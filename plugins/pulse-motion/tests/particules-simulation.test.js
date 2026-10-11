@@ -108,3 +108,24 @@ test('simulation GPU : physique, voie rapide, sous-émetteurs, chemins différen
   assert.ok(r.vivantes[0] > 0 && r.vivantes[1] > 0 && r.vivantes[2] > 0, JSON.stringify(r.vivantes));
   assert.equal(r.deterministe, true);
 });
+
+test('simulation GPU : historique des traînées', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const effet = compiler({ emetteurs: [{ nom: 'a', naissance: { salves: [{ t: 0, nombre: 1 }], forme: { type: 'point' }, vitesse: { direction: [1, 0], cone: 0, valeur: [12, 12] }, vie: [10, 10] },
+    forces: [ZERO], rendu: { type: 'trainee', longueur: 4 } }] });
+  const code = `
+const P = M.particulesInterne;
+const gpu = await P.obtenirGPU();
+if (!gpu) { await envoyer({ webgpu: false }); return; }
+const ZONE = [40, 40, 20, 10];
+const sim = new P.Simulation(gpu.device, DONNEES);
+sim.avancer(1, { a: () => ZONE, grille: () => ZONE });
+const h = await sim.lireHistorique(0);
+await envoyer({ k: sim.k, x: Array.from(h).filter((_, i) => i % 2 === 0) });`;
+  const r = JSON.parse(await executerPage(pageMoteur({ fichiers: FICHIERS, donnees: effet, code })));
+  assert.equal(r.erreur, undefined, r.erreur);
+  assert.equal(r.k, 120);
+  // Entrées écrites aux états 120, 118, 116, 114 : index (m / 2) mod 4 = 0, 3, 2, 1.
+  const attendu = [50 + 12 * 120 / 120, 50 + 12 * 114 / 120, 50 + 12 * 116 / 120, 50 + 12 * 118 / 120];
+  r.x.forEach((x, i) => assert.ok(Math.abs(x - attendu[i]) < 1e-3, `entrée ${i} : ${x} au lieu de ${attendu[i]}`));
+});

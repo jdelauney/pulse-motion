@@ -170,7 +170,7 @@ fn fs(@builtin(position) pos: vec4f) -> Sorties {
       });
       for (const { sim, i, delta } of liste) {
         const e = sim.emetteurs[i];
-        device.queue.writeBuffer(e.uniformeRendu, 0, new Float32Array([largeurCqh, 100, delta, 0]));
+        device.queue.writeBuffer(e.uniformeRendu, 0, new Float32Array([largeurCqh, 100, delta, 0, 0, 0, 0, 0]));
         passe.setPipeline(this.pipelines[e.em.rendu.melange === 'additif' ? 'additif' : 'alpha']);
         passe.setBindGroup(0, this.groupe(e));
         passe.draw(6, e.capacite);

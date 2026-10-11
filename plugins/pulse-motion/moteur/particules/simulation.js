@@ -3,6 +3,7 @@
  * new P.Simulation(device, effet)   effet : recette compilée (plan 1)
  *   .avancer(tau, zones) -> deltas  amène chaque émetteur à τ ; δ = τ − k/120 pour les simulés, 0 pour la voie rapide
  *   .lireEtat(i)          -> Promise<Float32Array> (16 nombres par case, disposition « Particule »)
+ *   .lireHistorique(i)    -> Promise<Float32Array> (2 nombres par entrée de traînée)
  *   .detruire()
  * zones.a(τ) et zones.grille(g) -> [x, y, largeur, hauteur] en cqh (zone d'émission à τ, au point g / 30 de la grille).
  *
@@ -18,7 +19,7 @@
 
   const PAS = 1 / 120;
   const GRILLE = 30;
-  const E_TAILLE = 136;
+  const E_TAILLE = 140;
   const TABLES = 448;
   const OCTETS_PARTICULE = 64;
   const OCTETS_MORT = 32;
@@ -62,6 +63,7 @@ struct Etat { pos: vec2f, vel: vec2f };
 @group(0) @binding(4) var<uniform> P: Pas;
 @group(0) @binding(5) var<uniform> V: Eval;
 @group(0) @binding(6) var<storage, read> zones: array<vec4f>;
+@group(0) @binding(7) var<storage, read_write> historique: array<vec2f>;
 
 fn ef(i: u32) -> f32 { return E[i]; }
 fn eu(i: u32) -> u32 { return bitcast<u32>(E[i]); }
@@ -297,6 +299,7 @@ fn mourir(pIn: Particule, s: u32) -> Particule {
 fn pas(@builtin(global_invocation_id) gid: vec3u) {
   let s = gid.x;
   if (s >= eu(0u)) { return; }
+  let N = eu(136u);
   var p = particules[s];
   if (p.vivante == 1u) {
     p = integrer(p, P.dt, P.tau0, P.zoneA);
@@ -307,10 +310,15 @@ fn pas(@builtin(global_invocation_id) gid: vec3u) {
   if (ne.ok) {
     let z = mix(P.zoneA, P.zoneB, clamp((ne.t - P.tau0) / P.dt, 0.0, 1.0));
     p = initialiser(ne, z);
+    for (var i = 0u; i < N; i++) { historique[s * N + i] = p.pos; }
     let reste = P.tau1 - ne.t;
     p = integrer(p, reste, ne.t, z);
     p.age = reste;
     if (p.age >= p.vie) { p = mourir(p, s); }
+  }
+  // Traînée : une position tous les 2 pas (1/60 s de τ).
+  if (N > 0u && p.vivante == 1u && (P.k + 1u) % 2u == 0u) {
+    historique[s * N + ((P.k + 1u) / 2u) % N] = p.pos;
   }
   particules[s] = p;
 }
@@ -364,7 +372,7 @@ fn evaluer(@builtin(global_invocation_id) gid: vec3u) {
     }
   }
 
-  /** Paramètres d'un émetteur (disposition « E » : 136 mots). */
+  /** Paramètres d'un émetteur (disposition « E » : 140 mots). */
   function emballer(em, effet) {
     const tampon = new ArrayBuffer(E_TAILLE * 4);
     const f = new Float32Array(tampon);
@@ -385,6 +393,7 @@ fn evaluer(@builtin(global_invocation_id) gid: vec3u) {
       u[b + 1] = fo.quadratique ? 1 : 0;
       f.set(parametresForce(fo), b + 2);
     });
+    u[136] = em.rendu.type === 'trainee' ? em.rendu.longueur : 0;
     return tampon;
   }
 
@@ -416,6 +425,7 @@ fn evaluer(@builtin(global_invocation_id) gid: vec3u) {
         { binding: 2, visibility: C, buffer: { type: 'read-only-storage' } },
         { binding: 3, visibility: C, buffer: { type: 'storage' } },
         { binding: 4, visibility: C, buffer: { type: 'uniform', hasDynamicOffset: true, minBindingSize: 48 } },
+        { binding: 7, visibility: C, buffer: { type: 'storage' } },
       ],
     });
     const U = GPUBufferUsage;
@@ -425,6 +435,7 @@ fn evaluer(@builtin(global_invocation_id) gid: vec3u) {
       evaluer: device.createComputePipeline({ layout: 'auto', compute: { module, entryPoint: 'evaluer' } }),
       videLecture: device.createBuffer({ size: OCTETS_MORT, usage: U.STORAGE }),
       videEcriture: device.createBuffer({ size: OCTETS_MORT, usage: U.STORAGE }),
+      videHistorique: device.createBuffer({ size: 16, usage: U.STORAGE }),
     };
     parDevice.set(device, p);
     return p;
@@ -446,7 +457,10 @@ fn evaluer(@builtin(global_invocation_id) gid: vec3u) {
           tables: tamponAvec(device, TABLES * 4, U.STORAGE | U.COPY_DST, tables(em)),
           particules: device.createBuffer({ size: capacite * OCTETS_PARTICULE, usage: U.STORAGE | U.COPY_SRC | U.COPY_DST }),
           morts: em.aLaMort >= 0 ? device.createBuffer({ size: capacite * OCTETS_MORT, usage: U.STORAGE | U.COPY_DST }) : null,
-          uniformeRendu: device.createBuffer({ size: 16, usage: U.UNIFORM | U.COPY_DST }),
+          historique: em.rendu.type === 'trainee'
+            ? device.createBuffer({ size: capacite * em.rendu.longueur * 8, usage: U.STORAGE | U.COPY_SRC | U.COPY_DST })
+            : null,
+          uniformeRendu: device.createBuffer({ size: 32, usage: U.UNIFORM | U.COPY_DST }),
         };
       });
 
@@ -466,6 +480,7 @@ fn evaluer(@builtin(global_invocation_id) gid: vec3u) {
             { binding: 2, resource: { buffer: parent ? parent.morts : this.p.videLecture } },
             { binding: 3, resource: { buffer: e.morts || this.p.videEcriture } },
             { binding: 4, resource: { buffer: this.tamponPas, size: 48 } },
+            { binding: 7, resource: { buffer: e.historique || this.p.videHistorique } },
           ],
         });
       });
@@ -492,7 +507,8 @@ fn evaluer(@builtin(global_invocation_id) gid: vec3u) {
       }
 
       this.kFin = Math.ceil(effet.fin / PAS) + 1;
-      const tailleEtat = this.simules.reduce((s, e) => s + e.capacite * OCTETS_PARTICULE, 0);
+      const tailleEtat = this.simules.reduce((s, e) => s + e.capacite * OCTETS_PARTICULE + (e.historique ? e.historique.size : 0), 0);
+      this.k = 0;
       this.planificateur = M.instantanes.creerPlanificateur({
         intervalle: M.instantanes.intervallePour({ tailleEtat, pasTotal: this.kFin, budget: BUDGET_INSTANTANES }),
       });
@@ -502,6 +518,7 @@ fn evaluer(@builtin(global_invocation_id) gid: vec3u) {
     avancer(tau, zones) {
       const k = Math.min(this.kFin, Math.max(0, Math.floor(tau / PAS + 1e-6)));
       const delta = Math.max(0, tau - k * PAS);
+      this.k = k;
       if (this.simules.length) this.executer(this.planificateur.planifier(k), zones);
       if (this.rapides.length) this.evaluer(tau, zones);
       return this.emetteurs.map((e) => (e.rapide ? 0 : delta));
@@ -549,17 +566,31 @@ fn evaluer(@builtin(global_invocation_id) gid: vec3u) {
         ouvrir();
         fermerPasse();
         if (a.type === 'vider') {
-          this.simules.forEach((e) => { enc.clearBuffer(e.particules); if (e.morts) enc.clearBuffer(e.morts); });
+          this.simules.forEach((e) => {
+            enc.clearBuffer(e.particules);
+            if (e.morts) enc.clearBuffer(e.morts);
+            if (e.historique) enc.clearBuffer(e.historique);
+          });
         } else if (a.type === 'restaurer') {
           const copie = this.instantanes.get(a.k);
-          this.simules.forEach((e, i) => enc.copyBufferToBuffer(copie[i], 0, e.particules, 0, e.capacite * OCTETS_PARTICULE));
+          this.simules.forEach((e, i) => {
+            enc.copyBufferToBuffer(copie[i].particules, 0, e.particules, 0, e.capacite * OCTETS_PARTICULE);
+            if (e.historique) enc.copyBufferToBuffer(copie[i].historique, 0, e.historique, 0, e.historique.size);
+          });
         } else if (a.type === 'sauver') {
           let copie = this.instantanes.get(a.k);
           if (!copie) {
-            copie = this.simules.map((e) => device.createBuffer({ size: e.capacite * OCTETS_PARTICULE, usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST }));
+            const U = GPUBufferUsage;
+            copie = this.simules.map((e) => ({
+              particules: device.createBuffer({ size: e.capacite * OCTETS_PARTICULE, usage: U.COPY_SRC | U.COPY_DST }),
+              historique: e.historique ? device.createBuffer({ size: e.historique.size, usage: U.COPY_SRC | U.COPY_DST }) : null,
+            }));
             this.instantanes.set(a.k, copie);
           }
-          this.simules.forEach((e, i) => enc.copyBufferToBuffer(e.particules, 0, copie[i], 0, e.capacite * OCTETS_PARTICULE));
+          this.simules.forEach((e, i) => {
+            enc.copyBufferToBuffer(e.particules, 0, copie[i].particules, 0, e.capacite * OCTETS_PARTICULE);
+            if (e.historique) enc.copyBufferToBuffer(e.historique, 0, copie[i].historique, 0, e.historique.size);
+          });
         }
       }
       envoyer();
@@ -595,12 +626,10 @@ fn evaluer(@builtin(global_invocation_id) gid: vec3u) {
       device.queue.submit([enc.finish()]);
     }
 
-    async lireEtat(i) {
-      const e = this.emetteurs[i];
-      const octets = e.capacite * OCTETS_PARTICULE;
-      const lecture = this.device.createBuffer({ size: octets, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
+    async lireTampon(tampon) {
+      const lecture = this.device.createBuffer({ size: tampon.size, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
       const enc = this.device.createCommandEncoder();
-      enc.copyBufferToBuffer(e.particules, 0, lecture, 0, octets);
+      enc.copyBufferToBuffer(tampon, 0, lecture, 0, tampon.size);
       this.device.queue.submit([enc.finish()]);
       await lecture.mapAsync(GPUMapMode.READ);
       const copie = new Float32Array(lecture.getMappedRange().slice(0));
@@ -609,9 +638,16 @@ fn evaluer(@builtin(global_invocation_id) gid: vec3u) {
       return copie;
     }
 
+    lireEtat(i) { return this.lireTampon(this.emetteurs[i].particules); }
+
+    lireHistorique(i) {
+      const e = this.emetteurs[i];
+      return e.historique ? this.lireTampon(e.historique) : Promise.resolve(new Float32Array(0));
+    }
+
     detruire() {
-      this.emetteurs.forEach((e) => [e.params, e.tables, e.particules, e.morts, e.uniformeRendu, e.uniformeEval].forEach((b) => b && b.destroy()));
-      this.instantanes.forEach((copie) => copie.forEach((b) => b.destroy()));
+      this.emetteurs.forEach((e) => [e.params, e.tables, e.particules, e.morts, e.historique, e.uniformeRendu, e.uniformeEval].forEach((b) => b && b.destroy()));
+      this.instantanes.forEach((copie) => copie.forEach((c) => { c.particules.destroy(); if (c.historique) c.historique.destroy(); }));
       this.instantanes.clear();
       this.tamponPas.destroy();
       if (this.tamponZones) this.tamponZones.destroy();
