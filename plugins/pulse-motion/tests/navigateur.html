@@ -120,6 +120,17 @@
   M.modeCapture(false);
   verifier('lecteur présent', !!document.getElementById('pm-lecteur'));
 
+  // Pendant un export, une modification ne recharge pas la page : rechargement à la fin.
+  var recharges = 0;
+  M.recharger = function () { recharges++; };
+  M.exportEnCours = true;
+  M.rechargerQuandPossible();
+  verifier('rechargement retenu pendant un export', recharges === 0);
+  M.finExport();
+  verifier('rechargement fait à la fin de l\'export', recharges === 1 && M.exportEnCours === false);
+  M.rechargerQuandPossible();
+  verifier('rechargement immédiat hors export', recharges === 2);
+
   M.seek(1).then(function (t) {
     verifier('seek renvoie une promesse', t === 1);
     document.getElementById('resultat').textContent = echecs.length

@@ -51,4 +51,4 @@ Lire `pulse-motion reference moteur` avant de toucher au fichier d'une scène.
 
 ✅ **Fait** : <la retouche, en une phrase>.
 📄 **Fichiers** : `sortie/<titre>.html` est à jour ; l'aperçu s'est rechargé.
-➡️ **Ensuite** : une autre retouche avec `/pulse-motion:retoucher`, ou « annule » pour revenir en arrière.
+➡️ **Ensuite** : une autre retouche avec `/pulse-motion:retoucher`, « annule » pour revenir en arrière, ou l'export en MP4 avec `/pulse-motion:exporter`.

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Pulse Motion – test de la capture</title>
+<link rel="stylesheet" href="../moteur/base.css">
+<style>
+  :root { --pm-ratio-l: 16; --pm-ratio-h: 9; --c-fond: #102030; }
+  #pm-scene { flex: none; width: 640px !important; height: 360px; }
+  @keyframes glisse { from { transform: translateX(0); } to { transform: translateX(200px); } }
+  #carre { position: absolute; left: 100px; top: 50px; width: 100px; height: 100px; background: #ff0000; animation: glisse 1s linear both; }
+  ul { position: absolute; left: 20px; top: 250px; margin: 0; padding: 0; list-style: none; }
+  li::before { content: ""; display: inline-block; width: 20px; height: 20px; background: #00ff00; }
+  #fondu { position: absolute; left: 400px; top: 200px; width: 50px; height: 50px; background: #ffffff; }
+  svg { position: absolute; left: 0; top: 300px; }
+  [data-scene="b"] { background: #ffff00; }
+</style>
+</head>
+<body>
+<div id="pm-scene">
+  <section data-scene="a">
+    <div id="carre" data-start="0" data-dur="1"></div>
+    <ul><li></li></ul>
+    <div id="fondu" data-start="0" data-dur="1" data-tween="opacity 0→1 linear"></div>
+    <svg width="640" height="40"><rect y="0" width="10" height="40" fill="#0000ff"><animate attributeName="x" from="0" to="300" dur="2s" fill="freeze"/></rect></svg>
+  </section>
+  <section data-scene="b"></section>
+</div>
+<canvas id="toile" width="640" height="360"></canvas>
+<pre id="resultat">EN COURS</pre>
+<script type="application/json" id="pm-donnees">
+{"titre":"test","format":{"ratio":"16:9","ips":30},"musique":null,
+ "scenes":[{"id":"a","duree":2,"rythme":1,"transition":"aucune"},{"id":"b","duree":2,"rythme":1,"transition":"aucune"}]}
+</script>
+<script src="../moteur/courbes.js"></script>
+<script src="../moteur/minutage.js"></script>
+<script src="../moteur/transitions.js"></script>
+<script src="../moteur/tween.js"></script>
+<script src="../moteur/horloge.js"></script>
+<script src="../moteur/capture.js"></script>
+<script>
+  M.demarrer();
+  var echecs = [], total = 0;
+  function verifier(nom, ok, detail) { total++; if (!ok) echecs.push(nom + (detail ? ' (' + detail + ')' : '')); }
+  var ctx = document.getElementById('toile').getContext('2d');
+  function pixel(x, y) { var d = ctx.getImageData(x, y, 1, 1).data; return [d[0], d[1], d[2]]; }
+  function proche(a, b, tol) { return a.every(function (v, i) { return Math.abs(v - b[i]) <= (tol || 8); }); }
+
+  M.seek(0.5).then(function () { return M.capturer(ctx, 640, 360); }).then(function () {
+    verifier('fond de la scène', proche(pixel(5, 5), [0x10, 0x20, 0x30]), pixel(5, 5));
+    verifier('animation CSS à mi-course (carré décalé de 100 px)', proche(pixel(250, 100), [255, 0, 0]) && proche(pixel(150, 100), [0x10, 0x20, 0x30]), pixel(250, 100) + ' / ' + pixel(150, 100));
+    verifier('pseudo-élément ::before recréé', proche(pixel(30, 260), [0, 255, 0]), pixel(30, 260));
+    verifier('data-tween opacité à 0,5', proche(pixel(425, 225), [0x88, 0x90, 0x98], 12), pixel(425, 225));
+    verifier('valeur SMIL figée (x = 75)', proche(pixel(80, 320), [0, 0, 255]) && !proche(pixel(5, 320), [0, 0, 255]), pixel(80, 320) + ' / ' + pixel(5, 320));
+    verifier('scène masquée absente', !proche(pixel(600, 20), [255, 255, 0]), pixel(600, 20));
+    return M.seek(3).then(function () { return M.capturer(ctx, 640, 360); });
+  }).then(function () {
+    verifier('scène b capturée à 3 s', proche(pixel(600, 20), [255, 255, 0]), pixel(600, 20));
+    verifier('scène a absente à 3 s', !proche(pixel(250, 100), [255, 0, 0]), pixel(250, 100));
+  }).catch(function (e) { echecs.push('exception : ' + e); }).then(function () {
+    document.getElementById('resultat').textContent = echecs.length
+      ? 'RESULTAT: ECHEC ' + echecs.length + '/' + total + ' ' + echecs.join(' | ')
+      : 'RESULTAT: OK ' + total + '/' + total;
+  });
+</script>
+</body>
+</html>
