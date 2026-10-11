@@ -175,7 +175,7 @@ L'état visible de la page ne dépend que de t. `M.rendre(t)` produit la même i
   - Types : `linear`, `quad`, `cubic`, `quart`, `quint`, `expo`, `sine`, `circle`, `elastic`, `back`, `bounce`, `bell`, `power`, `step`, `swing`, `jitter`, `wave`, `tardis`, `cubic-bezier`, `ressort`.
   - Modes : `in`, `in-inv`, `out`, `out-inv`, `inout`, `outin`, `spike`, `spike-inv`, `arch`, `arch-inv`, `spike-arch`, `spike-arch-inv`, `arch-spike` (portés de `TBZAnimationMode`).
 - Opérateurs : `M.mix(a, b, k)`, `M.fondu(a, b)`, `M.echelle(a)`, `M.echelleInverse(a)`.
-- `ressort` : forme close paramétrée par `raideur` et `amortissement` (idée de `motion-graphics-main/skills/motion-broll/engine/motion.js`).
+- `ressort` : forme close paramétrée par `raideur` et `amortissement` (idée de `motion-graphics-main/skills/motion/engine/motion.js`).
 - `M.courbeCSS(type, mode, param?, n = 40)` → chaîne CSS `linear(…)`. Au démarrage, le moteur publie `--ease-<type>-<mode>` pour les combinaisons usuelles (types `quad` à `bounce` × modes `in`, `out`, `inout`).
 - `data-tween="opacity 0→1 back-out; --compteur 0→1250 cubic-out"` interpole des valeurs à chaque image, sur la fenêtre `data-start`/`data-dur` de l'élément. `M.nombre(v)` formate en français (`1 250`).
 
@@ -293,7 +293,7 @@ Choix entre plusieurs styles, export fidèle, musique générée, voix, sous-tit
 |---|---|---|
 | `showtime-main/skills/showtime/runtime/stage.js` | MIT | Extraits (horloge virtuelle, aléa reproductible), mention conservée |
 | `hyperframes-main` | Apache 2.0 | Idées (linter orienté erreurs d'IA, adaptateurs déterministes) |
-| `motion-graphics-main/skills/motion-broll/engine/motion.js` | MIT | Idée des ressorts en forme close |
+| `motion-graphics-main/skills/motion/engine/motion.js` | MIT | Idée des ressorts en forme close |
 | `motion-design-main` | aucune | Inspiration seulement (règles de rythme reformulées) |
 | `BZAnimationTool.pas` | auteur du projet | Porté en JS et publié sous MIT |
 | Mediabunny | MPL-2.0 | Fichier inchangé dans `vendor/`, licence jointe |
