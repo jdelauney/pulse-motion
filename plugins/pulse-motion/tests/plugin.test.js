@@ -19,14 +19,14 @@ function enTete(texte) {
 }
 
 const SKILLS = fs.readdirSync(path.join(RACINE, 'skills'));
-const COMMANDES = ['etat', 'assembler', 'controler', 'apercu', 'historique', 'reference', 'scene', 'styles', 'consignes'];
+const COMMANDES = ['etat', 'assembler', 'controler', 'apercu', 'historique', 'reference', 'scene', 'styles', 'consignes', 'exporter', 'planche'];
 const fichiersGuides = () => [
   ...SKILLS.map((s) => path.join('skills', s, 'SKILL.md')),
   ...fs.readdirSync(path.join(RACINE, 'agents')).map((a) => path.join('agents', a)),
 ];
 
-test('skills : creer, retoucher, reprendre, lancés par la personne, outils limités', () => {
-  assert.deepEqual(SKILLS.sort(), ['creer', 'reprendre', 'retoucher']);
+test('skills : creer, exporter, retoucher, reprendre, lancés par la personne, outils limités', () => {
+  assert.deepEqual(SKILLS.sort(), ['creer', 'exporter', 'reprendre', 'retoucher']);
   for (const s of SKILLS) {
     const e = enTete(lire('skills', s, 'SKILL.md'));
     assert.ok(e.description && e.description.length > 20, `${s} : description`);
@@ -67,6 +67,12 @@ test('guidage : Node absent, police non fournie, décor de la dernière scène',
   for (const f of [path.join('agents', 'animateur.md'), path.join('references', 'styles', 'clair-pedagogique.md')]) {
     assert.match(lire(f), /dernière scène.*0,5 s/, `${f} : pause finale de la dernière scène`);
   }
+});
+
+test('export : proposé à la fin de creer et de retoucher, planche dans le parcours accompagné', () => {
+  for (const s of ['creer', 'retoucher']) assert.match(lire('skills', s, 'SKILL.md'), /\/pulse-motion:exporter/, s);
+  assert.match(lire('skills', 'creer', 'SKILL.md'), /pulse-motion planche \. <id1>,<id2> --ouvrir/);
+  assert.match(lire('skills', 'exporter', 'SKILL.md'), /`pulse-motion exporter \.` en arrière-plan/);
 });
 
 test('références : bloc « L\'essentiel » en tête, styles du catalogue documentés', () => {

@@ -7,6 +7,8 @@
  *   pulse-motion controler <dossier>
  *   pulse-motion apercu <dossier> [--port 4321] [--ouvrir]
  *   pulse-motion historique sauvegarder|annuler <dossier>
+ *   pulse-motion exporter <dossier>       MP4 relu dans sortie/ (Chrome ou Edge sans fenêtre)
+ *   pulse-motion planche <dossier> [id1,id2] [--ouvrir]   images clés PNG dans sortie/planche/
  *   pulse-motion reference <nom>          affiche references/<nom>.md (ex. moteur, rythme, styles/clair-pedagogique)
  *   pulse-motion scene <style> <nom>      affiche une scène toute faite d'un style
  *   pulse-motion styles                   liste les styles et leur catalogue (JSON)
@@ -25,6 +27,7 @@ const SCRIPTS = {
   controler: 'controler.js',
   apercu: 'apercu.js',
   historique: 'historique.js',
+  exporter: 'exporter.js',
 };
 
 function afficherFichier(fichier, quoi) {
@@ -41,6 +44,13 @@ function lancer(args) {
   if (SCRIPTS[commande]) {
     const r = spawnSync(process.execPath, [path.join(RACINE, 'scripts', SCRIPTS[commande]), ...reste], { stdio: 'inherit' });
     return r.status ?? 1;
+  }
+  if (commande === 'planche') {
+    const [dossier = '.', ...options] = reste;
+    const ids = options.filter((o) => !o.startsWith('--'));
+    const drapeaux = options.filter((o) => o.startsWith('--'));
+    const args = [path.join(RACINE, 'scripts', 'exporter.js'), dossier, '--planche', ...ids.slice(0, 1), ...drapeaux];
+    return spawnSync(process.execPath, args, { stdio: 'inherit' }).status ?? 1;
   }
   if (commande === 'reference') {
     const nom = reste[0] || '';
@@ -69,6 +79,7 @@ function lancer(args) {
     '  etat <dossier> [--accord deroule|style|video] [--parcours rapide|accompagne]',
     '  assembler <dossier>      controler <dossier>      apercu <dossier> [--port N] [--ouvrir]',
     '  historique sauvegarder|annuler <dossier>',
+    '  exporter <dossier>       planche <dossier> [id1,id2]',
     '  reference <nom>          scene <style> <nom>      styles      consignes <skill>',
   ].join('\n'));
   return 2;
