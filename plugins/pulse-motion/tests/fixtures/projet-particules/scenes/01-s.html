@@ -1,0 +1,13 @@
+<section data-scene="s">
+  <style>
+    @scope {
+      @keyframes glisse { from { transform: translateX(0); } to { transform: translateX(40cqh); } }
+      #cible { position: absolute; left: 10cqh; top: 40cqh; width: 10cqh; height: 10cqh; animation: glisse 4s linear both; }
+    }
+  </style>
+  <h1 id="titre" data-texte="titre" data-start="0"></h1>
+  <div id="cible" data-start="0" data-dur="4"></div>
+  <div data-effet="gerbe" data-ancre="#cible" data-start="0.5" data-dur="3"></div>
+  <div data-effet="simple" data-calque="arriere" data-start="1"></div>
+  <div data-effet="simple" data-calque="arriere" data-start="5.5"></div>
+</section>
