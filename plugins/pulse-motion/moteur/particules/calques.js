@@ -5,6 +5,7 @@
  * M.particules.disponible  WebGPU utilisable
  * M.particules.lirePixels(idScene, calque) -> Promise<{ largeur, hauteur, donnees }>
  * M.particules.lireEtat(idScene, ordre, emetteur) -> Promise<Float32Array>
+ * M.particules.lireOrdre(idScene, ordre, emetteur) -> Promise<Uint32Array>   paires clé, index après tri (tests)
  *
  * Zone d'émission : boîte de l'ancre (ou de la balise data-effet) relative à la scène, en cqh,
  * mesurée sur une grille de 30 points par seconde de τ en rendant la scène à ces instants
@@ -161,7 +162,15 @@
     Object.keys(sc.calques).forEach((nom) => {
       const canvas = sc.calques[nom];
       ajuster(canvas, sc.section);
-      etat.rendu.dessiner(etat.rendu.cible(canvas), listes[nom], largeurCqh);
+      // Réglages du calque : ceux de la recette active au bloom le plus fort.
+      let rc = { bloom: 0, seuil_bloom: 1, tons: 'douce' };
+      sc.effets.forEach((fx) => {
+        const tau = (t - fx.debut) * fx.info.rythme;
+        if (fx.calque === nom && tau >= 0 && tau < fx.effet.fin && fx.effet.rendu_calque.bloom > rc.bloom) rc = fx.effet.rendu_calque;
+      });
+      etat.rendu.dessiner(etat.rendu.cible(canvas), listes[nom], {
+        largeurCqh, dureeImage: sc.info.rythme / (M.ips || 30), bloom: rc.bloom, seuil: rc.seuil_bloom, tons: rc.tons,
+      });
     });
   }
 
@@ -210,12 +219,15 @@
     etat.pret = Promise.all([obtention, M.pret, polices()]).then((r) => {
       const gpu = r[0];
       if (!gpu || gpu.erreur) return;
-      etat.gpu = gpu;
-      etat.rendu = new P.Rendu(gpu.device, gpu.format);
-      etat.disponible = true;
-      gpu.device.onuncapturederror = erreurNonCapturee;
-      gpu.device.lost.then(() => perdu(gpu));
-      rendre(etat.t);
+      const rendu = new P.Rendu(gpu.device, gpu.format);
+      return rendu.preparer(etat.scenes.flatMap((sc) => sc.effets.map((fx) => fx.effet))).then(() => {
+        etat.gpu = gpu;
+        etat.rendu = rendu;
+        etat.disponible = true;
+        gpu.device.onuncapturederror = erreurNonCapturee;
+        gpu.device.lost.then(() => perdu(gpu));
+        rendre(etat.t);
+      });
     }).catch((e) => {
       etat.disponible = false;
       etat.scenes.forEach((sc) => sc.effets.forEach((fx) => panneau(fx.el, 'Effet non affiché : ' + message(e))));
@@ -281,6 +293,12 @@
       const fx = sc && sc.effets[ordre];
       if (!fx || !fx.sim) return Promise.reject(new Error('Effet ' + ordre + ' de la scène « ' + idScene + ' » non simulé.'));
       return fx.sim.lireEtat(emetteur);
+    },
+    lireOrdre(idScene, ordre, emetteur) {
+      const sc = trouver(idScene);
+      const fx = sc && sc.effets[ordre];
+      if (!fx || !fx.sim || !etat.rendu) return Promise.reject(new Error('Effet ' + ordre + ' de la scène « ' + idScene + ' » non dessiné.'));
+      return etat.rendu.lireOrdre(fx.sim.emetteurs[emetteur]);
     },
   };
 
