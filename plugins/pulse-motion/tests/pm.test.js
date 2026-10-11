@@ -38,6 +38,18 @@ test('les commandes de scripts transmettent arguments et code de sortie', () => 
   assert.match(h.stderr, /Aucune retouche à annuler/);
 });
 
+test('planche et exporter relaient vers scripts/exporter.js', () => {
+  const dir = copierProjet('projet-simple');
+  const r = pm('planche', dir, 'rien');
+  assert.equal(r.status, 1);
+  assert.match(JSON.parse(r.stdout).message, /Scène inconnue : rien/);
+  const invalide = copierProjet('projet-simple');
+  fs.writeFileSync(path.join(invalide, 'deroule.json'), '{}');
+  const e = pm('exporter', invalide);
+  assert.equal(e.status, 1);
+  assert.match(JSON.parse(e.stdout).message, /Le déroulé contient des erreurs/);
+});
+
 const sh = spawnSync('sh', ['-c', 'echo ok'], { encoding: 'utf8' });
 test('bin/pulse-motion (sh) relaie vers scripts/pm.js', { skip: sh.status !== 0 && 'sh introuvable' }, () => {
   const bin = path.join(__dirname, '..', 'bin', 'pulse-motion');
