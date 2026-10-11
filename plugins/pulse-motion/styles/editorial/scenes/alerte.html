@@ -1,0 +1,13 @@
+<!-- Scène toute faite « alerte » (style editorial) : un point de vigilance entre deux filets. Durée conseillée : 8 s.
+     Textes : titre (≤ 40 car.), texte (≤ 80 car.). -->
+<section data-scene="alerte">
+  <div class="decor">
+    <span class="ligne" data-decor data-start="0" data-dur="8" data-tween="--l 0→1 sine-inout"></span>
+  </div>
+  <div class="encadre">
+    <span id="haut" class="filet accent" data-start="0.2" data-dur="1.2"></span>
+    <h2 id="titre" class="titre-moyen accent masque" data-texte="titre" data-start="#haut+0.4" data-dur="1.1"></h2>
+    <p id="texte" class="texte fondu" data-texte="texte" data-start="#titre:fin+0.2" data-dur="1"></p>
+    <span id="bas" class="filet accent" data-start="#texte" data-dur="1.2"></span>
+  </div>
+</section>

@@ -1,0 +1,15 @@
+{
+  "style": "editorial",
+  "description": "Élégant et posé, comme un magazine : pour raconter (récit, témoignage, institutionnel).",
+  "transitions": ["fondu", "rideau"],
+  "scenes": [
+    { "nom": "titre", "role": "Ouvrir la vidéo ou un chapitre", "duree": 7, "textes": { "etiquette": 25, "titre": 40, "sous": 50 } },
+    { "nom": "liste", "role": "2 à 4 points, comme un sommaire", "duree": 12, "textes": { "titre": 40, "point1": 45, "point2": 45, "point3": 45, "point4": 45 } },
+    { "nom": "chiffre", "role": "Un chiffre clé en très grand", "duree": 7, "textes": { "titre": 40, "unite": 3, "legende": 60 } },
+    { "nom": "comparaison", "role": "Deux volets séparés par un filet", "duree": 12, "textes": { "titre": 40, "gauche-titre": 20, "gauche-texte": 60, "droite-titre": 20, "droite-texte": 60 } },
+    { "nom": "etape", "role": "Une étape, numéro à empattements", "duree": 8, "textes": { "numero": 2, "titre": 40, "texte": 80 } },
+    { "nom": "alerte", "role": "Un point de vigilance entre deux filets", "duree": 8, "textes": { "titre": 40, "texte": 80 } },
+    { "nom": "schema", "role": "Trois temps reliés par des flèches fines", "duree": 8, "textes": { "titre": 40, "a": 25, "b": 25, "c": 25 } },
+    { "nom": "conclusion", "role": "Le message à retenir et le logo", "duree": 6, "textes": { "titre": 40, "sous": 50 } }
+  ]
+}
