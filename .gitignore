@@ -1,4 +1,6 @@
+/.superpowers
 /.superpowers/*
-/aidd_docs/*
+/aidd_docs
+/aidd_docs/**/*
 /docs/superpowers/*
-/.fallow/*
+/.fallow
