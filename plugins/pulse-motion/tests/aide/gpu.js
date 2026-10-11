@@ -65,47 +65,61 @@ function lancer(navigateur, url, options) {
     '--headless=new', '--no-first-run', '--no-default-browser-check', '--hide-scrollbars',
     `--user-data-dir=${profil}`, '--window-size=1280,720', ...options, url,
   ], { stdio: 'ignore' });
-  return () => new Promise((fin) => {
+  const echec = new Promise((ok, ko) => {
+    processus.once('error', (e) => ko(new Error(`Lancement du navigateur impossible : ${e.message}`)));
+  });
+  echec.catch(() => {});
+  const fermer = () => new Promise((fin) => {
     const nettoyer = () => setTimeout(() => {
-      fs.rmSync(profil, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+      try {
+        fs.rmSync(profil, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+      } catch { /* profil temporaire : on n'échoue pas au nettoyage */ }
       fin();
     }, 200);
-    if (processus.exitCode !== null) return nettoyer();
+    if (processus.exitCode !== null || processus.signalCode !== null || processus.pid === undefined) return nettoyer();
     processus.once('exit', nettoyer);
     processus.kill();
   });
+  return { echec, fermer };
 }
 
 async function ouvrir(html, options, delai) {
   const navigateur = trouverNavigateur();
-  const serveur = await servir(html);
-  const fermerNavigateur = lancer(navigateur, serveur.url, options);
+  if (!navigateur) throw new Error("Chrome ou Edge introuvable (PM_NAVIGATEUR pour l'indiquer).");
+  let serveur;
+  let navigation;
   let minuterie;
   try {
+    serveur = await servir(html);
+    navigation = lancer(navigateur, serveur.url, options);
     return await Promise.race([
       serveur.resultat,
+      navigation.echec,
       new Promise((ok, ko) => { minuterie = setTimeout(() => ko(new Error(`Pas de résultat de la page après ${delai} ms.`)), delai); }),
     ]);
   } finally {
     clearTimeout(minuterie);
-    await fermerNavigateur();
-    await serveur.fermer();
+    if (navigation) await navigation.fermer();
+    if (serveur) await serveur.fermer();
   }
 }
 
-let optionsTrouvees;
+let sondage;
 
 /** Options de Chrome qui donnent un device WebGPU sans fenêtre, ou null. */
-async function optionsWebGPU() {
-  if (optionsTrouvees !== undefined) return optionsTrouvees;
-  optionsTrouvees = null;
-  if (!trouverNavigateur()) return null;
-  const candidates = process.env.PM_OPTIONS_WEBGPU ? [process.env.PM_OPTIONS_WEBGPU.split(/\s+/).filter(Boolean)] : CANDIDATES;
-  for (const options of candidates) {
-    const r = await ouvrir(SONDE, options, 20000).catch(() => 'SANS');
-    if (r === 'OK') { optionsTrouvees = options; break; }
+function optionsWebGPU() {
+  if (!sondage) {
+    sondage = (async () => {
+      if (!trouverNavigateur()) return null;
+      const candidates = process.env.PM_OPTIONS_WEBGPU ? [process.env.PM_OPTIONS_WEBGPU.split(/\s+/).filter(Boolean)] : CANDIDATES;
+      for (const options of candidates) {
+        const r = await ouvrir(SONDE, options, 20000).catch(() => 'SANS');
+        if (r === 'OK') return options;
+      }
+      return null;
+    })();
   }
-  return optionsTrouvees;
+  return sondage;
 }
 
 /** Ouvre html sans fenêtre avec WebGPU ; -> texte envoyé par la page. */
@@ -122,7 +136,7 @@ function pageMoteur({ fichiers = [], donnees = {}, code }) {
 <html lang="fr"><head><meta charset="utf-8"><title>Pulse Motion – test WebGPU</title></head>
 <body>
 <script>
-const DONNEES = ${JSON.stringify(donnees).replace(/</g, '\u003c')};
+const DONNEES = ${JSON.stringify(donnees).replace(/</g, '\\u003c')};
 function envoyer(objet) { return fetch('/_resultat', { method: 'POST', body: JSON.stringify(objet) }); }
 </script>
 ${scripts}

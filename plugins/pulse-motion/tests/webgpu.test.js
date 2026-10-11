@@ -14,3 +14,9 @@ test('banc WebGPU : une page sans fenêtre obtient un device et renvoie son rés
   const r = JSON.parse(await executerPage(html));
   assert.deepEqual(r, { double: 42, device: true });
 });
+
+test('pageMoteur : une donnée contenant </script> ne referme pas la balise', () => {
+  const html = pageMoteur({ fichiers: [], donnees: { x: '</script>' }, code: '' });
+  assert.doesNotMatch(html, /const DONNEES = [^\n]*<\/script>/);
+  assert.ok(html.includes("\\u003c/script>"));
+});
