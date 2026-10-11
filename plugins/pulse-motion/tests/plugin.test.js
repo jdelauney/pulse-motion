@@ -19,7 +19,7 @@ function enTete(texte) {
 }
 
 const SKILLS = fs.readdirSync(path.join(RACINE, 'skills'));
-const COMMANDES = ['etat', 'assembler', 'controler', 'apercu', 'historique', 'reference', 'scene', 'styles', 'consignes', 'exporter', 'planche', 'comparer', 'changer-style', 'lexique'];
+const COMMANDES = ['etat', 'assembler', 'controler', 'apercu', 'historique', 'reference', 'scene', 'styles', 'consignes', 'exporter', 'planche', 'comparer', 'changer-style', 'lexique', 'charte', 'police', 'glossaire'];
 const fichiersGuides = () => [
   ...SKILLS.map((s) => path.join('skills', s, 'SKILL.md')),
   ...fs.readdirSync(path.join(RACINE, 'agents')).map((a) => path.join('agents', a)),
@@ -91,4 +91,17 @@ test('références : bloc « L\'essentiel » en tête, styles du catalogue docum
 
 test('creer : style choisi alors que des scènes existent déjà → changement de style', () => {
   assert.match(lire('skills', 'creer', 'SKILL.md'), /scènes existent déjà[^\n]*pulse-motion changer-style \. <style>/);
+});
+
+test('charte : logo, chartes enregistrées, polices et glossaire dans le parcours', () => {
+  const creer = lire('skills', 'creer', 'SKILL.md');
+  assert.match(creer, /pulse-motion charte depuis-logo charte\/logo\.<ext> --style <style>/);
+  assert.match(creer, /pulse-motion charte liste/);
+  assert.match(creer, /pulse-motion charte appliquer <nom> \./);
+  assert.match(creer, /pulse-motion charte enregistrer <nom> \./);
+  assert.match(creer, /pulse-motion police "<famille>"/);
+  assert.match(creer, /pulse-motion glossaire noter \./);
+  assert.match(lire('skills', 'reprendre', 'SKILL.md'), /charte\.aJour/);
+  assert.match(lire('skills', 'retoucher', 'SKILL.md'), /pulse-motion charte depuis-logo/);
+  assert.match(lire('agents', 'animateur.md'), /pulse-motion glossaire \./);
 });

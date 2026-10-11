@@ -13,6 +13,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { lireDeroule } = require('./lib/deroule.js');
 const { cheminDansProjet } = require('./lib/embarquer.js');
+const { etatCharte } = require('./charte.js');
 
 const NODE_MINIMUM = 20;
 const ACCORDS = ['deroule', 'style', 'video'];
@@ -70,12 +71,14 @@ function etatProjet(dossier) {
     accords,
     apercu: memo.apercu ? { url: memo.apercu.url, actif: processusActif(memo.apercu.pid) } : null,
     erreurs: [],
+    charte: null,
   };
 
   if (resultat.projet) {
     const { deroule, erreurs } = lireDeroule(projet);
     if (deroule && typeof deroule.titre === 'string') resultat.titre = deroule.titre;
     if (deroule && deroule.parcours) resultat.parcours = deroule.parcours;
+    if (deroule && !erreurs.length) resultat.charte = etatCharte(projet, deroule);
     if (erreurs.length) {
       resultat.etape = 'deroule-a-corriger';
       resultat.erreurs = erreurs;

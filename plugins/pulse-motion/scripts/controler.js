@@ -11,8 +11,9 @@
  */
 const fs = require('node:fs');
 const path = require('node:path');
-const { assembler, chartePour } = require('./assembler.js');
+const { assembler, charteFinale } = require('./assembler.js');
 const { trouverStyle } = require('./styles.js');
+const { lireGlossaire, verifierGlossaire } = require('./vocabulaire.js');
 const { lireDeroule } = require('./lib/deroule.js');
 const { cheminDansProjet } = require('./lib/embarquer.js');
 const { extraireScene } = require('./lib/extraire.js');
@@ -133,11 +134,14 @@ function controler({ dossier, dossierStyles, ecrire = true }) {
       controlerCSS(scenesLues[s.id].css, s.id, `Scène « ${s.id} »`, problemes);
     }
 
+    // Glossaire de la charte : formes à éviter, sigles mal écrits.
+    problemes.push(...verifierGlossaire(deroule.scenes, lireGlossaire(projet).termes));
+
     // Style : tailles de texte et effets.
     try { controlerCSS(fs.readFileSync(path.join(dossierStyle, 'style.css'), 'utf8'), undefined, `Style « ${deroule.style} »`, problemes); } catch { /* style vérifié par l'assemblage */ }
 
     // Contraste de la charte.
-    const { couleurs } = chartePour(deroule, dossierStyle);
+    const { couleurs } = charteFinale(deroule, dossierStyle, projet);
     const paires = [
       ['texte', SEUILS.contrasteTexte, 'le texte'],
       ['primaire', SEUILS.contrasteTitres, 'les titres'],
