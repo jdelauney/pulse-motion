@@ -11,6 +11,7 @@
  *   pulse-motion planche <dossier> [id1,id2] [--ouvrir]   images clés PNG dans sortie/planche/
  *   pulse-motion reference <nom>          affiche references/<nom>.md (ex. moteur, rythme, styles/clair-pedagogique)
  *   pulse-motion scene <style> <nom>      affiche une scène toute faite d'un style
+ *   pulse-motion effet <nom>              affiche la recette d'un effet de particules de la bibliothèque
  *   pulse-motion styles                   liste les styles et leur catalogue (JSON)
  *   pulse-motion consignes <skill>        affiche les consignes d'un skill (ex. creer)
  */
@@ -62,6 +63,11 @@ function lancer(args) {
     if (!NOM_SUR.test(style || '') || !NOM_SUR.test(nom || '') || nom.includes('/')) { console.error('Usage : pulse-motion scene <style> <nom>'); return 2; }
     return afficherFichier(path.join(RACINE, 'styles', style, 'scenes', `${nom}.html`), `Scène « ${nom} » du style « ${style} »`);
   }
+  if (commande === 'effet') {
+    const nom = reste[0] || '';
+    if (!/^[a-z0-9-]+$/.test(nom)) { console.error('Usage : pulse-motion effet <nom> (ex. etincelles, confettis)'); return 2; }
+    return afficherFichier(path.join(RACINE, 'effets', `${nom}.json`), `Effet « ${nom} »`);
+  }
   if (commande === 'consignes') {
     const nom = reste[0] || '';
     if (!/^[a-z0-9-]+$/.test(nom)) { console.error('Usage : pulse-motion consignes <skill> (ex. creer)'); return 2; }
@@ -80,7 +86,7 @@ function lancer(args) {
     '  assembler <dossier>      controler <dossier>      apercu <dossier> [--port N] [--ouvrir]',
     '  historique sauvegarder|annuler <dossier>',
     '  exporter <dossier>       planche <dossier> [id1,id2]',
-    '  reference <nom>          scene <style> <nom>      styles      consignes <skill>',
+    '  reference <nom>          scene <style> <nom>      effet <nom>      styles      consignes <skill>',
   ].join('\n'));
   return 2;
 }

@@ -87,3 +87,30 @@ test('bibliothèque : neige : les flocons traversent l\'image à leurs réglages
   const parcours = vieMin * (g / K);
   assert.ok(parcours >= 102, `un flocon né 52 cqh au-dessus du centre doit atteindre le bas (102 cqh) : ${parcours.toFixed(1)} cqh parcourus`);
 });
+
+const { execFileSync, spawnSync } = require('node:child_process');
+const PM = path.join(__dirname, '..', 'scripts', 'pm.js');
+
+test('référence à jour : chaque effet et ses réglages sont dans la table', () => {
+  const texte = fs.readFileSync(path.join(__dirname, '..', 'references', 'particules.md'), 'utf8');
+  const lignes = [...texte.matchAll(/^\| `([a-z-]+)` \| ([^|]+) \| ([^|]+) \|$/gm)];
+  assert.deepEqual(lignes.map((m) => m[1]).sort(), NOMS);
+  for (const [, nom, reglages] of lignes) {
+    const attendus = Object.keys(R.resoudre(nom, charger).parametres).sort();
+    const ecrits = [...reglages.matchAll(/`([a-z0-9_]+)`/g)].map((m) => m[1]).sort();
+    assert.deepEqual(ecrits, attendus, `table de la référence, effet « ${nom} »`);
+  }
+  for (const mot of ['data-effet', 'data-ancre', 'data-calque', 'data-reglages', 'data-graine', 'etend', 'parametres', 'pulse-motion effet']) {
+    assert.ok(texte.includes(mot), `la référence parle de « ${mot} »`);
+  }
+});
+
+test('commande effet : affiche une recette, refuse un nom dangereux', () => {
+  const sortie = execFileSync(process.execPath, [PM, 'effet', 'etincelles'], { encoding: 'utf8' });
+  assert.equal(JSON.parse(sortie.slice(sortie.indexOf('{'))).nom, 'etincelles');
+  const mauvais = spawnSync(process.execPath, [PM, 'effet', '../deroule'], { encoding: 'utf8' });
+  assert.equal(mauvais.status, 2);
+  assert.match(mauvais.stderr, /Usage : pulse-motion effet <nom>/);
+  const reference = execFileSync(process.execPath, [PM, 'reference', 'particules'], { encoding: 'utf8' });
+  assert.match(reference, /## L'essentiel/);
+});
