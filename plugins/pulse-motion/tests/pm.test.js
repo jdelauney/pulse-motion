@@ -5,9 +5,25 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { copierProjet } = require('./aide/projet.js');
+const { dossierPersonnelEssai } = require('./aide/styles.js');
 
 const PM = path.join(__dirname, '..', 'scripts', 'pm.js');
-const pm = (...args) => spawnSync(process.execPath, [PM, ...args], { encoding: 'utf8' });
+// Dossier personnel isolé : les styles de la personne qui lance les tests n'interviennent pas.
+const PERSO = dossierPersonnelEssai();
+const pm = (...args) => spawnSync(process.execPath, [PM, ...args], { encoding: 'utf8', env: { ...process.env, PULSE_MOTION_DOSSIER: PERSO } });
+
+test('styles --genre classe les styles ; styles verifier contrôle le contrat', () => {
+  const liste = JSON.parse(pm('styles', '--genre', 'formation').stdout);
+  assert.equal(liste[0].style, 'clair-pedagogique');
+  assert.equal(liste[0].famille, 'moderne');
+  const v = pm('styles', 'verifier', 'clair-pedagogique');
+  assert.equal(v.status, 0, v.stderr);
+  assert.equal(JSON.parse(v.stdout).ok, true);
+  const inconnu = pm('styles', 'verifier', 'neon');
+  assert.equal(inconnu.status, 1);
+  assert.match(inconnu.stderr, /Style « neon » introuvable/);
+  assert.equal(pm('styles', '--genre', 'cuisine').status, 1);
+});
 
 test('reference, scene et styles affichent les fichiers du plugin', () => {
   assert.match(pm('reference', 'moteur').stdout, /^# /);

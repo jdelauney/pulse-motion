@@ -11,7 +11,8 @@
  */
 const fs = require('node:fs');
 const path = require('node:path');
-const { assembler, chartePour, RACINE } = require('./assembler.js');
+const { assembler, chartePour } = require('./assembler.js');
+const { trouverStyle } = require('./styles.js');
 const { lireDeroule } = require('./lib/deroule.js');
 const { cheminDansProjet } = require('./lib/embarquer.js');
 const { extraireScene } = require('./lib/extraire.js');
@@ -74,17 +75,17 @@ function controlerCSS(cssBrut, scene, ou, problemes) {
 }
 
 /**
- * controler({ dossier, dossierStyles?, ecrire? })
+ * controler({ dossier, dossierStyles?: string | string[], ecrire? })
  * -> { problemes: [...], fichier: chemin de controle.json | null }
  */
-function controler({ dossier, dossierStyles = path.join(RACINE, 'styles'), ecrire = true }) {
+function controler({ dossier, dossierStyles, ecrire = true }) {
   const projet = path.resolve(dossier);
   const assemblage = assembler({ dossier: projet, dossierStyles, ecrire: false });
   const problemes = assemblage.erreurs.map((e) => ({ ...e }));
   const { deroule } = lireDeroule(projet);
 
   if (assemblage.ok) {
-    const dossierStyle = path.join(dossierStyles, deroule.style);
+    const dossierStyle = trouverStyle(deroule.style, dossierStyles).dossier;
     const scenesLues = {};
     const elementsParScene = {};
     for (const s of deroule.scenes) {
