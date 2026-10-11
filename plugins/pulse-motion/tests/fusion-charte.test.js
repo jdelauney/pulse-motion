@@ -86,3 +86,22 @@ test('contrôle : contraste calculé sur la charte finale (ton sombre du style)'
   const r = controler({ dossier: dir, dossierStyles: racine, ecrire: false });
   assert.ok(r.problemes.some((p) => p.regle === 'contraste' && /#0f172a/.test(p.message)), JSON.stringify(r.problemes.map((p) => p.message)));
 });
+
+test('police { famille, fichier } qui n\'est pas une police : refusée à la validation, jamais d\'exception à l\'assemblage', () => {
+  assert.match(validerCharte({ polices: { titres: { famille: 'A', fichier: 'charte.json' } } }).join(), /« charte\.polices\.titres »/);
+  const dir = copierProjet('projet-simple');
+  fs.mkdirSync(path.join(dir, 'assets', 'dossier.woff2'));
+  modifierDeroule(dir, (d) => { d.charte.polices = { titres: { famille: 'A', fichier: 'assets/dossier.woff2' } }; });
+  const r = assembler({ dossier: dir, dossierStyles: STYLES, ecrire: false });
+  assert.equal(r.erreurs[0].regle, 'police-non-embarquee');
+  assert.match(r.erreurs[0].message, /Police « A »/);
+});
+
+test('fond imposé par la charte : le ton suit la clarté du fond', () => {
+  const identite = { couleur: { tons: ['clair', 'sombre'], tonDefaut: 'clair', sombre: { fond: '#0b1020', texte: '#f1f5f9' } } };
+  const sombre = { couleurs: { primaire: '#1d4ed8', accent: '#b45309', fond: '#111111', texte: '#eeeeee' }, fondImpose: true };
+  assert.equal(F.appliquerTon({ ...sombre, ton: 'auto' }, identite).ton, 'sombre');
+  assert.equal(F.appliquerTon({ ...sombre, ton: 'clair' }, identite).ton, 'sombre');
+  assert.equal(F.appliquerTon({ ...sombre, couleurs: { ...sombre.couleurs, fond: '#ffffff' }, ton: 'sombre' }, identite).ton, 'clair');
+  assert.equal(F.appliquerTon({ ...sombre, ton: 'auto' }, { couleur: { tons: ['clair'] } }).ton, 'clair');
+});

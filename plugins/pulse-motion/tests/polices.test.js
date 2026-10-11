@@ -82,3 +82,14 @@ test('fichier fourni : licence lue, caractères manquants signalés, confirmatio
   assert.match(fs.readFileSync(path.join(d, 'LICENCES.md'), 'utf8'), /## Ma Marque\n\n- Fichier fourni par la personne/);
   assert.match(P.installerFichier({ fichier: ecrire('notes.txt', 'x'), dans: d }).message, /TTF, OTF, WOFF ou WOFF2/);
 });
+
+test('nom de famille du catalogue Bunny nettoyé : rien n\'est écrit hors du dossier prévu', async () => {
+  const parent = dossier();
+  const d = path.join(parent, 'a', 'b');
+  const catalogue = { 'playfair-display': { ...CATALOGUE['playfair-display'], familyName: '../../evil' } };
+  const r = await P.installerBunny({ famille: 'playfair-display', dans: d, recuperer: reseau({ 'https://fonts.bunny.net/list': catalogue }) });
+  assert.equal(r.ok, true, r.message);
+  assert.deepEqual(r.fichiers, ['evil-400.woff2', 'evil-700.woff2']);
+  assert.deepEqual(fs.readdirSync(parent), ['a']);
+  assert.ok(fs.existsSync(path.join(d, 'evil-400.woff2')));
+});

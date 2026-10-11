@@ -38,7 +38,7 @@ function validerCharte(c, nom = 'charte') {
     if (!estObjet(c.polices)) err.push(`« ${nom}.polices » doit être un objet.`);
     else for (const [cle, val] of Object.entries(c.polices)) {
       const ok = estObjet(val)
-        ? estTexte(val.famille) && POLICE.test(val.famille) && estTexte(val.fichier) && POLICE.test(val.fichier)
+        ? estTexte(val.famille) && POLICE.test(val.famille) && estTexte(val.fichier) && POLICE.test(val.fichier) && /\.(woff2?|ttf|otf)$/i.test(val.fichier)
         : estTexte(val) && POLICE.test(val);
       if (!CLE.test(cle)) err.push(`« ${nom}.polices.${cle} » : le nom doit contenir seulement a-z, 0-9 et des tirets.`);
       else if (!ok) err.push(`« ${nom}.polices.${cle} » doit être un nom de police (lettres, chiffres, espaces, tirets), un fichier de police, ou { "famille", "fichier" }.`);

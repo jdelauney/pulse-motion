@@ -94,6 +94,9 @@ async function installerBunny({ famille, graisses = [400, 700], dans, recuperer 
     const liste = await recuperer(`https://${HOTE}/list`);
     if (!liste.ok) throw new Error(`catalogue indisponible, ${liste.status}`);
     const fam = familleConnue(id, lireCatalogueBunny(await liste.json()));
+    // Le nom vient du catalogue téléchargé et sert de nom de fichier : caractères sûrs seulement.
+    fam.nom = fam.nom.replace(/[^\p{L}\p{N} _-]/gu, '').trim();
+    if (!fam.nom) throw new Refus(`Le catalogue Bunny Fonts donne un nom de police inutilisable pour « ${id} ».`);
     const feuille = await recuperer(urlFeuille(fam, graisses));
     if (!feuille.ok) throw new Error(`feuille indisponible, ${feuille.status}`);
     const fichiers = choisirLatin(fichiersDeLaFeuille(await feuille.text())).filter((f) => f.style === 'normal');
