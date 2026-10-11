@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Pulse Motion – test du moteur</title>
+<link rel="stylesheet" href="../moteur/base.css">
+<style>
+  body { --pm-ratio-l: 16; --pm-ratio-h: 9; }
+  @keyframes apparait { from { opacity: 0; } to { opacity: 1; } }
+  #anime { animation: apparait 1s linear both; }
+  #glisse { transform: translateX(calc((1 - var(--p)) * 10cqh)); }
+</style>
+</head>
+<body>
+<div id="pm-scene">
+  <section data-scene="a">
+    <h1 id="titre" data-start="0.5" data-dur="1">Titre</h1>
+    <p id="anime" data-start="#titre:fin+0" data-dur="1">Apparaît</p>
+    <p id="glisse" data-start="1" data-dur="2" data-tween="--x 0cqh→10cqh linear">Glisse</p>
+    <span id="compteur" data-start="0" data-dur="2" data-tween="nombre 0→1250 linear">0</span>
+    <svg width="10" height="10"><rect width="10" height="10"><animate attributeName="x" from="0" to="10" dur="2s" fill="freeze"/></rect></svg>
+  </section>
+  <section data-scene="b">
+    <p id="b1" data-start="0.2" data-dur="0.5">B</p>
+  </section>
+</div>
+<pre id="resultat">EN COURS</pre>
+<script type="application/json" id="pm-donnees">
+{"titre":"test","format":{"ratio":"16:9","ips":30},"musique":null,
+ "scenes":[{"id":"a","duree":4,"rythme":1,"transition":"aucune"},{"id":"b","duree":2,"rythme":0.5,"transition":"fondu"}]}
+</script>
+<script src="../moteur/courbes.js"></script>
+<script src="../moteur/minutage.js"></script>
+<script src="../moteur/transitions.js"></script>
+<script src="../moteur/tween.js"></script>
+<script src="../moteur/horloge.js"></script>
+<script src="../moteur/lecteur.js"></script>
+<script>
+  // Le temps SMIL ne démarre qu'après le chargement : les vérifications attendent M.pret.
+  var rappels = [];
+  M.chaqueImage('a', function (p, tScene) { rappels.push([p, tScene]); });
+  M.demarrer();
+  M.demarrerLecteur();
+  M.pret.then(verifierTout);
+
+  function verifierTout() {
+
+  var echecs = [], total = 0;
+  function verifier(nom, ok, detail) { total++; if (!ok) echecs.push(nom + (detail ? ' (' + detail + ')' : '')); }
+  function proche(a, b, tol) { return Math.abs(a - b) <= (tol || 1e-3); }
+  function cs(id, prop) { return getComputedStyle(document.getElementById(id)).getPropertyValue(prop).trim(); }
+  function photo() {
+    var o = {};
+    document.querySelectorAll('[data-pm-cle], section[data-scene]').forEach(function (e) {
+      var s = getComputedStyle(e);
+      o[e.id || e.getAttribute('data-scene')] = [s.opacity, s.transform, s.display, s.getPropertyValue('--p'), s.getPropertyValue('--x'), e.getAttribute('data-etat'), e.textContent];
+    });
+    return JSON.stringify(o);
+  }
+
+  // Durée : 4 + 2 / 0,5 − 0,5 de chevauchement = 7,5 s
+  verifier('durée totale', proche(M.duree, 7.5), M.duree);
+  verifier('aucune erreur de minutage', M.erreurs.length === 0, JSON.stringify(M.erreurs));
+
+  // Déterminisme : même image en arrivant par 0→t ou par 5→t.
+  M.rendre(0); M.rendre(2.3); var direct = photo();
+  M.rendre(5); M.rendre(2.3); var detour = photo();
+  verifier('seek déterministe (0→2,3 / 5→2,3)', direct === detour, direct + ' ≠ ' + detour);
+  M.rendre(6.1); M.rendre(3.75); var a1 = photo();
+  M.rendre(0.2); M.rendre(3.75); var a2 = photo();
+  verifier('seek déterministe pendant le chevauchement', a1 === a2);
+
+  // Animation CSS calée sur l'élément porteur : #anime commence à 1,5 s.
+  M.rendre(2.0);
+  verifier('animation CSS à mi-course', proche(parseFloat(cs('anime', 'opacity')), 0.5, 0.02), cs('anime', 'opacity'));
+  M.rendre(1.0);
+  verifier('animation CSS avant son début', proche(parseFloat(cs('anime', 'opacity')), 0, 0.02), cs('anime', 'opacity'));
+
+  // --p, data-etat, data-tween, nombre.
+  M.rendre(2);
+  verifier('--p à mi-course', cs('glisse', '--p') === '0.5', cs('glisse', '--p'));
+  verifier('data-tween --x', cs('glisse', '--x') === '5cqh', cs('glisse', '--x'));
+  verifier('data-etat pendant', document.getElementById('glisse').getAttribute('data-etat') === 'pendant');
+  verifier('data-etat après', document.getElementById('titre').getAttribute('data-etat') === 'apres');
+  verifier('compteur en français', document.getElementById('compteur').textContent.replace(/\s/g, ' ') === '1 250');
+
+  // SMIL : temps de la scène.
+  M.rendre(1.25);
+  var svg = document.querySelector('section[data-scene="a"] svg');
+  verifier('SMIL en pause et calé', svg.animationsPaused() && proche(svg.getCurrentTime(), 1.25), svg.animationsPaused() + ' ' + svg.getCurrentTime());
+
+  // Visibilité et transition.
+  M.rendre(1);
+  verifier('scène b masquée au début', getComputedStyle(document.querySelector('[data-scene="b"]')).display === 'none');
+  M.rendre(3.75);
+  var opB = parseFloat(getComputedStyle(document.querySelector('[data-scene="b"]')).opacity);
+  verifier('fondu de b à mi-chevauchement', proche(opB, 0.5, 0.02), opB);
+  M.rendre(7);
+  verifier('scène a masquée à la fin', getComputedStyle(document.querySelector('[data-scene="a"]')).display === 'none');
+
+  // Rythme 0,5 : b1 à 0,2 s de scène → 3,5 + 0,4 = 3,9 s absolu.
+  M.rendre(3.9);
+  verifier('rythme appliqué aux éléments', document.getElementById('b1').getAttribute('data-etat') === 'pendant');
+
+  // Rappels M.chaqueImage.
+  rappels = []; M.rendre(2);
+  verifier('M.chaqueImage reçoit p et t de scène', rappels.length === 1 && proche(rappels[0][0], 0.5) && proche(rappels[0][1], 2));
+
+  // t borné, aléa reproductible, capture.
+  verifier('t borné à la durée', M.rendre(99) === 7.5 && M.rendre(-3) === 0);
+  M.modeCapture(true); M.rendre(2);
+  verifier('Date.now suit t en capture', Date.now() === 1767225600000 + 2000);
+  M.modeCapture(false);
+  verifier('lecteur présent', !!document.getElementById('pm-lecteur'));
+
+  M.seek(1).then(function (t) {
+    verifier('seek renvoie une promesse', t === 1);
+    document.getElementById('resultat').textContent = echecs.length
+      ? 'RESULTAT: ECHEC ' + echecs.length + '/' + total + '\n' + echecs.join('\n')
+      : 'RESULTAT: OK ' + total + '/' + total;
+  });
+  }
+</script>
+</body>
+</html>
