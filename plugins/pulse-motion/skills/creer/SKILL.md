@@ -70,7 +70,7 @@ Logo, couleurs ou musique demandés : demander les fichiers (chemin ou glisser-d
 1. `pulse-motion apercu . --ouvrir` **en arrière-plan** : le navigateur s'ouvre sur la vidéo.
 2. Attendre quelques secondes, puis `pulse-motion controler .` : la page a signalé les textes qui débordent. Corriger s'il y en a (l'aperçu se recharge seul).
 3. Parcours accompagné :
-   - **Style** : `pulse-motion planche . <id1>,<id2>` (deux scènes représentatives, par exemple le titre et une scène de contenu). Regarder soi-même les images PNG de `sortie/planche/` (avec `Read`) pour vérifier le rendu, puis montrer `sortie/planche/planche.html` à la personne et demander l'accord sur le style (`--accord style`).
+   - **Style** : `pulse-motion planche . <id1>,<id2> --ouvrir` (deux scènes représentatives, par exemple le titre et une scène de contenu) : la planche s'ouvre dans le navigateur de la personne. Regarder soi-même les images PNG de `sortie/planche/` (avec `Read`) pour vérifier le rendu, puis demander l'accord sur le style (`--accord style`).
    - **Vidéo finale** : faire regarder la vidéo entière dans l'aperçu et demander l'accord (`--accord video`).
    - Un refus : demander ce qui ne va pas et passer par `/pulse-motion:retoucher`.
 

@@ -111,12 +111,25 @@
     if (sauvee && typeof sauvee.t === 'number') { M.rendre(sauvee.t); if (sauvee.lecture) jouer(); }
     else afficher(M.temps());
 
+    // Rechargement après une retouche, à la même position. Pendant un export (M.exportEnCours),
+    // il attend la fin de l'export (M.finExport) pour ne pas l'interrompre.
+    M.recharger = function () {
+      try { sessionStorage.setItem(CLE_POSITION, JSON.stringify({ t: M.temps(), lecture: lecture })); } catch (e) { /* ignoré */ }
+      location.reload();
+    };
+    var rechargementEnAttente = false;
+    M.rechargerQuandPossible = function () {
+      if (M.exportEnCours) { rechargementEnAttente = true; return; }
+      M.recharger();
+    };
+    M.finExport = function () {
+      M.exportEnCours = false;
+      if (rechargementEnAttente) { rechargementEnAttente = false; M.recharger(); }
+    };
+
     if (racine.__PM_APERCU__ && racine.EventSource) {
       var source = new EventSource('/_pm/evenements');
-      source.addEventListener('recharger', function () {
-        try { sessionStorage.setItem(CLE_POSITION, JSON.stringify({ t: M.temps(), lecture: lecture })); } catch (e) { /* ignoré */ }
-        location.reload();
-      });
+      source.addEventListener('recharger', function () { M.rechargerQuandPossible(); });
       source.addEventListener('erreur', function (ev) {
         var message = 'Erreur d\'assemblage';
         try { message = JSON.parse(ev.data).message; } catch (e) { /* ignoré */ }

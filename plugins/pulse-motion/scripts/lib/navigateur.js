@@ -43,18 +43,23 @@ function rendreDOM(navigateur, cible) {
   });
 }
 
-/** Ouvre une URL sans fenêtre, en temps réel. -> { fermer() } */
+/** Ouvre une URL sans fenêtre, en temps réel. -> { aQuitte(), fermer() } */
 function ouvrirSansFenetre(navigateur, url) {
   const profil = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-chrome-'));
   const processus = spawn(navigateur, [...OPTIONS, `--user-data-dir=${profil}`, '--window-size=1280,800', url], { stdio: 'ignore' });
+  let quitte = false;
+  processus.on('error', () => { quitte = true; });
+  processus.on('exit', () => { quitte = true; });
   return {
+    /** Vrai si le navigateur s'est arrêté (plantage, lancement impossible). */
+    aQuitte: () => quitte,
     fermer() {
       return new Promise((resolve) => {
         const fin = () => {
           // Chrome peut garder le profil verrouillé quelques instants après sa fermeture.
           setTimeout(() => { fs.rmSync(profil, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 }); resolve(); }, 200);
         };
-        if (processus.exitCode !== null) return fin();
+        if (quitte || processus.exitCode !== null) return fin();
         processus.once('exit', fin);
         processus.kill();
       });

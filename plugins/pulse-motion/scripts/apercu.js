@@ -208,4 +208,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { demarrerApercu, injecterApercu };
+module.exports = { demarrerApercu, injecterApercu, ouvrirNavigateur };
