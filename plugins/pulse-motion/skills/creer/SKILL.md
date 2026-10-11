@@ -19,6 +19,7 @@ Guider une personne **sans notion de code** de son idée jusqu'à une vidéo ani
 ## 0. Vérifier
 
 `pulse-motion etat .`
+- La commande échoue avec « node » introuvable (Node.js n'est pas installé) : expliquer qu'il faut installer Node.js en version LTS depuis https://nodejs.org (Windows et macOS : programme d'installation ; Linux : gestionnaire de paquets), puis relancer Claude Code. S'arrêter.
 - `node.ok` faux : expliquer le message `node.message` et s'arrêter.
 - `projet` vrai : une vidéo existe déjà ici. Proposer `/pulse-motion:reprendre`, ou de créer la nouvelle vidéo dans un autre dossier. S'arrêter.
 
@@ -34,7 +35,7 @@ Le sujet vient de l'argument ; sinon, le demander d'abord en une question ouvert
 Le genre se déduit du sujet (formation, produit, storytelling, social). Format : 16:9, sauf genre `social` → 9:16.
 Puis `pulse-motion etat . --parcours rapide|accompagne`.
 
-Logo, couleurs ou musique demandés : demander les fichiers (chemin ou glisser-déposer) et les **copier** dans `assets/`. Couleurs en mots (« bleu marine ») : les traduire en `#rrggbb` et le dire.
+Logo, couleurs ou musique demandés : demander les fichiers (chemin ou glisser-déposer) et les **copier** dans `assets/`. Couleurs en mots (« bleu marine ») : les traduire en `#rrggbb` et le dire. Une police citée sans fichier (« ma police, c'est Montserrat ») : utiliser la plus proche des polices fournies (Figtree pour les titres, Inter pour le texte) et le dire ; si la personne fournit le fichier, le copier dans `assets/` et l'indiquer dans `charte.polices`.
 
 ## 2. Déroulé
 

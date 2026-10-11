@@ -59,6 +59,16 @@ test('les commandes pulse-motion citées existent, avec les références et scè
   }
 });
 
+test('guidage : Node absent, police non fournie, décor de la dernière scène', () => {
+  for (const s of SKILLS) {
+    assert.match(lire('skills', s, 'SKILL.md'), /Node\.js.*introuvable|introuvable.*Node\.js/, `${s} : cas « Node absent »`);
+  }
+  assert.match(lire('skills', 'creer', 'SKILL.md'), /police.*sans fichier.*(Figtree|Inter)/i);
+  for (const f of [path.join('agents', 'animateur.md'), path.join('references', 'styles', 'clair-pedagogique.md')]) {
+    assert.match(lire(f), /dernière scène.*0,5 s/, `${f} : pause finale de la dernière scène`);
+  }
+});
+
 test('références : bloc « L\'essentiel » en tête, styles du catalogue documentés', () => {
   for (const f of ['moteur.md', 'rythme.md', path.join('styles', 'clair-pedagogique.md')]) {
     assert.match(lire('references', f), /^# .+\n\n## L'essentiel\n/, f);

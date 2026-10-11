@@ -56,14 +56,26 @@ const EFFETS = [
   [/backdrop-filter\s*:/i, 'backdrop-filter'],
 ];
 
+const FAMILLES_PERMISES = /^(inherit|initial|unset|system-ui|sans-serif|serif|monospace|var\(--f-[a-z0-9-]+\))$/i;
+
 function controlerCSS(cssBrut, scene, ou, problemes) {
   const css = cssBrut.replace(/\/\*[\s\S]*?\*\//g, '');
-  const tailles = /font-size\s*:\s*(\d*\.?\d+)cqh/gi;
+  // Taille du texte : font-size, ou la propriété raccourcie font (« 700 5cqh/1.2 … »).
+  const tailles = /font(?:-size\s*:\s*|\s*:[^;}]*?\s)(\d*\.?\d+)cqh/gi;
   let m;
   while ((m = tailles.exec(css))) {
     const valeur = parseFloat(m[1]);
     if (valeur < SEUILS.texteMinCqh) {
       problemes.push({ regle: 'texte-petit', gravite: 'alerte', scene, message: `${ou} : texte de ${virgule(valeur)} cqh, trop petit pour être lu (minimum ${virgule(SEUILS.texteMinCqh)} cqh).` });
+    }
+  }
+  // Polices : seules celles de la charte (variables --f-…) sont embarquées.
+  const familles = /font-family\s*:\s*([^;}]+)|font\s*:[^;}]*?(["'][^"']+["'][^;}]*)/gi;
+  while ((m = familles.exec(css))) {
+    const valeur = (m[1] || m[2]).trim();
+    const nonEmbarquees = valeur.split(',').map((f) => f.trim()).filter((f) => f && !FAMILLES_PERMISES.test(f));
+    if (nonEmbarquees.length) {
+      problemes.push({ regle: 'police-non-embarquee', gravite: 'erreur', scene, message: `${ou} : la police « ${valeur} » n'est pas embarquée ; utiliser var(--f-titres) ou var(--f-texte) (polices de la charte).` });
     }
   }
   for (const [motif, nom] of EFFETS) {
@@ -137,7 +149,11 @@ function controler({ dossier, dossierStyles = path.join(RACINE, 'styles'), ecrir
 
     // Contraste de la charte.
     const { couleurs } = chartePour(deroule, dossierStyle);
-    const paires = [['texte', SEUILS.contrasteTexte, 'le texte'], ['primaire', SEUILS.contrasteTitres, 'les titres']];
+    const paires = [
+      ['texte', SEUILS.contrasteTexte, 'le texte'],
+      ['primaire', SEUILS.contrasteTitres, 'les titres'],
+      ['accent', SEUILS.contrasteTexte, 'les étiquettes'],
+    ];
     for (const [nom, minimum, quoi] of paires) {
       if (couleurs[nom] && couleurs.fond) {
         const c = contraste(couleurs[nom], couleurs.fond);
