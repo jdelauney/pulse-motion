@@ -77,3 +77,15 @@ test('ligne de commande : JSON de l\'état', () => {
   const sortie = execFileSync(process.execPath, [path.join(__dirname, '..', 'scripts', 'etat.js'), dir, '--accord', 'deroule'], { encoding: 'utf8' });
   assert.equal(JSON.parse(sortie).etape, 'apercu');
 });
+
+test('parcours accompagné : le style se choisit avant la fabrication des scènes', () => {
+  const dir = copierProjet('projet-simple');
+  modifierDeroule(dir, (d) => { d.parcours = 'accompagne'; });
+  fs.rmSync(path.join(dir, 'scenes', '02-chiffre.html'));
+  donnerAccord(dir, 'deroule');
+  const e = etatProjet(dir);
+  assert.equal(e.etape, 'style-a-valider');
+  assert.match(e.prochaine, /comparaison des styles/);
+  donnerAccord(dir, 'style');
+  assert.equal(etatProjet(dir).etape, 'fabrication');
+});

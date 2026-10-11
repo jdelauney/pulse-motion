@@ -73,3 +73,11 @@ test('lireDeroule : fichier absent, JSON invalide, BOM accepté', () => {
   fs.writeFileSync(path.join(dir, 'deroule.json'), '\uFEFF' + JSON.stringify(valide()));
   assert.deepEqual(lireDeroule(dir).erreurs, []);
 });
+
+test('scenes[].type : facultatif, un des 8 types de scène toute faite', () => {
+  const base = { version: 1, titre: 'T', genre: 'formation', parcours: 'rapide', format: { ratio: '16:9' }, style: 'x' };
+  const scene = { id: 'a', fichier: 'scenes/a.html', duree: 3, textes: {} };
+  assert.deepEqual(validerDeroule({ ...base, scenes: [{ ...scene, type: 'liste' }] }), []);
+  assert.deepEqual(validerDeroule({ ...base, scenes: [scene] }), []);
+  assert.match(validerDeroule({ ...base, scenes: [{ ...scene, type: 'carte' }] })[0], /« type » doit être l'un de : titre, liste/);
+});
