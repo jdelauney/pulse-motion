@@ -3,6 +3,9 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { TYPES } = require('./contrat.js');
+
+const TYPES_SCENE = Object.keys(TYPES);
 
 const GENRES = ['formation', 'produit', 'storytelling', 'social'];
 const PARCOURS = ['rapide', 'accompagne'];
@@ -81,6 +84,9 @@ function validerDeroule(d) {
     if (s.transition !== undefined && !TRANSITIONS.includes(s.transition)) {
       err.push(`La ${nom} : « transition » doit être l'une de : ${TRANSITIONS.join(', ')}.`);
     }
+    if (s.type !== undefined && !TYPES_SCENE.includes(s.type)) {
+      err.push(`La ${nom} : « type » doit être l'un de : ${TYPES_SCENE.join(', ')} (ou absent pour une scène composée librement).`);
+    }
   });
   return err;
 }
@@ -99,4 +105,4 @@ function lireDeroule(dossier) {
   return { deroule: d, erreurs: validerDeroule(d) };
 }
 
-module.exports = { validerDeroule, lireDeroule, GENRES, PARCOURS, RATIOS, TRANSITIONS };
+module.exports = { validerDeroule, lireDeroule, GENRES, PARCOURS, RATIOS, TRANSITIONS, TYPES_SCENE };
