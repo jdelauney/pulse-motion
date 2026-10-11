@@ -14,7 +14,7 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function (C) {
   'use strict';
 
-  var TRANSITIONS = ['aucune', 'fondu', 'glissement', 'balayage'];
+  var TRANSITIONS = ['aucune', 'fondu', 'glissement', 'balayage', 'rideau', 'zoom', 'coupe'];
   var douce = C.courbe('cubic', 'inout');
 
   function arrondi(x) { return Math.round(x * 10000) / 10000; }
@@ -27,6 +27,9 @@
     if (type === 'fondu') return { opacity: String(arrondi(k)), transform: '', clipPath: '' };
     if (type === 'glissement') return { opacity: '', transform: 'translateX(' + arrondi((1 - k) * 100) + '%)', clipPath: '' };
     if (type === 'balayage') return { opacity: '', transform: '', clipPath: 'inset(0 ' + arrondi((1 - k) * 100) + '% 0 0)' };
+    if (type === 'rideau') { var m = arrondi((1 - k) * 50); return { opacity: '', transform: '', clipPath: 'inset(0 ' + m + '% 0 ' + m + '%)' }; }
+    if (type === 'zoom') return { opacity: String(arrondi(k)), transform: 'scale(' + arrondi(0.86 + 0.14 * k) + ')', clipPath: '' };
+    if (type === 'coupe') return vide;
     throw new Error('Transition inconnue : « ' + type + ' ». Transitions : ' + TRANSITIONS.join(', '));
   }
 

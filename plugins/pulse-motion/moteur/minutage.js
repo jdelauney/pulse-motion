@@ -22,7 +22,7 @@
   var NOMBRE = /^\d*\.?\d+$/;
 
   function chevauchement(scene, index) {
-    return index > 0 && scene.transition && scene.transition !== 'aucune' ? CHEVAUCHEMENT : 0;
+    return index > 0 && scene.transition && scene.transition !== 'aucune' && scene.transition !== 'coupe' ? CHEVAUCHEMENT : 0;
   }
 
   /**

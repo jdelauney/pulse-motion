@@ -100,3 +100,9 @@ test('vidéo de 5 minutes : 40 scènes de 30 éléments minutées en moins de 50
   assert.ok(Math.abs(m.duree - (300 - 20 * 0.5)) < 1e-9);
   assert.ok(ms < 50, `${ms} ms`);
 });
+
+test('coupe : aucun chevauchement entre les scènes', () => {
+  const { calculerMinutage } = require('../moteur/minutage.js');
+  const m = calculerMinutage([{ id: 'a', duree: 4 }, { id: 'b', duree: 2, transition: 'coupe' }, { id: 'c', duree: 2, transition: 'zoom' }], {});
+  assert.deepEqual(m.scenes.map((s) => [s.debut, s.entree]), [[0, 0], [4, 0], [5.5, 0.5]]);
+});
