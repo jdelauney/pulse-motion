@@ -3,7 +3,7 @@
  * ton (clair ou sombre) et couleurs dérivées lisibles. Les chemins de charte/charte.json sont relatifs à charte/. */
 const fs = require('node:fs');
 const path = require('node:path');
-const { contraste, ajusterContraste, meilleurSur } = require('./couleurs.js');
+const { contraste, luminance, ajusterContraste, meilleurSur } = require('./couleurs.js');
 const { validerCharte } = require('./deroule.js');
 const SEUILS = require('../seuils.json');
 
@@ -55,7 +55,11 @@ function appliquerTon(charte, identite) {
     ? { ...charte.couleurs, fond: sombre.fond, texte: sombre.texte || charte.couleurs.texte }
     : charte.couleurs);
   let ton = defaut;
-  if (tons.includes(charte.ton)) ton = charte.ton;
+  if (charte.fondImpose && HEX.test(charte.couleurs.fond || '')) {
+    // Fond choisi par la personne : le ton est celui de ce fond, pour que le style s'y accorde.
+    const voulu = luminance(charte.couleurs.fond) < 0.18 ? 'sombre' : 'clair';
+    ton = tons.includes(voulu) ? voulu : defaut;
+  } else if (tons.includes(charte.ton)) ton = charte.ton;
   else if (charte.ton === 'auto' && tons.length > 1) {
     const score = (t) => {
       const k = couleursPour(t);

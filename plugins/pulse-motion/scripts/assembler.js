@@ -34,7 +34,13 @@ function cssCharte(charte, dossierProjet, dossierStyle) {
   lignes.push(...variablesDerivees(charte.couleurs));
   const faces = [];
   const dejaVues = new Set();
-  const face = (famille, fichier, graisse) => faces.push(`@font-face { font-family: '${famille}'; src: url("${versDataURI(fichier)}"); font-weight: ${graisse || '100 900'}; font-display: block; }`);
+  const face = (famille, fichier, graisse) => {
+    try {
+      faces.push(`@font-face { font-family: '${famille}'; src: url("${versDataURI(fichier)}"); font-weight: ${graisse || '100 900'}; font-display: block; }`);
+    } catch (e) {
+      erreurs.push({ regle: 'police-non-embarquee', gravite: 'erreur', message: `Police « ${famille} » : fichier « ${path.basename(fichier)} » illisible (${e.code || e.message}).` });
+    }
+  };
   for (const [role, valeur] of Object.entries(charte.polices)) {
     let famille;
     if (valeur && typeof valeur === 'object') {

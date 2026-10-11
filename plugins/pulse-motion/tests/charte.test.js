@@ -41,7 +41,7 @@ test('appliquer : recopie dans charte/, déroulé réduit à modele, annulable ;
   K.enregistrerCharte({ nom: 'dupont', dossier: source });
   const dir = copierProjet('projet-simple');
   modifierDeroule(dir, (d) => { delete d.charte; });
-  assert.deepEqual(K.appliquerCharte({ nom: 'dupont', dossier: dir }), { ok: true, nom: 'dupont' });
+  assert.deepEqual(K.appliquerCharte({ nom: 'dupont', dossier: dir }), { ok: true, nom: 'dupont', retires: [] });
   assert.deepEqual(lireJSON(path.join(dir, 'deroule.json')).charte, { modele: 'dupont' });
   assert.ok(fs.existsSync(path.join(dir, 'charte', 'logo.svg')));
   assert.deepEqual(etatProjet(dir).charte, { modele: 'dupont', existe: true, aJour: true });
@@ -75,3 +75,17 @@ test('depuis-logo : couleurs du logo rendues lisibles sur le fond du style, ajus
   assert.match(K.depuisLogo({ fichier: path.join(dir, 'assets', 'logo.svg'), style: 'neon' }).message, /Style « neon » introuvable/);
   assert.match(K.depuisLogo({ fichier: path.join(dir, 'x.jpg') }).message, /introuvable|PNG ou en SVG/);
 });
+
+test('appliquer garde le ton et, si la charte n\'en a pas, le logo de la vidéo ; dit ce qui est retiré ; glossaire du projet fusionné', () => avecPersonnel(() => {
+  const source = copierProjet('projet-simple');
+  modifierDeroule(source, (d) => { delete d.charte.logo; });
+  K.enregistrerCharte({ nom: 'sans-logo', dossier: source });
+  const dir = copierProjet('projet-simple');
+  modifierDeroule(dir, (d) => { d.charte.ton = 'clair'; });
+  const { noterGlossaire, lireGlossaire } = require('../scripts/vocabulaire.js');
+  noterGlossaire({ dossier: dir, terme: 'HACCP', sens: 'Méthode', eviter: 'Haccp' });
+  const r = K.appliquerCharte({ nom: 'sans-logo', dossier: dir });
+  assert.deepEqual(r, { ok: true, nom: 'sans-logo', retires: ['couleurs'] });
+  assert.deepEqual(lireJSON(path.join(dir, 'deroule.json')).charte, { modele: 'sans-logo', ton: 'clair', logo: 'assets/logo.svg' });
+  assert.deepEqual(lireGlossaire(dir).termes.map((t) => [t.terme, t.eviter]), [['HACCP', ['Haccp']]]);
+}));

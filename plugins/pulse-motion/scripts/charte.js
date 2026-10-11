@@ -22,6 +22,7 @@ const { ajusterContraste } = require('./lib/couleurs.js');
 const { sauvegarder } = require('./historique.js');
 const { trouverStyle, messageStyleInconnu, lireJSON } = require('./styles.js');
 const { couleursLogo, couleursDominantes } = require('./logo.js');
+const { lireGlossaire, noterGlossaire } = require('./vocabulaire.js');
 const SEUILS = require('./seuils.json');
 
 const NOM = /^[a-z0-9-]+$/;
@@ -111,13 +112,23 @@ function appliquerCharte({ nom, dossier }) {
   if (erreurs.length) return { ok: false, message: `Le déroulé contient des erreurs : ${erreurs.join(' ')}` };
   sauvegarder(projet);
   const cible = path.join(projet, 'charte');
+  // Les mots du métier déjà notés pour cette vidéo rejoignent le glossaire de la charte appliquée.
+  const glossaireAvant = lireGlossaire(projet).termes;
   fs.rmSync(cible, { recursive: true, force: true });
   fs.cpSync(source, cible, { recursive: true });
   fs.writeFileSync(path.join(cible, MARQUE), JSON.stringify({ nom, empreinte: empreinte(source) }, null, 2));
+  for (const t of glossaireAvant) noterGlossaire({ dossier: projet, terme: t.terme, sens: t.sens || '—', eviter: t.eviter.join(', '), prononciation: t.prononciation });
+  // Le déroulé garde son ton, et son logo si la charte n'en a pas ; le reste vient désormais de la charte.
   const brut = JSON.parse(fs.readFileSync(path.join(projet, 'deroule.json'), 'utf8').replace(/^﻿/, ''));
-  brut.charte = { modele: nom };
+  const avant = brut.charte || {};
+  const charteAppliquee = lireJSON(path.join(source, 'charte.json')) || {};
+  const garde = { modele: nom };
+  if (avant.ton) garde.ton = avant.ton;
+  if (avant.logo && !charteAppliquee.logo) garde.logo = avant.logo;
+  const retires = Object.keys(avant).filter((cle) => cle !== 'modele' && !(cle in garde));
+  brut.charte = garde;
   fs.writeFileSync(path.join(projet, 'deroule.json'), JSON.stringify(brut, null, 2));
-  return { ok: true, nom };
+  return { ok: true, nom, retires };
 }
 
 /** Charte enregistrée appliquée au projet : existe-t-elle encore, a-t-elle changé depuis ? */
