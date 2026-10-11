@@ -36,6 +36,9 @@
       var bornes = morceaux[1].split('→');
       var de = lireValeur(bornes[0], clause);
       var a = lireValeur(bornes[1], clause);
+      // Un zéro sans unité (« 0→10cqh ») prend l'unité de l'autre borne.
+      if (!de.unite && de.nombre === 0) de.unite = a.unite;
+      if (!a.unite && a.nombre === 0) a.unite = de.unite;
       if (de.unite !== a.unite) {
         throw new Error('data-tween : unités différentes (« ' + de.unite + ' » et « ' + a.unite + ' ») dans « ' + clause + ' ».');
       }

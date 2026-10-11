@@ -154,6 +154,8 @@
     if (!M.minutage) throw new Error('M.demarrer() doit être appelé avant M.rendre().');
     t = Math.max(0, Math.min(M.duree, Number(t) || 0));
     etat.t = t;
+    // Aléa ré-amorcé par image : la même image quel que soit le chemin pour arriver à t.
+    Math.random = mulberry32((0x5eed1234 ^ Math.imul(Math.round(t * M.ips) + 1, 0x9e3779b1)) >>> 0);
     var visibles = M.scenesVisibles(M.minutage, t);
     // Toutes les scènes sont rendues (l'état d'une scène masquée reste juste) ; seules les visibles s'affichent.
     etat.scenes.forEach(function (s) {

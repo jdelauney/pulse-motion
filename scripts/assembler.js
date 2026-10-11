@@ -76,6 +76,19 @@ function cssCharte(charte, dossierProjet, dossierStyle) {
   return { css: `${faces.join('\n')}\n:root {\n${lignes.join('\n')}\n}\n`, erreurs };
 }
 
+/** Fichier du projet -> URL data:, ou null avec une erreur nommée (introuvable, type, lecture). */
+function embarquerFichier(projet, relatif, quoi, erreurs) {
+  const absolu = cheminDansProjet(projet, relatif);
+  if (!absolu || !fs.existsSync(absolu)) {
+    erreurs.push({ regle: 'fichier-introuvable', gravite: 'erreur', message: `${quoi} introuvable : « ${relatif} ».` });
+    return null;
+  }
+  try { return versDataURI(absolu); } catch (e) {
+    erreurs.push({ regle: 'fichier-non-pris-en-charge', gravite: 'erreur', message: `${quoi} « ${relatif} » : ${e.code ? `lecture impossible (${e.code})` : e.message}.` });
+    return null;
+  }
+}
+
 function lireMoteur(racine) {
   return MOTEUR.map((f) => fs.readFileSync(path.join(racine, 'moteur', f), 'utf8')).join('\n;\n');
 }
@@ -106,11 +119,7 @@ function assembler({ dossier, dossierStyles = path.join(RACINE, 'styles'), ecrir
   erreurs.push(...erreursPolices);
 
   let uriLogo = null;
-  if (charte.logo) {
-    const absolu = cheminDansProjet(projet, charte.logo);
-    if (absolu && fs.existsSync(absolu)) uriLogo = versDataURI(absolu);
-    else erreurs.push({ regle: 'fichier-introuvable', gravite: 'erreur', message: `Logo introuvable : « ${charte.logo} ».` });
-  }
+  if (charte.logo) uriLogo = embarquerFichier(projet, charte.logo, 'Logo', erreurs);
 
   const sections = [];
   const scriptsScenes = [];
@@ -121,8 +130,12 @@ function assembler({ dossier, dossierStyles = path.join(RACINE, 'styles'), ecrir
     if (!fichier) probleme = `le fichier « ${scene.fichier} » sort du dossier du projet.`;
     else if (!fs.existsSync(fichier)) probleme = `fichier introuvable : « ${scene.fichier} ».`;
     else {
-      html = fs.readFileSync(fichier, 'utf8').replace(/^\uFEFF/, '');
-      probleme = S.verifierSection(html, scene.id);
+      try {
+        html = fs.readFileSync(fichier, 'utf8').replace(/^\uFEFF/, '');
+        probleme = S.verifierSection(html, scene.id);
+      } catch (e) {
+        probleme = `lecture impossible de \u00AB ${scene.fichier} \u00BB (${e.code || e.message}).`;
+      }
     }
     if (probleme) {
       erreurs.push({ regle: 'scene-invalide', gravite: 'erreur', scene: scene.id, message: `Scène « ${scene.id} » : ${probleme}` });
@@ -143,9 +156,8 @@ function assembler({ dossier, dossierStyles = path.join(RACINE, 'styles'), ecrir
 
   let audio = '';
   if (deroule.musique) {
-    const absolu = cheminDansProjet(projet, deroule.musique.fichier);
-    if (absolu && fs.existsSync(absolu)) audio = `<audio id="pm-musique" preload="auto" src="${versDataURI(absolu)}"></audio>`;
-    else erreurs.push({ regle: 'fichier-introuvable', gravite: 'erreur', message: `Musique introuvable : « ${deroule.musique.fichier} ».` });
+    const uri = embarquerFichier(projet, deroule.musique.fichier, 'Musique', erreurs);
+    if (uri) audio = `<audio id="pm-musique" preload="auto" src="${uri}"></audio>`;
   }
 
   const [l, h] = deroule.format.ratio.split(':');

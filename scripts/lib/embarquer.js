@@ -25,8 +25,9 @@ function versDataURI(fichier) {
   return `data:${mime};base64,${fs.readFileSync(fichier).toString('base64')}`;
 }
 
-const RESSOURCE_ATTR = /(\s(?:src|href|xlink:href)=)(["'])([^"']+)\2/g;
-const RESSOURCE_CSS = /url\((["']?)([^)"']+)\1\)/g;
+// La valeur va jusqu'au même guillemet : « l'été.png » entre guillemets doubles, « photo (1).png » dans url('…').
+const RESSOURCE_ATTR = /(\s(?:src|href|xlink:href)=)(["'])((?:(?!\2).)+)\2/g;
+const RESSOURCE_CSS = /url\(\s*(?:(["'])((?:(?!\1).)+)\1|([^)"'\s]+))\s*\)/g;
 const IGNOREES = /^(data:|#|about:|javascript:)/i;
 const DISTANTES = /^(https?:)?\/\//i;
 
@@ -67,8 +68,8 @@ function embarquerRessources(html, dossierProjet, contexte) {
     const uri = remplacer(chemin);
     return uri ? `${debut}${guillemet}${uri}${guillemet}` : tout;
   });
-  sortie = sortie.replace(RESSOURCE_CSS, (tout, guillemet, chemin) => {
-    const uri = remplacer(chemin);
+  sortie = sortie.replace(RESSOURCE_CSS, (tout, guillemet, entreGuillemets, nu) => {
+    const uri = remplacer(entreGuillemets || nu);
     return uri ? `url("${uri}")` : tout;
   });
   return { html: sortie, erreurs };

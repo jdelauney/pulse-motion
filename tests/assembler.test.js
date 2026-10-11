@@ -80,6 +80,17 @@ test('police, logo et musique absents : erreurs nommées', () => {
   assert.match(r.erreurs[0].message, /Police « Inconnue » non fournie/);
 });
 
+test('logo de type non pris en charge, scène qui est un dossier : erreurs, pas d\'exception', () => {
+  const dir = copierProjet('projet-simple');
+  fs.writeFileSync(path.join(dir, 'assets', 'logo.bmp'), 'BM');
+  fs.mkdirSync(path.join(dir, 'scenes', 'dossier.html'));
+  modifierDeroule(dir, (d) => { d.charte.logo = 'assets/logo.bmp'; d.scenes[1].fichier = 'scenes/dossier.html'; });
+  const r = assembler({ dossier: dir, dossierStyles: STYLES });
+  assert.equal(r.ok, true);
+  assert.deepEqual(r.erreurs.map((e) => e.regle), ['fichier-non-pris-en-charge', 'scene-invalide']);
+  assert.match(r.erreurs[0].message, /logo\.bmp/);
+});
+
 test('musique embarquée et volume transmis au moteur', () => {
   const dir = copierProjet('projet-simple');
   fs.writeFileSync(path.join(dir, 'assets', 'musique.mp3'), Buffer.from([0xff, 0xfb, 0x90, 0x00]));

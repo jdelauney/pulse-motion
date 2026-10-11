@@ -105,7 +105,11 @@ async function demarrerApercu({ dossier, port = 4321, dossierStyles, delai = 150
     if (nom && IGNORES.test(String(nom))) return;
     clearTimeout(minuterie);
     minuterie = setTimeout(() => {
-      const resultat = assembler(optionsAssemblage);
+      let resultat;
+      // Une erreur imprévue (fichier verrouillé par un éditeur ou un antivirus…) ne doit pas arrêter l'aperçu.
+      try { resultat = assembler(optionsAssemblage); } catch (e) {
+        resultat = { ok: false, erreurs: [{ regle: 'assemblage-impossible', gravite: 'erreur', message: `Assemblage impossible : ${e.message}` }] };
+      }
       if (resultat.ok) {
         dernier = resultat;
         diffuser('recharger', { erreurs: resultat.erreurs.length });
@@ -115,6 +119,7 @@ async function demarrerApercu({ dossier, port = 4321, dossierStyles, delai = 150
       }
     }, delai);
   });
+  surveillant.on('error', (e) => diffuser('erreur', { message: `Surveillance du projet interrompue : ${e.message}` }));
 
   function fermer() {
     clearTimeout(minuterie);
