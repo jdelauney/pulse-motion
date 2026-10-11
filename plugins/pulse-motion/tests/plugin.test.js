@@ -88,3 +88,7 @@ test('références : bloc « L\'essentiel » en tête, styles du catalogue docum
     assert.match(doc, new RegExp(`\\| \`${s.nom}\` \\|.*\\| ${s.duree} s \\|`), `scène ${s.nom} documentée avec sa durée`);
   }
 });
+
+test('creer : style choisi alors que des scènes existent déjà → changement de style', () => {
+  assert.match(lire('skills', 'creer', 'SKILL.md'), /scènes existent déjà[^\n]*pulse-motion changer-style \. <style>/);
+});

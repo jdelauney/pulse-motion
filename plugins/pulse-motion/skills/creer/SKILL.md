@@ -48,7 +48,7 @@ Logo, couleurs ou musique demandés : demander les fichiers (chemin ou glisser-d
    - **Parcours rapide** : une seule question : « Je valide, avec le style <1> (Recommandé) » · « Je valide, avec le style <2> » · « Je valide, avec le style <3> » · « Je veux changer quelque chose ». Décrire chaque style par sa personnalité (trois mots), jamais par son nom technique seul.
    - **Parcours accompagné** : d'abord l'accord sur le déroulé (« Je valide » (Recommandé) · « Je veux changer quelque chose »), puis une question à part sur le style, avec les mêmes styles.
    - Un seul style disponible : pas de comparaison ; le dire et ne demander que l'accord sur le déroulé.
-6. Changements : corriger, représenter. Accord : `pulse-motion etat . --accord deroule`. Style choisi : s'il diffère du style recommandé, changer `style` dans `deroule.json` (les scènes ne sont pas encore écrites) ; puis `pulse-motion etat . --accord style`.
+6. Changements : corriger, représenter. Accord : `pulse-motion etat . --accord deroule`. Style choisi : s'il diffère du style recommandé, changer `style` dans `deroule.json` tant qu'aucune scène n'est écrite ; si des scènes existent déjà, lancer `pulse-motion changer-style . <style>` (puis réécrire les scènes de `aReecrire`, étape 3). Enfin `pulse-motion etat . --accord style`.
 
 ```json
 {

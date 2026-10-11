@@ -18,12 +18,14 @@ const { cheminDansProjet } = require('./lib/embarquer.js');
 const { echapperHTML } = require('./lib/scenes.js');
 const { adapterScene, choisirType, textesPour, lireNombre } = require('./lib/adapter.js');
 const { trouverStyle, messageStyleInconnu, verifierStyle, ficheStyle, racinesStyles } = require('./styles.js');
-const { exporterVideo } = require('./exporter.js');
+const { exporterVideo, arreterProprementSurSignal } = require('./exporter.js');
 const { ouvrirNavigateur } = require('./apercu.js');
 
 /** Projet temporaire : les scènes `ids` du déroulé dans le style `st`. -> { dossier, avertissements } */
-function preparerProjet(projet, deroule, st, ids) {
+function preparerProjet(projet, deroule, st, ids, temporaires = []) {
   const dossier = fs.mkdtempSync(path.join(os.tmpdir(), `pm-comparer-${st.nom}-`));
+  // Noté tout de suite : supprimé même si la préparation échoue ensuite.
+  temporaires.push(dossier);
   fs.mkdirSync(path.join(dossier, 'scenes'));
   for (const sous of ['assets', 'charte']) {
     if (fs.existsSync(path.join(projet, sous))) fs.cpSync(path.join(projet, sous), path.join(dossier, sous), { recursive: true });
@@ -95,13 +97,23 @@ async function comparer({
   const avertissements = [];
   const colonnes = [];
   const temporaires = [];
+  const echec = (st, message) => {
+    // Pas de comparaison à moitié faite dans sortie/.
+    fs.rmSync(sortie, { recursive: true, force: true });
+    return fin({ ok: false, message: `Style « ${st.nom} » : ${message}` });
+  };
   try {
     for (const st of trouves) {
-      const prepare = preparerProjet(projet, deroule, st, ids);
-      temporaires.push(prepare.dossier);
-      avertissements.push(...prepare.avertissements);
-      const r = await exporter({ dossier: prepare.dossier, planche: ids, dossierStyles: racinesStyles(dossierStyles), navigateur });
-      if (!r.ok) return fin({ ok: false, message: `Style « ${st.nom} » : ${r.message}` });
+      let r;
+      let prepare;
+      try {
+        prepare = preparerProjet(projet, deroule, st, ids, temporaires);
+        avertissements.push(...prepare.avertissements);
+        r = await exporter({ dossier: prepare.dossier, planche: ids, dossierStyles: racinesStyles(dossierStyles), navigateur });
+      } catch (e) {
+        return echec(st, e.message);
+      }
+      if (!r.ok) return echec(st, r.message);
       const images = ids.map((id) => {
         const src = `${st.nom}-${id}.png`;
         fs.copyFileSync(path.join(prepare.dossier, 'sortie', 'planche', `${id}-3.png`), path.join(sortie, src));
@@ -119,6 +131,8 @@ async function comparer({
 }
 
 if (require.main === module) {
+  // Interruption (la commande tourne en arrière-plan) : fermer le navigateur sans fenêtre et l'aperçu lancés.
+  arreterProprementSurSignal();
   const args = process.argv.slice(2);
   const i = args.indexOf('--scenes');
   const positionnels = args.filter((a, k) => !a.startsWith('--') && args[k - 1] !== '--scenes');

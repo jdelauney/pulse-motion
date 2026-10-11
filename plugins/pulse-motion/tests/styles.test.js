@@ -79,3 +79,15 @@ test('assembler : style trouvé dans une liste de dossiers, message clair sinon'
   assert.equal(r.erreurs[0].regle, 'style-inconnu');
   assert.match(r.erreurs[0].message, /Style « neon » introuvable\. Styles disponibles : alpha\./);
 });
+
+test('style personnel mal formé : la liste et la recommandation continuent, le style est écarté', () => avecPersonnel((perso) => {
+  const casse = stylePersonnel(perso, 'maison');
+  modifierJSON(path.join(casse, 'catalogue.json'), (c) => { c.scenes = {}; });
+  modifierJSON(path.join(casse, 'charte.json'), (c) => { c.couleurs.texte = 12; });
+  modifierJSON(path.join(casse, 'identite.json'), (j) => { j.genres = 7; });
+  const fiche = S.listerStyles().find((f) => f.style === 'maison');
+  assert.equal(fiche.verifie, false);
+  assert.deepEqual(fiche.genres, []);
+  assert.deepEqual(S.recommander('formation').map((f) => f.style), ['clair-pedagogique']);
+  assert.equal(S.verifierStyle(casse).ok, false);
+}));
