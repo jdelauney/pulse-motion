@@ -14,6 +14,7 @@ Appliquer la retouche demandée, puis laisser l'aperçu se recharger à la même
 - Parler simplement, en français, sans jargon ; ne jamais montrer de commande.
 - Une retouche = le plus petit changement qui répond à la phrase. Ne pas « améliorer » autre chose.
 - Phrase ambiguë (quelle scène ? de combien ?) : une seule question avec `AskUserQuestion`, réponse recommandée en premier.
+- Lexique : avant d'expliquer un mot de l'outil (déroulé, scène, style, charte, transition, export…), lire `pulse-motion lexique`. Un mot déjà noté n'est pas réexpliqué en entier ; un mot expliqué pour la première fois se note avec `pulse-motion lexique noter "<terme>" "<phrase>" "<comme…>" "/pulse-motion:retoucher"`, en reprenant l'image fixe du lexique quand elle existe.
 
 ## 1. Vérifier
 
@@ -25,7 +26,7 @@ Appliquer la retouche demandée, puis laisser l'aperçu se recharger à la même
 
 ## 3. Sauvegarder
 
-`pulse-motion historique sauvegarder .` **avant** tout changement.
+`pulse-motion historique sauvegarder .` **avant** tout changement. (Un changement de style se sauvegarde lui-même : passer directement à l'étape 4.)
 
 ## 4. Appliquer
 
@@ -36,6 +37,7 @@ Classer la demande, puis :
 | Texte | « change le titre », « corrige la faute » | `scenes[].textes` du déroulé |
 | Rythme, durée | « ralentis la scène 3 » (rythme 0,8), « accélère » (1,25), « laisse plus de temps à la fin » (duree + 1 à 2 s) | `rythme` ou `duree` du déroulé |
 | Visuel d'une scène | « le chiffre doit rebondir », « mets la liste à droite » | le fichier de la scène (agent `animateur` pour une refonte, sinon modification directe) |
+| Style | « passe en style éditorial », « quelque chose de plus chaleureux » | `pulse-motion styles --genre <genre>` pour trouver le style (en cas de doute, proposer 2 styles avec `pulse-motion comparer . <style1>,<style2> --ouvrir`), puis `pulse-motion changer-style . <style>` : les scènes toutes faites sont recopiées ; les scènes de `aReecrire` sont confiées à un agent `animateur` chacune, en parallèle, dans le nouveau style |
 | Global | « mets mes couleurs », « baisse la musique », « change la transition » | `charte`, `musique`, `transition` du déroulé |
 | Structure | « ajoute une scène sur… », « supprime la scène 4 » | déroulé + fichier de scène (agent `animateur`) ; numéroter les fichiers dans l'ordre |
 
