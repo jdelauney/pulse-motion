@@ -453,6 +453,9 @@ fn evaluer(@builtin(global_invocation_id) gid: vec3u) {
       // Émetteurs simulés, parents avant enfants.
       this.simules = this.emetteurs.filter((e) => !e.rapide).sort((a, b) => a.em.profondeur - b.em.profondeur || a.em.index - b.em.index);
       this.tamponPas = device.createBuffer({ size: 256 * PAS_PAR_LOT, usage: U.UNIFORM | U.COPY_DST });
+      this.donneesPas = new ArrayBuffer(256 * PAS_PAR_LOT);
+      this.u32Pas = new Uint32Array(this.donneesPas);
+      this.f32Pas = new Float32Array(this.donneesPas);
       this.simules.forEach((e) => {
         const parent = e.em.parent >= 0 ? this.emetteurs[e.em.parent] : null;
         e.groupePas = device.createBindGroup({
@@ -507,9 +510,7 @@ fn evaluer(@builtin(global_invocation_id) gid: vec3u) {
     executer(actions, zones) {
       if (!actions.length) return;
       const { device } = this;
-      const donnees = new ArrayBuffer(256 * PAS_PAR_LOT);
-      const u = new Uint32Array(donnees);
-      const f = new Float32Array(donnees);
+      const { donneesPas: donnees, u32Pas: u, f32Pas: f } = this;
       let enc = null;
       let passe = null;
       let n = 0;
@@ -569,14 +570,16 @@ fn evaluer(@builtin(global_invocation_id) gid: vec3u) {
       const gMax = Math.min(this.nZones - 1, Math.floor(tau * GRILLE) + 1);
       let gMin = gMax;
       this.rapides.forEach((e) => { gMin = Math.min(gMin, Math.floor(Math.max(0, tau - e.em.vie[1]) * GRILLE)); });
-      let change = false;
+      let premier = -1;
+      let dernier = -1;
       for (let g = Math.max(0, gMin); g <= gMax; g++) {
         if (this.zonesConnues[g]) continue;
         this.zones.set(zones.grille(g), g * 4);
         this.zonesConnues[g] = 1;
-        change = true;
+        if (premier < 0) premier = g;
+        dernier = g;
       }
-      if (change) device.queue.writeBuffer(this.tamponZones, 0, this.zones);
+      if (premier >= 0) device.queue.writeBuffer(this.tamponZones, premier * 16, this.zones, premier * 4, (dernier - premier + 1) * 4);
       const enc = device.createCommandEncoder();
       const passe = enc.beginComputePass();
       passe.setPipeline(this.p.evaluer);

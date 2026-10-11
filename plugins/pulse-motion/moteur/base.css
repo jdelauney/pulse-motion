@@ -12,7 +12,8 @@ body {
   background: var(--c-fond, #fff); color: var(--c-texte, #111);
   font-family: var(--f-texte, system-ui, sans-serif);
 }
-#pm-scene > section[data-scene] { position: absolute; inset: 0; isolation: isolate; }
+#pm-scene > section[data-scene] { position: absolute; inset: 0; }
+#pm-scene > section.pm-avec-calques { isolation: isolate; }
 /* Effets de particules : la balise donne la zone d'émission par défaut ; les canvas des calques
    couvrent la scène, derrière le contenu (arriere) ou devant (avant). */
 [data-effet] { position: absolute; inset: 0; pointer-events: none; }

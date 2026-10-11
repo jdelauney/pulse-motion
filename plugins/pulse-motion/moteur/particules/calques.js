@@ -18,6 +18,7 @@
   const CALQUES = ['arriere', 'avant'];
   const SANS_GPU = 'Effet non affiché : WebGPU indisponible. Ouvrez la vidéo dans Chrome ou Edge récent.';
 
+  const GARDE_GPU = 10000;
   const etat = { gpu: null, rendu: null, scenes: [], t: 0, rendu_t: null, pret: Promise.resolve(), disponible: false };
 
   function panneau(el, message) {
@@ -60,6 +61,7 @@
         section.appendChild(canvas);
         sc.calques[nom] = canvas;
       });
+      section.classList.add('pm-avec-calques');
       scenes.push(sc);
     });
     return scenes;
@@ -105,20 +107,37 @@
     if (canvas.height !== h) canvas.height = h;
   }
 
+  function message(e) { return String(e && e.message || e); }
+
+  function liberer(fx) {
+    if (!fx.sim) return;
+    const sim = fx.sim;
+    fx.sim = null;
+    try { sim.detruire(); } catch (e) { /* device déjà perdu */ }
+  }
+
   function rendre(t) {
     etat.t = t;
     if (!etat.gpu) return;
     etat.rendu_t = t;
     const { device } = etat.gpu;
     etat.scenes.forEach((sc) => {
-      if (sc.section.style.display === 'none') return;
+      if (sc.section.style.display === 'none') { sc.effets.forEach(liberer); return; }
       if (sc.echec) return;
       try { rendreScene(sc, t, device); } catch (e) {
         sc.echec = true;
-        console.error('[Pulse Motion] Effets de particules : ' + e.message);
-        sc.effets.forEach((fx) => panneau(fx.el, 'Effet non affiché : ' + e.message));
+        console.error('[Pulse Motion] Effets de particules : ' + message(e));
+        sc.effets.forEach((fx) => { liberer(fx); panneau(fx.el, 'Effet non affiché : ' + message(e)); });
       }
     });
+  }
+
+  /** Mémoire GPU insuffisante : l'effet est désactivé, ses tampons libérés. */
+  function memoireInsuffisante(fx) {
+    fx.desactive = true;
+    liberer(fx);
+    console.error('[Pulse Motion] Effet de particules : mémoire du GPU insuffisante.');
+    panneau(fx.el, 'Effet non affiché : mémoire du GPU insuffisante');
   }
 
   function rendreScene(sc, t, device) {
@@ -126,10 +145,16 @@
     const listes = { arriere: [], avant: [] };
     sc.effets.forEach((fx) => {
       const tau = (t - fx.debut) * fx.info.rythme;
-      if (tau < 0 || tau >= fx.effet.fin) return;
-      if (!fx.sim) fx.sim = new P.Simulation(device, fx.effet);
-      const deltas = fx.sim.avancer(tau, { a: (x) => zoneA(fx, x, mesures), grille: (g) => grille(fx, g, mesures) });
-      deltas.forEach((delta, i) => listes[fx.calque].push({ sim: fx.sim, i, delta }));
+      if (tau < 0 || tau >= fx.effet.fin) { liberer(fx); return; }
+      if (fx.desactive) return;
+      device.pushErrorScope('out-of-memory');
+      try {
+        if (!fx.sim) fx.sim = new P.Simulation(device, fx.effet);
+        const deltas = fx.sim.avancer(tau, { a: (x) => zoneA(fx, x, mesures), grille: (g) => grille(fx, g, mesures) });
+        deltas.forEach((delta, i) => listes[fx.calque].push({ sim: fx.sim, i, delta }));
+      } finally {
+        device.popErrorScope().then((err) => { if (err) memoireInsuffisante(fx); }, () => {});
+      }
     });
     if (mesures.faites) M.rendreScene(sc.info.id, t);
     const largeurCqh = 100 * sc.section.clientWidth / Math.max(1, sc.section.clientHeight);
@@ -140,21 +165,60 @@
     });
   }
 
+  function erreurNonCapturee(ev) {
+    const msg = message(ev && ev.error);
+    console.error('[Pulse Motion] Erreur GPU : ' + msg);
+    etat.scenes.forEach((sc) => {
+      if (sc.section.style.display === 'none') return;
+      sc.effets.forEach((fx) => panneau(fx.el, 'Effet non affiché : erreur GPU (' + msg + ')'));
+    });
+  }
+
+  /** GPU, avec un délai de garde : au-delà, on passe au chemin « WebGPU indisponible ». */
+  function obtenirAvecGarde() {
+    return new Promise((resolve) => {
+      let fini = false;
+      const minuteur = setTimeout(() => { fini = true; resolve(null); }, GARDE_GPU);
+      P.obtenirGPU().then((gpu) => {
+        clearTimeout(minuteur);
+        if (fini) { if (gpu) gpu.device.destroy(); return; }
+        fini = true;
+        resolve(gpu);
+      }, (e) => {
+        clearTimeout(minuteur);
+        if (fini) return;
+        fini = true;
+        resolve({ erreur: e });
+      });
+    });
+  }
+
+  function polices() {
+    const f = racine.document && document.fonts;
+    return f && f.ready ? Promise.resolve(f.ready).catch(() => {}) : Promise.resolve();
+  }
+
   function demarrerGPU() {
-    etat.pret = P.obtenirGPU().then((gpu) => {
-      if (!gpu) {
-        etat.disponible = false;
-        etat.scenes.forEach((sc) => sc.effets.forEach((fx) => panneau(fx.el, SANS_GPU)));
-        return;
-      }
+    const obtention = obtenirAvecGarde();
+    obtention.then((gpu) => {
+      if (gpu && !gpu.erreur) return;
+      const msg = gpu ? 'Effet non affiché : ' + message(gpu.erreur) : SANS_GPU;
+      etat.disponible = false;
+      etat.scenes.forEach((sc) => sc.effets.forEach((fx) => panneau(fx.el, msg)));
+    });
+    // Aucune mesure d'ancre avant que la page soit prête : polices, temps SMIL, position du lecteur.
+    etat.pret = Promise.all([obtention, M.pret, polices()]).then((r) => {
+      const gpu = r[0];
+      if (!gpu || gpu.erreur) return;
       etat.gpu = gpu;
       etat.rendu = new P.Rendu(gpu.device, gpu.format);
       etat.disponible = true;
+      gpu.device.onuncapturederror = erreurNonCapturee;
       gpu.device.lost.then(() => perdu(gpu));
       rendre(etat.t);
     }).catch((e) => {
       etat.disponible = false;
-      etat.scenes.forEach((sc) => sc.effets.forEach((fx) => panneau(fx.el, 'Effet non affiché : ' + e.message)));
+      etat.scenes.forEach((sc) => sc.effets.forEach((fx) => panneau(fx.el, 'Effet non affiché : ' + message(e))));
     });
   }
 
@@ -165,8 +229,39 @@
     etat.rendu = null;
     etat.rendu_t = null;
     etat.disponible = false;
-    etat.scenes.forEach((sc) => sc.effets.forEach((fx) => { fx.sim = null; }));
+    etat.scenes.forEach((sc) => {
+      sc.echec = false;
+      sc.effets.forEach(liberer);
+    });
     demarrerGPU();
+  }
+
+  /** Une police chargée après coup change les mesures : on les refait. */
+  function polices_changees() {
+    if (!etat.gpu) return;
+    etat.scenes.forEach((sc) => sc.effets.forEach((fx) => { fx.zones.clear(); liberer(fx); }));
+    etat.rendu_t = null;
+    rendre(etat.t);
+  }
+
+  /** Seek : rend t et attend le GPU ; si le GPU est perdu entre-temps, recommence sur le nouveau. */
+  async function seekGPU(t) {
+    for (;;) {
+      await etat.pret;
+      const gpu = etat.gpu;
+      if (!gpu) return null;
+      if (etat.rendu_t !== t) rendre(t);
+      let perte = false;
+      try {
+        await Promise.race([
+          gpu.device.queue.onSubmittedWorkDone(),
+          gpu.device.lost.then(() => { perte = true; }),
+        ]);
+      } catch (e) { perte = true; }
+      if (!perte) await new Promise((ok) => setTimeout(ok, 0));
+      if (!perte && etat.gpu === gpu) return null;
+      await gpu.device.lost;
+    }
   }
 
   function trouver(idScene) { return etat.scenes.find((sc) => sc.info.id === idScene); }
@@ -193,11 +288,8 @@
     etat.scenes = recenser();
     if (!etat.scenes.length) return;
     M.surRendu(rendre);
-    M.surSeek((t) => etat.pret.then(() => {
-      if (!etat.gpu) return null;
-      if (etat.rendu_t !== t) rendre(t);
-      return etat.gpu.device.queue.onSubmittedWorkDone();
-    }));
+    M.surSeek(seekGPU);
+    if (racine.document && document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', polices_changees);
     etat.t = M.temps();
     demarrerGPU();
   };

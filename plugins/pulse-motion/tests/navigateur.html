@@ -145,7 +145,7 @@
   M.rendreScene('absente', 1);
   M.rendreScene('a', 2);
   verifier('rendreScene revient à l\'état de t', document.getElementById('titre').getAttribute('data-etat') === 'apres');
-  verifier('sections isolées', getComputedStyle(document.querySelector('section[data-scene="a"]')).isolation === 'isolate');
+  verifier('sections sans calque non isolées', getComputedStyle(document.querySelector('section[data-scene="a"]')).isolation === 'auto');
   verifier('data-effet plein cadre', getComputedStyle(document.querySelector('[data-effet]')).position === 'absolute');
 
   // L'aléa d'une scène ne dépend que de t : un rendu seul d'une scène ne change pas le résultat.
