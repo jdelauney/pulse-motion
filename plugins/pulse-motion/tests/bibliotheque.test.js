@@ -100,6 +100,8 @@ test('référence à jour : chaque effet et ses réglages sont dans la table', (
     const ecrits = [...reglages.matchAll(/`([a-z0-9_]+)`/g)].map((m) => m[1]).sort();
     assert.deepEqual(ecrits, attendus, `table de la référence, effet « ${nom} »`);
   }
+  const calque = texte.split(/\r?\n/).find((l) => l.startsWith('| `rendu_calque` |'));
+  assert.ok(calque && !calque.includes('melange'), 'melange ne fait pas partie de rendu_calque');
   for (const mot of ['data-effet', 'data-ancre', 'data-calque', 'data-reglages', 'data-graine', 'etend', 'parametres', 'pulse-motion effet']) {
     assert.ok(texte.includes(mot), `la référence parle de « ${mot} »`);
   }
