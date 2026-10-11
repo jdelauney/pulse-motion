@@ -1,0 +1,15 @@
+<!-- Scène toute faite « etape » : une étape numérotée d'une procédure. Durée conseillée : 8 s.
+     Textes : numero (1 à 2 car.), titre (≤ 40 car.), texte (≤ 80 car.).
+     Adapter data-dur des .rond à la durée de la scène. -->
+<section data-scene="etape">
+  <div class="decor">
+    <span class="rond accent" style="width: 45cqh; height: 45cqh; right: -10cqh; top: -15cqh" data-start="0" data-dur="8" data-tween="--dy 0cqh→8cqh sine-inout"></span>
+  </div>
+  <div class="etape">
+    <span id="numero" class="numero zoom" data-texte="numero" data-start="0.2" data-dur="0.8"></span>
+    <div class="etape-texte">
+      <h2 id="titre" class="titre-moyen entre-droite" data-texte="titre" data-start="#numero:fin" data-dur="0.7"></h2>
+      <p id="texte" class="texte entre-droite" data-texte="texte" data-start="#titre:fin+0.3" data-dur="0.7"></p>
+    </div>
+  </div>
+</section>

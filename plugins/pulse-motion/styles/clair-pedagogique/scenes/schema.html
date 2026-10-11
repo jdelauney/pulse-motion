@@ -1,0 +1,20 @@
+<!-- Scène toute faite « schema » : trois étapes reliées par des flèches qui se dessinent. Durée conseillée : 8 s.
+     Textes : titre (≤ 40 car.), a, b, c (≤ 25 car. chacun).
+     Adapter data-dur des .rond à la durée de la scène. -->
+<section data-scene="schema">
+  <div class="decor">
+    <span class="rond accent" style="width: 50cqh; height: 50cqh; right: -15cqh; bottom: -20cqh" data-start="0" data-dur="8" data-tween="--dx 0cqh→-8cqh sine-inout"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen entre-bas" data-texte="titre" data-start="0.2" data-dur="0.7"></h2>
+  <div class="schema">
+    <div id="a" class="boite zoom" data-texte="a" data-start="#titre:fin+0.3" data-dur="0.8"></div>
+    <svg id="fleche1" class="fleche" viewBox="0 0 48 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" data-start="#a:fin" data-dur="0.6" aria-hidden="true">
+      <path pathLength="100" d="M2 12h40M34 4l8 8-8 8"/>
+    </svg>
+    <div id="b" class="boite zoom" data-texte="b" data-start="#fleche1:fin" data-dur="0.8"></div>
+    <svg id="fleche2" class="fleche" viewBox="0 0 48 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" data-start="#b:fin" data-dur="0.6" aria-hidden="true">
+      <path pathLength="100" d="M2 12h40M34 4l8 8-8 8"/>
+    </svg>
+    <div id="c" class="boite zoom" data-texte="c" data-start="#fleche2:fin" data-dur="0.8"></div>
+  </div>
+</section>
