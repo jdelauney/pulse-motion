@@ -5,14 +5,14 @@
  *   node scripts/historique.js sauvegarder <dossier-du-projet>
  *   node scripts/historique.js annuler <dossier-du-projet>
  *
- * Copie deroule.json, scenes/ et assets/ dans .historique/NNN/ ; garde les 20 dernières copies.
+ * Copie deroule.json, scenes/, assets/ et charte/ dans .historique/NNN/ ; garde les 20 dernières copies.
  * Affiche un résumé JSON ; code de sortie 1 avec un message en français en cas d'échec.
  */
 const fs = require('node:fs');
 const path = require('node:path');
 
 const CONSERVEES = 20;
-const CONTENU = ['deroule.json', 'scenes', 'assets'];
+const CONTENU = ['deroule.json', 'scenes', 'assets', 'charte'];
 
 function copies(dossierHistorique) {
   if (!fs.existsSync(dossierHistorique)) return [];

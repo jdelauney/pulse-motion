@@ -13,6 +13,7 @@ const { extraireScene } = require('./lib/extraire.js');
 const { verifierSection } = require('./lib/scenes.js');
 const { contraste } = require('./lib/couleurs.js');
 const { dossierPersonnel } = require('./lib/personnel.js');
+const { trouverFichiersPolice } = require('./lib/police.js');
 const SEUILS = require('./seuils.json');
 
 const RACINE = path.resolve(__dirname, '..');
@@ -87,8 +88,11 @@ function verifierIdentite(nom, identite, css, erreurs) {
     erreurs.push('identite.json : « couleur.tons » doit contenir clair, sombre ou les deux.');
   } else if (!c.tons.includes(c.tonDefaut)) {
     erreurs.push('identite.json : « couleur.tonDefaut » doit être l\'un des tons déclarés.');
-  } else if (c.tons.length === 2 && !/\[data-ton=["']?sombre/.test(css)) {
-    erreurs.push('style.css : variante [data-ton="sombre"] absente alors que le ton sombre est déclaré.');
+  } else if (c.tons.includes('sombre')) {
+    if (c.tons.length === 2 && !/\[data-ton=["']?sombre/.test(css)) erreurs.push('style.css : variante [data-ton="sombre"] absente alors que le ton sombre est déclaré.');
+    const s = c.sombre || {};
+    if (!HEX.test(s.fond || '') || !HEX.test(s.texte || '')) erreurs.push('identite.json : « couleur.sombre » doit indiquer fond et texte en #rrggbb pour le ton sombre.');
+    else if (contraste(s.texte, s.fond) < SEUILS.contrasteTexte) erreurs.push(`identite.json : contraste texte/fond du ton sombre de ${virgule(contraste(s.texte, s.fond))}:1, il faut au moins ${virgule(SEUILS.contrasteTexte)}:1.`);
   }
   const typo = identite.typographie || {};
   for (const role of ['titres', 'texte']) {
@@ -104,7 +108,7 @@ function verifierCharte(dossier, charte, erreurs) {
   const licences = lireTexte(path.join(dossier, 'polices', 'LICENCES.md')) || '';
   for (const [role, famille] of Object.entries(charte.polices || {})) {
     if (POLICES_SYSTEME.has(famille)) continue;
-    if (!fs.existsSync(path.join(dossier, 'polices', `${famille}.woff2`))) erreurs.push(`Police « ${famille} » (charte.polices.${role}) : fichier polices/${famille}.woff2 manquant.`);
+    if (!trouverFichiersPolice(famille, [path.join(dossier, 'polices')]).length) erreurs.push(`Police « ${famille} » (charte.polices.${role}) : aucun fichier ${famille}.woff2 ou ${famille}-<graisse>.woff2 dans polices/.`);
     else if (!licences.includes(famille)) erreurs.push(`Police « ${famille} » : licence absente de polices/LICENCES.md.`);
   }
   const couleurs = charte.couleurs || {};
