@@ -50,10 +50,10 @@ function appliquerTon(charte, identite) {
   const c = (identite && identite.couleur) || {};
   const tons = Array.isArray(c.tons) && c.tons.length ? c.tons : ['clair'];
   const defaut = tons.includes(c.tonDefaut) ? c.tonDefaut : tons[0];
-  const sombre = c.sombre || {};
-  const couleursPour = (ton) => (ton === 'sombre' && !charte.fondImpose && sombre.fond
-    ? { ...charte.couleurs, fond: sombre.fond, texte: sombre.texte || charte.couleurs.texte }
-    : charte.couleurs);
+  const couleursPour = (ton) => {
+    const v = c[ton] || {};
+    return !charte.fondImpose && v.fond ? { ...charte.couleurs, fond: v.fond, texte: v.texte || charte.couleurs.texte } : charte.couleurs;
+  };
   let ton = defaut;
   if (charte.fondImpose && HEX.test(charte.couleurs.fond || '')) {
     // Fond choisi par la personne : le ton est celui de ce fond, pour que le style s'y accorde.

@@ -11,7 +11,7 @@ const { TYPES, FAMILLES, NOM_STYLE } = require('./lib/contrat.js');
 const { TRANSITIONS, GENRES } = require('./lib/deroule.js');
 const { extraireScene } = require('./lib/extraire.js');
 const { verifierSection } = require('./lib/scenes.js');
-const { contraste } = require('./lib/couleurs.js');
+const { contraste, luminance } = require('./lib/couleurs.js');
 const { dossierPersonnel } = require('./lib/personnel.js');
 const { trouverFichiersPolice } = require('./lib/police.js');
 const SEUILS = require('./seuils.json');
@@ -76,7 +76,7 @@ function verifierCatalogue(dossier, nom, catalogue, erreurs, avertissements) {
   }
 }
 
-function verifierIdentite(nom, identite, css, erreurs) {
+function verifierIdentite(nom, identite, css, erreurs, charteCouleurs = {}) {
   if (identite.style !== nom) erreurs.push(`identite.json : « style » doit valoir « ${nom} ».`);
   if (!FAMILLES.includes(identite.famille)) erreurs.push(`identite.json : « famille » doit être l'une de : ${FAMILLES.join(', ')}.`);
   if (!Array.isArray(identite.personnalite) || identite.personnalite.length !== 3) erreurs.push('identite.json : « personnalite » doit contenir 3 mots.');
@@ -88,11 +88,19 @@ function verifierIdentite(nom, identite, css, erreurs) {
     erreurs.push('identite.json : « couleur.tons » doit contenir clair, sombre ou les deux.');
   } else if (!c.tons.includes(c.tonDefaut)) {
     erreurs.push('identite.json : « couleur.tonDefaut » doit être l\'un des tons déclarés.');
-  } else if (c.tons.includes('sombre')) {
-    if (c.tons.length === 2 && !/\[data-ton=["']?sombre/.test(css)) erreurs.push('style.css : variante [data-ton="sombre"] absente alors que le ton sombre est déclaré.');
-    const s = c.sombre || {};
-    if (!HEX.test(s.fond || '') || !HEX.test(s.texte || '')) erreurs.push('identite.json : « couleur.sombre » doit indiquer fond et texte en #rrggbb pour le ton sombre.');
-    else if (contraste(s.texte, s.fond) < SEUILS.contrasteTexte) erreurs.push(`identite.json : contraste texte/fond du ton sombre de ${virgule(contraste(s.texte, s.fond))}:1, il faut au moins ${virgule(SEUILS.contrasteTexte)}:1.`);
+  } else {
+    if (c.tons.length === 2 && !/[data-ton=["']?sombre/.test(css)) erreurs.push('style.css : variante [data-ton="sombre"] absente alors que le ton sombre est déclaré.');
+    // Chaque ton : sa variante (couleur.clair, couleur.sombre) ou, à défaut, la charte du style.
+    for (const ton of c.tons) {
+      const v = c[ton];
+      if (ton === 'sombre' && !v) { erreurs.push('identite.json : « couleur.sombre » doit indiquer fond et texte en #rrggbb pour le ton sombre.'); continue; }
+      const k = v || charteCouleurs;
+      if (!HEX.test(k.fond || '') || !HEX.test(k.texte || '')) { erreurs.push(`identite.json : « couleur.${ton} » doit indiquer fond et texte en #rrggbb.`); continue; }
+      const fondSombre = luminance(k.fond) < 0.18;
+      if (ton === 'clair' && fondSombre) erreurs.push('identite.json : le ton clair a un fond sombre : indiquez « couleur.clair » (fond, texte).');
+      if (ton === 'sombre' && !fondSombre) erreurs.push('identite.json : le ton sombre a un fond clair : corrigez « couleur.sombre ».');
+      if (contraste(k.texte, k.fond) < SEUILS.contrasteTexte) erreurs.push(`identite.json : contraste texte/fond du ton ${ton} de ${virgule(contraste(k.texte, k.fond))}:1, il faut au moins ${virgule(SEUILS.contrasteTexte)}:1.`);
+    }
   }
   const typo = identite.typographie || {};
   for (const role of ['titres', 'texte']) {
@@ -150,7 +158,7 @@ function verifierContrat(dossier) {
   else verifierCatalogue(dossier, nom, catalogue, erreurs, avertissements);
   const identite = lireJSON(path.join(dossier, 'identite.json'));
   if (!identite) erreurs.push('identite.json manquant ou illisible.');
-  else verifierIdentite(nom, identite, css || '', erreurs);
+  else verifierIdentite(nom, identite, css || '', erreurs, (lireJSON(path.join(dossier, 'charte.json')) || {}).couleurs || {});
   verifierCharte(dossier, lireJSON(path.join(dossier, 'charte.json')) || {}, erreurs);
   return { ok: erreurs.length === 0, erreurs, avertissements };
 }
