@@ -69,6 +69,26 @@ test('sert la page avec le marqueur d\'aperçu et écrit etat.json', async () =>
   } finally { await apercu.fermer(); }
 });
 
+test('requête avec un autre nom d\'hôte (DNS rebinding) : refusée', async () => {
+  const dir = copierProjet('projet-simple');
+  const apercu = await demarrerApercu({ dossier: dir, port: 47290, dossierStyles: STYLES });
+  const requete = (hote, methode = 'GET', chemin = '/') => new Promise((resolve, reject) => {
+    const req = http.request({ host: '127.0.0.1', port: apercu.port, path: chemin, method: methode, headers: { Host: hote, 'Content-Type': 'application/json' } }, (res) => {
+      res.resume();
+      res.on('end', () => resolve(res.statusCode));
+    });
+    req.on('error', reject);
+    req.end(methode === 'POST' ? '{"debordements":[]}' : undefined);
+  });
+  try {
+    assert.equal(await requete('pirate.example:47290'), 403);
+    assert.equal(await requete('pirate.example', 'POST', '/_pm/controle'), 403);
+    assert.equal(fs.existsSync(path.join(dir, 'sortie', 'controle-page.json')), false);
+    assert.equal(await requete(`127.0.0.1:${apercu.port}`), 200);
+    assert.equal(await requete(`localhost:${apercu.port}`), 200);
+  } finally { await apercu.fermer(); }
+});
+
 test('port déjà pris : le suivant est utilisé', async () => {
   const occupant = net.createServer();
   await new Promise((r) => occupant.listen(47220, '127.0.0.1', r));
@@ -98,6 +118,11 @@ test('une modification recharge la page ; un déroulé cassé envoie une erreur'
     fs.writeFileSync(path.join(dir, 'deroule.json'), '{ cassé');
     assert.match((await erreur).message, /n'est pas un JSON valide/);
     assert.match((await obtenir(apercu.url)).corps, /<title>Nouveau titre<\/title>/, 'la dernière page valide reste servie');
+
+    const retour = flux.attendre('recharger');
+    fs.writeFileSync(path.join(dir, 'deroule.json'), fs.readFileSync(path.join(FIXTURES, 'projet-simple', 'deroule.json')));
+    await retour;
+    assert.match((await obtenir(apercu.url)).corps, /<title>La chaîne du froid<\/title>/, 'rétabli après correction');
   } finally {
     flux.fermer();
     await apercu.fermer();
@@ -117,6 +142,40 @@ test('une erreur inattendue pendant le réassemblage n\'arrête pas l\'aperçu',
     const recu = await Promise.race([erreur, flux.attendre('recharger')]);
     assert.ok(recu);
     assert.equal((await obtenir(apercu.url)).statut, 200, 'le serveur répond encore');
+  } finally {
+    flux.fermer();
+    await apercu.fermer();
+  }
+});
+
+function envoyer(url, corps, type = 'application/json') {
+  return new Promise((resolve, reject) => {
+    const req = http.request(url, { method: 'POST', headers: { 'Content-Type': type } }, (res) => {
+      res.resume();
+      res.on('end', () => resolve(res.statusCode));
+    });
+    req.on('error', reject);
+    req.end(corps);
+  });
+}
+
+test('rapport de débordement : écrit dans sortie/, refusé s\'il n\'est pas du JSON, effacé au réassemblage', async () => {
+  const dir = copierProjet('projet-simple');
+  const apercu = await demarrerApercu({ dossier: dir, port: 47280, dossierStyles: STYLES, delai: 50 });
+  const flux = await ecouterEvenements(apercu.url + '_pm/evenements');
+  const rapport = path.join(dir, 'sortie', 'controle-page.json');
+  try {
+    const d = [{ scene: 'intro', element: 'titre', message: 'Scène « intro » : le texte « titre » déborde de son cadre (vers 1 s).' }];
+    assert.equal(await envoyer(apercu.url + '_pm/controle', JSON.stringify({ debordements: d })), 204);
+    assert.deepEqual(JSON.parse(fs.readFileSync(rapport, 'utf8')), { debordements: d });
+    assert.equal(await envoyer(apercu.url + '_pm/controle', 'debordements=1', 'text/plain'), 415);
+    assert.equal(await envoyer(apercu.url + '_pm/controle', '{"debordements": 3}'), 400);
+
+    await attendre(200);
+    const recharge = flux.attendre('recharger');
+    modifierDeroule(dir, (x) => { x.titre = 'Autre'; });
+    await recharge;
+    assert.equal(fs.existsSync(rapport), false);
   } finally {
     flux.fermer();
     await apercu.fermer();

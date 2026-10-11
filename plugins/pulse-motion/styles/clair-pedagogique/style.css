@@ -1,0 +1,113 @@
+/* Pulse Motion – style « clair-pedagogique ».
+ *
+ * Clair, lisible, posé : pour expliquer. Toutes les couleurs et polices viennent de la charte
+ * (--c-primaire, --c-accent, --c-fond, --c-texte, --f-titres, --f-texte). Tailles en cqh.
+ * Les entrées (.entre-*) sont des animations CSS : le moteur les cale sur le début de
+ * l'élément (data-start). Avant ce début, l'élément montre l'état de départ (invisible).
+ * Effets exclus : filter: url(), mix-blend-mode, backdrop-filter (export rapide).
+ */
+
+/* ---------- Mise en page ---------- */
+#pm-scene > section[data-scene] {
+  display: flex; flex-direction: column; justify-content: center; gap: 3cqh;
+  padding: 9cqh 12cqh; overflow: hidden;
+  background: var(--c-fond); color: var(--c-texte);
+  font: 400 4.6cqh/1.35 var(--f-texte);
+}
+.centre { align-items: center; text-align: center; }
+.rangee { display: flex; gap: 6cqh; align-items: stretch; }
+.rangee > * { flex: 1; min-width: 0; }
+
+/* ---------- Typographie ---------- */
+.etiquette {
+  font: 700 3.6cqh/1 var(--f-titres); letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--c-accent);
+}
+.titre {
+  margin: 0; font: 800 9cqh/1.05 var(--f-titres); letter-spacing: -0.01em;
+  color: var(--c-primaire); text-wrap: balance;
+}
+.titre-moyen { margin: 0; font: 750 6.5cqh/1.1 var(--f-titres); color: var(--c-primaire); text-wrap: balance; }
+.sous-titre { margin: 0; font: 500 4.8cqh/1.3 var(--f-texte); opacity: 0.85; text-wrap: balance; }
+.texte { margin: 0; font: 400 4.4cqh/1.4 var(--f-texte); text-wrap: pretty; }
+.grand-chiffre {
+  margin: 0; font: 800 24cqh/1 var(--f-titres); color: var(--c-primaire);
+  font-variant-numeric: tabular-nums; letter-spacing: -0.02em;
+}
+
+/* ---------- Entrées (calées sur data-start) ---------- */
+@keyframes pm-entre-bas { from { opacity: 0; transform: translateY(5cqh); } to { opacity: 1; transform: none; } }
+@keyframes pm-entre-gauche { from { opacity: 0; transform: translateX(-8cqh); } to { opacity: 1; transform: none; } }
+@keyframes pm-entre-droite { from { opacity: 0; transform: translateX(8cqh); } to { opacity: 1; transform: none; } }
+@keyframes pm-zoom { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: none; } }
+@keyframes pm-fondu { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pm-trait { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+.entre-bas { animation: pm-entre-bas 0.7s var(--ease-quart-out) both; }
+.entre-gauche { animation: pm-entre-gauche 0.7s var(--ease-quart-out) both; }
+.entre-droite { animation: pm-entre-droite 0.7s var(--ease-quart-out) both; }
+.zoom { animation: pm-zoom 0.8s var(--ease-back-out) both; }
+.fondu { animation: pm-fondu 0.6s linear both; }
+
+/* Soulignement qui se trace sous un titre. */
+.trait {
+  display: block; width: 18cqh; height: 1.2cqh; border-radius: 1cqh; background: var(--c-accent);
+  transform-origin: left center; animation: pm-trait 0.6s var(--ease-cubic-inout) both;
+}
+.centre .trait { transform-origin: center; }
+
+/* ---------- Décor : formes douces qui dérivent pendant toute la scène ---------- */
+.decor { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.decor ~ * { position: relative; z-index: 1; }
+.rond {
+  position: absolute; border-radius: 50%; background: var(--c-primaire); opacity: 0.07;
+  translate: var(--dx, 0) var(--dy, 0);
+}
+.rond.accent { background: var(--c-accent); opacity: 0.12; }
+
+/* ---------- Liste révélée ---------- */
+.liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 2.4cqh; }
+.liste li { display: flex; gap: 2.4cqh; align-items: baseline; font-size: 4.6cqh; }
+.liste li::before {
+  content: ""; flex: none; width: 2.2cqh; height: 2.2cqh; border-radius: 50%;
+  background: var(--c-accent); translate: 0 0.2cqh;
+}
+
+/* ---------- Comparaison ---------- */
+.colonne {
+  display: flex; flex-direction: column; gap: 2cqh; padding: 4cqh;
+  border-radius: 3cqh; background: color-mix(in srgb, var(--c-primaire) 7%, var(--c-fond));
+}
+.colonne.accent { background: color-mix(in srgb, var(--c-accent) 14%, var(--c-fond)); }
+.colonne-titre { margin: 0; font: 750 5.2cqh/1.1 var(--f-titres); color: var(--c-primaire); }
+
+/* ---------- Étape numérotée ---------- */
+.etape { display: flex; gap: 5cqh; align-items: center; }
+.numero {
+  flex: none; display: grid; place-items: center; width: 20cqh; height: 20cqh; border-radius: 50%;
+  background: var(--c-primaire); color: var(--c-fond); font: 800 11cqh/1 var(--f-titres);
+}
+.etape-texte { display: flex; flex-direction: column; gap: 2cqh; min-width: 0; }
+
+/* ---------- Alerte ---------- */
+.alerte {
+  display: flex; gap: 4cqh; align-items: flex-start; padding: 5cqh;
+  border-left: 1.4cqh solid var(--c-accent); border-radius: 2cqh;
+  background: color-mix(in srgb, var(--c-accent) 12%, var(--c-fond));
+}
+.alerte-icone { flex: none; width: 12cqh; height: 12cqh; color: var(--c-accent); }
+.alerte-corps { display: flex; flex-direction: column; gap: 1.6cqh; min-width: 0; }
+
+/* ---------- Schéma fléché ---------- */
+.schema { display: flex; align-items: center; justify-content: space-between; gap: 2cqh; }
+.boite {
+  flex: 1; min-width: 0; padding: 4cqh 3cqh; border-radius: 2.5cqh; text-align: center;
+  border: 0.6cqh solid var(--c-primaire); background: var(--c-fond);
+  font: 700 4.4cqh/1.25 var(--f-titres); color: var(--c-primaire);
+}
+.fleche { flex: none; width: 12cqh; height: 6cqh; color: var(--c-accent); overflow: visible; }
+/* Le trait se dessine avec la progression --p de l'élément (pathLength="100"). */
+.fleche path { stroke-dasharray: 100; stroke-dashoffset: calc(100 * (1 - var(--p, 1))); }
+
+/* ---------- Logo ---------- */
+.logo { height: 14cqh; width: auto; object-fit: contain; }

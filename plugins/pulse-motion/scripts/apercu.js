@@ -69,7 +69,50 @@ async function demarrerApercu({ dossier, port = 4321, dossierStyles, delai = 150
     clients.forEach((res) => res.write(message));
   }
 
+  const rapportPage = path.join(projet, 'sortie', 'controle-page.json');
+
+  /** Rapport de débordement envoyé par la page : JSON seulement (une autre origine serait bloquée par CORS). */
+  function recevoirControle(req, res) {
+    if (!/^application\/json\b/i.test(req.headers['content-type'] || '')) {
+      res.writeHead(415, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('JSON attendu');
+      return;
+    }
+    let corps = '';
+    let tropGros = false;
+    req.setEncoding('utf8');
+    req.on('data', (morceau) => {
+      corps += morceau;
+      if (corps.length > 1e6) { tropGros = true; req.destroy(); }
+    });
+    req.on('end', () => {
+      if (tropGros) return;
+      let debordements;
+      try {
+        debordements = JSON.parse(corps).debordements;
+        if (!Array.isArray(debordements)) throw new Error('liste attendue');
+        debordements = debordements.map((d) => ({ scene: String(d.scene), element: String(d.element), message: String(d.message) }));
+      } catch {
+        res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('Rapport illisible');
+        return;
+      }
+      fs.mkdirSync(path.dirname(rapportPage), { recursive: true });
+      fs.writeFileSync(rapportPage, JSON.stringify({ debordements }, null, 2));
+      res.writeHead(204);
+      res.end();
+    });
+  }
+
   const serveur = http.createServer((req, res) => {
+    // Seuls 127.0.0.1 et localhost sont acceptés : une page d'un autre site rebranchée sur
+    // 127.0.0.1 (DNS rebinding) ne peut ni lire la vidéo ni écrire de rapport.
+    const portEcoute = serveur.address() && serveur.address().port;
+    if (![`127.0.0.1:${portEcoute}`, `localhost:${portEcoute}`].includes(String(req.headers.host || '').toLowerCase())) {
+      res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('Accès refusé');
+      return;
+    }
     const url = new URL(req.url, 'http://localhost');
     if (req.method === 'GET' && url.pathname === '/') {
       const corps = dernier.ok ? injecterApercu(dernier.html, dernier.erreurs) : pageErreur(dernier.erreurs);
@@ -80,6 +123,8 @@ async function demarrerApercu({ dossier, port = 4321, dossierStyles, delai = 150
       res.write(': connecté\n\n');
       clients.add(res);
       req.on('close', () => clients.delete(res));
+    } else if (req.method === 'POST' && url.pathname === '/_pm/controle') {
+      recevoirControle(req, res);
     } else {
       res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('Introuvable');
@@ -112,6 +157,8 @@ async function demarrerApercu({ dossier, port = 4321, dossierStyles, delai = 150
       }
       if (resultat.ok) {
         dernier = resultat;
+        // Le rapport de la page portait sur l'ancienne version : la page rechargée en enverra un nouveau.
+        fs.rmSync(rapportPage, { force: true });
         diffuser('recharger', { erreurs: resultat.erreurs.length });
       } else {
         if (!dernier.ok) dernier = resultat;

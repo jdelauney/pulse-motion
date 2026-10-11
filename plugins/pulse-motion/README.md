@@ -18,8 +18,13 @@ Plugin Claude Code qui fabrique, sur votre ordinateur et sans cloud, des vidéos
 
 | Dossier | Rôle |
 |---|---|
-| `moteur/` | Moteur JavaScript inclus dans chaque page : courbes, minutage, transitions, horloge déterministe, lecteur |
-| `scripts/` | Assemblage de la page autonome (`assembler.js`) et aperçu local avec rechargement (`apercu.js`) |
+| `skills/` | `/pulse-motion:creer`, `/pulse-motion:retoucher`, `/pulse-motion:reprendre` |
+| `agents/` | `animateur` : écrit une scène |
+| `moteur/` | Moteur JavaScript inclus dans chaque page : courbes, minutage, transitions, horloge déterministe, lecteur, débordements |
+| `scripts/` | Assemblage, aperçu, contrôles, état, historique ; `pm.js` derrière la commande `pulse-motion` (`bin/`) |
+| `styles/` | Styles : CSS, charte, polices, scènes toutes faites (v1 : `clair-pedagogique`) |
+| `references/` | Consignes lues par Claude : moteur, rythme, styles |
+| `exemples/` | « La chaîne du froid » : vidéo de formation de 60 s |
 | `tests/` | Tests (`npm test`), dont des tests dans Chrome ou Edge sans fenêtre |
 
 ## Tests
@@ -31,4 +36,4 @@ npm test
 
 ## Licence
 
-MIT. Provenance du code repris : `NOTICE.md`.
+MIT. Le code ou les tracés repris citent leur origine en tête de fichier ; licences des polices : `styles/clair-pedagogique/polices/LICENCES.md`.
