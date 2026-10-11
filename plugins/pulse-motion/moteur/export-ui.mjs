@@ -35,6 +35,7 @@ let enCours = false;
 export async function lancerExport() {
   if (enCours) return null;
   enCours = true;
+  M.exportEnCours = true;
   const panneau = creerPanneau();
   const controle = new AbortController();
   panneau.bouton.onclick = () => controle.abort();
@@ -53,10 +54,12 @@ export async function lancerExport() {
     });
     panneau.titre('Vérification de la vidéo…');
     panneau.bouton.disabled = true;
-    const relecture = await relire(resultat.buffer, { images: resultat.images, ips: M.ips });
-    const { fichier } = await envoyer(resultat.buffer, { ...relecture, audio: resultat.audio, largeur: resultat.largeur, hauteur: resultat.hauteur });
+    const relecture = await relire(resultat.buffer, { images: resultat.images, ips: M.ips, fondSombre: resultat.fondSombre });
+    const { fichier } = await envoyer(resultat.buffer, {
+      ...relecture, audio: resultat.audio, largeur: resultat.largeur, hauteur: resultat.hauteur, avertissement: resultat.avertissement,
+    });
     panneau.titre('✅ Vidéo enregistrée');
-    panneau.detail(`${fichier}${resultat.audio || !document.getElementById('pm-musique') ? '' : ' (sans son : ce navigateur ne sait pas encoder l\'audio AAC)'}`);
+    panneau.detail(resultat.avertissement ? `${fichier} – ${resultat.avertissement}` : fichier);
     panneau.bouton.textContent = 'Fermer';
     panneau.bouton.disabled = false;
     panneau.bouton.onclick = () => panneau.fermerDans(0);
@@ -72,10 +75,12 @@ export async function lancerExport() {
     return null;
   } finally {
     enCours = false;
+    if (M.finExport) M.finExport(); else M.exportEnCours = false;
   }
 }
 
 export async function lancerPlanche(scenes) {
+  M.exportEnCours = true;
   try {
     const images = await capturerPlanche(scenes);
     for (const { nom, blob } of images) {
@@ -85,6 +90,8 @@ export async function lancerPlanche(scenes) {
     await fetch('/_pm/planche-fin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ images: images.map((i) => `${i.nom}.png`) }) });
   } catch (e) {
     await signaler({ etat: 'erreur', message: String(e.message || e) });
+  } finally {
+    if (M.finExport) M.finExport(); else M.exportEnCours = false;
   }
 }
 

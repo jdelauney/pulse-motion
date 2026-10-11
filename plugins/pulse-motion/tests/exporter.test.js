@@ -52,6 +52,49 @@ test('planche sans scène précisée : les deux premières scènes ; scène inco
   assert.match(inconnue.message, /Scène inconnue : rien/);
 });
 
+test('vidéo sur fond noir : la relecture ne la prend pas pour une image noire', { skip: sansNavigateur }, async () => {
+  const dir = copierProjet('projet-simple');
+  modifierDeroule(dir, (d) => { d.charte.couleurs = { primaire: '#4c8dff', fond: '#000000', texte: '#ffffff', accent: '#ffb000' }; });
+  const r = await exporterVideo({ dossier: dir, dossierStyles: STYLES });
+  assert.equal(r.ok, true, r.message);
+});
+
+test('musique illisible : vidéo exportée sans son, avertissement en français', { skip: sansNavigateur }, async () => {
+  const dir = copierProjet('projet-simple');
+  fs.writeFileSync(path.join(dir, 'assets', 'musique.mp3'), Buffer.alloc(2000, 7));
+  modifierDeroule(dir, (d) => { d.musique = { fichier: 'assets/musique.mp3', volume: 0.6 }; });
+  const r = await exporterVideo({ dossier: dir, dossierStyles: STYLES });
+  assert.equal(r.ok, true, r.message);
+  assert.equal(r.audio, false);
+  assert.match(r.avertissement, /musique n'a pas pu être lue/);
+});
+
+test('planche avec ouverture : la page de planche est ouverte une fois finie', { skip: sansNavigateur }, async () => {
+  const dir = copierProjet('projet-simple');
+  const ouverts = [];
+  const r = await exporterVideo({ dossier: dir, dossierStyles: STYLES, planche: ['intro'], ouvrir: true, ouvrirFichier: (f) => ouverts.push(f) });
+  assert.equal(r.ok, true, r.message);
+  assert.deepEqual(ouverts, [path.join(dir, 'sortie', 'planche', 'planche.html')]);
+});
+
+test('navigateur qui se ferme aussitôt : échec rapide et clair', async () => {
+  const dir = copierProjet('projet-simple');
+  const debut = Date.now();
+  // Node lancé avec les options de Chrome s'arrête aussitôt : il joue le navigateur qui plante.
+  const r = await exporterVideo({ dossier: dir, dossierStyles: STYLES, navigateur: process.execPath });
+  assert.equal(r.ok, false);
+  assert.match(r.message, /navigateur s'est fermé/);
+  assert.ok(Date.now() - debut < 20000, 'échec en moins de 20 s');
+});
+
+test('export qui ne démarre pas (page en erreur) : échec après le délai de démarrage', { skip: sansNavigateur }, async () => {
+  const dir = copierProjet('projet-simple');
+  modifierDeroule(dir, (d) => { d.style = 'inexistant'; });
+  const r = await exporterVideo({ dossier: dir, dossierStyles: STYLES, delaiDemarrage: 4000 });
+  assert.equal(r.ok, false);
+  assert.match(r.message, /n'a pas démarré/);
+});
+
 test('sans Chrome ni Edge : message qui renvoie vers l\'aperçu et le bouton MP4', async () => {
   const dir = copierProjet('projet-simple');
   const r = await exporterVideo({ dossier: dir, dossierStyles: STYLES, navigateur: null });

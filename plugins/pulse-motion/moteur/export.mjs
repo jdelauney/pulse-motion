@@ -62,7 +62,7 @@ function preparerScene(largeur, hauteur) {
 
 /**
  * exporter({ surProgression?(n, total), signal? })
- * -> { buffer: ArrayBuffer, images, duree, largeur, hauteur, audio: bool }
+ * -> { buffer: ArrayBuffer, images, duree, largeur, hauteur, audio: bool, avertissement?, fondSombre: bool }
  */
 export async function exporter({ surProgression = () => {}, signal } = {}) {
   const [largeur, hauteur] = taille();
@@ -71,7 +71,19 @@ export async function exporter({ surProgression = () => {}, signal } = {}) {
   const ips = M.ips;
   const total = Math.round(M.duree * ips);
   const depart = M.temps();
-  const audio = support.audio ? await preparerAudio(total / ips) : null;
+  // Une musique illisible ou un navigateur sans AAC donnent une vidéo muette, pas un échec.
+  const musique = document.getElementById('pm-musique');
+  let audio = null;
+  let avertissement;
+  if (musique && musique.src) {
+    if (!support.audio) avertissement = 'Ce navigateur ne sait pas encoder le son : vidéo exportée sans son.';
+    else {
+      try { audio = await preparerAudio(total / ips); } catch {
+        avertissement = 'La musique n\'a pas pu être lue : vidéo exportée sans son.';
+      }
+    }
+  }
+  const fondSombre = luminanceCouleur(getComputedStyle(document.getElementById('pm-scene')).backgroundColor) < 24;
 
   const canvas = new OffscreenCanvas(largeur, hauteur);
   const ctx = canvas.getContext('2d');
@@ -105,7 +117,14 @@ export async function exporter({ surProgression = () => {}, signal } = {}) {
     remettre();
     M.rendre(depart);
   }
-  return { buffer: output.target.buffer, images: total, duree: total / ips, largeur, hauteur, audio: !!audio };
+  return { buffer: output.target.buffer, images: total, duree: total / ips, largeur, hauteur, audio: !!audio, avertissement, fondSombre };
+}
+
+/** Luminance moyenne (0–255) d'une couleur CSS calculée « rgb(…) » ou « rgba(…) ». */
+function luminanceCouleur(couleur) {
+  const v = String(couleur).match(/[\d.]+/g);
+  if (!v || v.length < 3) return 255;
+  return (Number(v[0]) + Number(v[1]) + Number(v[2])) / 3;
 }
 
 function luminanceMoyenne(canvas) {
@@ -119,10 +138,11 @@ function luminanceMoyenne(canvas) {
 }
 
 /**
- * Relit le MP4 produit : durée, nombre d'images, première et dernière images non noires.
+ * Relit le MP4 produit : durée, nombre d'images, première et dernière images non noires
+ * (sauf si le fond de la vidéo est lui-même sombre : fondSombre).
  * -> { ok, duree, images, premiereNoire, derniereNoire, erreurs: [message] }
  */
-export async function relire(buffer, { images: attendues, ips }) {
+export async function relire(buffer, { images: attendues, ips, fondSombre = false }) {
   const input = new Input({ source: new BufferSource(buffer), formats: ALL_FORMATS });
   const duree = await input.computeDuration();
   const piste = await input.getPrimaryVideoTrack();
@@ -136,8 +156,8 @@ export async function relire(buffer, { images: attendues, ips }) {
   const erreurs = [];
   if (images !== attendues) erreurs.push(`${images} images au lieu de ${attendues}.`);
   if (Math.abs(duree - attendues / ips) > 1 / ips + 0.05) erreurs.push(`durée ${duree.toFixed(2)} s au lieu de ${(attendues / ips).toFixed(2)} s.`);
-  if (premiereNoire) erreurs.push('la première image est noire.');
-  if (derniereNoire) erreurs.push('la dernière image est noire.');
+  if (premiereNoire && !fondSombre) erreurs.push('la première image est noire.');
+  if (derniereNoire && !fondSombre) erreurs.push('la dernière image est noire.');
   return { ok: erreurs.length === 0, duree, images, premiereNoire, derniereNoire, erreurs };
 }
 

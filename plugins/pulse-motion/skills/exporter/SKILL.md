@@ -20,10 +20,10 @@ Fabriquer le fichier MP4 de la vidéo, sur l'ordinateur, sans rien installer de 
 
 ## 2. Exporter
 
-`pulse-motion exporter .` (compter environ une demi-seconde par seconde de vidéo ; la progression s'affiche).
+Lancer `pulse-motion exporter .` en arrière-plan (la commande peut durer plusieurs minutes pour une longue vidéo : environ une demi-seconde par seconde de vidéo), puis lire son résultat JSON quand elle se termine.
 
-- Réussite : le résumé donne `fichier`, `duree`, `images`, `audio`.
-- `audio` faux alors que la vidéo a une musique : dire que ce navigateur ne sait pas encoder le son et que la vidéo est muette ; l'export fidèle (plus tard) le permettra.
+- Réussite : le résumé donne `fichier`, `duree`, `images`, `audio`, et parfois `avertissement`.
+- `avertissement` présent (musique illisible, son impossible à encoder) : le dire simplement ; la vidéo est muette mais exportée.
 - « Chrome ou Edge introuvable » : expliquer qu'il faut ouvrir l'aperçu dans Chrome ou Edge et cliquer sur le bouton « MP4 » de la barre de lecture (lancer `pulse-motion apercu . --ouvrir` en arrière-plan si l'aperçu n'est pas ouvert).
 - Autre échec : dire le message simplement ; aucun fichier incomplet n'a été écrit.
 

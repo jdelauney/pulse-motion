@@ -80,6 +80,54 @@ test('MP4 refusé : type, relecture absente ou en échec, fichier qui n\'est pas
   });
 });
 
+test('renommage impossible (ancienne vidéo bloquée) : erreur en français, aperçu toujours en vie, pas de .part', async () => {
+  await avecApercu(47316, async (dir, url) => {
+    // Un dossier non vide à la place de la vidéo finale rend le renommage impossible.
+    fs.mkdirSync(path.join(dir, 'sortie', 'la-chaine-du-froid.mp4'), { recursive: true });
+    fs.writeFileSync(path.join(dir, 'sortie', 'la-chaine-du-froid.mp4', 'x'), 'x');
+    const r = await requete(url + '_pm/export', { methode: 'POST', type: 'video/mp4', corps: MP4, entetes: relecture(RELU) });
+    assert.equal(r.statut, 500);
+    assert.match(r.json.message, /n'a pas pu être enregistrée/);
+    assert.equal(lireEtatExport(dir).etat, 'erreur');
+    assert.equal(fs.readdirSync(path.join(dir, 'sortie')).some((f) => f.endsWith('.part')), false);
+    assert.equal((await requete(url)).statut, 200, 'l\'aperçu répond encore');
+    // Même chose pour une image de planche : un fichier à la place du dossier planche/.
+    fs.writeFileSync(path.join(dir, 'sortie', 'planche'), 'x');
+    const image = await requete(url + '_pm/planche/intro-1.png', { methode: 'POST', type: 'image/png', corps: PNG });
+    assert.equal(image.statut, 500);
+    assert.equal((await requete(url)).statut, 200);
+  });
+});
+
+test('deux envois de vidéo en même temps : le second est refusé (409), le premier aboutit', async () => {
+  await avecApercu(47317, async (dir, url) => {
+    const premier = new Promise((resolve, reject) => {
+      const req = http.request(url + '_pm/export', { method: 'POST', headers: { 'Content-Type': 'video/mp4', ...relecture(RELU) } }, (res) => {
+        res.resume();
+        res.on('end', () => resolve(res.statusCode));
+      });
+      req.on('error', reject);
+      req.write(MP4.subarray(0, 20));
+      setTimeout(async () => {
+        const second = await requete(url + '_pm/export', { methode: 'POST', type: 'video/mp4', corps: MP4, entetes: relecture(RELU) });
+        assert.equal(second.statut, 409);
+        assert.match(second.json.message, /déjà en cours/);
+        req.end(MP4.subarray(20));
+      }, 200);
+    });
+    assert.equal(await premier, 200);
+    assert.deepEqual(fs.readFileSync(path.join(dir, 'sortie', 'la-chaine-du-froid.mp4')), MP4);
+  });
+});
+
+test('avertissement de la relecture (musique illisible) conservé dans export.json', async () => {
+  await avecApercu(47318, async (dir, url) => {
+    const r = await requete(url + '_pm/export', { methode: 'POST', type: 'video/mp4', corps: MP4, entetes: relecture({ ...RELU, avertissement: 'La musique n\'a pas pu être lue : vidéo exportée sans son.' }) });
+    assert.equal(r.statut, 200);
+    assert.match(lireEtatExport(dir).avertissement, /musique n'a pas pu être lue/);
+  });
+});
+
 test('titre accentué : nom de fichier sans accents ni espaces', async () => {
   await avecApercu(47313, async (dir, url) => {
     modifierDeroule(dir, (d) => { d.titre = 'Hygiène : les 5 règles d\'or !'; });

@@ -71,7 +71,8 @@ test('guidage : Node absent, police non fournie, décor de la dernière scène',
 
 test('export : proposé à la fin de creer et de retoucher, planche dans le parcours accompagné', () => {
   for (const s of ['creer', 'retoucher']) assert.match(lire('skills', s, 'SKILL.md'), /\/pulse-motion:exporter/, s);
-  assert.match(lire('skills', 'creer', 'SKILL.md'), /pulse-motion planche \./);
+  assert.match(lire('skills', 'creer', 'SKILL.md'), /pulse-motion planche \. <id1>,<id2> --ouvrir/);
+  assert.match(lire('skills', 'exporter', 'SKILL.md'), /`pulse-motion exporter \.` en arrière-plan/);
 });
 
 test('références : bloc « L\'essentiel » en tête, styles du catalogue documentés', () => {

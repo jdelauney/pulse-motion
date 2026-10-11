@@ -55,49 +55,76 @@ function creerRoutesExport(projet) {
     fs.writeFileSync(etatExport, JSON.stringify({ ...etat, date: new Date().toISOString() }, null, 2));
   }
 
+  let envoiEnCours = false;
+
+  /** Une erreur de disque ne doit jamais arrêter l'aperçu : message en français. */
+  function messageDisque(e) {
+    if (e && ['EPERM', 'EBUSY', 'EACCES', 'ENOTEMPTY', 'EISDIR'].includes(e.code)) {
+      return 'La vidéo n\'a pas pu être enregistrée : l\'ancienne vidéo est peut-être ouverte dans un autre programme (lecteur vidéo). Fermez-la puis relancez l\'export.';
+    }
+    return `La vidéo n'a pas pu être enregistrée : ${e && e.message ? e.message : 'erreur inconnue'}.`;
+  }
+
   function recevoirVideo(req, res) {
     if (!typeEst(req, 'video/mp4')) return repondre(res, 415, { message: 'Vidéo MP4 attendue.' });
     let relecture;
     try { relecture = JSON.parse(decodeURIComponent(req.headers['x-pm-relecture'] || '')); } catch {
       return repondre(res, 400, { message: 'Relecture de la vidéo absente.' });
     }
+    if (envoiEnCours) return repondre(res, 409, { message: 'Une vidéo est déjà en cours d\'enregistrement : attendez la fin de l\'export précédent.' });
+    envoiEnCours = true;
     const { deroule } = lireDeroule(projet);
     const nom = `${slug(deroule && deroule.titre ? deroule.titre : 'video')}.mp4`;
-    fs.mkdirSync(sortie, { recursive: true });
-    const partiel = path.join(sortie, `.${nom}.part`);
-    const flux = fs.createWriteStream(partiel);
+    // Nom unique : un envoi interrompu ne peut pas se mélanger avec le suivant.
+    const partiel = path.join(sortie, `.${nom}.${process.pid}-${Date.now()}.part`);
+    let flux = null;
     let taille = 0;
-    let abandon = false;
+    let fini = false;
     const echec = (statut, message) => {
-      abandon = true;
-      flux.destroy();
-      fs.rmSync(partiel, { force: true });
-      ecrireEtatExport({ etat: 'erreur', message });
+      if (fini) return;
+      fini = true;
+      envoiEnCours = false;
+      if (flux) flux.destroy();
+      try { fs.rmSync(partiel, { force: true }); } catch { /* rien à nettoyer */ }
+      try { ecrireEtatExport({ etat: 'erreur', message }); } catch { /* le message part quand même dans la réponse */ }
       if (!res.headersSent) repondre(res, statut, { message });
     };
+    try {
+      fs.mkdirSync(sortie, { recursive: true });
+      flux = fs.createWriteStream(partiel);
+    } catch (e) { return echec(500, messageDisque(e)); }
+    flux.on('error', (e) => echec(500, messageDisque(e)));
     req.on('data', (morceau) => {
-      if (abandon) return;
+      if (fini) return;
       taille += morceau.length;
       if (taille > MAX_VIDEO) { echec(413, 'Vidéo trop lourde.'); req.destroy(); return; }
       flux.write(morceau);
     });
-    req.on('aborted', () => { if (!abandon) echec(400, 'Envoi de la vidéo interrompu.'); });
+    req.on('close', () => { if (!req.complete) echec(400, 'Envoi de la vidéo interrompu.'); });
     req.on('end', () => {
-      if (abandon) return;
+      if (fini) return;
       flux.end(() => {
-        const debut = Buffer.alloc(8);
-        const fd = fs.openSync(partiel, 'r');
-        fs.readSync(fd, debut, 0, 8, 0);
-        fs.closeSync(fd);
-        if (debut.toString('latin1', 4, 8) !== 'ftyp') return echec(422, 'Le fichier reçu n\'est pas une vidéo MP4.');
-        if (!relecture || relecture.ok !== true) {
-          return echec(422, `La relecture de la vidéo a échoué : ${(relecture && relecture.erreurs || []).join(' ') || 'raison inconnue'}`);
-        }
-        const final = path.join(sortie, nom);
-        fs.renameSync(partiel, final);
-        const fichier = path.relative(projet, final).split(path.sep).join('/');
-        ecrireEtatExport({ etat: 'fini', fichier, octets: taille, duree: relecture.duree, images: relecture.images, audio: !!relecture.audio });
-        repondre(res, 200, { fichier });
+        if (fini) return;
+        try {
+          const debut = Buffer.alloc(8);
+          const fd = fs.openSync(partiel, 'r');
+          fs.readSync(fd, debut, 0, 8, 0);
+          fs.closeSync(fd);
+          if (debut.toString('latin1', 4, 8) !== 'ftyp') return echec(422, 'Le fichier reçu n\'est pas une vidéo MP4.');
+          if (!relecture || relecture.ok !== true) {
+            return echec(422, `La relecture de la vidéo a échoué : ${(relecture && relecture.erreurs || []).join(' ') || 'raison inconnue'}`);
+          }
+          const final = path.join(sortie, nom);
+          fs.renameSync(partiel, final);
+          const fichier = path.relative(projet, final).split(path.sep).join('/');
+          ecrireEtatExport({
+            etat: 'fini', fichier, octets: taille, duree: relecture.duree, images: relecture.images, audio: !!relecture.audio,
+            avertissement: relecture.avertissement ? String(relecture.avertissement) : undefined,
+          });
+          fini = true;
+          envoiEnCours = false;
+          repondre(res, 200, { fichier });
+        } catch (e) { echec(500, messageDisque(e)); }
       });
     });
   }
@@ -121,8 +148,12 @@ function creerRoutesExport(projet) {
     req.on('end', () => {
       const image = Buffer.concat(morceaux);
       if (!image.subarray(0, 8).equals(PNG)) return repondre(res, 422, { message: 'Le fichier reçu n\'est pas une image PNG.' });
-      fs.mkdirSync(path.join(sortie, 'planche'), { recursive: true });
-      fs.writeFileSync(path.join(sortie, 'planche', `${nom}.png`), image);
+      try {
+        fs.mkdirSync(path.join(sortie, 'planche'), { recursive: true });
+        fs.writeFileSync(path.join(sortie, 'planche', `${nom}.png`), image);
+      } catch (e) {
+        return repondre(res, 500, { message: `L'image « ${nom} » n'a pas pu être enregistrée : ${e.message}.` });
+      }
       return repondre(res, 200, {});
     });
   }
