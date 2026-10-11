@@ -13,6 +13,7 @@
  *   pulse-motion scene <style> <nom>      affiche une scène toute faite d'un style
  *   pulse-motion styles [--genre <genre>] liste les styles (JSON), classée pour le genre
  *   pulse-motion styles verifier <nom>    vérifie le contrat d'un style
+ *   pulse-motion changer-style <dossier> <style>   recopie les scènes toutes faites du nouveau style
  *   pulse-motion consignes <skill>        affiche les consignes d'un skill (ex. creer)
  */
 const fs = require('node:fs');
@@ -31,6 +32,7 @@ const SCRIPTS = {
   historique: 'historique.js',
   exporter: 'exporter.js',
   styles: 'styles.js',
+  'changer-style': 'changer-style.js',
 };
 
 function afficherFichier(fichier, quoi) {
@@ -80,6 +82,7 @@ function lancer(args) {
     '  exporter <dossier>       planche <dossier> [id1,id2]',
     '  reference <nom>          scene <style> <nom>      consignes <skill>',
     '  styles [--genre <genre>]                         styles verifier <nom>',
+    '  changer-style <dossier> <style>',
   ].join('\n'));
   return 2;
 }
