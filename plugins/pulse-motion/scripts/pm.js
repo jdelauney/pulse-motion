@@ -15,6 +15,7 @@
  *   pulse-motion styles verifier <nom>    vérifie le contrat d'un style
  *   pulse-motion changer-style <dossier> <style>   recopie les scènes toutes faites du nouveau style
  *   pulse-motion comparer <dossier> <s1,s2,s3> [--scenes a,b] [--ouvrir]   comparaison des styles sur le déroulé
+ *   pulse-motion lexique [noter "<terme>" "<phrase>" "<comme…>" "<commande>"]   mots de l'outil expliqués à la personne
  *   pulse-motion consignes <skill>        affiche les consignes d'un skill (ex. creer)
  */
 const fs = require('node:fs');
@@ -52,6 +53,9 @@ function lancer(args) {
     const r = spawnSync(process.execPath, [path.join(RACINE, 'scripts', SCRIPTS[commande]), ...reste], { stdio: 'inherit' });
     return r.status ?? 1;
   }
+  if (commande === 'lexique') {
+    return spawnSync(process.execPath, [path.join(RACINE, 'scripts', 'vocabulaire.js'), 'lexique', ...reste], { stdio: 'inherit' }).status ?? 1;
+  }
   if (commande === 'planche') {
     const [dossier = '.', ...options] = reste;
     const ids = options.filter((o) => !o.startsWith('--'));
@@ -85,6 +89,7 @@ function lancer(args) {
     '  reference <nom>          scene <style> <nom>      consignes <skill>',
     '  styles [--genre <genre>]                         styles verifier <nom>',
     '  changer-style <dossier> <style>                  comparer <dossier> <s1,s2,s3> [--scenes a,b] [--ouvrir]',
+    '  lexique [noter "<terme>" "<phrase>" "<comme…>" "<commande>"]',
   ].join('\n'));
   return 2;
 }
