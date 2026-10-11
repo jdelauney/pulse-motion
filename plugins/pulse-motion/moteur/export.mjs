@@ -68,6 +68,7 @@ export async function exporter({ surProgression = () => {}, signal } = {}) {
   const [largeur, hauteur] = taille();
   const support = await verifierSupport(largeur, hauteur);
   if (!support.video) throw new Error('Ce navigateur ne sait pas encoder la vidéo (H.264) : ouvrez l\'aperçu dans Chrome ou Edge.');
+  if (M.particules) await M.particules.verifierExport();
   const ips = M.ips;
   const total = Math.round(M.duree * ips);
   const depart = M.temps();
@@ -182,6 +183,7 @@ export function signaler(etat) {
 
 /** Capture des images clés en PNG (planche du parcours accompagné). -> [{ nom, blob }] */
 export async function capturerPlanche(scenes, { largeur = 1280 } = {}) {
+  if (M.particules) await M.particules.verifierExport();
   const [l, h] = taille();
   const hauteur = Math.round(largeur * h / l);
   const canvas = new OffscreenCanvas(l, h);

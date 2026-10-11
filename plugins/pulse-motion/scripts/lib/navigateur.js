@@ -28,6 +28,13 @@ function trouverNavigateur() {
 
 const OPTIONS = ['--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check', '--hide-scrollbars'];
 
+/** Options de Chrome sans fenêtre ; gpu : WebGPU actif (vidéos avec effets de particules). */
+function optionsChrome({ gpu = false } = {}) {
+  if (!gpu) return OPTIONS.slice();
+  const supplementaires = process.env.PM_OPTIONS_WEBGPU ? process.env.PM_OPTIONS_WEBGPU.split(/\s+/).filter(Boolean) : ['--enable-unsafe-webgpu'];
+  return [...OPTIONS.filter((o) => o !== '--disable-gpu'), ...supplementaires];
+}
+
 /** Charge un fichier HTML ou une URL ; -> Promise du DOM après exécution des scripts (tests). */
 function rendreDOM(navigateur, cible) {
   const url = /^https?:/.test(cible) ? cible : pathToFileURL(path.resolve(cible)).href;
@@ -43,10 +50,10 @@ function rendreDOM(navigateur, cible) {
   });
 }
 
-/** Ouvre une URL sans fenêtre, en temps réel. -> { aQuitte(), fermer() } */
-function ouvrirSansFenetre(navigateur, url) {
+/** Ouvre une URL sans fenêtre, en temps réel (gpu : WebGPU actif). -> { aQuitte(), fermer() } */
+function ouvrirSansFenetre(navigateur, url, { gpu = false } = {}) {
   const profil = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-chrome-'));
-  const processus = spawn(navigateur, [...OPTIONS, `--user-data-dir=${profil}`, '--window-size=1280,800', url], { stdio: 'ignore' });
+  const processus = spawn(navigateur, [...optionsChrome({ gpu }), `--user-data-dir=${profil}`, '--window-size=1280,800', url], { stdio: 'ignore' });
   let quitte = false;
   processus.on('error', () => { quitte = true; });
   processus.on('exit', () => { quitte = true; });
@@ -67,4 +74,4 @@ function ouvrirSansFenetre(navigateur, url) {
   };
 }
 
-module.exports = { trouverNavigateur, rendreDOM, ouvrirSansFenetre };
+module.exports = { trouverNavigateur, optionsChrome, rendreDOM, ouvrirSansFenetre };

@@ -5,6 +5,9 @@
  * M.particules.disponible  WebGPU utilisable
  * M.particules.lirePixels(idScene, calque) -> Promise<{ largeur, hauteur, donnees }>
  * M.particules.lireEtat(idScene, ordre, emetteur) -> Promise<Float32Array>
+ * M.particules.image(idScene, calque) -> Promise<ImageBitmap>   image du calque (export)
+ * M.particules.preparerCapture() -> Promise   pose canvas.__pmImage (PNG en data:) sur les calques affichés
+ * M.particules.verifierExport() -> Promise    rejette si des effets existent et que WebGPU manque
  * M.particules.lireOrdre(idScene, ordre, emetteur) -> Promise<Uint32Array>   paires clé, index après tri (tests)
  *
  * Zone d'émission : boîte de l'ancre (ou de la balise data-effet) relative à la scène, en cqh,
@@ -281,6 +284,46 @@
     }
   }
 
+  const SANS_GPU_EXPORT = 'Cette vidéo contient des effets de particules, qui demandent WebGPU : ouvrez l\'aperçu dans Chrome ou Edge récent pour l\'exporter.';
+
+  /** Pixels lus (prémultipliés) -> ImageData (non prémultipliée). */
+  function versImageData(p) {
+    const d = new Uint8ClampedArray(p.donnees.length);
+    for (let i = 0; i < d.length; i += 4) {
+      const a = p.donnees[i + 3];
+      if (!a) continue;
+      const k = 255 / a;
+      d[i] = p.donnees[i] * k;
+      d[i + 1] = p.donnees[i + 1] * k;
+      d[i + 2] = p.donnees[i + 2] * k;
+      d[i + 3] = a;
+    }
+    return new ImageData(d, p.largeur, p.hauteur);
+  }
+
+  function versDataURL(p) {
+    const c = document.createElement('canvas');
+    c.width = p.largeur;
+    c.height = p.hauteur;
+    c.getContext('2d').putImageData(versImageData(p), 0, 0);
+    return c.toDataURL('image/png');
+  }
+
+  /** Avant une capture foreignObject : l'image de chaque calque affiché, en PNG, sur son canvas. */
+  async function preparerCapture() {
+    await etat.pret;
+    if (!etat.gpu || !etat.rendu) return;
+    await etat.gpu.device.queue.onSubmittedWorkDone();
+    for (const sc of etat.scenes) {
+      for (const nom of Object.keys(sc.calques)) {
+        const canvas = sc.calques[nom];
+        canvas.__pmImage = sc.section.style.display === 'none' || !canvas.__pmCible
+          ? null
+          : versDataURL(await etat.rendu.lirePixels(canvas.__pmCible));
+      }
+    }
+  }
+
   function trouver(idScene) { return etat.scenes.find((sc) => sc.info.id === idScene); }
 
   M.particules = {
@@ -298,6 +341,14 @@
       const fx = sc && sc.effets[ordre];
       if (!fx || !fx.sim) return Promise.reject(new Error('Effet ' + ordre + ' de la scène « ' + idScene + ' » non simulé.'));
       return fx.sim.lireEtat(emetteur);
+    },
+    preparerCapture,
+    image(idScene, calque) {
+      return M.particules.lirePixels(idScene, calque).then((p) => createImageBitmap(versImageData(p)));
+    },
+    verifierExport() {
+      if (!etat.scenes.length) return Promise.resolve();
+      return etat.pret.then(() => { if (!etat.disponible) throw new Error(SANS_GPU_EXPORT); });
     },
     lireOrdre(idScene, ordre, emetteur) {
       const sc = trouver(idScene);
