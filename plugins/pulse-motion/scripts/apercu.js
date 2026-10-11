@@ -13,6 +13,7 @@ const http = require('node:http');
 const path = require('node:path');
 const { spawn } = require('node:child_process');
 const { assembler } = require('./assembler.js');
+const { creerRoutesExport } = require('./lib/routes-export.js');
 
 const IGNORES = /^(sortie|\.pulse-motion|\.historique|\.git)([\\/]|$)/;
 const ESSAIS_PORT = 20;
@@ -30,7 +31,8 @@ function pageErreur(erreurs) {
 }
 
 function injecterApercu(html, erreurs) {
-  const script = `<script>window.__PM_APERCU__ = true; window.__PM_ERREURS__ = ${JSON.stringify(erreurs).replace(/</g, '\\u003c')};</script>`;
+  const script = `<script>window.__PM_APERCU__ = true; window.__PM_ERREURS__ = ${JSON.stringify(erreurs).replace(/</g, '\\u003c')};</script>` +
+    '\n<script src="/_pm/capture.js"></script>\n<script type="module" src="/_pm/export-ui.mjs"></script>';
   return html.replace('</head>', `${script}\n</head>`);
 }
 
@@ -70,6 +72,7 @@ async function demarrerApercu({ dossier, port = 4321, dossierStyles, delai = 150
   }
 
   const rapportPage = path.join(projet, 'sortie', 'controle-page.json');
+  const routesExport = creerRoutesExport(projet);
 
   /** Rapport de débordement envoyé par la page : JSON seulement (une autre origine serait bloquée par CORS). */
   function recevoirControle(req, res) {
@@ -125,6 +128,8 @@ async function demarrerApercu({ dossier, port = 4321, dossierStyles, delai = 150
       req.on('close', () => clients.delete(res));
     } else if (req.method === 'POST' && url.pathname === '/_pm/controle') {
       recevoirControle(req, res);
+    } else if (routesExport(req, res, url)) {
+      // route d'export traitée
     } else {
       res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('Introuvable');
