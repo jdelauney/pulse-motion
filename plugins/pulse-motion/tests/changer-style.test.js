@@ -49,3 +49,23 @@ test('style inconnu, même style, fichier hors du projet : rien n\'est modifié'
   assert.equal(fs.existsSync(path.join(dir, '.historique')), false);
   assert.equal(deroule(dir).style, 'alpha');
 });
+
+test('fichier de scène hors de scenes/, déroulé visé ou fichier partagé : refus avant toute écriture', () => {
+  const racine = stylesEssai(['alpha', 'beta']);
+  for (const [fichiers, motif] of [
+    [['deroule.json'], /« intro » .*scenes\//],
+    [['.'], /« intro » .*scenes\//],
+    [['scenes/a.html', 'scenes/a.html'], /« regles » .*déjà utilisé par la scène « intro »/],
+  ]) {
+    const dir = projetTypes(racine);
+    const d = deroule(dir);
+    fichiers.forEach((f, i) => { d.scenes[i].fichier = f; });
+    fs.writeFileSync(path.join(dir, 'deroule.json'), JSON.stringify(d));
+    const avant = lire(dir, 'deroule.json');
+    const r = changerStyle({ dossier: dir, style: 'beta', dossierStyles: racine });
+    assert.equal(r.ok, false, fichiers.join());
+    assert.match(r.message, motif);
+    assert.equal(lire(dir, 'deroule.json'), avant);
+    assert.equal(fs.existsSync(path.join(dir, '.historique')), false);
+  }
+});

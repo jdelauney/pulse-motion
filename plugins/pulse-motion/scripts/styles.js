@@ -17,6 +17,7 @@ const SEUILS = require('./seuils.json');
 
 const RACINE = path.resolve(__dirname, '..');
 const LIVRES = path.join(RACINE, 'styles');
+const HEX = /^#[0-9a-fA-F]{6}$/;
 const POLICES_SYSTEME = new Set(['system-ui', 'sans-serif', 'serif', 'monospace']);
 const virgule = (x) => String(Math.round(x * 10) / 10).replace('.', ',');
 
@@ -49,7 +50,11 @@ function verifierCatalogue(dossier, nom, catalogue, erreurs, avertissements) {
   for (const t of catalogue.transitions || []) {
     if (!TRANSITIONS.includes(t)) erreurs.push(`catalogue.json : transition inconnue du moteur « ${t} ».`);
   }
-  const decrites = new Map((catalogue.scenes || []).map((s) => [s.nom, s]));
+  if (!Array.isArray(catalogue.scenes)) {
+    erreurs.push('catalogue.json : « scenes » doit être une liste.');
+    return;
+  }
+  const decrites = new Map(catalogue.scenes.map((s) => [s && s.nom, s]));
   for (const [type, cles] of Object.entries(TYPES)) {
     const attendues = [...cles].sort().join(', ');
     const s = decrites.get(type);
@@ -104,6 +109,12 @@ function verifierCharte(dossier, charte, erreurs) {
   }
   const couleurs = charte.couleurs || {};
   if (couleurs.fond) {
+    for (const nomCouleur of ['texte', 'primaire', 'fond']) {
+      if (couleurs[nomCouleur] !== undefined && !HEX.test(couleurs[nomCouleur])) {
+        erreurs.push(`charte.json : « couleurs.${nomCouleur} » doit être une couleur #rrggbb.`);
+      }
+    }
+    if (erreurs.some((e) => e.startsWith('charte.json : « couleurs.'))) return;
     for (const [nomCouleur, minimum] of [['texte', SEUILS.contrasteTexte], ['primaire', SEUILS.contrasteTitres]]) {
       if (!couleurs[nomCouleur]) continue;
       const c = contraste(couleurs[nomCouleur], couleurs.fond);
@@ -112,8 +123,17 @@ function verifierCharte(dossier, charte, erreurs) {
   }
 }
 
-/** Vérifie qu'un dossier de style respecte le contrat. -> { ok, erreurs, avertissements } */
+/** Vérifie qu'un dossier de style respecte le contrat. -> { ok, erreurs, avertissements } (ne lève jamais) */
 function verifierStyle(dossier) {
+  try {
+    return verifierContrat(dossier);
+  } catch (e) {
+    // Un fichier de style aux valeurs d'un mauvais type ne doit pas faire tomber la liste des styles.
+    return { ok: false, erreurs: [`Style mal formé (${path.basename(dossier)}) : ${e.message}.`], avertissements: [] };
+  }
+}
+
+function verifierContrat(dossier) {
   const erreurs = [];
   const avertissements = [];
   const nom = path.basename(dossier);
@@ -175,17 +195,19 @@ function messageStyleInconnu(nom, dossierStyles) {
 function ficheStyle(st) {
   const catalogue = lireJSON(path.join(st.dossier, 'catalogue.json')) || {};
   const identite = lireJSON(path.join(st.dossier, 'identite.json')) || {};
+  const liste = (v) => (Array.isArray(v) ? v : []);
+  const texte = (v) => (typeof v === 'string' ? v : '');
   return {
     style: st.nom,
-    description: catalogue.description || '',
+    description: texte(catalogue.description),
     personnel: st.personnel,
     verifie: st.personnel ? verifierStyle(st.dossier).ok : true,
-    famille: identite.famille || null,
-    personnalite: identite.personnalite || [],
-    genres: identite.genres || [],
-    signature: identite.signature || '',
-    transitions: catalogue.transitions || [],
-    scenes: catalogue.scenes || [],
+    famille: texte(identite.famille) || null,
+    personnalite: liste(identite.personnalite),
+    genres: liste(identite.genres),
+    signature: texte(identite.signature),
+    transitions: liste(catalogue.transitions),
+    scenes: liste(catalogue.scenes),
   };
 }
 

@@ -80,3 +80,26 @@ test('dans le navigateur : vraie planche comparative de 2 styles', { skip: !navi
   assert.equal(r.images.length, 4);
   for (const image of r.images) assert.equal(fs.readFileSync(path.join(dir, image)).subarray(1, 4).toString(), 'PNG');
 });
+
+test('scène toute faite manquante dans un style : message nommant le style, rien de temporaire ni de partiel', async () => {
+  const os = require('node:os');
+  const racine = stylesEssai(['alpha', 'beta']);
+  fs.rmSync(path.join(racine, 'beta', 'scenes', 'titre.html'));
+  const dir = projetTypes(racine);
+  const restes = () => fs.readdirSync(os.tmpdir()).filter((n) => n.startsWith('pm-comparer-beta-')).length;
+  const avant = restes();
+  const r = await comparer({ dossier: dir, styles: ['alpha', 'beta'], dossierStyles: racine, exporter: fauxExport([]) });
+  assert.equal(r.ok, false);
+  assert.match(r.message, /^Style « beta » : /);
+  assert.equal(restes(), avant);
+  assert.equal(fs.existsSync(path.join(dir, 'sortie', 'comparaison')), false);
+});
+
+test('interruption : les nettoyages en cours (navigateur, aperçu) sont faits', async () => {
+  const { nettoyages, nettoyerTout } = require('../scripts/exporter.js');
+  let fait = false;
+  nettoyages.add(async () => { fait = true; });
+  await nettoyerTout();
+  assert.equal(fait, true);
+  assert.equal(nettoyages.size, 0);
+});
