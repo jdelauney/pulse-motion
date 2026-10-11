@@ -22,6 +22,8 @@
   var PROFONDEUR_MAX = 2;
   var FORCES_MAX = 8;
   var TRAINEE_MAX = 16;
+  var CAPACITE_MAX = 2000000;
+  var HISTORIQUE_MAX = 16777216; // capacité × longueur d'une traînée (8 octets chacun : 128 Mio)
   var CODES = {
     forme: { point: 0, cercle: 1, anneau: 2, rectangle: 3, ligne: 4, ancre: 5 },
     force: { gravite: 0, trainee: 1, vent: 2, turbulence: 3, attracteur: 4, vortex: 5, rappel: 6 },
@@ -60,6 +62,7 @@
     if (!estObjet(base) || !estObjet(ajout)) return cloner(ajout);
     var r = cloner(base);
     Object.keys(ajout).forEach(function (k) {
+      if (k === '__proto__') return;
       if (k === 'emetteurs' && Array.isArray(r.emetteurs) && Array.isArray(ajout.emetteurs)) r.emetteurs = fusionnerEmetteurs(r.emetteurs, ajout.emetteurs);
       else if (estObjet(r[k]) && estObjet(ajout[k])) r[k] = fusionner(r[k], ajout[k]);
       else r[k] = cloner(ajout[k]);
@@ -101,7 +104,7 @@
     String(texte || '').split(';').map(function (s) { return s.trim(); }).filter(Boolean).forEach(function (clause) {
       var m = /^([a-z_][a-z0-9_]*)\s*:\s*(\S(?:.*\S)?)$/.exec(clause);
       if (!m) erreurs.push('réglage « ' + clause + ' » illisible (attendu « nom: valeur »)');
-      else valeurs[m[1]] = m[2];
+      else Object.defineProperty(valeurs, m[1], { value: m[2], enumerable: true, writable: true, configurable: true });
     });
     return { valeurs: valeurs, erreurs: erreurs };
   }
@@ -139,9 +142,10 @@
   function valeursParametres(recette, reglages, charte, invalide) {
     var params = recette.parametres === undefined ? {} : recette.parametres;
     if (!estObjet(params)) throw invalide('', '« parametres » doit être un objet');
-    var nombres = {};
-    var couleurs = {};
+    var nombres = Object.create(null);
+    var couleurs = Object.create(null);
     var erreurs = [];
+    var possede = function (o, k) { return Object.prototype.hasOwnProperty.call(o, k); };
     Object.keys(params).forEach(function (nom) {
       var p = params[nom];
       var ch = 'parametres.' + nom;
@@ -161,7 +165,7 @@
       nombres[nom] = p.defaut;
     });
     Object.keys(reglages).forEach(function (nom) {
-      var p = params[nom];
+      var p = possede(params, nom) ? params[nom] : undefined;
       var v = reglages[nom];
       if (!p) {
         erreurs.push('« ' + nom + ' » n\'est pas un réglage de l\'effet « ' + recette.nom + ' » (réglages : ' + (Object.keys(params).join(', ') || 'aucun') + ').');
@@ -202,7 +206,7 @@
         return { ok: false, effet: null, erreurs: erreursReglages.map(function (m) { return { regle: 'reglage-invalide', message: prefixe + ' : ' + m }; }) };
       }
       var dur = o.dur > 0 ? o.dur : 1;
-      var valeurs = {};
+      var valeurs = Object.create(null);
       Object.keys(vp.nombres).forEach(function (k) { valeurs[k] = vp.nombres[k]; });
       valeurs.dur = dur;
       var ctxCouleur = { couleurs: vp.couleurs, charte: o.charte };
@@ -263,14 +267,27 @@
         f = f === undefined ? { type: 'ancre' } : objet(f, ch);
         var type = choix(f.type, CODES.forme, ch + '.type', 'ancre');
         var zone = choix(f.zone, { surface: 1, contour: 1 }, ch + '.zone', 'surface');
+        // -1 : valeur interne « taille de la zone » quand le champ est absent ; négatif donné par l'auteur refusé.
+        function dimension(cle, defaut) {
+          var x = nombre(f[cle], ch + '.' + cle, defaut);
+          if (f[cle] !== undefined && f[cle] !== null && x < 0) throw invalide(ch + '.' + cle, 'valeur positive ou nulle attendue');
+          return x;
+        }
+        var rayon = dimension('rayon', -1);
+        var rayonInterieur = dimension('rayon_interieur', 0);
+        var largeur = dimension('largeur', -1);
+        var hauteur = dimension('hauteur', -1);
+        if (f.rayon !== undefined && f.rayon !== null && f.rayon_interieur !== undefined && f.rayon_interieur !== null && rayonInterieur > rayon) {
+          throw invalide(ch + '.rayon_interieur', 'le rayon intérieur ' + rayonInterieur + ' dépasse le rayon ' + rayon);
+        }
         return {
           type: type,
           code: CODES.forme[type],
           contour: zone === 'contour',
-          rayon: nombre(f.rayon, ch + '.rayon', -1),
-          rayonInterieur: nombre(f.rayon_interieur, ch + '.rayon_interieur', 0),
-          largeur: nombre(f.largeur, ch + '.largeur', -1),
-          hauteur: nombre(f.hauteur, ch + '.hauteur', -1),
+          rayon: rayon,
+          rayonInterieur: rayonInterieur,
+          largeur: largeur,
+          hauteur: hauteur,
           angle: rad(nombre(f.angle, ch + '.angle', 0)),
           decalage: paire(f.decalage, ch + '.decalage', [0, 0]),
         };
@@ -304,7 +321,8 @@
           if (type === 'gravite') {
             var g = nombre(f.valeur, c + '.valeur', 40);
             var d = paire(f.direction, c + '.direction', [0, 1]);
-            var l = Math.sqrt(d[0] * d[0] + d[1] * d[1]) || 1;
+            var l = Math.sqrt(d[0] * d[0] + d[1] * d[1]);
+            if (l === 0) throw invalide(c + '.direction', 'direction nulle');
             r.a = [arrondi(d[0] / l * g), arrondi(d[1] / l * g)];
           } else if (type === 'trainee') {
             r.coef = nombre(f.coef, c + '.coef', 1);
@@ -477,6 +495,9 @@
           tables: compilerVie(e.vie, ch + '.vie'),
           rendu: compilerRendu(e.rendu, ch + '.rendu'),
         };
+        if (enfant[i] >= 0 && vie[0] < PAS) {
+          throw invalide(ch + '.naissance.vie', 'durée de vie minimale ' + vie[0] + ' sous 1/120 s : deux morts dans le même pas feraient perdre des enfants');
+        }
         if (em.masse[0] <= 0) throw invalide(ch + '.naissance.masse', 'la masse doit être positive');
         if (P) {
           if (n.debit !== undefined || n.salves !== undefined) {
@@ -484,14 +505,16 @@
           }
           em.k = Math.round(nombre(n.nombre, ch + '.naissance.nombre'));
           if (em.k < 1) throw invalide(ch + '.naissance.nombre', 'au moins 1');
-          // G : une case d'enfant n'est réutilisée qu'après la mort de son occupant.
-          em.G = P.periode === Infinity ? 1 : Math.max(1, Math.ceil(vie[1] / P.periode));
+          // S : écart entre deux occupants successifs d'une case parent ; J : gigue de leurs morts.
+          // G : générations d'une case enfant, pour que G·S − J ≥ vie max de l'enfant.
+          em.G = P.espacement === Infinity ? 1 : Math.max(1, Math.ceil((vie[1] + P.gigue) / P.espacement));
           em.debit = 0;
           em.nTotal = 0;
           em.capContinu = 0;
           em.salves = [];
           em.capacite = P.capacite * em.G * em.k;
-          em.periode = P.periode === Infinity ? Infinity : em.G * P.periode - (vie[1] - vie[0]);
+          em.espacement = P.espacement === Infinity ? Infinity : em.G * P.espacement;
+          em.gigue = P.gigue + (vie[1] - vie[0]);
           em.finNaissances = P.fin;
         } else {
           if (n.nombre !== undefined) throw invalide(ch + '.naissance.nombre', '« nombre » est réservé aux sous-émetteurs ; utiliser « debit » ou « salves »');
@@ -520,8 +543,15 @@
             throw invalide(ch + '.naissance', 'indiquer « debit » (avec une durée data-dur suffisante) ou « salves » ; un sous-émetteur se lance par « a_la_mort » de son parent');
           }
           em.capacite = debut;
-          em.periode = em.capContinu > 0 && em.capContinu < em.nTotal ? em.capContinu / em.debit - (vie[1] - vie[0]) : Infinity;
+          em.espacement = em.capContinu > 0 && em.capContinu < em.nTotal ? em.capContinu / em.debit : Infinity;
+          em.gigue = vie[1] - vie[0];
           em.finNaissances = finN;
+        }
+        if (em.capacite > CAPACITE_MAX) {
+          throw invalide(ch, 'capacité de ' + em.capacite + ' particules, au-delà du maximum ' + CAPACITE_MAX + ' ; baisser nombre, debit ou la durée de vie');
+        }
+        if (em.rendu.type === 'trainee' && em.capacite * em.rendu.longueur > HISTORIQUE_MAX) {
+          throw invalide(ch + '.rendu', 'traînée trop longue pour ' + em.capacite + ' particules (capacité × longueur au plus ' + HISTORIQUE_MAX + ')');
         }
         em.fin = arrondi(em.finNaissances + vie[1]);
         em.voieRapide = em.parent < 0 && em.aLaMort < 0 && em.rendu.type !== 'trainee' && em.forces.every(function (f) {
@@ -549,7 +579,7 @@
         fin: emetteurs.reduce(function (s, e) { return Math.max(s, e.fin); }, 0),
         emetteurs: emetteurs,
       };
-      emetteurs.forEach(function (e) { delete e.periode; delete e.finNaissances; });
+      emetteurs.forEach(function (e) { delete e.espacement; delete e.gigue; delete e.finNaissances; });
       return { ok: true, effet: effet, erreurs: [] };
     } catch (e) {
       if (e && e.regle) return { ok: false, effet: null, erreurs: [{ regle: e.regle, message: e.message }] };
@@ -564,6 +594,7 @@
     PROFONDEUR_MAX: PROFONDEUR_MAX,
     FORCES_MAX: FORCES_MAX,
     TRAINEE_MAX: TRAINEE_MAX,
+    CAPACITE_MAX: CAPACITE_MAX,
     ErreurRecette: ErreurRecette,
     resoudre: resoudre,
     analyserReglages: analyserReglages,
