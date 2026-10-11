@@ -16,6 +16,7 @@
  *   pulse-motion changer-style <dossier> <style>   recopie les scènes toutes faites du nouveau style
  *   pulse-motion comparer <dossier> <s1,s2,s3> [--scenes a,b] [--ouvrir]   comparaison des styles sur le déroulé
  *   pulse-motion charte enregistrer <nom> <dossier> | liste | appliquer <nom> <dossier> | depuis-logo <fichier> [--style s] [--ton clair|sombre]
+ *   pulse-motion police "<famille>" [--graisses 400,700] | <fichier> [--famille "<nom>"] [--confirmer]   police de la charte (Bunny Fonts ou fichier)
  *   pulse-motion lexique [noter "<terme>" "<phrase>" "<comme…>" "<commande>"]   mots de l'outil expliqués à la personne
  *   pulse-motion consignes <skill>        affiche les consignes d'un skill (ex. creer)
  */
@@ -38,6 +39,7 @@ const SCRIPTS = {
   'changer-style': 'changer-style.js',
   comparer: 'comparer.js',
   charte: 'charte.js',
+  police: 'polices.js',
 };
 
 function afficherFichier(fichier, quoi) {
@@ -92,6 +94,7 @@ function lancer(args) {
     '  styles [--genre <genre>]                         styles verifier <nom>',
     '  changer-style <dossier> <style>                  comparer <dossier> <s1,s2,s3> [--scenes a,b] [--ouvrir]',
     '  charte enregistrer <nom> <dossier> | liste | appliquer <nom> <dossier> | depuis-logo <fichier> [--style s] [--ton clair|sombre]',
+    '  police "<famille>" [--graisses 400,700] | <fichier> [--famille "<nom>"] [--confirmer] [--dans <dossier>]',
     '  lexique [noter "<terme>" "<phrase>" "<comme…>" "<commande>"]',
   ].join('\n'));
   return 2;
