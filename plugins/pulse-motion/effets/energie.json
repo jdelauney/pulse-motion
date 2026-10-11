@@ -3,7 +3,7 @@
   "nom": "energie",
   "description": "Flux d'énergie qui tourbillonne autour de la zone comme un plasma, en traînées lumineuses.",
   "parametres": {
-    "nombre": { "defaut": 80, "min": 10, "max": 2000 },
+    "nombre": { "defaut": 200, "min": 10, "max": 2000 },
     "couleur": { "defaut": "primaire", "type": "couleur" },
     "rotation": { "defaut": 1, "min": -3, "max": 3 },
     "eclat": { "defaut": 4, "min": 1, "max": 10 }
