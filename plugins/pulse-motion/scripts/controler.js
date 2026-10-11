@@ -109,11 +109,25 @@ function controler({ dossier, dossierStyles = path.join(RACINE, 'styles'), dossi
     const min = calculerMinutage(deroule.scenes, elementsParScene);
     for (const e of min.erreurs) problemes.push({ ...e, gravite: 'erreur' });
 
+    // Fenêtre d'une balise d'effet : jusqu'à la mort de la dernière particule, pas seulement data-dur.
+    const finEffet = (scene, rythme) => {
+      const fins = {};
+      const balises = elementsParScene[scene.id].filter((e) => e.effet !== undefined);
+      for (const e of (assemblage.effets || []).filter((x) => x.scene === scene.id)) {
+        const balise = balises[e.ordre];
+        if (balise && min.elements[scene.id][balise.cle]) fins[balise.cle] = min.elements[scene.id][balise.cle].debut + e.effet.fin / (rythme || 1);
+      }
+      return fins;
+    };
+    const finsEffets = {};
+    for (const s of min.scenes) finsEffets[s.id] = finEffet(s, s.rythme);
+    const finElement = (id, cle, e) => Math.max(e.fin, finsEffets[id][cle] === undefined ? e.fin : finsEffets[id][cle]);
+
     // Temps morts : aucun élément en mouvement pendant plus que le seuil (pause finale exceptée).
     const derniere = min.scenes[min.scenes.length - 1];
     min.scenes.forEach((s, i) => {
       const dureeEntree = s.entree > 0 ? s.entree : (i === 0 && s.transition !== 'aucune' ? CHEVAUCHEMENT : 0);
-      const intervalles = Object.values(min.elements[s.id]).map((e) => [e.debut, e.fin]);
+      const intervalles = Object.entries(min.elements[s.id]).map(([cle, e]) => [e.debut, finElement(s.id, cle, e)]);
       if (dureeEntree) intervalles.push([s.debut, s.debut + dureeEntree]);
       const suivante = min.scenes[i + 1];
       if (suivante && suivante.entree > 0) intervalles.push([suivante.debut, s.fin]);
@@ -127,7 +141,7 @@ function controler({ dossier, dossierStyles = path.join(RACINE, 'styles'), dossi
     });
 
     // Pause finale.
-    const fins = Object.values(min.elements[derniere.id]).map((e) => e.fin);
+    const fins = Object.entries(min.elements[derniere.id]).map(([cle, e]) => finElement(derniere.id, cle, e));
     const pause = derniere.fin - Math.max(derniere.debut, ...fins);
     if (pause < SEUILS.pauseFinale) {
       problemes.push({ regle: 'pause-finale', gravite: 'alerte', scene: derniere.id, message: `La vidéo s'arrête ${virgule(pause)} s après le dernier mouvement : laisser au moins ${virgule(SEUILS.pauseFinale)} s pour finir sur une image stable.` });

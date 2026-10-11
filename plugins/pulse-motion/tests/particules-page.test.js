@@ -122,3 +122,32 @@ test('sans effet : aucun calque ni panneau dans la page', { skip: !trouverNaviga
   assert.doesNotMatch(dom, /<canvas[^>]*pm-calque/);
   assert.doesNotMatch(dom, /class="pm-effet-panneau"/);
 });
+
+test('zone d\'effet : une classe de scène place la balise, sans classe elle couvre la scène', { skip: !trouverNavigateur() && 'Chrome ou Edge introuvable' }, async () => {
+  const dir = copierProjet('projet-effets');
+  fs.writeFileSync(path.join(dir, 'scenes', '01-etincelles.html'), `<section data-scene="etincelles">
+  <style>@scope { .zone-feu { inset: 70% auto auto 30%; width: 40%; height: 10%; } }</style>
+  <h1 id="titre" data-texte="titre" data-start="0.2"></h1>
+  <div id="zone" class="zone-feu" data-effet="simple"></div>
+  <div id="plein" data-effet="simple"></div>
+</section>`);
+  const r = assembler({ dossier: dir, dossierStyles: STYLES, dossierEffets: EFFETS, ecrire: false });
+  assert.deepEqual(r.erreurs, []);
+  const mesure = `<script>window.__PM_SANS_GPU__ = true;
+setTimeout(function () {
+  var s = document.querySelector('section[data-scene]').getBoundingClientRect();
+  function rel(id) { var b = document.getElementById(id).getBoundingClientRect(); return [(b.left - s.left) / s.width, (b.top - s.top) / s.height, b.width / s.width, b.height / s.height]; }
+  var pre = document.createElement('pre'); pre.id = 'mesure-zone';
+  pre.textContent = JSON.stringify({ zone: rel('zone'), plein: rel('plein') });
+  document.body.appendChild(pre);
+}, 500);</script>`;
+  const fichier = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'pm-zone-')), 'page.html');
+  fs.writeFileSync(fichier, r.html.replace('<body>', `<body>\n${mesure}`));
+  const dom = await rendreDOM(trouverNavigateur(), fichier);
+  const m = /<pre id="mesure-zone">([^<]*)<\/pre>/.exec(dom);
+  assert.ok(m, 'mesure absente de la page');
+  const { zone, plein } = JSON.parse(m[1]);
+  const proche = (a, b) => Math.abs(a - b) < 0.02;
+  assert.ok(proche(zone[0], 0.3) && proche(zone[1], 0.7) && proche(zone[2], 0.4) && proche(zone[3], 0.1), 'zone placée à 30 % / 70 % : ' + zone);
+  assert.ok(proche(plein[0], 0) && proche(plein[1], 0) && proche(plein[2], 1) && proche(plein[3], 1), 'sans classe, toute la scène : ' + plein);
+});

@@ -116,3 +116,23 @@ test('commande effet : affiche une recette, refuse un nom dangereux', () => {
   const reference = execFileSync(process.execPath, [PM, 'reference', 'particules'], { encoding: 'utf8' });
   assert.match(reference, /## L'essentiel/);
 });
+
+test('bibliothèque : étincelles en bleu restent bleues, de la gerbe à la braise', () => {
+  const r = compiler('etincelles', 'couleur: #0000ff');
+  assert.equal(r.ok, true);
+  for (const em of r.effet.emetteurs) {
+    const t = em.tables.couleur;
+    for (let i = 0; i < t.length; i += 4) assert.ok(t[i] <= t[i + 2] + 1e-9, `${em.nom} : rouge ${t[i]} au-dessus du bleu ${t[i + 2]} (entrée ${i / 4})`);
+  }
+  const gerbe = r.effet.emetteurs[0].tables.couleur;
+  const milieu = (gerbe.length / 4 >> 1) * 4;
+  assert.ok(gerbe[milieu + 2] > 0.2, 'à mi-vie la gerbe est franchement bleue');
+  const chaud = compiler('etincelles').effet.emetteurs[0].tables.couleur;
+  assert.ok(chaud[(chaud.length / 4 >> 1) * 4] > chaud[(chaud.length / 4 >> 1) * 4 + 2], 'le défaut garde un rendu chaud');
+});
+
+test('bibliothèque : poussière émise pendant toute la durée, image garnie dès le début', () => {
+  const [grain, present] = compiler('poussiere', '', 8).effet.emetteurs;
+  assert.equal(grain.debit, 120 / 8, 'débit continu nombre / dur');
+  assert.deepEqual(present.salves.map((s) => [s.t, s.nombre]), [[0, 40]], 'salve de départ nombre / 3');
+});

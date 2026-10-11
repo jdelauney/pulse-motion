@@ -26,7 +26,7 @@
         { "type": "trainee", "coef": 1.2 }
       ],
       "vie": {
-        "couleur": { "degrade": ["#ffffff", "couleur", "#ff4a1c", "#40100000"], "courbe": "quad-out" },
+        "couleur": { "degrade": ["#ffffff", "couleur", "couleur", "#00000000"], "courbe": "quad-out" },
         "taille": { "de": 1, "a": 0.2, "courbe": "cubic-in" },
         "intensite": { "de": 6, "a": 1, "courbe": "quad-out" }
       },
@@ -47,7 +47,7 @@
         { "type": "trainee", "coef": 2 }
       ],
       "vie": {
-        "couleur": { "degrade": ["#ff8a3d", "#ff3a0a00"] },
+        "couleur": { "degrade": ["couleur", "#00000000"] },
         "intensite": { "de": 3, "a": 0 }
       },
       "rendu": { "type": "sprite", "melange": "additif" }
