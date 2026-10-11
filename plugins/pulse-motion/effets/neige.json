@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "nom": "neige",
+  "description": "Flocons qui tombent doucement en se balançant depuis le haut de l'image (zone plein cadre).",
+  "parametres": {
+    "nombre": { "defaut": 200, "min": 10, "max": 10000 },
+    "vitesse": { "defaut": 1, "min": 0.3, "max": 3 },
+    "vent": { "defaut": 4, "min": -30, "max": 30 },
+    "taille": { "defaut": 1, "min": 0.3, "max": 3 },
+    "couleur": { "defaut": "#ffffff", "type": "couleur" }
+  },
+  "rendu_calque": { "bloom": 0.6 },
+  "emetteurs": [
+    {
+      "nom": "flocon",
+      "naissance": {
+        "debit": "nombre / dur",
+        "forme": { "type": "ligne", "largeur": 200, "decalage": [0, -52] },
+        "vitesse": { "direction": [0, 1], "cone": 20, "valeur": ["6 * vitesse", "12 * vitesse"] },
+        "vie": ["12 / vitesse", "14 / vitesse"],
+        "taille": ["0.4 * taille", "1.1 * taille"],
+        "z": [-1, 1]
+      },
+      "forces": [
+        { "type": "gravite", "valeur": "8 * vitesse" },
+        { "type": "trainee", "coef": 0.8 },
+        { "type": "vent", "vitesse": ["vent", 0], "coef": 0.3 },
+        { "type": "turbulence", "echelle": 10, "force": 6, "vitesse": 0.5 }
+      ],
+      "vie": { "couleur": "couleur", "opacite": 0.9 },
+      "rendu": { "type": "sprite", "melange": "alpha" }
+    }
+  ]
+}

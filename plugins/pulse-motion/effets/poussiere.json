@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "nom": "poussiere",
+  "description": "Fines poussières en suspension qui flottent lentement dans la lumière ; ambiance de fond, en calque arrière.",
+  "parametres": {
+    "nombre": { "defaut": 120, "min": 10, "max": 5000 },
+    "couleur": { "defaut": "#ffffff", "type": "couleur" },
+    "eclat": { "defaut": 1.5, "min": 0.2, "max": 5 },
+    "vitesse": { "defaut": 1, "min": 0.2, "max": 3 }
+  },
+  "rendu_calque": { "bloom": 1.2, "seuil_bloom": 1 },
+  "emetteurs": [
+    {
+      "nom": "grain",
+      "naissance": {
+        "salves": [{ "t": 0, "nombre": "nombre" }],
+        "forme": { "type": "ancre", "zone": "surface" },
+        "vitesse": { "cone": 360, "valeur": [0, "3 * vitesse"] },
+        "vie": [6, 12],
+        "taille": [0.15, 0.5],
+        "z": [-1, 1]
+      },
+      "forces": [
+        { "type": "turbulence", "echelle": 25, "force": "6 * vitesse", "vitesse": 0.15 },
+        { "type": "trainee", "coef": 0.8 }
+      ],
+      "vie": {
+        "couleur": "couleur",
+        "intensite": "eclat",
+        "opacite": { "de": 0, "a": 0.8, "courbe": "sine-arch" }
+      },
+      "rendu": { "type": "sprite", "melange": "additif" }
+    }
+  ]
+}

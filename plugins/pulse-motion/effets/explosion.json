@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "nom": "explosion",
+  "description": "Explosion : éclair aveuglant, gerbe de débris incandescents et nuage de fumée qui se dissipe.",
+  "parametres": {
+    "puissance": { "defaut": 1, "min": 0.3, "max": 3 },
+    "debris": { "defaut": 120, "min": 10, "max": 2000 },
+    "couleur": { "defaut": "#ff9a3c", "type": "couleur" },
+    "fumee": { "defaut": 0.6, "min": 0, "max": 1 }
+  },
+  "rendu_calque": { "bloom": 3.9, "seuil_bloom": 0.9 },
+  "emetteurs": [
+    {
+      "nom": "eclair",
+      "naissance": {
+        "salves": [{ "t": 0, "nombre": 1 }],
+        "forme": { "type": "point" },
+        "vie": [0.35, 0.35],
+        "taille": ["30 * puissance", "30 * puissance"]
+      },
+      "vie": {
+        "couleur": { "degrade": ["#ffffff", "couleur"] },
+        "intensite": { "de": 10, "a": 0, "courbe": "expo-out" },
+        "taille": { "de": 0.4, "a": 1.4, "courbe": "cubic-out" }
+      },
+      "rendu": { "type": "sprite", "melange": "additif" }
+    },
+    {
+      "nom": "debris",
+      "naissance": {
+        "salves": [{ "t": 0, "nombre": "debris" }],
+        "forme": { "type": "cercle", "rayon": 2 },
+        "vitesse": { "radiale": true, "cone": 30, "valeur": ["40 * puissance", "110 * puissance"] },
+        "vie": [0.6, 1.6],
+        "taille": [0.4, 1],
+        "masse": [0.6, 1.5]
+      },
+      "forces": [
+        { "type": "gravite", "valeur": 45 },
+        { "type": "trainee", "coef": 2.2 }
+      ],
+      "vie": {
+        "couleur": { "degrade": ["#ffffff", "couleur", "#9b1d0a", "#20080000"], "courbe": "quad-out" },
+        "intensite": { "de": 6, "a": 0.5 }
+      },
+      "rendu": { "type": "etincelle", "etirement": 0.025, "melange": "additif", "flou": true }
+    },
+    {
+      "nom": "nuage",
+      "naissance": {
+        "salves": [{ "t": 0.05, "nombre": 24 }],
+        "forme": { "type": "cercle", "rayon": "6 * puissance" },
+        "vitesse": { "radiale": true, "valeur": ["8 * puissance", "20 * puissance"] },
+        "vie": [1.8, 3],
+        "taille": ["10 * puissance", "16 * puissance"],
+        "z": [-0.5, 0.5],
+        "rotation": [0, 360],
+        "vitesse_angulaire": [-40, 40]
+      },
+      "forces": [
+        { "type": "gravite", "valeur": -5 },
+        { "type": "trainee", "coef": 1.5 },
+        { "type": "turbulence", "echelle": 18, "force": 10, "vitesse": 0.4 }
+      ],
+      "vie": {
+        "couleur": "#5c5650",
+        "opacite": { "de": 0, "a": "fumee", "courbe": "sine-arch" },
+        "taille": { "de": 0.5, "a": 1.6, "courbe": "quad-out" }
+      },
+      "rendu": { "type": "sprite", "texture": "fumee", "melange": "alpha" }
+    }
+  ]
+}
