@@ -12,6 +12,7 @@ Fabriquer le fichier MP4 de la vidéo, sur l'ordinateur, sans rien installer de 
 
 - Parler simplement, en français, sans jargon ; ne jamais montrer de commande.
 - Ne rien modifier dans la vidéo : l'export prend la vidéo telle qu'elle est.
+- Lexique : avant d'expliquer un mot de l'outil (export, aperçu, planche…), lire `pulse-motion lexique`. Un mot déjà noté n'est pas réexpliqué en entier ; un mot expliqué pour la première fois se note avec `pulse-motion lexique noter "<terme>" "<phrase>" "<comme…>" "/pulse-motion:exporter"`, en reprenant l'image fixe du lexique quand elle existe.
 
 ## 1. Vérifier
 
