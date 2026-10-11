@@ -134,8 +134,25 @@
 
   // Un effet de particules est minuté même sans data-start (clé « _1 » comme dans extraire.js).
   verifier('data-effet minuté', document.querySelector('[data-effet]').getAttribute('data-pm-cle') === '_1');
+  // Rendu d'une scène seule : sans effet sur l'instant courant ni sur les auditeurs.
+  M.rendre(2);
+  var vus = 0;
+  M.surRendu(function () { vus++; });
+  M.rendreScene('a', 1);
+  verifier('rendreScene pose l\'état de la scène', document.getElementById('titre').getAttribute('data-etat') === 'pendant');
+  verifier('rendreScene ne prévient pas les auditeurs', vus === 0);
+  verifier('rendreScene ne change pas t', M.temps() === 2);
+  M.rendreScene('absente', 1);
+  M.rendreScene('a', 2);
+  verifier('rendreScene revient à l\'état de t', document.getElementById('titre').getAttribute('data-etat') === 'apres');
+  verifier('sections isolées', getComputedStyle(document.querySelector('section[data-scene="a"]')).isolation === 'isolate');
+  verifier('data-effet plein cadre', getComputedStyle(document.querySelector('[data-effet]')).position === 'absolute');
+
+  var attendu = null;
+  M.surSeek(function (t) { return new Promise(function (ok) { setTimeout(function () { attendu = t; ok(); }, 20); }); });
   M.seek(1).then(function (t) {
     verifier('seek renvoie une promesse', t === 1);
+    verifier('seek attend les surSeek', attendu === 1);
     document.getElementById('resultat').textContent = echecs.length
       ? 'RESULTAT: ECHEC ' + echecs.length + '/' + total + '\n' + echecs.join('\n')
       : 'RESULTAT: OK ' + total + '/' + total;
