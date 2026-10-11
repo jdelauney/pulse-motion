@@ -96,4 +96,7 @@ test('consignes : les effets de particules sont guidés', () => {
   assert.match(retoucher, /data-graine/);
   const creer = lire('skills', 'creer', 'SKILL.md');
   assert.match(creer, /effet de particules/);
+  assert.match(creer, /au plus deux effets simultanés/);
+  assert.match(animateur, /seulement si votre consigne le demande/);
+  assert.match(animateur, /effet-sur-texte/);
 });

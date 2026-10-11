@@ -13,7 +13,28 @@
     {
       "nom": "grain",
       "naissance": {
-        "salves": [{ "t": 0, "nombre": "nombre" }],
+        "debit": "nombre / dur",
+        "forme": { "type": "ancre", "zone": "surface" },
+        "vitesse": { "cone": 360, "valeur": [0, "3 * vitesse"] },
+        "vie": [6, 12],
+        "taille": [0.15, 0.5],
+        "z": [-1, 1]
+      },
+      "forces": [
+        { "type": "turbulence", "echelle": 25, "force": "6 * vitesse", "vitesse": 0.15 },
+        { "type": "trainee", "coef": 0.8 }
+      ],
+      "vie": {
+        "couleur": "couleur",
+        "intensite": "eclat",
+        "opacite": { "de": 0, "a": 0.8, "courbe": "sine-arch" }
+      },
+      "rendu": { "type": "sprite", "melange": "additif" }
+    },
+    {
+      "nom": "grain-present",
+      "naissance": {
+        "salves": [{ "t": 0, "nombre": "nombre / 3" }],
         "forme": { "type": "ancre", "zone": "surface" },
         "vitesse": { "cone": 360, "valeur": [0, "3 * vitesse"] },
         "vie": [6, 12],

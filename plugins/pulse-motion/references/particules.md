@@ -7,7 +7,7 @@
 - `data-ancre="#id"` : les particules naissent sur la boîte de cet élément (et la suivent s'il bouge). Sans ancre : la boîte de la balise elle-même, c'est-à-dire toute la scène.
 - `data-calque="arriere"` : derrière le contenu (ambiance) ; `avant` (par défaut) : devant (mise en valeur).
 - `data-reglages="nombre: 300; couleur: accent"` : seulement les réglages de la table ci-dessous. Couleurs : `#rrggbb` ou `primaire`, `accent`, `texte`, `fond` (charte).
-- Pour une ambiance (neige, pluie, poussière, fumée), régler `data-dur` sur la durée de la scène (ou presque) : l'effet n'émet que pendant `data-dur`, 1 s par défaut. Et `nombre` est un total sur `data-dur` : une durée plus longue étale le même nombre plus finement (seule exception, `etincelles` dans `feu`, qui est un débit par seconde).
+- Pour une ambiance (neige, pluie, poussière, fumée), régler `data-dur` sur la durée de la scène (ou presque) : l'effet n'émet que pendant `data-dur`, 1 s par défaut. `nombre` est un total émis pendant `data-dur` pour les effets continus (neige, pluie, poussière, fumée, feu, paillettes, énergie, étincelles, braises) : une durée plus longue étale le même nombre plus finement ; d'un coup pour confettis, explosion et feu d'artifice ; `etincelles` de `feu` est un débit par seconde.
 - `data-graine="7"` : un autre tirage du hasard (« fais-les partir autrement »), même recette.
 - Un effet **sert un propos** : mettre en valeur un chiffre, célébrer une conclusion, poser une ambiance. Jamais pour décorer.
 - Après écriture : `pulse-motion assembler .` puis `pulse-motion controler .` ; les erreurs `effet-…`, `reglage-invalide`, `ancre-introuvable` se corrigent dans la scène.
@@ -29,21 +29,21 @@
 | `data-graine` | entier |
 | `data-start`, `data-dur` | comme tout élément minuté ; `data-dur` = durée d'émission (1 s par défaut) |
 
-Pour une zone précise sans élément à viser, donner une position et une taille à la balise elle-même (dans le `@scope` de la scène : `.zone-feu { left: 30%; top: 70%; width: 40%; height: 10%; inset: auto; }`).
+Pour une zone précise sans élément à viser, donner une classe à la balise (`<div class="zone-feu" data-effet="feu">`) et une position et une taille dans le `@scope` de la scène : `.zone-feu { inset: 70% auto auto 30%; width: 40%; height: 10%; }`.
 
 ## Bibliothèque
 
 | Effet | Réglages | Quand l'utiliser |
 |---|---|---|
-| `etincelles` | `nombre`, `vitesse`, `couleur`, `gravite`, `taille` | Mettre en valeur un chiffre ou un mot à son arrivée (ancre sur l'élément, 1 à 2 s). |
+| `etincelles` | `nombre`, `vitesse`, `couleur`, `gravite`, `taille` | Mettre en valeur un chiffre ou un mot à son arrivée (ancre sur l'élément, 1 à 2 s). `couleur: bleu` n'existe pas : donner un `#rrggbb`, toute la gerbe prend cette teinte. |
 | `braises` | `nombre`, `vitesse`, `couleur`, `gravite`, `taille` | Ambiance chaude et calme qui monte (calque arrière), sujets sur la chaleur, l'énergie, la passion. |
 | `confettis` | `nombre`, `vitesse`, `couleur1`, `couleur2`, `couleur3` | Célébrer : conclusion, résultat obtenu, félicitations. Une seule fois par vidéo. |
 | `feu-artifice` | `fusees`, `eclats`, `couleur`, `hauteur` | Grande célébration (lancement, fin de parcours) ; plutôt hors formation. |
 | `fumee` | `nombre`, `couleur`, `opacite`, `vent`, `taille` | Ambiance, mystère, chaleur qui s'échappe ; calque arrière. |
 | `feu` | `intensite`, `hauteur`, `couleur`, `etincelles` | Montrer une combustion, un danger, une urgence ; ancre sur une zone basse. |
-| `poussiere` | `nombre`, `couleur`, `eclat`, `vitesse` | Fond vivant et discret qui évite les temps morts (calque arrière, toute la scène). |
-| `neige` | `nombre`, `vitesse`, `vent`, `taille`, `couleur` | Froid, hiver, calme ; toute la scène, calque arrière ; l'image est déjà garnie de flocons dès le début. |
-| `pluie` | `nombre`, `vent`, `couleur`, `opacite` | Météo, humidité, ambiance triste ; toute la scène, calque arrière. |
+| `poussiere` | `nombre`, `couleur`, `eclat`, `vitesse` | Fond vivant et discret qui évite les temps morts (calque arrière, toute la scène) ; sur un fond clair, `couleur: primaire` ou `#8fa6c4`. |
+| `neige` | `nombre`, `vitesse`, `vent`, `taille`, `couleur` | Froid, hiver, calme ; toute la scène, calque arrière ; l'image est déjà garnie de flocons dès le début ; sur un fond clair, `couleur: primaire` ou `#8fa6c4`. |
+| `pluie` | `nombre`, `vent`, `couleur`, `opacite` | Météo, humidité, ambiance triste ; toute la scène, calque arrière ; sur un fond clair, `couleur: primaire` ou `#8fa6c4`. |
 | `paillettes` | `nombre`, `couleur`, `eclat`, `taille` | Révélation, nouveauté, « magie » d'une astuce ; ancre sur l'élément révélé. |
 | `energie` | `nombre`, `couleur`, `rotation`, `eclat` | Puissance, technologie, idée qui s'allume ; ancre sur un pictogramme ou un mot. |
 | `explosion` | `puissance`, `debris`, `couleur`, `fumee` | Transition choc, rupture, « boum » ; courte (salve unique). |
@@ -52,7 +52,8 @@ Voir une recette : `pulse-motion effet <nom>`.
 
 ## Dosage
 
-- **En formation** : 2 effets simultanés au plus ; un effet devant (`avant`) ne dure pas pendant la lecture d'un texte long (le contrôle `effet-sur-texte` le signale) ; préférer `arriere` pour une ambiance.
+- **Nombre** : c'est `/pulse-motion:creer` qui décide quelles scènes reçoivent un effet (au plus deux effets simultanés à l'écran ; en formation courte, un ou deux effets dans toute la vidéo) et le dit à l'animateur ; l'animateur n'en ajoute pas de lui-même. Un effet devant (`avant`) ne dure pas pendant la lecture d'un texte long (le contrôle `effet-sur-texte` le signale) ; préférer `arriere` pour une ambiance.
+- **Fond clair** : la neige et la poussière, blanches par défaut, disparaissent sur un fond clair (style `clair-pedagogique`) : régler `couleur: primaire` ou un gris-bleu comme `#8fa6c4`.
 - **Durées** : mise en valeur 1 à 2 s ; ambiance sur toute la scène ; célébration 2 à 3 s.
 - **Quantité** : rester sous 300 000 particules par scène (contrôle `budget-particules`) ; les valeurs par défaut sont faites pour une image 16:9.
 - **Couleurs** : laisser la charte (`primaire`, `accent`) pour les effets de mise en valeur ; une couleur de matière (feu, fumée, neige) reste réaliste.
@@ -62,8 +63,8 @@ Voir une recette : `pulse-motion effet <nom>`.
 
 | Demande | Changement |
 |---|---|
-| « plus d'étincelles », « moins de confettis » | `nombre` dans `data-reglages` (× 2 ou ÷ 2) |
-| « plus lent », « plus vif » | `vitesse` (0,6 ou 1,5) |
+| « plus d'étincelles », « moins de confettis » | `nombre` dans `data-reglages` (× 2 ou ÷ 2), ou l'équivalent : `debris`, `eclats`, `etincelles` |
+| « plus lent », « plus vif » | `vitesse` (0,6 ou 1,5) ou le réglage équivalent de l'effet (voir la table) |
 | « en bleu », « aux couleurs de la marque » | `couleur: primaire` ou `#rrggbb` |
 | « fais-les partir autrement » | `data-graine` (un autre entier) |
 | « derrière le texte » | `data-calque="arriere"` |
@@ -72,7 +73,7 @@ Voir une recette : `pulse-motion effet <nom>`.
 
 ## Créer un effet
 
-Seulement si aucun effet de la table ne convient, dans le projet : `effets/<nom>.json`. **De préférence par héritage** :
+Seulement si aucun effet de la table ne convient, dans le projet : `effets/<nom>.json`. **De préférence par héritage**, sous un **nouveau nom** : un fichier `etincelles.json` avec `etend: "etincelles"` serait un héritage circulaire, et sans `etend` il remplacerait la recette de la bibliothèque pour toute la vidéo :
 
 ```json
 {

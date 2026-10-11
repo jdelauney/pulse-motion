@@ -166,3 +166,35 @@ test('historique : effets/ sauvegardé et restauré', () => {
   assert.equal(fs.readFileSync(path.join(dir, 'effets', 'locale.json'), 'utf8'), avant);
   assert.equal(fs.existsSync(path.join(dir, 'effets', 'nouvelle.json')), false);
 });
+
+const LONGUE = JSON.stringify({ version: 1, nom: 'longue', emetteurs: [{ nom: 'salve', naissance: { salves: [{ t: 0, nombre: 5 }], forme: { type: 'point' }, vie: [3, 3] } }] });
+
+test('contrôles : une particule encore vivante compte comme du mouvement (temps-mort)', () => {
+  const dir = copierProjet('projet-effets');
+  ecrire(dir, 'effets/longue.json', LONGUE);
+  ecrire(dir, 'scenes/01-etincelles.html', `<section data-scene="etincelles">
+  <h1 id="titre" data-texte="titre" data-start="0"></h1>
+  <div data-effet="longue" data-start="1" data-dur="0.1"></div>
+</section>`);
+  ecrire(dir, 'scenes/02-suite.html', '<section data-scene="suite"><h1 data-texte="titre" data-start="0"></h1></section>');
+  modifierDeroule(dir, (d) => {
+    d.scenes[0].duree = 4.5;
+    d.scenes.push({ id: 'suite', fichier: 'scenes/02-suite.html', duree: 3, textes: { titre: 'Fin' } });
+  });
+  assert.equal(controler2(dir).problemes.filter((x) => x.regle === 'temps-mort' && x.scene === 'etincelles').length, 0);
+  ecrire(dir, 'scenes/01-etincelles.html', fs.readFileSync(path.join(dir, 'scenes/01-etincelles.html'), 'utf8').replace(/<div data-effet[^>]*><\/div>/, ''));
+  assert.equal(controler2(dir).problemes.filter((x) => x.regle === 'temps-mort' && x.scene === 'etincelles').length, 1, 'sans l\'effet, la scène reste immobile');
+});
+
+test('contrôles : particules vivantes jusqu\'à la fin de la dernière scène (pause-finale)', () => {
+  const dir = copierProjet('projet-effets');
+  ecrire(dir, 'effets/longue.json', LONGUE);
+  ecrire(dir, 'scenes/01-etincelles.html', `<section data-scene="etincelles">
+  <h1 id="titre" data-texte="titre" data-start="0"></h1>
+  <div data-effet="longue" data-start="0.8" data-dur="0.1"></div>
+</section>`);
+  modifierDeroule(dir, (d) => { d.scenes[0].duree = 4; });
+  assert.equal(controler2(dir).problemes.filter((x) => x.regle === 'pause-finale').length, 1);
+  modifierDeroule(dir, (d) => { d.scenes[0].duree = 5; });
+  assert.equal(controler2(dir).problemes.filter((x) => x.regle === 'pause-finale').length, 0);
+});

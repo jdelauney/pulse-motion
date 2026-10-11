@@ -13,7 +13,7 @@ const { effet } = R.compiler({
     naissance: { debit: 50000, forme: { type: 'ancre' }, vitesse: { cone: 360, valeur: [5, 30] }, vie: [2, 2], taille: [0.3, 0.6] },
     forces: [{ type: 'gravite', valeur: 10 }, { type: 'trainee', coef: 0.5 }, { type: 'turbulence', echelle: 10, force: 20 }],
     rendu: { type: 'etincelle', melange: 'additif' } }],
-}, { dur: 6, graine: 1 });
+}, { dur: 8, graine: 1 });
 
 const CODE = `
 const P = M.particulesInterne;
