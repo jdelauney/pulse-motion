@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "nom": "fumee",
+  "description": "Volutes de fumée douce qui montent, s'élargissent et se dissipent ; à poser en calque arrière.",
+  "parametres": {
+    "nombre": { "defaut": 60, "min": 5, "max": 2000 },
+    "couleur": { "defaut": "#9aa3ad", "type": "couleur" },
+    "opacite": { "defaut": 0.5, "min": 0.05, "max": 1 },
+    "vent": { "defaut": 0, "min": -30, "max": 30 },
+    "taille": { "defaut": 1, "min": 0.3, "max": 3 }
+  },
+  "rendu_calque": { "bloom": 0 },
+  "emetteurs": [
+    {
+      "nom": "volute",
+      "naissance": {
+        "debit": "nombre / dur",
+        "forme": { "type": "ancre", "zone": "surface" },
+        "vitesse": { "direction": [0, -1], "cone": 30, "valeur": [6, 12] },
+        "vie": [2.5, 4.5],
+        "taille": ["8 * taille", "14 * taille"],
+        "z": [-0.5, 0.5],
+        "rotation": [0, 360],
+        "vitesse_angulaire": [-30, 30]
+      },
+      "forces": [
+        { "type": "gravite", "valeur": -4 },
+        { "type": "trainee", "coef": 0.6 },
+        { "type": "vent", "vitesse": ["vent", 0], "coef": 0.4 },
+        { "type": "turbulence", "echelle": 20, "force": 12, "vitesse": 0.3 }
+      ],
+      "vie": {
+        "couleur": "couleur",
+        "taille": { "de": 0.6, "a": 2.2, "courbe": "quad-out" },
+        "opacite": { "de": 0, "a": "opacite", "courbe": "sine-arch" }
+      },
+      "rendu": { "type": "sprite", "texture": "fumee", "melange": "alpha" }
+    }
+  ]
+}

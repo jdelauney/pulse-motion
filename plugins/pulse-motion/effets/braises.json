@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "nom": "braises",
+  "etend": "etincelles",
+  "description": "Braises incandescentes qui montent lentement en tournoyant ; dérivée des étincelles (même réglages).",
+  "parametres": {
+    "nombre": { "defaut": 150 },
+    "vitesse": { "defaut": 0.6 }
+  },
+  "rendu_calque": { "bloom": 2.4 },
+  "emetteurs": [
+    {
+      "nom": "gerbe",
+      "naissance": {
+        "forme": { "type": "ancre", "zone": "surface" },
+        "vitesse": { "direction": [0, -1], "cone": 40, "valeur": ["8 * vitesse", "18 * vitesse"] },
+        "vie": [1.5, 3]
+      },
+      "forces": [
+        { "type": "gravite", "valeur": "-6 * gravite" },
+        { "type": "trainee", "coef": 0.8 },
+        { "type": "turbulence", "echelle": 12, "force": 25, "vitesse": 0.4 }
+      ],
+      "vie": { "intensite": { "de": 3, "a": 0, "courbe": "sine-in" } },
+      "rendu": { "type": "sprite", "texture": "disque-doux" }
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "nom": "feu",
+  "description": "Flammes vives qui lèchent la zone en ondulant, avec quelques étincelles qui s'échappent.",
+  "parametres": {
+    "intensite": { "defaut": 1, "min": 0.3, "max": 3 },
+    "hauteur": { "defaut": 1, "min": 0.3, "max": 3 },
+    "couleur": { "defaut": "#ff7a1a", "type": "couleur" },
+    "etincelles": { "defaut": 20, "min": 1, "max": 400 }
+  },
+  "rendu_calque": { "bloom": 3, "seuil_bloom": 0.9 },
+  "emetteurs": [
+    {
+      "nom": "flamme",
+      "naissance": {
+        "debit": "120 * intensite",
+        "forme": { "type": "ancre", "zone": "surface" },
+        "vitesse": { "direction": [0, -1], "cone": 20, "valeur": ["10 * hauteur", "22 * hauteur"] },
+        "vie": [0.5, 1.1],
+        "taille": [5, 9],
+        "rotation": [-15, 15]
+      },
+      "forces": [
+        { "type": "gravite", "valeur": "-25 * hauteur" },
+        { "type": "trainee", "coef": 2 },
+        { "type": "turbulence", "echelle": 6, "force": 30, "vitesse": 1.5 }
+      ],
+      "vie": {
+        "couleur": { "degrade": ["#fff3c4", "couleur", "#c2200a", "#2a0a0400"] },
+        "taille": { "de": 1, "a": 0.3, "courbe": "quad-in" },
+        "intensite": { "de": "3 * intensite", "a": 0.5 }
+      },
+      "rendu": { "type": "sprite", "texture": "flamme", "melange": "additif" }
+    },
+    {
+      "nom": "etincelle",
+      "naissance": {
+        "debit": "etincelles",
+        "forme": { "type": "ancre", "zone": "surface" },
+        "vitesse": { "direction": [0, -1], "cone": 50, "valeur": [20, 45] },
+        "vie": [0.4, 0.9],
+        "taille": [0.3, 0.5]
+      },
+      "forces": [
+        { "type": "gravite", "valeur": -10 },
+        { "type": "trainee", "coef": 1 },
+        { "type": "turbulence", "echelle": 8, "force": 40, "vitesse": 1 }
+      ],
+      "vie": {
+        "couleur": { "degrade": ["#ffffff", "couleur", "#ff300000"] },
+        "intensite": { "de": 5, "a": 0 }
+      },
+      "rendu": { "type": "etincelle", "etirement": 0.03, "melange": "additif" }
+    }
+  ]
+}
