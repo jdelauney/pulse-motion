@@ -118,7 +118,9 @@
   verifier('t borné à la durée', M.rendre(99) === 7.5 && M.rendre(-3) === 0);
   M.modeCapture(true); M.rendre(2);
   verifier('Date.now suit t en capture', Date.now() === 1767225600000 + 2000);
+  verifier('M.enCapture vrai en capture', M.enCapture() === true);
   M.modeCapture(false);
+  verifier('M.enCapture faux hors capture', M.enCapture() === false);
   verifier('lecteur présent', !!document.getElementById('pm-lecteur'));
 
   // Pendant un export, une modification ne recharge pas la page : rechargement à la fin.

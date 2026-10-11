@@ -6,10 +6,15 @@
  * M.particules.lirePixels(idScene, calque) -> Promise<{ largeur, hauteur, donnees }>
  * M.particules.lireEtat(idScene, ordre, emetteur) -> Promise<Float32Array>
  * M.particules.image(idScene, calque) -> Promise<ImageBitmap>   image du calque (export)
- * M.particules.preparerCapture() -> Promise   pose canvas.__pmImage (PNG en data:) sur les calques affichés
+ * M.particules.preparerCapture() -> Promise   pose canvas.__pmImage (PNG en data:) sur les calques affichés ;
+ *   rejette (images remises à null) si un effet visible n'est pas rendu : WebGPU absent, effet désactivé
+ *   (mémoire, texture illisible) ou scène en échec — pas de vidéo sans ses effets
  * M.particules.verifierExport() -> Promise    rejette si des effets existent et que WebGPU manque
  * M.particules.lireOrdre(idScene, ordre, emetteur) -> Promise<Uint32Array>   paires clé, index après tri (tests)
  *
+ * Réglages d'un calque (bloom, seuil, tons) : ceux de la recette au bloom le plus fort parmi tous les
+ * effets du calque dans la scène (constants pour la scène ; à égalité, le premier).
+ * Scène masquée : simulations et cible de rendu libérées, recréées au retour.
  * Zone d'émission : boîte de l'ancre (ou de la balise data-effet) relative à la scène, en cqh,
  * mesurée sur une grille de 30 points par seconde de τ en rendant la scène à ces instants
  * (M.rendreScene) : elle ne dépend que de τ, jamais du chemin suivi pour arriver à t.
@@ -55,9 +60,12 @@
         });
       });
       if (!effets.length) return;
-      const sc = { info, section, effets, calques: {} };
+      const sc = { info, section, effets, calques: {}, reglages: {} };
       CALQUES.forEach((nom) => {
         if (!effets.some((fx) => fx.calque === nom)) return;
+        let rc = null;
+        effets.forEach((fx) => { if (fx.calque === nom && (!rc || fx.effet.rendu_calque.bloom > rc.bloom)) rc = fx.effet.rendu_calque; });
+        sc.reglages[nom] = rc;
         const canvas = document.createElement('canvas');
         canvas.className = 'pm-calque';
         canvas.setAttribute('data-pm-calque', nom);
@@ -104,7 +112,8 @@
   }
 
   function ajuster(canvas, section) {
-    const dpr = racine.devicePixelRatio || 1;
+    // Export : un pixel de calque par pixel CSS, comme l'image capturée.
+    const dpr = M.enCapture && M.enCapture() ? 1 : racine.devicePixelRatio || 1;
     const l = Math.max(1, Math.round(section.clientWidth * dpr));
     const h = Math.max(1, Math.round(section.clientHeight * dpr));
     if (canvas.width !== l) canvas.width = l;
@@ -127,22 +136,26 @@
     etat.rendu_t = t;
     const { device } = etat.gpu;
     etat.scenes.forEach((sc) => {
-      if (sc.section.style.display === 'none') { sc.effets.forEach(liberer); return; }
+      if (sc.section.style.display === 'none') {
+        sc.effets.forEach(liberer);
+        Object.keys(sc.calques).forEach((nom) => etat.rendu.oublierCible(sc.calques[nom]));
+        return;
+      }
       if (sc.echec) return;
       try { rendreScene(sc, t, device); } catch (e) {
-        sc.echec = true;
+        sc.echec = message(e);
         console.error('[Pulse Motion] Effets de particules : ' + message(e));
         sc.effets.forEach((fx) => { liberer(fx); panneau(fx.el, 'Effet non affiché : ' + message(e)); });
       }
     });
   }
 
-  /** Mémoire GPU insuffisante : l'effet est désactivé, ses tampons libérés. */
-  function memoireInsuffisante(fx) {
-    fx.desactive = true;
+  /** Effet désactivé (mémoire GPU insuffisante, texture illisible) : tampons libérés, panneau ; l'export le refuse. */
+  function desactiver(fx, raison) {
+    fx.desactive = raison;
     liberer(fx);
-    console.error('[Pulse Motion] Effet de particules : mémoire du GPU insuffisante.');
-    panneau(fx.el, 'Effet non affiché : mémoire du GPU insuffisante');
+    console.error('[Pulse Motion] Effet de particules : ' + raison + '.');
+    panneau(fx.el, 'Effet non affiché : ' + raison);
   }
 
   function rendreScene(sc, t, device) {
@@ -161,7 +174,7 @@
         const deltas = fx.sim.avancer(tau, { a: (x) => zoneA(fx, x, mesures), grille: (g) => grille(fx, g, mesures) });
         deltas.forEach((delta, i) => listes[fx.calque].push({ sim: fx.sim, i, delta }));
       } finally {
-        device.popErrorScope().then((err) => { if (err) memoireInsuffisante(fx); }, () => {});
+        device.popErrorScope().then((err) => { if (err) desactiver(fx, 'mémoire du GPU insuffisante'); }, () => {});
       }
     });
     if (mesures.faites) M.rendreScene(sc.info.id, t);
@@ -169,13 +182,7 @@
     Object.keys(sc.calques).forEach((nom) => {
       const canvas = sc.calques[nom];
       ajuster(canvas, sc.section);
-      // Réglages du calque : ceux de la recette active au bloom le plus fort.
-      let rc = null;
-      sc.effets.forEach((fx) => {
-        const tau = (t - fx.debut) * fx.info.rythme;
-        if (fx.calque === nom && tau >= 0 && tau < fx.effet.fin && (!rc || fx.effet.rendu_calque.bloom > rc.bloom)) rc = fx.effet.rendu_calque;
-      });
-      if (!rc) rc = { bloom: 0, seuil_bloom: 1, tons: 'douce' };
+      const rc = sc.reglages[nom];
       etat.rendu.dessiner(etat.rendu.cible(canvas), listes[nom], {
         largeurCqh, dureeImage: sc.info.rythme / (M.ips || 30), bloom: rc.bloom, seuil: rc.seuil_bloom, tons: rc.tons,
       });
@@ -228,7 +235,10 @@
       const gpu = r[0];
       if (!gpu || gpu.erreur) return;
       const rendu = new P.Rendu(gpu.device, gpu.format);
-      return rendu.preparer(etat.scenes.flatMap((sc) => sc.effets.map((fx) => fx.effet))).then(() => {
+      return rendu.preparer(etat.scenes.flatMap((sc) => sc.effets.map((fx) => fx.effet))).then((illisibles) => {
+        etat.scenes.forEach((sc) => sc.effets.forEach((fx) => {
+          if (fx.effet.emetteurs.some((em) => illisibles.has(em.rendu.textureImage))) desactiver(fx, 'texture illisible');
+        }));
         etat.gpu = gpu;
         etat.rendu = rendu;
         etat.disponible = true;
@@ -309,18 +319,56 @@
     return c.toDataURL('image/png');
   }
 
-  /** Avant une capture foreignObject : l'image de chaque calque affiché, en PNG, sur son canvas. */
+  let imageVide = null;
+
+  /** PNG transparent de 1 × 1 : calque où rien n'est dessiné (pas de relecture). */
+  function vide() {
+    if (!imageVide) {
+      const c = document.createElement('canvas');
+      c.width = 1;
+      c.height = 1;
+      imageVide = c.toDataURL('image/png');
+    }
+    return imageVide;
+  }
+
+  function oublierImages() {
+    etat.scenes.forEach((sc) => Object.keys(sc.calques).forEach((nom) => { sc.calques[nom].__pmImage = null; }));
+  }
+
+  function refuser(raison) {
+    throw new Error('Effet de particules non rendu (' + raison + ') : export interrompu.');
+  }
+
+  /** Avant une capture foreignObject : l'image de chaque calque affiché, en PNG, sur son canvas.
+   *  Pas de vidéo sans ses effets (spec §10) : en cas de refus, aucune image périmée ne reste. */
   async function preparerCapture() {
-    await etat.pret;
-    if (!etat.gpu || !etat.rendu) return;
-    await etat.gpu.device.queue.onSubmittedWorkDone();
-    for (const sc of etat.scenes) {
-      for (const nom of Object.keys(sc.calques)) {
-        const canvas = sc.calques[nom];
-        canvas.__pmImage = sc.section.style.display === 'none' || !canvas.__pmCible
-          ? null
-          : versDataURL(await etat.rendu.lirePixels(canvas.__pmCible));
+    if (!etat.scenes.length) return;
+    try {
+      await etat.pret;
+      if (!etat.gpu || !etat.rendu) refuser('WebGPU indisponible');
+      // Après le travail soumis : les erreurs de mémoire de l'image courante sont connues.
+      await etat.gpu.device.queue.onSubmittedWorkDone();
+      const t = etat.t;
+      for (const sc of etat.scenes) {
+        if (sc.section.style.display === 'none') continue;
+        if (sc.echec) refuser(sc.echec);
+        sc.effets.forEach((fx) => {
+          const tau = (t - fx.debut) * fx.info.rythme;
+          if (fx.desactive && tau >= 0 && tau < fx.effet.fin) refuser(fx.desactive);
+        });
       }
+      for (const sc of etat.scenes) {
+        for (const nom of Object.keys(sc.calques)) {
+          const canvas = sc.calques[nom];
+          const cible = canvas.__pmCible;
+          if (sc.section.style.display === 'none' || !cible) canvas.__pmImage = null;
+          else canvas.__pmImage = cible.vide ? vide() : versDataURL(await etat.rendu.lirePixels(cible));
+        }
+      }
+    } catch (e) {
+      oublierImages();
+      throw e;
     }
   }
 
