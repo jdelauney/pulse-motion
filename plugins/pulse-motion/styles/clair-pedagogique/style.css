@@ -111,3 +111,53 @@
 
 /* ---------- Logo ---------- */
 .logo { height: 14cqh; width: auto; object-fit: contain; }
+
+/* ---------- Ton sombre : couleurs de la marque ramenées à une version lisible ---------- */
+#pm-scene[data-ton="sombre"] .titre, #pm-scene[data-ton="sombre"] .titre-moyen, #pm-scene[data-ton="sombre"] .grand-chiffre,
+#pm-scene[data-ton="sombre"] .colonne-titre, #pm-scene[data-ton="sombre"] .boite { color: var(--c-primaire-lisible); }
+#pm-scene[data-ton="sombre"] .boite { border-color: var(--c-primaire-lisible); }
+#pm-scene[data-ton="sombre"] .etiquette, #pm-scene[data-ton="sombre"] .alerte-icone, #pm-scene[data-ton="sombre"] .fleche { color: var(--c-accent-lisible); }
+#pm-scene[data-ton="sombre"] .numero { color: var(--c-sur-primaire); }
+#pm-scene[data-ton="sombre"] .rond { opacity: 0.16; }
+
+/* ---------- Format carré : tailles réduites ---------- */
+@container (max-aspect-ratio: 5/4) {
+  #pm-scene > section[data-scene] { padding: 8cqh 8cqh; gap: 2.6cqh; font-size: 4cqh; }
+  .titre { font-size: 7.4cqh; }
+  .titre-moyen { font-size: 5.4cqh; }
+  .sous-titre { font-size: 4.2cqh; }
+  .texte { font-size: 3.8cqh; }
+  .liste li { font-size: 4cqh; }
+  .grand-chiffre { font-size: 17cqh; }
+  .colonne { padding: 3cqh; }
+  .colonne-titre { font-size: 4.4cqh; }
+  .boite { padding: 3cqh 1.6cqh; font-size: 3.6cqh; }
+  .fleche { width: 7cqh; }
+  .numero { width: 15cqh; height: 15cqh; font-size: 8cqh; }
+  .alerte { padding: 4cqh; }
+  .alerte-icone { width: 9cqh; height: 9cqh; }
+}
+
+/* ---------- Format vertical : tout s'empile ---------- */
+@container (orientation: portrait) {
+  #pm-scene > section[data-scene] { padding: 9cqh 6cqh; gap: 2.2cqh; font-size: 3.6cqh; }
+  .etiquette { font-size: 3.5cqh; }
+  .titre { font-size: 6cqh; }
+  .titre-moyen { font-size: 4.6cqh; }
+  .sous-titre { font-size: 3.8cqh; }
+  .texte { font-size: 3.5cqh; }
+  .liste { gap: 1.8cqh; }
+  .liste li { font-size: 3.6cqh; gap: 1.8cqh; }
+  .grand-chiffre { font-size: 13cqh; display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; }
+  .rangee { flex-direction: column; gap: 2.4cqh; }
+  .colonne { padding: 2.6cqh; gap: 1.2cqh; border-radius: 2cqh; }
+  .colonne-titre { font-size: 4cqh; }
+  .etape { flex-direction: column; align-items: flex-start; gap: 3cqh; }
+  .numero { width: 12cqh; height: 12cqh; font-size: 6.5cqh; }
+  .alerte { flex-direction: column; padding: 3.6cqh; gap: 2cqh; }
+  .alerte-icone { width: 8cqh; height: 8cqh; }
+  .schema { flex-direction: column; gap: 1cqh; }
+  .boite { width: 100%; padding: 2.4cqh 2cqh; font-size: 3.6cqh; }
+  .fleche { rotate: 90deg; width: 6cqh; height: 4cqh; }
+  .logo { height: 10cqh; }
+}
