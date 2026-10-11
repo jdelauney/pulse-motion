@@ -86,12 +86,12 @@ function controlerCSS(cssBrut, scene, ou, problemes) {
 }
 
 /**
- * controler({ dossier, dossierStyles?, ecrire? })
+ * controler({ dossier, dossierStyles?, dossierEffets?, ecrire? })
  * -> { problemes: [...], fichier: chemin de controle.json | null }
  */
-function controler({ dossier, dossierStyles = path.join(RACINE, 'styles'), ecrire = true }) {
+function controler({ dossier, dossierStyles = path.join(RACINE, 'styles'), dossierEffets = path.join(RACINE, 'effets'), ecrire = true }) {
   const projet = path.resolve(dossier);
-  const assemblage = assembler({ dossier: projet, dossierStyles, ecrire: false });
+  const assemblage = assembler({ dossier: projet, dossierStyles, dossierEffets, ecrire: false });
   const problemes = assemblage.erreurs.map((e) => ({ ...e }));
   const { deroule } = lireDeroule(projet);
 
@@ -142,6 +142,34 @@ function controler({ dossier, dossierStyles = path.join(RACINE, 'styles'), ecrir
         problemes.push({ regle: 'lecture', gravite: 'alerte', scene: s.id, message: `Scène « ${s.id} » : ${mots} mots à lire en ${virgule(disponible)} s ; prévoir au moins ${virgule(besoin)} s.` });
       }
       controlerCSS(scenesLues[s.id].css, s.id, `Scène « ${s.id} »`, problemes);
+    }
+
+    // Effets de particules : budget par scène, effet du calque avant posé sur un texte long.
+    for (const s of min.scenes) {
+      const effets = (assemblage.effets || []).filter((e) => e.scene === s.id);
+      if (!effets.length) continue;
+      const total = effets.reduce((n, e) => n + e.effet.capacite, 0);
+      if (total > SEUILS.budgetParticules) {
+        problemes.push({ regle: 'budget-particules', gravite: 'alerte', scene: s.id, message: `Scène « ${s.id} » : jusqu'à ${total} particules en même temps (au-delà de ${SEUILS.budgetParticules}, l'aperçu ralentit) ; baisser « nombre » ou la durée de vie.` });
+      }
+      const lus = scenesLues[s.id];
+      const balisesEffet = lus.elements.filter((e) => e.effet !== undefined);
+      const textes = (deroule.scenes.find((x) => x.id === s.id) || {}).textes || {};
+      const longs = lus.textes.filter((cle) => compterMots(textes[cle] || '') > SEUILS.effetSurTexteMots).map((cle) => {
+        const el = lus.elements.find((e) => e.texte === cle);
+        return { cle, debut: el ? min.elements[s.id][el.cle].debut : s.debut };
+      });
+      for (const e of effets) {
+        const balise = balisesEffet[e.ordre];
+        if (e.calque !== 'avant' || !balise) continue;
+        const debut = min.elements[s.id][balise.cle].debut;
+        const fin = debut + e.effet.fin / s.rythme;
+        // Un texte reste à l'écran de son entrée à la fin de la scène.
+        const gene = longs.find((t) => debut < s.fin && fin > t.debut);
+        if (gene) {
+          problemes.push({ regle: 'effet-sur-texte', gravite: 'alerte', scene: s.id, element: balise.cle, message: `Scène « ${s.id} » : l'effet « ${e.effet.nom} » passe devant le texte « ${gene.cle} » pendant sa lecture ; le poser en data-calque="arriere" ou le décaler après la lecture.` });
+        }
+      }
     }
 
     // Style : tailles de texte et effets.

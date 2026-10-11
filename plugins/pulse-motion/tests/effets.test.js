@@ -7,6 +7,9 @@ const { assembler } = require('../scripts/assembler.js');
 const { preparerEffets, fnv1a } = require('../scripts/lib/effets.js');
 const { extraireScene } = require('../scripts/lib/extraire.js');
 const { STYLES, EFFETS, copierProjet, modifierDeroule } = require('./aide/projet.js');
+const { controler } = require('../scripts/controler.js');
+const { sauvegarder, annuler } = require('../scripts/historique.js');
+const controler2 = (dir) => controler({ dossier: dir, dossierStyles: STYLES, dossierEffets: EFFETS, ecrire: false });
 
 const donneesDe = (html) => JSON.parse(/<script type="application\/json" id="pm-donnees">([^<]*)<\/script>/.exec(html)[1]);
 const assembler2 = (dir) => assembler({ dossier: dir, dossierStyles: STYLES, dossierEffets: EFFETS, ecrire: false });
@@ -115,4 +118,51 @@ test('projet sans effet : liste vide dans la page', () => {
   const r = assembler({ dossier: dir, dossierStyles: STYLES, dossierEffets: EFFETS, ecrire: false });
   assert.deepEqual(donneesDe(r.html).effets, []);
   assert.deepEqual(r.effets, []);
+});
+
+test('contrôles : projet avec effets sans problème', () => {
+  const dir = copierProjet('projet-effets');
+  assert.deepEqual(controler2(dir).problemes, []);
+});
+
+test('contrôles : erreurs d\'effets reprises de l\'assemblage', () => {
+  const dir = copierProjet('projet-effets');
+  ecrire(dir, 'scenes/01-etincelles.html', '<section data-scene="etincelles"><h1 data-texte="titre"></h1><div data-effet="inconnu"></div></section>');
+  const p = controler2(dir).problemes.find((x) => x.regle === 'effet-inconnu');
+  assert.ok(p);
+  assert.equal(p.gravite, 'erreur');
+});
+
+test('contrôles : budget de particules dépassé', () => {
+  const dir = copierProjet('projet-effets');
+  ecrire(dir, 'scenes/01-etincelles.html', `<section data-scene="etincelles">
+  <h1 id="titre" data-texte="titre" data-start="0.2"></h1>
+  <div data-effet="gerbe" data-ancre="#titre" data-start="#titre:fin" data-dur="2" data-reglages="nombre: 300"></div>
+  <div data-effet="simple" data-calque="arriere" data-reglages="nombre: 400000"></div>
+</section>`);
+  const p = controler2(dir).problemes.find((x) => x.regle === 'budget-particules');
+  assert.ok(p);
+  assert.equal(p.gravite, 'alerte');
+  assert.equal(p.scene, 'etincelles');
+  assert.match(p.message, /Scène « etincelles » : jusqu'à 400604 particules en même temps \(au-delà de 300000, l'aperçu ralentit\)/);
+});
+
+test('contrôles : effet devant un texte long pendant sa lecture', () => {
+  const dir = copierProjet('projet-effets');
+  modifierDeroule(dir, (d) => { d.scenes[0].textes.titre = 'Un titre bien trop long pour être lu pendant que les étincelles passent'; d.scenes[0].duree = 8; });
+  const alertes = controler2(dir).problemes.filter((x) => x.regle === 'effet-sur-texte');
+  assert.equal(alertes.length, 1, 'seul l\'effet du calque avant gêne');
+  assert.equal(alertes[0].element, '_1');
+  assert.match(alertes[0].message, /Scène « etincelles » : l'effet « gerbe » passe devant le texte « titre » pendant sa lecture ; le poser en data-calque="arriere" ou le décaler après la lecture\./);
+});
+
+test('historique : effets/ sauvegardé et restauré', () => {
+  const dir = copierProjet('projet-effets');
+  const avant = fs.readFileSync(path.join(dir, 'effets', 'locale.json'), 'utf8');
+  sauvegarder(dir);
+  ecrire(dir, 'effets/locale.json', '{}');
+  ecrire(dir, 'effets/nouvelle.json', '{}');
+  annuler(dir);
+  assert.equal(fs.readFileSync(path.join(dir, 'effets', 'locale.json'), 'utf8'), avant);
+  assert.equal(fs.existsSync(path.join(dir, 'effets', 'nouvelle.json')), false);
 });
