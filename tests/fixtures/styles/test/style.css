@@ -1,0 +1,4 @@
+/* Style de test : minimal. */
+h1 { font-family: var(--f-titres); font-size: 8cqh; color: var(--c-primaire); margin: 0; }
+p { font-size: 4cqh; }
+.fond { background: url(fond.svg) center / cover; }

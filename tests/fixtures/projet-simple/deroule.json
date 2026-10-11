@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "titre": "La chaîne du froid",
+  "genre": "formation",
+  "parcours": "rapide",
+  "format": { "ratio": "16:9", "ips": 30 },
+  "style": "test",
+  "charte": { "couleurs": { "primaire": "#0a6cff" }, "logo": "assets/logo.svg" },
+  "scenes": [
+    { "id": "intro", "fichier": "scenes/01-intro.html", "duree": 4, "textes": { "titre": "Pourquoi 4 °C ?", "sous": "3 minutes <pour> comprendre" }, "transition": "fondu" },
+    { "id": "chiffre", "fichier": "scenes/02-chiffre.html", "duree": 3, "rythme": 0.8, "textes": { "legende": "bactéries en 1 h" }, "transition": "glissement" }
+  ]
+}
