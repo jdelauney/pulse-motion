@@ -16,9 +16,9 @@ body {
 #pm-scene > section.pm-avec-calques { isolation: isolate; }
 /* Effets de particules : la balise donne la zone d'émission par défaut ; les canvas des calques
    couvrent la scène, derrière le contenu (arriere) ou devant (avant). */
-[data-effet] { position: absolute; inset: 0; pointer-events: none; }
-.pm-calque { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1000; }
-.pm-calque[data-pm-calque="arriere"] { z-index: -1; }
+#pm-scene [data-effet] { position: absolute; inset: 0; pointer-events: none; }
+#pm-scene .pm-calque { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1000; }
+#pm-scene .pm-calque[data-pm-calque="arriere"] { z-index: -1; }
 .pm-effet-panneau {
   position: absolute; left: 2cqh; top: 2cqh; max-width: 70cqh; padding: 1cqh 1.6cqh; z-index: 1001;
   border: 0.3cqh dashed #c0392b; border-radius: 1cqh; background: #fdecea; color: #7b1d14;
