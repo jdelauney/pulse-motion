@@ -81,7 +81,7 @@ Seulement si aucun effet de la table ne convient, dans le projet : `effets/<nom>
   "etend": "etincelles",
   "description": "Étincelles froides et plus lentes, pour un sujet sur le froid",
   "parametres": { "couleur": { "defaut": "#9fd3ff" }, "vitesse": { "defaut": 0.6 } },
-  "emetteurs": [{ "nom": "gerbe", "forces": [{ "type": "gravite", "valeur": 30 }, { "type": "trainee", "coef": 1.5 }] }]
+  "emetteurs": [{ "nom": "gerbe", "forces": [{ "type": "gravite", "valeur": "30 * gravite" }, { "type": "trainee", "coef": 1.5 }] }]
 }
 ```
 
@@ -90,11 +90,11 @@ Seulement si aucun effet de la table ne convient, dans le projet : `effets/<nom>
 | Partie | Contenu |
 |---|---|
 | `parametres` | réglages exposés : `{ "defaut", "min", "max" }` (nombre) ou `{ "defaut", "type": "couleur" }` ; seuls eux se règlent dans la scène |
-| `rendu_calque` | `bloom` (0 à 5 ; 3 pour un éclat franc ; le moteur le normalise), `seuil_bloom` (1), `tons` (`douce`, ou `aces` pour un rendu cinéma), `melange` (`premultiplie` : l'émission n'occulte qu'à hauteur de son alpha, comme un feu lumineux qui voile un peu) |
+| `rendu_calque` | `bloom` (valeurs usuelles 0 à 4 ; 3 pour un éclat franc ; le moteur le normalise), `seuil_bloom` (1), `tons` (`douce`, ou `aces` pour un rendu cinéma) |
 | `emetteurs[].naissance` | `debit` (par seconde) ou `salves` (`[{ "t", "nombre" }]`, 8 au plus), ou `nombre` pour un sous-émetteur ; `forme` (`point`, `cercle`, `anneau`, `rectangle`, `ligne`, `ancre` ; `zone`: `surface` ou `contour`) ; `vitesse` (`direction`, `cone` en degrés, `valeur`, `radiale`, `heritage`) ; `vie`, `taille`, `masse`, `z`, `rotation`, `vitesse_angulaire` |
 | `emetteurs[].forces` | `gravite`, `trainee` (`quadratique`), `vent`, `turbulence`, `attracteur` (force négative : répulseur), `vortex`, `rappel` ; 8 au plus |
 | `emetteurs[].vie` | au cours de la vie : `couleur` (`degrade` + `courbe`), `taille`, `intensite` (> 1 : brille), `opacite` (`{ "de", "a", "courbe" }`) |
-| `emetteurs[].rendu` | `type` (`sprite`, `etincelle`, `trainee`, `planche`), `texture` (`disque-doux`, `etoile`, `fumee`, `flamme`, `eclat`, `confetti`, ou `assets/…`), `melange` (`additif` pour la lumière, `alpha` pour la matière), `flou` |
+| `emetteurs[].rendu` | `type` (`sprite`, `etincelle`, `trainee`, `planche`), `texture` (`disque-doux`, `etoile`, `fumee`, `flamme`, `eclat`, `confetti`, ou `assets/…`), `melange` (`additif` : lumière ; `alpha` : matière ; `premultiplie` : émission qui ne voile l'image qu'à hauteur de son alpha, comme un feu lumineux qui voile un peu), `flou` |
 | `emetteurs[].a_la_mort` | `{ "emetteur": "<nom>" }` : sous-émetteur lancé à la mort (2 niveaux au plus) |
 
 Valeurs : un nombre, un intervalle `[min, max]` tiré au hasard, ou une expression avec les réglages (`"30 * vitesse"`, `"nombre / dur"` ; `dur` = durée d'émission). Longueurs en cqh (1 % de la hauteur de l'image), temps en secondes, angles en degrés. Courbes : celles du moteur (`quad-out`, `sine-arch` pour monter puis redescendre, `wave` pour scintiller).
