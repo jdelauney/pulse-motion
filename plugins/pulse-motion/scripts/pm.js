@@ -15,6 +15,7 @@
  *   pulse-motion styles verifier <nom>    vérifie le contrat d'un style
  *   pulse-motion changer-style <dossier> <style>   recopie les scènes toutes faites du nouveau style
  *   pulse-motion comparer <dossier> <s1,s2,s3> [--scenes a,b] [--ouvrir]   comparaison des styles sur le déroulé
+ *   pulse-motion charte enregistrer <nom> <dossier> | liste | appliquer <nom> <dossier> | depuis-logo <fichier> [--style s] [--ton clair|sombre]
  *   pulse-motion lexique [noter "<terme>" "<phrase>" "<comme…>" "<commande>"]   mots de l'outil expliqués à la personne
  *   pulse-motion consignes <skill>        affiche les consignes d'un skill (ex. creer)
  */
@@ -36,6 +37,7 @@ const SCRIPTS = {
   styles: 'styles.js',
   'changer-style': 'changer-style.js',
   comparer: 'comparer.js',
+  charte: 'charte.js',
 };
 
 function afficherFichier(fichier, quoi) {
@@ -89,6 +91,7 @@ function lancer(args) {
     '  reference <nom>          scene <style> <nom>      consignes <skill>',
     '  styles [--genre <genre>]                         styles verifier <nom>',
     '  changer-style <dossier> <style>                  comparer <dossier> <s1,s2,s3> [--scenes a,b] [--ouvrir]',
+    '  charte enregistrer <nom> <dossier> | liste | appliquer <nom> <dossier> | depuis-logo <fichier> [--style s] [--ton clair|sombre]',
     '  lexique [noter "<terme>" "<phrase>" "<comme…>" "<commande>"]',
   ].join('\n'));
   return 2;
