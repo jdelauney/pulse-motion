@@ -52,7 +52,7 @@ const PROCHAINES = {
   'fabrication': 'Écrire les scènes manquantes (agent animateur), puis assembler, contrôler et ouvrir l\'aperçu.',
   'style-a-valider': 'Parcours accompagné : montrer deux scènes dans l\'aperçu et demander l\'accord sur le style.',
   'video-a-valider': 'Parcours accompagné : faire regarder la vidéo entière et demander l\'accord final.',
-  'apercu': 'La vidéo est prête : proposer une retouche (/pulse-motion:retoucher) ou l\'export.',
+  'apercu': 'La vidéo est prête : proposer une retouche (/pulse-motion:retoucher) ou l\'export en MP4 (/pulse-motion:exporter).',
 };
 
 /** Calcule l'état du projet sans rien modifier. */
