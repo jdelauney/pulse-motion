@@ -85,3 +85,15 @@ test('références : bloc « L\'essentiel » en tête, styles du catalogue docum
     assert.match(doc, new RegExp(`\\| \`${s.nom}\` \\|.*\\| ${s.duree} s \\|`), `scène ${s.nom} documentée avec sa durée`);
   }
 });
+
+test('consignes : les effets de particules sont guidés', () => {
+  const animateur = lire('agents', 'animateur.md');
+  assert.match(animateur, /pulse-motion reference particules/);
+  assert.match(animateur, /effets\/<nom>\.json/);
+  assert.match(animateur, /etend/);
+  const retoucher = lire('skills', 'retoucher', 'SKILL.md');
+  assert.match(retoucher, /\| Effet de particules \|/);
+  assert.match(retoucher, /data-graine/);
+  const creer = lire('skills', 'creer', 'SKILL.md');
+  assert.match(creer, /effet de particules/);
+});
