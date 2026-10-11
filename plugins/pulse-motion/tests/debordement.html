@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Pulse Motion – test des débordements</title>
+<link rel="stylesheet" href="../moteur/base.css">
+<style>
+  body { --pm-ratio-l: 16; --pm-ratio-h: 9; }
+  p { margin: 0; font: 6cqh/1.2 sans-serif; }
+  .etroit { width: 10cqh; white-space: nowrap; overflow: hidden; }
+  .dehors { position: absolute; left: 190cqh; top: 10cqh; }
+  .arrive { position: absolute; top: 40cqh; transform: translateX(var(--x)); }
+</style>
+</head>
+<body>
+<div id="pm-scene">
+  <section data-scene="a">
+    <p data-texte="ok">Court</p>
+    <p class="etroit" data-texte="long">Un titre beaucoup trop long pour son cadre</p>
+    <p class="dehors" data-texte="loin">Hors de l'image</p>
+  </section>
+  <section data-scene="b">
+    <p class="arrive" data-texte="glisse" data-start="0" data-dur="3" data-tween="--x 200cqh→0cqh linear">Arrive de la droite</p>
+  </section>
+</div>
+<pre id="resultat">EN COURS</pre>
+<script type="application/json" id="pm-donnees">
+{"titre":"test","format":{"ratio":"16:9","ips":30},"musique":null,
+ "scenes":[{"id":"a","duree":4,"rythme":1,"transition":"aucune"},{"id":"b","duree":4,"rythme":1,"transition":"glissement"}]}
+</script>
+<script src="../moteur/courbes.js"></script>
+<script src="../moteur/minutage.js"></script>
+<script src="../moteur/transitions.js"></script>
+<script src="../moteur/tween.js"></script>
+<script src="../moteur/horloge.js"></script>
+<script src="../moteur/lecteur.js"></script>
+<script src="../moteur/debordement.js"></script>
+<script>
+  M.demarrer();
+  M.demarrerLecteur();
+  M.pret.then(function () {
+    M.rendre(1.7);
+    var trouves = M.detecterDebordements();
+    var attendu = JSON.stringify([
+      { scene: 'a', element: 'long', message: 'Scène « a » : le texte « long » déborde de son cadre (vers 0,4 s).' },
+      { scene: 'a', element: 'loin', message: 'Scène « a » : le texte « loin » sort de l\'image (vers 0,4 s).' },
+    ]);
+    var ok = JSON.stringify(trouves) === attendu && M.temps() === 1.7;
+    document.getElementById('resultat').textContent = ok ? 'RESULTAT: OK' : 'RESULTAT: ECHEC ' + JSON.stringify(trouves) + ' t=' + M.temps();
+  });
+</script>
+</body>
+</html>

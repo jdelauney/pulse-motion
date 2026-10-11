@@ -1,0 +1,19 @@
+<!-- Scène toute faite « alerte » : un point de vigilance, une erreur à éviter. Durée conseillée : 8 s.
+     Textes : titre (≤ 40 car.), texte (≤ 80 car.).
+     L'icône pulse une fois (courbe « spike ») pour attirer l'œil. Adapter data-dur des .rond à la durée de la scène.
+     Icône : Lucide « triangle-alert », licence ISC, © Lucide Contributors (https://lucide.dev). -->
+<section data-scene="alerte">
+  <div class="decor">
+    <span class="rond" style="width: 55cqh; height: 55cqh; left: -20cqh; top: -20cqh" data-start="0" data-dur="8" data-tween="--dx 0cqh→6cqh sine-inout"></span>
+  </div>
+  <div id="boite" class="alerte entre-bas" data-start="0.2" data-dur="0.7">
+    <svg id="icone" class="alerte-icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+         data-start="#boite:fin" data-dur="0.8" data-tween="scale 1→1.25 quad-spike" aria-hidden="true">
+      <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/>
+    </svg>
+    <div class="alerte-corps">
+      <h2 id="titre" class="titre-moyen" data-texte="titre"></h2>
+      <p id="texte" class="texte fondu" data-texte="texte" data-start="#boite:fin+0.4" data-dur="0.6"></p>
+    </div>
+  </div>
+</section>
