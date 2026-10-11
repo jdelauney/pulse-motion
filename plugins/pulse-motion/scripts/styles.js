@@ -131,4 +131,111 @@ function verifierStyle(dossier) {
   return { ok: erreurs.length === 0, erreurs, avertissements };
 }
 
-module.exports = { verifierStyle, lireJSON, RACINE, LIVRES, dossierPersonnel };
+const RECOMMANDATION = path.join(RACINE, 'references', 'styles', 'recommandation.json');
+
+/** Dossiers où chercher les styles, du plus prioritaire au moins prioritaire. */
+function racinesStyles(dossierStyles) {
+  if (Array.isArray(dossierStyles)) return dossierStyles;
+  if (dossierStyles) return [dossierStyles];
+  return [LIVRES, path.join(dossierPersonnel(), 'styles')];
+}
+
+const estPersonnel = (racine) => path.resolve(racine) === path.resolve(dossierPersonnel(), 'styles');
+
+/** -> { nom, dossier, personnel } | null (nom refusé s'il n'est pas sûr). */
+function trouverStyle(nom, dossierStyles) {
+  if (typeof nom !== 'string' || !NOM_STYLE.test(nom)) return null;
+  for (const racine of racinesStyles(dossierStyles)) {
+    const dossier = path.join(racine, nom);
+    if (fs.existsSync(path.join(dossier, 'style.css'))) return { nom, dossier, personnel: estPersonnel(racine) };
+  }
+  return null;
+}
+
+/** Noms des styles disponibles, sans doublon, dans l'ordre des dossiers. */
+function nomsStyles(dossierStyles) {
+  const noms = [];
+  for (const racine of racinesStyles(dossierStyles)) {
+    let entrees;
+    try { entrees = fs.readdirSync(racine).sort(); } catch { continue; }
+    for (const n of entrees) {
+      if (NOM_STYLE.test(n) && !noms.includes(n) && fs.existsSync(path.join(racine, n, 'style.css'))) noms.push(n);
+    }
+  }
+  return noms;
+}
+
+function messageStyleInconnu(nom, dossierStyles) {
+  const dispo = nomsStyles(dossierStyles);
+  const exemple = NOM_STYLE.test(String(nom)) ? nom : '<nom>';
+  return `Style « ${nom} » introuvable. Styles disponibles : ${dispo.join(', ') || 'aucun'}. Un style personnel se range dans ${path.join(dossierPersonnel(), 'styles', exemple)}.`;
+}
+
+/** Ce qu'il faut savoir d'un style pour le proposer. */
+function ficheStyle(st) {
+  const catalogue = lireJSON(path.join(st.dossier, 'catalogue.json')) || {};
+  const identite = lireJSON(path.join(st.dossier, 'identite.json')) || {};
+  return {
+    style: st.nom,
+    description: catalogue.description || '',
+    personnel: st.personnel,
+    verifie: st.personnel ? verifierStyle(st.dossier).ok : true,
+    famille: identite.famille || null,
+    personnalite: identite.personnalite || [],
+    genres: identite.genres || [],
+    signature: identite.signature || '',
+    transitions: catalogue.transitions || [],
+    scenes: catalogue.scenes || [],
+  };
+}
+
+function listerStyles(dossierStyles) {
+  return nomsStyles(dossierStyles).map((n) => ficheStyle(trouverStyle(n, dossierStyles)));
+}
+
+/**
+ * Styles classés pour un genre : les 2 recommandés du tableau, les styles personnels vérifiés
+ * du genre, le style de contraste (ou, à défaut, un style d'une autre famille), puis le reste.
+ * Les styles personnels non vérifiés ne sont pas proposés.
+ */
+function recommander(genre, dossierStyles) {
+  if (!GENRES.includes(genre)) throw new Error(`Genre inconnu : « ${genre} ». Genres : ${GENRES.join(', ')}.`);
+  const fiches = listerStyles(dossierStyles).filter((f) => f.verifie);
+  const parNom = new Map(fiches.map((f) => [f.style, f]));
+  const table = (lireJSON(RECOMMANDATION) || {})[genre] || {};
+  const ordre = [];
+  const ajouter = (n) => { if (parNom.has(n) && !ordre.includes(n)) ordre.push(n); };
+  (table.recommandes || []).forEach(ajouter);
+  fiches.filter((f) => f.personnel && f.genres.includes(genre)).forEach((f) => ajouter(f.style));
+  if (parNom.has(table.contraste)) ajouter(table.contraste);
+  else {
+    const familles = new Set(ordre.map((n) => parNom.get(n).famille));
+    const autre = fiches.find((f) => !ordre.includes(f.style) && !familles.has(f.famille));
+    if (autre) ajouter(autre.style);
+  }
+  fiches.forEach((f) => ajouter(f.style));
+  return ordre.map((n) => parNom.get(n));
+}
+
+if (require.main === module) {
+  const args = process.argv.slice(2);
+  try {
+    if (args[0] === 'verifier') {
+      const st = trouverStyle(args[1]);
+      if (!st) { console.error(messageStyleInconnu(args[1] || '')); process.exit(1); }
+      const r = verifierStyle(st.dossier);
+      console.log(JSON.stringify(r, null, 2));
+      process.exit(r.ok ? 0 : 1);
+    }
+    const i = args.indexOf('--genre');
+    console.log(JSON.stringify(i >= 0 ? recommander(args[i + 1]) : listerStyles(), null, 2));
+  } catch (e) {
+    console.error(e.message);
+    process.exit(1);
+  }
+}
+
+module.exports = {
+  verifierStyle, racinesStyles, trouverStyle, nomsStyles, messageStyleInconnu, ficheStyle, listerStyles, recommander,
+  lireJSON, RACINE, LIVRES, dossierPersonnel,
+};

@@ -14,6 +14,7 @@ const { lireDeroule } = require('./lib/deroule.js');
 const { embarquerRessources, versDataURI, cheminDansProjet } = require('./lib/embarquer.js');
 const S = require('./lib/scenes.js');
 const { variablesCSS } = require('../moteur/courbes.js');
+const { trouverStyle, messageStyleInconnu } = require('./styles.js');
 
 const RACINE = path.resolve(__dirname, '..');
 const MOTEUR = ['courbes.js', 'minutage.js', 'transitions.js', 'tween.js', 'horloge.js', 'lecteur.js', 'debordement.js'];
@@ -98,20 +99,21 @@ function jsonDansHTML(objet) {
 }
 
 /**
- * assembler({ dossier, dossierStyles?, ecrire? })
+ * assembler({ dossier, dossierStyles?: string | string[], ecrire? })
  * -> { ok, fichier, html, erreurs: [{ regle, gravite, scene?, message }] }
+ * Sans dossierStyles : styles livrés, puis styles personnels (~/.pulse-motion/styles).
  */
-function assembler({ dossier, dossierStyles = path.join(RACINE, 'styles'), ecrire = true }) {
+function assembler({ dossier, dossierStyles, ecrire = true }) {
   const projet = path.resolve(dossier);
   const { deroule, erreurs: erreursDeroule } = lireDeroule(projet);
   if (erreursDeroule.length) {
     return { ok: false, fichier: null, html: null, erreurs: erreursDeroule.map((message) => ({ regle: 'deroule-invalide', gravite: 'erreur', message })) };
   }
-  const dossierStyle = path.join(dossierStyles, deroule.style);
-  if (!fs.existsSync(path.join(dossierStyle, 'style.css'))) {
-    const dispo = fs.existsSync(dossierStyles) ? fs.readdirSync(dossierStyles).join(', ') : 'aucun';
-    return { ok: false, fichier: null, html: null, erreurs: [{ regle: 'style-inconnu', gravite: 'erreur', message: `Style « ${deroule.style} » introuvable. Styles disponibles : ${dispo}.` }] };
+  const style = trouverStyle(deroule.style, dossierStyles);
+  if (!style) {
+    return { ok: false, fichier: null, html: null, erreurs: [{ regle: 'style-inconnu', gravite: 'erreur', message: messageStyleInconnu(deroule.style, dossierStyles) }] };
   }
+  const dossierStyle = style.dossier;
 
   const erreurs = [];
   const charte = chartePour(deroule, dossierStyle);
