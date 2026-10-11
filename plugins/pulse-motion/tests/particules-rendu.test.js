@@ -129,3 +129,86 @@ test('rendu : calque vide après la fin d\'un effet, sans pixel de tramage', asy
   const r = JSON.parse(await executerPage(a.html.replace('</body>', `${code}\n</body>`)));
   assert.equal(r.somme, 0);
 });
+
+test('rendu : bloom indépendant de la taille, flou opaque, prémultiplié, réglages constants, HDR borné, cibles libérées', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const dir = copierProjet('projet-particules');
+  const point = (extra, vie, rendu) => ({ naissance: { salves: [{ t: 0, nombre: 1 }], forme: { type: 'point' }, vitesse: { valeur: [0, 0] }, vie: [10, 10], taille: [20, 20], ...extra }, vie, rendu });
+  ecrire(dir, 'effets/lumiere.json', recette('lumiere', point({ taille: [4, 4] }, { intensite: 8 }), { bloom: 5, seuil_bloom: 1 }));
+  ecrire(dir, 'effets/eclat-sans-bloom.json', recette('eclat-sans-bloom', point({ taille: [4, 4] }, { intensite: 8 }), { bloom: 0 }));
+  ecrire(dir, 'effets/flou-alpha.json', recette('flou-alpha', point({}, { couleur: '#202020' }, { melange: 'alpha', flou: true }), { bloom: 0 }));
+  ecrire(dir, 'effets/rouge-alpha.json', recette('rouge-alpha', point({}, { couleur: '#ff0000', opacite: 0.3 }, { melange: 'alpha' }), { bloom: 0 }));
+  ecrire(dir, 'effets/rouge-premultiplie.json', recette('rouge-premultiplie', point({}, { couleur: '#ff0000', opacite: 0.3 }, { melange: 'premultiplie' }), { bloom: 0 }));
+  ecrire(dir, 'effets/enorme.json', recette('enorme', point({ taille: [4, 4] }, { intensite: 100000 }), { bloom: 1, seuil_bloom: 1 }));
+  const scenes = {
+    lumiere: '<div data-effet="lumiere"></div>',
+    flou: '<div data-effet="flou-alpha"></div>',
+    alpha: '<div data-effet="rouge-alpha"></div>',
+    premultiplie: '<div data-effet="rouge-premultiplie"></div>',
+    reglages: '<div data-effet="eclat-sans-bloom"></div><div data-effet="lumiere" data-start="1.5"></div>',
+    enorme: '<div data-effet="enorme"></div>',
+  };
+  Object.entries(scenes).forEach(([id, corps], i) => ecrire(dir, `scenes/0${i + 1}-${id}.html`, `<section data-scene="${id}">${corps}</section>`));
+  modifierDeroule(dir, (d) => {
+    d.scenes = Object.keys(scenes).map((id, i) => ({ id, fichier: `scenes/0${i + 1}-${id}.html`, duree: 2, textes: {} }));
+  });
+  const a = assembler({ dossier: dir, dossierStyles: STYLES, dossierEffets: EFFETS, ecrire: false });
+  assert.deepEqual(a.erreurs, []);
+  const code = `<script>
+(async () => {
+  const envoyer = (o) => fetch('/_resultat', { method: 'POST', body: JSON.stringify(o) });
+  try {
+    await M.particules.pret;
+    if (!M.particules.disponible) return envoyer({ webgpu: false });
+    const debut = (id) => M.minutage.scenes.find((s) => s.id === id).debut;
+    const lire = async (id, t) => { await M.seek(debut(id) + t); return M.particules.lirePixels(id, 'avant'); };
+    const pixel = (p, x, y) => { const i = (Math.round(y) * p.largeur + Math.round(x)) * 4; return Array.from(p.donnees.slice(i, i + 4)); };
+    const loin = (p) => pixel(p, p.largeur / 2 + 6 * p.hauteur / 100, p.hauteur / 2)[3];
+    const centre = (p) => pixel(p, p.largeur / 2, p.hauteur / 2);
+    const profil = (p) => [3, 4, 5, 6, 8].map((d) => pixel(p, p.largeur / 2 + d * p.hauteur / 100, p.hauteur / 2)[3]);
+    const egal = (a, b) => a.largeur === b.largeur && a.donnees.every((x, i) => x === b.donnees[i]);
+    const r = { webgpu: true };
+    const scene = document.getElementById('pm-scene');
+    scene.style.flex = 'none';
+    const taille = (l, h) => { scene.style.width = l + 'px'; scene.style.height = h + 'px'; };
+    taille(640, 360);
+    const petit = await lire('lumiere', 1);
+    r.petit = { taille: [petit.largeur, petit.hauteur], profil: profil(petit) };
+    taille(1280, 720);
+    const grand = await lire('lumiere', 1);
+    r.grand = { taille: [grand.largeur, grand.hauteur], profil: profil(grand) };
+    taille(640, 360);
+    r.flou = centre(await lire('flou', 1));
+    r.alpha = centre(await lire('alpha', 1));
+    r.premultiplie = centre(await lire('premultiplie', 1));
+    r.reglages = loin(await lire('reglages', 0.5));
+    const enorme = await lire('enorme', 1);
+    r.enorme = { centre: centre(enorme), loin: loin(enorme), coin: pixel(enorme, 5, 5) };
+    const lum = await lire('lumiere', 1);
+    await M.seek(debut('flou') + 1);
+    r.cibleLiberee = document.querySelector('section[data-scene="lumiere"] canvas.pm-calque').__pmCible === undefined;
+    r.cibleRecreee = egal(lum, await lire('lumiere', 1));
+    envoyer(r);
+  } catch (e) { envoyer({ erreur: String(e && e.stack || e) }); }
+})();
+</script>`;
+  const r = JSON.parse(await executerPage(a.html.replace('</body>', `${code}\n</body>`)));
+  assert.equal(r.erreur, undefined, r.erreur);
+  assert.equal(r.webgpu, true);
+  assert.deepEqual(r.petit.taille, [640, 360]);
+  assert.deepEqual(r.grand.taille, [1280, 720]);
+  t.diagnostic(`alpha du halo à 3, 4, 5, 6 et 8 cqh : ${r.petit.profil} (640 × 360) ; ${r.grand.profil} (1280 × 720)`);
+  assert.ok(r.petit.profil[3] > 0 && r.grand.profil[3] > 0, `bloom visible à 6 cqh aux deux tailles : ${r.petit.profil} ; ${r.grand.profil}`);
+  r.petit.profil.forEach((x, k) => {
+    const y = r.grand.profil[k];
+    if (Math.max(x, y) >= 8) assert.ok(Math.abs(x - y) / Math.max(x, y) < 0.25, `portée du bloom constante en cqh : ${r.petit.profil} contre ${r.grand.profil}`);
+  });
+  assert.deepEqual(r.enorme.coin, [0, 0, 0, 0], `rien loin d'une source énorme : ${r.enorme.coin}`);
+  assert.ok(r.flou[3] >= 247, `particule alpha immobile avec flou opaque : ${r.flou}`);
+  assert.ok(r.premultiplie[0] > r.alpha[0] + 50, `prémultiplié plus lumineux qu'alpha : ${r.premultiplie} contre ${r.alpha}`);
+  assert.ok(r.reglages > 0, `bloom du calque fixé pour la scène, avant le début de l'effet le plus fort : ${r.reglages}`);
+  assert.equal(r.enorme.centre[3], 255, `centre d'une source énorme : ${r.enorme.centre}`);
+  assert.ok(r.enorme.loin > 0, `halo d'une source énorme, sans NaN : ${r.enorme.loin}`);
+  assert.equal(r.cibleLiberee, true, 'cible d\'une scène masquée libérée');
+  assert.equal(r.cibleRecreee, true, 'cible recréée au retour, même image');
+});

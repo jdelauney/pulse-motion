@@ -85,3 +85,76 @@ test('capture : les particules entrent dans l\'image, le calque arrière reste s
   assert.deepEqual(r.image, [640, 360]);
   t.diagnostic(`capture d'une image avec deux calques : ${Math.round(r.duree)} ms`);
 });
+
+test('capture : refus sans GPU, sans image périmée', { skip: !trouverNavigateur() && 'Chrome ou Edge introuvable' }, async () => {
+  const dir = copierProjet('projet-particules');
+  const r = assembler({ dossier: dir, dossierStyles: STYLES, dossierEffets: EFFETS, ecrire: false });
+  const html = r.html.replace('<body>', '<body>\n<script>window.__PM_SANS_GPU__ = true;</script>')
+    .replace('</body>', `<pre id="verdict">EN COURS</pre><script>
+const calques = () => [...document.querySelectorAll('canvas.pm-calque')];
+calques().forEach((c) => { c.__pmImage = 'data:image/png;base64,perime'; });
+M.particules.preparerCapture().then(() => { verdict.textContent = "OK"; }, (e) => { verdict.textContent = e.message + ' | ' + calques().map((c) => String(c.__pmImage)).join(','); });
+</script>\n</body>`);
+  const fichier = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'pm-export-')), 'page.html');
+  fs.writeFileSync(fichier, html);
+  const dom = await rendreDOM(trouverNavigateur(), fichier);
+  assert.equal((/<pre id="verdict">([^<]*)<\/pre>/.exec(dom) || [])[1], 'Effet de particules non rendu (WebGPU indisponible) : export interrompu. | null,null');
+});
+
+test('capture : texture illisible, effet désactivé, export refusé ; calque vide en image 1×1 ; densité 1 en capture', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const dir = copierProjet('projet-particules');
+  ecrire(dir, 'assets/casse.png', 'pas une image');
+  ecrire(dir, 'effets/casse.json', { version: 1, nom: 'casse', emetteurs: [{ nom: 'e', naissance: { salves: [{ t: 0, nombre: 5 }], forme: { type: 'point' }, vie: [10, 10] }, rendu: { texture: 'assets/casse.png' } }] });
+  const f = path.join(dir, 'scenes', '01-s.html');
+  fs.writeFileSync(f, fs.readFileSync(f, 'utf8').replace('</section>', '  <div id="casse" data-effet="casse" data-start="2"></div>\n</section>'));
+  const a = assembler({ dossier: dir, dossierStyles: STYLES, dossierEffets: EFFETS, ecrire: false });
+  assert.deepEqual(a.erreurs, []);
+  const code = `<script>
+(async () => {
+  const envoyer = (o) => fetch('/_resultat', { method: 'POST', body: JSON.stringify(o) });
+  try {
+    await M.particules.pret;
+    if (!M.particules.disponible) return envoyer({ webgpu: false });
+    const r = { webgpu: true };
+    const canvas = (nom) => document.querySelector('canvas.pm-calque[data-pm-calque="' + nom + '"]');
+    const taille = (src) => new Promise((ok) => { const i = new Image(); i.onload = () => ok([i.naturalWidth, i.naturalHeight]); i.onerror = () => ok(null); i.src = src; });
+    r.panneau = (document.querySelector('#casse > .pm-effet-panneau') || {}).textContent || null;
+    // t = 0,2 : aucun effet commencé, les deux calques sont vides.
+    await M.seek(0.2);
+    await M.particules.preparerCapture();
+    r.videAvant = await taille(canvas('avant').__pmImage);
+    r.videArriere = await taille(canvas('arriere').__pmImage);
+    // t = 1,5 : l'effet à la texture illisible n'a pas commencé, l'export passe.
+    await M.seek(1.5);
+    await M.particules.preparerCapture();
+    r.avantDebut = await taille(canvas('avant').__pmImage);
+    // t = 2,5 : l'effet désactivé est visible, l'export est refusé.
+    await M.seek(2.5);
+    r.refus = await M.particules.preparerCapture().then(() => 'OK', (e) => e.message);
+    r.images = [canvas('avant').__pmImage, canvas('arriere').__pmImage];
+    // Écran haute densité : calques au double en aperçu, un pixel par pixel CSS en capture.
+    Object.defineProperty(window, 'devicePixelRatio', { value: 2, configurable: true });
+    const largeurCSS = document.querySelector('section[data-scene="s"]').clientWidth;
+    await M.seek(1);
+    r.dprApercu = canvas('avant').width / largeurCSS;
+    M.modeCapture(true);
+    await M.seek(1);
+    r.dprCapture = canvas('avant').width / largeurCSS;
+    M.modeCapture(false);
+    envoyer(r);
+  } catch (e) { envoyer({ erreur: String(e && e.stack || e) }); }
+})();
+</script>`;
+  const r = JSON.parse(await executerPage(a.html.replace('</body>', `${code}\n</body>`)));
+  assert.equal(r.erreur, undefined, r.erreur);
+  assert.equal(r.webgpu, true);
+  assert.equal(r.panneau, 'Effet non affiché : texture illisible');
+  assert.deepEqual(r.videAvant, [1, 1]);
+  assert.deepEqual(r.videArriere, [1, 1]);
+  assert.ok(r.avantDebut && r.avantDebut[0] > 1, `calque dessiné en pleine taille : ${r.avantDebut}`);
+  assert.equal(r.refus, 'Effet de particules non rendu (texture illisible) : export interrompu.');
+  assert.deepEqual(r.images, [null, null]);
+  assert.equal(r.dprApercu, 2);
+  assert.equal(r.dprCapture, 1, 'calques au devicePixelRatio 1 pendant l\'export');
+});

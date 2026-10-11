@@ -10,6 +10,7 @@
  * M.rendreScene(id, t) pose l'état d'une seule scène (mesures des calques de particules)
  * M.surSeek(fn(t))    M.seek attend la promesse renvoyée (calques de particules)
  * M.modeCapture(bool) Date.now et performance.now suivent t (export)
+ * M.enCapture()      vrai entre M.modeCapture(true) et M.modeCapture(false)
  *
  * Aléa reproductible et horloge virtuelle : idée et algorithme mulberry32 repris de
  * showtime (skills/showtime/runtime/stage.js), licence MIT.
@@ -37,7 +38,7 @@
   }
   Math.random = mulberry32(0x5eed1234);
 
-  var etat = { t: 0, scenes: [], rappels: {}, auditeurs: [], attentes: [] };
+  var etat = { t: 0, scenes: [], rappels: {}, auditeurs: [], attentes: [], capture: false };
 
   // Le temps SMIL ne démarre qu'une tâche après « load » : on rend à nouveau à ce moment-là.
   M.pret = new Promise(function (resolve) {
@@ -196,7 +197,9 @@
     }
   };
 
+  M.enCapture = function () { return etat.capture; };
   M.modeCapture = function (actif) {
+    etat.capture = !!actif;
     if (actif) {
       racine.performance.now = function () { return etat.t * 1000; };
       Date.now = function () { return EPOCH + Math.round(etat.t * 1000); };

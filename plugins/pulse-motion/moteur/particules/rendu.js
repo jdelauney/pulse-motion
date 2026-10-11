@@ -1,15 +1,20 @@
 /* Pulse Motion – rendu « AAA » des particules d'un calque (WebGPU).
  *
  * new P.Rendu(device, format)
- *   .preparer(effets) -> Promise     textures des images de assets/ (avant le premier rendu)
+ *   .preparer(effets) -> Promise<Set> textures des images de assets/ (avant le premier rendu) ;
+ *                                     résout l'ensemble des images illisibles (URL data:)
  *   .cible(canvas)                    cible HDR, niveaux de bloom, copie lisible, contexte du canvas
- *   .dessiner(cible, liste, o)        liste : [{ sim, i, delta }] ; o : { largeurCqh, dureeImage, bloom, seuil, tons }
+ *   .oublierCible(canvas)             libère la cible (scène masquée) ; .cible la recrée au retour
+ *   .dessiner(cible, liste, o)        liste : [{ sim, i, delta }] ; o : { largeurCqh, dureeImage, bloom, seuil, tons } ;
+ *                                     pose cible.vide (rien à dessiner)
  *   .lirePixels(cible) -> Promise<{ largeur, hauteur, donnees }>  (RVBA 8 bits, prémultiplié, sRGB)
  *   .lireOrdre(e) -> Promise<Uint32Array>                          (paires clé, index après tri ; tests)
  *
  * Chaîne : tri bitonique des émetteurs en mélange alpha (clé z) -> particules dans une cible rgba16float
  * (sprite, étincelle étirée, traînée en ruban, planche ; textures procédurales ou image ; flou de
- * mouvement en 4 échantillons ; perspective selon z) -> bloom (seuil, dual Kawase sur 5 niveaux) ->
+ * mouvement en 4 échantillons ; perspective selon z) -> bloom (seuil, dual Kawase sur 5 niveaux dans un
+ * espace fixe de 540 px de haut : portée en cqh indépendante de la taille du canvas ; somme des niveaux
+ * divisée par leur nombre ; HDR borné à 6e4 contre le débordement des flottants 16 bits) ->
  * courbe de tons (douce ou ACES) -> tramage -> sRGB, alpha = max(alpha, max(r, g, b)), prémultiplié.
  * Tri bitonique : K. Batcher (1968). ACES : approximation de K. Narkowicz (2015). Dual Kawase :
  * M. Bjørge (2015). Algorithmes publics, réimplémentés.
@@ -21,9 +26,8 @@
   const P = M.particulesInterne = M.particulesInterne || {};
 
   const NIVEAUX = 5;
+  const HAUTEUR_BLOOM = 540;
   const TRI_LOG_MAX = 22;
-  const CODES_TEXTURE = { 'disque-doux': 0, etoile: 1, fumee: 2, flamme: 3, eclat: 4, confetti: 5, image: 6 };
-  const CODES_RENDU = { sprite: 0, etincelle: 1, trainee: 2, planche: 3 };
 
   const WGSL_FINAL_COMMUN = /* wgsl */ `
 @vertex
@@ -35,7 +39,7 @@ fn vsPlein(@builtin(vertex_index) i: u32) -> @builtin(position) vec4f {
 
   const WGSL_PARTICULES = P.WGSL_COMMUN + /* wgsl */ `
 struct Calque { largeur: f32, hauteur: f32, delta: f32, dureeImage: f32, k: u32, trie: u32, flou: u32, a: u32 };
-struct Style { genre: u32, texture: u32, etirement: f32, longueur: u32, colonnes: u32, lignes: u32, ips: f32, b: u32 };
+struct Style { genre: u32, texture: u32, etirement: f32, longueur: u32, colonnes: u32, lignes: u32, ips: f32, melange: u32 };
 @group(0) @binding(0) var<storage, read> particules: array<Particule>;
 @group(0) @binding(1) var<storage, read> T: array<f32>;
 @group(0) @binding(2) var<uniform> C: Calque;
@@ -51,6 +55,7 @@ struct Sortie {
   @location(1) uvTex: vec2f,
   @location(2) couleur: vec4f,
   @location(3) alea: f32,
+  @location(4) @interpolate(flat) echantillons: f32,
 };
 
 fn table(debut: u32, u: f32) -> f32 {
@@ -133,8 +138,9 @@ fn vsQuad(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> S
   o.pos = ecran(centre + q);
   o.uv = c;
   o.uvTex = uvTex;
-  o.couleur = vec4f(couleur.rgb * table(320u, u), couleur.a * table(384u, u) / f32(echantillons));
+  o.couleur = vec4f(couleur.rgb * table(320u, u), couleur.a * table(384u, u));
   o.alea = p.alea;
+  o.echantillons = f32(echantillons);
   return o;
 }
 
@@ -172,6 +178,7 @@ fn vsTrainee(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -
   let couleur = teinte(u);
   o.couleur = vec4f(couleur.rgb * table(320u, u), couleur.a * table(384u, u) * k);
   o.alea = p.alea;
+  o.echantillons = 1.0;
   return o;
 }
 
@@ -218,15 +225,25 @@ fn motif(e: Sortie) -> vec4f {
   return textureSample(image, lisse, e.uvTex);
 }
 
+// Mélanges (R.melange) : 0 additif, 1 alpha, 2 prémultiplié (émission qui n'occulte qu'à hauteur de
+// son alpha : la couleur n'est pas multipliée par l'alpha).
 @fragment
 fn fsQuad(e: Sortie) -> @location(0) vec4f {
   let t = motif(e);
-  return vec4f(t.rgb * e.couleur.rgb * e.couleur.a, t.a * e.couleur.a);
+  let n = e.echantillons;
+  let a = t.a * e.couleur.a;
+  if (R.melange == 0u) { return vec4f(t.rgb * e.couleur.rgb * e.couleur.a, a) / n; }
+  // Flou : n échantillons superposés au même endroit rendent l'opacité a, car 1 − (1 − aEch)^n = a.
+  let aEch = 1.0 - pow(max(1.0 - a, 0.0), 1.0 / n);
+  if (R.melange == 2u) { return vec4f(t.rgb * e.couleur.rgb / n, aEch); }
+  return vec4f(t.rgb * e.couleur.rgb * e.couleur.a * (aEch / max(a, 1e-6)), aEch);
 }
 
 @fragment
 fn fsTrainee(e: Sortie) -> @location(0) vec4f {
-  let a = (1.0 - smoothstep(0.3, 1.0, abs(e.uv.y))) * e.couleur.a;
+  let m = 1.0 - smoothstep(0.3, 1.0, abs(e.uv.y));
+  let a = m * e.couleur.a;
+  if (R.melange == 2u) { return vec4f(e.couleur.rgb * m, a); }
   return vec4f(e.couleur.rgb * a, a);
 }
 `;
@@ -268,21 +285,28 @@ fn etape(@builtin(global_invocation_id) g: vec3u) {
 }
 `;
 
-  const WGSL_BLOOM = WGSL_FINAL_COMMUN + /* wgsl */ `
+  // Borne du HDR : au-delà de 65504, les flottants 16 bits débordent (infini, puis NaN dans le flou).
+  const WGSL_BORNE = /* wgsl */ `
+const BORNE = vec3f(6e4);
+`;
+
+  const WGSL_BLOOM = WGSL_FINAL_COMMUN + WGSL_BORNE + /* wgsl */ `
 struct Flou { texelSource: vec2f, texelSortie: vec2f, seuil: f32, a: f32, b: f32, c: f32 };
 @group(0) @binding(0) var source: texture_2d<f32>;
 @group(0) @binding(1) var lisse: sampler;
 @group(0) @binding(2) var<uniform> B: Flou;
 
+fn lire(uv: vec2f) -> vec3f { return min(textureSample(source, lisse, uv).rgb, BORNE); }
+
 @fragment
 fn bas(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let uv = pos.xy * B.texelSortie;
   let h = B.texelSource * 0.5;
-  var c = textureSample(source, lisse, uv).rgb * 4.0;
-  c += textureSample(source, lisse, uv - h).rgb;
-  c += textureSample(source, lisse, uv + h).rgb;
-  c += textureSample(source, lisse, uv + vec2f(h.x, -h.y)).rgb;
-  c += textureSample(source, lisse, uv - vec2f(h.x, -h.y)).rgb;
+  var c = lire(uv) * 4.0;
+  c += lire(uv - h);
+  c += lire(uv + h);
+  c += lire(uv + vec2f(h.x, -h.y));
+  c += lire(uv - vec2f(h.x, -h.y));
   c = c / 8.0;
   if (B.seuil >= 0.0) {
     let l = max(c.r, max(c.g, c.b));
@@ -307,7 +331,7 @@ fn haut(@builtin(position) pos: vec4f) -> @location(0) vec4f {
 }
 `;
 
-  const WGSL_FINAL = P.WGSL_COMMUN + WGSL_FINAL_COMMUN + /* wgsl */ `
+  const WGSL_FINAL = P.WGSL_COMMUN + WGSL_FINAL_COMMUN + WGSL_BORNE + /* wgsl */ `
 struct Final { intensite: f32, tons: u32, a: u32, b: u32 };
 @group(0) @binding(0) var hdr: texture_2d<f32>;
 @group(0) @binding(1) var bloom: texture_2d<f32>;
@@ -339,8 +363,9 @@ struct Sorties { @location(0) ecran: vec4f, @location(1) copie: vec4f };
 fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
   let taille = vec2f(textureDimensions(hdr));
   let c = textureLoad(hdr, vec2i(pos.xy), 0);
-  let lumiere = textureSample(bloom, lisse, pos.xy / taille).rgb * F.intensite;
-  var rgb = max(c.rgb, vec3f(0.0)) + lumiere;
+  // Chaque niveau du bloom porte l'excès seuillé : la somme des niveaux est ramenée à une fois l'excès.
+  let lumiere = min(textureSample(bloom, lisse, pos.xy / taille).rgb, BORNE) * (F.intensite / ${NIVEAUX}.0);
+  var rgb = min(max(c.rgb, vec3f(0.0)) + lumiere, BORNE);
   if (F.tons == 1u) { rgb = tonsAces(rgb); } else { rgb = tonsDouce(rgb); }
   let a = clamp(max(c.a, max(rgb.r, max(rgb.g, rgb.b))), 0.0, 1.0);
   var o = vec4f(0.0);
@@ -358,6 +383,10 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
   };
 
   function puissanceDeDeux(n) { let p = 64; while (p < n) p *= 2; return p; }
+
+  function detruireCible(c) {
+    [c.hdr, c.sortie, ...c.niveaux.map((n) => n.texture), c.uniformeFinal, ...c.bas.map((b) => b.uniforme), ...c.haut.map((b) => b.uniforme)].forEach((t) => t.destroy());
+  }
 
   class Rendu {
     constructor(device, format) {
@@ -453,10 +482,11 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
 
     async preparer(effets) {
       const { device } = this;
+      const illisibles = new Set();
       for (const effet of effets) {
         for (const em of effet.emetteurs) {
           const url = em.rendu.textureImage;
-          if (!url || this.images.has(url)) continue;
+          if (!url || this.images.has(url) || illisibles.has(url)) continue;
           let bitmap;
           try {
             const img = new Image();
@@ -464,7 +494,8 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
             await img.decode();
             bitmap = await createImageBitmap(img);
           } catch (e) {
-            console.error('[Pulse Motion] Image de particules illisible (' + url + ') : ' + String(e && e.message || e));
+            console.error('[Pulse Motion] Image de particules illisible (' + url.slice(0, 64) + '…) : ' + String(e && e.message || e));
+            illisibles.add(url);
             continue;
           }
           const texture = device.createTexture({
@@ -476,6 +507,7 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
           this.images.set(url, texture.createView());
         }
       }
+      return illisibles;
     }
 
     cible(canvas) {
@@ -484,18 +516,18 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
       const hauteur = canvas.height;
       let c = canvas.__pmCible;
       if (c && c.device === device && c.largeur === largeur && c.hauteur === hauteur) return c;
-      if (c && c.device === device) {
-        [c.hdr, c.sortie, ...c.niveaux.map((n) => n.texture), c.uniformeFinal, ...c.bas.map((b) => b.uniforme), ...c.haut.map((b) => b.uniforme)].forEach((t) => t.destroy());
-      }
+      if (c && c.device === device) detruireCible(c);
       const contexte = canvas.getContext('webgpu');
       contexte.configure({ device, format: this.format, alphaMode: 'premultiplied' });
       const T = GPUTextureUsage;
       const hdr = device.createTexture({ size: [largeur, hauteur], format: 'rgba16float', usage: T.RENDER_ATTACHMENT | T.TEXTURE_BINDING });
       const sortie = device.createTexture({ size: [largeur, hauteur], format: 'rgba8unorm', usage: T.RENDER_ATTACHMENT | T.COPY_SRC | T.TEXTURE_BINDING });
+      // Niveaux du bloom dans un espace fixe (540 px de haut au niveau 0) : même portée en cqh à toute taille.
+      const largeurBloom = Math.max(1, Math.round(HAUTEUR_BLOOM * largeur / hauteur));
       const niveaux = [];
       for (let i = 0; i < NIVEAUX; i++) {
-        const l = Math.max(1, largeur >> (i + 1));
-        const h = Math.max(1, hauteur >> (i + 1));
+        const l = Math.max(1, Math.round(largeurBloom / (1 << i)));
+        const h = Math.max(1, Math.round(HAUTEUR_BLOOM / (1 << i)));
         const texture = device.createTexture({ size: [l, h], format: 'rgba16float', usage: T.RENDER_ATTACHMENT | T.TEXTURE_BINDING });
         niveaux.push({ texture, vue: texture.createView(), largeur: l, hauteur: h });
       }
@@ -506,7 +538,8 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
         return { uniforme: u, groupe: device.createBindGroup({ layout: this.layoutBloom, entries: [{ binding: 0, resource: source }, { binding: 1, resource: this.lisse }, { binding: 2, resource: { buffer: u } }] }) };
       };
       const bas = niveaux.map((n, i) => (i === 0
-        ? groupeFlou(vueHdr, largeur, hauteur, n.largeur, n.hauteur, 1)
+        // Prises du premier niveau écartées d'au moins un demi-texel de sortie (canvas de plus de 1080 px).
+        ? groupeFlou(vueHdr, Math.min(largeur, 2 * n.largeur), Math.min(hauteur, 2 * n.hauteur), n.largeur, n.hauteur, 1)
         : groupeFlou(niveaux[i - 1].vue, niveaux[i - 1].largeur, niveaux[i - 1].hauteur, n.largeur, n.hauteur, -1)));
       const haut = niveaux.slice(0, NIVEAUX - 1).map((n, i) => groupeFlou(niveaux[i + 1].vue, niveaux[i + 1].largeur, niveaux[i + 1].hauteur, n.largeur, n.hauteur, -1));
       const uniformeFinal = device.createBuffer({ size: 16, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
@@ -524,6 +557,14 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
       };
       canvas.__pmCible = c;
       return c;
+    }
+
+    oublierCible(canvas) {
+      const c = canvas.__pmCible;
+      if (!c) return;
+      delete canvas.__pmCible;
+      if (c.device === this.device) detruireCible(c);
+      try { c.contexte.unconfigure(); } catch (e) { /* contexte déjà perdu */ }
     }
 
     estTrie(e) { return e.em.rendu.melange !== 'additif'; }
@@ -575,13 +616,14 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
         const v = new ArrayBuffer(32);
         const f = new Float32Array(v);
         const u = new Uint32Array(v);
-        u[0] = CODES_RENDU[r.type];
-        u[1] = CODES_TEXTURE[r.texture];
+        u[0] = r.code;
+        u[1] = r.textureCode;
         f[2] = r.etirement;
         u[3] = r.longueur;
         u[4] = r.planche ? r.planche.colonnes : 1;
         u[5] = r.planche ? r.planche.lignes : 1;
         f[6] = r.planche ? r.planche.ips : 0;
+        u[7] = r.melangeCode;
         s = this.device.createBuffer({ size: 32, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
         this.device.queue.writeBuffer(s, 0, v);
         this.styles.set(e, s);
@@ -614,6 +656,7 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
     dessiner(cible, liste, o) {
       const { device } = this;
       const enc = device.createCommandEncoder();
+      cible.vide = liste.length === 0;
 
       // 1. Tri des émetteurs en mélange alpha (clé z croissante : du plus loin au plus proche).
       const aTrier = liste.filter(({ sim, i }) => this.estTrie(sim.emetteurs[i]));
