@@ -15,61 +15,44 @@ const { embarquerRessources, versDataURI, cheminDansProjet } = require('./lib/em
 const S = require('./lib/scenes.js');
 const { variablesCSS } = require('../moteur/courbes.js');
 const { trouverStyle, messageStyleInconnu } = require('./styles.js');
+const { charteFinale, chartePour, variablesDerivees } = require('./lib/fusion-charte.js');
+const { trouverFichiersPolice } = require('./lib/police.js');
 
 const RACINE = path.resolve(__dirname, '..');
 const MOTEUR = ['courbes.js', 'minutage.js', 'transitions.js', 'tween.js', 'horloge.js', 'lecteur.js', 'debordement.js'];
-const CHARTE_DEFAUT = {
-  couleurs: { primaire: '#0a6cff', accent: '#b45309', fond: '#ffffff', texte: '#1a1a1a' },
-  polices: { titres: 'system-ui', texte: 'system-ui' },
-};
-
 function slug(texte) {
   return String(texte).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'video';
 }
 
-function lireJSON(fichier, defaut) {
-  try { return JSON.parse(fs.readFileSync(fichier, 'utf8')); } catch { return defaut; }
-}
-
-/** Fusionne la charte par défaut, celle du style et celle du déroulé. */
-function chartePour(deroule, dossierStyle) {
-  const duStyle = lireJSON(path.join(dossierStyle, 'charte.json'), {});
-  const duDeroule = deroule.charte || {};
-  return {
-    couleurs: { ...CHARTE_DEFAUT.couleurs, ...duStyle.couleurs, ...duDeroule.couleurs },
-    polices: { ...CHARTE_DEFAUT.polices, ...duStyle.polices, ...duDeroule.polices },
-    logo: duDeroule.logo || null,
-  };
-}
-
 const POLICES_SYSTEME = new Set(['system-ui', 'sans-serif', 'serif', 'monospace']);
 
-/** Variables CSS de la charte et @font-face embarqués. -> { css, erreurs } */
+/** Variables CSS de la charte (et dérivées) et @font-face embarqués. -> { css, erreurs } */
 function cssCharte(charte, dossierProjet, dossierStyle) {
   const erreurs = [];
-  const lignes = [];
-  for (const [nom, valeur] of Object.entries(charte.couleurs)) lignes.push(`  --c-${nom}: ${valeur};`);
+  const lignes = Object.entries(charte.couleurs).map(([nom, valeur]) => `  --c-${nom}: ${valeur};`);
+  lignes.push(...variablesDerivees(charte.couleurs));
   const faces = [];
   const dejaVues = new Set();
+  const face = (famille, fichier, graisse) => faces.push(`@font-face { font-family: '${famille}'; src: url("${versDataURI(fichier)}"); font-weight: ${graisse || '100 900'}; font-display: block; }`);
   for (const [role, valeur] of Object.entries(charte.polices)) {
-    let famille = valeur;
-    if (/\.(woff2?|ttf|otf)$/i.test(valeur)) {
+    let famille;
+    if (valeur && typeof valeur === 'object') {
+      famille = valeur.famille;
+      const absolu = cheminDansProjet(dossierProjet, valeur.fichier);
+      if (!absolu || !fs.existsSync(absolu)) erreurs.push({ regle: 'police-non-embarquee', gravite: 'erreur', message: `Police « ${famille} » : fichier « ${valeur.fichier} » introuvable (charte.polices.${role}).` });
+      else if (!dejaVues.has(famille)) { face(famille, absolu); dejaVues.add(famille); }
+    } else if (/\.(woff2?|ttf|otf)$/i.test(valeur)) {
       famille = path.basename(valeur).replace(/\.[^.]+$/, '');
       const absolu = cheminDansProjet(dossierProjet, valeur);
-      if (absolu && fs.existsSync(absolu) && !dejaVues.has(famille)) {
-        faces.push(`@font-face { font-family: '${famille}'; src: url("${versDataURI(absolu)}"); font-weight: 100 900; font-display: block; }`);
-        dejaVues.add(famille);
-      } else if (!absolu || !fs.existsSync(absolu)) {
-        erreurs.push({ regle: 'police-non-embarquee', gravite: 'erreur', message: `Police « ${valeur} » introuvable dans le projet (charte.polices.${role}).` });
-      }
-    } else if (!POLICES_SYSTEME.has(famille) && !dejaVues.has(famille)) {
-      const fichier = path.join(dossierStyle, 'polices', `${famille}.woff2`);
-      if (fs.existsSync(fichier)) {
-        faces.push(`@font-face { font-family: '${famille}'; src: url("${versDataURI(fichier)}"); font-weight: 100 900; font-display: block; }`);
-        dejaVues.add(famille);
-      } else {
-        erreurs.push({ regle: 'police-non-embarquee', gravite: 'erreur', message: `Police « ${famille} » non fournie : ajoutez son fichier dans assets/ et indiquez-le dans charte.polices.${role}.` });
+      if (!absolu || !fs.existsSync(absolu)) erreurs.push({ regle: 'police-non-embarquee', gravite: 'erreur', message: `Police « ${valeur} » introuvable dans le projet (charte.polices.${role}).` });
+      else if (!dejaVues.has(famille)) { face(famille, absolu); dejaVues.add(famille); }
+    } else {
+      famille = valeur;
+      if (!POLICES_SYSTEME.has(famille) && !dejaVues.has(famille)) {
+        const fichiers = trouverFichiersPolice(famille, [path.join(dossierProjet, 'charte', 'polices'), path.join(dossierStyle, 'polices')]);
+        if (fichiers.length) { fichiers.forEach((f) => face(famille, f.fichier, f.graisse)); dejaVues.add(famille); }
+        else erreurs.push({ regle: 'police-non-embarquee', gravite: 'erreur', message: `Police « ${famille} » non fournie : récupérez-la avec « pulse-motion police "${famille}" », ou ajoutez son fichier dans charte/polices/ (charte.polices.${role}).` });
       }
     }
     lignes.push(`  --f-${role}: '${famille}', system-ui, sans-serif;`);
@@ -116,7 +99,8 @@ function assembler({ dossier, dossierStyles, ecrire = true }) {
   const dossierStyle = style.dossier;
 
   const erreurs = [];
-  const charte = chartePour(deroule, dossierStyle);
+  const charte = charteFinale(deroule, dossierStyle, projet);
+  charte.erreurs.forEach((message) => erreurs.push({ regle: 'charte-invalide', gravite: 'erreur', message }));
   const { css: cssDeCharte, erreurs: erreursPolices } = cssCharte(charte, projet, dossierStyle);
   erreurs.push(...erreursPolices);
 
@@ -186,7 +170,7 @@ ${cssStyle}
 </style>
 </head>
 <body>
-<div id="pm-scene">
+<div id="pm-scene" data-ton="${charte.ton}">
 ${sections.join('\n')}
 </div>
 ${audio}
@@ -228,4 +212,4 @@ if (require.main === module) {
   process.exit(ok ? 0 : 1);
 }
 
-module.exports = { assembler, slug, chartePour, RACINE };
+module.exports = { assembler, slug, chartePour, charteFinale, RACINE };

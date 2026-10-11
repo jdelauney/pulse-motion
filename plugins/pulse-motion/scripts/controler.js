@@ -11,7 +11,7 @@
  */
 const fs = require('node:fs');
 const path = require('node:path');
-const { assembler, chartePour } = require('./assembler.js');
+const { assembler, charteFinale } = require('./assembler.js');
 const { trouverStyle } = require('./styles.js');
 const { lireDeroule } = require('./lib/deroule.js');
 const { cheminDansProjet } = require('./lib/embarquer.js');
@@ -137,7 +137,7 @@ function controler({ dossier, dossierStyles, ecrire = true }) {
     try { controlerCSS(fs.readFileSync(path.join(dossierStyle, 'style.css'), 'utf8'), undefined, `Style « ${deroule.style} »`, problemes); } catch { /* style vérifié par l'assemblage */ }
 
     // Contraste de la charte.
-    const { couleurs } = chartePour(deroule, dossierStyle);
+    const { couleurs } = charteFinale(deroule, dossierStyle, projet);
     const paires = [
       ['texte', SEUILS.contrasteTexte, 'le texte'],
       ['primaire', SEUILS.contrasteTitres, 'les titres'],

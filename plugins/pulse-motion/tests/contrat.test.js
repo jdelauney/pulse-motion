@@ -77,3 +77,19 @@ test('charte du style illisible : contraste du texte insuffisant', () => {
   fs.writeFileSync(path.join(d, 'charte.json'), JSON.stringify({ couleurs: { primaire: '#1d4ed8', accent: '#b45309', fond: '#f8fafc', texte: '#cbd5e1' }, polices: { titres: 'Figtree', texte: 'Inter' } }));
   assert.match(verifierStyle(d).erreurs.join('\n'), /contraste texte\/fond de 1,\d:1/);
 });
+
+test('ton sombre déclaré : couleur.sombre (fond, texte lisible) obligatoire ; polices nom-graisse acceptées', () => {
+  const d = copieDuStyle();
+  const identite = JSON.parse(fs.readFileSync(path.join(d, 'identite.json'), 'utf8'));
+  identite.couleur.tons = ['clair', 'sombre'];
+  fs.writeFileSync(path.join(d, 'identite.json'), JSON.stringify(identite));
+  fs.appendFileSync(path.join(d, 'style.css'), '\n#pm-scene[data-ton="sombre"] { color: var(--c-texte); }\n');
+  assert.match(verifierStyle(d).erreurs.join('\n'), /« couleur\.sombre »/);
+  identite.couleur.sombre = { fond: '#0b1020', texte: '#1e293b' };
+  fs.writeFileSync(path.join(d, 'identite.json'), JSON.stringify(identite));
+  assert.match(verifierStyle(d).erreurs.join('\n'), /contraste texte\/fond du ton sombre/);
+  identite.couleur.sombre.texte = '#f1f5f9';
+  fs.writeFileSync(path.join(d, 'identite.json'), JSON.stringify(identite));
+  fs.renameSync(path.join(d, 'polices', 'Inter.woff2'), path.join(d, 'polices', 'Inter-400.woff2'));
+  assert.deepEqual(verifierStyle(d).erreurs, []);
+});
