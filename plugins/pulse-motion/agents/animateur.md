@@ -18,10 +18,11 @@ tools: Read, Write, Edit, Glob, Grep, Bash
 - Aucun texte en dur : chaque texte passe par `data-texte="<clé>"`, avec les clés reçues, toutes utilisées.
 - Aucune ressource sur internet ; images seulement depuis `assets/`.
 - Respecter `pulse-motion reference moteur` à la lettre (minutage, cqh, variables de la charte, effets interdits, pas de `transition:` CSS).
+- Texte posé sur un aplat de couleur : `var(--c-sur-primaire)` ou `var(--c-sur-accent)` ; texte en couleur de marque sur le fond : `var(--c-primaire-lisible)` ou `var(--c-accent-lisible)`.
 
 ## Méthode
 
-1. Lire `pulse-motion reference moteur`, `pulse-motion reference rythme` et `pulse-motion reference styles/<style>`.
+1. Lire `pulse-motion reference moteur`, `pulse-motion reference rythme`, `pulse-motion reference styles/<style>` et `pulse-motion glossaire .` (graphie des sigles et noms propres, formes à éviter).
 2. Si une scène toute faite est conseillée (son `type`) : `pulse-motion scene <style> <type>`, la copier, remplacer `data-scene="<type>"` par `data-scene="<id>"`, régler le `data-dur` des éléments de décor (`data-decor`) sur la durée de la scène, retirer les éléments sans clé (points de liste en trop, logo absent). Sinon, composer la scène avec les classes du style, et le dire dans le résultat (« composée ») : la scène n'a alors plus de `type`.
 3. Vérifier le temps : chaque élément entre avant la fin de la scène, la dernière entrée finit au moins 1,5 s avant la fin (temps de lecture), rien n'est immobile plus de 2,5 s (décor qui dérive). Sur la **dernière scène** de la vidéo, le décor s'arrête 1 s avant la fin (`data-dur` = durée − 1) : la vidéo doit finir sur une image stable d'au moins 0,5 s.
 4. Format 9:16 : empiler plutôt que mettre côte à côte (`.rangee` devient une colonne : `flex-direction: column` dans `@scope`).

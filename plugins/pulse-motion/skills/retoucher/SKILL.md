@@ -38,7 +38,7 @@ Classer la demande, puis :
 | Rythme, durée | « ralentis la scène 3 » (rythme 0,8), « accélère » (1,25), « laisse plus de temps à la fin » (duree + 1 à 2 s) | `rythme` ou `duree` du déroulé |
 | Visuel d'une scène | « le chiffre doit rebondir », « mets la liste à droite » | le fichier de la scène (agent `animateur` pour une refonte, sinon modification directe) |
 | Style | « passe en style éditorial », « quelque chose de plus chaleureux » | `pulse-motion styles --genre <genre>` pour trouver le style (en cas de doute, proposer 2 styles avec `pulse-motion comparer . <style1>,<style2> --ouvrir`), puis `pulse-motion changer-style . <style>` : les scènes toutes faites sont recopiées ; les scènes de `aReecrire` sont confiées à un agent `animateur` chacune, en parallèle, dans le nouveau style |
-| Global | « mets mes couleurs », « baisse la musique », « change la transition » | `charte`, `musique`, `transition` du déroulé |
+| Global | « mets mes couleurs », « baisse la musique », « change la transition » | `charte/charte.json` (couleurs, polices, logo), `musique`, `transition` du déroulé ; « prends les couleurs de mon logo » : `pulse-motion charte depuis-logo charte/logo.<ext> --style <style>` ; « applique la charte Dupont » : `pulse-motion charte appliquer <nom> .` ; « change la police des titres » : `pulse-motion police "<famille>"` ; « passe en sombre » : `"ton": "sombre"` dans `charte` du déroulé |
 | Structure | « ajoute une scène sur… », « supprime la scène 4 » | déroulé + fichier de scène (agent `animateur`) ; numéroter les fichiers dans l'ordre |
 
 Lire `pulse-motion reference moteur` avant de toucher au fichier d'une scène.

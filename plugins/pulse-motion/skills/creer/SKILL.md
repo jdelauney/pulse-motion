@@ -36,13 +36,18 @@ Le sujet vient de l'argument ; sinon, le demander d'abord en une question ouvert
 Le genre se déduit du sujet (formation, produit, storytelling, social). Format : 16:9, sauf genre `social` → 9:16.
 Puis `pulse-motion etat . --parcours rapide|accompagne`.
 
-Logo, couleurs ou musique demandés : demander les fichiers (chemin ou glisser-déposer) et les **copier** dans `assets/`. Couleurs en mots (« bleu marine ») : les traduire en `#rrggbb` et le dire. Une police citée sans fichier (« ma police, c'est Montserrat ») : utiliser la plus proche des polices fournies (Figtree pour les titres, Inter pour le texte) et le dire ; si la personne fournit le fichier, le copier dans `assets/` et l'indiquer dans `charte.polices`.
+La charte (logo, couleurs, polices) vit dans `charte/` du projet ; la musique dans `assets/`. Les fichiers se demandent à la personne (chemin ou glisser-déposer) et se **copient**.
+- `pulse-motion charte liste` : s'il existe des chartes enregistrées, la question 4 propose d'abord « Ma charte <nom> ». Elle s'applique après l'écriture du déroulé (étape 2) : `pulse-motion charte appliquer <nom> .`.
+- Logo : le copier dans `charte/logo.<ext>`, puis `pulse-motion charte depuis-logo charte/logo.<ext> --style <style>` (style recommandé, étape 2) : couleur primaire et couleur d'accent, déjà rendues lisibles sur le fond du style. Les écrire dans `charte/charte.json` (`{ "couleurs": { "primaire": "…", "accent": "…" }, "logo": "logo.<ext>" }`) et dire les `ajustements` en une phrase. Logo en JPEG ou WebP : demander un PNG ou un SVG. Pas de couleur exploitable : garder les couleurs du style et le dire.
+- Couleurs en mots (« bleu marine ») : les traduire en `#rrggbb` dans `charte/charte.json` et le dire.
+- Police citée sans fichier (« ma police, c'est Montserrat ») : `pulse-motion police "<famille>"` la récupère depuis Bunny Fonts dans `charte/polices/` ; si elle n'y est pas, garder la plus proche des polices du style (Figtree pour les titres, Inter pour le texte) et le dire. Fichier fourni : `pulse-motion police <fichier>` ; réponse `aConfirmer` : poser la question à la personne, puis relancer avec `--confirmer` ; `avertissements` (caractères absents) : les dire. Puis l'indiquer dans `charte/charte.json` (`"polices": { "titres": "<famille>" }`).
+- Musique : copier le fichier dans `assets/`.
 
 ## 2. Déroulé et style
 
 1. `pulse-motion styles --genre <genre>` : les styles classés pour ce genre, avec leur personnalité et leurs scènes toutes faites. Les **3 premiers** sont ceux à proposer ; le premier est le style recommandé.
 2. Lire `pulse-motion reference rythme`.
-3. Écrire `deroule.json` (schéma ci-dessous) dans le style recommandé : une idée par scène, structure du genre, durées ≥ 1,5 s + 0,3 s par mot, total proche de la durée demandée. Pour chaque scène, choisir une scène toute faite et l'écrire dans `type` (`titre`, `liste`, `chiffre`, `comparaison`, `etape`, `alerte`, `schema` ou `conclusion`) ; pas de `type` pour une scène à composer librement.
+3. Écrire `deroule.json` (schéma ci-dessous) dans le style recommandé : une idée par scène, structure du genre, durées ≥ 1,5 s + 0,3 s par mot, total proche de la durée demandée. Pour chaque scène, choisir une scène toute faite et l'écrire dans `type` (`titre`, `liste`, `chiffre`, `comparaison`, `etape`, `alerte`, `schema` ou `conclusion`) ; pas de `type` pour une scène à composer librement. Sigles et noms propres du sujet (HACCP, nom d'un produit) : proposer en une question de les noter au glossaire, `pulse-motion glossaire noter . "<terme>" "<sens>" "<formes à éviter>"`.
 4. S'il y a au moins 2 styles : `pulse-motion comparer . <style1>,<style2>,<style3> --ouvrir` **en arrière-plan** (avec les 3 premiers styles) : la comparaison des styles, faite sur les deux premières scènes de la personne, s'ouvre dans son navigateur. Regarder soi-même les images de `sortie/comparaison/` (avec `Read`) ; un avertissement (texte trop long pour un style) se dit en une phrase.
 5. Présenter le déroulé en tableau : n°, scène, texte à l'écran, durée ; durée totale en dessous. Puis demander :
    - **Parcours rapide** : une seule question : « Je valide, avec le style <1> (Recommandé) » · « Je valide, avec le style <2> » · « Je valide, avec le style <3> » · « Je veux changer quelque chose ». Décrire chaque style par sa personnalité (trois mots), jamais par son nom technique seul.
@@ -54,7 +59,7 @@ Logo, couleurs ou musique demandés : demander les fichiers (chemin ou glisser-d
 {
   "version": 1, "titre": "…", "genre": "formation", "parcours": "rapide",
   "format": { "ratio": "16:9", "ips": 30 }, "style": "clair-pedagogique",
-  "charte": { "couleurs": { "primaire": "#…", "accent": "#…" }, "logo": "assets/logo.svg" },
+  "charte": { "ton": "auto" },
   "musique": { "fichier": "assets/musique.mp3", "volume": 0.6 },
   "scenes": [
     { "id": "intro", "type": "titre", "fichier": "scenes/01-intro.html", "duree": 7, "intention": "poser la question", "textes": { "etiquette": "…", "titre": "…", "sous": "…" }, "transition": "fondu" }
@@ -62,7 +67,7 @@ Logo, couleurs ou musique demandés : demander les fichiers (chemin ou glisser-d
 }
 ```
 
-`charte` et `musique` sont facultatifs. Clés de `textes` : celles de la scène toute faite (`pulse-motion reference styles/<style>`).
+`charte` du déroulé ne garde que les réglages ponctuels (`ton` : `clair`, `sombre` ou `auto` ; une couleur à changer pour cette vidéo seulement) ; la charte elle-même est dans `charte/`. `charte` et `musique` sont facultatifs. Clés de `textes` : celles de la scène toute faite (`pulse-motion reference styles/<style>`).
 
 ## 3. Fabrication
 
@@ -81,6 +86,8 @@ Logo, couleurs ou musique demandés : demander les fichiers (chemin ou glisser-d
 4. Pour montrer deux scènes en images fixes (à la demande de la personne) : `pulse-motion planche . <id1>,<id2> --ouvrir`, puis regarder soi-même les images de `sortie/planche/` (avec `Read`).
 
 ## 5. Fin
+
+Si la charte a été créée pour cette vidéo, proposer de l'enregistrer pour les suivantes (« Enregistrer ma charte » (Recommandé) · « Pas maintenant ») : `pulse-motion charte enregistrer <nom> .` (nom en minuscules et tirets, ex. `client-dupont`).
 
 Terminer par ce bloc, sans rien après :
 

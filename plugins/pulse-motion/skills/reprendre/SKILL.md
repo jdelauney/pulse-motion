@@ -7,7 +7,7 @@ allowed-tools: Bash(pulse-motion *) Bash(node *) Read Glob Grep Write Edit Agent
 # /pulse-motion:reprendre – Reprendre la vidéo en cours
 
 1. `pulse-motion etat .` et lire `etape`, `prochaine`, `titre`, `parcours`. La commande échoue avec « node » introuvable (Node.js n'est pas installé) : expliquer qu'il faut installer Node.js en version LTS depuis https://nodejs.org, puis relancer Claude Code, et s'arrêter.
-2. Lire `pulse-motion lexique` : ne pas réexpliquer les mots déjà vus par la personne.
+2. Lire `pulse-motion lexique` : ne pas réexpliquer les mots déjà vus par la personne. `charte.aJour` faux : dire que la charte enregistrée « <modele> » a changé (ou n'existe plus, `charte.existe` faux) et proposer de la réappliquer (`pulse-motion charte appliquer <modele> .`) ; ne rien changer sans accord.
 3. Dire à la personne, en une phrase simple, où en est la vidéo « <titre> ».
 4. Lire les consignes de création : `pulse-motion consignes creer`.
 5. Continuer selon l'étape, à la section indiquée de ces consignes :
