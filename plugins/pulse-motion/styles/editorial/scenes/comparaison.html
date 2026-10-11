@@ -1,0 +1,19 @@
+<!-- Scène toute faite « comparaison » (style editorial) : deux volets séparés par un filet. Durée conseillée : 12 s.
+     Textes : titre (≤ 40 car.), gauche-titre et droite-titre (≤ 20 car.), gauche-texte et droite-texte (≤ 60 car.). -->
+<section data-scene="comparaison">
+  <div class="decor">
+    <span class="ligne" data-decor data-start="0" data-dur="12" data-tween="--l 0→1 sine-inout"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen masque" data-texte="titre" data-start="0.2" data-dur="1.1"></h2>
+  <span id="filet" class="filet" data-start="#titre:fin" data-dur="1.2"></span>
+  <div class="duo">
+    <div id="gauche" class="volet fondu" data-start="#filet+0.4" data-dur="1">
+      <h3 class="volet-titre" data-texte="gauche-titre"></h3>
+      <p class="texte" data-texte="gauche-texte"></p>
+    </div>
+    <div id="droite" class="volet fondu" data-start="#gauche:fin+1.4" data-dur="1">
+      <h3 class="volet-titre accent" data-texte="droite-titre"></h3>
+      <p class="texte" data-texte="droite-texte"></p>
+    </div>
+  </div>
+</section>

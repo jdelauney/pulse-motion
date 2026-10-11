@@ -1,0 +1,12 @@
+<!-- Scène toute faite « conclusion » (style editorial) : le message à retenir et le logo. Durée conseillée : 6 s.
+     Textes : titre (≤ 40 car.), sous (≤ 50 car.). Logo : celui de la charte (sinon supprimer l'image).
+     Dernière scène de la vidéo : data-dur du décor = durée de la scène − 1 s (image stable d'au moins 0,5 s à la fin). -->
+<section data-scene="conclusion" class="centre">
+  <div class="decor">
+    <span class="ligne" data-decor data-start="0" data-dur="5" data-tween="--l 0→1 sine-inout"></span>
+  </div>
+  <h2 id="titre" class="titre masque" data-texte="titre" data-start="0.2" data-dur="1.1"></h2>
+  <span id="filet" class="filet court" data-start="#titre:fin" data-dur="1"></span>
+  <p id="sous" class="chapo fondu" data-texte="sous" data-start="#filet+0.3" data-dur="1"></p>
+  <img id="logo" class="logo fondu" data-logo alt="" data-start="#sous:fin+0.2" data-dur="0.8">
+</section>
