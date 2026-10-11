@@ -16,7 +16,7 @@ const S = require('./lib/scenes.js');
 const { variablesCSS } = require('../moteur/courbes.js');
 
 const RACINE = path.resolve(__dirname, '..');
-const MOTEUR = ['courbes.js', 'minutage.js', 'transitions.js', 'tween.js', 'horloge.js', 'lecteur.js'];
+const MOTEUR = ['courbes.js', 'minutage.js', 'transitions.js', 'tween.js', 'horloge.js', 'lecteur.js', 'debordement.js'];
 const CHARTE_DEFAUT = {
   couleurs: { primaire: '#0a6cff', accent: '#ffb000', fond: '#ffffff', texte: '#1a1a1a' },
   polices: { titres: 'system-ui', texte: 'system-ui' },

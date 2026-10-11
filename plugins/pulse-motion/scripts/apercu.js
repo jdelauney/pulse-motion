@@ -69,6 +69,41 @@ async function demarrerApercu({ dossier, port = 4321, dossierStyles, delai = 150
     clients.forEach((res) => res.write(message));
   }
 
+  const rapportPage = path.join(projet, 'sortie', 'controle-page.json');
+
+  /** Rapport de débordement envoyé par la page : JSON seulement (une autre origine serait bloquée par CORS). */
+  function recevoirControle(req, res) {
+    if (!/^application\/json\b/i.test(req.headers['content-type'] || '')) {
+      res.writeHead(415, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('JSON attendu');
+      return;
+    }
+    let corps = '';
+    let tropGros = false;
+    req.setEncoding('utf8');
+    req.on('data', (morceau) => {
+      corps += morceau;
+      if (corps.length > 1e6) { tropGros = true; req.destroy(); }
+    });
+    req.on('end', () => {
+      if (tropGros) return;
+      let debordements;
+      try {
+        debordements = JSON.parse(corps).debordements;
+        if (!Array.isArray(debordements)) throw new Error('liste attendue');
+        debordements = debordements.map((d) => ({ scene: String(d.scene), element: String(d.element), message: String(d.message) }));
+      } catch {
+        res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('Rapport illisible');
+        return;
+      }
+      fs.mkdirSync(path.dirname(rapportPage), { recursive: true });
+      fs.writeFileSync(rapportPage, JSON.stringify({ debordements }, null, 2));
+      res.writeHead(204);
+      res.end();
+    });
+  }
+
   const serveur = http.createServer((req, res) => {
     const url = new URL(req.url, 'http://localhost');
     if (req.method === 'GET' && url.pathname === '/') {
@@ -80,6 +115,8 @@ async function demarrerApercu({ dossier, port = 4321, dossierStyles, delai = 150
       res.write(': connecté\n\n');
       clients.add(res);
       req.on('close', () => clients.delete(res));
+    } else if (req.method === 'POST' && url.pathname === '/_pm/controle') {
+      recevoirControle(req, res);
     } else {
       res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('Introuvable');
@@ -112,6 +149,8 @@ async function demarrerApercu({ dossier, port = 4321, dossierStyles, delai = 150
       }
       if (resultat.ok) {
         dernier = resultat;
+        // Le rapport de la page portait sur l'ancienne version : la page rechargée en enverra un nouveau.
+        fs.rmSync(rapportPage, { force: true });
         diffuser('recharger', { erreurs: resultat.erreurs.length });
       } else {
         if (!dernier.ok) dernier = resultat;
