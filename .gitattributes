@@ -1,0 +1,7 @@
+# Fins de ligne Unix partout : indispensable pour que bin/pulse-motion
+# fonctionne aussi sous Windows (Git Bash), même avec core.autocrlf activé.
+* text=auto eol=lf
+*.woff2 binary
+*.png binary
+*.jpg binary
+*.mp3 binary

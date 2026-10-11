@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+# pulse-motion – outil du plugin Pulse Motion. Claude Code place le dossier bin/ du plugin
+# dans le PATH : les skills /pulse-motion:* l'appellent sans chemin ni autorisation de lecture.
+exec node "$(dirname "$0")/../scripts/pm.js" "$@"
