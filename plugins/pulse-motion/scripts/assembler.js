@@ -17,7 +17,8 @@ const { preparerEffets } = require('./lib/effets.js');
 const { variablesCSS } = require('../moteur/courbes.js');
 
 const RACINE = path.resolve(__dirname, '..');
-const MOTEUR = ['courbes.js', 'minutage.js', 'transitions.js', 'tween.js', 'horloge.js', 'lecteur.js', 'debordement.js'];
+const MOTEUR = ['courbes.js', 'minutage.js', 'transitions.js', 'tween.js', 'horloge.js', 'lecteur.js', 'debordement.js',
+  'particules/instantanes.js', 'particules/gpu.js', 'particules/simulation.js', 'particules/rendu.js', 'particules/calques.js'];
 const CHARTE_DEFAUT = {
   couleurs: { primaire: '#0a6cff', accent: '#b45309', fond: '#ffffff', texte: '#1a1a1a' },
   polices: { titres: 'system-ui', texte: 'system-ui' },
@@ -204,6 +205,7 @@ ${lireMoteur(RACINE)}
 ${scriptsScenes.join('\n')}
 M.demarrer();
 M.demarrerLecteur();
+M.demarrerParticules();
 </script>
 </body>
 </html>
