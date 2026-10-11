@@ -22,8 +22,10 @@ const CODE = `
     const r = { webgpu: true };
     await M.seek(0);
     const direct = await lire(2.2);
+    r.hasardDirect = document.getElementById('hasard').style.left;
     await M.seek(5);
     const detour = await lire(2.2);
+    r.hasardDetour = document.getElementById('hasard').style.left;
     r.deterministe = egal(direct, detour);
     r.nonVide = somme(direct) > 0;
     r.videAvant = somme(await lire(0.2)) === 0;
@@ -49,7 +51,10 @@ function page(dir) {
 
 test('calques : image reproductible, vide hors fenêtre, calques ordonnés, reprise après perte du GPU', async (t) => {
   if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
-  const html = page(copierProjet('projet-particules')).replace('</body>', `${CODE}\n</body>`);
+  const dir = copierProjet('projet-particules');
+  const f = path.join(dir, 'scenes', '01-s.html');
+  fs.writeFileSync(f, fs.readFileSync(f, 'utf8').replace('</section>', "  <p id=\"hasard\" data-start=\"0\"></p><script>M.chaqueImage('s', function () { document.getElementById('hasard').style.left = (Math.random() * 10).toFixed(6) + 'cqh'; });</script>\n</section>"));
+  const html = page(dir).replace('</body>', `${CODE}\n</body>`);
   const r = JSON.parse(await executerPage(html));
   assert.equal(r.erreur, undefined, r.erreur);
   assert.equal(r.webgpu, true);
@@ -61,6 +66,8 @@ test('calques : image reproductible, vide hors fenêtre, calques ordonnés, repr
   assert.equal(r.finDeScene, true);
   assert.deepEqual(r.calques, ['arriere:-1', 'avant:1000']);
   assert.equal(r.apresPerte, true);
+  assert.ok(r.hasardDirect, 'Math.random a été appelé par la scène');
+  assert.equal(r.hasardDirect, r.hasardDetour, 'Math.random reproductible par deux chemins');
 });
 
 test('sans WebGPU : panneau sur chaque effet, panneau d\'erreur, page lisible', { skip: !trouverNavigateur() && 'Chrome ou Edge introuvable' }, async () => {
@@ -76,4 +83,15 @@ test('sans WebGPU : panneau sur chaque effet, panneau d\'erreur, page lisible', 
   assert.equal(panneaux.filter((p) => /Effet non affiché : WebGPU indisponible\. Ouvrez la vidéo dans Chrome ou Edge récent\./.test(p)).length, 3);
   assert.equal(panneaux.filter((p) => /Effet « inconnu » introuvable/.test(p)).length, 1);
   assert.match(dom, /data-pm-pret/);
+});
+
+test('sans effet : aucun calque ni panneau dans la page', { skip: !trouverNavigateur() && 'Chrome ou Edge introuvable' }, async () => {
+  const r = assembler({ dossier: copierProjet('projet-simple'), dossierStyles: STYLES, dossierEffets: EFFETS, ecrire: false });
+  assert.deepEqual(r.erreurs, []);
+  const fichier = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'pm-sans-effet-')), 'page.html');
+  fs.writeFileSync(fichier, r.html);
+  const dom = await rendreDOM(trouverNavigateur(), fichier);
+  assert.match(dom, /data-pm-pret/);
+  assert.doesNotMatch(dom, /<canvas[^>]*pm-calque/);
+  assert.doesNotMatch(dom, /class="pm-effet-panneau"/);
 });

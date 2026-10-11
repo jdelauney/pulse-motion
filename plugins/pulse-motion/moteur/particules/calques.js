@@ -112,22 +112,31 @@
     const { device } = etat.gpu;
     etat.scenes.forEach((sc) => {
       if (sc.section.style.display === 'none') return;
-      const mesures = { faites: false };
-      const listes = { arriere: [], avant: [] };
-      sc.effets.forEach((fx) => {
-        const tau = (t - fx.debut) * fx.info.rythme;
-        if (tau < 0 || tau >= fx.effet.fin) return;
-        if (!fx.sim) fx.sim = new P.Simulation(device, fx.effet);
-        const deltas = fx.sim.avancer(tau, { a: (x) => zoneA(fx, x, mesures), grille: (g) => grille(fx, g, mesures) });
-        deltas.forEach((delta, i) => listes[fx.calque].push({ sim: fx.sim, i, delta }));
-      });
-      if (mesures.faites) M.rendreScene(sc.info.id, t);
-      const largeurCqh = 100 * sc.section.clientWidth / Math.max(1, sc.section.clientHeight);
-      Object.keys(sc.calques).forEach((nom) => {
-        const canvas = sc.calques[nom];
-        ajuster(canvas, sc.section);
-        etat.rendu.dessiner(etat.rendu.cible(canvas), listes[nom], largeurCqh);
-      });
+      if (sc.echec) return;
+      try { rendreScene(sc, t, device); } catch (e) {
+        sc.echec = true;
+        console.error('[Pulse Motion] Effets de particules : ' + e.message);
+        sc.effets.forEach((fx) => panneau(fx.el, 'Effet non affiché : ' + e.message));
+      }
+    });
+  }
+
+  function rendreScene(sc, t, device) {
+    const mesures = { faites: false };
+    const listes = { arriere: [], avant: [] };
+    sc.effets.forEach((fx) => {
+      const tau = (t - fx.debut) * fx.info.rythme;
+      if (tau < 0 || tau >= fx.effet.fin) return;
+      if (!fx.sim) fx.sim = new P.Simulation(device, fx.effet);
+      const deltas = fx.sim.avancer(tau, { a: (x) => zoneA(fx, x, mesures), grille: (g) => grille(fx, g, mesures) });
+      deltas.forEach((delta, i) => listes[fx.calque].push({ sim: fx.sim, i, delta }));
+    });
+    if (mesures.faites) M.rendreScene(sc.info.id, t);
+    const largeurCqh = 100 * sc.section.clientWidth / Math.max(1, sc.section.clientHeight);
+    Object.keys(sc.calques).forEach((nom) => {
+      const canvas = sc.calques[nom];
+      ajuster(canvas, sc.section);
+      etat.rendu.dessiner(etat.rendu.cible(canvas), listes[nom], largeurCqh);
     });
   }
 
