@@ -224,4 +224,4 @@ if (require.main === module) {
   process.exit(ok ? 0 : 1);
 }
 
-module.exports = { assembler, slug };
+module.exports = { assembler, slug, chartePour, RACINE };
