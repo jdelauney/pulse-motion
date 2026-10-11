@@ -27,6 +27,23 @@ const CODE = `
     const detour = await lire(2.2);
     r.hasardDetour = document.getElementById('hasard').style.left;
     r.deterministe = egal(direct, detour);
+    // Aller-retour dans la fenêtre de l'effet : restaure un instantané et rejoue des pas.
+    await M.seek(3.4);
+    r.deterministeFenetre = egal(direct, await lire(2.2));
+    // Les particules suivent l'ancre (le carré glisse de 10 cqh par seconde).
+    const moyenneX = async (t) => {
+      await M.seek(t);
+      const e = await M.particules.lireEtat('s', 0, 0);
+      const u = new Uint32Array(e.buffer);
+      let somme = 0, n = 0;
+      for (let i = 0; i < e.length; i += 16) if (u[i + 14] === 1) { somme += e[i]; n++; }
+      return n ? somme / n : NaN;
+    };
+    r.x1 = await moyenneX(1);
+    r.x22 = await moyenneX(2.2);
+    r.sectionsIsolees = [...document.querySelectorAll('#pm-scene > section.pm-avec-calques')].map((s) => getComputedStyle(s).isolation);
+    await M.seek(5);
+    r.etatLibere = await M.particules.lireEtat('s', 0, 0).then(() => false, () => true);
     r.nonVide = somme(direct) > 0;
     r.videAvant = somme(await lire(0.2)) === 0;
     r.videApres = somme(await lire(5)) === 0;
@@ -38,6 +55,11 @@ const CODE = `
     await new Promise((ok) => setTimeout(ok, 200));
     await M.particules.pret;
     r.apresPerte = M.particules.disponible && egal(avantPerte, await lire(2.2));
+    // Seek lancé dans la fenêtre de perte, avant que device.lost soit résolue.
+    await M.seek(5);
+    M.particules.device.destroy();
+    await M.seek(2.2);
+    r.seekPendantPerte = M.particules.disponible && egal(avantPerte, await M.particules.lirePixels('s', 'avant'));
     envoyer(r);
   } catch (e) { envoyer({ erreur: String(e && e.stack || e) }); }
 })();
@@ -60,6 +82,11 @@ test('calques : image reproductible, vide hors fenêtre, calques ordonnés, repr
   assert.equal(r.webgpu, true);
   assert.equal(r.nonVide, true, 'des particules sont dessinées à 2,2 s');
   assert.equal(r.deterministe, true, 'même image par 0 → 2,2 et par 5 → 2,2 (ancre animée)');
+  assert.equal(r.deterministeFenetre, true, 'même image par 0 → 2,2 et par 3,4 → 2,2 (instantané restauré, pas rejoués)');
+  assert.ok(r.x22 - r.x1 > 8, "les particules suivent l'ancre : x(2,2) − x(1) = " + (r.x22 - r.x1));
+  assert.deepEqual(r.sectionsIsolees, ['isolate']);
+  assert.equal(r.etatLibere, true, "simulation détruite hors de la fenêtre de l'effet");
+  assert.equal(r.seekPendantPerte, true, 'seek pendant la perte du GPU : image correcte');
   assert.equal(r.videAvant, true);
   assert.equal(r.videApres, true);
   assert.equal(r.arriere, true);
