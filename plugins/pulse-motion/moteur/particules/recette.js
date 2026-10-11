@@ -422,7 +422,7 @@
       // Émetteurs : noms, liens parent → enfant, profondeur.
       var liste = recette.emetteurs;
       if (!Array.isArray(liste) || !liste.length) throw invalide('', '« emetteurs » doit être une liste non vide');
-      var parNom = {};
+      var parNom = Object.create(null);
       liste.forEach(function (e, i) {
         if (!estObjet(e)) throw invalide('emetteurs[' + i + ']', 'objet attendu');
         if (typeof e.nom !== 'string' || !/^[a-z0-9-]+$/.test(e.nom)) throw invalide('emetteurs[' + i + ']', '« nom » obligatoire (minuscules, chiffres, tirets)');

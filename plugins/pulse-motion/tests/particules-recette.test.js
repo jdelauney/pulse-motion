@@ -177,3 +177,25 @@ test('compiler : sous-émetteurs mal formés', () => {
   assert.equal(deuxNiveaux.ok, true, JSON.stringify(deuxNiveaux.erreurs));
   assert.deepEqual(deuxNiveaux.effet.emetteurs.map((e) => e.profondeur), [0, 1, 2]);
 });
+
+test('compiler : salves après l\'émission continue, enfant d\'une salve', () => {
+  const r = R.compiler(avecEmetteurs([{ nom: 'a', naissance: { debit: 10, vie: [1, 1], salves: [{ t: 0, nombre: 5 }, { t: 1, nombre: 3 }] } }]), { dur: 2, graine: 1 });
+  assert.equal(r.ok, true, JSON.stringify(r.erreurs));
+  const [a] = r.effet.emetteurs;
+  assert.equal(a.capContinu, 11);
+  assert.deepEqual(a.salves.map((s) => s.debut), [11, 16]);
+  assert.equal(a.capacite, 19);
+
+  const parent = { nom: 'a', naissance: { salves: [{ t: 0, nombre: 4 }] }, a_la_mort: { emetteur: 'b' } };
+  const enfantSalve = { nom: 'b', naissance: { nombre: 2 } };
+  const s = R.compiler(avecEmetteurs([parent, enfantSalve]), { dur: 2, graine: 1 });
+  assert.equal(s.ok, true, JSON.stringify(s.erreurs));
+  assert.equal(s.effet.emetteurs[0].capacite, 4);
+  assert.equal(s.effet.emetteurs[1].G, 1);
+  assert.equal(s.effet.emetteurs[1].capacite, 4 * 2);
+});
+
+test('compiler : noms d\'émetteurs protégés des propriétés de Object.prototype', () => {
+  assert.match(erreurDe(avecEmetteurs([{ nom: 'a', naissance: { debit: 10 }, a_la_mort: { emetteur: 'constructor' } }])).message, /émetteur « constructor » inconnu/);
+  assert.match(erreurDe(avecEmetteurs([{ nom: 'constructor', naissance: { debit: 10 } }, { nom: 'constructor', naissance: { debit: 10 } }])).message, /nom en double/);
+});
