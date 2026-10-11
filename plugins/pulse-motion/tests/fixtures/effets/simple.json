@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "nom": "simple",
+  "description": "Salve unique, gravité et traînée linéaire (voie rapide)",
+  "parametres": { "nombre": { "defaut": 50, "min": 1, "max": 500000 } },
+  "emetteurs": [
+    {
+      "nom": "salve",
+      "naissance": {
+        "salves": [{ "t": 0, "nombre": "nombre" }],
+        "forme": { "type": "point" },
+        "vitesse": { "direction": [0, -1], "cone": 90, "valeur": [10, 20] },
+        "vie": [1, 2]
+      },
+      "forces": [{ "type": "gravite", "valeur": 30 }, { "type": "trainee", "coef": 0.5 }],
+      "rendu": { "type": "sprite", "melange": "alpha" }
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "nom": "fille",
+  "etend": "gerbe",
+  "description": "Gerbe plus dense, gravité faible",
+  "parametres": { "nombre": { "defaut": 200 } },
+  "emetteurs": [{ "nom": "gerbe", "forces": [{ "type": "gravite", "valeur": 10 }] }]
+}
