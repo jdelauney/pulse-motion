@@ -1,0 +1,38 @@
+/* Pulse Motion – mise en page de base : scène au bon format, lecteur dessous. */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: #111; }
+body {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  --pm-barre: 48px;
+}
+#pm-scene {
+  position: relative; overflow: hidden; container-type: size;
+  aspect-ratio: var(--pm-ratio-l) / var(--pm-ratio-h);
+  width: min(100vw, calc((100vh - var(--pm-barre)) * var(--pm-ratio-l) / var(--pm-ratio-h)));
+  background: var(--c-fond, #fff); color: var(--c-texte, #111);
+  font-family: var(--f-texte, system-ui, sans-serif);
+}
+#pm-scene > section[data-scene] { position: absolute; inset: 0; }
+/* Une transition CSS partirait de l'état précédent (dépend du chemin pour arriver à t) :
+   le mouvement passe par les animations, --p ou data-tween. */
+#pm-scene, #pm-scene * { transition: none !important; }
+.pm-erreur {
+  position: absolute; inset: 8cqh; display: grid; place-items: center; text-align: center;
+  padding: 4cqh; border: 0.6cqh dashed #c0392b; background: #fdecea; color: #7b1d14;
+  font: 600 4cqh/1.3 system-ui, sans-serif;
+}
+#pm-lecteur {
+  display: flex; align-items: center; gap: 12px; height: var(--pm-barre);
+  width: min(100vw, calc((100vh - var(--pm-barre)) * var(--pm-ratio-l) / var(--pm-ratio-h)));
+  padding: 0 12px; color: #eee; font: 13px/1 system-ui, sans-serif; background: #1b1b1b;
+}
+#pm-lecteur button { width: 32px; height: 32px; border: 0; border-radius: 50%; background: #eee; color: #111; cursor: pointer; }
+.pm-piste { position: relative; flex: 1; }
+.pm-piste input { width: 100%; margin: 0; }
+.pm-reperes { position: absolute; inset: 0; pointer-events: none; }
+.pm-reperes span { position: absolute; top: -4px; width: 2px; height: 6px; background: #888; }
+.pm-etiquette { white-space: nowrap; font-variant-numeric: tabular-nums; }
+#pm-bandeau {
+  position: fixed; top: 0; left: 0; right: 0; padding: 10px 16px;
+  background: #c0392b; color: #fff; font: 600 14px/1.4 system-ui, sans-serif; z-index: 10;
+}
