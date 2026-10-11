@@ -22,6 +22,7 @@
   var PROFONDEUR_MAX = 2;
   var FORCES_MAX = 8;
   var TRAINEE_MAX = 16;
+  var SALVES_MAX = 8;
   var CAPACITE_MAX = 2000000;
   var HISTORIQUE_MAX = 16777216; // capacité × longueur d'une traînée (8 octets chacun : 128 Mio)
   var CODES = {
@@ -524,6 +525,7 @@
           if (em.debit < 0) throw invalide(ch + '.naissance.debit', 'valeur positive ou nulle attendue');
           var salves = n.salves === undefined ? [] : n.salves;
           if (!Array.isArray(salves)) throw invalide(ch + '.naissance.salves', 'liste attendue');
+          if (salves.length > SALVES_MAX) throw invalide(ch + '.naissance.salves', SALVES_MAX + ' salves au plus');
           em.nTotal = Math.floor(em.debit * dur + 1e-9);
           em.capContinu = em.debit > 0 ? Math.min(em.nTotal, Math.ceil(em.debit * vie[1]) + 1) : 0;
           var debut = em.capContinu;
@@ -594,6 +596,7 @@
     PROFONDEUR_MAX: PROFONDEUR_MAX,
     FORCES_MAX: FORCES_MAX,
     TRAINEE_MAX: TRAINEE_MAX,
+    SALVES_MAX: SALVES_MAX,
     CAPACITE_MAX: CAPACITE_MAX,
     ErreurRecette: ErreurRecette,
     resoudre: resoudre,
