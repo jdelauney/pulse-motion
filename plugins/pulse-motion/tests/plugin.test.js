@@ -19,7 +19,7 @@ function enTete(texte) {
 }
 
 const SKILLS = fs.readdirSync(path.join(RACINE, 'skills'));
-const COMMANDES = ['etat', 'assembler', 'controler', 'apercu', 'historique', 'reference', 'scene', 'styles', 'consignes', 'exporter', 'planche'];
+const COMMANDES = ['etat', 'assembler', 'controler', 'apercu', 'historique', 'reference', 'scene', 'styles', 'consignes', 'exporter', 'planche', 'comparer', 'changer-style', 'lexique'];
 const fichiersGuides = () => [
   ...SKILLS.map((s) => path.join('skills', s, 'SKILL.md')),
   ...fs.readdirSync(path.join(RACINE, 'agents')).map((a) => path.join('agents', a)),
@@ -45,7 +45,7 @@ test('agent animateur : nom, description, outils', () => {
 test('les commandes pulse-motion citées existent, avec les références et scènes citées', () => {
   for (const f of fichiersGuides()) {
     const texte = lire(f);
-    for (const m of texte.matchAll(/pulse-motion ([a-z]+)/g)) {
+    for (const m of texte.matchAll(/pulse-motion ([a-z]+(?:-[a-z]+)*)/g)) {
       if (m[1] === 'reference' || COMMANDES.includes(m[1])) continue;
       assert.fail(`${f} : commande inconnue « pulse-motion ${m[1]} »`);
     }
@@ -71,7 +71,10 @@ test('guidage : Node absent, police non fournie, décor de la dernière scène',
 
 test('export : proposé à la fin de creer et de retoucher, planche dans le parcours accompagné', () => {
   for (const s of ['creer', 'retoucher']) assert.match(lire('skills', s, 'SKILL.md'), /\/pulse-motion:exporter/, s);
-  assert.match(lire('skills', 'creer', 'SKILL.md'), /pulse-motion planche \. <id1>,<id2> --ouvrir/);
+  assert.match(lire('skills', 'creer', 'SKILL.md'), /pulse-motion comparer \. <style1>,<style2>,<style3> --ouvrir/);
+  assert.match(lire('skills', 'creer', 'SKILL.md'), /pulse-motion styles --genre <genre>/);
+  assert.match(lire('skills', 'retoucher', 'SKILL.md'), /pulse-motion changer-style \. <style>/);
+  for (const s of ['creer', 'retoucher', 'reprendre', 'exporter']) assert.match(lire('skills', s, 'SKILL.md'), /pulse-motion lexique/, s);
   assert.match(lire('skills', 'exporter', 'SKILL.md'), /`pulse-motion exporter \.` en arrière-plan/);
 });
 
