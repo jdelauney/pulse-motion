@@ -1,0 +1,13 @@
+<!-- Scène toute faite « titre » : ouvrir la vidéo ou un chapitre. Durée conseillée : 7 s.
+     Textes : etiquette (≤ 25 car.), titre (≤ 40 car.), sous (≤ 50 car.).
+     Adapter data-dur des .rond à la durée de la scène. -->
+<section data-scene="titre" class="centre">
+  <div class="decor">
+    <span class="rond" style="width: 70cqh; height: 70cqh; left: -18cqh; top: -22cqh" data-start="0" data-dur="7" data-tween="--dx 0cqh→8cqh sine-inout; --dy 0cqh→5cqh sine-inout"></span>
+    <span class="rond accent" style="width: 40cqh; height: 40cqh; right: -8cqh; bottom: -12cqh" data-start="0" data-dur="7" data-tween="--dx 0cqh→-6cqh sine-inout"></span>
+  </div>
+  <p id="etiquette" class="etiquette entre-bas" data-texte="etiquette" data-start="0.2" data-dur="0.7"></p>
+  <h1 id="titre" class="titre entre-bas" data-texte="titre" data-start="#etiquette+0.25" data-dur="0.7"></h1>
+  <span id="trait" class="trait" data-start="#titre:fin" data-dur="0.6"></span>
+  <p id="sous" class="sous-titre entre-bas" data-texte="sous" data-start="#trait+0.2" data-dur="0.7"></p>
+</section>

@@ -1,0 +1,12 @@
+<!-- Scène toute faite « chiffre » : un chiffre clé qui compte jusqu'à sa valeur. Durée conseillée : 7 s.
+     Textes : titre (≤ 40 car.), unite (≤ 3 car., « » si aucune, ex. « % », « °C »), legende (≤ 60 car.).
+     Valeur : remplacer 1250 dans data-tween (« nombre 0→3.5 » affiche 3,5).
+     Adapter data-dur des .rond à la durée de la scène. -->
+<section data-scene="chiffre" class="centre">
+  <div class="decor">
+    <span class="rond accent" style="width: 80cqh; height: 80cqh; left: 50%; top: 50%; margin: -40cqh 0 0 -40cqh" data-start="0" data-dur="7" data-tween="scale 0.9→1.05 sine-inout"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen entre-bas" data-texte="titre" data-start="0.2" data-dur="0.7"></h2>
+  <p class="grand-chiffre zoom" data-start="#titre:fin" data-dur="0.8"><span id="valeur" data-start="#titre:fin" data-dur="2" data-tween="nombre 0→1250 cubic-out">0</span><span data-texte="unite"></span></p>
+  <p id="legende" class="sous-titre entre-bas" data-texte="legende" data-start="#valeur:fin+0.2" data-dur="0.7"></p>
+</section>

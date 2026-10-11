@@ -1,0 +1,15 @@
+{
+  "style": "clair-pedagogique",
+  "description": "Clair, lisible et posé : pour expliquer (formation, présentation).",
+  "transitions": ["fondu", "glissement", "balayage"],
+  "scenes": [
+    { "nom": "titre", "role": "Ouvrir la vidéo ou un chapitre", "duree": 7, "textes": { "etiquette": 25, "titre": 40, "sous": 50 } },
+    { "nom": "liste", "role": "2 à 4 points révélés un par un", "duree": 12, "textes": { "titre": 40, "point1": 45, "point2": 45, "point3": 45, "point4": 45 } },
+    { "nom": "chiffre", "role": "Un chiffre clé qui compte jusqu'à sa valeur", "duree": 7, "textes": { "titre": 40, "unite": 3, "legende": 60 } },
+    { "nom": "comparaison", "role": "Deux colonnes : avant/après, à faire/à éviter", "duree": 12, "textes": { "titre": 40, "gauche-titre": 20, "gauche-texte": 60, "droite-titre": 20, "droite-texte": 60 } },
+    { "nom": "etape", "role": "Une étape numérotée d'une procédure", "duree": 8, "textes": { "numero": 2, "titre": 40, "texte": 80 } },
+    { "nom": "alerte", "role": "Un point de vigilance, une erreur à éviter", "duree": 8, "textes": { "titre": 40, "texte": 80 } },
+    { "nom": "schema", "role": "Trois étapes reliées par des flèches", "duree": 8, "textes": { "titre": 40, "a": 25, "b": 25, "c": 25 } },
+    { "nom": "conclusion", "role": "Le message à retenir et le logo", "duree": 6, "textes": { "titre": 40, "sous": 50 } }
+  ]
+}
