@@ -104,6 +104,25 @@ test('une modification recharge la page ; un déroulé cassé envoie une erreur'
   }
 });
 
+test('une erreur inattendue pendant le réassemblage n\'arrête pas l\'aperçu', async () => {
+  const dir = copierProjet('projet-simple');
+  const apercu = await demarrerApercu({ dossier: dir, port: 47270, dossierStyles: STYLES, delai: 50 });
+  const flux = await ecouterEvenements(apercu.url + '_pm/evenements');
+  try {
+    await attendre(200);
+    const erreur = flux.attendre('erreur');
+    // Le dossier de scènes devient illisible : lecture impossible (EISDIR).
+    fs.rmSync(path.join(dir, 'scenes', '02-chiffre.html'));
+    fs.mkdirSync(path.join(dir, 'scenes', '02-chiffre.html'));
+    const recu = await Promise.race([erreur, flux.attendre('recharger')]);
+    assert.ok(recu);
+    assert.equal((await obtenir(apercu.url)).statut, 200, 'le serveur répond encore');
+  } finally {
+    flux.fermer();
+    await apercu.fermer();
+  }
+});
+
 test('les écritures dans sortie/ ne déclenchent pas de rechargement', async () => {
   const dir = copierProjet('projet-simple');
   const apercu = await demarrerApercu({ dossier: dir, port: 47240, dossierStyles: STYLES, delai: 50 });

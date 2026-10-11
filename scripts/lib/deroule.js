@@ -11,6 +11,11 @@ const TRANSITIONS = ['aucune', 'fondu', 'glissement', 'balayage'];
 const ID = /^[a-z0-9-]+$/;
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
+// Noms injectés dans le CSS de la page : caractères sûrs seulement.
+const CLE = /^[a-z0-9-]+$/;
+const POLICE = /^[\p{L}\p{N} _.\/-]+$/u;
+
+const estObjet = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const estTexte = (v) => typeof v === 'string' && v.trim() !== '';
 const estPositif = (v) => typeof v === 'number' && isFinite(v) && v > 0;
 
@@ -29,22 +34,26 @@ function validerDeroule(d) {
   }
   if (!estTexte(d.style)) err.push('« style » est obligatoire (nom d\'un style du catalogue).');
 
-  if (d.charte !== undefined) {
+  if (d.charte !== undefined && !estObjet(d.charte)) err.push('« charte » doit être un objet.');
+  else if (d.charte !== undefined) {
     const c = d.charte;
     if (c.couleurs) {
       for (const [nom, val] of Object.entries(c.couleurs)) {
-        if (!HEX.test(val)) err.push(`« charte.couleurs.${nom} » doit être une couleur #rrggbb (reçu : ${JSON.stringify(val)}).`);
+        if (!CLE.test(nom)) err.push(`« charte.couleurs.${nom} » : le nom doit contenir seulement a-z, 0-9 et des tirets.`);
+        else if (!HEX.test(val)) err.push(`« charte.couleurs.${nom} » doit être une couleur #rrggbb (reçu : ${JSON.stringify(val)}).`);
       }
     }
     if (c.polices) {
       for (const [nom, val] of Object.entries(c.polices)) {
-        if (!estTexte(val)) err.push(`« charte.polices.${nom} » doit être un nom de police ou un fichier dans assets/.`);
+        if (!CLE.test(nom)) err.push(`« charte.polices.${nom} » : le nom doit contenir seulement a-z, 0-9 et des tirets.`);
+        else if (!estTexte(val) || !POLICE.test(val)) err.push(`« charte.polices.${nom} » doit être un nom de police (lettres, chiffres, espaces, tirets) ou un fichier dans assets/.`);
       }
     }
     if (c.logo !== undefined && !estTexte(c.logo)) err.push('« charte.logo » doit être un chemin de fichier dans assets/.');
   }
 
-  if (d.musique !== undefined) {
+  if (d.musique !== undefined && !estObjet(d.musique)) err.push('« musique » doit être un objet.');
+  else if (d.musique !== undefined) {
     if (!estTexte(d.musique.fichier)) err.push('« musique.fichier » doit être un chemin de fichier dans assets/.');
     if (d.musique.volume !== undefined && !(typeof d.musique.volume === 'number' && d.musique.volume >= 0 && d.musique.volume <= 1)) {
       err.push('« musique.volume » doit être un nombre entre 0 et 1.');

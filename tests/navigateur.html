@@ -9,6 +9,9 @@
   @keyframes apparait { from { opacity: 0; } to { opacity: 1; } }
   #anime { animation: apparait 1s linear both; }
   #glisse { transform: translateX(calc((1 - var(--p)) * 10cqh)); }
+  /* Une transition CSS dépendrait de l'état précédent : le moteur doit la neutraliser. */
+  #transite { opacity: 0; transition: opacity 2s linear; }
+  #transite[data-etat="pendant"], #transite[data-etat="apres"] { opacity: 1; }
 </style>
 </head>
 <body>
@@ -18,6 +21,8 @@
     <p id="anime" data-start="#titre:fin+0" data-dur="1">Apparaît</p>
     <p id="glisse" data-start="1" data-dur="2" data-tween="--x 0cqh→10cqh linear">Glisse</p>
     <span id="compteur" data-start="0" data-dur="2" data-tween="nombre 0→1250 linear">0</span>
+    <p id="transite" data-start="2" data-dur="0.5">Transite</p>
+    <p id="hasard" data-start="0">?</p>
     <svg width="10" height="10"><rect width="10" height="10"><animate attributeName="x" from="0" to="10" dur="2s" fill="freeze"/></rect></svg>
   </section>
   <section data-scene="b">
@@ -39,6 +44,8 @@
   // Le temps SMIL ne démarre qu'après le chargement : les vérifications attendent M.pret.
   var rappels = [];
   M.chaqueImage('a', function (p, tScene) { rappels.push([p, tScene]); });
+  // L'aléa d'une image ne doit dépendre que de t, pas du nombre d'images rendues avant.
+  M.chaqueImage('a', function () { document.getElementById('hasard').textContent = String(Math.random()); });
   M.demarrer();
   M.demarrerLecteur();
   M.pret.then(verifierTout);

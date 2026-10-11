@@ -59,6 +59,19 @@ test('cheminDansProjet refuse de sortir du projet', () => {
   assert.ok(cheminDansProjet('/p', 'assets/x.png').endsWith(path.join('assets', 'x.png')));
 });
 
+test('embarquerRessources : apostrophe et parenthèses dans les noms', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-emb-'));
+  fs.mkdirSync(path.join(dir, 'assets'));
+  fs.writeFileSync(path.join(dir, 'assets', "l'été.svg"), '<svg/>');
+  fs.writeFileSync(path.join(dir, 'assets', 'photo (1).svg'), '<svg/>');
+  const { html, erreurs } = embarquerRessources(
+    `<img src="assets/l'été.svg"><div style="background:url('assets/photo (1).svg')"></div><i style='background:url("assets/photo (1).svg")'></i>`,
+    dir,
+  );
+  assert.deepEqual(erreurs, []);
+  assert.equal((html.match(/data:image\/svg\+xml;base64,/g) || []).length, 3, html);
+});
+
 test('embarquerRessources : nom de fichier avec % et accents', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-emb-'));
   fs.mkdirSync(path.join(dir, 'assets'));

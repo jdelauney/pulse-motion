@@ -38,6 +38,14 @@ test('erreurs explicites', () => {
   assert.throws(() => T.analyserTween('opacity 0→1 rebond'), /Nom de courbe inconnu/);
 });
 
+test('un zéro sans unité prend l\'unité de l\'autre borne', () => {
+  const [c] = T.analyserTween('--x 0→-10cqh linear');
+  assert.equal(c.unite, 'cqh');
+  assert.equal(T.texteTween(c, 1), '-10cqh');
+  const [d] = T.analyserTween('--y 5px→0 linear');
+  assert.equal(T.texteTween(d, 1), '0px');
+});
+
 test('une chaîne vide ne produit aucune clause', () => {
   assert.deepEqual(T.analyserTween(''), []);
   assert.deepEqual(T.analyserTween(' ; '), []);

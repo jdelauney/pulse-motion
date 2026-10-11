@@ -49,6 +49,22 @@ test('id de scène invalide, aucune scène, pas un objet', () => {
   assert.deepEqual(validerDeroule([]), ['Le déroulé doit être un objet JSON.']);
 });
 
+test('charte ou musique à null : message nommant le champ, pas de plantage', () => {
+  assert.ok(validerDeroule({ ...valide(), charte: null }).includes('« charte » doit être un objet.'));
+  assert.ok(validerDeroule({ ...valide(), musique: null }).includes('« musique » doit être un objet.'));
+});
+
+test('noms de police et clés de charte : caractères sûrs seulement', () => {
+  const d = valide();
+  d.charte.polices = { titres: 'x</style><script>alert(1)</script>', texte: 'Gill Sans', logo2: 'assets/Ma-Police_2.woff2' };
+  d.charte.couleurs = { 'pri maire': '#000000' };
+  const e = validerDeroule(d);
+  assert.ok(e.some((m) => m.startsWith('« charte.polices.titres »')), e.join('\n'));
+  assert.ok(!e.some((m) => m.includes('charte.polices.texte')));
+  assert.ok(!e.some((m) => m.includes('charte.polices.logo2')));
+  assert.ok(e.some((m) => m.includes('« charte.couleurs.pri maire »') && m.includes('a-z, 0-9')));
+});
+
 test('lireDeroule : fichier absent, JSON invalide, BOM accepté', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-'));
   assert.match(lireDeroule(dir).erreurs[0], /Fichier introuvable/);

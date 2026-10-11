@@ -13,6 +13,9 @@ body {
   font-family: var(--f-texte, system-ui, sans-serif);
 }
 #pm-scene > section[data-scene] { position: absolute; inset: 0; }
+/* Une transition CSS partirait de l'état précédent (dépend du chemin pour arriver à t) :
+   le mouvement passe par les animations, --p ou data-tween. */
+#pm-scene, #pm-scene * { transition: none !important; }
 .pm-erreur {
   position: absolute; inset: 8cqh; display: grid; place-items: center; text-align: center;
   padding: 4cqh; border: 0.6cqh dashed #c0392b; background: #fdecea; color: #7b1d14;
