@@ -25,6 +25,8 @@ function projet() {
   ecrire(dir, 'effets/lumiere.json', recette('lumiere', { naissance: { salves: [{ t: 0, nombre: 1 }], forme: { type: 'point' }, vie: [10, 10], taille: [4, 4] }, vie: { intensite: 8 } }, { bloom: 1, seuil_bloom: 1 }));
   ecrire(dir, 'effets/sans-bloom.json', { version: 1, nom: 'sans-bloom', etend: 'lumiere', rendu_calque: { bloom: 0 } });
   ecrire(dir, 'effets/gris.json', recette('gris', { naissance: { salves: [{ t: 0, nombre: 1 }], forme: { type: 'point' }, vie: [10, 10], taille: [40, 40] }, vie: { couleur: '#808080' }, rendu: { melange: 'alpha' } }, { bloom: 0 }));
+  ecrire(dir, 'effets/aces.json', recette('aces', { naissance: { salves: [{ t: 0, nombre: 1 }], forme: { type: 'point' }, vie: [10, 10], taille: [40, 40] }, vie: { couleur: '#808080' }, rendu: { melange: 'alpha' } }, { bloom: 0, tons: 'aces' }));
+  ecrire(dir, 'effets/douce.json', { version: 1, nom: 'douce', etend: 'aces', rendu_calque: { tons: 'douce' } });
   ecrire(dir, 'scenes/01-s.html', `<section data-scene="types">
   <div data-effet="etoiles"></div><div data-effet="traits"></div><div data-effet="rubans"></div>
   <div data-effet="cartes"></div><div data-effet="confettis-test"></div>
@@ -32,12 +34,16 @@ function projet() {
   ecrire(dir, 'scenes/02-lumiere.html', '<section data-scene="lumiere"><div data-effet="lumiere"></div></section>');
   ecrire(dir, 'scenes/03-sans.html', '<section data-scene="sans"><div data-effet="sans-bloom"></div></section>');
   ecrire(dir, 'scenes/04-tons.html', '<section data-scene="tons"><div data-effet="gris"></div></section>');
+  ecrire(dir, 'scenes/05-aces.html', '<section data-scene="aces"><div data-effet="aces"></div></section>');
+  ecrire(dir, 'scenes/06-douce.html', '<section data-scene="douce"><div data-effet="douce"></div></section>');
   modifierDeroule(dir, (d) => {
     d.scenes = [
       { id: 'types', fichier: 'scenes/01-s.html', duree: 3, textes: {} },
       { id: 'lumiere', fichier: 'scenes/02-lumiere.html', duree: 2, textes: {} },
       { id: 'sans', fichier: 'scenes/03-sans.html', duree: 2, textes: {} },
       { id: 'tons', fichier: 'scenes/04-tons.html', duree: 2, textes: {} },
+      { id: 'aces', fichier: 'scenes/05-aces.html', duree: 2, textes: {} },
+      { id: 'douce', fichier: 'scenes/06-douce.html', duree: 2, textes: {} },
     ];
   });
   return dir;
@@ -75,6 +81,10 @@ const CODE = `
     r.centreLumiere = pixel(lum, lum.largeur / 2, lum.hauteur / 2);
     const tons = await lire('tons', 1);
     r.gris = pixel(tons, tons.largeur / 2, tons.hauteur / 2);
+    const aces = await lire('aces', 1);
+    const douce = await lire('douce', 1);
+    r.aces = pixel(aces, aces.largeur / 2, aces.hauteur / 2);
+    r.douce = pixel(douce, douce.largeur / 2, douce.hauteur / 2);
     envoyer(r);
   } catch (e) { envoyer({ erreur: String(e && e.stack || e) }); }
 })();
@@ -97,6 +107,8 @@ test('rendu : types de rendu, tri, bloom, tons', async (t) => {
   assert.ok(r.centreLumiere[3] === 255 && r.centreLumiere[0] > 240, `centre lumineux saturé : ${r.centreLumiere}`);
   r.gris.slice(0, 3).forEach((c) => assert.ok(Math.abs(c - 128) <= 2, `gris de la charte conservé : ${r.gris}`));
   assert.equal(r.gris[3], 255);
+  r.aces.slice(0, 3).forEach((c) => assert.ok(c > 138, `courbe ACES appliquée même sans bloom : ${r.aces}`));
+  r.douce.slice(0, 3).forEach((c) => assert.ok(Math.abs(c - 128) <= 2, `courbe douce conservée : ${r.douce}`));
 });
 
 test('rendu : calque vide après la fin d\'un effet, sans pixel de tramage', async (t) => {
