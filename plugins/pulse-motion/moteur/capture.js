@@ -4,6 +4,7 @@
  * courant, dans le contexte 2D donné. Voie SVG foreignObject : copie des scènes visibles,
  * styles calculés figés en ligne (animations comprises), pseudo-éléments ::before/::after
  * recréés, valeurs SMIL figées, polices @font-face embarquées dans l'image.
+ * Calques de particules : M.particules.preparerCapture() pose l'image de chaque calque sur son canvas, remplacé ici par un <img>.
  * Limites (export rapide) : filter: url(), mix-blend-mode, backdrop-filter mal rendus.
  * Navigateur seulement ; servi par l'aperçu, absent de la page livrée.
  */
@@ -85,10 +86,21 @@
     var correspondance = new Map(liste);
     var aRetirer = [];
     var ajouts = [];
+    var remplacements = [];
     liste.forEach(function (p) {
       var s = p[0], c = p[1];
       var nom = s.localName;
       if (nom === 'script') { aRetirer.push(c); return; }
+      // Canvas (calques de particules) : remplacé par son image, au même endroit et avec le même style.
+      if (nom === 'canvas') {
+        var img = document.createElementNS(XHTML, 'img');
+        img.setAttribute('style', styleFige(getComputedStyle(s)));
+        var src = s.__pmImage;
+        if (!src) { try { src = s.toDataURL(); } catch (e) { src = ''; } }
+        if (src) img.setAttribute('src', src);
+        remplacements.push([c, img]);
+        return;
+      }
       if (SMIL.test(nom)) {
         var attribut = s.getAttribute('attributeName');
         var cible = s.targetElement || s.parentElement;
@@ -104,6 +116,7 @@
       if (a[1]) a[0].insertBefore(a[1], a[0].firstChild);
       if (a[2]) a[0].appendChild(a[2]);
     });
+    remplacements.forEach(function (r) { r[0].parentNode.replaceChild(r[1], r[0]); });
     aRetirer.forEach(function (c) { c.remove(); });
     return copie;
   }
@@ -121,6 +134,11 @@
 
   /** Dessine l'image courante de #pm-scene dans ctx. -> Promise */
   M.capturer = function (ctx, largeur, hauteur) {
+    var avant = M.particules && M.particules.preparerCapture ? M.particules.preparerCapture() : Promise.resolve();
+    return avant.then(function () { return dessiner(ctx, largeur, hauteur); });
+  };
+
+  function dessiner(ctx, largeur, hauteur) {
     var copie = copierScene();
     copie.setAttribute('xmlns', XHTML);
     var xml = new XMLSerializer().serializeToString(copie);
@@ -134,5 +152,5 @@
       ctx.clearRect(0, 0, largeur, hauteur);
       ctx.drawImage(img, 0, 0, largeur, hauteur);
     });
-  };
+  }
 })(typeof globalThis !== 'undefined' ? globalThis : this);
