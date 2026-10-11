@@ -28,6 +28,7 @@ test('« La chaîne du froid » : assemblée et contrôlée sans aucun problème
   const r = assembler({ dossier: dir });
   assert.equal(r.ok, true);
   assert.deepEqual(r.erreurs, []);
+  assert.deepEqual(r.effets.map((e) => [e.scene, e.effet.nom, e.calque, e.ancre]), [['seuil', 'etincelles', 'avant', 'valeur']]);
   assert.ok(fs.existsSync(path.join(dir, 'sortie', 'la-chaine-du-froid.html')));
   assert.deepEqual(controler({ dossier: dir }).problemes, []);
 });
@@ -47,4 +48,29 @@ test('« La chaîne du froid » dans le navigateur : aucun débordement, chiffre
   assert.ok(m, 'vérification absente');
   const r = JSON.parse(m[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&'));
   assert.deepEqual(r, { debordements: [], erreurs: [], valeur: '4' });
+});
+
+const { optionsWebGPU, executerPage } = require('./aide/gpu.js');
+
+test('« La chaîne du froid » : étincelles sur le chiffre, dessinées avec WebGPU', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const dir = copierExemple();
+  const { html } = assembler({ dossier: dir, ecrire: false });
+  const code = `<script>
+(async () => {
+  const envoyer = (o) => fetch('/_resultat', { method: 'POST', body: JSON.stringify(o) });
+  await M.particules.pret;
+  if (!M.particules.disponible) return envoyer({ webgpu: false });
+  const seuil = M.minutage.scenes.find((s) => s.id === 'seuil');
+  await M.seek(seuil.debut + 2.5);
+  const p = await M.particules.lirePixels('seuil', 'avant');
+  let allumes = 0;
+  for (let i = 3; i < p.donnees.length; i += 4) if (p.donnees[i] > 0) allumes++;
+  envoyer({ allumes, erreurs: M.erreurs });
+})();
+</script>`;
+  const r = JSON.parse(await executerPage(html.replace('</body>', `${code}
+</body>`)));
+  assert.deepEqual(r.erreurs, []);
+  assert.ok(r.allumes > 100, `${r.allumes} pixels allumés par les étincelles`);
 });
