@@ -13,4 +13,5 @@
 - 2026-10-11 : code ouvert MIT ; seules les briques compatibles sont admises → `internal/decisions/0001-licences-compatibles-mit.md`.
 - 2026-10-11 : plugin autonome dans le catalogue pulseia, sans dépendance à Pulse.
 - 2026-10-11 : export en deux niveaux (navigateur sans installation / outil local fidèle) ; détourage en trois niveaux (IA légère navigateur, IA haute qualité, fond vert).
+- 2026-10-11 : socle découpé en 3 plans (moteur et aperçu / style, contrôles, guidage / export) → `docs/superpowers/plans/`.
 - Bilan des projets de référence et de l'état de l'art : `external/references-motion.md`.
