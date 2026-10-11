@@ -154,7 +154,7 @@ test('compiler : unités, directions, forces, tables', () => {
   assert.equal(gerbe.rendu.texture, 'disque-doux');
   assert.equal(gerbe.rendu.melangeCode, 0);
   assert.equal(eclat.rendu.type, 'sprite');
-  assert.deepEqual(effet.rendu_calque, { bloom: 0.6, seuil_bloom: 1 });
+  assert.deepEqual(effet.rendu_calque, { bloom: 0.6, seuil_bloom: 1, tons: 'douce' });
 });
 
 test('compiler : réglages et couleur de la charte', () => {
@@ -362,4 +362,13 @@ test('compiler : contrat de la forme compilée (formes, forces, vitesse, planche
   assert.equal(pt.rendu.planche, null);
   assert.equal(pt.rendu.textureFichier, null);
   assert.deepEqual([r.effet.version, r.effet.nom, r.effet.graine, r.effet.capacite], [1, 'essai', 5, 6]);
+});
+
+test('compiler : courbe de tons du calque', () => {
+  assert.equal(compilerFixture('gerbe').effet.rendu_calque.tons, 'douce');
+  const recette = R.resoudre('gerbe', depuisDossier);
+  recette.rendu_calque = { bloom: 1.2, tons: 'aces' };
+  assert.deepEqual(R.compiler(recette, { dur: 2, graine: 1 }).effet.rendu_calque, { bloom: 1.2, seuil_bloom: 1, tons: 'aces' });
+  recette.rendu_calque = { tons: 'cinema' };
+  assert.match(R.compiler(recette, { dur: 2, graine: 1 }).erreurs[0].message, /rendu_calque\.tons : « cinema » inconnu \(douce, aces\)/);
 });

@@ -576,6 +576,7 @@
         rendu_calque: {
           bloom: nombre(rc.bloom, 'rendu_calque.bloom', 0.6),
           seuil_bloom: nombre(rc.seuil_bloom, 'rendu_calque.seuil_bloom', 1),
+          tons: choix(rc.tons, { douce: 1, aces: 1 }, 'rendu_calque.tons', 'douce'),
         },
         capacite: emetteurs.reduce(function (s, e) { return s + e.capacite; }, 0),
         fin: emetteurs.reduce(function (s, e) { return Math.max(s, e.fin); }, 0),
