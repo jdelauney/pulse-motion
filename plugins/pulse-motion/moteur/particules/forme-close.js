@@ -1,7 +1,7 @@
 /* Pulse Motion – trajectoire exacte sous accélération constante et traînée linéaire.
  *
  *   v' = A − K v   =>   v(t) = v e + A f,   p(t) = p + v f + A g
- *   avec e = exp(−K t), f = (1 − e) / K, g = (t − f) / K  (développements limités si K t < 1e-3)
+ *   avec e = exp(−K t), f = (1 − e) / K, g = (t − f) / K  (développements limités si K t < 0,1)
  *
  * Miroir exact de balistique() dans le WGSL de simulation.js : sert de référence aux tests
  * (voie rapide, chute libre) et documente l'intégrateur.
@@ -19,9 +19,9 @@
   function balistique(p, v, A, K, t) {
     var x = K * t;
     var f, g;
-    if (x < 1e-3) {
-      f = t * (1 - x / 2 + x * x / 6);
-      g = t * t * (0.5 - x / 6 + x * x / 24);
+    if (x < 0.1) {
+      f = t * (1 - x / 2 + x * x / 6 - x * x * x / 24 + x * x * x * x / 120 - x * x * x * x * x / 720);
+      g = t * t * (0.5 - x / 6 + x * x / 24 - x * x * x / 120 + x * x * x * x / 720 - x * x * x * x * x / 5040);
     } else {
       f = (1 - Math.exp(-x)) / K;
       g = (t - f) / K;

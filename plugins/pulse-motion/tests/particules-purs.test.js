@@ -113,6 +113,20 @@ test('forme close : chute libre, traînée, composition exacte', () => {
   assert.ok(proche(presque.p[1], sans.p[1], 1e-8));
 });
 
+test('forme close : continuité au seuil des développements limités', () => {
+  for (const x of [2e-3, 1e-2, 5e-2, 0.0999, 0.1001]) {
+    const K = x, t = 1, p0 = [0, 0], v0 = [3, -4], A = [1, 30];
+    const f = (1 - Math.exp(-x)) / K;
+    const g = (t - f) / K;
+    const exact = { p: [p0[0] + v0[0] * f + A[0] * g, p0[1] + v0[1] * f + A[1] * g], v: [v0[0] * (1 - K * f) + A[0] * f, v0[1] * (1 - K * f) + A[1] * f] };
+    const serie = balistique(p0, v0, A, K, t);
+    for (let i = 0; i < 2; i++) {
+      assert.ok(proche(serie.p[i], exact.p[i], 1e-9), `x = ${x} : p[${i}] ${serie.p[i]} ≠ ${exact.p[i]}`);
+      assert.ok(proche(serie.v[i], exact.v[i], 1e-9), `x = ${x} : v[${i}] ${serie.v[i]} ≠ ${exact.v[i]}`);
+    }
+  }
+});
+
 test('recette : 8 salves au plus', () => {
   const salves = Array.from({ length: 9 }, (_, i) => ({ t: i, nombre: 1 }));
   const r = R.compiler({ version: 1, nom: 'x', emetteurs: [{ nom: 'a', naissance: { salves } }] }, { dur: 1, graine: 1 });
