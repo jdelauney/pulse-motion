@@ -1,0 +1,9 @@
+{
+  "name": "pulse-motion",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Créer des vidéos de motion design sur votre ordinateur, sans cloud.",
+  "license": "MIT",
+  "engines": { "node": ">=20" },
+  "scripts": { "test": "node --test" }
+}
