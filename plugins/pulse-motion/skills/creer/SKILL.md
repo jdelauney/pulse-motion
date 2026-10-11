@@ -61,7 +61,7 @@ Logo, couleurs ou musique demandés : demander les fichiers (chemin ou glisser-d
 
 ## 3. Fabrication
 
-1. Lancer **un agent `animateur` par scène, tous dans le même message** (en parallèle). À chacun : dossier, scène (id, fichier, durée, rythme, intention, textes), style, format, scène toute faite conseillée.
+1. Lancer **un agent `animateur` par scène, tous dans le même message** (en parallèle). À chacun : dossier, scène (id, fichier, durée, rythme, intention, textes), style, format, scène toute faite conseillée. Pour une scène dont l'intention est de mettre en valeur ou de célébrer, préciser à l'animateur qu'un effet de particules est bienvenu (étincelles sur un chiffre clé, confettis en conclusion) ; jamais plus de deux effets dans toute une vidéo de formation courte.
 2. `pulse-motion assembler .` puis `pulse-motion controler .`.
 3. Erreurs ou alertes : les corriger (dans la scène, ou dans le déroulé pour une durée), relancer assembler et controler. Deux tours au plus ; ce qui reste est dit à la personne.
 

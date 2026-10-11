@@ -36,10 +36,11 @@ Classer la demande, puis :
 | Texte | « change le titre », « corrige la faute » | `scenes[].textes` du déroulé |
 | Rythme, durée | « ralentis la scène 3 » (rythme 0,8), « accélère » (1,25), « laisse plus de temps à la fin » (duree + 1 à 2 s) | `rythme` ou `duree` du déroulé |
 | Visuel d'une scène | « le chiffre doit rebondir », « mets la liste à droite » | le fichier de la scène (agent `animateur` pour une refonte, sinon modification directe) |
+| Effet de particules | « plus d'étincelles », « en bleu », « fais-les partir autrement », « enlève les confettis », « ajoute des confettis à la fin » | la balise `data-effet` de la scène : `data-reglages`, `data-graine`, `data-calque`, `data-start`/`data-dur` ; l'ajouter ou la supprimer |
 | Global | « mets mes couleurs », « baisse la musique », « change la transition » | `charte`, `musique`, `transition` du déroulé |
 | Structure | « ajoute une scène sur… », « supprime la scène 4 » | déroulé + fichier de scène (agent `animateur`) ; numéroter les fichiers dans l'ordre |
 
-Lire `pulse-motion reference moteur` avant de toucher au fichier d'une scène.
+Lire `pulse-motion reference moteur` avant de toucher au fichier d'une scène, et `pulse-motion reference particules` pour un effet (table « Retouches en une phrase »).
 
 ## 5. Vérifier et montrer
 
