@@ -1,0 +1,14 @@
+{
+  "name": "pulse-motion",
+  "description": "Pulse Motion pour Claude Code : vidéos de motion design créées sur votre ordinateur, sans cloud. En français.",
+  "owner": {
+    "name": "PulseIA"
+  },
+  "plugins": [
+    {
+      "name": "pulse-motion",
+      "source": "./plugins/pulse-motion",
+      "description": "Décrivez votre vidéo en mots simples, validez le déroulé, regardez-la dans votre navigateur et exportez-la en MP4 ou en page HTML animée. Tout se fabrique sur votre ordinateur. En français."
+    }
+  ]
+}
