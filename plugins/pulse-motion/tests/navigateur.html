@@ -148,6 +148,13 @@
   verifier('sections isolées', getComputedStyle(document.querySelector('section[data-scene="a"]')).isolation === 'isolate');
   verifier('data-effet plein cadre', getComputedStyle(document.querySelector('[data-effet]')).position === 'absolute');
 
+  // L'aléa d'une scène ne dépend que de t : un rendu seul d'une scène ne change pas le résultat.
+  M.rendre(2);
+  var hasardA = document.getElementById('hasard').textContent;
+  M.rendreScene('a', 3);
+  M.rendreScene('a', 2);
+  verifier('rendreScene : aléa de la scène ne dépend que de t', document.getElementById('hasard').textContent === hasardA, hasardA + ' ≠ ' + document.getElementById('hasard').textContent);
+
   var attendu = null;
   M.surSeek(function (t) { return new Promise(function (ok) { setTimeout(function () { attendu = t; ok(); }, 20); }); });
   M.seek(1).then(function (t) {
