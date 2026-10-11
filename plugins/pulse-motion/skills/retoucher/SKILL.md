@@ -17,7 +17,7 @@ Appliquer la retouche demandée, puis laisser l'aperçu se recharger à la même
 
 ## 1. Vérifier
 
-`pulse-motion etat .` : sans vidéo (`projet` faux), proposer `/pulse-motion:creer` et s'arrêter.
+`pulse-motion etat .` : sans vidéo (`projet` faux), proposer `/pulse-motion:creer` et s'arrêter. La commande échoue avec « node » introuvable (Node.js n'est pas installé) : expliquer qu'il faut installer Node.js en version LTS depuis https://nodejs.org, puis relancer Claude Code, et s'arrêter.
 
 ## 2. « Annule » (ou « reviens en arrière »)
 

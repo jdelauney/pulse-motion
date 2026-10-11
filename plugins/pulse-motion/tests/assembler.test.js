@@ -38,6 +38,17 @@ test('projet valide : page autonome écrite dans sortie/', () => {
   assert.equal((html.match(/<section /g) || []).length, 2);
 });
 
+test('une nouvelle page efface le rapport de débordement de l\'ancienne', () => {
+  const dir = copierProjet('projet-simple');
+  const rapport = path.join(dir, 'sortie', 'controle-page.json');
+  fs.mkdirSync(path.dirname(rapport), { recursive: true });
+  fs.writeFileSync(rapport, JSON.stringify({ debordements: [{ scene: 'intro', element: 'titre', message: 'ancien' }] }));
+  assembler({ dossier: dir, dossierStyles: STYLES, ecrire: false });
+  assert.ok(fs.existsSync(rapport), 'sans écriture de la page, le rapport reste');
+  assembler({ dossier: dir, dossierStyles: STYLES });
+  assert.equal(fs.existsSync(rapport), false);
+});
+
 test('déroulé invalide : pas de page, erreurs du déroulé', () => {
   const dir = copierProjet('projet-simple');
   modifierDeroule(dir, (d) => { d.scenes[0].duree = 0; });

@@ -73,6 +73,46 @@ test('les commentaires CSS ne déclenchent pas d\'alerte', () => {
   assert.deepEqual(regles(r).filter((x) => x !== 'temps-mort'), []);
 });
 
+test('texte trop petit écrit avec la propriété raccourcie font:', () => {
+  const dir = copierProjet('projet-simple');
+  ecrireScene(dir, '02-chiffre.html', `<section data-scene="chiffre">
+  <style>@scope { .note { font: 400 1.5cqh/1.2 var(--f-texte); } }</style>
+  <p class="note" data-texte="legende" data-dur="2.5"></p>
+</section>`);
+  const r = controler({ dossier: dir, dossierStyles: STYLES });
+  assert.match(r.problemes.find((x) => x.regle === 'texte-petit').message, /texte de 1,5 cqh/);
+});
+
+test('police écrite en dur dans une scène : non embarquée', () => {
+  const dir = copierProjet('projet-simple');
+  ecrireScene(dir, '02-chiffre.html', `<section data-scene="chiffre">
+  <style>@scope { .a { font-family: "Poppins", sans-serif; } .b { font: 700 5cqh/1 'Lobster'; } .c { font-family: var(--f-titres); } .d { font-family: inherit; } }</style>
+  <p class="a" data-texte="legende" data-dur="2.5"></p>
+</section>`);
+  const r = controler({ dossier: dir, dossierStyles: STYLES });
+  const polices = r.problemes.filter((x) => x.regle === 'police-non-embarquee');
+  assert.equal(polices.length, 2, JSON.stringify(polices));
+  assert.equal(polices[0].gravite, 'erreur');
+  assert.match(polices[0].message, /« "Poppins", sans-serif »/);
+});
+
+test('effets interdits dans un attribut style ou filter : signalés', () => {
+  const dir = copierProjet('projet-simple');
+  ecrireScene(dir, '02-chiffre.html', `<section data-scene="chiffre">
+  <div style="mix-blend-mode: multiply" data-texte="legende" data-dur="2.5"></div>
+  <svg><g filter="url(#ombre)"></g></svg>
+</section>`);
+  const r = controler({ dossier: dir, dossierStyles: STYLES });
+  assert.equal(regles(r).filter((x) => x === 'effet-export').length, 2, JSON.stringify(r.problemes));
+});
+
+test('contraste de l\'accent (étiquettes) contrôlé', () => {
+  const dir = copierProjet('projet-simple');
+  modifierDeroule(dir, (d) => { d.charte.couleurs = { accent: '#ffd000', fond: '#ffffff' }; });
+  const r = controler({ dossier: dir, dossierStyles: STYLES });
+  assert.match(r.problemes.find((x) => x.regle === 'contraste').message, /les étiquettes \(#ffd000\)/);
+});
+
 test('contraste insuffisant de la charte', () => {
   const dir = copierProjet('projet-simple');
   modifierDeroule(dir, (d) => { d.charte.couleurs = { primaire: '#dddddd', texte: '#999999', fond: '#ffffff' }; });

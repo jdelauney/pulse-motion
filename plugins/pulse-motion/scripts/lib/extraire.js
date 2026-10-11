@@ -23,7 +23,7 @@ function lireAttributs(texte) {
  * extraireScene(html) -> {
  *   elements: [{ cle, balise, start, dur, tween, texte }],   (éléments minutés, ordre du document)
  *   textes: [clé data-texte],
- *   css: texte des blocs <style>
+ *   css: texte des blocs <style>, des attributs style et des attributs filter
  * }
  */
 function extraireScene(html) {
@@ -41,6 +41,9 @@ function extraireScene(html) {
   while ((m = BALISE.exec(sansBlocs))) {
     const attrs = lireAttributs(m[2]);
     if ('data-texte' in attrs) textes.push(attrs['data-texte']);
+    // Styles en ligne et filtre SVG comptent comme du CSS pour les contrôles.
+    if (attrs.style) css.push(`[style] { ${attrs.style} }`);
+    if (attrs.filter) css.push(`[filter] { filter: ${attrs.filter}; }`);
     if ('data-start' in attrs || 'data-dur' in attrs || 'data-tween' in attrs) {
       elements.push({
         cle: attrs.id || `_${++n}`,

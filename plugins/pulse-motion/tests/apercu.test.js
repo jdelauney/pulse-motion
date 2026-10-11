@@ -69,6 +69,26 @@ test('sert la page avec le marqueur d\'aperçu et écrit etat.json', async () =>
   } finally { await apercu.fermer(); }
 });
 
+test('requête avec un autre nom d\'hôte (DNS rebinding) : refusée', async () => {
+  const dir = copierProjet('projet-simple');
+  const apercu = await demarrerApercu({ dossier: dir, port: 47290, dossierStyles: STYLES });
+  const requete = (hote, methode = 'GET', chemin = '/') => new Promise((resolve, reject) => {
+    const req = http.request({ host: '127.0.0.1', port: apercu.port, path: chemin, method: methode, headers: { Host: hote, 'Content-Type': 'application/json' } }, (res) => {
+      res.resume();
+      res.on('end', () => resolve(res.statusCode));
+    });
+    req.on('error', reject);
+    req.end(methode === 'POST' ? '{"debordements":[]}' : undefined);
+  });
+  try {
+    assert.equal(await requete('pirate.example:47290'), 403);
+    assert.equal(await requete('pirate.example', 'POST', '/_pm/controle'), 403);
+    assert.equal(fs.existsSync(path.join(dir, 'sortie', 'controle-page.json')), false);
+    assert.equal(await requete(`127.0.0.1:${apercu.port}`), 200);
+    assert.equal(await requete(`localhost:${apercu.port}`), 200);
+  } finally { await apercu.fermer(); }
+});
+
 test('port déjà pris : le suivant est utilisé', async () => {
   const occupant = net.createServer();
   await new Promise((r) => occupant.listen(47220, '127.0.0.1', r));

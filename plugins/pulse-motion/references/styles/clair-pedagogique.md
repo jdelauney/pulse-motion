@@ -5,7 +5,7 @@
 - Clair, lisible et posé : pour expliquer (formation, présentation). Fond clair, titres en `--c-primaire`, accents en `--c-accent`.
 - Polices fournies : **Figtree** (titres) et **Inter** (texte). Une autre police de la charte doit être fournie en fichier dans `assets/`.
 - Partir d'une des **8 scènes toutes faites** : `pulse-motion scene clair-pedagogique <nom>`, copier dans `scenes/NN-<id>.html`, remplacer `data-scene="<nom>"` par l'id de la scène, puis adapter.
-- Les `.rond` du décor ont un `data-dur` égal à la durée conseillée : le mettre à la durée de la scène.
+- Les `.rond` du décor ont un `data-dur` égal à la durée conseillée : le mettre à la durée de la scène. Sur la **dernière scène** de la vidéo, le mettre à la durée − 1 s : la vidéo doit finir sur une image stable d'au moins 0,5 s.
 - Respecter les longueurs maximales des textes : au-delà, le texte déborde ou la scène devient trop courte pour le lire.
 
 ## Scènes toutes faites

@@ -6,7 +6,7 @@ allowed-tools: Bash(pulse-motion *) Bash(node *) Read Glob Grep Write Edit Agent
 
 # /pulse-motion:reprendre – Reprendre la vidéo en cours
 
-1. `pulse-motion etat .` et lire `etape`, `prochaine`, `titre`, `parcours`.
+1. `pulse-motion etat .` et lire `etape`, `prochaine`, `titre`, `parcours`. La commande échoue avec « node » introuvable (Node.js n'est pas installé) : expliquer qu'il faut installer Node.js en version LTS depuis https://nodejs.org, puis relancer Claude Code, et s'arrêter.
 2. Dire à la personne, en une phrase simple, où en est la vidéo « <titre> ».
 3. Lire les consignes de création : `pulse-motion consignes creer`.
 4. Continuer selon l'étape, à la section indiquée de ces consignes :

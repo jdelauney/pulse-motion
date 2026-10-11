@@ -105,6 +105,14 @@ async function demarrerApercu({ dossier, port = 4321, dossierStyles, delai = 150
   }
 
   const serveur = http.createServer((req, res) => {
+    // Seuls 127.0.0.1 et localhost sont acceptés : une page d'un autre site rebranchée sur
+    // 127.0.0.1 (DNS rebinding) ne peut ni lire la vidéo ni écrire de rapport.
+    const portEcoute = serveur.address() && serveur.address().port;
+    if (![`127.0.0.1:${portEcoute}`, `localhost:${portEcoute}`].includes(String(req.headers.host || '').toLowerCase())) {
+      res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('Accès refusé');
+      return;
+    }
     const url = new URL(req.url, 'http://localhost');
     if (req.method === 'GET' && url.pathname === '/') {
       const corps = dernier.ok ? injecterApercu(dernier.html, dernier.erreurs) : pageErreur(dernier.erreurs);

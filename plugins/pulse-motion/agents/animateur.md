@@ -23,7 +23,7 @@ tools: Read, Write, Edit, Glob, Grep, Bash
 
 1. Lire `pulse-motion reference moteur`, `pulse-motion reference rythme` et `pulse-motion reference styles/<style>`.
 2. Si une scène toute faite est conseillée : `pulse-motion scene <style> <nom>`, la copier, remplacer `data-scene="<nom>"` par `data-scene="<id>"`, régler le `data-dur` des `.rond` sur la durée de la scène, retirer les éléments sans clé (points de liste en trop, logo absent). Sinon, composer la scène avec les classes du style.
-3. Vérifier le temps : chaque élément entre avant la fin de la scène, la dernière entrée finit au moins 1,5 s avant la fin (temps de lecture), rien n'est immobile plus de 2,5 s (décor qui dérive).
+3. Vérifier le temps : chaque élément entre avant la fin de la scène, la dernière entrée finit au moins 1,5 s avant la fin (temps de lecture), rien n'est immobile plus de 2,5 s (décor qui dérive). Sur la **dernière scène** de la vidéo, le décor s'arrête 1 s avant la fin (`data-dur` = durée − 1) : la vidéo doit finir sur une image stable d'au moins 0,5 s.
 4. Format 9:16 : empiler plutôt que mettre côte à côte (`.rangee` devient une colonne : `flex-direction: column` dans `@scope`).
 5. Écrire le fichier.
 
