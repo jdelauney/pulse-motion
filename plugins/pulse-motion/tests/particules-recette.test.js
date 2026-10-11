@@ -78,8 +78,54 @@ test('compiler : générations d\'un enfant qui vit plus longtemps que la pério
   const recette = R.resoudre('gerbe', depuisDossier);
   recette.emetteurs[1].naissance.vie = [0.2, 1.2];
   const r = R.compiler(recette, { dur: 2, graine: 1 });
-  assert.equal(r.effet.emetteurs[1].G, 3);
-  assert.equal(r.effet.emetteurs[1].capacite, 51 * 3 * 3);
+  // S = 51 / 50 = 1,02 ; gigue du parent J = 0,5 ; G = ceil((1,2 + 0,5) / 1,02) = 2
+  assert.equal(r.effet.emetteurs[1].G, 2);
+  assert.equal(r.effet.emetteurs[1].capacite, 51 * 2 * 3);
+});
+
+// Simulation pas à pas : aucune case d'enfant n'est réécrite avant la mort de son occupant.
+function casesEnfantSures(parentVie, enfantVie, graine) {
+  const recette = avecEmetteurs([
+    { nom: 'p', naissance: { debit: 50, vie: parentVie }, a_la_mort: { emetteur: 'e' } },
+    { nom: 'e', naissance: { nombre: 2, vie: enfantVie } },
+  ]);
+  const { effet, ok, erreurs } = R.compiler(recette, { dur: 6, graine: 1 });
+  assert.equal(ok, true, JSON.stringify(erreurs));
+  const [p, e] = effet.emetteurs;
+  assert.ok(p.nTotal > p.capContinu, 'les cases du parent sont réutilisées');
+  let etat = graine;
+  const alea = () => { etat = (Math.imul(etat, 1664525) + 1013904223) >>> 0; return etat / 4294967296; };
+  const naissances = new Map(); // case d'enfant -> instants de naissance
+  for (let n = 0; n < p.nTotal; n++) {
+    const choix = alea();
+    const vie = choix < 0.3 ? parentVie[0] : choix < 0.6 ? parentVie[1] : parentVie[0] + alea() * (parentVie[1] - parentVie[0]);
+    const mort = n / p.debit + vie;
+    const s = n % p.capContinu;
+    const gen = Math.floor(n / p.capContinu);
+    for (let j = 0; j < e.k; j++) {
+      const c = (s * e.G + (gen % e.G)) * e.k + j;
+      if (!naissances.has(c)) naissances.set(c, []);
+      naissances.get(c).push(mort);
+    }
+  }
+  for (const c of naissances.keys()) assert.ok(c < e.capacite, 'toutes les cases tiennent dans la capacité');
+  for (const liste of naissances.values()) {
+    liste.sort((a, b) => a - b);
+    for (let i = 1; i < liste.length; i++) {
+      if (liste[i] < liste[i - 1] + enfantVie[1] - 1e-9) return false;
+    }
+  }
+  return true;
+}
+
+test('compiler : sûreté des générations d\'enfant par simulation', () => {
+  for (const parentVie of [[0.5, 1], [1, 3]]) {
+    for (const enfantVie of [[0.2, 0.4], [0.2, 1.2], [1, 3]]) {
+      for (const graine of [1, 2, 3]) {
+        assert.ok(casesEnfantSures(parentVie, enfantVie, graine), `parent ${parentVie} enfant ${enfantVie} graine ${graine}`);
+      }
+    }
+  }
 });
 
 test('compiler : unités, directions, forces, tables', () => {
@@ -198,4 +244,122 @@ test('compiler : salves après l\'émission continue, enfant d\'une salve', () =
 test('compiler : noms d\'émetteurs protégés des propriétés de Object.prototype', () => {
   assert.match(erreurDe(avecEmetteurs([{ nom: 'a', naissance: { debit: 10 }, a_la_mort: { emetteur: 'constructor' } }])).message, /émetteur « constructor » inconnu/);
   assert.match(erreurDe(avecEmetteurs([{ nom: 'constructor', naissance: { debit: 10 } }, { nom: 'constructor', naissance: { debit: 10 } }])).message, /nom en double/);
+});
+
+test('compiler : réglages nommés comme des membres d\'Object.prototype refusés', () => {
+  for (const nom of ['constructor', '__proto__']) {
+    const r = compilerFixture('gerbe', { reglages: `${nom}: 3` });
+    assert.equal(r.ok, false, nom);
+    assert.equal(r.erreurs[0].regle, 'reglage-invalide', nom);
+    assert.match(r.erreurs[0].message, new RegExp(`« ${nom} » n'est pas un réglage`));
+  }
+});
+
+test('resoudre : la clé __proto__ d\'une recette n\'empoisonne pas la fusion', () => {
+  const charger = depuisObjet({
+    base: { version: 1, emetteurs: [] },
+    fille: JSON.parse('{"etend":"base","__proto__":{"pollue":1},"autre":{"__proto__":{"pollue":2}}}'),
+  });
+  const r = R.resoudre('fille', charger);
+  assert.equal(Object.getPrototypeOf(r), Object.prototype);
+  assert.equal(({}).pollue, undefined);
+  assert.equal(r.pollue, undefined);
+});
+
+test('compiler : plafond de capacité et d\'historique de traînée', () => {
+  assert.equal(R.CAPACITE_MAX, 2000000);
+  const enorme = erreurDe(avecEmetteurs([{ nom: 'a', naissance: { salves: [{ t: 0, nombre: 1e12 }] } }]));
+  assert.equal(enorme.regle, 'effet-invalide');
+  assert.match(enorme.message, /Effet « essai », emetteurs\[a\] : capacité de 1000000000000 particules, au-delà du maximum 2000000 ; baisser nombre, debit ou la durée de vie\./);
+  const limite = R.compiler(avecEmetteurs([{ nom: 'a', naissance: { salves: [{ t: 0, nombre: 2000000 }] } }]), { dur: 1, graine: 1 });
+  assert.equal(limite.ok, true, JSON.stringify(limite.erreurs));
+  const enfants = erreurDe(avecEmetteurs([
+    { nom: 'p', naissance: { salves: [{ t: 0, nombre: 1000000 }] }, a_la_mort: { emetteur: 'e' } },
+    { nom: 'e', naissance: { nombre: 3 } },
+  ]));
+  assert.match(enfants.message, /emetteurs\[e\] : capacité de 3000000 particules/);
+  const trainee = (longueur, nombre) => avecEmetteurs([{ nom: 'a', naissance: { salves: [{ t: 0, nombre }] }, rendu: { type: 'trainee', longueur } }]);
+  const longue = erreurDe(trainee(16, 1048577));
+  assert.match(longue.message, /Effet « essai », emetteurs\[a\]\.rendu : traînée trop longue pour 1048577 particules \(capacité × longueur au plus 16777216\)\./);
+  assert.equal(R.compiler(trainee(16, 1048576), { dur: 1, graine: 1 }).ok, true);
+});
+
+test('compiler : dimensions, direction de gravité et durée de vie refusées', () => {
+  const forme = (f) => avecEmetteurs([{ nom: 'a', naissance: { debit: 10, forme: f } }]);
+  for (const champ of ['rayon', 'rayon_interieur', 'largeur', 'hauteur']) {
+    const e = erreurDe(forme({ type: 'rectangle', [champ]: -1 }));
+    assert.equal(e.regle, 'effet-invalide');
+    assert.match(e.message, new RegExp(`emetteurs\\[a\\]\\.naissance\\.forme\\.${champ} : valeur positive ou nulle attendue`), champ);
+  }
+  assert.match(erreurDe(forme({ type: 'anneau', rayon: 10, rayon_interieur: 20 })).message,
+    /emetteurs\[a\]\.naissance\.forme\.rayon_interieur : le rayon intérieur 20 dépasse le rayon 10/);
+  assert.equal(R.compiler(forme({ type: 'anneau', rayon: 10, rayon_interieur: 10 }), { dur: 1, graine: 1 }).ok, true);
+  assert.equal(R.compiler(forme({ type: 'rectangle' }), { dur: 1, graine: 1 }).effet.emetteurs[0].forme.largeur, -1, 'champ absent : -1 interne');
+  assert.match(erreurDe(avecEmetteurs([{ nom: 'a', naissance: { debit: 10 }, forces: [{ type: 'gravite', direction: [0, 0] }] }])).message,
+    /emetteurs\[a\]\.forces\[0\]\.direction : direction nulle/);
+  const mort = (vie) => avecEmetteurs([
+    { nom: 'a', naissance: { debit: 10, vie }, a_la_mort: { emetteur: 'b' } },
+    { nom: 'b', naissance: { nombre: 2 } },
+  ]);
+  assert.match(erreurDe(mort([0.005, 1])).message, /emetteurs\[a\]\.naissance\.vie : durée de vie minimale 0\.005 sous 1\/120 s/);
+  assert.equal(R.compiler(mort([1 / 120, 1]), { dur: 1, graine: 1 }).ok, true);
+  assert.equal(R.compiler(avecEmetteurs([{ nom: 'a', naissance: { debit: 10, vie: [0.001, 1] } }]), { dur: 1, graine: 1 }).ok, true, 'sans a_la_mort, pas de limite');
+});
+
+test('compiler : contrat de la forme compilée (formes, forces, vitesse, planche)', () => {
+  const sortie = (nom, naissance, extra = {}) => ({ nom, naissance: { salves: [{ t: 0, nombre: 1 }], ...naissance }, ...extra });
+  const recette = avecEmetteurs([
+    sortie('pt', { forme: { type: 'point', angle: 90, decalage: [0.25, -0.5] } }),
+    sortie('ce', { forme: { type: 'cercle', rayon: 30, zone: 'contour' } }),
+    sortie('an', { forme: { type: 'anneau', rayon: 50, rayon_interieur: 20 } }),
+    sortie('re', { forme: { type: 'rectangle', largeur: 40, hauteur: 10, angle: 180 } }),
+    sortie('li', { forme: { type: 'ligne', largeur: 100, angle: 45 } }),
+    sortie('fo', {
+      vie: [1, 2], taille: [0.5, 2], masse: [2, 3], z: [-1, 1], rotation: [90, 180], vitesse_angulaire: [-90, 45],
+      vitesse: { direction: [3, 4], cone: 90, valeur: [1, 2], radiale: true, heritage: 0.5 },
+    }, {
+      forces: [
+        { type: 'gravite', valeur: 10, direction: [3, 4] },
+        { type: 'trainee', coef: 0.5, quadratique: true },
+        { type: 'vent', vitesse: [4, -2], coef: 2 },
+        { type: 'turbulence', echelle: 5, force: 7, vitesse: 0.25 },
+        { type: 'attracteur', force: 3, rayon: 4, centre: [0.1, 0.9] },
+        { type: 'vortex', force: 5, rayon: 6, centre: [0.2, 0.3] },
+        { type: 'rappel', raideur: 8, amortissement: 2, centre: [0.4, 0.6] },
+      ],
+      rendu: { type: 'planche', texture: 'assets/f.png', melange: 'alpha', planche: { colonnes: 4, lignes: 2, ips: 12 } },
+    }),
+  ]);
+  const r = R.compiler(recette, { dur: 1, graine: 5 });
+  assert.equal(r.ok, true, JSON.stringify(r.erreurs));
+  const [pt, ce, an, re, li, fo] = r.effet.emetteurs;
+  assert.deepEqual(pt.forme, { type: 'point', code: 0, contour: false, rayon: -1, rayonInterieur: 0, largeur: -1, hauteur: -1, angle: Math.PI / 2, decalage: [0.25, -0.5] });
+  assert.deepEqual(ce.forme, { type: 'cercle', code: 1, contour: true, rayon: 30, rayonInterieur: 0, largeur: -1, hauteur: -1, angle: 0, decalage: [0, 0] });
+  assert.deepEqual(an.forme, { type: 'anneau', code: 2, contour: false, rayon: 50, rayonInterieur: 20, largeur: -1, hauteur: -1, angle: 0, decalage: [0, 0] });
+  assert.deepEqual(re.forme, { type: 'rectangle', code: 3, contour: false, rayon: -1, rayonInterieur: 0, largeur: 40, hauteur: 10, angle: Math.PI, decalage: [0, 0] });
+  assert.deepEqual(li.forme, { type: 'ligne', code: 4, contour: false, rayon: -1, rayonInterieur: 0, largeur: 100, hauteur: -1, angle: Math.PI / 4, decalage: [0, 0] });
+  assert.deepEqual(fo.forme, { type: 'ancre', code: 5, contour: false, rayon: -1, rayonInterieur: 0, largeur: -1, hauteur: -1, angle: 0, decalage: [0, 0] });
+  assert.deepEqual([fo.nom, fo.index, fo.parent, fo.profondeur, fo.aLaMort, fo.k, fo.G, fo.debit, fo.nTotal, fo.capContinu], ['fo', 5, -1, 0, -1, 0, 1, 0, 0, 0]);
+  assert.deepEqual(fo.salves, [{ t: 0, nombre: 1, debut: 0 }]);
+  assert.deepEqual([fo.vie, fo.taille, fo.masse, fo.z], [[1, 2], [0.5, 2], [2, 3], [-1, 1]]);
+  assert.deepEqual(fo.rotation, [Math.PI / 2, Math.PI]);
+  assert.deepEqual(fo.vitesseAngulaire, [-Math.PI / 2, Math.PI / 4]);
+  assert.deepEqual(fo.vitesse, { direction: [0.6, 0.8], cone: Math.PI / 2, valeur: [1, 2], radiale: true, heritage: 0.5 });
+  assert.deepEqual(fo.forces, [
+    { type: 'gravite', code: 0, a: [6, 8] },
+    { type: 'trainee', code: 1, coef: 0.5, quadratique: true },
+    { type: 'vent', code: 2, vitesse: [4, -2], coef: 2 },
+    { type: 'turbulence', code: 3, echelle: 5, force: 7, vitesse: 0.25 },
+    { type: 'attracteur', code: 4, force: 3, rayon: 4, centre: [0.1, 0.9] },
+    { type: 'vortex', code: 5, force: 5, rayon: 6, centre: [0.2, 0.3] },
+    { type: 'rappel', code: 6, raideur: 8, amortissement: 2, centre: [0.4, 0.6] },
+  ]);
+  assert.deepEqual(fo.rendu, {
+    type: 'planche', code: 3, texture: 'image', textureCode: 6, textureFichier: 'assets/f.png', melange: 'alpha', melangeCode: 1,
+    etirement: 0.03, flou: false, longueur: 8, planche: { colonnes: 4, lignes: 2, ips: 12 },
+  });
+  assert.equal(fo.voieRapide, false);
+  assert.equal(pt.rendu.planche, null);
+  assert.equal(pt.rendu.textureFichier, null);
+  assert.deepEqual([r.effet.version, r.effet.nom, r.effet.graine, r.effet.capacite], [1, 'essai', 5, 6]);
 });
