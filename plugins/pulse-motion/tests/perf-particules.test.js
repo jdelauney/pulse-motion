@@ -34,9 +34,11 @@ sim.avancer(2.5, zones);
 await device.queue.onSubmittedWorkDone();
 const etat = new Uint32Array((await sim.lireEtat(0)).buffer);
 let vivantes = 0;
+// Champ « vivante » : mot 14 des 16 mots de la disposition Particule.
 for (let s = 14; s < etat.length; s += 16) if (etat[s] === 1) vivantes++;
+// τ continue d'une mesure à l'autre : aucun retour en arrière (restauration d'instantané) dans les boucles chronométrées.
+let t = 2.5;
 async function chrono(images, pas, avecRendu) {
-  let t = 2.5;
   const debut = performance.now();
   for (let n = 0; n < images; n++) {
     t += pas;
@@ -46,6 +48,9 @@ async function chrono(images, pas, avecRendu) {
   }
   return (performance.now() - debut) / images;
 }
+// Échauffement hors mesure : compilation des pipelines de rendu.
+rendu.dessiner(cible, [{ sim, i: 0, delta: 0 }], options);
+await device.queue.onSubmittedWorkDone();
 const capture = await chrono(60, 1 / 30, false);
 const apercu = await chrono(120, 1 / 60, true);
 const info = gpu.adaptateur && gpu.adaptateur.info ? gpu.adaptateur.info : {};
@@ -56,6 +61,7 @@ test('performances : 100 000 particules (simulation en capture, rendu 1080p en a
   if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
   const r = JSON.parse(await executerPage(pageMoteur({ fichiers: FICHIERS, donnees: effet, code: CODE }), { delai: 300000 }));
   assert.equal(r.erreur, undefined, r.erreur);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
   t.diagnostic(`adaptateur : ${r.adaptateur || 'inconnu'}`);
   t.diagnostic(`particules vivantes : ${r.vivantes}`);
   t.diagnostic(`capture : ${r.capture.toFixed(2)} ms de simulation par image (spec : < 5 ms)`);
