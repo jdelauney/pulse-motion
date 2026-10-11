@@ -114,6 +114,7 @@
     if (!fx.sim) return;
     const sim = fx.sim;
     fx.sim = null;
+    try { if (etat.rendu) etat.rendu.oublier(sim); } catch (e) { /* device déjà perdu */ }
     try { sim.detruire(); } catch (e) { /* device déjà perdu */ }
   }
 
@@ -150,7 +151,10 @@
       if (fx.desactive) return;
       device.pushErrorScope('out-of-memory');
       try {
-        if (!fx.sim) fx.sim = new P.Simulation(device, fx.effet);
+        if (!fx.sim) {
+          fx.sim = new P.Simulation(device, fx.effet);
+          fx.sim.emetteurs.forEach((e) => etat.rendu.preparerEmetteur(e));
+        }
         const deltas = fx.sim.avancer(tau, { a: (x) => zoneA(fx, x, mesures), grille: (g) => grille(fx, g, mesures) });
         deltas.forEach((delta, i) => listes[fx.calque].push({ sim: fx.sim, i, delta }));
       } finally {
@@ -163,11 +167,12 @@
       const canvas = sc.calques[nom];
       ajuster(canvas, sc.section);
       // Réglages du calque : ceux de la recette active au bloom le plus fort.
-      let rc = { bloom: 0, seuil_bloom: 1, tons: 'douce' };
+      let rc = null;
       sc.effets.forEach((fx) => {
         const tau = (t - fx.debut) * fx.info.rythme;
-        if (fx.calque === nom && tau >= 0 && tau < fx.effet.fin && fx.effet.rendu_calque.bloom > rc.bloom) rc = fx.effet.rendu_calque;
+        if (fx.calque === nom && tau >= 0 && tau < fx.effet.fin && (!rc || fx.effet.rendu_calque.bloom > rc.bloom)) rc = fx.effet.rendu_calque;
       });
+      if (!rc) rc = { bloom: 0, seuil_bloom: 1, tons: 'douce' };
       etat.rendu.dessiner(etat.rendu.cible(canvas), listes[nom], {
         largeurCqh, dureeImage: sc.info.rythme / (M.ips || 30), bloom: rc.bloom, seuil: rc.seuil_bloom, tons: rc.tons,
       });

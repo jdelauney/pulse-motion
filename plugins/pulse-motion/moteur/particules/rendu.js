@@ -457,10 +457,16 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
         for (const em of effet.emetteurs) {
           const url = em.rendu.textureImage;
           if (!url || this.images.has(url)) continue;
-          const img = new Image();
-          img.src = url;
-          await img.decode();
-          const bitmap = await createImageBitmap(img);
+          let bitmap;
+          try {
+            const img = new Image();
+            img.src = url;
+            await img.decode();
+            bitmap = await createImageBitmap(img);
+          } catch (e) {
+            console.error('[Pulse Motion] Image de particules illisible (' + url + ') : ' + String(e && e.message || e));
+            continue;
+          }
           const texture = device.createTexture({
             size: [bitmap.width, bitmap.height],
             format: 'rgba8unorm-srgb',
@@ -478,7 +484,9 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
       const hauteur = canvas.height;
       let c = canvas.__pmCible;
       if (c && c.device === device && c.largeur === largeur && c.hauteur === hauteur) return c;
-      if (c && c.device === device) [c.hdr, c.sortie, ...c.niveaux.map((n) => n.texture)].forEach((t) => t.destroy());
+      if (c && c.device === device) {
+        [c.hdr, c.sortie, ...c.niveaux.map((n) => n.texture), c.uniformeFinal, ...c.bas.map((b) => b.uniforme), ...c.haut.map((b) => b.uniforme)].forEach((t) => t.destroy());
+      }
       const contexte = canvas.getContext('webgpu');
       contexte.configure({ device, format: this.format, alphaMode: 'premultiplied' });
       const T = GPUTextureUsage;
@@ -539,6 +547,25 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
         this.tris.set(e, t);
       }
       return t;
+    }
+
+    /** Libère les tampons de rendu des émetteurs d'une simulation détruite. */
+    oublier(sim) {
+      sim.emetteurs.forEach((e) => {
+        const t = this.tris.get(e);
+        if (t) t.ordre.destroy();
+        const s = this.styles.get(e);
+        if (s) s.destroy();
+        this.tris.delete(e);
+        this.styles.delete(e);
+        this.groupes.delete(e);
+      });
+    }
+
+    /** Tampons propres à un émetteur, créés d'avance (dans la portée d'erreur mémoire de l'effet). */
+    preparerEmetteur(e) {
+      if (this.estTrie(e)) this.tri(e);
+      this.style(e);
     }
 
     style(e) {
