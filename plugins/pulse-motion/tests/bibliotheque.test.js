@@ -62,7 +62,7 @@ test('bibliothèque : charte par défaut (accent et primaire du style)', () => {
   assert.deepEqual(confettis.effet.emetteurs[0].tables.couleur.slice(0, 3).map((x) => Math.round(x * 1e4)), bleu.slice(0, 3).map((x) => Math.round(x * 1e4)));
 });
 
-test('bibliothèque : chaque effet utilise au moins une fois chaque famille utile', () => {
+test('bibliothèque : la bibliothèque couvre toutes les familles utiles', () => {
   const types = new Set();
   const textures = new Set();
   const forces = new Set();
@@ -76,4 +76,14 @@ test('bibliothèque : chaque effet utilise au moins une fois chaque famille util
   assert.deepEqual([...types].sort(), ['etincelle', 'sprite', 'trainee'], 'la planche demande une image : pas dans la bibliothèque');
   assert.deepEqual([...textures].sort(), ['confetti', 'disque-doux', 'etoile', 'flamme', 'fumee']);
   assert.deepEqual([...forces].sort(), ['attracteur', 'gravite', 'trainee', 'turbulence', 'vent', 'vortex']);
+});
+
+test('bibliothèque : neige : les flocons traversent l\'image à leurs réglages par défaut', () => {
+  const flocon = compiler('neige').effet.emetteurs.find((e) => e.nom === 'flocon');
+  const g = flocon.forces.find((f) => f.type === 'gravite').a[1];
+  // Vitesse limite = g / K, avec K = somme des coefficients de traînée et de vent (masse 1).
+  const K = flocon.forces.filter((f) => f.type === 'trainee' || f.type === 'vent').reduce((s, f) => s + f.coef, 0);
+  const vieMin = Math.min(...flocon.vie);
+  const parcours = vieMin * (g / K);
+  assert.ok(parcours >= 102, `un flocon né 52 cqh au-dessus du centre doit atteindre le bas (102 cqh) : ${parcours.toFixed(1)} cqh parcourus`);
 });

@@ -3,269 +3,76 @@
   "nom": "confettis",
   "description": "Explosion de confettis aux couleurs de la charte qui retombent en voletant ; idéal pour une conclusion.",
   "parametres": {
-    "nombre": {
-      "defaut": 150,
-      "min": 10,
-      "max": 3000
-    },
-    "vitesse": {
-      "defaut": 1,
-      "min": 0.3,
-      "max": 2.5
-    },
-    "couleur1": {
-      "defaut": "primaire",
-      "type": "couleur"
-    },
-    "couleur2": {
-      "defaut": "accent",
-      "type": "couleur"
-    },
-    "couleur3": {
-      "defaut": "#ffd166",
-      "type": "couleur"
-    }
+    "nombre": { "defaut": 150, "min": 10, "max": 3000 },
+    "vitesse": { "defaut": 1, "min": 0.3, "max": 2.5 },
+    "couleur1": { "defaut": "primaire", "type": "couleur" },
+    "couleur2": { "defaut": "accent", "type": "couleur" },
+    "couleur3": { "defaut": "#ffd166", "type": "couleur" }
   },
-  "rendu_calque": {
-    "bloom": 0
-  },
+  "rendu_calque": { "bloom": 0 },
   "emetteurs": [
     {
       "nom": "confetti-1",
       "naissance": {
-        "salves": [
-          {
-            "t": 0,
-            "nombre": "nombre / 3"
-          }
-        ],
-        "forme": {
-          "type": "ancre",
-          "zone": "surface"
-        },
-        "vitesse": {
-          "direction": [
-            0,
-            -1
-          ],
-          "cone": 100,
-          "valeur": [
-            "30 * vitesse",
-            "70 * vitesse"
-          ]
-        },
-        "vie": [
-          2.5,
-          4
-        ],
-        "taille": [
-          1.2,
-          2
-        ],
-        "masse": [
-          0.6,
-          1.4
-        ],
-        "z": [
-          -1,
-          1
-        ],
-        "rotation": [
-          0,
-          360
-        ],
-        "vitesse_angulaire": [
-          -540,
-          540
-        ]
+        "salves": [{ "t": 0, "nombre": "nombre / 3" }],
+        "forme": { "type": "ancre", "zone": "surface" },
+        "vitesse": { "direction": [0, -1], "cone": 100, "valeur": ["30 * vitesse", "70 * vitesse"] },
+        "vie": [2.5, 4],
+        "taille": [1.2, 2],
+        "masse": [0.6, 1.4],
+        "z": [-1, 1],
+        "rotation": [0, 360],
+        "vitesse_angulaire": [-540, 540]
       },
       "forces": [
-        {
-          "type": "gravite",
-          "valeur": 35
-        },
-        {
-          "type": "trainee",
-          "coef": 2.2
-        },
-        {
-          "type": "turbulence",
-          "echelle": 15,
-          "force": 40,
-          "vitesse": 0.8
-        }
+        { "type": "gravite", "valeur": 35 },
+        { "type": "trainee", "coef": 2.2 },
+        { "type": "turbulence", "echelle": 15, "force": 40, "vitesse": 0.8 }
       ],
-      "vie": {
-        "couleur": "couleur1",
-        "opacite": {
-          "de": 1,
-          "a": 0,
-          "courbe": "expo-in"
-        }
-      },
-      "rendu": {
-        "type": "sprite",
-        "texture": "confetti",
-        "melange": "alpha"
-      }
+      "vie": { "couleur": "couleur1", "opacite": { "de": 1, "a": 0, "courbe": "expo-in" } },
+      "rendu": { "type": "sprite", "texture": "confetti", "melange": "alpha" }
     },
     {
       "nom": "confetti-2",
       "naissance": {
-        "salves": [
-          {
-            "t": 0,
-            "nombre": "nombre / 3"
-          }
-        ],
-        "forme": {
-          "type": "ancre",
-          "zone": "surface"
-        },
-        "vitesse": {
-          "direction": [
-            0,
-            -1
-          ],
-          "cone": 100,
-          "valeur": [
-            "30 * vitesse",
-            "70 * vitesse"
-          ]
-        },
-        "vie": [
-          2.5,
-          4
-        ],
-        "taille": [
-          1.2,
-          2
-        ],
-        "masse": [
-          0.6,
-          1.4
-        ],
-        "z": [
-          -1,
-          1
-        ],
-        "rotation": [
-          0,
-          360
-        ],
-        "vitesse_angulaire": [
-          -540,
-          540
-        ]
+        "salves": [{ "t": 0, "nombre": "nombre / 3" }],
+        "forme": { "type": "ancre", "zone": "surface" },
+        "vitesse": { "direction": [0, -1], "cone": 100, "valeur": ["30 * vitesse", "70 * vitesse"] },
+        "vie": [2.5, 4],
+        "taille": [1.2, 2],
+        "masse": [0.6, 1.4],
+        "z": [-1, 1],
+        "rotation": [0, 360],
+        "vitesse_angulaire": [-540, 540]
       },
       "forces": [
-        {
-          "type": "gravite",
-          "valeur": 35
-        },
-        {
-          "type": "trainee",
-          "coef": 2.2
-        },
-        {
-          "type": "turbulence",
-          "echelle": 15,
-          "force": 40,
-          "vitesse": 0.8
-        }
+        { "type": "gravite", "valeur": 35 },
+        { "type": "trainee", "coef": 2.2 },
+        { "type": "turbulence", "echelle": 15, "force": 40, "vitesse": 0.8 }
       ],
-      "vie": {
-        "couleur": "couleur2",
-        "opacite": {
-          "de": 1,
-          "a": 0,
-          "courbe": "expo-in"
-        }
-      },
-      "rendu": {
-        "type": "sprite",
-        "texture": "confetti",
-        "melange": "alpha"
-      }
+      "vie": { "couleur": "couleur2", "opacite": { "de": 1, "a": 0, "courbe": "expo-in" } },
+      "rendu": { "type": "sprite", "texture": "confetti", "melange": "alpha" }
     },
     {
       "nom": "confetti-3",
       "naissance": {
-        "salves": [
-          {
-            "t": 0,
-            "nombre": "nombre / 3"
-          }
-        ],
-        "forme": {
-          "type": "ancre",
-          "zone": "surface"
-        },
-        "vitesse": {
-          "direction": [
-            0,
-            -1
-          ],
-          "cone": 100,
-          "valeur": [
-            "30 * vitesse",
-            "70 * vitesse"
-          ]
-        },
-        "vie": [
-          2.5,
-          4
-        ],
-        "taille": [
-          1.2,
-          2
-        ],
-        "masse": [
-          0.6,
-          1.4
-        ],
-        "z": [
-          -1,
-          1
-        ],
-        "rotation": [
-          0,
-          360
-        ],
-        "vitesse_angulaire": [
-          -540,
-          540
-        ]
+        "salves": [{ "t": 0, "nombre": "nombre / 3" }],
+        "forme": { "type": "ancre", "zone": "surface" },
+        "vitesse": { "direction": [0, -1], "cone": 100, "valeur": ["30 * vitesse", "70 * vitesse"] },
+        "vie": [2.5, 4],
+        "taille": [1.2, 2],
+        "masse": [0.6, 1.4],
+        "z": [-1, 1],
+        "rotation": [0, 360],
+        "vitesse_angulaire": [-540, 540]
       },
       "forces": [
-        {
-          "type": "gravite",
-          "valeur": 35
-        },
-        {
-          "type": "trainee",
-          "coef": 2.2
-        },
-        {
-          "type": "turbulence",
-          "echelle": 15,
-          "force": 40,
-          "vitesse": 0.8
-        }
+        { "type": "gravite", "valeur": 35 },
+        { "type": "trainee", "coef": 2.2 },
+        { "type": "turbulence", "echelle": 15, "force": 40, "vitesse": 0.8 }
       ],
-      "vie": {
-        "couleur": "couleur3",
-        "opacite": {
-          "de": 1,
-          "a": 0,
-          "courbe": "expo-in"
-        }
-      },
-      "rendu": {
-        "type": "sprite",
-        "texture": "confetti",
-        "melange": "alpha"
-      }
+      "vie": { "couleur": "couleur3", "opacite": { "de": 1, "a": 0, "courbe": "expo-in" } },
+      "rendu": { "type": "sprite", "texture": "confetti", "melange": "alpha" }
     }
   ]
 }
