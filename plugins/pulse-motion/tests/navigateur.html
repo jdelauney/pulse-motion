@@ -26,6 +26,7 @@
     <svg width="10" height="10"><rect width="10" height="10"><animate attributeName="x" from="0" to="10" dur="2s" fill="freeze"/></rect></svg>
   </section>
   <section data-scene="b">
+    <div data-effet="essai"></div>
     <p id="b1" data-start="0.2" data-dur="0.5">B</p>
   </section>
 </div>
@@ -131,6 +132,8 @@
   M.rechargerQuandPossible();
   verifier('rechargement immédiat hors export', recharges === 2);
 
+  // Un effet de particules est minuté même sans data-start (clé « _1 » comme dans extraire.js).
+  verifier('data-effet minuté', document.querySelector('[data-effet]').getAttribute('data-pm-cle') === '_1');
   M.seek(1).then(function (t) {
     verifier('seek renvoie une promesse', t === 1);
     document.getElementById('resultat').textContent = echecs.length

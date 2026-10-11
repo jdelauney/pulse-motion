@@ -13,6 +13,7 @@ const path = require('node:path');
 const { lireDeroule } = require('./lib/deroule.js');
 const { embarquerRessources, versDataURI, cheminDansProjet } = require('./lib/embarquer.js');
 const S = require('./lib/scenes.js');
+const { preparerEffets } = require('./lib/effets.js');
 const { variablesCSS } = require('../moteur/courbes.js');
 
 const RACINE = path.resolve(__dirname, '..');
@@ -98,19 +99,19 @@ function jsonDansHTML(objet) {
 }
 
 /**
- * assembler({ dossier, dossierStyles?, ecrire? })
- * -> { ok, fichier, html, erreurs: [{ regle, gravite, scene?, message }] }
+ * assembler({ dossier, dossierStyles?, dossierEffets?, ecrire? })
+ * -> { ok, fichier, html, erreurs: [{ regle, gravite, scene?, message }], effets: [{ scene, ordre, calque, ancre, effet }] }
  */
-function assembler({ dossier, dossierStyles = path.join(RACINE, 'styles'), ecrire = true }) {
+function assembler({ dossier, dossierStyles = path.join(RACINE, 'styles'), dossierEffets = path.join(RACINE, 'effets'), ecrire = true }) {
   const projet = path.resolve(dossier);
   const { deroule, erreurs: erreursDeroule } = lireDeroule(projet);
   if (erreursDeroule.length) {
-    return { ok: false, fichier: null, html: null, erreurs: erreursDeroule.map((message) => ({ regle: 'deroule-invalide', gravite: 'erreur', message })) };
+    return { ok: false, fichier: null, html: null, effets: [], erreurs: erreursDeroule.map((message) => ({ regle: 'deroule-invalide', gravite: 'erreur', message })) };
   }
   const dossierStyle = path.join(dossierStyles, deroule.style);
   if (!fs.existsSync(path.join(dossierStyle, 'style.css'))) {
     const dispo = fs.existsSync(dossierStyles) ? fs.readdirSync(dossierStyles).join(', ') : 'aucun';
-    return { ok: false, fichier: null, html: null, erreurs: [{ regle: 'style-inconnu', gravite: 'erreur', message: `Style « ${deroule.style} » introuvable. Styles disponibles : ${dispo}.` }] };
+    return { ok: false, fichier: null, html: null, effets: [], erreurs: [{ regle: 'style-inconnu', gravite: 'erreur', message: `Style « ${deroule.style} » introuvable. Styles disponibles : ${dispo}.` }] };
   }
 
   const erreurs = [];
@@ -123,6 +124,7 @@ function assembler({ dossier, dossierStyles = path.join(RACINE, 'styles'), ecrir
 
   const sections = [];
   const scriptsScenes = [];
+  const effets = [];
   for (const scene of deroule.scenes) {
     const fichier = cheminDansProjet(projet, scene.fichier);
     let html = null;
@@ -145,7 +147,12 @@ function assembler({ dossier, dossierStyles = path.join(RACINE, 'styles'), ecrir
     const { html: sansScripts, scripts } = S.extraireScripts(html);
     const { html: avecTextes, manquants } = S.injecterTextes(sansScripts, scene.textes);
     manquants.forEach((cle) => erreurs.push({ regle: 'texte-manquant', gravite: 'erreur', scene: scene.id, message: `Scène « ${scene.id} » : data-texte="${cle}" n'a pas de texte dans le déroulé.` }));
-    const { html: embarque, erreurs: erreursRes } = embarquerRessources(S.injecterLogo(avecTextes, uriLogo), projet, `scène « ${scene.id} »`);
+    const { html: avecEffets, effets: effetsScene, erreurs: erreursEffets } = preparerEffets(avecTextes, {
+      scene: scene.id, projet, bibliotheque: dossierEffets, charte: charte.couleurs, premierIndex: effets.length,
+    });
+    effets.push(...effetsScene);
+    erreurs.push(...erreursEffets);
+    const { html: embarque, erreurs: erreursRes } = embarquerRessources(S.injecterLogo(avecEffets, uriLogo), projet, `scène « ${scene.id} »`);
     erreursRes.forEach((e) => erreurs.push({ ...e, scene: scene.id }));
     sections.push(embarque.trim());
     scripts.forEach((code) => scriptsScenes.push(`(function () { try {\n${code}\n} catch (e) { console.error('[Pulse Motion] Scène « ${scene.id} » : ' + e.message); } })();`));
@@ -166,6 +173,7 @@ function assembler({ dossier, dossierStyles = path.join(RACINE, 'styles'), ecrir
     format: { ratio: deroule.format.ratio, ips: deroule.format.ips || 30 },
     musique: deroule.musique ? { volume: deroule.musique.volume ?? 1 } : null,
     scenes: deroule.scenes.map((s) => ({ id: s.id, duree: s.duree, rythme: s.rythme || 1, transition: s.transition || 'aucune' })),
+    effets: effets.map(({ calque, ancre, effet }) => ({ calque, ancre, effet })),
   };
 
   const page = `<!doctype html>
@@ -212,7 +220,7 @@ M.demarrerLecteur();
     // Le rapport de débordement portait sur l'ancienne page : l'aperçu en renverra un pour la nouvelle.
     fs.rmSync(path.join(dossierSortie, 'controle-page.json'), { force: true });
   }
-  return { ok: true, fichier: sortie, html: page, erreurs };
+  return { ok: true, fichier: sortie, html: page, erreurs, effets };
 }
 
 if (require.main === module) {

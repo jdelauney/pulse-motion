@@ -49,7 +49,8 @@
   function lireElements(section) {
     var liste = [];
     var n = 0;
-    section.querySelectorAll('[data-start],[data-dur],[data-tween]').forEach(function (el) {
+    // Un effet de particules est minuté même sans data-start (comme dans scripts/lib/extraire.js).
+    section.querySelectorAll('[data-start],[data-dur],[data-tween],[data-effet]').forEach(function (el) {
       var cle = el.id || ('_' + (++n));
       el.setAttribute('data-pm-cle', cle);
       liste.push({ cle: cle, start: el.getAttribute('data-start'), dur: el.getAttribute('data-dur'), el: el });
