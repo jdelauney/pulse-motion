@@ -2,12 +2,15 @@
 'use strict';
 /* Pulse Motion – contrôles automatiques d'un projet vidéo, sans navigateur.
  *
- *   node scripts/controler.js <dossier-du-projet>
+ *   node scripts/controler.js <dossier-du-projet> [--sans-correction]
  *
- * Écrit sortie/controle.json : [{ regle, gravite: "erreur" | "alerte", scene?, element?, message }].
+ * Écrit sortie/controle.json : { problemes: [{ regle, gravite: "erreur" | "alerte", scene?, element?, message, correction? }],
+ *   corrections: [{ regle, scene, element?, avant, apres, message }] }.
+ * Corrige seul les cas sûrs (typographie, durées) dans deroule.json, après une copie d'historique ;
+ * --sans-correction : signale seulement (chaque problème corrigeable porte sa « correction »).
  * Reprend les erreurs de l'assemblage (polices, fichiers…) et le rapport de débordement
  * envoyé par la page d'aperçu (sortie/controle-page.json).
- * Affiche un résumé JSON { erreurs, alertes, fichier } ; code de sortie 1 s'il reste une erreur.
+ * Affiche un résumé JSON { erreurs, alertes, corrections, fichier } ; code de sortie 1 s'il reste une erreur.
  */
 const fs = require('node:fs');
 const path = require('node:path');
@@ -19,6 +22,7 @@ const { cheminDansProjet } = require('./lib/embarquer.js');
 const { corrigerTypographie, corrigerMajuscules, motsDoubles, termesVariables, cleTerme } = require('./lib/typographie.js');
 const { extraireScene, textesEnDur } = require('./lib/extraire.js');
 const { calculerMinutage, CHEVAUCHEMENT } = require('../moteur/minutage.js');
+const { appliquerCorrections } = require('./lib/corriger.js');
 const { EFFETS: EFFETS_LETTRES } = require('../moteur/lettres.js');
 const { analyserCamera } = require('../moteur/camera.js');
 const { analyserTemps } = require('../moteur/temps.js');
@@ -123,12 +127,8 @@ function controlerTextes(deroule, scenesHtml, termesGlossaire, problemes) {
   }
 }
 
-/**
- * controler({ dossier, dossierStyles?: string | string[], dossierEffets?, ecrire? })
- * -> { problemes: [...], fichier: chemin de controle.json | null }
- */
-function controler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, 'effets'), ecrire = true }) {
-  const projet = path.resolve(dossier);
+/** Contrôles sans navigateur. -> { problemes, ok } (ok : le projet s'assemble) */
+function controlesRapides({ projet, dossierStyles, dossierEffets }) {
   const assemblage = assembler({ dossier: projet, dossierStyles, dossierEffets, ecrire: false });
   const problemes = assemblage.erreurs.map((e) => ({ ...e }));
   const { deroule } = lireDeroule(projet);
@@ -324,24 +324,47 @@ function controler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     for (const d of page.debordements || []) problemes.push({ regle: 'debordement', gravite: 'erreur', scene: d.scene, element: d.element, message: d.message });
   } catch { /* aucun rapport de la page */ }
 
+  return { problemes, ok: assemblage.ok };
+}
+
+/**
+ * controler({ dossier, dossierStyles?, dossierEffets?, ecrire?, corriger? })
+ * -> { problemes, corrections, fichier } ; corriger : applique les corrections sûres au déroulé.
+ */
+function controler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, 'effets'), ecrire = true, corriger = false }) {
+  const projet = path.resolve(dossier);
+  const premier = controlesRapides({ projet, dossierStyles, dossierEffets });
+  let { problemes } = premier;
+  let corrections = [];
+  if (corriger && premier.ok) {
+    const r = appliquerCorrections(projet, problemes);
+    corrections = r.corrections;
+    if (corrections.length) {
+      ({ problemes } = controlesRapides({ projet, dossierStyles, dossierEffets }));
+      // La page assemblée suit le déroulé corrigé (l'aperçu se recharge).
+      if (ecrire) assembler({ dossier: projet, dossierStyles, dossierEffets, ecrire: true });
+    }
+    if (r.erreur) problemes.push({ regle: 'correction-impossible', gravite: 'alerte', message: r.erreur });
+  }
   let fichier = null;
   if (ecrire) {
     fs.mkdirSync(path.join(projet, 'sortie'), { recursive: true });
     fichier = path.join(projet, 'sortie', 'controle.json');
-    fs.writeFileSync(fichier, JSON.stringify(problemes, null, 2));
+    fs.writeFileSync(fichier, JSON.stringify({ problemes, corrections }, null, 2));
   }
-  return { problemes, fichier };
+  return { problemes, corrections, fichier };
 }
 
 if (require.main === module) {
-  const dossier = process.argv[2];
+  const args = process.argv.slice(2);
+  const dossier = args.find((a) => !a.startsWith('--'));
   if (!dossier) {
-    console.error('Usage : node scripts/controler.js <dossier-du-projet>');
+    console.error('Usage : node scripts/controler.js <dossier-du-projet> [--sans-correction]');
     process.exit(2);
   }
-  const { problemes, fichier } = controler({ dossier });
+  const { problemes, corrections, fichier } = controler({ dossier, corriger: !args.includes('--sans-correction') });
   const erreurs = problemes.filter((p) => p.gravite === 'erreur').length;
-  console.log(JSON.stringify({ erreurs, alertes: problemes.length - erreurs, fichier }, null, 2));
+  console.log(JSON.stringify({ erreurs, alertes: problemes.length - erreurs, corrections: corrections.length, fichier }, null, 2));
   process.exit(erreurs ? 1 : 0);
 }
 

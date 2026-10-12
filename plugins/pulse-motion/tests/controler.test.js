@@ -21,7 +21,7 @@ test('projet d\'exemple : aucun problème, controle.json écrit', () => {
   const dir = copierProjet('projet-simple');
   const r = controler({ dossier: dir, dossierStyles: STYLES });
   assert.deepEqual(r.problemes, []);
-  assert.deepEqual(JSON.parse(fs.readFileSync(r.fichier, 'utf8')), []);
+  assert.deepEqual(JSON.parse(fs.readFileSync(r.fichier, 'utf8')), { problemes: [], corrections: [] });
 });
 
 test('temps mort au milieu d\'une scène', () => {
@@ -329,4 +329,31 @@ test('projet calé sur un tempo : aucune correction de durée proposée (elle d�
   const r = controler({ dossier: dir, dossierStyles: STYLES });
   assert.ok(r.problemes.some((p) => p.regle === 'lecture'));
   assert.equal(r.problemes.some((p) => p.correction && p.correction.duree !== undefined), false);
+});
+
+test('controler avec corrections : déroulé corrigé, corrections listées, plus de problème corrigé, controle.json complet', () => {
+  const dir = copierProjet('projet-simple');
+  modifierDeroule(dir, (d) => { d.scenes[0].duree = 9; d.scenes[0].textes.sous = 'Etape : lire'; });
+  const r = controler({ dossier: dir, dossierStyles: STYLES, corriger: true });
+  assert.deepEqual(r.corrections.map((c) => c.regle), ['typographie', 'majuscule-accentuee', 'temps-mort']);
+  assert.equal(r.problemes.some((p) => ['temps-mort', 'typographie', 'majuscule-accentuee'].includes(p.regle)), false, JSON.stringify(r.problemes));
+  const d = JSON.parse(fs.readFileSync(path.join(dir, 'deroule.json'), 'utf8'));
+  assert.equal(d.scenes[0].duree, 5.5);
+  assert.equal(d.scenes[0].textes.sous, 'Étape\u00a0: lire');
+  assert.deepEqual(JSON.parse(fs.readFileSync(r.fichier, 'utf8')), { problemes: r.problemes, corrections: r.corrections });
+});
+
+test('ligne de commande : corrige par défaut ; --sans-correction laisse le déroulé intact', () => {
+  // L'exemple livré (styles livrés) : la ligne de commande ne connaît pas le style d'essai « test ».
+  const cli = (...a) => require('node:child_process').spawnSync(process.execPath, [path.join(__dirname, '..', 'scripts', 'controler.js'), ...a], { encoding: 'utf8' });
+  const dir = require('./aide/temporaire.js').dossierTemporaire('pm-cli-');
+  fs.cpSync(path.join(__dirname, '..', 'exemples', 'chaine-du-froid'), dir, { recursive: true });
+  modifierDeroule(dir, (d) => { d.scenes[0].textes.sous = 'Lire : vite'; });
+  const avant = fs.readFileSync(path.join(dir, 'deroule.json'), 'utf8');
+  const sans = cli(dir, '--sans-correction');
+  assert.equal(JSON.parse(sans.stdout).corrections, 0, sans.stdout + sans.stderr);
+  assert.equal(fs.readFileSync(path.join(dir, 'deroule.json'), 'utf8'), avant);
+  const avec = cli(dir);
+  assert.equal(JSON.parse(avec.stdout).corrections, 1, avec.stdout + avec.stderr);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(dir, 'deroule.json'), 'utf8')).scenes[0].textes.sous, 'Lire\u00a0: vite');
 });
