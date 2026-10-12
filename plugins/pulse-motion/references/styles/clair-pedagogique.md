@@ -6,7 +6,7 @@
 - Polices fournies : **Figtree** (titres) et **Inter** (texte). Une autre police de la charte doit être fournie en fichier dans `assets/`.
 - Partir d'une des **8 scènes toutes faites** : `pulse-motion scene clair-pedagogique <type>`, copier dans `scenes/NN-<id>.html`, remplacer `data-scene="<type>"` par l'id de la scène, puis adapter. Le `type` de la scène est noté dans le déroulé : c'est lui qui permet de changer de style sans réécrire la scène.
 - Les éléments de décor portent `data-decor` (les `.rond`) et un `data-dur` égal à la durée conseillée : le mettre à la durée de la scène. Sur la **dernière scène** de la vidéo, le mettre à la durée − 1 s : la vidéo doit finir sur une image stable d'au moins 0,5 s.
-- Formats 16:9, 1:1 et 9:16 (en vertical, colonnes, étape et schéma s'empilent). Ton clair par défaut, ton sombre sur demande (`"ton": "sombre"` dans la charte du déroulé).
+- Formats 16:9, 1:1, 4:5 et 9:16 (en vertical, colonnes, étape et schéma s'empilent). Ton clair par défaut, ton sombre sur demande (`"ton": "sombre"` dans la charte du déroulé).
 - Respecter les longueurs maximales des textes : au-delà, le texte déborde ou la scène devient trop courte pour le lire.
 
 ## Scènes toutes faites

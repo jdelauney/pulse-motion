@@ -8,7 +8,7 @@
 - Textes plus courts que dans les autres styles (titre ≤ 28 caractères) : la longueur maximale de chaque texte est dans le tableau.
 - Partir d'une des **8 scènes toutes faites** : `pulse-motion scene energique <type>`, copier dans `scenes/NN-<id>.html`, remplacer `data-scene="<type>"` par l'id de la scène.
 - Décor : les bandes (`.bandes`, `data-decor`) défilent pendant toute la scène : leur `data-dur` = durée de la scène. Sur la **dernière scène** de la vidéo, durée − 1 s : la vidéo doit finir sur une image stable d'au moins 0,5 s.
-- Formats 16:9, 1:1 et 9:16. Ton clair par défaut (fond jaune), ton sombre sur demande (fond noir, aplats à l'accent).
+- Formats 16:9, 1:1, 4:5 et 9:16. Ton clair par défaut (fond jaune), ton sombre sur demande (fond noir, aplats à l'accent).
 - Transitions : `coupe`, `balayage`, `zoom`.
 
 ## Scènes toutes faites
