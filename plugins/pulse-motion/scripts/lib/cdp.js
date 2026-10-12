@@ -145,7 +145,7 @@ function ouvrirPage({ navigateur, largeur, hauteur, gpu = false, delai = 30000 }
           await charge.promesse;
         },
         async evaluer(expression) {
-          const r = await envoyerBrut('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true }, sessionId);
+          const r = await envoyerBrut('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true, userGesture: true }, sessionId);
           if (r.exceptionDetails) {
             const d = r.exceptionDetails;
             const x = d.exception || {};
