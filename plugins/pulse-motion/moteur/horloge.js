@@ -14,7 +14,7 @@
  *
  * Aléa reproductible et horloge virtuelle : idée et algorithme mulberry32 repris de
  * showtime (skills/showtime/runtime/stage.js), licence MIT.
- * Navigateur seulement ; dépend de courbes, minutage, transitions, tween (global M).
+ * Navigateur seulement ; dépend de courbes, minutage, transitions, tween, lettres (global M).
  */
 (function (racine) {
   'use strict';
@@ -69,11 +69,15 @@
     var sections = {};
     document.querySelectorAll('#pm-scene > section[data-scene]').forEach(function (s) { sections[s.getAttribute('data-scene')] = s; });
 
+    M.dureeTemps = donnees.tempo && donnees.tempo.bpm > 0 ? 60 / donnees.tempo.bpm : null;
+    // Texte lettre par lettre : découpé avant de relever les animations.
+    donnees.scenes.forEach(function (sc) {
+      if (sections[sc.id] && M.decouper) erreurs.push.apply(erreurs, M.decouper(sections[sc.id], sc.id, M.dureeTemps));
+    });
     var elementsParScene = {};
     donnees.scenes.forEach(function (sc) {
       elementsParScene[sc.id] = sections[sc.id] ? lireElements(sections[sc.id]) : [];
     });
-    M.dureeTemps = donnees.tempo && donnees.tempo.bpm > 0 ? 60 / donnees.tempo.bpm : null;
     var min = M.calculerMinutage(donnees.scenes, elementsParScene, { dureeTemps: M.dureeTemps });
     M.minutage = min;
     M.duree = min.duree;

@@ -14,6 +14,9 @@
   #fondu { position: absolute; left: 400px; top: 200px; width: 50px; height: 50px; background: #ffffff; }
   svg { position: absolute; left: 0; top: 300px; }
   [data-scene="b"] { background: #ffff00; }
+  .glyphe { position: absolute; top: 20px; margin: 0; font: 80px/1 monospace; }
+  #degrade { left: 300px; width: 160px; --pm-degrade: linear-gradient(90deg, #ff0000 0 50%, #0000ff 50% 100%); }
+  #contour { left: 480px; color: transparent; --pm-contour: 8px; --pm-contour-couleur: #00ff00; }
 </style>
 </head>
 <body>
@@ -23,6 +26,9 @@
     <ul><li></li></ul>
     <div id="fondu" data-start="0" data-dur="1" data-tween="opacity 0→1 linear"></div>
     <svg width="640" height="40"><rect y="0" width="10" height="40" fill="#0000ff"><animate attributeName="x" from="0" to="300" dur="2s" fill="freeze"/></rect></svg>
+  </section>
+    <p id="degrade" class="glyphe pm-degrade">██</p>
+    <p id="contour" class="glyphe pm-contour">█</p>
   </section>
   <section data-scene="b"></section>
 </div>
@@ -44,6 +50,11 @@
   function verifier(nom, ok, detail) { total++; if (!ok) echecs.push(nom + (detail ? ' (' + detail + ')' : '')); }
   var ctx = document.getElementById('toile').getContext('2d');
   function pixel(x, y) { var d = ctx.getImageData(x, y, 1, 1).data; return [d[0], d[1], d[2]]; }
+  function trouve(x0, y0, l, h, couleur) {
+    var d = ctx.getImageData(x0, y0, l, h).data;
+    for (var i = 0; i < d.length; i += 4) if (proche([d[i], d[i + 1], d[i + 2]], couleur, 30)) return true;
+    return false;
+  }
   function proche(a, b, tol) { return a.every(function (v, i) { return Math.abs(v - b[i]) <= (tol || 8); }); }
 
   M.seek(0.5).then(function () { return M.capturer(ctx, 640, 360); }).then(function () {
@@ -52,6 +63,8 @@
     verifier('pseudo-élément ::before recréé', proche(pixel(30, 260), [0, 255, 0]), pixel(30, 260));
     verifier('data-tween opacité à 0,5', proche(pixel(425, 225), [0x88, 0x90, 0x98], 12), pixel(425, 225));
     verifier('valeur SMIL figée (x = 75)', proche(pixel(80, 320), [0, 0, 255]) && !proche(pixel(5, 320), [0, 0, 255]), pixel(80, 320) + ' / ' + pixel(5, 320));
+    verifier('texte en dégradé capturé (rouge à gauche, bleu à droite)', trouve(300, 20, 80, 80, [255, 0, 0]) && trouve(380, 20, 80, 80, [0, 0, 255]));
+    verifier('contour de texte capturé', trouve(480, 15, 70, 90, [0, 255, 0]));
     verifier('scène masquée absente', !proche(pixel(600, 20), [255, 255, 0]), pixel(600, 20));
     return M.seek(3).then(function () { return M.capturer(ctx, 640, 360); });
   }).then(function () {
