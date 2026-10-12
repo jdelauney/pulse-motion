@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//e/IA-PULSE/pulse-motion/.worktrees/particules-p1/plugins/pulse-motion/**)",
+      "Bash(mkdir -p /e/tmp/pm-exp)",
+      "Bash(cp -r tests/fixtures/projet-particules /e/tmp/pm-exp/avec)",
+      "Bash(mkdir /e/tmp/pm-exp/avec/effets)",
+      "Bash(cp tests/fixtures/effets/gerbe.json tests/fixtures/effets/simple.json /e/tmp/pm-exp/avec/effets/)",
+      "Bash(git pull *)",
+      "Bash(git merge *)",
+      "Bash(npm --prefix plugins/pulse-motion test)",
+      "Bash(git push *)",
+      "Bash(git worktree *)"
+    ]
+  }
+}
