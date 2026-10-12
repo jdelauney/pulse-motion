@@ -11,6 +11,24 @@ import json
 import os
 import sys
 import time
+import wave
+
+
+def lire_wav(chemin):
+    """WAV PCM 16 bits (les prises de Pulse Motion) -> son mono a 16 kHz, sans passer par PyAV."""
+    import numpy as np
+    with wave.open(chemin, 'rb') as w:
+        canaux, taux, largeur = w.getnchannels(), w.getframerate(), w.getsampwidth()
+        brut = w.readframes(w.getnframes())
+    if largeur != 2:
+        raise ValueError('WAV 16 bits attendu')
+    x = np.frombuffer(brut, dtype='<i2').astype(np.float32) / 32768.0
+    if canaux > 1:
+        x = x.reshape(-1, canaux).mean(axis=1)
+    if taux != 16000:
+        t = np.arange(0, len(x) / taux, 1 / 16000.0)
+        x = np.interp(t, np.arange(len(x)) / taux, x).astype(np.float32)
+    return x
 
 
 def main():
@@ -27,7 +45,7 @@ def main():
         return 0
     from faster_whisper import WhisperModel
     modele = WhisperModel(a.modele, device='cpu', compute_type='int8')
-    segments, _ = modele.transcribe(a.wav, language=a.langue, word_timestamps=True, beam_size=5)
+    segments, _ = modele.transcribe(lire_wav(a.wav), language=a.langue, word_timestamps=True, beam_size=5)
     mots = []
     for s in segments:
         print('%.1f' % s.end, file=sys.stderr, flush=True)
