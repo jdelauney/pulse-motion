@@ -26,7 +26,17 @@ const instant = (t) => `(async function () {
   return true;
 })()`;
 
-/** -> Promise<{ duree, capturer(t), fermer() }> */
+// Son de la page (mixage du moteur) en WAV base64, gardé dans la page puis lu par morceaux.
+const SON = `(async function () {
+  var r = await M.rendreSon();
+  window.__pmSon = null;
+  if (!r.buffer) return { longueur: 0, sonie: r.sonie, avertissements: r.avertissements };
+  var b = r.buffer;
+  window.__pmSon = M.wav.base64(M.wav.ecrire({ taux: b.sampleRate, canaux: [b.getChannelData(0), b.getChannelData(1)] }));
+  return { longueur: window.__pmSon.length, sonie: r.sonie, avertissements: r.avertissements };
+})()`;
+
+/** -> Promise<{ duree, capturer(t), rendreSon(), fermer() }> */
 async function ouvrirCapture({ fichierHtml, largeur, hauteur, navigateur, gpu = false, delai = 30000 }) {
   const page = await ouvrirPage({ navigateur, largeur, hauteur, gpu, delai });
   try {
@@ -37,6 +47,15 @@ async function ouvrirCapture({ fichierHtml, largeur, hauteur, navigateur, gpu = 
       async capturer(t) {
         await page.evaluer(instant(t));
         return page.capturer();
+      },
+      /** -> { wav: Buffer|null, sonie, avertissements } ; rapatrié par morceaux (messages CDP de taille bornée). */
+      async rendreSon({ morceau = 4 * 1024 * 1024 } = {}) {
+        const info = await page.evaluer(SON);
+        if (!info.longueur) return { wav: null, sonie: info.sonie, avertissements: info.avertissements };
+        const parts = [];
+        for (let i = 0; i < info.longueur; i += morceau) parts.push(await page.evaluer(`window.__pmSon.slice(${i}, ${i + morceau})`));
+        await page.evaluer('window.__pmSon = null, true');
+        return { wav: Buffer.from(parts.join(''), 'base64'), sonie: info.sonie, avertissements: info.avertissements };
       },
       fermer: () => page.fermer(),
     };
