@@ -13,7 +13,7 @@ const path = require('node:path');
 const { lireDeroule } = require('./lib/deroule.js');
 const { cheminDansProjet } = require('./lib/embarquer.js');
 const { adapterScene, lireNombre } = require('./lib/adapter.js');
-const { trouverStyle, messageStyleInconnu, verifierStyle } = require('./styles.js');
+const { trouverStyle, messageStyleInconnu, styleVerifie } = require('./styles.js');
 const { sauvegarder } = require('./historique.js');
 
 function changerStyle({ dossier, style, dossierStyles }) {
@@ -22,8 +22,8 @@ function changerStyle({ dossier, style, dossierStyles }) {
   if (erreurs.length) return { ok: false, message: `Le déroulé contient des erreurs : ${erreurs.join(' ')}` };
   const st = trouverStyle(style, dossierStyles);
   if (!st) return { ok: false, message: messageStyleInconnu(style, dossierStyles) };
-  if (st.personnel && !verifierStyle(st.dossier).ok) {
-    return { ok: false, message: `Le style personnel « ${style} » ne passe pas la vérification : lancez « pulse-motion styles verifier ${style} » pour voir quoi corriger.` };
+  if (!styleVerifie(st)) {
+    return { ok: false, message: `Le style personnel « ${style} » ne passe pas la vérification : lancez « pulse-motion style verifier ${style} » pour voir quoi corriger.` };
   }
   if (style === deroule.style) return { ok: true, style, recopiees: [], aReecrire: [], inchange: true };
 

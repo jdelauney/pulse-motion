@@ -18,6 +18,7 @@
  *   pulse-motion comparer <dossier> <s1,s2,s3> [--scenes a,b] [--ouvrir]   comparaison des styles sur le déroulé
  *   pulse-motion charte enregistrer <nom> <dossier> | liste | appliquer <nom> <dossier> | depuis-logo <fichier> [--style s] [--ton clair|sombre]
  *   pulse-motion police "<famille>" [--graisses 400,700] | <fichier> [--famille "<nom>"] [--confirmer]   police de la charte (Bunny Fonts ou fichier)
+ *   pulse-motion style nouveau <nom> [--depuis <style>] | verifier <nom> | planche <nom> [--scenes a,b] [--ratio r] [--ton t] [--ouvrir]   style personnel
  *   pulse-motion glossaire <dossier> | glossaire noter <dossier> "<terme>" "<sens>" ["<à éviter>"]   mots du métier (charte/glossaire.md)
  *   pulse-motion lexique [noter "<terme>" "<phrase>" "<comme…>" "<commande>"]   mots de l'outil expliqués à la personne
  *   pulse-motion consignes <skill>        affiche les consignes d'un skill (ex. creer)
@@ -42,6 +43,7 @@ const SCRIPTS = {
   comparer: 'comparer.js',
   charte: 'charte.js',
   police: 'polices.js',
+  style: 'style-perso.js',
 };
 
 function afficherFichier(fichier, quoi) {
@@ -75,7 +77,14 @@ function lancer(args) {
   if (commande === 'reference') {
     const nom = reste[0] || '';
     if (!NOM_SUR.test(nom)) { console.error('Usage : pulse-motion reference <nom> (ex. moteur, rythme, styles/clair-pedagogique)'); return 2; }
-    return afficherFichier(path.join(RACINE, 'references', `${nom}.md`), `Référence « ${nom} »`);
+    const fichier = path.join(RACINE, 'references', `${nom}.md`);
+    const m = /^styles\/([a-z0-9-]+)$/.exec(nom);
+    if (m && !fs.existsSync(fichier)) {
+      // Guide d'un style personnel : rangé avec le style (guide.md).
+      const st = trouverStyle(m[1]);
+      if (st && st.personnel) return afficherFichier(path.join(st.dossier, 'guide.md'), `Guide du style « ${m[1]} »`);
+    }
+    return afficherFichier(fichier, `Référence « ${nom} »`);
   }
   if (commande === 'scene') {
     const [style, nom] = reste;
@@ -105,6 +114,7 @@ function lancer(args) {
     '  changer-style <dossier> <style>                  comparer <dossier> <s1,s2,s3> [--scenes a,b] [--ouvrir]',
     '  charte enregistrer <nom> <dossier> | liste | appliquer <nom> <dossier> | depuis-logo <fichier> [--style s] [--ton clair|sombre]',
     '  police "<famille>" [--graisses 400,700] | <fichier> [--famille "<nom>"] [--confirmer] [--dans <dossier>]',
+    '  style nouveau <nom> [--depuis <style>] | verifier <nom> | planche <nom> [--scenes a,b] [--ratio r] [--ton t] [--ouvrir]',
     '  glossaire <dossier> | glossaire noter <dossier> "<terme>" "<sens>" ["<à éviter>"] ["<prononciation>"]',
     '  lexique [noter "<terme>" "<phrase>" "<comme…>" "<commande>"]',
   ].join('\n'));

@@ -17,7 +17,7 @@ const { lireDeroule } = require('./lib/deroule.js');
 const { cheminDansProjet } = require('./lib/embarquer.js');
 const { echapperHTML } = require('./lib/scenes.js');
 const { adapterScene, choisirType, textesPour, lireNombre } = require('./lib/adapter.js');
-const { trouverStyle, messageStyleInconnu, verifierStyle, ficheStyle, racinesStyles } = require('./styles.js');
+const { trouverStyle, messageStyleInconnu, styleVerifie, ficheStyle, racinesStyles } = require('./styles.js');
 const { exporterVideo, arreterProprementSurSignal } = require('./exporter.js');
 const { ouvrirNavigateur } = require('./apercu.js');
 
@@ -84,7 +84,7 @@ async function comparer({
   for (const nom of noms) {
     const st = trouverStyle(nom, dossierStyles);
     if (!st) return fin({ ok: false, message: messageStyleInconnu(nom, dossierStyles) });
-    if (st.personnel && !verifierStyle(st.dossier).ok) return fin({ ok: false, message: `Le style personnel « ${nom} » ne passe pas la vérification : lancez « pulse-motion styles verifier ${nom} ».` });
+    if (!styleVerifie(st)) return fin({ ok: false, message: `Le style personnel « ${nom} » ne passe pas la vérification : lancez « pulse-motion style verifier ${nom} ».` });
     trouves.push(st);
   }
   const ids = idsDemandes && idsDemandes.length ? idsDemandes : deroule.scenes.slice(0, 2).map((s) => s.id);
