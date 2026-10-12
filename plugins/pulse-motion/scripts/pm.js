@@ -8,6 +8,7 @@
  *   pulse-motion apercu <dossier> [--port 4321] [--ouvrir]
  *   pulse-motion historique sauvegarder|annuler <dossier>
  *   pulse-motion exporter <dossier>       MP4 relu dans sortie/ (Chrome ou Edge sans fenêtre)
+ *   pulse-motion ffmpeg                  ffmpeg présent ? commande pour l'installer
  *   pulse-motion planche <dossier> [id1,id2] [--ouvrir]   images clés PNG dans sortie/planche/
  *   pulse-motion reference <nom>          affiche references/<nom>.md (ex. moteur, rythme, styles/clair-pedagogique)
  *   pulse-motion scene <style> <nom>      affiche une scène toute faite d'un style
@@ -44,6 +45,7 @@ const SCRIPTS = {
   charte: 'charte.js',
   police: 'polices.js',
   style: 'style-perso.js',
+  ffmpeg: 'ffmpeg.js',
 };
 
 function afficherFichier(fichier, quoi) {
@@ -109,6 +111,7 @@ function lancer(args) {
     '  assembler <dossier>      controler <dossier> [--sans-correction] [--sans-rendu]      apercu <dossier> [--port N] [--ouvrir]',
     '  historique sauvegarder|annuler <dossier>',
     '  exporter <dossier>       planche <dossier> [id1,id2]',
+    '  ffmpeg                   ffmpeg présent ? commande pour l\'installer',
     '  reference <nom>          scene <style> <nom>      effet <nom>      consignes <skill>',
     '  styles [--genre <genre>]                         styles verifier <nom>',
     '  changer-style <dossier> <style>                  comparer <dossier> <s1,s2,s3> [--scenes a,b] [--ouvrir]',
