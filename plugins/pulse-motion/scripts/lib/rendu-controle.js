@@ -11,10 +11,10 @@ const virgule = (x) => String(Math.round(x * 10) / 10).replace('.', ',');
 const ZONES = { haut: 'en haut', bas: 'en bas', droite: 'à droite' };
 
 const MESSAGES = {
-  chevauchement: (c) => { const [a, b] = c.element.split('|'); return `Scène « ${c.scene} » : « ${a} » et « ${b} » se chevauchent (vers ${virgule(c.instant)} s) ; les écarter, ou marquer celui qui passe volontairement par-dessus avec data-superpose.`; },
-  'hors-cadre': (c) => `Scène « ${c.scene} » : « ${c.element} » sort de l'image (vers ${virgule(c.instant)} s).`,
+  chevauchement: (c) => { const [a, b] = c.element.split('|'); return `Scène « ${c.scene} » : « ${a} » et « ${b} » se chevauchent (vers ${virgule(c.instant)} s) ; les écarter, ou marquer celui qui passe volontairement par-dessus avec data-superpose. S'il s'agit d'un décor : data-decor (ou alt="" pour une image, aria-hidden="true" pour un SVG).`; },
+  'hors-cadre': (c) => `Scène « ${c.scene} » : « ${c.element} » sort de l'image (vers ${virgule(c.instant)} s). S'il s'agit d'un décor : data-decor (ou alt="" pour une image, aria-hidden="true" pour un SVG).`,
   marge: (c) => `Scène « ${c.scene} » : le texte « ${c.element} » touche presque le bord de l'image (vers ${virgule(c.instant)} s) ; garder au moins ${virgule(SEUILS.margeMin * 100)} % de marge.`,
-  'zone-sure': (c) => `Scène « ${c.scene} » : en 9:16, le texte « ${c.element} » passe sous les boutons des réseaux sociaux (${ZONES[c.valeur] || c.valeur}, vers ${virgule(c.instant)} s) ; le rapprocher du centre.`,
+  'zone-sure': (c) => `Scène « ${c.scene} » : en 9:16, le texte « ${c.element} » passe sous les boutons des réseaux sociaux (${ZONES[c.valeur] || c.valeur}, vers ${virgule(c.instant)} s) ; raccourcir les textes de la scène ou retirer un point, sinon les rapprocher du centre.`,
   'logo-masque': (c) => (c.valeur === 'dehors'
     ? `Scène « ${c.scene} » : le logo sort de l'image (vers ${virgule(c.instant)} s).`
     : `Scène « ${c.scene} » : le logo est recouvert à ${Math.round(c.valeur * 100)} % (vers ${virgule(c.instant)} s) ; le dégager.`),
@@ -44,6 +44,7 @@ async function controlerRendu({ html, ratio, duree, navigateur = trouverNavigate
     fs.writeFileSync(fichier, String(html).replace('</body>', `${appel}\n</body>`));
     let dom;
     try { dom = await rendreDOM(navigateur, fichier, { delai: (30 + 2 * (duree || 0)) * 1000 }); } catch (e) {
+      if (e.code === 'ENOENT') return nonVerifie('rendu-impossible', `Navigateur introuvable à « ${navigateur} » : vérifiez la variable PM_NAVIGATEUR (ou retirez-la pour utiliser Chrome ou Edge installés). Seuls les contrôles sans navigateur ont été faits.`);
       return nonVerifie('rendu-impossible', `La vidéo n'a pas pu être rendue dans le navigateur (${e.killed ? 'délai dépassé' : e.code || e.message}) : seuls les contrôles sans navigateur ont été faits.`);
     }
     const m = /<pre id="pm-mesures">([^<]*)<\/pre>/.exec(dom);

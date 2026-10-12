@@ -133,7 +133,7 @@
 
 /* ---------- Format vertical : tout s'empile ---------- */
 @container (orientation: portrait) {
-  #pm-scene > section[data-scene] { padding: 10cqh 7cqh 15cqh; gap: 2.2cqh; font-size: 3.6cqh; }
+  #pm-scene > section[data-scene] { padding: 10cqh 7cqh; gap: 2.2cqh; font-size: 3.6cqh; }
   .surtitre { font-size: 3.5cqh; letter-spacing: 0.12em; }
   .titre { font-size: 6.2cqh; }
   .titre-moyen { font-size: 4.6cqh; }
@@ -154,4 +154,9 @@
   .ligne { left: 6cqh; right: 6cqh; }
   .guillemet { right: 4cqh; top: 1cqh; font-size: 34cqh; }
   .logo { height: 9cqh; }
+}
+
+/* ---------- 9:16 : place pour la légende des réseaux sociaux (pas en 4:5) ---------- */
+@container (max-aspect-ratio: 2/3) {
+  #pm-scene > section[data-scene] { padding-bottom: 15cqh; }
 }

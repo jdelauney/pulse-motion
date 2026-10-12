@@ -156,3 +156,9 @@ test('creer et retoucher : le contrôle vérifie lui-même la vidéo rendue ; re
     assert.doesNotMatch(texte, /Attendre quelques secondes, puis `pulse-motion controler \.`|Quelques secondes après, `pulse-motion controler \.`/, s);
   }
 });
+
+test('revue : la référence du moteur explique les marqueurs lus par le contrôle de la vidéo rendue', () => {
+  const moteur = lire('references', 'moteur.md');
+  for (const motif of [/data-decor/, /data-superpose/, /alt=""/, /aria-hidden="true"/]) assert.match(moteur, motif);
+  assert.match(lire('skills', 'creer', 'SKILL.md'), /rendu-non-verifie.*rendu-impossible/);
+});

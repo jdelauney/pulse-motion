@@ -25,7 +25,7 @@ test('constats traduits en problèmes français (alertes)', () => {
     ['chevauchement', 'alerte', 'intro', 'titre|logo'], ['hors-cadre', 'alerte', 'intro', 'photo'], ['marge', 'alerte', 'intro', 'titre'],
     ['zone-sure', 'alerte', 'fin', 'sous'], ['logo-masque', 'alerte', 'fin', 'logo'], ['texte-fugace', 'alerte', 'fin', 'sous'], ['mouvement-rapide', 'alerte', 'fin', 'vite'],
   ]);
-  assert.equal(p[0].message, 'Scène « intro » : « titre » et « logo » se chevauchent (vers 1,2 s) ; les écarter, ou marquer celui qui passe volontairement par-dessus avec data-superpose.');
+  assert.equal(p[0].message, 'Scène « intro » : « titre » et « logo » se chevauchent (vers 1,2 s) ; les écarter, ou marquer celui qui passe volontairement par-dessus avec data-superpose. S\'il s\'agit d\'un décor : data-decor (ou alt="" pour une image, aria-hidden="true" pour un SVG).');
   assert.match(p[3].message, /en 9:16, le texte « sous » passe sous les boutons des réseaux sociaux \(en bas, vers 3 s\)/);
   assert.match(p[5].message, /ne reste lisible que 1,4 s ; il faut au moins 1,6 s/);
   assert.match(p[4].message, /le logo sort de l'image/);
@@ -69,4 +69,22 @@ test('controlerComplet : un défaut de mise en page et un débordement rendus re
   assert.ok(regles.includes('marge'), JSON.stringify(r.problemes));
   assert.ok(r.problemes.some((p) => p.regle === 'debordement' && p.scene === 'intro'), JSON.stringify(r.problemes));
   assert.equal(r.problemes.some((p) => p.message === 'ancien rapport'), false);
+});
+
+test('revue : messages qui disent comment marquer un décor, et raccourcir plutôt que déplacer en 9:16', () => {
+  const [chev, dehors, zone] = traduireConstats([
+    { regle: 'chevauchement', scene: 'a', element: 'x|y', instant: 1, valeur: 0.5 },
+    { regle: 'hors-cadre', scene: 'a', element: 'ciel', instant: 1, valeur: null },
+    { regle: 'zone-sure', scene: 'a', element: 'point4', instant: 1, valeur: 'bas' },
+  ]);
+  assert.match(chev.message, /décor.*data-decor/);
+  assert.match(dehors.message, /décor.*data-decor/);
+  assert.match(zone.message, /raccourcir/);
+});
+
+test('revue : navigateur introuvable à l\'adresse donnée, le message nomme le chemin et PM_NAVIGATEUR', async () => {
+  const chemin = path.join(__dirname, 'absent.exe');
+  const r = await controlerRendu({ html: '<html></html>', ratio: '16:9', duree: 4, navigateur: chemin });
+  assert.ok(r.problemes[0].message.includes(chemin), r.problemes[0].message);
+  assert.match(r.problemes[0].message, /PM_NAVIGATEUR/);
 });

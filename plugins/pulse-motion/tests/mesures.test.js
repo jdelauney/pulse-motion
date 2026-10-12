@@ -116,3 +116,23 @@ test('mesures : deux textes serrés dont les lettres ne se touchent pas ne se ch
   modifierDeroule(dir, (d) => { d.scenes[0].textes.numero = '2'; });
   assert.equal(regles(await mesurer(dir)).includes('chevauchement'), false);
 });
+
+test('revue : la première scène qui entre en glissant n\'est pas un mouvement rapide', sans, async () => {
+  const dir = projet((h) => h.replace('</section>', `${boite('grand', 'left:10cqw; top:50cqh; width:60cqw; height:45cqh', 'data-decor data-start="0" data-dur="4"')}</section>`));
+  modifierDeroule(dir, (d) => { d.scenes[0].transition = 'glissement'; });
+  assert.equal(regles(await mesurer(dir)).includes('mouvement-rapide'), false);
+});
+
+test('revue : logo peint au-dessus d\'une image data-superpose, pas masqué ; recouvert par-dessus, masqué', sans, async () => {
+  const logo = (h) => h.replace('<img data-logo', '<img data-logo style="position:absolute; left:70cqw; top:20cqh; width:10cqw; height:10cqh; z-index:2"');
+  const dessous = boite('photo', 'left:60cqw; top:15cqh; width:30cqw; height:30cqh; z-index:1', 'data-superpose');
+  assert.equal(regles(await mesurer(projet((h) => logo(h).replace('</section>', `${dessous}</section>`)))).includes('logo-masque'), false);
+  const dessus = boite('cache', 'left:68cqw; top:18cqh; width:14cqw; height:14cqh; z-index:3');
+  assert.ok(regles(await mesurer(projet((h) => logo(h).replace('</section>', `${dessus}</section>`)))).includes('logo-masque'));
+});
+
+test('revue : un élément sans identifiant est nommé par son texte alternatif ou sa classe', sans, async () => {
+  const sansId = '<svg class="carte" style="position:absolute; left:-10cqw; top:60cqh; width:20cqw; height:20cqh" viewBox="0 0 10 10"><rect width="10" height="10"/></svg>';
+  const c = (await mesurer(projet((h) => h.replace('</section>', `${sansId}</section>`)))).find((x) => x.regle === 'hors-cadre');
+  assert.equal(c.element, 'carte');
+});

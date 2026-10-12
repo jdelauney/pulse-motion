@@ -83,3 +83,13 @@ test('styles livrés : aucune animation sans fin (la vidéo doit finir sur une i
     assert.doesNotMatch(fs.readFileSync(path.join(RACINE, 'styles', style, 'style.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, ''), /\binfinite\b/, style);
   }
 });
+
+test('revue : la marge basse des interfaces de réseaux ne vaut que pour le 9:16, pas pour le 4:5', () => {
+  for (const style of fs.readdirSync(path.join(RACINE, 'styles'))) {
+    const css = fs.readFileSync(path.join(RACINE, 'styles', style, 'style.css'), 'utf8');
+    const portrait = css.slice(css.indexOf('@container (orientation: portrait)'));
+    const blocPortrait = portrait.slice(0, portrait.indexOf('\n}'));
+    assert.doesNotMatch(blocPortrait, /section\[data-scene\] \{ padding:[^;]*15cqh;/, `${style} : marge basse dans le bloc portrait (vaut aussi pour 4:5)`);
+    assert.match(css, /@container \(max-aspect-ratio: 2\/3\) \{\s*#pm-scene > section\[data-scene\] \{ padding-bottom: 15cqh; \}/, style);
+  }
+});
