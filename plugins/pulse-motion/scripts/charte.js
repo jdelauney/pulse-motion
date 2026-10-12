@@ -46,8 +46,8 @@ function empreinte(dossier) {
   return h.digest('hex');
 }
 
-/** renommer : fs.renameSync (remplaçable dans les essais). */
-function enregistrerCharte({ nom, dossier, renommer = fs.renameSync }) {
+/** renommer, supprimer : fs.renameSync, fs.rmSync (remplaçables dans les essais). */
+function enregistrerCharte({ nom, dossier, renommer = fs.renameSync, supprimer = fs.rmSync }) {
   if (!NOM.test(nom || '')) return nomRefuse();
   const projet = path.resolve(dossier);
   const { deroule, erreurs } = lireDeroule(projet);
@@ -94,13 +94,19 @@ function enregistrerCharte({ nom, dossier, renommer = fs.renameSync }) {
     try {
       renommer(temporaire, final);
     } catch (e) {
-      if (remplace) renommer(ancienne, final);
+      if (remplace) {
+        try { renommer(ancienne, final); } catch {
+          e.ancienne = ancienne;
+        }
+      }
       throw e;
     }
-    if (remplace) fs.rmSync(ancienne, { recursive: true, force: true });
+    // Ancienne version impossible à effacer (fichier verrouillé) : la nouvelle est en place, le reste est ignoré.
+    if (remplace) { try { supprimer(ancienne, { recursive: true, force: true }); } catch { /* invisible : filtré par NOM */ } }
   } catch (e) {
     try { fs.rmSync(temporaire, { recursive: true, force: true }); } catch { /* rien à nettoyer */ }
-    return { ok: false, message: `La charte « ${nom} » n'a pas pu être enregistrée (${e.code || e.message}) : vérifiez les droits de ${dossierChartes()}, ou indiquez un autre dossier avec la variable PULSE_MOTION_DOSSIER.` };
+    const ancienneGardee = e.ancienne ? ` L'ancienne version de la charte est gardée dans ${e.ancienne} : renommez ce dossier en « ${nom} » pour la retrouver.` : '';
+    return { ok: false, message: `La charte « ${nom} » n'a pas pu être enregistrée (${e.code || e.message}) : vérifiez les droits de ${dossierChartes()}, ou indiquez un autre dossier avec la variable PULSE_MOTION_DOSSIER.${ancienneGardee}` };
   }
   return { ok: true, nom, dossier: final };
 }

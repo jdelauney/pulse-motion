@@ -58,3 +58,16 @@ test('liste à point4 sans point3 : la référence au point retiré passe sur so
 test('textesPour : les textes restants remplissent aussi les points facultatifs', () => {
   assert.deepEqual(A.textesPour('liste', { titre: 'T', point1: 'a', point2: 'b', extra: 'c' }), { titre: 'T', point1: 'a', point2: 'b', point3: 'c', point4: '' });
 });
+
+test('élément retiré : une référence à son début ajoute son propre décalage', () => {
+  const { retirerElement } = require('../scripts/lib/adapter.js');
+  const html = [
+    '<p id="p2" data-start="1">a</p>',
+    '<p id="p3" data-start="#p2:fin+0.8" data-texte="point3">b</p>',
+    '<p id="p4" data-start="#p3+0.2">c</p>',
+    '<p id="p5" data-start="#p3:fin+0.5">d</p>',
+  ].join('\n');
+  const h = retirerElement(html, 'data-texte="point3"');
+  assert.match(h, /id="p4" data-start="#p2:fin\+1"/);
+  assert.match(h, /id="p5" data-start="#p2:fin\+0.5"/);
+});

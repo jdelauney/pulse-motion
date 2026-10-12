@@ -15,7 +15,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { dossierPersonnel } = require('./lib/personnel.js');
-const { sauvegarder } = require('./historique.js');
+const { sauvegarder, annuler } = require('./historique.js');
 
 const MODELE = path.join(__dirname, '..', 'modeles', 'lexique.md');
 const MODELE_GLOSSAIRE = path.join(__dirname, '..', 'modeles', 'glossaire.md');
@@ -39,7 +39,7 @@ function lireTableau(lignes, colonnes) {
     // ou au mauvais nombre de cellules est gardée telle quelle (brut), jamais réécrite.
     const morceaux = lignes[j].trimEnd().split(/(?<!\\)\|/);
     const complete = morceaux.length >= 2 && morceaux[morceaux.length - 1] === '';
-    const cellules = morceaux.slice(1, complete ? -1 : undefined).map((c) => c.trim());
+    const cellules = morceaux.slice(1, complete ? -1 : undefined).map((c) => c.trim().replace(/\\\|/g, '|'));
     const valide = complete && cellules.length === colonnes;
     while (cellules.length < colonnes) cellules.push('');
     rangees.push(Object.assign(cellules, { brut: lignes[j], valide }));
@@ -102,8 +102,15 @@ function noterGlossaire({ dossier, terme, sens, eviter = '', prononciation = '',
   if (!terme || !String(terme).trim() || !sens || !String(sens).trim()) throw new Error('Il faut au moins un terme et son sens.');
   const dejaNote = lireGlossaire(dossier).termes.some((t) => cleTri(t.terme) === cleTri(cellule(terme)));
   if (dejaNote) return { ajoute: false, fichier: cheminGlossaire(dossier) };
-  if (sauvegarde && fs.existsSync(path.join(path.resolve(dossier), 'deroule.json'))) sauvegarder(dossier);
-  return ajouterRangee(cheminGlossaire(dossier), GLOSSAIRE, [terme, sens, eviter, prononciation]);
+  const copie = sauvegarde && fs.existsSync(path.join(path.resolve(dossier), 'deroule.json'));
+  if (copie) sauvegarder(dossier);
+  try {
+    return ajouterRangee(cheminGlossaire(dossier), GLOSSAIRE, [terme, sens, eviter, prononciation]);
+  } catch (e) {
+    // Rien d'écrit : la copie prise pour cet ajout est retirée, « annule » ne la consommera pas à vide.
+    if (copie) { try { annuler(dossier); } catch { /* rien à défaire */ } }
+    throw e;
+  }
 }
 
 const echapperRegex = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

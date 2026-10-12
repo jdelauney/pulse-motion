@@ -47,3 +47,16 @@ test('verifierGlossaire : un titre tout en capitales n\'est pas une faute de cas
   assert.deepEqual(V.verifierGlossaire([{ id: 'a', textes: { titre: 'MARCHÉ DE RUNGIS' } }], termes), []);
   assert.equal(V.verifierGlossaire([{ id: 'a', textes: { titre: 'Le marché de rungis' } }], termes).length, 1);
 });
+
+test('glossaire : une barre échappée à la main (« \\| ») se lit comme une barre dans le terme', () => {
+  const { lireGlossaire } = require('../scripts/vocabulaire.js');
+  const dir = copierProjet('projet-simple');
+  fs.mkdirSync(path.join(dir, 'charte'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'charte', 'glossaire.md'), String.raw`# Glossaire
+
+| Terme | Sens | À éviter | Prononciation |
+|---|---|---|---|
+| Entrée\|Sortie | Le registre | | |
+`);
+  assert.deepEqual(lireGlossaire(dir).termes.map((t) => t.terme), ['Entrée|Sortie']);
+});

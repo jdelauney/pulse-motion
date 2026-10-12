@@ -67,5 +67,5 @@ test('lexique corrigé à la main : cellule avec « \| » et rangée sans « | �
   assert.ok(texte.includes(echappee), texte);
   assert.ok(texte.includes(sansFin), texte);
   assert.match(texte, /\| aperçu \| La vidéo dans le navigateur \|/);
-  assert.equal(V.lireLexique().termes.find((t) => t.terme === 'zoom').phrase, String.raw`grossir \| rapprocher`);
+  assert.equal(V.lireLexique().termes.find((t) => t.terme === 'zoom').phrase, 'grossir | rapprocher');
 }));
