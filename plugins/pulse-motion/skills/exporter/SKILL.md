@@ -34,7 +34,7 @@ Lancer `pulse-motion exporter .` en arrière-plan, puis lire son résultat JSON 
 
 - La personne veut une vidéo plus légère (envoi par courriel) : ajouter `--qualite 720p`. Plus fluide : `--ips 60` (export deux fois plus long).
 - Réussite : le résumé donne `fichier`, `duree`, `images`, `audio`, `mode` (`fidele` ou `navigateur`), et parfois `avertissement`.
-- `avertissement` présent (musique illisible) : le dire simplement ; la vidéo est muette mais exportée.
+- `avertissement` présent (musique ou voix illisible, son non encodable) : le dire simplement ; la vidéo est exportée, muette ou sans la source illisible.
 - `conseilFfmpeg` présent : la vidéo a été faite dans le navigateur faute de ffmpeg ; le dire en une phrase, et proposer l'installation pour la prochaine fois (étape 2).
 - Export interrompu : les parties déjà faites seront reprises au prochain export.
 - « Chrome ou Edge introuvable » : expliquer qu'il faut installer Chrome ou Edge, ou ouvrir l'aperçu dans l'un des deux et cliquer sur le bouton « MP4 » de la barre de lecture (lancer `pulse-motion apercu . --ouvrir` en arrière-plan si l'aperçu n'est pas ouvert).
