@@ -44,3 +44,17 @@ test('choisirType et textesPour : type déclaré, sinon le plus proche ; textes 
   assert.deepEqual(A.textesPour('titre', { question: 'Pourquoi ?', detail: 'En bref' }), { etiquette: 'Pourquoi ?', titre: 'En bref', sous: '' });
   assert.deepEqual(A.textesPour('liste', { titre: 'T', point1: 'a', point2: 'b' }), { titre: 'T', point1: 'a', point2: 'b', point3: '', point4: '' });
 });
+
+test('liste à point4 sans point3 : la référence au point retiré passe sur son ancre, minutage valide', () => {
+  const { calculerMinutage } = require('../moteur/minutage.js');
+  const html = A.adapterScene(modele('liste'), { type: 'liste', id: 'regles', duree: 12, textes: { titre: 'T', point1: 'a', point2: 'b', point4: 'd' } });
+  assert.doesNotMatch(html, /data-texte="point3"/);
+  assert.doesNotMatch(html, /#point3/);
+  assert.match(html, /id="point4"[^>]*data-start="#point2:fin\+0\.8"/);
+  const m = calculerMinutage([{ id: 'regles', duree: 12 }], { regles: extraireScene(html).elements });
+  assert.deepEqual(m.erreurs, []);
+});
+
+test('textesPour : les textes restants remplissent aussi les points facultatifs', () => {
+  assert.deepEqual(A.textesPour('liste', { titre: 'T', point1: 'a', point2: 'b', extra: 'c' }), { titre: 'T', point1: 'a', point2: 'b', point3: 'c', point4: '' });
+});
