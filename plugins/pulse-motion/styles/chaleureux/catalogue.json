@@ -1,0 +1,15 @@
+{
+  "style": "chaleureux",
+  "description": "Accueillant, doux, humain : pour un service grand public, une association, la santé, l'accueil des nouveaux arrivants.",
+  "transitions": ["fondu", "glissement"],
+  "scenes": [
+    { "nom": "titre", "role": "Accueillir et ouvrir la vidéo", "duree": 7, "textes": { "etiquette": 25, "titre": 40, "sous": 50 } },
+    { "nom": "liste", "role": "2 à 4 points sur des cartes douces", "duree": 12, "textes": { "titre": 40, "point1": 45, "point2": 45, "point3": 45, "point4": 45 } },
+    { "nom": "chiffre", "role": "Un chiffre dans un galet", "duree": 7, "textes": { "titre": 40, "unite": 3, "legende": 60 } },
+    { "nom": "comparaison", "role": "Deux cartes arrondies", "duree": 12, "textes": { "titre": 40, "gauche-titre": 20, "gauche-texte": 60, "droite-titre": 20, "droite-texte": 60 } },
+    { "nom": "etape", "role": "Une étape, numéro dans une forme ronde", "duree": 8, "textes": { "numero": 2, "titre": 40, "texte": 80 } },
+    { "nom": "alerte", "role": "Un conseil important, sur une carte", "duree": 8, "textes": { "titre": 40, "texte": 80 } },
+    { "nom": "schema", "role": "Trois étapes reliées par des flèches courbes", "duree": 8, "textes": { "titre": 40, "a": 25, "b": 25, "c": 25 } },
+    { "nom": "conclusion", "role": "Le message à retenir et le logo", "duree": 6, "textes": { "titre": 40, "sous": 50 } }
+  ]
+}

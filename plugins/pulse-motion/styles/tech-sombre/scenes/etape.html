@@ -1,0 +1,14 @@
+<!-- Scène toute faite « etape » (style tech-sombre) : une étape numérotée. Durée conseillée : 8 s.
+     Textes : numero (≤ 2 car.), titre (≤ 40 car.), texte (≤ 80 car.). -->
+<section data-scene="etape">
+  <div class="decor">
+    <span class="grille" data-decor data-start="0" data-dur="8" data-tween="--x 0cqh→-8cqh linear; --y 0cqh→-4cqh linear"></span>
+  </div>
+  <div class="etape">
+    <span id="numero" class="index lumineux glisse" data-texte="numero" data-start="0.2" data-dur="0.6"></span>
+    <div class="etape-texte">
+      <h2 id="titre" class="titre-moyen glisse" data-texte="titre" data-start="#numero:fin" data-dur="0.6"></h2>
+      <p id="texte" class="texte ecrit curseur" data-texte="texte" data-start="#titre:fin+0.2" data-dur="1.4"></p>
+    </div>
+  </div>
+</section>

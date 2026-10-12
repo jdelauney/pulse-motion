@@ -1,0 +1,12 @@
+<!-- Scène toute faite « chiffre » (style chaleureux) : un chiffre dans un galet. Durée conseillée : 7 s.
+     Textes : titre (≤ 40 car.), unite (≤ 3 car., vide si aucune), legende (≤ 60 car.). Valeur : remplacer 1250 dans « nombre 0→1250 ». -->
+<section data-scene="chiffre" class="centre">
+  <div class="decor">
+    <span class="galet sauge" data-decor style="width: 44cqh; height: 40cqh; left: -12cqh; bottom: -14cqh" data-start="0" data-dur="7" data-tween="--dx 0cqh→6cqh sine-inout; --m 0→1 sine-inout"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen pose" data-texte="titre" data-start="0.2" data-dur="0.9"></h2>
+  <div id="galet" class="galet-chiffre eclot" data-start="#titre:fin" data-dur="0.8">
+    <p class="chiffre-rond"><span id="valeur" data-start="#galet+0.2" data-dur="1.8" data-tween="nombre 0→1250 quint-out">0</span><span class="unite" data-texte="unite"></span></p>
+  </div>
+  <p id="legende" class="sous-titre pose" data-texte="legende" data-start="#valeur:fin+0.1" data-dur="0.9"></p>
+</section>

@@ -1,0 +1,14 @@
+<!-- Scène toute faite « liste » (style editorial) : 2 à 4 points, comme un sommaire numéroté. Durée conseillée : 12 s.
+     Textes : titre (≤ 40 car.), point1 … point4 (≤ 45 car.). Moins de 4 points : supprimer les points en trop. -->
+<section data-scene="liste">
+  <div class="decor">
+    <span class="ligne" data-decor data-start="0" data-dur="12" data-tween="--l 0→1 sine-inout"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen masque" data-texte="titre" data-start="0.2" data-dur="1.1"></h2>
+  <ol class="sommaire">
+    <li id="point1" class="masque" data-texte="point1" data-start="#titre:fin+0.3" data-dur="1"></li>
+    <li id="point2" class="masque" data-texte="point2" data-start="#point1:fin+0.6" data-dur="1"></li>
+    <li id="point3" class="masque" data-texte="point3" data-start="#point2:fin+0.6" data-dur="1"></li>
+    <li id="point4" class="masque" data-texte="point4" data-start="#point3:fin+0.6" data-dur="1"></li>
+  </ol>
+</section>

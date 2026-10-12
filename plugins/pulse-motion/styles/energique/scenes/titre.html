@@ -1,0 +1,10 @@
+<!-- Scène toute faite « titre » (style energique) : ouvrir fort. Durée conseillée : 6 s.
+     Textes : etiquette (≤ 20 car.), titre (≤ 28 car.), sous (≤ 40 car.). Décor : data-dur = durée de la scène. -->
+<section data-scene="titre">
+  <div class="decor">
+    <span class="bandes" data-decor data-start="0" data-dur="6" data-tween="--x 0cqh→-28cqh linear"></span>
+  </div>
+  <p id="etiquette" class="bandeau volet" data-texte="etiquette" data-start="0.1" data-dur="0.45"></p>
+  <h1 id="titre" class="cri tombe" data-texte="titre" data-start="#etiquette:fin" data-dur="0.7"></h1>
+  <p id="sous" class="texte claque" data-texte="sous" data-start="#titre:fin+0.1" data-dur="0.45"></p>
+</section>

@@ -1,0 +1,15 @@
+{
+  "style": "tech-sombre",
+  "description": "Précis, moderne, technique : pour une démo de logiciel, des données, un tutoriel technique.",
+  "transitions": ["fondu", "glissement"],
+  "scenes": [
+    { "nom": "titre", "role": "Ouvrir la vidéo, invite de commande", "duree": 7, "textes": { "etiquette": 25, "titre": 40, "sous": 50 } },
+    { "nom": "liste", "role": "2 à 4 lignes de journal", "duree": 12, "textes": { "titre": 40, "point1": 45, "point2": 45, "point3": 45, "point4": 45 } },
+    { "nom": "chiffre", "role": "Une mesure qui monte, jauge", "duree": 7, "textes": { "titre": 40, "unite": 3, "legende": 60 } },
+    { "nom": "comparaison", "role": "Deux panneaux, l'un actif", "duree": 12, "textes": { "titre": 40, "gauche-titre": 20, "gauche-texte": 60, "droite-titre": 20, "droite-texte": 60 } },
+    { "nom": "etape", "role": "Une étape numérotée", "duree": 8, "textes": { "numero": 2, "titre": 40, "texte": 80 } },
+    { "nom": "alerte", "role": "Un avertissement dans une console", "duree": 8, "textes": { "titre": 40, "texte": 80 } },
+    { "nom": "schema", "role": "Trois nœuds reliés", "duree": 8, "textes": { "titre": 40, "a": 25, "b": 25, "c": 25 } },
+    { "nom": "conclusion", "role": "Le message à retenir et le logo", "duree": 6, "textes": { "titre": 40, "sous": 50 } }
+  ]
+}

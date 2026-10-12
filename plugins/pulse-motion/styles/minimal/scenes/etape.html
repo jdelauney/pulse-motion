@@ -1,0 +1,15 @@
+<!-- Scène toute faite « etape » (style minimal) : une étape, numéro géant. Durée conseillée : 8 s.
+     Textes : numero (≤ 2 car.), titre (≤ 40 car.), texte (≤ 80 car.). -->
+<section data-scene="etape">
+  <div class="decor">
+    <span class="repere"></span>
+    <span class="marqueur" data-decor data-start="0" data-dur="8" data-tween="--x 0cqw→60cqw expo-inout"></span>
+  </div>
+  <div class="etape">
+    <span id="numero" class="numero-geant revele" data-texte="numero" data-start="0.2" data-dur="0.5"></span>
+    <div class="etape-texte">
+      <h2 id="titre" class="titre-moyen monte" data-texte="titre" data-start="#numero:fin" data-dur="0.45"></h2>
+      <p id="texte" class="texte monte" data-texte="texte" data-start="#titre:fin+0.3" data-dur="0.45"></p>
+    </div>
+  </div>
+</section>

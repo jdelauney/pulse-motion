@@ -1,0 +1,18 @@
+<!-- Scène toute faite « comparaison » (style tech-sombre) : deux panneaux, le second actif. Durée conseillée : 12 s.
+     Textes : titre (≤ 40 car.), gauche-titre et droite-titre (≤ 20 car.), gauche-texte et droite-texte (≤ 60 car.). -->
+<section data-scene="comparaison">
+  <div class="decor">
+    <span class="grille" data-decor data-start="0" data-dur="12" data-tween="--x 0cqh→-16cqh linear; --y 0cqh→-8cqh linear"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen glisse" data-texte="titre" data-start="0.2" data-dur="0.6"></h2>
+  <div class="diff">
+    <div id="gauche" class="panneau glisse" data-start="#titre:fin+0.3" data-dur="0.6">
+      <h3 class="panneau-titre" data-texte="gauche-titre"></h3>
+      <p class="texte" data-texte="gauche-texte"></p>
+    </div>
+    <div id="droite" class="panneau actif glisse" data-start="#gauche:fin+1.4" data-dur="0.6">
+      <h3 class="panneau-titre" data-texte="droite-titre"></h3>
+      <p class="texte" data-texte="droite-texte"></p>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,19 @@
+<!-- Scène toute faite « comparaison » (style minimal) : deux colonnes sur une grille. Durée conseillée : 12 s.
+     Textes : titre (≤ 40 car.), gauche-titre et droite-titre (≤ 20 car.), gauche-texte et droite-texte (≤ 60 car.). -->
+<section data-scene="comparaison">
+  <div class="decor">
+    <span class="repere"></span>
+    <span class="marqueur" data-decor data-start="0" data-dur="12" data-tween="--x 0cqw→60cqw linear"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen revele" data-texte="titre" data-start="0.2" data-dur="0.5"></h2>
+  <div class="colonnes">
+    <div id="gauche" class="colonne monte" data-start="#titre:fin+0.4" data-dur="0.45">
+      <h3 class="colonne-titre" data-texte="gauche-titre"></h3>
+      <p class="texte" data-texte="gauche-texte"></p>
+    </div>
+    <div id="droite" class="colonne accent monte" data-start="#gauche:fin+1.4" data-dur="0.45">
+      <h3 class="colonne-titre" data-texte="droite-titre"></h3>
+      <p class="texte" data-texte="droite-texte"></p>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,14 @@
+<!-- Scène toute faite « liste » (style chaleureux) : 2 à 4 points sur des cartes douces. Durée conseillée : 12 s.
+     Textes : titre (≤ 40 car.), point1 … point4 (≤ 45 car.). Moins de 4 points : supprimer les points en trop. -->
+<section data-scene="liste">
+  <div class="decor">
+    <span class="galet sauge" data-decor style="width: 52cqh; height: 46cqh; right: -16cqh; top: -14cqh" data-start="0" data-dur="12" data-tween="--dy 0cqh→8cqh sine-inout; --m 0→1 sine-inout"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen pose" data-texte="titre" data-start="0.2" data-dur="0.9"></h2>
+  <ul class="cartes">
+    <li id="point1" class="pose" data-texte="point1" data-start="#titre:fin+0.3" data-dur="0.9"></li>
+    <li id="point2" class="pose" data-texte="point2" data-start="#point1:fin+0.6" data-dur="0.9"></li>
+    <li id="point3" class="pose" data-texte="point3" data-start="#point2:fin+0.6" data-dur="0.9"></li>
+    <li id="point4" class="pose" data-texte="point4" data-start="#point3:fin+0.6" data-dur="0.9"></li>
+  </ul>
+</section>

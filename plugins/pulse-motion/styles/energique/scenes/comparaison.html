@@ -1,0 +1,18 @@
+<!-- Scène toute faite « comparaison » (style energique) : avant / après en face à face. Durée conseillée : 10 s.
+     Textes : titre (≤ 28 car.), gauche-titre et droite-titre (≤ 16 car.), gauche-texte et droite-texte (≤ 50 car.). -->
+<section data-scene="comparaison">
+  <div class="decor">
+    <span class="bandes" data-decor data-start="0" data-dur="10" data-tween="--x 0cqh→-42cqh linear"></span>
+  </div>
+  <h2 id="titre" class="cri-moyen claque" data-texte="titre" data-start="0.1" data-dur="0.45"></h2>
+  <div class="face-a-face">
+    <div id="gauche" class="carte creuse tombe" data-start="#titre:fin+0.2" data-dur="0.7">
+      <h3 class="carte-titre" data-texte="gauche-titre"></h3>
+      <p class="texte" data-texte="gauche-texte"></p>
+    </div>
+    <div id="droite" class="carte pleine tombe" data-start="#gauche:fin+0.8" data-dur="0.7">
+      <h3 class="carte-titre" data-texte="droite-titre"></h3>
+      <p class="texte" data-texte="droite-texte"></p>
+    </div>
+  </div>
+</section>

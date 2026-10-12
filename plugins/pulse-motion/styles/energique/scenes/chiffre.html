@@ -1,0 +1,10 @@
+<!-- Scène toute faite « chiffre » (style energique) : un chiffre choc. Durée conseillée : 6 s.
+     Textes : titre (≤ 28 car.), unite (≤ 3 car., vide si aucune), legende (≤ 45 car.). Valeur : remplacer 1250 dans « nombre 0→1250 ». -->
+<section data-scene="chiffre" class="centre">
+  <div class="decor">
+    <span class="bandes" data-decor data-start="0" data-dur="6" data-tween="--x 0cqh→-28cqh linear"></span>
+  </div>
+  <h2 id="titre" class="cri-moyen claque" data-texte="titre" data-start="0.1" data-dur="0.45"></h2>
+  <p class="chiffre-choc tombe" data-start="#titre:fin" data-dur="0.7"><span id="valeur" data-start="#titre:fin" data-dur="1.4" data-tween="nombre 0→1250 expo-out">0</span><span class="unite" data-texte="unite"></span></p>
+  <p id="legende" class="bandeau volet" data-texte="legende" data-start="#valeur:fin+0.1" data-dur="0.45"></p>
+</section>

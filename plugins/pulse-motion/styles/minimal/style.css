@@ -1,0 +1,128 @@
+/* Pulse Motion – style « minimal ».
+ *
+ * Net, sûr, essentiel : grille suisse, beaucoup d'espace, typographie démesurée (--f-titres),
+ * un seul accent (--c-accent-lisible), mouvements courts et nets (expo-out). Les titres sont dans la couleur
+ * du texte : le style reste lisible quelle que soit la couleur de la marque.
+ * Formats 16:9, 1:1 et 9:16 par requêtes de conteneur. Effets exclus : filter: url(), mix-blend-mode, backdrop-filter.
+ */
+
+/* ---------- Mise en page ---------- */
+#pm-scene > section[data-scene] {
+  display: flex; flex-direction: column; justify-content: center; gap: 3cqh;
+  padding: 11cqh 12cqh 9cqh; overflow: hidden;
+  background: var(--c-fond); color: var(--c-texte);
+  font: 400 4.4cqh/1.4 var(--f-texte);
+}
+
+/* ---------- Typographie ---------- */
+.index {
+  margin: 0; display: flex; align-items: center; gap: 2cqh;
+  font: 700 3.6cqh/1.1 var(--f-texte); letter-spacing: 0.04em; text-transform: uppercase;
+}
+.index::before { content: ""; flex: none; width: 2cqh; height: 2cqh; background: var(--c-accent-lisible); }
+.titre { margin: 0; font: 900 12cqh/0.95 var(--f-titres); letter-spacing: -0.04em; word-spacing: 0.12em; text-wrap: balance; }
+.titre-moyen { margin: 0; font: 800 7cqh/1 var(--f-titres); letter-spacing: -0.03em; word-spacing: 0.1em; text-wrap: balance; }
+.texte { margin: 0; font: 400 4.4cqh/1.4 var(--f-texte); text-wrap: pretty; }
+.sous-titre { margin: 0; font: 400 5cqh/1.3 var(--f-texte); text-wrap: balance; }
+.chiffre-geant { margin: 0; font: 900 32cqh/0.82 var(--f-titres); letter-spacing: -0.06em; font-variant-numeric: tabular-nums; }
+.chiffre-geant .unite { font-size: 0.4em; color: var(--c-accent-lisible); letter-spacing: -0.02em; }
+.regle { display: block; width: 100%; height: 0.4cqh; background: var(--c-texte); transform-origin: left center; animation: mi-regle 0.5s var(--ease-expo-out) both; }
+
+/* ---------- Mouvements courts et nets ---------- */
+@keyframes mi-monte { from { opacity: 0; transform: translateY(3cqh); } to { opacity: 1; transform: none; } }
+@keyframes mi-revele { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(-15% -2% -15% -2%); } }
+@keyframes mi-regle { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.monte { animation: mi-monte 0.45s var(--ease-expo-out) both; }
+.revele { animation: mi-revele 0.5s var(--ease-expo-out) both; }
+
+/* ---------- Décor : un marqueur d'accent qui avance sur une ligne fine ---------- */
+.decor { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.decor ~ * { position: relative; z-index: 1; }
+.repere { position: absolute; top: 6cqh; left: 12cqh; right: 12cqh; height: 0.2cqh; background: var(--c-texte); opacity: 0.15; }
+.marqueur { position: absolute; top: 5.6cqh; left: 12cqh; width: 5cqh; height: 1cqh; background: var(--c-accent); translate: var(--x, 0) 0; }
+
+/* ---------- Liste numérotée ---------- */
+.rangs { list-style: none; margin: 0; padding: 0; display: grid; }
+.rangs li {
+  display: grid; grid-template-columns: 10cqh 1fr; align-items: baseline;
+  padding: 1.8cqh 0; border-top: 0.2cqh solid color-mix(in srgb, var(--c-texte) 20%, transparent); font: 500 4.6cqh/1.3 var(--f-texte);
+}
+/* Numéros écrits en clair : la capture de l'export ne calcule pas les compteurs CSS. */
+.rangs li:nth-child(1)::before { content: "01"; }
+.rangs li:nth-child(2)::before { content: "02"; }
+.rangs li:nth-child(3)::before { content: "03"; }
+.rangs li:nth-child(4)::before { content: "04"; }
+.rangs li::before { font: 900 4.6cqh/1 var(--f-titres); color: var(--c-accent-lisible); }
+
+/* ---------- Comparaison ---------- */
+.colonnes { display: grid; grid-template-columns: 1fr 1fr; gap: 6cqh; }
+.colonne { display: flex; flex-direction: column; gap: 1.6cqh; min-width: 0; padding-top: 2.4cqh; border-top: 0.4cqh solid var(--c-texte); }
+.colonne.accent { border-top-color: var(--c-accent-lisible); }
+.colonne-titre { margin: 0; font: 800 5cqh/1.05 var(--f-titres); letter-spacing: -0.02em; }
+
+/* ---------- Étape ---------- */
+.etape { display: grid; grid-template-columns: auto 1fr; gap: 6cqh; align-items: end; }
+.numero-geant { font: 900 30cqh/0.78 var(--f-titres); letter-spacing: -0.07em; color: var(--c-accent-lisible); }
+.etape-texte { display: flex; flex-direction: column; gap: 2cqh; min-width: 0; padding-bottom: 1cqh; }
+
+/* ---------- Alerte ---------- */
+.vigilance { display: grid; grid-template-columns: 1.6cqh 1fr; gap: 4cqh; }
+.vigilance::before { content: ""; background: var(--c-accent-lisible); }
+.vigilance-corps { display: flex; flex-direction: column; gap: 2cqh; min-width: 0; padding: 1cqh 0; }
+
+/* ---------- Schéma sur une ligne ---------- */
+.ligne-temps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4cqh; position: relative; }
+.ligne-temps .regle { position: absolute; top: 2.6cqh; left: 0; right: 0; width: auto; height: 0.3cqh; }
+.temps { display: flex; flex-direction: column; gap: 2cqh; min-width: 0; padding-top: 6cqh; position: relative; font: 600 4.4cqh/1.25 var(--f-texte); }
+.temps::before { content: ""; position: absolute; top: 1.4cqh; left: 0; width: 2.6cqh; height: 2.6cqh; background: var(--c-fond); border: 0.4cqh solid var(--c-accent-lisible); }
+
+/* ---------- Logo ---------- */
+.logo { height: 11cqh; width: auto; object-fit: contain; align-self: flex-start; }
+
+/* ---------- Ton sombre ---------- */
+#pm-scene[data-ton="sombre"] .repere { opacity: 0.25; }
+
+/* ---------- Format carré ---------- */
+@container (max-aspect-ratio: 5/4) {
+  #pm-scene > section[data-scene] { padding: 10cqh 8cqh 8cqh; gap: 2.4cqh; font-size: 4cqh; }
+  .titre { font-size: 9cqh; }
+  .titre-moyen { font-size: 5.6cqh; }
+  .texte { font-size: 3.8cqh; }
+  .sous-titre { font-size: 4.2cqh; }
+  .rangs li, .rangs li::before { font-size: 4cqh; }
+  .chiffre-geant { font-size: 22cqh; }
+  .colonnes { gap: 4cqh; }
+  .colonne-titre { font-size: 4.4cqh; }
+  .numero-geant { font-size: 22cqh; }
+  .etape { gap: 4cqh; }
+  .temps { font-size: 3.7cqh; }
+  .ligne-temps { gap: 2.6cqh; }
+  .repere { left: 8cqh; right: 8cqh; }
+  .marqueur { left: 8cqh; }
+}
+
+/* ---------- Format vertical : tout s'empile ---------- */
+@container (orientation: portrait) {
+  #pm-scene > section[data-scene] { padding: 11cqh 6cqh 8cqh; gap: 2.2cqh; font-size: 3.6cqh; }
+  .index { font-size: 3.5cqh; }
+  .titre { font-size: 6.6cqh; line-height: 1.02; }
+  .titre-moyen { font-size: 4.8cqh; line-height: 1.06; }
+  .texte { font-size: 3.5cqh; }
+  .sous-titre { font-size: 3.8cqh; }
+  .rangs li { grid-template-columns: 7cqh 1fr; padding: 1.4cqh 0; font-size: 3.6cqh; }
+  .rangs li::before { font-size: 3.6cqh; }
+  .chiffre-geant { font-size: 14cqh; }
+  .colonnes { grid-template-columns: 1fr; gap: 3cqh; }
+  .colonne-titre { font-size: 4.2cqh; }
+  .etape { grid-template-columns: 1fr; gap: 2cqh; }
+  .numero-geant { font-size: 16cqh; }
+  .vigilance { gap: 3cqh; }
+  .ligne-temps { grid-template-columns: 1fr; gap: 0; }
+  .ligne-temps .regle { top: 0; bottom: 0; left: 1.1cqh; right: auto; width: 0.3cqh; height: auto; transform-origin: center top; animation-name: mi-regle-vertical; }
+  .temps { padding: 1.4cqh 0 2.4cqh 6cqh; font-size: 3.6cqh; }
+  .temps::before { top: 1.6cqh; }
+  .repere { left: 6cqh; right: 6cqh; }
+  .marqueur { left: 6cqh; }
+  .logo { height: 9cqh; }
+}
+@keyframes mi-regle-vertical { from { transform: scaleY(0); } to { transform: scaleY(1); } }

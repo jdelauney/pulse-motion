@@ -63,7 +63,8 @@
   /** Formate un nombre en français : séparateur de milliers, virgule décimale. */
   function nombre(v, decimales) {
     var d = decimales || 0;
-    return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d }).format(v);
+    // Espace insécable ordinaire plutôt que l'espace fine (U+202F) d'Intl : absente de plusieurs polices, elle s'afficherait collée.
+    return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d }).format(v).replace(/\u202f/g, '\u00a0');
   }
 
   /** Texte CSS à écrire pour une clause (avec unité), ou texte affiché pour « nombre ». */

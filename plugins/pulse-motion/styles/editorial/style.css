@@ -1,0 +1,155 @@
+/* Pulse Motion – style « editorial ».
+ *
+ * Élégant, exigeant, calme : la typographie porte la vidéo, comme dans un magazine.
+ * Titres à empattements très grands (--f-titres), texte sobre (--f-texte), filets fins qui se tracent,
+ * textes qui montent derrière un masque. Couleurs : variables de la charte (lisibles pour le texte en couleur).
+ * Formats 16:9, 1:1 et 9:16 par requêtes de conteneur. Effets exclus : filter: url(), mix-blend-mode, backdrop-filter.
+ */
+
+/* ---------- Mise en page ---------- */
+#pm-scene > section[data-scene] {
+  display: flex; flex-direction: column; justify-content: center; gap: 3.2cqh;
+  padding: 10cqh 14cqh; overflow: hidden;
+  background: var(--c-fond); color: var(--c-texte);
+  font: 400 4.4cqh/1.45 var(--f-texte);
+}
+.centre { align-items: center; text-align: center; }
+
+/* ---------- Typographie ---------- */
+.surtitre {
+  margin: 0; font: 600 3.6cqh/1.1 var(--f-texte); letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--c-accent-lisible);
+}
+.titre { margin: 0; font: 600 10.5cqh/1.02 var(--f-titres); letter-spacing: -0.02em; color: var(--c-texte); text-wrap: balance; }
+.titre-moyen { margin: 0; font: 600 6.6cqh/1.08 var(--f-titres); letter-spacing: -0.01em; color: var(--c-texte); text-wrap: balance; }
+.chapo { margin: 0; font: italic 400 5cqh/1.3 var(--f-titres); color: var(--c-primaire-lisible); text-wrap: balance; }
+.texte { margin: 0; font: 400 4.4cqh/1.5 var(--f-texte); text-wrap: pretty; }
+.chiffre-geant {
+  margin: 0; font: 400 28cqh/0.9 var(--f-titres); letter-spacing: -0.04em; color: var(--c-primaire-lisible);
+  font-variant-numeric: lining-nums tabular-nums;
+}
+.unite { font-size: 0.42em; margin-left: 0.06em; }
+
+/* ---------- Filets ---------- */
+.filet {
+  display: block; width: 100%; height: 0.3cqh; background: var(--c-texte); opacity: 0.8;
+  transform-origin: left center; animation: ed-trace 1.2s var(--ease-expo-out) both;
+}
+.filet.court { width: 16cqh; height: 0.5cqh; background: var(--c-accent-lisible); opacity: 1; }
+.filet.accent { background: var(--c-accent-lisible); opacity: 1; }
+.centre .filet { transform-origin: center; }
+@keyframes ed-trace { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* ---------- Apparitions ---------- */
+@keyframes ed-masque {
+  from { clip-path: inset(0 0 100% 0); transform: translateY(4cqh); }
+  to { clip-path: inset(-20% -5% -20% -5%); transform: none; }
+}
+@keyframes ed-fondu { from { opacity: 0; } to { opacity: 1; } }
+.masque { animation: ed-masque 1.1s var(--ease-expo-out) both; }
+.fondu { animation: ed-fondu 1s var(--ease-sine-inout) both; }
+
+/* ---------- Décor : une ligne fine qui se trace pendant la scène, un grand guillemet ---------- */
+.decor { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.decor ~ * { position: relative; z-index: 1; }
+.ligne {
+  position: absolute; left: 14cqh; right: 14cqh; bottom: 6cqh; height: 0.25cqh;
+  background: var(--c-texte); opacity: 0.22; transform-origin: left center; transform: scaleX(var(--l, 1));
+}
+.guillemet {
+  position: absolute; right: 7cqh; top: -10cqh; font: 400 64cqh/1 var(--f-titres);
+  color: var(--c-primaire); opacity: 0.07; translate: 0 var(--dy, 0);
+}
+.guillemet::before { content: "\201C"; }
+
+/* ---------- Liste en sommaire ---------- */
+.sommaire { list-style: none; margin: 0; padding: 0; display: grid; }
+.sommaire li {
+  display: grid; grid-template-columns: 9cqh 1fr; align-items: baseline;
+  padding: 1.8cqh 0; border-top: 0.25cqh solid color-mix(in srgb, var(--c-texte) 22%, transparent);
+  font: 400 4.6cqh/1.3 var(--f-texte);
+}
+/* Numéros écrits en clair : la capture de l'export ne calcule pas les compteurs CSS. */
+.sommaire li:nth-child(1)::before { content: "01"; }
+.sommaire li:nth-child(2)::before { content: "02"; }
+.sommaire li:nth-child(3)::before { content: "03"; }
+.sommaire li:nth-child(4)::before { content: "04"; }
+.sommaire li::before { font: italic 400 4.6cqh/1 var(--f-titres); color: var(--c-accent-lisible); }
+
+/* ---------- Comparaison en deux volets ---------- */
+.duo { display: grid; grid-template-columns: 1fr 1fr; }
+.volet { display: flex; flex-direction: column; gap: 1.6cqh; min-width: 0; }
+.volet:first-child { padding-right: 7cqh; }
+.volet + .volet { padding-left: 7cqh; border-left: 0.25cqh solid color-mix(in srgb, var(--c-texte) 25%, transparent); }
+.volet-titre { margin: 0; font: italic 500 5.6cqh/1.1 var(--f-titres); color: var(--c-primaire-lisible); }
+.volet-titre.accent { color: var(--c-accent-lisible); }
+
+/* ---------- Étape ---------- */
+.etape { display: grid; grid-template-columns: auto 1fr; gap: 7cqh; align-items: center; }
+.numeral { font: 300 32cqh/0.8 var(--f-titres); letter-spacing: -0.05em; color: var(--c-primaire-lisible); font-variant-numeric: lining-nums; }
+.etape-texte { display: flex; flex-direction: column; gap: 2.4cqh; min-width: 0; }
+
+/* ---------- Alerte entre deux filets ---------- */
+.encadre { display: flex; flex-direction: column; gap: 3cqh; }
+.titre-moyen.accent { color: var(--c-accent-lisible); font-style: italic; }
+
+/* ---------- Schéma ---------- */
+.chaine { display: flex; align-items: center; gap: 2.4cqh; }
+.maillon {
+  flex: 1; min-width: 0; padding: 3cqh 1cqh; text-align: center;
+  border-top: 0.25cqh solid var(--c-texte); border-bottom: 0.25cqh solid var(--c-texte);
+  font: 500 4.6cqh/1.25 var(--f-titres);
+}
+.lien { flex: none; width: 10cqh; height: 2cqh; color: var(--c-accent-lisible); overflow: visible; }
+.lien path { stroke-dasharray: 100; stroke-dashoffset: calc(100 * (1 - var(--p, 1))); }
+
+/* ---------- Logo ---------- */
+.logo { height: 12cqh; width: auto; object-fit: contain; margin-top: 1cqh; }
+
+/* ---------- Ton sombre ---------- */
+#pm-scene[data-ton="sombre"] .ligne { opacity: 0.3; }
+#pm-scene[data-ton="sombre"] .guillemet { color: var(--c-primaire-lisible); opacity: 0.1; }
+
+/* ---------- Format carré ---------- */
+@container (max-aspect-ratio: 5/4) {
+  #pm-scene > section[data-scene] { padding: 9cqh 9cqh; gap: 2.6cqh; font-size: 4cqh; }
+  .titre { font-size: 8.4cqh; }
+  .titre-moyen { font-size: 5.4cqh; }
+  .chapo { font-size: 4.4cqh; }
+  .texte { font-size: 3.9cqh; }
+  .sommaire li, .sommaire li::before { font-size: 4cqh; }
+  .chiffre-geant { font-size: 21cqh; }
+  .volet-titre { font-size: 4.6cqh; }
+  .volet:first-child { padding-right: 4cqh; }
+  .volet + .volet { padding-left: 4cqh; }
+  .numeral { font-size: 24cqh; }
+  .etape { gap: 5cqh; }
+  .maillon { font-size: 3.8cqh; }
+  .lien { width: 6cqh; }
+  .ligne { left: 9cqh; right: 9cqh; }
+}
+
+/* ---------- Format vertical : tout s'empile ---------- */
+@container (orientation: portrait) {
+  #pm-scene > section[data-scene] { padding: 10cqh 6cqh; gap: 2.2cqh; font-size: 3.6cqh; }
+  .surtitre { font-size: 3.5cqh; letter-spacing: 0.12em; }
+  .titre { font-size: 6.2cqh; }
+  .titre-moyen { font-size: 4.6cqh; }
+  .chapo { font-size: 3.8cqh; }
+  .texte { font-size: 3.5cqh; }
+  .sommaire li { grid-template-columns: 7cqh 1fr; padding: 1.4cqh 0; font-size: 3.6cqh; }
+  .sommaire li::before { font-size: 3.6cqh; }
+  .chiffre-geant { font-size: 14cqh; }
+  .duo { grid-template-columns: 1fr; }
+  .volet:first-child { padding-right: 0; padding-bottom: 2.6cqh; }
+  .volet + .volet { padding-left: 0; padding-top: 2.6cqh; border-left: 0; border-top: 0.25cqh solid color-mix(in srgb, var(--c-texte) 25%, transparent); }
+  .volet-titre { font-size: 4.2cqh; }
+  .etape { grid-template-columns: 1fr; gap: 2cqh; }
+  .numeral { font-size: 16cqh; }
+  .chaine { flex-direction: column; gap: 1.2cqh; }
+  .maillon { width: 100%; padding: 2cqh 1cqh; font-size: 3.6cqh; }
+  .lien { rotate: 90deg; width: 6cqh; }
+  .ligne { left: 6cqh; right: 6cqh; }
+  .guillemet { font-size: 40cqh; }
+  .logo { height: 9cqh; }
+}

@@ -1,0 +1,22 @@
+{
+  "style": "minimal",
+  "famille": "moderne",
+  "personnalite": ["net", "sûr", "essentiel"],
+  "eviter": ["décoration", "effets appuyés"],
+  "genres": ["produit", "social"],
+  "couleur": {
+    "strategie": "sobre-avec-une-touche",
+    "tons": ["clair", "sombre"],
+    "tonDefaut": "clair",
+    "sombre": { "fond": "#0a0a0a", "texte": "#fafafa" },
+    "roles": { "primaire": "règles et repères", "accent": "un seul détail par scène : numéros, marqueur, barre" }
+  },
+  "typographie": {
+    "titres": { "famille": "Schibsted Grotesk", "categorie": "sans-serif", "graisse": 900 },
+    "texte": { "famille": "Schibsted Grotesk", "categorie": "sans-serif", "graisse": 400 }
+  },
+  "mouvement": { "caractere": "net", "courbes": ["expo-out"], "dureeType": 0.45, "transitions": ["coupe", "fondu"] },
+  "signature": "Grille suisse, beaucoup d'espace, typographie démesurée, un seul accent, mouvements courts et nets",
+  "aFaire": ["Des titres très courts", "Un seul accent de couleur par scène"],
+  "aEviter": ["Le décor", "Plusieurs couleurs"]
+}

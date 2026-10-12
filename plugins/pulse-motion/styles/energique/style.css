@@ -1,0 +1,139 @@
+/* Pulse Motion – style « energique ».
+ *
+ * Audacieux, rapide, percutant : la couleur partout, des aplats, des titres géants en capitales (--f-titres)
+ * qui tombent et rebondissent, des bandes qui défilent. Texte en couleur de marque : variables lisibles
+ * (--c-accent-lisible), texte posé sur un aplat : --c-sur-primaire, --c-sur-accent.
+ * Formats 16:9, 1:1 et 9:16 par requêtes de conteneur. Effets exclus : filter: url(), mix-blend-mode, backdrop-filter.
+ */
+
+/* ---------- Mise en page ---------- */
+#pm-scene > section[data-scene] {
+  display: flex; flex-direction: column; justify-content: center; gap: 2.6cqh;
+  padding: 8cqh 10cqh; overflow: hidden;
+  background: var(--c-fond); color: var(--c-texte);
+  font: 500 4.8cqh/1.25 var(--f-texte);
+}
+.centre { align-items: center; text-align: center; }
+
+/* ---------- Typographie ---------- */
+.cri { margin: 0; font: 400 14cqh/1.08 var(--f-titres); text-transform: uppercase; letter-spacing: 0.01em; text-wrap: balance; }
+.cri-moyen { margin: 0; font: 400 9cqh/1.08 var(--f-titres); text-transform: uppercase; letter-spacing: 0.01em; text-wrap: balance; }
+.texte { margin: 0; font: 600 4.6cqh/1.3 var(--f-texte); }
+.bandeau {
+  margin: 0; align-self: flex-start; max-width: 100%; padding: 1.2cqh 2.4cqh;
+  background: var(--c-primaire-lisible); color: var(--c-sur-primaire);
+  font: 800 3.8cqh/1.15 var(--f-texte); text-transform: uppercase; letter-spacing: 0.05em; rotate: -1.5deg;
+}
+.centre .bandeau { align-self: center; }
+.chiffre-choc { margin: 0; font: 400 32cqh/0.86 var(--f-titres); color: var(--c-accent-lisible); font-variant-numeric: tabular-nums; }
+.unite { font-size: 0.45em; margin-left: 0.04em; }
+
+/* ---------- Entrées vives ---------- */
+@keyframes en-tombe { from { opacity: 0; transform: translateY(-26cqh) rotate(-3deg); } 30% { opacity: 1; } to { opacity: 1; transform: none; } }
+@keyframes en-claque { from { opacity: 0; transform: scale(1.5); } to { opacity: 1; transform: none; } }
+@keyframes en-volet { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(-10% -2% -10% -2%); } }
+.tombe { animation: en-tombe 0.7s var(--ease-bounce-out) both; }
+.claque { animation: en-claque 0.45s var(--ease-back-out) both; }
+.volet { animation: en-volet 0.45s var(--ease-expo-out) both; }
+
+/* ---------- Décor : bandes qui défilent ---------- */
+.decor { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.decor ~ * { position: relative; z-index: 1; }
+.bandes {
+  position: absolute; left: -30%; right: -30%; bottom: 5cqh; height: 14cqh; rotate: -6deg; opacity: 0.16;
+  background: repeating-linear-gradient(90deg, var(--c-primaire) 0 3cqh, transparent 3cqh 7cqh);
+  translate: var(--x, 0) 0;
+}
+
+/* ---------- Liste en pile ---------- */
+.pile { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.6cqh; justify-items: start; }
+.pile li {
+  display: flex; align-items: center; gap: 2.2cqh; max-width: 100%;
+  padding: 1.4cqh 2.6cqh; background: var(--c-primaire-lisible); color: var(--c-sur-primaire);
+  font: 800 4.4cqh/1.15 var(--f-texte); text-transform: uppercase;
+}
+.pile li:nth-child(odd) { rotate: -1deg; }
+.pile li:nth-child(even) { rotate: 1deg; }
+/* Numéros écrits en clair : la capture de l'export ne calcule pas les compteurs CSS. */
+.pile li:nth-child(1)::before { content: "1"; }
+.pile li:nth-child(2)::before { content: "2"; }
+.pile li:nth-child(3)::before { content: "3"; }
+.pile li:nth-child(4)::before { content: "4"; }
+.pile li::before { flex: none; font: 400 5.6cqh/1 var(--f-titres); color: var(--c-sur-primaire); }
+
+/* ---------- Comparaison face à face ---------- */
+.face-a-face { display: grid; grid-template-columns: 1fr 1fr; gap: 4cqh; }
+.carte { display: flex; flex-direction: column; gap: 1.6cqh; padding: 3.6cqh; min-width: 0; }
+.carte.creuse { border: 0.8cqh solid var(--c-texte); }
+.carte.pleine { background: var(--c-accent-lisible); color: var(--c-sur-accent); rotate: 1deg; }
+.carte-titre { margin: 0; font: 400 6.4cqh/1 var(--f-titres); text-transform: uppercase; }
+
+/* ---------- Étape ---------- */
+.etape { display: grid; grid-template-columns: auto 1fr; gap: 5cqh; align-items: center; }
+.pastille {
+  display: grid; place-items: center; width: 26cqh; height: 26cqh; rotate: -6deg;
+  background: var(--c-accent-lisible); color: var(--c-sur-accent); font: 400 15cqh/1 var(--f-titres);
+}
+.etape-texte { display: flex; flex-direction: column; gap: 2cqh; min-width: 0; }
+
+/* ---------- Alerte : bande de chantier ---------- */
+.danger { display: flex; flex-direction: column; gap: 2.4cqh; padding: 6cqh 5cqh 5cqh; border: 0.8cqh solid var(--c-texte); background: var(--c-fond); }
+.danger::before {
+  content: ""; position: absolute; left: -0.8cqh; right: -0.8cqh; top: -0.8cqh; height: 3.2cqh;
+  background: repeating-linear-gradient(-45deg, var(--c-texte) 0 2cqh, var(--c-accent-lisible) 2cqh 4cqh);
+}
+.danger .cri-moyen { color: var(--c-accent-lisible); }
+
+/* ---------- Schéma enchaîné ---------- */
+.enchainement { display: flex; align-items: stretch; gap: 1.6cqh; }
+.maillon {
+  flex: 1; min-width: 0; display: grid; place-items: center; padding: 3cqh 2cqh; text-align: center;
+  background: var(--c-primaire-lisible); color: var(--c-sur-primaire); font: 800 4.2cqh/1.15 var(--f-texte); text-transform: uppercase;
+}
+.chevron { flex: none; align-self: center; width: 7cqh; height: 7cqh; color: var(--c-accent-lisible); scale: var(--p, 1); }
+
+/* ---------- Logo ---------- */
+.logo { height: 13cqh; width: auto; object-fit: contain; }
+
+/* ---------- Ton sombre : les aplats passent à l'accent ---------- */
+#pm-scene[data-ton="sombre"] .bandeau, #pm-scene[data-ton="sombre"] .pile li, #pm-scene[data-ton="sombre"] .maillon { background: var(--c-accent-lisible); color: var(--c-sur-accent); }
+#pm-scene[data-ton="sombre"] .pile li::before { color: var(--c-sur-accent); }
+#pm-scene[data-ton="sombre"] .bandes { background: repeating-linear-gradient(90deg, var(--c-accent) 0 3cqh, transparent 3cqh 7cqh); opacity: 0.22; }
+
+/* ---------- Format carré ---------- */
+@container (max-aspect-ratio: 5/4) {
+  #pm-scene > section[data-scene] { padding: 8cqh 8cqh; gap: 2.2cqh; }
+  .cri { font-size: 11cqh; }
+  .cri-moyen { font-size: 7cqh; }
+  .texte { font-size: 4cqh; }
+  .pile li { font-size: 3.8cqh; padding: 1.2cqh 2cqh; }
+  .chiffre-choc { font-size: 22cqh; }
+  .carte { padding: 2.8cqh; }
+  .carte-titre { font-size: 5cqh; }
+  .pastille { width: 18cqh; height: 18cqh; font-size: 10cqh; }
+  .maillon { font-size: 3.6cqh; padding: 2.4cqh 1.2cqh; }
+  .chevron { width: 5cqh; height: 5cqh; }
+}
+
+/* ---------- Format vertical : tout s'empile ---------- */
+@container (orientation: portrait) {
+  #pm-scene > section[data-scene] { padding: 10cqh 6cqh; gap: 2cqh; font-size: 3.8cqh; }
+  .cri { font-size: 6.4cqh; }
+  .cri-moyen { font-size: 5.6cqh; }
+  .texte { font-size: 3.6cqh; }
+  .bandeau { font-size: 3.5cqh; padding: 1cqh 1.8cqh; }
+  .pile li { font-size: 3.5cqh; gap: 1.6cqh; padding: 1.2cqh 1.8cqh; }
+  .pile li::before { font-size: 4.4cqh; }
+  .chiffre-choc { font-size: 15cqh; }
+  .face-a-face { grid-template-columns: 1fr; gap: 2.6cqh; }
+  .carte { padding: 2.6cqh; gap: 1cqh; }
+  .carte-titre { font-size: 4.6cqh; }
+  .etape { grid-template-columns: 1fr; gap: 3cqh; }
+  .pastille { width: 14cqh; height: 14cqh; font-size: 8cqh; }
+  .danger { padding: 5cqh 3.4cqh 3.4cqh; }
+  .enchainement { flex-direction: column; }
+  .maillon { font-size: 3.6cqh; padding: 2cqh; }
+  .chevron { rotate: 90deg; width: 5cqh; height: 5cqh; }
+  .bandes { height: 10cqh; }
+  .logo { height: 9cqh; }
+}

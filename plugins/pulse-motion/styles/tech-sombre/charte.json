@@ -1,0 +1,4 @@
+{
+  "couleurs": { "primaire": "#38bdf8", "accent": "#22d3ee", "fond": "#0b1020", "texte": "#e2e8f0" },
+  "polices": { "titres": "Space Grotesk", "texte": "JetBrains Mono" }
+}

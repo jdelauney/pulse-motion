@@ -1,0 +1,22 @@
+{
+  "style": "editorial",
+  "famille": "editoriale",
+  "personnalite": ["élégant", "exigeant", "calme"],
+  "eviter": ["publicité criarde", "ton enfantin"],
+  "genres": ["storytelling", "formation"],
+  "couleur": {
+    "strategie": "sobre-avec-une-touche",
+    "tons": ["clair", "sombre"],
+    "tonDefaut": "clair",
+    "sombre": { "fond": "#16130f", "texte": "#efe9df" },
+    "roles": { "primaire": "chapeaux, chiffres, numéros", "accent": "surtitres, filets courts, flèches" }
+  },
+  "typographie": {
+    "titres": { "famille": "Fraunces", "categorie": "serif", "graisse": 600 },
+    "texte": { "famille": "Instrument Sans", "categorie": "sans-serif", "graisse": 400 }
+  },
+  "mouvement": { "caractere": "lent", "courbes": ["expo-out", "sine-inout"], "dureeType": 1.1, "transitions": ["fondu", "rideau"] },
+  "signature": "Filets fins qui se tracent, titres à empattements très grands, textes qui montent derrière un masque",
+  "aFaire": ["Laisser respirer : grandes marges, peu d'éléments", "Une seule couleur vive par scène"],
+  "aEviter": ["Rebonds et mouvements rapides", "Aplats de couleur pleins"]
+}

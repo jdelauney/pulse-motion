@@ -1,0 +1,15 @@
+<!-- Scène toute faite « schema » (style energique) : trois blocs enchaînés. Durée conseillée : 7 s.
+     Textes : titre (≤ 28 car.), a, b, c (≤ 20 car.). -->
+<section data-scene="schema">
+  <div class="decor">
+    <span class="bandes" data-decor data-start="0" data-dur="7" data-tween="--x 0cqh→-35cqh linear"></span>
+  </div>
+  <h2 id="titre" class="cri-moyen claque" data-texte="titre" data-start="0.1" data-dur="0.45"></h2>
+  <div class="enchainement">
+    <div id="a" class="maillon tombe" data-texte="a" data-start="#titre:fin+0.2" data-dur="0.7"></div>
+    <svg id="fleche1" class="chevron" viewBox="0 0 24 24" fill="currentColor" data-start="#a:fin" data-dur="0.45" aria-hidden="true"><path d="M3 3h8l9 9-9 9H3l9-9z"/></svg>
+    <div id="b" class="maillon tombe" data-texte="b" data-start="#fleche1:fin" data-dur="0.7"></div>
+    <svg id="fleche2" class="chevron" viewBox="0 0 24 24" fill="currentColor" data-start="#b:fin" data-dur="0.45" aria-hidden="true"><path d="M3 3h8l9 9-9 9H3l9-9z"/></svg>
+    <div id="c" class="maillon tombe" data-texte="c" data-start="#fleche2:fin" data-dur="0.7"></div>
+  </div>
+</section>

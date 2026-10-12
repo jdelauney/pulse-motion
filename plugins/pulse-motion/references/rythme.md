@@ -30,7 +30,7 @@
 
 ## Transitions
 
-- `fondu` par défaut, `glissement` pour avancer dans une suite (étapes), `balayage` pour changer de partie.
+- `fondu` par défaut, `glissement` pour avancer dans une suite (étapes), `balayage` pour changer de partie ; selon le style : `rideau` (ouverture depuis le centre), `zoom` (la scène approche), `coupe` (passage sec, sans chevauchement).
 - Deux ou trois familles au plus dans une vidéo ; la même pour des scènes de même nature.
 - `aucune` pour enchaîner deux scènes qui se répondent (avant/après).
 

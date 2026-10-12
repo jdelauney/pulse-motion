@@ -1,0 +1,11 @@
+<!-- Scène toute faite « chiffre » (style editorial) : un chiffre clé en très grand. Durée conseillée : 7 s.
+     Textes : titre (≤ 40 car.), unite (≤ 3 car., vide si aucune), legende (≤ 60 car.). Valeur : remplacer 1250 dans « nombre 0→1250 ». -->
+<section data-scene="chiffre">
+  <div class="decor">
+    <span class="ligne" data-decor data-start="0" data-dur="7" data-tween="--l 0→1 sine-inout"></span>
+  </div>
+  <h2 id="titre" class="chapo fondu" data-texte="titre" data-start="0.2" data-dur="0.9"></h2>
+  <p class="chiffre-geant masque" data-start="#titre:fin+0.1" data-dur="1.2"><span id="valeur" data-start="#titre:fin+0.1" data-dur="2.2" data-tween="nombre 0→1250 expo-out">0</span><span class="unite" data-texte="unite"></span></p>
+  <span id="filet" class="filet court" data-start="#valeur:fin" data-dur="1"></span>
+  <p id="legende" class="texte fondu" data-texte="legende" data-start="#filet+0.3" data-dur="1"></p>
+</section>
