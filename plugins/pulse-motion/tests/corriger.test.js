@@ -84,3 +84,11 @@ test('revue : écriture ratée, seule la copie de ce passage est retirée (pas d
   assert.equal(fs.statSync(scene, { bigint: true }).ino, identifiant);
   assert.deepEqual(copies(dir), []);
 });
+
+test('ajustement de taille appliqué, message lisible ; copieFaite : pas de seconde copie', () => {
+  const dir = copierProjet('projet-simple');
+  const r = appliquerCorrections(dir, [{ regle: 'debordement', correction: { scene: 'intro', ajustement: { cle: 'titre', taille: 0.85 } } }], { copieFaite: true });
+  assert.deepEqual(lire(dir).scenes[0].ajustements, { titre: { taille: 0.85 } });
+  assert.equal(r.corrections[0].message, 'Scène « intro », texte « titre » : taille réduite à 85 % (le texte débordait de son cadre).');
+  assert.deepEqual(copies(dir), []);
+});

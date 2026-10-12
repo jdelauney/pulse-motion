@@ -28,7 +28,7 @@ function traduireConstats(constats) {
   return (constats || []).filter((c) => MESSAGES[c.regle]).map((c) => ({ regle: c.regle, gravite: c.regle === 'flash' ? 'erreur' : 'alerte', scene: c.scene, element: c.element, message: MESSAGES[c.regle](c) }));
 }
 
-const nonVerifie = (regle, message) => ({ renduVerifie: false, problemes: [{ regle, gravite: 'alerte', message }] });
+const nonVerifie = (regle, message) => ({ renduVerifie: false, problemes: [{ regle, gravite: 'alerte', message }], ajustements: [] });
 
 /** -> { renduVerifie, problemes } ; jamais d'exception. */
 async function controlerRendu({ html, ratio, duree, navigateur = trouverNavigateur() }) {
@@ -36,11 +36,12 @@ async function controlerRendu({ html, ratio, duree, navigateur = trouverNavigate
   const r = await mesurerPage({ html, navigateur, delai: (30 + 2 * (duree || 0)) * 1000, script: `
     var constats = M.mesurer({ ratio: ${JSON.stringify(ratio)}, seuils: ${JSON.stringify(SEUILS)} });
     var debordements = M.detecterDebordements();
-    return { constats: constats.concat(await M.mesurerPixels({ ratio: ${JSON.stringify(ratio)}, seuils: ${JSON.stringify(SEUILS)} })), debordements: debordements };` });
+    var ajustements = M.essayerTailles({ minimumCqh: ${SEUILS.texteMinCqh} });
+    return { constats: constats.concat(await M.mesurerPixels({ ratio: ${JSON.stringify(ratio)}, seuils: ${JSON.stringify(SEUILS)} })), debordements: debordements, ajustements: ajustements };` });
   if (r.code === 'ENOENT') return nonVerifie('rendu-impossible', `Navigateur introuvable à « ${navigateur} » : vérifiez la variable PM_NAVIGATEUR (ou retirez-la pour utiliser Chrome ou Edge installés). Seuls les contrôles sans navigateur ont été faits.`);
   if (r.erreur) return nonVerifie('rendu-impossible', `La vidéo n'a pas pu être mesurée dans le navigateur (${r.erreur}) : seuls les contrôles sans navigateur ont été faits.`);
   const debordements = (r.resultat.debordements || []).map((d) => ({ regle: 'debordement', gravite: 'erreur', scene: d.scene, element: d.element, message: d.message }));
-  return { renduVerifie: true, problemes: [...debordements, ...traduireConstats(r.resultat.constats)] };
+  return { renduVerifie: true, problemes: [...debordements, ...traduireConstats(r.resultat.constats)], ajustements: r.resultat.ajustements || [] };
 }
 
 module.exports = { traduireConstats, controlerRendu };
