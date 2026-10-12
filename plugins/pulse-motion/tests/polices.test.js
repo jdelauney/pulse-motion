@@ -109,7 +109,7 @@ test('Bunny : fichier reçu qui n\'est pas une police, ou renommage impossible :
 
 test('Bunny : italiques sur demande, nommés « -italic »', async () => {
   const d = dossier();
-  const r = await P.installerBunny({ famille: 'Playfair Display', graisses: [400], italique: true, dans: d, recuperer: reseau({ 'https://fonts.bunny.net/css?family=playfair-display:400': FEUILLE }) });
+  const r = await P.installerBunny({ famille: 'Playfair Display', graisses: [400], italique: true, dans: d, recuperer: reseau({ 'https://fonts.bunny.net/css?family=playfair-display:400,400i': FEUILLE }) });
   assert.equal(r.ok, true, r.message);
   assert.deepEqual(r.fichiers, ['Playfair Display-400.woff2', 'Playfair Display-400-italic.woff2']);
 });
@@ -120,4 +120,12 @@ test('police fournie, caractères manquants : police de remplacement du style no
   const r = P.installerFichier({ fichier: path.join(src, 'Marque.woff2'), style: 'editorial', role: 'titres', dans: dossier() });
   assert.equal(r.ok, true);
   assert.match(r.avertissements[0], /utilisez « Fraunces », la police des titres du style « editorial »/);
+});
+
+test('Bunny : italique demandé pour une police sans italique : refus clair, rien d\'installé', async () => {
+  const d = dossier();
+  const r = await P.installerBunny({ famille: 'Inter', graisses: [400], italique: true, dans: d, recuperer: reseau() });
+  assert.equal(r.ok, false);
+  assert.match(r.message, /Inter n'a pas d'italique/);
+  assert.deepEqual(fs.readdirSync(d), []);
 });
