@@ -59,7 +59,7 @@ test('ligne de commande : lexique et lexique noter', () => avecPersonnel((perso)
 
 test('lexique corrigé à la main : cellule avec « \| » et rangée sans « | » final gardées telles quelles', () => avecPersonnel((perso) => {
   const modele = fs.readFileSync(path.join(__dirname, '..', 'modeles', 'lexique.md'), 'utf8');
-  const echappee = '| zoom | grossir \| rapprocher | une loupe | 2026-10-01 | vu |';
+  const echappee = String.raw`| zoom | grossir \| rapprocher | une loupe | 2026-10-01 | vu |`;
   const sansFin = '| balayage | passer d\'un côté à l\'autre | un essuie-glace | 2026-10-02 | vu';
   fs.writeFileSync(path.join(perso, 'lexique.md'), modele.replace('|---|---|---|---|---|\n', `|---|---|---|---|---|\n${echappee}\n${sansFin}\n`));
   V.noterLexique({ terme: 'aperçu', phrase: 'La vidéo dans le navigateur', date: '2026-10-12' });
@@ -67,5 +67,5 @@ test('lexique corrigé à la main : cellule avec « \| » et rangée sans « | �
   assert.ok(texte.includes(echappee), texte);
   assert.ok(texte.includes(sansFin), texte);
   assert.match(texte, /\| aperçu \| La vidéo dans le navigateur \|/);
-  assert.equal(V.lireLexique().termes.find((t) => t.terme === 'zoom').phrase, 'grossir \| rapprocher');
+  assert.equal(V.lireLexique().termes.find((t) => t.terme === 'zoom').phrase, String.raw`grossir \| rapprocher`);
 }));
