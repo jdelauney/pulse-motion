@@ -12,8 +12,6 @@ const M = globalThis.M;
 
 /** Taille de l'image exportée selon le format du déroulé. */
 export const TAILLES = { '16:9': [1920, 1080], '9:16': [1080, 1920], '1:1': [1080, 1080], '4:5': [1080, 1350] };
-const FONDU_ENTREE = 0.5;
-const FONDU_SORTIE = 1.5;
 const TAUX_AUDIO = 48000;
 
 export function taille(ratio = M.donnees.format.ratio) {
@@ -26,26 +24,6 @@ export async function verifierSupport(largeur, hauteur) {
   const video = await canEncodeVideo('avc', { width: largeur, height: hauteur, bitrate: 8e6 }).catch(() => false);
   const audio = typeof AudioEncoder !== 'undefined' && await canEncodeAudio('aac', { numberOfChannels: 2, sampleRate: TAUX_AUDIO, bitrate: 192e3 }).catch(() => false);
   return { video, audio };
-}
-
-/** Musique mixée hors temps réel : volume, fondu d'entrée 0,5 s, de sortie 1,5 s. -> AudioBuffer | null */
-export async function preparerAudio(duree) {
-  const element = document.getElementById('pm-musique');
-  if (!element || !element.src) return null;
-  const volume = M.donnees.musique && typeof M.donnees.musique.volume === 'number' ? M.donnees.musique.volume : 1;
-  const donnees = await (await fetch(element.src)).arrayBuffer();
-  const contexte = new OfflineAudioContext(2, Math.max(1, Math.ceil(duree * TAUX_AUDIO)), TAUX_AUDIO);
-  const decode = await contexte.decodeAudioData(donnees);
-  const source = contexte.createBufferSource();
-  source.buffer = decode;
-  const gain = contexte.createGain();
-  gain.gain.setValueAtTime(0, 0);
-  gain.gain.linearRampToValueAtTime(volume, Math.min(FONDU_ENTREE, duree / 2));
-  gain.gain.setValueAtTime(volume, Math.max(duree - FONDU_SORTIE, duree / 2));
-  gain.gain.linearRampToValueAtTime(0, duree);
-  source.connect(gain).connect(contexte.destination);
-  source.start(0);
-  return contexte.startRendering();
 }
 
 /** Force la scène à la taille exportée le temps de l'export. -> fonction de remise en état */
@@ -72,15 +50,18 @@ export async function exporter({ surProgression = () => {}, signal } = {}) {
   const ips = M.ips;
   const total = Math.round(M.duree * ips);
   const depart = M.temps();
-  // Une musique illisible ou un navigateur sans AAC donnent une vidéo muette, pas un échec.
-  const musique = document.getElementById('pm-musique');
+  // Le son est le mixage de la page (le même que la lecture) ; illisible ou navigateur sans AAC : vidéo muette.
   let audio = null;
   let avertissement;
-  if (musique && musique.src) {
+  if (M.aSon()) {
     if (!support.audio) avertissement = 'Ce navigateur ne sait pas encoder le son : vidéo exportée sans son.';
     else {
-      try { audio = await preparerAudio(total / ips); } catch {
-        avertissement = 'La musique n\'a pas pu être lue : vidéo exportée sans son.';
+      try {
+        const son = await M.rendreSon();
+        audio = son.buffer;
+        if (son.avertissements.length) avertissement = son.avertissements.join(' ');
+      } catch {
+        avertissement = 'Le son n\'a pas pu être préparé : vidéo exportée sans son.';
       }
     }
   }
