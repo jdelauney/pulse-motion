@@ -13,7 +13,7 @@ const crypto = require('node:crypto');
 const os = require('node:os');
 const fs = require('node:fs');
 const path = require('node:path');
-const { assembler, slug, RACINE } = require('./assembler.js');
+const { assembler, slug, ecrireSousTitres, RACINE } = require('./assembler.js');
 const { lireDeroule } = require('./lib/deroule.js');
 const { trouverNavigateur } = require('./lib/navigateur.js');
 const { ouvrirCapture } = require('./lib/capture-fidele.js');
@@ -67,6 +67,8 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
   if (provisoires.length && !avecProvisoire) return { ok: false, audio: false, message: messageProvisoire(provisoires) };
   const assemblage = assembler({ dossier: projet, dossierStyles, dossierEffets, ecrire: false });
   if (!assemblage.ok) return { ok: false, audio: false, message: `La page ne s'assemble pas : ${assemblage.erreurs.map((e) => e.message).join(' ')}` };
+  // Les fichiers de sous-titres suivent le texte exporté, même sans aperçu ouvert.
+  ecrireSousTitres(sortieDir, deroule.titre, assemblage.donnees.sousTitres && assemblage.donnees.sousTitres.cartons);
   const [largeur, hauteur] = TAILLES[qualite][deroule.format.ratio] || TAILLES[qualite]['16:9'];
   const cadence = ips || (deroule.format && deroule.format.ips) || 30;
 

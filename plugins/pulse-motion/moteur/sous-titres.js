@@ -12,7 +12,8 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function (Al) {
   'use strict';
 
-  var LARGEUR = { large: 42, etroit: 32 };
+  // Caractères par ligne : 42 en paysage et au carré, 32 en 4:5, 28 en 9:16 (le carton s'y écarte des boutons à droite).
+  var LARGEUR = { large: 42, etroit: 32, vertical: 28 };
   var DUREE_MIN = 1.25, DEBIT_MAX = 3.5, ECART = 0.1, MARGE_SANS_VOIX = 0.3;
   var FORTE = /[.!?…]["»”’)]*$/;
   var FAIBLE = /[,;:]["»”’)]*$/;
@@ -56,10 +57,12 @@
     var morceaux = [];
     while (ms.length) {
       if (longueur(ms) <= max) { morceaux.push(ms); break; }
+      // Meilleure coupe : ponctuation d'abord, mais une ligne bien remplie l'emporte sur une ligne orpheline.
       var meilleure = -1, meilleureNote = -1, i;
       for (i = 1; i < ms.length && longueur(ms.slice(0, i)) <= max; i++) {
         var n = note(ms, i);
-        if (n > 0 && n >= meilleureNote) { meilleure = i; meilleureNote = n; }
+        var valeur = n + 2.5 * longueur(ms.slice(0, i)) / max;
+        if (n > 0 && valeur >= meilleureNote) { meilleure = i; meilleureNote = valeur; }
       }
       // Aucune coupe permise dans la largeur (mot trop long, articles) : la première coupe permise, sinon après le premier mot.
       if (meilleure < 0) {
@@ -87,8 +90,8 @@
 
   /** Phrases (coupées après une ponctuation forte) -> cartons d'au plus deux lignes. */
   function cartons(scenes, options) {
-    var etroit = options && (options.ratio === '9:16' || options.ratio === '4:5');
-    var max = etroit ? LARGEUR.etroit : LARGEUR.large;
+    var ratio = options && options.ratio;
+    var max = ratio === '9:16' ? LARGEUR.vertical : ratio === '4:5' ? LARGEUR.etroit : LARGEUR.large;
     var resultat = [];
     scenes.forEach(function (sc) {
       var phrases = [], courante = [];
@@ -105,6 +108,21 @@
           siens.push({ scene: sc.id, debut: premier.t0, fin: dernier.t1, lignes: bloc });
         }
       });
+      // Phrases très courtes (« Vite. ») : regroupées avec la suivante quand le tout tient en deux lignes et se lit à temps.
+      for (var k = 0; k + 1 < siens.length; k++) {
+        var a = siens[k], b = siens[k + 1];
+        var nbA = a.lignes.reduce(function (n, l) { return n + l.length; }, 0);
+        var nbB = b.lignes.reduce(function (n, l) { return n + l.length; }, 0);
+        var court = a.fin - a.debut < DUREE_MIN;
+        var place = a.lignes.length + b.lignes.length <= 2;
+        var lisible = (nbA + nbB) / Math.max(DUREE_MIN, b.fin - a.debut) <= DEBIT_MAX;
+        if (court && place && lisible && b.debut - a.fin < 1) {
+          var tout = a.lignes.concat(b.lignes);
+          var uneLigne = [].concat.apply([], tout);
+          siens.splice(k, 2, { scene: sc.id, debut: a.debut, fin: b.fin, lignes: longueur(uneLigne) <= max ? [uneLigne] : tout });
+          k--;
+        }
+      }
       // Durée de lecture : au moins 1,25 s et 1 s pour 3,5 mots, prise sur le silence, sans toucher le suivant ni sortir de la scène.
       siens.forEach(function (c, k) {
         var nb = c.lignes.reduce(function (n, l) { return n + l.length; }, 0);
@@ -116,6 +134,12 @@
       });
       Array.prototype.push.apply(resultat, siens);
     });
+    // Entre deux scènes qui se chevauchent (transition), le carton précédent s'arrête 0,1 s avant le suivant.
+    for (var i = 0; i + 1 < resultat.length; i++) {
+      var c = resultat[i], d = resultat[i + 1];
+      if (c.fin > d.debut - ECART) c.fin = arrondi(Math.max(c.debut + 0.1, d.debut - ECART));
+      if (c.fin > d.debut - ECART) d.debut = arrondi(c.fin + ECART);
+    }
     return resultat;
   }
 

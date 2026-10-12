@@ -224,9 +224,14 @@
             if (part > S.chevauchementMax) constater('sous-titre-cache-texte', id, nom(el), t, arrondi(part));
           });
         });
-        if (vertical && visibles.length) {
-          var zoneSt = rc.top < cadre.top + S.zoneHaut * H ? 'haut' : rc.bottom > cadre.bottom - S.zoneBas * H ? 'bas' : null;
-          if (zoneSt) constater('zone-sure', visibles[visibles.length - 1], 'sous-titres', t, zoneSt);
+        var sceneSt = visibles[visibles.length - 1];
+        var dSt = Math.min(rc.left - cadre.left, cadre.right - rc.right, rc.top - cadre.top, cadre.bottom - rc.bottom);
+        if (sceneSt && dSt < S.margeMin * petit) constater('marge', sceneSt, 'sous-titres', t, arrondi(Math.max(0, dSt) / petit * 100));
+        if (vertical && sceneSt) {
+          var colonneSt = rc.bottom > cadre.top + S.zoneDroiteDebut * H && rc.top < cadre.top + S.zoneDroiteFin * H;
+          var zoneSt = rc.top < cadre.top + S.zoneHaut * H ? 'haut' : rc.bottom > cadre.bottom - S.zoneBas * H ? 'bas'
+            : colonneSt && rc.right > cadre.right - S.zoneDroite * W ? 'droite' : null;
+          if (zoneSt) constater('zone-sure', sceneSt, 'sous-titres', t, zoneSt);
         }
       }
       lectures.forEach(function (l, el) { if (!textesVus.has(el)) fermerLecture(el, l); });

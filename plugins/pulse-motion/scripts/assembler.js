@@ -88,6 +88,19 @@ function lireMoteur(racine) {
   return MOTEUR.map((f) => fs.readFileSync(path.join(racine, 'moteur', f), 'utf8')).join('\n;\n');
 }
 
+/** Sous-titres pour les plateformes (sous-titres activables) : sortie/<titre>.srt et .vtt ; retirés quand il n'y en a plus. */
+function ecrireSousTitres(dossierSortie, titre, cartons) {
+  const base = path.join(dossierSortie, slug(titre));
+  if (cartons && cartons.length) {
+    fs.mkdirSync(dossierSortie, { recursive: true });
+    fs.writeFileSync(`${base}.srt`, ST.versSRT(cartons));
+    fs.writeFileSync(`${base}.vtt`, ST.versVTT(cartons));
+  } else {
+    fs.rmSync(`${base}.srt`, { force: true });
+    fs.rmSync(`${base}.vtt`, { force: true });
+  }
+}
+
 function jsonDansHTML(objet) {
   return JSON.stringify(objet).replace(/</g, '\\u003c');
 }
@@ -268,15 +281,7 @@ M.demarrerParticules();
     const temporaire = `${sortie}.${process.pid}.tmp`;
     fs.writeFileSync(temporaire, page);
     fs.renameSync(temporaire, sortie);
-    // Sous-titres pour les plateformes (sous-titres activables) ; retirés quand il n'y en a plus.
-    const base = path.join(dossierSortie, slug(deroule.titre));
-    if (cartons.length) {
-      fs.writeFileSync(`${base}.srt`, ST.versSRT(cartons));
-      fs.writeFileSync(`${base}.vtt`, ST.versVTT(cartons));
-    } else {
-      fs.rmSync(`${base}.srt`, { force: true });
-      fs.rmSync(`${base}.vtt`, { force: true });
-    }
+    ecrireSousTitres(dossierSortie, deroule.titre, cartons);
     // Le rapport de débordement portait sur l'ancienne page : l'aperçu en renverra un pour la nouvelle.
     fs.rmSync(path.join(dossierSortie, 'controle-page.json'), { force: true });
   }
@@ -294,4 +299,4 @@ if (require.main === module) {
   process.exit(ok ? 0 : 1);
 }
 
-module.exports = { assembler, slug, chartePour, charteFinale, RACINE };
+module.exports = { assembler, slug, chartePour, charteFinale, ecrireSousTitres, RACINE };

@@ -20,16 +20,24 @@
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
   }
 
-  /** Texte dit -> [{ w, cles }] ; la ponctuation isolée est rattachée au mot précédent. */
+  var OUVRANTE = /^[«“‘([{—–-]+$/;
+
+  /** Texte dit -> [{ w, cles }] ; ponctuation isolée rattachée au mot précédent, ouvrante (« — ( ) au mot suivant. */
   function decouperMots(texte) {
-    var mots = [];
+    var mots = [], enAttente = '';
     String(texte).split(/\s+/).filter(Boolean).forEach(function (brut) {
       var cle = normaliserMot(brut);
-      if (!cle) { if (mots.length) mots[mots.length - 1].w += ' ' + brut; return; }
+      if (!cle) {
+        if (OUVRANTE.test(brut) || !mots.length) enAttente += brut + ' ';
+        else mots[mots.length - 1].w += ' ' + brut;
+        return;
+      }
       var cles = [cle];
       brut.split(/['’\-]/).map(normaliserMot).forEach(function (p) { if (p && cles.indexOf(p) < 0) cles.push(p); });
-      mots.push({ w: brut, cles: cles });
+      mots.push({ w: enAttente + brut, cles: cles });
+      enAttente = '';
     });
+    if (enAttente && mots.length) mots[mots.length - 1].w += ' ' + enAttente.trim();
     return mots;
   }
 
