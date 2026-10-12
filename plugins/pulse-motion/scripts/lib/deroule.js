@@ -3,11 +3,15 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { TYPES } = require('./contrat.js');
+
+const TYPES_SCENE = Object.keys(TYPES);
 
 const GENRES = ['formation', 'produit', 'storytelling', 'social'];
 const PARCOURS = ['rapide', 'accompagne'];
 const RATIOS = ['16:9', '9:16', '1:1'];
 const TRANSITIONS = ['aucune', 'fondu', 'glissement', 'balayage'];
+const TONS = ['clair', 'sombre', 'auto'];
 const ID = /^[a-z0-9-]+$/;
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
@@ -18,6 +22,33 @@ const POLICE = /^[\p{L}\p{N} _.\/-]+$/u;
 const estObjet = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const estTexte = (v) => typeof v === 'string' && v.trim() !== '';
 const estPositif = (v) => typeof v === 'number' && isFinite(v) && v > 0;
+
+/** Charte (du déroulé, de charte/charte.json ou enregistrée) -> messages, vide si valide. */
+function validerCharte(c, nom = 'charte') {
+  if (!estObjet(c)) return [`« ${nom} » doit être un objet.`];
+  const err = [];
+  if (c.couleurs !== undefined) {
+    if (!estObjet(c.couleurs)) err.push(`« ${nom}.couleurs » doit être un objet.`);
+    else for (const [cle, val] of Object.entries(c.couleurs)) {
+      if (!CLE.test(cle)) err.push(`« ${nom}.couleurs.${cle} » : le nom doit contenir seulement a-z, 0-9 et des tirets.`);
+      else if (!HEX.test(val)) err.push(`« ${nom}.couleurs.${cle} » doit être une couleur #rrggbb (reçu : ${JSON.stringify(val)}).`);
+    }
+  }
+  if (c.polices !== undefined) {
+    if (!estObjet(c.polices)) err.push(`« ${nom}.polices » doit être un objet.`);
+    else for (const [cle, val] of Object.entries(c.polices)) {
+      const ok = estObjet(val)
+        ? estTexte(val.famille) && POLICE.test(val.famille) && estTexte(val.fichier) && POLICE.test(val.fichier) && /\.(woff2?|ttf|otf)$/i.test(val.fichier)
+        : estTexte(val) && POLICE.test(val);
+      if (!CLE.test(cle)) err.push(`« ${nom}.polices.${cle} » : le nom doit contenir seulement a-z, 0-9 et des tirets.`);
+      else if (!ok) err.push(`« ${nom}.polices.${cle} » doit être un nom de police (lettres, chiffres, espaces, tirets), un fichier de police, ou { "famille", "fichier" }.`);
+    }
+  }
+  if (c.logo !== undefined && !estTexte(c.logo)) err.push(`« ${nom}.logo » doit être un chemin de fichier.`);
+  if (c.ton !== undefined && !TONS.includes(c.ton)) err.push(`« ${nom}.ton » doit être l'un de : ${TONS.join(', ')}.`);
+  if (c.modele !== undefined && !(estTexte(c.modele) && ID.test(c.modele))) err.push(`« ${nom}.modele » doit être le nom d'une charte enregistrée (a-z, 0-9, tirets).`);
+  return err;
+}
 
 /** -> liste de messages en français, vide si le déroulé est valide. */
 function validerDeroule(d) {
@@ -34,23 +65,7 @@ function validerDeroule(d) {
   }
   if (!estTexte(d.style)) err.push('« style » est obligatoire (nom d\'un style du catalogue).');
 
-  if (d.charte !== undefined && !estObjet(d.charte)) err.push('« charte » doit être un objet.');
-  else if (d.charte !== undefined) {
-    const c = d.charte;
-    if (c.couleurs) {
-      for (const [nom, val] of Object.entries(c.couleurs)) {
-        if (!CLE.test(nom)) err.push(`« charte.couleurs.${nom} » : le nom doit contenir seulement a-z, 0-9 et des tirets.`);
-        else if (!HEX.test(val)) err.push(`« charte.couleurs.${nom} » doit être une couleur #rrggbb (reçu : ${JSON.stringify(val)}).`);
-      }
-    }
-    if (c.polices) {
-      for (const [nom, val] of Object.entries(c.polices)) {
-        if (!CLE.test(nom)) err.push(`« charte.polices.${nom} » : le nom doit contenir seulement a-z, 0-9 et des tirets.`);
-        else if (!estTexte(val) || !POLICE.test(val)) err.push(`« charte.polices.${nom} » doit être un nom de police (lettres, chiffres, espaces, tirets) ou un fichier dans assets/.`);
-      }
-    }
-    if (c.logo !== undefined && !estTexte(c.logo)) err.push('« charte.logo » doit être un chemin de fichier dans assets/.');
-  }
+  if (d.charte !== undefined) err.push(...validerCharte(d.charte));
 
   if (d.musique !== undefined && !estObjet(d.musique)) err.push('« musique » doit être un objet.');
   else if (d.musique !== undefined) {
@@ -81,6 +96,9 @@ function validerDeroule(d) {
     if (s.transition !== undefined && !TRANSITIONS.includes(s.transition)) {
       err.push(`La ${nom} : « transition » doit être l'une de : ${TRANSITIONS.join(', ')}.`);
     }
+    if (s.type !== undefined && !TYPES_SCENE.includes(s.type)) {
+      err.push(`La ${nom} : « type » doit être l'un de : ${TYPES_SCENE.join(', ')} (ou absent pour une scène composée librement).`);
+    }
   });
   return err;
 }
@@ -99,4 +117,4 @@ function lireDeroule(dossier) {
   return { deroule: d, erreurs: validerDeroule(d) };
 }
 
-module.exports = { validerDeroule, lireDeroule, GENRES, PARCOURS, RATIOS, TRANSITIONS };
+module.exports = { validerDeroule, validerCharte, lireDeroule, GENRES, PARCOURS, RATIOS, TRANSITIONS, TYPES_SCENE, TONS };

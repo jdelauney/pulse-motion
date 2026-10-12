@@ -1,0 +1,4 @@
+{
+  "playfair-display": { "familyName": "Playfair Display", "weights": [400, 700, 900], "styles": ["normal", "italic"], "category": "serif" },
+  "inter": { "familyName": "Inter", "weights": [400, 700], "styles": ["normal"], "category": "sans-serif" }
+}

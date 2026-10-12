@@ -7,6 +7,7 @@
 - Les temps sont **relatifs au début de la scène**, en secondes : `data-start="0.4"`, `data-start="#titre+0.3"` (début de `#titre` + 0,3 s), `data-start="#titre:fin+0.2"` (fin de `#titre` + 0,2 s). `data-dur` vaut 1 s par défaut.
 - Tout ce qui bouge est **calé sur le temps** : animations CSS (`@keyframes`), `--p` (progression 0→1 de l'élément), `data-tween`. Jamais de `transition:` CSS (neutralisée), jamais de `setTimeout`.
 - Tailles en `cqh` (1 cqh = 1 % de la hauteur de l'image), couleurs et polices **uniquement** par les variables de la charte : `--c-primaire`, `--c-accent`, `--c-fond`, `--c-texte`, `--f-titres`, `--f-texte`.
+- Couleurs **prêtes à lire**, calculées par l'assemblage : `--c-primaire-lisible` et `--c-accent-lisible` (la couleur de la marque, foncée ou éclaircie juste assez pour se lire sur `--c-fond`), `--c-sur-primaire` et `--c-sur-accent` (noir ou blanc, pour un texte posé sur un aplat de cette couleur). Le ton (`clair` ou `sombre`) est posé sur `#pm-scene` : `#pm-scene[data-ton="sombre"]`.
 - Interdits (export rapide) : `filter: url(…)`, `mix-blend-mode`, `backdrop-filter`. Interdites aussi : les ressources sur internet (images, polices, CDN).
 - Après écriture : `pulse-motion assembler <dossier>` puis `pulse-motion controler <dossier>`, et corriger chaque erreur.
 - Effets de particules (étincelles, confettis, fumée…) : une balise `<div data-effet="…">` minutée ; tout est dans `pulse-motion reference particules`.

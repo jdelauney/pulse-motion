@@ -1,0 +1,21 @@
+{
+  "style": "clair-pedagogique",
+  "famille": "moderne",
+  "personnalite": ["posé", "lisible", "rassurant"],
+  "eviter": ["publicité tapageuse", "ambiance technique froide"],
+  "genres": ["formation", "produit"],
+  "couleur": {
+    "strategie": "sobre-avec-une-touche",
+    "tons": ["clair"],
+    "tonDefaut": "clair",
+    "roles": { "primaire": "titres", "accent": "étiquettes, puces, chiffres et flèches" }
+  },
+  "typographie": {
+    "titres": { "famille": "Figtree", "categorie": "sans-serif", "graisse": 800 },
+    "texte": { "famille": "Inter", "categorie": "sans-serif", "graisse": 400 }
+  },
+  "mouvement": { "caractere": "posé", "courbes": ["sine-inout", "cubic-out"], "dureeType": 0.7, "transitions": ["fondu", "glissement", "balayage"] },
+  "signature": "Grands ronds de couleur qui dérivent en fond, textes qui entrent en glissant",
+  "aFaire": ["Un seul message par scène", "Laisser au moins 1,5 s de lecture après la dernière entrée"],
+  "aEviter": ["Plus de 4 points dans une liste", "Des textes au-delà des longueurs maximales"]
+}

@@ -29,6 +29,20 @@ function avecEffets(projet, deroule) {
   });
 }
 
+/** Fait tous les nettoyages en cours (sans échouer) et vide la liste. */
+async function nettoyerTout() {
+  const enCours = [...nettoyages];
+  nettoyages.clear();
+  await Promise.all(enCours.map((n) => Promise.resolve().then(n).catch(() => {})));
+}
+
+/** Interruption (Ctrl+C, arrêt de la commande) : nettoyer, puis quitter. Pour les commandes qui exportent. */
+function arreterProprementSurSignal() {
+  for (const signal of ['SIGINT', 'SIGTERM']) {
+    process.on(signal, () => { nettoyerTout().then(() => process.exit(130)); });
+  }
+}
+
 /**
  * exporterVideo({ dossier, planche?: string[] | true, ouvrir?, dossierStyles?, navigateur?,
  *                 surProgression?, delaiMax?, delaiDemarrage?, ouvrirFichier? })
@@ -110,11 +124,7 @@ if (require.main === module) {
   const i = args.indexOf('--planche');
   const planche = i < 0 ? null : (args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1].split(',').filter(Boolean) : true);
   // Interruption (Ctrl+C, arrêt de la commande) : fermer le navigateur sans fenêtre et l'aperçu lancé.
-  for (const signal of ['SIGINT', 'SIGTERM']) {
-    process.on(signal, () => {
-      Promise.all([...nettoyages].map((n) => n().catch(() => {}))).then(() => process.exit(130));
-    });
-  }
+  arreterProprementSurSignal();
   let dernier = -1;
   exporterVideo({
     dossier,
@@ -133,4 +143,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { exporterVideo, avecEffets };
+module.exports = { exporterVideo, avecEffets, nettoyages, nettoyerTout, arreterProprementSurSignal };

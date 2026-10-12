@@ -12,12 +12,20 @@
  *   pulse-motion reference <nom>          affiche references/<nom>.md (ex. moteur, rythme, styles/clair-pedagogique)
  *   pulse-motion scene <style> <nom>      affiche une scène toute faite d'un style
  *   pulse-motion effet <nom>              affiche la recette d'un effet de particules de la bibliothèque
- *   pulse-motion styles                   liste les styles et leur catalogue (JSON)
+ *   pulse-motion styles [--genre <genre>] liste les styles (JSON), classée pour le genre
+ *   pulse-motion styles verifier <nom>    vérifie le contrat d'un style
+ *   pulse-motion changer-style <dossier> <style>   recopie les scènes toutes faites du nouveau style
+ *   pulse-motion comparer <dossier> <s1,s2,s3> [--scenes a,b] [--ouvrir]   comparaison des styles sur le déroulé
+ *   pulse-motion charte enregistrer <nom> <dossier> | liste | appliquer <nom> <dossier> | depuis-logo <fichier> [--style s] [--ton clair|sombre]
+ *   pulse-motion police "<famille>" [--graisses 400,700] | <fichier> [--famille "<nom>"] [--confirmer]   police de la charte (Bunny Fonts ou fichier)
+ *   pulse-motion glossaire <dossier> | glossaire noter <dossier> "<terme>" "<sens>" ["<à éviter>"]   mots du métier (charte/glossaire.md)
+ *   pulse-motion lexique [noter "<terme>" "<phrase>" "<comme…>" "<commande>"]   mots de l'outil expliqués à la personne
  *   pulse-motion consignes <skill>        affiche les consignes d'un skill (ex. creer)
  */
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const { trouverStyle, messageStyleInconnu } = require('./styles.js');
 
 const RACINE = path.resolve(__dirname, '..');
 const NOM_SUR = /^[a-z0-9-]+(\/[a-z0-9-]+)?$/;
@@ -29,6 +37,11 @@ const SCRIPTS = {
   apercu: 'apercu.js',
   historique: 'historique.js',
   exporter: 'exporter.js',
+  styles: 'styles.js',
+  'changer-style': 'changer-style.js',
+  comparer: 'comparer.js',
+  charte: 'charte.js',
+  police: 'polices.js',
 };
 
 function afficherFichier(fichier, quoi) {
@@ -46,6 +59,12 @@ function lancer(args) {
     const r = spawnSync(process.execPath, [path.join(RACINE, 'scripts', SCRIPTS[commande]), ...reste], { stdio: 'inherit' });
     return r.status ?? 1;
   }
+  if (commande === 'glossaire') {
+    return spawnSync(process.execPath, [path.join(RACINE, 'scripts', 'vocabulaire.js'), 'glossaire', ...reste], { stdio: 'inherit' }).status ?? 1;
+  }
+  if (commande === 'lexique') {
+    return spawnSync(process.execPath, [path.join(RACINE, 'scripts', 'vocabulaire.js'), 'lexique', ...reste], { stdio: 'inherit' }).status ?? 1;
+  }
   if (commande === 'planche') {
     const [dossier = '.', ...options] = reste;
     const ids = options.filter((o) => !o.startsWith('--'));
@@ -60,8 +79,10 @@ function lancer(args) {
   }
   if (commande === 'scene') {
     const [style, nom] = reste;
-    if (!NOM_SUR.test(style || '') || !NOM_SUR.test(nom || '') || nom.includes('/')) { console.error('Usage : pulse-motion scene <style> <nom>'); return 2; }
-    return afficherFichier(path.join(RACINE, 'styles', style, 'scenes', `${nom}.html`), `Scène « ${nom} » du style « ${style} »`);
+    if (!/^[a-z0-9-]+$/.test(style || '') || !/^[a-z0-9-]+$/.test(nom || '')) { console.error('Usage : pulse-motion scene <style> <nom>'); return 2; }
+    const st = trouverStyle(style);
+    if (!st) { console.error(messageStyleInconnu(style)); return 1; }
+    return afficherFichier(path.join(st.dossier, 'scenes', `${nom}.html`), `Scène « ${nom} » du style « ${style} »`);
   }
   if (commande === 'effet') {
     const nom = reste[0] || '';
@@ -73,20 +94,19 @@ function lancer(args) {
     if (!/^[a-z0-9-]+$/.test(nom)) { console.error('Usage : pulse-motion consignes <skill> (ex. creer)'); return 2; }
     return afficherFichier(path.join(RACINE, 'skills', nom, 'SKILL.md'), `Consignes « ${nom} »`);
   }
-  if (commande === 'styles') {
-    const dossier = path.join(RACINE, 'styles');
-    const styles = fs.readdirSync(dossier).filter((n) => fs.existsSync(path.join(dossier, n, 'catalogue.json')))
-      .map((n) => JSON.parse(fs.readFileSync(path.join(dossier, n, 'catalogue.json'), 'utf8')));
-    console.log(JSON.stringify(styles, null, 2));
-    return 0;
-  }
   console.error([
     'Usage : pulse-motion <commande> …',
     '  etat <dossier> [--accord deroule|style|video] [--parcours rapide|accompagne]',
     '  assembler <dossier>      controler <dossier>      apercu <dossier> [--port N] [--ouvrir]',
     '  historique sauvegarder|annuler <dossier>',
     '  exporter <dossier>       planche <dossier> [id1,id2]',
-    '  reference <nom>          scene <style> <nom>      effet <nom>      styles      consignes <skill>',
+    '  reference <nom>          scene <style> <nom>      effet <nom>      consignes <skill>',
+    '  styles [--genre <genre>]                         styles verifier <nom>',
+    '  changer-style <dossier> <style>                  comparer <dossier> <s1,s2,s3> [--scenes a,b] [--ouvrir]',
+    '  charte enregistrer <nom> <dossier> | liste | appliquer <nom> <dossier> | depuis-logo <fichier> [--style s] [--ton clair|sombre]',
+    '  police "<famille>" [--graisses 400,700] | <fichier> [--famille "<nom>"] [--confirmer] [--dans <dossier>]',
+    '  glossaire <dossier> | glossaire noter <dossier> "<terme>" "<sens>" ["<à éviter>"] ["<prononciation>"]',
+    '  lexique [noter "<terme>" "<phrase>" "<comme…>" "<commande>"]',
   ].join('\n'));
   return 2;
 }

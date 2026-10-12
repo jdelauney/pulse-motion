@@ -11,7 +11,9 @@
  */
 const fs = require('node:fs');
 const path = require('node:path');
-const { assembler, chartePour, RACINE } = require('./assembler.js');
+const { assembler, charteFinale, RACINE } = require('./assembler.js');
+const { trouverStyle } = require('./styles.js');
+const { lireGlossaire, verifierGlossaire } = require('./vocabulaire.js');
 const { lireDeroule } = require('./lib/deroule.js');
 const { cheminDansProjet } = require('./lib/embarquer.js');
 const { extraireScene } = require('./lib/extraire.js');
@@ -21,19 +23,7 @@ const SEUILS = JSON.parse(fs.readFileSync(path.join(__dirname, 'seuils.json'), '
 
 const virgule = (x) => String(Math.round(x * 10) / 10).replace('.', ',');
 
-/** Luminance relative WCAG d'une couleur #rrggbb. */
-function luminance(hex) {
-  const [r, g, b] = [1, 3, 5].map((i) => {
-    const c = parseInt(hex.slice(i, i + 2), 16) / 255;
-    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-  });
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
-
-function contraste(a, b) {
-  const [l1, l2] = [luminance(a), luminance(b)].sort((x, y) => y - x);
-  return (l1 + 0.05) / (l2 + 0.05);
-}
+const { contraste } = require('./lib/couleurs.js');
 
 const compterMots = (texte) => (String(texte).match(/[\p{L}\p{N}]+(?:['’-][\p{L}\p{N}]+)*/gu) || []).length;
 
@@ -86,17 +76,17 @@ function controlerCSS(cssBrut, scene, ou, problemes) {
 }
 
 /**
- * controler({ dossier, dossierStyles?, dossierEffets?, ecrire? })
+ * controler({ dossier, dossierStyles?: string | string[], dossierEffets?, ecrire? })
  * -> { problemes: [...], fichier: chemin de controle.json | null }
  */
-function controler({ dossier, dossierStyles = path.join(RACINE, 'styles'), dossierEffets = path.join(RACINE, 'effets'), ecrire = true }) {
+function controler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, 'effets'), ecrire = true }) {
   const projet = path.resolve(dossier);
   const assemblage = assembler({ dossier: projet, dossierStyles, dossierEffets, ecrire: false });
   const problemes = assemblage.erreurs.map((e) => ({ ...e }));
   const { deroule } = lireDeroule(projet);
 
   if (assemblage.ok) {
-    const dossierStyle = path.join(dossierStyles, deroule.style);
+    const dossierStyle = trouverStyle(deroule.style, dossierStyles).dossier;
     const scenesLues = {};
     const elementsParScene = {};
     for (const s of deroule.scenes) {
@@ -185,12 +175,14 @@ function controler({ dossier, dossierStyles = path.join(RACINE, 'styles'), dossi
         }
       }
     }
+    // Glossaire de la charte : formes à éviter, sigles mal écrits.
+    problemes.push(...verifierGlossaire(deroule.scenes, lireGlossaire(projet).termes));
 
     // Style : tailles de texte et effets.
     try { controlerCSS(fs.readFileSync(path.join(dossierStyle, 'style.css'), 'utf8'), undefined, `Style « ${deroule.style} »`, problemes); } catch { /* style vérifié par l'assemblage */ }
 
     // Contraste de la charte.
-    const { couleurs } = chartePour(deroule, dossierStyle);
+    const { couleurs } = charteFinale(deroule, dossierStyle, projet);
     const paires = [
       ['texte', SEUILS.contrasteTexte, 'le texte'],
       ['primaire', SEUILS.contrasteTitres, 'les titres'],
