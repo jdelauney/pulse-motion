@@ -6,6 +6,7 @@
  *                                                                     sans --scene : toute la vidéo, découpée par la transcription
  *   node scripts/voix.js provisoire [--scene <id>] [dossier]           voix du système pour caler avant d'enregistrer
  *   node scripts/voix.js transcrire [--scene <id>] [dossier]           mots calés par la transcription (Whisper installé)
+ *   node scripts/voix.js studio <scène> [dossier]                       ouvre le studio de voix de l'aperçu sur la scène
  *
  * Résumé JSON ; code 1 en cas d'échec.
  */
@@ -160,6 +161,21 @@ async function enregistrerPrise({ projet, scene: id, octets, outil = null, whisp
   return { ok: true, fichier: r.relatif, duree: r.duree, calage: t.ok ? 'whisper' : 'lettres', ...(t.ok ? {} : { avertissement: t.message }) };
 }
 
+/** Ouvre le studio de voix de l'aperçu (déjà lancé) sur une scène. -> { ok, url?, message? } */
+function ouvrirStudio({ dossier, scene: id, ouvrir }) {
+  const projet = path.resolve(dossier);
+  const { deroule, erreurs } = lireDeroule(projet);
+  if (erreurs.length) return { ok: false, message: `Le déroulé contient des erreurs : ${erreurs.join(' ')}` };
+  const { scene, message } = sceneAvecTexte(deroule, id);
+  if (!scene) return { ok: false, message };
+  const { etatProjet } = require('./etat.js');
+  const e = etatProjet(projet);
+  if (!e.apercu || !e.apercu.actif) return { ok: false, message: `Lancez l'aperçu : pulse-motion apercu ${dossier} --ouvrir, puis relancez cette commande.` };
+  const url = `${e.apercu.url}?studio=${encodeURIComponent(id)}`;
+  (ouvrir || require('./apercu.js').ouvrirNavigateur)(url);
+  return { ok: true, url };
+}
+
 /** Transcrit les prises (pas la voix provisoire) dont les mots ne viennent pas d'une transcription à jour. */
 async function transcrireProjet({ dossier, scene: id, whisper = whisperParDefaut() }) {
   const projet = path.resolve(dossier);
@@ -238,12 +254,13 @@ if (require.main === module) {
   if (action === 'importer' && libres[0]) travail = importerVoix({ dossier: libres[1] || '.', fichier: libres[0], scene: valeur('--scene') });
   else if (action === 'provisoire') travail = voixProvisoire({ dossier: libres[0] || '.', scene: valeur('--scene') });
   else if (action === 'transcrire') travail = transcrireProjet({ dossier: libres[0] || '.', scene: valeur('--scene') });
+  else if (action === 'studio' && libres[0]) travail = Promise.resolve(ouvrirStudio({ dossier: libres[1] || '.', scene: libres[0] }));
   else {
-    console.error('Usage : pulse-motion voix importer <fichier> [--scene <id>] [dossier] | provisoire [--scene <id>] [dossier] | transcrire [--scene <id>] [dossier]');
+    console.error('Usage : pulse-motion voix importer <fichier> [--scene <id>] [dossier] | provisoire [--scene <id>] [dossier] | transcrire [--scene <id>] [dossier] | studio <scène> [dossier]');
     process.exit(2);
   }
   travail.then((r) => { console.log(JSON.stringify(r, null, 2)); process.exit(r.ok ? 0 : 1); },
     (e) => { console.log(JSON.stringify({ ok: false, message: e.message }, null, 2)); process.exit(1); });
 }
 
-module.exports = { importerVoix, enregistrerPrise, ecrireDeroule, voixProvisoire, transcrireProjet, synthetiserSysteme };
+module.exports = { importerVoix, enregistrerPrise, ecrireDeroule, voixProvisoire, transcrireProjet, ouvrirStudio, synthetiserSysteme };
