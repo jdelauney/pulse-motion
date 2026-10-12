@@ -11,5 +11,14 @@
   "animationsSimultanees": 4,
   "animationLongue": 3,
   "lectureMaxAllonge": 1.5,
-  "pauseFinaleMaxAjout": 1
+  "pauseFinaleMaxAjout": 1,
+  "pasMesure": 0.2,
+  "immobile": 0.005,
+  "chevauchementMax": 0.1,
+  "margeMin": 0.04,
+  "logoMasqueMax": 0.2,
+  "grandElement": 0.25,
+  "vitesseMax": 1,
+  "texteFugaceBase": 0.8,
+  "texteFugaceParMot": 0.2
 }
