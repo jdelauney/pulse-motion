@@ -2,10 +2,12 @@
 'use strict';
 /* Pulse Motion – export MP4 (ou planche d'images clés) depuis la ligne de commande.
  *
- *   node scripts/exporter.js <dossier-du-projet>
+ *   node scripts/exporter.js <dossier-du-projet> [--qualite 1080p|720p] [--ips 30|60] [--rapide]
  *   node scripts/exporter.js <dossier-du-projet> --planche [id1,id2] [--ouvrir]
  *
- * Utilise l'aperçu en cours (ou en démarre un), l'ouvre dans Chrome ou Edge sans fenêtre
+ * Export fidèle (vraies captures + ffmpeg, voir export-fidele.js) quand ffmpeg est utilisable ; sinon, ou avec
+ * --rapide, export dans le navigateur (résultat avec conseilFfmpeg). La planche passe toujours par le navigateur.
+ * Export dans le navigateur : utilise l'aperçu en cours (ou en démarre un), l'ouvre dans Chrome ou Edge sans fenêtre
  * en mode export, et suit sortie/export.json jusqu'au MP4 relu (ou aux images de la planche).
  * Progression sur la sortie d'erreur ; résumé JSON sur la sortie standard ; code 1 en cas d'échec.
  */
@@ -15,6 +17,14 @@ const { lireDeroule } = require('./lib/deroule.js');
 const { trouverNavigateur, ouvrirSansFenetre } = require('./lib/navigateur.js');
 const { etatProjet } = require('./etat.js');
 const { demarrerApercu, ouvrirNavigateur } = require('./apercu.js');
+const { trouverFfmpeg } = require('./lib/ffmpeg.js');
+const { exporterFidele } = require('./export-fidele.js');
+
+/** Voie de l'export : fidèle (vraies captures + ffmpeg) si ffmpeg est utilisable, sauf --rapide et planche. */
+function choisirVoie({ planche = null, rapide = false, outil }) {
+  if (planche || rapide) return 'navigateur';
+  return outil && outil.present && outil.versionOk !== false ? 'fidele' : 'navigateur';
+}
 
 const attendre = (ms) => new Promise((r) => setTimeout(r, ms));
 const DELAI_DEMARRAGE = 45000;
@@ -120,21 +130,32 @@ async function exporterVideo({
 
 if (require.main === module) {
   const args = process.argv.slice(2);
-  const dossier = args.find((a, i) => !a.startsWith('--') && args[i - 1] !== '--planche') || '.';
+  const OPTIONS_A_VALEUR = ['--planche', '--qualite', '--ips'];
+  const dossier = args.find((a, i) => !a.startsWith('--') && !OPTIONS_A_VALEUR.includes(args[i - 1])) || '.';
+  const valeur = (o) => { const i = args.indexOf(o); return i >= 0 && args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1] : undefined; };
   const i = args.indexOf('--planche');
   const planche = i < 0 ? null : (args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1].split(',').filter(Boolean) : true);
+  const rapide = args.includes('--rapide');
   // Interruption (Ctrl+C, arrêt de la commande) : fermer le navigateur sans fenêtre et l'aperçu lancé.
   arreterProprementSurSignal();
   let dernier = -1;
-  exporterVideo({
-    dossier,
-    planche,
-    ouvrir: args.includes('--ouvrir'),
-    surProgression: (n, total) => {
-      const pourcent = Math.floor(100 * n / total);
-      if (pourcent >= dernier + 10) { dernier = pourcent; process.stderr.write(`Export : ${pourcent} % (image ${n} / ${total})\n`); }
-    },
-  }).then((r) => {
+  const surProgression = (n, total) => {
+    const pourcent = Math.floor(100 * n / total);
+    if (pourcent >= dernier + 10) { dernier = pourcent; process.stderr.write(`Export : ${pourcent} % (image ${n} / ${total})\n`); }
+  };
+  const outil = trouverFfmpeg();
+  const voie = choisirVoie({ planche, rapide, outil });
+  let travail;
+  if (voie === 'fidele') {
+    const controle = new AbortController();
+    process.on('SIGINT', () => controle.abort());
+    travail = exporterFidele({ dossier, qualite: valeur('--qualite') || '1080p', ips: valeur('--ips') ? Number(valeur('--ips')) : undefined, outil, signal: controle.signal, surProgression })
+      .then((r) => ({ ...r, mode: 'fidele' }));
+  } else {
+    travail = exporterVideo({ dossier, planche, ouvrir: args.includes('--ouvrir'), surProgression })
+      .then((r) => ({ ...r, mode: 'navigateur', ...(!rapide && !planche ? { conseilFfmpeg: { message: outil.message, commande: outil.commande } } : {}) }));
+  }
+  travail.then((r) => {
     console.log(JSON.stringify(r, null, 2));
     process.exit(r.ok ? 0 : 1);
   }, (e) => {
@@ -143,4 +164,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { exporterVideo, avecEffets, nettoyages, nettoyerTout, arreterProprementSurSignal };
+module.exports = { choisirVoie, exporterVideo, avecEffets, nettoyages, nettoyerTout, arreterProprementSurSignal };

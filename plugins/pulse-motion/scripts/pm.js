@@ -7,7 +7,7 @@
  *   pulse-motion controler <dossier> [--sans-correction] [--sans-rendu]   contrôle ; corrige seul les cas sûrs
  *   pulse-motion apercu <dossier> [--port 4321] [--ouvrir]
  *   pulse-motion historique sauvegarder|annuler <dossier>
- *   pulse-motion exporter <dossier>       MP4 relu dans sortie/ (Chrome ou Edge sans fenêtre)
+ *   pulse-motion exporter <dossier> [--qualite 1080p|720p] [--ips 30|60] [--rapide]   MP4 fidèle (ffmpeg) ou dans le navigateur
  *   pulse-motion ffmpeg                  ffmpeg présent ? commande pour l'installer
  *   pulse-motion planche <dossier> [id1,id2] [--ouvrir]   images clés PNG dans sortie/planche/
  *   pulse-motion reference <nom>          affiche references/<nom>.md (ex. moteur, rythme, styles/clair-pedagogique)
@@ -110,7 +110,7 @@ function lancer(args) {
     '  etat <dossier> [--accord deroule|style|video] [--parcours rapide|accompagne]',
     '  assembler <dossier>      controler <dossier> [--sans-correction] [--sans-rendu]      apercu <dossier> [--port N] [--ouvrir]',
     '  historique sauvegarder|annuler <dossier>',
-    '  exporter <dossier>       planche <dossier> [id1,id2]',
+    '  exporter <dossier> [--qualite 1080p|720p] [--ips 30|60] [--rapide]       planche <dossier> [id1,id2]',
     '  ffmpeg                   ffmpeg présent ? commande pour l\'installer',
     '  reference <nom>          scene <style> <nom>      effet <nom>      consignes <skill>',
     '  styles [--genre <genre>]                         styles verifier <nom>',

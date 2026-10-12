@@ -109,3 +109,26 @@ test('déroulé invalide : pas d\'export, erreurs du déroulé', async () => {
   assert.equal(r.ok, false);
   assert.match(r.message, /« version » doit valoir 1/);
 });
+
+test('voie de l\'export : fidèle si ffmpeg est utilisable, sinon (ou --rapide, ou planche) dans le navigateur', () => {
+  const { choisirVoie } = require('../scripts/exporter.js');
+  const pret = { present: true, versionOk: true };
+  assert.equal(choisirVoie({ outil: pret }), 'fidele');
+  assert.equal(choisirVoie({ outil: pret, rapide: true }), 'navigateur');
+  assert.equal(choisirVoie({ outil: pret, planche: ['intro'] }), 'navigateur');
+  assert.equal(choisirVoie({ outil: { present: false } }), 'navigateur');
+  assert.equal(choisirVoie({ outil: { present: true, versionOk: false } }), 'navigateur');
+});
+
+test('ligne de commande : export fidèle de l\'exemple en 720p, mode et son dans le résumé', { skip: (!trouverNavigateur() && 'Chrome ou Edge introuvable') || (!require('../scripts/lib/ffmpeg.js').trouverFfmpeg().present && 'ffmpeg absent') }, () => {
+  const { spawnSync } = require('node:child_process');
+  const { dossierTemporaire } = require('./aide/temporaire.js');
+  const dir = dossierTemporaire('pm-exp-');
+  fs.cpSync(path.join(__dirname, '..', 'exemples', 'chaine-du-froid'), dir, { recursive: true });
+  const r = spawnSync(process.execPath, [path.join(__dirname, '..', 'scripts', 'pm.js'), 'exporter', dir, '--qualite', '720p', '--ips', '2'], { encoding: 'utf8', timeout: 280000 });
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  const j = JSON.parse(r.stdout);
+  assert.equal(j.mode, 'fidele');
+  assert.equal(j.ok, true);
+  assert.ok(fs.existsSync(j.fichier));
+});
