@@ -19,6 +19,8 @@ const { cheminDansProjet } = require('./lib/embarquer.js');
 const { extraireScene } = require('./lib/extraire.js');
 const { calculerMinutage, CHEVAUCHEMENT } = require('../moteur/minutage.js');
 const { EFFETS: EFFETS_LETTRES } = require('../moteur/lettres.js');
+const { analyserCamera } = require('../moteur/camera.js');
+const { analyserTemps } = require('../moteur/temps.js');
 
 const SEUILS = JSON.parse(fs.readFileSync(path.join(__dirname, 'seuils.json'), 'utf8'));
 
@@ -159,6 +161,14 @@ function controler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
         problemes.push({ regle: 'lecture', gravite: 'alerte', scene: s.id, message: `Scène « ${s.id} » : ${mots} mots à lire en ${virgule(disponible)} s ; prévoir au moins ${virgule(besoin)} s.` });
       }
       controlerCSS(scenesLues[s.id].css, s.id, `Scène « ${s.id} »`, problemes);
+      for (const m of scenesLues[s.id].miseEnScene) {
+        const signaler = (regle, message) => problemes.push({ regle, gravite: 'erreur', scene: s.id, message: `Scène « ${s.id} » : ${message}` });
+        if (m.camera !== undefined) { try { analyserCamera(m.camera, temps); } catch (e) { signaler('camera-invalide', e.message); } }
+        if (m.gel !== undefined || m.vitesse !== undefined) { try { analyserTemps(m.gel ?? null, m.vitesse ?? null, temps); } catch (e) { signaler('temps-invalide', e.message); } }
+        if (m.profondeur !== undefined && !/^\d*\.?\d+$/.test(m.profondeur)) {
+          signaler('profondeur-invalide', `data-profondeur « ${m.profondeur} » doit être un nombre (1 : suit la caméra, 0 : plan fixe, 0.3 : plan lointain).`);
+        }
+      }
       for (const { attribut, effet } of scenesLues[s.id].decoupes) {
         if (!Object.hasOwn(EFFETS_LETTRES, effet)) {
           problemes.push({ regle: 'lettres-invalide', gravite: 'erreur', scene: s.id, message: `Scène « ${s.id} » : ${attribut} « ${effet} » inconnu (effets : ${Object.keys(EFFETS_LETTRES).join(', ')}).` });

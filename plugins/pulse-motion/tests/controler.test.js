@@ -204,3 +204,23 @@ test('texte lettre par lettre : effet inconnu signalé sans navigateur', () => {
   assert.equal(p.length, 1);
   assert.match(p[0].message, /Scène « chiffre » : data-lettres « danse » inconnu \(effets : monte, flou, frappe, onde, chute\)/);
 });
+
+test('caméra et temps : syntaxe fautive signalée sans navigateur', () => {
+  const dir = copierProjet('projet-simple');
+  ecrireScene(dir, '02-chiffre.html', `<section data-scene="chiffre">
+  <div data-camera="travelling 0→1 0+1" data-gel="1+1; 1.5+1"><p data-texte="legende" data-start="0" data-dur="2"></p></div>
+  <div data-camera="zoom 1→1.1 0+2" data-vitesse="0+1 x2" data-profondeur="loin"></div>
+</section>`);
+  const p = controler({ dossier: dir, dossierStyles: STYLES }).problemes;
+  const camera = p.filter((x) => x.regle === 'camera-invalide');
+  assert.equal(camera.length, 1);
+  assert.match(camera[0].message, /^Scène « chiffre » : data-camera : propriété « travelling » inconnue/);
+  assert.equal(p.filter((x) => x.regle === 'temps-invalide').length, 1);
+  assert.equal(p.filter((x) => x.regle === 'profondeur-invalide').length, 1);
+});
+
+test('assemblage : les modules de mise en scène sont dans la page', () => {
+  const dir = copierProjet('projet-simple');
+  const { html } = require('../scripts/assembler.js').assembler({ dossier: dir, dossierStyles: STYLES, ecrire: false });
+  for (const nom of ['Pulse Motion – caméra', 'Pulse Motion – temps figé', 'Pulse Motion – texte lettre par lettre']) assert.ok(html.includes(nom), nom);
+});
