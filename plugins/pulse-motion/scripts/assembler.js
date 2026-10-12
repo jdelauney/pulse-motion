@@ -135,6 +135,10 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
 
   const sections = [];
   const scriptsScenes = [];
+  // Sources sonores : un bloc texte par source (URL data:), lu et décodé par moteur/audio.js.
+  const sons = [];
+  const blocSon = (id, uri) => `<script type="text/plain" id="${id}">${uri}</script>`;
+  let fichiersSons = 0;
   const effets = [];
   for (const scene of deroule.scenes) {
     const fichier = cheminDansProjet(projet, scene.fichier);
@@ -163,7 +167,16 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     });
     effets.push(...effetsScene);
     erreurs.push(...erreursEffets);
-    const { html: embarque, erreurs: erreursRes } = embarquerRessources(S.injecterLogo(avecEffets, uriLogo), projet, `scène « ${scene.id} »`);
+    // Sons importés (data-son="assets/…") : embarqués en bloc, l'attribut désigne le bloc ; un nom de bruitage reste tel quel.
+    const avecSons = avecEffets.replace(/(\sdata-son=)(["'])([^"']+)\2/g, (tout, debut, guillemet, valeur) => {
+      if (!/[/.]/.test(valeur)) return tout;
+      const uri = embarquerFichier(projet, valeur, `Son « ${valeur} » (scène « ${scene.id} »)`, erreurs);
+      if (!uri) return tout;
+      const id = `pm-son-fichier-${fichiersSons++}`;
+      sons.push(blocSon(id, uri));
+      return `${debut}${guillemet}fichier:${id}${guillemet}`;
+    });
+    const { html: embarque, erreurs: erreursRes } = embarquerRessources(S.injecterLogo(avecSons, uriLogo), projet, `scène « ${scene.id} »`);
     erreursRes.forEach((e) => erreurs.push({ ...e, scene: scene.id }));
     sections.push(embarque.trim());
     scripts.forEach((code) => scriptsScenes.push(`(function () { try {\n${code}\n} catch (e) { console.error('[Pulse Motion] Scène « ${scene.id} » : ' + e.message); } })();`));
@@ -172,9 +185,6 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   const { html: cssStyle, erreurs: erreursStyle } = embarquerRessources(fs.readFileSync(path.join(dossierStyle, 'style.css'), 'utf8'), dossierStyle, `style « ${deroule.style} »`);
   erreurs.push(...erreursStyle);
 
-  // Sources sonores : un bloc texte par source (URL data:), lu et décodé par moteur/audio.js.
-  const sons = [];
-  const blocSon = (id, uri) => `<script type="text/plain" id="${id}">${uri}</script>`;
   let sourceMusique = null;
   if (deroule.musique && deroule.musique.fichier) {
     const uri = embarquerFichier(projet, deroule.musique.fichier, 'Musique', erreurs);
