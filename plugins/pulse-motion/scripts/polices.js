@@ -15,6 +15,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { analyserPolice, EXTENSIONS_POLICE } = require('./lib/police.js');
 const { trouverStyle, lireJSON } = require('./styles.js');
+const { sauvegarder } = require('./historique.js');
 
 const HOTE = 'fonts.bunny.net';
 const FAMILLE_ID = /^[a-z0-9-]+$/;
@@ -84,6 +85,13 @@ const recupererAvecDelai = (url) => fetch(url, { signal: AbortSignal.timeout(DEL
 const TAILLE_MAX = 5 * 1024 * 1024;
 const aujourdhui = () => new Date().toISOString().slice(0, 10);
 
+/** Police installée dans charte/polices d'un projet qui a un déroulé : copie avant (« annule » la défait). */
+function sauvegarderProjetDe(dans) {
+  const charte = path.dirname(path.resolve(dans));
+  const projet = path.dirname(charte);
+  if (path.basename(path.resolve(dans)) === 'polices' && path.basename(charte) === 'charte' && fs.existsSync(path.join(projet, 'deroule.json'))) sauvegarder(projet);
+}
+
 function ajouterLicence(dans, texte) {
   const fichier = path.join(dans, 'LICENCES.md');
   const debut = fs.existsSync(fichier) ? '' : '# Licences des polices\n\n';
@@ -105,6 +113,7 @@ async function installerBunny({ famille, graisses = [400, 700], italique = false
     if (!feuille.ok) throw new Error(`feuille indisponible, ${feuille.status}`);
     const fichiers = choisirLatin(fichiersDeLaFeuille(await feuille.text())).filter((f) => graisses.includes(f.graisse) && (f.style === 'normal' || (italique && f.style === 'italic')));
     if (!fichiers.length) throw new Refus(`La feuille de Bunny Fonts pour ${fam.nom} est vide ou pointe hors de ${HOTE}.`);
+    sauvegarderProjetDe(dans);
     fs.mkdirSync(dans, { recursive: true });
     const entrees = [];
     for (const f of fichiers) {
@@ -160,6 +169,7 @@ function installerFichier({ fichier, famille, confirmer = false, dans, style, ro
   if (!nomFamille) return { ok: false, message: 'Indiquez le nom de la police avec --famille "<nom>".' };
   const nom = `${nomFamille}${ext}`;
   const cible = path.join(dans, nom);
+  sauvegarderProjetDe(dans);
   fs.mkdirSync(dans, { recursive: true });
   fs.writeFileSync(`${cible}.part`, octets);
   fs.renameSync(`${cible}.part`, cible);

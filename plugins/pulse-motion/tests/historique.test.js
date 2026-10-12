@@ -59,3 +59,22 @@ test('ligne de commande : sans déroulé, code 1 et message en français', () =>
   assert.equal(code, 1);
   assert.match(erreur, /Aucun déroulé à sauvegarder/);
 });
+
+test('« annule » après l\'ajout d\'une police ou d\'un terme : seul ce dernier ajout est défait', () => {
+  const { annuler } = require('../scripts/historique.js');
+  const { installerFichier } = require('../scripts/polices.js');
+  const { noterGlossaire, lireGlossaire } = require('../scripts/vocabulaire.js');
+  const { police } = require('./aide/polices.js');
+  const dir = copierProjet('projet-simple');
+  noterGlossaire({ dossier: dir, terme: 'HACCP', sens: 'Méthode' });
+  noterGlossaire({ dossier: dir, terme: 'DLC', sens: 'Date limite' });
+  annuler(dir);
+  assert.deepEqual(lireGlossaire(dir).termes.map((t) => t.terme), ['HACCP']);
+  const src = path.join(dir, 'Marque.woff2');
+  fs.writeFileSync(src, police({ format: 'woff2' }));
+  assert.equal(installerFichier({ fichier: src, dans: path.join(dir, 'charte', 'polices') }).ok, true);
+  assert.ok(fs.existsSync(path.join(dir, 'charte', 'polices', 'Marque.woff2')));
+  annuler(dir);
+  assert.equal(fs.existsSync(path.join(dir, 'charte', 'polices', 'Marque.woff2')), false);
+  assert.deepEqual(lireGlossaire(dir).termes.map((t) => t.terme), ['HACCP']);
+});

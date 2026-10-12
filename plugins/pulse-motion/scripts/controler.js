@@ -182,7 +182,10 @@ function controler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     try { controlerCSS(fs.readFileSync(path.join(dossierStyle, 'style.css'), 'utf8'), undefined, `Style « ${deroule.style} »`, problemes); } catch { /* style vérifié par l'assemblage */ }
 
     // Contraste de la charte.
-    const { couleurs } = charteFinale(deroule, dossierStyle, projet);
+    const { couleurs, ton, tonIndisponible } = charteFinale(deroule, dossierStyle, projet);
+    if (tonIndisponible) {
+      problemes.push({ regle: 'ton-indisponible', gravite: 'alerte', message: `Le style « ${deroule.style} » n'a pas de ton ${tonIndisponible} : la vidéo s'affiche en ton ${ton}. Choisissez un style qui propose le ton ${tonIndisponible}, ou retirez « ton » de la charte.` });
+    }
     const paires = [
       ['texte', SEUILS.contrasteTexte, 'le texte'],
       ['primaire', SEUILS.contrasteTitres, 'les titres'],
