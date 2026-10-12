@@ -118,6 +118,10 @@ Avec `"tempo": { "bpm": 120 }` dans le déroulé (`"decalage"` : instant du prem
 
 Le son de la vidéo est **un seul mixage**, fait par le moteur dans la page (`M.rendreSon`) : musique (fondus d'entrée 0,5 s et de sortie 1,5 s, baissée de 10 dB sous la voix), voix ; le mélange à plein volume est ramené à −16 LUFS (crête sous −1,5 dB), puis les volumes du déroulé s'appliquent (« baisse la musique » : `musique.volume` plus bas). La lecture, l'export dans le navigateur et l'export fidèle utilisent le même : ce qu'on entend dans l'aperçu est ce qui sort dans le MP4. Voix : une prise par scène (`scenes[].voix.fichier`, `pulse-motion voix importer`), ou la voix provisoire du système (`pulse-motion voix provisoire`, refusée à l'export sauf `--avec-provisoire`). Avec la transcription (`pulse-motion whisper installer`, une fois), les mots de chaque prise prennent leurs vrais temps (`pulse-motion voix transcrire` pour les prises déjà là) ; un enregistrement de toute la vidéo se découpe seul : `pulse-motion voix importer <fichier>` sans `--scene`. Ne pas ajouter d'élément `<audio>` dans une scène : le son passe par le déroulé.
 
+### Sous-titres
+
+`"sousTitres": {}` dans le déroulé : les textes dits (`scenes[].voix.texte`) deviennent des sous-titres, calés sur la voix (ou répartis sur la scène), dessinés dans la vidéo et livrés en `sortie/<titre>.srt` et `.vtt` pour les plateformes. `mode` : `ligne` (défaut) ou `mot` (le mot dit en couleur d'accent) ; `position` : `bas` (défaut) ou `haut` ; `incrustes: false` : fichiers seulement. Habillage par le style : `--pm-st-police`, `--pm-st-taille`, `--pm-st-texte`, `--pm-st-fond`, `--pm-st-accent`, `--pm-st-marge`, `--pm-st-position`.
+
 ## Ce que le contrôle regarde dans la vidéo rendue
 
 `pulse-motion controler` rend la vidéo dans Chrome sans fenêtre et juge les **éléments de contenu** : textes (`data-texte`), images, logo (`data-logo`), SVG. Ils ne doivent pas se chevaucher, sortir de l'image, coller au bord (4 %), passer sous les boutons des réseaux en 9:16, ni masquer le logo. Pour dire ce qui est voulu :
