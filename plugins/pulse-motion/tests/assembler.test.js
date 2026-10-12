@@ -109,7 +109,7 @@ test('musique embarquée et volume transmis au moteur', () => {
   const r = assembler({ dossier: dir, dossierStyles: STYLES });
   assert.match(r.html, /<script type="text\/plain" id="pm-son-musique">data:audio\/mpeg;base64,/);
   assert.doesNotMatch(r.html, /<audio id="pm-musique"/);
-  assert.match(r.html, /"musique":\{"volume":0\.6,"source":"pm-son-musique"\}/);
+  assert.match(r.html, /"musique":\{"volume":0\.6,"source":"pm-son-musique","partition":null\}/);
 });
 
 test('un texte contenant </script> ne casse pas les données', () => {
