@@ -28,7 +28,7 @@
 
   M.aSon = function () {
     var d = M.donnees;
-    return !!(d && ((d.musique && d.musique.source) || prisesVoix().length));
+    return !!(d && ((d.musique && (d.musique.source || d.musique.partition)) || prisesVoix().length));
   };
 
   async function decoder(contexte, id) {
@@ -72,11 +72,20 @@
       if (entendues.length) bus.push({ tampon: await contexteVoix.startRendering(), volume: volumeDe(d.voix) });
     }
 
-    if (d.musique && d.musique.source) {
+    if (d.musique && (d.musique.source || d.musique.partition)) {
       try {
         var contexte = nouveauContexte();
-        var musique = contexte.createBufferSource();
-        musique.buffer = await decoder(contexte, d.musique.source);
+        // Musique importée (décodée), ou générée : partition jouée par le synthétiseur, coupée à la durée de la vidéo.
+        var entree = contexte.createGain();
+        if (d.musique.source) {
+          var musique = contexte.createBufferSource();
+          musique.buffer = await decoder(contexte, d.musique.source);
+          musique.connect(entree);
+          musique.start(0);
+        } else {
+          var bruit = M.synthe.bruit(contexte, 4242);
+          M.synthe.partition.evenements(d.musique.partition, { duree: duree }).forEach(function (e) { M.synthe.instruments.jouer(contexte, entree, e, bruit); });
+        }
         var fondus = contexte.createGain();
         automatiser(fondus.gain, X.pointsFondus(duree, 1));
         var points = X.pointsDucking(X.groupesParole(entendues, D.ecart), D);
@@ -87,8 +96,7 @@
         creux.frequency.value = D.frequence;
         creux.Q.value = D.q;
         automatiser(creux.gain, points.map(function (q) { return { t: q.t, v: q.db * D.creux }; }));
-        musique.connect(fondus).connect(baisse).connect(creux).connect(contexte.destination);
-        musique.start(0);
+        entree.connect(fondus).connect(baisse).connect(creux).connect(contexte.destination);
         bus.push({ tampon: await contexte.startRendering(), volume: volumeDe(d.musique) });
       } catch (e) {
         musiqueIllisible = true;
