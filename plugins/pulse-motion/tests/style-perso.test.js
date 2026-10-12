@@ -169,3 +169,22 @@ test('ligne de commande : « styles --genre » sans genre, message clair', () =>
   assert.equal(r.status, 1);
   assert.match(r.stderr, /Indiquez un genre après --genre : /);
 });
+
+test('nouveau : échec en cours de création, aucun dossier partiel et message qui nomme PULSE_MOTION_DOSSIER', () => avecPersonnel(async (perso) => {
+  P.nouveauStyle({ nom: 'papercraft' });
+  // Un guide illisible (un dossier à la place du fichier) fait échouer la copie après le début de l'écriture.
+  const guide = path.join(perso, 'styles', 'papercraft', 'guide.md');
+  fs.rmSync(guide);
+  fs.mkdirSync(guide);
+  const r = P.nouveauStyle({ nom: 'papier-2', depuis: 'papercraft' });
+  assert.equal(r.ok, false);
+  assert.match(r.message, /PULSE_MOTION_DOSSIER/);
+  assert.deepEqual(fs.readdirSync(path.join(perso, 'styles')), ['papercraft']);
+  const fichier = path.join(perso, 'pas-un-dossier');
+  fs.writeFileSync(fichier, 'x');
+  process.env.PULSE_MOTION_DOSSIER = fichier;
+  const r2 = P.nouveauStyle({ nom: 'papier-3' });
+  assert.equal(r2.ok, false);
+  assert.match(r2.message, /PULSE_MOTION_DOSSIER/);
+  assert.equal(fs.statSync(fichier).isFile(), true);
+}));

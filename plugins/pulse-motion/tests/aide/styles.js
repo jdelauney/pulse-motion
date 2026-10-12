@@ -1,8 +1,8 @@
 'use strict';
 /* Styles d'essai : copies de clair-pedagogique sous d'autres noms, chaque scène marquée <!-- style:<nom> -->. */
 const fs = require('node:fs');
-const os = require('node:os');
 const path = require('node:path');
+const { dossierTemporaire } = require('./temporaire.js');
 const { adapterScene } = require('../../scripts/lib/adapter.js');
 
 const CLAIR = path.join(__dirname, '..', '..', 'styles', 'clair-pedagogique');
@@ -15,7 +15,7 @@ function modifierJSON(fichier, fn) {
 
 /** -> dossier racine contenant un style par nom. */
 function stylesEssai(noms = ['alpha', 'beta', 'gamma']) {
-  const racine = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-styles-'));
+  const racine = dossierTemporaire('pm-styles-');
   for (const nom of noms) {
     const d = path.join(racine, nom);
     fs.cpSync(CLAIR, d, { recursive: true });
@@ -30,12 +30,12 @@ function stylesEssai(noms = ['alpha', 'beta', 'gamma']) {
 
 /** Dossier personnel temporaire, à mettre dans PULSE_MOTION_DOSSIER. */
 function dossierPersonnelEssai() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'pm-perso-'));
+  return dossierTemporaire('pm-perso-');
 }
 
 /** Projet de 4 scènes dans un style d'essai : titre, liste (3 points), chiffre (compteur 4), une scène libre. */
 function projetTypes(racine, style = 'alpha') {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-types-'));
+  const dir = dossierTemporaire('pm-types-');
   fs.mkdirSync(path.join(dir, 'scenes'));
   fs.mkdirSync(path.join(dir, 'assets'));
   const scenes = [

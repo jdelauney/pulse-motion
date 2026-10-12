@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { dossierTemporaire } = require('./aide/temporaire.js');
 const { execFileSync } = require('node:child_process');
 const { copierProjet } = require('./aide/projet.js');
 
@@ -18,7 +19,7 @@ test('vidéo en cours : contexte ajouté avec le titre, l\'étape et /pulse-moti
 });
 
 test('dossier sans vidéo : rien n\'est écrit', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-vide-'));
+  const dir = dossierTemporaire('pm-vide-');
   assert.equal(lancer({ cwd: dir }), '');
 });
 

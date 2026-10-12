@@ -2,8 +2,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
 const path = require('node:path');
+const { dossierTemporaire } = require('./aide/temporaire.js');
 const { assembler } = require('../scripts/assembler.js');
 const { STYLES, EFFETS, copierProjet } = require('./aide/projet.js');
 const { trouverNavigateur, rendreDOM } = require('./aide/navigateur.js');
@@ -103,7 +103,7 @@ test('sans WebGPU : panneau sur chaque effet, panneau d\'erreur, page lisible', 
   fs.writeFileSync(path.join(dir, 'scenes', '01-s.html'), scene);
   const r = assembler({ dossier: dir, dossierStyles: STYLES, dossierEffets: EFFETS, ecrire: false });
   const html = r.html.replace('<body>', '<body>\n<script>window.__PM_SANS_GPU__ = true;</script>');
-  const fichier = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'pm-sans-gpu-')), 'page.html');
+  const fichier = path.join(dossierTemporaire('pm-sans-gpu-'), 'page.html');
   fs.writeFileSync(fichier, html);
   const dom = await rendreDOM(trouverNavigateur(), fichier);
   const panneaux = dom.match(/class="pm-effet-panneau">[^<]*/g) || [];
@@ -115,7 +115,7 @@ test('sans WebGPU : panneau sur chaque effet, panneau d\'erreur, page lisible', 
 test('sans effet : aucun calque ni panneau dans la page', { skip: !trouverNavigateur() && 'Chrome ou Edge introuvable' }, async () => {
   const r = assembler({ dossier: copierProjet('projet-simple'), dossierStyles: STYLES, dossierEffets: EFFETS, ecrire: false });
   assert.deepEqual(r.erreurs, []);
-  const fichier = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'pm-sans-effet-')), 'page.html');
+  const fichier = path.join(dossierTemporaire('pm-sans-effet-'), 'page.html');
   fs.writeFileSync(fichier, r.html);
   const dom = await rendreDOM(trouverNavigateur(), fichier);
   assert.match(dom, /data-pm-pret/);
@@ -141,7 +141,7 @@ setTimeout(function () {
   pre.textContent = JSON.stringify({ zone: rel('zone'), plein: rel('plein') });
   document.body.appendChild(pre);
 }, 500);</script>`;
-  const fichier = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'pm-zone-')), 'page.html');
+  const fichier = path.join(dossierTemporaire('pm-zone-'), 'page.html');
   fs.writeFileSync(fichier, r.html.replace('<body>', `<body>\n${mesure}`));
   const dom = await rendreDOM(trouverNavigateur(), fichier);
   const m = /<pre id="mesure-zone">([^<]*)<\/pre>/.exec(dom);

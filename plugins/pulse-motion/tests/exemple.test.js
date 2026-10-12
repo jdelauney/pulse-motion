@@ -2,8 +2,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
 const path = require('node:path');
+const { dossierTemporaire } = require('./aide/temporaire.js');
 const { assembler } = require('../scripts/assembler.js');
 const { controler } = require('../scripts/controler.js');
 const { calculerMinutage } = require('../moteur/minutage.js');
@@ -12,7 +12,7 @@ const { trouverNavigateur, rendreDOM } = require('./aide/navigateur.js');
 const EXEMPLE = path.join(__dirname, '..', 'exemples', 'chaine-du-froid');
 
 function copierExemple() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-exemple-'));
+  const dir = dossierTemporaire('pm-exemple-');
   fs.cpSync(EXEMPLE, dir, { recursive: true });
   return dir;
 }

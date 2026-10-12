@@ -2,8 +2,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
 const path = require('node:path');
+const { dossierTemporaire } = require('./aide/temporaire.js');
 const P = require('../scripts/polices.js');
 const { police } = require('./aide/polices.js');
 
@@ -12,7 +12,7 @@ const CATALOGUE = JSON.parse(fs.readFileSync(path.join(BUNNY, 'list.json'), 'utf
 const FEUILLE = fs.readFileSync(path.join(BUNNY, 'playfair.css'), 'utf8');
 const URL_FEUILLE = 'https://fonts.bunny.net/css?family=playfair-display:400,700';
 const fichierBunny = (g, sous = 'latin') => `https://fonts.bunny.net/playfair-display/files/playfair-display-${sous}-${g}-normal.woff2`;
-const dossier = () => fs.mkdtempSync(path.join(os.tmpdir(), 'pm-polices-'));
+const dossier = () => dossierTemporaire('pm-polices-');
 
 /** Faux réseau : table url -> contenu (Error : la requête échoue ; absent : 404). */
 function faux(table) {

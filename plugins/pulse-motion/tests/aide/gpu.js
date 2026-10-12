@@ -7,8 +7,8 @@
  */
 const http = require('node:http');
 const fs = require('node:fs');
-const os = require('node:os');
 const path = require('node:path');
+const { dossierTemporaire } = require('./temporaire.js');
 const { spawn } = require('node:child_process');
 const { trouverNavigateur } = require('./navigateur.js');
 
@@ -60,7 +60,7 @@ function servir(html) {
 }
 
 function lancer(navigateur, url, options) {
-  const profil = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-gpu-'));
+  const profil = dossierTemporaire('pm-gpu-');
   const processus = spawn(navigateur, [
     '--headless=new', '--no-first-run', '--no-default-browser-check', '--hide-scrollbars',
     `--user-data-dir=${profil}`, '--window-size=1280,720', ...options, url,

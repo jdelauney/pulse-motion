@@ -2,8 +2,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
 const path = require('node:path');
+const { dossierTemporaire } = require('./aide/temporaire.js');
 const P = require('../scripts/lib/police.js');
 const { police } = require('./aide/polices.js');
 
@@ -33,8 +33,8 @@ test('fichier qui n\'est pas une police : message clair', () => {
 });
 
 test('trouverFichiersPolice : nom exact ou nom-graisse, premier dossier qui en a', () => {
-  const a = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-pol-'));
-  const b = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-pol-'));
+  const a = dossierTemporaire('pm-pol-');
+  const b = dossierTemporaire('pm-pol-');
   for (const f of ['Playfair Display-700.woff2', 'Playfair Display-400.woff2', 'Playfair.woff2', 'notes.txt']) fs.writeFileSync(path.join(a, f), 'x');
   fs.writeFileSync(path.join(b, 'Inter.woff2'), 'x');
   assert.deepEqual(P.trouverFichiersPolice('Playfair Display', [a, b]).map((f) => [path.basename(f.fichier), f.graisse]), [['Playfair Display-400.woff2', 400], ['Playfair Display-700.woff2', 700]]);
@@ -54,7 +54,7 @@ test('police dont la table des caractères pointe hors du fichier : message en f
 });
 
 test('fichiers d\'une famille : graisse et italique reconnus', () => {
-  const a = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-pol-'));
+  const a = dossierTemporaire('pm-pol-');
   for (const f of ['Fraunces-400.woff2', 'Fraunces-400-italic.woff2', 'Fraunces-600.woff2']) fs.writeFileSync(path.join(a, f), 'x');
   assert.deepEqual(P.trouverFichiersPolice('Fraunces', [a]).map((f) => [path.basename(f.fichier), f.graisse, f.italique]), [
     ['Fraunces-400.woff2', 400, false], ['Fraunces-400-italic.woff2', 400, true], ['Fraunces-600.woff2', 600, false],

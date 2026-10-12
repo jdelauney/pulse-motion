@@ -2,8 +2,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
 const path = require('node:path');
+const { dossierTemporaire } = require('./aide/temporaire.js');
 const { projetEssai } = require('../scripts/lib/projet-essai.js');
 const { verifierRendu } = require('../scripts/lib/rendu-style.js');
 const { trouverNavigateur } = require('../scripts/lib/navigateur.js');
@@ -30,7 +30,7 @@ test('rendu sans navigateur : non vérifié, dit clairement', async () => {
 const navigateur = trouverNavigateur();
 test('rendu dans le navigateur : style livré sans problème ; titre géant : débordement nommé avec le format', { skip: !navigateur && 'Chrome ou Edge introuvable' }, async () => {
   assert.deepEqual((await verifierRendu({ dossierStyle: CLAIR, navigateur })).problemes, []);
-  const racine = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-rendu-'));
+  const racine = dossierTemporaire('pm-rendu-');
   const d = path.join(racine, 'geant');
   fs.cpSync(CLAIR, d, { recursive: true });
   for (const f of ['catalogue.json', 'identite.json']) {

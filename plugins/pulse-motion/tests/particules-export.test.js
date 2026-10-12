@@ -2,8 +2,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
 const path = require('node:path');
+const { dossierTemporaire } = require('./aide/temporaire.js');
 const { assembler } = require('../scripts/assembler.js');
 const { optionsChrome } = require('../scripts/lib/navigateur.js');
 const { avecEffets } = require('../scripts/exporter.js');
@@ -34,7 +34,7 @@ test('verifierExport sans WebGPU : message clair', { skip: !trouverNavigateur() 
   const r = assembler({ dossier: dir, dossierStyles: STYLES, dossierEffets: EFFETS, ecrire: false });
   const html = r.html.replace('<body>', '<body>\n<script>window.__PM_SANS_GPU__ = true;</script>')
     .replace('</body>', '<pre id="verdict">EN COURS</pre><script>M.particules.verifierExport().then(() => { verdict.textContent = "OK"; }, (e) => { verdict.textContent = e.message; });</script>\n</body>');
-  const fichier = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'pm-export-')), 'page.html');
+  const fichier = path.join(dossierTemporaire('pm-export-'), 'page.html');
   fs.writeFileSync(fichier, html);
   const dom = await rendreDOM(trouverNavigateur(), fichier);
   assert.match(dom, /<pre id="verdict">Cette vidéo contient des effets de particules, qui demandent WebGPU : ouvrez l'aperçu dans Chrome ou Edge récent pour l'exporter\.<\/pre>/);
@@ -95,7 +95,7 @@ const calques = () => [...document.querySelectorAll('canvas.pm-calque')];
 calques().forEach((c) => { c.__pmImage = 'data:image/png;base64,perime'; });
 M.particules.preparerCapture().then(() => { verdict.textContent = "OK"; }, (e) => { verdict.textContent = e.message + ' | ' + calques().map((c) => String(c.__pmImage)).join(','); });
 </script>\n</body>`);
-  const fichier = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'pm-export-')), 'page.html');
+  const fichier = path.join(dossierTemporaire('pm-export-'), 'page.html');
   fs.writeFileSync(fichier, html);
   const dom = await rendreDOM(trouverNavigateur(), fichier);
   assert.equal((/<pre id="verdict">([^<]*)<\/pre>/.exec(dom) || [])[1], 'Effet de particules non rendu (WebGPU indisponible) : export interrompu. | null,null');

@@ -2,14 +2,14 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
 const path = require('node:path');
+const { dossierTemporaire } = require('./aide/temporaire.js');
 const L = require('../scripts/logo.js');
 const { pngRGBA, pngPalette } = require('./aide/png.js');
 
 const BLEU = [0x1d, 0x4e, 0xd8, 255];
 const ORANGE = [0xf5, 0x9e, 0x0b, 255];
-const ecrire = (nom, contenu) => { const f = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'pm-logo-')), nom); fs.writeFileSync(f, contenu); return f; };
+const ecrire = (nom, contenu) => { const f = path.join(dossierTemporaire('pm-logo-'), nom); fs.writeFileSync(f, contenu); return f; };
 
 test('PNG RGBA (5 filtres) : pixels relus exactement', () => {
   const png = pngRGBA(7, 9, (x, y) => [x * 30, y * 20, (x + y) * 10, x === 0 ? 0 : 255]);
