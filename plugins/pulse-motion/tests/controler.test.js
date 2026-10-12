@@ -239,3 +239,39 @@ test('caméra posée sur la section : signalée', () => {
   assert.ok(p);
   assert.match(p.message, /data-camera se pose sur un conteneur à l'intérieur de la scène, pas sur la <section>/);
 });
+
+test('typographie du déroulé : alerte avec la correction proposée ; majuscule accentuée en plus', () => {
+  const dir = copierProjet('projet-simple');
+  modifierDeroule(dir, (d) => { d.scenes[0].textes.titre = 'Etape 1 : ranger !'; });
+  const r = controler({ dossier: dir, dossierStyles: STYLES });
+  const typo = r.problemes.find((p) => p.regle === 'typographie');
+  assert.equal(typo.gravite, 'alerte');
+  assert.equal(typo.scene, 'intro');
+  assert.equal(typo.element, 'titre');
+  assert.deepEqual(typo.correction, { scene: 'intro', texte: 'titre', valeur: 'Etape 1\u00a0: ranger\u202f!' });
+  assert.match(typo.message, /Scène « intro », texte « titre » : typographie française/);
+  const maj = r.problemes.find((p) => p.regle === 'majuscule-accentuee');
+  assert.deepEqual(maj.correction, { scene: 'intro', texte: 'titre', valeur: 'Étape 1\u00a0: ranger\u202f!' });
+});
+
+test('mot doublé et terme écrit de deux façons : alertes sans correction ; glossaire respecté', () => {
+  const dir = copierProjet('projet-simple');
+  modifierDeroule(dir, (d) => { d.scenes[0].textes.sous = 'Lire le le mode e-mail'; d.scenes[1].textes.legende = 'un email'; });
+  const r = controler({ dossier: dir, dossierStyles: STYLES });
+  const double = r.problemes.find((p) => p.regle === 'mot-double');
+  assert.equal(double.correction, undefined);
+  assert.match(double.message, /« le » écrit deux fois.*« Lire le mode e-mail »/);
+  const variable = r.problemes.find((p) => p.regle === 'terme-variable');
+  assert.match(variable.message, /« e-mail » \(scène « intro »\), « email » \(scène « chiffre »\)/);
+  require('../scripts/vocabulaire.js').noterGlossaire({ dossier: dir, terme: 'e-mail', sens: 'courriel', sauvegarde: false });
+  assert.equal(controler({ dossier: dir, dossierStyles: STYLES }).problemes.some((p) => p.regle === 'terme-variable'), false);
+});
+
+test('texte écrit en dur dans une scène : typographie signalée, jamais corrigée', () => {
+  const dir = copierProjet('projet-simple');
+  const fichier = path.join(dir, 'scenes', '01-intro.html');
+  fs.writeFileSync(fichier, fs.readFileSync(fichier, 'utf8').replace('</section>', '<p>Attention!</p></section>'));
+  const p = controler({ dossier: dir, dossierStyles: STYLES }).problemes.find((x) => x.regle === 'typographie');
+  assert.equal(p.correction, undefined);
+  assert.match(p.message, /Scène « intro » : texte écrit dans la scène.*« Attention\u202f! »/);
+});

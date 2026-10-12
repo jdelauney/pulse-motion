@@ -39,3 +39,9 @@ test('attribut contenant > entre guillemets', () => {
   const { elements } = extraireScene('<p data-tween="--x 0→1 cubic-out" title="a > b" data-start="2">x</p>');
   assert.equal(elements[0].start, '2');
 });
+
+test('textes écrits en dur dans une scène : sans commentaires, styles, scripts ni textes du déroulé', () => {
+  const { textesEnDur } = require('../scripts/lib/extraire.js');
+  const html = '<!-- Durée : 8 s --><section><style>.a{}</style><h1 data-texte="titre">Provisoire</h1><p>Attention!</p><p>0</p><span>Voir&nbsp;:</span><script>x()</script></section>';
+  assert.deepEqual(textesEnDur(html), ['Attention!', 'Voir\u00a0:']);
+});

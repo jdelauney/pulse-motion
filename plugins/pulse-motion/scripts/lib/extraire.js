@@ -68,4 +68,17 @@ function extraireScene(html) {
   return { elements, textes, decoupes, miseEnScene, css: css.join('\n') };
 }
 
-module.exports = { extraireScene, lireAttributs };
+const ENTITES = { '&nbsp;': '\u00a0', '&#8239;': '\u202f', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&amp;': '&' };
+
+/** Textes écrits en dur dans une scène (hors commentaires, <style>, <script> et éléments data-texte). */
+function textesEnDur(html) {
+  const sans = String(html)
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<(style|script)\b[\s\S]*?<\/\1>/gi, '')
+    .replace(/<([a-zA-Z][\w-]*)\b[^>]*\sdata-texte\b[^>]*>[\s\S]*?<\/\1>/g, '');
+  return sans.split(/<[^>]*>/)
+    .map((t) => t.replace(/&(nbsp|#8239|lt|gt|quot|#39|amp);/g, (e) => ENTITES[e]).replace(/[ \t\r\n]+/g, ' ').trim())
+    .filter((t) => /\p{L}/u.test(t));
+}
+
+module.exports = { extraireScene, lireAttributs, textesEnDur };
