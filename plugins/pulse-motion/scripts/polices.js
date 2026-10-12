@@ -14,6 +14,7 @@ const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 const { analyserPolice, EXTENSIONS_POLICE } = require('./lib/police.js');
+const { trouverStyle, lireJSON } = require('./styles.js');
 
 const HOTE = 'fonts.bunny.net';
 const FAMILLE_ID = /^[a-z0-9-]+$/;
@@ -78,7 +79,9 @@ function choisirLatin(fichiers) {
   return [...retenus.values()];
 }
 
-const recupererAvecDelai = (url) => fetch(url, { signal: AbortSignal.timeout(DELAI) });
+// Pas de redirection suivie : seul fonts.bunny.net répond.
+const recupererAvecDelai = (url) => fetch(url, { signal: AbortSignal.timeout(DELAI), redirect: 'error' });
+const TAILLE_MAX = 5 * 1024 * 1024;
 const aujourdhui = () => new Date().toISOString().slice(0, 10);
 
 function ajouterLicence(dans, texte) {
@@ -87,9 +90,10 @@ function ajouterLicence(dans, texte) {
   fs.appendFileSync(fichier, `${debut}${texte}\n\n`);
 }
 
-async function installerBunny({ famille, graisses = [400, 700], dans, recuperer = recupererAvecDelai }) {
+async function installerBunny({ famille, graisses = [400, 700], italique = false, dans, recuperer = recupererAvecDelai }) {
   const id = String(famille || '').trim().toLowerCase().replace(/\s+/g, '-');
   const parts = [];
+  const installes = [];
   try {
     const liste = await recuperer(`https://${HOTE}/list`);
     if (!liste.ok) throw new Error(`catalogue indisponible, ${liste.status}`);
@@ -99,7 +103,7 @@ async function installerBunny({ famille, graisses = [400, 700], dans, recuperer 
     if (!fam.nom) throw new Refus(`Le catalogue Bunny Fonts donne un nom de police inutilisable pour « ${id} ».`);
     const feuille = await recuperer(urlFeuille(fam, graisses));
     if (!feuille.ok) throw new Error(`feuille indisponible, ${feuille.status}`);
-    const fichiers = choisirLatin(fichiersDeLaFeuille(await feuille.text())).filter((f) => f.style === 'normal');
+    const fichiers = choisirLatin(fichiersDeLaFeuille(await feuille.text())).filter((f) => graisses.includes(f.graisse) && (f.style === 'normal' || (italique && f.style === 'italic')));
     if (!fichiers.length) throw new Refus(`La feuille de Bunny Fonts pour ${fam.nom} est vide ou pointe hors de ${HOTE}.`);
     fs.mkdirSync(dans, { recursive: true });
     const entrees = [];
@@ -107,13 +111,17 @@ async function installerBunny({ famille, graisses = [400, 700], dans, recuperer 
       const reponse = await recuperer(f.url);
       if (!reponse.ok) throw new Error(`téléchargement refusé, ${reponse.status}`);
       const octets = Buffer.from(await reponse.arrayBuffer());
-      const nom = `${fam.nom}-${f.graisse}.woff2`;
+      // Le fichier doit être une police WOFF2 de taille raisonnable (pas une page d'erreur, pas un fichier démesuré).
+      if (octets.length > TAILLE_MAX || octets.toString('latin1', 0, 4) !== 'wOF2') {
+        throw new Refus(`Le fichier reçu de Bunny Fonts pour ${fam.nom} (${f.graisse}) n'est pas une police WOFF2 valide.`);
+      }
+      const nom = `${fam.nom}-${f.graisse}${f.style === 'italic' ? '-italic' : ''}.woff2`;
       const cible = path.join(dans, nom);
       fs.writeFileSync(`${cible}.part`, octets);
       parts.push(`${cible}.part`);
       entrees.push({ nom, cible, url: f.url, sha256: crypto.createHash('sha256').update(octets).digest('hex') });
     }
-    for (const e of entrees) fs.renameSync(`${e.cible}.part`, e.cible);
+    for (const e of entrees) { fs.renameSync(`${e.cible}.part`, e.cible); installes.push(e.cible); }
     ajouterLicence(dans, [
       `## ${fam.nom}`, '',
       `- Source : Bunny Fonts (https://${HOTE}), le ${aujourdhui()}`,
@@ -122,14 +130,24 @@ async function installerBunny({ famille, graisses = [400, 700], dans, recuperer 
     ].join('\n'));
     return { ok: true, famille: fam.nom, fichiers: entrees.map((e) => e.nom), dans };
   } catch (e) {
-    for (const p of parts) fs.rmSync(p, { force: true });
+    // Rien de partiel : ni fichier .part, ni fichier déjà renommé de cette installation.
+    for (const p of [...parts, ...installes]) { try { fs.rmSync(p, { force: true }); } catch { /* déjà absent */ } }
     if (e instanceof Refus) return { ok: false, message: e.message + RIEN };
     const cause = e.name === 'TimeoutError' || e.name === 'AbortError' ? 'délai dépassé' : (e.cause && e.cause.code) || e.message;
     return { ok: false, message: `Impossible d'installer « ${famille} » depuis Bunny Fonts (${cause}) : vérifiez la connexion internet et le nom de la police, puis relancez.${RIEN}` };
   }
 }
 
-function installerFichier({ fichier, famille, confirmer = false, dans }) {
+/** Police du style pour ce rôle (titres ou texte), proposée en remplacement : « Fraunces » ou null. */
+function policeDuStyle(style, role) {
+  if (!style || !role) return null;
+  const st = trouverStyle(style);
+  const identite = st && lireJSON(path.join(st.dossier, 'identite.json'));
+  const typo = identite && identite.typographie && identite.typographie[role];
+  return typo && typo.famille ? typo.famille : null;
+}
+
+function installerFichier({ fichier, famille, confirmer = false, dans, style, role }) {
   const ext = path.extname(fichier).toLowerCase();
   if (!EXTENSIONS_POLICE.includes(ext)) return { ok: false, message: 'Format de police non pris en charge : donnez un fichier TTF, OTF, WOFF ou WOFF2.' };
   let octets;
@@ -150,8 +168,12 @@ function installerFichier({ fichier, famille, confirmer = false, dans }) {
     `- Fichier fourni par la personne (« ${path.basename(fichier)} »), le ${aujourdhui()}`,
     `- Licence : celle de son éditeur ; intégration ${analyse.apercuSeulement ? 'limitée à l\'affichage, confirmée par la personne' : 'autorisée par le fichier'}`,
   ].join('\n'));
+  const remplacement = policeDuStyle(style, role);
+  const conseil = remplacement
+    ? `si vos textes en contiennent, utilisez « ${remplacement} », la police des ${role} du style « ${style} ».`
+    : 'gardez la police du style pour ce rôle si vos textes en contiennent.';
   const avertissements = analyse.manquants.length
-    ? [`Caractères absents de cette police : ${analyse.manquants.join(' ')}. Ils s'afficheraient dans une autre police : gardez la police du style pour ce rôle si vos textes en contiennent.`]
+    ? [`Caractères absents de cette police : ${analyse.manquants.join(' ')}. Ils s'afficheraient dans une autre police : ${conseil}`]
     : [];
   return { ok: true, famille: nomFamille, fichier: nom, dans, avertissements };
 }
@@ -159,17 +181,18 @@ function installerFichier({ fichier, famille, confirmer = false, dans }) {
 if (require.main === module) {
   const args = process.argv.slice(2);
   const valeur = (o) => { const i = args.indexOf(o); return i >= 0 ? args[i + 1] : undefined; };
-  const cible = args.find((a, i) => !a.startsWith('--') && !['--graisses', '--dans', '--famille'].includes(args[i - 1]));
+  const cible = args.find((a, i) => !a.startsWith('--') && !['--graisses', '--dans', '--famille', '--style', '--role'].includes(args[i - 1]));
   const dans = path.resolve(valeur('--dans') || path.join('charte', 'polices'));
   if (!cible) {
-    console.error('Usage : pulse-motion police "<famille>" [--graisses 400,700] [--dans <dossier>] | <fichier> [--famille "<nom>"] [--confirmer] [--dans <dossier>]');
+    console.error('Usage : pulse-motion police "<famille>" [--graisses 400,700] [--italique] [--dans <dossier>] | <fichier> [--famille "<nom>"] [--confirmer] [--style <style> --role titres|texte] [--dans <dossier>]');
     process.exit(2);
   }
   const fini = (r) => { console.log(JSON.stringify(r, null, 2)); process.exit(r.ok ? 0 : 1); };
-  if (EXTENSIONS_POLICE.includes(path.extname(cible).toLowerCase())) fini(installerFichier({ fichier: cible, famille: valeur('--famille'), confirmer: args.includes('--confirmer'), dans }));
-  else {
+  if (EXTENSIONS_POLICE.includes(path.extname(cible).toLowerCase())) {
+    fini(installerFichier({ fichier: cible, famille: valeur('--famille'), confirmer: args.includes('--confirmer'), dans, style: valeur('--style'), role: valeur('--role') }));
+  } else {
     const graisses = (valeur('--graisses') || '400,700').split(',').map(Number).filter((g) => g > 0);
-    installerBunny({ famille: cible, graisses, dans }).then(fini);
+    installerBunny({ famille: cible, graisses, italique: args.includes('--italique'), dans }).then(fini);
   }
 }
 

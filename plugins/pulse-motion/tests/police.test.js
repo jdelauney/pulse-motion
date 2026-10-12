@@ -41,3 +41,22 @@ test('trouverFichiersPolice : nom exact ou nom-graisse, premier dossier qui en a
   assert.deepEqual(P.trouverFichiersPolice('Inter', [path.join(a, 'absent'), a, b]).map((f) => [path.basename(f.fichier), f.graisse]), [['Inter.woff2', null]]);
   assert.deepEqual(P.trouverFichiersPolice('Rien', [a, b]), []);
 });
+
+test('police dont la table des caractères pointe hors du fichier : message en français', () => {
+  const p = police({ format: 'ttf' });
+  // Table cmap déclarée bien plus longue que le fichier : sous-table hors limites.
+  const n = p.readUInt16BE(4);
+  for (let i = 0; i < n; i++) {
+    const e = 12 + i * 16;
+    if (p.toString('latin1', e, e + 4) === 'cmap') { const off = p.readUInt32BE(e + 8); p.writeUInt32BE(0x00ffffff, off + 8); }
+  }
+  assert.throws(() => P.analyserPolice(p), /police abîmée ou illisible/);
+});
+
+test('fichiers d\'une famille : graisse et italique reconnus', () => {
+  const a = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-pol-'));
+  for (const f of ['Fraunces-400.woff2', 'Fraunces-400-italic.woff2', 'Fraunces-600.woff2']) fs.writeFileSync(path.join(a, f), 'x');
+  assert.deepEqual(P.trouverFichiersPolice('Fraunces', [a]).map((f) => [path.basename(f.fichier), f.graisse, f.italique]), [
+    ['Fraunces-400.woff2', 400, false], ['Fraunces-400-italic.woff2', 400, true], ['Fraunces-600.woff2', 600, false],
+  ]);
+});

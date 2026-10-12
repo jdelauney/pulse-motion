@@ -137,12 +137,19 @@ function analyserPolice(buf) {
   const fsType = os2 && os2.length >= 10 ? os2.readUInt16BE(8) : 0;
   const cmap = tables.get('cmap');
   if (!cmap) throw new Error('police sans table de caractères (cmap)');
-  const contient = lecteurCmap(cmap);
+  let manquants;
+  try {
+    const contient = lecteurCmap(cmap);
+    manquants = [...new Set(FRANCAIS)].filter((c) => !contient(c.codePointAt(0)));
+  } catch {
+    // Table des caractères qui pointe hors du fichier : lecture impossible.
+    throw new Error('police abîmée ou illisible');
+  }
   return {
     fsType,
     interdite: (fsType & 0x000f) === 0x0002,
     apercuSeulement: (fsType & 0x0004) !== 0 && (fsType & 0x0008) === 0,
-    manquants: [...new Set(FRANCAIS)].filter((c) => !contient(c.codePointAt(0))),
+    manquants,
   };
 }
 
@@ -156,11 +163,11 @@ function trouverFichiersPolice(famille, dossiers) {
       const ext = path.extname(nom).toLowerCase();
       if (!EXTENSIONS_POLICE.includes(ext)) continue;
       const base = nom.slice(0, -ext.length);
-      const m = /^(.*)-(\d{3})$/.exec(base);
-      if (base === famille) trouves.push({ fichier: path.join(dossier, nom), graisse: null });
-      else if (m && m[1] === famille) trouves.push({ fichier: path.join(dossier, nom), graisse: Number(m[2]) });
+      const m = /^(.*)-(\d{3})(-italic)?$/.exec(base);
+      if (base === famille) trouves.push({ fichier: path.join(dossier, nom), graisse: null, italique: false });
+      else if (m && m[1] === famille) trouves.push({ fichier: path.join(dossier, nom), graisse: Number(m[2]), italique: Boolean(m[3]) });
     }
-    if (trouves.length) return trouves.sort((a, b) => (a.graisse || 0) - (b.graisse || 0));
+    if (trouves.length) return trouves.sort((a, b) => (a.graisse || 0) - (b.graisse || 0) || Number(a.italique) - Number(b.italique));
   }
   return [];
 }
