@@ -1,13 +1,13 @@
 'use strict';
 /* Pulse Motion – rendu d'un style dans le navigateur (Chrome ou Edge sans fenêtre), au maximum de texte :
- * polices chargées, aucun débordement, aucune erreur du moteur, en 16:9, 1:1 et 9:16, et dans chaque ton. */
+ * polices chargées, aucun débordement, aucune erreur du moteur, en 16:9, 1:1, 4:5 et 9:16, et dans chaque ton. */
 const fs = require('node:fs');
 const path = require('node:path');
 const { assembler } = require('../assembler.js');
 const { rendreDOM, trouverNavigateur } = require('./navigateur.js');
 const { projetEssai } = require('./projet-essai.js');
 
-const FORMATS = ['16:9', '1:1', '9:16'];
+const FORMATS = ['16:9', '1:1', '4:5', '9:16'];
 const SYSTEME = new Set(['system-ui', 'sans-serif', 'serif', 'monospace']);
 const lireJSON = (f) => { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch { return {}; } };
 

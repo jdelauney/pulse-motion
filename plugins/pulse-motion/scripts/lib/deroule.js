@@ -9,7 +9,7 @@ const TYPES_SCENE = Object.keys(TYPES);
 
 const GENRES = ['formation', 'produit', 'storytelling', 'social'];
 const PARCOURS = ['rapide', 'accompagne'];
-const RATIOS = ['16:9', '9:16', '1:1'];
+const RATIOS = ['16:9', '9:16', '1:1', '4:5'];
 const TRANSITIONS = ['aucune', 'fondu', 'glissement', 'balayage', 'rideau', 'zoom', 'coupe'];
 const TONS = ['clair', 'sombre', 'auto'];
 const ID = /^[a-z0-9-]+$/;

@@ -121,7 +121,7 @@ test('nouveau en chaîne : une seule mention « Repris du style », celle du der
 test('planche : format et ton inconnus refusés avant tout export', () => avecPersonnel(async () => {
   P.nouveauStyle({ nom: 'papercraft' });
   const exporter = async () => { throw new Error('ne doit pas être appelé'); };
-  assert.match((await P.plancheStyle({ nom: 'papercraft', ratio: '4:3', exporter })).message, /Format « 4:3 » inconnu : 16:9, 1:1 ou 9:16/);
+  assert.match((await P.plancheStyle({ nom: 'papercraft', ratio: '4:3', exporter })).message, /Format « 4:3 » inconnu : 16:9, 1:1, 4:5 ou 9:16/);
   assert.match((await P.plancheStyle({ nom: 'papercraft', ton: 'gris', exporter })).message, /Ton « gris » inconnu : clair ou sombre/);
 }));
 

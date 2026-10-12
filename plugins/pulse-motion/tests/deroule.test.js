@@ -101,3 +101,16 @@ test('tempo : durée d\'un temps', () => {
   assert.equal(dureeTemps({ tempo: { bpm: 120 } }), 0.5);
   assert.equal(dureeTemps({}), null);
 });
+
+test('format 4:5 accepté', () => {
+  const d = valide();
+  d.format.ratio = '4:5';
+  assert.deepEqual(validerDeroule(d), []);
+  d.format.ratio = '4:3';
+  assert.ok(validerDeroule(d).some((m) => m.includes('16:9, 9:16, 1:1, 4:5')));
+});
+
+test('export : 4:5 en 1080 × 1350', () => {
+  const source = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'moteur', 'export.mjs'), 'utf8');
+  assert.match(source, /'4:5': \[1080, 1350\]/);
+});

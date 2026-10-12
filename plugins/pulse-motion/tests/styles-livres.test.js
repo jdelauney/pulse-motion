@@ -39,7 +39,7 @@ for (const style of LIVRES) {
     assert.deepEqual(controler({ dossier: projetCatalogue(style), ecrire: false }).problemes, [], style);
   });
 
-  test(`${style} dans le navigateur : polices chargées, aucun débordement, en 16:9, 1:1 et 9:16`, { skip: !navigateur && 'Chrome ou Edge introuvable' }, async () => {
+  test(`${style} dans le navigateur : polices chargées, aucun débordement, en 16:9, 1:1, 4:5 et 9:16`, { skip: !navigateur && 'Chrome ou Edge introuvable' }, async () => {
     const r = await verifierRendu({ dossierStyle: path.join(RACINE, 'styles', style), navigateur });
     assert.deepEqual(r.problemes, [], style);
   });
