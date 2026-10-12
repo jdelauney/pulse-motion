@@ -275,3 +275,58 @@ test('texte écrit en dur dans une scène : typographie signalée, jamais corrig
   assert.equal(p.correction, undefined);
   assert.match(p.message, /Scène « intro » : texte écrit dans la scène.*« Attention\u202f! »/);
 });
+
+const correctionDe = (r, regle) => (r.problemes.find((p) => p.regle === regle) || {}).correction;
+
+test('temps mort en fin de scène : durée raccourcie proposée, sans passer sous le temps de lecture', () => {
+  const dir = copierProjet('projet-simple');
+  modifierDeroule(dir, (d) => { d.scenes[0].duree = 9; });
+  assert.deepEqual(correctionDe(controler({ dossier: dir, dossierStyles: STYLES }), 'temps-mort'), { scene: 'intro', duree: 5.5 });
+});
+
+test('temps mort au milieu d\'une scène : aucune correction proposée', () => {
+  const dir = copierProjet('projet-simple');
+  const fichier = path.join(dir, 'scenes', '01-intro.html');
+  fs.writeFileSync(fichier, fs.readFileSync(fichier, 'utf8').replace('</section>', '<p data-start="8" data-dur="0.5">fin</p></section>'));
+  modifierDeroule(dir, (d) => { d.scenes[0].duree = 9; });
+  const p = controler({ dossier: dir, dossierStyles: STYLES }).problemes.find((x) => x.regle === 'temps-mort');
+  assert.ok(p);
+  assert.equal(p.correction, undefined);
+});
+
+test('lecture : durée allongée au 0,5 s supérieur, dans la limite de +50 %', () => {
+  const dir = copierProjet('projet-simple');
+  modifierDeroule(dir, (d) => { d.scenes[0].duree = 3; });
+  assert.deepEqual(correctionDe(controler({ dossier: dir, dossierStyles: STYLES }), 'lecture'), { scene: 'intro', duree: 4 });
+  modifierDeroule(dir, (d) => { d.scenes[0].duree = 2; });
+  const r = controler({ dossier: dir, dossierStyles: STYLES });
+  assert.ok(r.problemes.some((p) => p.regle === 'lecture'));
+  assert.equal(correctionDe(r, 'lecture'), undefined, '4 s dépasse 2 s + 50 %');
+});
+
+test('pause finale : dernière scène allongée en tenant compte du rythme', () => {
+  const dir = copierProjet('projet-simple');
+  modifierDeroule(dir, (d) => { d.scenes[1].duree = 2; });
+  assert.deepEqual(correctionDe(controler({ dossier: dir, dossierStyles: STYLES }), 'pause-finale'), { scene: 'chiffre', duree: 2.4 });
+  modifierDeroule(dir, (d) => { d.scenes[1].duree = 2.4; });
+  assert.equal(controler({ dossier: dir, dossierStyles: STYLES }).problemes.some((p) => p.regle === 'pause-finale'), false, '2,4 / 0,8 = 3 s : pause de 0,5 s tout juste');
+});
+
+test('plus de 4 animations vives en même temps : alerte trop-d-animations', () => {
+  const dir = copierProjet('projet-simple');
+  const fichier = path.join(dir, 'scenes', '01-intro.html');
+  const cinq = [1, 2, 3, 4, 5].map((k) => `<span data-start="1" data-dur="1">${k}</span>`).join('');
+  fs.writeFileSync(fichier, fs.readFileSync(fichier, 'utf8').replace('</section>', `${cinq}</section>`));
+  const p = controler({ dossier: dir, dossierStyles: STYLES }).problemes.find((x) => x.regle === 'trop-d-animations');
+  assert.ok(p);
+  assert.equal(p.scene, 'intro');
+  assert.match(p.message, /Scène « intro » : 7 éléments bougent en même temps vers 1 s/);
+});
+
+test('projet calé sur un tempo : aucune correction de durée proposée (elle décalerait la musique)', () => {
+  const dir = copierProjet('projet-simple');
+  modifierDeroule(dir, (d) => { d.tempo = { bpm: 120 }; d.scenes[0].duree = 3; });
+  const r = controler({ dossier: dir, dossierStyles: STYLES });
+  assert.ok(r.problemes.some((p) => p.regle === 'lecture'));
+  assert.equal(r.problemes.some((p) => p.correction && p.correction.duree !== undefined), false);
+});
