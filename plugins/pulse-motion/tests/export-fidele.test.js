@@ -140,3 +140,21 @@ test('deux navigateurs en parallèle : même résultat ; interruption : tout arr
   const travail = path.join(dir2, 'sortie', '.export');
   assert.deepEqual(fs.existsSync(travail) ? fs.readdirSync(travail).filter((f) => f.endsWith('.part')) : [], []);
 });
+
+test('revue : musique et durée qui ne tombe pas juste (7,25 s à 30 i/s) : toutes les images gardées', sans, async () => {
+  const dir = copierProjet('projet-simple');
+  ajouterMusique(dir, 9);
+  const r = await exporter(dir, { ips: 30, dureeSegment: 10 });
+  assert.equal(r.ok, true, r.message);
+  assert.equal(r.audio, true);
+  const s = await F.sonder({ ffprobe: outil.cheminProbe, fichier: r.fichier });
+  assert.equal(s.images, 218);
+});
+
+test('revue : musique absente du disque, avertissement « introuvable »', sans, async () => {
+  const dir = copierProjet('projet-simple');
+  modifierDeroule(dir, (d) => { d.musique = { fichier: 'assets/absente.mp3' }; });
+  const r = await exporter(dir, { ips: 5 });
+  assert.equal(r.ok, true, r.message);
+  assert.match(r.avertissement, /musique est introuvable/);
+});

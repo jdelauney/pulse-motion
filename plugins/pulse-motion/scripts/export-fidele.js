@@ -167,9 +167,12 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
     if (deroule.musique) {
       const piste = path.join(travail, 'musique.m4a');
       try {
-        if (!musique || !fs.existsSync(musique)) throw new Error('fichier introuvable');
-        await F.mixerMusique({ ffmpeg: outil.chemin, musique, volume, duree: total / cadence, sortie: piste, signal: controle.signal });
-        audio = piste;
+        if (!musique || !fs.existsSync(musique)) {
+          avertissement = `La musique est introuvable (« ${deroule.musique.fichier} ») : vidéo exportée sans son.`;
+        } else {
+          await F.mixerMusique({ ffmpeg: outil.chemin, musique, volume, duree: total / cadence, sortie: piste, signal: controle.signal });
+          audio = piste;
+        }
       } catch (err) {
         if (controle.signal.aborted) throw err;
         avertissement = 'La musique n\'a pas pu être lue : vidéo exportée sans son.';

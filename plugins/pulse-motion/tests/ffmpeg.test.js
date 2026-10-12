@@ -22,7 +22,7 @@ test('version : publiée, distribution, git', () => {
 });
 
 test('commande d\'installation selon le système', () => {
-  assert.equal(F.commandeInstallation({ plateforme: 'win32', existe: () => false }), 'winget install --id Gyan.FFmpeg -e');
+  assert.equal(F.commandeInstallation({ plateforme: 'win32', existe: () => false }), 'winget install --id Gyan.FFmpeg -e --accept-source-agreements --accept-package-agreements');
   assert.equal(F.commandeInstallation({ plateforme: 'darwin', existe: () => false }), 'brew install ffmpeg');
   assert.equal(F.commandeInstallation({ plateforme: 'linux', existe: (f) => f === '/usr/bin/apt' }), 'sudo apt install ffmpeg');
   assert.equal(F.commandeInstallation({ plateforme: 'linux', existe: (f) => f === '/usr/bin/dnf' }), 'sudo dnf install ffmpeg');
@@ -104,8 +104,11 @@ test('revue : commande à exécuter séparée du texte ; null quand il n\'y a pa
   const linux = F.trouverFfmpeg({ env: { PATH: '' }, plateforme: 'linux', existe: () => false, executer: () => { throw new Error('non'); } });
   assert.equal(linux.commande, null);
   assert.match(linux.installer, /gestionnaire de paquets/);
+  const apt = F.trouverFfmpeg({ env: { PATH: '' }, plateforme: 'linux', existe: (x) => x === '/usr/bin/apt', executer: () => { throw new Error('non'); } });
+  assert.equal(apt.commande, null, 'sudo : la personne lance la commande elle-même');
+  assert.equal(apt.installer, 'sudo apt install ffmpeg');
   const win = F.trouverFfmpeg({ env: { PATH: '' }, plateforme: 'win32', existe: () => false, executer: () => { throw new Error('non'); } });
-  assert.equal(win.commande, 'winget install --id Gyan.FFmpeg -e');
+  assert.equal(win.commande, 'winget install --id Gyan.FFmpeg -e --accept-source-agreements --accept-package-agreements');
 });
 
 test('revue : dossiers relatifs du PATH ignorés (un dossier de projet ne fournit pas ffmpeg), guillemets retirés', () => {

@@ -20,9 +20,9 @@ function lireVersion(texte) {
   return v ? { majeure: Number(v[1]), mineure: Number(v[2]) } : null;
 }
 
-/** Commande sûre à lancer pour installer ffmpeg sur ce système, ou null s'il n'y en a pas de connue. */
-function commandeSure({ plateforme = process.platform, existe = fs.existsSync } = {}) {
-  if (plateforme === 'win32') return 'winget install --id Gyan.FFmpeg -e';
+/** Commande d'installation de ffmpeg sur ce système (à montrer), ou null si aucune n'est connue. */
+function commandeSysteme({ plateforme = process.platform, existe = fs.existsSync } = {}) {
+  if (plateforme === 'win32') return 'winget install --id Gyan.FFmpeg -e --accept-source-agreements --accept-package-agreements';
   if (plateforme === 'darwin') return 'brew install ffmpeg';
   if (existe('/usr/bin/apt')) return 'sudo apt install ffmpeg';
   if (existe('/usr/bin/dnf')) return 'sudo dnf install ffmpeg';
@@ -30,9 +30,15 @@ function commandeSure({ plateforme = process.platform, existe = fs.existsSync } 
   return null;
 }
 
-/** Texte d'installation à montrer : la commande, ou une phrase si aucune commande n'est connue. */
+/** Commande que le skill peut lancer lui-même (sans sudo, qui demande un mot de passe), ou null. */
+function commandeSure(options = {}) {
+  const c = commandeSysteme(options);
+  return c && !c.startsWith('sudo ') ? c : null;
+}
+
+/** Texte d'installation à montrer : la commande du système, ou une phrase si aucune n'est connue. */
 function commandeInstallation(options = {}) {
-  return commandeSure(options) || 'installer le paquet ffmpeg avec le gestionnaire de paquets du système';
+  return commandeSysteme(options) || 'installer le paquet ffmpeg avec le gestionnaire de paquets du système';
 }
 
 function emplacements(env, plateforme) {
@@ -67,7 +73,7 @@ const suffisante = (v) => v.majeure > MINIMUM.majeure || (v.majeure === MINIMUM.
 function trouverFfmpeg({ env = process.env, plateforme = process.platform, existe = fs.existsSync, executer = executerParDefaut } = {}) {
   const commande = commandeSure({ plateforme, existe });
   const installer = commandeInstallation({ plateforme, existe });
-  const conseil = commande ? `« ${commande} »` : installer;
+  const conseil = commandeSysteme({ plateforme, existe }) ? `« ${installer} »` : installer;
   const absent = (message) => ({ present: false, chemin: null, cheminProbe: null, version: null, versionOk: false, commande, installer, message });
   let sansProbe = null;
   let ancien = null;
@@ -162,12 +168,14 @@ async function extraireImage({ ffmpeg, fichier, t }) {
 /** Piste son de la vidéo : sonie normalisée (−16 LUFS, crêtes −1,5 dBTP), puis volume de la personne, fondus
  *  d'entrée (0,5 s) et de sortie (1,5 s), silence si la musique est plus courte, coupée à la durée exacte. */
 async function mixerMusique({ ffmpeg, musique, volume = 1, duree, sortie, signal }) {
-  const sortieFondu = Math.max(0, duree - 1.5);
+  // Fondus ramenés dans la durée d'une vidéo très courte.
+  const fonduSortie = Math.min(1.5, duree);
+  const fonduEntree = Math.min(0.5, duree / 2);
   const filtres = [
     'loudnorm=I=-16:TP=-1.5:LRA=11',
     `volume=${Number(volume)}`,
-    'afade=t=in:st=0:d=0.5',
-    `afade=t=out:st=${sortieFondu}:d=1.5`,
+    `afade=t=in:st=0:d=${fonduEntree}`,
+    `afade=t=out:st=${Math.max(0, duree - fonduSortie)}:d=${fonduSortie}`,
     'apad',
     `atrim=0:${duree}`,
   ].join(',');
@@ -182,7 +190,8 @@ async function assemblerSegments({ ffmpeg, segments, sortie, audio }) {
   fs.writeFileSync(liste, segments.map((s) => `file '${path.resolve(s).replace(/\\/g, '/').replace(/'/g, "'\\''")}'`).join('\n'));
   try {
     // Piste son (facultative) ajoutée sans réencodage de l'image.
-    const son = audio ? ['-i', audio, '-map', '0:v:0', '-map', '1:a:0', '-shortest'] : [];
+    // Pas de « -shortest » : il couperait les dernières images ; la piste est déjà à la durée exacte.
+    const son = audio ? ['-i', audio, '-map', '0:v:0', '-map', '1:a:0'] : [];
     const r = await lancer(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', liste, ...son, '-c', 'copy', '-movflags', '+faststart', '-f', 'mp4', sortie]);
     if (r.code !== 0) throw new Error(`ffmpeg n'a pas pu assembler la vidéo (${derniereLigne(r.erreurs)})`);
   } finally {

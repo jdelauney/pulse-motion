@@ -1,7 +1,7 @@
 ---
 description: Exporter la vidéo en MP4 fidèle (vraies images du navigateur, son propre), fabriqué sur l'ordinateur, pour la publier ou l'envoyer
 disable-model-invocation: true
-allowed-tools: Bash(pulse-motion *) Bash(node *) Bash(winget install *) Bash(brew install *) Bash(sudo apt install *) Bash(sudo dnf install *) Bash(sudo pacman *) Read Glob Grep AskUserQuestion
+allowed-tools: Bash(pulse-motion *) Bash(node *) Bash(winget install --id Gyan.FFmpeg -e --accept-source-agreements --accept-package-agreements) Bash(brew install ffmpeg) Read Glob Grep AskUserQuestion
 ---
 
 # /pulse-motion:exporter – La vidéo en MP4
@@ -25,12 +25,12 @@ Fabriquer le fichier MP4 de la vidéo, sur l'ordinateur : en **export fidèle** 
 1. `pulse-motion ffmpeg` : `present` et `versionOk` vrais → étape 3.
 2. Sinon, expliquer en une phrase : « ffmpeg est un petit logiciel libre qui fabrique la vidéo en haute qualité, avec un son propre ; il s'installe une fois. » Puis demander avec `AskUserQuestion` : « Installer ffmpeg (Recommandé) » · « Exporter sans, dans le navigateur ».
    - Accord et `commande` non nulle : lancer exactement cette `commande`, puis relancer `pulse-motion ffmpeg` pour vérifier.
-   - Accord mais `commande` nulle : donner à la personne le texte `installer` (elle l'installe elle-même), puis attendre qu'elle dise que c'est fait.
+   - Accord mais `commande` nulle (Linux : l'installation demande son mot de passe) : donner à la personne le texte `installer` à taper dans un terminal, puis attendre qu'elle dise que c'est fait et relancer `pulse-motion ffmpeg`.
    - Refus, ou installation ratée : exporter dans le navigateur avec `pulse-motion exporter . --rapide`.
 
 ## 3. Exporter
 
-Lancer `pulse-motion exporter .` en arrière-plan, puis lire son résultat JSON quand elle se termine. L'export fidèle demande environ 3 secondes de calcul par seconde de vidéo en 1080p.
+Lancer `pulse-motion exporter .` en arrière-plan, puis lire son résultat JSON quand elle se termine. L'export fidèle demande environ 2 secondes de calcul par seconde de vidéo en 1080p.
 
 - La personne veut une vidéo plus légère (envoi par courriel) : ajouter `--qualite 720p`. Plus fluide : `--ips 60` (export deux fois plus long).
 - Réussite : le résumé donne `fichier`, `duree`, `images`, `audio`, `mode` (`fidele` ou `navigateur`), et parfois `avertissement`.

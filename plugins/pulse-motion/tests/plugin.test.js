@@ -186,5 +186,12 @@ test('skill exporter : ffmpeg vérifié, installation proposée avec accord (com
   assert.match(s, /`commande`/);
   assert.match(s, /--rapide/);
   assert.match(s, /--qualite 720p/);
-  assert.match(s.split('\n').find((l) => l.startsWith('allowed-tools:')), /Bash\(winget install \*\)/);
+  assert.match(s.split('\n').find((l) => l.startsWith('allowed-tools:')), /Bash\(winget install --id Gyan\.FFmpeg/);
+});
+
+test('revue : skill exporter, seules les commandes d\'installation exactes sont autorisées (pas de sudo)', () => {
+  const ligne = lire('skills', 'exporter', 'SKILL.md').split('\n').find((l) => l.startsWith('allowed-tools:'));
+  assert.match(ligne, /Bash\(winget install --id Gyan\.FFmpeg -e --accept-source-agreements --accept-package-agreements\)/);
+  assert.match(ligne, /Bash\(brew install ffmpeg\)/);
+  assert.doesNotMatch(ligne, /sudo|\*\)\s*Bash\(brew|install \*\)/);
 });

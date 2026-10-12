@@ -48,3 +48,13 @@ test('assemblage avec piste son : vidéo H.264 + AAC, même durée', sans, async
   assert.deepEqual([s.video, s.audio, s.images], ['h264', 'aac', 60]);
   assert.ok(Math.abs(s.dureeAudio - 2) < 0.05, String(s.dureeAudio));
 });
+
+test('revue : vidéo plus courte que 1,5 s, le fondu de sortie tient dans la durée (son à zéro à la fin)', sans, async () => {
+  const dir = dossierTemporaire('pm-son-');
+  const piste = path.join(dir, 'c.m4a');
+  await F.mixerMusique({ ffmpeg: outil.chemin, musique: musique(dir, 3), duree: 0.7, sortie: piste });
+  // Niveau des 0,1 dernière seconde : quasi silencieux.
+  const r = require('node:child_process').spawnSync(outil.chemin, ['-hide_banner', '-ss', '0.6', '-i', piste, '-af', 'volumedetect', '-f', 'null', '-'], { encoding: 'utf8' });
+  const max = Number((/max_volume: (-?[\d.]+) dB/.exec(r.stderr) || [])[1]);
+  assert.ok(max < -20, `niveau final ${max} dB`);
+});
