@@ -164,3 +164,24 @@ test('revue : musique illisible : le lecteur n\'affiche plus « son en préparat
     await page.fermer();
   }
 });
+
+test('voix dans la page : scène allongée par la voix, élément calé sur un mot', sans, async () => {
+  const V = require('../scripts/lib/voix.js');
+  const W = require('../moteur/wav.js');
+  const dir = copierProjet('projet-simple');
+  const x = new Float32Array(48000 * 6);
+  for (let i = 24000; i < 48000 * 5.5; i++) x[i] = 0.3 * Math.sin(i / 5);
+  const r = await V.ecrirePrise({ projet: dir, scene: 'intro', octets: W.ecrire({ taux: 48000, canaux: [x] }), texte: 'un deux trois quatre' });
+  modifierDeroule(dir, (d) => { d.scenes[0].voix = { texte: 'un deux trois quatre', fichier: r.relatif }; });
+  const fichier = path.join(dir, 'scenes', '01-intro.html');
+  fs.writeFileSync(fichier, fs.readFileSync(fichier, 'utf8').replace('</section>', '<p id="cale" data-start="mot:trois">3</p></section>'));
+  const page = await ouvrirPageSon({ dir, navigateur });
+  try {
+    const info = await page.evaluer('({ fin: M.minutage.scenes[0].fin, cale: M.minutage.elements.intro.cale.debut, mot: M.donnees.scenes[0].voix.mots[2].t0 })');
+    assert.ok(Math.abs(info.fin - (0.3 + 5.16 + 0.4)) < 0.05, String(info.fin));
+    assert.ok(Math.abs(info.cale - (0.3 + info.mot)) < 0.001);
+    assert.equal(await page.evaluer('M.aSon()'), true);
+  } finally {
+    await page.fermer();
+  }
+});
