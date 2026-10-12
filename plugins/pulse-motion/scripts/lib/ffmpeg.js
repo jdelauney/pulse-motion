@@ -148,6 +148,7 @@ async function sonder({ ffprobe, fichier }) {
     hauteur: v ? v.height : 0,
     video: v ? v.codec_name : null,
     audio: a ? a.codec_name : null,
+    dureeAudio: a ? Number(a.duration || 0) : null,
   };
 }
 
@@ -158,12 +159,31 @@ async function extraireImage({ ffmpeg, fichier, t }) {
   return r.sortie;
 }
 
+/** Piste son de la vidéo : sonie normalisée (−16 LUFS, crêtes −1,5 dBTP), puis volume de la personne, fondus
+ *  d'entrée (0,5 s) et de sortie (1,5 s), silence si la musique est plus courte, coupée à la durée exacte. */
+async function mixerMusique({ ffmpeg, musique, volume = 1, duree, sortie, signal }) {
+  const sortieFondu = Math.max(0, duree - 1.5);
+  const filtres = [
+    'loudnorm=I=-16:TP=-1.5:LRA=11',
+    `volume=${Number(volume)}`,
+    'afade=t=in:st=0:d=0.5',
+    `afade=t=out:st=${sortieFondu}:d=1.5`,
+    'apad',
+    `atrim=0:${duree}`,
+  ].join(',');
+  const r = await lancer(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-i', musique, '-vn', '-af', filtres,
+    '-ar', '48000', '-ac', '2', '-c:a', 'aac', '-b:a', '192k', '-t', String(duree), '-f', 'mp4', sortie], { signal });
+  if (r.code !== 0) throw new Error(`musique illisible (${derniereLigne(r.erreurs) || `code ${r.code}`})`);
+}
+
 /** Segments -> un fichier, sans réencodage (démultiplexeur concat), prêt à lire en flux (+faststart). */
-async function assemblerSegments({ ffmpeg, segments, sortie }) {
+async function assemblerSegments({ ffmpeg, segments, sortie, audio }) {
   const liste = `${sortie}.liste.txt`;
   fs.writeFileSync(liste, segments.map((s) => `file '${path.resolve(s).replace(/\\/g, '/').replace(/'/g, "'\\''")}'`).join('\n'));
   try {
-    const r = await lancer(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', liste, '-c', 'copy', '-movflags', '+faststart', '-f', 'mp4', sortie]);
+    // Piste son (facultative) ajoutée sans réencodage de l'image.
+    const son = audio ? ['-i', audio, '-map', '0:v:0', '-map', '1:a:0', '-shortest'] : [];
+    const r = await lancer(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', liste, ...son, '-c', 'copy', '-movflags', '+faststart', '-f', 'mp4', sortie]);
     if (r.code !== 0) throw new Error(`ffmpeg n'a pas pu assembler la vidéo (${derniereLigne(r.erreurs)})`);
   } finally {
     fs.rmSync(liste, { force: true });
@@ -189,4 +209,4 @@ function ecartImages(a, b) {
   return somme / n / 255;
 }
 
-module.exports = { lireVersion, commandeSure, commandeInstallation, trouverFfmpeg, MINIMUM, encoderSegment, sonder, extraireImage, assemblerSegments, ecartImages };
+module.exports = { lireVersion, commandeSure, commandeInstallation, trouverFfmpeg, MINIMUM, encoderSegment, sonder, extraireImage, assemblerSegments, ecartImages, mixerMusique };
