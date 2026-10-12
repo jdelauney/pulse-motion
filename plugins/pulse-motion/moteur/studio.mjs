@@ -2,8 +2,9 @@
  *
  * Bouton « Voix » dans le lecteur : choix de la scène, prompteur, compte à rebours de 3 s, enregistrement au micro
  * (son de la vidéo coupé), vumètre, réécoute (scène sans son + prise), « Garder » (envoi à l'aperçu) ou « Refaire ».
- * ?studio=<id> ouvre le studio sur cette scène. Pendant une prise, un rechargement de l'aperçu attend (M.exportEnCours).
- * Pour les tests : M.studio = { ouvrir, enregistrer, arreter, reecouter, garder, refaire, etat }.
+ * ?studio=<id> ouvre le studio sur cette scène. Tant qu'une prise n'est ni gardée ni refaite, la page est occupée :
+ * un rechargement de l'aperçu attend (M.studio.occupe, M.reprendreRechargement). Les boutons suivent la phase.
+ * Pour les tests : M.studio = { ouvrir, enregistrer, arreter, reecouter, garder, refaire, fermer, occupe, etat }.
  */
 const M = globalThis.M;
 const COMPTE = 3;
@@ -16,12 +17,26 @@ const MESSAGES = {
   ecoute: 'Écoutez la prise : la garder, ou refaire.',
   envoi: 'Enregistrement de la prise…',
 };
+// Phases où la page ne doit pas être rechargée : une prise est en cours ou pas encore gardée.
+const OCCUPEE = ['compte', 'enregistre', 'ecoute', 'envoi'];
+// Boutons permis selon la phase.
+const PERMIS = {
+  enregistrer: ['pret', 'ecoute', 'erreur'],
+  arreter: ['enregistre'],
+  reecouter: ['ecoute'],
+  garder: ['ecoute'],
+  refaire: ['ecoute', 'erreur'],
+  fermer: ['choix', 'pret', 'ecoute', 'erreur'],
+};
 
 let panneau = null;
 let scenes = [];
 const etat = { scene: null, phase: 'choix', message: '' };
 let prise = null;          // { octets: Uint8Array, url, duree }
 let enregistreur = null;
+let ecoute = null;         // réécoute en cours (Audio)
+
+const occupe = () => OCCUPEE.includes(etat.phase);
 
 function el(tag, attrs = {}, parent) {
   const e = document.createElement(tag);
@@ -36,6 +51,17 @@ function poser(phase, message = '') {
   if (!panneau) return;
   panneau.querySelector('.pm-studio-etat').textContent = message || MESSAGES[phase] || '';
   panneau.dataset.phase = phase;
+  for (const [nom, phases] of Object.entries(PERMIS)) {
+    const b = panneau.querySelector(`[data-action="${nom}"]`);
+    if (b) b.disabled = !phases.includes(phase);
+  }
+  panneau.querySelector('.pm-studio-scene').disabled = ['compte', 'enregistre', 'envoi'].includes(phase);
+}
+
+/** Phase posée, puis rechargement de l'aperçu repris s'il attendait que la page se libère. */
+function changer(phase, message) {
+  poser(phase, message);
+  if (!occupe() && M.reprendreRechargement) M.reprendreRechargement();
 }
 
 function debutScene(id) {
@@ -67,7 +93,7 @@ function construire() {
   bouton('reecouter', '▶ Réécouter', () => M.studio.reecouter());
   bouton('garder', 'Garder', () => M.studio.garder().catch(() => {}));
   bouton('refaire', 'Refaire', () => M.studio.refaire());
-  bouton('fermer', 'Fermer', () => { panneau.remove(); panneau = null; });
+  bouton('fermer', 'Fermer', () => M.studio.fermer());
   panneau.querySelector('.pm-studio-scene').addEventListener('change', (e) => M.studio.ouvrir(e.target.value));
 }
 
@@ -80,18 +106,42 @@ function remplir() {
   }
 }
 
-/** Ouvre le studio sur une scène (ou la première qui a un texte). */
+function arreterEcoute() {
+  if (!ecoute) return;
+  ecoute.pause();
+  ecoute = null;
+  arreterScene();
+  M.couperSon(false);
+}
+
+function oublierPrise() {
+  arreterEcoute();
+  if (prise && prise.url) URL.revokeObjectURL(prise.url);
+  prise = null;
+}
+
+/** Ouvre le studio sur une scène (ou la première qui a un texte). Changer de scène abandonne une prise non gardée. */
 async function ouvrir(id) {
+  if (['compte', 'enregistre', 'envoi'].includes(etat.phase)) return;
   await chargerScenes();
   construire();
   remplir();
   const s = scenes.find((x) => x.id === id) || scenes[0];
-  if (!s) { poser('erreur', 'Aucune scène n\'a de texte à dire : écrire d\'abord « voix.texte » dans le déroulé.'); return; }
+  if (!s) { changer('erreur', 'Aucune scène n\'a de texte à dire : écrire d\'abord « voix.texte » dans le déroulé.'); return; }
+  if (s.id !== etat.scene) oublierPrise();
   etat.scene = s.id;
   panneau.querySelector('.pm-studio-scene').value = s.id;
   panneau.querySelector('.pm-studio-prompteur').textContent = s.texte;
   M.rendre(debutScene(s.id));
-  poser('pret');
+  if (prise) poser('ecoute'); else changer('pret');
+}
+
+function fermer() {
+  arreter();
+  oublierPrise();
+  if (panneau) { panneau.remove(); panneau = null; }
+  etat.phase = 'choix';
+  if (M.reprendreRechargement) M.reprendreRechargement();
 }
 
 function vumetre(flux) {
@@ -127,33 +177,35 @@ function arreterScene() {
 /** Enregistre une prise (secondes : durée fixe, sinon jusqu'à « Arrêter »). -> { duree } */
 async function enregistrer(secondes) {
   if (!etat.scene) throw new Error('aucune scène');
+  if (['compte', 'enregistre', 'envoi'].includes(etat.phase)) throw new Error('une prise est déjà en cours');
   if (typeof MediaRecorder === 'undefined' || !navigator.mediaDevices) {
-    poser('erreur', 'Ce navigateur ne sait pas enregistrer : ouvrez l\'aperçu dans Chrome ou Edge, ou importez un fichier (pulse-motion voix importer).');
+    changer('erreur', 'Ce navigateur ne sait pas enregistrer : ouvrez l\'aperçu dans Chrome ou Edge, ou demandez l\'import d\'un fichier de voix.');
     throw new Error('MediaRecorder absent');
   }
+  oublierPrise();
+  poser('compte', `${COMPTE}…`);
   let flux;
   try {
     flux = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: true, autoGainControl: true } });
   } catch (e) {
-    poser('erreur', 'Le micro est refusé ou introuvable : autorisez le micro pour cette page (icône à gauche de l\'adresse), ou importez un fichier (pulse-motion voix importer).');
+    changer('erreur', 'Le micro est refusé ou introuvable : autorisez le micro pour cette page (icône à gauche de l\'adresse), ou demandez l\'import d\'un fichier de voix.');
     throw e;
   }
-  M.exportEnCours = true;   // un rechargement de l'aperçu attend la fin de la prise
   M.couperSon(true);
+  let couperVumetre = null;
   try {
     for (let n = COMPTE; n > 0; n--) { poser('compte', `${n}…`); await new Promise((r) => setTimeout(r, 1000)); }
     const morceaux = [];
     enregistreur = new MediaRecorder(flux);
     enregistreur.ondataavailable = (e) => { if (e.data && e.data.size) morceaux.push(e.data); };
     const fini = new Promise((r) => { enregistreur.onstop = r; });
-    const couperVumetre = vumetre(flux);
+    couperVumetre = vumetre(flux);
     enregistreur.start();
     poser('enregistre');
     lireScene();
     const limite = setTimeout(() => arreter(), (secondes || MAX_SECONDES) * 1000);
     await fini;
     clearTimeout(limite);
-    couperVumetre();
     arreterScene();
     const brut = await new Blob(morceaux, { type: enregistreur.mimeType }).arrayBuffer();
     const decode = await new OfflineAudioContext(1, 1, 48000).decodeAudioData(brut);
@@ -161,17 +213,16 @@ async function enregistrer(secondes) {
     for (let c = 0; c < decode.numberOfChannels; c++) canaux.push(decode.getChannelData(c));
     const pret = M.wav.preparerPrise({ taux: decode.sampleRate, canaux });
     const octets = M.wav.ecrire(pret);
-    if (prise && prise.url) URL.revokeObjectURL(prise.url);
     prise = { octets, url: URL.createObjectURL(new Blob([octets], { type: 'audio/wav' })), duree: pret.canaux[0].length / pret.taux };
     poser('ecoute');
     return { duree: prise.duree };
   } catch (e) {
-    if (etat.phase !== 'erreur') poser('erreur', `La prise n'a pas pu être enregistrée (${e.message}).`);
+    if (etat.phase !== 'erreur') changer('erreur', 'La prise n\'a pas pu être enregistrée : recommencez, en parlant au moins une seconde.');
     throw e;
   } finally {
+    if (couperVumetre) couperVumetre();
     flux.getTracks().forEach((p) => p.stop());
     M.couperSon(false);
-    if (M.finExport) M.finExport(); else M.exportEnCours = false;
   }
 }
 
@@ -179,34 +230,47 @@ function arreter() { if (enregistreur && enregistreur.state === 'recording') enr
 
 /** Réécoute : la scène se joue sans son, la nouvelle prise par-dessus (la musique revient une fois la prise gardée). */
 function reecouter() {
-  if (!prise) return;
+  if (!prise || etat.phase !== 'ecoute') return;
+  arreterEcoute();
   M.couperSon(true);
   const audio = new Audio(prise.url);
-  audio.onended = () => { arreterScene(); M.couperSon(false); };
+  ecoute = audio;
+  const finir = () => { if (ecoute === audio) arreterEcoute(); };
+  audio.onended = finir;
   lireScene();
-  audio.play();
+  audio.play().catch(finir);
 }
 
 /** Envoie la prise à l'aperçu, qui l'écrit dans le projet. -> { fichier, duree, transcription } */
 async function garder() {
-  if (!prise) throw new Error('aucune prise');
+  if (!prise || etat.phase !== 'ecoute') throw new Error('aucune prise à garder');
+  arreterEcoute();
   poser('envoi');
-  const r = await fetch(`/_pm/voix?scene=${encodeURIComponent(etat.scene)}`, { method: 'POST', headers: { 'Content-Type': 'audio/wav' }, body: prise.octets });
-  const corps = await r.json().catch(() => ({}));
+  let r;
+  let corps = {};
+  try {
+    r = await fetch(`/_pm/voix?scene=${encodeURIComponent(etat.scene)}`, { method: 'POST', headers: { 'Content-Type': 'audio/wav' }, body: prise.octets });
+    corps = await r.json().catch(() => ({}));
+  } catch (e) {
+    poser('ecoute', 'La prise n\'a pas pu être envoyée à l\'aperçu : réessayer de la garder.');
+    throw e;
+  }
   if (!r.ok) {
-    poser('erreur', corps.message || `La prise n'a pas pu être enregistrée (${r.status}).`);
+    // La prise reste disponible : la personne peut réessayer de la garder, ou refaire.
+    poser('ecoute', corps.message || `La prise n'a pas pu être enregistrée (${r.status}).`);
     throw new Error(corps.message || String(r.status));
   }
-  poser('pret', corps.transcription === 'en-cours' ? 'Prise gardée ; transcription en cours, l\'aperçu se mettra à jour.' : 'Prise gardée.');
+  oublierPrise();
+  changer('pret', corps.transcription === 'en-cours' ? 'Prise gardée ; transcription en cours, l\'aperçu se mettra à jour.' : 'Prise gardée.');
   return corps;
 }
 
 function refaire() {
-  prise = null;
-  poser('pret');
+  oublierPrise();
+  changer('pret');
 }
 
-M.studio = { ouvrir, enregistrer, arreter, reecouter, garder, refaire, etat: () => ({ ...etat }) };
+M.studio = { ouvrir, enregistrer, arreter, reecouter, garder, refaire, fermer, occupe, etat: () => ({ ...etat }) };
 
 function ajouterBouton() {
   const barre = document.getElementById('pm-lecteur');

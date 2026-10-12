@@ -165,20 +165,26 @@
     if (sauvee && typeof sauvee.t === 'number') { M.rendre(sauvee.t); if (sauvee.lecture) jouer(); }
     else afficher(M.temps());
 
-    // Rechargement après une retouche, à la même position. Pendant un export (M.exportEnCours),
-    // il attend la fin de l'export (M.finExport) pour ne pas l'interrompre.
+    // Rechargement après une retouche, à la même position. Pendant un export (M.exportEnCours) ou une prise du studio,
+    // il attend la fin (M.finExport, M.reprendreRechargement) pour ne pas l'interrompre.
     M.recharger = function () {
       try { sessionStorage.setItem(CLE_POSITION, JSON.stringify({ t: M.temps(), lecture: lecture })); } catch (e) { /* ignoré */ }
       location.reload();
     };
+    // Page occupée : export en cours, ou studio de voix avec une prise pas encore gardée.
     var rechargementEnAttente = false;
+    function occupee() { return !!(M.exportEnCours || (M.studio && M.studio.occupe && M.studio.occupe())); }
     M.rechargerQuandPossible = function () {
-      if (M.exportEnCours) { rechargementEnAttente = true; return; }
+      if (occupee()) { rechargementEnAttente = true; return; }
       M.recharger();
+    };
+    /** Rechargement demandé pendant que la page était occupée : fait dès qu'elle ne l'est plus. */
+    M.reprendreRechargement = function () {
+      if (rechargementEnAttente && !occupee()) { rechargementEnAttente = false; M.recharger(); }
     };
     M.finExport = function () {
       M.exportEnCours = false;
-      if (rechargementEnAttente) { rechargementEnAttente = false; M.recharger(); }
+      M.reprendreRechargement();
     };
 
     if (racine.__PM_APERCU__ && racine.EventSource) {
