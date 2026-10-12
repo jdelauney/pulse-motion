@@ -58,6 +58,20 @@ Avec un `tempo` dans le déroulé, aucune durée n'est corrigée seule (la musiq
 | `rendu-non-verifie` | Ni Chrome ni Edge | alerte | non | Installer l'un des deux, ou indiquer son chemin avec `PM_NAVIGATEUR` |
 | `rendu-impossible` | Page en erreur, délai dépassé, navigateur introuvable à l'adresse donnée | alerte | non | Lire la cause dans le message |
 
+## Voix
+
+| Règle | Ce qui la déclenche | Gravité | Corrigé seul ? | Que faire |
+|---|---|---|---|---|
+| `voix-allonge` | La voix dure plus que la scène : la scène est allongée | info | — (la scène suit sa voix) | Rien ; pour figer la durée, l'écrire dans le déroulé |
+| `ancre-mot-introuvable` | `data-start="mot:…"` sur un mot que la voix ne dit pas, ou une scène sans voix | erreur | non | Prendre un mot de la liste du message |
+| `voix-illisible` | Prise de voix abîmée ou introuvable | erreur | non | Réimporter ou réenregistrer la scène |
+| `voix-provisoire` | La scène joue encore la voix du système | alerte | non | Enregistrer la vraie voix ; l'export la refuse sans `--avec-provisoire` |
+| `mots-perimes` | La prise ou son texte ont changé depuis la transcription | alerte | non | `pulse-motion voix transcrire` |
+| `calage-approche` | Mots calés sans transcription | info | — | `pulse-motion whisper` pour un calage exact |
+| `page-lourde` | Plus de 20 Mo de sons dans la page | alerte | non | Installer ffmpeg (voix en Opus) |
+
+« info » : rien à corriger, la personne est prévenue. Avec une voix, la durée de la scène n'est jamais corrigée seule.
+
 ## Autres règles
 
 Le contrôle signale aussi, avec un message qui dit quoi faire : un texte du déroulé absent (`texte-manquant`), une scène mal formée (`scene-invalide`), un fichier ou une ressource introuvable ou hors du projet (`fichier-introuvable`, `ressource-distante`), une police non embarquée (`police-non-embarquee`), un effet de particules invalide, trop chargé ou posé sur un texte (`effet-invalide`, `budget-particules`, `effet-sur-texte`), une scène hors du tempo de la musique (`hors-tempo`), un ton absent du style (`ton-indisponible`), un découpage en lettres inconnu (`lettres-invalide`), une correction impossible à écrire (`correction-impossible`).

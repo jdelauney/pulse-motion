@@ -36,6 +36,7 @@
 | Attribut | Valeur | Effet |
 |---|---|---|
 | `data-start` | `0.4`, `#id+0.3`, `#id-0.2`, `#id:fin+0.2` | Début de l'élément, relatif à la scène ou à un autre élément **de la même scène** (minuté, avec un `id`) |
+| `data-start` | `mot:froid`, `mot:froid#2`, `mot:froid:fin`, `mot:froid+0.2` | Quand la voix de la scène dit « froid » (accents, majuscules et ponctuation ignorés ; `#2` deuxième fois, `:fin` fin du mot). Une nouvelle prise recale tout seul |
 | `data-dur` | `1.2` | Durée en secondes (1 par défaut) |
 | `data-tween` | `opacity 0→1 back-out; --x -10cqh→0cqh` | Interpole des valeurs pendant `[début, fin]` |
 
@@ -44,6 +45,8 @@ Le moteur pose sur chaque élément minuté :
 - `data-etat` : `avant`, `pendant` ou `apres`.
 
 Le `rythme` du déroulé étire tous les temps d'une scène : « ralentis la scène 3 » se règle dans le déroulé, pas dans le HTML.
+
+Une voix (`scenes[].voix`) allonge sa scène jusqu'à sa fin + 0,4 s (elle commence 0,3 s après le début de la scène, `voix.debut` pour changer) ; elle joue toujours en temps réel, même avec un `rythme`.
 
 ## Faire bouger
 
@@ -113,7 +116,7 @@ Avec `"tempo": { "bpm": 120 }` dans le déroulé (`"decalage"` : instant du prem
 
 ### Son
 
-Le son de la vidéo est **un seul mixage**, fait par le moteur dans la page (`M.rendreSon`) : musique (fondus d'entrée 0,5 s et de sortie 1,5 s, baissée de 10 dB sous la voix), voix ; le mélange à plein volume est ramené à −16 LUFS (crête sous −1,5 dB), puis les volumes du déroulé s'appliquent (« baisse la musique » : `musique.volume` plus bas). La lecture, l'export dans le navigateur et l'export fidèle utilisent le même : ce qu'on entend dans l'aperçu est ce qui sort dans le MP4. Ne pas ajouter d'élément `<audio>` dans une scène : le son passe par le déroulé.
+Le son de la vidéo est **un seul mixage**, fait par le moteur dans la page (`M.rendreSon`) : musique (fondus d'entrée 0,5 s et de sortie 1,5 s, baissée de 10 dB sous la voix), voix ; le mélange à plein volume est ramené à −16 LUFS (crête sous −1,5 dB), puis les volumes du déroulé s'appliquent (« baisse la musique » : `musique.volume` plus bas). La lecture, l'export dans le navigateur et l'export fidèle utilisent le même : ce qu'on entend dans l'aperçu est ce qui sort dans le MP4. Voix : une prise par scène (`scenes[].voix.fichier`, `pulse-motion voix importer`), ou la voix provisoire du système (`pulse-motion voix provisoire`, refusée à l'export sauf `--avec-provisoire`). Ne pas ajouter d'élément `<audio>` dans une scène : le son passe par le déroulé.
 
 ## Ce que le contrôle regarde dans la vidéo rendue
 
