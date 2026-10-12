@@ -85,8 +85,10 @@ function variablesDerivees(couleurs) {
   if (!HEX.test(couleurs.fond || '')) return lignes;
   for (const [nom, minimum] of [['primaire', SEUILS.contrasteTitres], ['accent', SEUILS.contrasteTexte]]) {
     if (!HEX.test(couleurs[nom] || '')) continue;
-    lignes.push(`  --c-${nom}-lisible: ${ajusterContraste(couleurs[nom], couleurs.fond, minimum).hex};`);
-    lignes.push(`  --c-sur-${nom}: ${meilleurSur(couleurs[nom])};`);
+    const lisible = ajusterContraste(couleurs[nom], couleurs.fond, minimum).hex;
+    lignes.push(`  --c-${nom}-lisible: ${lisible};`);
+    // Le texte posé sur un aplat se calcule sur la couleur lisible : c'est elle que les styles peignent.
+    lignes.push(`  --c-sur-${nom}: ${meilleurSur(lisible)};`);
   }
   return lignes;
 }

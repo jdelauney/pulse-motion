@@ -40,14 +40,11 @@
 .decor ~ * { position: relative; z-index: 1; }
 .galet {
   position: absolute; background: var(--c-primaire); opacity: 0.1; translate: var(--dx, 0) var(--dy, 0);
-  border-radius: 58% 42% 46% 54% / 52% 44% 56% 48%;
-  animation: ch-respire 6s var(--ease-sine-inout) infinite alternate;
+  /* Respiration calée sur la scène (--m de 0 à 1 par data-tween) : elle s'arrête avec le décor. */
+  scale: calc(1 + 0.06 * var(--m, 0));
+  border-radius: calc(58% - 14% * var(--m, 0)) calc(42% + 14% * var(--m, 0)) calc(46% + 12% * var(--m, 0)) calc(54% - 12% * var(--m, 0)) / calc(52% - 6% * var(--m, 0)) calc(44% + 14% * var(--m, 0)) calc(56% - 14% * var(--m, 0)) calc(48% + 6% * var(--m, 0));
 }
-.galet.sauge { background: var(--c-accent); opacity: 0.13; animation-duration: 7s; }
-@keyframes ch-respire {
-  from { border-radius: 58% 42% 46% 54% / 52% 44% 56% 48%; scale: 1; }
-  to { border-radius: 44% 56% 58% 42% / 46% 58% 42% 54%; scale: 1.06; }
-}
+.galet.sauge { background: var(--c-accent); opacity: 0.13; }
 
 /* ---------- Liste en cartes ---------- */
 .cartes { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.8cqh; }
@@ -56,13 +53,13 @@
   background: color-mix(in srgb, var(--c-primaire) 7%, var(--c-fond)); font: 600 4.4cqh/1.3 var(--f-texte);
 }
 .cartes li::before {
-  content: ""; flex: none; width: 3.2cqh; height: 3.2cqh; border-radius: 50%; background: var(--c-accent);
+  content: ""; flex: none; width: 3.2cqh; height: 3.2cqh; border-radius: 50%; background: var(--c-accent-lisible);
   box-shadow: 0 0 0 0.9cqh color-mix(in srgb, var(--c-accent) 22%, var(--c-fond));
 }
 
 /* ---------- Chiffre dans un galet ---------- */
 .galet-chiffre {
-  display: grid; place-items: center; min-width: 42cqh; min-height: 34cqh; padding: 5cqh 8cqh; background: var(--c-primaire);
+  display: grid; place-items: center; min-width: 42cqh; min-height: 34cqh; padding: 5cqh 8cqh; background: var(--c-primaire-lisible);
   border-radius: 58% 42% 46% 54% / 52% 44% 56% 48%;
 }
 
@@ -76,7 +73,7 @@
 /* ---------- Étape ---------- */
 .etape { display: grid; grid-template-columns: auto 1fr; gap: 5cqh; align-items: center; }
 .rond-numero {
-  display: grid; place-items: center; width: 22cqh; height: 22cqh; background: var(--c-accent); color: var(--c-sur-accent);
+  display: grid; place-items: center; width: 22cqh; height: 22cqh; background: var(--c-accent-lisible); color: var(--c-sur-accent);
   border-radius: 54% 46% 50% 50% / 48% 54% 46% 52%; font: 600 11cqh/1 var(--f-titres);
 }
 .etape-texte { display: flex; flex-direction: column; gap: 2cqh; min-width: 0; }

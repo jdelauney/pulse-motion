@@ -19,7 +19,7 @@
   margin: 0; display: flex; align-items: center; gap: 2cqh;
   font: 700 3.6cqh/1.1 var(--f-texte); letter-spacing: 0.04em; text-transform: uppercase;
 }
-.index::before { content: ""; flex: none; width: 2cqh; height: 2cqh; background: var(--c-accent); }
+.index::before { content: ""; flex: none; width: 2cqh; height: 2cqh; background: var(--c-accent-lisible); }
 .titre { margin: 0; font: 900 12cqh/0.95 var(--f-titres); letter-spacing: -0.04em; word-spacing: 0.12em; text-wrap: balance; }
 .titre-moyen { margin: 0; font: 800 7cqh/1 var(--f-titres); letter-spacing: -0.03em; word-spacing: 0.1em; text-wrap: balance; }
 .texte { margin: 0; font: 400 4.4cqh/1.4 var(--f-texte); text-wrap: pretty; }
@@ -57,7 +57,7 @@
 /* ---------- Comparaison ---------- */
 .colonnes { display: grid; grid-template-columns: 1fr 1fr; gap: 6cqh; }
 .colonne { display: flex; flex-direction: column; gap: 1.6cqh; min-width: 0; padding-top: 2.4cqh; border-top: 0.4cqh solid var(--c-texte); }
-.colonne.accent { border-top-color: var(--c-accent); }
+.colonne.accent { border-top-color: var(--c-accent-lisible); }
 .colonne-titre { margin: 0; font: 800 5cqh/1.05 var(--f-titres); letter-spacing: -0.02em; }
 
 /* ---------- Étape ---------- */
@@ -67,14 +67,14 @@
 
 /* ---------- Alerte ---------- */
 .vigilance { display: grid; grid-template-columns: 1.6cqh 1fr; gap: 4cqh; }
-.vigilance::before { content: ""; background: var(--c-accent); }
+.vigilance::before { content: ""; background: var(--c-accent-lisible); }
 .vigilance-corps { display: flex; flex-direction: column; gap: 2cqh; min-width: 0; padding: 1cqh 0; }
 
 /* ---------- Schéma sur une ligne ---------- */
 .ligne-temps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4cqh; position: relative; }
 .ligne-temps .regle { position: absolute; top: 2.6cqh; left: 0; right: 0; width: auto; height: 0.3cqh; }
 .temps { display: flex; flex-direction: column; gap: 2cqh; min-width: 0; padding-top: 6cqh; position: relative; font: 600 4.4cqh/1.25 var(--f-texte); }
-.temps::before { content: ""; position: absolute; top: 1.4cqh; left: 0; width: 2.6cqh; height: 2.6cqh; background: var(--c-fond); border: 0.4cqh solid var(--c-accent); }
+.temps::before { content: ""; position: absolute; top: 1.4cqh; left: 0; width: 2.6cqh; height: 2.6cqh; background: var(--c-fond); border: 0.4cqh solid var(--c-accent-lisible); }
 
 /* ---------- Logo ---------- */
 .logo { height: 11cqh; width: auto; object-fit: contain; align-self: flex-start; }

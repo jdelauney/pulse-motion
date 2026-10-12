@@ -28,7 +28,7 @@
 .ecrit { clip-path: inset(-10% calc((1 - var(--p, 1)) * 100%) -10% 0); }
 .curseur::after {
   content: ""; display: inline-block; width: 0.55em; height: 1.05em; margin-left: 0.25em; vertical-align: -0.15em;
-  background: var(--c-accent); animation: tech-clignote 1s steps(1, end) infinite;
+  background: var(--c-accent-lisible); animation: tech-clignote 1s steps(1, end) 3;
 }
 @keyframes tech-clignote { 0% { opacity: 1; } 50% { opacity: 0; } }
 
@@ -63,7 +63,7 @@
 
 /* ---------- Jauge ---------- */
 .jauge { display: block; position: relative; width: 100%; height: 1cqh; border-radius: 1cqh; background: color-mix(in srgb, var(--c-texte) 12%, transparent); overflow: hidden; }
-.jauge::after { content: ""; position: absolute; inset: 0; background: var(--c-accent); transform-origin: left center; transform: scaleX(var(--p, 1)); }
+.jauge::after { content: ""; position: absolute; inset: 0; background: var(--c-accent-lisible); transform-origin: left center; transform: scaleX(var(--p, 1)); }
 
 /* ---------- Comparaison : deux panneaux ---------- */
 .diff { display: grid; grid-template-columns: 1fr 1fr; gap: 3cqh; }
@@ -72,7 +72,7 @@
   border: 0.25cqh solid color-mix(in srgb, var(--c-texte) 28%, transparent);
   background: color-mix(in srgb, var(--c-texte) 4%, var(--c-fond));
 }
-.panneau.actif { border-color: var(--c-accent); box-shadow: 0 0 4cqh color-mix(in srgb, var(--c-accent) 22%, transparent); }
+.panneau.actif { border-color: var(--c-accent-lisible); box-shadow: 0 0 4cqh color-mix(in srgb, var(--c-accent) 22%, transparent); }
 .panneau-titre { margin: 0; font: 700 4.6cqh/1.1 var(--f-titres); }
 .panneau-titre::before { content: "// "; color: var(--c-accent-lisible); font-family: var(--f-texte); }
 .panneau.actif .panneau-titre { color: var(--c-accent-lisible); }
@@ -83,9 +83,9 @@
 .etape-texte { display: flex; flex-direction: column; gap: 2cqh; min-width: 0; }
 
 /* ---------- Alerte en console ---------- */
-.console { border: 0.25cqh solid var(--c-accent); border-radius: 1.4cqh; overflow: hidden; background: color-mix(in srgb, var(--c-texte) 4%, var(--c-fond)); }
+.console { border: 0.25cqh solid var(--c-accent-lisible); border-radius: 1.4cqh; overflow: hidden; background: color-mix(in srgb, var(--c-texte) 4%, var(--c-fond)); }
 .console-barre { display: flex; gap: 1.2cqh; padding: 1.6cqh 2.4cqh; background: color-mix(in srgb, var(--c-accent) 16%, var(--c-fond)); }
-.console-barre span { width: 1.8cqh; height: 1.8cqh; border-radius: 50%; background: var(--c-accent); opacity: 0.75; }
+.console-barre span { width: 1.8cqh; height: 1.8cqh; border-radius: 50%; background: var(--c-accent-lisible); opacity: 0.75; }
 .console-corps { display: flex; flex-direction: column; gap: 2cqh; padding: 4cqh; }
 
 /* ---------- Schéma en nœuds ---------- */
