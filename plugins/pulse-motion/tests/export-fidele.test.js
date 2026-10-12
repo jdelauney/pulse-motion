@@ -11,7 +11,7 @@ const { STYLES, copierProjet, modifierDeroule } = require('./aide/projet.js');
 const navigateur = trouverNavigateur();
 const outil = F.trouverFfmpeg();
 const sans = { skip: (!navigateur && 'Chrome ou Edge introuvable') || (!(outil.present && outil.versionOk) && 'ffmpeg absent') };
-const exporter = (dir, options = {}) => exporterFidele({ dossier: dir, qualite: '720p', ips: 10, navigateur, outil, dossierStyles: STYLES, dureeSegment: 3, ...options });
+const exporter = (dir, options = {}) => exporterFidele({ dossier: dir, qualite: '720p', ips: 10, navigateur, outil, dossierStyles: STYLES, dureeSegment: 3, paralleles: 1, ...options });
 
 test('export fidèle 720p : segments (7,25 s en 3 s), MP4 vérifié, suivi et dossier de travail retirés', sans, async () => {
   const dir = copierProjet('projet-simple');
@@ -93,4 +93,50 @@ test('revue : vidéo finale ouverte ailleurs (fichier verrouillé) : message en 
   const r2 = await exporter(dir, { ips: 5 });
   assert.equal(r2.ok, true, r2.message);
   assert.ok(r2.segmentsRepris > 0);
+});
+
+const ajouterMusique = (dir, duree) => {
+  const { execFileSync } = require('node:child_process');
+  fs.mkdirSync(path.join(dir, 'assets'), { recursive: true });
+  execFileSync(outil.chemin, ['-y', '-hide_banner', '-loglevel', 'error', '-f', 'lavfi', '-i', `sine=frequency=330:duration=${duree}`, path.join(dir, 'assets', 'musique.wav')]);
+  modifierDeroule(dir, (d) => { d.musique = { fichier: 'assets/musique.wav', volume: 0.7 }; });
+};
+
+test('son : musique du déroulé ajoutée (AAC, durée de l\'image) ; plus courte : silence ensuite', sans, async () => {
+  const dir = copierProjet('projet-simple');
+  ajouterMusique(dir, 4);
+  const r = await exporter(dir, { ips: 5 });
+  assert.equal(r.ok, true, r.message);
+  assert.equal(r.audio, true);
+  const s = await F.sonder({ ffprobe: outil.cheminProbe, fichier: r.fichier });
+  assert.equal(s.audio, 'aac');
+  assert.ok(Math.abs(s.dureeAudio - r.duree) < 0.1, `${s.dureeAudio} / ${r.duree}`);
+});
+
+test('son : musique illisible, vidéo muette exportée avec un avertissement', sans, async () => {
+  const dir = copierProjet('projet-simple');
+  fs.mkdirSync(path.join(dir, 'assets'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'assets', 'musique.mp3'), 'pas du son');
+  modifierDeroule(dir, (d) => { d.musique = { fichier: 'assets/musique.mp3' }; });
+  const r = await exporter(dir, { ips: 5 });
+  assert.equal(r.ok, true, r.message);
+  assert.equal(r.audio, false);
+  assert.match(r.avertissement, /musique n'a pas pu être lue.*sans son/);
+});
+
+test('deux navigateurs en parallèle : même résultat ; interruption : tout arrêté, aucun .part', sans, async () => {
+  const dir = copierProjet('projet-simple');
+  const r = await exporter(dir, { paralleles: 2, dureeSegment: 2 });
+  assert.equal(r.ok, true, r.message);
+  assert.equal(r.paralleles, 2);
+  assert.equal(r.images, 73);
+  const s = await F.sonder({ ffprobe: outil.cheminProbe, fichier: r.fichier });
+  assert.equal(s.images, 73);
+  const dir2 = copierProjet('projet-simple');
+  const controle = new AbortController();
+  setTimeout(() => controle.abort(), 1500);
+  const r2 = await exporter(dir2, { paralleles: 2, dureeSegment: 2, signal: controle.signal });
+  assert.equal(r2.ok, false);
+  const travail = path.join(dir2, 'sortie', '.export');
+  assert.deepEqual(fs.existsSync(travail) ? fs.readdirSync(travail).filter((f) => f.endsWith('.part')) : [], []);
 });
