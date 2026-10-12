@@ -38,14 +38,14 @@ test('sans source sonore : aSon faux, aucun tampon', sans, async () => {
   assert.equal(r.buffer, null);
 });
 
-test('musique : stéréo 48 kHz à la durée de la vidéo, −16 LUFS, rendu identique d\'une page à l\'autre', sans, async () => {
+test('musique : stéréo 48 kHz à la durée de la vidéo, −16 LUFS au volume 1 (moins le volume), rendu identique d\'une page à l\'autre', sans, async () => {
   const dir = copierProjet('projet-simple');
   avecMusique(dir);
   const a = await resume({ dir });
   const b = await resume({ dir });
   assert.equal(a.aSon, true);
   assert.deepEqual([a.canaux, a.taux, a.longueur], [2, 48000, Math.ceil(a.duree * 48000)]);
-  assert.ok(Math.abs(a.sonie + 16) < 0.3, String(a.sonie));
+  assert.ok(Math.abs(a.sonie - (-16 + 20 * Math.log10(0.8))) < 0.3, String(a.sonie)); // volume 0,8
   assert.equal(a.empreinte, b.empreinte);
   assert.deepEqual(a.avertissements, []);
 });
@@ -124,6 +124,42 @@ test('sans son : etatSon().attendu faux, la lecture marche sans AudioContext', s
     const e = await page.evaluer('(async function () { document.querySelector(\'#pm-lecteur button\').click(); await new Promise(function (r) { setTimeout(r, 300); }); return { e: M.etatSon(), t: M.temps() }; })()');
     assert.equal(e.e.attendu, false);
     assert.ok(e.t > 0.1);
+  } finally {
+    await page.fermer();
+  }
+});
+
+test('revue : le volume de la musique compte (0,5 seule → environ −22 LUFS, 6 dB sous le volume 1)', sans, async () => {
+  const dir = copierProjet('projet-simple');
+  avecMusique(dir);
+  modifierDeroule(dir, (d) => { d.musique.volume = 0.5; });
+  const r = await resume({ dir });
+  assert.ok(Math.abs(r.sonie + 22) < 0.5, String(r.sonie));
+});
+
+test('revue : musique muette (volume 0) : tampon présent, sonie nulle, aucun avertissement', sans, async () => {
+  const dir = copierProjet('projet-simple');
+  avecMusique(dir);
+  modifierDeroule(dir, (d) => { d.musique.volume = 0; });
+  const r = await resume({ dir });
+  assert.ok(r.longueur > 0);
+  assert.equal(r.sonie, null);
+  assert.deepEqual(r.avertissements, []);
+});
+
+test('revue : musique illisible : le lecteur n\'affiche plus « son en préparation » une fois le rendu fini', sans, async () => {
+  const dir = copierProjet('projet-simple');
+  avecMusique(dir, Buffer.alloc(3000, 7));
+  const page = await ouvrirPageSon({ dir, navigateur });
+  try {
+    const r = await page.evaluer(`(async function () {
+      document.querySelector('#pm-lecteur button').click();
+      await M.rendreSon();
+      await new Promise(function (r) { setTimeout(r, 300); });
+      return { e: M.etatSon(), etiquette: document.querySelector('.pm-etiquette').textContent };
+    })()`);
+    assert.equal(r.e.attendu, false);
+    assert.doesNotMatch(r.etiquette, /préparation/);
   } finally {
     await page.fermer();
   }

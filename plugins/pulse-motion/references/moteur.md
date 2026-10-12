@@ -113,7 +113,7 @@ Avec `"tempo": { "bpm": 120 }` dans le déroulé (`"decalage"` : instant du prem
 
 ### Son
 
-Le son de la vidéo est **un seul mixage**, fait par le moteur dans la page (`M.rendreSon`) : musique (fondus d'entrée 0,5 s et de sortie 1,5 s, baissée de 10 dB sous la voix), voix, puis sonie ramenée à −16 LUFS (crête sous −1,5 dB). La lecture, l'export dans le navigateur et l'export fidèle utilisent le même : ce qu'on entend dans l'aperçu est ce qui sort dans le MP4. Ne pas ajouter d'élément `<audio>` dans une scène : le son passe par le déroulé.
+Le son de la vidéo est **un seul mixage**, fait par le moteur dans la page (`M.rendreSon`) : musique (fondus d'entrée 0,5 s et de sortie 1,5 s, baissée de 10 dB sous la voix), voix ; le mélange à plein volume est ramené à −16 LUFS (crête sous −1,5 dB), puis les volumes du déroulé s'appliquent (« baisse la musique » : `musique.volume` plus bas). La lecture, l'export dans le navigateur et l'export fidèle utilisent le même : ce qu'on entend dans l'aperçu est ce qui sort dans le MP4. Ne pas ajouter d'élément `<audio>` dans une scène : le son passe par le déroulé.
 
 ## Ce que le contrôle regarde dans la vidéo rendue
 

@@ -97,6 +97,9 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
     // Son : le mixage de la page (le même que l'aperçu), rendu une fois ; illisible : vidéo muette avec un avertissement.
     const avertissements = [];
     if (deroule.musique && !(musique && fs.existsSync(musique))) avertissements.push(`La musique est introuvable (« ${deroule.musique.fichier} ») : vidéo exportée sans son.`);
+    else if (deroule.musique && !assemblage.html.includes('id="pm-son-musique"')) {
+      avertissements.push(`La musique « ${deroule.musique.fichier} » n'a pas pu être embarquée (formats acceptés : mp3, m4a, aac, wav, ogg) : vidéo exportée sans son.`);
+    }
     let son = null;
     try {
       son = await premiere.rendreSon();
@@ -192,7 +195,8 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
     if (s.video !== 'h264' || s.largeur !== largeur || s.hauteur !== hauteur) throw new Error('la vidéo n\'a pas la piste ou la taille attendues');
     if (s.images !== total || Math.abs(s.duree - total / cadence) > 1 / cadence + 0.01) throw new Error(`la vidéo a ${s.images} images au lieu de ${total}`);
     if (audio && (s.audio !== 'aac' || Math.abs(s.dureeAudio - total / cadence) > 0.1)) throw new Error('la piste son est absente ou n\'a pas la durée de l\'image');
-    if (audio && typeof son.sonie === 'number') {
+    // ebur128 ne mesure rien sous 400 ms (un bloc) : la sonie d'une vidéo plus courte n'est pas vérifiée.
+    if (audio && typeof son.sonie === 'number' && total / cadence >= 0.4) {
       const m = await F.mesurerSonie({ ffmpeg: outil.chemin, fichier: partiel });
       if (!(Math.abs(m.integree - son.sonie) <= 1)) throw new Error(`le son n'a pas la sonie attendue (${m.integree.toFixed(1)} LUFS au lieu de ${son.sonie.toFixed(1)})`);
     }

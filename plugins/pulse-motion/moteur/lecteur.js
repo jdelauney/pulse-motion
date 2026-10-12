@@ -71,6 +71,7 @@
       son.prepare = true;
       M.rendreSon().then(function (r) {
         son.tampon = r.buffer;
+        son.attendu = !!r.buffer;
         r.avertissements.forEach(signaler);
         if (lecture) lancerSon(M.temps());
         afficher(M.temps());
