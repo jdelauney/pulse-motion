@@ -95,3 +95,36 @@ test('revue : voix illisible : avertissement nommant la scène', sans, async () 
   assert.equal(r.buffer, null);
   assert.match(r.avertissements.join(' '), /voix de la scène « intro » n'a pas pu être lue/);
 });
+
+test('lecture : ▶ joue le son mixé, calé sur le temps de la vidéo ; pause : arrêté', sans, async () => {
+  const dir = copierProjet('projet-simple');
+  avecMusique(dir);
+  const page = await ouvrirPageSon({ dir, navigateur });
+  try {
+    await page.evaluer('M.rendreSon().then(function () { return true; })');
+    const etat = await page.evaluer(`(async function () {
+      document.querySelector('#pm-lecteur button').click();
+      await new Promise(function (r) { setTimeout(r, 1200); });
+      return { e: M.etatSon(), t: M.temps() };
+    })()`);
+    assert.equal(etat.e.attendu, true);
+    assert.equal(etat.e.pret, true);
+    assert.equal(etat.e.enLecture, true);
+    assert.ok(Math.abs(etat.e.position - etat.t) < 0.15, `${etat.e.position} / ${etat.t}`);
+    const apres = await page.evaluer('(function () { document.querySelector(\'#pm-lecteur button\').click(); return M.etatSon(); })()');
+    assert.equal(apres.enLecture, false);
+  } finally {
+    await page.fermer();
+  }
+});
+
+test('sans son : etatSon().attendu faux, la lecture marche sans AudioContext', sans, async () => {
+  const page = await ouvrirPageSon({ dir: copierProjet('projet-simple'), navigateur });
+  try {
+    const e = await page.evaluer('(async function () { document.querySelector(\'#pm-lecteur button\').click(); await new Promise(function (r) { setTimeout(r, 300); }); return { e: M.etatSon(), t: M.temps() }; })()');
+    assert.equal(e.e.attendu, false);
+    assert.ok(e.t > 0.1);
+  } finally {
+    await page.fermer();
+  }
+});
