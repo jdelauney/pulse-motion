@@ -185,3 +185,25 @@ test('voix dans la page : scène allongée par la voix, élément calé sur un m
     await page.fermer();
   }
 });
+
+test('couperSon : la lecture continue sans son ; rendu : le son repart', sans, async () => {
+  const dir = copierProjet('projet-simple');
+  avecMusique(dir);
+  const page = await ouvrirPageSon({ dir, navigateur });
+  try {
+    await page.evaluer('M.rendreSon().then(function () { return true; })');
+    const e = await page.evaluer(`(async function () {
+      M.couperSon(true);
+      document.querySelector('#pm-lecteur button').click();
+      await new Promise(function (r) { setTimeout(r, 400); });
+      var coupe = M.etatSon();
+      M.couperSon(false);
+      await new Promise(function (r) { setTimeout(r, 300); });
+      return { coupe: coupe, rendu: M.etatSon(), t: M.temps() };
+    })()`);
+    assert.equal(e.coupe.coupe, true);
+    assert.equal(e.coupe.enLecture, false);
+    assert.equal(e.rendu.enLecture, true);
+    assert.ok(e.t > 0.5);
+  } finally { await page.fermer(); }
+});

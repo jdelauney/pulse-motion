@@ -29,7 +29,7 @@
     var ips = M.ips;
     var scenes = M.minutage.scenes;
     // Son : tampon mixé par M.rendreSon, joué par un AudioContext créé au premier ▶ (geste de la personne).
-    var son = { attendu: !!(M.aSon && M.aSon()), tampon: null, contexte: null, source: null, debutContexte: 0, debutT: 0, prepare: false };
+    var son = { attendu: !!(M.aSon && M.aSon()), tampon: null, contexte: null, source: null, debutContexte: 0, debutT: 0, prepare: false, coupe: false };
     var lecture = false, dernier = 0, boucle = null;
 
     var barre = el('div', { id: 'pm-lecteur' }, document.body);
@@ -56,6 +56,7 @@
     }
     function lancerSon(t) {
       arreterSon();
+      if (son.coupe) return;
       if (!son.tampon || !son.contexte || t >= son.tampon.duration - 0.05) return;
       if (son.contexte.state === 'suspended') son.contexte.resume();
       var s = son.contexte.createBufferSource();
@@ -80,8 +81,14 @@
         signaler('Le son n\'a pas pu être préparé.');
       });
     }
+    // Son coupé (studio : enregistrement au micro) : la lecture continue, sans son.
+    M.couperSon = function (couper) {
+      son.coupe = !!couper;
+      if (son.coupe) arreterSon();
+      else if (lecture) lancerSon(M.temps());
+    };
     M.etatSon = function () {
-      return { attendu: son.attendu, pret: !!son.tampon, enLecture: !!son.source,
+      return { attendu: son.attendu, pret: !!son.tampon, enLecture: !!son.source, coupe: son.coupe,
         position: son.source ? son.debutT + son.contexte.currentTime - son.debutContexte : null };
     };
     setTimeout(function () { if (!(M.enCapture && M.enCapture())) preparerSon(); }, 1000);
