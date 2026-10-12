@@ -2,7 +2,7 @@
 'use strict';
 /* Pulse Motion – export MP4 (ou planche d'images clés) depuis la ligne de commande.
  *
- *   node scripts/exporter.js <dossier-du-projet> [--qualite 1080p|720p] [--ips 30|60] [--rapide]
+ *   node scripts/exporter.js <dossier-du-projet> [--qualite 1080p|720p] [--ips 30|60] [--rapide] [--avec-provisoire]
  *   node scripts/exporter.js <dossier-du-projet> --planche [id1,id2] [--ouvrir]
  *
  * Export fidèle (vraies captures + ffmpeg, voir export-fidele.js) quand ffmpeg est utilisable ; sinon, ou avec
@@ -19,6 +19,7 @@ const { etatProjet } = require('./etat.js');
 const { demarrerApercu, ouvrirNavigateur } = require('./apercu.js');
 const { trouverFfmpeg } = require('./lib/ffmpeg.js');
 const { exporterFidele } = require('./export-fidele.js');
+const { scenesProvisoires, messageProvisoire } = require('./lib/voix.js');
 
 /** Voie de l'export : fidèle (vraies captures + ffmpeg) si ffmpeg est utilisable, sauf --rapide et planche. */
 function choisirVoie({ planche = null, rapide = false, outil }) {
@@ -60,7 +61,7 @@ function arreterProprementSurSignal() {
  */
 async function exporterVideo({
   dossier, planche = null, ouvrir = false, dossierStyles, navigateur = trouverNavigateur(),
-  surProgression = () => {}, delaiMax, delaiDemarrage = DELAI_DEMARRAGE, ouvrirFichier = ouvrirNavigateur,
+  surProgression = () => {}, delaiMax, delaiDemarrage = DELAI_DEMARRAGE, ouvrirFichier = ouvrirNavigateur, avecProvisoire = false,
 }) {
   const debut = Date.now();
   const projet = path.resolve(dossier);
@@ -74,6 +75,10 @@ async function exporterVideo({
   if (ids) {
     const inconnues = ids.filter((id) => !deroule.scenes.some((s) => s.id === id));
     if (inconnues.length) return fin({ ok: false, message: `Scène inconnue : ${inconnues.join(', ')}.` });
+  } else {
+    // La planche n'a pas de son ; une vidéo avec la voix provisoire du système ne sort pas sans accord.
+    const provisoires = scenesProvisoires(projet, deroule);
+    if (provisoires.length && !avecProvisoire) return fin({ ok: false, message: messageProvisoire(provisoires) });
   }
 
   const etat = etatProjet(projet);
@@ -136,6 +141,7 @@ if (require.main === module) {
   const i = args.indexOf('--planche');
   const planche = i < 0 ? null : (args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1].split(',').filter(Boolean) : true);
   const rapide = args.includes('--rapide');
+  const avecProvisoire = args.includes('--avec-provisoire');
   let dernier = -1;
   const surProgression = (n, total) => {
     const pourcent = Math.floor(100 * n / total);
@@ -148,12 +154,12 @@ if (require.main === module) {
     // Interruption (Ctrl+C, arrêt de la commande) : l'export s'annule et range ses fichiers avant de sortir.
     const controle = new AbortController();
     for (const s of ['SIGINT', 'SIGTERM']) process.on(s, () => controle.abort());
-    travail = exporterFidele({ dossier, qualite: valeur('--qualite') || '1080p', ips: valeur('--ips') ? Number(valeur('--ips')) : undefined, outil, signal: controle.signal, surProgression })
+    travail = exporterFidele({ dossier, qualite: valeur('--qualite') || '1080p', ips: valeur('--ips') ? Number(valeur('--ips')) : undefined, outil, signal: controle.signal, surProgression, avecProvisoire })
       .then((r) => ({ ...r, mode: 'fidele' }));
   } else {
     // Interruption : fermer le navigateur sans fenêtre et l'aperçu lancé.
     arreterProprementSurSignal();
-    travail = exporterVideo({ dossier, planche, ouvrir: args.includes('--ouvrir'), surProgression })
+    travail = exporterVideo({ dossier, planche, ouvrir: args.includes('--ouvrir'), surProgression, avecProvisoire })
       .then((r) => ({ ...r, mode: 'navigateur', ...(!rapide && !planche ? { conseilFfmpeg: { message: outil.message, commande: outil.commande } } : {}) }));
   }
   travail.then((r) => {

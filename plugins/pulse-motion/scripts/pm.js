@@ -7,7 +7,7 @@
  *   pulse-motion controler <dossier> [--sans-correction] [--sans-rendu]   contrôle ; corrige seul les cas sûrs
  *   pulse-motion apercu <dossier> [--port 4321] [--ouvrir]
  *   pulse-motion historique sauvegarder|annuler <dossier>
- *   pulse-motion exporter <dossier> [--qualite 1080p|720p] [--ips 30|60] [--rapide]   MP4 fidèle (ffmpeg) ou dans le navigateur
+ *   pulse-motion exporter <dossier> [--qualite 1080p|720p] [--ips 30|60] [--rapide] [--avec-provisoire]   MP4 fidèle (ffmpeg) ou dans le navigateur
  *   pulse-motion ffmpeg                  ffmpeg présent ? commande pour l'installer
  *   pulse-motion voix importer <fichier> --scene <id> [dossier] | provisoire [--scene <id>] [dossier]   voix d'une scène ou voix provisoire du système
  *   pulse-motion planche <dossier> [id1,id2] [--ouvrir]   images clés PNG dans sortie/planche/
@@ -112,7 +112,7 @@ function lancer(args) {
     '  etat <dossier> [--accord deroule|style|video] [--parcours rapide|accompagne]',
     '  assembler <dossier>      controler <dossier> [--sans-correction] [--sans-rendu]      apercu <dossier> [--port N] [--ouvrir]',
     '  historique sauvegarder|annuler <dossier>',
-    '  exporter <dossier> [--qualite 1080p|720p] [--ips 30|60] [--rapide]       planche <dossier> [id1,id2]',
+    '  exporter <dossier> [--qualite 1080p|720p] [--ips 30|60] [--rapide] [--avec-provisoire]       planche <dossier> [id1,id2]',
     '  ffmpeg                   ffmpeg présent ? commande pour l\'installer',
     '  voix importer <fichier> --scene <id> [dossier] | provisoire [--scene <id>] [dossier]',
     '  reference <nom>          scene <style> <nom>      effet <nom>      consignes <skill>',
