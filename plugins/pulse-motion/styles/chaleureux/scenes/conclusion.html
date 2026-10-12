@@ -1,0 +1,11 @@
+<!-- Scène toute faite « conclusion » (style chaleureux) : le message à retenir et le logo. Durée conseillée : 6 s.
+     Textes : titre (≤ 40 car.), sous (≤ 50 car.). Logo : celui de la charte (sinon supprimer l'image).
+     Dernière scène de la vidéo : data-dur du décor = durée de la scène − 1 s (image stable d'au moins 0,5 s à la fin). -->
+<section data-scene="conclusion" class="centre">
+  <div class="decor">
+    <span class="galet" data-decor style="width: 70cqh; height: 62cqh; left: 50%; top: 50%; margin: -31cqh 0 0 -35cqh" data-start="0" data-dur="5" data-tween="--dy 0cqh→-3cqh sine-inout"></span>
+  </div>
+  <h2 id="titre" class="titre pose" data-texte="titre" data-start="0.2" data-dur="0.9"></h2>
+  <p id="sous" class="sous-titre pose" data-texte="sous" data-start="#titre:fin+0.1" data-dur="0.9"></p>
+  <img id="logo" class="logo eclot" data-logo alt="" data-start="#sous:fin+0.2" data-dur="0.8">
+</section>

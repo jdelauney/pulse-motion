@@ -1,0 +1,18 @@
+<!-- Scène toute faite « comparaison » (style chaleureux) : deux cartes arrondies. Durée conseillée : 12 s.
+     Textes : titre (≤ 40 car.), gauche-titre et droite-titre (≤ 20 car.), gauche-texte et droite-texte (≤ 60 car.). -->
+<section data-scene="comparaison">
+  <div class="decor">
+    <span class="galet" data-decor style="width: 48cqh; height: 42cqh; left: -16cqh; bottom: -18cqh" data-start="0" data-dur="12" data-tween="--dx 0cqh→8cqh sine-inout"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen pose" data-texte="titre" data-start="0.2" data-dur="0.9"></h2>
+  <div class="deux-cartes">
+    <div id="gauche" class="carte pose" data-start="#titre:fin+0.3" data-dur="0.9">
+      <h3 class="carte-titre" data-texte="gauche-titre"></h3>
+      <p class="texte" data-texte="gauche-texte"></p>
+    </div>
+    <div id="droite" class="carte sauge pose" data-start="#gauche:fin+1.2" data-dur="0.9">
+      <h3 class="carte-titre" data-texte="droite-titre"></h3>
+      <p class="texte" data-texte="droite-texte"></p>
+    </div>
+  </div>
+</section>

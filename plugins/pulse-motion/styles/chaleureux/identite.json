@@ -1,0 +1,21 @@
+{
+  "style": "chaleureux",
+  "famille": "chaleureuse",
+  "personnalite": ["accueillant", "doux", "humain"],
+  "eviter": ["froideur technique", "agressivité"],
+  "genres": ["formation", "storytelling"],
+  "couleur": {
+    "strategie": "plusieurs-couleurs",
+    "tons": ["clair"],
+    "tonDefaut": "clair",
+    "roles": { "primaire": "titres, galets", "accent": "pastilles, puces, flèches" }
+  },
+  "typographie": {
+    "titres": { "famille": "Fredoka", "categorie": "sans-serif", "graisse": 600 },
+    "texte": { "famille": "Nunito Sans", "categorie": "sans-serif", "graisse": 400 }
+  },
+  "mouvement": { "caractere": "doux", "courbes": ["quint-out", "back-out", "sine-inout"], "dureeType": 0.9, "transitions": ["fondu", "glissement"] },
+  "signature": "Formes organiques qui respirent, cartes aux rayons généreux, mouvements doux qui s'arrêtent net",
+  "aFaire": ["Un ton direct et bienveillant", "Des cartes aérées"],
+  "aEviter": ["Les angles vifs", "Les couleurs criardes"]
+}
