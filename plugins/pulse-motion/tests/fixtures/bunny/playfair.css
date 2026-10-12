@@ -1,0 +1,10 @@
+/* latin-ext */
+@font-face { font-family: 'Playfair Display'; font-style: normal; font-weight: 400; src: url(https://fonts.bunny.net/playfair-display/files/playfair-display-latin-ext-400-normal.woff2) format('woff2'); unicode-range: U+0100-02AF, U+0304, U+0308; }
+/* latin */
+@font-face { font-family: 'Playfair Display'; font-style: normal; font-weight: 400; src: url(https://fonts.bunny.net/playfair-display/files/playfair-display-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F; }
+/* latin */
+@font-face { font-family: 'Playfair Display'; font-style: italic; font-weight: 400; src: url(https://fonts.bunny.net/playfair-display/files/playfair-display-latin-400-italic.woff2) format('woff2'); unicode-range: U+0000-00FF; }
+/* latin-ext */
+@font-face { font-family: 'Playfair Display'; font-style: normal; font-weight: 700; src: url(https://fonts.bunny.net/playfair-display/files/playfair-display-latin-ext-700-normal.woff2) format('woff2'); unicode-range: U+0100-02AF; }
+/* latin */
+@font-face { font-family: 'Playfair Display'; font-style: normal; font-weight: 700; src: url(https://fonts.bunny.net/playfair-display/files/playfair-display-latin-700-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0152-0153; }

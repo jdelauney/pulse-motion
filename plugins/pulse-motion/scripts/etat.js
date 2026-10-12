@@ -13,6 +13,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { lireDeroule } = require('./lib/deroule.js');
 const { cheminDansProjet } = require('./lib/embarquer.js');
+const { etatCharte } = require('./charte.js');
 
 const NODE_MINIMUM = 20;
 const ACCORDS = ['deroule', 'style', 'video'];
@@ -50,7 +51,7 @@ const PROCHAINES = {
   'deroule-a-corriger': 'Le déroulé contient des erreurs : les corriger, puis le présenter à la personne.',
   'deroule-a-valider': 'Présenter le déroulé en tableau et demander l\'accord de la personne.',
   'fabrication': 'Écrire les scènes manquantes (agent animateur), puis assembler, contrôler et ouvrir l\'aperçu.',
-  'style-a-valider': 'Parcours accompagné : montrer deux scènes dans l\'aperçu et demander l\'accord sur le style.',
+  'style-a-valider': 'Parcours accompagné : montrer la comparaison des styles (pulse-motion comparer) et demander l\'accord sur le style, avant d\'écrire les scènes.',
   'video-a-valider': 'Parcours accompagné : faire regarder la vidéo entière et demander l\'accord final.',
   'apercu': 'La vidéo est prête : proposer une retouche (/pulse-motion:retoucher) ou l\'export en MP4 (/pulse-motion:exporter).',
 };
@@ -70,17 +71,22 @@ function etatProjet(dossier) {
     accords,
     apercu: memo.apercu ? { url: memo.apercu.url, actif: processusActif(memo.apercu.pid) } : null,
     erreurs: [],
+    charte: null,
   };
 
   if (resultat.projet) {
     const { deroule, erreurs } = lireDeroule(projet);
     if (deroule && typeof deroule.titre === 'string') resultat.titre = deroule.titre;
     if (deroule && deroule.parcours) resultat.parcours = deroule.parcours;
+    if (deroule && !erreurs.length) resultat.charte = etatCharte(projet, deroule);
     if (erreurs.length) {
       resultat.etape = 'deroule-a-corriger';
       resultat.erreurs = erreurs;
     } else if (!accords.deroule) {
       resultat.etape = 'deroule-a-valider';
+    } else if (resultat.parcours === 'accompagne' && !accords.style) {
+      // Le style se choisit avant d'écrire les scènes : les scènes toutes faites dépendent de lui.
+      resultat.etape = 'style-a-valider';
     } else {
       const manquantes = deroule.scenes.filter((s) => {
         const f = cheminDansProjet(projet, s.fichier);
@@ -89,8 +95,6 @@ function etatProjet(dossier) {
       if (manquantes.length) {
         resultat.etape = 'fabrication';
         resultat.scenesManquantes = manquantes;
-      } else if (resultat.parcours === 'accompagne' && !accords.style) {
-        resultat.etape = 'style-a-valider';
       } else if (resultat.parcours === 'accompagne' && !accords.video) {
         resultat.etape = 'video-a-valider';
       } else {

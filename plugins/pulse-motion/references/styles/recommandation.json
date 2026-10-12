@@ -1,0 +1,6 @@
+{
+  "formation": { "recommandes": ["clair-pedagogique", "chaleureux"], "contraste": "minimal" },
+  "produit": { "recommandes": ["minimal", "tech-sombre"], "contraste": "energique" },
+  "storytelling": { "recommandes": ["editorial", "chaleureux"], "contraste": "tech-sombre" },
+  "social": { "recommandes": ["energique", "minimal"], "contraste": "editorial" }
+}
