@@ -9,6 +9,7 @@
  *   pulse-motion historique sauvegarder|annuler <dossier>
  *   pulse-motion exporter <dossier> [--qualite 1080p|720p] [--ips 30|60] [--rapide]   MP4 fidèle (ffmpeg) ou dans le navigateur
  *   pulse-motion ffmpeg                  ffmpeg présent ? commande pour l'installer
+ *   pulse-motion voix importer <fichier> --scene <id> [dossier] | provisoire [--scene <id>] [dossier]   voix d'une scène ou voix provisoire du système
  *   pulse-motion planche <dossier> [id1,id2] [--ouvrir]   images clés PNG dans sortie/planche/
  *   pulse-motion reference <nom>          affiche references/<nom>.md (ex. moteur, rythme, styles/clair-pedagogique)
  *   pulse-motion scene <style> <nom>      affiche une scène toute faite d'un style
@@ -46,6 +47,7 @@ const SCRIPTS = {
   police: 'polices.js',
   style: 'style-perso.js',
   ffmpeg: 'ffmpeg.js',
+  voix: 'voix.js',
 };
 
 function afficherFichier(fichier, quoi) {
@@ -112,6 +114,7 @@ function lancer(args) {
     '  historique sauvegarder|annuler <dossier>',
     '  exporter <dossier> [--qualite 1080p|720p] [--ips 30|60] [--rapide]       planche <dossier> [id1,id2]',
     '  ffmpeg                   ffmpeg présent ? commande pour l\'installer',
+    '  voix importer <fichier> --scene <id> [dossier] | provisoire [--scene <id>] [dossier]',
     '  reference <nom>          scene <style> <nom>      effet <nom>      consignes <skill>',
     '  styles [--genre <genre>]                         styles verifier <nom>',
     '  changer-style <dossier> <style>                  comparer <dossier> <s1,s2,s3> [--scenes a,b] [--ouvrir]',
