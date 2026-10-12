@@ -105,3 +105,13 @@ body {
 #pm-scene [data-profondeur] {
   translate: calc(var(--pm-cam-dx, 0) * (1 - var(--pm-profondeur, 1)) * 1cqw) calc(var(--pm-cam-dy, 0) * (1 - var(--pm-profondeur, 1)) * 1cqh);
 }
+
+/* Sous-titres (moteur/sous-titres-rendu.js) : variables --pm-st-* pour l'habillage par le style. */
+#pm-scene #pm-sous-titres { position: absolute; left: 0; right: 0; z-index: 1000; display: flex; justify-content: center; pointer-events: none; }
+#pm-scene #pm-sous-titres[data-position="bas"] { bottom: var(--pm-st-marge); }
+#pm-scene #pm-sous-titres[data-position="haut"] { top: var(--pm-st-marge); }
+#pm-scene .pm-st-carton { max-width: 90%; padding: 0.35em 0.7em; border-radius: 0.35em; background: var(--pm-st-fond, rgb(0 0 0 / 0.62));
+  color: var(--pm-st-texte, #fff); font: 600 var(--pm-st-taille) / 1.25 var(--pm-st-police, var(--f-texte, system-ui, sans-serif)); text-align: center; }
+#pm-scene .pm-st-ligne { display: block; white-space: nowrap; }
+#pm-scene #pm-sous-titres[data-mode="mot"] .pm-st-mot[data-etat="a-venir"] { opacity: 0.55; }
+#pm-scene #pm-sous-titres[data-mode="mot"] .pm-st-mot[data-etat="en-cours"] { color: var(--pm-st-accent, var(--c-accent, #ffd400)); }
