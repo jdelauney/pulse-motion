@@ -1,0 +1,14 @@
+<!-- Scène toute faite « etape » (style energique) : une étape, numéro en pastille. Durée conseillée : 7 s.
+     Textes : numero (≤ 2 car.), titre (≤ 28 car.), texte (≤ 70 car.). -->
+<section data-scene="etape">
+  <div class="decor">
+    <span class="bandes" data-decor data-start="0" data-dur="7" data-tween="--x 0cqh→-35cqh linear"></span>
+  </div>
+  <div class="etape">
+    <span id="numero" class="pastille claque" data-texte="numero" data-start="0.1" data-dur="0.45"></span>
+    <div class="etape-texte">
+      <h2 id="titre" class="cri-moyen tombe" data-texte="titre" data-start="#numero:fin" data-dur="0.7"></h2>
+      <p id="texte" class="texte volet" data-texte="texte" data-start="#titre:fin+0.1" data-dur="0.45"></p>
+    </div>
+  </div>
+</section>

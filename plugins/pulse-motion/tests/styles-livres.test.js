@@ -64,3 +64,15 @@ for (const style of LIVRES) {
     if (tons.length > 1) await Promise.all(tons.map((ton) => verifierDansLeNavigateur(style, '16:9', ton)));
   });
 }
+
+test('energique : charte à l\'accent jaune sur le fond jaune, titres et aplats encore lisibles', () => {
+  const dir = projetCatalogue('energique');
+  const d = JSON.parse(fs.readFileSync(path.join(dir, 'deroule.json'), 'utf8'));
+  d.charte.couleurs = { accent: '#fde047' };
+  fs.writeFileSync(path.join(dir, 'deroule.json'), JSON.stringify(d));
+  const { html } = assembler({ dossier: dir, ecrire: false });
+  const lisible = /--c-accent-lisible: (#[0-9a-f]{6});/.exec(html)[1];
+  assert.notEqual(lisible, '#fde047');
+  assert.ok(require('../scripts/lib/couleurs.js').contraste(lisible, '#facc15') >= 4.5);
+  assert.doesNotMatch(fs.readFileSync(path.join(RACINE, 'styles', 'energique', 'style.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, ''), /color:\s*var\(--c-accent\)\s*;/, 'texte en accent brut');
+});

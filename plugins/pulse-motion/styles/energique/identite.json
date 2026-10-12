@@ -1,0 +1,22 @@
+{
+  "style": "energique",
+  "famille": "affirmee",
+  "personnalite": ["audacieux", "rapide", "percutant"],
+  "eviter": ["ton solennel", "lenteur"],
+  "genres": ["social", "produit"],
+  "couleur": {
+    "strategie": "la-couleur-partout",
+    "tons": ["clair", "sombre"],
+    "tonDefaut": "clair",
+    "sombre": { "fond": "#0a0a0a", "texte": "#fafafa" },
+    "roles": { "primaire": "aplats et bandeaux", "accent": "chiffres, pastilles, flèches" }
+  },
+  "typographie": {
+    "titres": { "famille": "Anton", "categorie": "sans-serif", "graisse": 400 },
+    "texte": { "famille": "Archivo", "categorie": "sans-serif", "graisse": 800 }
+  },
+  "mouvement": { "caractere": "vif", "courbes": ["bounce-out", "back-out", "expo-out"], "dureeType": 0.5, "transitions": ["coupe", "balayage", "zoom"] },
+  "signature": "Aplats pleins, titres géants en capitales qui tombent et rebondissent, bandes en mouvement",
+  "aFaire": ["Des titres très courts", "Une idée par écran"],
+  "aEviter": ["Les longs paragraphes", "Plus de trois couleurs"]
+}
