@@ -81,3 +81,22 @@ test('voix du système réelle (Windows) : une prise lisible', { skip: process.p
   assert.equal(r.ok, true, r.message);
   assert.ok(r.scenes[0].duree > 0.3, String(r.scenes[0].duree));
 });
+
+test('voix studio : aperçu lancé : ouvre le studio sur la scène ; sinon dit de lancer l\'aperçu', async () => {
+  const { ouvrirStudio } = require('../scripts/voix.js');
+  const { demarrerApercu } = require('../scripts/apercu.js');
+  const { STYLES } = require('./aide/projet.js');
+  const dir = copierProjet('projet-simple');
+  avecTexte(dir);
+  const sans = ouvrirStudio({ dossier: dir, scene: 'intro', ouvrir: () => {} });
+  assert.equal(sans.ok, false);
+  assert.match(sans.message, /pulse-motion apercu/);
+  const apercu = await demarrerApercu({ dossier: dir, port: 47361, dossierStyles: STYLES });
+  try {
+    const ouverts = [];
+    const r = ouvrirStudio({ dossier: dir, scene: 'intro', ouvrir: (u) => ouverts.push(u) });
+    assert.equal(r.ok, true, r.message);
+    assert.deepEqual(ouverts, [`${apercu.url}?studio=intro`]);
+    assert.match(ouvrirStudio({ dossier: dir, scene: 'rien', ouvrir: () => {} }).message, /Scène inconnue/);
+  } finally { await apercu.fermer(); }
+});
