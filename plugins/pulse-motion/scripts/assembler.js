@@ -36,9 +36,9 @@ function cssCharte(charte, dossierProjet, dossierStyle) {
   lignes.push(...variablesDerivees(charte.couleurs));
   const faces = [];
   const dejaVues = new Set();
-  const face = (famille, fichier, graisse) => {
+  const face = (famille, fichier, graisse, italique = false) => {
     try {
-      faces.push(`@font-face { font-family: '${famille}'; src: url("${versDataURI(fichier)}"); font-weight: ${graisse || '100 900'}; font-display: block; }`);
+      faces.push(`@font-face { font-family: '${famille}'; src: url("${versDataURI(fichier)}"); font-weight: ${graisse || '100 900'};${italique ? ' font-style: italic;' : ''} font-display: block; }`);
     } catch (e) {
       erreurs.push({ regle: 'police-non-embarquee', gravite: 'erreur', message: `Police « ${famille} » : fichier « ${path.basename(fichier)} » illisible (${e.code || e.message}).` });
     }
@@ -59,7 +59,7 @@ function cssCharte(charte, dossierProjet, dossierStyle) {
       famille = valeur;
       if (!POLICES_SYSTEME.has(famille) && !dejaVues.has(famille)) {
         const fichiers = trouverFichiersPolice(famille, [path.join(dossierProjet, 'charte', 'polices'), path.join(dossierStyle, 'polices')]);
-        if (fichiers.length) { fichiers.forEach((f) => face(famille, f.fichier, f.graisse)); dejaVues.add(famille); }
+        if (fichiers.length) { fichiers.forEach((f) => face(famille, f.fichier, f.graisse, f.italique)); dejaVues.add(famille); }
         else erreurs.push({ regle: 'police-non-embarquee', gravite: 'erreur', message: `Police « ${famille} » non fournie : récupérez-la avec « pulse-motion police "${famille}" », ou ajoutez son fichier dans charte/polices/ (charte.polices.${role}).` });
       }
     }

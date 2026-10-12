@@ -43,9 +43,24 @@ function couleursSVG(texte) {
 
 const paeth = (a, b, c) => { const p = a + b - c; const pa = Math.abs(p - a); const pb = Math.abs(p - b); const pc = Math.abs(p - c); return pa <= pb && pa <= pc ? a : pb <= pc ? b : c; };
 
-/** PNG 8 bits non entrelacé -> { largeur, hauteur, pixel(x, y) -> [r, g, b, a] }. */
+/** Erreur prévue, au message déjà en français (les autres deviennent « image PNG abîmée »). */
+class ErreurImage extends Error {}
+
+/**
+ * PNG non entrelacé, 8 bits par couleur (1, 2 ou 4 bits aussi pour la palette et les gris)
+ * -> { largeur, hauteur, pixel(x, y) -> [r, g, b, a] }.
+ */
 function decoderPNG(buf) {
-  if (!Buffer.isBuffer(buf) || !buf.subarray(0, 8).equals(SIGNATURE_PNG)) throw new Error('ce fichier n\'est pas une image PNG');
+  try {
+    return decoder(buf);
+  } catch (e) {
+    if (e instanceof ErreurImage) throw new Error(e.message);
+    throw new Error('image PNG abîmée : réenregistrez le logo, ou donnez-le en SVG');
+  }
+}
+
+function decoder(buf) {
+  if (!Buffer.isBuffer(buf) || !buf.subarray(0, 8).equals(SIGNATURE_PNG)) throw new ErreurImage('ce fichier n\'est pas une image PNG');
   let pos = 8;
   let ihdr = null;
   let palette = null;
@@ -55,23 +70,27 @@ function decoderPNG(buf) {
     const longueur = buf.readUInt32BE(pos);
     const type = buf.toString('latin1', pos + 4, pos + 8);
     const donnees = buf.subarray(pos + 8, pos + 8 + longueur);
-    if (type === 'IHDR') ihdr = { largeur: donnees.readUInt32BE(0), hauteur: donnees.readUInt32BE(4), profondeur: donnees[8], type: donnees[9], entrelace: donnees[12] };
-    else if (type === 'PLTE') palette = donnees;
+    if (type === 'IHDR') {
+      if (donnees.length < 13) throw new ErreurImage('image PNG abîmée (en-tête incomplet)');
+      ihdr = { largeur: donnees.readUInt32BE(0), hauteur: donnees.readUInt32BE(4), profondeur: donnees[8], type: donnees[9], entrelace: donnees[12] };
+    } else if (type === 'PLTE') palette = donnees;
     else if (type === 'tRNS') alphas = donnees;
     else if (type === 'IDAT') idat.push(donnees);
     else if (type === 'IEND') break;
     pos += 12 + longueur;
   }
-  if (!ihdr) throw new Error('image PNG illisible');
-  if (ihdr.entrelace) throw new Error('PNG entrelacé non pris en charge : réenregistrez le logo en PNG non entrelacé, ou donnez-le en SVG');
-  if (ihdr.profondeur !== 8) throw new Error(`PNG en ${ihdr.profondeur} bits par couleur non pris en charge : réenregistrez le logo en PNG 8 bits, ou donnez-le en SVG`);
+  if (!ihdr) throw new ErreurImage('image PNG illisible');
+  if (ihdr.entrelace) throw new ErreurImage('PNG entrelacé non pris en charge : réenregistrez le logo en PNG non entrelacé, ou donnez-le en SVG');
   const canaux = { 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 }[ihdr.type];
-  if (!canaux || (ihdr.type === 3 && !palette)) throw new Error('type de PNG non pris en charge : réenregistrez le logo en PNG couleur, ou donnez-le en SVG');
-  const { largeur, hauteur } = ihdr;
-  const stride = largeur * canaux;
+  if (!canaux || (ihdr.type === 3 && !palette)) throw new ErreurImage('type de PNG non pris en charge : réenregistrez le logo en PNG couleur, ou donnez-le en SVG');
+  const profondeurs = ihdr.type === 0 || ihdr.type === 3 ? [1, 2, 4, 8] : [8];
+  if (!profondeurs.includes(ihdr.profondeur)) throw new ErreurImage(`PNG en ${ihdr.profondeur} bits par couleur non pris en charge : réenregistrez le logo en PNG 8 bits, ou donnez-le en SVG`);
+  const { largeur, hauteur, profondeur } = ihdr;
+  const stride = Math.ceil((largeur * canaux * profondeur) / 8);
+  const pas = Math.max(1, (canaux * profondeur) >> 3);
   let brut;
-  try { brut = zlib.inflateSync(Buffer.concat(idat)); } catch { throw new Error('image PNG abîmée'); }
-  if (brut.length < hauteur * (stride + 1)) throw new Error('image PNG abîmée');
+  try { brut = zlib.inflateSync(Buffer.concat(idat)); } catch { throw new ErreurImage('image PNG abîmée'); }
+  if (brut.length < hauteur * (stride + 1)) throw new ErreurImage('image PNG abîmée');
   const px = Buffer.alloc(stride * hauteur);
   for (let y = 0; y < hauteur; y++) {
     const filtre = brut[y * (stride + 1)];
@@ -79,19 +98,28 @@ function decoderPNG(buf) {
     const ligne = y * stride;
     const precedente = ligne - stride;
     for (let i = 0; i < stride; i++) {
-      const a = i >= canaux ? px[ligne + i - canaux] : 0;
+      const a = i >= pas ? px[ligne + i - pas] : 0;
       const b = y ? px[precedente + i] : 0;
-      const c = y && i >= canaux ? px[precedente + i - canaux] : 0;
+      const c = y && i >= pas ? px[precedente + i - pas] : 0;
       const prediction = filtre === 1 ? a : filtre === 2 ? b : filtre === 3 ? (a + b) >> 1 : filtre === 4 ? paeth(a, b, c) : 0;
       px[ligne + i] = (brut[source + i] + prediction) & 0xff;
     }
   }
+  // Valeur d'un échantillon de moins de 8 bits (palette, gris).
+  const echantillon = (x, y) => {
+    const bit = x * profondeur;
+    return (px[y * stride + (bit >> 3)] >> (8 - profondeur - (bit & 7))) & ((1 << profondeur) - 1);
+  };
   const pixel = (x, y) => {
     const o = y * stride + x * canaux;
     switch (ihdr.type) {
-      case 0: return [px[o], px[o], px[o], 255];
+      case 0: { const v = profondeur === 8 ? px[o] : Math.round((echantillon(x, y) * 255) / ((1 << profondeur) - 1)); return [v, v, v, 255]; }
       case 2: return [px[o], px[o + 1], px[o + 2], 255];
-      case 3: { const k = px[o]; return [palette[k * 3], palette[k * 3 + 1], palette[k * 3 + 2], alphas && k < alphas.length ? alphas[k] : 255]; }
+      case 3: {
+        const k = profondeur === 8 ? px[o] : echantillon(x, y);
+        if (k * 3 + 2 >= palette.length) throw new Error('image PNG abîmée (couleur hors de la palette) : réenregistrez le logo, ou donnez-le en SVG');
+        return [palette[k * 3], palette[k * 3 + 1], palette[k * 3 + 2], alphas && k < alphas.length ? alphas[k] : 255];
+      }
       case 4: return [px[o], px[o], px[o], px[o + 1]];
       default: return [px[o], px[o + 1], px[o + 2], px[o + 3]];
     }

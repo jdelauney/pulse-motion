@@ -43,3 +43,14 @@ test('formats refusés avec un message clair', () => {
   assert.throws(() => L.decoderPNG(pngRGBA(2, 2, () => BLEU, { entrelace: true })), /PNG entrelacé/);
   assert.throws(() => L.decoderPNG(pngRGBA(2, 2, () => BLEU, { profondeur: 16 })), /16 bits/);
 });
+
+test('PNG à palette de 2 bits lu ; PNG ou palette abîmés : message en français', () => {
+  const png2 = pngPalette(9, 4, (x) => (x < 2 ? 0 : x < 7 ? 1 : 2), [[0, 0, 0], [0x0f, 0x76, 0x6e], [0xe1, 0x1d, 0x48]], [0], 2);
+  const { pixel } = L.decoderPNG(png2);
+  assert.deepEqual([pixel(0, 0), pixel(3, 1), pixel(8, 3)], [[0, 0, 0, 0], [0x0f, 0x76, 0x6e, 255], [0xe1, 0x1d, 0x48, 255]]);
+  assert.deepEqual(L.couleursDominantes(L.couleursLogo(ecrire('logo.png', png2))), { primaire: '#0f766e', accent: '#e11d48' });
+  const court = Buffer.concat([Buffer.from('89504e470d0a1a0a', 'hex'), Buffer.from([0, 0, 0, 13]), Buffer.from('IHDR'), Buffer.from([0, 0])]);
+  assert.throws(() => L.decoderPNG(court), /image PNG (abîmée|illisible)/);
+  const horsPalette = pngPalette(4, 1, () => 3, [[0, 0, 0]], [], 8);
+  assert.throws(() => L.couleursLogo(ecrire('logo.png', horsPalette)), /image PNG abîmée/);
+});

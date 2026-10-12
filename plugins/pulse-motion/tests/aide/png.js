@@ -40,12 +40,20 @@ function pngRGBA(largeur, hauteur, pixels, { entrelace = false, profondeur = 8 }
   return Buffer.concat([SIGNATURE, bloc('IHDR', ihdr), bloc('IDAT', zlib.deflateSync(Buffer.concat(lignes))), bloc('IEND', Buffer.alloc(0))]);
 }
 
-/** PNG à palette (filtre 0) ; alphas = transparence par index (tRNS). */
-function pngPalette(largeur, hauteur, indices, palette, alphas = []) {
+/** PNG à palette (filtre 0), de 1, 2, 4 ou 8 bits par pixel ; alphas = transparence par index (tRNS). */
+function pngPalette(largeur, hauteur, indices, palette, alphas = [], profondeur = 8) {
   const lignes = [];
-  for (let y = 0; y < hauteur; y++) { const l = Buffer.alloc(largeur + 1); for (let x = 0; x < largeur; x++) l[x + 1] = indices(x, y); lignes.push(l); }
+  const stride = Math.ceil((largeur * profondeur) / 8);
+  for (let y = 0; y < hauteur; y++) {
+    const l = Buffer.alloc(stride + 1);
+    for (let x = 0; x < largeur; x++) {
+      const bit = x * profondeur;
+      l[1 + (bit >> 3)] |= indices(x, y) << (8 - profondeur - (bit & 7));
+    }
+    lignes.push(l);
+  }
   const ihdr = Buffer.alloc(13);
-  ihdr.writeUInt32BE(largeur, 0); ihdr.writeUInt32BE(hauteur, 4); ihdr[8] = 8; ihdr[9] = 3;
+  ihdr.writeUInt32BE(largeur, 0); ihdr.writeUInt32BE(hauteur, 4); ihdr[8] = profondeur; ihdr[9] = 3;
   const morceaux = [SIGNATURE, bloc('IHDR', ihdr), bloc('PLTE', Buffer.from(palette.flat()))];
   if (alphas.length) morceaux.push(bloc('tRNS', Buffer.from(alphas)));
   morceaux.push(bloc('IDAT', zlib.deflateSync(Buffer.concat(lignes))), bloc('IEND', Buffer.alloc(0)));

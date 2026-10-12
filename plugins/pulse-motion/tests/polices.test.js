@@ -23,7 +23,7 @@ function faux(table) {
     return { ok: true, status: 200, json: async () => v, text: async () => v, arrayBuffer: async () => Buffer.from(v) };
   };
 }
-const reseau = (extra = {}) => faux({ 'https://fonts.bunny.net/list': CATALOGUE, [URL_FEUILLE]: FEUILLE, [fichierBunny(400)]: 'L400', [fichierBunny(700)]: 'L700', ...extra });
+const reseau = (extra = {}) => faux({ 'https://fonts.bunny.net/list': CATALOGUE, [URL_FEUILLE]: FEUILLE, [fichierBunny(400)]: 'wOF2L400', [fichierBunny(700)]: 'wOF2L700', [fichierBunny(400).replace('normal', 'italic')]: 'wOF2I400', ...extra });
 
 test('feuille Bunny : sous-ensemble latin par graisse, feuille entière refusée si une URL sort de l\'hôte', () => {
   const latin = P.choisirLatin(P.fichiersDeLaFeuille(FEUILLE));
@@ -36,7 +36,7 @@ test('installer depuis Bunny : fichiers nommés par graisse, licence notée, rie
   const d = dossier();
   const r = await P.installerBunny({ famille: 'Playfair Display', dans: d, recuperer: reseau() });
   assert.deepEqual(r, { ok: true, famille: 'Playfair Display', fichiers: ['Playfair Display-400.woff2', 'Playfair Display-700.woff2'], dans: d });
-  assert.equal(fs.readFileSync(path.join(d, 'Playfair Display-700.woff2'), 'utf8'), 'L700');
+  assert.equal(fs.readFileSync(path.join(d, 'Playfair Display-700.woff2'), 'utf8'), 'wOF2L700');
   const licences = fs.readFileSync(path.join(d, 'LICENCES.md'), 'utf8');
   assert.match(licences, /## Playfair Display/);
   assert.match(licences, /Open Font License/);
@@ -92,4 +92,32 @@ test('nom de famille du catalogue Bunny nettoyé : rien n\'est écrit hors du do
   assert.deepEqual(r.fichiers, ['evil-400.woff2', 'evil-700.woff2']);
   assert.deepEqual(fs.readdirSync(parent), ['a']);
   assert.ok(fs.existsSync(path.join(d, 'evil-400.woff2')));
+});
+
+test('Bunny : fichier reçu qui n\'est pas une police, ou renommage impossible : rien d\'installé', async () => {
+  const d1 = dossier();
+  const pasPolice = await P.installerBunny({ famille: 'Playfair Display', dans: d1, recuperer: reseau({ [fichierBunny(700)]: '<html>page</html>' }) });
+  assert.equal(pasPolice.ok, false);
+  assert.match(pasPolice.message, /n'est pas une police WOFF2/);
+  assert.deepEqual(fs.readdirSync(d1), []);
+  const d2 = dossier();
+  fs.mkdirSync(path.join(d2, 'Playfair Display-700.woff2', 'occupe'), { recursive: true });
+  const bloque = await P.installerBunny({ famille: 'Playfair Display', dans: d2, recuperer: reseau() });
+  assert.equal(bloque.ok, false);
+  assert.deepEqual(fs.readdirSync(d2), ['Playfair Display-700.woff2'], 'seul le dossier qui bloquait reste');
+});
+
+test('Bunny : italiques sur demande, nommés « -italic »', async () => {
+  const d = dossier();
+  const r = await P.installerBunny({ famille: 'Playfair Display', graisses: [400], italique: true, dans: d, recuperer: reseau({ 'https://fonts.bunny.net/css?family=playfair-display:400': FEUILLE }) });
+  assert.equal(r.ok, true, r.message);
+  assert.deepEqual(r.fichiers, ['Playfair Display-400.woff2', 'Playfair Display-400-italic.woff2']);
+});
+
+test('police fournie, caractères manquants : police de remplacement du style nommée pour le rôle', () => {
+  const src = dossier();
+  fs.writeFileSync(path.join(src, 'Marque.woff2'), police({ format: 'woff2', texte: 'abcdefghijklmnopqrstuvwxyz' }));
+  const r = P.installerFichier({ fichier: path.join(src, 'Marque.woff2'), style: 'editorial', role: 'titres', dans: dossier() });
+  assert.equal(r.ok, true);
+  assert.match(r.avertissements[0], /utilisez « Fraunces », la police des titres du style « editorial »/);
 });
