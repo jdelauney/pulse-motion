@@ -35,15 +35,15 @@ function optionsChrome({ gpu = false } = {}) {
   return [...OPTIONS.filter((o) => o !== '--disable-gpu'), ...supplementaires];
 }
 
-/** Charge un fichier HTML ou une URL ; -> Promise du DOM après exécution des scripts (tests). */
-function rendreDOM(navigateur, cible) {
+/** Charge un fichier HTML ou une URL ; -> Promise du DOM après exécution des scripts. delai : en millisecondes. */
+function rendreDOM(navigateur, cible, { delai = 60000 } = {}) {
   const url = /^https?:/.test(cible) ? cible : pathToFileURL(path.resolve(cible)).href;
   const profil = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-chrome-'));
   return new Promise((resolve, reject) => {
     execFile(navigateur, [
       ...OPTIONS, `--user-data-dir=${profil}`, '--allow-file-access-from-files',
       '--virtual-time-budget=5000', '--dump-dom', url,
-    ], { encoding: 'utf8', timeout: 60000, maxBuffer: 1 << 26 }, (erreur, sortie) => {
+    ], { encoding: 'utf8', timeout: delai, maxBuffer: 1 << 26 }, (erreur, sortie) => {
       fs.rmSync(profil, { recursive: true, force: true });
       if (erreur) reject(erreur); else resolve(sortie);
     });

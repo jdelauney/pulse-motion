@@ -367,3 +367,13 @@ test('revue : temps mort raccourci au dixième inférieur, l\'alerte disparaît 
   assert.deepEqual(r.corrections.map((c) => [c.regle, c.apres]), [['temps-mort', 5.5]]);
   assert.equal(r.problemes.some((p) => p.regle === 'temps-mort'), false, JSON.stringify(r.problemes));
 });
+
+test('ligne de commande : --sans-rendu, renduVerifie dans le résumé', () => {
+  const cli = (...a) => require('node:child_process').spawnSync(process.execPath, [path.join(__dirname, '..', 'scripts', 'controler.js'), ...a], { encoding: 'utf8' });
+  const dir = require('./aide/temporaire.js').dossierTemporaire('pm-cli-');
+  fs.cpSync(path.join(__dirname, '..', 'exemples', 'chaine-du-froid'), dir, { recursive: true });
+  const r = cli(dir, '--sans-rendu');
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.equal(JSON.parse(r.stdout).renduVerifie, false);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(dir, 'sortie', 'controle.json'), 'utf8')).renduVerifie, false);
+});
