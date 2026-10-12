@@ -1,0 +1,11 @@
+<!-- Scène toute faite « titre » (style chaleureux) : accueillir et ouvrir la vidéo. Durée conseillée : 7 s.
+     Textes : etiquette (≤ 25 car.), titre (≤ 40 car.), sous (≤ 50 car.). Décor : data-dur = durée de la scène. -->
+<section data-scene="titre" class="centre">
+  <div class="decor">
+    <span class="galet" data-decor style="width: 64cqh; height: 58cqh; left: -16cqh; top: -18cqh" data-start="0" data-dur="7" data-tween="--dx 0cqh→6cqh sine-inout; --dy 0cqh→4cqh sine-inout"></span>
+    <span class="galet sauge" data-decor style="width: 40cqh; height: 36cqh; right: -10cqh; bottom: -12cqh" data-start="0" data-dur="7" data-tween="--dx 0cqh→-5cqh sine-inout"></span>
+  </div>
+  <p id="etiquette" class="pastille-texte eclot" data-texte="etiquette" data-start="0.2" data-dur="0.8"></p>
+  <h1 id="titre" class="titre pose" data-texte="titre" data-start="#etiquette+0.3" data-dur="0.9"></h1>
+  <p id="sous" class="sous-titre pose" data-texte="sous" data-start="#titre:fin+0.1" data-dur="0.9"></p>
+</section>

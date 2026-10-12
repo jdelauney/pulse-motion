@@ -1,0 +1,19 @@
+<!-- Scène toute faite « schema » (style chaleureux) : trois étapes reliées par des flèches courbes. Durée conseillée : 8 s.
+     Textes : titre (≤ 40 car.), a, b, c (≤ 25 car.). -->
+<section data-scene="schema">
+  <div class="decor">
+    <span class="galet" data-decor style="width: 46cqh; height: 40cqh; right: -14cqh; bottom: -16cqh" data-start="0" data-dur="8" data-tween="--dx 0cqh→-6cqh sine-inout"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen pose" data-texte="titre" data-start="0.2" data-dur="0.9"></h2>
+  <div class="parcours">
+    <div id="a" class="etiquette-ronde eclot" data-texte="a" data-start="#titre:fin+0.3" data-dur="0.8"></div>
+    <svg id="lien1" class="courbe" viewBox="0 0 60 30" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" data-start="#a:fin" data-dur="0.7" aria-hidden="true">
+      <path pathLength="100" d="M2 22C18 4 40 4 56 20M48 18l8 2-3 8"/>
+    </svg>
+    <div id="b" class="etiquette-ronde eclot" data-texte="b" data-start="#lien1:fin" data-dur="0.8"></div>
+    <svg id="lien2" class="courbe" viewBox="0 0 60 30" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" data-start="#b:fin" data-dur="0.7" aria-hidden="true">
+      <path pathLength="100" d="M2 22C18 4 40 4 56 20M48 18l8 2-3 8"/>
+    </svg>
+    <div id="c" class="etiquette-ronde eclot" data-texte="c" data-start="#lien2:fin" data-dur="0.8"></div>
+  </div>
+</section>
