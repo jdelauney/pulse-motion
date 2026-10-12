@@ -19,7 +19,7 @@ function enTete(texte) {
 }
 
 const SKILLS = fs.readdirSync(path.join(RACINE, 'skills'));
-const COMMANDES = ['etat', 'assembler', 'controler', 'apercu', 'historique', 'reference', 'scene', 'styles', 'consignes', 'exporter', 'planche', 'effet', 'comparer', 'changer-style', 'lexique', 'charte', 'police', 'glossaire', 'style'];
+const COMMANDES = ['etat', 'assembler', 'controler', 'apercu', 'historique', 'reference', 'scene', 'styles', 'consignes', 'exporter', 'planche', 'effet', 'comparer', 'changer-style', 'lexique', 'charte', 'police', 'glossaire', 'style', 'ffmpeg'];
 const fichiersGuides = () => [
   ...SKILLS.map((s) => path.join('skills', s, 'SKILL.md')),
   ...fs.readdirSync(path.join(RACINE, 'agents')).map((a) => path.join('agents', a)),
@@ -177,4 +177,14 @@ test('référence des contrôles : chaque règle du contrôle y est expliquée, 
   for (const r of regles) assert.match(ref, new RegExp('`' + r + '`'), r);
   assert.match(ref, /corrigé seul/);
   for (const s of ['creer', 'retoucher']) assert.match(lire('skills', s, 'SKILL.md'), /pulse-motion reference controles/, s);
+});
+
+test('skill exporter : ffmpeg vérifié, installation proposée avec accord (commande sûre seulement), repli dans le navigateur', () => {
+  const s = lire('skills', 'exporter', 'SKILL.md');
+  assert.match(s, /pulse-motion ffmpeg/);
+  assert.match(s, /AskUserQuestion|accord/);
+  assert.match(s, /`commande`/);
+  assert.match(s, /--rapide/);
+  assert.match(s, /--qualite 720p/);
+  assert.match(s.split('\n').find((l) => l.startsWith('allowed-tools:')), /Bash\(winget install \*\)/);
 });
