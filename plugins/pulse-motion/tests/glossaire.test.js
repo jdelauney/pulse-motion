@@ -41,3 +41,9 @@ test('contrôle de la vidéo : alertes du glossaire', () => {
   assert.equal(g.length, 1);
   assert.equal(g[0].gravite, 'alerte');
 });
+
+test('verifierGlossaire : un titre tout en capitales n\'est pas une faute de casse', () => {
+  const termes = [{ terme: 'Rungis', sens: '', eviter: [], prononciation: '' }];
+  assert.deepEqual(V.verifierGlossaire([{ id: 'a', textes: { titre: 'MARCHÉ DE RUNGIS' } }], termes), []);
+  assert.equal(V.verifierGlossaire([{ id: 'a', textes: { titre: 'Le marché de rungis' } }], termes).length, 1);
+});
