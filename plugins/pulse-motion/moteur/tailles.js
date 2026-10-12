@@ -1,6 +1,7 @@
 /* Pulse Motion – taille ajustée d'un texte (data-taille="0.9", posé par l'assemblage depuis deroule.ajustements) :
- * taille de police calculée par le style × facteur. Recalculée au chargement et à chaque rendu où la taille de
- * l'image a changé (format, export) : le facteur suit les unités cqh du style.
+ * taille de police de la scène (écrite dans son style, sinon celle du style) × facteur. Recalculée au chargement,
+ * quand l'image change de taille (ResizeObserver, et à chaque rendu par sûreté : export) ; le facteur suit les cqh.
+ * Un texte dont la taille est animée (data-tween sur font-size) n'est jamais ajusté : l'animation l'emporterait.
  * M.essayerTailles({ minimumCqh, facteurs }) : dans la page de contrôle, pour chaque texte qui déborde de son
  * cadre, le plus grand facteur (sous le facteur actuel) qui supprime le débordement sans passer sous minimumCqh.
  * Navigateur seulement ; dépend de horloge (global M).
@@ -10,15 +11,24 @@
   var M = racine.M = racine.M || {};
   var derniere = '';
 
+  function animee(el) { return /(^|;)\s*font-size\b/.test(el.getAttribute('data-tween') || ''); }
+
+  /** Taille écrite dans la scène (gardée une fois pour toutes), remise en place ; -> taille calculée en px. */
   function base(el) {
-    el.style.removeProperty('font-size');
+    if (!el.hasAttribute('data-pm-taille-scene')) el.setAttribute('data-pm-taille-scene', el.style.getPropertyValue('font-size'));
+    var ecrite = el.getAttribute('data-pm-taille-scene');
+    if (ecrite) el.style.setProperty('font-size', ecrite); else el.style.removeProperty('font-size');
     return parseFloat(getComputedStyle(el).fontSize);
+  }
+  function poser(el, f) {
+    var taille = base(el);
+    if (f < 1) el.style.setProperty('font-size', (taille * f) + 'px');
   }
 
   M.appliquerTailles = function () {
     document.querySelectorAll('#pm-scene [data-taille]').forEach(function (el) {
       var f = parseFloat(el.getAttribute('data-taille'));
-      if (f > 0 && f <= 1) el.style.setProperty('font-size', (base(el) * f) + 'px');
+      if (!animee(el) && f > 0 && f <= 1) poser(el, f);
     });
     var c = document.getElementById('pm-scene');
     if (c) { var r = c.getBoundingClientRect(); derniere = r.width + 'x' + r.height; }
@@ -44,7 +54,7 @@
         M.rendre(s.debut + (s.fin - s.debut) * (k + 0.5) / 5);
         sec.querySelectorAll('[data-texte]').forEach(function (el) {
           var cle = el.getAttribute('data-texte');
-          if (vus[s.id + '|' + cle] || !deborde(el)) return;
+          if (vus[s.id + '|' + cle] || animee(el) || !deborde(el)) return;
           vus[s.id + '|' + cle] = true;
           var actuel = parseFloat(el.getAttribute('data-taille')) || 1;
           var taille = base(el);
@@ -56,8 +66,8 @@
             el.style.setProperty('font-size', (taille * f) + 'px');
             if (!deborde(el)) { trouve = f; break; }
           }
-          el.style.setProperty('font-size', (taille * actuel) + 'px');
-          if (actuel === 1) el.style.removeProperty('font-size');
+          // L'essai ne laisse rien : taille de la scène × facteur actuel.
+          poser(el, actuel);
           resultats.push({ scene: s.id, element: el.id || cle, cle: cle, taille: trouve });
         });
       }
@@ -66,8 +76,11 @@
     return resultats;
   };
 
-  // Au chargement, puis à chaque rendu si l'image a changé de taille (aperçu redimensionné, export).
+  // Au chargement, quand l'image change de taille (aperçu en pause, plein écran), et à chaque rendu par sûreté.
   M.appliquerTailles();
+  var scene = document.getElementById('pm-scene');
+  if (scene && racine.ResizeObserver) new racine.ResizeObserver(function () { M.appliquerTailles(); }).observe(scene);
+  else if (racine.addEventListener) racine.addEventListener('resize', function () { M.appliquerTailles(); });
   if (M.surRendu) {
     M.surRendu(function () {
       var c = document.getElementById('pm-scene');

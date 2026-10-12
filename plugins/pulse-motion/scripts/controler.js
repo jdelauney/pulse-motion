@@ -383,7 +383,8 @@ async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.j
       if (renduVerifie) problemes = problemes.filter((p) => p.regle !== 'debordement');
       problemes = [...problemes, ...v.problemes];
       if (corriger && renduVerifie) {
-          const corrigibles = v.ajustements.filter((a) => a.taille);
+          // Seulement les textes dont le débordement est bien signalé par le rendu.
+          const corrigibles = v.ajustements.filter((a) => a.taille && v.problemes.some((p) => p.regle === 'debordement' && p.scene === a.scene && p.element === a.element));
           if (corrigibles.length) {
             const appli = appliquerCorrections(projet, corrigibles.map((a) => ({ regle: 'debordement', correction: { scene: a.scene, ajustement: { cle: a.cle, taille: a.taille } } })), { copieFaite: r.corrections.length > 0 });
             corrections = [...corrections, ...appli.corrections];
@@ -394,7 +395,7 @@ async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.j
           }
           // Débordement que la taille ne suffit pas à corriger : le conseil de raccourcir.
           problemes = problemes.map((p) => (p.regle === 'debordement' && v.ajustements.some((a) => a.scene === p.scene && a.element === p.element && a.taille === null)
-            ? { ...p, message: `${p.message} Même réduit à 80 %, il ne tient pas : raccourcir le texte.` } : p));
+            ? { ...p, message: `${p.message} Même réduit autant que possible (jusqu'à 80 %, sans passer sous ${virgule(SEUILS.texteMinCqh)} cqh), il ne tient pas : raccourcir le texte.` } : p));
       }
     }
   }
