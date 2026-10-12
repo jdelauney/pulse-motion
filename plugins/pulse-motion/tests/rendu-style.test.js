@@ -42,3 +42,16 @@ test('rendu dans le navigateur : style livré sans problème ; titre géant : d�
   assert.ok(r.problemes.some((p) => /^9:16 : Scène « titre » : le texte « titre » (déborde|sort de l'image)/.test(p)), r.problemes.join('\n'));
   assert.ok(!r.problemes.some((p) => p.startsWith('16:9')), r.problemes.join('\n'));
 });
+
+test('banc d\'essai : la zone des boutons en 9:16 est jugée avec des phrases d\'exemple, pas au texte maximal', { skip: !navigateur && 'Chrome ou Edge introuvable' }, async () => {
+  const { dossierTemporaire } = require('./aide/temporaire.js');
+  const racine = dossierTemporaire('pm-banc-');
+  const dossierStyle = path.join(racine, 'clair-pedagogique');
+  fs.cpSync(CLAIR, dossierStyle, { recursive: true });
+  // En 9:16, la liste est poussée tout en bas : ses points tombent sous la légende des réseaux.
+  fs.appendFileSync(path.join(dossierStyle, 'style.css'), '\n@container (orientation: portrait) { #pm-scene > section[data-scene="liste"] { justify-content: flex-end; } }\n');
+  const r = await verifierRendu({ dossierStyle, navigateur, dossierStyles: racine });
+  const zones = r.problemes.filter((p) => /boutons des réseaux sociaux/.test(p));
+  assert.ok(zones.length > 0, r.problemes.join('\n'));
+  assert.ok(zones.every((p) => p.startsWith('9:16 (phrases d\'exemple) : ')), zones.join('\n'));
+});

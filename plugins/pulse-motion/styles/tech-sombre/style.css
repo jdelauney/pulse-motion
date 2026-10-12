@@ -123,16 +123,16 @@
 
 /* ---------- Format vertical : tout s'empile ---------- */
 @container (orientation: portrait) {
-  #pm-scene > section[data-scene] { padding: 10cqh 6cqh; gap: 2.2cqh; font-size: 3.5cqh; }
+  #pm-scene > section[data-scene] { padding: 9cqh 7cqh 15cqh; gap: 2cqh; font-size: 3.5cqh; }
   .invite { font-size: 3.5cqh; }
   .titre { font-size: 6cqh; }
-  .titre-moyen { font-size: 4.6cqh; }
+  .titre-moyen { font-size: 4.2cqh; }
   .texte { font-size: 3.5cqh; }
-  .journal { font-size: 3.5cqh; gap: 1.2cqh; }
-  .journal li { gap: 1.4cqh; }
+  .journal { font-size: 3.5cqh; gap: 0.7cqh; line-height: 1.2; }
+  .journal li { gap: 1.2cqh; }
   .chiffre-mono { font-size: 12cqh; }
-  .diff { grid-template-columns: 1fr; gap: 2cqh; }
-  .panneau { padding: 2.4cqh; gap: 1cqh; }
+  .diff { grid-template-columns: 1fr; gap: 1.4cqh; }
+  .panneau { padding: 1.8cqh; gap: 0.8cqh; }
   .panneau-titre { font-size: 4cqh; }
   .etape { grid-template-columns: 1fr; gap: 2cqh; }
   .index { font-size: 12cqh; }

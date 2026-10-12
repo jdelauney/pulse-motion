@@ -94,3 +94,25 @@ test('mesures : grand élément qui traverse l\'image trop vite', sans, async ()
   assert.equal(c.element, 'vite');
   assert.ok(c.valeur > 1, String(c.valeur));
 });
+
+test('mesures : une scène qui réapparaît n\'est pas un mouvement rapide (relevés consécutifs seulement)', sans, async () => {
+  // Grand élément immobile dans la seconde scène : masquée pendant la première, puis visible.
+  const dir = projet();
+  const fichier = path.join(dir, 'scenes', '02-chiffre.html');
+  fs.writeFileSync(fichier, fs.readFileSync(fichier, 'utf8').replace('</section>', `${boite('grand', 'left:10cqw; top:10cqh; width:60cqw; height:60cqh', 'data-superpose')}</section>`));
+  assert.equal(regles(await mesurer(dir)).includes('mouvement-rapide'), false);
+});
+
+test('mesures : zone des boutons en 9:16 calée sur les réseaux (haut 7 %, bas 20 %, droite 11 % entre 40 % et 85 % de la hauteur)', sans, async () => {
+  const enHautADroite = (h) => h.replace('<h1 id="titre"', '<h1 id="titre" style="position:absolute; left:20cqw; right:2cqw; top:12cqh; margin:0; font-size:3cqh; text-align:right"');
+  assert.equal((await mesurer(projet(enHautADroite), '9:16')).some((x) => x.regle === 'zone-sure' && x.element === 'titre'), false, 'à droite mais au-dessus des boutons');
+  const milieuADroite = (h) => h.replace('<h1 id="titre"', '<h1 id="titre" style="position:absolute; left:20cqw; right:2cqw; top:60cqh; margin:0; font-size:3cqh; text-align:right"');
+  const c = (await mesurer(projet(milieuADroite), '9:16')).find((x) => x.regle === 'zone-sure' && x.element === 'titre');
+  assert.equal(c && c.valeur, 'droite');
+});
+
+test('mesures : deux textes serrés dont les lettres ne se touchent pas ne se chevauchent pas', sans, async () => {
+  const dir = projet((h) => h.replace('<h1 id="titre" data-texte="titre" data-start="0.3">', '<p id="numero" data-texte="numero" style="font-size:30cqh; line-height:0.75; margin:0">2</p><h1 id="titre" data-texte="titre" data-start="0.3" style="margin:0">'));
+  modifierDeroule(dir, (d) => { d.scenes[0].textes.numero = '2'; });
+  assert.equal(regles(await mesurer(dir)).includes('chevauchement'), false);
+});

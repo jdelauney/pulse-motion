@@ -117,12 +117,12 @@
 
 /* ---------- Format vertical : tout s'empile ---------- */
 @container (orientation: portrait) {
-  #pm-scene > section[data-scene] { padding: 10cqh 6cqh; gap: 2cqh; font-size: 3.8cqh; }
+  #pm-scene > section[data-scene] { padding: 10cqh 7cqh 15cqh; gap: 2cqh; font-size: 3.8cqh; }
   .cri { font-size: 6.4cqh; }
   .cri-moyen { font-size: 5.6cqh; }
   .texte { font-size: 3.6cqh; }
   .bandeau { font-size: 3.5cqh; padding: 1cqh 1.8cqh; }
-  .pile li { font-size: 3.5cqh; gap: 1.6cqh; padding: 1.2cqh 1.8cqh; }
+  .pile li { font-size: 3.5cqh; gap: 1.2cqh; padding: 0.8cqh 1.4cqh; }
   .pile li::before { font-size: 4.4cqh; }
   .chiffre-choc { font-size: 15cqh; }
   .face-a-face { grid-template-columns: 1fr; gap: 2.6cqh; }
