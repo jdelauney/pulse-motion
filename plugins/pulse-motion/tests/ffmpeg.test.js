@@ -77,5 +77,42 @@ test('ligne de commande : pulse-motion ffmpeg (ffmpeg de cette machine)', { skip
   const j = JSON.parse(r.stdout);
   assert.equal(j.present, true);
   assert.equal(j.versionOk, true);
-  assert.match(j.version, /^\d+\.\d+$/);
+  assert.match(j.version, /^(\d+\.\d+|récente|inconnue)$/);
+});
+
+test('revue : versions git de Gyan et « git-… » reconnues ; version illisible gardée comme récente', () => {
+  assert.deepEqual(F.lireVersion(VERSION('2024-03-04-git-e30369bc1c-full_build-www.gyan.dev')), { majeure: 99, mineure: 0 });
+  assert.deepEqual(F.lireVersion(VERSION('git-2024-01-02-abcdef')), { majeure: 99, mineure: 0 });
+  const p = path.normalize('/usr/bin/ffmpeg');
+  const s = { existe: (f) => [p, path.normalize('/usr/bin/ffprobe')].includes(path.normalize(f)), executer: () => 'ffmpeg version étrange-build\n' };
+  const r = F.trouverFfmpeg({ env: { PATH: '/usr/bin' }, plateforme: 'linux', ...s });
+  assert.equal(r.present, true);
+  assert.equal(r.versionOk, true);
+  assert.equal(r.version, 'inconnue');
+});
+
+test('revue : un ffmpeg trop ancien en tête du PATH n\'empêche pas d\'en trouver un récent plus loin', () => {
+  const vieux = path.normalize('/opt/vieux/ffmpeg');
+  const neuf = path.normalize('/usr/local/bin/ffmpeg');
+  const s = systeme([vieux, path.normalize('/opt/vieux/ffprobe'), neuf, path.normalize('/usr/local/bin/ffprobe')], { [vieux]: '3.4.8', [neuf]: '6.1.1' });
+  const r = F.trouverFfmpeg({ env: { PATH: '/opt/vieux:/usr/local/bin' }, plateforme: 'linux', ...s });
+  assert.equal(r.chemin, neuf);
+  assert.equal(r.versionOk, true);
+});
+
+test('revue : commande à exécuter séparée du texte ; null quand il n\'y a pas de commande sûre', () => {
+  const linux = F.trouverFfmpeg({ env: { PATH: '' }, plateforme: 'linux', existe: () => false, executer: () => { throw new Error('non'); } });
+  assert.equal(linux.commande, null);
+  assert.match(linux.installer, /gestionnaire de paquets/);
+  const win = F.trouverFfmpeg({ env: { PATH: '' }, plateforme: 'win32', existe: () => false, executer: () => { throw new Error('non'); } });
+  assert.equal(win.commande, 'winget install --id Gyan.FFmpeg -e');
+});
+
+test('revue : dossiers relatifs du PATH ignorés (un dossier de projet ne fournit pas ffmpeg), guillemets retirés', () => {
+  const local = path.normalize(path.join('.', 'ffmpeg'));
+  const s1 = systeme([local, path.normalize(path.join('.', 'ffprobe'))]);
+  assert.equal(F.trouverFfmpeg({ env: { PATH: '.' }, plateforme: 'linux', ...s1 }).present, false);
+  const dossier = 'C:\\Program Files\\ffmpeg\\bin';
+  const s2 = systeme([path.normalize(`${dossier}\\ffmpeg.exe`), path.normalize(`${dossier}\\ffprobe.exe`)]);
+  assert.equal(F.trouverFfmpeg({ env: { PATH: `"${dossier}"` }, plateforme: 'win32', ...s2 }).chemin, path.normalize(`${dossier}\\ffmpeg.exe`));
 });
