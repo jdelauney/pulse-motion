@@ -112,6 +112,11 @@
     return x === y || (x.length > 4 && y.length > 4 && distance(x, y) <= 1);
   }
 
+  /** Un mot du script (ou une de ses parties : « faut-il » entendu « faut » « -il ») correspond au mot entendu. */
+  function correspond(cles, cle) {
+    return cles.some(function (c) { return memeMot(c, cle); });
+  }
+
   /**
    * Mots du script calés sur les mots entendus (transcription) : distance d'édition sur les mots, retour arrière.
    * Les mots appariés (égaux ou substitués) prennent les temps entendus ; les autres sont interpolés au prorata des
@@ -131,20 +136,27 @@
     for (j = 0; j <= m; j++) D[0][j] = j;
     for (i = 1; i <= n; i++) {
       for (j = 1; j <= m; j++) {
-        var c = memeMot(script[i - 1].cles[0], oui[j - 1].cle) ? 0 : 1;
+        var c = correspond(script[i - 1].cles, oui[j - 1].cle) ? 0 : 1;
         D[i][j] = Math.min(D[i - 1][j - 1] + c, D[i - 1][j] + 1, D[i][j - 1] + 1);
       }
     }
-    var paire = new Array(n), egaux = 0;
+    var paire = new Array(n), utilise = new Array(m), egaux = 0;
     i = n; j = m;
     while (i > 0 && j > 0) {
-      var cout = memeMot(script[i - 1].cles[0], oui[j - 1].cle) ? 0 : 1;
-      if (D[i][j] === D[i - 1][j - 1] + cout) { paire[i - 1] = oui[j - 1]; if (!cout) egaux++; i--; j--; }
+      var cout = correspond(script[i - 1].cles, oui[j - 1].cle) ? 0 : 1;
+      if (D[i][j] === D[i - 1][j - 1] + cout) { paire[i - 1] = j - 1; utilise[j - 1] = true; if (!cout) egaux++; i--; j--; }
       else if (D[i][j] === D[i - 1][j] + 1) i--;
       else j--;
     }
     if (!egaux) return null;
-    var mots = script.map(function (s, k) { return paire[k] ? { w: s.w, t0: paire[k].t0, t1: paire[k].t1 } : { w: s.w, t0: null, t1: null }; });
+    var mots = script.map(function (s, k) {
+      if (paire[k] === undefined) return { w: s.w, t0: null, t1: null };
+      // Morceaux voisins entendus du même mot (« faut » « -il ») : du début du premier à la fin du dernier.
+      var premier = paire[k], dernier = paire[k];
+      while (premier > 0 && !utilise[premier - 1] && correspond(s.cles, oui[premier - 1].cle)) premier--;
+      while (dernier < m - 1 && !utilise[dernier + 1] && correspond(s.cles, oui[dernier + 1].cle)) dernier++;
+      return { w: s.w, t0: oui[premier].t0, t1: oui[dernier].t1 };
+    });
     // Mots sans paire : répartis entre la fin du mot précédent et le début du suivant, au prorata des lettres.
     for (var k = 0; k < n; k++) {
       if (mots[k].t0 !== null) continue;
