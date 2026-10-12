@@ -46,7 +46,7 @@ Lire `pulse-motion reference moteur` avant de toucher au fichier d'une scène, e
 
 ## 5. Vérifier et montrer
 
-1. `pulse-motion assembler .` puis `pulse-motion controler .` ; corriger ce que la retouche a cassé (deux tours au plus). Les `corrections` de `sortie/controle.json` (faites seules par le contrôle : typographie, durées) sont dites à la personne ; `pulse-motion controler . --sans-correction` si elle a demandé une durée ou une graphie précise.
+1. `pulse-motion assembler .` puis `pulse-motion controler .` ; corriger ce que la retouche a cassé (deux tours au plus). Les `corrections` de `sortie/controle.json` (faites seules par le contrôle : typographie, durées, taille d'un texte qui débordait ; liste complète : `pulse-motion reference controles`) sont dites à la personne ; `pulse-motion controler . --sans-correction` si elle a demandé une durée ou une graphie précise.
 2. Aperçu : si `apercu.actif` est faux dans `pulse-motion etat .`, lancer `pulse-motion apercu . --ouvrir` en arrière-plan ; sinon il s'est rechargé seul.
 3. Le contrôle de l'étape 1 a vérifié la vidéo rendue (débordements, chevauchements, marges, zone des boutons en 9:16…) ; `renduVerifie: false` se dit à la personne.
 
