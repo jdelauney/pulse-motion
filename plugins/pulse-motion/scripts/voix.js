@@ -14,6 +14,7 @@ const { spawnSync } = require('node:child_process');
 const { lireDeroule } = require('./lib/deroule.js');
 const F = require('./lib/ffmpeg.js');
 const { ecrirePrise } = require('./lib/voix.js');
+const W = require('../moteur/wav.js');
 const { sauvegarder } = require('./historique.js');
 
 function ecrireDeroule(projet, fn) {
@@ -39,7 +40,10 @@ async function importerVoix({ dossier, fichier, scene: id, outil = F.trouverFfmp
   if (!scene) return { ok: false, message };
   if (!fs.existsSync(fichier)) return { ok: false, message: `Fichier introuvable : « ${fichier} ».` };
   let octets;
-  if (/\.wav$/i.test(fichier)) octets = fs.readFileSync(fichier);
+  // Un WAV 16 bits ou flottant se lit directement ; un autre WAV (24 bits, 8 bits…) ou format passe par ffmpeg.
+  const lisible = (o) => { try { W.lire(new Uint8Array(o)); return true; } catch { return false; } };
+  const estWav = /\.wav$/i.test(fichier);
+  if (estWav && lisible(fs.readFileSync(fichier))) octets = fs.readFileSync(fichier);
   else if (outil && outil.present) {
     const travail = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-voix-'));
     const temporaire = path.join(travail, 'prise.wav');
@@ -52,15 +56,14 @@ async function importerVoix({ dossier, fichier, scene: id, outil = F.trouverFfmp
       fs.rmSync(travail, { recursive: true, force: true });
     }
   } else {
-    return { ok: false, message: 'Ce fichier n\'est pas un WAV : installez ffmpeg (« pulse-motion ffmpeg ») ou donnez un fichier WAV.' };
+    return { ok: false, message: estWav
+      ? 'Ce WAV ne se lit pas tel quel : installez ffmpeg (« pulse-motion ffmpeg ») ou exportez-le en WAV 16 bits.'
+      : 'Ce fichier n\'est pas un WAV : installez ffmpeg (« pulse-motion ffmpeg ») ou donnez un fichier WAV.' };
   }
+  if (!lisible(octets)) return { ok: false, message: 'La voix n\'a pas pu être lue : ce fichier ne contient pas de son lisible.' };
+  // Copie d'historique seulement quand la prise est lisible : un essai raté ne laisse rien.
   sauvegarder(projet);
-  let r;
-  try {
-    r = await ecrirePrise({ projet, scene: id, octets: new Uint8Array(octets), texte: scene.voix.texte, outil: outil && outil.present ? outil : null });
-  } catch (e) {
-    return { ok: false, message: `La voix n'a pas pu être lue (${e.message}).` };
-  }
+  const r = await ecrirePrise({ projet, scene: id, octets: new Uint8Array(octets), texte: scene.voix.texte, outil: outil && outil.present ? outil : null });
   ecrireDeroule(projet, (d) => { d.scenes.find((s) => s.id === id).voix.fichier = r.relatif; });
   return { ok: true, fichier: r.relatif, duree: r.duree };
 }

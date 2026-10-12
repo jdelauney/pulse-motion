@@ -32,8 +32,25 @@ function creerPanneau() {
 
 let enCours = false;
 
-export async function lancerExport() {
+/** Scènes qui jouent encore la voix provisoire du système. */
+function scenesProvisoires() {
+  return (M.donnees.scenes || []).filter((s) => s.voix && s.voix.provisoire).map((s) => s.id);
+}
+
+export async function lancerExport({ avecProvisoire = false } = {}) {
   if (enCours) return null;
+  const provisoires = scenesProvisoires();
+  if (provisoires.length && !avecProvisoire) {
+    // Pas de vidéo avec la voix du système sans accord : le dire dans le panneau et au suivi de l'export.
+    const panneau = creerPanneau();
+    const message = `La vidéo contient encore la voix provisoire (scènes : ${provisoires.join(', ')}) : enregistrez votre voix avant d'exporter.`;
+    panneau.titre('Export impossible');
+    panneau.detail(message);
+    panneau.bouton.textContent = 'Fermer';
+    panneau.bouton.onclick = () => panneau.fermerDans(0);
+    await signaler({ etat: 'erreur', message });
+    return null;
+  }
   enCours = true;
   M.exportEnCours = true;
   const panneau = creerPanneau();
@@ -112,6 +129,6 @@ function ajouterBouton() {
 M.pret.then(() => (document.fonts ? document.fonts.ready : null)).then(() => {
   ajouterBouton();
   const parametres = new URLSearchParams(location.search);
-  if (parametres.get('export') === '1') lancerExport();
+  if (parametres.get('export') === '1') lancerExport({ avecProvisoire: parametres.get('provisoire') === '1' });
   else if (parametres.get('planche')) lancerPlanche(parametres.get('planche').split(',').filter(Boolean));
 });

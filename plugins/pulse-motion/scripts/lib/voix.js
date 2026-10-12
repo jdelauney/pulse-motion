@@ -16,12 +16,15 @@ const fichierMots = (absolu) => absolu.replace(/\.wav$/i, '') + '.mots.json';
 const fichierOpus = (absolu) => absolu.replace(/\.wav$/i, '') + '.opus';
 const relatifDe = (projet, absolu) => path.relative(projet, absolu).replace(/\\/g, '/');
 
-/** Prise utilisée par une scène, ou null. -> { relatif, absolu, provisoire } */
+const conseilImport = (id) => `utilisez « pulse-motion voix importer <fichier> --scene ${id} »`;
+
+/** Prise utilisée par une scène, ou null. -> { relatif, absolu, provisoire } | { relatif, erreur } */
 function priseDeScene(projet, deroule, scene) {
   if (!scene.voix) return null;
   if (scene.voix.fichier) {
     const absolu = cheminDansProjet(projet, scene.voix.fichier);
-    return absolu ? { relatif: scene.voix.fichier, absolu, provisoire: false } : null;
+    if (!absolu) return { relatif: scene.voix.fichier, erreur: `Scène « ${scene.id} » : la voix « ${scene.voix.fichier} » doit être dans le dossier du projet ; ${conseilImport(scene.id)}.` };
+    return { relatif: scene.voix.fichier, absolu, provisoire: false };
   }
   if (deroule.voix && deroule.voix.provisoire) {
     const relatif = `${DOSSIER_VOIX}/provisoire/${scene.id}.wav`;
@@ -39,13 +42,14 @@ function lireJSON(fichier) {
 function lireVoixScene(projet, deroule, scene) {
   const prise = priseDeScene(projet, deroule, scene);
   if (!prise) return null;
+  if (prise.erreur) return { prise, erreur: prise.erreur };
   let octets;
   let son;
   try {
     octets = fs.readFileSync(prise.absolu);
     son = W.lire(new Uint8Array(octets));
   } catch (e) {
-    return { prise, erreur: `Scène « ${scene.id} » : la voix « ${prise.relatif} » est illisible (${e.code === 'ENOENT' ? 'fichier introuvable' : e.message}).` };
+    return { prise, erreur: `Scène « ${scene.id} » : la voix « ${prise.relatif} » est illisible (${e.code === 'ENOENT' ? 'fichier introuvable' : e.message}) ; ${conseilImport(scene.id)}.` };
   }
   const canal = W.mono(son.canaux);
   const duree = Math.round(canal.length / son.taux * 1000) / 1000;

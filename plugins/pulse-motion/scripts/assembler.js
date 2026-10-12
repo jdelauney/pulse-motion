@@ -177,7 +177,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     if (!uri) continue;
     const id = `pm-son-voix-${scene.id}`;
     sons.push(blocSon(id, uri));
-    voixScenes[scene.id] = { source: id, debut: scene.voix.debut ?? DEBUT_VOIX, duree: v.duree, mots: v.mots };
+    voixScenes[scene.id] = { source: id, debut: scene.voix.debut ?? DEBUT_VOIX, duree: v.duree, mots: v.mots, ...(v.prise.provisoire ? { provisoire: true } : {}) };
     if (v.approche !== 'whisper') calageApproche = true;
     if (v.prise.provisoire) {
       erreurs.push({ regle: 'voix-provisoire', gravite: 'alerte', scene: scene.id,
@@ -186,7 +186,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   }
   if (calageApproche) {
     erreurs.push({ regle: 'calage-approche', gravite: 'info',
-      message: 'Les mots de la voix sont calés approximativement (sans transcription) : les ancres « mot: » et les sous-titres peuvent tomber un peu à côté ; « pulse-motion whisper » installe la transcription.' });
+      message: 'Les mots de la voix sont calés approximativement (sans transcription) : les ancres « mot: » et les sous-titres peuvent tomber un peu à côté.' });
   }
   const poidsSons = sons.reduce((n, b) => n + b.length, 0);
   if (poidsSons > 20 * 1024 * 1024) {
