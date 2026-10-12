@@ -49,3 +49,59 @@ body {
   position: fixed; top: 0; left: 0; right: 0; padding: 10px 16px;
   background: #c0392b; color: #fff; font: 600 14px/1.4 system-ui, sans-serif; z-index: 10;
 }
+/* Texte lettre par lettre (data-lettres) ou mot par mot (data-mots) : morceaux posés par moteur/lettres.js,
+   décalés de --pm-i × --pm-pas ; durée d'un morceau réglable par --pm-lettre-dur. */
+.pm-mot { display: inline-block; white-space: nowrap; }
+.pm-lettre { display: inline-block; white-space: pre; }
+[data-lettres] .pm-lettre, [data-mots] .pm-mot {
+  animation-fill-mode: both;
+  animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
+  animation-delay: calc(var(--pm-i, 0) * var(--pm-pas, 0.05s));
+}
+[data-lettres="monte"] .pm-lettre, [data-mots="monte"] .pm-mot { animation-name: pm-l-monte; animation-duration: var(--pm-lettre-dur, 0.4s); }
+[data-lettres="flou"] .pm-lettre, [data-mots="flou"] .pm-mot { animation-name: pm-l-flou; animation-duration: var(--pm-lettre-dur, 0.5s); }
+[data-lettres="frappe"] .pm-lettre, [data-mots="frappe"] .pm-mot { animation-name: pm-l-frappe; animation-duration: var(--pm-lettre-dur, 0.01s); animation-timing-function: step-end; }
+[data-lettres="onde"] .pm-lettre, [data-mots="onde"] .pm-mot { animation-name: pm-l-onde; animation-duration: var(--pm-lettre-dur, 0.6s); animation-timing-function: ease-in-out; }
+[data-lettres="chute"] .pm-lettre, [data-mots="chute"] .pm-mot { animation-name: pm-l-chute; animation-duration: var(--pm-lettre-dur, 0.7s); animation-timing-function: linear; }
+@keyframes pm-l-monte { from { opacity: 0; transform: translateY(0.5em); } to { opacity: 1; transform: none; } }
+@keyframes pm-l-flou { from { opacity: 0; filter: blur(0.25em); } to { opacity: 1; filter: blur(0); } }
+@keyframes pm-l-frappe { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pm-l-onde {
+  0% { opacity: 0; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-0.3em); }
+  65% { transform: translateY(0.06em); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes pm-l-chute {
+  0% { opacity: 0; transform: translateY(-50cqh); animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45); }
+  10% { opacity: 1; }
+  60% { transform: translateY(0); animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1); }
+  75% { transform: translateY(-0.25em); animation-timing-function: cubic-bezier(0.32, 0, 0.67, 0); }
+  88% { transform: translateY(0); }
+  94% { transform: translateY(-0.06em); }
+  100% { opacity: 1; transform: none; }
+}
+/* Texte rempli d'un dégradé (--pm-degrade) ; avec data-lettres ou data-mots, chaque morceau en porte sa portion. */
+.pm-degrade {
+  background-image: var(--pm-degrade, linear-gradient(90deg, var(--c-primaire, #ff6b35), var(--c-accent, #8e44ad)));
+  -webkit-background-clip: text; background-clip: text;
+  color: transparent; -webkit-text-fill-color: transparent;
+}
+.pm-degrade[data-lettres], .pm-degrade[data-mots] { background-image: none; }
+.pm-degrade[data-lettres] .pm-lettre, .pm-degrade[data-mots] .pm-mot {
+  background-image: var(--pm-degrade, linear-gradient(90deg, var(--c-primaire, #ff6b35), var(--c-accent, #8e44ad)));
+  background-size: calc(var(--pm-n, 1) * 100%) 100%;
+  background-position: calc(var(--pm-i, 0) / max(var(--pm-n, 1) - 1, 1) * 100%) 0;
+  -webkit-background-clip: text; background-clip: text;
+}
+/* Contour de texte, peint sous le remplissage. */
+.pm-contour {
+  -webkit-text-stroke: var(--pm-contour, 0.2cqh) var(--pm-contour-couleur, var(--c-texte, #fff));
+  paint-order: stroke fill;
+}
+/* Caméra : le conteneur couvre l'image ; le moteur pose transform, filter et --pm-cam-dx/dy.
+   Parallaxe : un plan [data-profondeur] suit le cadrage à --pm-profondeur (1 : comme la caméra, 0 : fixe). */
+#pm-scene [data-camera] { position: absolute; inset: 0; transform-origin: 0 0; }
+#pm-scene [data-profondeur] {
+  translate: calc(var(--pm-cam-dx, 0) * (1 - var(--pm-profondeur, 1)) * 1cqw) calc(var(--pm-cam-dy, 0) * (1 - var(--pm-profondeur, 1)) * 1cqh);
+}

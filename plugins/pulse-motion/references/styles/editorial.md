@@ -7,7 +7,7 @@
 - Signature : filets fins qui se tracent, titres très grands, textes qui montent derrière un masque. Mouvements lents (`expo-out`), aucune couleur en aplat.
 - Partir d'une des **8 scènes toutes faites** : `pulse-motion scene editorial <type>`, copier dans `scenes/NN-<id>.html`, remplacer `data-scene="<type>"` par l'id de la scène.
 - Décor : la ligne fine (`.ligne`, `data-decor`) se trace pendant toute la scène : son `data-dur` = durée de la scène. Sur la **dernière scène** de la vidéo, durée − 1 s : la vidéo doit finir sur une image stable d'au moins 0,5 s.
-- Formats 16:9, 1:1 et 9:16 (en vertical, volets et schéma s'empilent). Ton clair par défaut (fond crème), ton sombre sur demande.
+- Formats 16:9, 1:1, 4:5 et 9:16 (en vertical, volets et schéma s'empilent). Ton clair par défaut (fond crème), ton sombre sur demande.
 - Transitions : `fondu`, `rideau`.
 
 ## Scènes toutes faites

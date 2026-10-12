@@ -23,6 +23,8 @@ function lireAttributs(texte) {
  * extraireScene(html) -> {
  *   elements: [{ cle, balise, start, dur, tween, texte, effet, calque }],   (éléments minutés, data-effet compris, ordre du document)
  *   textes: [clé data-texte],
+ *   decoupes: [{ attribut: 'data-lettres' | 'data-mots', effet }],
+ *   miseEnScene: [{ balise, camera, gel, vitesse, profondeur }]   (textes des attributs, undefined si absents)
  *   css: texte des blocs <style>, des attributs style et des attributs filter
  * }
  */
@@ -35,12 +37,18 @@ function extraireScene(html) {
 
   const elements = [];
   const textes = [];
+  const decoupes = [];
+  const miseEnScene = [];
   let n = 0;
   let m;
   BALISE.lastIndex = 0;
   while ((m = BALISE.exec(sansBlocs))) {
     const attrs = lireAttributs(m[2]);
     if ('data-texte' in attrs) textes.push(attrs['data-texte']);
+    for (const attribut of ['data-lettres', 'data-mots']) if (attribut in attrs) decoupes.push({ attribut, effet: attrs[attribut] });
+    if ('data-camera' in attrs || 'data-gel' in attrs || 'data-vitesse' in attrs || 'data-profondeur' in attrs) {
+      miseEnScene.push({ balise: m[1].toLowerCase(), camera: attrs['data-camera'], gel: attrs['data-gel'], vitesse: attrs['data-vitesse'], profondeur: attrs['data-profondeur'] });
+    }
     // Styles en ligne et filtre SVG comptent comme du CSS pour les contrôles.
     if (attrs.style) css.push(`[style] { ${attrs.style} }`);
     if (attrs.filter) css.push(`[filter] { filter: ${attrs.filter}; }`);
@@ -57,7 +65,7 @@ function extraireScene(html) {
       });
     }
   }
-  return { elements, textes, css: css.join('\n') };
+  return { elements, textes, decoupes, miseEnScene, css: css.join('\n') };
 }
 
 module.exports = { extraireScene, lireAttributs };

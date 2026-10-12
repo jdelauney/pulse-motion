@@ -3,7 +3,7 @@
 /* Pulse Motion – styles personnels (~/.pulse-motion/styles/<nom>/, ou $PULSE_MOTION_DOSSIER/styles/<nom>/).
  *
  *   node scripts/style-perso.js nouveau <nom> [--depuis <style>]     squelette repris d'un style existant
- *   node scripts/style-perso.js verifier <nom>                       contrat, contrôles et rendu (16:9, 1:1, 9:16, tons)
+ *   node scripts/style-perso.js verifier <nom>                       contrat, contrôles et rendu (16:9, 1:1, 4:5, 9:16, tons)
  *   node scripts/style-perso.js planche <nom> [--scenes titre,liste] [--ratio 16:9] [--ton clair|sombre] [--textes exemple|maximum] [--ouvrir]
  *
  * Résumé JSON ; code 1 avec { ok: false, message } en cas d'échec.
@@ -67,7 +67,7 @@ async function verifierStylePerso({ nom, navigateur }) {
   };
 }
 
-const RATIOS = ['16:9', '1:1', '9:16'];
+const RATIOS = ['16:9', '1:1', '4:5', '9:16'];
 const TONS = ['clair', 'sombre'];
 const TEXTES = ['exemple', 'maximum'];
 
@@ -75,7 +75,7 @@ const TEXTES = ['exemple', 'maximum'];
 async function plancheStyle({ nom, scenes = ['titre', 'liste'], ratio = '16:9', ton, textes = 'exemple', ouvrir = false, navigateur, exporter = exporterVideo, ouvrirFichier = ouvrirNavigateur }) {
   const st = trouverStyle(nom);
   if (!st) return { ok: false, message: messageStyleInconnu(nom) };
-  if (!RATIOS.includes(ratio)) return { ok: false, message: `Format « ${ratio} » inconnu : 16:9, 1:1 ou 9:16.` };
+  if (!RATIOS.includes(ratio)) return { ok: false, message: `Format « ${ratio} » inconnu : 16:9, 1:1, 4:5 ou 9:16.` };
   if (ton !== undefined && !TONS.includes(ton)) return { ok: false, message: `Ton « ${ton} » inconnu : clair ou sombre.` };
   if (!TEXTES.includes(textes)) return { ok: false, message: `Textes « ${textes} » inconnus : exemple ou maximum.` };
   const inconnus = scenes.filter((t) => !TYPES[t]);
@@ -113,7 +113,7 @@ if (require.main === module) {
   else if (action === 'planche') {
     plancheStyle({ nom, scenes: valeur('--scenes') ? valeur('--scenes').split(',').filter(Boolean) : undefined, ratio: valeur('--ratio'), ton: valeur('--ton'), textes: valeur('--textes'), ouvrir: args.includes('--ouvrir') }).then(fini, echec);
   } else {
-    console.error('Usage : pulse-motion style nouveau <nom> [--depuis <style>] | verifier <nom> | planche <nom> [--scenes titre,liste] [--ratio 16:9|1:1|9:16] [--ton clair|sombre] [--textes exemple|maximum] [--ouvrir]');
+    console.error('Usage : pulse-motion style nouveau <nom> [--depuis <style>] | verifier <nom> | planche <nom> [--scenes titre,liste] [--ratio 16:9|1:1|4:5|9:16] [--ton clair|sombre] [--textes exemple|maximum] [--ouvrir]');
     process.exit(2);
   }
 }

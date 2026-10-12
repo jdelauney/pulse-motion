@@ -14,10 +14,13 @@ const path = require('node:path');
 const { assembler, charteFinale, RACINE } = require('./assembler.js');
 const { trouverStyle } = require('./styles.js');
 const { lireGlossaire, verifierGlossaire } = require('./vocabulaire.js');
-const { lireDeroule } = require('./lib/deroule.js');
+const { lireDeroule, dureeTemps } = require('./lib/deroule.js');
 const { cheminDansProjet } = require('./lib/embarquer.js');
 const { extraireScene } = require('./lib/extraire.js');
 const { calculerMinutage, CHEVAUCHEMENT } = require('../moteur/minutage.js');
+const { EFFETS: EFFETS_LETTRES } = require('../moteur/lettres.js');
+const { analyserCamera } = require('../moteur/camera.js');
+const { analyserTemps } = require('../moteur/temps.js');
 
 const SEUILS = JSON.parse(fs.readFileSync(path.join(__dirname, 'seuils.json'), 'utf8'));
 
@@ -96,8 +99,20 @@ function controler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
       scenesLues[s.id] = extraireScene(html);
       elementsParScene[s.id] = scenesLues[s.id].elements;
     }
-    const min = calculerMinutage(deroule.scenes, elementsParScene);
+    const temps = dureeTemps(deroule);
+    const min = calculerMinutage(deroule.scenes, elementsParScene, { dureeTemps: temps });
     for (const e of min.erreurs) problemes.push({ ...e, gravite: 'erreur' });
+
+    // Tempo : chaque scène commence sur un temps (à une demi-image près) ; la première commence la vidéo.
+    if (temps) {
+      const tolerance = 0.5 / (deroule.format.ips || 30);
+      for (const s of min.scenes.slice(1)) {
+        const ecart = (s.debut - (deroule.tempo.decalage || 0)) / temps;
+        if (Math.abs(ecart - Math.round(ecart)) * temps > tolerance) {
+          problemes.push({ regle: 'hors-tempo', gravite: 'alerte', scene: s.id, message: `Scène « ${s.id} » : elle commence à ${virgule(s.debut)} s, entre deux temps (${deroule.tempo.bpm} bpm) ; ajuster la durée de la scène précédente pour tomber sur la musique.` });
+        }
+      }
+    }
 
     // Fenêtre d'une balise d'effet : jusqu'à la mort de la dernière particule, pas seulement data-dur.
     const finEffet = (scene, rythme) => {
@@ -146,6 +161,20 @@ function controler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
         problemes.push({ regle: 'lecture', gravite: 'alerte', scene: s.id, message: `Scène « ${s.id} » : ${mots} mots à lire en ${virgule(disponible)} s ; prévoir au moins ${virgule(besoin)} s.` });
       }
       controlerCSS(scenesLues[s.id].css, s.id, `Scène « ${s.id} »`, problemes);
+      for (const m of scenesLues[s.id].miseEnScene) {
+        const signaler = (regle, message) => problemes.push({ regle, gravite: 'erreur', scene: s.id, message: `Scène « ${s.id} » : ${message}` });
+        if (m.camera !== undefined && m.balise === 'section') signaler('camera-invalide', 'data-camera se pose sur un conteneur à l\'intérieur de la scène, pas sur la <section> (dont les transitions déplacent déjà l\'image).');
+        else if (m.camera !== undefined) { try { analyserCamera(m.camera, temps); } catch (e) { signaler('camera-invalide', e.message); } }
+        if (m.gel !== undefined || m.vitesse !== undefined) { try { analyserTemps(m.gel ?? null, m.vitesse ?? null, temps); } catch (e) { signaler('temps-invalide', e.message); } }
+        if (m.profondeur !== undefined && !/^\d*\.?\d+$/.test(m.profondeur)) {
+          signaler('profondeur-invalide', `data-profondeur « ${m.profondeur} » doit être un nombre (1 : suit la caméra, 0 : plan fixe, 0.3 : plan lointain).`);
+        }
+      }
+      for (const { attribut, effet } of scenesLues[s.id].decoupes) {
+        if (!Object.hasOwn(EFFETS_LETTRES, effet)) {
+          problemes.push({ regle: 'lettres-invalide', gravite: 'erreur', scene: s.id, message: `Scène « ${s.id} » : ${attribut} « ${effet} » inconnu (effets : ${Object.keys(EFFETS_LETTRES).join(', ')}).` });
+        }
+      }
     }
 
     // Effets de particules : budget par scène, effet du calque avant posé sur un texte long.
