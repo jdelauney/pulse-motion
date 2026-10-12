@@ -4,7 +4,7 @@
  *
  *   pulse-motion etat <dossier> [--accord deroule|style|video] [--parcours rapide|accompagne]
  *   pulse-motion assembler <dossier>
- *   pulse-motion controler <dossier> [--sans-correction]   contrôle ; corrige seul les cas sûrs
+ *   pulse-motion controler <dossier> [--sans-correction] [--sans-rendu]   contrôle ; corrige seul les cas sûrs
  *   pulse-motion apercu <dossier> [--port 4321] [--ouvrir]
  *   pulse-motion historique sauvegarder|annuler <dossier>
  *   pulse-motion exporter <dossier>       MP4 relu dans sortie/ (Chrome ou Edge sans fenêtre)
@@ -106,7 +106,7 @@ function lancer(args) {
   console.error([
     'Usage : pulse-motion <commande> …',
     '  etat <dossier> [--accord deroule|style|video] [--parcours rapide|accompagne]',
-    '  assembler <dossier>      controler <dossier> [--sans-correction]      apercu <dossier> [--port N] [--ouvrir]',
+    '  assembler <dossier>      controler <dossier> [--sans-correction] [--sans-rendu]      apercu <dossier> [--port N] [--ouvrir]',
     '  historique sauvegarder|annuler <dossier>',
     '  exporter <dossier>       planche <dossier> [id1,id2]',
     '  reference <nom>          scene <style> <nom>      effet <nom>      consignes <skill>',

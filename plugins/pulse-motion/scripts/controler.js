@@ -2,15 +2,17 @@
 'use strict';
 /* Pulse Motion – contrôles automatiques d'un projet vidéo, sans navigateur.
  *
- *   node scripts/controler.js <dossier-du-projet> [--sans-correction]
+ *   node scripts/controler.js <dossier-du-projet> [--sans-correction] [--sans-rendu]
  *
+ * Contrôle aussi la vidéo rendue dans Chrome ou Edge sans fenêtre (débordements, chevauchements, cadre, marges,
+ * zone des boutons en 9:16, logo, textes fugaces, mouvements rapides) ; sans navigateur : alerte rendu-non-verifie.
  * Écrit sortie/controle.json : { problemes: [{ regle, gravite: "erreur" | "alerte", scene?, element?, message, correction? }],
- *   corrections: [{ regle, scene, element?, avant, apres, message }] }.
+ *   corrections: [{ regle, scene, element?, avant, apres, message }], renduVerifie }.
  * Corrige seul les cas sûrs (typographie, durées) dans deroule.json, après une copie d'historique ;
  * --sans-correction : signale seulement (chaque problème corrigeable porte sa « correction »).
  * Reprend les erreurs de l'assemblage (polices, fichiers…) et le rapport de débordement
  * envoyé par la page d'aperçu (sortie/controle-page.json).
- * Affiche un résumé JSON { erreurs, alertes, corrections, fichier } ; code de sortie 1 s'il reste une erreur.
+ * Affiche un résumé JSON { erreurs, alertes, corrections, renduVerifie, fichier } ; code de sortie 1 s'il reste une erreur.
  */
 const fs = require('node:fs');
 const path = require('node:path');
@@ -23,6 +25,7 @@ const { corrigerTypographie, corrigerMajuscules, motsDoubles, termesVariables, c
 const { extraireScene, textesEnDur } = require('./lib/extraire.js');
 const { calculerMinutage, CHEVAUCHEMENT } = require('../moteur/minutage.js');
 const { appliquerCorrections } = require('./lib/corriger.js');
+const { controlerRendu } = require('./lib/rendu-controle.js');
 const { EFFETS: EFFETS_LETTRES } = require('../moteur/lettres.js');
 const { analyserCamera } = require('../moteur/camera.js');
 const { analyserTemps } = require('../moteur/temps.js');
@@ -357,17 +360,45 @@ function controler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   return { problemes, corrections, fichier };
 }
 
+/**
+ * controlerComplet({ dossier, dossierStyles?, dossierEffets?, ecrire?, corriger?, rendu?, navigateur? })
+ * -> Promise<{ problemes, corrections, renduVerifie, fichier }> : contrôles rapides, corrections, puis vidéo rendue.
+ */
+async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.join(RACINE, 'effets'), ecrire = true, corriger = true, rendu = true, navigateur }) {
+  const projet = path.resolve(dossier);
+  const r = controler({ dossier: projet, dossierStyles, dossierEffets, ecrire, corriger });
+  let { problemes } = r;
+  let renduVerifie = false;
+  if (rendu) {
+    const assemblage = assembler({ dossier: projet, dossierStyles, dossierEffets, ecrire: false });
+    if (assemblage.ok) {
+      const { deroule } = lireDeroule(projet);
+      const duree = deroule.scenes.reduce((n, s) => n + s.duree / (s.rythme || 1), 0);
+      const options = { html: assemblage.html, ratio: deroule.format.ratio, duree };
+      if (navigateur !== undefined) options.navigateur = navigateur;
+      const v = await controlerRendu(options);
+      renduVerifie = v.renduVerifie;
+      // Le rendu remplace le rapport de débordement de l'aperçu (même page, plus récent).
+      if (renduVerifie) problemes = problemes.filter((p) => p.regle !== 'debordement');
+      problemes = [...problemes, ...v.problemes];
+    }
+  }
+  if (r.fichier) fs.writeFileSync(r.fichier, JSON.stringify({ problemes, corrections: r.corrections, renduVerifie }, null, 2));
+  return { problemes, corrections: r.corrections, renduVerifie, fichier: r.fichier };
+}
+
 if (require.main === module) {
   const args = process.argv.slice(2);
   const dossier = args.find((a) => !a.startsWith('--'));
   if (!dossier) {
-    console.error('Usage : node scripts/controler.js <dossier-du-projet> [--sans-correction]');
+    console.error('Usage : node scripts/controler.js <dossier-du-projet> [--sans-correction] [--sans-rendu]');
     process.exit(2);
   }
-  const { problemes, corrections, fichier } = controler({ dossier, corriger: !args.includes('--sans-correction') });
-  const erreurs = problemes.filter((p) => p.gravite === 'erreur').length;
-  console.log(JSON.stringify({ erreurs, alertes: problemes.length - erreurs, corrections: corrections.length, fichier }, null, 2));
-  process.exit(erreurs ? 1 : 0);
+  controlerComplet({ dossier, corriger: !args.includes('--sans-correction'), rendu: !args.includes('--sans-rendu') }).then(({ problemes, corrections, renduVerifie, fichier }) => {
+    const erreurs = problemes.filter((p) => p.gravite === 'erreur').length;
+    console.log(JSON.stringify({ erreurs, alertes: problemes.length - erreurs, corrections: corrections.length, renduVerifie, fichier }, null, 2));
+    process.exit(erreurs ? 1 : 0);
+  }, (e) => { console.error(e.message); process.exit(1); });
 }
 
-module.exports = { controler, contraste, compterMots, trous, SEUILS };
+module.exports = { controler, controlerComplet, contraste, compterMots, trous, SEUILS };
