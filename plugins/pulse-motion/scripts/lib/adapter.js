@@ -5,10 +5,29 @@ const { TYPES, OPTIONNELLES } = require('./contrat.js');
 
 const echapperRegex = (t) => String(t).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-/** Retire l'élément qui porte l'attribut (balise vide ou à texte simple, ou balise sans fermeture comme <img>). */
+/**
+ * Retire l'élément qui porte l'attribut (balise vide ou à texte simple, ou balise sans fermeture comme <img>).
+ * Un élément qui démarrait après l'élément retiré (« #point3:fin+0.8 ») démarre désormais après ce dont
+ * dépendait l'élément retiré (« #point2:fin+0.8 ») : le minutage reste valide.
+ */
 function retirerElement(html, attribut) {
   const re = new RegExp(`[ \\t]*<([a-zA-Z][\\w-]*)\\b[^>]*\\s${echapperRegex(attribut)}(?=[\\s>/])[^>]*>(?:[^<]*<\\/\\1>)?[ \\t]*(?:\\r?\\n)?`, 'g');
-  return html.replace(re, '');
+  const retires = [];
+  let h = html.replace(re, (tout) => {
+    const id = /\sid="([^"]+)"/.exec(tout);
+    const debut = /\sdata-start="([^"]*)"/.exec(tout);
+    if (id) retires.push({ id: id[1], debut: debut ? debut[1] : '0' });
+    return '';
+  });
+  for (const { id, debut } of retires) {
+    const reference = new RegExp(`(data-start=")#${echapperRegex(id)}(?::fin)?([+-][\\d.]+)?"`, 'g');
+    h = h.replace(reference, (tout, avant, decalage = '') => {
+      const ancre = /^(#[\w-]+(?::fin)?)([+-][\d.]+)?$/.exec(debut);
+      if (ancre) return `${avant}${ancre[1]}${decalage}"`;
+      return `${avant}${Math.round(((parseFloat(debut) || 0) + (parseFloat(decalage) || 0)) * 1000) / 1000}"`;
+    });
+  }
+  return h;
 }
 
 /** Valeur d'arrivée du premier compteur (« nombre 0→1250 »), ou null. */
@@ -58,7 +77,6 @@ function textesPour(type, textes = {}) {
   const resultat = {};
   for (const cle of attendues) {
     if (typeof textes[cle] === 'string') resultat[cle] = textes[cle];
-    else if ((OPTIONNELLES[type] || []).includes(cle)) resultat[cle] = '';
     else resultat[cle] = restants.length ? restants.shift() : '';
   }
   return resultat;

@@ -158,3 +158,14 @@ test('ligne de commande : résumé et code de sortie 1 en cas d\'erreur', () => 
   assert.equal(code, 1);
   assert.equal(JSON.parse(sortie).erreurs, 1);
 });
+
+test('première scène en coupe : pas d\'entrée de 0,5 s comptée comme mouvement (comme « aucune »)', () => {
+  const avec = (transition) => {
+    const dir = copierProjet('projet-simple');
+    fs.writeFileSync(path.join(dir, 'scenes', '01-intro.html'), '<section data-scene="intro"><h1 data-texte="titre" data-start="2.8" data-dur="1"></h1><p data-texte="sous" data-start="2.8" data-dur="1"></p><span data-start="2.8" data-dur="6.2" data-tween="--x 0cqh→1cqh linear"></span></section>');
+    modifierDeroule(dir, (d) => { d.scenes[0].transition = transition; d.scenes[0].duree = 9; });
+    return controler({ dossier: dir, dossierStyles: STYLES, ecrire: false }).problemes.filter((p) => p.regle === 'temps-mort' && p.scene === 'intro').length;
+  };
+  assert.equal(avec('aucune'), 1);
+  assert.equal(avec('coupe'), 1);
+});
