@@ -26,6 +26,9 @@ const { analyserTemps } = require('../moteur/temps.js');
 const SEUILS = JSON.parse(fs.readFileSync(path.join(__dirname, 'seuils.json'), 'utf8'));
 
 const virgule = (x) => String(Math.round(x * 10) / 10).replace('.', ',');
+const EPS = 1e-6;
+/** Arrondi au pas supérieur (0,1 ou 0,5 s), sans bruit de virgule flottante. */
+const auPasSuperieur = (x, pas) => Math.round(Math.ceil(x / pas - EPS) * pas * 1000) / 1000;
 
 const { contraste } = require('./lib/couleurs.js');
 
@@ -172,6 +175,14 @@ function controler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     for (const s of min.scenes) finsEffets[s.id] = finEffet(s, s.rythme);
     const finElement = (id, cle, e) => Math.max(e.fin, finsEffets[id][cle] === undefined ? e.fin : finsEffets[id][cle]);
 
+    const besoinLecture = {};
+    for (const s of deroule.scenes) {
+      const mots = Object.values(s.textes).reduce((n, t) => n + compterMots(t), 0);
+      besoinLecture[s.id] = { mots, besoin: SEUILS.lectureBase + SEUILS.lectureParMot * mots };
+    }
+    // Une durée corrigée décalerait les scènes suivantes par rapport à la musique : rien avec un tempo.
+    const corrigeable = !temps;
+
     // Temps morts : aucun élément en mouvement pendant plus que le seuil (pause finale exceptée).
     const derniere = min.scenes[min.scenes.length - 1];
     min.scenes.forEach((s, i) => {
@@ -183,8 +194,17 @@ function controler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
       let morceaux = trous(s.debut, s.fin, intervalles);
       if (s === derniere) morceaux = morceaux.filter(([, b]) => b < s.fin);
       for (const [a, b] of morceaux) {
-        if (b - a > SEUILS.tempsMort) {
-          problemes.push({ regle: 'temps-mort', gravite: 'alerte', scene: s.id, message: `Scène « ${s.id} » : rien ne bouge pendant ${virgule(b - a)} s (de ${virgule(a)} s à ${virgule(b)} s). Au-delà de ${virgule(SEUILS.tempsMort)} s, l'attention décroche.` });
+        if (b - a > SEUILS.tempsMort + EPS) {
+          const p = { regle: 'temps-mort', gravite: 'alerte', scene: s.id, message: `Scène « ${s.id} » : rien ne bouge pendant ${virgule(b - a)} s (de ${virgule(a)} s à ${virgule(b)} s). Au-delà de ${virgule(SEUILS.tempsMort)} s, l'attention décroche.` };
+          // En fin de scène (jusqu'à sa fin ou à l'entrée de la suivante) : raccourcir la scène, sans passer sous le temps de lecture.
+          const finUtile = suivante && suivante.entree > 0 ? suivante.debut : s.fin;
+          if (corrigeable && s !== derniere && Math.abs(b - finUtile) < EPS) {
+            const duree = deroule.scenes[i].duree;
+            const { mots, besoin } = besoinLecture[s.id];
+            const nouvelle = Math.max(auPasSuperieur(duree - (b - a - SEUILS.tempsMort) * s.rythme, 0.1), mots ? auPasSuperieur(besoin * s.rythme, 0.1) : 0);
+            if (nouvelle < duree - EPS) p.correction = { scene: s.id, duree: nouvelle };
+          }
+          problemes.push(p);
         }
       }
     });
@@ -192,17 +212,39 @@ function controler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     // Pause finale.
     const fins = Object.entries(min.elements[derniere.id]).map(([cle, e]) => finElement(derniere.id, cle, e));
     const pause = derniere.fin - Math.max(derniere.debut, ...fins);
-    if (pause < SEUILS.pauseFinale) {
-      problemes.push({ regle: 'pause-finale', gravite: 'alerte', scene: derniere.id, message: `La vidéo s'arrête ${virgule(pause)} s après le dernier mouvement : laisser au moins ${virgule(SEUILS.pauseFinale)} s pour finir sur une image stable.` });
+    if (pause < SEUILS.pauseFinale - EPS) {
+      const p = { regle: 'pause-finale', gravite: 'alerte', scene: derniere.id, message: `La vidéo s'arrête ${virgule(pause)} s après le dernier mouvement : laisser au moins ${virgule(SEUILS.pauseFinale)} s pour finir sur une image stable.` };
+      const manque = SEUILS.pauseFinale - pause;
+      if (corrigeable && manque <= SEUILS.pauseFinaleMaxAjout + EPS) {
+        const duree = deroule.scenes[deroule.scenes.length - 1].duree;
+        p.correction = { scene: derniere.id, duree: auPasSuperieur(duree + manque * derniere.rythme, 0.1) };
+      }
+      problemes.push(p);
+    }
+
+    // Trop d'animations vives en même temps : l'œil ne sait plus où regarder (les mouvements lents du décor ne comptent pas).
+    for (const s of min.scenes) {
+      const vifs = Object.values(min.elements[s.id]).filter((e) => e.fin - e.debut > 0 && e.fin - e.debut < SEUILS.animationLongue).sort((x, y) => x.debut - y.debut);
+      let max = 0;
+      let instant = 0;
+      for (const e of vifs) {
+        const n = vifs.filter((x) => x.debut <= e.debut + EPS && x.fin > e.debut + EPS).length;
+        if (n > max) { max = n; instant = e.debut; }
+      }
+      if (max > SEUILS.animationsSimultanees) {
+        problemes.push({ regle: 'trop-d-animations', gravite: 'alerte', scene: s.id, message: `Scène « ${s.id} » : ${max} éléments bougent en même temps vers ${virgule(instant)} s ; au-delà de ${SEUILS.animationsSimultanees}, l'œil ne sait plus où regarder. Décaler leurs départs (data-start).` });
+      }
     }
 
     // Temps de lecture et CSS des scènes.
     for (const s of deroule.scenes) {
-      const mots = Object.values(s.textes).reduce((n, t) => n + compterMots(t), 0);
-      const besoin = SEUILS.lectureBase + SEUILS.lectureParMot * mots;
+      const { mots, besoin } = besoinLecture[s.id];
       const disponible = s.duree / (s.rythme || 1);
-      if (mots && disponible < besoin) {
-        problemes.push({ regle: 'lecture', gravite: 'alerte', scene: s.id, message: `Scène « ${s.id} » : ${mots} mots à lire en ${virgule(disponible)} s ; prévoir au moins ${virgule(besoin)} s.` });
+      if (mots && disponible < besoin - EPS) {
+        const p = { regle: 'lecture', gravite: 'alerte', scene: s.id, message: `Scène « ${s.id} » : ${mots} mots à lire en ${virgule(disponible)} s ; prévoir au moins ${virgule(besoin)} s.` };
+        const nouvelle = auPasSuperieur(besoin * (s.rythme || 1), 0.5);
+        if (corrigeable && nouvelle <= s.duree * SEUILS.lectureMaxAllonge + EPS) p.correction = { scene: s.id, duree: nouvelle };
+        problemes.push(p);
       }
       controlerCSS(scenesLues[s.id].css, s.id, `Scène « ${s.id} »`, problemes);
       for (const m of scenesLues[s.id].miseEnScene) {
