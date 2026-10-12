@@ -74,7 +74,10 @@ function lireVoixScene(projet, deroule, scene) {
 }
 
 /** Prise brute (WAV) -> prise prête, écrite avec ses mots (et son Opus si ffmpeg est donné). -> { relatif, duree } */
-async function ecrirePrise({ projet, scene, octets, texte, provisoire = false, outil = null }) {
+const borne = (t, max) => Math.round(Math.min(max, Math.max(0, t)) * 1000) / 1000;
+
+/** mots (facultatifs) : temps mesurés sur la prise brute (transcription), recalés après le rognage. */
+async function ecrirePrise({ projet, scene, octets, texte, provisoire = false, outil = null, mots = null, approche }) {
   const pret = W.preparerPrise(W.lire(octets));
   const wav = W.ecrire(pret);
   const relatif = `${DOSSIER_VOIX}/${provisoire ? 'provisoire/' : ''}${scene}.wav`;
@@ -83,7 +86,10 @@ async function ecrirePrise({ projet, scene, octets, texte, provisoire = false, o
   fs.writeFileSync(absolu, wav);
   const sceau = empreinte(wav);
   const duree = Math.round(pret.canaux[0].length / pret.taux * 1000) / 1000;
-  const donnees = { empreinte: sceau, texte, duree, approche: 'lettres', mots: A.calageApproche(texte, pret.canaux[0], pret.taux) };
+  const calage = mots
+    ? mots.map((m) => ({ w: m.w, t0: borne(m.t0 - pret.decalage, duree), t1: borne(m.t1 - pret.decalage, duree) }))
+    : A.calageApproche(texte, pret.canaux[0], pret.taux);
+  const donnees = { empreinte: sceau, texte, duree, approche: approche || (mots ? 'whisper' : 'lettres'), mots: calage };
   fs.rmSync(fichierOpus(absolu), { force: true });
   if (outil && outil.present) {
     try {
