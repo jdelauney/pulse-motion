@@ -18,11 +18,12 @@ const { variablesCSS } = require('../moteur/courbes.js');
 const { trouverStyle, messageStyleInconnu } = require('./styles.js');
 const { charteFinale, chartePour, variablesDerivees } = require('./lib/fusion-charte.js');
 const { lireVoixScene } = require('./lib/voix.js');
-const { DEBUT_VOIX } = require('../moteur/minutage.js');
+const { DEBUT_VOIX, calculerMinutage } = require('../moteur/minutage.js');
+const ST = require('../moteur/sous-titres.js');
 const { trouverFichiersPolice } = require('./lib/police.js');
 
 const RACINE = path.resolve(__dirname, '..');
-const MOTEUR = ['courbes.js', 'aligner.js', 'minutage.js', 'transitions.js', 'tween.js', 'lettres.js', 'camera.js', 'temps.js', 'horloge.js', 'tailles.js', 'wav.js', 'sonie.js', 'mixage.js', 'audio.js', 'lecteur.js', 'debordement.js', 'mesures.js', 'pixels.js',
+const MOTEUR = ['courbes.js', 'aligner.js', 'sous-titres.js', 'minutage.js', 'transitions.js', 'tween.js', 'lettres.js', 'camera.js', 'temps.js', 'horloge.js', 'tailles.js', 'wav.js', 'sonie.js', 'mixage.js', 'audio.js', 'lecteur.js', 'debordement.js', 'mesures.js', 'pixels.js',
   'particules/instantanes.js', 'particules/gpu.js', 'particules/simulation.js', 'particules/rendu.js', 'particules/calques.js'];
 function slug(texte) {
   return String(texte).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
@@ -205,6 +206,24 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     effets: effets.map(({ calque, ancre, effet }) => ({ calque, ancre, effet })),
   };
 
+  // Sous-titres : cartons en temps absolus (minutage des scènes avec leurs voix), fichiers SRT et VTT.
+  let cartons = [];
+  if (deroule.sousTitres && deroule.scenes.some((s) => s.voix && s.voix.texte)) {
+    const min = calculerMinutage(donnees.scenes, {}, { dureeTemps: dureeTemps(deroule) });
+    const scenesST = deroule.scenes.map((s, i) => {
+      const m = min.scenes[i];
+      const mots = s.voix && s.voix.texte ? ST.motsDeScene({ debut: m.debut, fin: m.fin, texte: s.voix.texte, voix: voixScenes[s.id] || null }) : [];
+      return { id: s.id, debut: m.debut, fin: m.fin, mots };
+    }).filter((s) => s.mots.length);
+    cartons = ST.cartons(scenesST, { ratio: deroule.format.ratio });
+  }
+  donnees.sousTitres = cartons.length ? {
+    mode: deroule.sousTitres.mode || 'ligne',
+    incrustes: deroule.sousTitres.incrustes !== false,
+    position: deroule.sousTitres.position || null,
+    cartons,
+  } : null;
+
   const temps = dureeTemps(deroule);
   const page = `<!doctype html>
 <html lang="fr">
@@ -248,6 +267,15 @@ M.demarrerParticules();
     const temporaire = `${sortie}.${process.pid}.tmp`;
     fs.writeFileSync(temporaire, page);
     fs.renameSync(temporaire, sortie);
+    // Sous-titres pour les plateformes (sous-titres activables) ; retirés quand il n'y en a plus.
+    const base = path.join(dossierSortie, slug(deroule.titre));
+    if (cartons.length) {
+      fs.writeFileSync(`${base}.srt`, ST.versSRT(cartons));
+      fs.writeFileSync(`${base}.vtt`, ST.versVTT(cartons));
+    } else {
+      fs.rmSync(`${base}.srt`, { force: true });
+      fs.rmSync(`${base}.vtt`, { force: true });
+    }
     // Le rapport de débordement portait sur l'ancienne page : l'aperçu en renverra un pour la nouvelle.
     fs.rmSync(path.join(dossierSortie, 'controle-page.json'), { force: true });
   }
