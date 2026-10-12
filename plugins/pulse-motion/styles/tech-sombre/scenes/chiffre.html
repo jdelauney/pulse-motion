@@ -1,0 +1,11 @@
+<!-- Scène toute faite « chiffre » (style tech-sombre) : une mesure qui monte, avec une jauge. Durée conseillée : 7 s.
+     Textes : titre (≤ 40 car.), unite (≤ 3 car., vide si aucune), legende (≤ 60 car.). Valeur : remplacer 1250 dans « nombre 0→1250 ». -->
+<section data-scene="chiffre">
+  <div class="decor">
+    <span class="grille" data-decor data-start="0" data-dur="7" data-tween="--x 0cqh→-8cqh linear; --y 0cqh→-4cqh linear"></span>
+  </div>
+  <h2 id="titre" class="invite ecrit" data-texte="titre" data-start="0.2" data-dur="0.8"></h2>
+  <p class="chiffre-mono lumineux glisse" data-start="#titre:fin" data-dur="0.5"><span id="valeur" data-start="#titre:fin" data-dur="2" data-tween="nombre 0→1250 expo-out">0</span><span class="unite" data-texte="unite"></span></p>
+  <span id="jauge" class="jauge" data-start="#titre:fin" data-dur="2"></span>
+  <p id="legende" class="texte ecrit" data-texte="legende" data-start="#valeur:fin+0.1" data-dur="1"></p>
+</section>

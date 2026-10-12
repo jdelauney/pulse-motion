@@ -1,0 +1,11 @@
+<!-- Scène toute faite « conclusion » (style tech-sombre) : le message à retenir et le logo. Durée conseillée : 6 s.
+     Textes : titre (≤ 40 car.), sous (≤ 50 car.). Logo : celui de la charte (sinon supprimer l'image).
+     Dernière scène de la vidéo : data-dur du décor = durée de la scène − 1 s (image stable d'au moins 0,5 s à la fin). -->
+<section data-scene="conclusion">
+  <div class="decor">
+    <span class="grille" data-decor data-start="0" data-dur="5" data-tween="--x 0cqh→-8cqh linear; --y 0cqh→-4cqh linear"></span>
+  </div>
+  <h2 id="titre" class="titre glisse" data-texte="titre" data-start="0.2" data-dur="0.6"></h2>
+  <p id="sous" class="texte ecrit curseur" data-texte="sous" data-start="#titre:fin+0.2" data-dur="1.2"></p>
+  <img id="logo" class="logo glisse" data-logo alt="" data-start="#sous:fin+0.2" data-dur="0.6">
+</section>
