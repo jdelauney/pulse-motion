@@ -197,7 +197,10 @@
         M.rendre(t);
         var sec = conteneur.querySelector(':scope > section[data-scene="' + s.id + '"]');
         if (!sec) return null;
-        var textes = Array.prototype.filter.call(sec.querySelectorAll('[data-texte]'), function (el) {
+        // Textes de la scène, et lignes de sous-titres affichées à cet instant.
+        var candidats = Array.prototype.slice.call(sec.querySelectorAll('[data-texte]'))
+          .concat(Array.prototype.slice.call(document.querySelectorAll('#pm-sous-titres [data-pm-st]')));
+        var textes = candidats.filter(function (el) {
           if (el.closest('.decor, [data-decor]')) return false;
           var cs = getComputedStyle(el);
           if (cs.webkitTextFillColor && /rgba\([^)]*,\s*0\)/.test(cs.webkitTextFillColor)) return false;
@@ -256,7 +259,8 @@
             }
             var grand = x.taille >= S.grandTexteCqh * cadre.height / 100;
             var minimum = grand ? S.contrasteGrandTexte : S.contrasteTexte;
-            if (c < minimum) constats.push({ regle: 'contraste-reel', scene: s.id, element: x.el.id || x.el.getAttribute('data-texte'), instant: Math.round(t * 100) / 100, valeur: arrondi(c) });
+            var nomTexte = x.el.id || x.el.getAttribute('data-texte') || (x.el.hasAttribute('data-pm-st') ? 'sous-titres' : '');
+            if (c < minimum) constats.push({ regle: 'contraste-reel', scene: s.id, element: nomTexte, instant: Math.round(t * 100) / 100, valeur: arrondi(c) });
           });
           return null;
         }, function (e) {
