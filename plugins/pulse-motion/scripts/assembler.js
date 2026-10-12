@@ -10,7 +10,7 @@
  */
 const fs = require('node:fs');
 const path = require('node:path');
-const { lireDeroule } = require('./lib/deroule.js');
+const { lireDeroule, dureeTemps } = require('./lib/deroule.js');
 const { embarquerRessources, versDataURI, cheminDansProjet } = require('./lib/embarquer.js');
 const S = require('./lib/scenes.js');
 const { preparerEffets } = require('./lib/effets.js');
@@ -20,7 +20,7 @@ const { charteFinale, chartePour, variablesDerivees } = require('./lib/fusion-ch
 const { trouverFichiersPolice } = require('./lib/police.js');
 
 const RACINE = path.resolve(__dirname, '..');
-const MOTEUR = ['courbes.js', 'minutage.js', 'transitions.js', 'tween.js', 'horloge.js', 'lecteur.js', 'debordement.js',
+const MOTEUR = ['courbes.js', 'minutage.js', 'transitions.js', 'tween.js', 'lettres.js', 'camera.js', 'temps.js', 'horloge.js', 'lecteur.js', 'debordement.js',
   'particules/instantanes.js', 'particules/gpu.js', 'particules/simulation.js', 'particules/rendu.js', 'particules/calques.js'];
 function slug(texte) {
   return String(texte).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
@@ -141,7 +141,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     const { html: avecTextes, manquants } = S.injecterTextes(sansScripts, scene.textes);
     manquants.forEach((cle) => erreurs.push({ regle: 'texte-manquant', gravite: 'erreur', scene: scene.id, message: `Scène « ${scene.id} » : data-texte="${cle}" n'a pas de texte dans le déroulé.` }));
     const { html: avecEffets, effets: effetsScene, erreurs: erreursEffets } = preparerEffets(avecTextes, {
-      scene: scene.id, projet, bibliotheque: dossierEffets, charte: charte.couleurs, premierIndex: effets.length,
+      scene: scene.id, projet, bibliotheque: dossierEffets, charte: charte.couleurs, premierIndex: effets.length, dureeTemps: dureeTemps(deroule),
     });
     effets.push(...effetsScene);
     erreurs.push(...erreursEffets);
@@ -165,10 +165,12 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     titre: deroule.titre,
     format: { ratio: deroule.format.ratio, ips: deroule.format.ips || 30 },
     musique: deroule.musique ? { volume: deroule.musique.volume ?? 1 } : null,
+    tempo: deroule.tempo ? { bpm: deroule.tempo.bpm, decalage: deroule.tempo.decalage || 0 } : null,
     scenes: deroule.scenes.map((s) => ({ id: s.id, duree: s.duree, rythme: s.rythme || 1, transition: s.transition || 'aucune' })),
     effets: effets.map(({ calque, ancre, effet }) => ({ calque, ancre, effet })),
   };
 
+  const temps = dureeTemps(deroule);
   const page = `<!doctype html>
 <html lang="fr">
 <head>
@@ -177,7 +179,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
 <meta name="generator" content="Pulse Motion">
 <title>${S.echapperHTML(deroule.titre)}</title>
 <style>
-:root { --pm-ratio-l: ${l}; --pm-ratio-h: ${h}; }
+:root { --pm-ratio-l: ${l}; --pm-ratio-h: ${h};${temps ? ` --pm-temps: ${temps}s; --pm-bpm: ${deroule.tempo.bpm};` : ''} }
 ${fs.readFileSync(path.join(RACINE, 'moteur', 'base.css'), 'utf8')}
 ${variablesCSS()}
 ${cssDeCharte}

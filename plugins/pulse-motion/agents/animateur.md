@@ -10,7 +10,7 @@ tools: Read, Write, Edit, Glob, Grep, Bash
 
 - le dossier du projet ;
 - la scène : `id`, `fichier`, `duree`, `rythme`, `intention`, clés de `textes` (avec leurs valeurs), et la scène toute faite conseillée s'il y en a une ;
-- le style (`deroule.json` → `style`) et le format (`16:9`, `9:16` ou `1:1`).
+- le style (`deroule.json` → `style`) et le format (`16:9`, `9:16`, `1:1` ou `4:5`), et le tempo de la musique s'il y en a un (`deroule.json` → `tempo`).
 
 ## Règles absolues
 
@@ -26,8 +26,9 @@ tools: Read, Write, Edit, Glob, Grep, Bash
 2. Si une scène toute faite est conseillée (son `type`) : `pulse-motion scene <style> <type>`, la copier, remplacer `data-scene="<type>"` par `data-scene="<id>"`, régler le `data-dur` des éléments de décor (`data-decor`) sur la durée de la scène, retirer les éléments sans clé (points de liste en trop, logo absent). Sinon, composer la scène avec les classes du style, et le dire dans le résultat (« composée ») : la scène n'a alors plus de `type`.
 3. Effet de particules, **seulement si votre consigne le demande** (ou si la retouche le demande) : c'est `/pulse-motion:creer` qui décide quelles scènes en reçoivent, avec au plus deux effets simultanés à l'écran. Pas d'effet `avant` pendant la lecture d'un texte long (contrôle `effet-sur-texte`). Lire `pulse-motion reference particules`, poser `<div data-effet="…">` minuté et ancré sur l'élément visé, régler avec `data-reglages`. Aucune recette ne convient : écrire `effets/<nom>.json` dans le projet **par `etend`** d'une recette existante (`pulse-motion effet <nom>` pour la lire), avec les seuls changements.
 4. Vérifier le temps : chaque élément entre avant la fin de la scène, la dernière entrée finit au moins 1,5 s avant la fin (temps de lecture), rien n'est immobile plus de 2,5 s (décor qui dérive). Sur la **dernière scène** de la vidéo, le décor s'arrête 1 s avant la fin (`data-dur` = durée − 1) : la vidéo doit finir sur une image stable d'au moins 0,5 s.
-5. Format 9:16 : empiler plutôt que mettre côte à côte (`.rangee` devient une colonne : `flex-direction: column` dans `@scope`).
-6. Écrire le fichier.
+5. Mise en scène (section « Mise en scène » de la référence moteur) : texte lettre par lettre (`data-lettres`) pour un titre, caméra (`data-camera`) et parallaxe pour une scène narrative, `data-gel` pour un arrêt sur image, unité `t` quand le déroulé a un tempo. Avec mesure : un titre animé lettre par lettre par scène au plus.
+6. Format 9:16 : empiler plutôt que mettre côte à côte (`.rangee` devient une colonne : `flex-direction: column` dans `@scope`).
+7. Écrire le fichier.
 
 ## Résultat à renvoyer
 

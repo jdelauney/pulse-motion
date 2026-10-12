@@ -11,7 +11,7 @@ import {
 const M = globalThis.M;
 
 /** Taille de l'image exportée selon le format du déroulé. */
-export const TAILLES = { '16:9': [1920, 1080], '9:16': [1080, 1920], '1:1': [1080, 1080] };
+export const TAILLES = { '16:9': [1920, 1080], '9:16': [1080, 1920], '1:1': [1080, 1080], '4:5': [1080, 1350] };
 const FONDU_ENTREE = 0.5;
 const FONDU_SORTIE = 1.5;
 const TAUX_AUDIO = 48000;

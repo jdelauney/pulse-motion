@@ -179,3 +179,63 @@ test('ton sombre demandé sur un style sans ton sombre : alerte « ton-indisponi
   assert.equal(alerte.gravite, 'alerte');
   assert.match(alerte.message, /n'a pas de ton sombre/);
 });
+
+test('tempo : une scène qui ne commence pas sur un temps est signalée', () => {
+  const dir = copierProjet('projet-simple');
+  modifierDeroule(dir, (d) => { d.tempo = { bpm: 120 }; });
+  assert.ok(!regles(controler({ dossier: dir, dossierStyles: STYLES })).includes('hors-tempo'));
+  modifierDeroule(dir, (d) => { d.tempo = { bpm: 100 }; });
+  const p = controler({ dossier: dir, dossierStyles: STYLES }).problemes.find((x) => x.regle === 'hors-tempo');
+  assert.ok(p);
+  assert.equal(p.scene, 'chiffre');
+  assert.match(p.message, /commence à 3,5 s, entre deux temps \(100 bpm\)/);
+});
+
+test('tempo : data-start en temps sans tempo dans le déroulé', () => {
+  const dir = copierProjet('projet-simple');
+  ecrireScene(dir, '02-chiffre.html', '<section data-scene="chiffre"><p data-texte="legende" data-start="2t" data-dur="2"></p></section>');
+  assert.ok(regles(controler({ dossier: dir, dossierStyles: STYLES })).includes('tempo-absent'));
+});
+
+test('texte lettre par lettre : effet inconnu signalé sans navigateur', () => {
+  const dir = copierProjet('projet-simple');
+  ecrireScene(dir, '02-chiffre.html', '<section data-scene="chiffre"><p data-texte="legende" data-start="0" data-dur="2" data-lettres="danse"></p><p data-mots="monte" data-start="1"></p></section>');
+  const p = controler({ dossier: dir, dossierStyles: STYLES }).problemes.filter((x) => x.regle === 'lettres-invalide');
+  assert.equal(p.length, 1);
+  assert.match(p[0].message, /Scène « chiffre » : data-lettres « danse » inconnu \(effets : monte, flou, frappe, onde, chute\)/);
+});
+
+test('caméra et temps : syntaxe fautive signalée sans navigateur', () => {
+  const dir = copierProjet('projet-simple');
+  ecrireScene(dir, '02-chiffre.html', `<section data-scene="chiffre">
+  <div data-camera="travelling 0→1 0+1" data-gel="1+1; 1.5+1"><p data-texte="legende" data-start="0" data-dur="2"></p></div>
+  <div data-camera="zoom 1→1.1 0+2" data-vitesse="0+1 x2" data-profondeur="loin"></div>
+</section>`);
+  const p = controler({ dossier: dir, dossierStyles: STYLES }).problemes;
+  const camera = p.filter((x) => x.regle === 'camera-invalide');
+  assert.equal(camera.length, 1);
+  assert.match(camera[0].message, /^Scène « chiffre » : data-camera : propriété « travelling » inconnue/);
+  assert.equal(p.filter((x) => x.regle === 'temps-invalide').length, 1);
+  assert.equal(p.filter((x) => x.regle === 'profondeur-invalide').length, 1);
+});
+
+test('assemblage : les modules de mise en scène sont dans la page', () => {
+  const dir = copierProjet('projet-simple');
+  const { html } = require('../scripts/assembler.js').assembler({ dossier: dir, dossierStyles: STYLES, ecrire: false });
+  for (const nom of ['Pulse Motion – caméra', 'Pulse Motion – temps figé', 'Pulse Motion – texte lettre par lettre']) assert.ok(html.includes(nom), nom);
+});
+
+test("tempo : la première scène n'est pas jugée, même avec un décalage", () => {
+  const dir = copierProjet('projet-simple');
+  modifierDeroule(dir, (d) => { d.tempo = { bpm: 120, decalage: 0.25 }; });
+  const p = controler({ dossier: dir, dossierStyles: STYLES }).problemes.filter((x) => x.regle === 'hors-tempo');
+  assert.deepEqual(p.map((x) => x.scene), ['chiffre']);
+});
+
+test('caméra posée sur la section : signalée', () => {
+  const dir = copierProjet('projet-simple');
+  ecrireScene(dir, '02-chiffre.html', '<section data-scene="chiffre" data-camera="zoom 1→2 0+1"><p data-texte="legende" data-start="0" data-dur="2"></p></section>');
+  const p = controler({ dossier: dir, dossierStyles: STYLES }).problemes.find((x) => x.regle === 'camera-invalide');
+  assert.ok(p);
+  assert.match(p.message, /data-camera se pose sur un conteneur à l'intérieur de la scène, pas sur la <section>/);
+});

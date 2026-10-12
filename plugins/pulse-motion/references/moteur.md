@@ -27,7 +27,7 @@
 ```
 
 - Le CSS propre à la scène va dans un `<style>` avec `@scope { … }` : il ne touche pas les autres scènes.
-- La section occupe toute l'image (16:9, 9:16 ou 1:1 selon le déroulé) ; le style fournit la mise en page de base.
+- La section occupe toute l'image (16:9, 9:16, 1:1 ou 4:5 selon le déroulé) ; le style fournit la mise en page de base.
 - Images : fichiers copiés dans `assets/` et référencés en relatif (`<img src="assets/photo.jpg" alt="…">`, `url('assets/fond.svg')`). Elles sont embarquées dans la page.
 - Logo de la charte : `<img data-logo alt="">` (le moteur pose la source).
 
@@ -60,6 +60,57 @@ Nom = `<type>-<mode>` (ex. `cubic-out`, `back-inout`, `bounce-out`, `quad-spike`
 - Modes : `in`, `out`, `inout`, `outin` ; aller-retour : `spike` (monte puis redescend, pour mettre en valeur), `arch`, `spike-arch`, `arch-spike` ; inverses : `in-inv`, `out-inv`, `spike-inv`, `arch-inv`, `spike-arch-inv`.
 - Dans le CSS : `animation-timing-function: var(--ease-<type>-<mode>)` pour les types `quad` à `bounce` et les modes `in`, `out`, `inout` (ex. `var(--ease-back-out)`).
 
+## Mise en scène
+
+### Tempo (caler sur la musique)
+
+Avec `"tempo": { "bpm": 120 }` dans le déroulé (`"decalage"` : instant du premier temps, en s), toute durée peut s'écrire en **temps musicaux** avec le suffixe `t` : `data-start="4t"`, `data-dur="2t"`, `data-start="#titre:fin+1t"`, et de même dans `data-pas`, `data-camera`, `data-gel`, `data-vitesse`. Une boucle CSS se cale avec `var(--pm-temps)` (durée d'un temps) : `animation: pas var(--pm-temps) steps(2) infinite;`. Le contrôle `hors-tempo` signale une scène qui ne commence pas sur un temps.
+
+### Texte lettre par lettre
+
+```html
+<h1 class="titre" data-texte="titre" data-start="0.3" data-lettres="onde"></h1>
+<p class="texte" data-texte="detail" data-start="#titre:fin+0.2" data-mots="monte"></p>
+```
+
+- `data-lettres` (par lettre) ou `data-mots` (par mot) : `monte` (monte de 0,5 em), `flou` (net en 0,5 s), `frappe` (machine à écrire), `onde` (saut puis petit rebond), `chute` (tombe du haut et rebondit).
+- `data-pas` : écart entre deux lettres ou deux mots (par défaut `frappe` 0,04 s, `onde` 0,02 s, autres 0,05 s ; mots 0,12 s). Durée d'une lettre : `--pm-lettre-dur` (ex. `style="--pm-lettre-dur: 0.3s"`).
+- Le départ est le `data-start` de l'élément (ou de son ancêtre minuté). Fin de l'animation ≈ `data-start` + nombre de lettres × pas + durée d'une lettre : en tenir compte pour le temps de lecture.
+- Les mots ne sont jamais coupés, les retours à la ligne du texte sont gardés ; les lecteurs d'écran lisent le texte entier. Une balise à l'intérieur du texte (`<em>`) est aplatie.
+
+### Dégradé et contour
+
+- `class="pm-degrade"` : texte rempli d'un dégradé, `--pm-degrade` (par défaut primaire → accent de la charte). Ex. `style="--pm-degrade: linear-gradient(90deg, var(--c-primaire), var(--c-accent))"`. Se combine avec `data-lettres`.
+- `class="pm-contour"` : contour du texte, `--pm-contour` (épaisseur, 0,2 cqh) et `--pm-contour-couleur` (`var(--c-texte)`).
+
+### Caméra et parallaxe
+
+```html
+<div data-camera="zoom 1→1.06 0+4; x 50→44 3+0.3 cubic-out; y 50→70 3+0.3 cubic-out; secousse 1.2 6+0.2">
+  <div class="ciel" data-profondeur="0.2"></div>
+  <div class="collines" data-profondeur="0.6"></div>
+  <div class="sol"></div>
+</div>
+<h2 class="titre-moyen" data-texte="carton" data-start="1"></h2>
+```
+
+- `data-camera` sur un conteneur **dans** la scène (jamais sur la `<section>`), qui couvre l'image ; ce qui est **hors** du conteneur (cartons, titres) reste fixe.
+- Clauses `propriété départ→arrivée début+durée [courbe]` (courbe par défaut `sine-inout`) :
+  - `zoom` (1 = cadre normal, 2 = gros plan) ;
+  - `x`, `y` : le point visé, en % de l'image (50 = centre) — pour un travelling, déplacer `x` ; pour un gros plan sur un personnage en (44 %, 70 %), `zoom 1→3` avec `x 50→44; y 50→70` sur la même plage ;
+  - `rotation` (deg), `saturation` (1 normal, 0 gris), `flou` (cqh) ;
+  - `secousse <amplitude cqh> début+durée` : tremblement amorti (impact).
+- Hors de toute clause, une propriété garde sa valeur de départ (avant) ou d'arrivée (après).
+- `data-profondeur` sur un enfant de la caméra : 1 suit la caméra (défaut), 0 reste fixe, 0,3 = plan lointain. Utilise la propriété CSS `translate` : ne pas l'animer soi-même sur ces plans (`transform` reste libre).
+- Le décor peut dépasser l'image (`left: 150%`) : la caméra va le chercher.
+
+### Figer et accélérer le temps
+
+- `data-gel="1.2+1.5"` sur un conteneur : à 1,2 s, tout son contenu s'arrête 1,5 s (image figée), puis reprend où il en était. Les éléments après le gel arrivent donc 1,5 s plus tard.
+- `data-vitesse="3+2 x2"` : de 3 s à 5 s, le contenu va deux fois plus vite (`x0.5` : ralenti).
+- Plusieurs plages séparées par `;`, sans chevauchement, en secondes de la scène. Sur la `<section>` elle-même, elles s'appliquent à toute la scène. S'applique aux éléments minutés, animations CSS et SVG animés du conteneur ; pas à `M.chaqueImage` ni aux effets de particules.
+- Une caméra posée **sur le même élément** n'est pas figée : on gèle le décor, la caméra continue (zoom sur l'image figée). Pour désaturer pendant le gel : `saturation 1→0.4 1.2+0.3` dans la caméra.
+
 ## Signaux d'alerte
 
 | Vous écrivez… | Problème | À la place |
@@ -70,4 +121,6 @@ Nom = `<type>-<mode>` (ex. `cubic-out`, `back-inout`, `bounce-out`, `quad-spike`
 | `color: #1d4ed8` | Ignore la charte de la personne | `var(--c-primaire)` |
 | `data-start="#titre+1"` sur un `#titre` sans `data-start` ni `data-dur` | Référence inconnue | Minuter `#titre`, ou partir de `0` |
 | `<img src="https://…">` | La vidéo ne marche plus hors ligne | Copier le fichier dans `assets/` |
+| `transform: translateX(…)` animé sur toute une scène pour la parcourir | Pas de parallaxe, pas de cadrage | `data-camera="x 20→80 0+6"` |
+| `data-start` calculés à la main sur la musique (1,875 s…) | Décalage dès que le tempo change | `tempo` dans le déroulé et `data-start="4t"` |
 | Une scène où rien ne bouge pendant 3 s | Temps mort signalé | Décor qui dérive (`.decor .rond`) ou entrée échelonnée |

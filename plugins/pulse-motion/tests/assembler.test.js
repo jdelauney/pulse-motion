@@ -153,3 +153,11 @@ test('la page assemblée démarre dans le navigateur', { skip: !navigateur && 'C
   assert.match(dom, /<div id="pm-bandeau" hidden="">/, 'aucune erreur affichée');
   assert.match(dom, /id="pm-lecteur"/);
 });
+
+test('tempo : durée d\'un temps et bpm en variables CSS, tempo dans les données de la page', () => {
+  const dir = copierProjet('projet-simple');
+  modifierDeroule(dir, (d) => { d.tempo = { bpm: 120, decalage: 0.25 }; });
+  const { html } = assembler({ dossier: dir, dossierStyles: STYLES, ecrire: false });
+  assert.match(html, /--pm-temps: 0\.5s; --pm-bpm: 120;/);
+  assert.match(html, /"tempo":\{"bpm":120,"decalage":0\.25\}/);
+});

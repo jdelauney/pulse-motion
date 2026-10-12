@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Pulse Motion – test de la caméra et du temps figé ou accéléré</title>
+<link rel="stylesheet" href="../moteur/base.css">
+<style>
+  body { --pm-ratio-l: 16; --pm-ratio-h: 9; }
+  #pm-scene { flex: none; width: 800px !important; height: 450px; }
+  @keyframes glisse { from { transform: translateX(0); } to { transform: translateX(400px); } }
+  #css { animation: glisse 4s linear both; }
+</style>
+</head>
+<body>
+<div id="pm-scene">
+  <section data-scene="a">
+    <div id="cam" data-camera="zoom 1→2 1+1 linear; x 50→60 1+1 linear; rotation 0→10 2+2 linear" data-gel="2+2">
+      <div id="loin" data-profondeur="0"></div>
+      <div id="mi" data-profondeur="0.5"></div>
+      <div id="anim" data-start="0" data-dur="4" data-tween="--v 0→4 linear"></div>
+      <p id="css" data-start="0" data-dur="4">glisse</p>
+      <svg width="100" height="10"><rect id="rect" width="10" height="10"><animate attributeName="x" from="0" to="80" dur="8s" fill="freeze"/></rect></svg>
+      <div data-gel="0.5+0.5"><div id="imbrique" data-start="0" data-dur="8" data-tween="--v 0→8 linear"></div></div>
+    </div>
+    <div data-vitesse="1+2 x2"><div id="vite" data-start="0" data-dur="8" data-tween="--v 0→8 linear"></div></div>
+    <p id="carton" data-start="0" data-dur="8" data-tween="--v 0→8 linear"></p>
+  </section>
+  <section data-scene="b" data-camera="zoom 1→2 0+1">
+    <div data-camera="travelling 0→1 0+1"></div>
+    <div data-gel="1+1; 1.5+1"></div>
+    <div data-profondeur="loin"></div>
+    <div data-camera="zoom 1→2 1t+1t"></div>
+  </section>
+  <section data-scene="c" data-gel="0+1">
+    <div id="sg" data-start="0" data-dur="2" data-tween="--v 0→2 linear"></div>
+  </section>
+</div>
+<pre id="resultat">EN COURS</pre>
+<script type="application/json" id="pm-donnees">
+{"titre":"test","format":{"ratio":"16:9","ips":30},"musique":null,
+ "scenes":[{"id":"a","duree":8,"rythme":1,"transition":"aucune"},{"id":"b","duree":2,"rythme":1,"transition":"aucune"},{"id":"c","duree":3,"rythme":1,"transition":"aucune"}]}
+</script>
+<script src="../moteur/courbes.js"></script>
+<script src="../moteur/minutage.js"></script>
+<script src="../moteur/transitions.js"></script>
+<script src="../moteur/tween.js"></script>
+<script src="../moteur/lettres.js"></script>
+<script src="../moteur/camera.js"></script>
+<script src="../moteur/temps.js"></script>
+<script src="../moteur/horloge.js"></script>
+<script>
+  M.demarrer();
+  M.pret.then(function () {
+  var echecs = [], total = 0;
+  function verifier(nom, ok, detail) { total++; if (!ok) echecs.push(nom + (detail ? ' (' + detail + ')' : '')); }
+  function proche(a, b, tol) { return Math.abs(a - b) <= (tol || 1e-3); }
+  function el(id) { return document.getElementById(id); }
+  function v(id) { return parseFloat(getComputedStyle(el(id)).getPropertyValue('--v')); }
+  function tx(id) { var m = new DOMMatrix(getComputedStyle(el(id)).transform); return m.e; }
+  function photo() {
+    return JSON.stringify(['cam', 'loin', 'anim', 'css', 'imbrique', 'vite', 'carton'].map(function (id) {
+      var s = getComputedStyle(el(id)); return [s.transform, s.translate, s.filter, s.getPropertyValue('--v')];
+    }).concat([el('rect').x.animVal.value]));
+  }
+  var cam = el('cam');
+
+  M.rendre(1.5);
+  verifier('caméra : zoom et cadrage à mi-course', cam.style.transform.indexOf('scale(1.5)') >= 0 && cam.style.transform.indexOf('translate(-55%, -50%)') >= 0, cam.style.transform);
+  verifier('caméra : écart du cadrage posé pour la parallaxe', cam.style.getPropertyValue('--pm-cam-dx') === '5' && cam.style.getPropertyValue('--pm-cam-dy') === '0');
+  verifier('caméra plein cadre, origine en haut à gauche', getComputedStyle(cam).position === 'absolute' && getComputedStyle(cam).transformOrigin === '0px 0px');
+
+  M.rendre(3);
+  var cqw = el('pm-scene').getBoundingClientRect().width / 100;
+  verifier('parallaxe : plan fixe compensé en entier', proche(parseFloat(getComputedStyle(el('loin')).translate), 10 * cqw, 0.01), getComputedStyle(el('loin')).translate);
+  verifier('parallaxe : plan à 0,5 compensé de moitié', proche(parseFloat(getComputedStyle(el('mi')).translate), 5 * cqw, 0.01), getComputedStyle(el('mi')).translate);
+  verifier('gel : élément minuté arrêté', proche(v('anim'), 2), v('anim'));
+  verifier('gel : animation CSS arrêtée', proche(tx('css'), 200, 0.5), tx('css'));
+  verifier('gel : SVG animé arrêté', proche(el('rect').x.animVal.value, 20, 0.01), el('rect').x.animVal.value);
+  verifier('gel : la caméra du conteneur continue', cam.style.transform.indexOf('rotate(5deg)') >= 0, cam.style.transform);
+  verifier('hors du conteneur : temps normal', proche(v('carton'), 3), v('carton'));
+  verifier('gels imbriqués : les temps se composent', proche(v('imbrique'), 1.5), v('imbrique'));
+  M.rendre(5);
+  verifier('gel : reprend où il en était', proche(v('anim'), 3) && proche(tx('css'), 300, 0.5), v('anim') + ' / ' + tx('css'));
+
+  M.rendre(2);
+  verifier('vitesse x2 : en avance d\'une seconde', proche(v('vite'), 3), v('vite'));
+  M.rendre(4);
+  verifier('vitesse x2 : après la plage, avance gardée', proche(v('vite'), 6), v('vite'));
+
+  M.rendre(0); M.rendre(3.3); var direct = photo();
+  M.rendre(7); M.rendre(3.3); var detour = photo();
+  verifier('déterministe (0→3,3 / 7→3,3)', direct === detour, direct + ' ≠ ' + detour);
+
+  M.rendre(10.5);
+  verifier('gel posé sur la section : appliqué', proche(v('sg'), 0), v('sg'));
+  M.rendre(11.5);
+  verifier('gel posé sur la section : reprend', proche(v('sg'), 0.5), v('sg'));
+
+  var regles = M.erreurs.map(function (e) { return e.regle; }).sort().join(',');
+  verifier('erreurs : caméra, plages, profondeur, temps sans tempo', regles === 'camera-invalide,camera-invalide,camera-invalide,profondeur-invalide,temps-invalide', JSON.stringify(M.erreurs));
+  verifier('message nomme la scène', M.erreurs.every(function (e) { return e.message.indexOf('Scène « b »') === 0; }), JSON.stringify(M.erreurs));
+
+  document.getElementById('resultat').textContent = echecs.length
+    ? 'RESULTAT: ECHEC ' + echecs.length + '/' + total + '\n' + echecs.join('\n')
+    : 'RESULTAT: OK ' + total + '/' + total;
+  }).catch(function (e) { document.getElementById('resultat').textContent = 'RESULTAT: ECHEC exception ' + e; });
+</script>
+</body>
+</html>
