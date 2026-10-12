@@ -63,12 +63,13 @@ test('revue : une information (gravité info) n\'ouvre pas le bandeau d\'erreur 
   }
 });
 
-test('revue : calage-approche ne renvoie pas vers une commande absente', async () => {
+test('revue : calage-approche renvoie vers pulse-motion whisper (la commande existe)', async () => {
   const dir = copierProjet('projet-simple');
   await V.ecrirePrise({ projet: dir, scene: 'intro', octets: new Uint8Array(wavSinus({ secondes: 1 })), texte: 'Bonjour' });
   modifierDeroule(dir, (d) => { d.scenes[0].voix = { texte: 'Bonjour', fichier: 'assets/voix/intro.wav' }; });
   const info = assembler({ dossier: dir, dossierStyles: STYLES, ecrire: false }).erreurs.find((e) => e.regle === 'calage-approche');
-  assert.doesNotMatch(info.message, /pulse-motion whisper/);
+  assert.match(info.message, /pulse-motion whisper/);
+  assert.ok(require('../scripts/pm.js') && fs.existsSync(path.join(__dirname, '..', 'scripts', 'whisper.js')));
 });
 
 async function projetProvisoire() {

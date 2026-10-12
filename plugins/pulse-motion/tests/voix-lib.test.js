@@ -80,3 +80,13 @@ test('avec ffmpeg : Opus écrit à côté de la prise et désigné dans les mots
   d.scenes[0].voix.fichier = 'assets/voix/intro.wav';
   assert.equal(V.lireVoixScene(dir, d, d.scenes[0]).opus, 'assets/voix/intro.opus');
 });
+
+test('ecrirePrise avec des mots donnés : décalés du rognage, approche whisper', async () => {
+  const dir = copierProjet('projet-simple');
+  // Parole de 0,5 s à 2,5 s : rognage de 0,42 s au début (0,5 − 0,08).
+  const mots = [{ w: 'Pourquoi', t0: 0.6, t1: 1.0 }, { w: 'le', t0: 1.1, t1: 1.3 }, { w: 'froid', t0: 1.5, t1: 2.4 }];
+  await V.ecrirePrise({ projet: dir, scene: 'intro', octets: wavParole(), texte: 'Pourquoi le froid', mots });
+  const m = JSON.parse(fs.readFileSync(path.join(dir, 'assets', 'voix', 'intro.mots.json'), 'utf8'));
+  assert.equal(m.approche, 'whisper');
+  assert.ok(Math.abs(m.mots[0].t0 - 0.18) < 0.02, JSON.stringify(m.mots[0]));
+});

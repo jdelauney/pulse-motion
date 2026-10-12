@@ -91,8 +91,8 @@
     return y;
   }
 
-  /** Silence retiré au début et à la fin (fenêtres de 10 ms sous seuil dBFS), marge gardée. Jamais vide. */
-  function rogner(canal, taux, options) {
+  /** Plage gardée après rognage : { debut, fin } (indices) ; silence retiré (fenêtres de 10 ms sous seuil dBFS), marge gardée. */
+  function rognage(canal, taux, options) {
     var o = options || {}, seuil = Math.pow(10, (o.seuil === undefined ? -45 : o.seuil) / 20), marge = Math.round((o.marge === undefined ? 0.08 : o.marge) * taux);
     var pas = Math.max(1, Math.round(taux / 100)), premier = -1, dernier = -1;
     for (var debut = 0; debut < canal.length; debut += pas) {
@@ -100,8 +100,14 @@
       for (var i = debut; i < Math.min(canal.length, debut + pas); i++) { var a = Math.abs(canal[i]); if (a > m) m = a; }
       if (m >= seuil) { if (premier < 0) premier = debut; dernier = Math.min(canal.length, debut + pas); }
     }
-    if (premier < 0) return canal.length ? canal.slice(0, 1) : new Float32Array(1);
-    return canal.slice(Math.max(0, premier - marge), Math.min(canal.length, dernier + marge));
+    if (premier < 0) return { debut: 0, fin: Math.min(1, canal.length) };
+    return { debut: Math.max(0, premier - marge), fin: Math.min(canal.length, dernier + marge) };
+  }
+
+  /** Silence retiré au début et à la fin, marge gardée. Jamais vide. */
+  function rogner(canal, taux, options) {
+    var r = rognage(canal, taux, options);
+    return canal.length ? canal.slice(r.debut, r.fin) : new Float32Array(1);
   }
 
   /** Crête ramenée à cible dBFS (en place) ; un silence reste un silence. */
@@ -112,11 +118,14 @@
     return canal;
   }
 
-  /** Prise brute -> prise prête : mono, passe-haut 80 Hz, silences rognés, crête à −3 dBFS. */
+  /** Prise brute -> prise prête : mono, passe-haut 80 Hz, silences rognés, crête à −3 dBFS ; decalage : secondes
+   *  retirées au début (pour recaler des temps mesurés sur la prise brute). */
   function preparerPrise(son) {
-    var x = normaliserCrete(rogner(passeHaut(mono(son.canaux), son.taux, 80), son.taux), -3);
-    return { taux: son.taux, canaux: [x] };
+    var filtre = passeHaut(mono(son.canaux), son.taux, 80);
+    var r = rognage(filtre, son.taux);
+    var x = normaliserCrete(filtre.length ? filtre.slice(r.debut, r.fin) : new Float32Array(1), -3);
+    return { taux: son.taux, canaux: [x], decalage: r.debut / son.taux };
   }
 
-  return { ecrire: ecrire, lire: lire, base64: base64, mono: mono, passeHaut: passeHaut, rogner: rogner, normaliserCrete: normaliserCrete, preparerPrise: preparerPrise };
+  return { ecrire: ecrire, lire: lire, base64: base64, mono: mono, passeHaut: passeHaut, rognage: rognage, rogner: rogner, normaliserCrete: normaliserCrete, preparerPrise: preparerPrise };
 });
