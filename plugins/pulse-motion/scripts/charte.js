@@ -155,7 +155,8 @@ function depuisLogo({ fichier, style = 'clair-pedagogique', ton = null, dossierS
   const charteStyle = (lireJSON(path.join(st.dossier, 'charte.json')) || {}).couleurs || {};
   const tons = Array.isArray(couleur.tons) && couleur.tons.length ? couleur.tons : ['clair'];
   const tonRetenu = tons.includes(ton) ? ton : (tons.includes(couleur.tonDefaut) ? couleur.tonDefaut : tons[0]);
-  const fond = tonRetenu === 'sombre' && couleur.sombre && couleur.sombre.fond ? couleur.sombre.fond : (charteStyle.fond || '#ffffff');
+  const variante = couleur[tonRetenu] || {};
+  const fond = variante.fond || charteStyle.fond || '#ffffff';
   const couleurs = {};
   const ajustements = [];
   for (const [nom, minimum, quoi] of [['primaire', SEUILS.contrasteTitres, 'couleur primaire'], ['accent', SEUILS.contrasteTexte, 'couleur d\'accent']]) {

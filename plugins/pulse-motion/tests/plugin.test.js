@@ -78,14 +78,17 @@ test('export : proposé à la fin de creer et de retoucher, planche dans le parc
   assert.match(lire('skills', 'exporter', 'SKILL.md'), /`pulse-motion exporter \.` en arrière-plan/);
 });
 
-test('références : bloc « L\'essentiel » en tête, styles du catalogue documentés', () => {
-  for (const f of ['moteur.md', 'rythme.md', path.join('styles', 'clair-pedagogique.md')]) {
+test('références : bloc « L\'essentiel » en tête, chaque style du catalogue documenté', () => {
+  const styles = fs.readdirSync(path.join(RACINE, 'styles'));
+  for (const f of ['moteur.md', 'rythme.md', ...styles.map((st) => path.join('styles', `${st}.md`))]) {
     assert.match(lire('references', f), /^# .+\n\n## L'essentiel\n/, f);
   }
-  const catalogue = JSON.parse(lire('styles', 'clair-pedagogique', 'catalogue.json'));
-  const doc = lire('references', 'styles', 'clair-pedagogique.md');
-  for (const s of catalogue.scenes) {
-    assert.match(doc, new RegExp(`\\| \`${s.nom}\` \\|.*\\| ${s.duree} s \\|`), `scène ${s.nom} documentée avec sa durée`);
+  for (const st of styles) {
+    const catalogue = JSON.parse(lire('styles', st, 'catalogue.json'));
+    const doc = lire('references', 'styles', `${st}.md`);
+    for (const sc of catalogue.scenes) {
+      assert.match(doc, new RegExp(`\\| \`${sc.nom}\` \\|.*\\| ${sc.duree} s \\|`), `${st} : scène ${sc.nom} documentée avec sa durée`);
+    }
   }
 });
 

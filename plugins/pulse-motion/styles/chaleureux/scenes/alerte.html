@@ -1,0 +1,17 @@
+<!-- Scène toute faite « alerte » (style chaleureux) : un conseil important, sur une carte. Durée conseillée : 8 s.
+     Textes : titre (≤ 40 car.), texte (≤ 80 car.). -->
+<section data-scene="alerte">
+  <div class="decor">
+    <span class="galet sauge" data-decor style="width: 50cqh; height: 44cqh; left: -18cqh; top: -18cqh" data-start="0" data-dur="8" data-tween="--dx 0cqh→6cqh sine-inout; --m 0→1 sine-inout"></span>
+  </div>
+  <div id="boite" class="conseil pose" data-start="0.2" data-dur="0.9">
+    <svg id="icone" class="conseil-icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+         data-start="#boite:fin" data-dur="0.8" data-tween="scale 1→1.15 quad-spike" aria-hidden="true">
+      <circle cx="12" cy="12" r="10"/><path d="M12 8v5"/><path d="M12 16.5h.01"/>
+    </svg>
+    <div class="conseil-corps">
+      <h2 id="titre" class="titre-moyen" data-texte="titre"></h2>
+      <p id="texte" class="texte pose" data-texte="texte" data-start="#boite:fin+0.3" data-dur="0.9"></p>
+    </div>
+  </div>
+</section>

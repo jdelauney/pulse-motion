@@ -1,0 +1,23 @@
+{
+  "style": "tech-sombre",
+  "famille": "technique",
+  "personnalite": ["précis", "moderne", "technique"],
+  "eviter": ["ton chaleureux ou enfantin", "décor chargé"],
+  "genres": ["produit", "formation", "storytelling"],
+  "couleur": {
+    "strategie": "sobre-avec-une-touche",
+    "tons": ["sombre", "clair"],
+    "tonDefaut": "sombre",
+    "sombre": { "fond": "#0b1020", "texte": "#e2e8f0" },
+    "clair": { "fond": "#f8fafc", "texte": "#0f172a" },
+    "roles": { "primaire": "titres en couleur, liens", "accent": "invites, curseur, jauges, panneau actif" }
+  },
+  "typographie": {
+    "titres": { "famille": "Space Grotesk", "categorie": "sans-serif", "graisse": 700 },
+    "texte": { "famille": "JetBrains Mono", "categorie": "monospace", "graisse": 400 }
+  },
+  "mouvement": { "caractere": "net", "courbes": ["expo-out", "linear"], "dureeType": 0.6, "transitions": ["fondu", "glissement"] },
+  "signature": "Grille de fond qui glisse, texte qui s'écrit comme au clavier avec un curseur, chiffres à chasse fixe, accent lumineux",
+  "aFaire": ["Des phrases courtes et factuelles", "Un seul accent lumineux par scène"],
+  "aEviter": ["Les rebonds", "Les couleurs chaudes vives"]
+}

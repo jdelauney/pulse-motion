@@ -1,0 +1,12 @@
+<!-- Scène toute faite « conclusion » (style minimal) : le message à retenir et le logo. Durée conseillée : 6 s.
+     Textes : titre (≤ 40 car.), sous (≤ 50 car.). Logo : celui de la charte (sinon supprimer l'image).
+     Dernière scène de la vidéo : data-dur du décor = durée de la scène − 1 s (image stable d'au moins 0,5 s à la fin). -->
+<section data-scene="conclusion">
+  <div class="decor">
+    <span class="repere"></span>
+    <span class="marqueur" data-decor data-start="0" data-dur="5" data-tween="--x 0cqw→60cqw expo-inout"></span>
+  </div>
+  <h2 id="titre" class="titre revele" data-texte="titre" data-start="0.2" data-dur="0.5"></h2>
+  <p id="sous" class="sous-titre monte" data-texte="sous" data-start="#titre:fin+0.2" data-dur="0.45"></p>
+  <img id="logo" class="logo monte" data-logo alt="" data-start="#sous:fin+0.3" data-dur="0.45">
+</section>

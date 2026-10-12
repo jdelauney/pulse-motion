@@ -1,0 +1,11 @@
+<!-- Scène toute faite « alerte » (style energique) : un point d'attention, bande de chantier. Durée conseillée : 7 s.
+     Textes : titre (≤ 28 car.), texte (≤ 70 car.). -->
+<section data-scene="alerte">
+  <div class="decor">
+    <span class="bandes" data-decor data-start="0" data-dur="7" data-tween="--x 0cqh→-35cqh linear"></span>
+  </div>
+  <div id="boite" class="danger tombe" data-start="0.1" data-dur="0.7">
+    <h2 id="titre" class="cri-moyen" data-texte="titre"></h2>
+    <p id="texte" class="texte volet" data-texte="texte" data-start="#boite:fin+0.2" data-dur="0.45"></p>
+  </div>
+</section>

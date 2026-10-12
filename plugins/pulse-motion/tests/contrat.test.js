@@ -14,6 +14,13 @@ const STYLE = path.join(LIVRES, 'clair-pedagogique');
 function copieDuStyle() {
   const d = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'pm-contrat-')), 'clair-pedagogique');
   fs.cpSync(STYLE, d, { recursive: true });
+  // Base de départ en ton clair seul : variante sombre retirée de l'identité et de la feuille de style.
+  const css = path.join(d, 'style.css');
+  fs.writeFileSync(css, fs.readFileSync(css, 'utf8').replace(/#pm-scene\[data-ton="sombre"\][^{]*\{[^}]*\}/g, ''));
+  const identite = JSON.parse(fs.readFileSync(path.join(d, 'identite.json'), 'utf8'));
+  identite.couleur.tons = ['clair'];
+  delete identite.couleur.sombre;
+  fs.writeFileSync(path.join(d, 'identite.json'), JSON.stringify(identite));
   return d;
 }
 
@@ -91,5 +98,18 @@ test('ton sombre déclaré : couleur.sombre (fond, texte lisible) obligatoire ; 
   identite.couleur.sombre.texte = '#f1f5f9';
   fs.writeFileSync(path.join(d, 'identite.json'), JSON.stringify(identite));
   fs.renameSync(path.join(d, 'polices', 'Inter.woff2'), path.join(d, 'polices', 'Inter-400.woff2'));
+  assert.deepEqual(verifierStyle(d).erreurs, []);
+});
+
+test('ton clair au fond sombre (ou l\'inverse) : couleur.<ton> exigée', () => {
+  const d = copieDuStyle();
+  const identite = JSON.parse(fs.readFileSync(path.join(d, 'identite.json'), 'utf8'));
+  fs.writeFileSync(path.join(d, 'charte.json'), JSON.stringify({ couleurs: { primaire: '#38bdf8', accent: '#22d3ee', fond: '#0b1020', texte: '#e2e8f0' }, polices: { titres: 'Figtree', texte: 'Inter' } }));
+  identite.couleur = { ...identite.couleur, tons: ['sombre', 'clair'], tonDefaut: 'sombre', sombre: { fond: '#0b1020', texte: '#e2e8f0' } };
+  fs.writeFileSync(path.join(d, 'identite.json'), JSON.stringify(identite));
+  fs.appendFileSync(path.join(d, 'style.css'), '\n#pm-scene[data-ton="sombre"] .rond { opacity: 0.2; }\n');
+  assert.match(verifierStyle(d).erreurs.join('\n'), /le ton clair a un fond sombre : indiquez « couleur\.clair »/);
+  identite.couleur.clair = { fond: '#f8fafc', texte: '#0f172a' };
+  fs.writeFileSync(path.join(d, 'identite.json'), JSON.stringify(identite));
   assert.deepEqual(verifierStyle(d).erreurs, []);
 });

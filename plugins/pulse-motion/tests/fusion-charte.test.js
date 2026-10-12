@@ -105,3 +105,11 @@ test('fond imposé par la charte : le ton suit la clarté du fond', () => {
   assert.equal(F.appliquerTon({ ...sombre, couleurs: { ...sombre.couleurs, fond: '#ffffff' }, ton: 'sombre' }, identite).ton, 'clair');
   assert.equal(F.appliquerTon({ ...sombre, ton: 'auto' }, { couleur: { tons: ['clair'] } }).ton, 'clair');
 });
+
+test('style sombre par défaut : son ton clair a ses propres fond et texte', () => {
+  const identite = { couleur: { tons: ['sombre', 'clair'], tonDefaut: 'sombre', sombre: { fond: '#0b1020', texte: '#e2e8f0' }, clair: { fond: '#f8fafc', texte: '#0f172a' } } };
+  const base = { couleurs: { primaire: '#1e3a8a', accent: '#b45309', fond: '#0b1020', texte: '#e2e8f0' }, fondImpose: false };
+  assert.deepEqual(F.appliquerTon({ ...base, ton: 'clair' }, identite).couleurs, { ...base.couleurs, fond: '#f8fafc', texte: '#0f172a' });
+  assert.equal(F.appliquerTon({ ...base, ton: 'auto' }, identite).ton, 'clair', 'bleu foncé de la marque : le ton clair le rend lisible');
+  assert.equal(F.appliquerTon({ ...base, couleurs: { ...base.couleurs, primaire: '#38bdf8', accent: '#22d3ee' }, ton: 'auto' }, identite).ton, 'sombre');
+});

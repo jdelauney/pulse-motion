@@ -1,0 +1,15 @@
+{
+  "style": "energique",
+  "description": "Audacieux, rapide, percutant : pour les réseaux sociaux, un lancement, une annonce.",
+  "transitions": ["coupe", "balayage", "zoom"],
+  "scenes": [
+    { "nom": "titre", "role": "Ouvrir fort", "duree": 6, "textes": { "etiquette": 20, "titre": 28, "sous": 40 } },
+    { "nom": "liste", "role": "2 à 4 points qui tombent un par un", "duree": 10, "textes": { "titre": 28, "point1": 32, "point2": 32, "point3": 32, "point4": 32 } },
+    { "nom": "chiffre", "role": "Un chiffre choc", "duree": 6, "textes": { "titre": 28, "unite": 3, "legende": 45 } },
+    { "nom": "comparaison", "role": "Avant / après en face à face", "duree": 10, "textes": { "titre": 28, "gauche-titre": 16, "gauche-texte": 50, "droite-titre": 16, "droite-texte": 50 } },
+    { "nom": "etape", "role": "Une étape, numéro en pastille", "duree": 7, "textes": { "numero": 2, "titre": 28, "texte": 70 } },
+    { "nom": "alerte", "role": "Un point d'attention, bande de chantier", "duree": 7, "textes": { "titre": 28, "texte": 70 } },
+    { "nom": "schema", "role": "Trois blocs enchaînés", "duree": 7, "textes": { "titre": 28, "a": 20, "b": 20, "c": 20 } },
+    { "nom": "conclusion", "role": "L'appel à l'action et le logo", "duree": 5, "textes": { "titre": 28, "sous": 40 } }
+  ]
+}

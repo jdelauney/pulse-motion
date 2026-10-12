@@ -1,0 +1,12 @@
+<!-- Scène toute faite « titre » (style editorial) : ouvrir la vidéo ou un chapitre. Durée conseillée : 7 s.
+     Textes : etiquette (≤ 25 car.), titre (≤ 40 car.), sous (≤ 50 car.). Décor : data-dur = durée de la scène. -->
+<section data-scene="titre">
+  <div class="decor">
+    <span class="ligne" data-decor data-start="0" data-dur="7" data-tween="--l 0→1 sine-inout"></span>
+    <span class="guillemet" data-decor data-start="0" data-dur="7" data-tween="--dy 0cqh→-4cqh sine-inout"></span>
+  </div>
+  <p id="etiquette" class="surtitre fondu" data-texte="etiquette" data-start="0.3" data-dur="1"></p>
+  <span id="filet" class="filet court" data-start="#etiquette+0.4" data-dur="1.2"></span>
+  <h1 id="titre" class="titre masque" data-texte="titre" data-start="#filet+0.2" data-dur="1.1"></h1>
+  <p id="sous" class="chapo masque" data-texte="sous" data-start="#titre:fin+0.1" data-dur="1.1"></p>
+</section>

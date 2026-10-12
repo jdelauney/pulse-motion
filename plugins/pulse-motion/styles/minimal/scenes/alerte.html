@@ -1,0 +1,14 @@
+<!-- Scène toute faite « alerte » (style minimal) : un point de vigilance, barre d'accent. Durée conseillée : 8 s.
+     Textes : titre (≤ 40 car.), texte (≤ 80 car.). -->
+<section data-scene="alerte">
+  <div class="decor">
+    <span class="repere"></span>
+    <span class="marqueur" data-decor data-start="0" data-dur="8" data-tween="--x 0cqw→60cqw expo-inout"></span>
+  </div>
+  <div id="boite" class="vigilance revele" data-start="0.2" data-dur="0.5">
+    <div class="vigilance-corps">
+      <h2 id="titre" class="titre-moyen" data-texte="titre"></h2>
+      <p id="texte" class="texte monte" data-texte="texte" data-start="#boite:fin+0.3" data-dur="0.45"></p>
+    </div>
+  </div>
+</section>

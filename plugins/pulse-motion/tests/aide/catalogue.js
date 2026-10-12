@@ -20,20 +20,27 @@ function texteDeLongueur(n, decalage = 0) {
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
-function projetCatalogue() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-catalogue-'));
+const STYLES = path.join(__dirname, '..', '..', 'styles');
+
+/** Projet aux 8 scènes toutes faites d'un style, textes à leur longueur maximale. */
+function projetCatalogue(style = 'clair-pedagogique', ratio = '16:9', { ton } = {}) {
+  const dossierStyle = path.join(STYLES, style);
+  const catalogue = JSON.parse(fs.readFileSync(path.join(dossierStyle, 'catalogue.json'), 'utf8'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), `pm-catalogue-${style}-`));
   fs.mkdirSync(path.join(dir, 'scenes'));
   fs.mkdirSync(path.join(dir, 'assets'));
   fs.writeFileSync(path.join(dir, 'assets', 'logo.svg'), '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><circle cx="5" cy="5" r="5"/></svg>');
-  const scenes = CATALOGUE.scenes.map((s, i) => {
-    fs.copyFileSync(path.join(STYLE, 'scenes', `${s.nom}.html`), path.join(dir, 'scenes', `${s.nom}.html`));
+  const scenes = catalogue.scenes.map((s, i) => {
+    fs.copyFileSync(path.join(dossierStyle, 'scenes', `${s.nom}.html`), path.join(dir, 'scenes', `${s.nom}.html`));
     const textes = {};
     Object.entries(s.textes).forEach(([cle, max], k) => { textes[cle] = cle === 'numero' ? '12' : texteDeLongueur(max, i + k); });
-    return { id: s.nom, fichier: `scenes/${s.nom}.html`, duree: s.duree, textes, transition: CATALOGUE.transitions[i % 3] };
+    return { id: s.nom, type: s.nom, fichier: `scenes/${s.nom}.html`, duree: s.duree, textes, transition: catalogue.transitions[i % catalogue.transitions.length] };
   });
+  const charte = { logo: 'assets/logo.svg' };
+  if (ton) charte.ton = ton;
   fs.writeFileSync(path.join(dir, 'deroule.json'), JSON.stringify({
-    version: 1, titre: 'Catalogue', genre: 'formation', parcours: 'rapide',
-    format: { ratio: '16:9', ips: 30 }, style: 'clair-pedagogique', charte: { logo: 'assets/logo.svg' }, scenes,
+    version: 1, titre: `Catalogue ${style}`, genre: 'formation', parcours: 'rapide',
+    format: { ratio, ips: 30 }, style, charte, scenes,
   }, null, 2));
   return dir;
 }

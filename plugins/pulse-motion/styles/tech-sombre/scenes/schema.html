@@ -1,0 +1,19 @@
+<!-- Scène toute faite « schema » (style tech-sombre) : trois nœuds reliés. Durée conseillée : 8 s.
+     Textes : titre (≤ 40 car.), a, b, c (≤ 25 car.). -->
+<section data-scene="schema">
+  <div class="decor">
+    <span class="grille" data-decor data-start="0" data-dur="8" data-tween="--x 0cqh→-8cqh linear; --y 0cqh→-4cqh linear"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen glisse" data-texte="titre" data-start="0.2" data-dur="0.6"></h2>
+  <div class="graphe">
+    <div id="a" class="noeud glisse" data-texte="a" data-start="#titre:fin+0.3" data-dur="0.6"></div>
+    <svg id="lien1" class="connecteur" viewBox="0 0 60 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" data-start="#a:fin" data-dur="0.6" aria-hidden="true">
+      <path pathLength="100" d="M1 6h56M51 1l6 5-6 5"/>
+    </svg>
+    <div id="b" class="noeud glisse" data-texte="b" data-start="#lien1:fin" data-dur="0.6"></div>
+    <svg id="lien2" class="connecteur" viewBox="0 0 60 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" data-start="#b:fin" data-dur="0.6" aria-hidden="true">
+      <path pathLength="100" d="M1 6h56M51 1l6 5-6 5"/>
+    </svg>
+    <div id="c" class="noeud glisse" data-texte="c" data-start="#lien2:fin" data-dur="0.6"></div>
+  </div>
+</section>

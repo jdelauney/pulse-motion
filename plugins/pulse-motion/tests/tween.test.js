@@ -50,3 +50,8 @@ test('une chaîne vide ne produit aucune clause', () => {
   assert.deepEqual(T.analyserTween(''), []);
   assert.deepEqual(T.analyserTween(' ; '), []);
 });
+
+test('nombre : séparateur des milliers en espace insécable ordinaire (présente dans toutes les polices)', () => {
+  assert.equal(T.nombre(1250), '1 250');
+  assert.equal(T.nombre(1234567.5, 1), '1 234 567,5');
+});

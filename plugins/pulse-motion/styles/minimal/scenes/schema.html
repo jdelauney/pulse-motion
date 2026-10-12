@@ -1,0 +1,15 @@
+<!-- Scène toute faite « schema » (style minimal) : trois temps sur une ligne. Durée conseillée : 8 s.
+     Textes : titre (≤ 40 car.), a, b, c (≤ 25 car.). -->
+<section data-scene="schema">
+  <div class="decor">
+    <span class="repere"></span>
+    <span class="marqueur" data-decor data-start="0" data-dur="8" data-tween="--x 0cqw→60cqw expo-inout"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen revele" data-texte="titre" data-start="0.2" data-dur="0.5"></h2>
+  <div class="ligne-temps">
+    <span id="ligne" class="regle" data-start="#titre:fin+0.2" data-dur="1.4"></span>
+    <div id="a" class="temps monte" data-texte="a" data-start="#titre:fin+0.3" data-dur="0.45"></div>
+    <div id="b" class="temps monte" data-texte="b" data-start="#a:fin+0.4" data-dur="0.45"></div>
+    <div id="c" class="temps monte" data-texte="c" data-start="#b:fin+0.4" data-dur="0.45"></div>
+  </div>
+</section>

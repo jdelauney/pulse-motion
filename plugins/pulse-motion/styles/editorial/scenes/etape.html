@@ -1,0 +1,15 @@
+<!-- Scène toute faite « etape » (style editorial) : une étape, numéro à empattements. Durée conseillée : 8 s.
+     Textes : numero (≤ 2 car.), titre (≤ 40 car.), texte (≤ 80 car.). -->
+<section data-scene="etape">
+  <div class="decor">
+    <span class="ligne" data-decor data-start="0" data-dur="8" data-tween="--l 0→1 sine-inout"></span>
+  </div>
+  <div class="etape">
+    <span id="numero" class="numeral masque" data-texte="numero" data-start="0.2" data-dur="1.2"></span>
+    <div class="etape-texte">
+      <h2 id="titre" class="titre-moyen masque" data-texte="titre" data-start="#numero+0.5" data-dur="1.1"></h2>
+      <span id="filet" class="filet court" data-start="#titre:fin" data-dur="1"></span>
+      <p id="texte" class="texte fondu" data-texte="texte" data-start="#filet+0.3" data-dur="1"></p>
+    </div>
+  </div>
+</section>

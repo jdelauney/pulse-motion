@@ -1,0 +1,15 @@
+<!-- Scène toute faite « liste » (style minimal) : 2 à 4 points numérotés, alignés. Durée conseillée : 12 s.
+     Textes : titre (≤ 40 car.), point1 … point4 (≤ 45 car.). Moins de 4 points : supprimer les points en trop. -->
+<section data-scene="liste">
+  <div class="decor">
+    <span class="repere"></span>
+    <span class="marqueur" data-decor data-start="0" data-dur="12" data-tween="--x 0cqw→60cqw linear"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen revele" data-texte="titre" data-start="0.2" data-dur="0.5"></h2>
+  <ol class="rangs">
+    <li id="point1" class="monte" data-texte="point1" data-start="#titre:fin+0.3" data-dur="0.45"></li>
+    <li id="point2" class="monte" data-texte="point2" data-start="#point1:fin+0.7" data-dur="0.45"></li>
+    <li id="point3" class="monte" data-texte="point3" data-start="#point2:fin+0.7" data-dur="0.45"></li>
+    <li id="point4" class="monte" data-texte="point4" data-start="#point3:fin+0.7" data-dur="0.45"></li>
+  </ol>
+</section>

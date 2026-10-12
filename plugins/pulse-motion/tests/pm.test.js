@@ -30,7 +30,7 @@ test('reference, scene et styles affichent les fichiers du plugin', () => {
   assert.match(pm('reference', 'styles/clair-pedagogique').stdout, /clair-pedagogique/);
   assert.match(pm('scene', 'clair-pedagogique', 'titre').stdout, /<section data-scene="titre"/);
   const styles = JSON.parse(pm('styles').stdout);
-  assert.deepEqual(styles.map((s) => s.style), ['clair-pedagogique']);
+  assert.deepEqual(styles.map((s) => s.style), fs.readdirSync(path.join(__dirname, '..', 'styles')).sort());
 });
 
 test('noms dangereux ou inconnus refusés, sans lire hors du plugin', () => {

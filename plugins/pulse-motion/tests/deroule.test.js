@@ -32,7 +32,7 @@ test('chaque erreur nomme le champ et la scène', () => {
   const d = valide();
   d.genre = 'tuto';
   d.charte.couleurs.primaire = 'bleu';
-  d.scenes.push({ id: 'intro', fichier: 'x.html', duree: 0, textes: { a: 3 }, transition: 'zoom', rythme: -1 });
+  d.scenes.push({ id: 'intro', fichier: 'x.html', duree: 0, textes: { a: 3 }, transition: 'tourbillon', rythme: -1 });
   const e = validerDeroule(d);
   assert.ok(e.some((m) => m.startsWith('« genre » doit être')));
   assert.ok(e.some((m) => m.includes('« charte.couleurs.primaire »') && m.includes('"bleu"')));
