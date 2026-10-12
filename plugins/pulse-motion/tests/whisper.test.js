@@ -58,3 +58,23 @@ test('transcription trop longue : arrêtée au délai', sansPython, async () => 
   assert.equal(r.ok, false);
   assert.match(r.message, /trop longtemps/);
 });
+
+test('installer : lance les trois étapes dans l\'ordre, écrit version.json ; une étape en échec arrête et le dit', async () => {
+  const dossier = dossierTemporaire('pm-whisper-');
+  const vus = [];
+  const lancer = async (c) => { vus.push(c.join(' ')); return { code: 0, erreurs: '' }; };
+  const r = await Wh.installerWhisper({ dossier, modele: 'small', python: { commande: ['py', '-3'], version: '3.12.0' }, lancer });
+  assert.equal(r.ok, true, r.message);
+  assert.equal(vus.length, 3);
+  assert.match(vus[2], /download_model\("small"/);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(dossier, 'version.json'), 'utf8')).modele, 'small');
+  const echec = await Wh.installerWhisper({ dossier, python: { commande: ['py'], version: '3.12.0' }, lancer: async () => ({ code: 1, erreurs: 'No matching distribution' }) });
+  assert.equal(echec.ok, false);
+  assert.match(echec.message, /environnement Python.*No matching distribution/);
+});
+
+test('installer sans Python : refus avec la commande du système', async () => {
+  const r = await Wh.installerWhisper({ dossier: dossierTemporaire('pm-whisper-'), python: null, lancer: async () => ({ code: 0 }) });
+  assert.equal(r.ok, false);
+  assert.match(r.message, /Python/);
+});

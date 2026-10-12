@@ -94,9 +94,42 @@ function transcrire({ wav, duree, langue = 'fr', dossier = dossierWhisper(), pyt
   });
 }
 
+const ETAPES = ['environnement Python', 'installation de faster-whisper', 'téléchargement du modèle'];
+
+function lancerCommande(commande) {
+  return new Promise((resoudre) => {
+    // La sortie de pip va sur la sortie d'erreur : la sortie standard de la commande reste un JSON seul.
+    const p = spawn(commande[0], commande.slice(1), { stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
+    p.stdout.on('data', (d) => process.stderr.write(d));
+    let erreurs = '';
+    p.stderr.on('data', (d) => { process.stderr.write(d); erreurs = (erreurs + d).slice(-4000); });
+    p.on('error', (e) => resoudre({ code: 1, erreurs: e.message }));
+    p.on('close', (code) => resoudre({ code, erreurs }));
+  });
+}
+
+/** Installe la transcription (environnement isolé, faster-whisper, modèle). -> { ok, message, modele? } */
+async function installerWhisper({ dossier = dossierWhisper(), modele = MODELE_DEFAUT, python = trouverPython(), lancer = lancerCommande } = {}) {
+  if (!python) {
+    const s = commandeSysteme();
+    return { ok: false, message: `Python (3.9 ou plus récent) est introuvable. ${s.message}${s.commande ? ` Commande : ${s.commande}` : ''}` };
+  }
+  fs.mkdirSync(dossier, { recursive: true });
+  const commandes = commandesInstallation(python.commande, dossier, modele);
+  for (let i = 0; i < commandes.length; i++) {
+    const r = await lancer(commandes[i]);
+    if (r.code !== 0) {
+      const cause = String(r.erreurs || '').trim().split(/\r?\n/).pop() || `code ${r.code}`;
+      return { ok: false, message: `L'installation de la transcription a échoué (${ETAPES[i]} : ${cause}).` };
+    }
+  }
+  fs.writeFileSync(path.join(dossier, 'version.json'), JSON.stringify({ modele, date: new Date().toISOString() }, null, 2));
+  return { ok: true, modele, message: `La transcription est installée (modèle ${modele}, dans ${dossier}).` };
+}
+
 /** Whisper tel qu'installé sur l'ordinateur : { pret, transcrire }. */
 function whisperParDefaut() {
   return { pret: etatWhisper({ python: null }).pret, transcrire };
 }
 
-module.exports = { MODELE_DEFAUT, dossierWhisper, pythonDuVenv, trouverPython, commandeSysteme, commandesInstallation, etatWhisper, transcrire, whisperParDefaut };
+module.exports = { MODELE_DEFAUT, dossierWhisper, pythonDuVenv, trouverPython, commandeSysteme, commandesInstallation, etatWhisper, transcrire, installerWhisper, whisperParDefaut };
