@@ -165,23 +165,23 @@ async function extraireImage({ ffmpeg, fichier, t }) {
   return r.sortie;
 }
 
-/** Piste son de la vidéo : sonie normalisée (−16 LUFS, crêtes −1,5 dBTP), puis volume de la personne, fondus
- *  d'entrée (0,5 s) et de sortie (1,5 s), silence si la musique est plus courte, coupée à la durée exacte. */
-async function mixerMusique({ ffmpeg, musique, volume = 1, duree, sortie, signal }) {
-  // Fondus ramenés dans la durée d'une vidéo très courte.
-  const fonduSortie = Math.min(1.5, duree);
-  const fonduEntree = Math.min(0.5, duree / 2);
-  const filtres = [
-    'loudnorm=I=-16:TP=-1.5:LRA=11',
-    `volume=${Number(volume)}`,
-    `afade=t=in:st=0:d=${fonduEntree}`,
-    `afade=t=out:st=${Math.max(0, duree - fonduSortie)}:d=${fonduSortie}`,
-    'apad',
-    `atrim=0:${duree}`,
-  ].join(',');
-  const r = await lancer(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-i', musique, '-vn', '-af', filtres,
+/** Piste son de la vidéo : WAV déjà mixé et normalisé par la page -> AAC 192 kbit/s, 48 kHz, stéréo, à la durée
+ *  exacte (complétée par du silence ou coupée). */
+async function encoderSon({ ffmpeg, wav, duree, sortie, signal }) {
+  const r = await lancer(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-i', wav, '-vn', '-af', `apad,atrim=0:${duree}`,
     '-ar', '48000', '-ac', '2', '-c:a', 'aac', '-b:a', '192k', '-t', String(duree), '-f', 'mp4', sortie], { signal });
-  if (r.code !== 0) throw new Error(`musique illisible (${derniereLigne(r.erreurs) || `code ${r.code}`})`);
+  if (r.code !== 0) throw new Error(`son illisible (${derniereLigne(r.erreurs) || `code ${r.code}`})`);
+}
+
+/** Sonie intégrée (LUFS) et crête vraie (dBTP) d'un fichier, mesurées par le filtre ebur128. */
+async function mesurerSonie({ ffmpeg, fichier }) {
+  const r = await lancer(ffmpeg, ['-hide_banner', '-nostats', '-i', fichier, '-vn', '-af', 'ebur128=peak=true:framelog=verbose', '-f', 'null', '-']);
+  if (r.code !== 0) throw new Error(`sonie illisible (${derniereLigne(r.erreurs)})`);
+  const nombre = (re) => {
+    const m = [...r.erreurs.matchAll(re)].pop();
+    return !m ? NaN : m[1] === '-inf' ? -Infinity : Number(m[1]);
+  };
+  return { integree: nombre(/I:\s+(-inf|-?[\d.]+) LUFS/g), crete: nombre(/Peak:\s+(-inf|-?[\d.]+) dBFS/g) };
 }
 
 /** Segments -> un fichier, sans réencodage (démultiplexeur concat), prêt à lire en flux (+faststart). */
@@ -218,4 +218,4 @@ function ecartImages(a, b) {
   return somme / n / 255;
 }
 
-module.exports = { lireVersion, commandeSure, commandeInstallation, trouverFfmpeg, MINIMUM, encoderSegment, sonder, extraireImage, assemblerSegments, ecartImages, mixerMusique };
+module.exports = { lireVersion, commandeSure, commandeInstallation, trouverFfmpeg, MINIMUM, encoderSegment, sonder, extraireImage, assemblerSegments, ecartImages, encoderSon, mesurerSonie };
