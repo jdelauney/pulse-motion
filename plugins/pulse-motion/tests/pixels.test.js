@@ -84,3 +84,24 @@ test('pixels : bandeau incliné d\'energique (texte clair sur bande sombre, fond
   const r = await mesurerPage({ html, navigateur, delai: 60000, script: `return await M.mesurerPixels({ ratio: '16:9', seuils: ${JSON.stringify(SEUILS)} });` });
   assert.deepEqual(r.resultat, []);
 });
+
+const CLIGNOTE = (periode) => `<style>@keyframes pm-essai-flash { 50% { background: #ffffff; } }</style><div class="flash" data-decor style="position:absolute; inset:0; background:#000000; animation: pm-essai-flash ${periode}s steps(1) 0.5s 8"></div>`;
+
+test('pixels : alternance noir et blanc à 5 Hz sur toute l\'image, flash (plus de 3 par seconde)', sans, async () => {
+  const r = await pixels(projet((h) => h.replace(MARGE, `${MARGE}${CLIGNOTE(0.2)}`)));
+  const c = r.find((x) => x.regle === 'flash');
+  assert.ok(c, JSON.stringify(r));
+  assert.equal(c.scene, 'intro');
+  assert.ok(c.valeur > 3, String(c.valeur));
+});
+
+test('pixels : alternance à 2 Hz, pas de flash', sans, async () => {
+  const r = await pixels(projet((h) => h.replace(MARGE, `${MARGE}${CLIGNOTE(0.5)}`)));
+  assert.equal(r.some((x) => x.regle === 'flash'), false, JSON.stringify(r));
+});
+
+test('pixels : petite zone qui clignote vite (moins de 25 % de l\'image), pas de flash', sans, async () => {
+  const petit = CLIGNOTE(0.2).replace('inset:0;', 'left:0; top:0; width:20%; height:20%;');
+  const r = await pixels(projet((h) => h.replace(MARGE, `${MARGE}${petit}`)));
+  assert.equal(r.some((x) => x.regle === 'flash'), false, JSON.stringify(r));
+});

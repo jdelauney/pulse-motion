@@ -94,3 +94,9 @@ test('contraste réel traduit en alerte française', () => {
   assert.equal(p.gravite, 'alerte');
   assert.equal(p.message, 'Scène « fin » : le texte « titre » ne se détache pas assez de ce qu\'il y a derrière lui (contraste 2,1:1 vers 2 s) ; assombrir ou éclaircir le fond sous le texte, ajouter un aplat, ou changer la couleur du texte.');
 });
+
+test('flash traduit en erreur française', () => {
+  const [p] = traduireConstats([{ regle: 'flash', scene: 'intro', element: null, instant: 1.5, valeur: 5 }]);
+  assert.equal(p.gravite, 'erreur');
+  assert.equal(p.message, 'Scène « intro » : l\'image clignote 5 fois par seconde vers 1,5 s ; au-delà de 3 flashs par seconde sur une grande partie de l\'image, la vidéo peut déclencher une crise chez une personne épileptique. Ralentir ou adoucir ce clignotement.');
+});
