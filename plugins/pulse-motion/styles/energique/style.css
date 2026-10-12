@@ -66,7 +66,7 @@
 .carte { display: flex; flex-direction: column; gap: 1.6cqh; padding: 3.6cqh; min-width: 0; }
 .carte.creuse { border: 0.8cqh solid var(--c-texte); }
 .carte.pleine { background: var(--c-accent-lisible); color: var(--c-sur-accent); rotate: 1deg; }
-.carte-titre { margin: 0; font: 400 6.4cqh/1 var(--f-titres); text-transform: uppercase; }
+.carte-titre { margin: 0; font: 400 6.4cqh/1.1 var(--f-titres); text-transform: uppercase; }
 
 /* ---------- Étape ---------- */
 .etape { display: grid; grid-template-columns: auto 1fr; gap: 5cqh; align-items: center; }

@@ -1,10 +1,9 @@
 'use strict';
-/* Pulse Motion – contrôle de la vidéo rendue : page assemblée ouverte dans Chrome ou Edge sans fenêtre,
- * mesures de moteur/mesures.js (M.mesurer) et débordements (M.detecterDebordements), traduits en problèmes. */
-const fs = require('node:fs');
-const os = require('node:os');
-const path = require('node:path');
-const { rendreDOM, trouverNavigateur } = require('./navigateur.js');
+/* Pulse Motion – contrôle de la vidéo rendue : page assemblée ouverte en temps réel dans Chrome ou Edge sans
+ * fenêtre (page-mesures.js), mesures de moteur/mesures.js (M.mesurer) et débordements (M.detecterDebordements),
+ * traduits en problèmes. */
+const { trouverNavigateur } = require('./navigateur.js');
+const { mesurerPage } = require('./page-mesures.js');
 const SEUILS = require('../seuils.json');
 
 const virgule = (x) => String(Math.round(x * 10) / 10).replace('.', ',');
@@ -32,30 +31,12 @@ const nonVerifie = (regle, message) => ({ renduVerifie: false, problemes: [{ reg
 /** -> { renduVerifie, problemes } ; jamais d'exception. */
 async function controlerRendu({ html, ratio, duree, navigateur = trouverNavigateur() }) {
   if (!navigateur) return nonVerifie('rendu-non-verifie', 'Chrome ou Edge introuvable : la vidéo rendue (chevauchements, marges, textes qui débordent…) n\'a pas été vérifiée. Installez l\'un des deux, ou indiquez son chemin avec la variable PM_NAVIGATEUR.');
-  const dossier = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-controle-'));
-  try {
-    const appel = `<script>M.pret.then(function () { return document.fonts ? document.fonts.ready : null; }).then(function () {
-      var r;
-      try { r = { constats: M.mesurer({ ratio: ${JSON.stringify(ratio)}, seuils: ${JSON.stringify(SEUILS)} }), debordements: M.detecterDebordements() }; }
-      catch (e) { r = { echec: String((e && e.message) || e) }; }
-      var pre = document.createElement('pre'); pre.id = 'pm-mesures'; pre.textContent = JSON.stringify(r); document.body.appendChild(pre);
-    });</script>`;
-    const fichier = path.join(dossier, 'controle.html');
-    fs.writeFileSync(fichier, String(html).replace('</body>', `${appel}\n</body>`));
-    let dom;
-    try { dom = await rendreDOM(navigateur, fichier, { delai: (30 + 2 * (duree || 0)) * 1000 }); } catch (e) {
-      if (e.code === 'ENOENT') return nonVerifie('rendu-impossible', `Navigateur introuvable à « ${navigateur} » : vérifiez la variable PM_NAVIGATEUR (ou retirez-la pour utiliser Chrome ou Edge installés). Seuls les contrôles sans navigateur ont été faits.`);
-      return nonVerifie('rendu-impossible', `La vidéo n'a pas pu être rendue dans le navigateur (${e.killed ? 'délai dépassé' : e.code || e.message}) : seuls les contrôles sans navigateur ont été faits.`);
-    }
-    const m = /<pre id="pm-mesures">([^<]*)<\/pre>/.exec(dom);
-    if (!m) return nonVerifie('rendu-impossible', 'La page ne s\'est pas affichée dans le navigateur (erreur dans une scène ?) : seuls les contrôles sans navigateur ont été faits.');
-    const r = JSON.parse(m[1].replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&'));
-    if (r.echec) return nonVerifie('rendu-impossible', `Les mesures de la vidéo ont échoué (${r.echec}) : seuls les contrôles sans navigateur ont été faits.`);
-    const debordements = (r.debordements || []).map((d) => ({ regle: 'debordement', gravite: 'erreur', scene: d.scene, element: d.element, message: d.message }));
-    return { renduVerifie: true, problemes: [...debordements, ...traduireConstats(r.constats)] };
-  } finally {
-    fs.rmSync(dossier, { recursive: true, force: true });
-  }
+  const r = await mesurerPage({ html, navigateur, delai: (30 + 2 * (duree || 0)) * 1000, script: `
+    return { constats: M.mesurer({ ratio: ${JSON.stringify(ratio)}, seuils: ${JSON.stringify(SEUILS)} }), debordements: M.detecterDebordements() };` });
+  if (r.code === 'ENOENT') return nonVerifie('rendu-impossible', `Navigateur introuvable à « ${navigateur} » : vérifiez la variable PM_NAVIGATEUR (ou retirez-la pour utiliser Chrome ou Edge installés). Seuls les contrôles sans navigateur ont été faits.`);
+  if (r.erreur) return nonVerifie('rendu-impossible', `La vidéo n'a pas pu être mesurée dans le navigateur (${r.erreur}) : seuls les contrôles sans navigateur ont été faits.`);
+  const debordements = (r.resultat.debordements || []).map((d) => ({ regle: 'debordement', gravite: 'erreur', scene: d.scene, element: d.element, message: d.message }));
+  return { renduVerifie: true, problemes: [...debordements, ...traduireConstats(r.resultat.constats)] };
 }
 
 module.exports = { traduireConstats, controlerRendu };

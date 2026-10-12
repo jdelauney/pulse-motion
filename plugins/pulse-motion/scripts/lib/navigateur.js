@@ -55,11 +55,14 @@ function ouvrirSansFenetre(navigateur, url, { gpu = false } = {}) {
   const profil = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-chrome-'));
   const processus = spawn(navigateur, [...optionsChrome({ gpu }), `--user-data-dir=${profil}`, '--window-size=1280,800', url], { stdio: 'ignore' });
   let quitte = false;
-  processus.on('error', () => { quitte = true; });
+  let cause = null;
+  processus.on('error', (e) => { quitte = true; cause = e.code || e.message; });
   processus.on('exit', () => { quitte = true; });
   return {
     /** Vrai si le navigateur s'est arrêté (plantage, lancement impossible). */
     aQuitte: () => quitte,
+    /** Code de l'erreur de lancement (ex. ENOENT), ou null. */
+    cause: () => cause,
     fermer() {
       return new Promise((resolve) => {
         const fin = () => {
