@@ -8,6 +8,8 @@
   var M = racine.M = racine.M || {};
   M.synthe = M.synthe || {};
   var PETIT = 0.0001;
+  // Sources créées par l'évènement en cours (débranchées toutes ensemble quand elles ont fini).
+  var sourcesEnCours = null;
 
   function mulberry32(a) {
     return function () {
@@ -43,6 +45,7 @@
     o.frequency.setValueAtTime(f, t);
     o.start(t);
     o.stop(fin);
+    if (sourcesEnCours) sourcesEnCours.push(o);
     return o;
   }
   function sourceBruit(contexte, bruit, t, fin) {
@@ -51,6 +54,7 @@
     s.loop = true;
     s.start(t);
     s.stop(fin);
+    if (sourcesEnCours) sourcesEnCours.push(s);
     return s;
   }
   function filtre(contexte, type, f, t, q) {
@@ -132,7 +136,14 @@
       var piste = contexte.createGain();
       piste.gain.value = e.volume === undefined ? 1 : e.volume;
       piste.connect(sortie);
+      sourcesEnCours = [];
       faire(contexte, piste, { t: e.t, frequences: e.frequences && e.frequences.length ? e.frequences : [220], duree: Math.max(0.05, e.duree), velocite: e.velocite === undefined ? 1 : e.velocite }, bruit);
+      // Note finie : sa chaîne est débranchée, le rendu ne la calcule plus (sinon il ralentit avec la durée).
+      var sources = sourcesEnCours, restantes = sources.length;
+      sourcesEnCours = null;
+      sources.forEach(function (src) {
+        src.onended = function () { if (--restantes === 0) piste.disconnect(); };
+      });
     },
   };
 
