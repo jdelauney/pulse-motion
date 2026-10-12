@@ -89,3 +89,26 @@ test('appliquer garde le ton et, si la charte n\'en a pas, le logo de la vidéo 
   assert.deepEqual(lireJSON(path.join(dir, 'deroule.json')).charte, { modele: 'sans-logo', ton: 'clair', logo: 'assets/logo.svg' });
   assert.deepEqual(lireGlossaire(dir).termes.map((t) => [t.terme, t.eviter]), [['HACCP', ['Haccp']]]);
 }));
+
+test('enregistrer refuse une charte de projet illisible ou invalide', () => avecPersonnel(() => {
+  const dir = copierProjet('projet-simple');
+  fs.mkdirSync(path.join(dir, 'charte'));
+  fs.writeFileSync(path.join(dir, 'charte', 'charte.json'), '{ cassé');
+  assert.match(K.enregistrerCharte({ nom: 'x', dossier: dir }).message, /charte\/charte\.json/);
+  fs.writeFileSync(path.join(dir, 'charte', 'charte.json'), JSON.stringify({ couleurs: { fond: 'rouge' } }));
+  assert.match(K.enregistrerCharte({ nom: 'x', dossier: dir }).message, /couleurs\.fond/);
+}));
+
+test('remplacer une charte enregistrée : l\'ancienne version reste si le nouveau dossier ne peut pas prendre sa place', () => avecPersonnel((perso) => {
+  const dir = copierProjet('projet-simple');
+  assert.equal(K.enregistrerCharte({ nom: 'dupont', dossier: dir }).ok, true);
+  const avant = fs.readFileSync(path.join(perso, 'chartes', 'dupont', 'charte.json'), 'utf8');
+  modifierDeroule(dir, (d) => { d.charte.couleurs = { primaire: '#111111' }; });
+  let appels = 0;
+  const renommer = (de, vers) => { appels += 1; if (de.includes('.part-')) throw Object.assign(new Error('bloqué'), { code: 'EPERM' }); fs.renameSync(de, vers); };
+  const r = K.enregistrerCharte({ nom: 'dupont', dossier: dir, renommer });
+  assert.equal(r.ok, false);
+  assert.ok(appels >= 2);
+  assert.equal(fs.readFileSync(path.join(perso, 'chartes', 'dupont', 'charte.json'), 'utf8'), avant);
+  assert.deepEqual(fs.readdirSync(path.join(perso, 'chartes')), ['dupont']);
+}));

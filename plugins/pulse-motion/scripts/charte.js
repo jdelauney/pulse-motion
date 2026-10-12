@@ -46,7 +46,8 @@ function empreinte(dossier) {
   return h.digest('hex');
 }
 
-function enregistrerCharte({ nom, dossier }) {
+/** renommer : fs.renameSync (remplaçable dans les essais). */
+function enregistrerCharte({ nom, dossier, renommer = fs.renameSync }) {
   if (!NOM.test(nom || '')) return nomRefuse();
   const projet = path.resolve(dossier);
   const { deroule, erreurs } = lireDeroule(projet);
@@ -54,9 +55,16 @@ function enregistrerCharte({ nom, dossier }) {
   const ponctuel = { ...(deroule.charte || {}) };
   delete ponctuel.modele;
   const source = path.join(projet, 'charte');
-  const base = lireJSON(path.join(source, 'charte.json')) || {};
+  let base = {};
+  if (fs.existsSync(path.join(source, 'charte.json'))) {
+    base = lireJSON(path.join(source, 'charte.json'));
+    if (!base) return { ok: false, message: 'Le fichier charte/charte.json du projet est illisible (JSON mal formé) : corrigez-le ou supprimez-le, puis relancez.' };
+    const invalide = validerCharte(base, 'charte/charte.json');
+    if (invalide.length) return { ok: false, message: `Le fichier charte/charte.json du projet est invalide : ${invalide.join(' ')}` };
+  }
   const final = path.join(dossierChartes(), nom);
   const temporaire = `${final}.part-${process.pid}`;
+  const ancienne = `${final}.ancienne-${process.pid}`;
   try {
     fs.rmSync(temporaire, { recursive: true, force: true });
     fs.mkdirSync(temporaire, { recursive: true });
@@ -79,8 +87,17 @@ function enregistrerCharte({ nom, dossier }) {
     if (!Object.keys(charte.couleurs).length) delete charte.couleurs;
     if (!Object.keys(charte.polices).length) delete charte.polices;
     fs.writeFileSync(path.join(temporaire, 'charte.json'), JSON.stringify(charte, null, 2));
-    fs.rmSync(final, { recursive: true, force: true });
-    fs.renameSync(temporaire, final);
+    // L'ancienne version reste en place tant que la nouvelle n'a pas pris son nom.
+    fs.rmSync(ancienne, { recursive: true, force: true });
+    const remplace = fs.existsSync(final);
+    if (remplace) renommer(final, ancienne);
+    try {
+      renommer(temporaire, final);
+    } catch (e) {
+      if (remplace) renommer(ancienne, final);
+      throw e;
+    }
+    if (remplace) fs.rmSync(ancienne, { recursive: true, force: true });
   } catch (e) {
     try { fs.rmSync(temporaire, { recursive: true, force: true }); } catch { /* rien à nettoyer */ }
     return { ok: false, message: `La charte « ${nom} » n'a pas pu être enregistrée (${e.code || e.message}) : vérifiez les droits de ${dossierChartes()}, ou indiquez un autre dossier avec la variable PULSE_MOTION_DOSSIER.` };
@@ -117,7 +134,7 @@ function appliquerCharte({ nom, dossier }) {
   fs.rmSync(cible, { recursive: true, force: true });
   fs.cpSync(source, cible, { recursive: true });
   fs.writeFileSync(path.join(cible, MARQUE), JSON.stringify({ nom, empreinte: empreinte(source) }, null, 2));
-  for (const t of glossaireAvant) noterGlossaire({ dossier: projet, terme: t.terme, sens: t.sens || '—', eviter: t.eviter.join(', '), prononciation: t.prononciation });
+  for (const t of glossaireAvant) noterGlossaire({ dossier: projet, terme: t.terme, sens: t.sens || '—', eviter: t.eviter.join(', '), prononciation: t.prononciation, sauvegarde: false });
   // Le déroulé garde son ton, et son logo si la charte n'en a pas ; le reste vient désormais de la charte.
   const brut = JSON.parse(fs.readFileSync(path.join(projet, 'deroule.json'), 'utf8').replace(/^﻿/, ''));
   const avant = brut.charte || {};

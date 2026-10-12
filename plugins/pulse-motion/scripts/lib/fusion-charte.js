@@ -76,7 +76,10 @@ function charteFinale(deroule, dossierStyle, projet) {
   const brute = chartePour(deroule, dossierStyle, projet);
   const identite = lireJSON(path.join(dossierStyle, 'identite.json'), null);
   const { ton, couleurs } = appliquerTon(brute, identite);
-  return { couleurs, polices: brute.polices, logo: brute.logo, ton, erreurs: brute.erreurs };
+  // Ton demandé (clair ou sombre) que le style ne propose pas : signalé par le contrôle.
+  const tons = (identite && identite.couleur && Array.isArray(identite.couleur.tons) && identite.couleur.tons.length) ? identite.couleur.tons : ['clair'];
+  const indisponible = brute.ton !== 'auto' && !tons.includes(brute.ton) ? brute.ton : null;
+  return { couleurs, polices: brute.polices, logo: brute.logo, ton, tonIndisponible: indisponible, erreurs: brute.erreurs };
 }
 
 /** Couleurs ajustées au fond et couleur du texte posé dessus, en variables CSS. */

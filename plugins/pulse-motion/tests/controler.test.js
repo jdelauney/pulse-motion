@@ -169,3 +169,13 @@ test('première scène en coupe : pas d\'entrée de 0,5 s comptée comme mouveme
   assert.equal(avec('aucune'), 1);
   assert.equal(avec('coupe'), 1);
 });
+
+test('ton sombre demandé sur un style sans ton sombre : alerte « ton-indisponible »', () => {
+  const dir = copierProjet('projet-simple');
+  modifierDeroule(dir, (d) => { d.charte.ton = 'sombre'; });
+  const r = controler({ dossier: dir, dossierStyles: STYLES, ecrire: false });
+  const alerte = r.problemes.find((p) => p.regle === 'ton-indisponible');
+  assert.ok(alerte, JSON.stringify(r.problemes.map((p) => p.regle)));
+  assert.equal(alerte.gravite, 'alerte');
+  assert.match(alerte.message, /n'a pas de ton sombre/);
+});

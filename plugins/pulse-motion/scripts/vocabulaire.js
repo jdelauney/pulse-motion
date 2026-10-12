@@ -15,6 +15,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { dossierPersonnel } = require('./lib/personnel.js');
+const { sauvegarder } = require('./historique.js');
 
 const MODELE = path.join(__dirname, '..', 'modeles', 'lexique.md');
 const MODELE_GLOSSAIRE = path.join(__dirname, '..', 'modeles', 'glossaire.md');
@@ -96,8 +97,12 @@ function lireGlossaire(dossier) {
   return { fichier, texte, termes };
 }
 
-function noterGlossaire({ dossier, terme, sens, eviter = '', prononciation = '' }) {
+/** sauvegarde : copie du projet avant l'ajout (« annule » le défait) ; false quand l'appelant a déjà sauvegardé. */
+function noterGlossaire({ dossier, terme, sens, eviter = '', prononciation = '', sauvegarde = true }) {
   if (!terme || !String(terme).trim() || !sens || !String(sens).trim()) throw new Error('Il faut au moins un terme et son sens.');
+  const dejaNote = lireGlossaire(dossier).termes.some((t) => cleTri(t.terme) === cleTri(cellule(terme)));
+  if (dejaNote) return { ajoute: false, fichier: cheminGlossaire(dossier) };
+  if (sauvegarde && fs.existsSync(path.join(path.resolve(dossier), 'deroule.json'))) sauvegarder(dossier);
   return ajouterRangee(cheminGlossaire(dossier), GLOSSAIRE, [terme, sens, eviter, prononciation]);
 }
 
