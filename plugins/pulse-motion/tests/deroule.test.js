@@ -122,3 +122,9 @@ test('ajustements : facultatif, clé de texte existante, taille entre 0,8 et 1',
   assert.match(avec({ titre: { taille: 0.5 } }).join(' '), /« ajustements\.titre\.taille » doit être un nombre entre 0,8 et 1/);
   assert.match(avec([1]).join(' '), /« ajustements » doit être un objet/);
 });
+
+test('revue : ajustements, seules les clés propres des textes (pas « toString »)', () => {
+  const x = valide();
+  x.scenes[0].ajustements = { toString: { taille: 0.9 } };
+  assert.match(validerDeroule(x).join(' '), /« ajustements\.toString » : aucun texte « toString »/);
+});

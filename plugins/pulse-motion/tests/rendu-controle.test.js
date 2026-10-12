@@ -119,5 +119,5 @@ test('controlerComplet : un titre qui déborde est réduit (taille 0,85) ; un ti
   const r2 = await controlerComplet({ dossier: trop, dossierStyles: STYLES });
   const p = r2.problemes.find((x) => x.regle === 'debordement');
   assert.ok(p, JSON.stringify(r2.problemes));
-  assert.match(p.message, /raccourcir le texte/);
+  assert.match(p.message, /autant que possible.*raccourcir le texte/);
 });

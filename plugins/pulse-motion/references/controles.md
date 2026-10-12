@@ -6,7 +6,7 @@
 - Les cas sûrs sont **corrigés seuls** dans `deroule.json`, après une copie d'historique ; chaque correction est listée dans `corrections` de `sortie/controle.json` : les dire à la personne en une phrase. « annule » défait toutes les corrections d'un passage.
 - Dans les tableaux ci-dessous, la colonne « Corrigé seul ? » dit ce que le contrôle a corrigé seul, et dans quelle limite.
 - Ce qui reste est dans `problemes` : corriger les erreurs, traiter les alertes (deux tours au plus), dire le reste à la personne.
-- `--sans-correction` : signaler seulement (chaque problème corrigeable porte sa `correction` proposée). `--sans-rendu` : contrôles rapides seulement.
+- `--sans-correction` : signaler seulement (les problèmes de texte et de durée portent leur `correction` proposée ; un débordement reste une erreur). `--sans-rendu` : contrôles rapides seulement.
 - `renduVerifie: false` avec `rendu-non-verifie` ou `rendu-impossible` : la vidéo rendue n'a pas été contrôlée ; le dire à la personne.
 
 ## Minutage et lecture
@@ -57,6 +57,10 @@ Avec un `tempo` dans le déroulé, aucune durée n'est corrigée seule (la musiq
 |---|---|---|---|---|
 | `rendu-non-verifie` | Ni Chrome ni Edge | alerte | non | Installer l'un des deux, ou indiquer son chemin avec `PM_NAVIGATEUR` |
 | `rendu-impossible` | Page en erreur, délai dépassé, navigateur introuvable à l'adresse donnée | alerte | non | Lire la cause dans le message |
+
+## Autres règles
+
+Le contrôle signale aussi, avec un message qui dit quoi faire : un texte du déroulé absent (`texte-manquant`), une scène mal formée (`scene-invalide`), un fichier ou une ressource introuvable ou hors du projet (`fichier-introuvable`, `ressource-distante`), une police non embarquée (`police-non-embarquee`), un effet de particules invalide, trop chargé ou posé sur un texte (`effet-invalide`, `budget-particules`, `effet-sur-texte`), une scène hors du tempo de la musique (`hors-tempo`), un ton absent du style (`ton-indisponible`), un découpage en lettres inconnu (`lettres-invalide`), une correction impossible à écrire (`correction-impossible`).
 
 ## Dire ce qui est voulu
 
