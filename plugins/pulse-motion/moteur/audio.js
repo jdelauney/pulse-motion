@@ -73,11 +73,13 @@
   function volumeDe(objet) { return objet && typeof objet.volume === 'number' ? objet.volume : 1; }
 
   /** Chaque bus est rendu seul, à plein volume ; les volumes de la personne s'appliquent au mélange. */
-  async function rendre() {
+  async function rendre(options) {
+    // seulement: 'musique' : la musique seule (pour l'écouter), sans voix ni bruitages.
+    var seulement = options && options.seulement;
     var d = M.donnees, duree = M.duree, X = M.mixage, D = X.DUCKING;
     var avertissements = [], bus = [], musiqueIllisible = false, entendues = [];
 
-    var prises = prisesVoix();
+    var prises = seulement ? [] : prisesVoix();
     if (prises.length) {
       var contexteVoix = nouveauContexte();
       for (var i = 0; i < prises.length; i++) {
@@ -126,7 +128,7 @@
       }
     }
     // Bruitages : éléments [data-son] et transitions ; non baissés sous la voix.
-    var sons = evenementsSons();
+    var sons = seulement ? [] : evenementsSons();
     if (sons.length) {
       var contexteSons = nouveauContexte();
       var bruitSons = M.synthe.bruit(contexteSons, 777);
@@ -175,7 +177,8 @@
     return { buffer: sortie, sonie: sonie, avertissements: avertissements };
   }
 
-  M.rendreSon = function () {
+  M.rendreSon = function (options) {
+    if (options && options.seulement) return rendre(options);
     if (!promesse) promesse = rendre();
     return promesse;
   };
