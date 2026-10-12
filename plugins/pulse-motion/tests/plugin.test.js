@@ -148,3 +148,11 @@ test('creer et retoucher : le contrôle corrige seul les cas sûrs, et les corre
     assert.match(texte, /sortie\/controle\.json/, s);
   }
 });
+
+test('creer et retoucher : le contrôle vérifie lui-même la vidéo rendue ; rendu non vérifié dit à la personne', () => {
+  for (const s of ['creer', 'retoucher']) {
+    const texte = lire('skills', s, 'SKILL.md');
+    assert.match(texte, /renduVerifie/, s);
+    assert.doesNotMatch(texte, /Attendre quelques secondes, puis `pulse-motion controler \.`|Quelques secondes après, `pulse-motion controler \.`/, s);
+  }
+});
