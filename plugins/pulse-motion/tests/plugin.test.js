@@ -133,3 +133,10 @@ test('style personnel : création guidée, scènes témoins, vérification avant
   assert.match(s, /feTurbulence|texture/);
   assert.match(lire('agents', 'animateur.md'), /## Mode « style »/);
 });
+
+test('retoucher : une scène ajoutée garde son « type » si elle vient d\'une scène toute faite, le perd si elle est composée', () => {
+  const ligne = lire('skills', 'retoucher', 'SKILL.md').split('\n').find((l) => l.startsWith('| Structure |'));
+  assert.match(ligne, /« type »/);
+  assert.match(ligne, /scène toute faite/);
+  assert.match(ligne, /composée/);
+});

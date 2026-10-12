@@ -2,13 +2,13 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
 const path = require('node:path');
+const { dossierTemporaire } = require('./aide/temporaire.js');
 const { execFileSync } = require('node:child_process');
 const { etatProjet, donnerAccord, choisirParcours, verifierNode } = require('../scripts/etat.js');
 const { copierProjet, modifierDeroule } = require('./aide/projet.js');
 
-const vide = () => fs.mkdtempSync(path.join(os.tmpdir(), 'pm-vide-'));
+const vide = () => dossierTemporaire('pm-vide-');
 
 test('version de Node : 20 ou plus', () => {
   assert.deepEqual(verifierNode('20.0.0'), { version: '20.0.0', ok: true });

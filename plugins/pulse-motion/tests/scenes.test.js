@@ -2,8 +2,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
 const path = require('node:path');
+const { dossierTemporaire } = require('./aide/temporaire.js');
 const S = require('../scripts/lib/scenes.js');
 const { embarquerRessources, cheminDansProjet } = require('../scripts/lib/embarquer.js');
 
@@ -38,7 +38,7 @@ test('panneauErreur : section visible, texte échappé', () => {
 });
 
 test('embarquerRessources : data:, distantes, hors projet, introuvables', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-emb-'));
+  const dir = dossierTemporaire('pm-emb-');
   fs.mkdirSync(path.join(dir, 'assets'));
   fs.writeFileSync(path.join(dir, 'assets', 'a b.svg'), '<svg/>');
   const { html, erreurs } = embarquerRessources(
@@ -60,7 +60,7 @@ test('cheminDansProjet refuse de sortir du projet', () => {
 });
 
 test('embarquerRessources : apostrophe et parenthèses dans les noms', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-emb-'));
+  const dir = dossierTemporaire('pm-emb-');
   fs.mkdirSync(path.join(dir, 'assets'));
   fs.writeFileSync(path.join(dir, 'assets', "l'été.svg"), '<svg/>');
   fs.writeFileSync(path.join(dir, 'assets', 'photo (1).svg'), '<svg/>');
@@ -73,7 +73,7 @@ test('embarquerRessources : apostrophe et parenthèses dans les noms', () => {
 });
 
 test('embarquerRessources : nom de fichier avec % et accents', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-emb-'));
+  const dir = dossierTemporaire('pm-emb-');
   fs.mkdirSync(path.join(dir, 'assets'));
   fs.writeFileSync(path.join(dir, 'assets', '100%.svg'), '<svg/>');
   fs.writeFileSync(path.join(dir, 'assets', 'été.svg'), '<svg/>');

@@ -2,8 +2,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
 const path = require('node:path');
+const { dossierTemporaire } = require('./aide/temporaire.js');
 const { TYPES, OPTIONNELLES } = require('../scripts/lib/contrat.js');
 const { contraste } = require('../scripts/lib/couleurs.js');
 const { verifierStyle } = require('../scripts/styles.js');
@@ -12,7 +12,7 @@ const LIVRES = path.join(__dirname, '..', 'styles');
 const STYLE = path.join(LIVRES, 'clair-pedagogique');
 
 function copieDuStyle() {
-  const d = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'pm-contrat-')), 'clair-pedagogique');
+  const d = path.join(dossierTemporaire('pm-contrat-'), 'clair-pedagogique');
   fs.cpSync(STYLE, d, { recursive: true });
   // Base de départ en ton clair seul : variante sombre retirée de l'identité et de la feuille de style.
   const css = path.join(d, 'style.css');

@@ -3,6 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { dossierTemporaire } = require('./aide/temporaire.js');
 const { execFileSync } = require('node:child_process');
 const { sauvegarder, annuler, CONSERVEES } = require('../scripts/historique.js');
 const { copierProjet, modifierDeroule } = require('./aide/projet.js');
@@ -51,7 +52,7 @@ test(`seules les ${CONSERVEES} dernières copies sont gardées, la numérotation
 });
 
 test('ligne de commande : sans déroulé, code 1 et message en français', () => {
-  const dir = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'pm-vide-'));
+  const dir = dossierTemporaire('pm-vide-');
   let code = 0, erreur = '';
   try { execFileSync(process.execPath, [path.join(__dirname, '..', 'scripts', 'historique.js'), 'sauvegarder', dir], { encoding: 'utf8', stdio: 'pipe' }); } catch (e) {
     code = e.status; erreur = e.stderr;

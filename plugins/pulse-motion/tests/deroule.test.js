@@ -2,8 +2,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
 const path = require('node:path');
+const { dossierTemporaire } = require('./aide/temporaire.js');
 const { validerDeroule, lireDeroule } = require('../scripts/lib/deroule.js');
 
 const valide = () => ({
@@ -66,7 +66,7 @@ test('noms de police et clés de charte : caractères sûrs seulement', () => {
 });
 
 test('lireDeroule : fichier absent, JSON invalide, BOM accepté', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-'));
+  const dir = dossierTemporaire('pm-');
   assert.match(lireDeroule(dir).erreurs[0], /Fichier introuvable/);
   fs.writeFileSync(path.join(dir, 'deroule.json'), '{ titre: ');
   assert.match(lireDeroule(dir).erreurs[0], /n'est pas un JSON valide/);

@@ -1,15 +1,15 @@
 'use strict';
 /* Copie un projet d'exemple de tests/fixtures dans un dossier temporaire. */
 const fs = require('node:fs');
-const os = require('node:os');
 const path = require('node:path');
+const { dossierTemporaire } = require('./temporaire.js');
 
 const FIXTURES = path.join(__dirname, '..', 'fixtures');
 const STYLES = path.join(FIXTURES, 'styles');
 const EFFETS = path.join(FIXTURES, 'effets');
 
 function copierProjet(nom) {
-  const cible = fs.mkdtempSync(path.join(os.tmpdir(), `pm-${nom}-`));
+  const cible = dossierTemporaire(`pm-${nom}-`);
   fs.cpSync(path.join(FIXTURES, nom), cible, { recursive: true });
   return cible;
 }
