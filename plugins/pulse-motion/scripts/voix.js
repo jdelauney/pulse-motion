@@ -128,19 +128,36 @@ async function importerVoix({ dossier, fichier, scene: id, outil = F.trouverFfmp
   if (!scene) return { ok: false, message };
   const lu = await lireSon(fichier, outil);
   if (!lu.ok) return lu;
-  const octets = lu.octets;
-  // Copie d'historique seulement quand la prise est lisible : un essai raté ne laisse rien.
+  const r = await enregistrerPrise({ projet, scene: id, octets: lu.octets, outil, whisper });
+  if (!r.ok) return { ok: false, message: r.message };
+  return { ok: true, fichier: r.fichier, duree: r.duree, calage: r.calage, ...(r.avertissement ? { avertissement: r.avertissement } : {}) };
+}
+
+/**
+ * Une prise pour une scène (import ou studio de l'aperçu) : vérifie la scène et le son, copie d'historique, écrit
+ * la prise et ses mots, met le déroulé à jour, puis transcrit (si installée) — attendu, ou lancé en fond (enFond).
+ * -> { ok, statut?, message?, fichier, duree, calage, transcription?: Promise|null, avertissement? }
+ */
+async function enregistrerPrise({ projet, scene: id, octets, outil = null, whisper = whisperParDefaut(), enFond = false }) {
+  const { deroule, erreurs } = lireDeroule(projet);
+  if (erreurs.length) return { ok: false, statut: 422, message: `Le déroulé contient des erreurs : ${erreurs.join(' ')}` };
+  const { scene, message } = sceneAvecTexte(deroule, id);
+  if (!scene) return { ok: false, statut: deroule.scenes.some((s) => s.id === id) ? 422 : 404, message };
+  let son;
+  try { son = W.lire(new Uint8Array(octets)); } catch { return { ok: false, statut: 422, message: 'La voix n\'a pas pu être lue : ce fichier ne contient pas de son lisible.' }; }
+  const pret = W.preparerPrise(son);
+  const crete = pret.canaux[0].reduce((m, v) => Math.max(m, Math.abs(v)), 0);
+  if (crete === 0 || pret.canaux[0].length < 0.1 * son.taux) return { ok: false, statut: 422, message: 'La prise ne contient aucun son : vérifier le micro, puis recommencer.' };
+  // Copie d'historique seulement quand la prise est bonne : un essai raté ne laisse rien.
   sauvegarder(projet);
   const r = await ecrirePrise({ projet, scene: id, octets: new Uint8Array(octets), texte: scene.voix.texte, outil: outil && outil.present ? outil : null });
   ecrireDeroule(projet, (d) => { d.scenes.find((s) => s.id === id).voix.fichier = r.relatif; });
   // Transcription (si installée) : les mots prennent les temps réels de la parole ; sinon calage approché.
-  let calage = 'lettres';
-  let avertissement;
-  if (whisper && whisper.pret) {
-    const t = await transcrirePrise({ projet, relatif: r.relatif, texte: scene.voix.texte, whisper });
-    if (t.ok) calage = 'whisper'; else avertissement = t.message;
-  }
-  return { ok: true, fichier: r.relatif, duree: r.duree, calage, ...(avertissement ? { avertissement } : {}) };
+  if (!(whisper && whisper.pret)) return { ok: true, fichier: r.relatif, duree: r.duree, calage: 'lettres', transcription: null };
+  const travail = transcrirePrise({ projet, relatif: r.relatif, texte: scene.voix.texte, whisper });
+  if (enFond) return { ok: true, fichier: r.relatif, duree: r.duree, calage: 'lettres', transcription: travail.catch(() => ({ ok: false })) };
+  const t = await travail;
+  return { ok: true, fichier: r.relatif, duree: r.duree, calage: t.ok ? 'whisper' : 'lettres', ...(t.ok ? {} : { avertissement: t.message }) };
 }
 
 /** Transcrit les prises (pas la voix provisoire) dont les mots ne viennent pas d'une transcription à jour. */
@@ -229,4 +246,4 @@ if (require.main === module) {
     (e) => { console.log(JSON.stringify({ ok: false, message: e.message }, null, 2)); process.exit(1); });
 }
 
-module.exports = { importerVoix, voixProvisoire, transcrireProjet, synthetiserSysteme };
+module.exports = { importerVoix, enregistrerPrise, ecrireDeroule, voixProvisoire, transcrireProjet, synthetiserSysteme };
