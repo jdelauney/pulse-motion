@@ -101,6 +101,21 @@ async function ecrirePrise({ projet, scene, octets, texte, provisoire = false, o
   return { relatif, duree };
 }
 
+/** Transcrit une prise du projet et réécrit ses mots (approche whisper). -> { ok, message? } */
+async function transcrirePrise({ projet, relatif, texte, whisper }) {
+  const absolu = path.join(projet, relatif);
+  const octets = fs.readFileSync(absolu);
+  const son = W.lire(new Uint8Array(octets));
+  const duree = son.canaux[0].length / son.taux;
+  const r = await whisper.transcrire({ wav: absolu, duree });
+  if (!r.ok) return { ok: false, message: r.message };
+  const a = A.aligner(texte, r.mots);
+  if (!a) return { ok: false, message: 'La transcription n\'a reconnu aucun mot du texte : mots calés approximativement (vérifier que la prise dit bien le texte de la scène).' };
+  const ancien = lireJSON(fichierMots(absolu)) || {};
+  fs.writeFileSync(fichierMots(absolu), JSON.stringify({ ...ancien, empreinte: empreinte(octets), texte, duree: Math.round(duree * 1000) / 1000, approche: 'whisper', mots: a.mots }, null, 2));
+  return { ok: true };
+}
+
 /** Scènes qui jouent encore la voix provisoire du système. -> [id] */
 function scenesProvisoires(projet, deroule) {
   return deroule.scenes.filter((s) => { const p = priseDeScene(projet, deroule, s); return p && p.provisoire; }).map((s) => s.id);
@@ -110,4 +125,4 @@ function messageProvisoire(ids) {
   return `La vidéo contient encore la voix provisoire (scènes : ${ids.join(', ')}) : enregistrez votre voix, ou exportez quand même avec --avec-provisoire.`;
 }
 
-module.exports = { DOSSIER_VOIX, empreinte, priseDeScene, lireVoixScene, ecrirePrise, scenesProvisoires, messageProvisoire };
+module.exports = { DOSSIER_VOIX, empreinte, priseDeScene, lireVoixScene, ecrirePrise, transcrirePrise, scenesProvisoires, messageProvisoire };
