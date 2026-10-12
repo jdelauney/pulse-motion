@@ -1,0 +1,12 @@
+<!-- Scène toute faite « chiffre » (style minimal) : un chiffre clé démesuré. Durée conseillée : 7 s.
+     Textes : titre (≤ 40 car.), unite (≤ 3 car., vide si aucune), legende (≤ 60 car.). Valeur : remplacer 1250 dans « nombre 0→1250 ». -->
+<section data-scene="chiffre">
+  <div class="decor">
+    <span class="repere"></span>
+    <span class="marqueur" data-decor data-start="0" data-dur="7" data-tween="--x 0cqw→60cqw expo-inout"></span>
+  </div>
+  <h2 id="titre" class="index monte" data-texte="titre" data-start="0.2" data-dur="0.45"></h2>
+  <p class="chiffre-geant revele" data-start="#titre:fin+0.1" data-dur="0.5"><span id="valeur" data-start="#titre:fin+0.1" data-dur="1.6" data-tween="nombre 0→1250 expo-out">0</span><span class="unite" data-texte="unite"></span></p>
+  <span id="regle" class="regle" data-start="#valeur:fin" data-dur="0.5"></span>
+  <p id="legende" class="texte monte" data-texte="legende" data-start="#regle+0.2" data-dur="0.45"></p>
+</section>

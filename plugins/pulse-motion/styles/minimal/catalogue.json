@@ -1,0 +1,15 @@
+{
+  "style": "minimal",
+  "description": "Net, sûr, essentiel : pour présenter un produit, des résultats, une décision.",
+  "transitions": ["coupe", "fondu"],
+  "scenes": [
+    { "nom": "titre", "role": "Ouvrir la vidéo, titre démesuré", "duree": 7, "textes": { "etiquette": 25, "titre": 40, "sous": 50 } },
+    { "nom": "liste", "role": "2 à 4 points numérotés, alignés", "duree": 12, "textes": { "titre": 40, "point1": 45, "point2": 45, "point3": 45, "point4": 45 } },
+    { "nom": "chiffre", "role": "Un chiffre clé démesuré", "duree": 7, "textes": { "titre": 40, "unite": 3, "legende": 60 } },
+    { "nom": "comparaison", "role": "Deux colonnes sur une grille", "duree": 12, "textes": { "titre": 40, "gauche-titre": 20, "gauche-texte": 60, "droite-titre": 20, "droite-texte": 60 } },
+    { "nom": "etape", "role": "Une étape, numéro géant", "duree": 8, "textes": { "numero": 2, "titre": 40, "texte": 80 } },
+    { "nom": "alerte", "role": "Un point de vigilance, barre d'accent", "duree": 8, "textes": { "titre": 40, "texte": 80 } },
+    { "nom": "schema", "role": "Trois temps sur une ligne", "duree": 8, "textes": { "titre": 40, "a": 25, "b": 25, "c": 25 } },
+    { "nom": "conclusion", "role": "Le message à retenir et le logo", "duree": 6, "textes": { "titre": 40, "sous": 50 } }
+  ]
+}
