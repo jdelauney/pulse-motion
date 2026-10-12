@@ -34,9 +34,14 @@ function lireTableau(lignes, colonnes) {
   const rangees = [];
   let j = i + 2;
   for (; j < lignes.length && lignes[j].startsWith('|'); j++) {
-    const cellules = lignes[j].split('|').slice(1, -1).map((c) => c.trim());
+    // Une barre échappée (« \| ») fait partie du texte ; une rangée corrigée à la main sans barre finale
+    // ou au mauvais nombre de cellules est gardée telle quelle (brut), jamais réécrite.
+    const morceaux = lignes[j].trimEnd().split(/(?<!\\)\|/);
+    const complete = morceaux.length >= 2 && morceaux[morceaux.length - 1] === '';
+    const cellules = morceaux.slice(1, complete ? -1 : undefined).map((c) => c.trim());
+    const valide = complete && cellules.length === colonnes;
     while (cellules.length < colonnes) cellules.push('');
-    rangees.push(cellules);
+    rangees.push(Object.assign(cellules, { brut: lignes[j], valide }));
   }
   return { debut: i, fin: j, rangees };
 }
@@ -53,8 +58,10 @@ function ajouterRangee(fichier, sorte, cellules) {
     tableau = lireTableau(lignes, sorte.colonnes);
   }
   if (tableau.rangees.some((r) => cleTri(r[0]) === cleTri(cellules[0]))) return { ajoute: false, fichier };
-  const toutes = [...tableau.rangees, cellules.map(cellule)].sort((a, b) => cleTri(a[0]).localeCompare(cleTri(b[0]), 'fr'));
-  const resultat = [...lignes.slice(0, tableau.debut + 2), ...toutes.map((r) => `| ${r.join(' | ')} |`), ...lignes.slice(tableau.fin)].join('\n');
+  const nouvelle = Object.assign(cellules.map(cellule), { valide: true });
+  const toutes = [...tableau.rangees, nouvelle].sort((a, b) => cleTri(a[0]).localeCompare(cleTri(b[0]), 'fr'));
+  const ecrire = (r) => (r.brut !== undefined ? r.brut : `| ${r.join(' | ')} |`);
+  const resultat = [...lignes.slice(0, tableau.debut + 2), ...toutes.map(ecrire), ...lignes.slice(tableau.fin)].join('\n');
   try {
     fs.mkdirSync(path.dirname(fichier), { recursive: true });
     const temporaire = `${fichier}.${process.pid}.tmp`;
@@ -111,7 +118,9 @@ function verifierGlossaire(scenes, termes) {
         // La casse ne compte que pour un terme qui porte une majuscule (sigle, nom propre).
         if (t.terme === t.terme.toLowerCase()) continue;
         for (const m of texte.matchAll(motEntier(t.terme, 'giu'))) {
-          if (m[0] !== t.terme && !t.eviter.some((f) => f.toLowerCase() === m[0].toLowerCase())) {
+          // Une occurrence tout en capitales (titre écrit en majuscules) n'est pas une faute de casse.
+          const capitales = m[0] === m[0].toUpperCase() && m[0] !== m[0].toLowerCase();
+          if (m[0] !== t.terme && !capitales && !t.eviter.some((f) => f.toLowerCase() === m[0].toLowerCase())) {
             problemes.push({ regle: 'glossaire', gravite: 'alerte', scene: s.id, message: `Scène « ${s.id} », texte « ${cle} » : « ${m[0]} » s'écrit « ${t.terme} » (glossaire).` });
           }
         }
