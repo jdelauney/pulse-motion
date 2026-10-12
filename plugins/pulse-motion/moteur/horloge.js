@@ -7,7 +7,10 @@
  * M.temps()           instant courant
  * M.chaqueImage(id, fn(p, tScene))   seul point d'entrée JavaScript d'une scène
  * M.surRendu(fn(t))   prévenu après chaque rendu (lecteur, export)
+ * M.rendreScene(id, t) pose l'état d'une seule scène (mesures des calques de particules)
+ * M.surSeek(fn(t))    M.seek attend la promesse renvoyée (calques de particules)
  * M.modeCapture(bool) Date.now et performance.now suivent t (export)
+ * M.enCapture()      vrai entre M.modeCapture(true) et M.modeCapture(false)
  *
  * Aléa reproductible et horloge virtuelle : idée et algorithme mulberry32 repris de
  * showtime (skills/showtime/runtime/stage.js), licence MIT.
@@ -35,7 +38,7 @@
   }
   Math.random = mulberry32(0x5eed1234);
 
-  var etat = { t: 0, scenes: [], rappels: {}, auditeurs: [] };
+  var etat = { t: 0, scenes: [], rappels: {}, auditeurs: [], attentes: [], capture: false };
 
   // Le temps SMIL ne démarre qu'une tâche après « load » : on rend à nouveau à ce moment-là.
   M.pret = new Promise(function (resolve) {
@@ -49,7 +52,8 @@
   function lireElements(section) {
     var liste = [];
     var n = 0;
-    section.querySelectorAll('[data-start],[data-dur],[data-tween]').forEach(function (el) {
+    // Un effet de particules est minuté même sans data-start (comme dans scripts/lib/extraire.js).
+    section.querySelectorAll('[data-start],[data-dur],[data-tween],[data-effet]').forEach(function (el) {
       var cle = el.id || ('_' + (++n));
       el.setAttribute('data-pm-cle', cle);
       liste.push({ cle: cle, start: el.getAttribute('data-start'), dur: el.getAttribute('data-dur'), el: el });
@@ -105,6 +109,8 @@
 
   function rendreScene(s, t) {
     var info = s.info;
+    // Aléa propre à la scène : ne dépend que de t et de la scène, pas du chemin pour arriver à t.
+    Math.random = mulberry32((0x5eed1234 ^ Math.imul(Math.round(t * M.ips) + 1, 0x9e3779b1) ^ Math.imul(s.index + 1, 0x85ebca6b)) >>> 0);
     // Transition d'entrée : chevauchement, ou entrée depuis le fond pour la première scène.
     var dureeEntree = info.entree > 0 ? info.entree : (s.index === 0 ? M.CHEVAUCHEMENT : 0);
     var q = dureeEntree > 0 ? (t - info.debut) / dureeEntree : 1;
@@ -175,6 +181,7 @@
       document.querySelectorAll('#pm-scene img').forEach(function (img) {
         if (!img.complete) attentes.push(img.decode().catch(function () {}));
       });
+      etat.attentes.forEach(function (fn) { attentes.push(Promise.resolve(fn(etat.t))); });
       return Promise.all(attentes);
     }).then(function () { return etat.t; });
   };
@@ -182,8 +189,17 @@
   M.temps = function () { return etat.t; };
   M.chaqueImage = function (idScene, fn) { (etat.rappels[idScene] = etat.rappels[idScene] || []).push(fn); };
   M.surRendu = function (fn) { etat.auditeurs.push(fn); };
+  M.surSeek = function (fn) { etat.attentes.push(fn); };
+  M.rendreScene = function (idScene, t) {
+    for (var i = 0; i < etat.scenes.length; i++) {
+      var s = etat.scenes[i];
+      if (s.info.id === idScene && s.sec) { rendreScene(s, Math.max(0, Math.min(M.duree, Number(t) || 0))); return; }
+    }
+  };
 
+  M.enCapture = function () { return etat.capture; };
   M.modeCapture = function (actif) {
+    etat.capture = !!actif;
     if (actif) {
       racine.performance.now = function () { return etat.t * 1000; };
       Date.now = function () { return EPOCH + Math.round(etat.t * 1000); };

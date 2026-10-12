@@ -11,7 +11,7 @@
  */
 const fs = require('node:fs');
 const path = require('node:path');
-const { assembler, charteFinale } = require('./assembler.js');
+const { assembler, charteFinale, RACINE } = require('./assembler.js');
 const { trouverStyle } = require('./styles.js');
 const { lireGlossaire, verifierGlossaire } = require('./vocabulaire.js');
 const { lireDeroule } = require('./lib/deroule.js');
@@ -76,12 +76,12 @@ function controlerCSS(cssBrut, scene, ou, problemes) {
 }
 
 /**
- * controler({ dossier, dossierStyles?: string | string[], ecrire? })
+ * controler({ dossier, dossierStyles?: string | string[], dossierEffets?, ecrire? })
  * -> { problemes: [...], fichier: chemin de controle.json | null }
  */
-function controler({ dossier, dossierStyles, ecrire = true }) {
+function controler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, 'effets'), ecrire = true }) {
   const projet = path.resolve(dossier);
-  const assemblage = assembler({ dossier: projet, dossierStyles, ecrire: false });
+  const assemblage = assembler({ dossier: projet, dossierStyles, dossierEffets, ecrire: false });
   const problemes = assemblage.erreurs.map((e) => ({ ...e }));
   const { deroule } = lireDeroule(projet);
 
@@ -99,11 +99,25 @@ function controler({ dossier, dossierStyles, ecrire = true }) {
     const min = calculerMinutage(deroule.scenes, elementsParScene);
     for (const e of min.erreurs) problemes.push({ ...e, gravite: 'erreur' });
 
+    // Fenêtre d'une balise d'effet : jusqu'à la mort de la dernière particule, pas seulement data-dur.
+    const finEffet = (scene, rythme) => {
+      const fins = {};
+      const balises = elementsParScene[scene.id].filter((e) => e.effet !== undefined);
+      for (const e of (assemblage.effets || []).filter((x) => x.scene === scene.id)) {
+        const balise = balises[e.ordre];
+        if (balise && min.elements[scene.id][balise.cle]) fins[balise.cle] = min.elements[scene.id][balise.cle].debut + e.effet.fin / (rythme || 1);
+      }
+      return fins;
+    };
+    const finsEffets = {};
+    for (const s of min.scenes) finsEffets[s.id] = finEffet(s, s.rythme);
+    const finElement = (id, cle, e) => Math.max(e.fin, finsEffets[id][cle] === undefined ? e.fin : finsEffets[id][cle]);
+
     // Temps morts : aucun élément en mouvement pendant plus que le seuil (pause finale exceptée).
     const derniere = min.scenes[min.scenes.length - 1];
     min.scenes.forEach((s, i) => {
       const dureeEntree = s.entree > 0 ? s.entree : (i === 0 && s.transition !== 'aucune' ? CHEVAUCHEMENT : 0);
-      const intervalles = Object.values(min.elements[s.id]).map((e) => [e.debut, e.fin]);
+      const intervalles = Object.entries(min.elements[s.id]).map(([cle, e]) => [e.debut, finElement(s.id, cle, e)]);
       if (dureeEntree) intervalles.push([s.debut, s.debut + dureeEntree]);
       const suivante = min.scenes[i + 1];
       if (suivante && suivante.entree > 0) intervalles.push([suivante.debut, s.fin]);
@@ -117,7 +131,7 @@ function controler({ dossier, dossierStyles, ecrire = true }) {
     });
 
     // Pause finale.
-    const fins = Object.values(min.elements[derniere.id]).map((e) => e.fin);
+    const fins = Object.entries(min.elements[derniere.id]).map(([cle, e]) => finElement(derniere.id, cle, e));
     const pause = derniere.fin - Math.max(derniere.debut, ...fins);
     if (pause < SEUILS.pauseFinale) {
       problemes.push({ regle: 'pause-finale', gravite: 'alerte', scene: derniere.id, message: `La vidéo s'arrête ${virgule(pause)} s après le dernier mouvement : laisser au moins ${virgule(SEUILS.pauseFinale)} s pour finir sur une image stable.` });
@@ -134,6 +148,33 @@ function controler({ dossier, dossierStyles, ecrire = true }) {
       controlerCSS(scenesLues[s.id].css, s.id, `Scène « ${s.id} »`, problemes);
     }
 
+    // Effets de particules : budget par scène, effet du calque avant posé sur un texte long.
+    for (const s of min.scenes) {
+      const effets = (assemblage.effets || []).filter((e) => e.scene === s.id);
+      if (!effets.length) continue;
+      const total = effets.reduce((n, e) => n + e.effet.capacite, 0);
+      if (total > SEUILS.budgetParticules) {
+        problemes.push({ regle: 'budget-particules', gravite: 'alerte', scene: s.id, message: `Scène « ${s.id} » : jusqu'à ${total} particules en même temps (au-delà de ${SEUILS.budgetParticules}, l'aperçu ralentit) ; baisser « nombre » ou la durée de vie.` });
+      }
+      const lus = scenesLues[s.id];
+      const balisesEffet = lus.elements.filter((e) => e.effet !== undefined);
+      const textes = (deroule.scenes.find((x) => x.id === s.id) || {}).textes || {};
+      const longs = lus.textes.filter((cle) => compterMots(textes[cle] || '') > SEUILS.effetSurTexteMots).map((cle) => {
+        const el = lus.elements.find((e) => e.texte === cle);
+        return { cle, debut: el ? min.elements[s.id][el.cle].debut : s.debut };
+      });
+      for (const e of effets) {
+        const balise = balisesEffet[e.ordre];
+        if (e.calque !== 'avant' || !balise) continue;
+        const debut = min.elements[s.id][balise.cle].debut;
+        const fin = debut + e.effet.fin / s.rythme;
+        // Un texte reste à l'écran de son entrée à la fin de la scène.
+        const gene = longs.find((t) => debut < s.fin && fin > t.debut);
+        if (gene) {
+          problemes.push({ regle: 'effet-sur-texte', gravite: 'alerte', scene: s.id, element: balise.cle, message: `Scène « ${s.id} » : l'effet « ${e.effet.nom} » passe devant le texte « ${gene.cle} » pendant sa lecture ; le poser en data-calque="arriere" ou le décaler après la lecture.` });
+        }
+      }
+    }
     // Glossaire de la charte : formes à éviter, sigles mal écrits.
     problemes.push(...verifierGlossaire(deroule.scenes, lireGlossaire(projet).termes));
 

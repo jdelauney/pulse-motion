@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "nom": "feu-artifice",
+  "description": "Fusées qui montent en laissant une traînée, puis éclatent en gerbes colorées qui scintillent en retombant.",
+  "parametres": {
+    "fusees": { "defaut": 3, "min": 1, "max": 8 },
+    "eclats": { "defaut": 80, "min": 10, "max": 400 },
+    "couleur": { "defaut": "accent", "type": "couleur" },
+    "hauteur": { "defaut": 1, "min": 0.4, "max": 1.6 }
+  },
+  "rendu_calque": { "bloom": 3.3, "seuil_bloom": 0.9 },
+  "emetteurs": [
+    {
+      "nom": "fusee",
+      "naissance": {
+        "salves": [{ "t": 0, "nombre": "fusees" }],
+        "forme": { "type": "ancre", "zone": "surface" },
+        "vitesse": { "direction": [0, -1], "cone": 30, "valeur": ["55 * hauteur", "75 * hauteur"] },
+        "vie": [0.9, 1.4],
+        "taille": [0.6, 0.8]
+      },
+      "forces": [
+        { "type": "gravite", "valeur": 30 },
+        { "type": "trainee", "coef": 0.3 }
+      ],
+      "vie": { "couleur": "#fff2d0", "intensite": 4 },
+      "rendu": { "type": "trainee", "longueur": 10, "melange": "additif" },
+      "a_la_mort": { "emetteur": "eclat" }
+    },
+    {
+      "nom": "eclat",
+      "naissance": {
+        "nombre": "eclats",
+        "forme": { "type": "point" },
+        "vitesse": { "cone": 360, "valeur": [15, 35], "heritage": 0.2 },
+        "vie": [1, 1.8],
+        "taille": [0.5, 0.9]
+      },
+      "forces": [
+        { "type": "gravite", "valeur": 18 },
+        { "type": "trainee", "coef": 1.4 }
+      ],
+      "vie": {
+        "couleur": { "degrade": ["#ffffff", "couleur", "couleur", "#00000000"], "courbe": "quad-out" },
+        "intensite": { "de": 6, "a": 1 }
+      },
+      "rendu": { "type": "etincelle", "etirement": 0.03, "melange": "additif" },
+      "a_la_mort": { "emetteur": "scintille" }
+    },
+    {
+      "nom": "scintille",
+      "naissance": {
+        "nombre": 1,
+        "forme": { "type": "point" },
+        "vitesse": { "cone": 360, "valeur": [0, 3] },
+        "vie": [0.15, 0.4],
+        "taille": [0.6, 1]
+      },
+      "forces": [{ "type": "gravite", "valeur": 10 }],
+      "vie": { "couleur": "couleur", "intensite": { "de": 0, "a": 5, "courbe": "sine-arch" } },
+      "rendu": { "type": "sprite", "texture": "etoile", "melange": "additif" }
+    }
+  ]
+}

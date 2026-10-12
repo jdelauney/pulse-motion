@@ -19,7 +19,7 @@ function enTete(texte) {
 }
 
 const SKILLS = fs.readdirSync(path.join(RACINE, 'skills'));
-const COMMANDES = ['etat', 'assembler', 'controler', 'apercu', 'historique', 'reference', 'scene', 'styles', 'consignes', 'exporter', 'planche', 'comparer', 'changer-style', 'lexique', 'charte', 'police', 'glossaire'];
+const COMMANDES = ['etat', 'assembler', 'controler', 'apercu', 'historique', 'reference', 'scene', 'styles', 'consignes', 'exporter', 'planche', 'effet', 'comparer', 'changer-style', 'lexique', 'charte', 'police', 'glossaire'];
 const fichiersGuides = () => [
   ...SKILLS.map((s) => path.join('skills', s, 'SKILL.md')),
   ...fs.readdirSync(path.join(RACINE, 'agents')).map((a) => path.join('agents', a)),
@@ -90,6 +90,21 @@ test('références : bloc « L\'essentiel » en tête, chaque style du catalogue
       assert.match(doc, new RegExp(`\\| \`${sc.nom}\` \\|.*\\| ${sc.duree} s \\|`), `${st} : scène ${sc.nom} documentée avec sa durée`);
     }
   }
+});
+
+test('consignes : les effets de particules sont guidés', () => {
+  const animateur = lire('agents', 'animateur.md');
+  assert.match(animateur, /pulse-motion reference particules/);
+  assert.match(animateur, /effets\/<nom>\.json/);
+  assert.match(animateur, /etend/);
+  const retoucher = lire('skills', 'retoucher', 'SKILL.md');
+  assert.match(retoucher, /\| Effet de particules \|/);
+  assert.match(retoucher, /data-graine/);
+  const creer = lire('skills', 'creer', 'SKILL.md');
+  assert.match(creer, /effet de particules/);
+  assert.match(creer, /au plus deux effets simultanés/);
+  assert.match(animateur, /seulement si votre consigne le demande/);
+  assert.match(animateur, /effet-sur-texte/);
 });
 
 test('creer : style choisi alors que des scènes existent déjà → changement de style', () => {

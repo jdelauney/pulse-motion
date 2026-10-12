@@ -22,6 +22,13 @@ const DELAI_DEMARRAGE = 45000;
 /** Nettoyages en cours (navigateur sans fenêtre, aperçu lancé) : faits aussi si la commande est interrompue. */
 const nettoyages = new Set();
 
+/** Une scène du projet pose-t-elle un effet de particules ? (Chrome devra alors garder le GPU.) */
+function avecEffets(projet, deroule) {
+  return deroule.scenes.some((s) => {
+    try { return /\sdata-effet\s*=/.test(fs.readFileSync(path.join(projet, s.fichier), 'utf8')); } catch { return false; }
+  });
+}
+
 /** Fait tous les nettoyages en cours (sans échouer) et vide la liste. */
 async function nettoyerTout() {
   const enCours = [...nettoyages];
@@ -79,7 +86,7 @@ async function exporterVideo({
   const images = Math.round(deroule.scenes.reduce((t, s) => t + s.duree / (s.rythme || 1), 0) * ((deroule.format && deroule.format.ips) || 30));
   const limite = Date.now() + (delaiMax || (120 + images * 0.5) * 1000);
   const limiteDemarrage = Date.now() + delaiDemarrage;
-  const chrome = ouvrirSansFenetre(navigateur, adresse);
+  const chrome = ouvrirSansFenetre(navigateur, adresse, { gpu: avecEffets(projet, deroule) });
   const nettoyer = async () => {
     await chrome.fermer();
     if (apercuLance) await apercuLance.fermer();
@@ -136,4 +143,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { exporterVideo, nettoyages, nettoyerTout, arreterProprementSurSignal };
+module.exports = { exporterVideo, avecEffets, nettoyages, nettoyerTout, arreterProprementSurSignal };

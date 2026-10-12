@@ -11,6 +11,7 @@
  *   pulse-motion planche <dossier> [id1,id2] [--ouvrir]   images clés PNG dans sortie/planche/
  *   pulse-motion reference <nom>          affiche references/<nom>.md (ex. moteur, rythme, styles/clair-pedagogique)
  *   pulse-motion scene <style> <nom>      affiche une scène toute faite d'un style
+ *   pulse-motion effet <nom>              affiche la recette d'un effet de particules de la bibliothèque
  *   pulse-motion styles [--genre <genre>] liste les styles (JSON), classée pour le genre
  *   pulse-motion styles verifier <nom>    vérifie le contrat d'un style
  *   pulse-motion changer-style <dossier> <style>   recopie les scènes toutes faites du nouveau style
@@ -83,6 +84,11 @@ function lancer(args) {
     if (!st) { console.error(messageStyleInconnu(style)); return 1; }
     return afficherFichier(path.join(st.dossier, 'scenes', `${nom}.html`), `Scène « ${nom} » du style « ${style} »`);
   }
+  if (commande === 'effet') {
+    const nom = reste[0] || '';
+    if (!/^[a-z0-9-]+$/.test(nom)) { console.error('Usage : pulse-motion effet <nom> (ex. etincelles, confettis)'); return 2; }
+    return afficherFichier(path.join(RACINE, 'effets', `${nom}.json`), `Effet « ${nom} »`);
+  }
   if (commande === 'consignes') {
     const nom = reste[0] || '';
     if (!/^[a-z0-9-]+$/.test(nom)) { console.error('Usage : pulse-motion consignes <skill> (ex. creer)'); return 2; }
@@ -94,7 +100,7 @@ function lancer(args) {
     '  assembler <dossier>      controler <dossier>      apercu <dossier> [--port N] [--ouvrir]',
     '  historique sauvegarder|annuler <dossier>',
     '  exporter <dossier>       planche <dossier> [id1,id2]',
-    '  reference <nom>          scene <style> <nom>      consignes <skill>',
+    '  reference <nom>          scene <style> <nom>      effet <nom>      consignes <skill>',
     '  styles [--genre <genre>]                         styles verifier <nom>',
     '  changer-style <dossier> <style>                  comparer <dossier> <s1,s2,s3> [--scenes a,b] [--ouvrir]',
     '  charte enregistrer <nom> <dossier> | liste | appliquer <nom> <dossier> | depuis-logo <fichier> [--style s] [--ton clair|sombre]',

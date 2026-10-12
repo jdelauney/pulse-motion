@@ -71,7 +71,7 @@ La charte (logo, couleurs, polices) vit dans `charte/` du projet ; la musique da
 
 ## 3. Fabrication
 
-1. Lancer **un agent `animateur` par scène, tous dans le même message** (en parallèle). À chacun : dossier, scène (id, fichier, durée, rythme, intention, textes), style, format, scène toute faite conseillée (son `type`).
+1. Lancer **un agent `animateur` par scène, tous dans le même message** (en parallèle). À chacun : dossier, scène (id, fichier, durée, rythme, intention, textes), style, format, scène toute faite conseillée (son `type`). C'est vous qui décidez quelles scènes reçoivent un effet de particules : au plus deux effets simultanés à l'écran, et en formation courte un ou deux effets dans toute la vidéo. Dire à l'animateur de ces scènes quel effet poser (étincelles sur un chiffre clé, confettis en conclusion) ; les autres n'en ajoutent pas.
 2. Un agent qui a **composé** la scène au lieu de partir de la scène toute faite le dit : retirer alors `type` de cette scène dans `deroule.json`.
 3. `pulse-motion assembler .` puis `pulse-motion controler .`.
 4. Erreurs ou alertes : les corriger (dans la scène, ou dans le déroulé pour une durée), relancer assembler et controler. Deux tours au plus ; ce qui reste est dit à la personne.

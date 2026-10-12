@@ -5,5 +5,7 @@
   "lectureParMot": 0.3,
   "texteMinCqh": 3.5,
   "contrasteTexte": 4.5,
-  "contrasteTitres": 3
+  "contrasteTitres": 3,
+  "budgetParticules": 300000,
+  "effetSurTexteMots": 8
 }

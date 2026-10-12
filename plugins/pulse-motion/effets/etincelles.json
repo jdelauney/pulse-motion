@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "nom": "etincelles",
+  "description": "Gerbe d'étincelles chaudes qui jaillissent de la zone puis retombent, avec de petites braises à leur mort.",
+  "parametres": {
+    "nombre": { "defaut": 400, "min": 20, "max": 20000 },
+    "vitesse": { "defaut": 1, "min": 0.2, "max": 3 },
+    "couleur": { "defaut": "#ffb347", "type": "couleur" },
+    "gravite": { "defaut": 1, "min": 0, "max": 3 },
+    "taille": { "defaut": 1, "min": 0.3, "max": 3 }
+  },
+  "rendu_calque": { "bloom": 2.7, "seuil_bloom": 1 },
+  "emetteurs": [
+    {
+      "nom": "gerbe",
+      "naissance": {
+        "debit": "nombre / dur",
+        "forme": { "type": "ancre", "zone": "contour" },
+        "vitesse": { "direction": [0, -1], "cone": 110, "valeur": ["25 * vitesse", "60 * vitesse"] },
+        "vie": [0.5, 1.2],
+        "taille": ["0.4 * taille", "0.9 * taille"],
+        "masse": [0.8, 1.2]
+      },
+      "forces": [
+        { "type": "gravite", "valeur": "60 * gravite" },
+        { "type": "trainee", "coef": 1.2 }
+      ],
+      "vie": {
+        "couleur": { "degrade": ["#ffffff", "couleur", "couleur", "#00000000"], "courbe": "quad-out" },
+        "taille": { "de": 1, "a": 0.2, "courbe": "cubic-in" },
+        "intensite": { "de": 6, "a": 1, "courbe": "quad-out" }
+      },
+      "rendu": { "type": "etincelle", "etirement": 0.035, "melange": "additif" },
+      "a_la_mort": { "emetteur": "braise" }
+    },
+    {
+      "nom": "braise",
+      "naissance": {
+        "nombre": 1,
+        "forme": { "type": "point" },
+        "vitesse": { "cone": 360, "valeur": [2, 8], "heritage": 0.3 },
+        "vie": [0.2, 0.5],
+        "taille": ["0.2 * taille", "0.4 * taille"]
+      },
+      "forces": [
+        { "type": "gravite", "valeur": "20 * gravite" },
+        { "type": "trainee", "coef": 2 }
+      ],
+      "vie": {
+        "couleur": { "degrade": ["couleur", "#00000000"] },
+        "intensite": { "de": 3, "a": 0 }
+      },
+      "rendu": { "type": "sprite", "melange": "additif" }
+    }
+  ]
+}

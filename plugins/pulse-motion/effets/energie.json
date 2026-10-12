@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "nom": "energie",
+  "description": "Flux d'énergie qui tourbillonne autour de la zone comme un plasma, en traînées lumineuses.",
+  "parametres": {
+    "nombre": { "defaut": 200, "min": 10, "max": 2000 },
+    "couleur": { "defaut": "primaire", "type": "couleur" },
+    "rotation": { "defaut": 1, "min": -3, "max": 3 },
+    "eclat": { "defaut": 4, "min": 1, "max": 10 }
+  },
+  "rendu_calque": { "bloom": 3.6, "seuil_bloom": 0.8 },
+  "emetteurs": [
+    {
+      "nom": "filament",
+      "naissance": {
+        "debit": "nombre / dur",
+        "forme": { "type": "ancre", "zone": "contour" },
+        "vitesse": { "radiale": true, "valeur": [2, 6] },
+        "vie": [0.8, 1.6],
+        "taille": [0.4, 0.8]
+      },
+      "forces": [
+        { "type": "vortex", "force": "80 * rotation", "rayon": 12 },
+        { "type": "attracteur", "force": 40, "rayon": 12 },
+        { "type": "trainee", "coef": 1.2 },
+        { "type": "turbulence", "echelle": 6, "force": 20, "vitesse": 1 }
+      ],
+      "vie": {
+        "couleur": { "degrade": ["#ffffff", "couleur", "couleur"] },
+        "intensite": { "de": "eclat", "a": 0, "courbe": "quad-in" }
+      },
+      "rendu": { "type": "trainee", "longueur": 12, "melange": "additif" }
+    }
+  ]
+}
