@@ -29,7 +29,7 @@
     var ips = M.ips;
     var scenes = M.minutage.scenes;
     // Son : tampon mixé par M.rendreSon, joué par un AudioContext créé au premier ▶ (geste de la personne).
-    var son = { attendu: !!(M.aSon && M.aSon()), tampon: null, contexte: null, source: null, debutContexte: 0, debutT: 0, prepare: false };
+    var son = { attendu: !!(M.aSon && M.aSon()), tampon: null, contexte: null, source: null, debutContexte: 0, debutT: 0, prepare: false, coupe: false };
     var lecture = false, dernier = 0, boucle = null;
 
     var barre = el('div', { id: 'pm-lecteur' }, document.body);
@@ -56,6 +56,7 @@
     }
     function lancerSon(t) {
       arreterSon();
+      if (son.coupe) return;
       if (!son.tampon || !son.contexte || t >= son.tampon.duration - 0.05) return;
       if (son.contexte.state === 'suspended') son.contexte.resume();
       var s = son.contexte.createBufferSource();
@@ -80,8 +81,14 @@
         signaler('Le son n\'a pas pu être préparé.');
       });
     }
+    // Son coupé (studio : enregistrement au micro) : la lecture continue, sans son.
+    M.couperSon = function (couper) {
+      son.coupe = !!couper;
+      if (son.coupe) arreterSon();
+      else if (lecture) lancerSon(M.temps());
+    };
     M.etatSon = function () {
-      return { attendu: son.attendu, pret: !!son.tampon, enLecture: !!son.source,
+      return { attendu: son.attendu, pret: !!son.tampon, enLecture: !!son.source, coupe: son.coupe,
         position: son.source ? son.debutT + son.contexte.currentTime - son.debutContexte : null };
     };
     setTimeout(function () { if (!(M.enCapture && M.enCapture())) preparerSon(); }, 1000);
@@ -158,20 +165,26 @@
     if (sauvee && typeof sauvee.t === 'number') { M.rendre(sauvee.t); if (sauvee.lecture) jouer(); }
     else afficher(M.temps());
 
-    // Rechargement après une retouche, à la même position. Pendant un export (M.exportEnCours),
-    // il attend la fin de l'export (M.finExport) pour ne pas l'interrompre.
+    // Rechargement après une retouche, à la même position. Pendant un export (M.exportEnCours) ou une prise du studio,
+    // il attend la fin (M.finExport, M.reprendreRechargement) pour ne pas l'interrompre.
     M.recharger = function () {
       try { sessionStorage.setItem(CLE_POSITION, JSON.stringify({ t: M.temps(), lecture: lecture })); } catch (e) { /* ignoré */ }
       location.reload();
     };
+    // Page occupée : export en cours, ou studio de voix avec une prise pas encore gardée.
     var rechargementEnAttente = false;
+    function occupee() { return !!(M.exportEnCours || (M.studio && M.studio.occupe && M.studio.occupe())); }
     M.rechargerQuandPossible = function () {
-      if (M.exportEnCours) { rechargementEnAttente = true; return; }
+      if (occupee()) { rechargementEnAttente = true; return; }
       M.recharger();
+    };
+    /** Rechargement demandé pendant que la page était occupée : fait dès qu'elle ne l'est plus. */
+    M.reprendreRechargement = function () {
+      if (rechargementEnAttente && !occupee()) { rechargementEnAttente = false; M.recharger(); }
     };
     M.finExport = function () {
       M.exportEnCours = false;
-      if (rechargementEnAttente) { rechargementEnAttente = false; M.recharger(); }
+      M.reprendreRechargement();
     };
 
     if (racine.__PM_APERCU__ && racine.EventSource) {

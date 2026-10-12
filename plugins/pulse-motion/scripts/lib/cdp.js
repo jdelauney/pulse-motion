@@ -35,9 +35,9 @@ function creerLecteur(surMessage) {
 }
 
 /** -> Promise<{ aller, evaluer, capturer, envoyer, fermer, processus, profil }> */
-function ouvrirPage({ navigateur, largeur, hauteur, gpu = false, delai = 30000 }) {
+function ouvrirPage({ navigateur, largeur, hauteur, gpu = false, delai = 30000, options = [] }) {
   const profil = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-cdp-'));
-  const processus = spawn(navigateur, [...optionsChrome({ gpu }), `--user-data-dir=${profil}`, '--remote-debugging-pipe', `--window-size=${largeur},${hauteur}`, 'about:blank'],
+  const processus = spawn(navigateur, [...optionsChrome({ gpu }), ...options, `--user-data-dir=${profil}`, '--remote-debugging-pipe', `--window-size=${largeur},${hauteur}`, 'about:blank'],
     { stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe'] });
   const versNavigateur = processus.stdio[3];
   const depuisNavigateur = processus.stdio[4];

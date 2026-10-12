@@ -14,6 +14,9 @@ const path = require('node:path');
 const { spawn } = require('node:child_process');
 const { assembler } = require('./assembler.js');
 const { creerRoutesExport } = require('./lib/routes-export.js');
+const { creerRoutesVoix } = require('./lib/routes-voix.js');
+const { whisperParDefaut } = require('./lib/whisper.js');
+const { trouverFfmpeg } = require('./lib/ffmpeg.js');
 
 const IGNORES = /^(sortie|\.pulse-motion|\.historique|\.git)([\\/]|$)/;
 const ESSAIS_PORT = 20;
@@ -32,7 +35,8 @@ function pageErreur(erreurs) {
 
 function injecterApercu(html, erreurs) {
   const script = `<script>window.__PM_APERCU__ = true; window.__PM_ERREURS__ = ${JSON.stringify(erreurs).replace(/</g, '\\u003c')};</script>` +
-    '\n<script src="/_pm/capture.js"></script>\n<script type="module" src="/_pm/export-ui.mjs"></script>';
+    '\n<script src="/_pm/capture.js"></script>\n<script type="module" src="/_pm/export-ui.mjs"></script>' +
+    '\n<script type="module" src="/_pm/studio.mjs"></script>';
   return html.replace('</head>', `${script}\n</head>`);
 }
 
@@ -57,10 +61,10 @@ function ecouter(serveur, hote, port) {
 }
 
 /**
- * demarrerApercu({ dossier, port?, dossierStyles?, delai? })
+ * demarrerApercu({ dossier, port?, dossierStyles?, delai?, whisper?, maxPrise? })
  * -> Promise<{ port, url, fermer(): Promise }>
  */
-async function demarrerApercu({ dossier, port = 4321, dossierStyles, delai = 150 }) {
+async function demarrerApercu({ dossier, port = 4321, dossierStyles, delai = 150, whisper, maxPrise }) {
   const projet = path.resolve(dossier);
   const optionsAssemblage = dossierStyles ? { dossier: projet, dossierStyles } : { dossier: projet };
   let dernier = assembler(optionsAssemblage);
@@ -73,6 +77,7 @@ async function demarrerApercu({ dossier, port = 4321, dossierStyles, delai = 150
 
   const rapportPage = path.join(projet, 'sortie', 'controle-page.json');
   const routesExport = creerRoutesExport(projet);
+  const routesVoix = creerRoutesVoix(projet, { whisper: whisper || whisperParDefaut(), maxOctets: maxPrise, outil: trouverFfmpeg() });
 
   /** Rapport de débordement envoyé par la page : JSON seulement (une autre origine serait bloquée par CORS). */
   function recevoirControle(req, res) {
@@ -130,6 +135,8 @@ async function demarrerApercu({ dossier, port = 4321, dossierStyles, delai = 150
       recevoirControle(req, res);
     } else if (routesExport(req, res, url)) {
       // route d'export traitée
+    } else if (routesVoix(req, res, url)) {
+      // route du studio de voix traitée
     } else {
       res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('Introuvable');
