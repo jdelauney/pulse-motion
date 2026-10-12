@@ -74,3 +74,13 @@ test('« La chaîne du froid » : étincelles sur le chiffre, dessinées avec We
   assert.deepEqual(r.erreurs, []);
   assert.ok(r.allumes > 100, `${r.allumes} pixels allumés par les étincelles`);
 });
+
+test('« La chaîne du froid » : contrôle complet de la vidéo rendue, rien à signaler, en moins de 20 s', { skip: !navigateur && 'Chrome ou Edge introuvable' }, async () => {
+  const { controlerComplet } = require('../scripts/controler.js');
+  const dir = copierExemple();
+  const debut = Date.now();
+  const r = await controlerComplet({ dossier: dir, corriger: false });
+  assert.equal(r.renduVerifie, true);
+  assert.deepEqual(r.problemes, []);
+  assert.ok(Date.now() - debut < 20000, `${Date.now() - debut} ms`);
+});

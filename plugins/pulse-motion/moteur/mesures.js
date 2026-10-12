@@ -13,7 +13,8 @@
   'use strict';
   var M = racine.M = racine.M || {};
   var JUGES = '[data-texte], img, [data-logo], .logo, svg:not([aria-hidden="true"])';
-  var DEFAUTS = { pasMesure: 0.2, immobile: 0.005, chevauchementMax: 0.1, margeMin: 0.04, logoMasqueMax: 0.2, grandElement: 0.25, vitesseMax: 1, texteFugaceBase: 0.8, texteFugaceParMot: 0.2 };
+  var DEFAUTS = { pasMesure: 0.2, immobile: 0.005, chevauchementMax: 0.1, margeMin: 0.04, logoMasqueMax: 0.2, grandElement: 0.25, vitesseMax: 1, texteFugaceBase: 0.8, texteFugaceParMot: 0.2,
+    zoneHaut: 0.07, zoneBas: 0.2, zoneDroite: 0.11, zoneDroiteDebut: 0.4, zoneDroiteFin: 0.85 };
 
   function estLogo(el) { return el.hasAttribute('data-logo') || el.classList.contains('logo'); }
   function estJuge(el) {
@@ -49,6 +50,15 @@
     plage.selectNodeContents(el);
     return plage.getBoundingClientRect();
   }
+  /** Zone des lettres d'un texte : sa boîte de texte réduite de 20 % de la taille de police en haut et
+   * en bas (place des montantes et descendantes, vide pour un chiffre géant) ; autre élément : inchangée. */
+  function encre(x) {
+    if (!x.el.hasAttribute('data-texte')) return x.r;
+    var marge = 0.2 * parseFloat(getComputedStyle(x.el).fontSize);
+    var haut = x.r.top + marge;
+    var bas = Math.max(haut, x.r.bottom - marge);
+    return { left: x.r.left, right: x.r.right, top: haut, bottom: bas, width: x.r.width, height: bas - haut };
+  }
   function aire(r) { return Math.max(0, r.width) * Math.max(0, r.height); }
   function commune(a, b) {
     var w = Math.min(a.right, b.right) - Math.max(a.left, b.left);
@@ -73,7 +83,9 @@
       vus[cle] = true;
       constats.push({ regle: regle, scene: scene, element: element, instant: arrondi(t), valeur: valeur === undefined ? null : valeur });
     }
-    var precedents = new Map();
+    var precedents = new Map();   // élément -> { r, k } : relevé précédent (mouvement rapide)
+    var releves = new Map();      // élément jugé -> { r, k } : relevé précédent (immobilité)
+    var enTransition = false;
     var lectures = new Map();   // texte -> { scene, debut, fin }
 
     function fermerLecture(el, l) {
@@ -92,7 +104,9 @@
       var H = cadre.height;
       var petit = Math.min(W, H);
       var visibles = M.scenesVisibles(M.minutage, t);
-      var transition = visibles.length > 1;
+      // Pendant une transition, et au relevé qui la suit, la scène se déplace en bloc : rien n'est jugé immobile ni rapide.
+      var transition = visibles.length > 1 || enTransition;
+      enTransition = visibles.length > 1;
       var textesVus = new Set();
       visibles.forEach(function (id) {
         var sec = conteneur.querySelector(':scope > section[data-scene="' + id + '"]');
@@ -102,8 +116,11 @@
         sec.querySelectorAll('[data-start], ' + JUGES).forEach(function (el) {
           var r = el.getBoundingClientRect();
           var avant = precedents.get(el);
-          precedents.set(el, r);
-          if (!avant || transition) return;
+          precedents.set(el, { r: r, k: k });
+          // Seulement deux relevés consécutifs, l'élément affiché dans les deux : une scène qui
+          // réapparaît (rectangle nul tant qu'elle était masquée) n'est pas un mouvement.
+          if (!avant || avant.k !== k - 1 || !aire(avant.r) || !aire(r) || transition) return;
+          avant = avant.r;
           var visibleDansImage = commune(r, cadre);
           if (visibleDansImage < S.grandElement * W * H) return;
           var dx = (r.left + r.width / 2) - (avant.left + avant.width / 2);
@@ -123,9 +140,10 @@
           if (!visible) return;
           var e = etat(el);
           var stable = !transition && e !== 'avant' && e !== 'pendant' && !lettresEnCours(el);
-          var avant = el.__pmAvant;
-          el.__pmAvant = r;
-          if (!stable || !avant) return;
+          var avant = releves.get(el);
+          releves.set(el, { r: r, k: k });
+          if (!stable || !avant || avant.k !== k - 1) return;
+          avant = avant.r;
           if (Math.abs(r.left - avant.left) > S.immobile * W || Math.abs(r.top - avant.top) > S.immobile * H ||
               Math.abs(r.width - avant.width) > S.immobile * W || Math.abs(r.height - avant.height) > S.immobile * H) return;
           immobiles.push({ el: el, r: r });
@@ -143,7 +161,11 @@
             var d = Math.min(r.left - cadre.left, cadre.right - r.right, r.top - cadre.top, cadre.bottom - r.bottom);
             if (d < S.margeMin * petit) constater('marge', id, nom(el), t, arrondi(Math.max(0, d) / petit * 100));
             if (vertical) {
-              var zone = r.top < cadre.top + 0.10 * H ? 'haut' : r.bottom > cadre.bottom - 0.20 * H ? 'bas' : r.right > cadre.right - 0.12 * W ? 'droite' : null;
+              // Interfaces des réseaux (TikTok, Reels) : bandeau du haut, légende du bas, colonne de boutons
+              // à droite entre 40 % et 85 % de la hauteur.
+              var colonne = r.bottom > cadre.top + S.zoneDroiteDebut * H && r.top < cadre.top + S.zoneDroiteFin * H;
+              var zone = r.top < cadre.top + S.zoneHaut * H ? 'haut' : r.bottom > cadre.bottom - S.zoneBas * H ? 'bas'
+                : colonne && r.right > cadre.right - S.zoneDroite * W ? 'droite' : null;
               if (zone) constater('zone-sure', id, nom(el), t, zone);
             }
           }
@@ -158,7 +180,9 @@
             var logo = estLogo(a.el) ? a : estLogo(b.el) ? b : null;
             if (logo && c / aire(logo.r) > S.logoMasqueMax) constater('logo-masque', id, nom(logo.el), t, arrondi(c / aire(logo.r)));
             if (a.el.closest('[data-superpose]') || b.el.closest('[data-superpose]')) continue;
-            var part = c / Math.min(aire(a.r), aire(b.r));
+            var ra = encre(a);
+            var rb = encre(b);
+            var part = commune(ra, rb) / Math.min(aire(ra), aire(rb));
             if (part > S.chevauchementMax) constater('chevauchement', id, nom(a.el) + '|' + nom(b.el), t, arrondi(part));
           }
         }
@@ -166,7 +190,6 @@
       lectures.forEach(function (l, el) { if (!textesVus.has(el)) fermerLecture(el, l); });
     }
     lectures.forEach(function (l, el) { l.fin = M.duree; fermerLecture(el, l); });
-    precedents.forEach(function (r, el) { delete el.__pmAvant; });
     M.rendre(depart);
     return constats;
   };

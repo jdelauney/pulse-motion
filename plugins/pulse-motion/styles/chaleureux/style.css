@@ -118,14 +118,14 @@
 
 /* ---------- Format vertical : tout s'empile ---------- */
 @container (orientation: portrait) {
-  #pm-scene > section[data-scene] { padding: 9cqh 6cqh; gap: 2.2cqh; font-size: 3.6cqh; }
+  #pm-scene > section[data-scene] { padding: 9cqh 7cqh 15cqh; gap: 2.2cqh; font-size: 3.6cqh; }
   .pastille-texte { font-size: 3.5cqh; padding: 1cqh 2.4cqh; }
   .titre { font-size: 6.2cqh; }
   .titre-moyen { font-size: 4.6cqh; }
   .sous-titre { font-size: 3.8cqh; }
   .texte { font-size: 3.5cqh; }
-  .cartes { gap: 1.2cqh; }
-  .cartes li { font-size: 3.5cqh; padding: 1.4cqh 2cqh; gap: 1.8cqh; border-radius: 2.6cqh; }
+  .cartes { gap: 0.8cqh; }
+  .cartes li { font-size: 3.5cqh; padding: 0.9cqh 1.6cqh; gap: 1.2cqh; border-radius: 2.6cqh; }
   .galet-chiffre { min-width: 30cqh; min-height: 22cqh; padding: 3cqh 4cqh; }
   .chiffre-rond { font-size: 10cqh; }
   .deux-cartes { grid-template-columns: 1fr; gap: 2cqh; }

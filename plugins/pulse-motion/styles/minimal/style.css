@@ -103,14 +103,14 @@
 
 /* ---------- Format vertical : tout s'empile ---------- */
 @container (orientation: portrait) {
-  #pm-scene > section[data-scene] { padding: 11cqh 6cqh 8cqh; gap: 2.2cqh; font-size: 3.6cqh; }
+  #pm-scene > section[data-scene] { padding: 11cqh 7cqh 15cqh; gap: 2.2cqh; font-size: 3.6cqh; }
   .index { font-size: 3.5cqh; }
   .titre { font-size: 6.6cqh; line-height: 1.02; }
   .titre-moyen { font-size: 4.8cqh; line-height: 1.06; }
   .texte { font-size: 3.5cqh; }
   .sous-titre { font-size: 3.8cqh; }
-  .rangs li { grid-template-columns: 7cqh 1fr; padding: 1.4cqh 0; font-size: 3.6cqh; }
-  .rangs li::before { font-size: 3.6cqh; }
+  .rangs li { grid-template-columns: 6cqh 1fr; padding: 0.9cqh 0; font-size: 3.5cqh; }
+  .rangs li::before { font-size: 3.5cqh; }
   .chiffre-geant { font-size: 14cqh; }
   .colonnes { grid-template-columns: 1fr; gap: 3cqh; }
   .colonne-titre { font-size: 4.2cqh; }

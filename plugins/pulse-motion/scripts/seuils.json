@@ -20,5 +20,10 @@
   "grandElement": 0.25,
   "vitesseMax": 1,
   "texteFugaceBase": 0.8,
-  "texteFugaceParMot": 0.2
+  "texteFugaceParMot": 0.2,
+  "zoneHaut": 0.07,
+  "zoneBas": 0.2,
+  "zoneDroite": 0.11,
+  "zoneDroiteDebut": 0.4,
+  "zoneDroiteFin": 0.85
 }
