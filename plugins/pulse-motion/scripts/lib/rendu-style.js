@@ -5,7 +5,8 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { assembler } = require('../assembler.js');
-const { rendreDOM, trouverNavigateur } = require('./navigateur.js');
+const { trouverNavigateur } = require('./navigateur.js');
+const { mesurerPage } = require('./page-mesures.js');
 const { projetEssai } = require('./projet-essai.js');
 const { traduireConstats } = require('./rendu-controle.js');
 const SEUILS = require('../seuils.json');
@@ -25,22 +26,15 @@ async function rendreUnEssai({ dossierStyle, ratio, ton, navigateur, dossierStyl
     const { html, erreurs } = assembler({ dossier: dir, dossierStyles, ecrire: false });
     if (!html) return erreurs.map((e) => e.message);
     const familles = [...new Set(Object.values(lireJSON(path.join(dossierStyle, 'charte.json')).polices || {}).filter((f) => typeof f === 'string' && !SYSTEME.has(f)))];
-    const verification = `<script>M.pret.then(function () { return document.fonts.ready; }).then(function () {
+    const r = await mesurerPage({ html, navigateur, delai: 120000, script: `
       var chargees = []; document.fonts.forEach(function (f) { if (f.status === 'loaded') chargees.push(f.family.replace(/["']/g, '')); });
-      var r = { constats: M.mesurer({ ratio: ${JSON.stringify(ratio)}, seuils: ${JSON.stringify(SEUILS)} }), debordements: M.detecterDebordements().map(function (d) { return d.message; }), erreurs: M.erreurs.map(function (e) { return e.message || String(e); }),
-        polices: ${JSON.stringify(familles)}.filter(function (f) { return chargees.indexOf(f) < 0; }) };
-      var pre = document.createElement('pre'); pre.id = 'verification'; pre.textContent = JSON.stringify(r); document.body.appendChild(pre);
-    });</script>`;
-    const fichier = path.join(dir, 'verification.html');
-    fs.writeFileSync(fichier, html.replace('</body>', `${verification}\n</body>`));
-    let dom;
-    try { dom = await rendreDOM(navigateur, fichier); } catch (e) { return [`le navigateur n'a pas pu afficher la page (${e.message})`]; }
-    const m = /<pre id="verification">([^<]*)<\/pre>/.exec(dom);
-    if (!m) return ['la page ne s\'est pas affichée dans le navigateur'];
-    const r = JSON.parse(m[1].replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&'));
-    const constats = traduireConstats(r.constats).filter((p) => (textes === 'exemple') === (p.regle === ZONE)).map((p) => p.message);
+      return { constats: M.mesurer({ ratio: ${JSON.stringify(ratio)}, seuils: ${JSON.stringify(SEUILS)} }), debordements: M.detecterDebordements().map(function (d) { return d.message; }), erreurs: M.erreurs.map(function (e) { return e.message || String(e); }),
+        polices: ${JSON.stringify(familles)}.filter(function (f) { return chargees.indexOf(f) < 0; }) };` });
+    if (r.erreur) return [`le navigateur n'a pas pu afficher la page (${r.erreur})`];
+    const resultat = r.resultat;
+    const constats = traduireConstats(resultat.constats).filter((p) => (textes === 'exemple') === (p.regle === ZONE)).map((p) => p.message);
     if (textes === 'exemple') return constats;
-    return [...erreurs.map((e) => e.message), ...r.erreurs, ...r.debordements, ...constats, ...r.polices.map((f) => `police « ${f} » non chargée`)];
+    return [...erreurs.map((e) => e.message), ...resultat.erreurs, ...resultat.debordements, ...constats, ...resultat.polices.map((f) => `police « ${f} » non chargée`)];
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
