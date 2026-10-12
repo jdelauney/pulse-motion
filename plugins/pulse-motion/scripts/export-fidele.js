@@ -74,7 +74,8 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
 
   const travail = path.join(sortieDir, '.export');
   fs.mkdirSync(travail, { recursive: true });
-  const musique = deroule.musique ? cheminDansProjet(projet, deroule.musique.fichier) : null;
+  // Musique importée seulement (une musique générée n'a pas de fichier).
+  const musique = deroule.musique && deroule.musique.fichier ? cheminDansProjet(projet, deroule.musique.fichier) : null;
   // Empreinte des images : la page sans ses sources sonores (changer seulement un son ne refait pas les images).
   const sansSons = assemblage.html.replace(/<script type="text\/plain" id="pm-son-[a-z0-9-]+">[^<]*<\/script>/g, '');
   const empreinte = crypto.createHash('sha256').update(sansSons).update(`|${qualite}|${cadence}|${dureeSegment}`).digest('hex');
@@ -101,8 +102,8 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
     const premiere = await ouvrir();
     // Son : le mixage de la page (le même que l'aperçu), rendu une fois ; illisible : vidéo muette avec un avertissement.
     const avertissements = [];
-    if (deroule.musique && !(musique && fs.existsSync(musique))) avertissements.push(`La musique est introuvable (« ${deroule.musique.fichier} ») : vidéo exportée sans son.`);
-    else if (deroule.musique && !assemblage.html.includes('id="pm-son-musique"')) {
+    if (deroule.musique && deroule.musique.fichier && !(musique && fs.existsSync(musique))) avertissements.push(`La musique est introuvable (« ${deroule.musique.fichier} ») : vidéo exportée sans son.`);
+    else if (deroule.musique && deroule.musique.fichier && !assemblage.html.includes('id="pm-son-musique"')) {
       avertissements.push(`La musique « ${deroule.musique.fichier} » n'a pas pu être embarquée (formats acceptés : mp3, m4a, aac, wav, ogg) : vidéo exportée sans son.`);
     }
     let son = null;

@@ -4,6 +4,8 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { TYPES } = require('./contrat.js');
+const { AMBIANCES } = require('../../moteur/synthe/catalogue.js');
+const { tonaliteValide } = require('../../moteur/synthe/ambiances.js');
 
 const TYPES_SCENE = Object.keys(TYPES);
 
@@ -69,10 +71,26 @@ function validerDeroule(d) {
 
   if (d.musique !== undefined && !estObjet(d.musique)) err.push('« musique » doit être un objet.');
   else if (d.musique !== undefined) {
-    if (!estTexte(d.musique.fichier)) err.push('« musique.fichier » doit être un chemin de fichier dans assets/.');
+    const formes = ['fichier', 'generee', 'partition'].filter((k) => d.musique[k] !== undefined);
+    if (formes.length !== 1) err.push('« musique » doit avoir un seul de « fichier », « generee » ou « partition ».');
+    if (d.musique.fichier !== undefined && !estTexte(d.musique.fichier)) err.push('« musique.fichier » doit être un chemin de fichier dans assets/.');
+    if (d.musique.partition !== undefined && !estTexte(d.musique.partition)) err.push('« musique.partition » doit être le chemin d\'une partition JSON dans assets/.');
+    if (d.musique.generee !== undefined && !Object.hasOwn(AMBIANCES, d.musique.generee)) err.push(`« musique.generee » doit être l'une de : ${Object.keys(AMBIANCES).join(', ')}.`);
+    if (d.musique.tempo !== undefined && !(typeof d.musique.tempo === 'number' && d.musique.tempo >= 60 && d.musique.tempo <= 180)) err.push('« musique.tempo » doit être un nombre de battements par minute, de 60 à 180.');
+    if (d.musique.tonalite !== undefined && !tonaliteValide(d.musique.tonalite)) err.push('« musique.tonalite » doit être une tonalité : do, re, mib, fa#… suivie de « m » pour mineur (ex. « lam »).');
+    if (d.musique.intensite !== undefined && !(typeof d.musique.intensite === 'number' && d.musique.intensite >= 0 && d.musique.intensite <= 1)) err.push('« musique.intensite » doit être un nombre entre 0 et 1.');
+    if (d.musique.graine !== undefined && !(Number.isInteger(d.musique.graine) && d.musique.graine >= 0)) err.push('« musique.graine » doit être un nombre entier positif ou nul.');
     if (d.musique.volume !== undefined && !(typeof d.musique.volume === 'number' && d.musique.volume >= 0 && d.musique.volume <= 1)) {
       err.push('« musique.volume » doit être un nombre entre 0 et 1.');
     }
+    if (d.musique.generee && Object.hasOwn(AMBIANCES, d.musique.generee) && estObjet(d.tempo) && typeof d.tempo.bpm === 'number' && tempoMusique(d) !== d.tempo.bpm) {
+      err.push(`Le tempo de la musique générée (${tempoMusique(d)}) et « tempo.bpm » (${d.tempo.bpm}) diffèrent : n'en garder qu'un.`);
+    }
+  }
+  if (d.bruitages !== undefined && !estObjet(d.bruitages)) err.push('« bruitages » doit être un objet, ex. { "transitions": true }.');
+  else if (d.bruitages !== undefined) {
+    if (d.bruitages.transitions !== undefined && typeof d.bruitages.transitions !== 'boolean') err.push('« bruitages.transitions » doit valoir true ou false.');
+    if (d.bruitages.volume !== undefined && !(typeof d.bruitages.volume === 'number' && d.bruitages.volume >= 0 && d.bruitages.volume <= 1)) err.push('« bruitages.volume » doit être un nombre entre 0 et 1.');
   }
 
   if (d.tempo !== undefined && !estObjet(d.tempo)) err.push('« tempo » doit être un objet, ex. { "bpm": 120 }.');
@@ -140,8 +158,15 @@ function validerDeroule(d) {
 }
 
 /** Durée d'un temps musical en secondes (60 / bpm), ou null sans tempo. */
+/** Tempo d'une musique générée (le sien, ou celui de l'ambiance), ou null. */
+function tempoMusique(d) {
+  return d && d.musique && d.musique.generee && Object.hasOwn(AMBIANCES, d.musique.generee) ? (d.musique.tempo || AMBIANCES[d.musique.generee].tempo) : null;
+}
+
+/** Durée d'un temps musical en secondes (tempo du déroulé, sinon celui de la musique générée), ou null. */
 function dureeTemps(d) {
-  return d && d.tempo && d.tempo.bpm > 0 ? 60 / d.tempo.bpm : null;
+  const bpm = d && d.tempo && d.tempo.bpm > 0 ? d.tempo.bpm : tempoMusique(d);
+  return bpm ? 60 / bpm : null;
 }
 
 /** Lit et valide <dossier>/deroule.json. -> { deroule, erreurs } */
@@ -158,4 +183,4 @@ function lireDeroule(dossier) {
   return { deroule: d, erreurs: validerDeroule(d) };
 }
 
-module.exports = { validerDeroule, validerCharte, lireDeroule, dureeTemps, GENRES, PARCOURS, RATIOS, TRANSITIONS, TYPES_SCENE, TONS };
+module.exports = { validerDeroule, validerCharte, lireDeroule, dureeTemps, tempoMusique, GENRES, PARCOURS, RATIOS, TRANSITIONS, TYPES_SCENE, TONS };
