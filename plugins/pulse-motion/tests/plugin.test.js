@@ -140,3 +140,11 @@ test('retoucher : une scène ajoutée garde son « type » si elle vient d\'une 
   assert.match(ligne, /scène toute faite/);
   assert.match(ligne, /composée/);
 });
+
+test('creer et retoucher : le contrôle corrige seul les cas sûrs, et les corrections sont dites', () => {
+  for (const s of ['creer', 'retoucher']) {
+    const texte = lire('skills', s, 'SKILL.md');
+    assert.match(texte, /corrections/, s);
+    assert.match(texte, /sortie\/controle\.json/, s);
+  }
+});
