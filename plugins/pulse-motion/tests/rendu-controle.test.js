@@ -100,3 +100,24 @@ test('flash traduit en erreur française', () => {
   assert.equal(p.gravite, 'erreur');
   assert.equal(p.message, 'Scène « intro » : l\'image clignote 5 fois par seconde vers 1,5 s ; au-delà de 3 flashs par seconde sur une grande partie de l\'image, la vidéo peut déclencher une crise chez une personne épileptique. Ralentir ou adoucir ce clignotement.');
 });
+
+test('controlerComplet : un titre qui déborde est réduit (taille 0,85) ; un titre trop long reste une erreur avec le conseil de raccourcir', sans, async () => {
+  const preparer = (hauteur) => {
+    const dir = copierProjet('projet-simple');
+    const fichier = path.join(dir, 'scenes', '01-intro.html');
+    fs.writeFileSync(fichier, fs.readFileSync(fichier, 'utf8')
+      .replace(/(<section[^>]*>)/, '$1\n  <style>@scope { :scope { padding: 12cqh 12cqw; } }</style>')
+      .replace('<h1 id="titre"', `<h1 id="titre" style="height:${hauteur}cqh; line-height:1; overflow:hidden; margin:0"`));
+    return dir;
+  };
+  const dir = preparer(6.4);
+  const r = await controlerComplet({ dossier: dir, dossierStyles: STYLES });
+  assert.ok(r.corrections.some((c) => c.regle === 'debordement' && c.apres === 0.85), JSON.stringify(r.corrections));
+  assert.equal(r.problemes.some((p) => p.regle === 'debordement'), false, JSON.stringify(r.problemes));
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(dir, 'deroule.json'), 'utf8')).scenes[0].ajustements, { titre: { taille: 0.85 } });
+  const trop = preparer(3);
+  const r2 = await controlerComplet({ dossier: trop, dossierStyles: STYLES });
+  const p = r2.problemes.find((x) => x.regle === 'debordement');
+  assert.ok(p, JSON.stringify(r2.problemes));
+  assert.match(p.message, /raccourcir le texte/);
+});

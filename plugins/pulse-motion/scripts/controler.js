@@ -368,6 +368,7 @@ async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.j
   const projet = path.resolve(dossier);
   const r = controler({ dossier: projet, dossierStyles, dossierEffets, ecrire, corriger });
   let { problemes } = r;
+  let corrections = r.corrections;
   let renduVerifie = false;
   if (rendu) {
     const assemblage = assembler({ dossier: projet, dossierStyles, dossierEffets, ecrire: false });
@@ -381,10 +382,24 @@ async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.j
       // Le rendu remplace le rapport de débordement de l'aperçu (même page, plus récent).
       if (renduVerifie) problemes = problemes.filter((p) => p.regle !== 'debordement');
       problemes = [...problemes, ...v.problemes];
+      if (corriger && renduVerifie) {
+          const corrigibles = v.ajustements.filter((a) => a.taille);
+          if (corrigibles.length) {
+            const appli = appliquerCorrections(projet, corrigibles.map((a) => ({ regle: 'debordement', correction: { scene: a.scene, ajustement: { cle: a.cle, taille: a.taille } } })), { copieFaite: r.corrections.length > 0 });
+            corrections = [...corrections, ...appli.corrections];
+            const corriges = new Set(appli.corrections.map((c) => `${c.scene}|${c.element}`));
+            problemes = problemes.filter((p) => !(p.regle === 'debordement' && corrigibles.some((a) => a.scene === p.scene && a.element === p.element && corriges.has(`${a.scene}|${a.cle}`))));
+            if (appli.corrections.length && ecrire) assembler({ dossier: projet, dossierStyles, dossierEffets, ecrire: true });
+            if (appli.erreur) problemes.push({ regle: 'correction-impossible', gravite: 'alerte', message: appli.erreur });
+          }
+          // Débordement que la taille ne suffit pas à corriger : le conseil de raccourcir.
+          problemes = problemes.map((p) => (p.regle === 'debordement' && v.ajustements.some((a) => a.scene === p.scene && a.element === p.element && a.taille === null)
+            ? { ...p, message: `${p.message} Même réduit à 80 %, il ne tient pas : raccourcir le texte.` } : p));
+      }
     }
   }
-  if (r.fichier) fs.writeFileSync(r.fichier, JSON.stringify({ problemes, corrections: r.corrections, renduVerifie }, null, 2));
-  return { problemes, corrections: r.corrections, renduVerifie, fichier: r.fichier };
+  if (r.fichier) fs.writeFileSync(r.fichier, JSON.stringify({ problemes, corrections, renduVerifie }, null, 2));
+  return { problemes, corrections, renduVerifie, fichier: r.fichier };
 }
 
 if (require.main === module) {

@@ -11,7 +11,8 @@ const RAISONS = { lecture: 'temps de lecture', 'pause-finale': 'image stable à 
 const quoi = (p) => (p.regle === 'typographie' ? `typographie française${p.details ? ` (${p.details})` : ''}` : p.details || 'majuscule accentuée');
 
 /** problemes (ceux qui portent `correction`) -> { corrections, erreur? } */
-function appliquerCorrections(projet, problemes) {
+/** copieFaite : une copie d'historique a déjà été prise pour ce passage (une seule par passage). */
+function appliquerCorrections(projet, problemes, { copieFaite = false } = {}) {
   const fichier = path.join(projet, 'deroule.json');
   const brut = JSON.parse(fs.readFileSync(fichier, 'utf8').replace(/^\ufeff/, ''));
   const scene = (id) => (brut.scenes || []).find((s) => s.id === id);
@@ -28,6 +29,12 @@ function appliquerCorrections(projet, problemes) {
       s.textes[c.texte] = c.valeur;
       corrections.push({ regle: p.regle, scene: c.scene, element: c.texte, avant, apres: c.valeur,
         message: `Scène « ${c.scene} », texte « ${c.texte} » : ${quoi(p)}.` });
+    } else if (c.ajustement && typeof c.ajustement.taille === 'number') {
+      const s = scene(c.scene);
+      const avant = s.ajustements && s.ajustements[c.ajustement.cle] ? s.ajustements[c.ajustement.cle].taille : 1;
+      s.ajustements = { ...(s.ajustements || {}), [c.ajustement.cle]: { taille: c.ajustement.taille } };
+      corrections.push({ regle: p.regle, scene: c.scene, element: c.ajustement.cle, avant, apres: c.ajustement.taille,
+        message: `Scène « ${c.scene} », texte « ${c.ajustement.cle} » : taille réduite à ${Math.round(c.ajustement.taille * 100)} % (le texte débordait de son cadre).` });
     } else if (typeof c.duree === 'number') {
       const deja = durees.get(c.scene);
       if (!deja || c.duree > deja.correction.duree) durees.set(c.scene, p);
@@ -45,7 +52,7 @@ function appliquerCorrections(projet, problemes) {
   const temporaire = `${fichier}.${process.pid}.tmp`;
   let copie = null;
   try {
-    copie = sauvegarder(projet).dossier;
+    copie = copieFaite ? null : sauvegarder(projet).dossier;
     fs.writeFileSync(temporaire, JSON.stringify(brut, null, 2));
     fs.renameSync(temporaire, fichier);
   } catch (e) {
