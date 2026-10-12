@@ -1,0 +1,11 @@
+<!-- Scène toute faite « conclusion » (style energique) : l'appel à l'action et le logo. Durée conseillée : 5 s.
+     Textes : titre (≤ 28 car.), sous (≤ 40 car.). Logo : celui de la charte (sinon supprimer l'image).
+     Dernière scène de la vidéo : data-dur du décor = durée de la scène − 1 s (image stable d'au moins 0,5 s à la fin). -->
+<section data-scene="conclusion" class="centre">
+  <div class="decor">
+    <span class="bandes" data-decor data-start="0" data-dur="4" data-tween="--x 0cqh→-28cqh linear"></span>
+  </div>
+  <h2 id="titre" class="cri tombe" data-texte="titre" data-start="0.1" data-dur="0.7"></h2>
+  <p id="sous" class="bandeau volet" data-texte="sous" data-start="#titre:fin+0.1" data-dur="0.45"></p>
+  <img id="logo" class="logo claque" data-logo alt="" data-start="#sous:fin+0.2" data-dur="0.45">
+</section>

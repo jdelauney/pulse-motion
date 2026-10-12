@@ -1,0 +1,14 @@
+<!-- Scène toute faite « liste » (style energique) : 2 à 4 points qui tombent un par un. Durée conseillée : 10 s.
+     Textes : titre (≤ 28 car.), point1 … point4 (≤ 32 car.). Moins de 4 points : supprimer les points en trop. -->
+<section data-scene="liste">
+  <div class="decor">
+    <span class="bandes" data-decor data-start="0" data-dur="10" data-tween="--x 0cqh→-42cqh linear"></span>
+  </div>
+  <h2 id="titre" class="cri-moyen claque" data-texte="titre" data-start="0.1" data-dur="0.45"></h2>
+  <ol class="pile">
+    <li id="point1" class="tombe" data-texte="point1" data-start="#titre:fin+0.2" data-dur="0.7"></li>
+    <li id="point2" class="tombe" data-texte="point2" data-start="#point1:fin+0.4" data-dur="0.7"></li>
+    <li id="point3" class="tombe" data-texte="point3" data-start="#point2:fin+0.4" data-dur="0.7"></li>
+    <li id="point4" class="tombe" data-texte="point4" data-start="#point3:fin+0.4" data-dur="0.7"></li>
+  </ol>
+</section>
