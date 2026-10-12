@@ -97,7 +97,7 @@ async function exporterVideo({
 
   const suivi = path.join(projet, 'sortie', 'export.json');
   fs.rmSync(suivi, { force: true });
-  const adresse = `${url}?${ids ? `planche=${ids.map(encodeURIComponent).join(',')}` : 'export=1'}`;
+  const adresse = `${url}?${ids ? `planche=${ids.map(encodeURIComponent).join(',')}` : `export=1${avecProvisoire ? '&provisoire=1' : ''}`}`;
   const images = Math.round(deroule.scenes.reduce((t, s) => t + s.duree / (s.rythme || 1), 0) * ((deroule.format && deroule.format.ips) || 30));
   const limite = Date.now() + (delaiMax || (120 + images * 0.5) * 1000);
   const limiteDemarrage = Date.now() + delaiDemarrage;

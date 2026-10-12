@@ -10,7 +10,7 @@ const { STYLES } = require('./projet.js');
 const DONNEES = /(<script type="application\/json" id="pm-donnees">)([\s\S]*?)(<\/script>)/;
 
 /** -> page CDP (aller, evaluer, fermer…) ouverte sur la page du projet, après M.pret. */
-async function ouvrirPageSon({ dir, navigateur, modifier, sons = {} }) {
+async function ouvrirPageSon({ dir, navigateur, modifier, sons = {}, prelude = '' }) {
   const r = assembler({ dossier: dir, dossierStyles: STYLES, ecrire: false });
   if (!r.ok) throw new Error(r.erreurs.map((e) => e.message).join(' '));
   let html = r.html.replace(DONNEES, (_, a, json, b) => {
@@ -18,6 +18,8 @@ async function ouvrirPageSon({ dir, navigateur, modifier, sons = {} }) {
     if (modifier) modifier(d);
     return a + JSON.stringify(d).replace(/</g, '\\u003c') + b;
   });
+  // prelude : script exécuté avant le moteur (ex. erreurs transmises par l'aperçu).
+  if (prelude) html = html.replace('</head>', `<script>${prelude}</script>\n</head>`);
   const blocs = Object.entries(sons).map(([id, octets]) => `<script type="text/plain" id="${id}">data:audio/wav;base64,${octets.toString('base64')}</script>`);
   html = html.replace('<script type="application/json" id="pm-donnees">', `${blocs.join('\n')}\n<script type="application/json" id="pm-donnees">`);
   const fichier = path.join(dir, 'page-son.html');
