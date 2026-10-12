@@ -77,3 +77,32 @@ test('SRT et VTT', () => {
   assert.equal(S.versSRT(c), '1\n00:00:01,250 --> 00:00:03,000\nBonjour à\ntous\n\n2\n00:01:01,500 --> 01:02:03,004\nFin\n');
   assert.equal(S.versVTT(c), 'WEBVTT\n\n00:00:01.250 --> 00:00:03.000\nBonjour à\ntous\n\n00:01:01.500 --> 01:02:03.004\nFin\n');
 });
+
+test('revue : guillemets et tiret ouvrants gardés, rattachés au mot suivant', () => {
+  const ms = S.motsDeScene({ debut: 0, fin: 10, texte: '« Vraiment ? » Oui ! — Il répète « gardez vos produits » au froid.', voix: null });
+  assert.equal(ms.map((m) => m.w).join(' '), '« Vraiment ? » Oui ! — Il répète « gardez vos produits » au froid.');
+  assert.ok(!ms.some((m) => /^[«—]$/.test(m.w)), JSON.stringify(ms.map((m) => m.w)));
+});
+
+test('revue : phrases très courtes regroupées dans un carton lisible', () => {
+  const s = { id: 'a', debut: 0, fin: 10, mots: [...mots('Vite.', 0, 0.33), ...mots('Très vite.', 0.6, 0.33)] };
+  const c = S.cartons([s], { ratio: '16:9' });
+  assert.equal(c.length, 1, JSON.stringify(c.map(texteDe)));
+  assert.ok(c[0].fin - c[0].debut >= 1.25);
+});
+
+test('revue : pas de ligne orpheline (ligne très courte) au milieu d\'une phrase', () => {
+  const c = S.cartons([scene('Il faut jeter un aliment surtout quand il est resté longtemps à température ambiante dans la cuisine.')], { ratio: '9:16' });
+  const lignes = c.flatMap(texteDe);
+  for (const l of lignes.slice(0, -1)) assert.ok(l.length >= 12, JSON.stringify(lignes));
+});
+
+test('revue : 0,1 s d\'écart aussi entre la fin d\'une scène et la suivante (transition qui chevauche)', () => {
+  const c = S.cartons([scene('Première scène ici.', 0, 4, 1.3), { id: 'b', debut: 3.5, fin: 8, mots: mots('Deuxième scène.', 3.7) }], { ratio: '16:9' });
+  assert.ok(c[0].fin <= c[1].debut - 0.1 + 1e-9, JSON.stringify(c.map((x) => [x.debut, x.fin])));
+});
+
+test('revue : 9:16 : 28 caractères au plus par ligne', () => {
+  const c = S.cartons([scene('Pour garder les aliments en bonne santé il faut respecter la chaîne du froid jusqu\'à votre assiette')], { ratio: '9:16' });
+  for (const l of c.flatMap(texteDe)) assert.ok(l.length <= 28, l);
+});

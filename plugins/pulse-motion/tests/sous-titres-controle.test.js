@@ -50,3 +50,49 @@ test('contraste des sous-titres lu aux pixels (sous-titres blancs sans bandeau s
   assert.equal(r.renduVerifie, true, JSON.stringify(r.problemes));
   assert.ok(r.problemes.some((p) => p.regle === 'contraste-reel' && p.element === 'sous-titres'), JSON.stringify(r.problemes.map((p) => [p.regle, p.element])));
 });
+
+function projetVertical() {
+  const dir = copierProjet('projet-simple');
+  modifierDeroule(dir, (d) => { d.format.ratio = '9:16'; d.sousTitres = {}; d.scenes[0].voix = { texte: 'Rangez immédiatement vos courses dans le réfrigérateur en rentrant.' }; });
+  return dir;
+}
+const GEOMETRIE = `(function () {
+  var scene = document.getElementById('pm-scene').getBoundingClientRect();
+  for (var t = 0.3; t < M.duree; t += 0.2) {
+    M.rendre(t);
+    var carton = document.querySelector('#pm-sous-titres .pm-st-carton');
+    if (!carton) continue;
+    var rc = carton.getBoundingClientRect();
+    var debord = Array.prototype.some.call(carton.querySelectorAll('[data-pm-st]'), function (l) { return l.scrollWidth > carton.clientWidth + 1; });
+    return { droite: (rc.right - scene.left) / scene.width, gauche: (rc.left - scene.left) / scene.width, debord: debord };
+  }
+  return null;
+})()`;
+
+test('revue : 9:16 par défaut : lignes contenues dans leur carton, carton hors de la colonne des boutons, aucune alerte', sans, async () => {
+  const page = await ouvrirPageSon({ dir: projetVertical(), navigateur });
+  try {
+    const g = await page.evaluer(GEOMETRIE);
+    assert.ok(g, 'aucun carton affiché');
+    assert.equal(g.debord, false);
+    assert.ok(g.droite <= 0.89 && g.gauche >= 0.04, JSON.stringify(g));
+    const c = await page.evaluer('M.mesurer({ ratio: "9:16" })');
+    assert.ok(!c.some((x) => x.element === 'sous-titres'), JSON.stringify(c.filter((x) => x.element === 'sous-titres')));
+  } finally { await page.fermer(); }
+});
+
+test('revue : 9:16 : un carton poussé dans la colonne des boutons ou contre le bord est signalé', sans, async () => {
+  const prelude = 'window.addEventListener("load", function () { var s = document.createElement("style"); s.textContent = "#pm-scene .pm-st-carton { max-width: none !important; width: 99% !important; }"; document.head.appendChild(s); });';
+  const page = await ouvrirPageSon({ dir: projetVertical(), navigateur, prelude });
+  try {
+    const c = await page.evaluer('M.mesurer({ ratio: "9:16" })');
+    assert.ok(c.some((x) => x.regle === 'zone-sure' && x.element === 'sous-titres' && x.valeur === 'droite'), JSON.stringify(c));
+    assert.ok(c.some((x) => x.regle === 'marge' && x.element === 'sous-titres'), JSON.stringify(c));
+  } finally { await page.fermer(); }
+});
+
+test('revue : zone-sure sur les sous-titres : conseil propre aux sous-titres', () => {
+  const [p] = traduireConstats([{ regle: 'zone-sure', scene: 'intro', element: 'sous-titres', instant: 1, valeur: 'droite' }]);
+  assert.match(p.message, /sous-titres passent sous les boutons.*--pm-st-largeur/);
+  assert.doesNotMatch(p.message, /retirer un point/);
+});

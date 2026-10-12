@@ -205,3 +205,15 @@ test('revue : musique dans un format non embarquable (.flac) : avertissement, vi
   assert.equal(r.audio, false);
   assert.match(r.avertissement, /musique « assets\/musique\.flac » n'a pas pu être embarquée/);
 });
+
+test('revue : l\'export fidèle écrit les sous-titres du texte actuel (sans passer par l\'aperçu)', sans, async () => {
+  const dir = copierProjet('projet-simple');
+  modifierDeroule(dir, (d) => { d.sousTitres = {}; d.scenes[0].voix = { texte: 'Un texte ancien.' }; });
+  require('../scripts/assembler.js').assembler({ dossier: dir, dossierStyles: STYLES });
+  modifierDeroule(dir, (d) => { d.scenes[0].voix.texte = 'Un texte retouché.'; });
+  const r = await exporter(dir, { ips: 5 });
+  assert.equal(r.ok, true, r.message);
+  const srt = fs.readFileSync(path.join(dir, 'sortie', 'la-chaine-du-froid.srt'), 'utf8');
+  assert.match(srt, /Un texte retouché\./);
+  assert.match(fs.readFileSync(path.join(dir, 'sortie', 'la-chaine-du-froid.vtt'), 'utf8'), /Un texte retouché\./);
+});
