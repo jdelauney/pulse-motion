@@ -7,7 +7,7 @@
 - Signature : galets qui respirent (`.galet`, animation calée sur le temps), entrées douces qui s'arrêtent net (`quint-out`), rayons généreux.
 - Partir d'une des **8 scènes toutes faites** : `pulse-motion scene chaleureux <type>`, copier dans `scenes/NN-<id>.html`, remplacer `data-scene="<type>"` par l'id de la scène.
 - Décor : les galets (`data-decor`) dérivent pendant toute la scène : leur `data-dur` = durée de la scène. Sur la **dernière scène** de la vidéo, durée − 1 s : la vidéo doit finir sur une image stable d'au moins 0,5 s.
-- Formats 16:9, 1:1 et 9:16. Ton clair seulement.
+- Formats 16:9, 1:1, 4:5 et 9:16. Ton clair seulement.
 - Transitions : `fondu`, `glissement`.
 
 ## Scènes toutes faites

@@ -33,7 +33,7 @@ Le sujet vient de l'argument ; sinon, le demander d'abord en une question ouvert
 3. **Parcours** : Rapide (Recommandé) – « je valide seulement le déroulé » · Accompagné – « je valide aussi le style et la vidéo finale ».
 4. **À ajouter** (choix multiple) : mon logo et mes couleurs · une musique (fichier) · rien pour l'instant.
 
-Le genre se déduit du sujet (formation, produit, storytelling, social). Format : 16:9, sauf genre `social` → 9:16.
+Le genre se déduit du sujet (formation, produit, storytelling, social). Format : 16:9, sauf genre `social` → 9:16 (4:5 si la personne vise le fil LinkedIn ou Instagram).
 Puis `pulse-motion etat . --parcours rapide|accompagne`.
 
 La charte (logo, couleurs, polices) vit dans `charte/` du projet ; la musique dans `assets/`. Les fichiers se demandent à la personne (chemin ou glisser-déposer) et se **copient**.
@@ -41,7 +41,7 @@ La charte (logo, couleurs, polices) vit dans `charte/` du projet ; la musique da
 - Logo : le copier dans `charte/logo.<ext>`, puis `pulse-motion charte depuis-logo charte/logo.<ext> --style <style>` (style recommandé, étape 2) : couleur primaire et couleur d'accent, déjà rendues lisibles sur le fond du style. Les écrire dans `charte/charte.json` (`{ "couleurs": { "primaire": "…", "accent": "…" }, "logo": "logo.<ext>" }`) et dire les `ajustements` en une phrase. Logo en JPEG ou WebP : demander un PNG ou un SVG. Pas de couleur exploitable : garder les couleurs du style et le dire.
 - Couleurs en mots (« bleu marine ») : les traduire en `#rrggbb` dans `charte/charte.json` et le dire.
 - Police citée sans fichier (« ma police, c'est Montserrat ») : `pulse-motion police "<famille>"` la récupère depuis Bunny Fonts dans `charte/polices/` ; si elle n'y est pas, garder la plus proche des polices du style (celles de son guide ; pour `clair-pedagogique`, Figtree pour les titres, Inter pour le texte) et le dire. Fichier fourni : `pulse-motion police <fichier> --style <style> --role titres|texte` (le rôle qu'elle prend dans la charte) ; réponse `aConfirmer` : poser la question à la personne, puis relancer avec `--confirmer` ; `avertissements` (caractères absents, avec la police du style à utiliser à la place) : les dire. Puis l'indiquer dans `charte/charte.json` (`"polices": { "titres": "<famille>" }`).
-- Musique : copier le fichier dans `assets/`.
+- Musique : copier le fichier dans `assets/`. Si la personne connaît son tempo (ou le titre l'indique : « 120 bpm »), l'écrire dans le déroulé (`"tempo": { "bpm": 120 }`) : les animateurs caleront les entrées sur les temps.
 
 ## 2. Déroulé et style
 
@@ -67,7 +67,7 @@ La charte (logo, couleurs, polices) vit dans `charte/` du projet ; la musique da
 }
 ```
 
-`charte` du déroulé ne garde que les réglages ponctuels (`ton` : `clair`, `sombre` ou `auto` ; une couleur à changer pour cette vidéo seulement) ; la charte elle-même est dans `charte/`. `charte` et `musique` sont facultatifs. Clés de `textes` : celles de la scène toute faite (`pulse-motion reference styles/<style>`).
+`charte` du déroulé ne garde que les réglages ponctuels (`ton` : `clair`, `sombre` ou `auto` ; une couleur à changer pour cette vidéo seulement) ; la charte elle-même est dans `charte/`. `charte`, `musique` et `tempo` sont facultatifs. Clés de `textes` : celles de la scène toute faite (`pulse-motion reference styles/<style>`).
 
 ## 3. Fabrication
 

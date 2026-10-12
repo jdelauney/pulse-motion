@@ -7,7 +7,7 @@
 - Signature : `.ecrit` révèle le texte avec `--p` (durée de l'élément = vitesse de frappe), `.curseur` ajoute le curseur qui clignote, `.lumineux` donne l'accent lumineux.
 - Partir d'une des **8 scènes toutes faites** : `pulse-motion scene tech-sombre <type>`, copier dans `scenes/NN-<id>.html`, remplacer `data-scene="<type>"` par l'id de la scène.
 - Décor : la grille (`.grille`, `data-decor`) glisse pendant toute la scène : son `data-dur` = durée de la scène. Sur la **dernière scène** de la vidéo, durée − 1 s : la vidéo doit finir sur une image stable d'au moins 0,5 s.
-- Formats 16:9, 1:1 et 9:16. Ton sombre par défaut ; ton clair sur demande, ou choisi seul (`auto`) quand les couleurs de la marque sont foncées.
+- Formats 16:9, 1:1, 4:5 et 9:16. Ton sombre par défaut ; ton clair sur demande, ou choisi seul (`auto`) quand les couleurs de la marque sont foncées.
 - Transitions : `fondu`, `glissement`.
 
 ## Scènes toutes faites
