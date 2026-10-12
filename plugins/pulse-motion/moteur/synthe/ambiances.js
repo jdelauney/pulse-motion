@@ -66,7 +66,10 @@
     var mesure = P.dureeMesure(tempo);
     var mesures = Math.max(1, Math.ceil(o.duree / mesure));
     var scenes = o.scenes && o.scenes.length ? o.scenes : [{ debut: 0, fin: o.duree }];
-    var corps = Math.max(0, mesures - 1);   // la dernière mesure porte l'accord final
+    // Accord final : la dernière mesure, ou les deux dernières si la vidéo finit en début de mesure (accord audible).
+    var reste = o.duree - (mesures - 1) * mesure;
+    var mesuresFinales = mesures >= 2 && reste < mesure / 2 ? 2 : 1;
+    var corps = Math.max(0, mesures - mesuresFinales);
     var intro = Math.min(corps, Math.max(0, Math.round(scenes[0].fin / mesure)));
     var progression = recette.progressions[Math.floor(hasard() * recette.progressions.length)];
     var nom = P.nomDeMidi;
@@ -125,15 +128,24 @@
         pistes.push({ instrument: 'charleston', volume: 0.35, motif: ['- 1/8', 'x 1/8 0.7'], de: intro, a: corps });
         if (o.ambiance !== 'suspense') pistes.push({ instrument: 'caisse', volume: 0.5, motif: ['- 1/4', 'x 1/4'], de: intro, a: corps });
       }
-      // Montée sur la dernière seconde de l'avant-dernière scène.
+      // Montée sur la dernière seconde de l'avant-dernière scène, au seizième de mesure près.
       if (scenes.length >= 2) {
-        var tMontee = Math.max(0, scenes[scenes.length - 2].fin - 1);
-        var mesureMontee = Math.floor(tMontee / mesure);
-        if (mesureMontee < corps) pistes.push({ instrument: 'riser', volume: 0.5, motif: ['x 1'], de: mesureMontee, a: mesureMontee + 1 });
+        var frontiere = scenes[scenes.length - 2].fin;
+        var longueur = Math.min(1, mesure);
+        var debutMontee = frontiere - longueur;
+        if (debutMontee >= 0) {
+          var mesureMontee = Math.floor(debutMontee / mesure);
+          var avant = Math.round(16 * (debutMontee - mesureMontee * mesure) / mesure);
+          var duree16 = Math.max(1, Math.round(16 * longueur / mesure));
+          var fin = mesureMontee + Math.ceil((avant + duree16) / 16);
+          var apres = 16 * (fin - mesureMontee) - avant - duree16;
+          var motifMontee = (avant ? ['- ' + avant + '/16'] : []).concat(['x ' + duree16 + '/16'], apres ? ['- ' + apres + '/16'] : []);
+          if (fin <= corps) pistes.push({ instrument: 'riser', volume: 0.5, motif: motifMontee, de: mesureMontee, a: fin });
+        }
       }
     }
-    // Accord final : tonique tenue sur la dernière mesure.
-    pistes.push({ instrument: 'pad', volume: 0.55, motif: [accord(tonique, gamme, 1).map(nom).join('+') + ' 1'], de: mesures - 1, a: mesures });
+    // Accord final : tonique tenue jusqu'à la fin de la vidéo.
+    pistes.push({ instrument: 'pad', volume: 0.55, motif: [accord(tonique, gamme, 1).map(nom).join('+') + ' ' + mesuresFinales], de: mesures - mesuresFinales, a: mesures });
     return { tempo: tempo, tonalite: tonalite, mesures: mesures, pistes: pistes };
   }
 

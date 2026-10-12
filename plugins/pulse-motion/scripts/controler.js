@@ -201,9 +201,9 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
     if (temps) {
       const tolerance = 0.5 / (deroule.format.ips || 30);
       for (const s of min.scenes.slice(1)) {
-        const ecart = (s.debut - (deroule.tempo.decalage || 0)) / temps;
+        const ecart = (s.debut - ((deroule.tempo && deroule.tempo.decalage) || 0)) / temps;
         if (Math.abs(ecart - Math.round(ecart)) * temps > tolerance) {
-          problemes.push({ regle: 'hors-tempo', gravite: 'alerte', scene: s.id, message: `Scène « ${s.id} » : elle commence à ${virgule(s.debut)} s, entre deux temps (${deroule.tempo.bpm} bpm) ; ajuster la durée de la scène précédente pour tomber sur la musique.` });
+          problemes.push({ regle: 'hors-tempo', gravite: 'alerte', scene: s.id, message: `Scène « ${s.id} » : elle commence à ${virgule(s.debut)} s, entre deux temps (${Math.round(60 / temps)} bpm) ; ajuster la durée de la scène précédente pour tomber sur la musique.` });
         }
       }
     }

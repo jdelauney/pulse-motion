@@ -61,6 +61,22 @@
     return contexte.decodeAudioData(octets);
   }
 
+  /**
+   * Évènements créés par fenêtres de 4 s : le rendu s'arrête une seconde avant chaque fenêtre (suspend), crée les
+   * nœuds de ses notes, puis reprend. Créer tous les nœuds d'avance rendrait le calcul quadratique en la durée.
+   */
+  var FENETRE = 4;
+  function planifierParFenetres(contexte, evenements, duree, jouer) {
+    var k = 0;
+    function jusqua(fin) { while (k < evenements.length && evenements[k].t < fin) jouer(evenements[k++]); }
+    jusqua(FENETRE);
+    for (var w = FENETRE; w < duree; w += FENETRE) {
+      (function (debut) {
+        contexte.suspend(debut - 1).then(function () { jusqua(debut + FENETRE); contexte.resume(); });
+      })(w);
+    }
+  }
+
   function automatiser(param, points) {
     param.setValueAtTime(points[0].v, 0);
     for (var i = 1; i < points.length; i++) param.linearRampToValueAtTime(points[i].v, points[i].t);
@@ -109,7 +125,7 @@
           musique.start(0);
         } else {
           var bruit = M.synthe.bruit(contexte, 4242);
-          M.synthe.partition.evenements(d.musique.partition, { duree: duree }).forEach(function (e) { M.synthe.instruments.jouer(contexte, entree, e, bruit); });
+          planifierParFenetres(contexte, M.synthe.partition.evenements(d.musique.partition, { duree: duree }), duree, function (e) { M.synthe.instruments.jouer(contexte, entree, e, bruit); });
         }
         var fondus = contexte.createGain();
         automatiser(fondus.gain, X.pointsFondus(duree, 1));
