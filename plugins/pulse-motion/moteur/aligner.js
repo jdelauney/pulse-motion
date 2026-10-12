@@ -77,5 +77,124 @@
     });
   }
 
-  return { normaliserMot: normaliserMot, decouperMots: decouperMots, calageApproche: calageApproche, groupesParole: groupesParole };
+  var UNITES = ['zero', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf', 'dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize'];
+  var DIZAINES = { 2: 'vingt', 3: 'trente', 4: 'quarante', 5: 'cinquante', 6: 'soixante' };
+
+  /** 0–100 en lettres, forme normalisée (sans espaces ni traits d'union). */
+  function nombreEnLettres(n) {
+    if (n < 17) return UNITES[n];
+    if (n < 20) return 'dix' + UNITES[n - 10];
+    if (n < 70) { var r = n % 10; return DIZAINES[Math.floor(n / 10)] + (r === 1 ? 'etun' : r ? UNITES[r] : ''); }
+    if (n < 80) return 'soixante' + (n === 71 ? 'etonze' : nombreEnLettres(n - 60));
+    if (n === 80) return 'quatrevingts';
+    if (n < 100) return 'quatrevingt' + nombreEnLettres(n - 80);
+    return 'cent';
+  }
+
+  /** Clé de comparaison : un nombre de 0 à 100 écrit en chiffres devient sa forme en lettres. */
+  function cleComparee(cle) {
+    return /^\d+$/.test(cle) && Number(cle) <= 100 ? nombreEnLettres(Number(cle)) : cle;
+  }
+
+  function distance(a, b) {
+    var d = [], i, j;
+    for (i = 0; i <= a.length; i++) d.push([i]);
+    for (j = 1; j <= b.length; j++) d[0][j] = j;
+    for (i = 1; i <= a.length; i++) {
+      for (j = 1; j <= b.length; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+    return d[a.length][b.length];
+  }
+
+  /** Même mot : clés égales (nombres compris), ou une lettre d'écart pour des mots de plus de 4 lettres. */
+  function memeMot(a, b) {
+    var x = cleComparee(a), y = cleComparee(b);
+    return x === y || (x.length > 4 && y.length > 4 && distance(x, y) <= 1);
+  }
+
+  /**
+   * Mots du script calés sur les mots entendus (transcription) : distance d'édition sur les mots, retour arrière.
+   * Les mots appariés (égaux ou substitués) prennent les temps entendus ; les autres sont interpolés au prorata des
+   * lettres entre leurs voisins. -> { mots, reconnus } | null si aucun mot n'est égal.
+   */
+  function aligner(texte, entendus) {
+    var script = decouperMots(texte);
+    var oui = [];
+    (entendus || []).forEach(function (h) {
+      var dec = decouperMots(h.w);
+      if (dec.length) oui.push({ cle: dec[0].cles[0], t0: h.t0, t1: h.t1 });
+    });
+    var n = script.length, m = oui.length, i, j;
+    if (!n || !m) return null;
+    var D = [];
+    for (i = 0; i <= n; i++) { D.push(new Array(m + 1)); D[i][0] = i; }
+    for (j = 0; j <= m; j++) D[0][j] = j;
+    for (i = 1; i <= n; i++) {
+      for (j = 1; j <= m; j++) {
+        var c = memeMot(script[i - 1].cles[0], oui[j - 1].cle) ? 0 : 1;
+        D[i][j] = Math.min(D[i - 1][j - 1] + c, D[i - 1][j] + 1, D[i][j - 1] + 1);
+      }
+    }
+    var paire = new Array(n), egaux = 0;
+    i = n; j = m;
+    while (i > 0 && j > 0) {
+      var cout = memeMot(script[i - 1].cles[0], oui[j - 1].cle) ? 0 : 1;
+      if (D[i][j] === D[i - 1][j - 1] + cout) { paire[i - 1] = oui[j - 1]; if (!cout) egaux++; i--; j--; }
+      else if (D[i][j] === D[i - 1][j] + 1) i--;
+      else j--;
+    }
+    if (!egaux) return null;
+    var mots = script.map(function (s, k) { return paire[k] ? { w: s.w, t0: paire[k].t0, t1: paire[k].t1 } : { w: s.w, t0: null, t1: null }; });
+    // Mots sans paire : répartis entre la fin du mot précédent et le début du suivant, au prorata des lettres.
+    for (var k = 0; k < n; k++) {
+      if (mots[k].t0 !== null) continue;
+      var a = k;
+      while (a < n && mots[a].t0 === null) a++;
+      var avant = k > 0 ? mots[k - 1].t1 : (a < n ? Math.max(0, mots[a].t0 - 0.3 * (a - k)) : 0);
+      var apres = a < n ? mots[a].t0 : avant + 0.3 * (a - k);
+      var total = 0, cumul = 0, q;
+      for (q = k; q < a; q++) total += lettres(script[q]);
+      for (q = k; q < a; q++) {
+        var t0 = avant + (apres - avant) * cumul / total;
+        cumul += lettres(script[q]);
+        mots[q].t0 = Math.round(t0 * 1000) / 1000;
+        mots[q].t1 = Math.round((avant + (apres - avant) * cumul / total) * 1000) / 1000;
+      }
+      k = a - 1;
+    }
+    return { mots: mots, reconnus: egaux };
+  }
+
+  /**
+   * Enregistrement unique -> une plage par texte de scène, coupée au milieu du silence entre le dernier mot d'une
+   * scène et le premier de la suivante. -> [{ debut, fin, mots (temps de l'enregistrement), reconnus, total }] | null
+   */
+  function decouperEnScenes(textes, entendus, duree) {
+    var r = aligner(textes.join(' '), entendus);
+    if (!r) return null;
+    var scenes = [], k = 0;
+    textes.forEach(function (t) {
+      var nb = decouperMots(t).length;
+      scenes.push({ mots: r.mots.slice(k, k + nb), total: nb });
+      k += nb;
+    });
+    var coupes = [0];
+    for (var i = 1; i < scenes.length; i++) {
+      var precedents = scenes[i - 1].mots, suivants = scenes[i].mots;
+      var a = precedents.length ? precedents[precedents.length - 1].t1 : coupes[i - 1];
+      var b = suivants.length ? suivants[0].t0 : a;
+      coupes.push(Math.round((a + Math.max(a, b)) / 2 * 1000) / 1000);
+    }
+    coupes.push(duree);
+    return scenes.map(function (s, i) {
+      var debut = coupes[i], fin = coupes[i + 1];
+      // Mots reconnus de la scène : son texte réaligné sur les mots entendus de sa plage seulement.
+      var dedans = entendus.filter(function (h) { return h.t0 >= debut - 1e-9 && h.t1 <= fin + 1e-9; });
+      var seule = aligner(textes[i], dedans);
+      return { debut: debut, fin: fin, mots: s.mots, reconnus: seule ? seule.reconnus : 0, total: s.total };
+    });
+  }
+
+  return { normaliserMot: normaliserMot, decouperMots: decouperMots, calageApproche: calageApproche, groupesParole: groupesParole,
+    nombreEnLettres: nombreEnLettres, aligner: aligner, decouperEnScenes: decouperEnScenes };
 });
