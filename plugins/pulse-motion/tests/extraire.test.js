@@ -45,3 +45,10 @@ test('textes écrits en dur dans une scène : sans commentaires, styles, scripts
   const html = '<!-- Durée : 8 s --><section><style>.a{}</style><h1 data-texte="titre">Provisoire</h1><p>Attention!</p><p>0</p><span>Voir&nbsp;:</span><script>x()</script></section>';
   assert.deepEqual(textesEnDur(html), ['Attention!', 'Voir\u00a0:']);
 });
+
+test('revue : entités HTML décodées (numériques et nommées courantes) avant le contrôle', () => {
+  const { textesEnDur } = require('../scripts/lib/extraire.js');
+  assert.deepEqual(textesEnDur('<p>Caf&eacute; ouvert</p><p>&laquo;&nbsp;Bonjour&nbsp;&raquo;</p><p>Prix&#160;: 5</p><p>Voir&#x202F;!</p><p>L&rsquo;eau</p>'),
+    ['Café ouvert', '«\u00a0Bonjour\u00a0»', 'Prix\u00a0: 5', 'Voir\u202f!', 'L’eau']);
+  assert.deepEqual(textesEnDur('<p>A&inconnue;B</p>'), ['AB']);
+});

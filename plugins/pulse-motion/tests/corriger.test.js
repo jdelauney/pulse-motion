@@ -56,3 +56,31 @@ test('déroulé impossible à écrire : rien de changé, aucune copie laissée, 
   assert.equal(fs.readFileSync(path.join(dir, 'deroule.json'), 'utf8'), avant);
   assert.deepEqual(copies(dir), []);
 });
+
+test('revue : message d\'une correction de texte lisible (la règle appliquée, pas des espaces invisibles)', () => {
+  const dir = copierProjet('projet-simple');
+  const r = appliquerCorrections(dir, [{ regle: 'typographie', details: 'espace fine avant « ? », « ! », « ; »', correction: { scene: 'intro', texte: 'sous', valeur: 'Voir\u202f!' } }]);
+  assert.equal(r.corrections[0].message, 'Scène « intro », texte « sous » : typographie française (espace fine avant « ? », « ! », « ; »).');
+});
+
+test('revue : copie d\'historique impossible, message en français, rien de changé', () => {
+  const dir = copierProjet('projet-simple');
+  const avant = fs.readFileSync(path.join(dir, 'deroule.json'), 'utf8');
+  fs.writeFileSync(path.join(dir, '.historique'), 'un fichier à la place du dossier');
+  const r = appliquerCorrections(dir, [{ regle: 'lecture', correction: { scene: 'intro', duree: 6 } }]);
+  assert.deepEqual(r.corrections, []);
+  assert.match(r.erreur, /Rien n'a été changé/);
+  assert.equal(fs.readFileSync(path.join(dir, 'deroule.json'), 'utf8'), avant);
+});
+
+test('revue : écriture ratée, seule la copie de ce passage est retirée (pas de recopie du projet)', () => {
+  const dir = copierProjet('projet-simple');
+  const scene = path.join(dir, 'scenes', '01-intro.html');
+  fs.mkdirSync(path.join(dir, `deroule.json.${process.pid}.tmp`));
+  // Une recopie du projet (annuler) recrée les fichiers des scènes : leur identifiant changerait.
+  const identifiant = fs.statSync(scene, { bigint: true }).ino;
+  const r = appliquerCorrections(dir, [{ regle: 'lecture', correction: { scene: 'intro', duree: 6 } }]);
+  assert.match(r.erreur, /Rien n'a été changé/);
+  assert.equal(fs.statSync(scene, { bigint: true }).ino, identifiant);
+  assert.deepEqual(copies(dir), []);
+});

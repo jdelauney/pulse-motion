@@ -33,6 +33,7 @@ const virgule = (x) => String(Math.round(x * 10) / 10).replace('.', ',');
 const EPS = 1e-6;
 /** Arrondi au pas supérieur (0,1 ou 0,5 s), sans bruit de virgule flottante. */
 const auPasSuperieur = (x, pas) => Math.round(Math.ceil(x / pas - EPS) * pas * 1000) / 1000;
+const auPasInferieur = (x, pas) => Math.round(Math.floor(x / pas + EPS) * pas * 1000) / 1000;
 
 const { contraste } = require('./lib/couleurs.js');
 
@@ -97,13 +98,13 @@ function controlerTextes(deroule, scenesHtml, termesGlossaire, problemes) {
       entrees.push({ scene: s.id, cle, texte });
       const typo = corrigerTypographie(texte);
       if (typo.corrections.length) {
-        problemes.push({ regle: 'typographie', gravite: 'alerte', scene: s.id, element: cle, correction: { scene: s.id, texte: cle, valeur: typo.texte },
+        problemes.push({ regle: 'typographie', gravite: 'alerte', scene: s.id, element: cle, details: liste(typo.corrections), correction: { scene: s.id, texte: cle, valeur: typo.texte },
           message: `Scène « ${s.id} », texte « ${cle} » : typographie française (${liste(typo.corrections)}) : « ${typo.texte} ».` });
       }
       // Calculée sur le texte déjà corrigé : appliquée après la typographie, sa valeur contient les deux.
       const maj = corrigerMajuscules(typo.texte);
       if (maj.corrections.length) {
-        problemes.push({ regle: 'majuscule-accentuee', gravite: 'alerte', scene: s.id, element: cle, correction: { scene: s.id, texte: cle, valeur: maj.texte },
+        problemes.push({ regle: 'majuscule-accentuee', gravite: 'alerte', scene: s.id, element: cle, details: liste(maj.corrections), correction: { scene: s.id, texte: cle, valeur: maj.texte },
           message: `Scène « ${s.id} », texte « ${cle} » : ${liste(maj.corrections)} : « ${maj.texte} ».` });
       }
       for (const d of motsDoubles(texte)) {
@@ -201,7 +202,8 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
           if (corrigeable && s !== derniere && Math.abs(b - finUtile) < EPS) {
             const duree = deroule.scenes[i].duree;
             const { mots, besoin } = besoinLecture[s.id];
-            const nouvelle = Math.max(auPasSuperieur(duree - (b - a - SEUILS.tempsMort) * s.rythme, 0.1), mots ? auPasSuperieur(besoin * s.rythme, 0.1) : 0);
+            // Au dixième inférieur : le temps mort restant ne dépasse plus le seuil.
+            const nouvelle = Math.max(auPasInferieur(duree - (b - a - SEUILS.tempsMort) * s.rythme, 0.1), mots ? auPasSuperieur(besoin * s.rythme, 0.1) : 0);
             if (nouvelle < duree - EPS) p.correction = { scene: s.id, duree: nouvelle };
           }
           problemes.push(p);

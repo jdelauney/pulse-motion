@@ -66,3 +66,25 @@ test('termes variables : casse et trait d\'union, pas les accents ni la majuscul
   ]);
   assert.deepEqual(T.termesVariables(entrees, new Set([T.cleTerme('email'), T.cleTerme('Covid')])), []);
 });
+
+test('revue : ponctuation enchaînée, une seule espace, et corriger deux fois ne change rien', () => {
+  for (const [t, attendu] of [['Quoi ?!', 'Quoi\u202f?!'], ['Super !!!', 'Super\u202f!!!'], ['Vraiment?!', 'Vraiment\u202f?!'], ['Et alors… ?', 'Et alors…\u202f?']]) {
+    const une = T.corrigerTypographie(t).texte;
+    assert.equal(une, attendu, t);
+    assert.deepEqual(T.corrigerTypographie(une), { texte: une, corrections: [] }, t);
+  }
+});
+
+test('revue : « L » n\'est pas une unité après un nombre suivi d\'un mot ; mL et l\'unité seule le restent', () => {
+  for (const t of ['Étape 2 L’eau', 'Tome 3 L']) assert.deepEqual(T.corrigerTypographie(t), { texte: t, corrections: [] }, t);
+  assert.equal(T.corrigerTypographie('Verser 20 mL').texte, 'Verser 20\u202fmL');
+});
+
+test('revue : guillemets droits laissés quand le texte a déjà des « » ou qu\'il s\'agit de pouces', () => {
+  for (const t of ['27" et 32"', 'Écran 15"']) assert.equal(T.corrigerTypographie(t).texte, t, t);
+  assert.equal(T.corrigerTypographie('«\u00a0Il a dit "oui"\u00a0»').texte, '«\u00a0Il a dit "oui"\u00a0»');
+});
+
+test('revue : répétitions volontaires de l\'oral non signalées', () => {
+  for (const t of ['C\'est très très bien', 'Si si, vraiment', 'Bla bla bla', 'Non non', 'Oui oui']) assert.deepEqual(T.motsDoubles(t), [], t);
+});

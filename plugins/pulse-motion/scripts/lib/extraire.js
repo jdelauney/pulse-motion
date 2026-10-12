@@ -68,7 +68,20 @@ function extraireScene(html) {
   return { elements, textes, decoupes, miseEnScene, css: css.join('\n') };
 }
 
-const ENTITES = { '&nbsp;': '\u00a0', '&#8239;': '\u202f', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&amp;': '&' };
+// Entités nommées courantes en français ; les numériques sont décodées toutes, les inconnues retirées.
+const ENTITES = {
+  nbsp: '\u00a0', lt: '<', gt: '>', quot: '"', apos: "'", amp: '&', laquo: '«', raquo: '»', lsquo: '‘', rsquo: '’', ldquo: '“', rdquo: '”',
+  hellip: '…', mdash: '—', ndash: '–', euro: '€', deg: '°', oelig: 'œ', OElig: 'Œ', ccedil: 'ç', Ccedil: 'Ç',
+  eacute: 'é', egrave: 'è', ecirc: 'ê', euml: 'ë', Eacute: 'É', Egrave: 'È', Ecirc: 'Ê', agrave: 'à', acirc: 'â', Agrave: 'À',
+  icirc: 'î', iuml: 'ï', ocirc: 'ô', ucirc: 'û', ugrave: 'ù', uuml: 'ü',
+};
+const decoderEntites = (t) => t.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (tout, nom) => {
+  if (nom[0] === '#') {
+    const code = nom[1] === 'x' || nom[1] === 'X' ? parseInt(nom.slice(2), 16) : parseInt(nom.slice(1), 10);
+    try { return String.fromCodePoint(code); } catch { return ''; }
+  }
+  return ENTITES[nom] ?? '';
+});
 
 /** Textes écrits en dur dans une scène (hors commentaires, <style>, <script> et éléments data-texte). */
 function textesEnDur(html) {
@@ -77,7 +90,7 @@ function textesEnDur(html) {
     .replace(/<(style|script)\b[\s\S]*?<\/\1>/gi, '')
     .replace(/<([a-zA-Z][\w-]*)\b[^>]*\sdata-texte\b[^>]*>[\s\S]*?<\/\1>/g, '');
   return sans.split(/<[^>]*>/)
-    .map((t) => t.replace(/&(nbsp|#8239|lt|gt|quot|#39|amp);/g, (e) => ENTITES[e]).replace(/[ \t\r\n]+/g, ' ').trim())
+    .map((t) => decoderEntites(t).replace(/[ \t\r\n]+/g, ' ').trim())
     .filter((t) => /\p{L}/u.test(t));
 }
 

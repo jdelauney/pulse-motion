@@ -3,11 +3,12 @@
  * d'historique : « annule » les défait ensemble. Jamais le HTML des scènes, la charte ni les mots. */
 const fs = require('node:fs');
 const path = require('node:path');
-const { sauvegarder, annuler } = require('../historique.js');
+const { sauvegarder } = require('../historique.js');
 
 const virgule = (x) => String(Math.round(x * 100) / 100).replace('.', ',');
 const RAISONS = { lecture: 'temps de lecture', 'pause-finale': 'image stable à la fin', 'temps-mort': 'temps mort en fin de scène' };
-const QUOI = { typographie: 'typographie française', 'majuscule-accentuee': 'majuscule accentuée' };
+// Ce qui a été fait, en mots : l'avant et l'après ne diffèrent souvent que par des espaces invisibles.
+const quoi = (p) => (p.regle === 'typographie' ? `typographie française${p.details ? ` (${p.details})` : ''}` : p.details || 'majuscule accentuée');
 
 /** problemes (ceux qui portent `correction`) -> { corrections, erreur? } */
 function appliquerCorrections(projet, problemes) {
@@ -26,7 +27,7 @@ function appliquerCorrections(projet, problemes) {
       if (typeof avant !== 'string' || avant === c.valeur) continue;
       s.textes[c.texte] = c.valeur;
       corrections.push({ regle: p.regle, scene: c.scene, element: c.texte, avant, apres: c.valeur,
-        message: `Scène « ${c.scene} », texte « ${c.texte} » : ${QUOI[p.regle] || p.regle} (« ${avant} » → « ${c.valeur} »).` });
+        message: `Scène « ${c.scene} », texte « ${c.texte} » : ${quoi(p)}.` });
     } else if (typeof c.duree === 'number') {
       const deja = durees.get(c.scene);
       if (!deja || c.duree > deja.correction.duree) durees.set(c.scene, p);
@@ -41,16 +42,17 @@ function appliquerCorrections(projet, problemes) {
     corrections.push({ regle: p.regle, scene: id, avant, apres, message: `Scène « ${id} » : durée ${virgule(avant)} s → ${virgule(apres)} s (${RAISONS[p.regle] || p.regle}).` });
   }
   if (!corrections.length) return { corrections: [] };
-  sauvegarder(projet);
   const temporaire = `${fichier}.${process.pid}.tmp`;
+  let copie = null;
   try {
+    copie = sauvegarder(projet).dossier;
     fs.writeFileSync(temporaire, JSON.stringify(brut, null, 2));
     fs.renameSync(temporaire, fichier);
   } catch (e) {
     try { fs.rmSync(temporaire, { force: true }); } catch { /* dossier à la place du fichier : laissé */ }
-    // La copie prise pour ce passage est retirée : « annule » ne la consommera pas à vide.
-    try { annuler(projet); } catch { /* rien à défaire */ }
-    return { corrections: [], erreur: `Les corrections n'ont pas pu être écrites dans deroule.json (${e.code || e.message}) : vérifiez les droits du dossier du projet. Rien n'a été changé.` };
+    // Rien n'a été écrit : seule la copie prise pour ce passage est retirée (« annule » ne la consommera pas à vide).
+    if (copie) { try { fs.rmSync(copie, { recursive: true, force: true }); } catch { /* copie verrouillée : laissée */ } }
+    return { corrections: [], erreur: `Les corrections n'ont pas pu être écrites dans deroule.json (${e.code || e.message}) : vérifiez les droits du dossier du projet (et de son dossier .historique). Rien n'a été changé.` };
   }
   return { corrections };
 }

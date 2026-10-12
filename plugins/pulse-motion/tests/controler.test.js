@@ -357,3 +357,13 @@ test('ligne de commande : corrige par défaut ; --sans-correction laisse le dér
   assert.equal(JSON.parse(avec.stdout).corrections, 1, avec.stdout + avec.stderr);
   assert.equal(JSON.parse(fs.readFileSync(path.join(dir, 'deroule.json'), 'utf8')).scenes[0].textes.sous, 'Lire\u00a0: vite');
 });
+
+test('revue : temps mort raccourci au dixième inférieur, l\'alerte disparaît après correction', () => {
+  const dir = copierProjet('projet-simple');
+  const fichier = path.join(dir, 'scenes', '01-intro.html');
+  fs.writeFileSync(fichier, fs.readFileSync(fichier, 'utf8').replace('data-start="#titre:fin+0.2"', 'data-start="#titre:fin+0.25"'));
+  modifierDeroule(dir, (d) => { d.scenes[0].duree = 6; });
+  const r = controler({ dossier: dir, dossierStyles: STYLES, corriger: true, ecrire: false });
+  assert.deepEqual(r.corrections.map((c) => [c.regle, c.apres]), [['temps-mort', 5.5]]);
+  assert.equal(r.problemes.some((p) => p.regle === 'temps-mort'), false, JSON.stringify(r.problemes));
+});
