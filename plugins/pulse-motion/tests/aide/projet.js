@@ -6,6 +6,7 @@ const path = require('node:path');
 
 const FIXTURES = path.join(__dirname, '..', 'fixtures');
 const STYLES = path.join(FIXTURES, 'styles');
+const EFFETS = path.join(FIXTURES, 'effets');
 
 function copierProjet(nom) {
   const cible = fs.mkdtempSync(path.join(os.tmpdir(), `pm-${nom}-`));
@@ -20,4 +21,4 @@ function modifierDeroule(dossier, fn) {
   fs.writeFileSync(fichier, JSON.stringify(d, null, 2));
 }
 
-module.exports = { FIXTURES, STYLES, copierProjet, modifierDeroule };
+module.exports = { FIXTURES, STYLES, EFFETS, copierProjet, modifierDeroule };

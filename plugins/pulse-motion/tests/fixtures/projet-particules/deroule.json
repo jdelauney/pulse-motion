@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "titre": "Particules",
+  "genre": "formation",
+  "parcours": "rapide",
+  "format": { "ratio": "16:9", "ips": 30 },
+  "style": "test",
+  "scenes": [
+    { "id": "s", "fichier": "scenes/01-s.html", "duree": 6, "textes": { "titre": "Feu" } }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "titre": "Effets",
+  "genre": "formation",
+  "parcours": "rapide",
+  "format": { "ratio": "16:9", "ips": 30 },
+  "style": "test",
+  "scenes": [
+    { "id": "etincelles", "fichier": "scenes/01-etincelles.html", "duree": 6, "textes": { "titre": "Un titre court" } }
+  ]
+}

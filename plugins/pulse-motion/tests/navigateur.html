@@ -26,6 +26,7 @@
     <svg width="10" height="10"><rect width="10" height="10"><animate attributeName="x" from="0" to="10" dur="2s" fill="freeze"/></rect></svg>
   </section>
   <section data-scene="b">
+    <div data-effet="essai"></div>
     <p id="b1" data-start="0.2" data-dur="0.5">B</p>
   </section>
 </div>
@@ -117,7 +118,9 @@
   verifier('t borné à la durée', M.rendre(99) === 7.5 && M.rendre(-3) === 0);
   M.modeCapture(true); M.rendre(2);
   verifier('Date.now suit t en capture', Date.now() === 1767225600000 + 2000);
+  verifier('M.enCapture vrai en capture', M.enCapture() === true);
   M.modeCapture(false);
+  verifier('M.enCapture faux hors capture', M.enCapture() === false);
   verifier('lecteur présent', !!document.getElementById('pm-lecteur'));
 
   // Pendant un export, une modification ne recharge pas la page : rechargement à la fin.
@@ -131,8 +134,34 @@
   M.rechargerQuandPossible();
   verifier('rechargement immédiat hors export', recharges === 2);
 
+  // Un effet de particules est minuté même sans data-start (clé « _1 » comme dans extraire.js).
+  verifier('data-effet minuté', document.querySelector('[data-effet]').getAttribute('data-pm-cle') === '_1');
+  // Rendu d'une scène seule : sans effet sur l'instant courant ni sur les auditeurs.
+  M.rendre(2);
+  var vus = 0;
+  M.surRendu(function () { vus++; });
+  M.rendreScene('a', 1);
+  verifier('rendreScene pose l\'état de la scène', document.getElementById('titre').getAttribute('data-etat') === 'pendant');
+  verifier('rendreScene ne prévient pas les auditeurs', vus === 0);
+  verifier('rendreScene ne change pas t', M.temps() === 2);
+  M.rendreScene('absente', 1);
+  M.rendreScene('a', 2);
+  verifier('rendreScene revient à l\'état de t', document.getElementById('titre').getAttribute('data-etat') === 'apres');
+  verifier('sections sans calque non isolées', getComputedStyle(document.querySelector('section[data-scene="a"]')).isolation === 'auto');
+  verifier('data-effet plein cadre', getComputedStyle(document.querySelector('[data-effet]')).position === 'absolute');
+
+  // L'aléa d'une scène ne dépend que de t : un rendu seul d'une scène ne change pas le résultat.
+  M.rendre(2);
+  var hasardA = document.getElementById('hasard').textContent;
+  M.rendreScene('a', 3);
+  M.rendreScene('a', 2);
+  verifier('rendreScene : aléa de la scène ne dépend que de t', document.getElementById('hasard').textContent === hasardA, hasardA + ' ≠ ' + document.getElementById('hasard').textContent);
+
+  var attendu = null;
+  M.surSeek(function (t) { return new Promise(function (ok) { setTimeout(function () { attendu = t; ok(); }, 20); }); });
   M.seek(1).then(function (t) {
     verifier('seek renvoie une promesse', t === 1);
+    verifier('seek attend les surSeek', attendu === 1);
     document.getElementById('resultat').textContent = echecs.length
       ? 'RESULTAT: ECHEC ' + echecs.length + '/' + total + '\n' + echecs.join('\n')
       : 'RESULTAT: OK ' + total + '/' + total;

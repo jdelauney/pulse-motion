@@ -13,13 +13,15 @@ const path = require('node:path');
 const { lireDeroule } = require('./lib/deroule.js');
 const { embarquerRessources, versDataURI, cheminDansProjet } = require('./lib/embarquer.js');
 const S = require('./lib/scenes.js');
+const { preparerEffets } = require('./lib/effets.js');
 const { variablesCSS } = require('../moteur/courbes.js');
 const { trouverStyle, messageStyleInconnu } = require('./styles.js');
 const { charteFinale, chartePour, variablesDerivees } = require('./lib/fusion-charte.js');
 const { trouverFichiersPolice } = require('./lib/police.js');
 
 const RACINE = path.resolve(__dirname, '..');
-const MOTEUR = ['courbes.js', 'minutage.js', 'transitions.js', 'tween.js', 'horloge.js', 'lecteur.js', 'debordement.js'];
+const MOTEUR = ['courbes.js', 'minutage.js', 'transitions.js', 'tween.js', 'horloge.js', 'lecteur.js', 'debordement.js',
+  'particules/instantanes.js', 'particules/gpu.js', 'particules/simulation.js', 'particules/rendu.js', 'particules/calques.js'];
 function slug(texte) {
   return String(texte).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'video';
@@ -88,19 +90,19 @@ function jsonDansHTML(objet) {
 }
 
 /**
- * assembler({ dossier, dossierStyles?: string | string[], ecrire? })
- * -> { ok, fichier, html, erreurs: [{ regle, gravite, scene?, message }] }
+ * assembler({ dossier, dossierStyles?: string | string[], dossierEffets?, ecrire? })
+ * -> { ok, fichier, html, erreurs: [{ regle, gravite, scene?, message }], effets: [{ scene, ordre, calque, ancre, effet }] }
  * Sans dossierStyles : styles livrés, puis styles personnels (~/.pulse-motion/styles).
  */
-function assembler({ dossier, dossierStyles, ecrire = true }) {
+function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, 'effets'), ecrire = true }) {
   const projet = path.resolve(dossier);
   const { deroule, erreurs: erreursDeroule } = lireDeroule(projet);
   if (erreursDeroule.length) {
-    return { ok: false, fichier: null, html: null, erreurs: erreursDeroule.map((message) => ({ regle: 'deroule-invalide', gravite: 'erreur', message })) };
+    return { ok: false, fichier: null, html: null, effets: [], erreurs: erreursDeroule.map((message) => ({ regle: 'deroule-invalide', gravite: 'erreur', message })) };
   }
   const style = trouverStyle(deroule.style, dossierStyles);
   if (!style) {
-    return { ok: false, fichier: null, html: null, erreurs: [{ regle: 'style-inconnu', gravite: 'erreur', message: messageStyleInconnu(deroule.style, dossierStyles) }] };
+    return { ok: false, fichier: null, html: null, effets: [], erreurs: [{ regle: 'style-inconnu', gravite: 'erreur', message: messageStyleInconnu(deroule.style, dossierStyles) }] };
   }
   const dossierStyle = style.dossier;
 
@@ -115,6 +117,7 @@ function assembler({ dossier, dossierStyles, ecrire = true }) {
 
   const sections = [];
   const scriptsScenes = [];
+  const effets = [];
   for (const scene of deroule.scenes) {
     const fichier = cheminDansProjet(projet, scene.fichier);
     let html = null;
@@ -137,7 +140,12 @@ function assembler({ dossier, dossierStyles, ecrire = true }) {
     const { html: sansScripts, scripts } = S.extraireScripts(html);
     const { html: avecTextes, manquants } = S.injecterTextes(sansScripts, scene.textes);
     manquants.forEach((cle) => erreurs.push({ regle: 'texte-manquant', gravite: 'erreur', scene: scene.id, message: `Scène « ${scene.id} » : data-texte="${cle}" n'a pas de texte dans le déroulé.` }));
-    const { html: embarque, erreurs: erreursRes } = embarquerRessources(S.injecterLogo(avecTextes, uriLogo), projet, `scène « ${scene.id} »`);
+    const { html: avecEffets, effets: effetsScene, erreurs: erreursEffets } = preparerEffets(avecTextes, {
+      scene: scene.id, projet, bibliotheque: dossierEffets, charte: charte.couleurs, premierIndex: effets.length,
+    });
+    effets.push(...effetsScene);
+    erreurs.push(...erreursEffets);
+    const { html: embarque, erreurs: erreursRes } = embarquerRessources(S.injecterLogo(avecEffets, uriLogo), projet, `scène « ${scene.id} »`);
     erreursRes.forEach((e) => erreurs.push({ ...e, scene: scene.id }));
     sections.push(embarque.trim());
     scripts.forEach((code) => scriptsScenes.push(`(function () { try {\n${code}\n} catch (e) { console.error('[Pulse Motion] Scène « ${scene.id} » : ' + e.message); } })();`));
@@ -158,6 +166,7 @@ function assembler({ dossier, dossierStyles, ecrire = true }) {
     format: { ratio: deroule.format.ratio, ips: deroule.format.ips || 30 },
     musique: deroule.musique ? { volume: deroule.musique.volume ?? 1 } : null,
     scenes: deroule.scenes.map((s) => ({ id: s.id, duree: s.duree, rythme: s.rythme || 1, transition: s.transition || 'aucune' })),
+    effets: effets.map(({ calque, ancre, effet }) => ({ calque, ancre, effet })),
   };
 
   const page = `<!doctype html>
@@ -188,6 +197,7 @@ ${lireMoteur(RACINE)}
 ${scriptsScenes.join('\n')}
 M.demarrer();
 M.demarrerLecteur();
+M.demarrerParticules();
 </script>
 </body>
 </html>
@@ -204,7 +214,7 @@ M.demarrerLecteur();
     // Le rapport de débordement portait sur l'ancienne page : l'aperçu en renverra un pour la nouvelle.
     fs.rmSync(path.join(dossierSortie, 'controle-page.json'), { force: true });
   }
-  return { ok: true, fichier: sortie, html: page, erreurs };
+  return { ok: true, fichier: sortie, html: page, erreurs, effets };
 }
 
 if (require.main === module) {
