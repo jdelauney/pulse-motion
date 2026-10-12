@@ -14,7 +14,7 @@ const path = require('node:path');
 const { assembler, charteFinale, RACINE } = require('./assembler.js');
 const { trouverStyle } = require('./styles.js');
 const { lireGlossaire, verifierGlossaire } = require('./vocabulaire.js');
-const { lireDeroule } = require('./lib/deroule.js');
+const { lireDeroule, dureeTemps } = require('./lib/deroule.js');
 const { cheminDansProjet } = require('./lib/embarquer.js');
 const { extraireScene } = require('./lib/extraire.js');
 const { calculerMinutage, CHEVAUCHEMENT } = require('../moteur/minutage.js');
@@ -96,8 +96,20 @@ function controler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
       scenesLues[s.id] = extraireScene(html);
       elementsParScene[s.id] = scenesLues[s.id].elements;
     }
-    const min = calculerMinutage(deroule.scenes, elementsParScene);
+    const temps = dureeTemps(deroule);
+    const min = calculerMinutage(deroule.scenes, elementsParScene, { dureeTemps: temps });
     for (const e of min.erreurs) problemes.push({ ...e, gravite: 'erreur' });
+
+    // Tempo : chaque scène commence sur un temps (à une demi-image près).
+    if (temps) {
+      const tolerance = 0.5 / (deroule.format.ips || 30);
+      for (const s of min.scenes) {
+        const ecart = (s.debut - (deroule.tempo.decalage || 0)) / temps;
+        if (Math.abs(ecart - Math.round(ecart)) * temps > tolerance) {
+          problemes.push({ regle: 'hors-tempo', gravite: 'alerte', scene: s.id, message: `Scène « ${s.id} » : elle commence à ${virgule(s.debut)} s, entre deux temps (${deroule.tempo.bpm} bpm) ; ajuster la durée de la scène précédente pour tomber sur la musique.` });
+        }
+      }
+    }
 
     // Fenêtre d'une balise d'effet : jusqu'à la mort de la dernière particule, pas seulement data-dur.
     const finEffet = (scene, rythme) => {

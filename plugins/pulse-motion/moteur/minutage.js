@@ -5,6 +5,7 @@
  *   data-start="#titre+0.3"     début de #titre + 0,3 s
  *   data-start="#titre:fin-0.2" fin de #titre − 0,2 s
  *   data-dur="1.2"              durée (1 s par défaut)
+ * Avec un tempo dans le déroulé, toute durée s'écrit aussi en temps musicaux : « 2t », « #titre:fin+1t ».
  * Les temps internes d'une scène sont divisés par son rythme.
  *
  * Module pur : chargé tel quel dans la page (global M) et par Node (require).
@@ -18,21 +19,40 @@
 
   var CHEVAUCHEMENT = 0.5;
   var DUREE_DEFAUT = 1;
-  var REFERENCE = /^#([A-Za-z0-9_-]+)(:fin)?\s*(?:([+-])\s*(\d*\.?\d+))?$/;
-  var NOMBRE = /^\d*\.?\d+$/;
+  var REFERENCE = /^#([A-Za-z0-9_-]+)(:fin)?\s*(?:([+-])\s*(\d*\.?\d+t?))?$/;
+  var DUREE = /^(\d*\.?\d+)(t?)$/;
+
+  /**
+   * Durée écrite en secondes (« 1.5 ») ou en temps musicaux (« 2t »).
+   * dureeTemps : secondes par temps, ou null sans tempo.
+   * -> { valeur } | { erreur: 'illisible' | 'tempo-absent' }
+   */
+  function lireSecondes(texte, dureeTemps) {
+    var m = DUREE.exec(String(texte).trim());
+    if (!m) return { erreur: 'illisible' };
+    if (!m[2]) return { valeur: parseFloat(m[1]) };
+    if (!(dureeTemps > 0)) return { erreur: 'tempo-absent' };
+    return { valeur: parseFloat(m[1]) * dureeTemps };
+  }
+
+  function messageTempoAbsent(idScene, cle, attribut, valeur) {
+    return 'Scène « ' + idScene + ' », élément « ' + cle + ' » : ' + attribut + ' « ' + valeur + ' » est en temps musicaux, mais le déroulé n\'a pas de « tempo » (ex. "tempo": { "bpm": 120 }).';
+  }
 
   function chevauchement(scene, index) {
     return index > 0 && scene.transition && scene.transition !== 'aucune' && scene.transition !== 'coupe' ? CHEVAUCHEMENT : 0;
   }
 
   /**
-   * calculerMinutage(scenes, elementsParScene)
+   * calculerMinutage(scenes, elementsParScene, options?)
    *   scenes : [{ id, duree, rythme?, transition? }]
    *   elementsParScene : { [idScene]: [{ cle, start?, dur? }] }  (start, dur : textes des attributs)
+   *   options.dureeTemps : secondes par temps musical (tempo du déroulé), absent sans tempo
    * -> { duree, scenes: [{ id, debut, fin, rythme, transition, entree }],
    *      elements: { [idScene]: { [cle]: { debut, fin } } }, erreurs: [{ regle, scene, element, message }] }
    */
-  function calculerMinutage(scenes, elementsParScene) {
+  function calculerMinutage(scenes, elementsParScene, options) {
+    var dureeTemps = options && options.dureeTemps > 0 ? options.dureeTemps : null;
     var erreurs = [];
     var resultat = { duree: 0, scenes: [], elements: {}, erreurs: erreurs };
     var fin = 0;
@@ -43,14 +63,14 @@
       var debut = Math.max(0, fin - entree);
       var finScene = debut + s.duree / rythme;
       resultat.scenes.push({ id: s.id, debut: debut, fin: finScene, rythme: rythme, transition: s.transition || 'aucune', entree: entree });
-      resultat.elements[s.id] = minuterScene(s.id, debut, rythme, (elementsParScene && elementsParScene[s.id]) || [], erreurs);
+      resultat.elements[s.id] = minuterScene(s.id, debut, rythme, (elementsParScene && elementsParScene[s.id]) || [], erreurs, dureeTemps);
       fin = finScene;
     });
     resultat.duree = fin;
     return resultat;
   }
 
-  function minuterScene(idScene, debutScene, rythme, elements, erreurs) {
+  function minuterScene(idScene, debutScene, rythme, elements, erreurs, dureeTemps) {
     var parCle = {};
     elements.forEach(function (e) { parCle[e.cle] = e; });
     var local = {};      // cle -> { debut, fin } en temps de scène
@@ -63,11 +83,16 @@
     function lireDuree(e) {
       if (e.dur === undefined || e.dur === null || e.dur === '') return DUREE_DEFAUT;
       var d = String(e.dur).trim();
-      if (!NOMBRE.test(d)) {
+      var lu = lireSecondes(d, dureeTemps);
+      if (lu.erreur === 'tempo-absent') {
+        erreur('tempo-absent', e.cle, messageTempoAbsent(idScene, e.cle, 'data-dur', d));
+        return DUREE_DEFAUT;
+      }
+      if (lu.erreur) {
         erreur('dur-invalide', e.cle, 'Scène « ' + idScene + ' », élément « ' + e.cle + ' » : data-dur « ' + e.dur + ' » n\'est pas un nombre de secondes.');
         return DUREE_DEFAUT;
       }
-      return parseFloat(d);
+      return lu.valeur;
     }
 
     function resoudre(cle) {
@@ -80,8 +105,9 @@
       enCours[cle] = true;
       var debut = 0;
       var s = e.start === undefined || e.start === null ? '' : String(e.start).trim();
-      if (s === '') debut = 0;
-      else if (NOMBRE.test(s)) debut = parseFloat(s);
+      var direct = s === '' ? { valeur: 0 } : lireSecondes(s, dureeTemps);
+      if (direct.valeur !== undefined) debut = direct.valeur;
+      else if (direct.erreur === 'tempo-absent') erreur('tempo-absent', cle, messageTempoAbsent(idScene, cle, 'data-start', s));
       else {
         var m = REFERENCE.exec(s);
         if (!m) {
@@ -90,7 +116,9 @@
           erreur('reference-inconnue', cle, 'Scène « ' + idScene + ' », élément « ' + cle + ' » : « #' + m[1] + ' » n\'existe pas dans cette scène (ou n\'est pas minuté).');
         } else {
           var ref = resoudre(m[1]);
-          var decalage = m[4] ? parseFloat(m[4]) * (m[3] === '-' ? -1 : 1) : 0;
+          var ecart = m[4] ? lireSecondes(m[4], dureeTemps) : { valeur: 0 };
+          if (ecart.erreur) erreur('tempo-absent', cle, messageTempoAbsent(idScene, cle, 'data-start', s));
+          var decalage = ecart.erreur ? 0 : ecart.valeur * (m[3] === '-' ? -1 : 1);
           debut = Math.max(0, (m[2] ? ref.fin : ref.debut) + decalage);
         }
       }
@@ -126,6 +154,7 @@
   return {
     CHEVAUCHEMENT: CHEVAUCHEMENT,
     calculerMinutage: calculerMinutage,
+    lireSecondes: lireSecondes,
     progression: progression,
     etat: etat,
     scenesVisibles: scenesVisibles,

@@ -81,3 +81,23 @@ test('scenes[].type : facultatif, un des 8 types de scène toute faite', () => {
   assert.deepEqual(validerDeroule({ ...base, scenes: [scene] }), []);
   assert.match(validerDeroule({ ...base, scenes: [{ ...scene, type: 'carte' }] })[0], /« type » doit être l'un de : titre, liste/);
 });
+
+test('tempo : bpm de 30 à 300, décalage positif', () => {
+  const d = valide();
+  d.tempo = { bpm: 120 };
+  assert.deepEqual(validerDeroule(d), []);
+  d.tempo = { bpm: 128, decalage: 0.25 };
+  assert.deepEqual(validerDeroule(d), []);
+  d.tempo = { bpm: 10, decalage: -1 };
+  const e = validerDeroule(d);
+  assert.ok(e.some((m) => m.startsWith('« tempo.bpm »')), e.join('\n'));
+  assert.ok(e.some((m) => m.startsWith('« tempo.decalage »')), e.join('\n'));
+  d.tempo = 120;
+  assert.ok(validerDeroule(d).some((m) => m.startsWith('« tempo » doit être un objet')));
+});
+
+test('tempo : durée d\'un temps', () => {
+  const { dureeTemps } = require('../scripts/lib/deroule.js');
+  assert.equal(dureeTemps({ tempo: { bpm: 120 } }), 0.5);
+  assert.equal(dureeTemps({}), null);
+});

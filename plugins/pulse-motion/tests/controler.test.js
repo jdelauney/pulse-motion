@@ -179,3 +179,20 @@ test('ton sombre demandé sur un style sans ton sombre : alerte « ton-indisponi
   assert.equal(alerte.gravite, 'alerte');
   assert.match(alerte.message, /n'a pas de ton sombre/);
 });
+
+test('tempo : une scène qui ne commence pas sur un temps est signalée', () => {
+  const dir = copierProjet('projet-simple');
+  modifierDeroule(dir, (d) => { d.tempo = { bpm: 120 }; });
+  assert.ok(!regles(controler({ dossier: dir, dossierStyles: STYLES })).includes('hors-tempo'));
+  modifierDeroule(dir, (d) => { d.tempo = { bpm: 100 }; });
+  const p = controler({ dossier: dir, dossierStyles: STYLES }).problemes.find((x) => x.regle === 'hors-tempo');
+  assert.ok(p);
+  assert.equal(p.scene, 'chiffre');
+  assert.match(p.message, /commence à 3,5 s, entre deux temps \(100 bpm\)/);
+});
+
+test('tempo : data-start en temps sans tempo dans le déroulé', () => {
+  const dir = copierProjet('projet-simple');
+  ecrireScene(dir, '02-chiffre.html', '<section data-scene="chiffre"><p data-texte="legende" data-start="2t" data-dur="2"></p></section>');
+  assert.ok(regles(controler({ dossier: dir, dossierStyles: STYLES })).includes('tempo-absent'));
+});
