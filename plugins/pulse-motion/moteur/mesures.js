@@ -41,7 +41,8 @@
     });
   }
   function nom(el) {
-    return el.id || el.getAttribute('data-texte') || (estLogo(el) ? 'logo' : el.tagName.toLowerCase());
+    // Sans identifiant : texte alternatif d'une image, sinon première classe, sinon balise.
+    return el.id || el.getAttribute('data-texte') || (estLogo(el) ? 'logo' : el.getAttribute('alt') || el.classList[0] || el.tagName.toLowerCase());
   }
   /** Rectangle d'un élément ; pour un texte, l'étendue de son texte (une boîte de bloc prend toute la largeur). */
   function rectangle(el) {
@@ -58,6 +59,23 @@
     var haut = x.r.top + marge;
     var bas = Math.max(haut, x.r.bottom - marge);
     return { left: x.r.left, right: x.r.right, top: haut, bottom: bas, width: x.r.width, height: bas - haut };
+  }
+  /** Une scène est-elle en train d'entrer à t (transition d'entrée, ou entrée de la première depuis le fond) ? */
+  function enEntree(t) {
+    return M.minutage.scenes.some(function (s, i) {
+      var duree = s.entree > 0 ? s.entree : (i === 0 ? (M.CHEVAUCHEMENT || 0.5) : 0);
+      return t >= s.debut - 1e-9 && t < s.debut + duree - 1e-9;
+    });
+  }
+  /** a est-il peint au-dessus de b, au centre de leur partie commune ? */
+  function audessus(a, b) {
+    var x = (Math.max(a.r.left, b.r.left) + Math.min(a.r.right, b.r.right)) / 2;
+    var y = (Math.max(a.r.top, b.r.top) + Math.min(a.r.bottom, b.r.bottom)) / 2;
+    var pile = document.elementsFromPoint(x, y);
+    var rang = function (el) { for (var i = 0; i < pile.length; i++) if (el === pile[i] || el.contains(pile[i])) return i; return -1; };
+    var ia = rang(a.el);
+    var ib = rang(b.el);
+    return ia >= 0 && (ib < 0 || ia < ib);
   }
   function aire(r) { return Math.max(0, r.width) * Math.max(0, r.height); }
   function commune(a, b) {
@@ -105,8 +123,9 @@
       var petit = Math.min(W, H);
       var visibles = M.scenesVisibles(M.minutage, t);
       // Pendant une transition, et au relevé qui la suit, la scène se déplace en bloc : rien n'est jugé immobile ni rapide.
-      var transition = visibles.length > 1 || enTransition;
-      enTransition = visibles.length > 1;
+      var bouge = visibles.length > 1 || enEntree(t);
+      var transition = bouge || enTransition;
+      enTransition = bouge;
       var textesVus = new Set();
       visibles.forEach(function (id) {
         var sec = conteneur.querySelector(':scope > section[data-scene="' + id + '"]');
@@ -177,9 +196,12 @@
             if (a.el.contains(b.el) || b.el.contains(a.el)) continue;
             var c = commune(a.r, b.r);
             if (!c) continue;
+            var superpose = a.el.closest('[data-superpose]') || b.el.closest('[data-superpose]');
+            // Logo masqué : seulement par un élément peint au-dessus de lui, et pas autorisé (data-superpose).
             var logo = estLogo(a.el) ? a : estLogo(b.el) ? b : null;
-            if (logo && c / aire(logo.r) > S.logoMasqueMax) constater('logo-masque', id, nom(logo.el), t, arrondi(c / aire(logo.r)));
-            if (a.el.closest('[data-superpose]') || b.el.closest('[data-superpose]')) continue;
+            var autre = logo === a ? b : a;
+            if (logo && !superpose && c / aire(logo.r) > S.logoMasqueMax && audessus(autre, logo)) constater('logo-masque', id, nom(logo.el), t, arrondi(c / aire(logo.r)));
+            if (superpose) continue;
             var ra = encre(a);
             var rb = encre(b);
             var part = commune(ra, rb) / Math.min(aire(ra), aire(rb));

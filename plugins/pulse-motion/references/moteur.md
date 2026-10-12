@@ -111,6 +111,17 @@ Avec `"tempo": { "bpm": 120 }` dans le déroulé (`"decalage"` : instant du prem
 - Plusieurs plages séparées par `;`, sans chevauchement, en secondes de la scène. Sur la `<section>` elle-même, elles s'appliquent à toute la scène. S'applique aux éléments minutés, animations CSS et SVG animés du conteneur ; pas à `M.chaqueImage` ni aux effets de particules.
 - Une caméra posée **sur le même élément** n'est pas figée : on gèle le décor, la caméra continue (zoom sur l'image figée). Pour désaturer pendant le gel : `saturation 1→0.4 1.2+0.3` dans la caméra.
 
+## Ce que le contrôle regarde dans la vidéo rendue
+
+`pulse-motion controler` rend la vidéo dans Chrome sans fenêtre et juge les **éléments de contenu** : textes (`data-texte`), images, logo (`data-logo`), SVG. Ils ne doivent pas se chevaucher, sortir de l'image, coller au bord (4 %), passer sous les boutons des réseaux en 9:16, ni masquer le logo. Pour dire ce qui est voulu :
+
+| Cas | Marqueur |
+|---|---|
+| Forme, image ou calque de pur décor (fond, parallaxe, motif) | `data-decor` sur l'élément, ou dans `<div class="decor">` |
+| Image décorative | `alt=""` |
+| Icône SVG décorative | `aria-hidden="true"` |
+| Élément posé volontairement sur un autre (texte sur une carte image, badge) | `data-superpose` sur celui qui passe par-dessus |
+
 ## Signaux d'alerte
 
 | Vous écrivez… | Problème | À la place |

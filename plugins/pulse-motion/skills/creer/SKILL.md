@@ -79,7 +79,7 @@ La charte (logo, couleurs, polices) vit dans `charte/` du projet ; la musique da
 ## 4. Aperçu
 
 1. `pulse-motion apercu . --ouvrir` **en arrière-plan** : le navigateur s'ouvre sur la vidéo.
-2. `pulse-motion controler .` vérifie aussi la vidéo rendue (Chrome ou Edge sans fenêtre) : textes qui débordent, éléments qui se chevauchent ou sortent de l'image, marges, zone des boutons en 9:16, logo masqué, textes trop vite effacés, mouvements trop rapides. Corriger ce qui est signalé (l'aperçu se recharge seul). `renduVerifie: false` : le dire à la personne (navigateur introuvable ou page en erreur) avec le message du contrôle.
+2. `pulse-motion controler .` vérifie aussi la vidéo rendue (Chrome ou Edge sans fenêtre) : textes qui débordent, éléments qui se chevauchent ou sortent de l'image, marges, zone des boutons en 9:16, logo masqué, textes trop vite effacés, mouvements trop rapides. Corriger ce qui est signalé (l'aperçu se recharge seul). `renduVerifie: false` avec une alerte `rendu-non-verifie` ou `rendu-impossible` : la dire à la personne (navigateur introuvable ou page en erreur) avec le message du contrôle ; avec `--sans-rendu`, rien à dire.
 3. Parcours accompagné (le style est déjà choisi, à l'étape 2) :
    - **Vidéo finale** : faire regarder la vidéo entière dans l'aperçu et demander l'accord (`--accord video`).
    - Un refus : demander ce qui ne va pas et passer par `/pulse-motion:retoucher`.
