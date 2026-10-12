@@ -14,7 +14,9 @@
  *
  * Aléa reproductible et horloge virtuelle : idée et algorithme mulberry32 repris de
  * showtime (skills/showtime/runtime/stage.js), licence MIT.
- * Navigateur seulement ; dépend de courbes, minutage, transitions, tween, lettres (global M).
+ * Caméra (data-camera, data-profondeur) et temps figé ou accéléré (data-gel, data-vitesse) : chaque
+ * élément voit le temps de ses conteneurs ; une caméra voit celui de ses ancêtres, pas le sien.
+ * Navigateur seulement ; dépend de courbes, minutage, transitions, tween, lettres, camera, temps (global M).
  */
 (function (racine) {
   'use strict';
@@ -48,6 +50,47 @@
   });
 
   function arrondi(x) { return Math.round(x * 10000) / 10000; }
+
+  /** Plages de temps des conteneurs de el (de l'extérieur vers l'intérieur), jusqu'à la section. */
+  function chaineTemps(el, sec, plagesParEl) {
+    var liste = [];
+    while (el) {
+      if (plagesParEl.has(el)) liste.unshift(plagesParEl.get(el));
+      if (el === sec) break;
+      el = el.parentElement;
+    }
+    return liste;
+  }
+
+  /** Instant absolu vu à travers une chaîne de plages (gel, vitesse), au temps t. */
+  function tempsVu(chaine, t, info) {
+    if (!chaine.length) return t;
+    var tau = (t - info.debut) * info.rythme;
+    for (var i = 0; i < chaine.length; i++) tau = M.appliquerTemps(chaine[i], tau);
+    return info.debut + tau / info.rythme;
+  }
+
+  /** Conteneurs de temps, caméras et plans de parallaxe d'une section ; les erreurs vont dans erreurs. */
+  function lireMiseEnScene(sec, idScene, erreurs) {
+    var plagesParEl = new Map();
+    var cameras = [];
+    if (!sec) return { plagesParEl: plagesParEl, cameras: cameras };
+    function signaler(regle, message) { erreurs.push({ regle: regle, scene: idScene, message: 'Scène « ' + idScene + ' » : ' + message }); }
+    sec.querySelectorAll('[data-gel],[data-vitesse]').forEach(function (el) {
+      try { plagesParEl.set(el, M.analyserTemps(el.getAttribute('data-gel'), el.getAttribute('data-vitesse'), M.dureeTemps)); } catch (err) { signaler('temps-invalide', err.message); }
+    });
+    sec.querySelectorAll('[data-camera]').forEach(function (el) {
+      var clauses = [];
+      try { clauses = M.analyserCamera(el.getAttribute('data-camera'), M.dureeTemps); } catch (err) { signaler('camera-invalide', err.message); }
+      cameras.push({ el: el, clauses: clauses, chaine: chaineTemps(el.parentElement, sec, plagesParEl) });
+    });
+    sec.querySelectorAll('[data-profondeur]').forEach(function (el) {
+      var valeur = el.getAttribute('data-profondeur');
+      if (/^\d*\.?\d+$/.test(valeur)) el.style.setProperty('--pm-profondeur', valeur);
+      else signaler('profondeur-invalide', 'data-profondeur « ' + valeur + ' » doit être un nombre (1 : suit la caméra, 0 : plan fixe, 0.3 : plan lointain).');
+    });
+    return { plagesParEl: plagesParEl, cameras: cameras };
+  }
 
   function lireElements(section) {
     var liste = [];
@@ -84,6 +127,7 @@
 
     etat.scenes = min.scenes.map(function (info, index) {
       var sec = sections[info.id];
+      var scene = lireMiseEnScene(sec, info.id, erreurs);
       var elements = elementsParScene[info.id].map(function (e) {
         var tweens = [];
         var attr = e.el.getAttribute('data-tween');
@@ -93,7 +137,7 @@
           }
         }
         var temps = min.elements[info.id][e.cle];
-        return { el: e.el, debut: temps.debut, fin: temps.fin, tweens: tweens };
+        return { el: e.el, debut: temps.debut, fin: temps.fin, tweens: tweens, chaine: chaineTemps(e.el, sec, scene.plagesParEl) };
       });
       var debuts = new Map();
       elements.forEach(function (e) { debuts.set(e.el, e.debut); });
@@ -104,6 +148,13 @@
         elements: elements,
         debuts: debuts,
         svgs: sec ? Array.prototype.slice.call(sec.querySelectorAll('svg')) : [],
+        cameras: scene.cameras,
+        chaine: function (el) {
+          if (!scene.plagesParEl.size) return [];
+          if (!this.chaines.has(el)) this.chaines.set(el, chaineTemps(el, sec, scene.plagesParEl));
+          return this.chaines.get(el);
+        },
+        chaines: new Map(),
       };
     });
     M.erreurs = min.erreurs.concat(erreurs);
@@ -125,9 +176,10 @@
     s.sec.style.clipPath = st.clipPath;
 
     s.elements.forEach(function (e) {
-      var p = M.progression(t, e.debut, e.fin);
+      var te = tempsVu(e.chaine, t, info);
+      var p = M.progression(te, e.debut, e.fin);
       e.el.style.setProperty('--p', String(arrondi(p)));
-      e.el.setAttribute('data-etat', M.etat(t, e.debut, e.fin));
+      e.el.setAttribute('data-etat', M.etat(te, e.debut, e.fin));
       e.tweens.forEach(function (c) {
         if (c.prop === 'nombre') e.el.textContent = M.texteTween(c, p);
         else e.el.style.setProperty(c.prop, M.texteTween(c, p));
@@ -139,19 +191,29 @@
       a.pause();
       var base = info.debut;
       var cible = a.effect && a.effect.target;
+      var te = cible ? tempsVu(s.chaine(cible), t, info) : t;
       while (cible && cible !== s.sec) {
         if (s.debuts.has(cible)) { base = s.debuts.get(cible); break; }
         cible = cible.parentElement;
       }
-      a.currentTime = Math.max(0, (t - base) * info.rythme * 1000);
+      a.currentTime = Math.max(0, (te - base) * info.rythme * 1000);
     });
 
     // SMIL : temps de la scène.
     s.svgs.forEach(function (svg) {
       if (svg.pauseAnimations) {
         svg.pauseAnimations();
-        svg.setCurrentTime(Math.max(0, (t - info.debut) * info.rythme));
+        svg.setCurrentTime(Math.max(0, (tempsVu(s.chaine(svg), t, info) - info.debut) * info.rythme));
       }
+    });
+
+    // Caméras : cadrage au temps de leurs conteneurs ; --pm-cam-dx/dy pour la parallaxe (data-profondeur).
+    s.cameras.forEach(function (c) {
+      var st = M.styleCamera(M.etatCamera(c.clauses, (tempsVu(c.chaine, t, info) - info.debut) * info.rythme));
+      c.el.style.transform = st.transform;
+      c.el.style.filter = st.filter;
+      c.el.style.setProperty('--pm-cam-dx', String(st.dx));
+      c.el.style.setProperty('--pm-cam-dy', String(st.dy));
     });
 
     (etat.rappels[info.id] || []).forEach(function (fn) {

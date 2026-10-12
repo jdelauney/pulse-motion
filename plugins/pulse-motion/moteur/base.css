@@ -99,3 +99,9 @@ body {
   -webkit-text-stroke: var(--pm-contour, 0.2cqh) var(--pm-contour-couleur, var(--c-texte, #fff));
   paint-order: stroke fill;
 }
+/* Caméra : le conteneur couvre l'image ; le moteur pose transform, filter et --pm-cam-dx/dy.
+   Parallaxe : un plan [data-profondeur] suit le cadrage à --pm-profondeur (1 : comme la caméra, 0 : fixe). */
+#pm-scene [data-camera] { position: absolute; inset: 0; transform-origin: 0 0; }
+#pm-scene [data-profondeur] {
+  translate: calc(var(--pm-cam-dx, 0) * (1 - var(--pm-profondeur, 1)) * 1cqw) calc(var(--pm-cam-dy, 0) * (1 - var(--pm-profondeur, 1)) * 1cqh);
+}
