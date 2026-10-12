@@ -86,22 +86,35 @@ async function importerUnique({ projet, deroule, fichier, outil, whisper }) {
   if (!t.ok) return { ok: false, message: t.message };
   const decoupe = A.decouperEnScenes(scenes.map((s) => s.voix.texte), t.mots, duree);
   if (!decoupe) return { ok: false, message: 'La transcription n\'a reconnu aucun mot des textes : vérifier que l\'enregistrement dit bien les textes des scènes, ou importer scène par scène (--scene <id>).' };
+  // Presque rien de reconnu : pas un enregistrement de toute la vidéo (oubli de --scene ?) ; rien n'est remplacé.
+  const reconnus = decoupe.reduce((n, p) => n + p.reconnus, 0);
+  const total = decoupe.reduce((n, p) => n + p.total, 0);
+  if (reconnus < total / 2) {
+    return { ok: false, message: `La transcription a reconnu moins de la moitié des mots des textes (${reconnus} sur ${total}) : est-ce bien l'enregistrement de toute la vidéo ? Pour une seule scène, ajouter --scene <id>.` };
+  }
   sauvegarder(projet);
   const faites = [];
   const douteuses = [];
+  const gardees = [];
   for (let k = 0; k < scenes.length; k++) {
     const p = decoupe[k];
+    const douteuse = p.reconnus < p.total / 2;
+    // Une scène presque absente de l'enregistrement garde sa prise existante.
+    const existante = scenes[k].voix.fichier && fs.existsSync(path.join(projet, scenes[k].voix.fichier));
+    if (douteuse && existante) { gardees.push(scenes[k].id); continue; }
     const morceau = canal.slice(Math.round(p.debut * son.taux), Math.round(p.fin * son.taux));
     const mots = p.mots.map((m) => ({ w: m.w, t0: m.t0 - p.debut, t1: m.t1 - p.debut }));
     const r = await ecrirePrise({ projet, scene: scenes[k].id, octets: W.ecrire({ taux: son.taux, canaux: [morceau] }), texte: scenes[k].voix.texte,
       outil: outil && outil.present ? outil : null, mots, approche: 'whisper' });
     faites.push({ id: scenes[k].id, fichier: r.relatif, duree: r.duree });
-    if (p.reconnus < p.total / 2) douteuses.push(scenes[k].id);
+    if (douteuse) douteuses.push(scenes[k].id);
   }
   ecrireDeroule(projet, (d) => { for (const f of faites) d.scenes.find((s) => s.id === f.id).voix.fichier = f.fichier; });
-  const avertissement = douteuses.length
-    ? `Découpe à vérifier pour ${douteuses.map((id) => `la scène « ${id} »`).join(', ')} : moins de la moitié de ses mots ont été reconnus ; l'écouter, et la réenregistrer seule si besoin (pulse-motion voix importer <fichier> --scene <id>).`
-    : undefined;
+  const messages = [];
+  if (douteuses.length) messages.push(`Découpe à vérifier pour ${douteuses.map((id) => `la scène « ${id} »`).join(', ')} : moins de la moitié de ses mots ont été reconnus ; l'écouter, et la réenregistrer seule si besoin (pulse-motion voix importer <fichier> --scene <id>).`);
+  if (gardees.length) messages.push(`Prise existante gardée pour ${gardees.map((id) => `la scène « ${id} »`).join(', ')} : elle n'a presque pas été reconnue dans cet enregistrement.`);
+  if (messages.length) messages.push('« pulse-motion historique annuler » revient aux prises d\'avant.');
+  const avertissement = messages.length ? messages.join(' ') : undefined;
   return { ok: true, scenes: faites, ...(avertissement ? { avertissement } : {}) };
 }
 

@@ -111,6 +111,11 @@ async function transcrirePrise({ projet, relatif, texte, whisper }) {
   if (!r.ok) return { ok: false, message: r.message };
   const a = A.aligner(texte, r.mots);
   if (!a) return { ok: false, message: 'La transcription n\'a reconnu aucun mot du texte : mots calés approximativement (vérifier que la prise dit bien le texte de la scène).' };
+  // Une prise qui ne dit plus son texte (texte réécrit) n'est pas déclarée transcrite : il faut la réenregistrer.
+  const total = A.decouperMots(texte).length;
+  if (a.reconnus < total / 2) {
+    return { ok: false, message: `La transcription a reconnu moins de la moitié des mots du texte (${a.reconnus} sur ${total}) : la prise ne dit peut-être plus ce texte ; la réenregistrer si besoin (mots calés approximativement).` };
+  }
   const ancien = lireJSON(fichierMots(absolu)) || {};
   fs.writeFileSync(fichierMots(absolu), JSON.stringify({ ...ancien, empreinte: empreinte(octets), texte, duree: Math.round(duree * 1000) / 1000, approche: 'whisper', mots: a.mots }, null, 2));
   return { ok: true };

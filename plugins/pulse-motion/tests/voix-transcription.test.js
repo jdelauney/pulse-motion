@@ -107,3 +107,36 @@ test('fichier unique sans transcription : refusé, avec les deux solutions', asy
   assert.equal(r.ok, false);
   assert.match(r.message, /pulse-motion whisper installer.*--scene/);
 });
+
+test('revue : voix transcrire sur une prise qui ne dit plus le texte (moins de la moitié reconnue) : pas déclarée transcrite', async () => {
+  const dir = copierProjet('projet-simple');
+  modifierDeroule(dir, (d) => { d.scenes[0].voix = { texte: 'Pourquoi le froid' }; });
+  await importerVoix({ dossier: dir, fichier: fichierParole(), scene: 'intro', outil: { present: false }, whisper: { pret: false } });
+  modifierDeroule(dir, (d) => { d.scenes[0].voix.texte = 'Pourquoi les bactéries aiment la chaleur du midi'; });
+  const r = await transcrireProjet({ dossier: dir, whisper: faux([{ w: 'Pourquoi', t0: 0.1, t1: 0.5 }, { w: 'le', t0: 0.6, t1: 0.8 }, { w: 'froid', t0: 1.5, t1: 2 }]) });
+  assert.deepEqual(r.scenes, [{ id: 'intro', calage: 'lettres' }]);
+  assert.match(r.avertissement, /moins de la moitié.*réenregistrer/);
+  assert.notEqual(lireMots(dir, 'intro').approche, 'whisper');
+});
+
+test('revue : enregistrement d\'une seule scène importé sans --scene : refusé, prises existantes intactes', async () => {
+  const dir = copierProjet('projet-simple');
+  deuxTextes(dir);
+  await importerVoix({ dossier: dir, fichier: fichierParole(), scene: 'chiffre', outil: { present: false }, whisper: { pret: false } });
+  const avant = fs.readFileSync(path.join(dir, 'assets', 'voix', 'chiffre.wav'));
+  // L'enregistrement ne dit que la scène 1 (3 mots sur 5).
+  const r = await importerVoix({ dossier: dir, fichier: fichierParole(), outil: { present: false }, whisper: faux(entendusDeux.slice(0, 3)) });
+  assert.equal(r.ok, true, r.message);
+  assert.deepEqual(r.scenes.map((s) => s.id), ['intro']);
+  assert.match(r.avertissement, /gardée pour la scène « chiffre »/);
+  assert.deepEqual(fs.readFileSync(path.join(dir, 'assets', 'voix', 'chiffre.wav')), avant);
+});
+
+test('revue : enregistrement presque pas reconnu sans --scene : refusé avec le conseil --scene', async () => {
+  const dir = copierProjet('projet-simple');
+  deuxTextes(dir);
+  const r = await importerVoix({ dossier: dir, fichier: fichierDeuxScenes(), outil: { present: false }, whisper: faux([{ w: 'Pourquoi', t0: 0.5, t1: 0.9 }, { w: 'zzz', t0: 1, t1: 2 }]) });
+  assert.equal(r.ok, false);
+  assert.match(r.message, /moins de la moitié.*--scene/);
+  assert.equal(fs.existsSync(path.join(dir, 'assets', 'voix', 'intro.wav')), false);
+});
