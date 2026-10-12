@@ -83,6 +83,12 @@ function validerDeroule(d) {
     }
   }
 
+  if (d.voix !== undefined && !estObjet(d.voix)) err.push('« voix » doit être un objet, ex. { "provisoire": true }.');
+  else if (d.voix !== undefined) {
+    if (d.voix.provisoire !== undefined && typeof d.voix.provisoire !== 'boolean') err.push('« voix.provisoire » doit valoir true ou false.');
+    if (d.voix.volume !== undefined && !(typeof d.voix.volume === 'number' && d.voix.volume >= 0 && d.voix.volume <= 1)) err.push('« voix.volume » doit être un nombre entre 0 et 1.');
+  }
+
   if (!Array.isArray(d.scenes) || d.scenes.length === 0) {
     err.push('« scenes » doit contenir au moins une scène.');
     return err;
@@ -106,6 +112,14 @@ function validerDeroule(d) {
       else for (const [cle, a] of Object.entries(s.ajustements)) {
         if (!estObjet(s.textes) || !Object.hasOwn(s.textes, cle)) err.push(`La ${nom} : « ajustements.${cle} » : aucun texte « ${cle} » dans la scène.`);
         else if (!estObjet(a) || typeof a.taille !== 'number' || a.taille < 0.8 || a.taille > 1) err.push(`La ${nom} : « ajustements.${cle}.taille » doit être un nombre entre 0,8 et 1.`);
+      }
+    }
+    if (s.voix !== undefined) {
+      if (!estObjet(s.voix)) err.push(`La ${nom} : « voix » doit être un objet, ex. { "texte": "…" }.`);
+      else {
+        if (!estTexte(s.voix.texte)) err.push(`La ${nom} : « voix.texte » est obligatoire (le texte dit dans la scène).`);
+        if (s.voix.fichier !== undefined && !estTexte(s.voix.fichier)) err.push(`La ${nom} : « voix.fichier » doit être un chemin de fichier dans assets/.`);
+        if (s.voix.debut !== undefined && !(typeof s.voix.debut === 'number' && isFinite(s.voix.debut) && s.voix.debut >= 0)) err.push(`La ${nom} : « voix.debut » doit être un nombre de secondes positif ou nul.`);
       }
     }
     if (s.transition !== undefined && !TRANSITIONS.includes(s.transition)) {
