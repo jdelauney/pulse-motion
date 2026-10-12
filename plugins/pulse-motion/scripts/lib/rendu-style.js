@@ -25,7 +25,9 @@ async function rendreUnEssai({ dossierStyle, ratio, ton, navigateur, dossierStyl
     });</script>`;
     const fichier = path.join(dir, 'verification.html');
     fs.writeFileSync(fichier, html.replace('</body>', `${verification}\n</body>`));
-    const m = /<pre id="verification">([^<]*)<\/pre>/.exec(await rendreDOM(navigateur, fichier));
+    let dom;
+    try { dom = await rendreDOM(navigateur, fichier); } catch (e) { return [`le navigateur n'a pas pu afficher la page (${e.message})`]; }
+    const m = /<pre id="verification">([^<]*)<\/pre>/.exec(dom);
     if (!m) return ['la page ne s\'est pas affichée dans le navigateur'];
     const r = JSON.parse(m[1].replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&'));
     return [...erreurs.map((e) => e.message), ...r.erreurs, ...r.debordements, ...r.polices.map((f) => `police « ${f} » non chargée`)];

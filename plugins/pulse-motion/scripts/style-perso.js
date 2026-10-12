@@ -10,7 +10,7 @@
  */
 const fs = require('node:fs');
 const path = require('node:path');
-const { trouverStyle, messageStyleInconnu, verifierStyle, lireJSON, LIVRES, RACINE, dossierPersonnel } = require('./styles.js');
+const { trouverStyle, messageStyleInconnu, verifierStyle, marquerVerifie, lireJSON, LIVRES, RACINE, dossierPersonnel } = require('./styles.js');
 const { NOM_STYLE, TYPES } = require('./lib/contrat.js');
 const { projetEssai } = require('./lib/projet-essai.js');
 const { verifierRendu } = require('./lib/rendu-style.js');
@@ -56,8 +56,10 @@ async function verifierStylePerso({ nom, navigateur }) {
   let controle;
   try { controle = controler({ dossier: projet, ecrire: false }).problemes.map((p) => p.message); } finally { fs.rmSync(projet, { recursive: true, force: true }); }
   const rendu = await verifierRendu({ dossierStyle: st.dossier, navigateur });
+  const ok = controle.length === 0 && rendu.ok !== false;
+  if (ok && st.personnel) marquerVerifie(st.dossier);
   return {
-    ok: controle.length === 0 && rendu.ok !== false,
+    ok,
     erreurs: [], avertissements: contrat.avertissements, controle, rendu: rendu.problemes, renduVerifie: rendu.ok !== null,
     ...(rendu.message ? { message: rendu.message } : {}),
   };
@@ -68,6 +70,8 @@ async function plancheStyle({ nom, scenes = ['titre', 'liste'], ratio = '16:9', 
   if (!st) return { ok: false, message: messageStyleInconnu(nom) };
   const inconnus = scenes.filter((t) => !TYPES[t]);
   if (inconnus.length) return { ok: false, message: `Type de scène inconnu : ${inconnus.join(', ')}. Types : ${Object.keys(TYPES).join(', ')}.` };
+  const contrat = verifierStyle(st.dossier);
+  if (!contrat.ok) return { ok: false, message: `Le style « ${nom} » n'est pas encore conforme : ${contrat.erreurs.join(' ')}` };
   const projet = projetEssai({ dossierStyle: st.dossier, ratio, ton, types: scenes });
   try {
     const r = await exporter({ dossier: projet, planche: scenes, navigateur });
@@ -89,10 +93,11 @@ if (require.main === module) {
   const valeur = (o) => { const i = args.indexOf(o); return i >= 0 ? args[i + 1] : undefined; };
   const [action, nom] = args.filter((a, i) => !a.startsWith('--') && !['--depuis', '--scenes', '--ratio', '--ton'].includes(args[i - 1]));
   const fini = (r) => { console.log(JSON.stringify(r, null, 2)); process.exit(r.ok ? 0 : 1); };
+  const echec = (e) => fini({ ok: false, message: e.message });
   if (action === 'nouveau') fini(nouveauStyle({ nom, depuis: valeur('--depuis') }));
-  else if (action === 'verifier') verifierStylePerso({ nom }).then(fini);
+  else if (action === 'verifier') verifierStylePerso({ nom }).then(fini, echec);
   else if (action === 'planche') {
-    plancheStyle({ nom, scenes: valeur('--scenes') ? valeur('--scenes').split(',').filter(Boolean) : undefined, ratio: valeur('--ratio'), ton: valeur('--ton'), ouvrir: args.includes('--ouvrir') }).then(fini);
+    plancheStyle({ nom, scenes: valeur('--scenes') ? valeur('--scenes').split(',').filter(Boolean) : undefined, ratio: valeur('--ratio'), ton: valeur('--ton'), ouvrir: args.includes('--ouvrir') }).then(fini, echec);
   } else {
     console.error('Usage : pulse-motion style nouveau <nom> [--depuis <style>] | verifier <nom> | planche <nom> [--scenes titre,liste] [--ratio 16:9|1:1|9:16] [--ton clair|sombre] [--ouvrir]');
     process.exit(2);

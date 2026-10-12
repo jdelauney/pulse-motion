@@ -87,3 +87,25 @@ test('ligne de commande : style nouveau, guide d\'un style personnel par « refe
   assert.match(pm('reference', 'styles/papercraft').stdout, /^# Style « papercraft »/);
   assert.equal(pm('style', 'inconnu').status, 2);
 }));
+
+test('proposé seulement après une vérification réussie, et plus après une modification du style', () => avecPersonnel(async (perso) => {
+  P.nouveauStyle({ nom: 'papercraft' });
+  const fiche = () => S.listerStyles().find((f) => f.style === 'papercraft');
+  assert.equal(fiche().verifie, false, 'pas encore vérifié');
+  assert.ok(!S.recommander('formation').some((f) => f.style === 'papercraft'));
+  assert.equal((await P.verifierStylePerso({ nom: 'papercraft', navigateur: null })).ok, true);
+  assert.equal(fiche().verifie, true);
+  fs.appendFileSync(path.join(perso, 'styles', 'papercraft', 'style.css'), '\n.titre { letter-spacing: 0; }\n');
+  assert.equal(fiche().verifie, false, 'modifié depuis la vérification');
+}));
+
+test('navigateur qui échoue, catalogue illisible : réponse claire, jamais d\'exception', () => avecPersonnel(async (perso) => {
+  P.nouveauStyle({ nom: 'papercraft' });
+  const r = await P.verifierStylePerso({ nom: 'papercraft', navigateur: path.join(perso, 'absent.exe') });
+  assert.equal(r.ok, false);
+  assert.match(r.rendu.join('\n'), /navigateur n'a pas pu afficher la page/);
+  fs.writeFileSync(path.join(perso, 'styles', 'papercraft', 'catalogue.json'), '{ cassé');
+  const p = await P.plancheStyle({ nom: 'papercraft', exporter: async () => { throw new Error('ne doit pas être appelé'); } });
+  assert.equal(p.ok, false);
+  assert.match(p.message, /catalogue\.json/);
+}));
