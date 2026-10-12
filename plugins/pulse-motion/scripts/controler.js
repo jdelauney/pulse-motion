@@ -151,8 +151,16 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
       elementsParScene[s.id] = scenesLues[s.id].elements;
     }
     const temps = dureeTemps(deroule);
-    const min = calculerMinutage(deroule.scenes, elementsParScene, { dureeTemps: temps });
+    // Scènes de la page (avec leur voix) : durées effectives et ancres « mot: » comme dans le navigateur.
+    const scenesMinutees = (assemblage.donnees && assemblage.donnees.scenes) || deroule.scenes;
+    const min = calculerMinutage(scenesMinutees, elementsParScene, { dureeTemps: temps });
     for (const e of min.erreurs) problemes.push({ ...e, gravite: 'erreur' });
+    for (const s of min.scenes.filter((x) => x.allongee)) {
+      problemes.push({ regle: 'voix-allonge', gravite: 'info', scene: s.id,
+        message: `Scène « ${s.id} » : allongée à ${virgule(s.dureeEffective)} s pour laisser finir la voix (écrire "duree": ${Math.ceil(s.dureeEffective * 10) / 10} dans le déroulé pour la figer).` });
+    }
+    // La voix fixe la durée de sa scène : jamais de correction automatique de durée sous une voix.
+    const avecVoix = new Set(scenesMinutees.filter((x) => x.voix).map((x) => x.id));
 
     // Tempo : chaque scène commence sur un temps (à une demi-image près) ; la première commence la vidéo.
     if (temps) {
@@ -202,7 +210,7 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
           const p = { regle: 'temps-mort', gravite: 'alerte', scene: s.id, message: `Scène « ${s.id} » : rien ne bouge pendant ${virgule(b - a)} s (de ${virgule(a)} s à ${virgule(b)} s). Au-delà de ${virgule(SEUILS.tempsMort)} s, l'attention décroche.` };
           // En fin de scène (jusqu'à sa fin ou à l'entrée de la suivante) : raccourcir la scène, sans passer sous le temps de lecture.
           const finUtile = suivante && suivante.entree > 0 ? suivante.debut : s.fin;
-          if (corrigeable && s !== derniere && Math.abs(b - finUtile) < EPS) {
+          if (corrigeable && !avecVoix.has(s.id) && s !== derniere && Math.abs(b - finUtile) < EPS) {
             const duree = deroule.scenes[i].duree;
             const { mots, besoin } = besoinLecture[s.id];
             // Au dixième inférieur : le temps mort restant ne dépasse plus le seuil.
@@ -220,7 +228,7 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
     if (pause < SEUILS.pauseFinale - EPS) {
       const p = { regle: 'pause-finale', gravite: 'alerte', scene: derniere.id, message: `La vidéo s'arrête ${virgule(pause)} s après le dernier mouvement : laisser au moins ${virgule(SEUILS.pauseFinale)} s pour finir sur une image stable.` };
       const manque = SEUILS.pauseFinale - pause;
-      if (corrigeable && manque <= SEUILS.pauseFinaleMaxAjout + EPS) {
+      if (corrigeable && !avecVoix.has(derniere.id) && manque <= SEUILS.pauseFinaleMaxAjout + EPS) {
         const duree = deroule.scenes[deroule.scenes.length - 1].duree;
         p.correction = { scene: derniere.id, duree: auPasSuperieur(duree + manque * derniere.rythme, 0.1) };
       }
@@ -244,11 +252,12 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
     // Temps de lecture et CSS des scènes.
     for (const s of deroule.scenes) {
       const { mots, besoin } = besoinLecture[s.id];
-      const disponible = s.duree / (s.rythme || 1);
+      const minutee = min.scenes.find((x) => x.id === s.id);
+      const disponible = minutee ? minutee.fin - minutee.debut : s.duree / (s.rythme || 1);
       if (mots && disponible < besoin - EPS) {
         const p = { regle: 'lecture', gravite: 'alerte', scene: s.id, message: `Scène « ${s.id} » : ${mots} mots à lire en ${virgule(disponible)} s ; prévoir au moins ${virgule(besoin)} s.` };
         const nouvelle = auPasSuperieur(besoin * (s.rythme || 1), 0.5);
-        if (corrigeable && nouvelle <= s.duree * SEUILS.lectureMaxAllonge + EPS) p.correction = { scene: s.id, duree: nouvelle };
+        if (corrigeable && !avecVoix.has(s.id) && nouvelle <= s.duree * SEUILS.lectureMaxAllonge + EPS) p.correction = { scene: s.id, duree: nouvelle };
         problemes.push(p);
       }
       controlerCSS(scenesLues[s.id].css, s.id, `Scène « ${s.id} »`, problemes);
@@ -412,7 +421,9 @@ if (require.main === module) {
   }
   controlerComplet({ dossier, corriger: !args.includes('--sans-correction'), rendu: !args.includes('--sans-rendu') }).then(({ problemes, corrections, renduVerifie, fichier }) => {
     const erreurs = problemes.filter((p) => p.gravite === 'erreur').length;
-    console.log(JSON.stringify({ erreurs, alertes: problemes.length - erreurs, corrections: corrections.length, renduVerifie, fichier }, null, 2));
+    const alertes = problemes.filter((p) => p.gravite === 'alerte').length;
+    const informations = problemes.filter((p) => p.gravite === 'info').length;
+    console.log(JSON.stringify({ erreurs, alertes, informations, corrections: corrections.length, renduVerifie, fichier }, null, 2));
     process.exit(erreurs ? 1 : 0);
   }, (e) => { console.error(e.message); process.exit(1); });
 }
