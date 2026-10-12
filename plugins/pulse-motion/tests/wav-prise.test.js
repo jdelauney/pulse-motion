@@ -45,3 +45,10 @@ test('preparerPrise : stéréo -> mono rognée à −3 dBFS', () => {
   assert.ok(p.canaux[0].length < taux * 1.3);
   assert.ok(Math.abs(20 * Math.log10(crete(p.canaux[0])) + 3) < 0.1);
 });
+
+test('preparerPrise : decalage = secondes retirées au début (moins la marge)', () => {
+  const x = new Float32Array(taux * 3);
+  x.set(sinus(1, 0.5), taux);
+  const p = W.preparerPrise({ taux, canaux: [x] });
+  assert.ok(Math.abs(p.decalage - 0.92) < 0.02, String(p.decalage));
+});
