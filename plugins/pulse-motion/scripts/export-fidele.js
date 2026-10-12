@@ -30,6 +30,14 @@ function avecEffets(projet, deroule) {
   });
 }
 
+/** Première image du segment fidèle à sa capture (segment décalé, noir, d'une autre page). */
+async function premiereImageJuste(outil, fichier, capturee) {
+  if (!capturee) return false;
+  try {
+    return F.ecartImages(await F.extraireImage({ ffmpeg: outil.chemin, fichier, t: 0 }), capturee) <= ECART_MAX;
+  } catch { return false; }
+}
+
 /** Segment valide : lisible, H.264, à la taille et avec le nombre d'images attendus. */
 async function segmentValide(outil, fichier, attendu) {
   if (!fs.existsSync(fichier)) return false;
@@ -93,19 +101,23 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
       const fin = Math.min(total, debut + parSegment);
       const fichier = path.join(travail, `segment-${String(k).padStart(2, '0')}.mp4`);
       segments.push(fichier);
-      if (await segmentValide(outil, fichier, { largeur, hauteur, images: fin - debut })) {
+      if (await segmentValide(outil, fichier, { largeur, hauteur, images: fin - debut })
+        && await premiereImageJuste(outil, fichier, await capture.capturer(debut / cadence))) {
         repris++;
         faites += fin - debut;
         surProgression(faites, total);
         etat({ etat: 'en-cours', images: faites, total });
         continue;
       }
+      fs.rmSync(fichier, { force: true });
       segmentPartiel = `${fichier}.part`;
+      let premiere = null;
       async function* images() {
         for (let n = debut; n < fin; n++) {
           if (controle.signal.aborted) return;
           const png = await capture.capturer(n / cadence);
           if (temoins.has(n)) temoins.set(n, png);
+          if (n === debut) premiere = png;
           faites++;
           surProgression(faites, total);
           if (faites % 10 === 0 || faites === total) etat({ etat: 'en-cours', images: faites, total });
@@ -115,6 +127,7 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
       await F.encoderSegment({ ffmpeg: outil.chemin, sortie: segmentPartiel, ips: cadence, crf: CRF[qualite], images: images(), signal: controle.signal });
       if (controle.signal.aborted) throw new Error('export annulé');
       if (!(await segmentValide(outil, segmentPartiel, { largeur, hauteur, images: fin - debut }))) throw new Error(`le segment ${k + 1} est incomplet`);
+      if (!(await premiereImageJuste(outil, segmentPartiel, premiere))) throw new Error(`le segment ${k + 1} ne correspond pas à la page`);
       fs.renameSync(segmentPartiel, fichier);
       segmentPartiel = null;
       produits++;
@@ -122,6 +135,7 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
     }
     await capture.fermer();
     capture = null;
+    if (controle.signal.aborted) throw new Error('export annulé');
 
     await F.assemblerSegments({ ffmpeg: outil.chemin, segments, sortie: partiel });
     const s = await F.sonder({ ffprobe: outil.cheminProbe, fichier: partiel });
@@ -135,9 +149,19 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
       })();
       const lue = await F.extraireImage({ ffmpeg: outil.chemin, fichier: partiel, t: Math.max(0, n / cadence - 0.001) });
       const ecart = F.ecartImages(lue, capturee);
-      if (ecart > ECART_MAX) throw new Error(`l'image ${n + 1} de la vidéo ne correspond pas à la page (écart de ${Math.round(ecart * 100)} %)`);
+      if (ecart > ECART_MAX) {
+        // Le segment fautif est retiré : il ne sera pas repris au prochain export.
+        fs.rmSync(segments[Math.floor(n / parSegment)], { force: true });
+        throw new Error(`l'image ${n + 1} de la vidéo ne correspond pas à la page (écart de ${Math.round(ecart * 100)} %)`);
+      }
     }
-    fs.renameSync(partiel, final);
+    if (controle.signal.aborted) throw new Error('export annulé');
+    try {
+      fs.renameSync(partiel, final);
+    } catch (err) {
+      if (['EPERM', 'EBUSY', 'EACCES'].includes(err.code)) throw Object.assign(new Error(`« ${path.basename(final)} » est ouvert ailleurs : fermez la vidéo (lecteur, explorateur) puis relancez l'export`), { verrou: true });
+      throw err;
+    }
     fs.rmSync(travail, { recursive: true, force: true });
     const resultat = { ok: true, fichier: final, images: total, duree: total / cadence, largeur, hauteur, audio: false, segmentsRepris: repris };
     etat({ etat: 'fini', fichier: path.relative(projet, final).replace(/\\/g, '/'), images: total, duree: total / cadence, audio: false });
@@ -145,14 +169,17 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
   } catch (e) {
     const annule = controle.signal.aborted;
     const message = annule ? 'Export annulé : les segments déjà faits seront repris au prochain export.'
-      : `L'export fidèle a échoué (${e.message}) : relancez-le ; les segments déjà faits seront repris.`;
+      : e.verrou ? `${e.message} ; les segments déjà faits seront repris.`
+        : `L'export fidèle a échoué (${e.message}) : relancez-le ; les segments déjà faits seront repris.`;
     etat({ etat: annule ? 'annule' : 'erreur', message });
     return { ok: false, audio: false, message };
   } finally {
     if (signal) signal.removeEventListener('abort', surAnnulation);
     if (capture) await capture.fermer().catch(() => {});
-    if (segmentPartiel) fs.rmSync(segmentPartiel, { force: true });
-    fs.rmSync(partiel, { force: true });
+    // Fichiers partiels retirés ; encore verrouillés (Windows) : nouvel essai, puis laissés.
+    for (const f2 of [segmentPartiel, partiel]) {
+      if (f2) { try { fs.rmSync(f2, { force: true, maxRetries: 5, retryDelay: 200 }); } catch { /* laissé */ } }
+    }
   }
 }
 
@@ -168,7 +195,8 @@ if (require.main === module) {
   process.on('SIGINT', () => controle.abort());
   exporterFidele({ dossier, qualite: valeur('--qualite') || '1080p', ips: valeur('--ips') ? Number(valeur('--ips')) : undefined, signal: controle.signal,
     surProgression: (n, total) => process.stderr.write(`\r${Math.round((100 * n) / total)} %`) })
-    .then((r) => { process.stderr.write('\n'); console.log(JSON.stringify(r, null, 2)); process.exit(r.ok ? 0 : 1); });
+    .then((r) => { process.stderr.write('\n'); console.log(JSON.stringify(r, null, 2)); process.exit(r.ok ? 0 : 1); },
+      (err) => { console.log(JSON.stringify({ ok: false, message: `L'export fidèle a échoué (${err.message}).` }, null, 2)); process.exit(1); });
 }
 
 module.exports = { exporterFidele, TAILLES };

@@ -97,6 +97,7 @@ function lancer(programme, args, { entree = null, signal } = {}) {
     const sortie = [];
     let erreurs = '';
     let annule = false;
+    let erreurEntree = null;
     const surAnnulation = () => { annule = true; try { p.kill(); } catch { /* déjà arrêté */ } };
     if (signal) { if (signal.aborted) surAnnulation(); else signal.addEventListener('abort', surAnnulation, { once: true }); }
     p.stdout.on('data', (d) => sortie.push(d));
@@ -104,10 +105,12 @@ function lancer(programme, args, { entree = null, signal } = {}) {
     p.on('error', (e) => rejeter(e));
     p.on('close', (code) => {
       if (signal) signal.removeEventListener('abort', surAnnulation);
-      if (annule) rejeter(new Error('export annulé'));
+      // Rejet seulement une fois ffmpeg arrêté : son fichier de sortie est alors libre (Windows).
+      if (erreurEntree) rejeter(erreurEntree);
+      else if (annule) rejeter(new Error('export annulé'));
       else resoudre({ code, sortie: Buffer.concat(sortie), erreurs });
     });
-    if (entree) entree(p.stdin).catch((e) => { try { p.kill(); } catch { /* déjà arrêté */ } rejeter(e); });
+    if (entree) entree(p.stdin).catch((e) => { erreurEntree = e; try { p.kill(); } catch { /* déjà arrêté */ } });
   });
 }
 

@@ -52,3 +52,12 @@ test('ffmpeg en échec (image illisible) : rejet avec sa sortie d\'erreur', sans
   const dir = dossierTemporaire('pm-ff-');
   await assert.rejects(F.encoderSegment({ ffmpeg: outil.chemin, sortie: path.join(dir, 'x.mp4'), ips: 30, crf: 21, images: images(3, () => Buffer.from('pas une image')) }), /ffmpeg/);
 });
+
+test('revue : capture qui échoue pendant un segment : rejet seulement après l\'arrêt de ffmpeg (fichier libre aussitôt)', sans, async () => {
+  const dir = dossierTemporaire('pm-ff-');
+  const sortie = path.join(dir, 'x.mp4');
+  async function* cassees() { for (let k = 0; k < 40; k++) { if (k === 20) throw new Error('capture cassée'); yield uni(0, 0, 0); } }
+  await assert.rejects(F.encoderSegment({ ffmpeg: outil.chemin, sortie, ips: 30, crf: 21, images: cassees() }), /capture cassée/);
+  fs.rmSync(sortie, { force: true });
+  assert.equal(fs.existsSync(sortie), false);
+});

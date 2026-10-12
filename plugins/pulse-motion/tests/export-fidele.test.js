@@ -61,3 +61,36 @@ test('sans ffmpeg utilisable : refus clair, rien d\'écrit', async () => {
   assert.match(r.message, /ffmpeg n'est pas installé/);
   assert.equal(fs.existsSync(path.join(dir, 'sortie', '.export')), false);
 });
+
+test('revue : segment gardé mais faux (images noires) : détecté à la reprise, refait ; jamais repris indéfiniment', sans, async () => {
+  const dir = copierProjet('projet-simple');
+  const r1 = await exporter(dir, { arreterApres: 1 });
+  assert.equal(r1.ok, false);
+  const segment = path.join(dir, 'sortie', '.export', 'segment-00.mp4');
+  const { pngRGBA } = require('./aide/png.js');
+  const noir = pngRGBA(1280, 720, () => [0, 0, 0, 255]);
+  async function* noires() { for (let k = 0; k < 30; k++) yield noir; }
+  fs.rmSync(segment);
+  await F.encoderSegment({ ffmpeg: outil.chemin, sortie: segment, ips: 10, crf: 21, images: noires() });
+  const r2 = await exporter(dir);
+  assert.equal(r2.ok, true, r2.message);
+  assert.equal(r2.segmentsRepris, 0);
+});
+
+test('revue : vidéo finale ouverte ailleurs (fichier verrouillé) : message en français, segments gardés', { skip: sans.skip || (process.platform !== 'win32' && 'verrou propre à Windows') }, async () => {
+  const dir = copierProjet('projet-simple');
+  const final = path.join(dir, 'sortie', 'la-chaine-du-froid.mp4');
+  fs.mkdirSync(path.dirname(final), { recursive: true });
+  fs.writeFileSync(final, 'ancienne vidéo');
+  const verrou = fs.openSync(final, 'r');
+  try {
+    const r = await exporter(dir, { ips: 5 });
+    assert.equal(r.ok, false);
+    assert.match(r.message, /fermez la vidéo/);
+  } finally {
+    fs.closeSync(verrou);
+  }
+  const r2 = await exporter(dir, { ips: 5 });
+  assert.equal(r2.ok, true, r2.message);
+  assert.ok(r2.segmentsRepris > 0);
+});
