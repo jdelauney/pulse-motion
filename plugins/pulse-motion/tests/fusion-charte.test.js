@@ -123,3 +123,9 @@ test('couleurs lisibles : une marge au-dessus du seuil, pour rester lisibles sur
   assert.ok(contraste(valeur('primaire'), '#ffffff') >= SEUILS.contrasteTitres + SEUILS.margeLisible, valeur('primaire'));
   assert.equal(SEUILS.margeLisible, 0.5);
 });
+
+test('revue : une couleur de marque déjà lisible sur le fond reste telle quelle ; seule une couleur à ajuster reçoit la marge', () => {
+  const lignes = F.variablesDerivees({ primaire: '#0070f3', accent: '#e50914', fond: '#ffffff' }).join('\n');
+  assert.match(lignes, /--c-primaire-lisible: #0070f3;/);
+  assert.match(lignes, /--c-accent-lisible: #e50914;/);
+});

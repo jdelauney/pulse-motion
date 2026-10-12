@@ -40,3 +40,19 @@ test('page de mesures : plusieurs pages en même temps, chacune son résultat', 
   const r = await Promise.all([1, 2, 3].map((n) => mesurerPage({ html: page(), navigateur, delai: 30000, script: `return ${n};` })));
   assert.deepEqual(r.map((x) => x.resultat), [1, 2, 3]);
 });
+
+test('revue : un envoi sans le jeton de la page est ignoré (une autre page web ne peut pas répondre à sa place)', sans, async () => {
+  const http = require('node:http');
+  let port = null;
+  // La page attend 1,5 s avant de répondre ; pendant ce temps, un intrus poste un faux résultat sur son port.
+  const attente = mesurerPage({ html: page(), navigateur, delai: 30000, surPort: (p) => { port = p; }, script: 'await new Promise(function (r) { setTimeout(r, 1500); }); return "vrai";' });
+  await new Promise((r) => setTimeout(r, 700));
+  assert.ok(port);
+  const statut = await new Promise((ok) => {
+    const req = http.request({ host: '127.0.0.1', port, path: '/pm-resultat', method: 'POST', headers: { 'Content-Type': 'text/plain' } }, (res) => { res.resume(); res.on('end', () => ok(res.statusCode)); });
+    req.on('error', () => ok(0));
+    req.end(JSON.stringify({ resultat: 'faux' }));
+  });
+  assert.equal(statut, 403);
+  assert.deepEqual(await attente, { resultat: 'vrai' });
+});

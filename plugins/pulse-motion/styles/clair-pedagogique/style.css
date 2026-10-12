@@ -19,9 +19,14 @@
 .rangee > * { flex: 1; min-width: 0; }
 
 /* ---------- Typographie ---------- */
+/* Texte de couleur posé sur une surface teintée ou un décor pâle : un peu plus foncé (lisible à 4,5:1). */
+#pm-scene {
+  --c-primaire-sur-teinte: color-mix(in oklab, var(--c-primaire-lisible) 78%, var(--c-texte));
+  --c-accent-sur-teinte: color-mix(in oklab, var(--c-accent-lisible) 78%, var(--c-texte));
+}
 .etiquette {
   font: 700 3.6cqh/1 var(--f-titres); letter-spacing: 0.08em; text-transform: uppercase;
-  color: var(--c-accent-lisible);
+  color: var(--c-accent-sur-teinte);
 }
 .titre {
   margin: 0; font: 800 9cqh/1.05 var(--f-titres); letter-spacing: -0.01em;
