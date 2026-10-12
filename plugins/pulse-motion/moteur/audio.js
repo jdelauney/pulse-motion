@@ -6,13 +6,14 @@
  *
  * Sources embarquées par l'assembleur : un bloc script de type text/plain d'id « pm-son-… » contenant une URL data:,
  * désigné dans pm-donnees (musique.source, scenes[].voix.source). Musique baissée sous la parole (ducking : gain et creux à 2,5 kHz),
- * puis sonie ramenée à −16 LUFS (M.sonie).
+ * puis sonie de référence (bus à plein volume) ramenée à −16 LUFS (M.sonie) ; les volumes de la personne baissent ensuite.
  * Navigateur seulement ; dépend de horloge (M.donnees, M.minutage, M.duree), mixage et sonie.
  */
 (function (racine) {
   'use strict';
   var M = racine.M = racine.M || {};
   var TAUX = 48000;
+  var SONIE = -16;
   var promesse = null;
 
   /** Prises de voix placées dans la vidéo : [{ scene, source, debut, mots }]. */
@@ -42,37 +43,42 @@
     for (var i = 1; i < points.length; i++) param.linearRampToValueAtTime(points[i].v, points[i].t);
   }
 
+  function nouveauContexte() {
+    return new OfflineAudioContext(2, Math.max(1, Math.ceil(M.duree * TAUX)), TAUX);
+  }
+  function canaux(tampon) { return [tampon.getChannelData(0), tampon.getChannelData(1)]; }
+  function volumeDe(objet) { return objet && typeof objet.volume === 'number' ? objet.volume : 1; }
+
+  /** Chaque bus est rendu seul, à plein volume ; les volumes de la personne s'appliquent au mélange. */
   async function rendre() {
     var d = M.donnees, duree = M.duree, X = M.mixage, D = X.DUCKING;
-    var contexte = new OfflineAudioContext(2, Math.max(1, Math.ceil(duree * TAUX)), TAUX);
-    var avertissements = [], sources = 0, musiqueIllisible = false, entendues = [];
-    var volumeVoix = d.voix && typeof d.voix.volume === 'number' ? d.voix.volume : 1;
+    var avertissements = [], bus = [], musiqueIllisible = false, entendues = [];
 
     var prises = prisesVoix();
-    for (var i = 0; i < prises.length; i++) {
-      var p = prises[i];
-      try {
-        var tampon = await decoder(contexte, p.source);
-        var voix = contexte.createBufferSource();
-        voix.buffer = tampon;
-        var gainVoix = contexte.createGain();
-        gainVoix.gain.value = volumeVoix;
-        voix.connect(gainVoix).connect(contexte.destination);
-        voix.start(p.debut);
-        entendues.push(p);
-        sources++;
-      } catch (e) {
-        avertissements.push('La voix de la scène « ' + p.scene + ' » n\'a pas pu être lue.');
+    if (prises.length) {
+      var contexteVoix = nouveauContexte();
+      for (var i = 0; i < prises.length; i++) {
+        var p = prises[i];
+        try {
+          var voix = contexteVoix.createBufferSource();
+          voix.buffer = await decoder(contexteVoix, p.source);
+          voix.connect(contexteVoix.destination);
+          voix.start(p.debut);
+          entendues.push(p);
+        } catch (e) {
+          avertissements.push('La voix de la scène « ' + p.scene + ' » n\'a pas pu être lue.');
+        }
       }
+      if (entendues.length) bus.push({ tampon: await contexteVoix.startRendering(), volume: volumeDe(d.voix) });
     }
 
     if (d.musique && d.musique.source) {
       try {
+        var contexte = nouveauContexte();
         var musique = contexte.createBufferSource();
         musique.buffer = await decoder(contexte, d.musique.source);
-        var volume = typeof d.musique.volume === 'number' ? d.musique.volume : 1;
         var fondus = contexte.createGain();
-        automatiser(fondus.gain, X.pointsFondus(duree, volume));
+        automatiser(fondus.gain, X.pointsFondus(duree, 1));
         var points = X.pointsDucking(X.groupesParole(entendues, D.ecart), D);
         var baisse = contexte.createGain();
         automatiser(baisse.gain, points.map(function (q) { return { t: q.t, v: Math.pow(10, q.db / 20) }; }));
@@ -83,19 +89,39 @@
         automatiser(creux.gain, points.map(function (q) { return { t: q.t, v: q.db * D.creux }; }));
         musique.connect(fondus).connect(baisse).connect(creux).connect(contexte.destination);
         musique.start(0);
-        sources++;
+        bus.push({ tampon: await contexte.startRendering(), volume: volumeDe(d.musique) });
       } catch (e) {
         musiqueIllisible = true;
       }
     }
     if (musiqueIllisible) {
-      avertissements.push(sources ? 'La musique n\'a pas pu être lue : son exporté sans musique.' : 'La musique n\'a pas pu être lue : vidéo exportée sans son.');
+      avertissements.push(bus.length ? 'La musique n\'a pas pu être lue : son exporté sans musique.' : 'La musique n\'a pas pu être lue : vidéo exportée sans son.');
     }
-    if (!sources) return { buffer: null, sonie: null, avertissements: avertissements };
+    if (!bus.length) return { buffer: null, sonie: null, avertissements: avertissements };
 
-    var buffer = await contexte.startRendering();
-    var r = M.sonie.normaliser([buffer.getChannelData(0), buffer.getChannelData(1)], TAUX);
-    return { buffer: buffer, sonie: isFinite(r.integree) ? r.integree : null, avertissements: avertissements };
+    // Référence : tous les bus à plein volume, ramenés à −16 LUFS. Les volumes de la personne (« baisse la musique »)
+    // s'appliquent ensuite : une musique seule à 0,5 sort 6 dB plus bas.
+    var n = bus[0].tampon.length;
+    var sources = bus.map(function (b) { return canaux(b.tampon); });
+    var reference = sources[0];
+    if (bus.length > 1) {
+      reference = [new Float32Array(n), new Float32Array(n)];
+      sources.forEach(function (s) { for (var c = 0; c < 2; c++) for (var k = 0; k < n; k++) reference[c][k] += s[c][k]; });
+    }
+    var lref = M.sonie.mesurer(reference, TAUX).integree;
+    var gain = isFinite(lref) ? Math.pow(10, Math.min(SONIE - lref, 40) / 20) : 1;
+    var sortie = bus[0].tampon, mix = sources[0];
+    for (var c = 0; c < 2; c++) {
+      for (var k = 0; k < n; k++) {
+        var somme = 0;
+        for (var b = 0; b < bus.length; b++) somme += bus[b].volume * sources[b][c][k];
+        mix[c][k] = gain * somme;
+      }
+    }
+    // Crêtes limitées sans changer la sonie obtenue.
+    var lmix = M.sonie.mesurer(mix, TAUX).integree;
+    var sonie = isFinite(lmix) ? M.sonie.normaliser(mix, TAUX, { cible: lmix }).integree : null;
+    return { buffer: sortie, sonie: sonie, avertissements: avertissements };
   }
 
   M.rendreSon = function () {
