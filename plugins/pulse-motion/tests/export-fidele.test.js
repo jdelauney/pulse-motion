@@ -158,3 +158,50 @@ test('revue : musique absente du disque, avertissement « introuvable »', sans,
   assert.equal(r.ok, true, r.message);
   assert.match(r.avertissement, /musique est introuvable/);
 });
+
+test('son : sonie du MP4 égale à celle annoncée par la page (±1 LU) ; changer seulement la musique ne refait pas les images', sans, async () => {
+  const dir = copierProjet('projet-simple');
+  ajouterMusique(dir, 10);
+  const r = await exporter(dir, { ips: 5, dureeSegment: 3 });
+  assert.equal(r.ok, true, r.message);
+  const m = await F.mesurerSonie({ ffmpeg: outil.chemin, fichier: r.fichier });
+  // Volume 0,7 : 20·log10(0,7) ≈ −3,1 dB sous la sonie de référence (−16 LUFS).
+  assert.ok(Math.abs(m.integree - (-16 + 20 * Math.log10(0.7))) < 1, String(m.integree));
+  // Un export interrompu garde ses segments ; on change ensuite seulement la musique.
+  const r1 = await exporter(dir, { ips: 5, dureeSegment: 3, arreterApres: 1 });
+  assert.equal(r1.ok, false);
+  const { execFileSync } = require('node:child_process');
+  execFileSync(outil.chemin, ['-y', '-hide_banner', '-loglevel', 'error', '-f', 'lavfi', '-i', 'sine=frequency=550:duration=10', path.join(dir, 'assets', 'musique.wav')]);
+  const r2 = await exporter(dir, { ips: 5, dureeSegment: 3 });
+  assert.equal(r2.ok, true, r2.message);
+  assert.equal(r2.segmentsRepris, 1);
+});
+
+test('revue : vidéo de 0,3 s avec musique : exportée (sonie non vérifiable sous 0,4 s)', sans, async () => {
+  const dir = copierProjet('projet-simple');
+  ajouterMusique(dir, 2);
+  modifierDeroule(dir, (d) => { d.scenes = [{ ...d.scenes[0], duree: 0.3, transition: 'aucune' }]; });
+  const r = await exporter(dir, { ips: 10 });
+  assert.equal(r.ok, true, r.message);
+  assert.equal(r.audio, true);
+});
+
+test('revue : musique muette (volume 0) : exportée avec sa piste, sans vérification de sonie', sans, async () => {
+  const dir = copierProjet('projet-simple');
+  ajouterMusique(dir, 8);
+  modifierDeroule(dir, (d) => { d.musique.volume = 0; });
+  const r = await exporter(dir, { ips: 5 });
+  assert.equal(r.ok, true, r.message);
+  assert.equal(r.audio, true);
+});
+
+test('revue : musique dans un format non embarquable (.flac) : avertissement, vidéo muette', sans, async () => {
+  const dir = copierProjet('projet-simple');
+  fs.mkdirSync(path.join(dir, 'assets'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'assets', 'musique.flac'), Buffer.alloc(100, 1));
+  modifierDeroule(dir, (d) => { d.musique = { fichier: 'assets/musique.flac' }; });
+  const r = await exporter(dir, { ips: 5 });
+  assert.equal(r.ok, true, r.message);
+  assert.equal(r.audio, false);
+  assert.match(r.avertissement, /musique « assets\/musique\.flac » n'a pas pu être embarquée/);
+});

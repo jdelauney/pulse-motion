@@ -4,7 +4,9 @@
  * B : boucle sur la scène courante · clic sur l'image : lecture/pause.
  * Sous l'aperçu (window.__PM_APERCU__), écoute /_pm/evenements : rechargement à la
  * même position après une retouche, bandeau en cas d'erreur d'assemblage.
- * Navigateur seulement ; dépend de horloge (global M).
+ * Son : mixage du moteur (M.rendreSon), préparé 1 s après le chargement (sauf en capture) ou au premier ▶,
+ * joué par un AudioContext calé sur t.
+ * Navigateur seulement ; dépend de horloge et audio (global M).
  */
 (function (racine) {
   'use strict';
@@ -26,8 +28,8 @@
   M.demarrerLecteur = function () {
     var ips = M.ips;
     var scenes = M.minutage.scenes;
-    var musique = document.getElementById('pm-musique');
-    var volume = M.donnees.musique && typeof M.donnees.musique.volume === 'number' ? M.donnees.musique.volume : 1;
+    // Son : tampon mixé par M.rendreSon, joué par un AudioContext créé au premier ▶ (geste de la personne).
+    var son = { attendu: !!(M.aSon && M.aSon()), tampon: null, contexte: null, source: null, debutContexte: 0, debutT: 0, prepare: false };
     var lecture = false, dernier = 0, boucle = null;
 
     var barre = el('div', { id: 'pm-lecteur' }, document.body);
@@ -42,6 +44,48 @@
     var etiquette = el('span', { class: 'pm-etiquette' }, barre);
     var bandeau = el('div', { id: 'pm-bandeau', hidden: '' }, document.body);
 
+    function signaler(message) {
+      bandeau.textContent = (bandeau.hidden || !bandeau.textContent ? '' : bandeau.textContent + ' · ') + message;
+      bandeau.hidden = false;
+    }
+    function arreterSon() {
+      if (!son.source) return;
+      try { son.source.stop(); } catch (e) { /* déjà arrêtée */ }
+      son.source.disconnect();
+      son.source = null;
+    }
+    function lancerSon(t) {
+      arreterSon();
+      if (!son.tampon || !son.contexte || t >= son.tampon.duration - 0.05) return;
+      if (son.contexte.state === 'suspended') son.contexte.resume();
+      var s = son.contexte.createBufferSource();
+      s.buffer = son.tampon;
+      s.connect(son.contexte.destination);
+      s.start(0, Math.max(0, t));
+      son.source = s;
+      son.debutContexte = son.contexte.currentTime;
+      son.debutT = t;
+    }
+    function preparerSon() {
+      if (!son.attendu || son.prepare) return;
+      son.prepare = true;
+      M.rendreSon().then(function (r) {
+        son.tampon = r.buffer;
+        son.attendu = !!r.buffer;
+        r.avertissements.forEach(signaler);
+        if (lecture) lancerSon(M.temps());
+        afficher(M.temps());
+      }, function () {
+        son.attendu = false;
+        signaler('Le son n\'a pas pu être préparé.');
+      });
+    }
+    M.etatSon = function () {
+      return { attendu: son.attendu, pret: !!son.tampon, enLecture: !!son.source,
+        position: son.source ? son.debutT + son.contexte.currentTime - son.debutContexte : null };
+    };
+    setTimeout(function () { if (!(M.enCapture && M.enCapture())) preparerSon(); }, 1000);
+
     function indexScene(t) {
       var i = 0;
       scenes.forEach(function (s, k) { if (t >= s.debut) i = k; });
@@ -53,9 +97,10 @@
       var i = indexScene(t);
       etiquette.textContent = 'Scène ' + (i + 1) + '/' + scenes.length + ' · ' + scenes[i].id + (boucle ? ' (boucle)' : '') +
         ' · ' + horodatage(t) + ' / ' + horodatage(M.duree);
-      if (musique && lecture) {
-        musique.volume = Math.max(0, Math.min(1, volume * Math.min(1, t / 0.5, (M.duree - t) / 1.5)));
-        if (Math.abs(musique.currentTime - t) > 0.15) musique.currentTime = t;
+      if (lecture && son.attendu && !son.tampon) etiquette.textContent += ' · son en préparation';
+      if (lecture && son.source) {
+        var position = son.debutT + son.contexte.currentTime - son.debutContexte;
+        if (Math.abs(position - t) > 0.05) lancerSon(t);
       }
     }
     M.surRendu(afficher);
@@ -65,7 +110,9 @@
       lecture = true;
       bouton.textContent = '⏸';
       bouton.setAttribute('aria-label', 'Pause');
-      if (musique) { musique.currentTime = M.temps(); musique.play().catch(function () {}); }
+      if (son.attendu && !son.contexte && racine.AudioContext) son.contexte = new racine.AudioContext();
+      preparerSon();
+      lancerSon(M.temps());
       dernier = M.reel.now();
       M.reel.raf(boucler);
     }
@@ -73,7 +120,7 @@
       lecture = false;
       bouton.textContent = '▶';
       bouton.setAttribute('aria-label', 'Lecture');
-      if (musique) musique.pause();
+      arreterSon();
     }
     function basculer() { if (lecture) pause(); else jouer(); }
     function boucler() {
@@ -88,7 +135,7 @@
     }
     function aller(t) {
       M.rendre(t);
-      if (musique && lecture) musique.currentTime = M.temps();
+      if (lecture) lancerSon(M.temps());
     }
 
     bouton.addEventListener('click', basculer);

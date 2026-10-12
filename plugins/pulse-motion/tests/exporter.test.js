@@ -34,6 +34,21 @@ test('export avec musique : piste audio AAC (si le navigateur sait l\'encoder)',
   if (process.platform === 'win32' || process.platform === 'darwin') assert.equal(r.audio, true);
 });
 
+const F = require('../scripts/lib/ffmpeg.js');
+const outil = F.trouverFfmpeg();
+
+test('export navigateur : le son exporté vient du mixage de la page (sonie de référence −16 LUFS, moins le volume, lue par ffmpeg)', { skip: sansNavigateur || (!outil.present && 'ffmpeg absent') }, async () => {
+  const dir = copierProjet('projet-simple');
+  fs.writeFileSync(path.join(dir, 'assets', 'musique.wav'), wavSinus({ secondes: 10 }));
+  modifierDeroule(dir, (d) => { d.musique = { fichier: 'assets/musique.wav', volume: 0.3 }; });
+  const r = await exporterVideo({ dossier: dir, dossierStyles: STYLES });
+  assert.equal(r.ok, true, r.message);
+  if (!r.audio) return; // navigateur sans AAC
+  const m = await F.mesurerSonie({ ffmpeg: outil.chemin, fichier: path.join(dir, r.fichier) });
+  // Volume 0,3 : 20·log10(0,3) ≈ −10,5 dB sous la sonie de référence (−16 LUFS).
+  assert.ok(Math.abs(m.integree - (-16 + 20 * Math.log10(0.3))) < 1, String(m.integree));
+});
+
 test('planche : 3 images par scène demandée, hors des transitions, page de planche', { skip: sansNavigateur }, async () => {
   const dir = copierProjet('projet-simple');
   const r = await exporterVideo({ dossier: dir, dossierStyles: STYLES, planche: ['intro', 'chiffre'] });
