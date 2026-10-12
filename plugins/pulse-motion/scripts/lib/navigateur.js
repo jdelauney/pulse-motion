@@ -67,7 +67,11 @@ function ouvrirSansFenetre(navigateur, url, { gpu = false } = {}) {
       return new Promise((resolve) => {
         const fin = () => {
           // Chrome peut garder le profil verrouillé quelques instants après sa fermeture.
-          setTimeout(() => { fs.rmSync(profil, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 }); resolve(); }, 200);
+          setTimeout(() => {
+            // Profil encore verrouillé (antivirus, Windows) : laissé au système plutôt que de planter.
+            try { fs.rmSync(profil, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 }); } catch { /* laissé */ }
+            resolve();
+          }, 200);
         };
         if (quitte || processus.exitCode !== null) return fin();
         processus.once('exit', fin);

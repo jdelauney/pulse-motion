@@ -16,9 +16,14 @@
 .centre { align-items: center; text-align: center; }
 
 /* ---------- Typographie ---------- */
+/* Texte de couleur posé sur une surface teintée ou un décor pâle : un peu plus foncé (lisible à 4,5:1). */
+#pm-scene {
+  --c-primaire-sur-teinte: color-mix(in oklab, var(--c-primaire-lisible) 78%, var(--c-texte));
+  --c-accent-sur-teinte: color-mix(in oklab, var(--c-accent-lisible) 78%, var(--c-texte));
+}
 .pastille-texte {
   margin: 0; align-self: flex-start; padding: 1.2cqh 3cqh; border-radius: 99cqh;
-  background: color-mix(in srgb, var(--c-accent) 10%, var(--c-fond)); color: var(--c-accent-lisible);
+  background: color-mix(in srgb, var(--c-accent) 10%, var(--c-fond)); color: var(--c-accent-sur-teinte);
   font: 700 3.6cqh/1.1 var(--f-texte);
 }
 .centre .pastille-texte { align-self: center; }
@@ -67,8 +72,8 @@
 .deux-cartes { display: grid; grid-template-columns: 1fr 1fr; gap: 4cqh; }
 .carte { display: flex; flex-direction: column; gap: 1.6cqh; padding: 4.4cqh; min-width: 0; border-radius: 5cqh; background: color-mix(in srgb, var(--c-primaire) 8%, var(--c-fond)); }
 .carte.sauge { background: color-mix(in srgb, var(--c-accent) 12%, var(--c-fond)); }
-.carte-titre { margin: 0; font: 600 5.2cqh/1.1 var(--f-titres); color: var(--c-primaire-lisible); }
-.carte.sauge .carte-titre { color: var(--c-accent-lisible); }
+.carte-titre { margin: 0; font: 600 5.2cqh/1.1 var(--f-titres); color: var(--c-primaire-sur-teinte); }
+.carte.sauge .carte-titre { color: var(--c-accent-sur-teinte); }
 
 /* ---------- Étape ---------- */
 .etape { display: grid; grid-template-columns: auto 1fr; gap: 5cqh; align-items: center; }
@@ -88,7 +93,7 @@
 .parcours { display: flex; align-items: center; gap: 1.6cqh; }
 .etiquette-ronde {
   flex: 1; min-width: 0; padding: 3cqh 2cqh; border-radius: 99cqh; text-align: center;
-  background: color-mix(in srgb, var(--c-primaire) 10%, var(--c-fond)); color: var(--c-primaire-lisible);
+  background: color-mix(in srgb, var(--c-primaire) 10%, var(--c-fond)); color: var(--c-primaire-sur-teinte);
   font: 600 4.2cqh/1.2 var(--f-titres);
 }
 .courbe { flex: none; width: 10cqh; height: 5cqh; color: var(--c-accent-lisible); overflow: visible; }

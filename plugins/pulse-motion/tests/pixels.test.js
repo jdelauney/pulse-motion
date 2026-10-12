@@ -105,3 +105,42 @@ test('pixels : petite zone qui clignote vite (moins de 25 % de l\'image), pas de
   const r = await pixels(projet((h) => h.replace(MARGE, `${MARGE}${petit}`)));
   assert.equal(r.some((x) => x.regle === 'flash'), false, JSON.stringify(r));
 });
+
+test('revue : clignotements à 10 Hz et 6 Hz sur toute l\'image, flash (la vidéo est examinée image par image)', sans, async () => {
+  for (const periode of [0.1, 1 / 6]) {
+    const r = await pixels(projet((h) => h.replace(MARGE, `${MARGE}${CLIGNOTE(periode)}`)));
+    assert.ok(r.some((x) => x.regle === 'flash'), `${periode} : ${JSON.stringify(r)}`);
+  }
+});
+
+test('revue : texte presque invisible sur un dégradé, contraste signalé', sans, async () => {
+  const r = await pixels(projet((h) => h
+    .replace(MARGE, `${MARGE}${DEGRADE('#c0c0c0', '#e0e0e0')}`)
+    .replace('<h1 id="titre"', '<h1 id="titre" style="position:relative; color:#d0d0d0"')
+    .replace('<p data-texte="sous"', '<p data-texte="sous" style="position:relative; color:#111111"')));
+  assert.ok(r.some((x) => x.regle === 'contraste-reel' && x.element === 'titre'), JSON.stringify(r));
+});
+
+test('revue : couleur choisie dans la scène sur fond uni, contraste signalé ; couleur de la charte sur le fond, laissée à la charte', sans, async () => {
+  const gris = await pixels(projet((h) => h.replace('<p data-texte="sous"', '<p data-texte="sous" style="color:#bbbbbb"')));
+  assert.ok(gris.some((x) => x.regle === 'contraste-reel' && x.element === 'sous'), JSON.stringify(gris));
+  assert.deepEqual(await pixels(projet()), []);
+});
+
+test('revue : texte blanc avec ombre ou contour sombre sur un dégradé clair, rien à signaler', sans, async () => {
+  for (const effet of ['text-shadow: 0 0 0.3em #000, 0 0 0.3em #000', '-webkit-text-stroke: 0.08em #000']) {
+    const r = await pixels(projet((h) => h
+      .replace(MARGE, `${MARGE}${DEGRADE('#ffffff', '#c8c8c8')}`)
+      .replace('<h1 id="titre"', `<h1 id="titre" style="position:relative; color:#ffffff; ${effet}"`)
+      .replace('<p data-texte="sous"', '<p data-texte="sous" style="position:relative; color:#111111"')));
+    assert.equal(r.some((x) => x.regle === 'contraste-reel'), false, `${effet} : ${JSON.stringify(r)}`);
+  }
+});
+
+test('revue : texte sombre mais très transparent sur un dégradé clair, contraste signalé', sans, async () => {
+  const r = await pixels(projet((h) => h
+    .replace(MARGE, `${MARGE}${DEGRADE('#ffffff', '#c8c8c8')}`)
+    .replace('<h1 id="titre"', '<h1 id="titre" style="position:relative; color:rgba(17,17,17,0.2)"')
+    .replace('<p data-texte="sous"', '<p data-texte="sous" style="position:relative; color:#111111"')));
+  assert.ok(r.some((x) => x.regle === 'contraste-reel' && x.element === 'titre'), JSON.stringify(r));
+});
