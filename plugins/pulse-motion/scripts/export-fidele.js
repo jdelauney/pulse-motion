@@ -2,7 +2,7 @@
 'use strict';
 /* Pulse Motion – export fidèle : vraies captures d'écran de la page (Chrome ou Edge sans fenêtre), encodées par
  * ffmpeg en segments de 10 s (deux navigateurs en parallèle sur une machine d'au moins 4 cœurs) repris après
- * interruption, assemblées sans réencodage avec la musique (normalisée, fondus), vérifiées (ffprobe, images
+ * interruption, assemblées sans réencodage avec le son de la page (mixage du moteur, −16 LUFS), vérifiées (ffprobe, sonie, images
  * comparées aux captures).
  *
  *   node scripts/export-fidele.js <dossier-du-projet> [--qualite 1080p|720p] [--ips 30|60]
@@ -70,9 +70,9 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
   const travail = path.join(sortieDir, '.export');
   fs.mkdirSync(travail, { recursive: true });
   const musique = deroule.musique ? cheminDansProjet(projet, deroule.musique.fichier) : null;
-  const volume = deroule.musique && typeof deroule.musique.volume === 'number' ? deroule.musique.volume : 1;
-  const signatureMusique = musique && fs.existsSync(musique) ? crypto.createHash('sha256').update(fs.readFileSync(musique)).digest('hex') : 'aucune';
-  const empreinte = crypto.createHash('sha256').update(assemblage.html).update(`|${qualite}|${cadence}|${dureeSegment}|${signatureMusique}|${volume}`).digest('hex');
+  // Empreinte des images : la page sans ses sources sonores (changer seulement un son ne refait pas les images).
+  const sansSons = assemblage.html.replace(/<script type="text\/plain" id="pm-son-[a-z0-9-]+">[^<]*<\/script>/g, '');
+  const empreinte = crypto.createHash('sha256').update(sansSons).update(`|${qualite}|${cadence}|${dureeSegment}`).digest('hex');
   const fichierEmpreinte = path.join(travail, 'empreinte');
   const memeEmpreinte = fs.existsSync(fichierEmpreinte) && fs.readFileSync(fichierEmpreinte, 'utf8') === empreinte;
   if (!memeEmpreinte) {
@@ -94,6 +94,20 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
   if (signal) { if (signal.aborted) controle.abort(); else signal.addEventListener('abort', surAnnulation, { once: true }); }
   try {
     const premiere = await ouvrir();
+    // Son : le mixage de la page (le même que l'aperçu), rendu une fois ; illisible : vidéo muette avec un avertissement.
+    const avertissements = [];
+    if (deroule.musique && !(musique && fs.existsSync(musique))) avertissements.push(`La musique est introuvable (« ${deroule.musique.fichier} ») : vidéo exportée sans son.`);
+    else if (deroule.musique && !assemblage.html.includes('id="pm-son-musique"')) {
+      avertissements.push(`La musique « ${deroule.musique.fichier} » n'a pas pu être embarquée (formats acceptés : mp3, m4a, aac, wav, ogg) : vidéo exportée sans son.`);
+    }
+    let son = null;
+    try {
+      son = await premiere.rendreSon();
+      avertissements.push(...son.avertissements);
+    } catch (err) {
+      if (controle.signal.aborted) throw err;
+      avertissements.push('Le son n\'a pas pu être préparé : vidéo exportée sans son.');
+    }
     const total = Math.round(premiere.duree * cadence);
     const parSegment = Math.round(dureeSegment * cadence);
     const nombre = Math.ceil(total / parSegment);
@@ -161,29 +175,31 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
     if (echec) throw echec.reason;
     if (controle.signal.aborted) throw new Error('export annulé');
 
-    // Son : musique normalisée, volume, fondus ; illisible : vidéo muette avec un avertissement.
     let audio = null;
-    let avertissement;
-    if (deroule.musique) {
-      const piste = path.join(travail, 'musique.m4a');
+    if (son && son.wav) {
+      const wav = path.join(travail, 'son.wav');
+      const piste = path.join(travail, 'son.m4a');
+      fs.writeFileSync(wav, son.wav);
       try {
-        if (!musique || !fs.existsSync(musique)) {
-          avertissement = `La musique est introuvable (« ${deroule.musique.fichier} ») : vidéo exportée sans son.`;
-        } else {
-          await F.mixerMusique({ ffmpeg: outil.chemin, musique, volume, duree: total / cadence, sortie: piste, signal: controle.signal });
-          audio = piste;
-        }
+        await F.encoderSon({ ffmpeg: outil.chemin, wav, duree: total / cadence, sortie: piste, signal: controle.signal });
+        audio = piste;
       } catch (err) {
         if (controle.signal.aborted) throw err;
-        avertissement = 'La musique n\'a pas pu être lue : vidéo exportée sans son.';
+        avertissements.push('Le son n\'a pas pu être encodé : vidéo exportée sans son.');
       }
     }
+    const avertissement = avertissements.length ? avertissements.join(' ') : undefined;
 
     await F.assemblerSegments({ ffmpeg: outil.chemin, segments, sortie: partiel, audio });
     const s = await F.sonder({ ffprobe: outil.cheminProbe, fichier: partiel });
     if (s.video !== 'h264' || s.largeur !== largeur || s.hauteur !== hauteur) throw new Error('la vidéo n\'a pas la piste ou la taille attendues');
     if (s.images !== total || Math.abs(s.duree - total / cadence) > 1 / cadence + 0.01) throw new Error(`la vidéo a ${s.images} images au lieu de ${total}`);
     if (audio && (s.audio !== 'aac' || Math.abs(s.dureeAudio - total / cadence) > 0.1)) throw new Error('la piste son est absente ou n\'a pas la durée de l\'image');
+    // ebur128 ne mesure rien sous 400 ms (un bloc) : la sonie d'une vidéo plus courte n'est pas vérifiée.
+    if (audio && typeof son.sonie === 'number' && total / cadence >= 0.4) {
+      const m = await F.mesurerSonie({ ffmpeg: outil.chemin, fichier: partiel });
+      if (!(Math.abs(m.integree - son.sonie) <= 1)) throw new Error(`le son n'a pas la sonie attendue (${m.integree.toFixed(1)} LUFS au lieu de ${son.sonie.toFixed(1)})`);
+    }
     // Trois images de la vidéo comparées aux captures (segment décalé, image noire).
     for (const [n, png] of temoins) {
       const capturee = png || await (async () => {

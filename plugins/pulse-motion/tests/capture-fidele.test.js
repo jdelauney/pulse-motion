@@ -7,7 +7,7 @@ const { ouvrirCapture } = require('../scripts/lib/capture-fidele.js');
 const { assembler } = require('../scripts/assembler.js');
 const { decoderPNG } = require('../scripts/logo.js');
 const { trouverNavigateur } = require('./aide/navigateur.js');
-const { STYLES, copierProjet } = require('./aide/projet.js');
+const { STYLES, copierProjet, modifierDeroule } = require('./aide/projet.js');
 
 const navigateur = trouverNavigateur();
 const sans = { skip: !navigateur && 'Chrome ou Edge introuvable' };
@@ -61,5 +61,35 @@ test('capture fidèle : format vertical, image entière sans bande', sans, async
     assert.ok(proche(couleur(png, 0.75, 0.98), [255, 0, 0]), 'le fond de la scène va jusqu\'en bas');
   } finally {
     await c.fermer();
+  }
+});
+
+test('son rapatrié en plusieurs morceaux : WAV stéréo 48 kHz complet, sonie annoncée', sans, async () => {
+  const dir = copierProjet('projet-simple');
+  fs.writeFileSync(path.join(dir, 'assets', 'musique.wav'), require('./aide/son.js').wavSinus({ secondes: 10 }));
+  modifierDeroule(dir, (d) => { d.musique = { fichier: 'assets/musique.wav' }; });
+  const fichier = path.join(dir, 'page.html');
+  fs.writeFileSync(fichier, assembler({ dossier: dir, dossierStyles: STYLES, ecrire: false }).html);
+  const capture = await ouvrirCapture({ fichierHtml: fichier, largeur: 640, hauteur: 360, navigateur });
+  try {
+    const son = await capture.rendreSon({ morceau: 100000 });
+    const lu = require('../moteur/wav.js').lire(new Uint8Array(son.wav));
+    assert.deepEqual([lu.taux, lu.canaux.length, lu.canaux[0].length], [48000, 2, Math.ceil(capture.duree * 48000)]);
+    assert.ok(Math.abs(son.sonie + 16) < 0.3, String(son.sonie));
+    assert.deepEqual(son.avertissements, []);
+  } finally {
+    await capture.fermer();
+  }
+});
+
+test('page sans son : rendreSon renvoie wav nul', sans, async () => {
+  const dir = copierProjet('projet-simple');
+  const fichier = path.join(dir, 'page.html');
+  fs.writeFileSync(fichier, assembler({ dossier: dir, dossierStyles: STYLES, ecrire: false }).html);
+  const capture = await ouvrirCapture({ fichierHtml: fichier, largeur: 640, hauteur: 360, navigateur });
+  try {
+    assert.equal((await capture.rendreSon()).wav, null);
+  } finally {
+    await capture.fermer();
   }
 });
