@@ -5,7 +5,7 @@
  *   node scripts/assembler.js <dossier-du-projet>
  *
  * Lit deroule.json et scenes/, injecte textes et charte, embarque polices, images,
- * logo et musique, inclut le moteur, écrit sortie/<titre>.html.
+ * logo et sources sonores, inclut le moteur, écrit sortie/<titre>.html.
  * Affiche un résumé JSON { ok, fichier, erreurs } ; code de sortie 1 si la page n'a pas pu être produite.
  */
 const fs = require('node:fs');
@@ -20,7 +20,7 @@ const { charteFinale, chartePour, variablesDerivees } = require('./lib/fusion-ch
 const { trouverFichiersPolice } = require('./lib/police.js');
 
 const RACINE = path.resolve(__dirname, '..');
-const MOTEUR = ['courbes.js', 'minutage.js', 'transitions.js', 'tween.js', 'lettres.js', 'camera.js', 'temps.js', 'horloge.js', 'tailles.js', 'lecteur.js', 'debordement.js', 'mesures.js', 'pixels.js',
+const MOTEUR = ['courbes.js', 'minutage.js', 'transitions.js', 'tween.js', 'lettres.js', 'camera.js', 'temps.js', 'horloge.js', 'tailles.js', 'wav.js', 'sonie.js', 'mixage.js', 'audio.js', 'lecteur.js', 'debordement.js', 'mesures.js', 'pixels.js',
   'particules/instantanes.js', 'particules/gpu.js', 'particules/simulation.js', 'particules/rendu.js', 'particules/calques.js'];
 function slug(texte) {
   return String(texte).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
@@ -154,17 +154,20 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   const { html: cssStyle, erreurs: erreursStyle } = embarquerRessources(fs.readFileSync(path.join(dossierStyle, 'style.css'), 'utf8'), dossierStyle, `style « ${deroule.style} »`);
   erreurs.push(...erreursStyle);
 
-  let audio = '';
+  // Sources sonores : un bloc texte par source (URL data:), lu et décodé par moteur/audio.js.
+  const sons = [];
+  const blocSon = (id, uri) => `<script type="text/plain" id="${id}">${uri}</script>`;
+  let sourceMusique = null;
   if (deroule.musique) {
     const uri = embarquerFichier(projet, deroule.musique.fichier, 'Musique', erreurs);
-    if (uri) audio = `<audio id="pm-musique" preload="auto" src="${uri}"></audio>`;
+    if (uri) { sourceMusique = 'pm-son-musique'; sons.push(blocSon(sourceMusique, uri)); }
   }
 
   const [l, h] = deroule.format.ratio.split(':');
   const donnees = {
     titre: deroule.titre,
     format: { ratio: deroule.format.ratio, ips: deroule.format.ips || 30 },
-    musique: deroule.musique ? { volume: deroule.musique.volume ?? 1 } : null,
+    musique: deroule.musique ? { volume: deroule.musique.volume ?? 1, source: sourceMusique } : null,
     tempo: deroule.tempo ? { bpm: deroule.tempo.bpm, decalage: deroule.tempo.decalage || 0 } : null,
     scenes: deroule.scenes.map((s) => ({ id: s.id, duree: s.duree, rythme: s.rythme || 1, transition: s.transition || 'aucune' })),
     effets: effets.map(({ calque, ancre, effet }) => ({ calque, ancre, effet })),
@@ -190,7 +193,7 @@ ${cssStyle}
 <div id="pm-scene" data-ton="${charte.ton}">
 ${sections.join('\n')}
 </div>
-${audio}
+${sons.join('\n')}
 <script type="application/json" id="pm-donnees">${jsonDansHTML(donnees)}</script>
 <script>
 ${lireMoteur(RACINE)}

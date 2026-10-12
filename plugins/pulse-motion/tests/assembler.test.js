@@ -107,8 +107,9 @@ test('musique embarquée et volume transmis au moteur', () => {
   fs.writeFileSync(path.join(dir, 'assets', 'musique.mp3'), Buffer.from([0xff, 0xfb, 0x90, 0x00]));
   modifierDeroule(dir, (d) => { d.musique = { fichier: 'assets/musique.mp3', volume: 0.6 }; });
   const r = assembler({ dossier: dir, dossierStyles: STYLES });
-  assert.match(r.html, /<audio id="pm-musique" preload="auto" src="data:audio\/mpeg;base64,/);
-  assert.match(r.html, /"musique":\{"volume":0\.6\}/);
+  assert.match(r.html, /<script type="text\/plain" id="pm-son-musique">data:audio\/mpeg;base64,/);
+  assert.doesNotMatch(r.html, /<audio id="pm-musique"/);
+  assert.match(r.html, /"musique":\{"volume":0\.6,"source":"pm-son-musique"\}/);
 });
 
 test('un texte contenant </script> ne casse pas les données', () => {
@@ -160,4 +161,13 @@ test('tempo : durée d\'un temps et bpm en variables CSS, tempo dans les donnée
   const { html } = assembler({ dossier: dir, dossierStyles: STYLES, ecrire: false });
   assert.match(html, /--pm-temps: 0\.5s; --pm-bpm: 120;/);
   assert.match(html, /"tempo":\{"bpm":120,"decalage":0\.25\}/);
+});
+
+test('revue : aucun fichier du moteur embarqué ne contient « </script » (il fermerait le script de la page)', () => {
+  const moteur = path.join(__dirname, '..', 'moteur');
+  const fichiers = (dossier) => fs.readdirSync(dossier, { withFileTypes: true })
+    .flatMap((e) => (e.isDirectory() ? fichiers(path.join(dossier, e.name)) : [path.join(dossier, e.name)]))
+    .filter((f) => f.endsWith('.js'));
+  const fautifs = fichiers(moteur).filter((f) => /<\/script/i.test(fs.readFileSync(f, 'utf8')));
+  assert.deepEqual(fautifs, []);
 });
