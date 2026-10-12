@@ -2,7 +2,7 @@
  *
  * M.mesurer({ ratio, seuils }) rend la vidéo tous les seuils.pasMesure secondes et renvoie des constats
  * bruts { regle, scene, element, instant, valeur }, sans message (scripts/lib/rendu-controle.js les traduit) :
- * chevauchement, hors-cadre, marge, zone-sure (9:16), logo-masque, texte-fugace, mouvement-rapide.
+ * chevauchement, hors-cadre, marge, zone-sure (9:16), logo-masque, texte-fugace, mouvement-rapide, sous-titre-cache-texte.
  * Élément jugé : texte (data-texte), image (sauf alt="" décoratif), logo, SVG de contenu (sans aria-hidden),
  * hors décor (.decor, [data-decor]) et pas imbriqué dans un autre élément jugé. Immobile : même place
  * qu'au relevé précédent, porteur data-etat ni « avant » ni « pendant », lettres arrivées, pas de transition.
@@ -209,6 +209,26 @@
           }
         }
       });
+      // Sous-titres : carton qui recouvre un texte de la scène ; en 9:16, carton dans les zones des réseaux.
+      var carton = conteneur.querySelector('#pm-sous-titres .pm-st-carton');
+      if (carton && opacite(carton) > 0.5 && aire(carton.getBoundingClientRect()) > 0) {
+        var rc = carton.getBoundingClientRect();
+        visibles.forEach(function (id) {
+          var sec = conteneur.querySelector(':scope > section[data-scene="' + id + '"]');
+          if (!sec) return;
+          sec.querySelectorAll('[data-texte]').forEach(function (el) {
+            if (!estJuge(el) || opacite(el) <= 0.5) return;
+            var r = encre({ el: el, r: rectangle(el) });
+            if (!aire(r)) return;
+            var part = commune(r, rc) / aire(r);
+            if (part > S.chevauchementMax) constater('sous-titre-cache-texte', id, nom(el), t, arrondi(part));
+          });
+        });
+        if (vertical && visibles.length) {
+          var zoneSt = rc.top < cadre.top + S.zoneHaut * H ? 'haut' : rc.bottom > cadre.bottom - S.zoneBas * H ? 'bas' : null;
+          if (zoneSt) constater('zone-sure', visibles[visibles.length - 1], 'sous-titres', t, zoneSt);
+        }
+      }
       lectures.forEach(function (l, el) { if (!textesVus.has(el)) fermerLecture(el, l); });
     }
     lectures.forEach(function (l, el) { l.fin = M.duree; fermerLecture(el, l); });
