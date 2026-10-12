@@ -89,7 +89,7 @@ function verifierIdentite(nom, identite, css, erreurs, charteCouleurs = {}) {
   } else if (!c.tons.includes(c.tonDefaut)) {
     erreurs.push('identite.json : « couleur.tonDefaut » doit être l\'un des tons déclarés.');
   } else {
-    if (c.tons.length === 2 && !/[data-ton=["']?sombre/.test(css)) erreurs.push('style.css : variante [data-ton="sombre"] absente alors que le ton sombre est déclaré.');
+    if (c.tons.length === 2 && !/\[data-ton=["']?sombre/.test(css)) erreurs.push('style.css : variante [data-ton="sombre"] absente alors que le ton sombre est déclaré.');
     // Chaque ton : sa variante (couleur.clair, couleur.sombre) ou, à défaut, la charte du style.
     for (const ton of c.tons) {
       const v = c[ton];

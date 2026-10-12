@@ -69,3 +69,14 @@ test('fichier de scène hors de scenes/, déroulé visé ou fichier partagé : r
     assert.equal(fs.existsSync(path.join(dir, '.historique')), false);
   }
 });
+
+test('styles livrés : clair-pedagogique puis les cinq autres, scènes recopiées, assemblage sans erreur', () => {
+  const { projetCatalogue } = require('./aide/catalogue.js');
+  const dir = projetCatalogue('clair-pedagogique');
+  for (const style of ['energique', 'minimal', 'tech-sombre', 'chaleureux', 'editorial']) {
+    const r = changerStyle({ dossier: dir, style });
+    assert.equal(r.ok, true, `${style} : ${r.message}`);
+    assert.equal(r.recopiees.length, 8, style);
+    assert.deepEqual(assembler({ dossier: dir, ecrire: false }).erreurs, [], style);
+  }
+});

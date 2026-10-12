@@ -14,6 +14,13 @@ const STYLE = path.join(LIVRES, 'clair-pedagogique');
 function copieDuStyle() {
   const d = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'pm-contrat-')), 'clair-pedagogique');
   fs.cpSync(STYLE, d, { recursive: true });
+  // Base de départ en ton clair seul : variante sombre retirée de l'identité et de la feuille de style.
+  const css = path.join(d, 'style.css');
+  fs.writeFileSync(css, fs.readFileSync(css, 'utf8').replace(/#pm-scene\[data-ton="sombre"\][^{]*\{[^}]*\}/g, ''));
+  const identite = JSON.parse(fs.readFileSync(path.join(d, 'identite.json'), 'utf8'));
+  identite.couleur.tons = ['clair'];
+  delete identite.couleur.sombre;
+  fs.writeFileSync(path.join(d, 'identite.json'), JSON.stringify(identite));
   return d;
 }
 
