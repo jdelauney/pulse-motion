@@ -38,10 +38,13 @@ function familleConnue(id, catalogue) {
   return famille;
 }
 
-function urlFeuille(famille, graisses) {
+/** Italique : « 400i » à côté de « 400 » dans l'URL (syntaxe de Bunny Fonts). */
+function urlFeuille(famille, graisses, italique = false) {
   const dispo = graisses.filter((g) => famille.graisses.includes(g)).sort((a, b) => a - b);
   if (!dispo.length) throw new Refus(`Aucune des graisses demandées (${graisses.join(', ')}) n'existe pour ${famille.nom} : graisses disponibles ${famille.graisses.join(', ')}.`);
-  return `https://${HOTE}/css?family=${famille.id}:${dispo.join(',')}`;
+  if (italique && !famille.styles.includes('italic')) throw new Refus(`${famille.nom} n'a pas d'italique chez Bunny Fonts : installez-la sans --italique.`);
+  const variantes = dispo.flatMap((g) => (italique ? [`${g}`, `${g}i`] : [`${g}`]));
+  return `https://${HOTE}/css?family=${famille.id}:${variantes.join(',')}`;
 }
 
 /** La plage déclarée contient-elle les lettres ordinaires et les accents (a et é) ? */
@@ -109,7 +112,7 @@ async function installerBunny({ famille, graisses = [400, 700], italique = false
     // Le nom vient du catalogue téléchargé et sert de nom de fichier : caractères sûrs seulement.
     fam.nom = fam.nom.replace(/[^\p{L}\p{N} _-]/gu, '').trim();
     if (!fam.nom) throw new Refus(`Le catalogue Bunny Fonts donne un nom de police inutilisable pour « ${id} ».`);
-    const feuille = await recuperer(urlFeuille(fam, graisses));
+    const feuille = await recuperer(urlFeuille(fam, graisses, italique));
     if (!feuille.ok) throw new Error(`feuille indisponible, ${feuille.status}`);
     const fichiers = choisirLatin(fichiersDeLaFeuille(await feuille.text())).filter((f) => graisses.includes(f.graisse) && (f.style === 'normal' || (italique && f.style === 'italic')));
     if (!fichiers.length) throw new Refus(`La feuille de Bunny Fonts pour ${fam.nom} est vide ou pointe hors de ${HOTE}.`);

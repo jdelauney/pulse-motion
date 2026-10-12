@@ -5,6 +5,7 @@
 - Source : Bunny Fonts (https://fonts.bunny.net), le 2026-10-11
 - Licence : catalogue Google Fonts (SIL Open Font License, Apache 2.0 ou Ubuntu Font Licence), intégration autorisée
 - Fraunces-400.woff2 : https://fonts.bunny.net/fraunces/files/fraunces-latin-400-normal.woff2 (sha256 e558f39453a9c611908be04294b50dea5f21ae6c49b41c6e47f4115e91f90209)
+- Fraunces-400-italic.woff2 : https://fonts.bunny.net/fraunces/files/fraunces-latin-400-italic.woff2 (sha256 475b154af19c6b4ef371db22078b5044a078ce2467e11ef22a7b87f77837caf3), ajouté le 2026-10-12
 - Fraunces-600.woff2 : https://fonts.bunny.net/fraunces/files/fraunces-latin-600-normal.woff2 (sha256 3a1de7711d147bad4422825045f87597fd77cca72e7c96d3b0a81735d00dda82)
 
 ## Instrument Sans

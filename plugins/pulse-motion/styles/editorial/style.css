@@ -57,7 +57,7 @@
   background: var(--c-texte); opacity: 0.22; transform-origin: left center; transform: scaleX(var(--l, 1));
 }
 .guillemet {
-  position: absolute; right: 7cqh; top: -10cqh; font: 400 64cqh/1 var(--f-titres);
+  position: absolute; right: 7cqh; top: -4cqh; font: 400 64cqh/1 var(--f-titres);
   color: var(--c-primaire); opacity: 0.07; translate: 0 var(--dy, 0);
 }
 .guillemet::before { content: "\201C"; }
@@ -109,6 +109,7 @@
 /* ---------- Ton sombre ---------- */
 #pm-scene[data-ton="sombre"] .ligne { opacity: 0.3; }
 #pm-scene[data-ton="sombre"] .guillemet { color: var(--c-primaire-lisible); opacity: 0.1; }
+#pm-scene[data-ton="sombre"] .chapo { color: var(--c-texte); }
 
 /* ---------- Format carré ---------- */
 @container (max-aspect-ratio: 5/4) {
@@ -127,6 +128,7 @@
   .maillon { font-size: 3.8cqh; }
   .lien { width: 6cqh; }
   .ligne { left: 9cqh; right: 9cqh; }
+  .guillemet { right: 5cqh; top: -2cqh; font-size: 50cqh; }
 }
 
 /* ---------- Format vertical : tout s'empile ---------- */
@@ -150,6 +152,6 @@
   .maillon { width: 100%; padding: 2cqh 1cqh; font-size: 3.6cqh; }
   .lien { rotate: 90deg; width: 6cqh; }
   .ligne { left: 6cqh; right: 6cqh; }
-  .guillemet { font-size: 40cqh; }
+  .guillemet { right: 4cqh; top: 1cqh; font-size: 34cqh; }
   .logo { height: 9cqh; }
 }
