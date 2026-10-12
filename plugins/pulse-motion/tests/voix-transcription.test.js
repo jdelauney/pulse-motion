@@ -64,3 +64,46 @@ test('voix transcrire : retranscrit les prises en calage approché ; sans Whispe
   assert.deepEqual(r.scenes, [{ id: 'intro', calage: 'whisper' }]);
   assert.equal(lireMots(dir, 'intro').approche, 'whisper');
 });
+
+function fichierDeuxScenes() {
+  // Parole 0,5–2 s (scène 1), silence, parole 3,5–5 s (scène 2).
+  const x = new Float32Array(taux * 6);
+  for (const [a, b] of [[0.5, 2], [3.5, 5]]) for (let i = a * taux; i < b * taux; i++) x[i] = 0.3 * Math.sin(i / 5);
+  const f = path.join(dossierTemporaire('pm-voix-'), 'tout.wav');
+  fs.writeFileSync(f, W.ecrire({ taux, canaux: [x] }));
+  return f;
+}
+const deuxTextes = (dir) => modifierDeroule(dir, (d) => { d.scenes[0].voix = { texte: 'Pourquoi le froid' }; d.scenes[1].voix = { texte: 'Les bactéries' }; });
+const entendusDeux = [{ w: 'Pourquoi', t0: 0.5, t1: 0.9 }, { w: 'le', t0: 1.0, t1: 1.2 }, { w: 'froid', t0: 1.4, t1: 2.0 }, { w: 'Les', t0: 3.5, t1: 3.8 }, { w: 'bactéries', t0: 4.0, t1: 5.0 }];
+
+test('fichier unique : une prise par scène, coupée dans le silence, mots transcrits, déroulé mis à jour', async () => {
+  const dir = copierProjet('projet-simple');
+  deuxTextes(dir);
+  const r = await importerVoix({ dossier: dir, fichier: fichierDeuxScenes(), outil: { present: false }, whisper: faux(entendusDeux) });
+  assert.equal(r.ok, true, r.message);
+  assert.deepEqual(r.scenes.map((s) => s.fichier), ['assets/voix/intro.wav', 'assets/voix/chiffre.wav']);
+  assert.ok(r.scenes[0].duree < 2.2 && r.scenes[1].duree < 2.2, JSON.stringify(r.scenes));
+  const d = JSON.parse(fs.readFileSync(path.join(dir, 'deroule.json'), 'utf8'));
+  assert.deepEqual(d.scenes.map((s) => s.voix.fichier), ['assets/voix/intro.wav', 'assets/voix/chiffre.wav']);
+  const m = lireMots(dir, 'chiffre');
+  assert.equal(m.approche, 'whisper');
+  assert.deepEqual(m.mots.map((x) => x.w), ['Les', 'bactéries']);
+  assert.ok(m.mots[0].t0 < 0.2, JSON.stringify(m.mots[0]));
+});
+
+test('revue : fichier unique dont une scène est peu reconnue : alerte nommant la scène, découpe faite', async () => {
+  const dir = copierProjet('projet-simple');
+  deuxTextes(dir);
+  const entendus = [...entendusDeux.slice(0, 3), { w: 'zzz', t0: 3.5, t1: 3.8 }, { w: 'yyy', t0: 4.0, t1: 5.0 }];
+  const r = await importerVoix({ dossier: dir, fichier: fichierDeuxScenes(), outil: { present: false }, whisper: faux(entendus) });
+  assert.equal(r.ok, true, r.message);
+  assert.match(r.avertissement, /scène « chiffre ».*réenregistrer/);
+});
+
+test('fichier unique sans transcription : refusé, avec les deux solutions', async () => {
+  const dir = copierProjet('projet-simple');
+  deuxTextes(dir);
+  const r = await importerVoix({ dossier: dir, fichier: fichierDeuxScenes(), outil: { present: false }, whisper: { pret: false } });
+  assert.equal(r.ok, false);
+  assert.match(r.message, /pulse-motion whisper installer.*--scene/);
+});

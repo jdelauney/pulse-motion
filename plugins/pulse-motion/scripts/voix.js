@@ -2,7 +2,8 @@
 'use strict';
 /* Pulse Motion – voix d'une vidéo.
  *
- *   node scripts/voix.js importer <fichier> --scene <id> [dossier]   une prise pour une scène (WAV, ou tout format avec ffmpeg)
+ *   node scripts/voix.js importer <fichier> [--scene <id>] [dossier]   une prise pour une scène (WAV, ou tout format avec ffmpeg) ;
+ *                                                                     sans --scene : toute la vidéo, découpée par la transcription
  *   node scripts/voix.js provisoire [--scene <id>] [dossier]           voix du système pour caler avant d'enregistrer
  *   node scripts/voix.js transcrire [--scene <id>] [dossier]           mots calés par la transcription (Whisper installé)
  *
@@ -17,6 +18,7 @@ const F = require('./lib/ffmpeg.js');
 const { ecrirePrise, transcrirePrise, lireVoixScene } = require('./lib/voix.js');
 const { whisperParDefaut } = require('./lib/whisper.js');
 const W = require('../moteur/wav.js');
+const A = require('../moteur/aligner.js');
 const { sauvegarder } = require('./historique.js');
 
 function ecrireDeroule(projet, fn) {
@@ -33,18 +35,14 @@ function sceneAvecTexte(deroule, id) {
   return { scene };
 }
 
-/** Une prise pour une scène. -> { ok, fichier?, duree?, message? } */
-async function importerVoix({ dossier, fichier, scene: id, outil = F.trouverFfmpeg(), whisper = whisperParDefaut() }) {
-  const projet = path.resolve(dossier);
-  const { deroule, erreurs } = lireDeroule(projet);
-  if (erreurs.length) return { ok: false, message: `Le déroulé contient des erreurs : ${erreurs.join(' ')}` };
-  const { scene, message } = sceneAvecTexte(deroule, id);
-  if (!scene) return { ok: false, message };
+const lisible = (o) => { try { W.lire(new Uint8Array(o)); return true; } catch { return false; } };
+
+/** Fichier son -> WAV lisible par le moteur. -> { ok: true, octets } | { ok: false, message } */
+async function lireSon(fichier, outil) {
   if (!fs.existsSync(fichier)) return { ok: false, message: `Fichier introuvable : « ${fichier} ».` };
-  let octets;
   // Un WAV 16 bits ou flottant se lit directement ; un autre WAV (24 bits, 8 bits…) ou format passe par ffmpeg.
-  const lisible = (o) => { try { W.lire(new Uint8Array(o)); return true; } catch { return false; } };
   const estWav = /\.wav$/i.test(fichier);
+  let octets;
   if (estWav && lisible(fs.readFileSync(fichier))) octets = fs.readFileSync(fichier);
   else if (outil && outil.present) {
     const travail = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-voix-'));
@@ -63,6 +61,61 @@ async function importerVoix({ dossier, fichier, scene: id, outil = F.trouverFfmp
       : 'Ce fichier n\'est pas un WAV : installez ffmpeg (« pulse-motion ffmpeg ») ou donnez un fichier WAV.' };
   }
   if (!lisible(octets)) return { ok: false, message: 'La voix n\'a pas pu être lue : ce fichier ne contient pas de son lisible.' };
+  return { ok: true, octets };
+}
+
+/** Enregistrement de toute la vidéo -> une prise par scène qui a un texte (transcription requise). */
+async function importerUnique({ projet, deroule, fichier, outil, whisper }) {
+  if (!whisper || !whisper.pret) return { ok: false, message: 'Un enregistrement de toute la vidéo se découpe grâce à la transcription : installez-la (« pulse-motion whisper installer »), ou importez scène par scène (--scene <id>).' };
+  const scenes = deroule.scenes.filter((s) => s.voix && s.voix.texte);
+  if (!scenes.length) return { ok: false, message: 'Aucune scène n\'a de texte de voix (« voix.texte ») dans le déroulé.' };
+  const lu = await lireSon(fichier, outil);
+  if (!lu.ok) return lu;
+  const son = W.lire(new Uint8Array(lu.octets));
+  const canal = W.mono(son.canaux);
+  const duree = canal.length / son.taux;
+  const travail = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-voix-'));
+  let t;
+  try {
+    const wav = path.join(travail, 'tout.wav');
+    fs.writeFileSync(wav, W.ecrire({ taux: son.taux, canaux: [canal] }));
+    t = await whisper.transcrire({ wav, duree });
+  } finally {
+    fs.rmSync(travail, { recursive: true, force: true });
+  }
+  if (!t.ok) return { ok: false, message: t.message };
+  const decoupe = A.decouperEnScenes(scenes.map((s) => s.voix.texte), t.mots, duree);
+  if (!decoupe) return { ok: false, message: 'La transcription n\'a reconnu aucun mot des textes : vérifier que l\'enregistrement dit bien les textes des scènes, ou importer scène par scène (--scene <id>).' };
+  sauvegarder(projet);
+  const faites = [];
+  const douteuses = [];
+  for (let k = 0; k < scenes.length; k++) {
+    const p = decoupe[k];
+    const morceau = canal.slice(Math.round(p.debut * son.taux), Math.round(p.fin * son.taux));
+    const mots = p.mots.map((m) => ({ w: m.w, t0: m.t0 - p.debut, t1: m.t1 - p.debut }));
+    const r = await ecrirePrise({ projet, scene: scenes[k].id, octets: W.ecrire({ taux: son.taux, canaux: [morceau] }), texte: scenes[k].voix.texte,
+      outil: outil && outil.present ? outil : null, mots, approche: 'whisper' });
+    faites.push({ id: scenes[k].id, fichier: r.relatif, duree: r.duree });
+    if (p.reconnus < p.total / 2) douteuses.push(scenes[k].id);
+  }
+  ecrireDeroule(projet, (d) => { for (const f of faites) d.scenes.find((s) => s.id === f.id).voix.fichier = f.fichier; });
+  const avertissement = douteuses.length
+    ? `Découpe à vérifier pour ${douteuses.map((id) => `la scène « ${id} »`).join(', ')} : moins de la moitié de ses mots ont été reconnus ; l'écouter, et la réenregistrer seule si besoin (pulse-motion voix importer <fichier> --scene <id>).`
+    : undefined;
+  return { ok: true, scenes: faites, ...(avertissement ? { avertissement } : {}) };
+}
+
+/** Une prise pour une scène ; sans scène, un enregistrement de toute la vidéo découpé. -> { ok, fichier?|scenes?, duree?, message? } */
+async function importerVoix({ dossier, fichier, scene: id, outil = F.trouverFfmpeg(), whisper = whisperParDefaut() }) {
+  const projet = path.resolve(dossier);
+  const { deroule, erreurs } = lireDeroule(projet);
+  if (erreurs.length) return { ok: false, message: `Le déroulé contient des erreurs : ${erreurs.join(' ')}` };
+  if (!id) return importerUnique({ projet, deroule, fichier, outil, whisper });
+  const { scene, message } = sceneAvecTexte(deroule, id);
+  if (!scene) return { ok: false, message };
+  const lu = await lireSon(fichier, outil);
+  if (!lu.ok) return lu;
+  const octets = lu.octets;
   // Copie d'historique seulement quand la prise est lisible : un essai raté ne laisse rien.
   sauvegarder(projet);
   const r = await ecrirePrise({ projet, scene: id, octets: new Uint8Array(octets), texte: scene.voix.texte, outil: outil && outil.present ? outil : null });
@@ -152,11 +205,11 @@ if (require.main === module) {
   const valeur = (o) => { const i = args.indexOf(o); return i >= 0 ? args[i + 1] : undefined; };
   const libres = args.filter((a, i) => !a.startsWith('--') && args[i - 1] !== '--scene');
   let travail;
-  if (action === 'importer' && libres[0] && valeur('--scene')) travail = importerVoix({ dossier: libres[1] || '.', fichier: libres[0], scene: valeur('--scene') });
+  if (action === 'importer' && libres[0]) travail = importerVoix({ dossier: libres[1] || '.', fichier: libres[0], scene: valeur('--scene') });
   else if (action === 'provisoire') travail = voixProvisoire({ dossier: libres[0] || '.', scene: valeur('--scene') });
   else if (action === 'transcrire') travail = transcrireProjet({ dossier: libres[0] || '.', scene: valeur('--scene') });
   else {
-    console.error('Usage : pulse-motion voix importer <fichier> --scene <id> [dossier] | provisoire [--scene <id>] [dossier] | transcrire [--scene <id>] [dossier]');
+    console.error('Usage : pulse-motion voix importer <fichier> [--scene <id>] [dossier] | provisoire [--scene <id>] [dossier] | transcrire [--scene <id>] [dossier]');
     process.exit(2);
   }
   travail.then((r) => { console.log(JSON.stringify(r, null, 2)); process.exit(r.ok ? 0 : 1); },
