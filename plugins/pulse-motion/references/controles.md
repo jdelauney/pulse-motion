@@ -67,8 +67,10 @@ Avec un `tempo` dans le déroulé, aucune durée n'est corrigée seule (la musiq
 | `voix-illisible` | Prise de voix abîmée ou introuvable | erreur | non | Réimporter ou réenregistrer la scène |
 | `voix-provisoire` | La scène joue encore la voix du système | alerte | non | Enregistrer la vraie voix ; l'export la refuse sans `--avec-provisoire` |
 | `mots-perimes` | La prise ou son texte ont changé depuis la transcription | alerte | non | `pulse-motion voix transcrire` |
-| `calage-approche` | Mots calés sans transcription | info | — | Rien : ancres et sous-titres peuvent tomber un peu à côté |
+| `calage-approche` | Mots calés sans transcription | info | — | `pulse-motion whisper` : installer la transcription, puis `pulse-motion voix transcrire` |
 | `page-lourde` | Plus de 20 Mo de sons dans la page | alerte | non | Installer ffmpeg (voix en Opus) |
+
+À l'import d'un enregistrement de toute la vidéo, `pulse-motion voix importer` signale (`avertissement`) une scène dont moins de la moitié des mots ont été reconnus : l'écouter, et la réenregistrer seule si besoin.
 
 « info » : rien à corriger, la personne est prévenue. Avec une voix, la durée de la scène n'est jamais corrigée seule.
 

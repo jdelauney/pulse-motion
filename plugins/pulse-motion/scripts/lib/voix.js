@@ -74,7 +74,10 @@ function lireVoixScene(projet, deroule, scene) {
 }
 
 /** Prise brute (WAV) -> prise prête, écrite avec ses mots (et son Opus si ffmpeg est donné). -> { relatif, duree } */
-async function ecrirePrise({ projet, scene, octets, texte, provisoire = false, outil = null }) {
+const borne = (t, max) => Math.round(Math.min(max, Math.max(0, t)) * 1000) / 1000;
+
+/** mots (facultatifs) : temps mesurés sur la prise brute (transcription), recalés après le rognage. */
+async function ecrirePrise({ projet, scene, octets, texte, provisoire = false, outil = null, mots = null, approche }) {
   const pret = W.preparerPrise(W.lire(octets));
   const wav = W.ecrire(pret);
   const relatif = `${DOSSIER_VOIX}/${provisoire ? 'provisoire/' : ''}${scene}.wav`;
@@ -83,7 +86,10 @@ async function ecrirePrise({ projet, scene, octets, texte, provisoire = false, o
   fs.writeFileSync(absolu, wav);
   const sceau = empreinte(wav);
   const duree = Math.round(pret.canaux[0].length / pret.taux * 1000) / 1000;
-  const donnees = { empreinte: sceau, texte, duree, approche: 'lettres', mots: A.calageApproche(texte, pret.canaux[0], pret.taux) };
+  const calage = mots
+    ? mots.map((m) => ({ w: m.w, t0: borne(m.t0 - pret.decalage, duree), t1: borne(m.t1 - pret.decalage, duree) }))
+    : A.calageApproche(texte, pret.canaux[0], pret.taux);
+  const donnees = { empreinte: sceau, texte, duree, approche: approche || (mots ? 'whisper' : 'lettres'), mots: calage };
   fs.rmSync(fichierOpus(absolu), { force: true });
   if (outil && outil.present) {
     try {
@@ -95,6 +101,26 @@ async function ecrirePrise({ projet, scene, octets, texte, provisoire = false, o
   return { relatif, duree };
 }
 
+/** Transcrit une prise du projet et réécrit ses mots (approche whisper). -> { ok, message? } */
+async function transcrirePrise({ projet, relatif, texte, whisper }) {
+  const absolu = path.join(projet, relatif);
+  const octets = fs.readFileSync(absolu);
+  const son = W.lire(new Uint8Array(octets));
+  const duree = son.canaux[0].length / son.taux;
+  const r = await whisper.transcrire({ wav: absolu, duree });
+  if (!r.ok) return { ok: false, message: r.message };
+  const a = A.aligner(texte, r.mots);
+  if (!a) return { ok: false, message: 'La transcription n\'a reconnu aucun mot du texte : mots calés approximativement (vérifier que la prise dit bien le texte de la scène).' };
+  // Une prise qui ne dit plus son texte (texte réécrit) n'est pas déclarée transcrite : il faut la réenregistrer.
+  const total = A.decouperMots(texte).length;
+  if (a.reconnus < total / 2) {
+    return { ok: false, message: `La transcription a reconnu moins de la moitié des mots du texte (${a.reconnus} sur ${total}) : la prise ne dit peut-être plus ce texte ; la réenregistrer si besoin (mots calés approximativement).` };
+  }
+  const ancien = lireJSON(fichierMots(absolu)) || {};
+  fs.writeFileSync(fichierMots(absolu), JSON.stringify({ ...ancien, empreinte: empreinte(octets), texte, duree: Math.round(duree * 1000) / 1000, approche: 'whisper', mots: a.mots }, null, 2));
+  return { ok: true };
+}
+
 /** Scènes qui jouent encore la voix provisoire du système. -> [id] */
 function scenesProvisoires(projet, deroule) {
   return deroule.scenes.filter((s) => { const p = priseDeScene(projet, deroule, s); return p && p.provisoire; }).map((s) => s.id);
@@ -104,4 +130,4 @@ function messageProvisoire(ids) {
   return `La vidéo contient encore la voix provisoire (scènes : ${ids.join(', ')}) : enregistrez votre voix, ou exportez quand même avec --avec-provisoire.`;
 }
 
-module.exports = { DOSSIER_VOIX, empreinte, priseDeScene, lireVoixScene, ecrirePrise, scenesProvisoires, messageProvisoire };
+module.exports = { DOSSIER_VOIX, empreinte, priseDeScene, lireVoixScene, ecrirePrise, transcrirePrise, scenesProvisoires, messageProvisoire };

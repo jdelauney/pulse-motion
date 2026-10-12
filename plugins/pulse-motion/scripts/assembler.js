@@ -186,7 +186,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   }
   if (calageApproche) {
     erreurs.push({ regle: 'calage-approche', gravite: 'info',
-      message: 'Les mots de la voix sont calés approximativement (sans transcription) : les ancres « mot: » et les sous-titres peuvent tomber un peu à côté.' });
+      message: 'Les mots de la voix sont calés approximativement (sans transcription) : les ancres « mot: » et les sous-titres peuvent tomber un peu à côté ; « pulse-motion whisper » dit comment installer la transcription.' });
   }
   const poidsSons = sons.reduce((n, b) => n + b.length, 0);
   if (poidsSons > 20 * 1024 * 1024) {
