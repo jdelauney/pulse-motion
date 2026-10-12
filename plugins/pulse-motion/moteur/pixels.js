@@ -1,7 +1,7 @@
 /* Pulse Motion – mesures par pixels de la vidéo rendue (contrôle, Chrome sans fenêtre).
  *
  * M.mesurerPixels({ ratio, seuils }) -> Promise de constats { regle, scene, element, instant, valeur } :
- * contraste-reel (texte sur un fond non uni : image, dégradé, décor). Une capture du fond par scène, textes
+ * contraste-reel (texte sur un fond non uni : image, dégradé, décor) et flash (WCAG 2.3.1, 12 images par seconde). Une capture du fond par scène, textes
  * rendues transparentes, à un instant où la scène est entrée ; le fond est lu aux seuls pixels des lettres
  * (différence entre les deux captures) ; contraste de la couleur du texte avec les 10e et 90e centiles de ce fond. Fond uni (écart < seuils.fondUniEcart) : laissé au contrôle
  * de la charte. Particules non dessinées (WebGPU absent). Dépend de horloge et de capture (global M).
@@ -9,7 +9,8 @@
 (function (racine) {
   'use strict';
   var M = racine.M = racine.M || {};
-  var DEFAUTS = { contrasteTexte: 4.5, contrasteGrandTexte: 3, grandTexteCqh: 4.5, fondUniEcart: 0.05, ecartLettre: 60 };
+  var DEFAUTS = { contrasteTexte: 4.5, contrasteGrandTexte: 3, grandTexteCqh: 4.5, fondUniEcart: 0.05, ecartLettre: 60,
+    flashIps: 12, flashVariation: 0.1, flashSombre: 0.8, flashAire: 0.25, flashMax: 3, flashCases: 4, largeurFlash: 64 };
 
   function lineaire(c) { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }
   function luminance(r, g, b) { return 0.2126 * lineaire(r) + 0.7152 * lineaire(g) + 0.0722 * lineaire(b); }
@@ -27,6 +28,88 @@
     var suivante = M.minutage.scenes[i + 1];
     var fin = suivante && suivante.debut < s.fin ? suivante.debut : s.fin;
     return Math.max(s.debut, fin - 0.1);
+  }
+
+  /** Luminance moyenne de chaque case d'une grille n×n de l'image. */
+  function cases(image, l, h, n) {
+    var sommes = [];
+    var nombres = [];
+    for (var i = 0; i < n * n; i++) { sommes.push(0); nombres.push(0); }
+    for (var y = 0; y < h; y++) {
+      for (var x = 0; x < l; x++) {
+        var k = (y * l + x) * 4;
+        var c = Math.min(n - 1, Math.floor(y * n / h)) * n + Math.min(n - 1, Math.floor(x * n / l));
+        sommes[c] += luminance(image[k], image[k + 1], image[k + 2]);
+        nombres[c]++;
+      }
+    }
+    return sommes.map(function (s, i) { return s / nombres[i]; });
+  }
+
+  /** Flashs (WCAG 2.3.1) : par case, changements opposés de luminance ≥ variation, côté sombre < sombre ;
+   * plus de flashMax flashs dans une seconde sur au moins flashAire de l'image -> constat. */
+  function mesurerFlashs(S, constats) {
+    var n = S.flashCases;
+    var l = S.largeurFlash;
+    var cadre = document.getElementById('pm-scene').getBoundingClientRect();
+    var h = Math.max(1, Math.round(l * cadre.height / cadre.width));
+    var grande = document.createElement('canvas');
+    grande.width = Math.max(1, Math.round(cadre.width));
+    grande.height = Math.max(1, Math.round(cadre.height));
+    var gctx = grande.getContext('2d');
+    var toile = document.createElement('canvas');
+    toile.width = l;
+    toile.height = h;
+    var ctx = toile.getContext('2d', { willReadFrequently: true });
+    var pas = 1 / S.flashIps;
+    var nombre = Math.floor(M.duree / pas) + 1;
+    var series = [];
+    var chaine = Promise.resolve();
+    for (var k = 0; k < nombre; k++) {
+      (function (k) {
+        chaine = chaine.then(function () {
+          M.rendre(k * pas);
+          return M.capturer(gctx, grande.width, grande.height).then(function () {
+            ctx.drawImage(grande, 0, 0, l, h);
+            series.push(cases(ctx.getImageData(0, 0, l, h).data, l, h, n));
+          });
+        });
+      })(k);
+    }
+    return chaine.then(function () {
+      // Changements par case : +1, -1 ou 0 entre deux images.
+      var changements = [];
+      for (var k = 1; k < series.length; k++) {
+        changements.push(series[k].map(function (v, c) {
+          var a = series[k - 1][c];
+          return Math.abs(v - a) >= S.flashVariation && Math.min(v, a) < S.flashSombre ? (v > a ? 1 : -1) : 0;
+        }));
+      }
+      var fenetre = S.flashIps;
+      var deja = false;
+      for (var debut = 0; debut + 1 <= changements.length && !deja; debut++) {
+        var fin = Math.min(changements.length, debut + fenetre);
+        var touchees = 0;
+        var maxFlashs = 0;
+        for (var c = 0; c < n * n; c++) {
+          var signe = 0;
+          var alternances = 0;
+          for (var k2 = debut; k2 < fin; k2++) {
+            var d = changements[k2][c];
+            if (d && d !== signe) { alternances++; signe = d; }
+          }
+          var flashs = alternances / 2;
+          if (flashs > S.flashMax) { touchees++; maxFlashs = Math.max(maxFlashs, flashs); }
+        }
+        if (touchees / (n * n) >= S.flashAire) {
+          var t = (debut + 1) * pas;
+          var visibles = M.scenesVisibles(M.minutage, t);
+          constats.push({ regle: 'flash', scene: visibles[0] || null, element: null, instant: Math.round(t * 100) / 100, valeur: Math.round(maxFlashs * 10) / 10 });
+          deja = true;
+        }
+      }
+      return null;
+    });
   }
 
   M.mesurerPixels = function (options) {
@@ -115,7 +198,7 @@
         });
       });
     });
-    return chaine.then(function () {
+    return chaine.then(function () { return mesurerFlashs(S, constats); }).then(function () {
       sansLettres.remove();
       if (M.particules) M.particules.preparerCapture = preparer;
       M.rendre(depart);

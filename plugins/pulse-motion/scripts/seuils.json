@@ -30,5 +30,12 @@
   "grandTexteCqh": 4.5,
   "margeLisible": 0.5,
   "fondUniEcart": 0.05,
-  "ecartLettre": 60
+  "ecartLettre": 60,
+  "flashIps": 12,
+  "flashVariation": 0.1,
+  "flashSombre": 0.8,
+  "flashAire": 0.25,
+  "flashMax": 3,
+  "flashCases": 4,
+  "largeurFlash": 64
 }
