@@ -41,3 +41,9 @@ test('découper : une scène peu reconnue le dit (reconnus / total)', () => {
   const d = A.decouperEnScenes(['un deux', 'trois cinq six quatre'], entendus, 5);
   assert.deepEqual([d[1].reconnus, d[1].total], [1, 4]);
 });
+
+test('mot à trait d\'union entendu en deux morceaux (« faut » « -il ») : calé sur le début du premier', () => {
+  const r = A.aligner('Pourquoi faut-il garder', [e('Pourquoi', 0, 0.4), e('faut', 0.46, 0.7), e('-il', 0.78, 1.0), e('garder', 1.04, 1.3)]);
+  assert.equal(r.mots[1].t0, 0.46);
+  assert.equal(r.mots[2].t0, 1.04);
+});
