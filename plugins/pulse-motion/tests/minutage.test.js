@@ -106,3 +106,26 @@ test('coupe : aucun chevauchement entre les scènes', () => {
   const m = calculerMinutage([{ id: 'a', duree: 4 }, { id: 'b', duree: 2, transition: 'coupe' }, { id: 'c', duree: 2, transition: 'zoom' }], {});
   assert.deepEqual(m.scenes.map((s) => [s.debut, s.entree]), [[0, 0], [4, 0], [5.5, 0.5]]);
 });
+
+test('tempo : lireSecondes accepte les secondes et les temps (suffixe t)', () => {
+  assert.deepEqual(Mi.lireSecondes('1.5', null), { valeur: 1.5 });
+  assert.deepEqual(Mi.lireSecondes('2t', 0.5), { valeur: 1 });
+  assert.deepEqual(Mi.lireSecondes('.5t', 0.4), { valeur: 0.2 });
+  assert.deepEqual(Mi.lireSecondes('2t', null), { erreur: 'tempo-absent' });
+  assert.deepEqual(Mi.lireSecondes('2 s', 0.5), { erreur: 'illisible' });
+});
+
+test('tempo : data-start et data-dur en temps, référence décalée en temps', () => {
+  const m = Mi.calculerMinutage([{ id: 's', duree: 10 }], {
+    s: [{ cle: 'a', start: '1t', dur: '2t' }, { cle: 'b', start: '#a:fin+1t', dur: '0.5' }],
+  }, { dureeTemps: 0.5 });
+  assert.deepEqual(m.erreurs, []);
+  assert.deepEqual(m.elements.s.a, { debut: 0.5, fin: 1.5 });
+  assert.deepEqual(m.elements.s.b, { debut: 2, fin: 2.5 });
+});
+
+test('tempo : un temps sans tempo dans le déroulé est une erreur nommée', () => {
+  const m = Mi.calculerMinutage([{ id: 's', duree: 10 }], { s: [{ cle: 'a', start: '1t', dur: '2t' }] });
+  assert.deepEqual(m.erreurs.map((e) => e.regle), ['tempo-absent', 'tempo-absent']);
+  assert.match(m.erreurs[0].message, /data-start « 1t » est en temps musicaux.*« tempo »/);
+});

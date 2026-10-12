@@ -75,6 +75,14 @@ function validerDeroule(d) {
     }
   }
 
+  if (d.tempo !== undefined && !estObjet(d.tempo)) err.push('« tempo » doit être un objet, ex. { "bpm": 120 }.');
+  else if (d.tempo !== undefined) {
+    if (!(typeof d.tempo.bpm === 'number' && d.tempo.bpm >= 30 && d.tempo.bpm <= 300)) err.push('« tempo.bpm » doit être un nombre de battements par minute, de 30 à 300.');
+    if (d.tempo.decalage !== undefined && !(typeof d.tempo.decalage === 'number' && isFinite(d.tempo.decalage) && d.tempo.decalage >= 0)) {
+      err.push('« tempo.decalage » doit être un nombre de secondes positif ou nul (instant du premier temps).');
+    }
+  }
+
   if (!Array.isArray(d.scenes) || d.scenes.length === 0) {
     err.push('« scenes » doit contenir au moins une scène.');
     return err;
@@ -103,6 +111,11 @@ function validerDeroule(d) {
   return err;
 }
 
+/** Durée d'un temps musical en secondes (60 / bpm), ou null sans tempo. */
+function dureeTemps(d) {
+  return d && d.tempo && d.tempo.bpm > 0 ? 60 / d.tempo.bpm : null;
+}
+
 /** Lit et valide <dossier>/deroule.json. -> { deroule, erreurs } */
 function lireDeroule(dossier) {
   const fichier = path.join(dossier, 'deroule.json');
@@ -117,4 +130,4 @@ function lireDeroule(dossier) {
   return { deroule: d, erreurs: validerDeroule(d) };
 }
 
-module.exports = { validerDeroule, validerCharte, lireDeroule, GENRES, PARCOURS, RATIOS, TRANSITIONS, TYPES_SCENE, TONS };
+module.exports = { validerDeroule, validerCharte, lireDeroule, dureeTemps, GENRES, PARCOURS, RATIOS, TRANSITIONS, TYPES_SCENE, TONS };

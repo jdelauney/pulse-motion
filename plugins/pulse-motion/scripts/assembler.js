@@ -10,7 +10,7 @@
  */
 const fs = require('node:fs');
 const path = require('node:path');
-const { lireDeroule } = require('./lib/deroule.js');
+const { lireDeroule, dureeTemps } = require('./lib/deroule.js');
 const { embarquerRessources, versDataURI, cheminDansProjet } = require('./lib/embarquer.js');
 const S = require('./lib/scenes.js');
 const { preparerEffets } = require('./lib/effets.js');
@@ -165,10 +165,12 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     titre: deroule.titre,
     format: { ratio: deroule.format.ratio, ips: deroule.format.ips || 30 },
     musique: deroule.musique ? { volume: deroule.musique.volume ?? 1 } : null,
+    tempo: deroule.tempo ? { bpm: deroule.tempo.bpm, decalage: deroule.tempo.decalage || 0 } : null,
     scenes: deroule.scenes.map((s) => ({ id: s.id, duree: s.duree, rythme: s.rythme || 1, transition: s.transition || 'aucune' })),
     effets: effets.map(({ calque, ancre, effet }) => ({ calque, ancre, effet })),
   };
 
+  const temps = dureeTemps(deroule);
   const page = `<!doctype html>
 <html lang="fr">
 <head>
@@ -177,7 +179,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
 <meta name="generator" content="Pulse Motion">
 <title>${S.echapperHTML(deroule.titre)}</title>
 <style>
-:root { --pm-ratio-l: ${l}; --pm-ratio-h: ${h}; }
+:root { --pm-ratio-l: ${l}; --pm-ratio-h: ${h};${temps ? ` --pm-temps: ${temps}s; --pm-bpm: ${deroule.tempo.bpm};` : ''} }
 ${fs.readFileSync(path.join(RACINE, 'moteur', 'base.css'), 'utf8')}
 ${variablesCSS()}
 ${cssDeCharte}

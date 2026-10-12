@@ -73,7 +73,8 @@
     donnees.scenes.forEach(function (sc) {
       elementsParScene[sc.id] = sections[sc.id] ? lireElements(sections[sc.id]) : [];
     });
-    var min = M.calculerMinutage(donnees.scenes, elementsParScene);
+    M.dureeTemps = donnees.tempo && donnees.tempo.bpm > 0 ? 60 / donnees.tempo.bpm : null;
+    var min = M.calculerMinutage(donnees.scenes, elementsParScene, { dureeTemps: M.dureeTemps });
     M.minutage = min;
     M.duree = min.duree;
 
