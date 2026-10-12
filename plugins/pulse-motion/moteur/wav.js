@@ -1,4 +1,5 @@
-/* Pulse Motion – WAV PCM : écriture 16 bits, lecture 16 bits ou flottant 32 bits, base64.
+/* Pulse Motion – WAV PCM : écriture 16 bits, lecture 16 bits ou flottant 32 bits, base64 ; traitement d'une prise
+ * de voix (mono, passe-haut, silences, crête).
  *
  * Module pur : chargé tel quel dans la page (global M.wav) et par Node (require).
  */
@@ -70,5 +71,52 @@
     return btoa(morceaux.join(''));
   }
 
-  return { ecrire: ecrire, lire: lire, base64: base64 };
+  /** Canaux -> un seul canal (moyenne). */
+  function mono(canaux) {
+    if (canaux.length === 1) return Float32Array.from(canaux[0]);
+    var n = canaux[0].length, x = new Float32Array(n);
+    for (var i = 0; i < n; i++) { var s = 0; for (var c = 0; c < canaux.length; c++) s += canaux[c][i]; x[i] = s / canaux.length; }
+    return x;
+  }
+
+  /** Passe-haut du deuxième ordre (Butterworth) : retire grondements et souffle grave. -> nouveau tableau */
+  function passeHaut(canal, taux, frequence) {
+    var f = frequence || 80, K = Math.tan(Math.PI * f / taux), Q = Math.SQRT1_2, a0 = 1 + K / Q + K * K;
+    var b0 = 1 / a0, b1 = -2 / a0, b2 = 1 / a0, a1 = 2 * (K * K - 1) / a0, a2 = (1 - K / Q + K * K) / a0;
+    var y = new Float32Array(canal.length), x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+    for (var i = 0; i < canal.length; i++) {
+      var v = canal[i], s = b0 * v + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2;
+      x2 = x1; x1 = v; y2 = y1; y1 = s; y[i] = s;
+    }
+    return y;
+  }
+
+  /** Silence retiré au début et à la fin (fenêtres de 10 ms sous seuil dBFS), marge gardée. Jamais vide. */
+  function rogner(canal, taux, options) {
+    var o = options || {}, seuil = Math.pow(10, (o.seuil === undefined ? -45 : o.seuil) / 20), marge = Math.round((o.marge === undefined ? 0.08 : o.marge) * taux);
+    var pas = Math.max(1, Math.round(taux / 100)), premier = -1, dernier = -1;
+    for (var debut = 0; debut < canal.length; debut += pas) {
+      var m = 0;
+      for (var i = debut; i < Math.min(canal.length, debut + pas); i++) { var a = Math.abs(canal[i]); if (a > m) m = a; }
+      if (m >= seuil) { if (premier < 0) premier = debut; dernier = Math.min(canal.length, debut + pas); }
+    }
+    if (premier < 0) return canal.length ? canal.slice(0, 1) : new Float32Array(1);
+    return canal.slice(Math.max(0, premier - marge), Math.min(canal.length, dernier + marge));
+  }
+
+  /** Crête ramenée à cible dBFS (en place) ; un silence reste un silence. */
+  function normaliserCrete(canal, cible) {
+    var m = 0;
+    for (var i = 0; i < canal.length; i++) { var a = Math.abs(canal[i]); if (a > m) m = a; }
+    if (m > 0) { var g = Math.pow(10, (cible === undefined ? -3 : cible) / 20) / m; for (i = 0; i < canal.length; i++) canal[i] *= g; }
+    return canal;
+  }
+
+  /** Prise brute -> prise prête : mono, passe-haut 80 Hz, silences rognés, crête à −3 dBFS. */
+  function preparerPrise(son) {
+    var x = normaliserCrete(rogner(passeHaut(mono(son.canaux), son.taux, 80), son.taux), -3);
+    return { taux: son.taux, canaux: [x] };
+  }
+
+  return { ecrire: ecrire, lire: lire, base64: base64, mono: mono, passeHaut: passeHaut, rogner: rogner, normaliserCrete: normaliserCrete, preparerPrise: preparerPrise };
 });

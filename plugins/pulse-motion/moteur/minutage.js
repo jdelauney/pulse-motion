@@ -4,20 +4,26 @@
  *   data-start="0.4"            absolu dans la scène
  *   data-start="#titre+0.3"     début de #titre + 0,3 s
  *   data-start="#titre:fin-0.2" fin de #titre − 0,2 s
+ *   data-start="mot:froid"      quand la voix de la scène dit « froid » (#2 : deuxième fois, :fin : fin du mot, +0.2)
  *   data-dur="1.2"              durée (1 s par défaut)
  * Avec un tempo dans le déroulé, toute durée s'écrit aussi en temps musicaux : « 2t », « #titre:fin+1t ».
- * Les temps internes d'une scène sont divisés par son rythme.
+ * Les temps internes d'une scène sont divisés par son rythme. Une voix (scenes[].voix = { debut, duree, mots }, en
+ * secondes réelles) allonge la scène jusqu'à sa fin + 0,4 s (arrondi au temps musical suivant avec un tempo).
  *
  * Module pur : chargé tel quel dans la page (global M) et par Node (require).
  */
 (function (racine, fabrique) {
-  var api = fabrique();
+  var Al = typeof require === 'function' && typeof module === 'object' ? require('./aligner.js') : (racine.M && racine.M.aligner);
+  var api = fabrique(Al);
   if (typeof module === 'object' && module.exports) module.exports = api;
   else { racine.M = racine.M || {}; Object.assign(racine.M, api); }
-})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (Al) {
   'use strict';
 
   var CHEVAUCHEMENT = 0.5;
+  var MARGE_VOIX = 0.4;   // respiration après la voix
+  var DEBUT_VOIX = 0.3;   // début de la prise dans la scène, par défaut
+  var ANCRE_MOT = /^mot:(.+?)(?:#(\d+))?(:fin)?(?:\s*([+-])\s*(\d*\.?\d+t?))?$/;
   var DUREE_DEFAUT = 1;
   var REFERENCE = /^#([A-Za-z0-9_-]+)(:fin)?\s*(?:([+-])\s*(\d*\.?\d+t?))?$/;
   var DUREE = /^(\d*\.?\d+)(t?)$/;
@@ -61,16 +67,27 @@
       var rythme = s.rythme > 0 ? s.rythme : 1;
       var entree = chevauchement(s, i);
       var debut = Math.max(0, fin - entree);
-      var finScene = debut + s.duree / rythme;
-      resultat.scenes.push({ id: s.id, debut: debut, fin: finScene, rythme: rythme, transition: s.transition || 'aucune', entree: entree });
-      resultat.elements[s.id] = minuterScene(s.id, debut, rythme, (elementsParScene && elementsParScene[s.id]) || [], erreurs, dureeTemps);
+      var reelle = s.duree / rythme;
+      var allongee = false;
+      if (s.voix && s.voix.duree > 0) {
+        var finVoix = (s.voix.debut === undefined ? DEBUT_VOIX : s.voix.debut) + s.voix.duree + MARGE_VOIX;
+        if (finVoix > reelle + 1e-9) {
+          reelle = dureeTemps ? Math.ceil(finVoix / dureeTemps - 1e-9) * dureeTemps : finVoix;
+          allongee = true;
+        }
+      }
+      reelle = Math.round(reelle * 1e6) / 1e6;
+      var finScene = debut + reelle;
+      resultat.scenes.push({ id: s.id, debut: debut, fin: finScene, rythme: rythme, transition: s.transition || 'aucune', entree: entree,
+        allongee: allongee, dureeEffective: Math.round(reelle * rythme * 1e6) / 1e6 });
+      resultat.elements[s.id] = minuterScene(s.id, debut, rythme, (elementsParScene && elementsParScene[s.id]) || [], erreurs, dureeTemps, s.voix);
       fin = finScene;
     });
     resultat.duree = fin;
     return resultat;
   }
 
-  function minuterScene(idScene, debutScene, rythme, elements, erreurs, dureeTemps) {
+  function minuterScene(idScene, debutScene, rythme, elements, erreurs, dureeTemps, voix) {
     var parCle = {};
     elements.forEach(function (e) { parCle[e.cle] = e; });
     var local = {};      // cle -> { debut, fin } en temps de scène
@@ -95,6 +112,34 @@
       return lu.valeur;
     }
 
+    /** Ancre « mot: » -> temps de scène (temps du contenu : secondes réelles × rythme). */
+    function resoudreMot(cle, texte, a) {
+      var mots = voix && voix.mots ? voix.mots : null;
+      if (!mots || !mots.length) {
+        erreur('ancre-mot-introuvable', cle, 'Scène « ' + idScene + ' », élément « ' + cle + ' » : data-start « ' + texte + ' » vise un mot, mais la scène n\'a pas de voix.');
+        return 0;
+      }
+      var voulu = Al.normaliserMot(a[1]), rang = a[2] ? parseInt(a[2], 10) : 1, vus = 0, trouve = null;
+      for (var k = 0; k < mots.length && !trouve; k++) {
+        var cles = Al.decouperMots(mots[k].w).reduce(function (t, x) { return t.concat(x.cles); }, []);
+        if (cles.indexOf(voulu) >= 0 && ++vus === rang) trouve = mots[k];
+      }
+      if (!trouve) {
+        var dispo = [];
+        mots.forEach(function (x) {
+          var w = String(x.w).toLowerCase().replace(/[^\p{L}\p{N}'’-]+/gu, '');
+          if (w && dispo.indexOf(w) < 0) dispo.push(w);
+        });
+        erreur('ancre-mot-introuvable', cle, 'Scène « ' + idScene + ' », élément « ' + cle + ' » : le mot « ' + a[1] + ' »' + (rang > 1 ? ' (n° ' + rang + ')' : '') + ' n\'est pas dit par la voix (mots : ' + dispo.join(', ') + ').');
+        return 0;
+      }
+      var ecart = a[5] ? lireSecondes(a[5], dureeTemps) : { valeur: 0 };
+      if (ecart.erreur) erreur('tempo-absent', cle, messageTempoAbsent(idScene, cle, 'data-start', texte));
+      var decalage = ecart.erreur ? 0 : ecart.valeur * (a[4] === '-' ? -1 : 1);
+      var reel = (voix.debut === undefined ? DEBUT_VOIX : voix.debut) + (a[3] ? trouve.t1 : trouve.t0);
+      return reel * rythme + decalage;
+    }
+
     function resoudre(cle) {
       if (local[cle]) return local[cle];
       var e = parCle[cle];
@@ -108,7 +153,9 @@
       var direct = s === '' ? { valeur: 0 } : lireSecondes(s, dureeTemps);
       if (direct.valeur !== undefined) debut = direct.valeur;
       else if (direct.erreur === 'tempo-absent') erreur('tempo-absent', cle, messageTempoAbsent(idScene, cle, 'data-start', s));
-      else {
+      else if (ANCRE_MOT.test(s)) {
+        debut = Math.max(0, resoudreMot(cle, s, ANCRE_MOT.exec(s)));
+      } else {
         var m = REFERENCE.exec(s);
         if (!m) {
           erreur('start-invalide', cle, 'Scène « ' + idScene + ' », élément « ' + cle + ' » : data-start « ' + s + ' » illisible (exemples : 0.4, #titre+0.3, #titre:fin-0.2).');
@@ -153,6 +200,8 @@
 
   return {
     CHEVAUCHEMENT: CHEVAUCHEMENT,
+    MARGE_VOIX: MARGE_VOIX,
+    DEBUT_VOIX: DEBUT_VOIX,
     calculerMinutage: calculerMinutage,
     lireSecondes: lireSecondes,
     progression: progression,
