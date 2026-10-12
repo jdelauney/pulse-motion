@@ -5,7 +5,8 @@
 
 const FINE = '\u202f';
 const INSECABLE = '\u00a0';
-const UNITES = '%|°C|°F|€|\\$|kg|km|cm|mm|ml|mL|min|h|Mo|Go|Ko|L';
+// « L » seul est trop souvent une initiale (« Tome 3 L », « 2 L’eau ») : seul « mL » est reconnu.
+const UNITES = '%|°C|°F|€|\\$|kg|km|cm|mm|ml|mL|min|h|Mo|Go|Ko';
 
 function appliquer(texte, regles) {
   const corrections = [];
@@ -21,12 +22,13 @@ function appliquer(texte, regles) {
 const REGLES = [
   ['points de suspension « … »', (t) => t.replace(/\.{3}/g, '…')],
   ['apostrophe « ’ »', (t) => t.replace(/(\p{L})'(?=\p{L})/gu, '$1’')],
-  ['guillemets « »', (t) => t.replace(/"([^"]+)"/g, (m, dedans) => `«${INSECABLE}${dedans.trim()}${INSECABLE}»`)],
+  // Pas de conversion si le texte a déjà des « » (guillemets imbriqués) ni après un chiffre (pouces : 27").
+  ['guillemets « »', (t) => (/[«»]/.test(t) ? t : t.replace(/(?<!\d)"([^"]+)"/g, (m, dedans) => `«${INSECABLE}${dedans.trim()}${INSECABLE}»`))],
   ['espace insécable dans les guillemets', (t) => t
     .replace(/«(?![\u00a0\u202f]) ?/g, `«${INSECABLE}`)
     .replace(/(?<![\u00a0\u202f]) ?»/g, `${INSECABLE}»`)],
   // Une espace (ordinaire ou absente) avant ; ! ? devient fine ; une insécable déjà posée est gardée.
-  ['espace fine avant « ? », « ! », « ; »', (t) => t.replace(/([^\s\u00a0\u202f]) ?([;!?]+)(?=\s|$|[»"')\]…])/g, `$1${FINE}$2`)],
+  ['espace fine avant « ? », « ! », « ; »', (t) => t.replace(/([^\s\u00a0\u202f;!?]) ?([;!?]+)(?=\s|$|[»"')\]…])/g, `$1${FINE}$2`)],
   // Deux-points suivis d'une espace ou en fin de texte : jamais « 12:30 », « 16:9 », « https: ».
   ['espace insécable avant « : »', (t) => t.replace(/([^\s\u00a0\u202f]) ?:(?=\s|$)/g, `$1${INSECABLE}:`)],
   ['espace fine entre un nombre et son unité', (t) => t.replace(new RegExp(`(\\d) ?(${UNITES})(?![\\p{L}\\p{N}])`, 'gu'), `$1${FINE}$2`)],
@@ -59,14 +61,17 @@ function corrigerMajuscules(texte) {
   return { texte: t, corrections };
 }
 
-/** Mots répétés (« le le ») ; « nous nous » et « vous vous » sont corrects. */
+// Répétitions correctes ou volontaires (oral) : « nous nous lavons », « très très bien », « si si ».
+const REPETITIONS = ['nous', 'vous', 'très', 'si', 'bla', 'non', 'oui'];
+
+/** Mots répétés (« le le »), hors REPETITIONS. */
 function motsDoubles(texte) {
   const t = String(texte);
   const resultats = [];
   const re = /(?<![\p{L}\p{N}])(\p{L}+)[ \u00a0\u202f]+\1(?![\p{L}\p{N}])/giu;
   let m;
   while ((m = re.exec(t))) {
-    if (['nous', 'vous'].includes(m[1].toLowerCase())) continue;
+    if (REPETITIONS.includes(m[1].toLowerCase())) continue;
     resultats.push({ mot: m[1], propose: t.slice(0, m.index) + m[1] + t.slice(m.index + m[0].length) });
   }
   return resultats;
