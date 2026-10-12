@@ -12,9 +12,9 @@ const navigateur = trouverNavigateur();
 const sans = { skip: !navigateur && 'Chrome ou Edge introuvable' };
 const MICRO = ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', '--autoplay-policy=no-user-gesture-required'];
 
-async function studio(port, { micro = true } = {}, fn) {
+async function studio(port, { micro = true, deux = false } = {}, fn) {
   const dir = copierProjet('projet-simple');
-  modifierDeroule(dir, (d) => { d.scenes[0].voix = { texte: 'Pourquoi le froid' }; });
+  modifierDeroule(dir, (d) => { d.scenes[0].voix = { texte: 'Pourquoi le froid' }; if (deux) d.scenes[1].voix = { texte: 'Les bactéries' }; });
   const apercu = await demarrerApercu({ dossier: dir, port, dossierStyles: STYLES, whisper: { pret: false } });
   const page = await ouvrirPage({ navigateur, largeur: 900, hauteur: 600, options: micro ? MICRO : ['--deny-permission-prompts'] });
   try {
@@ -76,5 +76,58 @@ test('revue : un rechargement demandé pendant l\'enregistrement attend la fin d
       return window.__pmPasRecharge === true && M.studio.etat().phase === 'enregistre';
     })()`);
     assert.equal(r, true);
+  });
+});
+
+test('revue : rechargement demandé pendant la prise : la prise reste (phase écoute), le rechargement attend « Garder »', sans, async () => {
+  await studio(47355, {}, async (dir, page) => {
+    const r = await page.evaluer(`(async function () {
+      var p = M.studio.enregistrer(1);
+      await new Promise(function (r) { setTimeout(r, 3300); });
+      window.__pmPasRecharge = true;
+      M.rechargerQuandPossible();
+      await p;
+      await new Promise(function (r) { setTimeout(r, 300); });
+      return { meme: window.__pmPasRecharge === true, phase: M.studio.etat().phase };
+    })()`);
+    assert.deepEqual(r, { meme: true, phase: 'ecoute' });
+  });
+});
+
+test('revue : boutons selon la phase ; deuxième « Enregistrer » refusé pendant une prise', sans, async () => {
+  await studio(47356, {}, async (dir, page) => {
+    const r = await page.evaluer(`(async function () {
+      var actif = function (nom) { return !document.querySelector('#pm-studio [data-action="' + nom + '"]').disabled; };
+      var avant = { enregistrer: actif('enregistrer'), garder: actif('garder') };
+      var p = M.studio.enregistrer(1);
+      await new Promise(function (r) { setTimeout(r, 200); });
+      var second = await M.studio.enregistrer(1).then(function () { return 'accepte'; }, function () { return 'refuse'; });
+      var pendant = { enregistrer: actif('enregistrer'), scene: !document.querySelector('#pm-studio .pm-studio-scene').disabled };
+      await p;
+      var apres = { garder: actif('garder'), refaire: actif('refaire') };
+      return { avant: avant, second: second, pendant: pendant, apres: apres };
+    })()`);
+    assert.deepEqual(r.avant, { enregistrer: true, garder: false });
+    assert.equal(r.second, 'refuse');
+    assert.deepEqual(r.pendant, { enregistrer: false, scene: false });
+    assert.deepEqual(r.apres, { garder: true, refaire: true });
+  });
+});
+
+test('revue : changer de scène avec une prise non gardée : la prise n\'est pas écrite dans l\'autre scène ; « Garder » deux fois : une seule écriture', sans, async () => {
+  await studio(47357, { deux: true }, async (dir, page) => {
+    const r = await page.evaluer(`(async function () {
+      await M.studio.enregistrer(1);
+      await M.studio.ouvrir('chiffre');
+      var autre = await M.studio.garder().then(function () { return 'ecrit'; }, function () { return 'refuse'; });
+      await M.studio.ouvrir('intro');
+      await M.studio.enregistrer(1);
+      await M.studio.garder();
+      var deuxieme = await M.studio.garder().then(function () { return 'ecrit'; }, function () { return 'refuse'; });
+      return { autre: autre, deuxieme: deuxieme };
+    })()`);
+    assert.deepEqual(r, { autre: 'refuse', deuxieme: 'refuse' });
+    assert.equal(fs.existsSync(path.join(dir, 'assets', 'voix', 'chiffre.wav')), false);
+    assert.deepEqual(fs.readdirSync(path.join(dir, '.historique')), ['001']);
   });
 });
