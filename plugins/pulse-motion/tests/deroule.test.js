@@ -114,3 +114,11 @@ test('export : 4:5 en 1080 × 1350', () => {
   const source = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'moteur', 'export.mjs'), 'utf8');
   assert.match(source, /'4:5': \[1080, 1350\]/);
 });
+
+test('ajustements : facultatif, clé de texte existante, taille entre 0,8 et 1', () => {
+  const avec = (ajustements) => { const x = valide(); x.scenes[0].ajustements = ajustements; return validerDeroule(x); };
+  assert.deepEqual(avec({ titre: { taille: 0.9 } }), []);
+  assert.match(avec({ inconnu: { taille: 0.9 } }).join(' '), /« ajustements\.inconnu » : aucun texte « inconnu » dans la scène/);
+  assert.match(avec({ titre: { taille: 0.5 } }).join(' '), /« ajustements\.titre\.taille » doit être un nombre entre 0,8 et 1/);
+  assert.match(avec([1]).join(' '), /« ajustements » doit être un objet/);
+});

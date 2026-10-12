@@ -80,3 +80,14 @@ test('styles livrés : clair-pedagogique puis les cinq autres, scènes recopiée
     assert.deepEqual(assembler({ dossier: dir, ecrire: false }).erreurs, [], style);
   }
 });
+
+test('changer de style retire les ajustements de taille (ils dépendaient de l\'ancien style)', () => {
+  const racine = stylesEssai(['alpha', 'beta']);
+  const dir = projetTypes(racine);
+  const d = deroule(dir);
+  d.scenes[0].ajustements = { [Object.keys(d.scenes[0].textes)[0]]: { taille: 0.9 } };
+  fs.writeFileSync(path.join(dir, 'deroule.json'), JSON.stringify(d, null, 2));
+  const r = changerStyle({ dossier: dir, style: 'beta', dossierStyles: racine });
+  assert.equal(r.ok, true, r.message);
+  assert.equal(deroule(dir).scenes[0].ajustements, undefined);
+});

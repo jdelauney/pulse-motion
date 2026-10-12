@@ -63,6 +63,8 @@ function changerStyle({ dossier, style, dossierStyles }) {
   }
   const brut = JSON.parse(fs.readFileSync(path.join(projet, 'deroule.json'), 'utf8').replace(/^﻿/, ''));
   brut.style = style;
+  // Les ajustements de taille dépendaient de l'ancien style.
+  for (const sc of brut.scenes || []) delete sc.ajustements;
   fs.writeFileSync(path.join(projet, 'deroule.json'), JSON.stringify(brut, null, 2));
   return {
     ok: true,

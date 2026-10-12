@@ -101,6 +101,13 @@ function validerDeroule(d) {
     else for (const [k, v] of Object.entries(s.textes)) {
       if (typeof v !== 'string') err.push(`La ${nom} : « textes.${k} » doit être un texte.`);
     }
+    if (s.ajustements !== undefined) {
+      if (!estObjet(s.ajustements)) err.push(`La ${nom} : « ajustements » doit être un objet, ex. { "titre": { "taille": 0.9 } }.`);
+      else for (const [cle, a] of Object.entries(s.ajustements)) {
+        if (!estObjet(s.textes) || !(cle in s.textes)) err.push(`La ${nom} : « ajustements.${cle} » : aucun texte « ${cle} » dans la scène.`);
+        else if (!estObjet(a) || typeof a.taille !== 'number' || a.taille < 0.8 || a.taille > 1) err.push(`La ${nom} : « ajustements.${cle}.taille » doit être un nombre entre 0,8 et 1.`);
+      }
+    }
     if (s.transition !== undefined && !TRANSITIONS.includes(s.transition)) {
       err.push(`La ${nom} : « transition » doit être l'une de : ${TRANSITIONS.join(', ')}.`);
     }
