@@ -10,6 +10,7 @@
  *   pulse-motion exporter <dossier> [--qualite 1080p|720p] [--ips 30|60] [--rapide] [--avec-provisoire]   MP4 fidèle (ffmpeg) ou dans le navigateur
  *   pulse-motion ffmpeg                  ffmpeg présent ? commande pour l'installer
  *   pulse-motion voix importer <fichier> [--scene <id>] [dossier] | provisoire [--scene <id>] [dossier] | transcrire [--scene <id>] [dossier] | studio <scène> [dossier]   voix d'une scène, voix provisoire, transcription, studio
+ *   pulse-motion musique ecouter [dossier]   musique seule dans sortie/musique.wav (pour l'écouter)
  *   pulse-motion whisper [installer [--modele small]]   transcription des voix (Python, faster-whisper) : état ou installation
  *   pulse-motion planche <dossier> [id1,id2] [--ouvrir]   images clés PNG dans sortie/planche/
  *   pulse-motion reference <nom>          affiche references/<nom>.md (ex. moteur, rythme, styles/clair-pedagogique)
@@ -50,6 +51,7 @@ const SCRIPTS = {
   ffmpeg: 'ffmpeg.js',
   voix: 'voix.js',
   whisper: 'whisper.js',
+  musique: 'musique.js',
 };
 
 function afficherFichier(fichier, quoi) {
@@ -118,6 +120,7 @@ function lancer(args) {
     '  ffmpeg                   ffmpeg présent ? commande pour l\'installer',
     '  voix importer <fichier> [--scene <id>] [dossier] | provisoire [--scene <id>] [dossier] | transcrire [--scene <id>] [dossier] | studio <scène> [dossier]',
     '  whisper [installer [--modele small]]   transcription des voix',
+    '  musique ecouter [dossier]   musique seule dans sortie/musique.wav',
     '  reference <nom>          scene <style> <nom>      effet <nom>      consignes <skill>',
     '  styles [--genre <genre>]                         styles verifier <nom>',
     '  changer-style <dossier> <style>                  comparer <dossier> <s1,s2,s3> [--scenes a,b] [--ouvrir]',
