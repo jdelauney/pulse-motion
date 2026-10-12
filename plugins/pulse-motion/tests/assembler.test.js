@@ -26,7 +26,7 @@ test('projet valide : page autonome écrite dans sortie/', () => {
   assert.match(html, /--c-fond: #fafafa;/, 'couleur du style');
   assert.match(html, /@font-face \{ font-family: 'Testfont'; src: url\("data:font\/woff2;base64,/);
   assert.match(html, /--ease-bounce-out: linear\(/);
-  assert.match(html, />Pourquoi 4 °C \?</);
+  assert.match(html, />Pourquoi 4\u202f°C\u202f\?</);
   assert.match(html, />3 minutes &lt;pour&gt; comprendre</);
   assert.match(html, /<img data-logo alt="Logo" data-start="1" src="data:image\/svg\+xml;base64,/);
   assert.match(html, /<img src="data:image\/svg\+xml;base64,/, 'image de la scène');
@@ -140,7 +140,7 @@ test('dossier avec espaces et accents, scène enregistrée avec BOM et CRLF', ()
   assert.deepEqual(r.erreurs, []);
   assert.ok(r.fichier.startsWith(dir));
   assert.doesNotMatch(r.html, /\uFEFF/);
-  assert.match(r.html, />Pourquoi 4 °C \?</);
+  assert.match(r.html, />Pourquoi 4\u202f°C\u202f\?</);
 });
 
 const navigateur = trouverNavigateur();

@@ -16,7 +16,8 @@ const { trouverStyle } = require('./styles.js');
 const { lireGlossaire, verifierGlossaire } = require('./vocabulaire.js');
 const { lireDeroule, dureeTemps } = require('./lib/deroule.js');
 const { cheminDansProjet } = require('./lib/embarquer.js');
-const { extraireScene } = require('./lib/extraire.js');
+const { corrigerTypographie, corrigerMajuscules, motsDoubles, termesVariables, cleTerme } = require('./lib/typographie.js');
+const { extraireScene, textesEnDur } = require('./lib/extraire.js');
 const { calculerMinutage, CHEVAUCHEMENT } = require('../moteur/minutage.js');
 const { EFFETS: EFFETS_LETTRES } = require('../moteur/lettres.js');
 const { analyserCamera } = require('../moteur/camera.js');
@@ -78,6 +79,47 @@ function controlerCSS(cssBrut, scene, ou, problemes) {
   }
 }
 
+const liste = (corrections) => corrections.join(', ');
+
+/** Typographie, majuscules accentuées, mots doublés, termes variables (textes du déroulé et des scènes). */
+function controlerTextes(deroule, scenesHtml, termesGlossaire, problemes) {
+  const entrees = [];
+  for (const s of deroule.scenes) {
+    for (const [cle, texte] of Object.entries(s.textes || {})) {
+      if (typeof texte !== 'string') continue;
+      entrees.push({ scene: s.id, cle, texte });
+      const typo = corrigerTypographie(texte);
+      if (typo.corrections.length) {
+        problemes.push({ regle: 'typographie', gravite: 'alerte', scene: s.id, element: cle, correction: { scene: s.id, texte: cle, valeur: typo.texte },
+          message: `Scène « ${s.id} », texte « ${cle} » : typographie française (${liste(typo.corrections)}) : « ${typo.texte} ».` });
+      }
+      // Calculée sur le texte déjà corrigé : appliquée après la typographie, sa valeur contient les deux.
+      const maj = corrigerMajuscules(typo.texte);
+      if (maj.corrections.length) {
+        problemes.push({ regle: 'majuscule-accentuee', gravite: 'alerte', scene: s.id, element: cle, correction: { scene: s.id, texte: cle, valeur: maj.texte },
+          message: `Scène « ${s.id} », texte « ${cle} » : ${liste(maj.corrections)} : « ${maj.texte} ».` });
+      }
+      for (const d of motsDoubles(texte)) {
+        problemes.push({ regle: 'mot-double', gravite: 'alerte', scene: s.id, element: cle,
+          message: `Scène « ${s.id} », texte « ${cle} » : « ${d.mot} » écrit deux fois de suite ; proposition : « ${d.propose} ».` });
+      }
+    }
+    for (const texte of textesEnDur(scenesHtml[s.id] || '')) {
+      const juste = corrigerMajuscules(corrigerTypographie(texte).texte);
+      const corrections = [...corrigerTypographie(texte).corrections, ...juste.corrections];
+      if (corrections.length) {
+        problemes.push({ regle: 'typographie', gravite: 'alerte', scene: s.id,
+          message: `Scène « ${s.id} » : texte écrit dans la scène, typographie française (${liste(corrections)}) : « ${juste.texte} » (à corriger dans le fichier de la scène).` });
+      }
+    }
+  }
+  const exclus = new Set(termesGlossaire.flatMap((t) => [t.terme, ...t.eviter]).map(cleTerme));
+  for (const { formes } of termesVariables(entrees, exclus)) {
+    problemes.push({ regle: 'terme-variable', gravite: 'alerte', scene: formes[0].scene,
+      message: `Le même mot est écrit de plusieurs façons : ${formes.map((f) => `« ${f.forme} » (scène « ${f.scene} »)`).join(', ')} ; choisir une graphie (et la noter au glossaire si c'est un mot du métier).` });
+  }
+}
+
 /**
  * controler({ dossier, dossierStyles?: string | string[], dossierEffets?, ecrire? })
  * -> { problemes: [...], fichier: chemin de controle.json | null }
@@ -91,11 +133,13 @@ function controler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   if (assemblage.ok) {
     const dossierStyle = trouverStyle(deroule.style, dossierStyles).dossier;
     const scenesLues = {};
+    const scenesHtml = {};
     const elementsParScene = {};
     for (const s of deroule.scenes) {
       const fichier = cheminDansProjet(projet, s.fichier);
       let html = '';
       try { html = fs.readFileSync(fichier, 'utf8'); } catch { /* déjà signalé par l'assemblage */ }
+      scenesHtml[s.id] = html;
       scenesLues[s.id] = extraireScene(html);
       elementsParScene[s.id] = scenesLues[s.id].elements;
     }
@@ -204,8 +248,10 @@ function controler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
         }
       }
     }
-    // Glossaire de la charte : formes à éviter, sigles mal écrits.
-    problemes.push(...verifierGlossaire(deroule.scenes, lireGlossaire(projet).termes));
+    // Glossaire de la charte : formes à éviter, sigles mal écrits ; typographie et graphie des textes.
+    const termesGlossaire = lireGlossaire(projet).termes;
+    problemes.push(...verifierGlossaire(deroule.scenes, termesGlossaire));
+    controlerTextes(deroule, scenesHtml, termesGlossaire, problemes);
 
     // Style : tailles de texte et effets.
     try { controlerCSS(fs.readFileSync(path.join(dossierStyle, 'style.css'), 'utf8'), undefined, `Style « ${deroule.style} »`, problemes); } catch { /* style vérifié par l'assemblage */ }

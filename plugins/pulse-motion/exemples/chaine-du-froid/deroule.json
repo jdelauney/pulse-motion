@@ -10,7 +10,7 @@
     {
       "id": "intro", "fichier": "scenes/01-intro.html", "duree": 8, "transition": "fondu",
       "intention": "titre – annoncer le sujet",
-      "textes": { "etiquette": "Hygiène alimentaire", "titre": "La chaîne du froid", "sous": "3 minutes pour comprendre l'essentiel" }
+      "textes": { "etiquette": "Hygiène alimentaire", "titre": "La chaîne du froid", "sous": "3 minutes pour comprendre l’essentiel" }
     },
     {
       "id": "seuil", "fichier": "scenes/02-seuil.html", "duree": 9, "transition": "glissement",
@@ -34,18 +34,18 @@
       "textes": {
         "titre": "Les bons réflexes",
         "gauche-titre": "À faire", "gauche-texte": "Ranger les courses au froid dès le retour",
-        "droite-titre": "À éviter", "droite-texte": "Laisser un produit frais 2 h hors du froid"
+        "droite-titre": "À éviter", "droite-texte": "Laisser un produit frais 2\u202fh hors du froid"
       }
     },
     {
       "id": "recongeler", "fichier": "scenes/05-recongeler.html", "duree": 10, "transition": "fondu",
       "intention": "alerte – l'erreur la plus fréquente",
-      "textes": { "titre": "Ne jamais recongeler", "texte": "Un produit décongelé se consomme vite : le recongeler favorise les bactéries." }
+      "textes": { "titre": "Ne jamais recongeler", "texte": "Un produit décongelé se consomme vite\u00a0: le recongeler favorise les bactéries." }
     },
     {
       "id": "fin", "fichier": "scenes/06-fin.html", "duree": 9.5, "transition": "fondu",
       "intention": "conclusion – le message à retenir",
-      "textes": { "titre": "Le froid, c'est la sécurité", "sous": "Merci d'avoir suivi cette formation" }
+      "textes": { "titre": "Le froid, c’est la sécurité", "sous": "Merci d’avoir suivi cette formation" }
     }
   ]
 }
