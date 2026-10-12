@@ -1,0 +1,14 @@
+<!-- Scène toute faite « alerte » (style tech-sombre) : un avertissement dans une console. Durée conseillée : 8 s.
+     Textes : titre (≤ 40 car.), texte (≤ 80 car.). -->
+<section data-scene="alerte">
+  <div class="decor">
+    <span class="grille" data-decor data-start="0" data-dur="8" data-tween="--x 0cqh→-8cqh linear; --y 0cqh→-4cqh linear"></span>
+  </div>
+  <div id="boite" class="console glisse" data-start="0.2" data-dur="0.6">
+    <div class="console-barre"><span></span><span></span><span></span></div>
+    <div class="console-corps">
+      <h2 id="titre" class="titre-moyen lumineux" data-texte="titre"></h2>
+      <p id="texte" class="texte ecrit curseur" data-texte="texte" data-start="#boite:fin+0.3" data-dur="1.6"></p>
+    </div>
+  </div>
+</section>
