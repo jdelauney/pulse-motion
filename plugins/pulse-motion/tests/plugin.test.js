@@ -168,3 +168,13 @@ test('référence du moteur : contraste réel et flashs expliqués', () => {
   assert.match(moteur, /contraste réel/);
   assert.match(moteur, /3 flashs par seconde/);
 });
+
+test('référence des contrôles : chaque règle du contrôle y est expliquée, et les skills y renvoient', () => {
+  const ref = lire('references', 'controles.md');
+  const regles = ['temps-mort', 'pause-finale', 'lecture', 'texte-petit', 'contraste', 'typographie', 'majuscule-accentuee', 'mot-double', 'terme-variable',
+    'trop-d-animations', 'debordement', 'chevauchement', 'hors-cadre', 'marge', 'zone-sure', 'logo-masque', 'texte-fugace', 'mouvement-rapide', 'contraste-reel', 'flash',
+    'rendu-non-verifie', 'rendu-impossible'];
+  for (const r of regles) assert.match(ref, new RegExp('`' + r + '`'), r);
+  assert.match(ref, /corrigé seul/);
+  for (const s of ['creer', 'retoucher']) assert.match(lire('skills', s, 'SKILL.md'), /pulse-motion reference controles/, s);
+});
