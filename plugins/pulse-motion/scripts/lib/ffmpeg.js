@@ -116,7 +116,7 @@ const derniereLigne = (texte) => String(texte).trim().split(/\r?\n/).slice(-3).j
 /** Images PNG (itérable asynchrone) -> segment H.264 ; écriture respectant la contre-pression de ffmpeg. */
 async function encoderSegment({ ffmpeg, sortie, ips, crf, images, signal }) {
   const args = ['-y', '-hide_banner', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(ips), '-c:v', 'png', '-i', '-',
-    '-c:v', 'libx264', '-preset', 'medium', '-crf', String(crf), '-pix_fmt', 'yuv420p', '-r', String(ips), sortie];
+    '-c:v', 'libx264', '-preset', 'medium', '-crf', String(crf), '-pix_fmt', 'yuv420p', '-r', String(ips), '-f', 'mp4', sortie];
   const r = await lancer(ffmpeg, args, {
     signal,
     entree: async (stdin) => {
