@@ -20,7 +20,7 @@ const { charteFinale, chartePour, variablesDerivees } = require('./lib/fusion-ch
 const { trouverFichiersPolice } = require('./lib/police.js');
 
 const RACINE = path.resolve(__dirname, '..');
-const MOTEUR = ['courbes.js', 'minutage.js', 'transitions.js', 'tween.js', 'lettres.js', 'camera.js', 'temps.js', 'horloge.js', 'lecteur.js', 'debordement.js', 'mesures.js',
+const MOTEUR = ['courbes.js', 'minutage.js', 'transitions.js', 'tween.js', 'lettres.js', 'camera.js', 'temps.js', 'horloge.js', 'lecteur.js', 'debordement.js', 'mesures.js', 'pixels.js',
   'particules/instantanes.js', 'particules/gpu.js', 'particules/simulation.js', 'particules/rendu.js', 'particules/calques.js'];
 function slug(texte) {
   return String(texte).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()

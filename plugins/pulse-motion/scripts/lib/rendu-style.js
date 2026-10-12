@@ -28,7 +28,10 @@ async function rendreUnEssai({ dossierStyle, ratio, ton, navigateur, dossierStyl
     const familles = [...new Set(Object.values(lireJSON(path.join(dossierStyle, 'charte.json')).polices || {}).filter((f) => typeof f === 'string' && !SYSTEME.has(f)))];
     const r = await mesurerPage({ html, navigateur, delai: 120000, script: `
       var chargees = []; document.fonts.forEach(function (f) { if (f.status === 'loaded') chargees.push(f.family.replace(/["']/g, '')); });
-      return { constats: M.mesurer({ ratio: ${JSON.stringify(ratio)}, seuils: ${JSON.stringify(SEUILS)} }), debordements: M.detecterDebordements().map(function (d) { return d.message; }), erreurs: M.erreurs.map(function (e) { return e.message || String(e); }),
+      var constats = M.mesurer({ ratio: ${JSON.stringify(ratio)}, seuils: ${JSON.stringify(SEUILS)} });
+      var debordements = M.detecterDebordements().map(function (d) { return d.message; });
+      constats = constats.concat(await M.mesurerPixels({ ratio: ${JSON.stringify(ratio)}, seuils: ${JSON.stringify(SEUILS)} }));
+      return { constats: constats, debordements: debordements, erreurs: M.erreurs.map(function (e) { return e.message || String(e); }),
         polices: ${JSON.stringify(familles)}.filter(function (f) { return chargees.indexOf(f) < 0; }) };` });
     if (r.erreur) return [`le navigateur n'a pas pu afficher la page (${r.erreur})`];
     const resultat = r.resultat;

@@ -43,7 +43,7 @@ test('variables dérivées : couleurs lisibles sur le fond et texte posé dessus
   assert.match(lignes, /--c-primaire-lisible: #1d4ed8;/);
   assert.match(lignes, /--c-sur-primaire: #ffffff;/);
   assert.doesNotMatch(lignes, /--c-accent-lisible: #fbbf24;/, 'accent trop clair : ajusté');
-  assert.match(lignes, /--c-sur-accent: #000000;/);
+  assert.match(lignes, /--c-sur-accent: #ffffff;/, 'accent assombri (marge de lisibilité) : texte blanc dessus');
 });
 
 test('page : data-ton, variables dérivées, polices de charte/polices en plusieurs graisses', () => {
@@ -112,4 +112,14 @@ test('style sombre par défaut : son ton clair a ses propres fond et texte', () 
   assert.deepEqual(F.appliquerTon({ ...base, ton: 'clair' }, identite).couleurs, { ...base.couleurs, fond: '#f8fafc', texte: '#0f172a' });
   assert.equal(F.appliquerTon({ ...base, ton: 'auto' }, identite).ton, 'clair', 'bleu foncé de la marque : le ton clair le rend lisible');
   assert.equal(F.appliquerTon({ ...base, couleurs: { ...base.couleurs, primaire: '#38bdf8', accent: '#22d3ee' }, ton: 'auto' }, identite).ton, 'sombre');
+});
+
+test('couleurs lisibles : une marge au-dessus du seuil, pour rester lisibles sur un décor pâle', () => {
+  const { contraste } = require('../scripts/lib/couleurs.js');
+  const SEUILS = require('../scripts/seuils.json');
+  const lignes = F.variablesDerivees({ primaire: '#f59e0b', accent: '#f59e0b', fond: '#ffffff' }).join('\n');
+  const valeur = (nom) => new RegExp(`--c-${nom}-lisible: (#[0-9a-f]{6})`).exec(lignes)[1];
+  assert.ok(contraste(valeur('accent'), '#ffffff') >= SEUILS.contrasteTexte + SEUILS.margeLisible, valeur('accent'));
+  assert.ok(contraste(valeur('primaire'), '#ffffff') >= SEUILS.contrasteTitres + SEUILS.margeLisible, valeur('primaire'));
+  assert.equal(SEUILS.margeLisible, 0.5);
 });

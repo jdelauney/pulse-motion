@@ -25,5 +25,10 @@
   "zoneBas": 0.2,
   "zoneDroite": 0.11,
   "zoneDroiteDebut": 0.4,
-  "zoneDroiteFin": 0.85
+  "zoneDroiteFin": 0.85,
+  "contrasteGrandTexte": 3,
+  "grandTexteCqh": 4.5,
+  "margeLisible": 0.5,
+  "fondUniEcart": 0.05,
+  "ecartLettre": 60
 }
