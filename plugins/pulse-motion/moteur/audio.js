@@ -26,9 +26,32 @@
     }).filter(Boolean);
   }
 
+  /** Sons à jouer : éléments [data-son] (au début résolu de l'élément), transitions. -> [{ t, nom, fichier, volume }] */
+  function evenementsSons() {
+    var d = M.donnees || {}, liste = [];
+    if (!M.minutage) return liste;
+    document.querySelectorAll('#pm-scene section[data-scene] [data-son]').forEach(function (el) {
+      var sec = el.closest('section[data-scene]');
+      var e = M.minutage.elements[sec.getAttribute('data-scene')];
+      var cle = el.getAttribute('data-pm-cle');
+      if (!e || !e[cle]) return;
+      var v = parseFloat(el.getAttribute('data-son-volume'));
+      var nom = el.getAttribute('data-son');
+      var fichier = /^fichier:/.test(nom) ? nom.slice(8) : null;
+      liste.push({ t: e[cle].debut, nom: fichier ? null : nom, fichier: fichier, volume: isFinite(v) ? Math.max(0, Math.min(1, v)) : 1 });
+    });
+    if (d.bruitages && d.bruitages.transitions) {
+      M.minutage.scenes.forEach(function (s, i) {
+        var son = i > 0 && M.synthe.catalogue.SONS_TRANSITION[s.transition];
+        if (son) liste.push({ t: s.debut, nom: son, fichier: null, volume: 1 });
+      });
+    }
+    return liste;
+  }
+
   M.aSon = function () {
     var d = M.donnees;
-    return !!(d && ((d.musique && (d.musique.source || d.musique.partition)) || prisesVoix().length));
+    return !!(d && ((d.musique && (d.musique.source || d.musique.partition)) || prisesVoix().length || evenementsSons().length));
   };
 
   async function decoder(contexte, id) {
@@ -101,6 +124,26 @@
       } catch (e) {
         musiqueIllisible = true;
       }
+    }
+    // Bruitages : éléments [data-son] et transitions ; non baissés sous la voix.
+    var sons = evenementsSons();
+    if (sons.length) {
+      var contexteSons = nouveauContexte();
+      var bruitSons = M.synthe.bruit(contexteSons, 777);
+      for (var s = 0; s < sons.length; s++) {
+        var ev = sons[s];
+        if (ev.fichier) {
+          try {
+            var src = contexteSons.createBufferSource();
+            src.buffer = await decoder(contexteSons, ev.fichier);
+            var gf = contexteSons.createGain();
+            gf.gain.value = ev.volume;
+            src.connect(gf).connect(contexteSons.destination);
+            src.start(ev.t);
+          } catch (e) { avertissements.push('Un son importé n\'a pas pu être lu.'); }
+        } else M.synthe.bruitages.jouer(contexteSons, contexteSons.destination, ev.nom, ev.t, ev.volume, bruitSons);
+      }
+      bus.push({ tampon: await contexteSons.startRendering(), volume: volumeDe(d.bruitages) });
     }
     if (musiqueIllisible) {
       avertissements.push(bus.length ? 'La musique n\'a pas pu être lue : son exporté sans musique.' : 'La musique n\'a pas pu être lue : vidéo exportée sans son.');
