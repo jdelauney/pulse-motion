@@ -107,7 +107,7 @@
     if (e.saturation !== 1) filtres.push('saturate(' + e.saturation + ')');
     if (e.flou > 0) filtres.push('blur(' + e.flou + 'cqh)');
     return {
-      transform: 'translate(' + e.sx + 'cqh, ' + e.sy + 'cqh) translate(50%, 50%) scale(' + e.zoom + ') rotate(' + e.rotation + 'deg) translate(-' + e.x + '%, -' + e.y + '%)',
+      transform: 'translate(' + e.sx + 'cqh, ' + e.sy + 'cqh) translate(50%, 50%) scale(' + e.zoom + ') rotate(' + e.rotation + 'deg) translate(' + arrondi(-e.x) + '%, ' + arrondi(-e.y) + '%)',
       filter: filtres.length ? filtres.join(' ') : 'none',
       dx: arrondi(e.x - 50),
       dy: arrondi(e.y - 50),

@@ -19,6 +19,11 @@
     <p class="etroit" data-texte="long">Un titre beaucoup trop long pour son cadre</p>
     <p class="dehors" data-texte="loin">Hors de l'image</p>
   </section>
+  <section data-scene="c">
+    <p class="etroit" style="width: 80cqh" data-texte="entree" data-lettres="monte" data-pas="0.3">Un titre lettre par lettre</p>
+    <p class="etroit" data-texte="coupe" data-lettres="monte" data-pas="0.01">Un titre beaucoup trop long pour son cadre</p>
+    <div data-camera="zoom 2→2 0+1; x 60→60 0+1"><p style="position: absolute; left: 150cqh; top: 10cqh" data-texte="cadre">Recadré</p></div>
+  </section>
   <section data-scene="b">
     <p class="arrive" data-texte="glisse" data-start="0" data-dur="3" data-tween="--x 200cqh→0cqh linear">Arrive de la droite</p>
   </section>
@@ -26,12 +31,15 @@
 <pre id="resultat">EN COURS</pre>
 <script type="application/json" id="pm-donnees">
 {"titre":"test","format":{"ratio":"16:9","ips":30},"musique":null,
- "scenes":[{"id":"a","duree":4,"rythme":1,"transition":"aucune"},{"id":"b","duree":4,"rythme":1,"transition":"glissement"}]}
+ "scenes":[{"id":"a","duree":4,"rythme":1,"transition":"aucune"},{"id":"c","duree":4,"rythme":1,"transition":"aucune"},{"id":"b","duree":4,"rythme":1,"transition":"glissement"}]}
 </script>
 <script src="../moteur/courbes.js"></script>
 <script src="../moteur/minutage.js"></script>
 <script src="../moteur/transitions.js"></script>
 <script src="../moteur/tween.js"></script>
+<script src="../moteur/lettres.js"></script>
+<script src="../moteur/camera.js"></script>
+<script src="../moteur/temps.js"></script>
 <script src="../moteur/horloge.js"></script>
 <script src="../moteur/lecteur.js"></script>
 <script src="../moteur/debordement.js"></script>
@@ -44,6 +52,7 @@
     var attendu = JSON.stringify([
       { scene: 'a', element: 'long', message: 'Scène « a » : le texte « long » déborde de son cadre (vers 0,4 s).' },
       { scene: 'a', element: 'loin', message: 'Scène « a » : le texte « loin » sort de l\'image (vers 0,4 s).' },
+      { scene: 'c', element: 'coupe', message: 'Scène « c » : le texte « coupe » déborde de son cadre (vers 5,2 s).' },
     ]);
     var ok = JSON.stringify(trouves) === attendu && M.temps() === 1.7;
     document.getElementById('resultat').textContent = ok ? 'RESULTAT: OK' : 'RESULTAT: ECHEC ' + JSON.stringify(trouves) + ' t=' + M.temps();

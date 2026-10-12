@@ -297,7 +297,7 @@ Un projet, une scène par séquence (`scenes/01-generique.html` … `scenes/07-p
 | Gros plan d'ouverture, dézoom, secousse du logo | `data-camera="zoom 3→1 1.2+0.4 cubic-out; y 72→50 1.2+0.4 cubic-out; secousse 0.6 1.8+0.2"` |
 | Travelling avec parallaxe (séquences 2 et 5) | `data-camera="x 50→90 3+3 linear"` + `data-profondeur="0.1"` (étoiles), `"0.5"` (collines) |
 | Accéléré ×2 du designer (séquence 3) | `data-vitesse="9+2 x2"` sur le conteneur du designer |
-| Arrêt sur image désaturé (séquence 4) | `data-gel="1+4"` sur le décor + `saturation 1→0.6 1+0.3` dans sa caméra, qui continue de zoomer |
+| Arrêt sur image désaturé (séquence 4) | `data-gel="1+7"` (jusqu'à la fin de la scène) sur le décor et les corps des Touffus + `saturation 1→0.6 1+0.3 ; saturation 0.6→1 5+0.4` dans sa caméra, qui continue de zoomer ; les pupilles dans un calque hors du gel, pour qu'elles seules bougent |
 | Planches posées une par une | `data-start` en demi-temps (`0.5t` d'écart), courbe `back-out` |
 | Lanternes, étoiles de la tape dans la main | effets de particules `etincelles`, `paillettes` |
 | Touffus, pancartes, terminal | dessinés en SVG dans des scènes composées librement (pas de scène toute faite) |

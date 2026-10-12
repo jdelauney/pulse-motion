@@ -21,6 +21,7 @@
     <p id="d" class="pm-degrade">Dégradé</p>
     <p id="dl" class="pm-degrade" data-lettres="chute">VIBE</p>
     <p id="c" class="pm-contour">Contour</p>
+    <p id="br" data-lettres="monte">Ligne un<br>Ligne deux</p>
   </section>
 </div>
 <pre id="resultat">EN COURS</pre>
@@ -74,6 +75,11 @@
   M.rendre(0); M.rendre(1.15); var direct = photo();
   M.rendre(5); M.rendre(1.15); var detour = photo();
   verifier('déterministe (0→1,15 / 5→1,15)', direct === detour);
+
+  var br = document.getElementById('br');
+  verifier('retour à la ligne gardé, mots non collés', br.querySelectorAll('br').length === 1 && Array.prototype.map.call(br.querySelectorAll('.pm-mot'), function (m) { return m.textContent; }).join('|') === 'Ligne|un|Ligne|deux', br.innerHTML);
+  verifier('retour à la ligne : texte lu en entier', br.getAttribute('aria-label') === 'Ligne un Ligne deux', br.getAttribute('aria-label'));
+  verifier('retour à la ligne : rangs continus', br.style.getPropertyValue('--pm-n') === '16', br.style.getPropertyValue('--pm-n'));
 
   var d = getComputedStyle(document.getElementById('d'));
   verifier('pm-degrade : texte rempli par le dégradé', d.backgroundClip === 'text' && d.backgroundImage.indexOf('linear-gradient') === 0 && d.webkitTextFillColor === 'rgba(0, 0, 0, 0)', d.backgroundClip + ' ' + d.backgroundImage);

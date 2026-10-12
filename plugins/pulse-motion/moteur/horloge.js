@@ -76,7 +76,11 @@
     var cameras = [];
     if (!sec) return { plagesParEl: plagesParEl, cameras: cameras };
     function signaler(regle, message) { erreurs.push({ regle: regle, scene: idScene, message: 'Scène « ' + idScene + ' » : ' + message }); }
-    sec.querySelectorAll('[data-gel],[data-vitesse]').forEach(function (el) {
+    // La section elle-même peut porter un gel ou une vitesse (toute la scène), pas une caméra.
+    var conteneurs = Array.prototype.slice.call(sec.querySelectorAll('[data-gel],[data-vitesse]'));
+    if (sec.matches('[data-gel],[data-vitesse]')) conteneurs.unshift(sec);
+    if (sec.hasAttribute('data-camera')) signaler('camera-invalide', 'data-camera se pose sur un conteneur à l\'intérieur de la scène, pas sur la <section> (dont les transitions déplacent déjà l\'image).');
+    conteneurs.forEach(function (el) {
       try { plagesParEl.set(el, M.analyserTemps(el.getAttribute('data-gel'), el.getAttribute('data-vitesse'), M.dureeTemps)); } catch (err) { signaler('temps-invalide', err.message); }
     });
     sec.querySelectorAll('[data-camera]').forEach(function (el) {

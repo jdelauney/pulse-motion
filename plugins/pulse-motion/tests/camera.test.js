@@ -70,3 +70,8 @@ test('erreurs en français, qui nomment la clause', () => {
   assert.throws(() => K.analyserCamera('zoom 1→2 0+1 tordue', null), /courbe/i);
   assert.throws(() => K.analyserCamera('secousse 0 1+1', null), /amplitude/);
 });
+
+test("point visé hors de l'image (x ou y négatif) : CSS valide", () => {
+  const s = K.styleCamera(K.etatCamera(K.analyserCamera('x 50→-10 0+1 linear; y 50→-20 0+1 linear', null), 2));
+  assert.equal(s.transform, 'translate(0cqh, 0cqh) translate(50%, 50%) scale(1) rotate(0deg) translate(10%, 20%)');
+});

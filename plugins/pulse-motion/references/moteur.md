@@ -76,7 +76,7 @@ Avec `"tempo": { "bpm": 120 }` dans le déroulé (`"decalage"` : instant du prem
 - `data-lettres` (par lettre) ou `data-mots` (par mot) : `monte` (monte de 0,5 em), `flou` (net en 0,5 s), `frappe` (machine à écrire), `onde` (saut puis petit rebond), `chute` (tombe du haut et rebondit).
 - `data-pas` : écart entre deux lettres ou deux mots (par défaut `frappe` 0,04 s, `onde` 0,02 s, autres 0,05 s ; mots 0,12 s). Durée d'une lettre : `--pm-lettre-dur` (ex. `style="--pm-lettre-dur: 0.3s"`).
 - Le départ est le `data-start` de l'élément (ou de son ancêtre minuté). Fin de l'animation ≈ `data-start` + nombre de lettres × pas + durée d'une lettre : en tenir compte pour le temps de lecture.
-- Les mots ne sont jamais coupés ; les lecteurs d'écran lisent le texte entier.
+- Les mots ne sont jamais coupés, les retours à la ligne du texte sont gardés ; les lecteurs d'écran lisent le texte entier. Une balise à l'intérieur du texte (`<em>`) est aplatie.
 
 ### Dégradé et contour
 
@@ -94,7 +94,7 @@ Avec `"tempo": { "bpm": 120 }` dans le déroulé (`"decalage"` : instant du prem
 <h2 class="titre-moyen" data-texte="carton" data-start="1"></h2>
 ```
 
-- `data-camera` sur un conteneur qui couvre l'image ; ce qui est **hors** du conteneur (cartons, titres) reste fixe.
+- `data-camera` sur un conteneur **dans** la scène (jamais sur la `<section>`), qui couvre l'image ; ce qui est **hors** du conteneur (cartons, titres) reste fixe.
 - Clauses `propriété départ→arrivée début+durée [courbe]` (courbe par défaut `sine-inout`) :
   - `zoom` (1 = cadre normal, 2 = gros plan) ;
   - `x`, `y` : le point visé, en % de l'image (50 = centre) — pour un travelling, déplacer `x` ; pour un gros plan sur un personnage en (44 %, 70 %), `zoom 1→3` avec `x 50→44; y 50→70` sur la même plage ;
@@ -108,7 +108,7 @@ Avec `"tempo": { "bpm": 120 }` dans le déroulé (`"decalage"` : instant du prem
 
 - `data-gel="1.2+1.5"` sur un conteneur : à 1,2 s, tout son contenu s'arrête 1,5 s (image figée), puis reprend où il en était. Les éléments après le gel arrivent donc 1,5 s plus tard.
 - `data-vitesse="3+2 x2"` : de 3 s à 5 s, le contenu va deux fois plus vite (`x0.5` : ralenti).
-- Plusieurs plages séparées par `;`, sans chevauchement. S'applique aux éléments minutés, animations CSS et SVG animés du conteneur ; pas à `M.chaqueImage` ni aux effets de particules.
+- Plusieurs plages séparées par `;`, sans chevauchement, en secondes de la scène. Sur la `<section>` elle-même, elles s'appliquent à toute la scène. S'applique aux éléments minutés, animations CSS et SVG animés du conteneur ; pas à `M.chaqueImage` ni aux effets de particules.
 - Une caméra posée **sur le même élément** n'est pas figée : on gèle le décor, la caméra continue (zoom sur l'image figée). Pour désaturer pendant le gel : `saturation 1→0.4 1.2+0.3` dans la caméra.
 
 ## Signaux d'alerte

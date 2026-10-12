@@ -25,17 +25,20 @@
     <div data-vitesse="1+2 x2"><div id="vite" data-start="0" data-dur="8" data-tween="--v 0→8 linear"></div></div>
     <p id="carton" data-start="0" data-dur="8" data-tween="--v 0→8 linear"></p>
   </section>
-  <section data-scene="b">
+  <section data-scene="b" data-camera="zoom 1→2 0+1">
     <div data-camera="travelling 0→1 0+1"></div>
     <div data-gel="1+1; 1.5+1"></div>
     <div data-profondeur="loin"></div>
     <div data-camera="zoom 1→2 1t+1t"></div>
   </section>
+  <section data-scene="c" data-gel="0+1">
+    <div id="sg" data-start="0" data-dur="2" data-tween="--v 0→2 linear"></div>
+  </section>
 </div>
 <pre id="resultat">EN COURS</pre>
 <script type="application/json" id="pm-donnees">
 {"titre":"test","format":{"ratio":"16:9","ips":30},"musique":null,
- "scenes":[{"id":"a","duree":8,"rythme":1,"transition":"aucune"},{"id":"b","duree":2,"rythme":1,"transition":"aucune"}]}
+ "scenes":[{"id":"a","duree":8,"rythme":1,"transition":"aucune"},{"id":"b","duree":2,"rythme":1,"transition":"aucune"},{"id":"c","duree":3,"rythme":1,"transition":"aucune"}]}
 </script>
 <script src="../moteur/courbes.js"></script>
 <script src="../moteur/minutage.js"></script>
@@ -88,8 +91,13 @@
   M.rendre(7); M.rendre(3.3); var detour = photo();
   verifier('déterministe (0→3,3 / 7→3,3)', direct === detour, direct + ' ≠ ' + detour);
 
+  M.rendre(10.5);
+  verifier('gel posé sur la section : appliqué', proche(v('sg'), 0), v('sg'));
+  M.rendre(11.5);
+  verifier('gel posé sur la section : reprend', proche(v('sg'), 0.5), v('sg'));
+
   var regles = M.erreurs.map(function (e) { return e.regle; }).sort().join(',');
-  verifier('erreurs : caméra, plages, profondeur, temps sans tempo', regles === 'camera-invalide,camera-invalide,profondeur-invalide,temps-invalide', JSON.stringify(M.erreurs));
+  verifier('erreurs : caméra, plages, profondeur, temps sans tempo', regles === 'camera-invalide,camera-invalide,camera-invalide,profondeur-invalide,temps-invalide', JSON.stringify(M.erreurs));
   verifier('message nomme la scène', M.erreurs.every(function (e) { return e.message.indexOf('Scène « b »') === 0; }), JSON.stringify(M.erreurs));
 
   document.getElementById('resultat').textContent = echecs.length

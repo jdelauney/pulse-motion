@@ -12,6 +12,7 @@ const { lireAttributs } = require('./extraire.js');
 const { cheminDansProjet, versDataURI } = require('./embarquer.js');
 const { echapperHTML } = require('./scenes.js');
 const R = require('../../moteur/particules/recette.js');
+const { lireSecondes } = require('../../moteur/minutage.js');
 
 const NOM = /^[a-z0-9-]+$/;
 const BALISE = /<([a-zA-Z][\w-]*)\b((?:[^>"']|"[^"]*"|'[^']*')*)>/g;
@@ -49,11 +50,12 @@ function fnv1a(texte) {
 }
 
 /**
- * preparerEffets(html, { scene, projet, bibliotheque, charte, premierIndex })
+ * preparerEffets(html, { scene, projet, bibliotheque, charte, premierIndex, dureeTemps })
+ * dureeTemps : secondes par temps musical (tempo du déroulé), pour un data-dur écrit en « t ».
  * -> { html, effets: [{ scene, ordre, calque, ancre, effet }], erreurs: [{ regle, gravite, scene, element?, message }] }
  * ordre : position de la balise parmi les data-effet de la scène (erreurs comprises).
  */
-function preparerEffets(html, { scene, projet, bibliotheque, charte = {}, premierIndex = 0 }) {
+function preparerEffets(html, { scene, projet, bibliotheque, charte = {}, premierIndex = 0, dureeTemps = null }) {
   const effets = [];
   const erreurs = [];
   const source = String(html).replace(/<!--[\s\S]*?-->/g, '');
@@ -91,7 +93,9 @@ function preparerEffets(html, { scene, projet, bibliotheque, charte = {}, premie
       if (!/^\d+$/.test(a['data-graine'].trim())) return signaler([{ regle: 'effet-invalide', message: `data-graine « ${a['data-graine']} » : nombre entier attendu.` }]);
       graine = Number(a['data-graine'].trim()) >>> 0;
     }
-    const dur = /^\d*\.?\d+$/.test(String(a['data-dur'] || '').trim()) ? parseFloat(a['data-dur']) : 1;
+    // Durée illisible ou sans tempo : 1 s, comme le minutage (qui signale l'erreur).
+    const lu = lireSecondes(String(a['data-dur'] || ''), dureeTemps);
+    const dur = lu.erreur ? 1 : lu.valeur;
 
     let compile;
     try {

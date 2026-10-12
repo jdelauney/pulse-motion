@@ -224,3 +224,18 @@ test('assemblage : les modules de mise en scène sont dans la page', () => {
   const { html } = require('../scripts/assembler.js').assembler({ dossier: dir, dossierStyles: STYLES, ecrire: false });
   for (const nom of ['Pulse Motion – caméra', 'Pulse Motion – temps figé', 'Pulse Motion – texte lettre par lettre']) assert.ok(html.includes(nom), nom);
 });
+
+test("tempo : la première scène n'est pas jugée, même avec un décalage", () => {
+  const dir = copierProjet('projet-simple');
+  modifierDeroule(dir, (d) => { d.tempo = { bpm: 120, decalage: 0.25 }; });
+  const p = controler({ dossier: dir, dossierStyles: STYLES }).problemes.filter((x) => x.regle === 'hors-tempo');
+  assert.deepEqual(p.map((x) => x.scene), ['chiffre']);
+});
+
+test('caméra posée sur la section : signalée', () => {
+  const dir = copierProjet('projet-simple');
+  ecrireScene(dir, '02-chiffre.html', '<section data-scene="chiffre" data-camera="zoom 1→2 0+1"><p data-texte="legende" data-start="0" data-dur="2"></p></section>');
+  const p = controler({ dossier: dir, dossierStyles: STYLES }).problemes.find((x) => x.regle === 'camera-invalide');
+  assert.ok(p);
+  assert.match(p.message, /data-camera se pose sur un conteneur à l'intérieur de la scène, pas sur la <section>/);
+});

@@ -51,13 +51,26 @@
       if (lu.erreur) return { regle: 'lettres-invalide', message: debut + 'data-pas « ' + brut + ' » n\'est pas un nombre de secondes (ex. 0.04, ou 0.25t avec un tempo).' };
       pas = lu.valeur;
     }
-    var texte = el.textContent;
+    // Morceaux de texte et retours à la ligne (<br>, posés par l'assemblage pour « \n ») ;
+    // une autre balise dans le texte est aplatie en son texte.
+    var morceaux = [];
+    Array.prototype.forEach.call(el.childNodes, function (noeud) {
+      if (noeud.nodeName === 'BR') morceaux.push(null);
+      else morceaux.push(noeud.textContent);
+    });
+    var texte = morceaux.map(function (m) { return m === null ? ' ' : m; }).join('');
     if (texte.trim() === '') return null;
 
     var n = 0;
     var fragment = document.createDocumentFragment();
-    texte.split(/([ \t\n\r]+)/).forEach(function (morceau) {
+    var suite = [];
+    morceaux.forEach(function (m) {
+      if (m === null) suite.push(null);
+      else suite.push.apply(suite, m.split(/([ \t\n\r]+)/));
+    });
+    suite.forEach(function (morceau) {
       if (morceau === '') return;
+      if (morceau === null) { fragment.appendChild(document.createElement('br')); return; }
       if (BLANC.test(morceau)) { fragment.appendChild(document.createTextNode(morceau)); return; }
       var mot = span('pm-mot');
       mot.setAttribute('aria-hidden', 'true');
