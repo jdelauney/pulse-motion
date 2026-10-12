@@ -122,6 +122,8 @@ Avec `"tempo": { "bpm": 120 }` dans le déroulé (`"decalage"` : instant du prem
 | Icône SVG décorative | `aria-hidden="true"` |
 | Élément posé volontairement sur un autre (texte sur une carte image, badge) | `data-superpose` sur celui qui passe par-dessus |
 
+Il mesure aussi les pixels : le **contraste réel** de chaque texte avec ce qu'il y a derrière ses lettres (image, dégradé, décor ; au moins 4,5:1, 3:1 pour un texte de 4,5 cqh et plus) et les **flashs** : plus de 3 flashs par seconde sur un quart de l'image est une erreur (risque de crise d'épilepsie). Un texte posé sur une image a besoin d'un aplat ou d'un voile.
+
 ## Signaux d'alerte
 
 | Vous écrivez… | Problème | À la place |

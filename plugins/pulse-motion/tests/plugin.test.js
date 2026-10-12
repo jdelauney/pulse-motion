@@ -162,3 +162,9 @@ test('revue : la référence du moteur explique les marqueurs lus par le contrô
   for (const motif of [/data-decor/, /data-superpose/, /alt=""/, /aria-hidden="true"/]) assert.match(moteur, motif);
   assert.match(lire('skills', 'creer', 'SKILL.md'), /rendu-non-verifie.*rendu-impossible/);
 });
+
+test('référence du moteur : contraste réel et flashs expliqués', () => {
+  const moteur = lire('references', 'moteur.md');
+  assert.match(moteur, /contraste réel/);
+  assert.match(moteur, /3 flashs par seconde/);
+});
