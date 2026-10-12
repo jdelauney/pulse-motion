@@ -89,6 +89,13 @@ function validerDeroule(d) {
     if (d.voix.volume !== undefined && !(typeof d.voix.volume === 'number' && d.voix.volume >= 0 && d.voix.volume <= 1)) err.push('« voix.volume » doit être un nombre entre 0 et 1.');
   }
 
+  if (d.sousTitres !== undefined && !estObjet(d.sousTitres)) err.push('« sousTitres » doit être un objet, ex. { "mode": "ligne" }.');
+  else if (d.sousTitres !== undefined) {
+    if (d.sousTitres.mode !== undefined && !['ligne', 'mot'].includes(d.sousTitres.mode)) err.push('« sousTitres.mode » doit être « ligne » ou « mot ».');
+    if (d.sousTitres.incrustes !== undefined && typeof d.sousTitres.incrustes !== 'boolean') err.push('« sousTitres.incrustes » doit valoir true ou false.');
+    if (d.sousTitres.position !== undefined && !['bas', 'haut'].includes(d.sousTitres.position)) err.push('« sousTitres.position » doit être « bas » ou « haut ».');
+  }
+
   if (!Array.isArray(d.scenes) || d.scenes.length === 0) {
     err.push('« scenes » doit contenir au moins une scène.');
     return err;
