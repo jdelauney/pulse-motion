@@ -196,3 +196,11 @@ test('tempo : data-start en temps sans tempo dans le déroulé', () => {
   ecrireScene(dir, '02-chiffre.html', '<section data-scene="chiffre"><p data-texte="legende" data-start="2t" data-dur="2"></p></section>');
   assert.ok(regles(controler({ dossier: dir, dossierStyles: STYLES })).includes('tempo-absent'));
 });
+
+test('texte lettre par lettre : effet inconnu signalé sans navigateur', () => {
+  const dir = copierProjet('projet-simple');
+  ecrireScene(dir, '02-chiffre.html', '<section data-scene="chiffre"><p data-texte="legende" data-start="0" data-dur="2" data-lettres="danse"></p><p data-mots="monte" data-start="1"></p></section>');
+  const p = controler({ dossier: dir, dossierStyles: STYLES }).problemes.filter((x) => x.regle === 'lettres-invalide');
+  assert.equal(p.length, 1);
+  assert.match(p[0].message, /Scène « chiffre » : data-lettres « danse » inconnu \(effets : monte, flou, frappe, onde, chute\)/);
+});

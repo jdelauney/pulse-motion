@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Pulse Motion – test du texte lettre par lettre, du dégradé et du contour</title>
+<link rel="stylesheet" href="../moteur/base.css">
+<style>
+  body { --pm-ratio-l: 16; --pm-ratio-h: 9; }
+  #pm-scene { --c-primaire: #ff6b35; --c-accent: #8e44ad; --c-texte: #ffffff; }
+</style>
+</head>
+<body>
+<div id="pm-scene">
+  <section data-scene="a">
+    <h1 id="t" data-start="1" data-dur="1" data-lettres="onde" data-pas="0.1" style="--pm-lettre-dur: 0.4s">Où l'eau</h1>
+    <p id="m" data-start="0" data-mots="monte">Pourquoi 4&nbsp;°C ?</p>
+    <p id="l" data-lettres="frappe">4&nbsp;°C</p>
+    <p id="vide" data-lettres="monte"></p>
+    <p id="faux" data-lettres="danse">Intact</p>
+    <p id="pt" data-lettres="monte" data-pas="1t">Temps</p>
+    <p id="d" class="pm-degrade">Dégradé</p>
+    <p id="dl" class="pm-degrade" data-lettres="chute">VIBE</p>
+    <p id="c" class="pm-contour">Contour</p>
+  </section>
+</div>
+<pre id="resultat">EN COURS</pre>
+<script type="application/json" id="pm-donnees">
+{"titre":"test","format":{"ratio":"16:9","ips":30},"musique":null,
+ "scenes":[{"id":"a","duree":6,"rythme":1,"transition":"aucune"}]}
+</script>
+<script src="../moteur/courbes.js"></script>
+<script src="../moteur/minutage.js"></script>
+<script src="../moteur/transitions.js"></script>
+<script src="../moteur/tween.js"></script>
+<script src="../moteur/lettres.js"></script>
+<script src="../moteur/horloge.js"></script>
+<script>
+  M.demarrer();
+  M.pret.then(function () {
+  var echecs = [], total = 0;
+  function verifier(nom, ok, detail) { total++; if (!ok) echecs.push(nom + (detail ? ' (' + detail + ')' : '')); }
+  function lettres(id) { return document.querySelectorAll('#' + id + ' .pm-lettre:not(.pm-blanc)'); }
+  function opacite(el) { return parseFloat(getComputedStyle(el).opacity); }
+  function photo() {
+    return JSON.stringify(Array.prototype.map.call(document.querySelectorAll('.pm-lettre, .pm-mot'), function (e) {
+      var s = getComputedStyle(e); return [s.opacity, s.transform, s.filter];
+    }));
+  }
+
+  var t = document.getElementById('t');
+  verifier('7 lettres (apostrophe comprise, espace non comptée)', lettres('t').length === 7, lettres('t').length);
+  verifier('2 mots insécables', t.querySelectorAll('.pm-mot').length === 2 && getComputedStyle(t.querySelector('.pm-mot')).whiteSpace === 'nowrap');
+  verifier('texte entier pour les lecteurs d\'écran', t.getAttribute('aria-label') === 'Où l\'eau' && t.querySelector('.pm-mot').getAttribute('aria-hidden') === 'true');
+  verifier('texte visible inchangé', t.textContent === 'Où l\'eau', t.textContent);
+  verifier('--pm-n et --pm-pas posés', t.style.getPropertyValue('--pm-n') === '7' && t.style.getPropertyValue('--pm-pas') === '0.1s');
+
+  M.rendre(0.5);
+  verifier('avant le début : 1re lettre cachée', opacite(lettres('t')[0]) === 0, opacite(lettres('t')[0]));
+  M.rendre(1.05);
+  verifier('t = 1,05 : 1re lettre commencée', opacite(lettres('t')[0]) > 0, opacite(lettres('t')[0]));
+  verifier('t = 1,05 : 3e lettre pas encore', opacite(lettres('t')[2]) === 0, opacite(lettres('t')[2]));
+  M.rendre(3);
+  verifier('t = 3 : toutes les lettres visibles', Array.prototype.every.call(lettres('t'), function (e) { return opacite(e) === 1; }));
+
+  var m = document.getElementById('m');
+  verifier('data-mots : 3 mots, espace insécable gardée dans le mot', m.querySelectorAll('.pm-mot').length === 3 && m.querySelectorAll('.pm-mot')[1].textContent === '4 °C');
+  verifier('frappe : espace insécable non comptée', document.getElementById('l').style.getPropertyValue('--pm-n') === '3' && document.querySelectorAll('#l .pm-blanc').length === 1);
+  verifier('élément vide : rien de cassé', document.getElementById('vide').children.length === 0 && !document.getElementById('vide').hasAttribute('aria-label'));
+  verifier('effet inconnu : texte intact', document.getElementById('faux').innerHTML === 'Intact');
+  var regles = M.erreurs.map(function (e) { return e.regle; }).sort().join(',');
+  verifier('erreurs : effet inconnu et temps sans tempo', regles === 'lettres-invalide,tempo-absent', JSON.stringify(M.erreurs));
+  verifier('message nomme l\'effet et la scène', M.erreurs.some(function (e) { return /Scène « a », élément « faux » : data-lettres « danse » inconnu/.test(e.message); }));
+
+  M.rendre(0); M.rendre(1.15); var direct = photo();
+  M.rendre(5); M.rendre(1.15); var detour = photo();
+  verifier('déterministe (0→1,15 / 5→1,15)', direct === detour);
+
+  var d = getComputedStyle(document.getElementById('d'));
+  verifier('pm-degrade : texte rempli par le dégradé', d.backgroundClip === 'text' && d.backgroundImage.indexOf('linear-gradient') === 0 && d.webkitTextFillColor === 'rgba(0, 0, 0, 0)', d.backgroundClip + ' ' + d.backgroundImage);
+  var l0 = getComputedStyle(lettres('dl')[0]), l3 = getComputedStyle(lettres('dl')[3]);
+  verifier('pm-degrade + lettres : chaque lettre a sa portion du dégradé', l0.backgroundImage.indexOf('linear-gradient') === 0 && l0.backgroundClip === 'text' && l0.backgroundPositionX !== l3.backgroundPositionX, l0.backgroundPositionX + ' / ' + l3.backgroundPositionX);
+  var c = getComputedStyle(document.getElementById('c'));
+  verifier('pm-contour : contour peint sous le texte', parseFloat(c.webkitTextStrokeWidth) > 0 && c.paintOrder.indexOf('stroke') === 0, c.webkitTextStrokeWidth + ' ' + c.paintOrder);
+
+  document.getElementById('resultat').textContent = echecs.length
+    ? 'RESULTAT: ECHEC ' + echecs.length + '/' + total + '\n' + echecs.join('\n')
+    : 'RESULTAT: OK ' + total + '/' + total;
+  });
+</script>
+</body>
+</html>

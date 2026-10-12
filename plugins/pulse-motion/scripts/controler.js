@@ -18,6 +18,7 @@ const { lireDeroule, dureeTemps } = require('./lib/deroule.js');
 const { cheminDansProjet } = require('./lib/embarquer.js');
 const { extraireScene } = require('./lib/extraire.js');
 const { calculerMinutage, CHEVAUCHEMENT } = require('../moteur/minutage.js');
+const { EFFETS: EFFETS_LETTRES } = require('../moteur/lettres.js');
 
 const SEUILS = JSON.parse(fs.readFileSync(path.join(__dirname, 'seuils.json'), 'utf8'));
 
@@ -158,6 +159,11 @@ function controler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
         problemes.push({ regle: 'lecture', gravite: 'alerte', scene: s.id, message: `Scène « ${s.id} » : ${mots} mots à lire en ${virgule(disponible)} s ; prévoir au moins ${virgule(besoin)} s.` });
       }
       controlerCSS(scenesLues[s.id].css, s.id, `Scène « ${s.id} »`, problemes);
+      for (const { attribut, effet } of scenesLues[s.id].decoupes) {
+        if (!Object.hasOwn(EFFETS_LETTRES, effet)) {
+          problemes.push({ regle: 'lettres-invalide', gravite: 'erreur', scene: s.id, message: `Scène « ${s.id} » : ${attribut} « ${effet} » inconnu (effets : ${Object.keys(EFFETS_LETTRES).join(', ')}).` });
+        }
+      }
     }
 
     // Effets de particules : budget par scène, effet du calque avant posé sur un texte long.
