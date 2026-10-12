@@ -136,8 +136,6 @@ if (require.main === module) {
   const i = args.indexOf('--planche');
   const planche = i < 0 ? null : (args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1].split(',').filter(Boolean) : true);
   const rapide = args.includes('--rapide');
-  // Interruption (Ctrl+C, arrêt de la commande) : fermer le navigateur sans fenêtre et l'aperçu lancé.
-  arreterProprementSurSignal();
   let dernier = -1;
   const surProgression = (n, total) => {
     const pourcent = Math.floor(100 * n / total);
@@ -147,11 +145,14 @@ if (require.main === module) {
   const voie = choisirVoie({ planche, rapide, outil });
   let travail;
   if (voie === 'fidele') {
+    // Interruption (Ctrl+C, arrêt de la commande) : l'export s'annule et range ses fichiers avant de sortir.
     const controle = new AbortController();
-    process.on('SIGINT', () => controle.abort());
+    for (const s of ['SIGINT', 'SIGTERM']) process.on(s, () => controle.abort());
     travail = exporterFidele({ dossier, qualite: valeur('--qualite') || '1080p', ips: valeur('--ips') ? Number(valeur('--ips')) : undefined, outil, signal: controle.signal, surProgression })
       .then((r) => ({ ...r, mode: 'fidele' }));
   } else {
+    // Interruption : fermer le navigateur sans fenêtre et l'aperçu lancé.
+    arreterProprementSurSignal();
     travail = exporterVideo({ dossier, planche, ouvrir: args.includes('--ouvrir'), surProgression })
       .then((r) => ({ ...r, mode: 'navigateur', ...(!rapide && !planche ? { conseilFfmpeg: { message: outil.message, commande: outil.commande } } : {}) }));
   }
