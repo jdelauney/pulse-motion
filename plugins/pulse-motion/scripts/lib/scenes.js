@@ -20,17 +20,20 @@ function verifierSection(html, id) {
 const ELEMENT_TEXTE = /<([a-zA-Z][\w-]*)(\b[^>]*?\sdata-texte=(["'])([^"']+)\3[^>]*)>([\s\S]*?)<\/\1>/g;
 
 /**
- * Remplit les éléments data-texte="clé" avec les textes du déroulé (échappés).
+ * Remplit les éléments data-texte="clé" avec les textes du déroulé (échappés) ; un ajustement de taille
+ * (ajustements[clé].taille) devient data-taille sur l'élément (appliqué par moteur/tailles.js).
  * -> { html, manquants: [clé] }
  */
-function injecterTextes(html, textes) {
+function injecterTextes(html, textes, ajustements = {}) {
   const manquants = [];
   const sortie = html.replace(ELEMENT_TEXTE, (tout, balise, attributs, g, cle) => {
     if (!Object.prototype.hasOwnProperty.call(textes || {}, cle)) {
       manquants.push(cle);
       return `<${balise}${attributs}>[texte « ${echapperHTML(cle)} » manquant]</${balise}>`;
     }
-    return `<${balise}${attributs}>${echapperHTML(textes[cle])}</${balise}>`;
+    const a = ajustements && ajustements[cle];
+    const taille = a && typeof a.taille === 'number' ? ` data-taille="${a.taille}"` : '';
+    return `<${balise}${attributs}${taille}>${echapperHTML(textes[cle])}</${balise}>`;
   });
   return { html: sortie, manquants };
 }

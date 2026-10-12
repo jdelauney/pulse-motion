@@ -81,3 +81,8 @@ test('embarquerRessources : nom de fichier avec % et accents', () => {
   assert.deepEqual(erreurs, []);
   assert.equal((html.match(/data:image\/svg\+xml;base64,/g) || []).length, 2);
 });
+
+test('injecterTextes : data-taille posé sur l\'élément ajusté', () => {
+  const { html } = S.injecterTextes('<h1 id="titre" data-texte="titre" class="t"></h1><p data-texte="sous"></p>', { titre: 'Bonjour', sous: 'x' }, { titre: { taille: 0.85 } });
+  assert.equal(html, '<h1 id="titre" data-texte="titre" class="t" data-taille="0.85">Bonjour</h1><p data-texte="sous">x</p>');
+});
