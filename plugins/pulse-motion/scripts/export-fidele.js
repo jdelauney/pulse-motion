@@ -1,14 +1,16 @@
 #!/usr/bin/env node
 'use strict';
 /* Pulse Motion – export fidèle : vraies captures d'écran de la page (Chrome ou Edge sans fenêtre), encodées par
- * ffmpeg en segments de 10 s repris après interruption, assemblées sans réencodage, vérifiées (ffprobe, trois
- * images comparées aux captures).
+ * ffmpeg en segments de 10 s (deux navigateurs en parallèle sur une machine d'au moins 4 cœurs) repris après
+ * interruption, assemblées sans réencodage avec la musique (normalisée, fondus), vérifiées (ffprobe, images
+ * comparées aux captures).
  *
  *   node scripts/export-fidele.js <dossier-du-projet> [--qualite 1080p|720p] [--ips 30|60]
  *
  * Suivi dans sortie/export.json ; résumé JSON ; code 1 en cas d'échec.
  */
 const crypto = require('node:crypto');
+const os = require('node:os');
 const fs = require('node:fs');
 const path = require('node:path');
 const { assembler, slug, RACINE } = require('./assembler.js');
@@ -16,6 +18,7 @@ const { lireDeroule } = require('./lib/deroule.js');
 const { trouverNavigateur } = require('./lib/navigateur.js');
 const { ouvrirCapture } = require('./lib/capture-fidele.js');
 const F = require('./lib/ffmpeg.js');
+const { cheminDansProjet } = require('./lib/embarquer.js');
 
 const TAILLES = {
   '1080p': { '16:9': [1920, 1080], '9:16': [1080, 1920], '1:1': [1080, 1080], '4:5': [1080, 1350] },
@@ -48,7 +51,7 @@ async function segmentValide(outil, fichier, attendu) {
 }
 
 async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = trouverNavigateur(), outil = F.trouverFfmpeg(), dossierStyles,
-  dossierEffets = path.join(RACINE, 'effets'), surProgression = () => {}, signal, dureeSegment = 10, arreterApres } = {}) {
+  dossierEffets = path.join(RACINE, 'effets'), surProgression = () => {}, signal, dureeSegment = 10, arreterApres, paralleles } = {}) {
   const projet = path.resolve(dossier);
   const sortieDir = path.join(projet, 'sortie');
   const suivi = path.join(sortieDir, 'export.json');
@@ -66,7 +69,10 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
 
   const travail = path.join(sortieDir, '.export');
   fs.mkdirSync(travail, { recursive: true });
-  const empreinte = crypto.createHash('sha256').update(assemblage.html).update(`|${qualite}|${cadence}|${dureeSegment}`).digest('hex');
+  const musique = deroule.musique ? cheminDansProjet(projet, deroule.musique.fichier) : null;
+  const volume = deroule.musique && typeof deroule.musique.volume === 'number' ? deroule.musique.volume : 1;
+  const signatureMusique = musique && fs.existsSync(musique) ? crypto.createHash('sha256').update(fs.readFileSync(musique)).digest('hex') : 'aucune';
+  const empreinte = crypto.createHash('sha256').update(assemblage.html).update(`|${qualite}|${cadence}|${dureeSegment}|${signatureMusique}|${volume}`).digest('hex');
   const fichierEmpreinte = path.join(travail, 'empreinte');
   const memeEmpreinte = fs.existsSync(fichierEmpreinte) && fs.readFileSync(fichierEmpreinte, 'utf8') === empreinte;
   if (!memeEmpreinte) {
@@ -79,73 +85,107 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
 
   const final = path.join(sortieDir, `${slug(deroule.titre)}.mp4`);
   const partiel = `${final}.part`;
-  let capture = null;
-  let segmentPartiel = null;
+  const captures = [];
+  const partiels = new Set();
+  const gpu = avecEffets(projet, deroule);
+  const ouvrir = async () => { const c = await ouvrirCapture({ fichierHtml: page, largeur, hauteur, navigateur, gpu }); captures.push(c); return c; };
   const controle = new AbortController();
   const surAnnulation = () => controle.abort();
   if (signal) { if (signal.aborted) controle.abort(); else signal.addEventListener('abort', surAnnulation, { once: true }); }
   try {
-    capture = await ouvrirCapture({ fichierHtml: page, largeur, hauteur, navigateur, gpu: avecEffets(projet, deroule) });
-    const total = Math.round(capture.duree * cadence);
+    const premiere = await ouvrir();
+    const total = Math.round(premiere.duree * cadence);
     const parSegment = Math.round(dureeSegment * cadence);
     const nombre = Math.ceil(total / parSegment);
+    const travailleurs = Math.max(1, Math.min(nombre, paralleles || (os.cpus().length >= 4 && nombre >= 2 ? 2 : 1)));
     const temoins = new Map([[0, null], [Math.floor(total / 2), null], [total - 1, null]]);
-    const segments = [];
+    const segments = Array.from({ length: nombre }, (_, k) => path.join(travail, `segment-${String(k).padStart(2, '0')}.mp4`));
     let faites = 0;
     let repris = 0;
     let produits = 0;
+    let suivant = 0;
     etat({ etat: 'en-cours', images: 0, total });
-    for (let k = 0; k < nombre; k++) {
-      if (controle.signal.aborted) throw new Error('export annulé');
+    const avancer = (n) => {
+      faites += n;
+      surProgression(faites, total);
+      if (faites % 10 === 0 || faites === total) etat({ etat: 'en-cours', images: faites, total });
+    };
+
+    /** Un segment : repris s'il est valide et fidèle (première image comparée), sinon capturé, encodé, vérifié. */
+    async function traiterSegment(k, capture) {
       const debut = k * parSegment;
       const fin = Math.min(total, debut + parSegment);
-      const fichier = path.join(travail, `segment-${String(k).padStart(2, '0')}.mp4`);
-      segments.push(fichier);
+      const fichier = segments[k];
       if (await segmentValide(outil, fichier, { largeur, hauteur, images: fin - debut })
         && await premiereImageJuste(outil, fichier, await capture.capturer(debut / cadence))) {
         repris++;
-        faites += fin - debut;
-        surProgression(faites, total);
-        etat({ etat: 'en-cours', images: faites, total });
-        continue;
+        avancer(fin - debut);
+        return;
       }
       fs.rmSync(fichier, { force: true });
-      segmentPartiel = `${fichier}.part`;
-      let premiere = null;
+      const segmentPartiel = `${fichier}.part`;
+      partiels.add(segmentPartiel);
+      let premiereImage = null;
       async function* images() {
         for (let n = debut; n < fin; n++) {
           if (controle.signal.aborted) return;
           const png = await capture.capturer(n / cadence);
           if (temoins.has(n)) temoins.set(n, png);
-          if (n === debut) premiere = png;
-          faites++;
-          surProgression(faites, total);
-          if (faites % 10 === 0 || faites === total) etat({ etat: 'en-cours', images: faites, total });
+          if (n === debut) premiereImage = png;
+          avancer(1);
           yield png;
         }
       }
       await F.encoderSegment({ ffmpeg: outil.chemin, sortie: segmentPartiel, ips: cadence, crf: CRF[qualite], images: images(), signal: controle.signal });
       if (controle.signal.aborted) throw new Error('export annulé');
       if (!(await segmentValide(outil, segmentPartiel, { largeur, hauteur, images: fin - debut }))) throw new Error(`le segment ${k + 1} est incomplet`);
-      if (!(await premiereImageJuste(outil, segmentPartiel, premiere))) throw new Error(`le segment ${k + 1} ne correspond pas à la page`);
+      if (!(await premiereImageJuste(outil, segmentPartiel, premiereImage))) throw new Error(`le segment ${k + 1} ne correspond pas à la page`);
       fs.renameSync(segmentPartiel, fichier);
-      segmentPartiel = null;
+      partiels.delete(segmentPartiel);
       produits++;
       if (arreterApres && produits >= arreterApres) controle.abort();
     }
-    await capture.fermer();
-    capture = null;
+
+    // Travailleurs : chacun sa page, segments pris dans une file partagée ; une erreur arrête les autres.
+    async function travailleur(capture) {
+      while (!controle.signal.aborted && suivant < nombre) {
+        const k = suivant++;
+        await traiterSegment(k, capture);
+      }
+    }
+    const pages = [premiere];
+    for (let i = 1; i < travailleurs; i++) pages.push(await ouvrir());
+    const issues = await Promise.allSettled(pages.map((c) => travailleur(c).catch((err) => { controle.abort(); throw err; })));
+    for (const c of captures.splice(0)) await c.fermer().catch(() => {});
+    const echec = issues.find((i) => i.status === 'rejected' && !/export annulé/.test(i.reason && i.reason.message));
+    if (echec) throw echec.reason;
     if (controle.signal.aborted) throw new Error('export annulé');
 
-    await F.assemblerSegments({ ffmpeg: outil.chemin, segments, sortie: partiel });
+    // Son : musique normalisée, volume, fondus ; illisible : vidéo muette avec un avertissement.
+    let audio = null;
+    let avertissement;
+    if (deroule.musique) {
+      const piste = path.join(travail, 'musique.m4a');
+      try {
+        if (!musique || !fs.existsSync(musique)) throw new Error('fichier introuvable');
+        await F.mixerMusique({ ffmpeg: outil.chemin, musique, volume, duree: total / cadence, sortie: piste, signal: controle.signal });
+        audio = piste;
+      } catch (err) {
+        if (controle.signal.aborted) throw err;
+        avertissement = 'La musique n\'a pas pu être lue : vidéo exportée sans son.';
+      }
+    }
+
+    await F.assemblerSegments({ ffmpeg: outil.chemin, segments, sortie: partiel, audio });
     const s = await F.sonder({ ffprobe: outil.cheminProbe, fichier: partiel });
     if (s.video !== 'h264' || s.largeur !== largeur || s.hauteur !== hauteur) throw new Error('la vidéo n\'a pas la piste ou la taille attendues');
     if (s.images !== total || Math.abs(s.duree - total / cadence) > 1 / cadence + 0.01) throw new Error(`la vidéo a ${s.images} images au lieu de ${total}`);
+    if (audio && (s.audio !== 'aac' || Math.abs(s.dureeAudio - total / cadence) > 0.1)) throw new Error('la piste son est absente ou n\'a pas la durée de l\'image');
     // Trois images de la vidéo comparées aux captures (segment décalé, image noire).
     for (const [n, png] of temoins) {
       const capturee = png || await (async () => {
-        const c = await ouvrirCapture({ fichierHtml: page, largeur, hauteur, navigateur, gpu: avecEffets(projet, deroule) });
-        try { return await c.capturer(n / cadence); } finally { await c.fermer(); }
+        const c = await ouvrir();
+        try { return await c.capturer(n / cadence); } finally { captures.splice(captures.indexOf(c), 1); await c.fermer(); }
       })();
       const lue = await F.extraireImage({ ffmpeg: outil.chemin, fichier: partiel, t: Math.max(0, n / cadence - 0.001) });
       const ecart = F.ecartImages(lue, capturee);
@@ -163,11 +203,12 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
       throw err;
     }
     fs.rmSync(travail, { recursive: true, force: true });
-    const resultat = { ok: true, fichier: final, images: total, duree: total / cadence, largeur, hauteur, audio: false, segmentsRepris: repris };
-    etat({ etat: 'fini', fichier: path.relative(projet, final).replace(/\\/g, '/'), images: total, duree: total / cadence, audio: false });
+    const resultat = { ok: true, fichier: final, images: total, duree: total / cadence, largeur, hauteur, audio: Boolean(audio), segmentsRepris: repris, paralleles: travailleurs };
+    if (avertissement) resultat.avertissement = avertissement;
+    etat({ etat: 'fini', fichier: path.relative(projet, final).replace(/\\/g, '/'), images: total, duree: total / cadence, audio: Boolean(audio), ...(avertissement ? { avertissement } : {}) });
     return resultat;
   } catch (e) {
-    const annule = controle.signal.aborted;
+    const annule = controle.signal.aborted && !e.verrou && /annulé/.test(e.message);
     const message = annule ? 'Export annulé : les segments déjà faits seront repris au prochain export.'
       : e.verrou ? `${e.message} ; les segments déjà faits seront repris.`
         : `L'export fidèle a échoué (${e.message}) : relancez-le ; les segments déjà faits seront repris.`;
@@ -175,10 +216,10 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
     return { ok: false, audio: false, message };
   } finally {
     if (signal) signal.removeEventListener('abort', surAnnulation);
-    if (capture) await capture.fermer().catch(() => {});
+    for (const c of captures) await c.fermer().catch(() => {});
     // Fichiers partiels retirés ; encore verrouillés (Windows) : nouvel essai, puis laissés.
-    for (const f2 of [segmentPartiel, partiel]) {
-      if (f2) { try { fs.rmSync(f2, { force: true, maxRetries: 5, retryDelay: 200 }); } catch { /* laissé */ } }
+    for (const f2 of [...partiels, partiel]) {
+      try { fs.rmSync(f2, { force: true, maxRetries: 5, retryDelay: 200 }); } catch { /* laissé */ }
     }
   }
 }
