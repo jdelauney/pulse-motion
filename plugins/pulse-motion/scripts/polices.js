@@ -15,7 +15,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { analyserPolice, EXTENSIONS_POLICE } = require('./lib/police.js');
 const { trouverStyle, lireJSON } = require('./styles.js');
-const { sauvegarder } = require('./historique.js');
+const { sauvegarder, annuler } = require('./historique.js');
 
 const HOTE = 'fonts.bunny.net';
 const FAMILLE_ID = /^[a-z0-9-]+$/;
@@ -65,6 +65,8 @@ function fichiersDeLaFeuille(css) {
     fichiers.push({
       url,
       graisse: Number((/font-weight:\s*(\d+)/.exec(bloc) || [])[1] || 400),
+      // Police variable : « font-weight: 100 900 » couvre toute la plage.
+      graisseMax: Number((/font-weight:\s*\d+\s+(\d+)/.exec(bloc) || [])[1] || 0) || null,
       style: /font-style:\s*italic/.test(bloc) ? 'italic' : 'normal',
       latin: couvreLatin(((/unicode-range:\s*([^;}]+)/i.exec(bloc) || [])[1] || '').trim() || null),
     });
@@ -92,7 +94,11 @@ const aujourdhui = () => new Date().toISOString().slice(0, 10);
 function sauvegarderProjetDe(dans) {
   const charte = path.dirname(path.resolve(dans));
   const projet = path.dirname(charte);
-  if (path.basename(path.resolve(dans)) === 'polices' && path.basename(charte) === 'charte' && fs.existsSync(path.join(projet, 'deroule.json'))) sauvegarder(projet);
+  if (path.basename(path.resolve(dans)) === 'polices' && path.basename(charte) === 'charte' && fs.existsSync(path.join(projet, 'deroule.json'))) {
+    sauvegarder(projet);
+    return projet;
+  }
+  return null;
 }
 
 function ajouterLicence(dans, texte) {
@@ -105,6 +111,7 @@ async function installerBunny({ famille, graisses = [400, 700], italique = false
   const id = String(famille || '').trim().toLowerCase().replace(/\s+/g, '-');
   const parts = [];
   const installes = [];
+  let projet = null;
   try {
     const liste = await recuperer(`https://${HOTE}/list`);
     if (!liste.ok) throw new Error(`catalogue indisponible, ${liste.status}`);
@@ -114,9 +121,11 @@ async function installerBunny({ famille, graisses = [400, 700], italique = false
     if (!fam.nom) throw new Refus(`Le catalogue Bunny Fonts donne un nom de police inutilisable pour « ${id} ».`);
     const feuille = await recuperer(urlFeuille(fam, graisses, italique));
     if (!feuille.ok) throw new Error(`feuille indisponible, ${feuille.status}`);
-    const fichiers = choisirLatin(fichiersDeLaFeuille(await feuille.text())).filter((f) => graisses.includes(f.graisse) && (f.style === 'normal' || (italique && f.style === 'italic')));
+    // Un fichier variable sert pour chaque graisse demandée de sa plage.
+    const fichiers = choisirLatin(fichiersDeLaFeuille(await feuille.text()))
+      .flatMap((f) => (f.graisseMax ? graisses.filter((g) => g >= f.graisse && g <= f.graisseMax).map((g) => ({ ...f, graisse: g })) : [f]))
+      .filter((f) => graisses.includes(f.graisse) && (f.style === 'normal' || (italique && f.style === 'italic')));
     if (!fichiers.length) throw new Refus(`La feuille de Bunny Fonts pour ${fam.nom} est vide ou pointe hors de ${HOTE}.`);
-    sauvegarderProjetDe(dans);
     fs.mkdirSync(dans, { recursive: true });
     const entrees = [];
     for (const f of fichiers) {
@@ -133,7 +142,13 @@ async function installerBunny({ famille, graisses = [400, 700], italique = false
       parts.push(`${cible}.part`);
       entrees.push({ nom, cible, url: f.url, sha256: crypto.createHash('sha256').update(octets).digest('hex') });
     }
-    for (const e of entrees) { fs.renameSync(`${e.cible}.part`, e.cible); installes.push(e.cible); }
+    // Copie d'historique juste avant la première écriture réelle : un téléchargement raté n'en laisse pas.
+    projet = sauvegarderProjetDe(dans);
+    for (const e of entrees) {
+      const existait = fs.existsSync(e.cible);
+      fs.renameSync(`${e.cible}.part`, e.cible);
+      if (!existait) installes.push(e.cible);
+    }
     ajouterLicence(dans, [
       `## ${fam.nom}`, '',
       `- Source : Bunny Fonts (https://${HOTE}), le ${aujourdhui()}`,
@@ -142,8 +157,10 @@ async function installerBunny({ famille, graisses = [400, 700], italique = false
     ].join('\n'));
     return { ok: true, famille: fam.nom, fichiers: entrees.map((e) => e.nom), dans };
   } catch (e) {
-    // Rien de partiel : ni fichier .part, ni fichier déjà renommé de cette installation.
+    // Rien de partiel : ni fichier .part, ni nouveau fichier de cette installation ; une police déjà là reste.
     for (const p of [...parts, ...installes]) { try { fs.rmSync(p, { force: true }); } catch { /* déjà absent */ } }
+    // Dans un projet, la copie prise avant l'écriture remet charte/ dans son état d'avant.
+    if (projet) { try { annuler(projet); } catch { /* copie absente : rien à défaire */ } }
     if (e instanceof Refus) return { ok: false, message: e.message + RIEN };
     const cause = e.name === 'TimeoutError' || e.name === 'AbortError' ? 'délai dépassé' : (e.cause && e.cause.code) || e.message;
     return { ok: false, message: `Impossible d'installer « ${famille} » depuis Bunny Fonts (${cause}) : vérifiez la connexion internet et le nom de la police, puis relancez.${RIEN}` };

@@ -20,11 +20,14 @@ function retirerElement(html, attribut) {
     return '';
   });
   for (const { id, debut } of retires) {
-    const reference = new RegExp(`(data-start=")#${echapperRegex(id)}(?::fin)?([+-][\\d.]+)?"`, 'g');
-    h = h.replace(reference, (tout, avant, decalage = '') => {
+    const reference = new RegExp(`(data-start=")#${echapperRegex(id)}(:fin)?([+-][\\d.]+)?"`, 'g');
+    h = h.replace(reference, (tout, avant, fin, decalage = '') => {
       const ancre = /^(#[\w-]+(?::fin)?)([+-][\d.]+)?$/.exec(debut);
-      if (ancre) return `${avant}${ancre[1]}${decalage}"`;
-      return `${avant}${Math.round(((parseFloat(debut) || 0) + (parseFloat(decalage) || 0)) * 1000) / 1000}"`;
+      if (!ancre) return `${avant}${Math.round(((parseFloat(debut) || 0) + (parseFloat(decalage) || 0)) * 1000) / 1000}"`;
+      // Début de l'élément retiré : son propre décalage s'ajoute ; sa fin : l'ancre seule (sa durée disparaît avec lui).
+      const total = (fin ? 0 : parseFloat(ancre[2]) || 0) + (parseFloat(decalage) || 0);
+      const arrondi = Math.round(total * 1000) / 1000;
+      return `${avant}${ancre[1]}${arrondi ? (arrondi > 0 ? `+${arrondi}` : `${arrondi}`) : ''}"`;
     });
   }
   return h;

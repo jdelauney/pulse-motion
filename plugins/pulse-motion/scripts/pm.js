@@ -17,7 +17,7 @@
  *   pulse-motion changer-style <dossier> <style>   recopie les scènes toutes faites du nouveau style
  *   pulse-motion comparer <dossier> <s1,s2,s3> [--scenes a,b] [--ouvrir]   comparaison des styles sur le déroulé
  *   pulse-motion charte enregistrer <nom> <dossier> | liste | appliquer <nom> <dossier> | depuis-logo <fichier> [--style s] [--ton clair|sombre]
- *   pulse-motion police "<famille>" [--graisses 400,700] | <fichier> [--famille "<nom>"] [--confirmer]   police de la charte (Bunny Fonts ou fichier)
+ *   pulse-motion police "<famille>" [--graisses 400,700] [--italique] | <fichier> [--famille "<nom>"] [--confirmer] [--style <style> --role titres|texte]   police de la charte (Bunny Fonts ou fichier)
  *   pulse-motion style nouveau <nom> [--depuis <style>] | verifier <nom> | planche <nom> [--scenes a,b] [--ratio r] [--ton t] [--textes exemple|maximum] [--ouvrir]   style personnel
  *   pulse-motion glossaire <dossier> | glossaire noter <dossier> "<terme>" "<sens>" ["<à éviter>"]   mots du métier (charte/glossaire.md)
  *   pulse-motion lexique [noter "<terme>" "<phrase>" "<comme…>" "<commande>"]   mots de l'outil expliqués à la personne
@@ -113,7 +113,7 @@ function lancer(args) {
     '  styles [--genre <genre>]                         styles verifier <nom>',
     '  changer-style <dossier> <style>                  comparer <dossier> <s1,s2,s3> [--scenes a,b] [--ouvrir]',
     '  charte enregistrer <nom> <dossier> | liste | appliquer <nom> <dossier> | depuis-logo <fichier> [--style s] [--ton clair|sombre]',
-    '  police "<famille>" [--graisses 400,700] | <fichier> [--famille "<nom>"] [--confirmer] [--dans <dossier>]',
+    '  police "<famille>" [--graisses 400,700] [--italique] | <fichier> [--famille "<nom>"] [--confirmer] [--style <style> --role titres|texte] [--dans <dossier>]',
     '  style nouveau <nom> [--depuis <style>] | verifier <nom> | planche <nom> [--scenes a,b] [--ratio r] [--ton t] [--textes exemple|maximum] [--ouvrir]',
     '  glossaire <dossier> | glossaire noter <dossier> "<terme>" "<sens>" ["<à éviter>"] ["<prononciation>"]',
     '  lexique [noter "<terme>" "<phrase>" "<comme…>" "<commande>"]',

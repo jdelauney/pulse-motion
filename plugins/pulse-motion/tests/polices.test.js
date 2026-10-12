@@ -129,3 +129,40 @@ test('Bunny : italique demandé pour une police sans italique : refus clair, rie
   assert.match(r.message, /Inter n'a pas d'italique/);
   assert.deepEqual(fs.readdirSync(d), []);
 });
+
+test('Bunny : réinstallation qui échoue à la licence, la police déjà en place reste', async () => {
+  const d = dossier();
+  fs.writeFileSync(path.join(d, 'Playfair Display-400.woff2'), 'wOF2ANCIEN');
+  fs.mkdirSync(path.join(d, 'LICENCES.md'));
+  const r = await P.installerBunny({ famille: 'Playfair Display', dans: d, recuperer: reseau() });
+  assert.equal(r.ok, false);
+  assert.ok(fs.existsSync(path.join(d, 'Playfair Display-400.woff2')), 'la police d\'avant ne doit pas disparaître');
+  assert.equal(fs.existsSync(path.join(d, 'Playfair Display-700.woff2')), false, 'la police nouvelle est retirée');
+});
+
+test('Bunny : dans un projet, un téléchargement raté ne laisse pas de copie d\'historique vide', async () => {
+  const { copierProjet } = require('./aide/projet.js');
+  const dir = copierProjet('projet-simple');
+  const r = await P.installerBunny({ famille: 'Playfair Display', dans: path.join(dir, 'charte', 'polices'), recuperer: reseau({ [fichierBunny(700)]: undefined }) });
+  assert.equal(r.ok, false);
+  assert.equal(fs.existsSync(path.join(dir, '.historique')) && fs.readdirSync(path.join(dir, '.historique')).length > 0, false);
+});
+
+test('Bunny : police variable (font-weight en plage), chaque graisse demandée installée', async () => {
+  const d = dossier();
+  const url = 'https://fonts.bunny.net/playfair-display/files/playfair-display-latin-wght-normal.woff2';
+  const feuille = `@font-face { font-family: 'Playfair Display'; font-style: normal; font-weight: 400 900; src: url(${url}) format('woff2'); unicode-range: U+0000-00FF; }`;
+  const r = await P.installerBunny({ famille: 'Playfair Display', dans: d, recuperer: reseau({ [URL_FEUILLE]: feuille, [url]: 'wOF2VAR' }) });
+  assert.equal(r.ok, true, r.message);
+  assert.deepEqual(r.fichiers, ['Playfair Display-400.woff2', 'Playfair Display-700.woff2']);
+});
+
+test('glossaire : écriture impossible, aucune copie d\'historique laissée', () => {
+  const { noterGlossaire } = require('../scripts/vocabulaire.js');
+  const { copierProjet } = require('./aide/projet.js');
+  const dir = copierProjet('projet-simple');
+  fs.mkdirSync(path.join(dir, 'charte'), { recursive: true });
+  fs.mkdirSync(path.join(dir, 'charte', 'glossaire.md'));
+  assert.throws(() => noterGlossaire({ dossier: dir, terme: 'HACCP', sens: 'Méthode' }));
+  assert.equal(fs.existsSync(path.join(dir, '.historique')) && fs.readdirSync(path.join(dir, '.historique')).length > 0, false);
+});

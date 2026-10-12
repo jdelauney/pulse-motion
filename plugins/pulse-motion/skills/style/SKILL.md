@@ -31,7 +31,7 @@ Choisir le style de départ le plus proche (`pulse-motion styles`) : sa mise en 
 ## 2. Squelette
 
 1. Nom en minuscules et tirets (ex. `papercraft`), distinct des styles livrés : `pulse-motion style nouveau <nom> --depuis <style>`. Le dossier du style est dans la réponse (`dossier`).
-2. Polices : `pulse-motion police "<famille>" --dans <dossier>/polices` pour chacune (le texte de la licence est noté dans `polices/LICENCES.md`).
+2. Polices : `pulse-motion police "<famille>" --dans <dossier>/polices` pour chacune (ajouter `--italique` si le style emploie l'italique de cette police) (le texte de la licence est noté dans `polices/LICENCES.md`).
 3. Écrire `identite.json` (personnalité, à éviter, genres, couleur et tons, typographie, mouvement, signature, à faire, à éviter), `charte.json` (couleurs par défaut, polices) et `style.css` (même règles que les styles livrés : variables de la charte, tailles en `cqh`, couleurs lisibles `--c-primaire-lisible`, `--c-accent-lisible`, `--c-sur-primaire`, `--c-sur-accent` pour tout ce qui n'est pas décor, formats carré et vertical par `@container`, ton sombre par `#pm-scene[data-ton="sombre"]` si déclaré). Interdits, comme pour une scène (`pulse-motion reference moteur`) : aucune animation sans fin (`infinite`) — la vidéo doit finir sur une image stable —, aucun compteur CSS `counter()` (numéros écrits en clair), aucune `transition:` CSS.
 4. Effets à éviter, mal rendus par l'export rapide : filtres SVG (`feTurbulence`), `mix-blend-mode`, `backdrop-filter`. Une texture de papier se fait avec une image embarquée dans le dossier du style (`url("texture.png")` dans `style.css`), une ombre de découpe avec une ombre décalée (`box-shadow: 1cqh 1cqh 0 …`).
 

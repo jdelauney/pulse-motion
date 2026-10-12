@@ -112,3 +112,25 @@ test('remplacer une charte enregistrée : l\'ancienne version reste si le nouvea
   assert.equal(fs.readFileSync(path.join(perso, 'chartes', 'dupont', 'charte.json'), 'utf8'), avant);
   assert.deepEqual(fs.readdirSync(path.join(perso, 'chartes')), ['dupont']);
 }));
+
+test('remplacer une charte : l\'ancienne version impossible à effacer ne fait pas échouer l\'enregistrement', () => avecPersonnel((perso) => {
+  const dir = copierProjet('projet-simple');
+  assert.equal(K.enregistrerCharte({ nom: 'dupont', dossier: dir }).ok, true);
+  modifierDeroule(dir, (d) => { d.charte.couleurs = { primaire: '#111111' }; });
+  const supprimer = () => { throw Object.assign(new Error('verrouillé'), { code: 'EBUSY' }); };
+  const r = K.enregistrerCharte({ nom: 'dupont', dossier: dir, supprimer });
+  assert.equal(r.ok, true, r.message);
+  assert.match(fs.readFileSync(path.join(perso, 'chartes', 'dupont', 'charte.json'), 'utf8'), /#111111/);
+}));
+
+test('remplacer une charte : si l\'ancienne version ne peut pas reprendre sa place, le message dit où elle est', () => avecPersonnel((perso) => {
+  const dir = copierProjet('projet-simple');
+  assert.equal(K.enregistrerCharte({ nom: 'dupont', dossier: dir }).ok, true);
+  const renommer = (de, vers) => { if (vers.endsWith('dupont')) throw Object.assign(new Error('bloqué'), { code: 'EPERM' }); fs.renameSync(de, vers); };
+  const r = K.enregistrerCharte({ nom: 'dupont', dossier: dir, renommer });
+  assert.equal(r.ok, false);
+  assert.match(r.message, /EPERM/);
+  const reste = fs.readdirSync(path.join(perso, 'chartes')).find((n) => n.startsWith('dupont.ancienne-'));
+  assert.ok(reste);
+  assert.ok(r.message.includes(path.join(perso, 'chartes', reste)), r.message);
+}));
