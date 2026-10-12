@@ -5,6 +5,7 @@
  *   node scripts/styles.js [--genre <genre>]     liste des styles (JSON), classée pour le genre
  *   node scripts/styles.js verifier <nom>        vérifie le contrat d'un style
  */
+const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 const { TYPES, FAMILLES, NOM_STYLE } = require('./lib/contrat.js');
@@ -46,6 +47,14 @@ function verifierEffets(texte, ou, avertissements) {
   }
 }
 
+/** Ce qui empêche une image finale stable ou une capture fidèle. */
+function verifierStabilite(texte, ou, erreurs, avertissements) {
+  const sans = texte.replace(/\/\*[\s\S]*?\*\//g, '').replace(/<!--[\s\S]*?-->/g, '');
+  if (/\binfinite\b/.test(sans)) erreurs.push(`${ou} : animation sans fin (« infinite ») : la vidéo ne finirait pas sur une image stable ; caler le mouvement sur la scène (data-tween) ou donner un nombre de répétitions.`);
+  if (/\bcounter\(/.test(sans)) erreurs.push(`${ou} : compteur CSS (counter()) : la capture de l'export ne le calcule pas ; écrire les numéros en clair (li:nth-child(1)::before { content: "1"; }).`);
+  if (/(^|[\s;{])transition\s*:/.test(sans)) avertissements.push(`${ou} : transition CSS sans effet (le moteur les neutralise) ; utiliser une animation calée sur data-start.`);
+}
+
 function verifierCatalogue(dossier, nom, catalogue, erreurs, avertissements) {
   if (catalogue.style !== nom) erreurs.push(`catalogue.json : « style » doit valoir « ${nom} » (nom du dossier).`);
   for (const t of catalogue.transitions || []) {
@@ -73,6 +82,7 @@ function verifierCatalogue(dossier, nom, catalogue, erreurs, avertissements) {
     if (textes !== attendues) erreurs.push(`scenes/${type}.html : data-texte ${textes || 'aucun'} au lieu de ${attendues}.`);
     if (!/\sdata-decor\b/.test(html)) avertissements.push(`scenes/${type}.html : aucun élément data-decor (le décor ne sera pas étiré à la durée de la scène).`);
     verifierEffets(html, `scenes/${type}.html`, avertissements);
+    verifierStabilite(html, `scenes/${type}.html`, erreurs, avertissements);
   }
 }
 
@@ -152,7 +162,7 @@ function verifierContrat(dossier) {
   if (!NOM_STYLE.test(nom)) erreurs.push(`Nom de style « ${nom} » : seulement des lettres minuscules, des chiffres et des tirets.`);
   const css = lireTexte(path.join(dossier, 'style.css'));
   if (css === null) erreurs.push('style.css manquant.');
-  else verifierEffets(css, 'style.css', avertissements);
+  else { verifierEffets(css, 'style.css', avertissements); verifierStabilite(css, 'style.css', erreurs, avertissements); }
   const catalogue = lireJSON(path.join(dossier, 'catalogue.json'));
   if (!catalogue) erreurs.push('catalogue.json manquant ou illisible.');
   else verifierCatalogue(dossier, nom, catalogue, erreurs, avertissements);
@@ -203,6 +213,35 @@ function messageStyleInconnu(nom, dossierStyles) {
   return `Style « ${nom} » introuvable. Styles disponibles : ${dispo.join(', ') || 'aucun'}. Un style personnel se range dans ${path.join(dossierPersonnel(), 'styles', exemple)}.`;
 }
 
+const MARQUE_VERIFIE = '.verifie.json';
+
+/** Empreinte des fichiers d'un style (hors guide et marque de vérification) : change dès qu'on modifie le style. */
+function empreinteStyle(dossier) {
+  const h = crypto.createHash('sha256');
+  const parcourir = (relatif) => {
+    for (const e of fs.readdirSync(path.join(dossier, relatif), { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1))) {
+      const r = relatif ? `${relatif}/${e.name}` : e.name;
+      if (e.isDirectory()) parcourir(r);
+      else if (r !== MARQUE_VERIFIE && r !== 'guide.md') h.update(r).update('\0').update(fs.readFileSync(path.join(dossier, r))).update('\0');
+    }
+  };
+  parcourir('');
+  return h.digest('hex');
+}
+
+/** Note qu'un style a passé « pulse-motion style verifier » dans son état actuel. */
+function marquerVerifie(dossier) {
+  fs.writeFileSync(path.join(dossier, MARQUE_VERIFIE), JSON.stringify({ empreinte: empreinteStyle(dossier), date: new Date().toISOString().slice(0, 10) }, null, 2));
+}
+
+/** Style proposable : livré, ou personnel conforme et vérifié depuis sa dernière modification. */
+function styleVerifie(st) {
+  if (!st.personnel) return true;
+  if (!verifierStyle(st.dossier).ok) return false;
+  const marque = lireJSON(path.join(st.dossier, MARQUE_VERIFIE));
+  try { return Boolean(marque && marque.empreinte === empreinteStyle(st.dossier)); } catch { return false; }
+}
+
 /** Ce qu'il faut savoir d'un style pour le proposer. */
 function ficheStyle(st) {
   const catalogue = lireJSON(path.join(st.dossier, 'catalogue.json')) || {};
@@ -213,7 +252,7 @@ function ficheStyle(st) {
     style: st.nom,
     description: texte(catalogue.description),
     personnel: st.personnel,
-    verifie: st.personnel ? verifierStyle(st.dossier).ok : true,
+    verifie: styleVerifie(st),
     famille: texte(identite.famille) || null,
     personnalite: liste(identite.personnalite),
     genres: liste(identite.genres),
@@ -270,6 +309,6 @@ if (require.main === module) {
 }
 
 module.exports = {
-  verifierStyle, racinesStyles, trouverStyle, nomsStyles, messageStyleInconnu, ficheStyle, listerStyles, recommander,
+  verifierStyle, styleVerifie, marquerVerifie, racinesStyles, trouverStyle, nomsStyles, messageStyleInconnu, ficheStyle, listerStyles, recommander,
   lireJSON, RACINE, LIVRES, dossierPersonnel,
 };

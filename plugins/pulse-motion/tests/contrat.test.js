@@ -113,3 +113,14 @@ test('ton clair au fond sombre (ou l\'inverse) : couleur.<ton> exigée', () => {
   fs.writeFileSync(path.join(d, 'identite.json'), JSON.stringify(identite));
   assert.deepEqual(verifierStyle(d).erreurs, []);
 });
+
+test('animation sans fin ou compteur CSS : erreur (image finale stable, capture de l\'export) ; transition CSS : avertissement', () => {
+  const d = copieDuStyle();
+  fs.appendFileSync(path.join(d, 'style.css'), '\n.rond { animation: tourne 3s linear infinite; }\n.titre { transition: color 1s; }\n');
+  const liste = path.join(d, 'scenes', 'liste.html');
+  fs.writeFileSync(liste, fs.readFileSync(liste, 'utf8').replace('</section>', '<style>li::before { content: counter(n); }</style></section>'));
+  const r = verifierStyle(d);
+  assert.match(r.erreurs.join('\n'), /style\.css : animation sans fin/);
+  assert.match(r.erreurs.join('\n'), /scenes\/liste\.html : compteur CSS/);
+  assert.match(r.avertissements.join('\n'), /style\.css : transition CSS/);
+});

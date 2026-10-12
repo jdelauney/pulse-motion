@@ -32,7 +32,7 @@ Choisir le style de départ le plus proche (`pulse-motion styles`) : sa mise en 
 
 1. Nom en minuscules et tirets (ex. `papercraft`), distinct des styles livrés : `pulse-motion style nouveau <nom> --depuis <style>`. Le dossier du style est dans la réponse (`dossier`).
 2. Polices : `pulse-motion police "<famille>" --dans <dossier>/polices` pour chacune (le texte de la licence est noté dans `polices/LICENCES.md`).
-3. Écrire `identite.json` (personnalité, à éviter, genres, couleur et tons, typographie, mouvement, signature, à faire, à éviter), `charte.json` (couleurs par défaut, polices) et `style.css` (même règles que les styles livrés : variables de la charte, tailles en `cqh`, couleurs lisibles `--c-primaire-lisible`, `--c-accent-lisible`, `--c-sur-primaire`, `--c-sur-accent` pour tout ce qui n'est pas décor, formats carré et vertical par `@container`, ton sombre par `#pm-scene[data-ton="sombre"]` si déclaré).
+3. Écrire `identite.json` (personnalité, à éviter, genres, couleur et tons, typographie, mouvement, signature, à faire, à éviter), `charte.json` (couleurs par défaut, polices) et `style.css` (même règles que les styles livrés : variables de la charte, tailles en `cqh`, couleurs lisibles `--c-primaire-lisible`, `--c-accent-lisible`, `--c-sur-primaire`, `--c-sur-accent` pour tout ce qui n'est pas décor, formats carré et vertical par `@container`, ton sombre par `#pm-scene[data-ton="sombre"]` si déclaré). Interdits, comme pour une scène (`pulse-motion reference moteur`) : aucune animation sans fin (`infinite`) — la vidéo doit finir sur une image stable —, aucun compteur CSS `counter()` (numéros écrits en clair), aucune `transition:` CSS.
 4. Effets à éviter, mal rendus par l'export rapide : filtres SVG (`feTurbulence`), `mix-blend-mode`, `backdrop-filter`. Une texture de papier se fait avec une image embarquée dans le dossier du style (`url("texture.png")` dans `style.css`), une ombre de découpe avec une ombre décalée (`box-shadow: 1cqh 1cqh 0 …`).
 
 ## 3. Scènes témoins
@@ -54,6 +54,8 @@ Choisir le style de départ le plus proche (`pulse-motion styles`) : sa mise en 
 - `renduVerifie` faux (Chrome ou Edge absent) : le dire ; le style reste utilisable mais les débordements n'ont pas été contrôlés.
 
 ## 6. Fin
+
+Si `renduVerifie` est faux, remplacer « est prêt » par « est prêt, mais son affichage n'a pas pu être contrôlé (Chrome ou Edge absent) ».
 
 ✅ **Fait** : le style « <nom> » est prêt ; il sera proposé pour vos prochaines vidéos.
 📄 **Fichiers** : le style est rangé dans <dossier> ; pour l'utiliser sur un autre ordinateur, copiez ce dossier au même endroit.

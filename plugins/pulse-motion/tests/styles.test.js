@@ -23,6 +23,8 @@ function stylePersonnel(perso, nom) {
   const d = path.join(perso, 'styles', nom);
   fs.cpSync(CLAIR, d, { recursive: true });
   for (const f of ['catalogue.json', 'identite.json']) modifierJSON(path.join(d, f), (j) => { j.style = nom; });
+  // Comme après « pulse-motion style verifier » réussi : un style personnel n'est proposé qu'une fois vérifié.
+  S.marquerVerifie(d);
   return d;
 }
 
@@ -57,6 +59,7 @@ test('recommandation : 2 recommandés, styles personnels vérifiés du genre, un
   const perso = path.join(process.env.PULSE_MOTION_DOSSIER, 'styles');
   fs.mkdirSync(perso, { recursive: true });
   for (const n of ['perso-ok', 'perso-ko']) fs.renameSync(path.join(racine, n), path.join(perso, n));
+  S.marquerVerifie(path.join(perso, 'perso-ok'));
   const racines = [racine, perso];
   // perso-ko (scène titre manquante) n'est jamais proposé.
   assert.deepEqual(S.recommander('formation', racines).map((f) => f.style), ['clair-pedagogique', 'chaleureux', 'minimal', 'energique', 'perso-ok']);
