@@ -6,12 +6,12 @@ const path = require('node:path');
 const { assembler } = require('../scripts/assembler.js');
 const { controler } = require('../scripts/controler.js');
 const { verifierStyle } = require('../scripts/styles.js');
-const { trouverNavigateur, rendreDOM } = require('./aide/navigateur.js');
+const { trouverNavigateur } = require('./aide/navigateur.js');
 const { projetCatalogue } = require('./aide/catalogue.js');
+const { verifierRendu } = require('../scripts/lib/rendu-style.js');
 
 const RACINE = path.join(__dirname, '..');
 const LIVRES = ['chaleureux', 'clair-pedagogique', 'editorial', 'energique', 'minimal', 'tech-sombre'];
-const FORMATS = ['16:9', '1:1', '9:16'];
 const lireJSON = (...p) => JSON.parse(fs.readFileSync(path.join(RACINE, ...p), 'utf8'));
 const navigateur = trouverNavigateur();
 
@@ -22,27 +22,6 @@ test('catalogue livré : exactement les 6 styles, chacun recommandé pour au moi
   for (const nom of LIVRES) assert.ok(cites.has(nom), `${nom} n'est proposé pour aucun genre`);
   for (const nom of cites) assert.ok(LIVRES.includes(nom), `${nom} recommandé mais absent`);
 });
-
-async function verifierDansLeNavigateur(style, ratio, ton) {
-  const dir = projetCatalogue(style, ratio, { ton });
-  const { html, erreurs } = assembler({ dossier: dir, ecrire: false });
-  assert.deepEqual(erreurs, [], `${style} ${ratio}`);
-  const familles = [...new Set(Object.values(lireJSON('styles', style, 'charte.json').polices))];
-  const verification = `<script>M.pret.then(function () { return document.fonts.ready; }).then(function () {
-    var chargees = []; document.fonts.forEach(function (f) { if (f.status === 'loaded') chargees.push(f.family.replace(/["']/g, '')); });
-    var r = { debordements: M.detecterDebordements(), erreurs: M.erreurs, polices: ${JSON.stringify(familles)}.filter(function (f) { return chargees.indexOf(f) < 0; }) };
-    var pre = document.createElement('pre'); pre.id = 'verification'; pre.textContent = JSON.stringify(r); document.body.appendChild(pre);
-  });</script>`;
-  const fichier = path.join(dir, 'verification.html');
-  fs.writeFileSync(fichier, html.replace('</body>', `${verification}\n</body>`));
-  const dom = await rendreDOM(navigateur, fichier);
-  const m = /<pre id="verification">([^<]*)<\/pre>/.exec(dom);
-  assert.ok(m, `${style} ${ratio} : vérification absente`);
-  const r = JSON.parse(m[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&'));
-  assert.deepEqual(r.erreurs, [], `${style} ${ratio} : erreurs du moteur`);
-  assert.deepEqual(r.polices, [], `${style} ${ratio} : polices non chargées`);
-  assert.deepEqual(r.debordements.map((d) => `${d.scene}:${d.element}`), [], `${style} ${ratio}${ton ? ` (${ton})` : ''} : débordements`);
-}
 
 for (const style of LIVRES) {
   test(`${style} : contrat, guide, contrôles sans aucun problème au maximum de texte`, () => {
@@ -61,9 +40,8 @@ for (const style of LIVRES) {
   });
 
   test(`${style} dans le navigateur : polices chargées, aucun débordement, en 16:9, 1:1 et 9:16`, { skip: !navigateur && 'Chrome ou Edge introuvable' }, async () => {
-    const tons = lireJSON('styles', style, 'identite.json').couleur.tons;
-    await Promise.all(FORMATS.map((ratio) => verifierDansLeNavigateur(style, ratio)));
-    if (tons.length > 1) await Promise.all(tons.map((ton) => verifierDansLeNavigateur(style, '16:9', ton)));
+    const r = await verifierRendu({ dossierStyle: path.join(RACINE, 'styles', style), navigateur });
+    assert.deepEqual(r.problemes, [], style);
   });
 }
 
