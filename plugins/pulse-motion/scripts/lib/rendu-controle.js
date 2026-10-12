@@ -20,6 +20,7 @@ const MESSAGES = {
   'texte-fugace': (c) => `Scène « ${c.scene} » : le texte « ${c.element} » ne reste lisible que ${virgule(c.valeur.duree)} s ; il faut au moins ${virgule(c.valeur.besoin)} s pour le lire.`,
 'contraste-reel': (c) => `Scène « ${c.scene} » : le texte « ${c.element} » ne se détache pas assez de ce qu'il y a derrière lui (contraste ${virgule(c.valeur)}:1 vers ${virgule(c.instant)} s) ; assombrir ou éclaircir le fond sous le texte, ajouter un aplat, ou changer la couleur du texte.`,
 flash: (c) => `Scène « ${c.scene} » : l'image clignote ${virgule(c.valeur)} fois par seconde vers ${virgule(c.instant)} s ; au-delà de ${SEUILS.flashMax} flashs par seconde sur une grande partie de l'image, la vidéo peut déclencher une crise chez une personne épileptique. Ralentir ou adoucir ce clignotement.`,
+  'sous-titre-cache-texte': (c) => `Scène « ${c.scene} » : les sous-titres cachent le texte « ${c.element} » (vers ${virgule(c.instant)} s) ; passer les sous-titres en haut (« sousTitres »: { « position »: « haut » } dans le déroulé) ou remonter le texte.`,
   'mouvement-rapide': (c) => `Scène « ${c.scene} » : « ${c.element} » traverse l'image trop vite (vers ${virgule(c.instant)} s) ; au-delà d'une largeur d'image par seconde, le mouvement fatigue l'œil.`,
 };
 
