@@ -27,8 +27,8 @@ const instant = (t) => `(async function () {
 })()`;
 
 // Son de la page (mixage du moteur) en WAV base64, gardé dans la page puis lu par morceaux.
-const SON = `(async function () {
-  var r = await M.rendreSon();
+const SON = (options) => `(async function () {
+  var r = await M.rendreSon(${JSON.stringify(options || null)});
   window.__pmSon = null;
   if (!r.buffer) return { longueur: 0, sonie: r.sonie, avertissements: r.avertissements };
   var b = r.buffer;
@@ -49,8 +49,8 @@ async function ouvrirCapture({ fichierHtml, largeur, hauteur, navigateur, gpu = 
         return page.capturer();
       },
       /** -> { wav: Buffer|null, sonie, avertissements } ; rapatrié par morceaux (messages CDP de taille bornée). */
-      async rendreSon({ morceau = 4 * 1024 * 1024 } = {}) {
-        const info = await page.evaluer(SON);
+      async rendreSon({ morceau = 4 * 1024 * 1024, seulement } = {}) {
+        const info = await page.evaluer(SON(seulement ? { seulement } : null));
         if (!info.longueur) return { wav: null, sonie: info.sonie, avertissements: info.avertissements };
         const parts = [];
         for (let i = 0; i < info.longueur; i += morceau) parts.push(await page.evaluer(`window.__pmSon.slice(${i}, ${i + morceau})`));

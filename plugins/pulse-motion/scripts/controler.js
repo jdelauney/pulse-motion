@@ -24,6 +24,7 @@ const { cheminDansProjet } = require('./lib/embarquer.js');
 const { corrigerTypographie, corrigerMajuscules, motsDoubles, termesVariables, cleTerme } = require('./lib/typographie.js');
 const { extraireScene, textesEnDur } = require('./lib/extraire.js');
 const { calculerMinutage, CHEVAUCHEMENT } = require('../moteur/minutage.js');
+const CATALOGUE = require('../moteur/synthe/catalogue.js');
 const { appliquerCorrections } = require('./lib/corriger.js');
 const { controlerRendu } = require('./lib/rendu-controle.js');
 const { EFFETS: EFFETS_LETTRES } = require('../moteur/lettres.js');
@@ -162,13 +163,47 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
     // La voix fixe la durée de sa scène : jamais de correction automatique de durée sous une voix.
     const avecVoix = new Set(scenesMinutees.filter((x) => x.voix).map((x) => x.id));
 
+    // Sons : connus, pas trop serrés, les forts hors de la parole.
+    const sonsJoues = [];
+    for (const s of min.scenes) {
+      for (const e of elementsParScene[s.id].filter((x) => x.son !== undefined)) {
+        if (!CATALOGUE.BRUITAGES.includes(e.son) && !/[/.]/.test(e.son)) {
+          problemes.push({ regle: 'son-inconnu', gravite: 'erreur', scene: s.id, message: `Scène « ${s.id} » : le son « ${e.son} » n'existe pas (sons : ${CATALOGUE.BRUITAGES.join(', ')} ; ou un fichier assets/…).` });
+          continue;
+        }
+        const el = min.elements[s.id][e.cle];
+        if (el) sonsJoues.push({ t: el.debut, nom: e.son, scene: s.id });
+      }
+    }
+    if (deroule.bruitages && deroule.bruitages.transitions) {
+      min.scenes.forEach((s, i) => { const nom = i > 0 && CATALOGUE.SONS_TRANSITION[s.transition]; if (nom) sonsJoues.push({ t: s.debut, nom, scene: s.id }); });
+    }
+    sonsJoues.sort((a, b) => a.t - b.t);
+    for (let i = 0; i + 3 < sonsJoues.length; i++) {
+      if (sonsJoues[i + 3].t - sonsJoues[i].t < 1) {
+        problemes.push({ regle: 'trop-de-sons', gravite: 'alerte', scene: sonsJoues[i].scene, message: `Scène « ${sonsJoues[i].scene} » : plus de 3 sons dans la même seconde (vers ${virgule(sonsJoues[i].t)} s) ; en retirer ou les espacer.` });
+        break;
+      }
+    }
+    const motsDits = [];
+    scenesMinutees.forEach((s, i) => {
+      if (!s.voix || !s.voix.mots) return;
+      const d = min.scenes[i].debut + (s.voix.debut || 0);
+      s.voix.mots.forEach((m) => motsDits.push({ t0: d + m.t0, t1: d + m.t1 }));
+    });
+    for (const son of sonsJoues.filter((x) => CATALOGUE.FORTS.includes(x.nom))) {
+      if (motsDits.some((m) => son.t >= m.t0 - 0.02 && son.t <= m.t1 + 0.02)) {
+        problemes.push({ regle: 'son-sous-voix', gravite: 'alerte', scene: son.scene, message: `Scène « ${son.scene} » : le son « ${son.nom} » tombe pendant un mot (vers ${virgule(son.t)} s) et couvre la voix ; le placer dans une pause.` });
+      }
+    }
+
     // Tempo : chaque scène commence sur un temps (à une demi-image près) ; la première commence la vidéo.
     if (temps) {
       const tolerance = 0.5 / (deroule.format.ips || 30);
       for (const s of min.scenes.slice(1)) {
-        const ecart = (s.debut - (deroule.tempo.decalage || 0)) / temps;
+        const ecart = (s.debut - ((deroule.tempo && deroule.tempo.decalage) || 0)) / temps;
         if (Math.abs(ecart - Math.round(ecart)) * temps > tolerance) {
-          problemes.push({ regle: 'hors-tempo', gravite: 'alerte', scene: s.id, message: `Scène « ${s.id} » : elle commence à ${virgule(s.debut)} s, entre deux temps (${deroule.tempo.bpm} bpm) ; ajuster la durée de la scène précédente pour tomber sur la musique.` });
+          problemes.push({ regle: 'hors-tempo', gravite: 'alerte', scene: s.id, message: `Scène « ${s.id} » : elle commence à ${virgule(s.debut)} s, entre deux temps (${Math.round(60 / temps)} bpm) ; ajuster la durée de la scène précédente pour tomber sur la musique.` });
         }
       }
     }

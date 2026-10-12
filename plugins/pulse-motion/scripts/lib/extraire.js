@@ -21,7 +21,7 @@ function lireAttributs(texte) {
 
 /**
  * extraireScene(html) -> {
- *   elements: [{ cle, balise, start, dur, tween, texte, effet, calque }],   (éléments minutés, data-effet compris, ordre du document)
+ *   elements: [{ cle, balise, start, dur, tween, texte, effet, calque, son, sonVolume }],   (éléments minutés, data-effet compris, ordre du document)
  *   textes: [clé data-texte],
  *   decoupes: [{ attribut: 'data-lettres' | 'data-mots', effet }],
  *   miseEnScene: [{ balise, camera, gel, vitesse, profondeur }]   (textes des attributs, undefined si absents)
@@ -52,7 +52,8 @@ function extraireScene(html) {
     // Styles en ligne et filtre SVG comptent comme du CSS pour les contrôles.
     if (attrs.style) css.push(`[style] { ${attrs.style} }`);
     if (attrs.filter) css.push(`[filter] { filter: ${attrs.filter}; }`);
-    if ('data-start' in attrs || 'data-dur' in attrs || 'data-tween' in attrs || 'data-effet' in attrs) {
+    // Un son (data-son) est minuté comme un élément animé : il part au début de l'élément.
+    if ('data-start' in attrs || 'data-dur' in attrs || 'data-tween' in attrs || 'data-effet' in attrs || 'data-son' in attrs) {
       elements.push({
         cle: attrs.id || `_${++n}`,
         balise: m[1].toLowerCase(),
@@ -62,6 +63,8 @@ function extraireScene(html) {
         texte: attrs['data-texte'],
         effet: attrs['data-effet'],
         calque: attrs['data-calque'],
+        son: attrs['data-son'],
+        sonVolume: attrs['data-son-volume'],
       });
     }
   }
