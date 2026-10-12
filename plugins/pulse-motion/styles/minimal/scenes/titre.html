@@ -1,0 +1,12 @@
+<!-- Scène toute faite « titre » (style minimal) : ouvrir la vidéo, titre démesuré. Durée conseillée : 7 s.
+     Textes : etiquette (≤ 25 car.), titre (≤ 40 car.), sous (≤ 50 car.). Décor : data-dur = durée de la scène. -->
+<section data-scene="titre">
+  <div class="decor">
+    <span class="repere"></span>
+    <span class="marqueur" data-decor data-start="0" data-dur="7" data-tween="--x 0cqw→60cqw expo-inout"></span>
+  </div>
+  <p id="etiquette" class="index monte" data-texte="etiquette" data-start="0.2" data-dur="0.45"></p>
+  <h1 id="titre" class="titre revele" data-texte="titre" data-start="#etiquette:fin+0.1" data-dur="0.5"></h1>
+  <span id="regle" class="regle" data-start="#titre:fin" data-dur="0.5"></span>
+  <p id="sous" class="sous-titre monte" data-texte="sous" data-start="#regle+0.2" data-dur="0.45"></p>
+</section>
