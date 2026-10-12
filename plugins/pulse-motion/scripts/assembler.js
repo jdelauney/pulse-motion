@@ -10,7 +10,7 @@
  */
 const fs = require('node:fs');
 const path = require('node:path');
-const { lireDeroule, dureeTemps } = require('./lib/deroule.js');
+const { lireDeroule, dureeTemps, tempoMusique } = require('./lib/deroule.js');
 const { embarquerRessources, versDataURI, cheminDansProjet } = require('./lib/embarquer.js');
 const S = require('./lib/scenes.js');
 const { preparerEffets } = require('./lib/effets.js');
@@ -20,10 +20,12 @@ const { charteFinale, chartePour, variablesDerivees } = require('./lib/fusion-ch
 const { lireVoixScene } = require('./lib/voix.js');
 const { DEBUT_VOIX, calculerMinutage } = require('../moteur/minutage.js');
 const ST = require('../moteur/sous-titres.js');
+const SP = require('../moteur/synthe/partition.js');
+const SA = require('../moteur/synthe/ambiances.js');
 const { trouverFichiersPolice } = require('./lib/police.js');
 
 const RACINE = path.resolve(__dirname, '..');
-const MOTEUR = ['courbes.js', 'aligner.js', 'sous-titres.js', 'minutage.js', 'transitions.js', 'tween.js', 'lettres.js', 'camera.js', 'temps.js', 'horloge.js', 'tailles.js', 'wav.js', 'sonie.js', 'mixage.js', 'audio.js', 'lecteur.js', 'sous-titres-rendu.js', 'debordement.js', 'mesures.js', 'pixels.js',
+const MOTEUR = ['courbes.js', 'aligner.js', 'sous-titres.js', 'minutage.js', 'transitions.js', 'tween.js', 'lettres.js', 'camera.js', 'temps.js', 'horloge.js', 'tailles.js', 'wav.js', 'sonie.js', 'mixage.js', 'synthe/catalogue.js', 'synthe/partition.js', 'synthe/ambiances.js', 'synthe/instruments.js', 'synthe/bruitages.js', 'audio.js', 'lecteur.js', 'sous-titres-rendu.js', 'debordement.js', 'mesures.js', 'pixels.js',
   'particules/instantanes.js', 'particules/gpu.js', 'particules/simulation.js', 'particules/rendu.js', 'particules/calques.js'];
 function slug(texte) {
   return String(texte).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
@@ -174,7 +176,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   const sons = [];
   const blocSon = (id, uri) => `<script type="text/plain" id="${id}">${uri}</script>`;
   let sourceMusique = null;
-  if (deroule.musique) {
+  if (deroule.musique && deroule.musique.fichier) {
     const uri = embarquerFichier(projet, deroule.musique.fichier, 'Musique', erreurs);
     if (uri) { sourceMusique = 'pm-son-musique'; sons.push(blocSon(sourceMusique, uri)); }
   }
@@ -212,9 +214,11 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   const donnees = {
     titre: deroule.titre,
     format: { ratio: deroule.format.ratio, ips: deroule.format.ips || 30 },
-    musique: deroule.musique ? { volume: deroule.musique.volume ?? 1, source: sourceMusique } : null,
+    musique: deroule.musique ? { volume: deroule.musique.volume ?? 1, source: sourceMusique, partition: null } : null,
     voix: Object.keys(voixScenes).length ? { volume: deroule.voix && typeof deroule.voix.volume === 'number' ? deroule.voix.volume : 1 } : null,
-    tempo: deroule.tempo ? { bpm: deroule.tempo.bpm, decalage: deroule.tempo.decalage || 0 } : null,
+    // Tempo du déroulé, sinon celui de la musique générée.
+    tempo: deroule.tempo ? { bpm: deroule.tempo.bpm, decalage: deroule.tempo.decalage || 0 } : tempoMusique(deroule) ? { bpm: tempoMusique(deroule), decalage: 0 } : null,
+    bruitages: deroule.bruitages ? { transitions: deroule.bruitages.transitions === true, volume: deroule.bruitages.volume ?? 1 } : null,
     scenes: deroule.scenes.map((s) => ({ id: s.id, duree: s.duree, rythme: s.rythme || 1, transition: s.transition || 'aucune', ...(voixScenes[s.id] ? { voix: voixScenes[s.id] } : {}) })),
     effets: effets.map(({ calque, ancre, effet }) => ({ calque, ancre, effet })),
   };
@@ -237,6 +241,24 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     cartons,
   } : null;
 
+  // Musique générée (ambiance) ou partition libre : partition validée, jouée par le synthétiseur de la page.
+  if (deroule.musique && deroule.musique.generee) {
+    const min = calculerMinutage(donnees.scenes, {}, { dureeTemps: dureeTemps(deroule) });
+    donnees.musique.partition = SA.generer({ ambiance: deroule.musique.generee, tempo: deroule.musique.tempo, tonalite: deroule.musique.tonalite,
+      intensite: deroule.musique.intensite, graine: deroule.musique.graine, duree: min.duree, scenes: min.scenes.map((s) => ({ debut: s.debut, fin: s.fin })) });
+  } else if (deroule.musique && deroule.musique.partition) {
+    const absolu = cheminDansProjet(projet, deroule.musique.partition);
+    let lue = null;
+    try { lue = JSON.parse(fs.readFileSync(absolu, 'utf8').replace(/^\uFEFF/, '')); } catch (e) {
+      erreurs.push({ regle: 'partition-invalide', gravite: 'erreur', message: `Partition « ${deroule.musique.partition} » illisible (${e.code === 'ENOENT' || !absolu ? 'fichier introuvable dans le projet' : 'JSON invalide'}).` });
+    }
+    if (lue) {
+      const fautes = SP.validerPartition(lue);
+      if (fautes.length) erreurs.push({ regle: 'partition-invalide', gravite: 'erreur', message: `Partition « ${deroule.musique.partition} » : ${fautes.join(' ')}` });
+      else donnees.musique.partition = lue;
+    }
+  }
+
   const temps = dureeTemps(deroule);
   const page = `<!doctype html>
 <html lang="fr">
@@ -246,7 +268,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
 <meta name="generator" content="Pulse Motion">
 <title>${S.echapperHTML(deroule.titre)}</title>
 <style>
-:root { --pm-ratio-l: ${l}; --pm-ratio-h: ${h};${temps ? ` --pm-temps: ${temps}s; --pm-bpm: ${deroule.tempo.bpm};` : ''} }
+:root { --pm-ratio-l: ${l}; --pm-ratio-h: ${h};${temps ? ` --pm-temps: ${temps}s; --pm-bpm: ${Math.round(60 / temps * 1000) / 1000};` : ''} }
 ${fs.readFileSync(path.join(RACINE, 'moteur', 'base.css'), 'utf8')}
 ${variablesCSS()}
 ${cssDeCharte}
