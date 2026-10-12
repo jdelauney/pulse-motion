@@ -301,6 +301,7 @@ if (require.main === module) {
       process.exit(r.ok ? 0 : 1);
     }
     const i = args.indexOf('--genre');
+    if (i >= 0 && (!args[i + 1] || args[i + 1].startsWith('--'))) throw new Error(`Indiquez un genre après --genre : ${GENRES.join(', ')}.`);
     console.log(JSON.stringify(i >= 0 ? recommander(args[i + 1]) : listerStyles(), null, 2));
   } catch (e) {
     console.error(e.message);

@@ -2,7 +2,7 @@
 description: Créer son propre style de vidéo (« un style papercraft aux couleurs pop-art ») : allure, couleurs, polices et mouvements, vérifiés avant usage
 argument-hint: "[le style voulu en une phrase]"
 disable-model-invocation: true
-allowed-tools: Bash(pulse-motion *) Bash(node *) Read Glob Grep Write Edit Agent AskUserQuestion
+allowed-tools: Bash(pulse-motion *) Read Glob Grep Write Edit Agent AskUserQuestion
 ---
 
 # /pulse-motion:style – Créer un style personnel
@@ -44,7 +44,7 @@ Choisir le style de départ le plus proche (`pulse-motion styles`) : sa mise en 
 ## 4. Les six autres scènes
 
 1. Un agent `animateur` (mode « style ») par scène, tous dans le même message : `chiffre`, `comparaison`, `etape`, `alerte`, `schema`, `conclusion`, à partir de la même identité et de `style.css`.
-2. Planche des 8 scènes : `pulse-motion style planche <nom> --scenes titre,liste,chiffre,comparaison,etape,alerte,schema,conclusion --ouvrir`, aussi en `--ratio 9:16`.
+2. Planche des 8 scènes : `pulse-motion style planche <nom> --scenes titre,liste,chiffre,comparaison,etape,alerte,schema,conclusion --ouvrir`, aussi en `--ratio 9:16`. La planche montre des phrases d'exemple ; ajouter `--textes maximum` pour voir chaque texte à sa longueur maximale (le pire cas : rien ne doit déborder).
 3. Compléter `guide.md` du style (bloc « L'essentiel », tableau des scènes avec leurs durées, classes, à faire / à éviter), sur le modèle de `pulse-motion reference styles/<style de départ>`.
 
 ## 5. Vérifier
