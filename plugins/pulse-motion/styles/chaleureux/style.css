@@ -18,7 +18,7 @@
 /* ---------- Typographie ---------- */
 .pastille-texte {
   margin: 0; align-self: flex-start; padding: 1.2cqh 3cqh; border-radius: 99cqh;
-  background: color-mix(in srgb, var(--c-accent) 16%, var(--c-fond)); color: var(--c-accent-lisible);
+  background: color-mix(in srgb, var(--c-accent) 10%, var(--c-fond)); color: var(--c-accent-lisible);
   font: 700 3.6cqh/1.1 var(--f-texte);
 }
 .centre .pastille-texte { align-self: center; }

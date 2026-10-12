@@ -88,7 +88,8 @@ function variablesDerivees(couleurs) {
   if (!HEX.test(couleurs.fond || '')) return lignes;
   for (const [nom, minimum] of [['primaire', SEUILS.contrasteTitres], ['accent', SEUILS.contrasteTexte]]) {
     if (!HEX.test(couleurs[nom] || '')) continue;
-    const lisible = ajusterContraste(couleurs[nom], couleurs.fond, minimum).hex;
+    // Une marge au-dessus du seuil : la couleur reste lisible posée sur un décor pâle (rond, galet, dégradé).
+    const lisible = ajusterContraste(couleurs[nom], couleurs.fond, minimum + SEUILS.margeLisible).hex;
     lignes.push(`  --c-${nom}-lisible: ${lisible};`);
     // Le texte posé sur un aplat se calcule sur la couleur lisible : c'est elle que les styles peignent.
     lignes.push(`  --c-sur-${nom}: ${meilleurSur(lisible)};`);

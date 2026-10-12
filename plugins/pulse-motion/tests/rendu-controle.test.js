@@ -88,3 +88,9 @@ test('revue : navigateur introuvable à l\'adresse donnée, le message nomme le 
   assert.ok(r.problemes[0].message.includes(chemin), r.problemes[0].message);
   assert.match(r.problemes[0].message, /PM_NAVIGATEUR/);
 });
+
+test('contraste réel traduit en alerte française', () => {
+  const [p] = traduireConstats([{ regle: 'contraste-reel', scene: 'fin', element: 'titre', instant: 2, valeur: 2.1 }]);
+  assert.equal(p.gravite, 'alerte');
+  assert.equal(p.message, 'Scène « fin » : le texte « titre » ne se détache pas assez de ce qu\'il y a derrière lui (contraste 2,1:1 vers 2 s) ; assombrir ou éclaircir le fond sous le texte, ajouter un aplat, ou changer la couleur du texte.');
+});
