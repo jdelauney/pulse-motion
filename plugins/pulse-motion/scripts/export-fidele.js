@@ -19,6 +19,7 @@ const { trouverNavigateur } = require('./lib/navigateur.js');
 const { ouvrirCapture } = require('./lib/capture-fidele.js');
 const F = require('./lib/ffmpeg.js');
 const { cheminDansProjet } = require('./lib/embarquer.js');
+const { scenesProvisoires, messageProvisoire } = require('./lib/voix.js');
 
 const TAILLES = {
   '1080p': { '16:9': [1920, 1080], '9:16': [1080, 1920], '1:1': [1080, 1080], '4:5': [1080, 1350] },
@@ -51,7 +52,7 @@ async function segmentValide(outil, fichier, attendu) {
 }
 
 async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = trouverNavigateur(), outil = F.trouverFfmpeg(), dossierStyles,
-  dossierEffets = path.join(RACINE, 'effets'), surProgression = () => {}, signal, dureeSegment = 10, arreterApres, paralleles } = {}) {
+  dossierEffets = path.join(RACINE, 'effets'), surProgression = () => {}, signal, dureeSegment = 10, arreterApres, paralleles, avecProvisoire = false } = {}) {
   const projet = path.resolve(dossier);
   const sortieDir = path.join(projet, 'sortie');
   const suivi = path.join(sortieDir, 'export.json');
@@ -62,6 +63,8 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
 
   const { deroule, erreurs } = lireDeroule(projet);
   if (erreurs.length) return { ok: false, audio: false, message: `Le déroulé contient des erreurs : ${erreurs.join(' ')}` };
+  const provisoires = scenesProvisoires(projet, deroule);
+  if (provisoires.length && !avecProvisoire) return { ok: false, audio: false, message: messageProvisoire(provisoires) };
   const assemblage = assembler({ dossier: projet, dossierStyles, dossierEffets, ecrire: false });
   if (!assemblage.ok) return { ok: false, audio: false, message: `La page ne s'assemble pas : ${assemblage.erreurs.map((e) => e.message).join(' ')}` };
   const [largeur, hauteur] = TAILLES[qualite][deroule.format.ratio] || TAILLES[qualite]['16:9'];

@@ -17,10 +17,12 @@ const { preparerEffets } = require('./lib/effets.js');
 const { variablesCSS } = require('../moteur/courbes.js');
 const { trouverStyle, messageStyleInconnu } = require('./styles.js');
 const { charteFinale, chartePour, variablesDerivees } = require('./lib/fusion-charte.js');
+const { lireVoixScene } = require('./lib/voix.js');
+const { DEBUT_VOIX } = require('../moteur/minutage.js');
 const { trouverFichiersPolice } = require('./lib/police.js');
 
 const RACINE = path.resolve(__dirname, '..');
-const MOTEUR = ['courbes.js', 'minutage.js', 'transitions.js', 'tween.js', 'lettres.js', 'camera.js', 'temps.js', 'horloge.js', 'tailles.js', 'wav.js', 'sonie.js', 'mixage.js', 'audio.js', 'lecteur.js', 'debordement.js', 'mesures.js', 'pixels.js',
+const MOTEUR = ['courbes.js', 'aligner.js', 'minutage.js', 'transitions.js', 'tween.js', 'lettres.js', 'camera.js', 'temps.js', 'horloge.js', 'tailles.js', 'wav.js', 'sonie.js', 'mixage.js', 'audio.js', 'lecteur.js', 'debordement.js', 'mesures.js', 'pixels.js',
   'particules/instantanes.js', 'particules/gpu.js', 'particules/simulation.js', 'particules/rendu.js', 'particules/calques.js'];
 function slug(texte) {
   return String(texte).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
@@ -91,18 +93,18 @@ function jsonDansHTML(objet) {
 
 /**
  * assembler({ dossier, dossierStyles?: string | string[], dossierEffets?, ecrire? })
- * -> { ok, fichier, html, erreurs: [{ regle, gravite, scene?, message }], effets: [{ scene, ordre, calque, ancre, effet }] }
+ * -> { ok, fichier, html, erreurs: [{ regle, gravite, scene?, message }], effets: [{ scene, ordre, calque, ancre, effet }], donnees (pm-donnees) }
  * Sans dossierStyles : styles livrés, puis styles personnels (~/.pulse-motion/styles).
  */
 function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, 'effets'), ecrire = true }) {
   const projet = path.resolve(dossier);
   const { deroule, erreurs: erreursDeroule } = lireDeroule(projet);
   if (erreursDeroule.length) {
-    return { ok: false, fichier: null, html: null, effets: [], erreurs: erreursDeroule.map((message) => ({ regle: 'deroule-invalide', gravite: 'erreur', message })) };
+    return { ok: false, fichier: null, html: null, effets: [], donnees: null, erreurs: erreursDeroule.map((message) => ({ regle: 'deroule-invalide', gravite: 'erreur', message })) };
   }
   const style = trouverStyle(deroule.style, dossierStyles);
   if (!style) {
-    return { ok: false, fichier: null, html: null, effets: [], erreurs: [{ regle: 'style-inconnu', gravite: 'erreur', message: messageStyleInconnu(deroule.style, dossierStyles) }] };
+    return { ok: false, fichier: null, html: null, effets: [], donnees: null, erreurs: [{ regle: 'style-inconnu', gravite: 'erreur', message: messageStyleInconnu(deroule.style, dossierStyles) }] };
   }
   const dossierStyle = style.dossier;
 
@@ -163,13 +165,43 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     if (uri) { sourceMusique = 'pm-son-musique'; sons.push(blocSon(sourceMusique, uri)); }
   }
 
+  // Voix : une prise par scène (ou la voix provisoire), mots calés ; Opus si encodé, sinon WAV.
+  const voixScenes = {};
+  let calageApproche = false;
+  for (const scene of deroule.scenes) {
+    const v = lireVoixScene(projet, deroule, scene);
+    if (!v) continue;
+    if (v.erreur) { erreurs.push({ regle: 'voix-illisible', gravite: 'erreur', scene: scene.id, message: v.erreur }); continue; }
+    erreurs.push(...v.alertes);
+    const uri = embarquerFichier(projet, v.opus || v.prise.relatif, `Voix de la scène « ${scene.id} »`, erreurs);
+    if (!uri) continue;
+    const id = `pm-son-voix-${scene.id}`;
+    sons.push(blocSon(id, uri));
+    voixScenes[scene.id] = { source: id, debut: scene.voix.debut ?? DEBUT_VOIX, duree: v.duree, mots: v.mots, ...(v.prise.provisoire ? { provisoire: true } : {}) };
+    if (v.approche !== 'whisper') calageApproche = true;
+    if (v.prise.provisoire) {
+      erreurs.push({ regle: 'voix-provisoire', gravite: 'alerte', scene: scene.id,
+        message: `Scène « ${scene.id} » : c'est encore la voix provisoire du système ; enregistrez la vôtre avant d'exporter.` });
+    }
+  }
+  if (calageApproche) {
+    erreurs.push({ regle: 'calage-approche', gravite: 'info',
+      message: 'Les mots de la voix sont calés approximativement (sans transcription) : les ancres « mot: » et les sous-titres peuvent tomber un peu à côté.' });
+  }
+  const poidsSons = sons.reduce((n, b) => n + b.length, 0);
+  if (poidsSons > 20 * 1024 * 1024) {
+    erreurs.push({ regle: 'page-lourde', gravite: 'alerte',
+      message: `Les sons embarqués pèsent ${Math.round(poidsSons / 1024 / 1024)} Mo : la page sera lente à ouvrir ; installez ffmpeg (« pulse-motion ffmpeg ») pour les voix en Opus.` });
+  }
+
   const [l, h] = deroule.format.ratio.split(':');
   const donnees = {
     titre: deroule.titre,
     format: { ratio: deroule.format.ratio, ips: deroule.format.ips || 30 },
     musique: deroule.musique ? { volume: deroule.musique.volume ?? 1, source: sourceMusique } : null,
+    voix: Object.keys(voixScenes).length ? { volume: deroule.voix && typeof deroule.voix.volume === 'number' ? deroule.voix.volume : 1 } : null,
     tempo: deroule.tempo ? { bpm: deroule.tempo.bpm, decalage: deroule.tempo.decalage || 0 } : null,
-    scenes: deroule.scenes.map((s) => ({ id: s.id, duree: s.duree, rythme: s.rythme || 1, transition: s.transition || 'aucune' })),
+    scenes: deroule.scenes.map((s) => ({ id: s.id, duree: s.duree, rythme: s.rythme || 1, transition: s.transition || 'aucune', ...(voixScenes[s.id] ? { voix: voixScenes[s.id] } : {}) })),
     effets: effets.map(({ calque, ancre, effet }) => ({ calque, ancre, effet })),
   };
 
@@ -219,7 +251,7 @@ M.demarrerParticules();
     // Le rapport de débordement portait sur l'ancienne page : l'aperçu en renverra un pour la nouvelle.
     fs.rmSync(path.join(dossierSortie, 'controle-page.json'), { force: true });
   }
-  return { ok: true, fichier: sortie, html: page, erreurs, effets };
+  return { ok: true, fichier: sortie, html: page, erreurs, effets, donnees };
 }
 
 if (require.main === module) {

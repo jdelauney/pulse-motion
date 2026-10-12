@@ -185,7 +185,8 @@
       });
     }
     // Erreurs d'assemblage (transmises par l'aperçu) et de minutage : visibles tout de suite.
-    var erreurs = (racine.__PM_ERREURS__ || []).concat(M.erreurs || []);
+    // Les informations (gravité « info ») ne sont pas des erreurs : pas de bandeau pour elles.
+    var erreurs = (racine.__PM_ERREURS__ || []).concat(M.erreurs || []).filter(function (e) { return e.gravite !== 'info'; });
     if (erreurs.length) {
       bandeau.textContent = erreurs.map(function (e) { return e.message; }).join(' · ');
       bandeau.hidden = false;
