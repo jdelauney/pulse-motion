@@ -141,7 +141,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     const { html: avecTextes, manquants } = S.injecterTextes(sansScripts, scene.textes);
     manquants.forEach((cle) => erreurs.push({ regle: 'texte-manquant', gravite: 'erreur', scene: scene.id, message: `Scène « ${scene.id} » : data-texte="${cle}" n'a pas de texte dans le déroulé.` }));
     const { html: avecEffets, effets: effetsScene, erreurs: erreursEffets } = preparerEffets(avecTextes, {
-      scene: scene.id, projet, bibliotheque: dossierEffets, charte: charte.couleurs, premierIndex: effets.length,
+      scene: scene.id, projet, bibliotheque: dossierEffets, charte: charte.couleurs, premierIndex: effets.length, dureeTemps: dureeTemps(deroule),
     });
     effets.push(...effetsScene);
     erreurs.push(...erreursEffets);

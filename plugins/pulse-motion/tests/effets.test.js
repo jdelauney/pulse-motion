@@ -198,3 +198,16 @@ test('contrôles : particules vivantes jusqu\'à la fin de la dernière scène (
   modifierDeroule(dir, (d) => { d.scenes[0].duree = 5; });
   assert.equal(controler2(dir).problemes.filter((x) => x.regle === 'pause-finale').length, 0);
 });
+
+test("effet minuté en temps musicaux : même compilation qu'en secondes", () => {
+  const capacite = (dur) => {
+    const dir = copierProjet('projet-effets');
+    modifierDeroule(dir, (d) => { d.tempo = { bpm: 120 }; });
+    ecrire(dir, 'scenes/01-etincelles.html', `<section data-scene="etincelles"><h1 id="titre" data-texte="titre" data-start="0.2"></h1><div data-effet="gerbe" data-ancre="#titre" data-start="0" data-dur="${dur}"></div></section>`);
+    const r = assembler({ dossier: dir, dossierStyles: STYLES, dossierEffets: EFFETS, ecrire: false });
+    assert.deepEqual(r.erreurs, []);
+    return r.effets[0].effet.capacite;
+  };
+  assert.equal(capacite('4t'), capacite('2'));
+  assert.notEqual(capacite('4t'), capacite('1'));
+});
