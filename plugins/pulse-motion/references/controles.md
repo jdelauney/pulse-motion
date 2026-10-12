@@ -70,6 +70,8 @@ Avec un `tempo` dans le déroulé, aucune durée n'est corrigée seule (la musiq
 | `calage-approche` | Mots calés sans transcription | info | — | `pulse-motion whisper` : installer la transcription, puis `pulse-motion voix transcrire` |
 | `page-lourde` | Plus de 20 Mo de sons dans la page | alerte | non | Installer ffmpeg (voix en Opus) |
 
+À l'import d'un enregistrement de toute la vidéo, `pulse-motion voix importer` signale (`avertissement`) une scène dont moins de la moitié des mots ont été reconnus : l'écouter, et la réenregistrer seule si besoin.
+
 « info » : rien à corriger, la personne est prévenue. Avec une voix, la durée de la scène n'est jamais corrigée seule.
 
 ## Autres règles
