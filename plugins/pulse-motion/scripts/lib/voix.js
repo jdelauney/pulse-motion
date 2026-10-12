@@ -91,4 +91,13 @@ async function ecrirePrise({ projet, scene, octets, texte, provisoire = false, o
   return { relatif, duree };
 }
 
-module.exports = { DOSSIER_VOIX, empreinte, priseDeScene, lireVoixScene, ecrirePrise };
+/** Scènes qui jouent encore la voix provisoire du système. -> [id] */
+function scenesProvisoires(projet, deroule) {
+  return deroule.scenes.filter((s) => { const p = priseDeScene(projet, deroule, s); return p && p.provisoire; }).map((s) => s.id);
+}
+
+function messageProvisoire(ids) {
+  return `La vidéo contient encore la voix provisoire (scènes : ${ids.join(', ')}) : enregistrez votre voix, ou exportez quand même avec --avec-provisoire.`;
+}
+
+module.exports = { DOSSIER_VOIX, empreinte, priseDeScene, lireVoixScene, ecrirePrise, scenesProvisoires, messageProvisoire };
