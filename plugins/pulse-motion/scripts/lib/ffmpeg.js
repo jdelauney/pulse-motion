@@ -173,6 +173,18 @@ async function encoderSon({ ffmpeg, wav, duree, sortie, signal }) {
   if (r.code !== 0) throw new Error(`son illisible (${derniereLigne(r.erreurs) || `code ${r.code}`})`);
 }
 
+/** Prise WAV -> Opus 48 kbit/s mono (Ogg), plus léger à embarquer dans la page. */
+async function encoderOpus({ ffmpeg, wav, sortie }) {
+  const r = await lancer(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-i', wav, '-vn', '-ac', '1', '-c:a', 'libopus', '-b:a', '48k', '-f', 'ogg', sortie]);
+  if (r.code !== 0) throw new Error(`encodage Opus impossible (${derniereLigne(r.erreurs)})`);
+}
+
+/** Tout fichier son lisible par ffmpeg -> WAV PCM 16 bits mono 48 kHz. */
+async function importerAudio({ ffmpeg, entree, sortie }) {
+  const r = await lancer(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-i', entree, '-vn', '-ac', '1', '-ar', '48000', '-c:a', 'pcm_s16le', '-f', 'wav', sortie]);
+  if (r.code !== 0) throw new Error(`ce fichier son n'a pas pu être lu (${derniereLigne(r.erreurs)})`);
+}
+
 /** Sonie intégrée (LUFS) et crête vraie (dBTP) d'un fichier, mesurées par le filtre ebur128. */
 async function mesurerSonie({ ffmpeg, fichier }) {
   const r = await lancer(ffmpeg, ['-hide_banner', '-nostats', '-i', fichier, '-vn', '-af', 'ebur128=peak=true:framelog=verbose', '-f', 'null', '-']);
@@ -218,4 +230,4 @@ function ecartImages(a, b) {
   return somme / n / 255;
 }
 
-module.exports = { lireVersion, commandeSure, commandeInstallation, trouverFfmpeg, MINIMUM, encoderSegment, sonder, extraireImage, assemblerSegments, ecartImages, encoderSon, mesurerSonie };
+module.exports = { lireVersion, commandeSure, commandeInstallation, trouverFfmpeg, MINIMUM, encoderSegment, sonder, extraireImage, assemblerSegments, ecartImages, encoderSon, mesurerSonie, encoderOpus, importerAudio };
