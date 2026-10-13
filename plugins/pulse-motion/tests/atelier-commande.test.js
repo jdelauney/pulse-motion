@@ -1,6 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { copierProjet } = require('./aide/projet.js');
@@ -36,9 +37,11 @@ test('lancerAtelier : hors d\'un projet, dossier temporaire ; nom invalide refus
   const r = await lancerAtelier({ dossier: ailleurs, recette: 'neige', lancer: f.lancer, ouvrirUrl: f.ouvrirUrl });
   assert.equal(r.projet, false);
   assert.notEqual(f.appels.lancer[0].dossier, ailleurs, 'pas d\'aperçu (ni de .pulse-motion/) dans un dossier qui n\'est pas une vidéo');
-  assert.match(path.basename(f.appels.lancer[0].dossier), /^pm-atelier-/);
+  assert.equal(f.appels.lancer[0].dossier, path.join(os.tmpdir(), 'pm-atelier'));
+  await lancerAtelier({ dossier: ailleurs, lancer: f.lancer, ouvrirUrl: f.ouvrirUrl });
+  assert.equal(f.appels.lancer[1].dossier, f.appels.lancer[0].dossier, 'le même dossier est réutilisé');
   await assert.rejects(() => lancerAtelier({ dossier: ailleurs, recette: '../deroule', lancer: f.lancer, ouvrirUrl: f.ouvrirUrl }), /Nom d'effet « \.\.\/deroule » invalide/);
-  assert.equal(f.appels.lancer.length, 1);
+  assert.equal(f.appels.lancer.length, 2);
 });
 
 test('pm atelier : usage en cas d\'arguments invalides', () => {
