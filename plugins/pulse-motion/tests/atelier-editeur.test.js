@@ -96,3 +96,14 @@ test('recette vide et compilerPourPage : compile, textures connues reprises', as
   assert.equal(f.ok, false);
   assert.equal(f.erreurs[0].chemin, 'emetteurs[emetteur].naissance.vie');
 });
+
+test('intervalle ou paire : une seule borne vidée sans défaut est invalide, jamais [\'\', x]', async () => {
+  const E = await editeur();
+  assert.deepEqual(E.lireDeux(['0.5', '2'], ['', '']), { valeur: [0.5, 2] });
+  assert.deepEqual(E.lireDeux(['', ''], ['', '']), { valeur: undefined });
+  assert.deepEqual(E.lireDeux(['', '2'], [1, 3]), { valeur: [1, 2] }, 'le défaut remplace la borne vidée');
+  const r = E.lireDeux(['', '2'], ['', '']);
+  assert.equal(r.valeur, undefined);
+  assert.match(r.erreur, /deux bornes|les deux/);
+  assert.match(E.lireDeux(['1', ''], null).erreur, /les deux/);
+});

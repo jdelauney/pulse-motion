@@ -156,7 +156,7 @@ function afficherEffet() {
     autre.addEventListener('click', () => { poserGraine(etat.graine + 1); champ.value = String(etat.graine); recompiler(); });
   } else {
     formulaire = construireFormulaire(contenu, {
-      schema: M.recette.SCHEMA, recette: etat.recette,
+      schema: M.recette.SCHEMA, recette: etat.recette, masquer: ['nom', 'etend'], // le serveur les ignore
       surChangement: (r) => { etat.recette = r; etat.recetteModifiee = true; marquerModifie(); recompiler(); },
     });
   }
@@ -184,10 +184,14 @@ function boucler() {
   M.boucler({ debut: Math.max(d.debut, info.debut), fin: Math.min(d.fin, info.fin) });
 }
 
+let generation = 0; // une compilation dépassée (réponses dans le désordre, texture à charger) est ignorée
+
 async function appliquer() {
   const info = effetDe(etat.scene, etat.ordre);
   if (!info || !etat.recette) return;
+  const numero = ++generation;
   const r = await compilerPourPage(M.recette, etat.recette, { reglages: reglagesEnTexte(etat.valeurs), charte: donnees.charte, dur: info.dur, graine: etat.graine }, textures);
+  if (numero !== generation) return;
   etat.erreurs = r.ok ? [] : r.erreurs;
   marquer();
   if (!r.ok) { dire('Réglage refusé (voir le champ marqué) : l\'image garde le dernier état valide.'); return; }
@@ -205,6 +209,7 @@ function choisir(ordre, scene) {
   const id = scene || etat.scene || sceneCourante();
   const info = effetDe(id, ordre);
   if (!info) return false;
+  generation++;
   Object.assign(etat, {
     scene: id, ordre,
     valeurs: { ...M.recette.analyserReglages(info.reglages).valeurs },
@@ -327,6 +332,10 @@ function enregistrer() {
   if (etat.recetteModifiee) {
     dire('La recette a changé : enregistrez-la comme nouvel effet (« Enregistrer comme nouvel effet »).');
     return Promise.reject(new Error('recette modifiée'));
+  }
+  if (etat.erreurs.length) {
+    dire('Des réglages sont refusés (voir les champs marqués) : corrigez-les avant d\'enregistrer.');
+    return Promise.reject(new Error('réglages refusés'));
   }
   return envoyer('/_pm/atelier/reglages', {
     fichier: sc.fichier, empreinte: sc.empreinte, scene: etat.scene, ordre: etat.ordre,

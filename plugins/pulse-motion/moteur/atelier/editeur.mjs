@@ -15,7 +15,7 @@
  *   compilerPourPage(R, recette, options, textures) -> Promise<{ ok, effet, erreurs }>   textures de assets/ en data:
  *   TYPES : types de nœuds pris en charge
  * Navigateur :
- *   construireFormulaire(conteneur, { schema, recette, surChangement(recette) }) -> { recette(), remplacer(r), marquer(erreurs), detruire() }
+ *   construireFormulaire(conteneur, { schema, recette, surChangement(recette), masquer? }) -> { recette(), remplacer(r), marquer(erreurs), detruire() }
  *   construireReglages(conteneur, { parametres, valeurs, charte, surChangement(valeurs) }) -> { valeurs(), marquer(erreurs), detruire() }
  *   el(tag, attributs, parent)
  */
@@ -91,6 +91,19 @@ export function reglagesEnTexte(valeurs) {
   return Object.keys(valeurs)
     .filter((k) => valeurs[k] !== undefined && valeurs[k] !== null && String(valeurs[k]).trim() !== '')
     .map((k) => `${k}: ${String(valeurs[k]).trim()}`).join('; ');
+}
+
+/**
+ * Deux champs d'intervalle ou de paire -> { valeur } ou { erreur }. Les deux vides : champ retiré ; une borne vidée
+ * prend le défaut s'il y en a un, sinon la saisie est invalide (jamais ['', x]).
+ */
+export function lireDeux(textes, defaut) {
+  const x = textes.map(valeurSaisie);
+  if (x[0] === undefined && x[1] === undefined) return { valeur: undefined };
+  const d = Array.isArray(defaut) ? defaut : ['', ''];
+  const v = [x[0] === undefined ? d[0] : x[0], x[1] === undefined ? d[1] : x[1]];
+  if (v.some((b) => b === '' || b === undefined || b === null)) return { valeur: undefined, erreur: 'Renseignez les deux bornes (ou videz les deux champs pour retirer la valeur).' };
+  return { valeur: v };
 }
 
 /** Élément neuf d'une liste : exemple, sinon défaut, sinon objet de ses champs requis. */
@@ -264,12 +277,12 @@ function widgetDeux(parent, noeud, valeur, changer, noms) {
   const v = Array.isArray(valeur) ? valeur : valeur === undefined || valeur === null ? [undefined, undefined] : [valeur, valeur];
   const d = Array.isArray(noeud.defaut) ? noeud.defaut : ['', ''];
   const champs = [0, 1].map((i) => el('input', { type: 'text', inputmode: 'decimal', value: texteDe(v[i]), placeholder: texteDe(d[i]), 'aria-label': `${noeud.libelle} (${noms[i]})` }, boite));
-  const lire = () => {
-    const x = champs.map((c) => valeurSaisie(c.value));
-    if (x[0] === undefined && x[1] === undefined) return undefined;
-    return [x[0] === undefined ? d[0] : x[0], x[1] === undefined ? d[1] : x[1]];
-  };
-  champs.forEach((c) => c.addEventListener('input', () => changer(lire())));
+  champs.forEach((c) => c.addEventListener('input', () => {
+    parent.querySelectorAll(':scope > .pm-ed-saisie').forEach((m) => m.remove());
+    const r = lireDeux(champs.map((x) => x.value), noeud.defaut);
+    if (r.erreur) { el('div', { class: 'pm-ed-message pm-ed-saisie', texte: r.erreur }, parent); return; }
+    changer(r.valeur);
+  }));
   return boite;
 }
 
@@ -317,7 +330,7 @@ function widgetChoix(parent, noeud, valeur, changer) {
  * Formulaire de toute la recette, généré depuis le schéma. surChangement(copie de la recette) à chaque saisie ;
  * marquer(erreurs) rattache chaque erreur du compilateur au champ le plus proche (les autres : en tête).
  */
-export function construireFormulaire(conteneur, { schema, recette, surChangement }) {
+export function construireFormulaire(conteneur, { schema, recette, surChangement, masquer = [] }) {
   poserStyle();
   let donnees = copie(recette);
   const champs = new Map();
@@ -371,7 +384,7 @@ export function construireFormulaire(conteneur, { schema, recette, surChangement
         const boite = el('span', { class: 'pm-ed-valeurs' }, ligne(parent, noeud, chemin));
         const c = el('input', { type: 'checkbox', 'aria-label': noeud.libelle }, boite);
         c.checked = v === true;
-        c.addEventListener('change', () => changer1(c.checked ? true : noeud.defaut === false ? undefined : false));
+        c.addEventListener('change', () => changer1(c.checked));
         break;
       }
       case 'texte': {
@@ -422,6 +435,7 @@ export function construireFormulaire(conteneur, { schema, recette, surChangement
       }
     }
     for (const [k, n] of Object.entries(champsNoeud)) {
+      if (!chemin && masquer.includes(k)) continue;
       const c = joindre(chemin, k);
       const structure = (noeud.variantes && k === noeud.variantes.cle) || Object.values(champsNoeud).some((x) => x.selon === k);
       if (structure && n.type === 'choix') {
