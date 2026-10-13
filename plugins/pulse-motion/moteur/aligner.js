@@ -25,18 +25,25 @@
   /** Texte dit -> [{ w, cles }] ; ponctuation isolée rattachée au mot précédent, ouvrante (« — ( ) au mot suivant. */
   function decouperMots(texte) {
     var mots = [], enAttente = '';
-    String(texte).split(/\s+/).filter(Boolean).forEach(function (brut) {
+    // Séparateurs gardés : une espace insécable (« 4 °C », « froid ? ») reste dans le mot, ou marque le mot
+    // qu'on ne sépare pas du suivant (insecable : le caractère à remettre entre eux).
+    var morceaux = String(texte).trim().split(/(\s+)/);
+    for (var k = 0; k < morceaux.length; k += 2) {
+      var brut = morceaux[k], avant = k > 0 ? morceaux[k - 1] : ' ';
+      if (!brut) continue;
+      var lien = /[ \t\n\r\f\v]/.test(avant) ? ' ' : avant;
       var cle = normaliserMot(brut);
       if (!cle) {
         if (OUVRANTE.test(brut) || !mots.length) enAttente += brut + ' ';
-        else mots[mots.length - 1].w += ' ' + brut;
-        return;
+        else { var p = mots[mots.length - 1]; p.w += lien + brut; delete p.insecable; }
+        continue;
       }
       var cles = [cle];
-      brut.split(/['’\-]/).map(normaliserMot).forEach(function (p) { if (p && cles.indexOf(p) < 0) cles.push(p); });
+      brut.split(/['’\-]/).map(normaliserMot).forEach(function (q) { if (q && cles.indexOf(q) < 0) cles.push(q); });
+      if (mots.length && lien !== ' ' && !enAttente) mots[mots.length - 1].insecable = lien;
       mots.push({ w: enAttente + brut, cles: cles });
       enAttente = '';
-    });
+    }
     if (enAttente && mots.length) mots[mots.length - 1].w += ' ' + enAttente.trim();
     return mots;
   }
