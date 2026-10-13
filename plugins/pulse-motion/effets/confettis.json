@@ -30,7 +30,8 @@
         { "type": "turbulence", "echelle": 15, "force": 40, "vitesse": 0.8 }
       ],
       "vie": { "couleur": "couleur1", "opacite": { "de": 1, "a": 0, "courbe": "expo-in" } },
-      "rendu": { "type": "sprite", "texture": "confetti", "melange": "alpha" }
+      "rendu": { "type": "sprite", "texture": "confetti", "melange": "alpha" },
+      "collisions": { "cibles": ["sol", "elements", "formes"], "reponse": "poser", "empiler": true, "talus": 30 }
     },
     {
       "nom": "confetti-2",
@@ -51,7 +52,8 @@
         { "type": "turbulence", "echelle": 15, "force": 40, "vitesse": 0.8 }
       ],
       "vie": { "couleur": "couleur2", "opacite": { "de": 1, "a": 0, "courbe": "expo-in" } },
-      "rendu": { "type": "sprite", "texture": "confetti", "melange": "alpha" }
+      "rendu": { "type": "sprite", "texture": "confetti", "melange": "alpha" },
+      "collisions": { "cibles": ["sol", "elements", "formes"], "reponse": "poser", "empiler": true, "talus": 30 }
     },
     {
       "nom": "confetti-3",
@@ -72,7 +74,8 @@
         { "type": "turbulence", "echelle": 15, "force": 40, "vitesse": 0.8 }
       ],
       "vie": { "couleur": "couleur3", "opacite": { "de": 1, "a": 0, "courbe": "expo-in" } },
-      "rendu": { "type": "sprite", "texture": "confetti", "melange": "alpha" }
+      "rendu": { "type": "sprite", "texture": "confetti", "melange": "alpha" },
+      "collisions": { "cibles": ["sol", "elements", "formes"], "reponse": "poser", "empiler": true, "talus": 30 }
     }
   ]
 }

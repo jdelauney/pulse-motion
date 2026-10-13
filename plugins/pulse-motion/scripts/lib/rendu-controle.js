@@ -1,7 +1,8 @@
 'use strict';
 /* Pulse Motion – contrôle de la vidéo rendue : page assemblée ouverte en temps réel dans Chrome ou Edge sans
- * fenêtre (page-mesures.js), mesures de moteur/mesures.js (M.mesurer) et débordements (M.detecterDebordements),
- * traduits en problèmes. */
+ * fenêtre (page-mesures.js), mesures de moteur/mesures.js (M.mesurer), débordements (M.detecterDebordements) et
+ * formes exactes des collisions effacées à la fin de leur minutage (M.particules.formesVides, sans GPU), traduits en
+ * problèmes. */
 const { trouverNavigateur } = require('./navigateur.js');
 const { mesurerPage } = require('./page-mesures.js');
 const SEUILS = require('../seuils.json');
@@ -43,14 +44,21 @@ const nonVerifie = (regle, message) => ({ renduVerifie: false, problemes: [{ reg
 async function controlerRendu({ html, ratio, duree, navigateur = trouverNavigateur() }) {
   if (!navigateur) return nonVerifie('rendu-non-verifie', 'Chrome ou Edge introuvable : la vidéo rendue (chevauchements, marges, textes qui débordent…) n\'a pas été vérifiée. Installez l\'un des deux, ou indiquez son chemin avec la variable PM_NAVIGATEUR.');
   const r = await mesurerPage({ html, navigateur, delai: (30 + 2 * (duree || 0)) * 1000, script: `
+    // Formes exactes des collisions effacées à la fin de leur minutage (avant les mesures : elles rendent des scènes).
+    var formesVides = M.particules && M.particules.formesVides ? await M.particules.formesVides() : [];
     var constats = M.mesurer({ ratio: ${JSON.stringify(ratio)}, seuils: ${JSON.stringify(SEUILS)} });
     var debordements = M.detecterDebordements();
     var ajustements = M.essayerTailles({ minimumCqh: ${SEUILS.texteMinCqh} });
-    return { constats: constats.concat(await M.mesurerPixels({ ratio: ${JSON.stringify(ratio)}, seuils: ${JSON.stringify(SEUILS)} })), debordements: debordements, ajustements: ajustements };` });
+    return { constats: constats.concat(await M.mesurerPixels({ ratio: ${JSON.stringify(ratio)}, seuils: ${JSON.stringify(SEUILS)} })), debordements: debordements, ajustements: ajustements, formesVides: formesVides };` });
   if (r.code === 'ENOENT') return nonVerifie('rendu-impossible', `Navigateur introuvable à « ${navigateur} » : vérifiez la variable PM_NAVIGATEUR (ou retirez-la pour utiliser Chrome ou Edge installés). Seuls les contrôles sans navigateur ont été faits.`);
   if (r.erreur) return nonVerifie('rendu-impossible', `La vidéo n'a pas pu être mesurée dans le navigateur (${r.erreur}) : seuls les contrôles sans navigateur ont été faits.`);
   const debordements = (r.resultat.debordements || []).map((d) => ({ regle: 'debordement', gravite: 'erreur', scene: d.scene, element: d.element, message: d.message }));
-  return { renduVerifie: true, problemes: [...debordements, ...traduireConstats(r.resultat.constats)], ajustements: r.resultat.ajustements || [] };
+  return { renduVerifie: true, problemes: [...debordements, ...traduireConstats(r.resultat.constats), ...traduireFormesVides(r.resultat.formesVides)], ajustements: r.resultat.ajustements || [] };
 }
 
-module.exports = { traduireConstats, controlerRendu };
+/** Formes exactes au masque vide (M.particules.formesVides) -> alertes « obstacle-forme-vide ». */
+function traduireFormesVides(liste) {
+  return (liste || []).map((f) => ({ regle: 'obstacle-forme-vide', gravite: 'alerte', scene: f.scene, element: f.element, message: f.message }));
+}
+
+module.exports = { traduireConstats, traduireFormesVides, controlerRendu };

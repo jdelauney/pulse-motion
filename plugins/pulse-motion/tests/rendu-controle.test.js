@@ -121,3 +121,31 @@ test('controlerComplet : un titre qui déborde est réduit (taille 0,85) ; un ti
   assert.ok(p, JSON.stringify(r2.problemes));
   assert.match(p.message, /autant que possible.*raccourcir le texte/);
 });
+
+test('formes exactes au masque vide traduites en alertes « obstacle-forme-vide »', () => {
+  const { traduireFormesVides } = require('../scripts/lib/rendu-controle.js');
+  assert.deepEqual(traduireFormesVides([{ scene: 's', element: 'fugace', message: 'm' }]), [{ regle: 'obstacle-forme-vide', gravite: 'alerte', scene: 's', element: 'fugace', message: 'm' }]);
+  assert.deepEqual(traduireFormesVides(undefined), []);
+});
+
+test('controlerRendu : forme exacte effacée à la fin de son minutage signalée (sans GPU)', sans, async () => {
+  const { assembler } = require('../scripts/assembler.js');
+  const { EFFETS, modifierDeroule } = require('./aide/projet.js');
+  const dir = copierProjet('projet-particules');
+  modifierDeroule(dir, (d) => { d.scenes[0].textes.titre = 'HI'; });
+  fs.writeFileSync(path.join(dir, 'scenes', '01-s.html'), `<section data-scene="s">
+  <style>@scope {
+    #mot { position: absolute; left: 30cqh; top: 30cqh; margin: 0; font: 900 20cqh/1 sans-serif; }
+    @keyframes sortie { from { opacity: 1; } to { opacity: 0; } }
+    #fugace { position: absolute; left: 0; top: 90cqh; width: 100cqh; height: 5cqh; background: #f00; animation: sortie 1s linear both; }
+  }</style>
+  <h1 id="mot" data-texte="titre" data-obstacle="forme"></h1>
+  <div id="fugace" data-start="0" data-dur="1" data-obstacle="forme" data-decor></div>
+</section>`);
+  const a = assembler({ dossier: dir, dossierStyles: STYLES, dossierEffets: EFFETS, ecrire: false });
+  const r = await controlerRendu({ html: a.html, ratio: '16:9', duree: 6, navigateur });
+  assert.equal(r.renduVerifie, true, JSON.stringify(r.problemes));
+  const vides = r.problemes.filter((p) => p.regle === 'obstacle-forme-vide');
+  assert.deepEqual(vides.map((p) => [p.scene, p.element, p.gravite]), [['s', 'fugace', 'alerte']]);
+  assert.match(vides[0].message, /« #fugace » est invisible à la fin de son minutage/);
+});

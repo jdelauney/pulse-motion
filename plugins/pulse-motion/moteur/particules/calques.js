@@ -11,11 +11,28 @@
  *   (mémoire, texture illisible) ou scène en échec — pas de vidéo sans ses effets
  * M.particules.verifierExport() -> Promise    rejette si des effets existent et que WebGPU manque
  * M.particules.lireOrdre(idScene, ordre, emetteur) -> Promise<Uint32Array>   paires clé, index après tri (tests)
+ * M.particules.lireContacts(idScene, ordre, emetteur) -> Promise<Float32Array>   contacts des particules (collisions, tests)
+ * M.particules.lireHauteurs(idScene, ordre) -> Promise<Float32Array>   profils d'empilement de l'effet (tests)
+ * Couche commune des obstacles du déroulé : chaque effet qui y empile part de la somme des contributions des effets
+ * commencés avant lui ; la contribution d'un effet (ses sommes au dernier pas avant min(fin de son affichage, début de
+ * l'effet qui hérite)) est calculée une fois par instant en simulant l'effet, puis gardée (perdue avec le GPU, refaite
+ * après un changement de recette). La couche héritée est dessinée (bande sous les particules, couleur des effets qui
+ * l'ont formée) dans le calque de l'effet qui hérite, tant qu'il est affiché.
+ * Collisions (P3) : chaque effet dont une recette a « collisions » reçoit la table de ses obstacles (bords, éléments
+ * data-obstacle et formes de sa scène, éléments data-obstacle="video" des scènes voisines, obstacles du déroulé) ;
+ * leurs repères sont mesurés avec la zone d'émission à chaque point de la grille (P.mesurerReperes), les scènes voisines
+ * rendues à cet instant si elles sont visibles ; toutes les scènes rendues pour une mesure sont rendues de nouveau à t.
  * M.particules.remplacerEffet(idScene, ordre, effet) -> Promise   atelier : la recette compilée d'un effet remplacée,
  *   simulation recréée, instant courant rendu ; appels servis dans l'ordre ; rejette si l'effet n'a pas de simulation
  *   (balise en erreur), si WebGPU manque ou si une texture est illisible
- * M.particules.decrire(idScene) -> [{ ordre, calque, nom, debut, fin, rythme, actif, desactive }]   fenêtres (atelier)
+ * M.particules.decrire(idScene) -> [{ ordre, calque, nom, debut, fin, rythme, actif, desactive, collisions }]   fenêtres (atelier)
  * M.particules.raison      message du moteur quand WebGPU est indisponible (null sinon)
+ * M.particules.alertes     messages d'exécution (masque vide d'une forme exacte, obstacles ou couches au-delà des limites) ;
+ *   masque vide : aussi un panneau d'alerte (.pm-effet-alerte, masqué en capture) sur les effets qui visent les formes
+ * M.particules.formesVides() -> Promise<[{ scene, element, message }]>   formes exactes au masque vide (contrôle, sans GPU)
+ * Formes exactes : masque de chaque élément data-obstacle="forme" à la fin de son minutage (M.figer.masque), une fois,
+ * après la porte de disponibilité (polices chargées) ; champs de distance sur le GPU (P.creerFormes), recréés après une
+ * perte du GPU (masques gardés) ; refaits après un changement de polices.
  * ordre : rang de la balise parmi les data-effet de la scène, effets en erreur compris (comme l'assemblage).
  *
  * Réglages d'un calque (bloom, seuil, tons) : ceux de la recette au bloom le plus fort parmi tous les
@@ -34,7 +51,7 @@
   const SANS_GPU = 'Effet non affiché : WebGPU indisponible. Ouvrez la vidéo dans Chrome ou Edge récent.';
 
   const GARDE_GPU = 10000;
-  const etat = { gpu: null, rendu: null, scenes: [], t: 0, rendu_t: null, pret: Promise.resolve(), disponible: false, raison: null };
+  const etat = { gpu: null, rendu: null, scenes: [], obstacles: new Map(), masques: null, formes: null, alertes: [], t: 0, rendu_t: null, pret: Promise.resolve(), disponible: false, raison: null };
 
   function panneau(el, message) {
     if (el.querySelector(':scope > .pm-effet-panneau')) return;
@@ -42,6 +59,23 @@
     d.className = 'pm-effet-panneau';
     d.textContent = message;
     el.appendChild(d);
+  }
+
+  /** Alerte sur un effet qui reste affiché (aperçu seulement : masquée pendant une capture) ; une ligne par message. */
+  function panneauAlerte(el, message) {
+    let d = el.querySelector(':scope > .pm-effet-alerte');
+    if (!d) {
+      d = document.createElement('div');
+      d.className = 'pm-effet-alerte';
+      el.appendChild(d);
+    }
+    if (d.textContent.split('\n').indexOf(message) < 0) d.textContent = d.textContent ? d.textContent + '\n' + message : message;
+  }
+
+  /** Largeur de l'image en cqh : boîte de #pm-scene (celle de toutes les scènes, même masquées). */
+  function largeurScene() {
+    const s = document.getElementById('pm-scene');
+    return 100 * s.clientWidth / Math.max(1, s.clientHeight);
   }
 
   /** Réglages d'un calque : ceux de la recette au bloom le plus fort parmi ses effets (à égalité, le premier). */
@@ -72,6 +106,9 @@
           debut: temps ? temps.debut : info.debut,
           zones: new Map(),
           sim: null,
+          table: null,
+          reperes: new Map(),
+          largeurCqh: 0,
         });
       });
       if (!effets.length) return;
@@ -92,6 +129,247 @@
     return scenes;
   }
 
+  /** Obstacles déclarés de toutes les scènes (index dans M.donnees.obstacles), avec leur élément quand il y en a un. */
+  function recenserObstacles() {
+    const parScene = new Map();
+    (M.donnees.obstacles || []).forEach((d, index) => {
+      const section = document.querySelector('#pm-scene > section[data-scene="' + CSS.escape(d.scene) + '"]');
+      if (!section) return;
+      const decl = Object.assign({ index }, d);
+      if (d.genre === 'element' || d.genre === 'forme') {
+        decl.el = section.querySelector('[data-pm-obstacle="' + index + '"]');
+        if (!decl.el) return;
+      }
+      if (!parScene.has(d.scene)) parScene.set(d.scene, []);
+      parScene.get(d.scene).push(decl);
+    });
+    return parScene;
+  }
+
+  /** Scènes qui peuvent être visibles en même temps que idScene (transitions) : la précédente et la suivante. */
+  function voisinsDe(idScene) {
+    const ids = M.minutage.scenes.map((s) => s.id);
+    const i = ids.indexOf(idScene);
+    return [ids[i - 1], ids[i + 1]].filter(Boolean);
+  }
+
+  /** Obstacles d'un effet (null si aucune recette n'a « collisions ») ; table construite une fois. */
+  function monde(fx) {
+    if (!fx.effet.emetteurs.some((em) => em.collisions)) return null;
+    if (!fx.table) {
+      const O = M.obstacles;
+      const propres = etat.obstacles.get(fx.info.id) || [];
+      const voisins = voisinsDe(fx.info.id).flatMap((id) => (etat.obstacles.get(id) || []).filter((d) => d.video && d.el));
+      // Jamais la section de l'effet : masquée à l'instant courant, elle n'a pas de boîte (largeur nulle).
+      fx.largeurCqh = largeurScene();
+      fx.table = O.construireTable({ largeurCqh: fx.largeurCqh, solRecette: O.solDe(fx.effet), propres, voisins, video: M.donnees.obstaclesVideo || [], effet: fx.effet });
+      O.attacherFormes(fx.table, couchePour);
+      fx.reperes = new Map();
+      const ab = fx.table.abandonnes;
+      if (ab.obstacles) alerter('Scène « ' + fx.info.id + ' », effet « ' + fx.effet.nom + ' » : ' + ab.obstacles + ' obstacle(s) ignoré(s), au-delà de ' + O.MAX_TABLE + ' par effet (ceux de la vidéo sont gardés).');
+      if (ab.profils) alerter('Scène « ' + fx.info.id + ' », effet « ' + fx.effet.nom + ' » : ' + ab.profils + ' obstacle(s) sans couche d\'empilement, au-delà de ' + O.MAX_PROFILS + ' (ceux de la vidéo sont gardés) ; les particules s\'y posent sans s\'accumuler.');
+    }
+    return { entrees: fx.table.entrees, largeurCqh: fx.largeurCqh, actif: fx.table.actif, tans: fx.table.tans, formes: etat.formes ? { vue: etat.formes.vue } : null };
+  }
+
+  /** Couche du champ de distance d'une forme : numéro, null (masque vide), undefined (pas encore calculée). */
+  function couchePour(decl) {
+    if (!etat.masques || !etat.masques.has(decl.index)) return undefined;
+    if (!etat.masques.get(decl.index)) return null;
+    return etat.formes ? etat.formes.couches.get(decl.index) : undefined;
+  }
+
+  function alerter(message) {
+    if (etat.alertes.indexOf(message) >= 0) return;
+    etat.alertes.push(message);
+    console.warn('[Pulse Motion] ' + message);
+  }
+
+  function messageFormeVide(d) {
+    const nom = d.el.id ? '#' + d.el.id : '<' + d.el.localName + '>';
+    return 'Scène « ' + d.scene + ' » : l\'obstacle de forme exacte « ' + nom + ' » est invisible à la fin de son minutage (masque vide) ; il est ignoré. Le laisser visible à la fin de son minutage, ou retirer data-obstacle="forme".';
+  }
+
+  /** Masques calculés une fois (promesse partagée : contrôle de la vidéo et préparation du GPU). */
+  function masquesPromis() {
+    if (!etat.promesseMasques) etat.promesseMasques = calculerMasques().then((m) => { etat.masques = m; return m; });
+    return etat.promesseMasques;
+  }
+
+  /** Panneau d'alerte sur chaque effet dont les particules visent une forme exacte au masque vide. */
+  function signalerFormesVides() {
+    const O = M.obstacles;
+    etat.obstacles.forEach((liste) => liste.forEach((d) => {
+      if (d.genre !== 'forme' || !d.el || !etat.masques.has(d.index) || etat.masques.get(d.index)) return;
+      etat.scenes.forEach((sc) => {
+        if (sc.info.id !== d.scene && !(d.video && voisinsDe(d.scene).indexOf(sc.info.id) >= 0)) return;
+        sc.effets.forEach((fx) => {
+          if (fx.effet.emetteurs.some((em) => em.collisions && (em.collisions.masque & O.CATEGORIES.formes))) panneauAlerte(fx.el, messageFormeVide(d));
+        });
+      });
+    }));
+  }
+
+  /** Masques des formes exactes de toutes les scènes, chacun à la fin du minutage de son élément. */
+  async function calculerMasques() {
+    const masques = new Map();
+    const decls = [];
+    etat.obstacles.forEach((liste) => liste.forEach((d) => { if (d.genre === 'forme' && d.el) decls.push(d); }));
+    for (const d of decls) {
+      const info = M.minutage.scenes.find((s) => s.id === d.scene);
+      const cle = d.el.getAttribute('data-pm-cle');
+      const temps = cle ? (M.minutage.elements[d.scene] || {})[cle] : null;
+      const tFin = Math.min(temps ? temps.fin : info.fin, info.fin - 1e-6);
+      const section = d.el.closest('#pm-scene > section');
+      M.rendreScene(d.scene, tFin);
+      let promesse = null;
+      let hauteurSection = 0;
+      // Hauteur de la section lue pendant qu'elle est affichée : une scène masquée a une hauteur nulle.
+      affichee(section, () => { hauteurSection = section.clientHeight; promesse = M.figer.masque(d.el); });
+      M.rendreScene(d.scene, etat.t);
+      const m = await promesse;
+      if (!m.alpha.some((a) => a >= 128)) {
+        alerter(messageFormeVide(d));
+        masques.set(d.index, null);
+      } else {
+        m.hauteurCqh = m.hauteurPx * 100 / Math.max(1, hauteurSection);
+        masques.set(d.index, m);
+      }
+    }
+    return masques;
+  }
+
+  /** Champs de distance des formes sur le device (masques calculés une fois) ; tables des effets refaites. */
+  async function preparerFormes(device) {
+    if (!etat.masques) await masquesPromis();
+    signalerFormesVides();
+    if (etat.formes) { try { etat.formes.texture.destroy(); } catch (e) { /* device perdu */ } }
+    etat.formes = null;
+    const indices = Array.from(etat.masques.keys()).filter((i) => etat.masques.get(i));
+    if (indices.length) {
+      const f = P.creerFormes(device, indices.map((i) => etat.masques.get(i)));
+      etat.formes = { texture: f.texture, vue: f.vue, couches: new Map(indices.map((i, k) => [i, k])) };
+    }
+    etat.scenes.forEach((sc) => sc.effets.forEach((fx) => { fx.table = null; fx.reperes = new Map(); liberer(fx); }));
+  }
+
+  // Contributions des effets à la couche commune des obstacles de la vidéo : fx -> (instant -> GPUBuffer, MAX_VIDEO × 256 entiers).
+  const contributions = new Map();
+
+  function oublierContributions() {
+    contributions.forEach((parInstant) => parInstant.forEach((b) => { try { b.destroy(); } catch (e) { /* device perdu */ } }));
+    contributions.clear();
+  }
+
+  function empileSurVideo(fx) {
+    const m = monde(fx);
+    return !!(m && m.actif && m.entrees.some((e) => e.profil !== M.obstacles.AUCUN && e.source.video !== undefined));
+  }
+
+  /** Fin d'affichage d'un effet : sa fin, ou celle de sa scène. */
+  function finAffichage(fx) { return Math.min(fx.debut + fx.effet.fin / fx.info.rythme, fx.info.fin); }
+
+  /** Couleur de la couche héritée : moyenne, sur les effets qui l'ont formée, de la couleur à mi-vie de leur premier émetteur
+   *  qui empile sur les éléments (intensité comprise), opacité de leur table de vie à mi-vie. */
+  function couleurCouche(effets) {
+    const c = [0, 0, 0, 0];
+    let n = 0;
+    effets.forEach((f) => {
+      const em = f.effet.emetteurs.find((e) => e.collisions && e.collisions.empiler && (e.collisions.masque & M.obstacles.CATEGORIES.elements));
+      if (!em) return;
+      const t = em.tables;
+      const k = 32;
+      const intensite = t.intensite[k];
+      for (let i = 0; i < 3; i++) c[i] += t.couleur[k * 4 + i] * intensite;
+      c[3] += t.couleur[k * 4 + 3] * t.opacite[k];
+      n++;
+    });
+    return n ? c.map((x) => x / n) : c;
+  }
+
+  /** Bases des profils de fx : somme des contributions des effets commencés avant lui, chacune prise à l'instant
+   *  min(fin de l'effet, début de fx) (transitions comprises) ; null si aucune. Pose fx.couches (couches héritées à dessiner). */
+  function basesPour(fx, device) {
+    fx.couches = [];
+    if (!empileSurVideo(fx)) return null;
+    const O = M.obstacles;
+    const effets = etat.scenes.flatMap((sc) => sc.effets).filter(empileSurVideo);
+    const anterieurs = O.effetsAnterieurs(effets.map((f) => ({ debut: f.debut, fin: finAffichage(f) })), effets.indexOf(fx)).map((j) => effets[j]);
+    if (!anterieurs.length) return null;
+    const U = GPUBufferUsage;
+    const cumul = device.createBuffer({ size: O.MAX_VIDEO * O.CASES * 4, usage: U.STORAGE | U.COPY_SRC | U.COPY_DST });
+    anterieurs.forEach((f) => P.additionnerProfils(device, cumul, contribution(f, Math.min(finAffichage(f), fx.debut), device)));
+    const couleur = couleurCouche(anterieurs);
+    fx.table.entrees.forEach((e) => {
+      if (e.profil === O.AUCUN || e.source.video === undefined) return;
+      fx.couches.push({ debut: e.profil * O.CASES, genre: e.type, repere: O.repereFixe(e.source, fx.largeurCqh, fx.table.sol), couleur, flou: 0.6 });
+    });
+    const bases = device.createBuffer({ size: fx.table.tans.length * O.CASES * 4, usage: U.STORAGE | U.COPY_DST });
+    const enc = device.createCommandEncoder();
+    fx.table.entrees.forEach((e) => {
+      if (e.profil !== O.AUCUN && e.source.video !== undefined) enc.copyBufferToBuffer(cumul, e.source.video * O.CASES * 4, bases, e.profil * O.CASES * 4, O.CASES * 4);
+    });
+    device.queue.submit([enc.finish()]);
+    device.queue.onSubmittedWorkDone().then(() => cumul.destroy(), () => {});
+    return bases;
+  }
+
+  /** Contribution d'un effet à l'instant t (fin de son affichage, ou début d'un effet qui hérite pendant qu'il est encore
+   *  affiché) : ses sommes propres au dernier pas avant t, calculées une fois par instant. */
+  function contribution(f, t, device) {
+    if (!contributions.has(f)) contributions.set(f, new Map());
+    const parInstant = contributions.get(f);
+    if (parInstant.has(t)) return parInstant.get(t);
+    const mesures = { scenes: new Set() };
+    const m = monde(f);
+    m.bases = basesPour(f, device);
+    const sim = new P.Simulation(device, f.effet, m);
+    sim.avancer(Math.max(0, (t - f.debut) * f.info.rythme - 1e-6), zonesDe(f, mesures));
+    const c = sim.contributionVideo();
+    sim.detruire();
+    mesures.scenes.forEach((id) => M.rendreScene(id, etat.t));
+    parInstant.set(t, c);
+    return c;
+  }
+
+  /** Exécute fn avec la section affichée (une scène masquée à l'instant courant n'a pas de boîtes). */
+  function affichee(section, fn) {
+    const masquee = section.style.display === 'none';
+    if (masquee) section.style.display = '';
+    try { return fn(); } finally { if (masquee) section.style.display = 'none'; }
+  }
+
+  /** Repères de la table d'un effet à l'instant t (la scène de l'effet est déjà rendue à t). */
+  function mesurerTable(fx, t, mesures) {
+    const O = M.obstacles;
+    const entrees = fx.table.entrees;
+    const ligne = new Float32Array(entrees.length * O.REPERE);
+    const visibles = M.scenesVisibles(M.minutage, t);
+    const elements = [];
+    const rangs = [];
+    const voisines = new Map();
+    entrees.forEach((e, i) => {
+      const s = e.source;
+      if (!s.element) { O.ecrireRepere(ligne, i * O.REPERE, O.repereFixe(s, fx.largeurCqh, fx.table.sol)); return; }
+      const id = s.element.scene;
+      if (s.voisin && visibles.indexOf(id) < 0) { O.ecrireRepere(ligne, i * O.REPERE, O.INACTIF); return; }
+      if (s.voisin && !voisines.has(id)) {
+        voisines.set(id, document.querySelector('#pm-scene > section[data-scene="' + CSS.escape(id) + '"]'));
+        M.rendreScene(id, t);
+        mesures.scenes.add(id);
+      }
+      elements.push(s.element.el);
+      rangs.push(i);
+    });
+    if (elements.length) {
+      const mesurer = () => P.mesurerReperes(elements, fx.section);
+      // Sections voisines affichées le temps de la mesure (elles peuvent être masquées à l'instant courant).
+      const cadres = Array.from(voisines.values()).reduce((fn, sec) => () => affichee(sec, fn), mesurer)();
+      cadres.forEach((r, k) => O.ecrireRepere(ligne, rangs[k] * O.REPERE, r));
+    }
+    return ligne;
+  }
+
   function mesurer(fx) {
     const s = fx.section.getBoundingClientRect();
     if (!s.height) return [0, 0, 0, 0];
@@ -100,18 +378,31 @@
     return [(r.left - s.left) * k, (r.top - s.top) * k, r.width * k, r.height * k];
   }
 
-  /** Zone au point g de la grille (τ = g / 30), mesurée une fois en rendant la scène à cet instant. */
+  function instantGrille(fx, g) {
+    const info = fx.info;
+    return Math.min(Math.max(fx.debut + g / P.GRILLE / info.rythme, info.debut), info.fin - 1e-6);
+  }
+
+  /** Zone (et repères des obstacles) au point g de la grille (τ = g / 30), mesurés une fois en rendant la scène à cet instant. */
   function grille(fx, g, mesures) {
     let z = fx.zones.get(g);
-    if (!z) {
-      const info = fx.info;
-      const t = Math.min(Math.max(fx.debut + g / P.GRILLE / info.rythme, info.debut), info.fin - 1e-6);
-      M.rendreScene(info.id, t);
-      z = mesurer(fx);
+    const avecReperes = !!(fx.table && fx.table.actif);
+    if (!z || (avecReperes && !fx.reperes.has(g))) {
+      const t = instantGrille(fx, g);
+      M.rendreScene(fx.info.id, t);
+      mesures.scenes.add(fx.info.id);
+      affichee(fx.section, () => {
+        z = mesurer(fx);
+        if (avecReperes) fx.reperes.set(g, mesurerTable(fx, t, mesures));
+      });
       fx.zones.set(g, z);
-      mesures.faites = true;
     }
     return z;
+  }
+
+  function reperesGrille(fx, g, mesures) {
+    grille(fx, g, mesures);
+    return fx.reperes.get(g);
   }
 
   function zoneA(fx, tau, mesures) {
@@ -122,6 +413,15 @@
     if (f === 0) return a;
     const b = grille(fx, g + 1, mesures);
     return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f, a[3] + (b[3] - a[3]) * f];
+  }
+
+  /** Fonctions de zone et de repères d'un effet, pour P.Simulation.avancer. */
+  function zonesDe(fx, mesures) {
+    return {
+      a: (x) => zoneA(fx, x, mesures),
+      grille: (g) => grille(fx, g, mesures),
+      reperes: (g) => reperesGrille(fx, g, mesures),
+    };
   }
 
   function ajuster(canvas, section) {
@@ -172,8 +472,9 @@
   }
 
   function rendreScene(sc, t, device) {
-    const mesures = { faites: false };
+    const mesures = { scenes: new Set() };
     const listes = { arriere: [], avant: [] };
+    const couches = { arriere: [], avant: [] };
     sc.effets.forEach((fx) => {
       const tau = (t - fx.debut) * fx.info.rythme;
       if (tau < 0 || tau >= fx.effet.fin) { liberer(fx); return; }
@@ -181,23 +482,27 @@
       device.pushErrorScope('out-of-memory');
       try {
         if (!fx.sim) {
-          fx.sim = new P.Simulation(device, fx.effet);
+          const m = monde(fx);
+          if (m) m.bases = basesPour(fx, device);
+          fx.sim = new P.Simulation(device, fx.effet, m);
           fx.sim.emetteurs.forEach((e) => etat.rendu.preparerEmetteur(e));
         }
-        const deltas = fx.sim.avancer(tau, { a: (x) => zoneA(fx, x, mesures), grille: (g) => grille(fx, g, mesures) });
-        deltas.forEach((delta, i) => listes[fx.calque].push({ sim: fx.sim, i, delta }));
+        const deltas = fx.sim.avancer(tau, zonesDe(fx, mesures));
+        deltas.forEach((delta, i) => { if (!fx.sim.emetteurs[i].inerte) listes[fx.calque].push({ sim: fx.sim, i, delta }); });
+        if (fx.sim.hauteursBase) (fx.couches || []).forEach((k) => couches[fx.calque].push(Object.assign({ tampon: fx.sim.hauteursBase }, k)));
       } finally {
         device.popErrorScope().then((err) => { if (err) desactiver(fx, 'mémoire du GPU insuffisante'); }, () => {});
       }
     });
-    if (mesures.faites) M.rendreScene(sc.info.id, t);
-    const largeurCqh = 100 * sc.section.clientWidth / Math.max(1, sc.section.clientHeight);
+    // Toutes les scènes rendues à d'autres instants pour les mesures reviennent à t.
+    mesures.scenes.forEach((id) => M.rendreScene(id, t));
+    const largeurCqh = largeurScene();
     Object.keys(sc.calques).forEach((nom) => {
       const canvas = sc.calques[nom];
       ajuster(canvas, sc.section);
       const rc = sc.reglages[nom];
       etat.rendu.dessiner(etat.rendu.cible(canvas), listes[nom], {
-        largeurCqh, dureeImage: sc.info.rythme / (M.ips || 30), bloom: rc.bloom, seuil: rc.seuil_bloom, tons: rc.tons,
+        largeurCqh, dureeImage: sc.info.rythme / (M.ips || 30), bloom: rc.bloom, seuil: rc.seuil_bloom, tons: rc.tons, couches: couches[nom],
       });
     });
   }
@@ -253,6 +558,8 @@
         etat.scenes.forEach((sc) => sc.effets.forEach((fx) => {
           if (fx.effet.emetteurs.some((em) => illisibles.has(em.rendu.textureImage))) desactiver(fx, 'texture illisible');
         }));
+        return preparerFormes(gpu.device);
+      }).then(() => {
         etat.gpu = gpu;
         etat.rendu = rendu;
         etat.disponible = true;
@@ -275,6 +582,8 @@
     etat.rendu = null;
     etat.rendu_t = null;
     etat.disponible = false;
+    etat.formes = null; // texture de l'ancien device ; les masques (processeur) sont gardés
+    contributions.clear(); // tampons de l'ancien device
     etat.scenes.forEach((sc) => {
       sc.echec = false;
       sc.effets.forEach(liberer);
@@ -282,12 +591,24 @@
     demarrerGPU();
   }
 
-  /** Une police chargée après coup change les mesures : on les refait. */
+  /** Une police chargée après coup change les mesures et les masques des formes : on les refait. */
   function polices_changees() {
     if (!etat.gpu) return;
-    etat.scenes.forEach((sc) => sc.effets.forEach((fx) => { fx.zones.clear(); liberer(fx); }));
-    etat.rendu_t = null;
-    rendre(etat.t);
+    const device = etat.gpu.device;
+    etat.scenes.forEach((sc) => sc.effets.forEach((fx) => { fx.zones.clear(); fx.table = null; fx.reperes = new Map(); liberer(fx); }));
+    etat.masques = null;
+    etat.promesseMasques = null;
+    etat.alertes = [];
+    etat.scenes.forEach((sc) => sc.effets.forEach((fx) => fx.el.querySelectorAll(':scope > .pm-effet-alerte').forEach((d) => d.remove())));
+    oublierContributions();
+    // Une erreur ici ne doit pas laisser « pret » rejetée : les seeks l'attendent.
+    etat.pret = preparerFormes(device).then(() => {
+      etat.rendu_t = null;
+      rendre(etat.t);
+    }).catch((e) => {
+      console.error('[Pulse Motion] Effets de particules : ' + message(e));
+      etat.scenes.forEach((sc) => sc.effets.forEach((fx) => panneau(fx.el, 'Effet non affiché : ' + message(e))));
+    });
   }
 
   /** Seek : rend t et attend le GPU ; si le GPU est perdu entre-temps, recommence sur le nouveau. */
@@ -405,6 +726,11 @@
     fx.effet = effet;
     fx.desactive = null;
     fx.zones = new Map(); // l'ancre a pu bouger (page d'atelier)
+    fx.table = null;
+    fx.reperes = new Map();
+    // Les couches communes en dépendent : tous les effets repartent de contributions recalculées.
+    oublierContributions();
+    etat.scenes.forEach((s) => s.effets.forEach((f) => { if (f !== fx) liberer(f); }));
     fx.el.querySelectorAll(':scope > .pm-effet-panneau').forEach((p) => p.remove());
     sc.reglages[fx.calque] = reglagesCalque(sc.effets, fx.calque);
     sc.echec = false;
@@ -425,12 +751,23 @@
     get disponible() { return etat.disponible; },
     get device() { return etat.gpu ? etat.gpu.device : null; },
     get raison() { return etat.disponible ? null : etat.raison; },
+    get alertes() { return etat.alertes.slice(); },
+    /** Formes exactes au masque vide (contrôle de la vidéo, sans GPU) : [{ scene, element, message }]. */
+    formesVides() {
+      return masquesPromis().then((masques) => {
+        const r = [];
+        etat.obstacles.forEach((liste) => liste.forEach((d) => {
+          if (d.genre === 'forme' && d.el && masques.has(d.index) && !masques.get(d.index)) r.push({ scene: d.scene, element: d.el.id || d.el.localName, message: messageFormeVide(d) });
+        }));
+        return r;
+      });
+    },
     remplacerEffet,
     decrire(idScene) {
       const sc = trouver(idScene);
       return sc ? sc.effets.map((fx) => ({
         ordre: fx.ordre, calque: fx.calque, nom: fx.effet.nom, debut: fx.debut,
-        fin: fx.debut + fx.effet.fin / fx.info.rythme, rythme: fx.info.rythme, actif: !!fx.sim, desactive: fx.desactive || null,
+        fin: fx.debut + fx.effet.fin / fx.info.rythme, rythme: fx.info.rythme, actif: !!fx.sim, desactive: fx.desactive || null, collisions: !!(monde(fx) && fx.table.actif),
       })) : [];
     },
     lirePixels(idScene, calque) {
@@ -444,6 +781,18 @@
       const fx = sc && sc.effets.find((f) => f.ordre === ordre);
       if (!fx || !fx.sim) return Promise.reject(new Error('Effet ' + ordre + ' de la scène « ' + idScene + ' » non simulé.'));
       return fx.sim.lireEtat(emetteur);
+    },
+    lireContacts(idScene, ordre, emetteur) {
+      const sc = trouver(idScene);
+      const fx = sc && sc.effets.find((f) => f.ordre === ordre);
+      if (!fx || !fx.sim) return Promise.reject(new Error('Effet ' + ordre + ' de la scène « ' + idScene + ' » non simulé.'));
+      return fx.sim.lireContacts(emetteur);
+    },
+    lireHauteurs(idScene, ordre) {
+      const sc = trouver(idScene);
+      const fx = sc && sc.effets.find((f) => f.ordre === ordre);
+      if (!fx || !fx.sim) return Promise.reject(new Error('Effet ' + ordre + ' de la scène « ' + idScene + ' » non simulé.'));
+      return fx.sim.lireHauteurs();
     },
     preparerCapture,
     image(idScene, calque) {
@@ -462,6 +811,7 @@
   };
 
   M.demarrerParticules = function () {
+    etat.obstacles = recenserObstacles();
     etat.scenes = recenser();
     if (!etat.scenes.length) return;
     M.surRendu(rendre);
