@@ -242,3 +242,17 @@ test('guidage du son : animateur (mot:, data-son), retoucher (lignes du son), ex
   assert.match(exporter, /\.srt/);
   assert.match(exporter, /\.vtt/);
 });
+
+test('revue : consignes du son exactes (pas de voix.fichier, import relancé après Whisper, repli, place du tempo)', () => {
+  const audio = lire('references', 'audio.md');
+  assert.doesNotMatch(audio, /\| `voix\.fichier` \|/);
+  assert.match(audio, /\| `musique\.tempo` \|/);
+  const creer = lire('skills', 'creer', 'SKILL.md');
+  assert.match(creer, /"musique": \{ "generee": "<ambiance>", "tempo": 120/);
+  const whisper = creer.indexOf('`pulse-motion whisper`');
+  const importer = creer.indexOf('pulse-motion voix importer assets/<fichier> .');
+  assert.ok(whisper > 0 && importer > whisper, 'la transcription se vérifie avant l\'import d\'un enregistrement entier');
+  assert.match(creer, /relancer `pulse-motion voix importer assets\/<fichier> \.`/);
+  assert.match(creer, /relancer `pulse-motion whisper`/);
+  assert.match(creer, /relancer Claude Code/);
+});
