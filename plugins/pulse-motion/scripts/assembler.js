@@ -139,6 +139,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   const sons = [];
   const blocSon = (id, uri) => `<script type="text/plain" id="${id}">${uri}</script>`;
   let fichiersSons = 0;
+  const sonsEmbarques = new Map();   // chemin du son -> id du bloc
   const effets = [];
   for (const scene of deroule.scenes) {
     const fichier = cheminDansProjet(projet, scene.fichier);
@@ -168,12 +169,20 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     effets.push(...effetsScene);
     erreurs.push(...erreursEffets);
     // Sons importés (data-son="assets/…") : embarqués en bloc, l'attribut désigne le bloc ; un nom de bruitage reste tel quel.
-    const avecSons = avecEffets.replace(/(\sdata-son=)(["'])([^"']+)\2/g, (tout, debut, guillemet, valeur) => {
+    // Valeur entre guillemets doubles ou simples (une apostrophe dans un chemin entre guillemets doubles reste au chemin) ;
+    // un même fichier n'est embarqué qu'une fois.
+    const avecSons = avecEffets.replace(/(\sdata-son=)(?:"([^"]+)"|'([^']+)')/g, (tout, debut, double, simple) => {
+      const valeur = double !== undefined ? double : simple;
+      const guillemet = double !== undefined ? '"' : "'";
       if (!/[/.]/.test(valeur)) return tout;
-      const uri = embarquerFichier(projet, valeur, `Son « ${valeur} » (scène « ${scene.id} »)`, erreurs);
-      if (!uri) return tout;
-      const id = `pm-son-fichier-${fichiersSons++}`;
-      sons.push(blocSon(id, uri));
+      let id = sonsEmbarques.get(valeur);
+      if (!id) {
+        const uri = embarquerFichier(projet, valeur, `Son « ${valeur} » (scène « ${scene.id} »)`, erreurs);
+        if (!uri) return tout;
+        id = `pm-son-fichier-${fichiersSons++}`;
+        sons.push(blocSon(id, uri));
+        sonsEmbarques.set(valeur, id);
+      }
       return `${debut}${guillemet}fichier:${id}${guillemet}`;
     });
     const { html: embarque, erreurs: erreursRes } = embarquerRessources(S.injecterLogo(avecSons, uriLogo), projet, `scène « ${scene.id} »`);

@@ -76,9 +76,11 @@
     var pistes = [];
 
     // Un accord par mesure ; tous les 2 mesures (8 temps), la graine choisit le renversement.
-    var accords = [], renverse = false;
+    // racines : fondamentale de chaque accord, gardée pour la basse quand l'accord est renversé.
+    var accords = [], racines = [], renverse = false;
     for (var i = 0; i < corps; i++) {
       var notes = accord(tonique, gamme, progression[i % progression.length]);
+      racines.push(notes[0]);
       if (i % 2 === 0) renverse = hasard() < 0.5;
       if (renverse) notes = [notes[1], notes[2], notes[0] + 12];
       accords.push(notes);
@@ -94,15 +96,15 @@
         pistes.push({ instrument: 'pad', volume: 0.35, motif: accords.map(function (a) { return a.map(nom).join('+') + ' 1'; }), de: 0, a: corps });
       } else if (recette.nappe === 'nappe-bruit') {
         pistes.push({ instrument: 'nappe-bruit', volume: 0.5, motif: ['x 1'], de: 0, a: corps });
-        pistes.push({ instrument: 'pad', volume: 0.4, motif: accords.map(function (a) { return nom(a[0] - 12) + '+' + nom(a[0]) + ' 1'; }), de: 0, a: corps });
+        pistes.push({ instrument: 'pad', volume: 0.4, motif: racines.map(function (n) { return nom(n - 12) + '+' + nom(n) + ' 1'; }), de: 0, a: corps });
       } else {
         pistes.push({ instrument: 'pad', volume: 0.55, motif: accords.map(function (a) { return a.map(nom).join('+') + ' 1'; }), de: 0, a: corps });
       }
       // Basse : fondamentale une octave plus bas, au rythme de l'ambiance.
       if (intensite >= 0.25) {
-        pistes.push({ instrument: 'basse', volume: 0.6, motif: [].concat.apply([], accords.map(function (a) {
+        pistes.push({ instrument: 'basse', volume: 0.6, motif: [].concat.apply([], racines.map(function (n) {
           var pas = [], temps = 0, j = 0;
-          while (temps < 1 - 1e-9) { var r = recette.rythmeBasse[j++ % recette.rythmeBasse.length]; pas.push(nom(a[0] - 12) + ' ' + r); temps += fraction(r); }
+          while (temps < 1 - 1e-9) { var r = recette.rythmeBasse[j++ % recette.rythmeBasse.length]; pas.push(nom(n - 12) + ' ' + r); temps += fraction(r); }
           return pas;
         })), de: 0, a: corps });
       }
@@ -127,6 +129,10 @@
         pistes.push({ instrument: 'kick', volume: 0.7, motif: ['x 1/4'], de: intro, a: corps });
         pistes.push({ instrument: 'charleston', volume: 0.35, motif: ['- 1/8', 'x 1/8 0.7'], de: intro, a: corps });
         if (o.ambiance !== 'suspense') pistes.push({ instrument: 'caisse', volume: 0.5, motif: ['- 1/4', 'x 1/4'], de: intro, a: corps });
+      }
+      // Sub (basse profonde) sur le premier temps, pour les ambiances qui poussent, à forte intensité.
+      if ((o.ambiance === 'tech' || o.ambiance === 'entrainant') && intensite >= 0.8 && intro < corps) {
+        pistes.push({ instrument: 'sub', volume: 0.5, motif: racines.slice(intro).map(function (n) { return nom(n - 24) + ' 1/4'; }).reduce(function (m, p) { return m.concat([p, '- 3/4']); }, []), de: intro, a: corps });
       }
       // Montée sur la dernière seconde de l'avant-dernière scène, au seizième de mesure près.
       if (scenes.length >= 2) {
