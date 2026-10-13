@@ -5,6 +5,8 @@
  * data-reglages="nom: valeur; …" data-graine="7" data-start="…" data-dur="…"></div>.
  * Les recettes sont cherchées dans <projet>/effets/ puis dans la bibliothèque du plugin.
  * Chaque balise reçoit data-pm-effet="N" (index dans M.donnees.effets) ou data-pm-effet-erreur.
+ * Atelier : balisesEffets repère les balises (positions dans le texte d'origine, même rang que l'assemblage),
+ * reecrireBalise et modifierEffet changent quelques attributs sans toucher au reste.
  */
 const fs = require('node:fs');
 const path = require('node:path');
@@ -49,6 +51,63 @@ function fnv1a(texte) {
   return h >>> 0;
 }
 
+/** Graine par défaut d'un effet : nom de scène, rang de la balise, nom de recette. */
+function graineParDefaut(scene, ordre, nom) {
+  return fnv1a(`${scene}|${ordre}|${nom}`);
+}
+
+/** Scripts puis commentaires remplacés par des espaces (mêmes longueurs) : comme l'assemblage, qui retire les
+ *  scripts puis les commentaires, mais les positions restent celles du texte d'origine. */
+function masquer(html) {
+  const blanc = (t) => t.replace(/[^\n]/g, ' ');
+  return String(html).replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, blanc).replace(/<!--[\s\S]*?-->/g, blanc);
+}
+
+/** balisesEffets(html) -> [{ ordre, debut, fin, balise, attributs, texte }] : balises data-effet dans l'ordre du document. */
+function balisesEffets(html) {
+  const source = String(html);
+  const liste = [];
+  for (const m of masquer(source).matchAll(BALISE)) {
+    const attributs = lireAttributs(m[2]);
+    if (!('data-effet' in attributs)) continue;
+    const fin = m.index + m[0].length;
+    liste.push({ ordre: liste.length, debut: m.index, fin, balise: m[1], attributs, texte: source.slice(m.index, fin) });
+  }
+  return liste;
+}
+
+const ATTRIBUT_EN_PLACE = /(\s*)([^\s"'=<>/]+)(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'>]+))?/g;
+const echapperAttribut = (v) => String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+/**
+ * reecrireBalise('<div data-effet="x" …>', { 'data-reglages': 'nombre: 3', 'data-graine': null }) -> texte
+ * Attribut présent : remplacé à sa place (guillemets doubles) ou retiré avec l'espace qui le précède ;
+ * absent : ajouté en fin de balise. Les autres attributs, les retours à la ligne et « /> » restent tels quels.
+ */
+function reecrireBalise(texte, changements) {
+  const m = /^<([a-zA-Z][\w-]*)\b((?:[^>"']|"[^"]*"|'[^']*')*)>$/.exec(texte);
+  if (!m) throw new Error(`Balise illisible : ${texte.slice(0, 60)}`);
+  const fermante = (/\s*\/\s*$/.exec(m[2]) || [''])[0];
+  let attributs = fermante ? m[2].slice(0, -fermante.length) : m[2];
+  const restants = new Map(Object.entries(changements));
+  attributs = attributs.replace(ATTRIBUT_EN_PLACE, (tout, espace, nom) => {
+    const cle = nom.toLowerCase();
+    if (!restants.has(cle)) return tout;
+    const v = restants.get(cle);
+    restants.delete(cle);
+    return v === null ? '' : `${espace || ' '}${cle}="${echapperAttribut(v)}"`;
+  });
+  for (const [nom, v] of restants) if (v !== null) attributs += ` ${nom}="${echapperAttribut(v)}"`;
+  return `<${m[1]}${attributs}${fermante}>`;
+}
+
+/** modifierEffet(html, ordre, changements) -> html, ou null si la scène n'a pas de balise data-effet de ce rang. */
+function modifierEffet(html, ordre, changements) {
+  const b = balisesEffets(html)[ordre];
+  if (!b) return null;
+  return html.slice(0, b.debut) + reecrireBalise(b.texte, changements) + html.slice(b.fin);
+}
+
 /**
  * preparerEffets(html, { scene, projet, bibliotheque, charte, premierIndex, dureeTemps })
  * dureeTemps : secondes par temps musical (tempo du déroulé), pour un data-dur écrit en « t ».
@@ -88,7 +147,7 @@ function preparerEffets(html, { scene, projet, bibliotheque, charte = {}, premie
       if (!m || !ids.has(m[1])) return signaler([{ regle: 'ancre-introuvable', message: `data-ancre « ${a['data-ancre']} » ne désigne aucun élément de la scène (forme attendue : #id).` }]);
       ancre = m[1];
     }
-    let graine = fnv1a(`${scene}|${position}|${nom}`);
+    let graine = graineParDefaut(scene, position, nom);
     if (a['data-graine'] !== undefined) {
       if (!/^\d+$/.test(a['data-graine'].trim())) return signaler([{ regle: 'effet-invalide', message: `data-graine « ${a['data-graine']} » : nombre entier attendu.` }]);
       graine = Number(a['data-graine'].trim()) >>> 0;
@@ -123,4 +182,4 @@ function preparerEffets(html, { scene, projet, bibliotheque, charte = {}, premie
   return { html: sortie, effets, erreurs };
 }
 
-module.exports = { chargeurRecettes, fnv1a, preparerEffets };
+module.exports = { chargeurRecettes, fnv1a, graineParDefaut, preparerEffets, balisesEffets, reecrireBalise, modifierEffet };
