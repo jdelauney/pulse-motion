@@ -37,7 +37,9 @@ function pageErreur(erreurs) {
 function injecterApercu(html, erreurs) {
   const script = `<script>window.__PM_APERCU__ = true; window.__PM_ERREURS__ = ${JSON.stringify(erreurs).replace(/</g, '\\u003c')};</script>` +
     '\n<script src="/_pm/capture.js"></script>\n<script type="module" src="/_pm/export-ui.mjs"></script>' +
-    '\n<script type="module" src="/_pm/studio.mjs"></script>';
+    '\n<script type="module" src="/_pm/studio.mjs"></script>' +
+    '\n<script defer src="/_pm/atelier/expression.js"></script>\n<script defer src="/_pm/atelier/recette.js"></script>' +
+    '\n<script type="module" src="/_pm/atelier/panneau.mjs"></script>';
   return html.replace('</head>', `${script}\n</head>`);
 }
 

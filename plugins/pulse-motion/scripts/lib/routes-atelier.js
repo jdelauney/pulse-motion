@@ -8,6 +8,7 @@
  *   POST /_pm/atelier/reglages              { fichier, empreinte, scene, ordre, reglages, graine } -> { ok, empreinte }
  *   POST /_pm/atelier/recette               { nom, etend, recette, description?, dur?, remplacer?,
  *                                             cible?: { scene, ordre, empreinte, reglages, graine } } -> { ok, fichier, complete, empreinte? }
+ *   GET  /_pm/atelier/expression.js, recette.js, editeur.mjs, panneau.mjs   modules de l'atelier
  *   effet : { ordre, nom, calque, ancre, reglages, graine, graineEcrite, dur, recette | null, erreur | null }
  * Écritures : JSON seulement (une autre origine est arrêtée par la requête préalable CORS), copie dans
  * .historique/ avant, fichier temporaire puis renommage ; 409 si la scène a changé sur le disque ({ conflit: true })
@@ -31,7 +32,15 @@ const NOM = /^[a-z0-9-]+$/;
 const REGLAGES_SURS = /^[^"<>&\r\n]*$/;
 const MAX_CORPS = 2e6;
 // Fichiers servis tels quels : { chemin: { fichier, type } } (modules de l'atelier, plans 3 et 4).
-const STATIQUES = {};
+const ATELIER = path.join(RACINE, 'moteur', 'atelier');
+const PARTICULES = path.join(RACINE, 'moteur', 'particules');
+const JS = 'text/javascript; charset=utf-8';
+const STATIQUES = {
+  '/_pm/atelier/expression.js': { fichier: path.join(PARTICULES, 'expression.js'), type: JS },
+  '/_pm/atelier/recette.js': { fichier: path.join(PARTICULES, 'recette.js'), type: JS },
+  '/_pm/atelier/editeur.mjs': { fichier: path.join(ATELIER, 'editeur.mjs'), type: JS },
+  '/_pm/atelier/panneau.mjs': { fichier: path.join(ATELIER, 'panneau.mjs'), type: JS },
+};
 // Contenus fabriqués à la demande : { chemin: () => ({ type, corps }) } (page d'atelier, plan 4).
 const GENERES = {};
 
