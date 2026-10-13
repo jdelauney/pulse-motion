@@ -148,6 +148,11 @@
     if (sons.length) {
       var contexteSons = nouveauContexte();
       var bruitSons = M.synthe.bruit(contexteSons, 777);
+      // Fondu de sortie de 0,3 s en fin de vidéo : un son long ne s'arrête pas net.
+      var sortieSons = contexteSons.createGain();
+      sortieSons.gain.setValueAtTime(1, Math.max(0, duree - 0.3));
+      sortieSons.gain.linearRampToValueAtTime(0, duree);
+      sortieSons.connect(contexteSons.destination);
       for (var s = 0; s < sons.length; s++) {
         var ev = sons[s];
         if (ev.fichier) {
@@ -156,10 +161,10 @@
             src.buffer = await decoder(contexteSons, ev.fichier);
             var gf = contexteSons.createGain();
             gf.gain.value = ev.volume;
-            src.connect(gf).connect(contexteSons.destination);
+            src.connect(gf).connect(sortieSons);
             src.start(ev.t);
           } catch (e) { avertissements.push('Un son importé n\'a pas pu être lu.'); }
-        } else M.synthe.bruitages.jouer(contexteSons, contexteSons.destination, ev.nom, ev.t, ev.volume, bruitSons);
+        } else M.synthe.bruitages.jouer(contexteSons, sortieSons, ev.nom, ev.t, ev.volume, bruitSons);
       }
       bus.push({ tampon: await contexteSons.startRendering(), volume: volumeDe(d.bruitages) });
     }
