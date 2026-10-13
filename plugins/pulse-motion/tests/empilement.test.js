@@ -52,9 +52,10 @@ async function lire(effet, chemin, cadreBoite) {
   sim.detruire();
   return { h: Array.from(h), etats, tard: { x: tard[0], y: tard[1], vivante: new Uint32Array(tard.buffer)[14] } };
 }
-const direct = await lire(DONNEES.effet, [4]);
-const detour = await lire(DONNEES.effet, [6, 1, 3.4, 4]);
-const pasAPas = await lire(DONNEES.effet, Array.from({ length: 120 }, (_, i) => (i + 1) / 30));
+// Lecture à τ = 4,5 : la tardive (≈ 1,1 s de chute jusqu'au haut du tas, creux possible au centre) est posée.
+const direct = await lire(DONNEES.effet, [4.5]);
+const detour = await lire(DONNEES.effet, [6, 1, 3.4, 4.5]);
+const pasAPas = await lire(DONNEES.effet, Array.from({ length: 135 }, (_, i) => (i + 1) / 30));
 // Boîte tournée de 70° : pas de profil (cos 70° < 0,5).
 const boite = await lire(DONNEES.penche, [3], { centre: [88.89, 60], angle: 70 * Math.PI / 180, demi: [15, 3], echelle: [1, 1], actif: true });
 await envoyer({ webgpu: true, direct, memes: JSON.stringify(direct) === JSON.stringify(detour) && JSON.stringify(direct) === JSON.stringify(pasAPas), boite: boite.h });`;
