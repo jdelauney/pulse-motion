@@ -11,6 +11,7 @@
  *   versLocal(r, p), versMonde(r, l)
  * Table d'un effet : construireTable({ largeurCqh, solRecette, propres, voisins, video }) -> { entrees, actif, sol },
  *   solDe(effet), emballerMonde(entrees, nGrille, largeurCqh, tans) -> ArrayBuffer (uniforme « Monde » du WGSL)
+ *   attacherFormes(table, couchePour) : formes exactes (type 4) attachées à leur couche de champ de distance
  * Coordonnées en cqh depuis le coin haut gauche de la scène, angles en degrés.
  *
  * Module pur : chargé tel quel dans la page (global M.obstacles) et par Node (require).
@@ -227,6 +228,18 @@
     return b;
   }
 
+  /** Formes exactes : couche du champ de distance (type forme), masque vide (jamais ciblé), ou boîte en attendant. */
+  function attacherFormes(table, couchePour) {
+    table.entrees.forEach(function (e) {
+      var d = e.source.element;
+      if (!d || d.genre !== 'forme') return;
+      var c = couchePour(d);
+      if (c === null) e.categorie = 0;
+      else if (typeof c === 'number') { e.type = TYPES.forme; e.forme = c; }
+    });
+    return table;
+  }
+
   return {
     MAX_SCENE: MAX_SCENE,
     MAX_VIDEO: MAX_VIDEO,
@@ -248,6 +261,7 @@
     versLocal: versLocal,
     versMonde: versMonde,
     construireTable: construireTable,
+    attacherFormes: attacherFormes,
     solDe: solDe,
     emballerMonde: emballerMonde,
   };
