@@ -240,3 +240,57 @@ await envoyer({ webgpu: true, deterministe: egal(direct, detour) && egal(direct,
   assert.ok(r.posees > 0, 'des particules sont posées');
   assert.equal(r.deterministe, true);
 });
+
+test('collisions GPU : obstacle qui disparaît (repère inactif) : particules posées libérées sur place, sans être projetées', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const effet = compiler([point('a', { nombre: 20, forme: { type: 'ligne', largeur: 18 }, forces: [{ type: 'gravite', valeur: 40 }], collisions: { cibles: ['elements'], reponse: 'poser' } })], 0.1);
+  const r = await page({ effet }, `
+const table = O.construireTable({ largeurCqh: L, solRecette: null, propres: [{ scene: 's', genre: 'element', video: false, index: 0 }] });
+const bords = fixes(table).slice(0, 3);
+// Boîte immobile (centre (60, 70), 40 × 10 cqh), présente jusqu'au point de grille 29 (τ = 0,967 s), absente ensuite
+// (scène voisine masquée à la fin d'une transition).
+const reperes = (g) => ligne([...bords, g < 30 ? { centre: [60, 70], angle: 0, demi: [20, 5], echelle: [1, 1], actif: true } : O.INACTIF]);
+const z = { a: () => [51, 40, 18, 0], grille: () => [51, 40, 18, 0], reperes };
+const sim = new P.Simulation(device, DONNEES.effet, monde(table));
+sim.avancer(0.95, z);
+const avant = lireC(await sim.lireContacts(0)).filter((c) => c.obstacle === 3).length;
+const suite = [];
+for (const tau of [0.975, 1, 1.05, 1.1]) {
+  sim.avancer(tau, z);
+  suite.push({ tau, p: lireP(await sim.lireEtat(0)), c: lireC(await sim.lireContacts(0)) });
+}
+sim.detruire();
+await envoyer({ webgpu: true, avant, suite });`);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.ok(r.avant >= 15, `${r.avant} particules posées sur la boîte avant sa disparition`);
+  for (const { tau, p, c } of r.suite) {
+    assert.equal(p.length, 20, `τ = ${tau} : toutes vivantes`);
+    for (const q of p) {
+      assert.ok(Math.abs(q.vx) < 0.5 && q.vy > -0.5 && q.vy < 7, `τ = ${tau} : vitesse bornée (${q.vx}, ${q.vy})`);
+      assert.ok(q.x > 50 && q.x < 70 && q.y > 64 && q.y < 66, `τ = ${tau} : sur place (${q.x}, ${q.y})`);
+    }
+    if (tau >= 1) assert.ok(c.every((k) => k.obstacle !== 3), `τ = ${tau} : plus aucune particule posée sur la boîte absente`);
+  }
+});
+
+test('collisions : « pluie » sans obstacle garde la voie rapide ; l\'enfant « a_la_collision » n\'est pas simulé', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const r0 = R.compiler(require('../effets/pluie.json'), { dur: 3, graine: 2, charte: {} });
+  assert.equal(r0.ok, true, JSON.stringify(r0.erreurs));
+  const r = await page({ effet: r0.effet }, `
+const decrire = (sim) => ({ rapides: sim.emetteurs.map((e) => e.rapide), inertes: sim.emetteurs.map((e) => !!e.inerte), simules: sim.simules.length });
+const sans = new P.Simulation(device, DONNEES.effet, null);
+const z = { a: () => [0, -55, 177, 0], grille: () => [0, -55, 177, 0] };
+const deltas = sans.avancer(1, z);
+const a = decrire(sans);
+sans.detruire();
+const table = O.construireTable({ largeurCqh: L, solRecette: 90 });
+const avec = new P.Simulation(device, DONNEES.effet, monde(table));
+const b = decrire(avec);
+avec.detruire();
+await envoyer({ webgpu: true, a, b, deltas });`);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.deepEqual(r.a, { rapides: [true, false], inertes: [false, true], simules: 0 }, 'sans obstacle : rien de simulé pas à pas');
+  assert.deepEqual(r.deltas, [0, 0]);
+  assert.deepEqual(r.b, { rapides: [false, false], inertes: [false, false], simules: 2 }, 'avec collisions : parent et enfant simulés');
+});

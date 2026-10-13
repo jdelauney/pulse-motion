@@ -14,8 +14,10 @@
  * M.particules.lireContacts(idScene, ordre, emetteur) -> Promise<Float32Array>   contacts des particules (collisions, tests)
  * M.particules.lireHauteurs(idScene, ordre) -> Promise<Float32Array>   profils d'empilement de l'effet (tests)
  * Couche commune des obstacles du déroulé : chaque effet qui y empile part de la somme des contributions des effets
- * finis avant son début ; la contribution d'un effet (ses sommes au dernier pas avant la fin de son affichage) est
- * calculée une fois en simulant l'effet, puis gardée (perdue avec le GPU, refaite après un changement de recette).
+ * commencés avant lui ; la contribution d'un effet (ses sommes au dernier pas avant min(fin de son affichage, début de
+ * l'effet qui hérite)) est calculée une fois par instant en simulant l'effet, puis gardée (perdue avec le GPU, refaite
+ * après un changement de recette). La couche héritée est dessinée (bande sous les particules, couleur des effets qui
+ * l'ont formée) dans le calque de l'effet qui hérite, tant qu'il est affiché.
  * Collisions (P3) : chaque effet dont une recette a « collisions » reçoit la table de ses obstacles (bords, éléments
  * data-obstacle et formes de sa scène, éléments data-obstacle="video" des scènes voisines, obstacles du déroulé) ;
  * leurs repères sont mesurés avec la zone d'émission à chaque point de la grille (P.mesurerReperes), les scènes voisines
@@ -25,7 +27,9 @@
  *   (balise en erreur), si WebGPU manque ou si une texture est illisible
  * M.particules.decrire(idScene) -> [{ ordre, calque, nom, debut, fin, rythme, actif, desactive, collisions }]   fenêtres (atelier)
  * M.particules.raison      message du moteur quand WebGPU est indisponible (null sinon)
- * M.particules.alertes     messages d'exécution (masque vide d'une forme exacte…)
+ * M.particules.alertes     messages d'exécution (masque vide d'une forme exacte, obstacles ou couches au-delà des limites) ;
+ *   masque vide : aussi un panneau d'alerte (.pm-effet-alerte, masqué en capture) sur les effets qui visent les formes
+ * M.particules.formesVides() -> Promise<[{ scene, element, message }]>   formes exactes au masque vide (contrôle, sans GPU)
  * Formes exactes : masque de chaque élément data-obstacle="forme" à la fin de son minutage (M.figer.masque), une fois,
  * après la porte de disponibilité (polices chargées) ; champs de distance sur le GPU (P.creerFormes), recréés après une
  * perte du GPU (masques gardés) ; refaits après un changement de polices.
@@ -55,6 +59,23 @@
     d.className = 'pm-effet-panneau';
     d.textContent = message;
     el.appendChild(d);
+  }
+
+  /** Alerte sur un effet qui reste affiché (aperçu seulement : masquée pendant une capture) ; une ligne par message. */
+  function panneauAlerte(el, message) {
+    let d = el.querySelector(':scope > .pm-effet-alerte');
+    if (!d) {
+      d = document.createElement('div');
+      d.className = 'pm-effet-alerte';
+      el.appendChild(d);
+    }
+    if (d.textContent.split('\n').indexOf(message) < 0) d.textContent = d.textContent ? d.textContent + '\n' + message : message;
+  }
+
+  /** Largeur de l'image en cqh : boîte de #pm-scene (celle de toutes les scènes, même masquées). */
+  function largeurScene() {
+    const s = document.getElementById('pm-scene');
+    return 100 * s.clientWidth / Math.max(1, s.clientHeight);
   }
 
   /** Réglages d'un calque : ceux de la recette au bloom le plus fort parmi ses effets (à égalité, le premier). */
@@ -139,10 +160,14 @@
       const O = M.obstacles;
       const propres = etat.obstacles.get(fx.info.id) || [];
       const voisins = voisinsDe(fx.info.id).flatMap((id) => (etat.obstacles.get(id) || []).filter((d) => d.video && d.el));
-      fx.largeurCqh = 100 * fx.section.clientWidth / Math.max(1, fx.section.clientHeight);
+      // Jamais la section de l'effet : masquée à l'instant courant, elle n'a pas de boîte (largeur nulle).
+      fx.largeurCqh = largeurScene();
       fx.table = O.construireTable({ largeurCqh: fx.largeurCqh, solRecette: O.solDe(fx.effet), propres, voisins, video: M.donnees.obstaclesVideo || [], effet: fx.effet });
       O.attacherFormes(fx.table, couchePour);
       fx.reperes = new Map();
+      const ab = fx.table.abandonnes;
+      if (ab.obstacles) alerter('Scène « ' + fx.info.id + ' », effet « ' + fx.effet.nom + ' » : ' + ab.obstacles + ' obstacle(s) ignoré(s), au-delà de ' + O.MAX_TABLE + ' par effet (ceux de la vidéo sont gardés).');
+      if (ab.profils) alerter('Scène « ' + fx.info.id + ' », effet « ' + fx.effet.nom + ' » : ' + ab.profils + ' obstacle(s) sans couche d\'empilement, au-delà de ' + O.MAX_PROFILS + ' (ceux de la vidéo sont gardés) ; les particules s\'y posent sans s\'accumuler.');
     }
     return { entrees: fx.table.entrees, largeurCqh: fx.largeurCqh, actif: fx.table.actif, tans: fx.table.tans, formes: etat.formes ? { vue: etat.formes.vue } : null };
   }
@@ -155,8 +180,34 @@
   }
 
   function alerter(message) {
+    if (etat.alertes.indexOf(message) >= 0) return;
     etat.alertes.push(message);
     console.warn('[Pulse Motion] ' + message);
+  }
+
+  function messageFormeVide(d) {
+    const nom = d.el.id ? '#' + d.el.id : '<' + d.el.localName + '>';
+    return 'Scène « ' + d.scene + ' » : l\'obstacle de forme exacte « ' + nom + ' » est invisible à la fin de son minutage (masque vide) ; il est ignoré. Le laisser visible à la fin de son minutage, ou retirer data-obstacle="forme".';
+  }
+
+  /** Masques calculés une fois (promesse partagée : contrôle de la vidéo et préparation du GPU). */
+  function masquesPromis() {
+    if (!etat.promesseMasques) etat.promesseMasques = calculerMasques().then((m) => { etat.masques = m; return m; });
+    return etat.promesseMasques;
+  }
+
+  /** Panneau d'alerte sur chaque effet dont les particules visent une forme exacte au masque vide. */
+  function signalerFormesVides() {
+    const O = M.obstacles;
+    etat.obstacles.forEach((liste) => liste.forEach((d) => {
+      if (d.genre !== 'forme' || !d.el || !etat.masques.has(d.index) || etat.masques.get(d.index)) return;
+      etat.scenes.forEach((sc) => {
+        if (sc.info.id !== d.scene && !(d.video && voisinsDe(d.scene).indexOf(sc.info.id) >= 0)) return;
+        sc.effets.forEach((fx) => {
+          if (fx.effet.emetteurs.some((em) => em.collisions && (em.collisions.masque & O.CATEGORIES.formes))) panneauAlerte(fx.el, messageFormeVide(d));
+        });
+      });
+    }));
   }
 
   /** Masques des formes exactes de toutes les scènes, chacun à la fin du minutage de son élément. */
@@ -172,14 +223,16 @@
       const section = d.el.closest('#pm-scene > section');
       M.rendreScene(d.scene, tFin);
       let promesse = null;
-      affichee(section, () => { promesse = M.figer.masque(d.el); });
+      let hauteurSection = 0;
+      // Hauteur de la section lue pendant qu'elle est affichée : une scène masquée a une hauteur nulle.
+      affichee(section, () => { hauteurSection = section.clientHeight; promesse = M.figer.masque(d.el); });
       M.rendreScene(d.scene, etat.t);
       const m = await promesse;
       if (!m.alpha.some((a) => a >= 128)) {
-        alerter('Scène « ' + d.scene + ' » : un obstacle de forme exacte est invisible à la fin de son minutage (masque vide) ; il est ignoré.');
+        alerter(messageFormeVide(d));
         masques.set(d.index, null);
       } else {
-        m.hauteurCqh = m.hauteurPx * 100 / Math.max(1, section.clientHeight);
+        m.hauteurCqh = m.hauteurPx * 100 / Math.max(1, hauteurSection);
         masques.set(d.index, m);
       }
     }
@@ -188,7 +241,8 @@
 
   /** Champs de distance des formes sur le device (masques calculés une fois) ; tables des effets refaites. */
   async function preparerFormes(device) {
-    if (!etat.masques) etat.masques = await calculerMasques();
+    if (!etat.masques) await masquesPromis();
+    signalerFormesVides();
     if (etat.formes) { try { etat.formes.texture.destroy(); } catch (e) { /* device perdu */ } }
     etat.formes = null;
     const indices = Array.from(etat.masques.keys()).filter((i) => etat.masques.get(i));
@@ -199,11 +253,11 @@
     etat.scenes.forEach((sc) => sc.effets.forEach((fx) => { fx.table = null; fx.reperes = new Map(); liberer(fx); }));
   }
 
-  // Contributions des effets à la couche commune des obstacles de la vidéo : fx -> GPUBuffer (MAX_VIDEO × 256 entiers).
+  // Contributions des effets à la couche commune des obstacles de la vidéo : fx -> (instant -> GPUBuffer, MAX_VIDEO × 256 entiers).
   const contributions = new Map();
 
   function oublierContributions() {
-    contributions.forEach((b) => { try { b.destroy(); } catch (e) { /* device perdu */ } });
+    contributions.forEach((parInstant) => parInstant.forEach((b) => { try { b.destroy(); } catch (e) { /* device perdu */ } }));
     contributions.clear();
   }
 
@@ -215,8 +269,28 @@
   /** Fin d'affichage d'un effet : sa fin, ou celle de sa scène. */
   function finAffichage(fx) { return Math.min(fx.debut + fx.effet.fin / fx.info.rythme, fx.info.fin); }
 
-  /** Bases des profils de fx : somme des contributions des effets finis avant son début (null si aucune). */
+  /** Couleur de la couche héritée : moyenne, sur les effets qui l'ont formée, de la couleur à mi-vie de leur premier émetteur
+   *  qui empile sur les éléments (intensité comprise), opacité de leur table de vie à mi-vie. */
+  function couleurCouche(effets) {
+    const c = [0, 0, 0, 0];
+    let n = 0;
+    effets.forEach((f) => {
+      const em = f.effet.emetteurs.find((e) => e.collisions && e.collisions.empiler && (e.collisions.masque & M.obstacles.CATEGORIES.elements));
+      if (!em) return;
+      const t = em.tables;
+      const k = 32;
+      const intensite = t.intensite[k];
+      for (let i = 0; i < 3; i++) c[i] += t.couleur[k * 4 + i] * intensite;
+      c[3] += t.couleur[k * 4 + 3] * t.opacite[k];
+      n++;
+    });
+    return n ? c.map((x) => x / n) : c;
+  }
+
+  /** Bases des profils de fx : somme des contributions des effets commencés avant lui, chacune prise à l'instant
+   *  min(fin de l'effet, début de fx) (transitions comprises) ; null si aucune. Pose fx.couches (couches héritées à dessiner). */
   function basesPour(fx, device) {
+    fx.couches = [];
     if (!empileSurVideo(fx)) return null;
     const O = M.obstacles;
     const effets = etat.scenes.flatMap((sc) => sc.effets).filter(empileSurVideo);
@@ -224,7 +298,12 @@
     if (!anterieurs.length) return null;
     const U = GPUBufferUsage;
     const cumul = device.createBuffer({ size: O.MAX_VIDEO * O.CASES * 4, usage: U.STORAGE | U.COPY_SRC | U.COPY_DST });
-    anterieurs.forEach((f) => P.additionnerProfils(device, cumul, contribution(f, device)));
+    anterieurs.forEach((f) => P.additionnerProfils(device, cumul, contribution(f, Math.min(finAffichage(f), fx.debut), device)));
+    const couleur = couleurCouche(anterieurs);
+    fx.table.entrees.forEach((e) => {
+      if (e.profil === O.AUCUN || e.source.video === undefined) return;
+      fx.couches.push({ debut: e.profil * O.CASES, genre: e.type, repere: O.repereFixe(e.source, fx.largeurCqh, fx.table.sol), couleur, flou: 0.6 });
+    });
     const bases = device.createBuffer({ size: fx.table.tans.length * O.CASES * 4, usage: U.STORAGE | U.COPY_DST });
     const enc = device.createCommandEncoder();
     fx.table.entrees.forEach((e) => {
@@ -235,18 +314,21 @@
     return bases;
   }
 
-  /** Contribution d'un effet terminé : simulé jusqu'au dernier pas avant la fin de son affichage, une fois. */
-  function contribution(f, device) {
-    if (contributions.has(f)) return contributions.get(f);
+  /** Contribution d'un effet à l'instant t (fin de son affichage, ou début d'un effet qui hérite pendant qu'il est encore
+   *  affiché) : ses sommes propres au dernier pas avant t, calculées une fois par instant. */
+  function contribution(f, t, device) {
+    if (!contributions.has(f)) contributions.set(f, new Map());
+    const parInstant = contributions.get(f);
+    if (parInstant.has(t)) return parInstant.get(t);
     const mesures = { scenes: new Set() };
     const m = monde(f);
     m.bases = basesPour(f, device);
     const sim = new P.Simulation(device, f.effet, m);
-    sim.avancer(Math.max(0, (finAffichage(f) - f.debut) * f.info.rythme - 1e-6), zonesDe(f, mesures));
+    sim.avancer(Math.max(0, (t - f.debut) * f.info.rythme - 1e-6), zonesDe(f, mesures));
     const c = sim.contributionVideo();
     sim.detruire();
     mesures.scenes.forEach((id) => M.rendreScene(id, etat.t));
-    contributions.set(f, c);
+    parInstant.set(t, c);
     return c;
   }
 
@@ -392,6 +474,7 @@
   function rendreScene(sc, t, device) {
     const mesures = { scenes: new Set() };
     const listes = { arriere: [], avant: [] };
+    const couches = { arriere: [], avant: [] };
     sc.effets.forEach((fx) => {
       const tau = (t - fx.debut) * fx.info.rythme;
       if (tau < 0 || tau >= fx.effet.fin) { liberer(fx); return; }
@@ -405,20 +488,21 @@
           fx.sim.emetteurs.forEach((e) => etat.rendu.preparerEmetteur(e));
         }
         const deltas = fx.sim.avancer(tau, zonesDe(fx, mesures));
-        deltas.forEach((delta, i) => listes[fx.calque].push({ sim: fx.sim, i, delta }));
+        deltas.forEach((delta, i) => { if (!fx.sim.emetteurs[i].inerte) listes[fx.calque].push({ sim: fx.sim, i, delta }); });
+        if (fx.sim.hauteursBase) (fx.couches || []).forEach((k) => couches[fx.calque].push(Object.assign({ tampon: fx.sim.hauteursBase }, k)));
       } finally {
         device.popErrorScope().then((err) => { if (err) desactiver(fx, 'mémoire du GPU insuffisante'); }, () => {});
       }
     });
     // Toutes les scènes rendues à d'autres instants pour les mesures reviennent à t.
     mesures.scenes.forEach((id) => M.rendreScene(id, t));
-    const largeurCqh = 100 * sc.section.clientWidth / Math.max(1, sc.section.clientHeight);
+    const largeurCqh = largeurScene();
     Object.keys(sc.calques).forEach((nom) => {
       const canvas = sc.calques[nom];
       ajuster(canvas, sc.section);
       const rc = sc.reglages[nom];
       etat.rendu.dessiner(etat.rendu.cible(canvas), listes[nom], {
-        largeurCqh, dureeImage: sc.info.rythme / (M.ips || 30), bloom: rc.bloom, seuil: rc.seuil_bloom, tons: rc.tons,
+        largeurCqh, dureeImage: sc.info.rythme / (M.ips || 30), bloom: rc.bloom, seuil: rc.seuil_bloom, tons: rc.tons, couches: couches[nom],
       });
     });
   }
@@ -513,11 +597,17 @@
     const device = etat.gpu.device;
     etat.scenes.forEach((sc) => sc.effets.forEach((fx) => { fx.zones.clear(); fx.table = null; fx.reperes = new Map(); liberer(fx); }));
     etat.masques = null;
+    etat.promesseMasques = null;
     etat.alertes = [];
+    etat.scenes.forEach((sc) => sc.effets.forEach((fx) => fx.el.querySelectorAll(':scope > .pm-effet-alerte').forEach((d) => d.remove())));
     oublierContributions();
+    // Une erreur ici ne doit pas laisser « pret » rejetée : les seeks l'attendent.
     etat.pret = preparerFormes(device).then(() => {
       etat.rendu_t = null;
       rendre(etat.t);
+    }).catch((e) => {
+      console.error('[Pulse Motion] Effets de particules : ' + message(e));
+      etat.scenes.forEach((sc) => sc.effets.forEach((fx) => panneau(fx.el, 'Effet non affiché : ' + message(e))));
     });
   }
 
@@ -662,6 +752,16 @@
     get device() { return etat.gpu ? etat.gpu.device : null; },
     get raison() { return etat.disponible ? null : etat.raison; },
     get alertes() { return etat.alertes.slice(); },
+    /** Formes exactes au masque vide (contrôle de la vidéo, sans GPU) : [{ scene, element, message }]. */
+    formesVides() {
+      return masquesPromis().then((masques) => {
+        const r = [];
+        etat.obstacles.forEach((liste) => liste.forEach((d) => {
+          if (d.genre === 'forme' && d.el && masques.has(d.index) && !masques.get(d.index)) r.push({ scene: d.scene, element: d.el.id || d.el.localName, message: messageFormeVide(d) });
+        }));
+        return r;
+      });
+    },
     remplacerEffet,
     decrire(idScene) {
       const sc = trouver(idScene);
