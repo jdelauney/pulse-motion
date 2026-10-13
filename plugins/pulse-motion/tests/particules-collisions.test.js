@@ -250,7 +250,8 @@ const bords = fixes(table).slice(0, 3);
 // Boîte immobile (centre (60, 70), 40 × 10 cqh), présente jusqu'au point de grille 29 (τ = 0,967 s), absente ensuite
 // (scène voisine masquée à la fin d'une transition).
 const reperes = (g) => ligne([...bords, g < 30 ? { centre: [60, 70], angle: 0, demi: [20, 5], echelle: [1, 1], actif: true } : O.INACTIF]);
-const z = { a: () => [51, 40, 18, 0], grille: () => [51, 40, 18, 0], reperes };
+// Départ à y = 58 : posées sur le haut de la boîte (65) vers τ = 0,6 s.
+const z = { a: () => [51, 58, 18, 0], grille: () => [51, 58, 18, 0], reperes };
 const sim = new P.Simulation(device, DONNEES.effet, monde(table));
 sim.avancer(0.95, z);
 const avant = lireC(await sim.lireContacts(0)).filter((c) => c.obstacle === 3).length;
