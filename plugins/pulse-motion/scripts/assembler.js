@@ -14,6 +14,7 @@ const { lireDeroule, dureeTemps, tempoMusique } = require('./lib/deroule.js');
 const { embarquerRessources, versDataURI, cheminDansProjet } = require('./lib/embarquer.js');
 const S = require('./lib/scenes.js');
 const { preparerEffets } = require('./lib/effets.js');
+const { preparerObstacles, obstaclesVideo } = require('./lib/obstacles.js');
 const { variablesCSS } = require('../moteur/courbes.js');
 const { trouverStyle, messageStyleInconnu } = require('./styles.js');
 const { charteFinale, chartePour, variablesDerivees } = require('./lib/fusion-charte.js');
@@ -141,6 +142,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   let fichiersSons = 0;
   const sonsEmbarques = new Map();   // chemin du son -> id du bloc
   const effets = [];
+  const obstacles = [];
   for (const scene of deroule.scenes) {
     const fichier = cheminDansProjet(projet, scene.fichier);
     let html = null;
@@ -168,10 +170,13 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     });
     effets.push(...effetsScene);
     erreurs.push(...erreursEffets);
+    const { html: avecObstacles, obstacles: obstaclesScene, erreurs: erreursObstacles } = preparerObstacles(avecEffets, { scene: scene.id, premierIndex: obstacles.length });
+    obstacles.push(...obstaclesScene);
+    erreurs.push(...erreursObstacles);
     // Sons importés (data-son="assets/…") : embarqués en bloc, l'attribut désigne le bloc ; un nom de bruitage reste tel quel.
     // Valeur entre guillemets doubles ou simples (une apostrophe dans un chemin entre guillemets doubles reste au chemin) ;
     // un même fichier n'est embarqué qu'une fois.
-    const avecSons = avecEffets.replace(/(\sdata-son=)(?:"([^"]+)"|'([^']+)')/g, (tout, debut, double, simple) => {
+    const avecSons = avecObstacles.replace(/(\sdata-son=)(?:"([^"]+)"|'([^']+)')/g, (tout, debut, double, simple) => {
       const valeur = double !== undefined ? double : simple;
       const guillemet = double !== undefined ? '"' : "'";
       if (!/[/.]/.test(valeur)) return tout;
@@ -229,6 +234,8 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
       message: `Les sons embarqués pèsent ${Math.round(poidsSons / 1024 / 1024)} Mo : la page sera lente à ouvrir ; installez ffmpeg (« pulse-motion ffmpeg ») pour les voix en Opus.` });
   }
 
+  const video = obstaclesVideo(deroule);
+  erreurs.push(...video.erreurs);
   const [l, h] = deroule.format.ratio.split(':');
   const donnees = {
     titre: deroule.titre,
@@ -240,6 +247,8 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     bruitages: deroule.bruitages ? { transitions: deroule.bruitages.transitions === true, volume: deroule.bruitages.volume ?? 1 } : null,
     scenes: deroule.scenes.map((s) => ({ id: s.id, duree: s.duree, rythme: s.rythme || 1, transition: s.transition || 'aucune', ...(voixScenes[s.id] ? { voix: voixScenes[s.id] } : {}) })),
     effets: effets.map(({ calque, ancre, effet }) => ({ calque, ancre, effet })),
+    obstacles,
+    obstaclesVideo: video.obstacles,
   };
 
   // Sous-titres : cartons en temps absolus (minutage des scènes avec leurs voix), fichiers SRT et VTT.
