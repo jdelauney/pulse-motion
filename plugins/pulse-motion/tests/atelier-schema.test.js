@@ -162,4 +162,71 @@ test('schéma : les bornes min et max sont celles que le compilateur vérifie', 
   }
 });
 
+const fs = require('node:fs');
+const path = require('node:path');
+
+/** Chemins des nœuds objet (types de force compris) : [étapes]. */
+function objets(noeud, chemin = []) {
+  if (noeud.type === 'objet') {
+    const r = [chemin];
+    for (const [k, n] of Object.entries(noeud.champs)) r.push(...objets(n, [...chemin, k]));
+    if (noeud.variantes) {
+      for (const [t, v] of Object.entries(noeud.variantes.types)) {
+        r.push([...chemin, { variante: t }]);
+        for (const [k, n] of Object.entries(v.champs)) r.push(...objets(n, [...chemin, { variante: t }, k]));
+      }
+    }
+    return r;
+  }
+  if (noeud.type === 'liste' || noeud.type === 'dictionnaire') return objets(noeud.element, [...chemin, '*']);
+  return [];
+}
+
+test('compiler : un champ hors du schéma est refusé, à chaque niveau', () => {
+  const liste = objets(S);
+  assert.ok(liste.length > 20, `${liste.length} objets`);
+  for (const chemin of liste) {
+    const r = compiler(avec([...chemin, 'zz_inconnu'], 1));
+    assert.equal(r.ok, false, cle(chemin));
+    assert.equal(r.erreurs[0].regle, 'effet-invalide', cle(chemin));
+    assert.match(r.erreurs[0].message, /zz_inconnu : champ inconnu \(champs possibles : /, cle(chemin));
+  }
+  // Champ d'une autre force : inconnu pour celle-ci.
+  const r = compiler(avec(['emetteurs', '*', 'forces', '*', { variante: 'gravite' }, 'coef'], 1));
+  assert.match(r.erreurs[0].message, /emetteurs\[a\]\.forces\[0\]\.coef : champ inconnu \(champs possibles : type, valeur, direction\)/);
+  // Faute de frappe dans la vitesse : la liste des champs aide à corriger.
+  const v = compiler(avec(['emetteurs', '*', 'naissance', 'vitesse', 'vitese'], 2));
+  assert.match(v.erreurs[0].message, /naissance\.vitesse\.vitese : champ inconnu \(champs possibles : direction, cone, valeur, radiale, heritage\)/);
+});
+
+test('compiler : chaque erreur porte le chemin du champ en cause', () => {
+  assert.equal(compiler(avec(['emetteurs', '*', 'naissance', 'vie'], [-1, 1])).erreurs[0].chemin, 'emetteurs[a].naissance.vie');
+  assert.equal(compiler(avec(['emetteurs', '*', 'naissance', 'vitesse', 'zz'], 1)).erreurs[0].chemin, 'emetteurs[a].naissance.vitesse.zz');
+  assert.equal(compiler(avec(['emetteurs', '*', 'forces', '*', { variante: 'trainee' }, 'coef'], -1)).erreurs[0].chemin, 'emetteurs[a].forces[0].coef');
+  assert.equal(compiler(avec(['rendu_calque', 'tons'], 'cinema')).erreurs[0].chemin, 'rendu_calque.tons');
+  const r = R.compiler(base(), { dur: 2, graine: 1, reglages: 'p: 50; q: 1; illisible', charte: CHARTE });
+  assert.deepEqual(r.erreurs.map((e) => [e.regle, e.chemin]), [['reglage-invalide', 'reglages'], ['reglage-invalide', 'reglages.p'], ['reglage-invalide', 'reglages.q']]);
+  assert.equal(compiler({ version: 2 }).erreurs[0].chemin, '');
+});
+
+test('compiler : les recettes livrées et les recettes de test respectent le schéma', () => {
+  const dossiers = [path.join(__dirname, '..', 'effets'), path.join(__dirname, 'fixtures', 'effets'), path.join(__dirname, 'fixtures', 'projet-effets', 'effets')];
+  const charger = (nom) => {
+    for (const d of dossiers) {
+      const f = path.join(d, `${nom}.json`);
+      if (fs.existsSync(f)) return JSON.parse(fs.readFileSync(f, 'utf8'));
+    }
+    return null;
+  };
+  let n = 0;
+  for (const d of dossiers) {
+    for (const f of fs.readdirSync(d).filter((x) => x.endsWith('.json'))) {
+      const r = compiler(R.resoudre(f.replace(/\.json$/, ''), charger));
+      assert.equal(r.ok, true, `${f} : ${JSON.stringify(r.erreurs)}`);
+      n++;
+    }
+  }
+  assert.ok(n >= 16, `${n} recettes`);
+});
+
 module.exports = { base, exemple, feuilles, avec, cle, compiler };
