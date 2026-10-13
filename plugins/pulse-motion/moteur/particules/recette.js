@@ -4,6 +4,7 @@
  * analyserReglages(texte)  "nombre: 3000; couleur: accent" -> { valeurs, erreurs }
  * compiler(recette, o)     recette -> paramètres numériques pour le GPU (cqh, s de τ, radians,
  *                          RVB linéaire, tables de 64 valeurs, capacités)
+ * SCHEMA                   description déclarative du format (atelier : formulaire ; compilateur : champs refusés)
  *
  * Module pur : chargé tel quel dans la page (global M.recette) et par Node (require).
  */
@@ -34,6 +35,149 @@
   };
   var COULEURS_CHARTE = ['primaire', 'accent', 'texte', 'fond'];
   var HEX = /^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+
+  // ---- Schéma du format ----
+  //
+  // Description déclarative de chaque champ d'une recette : l'atelier en génère son formulaire et le compilateur
+  // refuse tout champ qui n'y figure pas. Une force ou une option nouvelle s'ajoute ici et au compilateur.
+  //
+  // Nœud : { type, libelle, defaut, … }
+  //   type        nombre | intervalle | paire | couleur | choix | courbe | booleen | texte | valeur | liste | objet | dictionnaire
+  //   defaut      valeur du compilateur quand le champ est absent ; null : pas de valeur fixe (taille de la zone,
+  //               « a » égal à « de », courbe linéaire…)
+  //   exemple     valeur valide quand defaut est null ou que le champ est requis ; requis : à écrire dans un objet écrit
+  //   min, max    bornes vérifiées par le compilateur ; curseur : [a, b], course du curseur de l'atelier ; pas ; unite
+  //   expression  nombre, intervalle, paire : une expression des réglages est permise (« 30 * vitesse »)
+  //   valeurs     choix : valeurs permises ; autre : { motif, libelle }, valeur libre permise en plus (image de assets/)
+  //   motif       texte : expression régulière du texte permis ; parmi : 'emetteurs' (nom d'un émetteur de la recette)
+  //   selon       valeur : nombre ou couleur selon le champ frère nommé (réglages exposés)
+  //   contexte    'racine' : émetteur lancé par la scène ; 'sous-emetteur' : lancé par « a_la_mort »
+  //   champs      objet : { nom: nœud } ; raccourci : 'nombre' | 'couleur', une valeur seule permise à la place de l'objet ;
+  //               variantes : { cle, types: { nom: { libelle, champs } } }, champs propres à chaque valeur de « cle »
+  //   element     liste, dictionnaire : nœud d'un élément ; maximum : nombre d'éléments ; cle : motif des noms (dictionnaire)
+
+  function noeud(type, libelle, defaut, o) {
+    var n = { type: type, libelle: libelle, defaut: defaut };
+    Object.keys(o || {}).forEach(function (k) { n[k] = o[k]; });
+    return n;
+  }
+  function nb(libelle, defaut, o) { return noeud('nombre', libelle, defaut, Object.assign({ expression: true }, o)); }
+  function iv(libelle, defaut, o) { return noeud('intervalle', libelle, defaut, Object.assign({ expression: true }, o)); }
+  function pr(libelle, defaut, o) { return noeud('paire', libelle, defaut, Object.assign({ expression: true }, o)); }
+  function ch(libelle, valeurs, defaut, o) { return noeud('choix', libelle, defaut, Object.assign({ valeurs: valeurs }, o)); }
+  function bo(libelle) { return noeud('booleen', libelle, false); }
+  function ob(libelle, champs, o) { return noeud('objet', libelle, null, Object.assign({ champs: champs }, o)); }
+  function li(libelle, element, o) { return noeud('liste', libelle, null, Object.assign({ element: element }, o)); }
+  function cb(libelle) { return noeud('courbe', libelle, null, { exemple: 'quad-out' }); }
+  function tableVie(libelle, defaut) {
+    return ob(libelle, {
+      de: nb('Au début de la vie', defaut, { curseur: [0, 10] }),
+      a: nb('À la fin de la vie', null, { exemple: 0.5, curseur: [0, 10] }),
+      courbe: cb('Courbe'),
+    }, { raccourci: 'nombre' });
+  }
+  function centre() { return pr('Centre (fraction de la zone)', [0.5, 0.5]); }
+  function attraction() {
+    return { force: nb('Force', 20, { curseur: [-200, 200] }), rayon: nb('Rayon', 10, { unite: 'cqh', curseur: [1, 100] }), centre: centre() };
+  }
+
+  var SCHEMA = ob('Recette', {
+    version: nb('Version du format', 1, { requis: true, min: 1, max: 1, expression: false }),
+    nom: noeud('texte', 'Nom', null, { motif: '^[a-z0-9-]+$', exemple: 'essai' }),
+    description: noeud('texte', 'Description', null, { exemple: 'Essai' }),
+    etend: noeud('texte', 'Hérite de', null, { motif: '^[a-z0-9-]+$', exemple: 'etincelles' }),
+    parametres: noeud('dictionnaire', 'Réglages exposés', null, {
+      cle: '^[a-z_][a-z0-9_]*$',
+      element: ob('Réglage', {
+        type: ch('Type', ['nombre', 'couleur'], 'nombre'),
+        defaut: noeud('valeur', 'Valeur par défaut', null, { selon: 'type', requis: true, exemple: 1 }),
+        min: nb('Minimum', null, { expression: false, exemple: 0 }),
+        max: nb('Maximum', null, { expression: false, exemple: 10 }),
+      }),
+    }),
+    rendu_calque: ob('Rendu du calque', {
+      bloom: nb('Halo lumineux', 0.6, { curseur: [0, 4], pas: 0.05 }),
+      seuil_bloom: nb('Seuil du halo', 1, { curseur: [0, 4], pas: 0.05 }),
+      tons: ch('Courbe de tons', ['douce', 'aces'], 'douce'),
+    }),
+    emetteurs: li('Émetteurs', ob('Émetteur', {
+      nom: noeud('texte', 'Nom', null, { requis: true, motif: '^[a-z0-9-]+$', exemple: 'e' }),
+      naissance: ob('Naissance', {
+        debit: nb('Débit (par seconde)', 0, { min: 0, contexte: 'racine', curseur: [0, 5000] }),
+        salves: li('Salves', ob('Salve', {
+          t: nb('Instant', 0, { min: 0, unite: 's', curseur: [0, 10] }),
+          nombre: nb('Nombre', null, { requis: true, min: 1, exemple: 10, curseur: [1, 5000] }),
+        }), { defaut: [], exemple: [{ t: 0, nombre: 10 }], maximum: SALVES_MAX, contexte: 'racine' }),
+        nombre: nb('Nombre par particule morte', null, { requis: true, min: 1, exemple: 2, contexte: 'sous-emetteur', curseur: [1, 50] }),
+        forme: ob('Forme d\'émission', {
+          type: ch('Forme', Object.keys(CODES.forme), 'ancre'),
+          zone: ch('Zone', ['surface', 'contour'], 'surface'),
+          rayon: nb('Rayon', null, { min: 0, unite: 'cqh', exemple: 5, curseur: [0, 50] }),
+          rayon_interieur: nb('Rayon intérieur', 0, { min: 0, unite: 'cqh', curseur: [0, 50] }),
+          largeur: nb('Largeur', null, { min: 0, unite: 'cqh', exemple: 10, curseur: [0, 180] }),
+          hauteur: nb('Hauteur', null, { min: 0, unite: 'cqh', exemple: 10, curseur: [0, 100] }),
+          angle: nb('Angle', 0, { unite: '°', curseur: [-180, 180] }),
+          decalage: pr('Décalage (fraction de la zone)', [0, 0]),
+        }),
+        vitesse: ob('Vitesse de départ', {
+          direction: pr('Direction', [0, -1]),
+          cone: nb('Ouverture du cône', 0, { min: 0, max: 360, unite: '°', curseur: [0, 360] }),
+          valeur: iv('Vitesse', [0, 0], { unite: 'cqh/s', curseur: [0, 200] }),
+          radiale: bo('Vers l\'extérieur de la forme'),
+          heritage: nb('Part de la vitesse du parent', 0, { curseur: [0, 1] }),
+        }),
+        vie: iv('Durée de vie', [1, 1], { unite: 's', curseur: [0.05, 10] }),
+        taille: iv('Taille', [1, 1], { unite: 'cqh', curseur: [0, 20] }),
+        masse: iv('Masse', [1, 1], { curseur: [0.1, 5] }),
+        z: iv('Profondeur', [0, 0], { curseur: [-1, 1] }),
+        rotation: iv('Rotation', [0, 0], { unite: '°', curseur: [-180, 180] }),
+        vitesse_angulaire: iv('Vitesse de rotation', [0, 0], { unite: '°/s', curseur: [-720, 720] }),
+      }),
+      forces: li('Forces', ob('Force', {
+        type: ch('Type', Object.keys(CODES.force), null, { requis: true, exemple: 'gravite' }),
+      }, {
+        variantes: {
+          cle: 'type',
+          types: {
+            gravite: { libelle: 'Gravité', champs: { valeur: nb('Accélération', 40, { unite: 'cqh/s²', curseur: [0, 200] }), direction: pr('Direction', [0, 1]) } },
+            trainee: { libelle: 'Traînée', champs: { coef: nb('Coefficient', 1, { min: 0, curseur: [0, 10] }), quadratique: bo('Quadratique (freine davantage les rapides)') } },
+            vent: { libelle: 'Vent', champs: { vitesse: pr('Vitesse du vent', [10, 0], { unite: 'cqh/s' }), coef: nb('Prise au vent', 1, { min: 0, curseur: [0, 10] }) } },
+            turbulence: { libelle: 'Turbulence', champs: { echelle: nb('Taille des tourbillons', 10, { unite: 'cqh', curseur: [1, 100] }), force: nb('Force', 10, { curseur: [0, 200] }), vitesse: nb('Évolution', 0.5, { curseur: [0, 5] }) } },
+            attracteur: { libelle: 'Attracteur (force négative : répulseur)', champs: attraction() },
+            vortex: { libelle: 'Vortex', champs: attraction() },
+            rappel: { libelle: 'Rappel (ressort)', champs: { raideur: nb('Raideur', 10, { curseur: [0, 100] }), amortissement: nb('Amortissement', 1, { curseur: [0, 10] }), centre: centre() } },
+          },
+        },
+      }), { defaut: [], maximum: FORCES_MAX }),
+      vie: ob('Au cours de la vie', {
+        couleur: ob('Couleur', {
+          degrade: li('Dégradé', noeud('couleur', 'Couleur', '#ffffff'), { requis: true, exemple: ['#ffffff', '#000000'] }),
+          courbe: cb('Courbe'),
+        }, { raccourci: 'couleur' }),
+        taille: tableVie('Taille (facteur)', 1),
+        intensite: tableVie('Intensité (au-delà de 1 : brille)', 1),
+        opacite: tableVie('Opacité', 1),
+      }),
+      rendu: ob('Rendu', {
+        type: ch('Type', Object.keys(CODES.rendu), 'sprite'),
+        texture: ch('Texture', Object.keys(CODES.texture).filter(function (t) { return t !== 'image'; }), 'disque-doux', {
+          autre: { motif: '^assets/.+\\.(png|webp|jpe?g|svg)$', libelle: 'Image du projet (assets/…)' },
+        }),
+        melange: ch('Mélange', Object.keys(CODES.melange), 'additif'),
+        etirement: nb('Étirement selon la vitesse', 0.03, { curseur: [0, 0.2], pas: 0.005 }),
+        flou: bo('Flou de mouvement'),
+        longueur: nb('Longueur de la traînée (points)', 8, { min: 2, max: TRAINEE_MAX, pas: 1, curseur: [2, TRAINEE_MAX] }),
+        planche: ob('Planche de sprites', {
+          colonnes: nb('Colonnes', null, { requis: true, min: 1, pas: 1, exemple: 2, curseur: [1, 16] }),
+          lignes: nb('Lignes', null, { requis: true, min: 1, pas: 1, exemple: 2, curseur: [1, 16] }),
+          ips: nb('Images par seconde', 0, { curseur: [0, 60] }),
+        }),
+      }),
+      a_la_mort: ob('À la mort', {
+        emetteur: noeud('texte', 'Émetteur lancé', null, { motif: '^[a-z0-9-]+$', parmi: 'emetteurs', exemple: 'b' }),
+      }),
+    }, { exemple: { nom: 'emetteur', naissance: { debit: 50, vie: [0.5, 1] } } }), { requis: true }),
+  });
 
   function ErreurRecette(regle, message) {
     var e = new Error(message);
@@ -599,6 +743,7 @@
     TRAINEE_MAX: TRAINEE_MAX,
     SALVES_MAX: SALVES_MAX,
     CAPACITE_MAX: CAPACITE_MAX,
+    SCHEMA: SCHEMA,
     ErreurRecette: ErreurRecette,
     resoudre: resoudre,
     analyserReglages: analyserReglages,
