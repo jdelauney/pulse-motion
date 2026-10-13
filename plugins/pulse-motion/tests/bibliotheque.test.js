@@ -166,3 +166,20 @@ test('bibliothèque : options de collision : aucun sol décalé, voie rapide gar
   // La goutte de pluie (gravité et traînée seulement) reste en voie rapide quand ses collisions sont inactives.
   assert.equal(compiler('pluie').effet.emetteurs.find((e) => e.nom === 'goutte').voieRapide, true);
 });
+
+test('référence : section Collisions (déclarations, réponses, empilement, vidéo, limites, contrôles)', () => {
+  const texte = fs.readFileSync(path.join(__dirname, '..', 'references', 'particules.md'), 'utf8');
+  const debut = texte.indexOf('## Collisions avec la scène');
+  assert.ok(debut > 0, 'section présente');
+  const fin = texte.indexOf('\n## ', debut + 5);
+  const section = texte.slice(debut, fin > 0 ? fin : undefined);
+  for (const mot of ['data-obstacle', 'data-obstacle="forme"', 'data-obstacle="video"', 'data-obstacle-forme', '"obstacles"',
+    'a_la_collision', 'rebond', 'poser', 'mourir', 'obstacle-introuvable', 'collisions-invalides', 'obstacles-video', 'trop-d-obstacles',
+    '16 obstacles', '8 obstacles', '"sol": 90', 'confettis', 'pluie', 'neige', 'etincelles']) {
+    assert.ok(section.includes(mot), `la section parle de « ${mot} »`);
+  }
+  for (const champ of Object.keys(R.SCHEMA.champs.emetteurs.element.champs.collisions.champs)) {
+    assert.ok(section.includes('`' + champ + '`'), `champ « ${champ} » documenté`);
+  }
+  assert.match(texte.split('## Collisions avec la scène')[0], /data-obstacle/, 'l\'essentiel mentionne les obstacles');
+});
