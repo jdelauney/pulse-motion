@@ -48,3 +48,31 @@ test('masque d\'un texte : forme des lettres, rapport d\'aspect, élément seul'
   assert.equal(m.avant, true, 'élément visible pendant son minutage');
   assert.equal(m.apres, false, 'élément effacé à la fin : masque vide');
 });
+
+test('masque d\'un élément en ligne (span sur deux lignes, scène agrandie) : boîte de mise en page entière, sans arrondi', { skip: !navigateur && 'Chrome ou Edge introuvable' }, async () => {
+  const dir = copierProjet('projet-particules');
+  fs.writeFileSync(path.join(dir, 'scenes', '01-s.html'), `<section data-scene="s">
+  <style>@scope {
+    #para { position: absolute; left: 20cqh; top: 20cqh; width: 37.3cqh; margin: 0; font: 900 12.3cqh/1.1 sans-serif; transform: scale(1.5); transform-origin: 0 0; }
+  }</style>
+  <p id="para">Un <span id="enligne" data-obstacle="forme">HI HO</span></p>
+</section>`);
+  const r = assembler({ dossier: dir, dossierStyles: STYLES, dossierEffets: EFFETS, ecrire: false });
+  assert.deepEqual(r.erreurs.filter((e) => e.gravite === 'erreur'), []);
+  const mesure = await mesurerPage({ html: r.html, navigateur, script: `
+    const el = document.getElementById('enligne');
+    const m = await M.figer.masque(el);
+    let pleins = 0;
+    for (const a of m.alpha) if (a >= 128) pleins++;
+    // Boîte attendue : union des lignes, sans la mise à l'échelle du paragraphe.
+    const para = document.getElementById('para');
+    para.style.transform = 'none';
+    const b = el.getBoundingClientRect();
+    para.style.transform = '';
+    return { largeurPx: m.largeurPx, hauteurPx: m.hauteurPx, attendue: [b.width, b.height], lignes: el.getClientRects().length, offset: [el.offsetWidth, el.offsetHeight], pleins };` });
+  assert.equal(mesure.erreur, undefined, mesure.erreur);
+  const m = mesure.resultat;
+  assert.equal(m.lignes, 2, 'le span passe sur deux lignes');
+  assert.ok(Math.abs(m.largeurPx - m.attendue[0]) < 0.01 && Math.abs(m.hauteurPx - m.attendue[1]) < 0.01, `boîte ${m.largeurPx} × ${m.hauteurPx} au lieu de ${m.attendue}`);
+  assert.ok(m.pleins > 0, 'les lettres sont dans le masque');
+});
