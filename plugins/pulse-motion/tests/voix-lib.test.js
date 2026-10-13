@@ -30,14 +30,15 @@ test('écrire une prise : WAV rogné à −3 dBFS, mots calés (lettres), lus en
   assert.equal(v.prise.provisoire, false);
 });
 
-test('revue : texte changé après la prise : calage lettres recalculé en silence', async () => {
+test('revue : texte changé après la prise : calage lettres recalculé, et alerte (la voix dit encore l\'ancien texte)', async () => {
   const dir = copierProjet('projet-simple');
   const r = await V.ecrirePrise({ projet: dir, scene: 'intro', octets: wavParole(), texte: 'Pourquoi le froid' });
   const d = deroule();
   d.scenes[0].voix = { texte: 'Pourquoi la chaleur', fichier: r.relatif };
   const v = V.lireVoixScene(dir, d, d.scenes[0]);
   assert.deepEqual(v.mots.map((m) => m.w), ['Pourquoi', 'la', 'chaleur']);
-  assert.deepEqual(v.alertes, []);
+  assert.deepEqual(v.alertes.map((a) => a.regle), ['mots-perimes']);
+  assert.match(v.alertes[0].message, /dit encore l'ancien texte/);
 });
 
 test('calage whisper périmé (prise remplacée) : recalcul approché et alerte mots-perimes', async () => {
