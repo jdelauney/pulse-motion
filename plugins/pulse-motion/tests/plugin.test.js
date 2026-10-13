@@ -294,7 +294,7 @@ test('demandes : skills outils et voix, déclenchables en langage courant, consi
   assert.match(enTete(outils)['allowed-tools'], /winget install --id Python\.Python\.3\.12/);
   assert.match(enTete(outils)['allowed-tools'], /winget install --id Gyan\.FFmpeg/);
   const voix = lire('skills', 'voix', 'SKILL.md');
-  for (const r of [/pulse-motion voix studio <id> \./, /pulse-motion voix importer assets\/<fichier>/, /pulse-motion voix provisoire \./, /pulse-motion voix transcrire \./, /pulse-motion musique ecouter \. --ouvrir/, /pulse-motion apercu \. --ouvrir/, /pulse-motion etat \./]) assert.match(voix, r);
+  for (const r of [/pulse-motion voix studio <id> \./, /pulse-motion voix importer "<chemin>"/, /pulse-motion voix provisoire \./, /pulse-motion voix transcrire \./, /pulse-motion musique ecouter \. --ouvrir/, /pulse-motion apercu \. --ouvrir/, /pulse-motion etat \./]) assert.match(voix, r);
   assert.match(enTete(voix).description, /retoucher/);
   assert.match(voix, /\/pulse-motion:creer/);
 });

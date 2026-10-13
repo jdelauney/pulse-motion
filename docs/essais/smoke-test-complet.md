@@ -256,7 +256,7 @@ Ouvrez Claude Code **dans** `E:\IA-PULSE\essais\video-1` (vide).
 **Attendu**
 - Claude explique en une phrase à quoi elle sert et sa taille (environ 800 Mo), puis demande votre accord.
 - Il installe en arrière-plan, puis confirme.
-- Il propose de recaler les mots des prises existantes.
+- À ce stade, il n'y a encore aucune vraie prise : rien à recaler.
 - Si elle est déjà prête, il le dit.
 
 ### 5.2 Enregistrer dans le studio
@@ -318,7 +318,7 @@ Chaque retouche se dit **telle quelle, sans slash** : c'est aussi le test du dé
 | 6.14 | `Sous-titres mot par mot` | `sousTitres.mode: "mot"` ; le mot dit passe en couleur d'accent |
 | 6.15 | `Sous-titres en haut` | `sousTitres.position: "haut"` |
 | 6.16 | `Baisse ma voix` | `voix.volume` < 1 |
-| 6.17 | `Je réenregistre la scène 3` | Le studio s'ouvre dans l'aperçu sur la scène 3 |
+| 6.17 | `Je réenregistre la scène 3` | Le studio s'ouvre dans l'aperçu sur la scène 3 (rien n'est modifié tant qu'une prise n'est pas gardée : pas de copie d'historique ni de contrôle à ce moment) |
 | 6.18 | `Passe en sombre` | `"ton": "sombre"` dans la charte du déroulé ; couleurs lisibles. Si le style n'a pas de ton sombre (`ton-indisponible`), Claude le dit simplement |
 | 6.19 | `Change la transition entre la scène 2 et 3 en balayage` | `transition` de la scène 3 |
 | 6.20 | `Passe en style éditorial` | Changement de style : scènes toutes faites recopiées, scènes composées réécrites par les animateurs |
@@ -332,10 +332,10 @@ Chaque retouche se dit **telle quelle, sans slash** : c'est aussi le test du dé
 
 ## 7. Reprise d'une vidéo (10 min)
 
-1. Fermez Claude Code, puis rouvrez-le dans `E:\IA-PULSE\essais\video-1`. Testez aussi la reprise par une phrase : `où en est ma vidéo ?`
+1. Fermez Claude Code, puis rouvrez-le dans `E:\IA-PULSE\essais\video-1`.
 
    **Attendu** : au démarrage, un rappel de la vidéo en cours dans ce dossier (hook de session).
-2. **Vous dites** : `/pulse-motion:reprendre`
+2. **Vous dites** : `où en est ma vidéo ?` (sans slash ; le refaire une autre fois avec `/pulse-motion:reprendre`)
 
    **Attendu**
    - Une phrase simple sur l'état de la vidéo (titre, étape).
@@ -482,7 +482,7 @@ Toujours dans `video-2`, ou dans un dossier vide :
 | 11.4 | `/pulse-motion:retoucher Change le texte de la scène 2 en` + une phrase de 40 mots | Le contrôle signale un texte trop long, ou réduit le texte jusqu'à 80 % ; Claude le dit et propose de raccourcir |
 | 11.5 | Studio : enregistrer sans rien dire | « La prise semble vide… » ; rien n'est gardé |
 | 11.6 | Studio : refuser le micro dans Chrome | Message clair qui dit comment autoriser le micro ou importer un fichier |
-| 11.7 | `/pulse-motion:retoucher J'ai un enregistrement de toute ma voix` + un fichier audio des textes enchaînés | Fichier copié dans `assets`, découpé par scène (transcription requise) ; une scène mal reconnue est signalée |
+| 11.7 | `j'ai un fichier de ma voix pour toute la vidéo` + un fichier audio des textes enchaînés | Le fichier est lu où il est, découpé par scène (transcription requise ; sinon Claude propose de l'installer) ; une scène mal reconnue est signalée |
 | 11.8 | Fermer l'aperçu, puis `/pulse-motion:reprendre` | Aperçu relancé |
 
 ---

@@ -60,17 +60,22 @@ function etatOutils(options = {}) {
     const f = trouverFfmpeg();
     const ok = Boolean(f.present && f.versionOk);
     return { ok, version: f.version || null, commande: f.commande || null,
-      message: ok ? `ffmpeg ${f.version} est prêt pour l'export fidèle.` : (f.message || 'ffmpeg est absent : l\'export se fera dans le navigateur.') };
+      message: f.message || (ok ? 'ffmpeg est prêt pour l\'export fidèle.' : 'ffmpeg est absent : l\'export se fera dans le navigateur.') };
   }, echec('ffmpeg'));
 
   const whisper = essayer(() => ({ etat: etatWhisper() }), (e) => ({ erreur: e }));
   const ancien = essayer(() => pythonAncien(), () => null);
-  const python = whisper.erreur ? echec('Python')(whisper.erreur) : {
-    ok: Boolean(whisper.etat.python) || Boolean(whisper.etat.venv),
-    version: whisper.etat.python ? whisper.etat.python.version : null,
-    ancien: whisper.etat.python ? null : ancien,
-    commandeSysteme: whisper.etat.commandeSysteme || null,
-  };
+  const python = whisper.erreur ? echec('Python')(whisper.erreur) : (() => {
+    const p = whisper.etat.python;
+    const ok = Boolean(p) || Boolean(whisper.etat.venv);
+    const vieux = p ? null : ancien;
+    const systeme = whisper.etat.commandeSysteme || null;
+    const message = p ? `Python ${p.version} est prêt.`
+      : ok ? 'La transcription a son propre Python.'
+        : vieux ? `Python ${vieux} est trop ancien (3.9 ou plus récent requis).${systeme ? ` ${systeme.message}` : ''}`
+          : `Python est introuvable (nécessaire seulement pour la transcription).${systeme ? ` ${systeme.message}` : ''}`;
+    return { ok, version: p ? p.version : null, ancien: vieux, commandeSysteme: systeme, message };
+  })();
   const transcription = whisper.erreur ? echec('La transcription')(whisper.erreur) : {
     ok: Boolean(whisper.etat.pret), modele: whisper.etat.modele || null, message: whisper.etat.message,
   };
