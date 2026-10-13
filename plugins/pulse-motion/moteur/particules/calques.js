@@ -11,10 +11,15 @@
  *   (mémoire, texture illisible) ou scène en échec — pas de vidéo sans ses effets
  * M.particules.verifierExport() -> Promise    rejette si des effets existent et que WebGPU manque
  * M.particules.lireOrdre(idScene, ordre, emetteur) -> Promise<Uint32Array>   paires clé, index après tri (tests)
+ * M.particules.lireContacts(idScene, ordre, emetteur) -> Promise<Float32Array>   contacts des particules (collisions, tests)
+ * Collisions (P3) : chaque effet dont une recette a « collisions » reçoit la table de ses obstacles (bords, éléments
+ * data-obstacle et formes de sa scène, éléments data-obstacle="video" des scènes voisines, obstacles du déroulé) ;
+ * leurs repères sont mesurés avec la zone d'émission à chaque point de la grille (P.mesurerReperes), les scènes voisines
+ * rendues à cet instant si elles sont visibles ; toutes les scènes rendues pour une mesure sont rendues de nouveau à t.
  * M.particules.remplacerEffet(idScene, ordre, effet) -> Promise   atelier : la recette compilée d'un effet remplacée,
  *   simulation recréée, instant courant rendu ; appels servis dans l'ordre ; rejette si l'effet n'a pas de simulation
  *   (balise en erreur), si WebGPU manque ou si une texture est illisible
- * M.particules.decrire(idScene) -> [{ ordre, calque, nom, debut, fin, rythme, actif, desactive }]   fenêtres (atelier)
+ * M.particules.decrire(idScene) -> [{ ordre, calque, nom, debut, fin, rythme, actif, desactive, collisions }]   fenêtres (atelier)
  * M.particules.raison      message du moteur quand WebGPU est indisponible (null sinon)
  * ordre : rang de la balise parmi les data-effet de la scène, effets en erreur compris (comme l'assemblage).
  *
@@ -34,7 +39,7 @@
   const SANS_GPU = 'Effet non affiché : WebGPU indisponible. Ouvrez la vidéo dans Chrome ou Edge récent.';
 
   const GARDE_GPU = 10000;
-  const etat = { gpu: null, rendu: null, scenes: [], t: 0, rendu_t: null, pret: Promise.resolve(), disponible: false, raison: null };
+  const etat = { gpu: null, rendu: null, scenes: [], obstacles: new Map(), t: 0, rendu_t: null, pret: Promise.resolve(), disponible: false, raison: null };
 
   function panneau(el, message) {
     if (el.querySelector(':scope > .pm-effet-panneau')) return;
@@ -72,6 +77,9 @@
           debut: temps ? temps.debut : info.debut,
           zones: new Map(),
           sim: null,
+          table: null,
+          reperes: new Map(),
+          largeurCqh: 0,
         });
       });
       if (!effets.length) return;
@@ -92,6 +100,82 @@
     return scenes;
   }
 
+  /** Obstacles déclarés de toutes les scènes (index dans M.donnees.obstacles), avec leur élément quand il y en a un. */
+  function recenserObstacles() {
+    const parScene = new Map();
+    (M.donnees.obstacles || []).forEach((d, index) => {
+      const section = document.querySelector('#pm-scene > section[data-scene="' + CSS.escape(d.scene) + '"]');
+      if (!section) return;
+      const decl = Object.assign({ index }, d);
+      if (d.genre === 'element' || d.genre === 'forme') {
+        decl.el = section.querySelector('[data-pm-obstacle="' + index + '"]');
+        if (!decl.el) return;
+      }
+      if (!parScene.has(d.scene)) parScene.set(d.scene, []);
+      parScene.get(d.scene).push(decl);
+    });
+    return parScene;
+  }
+
+  /** Scènes qui peuvent être visibles en même temps que idScene (transitions) : la précédente et la suivante. */
+  function voisinsDe(idScene) {
+    const ids = M.minutage.scenes.map((s) => s.id);
+    const i = ids.indexOf(idScene);
+    return [ids[i - 1], ids[i + 1]].filter(Boolean);
+  }
+
+  /** Obstacles d'un effet (null si aucune recette n'a « collisions ») ; table construite une fois. */
+  function monde(fx) {
+    if (!fx.effet.emetteurs.some((em) => em.collisions)) return null;
+    if (!fx.table) {
+      const O = M.obstacles;
+      const propres = etat.obstacles.get(fx.info.id) || [];
+      const voisins = voisinsDe(fx.info.id).flatMap((id) => (etat.obstacles.get(id) || []).filter((d) => d.video && d.el));
+      fx.largeurCqh = 100 * fx.section.clientWidth / Math.max(1, fx.section.clientHeight);
+      fx.table = O.construireTable({ largeurCqh: fx.largeurCqh, solRecette: O.solDe(fx.effet), propres, voisins, video: M.donnees.obstaclesVideo || [] });
+      fx.reperes = new Map();
+    }
+    return { entrees: fx.table.entrees, largeurCqh: fx.largeurCqh, actif: fx.table.actif };
+  }
+
+  /** Exécute fn avec la section affichée (une scène masquée à l'instant courant n'a pas de boîtes). */
+  function affichee(section, fn) {
+    const masquee = section.style.display === 'none';
+    if (masquee) section.style.display = '';
+    try { return fn(); } finally { if (masquee) section.style.display = 'none'; }
+  }
+
+  /** Repères de la table d'un effet à l'instant t (la scène de l'effet est déjà rendue à t). */
+  function mesurerTable(fx, t, mesures) {
+    const O = M.obstacles;
+    const entrees = fx.table.entrees;
+    const ligne = new Float32Array(entrees.length * O.REPERE);
+    const visibles = M.scenesVisibles(M.minutage, t);
+    const elements = [];
+    const rangs = [];
+    const voisines = new Map();
+    entrees.forEach((e, i) => {
+      const s = e.source;
+      if (!s.element) { O.ecrireRepere(ligne, i * O.REPERE, O.repereFixe(s, fx.largeurCqh, fx.table.sol)); return; }
+      const id = s.element.scene;
+      if (s.voisin && visibles.indexOf(id) < 0) { O.ecrireRepere(ligne, i * O.REPERE, O.INACTIF); return; }
+      if (s.voisin && !voisines.has(id)) {
+        voisines.set(id, document.querySelector('#pm-scene > section[data-scene="' + CSS.escape(id) + '"]'));
+        M.rendreScene(id, t);
+        mesures.scenes.add(id);
+      }
+      elements.push(s.element.el);
+      rangs.push(i);
+    });
+    if (elements.length) {
+      const mesurer = () => P.mesurerReperes(elements, fx.section);
+      // Sections voisines affichées le temps de la mesure (elles peuvent être masquées à l'instant courant).
+      const cadres = Array.from(voisines.values()).reduce((fn, sec) => () => affichee(sec, fn), mesurer)();
+      cadres.forEach((r, k) => O.ecrireRepere(ligne, rangs[k] * O.REPERE, r));
+    }
+    return ligne;
+  }
+
   function mesurer(fx) {
     const s = fx.section.getBoundingClientRect();
     if (!s.height) return [0, 0, 0, 0];
@@ -100,18 +184,31 @@
     return [(r.left - s.left) * k, (r.top - s.top) * k, r.width * k, r.height * k];
   }
 
-  /** Zone au point g de la grille (τ = g / 30), mesurée une fois en rendant la scène à cet instant. */
+  function instantGrille(fx, g) {
+    const info = fx.info;
+    return Math.min(Math.max(fx.debut + g / P.GRILLE / info.rythme, info.debut), info.fin - 1e-6);
+  }
+
+  /** Zone (et repères des obstacles) au point g de la grille (τ = g / 30), mesurés une fois en rendant la scène à cet instant. */
   function grille(fx, g, mesures) {
     let z = fx.zones.get(g);
-    if (!z) {
-      const info = fx.info;
-      const t = Math.min(Math.max(fx.debut + g / P.GRILLE / info.rythme, info.debut), info.fin - 1e-6);
-      M.rendreScene(info.id, t);
-      z = mesurer(fx);
+    const avecReperes = !!(fx.table && fx.table.actif);
+    if (!z || (avecReperes && !fx.reperes.has(g))) {
+      const t = instantGrille(fx, g);
+      M.rendreScene(fx.info.id, t);
+      mesures.scenes.add(fx.info.id);
+      affichee(fx.section, () => {
+        z = mesurer(fx);
+        if (avecReperes) fx.reperes.set(g, mesurerTable(fx, t, mesures));
+      });
       fx.zones.set(g, z);
-      mesures.faites = true;
     }
     return z;
+  }
+
+  function reperesGrille(fx, g, mesures) {
+    grille(fx, g, mesures);
+    return fx.reperes.get(g);
   }
 
   function zoneA(fx, tau, mesures) {
@@ -122,6 +219,15 @@
     if (f === 0) return a;
     const b = grille(fx, g + 1, mesures);
     return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f, a[3] + (b[3] - a[3]) * f];
+  }
+
+  /** Fonctions de zone et de repères d'un effet, pour P.Simulation.avancer. */
+  function zonesDe(fx, mesures) {
+    return {
+      a: (x) => zoneA(fx, x, mesures),
+      grille: (g) => grille(fx, g, mesures),
+      reperes: (g) => reperesGrille(fx, g, mesures),
+    };
   }
 
   function ajuster(canvas, section) {
@@ -172,7 +278,7 @@
   }
 
   function rendreScene(sc, t, device) {
-    const mesures = { faites: false };
+    const mesures = { scenes: new Set() };
     const listes = { arriere: [], avant: [] };
     sc.effets.forEach((fx) => {
       const tau = (t - fx.debut) * fx.info.rythme;
@@ -181,16 +287,17 @@
       device.pushErrorScope('out-of-memory');
       try {
         if (!fx.sim) {
-          fx.sim = new P.Simulation(device, fx.effet);
+          fx.sim = new P.Simulation(device, fx.effet, monde(fx));
           fx.sim.emetteurs.forEach((e) => etat.rendu.preparerEmetteur(e));
         }
-        const deltas = fx.sim.avancer(tau, { a: (x) => zoneA(fx, x, mesures), grille: (g) => grille(fx, g, mesures) });
+        const deltas = fx.sim.avancer(tau, zonesDe(fx, mesures));
         deltas.forEach((delta, i) => listes[fx.calque].push({ sim: fx.sim, i, delta }));
       } finally {
         device.popErrorScope().then((err) => { if (err) desactiver(fx, 'mémoire du GPU insuffisante'); }, () => {});
       }
     });
-    if (mesures.faites) M.rendreScene(sc.info.id, t);
+    // Toutes les scènes rendues à d'autres instants pour les mesures reviennent à t.
+    mesures.scenes.forEach((id) => M.rendreScene(id, t));
     const largeurCqh = 100 * sc.section.clientWidth / Math.max(1, sc.section.clientHeight);
     Object.keys(sc.calques).forEach((nom) => {
       const canvas = sc.calques[nom];
@@ -285,7 +392,7 @@
   /** Une police chargée après coup change les mesures : on les refait. */
   function polices_changees() {
     if (!etat.gpu) return;
-    etat.scenes.forEach((sc) => sc.effets.forEach((fx) => { fx.zones.clear(); liberer(fx); }));
+    etat.scenes.forEach((sc) => sc.effets.forEach((fx) => { fx.zones.clear(); fx.table = null; fx.reperes = new Map(); liberer(fx); }));
     etat.rendu_t = null;
     rendre(etat.t);
   }
@@ -405,6 +512,8 @@
     fx.effet = effet;
     fx.desactive = null;
     fx.zones = new Map(); // l'ancre a pu bouger (page d'atelier)
+    fx.table = null;
+    fx.reperes = new Map();
     fx.el.querySelectorAll(':scope > .pm-effet-panneau').forEach((p) => p.remove());
     sc.reglages[fx.calque] = reglagesCalque(sc.effets, fx.calque);
     sc.echec = false;
@@ -430,7 +539,7 @@
       const sc = trouver(idScene);
       return sc ? sc.effets.map((fx) => ({
         ordre: fx.ordre, calque: fx.calque, nom: fx.effet.nom, debut: fx.debut,
-        fin: fx.debut + fx.effet.fin / fx.info.rythme, rythme: fx.info.rythme, actif: !!fx.sim, desactive: fx.desactive || null,
+        fin: fx.debut + fx.effet.fin / fx.info.rythme, rythme: fx.info.rythme, actif: !!fx.sim, desactive: fx.desactive || null, collisions: !!(monde(fx) && fx.table.actif),
       })) : [];
     },
     lirePixels(idScene, calque) {
@@ -444,6 +553,12 @@
       const fx = sc && sc.effets.find((f) => f.ordre === ordre);
       if (!fx || !fx.sim) return Promise.reject(new Error('Effet ' + ordre + ' de la scène « ' + idScene + ' » non simulé.'));
       return fx.sim.lireEtat(emetteur);
+    },
+    lireContacts(idScene, ordre, emetteur) {
+      const sc = trouver(idScene);
+      const fx = sc && sc.effets.find((f) => f.ordre === ordre);
+      if (!fx || !fx.sim) return Promise.reject(new Error('Effet ' + ordre + ' de la scène « ' + idScene + ' » non simulé.'));
+      return fx.sim.lireContacts(emetteur);
     },
     preparerCapture,
     image(idScene, calque) {
@@ -462,6 +577,7 @@
   };
 
   M.demarrerParticules = function () {
+    etat.obstacles = recenserObstacles();
     etat.scenes = recenser();
     if (!etat.scenes.length) return;
     M.surRendu(rendre);
