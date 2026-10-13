@@ -1,16 +1,23 @@
 /* Pulse Motion – simulation des particules sur le GPU (WebGPU).
  *
- * new P.Simulation(device, effet)   effet : recette compilée (plan 1)
+ * new P.Simulation(device, effet, monde?)   effet : recette compilée ; monde : obstacles de l'effet (collisions), facultatif
+ *   monde = { entrees: [{ type, categorie, forme, profil }], largeurCqh, actif, formes?: { vue } }   (obstacles.js)
  *   .avancer(tau, zones) -> deltas  amène chaque émetteur à τ ; δ = τ − k/120 pour les simulés, 0 pour la voie rapide
  *   .lireEtat(i)          -> Promise<Float32Array> (16 nombres par case, disposition « Particule »)
  *   .lireHistorique(i)    -> Promise<Float32Array> (2 nombres par entrée de traînée)
+ *   .lireContacts(i)      -> Promise<Float32Array> (8 nombres par case, disposition « Contact » ; vide sans collisions)
  *   .detruire()
- * zones.a(τ) et zones.grille(g) -> [x, y, largeur, hauteur] en cqh (zone d'émission à τ, au point g / 30 de la grille).
+ * zones.a(τ) et zones.grille(g) -> [x, y, largeur, hauteur] en cqh (zone d'émission à τ, au point g / 30 de la grille) ;
+ * zones.reperes(g) -> Float32Array (8 nombres par obstacle de monde.entrees, disposition « Repere » de obstacles.js)
+ * au point g de la grille ; demandé seulement quand un émetteur a des collisions actives.
  *
- * Pas fixe de 1/120 s de τ, intégrateur exponentiel (exact pour gravité et traînée linéaire),
- * naissances calculées, aucune opération atomique, instantanés pour revenir en arrière.
+ * Pas fixe de 1/120 s de τ, intégrateur exponentiel (exact pour gravité et traînée linéaire), naissances calculées,
+ * instantanés pour revenir en arrière. Collisions (monde actif et recette avec « collisions ») : test balayé du
+ * déplacement de chaque pas contre les obstacles, dans leur repère local aux deux bouts du pas ; rebond, pose (la
+ * particule suit son obstacle), mort au contact ; impacts notés pour « a_la_collision ». Événements d'un parent :
+ * morts dans les cases [0, capacité), impacts dans [capacité, 2 × capacité).
  * Hachage PCG d'après M. O'Neill (pcg-random.org, domaine public).
- * Navigateur seulement (Chrome, Edge) ; dépend de instantanes.js (M.instantanes).
+ * Navigateur seulement (Chrome, Edge) ; dépend de instantanes.js (M.instantanes) et, avec un monde, de obstacles.js.
  */
 (function (racine) {
   'use strict';
@@ -19,12 +26,14 @@
 
   const PAS = 1 / 120;
   const GRILLE = 30;
-  const E_TAILLE = 140;
+  const E_TAILLE = 160;
   const TABLES = 448;
   const OCTETS_PARTICULE = 64;
-  const OCTETS_MORT = 32;
+  const OCTETS_MORT = 48;
+  const OCTETS_CONTACT = 32;
   const PAS_PAR_LOT = 256;
   const BUDGET_INSTANTANES = 256 * 1024 * 1024;
+  const LIGNES_REPERES = 8192;
   P.PAS = PAS;
   P.GRILLE = GRILLE;
 
@@ -49,13 +58,15 @@ fn alea(graine: u32, emetteur: u32, n: u32, canal: u32) -> f32 {
 }
 `;
 
-  const WGSL_SIMULATION = P.WGSL_COMMUN + /* wgsl */ `
-struct Mort { pos: vec2f, vel: vec2f, t: f32, n: u32, gen: u32, pas: u32 };
-struct Pas { k: u32, tau0: f32, tau1: f32, dt: f32, zoneA: vec4f, zoneB: vec4f };
+  const WGSL_STRUCTS = /* wgsl */ `
+struct Mort { pos: vec2f, vel: vec2f, t: f32, n: u32, gen: u32, pas: u32, normale: vec2f, r0: u32, r1: u32 };
 struct Eval { tau: f32, nZones: u32, a: u32, b: u32 };
-struct Naissance { ok: bool, n: u32, gen: u32, t: f32, pos: vec2f, vel: vec2f };
+struct Naissance { ok: bool, n: u32, gen: u32, t: f32, pos: vec2f, vel: vec2f, normale: vec2f };
 struct Etat { pos: vec2f, vel: vec2f };
+`;
 
+  const WGSL_DECL_P1 = /* wgsl */ `
+struct Pas { k: u32, tau0: f32, tau1: f32, dt: f32, zoneA: vec4f, zoneB: vec4f };
 @group(0) @binding(0) var<storage, read> E: array<f32>;
 @group(0) @binding(1) var<storage, read_write> particules: array<Particule>;
 @group(0) @binding(2) var<storage, read> mortsParent: array<Mort>;
@@ -64,7 +75,9 @@ struct Etat { pos: vec2f, vel: vec2f };
 @group(0) @binding(5) var<uniform> V: Eval;
 @group(0) @binding(6) var<storage, read> zones: array<vec4f>;
 @group(0) @binding(7) var<storage, read_write> historique: array<vec2f>;
+`;
 
+  const WGSL_FONCTIONS = /* wgsl */ `
 fn ef(i: u32) -> f32 { return E[i]; }
 fn eu(i: u32) -> u32 { return bitcast<u32>(E[i]); }
 
@@ -162,7 +175,7 @@ fn forme(centre: vec2f, wh: vec2f, g: u32, e: u32, n: u32) -> vec2f {
   return centre + vec2f(cos(a) * q.x - sin(a) * q.y, sin(a) * q.x + cos(a) * q.y);
 }
 
-fn naissanceVide() -> Naissance { return Naissance(false, 0u, 0u, 0.0, vec2f(0.0), vec2f(0.0)); }
+fn naissanceVide() -> Naissance { return Naissance(false, 0u, 0u, 0.0, vec2f(0.0), vec2f(0.0), vec2f(0.0)); }
 
 // Occupant d'une case racine parmi les naissances strictement avant tau (miroir de naissances.js).
 fn occupant(s: u32, tau: f32) -> Naissance {
@@ -188,7 +201,7 @@ fn occupant(s: u32, tau: f32) -> Naissance {
   return r;
 }
 
-// Naissance dans la case s pendant le pas [tau0, tau1) : racine, ou enfant d'une mort du parent.
+// Naissance dans la case s pendant le pas [tau0, tau1) : racine, ou enfant d'une mort (ou d'un impact) du parent.
 fn naissanceDuPas(s: u32) -> Naissance {
   let k = eu(7u);
   if (k == 0u) {
@@ -202,7 +215,7 @@ fn naissanceDuPas(s: u32) -> Naissance {
     return r;
   }
   let G = eu(8u);
-  let m = mortsParent[s / (k * G)];
+  let m = mortsParent[eu(137u) + s / (k * G)];
   var r = naissanceVide();
   if (m.pas == P.k + 1u && m.gen % G == (s / k) % G) {
     r.ok = true;
@@ -211,6 +224,7 @@ fn naissanceDuPas(s: u32) -> Naissance {
     r.t = clamp(m.t, P.tau0, P.tau1);
     r.pos = m.pos;
     r.vel = m.vel;
+    r.normale = m.normale;
   }
   return r;
 }
@@ -237,6 +251,11 @@ fn initialiser(ne: Naissance, zone: vec4f) -> Particule {
   if (eu(29u) == 1u) {
     let d = origine - centre;
     if (dot(d, d) > 1e-10) { base = normalize(d); }
+  }
+  if (dot(ne.normale, ne.normale) > 0.25) {
+    // Enfant d'un impact : direction donnée dans le repère de la surface ([0, -1] = le long de la normale).
+    let nn = ne.normale;
+    base = vec2f(-nn.y * base.x - nn.x * base.y, nn.x * base.x - nn.y * base.y);
   }
   let angle = atan2(base.y, base.x) + (alea(g, e, n, 3u) - 0.5) * ef(28u);
   p.pos = origine;
@@ -291,10 +310,12 @@ fn integrer(pIn: Particule, dt: f32, t: f32, zone: vec4f) -> Particule {
 fn mourir(pIn: Particule, s: u32) -> Particule {
   var p = pIn;
   p.vivante = 0u;
-  if (eu(10u) == 1u) { morts[s] = Mort(p.pos, p.vel, p.naissance + p.vie, p.n, p.gen, P.k + 1u); }
+  if (eu(10u) == 1u) { morts[s] = Mort(p.pos, p.vel, p.naissance + p.vie, p.n, p.gen, P.k + 1u, vec2f(0.0), 0u, 0u); }
   return p;
 }
+`;
 
+  const WGSL_ENTREES_P1 = /* wgsl */ `
 @compute @workgroup_size(64)
 fn pas(@builtin(global_invocation_id) gid: vec3u) {
   let s = gid.x;
@@ -361,6 +382,332 @@ fn evaluer(@builtin(global_invocation_id) gid: vec3u) {
 }
 `;
 
+  const WGSL_DECL_C = /* wgsl */ `
+struct Pas { k: u32, tau0: f32, tau1: f32, dt: f32, zoneA: vec4f, zoneB: vec4f, largeurs: array<vec4f, 2> };
+struct Monde { n: u32, nGrille: u32, largeur: f32, nProfils: u32, tans: array<vec4f, 2>, o: array<vec4u, 48> };
+struct Contact { local: vec2f, obstacle: u32, pose: f32, impact: f32, nImpacts: u32, opacite: f32, cellule: u32 };
+@group(0) @binding(0) var<storage, read> E: array<f32>;
+@group(0) @binding(1) var<storage, read_write> particules: array<Particule>;
+@group(0) @binding(2) var<storage, read> mortsParent: array<Mort>;
+@group(0) @binding(3) var<storage, read_write> morts: array<Mort>;
+@group(0) @binding(4) var<uniform> P: Pas;
+@group(0) @binding(7) var<storage, read_write> historique: array<vec2f>;
+@group(0) @binding(8) var<storage, read_write> contacts: array<Contact>;
+@group(0) @binding(9) var<storage, read_write> profils: array<atomic<u32>>;
+@group(0) @binding(10) var<storage, read> hauteurs: array<f32>;
+@group(0) @binding(11) var<uniform> Mo: Monde;
+@group(0) @binding(12) var reperes: texture_2d_array<f32>;
+@group(0) @binding(13) var sdf: texture_2d_array<f32>;
+@group(0) @binding(14) var lisse: sampler;
+`;
+
+  const WGSL_COLLISIONS = /* wgsl */ `
+const AUCUN = 0xffffffffu;
+const MARGE = 0.001;      // cqh : replacement hors de la surface après un rebond
+const FONDU = 0.5;        // s de τ : durée du fondu après repos_apres
+const SEUIL_CHOC = 5.0;   // cqh/s : sous cette vitesse normale, contact doux (glissement, Coulomb)
+const LIGNES = 8192u;
+
+struct Repere { centre: vec2f, angle: f32, actif: f32, demi: vec2f, echelle: vec2f };
+struct Coup { ok: bool, t: f32, n: vec2f, l: vec2f };
+struct Touche { ok: bool, t: f32, o: u32, l: vec2f, n: vec2f };
+
+var<workgroup> cadresA: array<Repere, 48>;
+var<workgroup> cadresB: array<Repere, 48>;
+var<private> mortEcrite: bool;
+var<private> impactEcrit: bool;
+
+fn texel(o: u32, g: u32, c: u32) -> vec4f {
+  return textureLoad(reperes, vec2u(2u * o + c, g % LIGNES), g / LIGNES, 0);
+}
+
+fn repereGrille(o: u32, g: u32) -> Repere {
+  let a = texel(o, g, 0u);
+  let b = texel(o, g, 1u);
+  return Repere(a.xy, a.z, a.w, b.xy, b.zw);
+}
+
+fn melange(A: Repere, B: Repere, f: f32) -> Repere {
+  var d = B.angle - A.angle;
+  d = d - 6.2831853 * round(d / 6.2831853);
+  return Repere(mix(A.centre, B.centre, f), A.angle + d * f, A.actif, mix(A.demi, B.demi, f), mix(A.echelle, B.echelle, f));
+}
+
+// Repère d'un obstacle à τ : grille de 30 points par seconde, position et échelle linéaires, angle par le plus court.
+fn repere(o: u32, tau: f32) -> Repere {
+  let x = max(tau, 0.0) * 30.0;
+  let i = min(u32(floor(x)), Mo.nGrille - 1u);
+  let j = min(i + 1u, Mo.nGrille - 1u);
+  return melange(repereGrille(o, i), repereGrille(o, j), clamp(x - f32(i), 0.0, 1.0));
+}
+
+fn tourner(r: Repere, v: vec2f) -> vec2f {
+  let c = cos(r.angle);
+  let s = sin(r.angle);
+  return vec2f(c * v.x - s * v.y, s * v.x + c * v.y);
+}
+
+fn versLocal(r: Repere, p: vec2f) -> vec2f {
+  let c = cos(r.angle);
+  let s = sin(r.angle);
+  let d = p - r.centre;
+  return vec2f(c * d.x + s * d.y, -s * d.x + c * d.y);
+}
+
+fn versMonde(r: Repere, l: vec2f) -> vec2f { return r.centre + tourner(r, l); }
+fn sur(v: vec2f) -> vec2f { return max(v, vec2f(1e-6)); }
+// Point matériel m (repère local sans échelle) de l'obstacle, dans le monde.
+fn materiel(r: Repere, m: vec2f) -> vec2f { return versMonde(r, m * r.echelle); }
+
+fn cadreDebut(o: u32, ta: f32, entier: bool) -> Repere {
+  if (entier) { return cadresA[o]; }
+  return repere(o, ta);
+}
+
+fn rien() -> Coup { return Coup(false, 0.0, vec2f(0.0), vec2f(0.0)); }
+
+// Demi-plan plein pour y > 0 (local), gonflé du rayon r : entrée par le côté vide seulement.
+fn coupDemiPlan(l0: vec2f, l1: vec2f, r: f32) -> Coup {
+  let h = -r;
+  if (l0.y > h || l1.y <= h) { return rien(); }
+  let t = (h - l0.y) / (l1.y - l0.y);
+  return Coup(true, t, vec2f(0.0, -1.0), vec2f(mix(l0.x, l1.x, t), h));
+}
+
+// Boîte [-1, 1]² en coordonnées normalisées : entrée seulement (départ dedans : aucun contact), face d'entrée.
+fn coupBoiteNorm(q0: vec2f, q1: vec2f) -> Coup {
+  if (all(abs(q0) < vec2f(1.0))) { return rien(); }
+  let v = q1 - q0;
+  var tE = -1e30;
+  var tS = 1e30;
+  var n = vec2f(0.0);
+  for (var a = 0u; a < 2u; a++) {
+    let p = q0[a];
+    let w = v[a];
+    if (abs(w) < 1e-12) {
+      if (p < -1.0 || p > 1.0) { return rien(); }
+      continue;
+    }
+    var t1 = (-1.0 - p) / w;
+    var t2 = (1.0 - p) / w;
+    var face = -1.0;
+    if (t1 > t2) { let x = t1; t1 = t2; t2 = x; face = 1.0; }
+    if (t1 > tE) { tE = t1; n = vec2f(0.0); n[a] = face; }
+    tS = min(tS, t2);
+  }
+  if (tE > tS || tE < 0.0 || tE > 1.0) { return rien(); }
+  return Coup(true, tE, n, mix(q0, q1, tE));
+}
+
+// Cercle unité en coordonnées normalisées : entrée seulement.
+fn coupCercleNorm(q0: vec2f, q1: vec2f) -> Coup {
+  if (dot(q0, q0) < 1.0) { return rien(); }
+  let v = q1 - q0;
+  let a = dot(v, v);
+  if (a < 1e-12) { return rien(); }
+  let b = dot(q0, v);
+  let c = dot(q0, q0) - 1.0;
+  let disc = b * b - a * c;
+  if (disc < 0.0) { return rien(); }
+  let t = (-b - sqrt(disc)) / a;
+  if (t < 0.0 || t > 1.0) { return rien(); }
+  let q = q0 + v * t;
+  return Coup(true, t, q, q);
+}
+
+// Demi-dimensions gonflées du rayon : segment = boîte mince (épaisseur 2 r), sinon boîte ou cercle agrandis.
+fn dimensions(genre: u32, R: Repere, r: f32) -> vec2f {
+  if (genre == 3u) { return vec2f(R.demi.x + r, r); }
+  return R.demi + vec2f(r);
+}
+
+// Contact du segment [p0 à ta, p1 à τ1] avec l'obstacle o : segment pris dans le repère local aux deux instants,
+// boîtes et cercles normalisés par leurs dimensions à ces instants (obstacles qui grandissent compris).
+fn coupObstacle(o: u32, A: Repere, B: Repere, p0: vec2f, p1: vec2f, r: f32) -> Coup {
+  let genre = Mo.o[o].x;
+  let l0 = versLocal(A, p0);
+  let l1 = versLocal(B, p1);
+  if (genre == 0u) { return coupDemiPlan(l0, l1, r); }
+  let DA = dimensions(genre, A, r);
+  let DB = dimensions(genre, B, r);
+  var c: Coup;
+  if (genre == 2u) { c = coupCercleNorm(l0 / sur(DA), l1 / sur(DB)); } else { c = coupBoiteNorm(l0 / sur(DA), l1 / sur(DB)); }
+  if (!c.ok) { return c; }
+  let D = mix(DA, DB, c.t);
+  c.n = normalize(c.n / sur(D));
+  c.l = c.l * D;
+  return c;
+}
+
+// Premier contact parmi les obstacles ciblés (masque E[141]) et actifs.
+fn chercher(p0: vec2f, p1: vec2f, ta: f32, entier: bool, r: f32) -> Touche {
+  var meilleur = Touche(false, 2.0, 0u, vec2f(0.0), vec2f(0.0));
+  let masque = eu(141u);
+  for (var o = 0u; o < Mo.n; o++) {
+    if ((Mo.o[o].y & masque) == 0u) { continue; }
+    let A = cadreDebut(o, ta, entier);
+    if (A.actif < 0.5) { continue; }
+    let c = coupObstacle(o, A, cadresB[o], p0, p1, r);
+    if (c.ok && c.t < meilleur.t) { meilleur = Touche(true, c.t, o, c.l, c.n); }
+  }
+  return meilleur;
+}
+
+// Valeur tirée par particule dans l'intervalle [E[mot], E[mot + 1]].
+fn tirage(p: Particule, canal: u32, mot: u32) -> f32 {
+  return mix(ef(mot), ef(mot + 1u), alea(eu(5u), eu(6u), p.n, canal));
+}
+
+// Mort notée pour les enfants « a_la_mort » (une par case et par pas : la première).
+fn noterMort(p: Particule, s: u32, t: f32) {
+  if (eu(10u) == 1u && !mortEcrite) {
+    morts[s] = Mort(p.pos, p.vel, t, p.n, p.gen, P.k + 1u, vec2f(0.0), 0u, 0u);
+    mortEcrite = true;
+  }
+}
+
+// Impact noté pour les enfants « a_la_collision », espacé d'au moins la vie de l'enfant (E[153]).
+fn noterImpact(p: ptr<function, Particule>, c: ptr<function, Contact>, s: u32, pos: vec2f, vel: vec2f, n: vec2f, t: f32) {
+  if (eu(152u) == 0u || impactEcrit || t - (*c).impact < ef(153u)) { return; }
+  let numero = pcg((*p).n ^ ((*c).nImpacts * 2654435769u));
+  morts[eu(0u) + s] = Mort(pos, vel, t, numero, (*p).gen, P.k + 1u, n, 0u, 0u);
+  (*c).impact = t;
+  (*c).nImpacts = (*c).nImpacts + 1u;
+  impactEcrit = true;
+}
+
+// Déplacement libre de p0 (à ta) à (*p).pos (à τ1) : premier contact et réponse.
+fn collisionner(p: ptr<function, Particule>, c: ptr<function, Contact>, p0: vec2f, ta: f32, entier: bool, s: u32) {
+  let tb = P.tau1;
+  let rayon = 0.5 * (*p).taille;
+  let t = chercher(p0, (*p).pos, ta, entier, rayon);
+  if (!t.ok) { return; }
+  let A = cadreDebut(t.o, ta, entier);
+  let B = cadresB[t.o];
+  let Rc = melange(A, B, t.t);
+  let tc = mix(ta, tb, t.t);
+  let duree = max(tb - ta, 1e-6);
+  let n = normalize(tourner(Rc, t.n));
+  let m = t.l / sur(Rc.echelle);
+  let vs = (materiel(B, m) - materiel(A, m)) / duree;
+  let point = versMonde(Rc, t.l);
+  let v = (*p).vel;
+  let vr = v - vs;
+  let vn = dot(vr, n);
+  noterImpact(p, c, s, point, vs + vr - 2.0 * min(vn, 0.0) * n, n, tc);
+  let code = eu(142u);
+  if (code == 2u) {
+    (*p).pos = point;
+    noterMort(*p, s, tc);
+    (*p).vivante = 0u;
+    return;
+  }
+  if (code == 1u) {
+    (*c).obstacle = t.o;
+    (*c).local = m;
+    (*c).pose = tc;
+    (*c).opacite = 1.0;
+    (*c).cellule = AUCUN;
+    (*p).pos = materiel(B, m);
+    (*p).vel = vs;
+    (*p).vrot = 0.0;
+    return;
+  }
+  var vNouv = v;
+  if (vn < 0.0) {
+    let vt = vr - vn * n;
+    let f = tirage(*p, 13u, 145u);
+    var e = tirage(*p, 12u, 143u);
+    var vtN = vt * (1.0 - f);
+    if (-vn < SEUIL_CHOC) {
+      e = 0.0;
+      vtN = vt * max(0.0, 1.0 - f * (-vn) / max(length(vt), 1e-6));
+    }
+    vNouv = vs + vtN - e * vn * n;
+  }
+  (*p).vel = vNouv;
+  (*p).pos = materiel(B, m) + normalize(tourner(B, t.n)) * MARGE + (vNouv - vs) * (1.0 - t.t) * duree;
+}
+
+// Particule posée : elle suit son point d'appui ; fondu puis mort après repos_apres ; repart si l'obstacle disparaît.
+fn suivre(p: ptr<function, Particule>, c: ptr<function, Contact>, s: u32) {
+  let o = (*c).obstacle;
+  let A = cadresA[o];
+  let B = cadresB[o];
+  if (B.actif < 0.5) {
+    (*c).obstacle = AUCUN;
+    (*c).cellule = AUCUN;
+    return;
+  }
+  let a = materiel(A, (*c).local);
+  let b = materiel(B, (*c).local);
+  (*p).pos = b;
+  (*p).vel = (b - a) / P.dt;
+  if (ef(147u) >= 0.0) {
+    let x = (P.tau1 - (*c).pose - tirage(*p, 14u, 147u)) / FONDU;
+    (*c).opacite = 1.0 - clamp(x, 0.0, 1.0);
+    if (x >= 1.0) {
+      noterMort(*p, s, P.tau1);
+      (*p).vivante = 0u;
+    }
+  }
+}
+
+@compute @workgroup_size(64)
+fn pasCollisions(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_index) li: u32) {
+  // Repères des obstacles aux deux bouts du pas, lus une fois par groupe.
+  if (li < Mo.n) {
+    cadresA[li] = repere(li, P.tau0);
+    cadresB[li] = repere(li, P.tau1);
+  }
+  workgroupBarrier();
+  let s = gid.x;
+  if (s >= eu(0u)) { return; }
+  mortEcrite = false;
+  impactEcrit = false;
+  let N = eu(136u);
+  var p = particules[s];
+  var c = contacts[s];
+  if (p.vivante == 1u) {
+    if (c.obstacle != AUCUN) {
+      suivre(&p, &c, s);
+    } else {
+      let p0 = p.pos;
+      p = integrer(p, P.dt, P.tau0, P.zoneA);
+      collisionner(&p, &c, p0, P.tau0, true, s);
+    }
+    if (p.vivante == 1u) {
+      p.age += P.dt;
+      if (p.age >= p.vie) { noterMort(p, s, p.naissance + p.vie); p.vivante = 0u; }
+    }
+  }
+  let ne = naissanceDuPas(s);
+  if (ne.ok) {
+    let z = mix(P.zoneA, P.zoneB, clamp((ne.t - P.tau0) / P.dt, 0.0, 1.0));
+    p = initialiser(ne, z);
+    c = Contact(vec2f(0.0), AUCUN, -1.0, -1e9, 0u, 1.0, AUCUN);
+    for (var i = 0u; i < N; i++) { historique[s * N + i] = p.pos; }
+    let reste = P.tau1 - ne.t;
+    let p0 = p.pos;
+    p = integrer(p, reste, ne.t, z);
+    collisionner(&p, &c, p0, ne.t, false, s);
+    if (p.vivante == 1u) {
+      p.age = reste;
+      if (p.age >= p.vie) { noterMort(p, s, p.naissance + p.vie); p.vivante = 0u; }
+    }
+  }
+  if (N > 0u && p.vivante == 1u && (P.k + 1u) % 2u == 0u) {
+    historique[s * N + ((P.k + 1u) / 2u) % N] = p.pos;
+  }
+  particules[s] = p;
+  contacts[s] = c;
+}
+`;
+
+  const WGSL_SIMULATION = P.WGSL_COMMUN + WGSL_STRUCTS + WGSL_DECL_P1 + WGSL_FONCTIONS + WGSL_ENTREES_P1;
+  const WGSL_MODULE_COLLISIONS = P.WGSL_COMMUN + WGSL_STRUCTS + WGSL_DECL_C + WGSL_FONCTIONS + WGSL_COLLISIONS;
+  P.WGSL_MODULE_COLLISIONS = () => WGSL_MODULE_COLLISIONS;
+
   function parametresForce(f) {
     switch (f.type) {
       case 'gravite': return [f.a[0], f.a[1]];
@@ -372,8 +719,8 @@ fn evaluer(@builtin(global_invocation_id) gid: vec3u) {
     }
   }
 
-  /** Paramètres d'un émetteur (disposition « E » : 140 mots). */
-  function emballer(em, effet) {
+  /** Paramètres d'un émetteur (disposition « E » : 160 mots). collisions : collisions actives pour cet émetteur. */
+  function emballer(em, effet, collisions) {
     const tampon = new ArrayBuffer(E_TAILLE * 4);
     const f = new Float32Array(tampon);
     const u = new Uint32Array(tampon);
@@ -394,6 +741,21 @@ fn evaluer(@builtin(global_invocation_id) gid: vec3u) {
       f.set(parametresForce(fo), b + 2);
     });
     u[136] = em.rendu.type === 'trainee' ? em.rendu.longueur : 0;
+    // Enfant d'une collision : il lit les impacts du parent, rangés après ses morts.
+    u[137] = em.declencheur === 'collision' ? effet.emetteurs[em.parent].capacite : 0;
+    const c = collisions ? em.collisions : null;
+    if (c) {
+      u[140] = 1;
+      u[141] = c.masque;
+      u[142] = c.reponseCode;
+      f[143] = c.restitution[0]; f[144] = c.restitution[1];
+      f[145] = c.frottement[0]; f[146] = c.frottement[1];
+      f[147] = c.reposApres ? c.reposApres[0] : -1; f[148] = c.reposApres ? c.reposApres[1] : -1;
+      u[149] = c.empiler ? 1 : 0;
+      f[150] = c.epaisseur ? c.epaisseur[0] : -1; f[151] = c.epaisseur ? c.epaisseur[1] : -1;
+      u[152] = em.aLaCollision >= 0 ? 1 : 0;
+      f[153] = em.aLaCollision >= 0 ? effet.emetteurs[em.aLaCollision].vie[1] + PAS : 0;
+    }
     return tampon;
   }
 
@@ -441,22 +803,68 @@ fn evaluer(@builtin(global_invocation_id) gid: vec3u) {
     return p;
   }
 
+  // Module « collisions » : créé au premier effet qui en a besoin.
+  const parDeviceC = new WeakMap();
+  function pipelinesCollisions(device) {
+    let p = parDeviceC.get(device);
+    if (p) return p;
+    const module = device.createShaderModule({ label: 'pm-collisions', code: WGSL_MODULE_COLLISIONS });
+    const C = GPUShaderStage.COMPUTE;
+    const layout = device.createBindGroupLayout({
+      entries: [
+        { binding: 0, visibility: C, buffer: { type: 'read-only-storage' } },
+        { binding: 1, visibility: C, buffer: { type: 'storage' } },
+        { binding: 2, visibility: C, buffer: { type: 'read-only-storage' } },
+        { binding: 3, visibility: C, buffer: { type: 'storage' } },
+        { binding: 4, visibility: C, buffer: { type: 'uniform', hasDynamicOffset: true, minBindingSize: 80 } },
+        { binding: 7, visibility: C, buffer: { type: 'storage' } },
+        { binding: 8, visibility: C, buffer: { type: 'storage' } },
+        { binding: 9, visibility: C, buffer: { type: 'storage' } },
+        { binding: 10, visibility: C, buffer: { type: 'read-only-storage' } },
+        { binding: 11, visibility: C, buffer: { type: 'uniform' } },
+        { binding: 12, visibility: C, texture: { sampleType: 'unfilterable-float', viewDimension: '2d-array' } },
+        { binding: 13, visibility: C, texture: { sampleType: 'float', viewDimension: '2d-array' } },
+        { binding: 14, visibility: C, sampler: { type: 'filtering' } },
+      ],
+    });
+    const U = GPUBufferUsage;
+    const sdfVide = device.createTexture({ size: [1, 1, 1], format: 'rgba16float', usage: GPUTextureUsage.TEXTURE_BINDING });
+    p = {
+      layout,
+      module,
+      pas: device.createComputePipeline({ layout: device.createPipelineLayout({ bindGroupLayouts: [layout] }), compute: { module, entryPoint: 'pasCollisions' } }),
+      videProfils: device.createBuffer({ size: 16, usage: U.STORAGE }),
+      videHauteurs: device.createBuffer({ size: 16, usage: U.STORAGE }),
+      vueSdfVide: sdfVide.createView({ dimension: '2d-array' }),
+      lisse: device.createSampler({ magFilter: 'linear', minFilter: 'linear', addressModeU: 'clamp-to-edge', addressModeV: 'clamp-to-edge' }),
+    };
+    parDeviceC.set(device, p);
+    return p;
+  }
+
   class Simulation {
-    constructor(device, effet) {
+    constructor(device, effet, monde) {
       const U = GPUBufferUsage;
       this.device = device;
       this.effet = effet;
       this.p = pipelinesPour(device);
+      this.monde = monde && monde.actif ? monde : null;
+      this.nZones = Math.ceil(effet.fin * GRILLE) + 2;
       this.emetteurs = effet.emetteurs.map((em) => {
         const capacite = Math.max(1, em.capacite);
+        const collisions = !!(this.monde && em.collisions);
+        const evenements = em.aLaMort >= 0 || em.aLaCollision >= 0;
         return {
           em,
-          rapide: em.voieRapide,
+          collisions,
+          rapide: em.voieRapide && !collisions,
           capacite,
-          params: tamponAvec(device, E_TAILLE * 4, U.STORAGE | U.COPY_DST, emballer(em, effet)),
+          params: tamponAvec(device, E_TAILLE * 4, U.STORAGE | U.COPY_DST, emballer(em, effet, collisions)),
           tables: tamponAvec(device, TABLES * 4, U.STORAGE | U.COPY_DST, tables(em)),
           particules: device.createBuffer({ size: capacite * OCTETS_PARTICULE, usage: U.STORAGE | U.COPY_SRC | U.COPY_DST }),
-          morts: em.aLaMort >= 0 ? device.createBuffer({ size: capacite * OCTETS_MORT, usage: U.STORAGE | U.COPY_DST }) : null,
+          // Morts dans [0, capacité), impacts dans [capacité, 2 × capacité) : lus par les enfants.
+          morts: evenements ? device.createBuffer({ size: 2 * capacite * OCTETS_MORT, usage: U.STORAGE | U.COPY_DST }) : null,
+          contacts: collisions ? device.createBuffer({ size: capacite * OCTETS_CONTACT, usage: U.STORAGE | U.COPY_SRC | U.COPY_DST }) : null,
           historique: em.rendu.type === 'trainee'
             ? device.createBuffer({ size: capacite * em.rendu.longueur * 8, usage: U.STORAGE | U.COPY_SRC | U.COPY_DST })
             : null,
@@ -470,9 +878,10 @@ fn evaluer(@builtin(global_invocation_id) gid: vec3u) {
       this.donneesPas = new ArrayBuffer(256 * PAS_PAR_LOT);
       this.u32Pas = new Uint32Array(this.donneesPas);
       this.f32Pas = new Float32Array(this.donneesPas);
+      if (this.emetteurs.some((e) => e.collisions)) this.preparerMonde();
       this.simules.forEach((e) => {
         const parent = e.em.parent >= 0 ? this.emetteurs[e.em.parent] : null;
-        e.groupePas = device.createBindGroup({
+        e.groupePas = e.collisions ? this.groupeCollisions(e, parent) : device.createBindGroup({
           layout: this.p.layoutPas,
           entries: [
             { binding: 0, resource: { buffer: e.params } },
@@ -486,7 +895,6 @@ fn evaluer(@builtin(global_invocation_id) gid: vec3u) {
       });
 
       // Voie rapide : zones de la grille (points g / 30) envoyées au GPU.
-      this.nZones = Math.ceil(effet.fin * GRILLE) + 2;
       this.zones = new Float32Array(this.nZones * 4);
       this.zonesConnues = new Uint8Array(this.nZones);
       this.rapides = this.emetteurs.filter((e) => e.rapide);
@@ -507,12 +915,68 @@ fn evaluer(@builtin(global_invocation_id) gid: vec3u) {
       }
 
       this.kFin = Math.ceil(effet.fin / PAS) + 1;
-      const tailleEtat = this.simules.reduce((s, e) => s + e.capacite * OCTETS_PARTICULE + (e.historique ? e.historique.size : 0), 0);
+      const tailleEtat = this.simules.reduce((s, e) => s + e.capacite * OCTETS_PARTICULE + (e.historique ? e.historique.size : 0) + (e.contacts ? e.contacts.size : 0), 0);
       this.k = 0;
       this.planificateur = M.instantanes.creerPlanificateur({
         intervalle: M.instantanes.intervallePour({ tailleEtat, pasTotal: this.kFin, budget: BUDGET_INSTANTANES }),
       });
       this.instantanes = new Map();
+    }
+
+    /** Repères des obstacles (texture, une ligne par point de grille) et uniforme « Monde ». */
+    preparerMonde() {
+      const { device } = this;
+      const O = M.obstacles;
+      const entrees = this.monde.entrees;
+      this.pc = pipelinesCollisions(device);
+      this.nObs = entrees.length;
+      this.reperesCPU = new Float32Array(this.nZones * this.nObs * O.REPERE);
+      this.reperesConnus = new Uint8Array(this.nZones);
+      this.texReperes = device.createTexture({
+        size: [2 * this.nObs, Math.min(this.nZones, LIGNES_REPERES), Math.ceil(this.nZones / LIGNES_REPERES)],
+        format: 'rgba32float',
+        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+      });
+      this.vueReperes = this.texReperes.createView({ dimension: '2d-array' });
+      this.uniformeMonde = tamponAvec(device, O.OCTETS_MONDE, GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        O.emballerMonde(entrees, this.nZones, this.monde.largeurCqh, []));
+    }
+
+    groupeCollisions(e, parent) {
+      return this.device.createBindGroup({
+        layout: this.pc.layout,
+        entries: [
+          { binding: 0, resource: { buffer: e.params } },
+          { binding: 1, resource: { buffer: e.particules } },
+          { binding: 2, resource: { buffer: parent ? parent.morts : this.p.videLecture } },
+          { binding: 3, resource: { buffer: e.morts || this.p.videEcriture } },
+          { binding: 4, resource: { buffer: this.tamponPas, size: 80 } },
+          { binding: 7, resource: { buffer: e.historique || this.p.videHistorique } },
+          { binding: 8, resource: { buffer: e.contacts } },
+          { binding: 9, resource: { buffer: this.profils || this.pc.videProfils } },
+          { binding: 10, resource: { buffer: this.hauteurs || this.pc.videHauteurs } },
+          { binding: 11, resource: { buffer: this.uniformeMonde } },
+          { binding: 12, resource: this.vueReperes },
+          { binding: 13, resource: this.monde.formes ? this.monde.formes.vue : this.pc.vueSdfVide },
+          { binding: 14, resource: this.pc.lisse },
+        ],
+      });
+    }
+
+    /** Repères des points de grille utiles au pas k (et à ses voisins) envoyés au GPU, une fois chacun. */
+    assurerReperes(k, zones) {
+      const n = this.nObs;
+      const g0 = Math.max(0, Math.floor(k * PAS * GRILLE) - 1);
+      const g1 = Math.min(this.nZones - 1, Math.floor((k + 1) * PAS * GRILLE) + 2);
+      for (let g = g0; g <= g1; g++) {
+        if (this.reperesConnus[g]) continue;
+        const r = zones.reperes(g);
+        this.reperesCPU.set(r, g * n * 8);
+        this.device.queue.writeTexture(
+          { texture: this.texReperes, origin: [0, g % LIGNES_REPERES, Math.floor(g / LIGNES_REPERES)] },
+          r, { bytesPerRow: n * 2 * 16 }, [n * 2, 1, 1]);
+        this.reperesConnus[g] = 1;
+      }
     }
 
     avancer(tau, zones) {
@@ -524,10 +988,23 @@ fn evaluer(@builtin(global_invocation_id) gid: vec3u) {
       return this.emetteurs.map((e) => (e.rapide ? 0 : delta));
     }
 
+    /** Données propres au pas (après zones et repères) ; complété par le plan 5 (largeurs des profils). */
+    ecrirePas(o, k) {
+      const u = this.u32Pas;
+      const f = this.f32Pas;
+      const tau0 = Math.fround(k * PAS);
+      const tau1 = Math.fround((k + 1) * PAS);
+      u[o] = k;
+      f[o + 1] = tau0;
+      f[o + 2] = tau1;
+      f[o + 3] = tau1 - tau0;
+    }
+
     executer(actions, zones) {
       if (!actions.length) return;
       const { device } = this;
-      const { donneesPas: donnees, u32Pas: u, f32Pas: f } = this;
+      const donnees = this.donneesPas;
+      const f = this.f32Pas;
       let enc = null;
       let passe = null;
       let n = 0;
@@ -546,17 +1023,13 @@ fn evaluer(@builtin(global_invocation_id) gid: vec3u) {
           if (n === PAS_PAR_LOT) envoyer();
           ouvrir();
           const o = n * 64;
-          const tau0 = Math.fround(a.k * PAS);
-          const tau1 = Math.fround((a.k + 1) * PAS);
-          u[o] = a.k;
-          f[o + 1] = tau0;
-          f[o + 2] = tau1;
-          f[o + 3] = tau1 - tau0;
           f.set(zones.a(a.k * PAS), o + 4);
           f.set(zones.a((a.k + 1) * PAS), o + 8);
+          if (this.texReperes) this.assurerReperes(a.k, zones);
+          this.ecrirePas(o, a.k);
           if (!passe) passe = enc.beginComputePass();
-          passe.setPipeline(this.p.pas);
           for (const e of this.simules) {
+            passe.setPipeline(e.collisions ? this.pc.pas : this.p.pas);
             passe.setBindGroup(0, e.groupePas, [n * 256]);
             passe.dispatchWorkgroups(Math.ceil(e.capacite / 64));
           }
@@ -570,12 +1043,14 @@ fn evaluer(@builtin(global_invocation_id) gid: vec3u) {
             enc.clearBuffer(e.particules);
             if (e.morts) enc.clearBuffer(e.morts);
             if (e.historique) enc.clearBuffer(e.historique);
+            if (e.contacts) enc.clearBuffer(e.contacts);
           });
         } else if (a.type === 'restaurer') {
           const copie = this.instantanes.get(a.k);
           this.simules.forEach((e, i) => {
             enc.copyBufferToBuffer(copie[i].particules, 0, e.particules, 0, e.capacite * OCTETS_PARTICULE);
             if (e.historique) enc.copyBufferToBuffer(copie[i].historique, 0, e.historique, 0, e.historique.size);
+            if (e.contacts) enc.copyBufferToBuffer(copie[i].contacts, 0, e.contacts, 0, e.contacts.size);
           });
         } else if (a.type === 'sauver') {
           let copie = this.instantanes.get(a.k);
@@ -584,12 +1059,14 @@ fn evaluer(@builtin(global_invocation_id) gid: vec3u) {
             copie = this.simules.map((e) => ({
               particules: device.createBuffer({ size: e.capacite * OCTETS_PARTICULE, usage: U.COPY_SRC | U.COPY_DST }),
               historique: e.historique ? device.createBuffer({ size: e.historique.size, usage: U.COPY_SRC | U.COPY_DST }) : null,
+              contacts: e.contacts ? device.createBuffer({ size: e.contacts.size, usage: U.COPY_SRC | U.COPY_DST }) : null,
             }));
             this.instantanes.set(a.k, copie);
           }
           this.simules.forEach((e, i) => {
             enc.copyBufferToBuffer(e.particules, 0, copie[i].particules, 0, e.capacite * OCTETS_PARTICULE);
             if (e.historique) enc.copyBufferToBuffer(e.historique, 0, copie[i].historique, 0, e.historique.size);
+            if (e.contacts) enc.copyBufferToBuffer(e.contacts, 0, copie[i].contacts, 0, e.contacts.size);
           });
         }
       }
@@ -645,12 +1122,19 @@ fn evaluer(@builtin(global_invocation_id) gid: vec3u) {
       return e.historique ? this.lireTampon(e.historique) : Promise.resolve(new Float32Array(0));
     }
 
+    lireContacts(i) {
+      const e = this.emetteurs[i];
+      return e.contacts ? this.lireTampon(e.contacts) : Promise.resolve(new Float32Array(0));
+    }
+
     detruire() {
-      this.emetteurs.forEach((e) => [e.params, e.tables, e.particules, e.morts, e.historique, e.uniformeRendu, e.uniformeEval].forEach((b) => b && b.destroy()));
-      this.instantanes.forEach((copie) => copie.forEach((c) => { c.particules.destroy(); if (c.historique) c.historique.destroy(); }));
+      this.emetteurs.forEach((e) => [e.params, e.tables, e.particules, e.morts, e.contacts, e.historique, e.uniformeRendu, e.uniformeEval].forEach((b) => b && b.destroy()));
+      this.instantanes.forEach((copie) => copie.forEach((c) => [c.particules, c.historique, c.contacts].forEach((b) => b && b.destroy())));
       this.instantanes.clear();
       this.tamponPas.destroy();
       if (this.tamponZones) this.tamponZones.destroy();
+      if (this.texReperes) this.texReperes.destroy();
+      if (this.uniformeMonde) this.uniformeMonde.destroy();
     }
   }
 
