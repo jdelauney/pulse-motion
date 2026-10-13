@@ -9,7 +9,7 @@
  *   [cx, cy, angle, actif, dx, dy, ex, ey]. Monde = centre + R(angle) · l (l : local à l'échelle).
  *   repereFixe(source, largeurCqh, sol), interpolerRepere(a, b, f), ecrireRepere(t, i, r), lireRepere(t, i),
  *   versLocal(r, p), versMonde(r, l)
- * Table d'un effet : construireTable({ largeurCqh, solRecette, propres, voisins, video }) -> { entrees, actif, sol },
+ * Table d'un effet : construireTable({ largeurCqh, solRecette, propres, voisins, video }) -> { entrees, actif, sol, tans, abandonnes },
  *   solDe(effet), emballerMonde(entrees, nGrille, largeurCqh, tans) -> ArrayBuffer (uniforme « Monde » du WGSL)
  *   largeursCases(entrees, cadres), effetsAnterieurs(liste, i) : profils d'empilement (« effet » dans construireTable)
  *   attacherFormes(table, couchePour) : formes exactes (type 4) attachées à leur couche de champ de distance
@@ -146,8 +146,10 @@
     return repere(centre, (d.angle || 0) * Math.PI / 180, [Math.abs(dx) / 2, Math.abs(dy) / 2]);
   }
 
-  /** Repère entre deux points de grille : position et échelle linéaires, angle par le plus court chemin. */
+  /** Repère entre deux points de grille : position et échelle linéaires, angle par le plus court chemin. Si l'un des deux
+   *  est inactif (et compte : f > 0 pour le second), le repère est inactif : on n'interpole jamais vers un obstacle absent. */
   function interpolerRepere(a, b, f) {
+    if (!a.actif || (!b.actif && f > 0)) return INACTIF;
     var d = b.angle - a.angle;
     d -= 2 * Math.PI * Math.round(d / (2 * Math.PI));
     function m(x, y) { return [x[0] + (y[0] - x[0]) * f, x[1] + (y[1] - x[1]) * f]; }
@@ -177,18 +179,25 @@
     return [r.centre[0] + c * l[0] - s * l[1], r.centre[1] + s * l[0] + c * l[1]];
   }
 
-  /** Profils de hauteur : une entrée (pas un mur) ciblée par un émetteur qui empile ; talus du premier ; 8 au plus. */
+  /** Profils de hauteur : une entrée (pas un mur) ciblée par un émetteur qui empile ; talus du premier ; 8 au plus,
+   *  places réservées d'abord aux obstacles de la vidéo (couche commune) ; table.abandonnes.profils : entrées sans profil. */
   function attribuerProfils(table, effet) {
     var empileurs = effet.emetteurs.filter(function (em) { return em.collisions && em.collisions.empiler; });
-    table.entrees.forEach(function (e) {
-      if (table.tans.length >= MAX_PROFILS || e.categorie === CATEGORIES.murs || e.categorie === 0) return;
-      for (var i = 0; i < empileurs.length; i++) {
-        if ((empileurs[i].collisions.masque & e.categorie) !== 0) {
-          e.profil = table.tans.length;
-          table.tans.push(Math.tan(empileurs[i].collisions.talus * Math.PI / 180));
-          return;
-        }
-      }
+    function empileur(e) {
+      if (e.categorie === CATEGORIES.murs || e.categorie === 0) return null;
+      for (var i = 0; i < empileurs.length; i++) if ((empileurs[i].collisions.masque & e.categorie) !== 0) return empileurs[i];
+      return null;
+    }
+    var candidats = table.entrees.filter(function (e) { return empileur(e); });
+    var video = candidats.filter(function (e) { return e.source.video !== undefined; }).length;
+    var autres = Math.max(0, MAX_PROFILS - video);
+    if (!table.abandonnes) table.abandonnes = { obstacles: 0, profils: 0 };
+    candidats.forEach(function (e) {
+      var deVideo = e.source.video !== undefined;
+      if (table.tans.length >= MAX_PROFILS || (!deVideo && autres === 0)) { table.abandonnes.profils++; return; }
+      if (!deVideo) autres--;
+      e.profil = table.tans.length;
+      table.tans.push(Math.tan(empileur(e).collisions.talus * Math.PI / 180));
     });
     return table;
   }
@@ -200,18 +209,24 @@
     return l;
   }
 
-  /** Effets finis au plus tard au début de l'effet i, triés par début puis par rang (cumul des couches de la vidéo). */
+  /** Effets commencés avant l'effet i, triés par début puis par rang (cumul des couches de la vidéo) : chacun contribue
+   *  par son profil à l'instant min(sa fin, début de i), transitions comprises. */
   function effetsAnterieurs(liste, i) {
     var r = [];
-    liste.forEach(function (x, j) { if (j !== i && x.fin <= liste[i].debut) r.push(j); });
+    liste.forEach(function (x, j) { if (j !== i && x.debut < liste[i].debut) r.push(j); });
     return r.sort(function (a, b) { return liste[a].debut - liste[b].debut || a - b; });
   }
 
-  /** Table des obstacles d'un effet (ordre fixe : il donne l'indice des obstacles dans les contacts). */
+  /** Table des obstacles d'un effet (ordre fixe : il donne l'indice des obstacles dans les contacts). Places réservées aux
+   *  obstacles de la vidéo ; table.abandonnes = { obstacles, profils } : entrées ou profils laissés faute de place. */
   function construireTable(o) {
     var entrees = [];
+    var abandonnes = { obstacles: 0, profils: 0 };
+    var reserve = Math.min((o.video || []).length, MAX_TABLE - 3);
     function ajouter(type, categorie, source) {
-      if (entrees.length < MAX_TABLE) entrees.push({ type: type, categorie: categorie, forme: AUCUN, profil: AUCUN, source: source });
+      var limite = source.video !== undefined || source.bord ? MAX_TABLE : MAX_TABLE - reserve;
+      if (entrees.length < limite) entrees.push({ type: type, categorie: categorie, forme: AUCUN, profil: AUCUN, source: source });
+      else abandonnes.obstacles++;
     }
     function declaration(d, voisin) {
       if (d.genre === 'element' || d.genre === 'forme') {
@@ -228,7 +243,7 @@
     video.forEach(function (d, i) { ajouter(TYPE_GENRE[d.type], CATEGORIES.elements, { fixe: d, video: i }); });
     var solRecette = o.solRecette === undefined ? null : o.solRecette;
     var voisins = o.voisins || [];
-    var table = { entrees: entrees, actif: propres.length + voisins.length + video.length > 0 || solRecette !== null, sol: solRecette === null ? 100 : solRecette, tans: [] };
+    var table = { entrees: entrees, actif: propres.length + voisins.length + video.length > 0 || solRecette !== null, sol: solRecette === null ? 100 : solRecette, tans: [], abandonnes: abandonnes };
     if (o.effet) attribuerProfils(table, o.effet);
     return table;
   }
