@@ -15,6 +15,7 @@ const { spawn } = require('node:child_process');
 const { assembler } = require('./assembler.js');
 const { creerRoutesExport } = require('./lib/routes-export.js');
 const { creerRoutesVoix } = require('./lib/routes-voix.js');
+const { creerRoutesAtelier } = require('./lib/routes-atelier.js');
 const { whisperParDefaut } = require('./lib/whisper.js');
 const { trouverFfmpeg } = require('./lib/ffmpeg.js');
 
@@ -36,7 +37,9 @@ function pageErreur(erreurs) {
 function injecterApercu(html, erreurs) {
   const script = `<script>window.__PM_APERCU__ = true; window.__PM_ERREURS__ = ${JSON.stringify(erreurs).replace(/</g, '\\u003c')};</script>` +
     '\n<script src="/_pm/capture.js"></script>\n<script type="module" src="/_pm/export-ui.mjs"></script>' +
-    '\n<script type="module" src="/_pm/studio.mjs"></script>';
+    '\n<script type="module" src="/_pm/studio.mjs"></script>' +
+    '\n<script defer src="/_pm/atelier/expression.js"></script>\n<script defer src="/_pm/atelier/recette.js"></script>' +
+    '\n<script type="module" src="/_pm/atelier/panneau.mjs"></script>';
   return html.replace('</head>', `${script}\n</head>`);
 }
 
@@ -61,12 +64,13 @@ function ecouter(serveur, hote, port) {
 }
 
 /**
- * demarrerApercu({ dossier, port?, dossierStyles?, delai?, whisper?, maxPrise? })
+ * demarrerApercu({ dossier, port?, dossierStyles?, dossierEffets?, delai?, whisper?, maxPrise? })
+ * dossierEffets : bibliothèque des effets de particules (tests) ; par défaut celle du plugin.
  * -> Promise<{ port, url, fermer(): Promise }>
  */
-async function demarrerApercu({ dossier, port = 4321, dossierStyles, delai = 150, whisper, maxPrise }) {
+async function demarrerApercu({ dossier, port = 4321, dossierStyles, dossierEffets, delai = 150, whisper, maxPrise }) {
   const projet = path.resolve(dossier);
-  const optionsAssemblage = dossierStyles ? { dossier: projet, dossierStyles } : { dossier: projet };
+  const optionsAssemblage = { dossier: projet, ...(dossierStyles ? { dossierStyles } : {}), ...(dossierEffets ? { dossierEffets } : {}) };
   let dernier = assembler(optionsAssemblage);
   const clients = new Set();
 
@@ -78,6 +82,7 @@ async function demarrerApercu({ dossier, port = 4321, dossierStyles, delai = 150
   const rapportPage = path.join(projet, 'sortie', 'controle-page.json');
   const routesExport = creerRoutesExport(projet);
   const routesVoix = creerRoutesVoix(projet, { whisper: whisper || whisperParDefaut, maxOctets: maxPrise, outil: trouverFfmpeg });
+  const routesAtelier = creerRoutesAtelier(projet, { dossierStyles, ...(dossierEffets ? { bibliotheque: dossierEffets } : {}) });
 
   /** Rapport de débordement envoyé par la page : JSON seulement (une autre origine serait bloquée par CORS). */
   function recevoirControle(req, res) {
@@ -133,6 +138,8 @@ async function demarrerApercu({ dossier, port = 4321, dossierStyles, delai = 150
       req.on('close', () => clients.delete(res));
     } else if (req.method === 'POST' && url.pathname === '/_pm/controle') {
       recevoirControle(req, res);
+    } else if (routesAtelier(req, res, url)) {
+      // route de l'atelier des effets traitée
     } else if (routesExport(req, res, url)) {
       // route d'export traitée
     } else if (routesVoix(req, res, url)) {

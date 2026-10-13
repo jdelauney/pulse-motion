@@ -2,6 +2,8 @@
  *
  * Espace : lecture/pause · ←/→ : une image · Maj+←/→ : scène précédente/suivante
  * B : boucle sur la scène courante · clic sur l'image : lecture/pause.
+ * M.boucler({ debut, fin } | null) : boucle de lecture posée par l'atelier des effets (fenêtre d'un effet).
+ * Les champs du panneau de l'atelier (#pm-atelier) et du studio (#pm-studio) gardent le clavier.
  * Sous l'aperçu (window.__PM_APERCU__), écoute /_pm/evenements : rechargement à la
  * même position après une retouche, bandeau en cas d'erreur d'assemblage.
  * Son : mixage du moteur (M.rendreSon), préparé 1 s après le chargement (sauf en capture) ou au premier ▶,
@@ -166,14 +168,19 @@
       M.rendre(t);
       if (lecture) lancerSon(M.temps());
     }
+    // Boucle posée par l'atelier des effets (fenêtre d'un effet) ; null la retire. La touche B reste la boucle de scène.
+    M.boucler = function (plage) {
+      boucle = plage && plage.fin > plage.debut ? { debut: plage.debut, fin: plage.fin } : null;
+      afficher(M.temps());
+    };
 
     bouton.addEventListener('click', basculer);
     document.getElementById('pm-scene').addEventListener('click', basculer);
     curseur.addEventListener('input', function () { aller(parseFloat(curseur.value)); });
     document.addEventListener('keydown', function (e) {
       if (e.target && e.target.tagName === 'INPUT' && e.key !== ' ') return;
-      // Studio de voix : ses champs gardent le clavier (liste des scènes).
-      if (e.target && e.target.closest && e.target.closest('#pm-studio')) return;
+      // Studio de voix et atelier des effets : leurs champs gardent le clavier.
+      if (e.target && e.target.closest && e.target.closest('#pm-studio, #pm-atelier')) return;
       var i = indexScene(M.temps());
       if (e.key === ' ') { e.preventDefault(); basculer(); }
       else if (e.key === 'ArrowRight' && e.shiftKey) { e.preventDefault(); aller(scenes[Math.min(i + 1, scenes.length - 1)].debut); }
@@ -195,9 +202,12 @@
       try { sessionStorage.setItem(CLE_POSITION, JSON.stringify({ t: M.temps(), lecture: lecture })); } catch (e) { /* ignoré */ }
       location.reload();
     };
-    // Page occupée : export en cours, ou studio de voix avec une prise pas encore gardée.
+    // Page occupée : export en cours, studio de voix avec une prise pas encore gardée, ou atelier avec un réglage
+    // pas encore enregistré.
     var rechargementEnAttente = false;
-    function occupee() { return !!(M.exportEnCours || (M.studio && M.studio.occupe && M.studio.occupe())); }
+    function occupee() {
+      return !!(M.exportEnCours || (M.studio && M.studio.occupe && M.studio.occupe()) || (M.atelier && M.atelier.occupe && M.atelier.occupe()));
+    }
     M.rechargerQuandPossible = function () {
       if (occupee()) { rechargementEnAttente = true; return; }
       M.recharger();
