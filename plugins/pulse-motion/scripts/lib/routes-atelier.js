@@ -46,6 +46,7 @@ const STATIQUES = {
 };
 // Contenus fabriqués à la demande : { chemin: () => ({ type, corps }) } (page d'atelier, plan 4).
 STATIQUES['/_pm/atelier'] = { fichier: path.join(ATELIER, 'page.html'), type: 'text/html; charset=utf-8' };
+STATIQUES['/_pm/atelier/page.mjs'] = { fichier: path.join(ATELIER, 'page.mjs'), type: JS };
 const GENERES = {
   // Moteur des vidéos, d'un bloc : mêmes fichiers, dans le même ordre, que dans une page assemblée.
   '/_pm/atelier/moteur.js': () => ({ type: JS, corps: lireMoteur(RACINE) }),
