@@ -119,6 +119,9 @@ test('schéma : valeurs tirées des tables du compilateur, types connus, libell�
   assert.deepEqual(em.rendu.champs.texture.valeurs, Object.keys(R.CODES.texture).filter((t) => t !== 'image'));
   assert.equal(em.forces.maximum, R.FORCES_MAX);
   assert.equal(em.naissance.champs.salves.maximum, R.SALVES_MAX);
+  assert.deepEqual(em.collisions.champs.reponse.valeurs, Object.keys(R.CODES.reponse));
+  assert.deepEqual(em.collisions.champs.cibles.element.valeurs, Object.keys(R.CODES.cible));
+  assert.deepEqual(em.collisions.champs.cibles.defaut, Object.keys(R.CODES.cible));
   for (const { chemin, noeud } of feuilles(S)) {
     assert.ok(TYPES.includes(noeud.type), `${cle(chemin)} : type « ${noeud.type} »`);
     assert.ok(typeof noeud.libelle === 'string' && noeud.libelle.length > 1, `${cle(chemin)} : libellé`);
@@ -188,7 +191,8 @@ test('compiler : un champ hors du schéma est refusé, à chaque niveau', () => 
   for (const chemin of liste) {
     const r = compiler(avec([...chemin, 'zz_inconnu'], 1));
     assert.equal(r.ok, false, cle(chemin));
-    assert.equal(r.erreurs[0].regle, 'effet-invalide', cle(chemin));
+    const attendue = /(^|.)(collisions|a_la_collision)(.|$)/.test(cle(chemin)) ? 'collisions-invalides' : 'effet-invalide';
+    assert.equal(r.erreurs[0].regle, attendue, cle(chemin));
     assert.match(r.erreurs[0].message, /zz_inconnu : champ inconnu \(champs possibles : /, cle(chemin));
   }
   // Champ d'une autre force : inconnu pour celle-ci.
