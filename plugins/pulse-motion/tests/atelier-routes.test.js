@@ -185,3 +185,112 @@ test('ecrireAtomique : remplace d\'un coup ; en échec, cible intacte et aucun t
   assert.equal(fs.readFileSync(path.join(dossier, 'garde.txt'), 'utf8'), 'x');
   assert.equal(empreinte(Buffer.from('nouveau')), crypto.createHash('sha256').update('nouveau').digest('hex').slice(0, 16));
 });
+
+const resolue = async (base, nom) => (await requete(`${base}recette?nom=${nom}`)).json.recette;
+
+test('recette : dérivée par etend, seules les différences écrites ; historique avant', async () => {
+  const dir = copierProjet('projet-effets');
+  await servir(dir, {}, async (base) => {
+    const r = await resolue(base, 'gerbe');
+    r.parametres.nombre.defaut = 200;
+    r.emetteurs[1].forces[0].coef = 3;
+    const rep = await requete(`${base}recette`, json({ nom: 'gerbe-douce', etend: 'gerbe', recette: r, dur: 2 }));
+    assert.equal(rep.statut, 200, rep.texte);
+    assert.deepEqual(rep.json, { ok: true, fichier: 'effets/gerbe-douce.json', complete: false });
+    assert.deepEqual(JSON.parse(fs.readFileSync(path.join(dir, 'effets', 'gerbe-douce.json'), 'utf8')), {
+      version: 1, nom: 'gerbe-douce', etend: 'gerbe', description: 'Dérivé de « gerbe » dans l\'atelier',
+      parametres: { nombre: { defaut: 200 } },
+      emetteurs: [{ nom: 'eclat', forces: [{ type: 'trainee', coef: 3 }] }],
+    });
+    assert.ok(fs.existsSync(path.join(dir, '.historique', '001')));
+    assert.deepEqual((await requete(`${base}contexte`)).json.recettes.projet, ['gerbe-douce', 'locale']);
+  });
+});
+
+test('recette : noms refusés (invalide, bibliothèque, projet sans confirmation), sinon remplacée en gardant son héritage', async () => {
+  const dir = copierProjet('projet-effets');
+  await servir(dir, {}, async (base) => {
+    const r = await resolue(base, 'locale');
+    const ecrireSous = (nom, plus = {}) => requete(`${base}recette`, json({ nom, etend: 'locale', recette: r, ...plus }));
+    const invalide = await ecrireSous('Gerbe!');
+    assert.equal(invalide.statut, 409);
+    assert.match(invalide.json.message, /minuscules, chiffres et tirets/);
+    const biblio = await ecrireSous('simple');
+    assert.equal(biblio.statut, 409);
+    assert.match(biblio.json.message, /bibliothèque/);
+    const pris = await ecrireSous('locale');
+    assert.equal(pris.statut, 409);
+    assert.match(pris.json.message, /déjà un effet « locale »/);
+    r.parametres.nombre.defaut = 80;
+    const remplace = await ecrireSous('locale', { remplacer: true });
+    assert.equal(remplace.statut, 200, remplace.texte);
+    assert.deepEqual(JSON.parse(fs.readFileSync(path.join(dir, 'effets', 'locale.json'), 'utf8')), {
+      version: 1, nom: 'locale', etend: 'simple', description: 'Variante propre au projet', parametres: { nombre: { defaut: 80 } },
+    });
+  });
+});
+
+test('recette : cible – la balise pointe vers le nouvel effet avec réglages et graine ; conflit : rien d\'écrit', async () => {
+  const dir = copierProjet('projet-effets');
+  await servir(dir, {}, async (base) => {
+    const r = await resolue(base, 'gerbe');
+    r.emetteurs[0].naissance.vie = [0.4, 0.8];
+    const perimee = await requete(`${base}recette`, json({ nom: 'gerbe-courte', etend: 'gerbe', recette: r, cible: { scene: 'etincelles', ordre: 0, empreinte: '0000000000000000', reglages: 'nombre: 300', graine: 5 } }));
+    assert.equal(perimee.statut, 409);
+    assert.equal(perimee.json.conflit, true);
+    assert.equal(fs.existsSync(path.join(dir, 'effets', 'gerbe-courte.json')), false);
+    assert.equal(fs.existsSync(path.join(dir, '.historique')), false);
+    const rep = await requete(`${base}recette`, json({ nom: 'gerbe-courte', etend: 'gerbe', recette: r, dur: 2, cible: { scene: 'etincelles', ordre: 0, empreinte: hache(scene(dir)), reglages: 'nombre: 300; couleur: accent', graine: 5 } }));
+    assert.equal(rep.statut, 200, rep.texte);
+    assert.equal(rep.json.empreinte, hache(scene(dir)));
+    assert.match(lireScene(dir), /<div data-effet="gerbe-courte" data-ancre="#titre" data-start="#titre:fin" data-dur="2" data-reglages="nombre: 300; couleur: accent" data-graine="5"><\/div>/);
+    assert.match(fs.readFileSync(path.join(dir, '.historique', '001', 'scenes', '01-etincelles.html'), 'utf8'), /data-effet="gerbe"/);
+    assert.deepEqual(JSON.parse(fs.readFileSync(path.join(dir, 'effets', 'gerbe-courte.json'), 'utf8')).emetteurs, [{ nom: 'gerbe', naissance: { vie: [0.4, 0.8] } }]);
+  });
+});
+
+test('recette : invalide -> 422 sans rien écrire ; émetteur retiré -> écrite entière ; hors projet -> refus', async () => {
+  const dir = copierProjet('projet-effets');
+  await servir(dir, {}, async (base) => {
+    const r = await resolue(base, 'gerbe');
+    const fausse = JSON.parse(JSON.stringify(r));
+    fausse.emetteurs[0].naissance.vie = [-1, 1];
+    const inv = await requete(`${base}recette`, json({ nom: 'gerbe-fausse', etend: 'gerbe', recette: fausse }));
+    assert.equal(inv.statut, 422);
+    assert.match(inv.json.message, /^Recette refusée : .*naissance\.vie/);
+    assert.equal(inv.json.erreurs[0].chemin, 'emetteurs[gerbe].naissance.vie');
+    assert.equal(fs.existsSync(path.join(dir, 'effets', 'gerbe-fausse.json')), false);
+    const seule = JSON.parse(JSON.stringify(r));
+    seule.emetteurs = [seule.emetteurs[0]];
+    delete seule.emetteurs[0].a_la_mort;
+    const rep = await requete(`${base}recette`, json({ nom: 'gerbe-seule', etend: 'gerbe', recette: seule, dur: 2 }));
+    assert.equal(rep.statut, 200, rep.texte);
+    assert.equal(rep.json.complete, true);
+    const ecrite = JSON.parse(fs.readFileSync(path.join(dir, 'effets', 'gerbe-seule.json'), 'utf8'));
+    assert.equal(ecrite.etend, null);
+    assert.deepEqual(ecrite.emetteurs.map((e) => e.nom), ['gerbe']);
+  });
+  await servir(dossierTemporaire('pm-atelier-vide-'), {}, async (base) => {
+    const rep = await requete(`${base}recette`, json({ nom: 'essai', etend: null, recette: { version: 1, emetteurs: [] } }));
+    assert.equal(rep.statut, 409);
+    assert.match(rep.json.message, /lancez l'atelier depuis le dossier d'une vidéo/);
+  });
+});
+
+test('recette : scène impossible à écrire -> recette retirée, scène intacte (rien à moitié)', async () => {
+  const dir = copierProjet('projet-effets');
+  const avant = lireScene(dir);
+  const sceneBloquee = (f, contenu) => {
+    if (f.endsWith('.html')) throw Object.assign(new Error('verrouillé'), { code: 'EBUSY' });
+    ecrireAtomique(f, contenu);
+  };
+  await servir(dir, { ecrire: sceneBloquee }, async (base) => {
+    const r = await resolue(base, 'gerbe');
+    r.rendu_calque = { bloom: 2 };
+    const rep = await requete(`${base}recette`, json({ nom: 'gerbe-vive', etend: 'gerbe', recette: r, dur: 2, cible: { scene: 'etincelles', ordre: 0, empreinte: hache(scene(dir)), reglages: '', graine: 3 } }));
+    assert.equal(rep.statut, 500);
+    assert.match(rep.json.message, /EBUSY/);
+  });
+  assert.equal(fs.existsSync(path.join(dir, 'effets', 'gerbe-vive.json')), false);
+  assert.equal(lireScene(dir), avant);
+});
