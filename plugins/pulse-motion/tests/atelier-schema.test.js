@@ -55,6 +55,11 @@ const cle = (chemin) => chemin.map((e) => (typeof e === 'object' ? e.variante : 
 /** Recette de base où la feuille au chemin vaut v (undefined : conteneurs créés, feuille absente). */
 function avec(chemin, v, contexte) {
   const r = base();
+  // a_la_collision : l'émetteur « a » lance « b » au contact (un seul parent : plus de a_la_mort), collisions requises.
+  if (chemin[2] === 'a_la_collision') {
+    delete r.emetteurs[0].a_la_mort;
+    r.emetteurs[0].collisions = {};
+  }
   let cible = r;
   let noeud = S;
   for (let i = 0; i < chemin.length; i++) {
