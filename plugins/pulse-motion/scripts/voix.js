@@ -152,7 +152,7 @@ async function enregistrerPrise({ projet, scene: id, octets, outil = null, whisp
   const pret = W.preparerPrise(son);
   const crete = pret.canaux[0].reduce((m, v) => Math.max(m, Math.abs(v)), 0);
   if (crete === 0 || pret.canaux[0].length < 0.1 * son.taux) return { ok: false, statut: 422, message: 'La prise ne contient aucun son : vérifier le micro, puis recommencer.' };
-  if (W.dureeParole(pret) < 0.3) return { ok: false, statut: 422, message: 'La prise semble vide (silence, souffle ou clic) : vérifier le micro, puis recommencer en parlant.' };
+  if (W.dureeParole(son) < 0.3) return { ok: false, statut: 422, message: 'La prise semble vide (silence, souffle ou clic) : vérifier le micro, puis recommencer en parlant.' };
   // Copie d'historique seulement quand la prise est bonne : un essai raté ne laisse rien.
   sauvegarder(projet);
   const r = await ecrirePrise({ projet, scene: id, octets: new Uint8Array(octets), texte: scene.voix.texte, outil: outil && outil.present ? outil : null });

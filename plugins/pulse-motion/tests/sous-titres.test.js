@@ -134,3 +134,10 @@ test('correctifs : VTT : &, < et > échappés', () => {
   assert.ok(vtt.includes('R&amp;D &lt;3 a&gt;b'), vtt);
   assert.ok(ST.versSRT(c).includes('R&D <3 a>b'));
 });
+
+
+test('revue : espace insécable après le guillemet ouvrant gardée', () => {
+  const Al = require('../moteur/aligner.js');
+  const mots = Al.decouperMots(`Il dit «${INSEC}bonjour${INSEC}».`);
+  assert.equal(mots[2].w, `«${INSEC}bonjour${INSEC}».`);
+});

@@ -127,11 +127,12 @@
     return { taux: son.taux, canaux: [x], decalage: r.debut / son.taux };
   }
 
-  /** Durée (s) où l'on entend quelque chose : fenêtres de 20 ms dont le niveau dépasse seuil (efficace, 0,02 ≈ −34 dBFS).
-   *  Une prise vide (silence, clic, souffle très bas) en a moins de 0,3 s. */
+  /** Durée (s) où l'on entend quelque chose : fenêtres de 20 ms dont le niveau efficace dépasse seuil (0,02 ≈ −34 dBFS).
+   *  À mesurer sur la prise brute, avant sa normalisation (qui remonterait un souffle au niveau d'une voix).
+   *  Une prise vide (silence, clic, souffle) en a moins de 0,3 s. */
   function dureeParole(son, seuil) {
     var s = seuil === undefined ? 0.02 : seuil;
-    var x = mono(son.canaux), n = Math.max(1, Math.round(0.02 * son.taux)), fenetres = 0;
+    var x = passeHaut(mono(son.canaux), son.taux), n = Math.max(1, Math.round(0.02 * son.taux)), fenetres = 0;
     for (var i = 0; i + n <= x.length; i += n) {
       var e = 0;
       for (var k = i; k < i + n; k++) e += x[k] * x[k];
