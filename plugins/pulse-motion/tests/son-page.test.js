@@ -242,3 +242,34 @@ test('correctifs : lecture reprise sans geste après un rechargement : son bloqu
     await page.fermer();
   }
 });
+
+
+test('revue : son bloqué : le clic sur la vidéo débloque le son sans mettre en pause', sans, async () => {
+  const dir = copierProjet('projet-simple');
+  avecMusique(dir);
+  const prelude = `sessionStorage.setItem('pm-position', JSON.stringify({ t: 0.5, lecture: true }));
+    window.__geste = false;
+    var Vrai = window.AudioContext;
+    window.AudioContext = function () {
+      var c = new Vrai(); var reprendre = c.resume.bind(c); c.suspend();
+      c.resume = function () { return window.__geste ? reprendre() : Promise.resolve(); };
+      return c;
+    };`;
+  const page = await ouvrirPageSon({ dir, navigateur, prelude });
+  try {
+    await page.evaluer('M.rendreSon().then(function () { return new Promise(function (r) { setTimeout(r, 400); }); })');
+    const r = await page.evaluer(`(async function () {
+      window.__geste = true;
+      var scene = document.getElementById('pm-scene');
+      scene.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+      scene.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await new Promise(function (r) { setTimeout(r, 300); });
+      return { e: M.etatSon(), bouton: document.querySelector('#pm-lecteur button').getAttribute('aria-label') };
+    })()`, { geste: true });
+    assert.equal(r.bouton, 'Pause');
+    assert.equal(r.e.bloque, false);
+    assert.equal(r.e.enLecture, true);
+  } finally {
+    await page.fermer();
+  }
+});

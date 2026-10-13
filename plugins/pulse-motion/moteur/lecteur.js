@@ -118,8 +118,14 @@
     // Lecture relancée sans geste (rechargement après une retouche) : le navigateur garde le son suspendu
     // jusqu'au premier clic ou à la première touche, qui le reprend.
     function sonBloque() { return !!(son.source && son.contexte && son.contexte.state === 'suspended'); }
+    // Le clic (ou la touche) qui débloque le son ne met pas aussi la vidéo en pause.
+    var gesteDeblocage = false;
     function debloquer() {
       if (!son.contexte || son.contexte.state !== 'suspended') return;
+      if (sonBloque()) {
+        gesteDeblocage = true;
+        setTimeout(function () { gesteDeblocage = false; }, 600);
+      }
       son.contexte.resume().then(function () { if (lecture) lancerSon(M.temps()); afficher(M.temps()); });
     }
     document.addEventListener('pointerdown', debloquer, true);
@@ -142,7 +148,10 @@
       bouton.setAttribute('aria-label', 'Lecture');
       arreterSon();
     }
-    function basculer() { if (lecture) pause(); else jouer(); }
+    function basculer() {
+      if (gesteDeblocage) { gesteDeblocage = false; return; }
+      if (lecture) pause(); else jouer();
+    }
     function boucler() {
       if (!lecture) return;
       var maintenant = M.reel.now();

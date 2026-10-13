@@ -91,3 +91,13 @@ test('ecrirePrise avec des mots donnés : décalés du rognage, approche whisper
   assert.equal(m.approche, 'whisper');
   assert.ok(Math.abs(m.mots[0].t0 - 0.18) < 0.02, JSON.stringify(m.mots[0]));
 });
+
+
+test('revue : texte retouché seulement dans sa typographie (apostrophe, espace insécable) : mots gardés, aucune alerte', async () => {
+  const dir = copierProjet('projet-simple');
+  const r = await V.ecrirePrise({ projet: dir, scene: 'intro', octets: wavParole(), texte: "Pourquoi l'eau ? Le froid" });
+  const d = deroule();
+  d.scenes[0].voix = { texte: 'Pourquoi l’eau' + String.fromCharCode(0x202F) + '? Le froid', fichier: r.relatif };
+  const v = V.lireVoixScene(dir, d, d.scenes[0]);
+  assert.deepEqual(v.alertes, []);
+});

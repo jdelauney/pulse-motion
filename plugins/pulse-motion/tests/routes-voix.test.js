@@ -166,3 +166,22 @@ test('correctifs : prise vide (silence, clic) refusée ; taille maximale dite d\
     assert.equal(bonne.json.calage, 'lettres');
   });
 });
+
+
+test('revue : prise faite seulement de souffle (bruit continu, sans parole) refusée', async () => {
+  const W2 = require('../moteur/wav.js');
+  const taux = 48000;
+  let graine = 7;
+  const hasard = () => { graine = (graine * 1103515245 + 12345) % 2147483648; return graine / 2147483648; };
+  const souffle = { taux, canaux: [new Float32Array(3 * taux).map(() => 0.004 * (hasard() * 2 - 1))] };
+  assert.ok(W2.dureeParole(souffle) < 0.3, String(W2.dureeParole(souffle)));
+  const { enregistrerPrise } = require('../scripts/voix.js');
+  const dir = copierProjet('projet-simple');
+  modifierDeroule(dir, (d) => { d.scenes[0].voix = { texte: 'Pourquoi le froid' }; });
+  const r = await enregistrerPrise({ projet: dir, scene: 'intro', octets: Buffer.from(W2.ecrire(souffle)), whisper: null });
+  assert.equal(r.ok, false);
+  assert.match(r.message, /vide|aucun son/);
+  // Une parole sur le même souffle est acceptée.
+  const parle = { taux, canaux: [souffle.canaux[0].map((v, i) => v + (i > taux && i < 2 * taux ? 0.2 * Math.sin(i / 5) : 0))] };
+  assert.ok(W2.dureeParole(parle) > 0.8);
+});

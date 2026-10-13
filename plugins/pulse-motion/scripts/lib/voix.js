@@ -39,6 +39,14 @@ function lireJSON(fichier) {
 }
 
 /** Voix d'une scène prête pour la page. -> null | { prise, erreur } | { prise, duree, mots, approche, opus, alertes } */
+/** Même texte dit : identique, ou retouché seulement dans sa typographie (apostrophes, espaces, ponctuation, casse). */
+function memeTexte(a, b) {
+  if (a === b) return true;
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  const cles = (t) => A.decouperMots(t).map((m) => m.cles[0]).join(' ');
+  return cles(a) === cles(b);
+}
+
 function lireVoixScene(projet, deroule, scene) {
   const prise = priseDeScene(projet, deroule, scene);
   if (!prise) return null;
@@ -58,7 +66,7 @@ function lireVoixScene(projet, deroule, scene) {
   const alertes = [];
   let mots;
   let approche = 'lettres';
-  if (enregistres && enregistres.empreinte === sceau && enregistres.texte === scene.voix.texte && Array.isArray(enregistres.mots)) {
+  if (enregistres && enregistres.empreinte === sceau && memeTexte(enregistres.texte, scene.voix.texte) && Array.isArray(enregistres.mots)) {
     mots = enregistres.mots;
     approche = enregistres.approche || 'lettres';
     if (enregistres.echec) {

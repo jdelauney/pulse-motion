@@ -34,7 +34,8 @@
       var lien = /[ \t\n\r\f\v]/.test(avant) ? ' ' : avant;
       var cle = normaliserMot(brut);
       if (!cle) {
-        if (OUVRANTE.test(brut) || !mots.length) enAttente += brut + ' ';
+        // Guillemet ouvrant : l'espace qui le suit (insécable « bonjour ») est gardée telle quelle.
+        if (OUVRANTE.test(brut) || !mots.length) enAttente += brut + (k + 1 < morceaux.length && !/[ \t\n\r\f\v]/.test(morceaux[k + 1]) ? morceaux[k + 1] : ' ');
         else { var p = mots[mots.length - 1]; p.w += lien + brut; delete p.insecable; }
         continue;
       }

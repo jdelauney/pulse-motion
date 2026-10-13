@@ -219,7 +219,7 @@ async function enregistrer(secondes) {
     const canaux = [];
     for (let c = 0; c < decode.numberOfChannels; c++) canaux.push(decode.getChannelData(c));
     const pret = M.wav.preparerPrise({ taux: decode.sampleRate, canaux });
-    if (M.wav.dureeParole(pret) < 0.3) {
+    if (M.wav.dureeParole({ taux: decode.sampleRate, canaux }) < 0.3) {
       changer('erreur', 'La prise semble vide (silence, souffle ou clic) : vérifier le micro, puis recommencer en parlant.');
       throw new Error('prise vide');
     }
