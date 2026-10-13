@@ -194,7 +194,47 @@ function creerRoutesAtelier(projet, { dossierStyles, bibliotheque = BIBLIOTHEQUE
     });
   }
 
-  const ecritures = {};
+  const refuser = (res, r) => repondre(res, r.statut, { message: r.message, ...(r.conflit ? { conflit: true } : {}) });
+
+  /** Scène visée par une écriture : -> { absolu, html } ou { statut, message, conflit? } (rien n'est écrit). */
+  function sceneVisee(c) {
+    const deroule = lireLeDeroule();
+    const s = deroule && deroule.scenes.find((x) => x.id === c.scene);
+    if (!s) return { statut: 404, message: `Scène « ${c.scene} » introuvable dans le déroulé.` };
+    if (c.fichier !== undefined && c.fichier !== s.fichier) return { statut: 409, conflit: true, message: CONFLIT };
+    const absolu = cheminDansProjet(projet, String(s.fichier || ''));
+    let brut;
+    try { brut = fs.readFileSync(absolu); } catch { return { statut: 404, message: `Fichier « ${s.fichier} » de la scène « ${s.id} » introuvable.` }; }
+    if (empreinte(brut) !== c.empreinte) return { statut: 409, conflit: true, message: CONFLIT };
+    const html = brut.toString('utf8');
+    if (!Number.isInteger(c.ordre) || !balisesEffets(html)[c.ordre]) return { statut: 409, conflit: true, message: CONFLIT };
+    return { absolu, html };
+  }
+
+  /** Texte de réglages sûr (pas de guillemet qui fermerait l'attribut), ou null. */
+  function reglagesSurs(v) {
+    const t = v === undefined || v === null ? '' : String(v).trim();
+    return REGLAGES_SURS.test(t) ? t : null;
+  }
+
+  function ecrireReglages(c, res) {
+    const reglages = reglagesSurs(c.reglages);
+    if (reglages === null) return repondre(res, 400, { message: 'Réglages illisibles : guillemets, chevrons, « & » et retours à la ligne ne sont pas permis.' });
+    if (!graineValide(c.graine)) return repondre(res, 400, { message: 'Graine : nombre entier positif attendu.' });
+    const v = sceneVisee(c);
+    if (v.statut) return refuser(res, v);
+    const nouveau = modifierEffet(v.html, c.ordre, {
+      'data-reglages': reglages || null,
+      'data-graine': c.graine === null || c.graine === undefined ? null : String(c.graine),
+    });
+    try {
+      historique.sauvegarder(projet);
+      ecrire(v.absolu, nouveau);
+    } catch (e) { return repondre(res, 500, { message: messageDisque(e) }); }
+    return repondre(res, 200, { ok: true, empreinte: empreinte(Buffer.from(nouveau, 'utf8')) });
+  }
+
+  const ecritures = { '/_pm/atelier/reglages': ecrireReglages };
 
   return function routes(req, res, url) {
     const p = url.pathname;
