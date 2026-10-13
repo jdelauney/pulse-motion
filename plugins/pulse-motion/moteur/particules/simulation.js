@@ -521,6 +521,52 @@ fn dimensions(genre: u32, R: Repere, r: f32) -> vec2f {
   return R.demi + vec2f(r);
 }
 
+// Distance (cqh à l'échelle) au contour d'une forme exacte : champ de distance dans la boîte, distance à la boîte dehors.
+fn distanceForme(o: u32, R: Repere, l: vec2f) -> f32 {
+  let dehors = abs(l) - R.demi;
+  if (dehors.x > 0.0 || dehors.y > 0.0) { return length(max(dehors, vec2f(0.0))); }
+  let uv = clamp(l / sur(R.demi) * 0.5 + 0.5, vec2f(0.5 / 256.0), vec2f(1.0 - 0.5 / 256.0));
+  return textureSampleLevel(sdf, lisse, uv, i32(Mo.o[o].z), 0.0).r * min(R.echelle.x, R.echelle.y);
+}
+
+fn normaleForme(o: u32, R: Repere, l: vec2f) -> vec2f {
+  let h = 0.25;
+  let g = vec2f(distanceForme(o, R, l + vec2f(h, 0.0)) - distanceForme(o, R, l - vec2f(h, 0.0)),
+                distanceForme(o, R, l + vec2f(0.0, h)) - distanceForme(o, R, l - vec2f(0.0, h)));
+  if (dot(g, g) < 1e-12) { return vec2f(0.0, -1.0); }
+  return normalize(g);
+}
+
+// Marche dans le champ (8 étapes au plus), depuis l'entrée du segment dans la boîte gonflée du rayon.
+fn coupForme(o: u32, A: Repere, B: Repere, l0: vec2f, l1: vec2f, r: f32) -> Coup {
+  let q0 = l0 / sur(A.demi + vec2f(r));
+  let q1 = l1 / sur(B.demi + vec2f(r));
+  var t = 0.0;
+  if (!all(abs(q0) <= vec2f(1.0))) {
+    let b = coupBoiteNorm(q0, q1);
+    if (!b.ok) { return rien(); }
+    t = b.t;
+  } else if (distanceForme(o, A, l0) - r <= 0.0) {
+    return rien();   // départ dans la forme : elle en sort librement
+  }
+  let longueur = length(l1 - l0);
+  if (longueur < 1e-6) { return rien(); }
+  for (var i = 0u; i < 8u; i++) {
+    let R = melange(A, B, t);
+    let l = mix(l0, l1, t);
+    let d = distanceForme(o, R, l) - r;
+    if (d < 0.01) { return Coup(true, t, normaleForme(o, R, l), l); }
+    t += d / longueur;
+    if (t > 1.0) { return rien(); }
+  }
+  // Marche épuisée : contact seulement si l'arrivée est dans la forme.
+  if (distanceForme(o, B, l1) - r < 0.0) {
+    let l = mix(l0, l1, t);
+    return Coup(true, t, normaleForme(o, B, l), l);
+  }
+  return rien();
+}
+
 // Contact du segment [p0 à ta, p1 à τ1] avec l'obstacle o : segment pris dans le repère local aux deux instants,
 // boîtes et cercles normalisés par leurs dimensions à ces instants (obstacles qui grandissent compris).
 fn coupObstacle(o: u32, A: Repere, B: Repere, p0: vec2f, p1: vec2f, r: f32) -> Coup {
@@ -528,6 +574,7 @@ fn coupObstacle(o: u32, A: Repere, B: Repere, p0: vec2f, p1: vec2f, r: f32) -> C
   let l0 = versLocal(A, p0);
   let l1 = versLocal(B, p1);
   if (genre == 0u) { return coupDemiPlan(l0, l1, r); }
+  if (genre == 4u) { return coupForme(o, A, B, l0, l1, r); }
   let DA = dimensions(genre, A, r);
   let DB = dimensions(genre, B, r);
   var c: Coup;

@@ -117,3 +117,12 @@ test('emballage de l\'uniforme Monde', () => {
   assert.deepEqual(Array.from(u.slice(12, 16)), [0, 1, O.AUCUN, O.AUCUN]);
   assert.deepEqual(Array.from(u.slice(24, 28)), [1, 4, O.AUCUN, 0]);
 });
+
+test('formes : couche attachée, masque vide ignoré, forme pas prête gardée en boîte', () => {
+  const propres = [0, 1, 2].map((index) => ({ scene: 's', genre: 'forme', video: false, index }));
+  const t = O.construireTable({ largeurCqh: L, solRecette: null, propres: [...propres, { scene: 's', genre: 'element', video: false, index: 3 }] });
+  O.attacherFormes(t, (d) => ({ 0: 5, 1: null }[d.index]));
+  assert.deepEqual(t.entrees.slice(3).map((e) => [e.type, e.categorie, e.forme]), [
+    [4, 8, 5], [1, 0, O.AUCUN], [1, 8, O.AUCUN], [1, 4, O.AUCUN],
+  ]);
+});
