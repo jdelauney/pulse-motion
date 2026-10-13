@@ -271,10 +271,18 @@
     });
     function finir() {
       regles.remove();
+      sansSousTitres.remove();
       if (M.particules) M.particules.preparerCapture = preparer;
       M.rendre(depart);
     }
-    return chaine.then(function () { return mesurerFlashs(S, constats); }).then(function () {
+    // Flashs : sous-titres masqués (un carton qui change n'est pas un flash ; sinon chaque carton fait relire ses
+    // alentours image par image, et le contrôle double de durée).
+    var sansSousTitres = document.createElement('style');
+    sansSousTitres.textContent = '#pm-sous-titres { display: none !important; }';
+    return chaine.then(function () {
+      document.head.appendChild(sansSousTitres);
+      return mesurerFlashs(S, constats);
+    }).then(function () {
       finir();
       return constats;
     }, function (e) {
