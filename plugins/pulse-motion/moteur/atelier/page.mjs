@@ -82,8 +82,12 @@ function marquer() {
   if (formulaire) formulaire.marquer(etat.erreurs.filter((e) => !estReglage(e)));
 }
 
+let generation = 0; // une compilation dépassée (réponses dans le désordre, texture à charger) est ignorée
+
 async function appliquer() {
+  const numero = ++generation;
   const r = await compiler();
+  if (numero !== generation) return;
   etat.erreurs = r.ok ? [] : r.erreurs;
   marquer();
   if (!r.ok) { dire('Recette refusée (voir le champ marqué) : l\'image garde le dernier état valide.'); return; }
