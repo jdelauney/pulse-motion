@@ -38,7 +38,8 @@ fn vsPlein(@builtin(vertex_index) i: u32) -> @builtin(position) vec4f {
 `;
 
   const WGSL_PARTICULES = P.WGSL_COMMUN + /* wgsl */ `
-struct Calque { largeur: f32, hauteur: f32, delta: f32, dureeImage: f32, k: u32, trie: u32, flou: u32, a: u32 };
+struct Calque { largeur: f32, hauteur: f32, delta: f32, dureeImage: f32, k: u32, trie: u32, flou: u32, fondu: u32 };
+struct Contact { local: vec2f, obstacle: u32, pose: f32, impact: f32, nImpacts: u32, opacite: f32, cellule: u32 };
 struct Style { genre: u32, texture: u32, etirement: f32, longueur: u32, colonnes: u32, lignes: u32, ips: f32, melange: u32 };
 @group(0) @binding(0) var<storage, read> particules: array<Particule>;
 @group(0) @binding(1) var<storage, read> T: array<f32>;
@@ -48,6 +49,13 @@ struct Style { genre: u32, texture: u32, etirement: f32, longueur: u32, colonnes
 @group(0) @binding(5) var<storage, read> historique: array<vec2f>;
 @group(0) @binding(6) var image: texture_2d<f32>;
 @group(0) @binding(7) var lisse: sampler;
+@group(0) @binding(8) var<storage, read> contacts: array<Contact>;
+
+// Fondu d'une particule posée (collisions) : 1 sans contacts.
+fn fondu(idx: u32) -> f32 {
+  if (C.fondu == 1u) { return contacts[idx].opacite; }
+  return 1.0;
+}
 
 struct Sortie {
   @builtin(position) pos: vec4f,
@@ -138,7 +146,7 @@ fn vsQuad(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> S
   o.pos = ecran(centre + q);
   o.uv = c;
   o.uvTex = uvTex;
-  o.couleur = vec4f(couleur.rgb * table(320u, u), couleur.a * table(384u, u));
+  o.couleur = vec4f(couleur.rgb * table(320u, u), couleur.a * table(384u, u) * fondu(idx));
   o.alea = p.alea;
   o.echantillons = f32(echantillons);
   return o;
@@ -176,7 +184,7 @@ fn vsTrainee(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -
   o.uv = vec2f(0.0, cote);
   o.uvTex = vec2f(f32(j) / f32(N), cote * 0.5 + 0.5);
   let couleur = teinte(u);
-  o.couleur = vec4f(couleur.rgb * table(320u, u), couleur.a * table(384u, u) * k);
+  o.couleur = vec4f(couleur.rgb * table(320u, u), couleur.a * table(384u, u) * k * fondu(idx));
   o.alea = p.alea;
   o.echantillons = 1.0;
   return o;
@@ -408,6 +416,7 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
           { binding: 5, visibility: V, buffer: { type: 'read-only-storage' } },
           { binding: 6, visibility: Fr, texture: { sampleType: 'float' } },
           { binding: 7, visibility: Fr, sampler: { type: 'filtering' } },
+          { binding: 8, visibility: V, buffer: { type: 'read-only-storage' } },
         ],
       });
       const module = device.createShaderModule({ label: 'pm-particules', code: WGSL_PARTICULES });
@@ -472,6 +481,7 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
 
       this.lisse = device.createSampler({ magFilter: 'linear', minFilter: 'linear', addressModeU: 'clamp-to-edge', addressModeV: 'clamp-to-edge' });
       this.vide = device.createBuffer({ size: 16, usage: U.STORAGE });
+      this.videContacts = device.createBuffer({ size: 32, usage: U.STORAGE });
       this.blanc = device.createTexture({ size: [1, 1], format: 'rgba8unorm-srgb', usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST });
       device.queue.writeTexture({ texture: this.blanc }, new Uint8Array([255, 255, 255, 255]), { bytesPerRow: 4 }, [1, 1]);
       this.images = new Map();
@@ -646,6 +656,7 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
             { binding: 5, resource: { buffer: e.historique || this.vide } },
             { binding: 6, resource: image || this.blanc.createView() },
             { binding: 7, resource: this.lisse },
+            { binding: 8, resource: { buffer: e.contacts || this.videContacts } },
           ],
         });
         this.groupes.set(e, g);
@@ -686,7 +697,7 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
         const f = new Float32Array(v);
         const u = new Uint32Array(v);
         f[0] = o.largeurCqh; f[1] = 100; f[2] = delta; f[3] = o.dureeImage;
-        u[4] = sim.k || 0; u[5] = this.estTrie(e) ? 1 : 0; u[6] = r.flou ? 1 : 0;
+        u[4] = sim.k || 0; u[5] = this.estTrie(e) ? 1 : 0; u[6] = r.flou ? 1 : 0; u[7] = e.contacts ? 1 : 0;
         device.queue.writeBuffer(e.uniformeRendu, 0, v);
         const trainee = r.type === 'trainee';
         rp.setPipeline(this.pipelines[(trainee ? 'trainee-' : 'quad-') + (r.melange === 'additif' ? 'additif' : 'alpha')]);
