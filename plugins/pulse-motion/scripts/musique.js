@@ -2,7 +2,7 @@
 'use strict';
 /* Pulse Motion – musique de la vidéo.
  *
- *   node scripts/musique.js ecouter [dossier]   rend la musique seule dans sortie/musique.wav (pour l'écouter)
+ *   node scripts/musique.js ecouter [dossier] [--ouvrir]   rend la musique seule dans sortie/musique.wav (--ouvrir : l'ouvre ensuite)
  *
  * La musique générée est fabriquée par le synthétiseur de la page : elle se rend dans Chrome ou Edge sans fenêtre.
  * Résumé JSON ; code 1 en cas d'échec.
@@ -15,7 +15,7 @@ const { trouverNavigateur } = require('./lib/navigateur.js');
 const { ouvrirCapture } = require('./lib/capture-fidele.js');
 
 /** -> { ok, fichier?, duree?, message? } */
-async function ecouterMusique({ dossier, navigateur = trouverNavigateur(), dossierStyles }) {
+async function ecouterMusique({ dossier, navigateur = trouverNavigateur(), dossierStyles, ouvrir = false, ouvrirFichier }) {
   const projet = path.resolve(dossier);
   const { deroule, erreurs } = lireDeroule(projet);
   if (erreurs.length) return { ok: false, message: `Le déroulé contient des erreurs : ${erreurs.join(' ')}` };
@@ -33,6 +33,8 @@ async function ecouterMusique({ dossier, navigateur = trouverNavigateur(), dossi
     const son = await capture.rendreSon({ seulement: 'musique' });
     if (!son.wav) return { ok: false, message: `La musique n'a pas pu être fabriquée${son.avertissements.length ? ` (${son.avertissements.join(' ')})` : ''}.` };
     fs.writeFileSync(path.join(sortie, 'musique.wav'), son.wav);
+    // --ouvrir : le fichier s'ouvre dans le lecteur de l'ordinateur (la personne l'écoute sans le chercher).
+    if (ouvrir) (ouvrirFichier || require('./apercu.js').ouvrirNavigateur)(path.join(sortie, 'musique.wav'));
     return { ok: true, fichier: 'sortie/musique.wav', duree: Math.round(capture.duree * 100) / 100 };
   } finally {
     if (capture) await capture.fermer();
@@ -41,12 +43,13 @@ async function ecouterMusique({ dossier, navigateur = trouverNavigateur(), dossi
 }
 
 if (require.main === module) {
-  const [action, dossier = '.'] = process.argv.slice(2);
+  const [action, ...args] = process.argv.slice(2);
+  const dossier = args.find((a) => !a.startsWith('--')) || '.';
   if (action !== 'ecouter') {
-    console.error('Usage : pulse-motion musique ecouter [dossier]');
+    console.error('Usage : pulse-motion musique ecouter [dossier] [--ouvrir]');
     process.exit(2);
   }
-  ecouterMusique({ dossier }).then((r) => { console.log(JSON.stringify(r, null, 2)); process.exit(r.ok ? 0 : 1); },
+  ecouterMusique({ dossier, ouvrir: args.includes('--ouvrir') }).then((r) => { console.log(JSON.stringify(r, null, 2)); process.exit(r.ok ? 0 : 1); },
     (e) => { console.log(JSON.stringify({ ok: false, message: e.message }, null, 2)); process.exit(1); });
 }
 

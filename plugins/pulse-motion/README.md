@@ -8,6 +8,20 @@ Plugin Claude Code qui fabrique, sur votre ordinateur et sans cloud, des vidéos
 /plugin install pulse-motion --marketplace jdelauney/pulse-motion
 ```
 
+## Ce que vous pouvez demander
+
+Tout se fait par une demande dans Claude Code, jamais dans un terminal. Créer une vidéo ou un style passe par une commande commençant par `/` ; pour le reste, une phrase suffit.
+
+| Commande | Comment la lancer | Exemples de demandes |
+|---|---|---|
+| `/pulse-motion:creer` | avec le `/` | `/pulse-motion:creer Les règles d'hygiène en cuisine` |
+| `/pulse-motion:style` | avec le `/` | `/pulse-motion:style Un style papercraft aux couleurs pop-art` |
+| `/pulse-motion:retoucher` | une phrase, ou avec le `/` | « ralentis la scène 3 », « baisse la musique », « ouvre l'aperçu », « fais une planche des scènes 2 et 3 », « enregistre ma charte », « annule » |
+| `/pulse-motion:voix` | une phrase, ou avec le `/` | « j'enregistre la scène 2 », « j'ai un fichier de ma voix », « mets une voix provisoire », « recale les mots », « fais-moi écouter la musique » |
+| `/pulse-motion:exporter` | une phrase, ou avec le `/` | « exporte ma vidéo », « une version légère pour l'envoyer par courriel » |
+| `/pulse-motion:reprendre` | une phrase, ou avec le `/` | « où en est ma vidéo ? », « on reprend » |
+| `/pulse-motion:outils` | une phrase, ou avec le `/` | « vérifie mon ordinateur », « installe la transcription », « installe ffmpeg » |
+
 ## Prérequis
 
 - Claude Code
@@ -18,7 +32,7 @@ Plugin Claude Code qui fabrique, sur votre ordinateur et sans cloud, des vidéos
 
 | Dossier | Rôle |
 |---|---|
-| `skills/` | `/pulse-motion:creer`, `/pulse-motion:retoucher`, `/pulse-motion:exporter`, `/pulse-motion:reprendre` |
+| `skills/` | `creer`, `style`, `retoucher`, `voix`, `exporter`, `reprendre`, `outils` (voir « Ce que vous pouvez demander ») |
 | `agents/` | `animateur` : écrit une scène |
 | `moteur/` | Moteur JavaScript inclus dans chaque page : courbes, minutage, transitions, horloge déterministe, lecteur, débordements ; capture et export MP4 (servis par l'aperçu seulement) |
 | `scripts/` | Assemblage, aperçu, contrôles, état, historique, export ; `pm.js` derrière la commande `pulse-motion` (`bin/`) |
