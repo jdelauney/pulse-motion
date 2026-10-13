@@ -123,12 +123,31 @@
     return copie;
   }
 
+  var TRANSFORMATIONS = ['transform', 'translate', 'rotate', 'scale'];
+
+  /** Boîte de mise en page (px CSS, non arrondie) : getBoundingClientRect, transformations de l'élément et de ses ancêtres
+   *  neutralisées le temps de la lecture (styles en ligne rétablis). Vaut aussi pour un élément en ligne (cs.width = auto,
+   *  offsetWidth arrondi et limité à la première ligne) : même boîte que celle du repère de l'obstacle. */
+  function boiteMiseEnPage(el) {
+    var chaine = [];
+    for (var n = el; n && n.nodeType === 1; n = n.parentElement) chaine.push(n);
+    var sauves = chaine.map(function (e) {
+      return TRANSFORMATIONS.map(function (p) { return [p, e.style.getPropertyValue(p), e.style.getPropertyPriority(p)]; });
+    });
+    chaine.forEach(function (e) { TRANSFORMATIONS.forEach(function (p) { e.style.setProperty(p, 'none', 'important'); }); });
+    var r = el.getBoundingClientRect();
+    chaine.forEach(function (e, k) {
+      sauves[k].forEach(function (s) { if (s[1]) e.style.setProperty(s[0], s[1], s[2]); else e.style.removeProperty(s[0]); });
+    });
+    return { largeur: r.width, hauteur: r.height };
+  }
+
   /** Masque alpha de l'élément seul, à sa taille de mise en page, sans ses transformations. */
   function masque(el, o) {
     var cote = (o && o.cote) || 256;
-    var cs = getComputedStyle(el);
-    var largeurPx = parseFloat(cs.width) || el.offsetWidth || 0;
-    var hauteurPx = parseFloat(cs.height) || el.offsetHeight || 0;
+    var boite = boiteMiseEnPage(el);
+    var largeurPx = boite.largeur;
+    var hauteurPx = boite.hauteur;
     if (!(largeurPx > 0 && hauteurPx > 0)) {
       return Promise.resolve({ largeur: 0, hauteur: 0, alpha: new Uint8ClampedArray(0), largeurPx: largeurPx, hauteurPx: hauteurPx });
     }
