@@ -54,11 +54,13 @@
    *   scenes : [{ id, duree, rythme?, transition? }]
    *   elementsParScene : { [idScene]: [{ cle, start?, dur? }] }  (start, dur : textes des attributs)
    *   options.dureeTemps : secondes par temps musical (tempo du déroulé), absent sans tempo
+   *   options.decalageTemps : instant du premier temps (tempo.decalage), 0 par défaut
    * -> { duree, scenes: [{ id, debut, fin, rythme, transition, entree }],
    *      elements: { [idScene]: { [cle]: { debut, fin } } }, erreurs: [{ regle, scene, element, message }] }
    */
   function calculerMinutage(scenes, elementsParScene, options) {
     var dureeTemps = options && options.dureeTemps > 0 ? options.dureeTemps : null;
+    var decalageTemps = options && options.decalageTemps > 0 ? options.decalageTemps : 0;
     var erreurs = [];
     var resultat = { duree: 0, scenes: [], elements: {}, erreurs: erreurs };
     var fin = 0;
@@ -72,7 +74,12 @@
       if (s.voix && s.voix.duree > 0) {
         var finVoix = (s.voix.debut === undefined ? DEBUT_VOIX : s.voix.debut) + s.voix.duree + MARGE_VOIX;
         if (finVoix > reelle + 1e-9) {
-          reelle = dureeTemps ? Math.ceil(finVoix / dureeTemps - 1e-9) * dureeTemps : finVoix;
+          // Avec un tempo : la scène suivante commence sur un temps (premier temps à decalageTemps, entrée chevauchée comprise).
+          if (dureeTemps) {
+            var entreeSuivante = i + 1 < scenes.length ? chevauchement(scenes[i + 1], i + 1) : 0;
+            var k = Math.ceil((debut + finVoix - entreeSuivante - decalageTemps) / dureeTemps - 1e-9);
+            reelle = k * dureeTemps + decalageTemps + entreeSuivante - debut;
+          } else reelle = finVoix;
           allongee = true;
         }
       }

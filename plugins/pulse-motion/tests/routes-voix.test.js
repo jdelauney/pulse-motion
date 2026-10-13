@@ -107,3 +107,81 @@ test('revue : texte retiré du déroulé avant « Garder » : refus clair', asyn
     assert.match(r.json.message, /n'a pas de texte de voix/);
   });
 });
+
+test('correctifs : transcription en fond : échec signalé (transcription-echouee), ancienne prise jamais écrite sur la nouvelle, une à la fois', async () => {
+  const { enregistrerPrise } = require('../scripts/voix.js');
+  const { controler } = require('../scripts/controler.js');
+  const dir = copierProjet('projet-simple');
+  modifierDeroule(dir, (d) => { d.scenes[0].voix = { texte: 'Pourquoi le froid' }; });
+  let enCours = 0, maxi = 0;
+  const lent = (mots, ms, ok = true) => ({ pret: true, transcrire: async () => {
+    enCours++; maxi = Math.max(maxi, enCours);
+    await new Promise((r) => setTimeout(r, ms));
+    enCours--;
+    return ok ? { ok: true, mots } : { ok: false, message: 'La transcription a échoué (essai).' };
+  } });
+  const ancienne = await enregistrerPrise({ projet: dir, scene: 'intro', octets: prise(1.5), whisper: lent([{ w: 'Pourquoi', t0: 0.1, t1: 0.2 }, { w: 'le', t0: 0.3, t1: 0.4 }, { w: 'froid', t0: 0.5, t1: 0.6 }], 300), enFond: true });
+  const nouvelle = await enregistrerPrise({ projet: dir, scene: 'intro', octets: prise(2.5), whisper: lent([{ w: 'Pourquoi', t0: 1.0, t1: 1.2 }, { w: 'le', t0: 1.3, t1: 1.4 }, { w: 'froid', t0: 1.5, t1: 1.9 }], 50), enFond: true });
+  await ancienne.transcription; await nouvelle.transcription;
+  assert.equal(maxi, 1);
+  const mots = JSON.parse(fs.readFileSync(path.join(dir, 'assets', 'voix', 'intro.mots.json'), 'utf8'));
+  assert.equal(mots.approche, 'whisper');
+  assert.ok(mots.mots[0].t0 > 0.5, JSON.stringify(mots.mots));
+  const echec = await enregistrerPrise({ projet: dir, scene: 'intro', octets: prise(2), whisper: lent([], 10, false), enFond: true });
+  await echec.transcription;
+  const c = controler({ dossier: dir, dossierStyles: STYLES, ecrire: false });
+  const p = c.problemes.find((x) => x.regle === 'transcription-echouee');
+  assert.ok(p && p.gravite === 'alerte' && p.scene === 'intro', JSON.stringify(c.problemes.map((x) => x.regle)));
+});
+
+test('correctifs : Whisper redétecté à chaque prise reçue (installé pendant que l\'aperçu tourne)', async () => {
+  let appels = 0;
+  const whisper = () => { appels++; return { pret: false }; };
+  await avecApercu(47349, { whisper }, async (dir, url) => {
+    await requete(`${url}_pm/voix?scene=intro`, { methode: 'POST', type: 'audio/wav', corps: prise() });
+    await requete(`${url}_pm/voix?scene=intro`, { methode: 'POST', type: 'audio/wav', corps: prise() });
+    assert.equal(appels, 2);
+  });
+});
+
+test('correctifs : prise vide (silence, clic) refusée ; taille maximale dite d\'après la limite ; calage annoncé', async () => {
+  const taux = 48000;
+  const W2 = require('../moteur/wav.js');
+  const silence = { taux, canaux: [new Float32Array(2 * taux)] };
+  const clic = { taux, canaux: [new Float32Array(2 * taux)] };
+  for (let i = taux; i < taux + 240; i++) clic.canaux[0][i] = 0.9;
+  const parole = { taux, canaux: [new Float32Array(2 * taux).map((_, i) => (i > 0.5 * taux && i < 1.5 * taux ? 0.3 * Math.sin(i / 5) : 0))] };
+  assert.equal(W2.dureeParole(silence), 0);
+  assert.ok(W2.dureeParole(clic) < 0.3);
+  assert.ok(Math.abs(W2.dureeParole(parole) - 1) < 0.1, String(W2.dureeParole(parole)));
+  await avecApercu(47350, { maxPrise: 400000 }, async (dir, url) => {
+    const vide = await requete(`${url}_pm/voix?scene=intro`, { methode: 'POST', type: 'audio/wav', corps: Buffer.from(W2.ecrire(clic)) });
+    assert.equal(vide.statut, 422);
+    assert.match(vide.json.message, /vide/);
+    const lourde = await requete(`${url}_pm/voix?scene=intro`, { methode: 'POST', type: 'audio/wav', corps: prise(5) });
+    assert.equal(lourde.statut, 413);
+    assert.match(lourde.json.message, /0,4 Mo au plus/);
+    const bonne = await requete(`${url}_pm/voix?scene=intro`, { methode: 'POST', type: 'audio/wav', corps: prise(1.5) });
+    assert.equal(bonne.statut, 200);
+    assert.equal(bonne.json.calage, 'lettres');
+  });
+});
+
+
+test('revue : prise faite seulement de souffle (bruit continu, sans parole) refusée', async () => {
+  const W2 = require('../moteur/wav.js');
+  const taux = 48000;
+  let graine = 7;
+  const hasard = () => { graine = (graine * 1103515245 + 12345) % 2147483648; return graine / 2147483648; };
+  const souffle = { taux, canaux: [new Float32Array(3 * taux).map(() => 0.004 * (hasard() * 2 - 1))] };
+  assert.ok(W2.dureeParole(souffle) < 0.3, String(W2.dureeParole(souffle)));
+  const { enregistrerPrise } = require('../scripts/voix.js');
+  const dir = copierProjet('projet-simple');
+  modifierDeroule(dir, (d) => { d.scenes[0].voix = { texte: 'Pourquoi le froid' }; });
+  const r = await enregistrerPrise({ projet: dir, scene: 'intro', octets: Buffer.from(W2.ecrire(souffle)), whisper: null });
+  assert.equal(r.ok, false);
+  assert.match(r.message, /vide|aucun son/);
+  // Une parole sur le même souffle est acceptée.
+  const parle = { taux, canaux: [souffle.canaux[0].map((v, i) => v + (i > taux && i < 2 * taux ? 0.2 * Math.sin(i / 5) : 0))] };
+  assert.ok(W2.dureeParole(parle) > 0.8);
+});

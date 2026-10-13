@@ -13,6 +13,8 @@ const path = require('node:path');
 
 const CONSERVEES = 20;
 const CONTENU = ['deroule.json', 'scenes', 'assets', 'charte', 'effets'];
+// Voix provisoires : recalculables, hors des copies, et gardées telles quelles par « annule ».
+const PROVISOIRES = path.join('assets', 'voix', 'provisoire');
 
 function copies(dossierHistorique) {
   if (!fs.existsSync(dossierHistorique)) return [];
@@ -31,7 +33,7 @@ function sauvegarder(dossier) {
   fs.mkdirSync(cible, { recursive: true });
   for (const nom of CONTENU) {
     const source = path.join(projet, nom);
-    if (fs.existsSync(source)) fs.cpSync(source, path.join(cible, nom), { recursive: true });
+    if (fs.existsSync(source)) fs.cpSync(source, path.join(cible, nom), { recursive: true, filter: (f) => path.relative(projet, f) !== PROVISOIRES });
   }
   for (const ancienne of copies(racine).slice(0, -CONSERVEES)) fs.rmSync(path.join(racine, ancienne), { recursive: true, force: true });
   return { numero, dossier: cible };
@@ -45,9 +47,16 @@ function annuler(dossier) {
   if (!existantes.length) throw new Error('Aucune retouche à annuler.');
   const numero = existantes[existantes.length - 1];
   const source = path.join(racine, numero);
+  const provisoires = path.join(projet, PROVISOIRES);
+  const deCote = fs.existsSync(provisoires) ? fs.mkdtempSync(path.join(racine, 'provisoires-')) : null;
+  if (deCote) fs.cpSync(provisoires, deCote, { recursive: true });
   for (const nom of CONTENU) {
     fs.rmSync(path.join(projet, nom), { recursive: true, force: true });
     if (fs.existsSync(path.join(source, nom))) fs.cpSync(path.join(source, nom), path.join(projet, nom), { recursive: true });
+  }
+  if (deCote) {
+    fs.cpSync(deCote, provisoires, { recursive: true });
+    fs.rmSync(deCote, { recursive: true, force: true });
   }
   fs.rmSync(source, { recursive: true, force: true });
   return { numero };

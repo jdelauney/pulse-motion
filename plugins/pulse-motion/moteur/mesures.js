@@ -223,6 +223,12 @@
             var part = commune(r, rc) / aire(r);
             if (part > S.chevauchementMax) constater('sous-titre-cache-texte', id, nom(el), t, arrondi(part));
           });
+          // Logo de la scène sous un carton (le calque des sous-titres passe au-dessus du contenu des scènes).
+          sec.querySelectorAll('[data-logo], .logo').forEach(function (el) {
+            if (opacite(el) <= 0.5) return;
+            var rl = el.getBoundingClientRect();
+            if (aire(rl) && commune(rl, rc) / aire(rl) > S.logoMasqueMax) constater('logo-masque', id, nom(el), t, { par: 'sous-titres', part: arrondi(commune(rl, rc) / aire(rl)) });
+          });
         });
         var sceneSt = visibles[visibles.length - 1];
         var dSt = Math.min(rc.left - cadre.left, cadre.right - rc.right, rc.top - cadre.top, cadre.bottom - rc.bottom);
@@ -237,6 +243,13 @@
       lectures.forEach(function (l, el) { if (!textesVus.has(el)) fermerLecture(el, l); });
     }
     lectures.forEach(function (l, el) { l.fin = M.duree; fermerLecture(el, l); });
+    // Cartons de sous-titres affichés moins de 1,25 s (durée lue dans les données : c'est celle de l'affichage).
+    var st = M.donnees && M.donnees.sousTitres;
+    if (st && st.incrustes !== false && st.cartons) {
+      st.cartons.forEach(function (c) {
+        if (c.fin - c.debut < 1.25 - 1e-6) constater('texte-fugace', c.scene, 'sous-titres', c.debut, { duree: arrondi(c.fin - c.debut), besoin: 1.25 });
+      });
+    }
     M.rendre(depart);
     return constats;
   };

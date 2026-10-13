@@ -41,7 +41,10 @@ def main():
     if faux:
         time.sleep(float(os.environ.get('PM_WHISPER_ATTENTE', '0')))
         with open(faux, encoding='utf-8') as f:
-            print(json.dumps(json.load(f)))
+            mots = json.load(f)
+        for m in mots:
+            print('%.1f' % m['t1'], file=sys.stderr, flush=True)
+        print(json.dumps(mots))
         return 0
     from faster_whisper import WhisperModel
     modele = WhisperModel(a.modele, device='cpu', compute_type='int8')

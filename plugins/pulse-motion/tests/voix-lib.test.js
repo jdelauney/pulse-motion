@@ -30,14 +30,15 @@ test('écrire une prise : WAV rogné à −3 dBFS, mots calés (lettres), lus en
   assert.equal(v.prise.provisoire, false);
 });
 
-test('revue : texte changé après la prise : calage lettres recalculé en silence', async () => {
+test('revue : texte changé après la prise : calage lettres recalculé, et alerte (la voix dit encore l\'ancien texte)', async () => {
   const dir = copierProjet('projet-simple');
   const r = await V.ecrirePrise({ projet: dir, scene: 'intro', octets: wavParole(), texte: 'Pourquoi le froid' });
   const d = deroule();
   d.scenes[0].voix = { texte: 'Pourquoi la chaleur', fichier: r.relatif };
   const v = V.lireVoixScene(dir, d, d.scenes[0]);
   assert.deepEqual(v.mots.map((m) => m.w), ['Pourquoi', 'la', 'chaleur']);
-  assert.deepEqual(v.alertes, []);
+  assert.deepEqual(v.alertes.map((a) => a.regle), ['mots-perimes']);
+  assert.match(v.alertes[0].message, /dit encore l'ancien texte/);
 });
 
 test('calage whisper périmé (prise remplacée) : recalcul approché et alerte mots-perimes', async () => {
@@ -89,4 +90,14 @@ test('ecrirePrise avec des mots donnés : décalés du rognage, approche whisper
   const m = JSON.parse(fs.readFileSync(path.join(dir, 'assets', 'voix', 'intro.mots.json'), 'utf8'));
   assert.equal(m.approche, 'whisper');
   assert.ok(Math.abs(m.mots[0].t0 - 0.18) < 0.02, JSON.stringify(m.mots[0]));
+});
+
+
+test('revue : texte retouché seulement dans sa typographie (apostrophe, espace insécable) : mots gardés, aucune alerte', async () => {
+  const dir = copierProjet('projet-simple');
+  const r = await V.ecrirePrise({ projet: dir, scene: 'intro', octets: wavParole(), texte: "Pourquoi l'eau ? Le froid" });
+  const d = deroule();
+  d.scenes[0].voix = { texte: 'Pourquoi l’eau' + String.fromCharCode(0x202F) + '? Le froid', fichier: r.relatif };
+  const v = V.lireVoixScene(dir, d, d.scenes[0]);
+  assert.deepEqual(v.alertes, []);
 });

@@ -19,7 +19,10 @@ function repondre(res, statut, corps) {
   res.end(JSON.stringify(corps));
 }
 
-/** creerRoutesVoix(projet, { whisper, maxOctets, outil }) -> (req, res, url) => bool (true si la route a été traitée) */
+/**
+ * creerRoutesVoix(projet, { whisper, maxOctets, outil }) -> (req, res, url) => bool (true si la route a été traitée)
+ * whisper, outil : objets, ou fonctions appelées à chaque prise (installés pendant que l'aperçu tourne).
+ */
 function creerRoutesVoix(projet, { whisper, maxOctets = MAX_PRISE, outil } = {}) {
   // Chargé à l'appel : scripts/voix.js charge des modules qui dépendent de l'assembleur.
   const { enregistrerPrise } = require('../voix.js');
@@ -48,16 +51,17 @@ function creerRoutesVoix(projet, { whisper, maxOctets = MAX_PRISE, outil } = {})
     req.on('data', (m) => {
       if (fini) return;
       taille += m.length;
-      if (taille > maxOctets) { finir(413, { message: 'Prise trop lourde (50 Mo au plus).' }); return; }
+      if (taille > maxOctets) { finir(413, { message: `Prise trop lourde (${(maxOctets / 1024 ** 2).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} Mo au plus) : enregistrer la scène en plusieurs fois, ou plus courte.` }); return; }
       morceaux.push(m);
     });
     req.on('error', () => finir(400, { message: 'Envoi de la prise interrompu.' }));
     req.on('end', async () => {
       if (fini) return;
       try {
-        const r = await enregistrerPrise({ projet, scene: url.searchParams.get('scene') || '', octets: Buffer.concat(morceaux), outil, whisper, enFond: true });
+        const actuel = (x) => (typeof x === 'function' ? x() : x);
+        const r = await enregistrerPrise({ projet, scene: url.searchParams.get('scene') || '', octets: Buffer.concat(morceaux), outil: actuel(outil), whisper: actuel(whisper), enFond: true });
         if (!r.ok) return finir(r.statut || 422, { message: r.message });
-        return finir(200, { fichier: r.fichier, duree: r.duree, transcription: r.transcription ? 'en-cours' : null });
+        return finir(200, { fichier: r.fichier, duree: r.duree, calage: r.calage, transcription: r.transcription ? 'en-cours' : null });
       } catch (e) {
         return finir(500, { message: `La prise n'a pas pu être enregistrée (${e.message}).` });
       }

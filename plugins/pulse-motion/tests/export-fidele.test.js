@@ -121,7 +121,7 @@ test('son : musique illisible, vidéo muette exportée avec un avertissement', s
   const r = await exporter(dir, { ips: 5 });
   assert.equal(r.ok, true, r.message);
   assert.equal(r.audio, false);
-  assert.match(r.avertissement, /musique n'a pas pu être lue.*sans son/);
+  assert.match(r.avertissement, /musique n'a pas pu être lue.*pas de son/);
 });
 
 test('deux navigateurs en parallèle : même résultat ; interruption : tout arrêté, aucun .part', sans, async () => {
@@ -216,4 +216,17 @@ test('revue : l\'export fidèle écrit les sous-titres du texte actuel (sans pas
   const srt = fs.readFileSync(path.join(dir, 'sortie', 'la-chaine-du-froid.srt'), 'utf8');
   assert.match(srt, /Un texte retouché\./);
   assert.match(fs.readFileSync(path.join(dir, 'sortie', 'la-chaine-du-froid.vtt'), 'utf8'), /Un texte retouché\./);
+});
+
+test('correctifs : empreinte des images indépendante des volumes et de la partition', () => {
+  const { empreinteImages } = require('../scripts/export-fidele.js');
+  const page = (d) => `<html><script type="application/json" id="pm-donnees">${JSON.stringify(d)}</script><section data-scene="a"></section></html>`;
+  const base = { titre: 't', scenes: [{ id: 'a', duree: 2, voix: { source: 'pm-son-voix-a', debut: 0.3 } }], musique: { volume: 1, source: 'pm-son-musique', partition: null }, voix: { volume: 1 }, bruitages: { transitions: true, volume: 1 } };
+  const autre = JSON.parse(JSON.stringify(base));
+  autre.musique.volume = 0.4; autre.voix.volume = 0.7; autre.bruitages.volume = 0.2; autre.musique.partition = { tempo: 90, pistes: [] };
+  const reglages = { qualite: '1080p', cadence: 30, dureeSegment: 4 };
+  assert.equal(empreinteImages(page(base), reglages), empreinteImages(page(autre), reglages));
+  const plusLong = JSON.parse(JSON.stringify(base)); plusLong.scenes[0].duree = 3;
+  assert.notEqual(empreinteImages(page(base), reglages), empreinteImages(page(plusLong), reglages));
+  assert.notEqual(empreinteImages(page(base), reglages), empreinteImages(page(base), { ...reglages, cadence: 60 }));
 });

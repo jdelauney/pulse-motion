@@ -32,12 +32,13 @@
 
   /** « re4+fa4 1/4 0.7 » -> { notes: [nom] | 'x' | null (silence), fraction, velocite } ou { erreur } */
   function lirePas(texte) {
-    var champs = String(texte).trim().split(/\s+/);
+    if (typeof texte !== 'string') return { erreur: 'un texte est attendu (ex. « do4 1/4 »), reçu ' + JSON.stringify(texte) };
+    var champs = texte.trim().split(/\s+/);
     if (!champs[0]) return { erreur: 'vide' };
     if (champs.length < 2) return { erreur: 'durée manquante (ex. « do4 1/4 »)' };
     var d = DUREE.exec(champs[1]);
-    var fraction = d ? parseInt(d[1], 10) / (d[2] ? parseInt(d[2], 10) : 1) : NaN;
-    if (!(fraction > 0)) return { erreur: 'durée « ' + champs[1] + ' » : une fraction de ronde (1, 1/2, 1/4, 3/8…)' };
+    var fraction = d && (d[2] === undefined || parseInt(d[2], 10) > 0) ? parseInt(d[1], 10) / (d[2] ? parseInt(d[2], 10) : 1) : NaN;
+    if (!(fraction > 0 && isFinite(fraction))) return { erreur: 'durée « ' + champs[1] + ' » : une fraction de ronde (1, 1/2, 1/4, 3/8…)' };
     var velocite = champs[2] === undefined ? 1 : parseFloat(champs[2]);
     if (!(velocite >= 0 && velocite <= 1)) return { erreur: 'vélocité « ' + champs[2] + ' » : un nombre de 0 à 1' };
     if (champs[0] === '-') return { notes: null, fraction: fraction, velocite: velocite };
@@ -64,11 +65,20 @@
       if (C.INSTRUMENTS.indexOf(piste.instrument) < 0) err.push(nom + ' : instrument « ' + piste.instrument + ' » inconnu (' + C.INSTRUMENTS.join(', ') + ').');
       if (piste.volume !== undefined && !(typeof piste.volume === 'number' && piste.volume >= 0 && piste.volume <= 1)) err.push(nom + ' : « volume » de 0 à 1.');
       ['de', 'a'].forEach(function (k) { if (piste[k] !== undefined && !(Number.isInteger(piste[k]) && piste[k] >= 0)) err.push(nom + ' : « ' + k + ' » doit être un numéro de mesure (entier, à partir de 0).'); });
+      var de = piste.de === undefined ? 0 : piste.de, a = piste.a === undefined ? p.mesures : piste.a;
+      if (Number.isInteger(de) && Number.isInteger(a) && de >= a) err.push(nom + ' : « de » (' + de + ') doit être avant « a » (' + a + ') : la piste ne jouerait rien.');
       if (!Array.isArray(piste.motif) || !piste.motif.length) { err.push(nom + ' : motif vide.'); return; }
+      var percussion = C.PERCUSSIONS.indexOf(piste.instrument) >= 0, ronde = 0, valide = true;
       piste.motif.forEach(function (pas, j) {
         var r = lirePas(pas);
-        if (r.erreur) err.push(nom + ', note ' + (j + 1) + ' : ' + r.erreur + '.');
+        if (r.erreur) { err.push(nom + ', note ' + (j + 1) + ' : ' + r.erreur + '.'); valide = false; return; }
+        if (r.notes === 'x' && !percussion) err.push(nom + ', note ' + (j + 1) + ' : « x » (frappe) est réservé aux percussions (' + C.PERCUSSIONS.join(', ') + ') ; donner une note (do4, la3…).');
+        ronde += r.fraction;
       });
+      // Notes jouées par la piste : au plus 100 000 (au-delà, la musique serait coupée sans le dire).
+      if (valide && Number.isInteger(p.mesures) && (a - de) / ronde * piste.motif.length > 100000) {
+        err.push(nom + ' : trop de notes (plus de 100 000 sur la durée de la piste) ; allonger les durées ou réduire « de » … « a ».');
+      }
     });
     return err;
   }

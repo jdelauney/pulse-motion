@@ -16,11 +16,17 @@ const MESSAGES = {
   'zone-sure': (c) => (c.element === 'sous-titres'
     ? `Scène « ${c.scene} » : en 9:16, les sous-titres passent sous les boutons des réseaux sociaux (${ZONES[c.valeur] || c.valeur}, vers ${virgule(c.instant)} s) ; garder les réglages par défaut du style, ou réduire --pm-st-largeur et revoir --pm-st-marge.`
     : `Scène « ${c.scene} » : en 9:16, le texte « ${c.element} » passe sous les boutons des réseaux sociaux (${ZONES[c.valeur] || c.valeur}, vers ${virgule(c.instant)} s) ; raccourcir les textes de la scène ou retirer un point, sinon les rapprocher du centre.`),
-  'logo-masque': (c) => (c.valeur === 'dehors'
+  'logo-masque': (c) => (c.valeur && c.valeur.par === 'sous-titres'
+    ? `Scène « ${c.scene} » : les sous-titres cachent le logo à ${Math.round(c.valeur.part * 100)} % (vers ${virgule(c.instant)} s) ; passer les sous-titres en haut (« sousTitres »: { « position »: « haut » }) ou déplacer le logo.`
+    : c.valeur === 'dehors'
     ? `Scène « ${c.scene} » : le logo sort de l'image (vers ${virgule(c.instant)} s).`
     : `Scène « ${c.scene} » : le logo est recouvert à ${Math.round(c.valeur * 100)} % (vers ${virgule(c.instant)} s) ; le dégager.`),
-  'texte-fugace': (c) => `Scène « ${c.scene} » : le texte « ${c.element} » ne reste lisible que ${virgule(c.valeur.duree)} s ; il faut au moins ${virgule(c.valeur.besoin)} s pour le lire.`,
-'contraste-reel': (c) => `Scène « ${c.scene} » : le texte « ${c.element} » ne se détache pas assez de ce qu'il y a derrière lui (contraste ${virgule(c.valeur)}:1 vers ${virgule(c.instant)} s) ; assombrir ou éclaircir le fond sous le texte, ajouter un aplat, ou changer la couleur du texte.`,
+  'texte-fugace': (c) => (c.element === 'sous-titres'
+    ? `Scène « ${c.scene} » : un sous-titre ne reste affiché que ${virgule(c.valeur.duree)} s (vers ${virgule(c.instant)} s) ; il faut au moins ${virgule(c.valeur.besoin)} s : raccourcir la phrase dite ou laisser une pause après elle.`
+    : `Scène « ${c.scene} » : le texte « ${c.element} » ne reste lisible que ${virgule(c.valeur.duree)} s ; il faut au moins ${virgule(c.valeur.besoin)} s pour le lire.`),
+'contraste-reel': (c) => (c.element === 'sous-titres'
+    ? `Scène « ${c.scene} » : les sous-titres ne se détachent pas assez de ce qu'il y a derrière eux (contraste ${virgule(c.valeur)}:1 vers ${virgule(c.instant)} s) ; dans le style, régler --pm-st-fond (bandeau derrière les sous-titres) ou --pm-st-texte (leur couleur).`
+    : `Scène « ${c.scene} » : le texte « ${c.element} » ne se détache pas assez de ce qu'il y a derrière lui (contraste ${virgule(c.valeur)}:1 vers ${virgule(c.instant)} s) ; assombrir ou éclaircir le fond sous le texte, ajouter un aplat, ou changer la couleur du texte.`),
 flash: (c) => `Scène « ${c.scene} » : l'image clignote ${virgule(c.valeur)} fois par seconde vers ${virgule(c.instant)} s ; au-delà de ${SEUILS.flashMax} flashs par seconde sur une grande partie de l'image, la vidéo peut déclencher une crise chez une personne épileptique. Ralentir ou adoucir ce clignotement.`,
   'sous-titre-cache-texte': (c) => `Scène « ${c.scene} » : les sous-titres cachent le texte « ${c.element} » (vers ${virgule(c.instant)} s) ; passer les sous-titres en haut (« sousTitres »: { « position »: « haut » } dans le déroulé) ou remonter le texte.`,
   'mouvement-rapide': (c) => `Scène « ${c.scene} » : « ${c.element} » traverse l'image trop vite (vers ${virgule(c.instant)} s) ; au-delà d'une largeur d'image par seconde, le mouvement fatigue l'œil.`,

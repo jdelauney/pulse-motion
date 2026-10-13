@@ -25,18 +25,26 @@
   /** Texte dit -> [{ w, cles }] ; ponctuation isolée rattachée au mot précédent, ouvrante (« — ( ) au mot suivant. */
   function decouperMots(texte) {
     var mots = [], enAttente = '';
-    String(texte).split(/\s+/).filter(Boolean).forEach(function (brut) {
+    // Séparateurs gardés : une espace insécable (« 4 °C », « froid ? ») reste dans le mot, ou marque le mot
+    // qu'on ne sépare pas du suivant (insecable : le caractère à remettre entre eux).
+    var morceaux = String(texte).trim().split(/(\s+)/);
+    for (var k = 0; k < morceaux.length; k += 2) {
+      var brut = morceaux[k], avant = k > 0 ? morceaux[k - 1] : ' ';
+      if (!brut) continue;
+      var lien = /[ \t\n\r\f\v]/.test(avant) ? ' ' : avant;
       var cle = normaliserMot(brut);
       if (!cle) {
-        if (OUVRANTE.test(brut) || !mots.length) enAttente += brut + ' ';
-        else mots[mots.length - 1].w += ' ' + brut;
-        return;
+        // Guillemet ouvrant : l'espace qui le suit (insécable « bonjour ») est gardée telle quelle.
+        if (OUVRANTE.test(brut) || !mots.length) enAttente += brut + (k + 1 < morceaux.length && !/[ \t\n\r\f\v]/.test(morceaux[k + 1]) ? morceaux[k + 1] : ' ');
+        else { var p = mots[mots.length - 1]; p.w += lien + brut; delete p.insecable; }
+        continue;
       }
       var cles = [cle];
-      brut.split(/['’\-]/).map(normaliserMot).forEach(function (p) { if (p && cles.indexOf(p) < 0) cles.push(p); });
+      brut.split(/['’\-]/).map(normaliserMot).forEach(function (q) { if (q && cles.indexOf(q) < 0) cles.push(q); });
+      if (mots.length && lien !== ' ' && !enAttente) mots[mots.length - 1].insecable = lien;
       mots.push({ w: enAttente + brut, cles: cles });
       enAttente = '';
-    });
+    }
     if (enAttente && mots.length) mots[mots.length - 1].w += ' ' + enAttente.trim();
     return mots;
   }
@@ -130,13 +138,30 @@
    * Les mots appariés (égaux ou substitués) prennent les temps entendus ; les autres sont interpolés au prorata des
    * lettres entre leurs voisins. -> { mots, reconnus } | null si aucun mot n'est égal.
    */
-  function aligner(texte, entendus) {
+  function aligner(texte, entendus, duree) {
     var script = decouperMots(texte);
     var oui = [];
     (entendus || []).forEach(function (h) {
       var dec = decouperMots(h.w);
       if (dec.length) oui.push({ cle: dec[0].cles[0], t0: h.t0, t1: h.t1 });
     });
+    // Nombres du texte écrits en chiffres et dits en plusieurs mots (« 21 » → « vingt » « et » « un ») : un seul mot entendu.
+    var nombres = {};
+    script.forEach(function (s) { if (/^\d+$/.test(s.cles[0]) && Number(s.cles[0]) <= 100) nombres[nombreEnLettres(Number(s.cles[0]))] = true; });
+    if (Object.keys(nombres).length) {
+      var regroupes = [];
+      for (var x = 0; x < oui.length; x++) {
+        var pris = 1;
+        for (var long = Math.min(4, oui.length - x); long > 1; long--) {
+          var mot = '';
+          for (var y = x; y < x + long; y++) mot += oui[y].cle;
+          if (nombres[mot]) { pris = long; break; }
+        }
+        regroupes.push(pris > 1 ? { cle: oui.slice(x, x + pris).map(function (o) { return o.cle; }).join(''), t0: oui[x].t0, t1: oui[x + pris - 1].t1 } : oui[x]);
+        x += pris - 1;
+      }
+      oui = regroupes;
+    }
     var n = script.length, m = oui.length, i, j;
     if (!n || !m) return null;
     var D = [];
@@ -172,6 +197,9 @@
       while (a < n && mots[a].t0 === null) a++;
       var avant = k > 0 ? mots[k - 1].t1 : (a < n ? Math.max(0, mots[a].t0 - 0.3 * (a - k)) : 0);
       var apres = a < n ? mots[a].t0 : avant + 0.3 * (a - k);
+      // Mots entendus qui se chevauchent : la plage ne recule pas ; après le dernier mot entendu : pas au-delà de la prise.
+      if (k > 0) avant = Math.max(mots[k - 1].t0, Math.min(avant, apres));
+      if (a === n && duree > 0) apres = Math.max(avant, Math.min(apres, duree));
       var total = 0, cumul = 0, q;
       for (q = k; q < a; q++) total += lettres(script[q]);
       for (q = k; q < a; q++) {
@@ -190,12 +218,13 @@
    * scène et le premier de la suivante. -> [{ debut, fin, mots (temps de l'enregistrement), reconnus, total }] | null
    */
   function decouperEnScenes(textes, entendus, duree) {
-    var r = aligner(textes.join(' '), entendus);
+    var r = aligner(textes.join(' '), entendus, duree);
     if (!r) return null;
     var scenes = [], k = 0;
     textes.forEach(function (t) {
-      var nb = decouperMots(t).length;
-      scenes.push({ mots: r.mots.slice(k, k + nb), total: nb });
+      // Mots écrits de la scène elle-même : une ponctuation de tête (« … et puis ») reste à la scène qui commence.
+      var propres = decouperMots(t), nb = propres.length;
+      scenes.push({ mots: r.mots.slice(k, k + nb).map(function (m, q) { return { w: propres[q].w, t0: m.t0, t1: m.t1 }; }), total: nb });
       k += nb;
     });
     var coupes = [0];
