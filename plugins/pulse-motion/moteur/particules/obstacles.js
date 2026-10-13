@@ -5,6 +5,12 @@
  *     data-obstacle : '' (boîte de l'élément) | 'forme' | 'video' | 'forme video'
  *     data-obstacle-forme : 'ligne' (data-de, data-a) | 'cercle' (data-centre, data-rayon) | 'rectangle' (data-de, data-a, data-angle)
  *   lireObstaclesVideo(liste) -> { obstacles, erreurs, enTrop }   « obstacles » de deroule.json (8 au plus)
+ * Repères (cqh de la scène de l'émetteur, radians) : { centre, angle, demi, echelle, actif } ; 8 nombres en f32
+ *   [cx, cy, angle, actif, dx, dy, ex, ey]. Monde = centre + R(angle) · l (l : local à l'échelle).
+ *   repereFixe(source, largeurCqh, sol), interpolerRepere(a, b, f), ecrireRepere(t, i, r), lireRepere(t, i),
+ *   versLocal(r, p), versMonde(r, l)
+ * Table d'un effet : construireTable({ largeurCqh, solRecette, propres, voisins, video }) -> { entrees, actif, sol },
+ *   solDe(effet), emballerMonde(entrees, nGrille, largeurCqh, tans) -> ArrayBuffer (uniforme « Monde » du WGSL)
  * Coordonnées en cqh depuis le coin haut gauche de la scène, angles en degrés.
  *
  * Module pur : chargé tel quel dans la page (global M.obstacles) et par Node (require).
@@ -21,6 +27,16 @@
   var FORMES = ['ligne', 'cercle', 'rectangle'];
   var CHAMPS_VIDEO = { sol: ['type', 'a'], ligne: ['type', 'de', 'a'], cercle: ['type', 'centre', 'rayon'], rectangle: ['type', 'de', 'a', 'angle'] };
   var NOMBRE = /^[-+]?(\d+\.?\d*|\.\d+)$/;
+  var TYPES = { demiPlan: 0, boite: 1, cercle: 2, segment: 3, forme: 4 };
+  var CATEGORIES = { sol: 1, murs: 2, elements: 4, formes: 8 };
+  var TYPE_GENRE = { sol: 0, rectangle: 1, cercle: 2, ligne: 3 };
+  var AUCUN = 0xffffffff;
+  var MAX_TABLE = 48;
+  var MAX_PROFILS = 8;
+  var CASES = 256;
+  var REPERE = 8;
+  var OCTETS_MONDE = 816;
+  var INACTIF = { centre: [0, 0], angle: 0, demi: [0, 0], echelle: [1, 1], actif: false };
 
   function possede(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
   function nombreTexte(t) {
@@ -109,10 +125,130 @@
     return r;
   }
 
+  function repere(centre, angle, demi) { return { centre: centre, angle: angle, demi: demi, echelle: [1, 1], actif: true }; }
+
+  /** Repère d'un bord de l'image ou d'une primitive déclarée (scène ou déroulé). */
+  function repereFixe(source, largeurCqh, sol) {
+    var L = largeurCqh;
+    if (source.bord === 'sol') return repere([L / 2, sol], 0, [L / 2, 0]);
+    if (source.bord === 'gauche') return repere([0, 50], Math.PI / 2, [50, 0]);
+    if (source.bord === 'droit') return repere([L, 50], -Math.PI / 2, [50, 0]);
+    var d = source.fixe;
+    var genre = d.genre || d.type;
+    if (genre === 'sol') return repere([L / 2, d.a], 0, [L / 2, 0]);
+    if (genre === 'cercle') return repere([d.centre[0], d.centre[1]], 0, [d.rayon, d.rayon]);
+    var dx = d.a[0] - d.de[0];
+    var dy = d.a[1] - d.de[1];
+    var centre = [(d.a[0] + d.de[0]) / 2, (d.a[1] + d.de[1]) / 2];
+    if (genre === 'ligne') return repere(centre, Math.atan2(dy, dx), [Math.sqrt(dx * dx + dy * dy) / 2, 0]);
+    return repere(centre, (d.angle || 0) * Math.PI / 180, [Math.abs(dx) / 2, Math.abs(dy) / 2]);
+  }
+
+  /** Repère entre deux points de grille : position et échelle linéaires, angle par le plus court chemin. */
+  function interpolerRepere(a, b, f) {
+    var d = b.angle - a.angle;
+    d -= 2 * Math.PI * Math.round(d / (2 * Math.PI));
+    function m(x, y) { return [x[0] + (y[0] - x[0]) * f, x[1] + (y[1] - x[1]) * f]; }
+    return { centre: m(a.centre, b.centre), angle: a.angle + d * f, demi: m(a.demi, b.demi), echelle: m(a.echelle, b.echelle), actif: a.actif };
+  }
+
+  function ecrireRepere(t, i, r) {
+    t[i] = r.centre[0]; t[i + 1] = r.centre[1]; t[i + 2] = r.angle; t[i + 3] = r.actif ? 1 : 0;
+    t[i + 4] = r.demi[0]; t[i + 5] = r.demi[1]; t[i + 6] = r.echelle[0]; t[i + 7] = r.echelle[1];
+  }
+
+  function lireRepere(t, i) {
+    return { centre: [t[i], t[i + 1]], angle: t[i + 2], actif: t[i + 3] > 0.5, demi: [t[i + 4], t[i + 5]], echelle: [t[i + 6], t[i + 7]] };
+  }
+
+  function versLocal(r, p) {
+    var c = Math.cos(r.angle);
+    var s = Math.sin(r.angle);
+    var x = p[0] - r.centre[0];
+    var y = p[1] - r.centre[1];
+    return [c * x + s * y, -s * x + c * y];
+  }
+
+  function versMonde(r, l) {
+    var c = Math.cos(r.angle);
+    var s = Math.sin(r.angle);
+    return [r.centre[0] + c * l[0] - s * l[1], r.centre[1] + s * l[0] + c * l[1]];
+  }
+
+  /** Table des obstacles d'un effet (ordre fixe : il donne l'indice des obstacles dans les contacts). */
+  function construireTable(o) {
+    var entrees = [];
+    function ajouter(type, categorie, source) {
+      if (entrees.length < MAX_TABLE) entrees.push({ type: type, categorie: categorie, forme: AUCUN, profil: AUCUN, source: source });
+    }
+    function declaration(d, voisin) {
+      if (d.genre === 'element' || d.genre === 'forme') {
+        ajouter(TYPES.boite, d.genre === 'forme' ? CATEGORIES.formes : CATEGORIES.elements, { element: d, voisin: voisin });
+      } else ajouter(TYPE_GENRE[d.genre], CATEGORIES.elements, { fixe: d });
+    }
+    var propres = o.propres || [];
+    var video = o.video || [];
+    ajouter(TYPES.demiPlan, CATEGORIES.sol, { bord: 'sol' });
+    ajouter(TYPES.demiPlan, CATEGORIES.murs, { bord: 'gauche' });
+    ajouter(TYPES.demiPlan, CATEGORIES.murs, { bord: 'droit' });
+    propres.forEach(function (d) { declaration(d, false); });
+    (o.voisins || []).forEach(function (d) { declaration(d, true); });
+    video.forEach(function (d, i) { ajouter(TYPE_GENRE[d.type], CATEGORIES.elements, { fixe: d, video: i }); });
+    var solRecette = o.solRecette === undefined ? null : o.solRecette;
+    var voisins = o.voisins || [];
+    return { entrees: entrees, actif: propres.length + voisins.length + video.length > 0 || solRecette !== null, sol: solRecette === null ? 100 : solRecette };
+  }
+
+  /** Sol de l'effet : celui du premier émetteur qui le décale, sinon null (bord bas). */
+  function solDe(effet) {
+    for (var i = 0; i < effet.emetteurs.length; i++) {
+      var c = effet.emetteurs[i].collisions;
+      if (c && c.sol !== null && c.sol !== undefined) return c.sol;
+    }
+    return null;
+  }
+
+  /** Uniforme « Monde » : n, nGrille, largeur, nProfils, tans[8], puis (type, categorie, forme, profil) par entrée. */
+  function emballerMonde(entrees, nGrille, largeurCqh, tans) {
+    var b = new ArrayBuffer(OCTETS_MONDE);
+    var u = new Uint32Array(b);
+    var f = new Float32Array(b);
+    u[0] = entrees.length;
+    u[1] = nGrille;
+    f[2] = largeurCqh;
+    u[3] = entrees.filter(function (e) { return e.profil !== AUCUN; }).length;
+    (tans || []).forEach(function (t, i) { f[4 + i] = t; });
+    entrees.forEach(function (e, i) {
+      u[12 + i * 4] = e.type;
+      u[13 + i * 4] = e.categorie;
+      u[14 + i * 4] = e.forme;
+      u[15 + i * 4] = e.profil;
+    });
+    return b;
+  }
+
   return {
     MAX_SCENE: MAX_SCENE,
     MAX_VIDEO: MAX_VIDEO,
     lireDeclaration: lireDeclaration,
     lireObstaclesVideo: lireObstaclesVideo,
+    TYPES: TYPES,
+    CATEGORIES: CATEGORIES,
+    AUCUN: AUCUN,
+    MAX_TABLE: MAX_TABLE,
+    MAX_PROFILS: MAX_PROFILS,
+    CASES: CASES,
+    REPERE: REPERE,
+    OCTETS_MONDE: OCTETS_MONDE,
+    INACTIF: INACTIF,
+    repereFixe: repereFixe,
+    interpolerRepere: interpolerRepere,
+    ecrireRepere: ecrireRepere,
+    lireRepere: lireRepere,
+    versLocal: versLocal,
+    versMonde: versMonde,
+    construireTable: construireTable,
+    solDe: solDe,
+    emballerMonde: emballerMonde,
   };
 });
