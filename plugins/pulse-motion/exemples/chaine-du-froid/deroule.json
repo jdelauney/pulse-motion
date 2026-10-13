@@ -6,19 +6,25 @@
   "format": { "ratio": "16:9", "ips": 30 },
   "style": "clair-pedagogique",
   "charte": { "logo": "assets/logo.svg" },
+  "musique": { "generee": "inspirant", "tempo": 120, "intensite": 0.4, "volume": 0.5 },
+  "sousTitres": {},
+  "bruitages": { "transitions": true, "volume": 0.7 },
   "scenes": [
     {
       "id": "intro", "fichier": "scenes/01-intro.html", "duree": 8, "transition": "fondu",
+      "voix": { "texte": "La chaîne du froid protège vos aliments. Voyons l’essentiel en trois minutes." },
       "intention": "titre – annoncer le sujet",
       "textes": { "etiquette": "Hygiène alimentaire", "titre": "La chaîne du froid", "sous": "3 minutes pour comprendre l’essentiel" }
     },
     {
       "id": "seuil", "fichier": "scenes/02-seuil.html", "duree": 9, "transition": "glissement",
+      "voix": { "texte": "Au réfrigérateur, les produits frais restent à quatre degrés au maximum." },
       "intention": "chiffre – la température à retenir",
       "textes": { "titre": "La température à ne pas dépasser", "unite": "°C", "legende": "pour les produits frais au réfrigérateur" }
     },
     {
       "id": "maillons", "fichier": "scenes/03-maillons.html", "duree": 13, "transition": "glissement",
+      "voix": { "texte": "Le froid suit quatre maillons : le camion, la chambre froide, la vitrine, puis votre réfrigérateur." },
       "intention": "liste – les 4 maillons de la chaîne",
       "textes": {
         "titre": "Les 4 maillons de la chaîne",
@@ -30,6 +36,7 @@
     },
     {
       "id": "reflexes", "fichier": "scenes/04-reflexes.html", "duree": 13, "transition": "balayage",
+      "voix": { "texte": "Rangez vos courses au froid dès le retour. Ne laissez jamais un produit frais deux heures dehors." },
       "intention": "comparaison – à faire, à éviter",
       "textes": {
         "titre": "Les bons réflexes",
@@ -39,11 +46,13 @@
     },
     {
       "id": "recongeler", "fichier": "scenes/05-recongeler.html", "duree": 10, "transition": "fondu",
+      "voix": { "texte": "Un produit décongelé ne se recongèle jamais : il se consomme vite." },
       "intention": "alerte – l'erreur la plus fréquente",
       "textes": { "titre": "Ne jamais recongeler", "texte": "Un produit décongelé se consomme vite\u00a0: le recongeler favorise les bactéries." }
     },
     {
       "id": "fin", "fichier": "scenes/06-fin.html", "duree": 9.5, "transition": "fondu",
+      "voix": { "texte": "Le froid, c’est la sécurité. Merci d’avoir suivi cette formation." },
       "intention": "conclusion – le message à retenir",
       "textes": { "titre": "Le froid, c’est la sécurité", "sous": "Merci d’avoir suivi cette formation" }
     }

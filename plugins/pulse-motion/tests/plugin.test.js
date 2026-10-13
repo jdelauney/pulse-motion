@@ -19,7 +19,7 @@ function enTete(texte) {
 }
 
 const SKILLS = fs.readdirSync(path.join(RACINE, 'skills'));
-const COMMANDES = ['etat', 'assembler', 'controler', 'apercu', 'historique', 'reference', 'scene', 'styles', 'consignes', 'exporter', 'planche', 'effet', 'comparer', 'changer-style', 'lexique', 'charte', 'police', 'glossaire', 'style', 'ffmpeg'];
+const COMMANDES = ['etat', 'assembler', 'controler', 'apercu', 'historique', 'reference', 'scene', 'styles', 'consignes', 'exporter', 'planche', 'effet', 'comparer', 'changer-style', 'lexique', 'charte', 'police', 'glossaire', 'style', 'ffmpeg', 'voix', 'whisper', 'musique'];
 const fichiersGuides = () => [
   ...SKILLS.map((s) => path.join('skills', s, 'SKILL.md')),
   ...fs.readdirSync(path.join(RACINE, 'agents')).map((a) => path.join('agents', a)),
@@ -80,7 +80,7 @@ test('export : proposé à la fin de creer et de retoucher, planche dans le parc
 
 test('références : bloc « L\'essentiel » en tête, chaque style du catalogue documenté', () => {
   const styles = fs.readdirSync(path.join(RACINE, 'styles'));
-  for (const f of ['moteur.md', 'rythme.md', ...styles.map((st) => path.join('styles', `${st}.md`))]) {
+  for (const f of ['moteur.md', 'rythme.md', 'audio.md', ...styles.map((st) => path.join('styles', `${st}.md`))]) {
     assert.match(lire('references', f), /^# .+\n\n## L'essentiel\n/, f);
   }
   for (const st of styles) {
@@ -194,4 +194,65 @@ test('revue : skill exporter, seules les commandes d\'installation exactes sont 
   assert.match(ligne, /Bash\(winget install --id Gyan\.FFmpeg -e --accept-source-agreements --accept-package-agreements\)/);
   assert.match(ligne, /Bash\(brew install ffmpeg\)/);
   assert.doesNotMatch(ligne, /sudo|\*\)\s*Bash\(brew|install \*\)/);
+});
+
+test('référence audio : champs, ancres, sons, ambiances, partition, mixage, sous-titres, commandes', () => {
+  const t = lire('references', 'audio.md');
+  assert.match(t, /^# .+\n\n## L'essentiel\n/);
+  for (const mot of ['voix.texte', 'voix.provisoire', 'voix.debut', 'sousTitres', 'incrustes', 'bruitages', 'transitions', 'generee', 'graine', 'intensite', 'tonalite', 'partition', 'mot:', 'data-son', 'data-son-volume', '−16 LUFS', '3,5 mots', '.srt', '.vtt', '--avec-provisoire',
+    'pulse-motion voix importer', 'pulse-motion voix provisoire', 'pulse-motion voix transcrire', 'pulse-motion voix studio', 'pulse-motion whisper installer', 'pulse-motion musique ecouter']) {
+    assert.ok(t.includes(mot), `audio.md : « ${mot} » absent`);
+  }
+  const C = require('../moteur/synthe/catalogue.js');
+  for (const a of Object.keys(C.AMBIANCES)) assert.ok(t.includes(`\`${a}\``), `ambiance ${a}`);
+  for (const s of C.BRUITAGES) assert.ok(t.includes(`\`${s}\``), `son ${s}`);
+  for (const i of C.INSTRUMENTS) assert.ok(t.includes(`\`${i}\``), `instrument ${i}`);
+  assert.match(lire('references', 'moteur.md'), /pulse-motion reference audio/);
+});
+
+test('creer : la question du son, textes dits, voix provisoire, sous-titres, Whisper avec accord', () => {
+  const creer = lire('skills', 'creer', 'SKILL.md');
+  assert.match(creer, /\*\*Le son\*\*/);
+  assert.match(creer, /3,5 mots/);
+  assert.match(creer, /une idée par phrase/);
+  assert.match(creer, /pulse-motion voix provisoire \./);
+  assert.match(creer, /pulse-motion whisper/);
+  assert.match(creer, /pulse-motion reference audio/);
+  assert.match(creer, /sousTitres/);
+  assert.match(creer, /mode.*mot.*9:16|9:16.*mode.*mot/);
+  assert.match(creer, /generee/);
+  assert.match(creer, /pulse-motion musique ecouter \./);
+  assert.match(creer, /hors-tempo/);
+  const e = enTete(creer);
+  assert.match(e['allowed-tools'], /Bash\(winget install --id Python\.Python\.3\.12 -e --accept-source-agreements --accept-package-agreements\)/);
+  assert.match(e['allowed-tools'], /Bash\(brew install python\)/);
+});
+
+test('guidage du son : animateur (mot:, data-son), retoucher (lignes du son), exporter (provisoire, srt/vtt)', () => {
+  const animateur = lire('agents', 'animateur.md');
+  assert.match(animateur, /mot:/);
+  assert.match(animateur, /data-son/);
+  assert.match(animateur, /seulement.*prise|prise.*seulement/);
+  assert.match(animateur, /son-sous-voix|pendant un mot/);
+  assert.match(animateur, /pulse-motion reference audio/);
+  const retoucher = lire('skills', 'retoucher', 'SKILL.md');
+  for (const r of [/\| Voix \|/, /\| Musique \|/, /\| Bruitages \|/, /\| Sous-titres \|/, /pulse-motion voix studio <id> \./, /graine/, /pulse-motion voix transcrire \./]) assert.match(retoucher, r);
+  const exporter = lire('skills', 'exporter', 'SKILL.md');
+  assert.match(exporter, /--avec-provisoire/);
+  assert.match(exporter, /\.srt/);
+  assert.match(exporter, /\.vtt/);
+});
+
+test('revue : consignes du son exactes (pas de voix.fichier, import relancé après Whisper, repli, place du tempo)', () => {
+  const audio = lire('references', 'audio.md');
+  assert.doesNotMatch(audio, /\| `voix\.fichier` \|/);
+  assert.match(audio, /\| `musique\.tempo` \|/);
+  const creer = lire('skills', 'creer', 'SKILL.md');
+  assert.match(creer, /"musique": \{ "generee": "<ambiance>", "tempo": 120/);
+  const whisper = creer.indexOf('`pulse-motion whisper`');
+  const importer = creer.indexOf('pulse-motion voix importer assets/<fichier> .');
+  assert.ok(whisper > 0 && importer > whisper, 'la transcription se vérifie avant l\'import d\'un enregistrement entier');
+  assert.match(creer, /relancer `pulse-motion voix importer assets\/<fichier> \.`/);
+  assert.match(creer, /relancer `pulse-motion whisper`/);
+  assert.match(creer, /relancer Claude Code/);
 });
