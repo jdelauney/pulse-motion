@@ -149,9 +149,10 @@ test("page : forme exacte d'une scène qui n'est pas la première (masque pris s
   // Lettres de 40 cqh dont le haut est vers y = 40 : flocons posés sur les lettres (pas au-dessus du champ ni ailleurs).
   assert.ok(r1.ys.length >= 40, `scène 1 : ${r1.ys.length} flocons posés sur les lettres`);
   assert.ok(r2.ys.length >= 40, `scène 2 : ${r2.ys.length} flocons posés sur les lettres`);
-  assert.ok(Math.abs(r2.ys.length - r1.ys.length) <= r1.ys.length * 0.1, `autant de flocons posés : ${r1.ys.length} et ${r2.ys.length}`);
-  const moyenne = (l) => l.reduce((a, b) => a + b, 0) / l.length;
-  assert.ok(Math.abs(moyenne(r1.ys) - moyenne(r2.ys)) < 1, `même hauteur moyenne : ${moyenne(r1.ys)} et ${moyenne(r2.ys)}`);
+  // Graine propre à chaque scène : pas les mêmes flocons, mais les mêmes niveaux de pose (haut des lettres, barre du H).
+  const memesNiveaux = r2.ys.filter((y) => r1.ys.some((z) => Math.abs(y - z) < 0.3)).length;
+  assert.ok(memesNiveaux >= 0.9 * r2.ys.length, `${memesNiveaux} sur ${r2.ys.length} flocons de la scène 2 aux hauteurs de pose de la scène 1`);
+  assert.ok(Math.abs(Math.min(...r2.ys) - Math.min(...r1.ys)) < 0.05, `même haut des lettres : ${Math.min(...r1.ys)} et ${Math.min(...r2.ys)}`);
   assert.ok(r2.ys.every((y) => y > 35 && y < 82), 'posés sur les lettres de la scène 2');
 });
 

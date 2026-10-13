@@ -92,7 +92,8 @@ function contactsCoherents(posees) {
   assert.ok(posees.length > 50, `${posees.length} particules posées sur le sol de la vidéo`);
   for (const p of posees) {
     assert.ok(Math.abs(p.lx - (p.x - L / 2)) < 0.05, `x local ${p.lx} pour x = ${p.x}`);
-    assert.equal(p.cel, Math.min(255, Math.floor((p.lx / (L / 2) * 0.5 + 0.5) * 256)), `case ${p.cel} pour x local ${p.lx}`);
+    // À une case près (arrondis en f32 au bord d'une case) ; une largeur nulle mettait tout dans la case 255.
+    assert.ok(Math.abs(p.cel - (p.lx / (L / 2) * 0.5 + 0.5) * 256) < 1.01, `case ${p.cel} pour x local ${p.lx}`);
   }
 }
 
