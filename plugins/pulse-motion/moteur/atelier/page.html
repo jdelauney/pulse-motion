@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pulse Motion – atelier des effets</title>
+<link rel="stylesheet" href="/_pm/atelier/base.css">
+<style>
+  body { padding-right: 380px; }
+  #pm-scene, #pm-lecteur { width: min(calc(100vw - 380px), calc((100vh - var(--pm-barre)) * 16 / 9)); }
+  #pm-scene { background: #101014; }
+  #pm-atelier-ancre { position: absolute; z-index: 1001; border: 1px dashed rgb(255 255 255 / .7); outline: 1px dashed rgb(0 0 0 / .45); cursor: move; touch-action: none; }
+  .pm-atelier-poignee { position: absolute; right: -6px; bottom: -6px; width: 12px; height: 12px; background: #fff; border: 1px solid #333; border-radius: 2px; cursor: nwse-resize; }
+  #pm-atelier { position: fixed; top: 0; right: 0; bottom: 0; width: 380px; overflow: auto; padding: 12px 14px; background: #1b1b1b; color: #eee; font: 14px/1.45 system-ui, sans-serif; }
+  #pm-atelier h1 { font-size: 17px; margin: 0 0 8px; }
+  #pm-atelier h2 { font-size: 14px; margin: 14px 0 4px; }
+  .pm-at-message, .pm-at-sans-projet { margin: 6px 0; color: #ffcc80; }
+  .pm-at-ligne { display: grid; grid-template-columns: 9.5em minmax(0, 1fr); gap: 6px; align-items: center; margin: 4px 0; }
+  .pm-at-ligne > span:first-child { color: #bbb; }
+  #pm-atelier select, #pm-atelier input[type=number], #pm-atelier input[type=text] { min-width: 0; background: #262626; color: #eee; border: 1px solid #444; border-radius: 4px; padding: 2px 4px; font: inherit; }
+  #pm-atelier button { background: #333; color: #eee; border: 1px solid #555; border-radius: 4px; padding: 2px 8px; font: inherit; cursor: pointer; }
+  #pm-atelier button[aria-pressed="true"] { background: #4caf50; color: #111; }
+  #pm-atelier button:disabled { opacity: .5; cursor: default; }
+</style>
+</head>
+<body>
+<div id="pm-scene" data-ton="sombre">
+  <section data-scene="atelier">
+    <div id="pm-atelier-ancre" title="Zone d'émission : glisser pour la déplacer, tirer le coin pour la redimensionner"><span class="pm-atelier-poignee"></span></div>
+    <div data-effet="atelier" data-pm-effet="0"></div>
+  </section>
+</div>
+<aside id="pm-atelier" aria-label="Atelier des effets"><p class="pm-at-message">Chargement de l'atelier…</p></aside>
+<script src="/_pm/atelier/moteur.js"></script>
+<script src="/_pm/atelier/expression.js"></script>
+<script src="/_pm/atelier/recette.js"></script>
+<script type="module" src="/_pm/atelier/page.mjs"></script>
+</body>
+</html>

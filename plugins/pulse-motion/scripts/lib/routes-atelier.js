@@ -8,6 +8,7 @@
  *   POST /_pm/atelier/reglages              { fichier, empreinte, scene, ordre, reglages, graine } -> { ok, empreinte }
  *   POST /_pm/atelier/recette               { nom, etend, recette, description?, dur?, remplacer?,
  *                                             cible?: { scene, ordre, empreinte, reglages, graine } } -> { ok, fichier, complete, empreinte? }
+ *   GET  /_pm/atelier?recette=<nom>         page d'atelier (moteur/atelier/page.html) ; /_pm/atelier/moteur.js, base.css, page.mjs
  *   GET  /_pm/atelier/expression.js, recette.js, editeur.mjs, panneau.mjs   modules de l'atelier
  *   effet : { ordre, nom, calque, ancre, reglages, graine, graineEcrite, dur, recette | null, erreur | null }
  * Écritures : JSON seulement (une autre origine est arrêtée par la requête préalable CORS), copie dans
@@ -25,6 +26,8 @@ const { trouverStyle } = require('../styles.js');
 const { lireSecondes } = require('../../moteur/minutage.js');
 const R = require('../../moteur/particules/recette.js');
 const historique = require('../historique.js');
+const { variablesCSS } = require('../../moteur/courbes.js');
+const { lireMoteur } = require('../assembler.js');
 
 const RACINE = path.resolve(__dirname, '..', '..');
 const BIBLIOTHEQUE = path.join(RACINE, 'effets');
@@ -42,7 +45,17 @@ const STATIQUES = {
   '/_pm/atelier/panneau.mjs': { fichier: path.join(ATELIER, 'panneau.mjs'), type: JS },
 };
 // Contenus fabriqués à la demande : { chemin: () => ({ type, corps }) } (page d'atelier, plan 4).
-const GENERES = {};
+STATIQUES['/_pm/atelier'] = { fichier: path.join(ATELIER, 'page.html'), type: 'text/html; charset=utf-8' };
+const GENERES = {
+  // Moteur des vidéos, d'un bloc : mêmes fichiers, dans le même ordre, que dans une page assemblée.
+  '/_pm/atelier/moteur.js': () => ({ type: JS, corps: lireMoteur(RACINE) }),
+  '/_pm/atelier/base.css': () => ({
+    type: 'text/css; charset=utf-8',
+    corps: `:root { --pm-ratio-l: 16; --pm-ratio-h: 9; }
+${fs.readFileSync(path.join(RACINE, 'moteur', 'base.css'), 'utf8')}
+${variablesCSS()}`,
+  }),
+};
 
 const CONFLIT = 'La scène a été modifiée sur le disque depuis l\'ouverture de la page (par exemple par une retouche) : rechargez la page. Les réglages non enregistrés seront perdus ; le fichier, lui, n\'a pas été touché.';
 const SANS_PROJET = 'Aucune vidéo ouverte : lancez l\'atelier depuis le dossier d\'une vidéo (pulse-motion atelier) pour enregistrer vos effets.';
