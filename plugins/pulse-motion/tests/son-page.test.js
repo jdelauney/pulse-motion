@@ -70,7 +70,8 @@ test('musique illisible seule : aucun tampon, avertissement « sans son »', san
   avecMusique(dir, Buffer.alloc(3000, 7));
   const r = await resume({ dir });
   assert.equal(r.buffer, null);
-  assert.match(r.avertissements.join(' '), /musique n'a pas pu être lue : vidéo exportée sans son/);
+  assert.match(r.avertissements.join(' '), /musique n'a pas pu être lue : la vidéo n'a pas de son/);
+  assert.doesNotMatch(r.avertissements.join(' '), /export/);
 });
 
 test('revue : musique illisible mais voix lisible : son rendu avec la voix, avertissement « sans musique »', sans, async () => {
@@ -82,7 +83,8 @@ test('revue : musique illisible mais voix lisible : son rendu avec la voix, aver
     modifier: (d) => { d.scenes[0].voix = { source: 'pm-son-voix-essai', debut: 0.5, duree: 1, mots: [] }; },
   });
   assert.ok(r.longueur > 0);
-  assert.match(r.avertissements.join(' '), /musique n'a pas pu être lue : son exporté sans musique/);
+  assert.match(r.avertissements.join(' '), /musique n'a pas pu être lue : le son est fait sans elle/);
+  assert.doesNotMatch(r.avertissements.join(' '), /export/);
 });
 
 test('revue : voix illisible : avertissement nommant la scène', sans, async () => {
@@ -206,4 +208,37 @@ test('couperSon : la lecture continue sans son ; rendu : le son repart', sans, a
     assert.equal(e.rendu.enLecture, true);
     assert.ok(e.t > 0.5);
   } finally { await page.fermer(); }
+});
+
+test('correctifs : lecture reprise sans geste après un rechargement : son bloqué signalé, repris au premier clic', sans, async () => {
+  const dir = copierProjet('projet-simple');
+  avecMusique(dir);
+  // Politique de lecture automatique simulée : le contexte audio reste suspendu tant qu'aucun geste n'a eu lieu.
+  const prelude = `sessionStorage.setItem('pm-position', JSON.stringify({ t: 0.5, lecture: true }));
+    window.__geste = false; window.__repris = 0;
+    var Vrai = window.AudioContext;
+    window.AudioContext = function () {
+      var c = new Vrai(); var reprendre = c.resume.bind(c); c.suspend();
+      c.resume = function () { if (!window.__geste) return Promise.resolve(); window.__repris++; return reprendre(); };
+      return c;
+    };`;
+  const page = await ouvrirPageSon({ dir, navigateur, prelude });
+  try {
+    const avant = await page.evaluer(`M.rendreSon().then(function () { return new Promise(function (r) { setTimeout(r, 400); }); }).then(function () {
+      return { e: M.etatSon(), etiquette: document.querySelector('.pm-etiquette').textContent };
+    })`);
+    assert.equal(avant.e.bloque, true);
+    assert.match(avant.etiquette, /cliquez/);
+    const apres = await page.evaluer(`(async function () {
+      window.__geste = true;
+      document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+      await new Promise(function (r) { setTimeout(r, 300); });
+      return { repris: window.__repris, e: M.etatSon(), etiquette: document.querySelector('.pm-etiquette').textContent };
+    })()`, { geste: true });
+    assert.ok(apres.repris >= 1);
+    assert.equal(apres.e.bloque, false);
+    assert.doesNotMatch(apres.etiquette, /cliquez/);
+  } finally {
+    await page.fermer();
+  }
 });

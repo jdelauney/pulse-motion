@@ -106,3 +106,14 @@ test('revue : lecteur de messages, gros message en morceaux, caractère coupé, 
   assert.equal(recus[2].texte, 'é');
   assert.equal(recus[3].texte, 'café');
 });
+
+test('correctifs : geste de la personne simulé seulement sur demande (option geste)', sans, async () => {
+  const page = await ouvrirPage({ navigateur, largeur: 320, hauteur: 180 });
+  try {
+    await page.aller(PAGE);
+    assert.equal(await page.evaluer('navigator.userActivation.hasBeenActive'), false);
+    assert.equal(await page.evaluer('navigator.userActivation.isActive', { geste: true }), true);
+  } finally {
+    await page.fermer();
+  }
+});

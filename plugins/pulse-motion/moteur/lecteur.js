@@ -88,11 +88,13 @@
       else if (lecture) lancerSon(M.temps());
     };
     M.etatSon = function () {
-      return { attendu: son.attendu, pret: !!son.tampon, enLecture: !!son.source, coupe: son.coupe,
+      return { attendu: son.attendu, pret: !!son.tampon, enLecture: !!son.source, coupe: son.coupe, bloque: sonBloque(),
         position: son.source ? son.debutT + son.contexte.currentTime - son.debutContexte : null };
     };
     // Pas de préparation d'avance en capture, ni dans la page du contrôle (M.sansSon) : le rendu du son y prendrait le temps des mesures.
-    setTimeout(function () { if (!(M.enCapture && M.enCapture()) && !M.sansSon) preparerSon(); }, 1000);
+    // ni dans une page ouverte pour la capture (?capture=1), même lente à passer en mode capture.
+    var pageCapture = /[?&]capture=1(&|$)/.test(location.search);
+    setTimeout(function () { if (!(M.enCapture && M.enCapture()) && !M.sansSon && !pageCapture) preparerSon(); }, 1000);
 
     function indexScene(t) {
       var i = 0;
@@ -106,12 +108,22 @@
       etiquette.textContent = 'Scène ' + (i + 1) + '/' + scenes.length + ' · ' + scenes[i].id + (boucle ? ' (boucle)' : '') +
         ' · ' + horodatage(t) + ' / ' + horodatage(M.duree);
       if (lecture && son.attendu && !son.tampon) etiquette.textContent += ' · son en préparation';
+      else if (lecture && sonBloque()) etiquette.textContent += ' · son bloqué par le navigateur : cliquez pour l\'entendre';
       if (lecture && son.source) {
         var position = son.debutT + son.contexte.currentTime - son.debutContexte;
         if (Math.abs(position - t) > 0.05) lancerSon(t);
       }
     }
     M.surRendu(afficher);
+    // Lecture relancée sans geste (rechargement après une retouche) : le navigateur garde le son suspendu
+    // jusqu'au premier clic ou à la première touche, qui le reprend.
+    function sonBloque() { return !!(son.source && son.contexte && son.contexte.state === 'suspended'); }
+    function debloquer() {
+      if (!son.contexte || son.contexte.state !== 'suspended') return;
+      son.contexte.resume().then(function () { if (lecture) lancerSon(M.temps()); afficher(M.temps()); });
+    }
+    document.addEventListener('pointerdown', debloquer, true);
+    document.addEventListener('keydown', debloquer, true);
 
     function jouer() {
       if (M.temps() >= M.duree) M.rendre(0);

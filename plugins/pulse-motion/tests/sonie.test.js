@@ -50,3 +50,14 @@ test('normaliser un silence : rien ne change, gain 0', () => {
   assert.equal(r.integree, -Infinity);
   assert.ok(x.every((v) => v === 0));
 });
+
+test('correctifs : le limiteur n\'alloue rien quand aucune crête ne dépasse le seuil', () => {
+  const S = require('../moteur/sonie.js');
+  const x = new Float32Array(48000).map((_, i) => 0.1 * Math.sin(i / 10));
+  const Origine = globalThis.Float32Array;
+  let crees = 0;
+  globalThis.Float32Array = new Proxy(Origine, { construct(cible, args) { crees++; return new cible(...args); } });
+  try { S.limiter([x], 48000, 0.5); } finally { globalThis.Float32Array = Origine; }
+  assert.equal(crees, 0);
+  assert.ok(Math.abs(x[15] - 0.1 * Math.sin(1.5)) < 1e-7);
+});
