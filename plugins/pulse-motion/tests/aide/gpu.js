@@ -3,7 +3,8 @@
  *
  * La page est servie sur 127.0.0.1 et envoie son résultat par POST /_resultat.
  * Les options qui donnent un adaptateur WebGPU sont cherchées une fois parmi les candidates
- * (GPU de la machine, puis repli logiciel SwiftShader) ; PM_OPTIONS_WEBGPU les impose.
+ * (GPU de la machine, puis repli logiciel SwiftShader) ; PM_OPTIONS_WEBGPU les impose, PM_SANS_WEBGPU=1 dit qu'il n'y
+ * en a pas (scripts/lancer-tests.js sonde une fois pour toute la suite et le transmet aux fichiers de test).
  */
 const http = require('node:http');
 const fs = require('node:fs');
@@ -110,7 +111,7 @@ let sondage;
 function optionsWebGPU() {
   if (!sondage) {
     sondage = (async () => {
-      if (!trouverNavigateur()) return null;
+      if (process.env.PM_SANS_WEBGPU === '1' || !trouverNavigateur()) return null;
       const candidates = process.env.PM_OPTIONS_WEBGPU ? [process.env.PM_OPTIONS_WEBGPU.split(/\s+/).filter(Boolean)] : CANDIDATES;
       for (const options of candidates) {
         const r = await ouvrir(SONDE, options, 20000).catch(() => 'SANS');
