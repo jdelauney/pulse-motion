@@ -126,3 +126,33 @@ test('formes : couche attachée, masque vide ignoré, forme pas prête gardée e
     [4, 8, 5], [1, 0, O.AUCUN], [1, 8, O.AUCUN], [1, 4, O.AUCUN],
   ]);
 });
+
+test('profils : entrées ciblées par un émetteur qui empile, talus du premier, 8 au plus, pas de mur', () => {
+  const em = (masque, empiler, talus) => ({ collisions: { masque, empiler, talus, reponse: empiler ? 'poser' : 'rebond' } });
+  const effet = { emetteurs: [em(15, false, 35), em(1 | 4, true, 30), em(4 | 8, true, 50)] };
+  const propres = [
+    { scene: 's', genre: 'element', video: false, index: 0 },
+    { scene: 's', genre: 'forme', video: false, index: 1 },
+  ];
+  const t = O.construireTable({ largeurCqh: L, solRecette: null, propres, video: [{ type: 'sol', a: 92 }], effet });
+  assert.deepEqual(t.entrees.map((e) => e.profil), [0, O.AUCUN, O.AUCUN, 1, 2, 3]);
+  const tan = (d) => Math.tan(d * Math.PI / 180);
+  assert.deepEqual(t.tans.map((x) => Math.round(x * 1e6)), [tan(30), tan(30), tan(50), tan(30)].map((x) => Math.round(x * 1e6)));
+  const sansEmpiler = O.construireTable({ largeurCqh: L, solRecette: null, propres, effet: { emetteurs: [em(15, false, 35)] } });
+  assert.ok(sansEmpiler.entrees.every((e) => e.profil === O.AUCUN));
+  assert.deepEqual(sansEmpiler.tans, []);
+  const beaucoup = Array.from({ length: 12 }, (_, i) => ({ scene: 's', genre: 'element', video: false, index: i }));
+  assert.equal(O.construireTable({ largeurCqh: L, solRecette: null, propres: beaucoup, effet }).tans.length, 8);
+});
+
+test('largeurs de case et ordre des contributions', () => {
+  const t = O.construireTable({ largeurCqh: L, solRecette: null, propres: [{ scene: 's', genre: 'element', video: false, index: 0 }],
+    effet: { emetteurs: [{ collisions: { masque: 5, empiler: true, talus: 35, reponse: 'poser' } }] } });
+  const cadres = [O.repereFixe({ bord: 'sol' }, L, 100), O.INACTIF, O.INACTIF, { centre: [50, 50], angle: 0, demi: [12.8, 2], echelle: [1, 1], actif: true }];
+  const l = O.largeursCases(t.entrees, cadres);
+  assert.equal(l.length, 8);
+  assert.equal(l[0], Math.fround(L / 256));
+  assert.equal(l[1], Math.fround(25.6 / 256));
+  assert.deepEqual(O.effetsAnterieurs([{ debut: 0, fin: 3 }, { debut: 5, fin: 9 }, { debut: 3, fin: 6 }, { debut: 2, fin: 3 }, { debut: 0, fin: 1 }], 1), [0, 4, 3]);
+  assert.deepEqual(O.effetsAnterieurs([{ debut: 0, fin: 3 }], 0), []);
+});
