@@ -163,6 +163,8 @@
     curseur.addEventListener('input', function () { aller(parseFloat(curseur.value)); });
     document.addEventListener('keydown', function (e) {
       if (e.target && e.target.tagName === 'INPUT' && e.key !== ' ') return;
+      // Studio de voix : ses champs gardent le clavier (liste des scènes).
+      if (e.target && e.target.closest && e.target.closest('#pm-studio')) return;
       var i = indexScene(M.temps());
       if (e.key === ' ') { e.preventDefault(); basculer(); }
       else if (e.key === 'ArrowRight' && e.shiftKey) { e.preventDefault(); aller(scenes[Math.min(i + 1, scenes.length - 1)].debut); }
