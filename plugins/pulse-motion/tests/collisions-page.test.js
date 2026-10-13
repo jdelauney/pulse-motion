@@ -86,6 +86,26 @@ test('page : une boîte animée emporte les particules posées ; même image par
   assert.equal(r.deterministe, true, 'même image par 0 → 2,5 et par 5,5 → 2,5');
 });
 
+test("page : forme invisible (display: none, coordonnées lues dans les données) : les particules s'y posent", async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const dir = copierProjet('projet-particules');
+  ecrire(dir, 'effets/pose.json', recette('pose', { collisions: { cibles: ['elements'], reponse: 'poser' } }));
+  ecrire(dir, 'scenes/01-s.html', `<section data-scene="s">
+  <style>@scope { #source { position: absolute; left: 35cqh; top: 30cqh; width: 30cqh; height: 1cqh; } }</style>
+  <h1 data-texte="titre"></h1>
+  <div data-obstacle-forme="ligne" data-de="20 60" data-a="120 60"></div>
+  <div id="source"></div>
+  <div data-effet="pose" data-ancre="#source" data-start="0" data-dur="0.1"></div>
+</section>`);
+  const r = await page(dir, `
+    const e = await etat('s', 3);
+    envoyer({ webgpu: true, e, affichage: getComputedStyle(document.querySelector('[data-obstacle-forme]')).display });`);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.equal(r.affichage, 'none', "la forme ne s'affiche pas");
+  assert.equal(r.e.length, 30);
+  assert.ok(r.e.every((p) => p.obstacle === 3 && Math.abs(p.y - (60 - 0.3)) < 0.05), JSON.stringify(r.e.slice(0, 3)));
+});
+
 test('page : sans obstacle, collisions inactives (voie rapide, les particules sortent par le bas)', async (t) => {
   if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
   const dir = copierProjet('projet-particules');
