@@ -234,7 +234,100 @@ function creerRoutesAtelier(projet, { dossierStyles, bibliotheque = BIBLIOTHEQUE
     return repondre(res, 200, { ok: true, empreinte: empreinte(Buffer.from(nouveau, 'utf8')) });
   }
 
-  const ecritures = { '/_pm/atelier/reglages': ecrireReglages };
+  /** Description écrite : celle envoyée, sinon celle de la recette si elle diffère de la base, sinon une mention. */
+  function descriptionDe(c, base, etend) {
+    if (typeof c.description === 'string' && c.description.trim()) return c.description.trim();
+    const decrite = typeof c.recette.description === 'string' ? c.recette.description.trim() : '';
+    if (decrite && (!base || decrite !== base.description)) return decrite;
+    return etend ? `Dérivé de « ${etend} » dans l'atelier` : 'Créé dans l\'atelier';
+  }
+
+  function ecrireRecette(c, res) {
+    if (!projetOuvert()) return repondre(res, 409, { message: SANS_PROJET });
+    const nom = String(c.nom || '');
+    if (!NOM.test(nom)) return repondre(res, 409, { message: `Nom « ${nom} » refusé : minuscules, chiffres et tirets seulement (exemple : etincelles-bleues).` });
+    if (fs.existsSync(path.join(bibliotheque, `${nom}.json`))) {
+      return repondre(res, 409, { message: `« ${nom} » est déjà le nom d'un effet de la bibliothèque : choisissez-en un autre (exemple : ${nom}-2).` });
+    }
+    const fichier = path.join(projet, 'effets', `${nom}.json`);
+    const existant = fs.existsSync(fichier);
+    if (existant && c.remplacer !== true) {
+      return repondre(res, 409, { message: `Le projet a déjà un effet « ${nom} » : choisissez un autre nom, ou confirmez son remplacement.` });
+    }
+    if (!estObjet(c.recette)) return repondre(res, 400, { message: 'Recette absente ou illisible.' });
+    let etend = c.etend === null || c.etend === undefined || c.etend === '' ? null : String(c.etend);
+    if (etend === nom) {
+      // Recette du projet réenregistrée sous son nom : elle garde son héritage.
+      if (!existant) return repondre(res, 409, { message: `« ${nom} » ne peut pas hériter de lui-même : choisissez un autre nom.` });
+      try { etend = JSON.parse(fs.readFileSync(fichier, 'utf8')).etend || null; } catch { etend = null; }
+      if (etend === nom) etend = null;
+    }
+    if (etend !== null && !NOM.test(etend)) return repondre(res, 400, { message: `« etend » : nom d'effet « ${etend} » invalide.` });
+    const cible = c.cible === undefined || c.cible === null ? null : c.cible;
+    if (cible !== null) {
+      if (!estObjet(cible)) return repondre(res, 400, { message: 'Cible illisible.' });
+      if (reglagesSurs(cible.reglages) === null) return repondre(res, 400, { message: 'Réglages illisibles : guillemets, chevrons, « & » et retours à la ligne ne sont pas permis.' });
+      if (!Number.isInteger(cible.graine) || !graineValide(cible.graine)) return repondre(res, 400, { message: 'Graine : nombre entier positif attendu.' });
+    }
+
+    const recettes = charger();
+    let base = null;
+    if (etend) {
+      try { base = R.resoudre(etend, recettes); } catch (e) {
+        if (!e.regle) throw e;
+        return repondre(res, 422, { message: e.message });
+      }
+    }
+    const description = descriptionDe(c, base, etend);
+    const { version: _v, nom: _n, etend: _e, description: _d, ...corps } = c.recette;
+    let contenu = null;
+    let complete = false;
+    if (base) {
+      const { version: _bv, nom: _bn, etend: _be, description: _bd, ...corpsBase } = base;
+      try { contenu = { version: 1, nom, etend, description, ...R.differences(corpsBase, corps) }; } catch (e) {
+        if (!e.regle) throw e;
+        complete = true; // un champ ou un émetteur retiré : « etend » ne sait pas l'écrire, la recette est écrite entière
+      }
+    }
+    if (!contenu) contenu = { version: 1, nom, etend: null, description, ...corps };
+
+    // Compilée avant d'être écrite : charte du projet, durée, réglages et graine de la balise visée.
+    const reglagesCible = cible ? reglagesSurs(cible.reglages) : '';
+    let compile;
+    try {
+      compile = R.compiler(R.resoudre(nom, (n) => (n === nom ? contenu : recettes(n))), {
+        charte: charte(), dur: Number(c.dur) > 0 ? Number(c.dur) : 1, graine: cible ? cible.graine : 1, reglages: reglagesCible,
+      });
+    } catch (e) {
+      if (!e.regle) throw e;
+      compile = { ok: false, erreurs: [{ regle: e.regle, message: e.message, chemin: e.chemin || '' }] };
+    }
+    if (!compile.ok) return repondre(res, 422, { message: `Recette refusée : ${compile.erreurs.map((x) => x.message).join(' ')}`, erreurs: compile.erreurs });
+
+    const v = cible ? sceneVisee(cible) : null;
+    if (v && v.statut) return refuser(res, v);
+    const avant = existant ? fs.readFileSync(fichier) : null;
+    let nouvelleScene = null;
+    try {
+      historique.sauvegarder(projet);
+      fs.mkdirSync(path.dirname(fichier), { recursive: true });
+      ecrire(fichier, `${JSON.stringify(contenu, null, 2)}\n`);
+      if (v) {
+        nouvelleScene = modifierEffet(v.html, cible.ordre, { 'data-effet': nom, 'data-reglages': reglagesCible || null, 'data-graine': String(cible.graine) });
+        try { ecrire(v.absolu, nouvelleScene); } catch (e) {
+          // La recette ne reste pas seule : rien n'est modifié à moitié.
+          try {
+            if (avant) ecrire(fichier, avant);
+            else fs.rmSync(fichier, { force: true });
+          } catch { /* l'erreur d'origine est signalée */ }
+          throw e;
+        }
+      }
+    } catch (e) { return repondre(res, 500, { message: messageDisque(e) }); }
+    return repondre(res, 200, { ok: true, fichier: `effets/${nom}.json`, complete, ...(nouvelleScene ? { empreinte: empreinte(Buffer.from(nouvelleScene, 'utf8')) } : {}) });
+  }
+
+  const ecritures = { '/_pm/atelier/reglages': ecrireReglages, '/_pm/atelier/recette': ecrireRecette };
 
   return function routes(req, res, url) {
     const p = url.pathname;
