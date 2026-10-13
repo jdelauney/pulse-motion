@@ -159,6 +159,21 @@ test('reglages : refus sans rien écrire – empreinte périmée, balise absente
   assert.equal(fs.existsSync(path.join(dir, '.historique')), false);
 });
 
+test('reglages : refusés par le compilateur -> 422 avec le chemin, scène intacte, pas d’historique', async () => {
+  const dir = copierProjet('projet-effets');
+  const avant = lireScene(dir);
+  await servir(dir, {}, async (base) => {
+    const r = await requete(`${base}reglages`, json({ empreinte: hache(scene(dir)), scene: 'etincelles', ordre: 0, reglages: 'nombre: 9999999', graine: 3 }));
+    assert.equal(r.statut, 422, r.texte);
+    assert.equal(r.json.erreurs[0].chemin, 'reglages.nombre');
+    assert.match(r.json.message, /maximum/);
+    const inconnu = await requete(`${base}reglages`, json({ empreinte: hache(scene(dir)), scene: 'etincelles', ordre: 0, reglages: 'truc: 1' }));
+    assert.equal(inconnu.statut, 422);
+  });
+  assert.equal(lireScene(dir), avant);
+  assert.equal(fs.existsSync(path.join(dir, '.historique')), false);
+});
+
 test('reglages : écriture impossible -> 500, scène intacte', async () => {
   const dir = copierProjet('projet-effets');
   const avant = lireScene(dir);
