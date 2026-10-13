@@ -256,3 +256,27 @@ test('revue : consignes du son exactes (pas de voix.fichier, import relancé apr
   assert.match(creer, /relancer `pulse-motion whisper`/);
   assert.match(creer, /relancer Claude Code/);
 });
+
+
+test('correctifs : guidage du son précisé (sous-titres sans voix, arrêt avant export, retouches, crête, largeur des sous-titres)', () => {
+  const creer = lire('skills', 'creer', 'SKILL.md');
+  assert.match(creer, /« Pas de voix »[^\n]*ignor[^\n]*sous-titres/);
+  const exporter = lire('skills', 'exporter', 'SKILL.md');
+  assert.match(exporter, /« Enregistrer ma voix d'abord »[^\n]*s'arrêter/);
+  const retoucher = lire('skills', 'retoucher', 'SKILL.md');
+  assert.match(retoucher, /« enlève les sous-titres »/);
+  assert.doesNotMatch(retoucher, /« plus de sous-titres »/);
+  assert.match(retoucher, /\| Structure \|[^\n]*voix\.texte[^\n]*pulse-motion voix provisoire --scene <id> \./);
+  for (const f of ['audio.md', 'moteur.md']) assert.match(lire('references', f), /crête sous −1,5 dBFS/, f);
+  assert.match(lire('references', 'audio.md'), /--pm-st-largeur/);
+});
+
+test('correctifs : sous-commandes du son citées dans les guides : elles existent', () => {
+  const SOUS = { voix: ['importer', 'provisoire', 'transcrire', 'studio'], whisper: ['installer'], musique: ['ecouter'] };
+  for (const f of [...fichiersGuides(), path.join('references', 'audio.md'), path.join('references', 'moteur.md')]) {
+    for (const m of lire(f).matchAll(/pulse-motion (voix|whisper|musique)(?: ([a-z]+))?/g)) {
+      if (m[2] === undefined) continue;
+      assert.ok(SOUS[m[1]].includes(m[2]), `${f} : « pulse-motion ${m[1]} ${m[2]} » n'existe pas`);
+    }
+  }
+});

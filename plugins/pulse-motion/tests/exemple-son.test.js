@@ -40,7 +40,8 @@ test('déroulé : un texte dit par scène, au plus 3,5 mots par seconde ; sous-t
   const d = lireDeroule(EXEMPLE);
   for (const s of d.scenes) {
     assert.ok(s.voix && s.voix.texte, `${s.id} : texte dit`);
-    assert.ok(mots(s.voix.texte) / s.duree <= 3.5, `${s.id} : ${mots(s.voix.texte)} mots en ${s.duree} s`);
+    // Règle du guidage : la scène dure au moins mots / 3,5 + 0,7 s.
+    assert.ok(s.duree >= mots(s.voix.texte) / 3.5 + 0.7, `${s.id} : ${mots(s.voix.texte)} mots en ${s.duree} s`);
   }
   assert.ok(d.sousTitres);
   assert.ok(Object.keys(C.AMBIANCES).includes(d.musique.generee));
@@ -98,7 +99,20 @@ test('dans la page : voix, musique générée et bruitages mixés, sonie mesuré
     assert.ok(Number.isFinite(r.sonie) && r.sonie < -15, String(r.sonie));
     assert.deepEqual(r.avertissements, []);
     assert.ok(r.sousTitre.length > 3, r.sousTitre);
+    // La musique seule a sa sonie, et le mélange (voix et bruitages en plus) en diffère : la voix seule ne passerait pas.
+    const b = await page.evaluer(`Promise.all([M.rendreSon(), M.rendreSon({ seulement: 'musique' })]).then(function (rs) {
+      return { musique: rs[1].sonie, tout: rs[0].sonie, sons: document.querySelectorAll('#pm-scene [data-son]').length };
+    })`);
+    assert.ok(Number.isFinite(b.musique), JSON.stringify(b));
+    assert.ok(Math.abs(b.tout - b.musique) > 0.5, JSON.stringify(b));
+    assert.ok(b.sons >= 3, JSON.stringify(b));
   } finally { await page.fermer(); }
+});
+
+test('exemple : la vidéo dure une minute, et le dit (à l\'écran et dans la voix)', () => {
+  const d = lireDeroule(EXEMPLE);
+  assert.match(d.scenes[0].voix.texte, /en une minute/);
+  assert.match(d.scenes[0].textes.sous, /^1 minute/);
 });
 
 test('revue : une vraie prise remplace la voix provisoire (scène seuil) : ancre et cartons recalés, plus d\'alerte pour elle ; mode mot', async () => {
