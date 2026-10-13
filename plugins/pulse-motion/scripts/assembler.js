@@ -340,4 +340,4 @@ if (require.main === module) {
   process.exit(ok ? 0 : 1);
 }
 
-module.exports = { assembler, slug, chartePour, charteFinale, ecrireSousTitres, RACINE };
+module.exports = { assembler, slug, chartePour, charteFinale, ecrireSousTitres, lireMoteur, RACINE };
