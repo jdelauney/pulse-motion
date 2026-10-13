@@ -127,5 +127,18 @@
     return { taux: son.taux, canaux: [x], decalage: r.debut / son.taux };
   }
 
-  return { ecrire: ecrire, lire: lire, base64: base64, mono: mono, passeHaut: passeHaut, rognage: rognage, rogner: rogner, normaliserCrete: normaliserCrete, preparerPrise: preparerPrise };
+  /** Durée (s) où l'on entend quelque chose : fenêtres de 20 ms dont le niveau dépasse seuil (efficace, 0,02 ≈ −34 dBFS).
+   *  Une prise vide (silence, clic, souffle très bas) en a moins de 0,3 s. */
+  function dureeParole(son, seuil) {
+    var s = seuil === undefined ? 0.02 : seuil;
+    var x = mono(son.canaux), n = Math.max(1, Math.round(0.02 * son.taux)), fenetres = 0;
+    for (var i = 0; i + n <= x.length; i += n) {
+      var e = 0;
+      for (var k = i; k < i + n; k++) e += x[k] * x[k];
+      if (Math.sqrt(e / n) > s) fenetres++;
+    }
+    return fenetres * n / son.taux;
+  }
+
+  return { ecrire: ecrire, lire: lire, base64: base64, mono: mono, passeHaut: passeHaut, rognage: rognage, rogner: rogner, normaliserCrete: normaliserCrete, preparerPrise: preparerPrise, dureeParole: dureeParole };
 });

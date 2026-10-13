@@ -38,6 +38,13 @@ let ecoute = null;         // réécoute en cours (Audio)
 
 const occupe = () => OCCUPEE.includes(etat.phase);
 
+/** Erreur du micro (nom de l'erreur du navigateur) -> message en français. */
+function messageMicro(nom) {
+  if (nom === 'NotFoundError' || nom === 'OverconstrainedError') return 'Aucun micro n\'est branché : brancher un micro, ou demander l\'import d\'un fichier de voix.';
+  if (nom === 'NotReadableError' || nom === 'AbortError') return 'Le micro est utilisé par une autre application (visioconférence…) : la fermer, puis recommencer.';
+  return 'Le micro est refusé : autorisez le micro pour cette page (icône à gauche de l\'adresse), ou demandez l\'import d\'un fichier de voix.';
+}
+
 function el(tag, attrs = {}, parent) {
   const e = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs)) { if (k === 'texte') e.textContent = v; else e.setAttribute(k, v); }
@@ -188,7 +195,7 @@ async function enregistrer(secondes) {
   try {
     flux = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: true, autoGainControl: true } });
   } catch (e) {
-    changer('erreur', 'Le micro est refusé ou introuvable : autorisez le micro pour cette page (icône à gauche de l\'adresse), ou demandez l\'import d\'un fichier de voix.');
+    changer('erreur', messageMicro(e && e.name));
     throw e;
   }
   M.couperSon(true);
@@ -212,6 +219,10 @@ async function enregistrer(secondes) {
     const canaux = [];
     for (let c = 0; c < decode.numberOfChannels; c++) canaux.push(decode.getChannelData(c));
     const pret = M.wav.preparerPrise({ taux: decode.sampleRate, canaux });
+    if (M.wav.dureeParole(pret) < 0.3) {
+      changer('erreur', 'La prise semble vide (silence, souffle ou clic) : vérifier le micro, puis recommencer en parlant.');
+      throw new Error('prise vide');
+    }
     const octets = M.wav.ecrire(pret);
     prise = { octets, url: URL.createObjectURL(new Blob([octets], { type: 'audio/wav' })), duree: pret.canaux[0].length / pret.taux };
     poser('ecoute');
@@ -261,7 +272,8 @@ async function garder() {
     throw new Error(corps.message || String(r.status));
   }
   oublierPrise();
-  changer('pret', corps.transcription === 'en-cours' ? 'Prise gardée ; transcription en cours, l\'aperçu se mettra à jour.' : 'Prise gardée.');
+  changer('pret', corps.transcription === 'en-cours' ? 'Prise gardée ; transcription en cours, l\'aperçu se mettra à jour.'
+    : corps.calage === 'lettres' ? 'Prise gardée ; mots calés approximativement (transcription non installée).' : 'Prise gardée.');
   return corps;
 }
 
@@ -270,7 +282,7 @@ function refaire() {
   changer('pret');
 }
 
-M.studio = { ouvrir, enregistrer, arreter, reecouter, garder, refaire, fermer, occupe, etat: () => ({ ...etat }) };
+M.studio = { ouvrir, enregistrer, arreter, reecouter, garder, refaire, fermer, occupe, messageMicro, etat: () => ({ ...etat }) };
 
 function ajouterBouton() {
   const barre = document.getElementById('pm-lecteur');
@@ -282,6 +294,13 @@ function ajouterBouton() {
 
 M.pret.then(() => {
   ajouterBouton();
-  const id = new URLSearchParams(location.search).get('studio');
-  if (id) ouvrir(id);
+  const parametres = new URLSearchParams(location.search);
+  const id = parametres.get('studio');
+  if (id) {
+    ouvrir(id);
+    // Retiré de l'adresse : un rechargement après une retouche ne rouvre pas la scène de départ.
+    parametres.delete('studio');
+    const reste = parametres.toString();
+    history.replaceState(history.state, '', location.pathname + (reste ? `?${reste}` : '') + location.hash);
+  }
 });

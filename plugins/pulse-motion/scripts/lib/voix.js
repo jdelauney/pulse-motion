@@ -61,6 +61,10 @@ function lireVoixScene(projet, deroule, scene) {
   if (enregistres && enregistres.empreinte === sceau && enregistres.texte === scene.voix.texte && Array.isArray(enregistres.mots)) {
     mots = enregistres.mots;
     approche = enregistres.approche || 'lettres';
+    if (enregistres.echec) {
+      alertes.push({ regle: 'transcription-echouee', gravite: 'alerte', scene: scene.id,
+        message: `Scène « ${scene.id} » : ${enregistres.echec.replace(/\.$/, '')} ; relancer « pulse-motion voix transcrire », ou réenregistrer la scène.` });
+    }
   } else {
     mots = A.calageApproche(scene.voix.texte, canal, son.taux);
     if (enregistres && enregistres.empreinte === sceau && typeof enregistres.texte === 'string' && enregistres.texte !== scene.voix.texte) {
@@ -142,16 +146,32 @@ async function transcrirePrise({ projet, relatif, texte, whisper, surProgression
   }
   let r;
   try { r = await whisper.transcrire({ wav, duree, surProgression }); } finally { if (copie) fs.rmSync(copie, { recursive: true, force: true }); }
-  if (!r.ok) return { ok: false, message: r.message };
+  // Prise remplacée pendant la transcription (nouvelle prise du studio) : rien n'est écrit pour l'ancienne.
+  const sceau = empreinte(octets);
+  const remplacee = () => { try { return empreinte(fs.readFileSync(absolu)) !== sceau; } catch { return true; } };
+  const ecrire = (champs) => {
+    const ancien = lireJSON(fichierMots(absolu)) || {};
+    const { echec, ...reste } = ancien;
+    fs.writeFileSync(fichierMots(absolu), JSON.stringify({ ...reste, ...champs }, null, 2));
+  };
+  // Échec : gardé à côté de la prise (alerte transcription-echouee au contrôle), mots calés approximativement.
+  const echouer = (message) => {
+    if (!remplacee()) {
+      const ancien = lireJSON(fichierMots(absolu)) || {};
+      if (ancien.empreinte === sceau) fs.writeFileSync(fichierMots(absolu), JSON.stringify({ ...ancien, echec: message }, null, 2));
+    }
+    return { ok: false, message };
+  };
+  if (!r.ok) return echouer(r.message);
   const a = A.aligner(texte, r.mots, duree);
-  if (!a) return { ok: false, message: 'La transcription n\'a reconnu aucun mot du texte : mots calés approximativement (vérifier que la prise dit bien le texte de la scène).' };
+  if (!a) return echouer('La transcription n\'a reconnu aucun mot du texte : mots calés approximativement (vérifier que la prise dit bien le texte de la scène).');
   // Une prise qui ne dit plus son texte (texte réécrit) n'est pas déclarée transcrite : il faut la réenregistrer.
   const total = A.decouperMots(texte).length;
   if (a.reconnus < total / 2) {
-    return { ok: false, message: `La transcription a reconnu moins de la moitié des mots du texte (${a.reconnus} sur ${total}) : la prise ne dit peut-être plus ce texte ; la réenregistrer si besoin (mots calés approximativement).` };
+    return echouer(`La transcription a reconnu moins de la moitié des mots du texte (${a.reconnus} sur ${total}) : la prise ne dit peut-être plus ce texte ; la réenregistrer si besoin (mots calés approximativement).`);
   }
-  const ancien = lireJSON(fichierMots(absolu)) || {};
-  fs.writeFileSync(fichierMots(absolu), JSON.stringify({ ...ancien, empreinte: empreinte(octets), texte, duree: Math.round(duree * 1000) / 1000, approche: 'whisper', mots: a.mots }, null, 2));
+  if (remplacee()) return { ok: false, message: 'La prise a été remplacée pendant la transcription : ses mots ne sont pas gardés.' };
+  ecrire({ empreinte: sceau, texte, duree: Math.round(duree * 1000) / 1000, approche: 'whisper', mots: a.mots });
   return { ok: true };
 }
 

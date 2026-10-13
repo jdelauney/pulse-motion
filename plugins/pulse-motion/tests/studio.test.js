@@ -10,7 +10,12 @@ const { STYLES, copierProjet, modifierDeroule } = require('./aide/projet.js');
 
 const navigateur = trouverNavigateur();
 const sans = { skip: !navigateur && 'Chrome ou Edge introuvable' };
-const MICRO = ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', '--autoplay-policy=no-user-gesture-required'];
+// Micro simulé qui « parle » : un son continu lu depuis un fichier (les bips du micro simulé par défaut, 0,1 s par
+// seconde, sont une prise presque vide, refusée par le studio).
+const { wavSinus } = require('./aide/son.js');
+const VOIX_SIMULEE = path.join(require('node:os').tmpdir(), `pm-micro-${process.pid}.wav`);
+fs.writeFileSync(VOIX_SIMULEE, wavSinus({ secondes: 8, frequence: 220, taux: 48000 }));
+const MICRO = ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', '--autoplay-policy=no-user-gesture-required', `--use-file-for-fake-audio-capture=${VOIX_SIMULEE}`];
 
 async function studio(port, { micro = true, deux = false } = {}, fn) {
   const dir = copierProjet('projet-simple');
@@ -129,5 +134,26 @@ test('revue : changer de scène avec une prise non gardée : la prise n\'est pas
     assert.deepEqual(r, { autre: 'refuse', deuxieme: 'refuse' });
     assert.equal(fs.existsSync(path.join(dir, 'assets', 'voix', 'chiffre.wav')), false);
     assert.deepEqual(fs.readdirSync(path.join(dir, '.historique')), ['001']);
+  });
+});
+
+test('correctifs : ?studio retiré de l\'adresse, raccourcis du lecteur inactifs dans le studio, erreurs du micro en français', sans, async () => {
+  await studio(47358, {}, async (dir, page) => {
+    const r = await page.evaluer(`(async function () {
+      var avant = M.temps();
+      var choix = document.querySelector('#pm-studio .pm-studio-scene');
+      choix.focus();
+      choix.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+      choix.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+      await new Promise(function (r) { setTimeout(r, 200); });
+      return { adresse: location.search, bouge: M.temps() !== avant, lecture: document.querySelector('#pm-lecteur button').getAttribute('aria-label'),
+        trouve: M.studio.messageMicro('NotFoundError'), occupe: M.studio.messageMicro('NotReadableError'), refuse: M.studio.messageMicro('NotAllowedError') };
+    })()`);
+    assert.doesNotMatch(r.adresse, /studio/);
+    assert.equal(r.bouge, false);
+    assert.equal(r.lecture, 'Lecture');
+    assert.match(r.trouve, /aucun micro/i);
+    assert.match(r.occupe, /autre application/);
+    assert.match(r.refuse, /autorisez le micro/);
   });
 });

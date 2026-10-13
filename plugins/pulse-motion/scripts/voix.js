@@ -139,6 +139,9 @@ async function importerVoix({ dossier, fichier, scene: id, outil = F.trouverFfmp
  * la prise et ses mots, met le déroulé à jour, puis transcrit (si installée) — attendu, ou lancé en fond (enFond).
  * -> { ok, statut?, message?, fichier, duree, calage, transcription?: Promise|null, avertissement? }
  */
+// File des transcriptions en fond, par scène : projet|scène -> promesse de la dernière.
+const fileTranscriptions = new Map();
+
 async function enregistrerPrise({ projet, scene: id, octets, outil = null, whisper = whisperParDefaut(), enFond = false }) {
   const { deroule, erreurs } = lireDeroule(projet);
   if (erreurs.length) return { ok: false, statut: 422, message: `Le déroulé contient des erreurs : ${erreurs.join(' ')}` };
@@ -149,13 +152,18 @@ async function enregistrerPrise({ projet, scene: id, octets, outil = null, whisp
   const pret = W.preparerPrise(son);
   const crete = pret.canaux[0].reduce((m, v) => Math.max(m, Math.abs(v)), 0);
   if (crete === 0 || pret.canaux[0].length < 0.1 * son.taux) return { ok: false, statut: 422, message: 'La prise ne contient aucun son : vérifier le micro, puis recommencer.' };
+  if (W.dureeParole(pret) < 0.3) return { ok: false, statut: 422, message: 'La prise semble vide (silence, souffle ou clic) : vérifier le micro, puis recommencer en parlant.' };
   // Copie d'historique seulement quand la prise est bonne : un essai raté ne laisse rien.
   sauvegarder(projet);
   const r = await ecrirePrise({ projet, scene: id, octets: new Uint8Array(octets), texte: scene.voix.texte, outil: outil && outil.present ? outil : null });
   ecrireDeroule(projet, (d) => { d.scenes.find((s) => s.id === id).voix.fichier = r.relatif; });
   // Transcription (si installée) : les mots prennent les temps réels de la parole ; sinon calage approché.
   if (!(whisper && whisper.pret)) return { ok: true, fichier: r.relatif, duree: r.duree, calage: 'lettres', transcription: null };
-  const travail = transcrirePrise({ projet, relatif: r.relatif, texte: scene.voix.texte, whisper });
+  // Transcriptions d'une même scène l'une après l'autre (une prise refaite pendant la transcription de la précédente).
+  const cle = `${path.resolve(projet)}|${id}`;
+  const travail = (fileTranscriptions.get(cle) || Promise.resolve()).then(() => transcrirePrise({ projet, relatif: r.relatif, texte: scene.voix.texte, whisper }));
+  const suivante = travail.catch(() => {}).then(() => { if (fileTranscriptions.get(cle) === suivante) fileTranscriptions.delete(cle); });
+  fileTranscriptions.set(cle, suivante);
   if (enFond) return { ok: true, fichier: r.relatif, duree: r.duree, calage: 'lettres', transcription: travail.catch(() => ({ ok: false })) };
   const t = await travail;
   return { ok: true, fichier: r.relatif, duree: r.duree, calage: t.ok ? 'whisper' : 'lettres', ...(t.ok ? {} : { avertissement: t.message }) };
