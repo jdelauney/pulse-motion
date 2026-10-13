@@ -44,6 +44,7 @@ Avec un `tempo` dans le déroulé, aucune durée n'est corrigée seule (la musiq
 | `zone-sure` | En 9:16 : texte dans les 7 % du haut, les 20 % du bas, ou les 11 % de droite entre 40 % et 85 % de la hauteur (boutons des réseaux) | alerte | non | Raccourcir les textes ou retirer un point, sinon rapprocher du centre |
 | `logo-masque` | Logo recouvert à plus de 20 %, ou hors de l'image | alerte | non | Le dégager |
 | `sous-titre-cache-texte` | Un sous-titre recouvre plus de 10 % d'un texte de la scène | alerte | non | Sous-titres en haut (`"position": "haut"`), ou remonter le texte |
+| `obstacle-forme-vide` | Élément `data-obstacle="forme"` invisible à la fin de son minutage : les particules ne s'y arrêtent pas (aussi signalé dans l'aperçu, sur l'effet) | alerte | non | Le laisser visible à la fin de son minutage, ou retirer `data-obstacle="forme"` |
 
 Les sous-titres sont aussi contrôlés pour le contraste (`contraste-reel`, élément « sous-titres ») et, en 9:16, pour les zones des réseaux (`zone-sure`).
 

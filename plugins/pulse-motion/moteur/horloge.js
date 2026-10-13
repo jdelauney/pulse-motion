@@ -10,7 +10,7 @@
  * M.rendreScene(id, t) pose l'état d'une seule scène (mesures des calques de particules)
  * M.surSeek(fn(t))    M.seek attend la promesse renvoyée (calques de particules)
  * M.modeCapture(bool) Date.now et performance.now suivent t (export)
- * M.enCapture()      vrai entre M.modeCapture(true) et M.modeCapture(false)
+ * M.enCapture()      vrai entre M.modeCapture(true) et M.modeCapture(false) (classe pm-capture sur <html>)
  *
  * Aléa reproductible et horloge virtuelle : idée et algorithme mulberry32 repris de
  * showtime (skills/showtime/runtime/stage.js), licence MIT.
@@ -271,6 +271,8 @@
   M.enCapture = function () { return etat.capture; };
   M.modeCapture = function (actif) {
     etat.capture = !!actif;
+    // Classe pm-capture : ce qui n'est destiné qu'à l'aperçu (alertes sur les effets) est masqué dans les images.
+    if (racine.document && document.documentElement) document.documentElement.classList.toggle('pm-capture', etat.capture);
     if (actif) {
       racine.performance.now = function () { return etat.t * 1000; };
       Date.now = function () { return EPOCH + Math.round(etat.t * 1000); };
