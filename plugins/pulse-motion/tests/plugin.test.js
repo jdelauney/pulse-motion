@@ -209,3 +209,20 @@ test('référence audio : champs, ancres, sons, ambiances, partition, mixage, so
   for (const i of C.INSTRUMENTS) assert.ok(t.includes(`\`${i}\``), `instrument ${i}`);
   assert.match(lire('references', 'moteur.md'), /pulse-motion reference audio/);
 });
+
+test('creer : la question du son, textes dits, voix provisoire, sous-titres, Whisper avec accord', () => {
+  const creer = lire('skills', 'creer', 'SKILL.md');
+  assert.match(creer, /\*\*Le son\*\*/);
+  assert.match(creer, /3,5 mots/);
+  assert.match(creer, /une idée par phrase/);
+  assert.match(creer, /pulse-motion voix provisoire \./);
+  assert.match(creer, /pulse-motion whisper/);
+  assert.match(creer, /pulse-motion reference audio/);
+  assert.match(creer, /sousTitres/);
+  assert.match(creer, /mode.*mot.*9:16|9:16.*mode.*mot/);
+  assert.match(creer, /generee/);
+  assert.match(creer, /pulse-motion musique ecouter \./);
+  const e = enTete(creer);
+  assert.match(e['allowed-tools'], /Bash\(winget install --id Python\.Python\.3\.12 -e --accept-source-agreements --accept-package-agreements\)/);
+  assert.match(e['allowed-tools'], /Bash\(brew install python\)/);
+});
