@@ -18,5 +18,5 @@ allowed-tools: Bash(pulse-motion *) Bash(node *) Read Glob Grep Write Edit Agent
 | `deroule-a-valider` | Présenter le déroulé et demander l'accord (creer, étape 2) |
 | `fabrication` | Écrire les scènes de `scenesManquantes` (creer, étape 3) |
 | `style-a-valider` | Montrer la comparaison des styles et demander l'accord sur le style (creer, étape 2, points 4 à 6) |
-| `video-a-valider` | Ouvrir l'aperçu (`pulse-motion apercu . --ouvrir` en arrière-plan s'il n'est pas actif) et demander l'accord sur la vidéo (creer, étape 4) |
-| `apercu` | Ouvrir l'aperçu s'il n'est pas actif, puis proposer une retouche (`/pulse-motion:retoucher`) |
+| `video-a-valider` | Ouvrir l'aperçu (`pulse-motion apercu . --ouvrir` en arrière-plan : il rouvre l'aperçu déjà lancé, ou le démarre) et demander l'accord sur la vidéo (creer, étape 4) |
+| `apercu` | Ouvrir l'aperçu (`pulse-motion apercu . --ouvrir` en arrière-plan), puis proposer une retouche (`/pulse-motion:retoucher`) |

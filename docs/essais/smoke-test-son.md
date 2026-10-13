@@ -279,9 +279,7 @@ Si des scènes ont encore la voix de l'ordinateur, répondez « Exporter une ver
 - Le MP4 se lit dans VLC ou Films et TV, avec un son identique à celui de l'aperçu.
 - Le `.srt` se charge dans VLC (Sous-titres → Ajouter un fichier) et s'affiche en même temps que les sous-titres incrustés.
 
-**Vous dites** : `quelle est la sonie du MP4 ?`
-
-**Attendu** : Claude répond avec une valeur proche de −16 LUFS, un peu en dessous si la musique et les bruitages ont été baissés. L'export vérifie lui-même que le son du MP4 a la sonie annoncée par la page.
+La sonie n'est pas à mesurer ici : l'export fidèle vérifie lui-même que le son du MP4 a celle de la page (à ±1 LU), et échoue sinon. Un export réussi suffit donc.
 
 ### 9.3 Export léger
 
@@ -303,7 +301,7 @@ Si des scènes ont encore la voix de l'ordinateur, répondez « Exporter une ver
 2. **Vous dites** : `j'ai un fichier de ma voix pour toute la vidéo`, puis donnez le fichier (chemin ou glisser-déposer).
 
 **Attendu**
-- Claude copie le fichier dans la vidéo, puis l'importe en le découpant par scène.
+- Claude lit le fichier où il est (sans le copier), puis l'importe en le découpant par scène.
 - Une scène mal reconnue est signalée en une phrase.
 - À la lecture, chaque scène commence sur sa phrase.
 

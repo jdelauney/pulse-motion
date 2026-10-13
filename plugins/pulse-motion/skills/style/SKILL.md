@@ -1,5 +1,5 @@
 ---
-description: Créer son propre style de vidéo (« un style papercraft aux couleurs pop-art ») : allure, couleurs, polices et mouvements, vérifiés avant usage
+description: "Créer son propre style de vidéo (« un style papercraft aux couleurs pop-art ») : allure, couleurs, polices et mouvements, vérifiés avant usage"
 argument-hint: "[le style voulu en une phrase]"
 disable-model-invocation: true
 allowed-tools: Bash(pulse-motion *) Read Glob Grep Write Edit Agent AskUserQuestion
