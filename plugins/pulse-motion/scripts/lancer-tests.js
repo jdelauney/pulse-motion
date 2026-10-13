@@ -16,7 +16,7 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
 const TESTS = path.join(__dirname, '..', 'tests');
-const NAVIGATEUR = /require\(\s*'(?:\.\/aide\/(?:gpu|navigateur|page-son)|\.\.\/scripts\/lib\/(?:cdp|navigateur|page-mesures|capture-fidele)|\.\.\/scripts\/exporter)(?:\.js)?'\s*\)/;
+const NAVIGATEUR = /require\(\s*['"](?:\.\/aide\/(?:gpu|navigateur|page-son)|\.\.\/scripts\/lib\/(?:cdp|navigateur|page-mesures|capture-fidele)|\.\.\/scripts\/exporter)(?:\.js)?['"]\s*\)/;
 
 /** { unitaires, navigateur } : chemins des fichiers *.test.js de tests/, triés. */
 function repartir(dossier = TESTS) {
