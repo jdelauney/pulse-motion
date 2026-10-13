@@ -101,3 +101,13 @@ test('page : les formes invisibles ne s\'affichent pas', () => {
   const css = fs.readFileSync(path.join(__dirname, '..', 'moteur', 'base.css'), 'utf8');
   assert.match(css, /\[data-obstacle-forme\] \{ display: none; \}/);
 });
+
+test('page : le moteur embarque obstacles.js et reperes.js avant la simulation', () => {
+  const { lireMoteur, RACINE } = require('../scripts/assembler.js');
+  const moteur = lireMoteur(RACINE);
+  const i = (motif) => moteur.indexOf(motif);
+  assert.ok(i('Pulse Motion – obstacles des collisions de particules') > 0);
+  assert.ok(i('Pulse Motion – repères des obstacles mesurés dans la page') > 0);
+  assert.ok(i('Pulse Motion – obstacles des collisions de particules') < i('Pulse Motion – simulation des particules sur le GPU'));
+  assert.ok(i('Pulse Motion – repères des obstacles mesurés dans la page') < i('Pulse Motion – calques de particules'));
+});
