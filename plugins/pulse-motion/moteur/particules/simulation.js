@@ -3,6 +3,7 @@
  * new P.Simulation(device, effet, monde?)   effet : recette compilée ; monde : obstacles de l'effet (collisions), facultatif
  *   monde = { entrees: [{ type, categorie, forme, profil }], largeurCqh, actif, formes?: { vue } }   (obstacles.js)
  *   .avancer(tau, zones) -> deltas  amène chaque émetteur à τ ; δ = τ − k/120 pour les simulés, 0 pour la voie rapide
+ *   .emetteurs[i].inerte  enfant « a_la_collision » d'un parent sans collisions actives : ni simulé ni dessiné
  *   .lireEtat(i)          -> Promise<Float32Array> (16 nombres par case, disposition « Particule »)
  *   .lireHistorique(i)    -> Promise<Float32Array> (2 nombres par entrée de traînée)
  *   .lireContacts(i)      -> Promise<Float32Array> (8 nombres par case, disposition « Contact » ; vide sans collisions)
@@ -11,7 +12,8 @@
  *   .contributionVideo()  -> GPUBuffer (MAX_VIDEO × 256 entiers : sommes propres du dernier pas, par obstacle de la vidéo)
  * P.additionnerProfils(device, cible, source)   cible += source (tampons d'entiers de même taille)
  * monde.tans (tan du talus par profil), monde.bases (GPUBuffer nProfils × 256 entiers, contributions de la vidéo ;
- * la simulation le détruit avec elle). Empilement : sommes entières atomiques (seule opération atomique), puis relaxation.
+ * la simulation le détruit avec elle) ; .hauteursBase (GPUBuffer nProfils × 256 f32, cqh) : ces bases relaxées au talus,
+ * sans les particules de l'effet (couche héritée dessinée par le rendu), null sans bases. Empilement : sommes entières atomiques (seule opération atomique), puis relaxation.
  * zones.a(τ) et zones.grille(g) -> [x, y, largeur, hauteur] en cqh (zone d'émission à τ, au point g / 30 de la grille) ;
  * zones.reperes(g) -> Float32Array (8 nombres par obstacle de monde.entrees, disposition « Repere » de obstacles.js)
  * au point g de la grille ; demandé seulement quand un émetteur a des collisions actives.
@@ -439,11 +441,17 @@ fn melange(A: Repere, B: Repere, f: f32) -> Repere {
 }
 
 // Repère d'un obstacle à τ : grille de 30 points par seconde, position et échelle linéaires, angle par le plus court.
+// Un point de grille inactif (obstacle absent : scène voisine cachée, élément masqué) rend le repère inactif : jamais
+// d'interpolation vers le repère vide (les particules posées seraient projetées vers l'origine) ; elles sont libérées.
 fn repere(o: u32, tau: f32) -> Repere {
   let x = max(tau, 0.0) * 30.0;
   let i = min(u32(floor(x)), Mo.nGrille - 1u);
   let j = min(i + 1u, Mo.nGrille - 1u);
-  return melange(repereGrille(o, i), repereGrille(o, j), clamp(x - f32(i), 0.0, 1.0));
+  let f = clamp(x - f32(i), 0.0, 1.0);
+  let A = repereGrille(o, i);
+  let B = repereGrille(o, j);
+  if (A.actif < 0.5 || (B.actif < 0.5 && f > 0.0)) { return Repere(A.centre, A.angle, 0.0, A.demi, A.echelle); }
+  return melange(A, B, f);
 }
 
 fn tourner(r: Repere, v: vec2f) -> vec2f {
@@ -604,7 +612,7 @@ fn chercher(p0: vec2f, p1: vec2f, ta: f32, entier: bool, r: f32) -> Touche {
   for (var o = 0u; o < Mo.n; o++) {
     if ((Mo.o[o].y & masque) == 0u) { continue; }
     let A = cadreDebut(o, ta, entier);
-    if (A.actif < 0.5) { continue; }
+    if (A.actif < 0.5 || cadresB[o].actif < 0.5) { continue; }
     let c = coupObstacle(o, A, cadresB[o], p0, p1, r);
     if (c.ok && c.t < meilleur.t) { meilleur = Touche(true, c.t, o, c.l, c.n); }
   }
@@ -1074,8 +1082,15 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
         };
       });
 
+      // Inertes : enfants « a_la_collision » d'un parent sans collisions actives (et leurs descendants) ; rien n'y naît,
+      // ils ne sont ni simulés ni dessinés (le parent garde la voie rapide).
+      this.emetteurs.slice().sort((a, b) => a.em.profondeur - b.em.profondeur).forEach((e) => {
+        const parent = e.em.parent >= 0 ? this.emetteurs[e.em.parent] : null;
+        e.inerte = !!parent && (parent.inerte || (e.em.declencheur === 'collision' && !parent.collisions));
+        if (e.inerte) e.rapide = false;
+      });
       // Émetteurs simulés, parents avant enfants.
-      this.simules = this.emetteurs.filter((e) => !e.rapide).sort((a, b) => a.em.profondeur - b.em.profondeur || a.em.index - b.em.index);
+      this.simules = this.emetteurs.filter((e) => !e.rapide && !e.inerte).sort((a, b) => a.em.profondeur - b.em.profondeur || a.em.index - b.em.index);
       this.tamponPas = device.createBuffer({ size: 256 * PAS_PAR_LOT, usage: U.UNIFORM | U.COPY_DST });
       this.donneesPas = new ArrayBuffer(256 * PAS_PAR_LOT);
       this.u32Pas = new Uint32Array(this.donneesPas);
@@ -1162,6 +1177,43 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
           { binding: 5, resource: { buffer: this.uniformeMonde } },
         ],
       });
+      if (this.monde.bases) this.relaxerBases(octets);
+    }
+
+    /** Couche héritée seule (bases de la vidéo relaxées au talus, sans les particules de l'effet), calculée une fois :
+     *  le rendu la dessine (hauteursBase, nProfils × 256 hauteurs en cqh). Obstacles de la vidéo : repères fixes. */
+    relaxerBases(octets) {
+      const { device } = this;
+      const O = M.obstacles;
+      const U = GPUBufferUsage;
+      const entrees = this.monde.entrees;
+      this.hauteursBase = device.createBuffer({ size: octets, usage: U.STORAGE | U.COPY_SRC });
+      const zero = device.createBuffer({ size: octets, usage: U.STORAGE });
+      const brut = device.createBuffer({ size: octets, usage: U.STORAGE });
+      const pas = device.createBuffer({ size: 256, usage: U.UNIFORM | U.COPY_DST });
+      const cadres = entrees.map((e) => (e.source && e.source.video !== undefined ? O.repereFixe(e.source, this.monde.largeurCqh, 100) : O.INACTIF));
+      const v = new Float32Array(20);
+      v.set(O.largeursCases(entrees, cadres), 12);
+      device.queue.writeBuffer(pas, 0, v);
+      const groupe = device.createBindGroup({
+        layout: this.pc.layoutRelax,
+        entries: [
+          { binding: 0, resource: { buffer: zero } },
+          { binding: 1, resource: { buffer: this.hauteursBase } },
+          { binding: 2, resource: { buffer: this.bases } },
+          { binding: 3, resource: { buffer: brut } },
+          { binding: 4, resource: { buffer: pas, size: 80 } },
+          { binding: 5, resource: { buffer: this.uniformeMonde } },
+        ],
+      });
+      const enc = device.createCommandEncoder();
+      const passe = enc.beginComputePass();
+      passe.setPipeline(this.pc.relaxer);
+      passe.setBindGroup(0, groupe, [0]);
+      passe.dispatchWorkgroups(this.nProfils);
+      passe.end();
+      device.queue.submit([enc.finish()]);
+      device.queue.onSubmittedWorkDone().then(() => [zero, brut, pas].forEach((b) => b.destroy()), () => {});
     }
 
     groupeCollisions(e, parent) {
@@ -1207,7 +1259,7 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
       this.k = k;
       if (this.simules.length) this.executer(this.planificateur.planifier(k), zones);
       if (this.rapides.length) this.evaluer(tau, zones);
-      return this.emetteurs.map((e) => (e.rapide ? 0 : delta));
+      return this.emetteurs.map((e) => (e.rapide || e.inerte ? 0 : delta));
     }
 
     /** Données propres au pas, après zones et repères : temps, largeurs de case des profils à τ1. */
@@ -1397,7 +1449,7 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
       if (this.tamponZones) this.tamponZones.destroy();
       if (this.texReperes) this.texReperes.destroy();
       if (this.uniformeMonde) this.uniformeMonde.destroy();
-      [this.profils, this.hauteurs, this.brut, this.bases].forEach((b) => b && b.destroy());
+      [this.profils, this.hauteurs, this.brut, this.bases, this.hauteursBase].forEach((b) => b && b.destroy());
     }
   }
 

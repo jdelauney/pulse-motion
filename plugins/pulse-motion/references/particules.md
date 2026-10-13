@@ -118,12 +118,12 @@ Les particules rebondissent sur un cadre, se posent sur un titre, s'accumulent a
 | Déclaration | Effet |
 |---|---|
 | `data-obstacle` | La boîte de l'élément, même tournée, mise à l'échelle ou animée (les particules posées suivent). |
-| `data-obstacle="forme"` | La forme exacte (lettres d'un texte, silhouette d'une image), prise à la fin du minutage de l'élément. Un élément effacé à ce moment ne compte pas (alerte). |
+| `data-obstacle="forme"` | La forme exacte (lettres d'un texte, silhouette d'une image), prise à la fin du minutage de l'élément. Un élément effacé à ce moment ne compte pas (alerte `obstacle-forme-vide`). |
 | `data-obstacle="video"` ou `"forme video"` | Idem, et obstacle aussi pour les effets de la scène voisine pendant une transition. |
 | `data-obstacle-forme="ligne"` | Ligne invisible : `data-de="x y"`, `data-a="x y"` (cqh). Aussi `cercle` (`data-centre`, `data-rayon`) et `rectangle` (`data-de`, `data-a`, `data-angle` en degrés). |
 | Sol et murs | Le bas, la gauche et la droite de l'image sont toujours là ; la recette décale le sol avec `"sol": 90` (cqh depuis le haut). |
 
-Au plus 16 obstacles par scène (les premiers dans l'ordre du document comptent).
+Au plus 16 obstacles par scène (les premiers dans l'ordre du document comptent). Un effet garde au plus 48 obstacles (bords, scène, scènes voisines, vidéo) et 8 couches d'empilement ; ceux de la vidéo passent en premier ; au-delà, une alerte dans la console de l'aperçu.
 
 ### Obstacles de la vidéo (déroulé)
 
@@ -131,7 +131,9 @@ Au plus 16 obstacles par scène (les premiers dans l'ordre du document comptent)
 "obstacles": [ { "type": "sol", "a": 92 }, { "type": "ligne", "de": [0, 80], "a": [40, 95] } ]
 ```
 
-Types `sol` (`a`), `ligne` (`de`, `a`), `cercle` (`centre`, `rayon`), `rectangle` (`de`, `a`, `angle`) ; au plus 8 obstacles de vidéo, valables dans toutes les scènes. La neige accumulée sur un sol de la vidéo dans une scène est encore là dans la suivante.
+Types `sol` (`a`), `ligne` (`de`, `a`), `cercle` (`centre`, `rayon`), `rectangle` (`de`, `a`, `angle`) ; au plus 8 obstacles de vidéo, valables dans toutes les scènes.
+
+Couche commune : un effet qui **empile** sur un obstacle de la vidéo (`"empiler": true`, cible `elements`) hérite de la couche laissée par les effets commencés avant lui, quelle que soit leur scène. Chacun compte pour la couche qu'il avait formée au début de l'effet qui hérite (à sa fin s'il était déjà fini ; pendant une transition, sa couche à cet instant). La couche héritée est **dessinée** : une bande qui suit son profil, bord haut adouci, de la couleur à mi-vie des effets qui l'ont formée, dans le calque de l'effet qui hérite ; ses nouvelles particules se posent dessus. Elle n'est visible que **pendant que cet effet est affiché** : sans effet qui empile sur ce sol dans la scène suivante (ou avant son `data-start`), la neige d'une scène ne reste pas au sol. Pour une neige qui tient d'une scène à l'autre, mettre l'effet dans chaque scène, dès le début.
 
 ### Réglages d'une recette (`collisions`, par émetteur)
 
@@ -157,7 +159,7 @@ Bibliothèque : `confettis` et `neige` se posent et s'empilent, `pluie` meurt au
 
 Limites : une couche ne s'écroule pas quand son obstacle bouge, les grains ne roulent pas les uns sur les autres, les particules ne se heurtent pas entre elles. Un émetteur à collisions garde `z` pour la taille et l'ordre de dessin, mais sans décalage de perspective (ses particules restent sur leurs obstacles).
 
-Contrôles : `obstacle-introuvable` (déclaration mal écrite), `collisions-invalides` (recette), `obstacles-video` (déroulé), alerte `trop-d-obstacles` (au-delà de 16 obstacles par scène ou de 8 obstacles de vidéo).
+Contrôles : `obstacle-introuvable` (déclaration mal écrite), `collisions-invalides` (recette), `obstacles-video` (déroulé), alerte `trop-d-obstacles` (au-delà de 16 obstacles par scène ou de 8 obstacles de vidéo), alerte `obstacle-forme-vide` (forme exacte invisible à la fin de son minutage ; contrôle de la vidéo rendue, donc avec Chrome ou Edge ; aussi un panneau sur l'effet dans l'aperçu).
 
 ## Régler à l'œil : l'atelier
 

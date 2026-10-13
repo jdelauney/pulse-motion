@@ -5,8 +5,10 @@
  *                                     résout l'ensemble des images illisibles (URL data:)
  *   .cible(canvas)                    cible HDR, niveaux de bloom, copie lisible, contexte du canvas
  *   .oublierCible(canvas)             libère la cible (scène masquée) ; .cible la recrée au retour
- *   .dessiner(cible, liste, o)        liste : [{ sim, i, delta }] ; o : { largeurCqh, dureeImage, bloom, seuil, tons } ;
- *                                     pose cible.vide (rien à dessiner)
+ *   .dessiner(cible, liste, o)        liste : [{ sim, i, delta }] ; o : { largeurCqh, dureeImage, bloom, seuil, tons, couches? } ;
+ *                                     pose cible.vide (rien à dessiner) ; couches : [{ tampon (f32, cqh), debut (case),
+ *                                     repere, genre (type d'obstacle), couleur [r, v, b, a], flou (cqh) }] couches héritées
+ *                                     des obstacles de la vidéo, dessinées sous les particules
  *   .lirePixels(cible) -> Promise<{ largeur, hauteur, donnees }>  (RVBA 8 bits, prémultiplié, sRGB)
  *   .lireOrdre(e) -> Promise<Uint32Array>                          (paires clé, index après tri ; tests)
  *
@@ -296,6 +298,47 @@ fn etape(@builtin(global_invocation_id) g: vec3u) {
 }
 `;
 
+  // Couche héritée d'un obstacle de la vidéo (neige tombée dans une scène précédente) : bande qui suit le profil (256 cases,
+  // cqh, sur le dessus de l'obstacle dans son repère), bord haut adouci sur K.flou cqh. Alpha prémultiplié.
+  const WGSL_COUCHE = /* wgsl */ `
+struct Couche { centre: vec2f, angle: f32, demiX: f32, couleur: vec4f, largeur: f32, hauteur: f32, debut: u32, flou: f32,
+  genre: u32, demiY: f32, a: f32, b: f32 };
+@group(0) @binding(0) var<storage, read> H: array<f32>;
+@group(0) @binding(1) var<uniform> K: Couche;
+struct SortieCouche { @builtin(position) pos: vec4f, @location(0) sousHaut: f32 };
+
+// Dessus de l'obstacle en x local (y vers le bas) : demi-plan et segment 0, boîte -demiY, cercle sur son arc.
+fn dessus(x: f32) -> f32 {
+  if (K.genre == 1u) { return -K.demiY; }
+  if (K.genre == 2u) { let u = x / max(K.demiX, 1e-6); return -K.demiY * sqrt(max(1.0 - u * u, 0.0)); }
+  return 0.0;
+}
+
+@vertex
+fn vsCouche(@builtin(vertex_index) vi: u32) -> SortieCouche {
+  let c = min(vi / 2u, 255u);
+  let h = max(H[K.debut + c], 0.0);
+  let x = ((f32(c) + 0.5) / 256.0 * 2.0 - 1.0) * K.demiX;
+  let haut = (vi & 1u) == 1u;
+  var l = vec2f(x, dessus(x));
+  if (haut) { l.y = l.y - h; }
+  let co = cos(K.angle);
+  let si = sin(K.angle);
+  let w = K.centre + vec2f(co * l.x - si * l.y, si * l.x + co * l.y);
+  var o: SortieCouche;
+  o.pos = vec4f(w.x / K.largeur * 2.0 - 1.0, 1.0 - w.y / K.hauteur * 2.0, 0.0, 1.0);
+  o.sousHaut = select(h, 0.0, haut);
+  return o;
+}
+
+@fragment
+fn fsCouche(e: SortieCouche) -> @location(0) vec4f {
+  let a = K.couleur.a * smoothstep(0.0, K.flou, e.sousHaut);
+  return vec4f(K.couleur.rgb * a, a);
+}
+`;
+  const GENRES_COUCHE = { 0: 0, 3: 0, 1: 1, 2: 2 };
+
   // Borne du HDR : au-delà de 65504, les flottants 16 bits débordent (infini, puis NaN dans le flou).
   const WGSL_BORNE = /* wgsl */ `
 const BORNE = vec3f(6e4);
@@ -433,6 +476,22 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
           primitive: { topology: forme === 'quad' ? 'triangle-list' : 'triangle-strip' },
         });
       }));
+
+      // Couches héritées des obstacles de la vidéo.
+      this.layoutCouche = device.createBindGroupLayout({
+        entries: [
+          { binding: 0, visibility: V, buffer: { type: 'read-only-storage' } },
+          { binding: 1, visibility: V | Fr, buffer: { type: 'uniform' } },
+        ],
+      });
+      const moduleCouche = device.createShaderModule({ label: 'pm-couche', code: WGSL_COUCHE });
+      this.pipelineCouche = device.createRenderPipeline({
+        layout: device.createPipelineLayout({ bindGroupLayouts: [this.layoutCouche] }),
+        vertex: { module: moduleCouche, entryPoint: 'vsCouche' },
+        fragment: { module: moduleCouche, entryPoint: 'fsCouche', targets: [{ format: 'rgba16float', blend: MELANGES.alpha }] },
+        primitive: { topology: 'triangle-strip' },
+      });
+      this.couches = new WeakMap();
 
       // Tri bitonique : tableau de passes (j, k) partagé jusqu'à 2^22 particules.
       this.layoutTri = device.createBindGroupLayout({
@@ -603,8 +662,26 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
       return t;
     }
 
+    /** Uniforme et groupe d'une couche héritée (tampon de hauteurs, profil), créés une fois. */
+    couche(tampon, debut) {
+      let parTampon = this.couches.get(tampon);
+      if (!parTampon) { parTampon = new Map(); this.couches.set(tampon, parTampon); }
+      let c = parTampon.get(debut);
+      if (!c) {
+        const uniforme = this.device.createBuffer({ size: 64, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+        c = {
+          uniforme,
+          groupe: this.device.createBindGroup({ layout: this.layoutCouche, entries: [{ binding: 0, resource: { buffer: tampon } }, { binding: 1, resource: { buffer: uniforme } }] }),
+        };
+        parTampon.set(debut, c);
+      }
+      return c;
+    }
+
     /** Libère les tampons de rendu des émetteurs d'une simulation détruite. */
     oublier(sim) {
+      const couches = sim.hauteursBase && this.couches.get(sim.hauteursBase);
+      if (couches) { couches.forEach((c) => c.uniforme.destroy()); this.couches.delete(sim.hauteursBase); }
       sim.emetteurs.forEach((e) => {
         const t = this.tris.get(e);
         if (t) t.ordre.destroy();
@@ -670,7 +747,8 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
     dessiner(cible, liste, o) {
       const { device } = this;
       const enc = device.createCommandEncoder();
-      cible.vide = liste.length === 0;
+      const couches = o.couches || [];
+      cible.vide = liste.length === 0 && couches.length === 0;
 
       // 1. Tri des émetteurs en mélange alpha (clé z croissante : du plus loin au plus proche).
       const aTrier = liste.filter(({ sim, i }) => this.estTrie(sim.emetteurs[i]));
@@ -693,6 +771,21 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
 
       // 2. Particules dans la cible HDR.
       const rp = enc.beginRenderPass({ colorAttachments: [{ view: cible.vueHdr, loadOp: 'clear', storeOp: 'store', clearValue: [0, 0, 0, 0] }] });
+      // Couches héritées d'abord : les particules de l'effet se dessinent dessus.
+      couches.forEach((k) => {
+        const c = this.couche(k.tampon, k.debut);
+        const v = new ArrayBuffer(64);
+        const f = new Float32Array(v);
+        const u = new Uint32Array(v);
+        f[0] = k.repere.centre[0]; f[1] = k.repere.centre[1]; f[2] = k.repere.angle; f[3] = k.repere.demi[0];
+        f.set(k.couleur, 4);
+        f[8] = o.largeurCqh; f[9] = 100; u[10] = k.debut; f[11] = k.flou;
+        u[12] = GENRES_COUCHE[k.genre] || 0; f[13] = k.repere.demi[1];
+        device.queue.writeBuffer(c.uniforme, 0, v);
+        rp.setPipeline(this.pipelineCouche);
+        rp.setBindGroup(0, c.groupe);
+        rp.draw(512);
+      });
       liste.forEach(({ sim, i, delta }) => {
         const e = sim.emetteurs[i];
         const r = e.em.rendu;
