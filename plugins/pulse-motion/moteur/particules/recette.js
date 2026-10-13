@@ -1,6 +1,8 @@
 /* Pulse Motion – recettes d'effets de particules : héritage, réglages, couleurs, compilation.
  *
  * resoudre(nom, charger)   applique « etend » (fusion profonde, émetteurs fusionnés par nom)
+ * differences(base, r)     plus petite recette dérivée d telle que fusionner(base, d) redonne r (atelier)
+ * fusionner(base, ajout), egal(a, b)
  * analyserReglages(texte)  "nombre: 3000; couleur: accent" -> { valeurs, erreurs }
  * compiler(recette, o)     recette -> paramètres numériques pour le GPU (cqh, s de τ, radians,
  *                          RVB linéaire, tables de 64 valeurs, capacités)
@@ -239,6 +241,71 @@
     recette.nom = nom;
     recette.etend = null;
     return recette;
+  }
+
+  // ---- Différences (atelier : recette dérivée par « etend ») ----
+
+  function possede(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
+
+  /** Égalité profonde de valeurs JSON (ordre des clés indifférent). */
+  function egal(a, b) {
+    if (a === b) return true;
+    if (Array.isArray(a)) return Array.isArray(b) && a.length === b.length && a.every(function (x, i) { return egal(x, b[i]); });
+    if (estObjet(a)) {
+      if (!estObjet(b)) return false;
+      var ka = Object.keys(a);
+      return ka.length === Object.keys(b).length && ka.every(function (k) { return possede(b, k) && egal(a[k], b[k]); });
+    }
+    return false;
+  }
+
+  function inexprimable(raison) {
+    return ErreurRecette('effet-invalide', 'Impossible à écrire par « etend » : ' + raison + '.');
+  }
+
+  function diffObjet(base, recette, chemin) {
+    var d = {};
+    Object.keys(base).forEach(function (k) {
+      if (!possede(recette, k)) throw inexprimable('le champ « ' + chemin + k + ' » est retiré');
+    });
+    Object.keys(recette).forEach(function (k) {
+      if (k === '__proto__') return;
+      var b = base[k];
+      var r = recette[k];
+      if (possede(base, k) && egal(b, r)) return;
+      if (k === 'emetteurs' && Array.isArray(b) && Array.isArray(r)) d[k] = diffEmetteurs(b, r);
+      else if (possede(base, k) && estObjet(b) && estObjet(r)) d[k] = diffObjet(b, r, chemin + k + '.');
+      else d[k] = cloner(r);
+    });
+    return d;
+  }
+
+  /** Émetteurs : ceux de base restent dans l'ordre (l'ordre fixe le tirage), modifiés par nom ; les nouveaux suivent. */
+  function diffEmetteurs(base, recette) {
+    var noms = recette.map(function (e) { return estObjet(e) ? e.nom : undefined; });
+    base.forEach(function (b, i) {
+      if (!estObjet(b)) throw inexprimable('un émetteur de base n\'a pas de nom');
+      var j = noms.indexOf(b.nom);
+      if (j < 0) throw inexprimable('l\'émetteur « ' + b.nom + ' » est retiré');
+      if (j !== i) throw inexprimable('l\'ordre des émetteurs change');
+    });
+    var d = [];
+    recette.forEach(function (r, i) {
+      if (i >= base.length) { d.push(cloner(r)); return; }
+      if (egal(base[i], r)) return;
+      d.push(Object.assign({ nom: r.nom }, diffObjet(base[i], r, 'emetteurs[' + r.nom + '].')));
+    });
+    return d;
+  }
+
+  /**
+   * differences(base, recette) -> plus petit objet r tel que fusionner(base, r) redonne recette (émetteurs par nom).
+   * Lève une ErreurRecette si recette retire un champ ou un émetteur de base, ou change l'ordre des émetteurs :
+   * « etend » ne sait qu'ajouter et remplacer.
+   */
+  function differences(base, recette) {
+    if (!estObjet(base) || !estObjet(recette)) throw inexprimable('deux recettes (objets JSON) attendues');
+    return diffObjet(base, recette, '');
   }
 
   // ---- Réglages et couleurs ----
@@ -782,6 +849,9 @@
     SCHEMA: SCHEMA,
     ErreurRecette: ErreurRecette,
     resoudre: resoudre,
+    fusionner: fusionner,
+    differences: differences,
+    egal: egal,
     analyserReglages: analyserReglages,
     couleurLineaire: couleurLineaire,
     compiler: compiler,
