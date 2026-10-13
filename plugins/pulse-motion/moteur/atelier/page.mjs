@@ -6,7 +6,9 @@
  * chaque changement recompile (au plus toutes les 100 ms) et remplace la simulation de l'effet. « Enregistrer » écrit
  * effets/<nom>.json dans le projet (par etend quand le départ est une recette existante ; les réglages courants y
  * deviennent les valeurs par défaut) ; hors d'un projet, la page dit de lancer l'atelier depuis le dossier d'une vidéo.
- * Pour les tests : M.atelierPage = { pret, etat(), modifier(fn), regler(nom, v), duree(s), graine(n), fond(f),
+ * Obstacles d'essai (collisions) : ?sol=1 (sol de la vidéo à 90 cqh) et ?boite=1 (boîte data-obstacle en bas au centre) ;
+ * cocher une case recharge la page avec l'adresse mise à jour.
+ * Pour les tests : M.atelierPage = { pret, etat(), essai(), modifier(fn), regler(nom, v), duree(s), graine(n), fond(f),
  *   ancre({ x, y, l, h }), lecture(bool), enregistrer(nom, { remplacer }) }.
  */
 import { construireFormulaire, construireReglages, reglagesEnTexte, limiter, compilerPourPage, nouvelleRecette, el } from './editeur.mjs';
@@ -16,6 +18,10 @@ const DUREE = 60;
 const DELAI = 100;
 const SOMBRE = '#101014';
 const CHARTE = ['primaire', 'accent', 'texte', 'fond'];
+const ESSAI = (() => {
+  const q = new URLSearchParams(location.search);
+  return { sol: q.get('sol') === '1', boite: q.get('boite') === '1' };
+})();
 const SANS_PROJET = 'Aucune vidéo ouverte : lancez l\'atelier depuis le dossier d\'une vidéo (pulse-motion atelier) pour enregistrer vos effets.';
 
 const etat = {
@@ -53,12 +59,21 @@ function poserDonnees(effet) {
     titre: 'Atelier', format: { ratio: '16:9', ips: 30 }, musique: null, voix: null, tempo: null, bruitages: null, sousTitres: null,
     scenes: [{ id: 'atelier', duree: DUREE, rythme: 1, transition: 'aucune' }],
     effets: [{ calque: 'avant', ancre: 'pm-atelier-ancre', effet }],
+    obstacles: ESSAI.boite ? [{ scene: 'atelier', genre: 'element', video: false }] : [],
+    obstaclesVideo: ESSAI.sol ? [{ type: 'sol', a: 90 }] : [],
   };
   const s = document.createElement('script');
   s.type = 'application/json';
   s.id = 'pm-donnees';
   s.textContent = JSON.stringify(d);
   document.body.appendChild(s);
+}
+
+/** Obstacles d'essai : l'adresse change, la page se recharge (les données du moteur sont fixées au démarrage). */
+function basculerEssai(cle, actif) {
+  const q = new URLSearchParams(location.search);
+  if (actif) q.set(cle, '1'); else q.delete(cle);
+  location.search = q.toString();
 }
 
 function poserAncre() {
@@ -196,6 +211,15 @@ function construirePanneau() {
     b.addEventListener('click', () => fond(f));
   });
 
+  const essais = el('span', {}, ligne(p, "Obstacles d'essai"));
+  [['sol', 'Sol'], ['boite', 'Boîte']].forEach(([cle, texte]) => {
+    const etiquette = el('label', {}, essais);
+    const caseACocher = el('input', { type: 'checkbox', 'data-essai': cle, 'aria-label': `${texte} d'essai` }, etiquette);
+    caseACocher.checked = ESSAI[cle];
+    etiquette.append(` ${texte} `);
+    caseACocher.addEventListener('change', () => basculerEssai(cle, caseACocher.checked));
+  });
+
   const dur = el('input', { type: 'number', min: '0.1', step: '0.1', value: String(etat.dur), 'aria-label': 'Durée d\'émission' }, ligne(p, 'Durée d\'émission (s)'));
   dur.addEventListener('input', () => {
     const x = Number(dur.value);
@@ -298,6 +322,8 @@ async function demarrer() {
     r = await compilerPourPage(M.recette, nouvelleRecette(), options(), textures);
   }
   etat.effet = r.effet;
+  document.getElementById('pm-atelier-boite').hidden = !ESSAI.boite;
+  document.getElementById('pm-atelier-sol').hidden = !ESSAI.sol;
   poserDonnees(r.effet);
   poserAncre();
   poserFond();
@@ -318,6 +344,7 @@ async function demarrer() {
 M.atelierPage = {
   pret,
   etat: () => clone({ ...etat, effet: null }),
+  essai: () => ({ ...ESSAI }),
   modifier(fn) {
     fn(etat.recette);
     if (formulaire) formulaire.remplacer(etat.recette);

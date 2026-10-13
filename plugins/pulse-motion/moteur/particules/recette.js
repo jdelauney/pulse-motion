@@ -34,6 +34,8 @@
     rendu: { sprite: 0, etincelle: 1, trainee: 2, planche: 3 },
     melange: { additif: 0, alpha: 1, premultiplie: 2 },
     texture: { 'disque-doux': 0, etoile: 1, fumee: 2, flamme: 3, eclat: 4, confetti: 5, image: 6 },
+    reponse: { rebond: 0, poser: 1, mourir: 2 },
+    cible: { sol: 1, murs: 2, elements: 4, formes: 8 },
   };
   var COULEURS_CHARTE = ['primaire', 'accent', 'texte', 'fond'];
   var HEX = /^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
@@ -176,6 +178,20 @@
         }),
       }),
       a_la_mort: ob('À la mort', {
+        emetteur: noeud('texte', 'Émetteur lancé', null, { motif: '^[a-z0-9-]+$', parmi: 'emetteurs', exemple: 'b' }),
+      }),
+      collisions: ob('Collisions avec la scène', {
+        cibles: li('Cibles', ch('Cible', Object.keys(CODES.cible), null, { exemple: 'sol' }), { defaut: Object.keys(CODES.cible), exemple: ['sol'], maximum: 4 }),
+        reponse: ch('Réponse au contact', Object.keys(CODES.reponse), 'rebond'),
+        restitution: iv('Rebond (part de la vitesse normale gardée)', [0.4, 0.4], { min: 0, max: 1, curseur: [0, 1], pas: 0.05 }),
+        frottement: iv('Frottement (part de la vitesse tangentielle perdue)', [0.2, 0.2], { min: 0, max: 1, curseur: [0, 1], pas: 0.05 }),
+        repos_apres: iv('Fondu après la pose', null, { exemple: 2, min: 0, unite: 's', curseur: [0, 10] }),
+        empiler: bo('Former une couche (avec « poser »)'),
+        epaisseur: iv('Épaisseur dans la couche', null, { exemple: 0.5, min: 0, unite: 'cqh', curseur: [0, 5] }),
+        talus: nb('Angle de talus de la couche', 35, { min: 5, max: 80, unite: '°', curseur: [5, 80] }),
+        sol: nb('Sol décalé (depuis le haut)', null, { exemple: 90, unite: 'cqh', curseur: [0, 100] }),
+      }),
+      a_la_collision: ob('Au contact', {
         emetteur: noeud('texte', 'Émetteur lancé', null, { motif: '^[a-z0-9-]+$', parmi: 'emetteurs', exemple: 'b' }),
       }),
     }, { exemple: { nom: 'emetteur', naissance: { debit: 50, vie: [0.5, 1] } } }), { requis: true }),
@@ -441,7 +457,8 @@
     var nomEffet = recette && recette.nom ? recette.nom : '?';
     var prefixe = 'Effet « ' + nomEffet + ' »';
     function invalide(chemin, message) {
-      return ErreurRecette('effet-invalide', prefixe + (chemin ? ', ' + chemin : '') + ' : ' + message + '.', chemin || '');
+      var regle = /(^|\.)(collisions|a_la_collision)(\.|\[|$)/.test(chemin || '') ? 'collisions-invalides' : 'effet-invalide';
+      return ErreurRecette(regle, prefixe + (chemin ? ', ' + chemin : '') + ' : ' + message + '.', chemin || '');
     }
     try {
       if (!estObjet(recette)) throw invalide('', 'objet JSON attendu');
@@ -685,6 +702,47 @@
         return res;
       }
 
+      function compilerCollisions(c, ch) {
+        if (c === undefined || c === null) return null;
+        c = objet(c, ch);
+        var cibles = c.cibles === undefined ? Object.keys(CODES.cible) : c.cibles;
+        if (!Array.isArray(cibles) || !cibles.length) throw invalide(ch + '.cibles', 'liste non vide parmi ' + Object.keys(CODES.cible).join(', ') + ' attendue');
+        if (cibles.length > 4) throw invalide(ch + '.cibles', '4 cibles au plus');
+        var masque = 0;
+        cibles.forEach(function (x, k) { masque |= CODES.cible[choix(x, CODES.cible, ch + '.cibles[' + k + ']')]; });
+        var reponse = choix(c.reponse, CODES.reponse, ch + '.reponse', 'rebond');
+        function entre01(cle, defaut) {
+          var x = intervalle(c[cle], ch + '.' + cle, defaut);
+          if (x[0] < 0 || x[1] > 1) throw invalide(ch + '.' + cle, 'valeurs entre 0 et 1 attendues');
+          return x;
+        }
+        function positif(cle) {
+          if (c[cle] === undefined || c[cle] === null) return null;
+          var x = intervalle(c[cle], ch + '.' + cle, [0, 0]);
+          if (x[0] < 0) throw invalide(ch + '.' + cle, 'valeur positive ou nulle attendue');
+          return x;
+        }
+        if (Array.isArray(c.talus)) throw invalide(ch + '.talus', 'nombre ou expression attendu (angle de la couche, pas un intervalle)');
+        var talus = nombre(c.talus, ch + '.talus', 35);
+        if (talus < 5 || talus > 80) throw invalide(ch + '.talus', 'angle entre 5 et 80 degrés attendu');
+        if (c.empiler !== undefined && typeof c.empiler !== 'boolean') throw invalide(ch + '.empiler', 'true ou false attendu');
+        var empiler = c.empiler === true;
+        if (empiler && reponse !== 'poser') throw invalide(ch + '.empiler', 'une couche se forme avec « reponse »: « poser »');
+        if (Array.isArray(c.sol)) throw invalide(ch + '.sol', 'nombre ou expression attendu (hauteur du sol en cqh depuis le haut)');
+        return {
+          masque: masque,
+          reponse: reponse,
+          reponseCode: CODES.reponse[reponse],
+          restitution: entre01('restitution', [0.4, 0.4]),
+          frottement: entre01('frottement', [0.2, 0.2]),
+          reposApres: positif('repos_apres'),
+          empiler: empiler,
+          epaisseur: positif('epaisseur'),
+          talus: talus,
+          sol: c.sol === undefined || c.sol === null ? null : nombre(c.sol, ch + '.sol'),
+        };
+      }
+
       // Émetteurs : noms, liens parent → enfant, profondeur.
       var liste = recette.emetteurs;
       if (!Array.isArray(liste) || !liste.length) throw invalide('', '« emetteurs » doit être une liste non vide');
@@ -697,17 +755,27 @@
       });
       var parent = liste.map(function () { return -1; });
       var enfant = liste.map(function () { return -1; });
-      liste.forEach(function (e, i) {
-        var cible = e.a_la_mort && e.a_la_mort.emetteur;
+      var enfantCollision = liste.map(function () { return -1; });
+      var declencheur = liste.map(function () { return null; });
+      // Un émetteur n'a qu'un parent, par « a_la_mort » ou par « a_la_collision ».
+      function lier(e, i, cle) {
+        var cible = e[cle] && e[cle].emetteur;
         if (cible === undefined || cible === null) return;
-        var ch = 'emetteurs[' + e.nom + '].a_la_mort.emetteur';
+        var ch = 'emetteurs[' + e.nom + '].' + cle + '.emetteur';
         if (parNom[cible] === undefined) throw invalide(ch, 'émetteur « ' + cible + ' » inconnu');
         var j = parNom[cible];
         if (j === i) throw invalide(ch, 'un émetteur ne peut pas se lancer lui-même');
         if (parent[j] >= 0) throw invalide(ch, '« ' + cible + ' » est déjà lancé par « ' + liste[parent[j]].nom + ' »');
+        if (cle === 'a_la_collision' && (e.collisions === undefined || e.collisions === null)) {
+          throw invalide(ch, '« a_la_collision » demande « collisions » sur « ' + e.nom + ' »');
+        }
         parent[j] = i;
-        enfant[i] = j;
-      });
+        declencheur[j] = cle === 'a_la_mort' ? 'mort' : 'collision';
+        if (cle === 'a_la_mort') enfant[i] = j;
+        else enfantCollision[i] = j;
+      }
+      liste.forEach(function (e, i) { lier(e, i, 'a_la_mort'); });
+      liste.forEach(function (e, i) { lier(e, i, 'a_la_collision'); });
       var profondeur = liste.map(function (e, i) {
         var p = 0, k = i, vus = [i];
         while (parent[k] >= 0) {
@@ -731,6 +799,8 @@
           parent: P ? P.index : -1,
           profondeur: profondeur[i],
           aLaMort: enfant[i],
+          aLaCollision: enfantCollision[i],
+          declencheur: declencheur[i],
           vie: vie,
           taille: intervalle(n.taille, ch + '.naissance.taille', [1, 1]),
           masse: intervalle(n.masse, ch + '.naissance.masse', [1, 1]),
@@ -742,7 +812,10 @@
           forces: compilerForces(e.forces, ch + '.forces'),
           tables: compilerVie(e.vie, ch + '.vie'),
           rendu: compilerRendu(e.rendu, ch + '.rendu'),
+          collisions: compilerCollisions(e.collisions, ch + '.collisions'),
         };
+        // Mort au contact ou fondu après la pose : une particule peut mourir dès sa naissance.
+        var etendueMorts = em.collisions && (em.collisions.reponse === 'mourir' || em.collisions.reposApres) ? vie[1] : vie[1] - vie[0];
         if (enfant[i] >= 0 && vie[0] < PAS) {
           throw invalide(ch + '.naissance.vie', 'durée de vie minimale ' + vie[0] + ' sous 1/120 s : deux morts dans le même pas feraient perdre des enfants');
         }
@@ -755,14 +828,16 @@
           if (em.k < 1) throw invalide(ch + '.naissance.nombre', 'au moins 1');
           // S : écart entre deux occupants successifs d'une case parent ; J : gigue de leurs morts.
           // G : générations d'une case enfant, pour que G·S − J ≥ vie max de l'enfant.
-          em.G = P.espacement === Infinity ? 1 : Math.max(1, Math.ceil((vie[1] + P.gigue) / P.espacement));
+          // Collision : un impact peut tomber n'importe quand dans la vie du parent (gigue des naissances + vie min du parent).
+          var gigueNaissances = declencheur[i] === 'collision' ? P.gigue + P.vie[0] : P.gigue;
+          em.G = P.espacement === Infinity ? 1 : Math.max(1, Math.ceil((vie[1] + gigueNaissances) / P.espacement));
           em.debit = 0;
           em.nTotal = 0;
           em.capContinu = 0;
           em.salves = [];
           em.capacite = P.capacite * em.G * em.k;
           em.espacement = P.espacement === Infinity ? Infinity : em.G * P.espacement;
-          em.gigue = P.gigue + (vie[1] - vie[0]);
+          em.gigue = gigueNaissances + etendueMorts;
           em.finNaissances = P.fin;
         } else {
           if (n.nombre !== undefined) throw invalide(ch + '.naissance.nombre', '« nombre » est réservé aux sous-émetteurs ; utiliser « debit » ou « salves »');
@@ -793,7 +868,7 @@
           }
           em.capacite = debut;
           em.espacement = em.capContinu > 0 && em.capContinu < em.nTotal ? em.capContinu / em.debit : Infinity;
-          em.gigue = vie[1] - vie[0];
+          em.gigue = etendueMorts;
           em.finNaissances = finN;
         }
         if (em.capacite > CAPACITE_MAX) {

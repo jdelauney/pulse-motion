@@ -1,7 +1,7 @@
 {
   "version": 1,
   "nom": "neige",
-  "description": "Flocons qui tombent doucement en se balançant depuis le haut de l'image (zone plein cadre).",
+  "description": "Flocons qui tombent doucement en se balançant depuis le haut de l'image (zone plein cadre) ; se posent et s'accumulent sur les obstacles de la scène.",
   "parametres": {
     "nombre": { "defaut": 200, "min": 10, "max": 10000 },
     "vitesse": { "defaut": 1, "min": 0.3, "max": 3 },
@@ -28,7 +28,8 @@
         { "type": "turbulence", "echelle": 10, "force": 6, "vitesse": 0.5 }
       ],
       "vie": { "couleur": "couleur", "opacite": { "de": 0.9, "a": 0, "courbe": "expo-in" } },
-      "rendu": { "type": "sprite", "melange": "alpha" }
+      "rendu": { "type": "sprite", "melange": "alpha" },
+      "collisions": { "cibles": ["sol", "elements", "formes"], "reponse": "poser", "empiler": true, "talus": 40 }
     },
     {
       "nom": "flocon-present",
@@ -47,7 +48,8 @@
         { "type": "turbulence", "echelle": 10, "force": 6, "vitesse": 0.5 }
       ],
       "vie": { "couleur": "couleur", "opacite": { "de": 0.9, "a": 0, "courbe": "expo-in" } },
-      "rendu": { "type": "sprite", "melange": "alpha" }
+      "rendu": { "type": "sprite", "melange": "alpha" },
+      "collisions": { "cibles": ["sol", "elements", "formes"], "reponse": "poser", "empiler": true, "talus": 40 }
     }
   ]
 }

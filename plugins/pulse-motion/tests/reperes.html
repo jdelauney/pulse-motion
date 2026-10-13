@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Pulse Motion – repères des obstacles</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  #pm-scene { position: relative; width: 800px; height: 450px; overflow: hidden; }
+  #pm-scene > section { position: absolute; inset: 0; }
+  #b { transform: translateX(200px); }
+  .cadre { position: absolute; left: 100px; top: 50px; width: 300px; height: 200px; transform: rotate(30deg); transform-origin: 0 0; }
+  #boite { position: absolute; left: 40px; top: 20px; width: 100px; height: 50px; scale: 2 1; }
+  #simple { position: absolute; left: 45px; top: 90px; width: 90px; height: 45px; }
+  #anime { position: absolute; left: 0; top: 0; width: 45px; height: 45px; animation: glisse 10s linear -5s paused; }
+  @keyframes glisse { from { transform: translateX(0); } to { transform: translateX(90px); } }
+  #pourcent { position: absolute; left: 0; top: 180px; width: 90px; height: 45px; translate: 50% 100%; }
+  #cache { display: none; position: absolute; width: 10px; height: 10px; }
+  #autre { position: absolute; left: 450px; top: 225px; width: 45px; height: 90px; }
+</style>
+</head>
+<body>
+<div id="pm-scene">
+  <section id="a" data-scene="a">
+    <div class="cadre"><div id="boite"></div></div>
+    <div id="simple"></div>
+    <div id="anime"></div>
+    <div id="pourcent"></div>
+    <div id="cache"></div>
+  </section>
+  <section id="b" data-scene="b"><div id="autre"></div></section>
+</div>
+<pre id="resultat">EN COURS</pre>
+<script src="../moteur/particules/reperes.js"></script>
+<script>
+  var P = M.particulesInterne;
+  var echecs = [];
+  var k = 100 / 450;
+  function proche(nom, a, b, tol) { if (Math.abs(a - b) > (tol || 0.01)) echecs.push(nom + ' : ' + a + ' au lieu de ' + b); }
+  function verifier(nom, r, attendu) {
+    proche(nom + ' centre x', r.centre[0], attendu.centre[0]);
+    proche(nom + ' centre y', r.centre[1], attendu.centre[1]);
+    proche(nom + ' angle', r.angle, attendu.angle, 1e-4);
+    proche(nom + ' demi x', r.demi[0], attendu.demi[0]);
+    proche(nom + ' demi y', r.demi[1], attendu.demi[1]);
+    proche(nom + ' échelle x', r.echelle[0], attendu.echelle[0], 1e-4);
+    proche(nom + ' échelle y', r.echelle[1], attendu.echelle[1], 1e-4);
+    if (r.actif !== attendu.actif) echecs.push(nom + ' actif : ' + r.actif);
+  }
+  var a = document.getElementById('a');
+  var b = document.getElementById('b');
+  var styleAvant = document.getElementById('anime').getAttribute('style') || '';
+  var r = P.mesurerReperes(['simple', 'boite', 'anime', 'pourcent', 'cache', 'autre'].map(function (id) { return document.getElementById(id); }), a);
+  verifier('simple', r[0], { centre: [90 * k, 112.5 * k], angle: 0, demi: [45 * k, 22.5 * k], echelle: [1, 1], actif: true });
+  // Boîte mise à l'échelle 2 × 1 autour de son centre (90, 45) dans le cadre, cadre tourné de 30° autour de (100, 50).
+  var c = Math.cos(Math.PI / 6), s = Math.sin(Math.PI / 6);
+  verifier('boite', r[1], { centre: [(100 + 90 * c - 45 * s) * k, (50 + 90 * s + 45 * c) * k], angle: Math.PI / 6, demi: [100 * k, 25 * k], echelle: [2, 1], actif: true });
+  // Animation en pause à mi-course : translateX(45px).
+  verifier('anime', r[2], { centre: [67.5 * k, 22.5 * k], angle: 0, demi: [22.5 * k, 22.5 * k], echelle: [1, 1], actif: true });
+  // translate en pourcentages de la boîte : (45, 45) px.
+  verifier('pourcent', r[3], { centre: [90 * k, 247.5 * k], angle: 0, demi: [45 * k, 22.5 * k], echelle: [1, 1], actif: true });
+  if (r[4].actif !== false) echecs.push('élément masqué : actif');
+  // Élément d'une autre scène, décalée de 200 px : exprimé dans la section a.
+  verifier('autre (repère de a)', r[5], { centre: [672.5 * k, 270 * k], angle: 0, demi: [22.5 * k, 45 * k], echelle: [1, 1], actif: true });
+  verifier('autre (repère de b)', P.mesurerReperes([document.getElementById('autre')], b)[0], { centre: [472.5 * k, 270 * k], angle: 0, demi: [22.5 * k, 45 * k], echelle: [1, 1], actif: true });
+  // Les styles en ligne sont rétablis à l'identique, l'animation continue de s'appliquer.
+  if ((document.getElementById('anime').getAttribute('style') || '') !== styleAvant) echecs.push('style en ligne modifié : ' + document.getElementById('anime').getAttribute('style'));
+  if (getComputedStyle(document.getElementById('anime')).transform !== 'matrix(1, 0, 0, 1, 45, 0)') echecs.push('animation perdue : ' + getComputedStyle(document.getElementById('anime')).transform);
+  if (getComputedStyle(b).transform !== 'matrix(1, 0, 0, 1, 200, 0)') echecs.push('transformation de la section perdue');
+  document.getElementById('resultat').textContent = echecs.length ? 'RESULTAT: ECHEC ' + echecs.join(' | ') : 'RESULTAT: OK';
+</script>
+</body>
+</html>

@@ -142,3 +142,41 @@ test('page d\'atelier hors d\'un projet : joue la bibliothèque, dit de lancer l
     await apercu.fermer();
   }
 });
+
+test('page d\'atelier : sol et boîte d\'essai', async (t) => {
+  if (!navigateur) return t.skip('Chrome ou Edge introuvable');
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const dir = copierProjet('projet-effets');
+  const apercu = await demarrerApercu({ dossier: dir, port: 47451, dossierStyles: STYLES });
+  const page = await ouvrirPage({ navigateur, largeur: 1400, hauteur: 800, gpu: true, options: await optionsWebGPU(), delai: 90000 });
+  try {
+    await page.aller(`${apercu.url}_pm/atelier?recette=neige`);
+    await page.evaluer('M.atelierPage.pret.then(() => true)');
+    assert.deepEqual(await page.evaluer('M.atelierPage.essai()'), { sol: false, boite: false });
+    assert.equal(await page.evaluer('M.particules.decrire("atelier")[0].collisions'), false, 'sans obstacle d\'essai : collisions inactives');
+    assert.equal(await page.evaluer('document.getElementById("pm-atelier-boite").hidden'), true);
+    assert.equal(await page.evaluer('document.querySelectorAll("#pm-atelier [data-essai]").length'), 2);
+
+    await page.aller(`${apercu.url}_pm/atelier?recette=neige&sol=1&boite=1`);
+    await page.evaluer('M.atelierPage.pret.then(() => true)');
+    assert.deepEqual(await page.evaluer('M.atelierPage.essai()'), { sol: true, boite: true });
+    assert.deepEqual(await page.evaluer('M.donnees.obstaclesVideo'), [{ type: 'sol', a: 90 }]);
+    assert.deepEqual(await page.evaluer('M.donnees.obstacles'), [{ scene: 'atelier', genre: 'element', video: false }]);
+    assert.equal(await page.evaluer('document.getElementById("pm-atelier-boite").hidden'), false);
+    assert.equal(await page.evaluer('M.particules.decrire("atelier")[0].collisions'), true);
+    await page.evaluer('(M.atelierPage.lecture(false), true)');
+    // Flocons « déjà présents » (émetteur 1) : ceux du bas se posent vite sur le sol d'essai ou sur la boîte.
+    const posees = await page.evaluer(`(async () => {
+      await M.seek(3);
+      const c = new Uint32Array((await M.particules.lireContacts('atelier', 0, 1)).buffer);
+      const p = new Uint32Array((await M.particules.lireEtat('atelier', 0, 1)).buffer);
+      let n = 0;
+      for (let s = 0; s < c.length / 8; s++) if (p[s * 16 + 14] === 1 && c[s * 8 + 2] !== 0xffffffff) n++;
+      return n;
+    })()`);
+    assert.ok(posees > 0, `${posees} flocons posés sur les obstacles d'essai`);
+  } finally {
+    await page.fermer();
+    await apercu.fermer();
+  }
+});
