@@ -43,10 +43,14 @@ test('repères fixes : bords et primitives, côté plein des demi-plans', () => 
   proche(p[1], 61.25, 'y', 1e-12);
 });
 
-test('interpolation : position et échelle linéaires, angle par le plus court chemin, actif du premier', () => {
+test('interpolation : position et échelle linéaires, angle par le plus court chemin ; jamais vers un repère inactif', () => {
   const a = { centre: [0, 0], angle: 3, demi: [1, 2], echelle: [1, 1], actif: true };
   const b = { centre: [10, 20], angle: -3, demi: [3, 2], echelle: [2, 1], actif: false };
-  const m = O.interpolerRepere(a, b, 0.25);
+  // Un des deux points inactif (et compté) : repère inactif, pas de glissement vers le repère vide (origine, taille 0).
+  assert.equal(O.interpolerRepere(a, b, 0.25).actif, false);
+  assert.equal(O.interpolerRepere(b, a, 0.75).actif, false);
+  assert.deepEqual(O.interpolerRepere(a, b, 0), a, 'au point de grille actif : ce repère');
+  const m = O.interpolerRepere(a, Object.assign({}, b, { actif: true }), 0.25);
   assert.deepEqual(m.centre, [2.5, 5]);
   assert.deepEqual(m.demi, [1.5, 2]);
   assert.deepEqual(m.echelle, [1.25, 1]);
@@ -153,6 +157,27 @@ test('largeurs de case et ordre des contributions', () => {
   assert.equal(l.length, 8);
   assert.equal(l[0], Math.fround(L / 256));
   assert.equal(l[1], Math.fround(25.6 / 256));
-  assert.deepEqual(O.effetsAnterieurs([{ debut: 0, fin: 3 }, { debut: 5, fin: 9 }, { debut: 3, fin: 6 }, { debut: 2, fin: 3 }, { debut: 0, fin: 1 }], 1), [0, 4, 3]);
+  // Effets commencés avant (transitions comprises : celui de 3 à 6 compte pour un effet qui commence à 5).
+  assert.deepEqual(O.effetsAnterieurs([{ debut: 0, fin: 3 }, { debut: 5, fin: 9 }, { debut: 3, fin: 6 }, { debut: 2, fin: 3 }, { debut: 0, fin: 1 }], 1), [0, 4, 3, 2]);
   assert.deepEqual(O.effetsAnterieurs([{ debut: 0, fin: 3 }], 0), []);
+  assert.deepEqual(O.effetsAnterieurs([{ debut: 2, fin: 3 }, { debut: 2, fin: 5 }], 1), [], "même début : aucun n'hérite de l'autre");
+});
+
+test('limites : places réservées aux obstacles de la vidéo (table et profils), abandons comptés', () => {
+  const video = Array.from({ length: 8 }, (_, i) => ({ type: 'sol', a: 60 + i }));
+  const propres = Array.from({ length: 16 }, (_, i) => ({ scene: 's', genre: 'element', video: false, index: i }));
+  const voisins = Array.from({ length: 30 }, (_, i) => ({ scene: 'v', genre: 'element', video: true, index: 100 + i }));
+  const t = O.construireTable({ largeurCqh: L, solRecette: null, propres, voisins, video });
+  assert.equal(t.entrees.length, O.MAX_TABLE);
+  assert.deepEqual(t.entrees.filter((e) => e.source.video !== undefined).map((e) => e.source.video), [0, 1, 2, 3, 4, 5, 6, 7], 'tous les obstacles de la vidéo gardés');
+  assert.equal(t.abandonnes.obstacles, 3 + 16 + 30 + 8 - O.MAX_TABLE);
+  assert.equal(t.abandonnes.profils, 0);
+  // Profils : 2 sols de la vidéo et 12 éléments ciblés par un émetteur qui empile ; les sols de la vidéo ont les leurs.
+  const effet = { emetteurs: [{ collisions: { masque: 4, empiler: true, talus: 30, reponse: 'poser' } }] };
+  const p = O.construireTable({ largeurCqh: L, solRecette: null, propres: propres.slice(0, 12), video: video.slice(0, 2), effet });
+  const avecProfil = p.entrees.filter((e) => e.profil !== O.AUCUN);
+  assert.equal(avecProfil.length, O.MAX_PROFILS);
+  assert.equal(p.entrees.filter((e) => e.source.video !== undefined && e.profil !== O.AUCUN).length, 2, 'sols de la vidéo avec profil');
+  assert.equal(p.abandonnes.profils, 12 - (O.MAX_PROFILS - 2));
+  assert.deepEqual(avecProfil.map((e) => e.profil), [0, 1, 2, 3, 4, 5, 6, 7], "numéros dans l'ordre de la table");
 });
