@@ -19,7 +19,7 @@ function enTete(texte) {
 }
 
 const SKILLS = fs.readdirSync(path.join(RACINE, 'skills'));
-const COMMANDES = ['etat', 'assembler', 'controler', 'apercu', 'historique', 'reference', 'scene', 'styles', 'consignes', 'exporter', 'planche', 'effet', 'comparer', 'changer-style', 'lexique', 'charte', 'police', 'glossaire', 'style', 'ffmpeg', 'voix', 'whisper', 'musique', 'outils'];
+const COMMANDES = ['etat', 'assembler', 'controler', 'apercu', 'historique', 'reference', 'scene', 'styles', 'consignes', 'exporter', 'planche', 'effet', 'comparer', 'changer-style', 'lexique', 'charte', 'police', 'glossaire', 'style', 'ffmpeg', 'voix', 'whisper', 'musique', 'outils', 'atelier'];
 const fichiersGuides = () => [
   ...SKILLS.map((s) => path.join('skills', s, 'SKILL.md')),
   ...fs.readdirSync(path.join(RACINE, 'agents')).map((a) => path.join('agents', a)),
@@ -328,4 +328,15 @@ test('demandes : README et smoke tests sans terminal', () => {
     assert.doesNotMatch(t, /```powershell|```bash|PowerShell/, f);
     assert.doesNotMatch(t, /(^|\s)pm (voix|apercu|exporter|whisper|musique|assembler|controler|ffmpeg|outils)/m, f);
   }
+});
+
+test('consignes : l\'atelier des effets est guidé', () => {
+  const ref = lire('references', 'particules.md');
+  assert.match(ref, /## Régler à l'œil : l'atelier/);
+  assert.match(ref, /pulse-motion atelier/);
+  assert.match(ref, /bouton \*\*Effets\*\*/);
+  assert.match(ref, /« Enregistrer comme nouvel effet »/);
+  const retoucher = lire('skills', 'retoucher', 'SKILL.md');
+  assert.match(retoucher, /pulse-motion atelier/);
+  assert.match(retoucher, /bouton « Effets »/);
 });
