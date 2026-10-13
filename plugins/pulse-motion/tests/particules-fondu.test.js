@@ -58,3 +58,44 @@ await envoyer({ webgpu: true, plein, moitie, fin });`;
   assert.equal(r.fin.vivante, 0, 'morte après le fondu');
   assert.equal(r.fin.s, 0);
 });
+
+test('rendu : une particule posée (z = 1) est dessinée sur son obstacle, sans décalage de perspective', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const { effet, ok, erreurs } = R.compiler({ version: 1, nom: 'profondeur', rendu_calque: { bloom: 0 }, emetteurs: [{
+    nom: 'a', naissance: { salves: [{ t: 0, nombre: 1 }], forme: { type: 'point' }, vie: [10, 10], taille: [4, 4], z: [1, 1] },
+    forces: [{ type: 'gravite', valeur: 400 }], collisions: { cibles: ['sol'], reponse: 'poser' },
+    vie: { couleur: '#ffffff' }, rendu: { melange: 'alpha' },
+  }] }, { dur: 0.1, graine: 1, charte: {} });
+  assert.equal(ok, true, JSON.stringify(erreurs));
+  const code = `
+const P = M.particulesInterne;
+const O = M.obstacles;
+const gpu = await P.obtenirGPU();
+if (!gpu) { await envoyer({ webgpu: false }); return; }
+const { device } = gpu;
+const L = 177.78;
+const table = O.construireTable({ largeurCqh: L, solRecette: 80 });
+const ligne = new Float32Array(table.entrees.length * 8);
+table.entrees.forEach((e, i) => O.ecrireRepere(ligne, i * 8, O.repereFixe(e.source, L, table.sol)));
+const z = { a: () => [30, 55, 0, 0], grille: () => [30, 55, 0, 0], reperes: () => ligne };
+const canvas = document.createElement('canvas');
+canvas.width = 640; canvas.height = 360;
+document.body.appendChild(canvas);
+const rendu = new P.Rendu(device, gpu.format);
+const cible = rendu.cible(canvas);
+const sim = new P.Simulation(device, DONNEES, { entrees: table.entrees, largeurCqh: L, actif: true });
+sim.emetteurs.forEach((e) => rendu.preparerEmetteur(e));
+const d = sim.avancer(0.5, z);
+rendu.dessiner(cible, [{ sim, i: 0, delta: d[0] }], { largeurCqh: L, dureeImage: 1 / 30, bloom: 0, seuil: 1, tons: 'douce' });
+const p = await rendu.lirePixels(cible);
+let s = 0, sx = 0, sy = 0;
+for (let i = 0; i < p.largeur * p.hauteur; i++) { const a = p.donnees[i * 4 + 3]; s += a; sx += a * (i % p.largeur); sy += a * Math.floor(i / p.largeur); }
+const k = 100 / p.hauteur;
+const e = await sim.lireEtat(0);
+await envoyer({ webgpu: true, x: (sx / s + 0.5) * k, y: (sy / s + 0.5) * k, simX: e[0], simY: e[1], pose: new Uint32Array((await sim.lireContacts(0)).buffer)[2] });`;
+  const r = JSON.parse(await executerPage(pageMoteur({ fichiers: FICHIERS, donnees: effet, code })));
+  assert.equal(r.erreur, undefined, r.erreur);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.equal(r.pose, 0, 'posée sur le sol');
+  assert.ok(Math.abs(r.x - r.simX) < 0.5 && Math.abs(r.y - r.simY) < 0.5, `dessinée en (${r.x}, ${r.y}) au lieu de (${r.simX}, ${r.simY})`);
+});

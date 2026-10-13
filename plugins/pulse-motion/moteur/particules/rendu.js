@@ -12,7 +12,7 @@
  *
  * Chaîne : tri bitonique des émetteurs en mélange alpha (clé z) -> particules dans une cible rgba16float
  * (sprite, étincelle étirée, traînée en ruban, planche ; textures procédurales ou image ; flou de
- * mouvement en 4 échantillons ; perspective selon z) -> bloom (seuil, dual Kawase sur 5 niveaux dans un
+ * mouvement en 4 échantillons ; perspective selon z, sauf pour les émetteurs à collisions) -> bloom (seuil, dual Kawase sur 5 niveaux dans un
  * espace fixe de 540 px de haut : portée en cqh indépendante de la taille du canvas ; somme des niveaux
  * divisée par leur nombre ; HDR borné à 6e4 contre le débordement des flottants 16 bits) ->
  * courbe de tons (douce ou ACES) -> tramage -> sRGB, alpha = max(alpha, max(r, g, b)), prémultiplié.
@@ -84,7 +84,10 @@ fn teinte(u: f32) -> vec4f {
 
 fn ecran(w: vec2f) -> vec4f { return vec4f(w.x / C.largeur * 2.0 - 1.0, 1.0 - w.y / C.hauteur * 2.0, 0.0, 1.0); }
 
+// Décalage de perspective selon z. Émetteur à collisions (contacts liés) : aucun décalage, la position dessinée est celle
+// de la simulation (sinon une particule posée apparaît à côté de son obstacle) ; la taille suit toujours z.
 fn perspective(p: vec2f, z: f32) -> vec2f {
+  if (C.fondu == 1u) { return p; }
   let c = vec2f(C.largeur, C.hauteur) * 0.5;
   return c + (p - c) * (1.0 + 0.35 * z);
 }

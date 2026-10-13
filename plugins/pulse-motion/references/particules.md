@@ -155,7 +155,7 @@ Types `sol` (`a`), `ligne` (`de`, `a`), `cercle` (`centre`, `rayon`), `rectangle
 
 Bibliothèque : `confettis` et `neige` se posent et s'empilent, `pluie` meurt au contact et lance `eclabousse`, `etincelles` (et `braises`) rebondissent. Retouche : « la neige doit tenir sur le titre » → `data-obstacle="forme"` sur le titre.
 
-Limites : une couche ne s'écroule pas quand son obstacle bouge, les grains ne roulent pas les uns sur les autres, les particules ne se heurtent pas entre elles.
+Limites : une couche ne s'écroule pas quand son obstacle bouge, les grains ne roulent pas les uns sur les autres, les particules ne se heurtent pas entre elles. Un émetteur à collisions garde `z` pour la taille et l'ordre de dessin, mais sans décalage de perspective (ses particules restent sur leurs obstacles).
 
 Contrôles : `obstacle-introuvable` (déclaration mal écrite), `collisions-invalides` (recette), `obstacles-video` (déroulé), alerte `trop-d-obstacles` (au-delà de 16 obstacles par scène ou de 8 obstacles de vidéo).
 
