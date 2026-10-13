@@ -51,6 +51,23 @@ async function segmentValide(outil, fichier, attendu) {
   } catch { return false; }
 }
 
+/**
+ * Empreinte des images : la page sans ses sources sonores, et ses données sans ce qui ne touche que le son
+ * (volumes, partition) : changer seulement un son ou un volume ne refait pas les images.
+ */
+function empreinteImages(html, { qualite, cadence, dureeSegment }) {
+  let page = html.replace(/<script type="text\/plain" id="pm-son-[a-z0-9-]+">[^<]*<\/script>/g, '');
+  page = page.replace(/(<script type="application\/json" id="pm-donnees">)([\s\S]*?)(<\/script>)/, (tout, a, json, b) => {
+    let d;
+    try { d = JSON.parse(json); } catch { return tout; }
+    if (d.musique) { delete d.musique.volume; delete d.musique.partition; }
+    if (d.voix) delete d.voix.volume;
+    if (d.bruitages) delete d.bruitages.volume;
+    return a + JSON.stringify(d) + b;
+  });
+  return crypto.createHash('sha256').update(page).update(`|${qualite}|${cadence}|${dureeSegment}`).digest('hex');
+}
+
 async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = trouverNavigateur(), outil = F.trouverFfmpeg(), dossierStyles,
   dossierEffets = path.join(RACINE, 'effets'), surProgression = () => {}, signal, dureeSegment = 10, arreterApres, paralleles, avecProvisoire = false } = {}) {
   const projet = path.resolve(dossier);
@@ -76,9 +93,7 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
   fs.mkdirSync(travail, { recursive: true });
   // Musique importée seulement (une musique générée n'a pas de fichier).
   const musique = deroule.musique && deroule.musique.fichier ? cheminDansProjet(projet, deroule.musique.fichier) : null;
-  // Empreinte des images : la page sans ses sources sonores (changer seulement un son ne refait pas les images).
-  const sansSons = assemblage.html.replace(/<script type="text\/plain" id="pm-son-[a-z0-9-]+">[^<]*<\/script>/g, '');
-  const empreinte = crypto.createHash('sha256').update(sansSons).update(`|${qualite}|${cadence}|${dureeSegment}`).digest('hex');
+  const empreinte = empreinteImages(assemblage.html, { qualite, cadence, dureeSegment });
   const fichierEmpreinte = path.join(travail, 'empreinte');
   const memeEmpreinte = fs.existsSync(fichierEmpreinte) && fs.readFileSync(fichierEmpreinte, 'utf8') === empreinte;
   if (!memeEmpreinte) {
@@ -265,4 +280,4 @@ if (require.main === module) {
       (err) => { console.log(JSON.stringify({ ok: false, message: `L'export fidèle a échoué (${err.message}).` }, null, 2)); process.exit(1); });
 }
 
-module.exports = { exporterFidele, TAILLES };
+module.exports = { exporterFidele, empreinteImages, TAILLES };

@@ -77,7 +77,7 @@ async function demarrerApercu({ dossier, port = 4321, dossierStyles, delai = 150
 
   const rapportPage = path.join(projet, 'sortie', 'controle-page.json');
   const routesExport = creerRoutesExport(projet);
-  const routesVoix = creerRoutesVoix(projet, { whisper: whisper || whisperParDefaut(), maxOctets: maxPrise, outil: trouverFfmpeg() });
+  const routesVoix = creerRoutesVoix(projet, { whisper: whisper || whisperParDefaut, maxOctets: maxPrise, outil: trouverFfmpeg });
 
   /** Rapport de débordement envoyé par la page : JSON seulement (une autre origine serait bloquée par CORS). */
   function recevoirControle(req, res) {

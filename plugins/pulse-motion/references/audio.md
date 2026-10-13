@@ -62,7 +62,7 @@ Réenregistrer la scène recale tout seul les ancres. Une ancre sur un mot que l
 - Cartons de 2 lignes au plus (42 caractères par ligne, 32 en 4:5, 28 en 9:16), découpés aux pauses et à la ponctuation, jamais après un article.
 - `mode: "ligne"` : le carton s'affiche ; `mode: "mot"` : le mot dit passe en couleur d'accent (conseillé en 9:16, pour les réseaux).
 - Dessinés dans la vidéo (`incrustes`) et livrés dans `sortie/<titre>.srt` et `sortie/<titre>.vtt`, pour les plateformes qui les proposent à part.
-- Habillés par le style : `--pm-st-police`, `--pm-st-taille`, `--pm-st-texte`, `--pm-st-fond`, `--pm-st-accent`, `--pm-st-marge`, `--pm-st-position`.
+- Habillés par le style : `--pm-st-police`, `--pm-st-taille`, `--pm-st-largeur` (largeur maximale du carton), `--pm-st-texte`, `--pm-st-fond`, `--pm-st-accent`, `--pm-st-marge`, `--pm-st-position`.
 - Le contrôle signale un sous-titre qui cache un texte de la scène (`sous-titre-cache-texte`) : remonter le texte, ou passer les sous-titres en haut.
 
 ## Musique générée
@@ -124,7 +124,7 @@ Composée sur l'ordinateur à partir de la graine : la même graine donne toujou
 ## Mixage
 
 - Musique : fondu d'entrée de 0,5 s et de sortie de 1,5 s ; baissée de 10 dB pendant la voix (et creusée vers 2,5 kHz, là où se trouve la parole).
-- Le mélange à plein volume est ramené à −16 LUFS (crête sous −2 dBFS) ; les volumes du déroulé (`voix.volume`, `musique.volume`, `bruitages.volume`) s'appliquent ensuite : « baisse la musique » = `musique.volume` plus bas.
+- Le mélange à plein volume est ramené à −16 LUFS (crête sous −1,5 dBFS, limiteur réglé à −2 dBFS) ; les volumes du déroulé (`voix.volume`, `musique.volume`, `bruitages.volume`) s'appliquent ensuite : « baisse la musique » = `musique.volume` plus bas.
 - Pas d'élément `<audio>` dans une scène : tout le son passe par le déroulé et `data-son`.
 
 ## Commandes

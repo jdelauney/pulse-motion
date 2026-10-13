@@ -71,15 +71,17 @@
 
   /** Limiteur à anticipation (5 ms) : aucune crête échantillon au-dessus de seuil (linéaire) ; relâchement 100 ms. */
   function limiter(canaux, taux, seuil) {
-    var n = canaux[0].length, L = Math.max(1, Math.round(0.005 * taux));
-    var r = new Float32Array(n), depasse = false;
-    for (var i = 0; i < n; i++) {
-      var p = 0;
-      for (var c = 0; c < canaux.length; c++) { var a = Math.abs(canaux[c][i]); if (a > p) p = a; }
-      r[i] = p > seuil ? seuil / p : 1;
-      if (p > seuil) depasse = true;
-    }
+    var n = canaux[0].length, L = Math.max(1, Math.round(0.005 * taux)), i, c;
+    // Rien à limiter : aucune copie (le cas courant après la normalisation).
+    var depasse = false;
+    for (c = 0; c < canaux.length && !depasse; c++) for (i = 0; i < n; i++) if (Math.abs(canaux[c][i]) > seuil) { depasse = true; break; }
     if (!depasse) return;
+    var r = new Float32Array(n);
+    for (i = 0; i < n; i++) {
+      var p = 0;
+      for (c = 0; c < canaux.length; c++) { var a = Math.abs(canaux[c][i]); if (a > p) p = a; }
+      r[i] = p > seuil ? seuil / p : 1;
+    }
     // Minimum glissant de r sur [i, i + L] (file monotone), puis rampe d'attaque linéaire sur L échantillons.
     var m = new Float32Array(n), file = new Int32Array(n), tete = 0, queue = 0;
     for (i = n - 1; i >= 0; i--) {
@@ -118,5 +120,5 @@
     return { gain: total, integree: mesure.integree, crete: mesure.crete };
   }
 
-  return { mesurer: mesurer, normaliser: normaliser };
+  return { mesurer: mesurer, normaliser: normaliser, limiter: limiter };
 });

@@ -93,3 +93,27 @@ test('page sans son : rendreSon renvoie wav nul', sans, async () => {
     await capture.fermer();
   }
 });
+
+test('correctifs : la page de capture ne prépare pas le son d\'avance (rendu seulement sur demande)', sans, async () => {
+  const fichier = page();
+  const dir = path.dirname(fichier);
+  const { wavSinus } = require('./aide/son.js');
+  fs.mkdirSync(path.join(dir, 'assets'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'assets', 'musique.wav'), wavSinus({ secondes: 3 }));
+  modifierDeroule(dir, (d) => { d.musique = { fichier: 'assets/musique.wav' }; });
+  fs.writeFileSync(fichier, assembler({ dossier: dir, dossierStyles: STYLES, ecrire: false }).html);
+  const c = await ouvrirCapture({ fichierHtml: fichier, largeur: 320, hauteur: 180, navigateur });
+  try {
+    assert.equal(await c.evaluer('location.search'), '?capture=1');
+    assert.ok((await c.rendreSon()).wav);
+  } finally { await c.fermer(); }
+  // Page lente : la capture n'est pas encore active quand le lecteur voudrait préparer le son (1 s après le chargement).
+  const { ouvrirPage } = require('../scripts/lib/cdp.js');
+  const { pathToFileURL } = require('node:url');
+  const p = await ouvrirPage({ navigateur, largeur: 320, hauteur: 180 });
+  try {
+    await p.aller(pathToFileURL(fichier).href + '?capture=1');
+    await new Promise((r) => setTimeout(r, 2500));
+    assert.deepEqual(await p.evaluer('({ attendu: M.etatSon().attendu, pret: M.etatSon().pret, capture: M.enCapture() })'), { attendu: true, pret: false, capture: false });
+  } finally { await p.fermer(); }
+});

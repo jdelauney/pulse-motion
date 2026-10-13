@@ -139,6 +139,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   const sons = [];
   const blocSon = (id, uri) => `<script type="text/plain" id="${id}">${uri}</script>`;
   let fichiersSons = 0;
+  const sonsEmbarques = new Map();   // chemin du son -> id du bloc
   const effets = [];
   for (const scene of deroule.scenes) {
     const fichier = cheminDansProjet(projet, scene.fichier);
@@ -168,12 +169,20 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     effets.push(...effetsScene);
     erreurs.push(...erreursEffets);
     // Sons importés (data-son="assets/…") : embarqués en bloc, l'attribut désigne le bloc ; un nom de bruitage reste tel quel.
-    const avecSons = avecEffets.replace(/(\sdata-son=)(["'])([^"']+)\2/g, (tout, debut, guillemet, valeur) => {
+    // Valeur entre guillemets doubles ou simples (une apostrophe dans un chemin entre guillemets doubles reste au chemin) ;
+    // un même fichier n'est embarqué qu'une fois.
+    const avecSons = avecEffets.replace(/(\sdata-son=)(?:"([^"]+)"|'([^']+)')/g, (tout, debut, double, simple) => {
+      const valeur = double !== undefined ? double : simple;
+      const guillemet = double !== undefined ? '"' : "'";
       if (!/[/.]/.test(valeur)) return tout;
-      const uri = embarquerFichier(projet, valeur, `Son « ${valeur} » (scène « ${scene.id} »)`, erreurs);
-      if (!uri) return tout;
-      const id = `pm-son-fichier-${fichiersSons++}`;
-      sons.push(blocSon(id, uri));
+      let id = sonsEmbarques.get(valeur);
+      if (!id) {
+        const uri = embarquerFichier(projet, valeur, `Son « ${valeur} » (scène « ${scene.id} »)`, erreurs);
+        if (!uri) return tout;
+        id = `pm-son-fichier-${fichiersSons++}`;
+        sons.push(blocSon(id, uri));
+        sonsEmbarques.set(valeur, id);
+      }
       return `${debut}${guillemet}fichier:${id}${guillemet}`;
     });
     const { html: embarque, erreurs: erreursRes } = embarquerRessources(S.injecterLogo(avecSons, uriLogo), projet, `scène « ${scene.id} »`);
@@ -236,7 +245,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   // Sous-titres : cartons en temps absolus (minutage des scènes avec leurs voix), fichiers SRT et VTT.
   let cartons = [];
   if (deroule.sousTitres && deroule.scenes.some((s) => s.voix && s.voix.texte)) {
-    const min = calculerMinutage(donnees.scenes, {}, { dureeTemps: dureeTemps(deroule) });
+    const min = calculerMinutage(donnees.scenes, {}, { dureeTemps: dureeTemps(deroule), decalageTemps: (deroule.tempo && deroule.tempo.decalage) || 0 });
     const scenesST = deroule.scenes.map((s, i) => {
       const m = min.scenes[i];
       const mots = s.voix && s.voix.texte ? ST.motsDeScene({ debut: m.debut, fin: m.fin, texte: s.voix.texte, voix: voixScenes[s.id] || null }) : [];
@@ -253,7 +262,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
 
   // Musique générée (ambiance) ou partition libre : partition validée, jouée par le synthétiseur de la page.
   if (deroule.musique && deroule.musique.generee) {
-    const min = calculerMinutage(donnees.scenes, {}, { dureeTemps: dureeTemps(deroule) });
+    const min = calculerMinutage(donnees.scenes, {}, { dureeTemps: dureeTemps(deroule), decalageTemps: (deroule.tempo && deroule.tempo.decalage) || 0 });
     donnees.musique.partition = SA.generer({ ambiance: deroule.musique.generee, tempo: deroule.musique.tempo, tonalite: deroule.musique.tonalite,
       intensite: deroule.musique.intensite, graine: deroule.musique.graine, duree: min.duree, scenes: min.scenes.map((s) => ({ debut: s.debut, fin: s.fin })) });
   } else if (deroule.musique && deroule.musique.partition) {

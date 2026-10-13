@@ -96,3 +96,38 @@ test('revue : zone-sure sur les sous-titres : conseil propre aux sous-titres', (
   assert.match(p.message, /sous-titres passent sous les boutons.*--pm-st-largeur/);
   assert.doesNotMatch(p.message, /retirer un point/);
 });
+
+test('correctifs : logo caché par un sous-titre : logo-masque, message qui propose les sous-titres en haut', sans, async () => {
+  const dir = projet();
+  const f = path.join(dir, 'scenes', '01-intro.html');
+  fs.writeFileSync(f, fs.readFileSync(f, 'utf8').replace('</section>', '<div data-logo style="position:absolute; left:45%; width:10%; bottom:6cqh; height:8cqh; background:#123456"></div></section>'));
+  const page = await ouvrirPageSon({ dir, navigateur });
+  try {
+    const c = await page.evaluer('M.mesurer({ ratio: "16:9" })');
+    const logo = c.find((x) => x.regle === 'logo-masque');
+    assert.ok(logo && logo.valeur && logo.valeur.par === 'sous-titres', JSON.stringify(c));
+    const [p] = traduireConstats([logo]);
+    assert.match(p.message, /sous-titres/);
+    assert.match(p.message, /haut/);
+  } finally { await page.fermer(); }
+});
+
+test('correctifs : carton affiché moins de 1,25 s : texte-fugace sur « sous-titres »', sans, async () => {
+  const dir = projet('haut');
+  const page = await ouvrirPageSon({ dir, navigateur, modifier: (d) => {
+    d.sousTitres.cartons = [{ scene: 'intro', debut: 1, fin: 1.6, lignes: [[{ w: 'Vite', t0: 1, t1: 1.5 }]] }, { scene: 'intro', debut: 1.7, fin: 4, lignes: [[{ w: 'ensuite', t0: 1.7, t1: 2.2 }]] }];
+  } });
+  try {
+    const c = await page.evaluer('M.mesurer({ ratio: "16:9" })');
+    const f = c.find((x) => x.regle === 'texte-fugace' && x.element === 'sous-titres');
+    assert.ok(f, JSON.stringify(c));
+    assert.ok(Math.abs(f.valeur.duree - 0.6) < 0.05);
+    assert.match(traduireConstats([f])[0].message, /sous-titre.*0,6 s/);
+  } finally { await page.fermer(); }
+});
+
+test('correctifs : contraste des sous-titres : le message propose --pm-st-fond ou --pm-st-texte', () => {
+  const [p] = traduireConstats([{ regle: 'contraste-reel', scene: 'intro', element: 'sous-titres', instant: 2, valeur: 1.8 }]);
+  assert.match(p.message, /--pm-st-fond/);
+  assert.match(p.message, /--pm-st-texte/);
+});

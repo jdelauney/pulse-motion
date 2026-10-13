@@ -40,7 +40,8 @@ const SON = (options) => `(async function () {
 async function ouvrirCapture({ fichierHtml, largeur, hauteur, navigateur, gpu = false, delai = 30000 }) {
   const page = await ouvrirPage({ navigateur, largeur, hauteur, gpu, delai });
   try {
-    await page.aller(pathToFileURL(fichierHtml).href);
+    // ?capture=1 : le lecteur ne prépare pas le son d'avance (il n'est rendu que si l'export le demande).
+    await page.aller(`${pathToFileURL(fichierHtml).href}?capture=1`);
     const duree = await page.evaluer(PREPARER);
     return {
       duree,
@@ -57,6 +58,7 @@ async function ouvrirCapture({ fichierHtml, largeur, hauteur, navigateur, gpu = 
         await page.evaluer('window.__pmSon = null, true');
         return { wav: Buffer.from(parts.join(''), 'base64'), sonie: info.sonie, avertissements: info.avertissements };
       },
+      evaluer: (code) => page.evaluer(code),
       fermer: () => page.fermer(),
     };
   } catch (e) {

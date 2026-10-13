@@ -6,7 +6,7 @@
  *
  * Contrôle aussi la vidéo rendue dans Chrome ou Edge sans fenêtre (débordements, chevauchements, cadre, marges,
  * zone des boutons en 9:16, logo, textes fugaces, mouvements rapides) ; sans navigateur : alerte rendu-non-verifie.
- * Écrit sortie/controle.json : { problemes: [{ regle, gravite: "erreur" | "alerte", scene?, element?, message, correction? }],
+ * Écrit sortie/controle.json : { problemes: [{ regle, gravite: "erreur" | "alerte" | "info" (rien à corriger : la personne est prévenue), scene?, element?, message, correction? }],
  *   corrections: [{ regle, scene, element?, avant, apres, message }], renduVerifie }.
  * Corrige seul les cas sûrs (typographie, durées) dans deroule.json, après une copie d'historique ;
  * --sans-correction : signale seulement (chaque problème corrigeable porte sa « correction »).
@@ -21,6 +21,7 @@ const { trouverStyle } = require('./styles.js');
 const { lireGlossaire, verifierGlossaire } = require('./vocabulaire.js');
 const { lireDeroule, dureeTemps } = require('./lib/deroule.js');
 const { cheminDansProjet } = require('./lib/embarquer.js');
+const W = require('../moteur/wav.js');
 const { corrigerTypographie, corrigerMajuscules, motsDoubles, termesVariables, cleTerme } = require('./lib/typographie.js');
 const { extraireScene, textesEnDur } = require('./lib/extraire.js');
 const { calculerMinutage, CHEVAUCHEMENT } = require('../moteur/minutage.js');
@@ -40,6 +41,7 @@ const auPasSuperieur = (x, pas) => Math.round(Math.ceil(x / pas - EPS) * pas * 1
 const auPasInferieur = (x, pas) => Math.round(Math.floor(x / pas + EPS) * pas * 1000) / 1000;
 
 const { contraste } = require('./lib/couleurs.js');
+const { dureeVideo } = require('./lib/voix.js');
 
 const compterMots = (texte) => (String(texte).match(/[\p{L}\p{N}]+(?:['’-][\p{L}\p{N}]+)*/gu) || []).length;
 
@@ -154,7 +156,7 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
     const temps = dureeTemps(deroule);
     // Scènes de la page (avec leur voix) : durées effectives et ancres « mot: » comme dans le navigateur.
     const scenesMinutees = (assemblage.donnees && assemblage.donnees.scenes) || deroule.scenes;
-    const min = calculerMinutage(scenesMinutees, elementsParScene, { dureeTemps: temps });
+    const min = calculerMinutage(scenesMinutees, elementsParScene, { dureeTemps: temps, decalageTemps: (deroule.tempo && deroule.tempo.decalage) || 0 });
     for (const e of min.erreurs) problemes.push({ ...e, gravite: 'erreur' });
     for (const s of min.scenes.filter((x) => x.allongee)) {
       problemes.push({ regle: 'voix-allonge', gravite: 'info', scene: s.id,
@@ -172,7 +174,8 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
           continue;
         }
         const el = min.elements[s.id][e.cle];
-        if (el) sonsJoues.push({ t: el.debut, nom: e.son, scene: s.id });
+        const volume = e.sonVolume === undefined || !isFinite(parseFloat(e.sonVolume)) ? 1 : Math.max(0, Math.min(1, parseFloat(e.sonVolume)));
+        if (el) sonsJoues.push({ t: el.debut, nom: e.son, scene: s.id, volume, fichier: /[/.]/.test(e.son) });
       }
     }
     if (deroule.bruitages && deroule.bruitages.transitions) {
@@ -191,7 +194,24 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
       const d = min.scenes[i].debut + (s.voix.debut || 0);
       s.voix.mots.forEach((m) => motsDits.push({ t0: d + m.t0, t1: d + m.t1 }));
     });
-    for (const son of sonsJoues.filter((x) => CATALOGUE.FORTS.includes(x.nom))) {
+    // Son fort : un fort de la bibliothèque, ou un fichier importé dont la crête dépasse −12 dBFS (illisible ici : compté fort) ;
+    // un son à volume 0 ne s'entend pas.
+    const crete = new Map();
+    const fort = (x) => {
+      if (x.volume <= 0) return false;
+      if (!x.fichier) return CATALOGUE.FORTS.includes(x.nom);
+      if (!crete.has(x.nom)) {
+        let c = 1;
+        try {
+          const son = W.lire(new Uint8Array(fs.readFileSync(cheminDansProjet(projet, x.nom))));
+          c = 0;
+          for (const canal of son.canaux) for (const v of canal) c = Math.max(c, Math.abs(v));
+        } catch { /* format non lu ici (mp3…) : compté fort */ }
+        crete.set(x.nom, c);
+      }
+      return crete.get(x.nom) * x.volume > Math.pow(10, -12 / 20);
+    };
+    for (const son of sonsJoues.filter(fort)) {
       if (motsDits.some((m) => son.t >= m.t0 - 0.02 && son.t <= m.t1 + 0.02)) {
         problemes.push({ regle: 'son-sous-voix', gravite: 'alerte', scene: son.scene, message: `Scène « ${son.scene} » : le son « ${son.nom} » tombe pendant un mot (vers ${virgule(son.t)} s) et couvre la voix ; le placer dans une pause.` });
       }
@@ -418,7 +438,7 @@ async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.j
     const assemblage = assembler({ dossier: projet, dossierStyles, dossierEffets, ecrire: false });
     if (assemblage.ok) {
       const { deroule } = lireDeroule(projet);
-      const duree = deroule.scenes.reduce((n, s) => n + s.duree / (s.rythme || 1), 0);
+      const duree = dureeVideo(projet, deroule);
       const options = { html: assemblage.html, ratio: deroule.format.ratio, duree };
       if (navigateur !== undefined) options.navigateur = navigateur;
       const v = await controlerRendu(options);

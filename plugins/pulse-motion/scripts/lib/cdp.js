@@ -144,8 +144,9 @@ function ouvrirPage({ navigateur, largeur, hauteur, gpu = false, delai = 30000, 
           }
           await charge.promesse;
         },
-        async evaluer(expression) {
-          const r = await envoyerBrut('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true, userGesture: true }, sessionId);
+        // geste : l'évaluation compte comme un geste de la personne (clic sur ▶ qui lance le son) ; seulement sur demande.
+        async evaluer(expression, { geste = false } = {}) {
+          const r = await envoyerBrut('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true, ...(geste ? { userGesture: true } : {}) }, sessionId);
           if (r.exceptionDetails) {
             const d = r.exceptionDetails;
             const x = d.exception || {};

@@ -79,3 +79,18 @@ test('« annule » après l\'ajout d\'une police ou d\'un terme : seul ce dernie
   assert.equal(fs.existsSync(path.join(dir, 'charte', 'polices', 'Marque.woff2')), false);
   assert.deepEqual(lireGlossaire(dir).termes.map((t) => t.terme), ['HACCP']);
 });
+
+test('correctifs : voix provisoires hors des copies, et gardées par « annule »', () => {
+  const dir = copierProjet('projet-simple');
+  const prov = path.join(dir, 'assets', 'voix', 'provisoire');
+  fs.mkdirSync(prov, { recursive: true });
+  fs.writeFileSync(path.join(prov, 'intro.wav'), 'prise provisoire');
+  fs.writeFileSync(path.join(dir, 'assets', 'voix', 'intro.wav'), 'vraie prise');
+  const { dossier } = sauvegarder(dir);
+  assert.equal(fs.existsSync(path.join(dossier, 'assets', 'voix', 'provisoire')), false);
+  assert.equal(fs.existsSync(path.join(dossier, 'assets', 'voix', 'intro.wav')), true);
+  fs.writeFileSync(path.join(prov, 'intro.wav'), 'nouvelle prise provisoire');
+  annuler(dir);
+  assert.equal(fs.readFileSync(path.join(prov, 'intro.wav'), 'utf8'), 'nouvelle prise provisoire');
+  assert.equal(fs.readFileSync(path.join(dir, 'assets', 'voix', 'intro.wav'), 'utf8'), 'vraie prise');
+});

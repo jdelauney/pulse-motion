@@ -18,7 +18,8 @@ test('état sans installation : pas prêt, commandes d\'installation données', 
   if (python) {
     assert.equal(e.commandes.length, 3);
     assert.match(e.commandes[1].join(' '), /pip install --upgrade faster-whisper/);
-    assert.match(e.commandes[2].join(' '), /download_model\("large-v3-turbo"/);
+    assert.match(e.commandes[2].join(' '), /download_model\(sys\.argv\[1\]/);
+    assert.ok(e.commandes[2].includes('large-v3-turbo'));
   }
 });
 
@@ -66,7 +67,7 @@ test('installer : lance les trois étapes dans l\'ordre, écrit version.json ; u
   const r = await Wh.installerWhisper({ dossier, modele: 'small', python: { commande: ['py', '-3'], version: '3.12.0' }, lancer });
   assert.equal(r.ok, true, r.message);
   assert.equal(vus.length, 3);
-  assert.match(vus[2], /download_model\("small"/);
+  assert.match(vus[2], /download_model\(sys\.argv\[1\].* small /);
   assert.equal(JSON.parse(fs.readFileSync(path.join(dossier, 'version.json'), 'utf8')).modele, 'small');
   const echec = await Wh.installerWhisper({ dossier, python: { commande: ['py'], version: '3.12.0' }, lancer: async () => ({ code: 1, erreurs: 'No matching distribution' }) });
   assert.equal(echec.ok, false);

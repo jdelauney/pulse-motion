@@ -106,3 +106,38 @@ test('revue : 9:16 : 28 caractères au plus par ligne', () => {
   const c = S.cartons([scene('Pour garder les aliments en bonne santé il faut respecter la chaîne du froid jusqu\'à votre assiette')], { ratio: '9:16' });
   for (const l of c.flatMap(texteDe)) assert.ok(l.length <= 28, l);
 });
+
+const FINE = String.fromCharCode(0x202F), INSEC = String.fromCharCode(0xA0);
+
+test('correctifs : espaces insécables gardées (jamais de coupe entre « 4 » et « °C »), restituées dans les fichiers', () => {
+  const ST = require('../moteur/sous-titres.js');
+  const Al = require('../moteur/aligner.js');
+  const mots = Al.decouperMots(`Il fait 4${FINE}°C dehors${FINE}?`);
+  assert.equal(mots[2].insecable, FINE);
+  assert.equal(mots[4].w, `dehors${FINE}?`);
+  // « 4 » tombe en fin de ligne si l'on coupe au plus près de la largeur : la coupe doit passer ailleurs.
+  for (let n = 20; n < 60; n++) {
+    const texte = `${'a'.repeat(n)} gardez les produits à 4${FINE}°C et les surgelés à moins${INSEC}18${FINE}°C au plus tard.`;
+    const sc = { id: 's', debut: 0, fin: 8, texte };
+    const c = ST.cartons([{ id: 's', debut: 0, fin: 8, mots: ST.motsDeScene(sc) }], { ratio: '9:16' });
+    for (const carton of c) for (const l of carton.lignes) assert.ok(!l[l.length - 1].insecable, `n=${n} : « ${l.map((m) => m.w).join(' ')} »`);
+    const srt = ST.versSRT(c);
+    assert.ok(srt.includes(`4${FINE}°C`), srt);
+    assert.ok(srt.includes(`moins${INSEC}18`), srt);
+  }
+});
+
+test('correctifs : VTT : &, < et > échappés', () => {
+  const ST = require('../moteur/sous-titres.js');
+  const c = [{ scene: 'a', debut: 0, fin: 2, lignes: [[{ w: 'R&D', t0: 0, t1: 1 }, { w: '<3', t0: 1, t1: 2 }, { w: 'a>b', t0: 1, t1: 2 }]] }];
+  const vtt = ST.versVTT(c);
+  assert.ok(vtt.includes('R&amp;D &lt;3 a&gt;b'), vtt);
+  assert.ok(ST.versSRT(c).includes('R&D <3 a>b'));
+});
+
+
+test('revue : espace insécable après le guillemet ouvrant gardée', () => {
+  const Al = require('../moteur/aligner.js');
+  const mots = Al.decouperMots(`Il dit «${INSEC}bonjour${INSEC}».`);
+  assert.equal(mots[2].w, `«${INSEC}bonjour${INSEC}».`);
+});
