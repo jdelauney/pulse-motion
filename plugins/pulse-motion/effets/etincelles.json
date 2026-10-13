@@ -31,6 +31,7 @@
         "intensite": { "de": 6, "a": 1, "courbe": "quad-out" }
       },
       "rendu": { "type": "etincelle", "etirement": 0.035, "melange": "additif" },
+      "collisions": { "cibles": ["sol", "murs", "elements", "formes"], "restitution": 0.35, "frottement": 0.3 },
       "a_la_mort": { "emetteur": "braise" }
     },
     {

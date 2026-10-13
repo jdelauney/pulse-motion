@@ -136,3 +136,33 @@ test('bibliothèque : poussière émise pendant toute la durée, image garnie d�
   assert.equal(grain.debit, 120 / 8, 'débit continu nombre / dur');
   assert.deepEqual(present.salves.map((s) => [s.t, s.nombre]), [[0, 40]], 'salve de départ nombre / 3');
 });
+
+test('bibliothèque : options de collision (confettis, pluie, neige, étincelles)', () => {
+  const em = (nom) => compiler(nom).effet.emetteurs;
+  for (const e of em('confettis')) {
+    assert.equal(e.collisions.reponse, 'poser', e.nom);
+    assert.equal(e.collisions.empiler, true, e.nom);
+  }
+  const pluie = em('pluie');
+  const goutte = pluie.find((e) => e.nom === 'goutte');
+  const eclabousse = pluie.find((e) => e.nom === 'eclabousse');
+  assert.equal(goutte.collisions.reponse, 'mourir');
+  assert.equal(pluie[goutte.aLaCollision], eclabousse);
+  assert.equal(eclabousse.declencheur, 'collision');
+  for (const e of em('neige')) {
+    assert.equal(e.collisions.reponse, 'poser', e.nom);
+    assert.equal(e.collisions.empiler, true, e.nom);
+  }
+  const gerbe = em('etincelles').find((e) => e.nom === 'gerbe');
+  assert.equal(gerbe.collisions.reponse, 'rebond');
+  assert.ok(gerbe.collisions.masque & R.CODES.cible.murs, 'les étincelles rebondissent sur les murs');
+  assert.equal(em('braises').find((e) => e.nom === 'gerbe').collisions.reponse, 'rebond', 'braises dérivées des étincelles');
+});
+
+test('bibliothèque : options de collision : aucun sol décalé, voie rapide gardée sans obstacle', () => {
+  for (const nom of NOMS) {
+    for (const e of compiler(nom).effet.emetteurs) assert.ok(!e.collisions || e.collisions.sol === null, `${nom} / ${e.nom} : pas de sol décalé`);
+  }
+  // La goutte de pluie (gravité et traînée seulement) reste en voie rapide quand ses collisions sont inactives.
+  assert.equal(compiler('pluie').effet.emetteurs.find((e) => e.nom === 'goutte').voieRapide, true);
+});

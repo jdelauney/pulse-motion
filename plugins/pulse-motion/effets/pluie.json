@@ -1,7 +1,7 @@
 {
   "version": 1,
   "nom": "pluie",
-  "description": "Pluie fine et rapide, légèrement oblique selon le vent, depuis le haut de l'image (zone plein cadre).",
+  "description": "Pluie fine et rapide, légèrement oblique selon le vent, depuis le haut de l'image (zone plein cadre) ; éclabousse au contact des obstacles de la scène.",
   "parametres": {
     "nombre": { "defaut": 1000, "min": 20, "max": 20000 },
     "vent": { "defaut": -10, "min": -60, "max": 60 },
@@ -24,7 +24,22 @@
         { "type": "trainee", "coef": 0.2 }
       ],
       "vie": { "couleur": "couleur", "opacite": "opacite" },
-      "rendu": { "type": "etincelle", "etirement": 0.06, "melange": "alpha" }
+      "rendu": { "type": "etincelle", "etirement": 0.06, "melange": "alpha" },
+      "collisions": { "cibles": ["sol", "elements", "formes"], "reponse": "mourir" },
+      "a_la_collision": { "emetteur": "eclabousse" }
+    },
+    {
+      "nom": "eclabousse",
+      "naissance": {
+        "nombre": 3,
+        "forme": { "type": "point" },
+        "vitesse": { "direction": [0, -1], "cone": 140, "valeur": [8, 20], "heritage": 0.05 },
+        "vie": [0.15, 0.35],
+        "taille": [0.08, 0.15]
+      },
+      "forces": [{ "type": "gravite", "valeur": 60 }],
+      "vie": { "couleur": "couleur", "opacite": { "de": "opacite", "a": 0 } },
+      "rendu": { "type": "sprite", "melange": "alpha" }
     }
   ]
 }
