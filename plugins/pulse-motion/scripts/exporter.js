@@ -19,7 +19,7 @@ const { etatProjet } = require('./etat.js');
 const { demarrerApercu, ouvrirNavigateur } = require('./apercu.js');
 const { trouverFfmpeg } = require('./lib/ffmpeg.js');
 const { exporterFidele } = require('./export-fidele.js');
-const { scenesProvisoires, messageProvisoire } = require('./lib/voix.js');
+const { scenesProvisoires, messageProvisoire, dureeVideo } = require('./lib/voix.js');
 
 /** Voie de l'export : fidèle (vraies captures + ffmpeg) si ffmpeg est utilisable, sauf --rapide et planche. */
 function choisirVoie({ planche = null, rapide = false, outil }) {
@@ -98,7 +98,8 @@ async function exporterVideo({
   const suivi = path.join(projet, 'sortie', 'export.json');
   fs.rmSync(suivi, { force: true });
   const adresse = `${url}?${ids ? `planche=${ids.map(encodeURIComponent).join(',')}` : `export=1${avecProvisoire ? '&provisoire=1' : ''}`}`;
-  const images = Math.round(deroule.scenes.reduce((t, s) => t + s.duree / (s.rythme || 1), 0) * ((deroule.format && deroule.format.ips) || 30));
+  // Délai maximal sur la durée réelle (scènes allongées par leur voix comprises).
+  const images = Math.round(dureeVideo(projet, deroule) * ((deroule.format && deroule.format.ips) || 30));
   const limite = Date.now() + (delaiMax || (120 + images * 0.5) * 1000);
   const limiteDemarrage = Date.now() + delaiDemarrage;
   const chrome = ouvrirSansFenetre(navigateur, adresse, { gpu: avecEffets(projet, deroule) });

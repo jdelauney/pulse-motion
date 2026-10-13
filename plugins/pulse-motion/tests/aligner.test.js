@@ -41,3 +41,30 @@ test('calage approché sans parole détectée : réparti sur toute la prise ; te
   assert.ok(Math.abs(m[1].t1 - 2) < 0.01);
   assert.deepEqual(A.calageApproche('   ', new Float32Array(10), taux), []);
 });
+
+test('correctifs : nombre dit en plusieurs mots (« vingt et un ») : un seul mot du script, du début du premier à la fin du dernier', () => {
+  const A = require('../moteur/aligner.js');
+  const r = A.aligner('il fait 21 degrés', [{ w: 'il', t0: 0, t1: 0.2 }, { w: 'fait', t0: 0.3, t1: 0.5 }, { w: 'vingt', t0: 0.6, t1: 0.8 }, { w: 'et', t0: 0.85, t1: 0.9 }, { w: 'un', t0: 0.95, t1: 1.1 }, { w: 'degrés', t0: 1.2, t1: 1.6 }]);
+  assert.deepEqual(r.mots[2], { w: '21', t0: 0.6, t1: 1.1 });
+  assert.equal(r.reconnus, 4);
+});
+
+test('correctifs : mots interpolés croissants (mots entendus qui se chevauchent) et bornés à la durée de la prise', () => {
+  const A = require('../moteur/aligner.js');
+  // « froid » entendu avant la fin de « le » : le mot manquant entre eux ne recule pas.
+  const r = A.aligner('pourquoi le grand froid', [{ w: 'pourquoi', t0: 0, t1: 0.5 }, { w: 'le', t0: 0.6, t1: 1.0 }, { w: 'froid', t0: 0.9, t1: 1.3 }], 3);
+  r.mots.forEach((m) => assert.ok(m.t1 >= m.t0, JSON.stringify(m)));
+  for (let k = 1; k < r.mots.length; k++) assert.ok(r.mots[k].t0 >= r.mots[k - 1].t0, JSON.stringify(r.mots));
+  // Mots manquants après le dernier mot entendu : jamais au-delà de la prise.
+  const fin = A.aligner('pourquoi le froid est si important pour vous', [{ w: 'pourquoi', t0: 0, t1: 0.5 }, { w: 'le', t0: 0.6, t1: 0.8 }, { w: 'froid', t0: 0.9, t1: 1.8 }], 2);
+  fin.mots.forEach((m) => assert.ok(m.t1 <= 2 + 1e-9, JSON.stringify(m)));
+});
+
+test('correctifs : découpe d\'un enregistrement entier : ponctuation de tête gardée par la scène qui commence', () => {
+  const A = require('../moteur/aligner.js');
+  const e = [{ w: 'bonjour', t0: 0, t1: 0.5 }, { w: 'et', t0: 1.5, t1: 1.7 }, { w: 'puis', t0: 1.8, t1: 2.1 }];
+  const r = A.decouperEnScenes(['Bonjour.', '… et puis'], e, 2.5);
+  assert.equal(r[0].mots[0].w, 'Bonjour.');
+  assert.equal(r[1].mots[0].w, '… et');
+  assert.equal(r[1].mots[0].t0, 1.5);
+});

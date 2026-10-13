@@ -125,7 +125,7 @@
     donnees.scenes.forEach(function (sc) {
       elementsParScene[sc.id] = sections[sc.id] ? lireElements(sections[sc.id]) : [];
     });
-    var min = M.calculerMinutage(donnees.scenes, elementsParScene, { dureeTemps: M.dureeTemps });
+    var min = M.calculerMinutage(donnees.scenes, elementsParScene, { dureeTemps: M.dureeTemps, decalageTemps: (donnees.tempo && donnees.tempo.decalage) || 0 });
     M.minutage = min;
     M.duree = min.duree;
 

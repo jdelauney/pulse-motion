@@ -55,3 +55,14 @@ test('une ancre peut servir de référence : #x:fin après un mot', () => {
   const m = calculerMinutage([{ id: 'a', duree: 4, voix }], { a: [el('x', 'mot:le'), el('y', '#x:fin')] });
   assert.equal(r2(m.elements.a.y.debut), 1.8); // 0,3 + 0,5 + 1 s (durée par défaut)
 });
+
+test('correctifs : allongement au temps musical compté depuis le décalage du tempo, scène suivante sur un temps', () => {
+  // 120 bpm (0,5 s), premier temps à 0,25 s : la voix finit à 2,7 s, la scène suivante commence à 2,75 s.
+  const m = calculerMinutage([{ id: 'a', duree: 1, voix }, { id: 'b', duree: 3 }], {}, { dureeTemps: 0.5, decalageTemps: 0.25 });
+  assert.equal(m.scenes[1].debut, 2.75);
+  // Avec une transition (entrée chevauchée), c'est le début de la scène suivante qui tombe sur un temps.
+  const t = calculerMinutage([{ id: 'a', duree: 1, voix }, { id: 'b', duree: 3, transition: 'fondu' }], {}, { dureeTemps: 0.5, decalageTemps: 0.25 });
+  const k = (t.scenes[1].debut - 0.25) / 0.5;
+  assert.ok(Math.abs(k - Math.round(k)) < 1e-6, String(t.scenes[1].debut));
+  assert.ok(t.scenes[0].fin >= 2.7 - 1e-9);
+});

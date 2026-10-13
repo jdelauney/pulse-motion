@@ -63,7 +63,13 @@ function lireVoixScene(projet, deroule, scene) {
     approche = enregistres.approche || 'lettres';
   } else {
     mots = A.calageApproche(scene.voix.texte, canal, son.taux);
-    if (enregistres && enregistres.approche === 'whisper') {
+    if (enregistres && enregistres.empreinte === sceau && typeof enregistres.texte === 'string' && enregistres.texte !== scene.voix.texte) {
+      // Même prise, autre texte : la voix dit encore l'ancien.
+      alertes.push({ regle: 'mots-perimes', gravite: 'alerte', scene: scene.id,
+        message: prise.provisoire
+          ? `Scène « ${scene.id} » : le texte dit a changé ; la voix provisoire lit encore l'ancien (relancer « pulse-motion voix provisoire --scene ${scene.id} »).`
+          : `Scène « ${scene.id} » : le texte dit a changé depuis l'enregistrement ; la voix dit encore l'ancien texte : réenregistrer la scène (studio de l'aperçu) ou importer la nouvelle prise.` });
+    } else if (enregistres && enregistres.approche === 'whisper') {
       alertes.push({ regle: 'mots-perimes', gravite: 'alerte', scene: scene.id,
         message: `Scène « ${scene.id} » : la prise ou son texte ont changé depuis la transcription ; mots calés approximativement (relancer « pulse-motion voix transcrire »).` });
     }
@@ -71,6 +77,17 @@ function lireVoixScene(projet, deroule, scene) {
   const opus = fichierOpus(prise.absolu);
   const opusValide = enregistres && enregistres.opus === sceau && fs.existsSync(opus);
   return { prise: { relatif: prise.relatif, provisoire: prise.provisoire }, duree, mots, approche, opus: opusValide ? relatifDe(projet, opus) : null, alertes };
+}
+
+/** Durée de la vidéo avec les scènes allongées par leur voix (délais maximaux de l'export et du contrôle). -> secondes */
+function dureeVideo(projet, deroule) {
+  const { calculerMinutage } = require('../../moteur/minutage.js');
+  const { dureeTemps } = require('./deroule.js');
+  const scenes = deroule.scenes.map((s) => {
+    const v = s.voix && s.voix.texte ? lireVoixScene(projet, deroule, s) : null;
+    return { ...s, voix: v && !v.erreur ? { debut: s.voix.debut, duree: v.duree } : undefined };
+  });
+  return calculerMinutage(scenes, {}, { dureeTemps: dureeTemps(deroule), decalageTemps: (deroule.tempo && deroule.tempo.decalage) || 0 }).duree;
 }
 
 /** Prise brute (WAV) -> prise prête, écrite avec ses mots (et son Opus si ffmpeg est donné). -> { relatif, duree } */
@@ -102,14 +119,31 @@ async function ecrirePrise({ projet, scene, octets, texte, provisoire = false, o
 }
 
 /** Transcrit une prise du projet et réécrit ses mots (approche whisper). -> { ok, message? } */
-async function transcrirePrise({ projet, relatif, texte, whisper }) {
+/** WAV en PCM entier 16 bits (seul format lu par le script de transcription) ? */
+function estPCM16(octets) {
+  const b = Buffer.from(octets);
+  for (let i = 12; i + 8 <= b.length; i += 8 + b.readUInt32LE(i + 4) + (b.readUInt32LE(i + 4) % 2)) {
+    if (b.toString('latin1', i, i + 4) === 'fmt ') return [1, 0xFFFE].includes(b.readUInt16LE(i + 8)) && b.readUInt16LE(i + 22) === 16;
+  }
+  return false;
+}
+
+async function transcrirePrise({ projet, relatif, texte, whisper, surProgression }) {
   const absolu = path.join(projet, relatif);
   const octets = fs.readFileSync(absolu);
   const son = W.lire(new Uint8Array(octets));
   const duree = son.canaux[0].length / son.taux;
-  const r = await whisper.transcrire({ wav: absolu, duree });
+  // Prise posée à la main en flottant 32 bits : copie 16 bits pour la transcription.
+  let wav = absolu, copie = null;
+  if (!estPCM16(octets)) {
+    copie = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'pm-transcrire-'));
+    wav = path.join(copie, 'prise.wav');
+    fs.writeFileSync(wav, W.ecrire(son));
+  }
+  let r;
+  try { r = await whisper.transcrire({ wav, duree, surProgression }); } finally { if (copie) fs.rmSync(copie, { recursive: true, force: true }); }
   if (!r.ok) return { ok: false, message: r.message };
-  const a = A.aligner(texte, r.mots);
+  const a = A.aligner(texte, r.mots, duree);
   if (!a) return { ok: false, message: 'La transcription n\'a reconnu aucun mot du texte : mots calés approximativement (vérifier que la prise dit bien le texte de la scène).' };
   // Une prise qui ne dit plus son texte (texte réécrit) n'est pas déclarée transcrite : il faut la réenregistrer.
   const total = A.decouperMots(texte).length;
@@ -130,4 +164,4 @@ function messageProvisoire(ids) {
   return `La vidéo contient encore la voix provisoire (scènes : ${ids.join(', ')}) : enregistrez votre voix, ou exportez quand même avec --avec-provisoire.`;
 }
 
-module.exports = { DOSSIER_VOIX, empreinte, priseDeScene, lireVoixScene, ecrirePrise, transcrirePrise, scenesProvisoires, messageProvisoire };
+module.exports = { DOSSIER_VOIX, empreinte, priseDeScene, lireVoixScene, dureeVideo, ecrirePrise, transcrirePrise, scenesProvisoires, messageProvisoire };
