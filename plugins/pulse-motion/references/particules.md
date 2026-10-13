@@ -9,6 +9,7 @@
 - `data-reglages="nombre: 300; couleur: accent"` : seulement les réglages de la table ci-dessous. Couleurs : `#rrggbb` ou `primaire`, `accent`, `texte`, `fond` (charte).
 - Pour une ambiance (neige, pluie, poussière, fumée), régler `data-dur` sur la durée de la scène (ou presque) : l'effet n'émet que pendant `data-dur`, 1 s par défaut. `nombre` est un total émis pendant `data-dur` pour les effets continus (neige, pluie, poussière, fumée, feu, paillettes, énergie, étincelles, braises) : une durée plus longue étale le même nombre plus finement ; d'un coup pour confettis, explosion et feu d'artifice ; `etincelles` de `feu` est un débit par seconde.
 - `data-graine="7"` : un autre tirage du hasard (« fais-les partir autrement »), même recette.
+- Les particules réagissent à la scène quand elle déclare des obstacles : `data-obstacle` sur un élément (sa boîte), `data-obstacle="forme"` (sa forme exacte, les lettres d'un titre). Neige et confettis s'y posent, la pluie y éclabousse, les étincelles y rebondissent (voir « Collisions avec la scène »).
 - Un effet **sert un propos** : mettre en valeur un chiffre, célébrer une conclusion, poser une ambiance. Jamais pour décorer.
 - Après écriture : `pulse-motion assembler .` puis `pulse-motion controler .` ; les erreurs `effet-…`, `reglage-invalide`, `ancre-introuvable` se corrigent dans la scène.
 
@@ -102,6 +103,62 @@ Valeurs : un nombre, un intervalle `[min, max]` tiré au hasard, ou une expressi
 
 Ne pas recopier d'effets, de textures ni de shaders trouvés en ligne : leurs licences ne le permettent souvent pas ; écrire une recette originale.
 
+## Collisions avec la scène
+
+Les particules rebondissent sur un cadre, se posent sur un titre, s'accumulent au sol, meurent au contact. La **scène** dit ce qui fait obstacle ; la **recette** dit comment ses particules réagissent. Les collisions ne s'activent que si la scène (ou une scène voisine, ou le déroulé) déclare au moins un obstacle, ou si la recette décale le sol : sans obstacle, un effet se comporte comme avant.
+
+### Déclarer les obstacles d'une scène
+
+```html
+<h1 id="titre" data-texte="titre" data-obstacle="forme"></h1>          <!-- forme exacte des lettres -->
+<div class="plateau" data-obstacle></div>                              <!-- boîte de l'élément -->
+<div data-obstacle-forme="ligne" data-de="10 80" data-a="60 95"></div> <!-- ligne invisible, en cqh -->
+```
+
+| Déclaration | Effet |
+|---|---|
+| `data-obstacle` | La boîte de l'élément, même tournée, mise à l'échelle ou animée (les particules posées suivent). |
+| `data-obstacle="forme"` | La forme exacte (lettres d'un texte, silhouette d'une image), prise à la fin du minutage de l'élément. Un élément effacé à ce moment ne compte pas (alerte). |
+| `data-obstacle="video"` ou `"forme video"` | Idem, et obstacle aussi pour les effets de la scène voisine pendant une transition. |
+| `data-obstacle-forme="ligne"` | Ligne invisible : `data-de="x y"`, `data-a="x y"` (cqh). Aussi `cercle` (`data-centre`, `data-rayon`) et `rectangle` (`data-de`, `data-a`, `data-angle` en degrés). |
+| Sol et murs | Le bas, la gauche et la droite de l'image sont toujours là ; la recette décale le sol avec `"sol": 90` (cqh depuis le haut). |
+
+Au plus 16 obstacles par scène (les premiers dans l'ordre du document comptent).
+
+### Obstacles de la vidéo (déroulé)
+
+```json
+"obstacles": [ { "type": "sol", "a": 92 }, { "type": "ligne", "de": [0, 80], "a": [40, 95] } ]
+```
+
+Types `sol` (`a`), `ligne` (`de`, `a`), `cercle` (`centre`, `rayon`), `rectangle` (`de`, `a`, `angle`) ; au plus 8 obstacles de vidéo, valables dans toutes les scènes. La neige accumulée sur un sol de la vidéo dans une scène est encore là dans la suivante.
+
+### Réglages d'une recette (`collisions`, par émetteur)
+
+```json
+"collisions": { "cibles": ["sol", "elements"], "reponse": "poser", "empiler": true, "talus": 35 },
+"a_la_collision": { "emetteur": "eclabousse" }
+```
+
+| Champ | Rôle |
+|---|---|
+| `cibles` | Ce qui arrête les particules : `sol`, `murs`, `elements` (obstacles de la scène et de la vidéo), `formes` (formes exactes). Toutes par défaut. |
+| `reponse` | `rebond` (défaut), `poser` (la particule reste sur l'obstacle et le suit), `mourir` (disparaît au contact). |
+| `restitution` | Part de la vitesse gardée au rebond, de 0 à 1 (0,4). |
+| `frottement` | Part de la vitesse le long de la surface perdue au contact, de 0 à 1 (0,2). |
+| `repos_apres` | Secondes avant le fondu d'une particule posée ; absent : elle reste jusqu'à sa mort. |
+| `empiler` | Avec `poser` : les particules posées forment une couche qui monte (neige, confettis). |
+| `epaisseur` | Épaisseur d'une particule dans la couche, en cqh (par défaut sa taille). |
+| `talus` | Pente la plus forte de la couche, en degrés (5 à 80, 35 par défaut). |
+| `sol` | Sol décalé, en cqh depuis le haut ; active les collisions même sans obstacle déclaré. |
+| `a_la_collision` | `{ "emetteur": "<nom>" }` : sous-émetteur lancé au point de contact, orienté selon la surface (`direction: [0, -1]` = perpendiculaire à la surface). Compte dans les 2 niveaux de sous-émetteurs ; un émetteur n'a qu'un parent. |
+
+Bibliothèque : `confettis` et `neige` se posent et s'empilent, `pluie` meurt au contact et lance `eclabousse`, `etincelles` (et `braises`) rebondissent. Retouche : « la neige doit tenir sur le titre » → `data-obstacle="forme"` sur le titre.
+
+Limites : une couche ne s'écroule pas quand son obstacle bouge, les grains ne roulent pas les uns sur les autres, les particules ne se heurtent pas entre elles.
+
+Contrôles : `obstacle-introuvable` (déclaration mal écrite), `collisions-invalides` (recette), `obstacles-video` (déroulé), alerte `trop-d-obstacles` (au-delà de 16 obstacles par scène ou de 8 obstacles de vidéo).
+
 ## Régler à l'œil : l'atelier
 
 Quand la personne veut régler un effet en le regardant (« laisse-moi régler les étincelles », « je veux voir ce que ça donne »), ou pour vérifier un effet de la bibliothèque :
@@ -121,3 +178,4 @@ Quand la personne veut régler un effet en le regardant (« laisse-moi régler l
 | `data-ancre="titre"` | Il manque `#` | `data-ancre="#titre"` |
 | Une recette recopiée et modifiée en entier | Difficile à retoucher | `etend` + les seuls changements |
 | `nombre: 20000` sur une scène qui en a déjà | `budget-particules` | Baisser `nombre` ou la durée de vie |
+| `data-obstacle="formes"` | Valeur inconnue (`obstacle-introuvable`) | `data-obstacle="forme"` |
