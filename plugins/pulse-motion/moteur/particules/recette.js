@@ -191,6 +191,9 @@
         talus: nb('Angle de talus de la couche', 35, { min: 5, max: 80, unite: '°', curseur: [5, 80] }),
         sol: nb('Sol décalé (depuis le haut)', null, { exemple: 90, unite: 'cqh', curseur: [0, 100] }),
       }),
+      a_la_collision: ob('Au contact', {
+        emetteur: noeud('texte', 'Émetteur lancé', null, { motif: '^[a-z0-9-]+$', parmi: 'emetteurs', exemple: 'b' }),
+      }),
     }, { exemple: { nom: 'emetteur', naissance: { debit: 50, vie: [0.5, 1] } } }), { requis: true }),
   });
 
@@ -752,17 +755,27 @@
       });
       var parent = liste.map(function () { return -1; });
       var enfant = liste.map(function () { return -1; });
-      liste.forEach(function (e, i) {
-        var cible = e.a_la_mort && e.a_la_mort.emetteur;
+      var enfantCollision = liste.map(function () { return -1; });
+      var declencheur = liste.map(function () { return null; });
+      // Un émetteur n'a qu'un parent, par « a_la_mort » ou par « a_la_collision ».
+      function lier(e, i, cle) {
+        var cible = e[cle] && e[cle].emetteur;
         if (cible === undefined || cible === null) return;
-        var ch = 'emetteurs[' + e.nom + '].a_la_mort.emetteur';
+        var ch = 'emetteurs[' + e.nom + '].' + cle + '.emetteur';
         if (parNom[cible] === undefined) throw invalide(ch, 'émetteur « ' + cible + ' » inconnu');
         var j = parNom[cible];
         if (j === i) throw invalide(ch, 'un émetteur ne peut pas se lancer lui-même');
         if (parent[j] >= 0) throw invalide(ch, '« ' + cible + ' » est déjà lancé par « ' + liste[parent[j]].nom + ' »');
+        if (cle === 'a_la_collision' && (e.collisions === undefined || e.collisions === null)) {
+          throw invalide(ch, '« a_la_collision » demande « collisions » sur « ' + e.nom + ' »');
+        }
         parent[j] = i;
-        enfant[i] = j;
-      });
+        declencheur[j] = cle === 'a_la_mort' ? 'mort' : 'collision';
+        if (cle === 'a_la_mort') enfant[i] = j;
+        else enfantCollision[i] = j;
+      }
+      liste.forEach(function (e, i) { lier(e, i, 'a_la_mort'); });
+      liste.forEach(function (e, i) { lier(e, i, 'a_la_collision'); });
       var profondeur = liste.map(function (e, i) {
         var p = 0, k = i, vus = [i];
         while (parent[k] >= 0) {
@@ -786,6 +799,8 @@
           parent: P ? P.index : -1,
           profondeur: profondeur[i],
           aLaMort: enfant[i],
+          aLaCollision: enfantCollision[i],
+          declencheur: declencheur[i],
           vie: vie,
           taille: intervalle(n.taille, ch + '.naissance.taille', [1, 1]),
           masse: intervalle(n.masse, ch + '.naissance.masse', [1, 1]),
@@ -799,6 +814,8 @@
           rendu: compilerRendu(e.rendu, ch + '.rendu'),
           collisions: compilerCollisions(e.collisions, ch + '.collisions'),
         };
+        // Mort au contact ou fondu après la pose : une particule peut mourir dès sa naissance.
+        var etendueMorts = em.collisions && (em.collisions.reponse === 'mourir' || em.collisions.reposApres) ? vie[1] : vie[1] - vie[0];
         if (enfant[i] >= 0 && vie[0] < PAS) {
           throw invalide(ch + '.naissance.vie', 'durée de vie minimale ' + vie[0] + ' sous 1/120 s : deux morts dans le même pas feraient perdre des enfants');
         }
@@ -811,14 +828,16 @@
           if (em.k < 1) throw invalide(ch + '.naissance.nombre', 'au moins 1');
           // S : écart entre deux occupants successifs d'une case parent ; J : gigue de leurs morts.
           // G : générations d'une case enfant, pour que G·S − J ≥ vie max de l'enfant.
-          em.G = P.espacement === Infinity ? 1 : Math.max(1, Math.ceil((vie[1] + P.gigue) / P.espacement));
+          // Collision : un impact peut tomber n'importe quand dans la vie du parent (gigue des naissances + vie min du parent).
+          var gigueNaissances = declencheur[i] === 'collision' ? P.gigue + P.vie[0] : P.gigue;
+          em.G = P.espacement === Infinity ? 1 : Math.max(1, Math.ceil((vie[1] + gigueNaissances) / P.espacement));
           em.debit = 0;
           em.nTotal = 0;
           em.capContinu = 0;
           em.salves = [];
           em.capacite = P.capacite * em.G * em.k;
           em.espacement = P.espacement === Infinity ? Infinity : em.G * P.espacement;
-          em.gigue = P.gigue + (vie[1] - vie[0]);
+          em.gigue = gigueNaissances + etendueMorts;
           em.finNaissances = P.fin;
         } else {
           if (n.nombre !== undefined) throw invalide(ch + '.naissance.nombre', '« nombre » est réservé aux sous-émetteurs ; utiliser « debit » ou « salves »');
@@ -849,7 +868,7 @@
           }
           em.capacite = debut;
           em.espacement = em.capContinu > 0 && em.capContinu < em.nTotal ? em.capContinu / em.debit : Infinity;
-          em.gigue = vie[1] - vie[0];
+          em.gigue = etendueMorts;
           em.finNaissances = finN;
         }
         if (em.capacite > CAPACITE_MAX) {
