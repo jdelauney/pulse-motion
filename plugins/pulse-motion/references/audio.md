@@ -67,7 +67,7 @@ Réenregistrer la scène recale tout seul les ancres. Une ancre sur un mot que l
 
 ## Musique générée
 
-Composée sur l'ordinateur à partir de la graine : la même graine donne toujours la même musique ; `graine` + 1 donne une variante. Son tempo devient celui du déroulé (unité `t` des animations). Structure calée sur les scènes : introduction sans percussion pendant la première scène, montée sur la dernière seconde avant la dernière scène, accord final jusqu'à la fin.
+Composée sur l'ordinateur à partir de la graine : la même graine donne toujours la même musique ; `graine` + 1 donne une variante. Son tempo devient celui du déroulé (unité `t` des animations) : chaque scène doit alors commencer sur un temps (contrôle `hors-tempo`). Le plus simple : `"tempo": 120` (un temps = 0,5 s) avec des durées de scène en demi-secondes. Structure calée sur les scènes : introduction sans percussion pendant la première scène, montée sur la dernière seconde avant la dernière scène, accord final jusqu'à la fin.
 
 | Ambiance | Caractère | Tempo, tonalité par défaut | Genres |
 |---|---|---|---|
