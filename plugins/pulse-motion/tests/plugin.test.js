@@ -222,6 +222,7 @@ test('creer : la question du son, textes dits, voix provisoire, sous-titres, Whi
   assert.match(creer, /mode.*mot.*9:16|9:16.*mode.*mot/);
   assert.match(creer, /generee/);
   assert.match(creer, /pulse-motion musique ecouter \./);
+  assert.match(creer, /hors-tempo/);
   const e = enTete(creer);
   assert.match(e['allowed-tools'], /Bash\(winget install --id Python\.Python\.3\.12 -e --accept-source-agreements --accept-package-agreements\)/);
   assert.match(e['allowed-tools'], /Bash\(brew install python\)/);
