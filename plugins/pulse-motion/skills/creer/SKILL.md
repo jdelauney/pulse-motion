@@ -79,7 +79,7 @@ La charte (logo, couleurs, polices) vit dans `charte/` du projet ; la musique da
 ## 3. Fabrication
 
 0. Voix, avant les animateurs (la voix fixe la durée des scènes et le moment de chaque mot) :
-   - Transcription : `pulse-motion whisper`. `pret` faux : proposer une fois de l'installer, elle cale les sous-titres et les animations sur les vrais mots (« Installer la transcription (Recommandé) » · « Plus tard ») ; elle est indispensable pour découper un enregistrement de toute la vidéo.
+   - Transcription : `pulse-motion whisper`. `pret` faux : proposer une fois de l'installer (consignes d'installation de `pulse-motion consignes outils`, étape « Installer la transcription »), elle cale les sous-titres et les animations sur les vrais mots (« Installer la transcription (Recommandé) » · « Plus tard ») ; elle est indispensable pour découper un enregistrement de toute la vidéo.
      - Accord, avec `commandeSysteme` (Python manque) : lancer sa `commande` (sous Linux, `commande` nulle : donner le texte `message` à taper et attendre que la personne dise que c'est fait), puis relancer `pulse-motion whisper`. Python toujours introuvable (sous Windows, l'ordinateur ne le voit qu'après un redémarrage de l'outil) : dire qu'il faudra relancer Claude Code pour finir l'installation, et continuer sans.
      - Puis `pulse-motion whisper installer` en arrière-plan (quelques minutes, environ 800 Mo), et attendre sa fin. `ok` faux : dire en une phrase que la transcription n'a pas pu s'installer, et continuer sans.
      - Refus ou échec : dire en une phrase que les mots seront calés au mieux ; tout fonctionne quand même.

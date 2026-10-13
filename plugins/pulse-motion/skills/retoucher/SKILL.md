@@ -1,7 +1,6 @@
 ---
-description: Retoucher la vidéo en une phrase (« ralentis la scène 3 », « change le titre », « annule ») et la voir aussitôt
+description: Retoucher la vidéo Pulse Motion du dossier en une phrase et la voir aussitôt (« ralentis la scène 3 », « change le titre », « baisse la musique », « ouvre l'aperçu », « fais une planche des scènes 2 et 3 », « enregistre ma charte », « annule »). Pour enregistrer ou importer une voix, c'est /pulse-motion:voix ; pour une nouvelle vidéo, /pulse-motion:creer.
 argument-hint: "[la retouche en une phrase]"
-disable-model-invocation: true
 allowed-tools: Bash(pulse-motion *) Bash(node *) Read Glob Grep Write Edit Agent AskUserQuestion
 ---
 
@@ -26,7 +25,7 @@ Appliquer la retouche demandée, puis laisser l'aperçu se recharger à la même
 
 ## 3. Sauvegarder
 
-`pulse-motion historique sauvegarder .` **avant** tout changement. (Un changement de style se sauvegarde lui-même : passer directement à l'étape 4.)
+`pulse-motion historique sauvegarder .` **avant** tout changement. (Un changement de style se sauvegarde lui-même : passer directement à l'étape 4.) Les demandes qui ne modifient pas la vidéo (ouvrir l'aperçu, faire une planche, comparer des styles, enregistrer la charte, noter un terme au glossaire) : ni copie ni contrôle, aller directement à l'étape 4 puis à la fin.
 
 ## 4. Appliquer
 
@@ -44,6 +43,8 @@ Classer la demande, puis :
 | Musique | « plus calme », « plus entraînant », « une autre variante », « baisse la musique », « enlève la musique » | ambiance (`musique.generee`) ou `intensite` (plus bas = plus calme) ; « une autre variante » : `graine` + 1 ; `musique.volume` ; retirer `musique` ; « fais-moi écouter » : `pulse-motion musique ecouter .` |
 | Bruitages | « enlève les bruitages », « mets un son quand le titre arrive », « moins fort » | retirer les `data-son` des scènes et `bruitages.transitions` ; `data-son` sur l'élément (sons : `pulse-motion reference audio`) ; `bruitages.volume` ou `data-son-volume` |
 | Sous-titres | « sous-titres en haut », « mot par mot », « enlève-les de l'image », « enlève les sous-titres » | `sousTitres.position` (`haut`) ; `sousTitres.mode` (`mot`) ; `sousTitres.incrustes: false` (les fichiers `.srt` et `.vtt` restent) ; retirer `sousTitres` |
+| Aperçu et images | « ouvre l'aperçu », « fais une planche des scènes 2 et 3 », « compare avec un autre style » | `pulse-motion apercu . --ouvrir` en arrière-plan (s'il n'est pas actif) ; `pulse-motion planche . <ids> --ouvrir` (images fixes dans `sortie/planche/`, à regarder aussi soi-même avec `Read`) ; `pulse-motion comparer . <style1>,<style2> --ouvrir` en arrière-plan (images dans `sortie/comparaison/`) |
+| Charte et glossaire | « enregistre ma charte sous le nom dupont », « applique la charte dupont », « note HACCP au glossaire » | `pulse-motion charte enregistrer <nom> .` (nom en minuscules et tirets) ; `pulse-motion charte appliquer <nom> .` (une retouche : les réglages remplacés se disent en une phrase) ; `pulse-motion glossaire noter . "<terme>" "<sens>" "<formes à éviter>"` |
 | Structure | « ajoute une scène sur… », « supprime la scène 4 » | déroulé + fichier de scène (agent `animateur`) ; numéroter les fichiers dans l'ordre ; écrire « type » (le nom de la scène) pour une scène tirée d'une scène toute faite du style, le retirer pour une scène composée ; vidéo avec une voix : écrire aussi le `voix.texte` de la nouvelle scène, puis `pulse-motion voix provisoire --scene <id> .` (ou proposer de l'enregistrer dans le studio) |
 
 Lire `pulse-motion reference moteur` avant de toucher au fichier d'une scène, `pulse-motion reference audio` pour le son, et `pulse-motion reference particules` pour un effet (table « Retouches en une phrase »).

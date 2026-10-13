@@ -1,6 +1,5 @@
 ---
-description: Exporter la vidéo en MP4 fidèle (vraies images du navigateur, son propre), fabriqué sur l'ordinateur, pour la publier ou l'envoyer
-disable-model-invocation: true
+description: Exporter la vidéo Pulse Motion du dossier en MP4, fabriqué sur l'ordinateur, pour la publier ou l'envoyer (« exporte ma vidéo », « fais-moi le MP4 », « une version légère pour l'envoyer par courriel », « exporte en plus fluide »). Ne modifie pas la vidéo : pour une retouche, c'est /pulse-motion:retoucher.
 allowed-tools: Bash(pulse-motion *) Bash(node *) Bash(winget install --id Gyan.FFmpeg -e --accept-source-agreements --accept-package-agreements) Bash(brew install ffmpeg) Read Glob Grep AskUserQuestion
 ---
 
@@ -24,7 +23,7 @@ Fabriquer le fichier MP4 de la vidéo, sur l'ordinateur : en **export fidèle** 
 ## 2. Préparer l'export fidèle
 
 1. `pulse-motion ffmpeg` : `present` et `versionOk` vrais → étape 3.
-2. Sinon, expliquer en une phrase : « ffmpeg est un petit logiciel libre qui fabrique la vidéo en haute qualité, avec un son propre ; il s'installe une fois. » Puis demander avec `AskUserQuestion` : « Installer ffmpeg (Recommandé) » · « Exporter sans, dans le navigateur ».
+2. Sinon, suivre les consignes d'installation de `pulse-motion consignes outils` (étape « Installer ffmpeg »), en proposant aussi d'exporter sans. En bref : expliquer en une phrase : « ffmpeg est un petit logiciel libre qui fabrique la vidéo en haute qualité, avec un son propre ; il s'installe une fois. » Puis demander avec `AskUserQuestion` : « Installer ffmpeg (Recommandé) » · « Exporter sans, dans le navigateur ».
    - Accord et `commande` non nulle : lancer exactement cette `commande`, puis relancer `pulse-motion ffmpeg` pour vérifier.
    - Accord mais `commande` nulle (Linux : l'installation demande son mot de passe) : donner à la personne le texte `installer` à taper dans un terminal, puis attendre qu'elle dise que c'est fait et relancer `pulse-motion ffmpeg`.
    - Refus, ou installation ratée : exporter dans le navigateur avec `pulse-motion exporter . --rapide`.

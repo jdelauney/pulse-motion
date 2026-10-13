@@ -30,7 +30,6 @@ test('skills : creer, exporter, retoucher, reprendre, lancés par la personne, o
   for (const s of SKILLS) {
     const e = enTete(lire('skills', s, 'SKILL.md'));
     assert.ok(e.description && e.description.length > 20, `${s} : description`);
-    if (!['outils', 'voix'].includes(s)) assert.equal(e['disable-model-invocation'], 'true', `${s} : lancé par la personne seulement`);
     assert.match(e['allowed-tools'], /Bash\(pulse-motion \*\)/, `${s} : outil pulse-motion autorisé`);
   }
 });
@@ -298,4 +297,23 @@ test('demandes : skills outils et voix, déclenchables en langage courant, consi
   for (const r of [/pulse-motion voix studio <id> \./, /pulse-motion voix importer assets\/<fichier>/, /pulse-motion voix provisoire \./, /pulse-motion voix transcrire \./, /pulse-motion musique ecouter \. --ouvrir/, /pulse-motion apercu \. --ouvrir/, /pulse-motion etat \./]) assert.match(voix, r);
   assert.match(enTete(voix).description, /retoucher/);
   assert.match(voix, /\/pulse-motion:creer/);
+});
+
+
+test('demandes : slash seulement pour creer et style ; les autres en langage courant, avec garde « pas de vidéo »', () => {
+  for (const s of SKILLS) {
+    const e = enTete(lire('skills', s, 'SKILL.md'));
+    if (['creer', 'style'].includes(s)) assert.equal(e['disable-model-invocation'], 'true', s);
+    else {
+      assert.equal(e['disable-model-invocation'], undefined, s);
+      assert.ok((e.description.match(/« [^»]+ »/g) || []).length >= 3, `${s} : exemples de demandes`);
+    }
+  }
+  for (const s of ['retoucher', 'reprendre', 'exporter', 'voix']) assert.match(lire('skills', s, 'SKILL.md'), /`projet` faux[^\n]*\/pulse-motion:creer/, s);
+  const retoucher = lire('skills', 'retoucher', 'SKILL.md');
+  assert.match(retoucher, /\| Aperçu et images \|/);
+  assert.match(retoucher, /\| Charte et glossaire \|/);
+  for (const r of [/pulse-motion planche \. <ids> --ouvrir/, /pulse-motion charte enregistrer <nom> \./, /pulse-motion glossaire noter \./, /pulse-motion apercu \. --ouvrir/]) assert.match(retoucher, r);
+  assert.match(enTete(lire('skills', 'reprendre', 'SKILL.md')).description, /où en est ma vidéo/);
+  for (const s of ['creer', 'exporter']) assert.match(lire('skills', s, 'SKILL.md'), /pulse-motion consignes outils/, s);
 });
