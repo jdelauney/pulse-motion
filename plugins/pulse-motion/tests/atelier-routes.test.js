@@ -120,3 +120,68 @@ test('aperçu : routes de l\'atelier branchées, bibliothèque des tests transmi
     assert.match((await requete(apercu.url)).texte, /data-effet="gerbe"[^>]*data-pm-effet="0"/, 'la page trouve « gerbe » dans la bibliothèque des tests');
   } finally { await apercu.fermer(); }
 });
+
+test('reglages : seuls data-reglages et data-graine de la balise visée changent ; historique avant ; nouvelle empreinte', async () => {
+  const dir = copierProjet('projet-effets');
+  const avant = lireScene(dir);
+  await servir(dir, {}, async (base) => {
+    const r = await requete(`${base}reglages`, json({ fichier: 'scenes/01-etincelles.html', empreinte: hache(scene(dir)), scene: 'etincelles', ordre: 0, reglages: 'nombre: 900; couleur: #00ff88', graine: 7 }));
+    assert.equal(r.statut, 200, r.texte);
+    assert.equal(lireScene(dir), avant.replace('data-reglages="nombre: 300; couleur: accent"', 'data-reglages="nombre: 900; couleur: #00ff88" data-graine="7"'));
+    assert.equal(r.json.empreinte, hache(scene(dir)));
+    assert.equal(fs.readFileSync(path.join(dir, '.historique', '001', 'scenes', '01-etincelles.html'), 'utf8'), avant);
+    // Réglages vides et graine nulle : attributs retirés.
+    const r2 = await requete(`${base}reglages`, json({ empreinte: r.json.empreinte, scene: 'etincelles', ordre: 0, reglages: '', graine: null }));
+    assert.equal(r2.statut, 200, r2.texte);
+    assert.equal(lireScene(dir), avant.replace(' data-reglages="nombre: 300; couleur: accent"', ''));
+    assert.ok(fs.existsSync(path.join(dir, '.historique', '002')));
+  });
+});
+
+test('reglages : refus sans rien écrire – empreinte périmée, balise absente, scène inconnue, valeurs dangereuses, type', async () => {
+  const dir = copierProjet('projet-effets');
+  const avant = lireScene(dir);
+  const e = hache(scene(dir));
+  await servir(dir, {}, async (base) => {
+    const perimee = await requete(`${base}reglages`, json({ empreinte: 'ffffffffffffffff', scene: 'etincelles', ordre: 0, reglages: 'nombre: 900' }));
+    assert.equal(perimee.statut, 409);
+    assert.equal(perimee.json.conflit, true);
+    assert.match(perimee.json.message, /modifiée sur le disque/);
+    assert.equal((await requete(`${base}reglages`, json({ empreinte: e, scene: 'etincelles', ordre: 5, reglages: '' }))).statut, 409);
+    assert.equal((await requete(`${base}reglages`, json({ empreinte: e, scene: 'etincelles', ordre: 0, fichier: 'scenes/autre.html' }))).statut, 409);
+    assert.equal((await requete(`${base}reglages`, json({ empreinte: e, scene: 'absente', ordre: 0 }))).statut, 404);
+    assert.equal((await requete(`${base}reglages`, json({ empreinte: e, scene: 'etincelles', ordre: 0, reglages: 'nombre: 1" onload="x' }))).statut, 400);
+    assert.equal((await requete(`${base}reglages`, json({ empreinte: e, scene: 'etincelles', ordre: 0, graine: -1 }))).statut, 400);
+    assert.equal((await requete(`${base}reglages`, { methode: 'POST', type: 'text/plain', corps: '{}' })).statut, 415);
+    assert.equal((await requete(`${base}reglages`, { methode: 'POST', type: 'application/json', corps: '{oups' })).statut, 400);
+  });
+  assert.equal(lireScene(dir), avant);
+  assert.equal(fs.existsSync(path.join(dir, '.historique')), false);
+});
+
+test('reglages : écriture impossible -> 500, scène intacte', async () => {
+  const dir = copierProjet('projet-effets');
+  const avant = lireScene(dir);
+  const disquePlein = () => { throw Object.assign(new Error('disque plein'), { code: 'ENOSPC' }); };
+  await servir(dir, { ecrire: disquePlein }, async (base) => {
+    const r = await requete(`${base}reglages`, json({ empreinte: hache(scene(dir)), scene: 'etincelles', ordre: 0, reglages: 'nombre: 900' }));
+    assert.equal(r.statut, 500);
+    assert.match(r.json.message, /Écriture impossible \(ENOSPC\) : rien n'a été modifié/);
+  });
+  assert.equal(lireScene(dir), avant);
+});
+
+test('ecrireAtomique : remplace d\'un coup ; en échec, cible intacte et aucun temporaire laissé', () => {
+  const d = dossierTemporaire('pm-atomique-');
+  const f = path.join(d, 'a.txt');
+  fs.writeFileSync(f, 'ancien');
+  ecrireAtomique(f, 'nouveau');
+  assert.equal(fs.readFileSync(f, 'utf8'), 'nouveau');
+  const dossier = path.join(d, 'dossier');
+  fs.mkdirSync(dossier);
+  fs.writeFileSync(path.join(dossier, 'garde.txt'), 'x');
+  assert.throws(() => ecrireAtomique(dossier, 'contenu'));
+  assert.deepEqual(fs.readdirSync(d).sort(), ['a.txt', 'dossier']);
+  assert.equal(fs.readFileSync(path.join(dossier, 'garde.txt'), 'utf8'), 'x');
+  assert.equal(empreinte(Buffer.from('nouveau')), crypto.createHash('sha256').update('nouveau').digest('hex').slice(0, 16));
+});
