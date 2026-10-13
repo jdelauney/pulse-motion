@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="fr" data-racine="../" data-commande="reprendre">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>/pulse-motion:reprendre – Wiki Pulse Motion</title>
+<meta name="description" content="Reprendre la vidéo en cours là où elle s'était arrêtée.">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/animations.css">
+<script src="../js/donnees.js" defer></script>
+<script src="../js/gabarit.js" defer></script>
+<script src="../js/animations.js" defer></script>
+<script src="../js/console.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<div class="mise-en-page">
+<nav class="laterale" aria-label="Les commandes" data-laterale></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille pastille-etape" data-couleur="1">Étape 1 · Créer</p>
+<h1><code>/pulse-motion:reprendre</code></h1>
+<p class="chapo">Reprendre la vidéo en cours là où elle s'était arrêtée.</p>
+</header>
+
+<ul class="sommaire" aria-label="Sur cette page" data-sommaire></ul>
+
+<section id="description">
+<h2>Description</h2>
+<p>Vous avez fermé VS Code au milieu d'une vidéo ? Une conversation a été interrompue ? Cette commande relit l'état de la vidéo du dossier, vous dit en une phrase où elle en est, puis continue exactement à la bonne étape.</p>
+<p>Elle relit aussi votre <a href="../lexique.html#lexique-personnel">lexique personnel</a> : les mots de l'outil déjà expliqués ne vous sont pas réexpliqués.</p>
+<table>
+<thead><tr><th>Où en était la vidéo</th><th>Ce que fait Pulse Motion</th></tr></thead>
+<tbody>
+<tr><td>Aucune vidéo dans le dossier</td><td>Vous propose <a href="creer.html"><code>/pulse-motion:creer</code></a>.</td></tr>
+<tr><td>Le déroulé a des erreurs</td><td>Les corrige, puis vous présente le déroulé.</td></tr>
+<tr><td>Le déroulé attend votre accord</td><td>Vous le présente et demande votre accord.</td></tr>
+<tr><td>Des scènes manquent</td><td>Les fait écrire par les animateurs, puis contrôle la vidéo.</td></tr>
+<tr><td>Le style attend votre accord (parcours accompagné)</td><td>Vous remontre la comparaison des styles.</td></tr>
+<tr><td>La vidéo finale attend votre accord (parcours accompagné)</td><td>Ouvre l'aperçu et demande votre accord.</td></tr>
+<tr><td>La vidéo est prête</td><td>Rouvre l'aperçu s'il est fermé, puis vous propose une retouche.</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="pourquoi">
+<h2>Pourquoi l'utiliser</h2>
+<ul>
+<li><strong>Rien n'est perdu.</strong> Tout l'état de la vidéo est dans son dossier : vous pouvez fermer l'ordinateur à n'importe quelle étape.</li>
+<li><strong>Vous n'avez pas à vous souvenir.</strong> Pulse Motion sait quelle étape vient ensuite et vous la propose.</li>
+<li><strong>Votre charte reste à jour.</strong> Si la charte enregistrée utilisée par cette vidéo a changé depuis (autre couleur, nouveau logo), Pulse Motion vous le signale et propose de la réappliquer. Rien ne change sans votre accord.</li>
+</ul>
+</section>
+
+<section id="quand">
+<h2>Quand l'utiliser</h2>
+<ol class="parcours" aria-label="Le parcours Pulse Motion, cette commande à l'étape mise en avant">
+  <li data-couleur="1" aria-current="step"><span class="parcours-numero">1</span> Créer</li>
+  <li data-couleur="3"><span class="parcours-numero">2</span> Retoucher</li>
+  <li data-couleur="4"><span class="parcours-numero">3</span> Exporter</li>
+  <li data-couleur="0"><span class="parcours-numero">4</span> Personnaliser</li>
+</ol>
+<ul>
+<li><strong>Au retour d'une pause</strong>, quand vous rouvrez le dossier d'une vidéo.</li>
+<li><strong>Quand Pulse Motion vous le rappelle.</strong> Au démarrage de chaque session, il regarde si le dossier contient une vidéo en cours et vous propose de la reprendre.</li>
+<li><strong>Après un redémarrage de Claude Code</strong>, par exemple pour finir l'installation de la transcription.</li>
+</ul>
+</section>
+
+<section id="arguments">
+<h2>Comment la lancer</h2>
+<pre class="commande"><code>/pulse-motion:reprendre</code></pre>
+<p>Elle ne prend rien après le nom. Lancez-la dans le dossier de la vidéo : dans VS Code, menu <strong>File</strong> → <strong>Open Folder…</strong>, puis ouvrez le panneau Claude Code.</p>
+</section>
+
+<section id="produit">
+<h2>Ce qu'elle produit</h2>
+<p>Rien de nouveau par elle-même : elle reprend le travail de <a href="creer.html"><code>/pulse-motion:creer</code></a> là où il s'était arrêté, et produit donc les mêmes fichiers (déroulé, scènes, page animée dans <code>sortie/</code>).</p>
+</section>
+
+<section id="risques">
+<h2>Risques et précautions</h2>
+<ul>
+<li><strong>Elle ne modifie rien avant de vous avoir parlé.</strong> Elle vous dit d'abord où en est la vidéo.</li>
+<li><strong>Un dossier, une vidéo.</strong> Ouvrez bien le dossier de la vidéo, pas le dossier qui le contient : sinon Pulse Motion ne trouve aucune vidéo.</li>
+</ul>
+</section>
+
+<section id="problemes">
+<h2>Problèmes et solutions</h2>
+<details class="probleme"><summary>Pulse Motion dit qu'il n'y a aucune vidéo ici</summary><p>Le dossier ouvert n'est pas celui de la vidéo. Il doit contenir un fichier <code>deroule.json</code>. Ouvrez le bon dossier avec <strong>File</strong> → <strong>Open Folder…</strong>, puis relancez la commande.</p></details>
+<details class="probleme"><summary>Ma charte enregistrée n'existe plus</summary><p>Elle a été supprimée de votre ordinateur. La vidéo garde sa propre copie de la charte, dans son dossier <code>charte/</code> : rien n'est cassé. Pulse Motion vous le signale simplement.</p></details>
+</section>
+
+<section id="exemples">
+<h2>Exemples</h2>
+<div class="conversation" data-titre="Exemple : reprendre après une pause">
+<p data-role="vous">/pulse-motion:reprendre</p>
+<p data-role="outil">pulse-motion etat .</p>
+<p data-role="claude">La vidéo « La chaîne du froid » attend encore votre accord sur son déroulé. Le voici : 6 scènes, 1 min 03.
+→ Je valide, avec le style posé, lisible, rassurant (Recommandé) / Je veux changer quelque chose</p>
+</div>
+<div class="conversation" data-titre="Exemple : une vidéo terminée">
+<p data-role="vous">/pulse-motion:reprendre</p>
+<p data-role="claude">La vidéo « La chaîne du froid » est prête. J'ai rouvert l'aperçu dans votre navigateur.
+Une retouche ? Décrivez-la en une phrase, par exemple « ralentis la scène 3 ».</p>
+</div>
+</section>
+
+<section id="liees">
+<h2>Commandes liées</h2>
+<ul>
+<li><a href="creer.html"><code>/pulse-motion:creer</code></a> : les étapes que <code>reprendre</code> continue.</li>
+<li><a href="retoucher.html"><code>/pulse-motion:retoucher</code></a> : changer une vidéo prête.</li>
+</ul>
+</section>
+
+<nav class="suite" aria-label="Commande précédente et suivante" data-suite></nav>
+</article>
+</div>
+</main>
+</body>
+</html>

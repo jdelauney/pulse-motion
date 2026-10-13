@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="fr" data-racine="../" data-commande="retoucher">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>/pulse-motion:retoucher – Wiki Pulse Motion</title>
+<meta name="description" content="Retoucher la vidéo en une phrase (« ralentis la scène 3 », « change le titre », « annule ») et la voir aussitôt.">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/animations.css">
+<script src="../js/donnees.js" defer></script>
+<script src="../js/gabarit.js" defer></script>
+<script src="../js/animations.js" defer></script>
+<script src="../js/console.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<div class="mise-en-page">
+<nav class="laterale" aria-label="Les commandes" data-laterale></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille pastille-etape" data-couleur="3">Étape 2 · Retoucher</p>
+<h1><code>/pulse-motion:retoucher</code></h1>
+<p class="chapo">Retoucher la vidéo en une phrase (« ralentis la scène 3 », « change le titre », « annule ») et la voir aussitôt.</p>
+</header>
+
+<ul class="sommaire" aria-label="Sur cette page" data-sommaire></ul>
+
+<section id="description">
+<h2>Description</h2>
+<p>Vous regardez la vidéo dans l'aperçu, quelque chose ne va pas : dites-le en une phrase. Pulse Motion fait <strong>le plus petit changement</strong> qui répond à votre phrase, sans « améliorer » autre chose au passage. Il contrôle la vidéo, puis l'aperçu se recharge tout seul, à la même position.</p>
+<p>Chaque retouche est <strong>sauvegardée avant d'être faite</strong>. Si le résultat ne vous plaît pas, « annule » revient à l'état précédent.</p>
+
+<figure class="anim" data-etapes="4" data-duree="1300">
+<svg viewBox="0 0 760 200" role="img" aria-labelledby="retoucher-flux-titre">
+<title id="retoucher-flux-titre">Une retouche : sauvegarder, changer, contrôler, voir</title>
+<g class="e1" data-etape="1"><rect class="actif-halo schema-halo-primaire" x="4" y="44" width="164" height="100" rx="20"/><rect class="schema-boite" x="10" y="50" width="152" height="88" rx="16"/><text class="schema-texte" x="86" y="88" text-anchor="middle">Sauvegarder</text><text class="schema-texte-secondaire" x="86" y="110" text-anchor="middle">pour pouvoir annuler</text></g>
+<path class="schema-fleche trace e2" pathLength="1" d="M162 94 H196" marker-end="url(#retoucher-pointe)"/>
+<g class="e2" data-etape="2"><rect class="actif-halo schema-halo-primaire" x="196" y="44" width="164" height="100" rx="20"/><rect class="schema-boite-active" x="202" y="50" width="152" height="88" rx="16"/><text class="schema-texte" x="278" y="88" text-anchor="middle">Changer</text><text class="schema-texte-secondaire" x="278" y="110" text-anchor="middle">le strict nécessaire</text></g>
+<path class="schema-fleche trace e3" pathLength="1" d="M354 94 H388" marker-end="url(#retoucher-pointe)"/>
+<g class="e3" data-etape="3"><rect class="actif-halo schema-halo-primaire" x="388" y="44" width="164" height="100" rx="20"/><rect class="schema-boite" x="394" y="50" width="152" height="88" rx="16"/><text class="schema-texte" x="470" y="88" text-anchor="middle">Contrôler</text><text class="schema-texte-secondaire" x="470" y="110" text-anchor="middle">rien de cassé</text></g>
+<path class="schema-fleche trace e4" pathLength="1" d="M546 94 H580" marker-end="url(#retoucher-pointe)"/>
+<g class="e4" data-etape="4"><rect class="actif-halo schema-halo-primaire" x="580" y="44" width="164" height="100" rx="20"/><rect class="schema-boite-active" x="586" y="50" width="152" height="88" rx="16"/><text class="schema-texte" x="662" y="88" text-anchor="middle">Voir</text><text class="schema-texte-secondaire" x="662" y="110" text-anchor="middle">l'aperçu se recharge</text></g>
+<path class="schema-accompagne trace e4" pathLength="1" d="M662 144 C662 196 86 196 86 148" marker-end="url(#retoucher-pointe-mauve)"/>
+<defs>
+<marker id="retoucher-pointe" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" class="schema-pointe-grise"/></marker>
+<marker id="retoucher-pointe-mauve" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" class="schema-pointe"/></marker>
+</defs>
+</svg>
+<figcaption>Une retouche : Pulse Motion sauvegarde la vidéo, fait le changement demandé et seulement lui, contrôle que rien n'est cassé, puis l'aperçu se recharge. La retouche suivante repart du début de la boucle.</figcaption>
+</figure>
+</section>
+
+<section id="pourquoi">
+<h2>Pourquoi l'utiliser</h2>
+<ul>
+<li><strong>Vous parlez comme à un monteur.</strong> Pas de logiciel à apprendre : « le chiffre doit rebondir », « mets la liste à droite ».</li>
+<li><strong>Vous voyez le résultat dans la seconde.</strong> L'aperçu reste ouvert et se recharge à la même position.</li>
+<li><strong>Vous pouvez tout essayer.</strong> « annule » revient en arrière ; les 20 dernières retouches sont gardées.</li>
+<li><strong>Une phrase ambiguë donne une question, pas une erreur.</strong> « Ralentis » ? Pulse Motion vous demande quelle scène, avec la réponse la plus probable en premier.</li>
+</ul>
+</section>
+
+<section id="quand">
+<h2>Quand l'utiliser</h2>
+<ol class="parcours" aria-label="Le parcours Pulse Motion, cette commande à l'étape mise en avant">
+  <li data-couleur="1"><span class="parcours-numero">1</span> Créer</li>
+  <li data-couleur="3" aria-current="step"><span class="parcours-numero">2</span> Retoucher</li>
+  <li data-couleur="4"><span class="parcours-numero">3</span> Exporter</li>
+  <li data-couleur="0"><span class="parcours-numero">4</span> Personnaliser</li>
+</ol>
+<ul>
+<li><strong>Après <a href="creer.html"><code>/pulse-motion:creer</code></a></strong>, en regardant la vidéo dans l'aperçu.</li>
+<li><strong>Avant <a href="exporter.html"><code>/pulse-motion:exporter</code></a></strong>, pour corriger une erreur signalée par le contrôle.</li>
+<li><strong>Après un export</strong>, pour une nouvelle version : retouchez, puis exportez de nouveau.</li>
+</ul>
+</section>
+
+<section id="arguments">
+<h2>Comment la lancer</h2>
+<pre class="commande"><code>/pulse-motion:retoucher [la retouche en une phrase]</code></pre>
+<p class="legende">Entre crochets <code>[ ]</code> : facultatif. Sans phrase, Pulse Motion vous demande ce qu'il faut changer.</p>
+<pre class="commande"><code>/pulse-motion:retoucher ralentis la scène 3</code></pre>
+<pre class="commande"><code>/pulse-motion:retoucher annule</code></pre>
+
+<h3>Ce que vous pouvez demander</h3>
+<table>
+<thead><tr><th>Ce que vous voulez changer</th><th>Exemples de phrases</th></tr></thead>
+<tbody>
+<tr><td><strong>Un texte</strong></td><td>« change le titre », « corrige la faute dans la scène 2 »</td></tr>
+<tr><td><strong>Le rythme, une durée</strong></td><td>« ralentis la scène 3 », « accélère », « laisse plus de temps à la fin »</td></tr>
+<tr><td><strong>Le visuel d'une scène</strong></td><td>« le chiffre doit rebondir », « mets la liste à droite »</td></tr>
+<tr><td><strong>Un effet de particules</strong></td><td>« plus d'étincelles », « en bleu », « fais-les partir autrement », « ajoute des confettis à la fin », « enlève les confettis »</td></tr>
+<tr><td><strong>Le style</strong></td><td>« passe en style éditorial », « quelque chose de plus chaleureux »</td></tr>
+<tr><td><strong>La charte</strong></td><td>« mets mes couleurs », « prends les couleurs de mon logo », « applique la charte Dupont », « change la police des titres », « passe en sombre »</td></tr>
+<tr><td><strong>La transition</strong></td><td>« change la transition », « coupe sèche entre les scènes 4 et 5 »</td></tr>
+<tr><td><strong>La voix</strong></td><td>« baisse la voix », « je réenregistre la scène 3 », « j'ai un nouvel enregistrement », « change ce que je dis dans l'intro »</td></tr>
+<tr><td><strong>La musique</strong></td><td>« plus calme », « plus entraînant », « une autre variante », « baisse la musique », « enlève la musique », « fais-moi écouter »</td></tr>
+<tr><td><strong>Les bruitages</strong></td><td>« mets un son quand le titre arrive », « moins fort », « enlève les bruitages »</td></tr>
+<tr><td><strong>Les sous-titres</strong></td><td>« sous-titres en haut », « mot par mot », « enlève-les de l'image », « enlève les sous-titres »</td></tr>
+<tr><td><strong>La structure</strong></td><td>« ajoute une scène sur le lavage des mains », « supprime la scène 4 »</td></tr>
+<tr><td><strong>Revenir en arrière</strong></td><td>« annule », « reviens en arrière »</td></tr>
+</tbody>
+</table>
+<p>Le détail des réglages du son est sur la page <a href="../son.html">Le son</a> ; les styles et les effets sont dans le <a href="../catalogue.html">catalogue</a>.</p>
+</section>
+
+<section id="produit">
+<h2>Ce qu'elle produit</h2>
+<ul>
+<li><strong>La vidéo à jour</strong> : <code>sortie/&lt;titre&gt;.html</code>, et l'aperçu rechargé.</li>
+<li><strong>Une copie de l'état d'avant</strong>, dans le dossier caché <code>.historique/</code> de la vidéo (les 20 dernières).</li>
+<li><strong>Un rapport de contrôle</strong> à jour (<code>sortie/controle.json</code>). Ce que le contrôle a corrigé seul vous est dit en une phrase.</li>
+</ul>
+</section>
+
+<section id="risques">
+<h2>Risques et précautions</h2>
+<ul>
+<li><strong>Une durée ou une graphie précise est respectée.</strong> Si vous demandez « la scène 3 dure 4 secondes » ou une orthographe particulière, Pulse Motion contrôle sans corriger seul, pour ne pas défaire votre demande. Il vous signale seulement ce qui pose problème.</li>
+<li><strong>Un changement de style réécrit certaines scènes.</strong> Les scènes toutes faites sont recopiées dans le nouveau style ; les scènes composées librement sont réécrites par un animateur. « annule » ramène l'ancien style.</li>
+<li><strong>Une musique composée fixe le pas des durées.</strong> Chaque scène doit commencer sur un temps de la musique (à 120 battements par minute, toutes les demi-secondes). Le contrôle ne corrige alors plus seul les durées, pour ne pas décaler la musique : Pulse Motion les ajuste lui-même, sur les temps.</li>
+</ul>
+<aside class="encadre encadre-conseil"><p><strong>Conseil :</strong> une retouche à la fois. Si vous en enchaînez trois dans une même phrase, « annule » les défera toutes les trois ensemble.</p></aside>
+</section>
+
+<section id="problemes">
+<h2>Problèmes et solutions</h2>
+<details class="probleme"><summary>« Aucune retouche à annuler »</summary><p>Vous êtes revenu au tout premier état gardé, ou la vidéo n'a jamais été retouchée. Il n'y a rien de plus ancien à restaurer.</p></details>
+<details class="probleme"><summary>L'aperçu ne s'est pas rechargé</summary><p>Il était peut-être fermé. Pulse Motion le rouvre s'il n'est plus actif ; sinon, rechargez la page du navigateur (<kbd>F5</kbd>, ou <kbd>Cmd</kbd> + <kbd>R</kbd> sur Mac).</p></details>
+<details class="probleme"><summary>Le texte est trop long et déborde encore</summary><p>Le contrôle réduit un texte qui déborde jusqu'à 80 % de sa taille, jamais en dessous de ce qui reste lisible. Au-delà, il faut le raccourcir : « raccourcis le titre de la scène 2 ». Les longueurs maximales de chaque style sont dans le <a href="../catalogue.html#styles">catalogue</a>.</p></details>
+<details class="probleme"><summary>Pulse Motion me signale qu'un mot de la voix est introuvable</summary><p>Une animation part sur un mot de votre voix, mais ce mot n'est plus dit (vous avez changé le texte ou réenregistré). Pulse Motion propose un autre mot de la scène pour le départ.</p></details>
+</section>
+
+<section id="exemples">
+<h2>Exemples</h2>
+<div class="conversation" data-titre="Exemple : ralentir une scène">
+<p data-role="vous">/pulse-motion:retoucher ralentis la scène 3</p>
+<p data-role="outil">pulse-motion historique sauvegarder .</p>
+<p data-role="claude">✅ Fait : la scène 3, « Les 4 maillons de la chaîne », se déroule plus lentement.
+L'aperçu s'est rechargé.</p>
+</div>
+<div class="conversation" data-titre="Exemple : une phrase ambiguë">
+<p data-role="vous">/pulse-motion:retoucher le titre est trop petit</p>
+<p data-role="claude">Quel titre ?
+→ Celui de la scène 1, « La chaîne du froid » (Recommandé) / Tous les titres / Un autre</p>
+<p data-role="vous">Celui de la scène 1</p>
+<p data-role="claude">✅ Fait : le titre de l'intro est plus grand. L'aperçu s'est rechargé.</p>
+</div>
+<div class="conversation" data-titre="Exemple : revenir en arrière">
+<p data-role="vous">/pulse-motion:retoucher annule</p>
+<p data-role="outil">pulse-motion historique annuler .</p>
+<p data-role="claude">✅ Fait : la vidéo est revenue à l'état d'avant la dernière retouche.</p>
+</div>
+</section>
+
+<section id="liees">
+<h2>Commandes liées</h2>
+<ul>
+<li><a href="creer.html"><code>/pulse-motion:creer</code></a> : créer la vidéo à retoucher.</li>
+<li><a href="exporter.html"><code>/pulse-motion:exporter</code></a> : fabriquer le MP4 une fois la vidéo à votre goût.</li>
+<li><a href="style.html"><code>/pulse-motion:style</code></a> : créer un style à vous, puis « passe en style… ».</li>
+</ul>
+</section>
+
+<nav class="suite" aria-label="Commande précédente et suivante" data-suite></nav>
+</article>
+</div>
+</main>
+</body>
+</html>
