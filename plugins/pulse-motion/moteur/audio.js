@@ -164,7 +164,8 @@
       bus.push({ tampon: await contexteSons.startRendering(), volume: volumeDe(d.bruitages) });
     }
     if (musiqueIllisible) {
-      avertissements.push(bus.length ? 'La musique n\'a pas pu être lue : son exporté sans musique.' : 'La musique n\'a pas pu être lue : vidéo exportée sans son.');
+      // Formulé pour la lecture comme pour l'export (le même rendu sert aux deux).
+      avertissements.push(bus.length ? 'La musique n\'a pas pu être lue : le son est fait sans elle.' : 'La musique n\'a pas pu être lue : la vidéo n\'a pas de son.');
     }
     if (!bus.length) return { buffer: null, sonie: null, avertissements: avertissements };
 
