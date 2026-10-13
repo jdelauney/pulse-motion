@@ -236,7 +236,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   // Sous-titres : cartons en temps absolus (minutage des scènes avec leurs voix), fichiers SRT et VTT.
   let cartons = [];
   if (deroule.sousTitres && deroule.scenes.some((s) => s.voix && s.voix.texte)) {
-    const min = calculerMinutage(donnees.scenes, {}, { dureeTemps: dureeTemps(deroule) });
+    const min = calculerMinutage(donnees.scenes, {}, { dureeTemps: dureeTemps(deroule), decalageTemps: (deroule.tempo && deroule.tempo.decalage) || 0 });
     const scenesST = deroule.scenes.map((s, i) => {
       const m = min.scenes[i];
       const mots = s.voix && s.voix.texte ? ST.motsDeScene({ debut: m.debut, fin: m.fin, texte: s.voix.texte, voix: voixScenes[s.id] || null }) : [];
@@ -253,7 +253,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
 
   // Musique générée (ambiance) ou partition libre : partition validée, jouée par le synthétiseur de la page.
   if (deroule.musique && deroule.musique.generee) {
-    const min = calculerMinutage(donnees.scenes, {}, { dureeTemps: dureeTemps(deroule) });
+    const min = calculerMinutage(donnees.scenes, {}, { dureeTemps: dureeTemps(deroule), decalageTemps: (deroule.tempo && deroule.tempo.decalage) || 0 });
     donnees.musique.partition = SA.generer({ ambiance: deroule.musique.generee, tempo: deroule.musique.tempo, tonalite: deroule.musique.tonalite,
       intensite: deroule.musique.intensite, graine: deroule.musique.graine, duree: min.duree, scenes: min.scenes.map((s) => ({ debut: s.debut, fin: s.fin })) });
   } else if (deroule.musique && deroule.musique.partition) {

@@ -6,7 +6,7 @@
  *
  * Contrôle aussi la vidéo rendue dans Chrome ou Edge sans fenêtre (débordements, chevauchements, cadre, marges,
  * zone des boutons en 9:16, logo, textes fugaces, mouvements rapides) ; sans navigateur : alerte rendu-non-verifie.
- * Écrit sortie/controle.json : { problemes: [{ regle, gravite: "erreur" | "alerte", scene?, element?, message, correction? }],
+ * Écrit sortie/controle.json : { problemes: [{ regle, gravite: "erreur" | "alerte" | "info" (rien à corriger : la personne est prévenue), scene?, element?, message, correction? }],
  *   corrections: [{ regle, scene, element?, avant, apres, message }], renduVerifie }.
  * Corrige seul les cas sûrs (typographie, durées) dans deroule.json, après une copie d'historique ;
  * --sans-correction : signale seulement (chaque problème corrigeable porte sa « correction »).
@@ -40,6 +40,7 @@ const auPasSuperieur = (x, pas) => Math.round(Math.ceil(x / pas - EPS) * pas * 1
 const auPasInferieur = (x, pas) => Math.round(Math.floor(x / pas + EPS) * pas * 1000) / 1000;
 
 const { contraste } = require('./lib/couleurs.js');
+const { dureeVideo } = require('./lib/voix.js');
 
 const compterMots = (texte) => (String(texte).match(/[\p{L}\p{N}]+(?:['’-][\p{L}\p{N}]+)*/gu) || []).length;
 
@@ -154,7 +155,7 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
     const temps = dureeTemps(deroule);
     // Scènes de la page (avec leur voix) : durées effectives et ancres « mot: » comme dans le navigateur.
     const scenesMinutees = (assemblage.donnees && assemblage.donnees.scenes) || deroule.scenes;
-    const min = calculerMinutage(scenesMinutees, elementsParScene, { dureeTemps: temps });
+    const min = calculerMinutage(scenesMinutees, elementsParScene, { dureeTemps: temps, decalageTemps: (deroule.tempo && deroule.tempo.decalage) || 0 });
     for (const e of min.erreurs) problemes.push({ ...e, gravite: 'erreur' });
     for (const s of min.scenes.filter((x) => x.allongee)) {
       problemes.push({ regle: 'voix-allonge', gravite: 'info', scene: s.id,
@@ -418,7 +419,7 @@ async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.j
     const assemblage = assembler({ dossier: projet, dossierStyles, dossierEffets, ecrire: false });
     if (assemblage.ok) {
       const { deroule } = lireDeroule(projet);
-      const duree = deroule.scenes.reduce((n, s) => n + s.duree / (s.rythme || 1), 0);
+      const duree = dureeVideo(projet, deroule);
       const options = { html: assemblage.html, ratio: deroule.format.ratio, duree };
       if (navigateur !== undefined) options.navigateur = navigateur;
       const v = await controlerRendu(options);

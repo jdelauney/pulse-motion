@@ -44,3 +44,13 @@ test('sans voix : la correction automatique de durée reste (témoin)', () => {
   const c = controler({ dossier: dir, dossierStyles: STYLES, ecrire: false });
   assert.ok(c.problemes.some((p) => p.correction && p.correction.scene === 'intro'), JSON.stringify(c.problemes.map((p) => p.regle)));
 });
+
+test('correctifs : texte dit changé après la prise : alerte qui dit que la voix dit encore l\'ancien texte', async () => {
+  const dir = copierProjet('projet-simple');
+  const r = await V.ecrirePrise({ projet: dir, scene: 'intro', octets: wavParole(2), texte: 'Pourquoi le froid compte' });
+  modifierDeroule(dir, (d) => { d.scenes[0].voix = { texte: 'Pourquoi le chaud compte', fichier: r.relatif }; });
+  const c = controler({ dossier: dir, dossierStyles: STYLES, ecrire: false });
+  const p = c.problemes.find((x) => x.regle === 'mots-perimes');
+  assert.ok(p, JSON.stringify(c.problemes.map((x) => x.regle)));
+  assert.match(p.message, /dit encore l'ancien texte/);
+});

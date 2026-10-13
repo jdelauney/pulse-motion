@@ -189,7 +189,10 @@ async function transcrireProjet({ dossier, scene: id, whisper = whisperParDefaut
   for (const s of scenes) {
     const v = lireVoixScene(projet, deroule, s);
     if (!v || v.erreur || (v.approche === 'whisper' && !v.alertes.length)) continue;
-    const t = await transcrirePrise({ projet, relatif: s.voix.fichier, texte: s.voix.texte, whisper });
+    // Progrès sur la sortie d'erreur (la sortie standard reste un JSON seul).
+    let dernier = -1;
+    const surProgression = (p) => { if (p >= dernier + 10) { dernier = p; process.stderr.write(`Transcription de la scène « ${s.id} » : ${p} %\n`); } };
+    const t = await transcrirePrise({ projet, relatif: s.voix.fichier, texte: s.voix.texte, whisper, surProgression });
     faites.push({ id: s.id, calage: t.ok ? 'whisper' : 'lettres' });
     if (!t.ok) avertissements.push(`Scène « ${s.id} » : ${t.message}`);
   }
@@ -197,20 +200,28 @@ async function transcrireProjet({ dossier, scene: id, whisper = whisperParDefaut
 }
 
 /** Voix du système -> WAV. -> { ok, message? } */
-function synthetiserSysteme(texte, sortie) {
+function synthetiserSysteme(texte, sortie, { plateforme = process.platform, lancer = spawnSync } = {}) {
   let r;
-  if (process.platform === 'win32') {
+  // Texte passé par un fichier : jamais pris pour une option (« -v… ») ni coupé par les guillemets.
+  const fichierTexte = `${sortie}.txt`;
+  if (plateforme !== 'win32') fs.writeFileSync(fichierTexte, texte);
+  if (plateforme === 'win32') {
     const script = 'Add-Type -AssemblyName System.Speech; $s = New-Object System.Speech.Synthesis.SpeechSynthesizer; '
       + '$v = $s.GetInstalledVoices() | Where-Object { $_.VoiceInfo.Culture.Name -like "fr*" } | Select-Object -First 1; '
       + 'if ($v) { $s.SelectVoice($v.VoiceInfo.Name) }; $s.SetOutputToWaveFile($env:PM_SORTIE); $s.Speak($env:PM_TEXTE); $s.Dispose()';
-    r = spawnSync('powershell', ['-NoProfile', '-NonInteractive', '-Command', script], { env: { ...process.env, PM_TEXTE: texte, PM_SORTIE: sortie }, encoding: 'utf8', windowsHide: true, timeout: 60000 });
-  } else if (process.platform === 'darwin') {
-    r = spawnSync('say', ['-v', 'Thomas', '-o', sortie, '--data-format=LEI16@48000', texte], { encoding: 'utf8', timeout: 60000 });
+    r = lancer('powershell', ['-NoProfile', '-NonInteractive', '-Command', script], { env: { ...process.env, PM_TEXTE: texte, PM_SORTIE: sortie }, encoding: 'utf8', windowsHide: true, timeout: 60000 });
+  } else if (plateforme === 'darwin') {
+    // Voix françaises de macOS, puis la voix par défaut.
+    for (const voix of ['Thomas', 'Amélie', null]) {
+      r = lancer('say', [...(voix ? ['-v', voix] : []), '-o', sortie, '--data-format=LEI16@48000', '-f', fichierTexte], { encoding: 'utf8', timeout: 60000 });
+      if (!r.error && r.status === 0 && fs.existsSync(sortie)) break;
+    }
   } else {
-    r = spawnSync('espeak-ng', ['-v', 'fr', '-w', sortie, texte], { encoding: 'utf8', timeout: 60000 });
+    r = lancer('espeak-ng', ['-v', 'fr', '-w', sortie, '-f', fichierTexte], { encoding: 'utf8', timeout: 60000 });
   }
+  fs.rmSync(fichierTexte, { force: true });
   if (r.error || r.status !== 0 || !fs.existsSync(sortie)) {
-    return { ok: false, message: process.platform === 'linux'
+    return { ok: false, message: plateforme === 'linux'
       ? 'aucune voix du système : installez espeak-ng (ex. « sudo apt install espeak-ng »)'
       : 'aucune voix du système n\'a pu lire le texte' };
   }
@@ -222,13 +233,16 @@ async function voixProvisoire({ dossier, scene: id, synthetiser = synthetiserSys
   const projet = path.resolve(dossier);
   const { deroule, erreurs } = lireDeroule(projet);
   if (erreurs.length) return { ok: false, scenes: [], message: `Le déroulé contient des erreurs : ${erreurs.join(' ')}` };
-  let scenes = deroule.scenes.filter((s) => s.voix && s.voix.texte);
+  // Sans --scene : les scènes qui ont déjà une vraie prise la gardent.
+  let scenes = deroule.scenes.filter((s) => s.voix && s.voix.texte && !s.voix.fichier);
   if (id) {
     const r = sceneAvecTexte(deroule, id);
     if (!r.scene) return { ok: false, scenes: [], message: r.message };
     scenes = [r.scene];
   }
+  if (!scenes.length && deroule.scenes.some((s) => s.voix && s.voix.texte)) return { ok: true, scenes: [], message: 'Toutes les scènes qui ont un texte ont déjà leur vraie voix : rien à faire.' };
   if (!scenes.length) return { ok: false, scenes: [], message: 'Aucune scène n\'a de texte de voix (« voix.texte ») dans le déroulé.' };
+  sauvegarder(projet);
   const faites = [];
   const travail = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-voix-'));
   try {
