@@ -246,6 +246,16 @@ function creerRoutesAtelier(projet, { dossierStyles, bibliotheque = BIBLIOTHEQUE
     if (!graineValide(c.graine)) return repondre(res, 400, { message: 'Graine : nombre entier positif attendu.' });
     const v = sceneVisee(c);
     if (v.statut) return refuser(res, v);
+    // Compilés avant d'être écrits, comme à l'assemblage : un réglage refusé n'entre pas dans la scène.
+    const deroule = lireLeDeroule();
+    const d = decrireEffet(c.scene, balisesEffets(v.html)[c.ordre], { charte: charte(deroule), temps: dureeTemps(deroule), charger: charger() });
+    if (!d.recette) return repondre(res, 422, { message: d.erreur, erreurs: [{ chemin: 'effet', message: d.erreur }] });
+    const graine = c.graine === null || c.graine === undefined ? graineParDefaut(c.scene, c.ordre, d.nom) : c.graine;
+    const compile = R.compiler(d.recette, { reglages, charte: charte(deroule), dur: d.dur, graine });
+    if (!compile.ok) {
+      const { erreurs } = compile;
+      return repondre(res, 422, { message: `Réglages refusés : ${erreurs.map((x) => x.message).join(' ')}`, erreurs });
+    }
     const nouveau = modifierEffet(v.html, c.ordre, {
       'data-reglages': reglages || null,
       'data-graine': c.graine === null || c.graine === undefined ? null : String(c.graine),
