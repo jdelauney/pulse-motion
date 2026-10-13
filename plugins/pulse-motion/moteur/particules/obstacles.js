@@ -11,6 +11,7 @@
  *   versLocal(r, p), versMonde(r, l)
  * Table d'un effet : construireTable({ largeurCqh, solRecette, propres, voisins, video }) -> { entrees, actif, sol },
  *   solDe(effet), emballerMonde(entrees, nGrille, largeurCqh, tans) -> ArrayBuffer (uniforme « Monde » du WGSL)
+ *   largeursCases(entrees, cadres), effetsAnterieurs(liste, i) : profils d'empilement (« effet » dans construireTable)
  *   attacherFormes(table, couchePour) : formes exactes (type 4) attachées à leur couche de champ de distance
  * Coordonnées en cqh depuis le coin haut gauche de la scène, angles en degrés.
  *
@@ -176,6 +177,36 @@
     return [r.centre[0] + c * l[0] - s * l[1], r.centre[1] + s * l[0] + c * l[1]];
   }
 
+  /** Profils de hauteur : une entrée (pas un mur) ciblée par un émetteur qui empile ; talus du premier ; 8 au plus. */
+  function attribuerProfils(table, effet) {
+    var empileurs = effet.emetteurs.filter(function (em) { return em.collisions && em.collisions.empiler; });
+    table.entrees.forEach(function (e) {
+      if (table.tans.length >= MAX_PROFILS || e.categorie === CATEGORIES.murs || e.categorie === 0) return;
+      for (var i = 0; i < empileurs.length; i++) {
+        if ((empileurs[i].collisions.masque & e.categorie) !== 0) {
+          e.profil = table.tans.length;
+          table.tans.push(Math.tan(empileurs[i].collisions.talus * Math.PI / 180));
+          return;
+        }
+      }
+    });
+    return table;
+  }
+
+  /** Largeur de case (cqh) de chaque profil, d'après les repères des entrées à la fin du pas. */
+  function largeursCases(entrees, cadres) {
+    var l = new Float32Array(MAX_PROFILS);
+    entrees.forEach(function (e, i) { if (e.profil !== AUCUN) l[e.profil] = 2 * cadres[i].demi[0] / CASES; });
+    return l;
+  }
+
+  /** Effets finis au plus tard au début de l'effet i, triés par début puis par rang (cumul des couches de la vidéo). */
+  function effetsAnterieurs(liste, i) {
+    var r = [];
+    liste.forEach(function (x, j) { if (j !== i && x.fin <= liste[i].debut) r.push(j); });
+    return r.sort(function (a, b) { return liste[a].debut - liste[b].debut || a - b; });
+  }
+
   /** Table des obstacles d'un effet (ordre fixe : il donne l'indice des obstacles dans les contacts). */
   function construireTable(o) {
     var entrees = [];
@@ -197,7 +228,9 @@
     video.forEach(function (d, i) { ajouter(TYPE_GENRE[d.type], CATEGORIES.elements, { fixe: d, video: i }); });
     var solRecette = o.solRecette === undefined ? null : o.solRecette;
     var voisins = o.voisins || [];
-    return { entrees: entrees, actif: propres.length + voisins.length + video.length > 0 || solRecette !== null, sol: solRecette === null ? 100 : solRecette };
+    var table = { entrees: entrees, actif: propres.length + voisins.length + video.length > 0 || solRecette !== null, sol: solRecette === null ? 100 : solRecette, tans: [] };
+    if (o.effet) attribuerProfils(table, o.effet);
+    return table;
   }
 
   /** Sol de l'effet : celui du premier émetteur qui le décale, sinon null (bord bas). */
@@ -262,6 +295,9 @@
     versMonde: versMonde,
     construireTable: construireTable,
     attacherFormes: attacherFormes,
+    attribuerProfils: attribuerProfils,
+    largeursCases: largeursCases,
+    effetsAnterieurs: effetsAnterieurs,
     solDe: solDe,
     emballerMonde: emballerMonde,
   };
