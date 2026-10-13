@@ -48,7 +48,7 @@
             l.className = 'pm-st-ligne';
             l.setAttribute('data-pm-st', '');
             ligne.forEach(function (m, j) {
-              if (j) l.appendChild(document.createTextNode(' '));
+              if (j) l.appendChild(document.createTextNode(ligne[j - 1].insecable || ' '));
               var s = document.createElement('span');
               s.className = 'pm-st-mot';
               s.textContent = m.w;

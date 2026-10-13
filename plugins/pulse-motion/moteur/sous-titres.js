@@ -23,28 +23,38 @@
 
   function arrondi(x) { return Math.round(x * 1000) / 1000; }
   function longueur(ms) { return ms.map(function (m) { return m.w; }).join(' ').length; }
+  /** Mots d'une ligne remis bout à bout, avec les espaces insécables du texte. */
+  function joindre(l) { return l.map(function (m, j) { return m.w + (j + 1 < l.length ? (m.insecable || ' ') : ''); }).join(''); }
   function cle(m) { return Al.normaliserMot(m.w); }
 
   /** Mots de la scène en temps absolus : ceux de la voix, sinon le texte réparti sur la scène au prorata des lettres. */
   function motsDeScene(s) {
+    var liste = Al.decouperMots(s.texte || '');
     if (s.voix && s.voix.mots && s.voix.mots.length) {
       var d = s.debut + (s.voix.debut || 0);
-      return s.voix.mots.map(function (m) { return { w: m.w, t0: arrondi(d + m.t0), t1: arrondi(d + m.t1) }; });
+      // Mots de la voix dans l'ordre du texte : ils reprennent sa graphie (espaces insécables comprises).
+      var memes = liste.length === s.voix.mots.length;
+      return s.voix.mots.map(function (m, k) {
+        var mot = { w: memes ? liste[k].w : m.w, t0: arrondi(d + m.t0), t1: arrondi(d + m.t1) };
+        if (memes && liste[k].insecable) mot.insecable = liste[k].insecable;
+        return mot;
+      });
     }
-    var liste = Al.decouperMots(s.texte || '');
     var a = s.debut + MARGE_SANS_VOIX, b = Math.max(a, s.fin - MARGE_SANS_VOIX);
     var total = liste.reduce(function (n, m) { return n + Math.max(1, m.cles[0].length); }, 0), cumul = 0;
     return liste.map(function (m) {
       var t0 = a + (b - a) * cumul / total;
       cumul += Math.max(1, m.cles[0].length);
-      return { w: m.w, t0: arrondi(t0), t1: arrondi(a + (b - a) * cumul / total) };
+      var mot = { w: m.w, t0: arrondi(t0), t1: arrondi(a + (b - a) * cumul / total) };
+      if (m.insecable) mot.insecable = m.insecable;
+      return mot;
     });
   }
 
   /** Note d'une coupe juste avant le mot i (0 : interdite : après un article, ou avant une ponctuation isolée). */
   function note(ms, i) {
     if (i <= 0 || i >= ms.length) return 0;
-    if (!cle(ms[i])) return 0;
+    if (!cle(ms[i]) || ms[i - 1].insecable) return 0;
     if (ARTICLES.indexOf(cle(ms[i - 1])) >= 0) return 0;
     if (FORTE.test(ms[i - 1].w)) return 4;
     if (FAIBLE.test(ms[i - 1].w)) return 3;
@@ -148,13 +158,14 @@
     var p = function (x, n) { return String(x).padStart(n, '0'); };
     return p(h, 2) + ':' + p(m, 2) + ':' + p(s, 2) + separateur + p(ms % 1000, 3);
   }
-  function texteCarton(c) { return c.lignes.map(function (l) { return l.map(function (m) { return m.w; }).join(' '); }).join('\n'); }
+  function texteCarton(c) { return c.lignes.map(joindre).join('\n'); }
+  function echapper(t) { return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
   function versSRT(liste) {
     return liste.map(function (c, i) { return (i + 1) + '\n' + horodatage(c.debut, ',') + ' --> ' + horodatage(c.fin, ',') + '\n' + texteCarton(c) + '\n'; }).join('\n');
   }
   function versVTT(liste) {
-    return 'WEBVTT\n\n' + liste.map(function (c) { return horodatage(c.debut, '.') + ' --> ' + horodatage(c.fin, '.') + '\n' + texteCarton(c) + '\n'; }).join('\n');
+    return 'WEBVTT\n\n' + liste.map(function (c) { return horodatage(c.debut, '.') + ' --> ' + horodatage(c.fin, '.') + '\n' + echapper(texteCarton(c)) + '\n'; }).join('\n');
   }
 
   return { LARGEUR: LARGEUR, motsDeScene: motsDeScene, cartons: cartons, versSRT: versSRT, versVTT: versVTT };
