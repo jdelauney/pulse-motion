@@ -226,3 +226,18 @@ test('creer : la question du son, textes dits, voix provisoire, sous-titres, Whi
   assert.match(e['allowed-tools'], /Bash\(winget install --id Python\.Python\.3\.12 -e --accept-source-agreements --accept-package-agreements\)/);
   assert.match(e['allowed-tools'], /Bash\(brew install python\)/);
 });
+
+test('guidage du son : animateur (mot:, data-son), retoucher (lignes du son), exporter (provisoire, srt/vtt)', () => {
+  const animateur = lire('agents', 'animateur.md');
+  assert.match(animateur, /mot:/);
+  assert.match(animateur, /data-son/);
+  assert.match(animateur, /seulement.*prise|prise.*seulement/);
+  assert.match(animateur, /son-sous-voix|pendant un mot/);
+  assert.match(animateur, /pulse-motion reference audio/);
+  const retoucher = lire('skills', 'retoucher', 'SKILL.md');
+  for (const r of [/\| Voix \|/, /\| Musique \|/, /\| Bruitages \|/, /\| Sous-titres \|/, /pulse-motion voix studio <id> \./, /graine/, /pulse-motion voix transcrire \./]) assert.match(retoucher, r);
+  const exporter = lire('skills', 'exporter', 'SKILL.md');
+  assert.match(exporter, /--avec-provisoire/);
+  assert.match(exporter, /\.srt/);
+  assert.match(exporter, /\.vtt/);
+});
