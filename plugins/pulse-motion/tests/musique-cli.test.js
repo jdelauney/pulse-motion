@@ -25,3 +25,12 @@ test('sans musique : message', { skip: !navigateur && 'Chrome absent' }, async (
   assert.equal(r.ok, false);
   assert.match(r.message, /pas de musique/);
 });
+
+test('musique ecouter --ouvrir : le fichier fabriqué est ouvert', { skip: !navigateur && 'Chrome absent' }, async () => {
+  const dir = copierProjet('projet-simple');
+  modifierDeroule(dir, (d) => { d.musique = { generee: 'calme' }; });
+  const ouverts = [];
+  const r = await ecouterMusique({ dossier: dir, dossierStyles: STYLES, ouvrir: true, ouvrirFichier: (f) => ouverts.push(f) });
+  assert.equal(r.ok, true, r.message);
+  assert.deepEqual(ouverts, [path.join(dir, 'sortie', 'musique.wav')]);
+});

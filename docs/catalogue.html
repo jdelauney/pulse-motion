@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="fr" data-racine="">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Catalogue – Wiki Pulse Motion</title>
+<meta name="description" content="Ce que Pulse Motion livre : six styles avec leurs polices et leur signature, huit scènes toutes faites par style, douze effets de particules, quatre formats d'image.">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/animations.css">
+<script src="js/donnees.js" defer></script>
+<script src="js/gabarit.js" defer></script>
+<script src="js/animations.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<div class="mise-en-page">
+<nav class="laterale" aria-label="Sur cette page" data-laterale="sommaire"></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille">Ce qui est livré</p>
+<h1>Catalogue</h1>
+<p class="chapo">Les styles, les scènes, les effets et les formats livrés avec Pulse Motion. Vous n'avez pas à les connaître par cœur : Pulse Motion vous propose ceux qui conviennent à votre vidéo. Cette page vous aide à savoir quoi demander.</p>
+</header>
+
+<!-- ===================================================================================================== -->
+<section id="styles">
+<h2>Les six styles</h2>
+<p>Un style, c'est l'allure de la vidéo : ses formes, ses polices, sa façon de bouger. Votre <a href="concepts.html#charte">charte</a> (logo, couleurs, polices) s'applique par-dessus. Pour changer de style en cours de route : « passe en style éditorial ». Pour créer le vôtre : <a href="commandes/style.html"><code>/pulse-motion:style</code></a>.</p>
+<ul class="grille-cartes">
+<li><div class="carte"><span class="pastille">posé · lisible · rassurant</span><span class="carte-titre carte-titre-espace">clair-pedagogique</span><span class="carte-texte">Fond clair, titres à la couleur primaire, accents à la couleur d'accent. Pour expliquer : formation, présentation. Polices Figtree et Inter. Ton clair ou sombre.</span></div></li>
+<li><div class="carte"><span class="pastille">accueillant · doux · humain</span><span class="carte-titre carte-titre-espace">chaleureux</span><span class="carte-texte">Tons chauds (terre cuite, sauge, pêche), formes rondes, galets qui respirent. Pour un service grand public, une association, la santé. Polices Fredoka et Nunito Sans. Ton clair.</span></div></li>
+<li><div class="carte"><span class="pastille">élégant · exigeant · calme</span><span class="carte-titre carte-titre-espace">editorial</span><span class="carte-texte">La typographie porte la vidéo, comme un magazine : filets fins qui se tracent, titres très grands, mouvements lents. Pour raconter. Polices Fraunces et Instrument Sans. Ton clair (crème) ou sombre.</span></div></li>
+<li><div class="carte"><span class="pastille">audacieux · rapide · percutant</span><span class="carte-titre carte-titre-espace">energique</span><span class="carte-texte">La couleur partout, des aplats, des titres géants en capitales qui tombent et rebondissent. Pour les réseaux, un lancement. Polices Anton et Archivo. Ton clair (jaune) ou sombre.</span></div></li>
+<li><div class="carte"><span class="pastille">net · sûr · essentiel</span><span class="carte-titre carte-titre-espace">minimal</span><span class="carte-texte">Grille suisse, beaucoup d'espace, typographie démesurée, un seul détail d'accent par scène. Pour un produit, des résultats, une décision. Police Schibsted Grotesk. Ton clair ou sombre.</span></div></li>
+<li><div class="carte"><span class="pastille">précis · moderne · technique</span><span class="carte-titre carte-titre-espace">tech-sombre</span><span class="carte-texte">Fond sombre, grille qui glisse, texte qui s'écrit au clavier avec son curseur. Pour une démo de logiciel, des données, un tutoriel technique. Polices Space Grotesk et JetBrains Mono. Ton sombre ou clair.</span></div></li>
+</ul>
+<h3>Quel style pour quel genre ?</h3>
+<table>
+<thead><tr><th>Genre</th><th>Proposés en premier</th><th>Le contraste proposé en troisième</th></tr></thead>
+<tbody>
+<tr><td>Formation</td><td>clair-pedagogique, chaleureux</td><td>minimal</td></tr>
+<tr><td>Présentation de produit</td><td>minimal, tech-sombre</td><td>energique</td></tr>
+<tr><td>Storytelling</td><td>editorial, chaleureux</td><td>tech-sombre</td></tr>
+<tr><td>Publication sociale</td><td>energique, minimal</td><td>editorial</td></tr>
+</tbody>
+</table>
+<p>Vos styles personnels s'ajoutent à cette liste : un style personnel fait pour ce genre est proposé juste après les deux premiers, à la place du style contrasté. Seuls les styles vérifiés depuis leur dernière modification sont proposés.</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="scenes">
+<h2>Les scènes toutes faites</h2>
+<p>Chaque style livre les mêmes huit scènes, chacune dessinée à sa façon. Chacune a des textes à remplir, avec une <strong>longueur maximale</strong> : au-delà, le texte déborde ou la scène devient trop courte pour être lue.</p>
+<table>
+<thead><tr><th>Scène</th><th>Rôle</th><th>Textes (longueur maximale, en caractères)</th></tr></thead>
+<tbody>
+<tr><td><code>titre</code></td><td>Ouvrir la vidéo ou un chapitre</td><td>étiquette (25), titre (40), sous-titre (50)</td></tr>
+<tr><td><code>liste</code></td><td>2 à 4 points révélés un par un</td><td>titre (40), 2 à 4 points (45 chacun)</td></tr>
+<tr><td><code>chiffre</code></td><td>Un chiffre clé qui compte jusqu'à sa valeur</td><td>titre (40), unité (3), légende (60)</td></tr>
+<tr><td><code>comparaison</code></td><td>Deux colonnes : avant / après, à faire / à éviter</td><td>titre (40), deux titres de colonne (20), deux textes (60)</td></tr>
+<tr><td><code>etape</code></td><td>Une étape numérotée d'une procédure</td><td>numéro (2), titre (40), texte (80)</td></tr>
+<tr><td><code>alerte</code></td><td>Un point de vigilance, une erreur à éviter</td><td>titre (40), texte (80)</td></tr>
+<tr><td><code>schema</code></td><td>Trois étapes reliées par des flèches</td><td>titre (40), trois étiquettes (25)</td></tr>
+<tr><td><code>conclusion</code></td><td>Le message à retenir et le logo</td><td>titre (40), sous-titre (50)</td></tr>
+</tbody>
+</table>
+<p class="legende">Le style <code>energique</code> demande des textes plus courts : un titre de 28 caractères, des points de 32. En vertical, les colonnes, les étapes et les schémas s'empilent.</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="effets">
+<h2>Les effets de particules</h2>
+<p>Un effet <strong>sert un propos</strong> : mettre en valeur un chiffre, célébrer une conclusion, poser une ambiance. Jamais pour décorer. Pulse Motion décide lui-même des scènes qui en reçoivent : au plus deux effets en même temps à l'écran, et un ou deux dans toute une formation courte.</p>
+<table>
+<thead><tr><th>Effet</th><th>Quand l'utiliser</th></tr></thead>
+<tbody>
+<tr><td><code>etincelles</code></td><td>Mettre en valeur un chiffre ou un mot à son arrivée, une à deux secondes.</td></tr>
+<tr><td><code>braises</code></td><td>Une ambiance chaude et calme qui monte : la chaleur, l'énergie, la passion.</td></tr>
+<tr><td><code>confettis</code></td><td>Célébrer : conclusion, résultat obtenu, félicitations. Une seule fois par vidéo.</td></tr>
+<tr><td><code>feu-artifice</code></td><td>Une grande célébration : un lancement, une fin de parcours. Plutôt hors formation.</td></tr>
+<tr><td><code>fumee</code></td><td>Une ambiance, un mystère, une chaleur qui s'échappe.</td></tr>
+<tr><td><code>feu</code></td><td>Montrer une combustion, un danger, une urgence.</td></tr>
+<tr><td><code>poussiere</code></td><td>Un fond vivant et discret, qui évite les temps morts.</td></tr>
+<tr><td><code>neige</code></td><td>Le froid, l'hiver, le calme. L'image est déjà garnie de flocons dès le début.</td></tr>
+<tr><td><code>pluie</code></td><td>La météo, l'humidité, une ambiance triste.</td></tr>
+<tr><td><code>paillettes</code></td><td>Une révélation, une nouveauté, la « magie » d'une astuce.</td></tr>
+<tr><td><code>energie</code></td><td>La puissance, la technologie, une idée qui s'allume.</td></tr>
+<tr><td><code>explosion</code></td><td>Une transition choc, une rupture, un « boum ». Très courte.</td></tr>
+</tbody>
+</table>
+<h3>Régler un effet d'une phrase</h3>
+<table>
+<thead><tr><th>Vous dites</th><th>Ce qui change</th></tr></thead>
+<tbody>
+<tr><td>« plus d'étincelles », « moins de confettis »</td><td>Le nombre de particules, doublé ou divisé par deux.</td></tr>
+<tr><td>« plus lent », « plus vif »</td><td>La vitesse.</td></tr>
+<tr><td>« en bleu », « aux couleurs de la marque »</td><td>La couleur : une teinte précise, ou celles de votre charte.</td></tr>
+<tr><td>« fais-les partir autrement »</td><td>Un autre tirage du hasard, même effet.</td></tr>
+<tr><td>« derrière le texte »</td><td>L'effet passe derrière le contenu.</td></tr>
+<tr><td>« plus tard », « plus longtemps »</td><td>Le moment et la durée de l'effet.</td></tr>
+<tr><td>« enlève les confettis », « ajoute de la neige sur l'intro »</td><td>L'effet est retiré ou ajouté.</td></tr>
+</tbody>
+</table>
+<aside class="encadre encadre-conseil"><p><strong>Conseil :</strong> sur un fond clair, la neige et la poussière, blanches par défaut, deviennent invisibles. Pulse Motion les passe à la couleur de votre charte ou à un gris-bleu ; si vous ne les voyez pas, demandez « neige plus visible ».</p></aside>
+<p>Aucun effet ne convient ? Pulse Motion peut en créer un pour votre vidéo, de préférence en partant d'un effet existant (« des étincelles bleues et plus lentes, pour un sujet sur le froid »).</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="formats">
+<h2>Les formats d'image</h2>
+<table>
+<thead><tr><th>Format</th><th>Forme</th><th>Pour</th></tr></thead>
+<tbody>
+<tr><td><strong>16:9</strong></td><td>Paysage</td><td>Formation, présentation, YouTube, plateforme de formation. Le format par défaut.</td></tr>
+<tr><td><strong>9:16</strong></td><td>Vertical</td><td>Stories, Reels, TikTok, Shorts. Choisi pour le genre « social ».</td></tr>
+<tr><td><strong>4:5</strong></td><td>Presque carré, vertical</td><td>Le fil LinkedIn ou Instagram.</td></tr>
+<tr><td><strong>1:1</strong></td><td>Carré</td><td>Le fil des réseaux, quand on veut la même vidéo partout.</td></tr>
+</tbody>
+</table>
+<p>Tous les styles livrés fonctionnent dans les quatre formats : les tailles s'adaptent à la hauteur de l'image. En <strong>9:16</strong>, le contrôle vérifie en plus qu'aucun texte ne passe sous les boutons des réseaux (en haut, en bas, et sur le côté droit).</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="exemple">
+<h2>L'exemple livré</h2>
+<p>Le plugin contient une vidéo d'exemple, <strong>« La chaîne du froid »</strong> : une formation d'une minute, en six scènes, dans le style <code>clair-pedagogique</code>, avec une musique composée, une voix, des sous-titres et des bruitages sur les transitions. C'est elle que suit le <a href="tutoriels/premiere-video.html">tutoriel 1</a>.</p>
+</section>
+
+</article>
+</div>
+</main>
+</body>
+</html>

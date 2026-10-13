@@ -197,6 +197,22 @@ function ouvrirNavigateur(url) {
   spawn(cmd, args, { stdio: 'ignore', detached: true }).unref();
 }
 
+/**
+ * Aperçu du projet : déjà actif (onglet fermé, serveur toujours là), son adresse est rouverte sans second serveur ;
+ * sinon il démarre. -> { url, deja }
+ */
+async function lancerApercu({ dossier, port, ouvrir = false, etat, demarrer = demarrerApercu, ouvrirUrl = ouvrirNavigateur }) {
+  const lireEtat = etat || ((d) => require('./etat.js').etatProjet(d));
+  const actuel = lireEtat(dossier).apercu;
+  if (actuel && actuel.actif && actuel.url) {
+    if (ouvrir) ouvrirUrl(actuel.url);
+    return { url: actuel.url, deja: true };
+  }
+  const { url } = await demarrer({ dossier, port });
+  if (ouvrir) ouvrirUrl(url);
+  return { url, deja: false };
+}
+
 if (require.main === module) {
   const args = process.argv.slice(2);
   const dossier = args.find((a) => !a.startsWith('--'));
@@ -206,13 +222,14 @@ if (require.main === module) {
     console.error('Usage : node scripts/apercu.js <dossier-du-projet> [--port 4321] [--ouvrir]');
     process.exit(2);
   }
-  demarrerApercu({ dossier, port }).then(({ url }) => {
-    console.log(`Aperçu : ${url}`);
-    if (args.includes('--ouvrir')) ouvrirNavigateur(url);
+  lancerApercu({ dossier, port, ouvrir: args.includes('--ouvrir') }).then(({ url, deja }) => {
+    console.log(deja ? `Aperçu déjà ouvert : ${url}` : `Aperçu : ${url}`);
+    // Aperçu déjà actif : ce processus n'a rien à servir.
+    if (deja) process.exit(0);
   }, (e) => {
     console.error(e.message);
     process.exit(1);
   });
 }
 
-module.exports = { demarrerApercu, injecterApercu, ouvrirNavigateur };
+module.exports = { demarrerApercu, lancerApercu, injecterApercu, ouvrirNavigateur };
