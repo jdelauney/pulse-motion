@@ -21,6 +21,10 @@
  *   (balise en erreur), si WebGPU manque ou si une texture est illisible
  * M.particules.decrire(idScene) -> [{ ordre, calque, nom, debut, fin, rythme, actif, desactive, collisions }]   fenêtres (atelier)
  * M.particules.raison      message du moteur quand WebGPU est indisponible (null sinon)
+ * M.particules.alertes     messages d'exécution (masque vide d'une forme exacte…)
+ * Formes exactes : masque de chaque élément data-obstacle="forme" à la fin de son minutage (M.figer.masque), une fois,
+ * après la porte de disponibilité (polices chargées) ; champs de distance sur le GPU (P.creerFormes), recréés après une
+ * perte du GPU (masques gardés) ; refaits après un changement de polices.
  * ordre : rang de la balise parmi les data-effet de la scène, effets en erreur compris (comme l'assemblage).
  *
  * Réglages d'un calque (bloom, seuil, tons) : ceux de la recette au bloom le plus fort parmi tous les
@@ -39,7 +43,7 @@
   const SANS_GPU = 'Effet non affiché : WebGPU indisponible. Ouvrez la vidéo dans Chrome ou Edge récent.';
 
   const GARDE_GPU = 10000;
-  const etat = { gpu: null, rendu: null, scenes: [], obstacles: new Map(), t: 0, rendu_t: null, pret: Promise.resolve(), disponible: false, raison: null };
+  const etat = { gpu: null, rendu: null, scenes: [], obstacles: new Map(), masques: null, formes: null, alertes: [], t: 0, rendu_t: null, pret: Promise.resolve(), disponible: false, raison: null };
 
   function panneau(el, message) {
     if (el.querySelector(':scope > .pm-effet-panneau')) return;
@@ -133,9 +137,62 @@
       const voisins = voisinsDe(fx.info.id).flatMap((id) => (etat.obstacles.get(id) || []).filter((d) => d.video && d.el));
       fx.largeurCqh = 100 * fx.section.clientWidth / Math.max(1, fx.section.clientHeight);
       fx.table = O.construireTable({ largeurCqh: fx.largeurCqh, solRecette: O.solDe(fx.effet), propres, voisins, video: M.donnees.obstaclesVideo || [] });
+      O.attacherFormes(fx.table, couchePour);
       fx.reperes = new Map();
     }
-    return { entrees: fx.table.entrees, largeurCqh: fx.largeurCqh, actif: fx.table.actif };
+    return { entrees: fx.table.entrees, largeurCqh: fx.largeurCqh, actif: fx.table.actif, formes: etat.formes ? { vue: etat.formes.vue } : null };
+  }
+
+  /** Couche du champ de distance d'une forme : numéro, null (masque vide), undefined (pas encore calculée). */
+  function couchePour(decl) {
+    if (!etat.masques || !etat.masques.has(decl.index)) return undefined;
+    if (!etat.masques.get(decl.index)) return null;
+    return etat.formes ? etat.formes.couches.get(decl.index) : undefined;
+  }
+
+  function alerter(message) {
+    etat.alertes.push(message);
+    console.warn('[Pulse Motion] ' + message);
+  }
+
+  /** Masques des formes exactes de toutes les scènes, chacun à la fin du minutage de son élément. */
+  async function calculerMasques() {
+    const masques = new Map();
+    const decls = [];
+    etat.obstacles.forEach((liste) => liste.forEach((d) => { if (d.genre === 'forme' && d.el) decls.push(d); }));
+    for (const d of decls) {
+      const info = M.minutage.scenes.find((s) => s.id === d.scene);
+      const cle = d.el.getAttribute('data-pm-cle');
+      const temps = cle ? (M.minutage.elements[d.scene] || {})[cle] : null;
+      const tFin = Math.min(temps ? temps.fin : info.fin, info.fin - 1e-6);
+      const section = d.el.closest('#pm-scene > section');
+      M.rendreScene(d.scene, tFin);
+      let promesse = null;
+      affichee(section, () => { promesse = M.figer.masque(d.el); });
+      M.rendreScene(d.scene, etat.t);
+      const m = await promesse;
+      if (!m.alpha.some((a) => a >= 128)) {
+        alerter('Scène « ' + d.scene + ' » : un obstacle de forme exacte est invisible à la fin de son minutage (masque vide) ; il est ignoré.');
+        masques.set(d.index, null);
+      } else {
+        m.hauteurCqh = m.hauteurPx * 100 / Math.max(1, section.clientHeight);
+        masques.set(d.index, m);
+      }
+    }
+    return masques;
+  }
+
+  /** Champs de distance des formes sur le device (masques calculés une fois) ; tables des effets refaites. */
+  async function preparerFormes(device) {
+    if (!etat.masques) etat.masques = await calculerMasques();
+    if (etat.formes) { try { etat.formes.texture.destroy(); } catch (e) { /* device perdu */ } }
+    etat.formes = null;
+    const indices = Array.from(etat.masques.keys()).filter((i) => etat.masques.get(i));
+    if (indices.length) {
+      const f = P.creerFormes(device, indices.map((i) => etat.masques.get(i)));
+      etat.formes = { texture: f.texture, vue: f.vue, couches: new Map(indices.map((i, k) => [i, k])) };
+    }
+    etat.scenes.forEach((sc) => sc.effets.forEach((fx) => { fx.table = null; fx.reperes = new Map(); liberer(fx); }));
   }
 
   /** Exécute fn avec la section affichée (une scène masquée à l'instant courant n'a pas de boîtes). */
@@ -360,6 +417,8 @@
         etat.scenes.forEach((sc) => sc.effets.forEach((fx) => {
           if (fx.effet.emetteurs.some((em) => illisibles.has(em.rendu.textureImage))) desactiver(fx, 'texture illisible');
         }));
+        return preparerFormes(gpu.device);
+      }).then(() => {
         etat.gpu = gpu;
         etat.rendu = rendu;
         etat.disponible = true;
@@ -382,6 +441,7 @@
     etat.rendu = null;
     etat.rendu_t = null;
     etat.disponible = false;
+    etat.formes = null; // texture de l'ancien device ; les masques (processeur) sont gardés
     etat.scenes.forEach((sc) => {
       sc.echec = false;
       sc.effets.forEach(liberer);
@@ -389,12 +449,17 @@
     demarrerGPU();
   }
 
-  /** Une police chargée après coup change les mesures : on les refait. */
+  /** Une police chargée après coup change les mesures et les masques des formes : on les refait. */
   function polices_changees() {
     if (!etat.gpu) return;
+    const device = etat.gpu.device;
     etat.scenes.forEach((sc) => sc.effets.forEach((fx) => { fx.zones.clear(); fx.table = null; fx.reperes = new Map(); liberer(fx); }));
-    etat.rendu_t = null;
-    rendre(etat.t);
+    etat.masques = null;
+    etat.alertes = [];
+    etat.pret = preparerFormes(device).then(() => {
+      etat.rendu_t = null;
+      rendre(etat.t);
+    });
   }
 
   /** Seek : rend t et attend le GPU ; si le GPU est perdu entre-temps, recommence sur le nouveau. */
@@ -534,6 +599,7 @@
     get disponible() { return etat.disponible; },
     get device() { return etat.gpu ? etat.gpu.device : null; },
     get raison() { return etat.disponible ? null : etat.raison; },
+    get alertes() { return etat.alertes.slice(); },
     remplacerEffet,
     decrire(idScene) {
       const sc = trouver(idScene);
