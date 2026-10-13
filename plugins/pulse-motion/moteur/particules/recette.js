@@ -179,10 +179,11 @@
     }, { exemple: { nom: 'emetteur', naissance: { debit: 50, vie: [0.5, 1] } } }), { requis: true }),
   });
 
-  function ErreurRecette(regle, message) {
+  function ErreurRecette(regle, message, chemin) {
     var e = new Error(message);
     e.name = 'ErreurRecette';
     e.regle = regle;
+    if (chemin !== undefined) e.chemin = chemin;
     return e;
   }
 
@@ -278,6 +279,39 @@
     return [versLineaire(c[0]), versLineaire(c[1]), versLineaire(c[2]), c[3]];
   }
 
+  // ---- Contrôle des champs ----
+
+  /** Chemin d'un élément de liste : émetteur par nom (comme le compilateur), sinon par rang. */
+  function cheminElement(chemin, x, i) {
+    var nom = estObjet(x) && typeof x.nom === 'string' && /^[a-z0-9-]+$/.test(x.nom) ? x.nom : i;
+    return chemin + '[' + nom + ']';
+  }
+
+  /** Refuse tout champ absent du schéma ; les types et les valeurs restent l'affaire du compilateur. */
+  function verifierChamps(v, n, chemin, invalide) {
+    if (!n) return;
+    if (n.type === 'objet') {
+      if (!estObjet(v)) return; // raccourci, ou type faux : le compilateur le dit
+      var champs = n.champs;
+      if (n.variantes) {
+        var t = v[n.variantes.cle];
+        if (typeof t !== 'string' || !Object.prototype.hasOwnProperty.call(n.variantes.types, t)) return; // type inconnu : le compilateur liste les types
+        champs = Object.assign({}, n.champs, n.variantes.types[t].champs);
+      }
+      Object.keys(v).forEach(function (k) {
+        var c = chemin ? chemin + '.' + k : k;
+        if (!Object.prototype.hasOwnProperty.call(champs, k)) throw invalide(c, 'champ inconnu (champs possibles : ' + Object.keys(champs).join(', ') + ')');
+        verifierChamps(v[k], champs[k], c, invalide);
+      });
+    } else if (n.type === 'liste') {
+      if (!Array.isArray(v)) return;
+      v.forEach(function (x, i) { verifierChamps(x, n.element, cheminElement(chemin, x, i), invalide); });
+    } else if (n.type === 'dictionnaire') {
+      if (!estObjet(v)) return;
+      Object.keys(v).forEach(function (k) { verifierChamps(v[k], n.element, chemin + '.' + k, invalide); });
+    }
+  }
+
   // ---- Compilation ----
 
   function rad(d) { return d * Math.PI / 180; }
@@ -313,42 +347,44 @@
       var p = possede(params, nom) ? params[nom] : undefined;
       var v = reglages[nom];
       if (!p) {
-        erreurs.push('« ' + nom + ' » n\'est pas un réglage de l\'effet « ' + recette.nom + ' » (réglages : ' + (Object.keys(params).join(', ') || 'aucun') + ').');
+        erreurs.push({ chemin: 'reglages.' + nom, message: '« ' + nom + ' » n\'est pas un réglage de l\'effet « ' + recette.nom + ' » (réglages : ' + (Object.keys(params).join(', ') || 'aucun') + ').' });
         return;
       }
       if (p.type === 'couleur') {
-        try { couleurs[nom] = resoudreCouleur(v, { charte: charte }); } catch (e) { erreurs.push('réglage « ' + nom + ' » : ' + e.message + '.'); }
+        try { couleurs[nom] = resoudreCouleur(v, { charte: charte }); } catch (e) { erreurs.push({ chemin: 'reglages.' + nom, message: 'réglage « ' + nom + ' » : ' + e.message + '.' }); }
         return;
       }
       var x = Number(v);
-      if (v === '' || !isFinite(x)) { erreurs.push('réglage « ' + nom + ' » : « ' + v + ' » n\'est pas un nombre.'); return; }
-      if (p.min !== undefined && x < p.min) { erreurs.push('réglage « ' + nom + ' » : ' + x + ' est sous le minimum ' + p.min + '.'); return; }
-      if (p.max !== undefined && x > p.max) { erreurs.push('réglage « ' + nom + ' » : ' + x + ' est au-delà du maximum ' + p.max + '.'); return; }
+      if (v === '' || !isFinite(x)) { erreurs.push({ chemin: 'reglages.' + nom, message: 'réglage « ' + nom + ' » : « ' + v + ' » n\'est pas un nombre.' }); return; }
+      if (p.min !== undefined && x < p.min) { erreurs.push({ chemin: 'reglages.' + nom, message: 'réglage « ' + nom + ' » : ' + x + ' est sous le minimum ' + p.min + '.' }); return; }
+      if (p.max !== undefined && x > p.max) { erreurs.push({ chemin: 'reglages.' + nom, message: 'réglage « ' + nom + ' » : ' + x + ' est au-delà du maximum ' + p.max + '.' }); return; }
       nombres[nom] = x;
     });
     return { nombres: nombres, couleurs: couleurs, erreurs: erreurs };
   }
 
   /**
-   * compiler(recette, { reglages, charte, dur, graine }) -> { ok, effet, erreurs: [{ regle, message }] }
-   * La recette est déjà résolue (resoudre). Arrêt à la première erreur de structure ;
-   * toutes les erreurs de réglage sont listées.
+   * compiler(recette, { reglages, charte, dur, graine }) -> { ok, effet, erreurs: [{ regle, message, chemin }] }
+   * La recette est déjà résolue (resoudre). Champs hors du SCHEMA refusés ; arrêt à la première erreur de
+   * structure ; toutes les erreurs de réglage sont listées. chemin : champ en cause (emetteurs[gerbe].naissance.vie,
+   * reglages.nombre), '' si aucun.
    */
   function compiler(recette, options) {
     var o = options || {};
     var nomEffet = recette && recette.nom ? recette.nom : '?';
     var prefixe = 'Effet « ' + nomEffet + ' »';
     function invalide(chemin, message) {
-      return ErreurRecette('effet-invalide', prefixe + (chemin ? ', ' + chemin : '') + ' : ' + message + '.');
+      return ErreurRecette('effet-invalide', prefixe + (chemin ? ', ' + chemin : '') + ' : ' + message + '.', chemin || '');
     }
     try {
       if (!estObjet(recette)) throw invalide('', 'objet JSON attendu');
       if (recette.version !== 1) throw invalide('', '« version » doit valoir 1');
+      verifierChamps(recette, SCHEMA, '', invalide);
       var reg = analyserReglages(o.reglages);
       var vp = valeursParametres(recette, reg.valeurs, o.charte, invalide);
-      var erreursReglages = reg.erreurs.concat(vp.erreurs);
+      var erreursReglages = reg.erreurs.map(function (m) { return { chemin: 'reglages', message: m }; }).concat(vp.erreurs);
       if (erreursReglages.length) {
-        return { ok: false, effet: null, erreurs: erreursReglages.map(function (m) { return { regle: 'reglage-invalide', message: prefixe + ' : ' + m }; }) };
+        return { ok: false, effet: null, erreurs: erreursReglages.map(function (x) { return { regle: 'reglage-invalide', message: prefixe + ' : ' + x.message, chemin: x.chemin }; }) };
       }
       var dur = o.dur > 0 ? o.dur : 1;
       var valeurs = Object.create(null);
@@ -729,7 +765,7 @@
       emetteurs.forEach(function (e) { delete e.espacement; delete e.gigue; delete e.finNaissances; });
       return { ok: true, effet: effet, erreurs: [] };
     } catch (e) {
-      if (e && e.regle) return { ok: false, effet: null, erreurs: [{ regle: e.regle, message: e.message }] };
+      if (e && e.regle) return { ok: false, effet: null, erreurs: [{ regle: e.regle, message: e.message, chemin: e.chemin || '' }] };
       throw e;
     }
   }
