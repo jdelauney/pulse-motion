@@ -14,6 +14,7 @@ const TAILLE_MAX = 10 * 1024 * 1024;
 
 function pageAvecMesure(html, script, jeton) {
   const envoi = `<script>(function () {
+  M.sansSon = true;
   function envoyer(objet) {
     return fetch('/pm-resultat/${jeton}', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(objet) });
   }

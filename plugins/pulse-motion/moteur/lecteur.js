@@ -91,7 +91,8 @@
       return { attendu: son.attendu, pret: !!son.tampon, enLecture: !!son.source, coupe: son.coupe,
         position: son.source ? son.debutT + son.contexte.currentTime - son.debutContexte : null };
     };
-    setTimeout(function () { if (!(M.enCapture && M.enCapture())) preparerSon(); }, 1000);
+    // Pas de préparation d'avance en capture, ni dans la page du contrôle (M.sansSon) : le rendu du son y prendrait le temps des mesures.
+    setTimeout(function () { if (!(M.enCapture && M.enCapture()) && !M.sansSon) preparerSon(); }, 1000);
 
     function indexScene(t) {
       var i = 0;
