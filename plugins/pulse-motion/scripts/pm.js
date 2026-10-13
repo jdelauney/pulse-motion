@@ -6,6 +6,7 @@
  *   pulse-motion assembler <dossier>
  *   pulse-motion controler <dossier> [--sans-correction] [--sans-rendu]   contrôle ; corrige seul les cas sûrs
  *   pulse-motion apercu <dossier> [--port 4321] [--ouvrir]
+ *   pulse-motion atelier [<recette>] [--dossier <d>]   atelier des effets de particules (page de l'aperçu) : régler, enregistrer
  *   pulse-motion historique sauvegarder|annuler <dossier>
  *   pulse-motion exporter <dossier> [--qualite 1080p|720p] [--ips 30|60] [--rapide] [--avec-provisoire]   MP4 fidèle (ffmpeg) ou dans le navigateur
  *   pulse-motion ffmpeg                  ffmpeg présent ? commande pour l'installer
@@ -41,6 +42,7 @@ const SCRIPTS = {
   assembler: 'assembler.js',
   controler: 'controler.js',
   apercu: 'apercu.js',
+  atelier: 'atelier.js',
   historique: 'historique.js',
   exporter: 'exporter.js',
   styles: 'styles.js',
@@ -118,6 +120,7 @@ function lancer(args) {
     '  etat <dossier> [--accord deroule|style|video] [--parcours rapide|accompagne]',
     '  assembler <dossier>      controler <dossier> [--sans-correction] [--sans-rendu]      apercu <dossier> [--port N] [--ouvrir]',
     '  historique sauvegarder|annuler <dossier>',
+    '  atelier [<recette>] [--dossier <dossier>]   atelier des effets de particules : régler à l\'œil, enregistrer dans effets/',
     '  exporter <dossier> [--qualite 1080p|720p] [--ips 30|60] [--rapide] [--avec-provisoire]       planche <dossier> [id1,id2]',
     '  ffmpeg                   ffmpeg présent ? commande pour l\'installer',
     '  voix importer <fichier> [--scene <id>] [dossier] | provisoire [--scene <id>] [dossier] | transcrire [--scene <id>] [dossier] | studio <scène> [dossier]',
