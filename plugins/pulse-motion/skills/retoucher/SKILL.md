@@ -49,6 +49,8 @@ Classer la demande, puis :
 
 Lire `pulse-motion reference moteur` avant de toucher au fichier d'une scène, `pulse-motion reference audio` pour le son, et `pulse-motion reference particules` pour un effet (table « Retouches en une phrase »).
 
+Si la personne veut régler un effet de particules en le regardant (« laisse-moi régler », « je veux voir ce que ça donne »), proposer l'atelier : le bouton « Effets » de l'aperçu (curseurs en direct, « Enregistrer »), ou `pulse-motion atelier <effet>` en arrière-plan pour travailler l'effet seul ; ses enregistrements passent par l'historique (« annule » les défait). Lire ensuite la scène ou `effets/<nom>.json` pour connaître le réglage retenu.
+
 ## 5. Vérifier et montrer
 
 1. `pulse-motion assembler .` puis `pulse-motion controler .` ; corriger ce que la retouche a cassé (deux tours au plus). Les `corrections` de `sortie/controle.json` (faites seules par le contrôle : typographie, durées, taille d'un texte qui débordait ; liste complète : `pulse-motion reference controles`) sont dites à la personne ; `pulse-motion controler . --sans-correction` si elle a demandé une durée ou une graphie précise.
