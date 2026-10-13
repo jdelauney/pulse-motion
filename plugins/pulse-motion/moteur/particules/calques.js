@@ -11,6 +11,12 @@
  *   (mémoire, texture illisible) ou scène en échec — pas de vidéo sans ses effets
  * M.particules.verifierExport() -> Promise    rejette si des effets existent et que WebGPU manque
  * M.particules.lireOrdre(idScene, ordre, emetteur) -> Promise<Uint32Array>   paires clé, index après tri (tests)
+ * M.particules.remplacerEffet(idScene, ordre, effet) -> Promise   atelier : la recette compilée d'un effet remplacée,
+ *   simulation recréée, instant courant rendu ; appels servis dans l'ordre ; rejette si l'effet n'a pas de simulation
+ *   (balise en erreur), si WebGPU manque ou si une texture est illisible
+ * M.particules.decrire(idScene) -> [{ ordre, calque, nom, debut, fin, rythme, actif, desactive }]   fenêtres (atelier)
+ * M.particules.raison      message du moteur quand WebGPU est indisponible (null sinon)
+ * ordre : rang de la balise parmi les data-effet de la scène, effets en erreur compris (comme l'assemblage).
  *
  * Réglages d'un calque (bloom, seuil, tons) : ceux de la recette au bloom le plus fort parmi tous les
  * effets du calque dans la scène (constants pour la scène ; à égalité, le premier).
@@ -28,7 +34,7 @@
   const SANS_GPU = 'Effet non affiché : WebGPU indisponible. Ouvrez la vidéo dans Chrome ou Edge récent.';
 
   const GARDE_GPU = 10000;
-  const etat = { gpu: null, rendu: null, scenes: [], t: 0, rendu_t: null, pret: Promise.resolve(), disponible: false };
+  const etat = { gpu: null, rendu: null, scenes: [], t: 0, rendu_t: null, pret: Promise.resolve(), disponible: false, raison: null };
 
   function panneau(el, message) {
     if (el.querySelector(':scope > .pm-effet-panneau')) return;
@@ -38,6 +44,13 @@
     el.appendChild(d);
   }
 
+  /** Réglages d'un calque : ceux de la recette au bloom le plus fort parmi ses effets (à égalité, le premier). */
+  function reglagesCalque(effets, nom) {
+    let rc = null;
+    effets.forEach((fx) => { if (fx.calque === nom && (!rc || fx.effet.rendu_calque.bloom > rc.bloom)) rc = fx.effet.rendu_calque; });
+    return rc;
+  }
+
   function recenser() {
     const scenes = [];
     M.minutage.scenes.forEach((info) => {
@@ -45,12 +58,14 @@
       if (!section) return;
       section.querySelectorAll('[data-pm-effet-erreur]').forEach((el) => panneau(el, el.getAttribute('data-pm-effet-erreur')));
       const effets = [];
+      const balises = Array.from(section.querySelectorAll('[data-effet]'));
       section.querySelectorAll('[data-pm-effet]').forEach((el) => {
         const d = (M.donnees.effets || [])[Number(el.getAttribute('data-pm-effet'))];
         if (!d) return;
         const temps = (M.minutage.elements[info.id] || {})[el.getAttribute('data-pm-cle')];
         effets.push({
           el, info, section,
+          ordre: balises.indexOf(el),
           effet: d.effet,
           calque: d.calque,
           ancre: d.ancre ? section.querySelector('#' + CSS.escape(d.ancre)) : null,
@@ -63,9 +78,7 @@
       const sc = { info, section, effets, calques: {}, reglages: {} };
       CALQUES.forEach((nom) => {
         if (!effets.some((fx) => fx.calque === nom)) return;
-        let rc = null;
-        effets.forEach((fx) => { if (fx.calque === nom && (!rc || fx.effet.rendu_calque.bloom > rc.bloom)) rc = fx.effet.rendu_calque; });
-        sc.reglages[nom] = rc;
+        sc.reglages[nom] = reglagesCalque(effets, nom);
         const canvas = document.createElement('canvas');
         canvas.className = 'pm-calque';
         canvas.setAttribute('data-pm-calque', nom);
@@ -228,6 +241,7 @@
       if (gpu && !gpu.erreur) return;
       const msg = gpu ? 'Effet non affiché : ' + message(gpu.erreur) : SANS_GPU;
       etat.disponible = false;
+      etat.raison = msg;
       etat.scenes.forEach((sc) => sc.effets.forEach((fx) => panneau(fx.el, msg)));
     });
     // Aucune mesure d'ancre avant que la page soit prête : polices, temps SMIL, position du lecteur.
@@ -242,13 +256,15 @@
         etat.gpu = gpu;
         etat.rendu = rendu;
         etat.disponible = true;
+        etat.raison = null;
         gpu.device.onuncapturederror = erreurNonCapturee;
         gpu.device.lost.then(() => perdu(gpu));
         rendre(etat.t);
       });
     }).catch((e) => {
       etat.disponible = false;
-      etat.scenes.forEach((sc) => sc.effets.forEach((fx) => panneau(fx.el, 'Effet non affiché : ' + message(e))));
+      etat.raison = 'Effet non affiché : ' + message(e);
+      etat.scenes.forEach((sc) => sc.effets.forEach((fx) => panneau(fx.el, etat.raison)));
     });
   }
 
@@ -374,10 +390,49 @@
 
   function trouver(idScene) { return etat.scenes.find((sc) => sc.info.id === idScene); }
 
+  let fileRemplacements = Promise.resolve();
+
+  async function remplacer(idScene, ordre, effet) {
+    const sc = trouver(idScene);
+    const fx = sc && sc.effets.find((f) => f.ordre === ordre);
+    if (!fx) throw new Error('Effet ' + ordre + ' de la scène « ' + idScene + ' » introuvable (balise en erreur au chargement de la page ?).');
+    await etat.pret;
+    const gpu = etat.gpu;
+    if (!gpu || !etat.rendu) throw new Error(etat.raison || SANS_GPU);
+    const illisibles = await etat.rendu.preparer([effet]);
+    if (effet.emetteurs.some((em) => illisibles.has(em.rendu.textureImage))) throw new Error('Effet non affiché : texture illisible.');
+    liberer(fx);
+    fx.effet = effet;
+    fx.desactive = null;
+    fx.zones = new Map(); // l'ancre a pu bouger (page d'atelier)
+    fx.el.querySelectorAll(':scope > .pm-effet-panneau').forEach((p) => p.remove());
+    sc.reglages[fx.calque] = reglagesCalque(sc.effets, fx.calque);
+    sc.echec = false;
+    etat.rendu_t = null;
+    rendre(etat.t);
+    await gpu.device.queue.onSubmittedWorkDone();
+  }
+
+  /** Remplacements servis un par un, dans l'ordre des appels : le dernier demandé est celui qui reste. */
+  function remplacerEffet(idScene, ordre, effet) {
+    const suite = fileRemplacements.then(() => remplacer(idScene, ordre, effet));
+    fileRemplacements = suite.catch(() => {});
+    return suite;
+  }
+
   M.particules = {
     get pret() { return etat.pret; },
     get disponible() { return etat.disponible; },
     get device() { return etat.gpu ? etat.gpu.device : null; },
+    get raison() { return etat.disponible ? null : etat.raison; },
+    remplacerEffet,
+    decrire(idScene) {
+      const sc = trouver(idScene);
+      return sc ? sc.effets.map((fx) => ({
+        ordre: fx.ordre, calque: fx.calque, nom: fx.effet.nom, debut: fx.debut,
+        fin: fx.debut + fx.effet.fin / fx.info.rythme, rythme: fx.info.rythme, actif: !!fx.sim, desactive: fx.desactive || null,
+      })) : [];
+    },
     lirePixels(idScene, calque) {
       const sc = trouver(idScene);
       const canvas = sc && sc.calques[calque];
