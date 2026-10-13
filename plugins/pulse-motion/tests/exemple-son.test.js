@@ -100,3 +100,31 @@ test('dans la page : voix, musique générée et bruitages mixés, sonie mesuré
     assert.ok(r.sousTitre.length > 3, r.sousTitre);
   } finally { await page.fermer(); }
 });
+
+test('revue : une vraie prise remplace la voix provisoire (scène seuil) : ancre et cartons recalés, plus d\'alerte pour elle ; mode mot', async () => {
+  const { enregistrerPrise } = require('../scripts/voix.js');
+  const dir = copierExemple();
+  await voixProvisoire({ dossier: dir, synthetiser: synthese(0.3), outil: { present: false } });
+  const etat = () => {
+    const { donnees } = assembler({ dossier: dir, ecrire: false });
+    const m = calculerMinutage(donnees.scenes, { seuil: [{ cle: 'x', start: 'mot:degres' }] });
+    const s = m.scenes[1];
+    return { ancre: m.elements.seuil.x.debut - s.debut, cartons: donnees.sousTitres.cartons.filter((c) => c.debut >= s.debut && c.debut < s.fin).map((c) => [c.debut, c.fin]), mode: donnees.sousTitres.mode };
+  };
+  const avant = etat();
+  const fichier = path.join(dir, 'prise.wav');
+  synthese(0.55)('x '.repeat(11), fichier);
+  const r = await enregistrerPrise({ projet: dir, scene: 'seuil', octets: fs.readFileSync(fichier), whisper: null });
+  assert.equal(r.ok, true, r.message);
+  assert.equal(lireDeroule(dir).scenes[1].voix.fichier, 'assets/voix/seuil.wav');
+  const apres = etat();
+  assert.ok(apres.ancre > avant.ancre + 1, `${avant.ancre} → ${apres.ancre}`);
+  assert.notDeepEqual(apres.cartons, avant.cartons);
+  const c = controler({ dossier: dir, ecrire: false });
+  assert.deepEqual(c.problemes.filter((p) => p.regle === 'voix-provisoire').map((p) => p.scene).sort(), ['fin', 'intro', 'maillons', 'recongeler', 'reflexes']);
+  assert.deepEqual(c.problemes.filter((p) => p.gravite === 'erreur'), []);
+  const d = lireDeroule(dir);
+  d.sousTitres = { mode: 'mot' };
+  fs.writeFileSync(path.join(dir, 'deroule.json'), JSON.stringify(d, null, 2));
+  assert.equal(etat().mode, 'mot');
+});

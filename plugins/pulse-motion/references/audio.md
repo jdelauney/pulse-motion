@@ -25,8 +25,8 @@ Tous facultatifs : un déroulé sans son reste valide.
 | Champ | Valeurs |
 |---|---|
 | `musique` | exactement un de `fichier`, `generee`, `partition` ; `volume` 0–1 (défaut 1) |
-| `musique.generee` | ambiance (liste plus bas) ; `tempo` 60–180 bpm, `tonalite` (`do`, `do#`, `re`, `mib`, `mi`, `fa`, `fa#`, `sol`, `lab`, `la`, `sib`, `si`, suivi de `m` pour le mineur), `intensite` 0–1 (défaut 0,5), `graine` entier ≥ 0 (défaut 1) |
-| `voix.fichier` | un enregistrement de toute la vidéo, découpé par scène (transcription requise) |
+| `musique.generee` | ambiance (liste plus bas) ; avec `tonalite` (`do`, `do#`, `re`, `mib`, `mi`, `fa`, `fa#`, `sol`, `lab`, `la`, `sib`, `si`, suivi de `m` pour le mineur), `intensite` 0–1 (défaut 0,5), `graine` entier ≥ 0 (défaut 1) |
+| `musique.tempo` | 60–180 bpm, avec `generee` : `"musique": { "generee": "inspirant", "tempo": 120 }` (défaut : celui de l'ambiance) ; il devient le tempo de la vidéo, pas de `tempo` en haut du déroulé en plus |
 | `voix.provisoire` | `true` : voix du système pour les scènes qui ont un texte sans prise |
 | `voix.volume` | 0–1 (défaut 1) |
 | `sousTitres` | présent : sous-titres dès qu'une scène a un `voix.texte` ; `mode` `ligne` (défaut) ou `mot` ; `incrustes` `true` (défaut) ou `false` (fichiers seulement) ; `position` `bas` ou `haut` |
