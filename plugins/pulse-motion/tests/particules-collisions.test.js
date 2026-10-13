@@ -27,7 +27,7 @@ if (!gpu) { await envoyer({ webgpu: false }); return; }
 const { device } = gpu;
 const L = ${L};
 function ligne(cadres) { const t = new Float32Array(cadres.length * 8); cadres.forEach((r, i) => O.ecrireRepere(t, i * 8, r)); return t; }
-function fixes(table) { return table.entrees.map((e) => O.repereFixe(e.source, L, table.sol)); }
+function fixes(table) { return table.entrees.map((e) => (e.source.element ? O.INACTIF : O.repereFixe(e.source, L, table.sol))); }
 function monde(table) { return { entrees: table.entrees, largeurCqh: L, actif: true }; }
 function zonesFixes(ZONE, table) { const l = ligne(fixes(table)); return { a: () => ZONE, grille: () => ZONE, reperes: () => l }; }
 const lireP = (f) => { const u = new Uint32Array(f.buffer); const l = [];
