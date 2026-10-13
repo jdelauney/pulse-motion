@@ -37,7 +37,7 @@ Puis une deuxième ronde, **Le son** (lire d'abord `pulse-motion reference audio
 
 1. **Musique** : « Une musique composée pour la vidéo (Recommandé) » · « J'ai un fichier » · « Pas de musique ». L'ambiance se choisit selon le genre (formation → `calme` ou `inspirant`, produit → `corporate` ou `tech`, storytelling → `inspirant` ou `suspense`, social → `entrainant`) et se décrit en trois mots, jamais par son nom technique.
 2. **Voix** : « Je l'enregistre (Recommandé) » · « J'ai un fichier » · « Pas de voix ».
-3. **Sous-titres** (seulement avec une voix) : « Oui (Recommandé) » · « Non ». En 9:16, proposer d'abord les sous-titres mot par mot (`mode` `mot`), qui retiennent l'œil sur les réseaux.
+3. **Sous-titres** : « Oui (Recommandé) » · « Non ». Ils reprennent le texte dit : avec « Pas de voix » à la question 2, ignorer cette réponse et dire en une phrase qu'il n'y aura pas de sous-titres sans voix. En 9:16, proposer d'abord les sous-titres mot par mot (`mode` `mot`), qui retiennent l'œil sur les réseaux.
 
 Le genre se déduit du sujet (formation, produit, storytelling, social). Format : 16:9, sauf genre `social` → 9:16 (4:5 si la personne vise le fil LinkedIn ou Instagram).
 Puis `pulse-motion etat . --parcours rapide|accompagne`.

@@ -12,9 +12,9 @@
   "scenes": [
     {
       "id": "intro", "fichier": "scenes/01-intro.html", "duree": 8, "transition": "fondu",
-      "voix": { "texte": "La chaîne du froid protège vos aliments. Voyons l’essentiel en trois minutes." },
+      "voix": { "texte": "La chaîne du froid protège vos aliments. Voyons l’essentiel en une minute." },
       "intention": "titre – annoncer le sujet",
-      "textes": { "etiquette": "Hygiène alimentaire", "titre": "La chaîne du froid", "sous": "3 minutes pour comprendre l’essentiel" }
+      "textes": { "etiquette": "Hygiène alimentaire", "titre": "La chaîne du froid", "sous": "1 minute pour comprendre l’essentiel" }
     },
     {
       "id": "seuil", "fichier": "scenes/02-seuil.html", "duree": 9, "transition": "glissement",

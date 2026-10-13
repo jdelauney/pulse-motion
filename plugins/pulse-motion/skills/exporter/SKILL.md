@@ -19,7 +19,7 @@ Fabriquer le fichier MP4 de la vidéo, sur l'ordinateur : en **export fidèle** 
 
 1. `pulse-motion etat .` : sans vidéo (`projet` faux), proposer `/pulse-motion:creer` et s'arrêter. La commande échoue avec « node » introuvable (Node.js n'est pas installé) : expliquer qu'il faut installer Node.js en version LTS depuis https://nodejs.org, puis relancer Claude Code, et s'arrêter.
 2. `pulse-motion controler .` : s'il reste des **erreurs**, les dire simplement et proposer de les corriger d'abord (`/pulse-motion:retoucher`). Des **alertes** seules n'empêchent pas l'export : les mentionner en une phrase.
-3. Alerte `voix-provisoire` : la vidéo parle encore avec la voix de l'ordinateur, qui sert seulement à caler l'animation. Le dire, et proposer d'enregistrer d'abord (bouton « Voix » de l'aperçu, ou `/pulse-motion:retoucher`) : « Enregistrer ma voix d'abord (Recommandé) » · « Exporter une version de travail avec la voix de l'ordinateur ». Seulement sur ce second choix, ajouter `--avec-provisoire` à l'export (sans lui, l'export est refusé).
+3. Alerte `voix-provisoire` : la vidéo parle encore avec la voix de l'ordinateur, qui sert seulement à caler l'animation. Le dire, et proposer d'enregistrer d'abord (bouton « Voix » de l'aperçu, ou `/pulse-motion:retoucher`) : « Enregistrer ma voix d'abord (Recommandé) » · « Exporter une version de travail avec la voix de l'ordinateur ». Sur « Enregistrer ma voix d'abord » : expliquer comment ouvrir le studio, puis s'arrêter sans exporter. Seulement sur ce second choix, ajouter `--avec-provisoire` à l'export (sans lui, l'export est refusé).
 
 ## 2. Préparer l'export fidèle
 
