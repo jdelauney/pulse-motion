@@ -441,7 +441,7 @@
     },
     lireEtat(idScene, ordre, emetteur) {
       const sc = trouver(idScene);
-      const fx = sc && sc.effets[ordre];
+      const fx = sc && sc.effets.find((f) => f.ordre === ordre);
       if (!fx || !fx.sim) return Promise.reject(new Error('Effet ' + ordre + ' de la scène « ' + idScene + ' » non simulé.'));
       return fx.sim.lireEtat(emetteur);
     },
@@ -455,7 +455,7 @@
     },
     lireOrdre(idScene, ordre, emetteur) {
       const sc = trouver(idScene);
-      const fx = sc && sc.effets[ordre];
+      const fx = sc && sc.effets.find((f) => f.ordre === ordre);
       if (!fx || !fx.sim || !etat.rendu) return Promise.reject(new Error('Effet ' + ordre + ' de la scène « ' + idScene + ' » non dessiné.'));
       return etat.rendu.lireOrdre(fx.sim.emetteurs[emetteur]);
     },

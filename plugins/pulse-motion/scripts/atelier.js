@@ -17,11 +17,18 @@ const { lancerApercu, ouvrirNavigateur } = require('./apercu.js');
 const NOM = /^[a-z0-9-]+$/;
 const USAGE = 'Usage : pulse-motion atelier [<recette>] [--dossier <dossier>] [--port 4321]';
 
+/** Hors projet : toujours le même dossier temporaire, pour ne pas en semer un par lancement. */
+function dossierAtelierTemporaire() {
+  const d = path.join(os.tmpdir(), 'pm-atelier');
+  fs.mkdirSync(d, { recursive: true });
+  return d;
+}
+
 /** -> Promise<{ url, deja, projet }> ; recette : nom d'effet (bibliothèque ou projet), ou null (recette vide). */
 async function lancerAtelier({ dossier = '.', recette = null, port = 4321, lancer = lancerApercu, ouvrirUrl = ouvrirNavigateur } = {}) {
   if (recette !== null && !NOM.test(recette)) throw new Error(`Nom d'effet « ${recette} » invalide (minuscules, chiffres, tirets ; exemple : etincelles).`);
   const projet = fs.existsSync(path.join(dossier, 'deroule.json'));
-  const cible = projet ? dossier : fs.mkdtempSync(path.join(os.tmpdir(), 'pm-atelier-'));
+  const cible = projet ? dossier : dossierAtelierTemporaire();
   const { url, deja } = await lancer({ dossier: cible, port, ouvrir: false });
   const adresse = `${url}_pm/atelier${recette ? `?recette=${encodeURIComponent(recette)}` : ''}`;
   ouvrirUrl(adresse);
