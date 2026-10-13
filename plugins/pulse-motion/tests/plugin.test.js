@@ -19,18 +19,18 @@ function enTete(texte) {
 }
 
 const SKILLS = fs.readdirSync(path.join(RACINE, 'skills'));
-const COMMANDES = ['etat', 'assembler', 'controler', 'apercu', 'historique', 'reference', 'scene', 'styles', 'consignes', 'exporter', 'planche', 'effet', 'comparer', 'changer-style', 'lexique', 'charte', 'police', 'glossaire', 'style', 'ffmpeg', 'voix', 'whisper', 'musique'];
+const COMMANDES = ['etat', 'assembler', 'controler', 'apercu', 'historique', 'reference', 'scene', 'styles', 'consignes', 'exporter', 'planche', 'effet', 'comparer', 'changer-style', 'lexique', 'charte', 'police', 'glossaire', 'style', 'ffmpeg', 'voix', 'whisper', 'musique', 'outils'];
 const fichiersGuides = () => [
   ...SKILLS.map((s) => path.join('skills', s, 'SKILL.md')),
   ...fs.readdirSync(path.join(RACINE, 'agents')).map((a) => path.join('agents', a)),
 ];
 
 test('skills : creer, exporter, retoucher, reprendre, lancés par la personne, outils limités', () => {
-  assert.deepEqual(SKILLS.sort(), ['creer', 'exporter', 'reprendre', 'retoucher', 'style']);
+  assert.deepEqual(SKILLS.sort(), ['creer', 'exporter', 'outils', 'reprendre', 'retoucher', 'style', 'voix']);
   for (const s of SKILLS) {
     const e = enTete(lire('skills', s, 'SKILL.md'));
     assert.ok(e.description && e.description.length > 20, `${s} : description`);
-    assert.equal(e['disable-model-invocation'], 'true', `${s} : lancé par la personne seulement`);
+    if (!['outils', 'voix'].includes(s)) assert.equal(e['disable-model-invocation'], 'true', `${s} : lancé par la personne seulement`);
     assert.match(e['allowed-tools'], /Bash\(pulse-motion \*\)/, `${s} : outil pulse-motion autorisé`);
   }
 });
@@ -279,4 +279,23 @@ test('correctifs : sous-commandes du son citées dans les guides : elles existen
       assert.ok(SOUS[m[1]].includes(m[2]), `${f} : « pulse-motion ${m[1]} ${m[2]} » n'existe pas`);
     }
   }
+});
+
+
+test('demandes : skills outils et voix, déclenchables en langage courant, consignes complètes', () => {
+  for (const s of ['outils', 'voix']) {
+    const t = lire('skills', s, 'SKILL.md');
+    const e = enTete(t);
+    assert.equal(e['disable-model-invocation'], undefined, s);
+    assert.ok((e.description.match(/« [^»]+ »/g) || []).length >= 3, `${s} : exemples de demandes`);
+    assert.match(e['allowed-tools'], /Bash\(pulse-motion \*\)/, s);
+  }
+  const outils = lire('skills', 'outils', 'SKILL.md');
+  for (const r of [/pulse-motion outils/, /pulse-motion ffmpeg/, /pulse-motion whisper installer/, /--modele small/, /relancer Claude Code/, /accord/, /j'enregistre la scène 1/]) assert.match(outils, r);
+  assert.match(enTete(outils)['allowed-tools'], /winget install --id Python\.Python\.3\.12/);
+  assert.match(enTete(outils)['allowed-tools'], /winget install --id Gyan\.FFmpeg/);
+  const voix = lire('skills', 'voix', 'SKILL.md');
+  for (const r of [/pulse-motion voix studio <id> \./, /pulse-motion voix importer assets\/<fichier>/, /pulse-motion voix provisoire \./, /pulse-motion voix transcrire \./, /pulse-motion musique ecouter \. --ouvrir/, /pulse-motion apercu \. --ouvrir/, /pulse-motion etat \./]) assert.match(voix, r);
+  assert.match(enTete(voix).description, /retoucher/);
+  assert.match(voix, /\/pulse-motion:creer/);
 });
