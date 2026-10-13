@@ -9,6 +9,8 @@
   body { padding-right: 380px; }
   #pm-scene, #pm-lecteur { width: min(calc(100vw - 380px), calc((100vh - var(--pm-barre)) * 16 / 9)); }
   #pm-scene { background: #101014; }
+  #pm-atelier-boite { position: absolute; left: 40%; top: 72%; width: 20%; height: 8%; border: 1px dashed rgb(255 255 255 / .55); background: rgb(255 255 255 / .06); pointer-events: none; }
+  #pm-atelier-sol { position: absolute; left: 0; right: 0; top: 90%; border-top: 1px dashed rgb(255 255 255 / .55); pointer-events: none; }
   #pm-atelier-ancre { position: absolute; z-index: 1001; border: 1px dashed rgb(255 255 255 / .7); outline: 1px dashed rgb(0 0 0 / .45); cursor: move; touch-action: none; }
   .pm-atelier-poignee { position: absolute; right: -6px; bottom: -6px; width: 12px; height: 12px; background: #fff; border: 1px solid #333; border-radius: 2px; cursor: nwse-resize; }
   #pm-atelier { position: fixed; top: 0; right: 0; bottom: 0; width: 380px; overflow: auto; padding: 12px 14px; background: #1b1b1b; color: #eee; font: 14px/1.45 system-ui, sans-serif; }
@@ -27,6 +29,8 @@
 <div id="pm-scene" data-ton="sombre">
   <section data-scene="atelier">
     <div id="pm-atelier-ancre" title="Zone d'émission : glisser pour la déplacer, tirer le coin pour la redimensionner"><span class="pm-atelier-poignee"></span></div>
+    <div id="pm-atelier-boite" data-obstacle data-pm-obstacle="0" hidden></div>
+    <div id="pm-atelier-sol" hidden></div>
     <div data-effet="atelier" data-pm-effet="0"></div>
   </section>
 </div>
