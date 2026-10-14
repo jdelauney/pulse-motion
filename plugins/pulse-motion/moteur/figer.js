@@ -125,7 +125,8 @@
       if (a[1]) a[0].insertBefore(a[1], a[0].firstChild);
       if (a[2]) a[0].appendChild(a[2]);
     });
-    remplacements.forEach(function (r) { r[0].parentNode.replaceChild(r[1], r[0]); });
+    // Racine elle-même remplacée (canvas de composition, enfant direct de #pm-scene) : l'image devient la copie.
+    remplacements.forEach(function (r) { if (r[0] === copie) copie = r[1]; else r[0].parentNode.replaceChild(r[1], r[0]); });
     aRetirer.forEach(function (c) { c.remove(); });
     return copie;
   }
