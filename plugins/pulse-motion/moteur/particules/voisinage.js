@@ -30,7 +30,7 @@
   const P = M.particulesInterne = M.particulesInterne || {};
 
   const CELLULES_MAX = 1 << 20;
-  const PLEINE = 96;
+  const PLEINE = 96;   // même valeur que PLEINE_VOISINAGE de recette.js (contrôles)
   const OCTETS_GROUPE = 560;
   const OCTETS_CORPS = 32;
   const ITERATIONS_GRAINS = 6;
