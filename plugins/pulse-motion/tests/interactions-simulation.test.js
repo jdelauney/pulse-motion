@@ -171,3 +171,74 @@ await envoyer({ webgpu: true, p: fin[0].p });`);
   const moyenne = interieur.reduce((s, x) => s + x[1], 0) / interieur.length;
   assert.ok(Math.abs(moyenne / rho0 - 1) <= 0.02, `densité au repos ${(moyenne / rho0).toFixed(4)} ρ0 (à 2 % près)`);
 });
+
+/** Angle du tas (degrés) : hauteur de chaque colonne de 1 cqh (sommet des grains au-dessus du sol), régression linéaire de
+ *  chaque flanc entre 25 % et 75 % de la hauteur maximale ; moyenne des deux pentes. */
+function angleTas(grains, sol) {
+  const hauteurs = new Map();
+  for (const p of grains) {
+    const b = Math.floor(p.x);
+    const h = sol - (p.y - p.taille / 2);
+    if (!hauteurs.has(b) || h > hauteurs.get(b)) hauteurs.set(b, h);
+  }
+  const xs = [...hauteurs.keys()].sort((a, b) => a - b);
+  const hmax = Math.max(...xs.map((x) => hauteurs.get(x)));
+  const sommet = xs.find((x) => hauteurs.get(x) === hmax);
+  const pente = (gauche) => {
+    const pts = xs.filter((x) => (gauche ? x < sommet : x > sommet)).map((x) => [x + 0.5, hauteurs.get(x)])
+      .filter(([, h]) => h >= 0.25 * hmax && h <= 0.75 * hmax);
+    assert.ok(pts.length >= 4, `flanc ${gauche ? 'gauche' : 'droit'} : ${pts.length} colonnes`);
+    const mx = pts.reduce((s, q) => s + q[0], 0) / pts.length;
+    const mh = pts.reduce((s, q) => s + q[1], 0) / pts.length;
+    const num = pts.reduce((s, q) => s + (q[0] - mx) * (q[1] - mh), 0);
+    const den = pts.reduce((s, q) => s + (q[0] - mx) ** 2, 0);
+    return Math.abs(num / den);
+  };
+  return Math.atan((pente(true) + pente(false)) / 2) * 180 / Math.PI;
+}
+
+const grains = (debit, extra = {}) => ({ nom: 'g', naissance: { debit, forme: { type: 'rectangle' }, vitesse: { direction: [0, 1], cone: 20, valeur: [0, 2] }, vie: [30, 30], taille: [0.8, 0.8] },
+  forces: [{ type: 'gravite', valeur: 40 }], ...extra });
+
+test('interactions GPU : grains : tas à l\'angle de frottement (± 5°), sans tremblement au repos', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  // 2 000 grains versés depuis un petit carré en (88, 51), sur le sol de la recette (y = 90).
+  const sable = compiler([grains(400, { collisions: { cibles: ['sol'], restitution: 0, frottement: 0.6 },
+    interactions: { type: 'grains', rayon: 1, frottement: { statique: 0.6, dynamique: 0.5 }, restitution: 0 } })], 5);
+  const r = await page({ sable }, `
+const { m, reperes } = monde([], 90);
+const zones = { a: () => [87, 50, 2, 2], grille: () => [87, 50, 2, 2], reperes };
+const fin = await etat(DONNEES.sable, zones, [9], m);
+await envoyer({ webgpu: true, p: fin[0].p });`);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.equal(r.p.length, 2000);
+  assert.ok(r.p.every((q) => q.y <= 89.6 + 0.05), 'aucun grain sous le sol');
+  const angle = angleTas(r.p, 90);
+  const attendu = Math.atan(0.6) * 180 / Math.PI;
+  assert.ok(Math.abs(angle - attendu) <= 5, `angle du tas ${angle.toFixed(1)}° (frottement statique 0,6 : ${attendu.toFixed(1)}° ± 5°)`);
+  const vitesse = r.p.reduce((s, q) => s + Math.hypot(q.vx, q.vy), 0) / r.p.length;
+  assert.ok(vitesse < 1, `vitesse moyenne ${vitesse.toFixed(3)} cqh/s : tas au repos, sans tremblement`);
+});
+
+test('interactions GPU : grains : un tas posé sur un support qui part s\'écroule ; même état au bit près par deux chemins', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  // 600 grains versés sur une boîte de 40 × 8 cqh (dessus en y = 60) ; la boîte glisse vers la droite à 60 cqh/s dès τ = 3.
+  const tas = compiler([grains(300, { collisions: { cibles: ['sol', 'elements'], restitution: 0, frottement: 0.6 }, interactions: { type: 'grains', rayon: 1 } })], 2);
+  const r = await page({ tas }, `
+const boite = (g) => ({ centre: [88 + Math.max(0, g / 30 - 3) * 60, 64], angle: 0, demi: [20, 4], echelle: [1, 1], actif: true });
+const { m, reperes } = monde([{ scene: 's', genre: 'element', video: false, index: 0 }], 90, boite);
+const zones = { a: () => [86, 30, 4, 2], grille: () => [86, 30, 4, 2], reperes };
+const avant = await etat(DONNEES.tas, zones, [2.9], m);
+const apres = await etat(DONNEES.tas, zones, [6], m);
+const A = await etat(DONNEES.tas, zones, [2.5], m);
+const B = await etat(DONNEES.tas, zones, [1, 3, 1.8, 2.5], m);
+await envoyer({ webgpu: true, avant: avant[0].p, apres: apres[0].p, egal: memes(A, B) });`);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.equal(r.egal, true, 'même état au bit près par deux chemins (grains versés en continu, support qui bouge)');
+  assert.equal(r.avant.length, 600);
+  const surBoite = r.avant.filter((q) => Math.abs(q.x - 88) < 20 && q.y < 60.5).length;
+  assert.ok(surBoite >= 300, `${surBoite} grains sur la boîte avant son départ`);
+  assert.ok(r.apres.every((q) => !(Math.abs(q.x - 88) < 20 && q.y < 60.5)), 'plus aucun grain en l\'air à la place de la boîte');
+  const tombes = r.apres.filter((q) => q.y > 80).length;
+  assert.ok(tombes >= 540, `${tombes} grains tombés au sol après le départ du support`);
+});
