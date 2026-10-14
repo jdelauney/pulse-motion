@@ -25,6 +25,10 @@ body {
 #pm-scene .pm-fragment-cache { visibility: hidden !important; }
 #pm-scene .pm-calque { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1000; }
 #pm-scene .pm-calque[data-pm-calque="arriere"] { z-index: -1; }
+/* Composition des shaders (transitions, post-traitements) : au-dessus des scènes réelles, masquées pendant ce temps ;
+   sous les sous-titres (z-index 1000). */
+#pm-scene > .pm-composition { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999; }
+#pm-scene.pm-compose > section[data-scene] { opacity: 0 !important; }
 .pm-effet-panneau {
   position: absolute; left: 2cqh; top: 2cqh; max-width: 70cqh; padding: 1cqh 1.6cqh; z-index: 1001;
   border: 0.3cqh dashed #c0392b; border-radius: 1cqh; background: #fdecea; color: #7b1d14;
