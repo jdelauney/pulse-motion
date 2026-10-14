@@ -124,3 +124,28 @@ await envoyer({ webgpu: true, drapeaux: [Math.floor(ap.b[3] / 65536), Math.floor
   const f0 = r.fin.find((p) => p.n === 0);
   assert.ok(f0.rgba[2] >= 250 && f0.rgba[0] <= 20 && f0.rgba[3] >= 250, `couleur d'arrivée ${f0.rgba}`);
 });
+
+test('rendu : éclats immobiles = la photographie au pixel près (polygones texturés)', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const ecl = compiler([{ nom: 'e', naissance: { vie: [5, 5] }, rendu: { type: 'eclats', morceaux: 16, impulsion: 0, rotation_max: 0, melange: 'alpha' } }]);
+  const r = await page({ ecl }, `
+const ph = photo(64, 32, (x, y) => [x * 4, y * 8, 120, 255], 6.4, 3.2);
+const image = await createImageBitmap(new ImageData(new Uint8ClampedArray(ph.rgba), 64, 32));
+const ec = F.eclats(F.voronoi({ largeur: 6.4, hauteur: 3.2, morceaux: 16, graine: 2 }));
+const frag = { a: null, b: null, eclats: ec, image, demiA: [3.2, 1.6], demiB: [0, 0], coteA: 0, coteB: 0 };
+const zones = { a: () => ZONE, grille: () => ZONE, ancres: ancres(ANCRE) };
+const sim = new P.Simulation(device, DONNEES.ecl, null, [frag]);
+// Sans force ni impulsion : les éclats restent en place après leur libération.
+const d = sim.avancer(0.5, zones);
+rendu.dessiner(cible, [{ sim, i: 0, delta: d[0] }], OPTIONS);
+const px = await rendu.lirePixels(cible);
+let dehors = 0;
+for (let j = 370; j < 430; j++) for (const i of [460, 540]) dehors = Math.max(dehors, px.donnees[(j * px.largeur + i) * 4 + 3]);
+const photoGPU = !!sim.emetteurs[0].photo;
+sim.detruire();
+await envoyer({ webgpu: true, pire: ecartPhoto(px, ph, 468, 384), dehors, photoGPU });`);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.equal(r.photoGPU, true, 'photographie copiée en texture');
+  assert.ok(r.pire <= 3, `écart de ${r.pire} niveaux avec la photographie`);
+  assert.equal(r.dehors, 0);
+});
