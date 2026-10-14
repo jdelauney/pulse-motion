@@ -125,3 +125,72 @@ test('raccord : éléments cachés selon τ (pas de 1/120 s)', () => {
   for (const [effet, tau, ancre, cible] of cas) assert.deepEqual(F.raccord(effet, tau), { ancre, cible }, `τ = ${tau}`);
   assert.deepEqual([F.pasDe(1 / 120), F.pasDe(0.999 / 120), F.pasDe(-0.1)], [1, 0, -12]);
 });
+
+/** Point dans un polygone convexe (marge > 0 : strictement dedans, < 0 : bords compris). */
+function dedans(poly, p, marge = 0) {
+  const s = Math.sign(F.aire(poly));
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[i];
+    const b = poly[(i + 1) % poly.length];
+    if (s * ((b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0])) < marge) return false;
+  }
+  return true;
+}
+
+test('decouper, aire : demi-plan d\'un carré', () => {
+  const carre = [[-1, -1], [1, -1], [1, 1], [-1, 1]];
+  assert.equal(F.aire(carre), 4);
+  const moitie = F.decouper(carre, 1, 0, 0);
+  assert.equal(Math.abs(F.aire(moitie)), 2);
+  assert.ok(moitie.every(([x]) => x <= 1e-12));
+  assert.deepEqual(F.decouper(carre, 1, 0, -5), []);
+});
+
+test('voronoi : cellules disjointes qui pavent la boîte, germe dans sa cellule, tirage reproductible', () => {
+  const o = { largeur: 80, hauteur: 30, morceaux: 64, graine: 7, origine: [0.3, 0.6] };
+  const cellules = F.voronoi(o);
+  assert.equal(cellules.length, 64);
+  const somme = cellules.reduce((s, c) => s + Math.abs(F.aire(c.sommets)), 0);
+  assert.ok(Math.abs(somme - 2400) < 2400 * 1e-9, `aire totale ${somme}`);
+  for (const c of cellules) {
+    assert.ok(c.sommets.length >= 3, 'cellule non vide');
+    assert.ok(dedans(c.sommets, c.germe, -1e-9), 'germe dans sa cellule');
+    assert.ok(c.sommets.every(([x, y]) => Math.abs(x) <= 40 + 1e-9 && Math.abs(y) <= 15 + 1e-9), 'dans la boîte');
+  }
+  let g = 1;
+  const hasard = () => (g = (Math.imul(g, 48271) >>> 0) % 2147483647) / 2147483647;
+  for (let i = 0; i < 2000; i++) {
+    const p = [(hasard() - 0.5) * 80, (hasard() - 0.5) * 30];
+    assert.equal(cellules.filter((c) => dedans(c.sommets, p)).length, 1, `point ${p} dans une seule cellule`);
+  }
+  assert.deepEqual(F.voronoi(o), cellules, 'même graine : même pavage');
+  assert.notDeepEqual(F.voronoi({ ...o, graine: 8 }), cellules);
+  // Morceaux plus petits près du point d'impact.
+  const impact = [(0.3 - 0.5) * 80, (0.6 - 0.5) * 30];
+  const tries = cellules.slice().sort((a, b) => Math.hypot(a.germe[0] - impact[0], a.germe[1] - impact[1]) - Math.hypot(b.germe[0] - impact[0], b.germe[1] - impact[1]));
+  const moyenne = (l) => l.reduce((s, c) => s + Math.abs(F.aire(c.sommets)), 0) / l.length;
+  assert.ok(moyenne(tries.slice(0, 16)) < moyenne(tries.slice(-16)), 'éclats proches de l\'impact plus petits');
+});
+
+test('eclats : centre, sommets relatifs, rayon englobant, 36 nombres par éclat ; simplification au-delà de 16 sommets', () => {
+  const cellules = F.voronoi({ largeur: 40, hauteur: 20, morceaux: 12, graine: 3 });
+  const e = F.eclats(cellules);
+  assert.equal(e.length, 12 * F.FLOTTANTS_ECLAT);
+  cellules.forEach((c, i) => {
+    const b = i * 36;
+    const k = e[b + 2];
+    assert.equal(k, Math.min(c.sommets.length, 16));
+    assert.ok(dedans(c.sommets, [e[b], e[b + 1]], 1e-9), 'centre dans l\'éclat');
+    for (let j = 0; j < k; j++) {
+      assert.ok(Math.abs(e[b + 4 + 2 * j] + e[b] - c.sommets[j][0]) < 1e-4);
+      assert.ok(Math.abs(e[b + 5 + 2 * j] + e[b + 1] - c.sommets[j][1]) < 1e-4);
+      assert.ok(Math.hypot(e[b + 4 + 2 * j], e[b + 5 + 2 * j]) <= e[b + 3] + 1e-4, 'rayon englobant');
+    }
+  });
+  const cercle = Array.from({ length: 20 }, (_, i) => [10 * Math.cos(i * Math.PI / 10), 10 * Math.sin(i * Math.PI / 10)]);
+  const s = F.eclats([{ germe: [0, 0], sommets: cercle }]);
+  assert.equal(s[2], 16);
+  const garde = Array.from({ length: 16 }, (_, j) => [s[4 + 2 * j] + s[0], s[5 + 2 * j] + s[1]]);
+  assert.ok(garde.every((p) => cercle.some((q) => Math.hypot(p[0] - q[0], p[1] - q[1]) < 1e-4)), 'sommets d\'origine');
+  assert.ok(Math.abs(F.aire(garde)) > 0.95 * Math.abs(F.aire(cercle)), 'aire presque gardée');
+});
