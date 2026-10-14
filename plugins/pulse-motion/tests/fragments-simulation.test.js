@@ -107,3 +107,46 @@ await envoyer({ webgpu: true, a: Array.from(frag.a), etats });`);
     pres(p.vx, 10, 1e-2, 'vitesse de l\'ancre');
   }
 });
+
+test('fragments GPU : éclats nés au centre de leur cellule, tournés comme l\'ancre ; ils s\'écartent de l\'impact, rebondissent sur un sol (P3) et tournent au contact', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const eclats = compiler([{ nom: 'e', naissance: { vie: [6, 6] }, forces: [{ type: 'gravite', valeur: 60 }],
+    rendu: { type: 'eclats', morceaux: 24, impulsion: 30, rotation_max: 0 }, collisions: { cibles: ['sol'], restitution: 0.4, frottement: 0.5 } }], 0.1);
+  const r = await page({ eclats }, `
+const ec = F.eclats(F.voronoi({ largeur: 20, hauteur: 10, morceaux: 24, graine: 9, origine: [0.5, 0.5] }));
+const frag = { a: null, b: null, eclats: ec, image: null, demiA: [10, 5], demiB: [0, 0], coteA: 0, coteB: 0 };
+const table = O.construireTable({ largeurCqh: L, solRecette: 70 });
+const fixes = new Float32Array(table.entrees.length * 8);
+table.entrees.forEach((e, i) => O.ecrireRepere(fixes, i * 8, O.repereFixe(e.source, L, table.sol)));
+const zones = { a: () => [70, 35, 20, 10], grille: () => [70, 35, 20, 10], reperes: () => fixes,
+  ancres: ancres(() => ({ centre: [80, 40], angle: Math.PI / 6, demi: [10, 5], echelle: [1, 1], actif: true })) };
+const m = { entrees: table.entrees, largeurCqh: L, actif: true };
+const debut = await etat(DONNEES.eclats, [frag], zones, [1.5 / 120], m);
+const envol = await etat(DONNEES.eclats, [frag], zones, [0.1], m);
+const fin = await etat(DONNEES.eclats, [frag], zones, [4], m);
+await envoyer({ webgpu: true, ec: Array.from(ec), debut, envol, fin });`);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.equal(r.debut.rapide, false, 'collisions actives : simulé');
+  const c = Math.cos(Math.PI / 6);
+  const s = Math.sin(Math.PI / 6);
+  const centre = (n) => { const x = r.ec[n * 36]; const y = r.ec[n * 36 + 1]; return [80 + c * x - s * y, 40 + s * x + c * y]; };
+  // Pas 1 : chaque éclat au centre de sa cellule, à l'angle de l'ancre, taille = diamètre englobant (raccord).
+  assert.equal(r.debut.p.length, 24);
+  for (const p of r.debut.p) {
+    const [x, y] = centre(p.n);
+    pres(p.x, x, 1e-4, 'x'); pres(p.y, y, 1e-4, 'y');
+    pres(p.rot, Math.PI / 6, 1e-5, 'angle');
+    pres(p.taille, 2 * r.ec[p.n * 36 + 3], 1e-4, 'taille');
+    assert.ok(p.vrot === 0, 'rotation_max 0');
+  }
+  // τ = 0,1 : ils s'écartent du point d'impact (centre de l'ancre).
+  const ecartes = r.envol.p.filter((p) => {
+    const [x0, y0] = centre(p.n);
+    return (p.x - x0) * (x0 - 80) + (p.y - y0) * (y0 - 40) > 0;
+  }).length;
+  assert.ok(ecartes >= 20, `${ecartes} éclats s'écartent de l'impact`);
+  // τ = 4 : au-dessus du sol (à leur rayon près), beaucoup posés, et le frottement du contact les a fait tourner.
+  assert.ok(r.fin.p.every((p) => p.y + p.taille / 2 <= 70 + 0.05), 'aucun éclat sous le sol');
+  assert.ok(r.fin.p.filter((p) => p.y > 60).length >= 12, 'éclats retombés au sol');
+  assert.ok(r.fin.p.some((p) => Math.abs(p.vrot) > 0.05) || r.fin.p.some((p) => Math.abs(p.rot - Math.PI / 6) > 0.05), 'le contact fait tourner');
+});
