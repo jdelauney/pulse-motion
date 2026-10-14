@@ -45,7 +45,7 @@
   var RAYON_MIN = 0.25;        // cqh : grille d'un million de cellules au plus (scène élargie, plan 2)
   var RAYON_MAX = 20;
   var GROUPE_MAX = 8;          // émetteurs liés par « avec » (uniforme du groupe sur le GPU)
-  var ITERATIONS_GRAINS = 3;   // itérations de contacts par sous-pas (deux sous-pas : plan 3)
+  var ITERATIONS_GRAINS = 6;   // itérations de contacts par sous-pas (deux sous-pas : plan 3)
   var LIMITES_INTERACTIONS = { essaim: 100000, fluide: 60000, grains: 60000 };
   var CODES = {
     forme: { point: 0, cercle: 1, anneau: 2, rectangle: 3, ligne: 4, ancre: 5, pixels: 6 },

@@ -17,7 +17,7 @@ test('interactions : absentes par défaut, défauts de la spec pour les trois ty
   assert.equal(sans.voieRapide, true);
   assert.deepEqual(R.CODES.interaction, { essaim: 0, fluide: 1, grains: 2 });
   assert.deepEqual(R.LIMITES_INTERACTIONS, { essaim: 100000, fluide: 60000, grains: 60000 });
-  assert.deepEqual([R.RAYON_INTERACTION, R.RAYON_MIN, R.RAYON_MAX, R.GROUPE_MAX, R.ITERATIONS_GRAINS], [2, 0.25, 20, 8, 3]);
+  assert.deepEqual([R.RAYON_INTERACTION, R.RAYON_MIN, R.RAYON_MAX, R.GROUPE_MAX, R.ITERATIONS_GRAINS], [2, 0.25, 20, 8, 6]);
   const e = ok(compiler([em('a', { type: 'essaim' })])).emetteurs[0];
   assert.equal(e.voieRapide, false, 'interactions : simulé pas à pas');
   const sansGroupe = (x) => { const c = Object.assign({}, x); delete c.groupe; return c; };

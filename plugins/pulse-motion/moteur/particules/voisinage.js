@@ -2,7 +2,7 @@
  *
  * P.grilleInteractions(largeurCqh, cote) -> { origine: [x, y], cote, nx, ny, n }   grille fixe : la scène élargie de 25 %
  *   de chaque côté (cqh), cellules de côté « cote » ; Error au-delà de CELLULES_MAX cellules
- * P.iterationsGroupe(def, membres) -> itérations du solveur (fluide 2 × max(incompressibilite), grains 2 × 3, essaim 0)
+ * P.iterationsGroupe(def, membres) -> itérations du solveur (fluide 2 × max(incompressibilite), grains 2 × ITERATIONS_GRAINS, essaim 0)
  * P.emballerGroupe(def, membres, grille, nCorps) -> ArrayBuffer   uniforme « Groupe » (560 octets) ; membres :
  *   [{ em, base, capacite }] (émetteurs simulés du groupe, dans l'ordre de la recette)
  * P.WGSL_GROUPE    structures WGSL partagées (ParamsMembre, Groupe, Membre, Corps) ; P.WGSL_PAS_GROUPE : struct Pas (48 octets)
@@ -33,7 +33,7 @@
   const PLEINE = 96;
   const OCTETS_GROUPE = 560;
   const OCTETS_CORPS = 32;
-  const ITERATIONS_GRAINS = 3;
+  const ITERATIONS_GRAINS = 6;
   const MEMBRES_MAX = 8;
   P.PLEINE = PLEINE;
   P.CELLULES_MAX = CELLULES_MAX;
@@ -138,7 +138,7 @@ fn noter(@builtin(global_invocation_id) gid: vec3u) {
   let s = gid.x;
   if (s >= MB.capacite) { return; }
   let p = particules[s];
-  anciennes[MB.base + s] = vec4f(p.pos, bitcast<f32>(p.n), f32(p.vivante));
+  anciennes[MB.base + s] = vec4f(p.pos, f32(p.n), f32(p.vivante));
 }
 
 // Corps du groupe : état de chaque particule du membre après son pas (prédiction), cellule, comptage par cellule
@@ -266,6 +266,16 @@ fn plage(c: u32, v: u32) -> Plage {
   if (b - a > PLEINE) { return Plage(0u, 0u); }
   return Plage(a, b);
 }
+
+// Direction de j vers i (d = pi − pj, r = |d|) ; corps confondus : direction tirée de la paire, opposée pour (j, i),
+// pour qu'ils se séparent (coin d'un obstacle, naissance en un point).
+fn direction(i: u32, j: u32, d: vec2f, r: f32) -> vec2f {
+  if (r > 1e-6) { return d / r; }
+  let a = f32(pcg((min(i, j) * 2654435761u) ^ max(i, j)) >> 8u) / 16777216.0 * 6.2831853;
+  let u = vec2f(cos(a), sin(a));
+  if (i < j) { return u; }
+  return -u;
+}
 `;
 
   // Essaim (Reynolds).
@@ -303,8 +313,8 @@ fn essaim(@builtin(global_invocation_id) gid: vec3u) {
         let cj = corps[j];
         let d = ci.pos - cj.pos;
         let l = length(d);
-        if (l < 1e-6 || l >= vision) { continue; }
-        let u = d / l;
+        if (l >= vision) { continue; }
+        let u = direction(i, j, d, l);
         if (l < R) { sep += u * (1.0 - l / R); }
         if (l < 0.5 * R) {
           pousse += u * (0.5 * R - l);
@@ -318,7 +328,7 @@ fn essaim(@builtin(global_invocation_id) gid: vec3u) {
         }
       }
     }
-    a = m.a.x * 8.0 * vmax / R * sep;
+    a = m.a.x * 32.0 * vmax / R * sep;
     if (nVus > 0.0) {
       a += m.a.y * 2.0 * (vMoy / nVus - ci.vel);
       a += m.a.z * 2.0 * vmax * (pMoy / nVus - ci.pos) / vision;
@@ -327,7 +337,7 @@ fn essaim(@builtin(global_invocation_id) gid: vec3u) {
   if (m.c.z > 0.5) {
     let d = P.zoneB.xy + P.zoneB.zw * m.c.xy - ci.pos;
     let l = length(d);
-    if (l > 1e-6) { a += 2.0 * vmax * (d / l) * min(1.0, l / vision); }
+    if (l > 1e-6) { a += 4.0 * vmax * (d / l) * min(1.0, l / vision); }
   }
   let v = borner(ci.vel + a * P.dt, m.b.z, vmax, repli(ci.n));
   var x = ci.pos + (v - ci.vel) * P.dt;
@@ -340,7 +350,7 @@ fn essaim(@builtin(global_invocation_id) gid: vec3u) {
   // Fluide (PBF) en unités de h : q = r / h.
   const WGSL_FLUIDE = /* wgsl */ `
 const EPS_PBF = 0.1;        // relaxation du multiplicateur
-const K_CORR = 0.01;        // répulsion artificielle (anti-amas)
+const K_CORR = 0.1;         // répulsion artificielle (anti-amas)
 const W_DQ = 0.884736;      // W(0,2) = (1 − 0,04)³
 const PAS_MAX = 0.1;        // déplacement d'une itération au plus, en fraction de h
 
@@ -383,11 +393,9 @@ fn densite(@builtin(global_invocation_id) gid: vec3u) {
       let q = r / h;
       if (q >= 1.0) { continue; }
       rho += noyauW(q);
-      if (r > 1e-6) {
-        let g = gradW(q, d / r) / rho0;
-        gi += g;
-        somme += dot(g, g);
-      }
+      let g = gradW(q, direction(i, j, d, r)) / rho0;
+      gi += g;
+      somme += dot(g, g);
     }
   }
   var C = rho / rho0 - 1.0;
@@ -417,10 +425,10 @@ fn corriger(@builtin(global_invocation_id) gid: vec3u) {
       let d = pi - posL[j];
       let r = length(d);
       let q = r / h;
-      if (q >= 1.0 || r <= 1e-6) { continue; }
+      if (q >= 1.0) { continue; }
       let w = noyauW(q) / W_DQ;
       let s = -K_CORR * w * w * w * w;
-      dq += (li + lambdas[j] + s) * gradW(q, d / r);
+      dq += (li + lambdas[j] + s) * gradW(q, direction(i, j, d, r));
     }
   }
   var dp = dq / m.a.x * h;
@@ -466,7 +474,7 @@ const RELAXATION = 1.5;     // surrelaxation de la moyenne des corrections (Jaco
 // Position au début du pas : notée avant le pas des émetteurs (même particule), sinon déduite de la prédiction.
 fn ancienne(i: u32) -> vec2f {
   let a = anciennes[i];
-  if (a.w > 0.5 && bitcast<u32>(a.z) == corps[i].n) { return a.xy; }
+  if (a.w > 0.5 && a.z == f32(corps[i].n)) { return a.xy; }
   return corps[i].pos - corps[i].vel * P.dt;
 }
 
@@ -496,8 +504,8 @@ fn contacts(@builtin(global_invocation_id) gid: vec3u) {
       let d = pi - pj;
       let r = length(d);
       let contact = ri + corps[j].rayon;
-      if (r <= 1e-6 || r >= contact * (1.0 + 0.25 * m.a.z)) { continue; }
-      let u = d / r;
+      if (r >= contact * (1.0 + 0.25 * m.a.z)) { continue; }
+      let u = direction(i, j, d, r);
       let pen = contact - r;
       if (pen > 0.0) {
         var c = 0.5 * pen * u;
@@ -515,20 +523,22 @@ fn contacts(@builtin(global_invocation_id) gid: vec3u) {
   if (nb > 0.0) { posE[i] = pi + RELAXATION * dp / nb; } else { posE[i] = pi; }
 }
 
-// Vitesse finale des grains : prédiction + déplacement des contacts / dt ; rebond entre grains (restitution) sur la vitesse
-// normale d'approche prédite.
+// Vitesse finale des grains : prédiction + déplacement des contacts / dt, bornée par la vitesse prédite du grain (les
+// contacts entre grains dissipent sans donner de vitesse : un amas né serré ne se disperse pas en éclatant, un grain qui
+// tombe sur le tas n'y creuse pas de cratère) ; rebond entre grains (restitution) sur la vitesse normale d'approche prédite.
 @compute @workgroup_size(64)
 fn vitessesGrains(@builtin(global_invocation_id) gid: vec3u) {
   let i = gid.x;
   if (i >= GR.nCorps) { return; }
   let ci = corps[i];
-  let v = ci.vel + (posL[i] - ci.pos) / P.dt;
+  var v = ci.vel + (posL[i] - ci.pos) / P.dt;
   if (ci.membre == AUCUN || !dansGrille(i)) {
     vitesses[i] = v;
     return;
   }
   let e = GR.m[ci.membre].a.w;
   var dv = vec2f(0.0);
+  var vlim = length(ci.vel);
   for (var vc = 0u; vc < 9u; vc++) {
     let pl = plage(cles[i], vc);
     for (var k = pl.a; k < pl.b; k++) {
@@ -536,20 +546,22 @@ fn vitessesGrains(@builtin(global_invocation_id) gid: vec3u) {
       if (j == i) { continue; }
       let d = posL[i] - posL[j];
       let r = length(d);
-      if (r <= 1e-6 || r >= (ci.rayon + corps[j].rayon) * 1.01) { continue; }
-      let u = d / r;
+      if (r >= (ci.rayon + corps[j].rayon) * 1.01) { continue; }
+      let u = direction(i, j, d, r);
       let vn = dot(ci.vel - corps[j].vel, u);
       if (vn < 0.0) { dv -= 0.5 * e * vn * u; }
     }
   }
+  let lv = length(v);
+  if (lv > vlim) { v = v * (vlim / lv); }
   vitesses[i] = v + dv;
 }
 `;
 
   // Rendu aux particules : déclarations et code communs aux deux modules.
   const WGSL_RENDRE_DECL = /* wgsl */ `
-struct Limite { ok: bool, pos: vec2f, n: vec2f };
-const SEUIL_REPOS = 0.5;   // cqh/s : un grain soutenu plus lent que cela est mis au repos
+struct Limite { ok: bool, pos: vec2f, n: vec2f, f: f32 };
+const SEUIL_REPOS = 4.0;   // cqh/s : un grain soutenu plus lent que cela est mis au repos
 @group(0) @binding(15) var<uniform> GR: Groupe;
 @group(0) @binding(16) var<uniform> MB: Membre;
 @group(0) @binding(17) var<storage, read> corps: array<Corps>;
@@ -562,7 +574,7 @@ const SEUIL_REPOS = 0.5;   // cqh/s : un grain soutenu plus lent que cela est mi
 // Position au début du pas : notée avant le pas des émetteurs (même particule), sinon déduite de la prédiction.
 fn ancienneR(i: u32) -> vec2f {
   let a = anciennes[i];
-  if (a.w > 0.5 && bitcast<u32>(a.z) == corps[i].n) { return a.xy; }
+  if (a.w > 0.5 && a.z == f32(corps[i].n)) { return a.xy; }
   return corps[i].pos - corps[i].vel * P.dt;
 }
 
@@ -590,6 +602,8 @@ fn rendreCorps(s: u32) {
   if (l.ok) {
     let vn = dot(v, l.n);
     if (vn < 0.0) { v = v - vn * l.n; }
+    let vt = v - dot(v, l.n) * l.n;
+    v = v - (1.0 - l.f) * vt;
   }
   if (GR.genre == 0u) { v = fuir(x, v, c.rayon, GR.m[c.membre]); }
   p.pos = x;
@@ -604,7 +618,7 @@ const AUCUN = 0xffffffffu;
 @group(0) @binding(1) var<storage, read_write> particules: array<Particule>;
 @group(0) @binding(4) var<uniform> P: Pas;
 
-fn limiter(p0: vec2f, p1: vec2f, r: f32) -> Limite { return Limite(false, p1, vec2f(0.0)); }
+fn limiter(p0: vec2f, p1: vec2f, r: f32) -> Limite { return Limite(false, p1, vec2f(0.0), 1.0); }
 fn fuir(x: vec2f, v: vec2f, r: f32, m: ParamsMembre) -> vec2f { return v; }
 
 @compute @workgroup_size(64)
@@ -616,12 +630,28 @@ fn rendre(@builtin(global_invocation_id) gid: vec3u) { rendreCorps(gid.x); }
 // Déplacement de correction de p0 (hors des obstacles après le pas des émetteurs) à p1 : arrêté au premier obstacle touché
 // (repères à τ1 aux deux bouts : obstacles immobiles le temps de la correction), replacé hors de la surface.
 fn limiter(p0: vec2f, p1: vec2f, r: f32) -> Limite {
-  if (eu(140u) != 1u) { return Limite(false, p1, vec2f(0.0)); }
+  if (eu(140u) != 1u) { return Limite(false, p1, vec2f(0.0), 1.0); }
   let t = chercher(p0, p1, P.tau1, true, r);
-  if (!t.ok) { return Limite(false, p1, vec2f(0.0)); }
+  if (!t.ok) { return Limite(false, p1, vec2f(0.0), 1.0); }
   let B = cadresB[t.o];
   let n = normalize(tourner(B, t.n));
-  return Limite(true, versMonde(B, t.l) + n * MARGE, n);
+  let q = versMonde(B, t.l) + n * MARGE;
+  // Reste du déplacement glissé le long de la surface (sans quoi un grain posé, poussé de biais vers le sol, ne bouge
+  // plus et ses voisins s'enfoncent en lui), freiné par le frottement de l'émetteur (Coulomb : la part tangentielle perd
+  // frottement × la part normale), arrêté au second obstacle touché ; f : part de la vitesse tangentielle gardée.
+  let reste = (p1 - p0) * (1.0 - t.t);
+  let rn = max(-dot(reste, n), 0.0);
+  let rt = reste + rn * n;
+  let lt = length(rt);
+  var f = 1.0;
+  if (lt > 1e-9) { f = max(0.0, 1.0 - 0.5 * (ef(145u) + ef(146u)) * rn / lt); }
+  var x = q + rt * f;
+  let t2 = chercher(q, x, P.tau1, true, r);
+  if (t2.ok) {
+    let B2 = cadresB[t2.o];
+    x = versMonde(B2, t2.l) + normalize(tourner(B2, t2.n)) * MARGE;
+  }
+  return Limite(true, x, n, f);
 }
 
 // Fuite (essaim) : un obstacle vu devant, à moins du rayon de vision, détourne la vitesse le long de sa normale, d'autant
@@ -745,7 +775,7 @@ fn rendreC(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_
       }
       g.lancer(passe, 'viscosite', 'AB', null, blocs, n);
     },
-    // Itérations de contacts en ping-pong (2 × 3 : résultat dans posA), puis vitesses ; mise au repos au rendu.
+    // Itérations de contacts en ping-pong (2 × ITERATIONS_GRAINS, nombre pair : résultat dans posA), puis vitesses ; mise au repos au rendu.
     grains(g, passe, n, blocs) {
       for (let k = 0; k < g.iterations; k++) g.lancer(passe, 'contacts', k % 2 === 0 ? 'AB' : 'BA', null, blocs, n);
       g.lancer(passe, 'vitessesGrains', 'AB', null, blocs, n);

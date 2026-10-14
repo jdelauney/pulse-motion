@@ -48,7 +48,7 @@ test('voisinage : uniforme « Groupe » (grille, membres, paramètres de chaque 
   assert.equal(new Uint32Array(fl.buffer)[8], 10, 'fluide : 2 × incompressibilité');
   assert.deepEqual(Array.from(fl.slice(12, 17)), [effet.emetteurs[2].interactions.rho0, 0.05, 0.1, 5, 2].map(f32));
   const gr = new Float32Array(P.emballerGroupe(effet.groupes[2], membres(2), P.grilleInteractions(177.78, 2), 10));
-  assert.equal(new Uint32Array(gr.buffer)[8], 2 * R.ITERATIONS_GRAINS, 'grains : 2 × 3 itérations');
+  assert.equal(new Uint32Array(gr.buffer)[8], 2 * R.ITERATIONS_GRAINS, 'grains : 2 × ITERATIONS_GRAINS itérations');
   assert.deepEqual(Array.from(gr.slice(12, 17)), [0.6, 0.4, 0.3, 0.1, 2].map(f32));
   assert.equal(P.iterationsGroupe(effet.groupes[0], membres(0)), 0);
 });
