@@ -1008,7 +1008,7 @@
 
   /** Photographies des scènes du plan dans leur état courant (pleine résolution si exact, sinon demi) ; figements
    *  synchrones ensemble (même instant), rastérisations ensuite. */
-  async function photographier(plan, t, exact) {
+  async function photographierScenes(plan, t, exact) {
     const scene = document.getElementById('pm-scene');
     const dpr = M.enCapture && M.enCapture() ? 1 : racine.devicePixelRatio || 1;
     const k = exact ? 1 : 0.5;
@@ -1046,7 +1046,7 @@
     if (comp.enCours) { comp.aRefaire = true; return; }
     if (M.enLecture && M.enLecture() && M.reel.now() - comp.derniere < PERIODE_PHOTOS) return;
     comp.aRefaire = false;
-    comp.enCours = comp.file = comp.file.then(() => photographier(plan, t, false)).then(() => {
+    comp.enCours = comp.file = comp.file.then(() => photographierScenes(plan, t, false)).then(() => {
       comp.enCours = null;
       comp.derniere = M.reel.now();
       if (etat.gpu) composer(etat.t);
@@ -1065,7 +1065,7 @@
     // Style d'entrée à jour : une transition par shader prête n'a pas de style CSS (le seek a pu rendre avant le GPU).
     plan.couches.forEach((id) => M.rendreScene(id, t));
     const exact = !!(M.enCapture && M.enCapture());
-    const fait = comp.file.then(() => photographier(plan, t, exact));
+    const fait = comp.file.then(() => photographierScenes(plan, t, exact));
     comp.file = fait.catch(() => {});
     await fait;
     composer(t);
