@@ -13,6 +13,9 @@
  * Fragments (P4) : forme « pixels » (naissance sur les pixels de l'ancre photographiée), couleur « source », rendu
  * « eclats », « cible » (arrivée sur un élément) ; un émetteur de fragments naît tout entier à τ = 0 (une salve dont le
  * nombre est fixé à la photographie : fragments.js).
+ * Interactions (P5a) : bloc « interactions » d'un émetteur (essaim, fluide, grains : em.interactions), liens « avec » entre
+ * émetteurs d'un même effet (effet.groupes : un groupe de voisinage par ensemble lié, un type par groupe) ; rendu « fluide »
+ * (em.fluide : nappe lissée). Un émetteur à interactions quitte la voie rapide ; erreurs « interactions-invalides ».
  *
  * Module pur : chargé tel quel dans la page (global M.recette) et par Node (require).
  */
@@ -38,6 +41,12 @@
   var DENSITE_MAX = 64;
   var MORCEAUX_MIN = 8;
   var MORCEAUX_MAX = 512;
+  var RAYON_INTERACTION = 2;   // cqh : rayon d'interaction par défaut
+  var RAYON_MIN = 0.25;        // cqh : grille d'un million de cellules au plus (scène élargie, plan 2)
+  var RAYON_MAX = 20;
+  var GROUPE_MAX = 8;          // émetteurs liés par « avec » (uniforme du groupe sur le GPU)
+  var ITERATIONS_GRAINS = 3;   // itérations de contacts par sous-pas (deux sous-pas : plan 3)
+  var LIMITES_INTERACTIONS = { essaim: 100000, fluide: 60000, grains: 60000 };
   var CODES = {
     forme: { point: 0, cercle: 1, anneau: 2, rectangle: 3, ligne: 4, ancre: 5, pixels: 6 },
     force: { gravite: 0, trainee: 1, vent: 2, turbulence: 3, attracteur: 4, vortex: 5, rappel: 6 },
@@ -49,6 +58,7 @@
     ordre: { hasard: 0, 'gauche-droite': 1, centre: 2 },
     arrivee: { guidee: 0, choree: 1 },
     source: { ancre: 0, cible: 1 },
+    interaction: { essaim: 0, fluide: 1, grains: 2 },
   };
   var COULEURS_CHARTE = ['primaire', 'accent', 'texte', 'fond'];
   var HEX = /^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
@@ -229,6 +239,45 @@
         guidage: nb('Début du rattrapage (fraction du trajet)', 0.6, { min: 0, max: 1, curseur: [0, 1], pas: 0.05 }),
         densite: nb('Densité de la cible : une particule pour N pixels', DENSITE, { min: 1, max: DENSITE_MAX, pas: 1, curseur: [1, DENSITE_MAX] }),
         courbe: cb('Courbe du trajet (chorégraphié)'),
+      }),
+      interactions: ob('Interactions entre particules', {
+        type: ch('Type', Object.keys(CODES.interaction), null, { requis: true, exemple: 'essaim' }),
+        rayon: nb('Rayon d\'interaction', RAYON_INTERACTION, { min: RAYON_MIN, max: RAYON_MAX, unite: 'cqh', curseur: [0.5, 10], pas: 0.1 }),
+        avec: li('Interagit aussi avec (émetteurs du même effet, même type)',
+          noeud('texte', 'Émetteur', null, { motif: '^[a-z0-9-]+$', parmi: 'emetteurs', exemple: 'b' }), { defaut: [], maximum: GROUPE_MAX - 1 }),
+      }, {
+        exemple: { type: 'essaim' },
+        variantes: {
+          cle: 'type',
+          types: {
+            essaim: { libelle: 'Essaim (nuée, banc, lucioles)', champs: {
+              separation: nb('Séparation', 1.5, { min: 0, max: 5, curseur: [0, 5], pas: 0.1 }),
+              alignement: nb('Alignement', 1, { min: 0, max: 5, curseur: [0, 5], pas: 0.1 }),
+              cohesion: nb('Cohésion', 1, { min: 0, max: 5, curseur: [0, 5], pas: 0.1 }),
+              vision: ob('Vision', {
+                rayon: nb('Rayon de vision', 6, { min: RAYON_MIN, max: 40, unite: 'cqh', curseur: [1, 30] }),
+                angle: nb('Angle de vision', 270, { min: 10, max: 360, unite: '°', curseur: [10, 360] }),
+              }),
+              vitesse: iv('Vitesse', [5, 20], { unite: 'cqh/s', curseur: [0, 100] }),
+              cible: pr('Cible (fraction de la zone, ou « ancre »)', null, { exemple: [0.5, 0.5] }),
+              fuite: nb('Fuite des obstacles', 30, { min: 0, curseur: [0, 200] }),
+            } },
+            fluide: { libelle: 'Fluide (eau, miel)', champs: {
+              densite: nb('Densité au repos (particules par cellule)', 6, { min: 1, max: 30, curseur: [2, 20] }),
+              viscosite: nb('Viscosité', 0.05, { min: 0, max: 1, curseur: [0, 1], pas: 0.01 }),
+              tension: nb('Tension de surface', 0.1, { min: 0, max: 1, curseur: [0, 1], pas: 0.01 }),
+              incompressibilite: nb('Incompressibilité (itérations)', 4, { min: 2, max: 6, pas: 1, curseur: [2, 6] }),
+            } },
+            grains: { libelle: 'Grains (sable, neige lourde)', champs: {
+              frottement: ob('Frottement entre grains', {
+                statique: nb('Statique', 0.6, { min: 0, max: 1.5, curseur: [0, 1.5], pas: 0.05 }),
+                dynamique: nb('Dynamique', 0.4, { min: 0, max: 1.5, curseur: [0, 1.5], pas: 0.05 }),
+              }),
+              cohesion: nb('Cohésion', 0, { min: 0, max: 1, curseur: [0, 1], pas: 0.05 }),
+              restitution: nb('Rebond entre grains', 0.1, { min: 0, max: 1, curseur: [0, 1], pas: 0.05 }),
+            } },
+          },
+        },
       }),
     }, { exemple: { nom: 'emetteur', naissance: { debit: 50, vie: [0.5, 1] } } }), { requis: true }),
   });
@@ -493,7 +542,9 @@
     var nomEffet = recette && recette.nom ? recette.nom : '?';
     var prefixe = 'Effet « ' + nomEffet + ' »';
     function invalide(chemin, message) {
-      var regle = /(^|\.)(collisions|a_la_collision)(\.|\[|$)/.test(chemin || '') ? 'collisions-invalides' : 'effet-invalide';
+      var c = chemin || '';
+      var regle = /(^|\.)interactions(\.|\[|$)/.test(c) ? 'interactions-invalides'
+        : /(^|\.)(collisions|a_la_collision)(\.|\[|$)/.test(c) ? 'collisions-invalides' : 'effet-invalide';
       return ErreurRecette(regle, prefixe + (chemin ? ', ' + chemin : '') + ' : ' + message + '.', chemin || '');
     }
     try {
@@ -852,6 +903,68 @@
         };
       }
 
+      /** Bloc « interactions » (P5a) : type, rayon, émetteurs liés (noms vérifiés avec les groupes), réglages du type ;
+       *  cote : côté de cellule de voisinage propre à l'émetteur (essaim : rayon de vision s'il est plus grand). */
+      function compilerInteractions(v, ch) {
+        if (v === undefined || v === null) return null;
+        v = objet(v, ch);
+        var type = choix(v.type, CODES.interaction, ch + '.type');
+        function entre(o, cle, chemin, defaut, min, max) {
+          var x = nombre(o[cle], chemin, defaut);
+          if (x < min || (max !== undefined && x > max)) {
+            throw invalide(chemin, max !== undefined ? 'valeur entre ' + min + ' et ' + max + ' attendue' : 'valeur supérieure ou égale à ' + min + ' attendue');
+          }
+          return x;
+        }
+        function sousObjet(cle) { return v[cle] === undefined || v[cle] === null ? {} : objet(v[cle], ch + '.' + cle); }
+        var r = { type: type, code: CODES.interaction[type], rayon: entre(v, 'rayon', ch + '.rayon', RAYON_INTERACTION, RAYON_MIN, RAYON_MAX), avec: [] };
+        if (v.avec !== undefined && v.avec !== null) {
+          if (!Array.isArray(v.avec)) throw invalide(ch + '.avec', 'liste de noms d\'émetteurs attendue');
+          if (v.avec.length > GROUPE_MAX - 1) throw invalide(ch + '.avec', (GROUPE_MAX - 1) + ' émetteurs au plus');
+          r.avec = v.avec.map(function (nom, k) {
+            if (typeof nom !== 'string') throw invalide(ch + '.avec[' + k + ']', 'nom d\'émetteur attendu');
+            return nom;
+          });
+        }
+        if (type === 'essaim') {
+          var vision = sousObjet('vision');
+          var vitesse = intervalle(v.vitesse, ch + '.vitesse', [5, 20]);
+          if (vitesse[0] < 0 || vitesse[1] <= 0) throw invalide(ch + '.vitesse', 'vitesses positives attendues (minimum ≥ 0, maximum > 0)');
+          var cible = null;
+          if (v.cible === 'ancre') cible = [0.5, 0.5];
+          else if (v.cible !== undefined && v.cible !== null) cible = paire(v.cible, ch + '.cible', [0.5, 0.5]);
+          r.separation = entre(v, 'separation', ch + '.separation', 1.5, 0, 5);
+          r.alignement = entre(v, 'alignement', ch + '.alignement', 1, 0, 5);
+          r.cohesion = entre(v, 'cohesion', ch + '.cohesion', 1, 0, 5);
+          r.vision = {
+            rayon: entre(vision, 'rayon', ch + '.vision.rayon', 6, RAYON_MIN, 40),
+            angle: rad(entre(vision, 'angle', ch + '.vision.angle', 270, 10, 360)),
+          };
+          r.vitesse = vitesse;
+          r.cible = cible;
+          r.fuite = entre(v, 'fuite', ch + '.fuite', 30, 0);
+          r.cote = Math.max(r.rayon, r.vision.rayon);
+        } else if (type === 'fluide') {
+          r.densite = entre(v, 'densite', ch + '.densite', 6, 1, 30);
+          r.viscosite = entre(v, 'viscosite', ch + '.viscosite', 0.05, 0, 1);
+          r.tension = entre(v, 'tension', ch + '.tension', 0.1, 0, 1);
+          r.incompressibilite = Math.round(entre(v, 'incompressibilite', ch + '.incompressibilite', 4, 2, 6));
+          // Densité au repos visée par le solveur : somme du noyau (1 − q²)³ sur « densite » particules par cellule h × h.
+          r.rho0 = arrondi(r.densite * Math.PI / 4);
+          r.cote = r.rayon;
+        } else {
+          var fr = sousObjet('frottement');
+          r.frottement = {
+            statique: entre(fr, 'statique', ch + '.frottement.statique', 0.6, 0, 1.5),
+            dynamique: entre(fr, 'dynamique', ch + '.frottement.dynamique', 0.4, 0, 1.5),
+          };
+          r.cohesion = entre(v, 'cohesion', ch + '.cohesion', 0, 0, 1);
+          r.restitution = entre(v, 'restitution', ch + '.restitution', 0.1, 0, 1);
+          r.cote = r.rayon;
+        }
+        return r;
+      }
+
       /** Règles d'un émetteur de fragments (pixels, éclats ou cible). */
       function verifierFragment(n, em, ch, P) {
         if (P) throw invalide(ch, 'un sous-émetteur ne naît pas d\'une photographie (forme « pixels », éclats, « cible ») : réservé aux émetteurs lancés par la scène');
@@ -961,6 +1074,7 @@
           eclats: compilerEclats(e.rendu, ch + '.rendu'),
           cible: cible,
           modules: compilerModules(e.modules, ch + '.modules'),
+          interactions: compilerInteractions(e.interactions, ch + '.interactions'),
         };
         em.fragment = !!(em.pixels || em.eclats || em.cible);
         if (em.fragment) verifierFragment(n, em, ch, P);
@@ -1060,6 +1174,8 @@
           : em.forces.every(function (f) { return f.type === 'gravite' || (f.type === 'trainee' && !f.quadratique); }));
         // Un module de force n'a pas de forme close : l'émetteur est simulé pas à pas.
         if (em.modules.force) em.voieRapide = false;
+        // Interactions : l'état d'une particule dépend de ses voisines, aucune forme close.
+        if (em.interactions) em.voieRapide = false;
         return em;
       }
 
@@ -1106,6 +1222,12 @@
     DENSITE_MAX: DENSITE_MAX,
     MORCEAUX_MIN: MORCEAUX_MIN,
     MORCEAUX_MAX: MORCEAUX_MAX,
+    RAYON_INTERACTION: RAYON_INTERACTION,
+    RAYON_MIN: RAYON_MIN,
+    RAYON_MAX: RAYON_MAX,
+    GROUPE_MAX: GROUPE_MAX,
+    ITERATIONS_GRAINS: ITERATIONS_GRAINS,
+    LIMITES_INTERACTIONS: LIMITES_INTERACTIONS,
     SCHEMA: SCHEMA,
     ErreurRecette: ErreurRecette,
     resoudre: resoudre,
