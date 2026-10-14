@@ -3,14 +3,17 @@
  *
  *   GET  /_pm/atelier/contexte              { projet, charte, recettes: { bibliotheque: [noms], projet: [noms] } }
  *   GET  /_pm/atelier/recette?nom=<nom>     { nom, source: 'projet' | 'bibliotheque', recette (résolue) }
- *   GET  /_pm/atelier/scenes                { charte, scenes: [{ id, fichier, empreinte, effets: [effet] }] }
+ *   GET  /_pm/atelier/scenes                { charte, scenes: [{ id, fichier, empreinte, effets: [effet], shaders: [fond] }] }
  *   GET  /_pm/atelier/texture?chemin=assets/…   { uri } : image du projet en data:
  *   POST /_pm/atelier/reglages              { fichier, empreinte, scene, ordre, reglages, graine } -> { ok, empreinte }
  *   POST /_pm/atelier/recette               { nom, etend, recette, description?, dur?, remplacer?,
  *                                             cible?: { scene, ordre, empreinte, reglages, graine } } -> { ok, fichier, complete, empreinte? }
+ *   POST /_pm/atelier/reglages-shader       { fichier, empreinte, scene, ordre, reglages } -> { ok, empreinte }   (fond par shader, P6)
+ *   GET  /_pm/atelier/shader?nom=<nom>      { nom, source, fichier, json, code, erreurs } : sources d'un shader (modules de l'atelier)
  *   GET  /_pm/atelier?recette=<nom>         page d'atelier (moteur/atelier/page.html) ; /_pm/atelier/moteur.js, base.css, page.mjs
  *   GET  /_pm/atelier/expression.js, recette.js, editeur.mjs, panneau.mjs   modules de l'atelier
  *   effet : { ordre, nom, calque, ancre, reglages, graine, graineEcrite, dur, recette | null, erreur | null }
+ *   fond : { ordre, nom, calque, ancre, reglages, usage, parametres, erreur | null }   (balises data-shader)
  * Écritures : JSON seulement (une autre origine est arrêtée par la requête préalable CORS), copie dans
  * .historique/ avant, fichier temporaire puis renommage ; 409 si la scène a changé sur le disque ({ conflit: true })
  * ou si le nom de la recette est invalide ou pris. Jamais d'écriture dans la bibliothèque du plugin.
@@ -25,6 +28,8 @@ const { charteFinale, CHARTE_DEFAUT } = require('./fusion-charte.js');
 const { trouverStyle } = require('../styles.js');
 const { lireSecondes } = require('../../moteur/minutage.js');
 const R = require('../../moteur/particules/recette.js');
+const S = require('../../moteur/shaders/code.js');
+const { chargeurShaders, balisesShaders, modifierShader, BIBLIOTHEQUE: BIBLIOTHEQUE_SHADERS } = require('./shaders.js');
 const historique = require('../historique.js');
 const { variablesCSS } = require('../../moteur/courbes.js');
 const { lireMoteur } = require('../assembler.js');
@@ -117,13 +122,14 @@ function lireJSON(req) {
 }
 
 /**
- * creerRoutesAtelier(projet, { dossierStyles?, bibliotheque?, ecrire? }) -> (req, res, url) => bool (true si traitée)
- * bibliotheque : dossier des recettes livrées (tests : tests/fixtures/effets) ; ecrire(fichier, contenu) : écriture
- * atomique, remplaçable dans les tests pour simuler un disque plein.
+ * creerRoutesAtelier(projet, { dossierStyles?, bibliotheque?, bibliothequeShaders?, ecrire? }) -> (req, res, url) => bool (true si traitée)
+ * bibliotheque : dossier des recettes livrées (tests : tests/fixtures/effets) ; bibliothequeShaders : dossier des shaders livrés ;
+ * ecrire(fichier, contenu) : écriture atomique, remplaçable dans les tests pour simuler un disque plein.
  */
-function creerRoutesAtelier(projet, { dossierStyles, bibliotheque = BIBLIOTHEQUE, ecrire = ecrireAtomique } = {}) {
+function creerRoutesAtelier(projet, { dossierStyles, bibliotheque = BIBLIOTHEQUE, bibliothequeShaders = BIBLIOTHEQUE_SHADERS, ecrire = ecrireAtomique } = {}) {
   const projetOuvert = () => fs.existsSync(path.join(projet, 'deroule.json'));
   const charger = () => chargeurRecettes(projet, bibliotheque);
+  const chargerShaders = () => chargeurShaders(projet, bibliothequeShaders);
 
   function lireLeDeroule() {
     const { deroule } = lireDeroule(projet);
@@ -180,16 +186,40 @@ function creerRoutesAtelier(projet, { dossierStyles, bibliotheque = BIBLIOTHEQUE
     };
   }
 
+  /** Balise data-shader -> { ordre, nom, calque, ancre, reglages, usage, parametres, erreur } ; erreur : message, ou null. */
+  function decrireShader(b, ctx) {
+    const a = b.attributs;
+    const nom = String(a['data-shader'] || '').trim();
+    const reglages = a['data-reglages'] || '';
+    let src = null;
+    let erreur = null;
+    try { src = ctx.shaders(nom); } catch (e) { erreur = e.message; }
+    if (!src && !erreur) erreur = `Shader « ${nom} » introuvable (ni dans shaders/ du projet, ni dans la bibliothèque).`;
+    else if (src && src.erreurs.length) erreur = src.erreurs.map((e) => e.message).join(' ');
+    else if (src && src.json.usage !== 'fond') erreur = `Shader « ${nom} » : c'est une « ${src.json.usage} », « fond » attendu.`;
+    if (src && !erreur) {
+      const v = S.valeursShader(src.json, reglages, ctx.charte);
+      if (v.erreurs.length) erreur = v.erreurs.map((e) => e.message).join(' ');
+    }
+    return {
+      ordre: b.ordre, nom, calque: (a['data-calque'] || 'arriere').trim(),
+      ancre: a['data-ancre'] ? a['data-ancre'].trim().replace(/^#/, '') : null,
+      reglages, usage: src && src.json ? src.json.usage : null, parametres: src && src.json ? src.json.parametres || {} : {}, erreur,
+    };
+  }
+
   function scenes(res) {
     const deroule = lireLeDeroule();
     if (!deroule) return repondre(res, 200, { charte: charte(null), scenes: [] });
-    const ctx = { charte: charte(deroule), temps: dureeTemps(deroule), charger: charger() };
+    const ctx = { charte: charte(deroule), temps: dureeTemps(deroule), charger: charger(), shaders: chargerShaders() };
     const liste = deroule.scenes.map((s) => {
       const absolu = cheminDansProjet(projet, String(s.fichier || ''));
       let brut = null;
       try { brut = absolu ? fs.readFileSync(absolu) : null; } catch { brut = null; }
-      if (!brut) return { id: s.id, fichier: s.fichier, empreinte: null, effets: [] };
-      return { id: s.id, fichier: s.fichier, empreinte: empreinte(brut), effets: balisesEffets(brut.toString('utf8')).map((b) => decrireEffet(s.id, b, ctx)) };
+      if (!brut) return { id: s.id, fichier: s.fichier, empreinte: null, effets: [], shaders: [] };
+      const texte = brut.toString('utf8');
+      return { id: s.id, fichier: s.fichier, empreinte: empreinte(brut), effets: balisesEffets(texte).map((b) => decrireEffet(s.id, b, ctx)),
+        shaders: balisesShaders(texte).map((b) => decrireShader(b, ctx)) };
     });
     return repondre(res, 200, { charte: ctx.charte, scenes: liste });
   }
@@ -220,7 +250,7 @@ function creerRoutesAtelier(projet, { dossierStyles, bibliotheque = BIBLIOTHEQUE
   const refuser = (res, r) => repondre(res, r.statut, { message: r.message, ...(r.conflit ? { conflit: true } : {}) });
 
   /** Scène visée par une écriture : -> { absolu, html } ou { statut, message, conflit? } (rien n'est écrit). */
-  function sceneVisee(c) {
+  function sceneVisee(c, balises = balisesEffets) {
     const deroule = lireLeDeroule();
     const s = deroule && deroule.scenes.find((x) => x.id === c.scene);
     if (!s) return { statut: 404, message: `Scène « ${c.scene} » introuvable dans le déroulé.` };
@@ -230,7 +260,7 @@ function creerRoutesAtelier(projet, { dossierStyles, bibliotheque = BIBLIOTHEQUE
     try { brut = fs.readFileSync(absolu); } catch { return { statut: 404, message: `Fichier « ${s.fichier} » de la scène « ${s.id} » introuvable.` }; }
     if (empreinte(brut) !== c.empreinte) return { statut: 409, conflit: true, message: CONFLIT };
     const html = brut.toString('utf8');
-    if (!Number.isInteger(c.ordre) || !balisesEffets(html)[c.ordre]) return { statut: 409, conflit: true, message: CONFLIT };
+    if (!Number.isInteger(c.ordre) || !balises(html)[c.ordre]) return { statut: 409, conflit: true, message: CONFLIT };
     return { absolu, html };
   }
 
@@ -360,7 +390,34 @@ function creerRoutesAtelier(projet, { dossierStyles, bibliotheque = BIBLIOTHEQUE
     return repondre(res, 200, { ok: true, fichier: `effets/${nom}.json`, complete, ...(nouvelleScene ? { empreinte: empreinte(Buffer.from(nouvelleScene, 'utf8')) } : {}) });
   }
 
-  const ecritures = { '/_pm/atelier/reglages': ecrireReglages, '/_pm/atelier/recette': ecrireRecette };
+  function ecrireReglagesShader(c, res) {
+    const reglages = reglagesSurs(c.reglages);
+    if (reglages === null) return repondre(res, 400, { message: 'Réglages illisibles : guillemets, chevrons, « & » et retours à la ligne ne sont pas permis.' });
+    const v = sceneVisee(c, balisesShaders);
+    if (v.statut) return refuser(res, v);
+    const deroule = lireLeDeroule();
+    const d = decrireShader(balisesShaders(v.html)[c.ordre], { charte: charte(deroule), shaders: chargerShaders() });
+    if (d.usage !== 'fond') return repondre(res, 422, { message: d.erreur, erreurs: [{ chemin: 'shader', message: d.erreur }] });
+    // Contrôlés avant d'être écrits, comme à l'assemblage.
+    const val = S.valeursShader({ nom: d.nom, parametres: d.parametres }, reglages, charte(deroule));
+    if (val.erreurs.length) return repondre(res, 422, { message: `Réglages refusés : ${val.erreurs.map((x) => x.message).join(' ')}`, erreurs: val.erreurs });
+    const nouveau = modifierShader(v.html, c.ordre, { 'data-reglages': reglages || null });
+    try {
+      historique.sauvegarder(projet);
+      ecrire(v.absolu, nouveau);
+    } catch (e) { return repondre(res, 500, { message: messageDisque(e) }); }
+    return repondre(res, 200, { ok: true, empreinte: empreinte(Buffer.from(nouveau, 'utf8')) });
+  }
+
+  function shader(res, url) {
+    const nom = url.searchParams.get('nom') || '';
+    let src = null;
+    try { src = chargerShaders()(nom); } catch (e) { return repondre(res, 400, { message: e.message }); }
+    if (!src) return repondre(res, 404, { message: `Shader « ${nom} » introuvable (ni dans shaders/ du projet, ni dans la bibliothèque).` });
+    return repondre(res, 200, { nom, source: src.source, fichier: src.fichier, json: src.json, code: src.code, erreurs: src.erreurs });
+  }
+
+  const ecritures = { '/_pm/atelier/reglages': ecrireReglages, '/_pm/atelier/recette': ecrireRecette, '/_pm/atelier/reglages-shader': ecrireReglagesShader };
 
   return function routes(req, res, url) {
     const p = url.pathname;
@@ -381,6 +438,7 @@ function creerRoutesAtelier(projet, { dossierStyles, bibliotheque = BIBLIOTHEQUE
       if (p === '/_pm/atelier/recette') { recette(res, url); return true; }
       if (p === '/_pm/atelier/scenes') { scenes(res); return true; }
       if (p === '/_pm/atelier/texture') { texture(res, url); return true; }
+      if (p === '/_pm/atelier/shader') { shader(res, url); return true; }
       return false;
     }
     if (req.method === 'POST' && ecritures[p]) {
