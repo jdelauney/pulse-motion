@@ -71,3 +71,24 @@ test('bibliothèque : modules valides et attachables à une recette', () => {
   assert.equal(m.couleur.appel, 'pmCouleur_couleur');
   assert.equal(m.forme.appel, 'pmForme_forme');
 });
+
+test('référence : chaque shader de la bibliothèque, licence, contrôles ; renvois depuis particules et contrôles', () => {
+  const ref = fs.readFileSync(path.join(__dirname, '..', 'references', 'shaders.md'), 'utf8');
+  assert.match(ref, /^# .+\n\n## L'essentiel\n/);
+  for (const noms of Object.values(ATTENDUS)) for (const n of noms) assert.match(ref, new RegExp('`' + n + '`'), n);
+  assert.match(ref, /Shadertoy/);
+  assert.match(ref, /CC BY-NC-SA/);
+  assert.match(ref, /ne jamais recopier/i);
+  for (const r of ['shader-inconnu', 'usage-incompatible', 'fonction-absente', 'liaison-reservee', 'shader-trop-gros', 'shader-invalide', 'nom-reserve', 'reglage-inconnu', 'shader-ne-compile-pas']) {
+    assert.match(ref, new RegExp('`' + r + '`'), r);
+  }
+  assert.match(ref, /pulse-motion controler \. --gpu/);
+  for (const f of ['image(coord: vec2f) -> vec4f', 'transition(coord: vec2f, progres: f32) -> vec4f', 'post(coord: vec2f) -> vec4f',
+    'force(p: Particule, t: f32, zone: vec4f) -> vec2f', 'couleur(p: Particule, u: f32, base: vec4f) -> vec4f', 'forme(uv: vec2f, p: Particule) -> f32']) {
+    assert.ok(ref.includes(f), f);
+  }
+  const particules = fs.readFileSync(path.join(__dirname, '..', 'references', 'particules.md'), 'utf8');
+  assert.match(particules, /pulse-motion reference shaders/);
+  assert.match(particules, /`emetteurs\[\]\.modules`/);
+  assert.match(fs.readFileSync(path.join(__dirname, '..', 'references', 'controles.md'), 'utf8'), /`shader-ne-compile-pas`/);
+});

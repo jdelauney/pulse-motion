@@ -13,6 +13,7 @@
 - Un élément peut se **briser**, se **désintégrer**, être **assemblé** par des particules ou se **métamorphoser** en un autre : `data-ancre` sur l'élément (et `data-cible` pour l'élément d'arrivée) ; le moteur cache et montre l'élément réel au bon moment (voir « Fragmentation »).
 - Un effet **sert un propos** : mettre en valeur un chiffre, célébrer une conclusion, poser une ambiance. Jamais pour décorer.
 - Après écriture : `pulse-motion assembler .` puis `pulse-motion controler .` ; les erreurs `effet-…`, `reglage-invalide`, `ancre-introuvable` se corrigent dans la scène.
+- Fonds animés, auras, transitions et post-traitements par shader, modules qui changent le comportement des particules : `pulse-motion reference shaders`.
 
 ## Poser un effet
 
@@ -100,6 +101,7 @@ Seulement si aucun effet de la table ne convient, dans le projet : `effets/<nom>
 | `emetteurs[].vie` | au cours de la vie : `couleur` (`degrade` + `courbe`), `taille`, `intensite` (> 1 : brille), `opacite` (`{ "de", "a", "courbe" }`) |
 | `emetteurs[].rendu` | `type` (`sprite`, `etincelle`, `trainee`, `planche`), `texture` (`disque-doux`, `etoile`, `fumee`, `flamme`, `eclat`, `confetti`, ou `assets/…`), `melange` (`additif` : lumière ; `alpha` : matière ; `premultiplie` : émission qui ne voile l'image qu'à hauteur de son alpha, comme un feu lumineux qui voile un peu), `flou` |
 | `emetteurs[].a_la_mort` | `{ "emetteur": "<nom>" }` : sous-émetteur lancé à la mort (2 niveaux au plus) |
+| `emetteurs[].modules` | modules WGSL : `{ "force": "spirale", "couleur": "couleur-vitesse", "forme": "etoile" }` (shaders de la bibliothèque ou de `shaders/` du projet) ; voir `pulse-motion reference shaders` |
 
 Valeurs : un nombre, un intervalle `[min, max]` tiré au hasard, ou une expression avec les réglages (`"30 * vitesse"`, `"nombre / dur"` ; `dur` = durée d'émission). Longueurs en cqh (1 % de la hauteur de l'image), temps en secondes, angles en degrés. Courbes : celles du moteur (`quad-out`, `sine-arch` pour monter puis redescendre, `wave` pour scintiller).
 
