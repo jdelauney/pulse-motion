@@ -202,3 +202,65 @@ test('performances : 100 000 particules qui s\'empilent sur le sol (un profil re
   assert.ok(r.posees > 10000, `${r.posees} particules posées`);
   if (process.env.PM_PERF === '1') assert.ok(r.capture < 5, `simulation avec empilement : ${r.capture.toFixed(2)} ms par image`);
 });
+
+// Désintégration de 300 000 grains (photographie de synthèse de 600 × 500 pixels opaques), libération étalée, vent et
+// turbulence : voie simulée.
+const DESINTEGRATION = R.compiler({
+  version: 1, nom: 'perf-desintegration',
+  emetteurs: [{ nom: 'grain',
+    naissance: { forme: { type: 'pixels', liberation: 1, ordre: 'gauche-droite' }, vitesse: { direction: [1, -0.4], cone: 40, valeur: [2, 10] }, vie: [3, 3] },
+    forces: [{ type: 'vent', vitesse: [35, -7], coef: 1.2 }, { type: 'turbulence', echelle: 6, force: 20, vitesse: 0.8 }],
+    vie: { couleur: 'source' }, rendu: { texture: 'pixel', melange: 'alpha' } }],
+}, { dur: 1, graine: 1 }).effet;
+
+const CODE_DESINTEGRATION = `
+const P = M.particulesInterne;
+const F = M.fragments;
+const O = M.obstacles;
+const gpu = await P.obtenirGPU();
+if (!gpu) { await envoyer({ webgpu: false }); return; }
+const { device } = gpu;
+const L = 600;
+const H = 500;
+const rgba = new Uint8ClampedArray(L * H * 4);
+for (let i = 0; i < L * H; i++) rgba.set([i % 251, i % 241, i % 239, 255], i * 4);
+const liste = F.listerPixels({ largeur: L, hauteur: H, rgba, largeurCqh: 60, hauteurCqh: 50 });
+const frag = { a: F.permuter(liste, F.pasPremier(liste.total, 1)).donnees, b: null, eclats: null, image: null,
+  demiA: liste.demi, demiB: [0, 0], coteA: liste.cote, coteB: 0 };
+const ancres = new Float32Array(16);
+O.ecrireRepere(ancres, 0, { centre: [80, 50], angle: 0, demi: [30, 25], echelle: [1, 1], actif: true });
+O.ecrireRepere(ancres, 8, { centre: [80, 50], angle: 0, demi: [30, 25], echelle: [1, 1], actif: true });
+const ZONE = [50, 25, 60, 50];
+const zones = { a: () => ZONE, grille: () => ZONE, ancres: () => ancres };
+const sim = new P.Simulation(device, F.ajusterCapacites(DONNEES, { 0: liste.total }), null, [frag]);
+sim.avancer(0.5, zones);
+await device.queue.onSubmittedWorkDone();
+const etat = new Uint32Array((await sim.lireEtat(0)).buffer);
+let vivantes = 0;
+for (let s = 14; s < etat.length; s += 16) if (etat[s] === 1) vivantes++;
+// τ continue d'une mesure à l'autre (aucune restauration d'instantané) : 60 images à 30 ips, de 0,5 à 2,5 s.
+let t = 0.5;
+const debut = performance.now();
+for (let n = 0; n < 60; n++) {
+  t += 1 / 30;
+  sim.avancer(t, zones);
+  await device.queue.onSubmittedWorkDone();
+}
+const capture = (performance.now() - debut) / 60;
+const info = gpu.adaptateur && gpu.adaptateur.info ? gpu.adaptateur.info : {};
+sim.detruire();
+await envoyer({ webgpu: true, total: liste.total, vivantes, capture, adaptateur: [info.vendor, info.architecture, info.description].filter(Boolean).join(' ') });
+`;
+
+test('performances : désintégration de 300 000 grains (simulation en capture)', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const fichiers = ['particules/instantanes.js', 'particules/gpu.js', 'particules/obstacles.js', 'particules/fragments.js', 'particules/simulation.js'];
+  const r = JSON.parse(await executerPage(pageMoteur({ fichiers, donnees: DESINTEGRATION, code: CODE_DESINTEGRATION }), { delai: 300000 }));
+  assert.equal(r.erreur, undefined, r.erreur);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  t.diagnostic(`adaptateur : ${r.adaptateur || 'inconnu'}`);
+  t.diagnostic(`désintégration : ${r.capture.toFixed(2)} ms de simulation par image pour ${r.total} grains (spec : < 5 ms)`);
+  assert.equal(r.total, 300000);
+  assert.equal(r.vivantes, 300000, 'tous les grains vivants (tenus ou libérés)');
+  if (process.env.PM_PERF === '1') assert.ok(r.capture < 5, `désintégration : ${r.capture.toFixed(2)} ms par image`);
+});
