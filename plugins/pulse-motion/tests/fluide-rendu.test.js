@@ -102,3 +102,53 @@ await envoyer({ webgpu: true, ecart, opaques });`);
   assert.equal(r.ecart, 0, 'même image au bit près par deux chemins');
   assert.ok(r.opaques > 1000, `${r.opaques} pixels de nappe`);
 });
+
+test('rendu fluide : réfraction de la photographie de la scène ; sans photographie, réfraction ignorée (image d\'une réfraction nulle)', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const verre = (refraction) => compiler(flaque({ type: 'fluide', teinte: '#ffffff', opacite: 0.1, absorption: 0.2, refraction, lissage: 0.5 }));
+  const r = await page({ avec: verre(0.8), sans: verre(0) }, `
+// Photographie de synthèse de la scène : bandes verticales rouges et vertes de 20 px.
+const c2 = document.createElement('canvas');
+c2.width = 1777;
+c2.height = 1000;
+const g = c2.getContext('2d');
+for (let x = 0; x < 1777; x += 40) { g.fillStyle = '#ff0000'; g.fillRect(x, 0, 20, 1000); g.fillStyle = '#00ff00'; g.fillRect(x + 20, 0, 20, 1000); }
+const bitmap = await createImageBitmap(c2);
+const vue = rendu.photo('s', bitmap);
+const memeVue = rendu.photo('s', bitmap) === vue;
+const zones = { a: () => [60, 40, 20, 10], grille: () => [60, 40, 20, 10] };
+async function image(effet, photoScene) {
+  const sim = new P.Simulation(device, effet, null, null, 177.7);
+  const d = sim.avancer(0.5, zones);
+  rendu.dessiner(cible, [{ sim, i: 0, delta: d[0] }], Object.assign({ photoScene }, OPTIONS));
+  const px = await rendu.lirePixels(cible);
+  rendu.oublier(sim);
+  sim.detruire();
+  return px.donnees;
+}
+const avecPhoto = await image(DONNEES.avec, vue);
+const sansPhoto = await image(DONNEES.avec, null);
+const sansRefraction = await image(DONNEES.sans, null);
+let rouges = 0;
+let verts = 0;
+for (let x = 620; x < 780; x++) {
+  const k = (450 * 1777 + x) * 4;
+  if (avecPhoto[k] > avecPhoto[k + 1] + 60) rouges++;
+  if (avecPhoto[k + 1] > avecPhoto[k] + 60) verts++;
+}
+let ecartSans = 0;
+let ecartAvec = 0;
+for (let i = 0; i < avecPhoto.length; i++) {
+  ecartSans = Math.max(ecartSans, Math.abs(sansPhoto[i] - sansRefraction[i]));
+  ecartAvec = Math.max(ecartAvec, Math.abs(avecPhoto[i] - sansPhoto[i]));
+}
+const dehors = Array.from(avecPhoto.slice((450 * 1777 + 300) * 4, (450 * 1777 + 300) * 4 + 4));
+rendu.oublierPhoto('s');
+await envoyer({ webgpu: true, rouges, verts, ecartSans, ecartAvec, dehors, memeVue });`);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.equal(r.memeVue, true, 'photographie de même taille : texture et vue réutilisées');
+  assert.ok(r.rouges >= 20 && r.verts >= 20, `bandes vues à travers le fluide : ${r.rouges} rouges, ${r.verts} vertes`);
+  assert.ok(r.ecartAvec > 50, 'la réfraction change l\'image');
+  assert.equal(r.ecartSans, 0, 'sans photographie : exactement l\'image d\'une réfraction nulle');
+  assert.deepEqual(r.dehors, [0, 0, 0, 0], 'hors du fluide : ni photographie ni teinte');
+});
