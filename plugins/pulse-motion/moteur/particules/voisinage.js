@@ -337,6 +337,128 @@ fn essaim(@builtin(global_invocation_id) gid: vec3u) {
 }
 `;
 
+  // Fluide (PBF) en unités de h : q = r / h.
+  const WGSL_FLUIDE = /* wgsl */ `
+const EPS_PBF = 0.1;        // relaxation du multiplicateur
+const K_CORR = 0.01;        // répulsion artificielle (anti-amas)
+const W_DQ = 0.884736;      // W(0,2) = (1 − 0,04)³
+const PAS_MAX = 0.1;        // déplacement d'une itération au plus, en fraction de h
+
+// Noyau de densité poly6 sans normalisation (W(0) = 1).
+fn noyauW(q: f32) -> f32 {
+  let a = 1.0 - q * q;
+  return a * a * a;
+}
+
+// Gradient du noyau « spiky » par rapport à la position de i (u : direction de j vers i), en unités de q.
+fn gradW(q: f32, u: vec2f) -> vec2f {
+  let a = 1.0 - q;
+  return -3.0 * a * a * u;
+}
+
+// PBF, étape 1 : densité ρ_i = 1 + Σ W (lue dans posL), contrainte C_i = ρ_i / ρ0 − 1 (dépression gardée à hauteur de
+// « tension »), multiplicateur λ_i = −C_i / (Σ |∇C|² + ε).
+@compute @workgroup_size(64)
+fn densite(@builtin(global_invocation_id) gid: vec3u) {
+  let i = gid.x;
+  if (i >= GR.nCorps) { return; }
+  if (corps[i].membre == AUCUN || !dansGrille(i)) {
+    lambdas[i] = 0.0;
+    return;
+  }
+  let m = GR.m[corps[i].membre];
+  let rho0 = m.a.x;
+  let h = m.b.x;
+  let pi = posL[i];
+  var rho = 1.0;
+  var gi = vec2f(0.0);
+  var somme = 0.0;
+  for (var vc = 0u; vc < 9u; vc++) {
+    let pl = plage(cles[i], vc);
+    for (var k = pl.a; k < pl.b; k++) {
+      let j = ordre[k];
+      if (j == i) { continue; }
+      let d = pi - posL[j];
+      let r = length(d);
+      let q = r / h;
+      if (q >= 1.0) { continue; }
+      rho += noyauW(q);
+      if (r > 1e-6) {
+        let g = gradW(q, d / r) / rho0;
+        gi += g;
+        somme += dot(g, g);
+      }
+    }
+  }
+  var C = rho / rho0 - 1.0;
+  if (C < 0.0) { C = C * m.a.z; }
+  lambdas[i] = -C / (somme + dot(gi, gi) + EPS_PBF);
+}
+
+// PBF, étape 2 : Δp_i = h / ρ0 · Σ (λ_i + λ_j + s) ∇W, s = −K (W(q) / W(0,2))⁴ ; posL -> posE, déplacement borné.
+@compute @workgroup_size(64)
+fn corriger(@builtin(global_invocation_id) gid: vec3u) {
+  let i = gid.x;
+  if (i >= GR.nCorps) { return; }
+  let pi = posL[i];
+  if (corps[i].membre == AUCUN || !dansGrille(i)) {
+    posE[i] = pi;
+    return;
+  }
+  let m = GR.m[corps[i].membre];
+  let h = m.b.x;
+  let li = lambdas[i];
+  var dq = vec2f(0.0);
+  for (var vc = 0u; vc < 9u; vc++) {
+    let pl = plage(cles[i], vc);
+    for (var k = pl.a; k < pl.b; k++) {
+      let j = ordre[k];
+      if (j == i) { continue; }
+      let d = pi - posL[j];
+      let r = length(d);
+      let q = r / h;
+      if (q >= 1.0 || r <= 1e-6) { continue; }
+      let w = noyauW(q) / W_DQ;
+      let s = -K_CORR * w * w * w * w;
+      dq += (li + lambdas[j] + s) * gradW(q, d / r);
+    }
+  }
+  var dp = dq / m.a.x * h;
+  let l = length(dp);
+  if (l > PAS_MAX * h) { dp = dp * (PAS_MAX * h / l); }
+  posE[i] = pi + dp;
+}
+
+// Vitesse corrigée d'un corps : prédiction + déplacement des contraintes / dt (positions finales dans posL).
+fn vitesseCorrigee(j: u32) -> vec2f { return corps[j].vel + (posL[j] - corps[j].pos) / P.dt; }
+
+// Vitesse finale du fluide : vitesse corrigée, puis viscosité XSPH v_i += c Σ (v_j − v_i) W / ρ0.
+@compute @workgroup_size(64)
+fn viscosite(@builtin(global_invocation_id) gid: vec3u) {
+  let i = gid.x;
+  if (i >= GR.nCorps) { return; }
+  let vi = vitesseCorrigee(i);
+  if (corps[i].membre == AUCUN || !dansGrille(i)) {
+    vitesses[i] = vi;
+    return;
+  }
+  let m = GR.m[corps[i].membre];
+  let h = m.b.x;
+  var dv = vec2f(0.0);
+  for (var vc = 0u; vc < 9u; vc++) {
+    let pl = plage(cles[i], vc);
+    for (var k = pl.a; k < pl.b; k++) {
+      let j = ordre[k];
+      if (j == i) { continue; }
+      let q = length(posL[i] - posL[j]) / h;
+      if (q >= 1.0) { continue; }
+      dv += (vitesseCorrigee(j) - vi) * noyauW(q);
+    }
+  }
+  vitesses[i] = vi + m.a.y * dv / m.a.x;
+}
+`;
+
   // Rendu aux particules : déclarations et code communs aux deux modules.
   const WGSL_RENDRE_DECL = /* wgsl */ `
 struct Limite { ok: bool, pos: vec2f, n: vec2f };
@@ -446,7 +568,7 @@ fn rendreC(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_
   }
   P.codeRendreInteractions = codeRendre;
 
-  P.WGSL_VOISINAGE = P.WGSL_COMMUN + WGSL_PAS + P.WGSL_GROUPE + WGSL_LIAISONS + WGSL_GRILLE + WGSL_BORNER + WGSL_VOISINS + WGSL_ESSAIM;
+  P.WGSL_VOISINAGE = P.WGSL_COMMUN + WGSL_PAS + P.WGSL_GROUPE + WGSL_LIAISONS + WGSL_GRILLE + WGSL_BORNER + WGSL_VOISINS + WGSL_ESSAIM + WGSL_FLUIDE;
 
   // Liaisons de chaque noyau (disposition explicite : 8 tampons de stockage au plus chacune). Liaison 0 : décalage dynamique.
   const NOYAUX = {
@@ -457,6 +579,9 @@ fn rendreC(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_
     ranger: [1, 5, 6, 7, 8],
     trier: [1, 7, 8],
     essaim: [0, 1, 4, 5, 7, 8, 10, 12],
+    densite: [1, 4, 5, 7, 8, 9, 11],
+    corriger: [1, 4, 5, 7, 8, 9, 10, 11],
+    viscosite: [0, 1, 4, 5, 7, 8, 9, 12],
   };
   P.NOYAUX_VOISINAGE = NOYAUX;
 
@@ -522,6 +647,15 @@ fn rendreC(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_
   // Solveur de chaque type : dispatches entre le tri et le rendu aux particules (positions finales dans posA).
   const SOLVEURS = {
     essaim(g, passe, n, blocs) { g.lancer(passe, 'essaim', 'BA', null, blocs, n); },
+    // Itérations en ping-pong (nombre pair : résultat dans posA), puis vitesses (lecture de posA).
+    fluide(g, passe, n, blocs) {
+      for (let k = 0; k < g.iterations; k++) {
+        const v = k % 2 === 0 ? 'AB' : 'BA';
+        g.lancer(passe, 'densite', v, null, blocs, n);
+        g.lancer(passe, 'corriger', v, null, blocs, n);
+      }
+      g.lancer(passe, 'viscosite', 'AB', null, blocs, n);
+    },
   };
 
   class Groupe {
