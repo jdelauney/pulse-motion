@@ -86,3 +86,42 @@ await envoyer({ webgpu: true, faux: { ok: faux.ok, erreurs: faux.erreurs, messag
   assert.equal(r.nom.ok, false, 'redéfinir une fonction du prélude ne compile pas');
   assert.match(r.nom.message, /ne compile pas/);
 });
+
+test('shaders : mode 0 sur un repère tourné (quad, coord depuis le coin de la boîte, débord)', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const r = await page(`
+const c = await sh.compiler(donnee([
+  'fn image(coord: vec2f) -> vec4f {',
+  '  if (coord.x < 0.0 || coord.y < 0.0 || coord.x > iResolution.x || coord.y > iResolution.y) { return vec4f(0.0, 0.0, 1.0, 1.0); }',
+  '  return vec4f(coord.x / iResolution.x, coord.y / iResolution.y, 0.0, 1.0);',
+  '}'].join('\n')));
+// Boîte de 40 × 20 cqh tournée de 90°, centrée en (88,9 ; 50) cqh = (80 ; 45) px, débord de 5 cqh.
+const lire = await dessiner(c.shader, { temps: 0, progres: 0, duree: 1, mode: 0, resolution: [40, 20, 36, 18], scene: [LCQH, 100, L, H],
+  repere: [80 / 0.9, 50, Math.PI / 2, 5], demi: [20, 10, 0, 0] });
+await envoyer({ webgpu: true, centre: lire(80, 45), basBoite: lire(80, 62), deborde: lire(91, 45), dehors: lire(95, 45), coin: lire(5, 5) });`);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  const proche = (a, b, tol, quoi) => assert.ok(Math.abs(a - b) <= tol, `${quoi} : ${a} au lieu de ${b}`);
+  // Centre : coord = (20,6 ; 9,4) cqh -> (0,51 ; 0,47).
+  proche(r.centre[0], 0.514, 0.03, 'centre x'); proche(r.centre[1], 0.472, 0.03, 'centre y');
+  // 17,5 px plus bas = +19,4 cqh le long de l'axe x local (rotation de 90°) : coord.x proche de la largeur.
+  proche(r.basBoite[0], 0.986, 0.03, 'bas de la boîte'); proche(r.basBoite[1], 0.47, 0.03, 'bas de la boîte, y');
+  assert.deepEqual(r.deborde, [0, 0, 1, 1], 'dans le débord (coord.y < 0)');
+  assert.deepEqual(r.dehors, [0, 0, 0, 0], 'au-delà du débord : rien');
+  assert.deepEqual(r.coin, [0, 0, 0, 0]);
+});
+
+test('shaders : même image par deux chemins (iTime, fbm, bruit)', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const r = await page(`
+const c = await sh.compiler(donnee('fn image(coord: vec2f) -> vec4f {\n  let n = fbm(vec3f(coord * 0.05, iTime));\n  let b = canal3(coord / 64.0);\n  return vec4f(0.5 + 0.5 * n, b.r, b.g, 1.0);\n}\n'));
+const a = (await dessiner(c.shader, PLEIN({ temps: 1.3 }))).tout.slice();
+const b = (await dessiner(c.shader, PLEIN({ temps: 0.2 }))).tout.slice();
+const a2 = (await dessiner(c.shader, PLEIN({ temps: 1.3 }))).tout.slice();
+let ecartAA = 0;
+let ecartAB = 0;
+for (let i = 0; i < a.length; i++) { ecartAA = Math.max(ecartAA, Math.abs(a[i] - a2[i])); ecartAB = Math.max(ecartAB, Math.abs(a[i] - b[i])); }
+await envoyer({ webgpu: true, ecartAA, ecartAB });`);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.equal(r.ecartAA, 0, 'même instant, même image');
+  assert.ok(r.ecartAB > 0.01, 'un autre instant change l\'image');
+});
