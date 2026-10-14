@@ -27,7 +27,7 @@ const { trouverFichiersPolice } = require('./lib/police.js');
 
 const RACINE = path.resolve(__dirname, '..');
 const MOTEUR = ['courbes.js', 'aligner.js', 'sous-titres.js', 'minutage.js', 'transitions.js', 'tween.js', 'lettres.js', 'camera.js', 'temps.js', 'horloge.js', 'tailles.js', 'wav.js', 'sonie.js', 'mixage.js', 'synthe/catalogue.js', 'synthe/partition.js', 'synthe/ambiances.js', 'synthe/instruments.js', 'synthe/bruitages.js', 'audio.js', 'lecteur.js', 'sous-titres-rendu.js', 'debordement.js', 'mesures.js', 'pixels.js',
-  'figer.js', 'particules/instantanes.js', 'particules/gpu.js', 'particules/obstacles.js', 'particules/simulation.js', 'particules/rendu.js', 'particules/formes.js', 'particules/reperes.js', 'particules/calques.js'];
+  'figer.js', 'particules/instantanes.js', 'particules/gpu.js', 'particules/obstacles.js', 'particules/fragments.js', 'particules/simulation.js', 'particules/rendu.js', 'particules/formes.js', 'particules/reperes.js', 'particules/calques.js'];
 function slug(texte) {
   return String(texte).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'video';
@@ -246,7 +246,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     tempo: deroule.tempo ? { bpm: deroule.tempo.bpm, decalage: deroule.tempo.decalage || 0 } : tempoMusique(deroule) ? { bpm: tempoMusique(deroule), decalage: 0 } : null,
     bruitages: deroule.bruitages ? { transitions: deroule.bruitages.transitions === true, volume: deroule.bruitages.volume ?? 1 } : null,
     scenes: deroule.scenes.map((s) => ({ id: s.id, duree: s.duree, rythme: s.rythme || 1, transition: s.transition || 'aucune', ...(voixScenes[s.id] ? { voix: voixScenes[s.id] } : {}) })),
-    effets: effets.map(({ calque, ancre, effet }) => ({ calque, ancre, effet })),
+    effets: effets.map(({ calque, ancre, cible, effet }) => ({ calque, ancre, cible, effet })),
     obstacles,
     obstaclesVideo: video.obstacles,
   };
