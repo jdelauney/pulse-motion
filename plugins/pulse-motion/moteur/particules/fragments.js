@@ -191,6 +191,139 @@
     return r;
   }
 
+  /** Hasard reproductible (mulberry32). */
+  function mulberry32(graine) {
+    var a = graine >>> 0;
+    return function () {
+      a = (a + 0x6d2b79f5) >>> 0;
+      var t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  /** Partie du polygone convexe où a·x + b·y ≤ c (Sutherland–Hodgman sur une droite). */
+  function decouper(poly, a, b, c) {
+    var r = [];
+    for (var i = 0; i < poly.length; i++) {
+      var p = poly[i];
+      var q = poly[(i + 1) % poly.length];
+      var fp = a * p[0] + b * p[1] - c;
+      var fq = a * q[0] + b * q[1] - c;
+      if (fp <= 0) r.push(p);
+      if ((fp < 0 && fq > 0) || (fp > 0 && fq < 0)) {
+        var t = fp / (fp - fq);
+        r.push([p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]);
+      }
+    }
+    return r;
+  }
+
+  function aire(poly) {
+    var s = 0;
+    for (var i = 0; i < poly.length; i++) {
+      var p = poly[i];
+      var q = poly[(i + 1) % poly.length];
+      s += p[0] * q[1] - q[0] * p[1];
+    }
+    return s / 2;
+  }
+
+  /** Germes : un sur deux uniforme dans la boîte, l'autre autour du point d'impact (écart-type 0,2 × petit côté). */
+  function germes(o) {
+    var W = o.largeur;
+    var H = o.hauteur;
+    var hasard = mulberry32((o.graine >>> 0) ^ 0x9e3779b9);
+    var origine = o.origine || [0.5, 0.5];
+    var ox = (origine[0] - 0.5) * W;
+    var oy = (origine[1] - 0.5) * H;
+    var borne = function (v, m) { return Math.max(-m, Math.min(m, v)); };
+    var g = [];
+    while (g.length < o.morceaux) {
+      var p;
+      if (g.length % 2 === 0) p = [(hasard() - 0.5) * W, (hasard() - 0.5) * H];
+      else {
+        var r = Math.sqrt(-2 * Math.log(1 - hasard())) * 0.2 * Math.min(W, H);
+        var th = 2 * Math.PI * hasard();
+        p = [borne(ox + r * Math.cos(th), W / 2), borne(oy + r * Math.sin(th), H / 2)];
+      }
+      // Deux germes confondus donneraient deux cellules superposées : tirage refait.
+      if (g.some(function (q) { return q[0] === p[0] && q[1] === p[1]; })) continue;
+      g.push(p);
+    }
+    return g;
+  }
+
+  /** Cellules de Voronoï de la boîte [−largeur/2, largeur/2] × [−hauteur/2, hauteur/2] (cqh locaux). */
+  function voronoi(o) {
+    var W = o.largeur;
+    var H = o.hauteur;
+    var g = germes(o);
+    var boite = [[-W / 2, -H / 2], [W / 2, -H / 2], [W / 2, H / 2], [-W / 2, H / 2]];
+    return g.map(function (p, i) {
+      var poly = boite;
+      for (var j = 0; j < g.length && poly.length; j++) {
+        if (j === i) continue;
+        var q = g[j];
+        // Points plus proches de p que de q : (q − p) · x ≤ (|q|² − |p|²) / 2.
+        poly = decouper(poly, q[0] - p[0], q[1] - p[1], (q[0] * q[0] + q[1] * q[1] - p[0] * p[0] - p[1] * p[1]) / 2);
+      }
+      return { germe: p.slice(), sommets: poly };
+    });
+  }
+
+  /** Polygone ramené à SOMMETS_MAX sommets : retire le sommet dont le triangle avec ses voisins a la plus petite aire. */
+  function simplifier(poly) {
+    var p = poly.slice();
+    while (p.length > SOMMETS_MAX) {
+      var meilleur = 0;
+      var plusPetite = Infinity;
+      for (var i = 0; i < p.length; i++) {
+        var a = Math.abs(aire([p[(i + p.length - 1) % p.length], p[i], p[(i + 1) % p.length]]));
+        if (a < plusPetite) { plusPetite = a; meilleur = i; }
+      }
+      p.splice(meilleur, 1);
+    }
+    return p;
+  }
+
+  /** Éclats : centre (centroïde), nombre de sommets, rayon englobant, sommets relatifs au centre (16 au plus). */
+  function eclats(cellules) {
+    var e = new Float32Array(cellules.length * FLOTTANTS_ECLAT);
+    cellules.forEach(function (c, i) {
+      var poly = simplifier(c.sommets);
+      var b = i * FLOTTANTS_ECLAT;
+      var A = aire(poly);
+      var cx = 0;
+      var cy = 0;
+      if (Math.abs(A) > 1e-12) {
+        for (var j = 0; j < poly.length; j++) {
+          var p = poly[j];
+          var q = poly[(j + 1) % poly.length];
+          var x = p[0] * q[1] - q[0] * p[1];
+          cx += (p[0] + q[0]) * x;
+          cy += (p[1] + q[1]) * x;
+        }
+        cx /= 6 * A;
+        cy /= 6 * A;
+      } else if (poly.length) {
+        poly.forEach(function (s) { cx += s[0] / poly.length; cy += s[1] / poly.length; });
+      }
+      var rayon = 0;
+      e[b] = cx;
+      e[b + 1] = cy;
+      e[b + 2] = poly.length < 3 ? 0 : poly.length;
+      poly.forEach(function (s, k) {
+        e[b + 4 + 2 * k] = s[0] - cx;
+        e[b + 5 + 2 * k] = s[1] - cy;
+        rayon = Math.max(rayon, Math.hypot(s[0] - cx, s[1] - cy));
+      });
+      e[b + 3] = rayon;
+    });
+    return e;
+  }
+
   /** Pas de la simulation à τ (comme P.Simulation.avancer). */
   function pasDe(tau) { return Math.floor(tau / PAS + 1e-6); }
 
@@ -230,6 +363,10 @@
     cleHilbert: cleHilbert,
     ordonnerHilbert: ordonnerHilbert,
     apparier: apparier,
+    decouper: decouper,
+    aire: aire,
+    voronoi: voronoi,
+    eclats: eclats,
     ajusterCapacites: ajusterCapacites,
     pasDe: pasDe,
     raccord: raccord,
