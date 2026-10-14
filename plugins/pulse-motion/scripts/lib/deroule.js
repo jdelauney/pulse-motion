@@ -185,6 +185,16 @@ function validerDeroule(d) {
         const du = s.transition.duree;
         if (du !== undefined && !(typeof du === 'number' && du >= 0.1 && du <= 5)) {
           err.push(`La ${nom} : « transition.duree » doit être un nombre de secondes entre 0,1 et 5.`);
+        } else {
+          const duree = du === undefined ? 0.8 : du;
+          // Durée réelle (duree / rythme) : la transition tient dans la scène qui entre et dans celle qui sort.
+          const reelle = (x) => (x && estPositif(x.duree) ? x.duree / (estPositif(x.rythme) ? x.rythme : 1) : Infinity);
+          const prec = i > 0 ? d.scenes[i - 1] : null;
+          const plafond = Math.min(reelle(s), prec ? reelle(prec) : Infinity);
+          if (duree > plafond + 1e-9) {
+            const quelle = reelle(s) <= (prec ? reelle(prec) : Infinity) ? 'celle de la scène' : `celle de la scène précédente (« ${prec && prec.id} »)`;
+            err.push(`La ${nom} : « transition.duree » (${String(duree).replace('.', ',')} s) dépasse ${quelle}, ${String(Math.round(plafond * 100) / 100).replace('.', ',')} s : la raccourcir ou allonger la scène.`);
+          }
         }
       }
     }

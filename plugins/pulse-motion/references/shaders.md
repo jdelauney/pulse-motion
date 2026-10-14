@@ -42,7 +42,7 @@ Le fond est dessiné dans le calque de particules de la scène, avant les partic
 "post": [{ "shader": "grain", "reglages": { "force": 0.05 } }]
 ```
 
-- `duree` d'une transition : 0,1 à 5 s (0,8 par défaut) ; pendant ce temps les deux scènes s'animent, le moteur les photographie et le shader les mélange.
+- `duree` d'une transition : 0,1 à 5 s (0,8 par défaut), sans dépasser la durée de la scène qui entre ni celle de la scène qui sort (sinon `deroule-invalide`) ; pendant ce temps les deux scènes s'animent, le moteur les photographie et le shader les mélange.
 - Au plus 4 post-traitements par scène et pour la vidéo, appliqués dans l'ordre de la liste. Les sous-titres restent nets (au-dessus).
 - Dans l'aperçu, pendant la lecture, la photographie des scènes est rafraîchie 10 fois par seconde en demi-résolution (le shader, lui, tourne à chaque image) : un léger retard est normal ; l'export est exact.
 
