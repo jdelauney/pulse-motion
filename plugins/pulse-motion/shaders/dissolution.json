@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "nom": "dissolution",
+  "usage": "transition",
+  "description": "La scène qui entre apparaît par taches de bruit, avec un liseré lumineux au bord des taches : transition douce et organique.",
+  "parametres": {
+    "grain": { "defaut": 8, "min": 1, "max": 40 },
+    "bord": { "defaut": 0.05, "min": 0.01, "max": 0.3 },
+    "couleur_bord": { "defaut": "accent", "type": "couleur" }
+  }
+}
