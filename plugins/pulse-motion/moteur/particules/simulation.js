@@ -895,8 +895,15 @@ fn coupForme(o: u32, A: Repere, B: Repere, l0: vec2f, l1: vec2f, r: f32) -> Coup
     let R = melange(A, B, t);
     let l = mix(l0, l1, t);
     let d = distanceForme(o, R, l) - r;
-    if (d < 0.01) { return Coup(true, t, normaleForme(o, R, l), l); }
-    t += d / longueur;
+    if (d < 0.01) {
+      // Contact seulement si le segment s'enfonce : une particule replacée à MARGE de la surface, qui glisse le long ou
+      // s'en éloigne, n'est pas arrêtée (sans quoi le second contact après un rebond la ramenait à son départ).
+      let n = normaleForme(o, R, l);
+      if (dot(l1 - l0, n) < 0.0) { return Coup(true, t, n, l); }
+      t += max(d, 0.02) / longueur;
+    } else {
+      t += d / longueur;
+    }
     if (t > 1.0) { return rien(); }
   }
   // Marche épuisée : contact seulement si l'arrivée est dans la forme.
