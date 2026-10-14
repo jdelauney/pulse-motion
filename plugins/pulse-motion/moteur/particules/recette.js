@@ -956,7 +956,8 @@
         var liberation = em.pixels ? em.pixels.liberation : 0;
         // Mort au contact ou fondu après la pose : une particule peut mourir dès sa naissance.
         var etendueMorts = (em.collisions && (em.collisions.reponse === 'mourir' || em.collisions.reposApres) ? vie[1] : vie[1] - vie[0]) + tenue + liberation;
-        if (enfant[i] >= 0 && vie[0] < PAS) {
+        // À l'arrondi près : une arrivée au premier pas (cible.a = 0) vaut 0.008333 s.
+        if (enfant[i] >= 0 && vie[0] < PAS - 1e-6) {
           throw invalide(ch + '.naissance.vie', 'durée de vie minimale ' + vie[0] + ' sous 1/120 s : deux morts dans le même pas feraient perdre des enfants');
         }
         if (em.masse[0] <= 0) throw invalide(ch + '.naissance.masse', 'la masse doit être positive');
