@@ -794,6 +794,7 @@
         sc.effets.forEach((fx) => { liberer(fx); panneau(fx.el, 'Effet non affiché : ' + message(e)); });
       }
     });
+    oublierRefractions();
     rafraichirRefractions(t);
     rendreComposition(t);
   }
@@ -845,6 +846,19 @@
     try {
       if (jeton === sc.jetonRefraction && etat.rendu) sc.refraction = { vue: etat.rendu.photo('refraction|' + sc.info.id, bitmap), t, exact };
     } finally { bitmap.close(); }
+  }
+
+  /** Photographies de réfraction des scènes qui n'en ont plus besoin (masquées, en échec, sans effet simulé qui réfracte) :
+   *  texture libérée (pleine résolution en capture), photographie en cours abandonnée. */
+  function oublierRefractions() {
+    const utiles = new Set(scenesRefraction());
+    etat.scenes.forEach((sc) => {
+      if (utiles.has(sc) || (!sc.refraction && !sc.jetonRefraction)) return;
+      sc.jetonRefraction = (sc.jetonRefraction || 0) + 1;
+      if (!sc.refraction) return;
+      sc.refraction = null;
+      try { if (etat.rendu) etat.rendu.oublierPhoto('refraction|' + sc.info.id); } catch (e) { /* device déjà perdu */ }
+    });
   }
 
   /** Aperçu : photographies de réfraction refaites (demi-résolution) au plus toutes les 100 ms pendant la lecture, à chaque

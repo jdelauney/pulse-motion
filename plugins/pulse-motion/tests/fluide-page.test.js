@@ -12,11 +12,11 @@ const ecrire = (dir, relatif, contenu) => {
   fs.writeFileSync(path.join(dir, relatif), typeof contenu === 'string' ? contenu : JSON.stringify(contenu));
 };
 
-test('page : fluide qui réfracte la scène (alerte avant la photographie, photographie exacte à l\'export, même image par deux chemins)', async (t) => {
+test("page : fluide qui réfracte la scène (alerte avant la photographie, photographie exacte à l'export, même image par deux chemins, libérée avec l'effet)", async (t) => {
   if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
   const dir = copierProjet('projet-particules');
   ecrire(dir, 'effets/flaque.json', { version: 1, nom: 'flaque', rendu_calque: { bloom: 0, tons: 'neutre' }, emetteurs: [{ nom: 'f',
-    naissance: { salves: [{ t: 0, nombre: 1600 }], forme: { type: 'ancre' }, vie: [10, 10], taille: [1.4, 1.4] },
+    naissance: { salves: [{ t: 0, nombre: 1600 }], forme: { type: 'ancre' }, vie: [2.5, 2.5], taille: [1.4, 1.4] },
     rendu: { type: 'fluide', teinte: '#ffffff', opacite: 0.1, absorption: 0.2, refraction: 0.8, lissage: 0.6 } }] });
   ecrire(dir, 'scenes/01-s.html', `<section data-scene="s">
   <style>@scope {
@@ -55,7 +55,10 @@ test('page : fluide qui réfracte la scène (alerte avant la photographie, photo
       if (a.donnees[k] > a.donnees[k + 1] + 60) rouges++;
       if (a.donnees[k + 1] > a.donnees[k] + 60) verts++;
     }
-    await envoyer({ webgpu: true, alerte, r1, ecart, rouges, verts });
+    // Effet fini (salve à 0, vie 2,5 s) : simulation libérée, photographie de réfraction aussi.
+    await M.seek(5.9);
+    const r2 = M.particules.refraction('s');
+    await envoyer({ webgpu: true, alerte, r1, r2, ecart, rouges, verts });
   } catch (e) { envoyer({ erreur: String(e && e.stack || e) }); }
 })();
 </script>
@@ -66,5 +69,6 @@ test('page : fluide qui réfracte la scène (alerte avant la photographie, photo
   assert.deepEqual(r.alerte, ['Scène « s » : réfraction du fluide ignorée tant que la photographie de la scène n\'est pas prête.'], 'alerte de la console avant la première photographie (aperçu)');
   assert.deepEqual(r.r1, { t: 1, exact: true }, 'photographie exacte à l\'instant de l\'export');
   assert.equal(r.ecart, 0, 'même image au bit près par deux chemins');
+  assert.equal(r.r2, null, "photographie de réfraction libérée avec l'effet");
   assert.ok(r.rouges >= 10 && r.verts >= 10, `bandes de la scène vues à travers le fluide : ${r.rouges} rouges, ${r.verts} vertes`);
 });
