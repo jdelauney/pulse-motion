@@ -12,6 +12,10 @@
  *   .lirePixels(cible) -> Promise<{ largeur, hauteur, donnees }>  (RVBA 8 bits, prémultiplié, sRGB)
  *   .lireOrdre(e) -> Promise<Uint32Array>                          (paires clé, index après tri ; tests)
  *
+ * Fragments (P4) : liaison 9 = tampon E de l'émetteur (P.WGSL_FRAGMENTS) ; couleur du pixel d'origine (« source »), de A
+ * vers B le long du trajet, particules en trop en fondu, taille vers celle des pixels de la cible ; éclats : polygones
+ * texturés par la photographie de l'ancre (e.photo) ; texture « pixel » (carré plein) ; tons « neutre ». Un émetteur de
+ * fragments à profondeur constante n'est pas trié (même ordre).
  * Chaîne : tri bitonique des émetteurs en mélange alpha (clé z) -> particules dans une cible rgba16float
  * (sprite, étincelle étirée, traînée en ruban, planche ; textures procédurales ou image ; flou de
  * mouvement en 4 échantillons ; perspective selon z, sauf pour les émetteurs à collisions) -> bloom (seuil, dual Kawase sur 5 niveaux dans un
@@ -39,8 +43,9 @@ fn vsPlein(@builtin(vertex_index) i: u32) -> @builtin(position) vec4f {
 }
 `;
 
-  const WGSL_PARTICULES = P.WGSL_COMMUN + /* wgsl */ `
-struct Calque { largeur: f32, hauteur: f32, delta: f32, dureeImage: f32, k: u32, trie: u32, flou: u32, fondu: u32 };
+  const WGSL_PARTICULES = P.WGSL_COMMUN + P.WGSL_FRAGMENTS + /* wgsl */ `
+struct Calque { largeur: f32, hauteur: f32, delta: f32, dureeImage: f32, k: u32, trie: u32, flou: u32, fondu: u32,
+  tau: f32, r0: f32, r1: f32, r2: f32 };
 struct Contact { local: vec2f, obstacle: u32, pose: f32, impact: f32, nImpacts: u32, opacite: f32, cellule: u32 };
 struct Style { genre: u32, texture: u32, etirement: f32, longueur: u32, colonnes: u32, lignes: u32, ips: f32, melange: u32 };
 @group(0) @binding(0) var<storage, read> particules: array<Particule>;
@@ -52,6 +57,43 @@ struct Style { genre: u32, texture: u32, etirement: f32, longueur: u32, colonnes
 @group(0) @binding(6) var image: texture_2d<f32>;
 @group(0) @binding(7) var lisse: sampler;
 @group(0) @binding(8) var<storage, read> contacts: array<Contact>;
+@group(0) @binding(9) var<storage, read> E: array<f32>;
+
+fn ef(i: u32) -> f32 { return E[i]; }
+fn eu(i: u32) -> u32 { return bitcast<u32>(E[i]); }
+
+fn versLineaire(c: vec3f) -> vec3f {
+  return select(pow((c + 0.055) / 1.055, vec3f(2.4)), c / 12.92, c <= vec3f(0.04045));
+}
+
+struct Fragment { couleur: vec4f, opacite: f32, taille: f32 };
+
+// Fragment à τ : couleur du pixel de l'ancre, de la cible, ou de l'un à l'autre le long du trajet (RVB linéaire, alpha
+// du pixel) ; une particule en trop entre (côté ancre) ou sort (côté cible) en fondu ; taille de la naissance vers celle
+// d'un pixel de la cible.
+fn fragmentRendu(p: Particule) -> Fragment {
+  let tau = C.tau;
+  var s = 0.0;
+  if (aFragment(F_CIBLE)) { s = progression(p.n, tau); }
+  var ca = vec4f(1.0);
+  var opacite = 1.0;
+  if (aFragment(F_PIXELS)) {
+    let a = pixelF(p.n, 0u);
+    ca = vec4f(versLineaire(a.couleur.rgb), a.couleur.a);
+    if ((a.drapeaux & 1u) != 0u) { opacite = s; }
+  }
+  var cb = ca;
+  var taille = p.taille;
+  if (aFragment(F_CIBLE)) {
+    let b = pixelF(p.n, 1u);
+    cb = vec4f(versLineaire(b.couleur.rgb), b.couleur.a);
+    if (!aFragment(F_PIXELS)) { ca = cb; }
+    if ((b.drapeaux & 2u) != 0u) { opacite = opacite * (1.0 - s); }
+    let rb = repereElement(1u, tau);
+    taille = mix(p.taille, ef(169u) * max(rb.echelle.x, rb.echelle.y), s);
+  }
+  return Fragment(mix(ca, cb, s), opacite, taille);
+}
 
 // Fondu d'une particule posée (collisions) : 1 sans contacts.
 fn fondu(idx: u32) -> f32 {
@@ -115,7 +157,10 @@ fn vsQuad(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> S
   var o: Sortie;
   let u = p.age / p.vie;
   let f = 1.0 + 0.35 * p.z;
-  let taille = p.taille * table(256u, u) * f;
+  // Fragments : couleur du pixel d'origine, fondu des particules en trop, taille vers celle des pixels de la cible.
+  var fr = Fragment(vec4f(1.0), 1.0, p.taille);
+  if (aFragment(F_PIXELS | F_CIBLE)) { fr = fragmentRendu(p); }
+  let taille = fr.taille * table(256u, u) * f;
   let recul = f32(ii % echantillons) / f32(echantillons) * C.dureeImage;
   let centre = perspective(p.pos + p.vel * (C.delta - recul), p.z);
   var coins = array<vec2f, 6>(vec2f(-1.0, -1.0), vec2f(1.0, -1.0), vec2f(-1.0, 1.0), vec2f(-1.0, 1.0), vec2f(1.0, -1.0), vec2f(1.0, 1.0));
@@ -147,11 +192,14 @@ fn vsQuad(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> S
       uvTex = (cel + uvTex) / vec2f(f32(R.colonnes), f32(R.lignes));
     }
   }
-  let couleur = teinte(u);
+  // Couleur « source » : le dégradé multiplié par mix(1, couleur du pixel, part de la source).
+  let w = table(448u, u);
+  let teinteVie = teinte(u);
+  let couleur = vec4f(teinteVie.rgb * mix(vec3f(1.0), fr.couleur.rgb, w), teinteVie.a * mix(1.0, fr.couleur.a, w));
   o.pos = ecran(centre + q);
   o.uv = c;
   o.uvTex = uvTex;
-  o.couleur = vec4f(couleur.rgb * table(320u, u), couleur.a * table(384u, u) * fondu(idx));
+  o.couleur = vec4f(couleur.rgb * table(320u, u), couleur.a * table(384u, u) * fondu(idx) * fr.opacite);
   o.alea = p.alea;
   o.echantillons = f32(echantillons);
   return o;
@@ -233,6 +281,8 @@ fn motif(e: Sortie) -> vec4f {
     case 5u: {
       return vec4f((1.0 - smoothstep(0.9, 1.0, abs(e.uv.x))) * (1.0 - smoothstep(0.9, 1.0, abs(e.uv.y))));
     }
+    // Pixel (fragments) : carré plein, sans lissage : des grains voisins pavent exactement l'élément.
+    case 7u: { return vec4f(1.0); }
     default: { }
   }
   return textureSample(image, lisse, e.uvTex);
@@ -420,7 +470,7 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
   // Chaque niveau du bloom porte l'excès seuillé : la somme des niveaux est ramenée à une fois l'excès.
   let lumiere = min(textureSample(bloom, lisse, pos.xy / taille).rgb, BORNE) * (F.intensite / ${NIVEAUX}.0);
   var rgb = min(max(c.rgb, vec3f(0.0)) + lumiere, BORNE);
-  if (F.tons == 1u) { rgb = tonsAces(rgb); } else { rgb = tonsDouce(rgb); }
+  if (F.tons == 1u) { rgb = tonsAces(rgb); } else if (F.tons == 2u) { rgb = clamp(rgb, vec3f(0.0), vec3f(1.0)); } else { rgb = tonsDouce(rgb); }
   let a = clamp(max(c.a, max(rgb.r, max(rgb.g, rgb.b))), 0.0, 1.0);
   var o = vec4f(0.0);
   if (a > 0.5 / 255.0) {
@@ -463,6 +513,7 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
           { binding: 6, visibility: Fr, texture: { sampleType: 'float' } },
           { binding: 7, visibility: Fr, sampler: { type: 'filtering' } },
           { binding: 8, visibility: V, buffer: { type: 'read-only-storage' } },
+          { binding: 9, visibility: V, buffer: { type: 'read-only-storage' } },
         ],
       });
       const module = device.createShaderModule({ label: 'pm-particules', code: WGSL_PARTICULES });
@@ -639,7 +690,8 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
       try { c.contexte.unconfigure(); } catch (e) { /* contexte déjà perdu */ }
     }
 
-    estTrie(e) { return e.em.rendu.melange !== 'additif'; }
+    /** Mélange alpha : tri par z ; sauf un émetteur de fragments à z constant (l'ordre trié est alors celui des cases). */
+    estTrie(e) { return e.em.rendu.melange !== 'additif' && !(e.em.fragment && e.em.z[0] === e.em.z[1]); }
 
     tri(e) {
       let t = this.tris.get(e);
@@ -737,6 +789,7 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
             { binding: 6, resource: image || this.blanc.createView() },
             { binding: 7, resource: this.lisse },
             { binding: 8, resource: { buffer: e.contacts || this.videContacts } },
+            { binding: 9, resource: { buffer: e.params } },
           ],
         });
         this.groupes.set(e, g);
@@ -789,11 +842,12 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
       liste.forEach(({ sim, i, delta }) => {
         const e = sim.emetteurs[i];
         const r = e.em.rendu;
-        const v = new ArrayBuffer(32);
+        const v = new ArrayBuffer(48);
         const f = new Float32Array(v);
         const u = new Uint32Array(v);
         f[0] = o.largeurCqh; f[1] = 100; f[2] = delta; f[3] = o.dureeImage;
         u[4] = sim.k || 0; u[5] = this.estTrie(e) ? 1 : 0; u[6] = r.flou ? 1 : 0; u[7] = e.contacts ? 1 : 0;
+        f[8] = sim.tau || 0;
         device.queue.writeBuffer(e.uniformeRendu, 0, v);
         const trainee = r.type === 'trainee';
         rp.setPipeline(this.pipelines[(trainee ? 'trainee-' : 'quad-') + (r.melange === 'additif' ? 'additif' : 'alpha')]);
@@ -825,7 +879,7 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
       // 4. Tons, tramage, sRGB : canvas et copie lisible.
       const fu = new ArrayBuffer(16);
       new Float32Array(fu)[0] = o.bloom > 0 ? o.bloom : 0;
-      new Uint32Array(fu)[1] = o.tons === 'aces' ? 1 : 0;
+      new Uint32Array(fu)[1] = ({ aces: 1, neutre: 2 })[o.tons] || 0;
       device.queue.writeBuffer(cible.uniformeFinal, 0, fu);
       const fin = enc.beginRenderPass({
         colorAttachments: [
