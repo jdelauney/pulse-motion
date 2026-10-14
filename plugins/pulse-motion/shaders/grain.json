@@ -4,7 +4,7 @@
   "usage": "post",
   "description": "Grain de pellicule, renouvelé à cadence fixe, plus visible dans les tons moyens : image plus organique, ambiance cinéma ou archive.",
   "parametres": {
-    "force": { "defaut": 0.08, "min": 0, "max": 0.5 },
+    "force": { "defaut": 0.06, "min": 0, "max": 0.5 },
     "taille": { "defaut": 0.15, "min": 0.05, "max": 2 },
     "vitesse": { "defaut": 24, "min": 1, "max": 60 }
   }

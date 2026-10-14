@@ -119,6 +119,29 @@ await envoyer({ webgpu: true, res });`);
   assert.equal(r.res.vignettage.temps, 0, 'le vignettage ne dépend pas de t');
 });
 
+test('grain : ajouté en sRGB, moins marqué sur le noir que sur le gris, sans éclaircir le noir', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const r = await page({ grain: donnee('grain') }, `
+const s = await compiler(DONNEES.grain);
+// Entrées en RVB linéaire (comme la composition) : noir, et gris sRGB 128 (linéaire 0,2158 ≈ 55/255).
+const NOIR = texture(1, 1, () => [0, 0, 0, 255]);
+const GRIS = texture(1, 1, () => [55, 55, 55, 255]);
+const srgb = (c) => 255 * (c <= 0.0031308 ? c * 12.92 : 1.055 * Math.pow(c, 1 / 2.4) - 0.055);
+const stats = (px) => {
+  let n = 0; let m = 0; let m2 = 0;
+  for (let i = 0; i < px.length; i += 4) { const v = srgb(Math.max(0, px[i + 1])); n++; m += v; m2 += v * v; }
+  m /= n;
+  return { moyenne: m, ecart: Math.sqrt(Math.max(0, m2 / n - m * m)) };
+};
+await envoyer({ webgpu: true, noir: stats(await dessiner(s, PLEIN({ temps: 1 }), [NOIR, null, null])),
+  gris: stats(await dessiner(s, PLEIN({ temps: 1 }), [GRIS, null, null])) });`);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.ok(r.gris.ecart > 1, `du grain sur le gris (écart-type ${r.gris.ecart})`);
+  assert.ok(r.noir.ecart < r.gris.ecart, `grain plus faible sur le noir (${r.noir.ecart}) que sur le gris (${r.gris.ecart})`);
+  assert.ok(r.noir.moyenne <= 1, `le noir reste noir (moyenne sRGB ${r.noir.moyenne})`);
+  assert.ok(Math.abs(r.gris.moyenne - 128) < 2, `le gris garde sa valeur moyenne (${r.gris.moyenne})`);
+});
+
 const R = require('../moteur/particules/recette.js');
 
 test('fonds et auras : dessinés sans NaN ; l\'aura éclaire autour de la boîte', async (t) => {
