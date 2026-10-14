@@ -193,3 +193,55 @@ await envoyer({ webgpu: true, b: Array.from(liste.donnees), mi, avant, apres, ra
   assert.ok(posees >= 20, `${posees} particules déjà posées à mi-parcours`);
   assert.ok(enRoute >= 50, `${enRoute} particules de droite encore en route`);
 });
+
+test('fragments GPU : métamorphose chorégraphiée (pixels de A vers pixels de B) : départ exact, arrivée à 0,01 cqh, extinction, même état par deux chemins', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const choree = compiler([{ nom: 'g', naissance: { forme: { type: 'pixels' } }, forces: [{ type: 'turbulence', echelle: 10, force: 20 }],
+    cible: { source: 'cible', arrivee: 'choree', a: 1, echelonnement: 0.5, ordre: 'gauche-droite', courbe: 'cubic-inout' } }], 1);
+  const r = await page({ choree }, `
+const A = F.listerPixels(photo(10, 6, () => [255, 0, 0, 255], 5, 3));
+const B = F.listerPixels(photo(20, 4, () => [0, 0, 255, 255], 10, 2));
+const ap = F.apparier(A, B);
+const frag = { a: ap.a, b: ap.b, eclats: null, image: null, demiA: A.demi, demiB: B.demi, coteA: A.cote, coteB: B.cote };
+const repA = () => ({ centre: [40, 40], angle: 0, demi: [2.5, 1.5], echelle: [1, 1], actif: true });
+const repB = (g) => ({ centre: [120, 60 - 6 * g / 30], angle: 0.3, demi: [5, 1], echelle: [1, 1], actif: true });
+const zones = { a: () => [37.5, 38.5, 5, 3], grille: () => [37.5, 38.5, 5, 3], ancres: ancres(repA, repB) };
+const effet = F.ajusterCapacites(DONNEES.choree, { 0: ap.total });
+const sim = new P.Simulation(device, effet, null, [frag]);
+const lire = async (tau) => { sim.avancer(tau, zones); return lireP(await sim.lireEtat(0)); };
+const tot = await lire(0.1);
+const avant = await lire(119.5 / 120);
+const apres = await lire(120.5 / 120);
+const detour = await lire(0.7);
+const sim2 = new P.Simulation(device, effet, null, [frag]);
+sim2.avancer(0.7, zones);
+const direct = lireP(await sim2.lireEtat(0));
+const rapide = sim.emetteurs[0].rapide;
+sim.detruire();
+sim2.detruire();
+await envoyer({ webgpu: true, a: Array.from(ap.a), b: Array.from(ap.b), total: ap.total, tot, avant, apres, detour, direct, rapide });`);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.equal(r.rapide, true, 'voie rapide');
+  assert.equal(r.total, 80);
+  // τ = 0,1 : une particule dont le départ est plus tard est encore exactement sur son pixel de A.
+  const depart = (n) => (r.b[n * 4] / 10 + 0.5) * 0.5 * (119 / 120);
+  let surA = 0;
+  for (const p of r.tot.filter((x) => depart(x.n) > 0.1)) {
+    pres(p.x, 40 + r.a[p.n * 4], 1e-4, 'x sur A'); pres(p.y, 40 + r.a[p.n * 4 + 1], 1e-4, 'y sur A');
+    surA++;
+  }
+  assert.ok(surA >= 40, `${surA} particules encore sur A`);
+  // Juste avant l'arrivée : toutes sur leur pixel de B (repère tourné de 0,3 rad, qui monte de 6 cqh/s).
+  const tau = 119.5 / 120;
+  const c = Math.cos(0.3);
+  const s = Math.sin(0.3);
+  assert.equal(r.avant.length, 80);
+  for (const p of r.avant) {
+    const x = r.b[p.n * 4];
+    const y = r.b[p.n * 4 + 1];
+    const d = Math.hypot(p.x - (120 + c * x - s * y), p.y - (60 - 6 * tau + s * x + c * y));
+    assert.ok(d < 0.01, `particule ${p.n} à ${d} cqh de sa cible`);
+  }
+  assert.equal(r.apres.length, 0, 'éteintes au pas de l\'arrivée');
+  assert.deepEqual(r.detour, r.direct, 'même état par deux chemins');
+});
