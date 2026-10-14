@@ -16,7 +16,7 @@ test('bibliothèque dans la page : raccord de « desintegrer », même image par
   fs.writeFileSync(path.join(dir, 'scenes', '01-s.html'), `<section data-scene="s">
   <style>@scope {
     h1, h2, h3, h4 { position: absolute; margin: 0; font: 900 14cqh/1 sans-serif; }
-    #titre { left: 10cqh; top: 8cqh; color: #e04020; }
+    #titre { left: 10cqh; top: 8cqh; font-size: 18cqh; color: #e04020; }
     #mot { left: 110cqh; top: 8cqh; color: #2080e0; }
     #avant { left: 10cqh; top: 40cqh; color: #20a040; }
     #apres { left: 110cqh; top: 40cqh; color: #a020c0; }
@@ -43,6 +43,9 @@ test('bibliothèque dans la page : raccord de « desintegrer », même image par
     await M.particules.pret;
     if (!M.particules.disponible) return envoyer({ webgpu: false });
     // Raccord : le titre photographié à sa place dans le calque « avant », puis le calque au premier pas de l'effet.
+    // Titre en 18cqh (comme fragments-page) : la référence est rastérisée à la taille du calque (521 px de haut sans
+    // fenêtre), les particules à celle de la sortie (1080) ; en 14cqh, les traits fins des lettres creusent l'écart à
+    // 2,4 % pour une seule différence de rastérisation (un bloc uni donne 0,1 %).
     await M.seek(0.9);
     const el = document.getElementById('titre');
     const section = el.closest('section');
