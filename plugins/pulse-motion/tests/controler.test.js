@@ -334,6 +334,16 @@ test('plus de 4 animations vives en même temps : alerte trop-d-animations', () 
   assert.match(p.message, /Scène « intro » : 7 éléments bougent en même temps vers 1 s/);
 });
 
+test('trop-d-animations : les fonds et auras par shader (une ambiance) ne comptent pas', () => {
+  const dir = copierProjet('projet-simple');
+  const fichier = path.join(dir, 'scenes', '01-intro.html');
+  const vifs = [1, 2].map((k) => `<span data-start="1" data-dur="1">${k}</span>`).join('');
+  const auras = [1, 2, 3].map(() => '<div data-shader="halo" data-start="1" data-dur="1"></div>').join('');
+  fs.writeFileSync(fichier, fs.readFileSync(fichier, 'utf8').replace('</section>', `${vifs}${auras}</section>`));
+  const r = controler({ dossier: dir, dossierStyles: STYLES });
+  assert.equal(r.problemes.some((x) => x.regle === 'trop-d-animations'), false, JSON.stringify(r.problemes.filter((x) => x.regle === 'trop-d-animations')));
+});
+
 test('projet calé sur un tempo : aucune correction de durée proposée (elle décalerait la musique)', () => {
   const dir = copierProjet('projet-simple');
   modifierDeroule(dir, (d) => { d.tempo = { bpm: 120 }; d.scenes[0].duree = 3; });
