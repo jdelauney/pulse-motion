@@ -70,3 +70,63 @@ test('valeursShader : réglage hors bornes, inconnu ou illisible', () => {
   assert.match(S.valeursShader(JSON_FOND, 'vitesse', CHARTE).erreurs[0].message, /illisible/);
   assert.match(S.valeursShader(JSON_FOND, 'teinte: bleu', CHARTE).erreurs[0].message, /couleur « bleu » inconnue/);
 });
+
+test('disposition : décalages WGSL (f32 sur 4 octets, vec4f sur 16), taille multiple de 16', () => {
+  const d = S.dispositionReglages({ a: { defaut: 1 }, c: { defaut: '#ffffff', type: 'couleur' }, b: { defaut: 2 } });
+  assert.deepEqual(d.champs, [{ nom: 'a', type: 'f32', decalage: 0 }, { nom: 'c', type: 'vec4f', decalage: 16 }, { nom: 'b', type: 'f32', decalage: 32 }]);
+  assert.equal(d.taille, 48);
+  assert.equal(d.wgsl, 'struct Reglages {\n  a: f32,\n  c: vec4f,\n  b: f32,\n};\n');
+  const vide = S.dispositionReglages({});
+  assert.equal(vide.taille, 16);
+  assert.match(vide.wgsl, /pm_vide: f32/);
+  const f = S.ecrireReglages(d, { a: 0.5, c: [0.1, 0.2, 0.3, 1], b: 7 });
+  assert.equal(f.length, 12);
+  assert.equal(f[0], 0.5);
+  assert.deepEqual(Array.from(f.slice(4, 8)).map((x) => Math.round(x * 10) / 10), [0.1, 0.2, 0.3, 1]);
+  assert.equal(f[8], 7);
+});
+
+test('ecrireEntrees : 80 octets, mode entier au mot 3', () => {
+  const b = S.ecrireEntrees({ temps: 1.5, progres: 0.25, duree: 3, mode: 1, resolution: [177.7, 100, 1920, 1080], scene: [177.7, 100, 1920, 1080], repere: [50, 40, 0.5, 2], demi: [10, 5, 0, 0] });
+  assert.equal(b.byteLength, S.OCTETS_ENTREES);
+  const f = new Float32Array(b);
+  assert.equal(f[0], 1.5);
+  assert.equal(new Uint32Array(b)[3], 1);
+  assert.equal(f[7], 1080);
+  assert.equal(f[15], 2);
+  assert.equal(f[17], 5);
+});
+
+test('assemblerShader : code à sa ligne ; situer ramène les lignes du fichier', () => {
+  const code = 'fn image(coord: vec2f) -> vec4f {\r\n  let x = 1.0;\r\n  return vec4f(x);\r\n}';
+  const a = S.assemblerShader({ code, usage: 'fond', disposition: S.dispositionReglages({}), prelude: '// prélude\nfn pcg(v: u32) -> u32 { return v; }\n' });
+  const lignes = a.wgsl.split('\n');
+  assert.equal(lignes[a.ligneCode], 'fn image(coord: vec2f) -> vec4f {');
+  assert.equal(lignes[a.ligneCode + 2], '  return vec4f(x);');
+  assert.equal(a.lignesCode, 4);
+  assert.ok(a.wgsl.startsWith('// prélude'));
+  assert.match(a.wgsl, /@vertex\s+fn pmSommets/);
+  assert.match(a.wgsl, /fn pmImage\(e: PmSortie\) -> @location\(0\) vec4f/);
+  assert.match(a.wgsl, /return image\(e\.coord\);/);
+  assert.match(a.wgsl, /var<private> iTime: f32;/);
+  assert.match(a.wgsl, /fn canal3\(uv: vec2f\) -> vec4f \{ return textureSampleLevel\(iChannel3, iRepete, uv, 0\.0\); \}/);
+  assert.match(S.assemblerShader({ code, usage: 'transition', disposition: S.dispositionReglages({}) }).wgsl, /return transition\(e\.coord, iProgres\);/);
+  assert.match(S.assemblerShader({ code, usage: 'post', disposition: S.dispositionReglages({}) }).wgsl, /return post\(e\.coord\);/);
+  assert.throws(() => S.assemblerShader({ code, usage: 'module-force', disposition: S.dispositionReglages({}) }), /usage/);
+  const erreurs = S.situer([
+    { type: 'error', lineNum: a.ligneCode + 2, linePos: 11, message: 'type incompatible' },
+    { type: 'warning', lineNum: a.ligneCode + 1, linePos: 1, message: 'inutile' },
+    { type: 'error', lineNum: 2, linePos: 4, message: 'redéfinition de « pcg »' },
+  ], a);
+  assert.deepEqual(erreurs, [{ ligne: 2, colonne: 11, message: 'type incompatible' }, { ligne: null, colonne: null, message: 'redéfinition de « pcg »' }]);
+  const m = S.messageErreur('essai', 'shaders/essai.wgsl', erreurs);
+  assert.match(m, /^Shader « essai » \(shaders\/essai\.wgsl\) ne compile pas : ligne 2, colonne 11 : type incompatible ; hors du code du shader/);
+});
+
+test('prélude des shaders et empreinte', () => {
+  for (const f of ['alea2', 'fbm', 'palette', 'rot2', 'sdCercle', 'sdBoite', 'sdSegment', 'sdEtoile']) assert.match(S.OUTILS, new RegExp(`fn ${f}\\(`), f);
+  assert.match(S.ENTREES, /struct PmEntrees/);
+  assert.equal(S.empreinte('abc'), S.empreinte('abc'));
+  assert.notEqual(S.empreinte('abc'), S.empreinte('abd'));
+  assert.match(S.empreinte('é'), /^[0-9a-f]{8}$/);
+});

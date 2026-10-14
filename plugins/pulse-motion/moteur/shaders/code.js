@@ -11,6 +11,15 @@
  * reglagesEnTexte(objet | texte) -> texte
  * sansCommentaires(code) -> texte    commentaires remplacés par des espaces (positions et lignes gardées)
  * octets(texte) -> taille en UTF-8
+ * dispositionReglages(parametres) -> { wgsl, taille, champs }   struct « Reglages » (uniforme) : f32 ou vec4f (couleur)
+ * ecrireReglages(disposition, valeurs) -> Float32Array           contenu de l'uniforme des réglages
+ * ecrireEntrees(o) -> ArrayBuffer (OCTETS_ENTREES)               uniforme « PmEntrees » (iTime, iProgres, iResolution…)
+ * assemblerShader({ code, usage, disposition, prelude }) -> { wgsl, ligneCode, lignesCode }
+ *   fond, transition, post : prélude (particules) + OUTILS + entrées + code de la personne (tel quel) + enveloppe
+ *   (sommets pmSommets, fragment pmImage) ; ligneCode : nombre de lignes avant le code.
+ * situer(messages, assemblage) -> [{ ligne, colonne, message }]  erreurs de getCompilationInfo ramenées au fichier .wgsl
+ *   (ligne null : hors du code de la personne) ; messageErreur(nom, fichier, erreurs) -> texte du panneau
+ * empreinte(texte) -> 8 chiffres hexadécimaux (FNV-1a 32 bits)
  *
  * Module pur : chargé tel quel dans la page (global M.codeShader) et par Node (require). Dans la page, recette.js
  * (M.recette) n'est chargé que par l'atelier : il est cherché à l'appel des fonctions qui en ont besoin.
@@ -167,6 +176,215 @@
     return { valeurs: valeurs, erreurs: erreurs };
   }
 
+  // ---- Uniformes ----
+
+  /** struct Reglages : un f32 par nombre, un vec4f par couleur, dans l'ordre de « parametres » ; taille multiple de 16. */
+  function dispositionReglages(parametres) {
+    var champs = [];
+    var lignes = [];
+    var o = 0;
+    Object.keys(parametres || {}).forEach(function (nom) {
+      var couleur = (parametres[nom] || {}).type === 'couleur';
+      var align = couleur ? 16 : 4;
+      o = Math.ceil(o / align) * align;
+      champs.push({ nom: nom, type: couleur ? 'vec4f' : 'f32', decalage: o });
+      lignes.push('  ' + nom + ': ' + (couleur ? 'vec4f' : 'f32') + ',');
+      o += couleur ? 16 : 4;
+    });
+    // Une structure WGSL ne peut pas être vide.
+    if (!champs.length) { lignes.push('  pm_vide: f32,'); o = 4; }
+    return { wgsl: 'struct Reglages {\n' + lignes.join('\n') + '\n};\n', taille: Math.max(16, Math.ceil(o / 16) * 16), champs: champs };
+  }
+
+  function ecrireReglages(disposition, valeurs) {
+    var f = new Float32Array(disposition.taille / 4);
+    disposition.champs.forEach(function (c) {
+      var v = valeurs ? valeurs[c.nom] : undefined;
+      if (c.type === 'vec4f') f.set(Array.isArray(v) ? v : [0, 0, 0, 0], c.decalage / 4);
+      else f[c.decalage / 4] = typeof v === 'number' ? v : 0;
+    });
+    return f;
+  }
+
+  var OCTETS_ENTREES = 80;
+  var ENTREES = [
+    'struct PmEntrees {',
+    '  temps: f32, progres: f32, duree: f32, mode: u32,',
+    '  resolution: vec4f,',
+    '  scene: vec4f,',
+    '  repere: vec4f,',
+    '  demi: vec4f,',
+    '};',
+    '',
+  ].join('\n');
+
+  function ecrireEntrees(o) {
+    var b = new ArrayBuffer(OCTETS_ENTREES);
+    var f = new Float32Array(b);
+    var u = new Uint32Array(b);
+    f[0] = o.temps || 0;
+    f[1] = o.progres || 0;
+    f[2] = o.duree || 0;
+    u[3] = o.mode || 0;
+    f.set(o.resolution || [0, 0, 0, 0], 4);
+    f.set(o.scene || [0, 0, 0, 0], 8);
+    f.set(o.repere || [0, 0, 0, 0], 12);
+    f.set(o.demi || [0, 0, 0, 0], 16);
+    return b;
+  }
+
+  // ---- Prélude propre aux shaders (pcg, alea, bruit, curl : ceux des particules) ----
+
+  var OUTILS = [
+    '// Prélude des shaders (P6) : hasard 2D, bruit fractal, palettes, rotations, distances signées.',
+    'fn alea2(p: vec2f) -> f32 {',
+    '  let q = vec2u(vec2i(floor(p)) + vec2i(65536));',
+    '  return f32(pcg(q.x ^ pcg(q.y)) >> 8u) / 16777216.0;',
+    '}',
+    '// Bruit fractal (5 octaves) du bruit de valeurs 3D, dans [-1, 1] environ.',
+    'fn fbm(p: vec3f) -> f32 {',
+    '  var s = 0.0;',
+    '  var a = 0.5;',
+    '  var q = p;',
+    '  for (var i = 0; i < 5; i++) {',
+    '    s += a * bruit(q);',
+    '    q = q * 2.03 + vec3f(17.0, 31.0, 7.0);',
+    '    a *= 0.5;',
+    '  }',
+    '  return s;',
+    '}',
+    '// Palette cosinus : a + b cos(2π (c t + d)).',
+    'fn palette(t: f32, a: vec3f, b: vec3f, c: vec3f, d: vec3f) -> vec3f { return a + b * cos(6.2831853 * (c * t + d)); }',
+    'fn rot2(angle: f32) -> mat2x2f { let c = cos(angle); let s = sin(angle); return mat2x2f(c, s, -s, c); }',
+    'fn sdCercle(p: vec2f, r: f32) -> f32 { return length(p) - r; }',
+    'fn sdBoite(p: vec2f, demi: vec2f) -> f32 {',
+    '  let d = abs(p) - demi;',
+    '  return length(max(d, vec2f(0.0))) + min(max(d.x, d.y), 0.0);',
+    '}',
+    'fn sdSegment(p: vec2f, a: vec2f, b: vec2f) -> f32 {',
+    '  let pa = p - a;',
+    '  let ba = b - a;',
+    '  let h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);',
+    '  return length(pa - ba * h);',
+    '}',
+    '// Étoile à n branches : rayon extérieur r, rayon des creux r × creux (distance approchée, négative dedans).',
+    'fn sdEtoile(p: vec2f, r: f32, n: f32, creux: f32) -> f32 {',
+    '  let secteur = 6.2831853 / n;',
+    '  let b = abs(fract(atan2(p.y, p.x) / secteur + 0.5) - 0.5) * secteur;',
+    '  let q = length(p) * vec2f(cos(b), sin(b));',
+    '  let A = vec2f(r, 0.0);',
+    '  let B = r * creux * vec2f(cos(secteur * 0.5), sin(secteur * 0.5));',
+    '  let e = B - A;',
+    '  let w = q - A;',
+    '  let h = clamp(dot(w, e) / dot(e, e), 0.0, 1.0);',
+    '  let d = length(w - e * h);',
+    '  return select(d, -d, e.x * w.y - e.y * w.x > 0.0);',
+    '}',
+    '',
+  ].join('\n');
+
+  // ---- Assemblage d'un shader complet (fond, transition, post) ----
+
+  var LIAISONS = [
+    '@group(0) @binding(0) var<uniform> PM: PmEntrees;',
+    '@group(0) @binding(1) var<uniform> PM_R: Reglages;',
+    '@group(0) @binding(2) var iChannel0: texture_2d<f32>;',
+    '@group(0) @binding(3) var iChannel1: texture_2d<f32>;',
+    '@group(0) @binding(4) var iChannel2: texture_2d<f32>;',
+    '@group(0) @binding(5) var iChannel3: texture_2d<f32>;',
+    '@group(0) @binding(6) var iEchantillon: sampler;',
+    '@group(0) @binding(7) var iRepete: sampler;',
+    'var<private> iTime: f32;',
+    'var<private> iProgres: f32;',
+    'var<private> iResolution: vec4f;',
+    'var<private> R: Reglages;',
+    'fn canal0(uv: vec2f) -> vec4f { return textureSampleLevel(iChannel0, iEchantillon, uv, 0.0); }',
+    'fn canal1(uv: vec2f) -> vec4f { return textureSampleLevel(iChannel1, iEchantillon, uv, 0.0); }',
+    'fn canal2(uv: vec2f) -> vec4f { return textureSampleLevel(iChannel2, iEchantillon, uv, 0.0); }',
+    'fn canal3(uv: vec2f) -> vec4f { return textureSampleLevel(iChannel3, iRepete, uv, 0.0); }',
+    '',
+  ].join('\n');
+
+  // Sommets : mode 1, triangle plein cadre (coord en cqh de l'image) ; mode 0, quad sur le repère d'un élément (boîte
+  // agrandie du débord ; coord en cqh depuis le coin haut gauche de la boîte, négative dans le débord).
+  var ENVELOPPE = [
+    'struct PmSortie { @builtin(position) pos: vec4f, @location(0) coord: vec2f };',
+    '',
+    '@vertex',
+    'fn pmSommets(@builtin(vertex_index) i: u32) -> PmSortie {',
+    '  var o: PmSortie;',
+    '  if (PM.mode == 1u) {',
+    '    var p = array<vec2f, 3>(vec2f(-1.0, -3.0), vec2f(-1.0, 1.0), vec2f(3.0, 1.0));',
+    '    let c = p[i];',
+    '    o.pos = vec4f(c, 0.0, 1.0);',
+    '    o.coord = vec2f((c.x + 1.0) * 0.5 * PM.scene.x, (1.0 - c.y) * 0.5 * PM.scene.y);',
+    '    return o;',
+    '  }',
+    '  var coins = array<vec2f, 6>(vec2f(-1.0, -1.0), vec2f(1.0, -1.0), vec2f(-1.0, 1.0), vec2f(-1.0, 1.0), vec2f(1.0, -1.0), vec2f(1.0, 1.0));',
+    '  let d = PM.demi.xy + vec2f(PM.repere.w);',
+    '  let l = coins[i] * d;',
+    '  let a = PM.repere.z;',
+    '  let w = PM.repere.xy + vec2f(cos(a) * l.x - sin(a) * l.y, sin(a) * l.x + cos(a) * l.y);',
+    '  o.pos = vec4f(w.x / PM.scene.x * 2.0 - 1.0, 1.0 - w.y / PM.scene.y * 2.0, 0.0, 1.0);',
+    '  o.coord = l + PM.demi.xy;',
+    '  return o;',
+    '}',
+    '',
+    '@fragment',
+    'fn pmImage(e: PmSortie) -> @location(0) vec4f {',
+    '  iTime = PM.temps;',
+    '  iProgres = PM.progres;',
+    '  iResolution = PM.resolution;',
+    '  R = PM_R;',
+    '  return /*APPEL*/;',
+    '}',
+    '',
+  ].join('\n');
+
+  var APPELS = { fond: 'image(e.coord)', transition: 'transition(e.coord, iProgres)', post: 'post(e.coord)' };
+
+  function compterLignes(t) { return (String(t).match(/\n/g) || []).length; }
+
+  function assemblerShader(o) {
+    if (!APPELS[o.usage]) throw new Error('assemblerShader : usage « ' + o.usage + ' » (fond, transition ou post attendu).');
+    var avant = [o.prelude || '', OUTILS, ENTREES, o.disposition.wgsl, LIAISONS].join('\n') + '\n// ---- code du shader ----\n';
+    var code = String(o.code).replace(/\r\n?/g, '\n');
+    return {
+      wgsl: avant + code + '\n// ---- enveloppe du moteur ----\n' + ENVELOPPE.replace('/*APPEL*/', APPELS[o.usage]),
+      ligneCode: compterLignes(avant),
+      lignesCode: code.split('\n').length,
+    };
+  }
+
+  /** Messages de compilation (getCompilationInfo) -> erreurs dans le fichier .wgsl (lignes à partir de 1). */
+  function situer(messages, a) {
+    return (messages || []).filter(function (m) { return m.type === 'error'; }).map(function (m) {
+      var l = m.lineNum - a.ligneCode;
+      var dedans = l >= 1 && l <= a.lignesCode;
+      return { ligne: dedans ? l : null, colonne: dedans ? m.linePos : null, message: String(m.message) };
+    });
+  }
+
+  function messageErreur(nom, fichier, erreurs) {
+    var liste = erreurs.slice(0, 3).map(function (e) {
+      return (e.ligne ? 'ligne ' + e.ligne + ', colonne ' + e.colonne : 'hors du code du shader (nom déjà pris par le moteur ?)') + ' : ' + e.message;
+    });
+    return 'Shader « ' + nom + ' » (' + fichier + ') ne compile pas : ' + liste.join(' ; ') +
+      (erreurs.length > 3 ? ' (et ' + (erreurs.length - 3) + ' autre(s))' : '') + '.';
+  }
+
+  /** FNV-1a 32 bits sur l'UTF-8 du texte (une paire de substitution compte comme deux caractères de 3 octets). */
+  function empreinte(texte) {
+    var h = 0x811c9dc5;
+    var s = String(texte);
+    for (var i = 0; i < s.length; i++) {
+      var c = s.charCodeAt(i);
+      var o = c < 0x80 ? [c] : c < 0x800 ? [0xc0 | (c >> 6), 0x80 | (c & 63)] : [0xe0 | (c >> 12), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63)];
+      for (var k = 0; k < o.length; k++) { h ^= o[k]; h = Math.imul(h, 0x01000193) >>> 0; }
+    }
+    return ('0000000' + h.toString(16)).slice(-8);
+  }
+
   return {
     USAGES: USAGES,
     FONCTIONS: FONCTIONS,
@@ -176,5 +394,15 @@
     validerShader: validerShader,
     reglagesEnTexte: reglagesEnTexte,
     valeursShader: valeursShader,
+    dispositionReglages: dispositionReglages,
+    ecrireReglages: ecrireReglages,
+    OCTETS_ENTREES: OCTETS_ENTREES,
+    ENTREES: ENTREES,
+    ecrireEntrees: ecrireEntrees,
+    OUTILS: OUTILS,
+    assemblerShader: assemblerShader,
+    situer: situer,
+    messageErreur: messageErreur,
+    empreinte: empreinte,
   };
 });
