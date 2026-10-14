@@ -5,12 +5,17 @@
  *                                     résout l'ensemble des images illisibles (URL data:)
  *   .cible(canvas)                    cible HDR, niveaux de bloom, copie lisible, contexte du canvas
  *   .oublierCible(canvas)             libère la cible (scène masquée) ; .cible la recrée au retour
- *   .dessiner(cible, liste, o)        liste : [{ sim, i, delta }] ; o : { largeurCqh, dureeImage, bloom, seuil, tons, couches? } ;
+ *   .dessiner(cible, liste, o)        liste : [{ sim, i, delta }] ; o : { largeurCqh, dureeImage, bloom, seuil, tons, couches?, fonds? } ;
+ *                                     fonds : [(passe) => void] fonds par shader (P6), dessinés dans la cible HDR en premier ;
  *                                     pose cible.vide (rien à dessiner) ; couches : [{ tampon (f32, cqh), debut (case),
  *                                     repere, genre (type d'obstacle), couleur [r, v, b, a], flou (cqh) }] couches héritées
  *                                     des obstacles de la vidéo, dessinées sous les particules
  *   .lirePixels(cible) -> Promise<{ largeur, hauteur, donnees }>  (RVBA 8 bits, prémultiplié, sRGB)
  *   .lireOrdre(e) -> Promise<Uint32Array>                          (paires clé, index après tri ; tests)
+ *
+ * Modules (P6) : em.modulesWGSL.couleur (couleur au cours de la vie, avant intensité et opacité ; quad, traînée, éclat) et
+ * .forme (alpha du motif, fsQuad) insérés aux marques du WGSL ; variantes de pipelines mises en cache par empreintes
+ * (pipelinesDe) ; verifierModules(effets) -> Map(effet -> message) des effets dont un module (force compris) ne compile pas.
  *
  * Fragments (P4) : liaison 9 = tampon E de l'émetteur (P.WGSL_FRAGMENTS) ; couleur du pixel d'origine (« source »), de A
  * vers B le long du trajet, particules en trop en fondu, taille vers celle des pixels de la cible ; éclats : polygones
@@ -108,6 +113,7 @@ struct Sortie {
   @location(2) couleur: vec4f,
   @location(3) alea: f32,
   @location(4) @interpolate(flat) echantillons: f32,
+  @location(5) @interpolate(flat) idx: u32,
 };
 
 fn table(debut: u32, u: f32) -> f32 {
@@ -195,13 +201,15 @@ fn vsQuad(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> S
   // Couleur « source » : le dégradé multiplié par mix(1, couleur du pixel, part de la source).
   let w = table(448u, u);
   let teinteVie = teinte(u);
-  let couleur = vec4f(teinteVie.rgb * mix(vec3f(1.0), fr.couleur.rgb, w), teinteVie.a * mix(1.0, fr.couleur.a, w));
+  var couleur = vec4f(teinteVie.rgb * mix(vec3f(1.0), fr.couleur.rgb, w), teinteVie.a * mix(1.0, fr.couleur.a, w));
+  // [module-couleur]
   o.pos = ecran(centre + q);
   o.uv = c;
   o.uvTex = uvTex;
   o.couleur = vec4f(couleur.rgb * table(320u, u), couleur.a * table(384u, u) * fondu(idx) * fr.opacite);
   o.alea = p.alea;
   o.echantillons = f32(echantillons);
+  o.idx = idx;
   return o;
 }
 
@@ -236,10 +244,12 @@ fn vsTrainee(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -
   o.pos = ecran(perspective(a, p.z) + normale * demiLargeur * cote);
   o.uv = vec2f(0.0, cote);
   o.uvTex = vec2f(f32(j) / f32(N), cote * 0.5 + 0.5);
-  let couleur = teinte(u);
+  var couleur = teinte(u);
+  // [module-couleur]
   o.couleur = vec4f(couleur.rgb * table(320u, u), couleur.a * table(384u, u) * k * fondu(idx));
   o.alea = p.alea;
   o.echantillons = 1.0;
+  o.idx = idx;
   return o;
 }
 
@@ -268,10 +278,12 @@ fn vsEclat(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> 
   sortie.pos = ecran(w);
   sortie.uv = vec2f(0.0);
   sortie.uvTex = (centre + decal - vec2f(ef(184u), ef(185u))) / max(2.0 * vec2f(ef(164u), ef(165u)), vec2f(1e-6)) + 0.5;
-  let couleur = teinte(u);
+  var couleur = teinte(u);
+  // [module-couleur]
   sortie.couleur = vec4f(couleur.rgb * table(320u, u), couleur.a * table(384u, u) * fondu(idx));
   sortie.alea = p.alea;
   sortie.echantillons = 1.0;
+  sortie.idx = idx;
   return sortie;
 }
 
@@ -324,7 +336,8 @@ fn motif(e: Sortie) -> vec4f {
 // son alpha : la couleur n'est pas multipliée par l'alpha).
 @fragment
 fn fsQuad(e: Sortie) -> @location(0) vec4f {
-  let t = motif(e);
+  var t = motif(e);
+  // [module-forme]
   let n = e.echantillons;
   let a = t.a * e.couleur.a;
   if (R.melange == 0u) { return vec4f(t.rgb * e.couleur.rgb * e.couleur.a, a) / n; }
@@ -531,6 +544,23 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
     [c.hdr, c.sortie, ...c.niveaux.map((n) => n.texture), c.uniformeFinal, ...c.bas.map((b) => b.uniforme), ...c.haut.map((b) => b.uniforme)].forEach((t) => t.destroy());
   }
 
+  const MARQUE_COULEUR = '// [module-couleur]';
+  const MARQUE_FORME = '// [module-forme]';
+
+  /** Rendu des particules avec les modules de couleur et de forme d'un émetteur (P6) : appels aux marques, prélude, modules. */
+  function codeParticules(couleur, forme) {
+    let code = WGSL_PARTICULES;
+    if (couleur) code = code.split(MARQUE_COULEUR).join('couleur = ' + couleur.appel + '(p, u, couleur);');
+    if (forme) code = code.split(MARQUE_FORME).join('t = vec4f(' + forme.appel + '(e.uv, particules[e.idx]));');
+    if (couleur || forme) code += P.WGSL_BRUIT + M.codeShader.OUTILS + (couleur ? couleur.wgsl : '') + (forme ? forme.wgsl : '');
+    return code;
+  }
+  P.codeParticules = codeParticules;
+
+  function messageModule(mod, erreurs) {
+    return erreurs.length ? M.codeShader.messageErreur(mod.nom, mod.fichier || 'shaders/' + mod.nom + '.wgsl', erreurs) : null;
+  }
+
   class Rendu {
     constructor(device, format) {
       this.device = device;
@@ -543,7 +573,7 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
       // Particules.
       this.layout = device.createBindGroupLayout({
         entries: [
-          { binding: 0, visibility: V, buffer: { type: 'read-only-storage' } },
+          { binding: 0, visibility: V | Fr, buffer: { type: 'read-only-storage' } },
           { binding: 1, visibility: V, buffer: { type: 'read-only-storage' } },
           { binding: 2, visibility: V, buffer: { type: 'uniform' } },
           { binding: 3, visibility: V | Fr, buffer: { type: 'uniform' } },
@@ -555,18 +585,9 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
           { binding: 9, visibility: V, buffer: { type: 'read-only-storage' } },
         ],
       });
-      const module = device.createShaderModule({ label: 'pm-particules', code: WGSL_PARTICULES });
-      const layout = device.createPipelineLayout({ bindGroupLayouts: [this.layout] });
-      this.pipelines = {};
-      Object.keys(GENRES).forEach((genre) => Object.keys(MELANGES).forEach((melange) => {
-        const g = GENRES[genre];
-        this.pipelines[genre + '-' + melange] = device.createRenderPipeline({
-          layout,
-          vertex: { module, entryPoint: g.sommets },
-          fragment: { module, entryPoint: g.fragment, targets: [{ format: 'rgba16float', blend: MELANGES[melange] }] },
-          primitive: { topology: g.topologie },
-        });
-      }));
+      this.layoutParticules = device.createPipelineLayout({ bindGroupLayouts: [this.layout] });
+      this.pipelines = this.creerPipelines(device.createShaderModule({ label: 'pm-particules', code: WGSL_PARTICULES }));
+      this.variantes = new Map();
 
       // Couches héritées des obstacles de la vidéo.
       this.layoutCouche = device.createBindGroupLayout({
@@ -643,6 +664,68 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
       this.styles = new WeakMap();
     }
 
+    /** Pipelines des genres × mélanges pour un module WGSL compilé. */
+    creerPipelines(module) {
+      const p = {};
+      Object.keys(GENRES).forEach((genre) => Object.keys(MELANGES).forEach((melange) => {
+        const g = GENRES[genre];
+        p[genre + '-' + melange] = this.device.createRenderPipeline({
+          layout: this.layoutParticules,
+          vertex: { module, entryPoint: g.sommets },
+          fragment: { module, entryPoint: g.fragment, targets: [{ format: 'rgba16float', blend: MELANGES[melange] }] },
+          primitive: { topology: g.topologie },
+        });
+      }));
+      return p;
+    }
+
+    /** Pipelines d'un émetteur : ceux des particules, ou la variante de ses modules de couleur et de forme (cache par empreintes). */
+    pipelinesDe(e) {
+      const m = e.em.modulesWGSL;
+      const couleur = m ? m.couleur : null;
+      const forme = m ? m.forme : null;
+      if (!couleur && !forme) return this.pipelines;
+      const cle = (couleur ? couleur.empreinte : '-') + '|' + (forme ? forme.empreinte : '-');
+      let v = this.variantes.get(cle);
+      if (!v) {
+        v = this.creerPipelines(this.device.createShaderModule({ label: 'pm-particules-modules', code: codeParticules(couleur, forme) }));
+        this.variantes.set(cle, v);
+      }
+      return v;
+    }
+
+    /** Erreurs d'un module de couleur ou de forme, compilé seul avec le rendu, situées dans son fichier. */
+    async situerRendu(mod) {
+      const code = mod.usage === 'module-couleur' ? codeParticules(mod, null) : codeParticules(null, mod);
+      const module = this.device.createShaderModule({ label: 'pm-verification-' + mod.nom, code });
+      const info = await module.getCompilationInfo();
+      const debut = (code.slice(0, code.lastIndexOf(mod.wgsl)).match(/\n/g) || []).length;
+      return M.codeShader.situerModule(info.messages, mod, debut);
+    }
+
+    /** Modules WGSL des effets (force, couleur, forme) compilés une fois chacun -> Map(effet -> message) des échecs. */
+    async verifierModules(effets) {
+      const echecs = new Map();
+      const vus = new Map();
+      const verifier = async (mod) => {
+        const cle = mod.usage + '|' + mod.empreinte;
+        if (!vus.has(cle)) vus.set(cle, messageModule(mod, mod.usage === 'module-force' ? await P.verifierForce(this.device, mod) : await this.situerRendu(mod)));
+        return vus.get(cle);
+      };
+      for (const effet of effets) {
+        for (const em of effet.emetteurs) {
+          const m = em.modulesWGSL;
+          if (!m) continue;
+          for (const mod of [m.force, m.couleur, m.forme]) {
+            if (!mod || echecs.has(effet)) continue;
+            const msg = await verifier(mod);
+            if (msg) echecs.set(effet, msg);
+          }
+        }
+      }
+      return echecs;
+    }
+
     async preparer(effets) {
       const { device } = this;
       const illisibles = new Set();
@@ -667,6 +750,7 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
             usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
           });
           device.queue.copyExternalImageToTexture({ source: bitmap }, { texture, premultipliedAlpha: true }, [bitmap.width, bitmap.height]);
+          bitmap.close();
           this.images.set(url, texture.createView());
         }
       }
@@ -842,7 +926,8 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
       const { device } = this;
       const enc = device.createCommandEncoder();
       const couches = o.couches || [];
-      cible.vide = liste.length === 0 && couches.length === 0;
+      const fonds = o.fonds || [];
+      cible.vide = liste.length === 0 && couches.length === 0 && fonds.length === 0;
 
       // 1. Tri des émetteurs en mélange alpha (clé z croissante : du plus loin au plus proche).
       const aTrier = liste.filter(({ sim, i }) => this.estTrie(sim.emetteurs[i]));
@@ -865,6 +950,8 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
 
       // 2. Particules dans la cible HDR.
       const rp = enc.beginRenderPass({ colorAttachments: [{ view: cible.vueHdr, loadOp: 'clear', storeOp: 'store', clearValue: [0, 0, 0, 0] }] });
+      // Fonds et auras par shader (P6) : sous les couches héritées et les particules du calque.
+      fonds.forEach((dessinerFond) => dessinerFond(rp));
       // Couches héritées d'abord : les particules de l'effet se dessinent dessus.
       couches.forEach((k) => {
         const c = this.couche(k.tampon, k.debut);
@@ -891,7 +978,7 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
         f[8] = sim.tau || 0;
         device.queue.writeBuffer(e.uniformeRendu, 0, v);
         const genre = r.type === 'trainee' ? 'trainee' : r.type === 'eclats' ? 'eclat' : 'quad';
-        rp.setPipeline(this.pipelines[genre + '-' + (r.melange === 'additif' ? 'additif' : 'alpha')]);
+        rp.setPipeline(this.pipelinesDe(e)[genre + '-' + (r.melange === 'additif' ? 'additif' : 'alpha')]);
         rp.setBindGroup(0, this.groupe(e));
         if (genre === 'trainee') rp.draw(2 * (r.longueur + 1), e.capacite);
         else if (genre === 'eclat') rp.draw(3 * (SOMMETS_ECLAT - 2), e.capacite);

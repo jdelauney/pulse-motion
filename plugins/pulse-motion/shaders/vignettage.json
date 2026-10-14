@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "nom": "vignettage",
+  "usage": "post",
+  "description": "Assombrit les bords et les coins de l'image pour guider le regard vers le centre : intimité, mystère, focalisation.",
+  "parametres": {
+    "force": { "defaut": 0.5, "min": 0, "max": 1 },
+    "rayon": { "defaut": 0.9, "min": 0.3, "max": 1.5 },
+    "douceur": { "defaut": 0.45, "min": 0.01, "max": 1 },
+    "couleur": { "defaut": "#000000", "type": "couleur" }
+  }
+}

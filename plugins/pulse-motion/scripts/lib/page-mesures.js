@@ -30,9 +30,9 @@ function pageAvecMesure(html, script, jeton) {
 
 /**
  * -> Promise<{ resultat } | { erreur, code? }> ; le navigateur et le serveur sont toujours fermés.
- * surPort(port) : appelé quand le serveur écoute (tests).
+ * surPort(port) : appelé quand le serveur écoute (tests) ; gpu : WebGPU actif (compilation des shaders, --gpu).
  */
-function mesurerPage({ html, script, navigateur, delai = 60000, surPort }) {
+function mesurerPage({ html, script, navigateur, delai = 60000, surPort, gpu = false }) {
   const jeton = crypto.randomBytes(16).toString('hex');
   const page = pageAvecMesure(html, script, jeton);
   return new Promise((resolve) => {
@@ -76,7 +76,7 @@ function mesurerPage({ html, script, navigateur, delai = 60000, surPort }) {
       hote = `127.0.0.1:${port}`;
       if (surPort) surPort(port);
       try {
-        nav = ouvrirSansFenetre(navigateur, `http://${hote}/`);
+        nav = ouvrirSansFenetre(navigateur, `http://${hote}/`, { gpu });
       } catch (e) {
         terminer({ erreur: `navigateur impossible à lancer (${e.code || e.message})`, ...(e.code === 'ENOENT' ? { code: 'ENOENT' } : {}) });
         return;

@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "nom": "halo",
+  "usage": "fond",
+  "description": "Lueur douce qui respire autour d'un élément (data-ancre) : mettre en valeur un chiffre, un pictogramme, un titre.",
+  "debord": 12,
+  "parametres": {
+    "rayon": { "defaut": 4, "min": 0.5, "max": 12 },
+    "intensite": { "defaut": 1.2, "min": 0, "max": 3 },
+    "pulsation": { "defaut": 0.5, "min": 0, "max": 3 },
+    "couleur": { "defaut": "accent", "type": "couleur" }
+  }
+}

@@ -2,8 +2,9 @@
 'use strict';
 /* Pulse Motion – contrôles automatiques d'un projet vidéo, sans navigateur.
  *
- *   node scripts/controler.js <dossier-du-projet> [--sans-correction] [--sans-rendu]
+ *   node scripts/controler.js <dossier-du-projet> [--sans-correction] [--sans-rendu] [--gpu]
  *
+ * --gpu : compile aussi chaque shader et chaque module WGSL dans Chrome sans fenêtre avec WebGPU (shader-ne-compile-pas).
  * Contrôle aussi la vidéo rendue dans Chrome ou Edge sans fenêtre (débordements, chevauchements, cadre, marges,
  * zone des boutons en 9:16, logo, textes fugaces, mouvements rapides) ; sans navigateur : alerte rendu-non-verifie.
  * Écrit sortie/controle.json : { problemes: [{ regle, gravite: "erreur" | "alerte" | "info" (rien à corriger : la personne est prévenue), scene?, element?, message, correction? }],
@@ -24,10 +25,11 @@ const { cheminDansProjet } = require('./lib/embarquer.js');
 const W = require('../moteur/wav.js');
 const { corrigerTypographie, corrigerMajuscules, motsDoubles, termesVariables, cleTerme } = require('./lib/typographie.js');
 const { extraireScene, textesEnDur } = require('./lib/extraire.js');
-const { calculerMinutage, CHEVAUCHEMENT } = require('../moteur/minutage.js');
+const { calculerMinutage } = require('../moteur/minutage.js');
 const CATALOGUE = require('../moteur/synthe/catalogue.js');
 const { appliquerCorrections } = require('./lib/corriger.js');
 const { controlerRendu } = require('./lib/rendu-controle.js');
+const { aDesShaders, compilerShadersGPU } = require('./lib/shaders-gpu.js');
 const { EFFETS: EFFETS_LETTRES } = require('../moteur/lettres.js');
 const { analyserCamera } = require('../moteur/camera.js');
 const { analyserTemps } = require('../moteur/temps.js');
@@ -179,7 +181,7 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
       }
     }
     if (deroule.bruitages && deroule.bruitages.transitions) {
-      min.scenes.forEach((s, i) => { const nom = i > 0 && CATALOGUE.SONS_TRANSITION[s.transition]; if (nom) sonsJoues.push({ t: s.debut, nom, scene: s.id }); });
+      min.scenes.forEach((s, i) => { const nom = i > 0 && CATALOGUE.sonTransition(s.transition); if (nom) sonsJoues.push({ t: s.debut, nom, scene: s.id }); });
     }
     sonsJoues.sort((a, b) => a.t - b.t);
     for (let i = 0; i + 3 < sonsJoues.length; i++) {
@@ -258,7 +260,7 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
     // Temps morts : aucun élément en mouvement pendant plus que le seuil (pause finale exceptée).
     const derniere = min.scenes[min.scenes.length - 1];
     min.scenes.forEach((s, i) => {
-      const dureeEntree = s.entree > 0 ? s.entree : (i === 0 && s.transition !== 'aucune' && s.transition !== 'coupe' ? CHEVAUCHEMENT : 0);
+      const dureeEntree = s.entree > 0 ? s.entree : (i === 0 ? s.dureeTransition || 0 : 0);
       const intervalles = Object.entries(min.elements[s.id]).map(([cle, e]) => [e.debut, finElement(s.id, cle, e)]);
       if (dureeEntree) intervalles.push([s.debut, s.debut + dureeEntree]);
       const suivante = min.scenes[i + 1];
@@ -303,9 +305,12 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
       problemes.push(p);
     }
 
-    // Trop d'animations vives en même temps : l'œil ne sait plus où regarder (les mouvements lents du décor ne comptent pas).
+    // Trop d'animations vives en même temps : l'œil ne sait plus où regarder (les mouvements lents du décor ne comptent pas,
+    // ni les fonds et auras par shader : une ambiance, pas un point d'attention).
     for (const s of min.scenes) {
-      const vifs = Object.values(min.elements[s.id]).filter((e) => e.fin - e.debut > 0 && e.fin - e.debut < SEUILS.animationLongue).sort((x, y) => x.debut - y.debut);
+      const ambiances = new Set(elementsParScene[s.id].filter((e) => e.shader !== undefined).map((e) => e.cle));
+      const vifs = Object.entries(min.elements[s.id]).filter(([cle]) => !ambiances.has(cle)).map(([, e]) => e)
+        .filter((e) => e.fin - e.debut > 0 && e.fin - e.debut < SEUILS.animationLongue).sort((x, y) => x.debut - y.debut);
       let max = 0;
       let instant = 0;
       for (const e of vifs) {
@@ -438,10 +443,11 @@ function controler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
 }
 
 /**
- * controlerComplet({ dossier, dossierStyles?, dossierEffets?, ecrire?, corriger?, rendu?, navigateur? })
- * -> Promise<{ problemes, corrections, renduVerifie, fichier }> : contrôles rapides, corrections, puis vidéo rendue.
+ * controlerComplet({ dossier, dossierStyles?, dossierEffets?, ecrire?, corriger?, rendu?, gpu?, navigateur? })
+ * -> Promise<{ problemes, corrections, renduVerifie, fichier }> : contrôles rapides, corrections, vidéo rendue, puis (gpu)
+ * compilation réelle des shaders.
  */
-async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.join(RACINE, 'effets'), ecrire = true, corriger = true, rendu = true, navigateur }) {
+async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.join(RACINE, 'effets'), ecrire = true, corriger = true, rendu = true, gpu = false, navigateur }) {
   const projet = path.resolve(dossier);
   const r = controler({ dossier: projet, dossierStyles, dossierEffets, ecrire, corriger });
   let { problemes } = r;
@@ -476,6 +482,13 @@ async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.j
       }
     }
   }
+  if (gpu) {
+    const assemblage = assembler({ dossier: projet, dossierStyles, dossierEffets, ecrire: false });
+    if (assemblage.ok && aDesShaders(assemblage.donnees)) {
+      const g = await compilerShadersGPU({ html: assemblage.html, ...(navigateur !== undefined ? { navigateur } : {}) });
+      problemes = [...problemes, ...g.problemes];
+    }
+  }
   if (r.fichier) fs.writeFileSync(r.fichier, JSON.stringify({ problemes, corrections, renduVerifie }, null, 2));
   return { problemes, corrections, renduVerifie, fichier: r.fichier };
 }
@@ -484,10 +497,10 @@ if (require.main === module) {
   const args = process.argv.slice(2);
   const dossier = args.find((a) => !a.startsWith('--'));
   if (!dossier) {
-    console.error('Usage : node scripts/controler.js <dossier-du-projet> [--sans-correction] [--sans-rendu]');
+    console.error('Usage : node scripts/controler.js <dossier-du-projet> [--sans-correction] [--sans-rendu] [--gpu]');
     process.exit(2);
   }
-  controlerComplet({ dossier, corriger: !args.includes('--sans-correction'), rendu: !args.includes('--sans-rendu') }).then(({ problemes, corrections, renduVerifie, fichier }) => {
+  controlerComplet({ dossier, corriger: !args.includes('--sans-correction'), rendu: !args.includes('--sans-rendu'), gpu: args.includes('--gpu') }).then(({ problemes, corrections, renduVerifie, fichier }) => {
     const erreurs = problemes.filter((p) => p.gravite === 'erreur').length;
     const alertes = problemes.filter((p) => p.gravite === 'alerte').length;
     const informations = problemes.filter((p) => p.gravite === 'info').length;

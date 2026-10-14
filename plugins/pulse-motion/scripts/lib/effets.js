@@ -9,6 +9,8 @@
  * Chaque balise reçoit data-pm-effet="N" (index dans M.donnees.effets) ou data-pm-effet-erreur.
  * Atelier : balisesEffets repère les balises (positions dans le texte d'origine, même rang que l'assemblage),
  * reecrireBalise et modifierEffet changent quelques attributs sans toucher au reste.
+ * Modules WGSL (P6) : le code des modules d'une recette est attaché à l'effet compilé (S.attacherModules, chargerShader) ;
+ * les sources utilisées sont rendues dans « modules ».
  */
 const fs = require('node:fs');
 const path = require('node:path');
@@ -16,6 +18,7 @@ const { lireAttributs } = require('./extraire.js');
 const { cheminDansProjet, versDataURI } = require('./embarquer.js');
 const { echapperHTML } = require('./scenes.js');
 const R = require('../../moteur/particules/recette.js');
+const S = require('../../moteur/shaders/code.js');
 const { lireSecondes } = require('../../moteur/minutage.js');
 
 const NOM = /^[a-z0-9-]+$/;
@@ -65,17 +68,22 @@ function masquer(html) {
   return String(html).replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, blanc).replace(/<!--[\s\S]*?-->/g, blanc);
 }
 
-/** balisesEffets(html) -> [{ ordre, debut, fin, balise, attributs, texte }] : balises data-effet dans l'ordre du document. */
-function balisesEffets(html) {
+/** balisesAvec(html, attribut) -> [{ ordre, debut, fin, balise, attributs, texte }] : balises portant l'attribut, dans l'ordre du document. */
+function balisesAvec(html, attribut) {
   const source = String(html);
   const liste = [];
   for (const m of masquer(source).matchAll(BALISE)) {
     const attributs = lireAttributs(m[2]);
-    if (!('data-effet' in attributs)) continue;
+    if (!(attribut in attributs)) continue;
     const fin = m.index + m[0].length;
     liste.push({ ordre: liste.length, debut: m.index, fin, balise: m[1], attributs, texte: source.slice(m.index, fin) });
   }
   return liste;
+}
+
+/** balisesEffets(html) -> balises data-effet dans l'ordre du document. */
+function balisesEffets(html) {
+  return balisesAvec(html, 'data-effet');
 }
 
 const ATTRIBUT_EN_PLACE = /(\s*)([^\s"'=<>/]+)(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'>]+))?/g;
@@ -111,14 +119,17 @@ function modifierEffet(html, ordre, changements) {
 }
 
 /**
- * preparerEffets(html, { scene, projet, bibliotheque, charte, premierIndex, dureeTemps })
+ * preparerEffets(html, { scene, projet, bibliotheque, charte, premierIndex, dureeTemps, chargerShader })
+ * chargerShader : chargeurShaders (scripts/lib/shaders.js), pour les modules des recettes.
  * dureeTemps : secondes par temps musical (tempo du déroulé), pour un data-dur écrit en « t ».
- * -> { html, effets: [{ scene, ordre, calque, ancre, cible, effet }], erreurs: [{ regle, gravite, scene, element?, message }] }
+ * -> { html, effets: [{ scene, ordre, calque, ancre, cible, effet }], erreurs: [{ regle, gravite, scene, element?, message }],
+ *    modules: { nom: { json, code } } }
  * ordre : position de la balise parmi les data-effet de la scène (erreurs comprises).
  */
-function preparerEffets(html, { scene, projet, bibliotheque, charte = {}, premierIndex = 0, dureeTemps = null }) {
+function preparerEffets(html, { scene, projet, bibliotheque, charte = {}, premierIndex = 0, dureeTemps = null, chargerShader = null }) {
   const effets = [];
   const erreurs = [];
+  const modules = {};
   const source = String(html).replace(/<!--[\s\S]*?-->/g, '');
   const ids = new Set();
   for (const m of source.matchAll(BALISE)) {
@@ -181,6 +192,17 @@ function preparerEffets(html, { scene, projet, bibliotheque, charte = {}, premie
       return signaler([{ regle: 'ancre-vide', message: `l'effet « ${nom} » photographie son ancre : data-ancre="#id" attendu (rien à photographier sans elle).` }]);
     }
 
+    // Modules WGSL : code assemblé avec les réglages de la recette (S.attacherModules), sources gardées pour l'atelier.
+    if (ems.some((em) => em.modules && (em.modules.force || em.modules.couleur || em.modules.forme))) {
+      const chargerModule = (n) => { try { return chargerShader ? chargerShader(n) : null; } catch { return null; } };
+      const fautes = S.attacherModules(compile.effet, chargerModule, charte);
+      if (fautes.length) return signaler(fautes);
+      ems.forEach((em) => S.CLES_MODULES.forEach((k) => {
+        const n = em.modules[k];
+        if (n) { const src = chargerModule(n); modules[n] = { json: src.json, code: src.code }; }
+      }));
+    }
+
     for (const em of compile.effet.emetteurs) {
       if (!em.rendu.textureFichier) continue;
       const absolu = cheminDansProjet(projet, em.rendu.textureFichier);
@@ -195,7 +217,7 @@ function preparerEffets(html, { scene, projet, bibliotheque, charte = {}, premie
     return `<${balise}${attributs} data-pm-effet="${index}"${fermante}>`;
   });
 
-  return { html: sortie, effets, erreurs };
+  return { html: sortie, effets, erreurs, modules };
 }
 
-module.exports = { chargeurRecettes, fnv1a, graineParDefaut, preparerEffets, balisesEffets, reecrireBalise, modifierEffet };
+module.exports = { chargeurRecettes, fnv1a, graineParDefaut, preparerEffets, balisesAvec, balisesEffets, reecrireBalise, modifierEffet };

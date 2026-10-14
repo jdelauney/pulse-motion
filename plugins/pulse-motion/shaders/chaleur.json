@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "nom": "chaleur",
+  "usage": "post",
+  "description": "L'air tremble comme au-dessus d'une route chaude, surtout en bas de l'image : chaleur, désert, mirage, fièvre.",
+  "parametres": {
+    "force": { "defaut": 0.4, "min": 0, "max": 3 },
+    "echelle": { "defaut": 6, "min": 1, "max": 30 },
+    "vitesse": { "defaut": 1.5, "min": 0, "max": 6 },
+    "haut": { "defaut": 0.3, "min": 0, "max": 0.95 }
+  }
+}

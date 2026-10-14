@@ -20,13 +20,13 @@ const lireJSON = (f) => { try { return JSON.parse(fs.readFileSync(f, 'utf8')); }
 const ZONE = 'zone-sure';
 
 /** textes : 'maximum' (toutes les règles sauf la zone des boutons) ou 'exemple' (la zone des boutons seule). */
-async function rendreUnEssai({ dossierStyle, ratio, ton, navigateur, dossierStyles, textes = 'maximum' }) {
+async function rendreUnEssai({ dossierStyle, ratio, ton, navigateur, dossierStyles, textes = 'maximum', delai = 120000 }) {
   const dir = projetEssai({ dossierStyle, ratio, ton, textes });
   try {
     const { html, erreurs } = assembler({ dossier: dir, dossierStyles, ecrire: false });
     if (!html) return erreurs.map((e) => e.message);
     const familles = [...new Set(Object.values(lireJSON(path.join(dossierStyle, 'charte.json')).polices || {}).filter((f) => typeof f === 'string' && !SYSTEME.has(f)))];
-    const r = await mesurerPage({ html, navigateur, delai: 120000, script: `
+    const r = await mesurerPage({ html, navigateur, delai, script: `
       var chargees = []; document.fonts.forEach(function (f) { if (f.status === 'loaded') chargees.push(f.family.replace(/["']/g, '')); });
       var constats = M.mesurer({ ratio: ${JSON.stringify(ratio)}, seuils: ${JSON.stringify(SEUILS)} });
       var debordements = M.detecterDebordements().map(function (d) { return d.message; });
@@ -43,12 +43,13 @@ async function rendreUnEssai({ dossierStyle, ratio, ton, navigateur, dossierStyl
   }
 }
 
-/** -> { ok: true | false | null, problemes, message? } ; ok null : navigateur absent, rendu non vérifié. */
-async function verifierRendu({ dossierStyle, navigateur = trouverNavigateur(), dossierStyles }) {
+/** -> { ok: true | false | null, problemes, message? } ; ok null : navigateur absent, rendu non vérifié.
+ *  delai : ms par page (120 s par défaut ; plus pour les tests, lancés à côté d'autres navigateurs). */
+async function verifierRendu({ dossierStyle, navigateur = trouverNavigateur(), dossierStyles, delai }) {
   if (!navigateur) return { ok: null, problemes: [], message: 'Chrome ou Edge introuvable : le rendu (débordements, polices) n\'a pas été vérifié. Installez l\'un des deux, ou indiquez son chemin avec la variable PM_NAVIGATEUR.' };
   const tons = ((lireJSON(path.join(dossierStyle, 'identite.json')).couleur || {}).tons) || ['clair'];
   const essais = [...FORMATS.map((ratio) => ({ ratio })), ...(tons.length > 1 ? tons.map((ton) => ({ ratio: '16:9', ton })) : []), { ratio: '9:16', textes: 'exemple' }];
-  const resultats = await Promise.all(essais.map((e) => rendreUnEssai({ dossierStyle, navigateur, dossierStyles, ...e })));
+  const resultats = await Promise.all(essais.map((e) => rendreUnEssai({ dossierStyle, navigateur, dossierStyles, delai, ...e })));
   const problemes = resultats.flatMap((liste, i) => liste.map((m) => `${essais[i].ratio}${essais[i].ton ? ` (ton ${essais[i].ton})` : ''}${essais[i].textes ? ' (phrases d\'exemple)' : ''} : ${m}`));
   return { ok: problemes.length === 0, problemes };
 }

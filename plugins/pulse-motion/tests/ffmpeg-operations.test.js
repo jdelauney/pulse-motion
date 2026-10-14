@@ -41,6 +41,22 @@ test('assemblage de deux segments sans réencodage ; image extraite et comparée
   assert.equal(F.ecartImages(uni(0, 0, 0, 10, 10), uni(0, 0, 0, 20, 10)), 1);
 });
 
+test("ecartImages : un motif décalé de plus d'un bloc compte ; un bruit de moyenne nulle se compense", () => {
+  // 1920 × 1080 : blocs de 7 px. Bandes verticales de 24 px (64 / 192), décalées de 12 px ; bruit ±20 (graine fixe).
+  const L = 1920;
+  const H = 1080;
+  const bande = (x) => (Math.floor(x / 24) % 2 ? 192 : 64);
+  let graine = 12345;
+  const alea = () => { graine = (Math.imul(graine, 1103515245) + 12345) >>> 0; return graine / 4294967296; };
+  const motif = pngRGBA(L, H, (x) => { const v = bande(x); return [v, v, v, 255]; });
+  const decale = pngRGBA(L, H, (x) => { const v = bande(x + 12); return [v, v, v, 255]; });
+  const bruite = pngRGBA(L, H, (x) => { const v = bande(x); return [v + Math.round((alea() * 2 - 1) * 20), v + Math.round((alea() * 2 - 1) * 20), v + Math.round((alea() * 2 - 1) * 20), 255]; });
+  const ecartDecale = F.ecartImages(motif, decale);
+  const ecartBruit = F.ecartImages(motif, bruite);
+  assert.ok(ecartDecale > 0.02, `motif décalé : ${ecartDecale}`);
+  assert.ok(ecartBruit < 0.02, `bruit de moyenne nulle : ${ecartBruit}`);
+});
+
 test('segment annulé : ffmpeg arrêté, rejet « export annulé »', sans, async () => {
   const dir = dossierTemporaire('pm-ff-');
   const controle = new AbortController();

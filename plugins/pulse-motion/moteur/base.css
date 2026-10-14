@@ -14,17 +14,21 @@ body {
 }
 #pm-scene > section[data-scene] { position: absolute; inset: 0; }
 #pm-scene > section.pm-avec-calques { isolation: isolate; }
-/* Effets de particules : la balise donne la zone d'émission par défaut ; les canvas des calques
+/* Effets de particules et fonds par shader : la balise donne la zone d'émission par défaut ; les canvas des calques
    couvrent la scène, derrière le contenu (arriere) ou devant (avant). */
 /* Le préfixe #pm-scene doit l'emporter sur les règles des styles comme `.decor ~ *`. */
-#pm-scene [data-effet] { position: absolute; }
-[data-effet] { inset: 0; pointer-events: none; }
+#pm-scene [data-effet], #pm-scene [data-shader] { position: absolute; }
+[data-effet], [data-shader] { inset: 0; pointer-events: none; }
 /* Formes d'obstacles invisibles (collisions de particules) : déclarations lues par le moteur, rien à afficher. */
 [data-obstacle-forme] { display: none; }
 /* Fragmentation des particules : élément remplacé par ses particules (raccord posé par le moteur selon t). */
 #pm-scene .pm-fragment-cache { visibility: hidden !important; }
 #pm-scene .pm-calque { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1000; }
 #pm-scene .pm-calque[data-pm-calque="arriere"] { z-index: -1; }
+/* Composition des shaders (transitions, post-traitements) : au-dessus des scènes réelles, masquées pendant ce temps ;
+   sous les sous-titres (z-index 1000). */
+#pm-scene > .pm-composition { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999; }
+#pm-scene.pm-compose > section[data-scene] { opacity: 0 !important; }
 .pm-effet-panneau {
   position: absolute; left: 2cqh; top: 2cqh; max-width: 70cqh; padding: 1cqh 1.6cqh; z-index: 1001;
   border: 0.3cqh dashed #c0392b; border-radius: 1cqh; background: #fdecea; color: #7b1d14;
