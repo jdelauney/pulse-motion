@@ -1749,9 +1749,8 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
 
     evaluer(tau, zones, k) {
       const { device } = this;
-      // Fragments : repères à la naissance (τ = 0) et autour de τ.
-      this.assurerAncres(0, 1, zones);
-      this.assurerAncres(Math.floor(tau * GRILLE) - 1, Math.floor(tau * GRILLE) + 2, zones);
+      // Fragments : repères de τ = 0 jusqu'autour de τ (naissance, instants de libération entre les deux, τ).
+      this.assurerAncres(0, Math.floor(tau * GRILLE) + 2, zones);
       const gMax = Math.min(this.nZones - 1, Math.floor(tau * GRILLE) + 1);
       let gMin = gMax;
       this.rapides.forEach((e) => { gMin = Math.min(gMin, Math.floor(Math.max(0, tau - e.em.vie[1]) * GRILLE)); });
