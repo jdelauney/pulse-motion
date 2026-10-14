@@ -2,7 +2,9 @@
 /* Pulse Motion – effets de particules d'une scène : recettes, réglages, compilation.
  *
  * Une scène pose un effet avec <div data-effet="nom" data-ancre="#id" data-calque="avant|arriere"
- * data-reglages="nom: valeur; …" data-graine="7" data-start="…" data-dur="…"></div>.
+ * data-reglages="nom: valeur; …" data-graine="7" data-start="…" data-dur="…"></div> ; data-cible="#id" : élément
+ * d'arrivée d'une métamorphose (fragmentation, P4). Une recette qui photographie son ancre (pixels, éclats, cible
+ * « ancre ») demande data-ancre (ancre-vide), une métamorphose data-cible (metamorphose-sans-cible).
  * Les recettes sont cherchées dans <projet>/effets/ puis dans la bibliothèque du plugin.
  * Chaque balise reçoit data-pm-effet="N" (index dans M.donnees.effets) ou data-pm-effet-erreur.
  * Atelier : balisesEffets repère les balises (positions dans le texte d'origine, même rang que l'assemblage),
@@ -111,7 +113,7 @@ function modifierEffet(html, ordre, changements) {
 /**
  * preparerEffets(html, { scene, projet, bibliotheque, charte, premierIndex, dureeTemps })
  * dureeTemps : secondes par temps musical (tempo du déroulé), pour un data-dur écrit en « t ».
- * -> { html, effets: [{ scene, ordre, calque, ancre, effet }], erreurs: [{ regle, gravite, scene, element?, message }] }
+ * -> { html, effets: [{ scene, ordre, calque, ancre, cible, effet }], erreurs: [{ regle, gravite, scene, element?, message }] }
  * ordre : position de la balise parmi les data-effet de la scène (erreurs comprises).
  */
 function preparerEffets(html, { scene, projet, bibliotheque, charte = {}, premierIndex = 0, dureeTemps = null }) {
@@ -147,6 +149,12 @@ function preparerEffets(html, { scene, projet, bibliotheque, charte = {}, premie
       if (!m || !ids.has(m[1])) return signaler([{ regle: 'ancre-introuvable', message: `data-ancre « ${a['data-ancre']} » ne désigne aucun élément de la scène (forme attendue : #id).` }]);
       ancre = m[1];
     }
+    let cible = null;
+    if (a['data-cible'] !== undefined) {
+      const m = /^#([A-Za-z0-9_-]+)$/.exec(a['data-cible'].trim());
+      if (!m || !ids.has(m[1])) return signaler([{ regle: 'cible-introuvable', message: `data-cible « ${a['data-cible']} » ne désigne aucun élément de la scène (forme attendue : #id).` }]);
+      cible = m[1];
+    }
     let graine = graineParDefaut(scene, position, nom);
     if (a['data-graine'] !== undefined) {
       if (!/^\d+$/.test(a['data-graine'].trim())) return signaler([{ regle: 'effet-invalide', message: `data-graine « ${a['data-graine']} » : nombre entier attendu.` }]);
@@ -164,6 +172,14 @@ function preparerEffets(html, { scene, projet, bibliotheque, charte = {}, premie
       compile = { ok: false, erreurs: [{ regle: e.regle, message: e.message }] };
     }
     if (!compile.ok) return signaler(compile.erreurs);
+    // Fragmentation : un élément à photographier (ancre), un élément d'arrivée (cible).
+    const ems = compile.effet.emetteurs;
+    if (ems.some((em) => em.cible && em.cible.source === 'cible') && !cible) {
+      return signaler([{ regle: 'metamorphose-sans-cible', message: `l'effet « ${nom} » transforme son ancre en un autre élément : data-cible="#id" attendu (l'élément d'arrivée, dans la même scène).` }]);
+    }
+    if (ems.some((em) => em.pixels || em.eclats || (em.cible && em.cible.source === 'ancre')) && !ancre) {
+      return signaler([{ regle: 'ancre-vide', message: `l'effet « ${nom} » photographie son ancre : data-ancre="#id" attendu (rien à photographier sans elle).` }]);
+    }
 
     for (const em of compile.effet.emetteurs) {
       if (!em.rendu.textureFichier) continue;
@@ -175,7 +191,7 @@ function preparerEffets(html, { scene, projet, bibliotheque, charte = {}, premie
     }
 
     const index = premierIndex + effets.length;
-    effets.push({ scene, ordre: position, calque, ancre, effet: compile.effet });
+    effets.push({ scene, ordre: position, calque, ancre, cible, effet: compile.effet });
     return `<${balise}${attributs} data-pm-effet="${index}"${fermante}>`;
   });
 
