@@ -30,6 +30,14 @@
  * M.particules.alertes     messages d'exécution (masque vide d'une forme exacte, obstacles ou couches au-delà des limites) ;
  *   masque vide : aussi un panneau d'alerte (.pm-effet-alerte, masqué en capture) sur les effets qui visent les formes
  * M.particules.formesVides() -> Promise<[{ scene, element, message }]>   formes exactes au masque vide (contrôle, sans GPU)
+ * M.particules.photosVides() -> Promise<[{ scene, element, regle, message }]>   photographies des effets de fragmentation :
+ *   ancre-vide (rien à photographier : effet désactivé), photographie-trop-grande (densité augmentée) ; sans GPU
+ * M.particules.donneesFragments(idScene, ordre) -> [données | null]   données de fragments de l'effet (tests)
+ * Fragments (P4) : chaque élément photographié (M.figer.photo) une fois par instant et densité, après la porte de
+ * disponibilité, à la résolution de sortie 1080p du format ; listes de pixels, appariement de Hilbert, éclats
+ * (M.fragments) ; fx.effet : fx.effetOrigine avec le nombre de particules de la photographie ; repères de l'ancre et de
+ * l'élément visé mesurés avec la zone d'émission ; raccords : classe pm-fragment-cache (visibility: hidden) posée selon t
+ * (M.fragments.raccord), seulement quand l'effet est affiché.
  * Formes exactes : masque de chaque élément data-obstacle="forme" à la fin de son minutage (M.figer.masque), une fois,
  * après la porte de disponibilité (polices chargées) ; champs de distance sur le GPU (P.creerFormes), recréés après une
  * perte du GPU (masques gardés) ; refaits après un changement de polices.
@@ -49,9 +57,13 @@
   const P = M.particulesInterne = M.particulesInterne || {};
   const CALQUES = ['arriere', 'avant'];
   const SANS_GPU = 'Effet non affiché : WebGPU indisponible. Ouvrez la vidéo dans Chrome ou Edge récent.';
+  const CACHE = 'pm-fragment-cache';
+  // Hauteur de sortie 1080p de chaque format (pixels de sortie des photographies).
+  const HAUTEURS_SORTIE = { '16:9': 1080, '9:16': 1920, '1:1': 1080, '4:5': 1350 };
 
   const GARDE_GPU = 10000;
-  const etat = { gpu: null, rendu: null, scenes: [], obstacles: new Map(), masques: null, formes: null, alertes: [], t: 0, rendu_t: null, pret: Promise.resolve(), disponible: false, raison: null };
+  const etat = { gpu: null, rendu: null, scenes: [], obstacles: new Map(), masques: null, formes: null, alertes: [], t: 0, rendu_t: null, pret: Promise.resolve(), disponible: false, raison: null,
+    photos: new Map(), problemesPhotos: [], promesseFragments: null };
 
   function panneau(el, message) {
     if (el.querySelector(':scope > .pm-effet-panneau')) return;
@@ -103,6 +115,10 @@
           effet: d.effet,
           calque: d.calque,
           ancre: d.ancre ? section.querySelector('#' + CSS.escape(d.ancre)) : null,
+          cible: d.cible ? section.querySelector('#' + CSS.escape(d.cible)) : null,
+          effetOrigine: d.effet,
+          fragments: null,
+          ancres: new Map(),
           debut: temps ? temps.debut : info.debut,
           zones: new Map(),
           sim: null,
@@ -323,13 +339,194 @@
     const mesures = { scenes: new Set() };
     const m = monde(f);
     m.bases = basesPour(f, device);
-    const sim = new P.Simulation(device, f.effet, m);
+    const sim = new P.Simulation(device, f.effet, m, f.fragments);
     sim.avancer(Math.max(0, (t - f.debut) * f.info.rythme - 1e-6), zonesDe(f, mesures));
     const c = sim.contributionVideo();
     sim.detruire();
     mesures.scenes.forEach((id) => M.rendreScene(id, etat.t));
     parInstant.set(t, c);
     return c;
+  }
+
+  // ---- Fragments (P4) ----
+
+  /** Effet dont une recette photographie un élément (naissance sur les pixels, éclats, arrivée sur une cible). */
+  function fragmente(fx) { return fx.effetOrigine.emetteurs.some((em) => em.fragment); }
+
+  /** Élément visé par les émetteurs à cible : data-cible si l'un vise « cible », sinon l'ancre. */
+  function elementVise(fx) {
+    return fx.effetOrigine.emetteurs.some((em) => em.cible && em.cible.source === 'cible') ? fx.cible : fx.ancre;
+  }
+
+  function nomElement(el) { return el.id ? '#' + el.id : '<' + el.localName + '>'; }
+
+  function hauteurSortie() { return HAUTEURS_SORTIE[M.donnees && M.donnees.format && M.donnees.format.ratio] || 1080; }
+
+  /** Instant (s de la vidéo) borné à la scène de l'effet. */
+  function dansScene(fx, t) { return Math.min(Math.max(t, fx.info.debut), fx.info.fin - 1e-6); }
+
+  /** Photographie d'un élément à l'instant t : { photo, liste, densite, image? }, ou null si rien n'est visible. Gardée par
+   *  élément, instant, densité ; densité multipliée par 4 tant qu'il y a plus de PIXELS_MAX pixels opaques (pas pour les
+   *  éclats : leur nombre ne dépend pas des pixels). La classe du moteur est retirée le temps du figement. */
+  function photographier(el, t, densite, image) {
+    const Fr = M.fragments;
+    if (!etat.photos.has(el)) etat.photos.set(el, new Map());
+    const parEl = etat.photos.get(el);
+    const cle = t + '|' + densite + '|' + (image ? 1 : 0);
+    if (parEl.has(cle)) return parEl.get(cle);
+    const promesse = (async () => {
+      const section = el.closest('#pm-scene > section');
+      const id = section.getAttribute('data-scene');
+      let d = densite;
+      for (;;) {
+        let attente = null;
+        let taille = null;
+        M.rendreScene(id, t);
+        affichee(section, () => {
+          const cachee = el.classList.contains(CACHE);
+          el.classList.remove(CACHE);
+          try {
+            const h = Math.max(1, section.clientHeight);
+            const b = M.figer.boite(el);
+            taille = { largeurCqh: b.largeur * 100 / h, hauteurCqh: b.hauteur * 100 / h };
+            attente = M.figer.photo(el, Fr.dimensionsPhoto(taille.largeurCqh, taille.hauteurCqh, hauteurSortie(), d));
+          } finally {
+            if (cachee) el.classList.add(CACHE);
+          }
+        });
+        M.rendreScene(id, etat.t);
+        const ph = await attente;
+        if (!ph.largeur) return null;
+        const photo = { largeur: ph.largeur, hauteur: ph.hauteur, rgba: ph.rgba, largeurCqh: taille.largeurCqh, hauteurCqh: taille.hauteurCqh };
+        const liste = Fr.listerPixels(photo);
+        if (!liste.total) return null;
+        if (!image && liste.total > Fr.PIXELS_MAX) { d *= 4; continue; }
+        const bitmap = image ? await createImageBitmap(new ImageData(new Uint8ClampedArray(photo.rgba), photo.largeur, photo.hauteur)) : null;
+        return { photo, liste, densite: d, image: bitmap };
+      }
+    })();
+    parEl.set(cle, promesse);
+    return promesse;
+  }
+
+  /** Problème de photographie : remonté au contrôle de la vidéo (photosVides) ; ancre vide : effet désactivé (panneau,
+   *  l'élément reste affiché) ; photographie trop grande : alerte (panneau d'alerte de l'aperçu). */
+  function signalerPhoto(fx, el, regle, texte) {
+    const message = 'Scène « ' + fx.info.id + ' », effet « ' + fx.effetOrigine.nom + ' » : ' + texte;
+    if (!etat.problemesPhotos.some((p) => p.message === message)) {
+      etat.problemesPhotos.push({ scene: fx.info.id, element: el ? (el.id || el.localName) : null, regle, message });
+    }
+    if (regle === 'ancre-vide') desactiver(fx, message);
+    else { alerter(message); panneauAlerte(fx.el, message); }
+  }
+
+  async function photoOuVide(fx, el, t, densite, image) {
+    const r = el ? await photographier(el, t, densite, image) : null;
+    if (!r) {
+      const quand = String(Math.round(t * 100) / 100).replace('.', ',');
+      signalerPhoto(fx, el, 'ancre-vide', 'rien à photographier : ' + (el ? '« ' + nomElement(el) + ' » n\'a aucun pixel visible' : 'aucun élément visé') +
+        ' à ' + quand + ' s ; l\'effet n\'est pas affiché. Rendre l\'élément visible à cet instant (texte, couleur, image chargée), ou viser un autre élément.');
+      return null;
+    }
+    if (r.densite > densite) {
+      signalerPhoto(fx, el, 'photographie-trop-grande', '« ' + nomElement(el) + ' » a plus d\'un million de pixels opaques : densité portée à ' + r.densite + ' (une particule pour ' + r.densite + ' pixels).');
+    }
+    return r;
+  }
+
+  /** Repères de l'ancre et de l'élément visé au début de l'effet (appariement de Hilbert dans leur repère commun). */
+  function reperesDebut(fx) {
+    const id = fx.info.id;
+    M.rendreScene(id, dansScene(fx, fx.debut));
+    const elements = [fx.ancre, elementVise(fx) || fx.ancre];
+    const r = affichee(fx.section, () => P.mesurerReperes(elements, fx.section));
+    M.rendreScene(id, etat.t);
+    return r;
+  }
+
+  /** Données de fragmentation d'un effet : photographies, listes (permutées par le pas premier, ou appariées le long d'une
+   *  courbe de Hilbert), éclats ; nombre de particules fixé (fx.effet). false : rien à photographier (effet désactivé). */
+  async function preparerFragmentsEffet(fx) {
+    const Fr = M.fragments;
+    const effet = fx.effetOrigine;
+    const donnees = effet.emetteurs.map(() => null);
+    const totaux = {};
+    for (const em of effet.emetteurs) {
+      if (!em.fragment) continue;
+      const d = { a: null, b: null, eclats: null, image: null, demiA: [0, 0], demiB: [0, 0], coteA: 0, coteB: 0, nA: 0, nB: 0 };
+      let A = null;
+      let B = null;
+      if (em.pixels || em.eclats) {
+        const t = em.pixels && em.pixels.instant !== null ? fx.info.debut + em.pixels.instant : fx.debut;
+        A = await photoOuVide(fx, fx.ancre, dansScene(fx, t), em.eclats ? 1 : em.pixels.densite, !!em.eclats);
+        if (!A) return false;
+        d.demiA = A.liste.demi;
+        d.coteA = A.liste.cote;
+        d.nA = A.liste.total;
+      }
+      if (em.cible) {
+        const el = em.cible.source === 'cible' ? fx.cible : fx.ancre;
+        B = await photoOuVide(fx, el, dansScene(fx, fx.debut + em.cible.a / fx.info.rythme), em.cible.densite, false);
+        if (!B) return false;
+        d.demiB = B.liste.demi;
+        d.coteB = B.liste.cote;
+        d.nB = B.liste.total;
+      }
+      if (em.eclats) {
+        const graine = (effet.graine ^ Math.imul(em.index + 1, 0x9e3779b1)) >>> 0;
+        d.eclats = Fr.eclats(Fr.voronoi({ largeur: A.photo.largeurCqh, hauteur: A.photo.hauteurCqh, morceaux: em.eclats.morceaux, graine, origine: em.eclats.origine }));
+        d.image = A.image;
+      } else if (A && B) {
+        const r0 = reperesDebut(fx);
+        const [la, lb] = Fr.ordonnerHilbert([{ liste: A.liste, repere: r0[0] }, { liste: B.liste, repere: em.cible.source === 'cible' ? r0[1] : r0[0] }]);
+        const ap = Fr.apparier(la, lb);
+        d.a = ap.a;
+        d.b = ap.b;
+        totaux[em.index] = ap.total;
+      } else if (A) {
+        d.a = Fr.permuter(A.liste, Fr.pasPremier(A.liste.total, effet.graine)).donnees;
+        totaux[em.index] = A.liste.total;
+      } else {
+        d.b = B.liste.donnees;
+        totaux[em.index] = B.liste.total;
+      }
+      donnees[em.index] = d;
+    }
+    fx.fragments = donnees;
+    fx.effet = Fr.ajusterCapacites(effet, totaux);
+    return true;
+  }
+
+  async function preparerTousFragments() {
+    for (const sc of etat.scenes) {
+      for (const fx of sc.effets) {
+        if (!fragmente(fx) || fx.fragments || fx.desactive) continue;
+        try { await preparerFragmentsEffet(fx); } catch (e) { desactiver(fx, message(e)); }
+      }
+    }
+  }
+
+  /** Données des fragments de tous les effets, une fois (promesse partagée : contrôle de la vidéo et préparation du GPU),
+   *  après la porte de disponibilité (temps SMIL, polices). */
+  function fragmentsPromis() {
+    if (!etat.promesseFragments) etat.promesseFragments = Promise.all([M.pret, polices()]).then(preparerTousFragments);
+    return etat.promesseFragments;
+  }
+
+  /** Repères de l'ancre (ou de la balise) et de l'élément visé, scène rendue et affichée (zones.ancres). */
+  function mesurerAncres(fx) {
+    const O = M.obstacles;
+    const t = new Float32Array(16);
+    const a = fx.ancre || fx.el;
+    const r = P.mesurerReperes([a, elementVise(fx) || a], fx.section);
+    O.ecrireRepere(t, 0, r[0]);
+    O.ecrireRepere(t, 8, r[1]);
+    return t;
+  }
+
+  function ancresGrille(fx, g, mesures) {
+    grille(fx, g, mesures);
+    return fx.ancres.get(g);
   }
 
   /** Exécute fn avec la section affichée (une scène masquée à l'instant courant n'a pas de boîtes). */
@@ -383,17 +580,20 @@
     return Math.min(Math.max(fx.debut + g / P.GRILLE / info.rythme, info.debut), info.fin - 1e-6);
   }
 
-  /** Zone (et repères des obstacles) au point g de la grille (τ = g / 30), mesurés une fois en rendant la scène à cet instant. */
+  /** Zone (et repères des obstacles, et des éléments photographiés) au point g de la grille (τ = g / 30), mesurés une fois
+   *  en rendant la scène à cet instant. */
   function grille(fx, g, mesures) {
     let z = fx.zones.get(g);
     const avecReperes = !!(fx.table && fx.table.actif);
-    if (!z || (avecReperes && !fx.reperes.has(g))) {
+    const avecAncres = !!fx.fragments;
+    if (!z || (avecReperes && !fx.reperes.has(g)) || (avecAncres && !fx.ancres.has(g))) {
       const t = instantGrille(fx, g);
       M.rendreScene(fx.info.id, t);
       mesures.scenes.add(fx.info.id);
       affichee(fx.section, () => {
         z = mesurer(fx);
         if (avecReperes) fx.reperes.set(g, mesurerTable(fx, t, mesures));
+        if (avecAncres) fx.ancres.set(g, mesurerAncres(fx));
       });
       fx.zones.set(g, z);
     }
@@ -421,6 +621,7 @@
       a: (x) => zoneA(fx, x, mesures),
       grille: (g) => grille(fx, g, mesures),
       reperes: (g) => reperesGrille(fx, g, mesures),
+      ancres: (g) => ancresGrille(fx, g, mesures),
     };
   }
 
@@ -479,12 +680,14 @@
       const tau = (t - fx.debut) * fx.info.rythme;
       if (tau < 0 || tau >= fx.effet.fin) { liberer(fx); return; }
       if (fx.desactive) return;
+      // Effet de fragmentation : seulement une fois ses photographies faites.
+      if (fragmente(fx) && !fx.fragments) return;
       device.pushErrorScope('out-of-memory');
       try {
         if (!fx.sim) {
           const m = monde(fx);
           if (m) m.bases = basesPour(fx, device);
-          fx.sim = new P.Simulation(device, fx.effet, m);
+          fx.sim = new P.Simulation(device, fx.effet, m, fx.fragments);
           fx.sim.emetteurs.forEach((e) => etat.rendu.preparerEmetteur(e));
         }
         const deltas = fx.sim.avancer(tau, zonesDe(fx, mesures));
@@ -558,7 +761,7 @@
         etat.scenes.forEach((sc) => sc.effets.forEach((fx) => {
           if (fx.effet.emetteurs.some((em) => illisibles.has(em.rendu.textureImage))) desactiver(fx, 'texture illisible');
         }));
-        return preparerFormes(gpu.device);
+        return preparerFormes(gpu.device).then(fragmentsPromis);
       }).then(() => {
         etat.gpu = gpu;
         etat.rendu = rendu;
@@ -595,14 +798,21 @@
   function polices_changees() {
     if (!etat.gpu) return;
     const device = etat.gpu.device;
-    etat.scenes.forEach((sc) => sc.effets.forEach((fx) => { fx.zones.clear(); fx.table = null; fx.reperes = new Map(); liberer(fx); }));
+    etat.scenes.forEach((sc) => sc.effets.forEach((fx) => {
+      fx.zones.clear(); fx.table = null; fx.reperes = new Map(); liberer(fx);
+      // Photographies et données des fragments refaites avec les nouvelles polices.
+      fx.fragments = null; fx.effet = fx.effetOrigine; fx.ancres = new Map();
+    }));
     etat.masques = null;
     etat.promesseMasques = null;
+    etat.photos = new Map();
+    etat.promesseFragments = null;
+    etat.problemesPhotos = [];
     etat.alertes = [];
     etat.scenes.forEach((sc) => sc.effets.forEach((fx) => fx.el.querySelectorAll(':scope > .pm-effet-alerte').forEach((d) => d.remove())));
     oublierContributions();
     // Une erreur ici ne doit pas laisser « pret » rejetée : les seeks l'attendent.
-    etat.pret = preparerFormes(device).then(() => {
+    etat.pret = preparerFormes(device).then(fragmentsPromis).then(() => {
       etat.rendu_t = null;
       rendre(etat.t);
     }).catch((e) => {
@@ -724,10 +934,14 @@
     if (effet.emetteurs.some((em) => illisibles.has(em.rendu.textureImage))) throw new Error('Effet non affiché : texture illisible.');
     liberer(fx);
     fx.effet = effet;
+    fx.effetOrigine = effet;
     fx.desactive = null;
     fx.zones = new Map(); // l'ancre a pu bouger (page d'atelier)
     fx.table = null;
     fx.reperes = new Map();
+    fx.fragments = null;
+    fx.ancres = new Map();
+    if (fragmente(fx) && !(await preparerFragmentsEffet(fx))) throw new Error('Effet non affiché : rien à photographier (ancre vide).');
     // Les couches communes en dépendent : tous les effets repartent de contributions recalculées.
     oublierContributions();
     etat.scenes.forEach((s) => s.effets.forEach((f) => { if (f !== fx) liberer(f); }));
@@ -761,6 +975,16 @@
         }));
         return r;
       });
+    },
+    /** Problèmes de photographie des effets de fragmentation (contrôle de la vidéo, sans GPU) : [{ scene, element, regle, message }]. */
+    photosVides() {
+      return fragmentsPromis().then(() => etat.problemesPhotos.map((p) => Object.assign({}, p)));
+    },
+    /** Données de fragments d'un effet (tests) : un élément par émetteur, null hors fragments ; null si non préparées. */
+    donneesFragments(idScene, ordre) {
+      const sc = trouver(idScene);
+      const fx = sc && sc.effets.find((f) => f.ordre === ordre);
+      return fx ? fx.fragments : null;
     },
     remplacerEffet,
     decrire(idScene) {
