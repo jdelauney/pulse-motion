@@ -18,6 +18,9 @@ test('déroulé : transition objet et post-traitements', () => {
   d.post = [{ shader: 'vignettage' }, { shader: 'aberration', reglages: { ecart: 0.4 } }];
   assert.deepEqual(validerDeroule(d), []);
   assert.deepEqual(validerDeroule(base()), [], 'transitions CSS inchangées');
+  const juste = base();
+  juste.scenes[1].transition = { shader: 'dissolution', duree: 3 };
+  assert.deepEqual(validerDeroule(juste), [], 'une transition aussi longue que les deux scènes');
   assert.equal(MAX_POST, 4);
 });
 
@@ -31,6 +34,8 @@ test('déroulé : transitions et post-traitements mal écrits', () => {
     [(d) => { d.scenes[1].transition = { shader: 'dissolution', reglages: [1] }; }, /« reglages » doit être un objet/],
     [(d) => { d.scenes[1].transition = { shader: 'dissolution', image: 'motif.png' }; }, /« image » doit être un fichier de assets\//],
     [(d) => { d.scenes[0].post = { shader: 'grain' }; }, /La scène « a » : « post » doit être une liste/],
+    [(d) => { d.scenes[1].transition = { shader: 'dissolution', duree: 4 }; d.scenes[1].duree = 6; }, /« transition\.duree » \(4 s\) dépasse celle de la scène précédente \(« a »\), 3 s/],
+    [(d) => { d.scenes[1].transition = { shader: 'dissolution', duree: 2 }; d.scenes[1].duree = 3; d.scenes[1].rythme = 2; }, /« transition\.duree » \(2 s\) dépasse celle de la scène, 1,5 s/],
     [(d) => { d.post = [{ shader: 'grain', duree: 2 }]; }, /« post »\[1\] : champ « duree » inconnu \(champs : shader, reglages, image\)/],
     [(d) => { d.post = Array.from({ length: 5 }, () => ({ shader: 'grain' })); }, /« post » : 4 post-traitements au plus/],
   ];
