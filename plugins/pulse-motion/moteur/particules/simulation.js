@@ -540,13 +540,42 @@ fn piloter(p: ptr<function, Particule>, t0: f32, t1: f32, zone: vec4f) -> u32 {
       debut = lib;
     }
   }
-  // Arrivée sur une cible : plan 2, tâche 3.
+  if (aFragment(F_CIBLE)) {
+    let tr = trajet(n);
+    if (t1 >= tr.arrivee) {
+      // Arrivée propre : posée exactement sur sa cible, qu'elle suit ensuite.
+      let a = cibleF(n, t0);
+      let b = cibleF(n, t1);
+      (*p).pos = b;
+      (*p).vel = (b - a) / max(t1 - t0, 1e-6);
+      (*p).rot = repereElement(1u, t1).angle;
+      (*p).vrot = 0.0;
+      return 2u;
+    }
+    if (eu(156u) == 0u && debut >= tr.depart + ef(161u) * (tr.arrivee - tr.depart)) {
+      // Rattrapage critique : position de la cible et vitesse nulle visées au temps restant T (Hermite cubique,
+      // accélération recalculée à chaque pas) ; les forces de la recette ne comptent plus.
+      let T = max(tr.arrivee - debut, 1e-4);
+      let dt = t1 - debut;
+      let c = cibleF(n, t1);
+      let acc = (6.0 * (c - (*p).pos) - 4.0 * (*p).vel * T) / (T * T);
+      (*p).pos = (*p).pos + (*p).vel * dt + 0.5 * acc * dt * dt;
+      (*p).vel = (*p).vel + acc * dt;
+      var d = repereElement(1u, t1).angle - (*p).rot;
+      d = d - 6.2831853 * round(d / 6.2831853);
+      (*p).rot = (*p).rot + d * clamp(dt / T, 0.0, 1.0);
+      return 3u;
+    }
+  }
   *p = integrer(*p, t1 - debut, debut, zone);
   return 0u;
 }
 
-// Mort par l'âge.
-fn meurt(p: Particule) -> bool { return p.age >= p.vie; }
+// Mort par l'âge ; une particule qui vise une cible s'éteint au pas de l'arrivée de l'effet (l'élément réel la remplace).
+fn meurt(p: Particule) -> bool {
+  if (aFragment(F_CIBLE)) { return P.k + 1u >= eu(157u); }
+  return p.age >= p.vie;
+}
 `;
 
   const WGSL_ENTREES_P1 = /* wgsl */ `
