@@ -105,3 +105,69 @@ await envoyer({ webgpu: true, etats });`);
   const [cx, cy] = centre(r.etats[6]);
   assert.ok(Math.hypot(cx - 94, cy - 45) < 8, `centre (${cx.toFixed(1)}, ${cy.toFixed(1)}) loin de la cible (94, 45)`);
 });
+
+/** Densité PBF de chaque particule (même noyau que le GPU) : 1 + Σ (1 − (r/h)²)³ sur les voisines à moins de h. */
+function densites(p, h) {
+  return p.map((a) => {
+    let rho = 1;
+    for (const b of p) {
+      if (b === a) continue;
+      const q = Math.hypot(a.x - b.x, a.y - b.y) / h;
+      if (q < 1) rho += (1 - q * q) ** 3;
+    }
+    return rho;
+  });
+}
+
+test('interactions GPU : fluide : même état au bit près par deux chemins (émetteurs liés), goutte incompressible et cohérente', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const goutte = (nom, avec, nombre) => ({ nom, naissance: { salves: [{ t: 0, nombre }], forme: { type: 'rectangle' }, vie: [10, 10], taille: [0.8, 0.8] },
+    interactions: { type: 'fluide', rayon: 2, densite: 6, viscosite: 0.1, tension: 0.3, avec } });
+  const fluide = compiler([goutte('a', ['b'], 225), goutte('b', [], 75)]);
+  // 300 particules sur 20 × 10 cqh : 1,5 par cqh², la densité au repos (6 par cellule de 2 × 2).
+  const r = await page({ fluide }, `
+const zones = { a: () => [70, 40, 20, 10], grille: () => [70, 40, 20, 10] };
+const fin = await etat(DONNEES.fluide, zones, [1]);
+const autre = await etat(DONNEES.fluide, zones, [0.4, 1.3, 0.6, 1]);
+await envoyer({ webgpu: true, p: fin[0].p.concat(fin[1].p), egal: memes(fin, autre) });`);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.equal(r.egal, true, 'même état au bit près par deux chemins (retour en arrière compris)');
+  assert.equal(r.p.length, 300);
+  const rho0 = fluide.emetteurs[0].interactions.rho0;
+  const max = Math.max(...densites(r.p, 2));
+  assert.ok(max <= 1.15 * rho0, `densité maximale ${(max / rho0).toFixed(3)} ρ0 (incompressibilité)`);
+  assert.ok(distanceMin(r.p) >= 0.1, 'aucun amas de particules confondues (répulsion artificielle)');
+  const [cx, cy] = centre(r.p);
+  const proches = r.p.filter((q) => Math.hypot(q.x - cx, q.y - cy) < 15).length;
+  assert.ok(proches >= 240, `${proches} particules à moins de 15 cqh du centre : la goutte tient (tension)`);
+});
+
+test('interactions GPU : fluide au repos dans une cuve (P3) : densité à 2 % près, aucune particule dans les parois', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const eau = compiler([{ nom: 'eau', naissance: { salves: [{ t: 0, nombre: 1200 }], forme: { type: 'rectangle' }, vie: [30, 30], taille: [1, 1] },
+    forces: [{ type: 'gravite', valeur: 40 }],
+    collisions: { cibles: ['sol', 'elements'], restitution: 0, frottement: 0.05 },
+    interactions: { type: 'fluide', rayon: 2, densite: 6, viscosite: 0.1, tension: 0.1, incompressibilite: 4 } }]);
+  // Cuve : parois verticales en x = 60 et x = 100 (de y = 40 à 90), sol de la recette en y = 90.
+  const r = await page({ eau }, `
+const CUVE = [{ scene: 's', genre: 'ligne', video: false, de: [60, 40], a: [60, 90] }, { scene: 's', genre: 'ligne', video: false, de: [100, 40], a: [100, 90] }];
+const { m, reperes } = monde(CUVE, 90);
+const zones = { a: () => [61, 52, 38, 36], grille: () => [61, 52, 38, 36], reperes };
+const fin = await etat(DONNEES.eau, zones, [5], m);
+await envoyer({ webgpu: true, p: fin[0].p });`);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.equal(r.p.length, 1200);
+  for (const q of r.p) {
+    assert.ok(q.x >= 60.5 - 0.05 && q.x <= 99.5 + 0.05, `x = ${q.x} : dans une paroi`);
+    assert.ok(q.y <= 89.5 + 0.05, `y = ${q.y} : sous le sol`);
+  }
+  const vitesse = r.p.reduce((s, q) => s + Math.hypot(q.vx, q.vy), 0) / r.p.length;
+  assert.ok(vitesse < 2, `vitesse moyenne ${vitesse.toFixed(2)} cqh/s : au repos`);
+  const rho0 = eau.emetteurs[0].interactions.rho0;
+  const rho = densites(r.p, 2);
+  const haut = Math.min(...r.p.map((q) => q.y));
+  const interieur = r.p.map((q, i) => [q, rho[i]]).filter(([q]) => q.x >= 64 && q.x <= 96 && q.y >= haut + 2 && q.y <= 87.5);
+  assert.ok(interieur.length >= 150, `${interieur.length} particules à l'intérieur`);
+  const moyenne = interieur.reduce((s, x) => s + x[1], 0) / interieur.length;
+  assert.ok(Math.abs(moyenne / rho0 - 1) <= 0.02, `densité au repos ${(moyenne / rho0).toFixed(4)} ρ0 (à 2 % près)`);
+});
