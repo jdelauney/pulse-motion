@@ -529,6 +529,23 @@
     return fx.ancres.get(g);
   }
 
+  /** Raccords (fonction de t) : un élément photographié est caché pendant que ses particules le remplacent (classe
+   *  pm-fragment-cache) ; seulement si l'effet est affiché (GPU prêt, photographies faites, ni désactivé ni en échec). */
+  function raccorder(t) {
+    const caches = new Set();
+    const geres = new Set();
+    etat.scenes.forEach((sc) => sc.effets.forEach((fx) => {
+      if (!fragmente(fx)) return;
+      [fx.ancre, fx.cible].forEach((el) => { if (el) geres.add(el); });
+      if (!etat.gpu || !fx.fragments || fx.desactive || sc.echec) return;
+      const r = M.fragments.raccord(fx.effet, (t - fx.debut) * fx.info.rythme);
+      if (r.ancre && fx.ancre) caches.add(fx.ancre);
+      if (r.cible && fx.cible) caches.add(fx.cible);
+    }));
+    geres.forEach((el) => el.classList.toggle(CACHE, caches.has(el)));
+  }
+
+
   /** Exécute fn avec la section affichée (une scène masquée à l'instant courant n'a pas de boîtes). */
   function affichee(section, fn) {
     const masquee = section.style.display === 'none';
@@ -646,6 +663,7 @@
 
   function rendre(t) {
     etat.t = t;
+    raccorder(t);
     if (!etat.gpu) return;
     etat.rendu_t = t;
     const { device } = etat.gpu;

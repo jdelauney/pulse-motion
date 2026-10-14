@@ -129,3 +129,75 @@ envoyer({ webgpu: true, nA: d[0].nA, a: d[0].a.length / 4, opaques, demiA: d[0].
   assert.equal(r.desint, r.nA, 'toutes les particules de la désintégration simulées');
   assert.equal(r.vivantsEclats, 40);
 });
+
+const { mesurerPage } = require('../scripts/lib/page-mesures.js');
+const { trouverNavigateur } = require('../scripts/lib/navigateur.js');
+
+test('page sans WebGPU : photographies contrôlées (ancre-vide, photographie-trop-grande), aucun élément caché', { skip: !trouverNavigateur() && 'Chrome ou Edge introuvable' }, async () => {
+  const dir = copierProjet('projet-particules');
+  modifierDeroule(dir, (d) => { d.scenes[0].textes = { titre: 'A' }; });
+  ecrire(dir, 'effets/desint.json', DESINT);
+  ecrire(dir, 'scenes/01-s.html', `<section data-scene="s">
+  ${style('#vide { position: absolute; left: 10cqh; top: 10cqh; width: 10cqh; height: 10cqh; } #grand { position: absolute; left: 60cqh; top: 0; width: 100cqh; height: 100cqh; background: #3070d0; }')}
+  <h1 id="titre" data-texte="titre" data-start="0"></h1>
+  <div id="vide" data-start="0"></div>
+  <div id="grand" data-start="0"></div>
+  <div data-effet="desint" data-ancre="#vide" data-start="1" data-dur="1"></div>
+  <div data-effet="desint" data-ancre="#grand" data-start="1" data-dur="1"></div>
+</section>`);
+  const a = assembler({ dossier: dir, dossierStyles: STYLES, dossierEffets: EFFETS, ecrire: false });
+  const html = a.html.replace('<head>', '<head><script>window.__PM_SANS_GPU__ = true;</script>');
+  const mesure = await mesurerPage({ html, navigateur: trouverNavigateur(), script: `
+    const photos = await M.particules.photosVides();
+    await M.seek(1.5);
+    const caches = Array.from(document.querySelectorAll('.pm-fragment-cache')).map((e) => e.id);
+    const donnees = M.particules.donneesFragments('s', 1);
+    const panneau = (document.querySelector('[data-effet] > .pm-effet-panneau') || {}).textContent || '';
+    return { photos, caches, nA: donnees && donnees[0].nA, panneau, alertes: M.particules.alertes };` });
+  assert.equal(mesure.erreur, undefined, mesure.erreur);
+  const m = mesure.resultat;
+  assert.deepEqual(m.photos.map((p) => [p.regle, p.element]), [['ancre-vide', 'vide'], ['photographie-trop-grande', 'grand']]);
+  assert.match(m.photos[0].message, /Scène « s », effet « desint » : rien à photographier : « #vide » n'a aucun pixel visible à 1 s ; l'effet n'est pas affiché\./);
+  assert.match(m.photos[1].message, /« #grand » a plus d'un million de pixels opaques : densité portée à 4 \(une particule pour 4 pixels\)\./);
+  assert.equal(m.nA, 512 * 512, 'densité 4 : photographie de 512 × 512');
+  assert.deepEqual(m.caches, [], 'sans WebGPU, aucun élément caché');
+  assert.ok(m.alertes.includes(m.photos[1].message));
+});
+
+test('page : raccords selon t (désintégration, assemblage, métamorphose)', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const html = pageFragments({
+    textes: { titre: 'AB', un: 'CD', deux: 'EF', trois: 'GH' },
+    recettes: [DESINT, assemble('guidee'), META],
+    scene: `<section data-scene="s">
+  ${style('h1, h2, h3, h4 { position: absolute; margin: 0; font: 900 12cqh/1 sans-serif; color: #e04020; } #a { left: 10cqh; top: 10cqh; } #b { left: 90cqh; top: 10cqh; } #c { left: 10cqh; top: 60cqh; } #d { left: 90cqh; top: 60cqh; }')}
+  <h1 id="a" data-texte="titre" data-start="0"></h1>
+  <h2 id="b" data-texte="un" data-start="0"></h2>
+  <h3 id="c" data-texte="deux" data-start="0"></h3>
+  <h4 id="d" data-texte="trois" data-start="0"></h4>
+  <div data-effet="desint" data-ancre="#a" data-start="1" data-dur="1"></div>
+  <div data-effet="assemble-guidee" data-ancre="#b" data-start="1" data-dur="1"></div>
+  <div data-effet="meta" data-ancre="#c" data-cible="#d" data-start="1" data-dur="1"></div>
+</section>`,
+    script: `
+await M.particules.pret;
+if (!M.particules.disponible) return envoyer({ webgpu: false });
+const l = [];
+for (const t of [0.5, 1 + 0.5 / 120, 1 + 1.5 / 120, 1.5, 2 + 0.5 / 120, 3]) {
+  await M.seek(t);
+  l.push(['a', 'b', 'c', 'd'].map((id) => cache(id) && getComputedStyle(document.getElementById(id)).visibility === 'hidden'));
+}
+envoyer({ webgpu: true, l });`,
+  });
+  const r = JSON.parse(await executerPage(html));
+  assert.equal(r.erreur, undefined, r.erreur);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.deepEqual(r.l, [
+    [false, true, false, true],   // avant : l'élément assemblé et l'arrivée de la métamorphose attendent
+    [false, true, false, true],   // pas 0 de l'effet : pas encore de particules
+    [true, true, true, true],     // pas 1 : les particules remplacent l'élément
+    [true, true, true, true],
+    [true, false, true, false],   // pas de l'arrivée : l'élément réel remplace les particules
+    [true, false, true, false],
+  ]);
+});
