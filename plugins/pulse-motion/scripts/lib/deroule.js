@@ -21,6 +21,9 @@ const HEX = /^#[0-9a-fA-F]{6}$/;
 const CLE = /^[a-z0-9-]+$/;
 const POLICE = /^[\p{L}\p{N} _.\/-]+$/u;
 
+const NOM_SHADER = /^[a-z0-9-]+$/;
+const MAX_POST = 4;
+
 const estObjet = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const estTexte = (v) => typeof v === 'string' && v.trim() !== '';
 const estPositif = (v) => typeof v === 'number' && isFinite(v) && v > 0;
@@ -49,6 +52,29 @@ function validerCharte(c, nom = 'charte') {
   if (c.logo !== undefined && !estTexte(c.logo)) err.push(`« ${nom}.logo » doit être un chemin de fichier.`);
   if (c.ton !== undefined && !TONS.includes(c.ton)) err.push(`« ${nom}.ton » doit être l'un de : ${TONS.join(', ')}.`);
   if (c.modele !== undefined && !(estTexte(c.modele) && ID.test(c.modele))) err.push(`« ${nom}.modele » doit être le nom d'une charte enregistrée (a-z, 0-9, tirets).`);
+  return err;
+}
+
+/** Shader déclaré dans le déroulé (transition, post-traitement) -> messages. */
+function validerShaderDeclare(o, ou, champs) {
+  if (!estObjet(o)) return [`${ou} doit être un objet { "shader": "nom", "reglages": { … } }.`];
+  const err = [];
+  for (const k of Object.keys(o)) if (!champs.includes(k)) err.push(`${ou} : champ « ${k} » inconnu (champs : ${champs.join(', ')}).`);
+  if (!estTexte(o.shader) || !NOM_SHADER.test(o.shader)) err.push(`${ou} : « shader » doit être le nom d'un shader (minuscules, chiffres, tirets).`);
+  const valeurOk = (x) => (typeof x === 'number' && isFinite(x)) || estTexte(x);
+  if (o.reglages !== undefined && !(estObjet(o.reglages) && Object.values(o.reglages).every(valeurOk))) {
+    err.push(`${ou} : « reglages » doit être un objet { nom: nombre ou couleur }.`);
+  }
+  if (o.image !== undefined && !(estTexte(o.image) && /^assets\//.test(o.image))) err.push(`${ou} : « image » doit être un fichier de assets/ (ex. « assets/motif.png »).`);
+  return err;
+}
+
+/** Liste de post-traitements (scène ou vidéo) -> messages. */
+function validerPost(liste, ou) {
+  if (!Array.isArray(liste)) return [`${ou} doit être une liste, ex. [{ "shader": "grain" }].`];
+  const err = [];
+  if (liste.length > MAX_POST) err.push(`${ou} : ${MAX_POST} post-traitements au plus.`);
+  liste.forEach((p, i) => err.push(...validerShaderDeclare(p, `${ou}[${i + 1}]`, ['shader', 'reglages', 'image'])));
   return err;
 }
 
@@ -114,6 +140,8 @@ function validerDeroule(d) {
     if (d.sousTitres.position !== undefined && !['bas', 'haut'].includes(d.sousTitres.position)) err.push('« sousTitres.position » doit être « bas » ou « haut ».');
   }
 
+  if (d.post !== undefined) err.push(...validerPost(d.post, '« post »'));
+
   if (!Array.isArray(d.scenes) || d.scenes.length === 0) {
     err.push('« scenes » doit contenir au moins une scène.');
     return err;
@@ -147,9 +175,20 @@ function validerDeroule(d) {
         if (s.voix.debut !== undefined && !(typeof s.voix.debut === 'number' && isFinite(s.voix.debut) && s.voix.debut >= 0)) err.push(`La ${nom} : « voix.debut » doit être un nombre de secondes positif ou nul.`);
       }
     }
-    if (s.transition !== undefined && !TRANSITIONS.includes(s.transition)) {
-      err.push(`La ${nom} : « transition » doit être l'une de : ${TRANSITIONS.join(', ')}.`);
+    if (s.transition !== undefined) {
+      if (typeof s.transition === 'string' || !estObjet(s.transition)) {
+        if (!TRANSITIONS.includes(s.transition)) {
+          err.push(`La ${nom} : « transition » doit être l'une de : ${TRANSITIONS.join(', ')}, ou un shader { "shader": "dissolution", "duree": 0.8 }.`);
+        }
+      } else {
+        err.push(...validerShaderDeclare(s.transition, `La ${nom} : « transition »`, ['shader', 'duree', 'reglages', 'image']));
+        const du = s.transition.duree;
+        if (du !== undefined && !(typeof du === 'number' && du >= 0.1 && du <= 5)) {
+          err.push(`La ${nom} : « transition.duree » doit être un nombre de secondes entre 0,1 et 5.`);
+        }
+      }
     }
+    if (s.post !== undefined) err.push(...validerPost(s.post, `La ${nom} : « post »`));
     if (s.type !== undefined && !TYPES_SCENE.includes(s.type)) {
       err.push(`La ${nom} : « type » doit être l'un de : ${TYPES_SCENE.join(', ')} (ou absent pour une scène composée librement).`);
     }
@@ -183,4 +222,4 @@ function lireDeroule(dossier) {
   return { deroule: d, erreurs: validerDeroule(d) };
 }
 
-module.exports = { validerDeroule, validerCharte, lireDeroule, dureeTemps, tempoMusique, GENRES, PARCOURS, RATIOS, TRANSITIONS, TYPES_SCENE, TONS };
+module.exports = { validerDeroule, validerCharte, lireDeroule, dureeTemps, tempoMusique, GENRES, PARCOURS, RATIOS, TRANSITIONS, TYPES_SCENE, TONS, MAX_POST };
