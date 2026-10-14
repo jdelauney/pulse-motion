@@ -32,6 +32,7 @@
  * déplacement de chaque pas contre les obstacles, dans leur repère local aux deux bouts du pas ; rebond, pose (la
  * particule suit son obstacle), mort au contact ; impacts notés pour « a_la_collision ». Événements d'un parent :
  * morts dans les cases [0, capacité), impacts dans [capacité, 2 × capacité).
+ * P.WGSL_BRUIT : bruit de valeurs et rotationnel (prélude des shaders, P6).
  * Hachage PCG d'après M. O'Neill (pcg-random.org, domaine public).
  * Navigateur seulement (Chrome, Edge) ; dépend de instantanes.js (M.instantanes) et, avec un monde, de obstacles.js.
  */
@@ -71,6 +72,34 @@ fn pcg(v: u32) -> u32 {
 fn alea(graine: u32, emetteur: u32, n: u32, canal: u32) -> f32 {
   let h = pcg(graine ^ pcg(emetteur ^ pcg(n ^ pcg(canal))));
   return f32(h >> 8u) / 16777216.0;
+}
+`;
+
+  // Bruit de valeurs 3D et rotationnel : noyaux des particules, et prélude des shaders (P6, particules/shaders.js).
+  P.WGSL_BRUIT = /* wgsl */ `
+fn bruitCoin(c: vec3f) -> f32 {
+  let q = vec3u(vec3i(c));
+  return f32(pcg(q.x ^ pcg(q.y ^ pcg(q.z))) >> 8u) / 8388608.0 - 1.0;
+}
+
+// Bruit de valeurs 3D lissé, dans [-1, 1].
+fn bruit(p: vec3f) -> f32 {
+  let c = floor(p);
+  let f = fract(p);
+  let u = f * f * (3.0 - 2.0 * f);
+  let a = mix(bruitCoin(c), bruitCoin(c + vec3f(1.0, 0.0, 0.0)), u.x);
+  let b = mix(bruitCoin(c + vec3f(0.0, 1.0, 0.0)), bruitCoin(c + vec3f(1.0, 1.0, 0.0)), u.x);
+  let d = mix(bruitCoin(c + vec3f(0.0, 0.0, 1.0)), bruitCoin(c + vec3f(1.0, 0.0, 1.0)), u.x);
+  let e = mix(bruitCoin(c + vec3f(0.0, 1.0, 1.0)), bruitCoin(c + vec3f(1.0, 1.0, 1.0)), u.x);
+  return mix(mix(a, b, u.y), mix(d, e, u.y), u.z);
+}
+
+// Rotationnel 2D d'un bruit 3D (x, y, temps) : écoulement sans source ni puits.
+fn curl(p: vec2f, t: f32) -> vec2f {
+  let h = 0.01;
+  let dy = bruit(vec3f(p.x, p.y + h, t)) - bruit(vec3f(p.x, p.y - h, t));
+  let dx = bruit(vec3f(p.x + h, p.y, t)) - bruit(vec3f(p.x - h, p.y, t));
+  return vec2f(dy, -dx) / (2.0 * h);
 }
 `;
 
@@ -198,31 +227,7 @@ struct Pas { k: u32, tau0: f32, tau1: f32, dt: f32, zoneA: vec4f, zoneB: vec4f }
 fn ef(i: u32) -> f32 { return E[i]; }
 fn eu(i: u32) -> u32 { return bitcast<u32>(E[i]); }
 
-fn bruitCoin(c: vec3f) -> f32 {
-  let q = vec3u(vec3i(c));
-  return f32(pcg(q.x ^ pcg(q.y ^ pcg(q.z))) >> 8u) / 8388608.0 - 1.0;
-}
-
-// Bruit de valeurs 3D lissé, dans [-1, 1].
-fn bruit(p: vec3f) -> f32 {
-  let c = floor(p);
-  let f = fract(p);
-  let u = f * f * (3.0 - 2.0 * f);
-  let a = mix(bruitCoin(c), bruitCoin(c + vec3f(1.0, 0.0, 0.0)), u.x);
-  let b = mix(bruitCoin(c + vec3f(0.0, 1.0, 0.0)), bruitCoin(c + vec3f(1.0, 1.0, 0.0)), u.x);
-  let d = mix(bruitCoin(c + vec3f(0.0, 0.0, 1.0)), bruitCoin(c + vec3f(1.0, 0.0, 1.0)), u.x);
-  let e = mix(bruitCoin(c + vec3f(0.0, 1.0, 1.0)), bruitCoin(c + vec3f(1.0, 1.0, 1.0)), u.x);
-  return mix(mix(a, b, u.y), mix(d, e, u.y), u.z);
-}
-
-// Rotationnel 2D d'un bruit 3D (x, y, temps) : écoulement sans source ni puits.
-fn curl(p: vec2f, t: f32) -> vec2f {
-  let h = 0.01;
-  let dy = bruit(vec3f(p.x, p.y + h, t)) - bruit(vec3f(p.x, p.y - h, t));
-  let dx = bruit(vec3f(p.x + h, p.y, t)) - bruit(vec3f(p.x - h, p.y, t));
-  return vec2f(dy, -dx) / (2.0 * h);
-}
-
+${P.WGSL_BRUIT}
 // v' = A − K v sur une durée t, exact (miroir de forme-close.js).
 fn balistique(p: vec2f, v: vec2f, A: vec2f, K: f32, t: f32) -> Etat {
   let x = K * t;
