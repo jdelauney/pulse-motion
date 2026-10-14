@@ -8,6 +8,8 @@
  * compiler(recette, o)     recette -> paramètres numériques pour le GPU (cqh, s de τ, radians,
  *                          RVB linéaire, tables de 64 valeurs, capacités)
  * SCHEMA                   description déclarative du format (atelier : formulaire ; compilateur : champs refusés)
+ * Modules (P6) : « modules » d'un émetteur ({ force, couleur, forme } : noms de shaders) -> em.modules ; un module de force
+ * fait quitter la voie rapide ; effet.reglages = { nombres, couleurs } (valeurs des réglages, hex pour les couleurs).
  * Fragments (P4) : forme « pixels » (naissance sur les pixels de l'ancre photographiée), couleur « source », rendu
  * « eclats », « cible » (arrivée sur un élément) ; un émetteur de fragments naît tout entier à τ = 0 (une salve dont le
  * nombre est fixé à la photographie : fragments.js).
@@ -198,6 +200,11 @@
       }),
       a_la_mort: ob('À la mort', {
         emetteur: noeud('texte', 'Émetteur lancé', null, { motif: '^[a-z0-9-]+$', parmi: 'emetteurs', exemple: 'b' }),
+      }),
+      modules: ob('Modules WGSL (shaders de la personne)', {
+        force: noeud('texte', 'Force ajoutée à l\'accélération (shader module-force)', null, { motif: '^[a-z0-9-]+$', exemple: 'spirale' }),
+        couleur: noeud('texte', 'Couleur au cours de la vie (shader module-couleur)', null, { motif: '^[a-z0-9-]+$', exemple: 'couleur-vitesse' }),
+        forme: noeud('texte', 'Motif de la particule (shader module-forme)', null, { motif: '^[a-z0-9-]+$', exemple: 'etoile' }),
       }),
       collisions: ob('Collisions avec la scène', {
         cibles: li('Cibles', ch('Cible', Object.keys(CODES.cible), null, { exemple: 'sol' }), { defaut: Object.keys(CODES.cible), exemple: ['sol'], maximum: 4 }),
@@ -908,6 +915,18 @@
         return p;
       });
 
+      /** Modules WGSL d'un émetteur : noms de shaders (le code est attaché après la compilation, M.codeShader.attacherModules). */
+      function compilerModules(m, chemin) {
+        var o = objet(m, chemin);
+        var r = { force: null, couleur: null, forme: null };
+        ['force', 'couleur', 'forme'].forEach(function (k) {
+          if (o[k] === undefined || o[k] === null) return;
+          if (typeof o[k] !== 'string' || !/^[a-z0-9-]+$/.test(o[k])) throw invalide(chemin + '.' + k, 'nom de shader attendu (minuscules, chiffres, tirets)');
+          r[k] = o[k];
+        });
+        return r;
+      }
+
       function compilerEmetteur(e, i, P) {
         var ch = 'emetteurs[' + e.nom + ']';
         var n = objet(e.naissance, ch + '.naissance');
@@ -941,6 +960,7 @@
           pixels: compilerPixels(n.forme, ch + '.naissance.forme'),
           eclats: compilerEclats(e.rendu, ch + '.rendu'),
           cible: cible,
+          modules: compilerModules(e.modules, ch + '.modules'),
         };
         em.fragment = !!(em.pixels || em.eclats || em.cible);
         if (em.fragment) verifierFragment(n, em, ch, P);
@@ -1038,6 +1058,8 @@
         em.voieRapide = em.parent < 0 && em.aLaMort < 0 && em.rendu.type !== 'trainee' && (em.cible
           ? em.cible.arrivee === 'choree'
           : em.forces.every(function (f) { return f.type === 'gravite' || (f.type === 'trainee' && !f.quadratique); }));
+        // Un module de force n'a pas de forme close : l'émetteur est simulé pas à pas.
+        if (em.modules.force) em.voieRapide = false;
         return em;
       }
 
@@ -1052,6 +1074,8 @@
         nom: nomEffet,
         graine: (o.graine >>> 0),
         duree: dur,
+        // Valeurs des réglages (modules WGSL : réglages de même nom).
+        reglages: { nombres: Object.assign({}, vp.nombres), couleurs: Object.assign({}, vp.couleurs) },
         rendu_calque: {
           bloom: nombre(rc.bloom, 'rendu_calque.bloom', 0.6),
           seuil_bloom: nombre(rc.seuil_bloom, 'rendu_calque.seuil_bloom', 1),
