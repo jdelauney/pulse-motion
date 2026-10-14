@@ -1,6 +1,6 @@
 /* Pulse Motion – simulation des particules sur le GPU (WebGPU).
  *
- * new P.Simulation(device, effet, monde?, fragments?)   effet : recette compilée ; monde : obstacles de l'effet (collisions),
+ * new P.Simulation(device, effet, monde?, fragments?, largeurCqh?)   effet : recette compilée ; monde : obstacles de l'effet (collisions),
  *   facultatif ; fragments : données des émetteurs de fragments (P4), un élément par émetteur (null hors fragments) :
  *   { a, b (listes de pixels, 4 nombres par particule), eclats (36 nombres par éclat), image (ImageBitmap, éclats),
  *     demiA, demiB, centreA, centreB (boîtes opaques des photographies), coteA, coteB } (fragments.js, calques.js)
@@ -14,6 +14,10 @@
  *   .detruire()
  *   .lireHauteurs()       -> Promise<Float32Array> (profils d'empilement, 256 hauteurs par profil, cqh)
  *   .contributionVideo()  -> GPUBuffer (MAX_VIDEO × 256 entiers : sommes propres du dernier pas, par obstacle de la vidéo)
+ *   .lireVoisinage(g)     -> Promise (voisinage du groupe g au dernier pas : voisinage.js, tests)
+ * Interactions (P5a) : un groupe de voisinage (P.Groupe, voisinage.js) par entrée de effet.groupes, sur une grille fixe (scène
+ * de largeurCqh × 100 cqh élargie ; largeurCqh : 1600/9 par défaut) ; à chaque pas, « noter » (grains) avant le pas des
+ * émetteurs, puis comptage, tri et solveurs après, dans la même passe de calcul ; rien n'entre dans les instantanés.
  * P.additionnerProfils(device, cible, source)   cible += source (tampons d'entiers de même taille)
  * Modules de force (P6) : em.modulesWGSL.force (M.codeShader.attacherModules) ; l'appel est inséré dans integrer (pas et
  * pasCollisions), le module et le prélude des shaders ajoutés au noyau ; pipelines mis en cache par empreinte (même mise en
@@ -1471,7 +1475,7 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
   };
 
   class Simulation {
-    constructor(device, effet, monde, fragments) {
+    constructor(device, effet, monde, fragments, largeurCqh) {
       const U = GPUBufferUsage;
       this.device = device;
       this.effet = effet;
@@ -1479,6 +1483,7 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
       this.monde = monde && monde.actif ? monde : null;
       this.nZones = Math.ceil(effet.fin * GRILLE) + 2;
       this.tau = 0;
+      this.largeurCqh = largeurCqh > 0 ? largeurCqh : 1600 / 9;
       this.emetteurs = effet.emetteurs.map((em) => {
         const capacite = Math.max(1, em.capacite);
         const frag = em.fragment ? (fragments && fragments[em.index]) || null : null;
@@ -1543,6 +1548,12 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
         const force = e.em.modulesWGSL ? e.em.modulesWGSL.force : null;
         e.pipelinePas = e.collisions ? pipelineCollisions(device, force) : pipelinePas(device, force);
       });
+
+      // Interactions (P5a) : un groupe de voisinage par ensemble d'émetteurs liés, émetteurs simulés seulement.
+      const groupes = effet.groupes || [];
+      if (groupes.length && !P.Groupe) throw new Error('Interactions : moteur/particules/voisinage.js n\'est pas chargé.');
+      this.groupes = groupes.map((g) => (g.membres.some((i) => !this.emetteurs[i].inerte) ? new P.Groupe(device, this, g) : null));
+      this.groupesActifs = this.groupes.filter(Boolean);
 
       // Voie rapide : zones de la grille (points g / 30) envoyées au GPU.
       this.zones = new Float32Array(this.nZones * 4);
@@ -1759,11 +1770,15 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
           this.assurerAncres(Math.floor(a.k * PAS * GRILLE) - 1, Math.floor((a.k + 1) * PAS * GRILLE) + 2, zones);
           this.ecrirePas(o, a.k);
           if (!passe) passe = enc.beginComputePass();
+          // Interactions : positions au début du pas (grains), avant le pas des émetteurs.
+          for (const g of this.groupesActifs) g.noter(passe);
           for (const e of this.simules) {
             passe.setPipeline(e.pipelinePas);
             passe.setBindGroup(0, e.groupePas, [n * 256]);
             passe.dispatchWorkgroups(Math.ceil(e.capacite / 64));
           }
+          // Interactions : voisinage (et solveurs) après le pas de tous les émetteurs.
+          for (const g of this.groupesActifs) g.executer(passe, n);
           if (this.nProfils) {
             passe.setPipeline(this.pc.relaxer);
             passe.setBindGroup(0, this.groupeRelax, [n * 256]);
@@ -1874,6 +1889,11 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
       return this.nProfils ? this.lireTampon(this.hauteurs) : Promise.resolve(new Float32Array(0));
     }
 
+    lireVoisinage(g) {
+      const groupe = this.groupes ? this.groupes[g] : null;
+      return groupe ? groupe.lire() : Promise.reject(new Error('Groupe d\'interactions ' + g + ' sans émetteur simulé.'));
+    }
+
     /** Sommes propres du dernier pas, rangées par obstacle de la vidéo (contribution de l'effet à la couche commune). */
     contributionVideo() {
       const O = M.obstacles;
@@ -1898,6 +1918,7 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
         if (copie.hauteurs) copie.hauteurs.destroy();
       });
       this.instantanes.clear();
+      (this.groupesActifs || []).forEach((g) => g.detruire());
       this.tamponPas.destroy();
       if (this.tamponZones) this.tamponZones.destroy();
       if (this.texReperes) this.texReperes.destroy();

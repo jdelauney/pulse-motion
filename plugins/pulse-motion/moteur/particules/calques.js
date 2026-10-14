@@ -71,7 +71,8 @@
  * (M.rendreScene) : elle ne dépend que de τ, jamais du chemin suivi pour arriver à t.
  * Modules WGSL des recettes (P6) : compilés au démarrage du GPU (Rendu.verifierModules) ; un module qui ne compile pas désactive
  * son effet (panneau, M.shaders.erreurs, usage « module ») ; l'atelier refuse une recette dont un module ne compile pas.
- * Navigateur seulement ; dépend de horloge, gpu, simulation, rendu.
+ * Navigateur seulement ; dépend de horloge, gpu, simulation, voisinage (interactions, P5a : largeur de la scène passée à
+ * la simulation pour sa grille de voisinage), rendu.
  */
 (function (racine) {
   'use strict';
@@ -385,7 +386,7 @@
     const mesures = { scenes: new Set() };
     const m = monde(f);
     m.bases = basesPour(f, device);
-    const sim = new P.Simulation(device, f.effet, m, f.fragments);
+    const sim = new P.Simulation(device, f.effet, m, f.fragments, largeurScene());
     sim.avancer(Math.max(0, (t - f.debut) * f.info.rythme - 1e-6), zonesDe(f, mesures));
     const c = sim.contributionVideo();
     sim.detruire();
@@ -806,7 +807,7 @@
         if (!fx.sim) {
           const m = monde(fx);
           if (m) m.bases = basesPour(fx, device);
-          fx.sim = new P.Simulation(device, fx.effet, m, fx.fragments);
+          fx.sim = new P.Simulation(device, fx.effet, m, fx.fragments, largeurScene());
           fx.sim.emetteurs.forEach((e) => etat.rendu.preparerEmetteur(e));
         }
         const deltas = fx.sim.avancer(tau, zonesDe(fx, mesures));

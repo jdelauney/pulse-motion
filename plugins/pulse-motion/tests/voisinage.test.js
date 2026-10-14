@@ -59,3 +59,97 @@ test('voisinage : WGSL du module (noyaux et liaisons)', () => {
   assert.match(P.WGSL_VOISINAGE, /atomicAdd\(&comptes\[cle\], 1u\)/, 'comptage en entiers atomiques');
   assert.doesNotMatch(P.WGSL_VOISINAGE, /atomic<f32>/, 'aucune somme atomique en flottant');
 });
+
+const { optionsWebGPU, executerPage, pageMoteur } = require('./aide/gpu.js');
+
+const FICHIERS = ['particules/instantanes.js', 'particules/gpu.js', 'particules/obstacles.js', 'particules/simulation.js', 'particules/voisinage.js'];
+const AUCUN = 0xffffffff;
+
+/** Vérifie un voisinage lu : débuts croissants, cellules triées par indice, chaque corps vivant de la grille (cellule non
+ *  pleine) rangé une fois dans sa cellule, cellule recalculée depuis la position. -> nombre de corps rangés. */
+function verifier(v) {
+  const { grille, cles, debuts, ordre, corps, corpsU } = v;
+  assert.equal(debuts.length, grille.n + 1);
+  const vus = new Set();
+  let ranges = 0;
+  for (let c = 0; c < grille.n; c++) {
+    assert.ok(debuts[c + 1] >= debuts[c], 'débuts croissants');
+    const tranche = ordre.slice(debuts[c], debuts[c + 1]);
+    if (tranche.length > P.PLEINE) {
+      assert.ok(tranche.every((i) => i === AUCUN), `cellule ${c} pleine : ignorée`);
+      continue;
+    }
+    tranche.forEach((i, k) => {
+      assert.equal(cles[i], c, `corps ${i} rangé dans sa cellule`);
+      if (k) assert.ok(i > tranche[k - 1], `cellule ${c} triée par indice`);
+      vus.add(i);
+    });
+    ranges += tranche.length;
+  }
+  assert.equal(debuts[grille.n], cles.filter((c) => c !== AUCUN).length, 'total = corps dans la grille');
+  for (let i = 0; i < cles.length; i++) {
+    if (corpsU[i * 8 + 5] === AUCUN) { assert.equal(cles[i], AUCUN, `corps ${i} mort : sans cellule`); continue; }
+    if (cles[i] === AUCUN) { assert.ok(!vus.has(i)); continue; }
+    const plein = debuts[cles[i] + 1] - debuts[cles[i]] > P.PLEINE;
+    assert.equal(vus.has(i), !plein, `corps ${i} rangé une fois`);
+    const qx = (corps[i * 8] - grille.origine[0]) / grille.cote;
+    const qy = (corps[i * 8 + 1] - grille.origine[1]) / grille.cote;
+    if (Math.abs(qx - Math.round(qx)) > 1e-3 && Math.abs(qy - Math.round(qy)) > 1e-3) {
+      assert.equal(cles[i], Math.floor(qy) * grille.nx + Math.floor(qx), `cellule du corps ${i}`);
+    }
+  }
+  return ranges;
+}
+
+test('voisinage GPU : tri par cellule correct et stable, corps hors de la grille ignorés, cellule pleine, même voisinage par deux chemins', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const essaim = (avec) => ({ type: 'essaim', rayon: 2, vision: { rayon: 6 }, avec });
+  const effet = compiler([
+    { nom: 'a', naissance: { salves: [{ t: 0, nombre: 1500 }], forme: { type: 'rectangle' }, vitesse: { cone: 360, valeur: [0, 10] }, vie: [5, 5] }, interactions: essaim(['c']) },
+    { nom: 'loin', naissance: { salves: [{ t: 0, nombre: 200 }], forme: { type: 'rectangle', decalage: [-200, 0] }, vie: [5, 5] }, interactions: essaim(['a']) },
+    { nom: 'c', naissance: { salves: [{ t: 0.2, nombre: 300 }], forme: { type: 'rectangle' }, vitesse: { cone: 360, valeur: [0, 10] }, vie: [5, 5] }, interactions: essaim([]) },
+    { nom: 'seul', naissance: { salves: [{ t: 0, nombre: 200 }], forme: { type: 'point' }, vie: [5, 5] }, interactions: essaim([]) },
+  ]);
+  assert.deepEqual(effet.groupes.map((g) => g.membres), [[0, 1, 2], [3]]);
+  const r = JSON.parse(await executerPage(pageMoteur({ fichiers: FICHIERS, donnees: effet, code: `
+const P = M.particulesInterne;
+const gpu = await P.obtenirGPU();
+if (!gpu) { await envoyer({ webgpu: false }); return; }
+const { device } = gpu;
+const zones = { a: () => [50, 30, 60, 40], grille: () => [50, 30, 60, 40] };
+async function voisinage(chemin, g) {
+  const sim = new P.Simulation(device, DONNEES, null, null, 177.78);
+  for (const t of chemin) sim.avancer(t, zones);
+  const v = await sim.lireVoisinage(g);
+  const etats = [];
+  for (let i = 0; i < DONNEES.emetteurs.length; i++) etats.push(Array.from(new Uint32Array((await sim.lireEtat(i)).buffer)));
+  const groupes = sim.groupes.map((x) => !!x);
+  sim.detruire();
+  return { corps: Array.from(v.corps), corpsU: Array.from(new Uint32Array(v.corps.buffer)), cles: Array.from(v.cles), debuts: Array.from(v.debuts),
+    ordre: Array.from(v.ordre), grille: v.grille, membres: v.membres, etats, groupes };
+}
+const A = await voisinage([0.5], 0);
+const B = await voisinage([0.3, 0.9, 0.5], 0);
+const S = await voisinage([1.5 / 120], 1);
+const egal = JSON.stringify([A.cles, A.debuts, A.ordre, A.etats]) === JSON.stringify([B.cles, B.debuts, B.ordre, B.etats]);
+delete A.etats; delete B.etats; delete S.etats;
+await envoyer({ webgpu: true, A, S, egal });` }), { delai: 180000 }));
+  assert.equal(r.erreur, undefined, r.erreur);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  const { A, S } = r;
+  assert.deepEqual(A.groupes, [true, true]);
+  assert.equal(r.egal, true, 'même voisinage et même état au bit près par deux chemins (retour en arrière compris)');
+  assert.deepEqual(A.membres, [{ emetteur: 0, base: 0, capacite: 1500 }, { emetteur: 1, base: 1500, capacite: 200 }, { emetteur: 2, base: 1700, capacite: 300 }]);
+  assert.equal(A.grille.cote, 6);
+  assert.equal(verifier(A), 1800, 'a et c rangés (cellules de moins de 96 corps), loin hors de la grille');
+  for (let i = 1500; i < 1700; i++) {
+    assert.notEqual(A.corpsU[i * 8 + 5], AUCUN, `corps ${i} de « loin » vivant`);
+    assert.equal(A.cles[i], AUCUN, `corps ${i} de « loin » hors de la grille`);
+  }
+  for (let i = 1700; i < 2000; i++) assert.equal(A.corpsU[i * 8 + 5], 2, '« c », né à 0,2 s : rang 2 du groupe');
+  // Salve née en un point : une cellule de 200 corps, pleine, vidée.
+  verifier(S);
+  const pleines = [];
+  for (let c = 0; c < S.grille.n; c++) if (S.debuts[c + 1] - S.debuts[c] > P.PLEINE) pleines.push(S.debuts[c + 1] - S.debuts[c]);
+  assert.deepEqual(pleines, [200]);
+});
