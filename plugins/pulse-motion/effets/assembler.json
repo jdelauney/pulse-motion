@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "nom": "assembler",
+  "description": "Des particules venues de tout l'écran s'assemblent en l'élément visé (data-ancre), de gauche à droite ; il apparaît à leur arrivée (fin de data-dur, ou plus tôt avec « arrivee »).",
+  "parametres": {
+    "densite": { "defaut": 4, "min": 1, "max": 64 },
+    "arrivee": { "defaut": 1, "min": 0.2, "max": 1 },
+    "echelonnement": { "defaut": 0.4, "min": 0, "max": 1 },
+    "etendue": { "defaut": 100, "min": 10, "max": 200 }
+  },
+  "rendu_calque": { "bloom": 0, "tons": "neutre" },
+  "emetteurs": [
+    {
+      "nom": "grain",
+      "naissance": {
+        "forme": { "type": "rectangle", "largeur": "etendue * 1.8", "hauteur": "etendue" },
+        "vitesse": { "cone": 360, "valeur": [0, 20] },
+        "taille": [0.3, 0.6]
+      },
+      "forces": [
+        { "type": "turbulence", "echelle": 15, "force": 25, "vitesse": 0.5 },
+        { "type": "trainee", "coef": 0.6 }
+      ],
+      "cible": { "source": "ancre", "arrivee": "guidee", "a": "arrivee * dur", "echelonnement": "echelonnement", "ordre": "gauche-droite", "guidage": 0.5, "densite": "densite" },
+      "vie": {
+        "couleur": "source",
+        "opacite": { "de": 0, "a": 1, "courbe": "quad-out" }
+      },
+      "rendu": { "type": "sprite", "texture": "pixel", "melange": "alpha" }
+    }
+  ]
+}

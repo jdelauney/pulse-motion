@@ -1,7 +1,8 @@
 'use strict';
 /* Pulse Motion – contrôle de la vidéo rendue : page assemblée ouverte en temps réel dans Chrome ou Edge sans
  * fenêtre (page-mesures.js), mesures de moteur/mesures.js (M.mesurer), débordements (M.detecterDebordements) et
- * formes exactes des collisions effacées à la fin de leur minutage (M.particules.formesVides, sans GPU), traduits en
+ * formes exactes des collisions effacées à la fin de leur minutage (M.particules.formesVides, sans GPU) et photographies
+ * des effets de fragmentation (M.particules.photosVides, sans GPU : ancre-vide, photographie-trop-grande), traduits en
  * problèmes. */
 const { trouverNavigateur } = require('./navigateur.js');
 const { mesurerPage } = require('./page-mesures.js');
@@ -46,14 +47,21 @@ async function controlerRendu({ html, ratio, duree, navigateur = trouverNavigate
   const r = await mesurerPage({ html, navigateur, delai: (30 + 2 * (duree || 0)) * 1000, script: `
     // Formes exactes des collisions effacées à la fin de leur minutage (avant les mesures : elles rendent des scènes).
     var formesVides = M.particules && M.particules.formesVides ? await M.particules.formesVides() : [];
+    // Photographies des effets de fragmentation (elles rendent aussi des scènes).
+    var photos = M.particules && M.particules.photosVides ? await M.particules.photosVides() : [];
     var constats = M.mesurer({ ratio: ${JSON.stringify(ratio)}, seuils: ${JSON.stringify(SEUILS)} });
     var debordements = M.detecterDebordements();
     var ajustements = M.essayerTailles({ minimumCqh: ${SEUILS.texteMinCqh} });
-    return { constats: constats.concat(await M.mesurerPixels({ ratio: ${JSON.stringify(ratio)}, seuils: ${JSON.stringify(SEUILS)} })), debordements: debordements, ajustements: ajustements, formesVides: formesVides };` });
+    return { constats: constats.concat(await M.mesurerPixels({ ratio: ${JSON.stringify(ratio)}, seuils: ${JSON.stringify(SEUILS)} })), debordements: debordements, ajustements: ajustements, formesVides: formesVides, photos: photos };` });
   if (r.code === 'ENOENT') return nonVerifie('rendu-impossible', `Navigateur introuvable à « ${navigateur} » : vérifiez la variable PM_NAVIGATEUR (ou retirez-la pour utiliser Chrome ou Edge installés). Seuls les contrôles sans navigateur ont été faits.`);
   if (r.erreur) return nonVerifie('rendu-impossible', `La vidéo n'a pas pu être mesurée dans le navigateur (${r.erreur}) : seuls les contrôles sans navigateur ont été faits.`);
   const debordements = (r.resultat.debordements || []).map((d) => ({ regle: 'debordement', gravite: 'erreur', scene: d.scene, element: d.element, message: d.message }));
-  return { renduVerifie: true, problemes: [...debordements, ...traduireConstats(r.resultat.constats), ...traduireFormesVides(r.resultat.formesVides)], ajustements: r.resultat.ajustements || [] };
+  return { renduVerifie: true, problemes: [...debordements, ...traduireConstats(r.resultat.constats), ...traduireFormesVides(r.resultat.formesVides), ...traduirePhotos(r.resultat.photos)], ajustements: r.resultat.ajustements || [] };
+}
+
+/** Problèmes de photographie des fragments (M.particules.photosVides) : ancre-vide (erreur), photographie-trop-grande (alerte). */
+function traduirePhotos(liste) {
+  return (liste || []).map((p) => ({ regle: p.regle, gravite: p.regle === 'ancre-vide' ? 'erreur' : 'alerte', scene: p.scene, element: p.element, message: p.message }));
 }
 
 /** Formes exactes au masque vide (M.particules.formesVides) -> alertes « obstacle-forme-vide ». */
@@ -61,4 +69,4 @@ function traduireFormesVides(liste) {
   return (liste || []).map((f) => ({ regle: 'obstacle-forme-vide', gravite: 'alerte', scene: f.scene, element: f.element, message: f.message }));
 }
 
-module.exports = { traduireConstats, traduireFormesVides, controlerRendu };
+module.exports = { traduireConstats, traduireFormesVides, traduirePhotos, controlerRendu };

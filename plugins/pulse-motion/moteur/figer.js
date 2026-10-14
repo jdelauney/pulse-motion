@@ -7,7 +7,12 @@
  * M.figer.masque(el, { cote }) -> Promise<{ largeur, hauteur, alpha, largeurPx, hauteurPx }>
  *   masque alpha de l'élément seul (sans ses transformations ni ses ancêtres), dans l'état où il est à l'appel
  *   (figement synchrone, rastérisation asynchrone) ; grand côté de « cote » px (256 par défaut), rapport d'aspect gardé.
- * Utilisé par capture.js (export rapide) et par les formes exactes des collisions de particules (calques.js).
+ * M.figer.photo(el, { largeur, hauteur, zone? }) -> Promise<{ largeur, hauteur, rgba, largeurPx, hauteurPx }>
+ *   image RVBA (non prémultipliée) de l'élément seul, sans ses transformations, en largeur × hauteur pixels (fragmentation
+ *   des particules, P4) ; même figement que le masque. zone { x, y, largeur, hauteur } (px CSS dans la boîte) : seule
+ *   cette partie de la boîte est rastérisée.
+ * M.figer.boite(el) -> { largeur, hauteur }   boîte de mise en page (px CSS), transformations neutralisées
+ * Utilisé par capture.js (export rapide), par les formes exactes des collisions et par la fragmentation (calques.js).
  * Navigateur seulement ; chargé dans la page livrée.
  */
 (function (racine) {
@@ -142,24 +147,18 @@
     return { largeur: r.width, hauteur: r.height };
   }
 
-  /** Masque alpha de l'élément seul, à sa taille de mise en page, sans ses transformations. */
-  function masque(el, o) {
-    var cote = (o && o.cote) || 256;
-    var boite = boiteMiseEnPage(el);
+  /** Image RVBA (non prémultipliée) de l'élément seul, à sa boîte de mise en page, sans ses transformations, rastérisée
+   *  en L × H pixels : figement synchrone (état à l'appel), rastérisation asynchrone. */
+  function rasteriser(el, boite, L, H, zone) {
     var largeurPx = boite.largeur;
     var hauteurPx = boite.hauteur;
-    if (!(largeurPx > 0 && hauteurPx > 0)) {
-      return Promise.resolve({ largeur: 0, hauteur: 0, alpha: new Uint8ClampedArray(0), largeurPx: largeurPx, hauteurPx: hauteurPx });
-    }
-    var k = cote / Math.max(largeurPx, hauteurPx);
-    var L = Math.max(1, Math.round(largeurPx * k));
-    var H = Math.max(1, Math.round(hauteurPx * k));
     var copie = figerArbre(el);
     copie.setAttribute('style', copie.getAttribute('style') + 'position:absolute;left:0;top:0;right:auto;bottom:auto;margin:0;' +
       'transform:none;translate:none;rotate:none;scale:none;width:' + largeurPx + 'px;height:' + hauteurPx + 'px;');
     copie.setAttribute('xmlns', XHTML);
     var xml = new XMLSerializer().serializeToString(copie);
-    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + L + '" height="' + H + '" viewBox="0 0 ' + largeurPx + ' ' + hauteurPx + '">' +
+    var z = zone || { x: 0, y: 0, largeur: largeurPx, hauteur: hauteurPx };
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + L + '" height="' + H + '" viewBox="' + z.x + ' ' + z.y + ' ' + z.largeur + ' ' + z.hauteur + '" preserveAspectRatio="none">' +
       '<foreignObject x="0" y="0" width="' + largeurPx + '" height="' + hauteurPx + '">' +
       '<style xmlns="' + XHTML + '">' + reglesPolices() + '</style>' + xml + '</foreignObject></svg>';
     var img = new Image();
@@ -170,12 +169,39 @@
       c.height = H;
       var ctx = c.getContext('2d');
       ctx.drawImage(img, 0, 0, L, H);
-      var d = ctx.getImageData(0, 0, L, H).data;
-      var alpha = new Uint8ClampedArray(L * H);
-      for (var i = 0; i < alpha.length; i++) alpha[i] = d[i * 4 + 3];
-      return { largeur: L, hauteur: H, alpha: alpha, largeurPx: largeurPx, hauteurPx: hauteurPx };
+      return ctx.getImageData(0, 0, L, H).data;
     });
   }
 
-  M.figer = { styleFige: styleFige, reglesPolices: reglesPolices, figerArbre: figerArbre, masque: masque };
+  /** Masque alpha de l'élément seul, à sa taille de mise en page, sans ses transformations. */
+  function masque(el, o) {
+    var cote = (o && o.cote) || 256;
+    var boite = boiteMiseEnPage(el);
+    if (!(boite.largeur > 0 && boite.hauteur > 0)) {
+      return Promise.resolve({ largeur: 0, hauteur: 0, alpha: new Uint8ClampedArray(0), largeurPx: boite.largeur, hauteurPx: boite.hauteur });
+    }
+    var k = cote / Math.max(boite.largeur, boite.hauteur);
+    var L = Math.max(1, Math.round(boite.largeur * k));
+    var H = Math.max(1, Math.round(boite.hauteur * k));
+    return rasteriser(el, boite, L, H).then(function (d) {
+      var alpha = new Uint8ClampedArray(L * H);
+      for (var i = 0; i < alpha.length; i++) alpha[i] = d[i * 4 + 3];
+      return { largeur: L, hauteur: H, alpha: alpha, largeurPx: boite.largeur, hauteurPx: boite.hauteur };
+    });
+  }
+
+  /** Photographie RVBA de l'élément seul en o.largeur × o.hauteur pixels (fragmentation des particules). */
+  function photo(el, o) {
+    var boite = boiteMiseEnPage(el);
+    if (!(boite.largeur > 0 && boite.hauteur > 0)) {
+      return Promise.resolve({ largeur: 0, hauteur: 0, rgba: new Uint8ClampedArray(0), largeurPx: boite.largeur, hauteurPx: boite.hauteur });
+    }
+    var L = Math.max(1, Math.round(o.largeur));
+    var H = Math.max(1, Math.round(o.hauteur));
+    return rasteriser(el, boite, L, H, o.zone).then(function (d) {
+      return { largeur: L, hauteur: H, rgba: new Uint8ClampedArray(d), largeurPx: boite.largeur, hauteurPx: boite.hauteur };
+    });
+  }
+
+  M.figer = { styleFige: styleFige, reglesPolices: reglesPolices, figerArbre: figerArbre, masque: masque, photo: photo, boite: boiteMiseEnPage };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

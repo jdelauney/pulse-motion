@@ -229,12 +229,17 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
     }
 
     // Fenêtre d'une balise d'effet : jusqu'à la mort de la dernière particule, pas seulement data-dur.
+    const nomsEffets = {};
     const finEffet = (scene, rythme) => {
       const fins = {};
+      nomsEffets[scene.id] = {};
       const balises = elementsParScene[scene.id].filter((e) => e.effet !== undefined);
       for (const e of (assemblage.effets || []).filter((x) => x.scene === scene.id)) {
         const balise = balises[e.ordre];
-        if (balise && min.elements[scene.id][balise.cle]) fins[balise.cle] = min.elements[scene.id][balise.cle].debut + e.effet.fin / (rythme || 1);
+        if (balise && min.elements[scene.id][balise.cle]) {
+          fins[balise.cle] = min.elements[scene.id][balise.cle].debut + e.effet.fin / (rythme || 1);
+          nomsEffets[scene.id][balise.cle] = e.effet.nom;
+        }
       }
       return fins;
     };
@@ -278,10 +283,18 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
     });
 
     // Pause finale.
-    const fins = Object.entries(min.elements[derniere.id]).map(([cle, e]) => finElement(derniere.id, cle, e));
-    const pause = derniere.fin - Math.max(derniere.debut, ...fins);
+    const fins = Object.entries(min.elements[derniere.id]).map(([cle, e]) => [cle, finElement(derniere.id, cle, e)]);
+    const pause = derniere.fin - Math.max(derniere.debut, ...fins.map((f) => f[1]));
     if (pause < SEUILS.pauseFinale - EPS) {
-      const p = { regle: 'pause-finale', gravite: 'alerte', scene: derniere.id, message: `La vidéo s'arrête ${virgule(pause)} s après le dernier mouvement : laisser au moins ${virgule(SEUILS.pauseFinale)} s pour finir sur une image stable.` };
+      let message = `La vidéo s'arrête ${virgule(pause)} s après le dernier mouvement : laisser au moins ${virgule(SEUILS.pauseFinale)} s pour finir sur une image stable.`;
+      if (pause < -EPS) {
+        // Un mouvement (souvent un effet de particules et la vie de ses particules) dépasse la fin de la vidéo.
+        const [cle] = fins.reduce((a, b) => (b[1] > a[1] ? b : a));
+        const nom = nomsEffets[derniere.id][cle];
+        const quoi = nom ? `l'effet « ${nom} »` : `« ${cle} »`;
+        message = `Scène « ${derniere.id} » : ${quoi} continue ${virgule(-pause)} s après la fin de la vidéo et sera coupé : avancer data-start, donner un data-dur plus court ou allonger la scène (laisser ensuite au moins ${virgule(SEUILS.pauseFinale)} s d'image stable).`;
+      }
+      const p = { regle: 'pause-finale', gravite: 'alerte', scene: derniere.id, message };
       const manque = SEUILS.pauseFinale - pause;
       if (corrigeable && !avecVoix.has(derniere.id) && manque <= SEUILS.pauseFinaleMaxAjout + EPS) {
         const duree = deroule.scenes[deroule.scenes.length - 1].duree;

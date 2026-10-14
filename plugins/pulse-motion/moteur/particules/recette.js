@@ -7,6 +7,9 @@
  * compiler(recette, o)     recette -> paramètres numériques pour le GPU (cqh, s de τ, radians,
  *                          RVB linéaire, tables de 64 valeurs, capacités)
  * SCHEMA                   description déclarative du format (atelier : formulaire ; compilateur : champs refusés)
+ * Fragments (P4) : forme « pixels » (naissance sur les pixels de l'ancre photographiée), couleur « source », rendu
+ * « eclats », « cible » (arrivée sur un élément) ; un émetteur de fragments naît tout entier à τ = 0 (une salve dont le
+ * nombre est fixé à la photographie : fragments.js).
  *
  * Module pur : chargé tel quel dans la page (global M.recette) et par Node (require).
  */
@@ -28,14 +31,21 @@
   var SALVES_MAX = 8;
   var CAPACITE_MAX = 2000000;
   var HISTORIQUE_MAX = 16777216; // capacité × longueur d'une traînée (8 octets chacun : 128 Mio)
+  var DENSITE = 4;          // pixels de l'élément photographié par particule (forme « pixels », « cible »)
+  var DENSITE_MAX = 64;
+  var MORCEAUX_MIN = 8;
+  var MORCEAUX_MAX = 512;
   var CODES = {
-    forme: { point: 0, cercle: 1, anneau: 2, rectangle: 3, ligne: 4, ancre: 5 },
+    forme: { point: 0, cercle: 1, anneau: 2, rectangle: 3, ligne: 4, ancre: 5, pixels: 6 },
     force: { gravite: 0, trainee: 1, vent: 2, turbulence: 3, attracteur: 4, vortex: 5, rappel: 6 },
-    rendu: { sprite: 0, etincelle: 1, trainee: 2, planche: 3 },
+    rendu: { sprite: 0, etincelle: 1, trainee: 2, planche: 3, eclats: 4 },
     melange: { additif: 0, alpha: 1, premultiplie: 2 },
-    texture: { 'disque-doux': 0, etoile: 1, fumee: 2, flamme: 3, eclat: 4, confetti: 5, image: 6 },
+    texture: { 'disque-doux': 0, etoile: 1, fumee: 2, flamme: 3, eclat: 4, confetti: 5, image: 6, pixel: 7 },
     reponse: { rebond: 0, poser: 1, mourir: 2 },
     cible: { sol: 1, murs: 2, elements: 4, formes: 8 },
+    ordre: { hasard: 0, 'gauche-droite': 1, centre: 2 },
+    arrivee: { guidee: 0, choree: 1 },
+    source: { ancre: 0, cible: 1 },
   };
   var COULEURS_CHARTE = ['primaire', 'accent', 'texte', 'fond'];
   var HEX = /^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
@@ -102,7 +112,7 @@
     rendu_calque: ob('Rendu du calque', {
       bloom: nb('Halo lumineux', 0.6, { curseur: [0, 4], pas: 0.05 }),
       seuil_bloom: nb('Seuil du halo', 1, { curseur: [0, 4], pas: 0.05 }),
-      tons: ch('Courbe de tons', ['douce', 'aces'], 'douce'),
+      tons: ch('Courbe de tons', ['douce', 'aces', 'neutre'], 'douce'),
     }),
     emetteurs: li('Émetteurs', ob('Émetteur', {
       nom: noeud('texte', 'Nom', null, { requis: true, motif: '^[a-z0-9-]+$', exemple: 'e' }),
@@ -122,6 +132,10 @@
           hauteur: nb('Hauteur', null, { min: 0, unite: 'cqh', exemple: 10, curseur: [0, 100] }),
           angle: nb('Angle', 0, { unite: '°', curseur: [-180, 180] }),
           decalage: pr('Décalage (fraction de la zone)', [0, 0]),
+          densite: nb('Densité (forme « pixels ») : une particule pour N pixels de l\'ancre', DENSITE, { min: 1, max: DENSITE_MAX, pas: 1, curseur: [1, DENSITE_MAX] }),
+          instant: nb('Photographie de l\'ancre (s de scène ; absent : début de l\'effet)', null, { min: 0, exemple: 1, unite: 's', curseur: [0, 30] }),
+          liberation: nb('Libération des pixels étalée sur', 0, { min: 0, unite: 's', curseur: [0, 5] }),
+          ordre: ch('Ordre de libération', Object.keys(CODES.ordre), 'hasard'),
         }),
         vitesse: ob('Vitesse de départ', {
           direction: pr('Direction', [0, -1]),
@@ -176,6 +190,10 @@
           lignes: nb('Lignes', null, { requis: true, min: 1, pas: 1, exemple: 2, curseur: [1, 16] }),
           ips: nb('Images par seconde', 0, { curseur: [0, 60] }),
         }),
+        morceaux: nb('Morceaux (éclats)', 24, { min: MORCEAUX_MIN, max: MORCEAUX_MAX, pas: 1, curseur: [MORCEAUX_MIN, MORCEAUX_MAX] }),
+        origine: pr('Point d\'impact des éclats (fraction de la boîte du contenu visible)', [0.5, 0.5]),
+        impulsion: nb('Impulsion des éclats', 40, { unite: 'cqh/s', curseur: [0, 300] }),
+        rotation_max: nb('Rotation maximale des éclats', 180, { min: 0, unite: '°/s', curseur: [0, 1080] }),
       }),
       a_la_mort: ob('À la mort', {
         emetteur: noeud('texte', 'Émetteur lancé', null, { motif: '^[a-z0-9-]+$', parmi: 'emetteurs', exemple: 'b' }),
@@ -193,6 +211,16 @@
       }),
       a_la_collision: ob('Au contact', {
         emetteur: noeud('texte', 'Émetteur lancé', null, { motif: '^[a-z0-9-]+$', parmi: 'emetteurs', exemple: 'b' }),
+      }),
+      cible: ob('Arrivée sur un élément', {
+        source: ch('Élément visé (data-ancre ou data-cible)', Object.keys(CODES.source), 'ancre'),
+        arrivee: ch('Arrivée', Object.keys(CODES.arrivee), 'guidee'),
+        a: nb('Instant d\'arrivée (s de τ ; absent : fin de data-dur)', null, { min: 0, exemple: 2, unite: 's', curseur: [0, 10] }),
+        echelonnement: nb('Échelonnement des départs', 0, { min: 0, max: 1, curseur: [0, 1], pas: 0.05 }),
+        ordre: ch('Ordre d\'arrivée', Object.keys(CODES.ordre), 'hasard'),
+        guidage: nb('Début du rattrapage (fraction du trajet)', 0.6, { min: 0, max: 1, curseur: [0, 1], pas: 0.05 }),
+        densite: nb('Densité de la cible : une particule pour N pixels', DENSITE, { min: 1, max: DENSITE_MAX, pas: 1, curseur: [1, DENSITE_MAX] }),
+        courbe: cb('Courbe du trajet (chorégraphié)'),
       }),
     }, { exemple: { nom: 'emetteur', naissance: { debit: 50, vie: [0.5, 1] } } }), { requis: true }),
   });
@@ -411,7 +439,7 @@
     Object.keys(params).forEach(function (nom) {
       var p = params[nom];
       var ch = 'parametres.' + nom;
-      if (!/^[a-z_][a-z0-9_]*$/.test(nom) || nom === 'dur') throw invalide(ch, 'nom de paramètre invalide (minuscules, chiffres, _ ; « dur » est réservé)');
+      if (!/^[a-z_][a-z0-9_]*$/.test(nom) || nom === 'dur' || nom === 'source') throw invalide(ch, 'nom de paramètre invalide (minuscules, chiffres, _ ; « dur » et « source » sont réservés)');
       if (!estObjet(p)) throw invalide(ch, 'objet { defaut, min, max } attendu');
       if (p.type === 'couleur') {
         try { couleurs[nom] = resoudreCouleur(p.defaut, { charte: charte }); } catch (e) { throw invalide(ch + '.defaut', e.message); }
@@ -628,6 +656,8 @@
         return t;
       }
 
+      /** Dégradé (64 RVBA linéaires) et part de la couleur « source » (64 valeurs) : un arrêt « source » vaut blanc dans le
+       *  dégradé et 1 dans la part ; le moteur multiplie le dégradé par mix(1, couleur du pixel d'origine, part). */
       function tableCouleur(v, ch) {
         var stops = ['#ffffff'];
         var f = C.courbe('linear', 'in');
@@ -637,8 +667,10 @@
           f = courbe(v.courbe, ch + '.courbe');
           if (!Array.isArray(stops) || !stops.length) throw invalide(ch + '.degrade', 'liste de couleurs non vide attendue');
         } else if (v !== undefined) throw invalide(ch, 'couleur ou objet { degrade, courbe } attendu');
-        var cs = stops.map(function (s, k) { return couleur(s, ch + '.degrade[' + k + ']'); });
+        var cs = stops.map(function (s, k) { return s === 'source' ? [1, 1, 1, 1] : couleur(s, ch + '.degrade[' + k + ']'); });
+        var ps = stops.map(function (s) { return s === 'source' ? 1 : 0; });
         var t = [];
+        var part = [];
         for (var i = 0; i < TAILLE_TABLE; i++) {
           var u = Math.max(0, Math.min(1, f(i / (TAILLE_TABLE - 1)))) * (cs.length - 1);
           var k = Math.min(Math.floor(u), Math.max(0, cs.length - 2));
@@ -646,14 +678,17 @@
           var c0 = cs[k];
           var c1 = cs[Math.min(k + 1, cs.length - 1)];
           for (var j = 0; j < 4; j++) t.push(arrondi(c0[j] + (c1[j] - c0[j]) * r));
+          part.push(arrondi(ps[k] + (ps[Math.min(k + 1, ps.length - 1)] - ps[k]) * r));
         }
-        return t;
+        return { couleur: t, source: part };
       }
 
       function compilerVie(v, ch) {
         v = objet(v, ch);
+        var c = tableCouleur(v.couleur, ch + '.couleur');
         return {
-          couleur: tableCouleur(v.couleur, ch + '.couleur'),
+          couleur: c.couleur,
+          source: c.source,
           taille: table(v.taille, ch + '.taille', 1),
           intensite: table(v.intensite, ch + '.intensite', 1),
           opacite: table(v.opacite, ch + '.opacite', 1),
@@ -665,7 +700,11 @@
         var type = choix(r.type, CODES.rendu, ch + '.type', 'sprite');
         var texture = r.texture === undefined ? 'disque-doux' : r.texture;
         var fichier = null;
-        if (typeof texture === 'string' && /^assets\//.test(texture)) {
+        if (type === 'eclats') {
+          // Un éclat est un morceau de la photographie de son ancre : pas d'autre texture.
+          if (r.texture !== undefined) throw invalide(ch + '.texture', 'un éclat montre la photographie de son ancre : retirer « texture »');
+          texture = 'image';
+        } else if (typeof texture === 'string' && /^assets\//.test(texture)) {
           if (!/\.(png|webp|jpe?g|svg)$/i.test(texture)) throw invalide(ch + '.texture', 'image PNG, WebP, JPEG ou SVG attendue');
           fichier = texture;
           texture = 'image';
@@ -743,6 +782,86 @@
         };
       }
 
+      /** Naissance sur les pixels de l'ancre : champs vérifiés pour toute forme, gardés pour la forme « pixels ». */
+      function compilerPixels(f, ch) {
+        f = f === undefined ? {} : objet(f, ch);
+        var densite = nombre(f.densite, ch + '.densite', DENSITE);
+        if (densite < 1 || densite > DENSITE_MAX) throw invalide(ch + '.densite', 'entre 1 et ' + DENSITE_MAX + ' pixels par particule');
+        var instant = null;
+        if (f.instant !== undefined && f.instant !== null && f.instant !== 'debut') {
+          instant = nombre(f.instant, ch + '.instant');
+          if (instant < 0) throw invalide(ch + '.instant', 'secondes de scène positives ou nulles, ou « debut », attendues');
+        }
+        var liberation = nombre(f.liberation, ch + '.liberation', 0);
+        if (liberation < 0) throw invalide(ch + '.liberation', 'durée positive ou nulle attendue');
+        var ordre = choix(f.ordre, CODES.ordre, ch + '.ordre', 'hasard');
+        if (f.type !== 'pixels') return null;
+        return { densite: densite, instant: instant, liberation: liberation, ordre: ordre, ordreCode: CODES.ordre[ordre] };
+      }
+
+      /** Éclats : champs vérifiés pour tout rendu, gardés pour le rendu « eclats ». */
+      function compilerEclats(r, ch) {
+        r = objet(r, ch);
+        var morceaux = Math.round(nombre(r.morceaux, ch + '.morceaux', 24));
+        if (morceaux < MORCEAUX_MIN || morceaux > MORCEAUX_MAX) throw invalide(ch + '.morceaux', 'entre ' + MORCEAUX_MIN + ' et ' + MORCEAUX_MAX + ' morceaux');
+        var origine = paire(r.origine, ch + '.origine', [0.5, 0.5]);
+        var impulsion = nombre(r.impulsion, ch + '.impulsion', 40);
+        var rotation = nombre(r.rotation_max, ch + '.rotation_max', 180);
+        if (rotation < 0) throw invalide(ch + '.rotation_max', 'valeur positive ou nulle attendue');
+        if (r.type !== 'eclats') return null;
+        return { morceaux: morceaux, origine: origine, impulsion: impulsion, rotationMax: rad(rotation) };
+      }
+
+      /** Arrivée sur un élément : instant arrondi au pas de 1/120 s (au moins un pas), fenêtre et ordre des trajets. */
+      function compilerCible(c, ch) {
+        if (c === undefined || c === null) return null;
+        c = objet(c, ch);
+        var source = choix(c.source, CODES.source, ch + '.source', 'ancre');
+        var arrivee = choix(c.arrivee, CODES.arrivee, ch + '.arrivee', 'guidee');
+        var a = dur;
+        if (c.a !== undefined && c.a !== null && c.a !== 'fin') {
+          a = nombre(c.a, ch + '.a');
+          if (a < 0) throw invalide(ch + '.a', 'secondes de τ positives ou nulles, ou « fin », attendues');
+        }
+        var k = Math.max(1, Math.round(a / PAS));
+        function fraction(cle, defaut) {
+          var x = nombre(c[cle], ch + '.' + cle, defaut);
+          if (x < 0 || x > 1) throw invalide(ch + '.' + cle, 'valeur entre 0 et 1 attendue');
+          return x;
+        }
+        var echelonnement = fraction('echelonnement', 0);
+        var guidage = fraction('guidage', 0.6);
+        var densite = nombre(c.densite, ch + '.densite', DENSITE);
+        if (densite < 1 || densite > DENSITE_MAX) throw invalide(ch + '.densite', 'entre 1 et ' + DENSITE_MAX + ' pixels par particule');
+        var ordre = choix(c.ordre, CODES.ordre, ch + '.ordre', 'hasard');
+        var f = courbe(c.courbe, ch + '.courbe');
+        var progression = [];
+        for (var i = 0; i < TAILLE_TABLE; i++) progression.push(arrondi(f(i / (TAILLE_TABLE - 1))));
+        return {
+          source: source, sourceCode: CODES.source[source], arrivee: arrivee, arriveeCode: CODES.arrivee[arrivee],
+          k: k, a: arrondi(k * PAS), echelonnement: echelonnement, ordre: ordre, ordreCode: CODES.ordre[ordre],
+          guidage: guidage, densite: densite, progression: progression, bruit: [1, 0, 0],
+        };
+      }
+
+      /** Règles d'un émetteur de fragments (pixels, éclats ou cible). */
+      function verifierFragment(n, em, ch, P) {
+        if (P) throw invalide(ch, 'un sous-émetteur ne naît pas d\'une photographie (forme « pixels », éclats, « cible ») : réservé aux émetteurs lancés par la scène');
+        if (n.debit !== undefined || n.salves !== undefined) {
+          throw invalide(ch + '.naissance', 'un émetteur de fragments naît tout entier au début de l\'effet (une particule par pixel ou par éclat) : retirer « debit » et « salves »');
+        }
+        if (em.cible && em.eclats) throw invalide(ch + '.cible', 'les éclats ne visent pas de cible');
+        if (!em.pixels && !em.cible && em.tables.source.some(function (x) { return x > 0; })) {
+          throw invalide(ch + '.vie.couleur', '« source » est la couleur des pixels d\'un élément photographié : seulement avec la forme « pixels » ou une « cible »');
+        }
+        if (em.cible && em.collisions && em.collisions.reponse !== 'rebond') {
+          throw invalide(ch + '.collisions.reponse', 'une particule qui vise une cible doit pouvoir repartir vers elle : seulement « rebond »');
+        }
+        if (em.cible && em.cible.arrivee === 'choree' && (em.aLaMort >= 0 || em.aLaCollision >= 0 || em.rendu.type === 'trainee')) {
+          throw invalide(ch + '.cible.arrivee', 'une arrivée chorégraphiée (calculée sans état) n\'a ni sous-émetteur ni traînée : « guidee »');
+        }
+      }
+
       // Émetteurs : noms, liens parent → enfant, profondeur.
       var liste = recette.emetteurs;
       if (!Array.isArray(liste) || !liste.length) throw invalide('', '« emetteurs » doit être une liste non vide');
@@ -791,7 +910,12 @@
       function compilerEmetteur(e, i, P) {
         var ch = 'emetteurs[' + e.nom + ']';
         var n = objet(e.naissance, ch + '.naissance');
+        var cible = compilerCible(e.cible, ch + '.cible');
         var vie = intervalle(n.vie, ch + '.naissance.vie', [1, 1]);
+        if (cible) {
+          if (n.vie !== undefined) throw invalide(ch + '.naissance.vie', 'une particule qui vise une cible vit jusqu\'à son arrivée : retirer « vie »');
+          vie = [cible.a, cible.a];
+        }
         if (vie[0] <= 0) throw invalide(ch + '.naissance.vie', 'la durée de vie doit être positive');
         var em = {
           nom: e.nom,
@@ -813,10 +937,27 @@
           tables: compilerVie(e.vie, ch + '.vie'),
           rendu: compilerRendu(e.rendu, ch + '.rendu'),
           collisions: compilerCollisions(e.collisions, ch + '.collisions'),
+          pixels: compilerPixels(n.forme, ch + '.naissance.forme'),
+          eclats: compilerEclats(e.rendu, ch + '.rendu'),
+          cible: cible,
         };
+        em.fragment = !!(em.pixels || em.eclats || em.cible);
+        if (em.fragment) verifierFragment(n, em, ch, P);
+        else if (em.tables.source.some(function (x) { return x > 0; })) {
+          throw invalide(ch + '.vie.couleur', '« source » est la couleur des pixels d\'un élément photographié : seulement avec la forme « pixels » ou une « cible »');
+        }
+        if (cible) {
+          // Bruit du trajet chorégraphié : celui de la première turbulence (amplitude = force × 0,1 cqh).
+          var turbulence = em.forces.filter(function (f) { return f.type === 'turbulence'; })[0];
+          if (turbulence) cible.bruit = [turbulence.echelle, arrondi(turbulence.force * 0.1), turbulence.vitesse];
+        }
+        // Fragments tenus à leur place un pas (raccord exact), puis libérés selon « liberation ».
+        var tenue = em.pixels || em.eclats ? PAS : 0;
+        var liberation = em.pixels ? em.pixels.liberation : 0;
         // Mort au contact ou fondu après la pose : une particule peut mourir dès sa naissance.
-        var etendueMorts = em.collisions && (em.collisions.reponse === 'mourir' || em.collisions.reposApres) ? vie[1] : vie[1] - vie[0];
-        if (enfant[i] >= 0 && vie[0] < PAS) {
+        var etendueMorts = (em.collisions && (em.collisions.reponse === 'mourir' || em.collisions.reposApres) ? vie[1] : vie[1] - vie[0]) + tenue + liberation;
+        // À l'arrondi près : une arrivée au premier pas (cible.a = 0) vaut 0.008333 s.
+        if (enfant[i] >= 0 && vie[0] < PAS - 1e-6) {
           throw invalide(ch + '.naissance.vie', 'durée de vie minimale ' + vie[0] + ' sous 1/120 s : deux morts dans le même pas feraient perdre des enfants');
         }
         if (em.masse[0] <= 0) throw invalide(ch + '.naissance.masse', 'la masse doit être positive');
@@ -839,6 +980,21 @@
           em.espacement = P.espacement === Infinity ? Infinity : em.G * P.espacement;
           em.gigue = gigueNaissances + etendueMorts;
           em.finNaissances = P.fin;
+        } else if (em.fragment) {
+          // Une particule par éclat, ou par pixel (nombre fixé à la photographie : fragments.ajusterCapacites), toutes
+          // nées à τ = 0.
+          if (n.nombre !== undefined) throw invalide(ch + '.naissance.nombre', '« nombre » est réservé aux sous-émetteurs ; utiliser « debit » ou « salves »');
+          var nombreFragments = em.eclats ? em.eclats.morceaux : 1;
+          em.k = 0;
+          em.G = 1;
+          em.debit = 0;
+          em.nTotal = 0;
+          em.capContinu = 0;
+          em.salves = [{ t: 0, nombre: nombreFragments, debut: 0 }];
+          em.capacite = nombreFragments;
+          em.espacement = Infinity;
+          em.gigue = etendueMorts;
+          em.finNaissances = 0;
         } else {
           if (n.nombre !== undefined) throw invalide(ch + '.naissance.nombre', '« nombre » est réservé aux sous-émetteurs ; utiliser « debit » ou « salves »');
           em.k = 0;
@@ -877,10 +1033,10 @@
         if (em.rendu.type === 'trainee' && em.capacite * em.rendu.longueur > HISTORIQUE_MAX) {
           throw invalide(ch + '.rendu', 'traînée trop longue pour ' + em.capacite + ' particules (capacité × longueur au plus ' + HISTORIQUE_MAX + ')');
         }
-        em.fin = arrondi(em.finNaissances + vie[1]);
-        em.voieRapide = em.parent < 0 && em.aLaMort < 0 && em.rendu.type !== 'trainee' && em.forces.every(function (f) {
-          return f.type === 'gravite' || (f.type === 'trainee' && !f.quadratique);
-        });
+        em.fin = em.cible ? em.cible.a : arrondi(em.finNaissances + tenue + liberation + vie[1]);
+        em.voieRapide = em.parent < 0 && em.aLaMort < 0 && em.rendu.type !== 'trainee' && (em.cible
+          ? em.cible.arrivee === 'choree'
+          : em.forces.every(function (f) { return f.type === 'gravite' || (f.type === 'trainee' && !f.quadratique); }));
         return em;
       }
 
@@ -898,7 +1054,7 @@
         rendu_calque: {
           bloom: nombre(rc.bloom, 'rendu_calque.bloom', 0.6),
           seuil_bloom: nombre(rc.seuil_bloom, 'rendu_calque.seuil_bloom', 1),
-          tons: choix(rc.tons, { douce: 1, aces: 1 }, 'rendu_calque.tons', 'douce'),
+          tons: choix(rc.tons, { douce: 1, aces: 1, neutre: 1 }, 'rendu_calque.tons', 'douce'),
         },
         capacite: emetteurs.reduce(function (s, e) { return s + e.capacite; }, 0),
         fin: emetteurs.reduce(function (s, e) { return Math.max(s, e.fin); }, 0),
@@ -921,6 +1077,10 @@
     TRAINEE_MAX: TRAINEE_MAX,
     SALVES_MAX: SALVES_MAX,
     CAPACITE_MAX: CAPACITE_MAX,
+    DENSITE: DENSITE,
+    DENSITE_MAX: DENSITE_MAX,
+    MORCEAUX_MIN: MORCEAUX_MIN,
+    MORCEAUX_MAX: MORCEAUX_MAX,
     SCHEMA: SCHEMA,
     ErreurRecette: ErreurRecette,
     resoudre: resoudre,
