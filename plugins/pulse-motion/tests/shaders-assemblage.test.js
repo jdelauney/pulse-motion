@@ -76,3 +76,31 @@ test('assemblage : erreurs des shaders du déroulé nommées, page produite', ()
     assert.equal(a.ok, true, 'la page est quand même produite');
   }
 });
+
+const MODULE = 'fn force(p: Particule, t: f32, zone: vec4f) -> vec2f { return vec2f(R.poussee, 0.0); }\n';
+const RECETTE = { version: 1, nom: 'pousse', parametres: { poussee: { defaut: 20, min: 0, max: 100 } },
+  emetteurs: [{ nom: 'e', naissance: { debit: 20, vie: [1, 1] }, modules: { force: 'poussee-x' } }] };
+
+test('assemblage : modules des recettes attachés, sources gardées, erreurs nommées', () => {
+  const { dir, biblio } = projet(() => {});
+  ecrire(dir, 'shaders/poussee-x.json', { version: 1, nom: 'poussee-x', usage: 'module-force', parametres: { poussee: { defaut: 5, min: 0, max: 100 } } });
+  ecrire(dir, 'shaders/poussee-x.wgsl', MODULE);
+  ecrire(dir, 'effets/pousse.json', RECETTE);
+  ecrire(dir, 'scenes/a.html', '<section data-scene="a"><div data-effet="pousse" data-reglages="poussee: 40" data-dur="2"></div></section>');
+  const a = assembler({ dossier: dir, dossierStyles: STYLES, dossierEffets: EFFETS, dossierShaders: biblio, ecrire: false });
+  assert.deepEqual(a.erreurs.filter((e) => e.gravite === 'erreur'), []);
+  const em = a.donnees.effets[0].effet.emetteurs[0];
+  assert.equal(em.voieRapide, false);
+  assert.equal(em.modulesWGSL.force.appel, 'pmForce_force');
+  assert.match(em.modulesWGSL.force.wgsl, /const pmForce_R_poussee: f32 = 40\.0;/);
+  assert.deepEqual(Object.keys(a.donnees.modules), ['poussee-x']);
+  assert.equal(a.donnees.modules['poussee-x'].code, MODULE);
+  assert.equal(a.donnees.modules['poussee-x'].json.usage, 'module-force');
+
+  ecrire(dir, 'effets/pousse.json', { ...RECETTE, emetteurs: [{ ...RECETTE.emetteurs[0], modules: { force: 'voile' } }] });
+  const b = assembler({ dossier: dir, dossierStyles: STYLES, dossierEffets: EFFETS, dossierShaders: biblio, ecrire: false });
+  const e = b.erreurs.find((x) => x.regle === 'usage-incompatible');
+  assert.ok(e, JSON.stringify(b.erreurs));
+  assert.match(e.message, /^Scène « a » : Effet « pousse », émetteur « e », module force « voile » : ce shader est un « fond »/);
+  assert.match(b.html, /data-pm-effet-erreur=/);
+});

@@ -147,6 +147,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   const obstacles = [];
   const shaders = [];
   const chargerShader = chargeurShaders(projet, dossierShaders);
+  const sourcesModules = {};
   for (const scene of deroule.scenes) {
     const fichier = cheminDansProjet(projet, scene.fichier);
     let html = null;
@@ -169,9 +170,10 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     const { html: sansScripts, scripts } = S.extraireScripts(html);
     const { html: avecTextes, manquants } = S.injecterTextes(sansScripts, scene.textes, scene.ajustements);
     manquants.forEach((cle) => erreurs.push({ regle: 'texte-manquant', gravite: 'erreur', scene: scene.id, message: `Scène « ${scene.id} » : data-texte="${cle}" n'a pas de texte dans le déroulé.` }));
-    const { html: avecEffets, effets: effetsScene, erreurs: erreursEffets } = preparerEffets(avecTextes, {
-      scene: scene.id, projet, bibliotheque: dossierEffets, charte: charte.couleurs, premierIndex: effets.length, dureeTemps: dureeTemps(deroule),
+    const { html: avecEffets, effets: effetsScene, erreurs: erreursEffets, modules: modulesScene } = preparerEffets(avecTextes, {
+      scene: scene.id, projet, bibliotheque: dossierEffets, charte: charte.couleurs, premierIndex: effets.length, dureeTemps: dureeTemps(deroule), chargerShader,
     });
+    Object.assign(sourcesModules, modulesScene);
     effets.push(...effetsScene);
     erreurs.push(...erreursEffets);
     const { html: avecShaders, shaders: shadersScene, erreurs: erreursShaders } = preparerShaders(avecEffets, {
@@ -265,6 +267,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     obstacles,
     obstaclesVideo: video.obstacles,
     shaders,
+    modules: sourcesModules,
   };
 
   // Sous-titres : cartons en temps absolus (minutage des scènes avec leurs voix), fichiers SRT et VTT.
