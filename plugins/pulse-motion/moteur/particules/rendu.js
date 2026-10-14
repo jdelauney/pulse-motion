@@ -5,7 +5,8 @@
  *                                     résout l'ensemble des images illisibles (URL data:)
  *   .cible(canvas)                    cible HDR, niveaux de bloom, copie lisible, contexte du canvas
  *   .oublierCible(canvas)             libère la cible (scène masquée) ; .cible la recrée au retour
- *   .dessiner(cible, liste, o)        liste : [{ sim, i, delta }] ; o : { largeurCqh, dureeImage, bloom, seuil, tons, couches? } ;
+ *   .dessiner(cible, liste, o)        liste : [{ sim, i, delta }] ; o : { largeurCqh, dureeImage, bloom, seuil, tons, couches?, fonds? } ;
+ *                                     fonds : [(passe) => void] fonds par shader (P6), dessinés dans la cible HDR en premier ;
  *                                     pose cible.vide (rien à dessiner) ; couches : [{ tampon (f32, cqh), debut (case),
  *                                     repere, genre (type d'obstacle), couleur [r, v, b, a], flou (cqh) }] couches héritées
  *                                     des obstacles de la vidéo, dessinées sous les particules
@@ -842,7 +843,8 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
       const { device } = this;
       const enc = device.createCommandEncoder();
       const couches = o.couches || [];
-      cible.vide = liste.length === 0 && couches.length === 0;
+      const fonds = o.fonds || [];
+      cible.vide = liste.length === 0 && couches.length === 0 && fonds.length === 0;
 
       // 1. Tri des émetteurs en mélange alpha (clé z croissante : du plus loin au plus proche).
       const aTrier = liste.filter(({ sim, i }) => this.estTrie(sim.emetteurs[i]));
@@ -865,6 +867,8 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
 
       // 2. Particules dans la cible HDR.
       const rp = enc.beginRenderPass({ colorAttachments: [{ view: cible.vueHdr, loadOp: 'clear', storeOp: 'store', clearValue: [0, 0, 0, 0] }] });
+      // Fonds et auras par shader (P6) : sous les couches héritées et les particules du calque.
+      fonds.forEach((dessinerFond) => dessinerFond(rp));
       // Couches héritées d'abord : les particules de l'effet se dessinent dessus.
       couches.forEach((k) => {
         const c = this.couche(k.tampon, k.debut);
