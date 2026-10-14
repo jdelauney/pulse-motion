@@ -117,3 +117,51 @@ await envoyer({ webgpu: true, ecartAB, ecartAC });`,
   assert.equal(r.ecartAB, 0);
   assert.ok(r.ecartAC > 5, 'un autre instant change l\'image');
 });
+
+test('fond : erreur de compilation : panneau situé, autres fonds dessinés, export refusé', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const r = await page({
+    scene: '<section data-scene="a"><div data-shader="casse" data-start="4" data-dur="1"></div><div data-shader="aplat" data-calque="avant"></div></section>',
+    script: `
+await M.seek(1);
+const p = document.querySelector('[data-shader="casse"] > .pm-effet-panneau');
+let refus = null;
+try { await M.particules.verifierExport(); } catch (e) { refus = e.message; }
+let capture = null;
+try { await M.particules.preparerCapture(); } catch (e) { capture = e.message; }
+await envoyer({ webgpu: true, panneau: p && p.textContent, erreurs: M.shaders.erreurs(), refus, capture,
+  aplat: px(await M.particules.lirePixels('a', 'avant'), 10, 10), decrire: M.shaders.decrire('a').map((d) => [d.nom, d.actif]) });`,
+  });
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.match(r.panneau, /^Fond non affiché : Shader « casse » \(shaders\/casse\.wgsl\) ne compile pas : ligne 2, colonne \d+ : /);
+  assert.equal(r.erreurs.length, 1);
+  assert.equal(r.erreurs[0].erreurs[0].ligne, 2);
+  assert.equal(r.erreurs[0].usage, 'fond');
+  assert.match(r.refus, /^Export refusé : Shader « casse »/, 'refusé même hors de la fenêtre du fond');
+  assert.match(r.capture, /Shader « casse »/);
+  proche(r.aplat, [255, 0, 0, 255], 1, 'l\'autre fond reste dessiné');
+  assert.deepEqual(r.decrire, [['casse', false], ['aplat', true]]);
+});
+
+test('fond : capture (image du calque avec son fond) et réglages de l\'atelier sans rechargement', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const r = await page({
+    scene: '<section data-scene="a"><div data-shader="aplat"></div></section>',
+    script: `
+await M.seek(1);
+const r0 = px(await M.particules.lirePixels('a', 'arriere'), 10, 10);
+const canvas = document.querySelector('canvas[data-pm-calque="arriere"]');
+await M.particules.preparerCapture();
+const image = canvas.__pmImage;
+await M.shaders.regler('a', 0, { teinte: [0, 0, 1, 1], opacite: 0.5 });
+const r1 = px(await M.particules.lirePixels('a', 'arriere'), 10, 10);
+let inconnu = null;
+try { await M.shaders.regler('a', 5, {}); } catch (e) { inconnu = e.message; }
+await envoyer({ webgpu: true, r0, r1, png: typeof image === 'string' && image.length > 200, inconnu });`,
+  });
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  proche(r.r0, [255, 0, 0, 255], 1, 'avant le réglage');
+  proche(r.r1, [0, 0, 128, 128], 2, 'bleu à demi opaque, prémultiplié');
+  assert.equal(r.png, true, 'le calque d\'un fond seul n\'est pas « vide » à la capture');
+  assert.match(r.inconnu, /Fond 5 de la scène « a » non affiché/);
+});

@@ -982,6 +982,10 @@
   }
 
   const SANS_GPU_EXPORT = 'Cette vidéo contient des effets de particules, qui demandent WebGPU : ouvrez l\'aperçu dans Chrome ou Edge récent pour l\'exporter.';
+  const SANS_GPU_SHADERS = 'Cette vidéo contient des shaders (fonds, transitions, post-traitements), qui demandent WebGPU : ouvrez l\'aperçu dans Chrome ou Edge récent pour l\'exporter.';
+
+  /** Vrai si la page a des calques (effets, fonds) ; la composition s'y ajoute au plan 5. */
+  function aDuTravail() { return etat.scenes.length > 0; }
 
   /** Pixels lus (prémultipliés) -> ImageData (non prémultipliée). */
   function versImageData(p) {
@@ -1030,10 +1034,12 @@
   /** Avant une capture foreignObject : l'image de chaque calque affiché, en PNG, sur son canvas.
    *  Pas de vidéo sans ses effets (spec §10) : en cas de refus, aucune image périmée ne reste. */
   async function preparerCapture() {
-    if (!etat.scenes.length) return;
+    if (!aDuTravail()) return;
     try {
       await etat.pret;
       if (!etat.gpu || !etat.rendu) refuser('WebGPU indisponible');
+      // Un shader qui ne compile pas : pas de vidéo sans lui (spec P6 §5).
+      if (etat.erreursShaders.length) refuser(etat.erreursShaders[0].message);
       // Après le travail soumis : les erreurs de mémoire de l'image courante sont connues.
       await etat.gpu.device.queue.onSubmittedWorkDone();
       const t = etat.t;
@@ -1167,8 +1173,11 @@
       return M.particules.lirePixels(idScene, calque).then((p) => createImageBitmap(versImageData(p)));
     },
     verifierExport() {
-      if (!etat.scenes.length) return Promise.resolve();
-      return etat.pret.then(() => { if (!etat.disponible) throw new Error(SANS_GPU_EXPORT); });
+      if (!aDuTravail()) return Promise.resolve();
+      return etat.pret.then(() => {
+        if (!etat.disponible) throw new Error(etat.scenes.some((sc) => sc.effets.length) ? SANS_GPU_EXPORT : SANS_GPU_SHADERS);
+        if (etat.erreursShaders.length) throw new Error('Export refusé : ' + etat.erreursShaders[0].message);
+      });
     },
     lireOrdre(idScene, ordre, emetteur) {
       const sc = trouver(idScene);
@@ -1183,6 +1192,16 @@
     decrire(idScene) {
       const sc = trouver(idScene);
       return sc ? sc.fonds.map((f) => ({ ordre: f.ordre, nom: f.donnee.nom, calque: f.calque, debut: f.debut, fin: f.fin, actif: !!f.shader, erreur: f.erreur })) : [];
+    },
+    async regler(idScene, ordre, valeurs) {
+      await etat.pret;
+      const sc = trouver(idScene);
+      const f = sc && sc.fonds.find((x) => x.ordre === ordre);
+      if (!f || !f.shader || !etat.gpu) throw new Error('Fond ' + ordre + ' de la scène « ' + idScene + ' » non affiché (balise en erreur, ou shader qui ne compile pas).');
+      etat.shaders.regler(f.shader, valeurs);
+      etat.rendu_t = null;
+      rendre(etat.t);
+      await etat.gpu.device.queue.onSubmittedWorkDone();
     },
   };
 
