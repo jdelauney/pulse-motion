@@ -4,6 +4,7 @@
  * differences(base, r)     plus petite recette dérivée d telle que fusionner(base, d) redonne r (atelier)
  * fusionner(base, ajout), egal(a, b)
  * analyserReglages(texte)  "nombre: 3000; couleur: accent" -> { valeurs, erreurs }
+ * valeursParametres(recette, reglages, charte, invalide) -> { nombres, couleurs (hex), erreurs }   (shaders, P6)
  * compiler(recette, o)     recette -> paramètres numériques pour le GPU (cqh, s de τ, radians,
  *                          RVB linéaire, tables de 64 valeurs, capacités)
  * SCHEMA                   description déclarative du format (atelier : formulaire ; compilateur : champs refusés)
@@ -1089,6 +1090,7 @@
     egal: egal,
     analyserReglages: analyserReglages,
     couleurLineaire: couleurLineaire,
+    valeursParametres: valeursParametres,
     compiler: compiler,
   };
 });
