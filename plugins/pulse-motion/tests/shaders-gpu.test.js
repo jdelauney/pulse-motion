@@ -125,3 +125,32 @@ await envoyer({ webgpu: true, ecartAA, ecartAB });`);
   assert.equal(r.ecartAA, 0, 'même instant, même image');
   assert.ok(r.ecartAB > 0.01, 'un autre instant change l\'image');
 });
+
+test('canaux : image de assets/ en iChannel2, bruit fixe en iChannel3, iChannel0 donné par l\'appelant', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const r = await page(`
+// Image de 2 × 1 : rouge à gauche, bleu à droite.
+const c2 = document.createElement('canvas');
+c2.width = 2; c2.height = 1;
+const ctx = c2.getContext('2d');
+ctx.fillStyle = '#ff0000'; ctx.fillRect(0, 0, 1, 1);
+ctx.fillStyle = '#0000ff'; ctx.fillRect(1, 0, 1, 1);
+const img = await sh.compiler(donnee('fn image(coord: vec2f) -> vec4f { return canal2(coord / iResolution.xy); }', { image: c2.toDataURL('image/png') }));
+const lImg = await dessiner(img.shader, PLEIN());
+const brt = await sh.compiler(donnee('fn image(coord: vec2f) -> vec4f { return canal3(vec2f(0.5, 0.5) / 256.0); }'));
+const lBrt = await dessiner(brt.shader, PLEIN());
+const tex = P.texelsBruit();
+// iChannel0 : une texture de l'appelant (vert opaque).
+const verte = device.createTexture({ size: [1, 1], format: 'rgba8unorm', usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST });
+device.queue.writeTexture({ texture: verte }, new Uint8Array([0, 255, 0, 255]), { bytesPerRow: 4 }, [1, 1]);
+const post = await sh.compiler(donnee('fn post(coord: vec2f) -> vec4f { return canal0(coord / iResolution.xy) + canal1(vec2f(0.5)); }', { usage: 'post' }));
+const lPost = await dessiner(post.shader, PLEIN(), [verte.createView(), null, null], 'composition');
+await envoyer({ webgpu: true, gauche: lImg(10, 45), droite: lImg(150, 45), bruit: lBrt(80, 45), attendu: Array.from(tex.slice(0, 4)).map((x) => Math.round(x / 255 * 1000) / 1000),
+  bruit2: Array.from(P.texelsBruit().slice(0, 16)), bruit1: Array.from(tex.slice(0, 16)), post: lPost(80, 45) });`);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.deepEqual(r.gauche.map((x) => Math.round(x * 100) / 100), [1, 0, 0, 1], 'rouge pur lu en linéaire');
+  assert.deepEqual(r.droite.map((x) => Math.round(x * 100) / 100), [0, 0, 1, 1]);
+  for (let i = 0; i < 4; i++) assert.ok(Math.abs(r.bruit[i] - r.attendu[i]) < 0.003, `bruit ${r.bruit} / ${r.attendu}`);
+  assert.deepEqual(r.bruit2, r.bruit1, 'même texture de bruit à chaque calcul');
+  assert.deepEqual(r.post.map((x) => Math.round(x * 100) / 100), [0, 1, 0, 1], 'iChannel0 de l\'appelant, iChannel1 transparent');
+});
