@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "nom": "plasma",
+  "usage": "fond",
+  "description": "Ondes colorées qui se croisent et circulent, autour d'une couleur de la charte : fond énergique (technologie, créativité).",
+  "parametres": {
+    "vitesse": { "defaut": 1, "min": 0, "max": 4 },
+    "echelle": { "defaut": 25, "min": 5, "max": 100 },
+    "contraste": { "defaut": 1, "min": 0.2, "max": 3 },
+    "couleur": { "defaut": "primaire", "type": "couleur" }
+  }
+}

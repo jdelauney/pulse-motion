@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "nom": "grille-neon",
+  "usage": "fond",
+  "description": "Grille lumineuse en perspective qui défile vers l'avant sous un horizon : fond rétro et numérique (jeu, futur, vitesse).",
+  "parametres": {
+    "pas": { "defaut": 8, "min": 2, "max": 30 },
+    "vitesse": { "defaut": 0.5, "min": 0, "max": 3 },
+    "eclat": { "defaut": 1.5, "min": 0.2, "max": 4 },
+    "couleur": { "defaut": "accent", "type": "couleur" }
+  }
+}

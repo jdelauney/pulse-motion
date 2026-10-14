@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "nom": "degrade-vivant",
+  "usage": "fond",
+  "description": "Dégradé entre deux couleurs de la charte dont l'axe tourne et ondule doucement : fond sobre qui évite l'image figée.",
+  "parametres": {
+    "vitesse": { "defaut": 0.15, "min": 0, "max": 1 },
+    "angle": { "defaut": 30, "min": -180, "max": 180 },
+    "couleur1": { "defaut": "primaire", "type": "couleur" },
+    "couleur2": { "defaut": "accent", "type": "couleur" }
+  }
+}
