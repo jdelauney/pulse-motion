@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "nom": "couleur-vitesse",
+  "usage": "module-couleur",
+  "description": "Module de couleur : la particule passe de la couleur « lent » au repos à la couleur « rapide » à pleine vitesse (étincelles qui refroidissent, flux).",
+  "parametres": {
+    "vitesse_max": { "defaut": 60, "min": 1, "max": 400 },
+    "lent": { "defaut": "primaire", "type": "couleur" },
+    "rapide": { "defaut": "accent", "type": "couleur" }
+  }
+}

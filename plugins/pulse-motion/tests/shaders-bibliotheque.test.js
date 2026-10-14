@@ -55,3 +55,19 @@ test('bibliothèque : transitions et post-traitements valides, réglables, origi
   assert.ok(lire('balayage-organique').json.parametres.douceur.min > 0);
   assert.ok(lire('vignettage').json.parametres.douceur.min > 0);
 });
+
+test('bibliothèque : modules valides et attachables à une recette', () => {
+  for (const usage of ['module-force', 'module-couleur', 'module-forme']) assert.equal(presents(usage).length, 1, usage);
+  verifier('module-force');
+  verifier('module-couleur');
+  verifier('module-forme');
+  const r = R.compiler({ version: 1, nom: 'essai', parametres: { tours: { defaut: 2, min: 0, max: 10 } },
+    emetteurs: [{ nom: 'e', naissance: { debit: 10, vie: [1, 1] }, modules: { force: 'spirale', couleur: 'couleur-vitesse', forme: 'etoile' } }] },
+    { dur: 1, graine: 1, charte: CHARTE });
+  assert.equal(r.ok, true, JSON.stringify(r.erreurs));
+  assert.deepEqual(S.attacherModules(r.effet, (n) => ({ ...lire(n), erreurs: [] }), CHARTE), []);
+  const m = r.effet.emetteurs[0].modulesWGSL;
+  assert.match(m.force.wgsl, /const pmForce_R_tours: f32 = 2\.0;/, 'tours de la recette repris par le module');
+  assert.equal(m.couleur.appel, 'pmCouleur_couleur');
+  assert.equal(m.forme.appel, 'pmForme_forme');
+});
