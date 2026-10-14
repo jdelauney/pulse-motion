@@ -9,8 +9,12 @@
  * P.WGSL_VOISINAGE module des noyaux du groupe
  * new P.Groupe(device, sim, def)   def : effet.groupes[g] ; sim : P.Simulation (emetteurs, tamponPas, largeurCqh, lireTampon)
  *   .noter(passe)          grains : position au début du pas (avant le pas des émetteurs)
- *   .executer(passe, n)    après le pas des émetteurs : corps, comptage, préfixe, rangement, tri (n : rang du pas dans le
- *                          lot, décalage n × 256 du tampon des pas)
+ *   .executer(passe, n)    après le pas des émetteurs : corps, comptage, préfixe, rangement, tri, solveur du type
+ *                          (SOLVEURS), rendu aux particules (n : rang du pas dans le lot, décalage n × 256 du tampon des pas)
+ * Solveurs (Jacobi, sommes dans l'ordre trié des 9 cellules voisines) : essaim (Reynolds), fluide (PBF), grains (PBD) ;
+ * positions de travail en ping-pong (résultat dans posA). Rendu aux particules : module « pm-rendre », ou, pour un émetteur
+ * à collisions, module des collisions de P3 augmenté (« rendreC » : correction arrêtée aux obstacles, fuite de l'essaim) ;
+ * grains soutenus et presque immobiles mis au repos.
  *   .lire() -> Promise<{ corps, cles, debuts, ordre, grille, membres }>   (tests)
  *   .detruire()
  * Corps du groupe : les cases des émetteurs membres à la suite (base de chacun : somme des capacités avant lui) ; indice
@@ -220,7 +224,229 @@ fn trier(@builtin(global_invocation_id) gid: vec3u) {
 }
 `;
 
-  P.WGSL_VOISINAGE = P.WGSL_COMMUN + WGSL_PAS + P.WGSL_GROUPE + WGSL_LIAISONS + WGSL_GRILLE;
+  // Bornes de vitesse et direction de repli (essaim ; rendu aux particules : fuite).
+  const WGSL_BORNER = /* wgsl */ `
+// Direction de repli d'une vitesse nulle, tirée du numéro de la particule.
+fn repli(n: u32) -> vec2f {
+  let a = f32(pcg(n ^ 0x9e3779b9u) >> 8u) / 16777216.0 * 6.2831853;
+  return vec2f(cos(a), sin(a));
+}
+
+// Vitesse bornée à [vmin, vmax] ; une vitesse nulle part dans la direction d.
+fn borner(v: vec2f, vmin: f32, vmax: f32, d: vec2f) -> vec2f {
+  let l = length(v);
+  if (l > vmax) { return v * (vmax / l); }
+  if (l < vmin) {
+    if (l > 1e-6) { return v * (vmin / l); }
+    return d * vmin;
+  }
+  return v;
+}
+`;
+
+  // Voisines : 9 cellules dans l'ordre des cellules (ligne par ligne), corps de chacune dans l'ordre trié.
+  const WGSL_VOISINS = /* wgsl */ `
+struct Plage { a: u32, b: u32 };
+
+// Corps dans la grille et dans une cellule non pleine : il a des voisines ce pas-ci.
+fn dansGrille(i: u32) -> bool {
+  let c = cles[i];
+  return c != AUCUN && debuts[c + 1u] - debuts[c] <= PLEINE;
+}
+
+// Plage (dans ordre) de la cellule voisine numéro v (0 à 8, de (−1, −1) à (1, 1) ligne par ligne) de la cellule c ; vide
+// hors de la grille ou pour une cellule pleine.
+fn plage(c: u32, v: u32) -> Plage {
+  let x = i32(c % GR.nx) + i32(v % 3u) - 1;
+  let y = i32(c / GR.nx) + i32(v / 3u) - 1;
+  if (x < 0 || y < 0 || x >= i32(GR.nx) || y >= i32(GR.ny)) { return Plage(0u, 0u); }
+  let w = u32(y) * GR.nx + u32(x);
+  let a = debuts[w];
+  let b = debuts[w + 1u];
+  if (b - a > PLEINE) { return Plage(0u, 0u); }
+  return Plage(a, b);
+}
+`;
+
+  // Essaim (Reynolds).
+  const WGSL_ESSAIM = /* wgsl */ `
+// Séparation (rayon R), alignement et cohésion (voisines vues dans le cône, à moins du rayon de vision), attraction vers
+// la cible (zone à τ1), vitesse bornée ; écart minimal R / 2 tenu par une correction de position (moitié de la moyenne
+// des recouvrements). Position finale : prédiction + (vitesse pilotée − vitesse prédite) × dt.
+@compute @workgroup_size(64)
+fn essaim(@builtin(global_invocation_id) gid: vec3u) {
+  let i = gid.x;
+  if (i >= GR.nCorps) { return; }
+  let ci = corps[i];
+  posE[i] = ci.pos;
+  vitesses[i] = ci.vel;
+  if (ci.membre == AUCUN) { return; }
+  let m = GR.m[ci.membre];
+  let R = m.c.w;
+  let vision = m.b.x;
+  let vmax = m.b.w;
+  var a = vec2f(0.0);
+  var pousse = vec2f(0.0);
+  var nPousse = 0.0;
+  if (dansGrille(i)) {
+    var sep = vec2f(0.0);
+    var vMoy = vec2f(0.0);
+    var pMoy = vec2f(0.0);
+    var nVus = 0.0;
+    var dir = vec2f(0.0);
+    if (dot(ci.vel, ci.vel) > 1e-8) { dir = normalize(ci.vel); }
+    for (var vc = 0u; vc < 9u; vc++) {
+      let pl = plage(cles[i], vc);
+      for (var k = pl.a; k < pl.b; k++) {
+        let j = ordre[k];
+        if (j == i) { continue; }
+        let cj = corps[j];
+        let d = ci.pos - cj.pos;
+        let l = length(d);
+        if (l < 1e-6 || l >= vision) { continue; }
+        let u = d / l;
+        if (l < R) { sep += u * (1.0 - l / R); }
+        if (l < 0.5 * R) {
+          pousse += u * (0.5 * R - l);
+          nPousse += 1.0;
+        }
+        // Cône de vision : direction de i vers j à moins du demi-angle de la vitesse de i (vitesse nulle : tout est vu).
+        if (dot(dir, dir) < 0.5 || dot(-u, dir) >= m.b.y) {
+          vMoy += cj.vel;
+          pMoy += cj.pos;
+          nVus += 1.0;
+        }
+      }
+    }
+    a = m.a.x * 8.0 * vmax / R * sep;
+    if (nVus > 0.0) {
+      a += m.a.y * 2.0 * (vMoy / nVus - ci.vel);
+      a += m.a.z * 2.0 * vmax * (pMoy / nVus - ci.pos) / vision;
+    }
+  }
+  if (m.c.z > 0.5) {
+    let d = P.zoneB.xy + P.zoneB.zw * m.c.xy - ci.pos;
+    let l = length(d);
+    if (l > 1e-6) { a += 2.0 * vmax * (d / l) * min(1.0, l / vision); }
+  }
+  let v = borner(ci.vel + a * P.dt, m.b.z, vmax, repli(ci.n));
+  var x = ci.pos + (v - ci.vel) * P.dt;
+  if (nPousse > 0.0) { x += 0.5 * pousse / nPousse; }
+  posE[i] = x;
+  vitesses[i] = v;
+}
+`;
+
+  // Rendu aux particules : déclarations et code communs aux deux modules.
+  const WGSL_RENDRE_DECL = /* wgsl */ `
+struct Limite { ok: bool, pos: vec2f, n: vec2f };
+const SEUIL_REPOS = 0.5;   // cqh/s : un grain soutenu plus lent que cela est mis au repos
+@group(0) @binding(15) var<uniform> GR: Groupe;
+@group(0) @binding(16) var<uniform> MB: Membre;
+@group(0) @binding(17) var<storage, read> corps: array<Corps>;
+@group(0) @binding(18) var<storage, read> posF: array<vec2f>;
+@group(0) @binding(19) var<storage, read> vitesses: array<vec2f>;
+@group(0) @binding(20) var<storage, read> anciennes: array<vec4f>;
+`;
+
+  const WGSL_RENDRE = /* wgsl */ `
+// Position au début du pas : notée avant le pas des émetteurs (même particule), sinon déduite de la prédiction.
+fn ancienneR(i: u32) -> vec2f {
+  let a = anciennes[i];
+  if (a.w > 0.5 && bitcast<u32>(a.z) == corps[i].n) { return a.xy; }
+  return corps[i].pos - corps[i].vel * P.dt;
+}
+
+// Résultat du voisinage rendu à la case s du membre : position et vitesse finales ; grain soutenu (la correction annule au
+// moins la moitié du déplacement prédit) et presque immobile depuis le début du pas : laissé à sa place, vitesse nulle ;
+// déplacement de correction arrêté aux obstacles ; fuite des obstacles (essaim).
+fn rendreCorps(s: u32) {
+  if (s >= MB.capacite) { return; }
+  let i = MB.base + s;
+  let c = corps[i];
+  if (c.membre == AUCUN) { return; }
+  var p = particules[s];
+  var x = posF[i];
+  var v = vitesses[i];
+  if (GR.genre == 2u) {
+    let a = ancienneR(i);
+    let prevu = c.pos - a;
+    if (dot(x - c.pos, prevu) < -0.5 * dot(prevu, prevu) && length(x - a) < SEUIL_REPOS * P.dt) {
+      x = a;
+      v = vec2f(0.0);
+    }
+  }
+  let l = limiter(c.pos, x, c.rayon);
+  x = l.pos;
+  if (l.ok) {
+    let vn = dot(v, l.n);
+    if (vn < 0.0) { v = v - vn * l.n; }
+  }
+  if (GR.genre == 0u) { v = fuir(x, v, c.rayon, GR.m[c.membre]); }
+  p.pos = x;
+  p.vel = v;
+  particules[s] = p;
+}
+`;
+
+  // Sans collisions actives : ni arrêt aux obstacles ni fuite.
+  const WGSL_RENDRE_SIMPLE = /* wgsl */ `
+const AUCUN = 0xffffffffu;
+@group(0) @binding(1) var<storage, read_write> particules: array<Particule>;
+@group(0) @binding(4) var<uniform> P: Pas;
+
+fn limiter(p0: vec2f, p1: vec2f, r: f32) -> Limite { return Limite(false, p1, vec2f(0.0)); }
+fn fuir(x: vec2f, v: vec2f, r: f32, m: ParamsMembre) -> vec2f { return v; }
+
+@compute @workgroup_size(64)
+fn rendre(@builtin(global_invocation_id) gid: vec3u) { rendreCorps(gid.x); }
+`;
+
+  // Avec collisions actives : ajouté au module des collisions de P3 (ses liaisons 0, 1, 4, 11 à 14, ses fonctions).
+  const WGSL_RENDRE_OBSTACLES = /* wgsl */ `
+// Déplacement de correction de p0 (hors des obstacles après le pas des émetteurs) à p1 : arrêté au premier obstacle touché
+// (repères à τ1 aux deux bouts : obstacles immobiles le temps de la correction), replacé hors de la surface.
+fn limiter(p0: vec2f, p1: vec2f, r: f32) -> Limite {
+  if (eu(140u) != 1u) { return Limite(false, p1, vec2f(0.0)); }
+  let t = chercher(p0, p1, P.tau1, true, r);
+  if (!t.ok) { return Limite(false, p1, vec2f(0.0)); }
+  let B = cadresB[t.o];
+  let n = normalize(tourner(B, t.n));
+  return Limite(true, versMonde(B, t.l) + n * MARGE, n);
+}
+
+// Fuite (essaim) : un obstacle vu devant, à moins du rayon de vision, détourne la vitesse le long de sa normale, d'autant
+// plus qu'il est proche (fuite × vmax / vision × (1 − t) × dt) ; vitesse bornée de nouveau.
+fn fuir(x: vec2f, v: vec2f, r: f32, m: ParamsMembre) -> vec2f {
+  let l = length(v);
+  if (eu(140u) != 1u || m.a.w <= 0.0 || l < 1e-6) { return v; }
+  let t = chercher(x, x + v / l * m.b.x, P.tau1, true, r);
+  if (!t.ok) { return v; }
+  let n = normalize(tourner(cadresB[t.o], t.n));
+  return borner(v + n * (m.a.w * m.b.w / m.b.x * (1.0 - t.t) * P.dt), m.b.z, m.b.w, v / l);
+}
+
+@compute @workgroup_size(64)
+fn rendreC(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_index) li: u32) {
+  if (li < Mo.n) {
+    let r = repere(li, P.tau1);
+    cadresA[li] = r;
+    cadresB[li] = r;
+  }
+  workgroupBarrier();
+  rendreCorps(gid.x);
+}
+`;
+
+  /** Code du module de rendu aux particules : sans collisions (« pm-rendre »), ou module des collisions de P3 augmenté. */
+  function codeRendre(collisions) {
+    const commun = P.WGSL_GROUPE + WGSL_RENDRE_DECL + WGSL_BORNER + WGSL_RENDRE;
+    if (!collisions) return P.WGSL_COMMUN + WGSL_PAS + commun + WGSL_RENDRE_SIMPLE;
+    return P.WGSL_MODULE_COLLISIONS() + commun + WGSL_RENDRE_OBSTACLES;
+  }
+  P.codeRendreInteractions = codeRendre;
+
+  P.WGSL_VOISINAGE = P.WGSL_COMMUN + WGSL_PAS + P.WGSL_GROUPE + WGSL_LIAISONS + WGSL_GRILLE + WGSL_BORNER + WGSL_VOISINS + WGSL_ESSAIM;
 
   // Liaisons de chaque noyau (disposition explicite : 8 tampons de stockage au plus chacune). Liaison 0 : décalage dynamique.
   const NOYAUX = {
@@ -230,6 +456,7 @@ fn trier(@builtin(global_invocation_id) gid: vec3u) {
     prefixe: [1, 6, 7],
     ranger: [1, 5, 6, 7, 8],
     trier: [1, 7, 8],
+    essaim: [0, 1, 4, 5, 7, 8, 10, 12],
   };
   P.NOYAUX_VOISINAGE = NOYAUX;
 
@@ -256,6 +483,46 @@ fn trier(@builtin(global_invocation_id) gid: vec3u) {
     parDevice.set(device, p);
     return p;
   }
+
+  // Rendu aux particules : un pipeline par variante (sans collisions, avec collisions), créé au premier besoin.
+  const parDeviceRendre = new WeakMap();
+  function pipelinesRendre(device, collisions) {
+    let p = parDeviceRendre.get(device);
+    if (!p) { p = {}; parDeviceRendre.set(device, p); }
+    const cle = collisions ? 'c' : 's';
+    if (p[cle]) return p[cle];
+    const C = GPUShaderStage.COMPUTE;
+    const entrees = [
+      { binding: 1, visibility: C, buffer: { type: 'storage' } },
+      { binding: 4, visibility: C, buffer: { type: 'uniform', hasDynamicOffset: true, minBindingSize: collisions ? 80 : 48 } },
+      { binding: 15, visibility: C, buffer: { type: 'uniform' } },
+      { binding: 16, visibility: C, buffer: { type: 'uniform' } },
+      { binding: 17, visibility: C, buffer: { type: 'read-only-storage' } },
+      { binding: 18, visibility: C, buffer: { type: 'read-only-storage' } },
+      { binding: 19, visibility: C, buffer: { type: 'read-only-storage' } },
+      { binding: 20, visibility: C, buffer: { type: 'read-only-storage' } },
+    ];
+    if (collisions) {
+      entrees.push(
+        { binding: 0, visibility: C, buffer: { type: 'read-only-storage' } },
+        { binding: 11, visibility: C, buffer: { type: 'uniform' } },
+        { binding: 12, visibility: C, texture: { sampleType: 'unfilterable-float', viewDimension: '2d-array' } },
+        { binding: 13, visibility: C, texture: { sampleType: 'float', viewDimension: '2d-array' } },
+        { binding: 14, visibility: C, sampler: { type: 'filtering' } });
+    }
+    const layout = device.createBindGroupLayout({ entries: entrees });
+    const module = device.createShaderModule({ label: collisions ? 'pm-rendre-collisions' : 'pm-rendre', code: codeRendre(collisions) });
+    p[cle] = {
+      layout,
+      pipeline: device.createComputePipeline({ layout: device.createPipelineLayout({ bindGroupLayouts: [layout] }), compute: { module, entryPoint: collisions ? 'rendreC' : 'rendre' } }),
+    };
+    return p[cle];
+  }
+
+  // Solveur de chaque type : dispatches entre le tri et le rendu aux particules (positions finales dans posA).
+  const SOLVEURS = {
+    essaim(g, passe, n, blocs) { g.lancer(passe, 'essaim', 'BA', null, blocs, n); },
+  };
 
   class Groupe {
     constructor(device, sim, def) {
@@ -342,14 +609,52 @@ fn trier(@builtin(global_invocation_id) gid: vec3u) {
       for (const m of this.membres) this.lancer(passe, 'noter', 'AB', m, Math.ceil(m.capacite / 64), 0);
     }
 
-    /** Voisinage du pas n du lot : corps, comptage, préfixe, rangement, tri. */
+    /** Pas n du lot : voisinage (corps, comptage, préfixe, rangement, tri), solveur du type, rendu aux particules. */
     executer(passe, n) {
       const cellules = Math.ceil(this.grille.n / 64);
+      const blocs = Math.ceil(this.nCorps / 64);
       this.lancer(passe, 'effacer', 'AB', null, cellules, n);
       for (const m of this.membres) this.lancer(passe, 'rassembler', 'BA', m, Math.ceil(m.capacite / 64), n);
       this.lancer(passe, 'prefixe', 'AB', null, 1, n);
-      this.lancer(passe, 'ranger', 'AB', null, Math.ceil(this.nCorps / 64), n);
+      this.lancer(passe, 'ranger', 'AB', null, blocs, n);
       this.lancer(passe, 'trier', 'AB', null, cellules, n);
+      SOLVEURS[this.def.type](this, passe, n, blocs);
+      for (const m of this.membres) {
+        const r = pipelinesRendre(this.device, m.e.collisions);
+        passe.setPipeline(r.pipeline);
+        passe.setBindGroup(0, this.liaisonRendre(m, r), [n * 256]);
+        passe.dispatchWorkgroups(Math.max(1, Math.ceil(m.capacite / 64)));
+      }
+    }
+
+    /** Liaisons du rendu aux particules d'un membre ; avec collisions, ressources du monde de la simulation (P3). */
+    liaisonRendre(m, r) {
+      const cle = 'rendre|' + m.rang;
+      let g = this.liaisons.get(cle);
+      if (!g) {
+        const sim = this.sim;
+        const entrees = [
+          { binding: 1, resource: { buffer: m.e.particules } },
+          { binding: 4, resource: { buffer: sim.tamponPas, size: m.e.collisions ? 80 : 48 } },
+          { binding: 15, resource: { buffer: this.uniforme } },
+          { binding: 16, resource: { buffer: m.uniforme } },
+          { binding: 17, resource: { buffer: this.corps } },
+          { binding: 18, resource: { buffer: this.posA } },
+          { binding: 19, resource: { buffer: this.vitesses } },
+          { binding: 20, resource: { buffer: this.anciennes } },
+        ];
+        if (m.e.collisions) {
+          entrees.push(
+            { binding: 0, resource: { buffer: m.e.params } },
+            { binding: 11, resource: { buffer: sim.uniformeMonde } },
+            { binding: 12, resource: sim.vueReperes },
+            { binding: 13, resource: sim.monde.formes ? sim.monde.formes.vue : sim.pc.vueSdfVide },
+            { binding: 14, resource: sim.pc.lisse });
+        }
+        g = this.device.createBindGroup({ layout: r.layout, entries: entrees });
+        this.liaisons.set(cle, g);
+      }
+      return g;
     }
 
     /** Voisinage du dernier pas (tests) ; ordre réduit aux places écrites ce pas-ci (au-delà : restes de pas antérieurs). */
