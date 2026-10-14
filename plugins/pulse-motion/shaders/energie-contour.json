@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "nom": "energie-contour",
+  "usage": "fond",
+  "description": "Arcs lumineux qui courent le long du contour d'un élément (data-ancre) : puissance, idée qui s'allume, élément actif.",
+  "debord": 6,
+  "parametres": {
+    "vitesse": { "defaut": 1, "min": 0, "max": 4 },
+    "epaisseur": { "defaut": 0.8, "min": 0.1, "max": 4 },
+    "eclat": { "defaut": 2, "min": 0.2, "max": 5 },
+    "couleur": { "defaut": "primaire", "type": "couleur" }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "nom": "nebuleuse",
+  "usage": "fond",
+  "description": "Nuages de bruit fractal qui dérivent lentement, en deux couleurs de la charte : fond d'ambiance calme (espace, rêverie, idée).",
+  "parametres": {
+    "vitesse": { "defaut": 0.2, "min": 0, "max": 2 },
+    "echelle": { "defaut": 30, "min": 5, "max": 100 },
+    "densite": { "defaut": 1, "min": 0, "max": 2 },
+    "couleur1": { "defaut": "primaire", "type": "couleur" },
+    "couleur2": { "defaut": "accent", "type": "couleur" }
+  }
+}
