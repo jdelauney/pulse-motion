@@ -76,3 +76,51 @@ await envoyer({ webgpu: true, erreurs: await P.verifierForce(device, DONNEES.for
   assert.ok(r.erreurs[0].colonne >= 1);
   assert.deepEqual(r.juste, []);
 });
+
+test('modules de couleur et de forme : couleur remplacée, alpha du motif donné par le module', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const rendu = { texture: 'disque-doux', melange: 'alpha' };
+  const avec = effet([{ nom: 'e', naissance: UN, rendu, modules: { couleur: 'vert', forme: 'carre' } }]);
+  const sans = effet([{ nom: 'e', naissance: UN, rendu }]);
+  const r = await page({ avec, sans }, `
+const canvas = document.createElement('canvas');
+canvas.width = 1777; canvas.height = 1000;
+document.body.appendChild(canvas);
+const rendu = new P.Rendu(device, gpu.format);
+const cible = rendu.cible(canvas);
+const OPTIONS = { largeurCqh: 177.7, dureeImage: 1 / 30, bloom: 0, seuil: 1, tons: 'neutre' };
+async function image(fx) {
+  const sim = new P.Simulation(device, fx, null, null);
+  const d = sim.avancer(0.5, zones);
+  rendu.dessiner(cible, [{ sim, i: 0, delta: d[0] }], OPTIONS);
+  const p = await rendu.lirePixels(cible);
+  rendu.oublier(sim);
+  sim.detruire();
+  const px = (x, y) => Array.from(p.donnees.slice((y * p.largeur + x) * 4, (y * p.largeur + x) * 4 + 4));
+  // Particule de 20 cqh (200 px) centrée en (888, 500) : uv = 0,25 à 25 px du centre, 0,75 à 75 px.
+  return { centre: px(890, 500), pres: px(913, 500), loin: px(963, 500) };
+}
+await envoyer({ webgpu: true, avec: await image(DONNEES.avec), sans: await image(DONNEES.sans), variantes: rendu.variantes.size });`);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.ok(r.avec.centre[1] >= 250 && r.avec.centre[0] <= 3 && r.avec.centre[3] >= 250, `vert opaque au centre : ${r.avec.centre}`);
+  assert.ok(r.avec.pres[3] >= 250, `dans le carré (uv 0,25) : ${r.avec.pres}`);
+  assert.equal(r.avec.loin[3], 0, 'hors du carré (uv 0,75) : rien');
+  assert.ok(r.sans.loin[3] > 10, `sans module : disque doux encore visible à uv 0,75 (${r.sans.loin})`);
+  assert.ok(r.sans.centre[0] > 200 && r.sans.centre[1] > 200, 'sans module : blanc');
+  assert.equal(r.variantes, 1, 'une variante pour la combinaison couleur + forme');
+});
+
+test('modules du rendu : erreurs situées dans le fichier du module, un message par effet', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const casse = effet([{ nom: 'e', naissance: UN, modules: { couleur: 'rouge-casse' } }]);
+  const force = effet([{ nom: 'e', naissance: UN, modules: { force: 'casse-f' } }]);
+  const juste = effet([{ nom: 'e', naissance: UN, modules: { couleur: 'vert', forme: 'carre' } }]);
+  const r = await page({ casse, force, juste }, `
+const rendu = new P.Rendu(device, gpu.format);
+const m = await rendu.verifierModules([DONNEES.casse, DONNEES.force, DONNEES.juste]);
+await envoyer({ webgpu: true, messages: [DONNEES.casse, DONNEES.force, DONNEES.juste].map((fx) => m.get(fx) || null) });`);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.match(r.messages[0], /^Shader « rouge-casse » \(shaders\/rouge-casse\.wgsl\) ne compile pas : ligne 2, colonne \d+ : /);
+  assert.match(r.messages[1], /^Shader « casse-f » \(shaders\/casse-f\.wgsl\) ne compile pas : ligne 2/);
+  assert.equal(r.messages[2], null);
+});
