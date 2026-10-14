@@ -263,7 +263,7 @@ Rendu `fluide` (dans `rendu`) : une nappe lisse au lieu de points.
 
 - Obstacles : les `collisions` (réponse `rebond` ou `mourir`) s'appliquent aux trois types ; les grains forment eux-mêmes leur tas : ni `poser` ni `empiler` avec `interactions`.
 - Coût : jusqu'à 100 000 particules par émetteur en essaim, 60 000 en fluide ou en grains ; un fluide ou des grains coûtent bien plus que des particules simples : partir des réglages de la bibliothèque.
-- Déterminisme : l'image ne dépend que de l'instant (aperçu et export identiques).
+- Déterminisme : dans une même sortie (aperçu, export rapide ou export fidèle), l'image ne dépend que de l'instant, quel que soit l'ordre des retours en arrière, et deux exports du même mode sont identiques. D'une sortie à l'autre, un essaim, un fluide ou des grains gardent la même allure, mais pas forcément la même image au pixel près : la mise en page diffère d'un millième de cqh selon la taille de la page, les mesures arrondies au 1/64 de cqh l'absorbent presque toujours, et un écart restant est amplifié par les interactions.
 
 Contrôles : `interactions-invalides` (type inconnu, `avec` vers un émetteur absent, sans `interactions` ou d'un autre type, émetteur de fragmentation, réponse `poser`, grain plus grand que `rayon`), alerte `budget-interactions` (au-delà des limites par émetteur). Dans l'aperçu, la console signale une réfraction ignorée tant que la photographie de la scène n'est pas prête.
 
