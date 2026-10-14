@@ -20,6 +20,12 @@
  * situer(messages, assemblage) -> [{ ligne, colonne, message }]  erreurs de getCompilationInfo ramenées au fichier .wgsl
  *   (ligne null : hors du code de la personne) ; messageErreur(nom, fichier, erreurs) -> texte du panneau
  * empreinte(texte) -> 8 chiffres hexadécimaux (FNV-1a 32 bits)
+ * assemblerModule({ code, usage, nom, parametres, valeurs }) -> { nom, usage, wgsl, appel, empreinte, ligneCode, carte }
+ *   module de particules (force, couleur, forme) : noms déclarés au niveau du module et R.x préfixés (pmForce_, pmCouleur_,
+ *   pmForme_), réglages en constantes ; appel : nom de la fonction attendue préfixée ; carte : décalages de colonnes par ligne.
+ * situerModule(messages, module, debut) -> erreurs dans le fichier du module (debut : lignes avant le module dans le noyau)
+ * attacherModules(effet, charger, charte) -> [{ regle, message }]   em.modulesWGSL de chaque émetteur ; charger(nom) ->
+ *   { json, code, erreurs } | null ; réglages d'un module : défauts, remplacés par ceux de la recette de même nom.
  *
  * Module pur : chargé tel quel dans la page (global M.codeShader) et par Node (require). Dans la page, recette.js
  * (M.recette) n'est chargé que par l'atelier : il est cherché à l'appel des fonctions qui en ont besoin.
@@ -385,6 +391,140 @@
     return ('0000000' + h.toString(16)).slice(-8);
   }
 
+  // ---- Modules de particules ----
+
+  var PREFIXES = { 'module-force': 'pmForce_', 'module-couleur': 'pmCouleur_', 'module-forme': 'pmForme_' };
+  var CLES_MODULES = ['force', 'couleur', 'forme'];
+
+  /** Noms déclarés au niveau du module (hors des accolades) : fn, const, struct, alias, override, var. */
+  function declarations(nu) {
+    var profs = new Array(nu.length);
+    var p = 0;
+    for (var i = 0; i < nu.length; i++) {
+      profs[i] = p;
+      if (nu[i] === '{') p++;
+      else if (nu[i] === '}') p--;
+    }
+    var noms = [];
+    var re = /\b(?:fn|const|struct|alias|override|var)\b(?:\s*<[^>]*>)?\s+([A-Za-z_][A-Za-z0-9_]*)/g;
+    var m;
+    while ((m = re.exec(nu))) if (profs[m.index] === 0 && noms.indexOf(m[1]) < 0) noms.push(m[1]);
+    return noms;
+  }
+
+  /** Noms déclarés et R.x préfixés, ligne par ligne, hors commentaires et hors accès à un champ ; carte des colonnes. */
+  function reecrireModule(code, prefixe, noms) {
+    var lignes = code.split('\n');
+    var nus = sansCommentaires(code).split('\n');
+    var motifNoms = noms.length ? new RegExp('(^|[^.A-Za-z0-9_])(' + noms.join('|') + ')(?![A-Za-z0-9_])', 'g') : null;
+    var motifR = /(^|[^.A-Za-z0-9_])R\.([A-Za-z_][A-Za-z0-9_]*)/g;
+    var carte = [];
+    var texte = lignes.map(function (ligne, n) {
+      var nu = nus[n];
+      var morceaux = [];
+      var m;
+      if (motifNoms) {
+        motifNoms.lastIndex = 0;
+        while ((m = motifNoms.exec(nu))) {
+          var d = m.index + m[1].length;
+          morceaux.push({ debut: d, fin: d + m[2].length, texte: prefixe + m[2] });
+          motifNoms.lastIndex = d + m[2].length;
+        }
+      }
+      motifR.lastIndex = 0;
+      while ((m = motifR.exec(nu))) {
+        var d2 = m.index + m[1].length;
+        morceaux.push({ debut: d2, fin: d2 + 2 + m[2].length, texte: prefixe + 'R_' + m[2] });
+        motifR.lastIndex = d2 + 2 + m[2].length;
+      }
+      morceaux.sort(function (a, b) { return a.debut - b.debut; });
+      var r = '';
+      var pos = 0;
+      var decal = 0;
+      var points = [];
+      morceaux.forEach(function (k) {
+        if (k.debut < pos) return;
+        r += ligne.slice(pos, k.debut) + k.texte;
+        decal += k.texte.length - (k.fin - k.debut);
+        pos = k.fin;
+        points.push([r.length + 1, decal]);
+      });
+      carte.push(points);
+      return r + ligne.slice(pos);
+    });
+    return { texte: texte.join('\n'), carte: carte };
+  }
+
+  function flottant(x) {
+    var s = String(Number(x));
+    return /[.eE]/.test(s) ? s : s + '.0';
+  }
+
+  function assemblerModule(o) {
+    var prefixe = PREFIXES[o.usage];
+    if (!prefixe) throw new Error('assemblerModule : usage « ' + o.usage + ' » (module-force, module-couleur ou module-forme attendu).');
+    var code = String(o.code).replace(/\r\n?/g, '\n');
+    var r = reecrireModule(code, prefixe, declarations(sansCommentaires(code)));
+    var params = o.parametres || {};
+    var consts = Object.keys(params).map(function (k) {
+      var v = o.valeurs ? o.valeurs[k] : undefined;
+      if (Array.isArray(v)) return 'const ' + prefixe + 'R_' + k + ': vec4f = vec4f(' + v.map(flottant).join(', ') + ');';
+      return 'const ' + prefixe + 'R_' + k + ': f32 = ' + flottant(typeof v === 'number' ? v : 0) + ';';
+    });
+    var tete = '// Module « ' + o.nom + ' » (' + o.usage + ')\n' + (consts.length ? consts.join('\n') + '\n' : '');
+    var wgsl = tete + r.texte + '\n';
+    return { nom: o.nom, usage: o.usage, wgsl: wgsl, appel: prefixe + FONCTIONS[o.usage].nom, empreinte: empreinte(wgsl), ligneCode: compterLignes(tete), carte: r.carte };
+  }
+
+  function situerModule(messages, mod, debut) {
+    return (messages || []).filter(function (m) { return m.type === 'error'; }).map(function (m) {
+      var l = m.lineNum - debut - mod.ligneCode;
+      if (l < 1 || l > mod.carte.length) return { ligne: null, colonne: null, message: String(m.message) };
+      var d = 0;
+      mod.carte[l - 1].forEach(function (p) { if (p[0] <= m.linePos) d = p[1]; });
+      return { ligne: l, colonne: Math.max(1, m.linePos - d), message: String(m.message) };
+    });
+  }
+
+  function attacherModules(effet, charger, charte) {
+    var erreurs = [];
+    var reg = effet.reglages || { nombres: {}, couleurs: {} };
+    var possede = function (o, k) { return Object.prototype.hasOwnProperty.call(o, k); };
+    effet.emetteurs.forEach(function (em) {
+      em.modulesWGSL = { force: null, couleur: null, forme: null };
+      CLES_MODULES.forEach(function (cle) {
+        var nom = em.modules && em.modules[cle];
+        if (!nom) return;
+        var pre = 'Effet « ' + effet.nom + ' », émetteur « ' + em.nom + ' », module ' + cle + ' « ' + nom + ' »';
+        var src = charger(nom);
+        if (!src) { erreurs.push({ regle: 'shader-inconnu', message: pre + ' : shader introuvable (ni dans shaders/ du projet, ni dans la bibliothèque).' }); return; }
+        if (src.erreurs && src.erreurs.length) {
+          src.erreurs.forEach(function (e) { erreurs.push({ regle: e.regle, message: pre + ' : ' + e.message }); });
+          return;
+        }
+        if (src.json.usage !== 'module-' + cle) {
+          erreurs.push({ regle: 'usage-incompatible', message: pre + ' : ce shader est un « ' + src.json.usage + ' », « module-' + cle + ' » attendu.' });
+          return;
+        }
+        var herites = {};
+        Object.keys(src.json.parametres || {}).forEach(function (k) {
+          if (possede(reg.nombres, k)) herites[k] = reg.nombres[k];
+          else if (possede(reg.couleurs, k)) herites[k] = reg.couleurs[k];
+        });
+        var v = valeursShader(src.json, herites, charte);
+        if (v.erreurs.length) {
+          v.erreurs.forEach(function (e) { erreurs.push({ regle: 'reglage-invalide', message: pre + ' : ' + e.message }); });
+          return;
+        }
+        var mod = assemblerModule({ code: src.code, usage: 'module-' + cle, nom: nom, parametres: src.json.parametres || {}, valeurs: v.valeurs });
+        // Fichier du module dans les messages de compilation (sources de l'atelier : pas de « fichier »).
+        mod.fichier = src.fichier || 'shaders/' + nom + '.wgsl';
+        em.modulesWGSL[cle] = mod;
+      });
+    });
+    return erreurs;
+  }
+
   return {
     USAGES: USAGES,
     FONCTIONS: FONCTIONS,
@@ -404,5 +544,9 @@
     situer: situer,
     messageErreur: messageErreur,
     empreinte: empreinte,
+    CLES_MODULES: CLES_MODULES,
+    assemblerModule: assemblerModule,
+    situerModule: situerModule,
+    attacherModules: attacherModules,
   };
 });
