@@ -120,6 +120,16 @@
     return 100 * s.clientWidth / Math.max(1, s.clientHeight);
   }
 
+  /** Largeur en cqh donnée à la simulation d'un effet : pour les interactions (P5a), celle du format déclaré (16:9 :
+   *  1600/9), pas celle de la boîte mesurée, qui varie avec la taille de la page (aperçu, export rapide, export fidèle) :
+   *  la grille du voisinage en dépend, et les interactions amplifient tout écart. */
+  function largeurSimulation(fx) {
+    const ratio = M.donnees && M.donnees.format && M.donnees.format.ratio;
+    const m = typeof ratio === 'string' ? /^(\d+):(\d+)$/.exec(ratio) : null;
+    if (avecInteractions(fx) && m && +m[2] > 0) return 100 * m[1] / m[2];
+    return largeurScene();
+  }
+
   /** Réglages d'un calque : ceux de la recette au bloom le plus fort parmi ses effets (à égalité, le premier). */
   function reglagesCalque(effets, nom) {
     let rc = null;
@@ -229,7 +239,7 @@
       const propres = etat.obstacles.get(fx.info.id) || [];
       const voisins = voisinsDe(fx.info.id).flatMap((id) => (etat.obstacles.get(id) || []).filter((d) => d.video && d.el));
       // Jamais la section de l'effet : masquée à l'instant courant, elle n'a pas de boîte (largeur nulle).
-      fx.largeurCqh = largeurScene();
+      fx.largeurCqh = largeurSimulation(fx);
       fx.table = O.construireTable({ largeurCqh: fx.largeurCqh, solRecette: O.solDe(fx.effet), propres, voisins, video: M.donnees.obstaclesVideo || [], effet: fx.effet });
       O.attacherFormes(fx.table, couchePour);
       fx.reperes = new Map();
@@ -391,7 +401,7 @@
     const mesures = { scenes: new Set() };
     const m = monde(f);
     m.bases = basesPour(f, device);
-    const sim = new P.Simulation(device, f.effet, m, f.fragments, largeurScene());
+    const sim = new P.Simulation(device, f.effet, m, f.fragments, largeurSimulation(f));
     sim.avancer(Math.max(0, (t - f.debut) * f.info.rythme - 1e-6), zonesDe(f, mesures));
     const c = sim.contributionVideo();
     sim.detruire();
@@ -674,6 +684,22 @@
     return [(r.left - s.left) * k, (r.top - s.top) * k, r.width * k, r.height * k];
   }
 
+  // Interactions (P5a) : zone et repères mesurés arrondis (positions et tailles au 1/64 de cqh, angles et échelles au
+  // 1/4096) : la mise en page diffère d'un millième de cqh selon la taille de la page (aperçu, export rapide, export
+  // fidèle) et les essaims, fluides et grains amplifient tout écart ; arrondies, les mesures sont les mêmes partout.
+  const arrondi = (v, q) => Math.round(v * q) / q;
+  function arrondirZone(z) { return z.map((v) => arrondi(v, 64)); }
+  function arrondirReperes(t) {
+    const O = M.obstacles;
+    for (let i = 0; i < t.length; i += O.REPERE) {
+      t[i] = arrondi(t[i], 64); t[i + 1] = arrondi(t[i + 1], 64); t[i + 2] = arrondi(t[i + 2], 4096);
+      t[i + 4] = arrondi(t[i + 4], 64); t[i + 5] = arrondi(t[i + 5], 64);
+      t[i + 6] = arrondi(t[i + 6], 4096); t[i + 7] = arrondi(t[i + 7], 4096);
+    }
+    return t;
+  }
+  const avecInteractions = (fx) => !!(fx.effet.groupes && fx.effet.groupes.length);
+
   function instantGrille(fx, g) {
     const info = fx.info;
     return Math.min(Math.max(fx.debut + g / P.GRILLE / info.rythme, info.debut), info.fin - 1e-6);
@@ -691,7 +717,11 @@
       mesures.scenes.add(fx.info.id);
       affichee(fx.section, () => {
         z = mesurer(fx);
-        if (avecReperes) fx.reperes.set(g, mesurerTable(fx, t, mesures));
+        if (avecInteractions(fx)) z = arrondirZone(z);
+        if (avecReperes) {
+          const r = mesurerTable(fx, t, mesures);
+          fx.reperes.set(g, avecInteractions(fx) ? arrondirReperes(r) : r);
+        }
         if (avecAncres) fx.ancres.set(g, mesurerAncres(fx));
       });
       fx.zones.set(g, z);
@@ -874,7 +904,7 @@
         if (!fx.sim) {
           const m = monde(fx);
           if (m) m.bases = basesPour(fx, device);
-          fx.sim = new P.Simulation(device, fx.effet, m, fx.fragments, largeurScene());
+          fx.sim = new P.Simulation(device, fx.effet, m, fx.fragments, largeurSimulation(fx));
           fx.sim.emetteurs.forEach((e) => etat.rendu.preparerEmetteur(e));
         }
         const deltas = fx.sim.avancer(tau, zonesDe(fx, mesures));
