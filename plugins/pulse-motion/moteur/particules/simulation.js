@@ -446,8 +446,12 @@ fn mourir(pIn: Particule, s: u32) -> Particule {
 
   // Fragments (P4), simulation seulement : naissance, tenue, libération, pilotage, mort.
   const WGSL_FRAGMENTS_SIM = /* wgsl */ `
-// Point local tenu d'un fragment : son pixel de l'ancre.
+// Point local tenu d'un fragment : son pixel de l'ancre, ou le centre de son éclat.
 fn pointTenu(n: u32) -> vec2f {
+  if (aFragment(F_ECLATS)) {
+    let b = eu(179u) + n * 36u;
+    return vec2f(ef(b), ef(b + 1u));
+  }
   return pixelF(n, 0u).pos;
 }
 
@@ -458,14 +462,27 @@ fn vitesseElement(l: vec2f, t: f32) -> vec2f {
 
 // Vitesse d'un fragment à sa libération : vitesse de départ de la recette (radiale : depuis le centre de l'ancre) et
 // vitesse de l'ancre.
+// Éclat : + impulsion radiale depuis le point d'impact, plus forte près de lui (1 − 0,6 d / diagonale), tirée dans
+// [0,8 ; 1,2].
 fn vitesseLiberation(n: u32, t: f32) -> vec2f {
   let r = repereElement(0u, t);
   let l = pointTenu(n);
-  return vitesseDepart(n, versMondeF(r, l), r.centre, naissanceVide()) + vitesseElement(l, t);
+  var v = vitesseDepart(n, versMondeF(r, l), r.centre, naissanceVide()) + vitesseElement(l, t);
+  if (aFragment(F_ECLATS)) {
+    let demi = vec2f(ef(164u), ef(165u));
+    let d = l - (vec2f(ef(172u), ef(173u)) - 0.5) * 2.0 * demi;
+    let ld = length(d);
+    var dir = vec2f(0.0, -1.0);
+    if (ld > 1e-6) { dir = d / ld; }
+    let force = ef(170u) * (1.0 - 0.6 * clamp(ld / max(length(2.0 * demi), 1e-6), 0.0, 1.0)) * (0.8 + 0.4 * alea(eu(5u), eu(6u), n, 23u));
+    v = v + tournerF(r.angle, dir) * force;
+  }
+  return v;
 }
 
-// Vitesse de rotation d'un fragment libéré : celle de la recette.
+// Vitesse de rotation d'un fragment libéré : celle de la recette (pixels), ou tirée dans ±rotation_max (éclats).
 fn vrotLiberation(n: u32) -> f32 {
+  if (aFragment(F_ECLATS)) { return (alea(eu(5u), eu(6u), n, 24u) * 2.0 - 1.0) * ef(171u); }
   return mix(ef(22u), ef(23u), alea(eu(5u), eu(6u), n, 10u));
 }
 
@@ -479,7 +496,12 @@ fn naitreFragment(p: ptr<function, Particule>, ne: Naissance) {
   (*p).vel = vitesseElement(l, ne.t);
   (*p).rot = r.angle;
   (*p).vrot = 0.0;
-  (*p).taille = ef(168u) * max(r.echelle.x, r.echelle.y);
+  if (aFragment(F_ECLATS)) {
+    // Éclat : disque englobant (collisions).
+    (*p).taille = 2.0 * ef(eu(179u) + n * 36u + 3u) * max(r.echelle.x, r.echelle.y);
+  } else {
+    (*p).taille = ef(168u) * max(r.echelle.x, r.echelle.y);
+  }
 }
 
 // Fragment tenu à sa place à τ (voie rapide).
@@ -966,6 +988,11 @@ fn collisionner(p: ptr<function, Particule>, c: ptr<function, Contact>, p0: vec2
     vNouv = vs + vtN - e * vn * n;
   }
   (*p).vel = vNouv;
+  if (aFragment(F_ECLATS)) {
+    // Éclat (disque englobant, moment d'inertie ½ m r²) : l'impulsion au point de contact −n r le fait aussi tourner.
+    let dv = vNouv - v;
+    (*p).vrot = (*p).vrot - 2.0 * (n.x * dv.y - n.y * dv.x) / max(rayon, 1e-4);
+  }
   (*p).pos = materiel(B, m) + normalize(tourner(B, t.n)) * MARGE + (vNouv - vs) * (1.0 - t.t) * duree;
 }
 
@@ -1209,6 +1236,17 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
     return b;
   }
 
+  /** Photographie de l'ancre (éclats) en texture sRGB prémultipliée, comme les images de assets/ (rendu, liaison 6). */
+  function creerPhoto(device, image) {
+    const texture = device.createTexture({
+      size: [image.width, image.height],
+      format: 'rgba8unorm-srgb',
+      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+    });
+    device.queue.copyExternalImageToTexture({ source: image }, { texture, premultipliedAlpha: true }, [image.width, image.height]);
+    return { texture, vue: texture.createView() };
+  }
+
   const parDevice = new WeakMap();
   function pipelinesPour(device) {
     let p = parDevice.get(device);
@@ -1339,6 +1377,7 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
             ? device.createBuffer({ size: capacite * em.rendu.longueur * 8, usage: U.STORAGE | U.COPY_SRC | U.COPY_DST })
             : null,
           uniformeRendu: device.createBuffer({ size: 48, usage: U.UNIFORM | U.COPY_DST }),
+          photo: frag && frag.image ? creerPhoto(device, frag.image) : null,
         };
       });
       // Fragments : repères de l'ancre et de l'élément visé, écrits dans leur tampon E au fil des pas (assurerAncres).
@@ -1720,7 +1759,10 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
     }
 
     detruire() {
-      this.emetteurs.forEach((e) => [e.params, e.tables, e.particules, e.morts, e.contacts, e.historique, e.uniformeRendu, e.uniformeEval].forEach((b) => b && b.destroy()));
+      this.emetteurs.forEach((e) => {
+        [e.params, e.tables, e.particules, e.morts, e.contacts, e.historique, e.uniformeRendu, e.uniformeEval].forEach((b) => b && b.destroy());
+        if (e.photo) e.photo.texture.destroy();
+      });
       this.instantanes.forEach((copie) => {
         copie.forEach((c) => [c.particules, c.historique, c.contacts].forEach((b) => b && b.destroy()));
         if (copie.hauteurs) copie.hauteurs.destroy();
