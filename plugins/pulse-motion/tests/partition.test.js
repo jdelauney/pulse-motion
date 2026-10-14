@@ -13,7 +13,7 @@ test('catalogue : instruments, douze bruitages, sons de transition, six ambiance
   assert.deepEqual(Object.keys(AMBIANCES).sort(), ['calme', 'corporate', 'entrainant', 'inspirant', 'suspense', 'tech']);
 });
 
-test('catalogue : son d'une transition, nommée ou par shader (bibliothèque, ou souffle pour un shader du projet)', () => {
+test("catalogue : son d'une transition, nommée ou par shader (bibliothèque, ou souffle pour un shader du projet)", () => {
   const C = require('../moteur/synthe/catalogue.js');
   assert.equal(C.sonTransition('fondu'), 'souffle');
   assert.equal(C.sonTransition('aucune'), null);

@@ -190,7 +190,7 @@ await envoyer({ webgpu: true, images });` });
   assert.ok(pendant.some((x) => x.compose), 'la composition prend le relais');
 });
 
-test('composition : aperçu, images des calques réduites à la demi-résolution de la photographie avant l'encodage', async (t) => {
+test("composition : aperçu, images des calques réduites à la demi-résolution de la photographie avant l'encodage", async (t) => {
   if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
   const r = await page({ fondA: '<div data-shader="degrade-vivant"></div>', script: `
 await M.seek(2.5);
