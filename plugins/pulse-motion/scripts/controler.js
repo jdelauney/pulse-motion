@@ -30,6 +30,7 @@ const CATALOGUE = require('../moteur/synthe/catalogue.js');
 const { appliquerCorrections } = require('./lib/corriger.js');
 const { controlerRendu } = require('./lib/rendu-controle.js');
 const { aDesShaders, compilerShadersGPU } = require('./lib/shaders-gpu.js');
+const { LIMITES_INTERACTIONS } = require('../moteur/particules/recette.js');
 const { EFFETS: EFFETS_LETTRES } = require('../moteur/lettres.js');
 const { analyserCamera } = require('../moteur/camera.js');
 const { analyserTemps } = require('../moteur/temps.js');
@@ -357,6 +358,15 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
       const total = effets.reduce((n, e) => n + e.effet.capacite, 0);
       if (total > SEUILS.budgetParticules) {
         problemes.push({ regle: 'budget-particules', gravite: 'alerte', scene: s.id, message: `Scène « ${s.id} » : jusqu'à ${total} particules en même temps (au-delà de ${SEUILS.budgetParticules}, l'aperçu ralentit) ; baisser « nombre » ou la durée de vie.` });
+      }
+      // Interactions (P5a) : au-delà de la limite de son type, un émetteur dépasse le temps de simulation d'une image.
+      for (const e of effets) {
+        for (const em of e.effet.emetteurs) {
+          if (!em.interactions) continue;
+          const limite = LIMITES_INTERACTIONS[em.interactions.type];
+          if (em.capacite <= limite) continue;
+          problemes.push({ regle: 'budget-interactions', gravite: 'alerte', scene: s.id, message: `Scène « ${s.id} » : l'effet « ${e.effet.nom} », émetteur « ${em.nom} » (${em.interactions.type}), peut compter ${em.capacite} particules ; au-delà de ${limite} par émetteur, la simulation des interactions dépasse son temps (aperçu saccadé). Baisser « nombre », « debit » ou la durée de vie.` });
+        }
       }
       const lus = scenesLues[s.id];
       const balisesEffet = lus.elements.filter((e) => e.effet !== undefined);
