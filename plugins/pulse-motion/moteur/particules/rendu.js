@@ -1151,6 +1151,32 @@ fn fsNappe(@builtin(position) pos: vec4f) -> @location(0) vec4f {
       return r.groupe;
     }
 
+    /** Photographie d'une scène (réfraction des fluides) en texture sRGB prémultipliée, lue en linéaire ; gardée par clé et
+     *  réutilisée (même vue) tant que sa taille ne change pas. -> GPUTextureView */
+    photo(cle, bitmap) {
+      const { device } = this;
+      let p = this.photos.get(cle);
+      if (!p || p.largeur !== bitmap.width || p.hauteur !== bitmap.height) {
+        if (p) p.texture.destroy();
+        const texture = device.createTexture({
+          size: [bitmap.width, bitmap.height],
+          format: 'rgba8unorm-srgb',
+          usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+        });
+        p = { texture, vue: texture.createView(), largeur: bitmap.width, hauteur: bitmap.height };
+        this.photos.set(cle, p);
+      }
+      device.queue.copyExternalImageToTexture({ source: bitmap }, { texture: p.texture, premultipliedAlpha: true }, [bitmap.width, bitmap.height]);
+      return p.vue;
+    }
+
+    oublierPhoto(cle) {
+      const p = this.photos.get(cle);
+      if (!p) return;
+      p.texture.destroy();
+      this.photos.delete(cle);
+    }
+
     dessiner(cible, liste, o) {
       const { device } = this;
       const enc = device.createCommandEncoder();
