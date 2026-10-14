@@ -1073,7 +1073,18 @@ fn collisionner(p: ptr<function, Particule>, c: ptr<function, Contact>, p0: vec2
     let dv = vNouv - v;
     (*p).vrot = (*p).vrot - 2.0 * (n.x * dv.y - n.y * dv.x) / max(rayon, 1e-4);
   }
-  (*p).pos = materiel(B, m) + normalize(tourner(B, t.n)) * MARGE + (vNouv - vs) * (1.0 - t.t) * duree;
+  let depart = materiel(B, m) + normalize(tourner(B, t.n)) * MARGE;
+  (*p).pos = depart + (vNouv - vs) * (1.0 - t.t) * duree;
+  // Reste du pas après le rebond : arrêté au second obstacle touché (coin d'une cuve : paroi puis sol), sans quoi la
+  // particule entre dans le second et n'en ressort plus (départ dedans : aucun contact).
+  let t2 = chercher(depart, (*p).pos, tc, false, rayon);
+  if (t2.ok) {
+    let B2 = cadresB[t2.o];
+    let n2 = normalize(tourner(B2, t2.n));
+    (*p).pos = versMonde(B2, t2.l) + n2 * MARGE;
+    let vn2 = dot((*p).vel, n2);
+    if (vn2 < 0.0) { (*p).vel = (*p).vel - vn2 * n2; }
+  }
 }
 
 // Particule posée : elle suit son point d'appui ; fondu puis mort après repos_apres ; repart si l'obstacle disparaît.
