@@ -133,7 +133,7 @@ envoyer({ webgpu: true, nA: d[0].nA, a: d[0].a.length / 4, opaques, demiA: d[0].
 const { mesurerPage } = require('../scripts/lib/page-mesures.js');
 const { trouverNavigateur } = require('../scripts/lib/navigateur.js');
 
-test('page sans WebGPU : photographies contrôlées (ancre-vide, photographie-trop-grande), aucun élément caché', { skip: !trouverNavigateur() && 'Chrome ou Edge introuvable' }, async () => {
+test('page sans WebGPU : photographies contrôlées (ancre-vide, photographie-trop-grande), raccords seulement dans la page de contrôle', { skip: !trouverNavigateur() && 'Chrome ou Edge introuvable' }, async () => {
   const dir = copierProjet('projet-particules');
   modifierDeroule(dir, (d) => { d.scenes[0].textes = { titre: 'A' }; });
   ecrire(dir, 'effets/desint.json', DESINT);
@@ -148,19 +148,27 @@ test('page sans WebGPU : photographies contrôlées (ancre-vide, photographie-tr
   const a = assembler({ dossier: dir, dossierStyles: STYLES, dossierEffets: EFFETS, ecrire: false });
   const html = a.html.replace('<head>', '<head><script>window.__PM_SANS_GPU__ = true;</script>');
   const mesure = await mesurerPage({ html, navigateur: trouverNavigateur(), script: `
+    // Aperçu sans WebGPU : rien de caché (l'élément reste visible, l'effet n'est pas affiché).
+    await M.seek(1.5);
+    const cachesApercu = Array.from(document.querySelectorAll('.pm-fragment-cache')).map((e) => e.id);
+    // Page de contrôle (photosVides appelé) : raccords posés selon t comme dans la vidéo exportée.
     const photos = await M.particules.photosVides();
     await M.seek(1.5);
     const caches = Array.from(document.querySelectorAll('.pm-fragment-cache')).map((e) => e.id);
+    await M.seek(0.5);
+    const cachesAvant = Array.from(document.querySelectorAll('.pm-fragment-cache')).map((e) => e.id);
     const donnees = M.particules.donneesFragments('s', 1);
     const panneau = (document.querySelector('[data-effet] > .pm-effet-panneau') || {}).textContent || '';
-    return { photos, caches, nA: donnees && donnees[0].nA, panneau, alertes: M.particules.alertes };` });
+    return { photos, cachesApercu, caches, cachesAvant, nA: donnees && donnees[0].nA, panneau, alertes: M.particules.alertes };` });
   assert.equal(mesure.erreur, undefined, mesure.erreur);
   const m = mesure.resultat;
   assert.deepEqual(m.photos.map((p) => [p.regle, p.element]), [['ancre-vide', 'vide'], ['photographie-trop-grande', 'grand']]);
   assert.match(m.photos[0].message, /Scène « s », effet « desint » : rien à photographier : « #vide » n'a aucun pixel visible à 1 s ; l'effet n'est pas affiché\./);
   assert.match(m.photos[1].message, /« #grand » a plus d'un million de pixels opaques : densité portée à 4 \(une particule pour 4 pixels\)\./);
   assert.equal(m.nA, 512 * 512, 'densité 4 : photographie de 512 × 512');
-  assert.deepEqual(m.caches, [], 'sans WebGPU, aucun élément caché');
+  assert.deepEqual(m.cachesApercu, [], 'aperçu sans WebGPU : aucun élément caché');
+  assert.deepEqual(m.caches, ['grand'], 'contrôle : élément remplacé par ses particules caché ; ancre vide (effet désactivé) laissée');
+  assert.deepEqual(m.cachesAvant, [], "contrôle : rien de caché avant l'effet");
   assert.ok(m.alertes.includes(m.photos[1].message));
 });
 
