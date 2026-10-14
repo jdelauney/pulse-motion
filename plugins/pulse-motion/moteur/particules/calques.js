@@ -686,7 +686,9 @@
 
   // Interactions (P5a) : zone et repères mesurés arrondis (positions et tailles au 1/64 de cqh, angles et échelles au
   // 1/4096) : la mise en page diffère d'un millième de cqh selon la taille de la page (aperçu, export rapide, export
-  // fidèle) et les essaims, fluides et grains amplifient tout écart ; arrondies, les mesures sont les mêmes partout.
+  // fidèle) et les essaims, fluides et grains amplifient tout écart ; arrondies, les mesures sont presque toujours les mêmes
+  // partout (pas toujours : une valeur proche d'une frontière d'arrondi peut tomber de part et d'autre ; même allure, pas
+  // même image garantie d'une sortie à l'autre, voir la référence).
   const arrondi = (v, q) => Math.round(v * q) / q;
   function arrondirZone(z) { return z.map((v) => arrondi(v, 64)); }
   function arrondirReperes(t) {
