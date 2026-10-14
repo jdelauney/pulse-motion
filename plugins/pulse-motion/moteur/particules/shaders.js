@@ -80,6 +80,7 @@
       const T = GPUTextureUsage;
       const texture = this.device.createTexture({ size: [bitmap.width, bitmap.height], format: 'rgba8unorm-srgb', usage: T.TEXTURE_BINDING | T.COPY_DST | T.RENDER_ATTACHMENT });
       this.device.queue.copyExternalImageToTexture({ source: bitmap }, { texture, premultipliedAlpha: true }, [bitmap.width, bitmap.height]);
+      bitmap.close();
       const vue = texture.createView();
       this.images.set(uri, vue);
       return vue;

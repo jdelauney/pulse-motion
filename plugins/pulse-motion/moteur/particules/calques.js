@@ -1002,14 +1002,15 @@
     return plan;
   }
 
-  /** Images des calques (particules, fonds) des scènes données, posées sur leurs canvas pour le figement (__pmImage). */
-  async function imagesCalques(ids) {
+  /** Images des calques (particules, fonds) des scènes données, posées sur leurs canvas pour le figement (__pmImage) ;
+   *  echelle < 1 (photographie de l'aperçu en demi-résolution) : réduites avant l'encodage PNG. */
+  async function imagesCalques(ids, echelle = 1) {
     for (const sc of etat.scenes) {
       if (ids.indexOf(sc.info.id) < 0) continue;
       for (const nom of Object.keys(sc.calques)) {
         const canvas = sc.calques[nom];
         const cible = canvas.__pmCible;
-        canvas.__pmImage = !etat.rendu || !cible ? null : cible.vide ? vide() : versDataURL(await etat.rendu.lirePixels(cible));
+        canvas.__pmImage = !etat.rendu || !cible ? null : cible.vide ? vide() : versDataURL(await etat.rendu.lirePixels(cible), echelle);
       }
     }
   }
@@ -1022,7 +1023,7 @@
     const k = exact ? 1 : 0.5;
     const L = Math.max(1, Math.round(scene.clientWidth * dpr * k));
     const H = Math.max(1, Math.round(scene.clientHeight * dpr * k));
-    await imagesCalques(plan.couches);
+    await imagesCalques(plan.couches, k);
     const promesses = plan.couches.map((id) => {
       const section = sectionDe(id);
       // Opacité de la transition CSS de la scène (fondu de repli compris), la règle pm-compose mise à part ; une
@@ -1035,7 +1036,7 @@
       const ph = photos[i];
       if (!ph.largeur || !etat.composition) continue;
       const bitmap = await createImageBitmap(new ImageData(new Uint8ClampedArray(ph.rgba), ph.largeur, ph.hauteur));
-      comp.photos.set(plan.couches[i], { vue: etat.composition.photo(plan.couches[i], bitmap), t, exact });
+      try { comp.photos.set(plan.couches[i], { vue: etat.composition.photo(plan.couches[i], bitmap), t, exact }); } finally { bitmap.close(); }
     }
     comp.faites++;
     const garder = new Set(plan.couches);
@@ -1228,12 +1229,18 @@
     return new ImageData(d, p.largeur, p.hauteur);
   }
 
-  function versDataURL(p) {
+  /** Pixels -> PNG en data: ; echelle < 1 : image réduite avant l'encodage (moins de travail sur le fil principal). */
+  function versDataURL(p, echelle = 1) {
     const c = document.createElement('canvas');
     c.width = p.largeur;
     c.height = p.hauteur;
     c.getContext('2d').putImageData(versImageData(p), 0, 0);
-    return c.toDataURL('image/png');
+    if (!(echelle < 1)) return c.toDataURL('image/png');
+    const r = document.createElement('canvas');
+    r.width = Math.max(1, Math.round(p.largeur * echelle));
+    r.height = Math.max(1, Math.round(p.hauteur * echelle));
+    r.getContext('2d').drawImage(c, 0, 0, r.width, r.height);
+    return r.toDataURL('image/png');
   }
 
   let imageVide = null;

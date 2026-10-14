@@ -26,7 +26,7 @@ const attendre = (ms) => new Promise((ok) => setTimeout(ok, ms));
 `;
 
 /** Deux scènes de 3 s : a (rouge), b (bleue) qui entre par « transition » ; deroule(d) complète le déroulé. */
-function pageComposition({ deroule = () => {}, script }) {
+function pageComposition({ deroule = () => {}, script, fondA = '' }) {
   const dir = copierProjet('projet-particules');
   modifierDeroule(dir, (d) => {
     d.scenes = [
@@ -36,7 +36,7 @@ function pageComposition({ deroule = () => {}, script }) {
     deroule(d);
   });
   for (const [nom, [usage, code]] of Object.entries(SHADERS)) { ecrire(dir, `shaders/${nom}.json`, { version: 1, nom, usage }); ecrire(dir, `shaders/${nom}.wgsl`, code); }
-  ecrire(dir, 'scenes/a.html', '<section data-scene="a"><div style="position:absolute;inset:0;background:#ff0000"></div></section>');
+  ecrire(dir, 'scenes/a.html', `<section data-scene="a"><div style="position:absolute;inset:0;background:#ff0000"></div>${fondA}</section>`);
   ecrire(dir, 'scenes/b.html', '<section data-scene="b"><div style="position:absolute;inset:0;background:#0000ff"></div></section>');
   const a = assembler({ dossier: dir, dossierStyles: STYLES, dossierEffets: EFFETS, ecrire: false });
   assert.deepEqual(a.erreurs.filter((e) => e.gravite === 'erreur'), []);
@@ -188,4 +188,19 @@ await envoyer({ webgpu: true, images });` });
   assert.deepEqual(coupes, [], 'aucune image de la transition avec B opaque hors composition');
   assert.ok(pendant.some((x) => !x.compose && x.opaciteB > 0 && x.opaciteB < 1), 'fondu CSS en attendant la photographie');
   assert.ok(pendant.some((x) => x.compose), 'la composition prend le relais');
+});
+
+test('composition : aperçu, images des calques réduites à la demi-résolution de la photographie avant l'encodage', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const r = await page({ fondA: '<div data-shader="degrade-vivant"></div>', script: `
+await M.seek(2.5);
+await attendre(300);
+const canvas = document.querySelector('section[data-scene="a"] canvas.pm-calque');
+const img = new Image();
+img.src = canvas.__pmImage;
+await img.decode();
+await envoyer({ webgpu: true, canvas: [canvas.width, canvas.height], image: [img.naturalWidth, img.naturalHeight], photos: M.shaders.composition().photos.map((x) => x.exact) });` });
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.deepEqual(r.photos, [false, false]);
+  assert.deepEqual(r.image, r.canvas.map((x) => Math.round(x / 2)), `image de ${r.image} pour un calque de ${r.canvas}`);
 });
