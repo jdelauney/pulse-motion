@@ -16,7 +16,7 @@ test('bibliothèque dans la page : raccord de « desintegrer », même image par
   fs.writeFileSync(path.join(dir, 'scenes', '01-s.html'), `<section data-scene="s">
   <style>@scope {
     h1, h2, h3, h4 { position: absolute; margin: 0; font: 900 14cqh/1 sans-serif; }
-    #titre { left: 10cqh; top: 8cqh; font-size: 18cqh; color: #e04020; }
+    #titre { left: 10cqh; top: 8cqh; color: #e04020; }
     #mot { left: 110cqh; top: 8cqh; color: #2080e0; }
     #avant { left: 10cqh; top: 40cqh; color: #20a040; }
     #apres { left: 110cqh; top: 40cqh; color: #a020c0; }
@@ -36,16 +36,15 @@ test('bibliothèque dans la page : raccord de « desintegrer », même image par
 </section>`);
   const a = assembler({ dossier: dir, dossierStyles: STYLES, dossierEffets: BIBLIOTHEQUE, ecrire: false });
   assert.deepEqual(a.erreurs.filter((e) => e.gravite === 'erreur'), []);
-  const html = a.html.replace('</body>', `<script>
+  // Scène de 1080 px de haut (résolution de sortie) : le calque, la référence et la photographie à la même échelle.
+  const html = a.html.replace('<head>', '<head><style>#pm-scene { width: 1920px !important; height: 1080px !important; flex: none !important; }</style>').replace('</body>', `<script>
 (async () => {
   const envoyer = (o) => fetch('/_resultat', { method: 'POST', body: JSON.stringify(o) });
   try {
     await M.particules.pret;
     if (!M.particules.disponible) return envoyer({ webgpu: false });
-    // Raccord : le titre photographié à sa place dans le calque « avant », puis le calque au premier pas de l'effet.
-    // Titre en 18cqh (comme fragments-page) : la référence est rastérisée à la taille du calque (521 px de haut sans
-    // fenêtre), les particules à celle de la sortie (1080) ; en 14cqh, les traits fins des lettres creusent l'écart à
-    // 2,4 % pour une seule différence de rastérisation (un bloc uni donne 0,1 %).
+    // Raccord : le titre (14cqh) photographié à sa place dans le calque « avant », puis le calque au premier pas de
+    // l'effet, à la résolution de sortie (scène de 1080 px : référence et particules rastérisées à la même échelle).
     await M.seek(0.9);
     const el = document.getElementById('titre');
     const section = el.closest('section');
@@ -77,7 +76,7 @@ test('bibliothèque dans la page : raccord de « desintegrer », même image par
     const detour = await lire(2.2);
     let alpha = 0;
     for (let i = 3; i < direct[0].donnees.length; i += 4) alpha = Math.max(alpha, direct[0].donnees[i]);
-    envoyer({ webgpu: true, ecart, egal: egal(direct, detour), alpha, collisions: M.particules.decrire('s').map((d) => d.collisions),
+    envoyer({ webgpu: true, ecart, hauteurCalque: canvas.height, egal: egal(direct, detour), alpha, collisions: M.particules.decrire('s').map((d) => d.collisions),
       panneaux: document.querySelectorAll('.pm-effet-panneau').length });
   } catch (e) { envoyer({ erreur: String(e && e.stack || e) }); }
 })();
@@ -87,6 +86,7 @@ test('bibliothèque dans la page : raccord de « desintegrer », même image par
   assert.equal(r.erreur, undefined, r.erreur);
   if (r.webgpu === false) return t.skip('WebGPU indisponible');
   assert.equal(r.panneaux, 0, 'tous les effets affichés');
+  assert.equal(r.hauteurCalque, 1080, 'calque à la résolution de sortie');
   assert.ok(r.ecart < 0.02, `desintegrer : écart moyen ${(r.ecart * 100).toFixed(2)} % au début`);
   assert.ok(r.alpha > 0, 'des particules à 2,2 s');
   assert.equal(r.egal, true, 'même image par deux chemins');
