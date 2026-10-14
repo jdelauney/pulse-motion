@@ -2,8 +2,9 @@
 'use strict';
 /* Pulse Motion – contrôles automatiques d'un projet vidéo, sans navigateur.
  *
- *   node scripts/controler.js <dossier-du-projet> [--sans-correction] [--sans-rendu]
+ *   node scripts/controler.js <dossier-du-projet> [--sans-correction] [--sans-rendu] [--gpu]
  *
+ * --gpu : compile aussi chaque shader et chaque module WGSL dans Chrome sans fenêtre avec WebGPU (shader-ne-compile-pas).
  * Contrôle aussi la vidéo rendue dans Chrome ou Edge sans fenêtre (débordements, chevauchements, cadre, marges,
  * zone des boutons en 9:16, logo, textes fugaces, mouvements rapides) ; sans navigateur : alerte rendu-non-verifie.
  * Écrit sortie/controle.json : { problemes: [{ regle, gravite: "erreur" | "alerte" | "info" (rien à corriger : la personne est prévenue), scene?, element?, message, correction? }],
@@ -28,6 +29,7 @@ const { calculerMinutage, CHEVAUCHEMENT } = require('../moteur/minutage.js');
 const CATALOGUE = require('../moteur/synthe/catalogue.js');
 const { appliquerCorrections } = require('./lib/corriger.js');
 const { controlerRendu } = require('./lib/rendu-controle.js');
+const { aDesShaders, compilerShadersGPU } = require('./lib/shaders-gpu.js');
 const { EFFETS: EFFETS_LETTRES } = require('../moteur/lettres.js');
 const { analyserCamera } = require('../moteur/camera.js');
 const { analyserTemps } = require('../moteur/temps.js');
@@ -438,10 +440,11 @@ function controler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
 }
 
 /**
- * controlerComplet({ dossier, dossierStyles?, dossierEffets?, ecrire?, corriger?, rendu?, navigateur? })
- * -> Promise<{ problemes, corrections, renduVerifie, fichier }> : contrôles rapides, corrections, puis vidéo rendue.
+ * controlerComplet({ dossier, dossierStyles?, dossierEffets?, ecrire?, corriger?, rendu?, gpu?, navigateur? })
+ * -> Promise<{ problemes, corrections, renduVerifie, fichier }> : contrôles rapides, corrections, vidéo rendue, puis (gpu)
+ * compilation réelle des shaders.
  */
-async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.join(RACINE, 'effets'), ecrire = true, corriger = true, rendu = true, navigateur }) {
+async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.join(RACINE, 'effets'), ecrire = true, corriger = true, rendu = true, gpu = false, navigateur }) {
   const projet = path.resolve(dossier);
   const r = controler({ dossier: projet, dossierStyles, dossierEffets, ecrire, corriger });
   let { problemes } = r;
@@ -476,6 +479,13 @@ async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.j
       }
     }
   }
+  if (gpu) {
+    const assemblage = assembler({ dossier: projet, dossierStyles, dossierEffets, ecrire: false });
+    if (assemblage.ok && aDesShaders(assemblage.donnees)) {
+      const g = await compilerShadersGPU({ html: assemblage.html, ...(navigateur !== undefined ? { navigateur } : {}) });
+      problemes = [...problemes, ...g.problemes];
+    }
+  }
   if (r.fichier) fs.writeFileSync(r.fichier, JSON.stringify({ problemes, corrections, renduVerifie }, null, 2));
   return { problemes, corrections, renduVerifie, fichier: r.fichier };
 }
@@ -484,10 +494,10 @@ if (require.main === module) {
   const args = process.argv.slice(2);
   const dossier = args.find((a) => !a.startsWith('--'));
   if (!dossier) {
-    console.error('Usage : node scripts/controler.js <dossier-du-projet> [--sans-correction] [--sans-rendu]');
+    console.error('Usage : node scripts/controler.js <dossier-du-projet> [--sans-correction] [--sans-rendu] [--gpu]');
     process.exit(2);
   }
-  controlerComplet({ dossier, corriger: !args.includes('--sans-correction'), rendu: !args.includes('--sans-rendu') }).then(({ problemes, corrections, renduVerifie, fichier }) => {
+  controlerComplet({ dossier, corriger: !args.includes('--sans-correction'), rendu: !args.includes('--sans-rendu'), gpu: args.includes('--gpu') }).then(({ problemes, corrections, renduVerifie, fichier }) => {
     const erreurs = problemes.filter((p) => p.gravite === 'erreur').length;
     const alertes = problemes.filter((p) => p.gravite === 'alerte').length;
     const informations = problemes.filter((p) => p.gravite === 'info').length;
