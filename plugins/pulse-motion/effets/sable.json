@@ -1,0 +1,94 @@
+{
+  "version": 1,
+  "nom": "sable",
+  "description": "Sable qui s'écoule depuis l'ancre et forme un vrai tas, qui s'écroule si son support bouge (grains) ; déclarer un sol ou un obstacle dessous (data-obstacle).",
+  "parametres": {
+    "nombre": {
+      "defaut": 3000,
+      "min": 200,
+      "max": 20000
+    },
+    "couleur": {
+      "defaut": "#d8b27a",
+      "type": "couleur"
+    },
+    "taille": {
+      "defaut": 1,
+      "min": 0.5,
+      "max": 2
+    },
+    "frottement": {
+      "defaut": 0.6,
+      "min": 0.2,
+      "max": 1.2
+    }
+  },
+  "rendu_calque": {
+    "bloom": 0,
+    "tons": "neutre"
+  },
+  "emetteurs": [
+    {
+      "nom": "grain",
+      "naissance": {
+        "debit": "nombre / dur",
+        "forme": {
+          "type": "ancre"
+        },
+        "vitesse": {
+          "direction": [
+            0,
+            1
+          ],
+          "cone": 20,
+          "valeur": [
+            2,
+            6
+          ]
+        },
+        "vie": [
+          "dur + 6",
+          "dur + 6"
+        ],
+        "taille": [
+          "0.6 * taille",
+          "0.8 * taille"
+        ]
+      },
+      "forces": [
+        {
+          "type": "gravite",
+          "valeur": 50
+        }
+      ],
+      "collisions": {
+        "cibles": [
+          "sol",
+          "murs",
+          "elements",
+          "formes"
+        ],
+        "reponse": "rebond",
+        "restitution": 0,
+        "frottement": 0.6
+      },
+      "interactions": {
+        "type": "grains",
+        "rayon": "0.8 * taille",
+        "frottement": {
+          "statique": "frottement",
+          "dynamique": "0.7 * frottement"
+        },
+        "restitution": 0.05
+      },
+      "vie": {
+        "couleur": "couleur"
+      },
+      "rendu": {
+        "type": "sprite",
+        "texture": "disque-doux",
+        "melange": "alpha"
+      }
+    }
+  ]
+}
