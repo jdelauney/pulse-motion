@@ -47,6 +47,7 @@
   var GROUPE_MAX = 8;          // émetteurs liés par « avec » (uniforme du groupe sur le GPU)
   var ITERATIONS_GRAINS = 6;   // itérations de contacts par sous-pas (deux sous-pas : plan 3)
   var LIMITES_INTERACTIONS = { essaim: 100000, fluide: 60000, grains: 60000 };
+  var PLEINE_VOISINAGE = 96;   // corps par cellule au-delà desquels la cellule est ignorée pour le pas (voisinage.js, PLEINE)
   var CODES = {
     forme: { point: 0, cercle: 1, anneau: 2, rectangle: 3, ligne: 4, ancre: 5, pixels: 6 },
     force: { gravite: 0, trainee: 1, vent: 2, turbulence: 3, attracteur: 4, vortex: 5, rappel: 6 },
@@ -1022,6 +1023,13 @@
           throw invalide(c + '.rayon', 'un grain doit tenir dans une cellule de voisinage : rayon ' + em.interactions.rayon + ' cqh sous la taille maximale ' +
             em.taille[1] + ' cqh ; augmenter « rayon » ou réduire « naissance.taille »');
         }
+        // Une cellule de voisinage (côté « rayon ») tient (rayon / taille)² grains tassés ; au-delà de PLEINE_VOISINAGE
+        // corps, elle est ignorée et ses grains passent les uns à travers les autres (marge de 1,2 pour un tas serré).
+        if (em.interactions.type === 'grains' && Math.pow(em.interactions.rayon / Math.max(em.taille[0], 1e-6), 2) > PLEINE_VOISINAGE / 1.2) {
+          throw invalide(c + '.rayon', 'rayon ' + em.interactions.rayon + ' cqh trop grand pour des grains de ' + em.taille[0] +
+            ' cqh : une cellule de voisinage en tiendrait plus de ' + PLEINE_VOISINAGE + ' (au-delà, ils passent les uns à travers les autres) ; garder « rayon » sous ' +
+            Math.floor(Math.sqrt(PLEINE_VOISINAGE / 1.2) * 10) / 10 + ' × la taille minimale (« rayon » proche de la taille maximale)');
+        }
       }
 
       /** Groupes de voisinage : composantes connexes des liens « avec » (un lien dans un seul sens suffit), membres dans
@@ -1322,6 +1330,7 @@
     GROUPE_MAX: GROUPE_MAX,
     ITERATIONS_GRAINS: ITERATIONS_GRAINS,
     LIMITES_INTERACTIONS: LIMITES_INTERACTIONS,
+    PLEINE_VOISINAGE: PLEINE_VOISINAGE,
     SCHEMA: SCHEMA,
     ErreurRecette: ErreurRecette,
     resoudre: resoudre,
