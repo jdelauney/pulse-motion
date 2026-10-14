@@ -256,3 +256,21 @@ test('bibliothèque : interactions (nuee, banc, lucioles, eau, miel, sable, neig
   }
   assert.ok(compiler('neige-lourde').effet.emetteurs[0].interactions.cohesion > 0, 'neige collante');
 });
+
+test('référence : section Interactions (types, champs du schéma, rendu fluide, limites, contrôles, bibliothèque)', () => {
+  const texte = fs.readFileSync(path.join(__dirname, '..', 'references', 'particules.md'), 'utf8');
+  const debut = texte.indexOf('## Interactions');
+  const fin = texte.indexOf('## Régler à l\'œil');
+  assert.ok(debut > texte.indexOf('## Fragmentation') && fin > debut, 'section Interactions après la fragmentation, avant l\'atelier');
+  const section = texte.slice(debut, fin);
+  const n = R.SCHEMA.champs.emetteurs.element.champs.interactions;
+  const champs = [...Object.keys(n.champs), ...Object.values(n.variantes.types).flatMap((v) => Object.keys(v.champs)), 'teinte', 'opacite', 'absorption', 'refraction', 'lissage'];
+  for (const c of champs) assert.ok(section.includes('`' + c + '`'), `champ « ${c} » documenté`);
+  for (const mot of ['"type": "fluide"', '`essaim`', '`grains`', 'interactions-invalides', 'budget-interactions', '100 000', '60 000', 'data-obstacle', '`poser`', '`empiler`']) {
+    assert.ok(section.includes(mot), `la section parle de « ${mot} »`);
+  }
+  for (const nom of ['nuee', 'banc', 'lucioles', 'eau', 'miel', 'sable', 'neige-lourde']) assert.ok(section.includes('`' + nom + '`'), nom);
+  assert.match(texte.split('## Interactions')[0], /voir « Interactions »/, 'la bibliothèque y renvoie');
+  const controles = fs.readFileSync(path.join(__dirname, '..', 'references', 'controles.md'), 'utf8');
+  for (const r of ['interactions-invalides', 'budget-interactions']) assert.match(controles, new RegExp('`' + r + '`'), r);
+});
