@@ -44,3 +44,14 @@ test('bibliothèque : fonds et auras valides, réglables, originaux', () => {
     assert.doesNotThrow(() => S.assemblerShader({ code, usage: 'fond', disposition: S.dispositionReglages(json.parametres || {}) }), nom);
   }
 });
+
+test('bibliothèque : transitions et post-traitements valides, réglables, originaux', () => {
+  assert.equal(presents('transition').length, 5);
+  assert.equal(presents('post').length, 4);
+  verifier('transition');
+  verifier('post');
+  // Bornes des smoothstep : bord et douceur jamais nuls.
+  assert.ok(lire('dissolution').json.parametres.bord.min > 0);
+  assert.ok(lire('balayage-organique').json.parametres.douceur.min > 0);
+  assert.ok(lire('vignettage').json.parametres.douceur.min > 0);
+});

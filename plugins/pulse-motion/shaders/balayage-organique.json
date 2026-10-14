@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "nom": "balayage-organique",
+  "usage": "transition",
+  "description": "Un front irrégulier traverse l'image et découvre la scène qui entre, comme une encre qui s'étale : transition vivante, plus douce qu'un balayage net.",
+  "parametres": {
+    "angle": { "defaut": 0, "min": -180, "max": 180 },
+    "douceur": { "defaut": 0.08, "min": 0.01, "max": 0.4 },
+    "echelle": { "defaut": 12, "min": 2, "max": 50 }
+  }
+}

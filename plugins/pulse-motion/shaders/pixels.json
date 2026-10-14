@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "nom": "pixels",
+  "usage": "transition",
+  "description": "L'image se pixelise jusqu'au milieu de la transition, change de scène, puis se dépixelise : univers numérique, jeu vidéo.",
+  "parametres": {
+    "taille_max": { "defaut": 12, "min": 1, "max": 50 }
+  }
+}
