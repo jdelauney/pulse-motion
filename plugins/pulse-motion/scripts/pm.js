@@ -4,7 +4,7 @@
  *
  *   pulse-motion etat <dossier> [--accord deroule|style|video] [--parcours rapide|accompagne]
  *   pulse-motion assembler <dossier>
- *   pulse-motion controler <dossier> [--sans-correction] [--sans-rendu]   contrôle ; corrige seul les cas sûrs
+ *   pulse-motion controler <dossier> [--sans-correction] [--sans-rendu] [--gpu]   contrôle ; corrige seul les cas sûrs
  *   pulse-motion apercu <dossier> [--port 4321] [--ouvrir]
  *   pulse-motion atelier [<recette>] [--dossier <d>]   atelier des effets de particules (page de l'aperçu) : régler, enregistrer
  *   pulse-motion historique sauvegarder|annuler <dossier>
@@ -118,7 +118,7 @@ function lancer(args) {
   console.error([
     'Usage : pulse-motion <commande> …',
     '  etat <dossier> [--accord deroule|style|video] [--parcours rapide|accompagne]',
-    '  assembler <dossier>      controler <dossier> [--sans-correction] [--sans-rendu]      apercu <dossier> [--port N] [--ouvrir]',
+    '  assembler <dossier>      controler <dossier> [--sans-correction] [--sans-rendu] [--gpu]      apercu <dossier> [--port N] [--ouvrir]',
     '  historique sauvegarder|annuler <dossier>',
     '  atelier [<recette>] [--dossier <dossier>]   atelier des effets de particules : régler à l\'œil, enregistrer dans effets/',
     '  exporter <dossier> [--qualite 1080p|720p] [--ips 30|60] [--rapide] [--avec-provisoire]       planche <dossier> [id1,id2]',
