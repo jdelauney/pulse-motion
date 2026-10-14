@@ -41,7 +41,7 @@ test('assemblage de deux segments sans réencodage ; image extraite et comparée
   assert.equal(F.ecartImages(uni(0, 0, 0, 10, 10), uni(0, 0, 0, 20, 10)), 1);
 });
 
-test('ecartImages : un motif décalé de plus d'un bloc compte ; un bruit de moyenne nulle se compense', () => {
+test("ecartImages : un motif décalé de plus d'un bloc compte ; un bruit de moyenne nulle se compense", () => {
   // 1920 × 1080 : blocs de 7 px. Bandes verticales de 24 px (64 / 192), décalées de 12 px ; bruit ±20 (graine fixe).
   const L = 1920;
   const H = 1080;
