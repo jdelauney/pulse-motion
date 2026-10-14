@@ -12,7 +12,8 @@
  *   valeurSaisie(texte) -> nombre | expression | undefined ; reglagesEnTexte({ nom: valeur }) -> 'nom: valeur; …'
  *   valeurNeuve(nœud) -> élément ajouté à une liste ; nouvelleRecette() -> recette de départ (un émetteur)
  *   limiter(fn, ms) -> fonction appelée au plus une fois par période, le dernier appel n'étant jamais perdu
- *   compilerPourPage(R, recette, options, textures) -> Promise<{ ok, effet, erreurs }>   textures de assets/ en data:
+ *   compilerPourPage(R, recette, options, textures, S?, sources?) -> Promise<{ ok, effet, erreurs }>   textures de assets/ en data: ;
+ *     modules WGSL attachés (S = M.codeShader ; sources : Map nom -> { json, code, fichier } de la page, ou demandées à l'aperçu)
  *   TYPES : types de nœuds pris en charge
  * Navigateur :
  *   construireFormulaire(conteneur, { schema, recette, surChangement(recette), masquer? }) -> { recette(), remplacer(r), marquer(erreurs), detruire() }
@@ -165,8 +166,21 @@ export function limiter(fn, ms) {
   };
 }
 
-/** Compile comme l'assembleur, puis pose les textures de assets/ (connues, ou demandées à l'aperçu). */
-export async function compilerPourPage(R, recette, options, textures) {
+let sourcesModules = null;
+
+/** Sources des modules WGSL connues de la page (M.donnees.modules), gardées pour les recompilations. */
+function sourcesPage() {
+  if (!sourcesModules) {
+    sourcesModules = new Map();
+    const m = globalThis.M && globalThis.M.donnees && globalThis.M.donnees.modules;
+    if (m) Object.keys(m).forEach((n) => sourcesModules.set(n, m[n]));
+  }
+  return sourcesModules;
+}
+
+/** Compile comme l'assembleur, puis pose les textures de assets/ (connues, ou demandées à l'aperçu) et le code des modules
+ *  WGSL (sources de la page, ou demandées à l'aperçu) ; S : M.codeShader (sans lui, les modules ne sont pas attachés). */
+export async function compilerPourPage(R, recette, options, textures, S = globalThis.M && globalThis.M.codeShader, sources = sourcesPage()) {
   const r = R.compiler(recette, options);
   if (!r.ok) return r;
   for (const em of r.effet.emetteurs) {
@@ -186,6 +200,23 @@ export async function compilerPourPage(R, recette, options, textures) {
       textures.set(em.rendu.textureFichier, uri);
     }
     em.rendu.textureImage = uri;
+  }
+  const avecModules = r.effet.emetteurs.some((em) => em.modules && (em.modules.force || em.modules.couleur || em.modules.forme));
+  if (avecModules && S) {
+    for (const em of r.effet.emetteurs) {
+      for (const k of S.CLES_MODULES) {
+        const n = em.modules[k];
+        if (!n || sources.has(n)) continue;
+        let src = null;
+        try {
+          const rep = await fetch(`/_pm/atelier/shader?nom=${encodeURIComponent(n)}`, { cache: 'no-store' });
+          if (rep.ok) src = await rep.json();
+        } catch (e) { src = null; }
+        sources.set(n, src);
+      }
+    }
+    const fautes = S.attacherModules(r.effet, (n) => sources.get(n) || null, options.charte || {});
+    if (fautes.length) return { ok: false, effet: null, erreurs: fautes.map((f) => ({ regle: f.regle, chemin: 'modules', message: f.message })) };
   }
   return r;
 }
