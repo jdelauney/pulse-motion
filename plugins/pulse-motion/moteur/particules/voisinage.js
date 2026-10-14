@@ -375,7 +375,10 @@ fn gradW(q: f32, u: vec2f) -> vec2f {
 }
 
 // PBF, étape 1 : densité ρ_i = 1 + Σ W (lue dans posL), contrainte C_i = ρ_i / ρ0 − 1 (dépression gardée à hauteur de
-// « tension »), multiplicateur λ_i = −C_i / (Σ |∇C|² + ε).
+// « tension », seulement pour une particule entourée d'au moins VOISINES_TENSION voisines : une particule isolée ou en
+// filet n'attire pas, sans quoi l'instabilité en traction creuse des boucles dans l'eau qui tombe), multiplicateur
+// λ_i = −C_i / (Σ |∇C|² + ε).
+const VOISINES_TENSION = 3u;
 @compute @workgroup_size(64)
 fn densite(@builtin(global_invocation_id) gid: vec3u) {
   if (gid.x >= GR.nCorps) { return; }
@@ -391,6 +394,7 @@ fn densite(@builtin(global_invocation_id) gid: vec3u) {
   var rho = 1.0;
   var gi = vec2f(0.0);
   var somme = 0.0;
+  var voisines = 0u;
   for (var vc = 0u; vc < 9u; vc++) {
     let pl = plage(cles[i], vc);
     for (var k = pl.a; k < pl.b; k++) {
@@ -400,6 +404,7 @@ fn densite(@builtin(global_invocation_id) gid: vec3u) {
       let r = length(d);
       let q = r / h;
       if (q >= 1.0) { continue; }
+      voisines += 1u;
       rho += noyauW(q);
       let g = gradW(q, direction(i, j, d, r)) / rho0;
       gi += g;
@@ -407,7 +412,7 @@ fn densite(@builtin(global_invocation_id) gid: vec3u) {
     }
   }
   var C = rho / rho0 - 1.0;
-  if (C < 0.0) { C = C * m.a.z; }
+  if (C < 0.0) { C = select(0.0, C * m.a.z, voisines >= VOISINES_TENSION); }
   lambdas[i] = -C / (somme + dot(gi, gi) + EPS_PBF);
 }
 
@@ -569,7 +574,8 @@ fn vitessesGrains(@builtin(global_invocation_id) gid: vec3u) {
   // Rendu aux particules : déclarations et code communs aux deux modules.
   const WGSL_RENDRE_DECL = /* wgsl */ `
 struct Limite { ok: bool, pos: vec2f, n: vec2f, f: f32 };
-const SEUIL_REPOS = 4.0;   // cqh/s : un grain soutenu plus lent que cela est mis au repos
+const SEUIL_REPOS = 2.0;   // cqh/s : un grain soutenu plus lent que cela est mis au repos (plus haut, des grains qui
+                           // glissent lentement sur un flanc étaient figés : frottement en plus, tas trop raide)
 @group(0) @binding(15) var<uniform> GR: Groupe;
 @group(0) @binding(16) var<uniform> MB: Membre;
 @group(0) @binding(17) var<storage, read> corps: array<Corps>;
