@@ -124,3 +124,53 @@ await envoyer({ webgpu: true, messages: [DONNEES.casse, DONNEES.force, DONNEES.j
   assert.match(r.messages[1], /^Shader « casse-f » \(shaders\/casse-f\.wgsl\) ne compile pas : ligne 2/);
   assert.equal(r.messages[2], null);
 });
+
+const fs = require('node:fs');
+const path = require('node:path');
+const { assembler } = require('../scripts/assembler.js');
+const { STYLES, EFFETS, copierProjet, modifierDeroule } = require('./aide/projet.js');
+
+test('page : module qui ne compile pas : effet désactivé, panneau, export refusé ; l\'atelier refuse la recette', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const dir = copierProjet('projet-particules');
+  const ecrire = (relatif, contenu) => {
+    fs.mkdirSync(path.dirname(path.join(dir, relatif)), { recursive: true });
+    fs.writeFileSync(path.join(dir, relatif), typeof contenu === 'string' ? contenu : JSON.stringify(contenu));
+  };
+  for (const n of ['casse-f', 'pousse-x']) { ecrire(`shaders/${n}.json`, SOURCES[n].json); ecrire(`shaders/${n}.wgsl`, SOURCES[n].code); }
+  const recette = (nom, force) => ({ version: 1, nom, emetteurs: [{ nom: 'e', naissance: { debit: 30, vie: [1, 1] }, modules: { force } }] });
+  ecrire('effets/casse.json', recette('casse', 'casse-f'));
+  ecrire('effets/pousse.json', recette('pousse', 'pousse-x'));
+  modifierDeroule(dir, (d) => { d.scenes = [{ id: 'a', fichier: 'scenes/a.html', duree: 4, textes: {} }]; });
+  ecrire('scenes/a.html', '<section data-scene="a"><div id="c" data-effet="casse" data-dur="3"></div><div data-effet="pousse" data-dur="3"></div></section>');
+  const a = assembler({ dossier: dir, dossierStyles: STYLES, dossierEffets: EFFETS, ecrire: false });
+  assert.deepEqual(a.erreurs.filter((e) => e.gravite === 'erreur'), []);
+  const casse = a.donnees.effets[0].effet;
+  const html = a.html.replace('</body>', `<script>
+(async () => {
+const envoyer = (o) => fetch('/_resultat', { method: 'POST', body: JSON.stringify(o) });
+try {
+  await M.pret;
+  await M.particules.pret;
+  if (!M.particules.disponible) { await envoyer({ webgpu: false }); return; }
+  await M.seek(1);
+  const p = document.querySelector('#c > .pm-effet-panneau');
+  let refus = null;
+  try { await M.particules.verifierExport(); } catch (e) { refus = e.message; }
+  let atelier = null;
+  try { await M.particules.remplacerEffet('a', 1, ${JSON.stringify(casse).replace(/</g, '\u003c')}); } catch (e) { atelier = e.message; }
+  await envoyer({ webgpu: true, panneau: p && p.textContent, refus, atelier, decrire: M.particules.decrire('a').map((d) => [d.nom, d.actif, !!d.desactive]),
+    erreurs: M.shaders.erreurs().map((e) => e.usage) });
+} catch (e) { envoyer({ erreur: String(e && e.stack || e) }); }
+})();
+</script>
+</body>`);
+  const r = JSON.parse(await executerPage(html));
+  assert.equal(r.erreur, undefined, r.erreur);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.match(r.panneau, /^Effet non affiché : Shader « casse-f » \(shaders\/casse-f\.wgsl\) ne compile pas : ligne 2/);
+  assert.match(r.refus, /^Export refusé : Shader « casse-f »/);
+  assert.match(r.atelier, /^Effet non affiché : Shader « casse-f »/);
+  assert.deepEqual(r.decrire, [['casse', false, true], ['pousse', true, false]]);
+  assert.deepEqual(r.erreurs, ['module']);
+});

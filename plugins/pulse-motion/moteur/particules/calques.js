@@ -67,6 +67,8 @@
  * Zone d'émission : boîte de l'ancre (ou de la balise data-effet) relative à la scène, en cqh,
  * mesurée sur une grille de 30 points par seconde de τ en rendant la scène à ces instants
  * (M.rendreScene) : elle ne dépend que de τ, jamais du chemin suivi pour arriver à t.
+ * Modules WGSL des recettes (P6) : compilés au démarrage du GPU (Rendu.verifierModules) ; un module qui ne compile pas désactive
+ * son effet (panneau, M.shaders.erreurs, usage « module ») ; l'atelier refuse une recette dont un module ne compile pas.
  * Navigateur seulement ; dépend de horloge, gpu, simulation, rendu.
  */
 (function (racine) {
@@ -1070,6 +1072,17 @@
     await etat.gpu.device.queue.onSubmittedWorkDone();
   }
 
+  /** Modules WGSL des recettes compilés une fois : un effet dont un module ne compile pas est désactivé ; export refusé. */
+  async function verifierModules(rendu) {
+    const echecs = await rendu.verifierModules(etat.scenes.flatMap((sc) => sc.effets.map((fx) => fx.effet)));
+    etat.scenes.forEach((sc) => sc.effets.forEach((fx) => {
+      const m = echecs.get(fx.effet);
+      if (!m) return;
+      etat.erreursShaders.push({ nom: fx.effet.nom, usage: 'module', scene: fx.info.id, message: m, erreurs: [] });
+      desactiver(fx, m);
+    }));
+  }
+
   function demarrerGPU() {
     const obtention = obtenirAvecGarde();
     obtention.then((gpu) => {
@@ -1091,7 +1104,7 @@
         return compilerShaders(gpu.device).then((compiler) => {
           etat.composition = new P.Composition(gpu.device, gpu.format, etat.shaders);
           return compilerComposition(compiler);
-        }).then(() => preparerFormes(gpu.device)).then(fragmentsPromis);
+        }).then(() => verifierModules(rendu)).then(() => preparerFormes(gpu.device)).then(fragmentsPromis);
       }).then(() => {
         etat.gpu = gpu;
         etat.rendu = rendu;
@@ -1286,6 +1299,8 @@
     if (!gpu || !etat.rendu) throw new Error(etat.raison || SANS_GPU);
     const illisibles = await etat.rendu.preparer([effet]);
     if (effet.emetteurs.some((em) => illisibles.has(em.rendu.textureImage))) throw new Error('Effet non affiché : texture illisible.');
+    const echecs = await etat.rendu.verifierModules([effet]);
+    if (echecs.size) throw new Error('Effet non affiché : ' + echecs.get(effet));
     liberer(fx);
     fx.effet = effet;
     fx.effetOrigine = effet;
