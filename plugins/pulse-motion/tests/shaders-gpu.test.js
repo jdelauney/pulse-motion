@@ -94,7 +94,7 @@ const c = await sh.compiler(donnee([
   'fn image(coord: vec2f) -> vec4f {',
   '  if (coord.x < 0.0 || coord.y < 0.0 || coord.x > iResolution.x || coord.y > iResolution.y) { return vec4f(0.0, 0.0, 1.0, 1.0); }',
   '  return vec4f(coord.x / iResolution.x, coord.y / iResolution.y, 0.0, 1.0);',
-  '}'].join('\n')));
+  '}'].join('\\n')));
 // Boîte de 40 × 20 cqh tournée de 90°, centrée en (88,9 ; 50) cqh = (80 ; 45) px, débord de 5 cqh.
 const lire = await dessiner(c.shader, { temps: 0, progres: 0, duree: 1, mode: 0, resolution: [40, 20, 36, 18], scene: [LCQH, 100, L, H],
   repere: [80 / 0.9, 50, Math.PI / 2, 5], demi: [20, 10, 0, 0] });
@@ -113,7 +113,7 @@ await envoyer({ webgpu: true, centre: lire(80, 45), basBoite: lire(80, 62), debo
 test('shaders : même image par deux chemins (iTime, fbm, bruit)', async (t) => {
   if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
   const r = await page(`
-const c = await sh.compiler(donnee('fn image(coord: vec2f) -> vec4f {\n  let n = fbm(vec3f(coord * 0.05, iTime));\n  let b = canal3(coord / 64.0);\n  return vec4f(0.5 + 0.5 * n, b.r, b.g, 1.0);\n}\n'));
+const c = await sh.compiler(donnee('fn image(coord: vec2f) -> vec4f {\\n  let n = fbm(vec3f(coord * 0.05, iTime));\\n  let b = canal3(coord / 64.0);\\n  return vec4f(0.5 + 0.5 * n, b.r, b.g, 1.0);\\n}\\n'));
 const a = (await dessiner(c.shader, PLEIN({ temps: 1.3 }))).tout.slice();
 const b = (await dessiner(c.shader, PLEIN({ temps: 0.2 }))).tout.slice();
 const a2 = (await dessiner(c.shader, PLEIN({ temps: 1.3 }))).tout.slice();
