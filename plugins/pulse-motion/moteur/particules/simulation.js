@@ -576,6 +576,36 @@ fn meurt(p: Particule) -> bool {
   if (aFragment(F_CIBLE)) { return P.k + 1u >= eu(157u); }
   return p.age >= p.vie;
 }
+
+// Trajet chorégraphié : Bézier quadratique du départ q.pos à la cible (point de contrôle : milieu + perpendiculaire
+// tirée), bruit qui s'éteint au départ et à l'arrivée ; s : avancement après la courbe du trajet.
+fn positionChoree(q: Particule, tau: f32, s: f32) -> vec2f {
+  let c = cibleF(q.n, tau);
+  let d = c - q.pos;
+  let ctrl = q.pos + 0.5 * d + vec2f(-d.y, d.x) * (alea(eu(5u), eu(6u), q.n, 22u) - 0.5) * 0.6;
+  let u = 1.0 - s;
+  var x = u * u * q.pos + 2.0 * u * s * ctrl + s * s * c;
+  if (ef(181u) > 0.0) {
+    let b = vec3f(x / max(ef(180u), 1e-3), tau * ef(182u));
+    x = x + vec2f(bruit(b), bruit(b + vec3f(17.3, 5.1, 0.0))) * ef(181u) * sin(3.14159265 * s);
+  }
+  return x;
+}
+
+// Particule chorégraphiée à τ (voie rapide, sans état) : posée sur sa cible dès son arrivée propre.
+fn choree(q: Particule, tau: f32) -> Particule {
+  var p = q;
+  let s = courbeTrajet(progression(q.n, tau));
+  p.pos = positionChoree(q, tau, s);
+  let s2 = courbeTrajet(progression(q.n, tau + PAS_TAU));
+  p.vel = (positionChoree(q, tau + PAS_TAU, s2) - p.pos) / PAS_TAU;
+  p.age = tau - q.naissance;
+  var d = repereElement(1u, tau).angle - q.rot;
+  d = d - 6.2831853 * round(d / 6.2831853);
+  p.rot = q.rot + d * s;
+  p.vrot = 0.0;
+  return p;
+}
 `;
 
   const WGSL_ENTREES_P1 = /* wgsl */ `
@@ -637,6 +667,12 @@ fn evaluer(@builtin(global_invocation_id) gid: vec3u) {
       q.vrot = vrotLiberation(q.n);
       q.rot = rl.angle;
       t0 = lib;
+    }
+    if (aFragment(F_CIBLE)) {
+      // Arrivée chorégraphiée : position fonction directe de τ, éteinte au pas de l'arrivée (V.a : pas courant).
+      if (V.a < eu(157u)) { p = choree(q, V.tau); }
+      particules[s] = p;
+      return;
     }
     let age = V.tau - t0;
     if (age < q.vie) {
