@@ -83,3 +83,65 @@ test('interactions : schéma (variantes par type, valeurs du compilateur, exempl
   assert.equal(n.champs.avec.maximum, R.GROUPE_MAX - 1);
   assert.deepEqual(n.exemple, { type: 'essaim' });
 });
+
+test('interactions : groupes d\'émetteurs liés par « avec » (un sens suffit, chaînes comprises), un type par groupe', () => {
+  const e = ok(compiler([
+    em('a', { type: 'fluide', avec: ['b'] }),
+    em('b', { type: 'fluide', rayon: 3 }),
+    em('c', { type: 'fluide' }),
+    em('d', { type: 'essaim', avec: ['e'] }),
+    em('e', { type: 'essaim', vision: { rayon: 9 } }),
+    em('f'),
+  ]));
+  assert.deepEqual(e.groupes, [
+    { type: 'fluide', code: 1, membres: [0, 1], cote: 3 },
+    { type: 'fluide', code: 1, membres: [2], cote: 2 },
+    { type: 'essaim', code: 0, membres: [3, 4], cote: 9 },
+  ]);
+  assert.deepEqual(e.emetteurs.map((x) => (x.interactions ? x.interactions.groupe : null)), [0, 0, 1, 2, 2, null]);
+  const chaine = ok(compiler([em('a', { type: 'grains', avec: ['b'] }), em('b', { type: 'grains' }), em('c', { type: 'grains', avec: ['b'] })]));
+  assert.deepEqual(chaine.groupes.map((g) => g.membres), [[0, 1, 2]], 'a -> b et c -> b : un seul groupe');
+  assert.deepEqual(ok(compiler([em('a')])).groupes, [], 'sans interactions : aucun groupe');
+  // Sous-émetteur à interactions : permis (gouttes nées de la mort d'un parent).
+  const sous = ok(compiler([em('p', undefined, { a_la_mort: { emetteur: 'b' } }), { nom: 'b', naissance: { nombre: 2, vie: [1, 1] }, interactions: { type: 'essaim' } }]));
+  assert.deepEqual(sous.groupes.map((g) => g.membres), [[1]]);
+});
+
+test('interactions : liens refusés (émetteur inconnu, lui-même, sans interactions, autre type, plus de 8 liés)', () => {
+  const cas = [
+    [[em('a', { type: 'essaim', avec: ['zz'] })], 'emetteurs[a].interactions.avec[0]', /« zz » n'est pas un émetteur de cet effet \(émetteurs : a\)/],
+    [[em('a', { type: 'essaim', avec: ['a'] })], 'emetteurs[a].interactions.avec[0]', /interagit déjà avec lui-même/],
+    [[em('a', { type: 'essaim', avec: ['b'] }), em('b')], 'emetteurs[a].interactions.avec[0]', /« b » n'a pas de bloc « interactions »/],
+    [[em('a', { type: 'essaim', avec: ['b'] }), em('b', { type: 'fluide' })], 'emetteurs[a].interactions.avec[0]', /« b » est de type « fluide », « essaim » attendu/],
+  ];
+  for (const [emetteurs, chemin, message] of cas) {
+    const e = erreurDe(compiler(emetteurs));
+    assert.equal(e.regle, 'interactions-invalides', chemin);
+    assert.equal(e.chemin, chemin);
+    assert.match(e.message, message);
+  }
+  const neuf = Array.from({ length: 9 }, (_, i) => em('e' + i, { type: 'grains', avec: i ? ['e' + (i - 1)] : [] }));
+  const e = erreurDe(compiler(neuf));
+  assert.deepEqual([e.regle, e.chemin], ['interactions-invalides', 'emetteurs[e0].interactions.avec']);
+  assert.match(e.message, /8 émetteurs liés au plus \(le groupe de « e0 » en compte 9\)/);
+});
+
+test('interactions : émetteur de fragments, particules posées, grain plus grand que sa cellule : refusés', () => {
+  const pixels = { nom: 'p', naissance: { forme: { type: 'pixels' } }, interactions: { type: 'fluide' } };
+  const choree = { nom: 'c', naissance: {}, cible: { arrivee: 'choree' }, interactions: { type: 'essaim' } };
+  for (const [recette, nom] of [[pixels, 'p'], [choree, 'c']]) {
+    const e = erreurDe(compiler([recette]));
+    assert.deepEqual([e.regle, e.chemin], ['interactions-invalides', `emetteurs[${nom}].interactions`]);
+    assert.match(e.message, /voie rapide forcée/);
+  }
+  let e = erreurDe(compiler([em('a', { type: 'grains' }, { collisions: { reponse: 'poser' } })]));
+  assert.deepEqual([e.regle, e.chemin], ['interactions-invalides', 'emetteurs[a].interactions']);
+  assert.match(e.message, /« rebond » ou « mourir »/);
+  e = erreurDe(compiler([em('a', { type: 'grains', rayon: 1 }, { naissance: { salves: [{ t: 0, nombre: 5 }], taille: [0.5, 1.5] } })]));
+  assert.deepEqual([e.regle, e.chemin], ['interactions-invalides', 'emetteurs[a].interactions.rayon']);
+  assert.match(e.message, /taille maximale 1.5 cqh/);
+  // Rebond et mort au contact : permis ; un essaim ou un fluide peut être plus gros que son rayon.
+  ok(compiler([em('a', { type: 'fluide' }, { collisions: { reponse: 'rebond', restitution: 0 } })]));
+  ok(compiler([em('a', { type: 'grains' }, { collisions: { reponse: 'mourir' } })]));
+  ok(compiler([em('a', { type: 'essaim', rayon: 0.5 }, { naissance: { salves: [{ t: 0, nombre: 5 }], taille: [2, 2] } })]));
+});
