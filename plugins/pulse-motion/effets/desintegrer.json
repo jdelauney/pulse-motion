@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "nom": "desintegrer",
+  "description": "L'élément visé (data-ancre) se désagrège en poussière de ses propres couleurs, de gauche à droite pendant data-dur, emportée par le vent avec une lueur avant de s'éteindre.",
+  "parametres": {
+    "densite": { "defaut": 4, "min": 1, "max": 64 },
+    "vent": { "defaut": 35, "min": 0, "max": 150 },
+    "turbulence": { "defaut": 20, "min": 0, "max": 100 },
+    "lueur": { "defaut": "#ffb347", "type": "couleur" }
+  },
+  "rendu_calque": { "bloom": 0, "tons": "neutre" },
+  "emetteurs": [
+    {
+      "nom": "grain",
+      "naissance": {
+        "forme": { "type": "pixels", "densite": "densite", "liberation": "dur", "ordre": "gauche-droite" },
+        "vitesse": { "direction": [1, -0.4], "cone": 40, "valeur": [2, 10] },
+        "vie": [0.8, 1.6]
+      },
+      "forces": [
+        { "type": "vent", "vitesse": ["vent", "vent * -0.2"], "coef": 1.2 },
+        { "type": "turbulence", "echelle": 6, "force": "turbulence", "vitesse": 0.8 }
+      ],
+      "vie": {
+        "couleur": { "degrade": ["source", "source", "lueur", "#00000000"] },
+        "taille": { "de": 1, "a": 0.4 },
+        "opacite": { "de": 1, "a": 0, "courbe": "quad-in" }
+      },
+      "rendu": { "type": "sprite", "texture": "pixel", "melange": "alpha" }
+    }
+  ]
+}
