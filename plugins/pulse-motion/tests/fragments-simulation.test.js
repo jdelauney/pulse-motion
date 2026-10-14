@@ -150,3 +150,46 @@ await envoyer({ webgpu: true, ec: Array.from(ec), debut, envol, fin });`);
   assert.ok(r.fin.p.filter((p) => p.y > 60).length >= 12, 'éclats retombés au sol');
   assert.ok(r.fin.p.some((p) => Math.abs(p.vrot) > 0.05) || r.fin.p.some((p) => Math.abs(p.rot - Math.PI / 6) > 0.05), 'le contact fait tourner');
 });
+
+test('fragments GPU : arrivée guidée sur une cible qui glisse (échelonnement de gauche à droite), à 0,01 cqh près, extinction au pas de l\'arrivée', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const guidee = compiler([{ nom: 'g', naissance: { forme: { type: 'rectangle', largeur: 160, hauteur: 90 }, vitesse: { cone: 360, valeur: [0, 20] }, taille: [0.5, 0.5] },
+    forces: [{ type: 'turbulence', echelle: 10, force: 20 }], cible: { a: 1, echelonnement: 0.5, ordre: 'gauche-droite', guidage: 0.6 } }], 1);
+  const r = await page({ guidee }, `
+// Cible : 20 × 10 pixels de 0,5 cqh, centre (80 + 10 τ, 50).
+const liste = F.listerPixels(photo(20, 10, () => [255, 255, 255, 255], 10, 5));
+const frag = { a: null, b: liste.donnees, eclats: null, image: null, demiA: [0, 0], demiB: liste.demi, coteA: 0, coteB: liste.cote };
+const viseur = (g) => ({ centre: [80 + 10 * g / 30, 50], angle: 0, demi: [5, 2.5], echelle: [1, 1], actif: true });
+const zones = { a: () => [80, 50, 0, 0], grille: () => [80, 50, 0, 0], ancres: ancres(viseur, viseur) };
+const sim = new P.Simulation(device, F.ajusterCapacites(DONNEES.guidee, { 0: liste.total }), null, [frag]);
+const lire = async (tau) => { sim.avancer(tau, zones); return lireP(await sim.lireEtat(0)); };
+const mi = await lire(74.5 / 120);
+const avant = await lire(119.5 / 120);
+const apres = await lire(120.5 / 120);
+const rapide = sim.emetteurs[0].rapide;
+sim.detruire();
+await envoyer({ webgpu: true, b: Array.from(liste.donnees), mi, avant, apres, rapide });`);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.equal(r.rapide, false);
+  const cible = (n, k) => [80 + 10 * k / 120 + r.b[n * 4], 50 + r.b[n * 4 + 1]];
+  // Arrivée propre : fenêtre des trajets D = 119/120 (un pas avant l'arrivée) ; départ (x / 10 + 0,5) × 0,5 × D,
+  // arrivée départ + 0,5 × D.
+  const D = 119 / 120;
+  const arrivee = (n) => (r.b[n * 4] / 10 + 0.5) * 0.5 * D + 0.5 * D;
+  assert.equal(r.avant.length, 200);
+  for (const p of r.avant) {
+    const [x, y] = cible(p.n, 119);
+    assert.ok(Math.hypot(p.x - x, p.y - y) < 0.01, `particule ${p.n} à ${Math.hypot(p.x - x, p.y - y)} cqh de sa cible`);
+  }
+  assert.equal(r.apres.length, 0, 'éteintes au pas de l\'arrivée');
+  let posees = 0;
+  let enRoute = 0;
+  for (const p of r.mi) {
+    const [x, y] = cible(p.n, 74);
+    const d = Math.hypot(p.x - x, p.y - y);
+    if (arrivee(p.n) <= 73 / 120) { assert.ok(d < 1e-3, `arrivée tôt, suit sa cible : ${d}`); posees++; }
+    else if (arrivee(p.n) > 0.75 && d > 0.01) enRoute++;
+  }
+  assert.ok(posees >= 20, `${posees} particules déjà posées à mi-parcours`);
+  assert.ok(enRoute >= 50, `${enRoute} particules de droite encore en route`);
+});
