@@ -592,8 +592,9 @@ fn ancienneR(i: u32) -> vec2f {
   return corps[i].pos - corps[i].vel * P.dt;
 }
 
-// Résultat du voisinage rendu à la case s du membre : position et vitesse finales ; grain soutenu (la correction annule au
-// moins la moitié du déplacement prédit) et presque immobile depuis le début du pas : laissé à sa place, vitesse nulle ;
+// Résultat du voisinage rendu à la case s du membre : position et vitesse finales ; grain avec frottement statique, soutenu
+// (la correction annule au moins la moitié du déplacement prédit) et presque immobile depuis le début du pas : laissé à
+// sa place, vitesse nulle (sans frottement statique, rien ne le retient : il glisse, même lentement, au sommet d'une forme) ;
 // déplacement de correction arrêté aux obstacles ; fuite des obstacles (essaim).
 fn rendreCorps(s: u32) {
   if (s >= MB.capacite) { return; }
@@ -603,7 +604,7 @@ fn rendreCorps(s: u32) {
   var p = particules[s];
   var x = posF[i];
   var v = vitesses[i];
-  if (GR.genre == 2u) {
+  if (GR.genre == 2u && GR.m[c.membre].a.x > 0.0) {
     let a = ancienneR(i);
     let prevu = c.pos - a;
     if (dot(x - c.pos, prevu) < -0.5 * dot(prevu, prevu) && length(x - a) < SEUIL_REPOS * P.dt) {

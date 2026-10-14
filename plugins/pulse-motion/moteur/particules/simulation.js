@@ -856,15 +856,18 @@ fn dimensions(genre: u32, R: Repere, r: f32) -> vec2f {
 }
 
 // Distance (cqh à l'échelle) au contour d'une forme exacte : champ de distance dans la boîte. Dehors, minorant qui reste
-// une vraie distance à la forme : max(distance à la boîte b, champ au point q le plus proche de la boîte − b) (inégalité
-// triangulaire) ; la seule distance à la boîte posait les particules sur la boîte, pas sur la forme.
+// une vraie distance à la forme : √(b² + champ(q)²), b distance à la boîte, q point le plus proche de la boîte (l − q est
+// normal à la boîte convexe, donc |l − s|² ≥ b² + |q − s|² pour tout point s de la forme). La seule distance à la boîte
+// posait les particules sur la boîte, pas sur la forme ; max(b, champ − b), trop lâche près d'un sommet arrondi qui touche
+// la boîte, y posait encore des grains (rangée plate au-dessus du sommet d'un disque, qui ne glissait pas).
 fn distanceForme(o: u32, R: Repere, l: vec2f) -> f32 {
   let dehors = abs(l) - R.demi;
   let uv = clamp(l / sur(R.demi) * 0.5 + 0.5, vec2f(0.5 / 256.0), vec2f(1.0 - 0.5 / 256.0));
   let champ = textureSampleLevel(sdf, lisse, uv, i32(Mo.o[o].z), 0.0).r * min(R.echelle.x, R.echelle.y);
   if (dehors.x > 0.0 || dehors.y > 0.0) {
     let b = length(max(dehors, vec2f(0.0)));
-    return max(b, champ - b);
+    let c = max(champ, 0.0);
+    return sqrt(b * b + c * c);
   }
   return champ;
 }
