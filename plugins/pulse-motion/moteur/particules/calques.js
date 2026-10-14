@@ -56,6 +56,11 @@
  * (export), demi-résolution sinon, au plus toutes les 100 ms pendant la lecture, à chaque image à l'arrêt ; classe pm-compose
  * sur #pm-scene (scènes réelles invisibles) quand toutes les photographies du plan existent. Une transition qui ne compile
  * pas : panneau sur la scène, fondu (M.transitionShader faux) ; un post-traitement : panneau, ignoré ; export refusé.
+ * Réfraction des fluides (P5a) : chaque scène affichée dont un effet actif dessine un fluide qui réfracte (em.fluide.refraction
+ * > 0) est photographiée sans ses calques (M.figer.photo, calques remplacés par une image transparente le temps du figement) :
+ * demi-résolution dans l'aperçu (10 par seconde au plus en lecture, à chaque image à l'arrêt), exacte et attendue au seek en
+ * capture ; passée au rendu (o.photoScene) ; sans photographie, réfraction ignorée et alerte dans la console (hors capture).
+ * M.particules.refraction(idScene) -> { t, exact } | null   photographie de réfraction de la scène (tests)
  * M.transitionShader(id) -> bool        transition par shader de la scène prête (horloge : pas de style CSS d'entrée) :
  *   compilée, composition affichée et scène déjà photographiée ; sinon fondu CSS d'attente (jamais photographié : une
  *   scène à transition par shader compilée est photographiée opaque).
@@ -757,6 +762,7 @@
         sc.effets.forEach((fx) => { liberer(fx); panneau(fx.el, 'Effet non affiché : ' + message(e)); });
       }
     });
+    rafraichirRefractions(t);
     rendreComposition(t);
   }
 
@@ -774,6 +780,67 @@
     if (!actifs.length) return [];
     const reperes = P.mesurerReperes(actifs.map((f) => f.ancre || f.el), sc.section);
     return actifs.map((f, i) => ({ f, r: reperes[i], t })).filter((a) => a.r.actif);
+  }
+
+  // ---- Réfraction des fluides (P5a) : photographie de la scène sous ses calques ----
+
+  const refr = { enCours: null, derniere: -Infinity };
+
+  /** Effet dont un émetteur dessine un fluide qui réfracte la scène. */
+  function refracte(fx) { return fx.effet.emetteurs.some((em) => em.fluide && em.fluide.refraction > 0); }
+
+  /** Scènes affichées, sans échec, dont un effet simulé réfracte. */
+  function scenesRefraction() {
+    return etat.scenes.filter((sc) => sc.section.style.display !== 'none' && !sc.echec && sc.effets.some((fx) => fx.sim && refracte(fx)));
+  }
+
+  /** Photographie de la scène sans ses calques (le fluide ne se réfracte pas lui-même) : pleine résolution si exact, sinon
+   *  demi ; figement synchrone, rastérisation ensuite ; une photographie plus ancienne n'écrase pas une plus récente. */
+  async function photographierRefraction(sc, t, exact) {
+    const jeton = sc.jetonRefraction = (sc.jetonRefraction || 0) + 1;
+    const dpr = M.enCapture && M.enCapture() ? 1 : racine.devicePixelRatio || 1;
+    const k = exact ? 1 : 0.5;
+    const L = Math.max(1, Math.round(sc.section.clientWidth * dpr * k));
+    const H = Math.max(1, Math.round(sc.section.clientHeight * dpr * k));
+    const calques = Object.values(sc.calques);
+    const avant = calques.map((c) => c.__pmImage);
+    let promesse;
+    calques.forEach((c) => { c.__pmImage = vide(); });
+    try { promesse = M.figer.photo(sc.section, { largeur: L, hauteur: H }); } finally { calques.forEach((c, i) => { c.__pmImage = avant[i]; }); }
+    const ph = await promesse;
+    if (!ph.largeur || !etat.rendu || jeton !== sc.jetonRefraction) return;
+    const bitmap = await createImageBitmap(new ImageData(new Uint8ClampedArray(ph.rgba), ph.largeur, ph.hauteur));
+    try {
+      if (jeton === sc.jetonRefraction && etat.rendu) sc.refraction = { vue: etat.rendu.photo('refraction|' + sc.info.id, bitmap), t, exact };
+    } finally { bitmap.close(); }
+  }
+
+  /** Aperçu : photographies de réfraction refaites (demi-résolution) au plus toutes les 100 ms pendant la lecture, à chaque
+   *  image à l'arrêt ; une série à la fois ; puis l'instant courant redessiné. */
+  function rafraichirRefractions(t) {
+    if (M.enCapture && M.enCapture()) return;
+    const scenes = scenesRefraction().filter((sc) => !sc.refraction || sc.refraction.t !== t);
+    if (!scenes.length || refr.enCours) return;
+    if (M.enLecture && M.enLecture() && M.reel.now() - refr.derniere < PERIODE_PHOTOS) return;
+    refr.enCours = (async () => { for (const sc of scenes) await photographierRefraction(sc, t, false); })().then(() => {
+      refr.enCours = null;
+      refr.derniere = M.reel.now();
+      if (etat.gpu) { etat.rendu_t = null; rendre(etat.t); }
+    }, (e) => {
+      refr.enCours = null;
+      console.error('[Pulse Motion] Réfraction : ' + message(e));
+    });
+  }
+
+  /** Seek : photographies de réfraction faites à t (pleine résolution en capture), puis t redessiné. */
+  async function seekRefractions(t) {
+    const scenes = scenesRefraction();
+    if (!scenes.length || !etat.gpu) return;
+    const exact = !!(M.enCapture && M.enCapture());
+    for (const sc of scenes) await photographierRefraction(sc, t, exact);
+    etat.rendu_t = null;
+    rendre(t);
+    await etat.gpu.device.queue.onSubmittedWorkDone();
   }
 
   /** Entrées d'un fond : τ depuis son début, part de sa fenêtre, zone (boîte de l'élément, échelle comprise) en cqh et en px. */
@@ -819,6 +886,11 @@
     });
     // Toutes les scènes rendues à d'autres instants pour les mesures reviennent à t.
     mesures.scenes.forEach((id) => M.rendreScene(id, t));
+    // Réfraction demandée sans photographie de la scène : ignorée par le rendu, alerte (en capture, la photographie exacte
+    // est faite au seek avant le dessin final).
+    if (!sc.refraction && !(M.enCapture && M.enCapture()) && sc.effets.some((fx) => fx.sim && refracte(fx))) {
+      alerter('Scène « ' + sc.info.id + ' » : réfraction du fluide ignorée tant que la photographie de la scène n\'est pas prête.');
+    }
     const largeurCqh = largeurScene();
     // Fonds mesurés après le retour de toutes les scènes à t.
     const fonds = fondsActifs(sc, t);
@@ -828,6 +900,7 @@
       const rc = sc.reglages[nom];
       etat.rendu.dessiner(etat.rendu.cible(canvas), listes[nom], {
         largeurCqh, dureeImage: sc.info.rythme / (M.ips || 30), bloom: rc.bloom, seuil: rc.seuil_bloom, tons: rc.tons, couches: couches[nom],
+        photoScene: sc.refraction ? sc.refraction.vue : null,
         fonds: fonds.filter((a) => a.f.calque === nom).map((a) => (passe) => etat.shaders.dessiner(passe, a.f.shader, entreesFond(a, largeurCqh, canvas), null, 'fond')),
       });
     });
@@ -1151,6 +1224,7 @@
     comp.postsVideo.forEach((p) => { p.shader = null; });
     masquerComposition();
     etat.scenes.forEach((sc) => sc.fonds.forEach((f) => { f.shader = null; }));
+    etat.scenes.forEach((sc) => { sc.refraction = null; }); // textures de l'ancien device
     contributions.clear(); // tampons de l'ancien device
     etat.scenes.forEach((sc) => {
       sc.echec = false;
@@ -1202,6 +1276,7 @@
       } catch (e) { perte = true; }
       if (!perte) await new Promise((ok) => setTimeout(ok, 0));
       if (!perte && etat.gpu === gpu) {
+        await seekRefractions(t);
         await seekComposition(t);
         return null;
       }
@@ -1409,6 +1484,11 @@
       const fx = sc && sc.effets.find((f) => f.ordre === ordre);
       if (!fx || !fx.sim) return Promise.reject(new Error('Effet ' + ordre + ' de la scène « ' + idScene + ' » non simulé.'));
       return fx.sim.lireHauteurs();
+    },
+    /** Photographie de réfraction d'une scène (tests) : { t, exact } | null. */
+    refraction(idScene) {
+      const sc = trouver(idScene);
+      return sc && sc.refraction ? { t: sc.refraction.t, exact: sc.refraction.exact } : null;
     },
     preparerCapture,
     image(idScene, calque) {
