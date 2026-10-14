@@ -8,6 +8,10 @@
  * « Enregistrer » écrit data-reglages et data-graine dans la scène ; « Enregistrer comme nouvel effet » écrit
  * effets/<nom>.json (par etend) et y fait pointer la balise. L'aperçu recharge alors la page : le panneau rouvre sur
  * le même effet (sessionStorage). Tant qu'un réglage n'est pas enregistré, la page n'est pas rechargée (M.atelier.occupe).
+ * Fonds par shader (P6) : les balises data-shader de la scène sont listées sous les effets ; un fond choisi montre les curseurs
+ * de ses réglages (son .json) ; chaque changement est contrôlé (M.codeShader.valeursShader) puis réécrit dans son uniforme
+ * (M.shaders.regler), sans recompiler ni recharger ; « Enregistrer » écrit data-reglages (/_pm/atelier/reglages-shader).
+ * Pour les tests : M.atelier.choisirFond(ordre, scene?), reglerFond(nom, valeur), enregistrerFond().
  * Pour les tests : M.atelier = { ouvrir, fermer, choisir, regler, retablir, graine, niveau, modifierRecette,
  *   enregistrer, enregistrerComme, occupe, etat, pret }.
  */
@@ -25,7 +29,7 @@ let reglagesUI = null;
 let derniere = Promise.resolve();
 const textures = new Map();
 const etat = {
-  ouvert: false, scene: null, ordre: null, niveau: 'simple',
+  ouvert: false, scene: null, ordre: null, niveau: 'simple', genre: 'effet',
   valeurs: {}, graine: 0, graineEcrite: false, graineChangee: false,
   recette: null, recetteModifiee: false, modifie: false,
   erreurs: [], message: '', conflit: false, enCours: false,
@@ -52,10 +56,11 @@ function sceneCourante() {
 }
 const sceneDe = (id) => (donnees && donnees.scenes.find((s) => s.id === id)) || null;
 const effetDe = (id, ordre) => { const s = sceneDe(id); return s ? s.effets.find((e) => e.ordre === ordre) || null : null; };
+const fondDe = (id, ordre) => { const s = sceneDe(id); return s ? (s.shaders || []).find((f) => f.ordre === ordre) || null : null; };
 
 function memoriser() {
   try {
-    if (etat.ouvert) sessionStorage.setItem(CLE, JSON.stringify({ ouvert: true, scene: etat.scene, ordre: etat.ordre, niveau: etat.niveau }));
+    if (etat.ouvert) sessionStorage.setItem(CLE, JSON.stringify({ ouvert: true, scene: etat.scene, ordre: etat.ordre, niveau: etat.niveau, genre: etat.genre }));
     else sessionStorage.removeItem(CLE);
   } catch (e) { /* stockage indisponible */ }
 }
@@ -91,11 +96,18 @@ function afficherListe() {
   const zone = panneau.querySelector('.pm-at-liste');
   zone.textContent = '';
   const s = sceneDe(etat.scene);
-  el('p', { texte: s && s.effets.length ? `Scène « ${etat.scene} » : choisissez un effet (ou cliquez dessus dans l'image).` : `La scène « ${etat.scene} » n'a pas d'effet.` }, zone).style.margin = '4px 0';
+  const fonds = s ? s.shaders || [] : [];
+  el('p', { texte: s && s.effets.length ? `Scène « ${etat.scene} » : choisissez un effet (ou cliquez dessus dans l'image).`
+    : fonds.length ? `La scène « ${etat.scene} » n'a pas d'effet de particules ; ses fonds :` : `La scène « ${etat.scene} » n'a pas d'effet.` }, zone).style.margin = '4px 0';
   (s ? s.effets : []).forEach((e) => {
     const b = el('button', { type: 'button', 'data-ordre': String(e.ordre), texte: `${e.ordre + 1}. ${e.nom}${e.calque === 'arriere' ? ' (arrière)' : ''}${e.erreur ? ' — en erreur' : ''}` }, zone);
-    b.style.cssText = `display:block;width:100%;text-align:left;margin:2px 0;${e.ordre === etat.ordre ? 'outline:2px solid #4caf50' : ''}`;
+    b.style.cssText = `display:block;width:100%;text-align:left;margin:2px 0;${etat.genre === 'effet' && e.ordre === etat.ordre ? 'outline:2px solid #4caf50' : ''}`;
     b.addEventListener('click', () => choisir(e.ordre));
+  });
+  fonds.forEach((f) => {
+    const b = el('button', { type: 'button', 'data-fond': String(f.ordre), texte: `Fond : ${f.nom}${f.calque === 'avant' ? ' (devant)' : ''}${f.erreur ? ' — en erreur' : ''}` }, zone);
+    b.style.cssText = `display:block;width:100%;text-align:left;margin:2px 0;${etat.genre === 'fond' && f.ordre === etat.ordre ? 'outline:2px solid #4caf50' : ''}`;
+    b.addEventListener('click', () => choisirFond(f.ordre));
   });
 }
 
@@ -124,6 +136,7 @@ function poserGraine(n) {
 
 function afficherEffet() {
   if (!panneau) return;
+  if (etat.genre === 'fond') { afficherFond(); return; }
   const zone = panneau.querySelector('.pm-at-effet');
   zone.textContent = '';
   formulaire = null;
@@ -175,6 +188,93 @@ function afficherEffet() {
   marquer();
 }
 
+function afficherFond() {
+  const zone = panneau.querySelector('.pm-at-effet');
+  zone.textContent = '';
+  formulaire = null;
+  reglagesUI = null;
+  const info = fondDe(etat.scene, etat.ordre);
+  if (!info) return;
+  el('h3', { texte: `Fond « ${info.nom} » (${info.calque === 'avant' ? 'devant le contenu' : 'derrière le contenu'})` }, zone).style.cssText = 'margin:10px 0 4px;font-size:15px';
+  if (!info.usage) { el('p', { texte: info.erreur || 'Shader introuvable.' }, zone); return; }
+  const contenu = el('div', {}, zone);
+  reglagesUI = construireReglages(contenu, {
+    parametres: info.parametres, valeurs: etat.valeurs, charte: CHARTE,
+    surChangement: (v) => { etat.valeurs = v; marquerModifie(); reappliquerFond(); },
+  });
+  const actions = el('div', { class: 'pm-ed' }, zone);
+  actions.style.cssText = 'margin-top:10px;display:grid;gap:6px';
+  el('button', { type: 'button', 'data-action': 'enregistrer-fond', texte: 'Enregistrer' }, actions).addEventListener('click', () => enregistrerFond().catch(() => {}));
+  marquer();
+}
+
+/** Lecture en boucle sur la fenêtre du fond (sans sortir de la scène). */
+function bouclerFond() {
+  if (!M.boucler) return;
+  const d = M.shaders ? M.shaders.decrire(etat.scene).find((x) => x.ordre === etat.ordre) : null;
+  const info = M.minutage.scenes.find((s) => s.id === etat.scene);
+  if (!d || !info) { M.boucler(null); return; }
+  M.boucler({ debut: Math.max(d.debut, info.debut), fin: Math.min(d.fin, info.fin) });
+}
+
+/** Réglages contrôlés comme à l'assemblage, puis réécrits dans l'uniforme du fond (image redessinée, sans recompiler). */
+async function appliquerFond() {
+  const info = fondDe(etat.scene, etat.ordre);
+  if (!info || !info.usage) return;
+  const v = M.codeShader.valeursShader({ nom: info.nom, parametres: info.parametres }, reglagesEnTexte(etat.valeurs), donnees.charte);
+  etat.erreurs = v.erreurs;
+  marquer();
+  if (v.erreurs.length) { dire('Réglage refusé (voir le champ marqué) : l\'image garde le dernier état valide.'); return; }
+  if (!M.particules.disponible) return;
+  try {
+    await M.shaders.regler(etat.scene, etat.ordre, v.valeurs);
+    if (!etat.conflit) dire('');
+  } catch (e) { dire(String(e && e.message || e)); }
+}
+const reappliquerFond = limiter(() => { derniere = appliquerFond(); }, DELAI);
+
+function choisirFond(ordre, scene) {
+  const id = scene || etat.scene || sceneCourante();
+  const info = fondDe(id, ordre);
+  if (!info) return false;
+  generation++;
+  Object.assign(etat, {
+    genre: 'fond', scene: id, ordre,
+    valeurs: { ...M.recette.analyserReglages(info.reglages).valeurs },
+    recette: null, recetteModifiee: false, modifie: false, conflit: false,
+    erreurs: info.erreur ? [{ chemin: '', message: info.erreur }] : [],
+  });
+  bouclerFond();
+  memoriser();
+  afficherListe();
+  afficherEffet();
+  if (!M.particules.disponible) dire(M.particules.raison || 'Fonds non affichés : WebGPU indisponible.');
+  else if (info.erreur) dire(`Fond en erreur : ${info.erreur}`);
+  else dire('');
+  return true;
+}
+
+function reglerFond(nom, valeur) {
+  if (etat.genre !== 'fond') return Promise.reject(new Error('Aucun fond choisi.'));
+  etat.valeurs[nom] = String(valeur);
+  marquerModifie();
+  afficherEffet();
+  derniere = appliquerFond();
+  return derniere;
+}
+
+function enregistrerFond() {
+  const sc = sceneDe(etat.scene);
+  if (etat.genre !== 'fond' || !sc || !fondDe(etat.scene, etat.ordre)) return Promise.reject(new Error('Aucun fond choisi.'));
+  if (etat.erreurs.length) {
+    dire('Des réglages sont refusés (voir les champs marqués) : corrigez-les avant d\'enregistrer.');
+    return Promise.reject(new Error('réglages refusés'));
+  }
+  return envoyer('/_pm/atelier/reglages-shader', {
+    fichier: sc.fichier, empreinte: sc.empreinte, scene: etat.scene, ordre: etat.ordre, reglages: reglagesEnTexte(etat.valeurs),
+  });
+}
+
 /** Lecture en boucle sur la fenêtre de l'effet (sans en sortir de la scène). */
 function boucler() {
   if (!M.boucler) return;
@@ -211,7 +311,7 @@ function choisir(ordre, scene) {
   if (!info) return false;
   generation++;
   Object.assign(etat, {
-    scene: id, ordre,
+    genre: 'effet', scene: id, ordre,
     valeurs: { ...M.recette.analyserReglages(info.reglages).valeurs },
     graine: info.graine, graineEcrite: info.graineEcrite, graineChangee: false,
     recette: info.recette ? clone(info.recette) : null, recetteModifiee: false, modifie: false, conflit: false,
@@ -227,7 +327,7 @@ function choisir(ordre, scene) {
   return true;
 }
 
-async function ouvrir(scene, ordre) {
+async function ouvrir(scene, ordre, genre) {
   await M.pret;
   await M.particules.pret;
   if (!donnees) await chargerDonnees();
@@ -237,11 +337,11 @@ async function ouvrir(scene, ordre) {
   memoriser();
   afficherListe();
   if (!M.particules.disponible) dire(M.particules.raison || 'Effets non affichés : WebGPU indisponible.');
-  if (ordre !== undefined && ordre !== null) choisir(ordre, etat.scene);
+  if (ordre !== undefined && ordre !== null) (genre === 'fond' ? choisirFond : choisir)(ordre, etat.scene);
 }
 
 function fermer() {
-  Object.assign(etat, { ouvert: false, scene: null, ordre: null, modifie: false, conflit: false });
+  Object.assign(etat, { ouvert: false, scene: null, ordre: null, genre: 'effet', modifie: false, conflit: false });
   if (M.boucler) M.boucler(null);
   if (panneau) { panneau.remove(); panneau = null; }
   formulaire = null;
@@ -380,6 +480,7 @@ function effetSous(x, y) {
 
 M.atelier = {
   ouvrir, fermer, choisir, regler, retablir, graine, niveau, modifierRecette, enregistrer, enregistrerComme, occupe,
+  choisirFond, reglerFond, enregistrerFond,
   etat: () => clone(etat),
   get pret() { return derniere; },
 };
@@ -413,13 +514,13 @@ function ajouterBouton() {
 }
 
 M.pret.then(async () => {
-  if (!document.querySelector('#pm-scene [data-effet]')) return;
+  if (!document.querySelector('#pm-scene [data-effet], #pm-scene [data-shader]')) return;
   ajouterBouton();
   await chargerDonnees();
   let memo = null;
   try { memo = JSON.parse(sessionStorage.getItem(CLE) || 'null'); } catch (e) { /* stockage indisponible */ }
   if (memo && memo.ouvert) {
     etat.niveau = memo.niveau === 'avance' ? 'avance' : 'simple';
-    await ouvrir(memo.scene, memo.ordre);
+    await ouvrir(memo.scene, memo.ordre, memo.genre);
   }
 });

@@ -84,3 +84,50 @@ test('atelier : reglages-shader écrit sur le bon fond, refuse un réglage hors 
     assert.equal(perime.json.conflit, true);
   });
 });
+
+const { demarrerApercu } = require('../scripts/apercu.js');
+const { ouvrirPage } = require('../scripts/lib/cdp.js');
+const { trouverNavigateur } = require('./aide/navigateur.js');
+const { optionsWebGPU } = require('./aide/gpu.js');
+
+test('panneau : un réglage de fond change l\'image sans rechargement ; enregistré dans la scène', async (t) => {
+  const navigateur = trouverNavigateur();
+  if (!navigateur) return t.skip('Chrome ou Edge introuvable');
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const dir = projet();
+  ecrire(dir, 'scenes/01-s.html', '<section data-scene="s">\n  <div data-shader="aplat"></div>\n</section>\n');
+  const apercu = await demarrerApercu({ dossier: dir, port: 47460, dossierStyles: STYLES, dossierEffets: EFFETS, delai: 50 });
+  const page = await ouvrirPage({ navigateur, largeur: 1280, hauteur: 800, gpu: true, options: await optionsWebGPU(), delai: 90000 });
+  try {
+    await page.aller(apercu.url);
+    await page.evaluer('M.pret.then(() => M.particules.pret).then(() => true)');
+    const pixel = `(async () => { await M.seek(1); const p = await M.particules.lirePixels('s', 'arriere'); return Array.from(p.donnees.slice(0, 4)); })()`;
+    const avant = await page.evaluer(pixel);
+    const r = await page.evaluer(`(async () => {
+      window.__pmMarque = 'meme-page';
+      const bouton = !!document.getElementById('pm-bouton-effets');
+      await M.atelier.ouvrir('s');
+      const liste = Array.from(document.querySelectorAll('#pm-atelier [data-fond]')).map((b) => b.textContent);
+      const choisi = M.atelier.choisirFond(0, 's');
+      await M.atelier.reglerFond('teinte', '#0000ff');
+      await M.atelier.reglerFond('opacite', 4);
+      const refuse = M.atelier.etat().erreurs.map((e) => e.chemin);
+      await M.atelier.reglerFond('opacite', 1);
+      return { bouton, liste, choisi, refuse, genre: M.atelier.etat().genre };
+    })()`);
+    assert.equal(r.bouton, true, 'bouton « Effets » pour une page qui n\'a que des fonds');
+    assert.deepEqual(r.liste, ['Fond : aplat']);
+    assert.equal(r.choisi, true);
+    assert.deepEqual(r.refuse, ['reglages.opacite'], 'réglage hors bornes marqué');
+    assert.equal(r.genre, 'fond');
+    const apres = await page.evaluer(pixel);
+    assert.ok(avant[0] > 250 && avant[2] < 5, `rouge avant : ${avant}`);
+    assert.ok(apres[2] > 250 && apres[0] < 5, `bleu après : ${apres}`);
+    assert.equal(await page.evaluer('window.__pmMarque'), 'meme-page', 'sans rechargement');
+    await page.evaluer('M.atelier.enregistrerFond().then(() => true)');
+    assert.match(fs.readFileSync(path.join(dir, 'scenes', '01-s.html'), 'utf8'), /<div data-shader="aplat" data-reglages="teinte: #0000ff; opacite: 1"><\/div>/);
+  } finally {
+    await page.fermer();
+    await apercu.fermer();
+  }
+});
