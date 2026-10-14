@@ -131,3 +131,25 @@ test('panneau : un réglage de fond change l\'image sans rechargement ; enregist
     await apercu.fermer();
   }
 });
+
+const R = require('../moteur/particules/recette.js');
+const S = require('../moteur/shaders/code.js');
+
+test('compilerPourPage : modules attachés depuis les sources de la page, module inconnu nommé', async () => {
+  const E = await import(pathToFileURL(path.join(__dirname, '..', 'moteur', 'atelier', 'editeur.mjs')).href);
+  const CHARTE = { primaire: '#3366cc', accent: '#ff9900', texte: '#111111', fond: '#ffffff' };
+  const sources = new Map([['pousse', { json: { version: 1, nom: 'pousse', usage: 'module-force', parametres: { ax: { defaut: 5, min: 0, max: 50 } } },
+    code: 'fn force(p: Particule, t: f32, zone: vec4f) -> vec2f { return vec2f(R.ax, 0.0); }\n' }]]);
+  const recette = { version: 1, nom: 'essai', parametres: { ax: { defaut: 12, min: 0, max: 50 } },
+    emetteurs: [{ nom: 'e', naissance: { debit: 10, vie: [1, 1] }, modules: { force: 'pousse' } }] };
+  const r = await E.compilerPourPage(R, recette, { dur: 1, graine: 1, charte: CHARTE, reglages: 'ax: 20' }, new Map(), S, sources);
+  assert.equal(r.ok, true, JSON.stringify(r.erreurs));
+  assert.match(r.effet.emetteurs[0].modulesWGSL.force.wgsl, /const pmForce_R_ax: f32 = 20\.0;/, 'réglage de la recette repris');
+  const inconnu = await E.compilerPourPage(R, { ...recette, emetteurs: [{ ...recette.emetteurs[0], modules: { force: 'absent' } }] },
+    { dur: 1, graine: 1, charte: CHARTE }, new Map(), S, sources);
+  assert.equal(inconnu.ok, false);
+  assert.equal(inconnu.erreurs[0].regle, 'shader-inconnu');
+  assert.equal(inconnu.erreurs[0].chemin, 'modules');
+  const sans = await E.compilerPourPage(R, { version: 1, nom: 'x', emetteurs: [{ nom: 'e', naissance: { debit: 10, vie: [1, 1] } }] }, { dur: 1, graine: 1, charte: CHARTE }, new Map());
+  assert.equal(sans.ok, true, 'sans module : comme avant (S absent dans Node)');
+});
