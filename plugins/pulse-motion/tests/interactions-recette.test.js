@@ -145,3 +145,31 @@ test('interactions : émetteur de fragments, particules posées, grain plus gran
   ok(compiler([em('a', { type: 'grains' }, { collisions: { reponse: 'mourir' } })]));
   ok(compiler([em('a', { type: 'essaim', rayon: 0.5 }, { naissance: { salves: [{ t: 0, nombre: 5 }], taille: [2, 2] } })]));
 });
+
+test('rendu « fluide » : défauts, réglages, champs vérifiés pour tout rendu, réservés au type fluide', () => {
+  assert.equal(R.CODES.rendu.fluide, 5);
+  const f = ok(compiler([em('a', { type: 'fluide' }, { rendu: { type: 'fluide' } })])).emetteurs[0];
+  assert.deepEqual([f.rendu.type, f.rendu.code], ['fluide', 5]);
+  assert.deepEqual(f.fluide, { teinte: R.couleurLineaire('#4aa8ff'), opacite: 0.85, absorption: 0.25, refraction: 0, lissage: 1 });
+  const r = ok(compiler([em('a', undefined, { rendu: { type: 'fluide', teinte: '#ff0000', opacite: 0.5, absorption: '2 * k', refraction: 1, lissage: 0 } })])).emetteurs[0].fluide;
+  assert.deepEqual(r, { teinte: [1, 0, 0, 1], opacite: 0.5, absorption: 1, refraction: 1, lissage: 0 }, 'un rendu « fluide » sans interactions est permis');
+  const s = ok(compiler([em('a', undefined, { rendu: { teinte: '#ff0000', refraction: 0.5 } })])).emetteurs[0];
+  assert.equal(s.fluide, null, 'autre rendu : champs vérifiés, rien de gardé');
+  assert.deepEqual(Object.keys(s.rendu), ['type', 'code', 'texture', 'textureCode', 'textureFichier', 'melange', 'melangeCode', 'etirement', 'flou', 'longueur', 'planche']);
+  const cas = [
+    [{ type: 'fluide', opacite: 1.2 }, 'emetteurs[a].rendu.opacite', /valeur entre 0 et 1 attendue/],
+    [{ type: 'fluide', refraction: -0.1 }, 'emetteurs[a].rendu.refraction', /valeur entre 0 et 1 attendue/],
+    [{ type: 'fluide', absorption: -1 }, 'emetteurs[a].rendu.absorption', /valeur positive ou nulle attendue/],
+    [{ type: 'fluide', lissage: 6 }, 'emetteurs[a].rendu.lissage', /valeur entre 0 et 5 attendue/],
+    [{ type: 'fluide', teinte: 'rose' }, 'emetteurs[a].rendu.teinte', /couleur « rose » inconnue/],
+    [{ opacite: 2 }, 'emetteurs[a].rendu.opacite', /valeur entre 0 et 1 attendue/],
+  ];
+  for (const [rendu, chemin, message] of cas) {
+    const e = erreurDe(compiler([em('a', undefined, { rendu })]));
+    assert.deepEqual([e.regle, e.chemin], ['effet-invalide', chemin], JSON.stringify(rendu));
+    assert.match(e.message, message, JSON.stringify(rendu));
+  }
+  const e = erreurDe(compiler([{ nom: 'p', naissance: { forme: { type: 'pixels' } }, rendu: { type: 'fluide' } }]));
+  assert.deepEqual([e.regle, e.chemin], ['effet-invalide', 'emetteurs[p].rendu.type']);
+  assert.match(e.message, /pas de rendu « fluide »/);
+});

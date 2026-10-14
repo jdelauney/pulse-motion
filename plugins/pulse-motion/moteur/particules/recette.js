@@ -50,7 +50,7 @@
   var CODES = {
     forme: { point: 0, cercle: 1, anneau: 2, rectangle: 3, ligne: 4, ancre: 5, pixels: 6 },
     force: { gravite: 0, trainee: 1, vent: 2, turbulence: 3, attracteur: 4, vortex: 5, rappel: 6 },
-    rendu: { sprite: 0, etincelle: 1, trainee: 2, planche: 3, eclats: 4 },
+    rendu: { sprite: 0, etincelle: 1, trainee: 2, planche: 3, eclats: 4, fluide: 5 },
     melange: { additif: 0, alpha: 1, premultiplie: 2 },
     texture: { 'disque-doux': 0, etoile: 1, fumee: 2, flamme: 3, eclat: 4, confetti: 5, image: 6, pixel: 7 },
     reponse: { rebond: 0, poser: 1, mourir: 2 },
@@ -207,6 +207,11 @@
         origine: pr('Point d\'impact des éclats (fraction de la boîte du contenu visible)', [0.5, 0.5]),
         impulsion: nb('Impulsion des éclats', 40, { unite: 'cqh/s', curseur: [0, 300] }),
         rotation_max: nb('Rotation maximale des éclats', 180, { min: 0, unite: '°/s', curseur: [0, 1080] }),
+        teinte: noeud('couleur', 'Teinte du fluide', '#4aa8ff'),
+        opacite: nb('Opacité du fluide', 0.85, { min: 0, max: 1, curseur: [0, 1], pas: 0.05 }),
+        absorption: nb('Absorption du fluide (par cqh d\'épaisseur)', 0.25, { min: 0, curseur: [0, 2], pas: 0.05 }),
+        refraction: nb('Réfraction de la scène sous le fluide', 0, { min: 0, max: 1, curseur: [0, 1], pas: 0.05 }),
+        lissage: nb('Lissage de la nappe', 1, { min: 0, max: 5, unite: 'cqh', curseur: [0, 5], pas: 0.1 }),
       }),
       a_la_mort: ob('À la mort', {
         emetteur: noeud('texte', 'Émetteur lancé', null, { motif: '^[a-z0-9-]+$', parmi: 'emetteurs', exemple: 'b' }),
@@ -871,6 +876,27 @@
         return { morceaux: morceaux, origine: origine, impulsion: impulsion, rotationMax: rad(rotation) };
       }
 
+      /** Rendu « fluide » (P5a) : champs vérifiés pour tout rendu, gardés pour le rendu « fluide » (nappe en espace écran). */
+      function compilerFluide(r, ch) {
+        r = objet(r, ch);
+        function entre(cle, defaut, max) {
+          var x = nombre(r[cle], ch + '.' + cle, defaut);
+          if (x < 0 || (max !== undefined && x > max)) {
+            throw invalide(ch + '.' + cle, max !== undefined ? 'valeur entre 0 et ' + max + ' attendue' : 'valeur positive ou nulle attendue');
+          }
+          return x;
+        }
+        var res = {
+          teinte: couleur(r.teinte === undefined ? '#4aa8ff' : r.teinte, ch + '.teinte'),
+          opacite: entre('opacite', 0.85, 1),
+          absorption: entre('absorption', 0.25),
+          refraction: entre('refraction', 0, 1),
+          lissage: entre('lissage', 1, 5),
+        };
+        if (r.type !== 'fluide') return null;
+        return res;
+      }
+
       /** Arrivée sur un élément : instant arrondi au pas de 1/120 s (au moins un pas), fenêtre et ordre des trajets. */
       function compilerCible(c, ch) {
         if (c === undefined || c === null) return null;
@@ -1133,6 +1159,7 @@
           collisions: compilerCollisions(e.collisions, ch + '.collisions'),
           pixels: compilerPixels(n.forme, ch + '.naissance.forme'),
           eclats: compilerEclats(e.rendu, ch + '.rendu'),
+          fluide: compilerFluide(e.rendu, ch + '.rendu'),
           cible: cible,
           modules: compilerModules(e.modules, ch + '.modules'),
           interactions: compilerInteractions(e.interactions, ch + '.interactions'),
@@ -1142,6 +1169,7 @@
         else if (em.tables.source.some(function (x) { return x > 0; })) {
           throw invalide(ch + '.vie.couleur', '« source » est la couleur des pixels d\'un élément photographié : seulement avec la forme « pixels » ou une « cible »');
         }
+        if (em.fluide && em.fragment) throw invalide(ch + '.rendu.type', 'un émetteur de fragments se dessine en grains ou en éclats : pas de rendu « fluide »');
         if (em.interactions) verifierInteractions(em, ch);
         if (cible) {
           // Bruit du trajet chorégraphié : celui de la première turbulence (amplitude = force × 0,1 cqh).
