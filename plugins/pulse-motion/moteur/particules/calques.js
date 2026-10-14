@@ -31,7 +31,9 @@
  *   masque vide : aussi un panneau d'alerte (.pm-effet-alerte, masqué en capture) sur les effets qui visent les formes
  * M.particules.formesVides() -> Promise<[{ scene, element, message }]>   formes exactes au masque vide (contrôle, sans GPU)
  * M.particules.photosVides() -> Promise<[{ scene, element, regle, message }]>   photographies des effets de fragmentation :
- *   ancre-vide (rien à photographier : effet désactivé), photographie-trop-grande (densité augmentée) ; sans GPU
+ *   ancre-vide (rien à photographier : effet désactivé), photographie-trop-grande (densité augmentée) ; sans GPU.
+ *   Page de contrôle : après cet appel, les raccords sont posés selon t même sans GPU (la page mesurée cache les
+ *   éléments comme la vidéo exportée : pas de chevauchement ni de lisibilité mesurés sur un élément remplacé)
  * M.particules.donneesFragments(idScene, ordre) -> [données | null]   données de fragments de l'effet (tests)
  * Fragments (P4) : chaque élément photographié (M.figer.photo) une fois par instant et densité, après la porte de
  * disponibilité, à la résolution de sortie 1080p du format, recadré sur sa boîte opaque (contenu visible) ; listes de pixels, appariement de Hilbert, éclats
@@ -63,7 +65,7 @@
 
   const GARDE_GPU = 10000;
   const etat = { gpu: null, rendu: null, scenes: [], obstacles: new Map(), masques: null, formes: null, alertes: [], t: 0, rendu_t: null, pret: Promise.resolve(), disponible: false, raison: null,
-    photos: new Map(), problemesPhotos: [], promesseFragments: null };
+    photos: new Map(), problemesPhotos: [], promesseFragments: null, controle: false };
 
   function panneau(el, message) {
     if (el.querySelector(':scope > .pm-effet-panneau')) return;
@@ -559,14 +561,15 @@
   }
 
   /** Raccords (fonction de t) : un élément photographié est caché pendant que ses particules le remplacent (classe
-   *  pm-fragment-cache) ; seulement si l'effet est affiché (GPU prêt, photographies faites, ni désactivé ni en échec). */
+   *  pm-fragment-cache) ; seulement si l'effet est affiché (GPU prêt, photographies faites, ni désactivé ni en échec),
+   *  ou, dans la page de contrôle (photosVides appelé), dès que ses photographies sont faites, même sans GPU. */
   function raccorder(t) {
     const caches = new Set();
     const geres = new Set();
     etat.scenes.forEach((sc) => sc.effets.forEach((fx) => {
       if (!fragmente(fx)) return;
       [fx.ancre, fx.cible].forEach((el) => { if (el) geres.add(el); });
-      if (!etat.gpu || !fx.fragments || fx.desactive || sc.echec) return;
+      if ((!etat.gpu && !etat.controle) || !fx.fragments || fx.desactive || sc.echec) return;
       const r = M.fragments.raccord(fx.effet, (t - fx.debut) * fx.info.rythme);
       if (r.ancre && fx.ancre) caches.add(fx.ancre);
       if (r.cible && fx.cible) caches.add(fx.cible);
@@ -1025,7 +1028,11 @@
     },
     /** Problèmes de photographie des effets de fragmentation (contrôle de la vidéo, sans GPU) : [{ scene, element, regle, message }]. */
     photosVides() {
-      return fragmentsPromis().then(() => etat.problemesPhotos.map((p) => Object.assign({}, p)));
+      return fragmentsPromis().then(() => {
+        etat.controle = true;
+        raccorder(etat.t);
+        return etat.problemesPhotos.map((p) => Object.assign({}, p));
+      });
     },
     /** Données de fragments d'un effet (tests) : un élément par émetteur, null hors fragments ; null si non préparées. */
     donneesFragments(idScene, ordre) {
