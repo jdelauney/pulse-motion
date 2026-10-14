@@ -201,3 +201,129 @@ envoyer({ webgpu: true, l });`,
     [true, false, true, false],
   ]);
 });
+
+test('page : au début d\'une désintégration et d\'un bris, l\'image des particules est celle de l\'élément (écart moyen < 2 %)', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const html = pageFragments({
+    textes: { titre: 'PULSE' },
+    recettes: [DESINT, BRIS],
+    scene: `<section data-scene="s">
+  ${style('#mot { position: absolute; left: 20cqh; top: 15cqh; margin: 0; font: 900 18cqh/1 sans-serif; color: #e04020; } #bloc { position: absolute; left: 30cqh; top: 60cqh; width: 60cqh; height: 25cqh; background: linear-gradient(90deg, #2050e0, #e0c020); border-radius: 4cqh; }')}
+  <h1 id="mot" data-texte="titre" data-start="0"></h1>
+  <div id="bloc" data-start="0"></div>
+  <div data-effet="desint" data-ancre="#mot" data-start="1" data-dur="1"></div>
+  <div data-effet="bris" data-ancre="#bloc" data-start="1" data-dur="1"></div>
+</section>`,
+    script: `
+await M.particules.pret;
+if (!M.particules.disponible) return envoyer({ webgpu: false });
+await M.seek(0.5);
+const mot = document.getElementById('mot');
+const bloc = document.getElementById('bloc');
+const refMot = await reference(mot);
+const refBloc = await reference(bloc);
+await M.seek(1 + 1.5 / 120);
+const calque = await M.particules.lirePixels('s', 'avant');
+envoyer({ webgpu: true, mot: ecart(calque, refMot), bloc: ecart(calque, refBloc), caches: [cache('mot'), cache('bloc')] });`,
+  });
+  const r = JSON.parse(await executerPage(html));
+  assert.equal(r.erreur, undefined, r.erreur);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.deepEqual(r.caches, [true, true], 'éléments réels cachés');
+  assert.ok(r.mot < 0.02, `désintégration : écart moyen ${(r.mot * 100).toFixed(2)} %`);
+  assert.ok(r.bloc < 0.02, `bris : écart moyen ${(r.bloc * 100).toFixed(2)} %`);
+});
+
+test('page : assemblage guidé et chorégraphié : arrivée à 0,01 cqh, l\'image suivante montre l\'élément réel', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const html = pageFragments({
+    textes: { titre: 'OK', fin: 'GO' },
+    recettes: [assemble('guidee'), assemble('choree')],
+    scene: `<section data-scene="s">
+  ${style('#un { position: absolute; left: 20cqh; top: 30cqh; margin: 0; font: 900 20cqh/1 sans-serif; color: #2080e0; } #deux { position: absolute; left: 100cqh; top: 30cqh; margin: 0; font: 900 20cqh/1 sans-serif; color: #20a040; transform: rotate(-8deg); }')}
+  <h1 id="un" data-texte="titre" data-start="0"></h1>
+  <h2 id="deux" data-texte="fin" data-start="0"></h2>
+  <div data-effet="assemble-guidee" data-ancre="#un" data-start="0.5" data-dur="1"></div>
+  <div data-effet="assemble-choree" data-ancre="#deux" data-start="0.5" data-dur="1"></div>
+</section>`,
+    script: `
+await M.particules.pret;
+if (!M.particules.disponible) return envoyer({ webgpu: false });
+const O = M.obstacles;
+const res = {};
+await M.seek(0.5 + 119.5 / 120);
+for (const [ordre, id] of [[0, 'un'], [1, 'deux']]) {
+  const el = document.getElementById(id);
+  const rep = M.particulesInterne.mesurerReperes([el], el.closest('section'))[0];
+  const b = M.particules.donneesFragments('s', ordre)[0].b;
+  const ps = vivantes(await M.particules.lireEtat('s', ordre, 0));
+  let pire = 0;
+  for (const p of ps) {
+    const c = O.versMonde(rep, [b[p.n * 4] * rep.echelle[0], b[p.n * 4 + 1] * rep.echelle[1]]);
+    pire = Math.max(pire, Math.hypot(p.x - c[0], p.y - c[1]));
+  }
+  res[id] = { pire, vivantes: ps.length, total: b.length / 4, cacheAvant: cache(id) };
+}
+await M.seek(0.5 + 120.5 / 120);
+for (const id of ['un', 'deux']) {
+  res[id].cacheApres = cache(id);
+  res[id].visibilite = getComputedStyle(document.getElementById(id)).visibility;
+}
+res.alphaApres = alphaMax(await M.particules.lirePixels('s', 'avant'));
+envoyer({ webgpu: true, res });`,
+  });
+  const r = JSON.parse(await executerPage(html));
+  assert.equal(r.erreur, undefined, r.erreur);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  for (const id of ['un', 'deux']) {
+    const x = r.res[id];
+    assert.equal(x.vivantes, x.total, `${id} : toutes les particules présentes à l'image d'avant`);
+    assert.ok(x.pire < 0.01, `${id} : particule la plus éloignée de sa cible à ${x.pire} cqh`);
+    assert.equal(x.cacheAvant, true, `${id} : élément caché jusqu'à l'arrivée`);
+    assert.equal(x.cacheApres, false, `${id} : élément montré à l'image de l'arrivée`);
+    assert.equal(x.visibilite, 'visible');
+  }
+  assert.equal(r.res.alphaApres, 0, 'particules éteintes à l\'image de l\'arrivée');
+});
+
+test('page : métamorphose qui aboutit sur B (bijection sur le plus petit ensemble, B montré à l\'arrivée)', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const html = pageFragments({
+    textes: { titre: 'AB', fin: 'CDEF' },
+    recettes: [META],
+    scene: `<section data-scene="s">
+  ${style('#a { position: absolute; left: 15cqh; top: 20cqh; margin: 0; font: 900 18cqh/1 sans-serif; color: #e04020; } #b { position: absolute; left: 80cqh; top: 55cqh; margin: 0; font: 900 14cqh/1 sans-serif; color: #2060e0; }')}
+  <h1 id="a" data-texte="titre" data-start="0"></h1>
+  <h2 id="b" data-texte="fin" data-start="0"></h2>
+  <div data-effet="meta" data-ancre="#a" data-cible="#b" data-start="1" data-dur="1.5"></div>
+</section>`,
+    script: `
+await M.particules.pret;
+if (!M.particules.disponible) return envoyer({ webgpu: false });
+await M.seek(1 + 179.5 / 120);
+const el = document.getElementById('b');
+const rep = M.particulesInterne.mesurerReperes([el], el.closest('section'))[0];
+const d = M.particules.donneesFragments('s', 0)[0];
+const ps = vivantes(await M.particules.lireEtat('s', 0, 0));
+let pire = 0;
+let restent = 0;
+for (const p of ps) {
+  if (Math.floor(d.b[p.n * 4 + 3] / 65536) & 2) continue;
+  restent++;
+  const c = M.obstacles.versMonde(rep, [d.b[p.n * 4] * rep.echelle[0], d.b[p.n * 4 + 1] * rep.echelle[1]]);
+  pire = Math.max(pire, Math.hypot(p.x - c[0], p.y - c[1]));
+}
+const avant = [cache('a'), cache('b')];
+await M.seek(1 + 180.5 / 120);
+envoyer({ webgpu: true, pire, restent, nA: d.nA, nB: d.nB, total: ps.length, avant, apres: [cache('a'), cache('b')], alpha: alphaMax(await M.particules.lirePixels('s', 'avant')) });`,
+  });
+  const r = JSON.parse(await executerPage(html));
+  assert.equal(r.erreur, undefined, r.erreur);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.equal(r.total, Math.max(r.nA, r.nB), 'max(A, B) particules');
+  assert.equal(r.restent, r.nB, 'chaque pixel de B reçoit exactement une particule qui reste');
+  assert.ok(r.pire < 0.01, `particule la plus éloignée de son pixel de B : ${r.pire} cqh`);
+  assert.deepEqual(r.avant, [true, true], 'A caché dès le début, B jusqu\'à l\'arrivée');
+  assert.deepEqual(r.apres, [true, false], 'B montré à l\'arrivée');
+  assert.equal(r.alpha, 0, 'particules éteintes');
+});
