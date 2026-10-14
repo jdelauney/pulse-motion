@@ -24,6 +24,9 @@
  *   module de particules (force, couleur, forme) : noms déclarés au niveau du module et R.x préfixés (pmForce_, pmCouleur_,
  *   pmForme_), réglages en constantes ; appel : nom de la fonction attendue préfixée ; carte : décalages de colonnes par ligne.
  * situerModule(messages, module, debut) -> erreurs dans le fichier du module (debut : lignes avant le module dans le noyau)
+ * planComposition({ scenes, t, transitions, posts, postsVideo }) -> null | { couches, transition, postsVideo }
+ *   composition à l'instant t : scènes visibles (ordre du document) à photographier, transition par shader en cours
+ *   ({ sortante: id | null, entrante, progres, temps, duree }) ; null sans transition par shader ni post-traitement.
  * attacherModules(effet, charger, charte) -> [{ regle, message }]   em.modulesWGSL de chaque émetteur ; charger(nom) ->
  *   { json, code, erreurs } | null ; réglages d'un module : défauts, remplacés par ceux de la recette de même nom.
  *
@@ -525,7 +528,32 @@
     return erreurs;
   }
 
+  // ---- Composition (transitions et post-traitements par shader) ----
+
+  function planComposition(o) {
+    var visibles = o.scenes.filter(function (s) { return o.t >= s.debut && o.t < s.fin; });
+    if (!visibles.length && o.scenes.length) visibles = [o.scenes[o.scenes.length - 1]];
+    var transition = null;
+    var derniere = visibles[visibles.length - 1];
+    if (derniere && o.transitions[derniere.id] && derniere.dureeTransition > 0) {
+      var q = (o.t - derniere.debut) / derniere.dureeTransition;
+      if (q < 1) {
+        transition = {
+          sortante: visibles.length > 1 ? visibles[visibles.length - 2].id : null,
+          entrante: derniere.id,
+          progres: Math.max(0, q),
+          temps: Math.max(0, o.t - derniere.debut),
+          duree: derniere.dureeTransition,
+        };
+      }
+    }
+    var avecPosts = o.postsVideo > 0 || visibles.some(function (s) { return (o.posts[s.id] || 0) > 0; });
+    if (!transition && !avecPosts) return null;
+    return { couches: visibles.map(function (s) { return s.id; }), transition: transition, postsVideo: o.postsVideo };
+  }
+
   return {
+    planComposition: planComposition,
     USAGES: USAGES,
     FONCTIONS: FONCTIONS,
     TAILLE_MAX: TAILLE_MAX,
