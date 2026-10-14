@@ -181,7 +181,7 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
       }
     }
     if (deroule.bruitages && deroule.bruitages.transitions) {
-      min.scenes.forEach((s, i) => { const nom = i > 0 && CATALOGUE.SONS_TRANSITION[s.transition]; if (nom) sonsJoues.push({ t: s.debut, nom, scene: s.id }); });
+      min.scenes.forEach((s, i) => { const nom = i > 0 && CATALOGUE.sonTransition(s.transition); if (nom) sonsJoues.push({ t: s.debut, nom, scene: s.id }); });
     }
     sonsJoues.sort((a, b) => a.t - b.t);
     for (let i = 0; i + 3 < sonsJoues.length; i++) {

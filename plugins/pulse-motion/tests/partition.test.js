@@ -13,6 +13,21 @@ test('catalogue : instruments, douze bruitages, sons de transition, six ambiance
   assert.deepEqual(Object.keys(AMBIANCES).sort(), ['calme', 'corporate', 'entrainant', 'inspirant', 'suspense', 'tech']);
 });
 
+test('catalogue : son d'une transition, nommée ou par shader (bibliothèque, ou souffle pour un shader du projet)', () => {
+  const C = require('../moteur/synthe/catalogue.js');
+  assert.equal(C.sonTransition('fondu'), 'souffle');
+  assert.equal(C.sonTransition('aucune'), null);
+  assert.equal(C.sonTransition(undefined), null);
+  assert.equal(C.sonTransition({ shader: 'glitch', duree: 0.8 }), 'impact');
+  assert.equal(C.sonTransition({ shader: 'vagues-maison', duree: 0.8 }), 'souffle');
+  for (const nom of Object.values(C.SONS_TRANSITION_SHADER)) assert.ok(BRUITAGES.includes(nom), nom);
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const transitions = fs.readdirSync(path.join(__dirname, '..', 'shaders')).filter((f) => f.endsWith('.json'))
+    .map((f) => JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'shaders', f), 'utf8'))).filter((j) => j.usage === 'transition').map((j) => j.nom);
+  assert.deepEqual(transitions.sort(), Object.keys(C.SONS_TRANSITION_SHADER).sort(), 'un son pour chaque transition de la bibliothèque');
+});
+
 test('fréquences : noms français et anglais, altérations, octaves', () => {
   assert.ok(proche(P.frequence('la4'), 440));
   assert.ok(proche(P.frequence('a4'), 440));

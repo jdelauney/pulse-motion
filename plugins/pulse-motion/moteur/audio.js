@@ -42,7 +42,7 @@
     });
     if (d.bruitages && d.bruitages.transitions) {
       M.minutage.scenes.forEach(function (s, i) {
-        var son = i > 0 && M.synthe.catalogue.SONS_TRANSITION[s.transition];
+        var son = i > 0 && M.synthe.catalogue.sonTransition(s.transition);
         if (son) liste.push({ t: s.debut, nom: son, fichier: null, volume: 1 });
       });
     }
