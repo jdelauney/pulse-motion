@@ -207,3 +207,18 @@ test('bibliothèque : fragmentation (briser, désintégrer, assembler, métamorp
   assert.ok(m.cible.bruit[1] > 0, 'tourbillon en chemin');
   assert.deepEqual([m.tables.opacite[0], m.tables.opacite[63], m.tables.source[0]], [1, 1, 1]);
 });
+
+test('référence : section Fragmentation (déclarations, champs du schéma, contrôles)', () => {
+  const texte = fs.readFileSync(path.join(__dirname, '..', 'references', 'particules.md'), 'utf8');
+  const debut = texte.indexOf('## Fragmentation');
+  const fin = texte.indexOf('## Régler à l\'œil');
+  assert.ok(debut > 0 && fin > debut, 'section Fragmentation avant l\'atelier');
+  const section = texte.slice(debut, fin);
+  const em = R.SCHEMA.champs.emetteurs.element.champs;
+  const champs = [...Object.keys(em.cible.champs), 'densite', 'instant', 'liberation', 'ordre', 'morceaux', 'origine', 'impulsion', 'rotation_max'];
+  for (const mot of [...champs, 'data-cible', '"pixels"', '"source"', '"eclats"', '"neutre"', 'guidee', 'choree', 'ancre-vide', 'cible-introuvable', 'metamorphose-sans-cible', 'photographie-trop-grande']) {
+    assert.ok(section.includes(mot), `la section parle de « ${mot} »`);
+  }
+  for (const nom of ['briser', 'desintegrer', 'assembler', 'metamorphose']) assert.ok(section.includes('`' + nom + '`'), nom);
+  assert.ok(texte.includes('| `data-cible` |'), 'data-cible dans la table des attributs');
+});
