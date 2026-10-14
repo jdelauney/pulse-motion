@@ -60,6 +60,8 @@ function avec(chemin, v, contexte) {
     delete r.emetteurs[0].a_la_mort;
     r.emetteurs[0].collisions = {};
   }
+  // cible : un émetteur de fragments naît de la photographie de son élément, sans salves.
+  if (chemin[2] === 'cible') delete r.emetteurs[0].naissance.salves;
   let cible = r;
   let noeud = S;
   for (let i = 0; i < chemin.length; i++) {
