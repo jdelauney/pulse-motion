@@ -5,7 +5,7 @@
  *                                     résout l'ensemble des images illisibles (URL data:)
  *   .cible(canvas)                    cible HDR, niveaux de bloom, copie lisible, contexte du canvas
  *   .oublierCible(canvas)             libère la cible (scène masquée) ; .cible la recrée au retour
- *   .dessiner(cible, liste, o)        liste : [{ sim, i, delta }] ; o : { largeurCqh, dureeImage, bloom, seuil, tons, couches?, fonds? } ;
+ *   .dessiner(cible, liste, o)        liste : [{ sim, i, delta }] ; o : { largeurCqh, dureeImage, bloom, seuil, tons, couches?, fonds?, photoScene? } ;
  *                                     fonds : [(passe) => void] fonds par shader (P6), dessinés dans la cible HDR en premier ;
  *                                     pose cible.vide (rien à dessiner) ; couches : [{ tampon (f32, cqh), debut (case),
  *                                     repere, genre (type d'obstacle), couleur [r, v, b, a], flou (cqh) }] couches héritées
@@ -21,6 +21,10 @@
  * vers B le long du trajet, particules en trop en fondu, taille vers celle des pixels de la cible ; éclats : polygones
  * texturés par la photographie de l'ancre (e.photo) ; texture « pixel » (carré plein) ; tons « neutre ». Un émetteur de
  * fragments à profondeur constante n'est pas trié (même ordre).
+ * Rendu « fluide » (P5a) : em.fluide ; chaque particule en demi-sphère (hauteur au maximum, épaisseur additionnée) dans une
+ * texture de demi-résolution, flou bilatéral séparable (bords gardés), puis ombrage plein écran dans la cible HDR : teinte,
+ * absorption selon l'épaisseur, réfraction de la photographie de la scène (o.photoScene, refraction > 0), reflet ; ressources
+ * par (émetteur, cible) ; .photo(cle, bitmap) -> vue, .oublierPhoto(cle) : photographies de scène (calques.js).
  * Chaîne : tri bitonique des émetteurs en mélange alpha (clé z) -> particules dans une cible rgba16float
  * (sprite, étincelle étirée, traînée en ruban, planche ; textures procédurales ou image ; flou de
  * mouvement en 4 échantillons ; perspective selon z, sauf pour les émetteurs à collisions) -> bloom (seuil, dual Kawase sur 5 niveaux dans un
@@ -354,6 +358,37 @@ fn fsTrainee(e: Sortie) -> @location(0) vec4f {
   if (R.melange == 2u) { return vec4f(e.couleur.rgb * m, a); }
   return vec4f(e.couleur.rgb * a, a);
 }
+
+// Nappe d'un émetteur « fluide » (P5a) : chaque particule en demi-sphère de rayon taille / 2 (table de taille), sans
+// perspective ; hauteur (rvb, mélange max) et épaisseur 2 h × opacité de vie (alpha, mélange additif), en demi-résolution.
+@vertex
+fn vsSphere(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> Sortie {
+  let idx = ii;
+  if (idx >= arrayLength(&particules)) { return cachee(); }
+  let p = particules[idx];
+  if (p.vivante == 0u) { return cachee(); }
+  let u = p.age / p.vie;
+  let rayon = 0.5 * p.taille * table(256u, u);
+  var coins = array<vec2f, 6>(vec2f(-1.0, -1.0), vec2f(1.0, -1.0), vec2f(-1.0, 1.0), vec2f(-1.0, 1.0), vec2f(1.0, -1.0), vec2f(1.0, 1.0));
+  let c = coins[vi];
+  var o: Sortie;
+  o.pos = ecran(p.pos + p.vel * C.delta + c * rayon);
+  o.uv = c;
+  o.uvTex = vec2f(rayon, table(384u, u) * fondu(idx));
+  o.couleur = vec4f(0.0);
+  o.alea = p.alea;
+  o.echantillons = 1.0;
+  o.idx = idx;
+  return o;
+}
+
+@fragment
+fn fsSphere(e: Sortie) -> @location(0) vec4f {
+  let r2 = dot(e.uv, e.uv);
+  if (r2 >= 1.0) { discard; }
+  let h = e.uvTex.x * sqrt(1.0 - r2);
+  return vec4f(h, h, h, 2.0 * h * e.uvTex.y);
+}
 `;
 
   const WGSL_TRI = P.WGSL_COMMUN + /* wgsl */ `
@@ -526,10 +561,87 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
 }
 `;
 
+  // Nappe (P5a) : flou bilatéral séparable et ombrage plein écran.
+  const WGSL_NAPPE = WGSL_FINAL_COMMUN + /* wgsl */ `
+struct Flou { pas: vec2f, rayon: f32, sigmaH: f32 };
+struct Nappe { teinte: vec4f, taille: vec2f, cqhTexel: f32, opacite: f32, absorption: f32, refraction: f32, avecPhoto: u32, r0: u32 };
+@group(0) @binding(0) var source: texture_2d<f32>;
+@group(0) @binding(1) var lisse: sampler;
+@group(0) @binding(2) var<uniform> B: Flou;
+@group(0) @binding(3) var<uniform> N: Nappe;
+@group(0) @binding(4) var photo: texture_2d<f32>;
+
+// Flou bilatéral (une direction par passe) : hauteur (r) pondérée par la gaussienne et l'écart de hauteur (bords gardés) ;
+// épaisseur (a) en flou gaussien simple. Lecture au texel près.
+@fragment
+fn fsFlou(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+  let taille = vec2i(textureDimensions(source));
+  let c = vec2i(pos.xy);
+  let centre = textureLoad(source, c, 0);
+  let R = i32(B.rayon);
+  let sigma = max(B.rayon * 0.5, 0.5);
+  var h = 0.0;
+  var wh = 0.0;
+  var e = 0.0;
+  var we = 0.0;
+  for (var k = -R; k <= R; k++) {
+    let q = clamp(c + vec2i(B.pas) * k, vec2i(0), taille - vec2i(1));
+    let s = textureLoad(source, q, 0);
+    let g = exp(-f32(k * k) / (2.0 * sigma * sigma));
+    let dh = (s.r - centre.r) / max(B.sigmaH, 1e-4);
+    let w = g * exp(-0.5 * dh * dh);
+    h += s.r * w;
+    wh += w;
+    e += s.a * g;
+    we += g;
+  }
+  let hl = h / max(wh, 1e-6);
+  return vec4f(hl, hl, hl, e / max(we, 1e-6));
+}
+
+// Ombrage : normale de la hauteur lissée, couverture selon l'épaisseur (absorption), teinte, réfraction de la photographie
+// de la scène (prémultipliée, linéaire), reflet spéculaire ; alpha prémultiplié.
+@fragment
+fn fsNappe(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+  let uv = pos.xy / N.taille;
+  let n0 = textureSampleLevel(source, lisse, uv, 0.0);
+  let ep = n0.a;
+  if (ep <= 1e-3) { return vec4f(0.0); }
+  let t = 1.0 / vec2f(textureDimensions(source));
+  let hx = textureSampleLevel(source, lisse, uv + vec2f(t.x, 0.0), 0.0).r - textureSampleLevel(source, lisse, uv - vec2f(t.x, 0.0), 0.0).r;
+  let hy = textureSampleLevel(source, lisse, uv + vec2f(0.0, t.y), 0.0).r - textureSampleLevel(source, lisse, uv - vec2f(0.0, t.y), 0.0).r;
+  let n = normalize(vec3f(-hx, -hy, 2.0 * N.cqhTexel));
+  let bord = smoothstep(0.0, 0.15, ep);
+  let a = clamp(N.opacite * (1.0 - exp(-N.absorption * ep)), 0.0, 1.0) * bord;
+  var rgb = N.teinte.rgb * a;
+  var alpha = a;
+  if (N.avecPhoto == 1u) {
+    let fond = textureSampleLevel(photo, lisse, clamp(uv + n.xy * N.refraction * 0.05, vec2f(0.0), vec2f(1.0)), 0.0);
+    let k = N.refraction * bord * (1.0 - a);
+    rgb += k * fond.rgb;
+    alpha += k * fond.a;
+  }
+  let l = normalize(vec3f(-0.4, -0.6, 0.7));
+  let hv = normalize(l + vec3f(0.0, 0.0, 1.0));
+  let spec = pow(max(dot(n, hv), 0.0), 60.0) * 0.8 * bord;
+  rgb += vec3f(spec);
+  alpha = clamp(alpha + spec, 0.0, 1.0);
+  return vec4f(rgb, alpha);
+}
+`;
+
   const MELANGES = {
     additif: { color: { srcFactor: 'one', dstFactor: 'one', operation: 'add' }, alpha: { srcFactor: 'one', dstFactor: 'one', operation: 'add' } },
     alpha: { color: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' }, alpha: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' } },
   };
+
+  // Nappe : hauteur au maximum (couleur), épaisseur additionnée (alpha).
+  const MELANGE_NAPPE = { color: { srcFactor: 'one', dstFactor: 'one', operation: 'max' }, alpha: { srcFactor: 'one', dstFactor: 'one', operation: 'add' } };
+  const FLOU_MAX = 32;
+  function detruireNappe(r) {
+    [r.a, r.b].forEach((t) => t.destroy());
+    [r.uniforme, r.flouH, r.flouV].forEach((b) => b.destroy());
+  }
 
   function puissanceDeDeux(n) { let p = 64; while (p < n) p *= 2; return p; }
   const SOMMETS_ECLAT = 16;
@@ -541,6 +653,7 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
   };
 
   function detruireCible(c) {
+    c.detruite = true;
     [c.hdr, c.sortie, ...c.niveaux.map((n) => n.texture), c.uniformeFinal, ...c.bas.map((b) => b.uniforme), ...c.haut.map((b) => b.uniforme)].forEach((t) => t.destroy());
   }
 
@@ -586,8 +699,30 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
         ],
       });
       this.layoutParticules = device.createPipelineLayout({ bindGroupLayouts: [this.layout] });
-      this.pipelines = this.creerPipelines(device.createShaderModule({ label: 'pm-particules', code: WGSL_PARTICULES }));
+      const moduleParticules = device.createShaderModule({ label: 'pm-particules', code: WGSL_PARTICULES });
+      this.pipelines = this.creerPipelines(moduleParticules);
       this.variantes = new Map();
+
+      // Rendu « fluide » (P5a) : sphères de la nappe, flou bilatéral, ombrage.
+      this.pipelineSphere = device.createRenderPipeline({
+        layout: this.layoutParticules,
+        vertex: { module: moduleParticules, entryPoint: 'vsSphere' },
+        fragment: { module: moduleParticules, entryPoint: 'fsSphere', targets: [{ format: 'rgba16float', blend: MELANGE_NAPPE }] },
+        primitive: { topology: 'triangle-list' },
+      });
+      const moduleNappe = device.createShaderModule({ label: 'pm-nappe', code: WGSL_NAPPE });
+      this.pipelineFlou = device.createRenderPipeline({
+        layout: 'auto',
+        vertex: { module: moduleNappe, entryPoint: 'vsPlein' },
+        fragment: { module: moduleNappe, entryPoint: 'fsFlou', targets: [{ format: 'rgba16float' }] },
+      });
+      this.pipelineNappe = device.createRenderPipeline({
+        layout: 'auto',
+        vertex: { module: moduleNappe, entryPoint: 'vsPlein' },
+        fragment: { module: moduleNappe, entryPoint: 'fsNappe', targets: [{ format: 'rgba16float', blend: MELANGES.alpha }] },
+      });
+      this.fluides = new WeakMap();
+      this.photos = new Map();
 
       // Couches héritées des obstacles de la vidéo.
       this.layoutCouche = device.createBindGroupLayout({
@@ -658,6 +793,7 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
       this.videContacts = device.createBuffer({ size: 32, usage: U.STORAGE });
       this.blanc = device.createTexture({ size: [1, 1], format: 'rgba8unorm-srgb', usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST });
       device.queue.writeTexture({ texture: this.blanc }, new Uint8Array([255, 255, 255, 255]), { bytesPerRow: 4 }, [1, 1]);
+      this.vueBlanc = this.blanc.createView();
       this.images = new Map();
       this.groupes = new WeakMap();
       this.tris = new WeakMap();
@@ -814,8 +950,9 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
       try { c.contexte.unconfigure(); } catch (e) { /* contexte déjà perdu */ }
     }
 
-    /** Mélange alpha : tri par z ; sauf un émetteur de fragments à z constant (l'ordre trié est alors celui des cases). */
-    estTrie(e) { return e.em.rendu.melange !== 'additif' && !(e.em.fragment && e.em.z[0] === e.em.z[1]); }
+    /** Mélange alpha : tri par z ; sauf un émetteur de fragments à z constant (l'ordre trié est alors celui des cases) et un
+     *  émetteur « fluide » (nappe : hauteur au maximum, épaisseur additionnée, sans ordre). */
+    estTrie(e) { return !e.em.fluide && e.em.rendu.melange !== 'additif' && !(e.em.fragment && e.em.z[0] === e.em.z[1]); }
 
     tri(e) {
       let t = this.tris.get(e);
@@ -863,6 +1000,8 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
         if (t) t.ordre.destroy();
         const s = this.styles.get(e);
         if (s) s.destroy();
+        const fl = this.fluides.get(e);
+        if (fl) { fl.forEach(detruireNappe); this.fluides.delete(e); }
         this.tris.delete(e);
         this.styles.delete(e);
         this.groupes.delete(e);
@@ -922,12 +1061,104 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
       return g;
     }
 
+    /** Uniforme « Calque » d'un émetteur pour l'image : scène (cqh), extrapolation, k, tri, flou, fondu, τ. */
+    ecrireCalque(sim, e, delta, o) {
+      const r = e.em.rendu;
+      const v = new ArrayBuffer(48);
+      const f = new Float32Array(v);
+      const u = new Uint32Array(v);
+      f[0] = o.largeurCqh; f[1] = 100; f[2] = delta; f[3] = o.dureeImage;
+      u[4] = sim.k || 0; u[5] = this.estTrie(e) ? 1 : 0; u[6] = r.flou ? 1 : 0; u[7] = e.contacts ? 1 : 0;
+      f[8] = sim.tau || 0;
+      this.device.queue.writeBuffer(e.uniformeRendu, 0, v);
+    }
+
+    /** Textures de la nappe d'un émetteur « fluide » dans une cible (demi-résolution, A et B pour le flou), uniformes, groupes
+     *  du flou ; créées une fois par cible ; celles des cibles détruites (canvas redimensionné, scène masquée) libérées. */
+    nappe(e, cible) {
+      let parCible = this.fluides.get(e);
+      if (!parCible) { parCible = new Map(); this.fluides.set(e, parCible); }
+      parCible.forEach((r, c) => { if (c.detruite) { detruireNappe(r); parCible.delete(c); } });
+      let r = parCible.get(cible);
+      if (r) return r;
+      const { device } = this;
+      const T = GPUTextureUsage;
+      const U = GPUBufferUsage;
+      const largeur = Math.max(1, Math.ceil(cible.largeur / 2));
+      const hauteur = Math.max(1, Math.ceil(cible.hauteur / 2));
+      const texture = () => device.createTexture({ size: [largeur, hauteur], format: 'rgba16float', usage: T.RENDER_ATTACHMENT | T.TEXTURE_BINDING });
+      const uniforme = (octets) => device.createBuffer({ size: octets, usage: U.UNIFORM | U.COPY_DST });
+      r = { a: texture(), b: texture(), largeur, hauteur, uniforme: uniforme(48), flouH: uniforme(16), flouV: uniforme(16), photo: undefined, groupe: null };
+      r.vueA = r.a.createView();
+      r.vueB = r.b.createView();
+      const flou = (vue, u) => device.createBindGroup({
+        layout: this.pipelineFlou.getBindGroupLayout(0),
+        entries: [{ binding: 0, resource: vue }, { binding: 2, resource: { buffer: u } }],
+      });
+      r.groupeH = flou(r.vueA, r.flouH);
+      r.groupeV = flou(r.vueB, r.flouV);
+      parCible.set(cible, r);
+      return r;
+    }
+
+    /** Sphères de la nappe dans A, flou horizontal A -> B, vertical B -> A (rayon : « lissage » cqh en texels de
+     *  demi-résolution, FLOU_MAX au plus ; écart de hauteur toléré : un quart de la taille moyenne des particules). */
+    preparerNappe(enc, cible, e) {
+      const r = this.nappe(e, cible);
+      const fl = e.em.fluide;
+      const rayon = Math.min(FLOU_MAX, Math.round(fl.lissage * r.hauteur / 100));
+      const sigmaH = Math.max(0.05, 0.125 * (e.em.taille[0] + e.em.taille[1]));
+      this.device.queue.writeBuffer(r.flouH, 0, new Float32Array([1, 0, rayon, sigmaH]));
+      this.device.queue.writeBuffer(r.flouV, 0, new Float32Array([0, 1, rayon, sigmaH]));
+      const spheres = enc.beginRenderPass({ colorAttachments: [{ view: r.vueA, loadOp: 'clear', storeOp: 'store', clearValue: [0, 0, 0, 0] }] });
+      spheres.setPipeline(this.pipelineSphere);
+      spheres.setBindGroup(0, this.groupe(e));
+      spheres.draw(6, e.capacite);
+      spheres.end();
+      [[r.vueB, r.groupeH], [r.vueA, r.groupeV]].forEach(([vue, groupe]) => {
+        const p = enc.beginRenderPass({ colorAttachments: [{ view: vue, loadOp: 'clear', storeOp: 'store', clearValue: [0, 0, 0, 0] }] });
+        p.setPipeline(this.pipelineFlou);
+        p.setBindGroup(0, groupe);
+        p.draw(3);
+        p.end();
+      });
+    }
+
+    /** Uniforme et groupe de l'ombrage d'une nappe ; photo : photographie de la scène (GPUTextureView) ou null (réfraction
+     *  ignorée). Groupe recréé quand la photographie change. */
+    groupeNappe(e, cible, photo) {
+      const r = this.nappe(e, cible);
+      const fl = e.em.fluide;
+      const v = new ArrayBuffer(48);
+      const f = new Float32Array(v);
+      const u = new Uint32Array(v);
+      f.set(fl.teinte, 0);
+      f[4] = cible.largeur; f[5] = cible.hauteur; f[6] = 100 / r.hauteur; f[7] = fl.opacite;
+      f[8] = fl.absorption; f[9] = fl.refraction; u[10] = photo && fl.refraction > 0 ? 1 : 0;
+      this.device.queue.writeBuffer(r.uniforme, 0, v);
+      if (!r.groupe || r.photo !== photo) {
+        r.photo = photo;
+        r.groupe = this.device.createBindGroup({
+          layout: this.pipelineNappe.getBindGroupLayout(0),
+          entries: [
+            { binding: 0, resource: r.vueA },
+            { binding: 1, resource: this.lisse },
+            { binding: 3, resource: { buffer: r.uniforme } },
+            { binding: 4, resource: photo || this.vueBlanc },
+          ],
+        });
+      }
+      return r.groupe;
+    }
+
     dessiner(cible, liste, o) {
       const { device } = this;
       const enc = device.createCommandEncoder();
       const couches = o.couches || [];
       const fonds = o.fonds || [];
       cible.vide = liste.length === 0 && couches.length === 0 && fonds.length === 0;
+      // Uniforme « Calque » de chaque émetteur, une fois par image (lu par les sphères des nappes et par le dessin).
+      liste.forEach(({ sim, i, delta }) => this.ecrireCalque(sim, sim.emetteurs[i], delta, o));
 
       // 1. Tri des émetteurs en mélange alpha (clé z croissante : du plus loin au plus proche).
       const aTrier = liste.filter(({ sim, i }) => this.estTrie(sim.emetteurs[i]));
@@ -948,6 +1179,9 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
         passe.end();
       }
 
+      // 1 bis. Nappes des émetteurs « fluide » (P5a) : sphères en demi-résolution, flou bilatéral.
+      liste.forEach(({ sim, i }) => { if (sim.emetteurs[i].em.fluide) this.preparerNappe(enc, cible, sim.emetteurs[i]); });
+
       // 2. Particules dans la cible HDR.
       const rp = enc.beginRenderPass({ colorAttachments: [{ view: cible.vueHdr, loadOp: 'clear', storeOp: 'store', clearValue: [0, 0, 0, 0] }] });
       // Fonds et auras par shader (P6) : sous les couches héritées et les particules du calque.
@@ -967,16 +1201,16 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
         rp.setBindGroup(0, c.groupe);
         rp.draw(512);
       });
-      liste.forEach(({ sim, i, delta }) => {
+      liste.forEach(({ sim, i }) => {
         const e = sim.emetteurs[i];
         const r = e.em.rendu;
-        const v = new ArrayBuffer(48);
-        const f = new Float32Array(v);
-        const u = new Uint32Array(v);
-        f[0] = o.largeurCqh; f[1] = 100; f[2] = delta; f[3] = o.dureeImage;
-        u[4] = sim.k || 0; u[5] = this.estTrie(e) ? 1 : 0; u[6] = r.flou ? 1 : 0; u[7] = e.contacts ? 1 : 0;
-        f[8] = sim.tau || 0;
-        device.queue.writeBuffer(e.uniformeRendu, 0, v);
+        if (e.em.fluide) {
+          // Nappe : ombrage plein écran (teinte, absorption, réfraction de la photographie de la scène, reflet).
+          rp.setPipeline(this.pipelineNappe);
+          rp.setBindGroup(0, this.groupeNappe(e, cible, o.photoScene || null));
+          rp.draw(3);
+          return;
+        }
         const genre = r.type === 'trainee' ? 'trainee' : r.type === 'eclats' ? 'eclat' : 'quad';
         rp.setPipeline(this.pipelinesDe(e)[genre + '-' + (r.melange === 'additif' ? 'additif' : 'alpha')]);
         rp.setBindGroup(0, this.groupe(e));
