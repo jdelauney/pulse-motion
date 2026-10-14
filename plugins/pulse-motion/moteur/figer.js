@@ -7,9 +7,10 @@
  * M.figer.masque(el, { cote }) -> Promise<{ largeur, hauteur, alpha, largeurPx, hauteurPx }>
  *   masque alpha de l'élément seul (sans ses transformations ni ses ancêtres), dans l'état où il est à l'appel
  *   (figement synchrone, rastérisation asynchrone) ; grand côté de « cote » px (256 par défaut), rapport d'aspect gardé.
- * M.figer.photo(el, { largeur, hauteur }) -> Promise<{ largeur, hauteur, rgba, largeurPx, hauteurPx }>
+ * M.figer.photo(el, { largeur, hauteur, zone? }) -> Promise<{ largeur, hauteur, rgba, largeurPx, hauteurPx }>
  *   image RVBA (non prémultipliée) de l'élément seul, sans ses transformations, en largeur × hauteur pixels (fragmentation
- *   des particules, P4) ; même figement que le masque.
+ *   des particules, P4) ; même figement que le masque. zone { x, y, largeur, hauteur } (px CSS dans la boîte) : seule
+ *   cette partie de la boîte est rastérisée.
  * M.figer.boite(el) -> { largeur, hauteur }   boîte de mise en page (px CSS), transformations neutralisées
  * Utilisé par capture.js (export rapide), par les formes exactes des collisions et par la fragmentation (calques.js).
  * Navigateur seulement ; chargé dans la page livrée.
@@ -148,7 +149,7 @@
 
   /** Image RVBA (non prémultipliée) de l'élément seul, à sa boîte de mise en page, sans ses transformations, rastérisée
    *  en L × H pixels : figement synchrone (état à l'appel), rastérisation asynchrone. */
-  function rasteriser(el, boite, L, H) {
+  function rasteriser(el, boite, L, H, zone) {
     var largeurPx = boite.largeur;
     var hauteurPx = boite.hauteur;
     var copie = figerArbre(el);
@@ -156,7 +157,8 @@
       'transform:none;translate:none;rotate:none;scale:none;width:' + largeurPx + 'px;height:' + hauteurPx + 'px;');
     copie.setAttribute('xmlns', XHTML);
     var xml = new XMLSerializer().serializeToString(copie);
-    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + L + '" height="' + H + '" viewBox="0 0 ' + largeurPx + ' ' + hauteurPx + '">' +
+    var z = zone || { x: 0, y: 0, largeur: largeurPx, hauteur: hauteurPx };
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + L + '" height="' + H + '" viewBox="' + z.x + ' ' + z.y + ' ' + z.largeur + ' ' + z.hauteur + '" preserveAspectRatio="none">' +
       '<foreignObject x="0" y="0" width="' + largeurPx + '" height="' + hauteurPx + '">' +
       '<style xmlns="' + XHTML + '">' + reglesPolices() + '</style>' + xml + '</foreignObject></svg>';
     var img = new Image();
@@ -196,7 +198,7 @@
     }
     var L = Math.max(1, Math.round(o.largeur));
     var H = Math.max(1, Math.round(o.hauteur));
-    return rasteriser(el, boite, L, H).then(function (d) {
+    return rasteriser(el, boite, L, H, o.zone).then(function (d) {
       return { largeur: L, hauteur: H, rgba: new Uint8ClampedArray(d), largeurPx: boite.largeur, hauteurPx: boite.hauteur };
     });
   }

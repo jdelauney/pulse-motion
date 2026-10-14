@@ -3,7 +3,7 @@
  * new P.Simulation(device, effet, monde?, fragments?)   effet : recette compilée ; monde : obstacles de l'effet (collisions),
  *   facultatif ; fragments : données des émetteurs de fragments (P4), un élément par émetteur (null hors fragments) :
  *   { a, b (listes de pixels, 4 nombres par particule), eclats (36 nombres par éclat), image (ImageBitmap, éclats),
- *     demiA, demiB, coteA, coteB } (fragments.js, calques.js)
+ *     demiA, demiB, centreA, centreB (boîtes opaques des photographies), coteA, coteB } (fragments.js, calques.js)
  *   monde = { entrees: [{ type, categorie, forme, profil }], largeurCqh, actif, formes?: { vue } }   (obstacles.js)
  *   .tau                  dernier τ demandé (rendu des fragments)
  *   .avancer(tau, zones) -> deltas  amène chaque émetteur à τ ; δ = τ − k/120 pour les simulés, 0 pour la voie rapide
@@ -129,7 +129,8 @@ fn pixelF(i: u32, quel: u32) -> PixelF {
   return PixelF(vec2f(ef(b), ef(b + 1u)), vec4f(r, rv - r * 256.0, bl, ba - bl * 256.0) / 255.0, u32(drapeaux));
 }
 
-// Rang dans l'ordre demandé, dans [0, 1] : 0 hasard, 1 de gauche à droite, 2 du centre vers les bords.
+// Rang dans l'ordre demandé, dans [0, 1] : 0 hasard, 1 de gauche à droite, 2 du centre vers les bords. l : point local
+// relatif au centre de la boîte opaque de la photographie (demi : sa demi-taille).
 fn fractionOrdre(code: u32, l: vec2f, demi: vec2f, n: u32, canal: u32) -> f32 {
   if (code == 1u) { return clamp(l.x / max(2.0 * demi.x, 1e-6) + 0.5, 0.0, 1.0); }
   if (code == 2u) { return clamp(length(l / max(demi, vec2f(1e-6))) * 0.70710678, 0.0, 1.0); }
@@ -142,7 +143,7 @@ fn liberation(n: u32) -> f32 {
   if (!aFragment(F_PIXELS | F_ECLATS)) { return 0.0; }
   var l = ef(183u);
   if (aFragment(F_PIXELS) && ef(162u) > 0.0) {
-    l = l + ef(162u) * fractionOrdre(eu(163u), pixelF(n, 0u).pos, vec2f(ef(164u), ef(165u)), n, 21u);
+    l = l + ef(162u) * fractionOrdre(eu(163u), pixelF(n, 0u).pos - vec2f(ef(184u), ef(185u)), vec2f(ef(164u), ef(165u)), n, 21u);
   }
   return l;
 }
@@ -152,7 +153,7 @@ fn liberation(n: u32) -> f32 {
 fn trajet(n: u32) -> Trajet {
   let D = ef(158u);
   let e = ef(159u);
-  let depart = fractionOrdre(eu(160u), pixelF(n, 1u).pos, vec2f(ef(166u), ef(167u)), n, 20u) * e * D;
+  let depart = fractionOrdre(eu(160u), pixelF(n, 1u).pos - vec2f(ef(186u), ef(187u)), vec2f(ef(166u), ef(167u)), n, 20u) * e * D;
   return Trajet(depart, depart + (1.0 - e) * D);
 }
 
@@ -470,7 +471,7 @@ fn vitesseLiberation(n: u32, t: f32) -> vec2f {
   var v = vitesseDepart(n, versMondeF(r, l), r.centre, naissanceVide()) + vitesseElement(l, t);
   if (aFragment(F_ECLATS)) {
     let demi = vec2f(ef(164u), ef(165u));
-    let d = l - (vec2f(ef(172u), ef(173u)) - 0.5) * 2.0 * demi;
+    let d = l - vec2f(ef(184u), ef(185u)) - (vec2f(ef(172u), ef(173u)) - 0.5) * 2.0 * demi;
     let ld = length(d);
     var dir = vec2f(0.0, -1.0);
     if (ld > 1e-6) { dir = d / ld; }
@@ -1269,6 +1270,9 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
       if (em.pixels) { f[162] = em.pixels.liberation; u[163] = em.pixels.ordreCode; }
       f[164] = frag.demiA[0]; f[165] = frag.demiA[1]; f[166] = frag.demiB[0]; f[167] = frag.demiB[1];
       f[168] = frag.coteA; f[169] = frag.coteB;
+      const cA = frag.centreA || [0, 0];
+      const cB = frag.centreB || [0, 0];
+      f[184] = cA[0]; f[185] = cA[1]; f[186] = cB[0]; f[187] = cB[1];
       if (em.eclats) {
         f[170] = em.eclats.impulsion; f[171] = em.eclats.rotationMax;
         f[172] = em.eclats.origine[0]; f[173] = em.eclats.origine[1]; u[174] = em.eclats.morceaux;

@@ -121,7 +121,7 @@ envoyer({ webgpu: true, nA: d[0].nA, a: d[0].a.length / 4, opaques, demiA: d[0].
   assert.ok(r.nA > 1000, `${r.nA} pixels opaques`);
   assert.equal(r.nA, r.opaques, 'un grain par pixel opaque de la photographie');
   assert.equal(r.a, r.nA);
-  assert.ok(Math.abs(r.demiA[0] - r.boite[0]) < 1e-3 && Math.abs(r.demiA[1] - r.boite[1]) < 1e-3, 'demi-boîte locale en cqh');
+  assert.ok(r.demiA[0] <= r.boite[0] + 1e-3 && r.demiA[1] <= r.boite[1] + 1e-3 && r.demiA[1] > r.boite[1] * 0.5, 'demi-taille de la boîte opaque en cqh');
   assert.equal(r.eclats, 40);
   assert.equal(r.image, true, 'photographie gardée pour les éclats');
   assert.equal(r.meta.a, Math.max(r.meta.nA, r.meta.nB), 'métamorphose : max(A, B) particules');
@@ -326,4 +326,80 @@ envoyer({ webgpu: true, pire, restent, nA: d.nA, nB: d.nB, total: ps.length, ava
   assert.deepEqual(r.avant, [true, true], 'A caché dès le début, B jusqu\'à l\'arrivée');
   assert.deepEqual(r.apres, [true, false], 'B montré à l\'arrivée');
   assert.equal(r.alpha, 0, 'particules éteintes');
+});
+
+test('page : titre en bloc (boîte de toute la largeur) : éclats sur le texte, désintégration étalée sur toute la libération', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const html = pageFragments({
+    textes: { titre: 'PULSE', fin: 'MOTION' },
+    recettes: [DESINT, BRIS],
+    scene: `<section data-scene="s">
+  ${style('h1, h2 { margin: 0; padding: 4cqh 0 0 6cqh; font: 900 12cqh/1 sans-serif; color: #e04020; }')}
+  <h1 id="un" data-texte="titre" data-start="0"></h1>
+  <h2 id="deux" data-texte="fin" data-start="0"></h2>
+  <div data-effet="bris" data-ancre="#un" data-start="1" data-dur="1"></div>
+  <div data-effet="desint" data-ancre="#deux" data-start="1" data-dur="1"></div>
+</section>`,
+    script: `
+await M.particules.pret;
+if (!M.particules.disponible) return envoyer({ webgpu: false });
+const h = document.querySelector('section').clientHeight;
+const boite = M.figer.boite(document.getElementById('un')).largeur * 100 / h;
+const [e] = M.particules.donneesFragments('s', 0);
+// Éclats non vides : au moins un pixel opaque de la photographie dans le polygone.
+const c = document.createElement('canvas');
+c.width = e.image.width;
+c.height = e.image.height;
+const ctx = c.getContext('2d');
+ctx.drawImage(e.image, 0, 0);
+const px = ctx.getImageData(0, 0, c.width, c.height).data;
+const opaques = [];
+for (let j = 0; j < c.height; j++) for (let i = 0; i < c.width; i++) {
+  if (px[(j * c.width + i) * 4 + 3] >= 26) opaques.push([e.centreA[0] + ((i + 0.5) / c.width - 0.5) * 2 * e.demiA[0], e.centreA[1] + ((j + 0.5) / c.height - 0.5) * 2 * e.demiA[1]]);
+}
+const dans = (poly, p) => {
+  let signe = 0;
+  for (let k = 0; k < poly.length; k++) {
+    const a = poly[k];
+    const b = poly[(k + 1) % poly.length];
+    const v = (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]);
+    if (v === 0) continue;
+    if (signe === 0) signe = Math.sign(v); else if (Math.sign(v) !== signe) return false;
+  }
+  return true;
+};
+let pleins = 0;
+const n = e.eclats.length / 36;
+for (let k = 0; k < n; k++) {
+  const b = k * 36;
+  const poly = Array.from({ length: e.eclats[b + 2] }, (_, q) => [e.eclats[b] + e.eclats[b + 4 + 2 * q], e.eclats[b + 1] + e.eclats[b + 5 + 2 * q]]);
+  if (poly.length >= 3 && opaques.some((p) => dans(poly, p))) pleins++;
+}
+// Désintégration : part des grains libérés (plus à leur place) à 0,25, 0,5 et 0,75 s de la libération (1 s).
+const el = document.getElementById('deux');
+const rep = M.particulesInterne.mesurerReperes([el], el.closest('section'))[0];
+const [d] = M.particules.donneesFragments('s', 1);
+const parts = [];
+for (const tau of [0.25, 0.5, 0.75]) {
+  await M.seek(1 + tau);
+  let tenus = 0;
+  for (const p of vivantes(await M.particules.lireEtat('s', 1, 0))) {
+    const q = M.obstacles.versMonde(rep, [d.a[p.n * 4] * rep.echelle[0], d.a[p.n * 4 + 1] * rep.echelle[1]]);
+    if (Math.hypot(p.x - q[0], p.y - q[1]) < 0.01) tenus++;
+  }
+  parts.push(1 - tenus / d.nA);
+}
+envoyer({ webgpu: true, boite, demi: e.demiA, pleins, n, parts });`,
+  });
+  const r = JSON.parse(await executerPage(html));
+  assert.equal(r.erreur, undefined, r.erreur);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.ok(r.boite > 150, `boîte de mise en page de ${r.boite} cqh`);
+  assert.ok(2 * r.demi[0] < 60, `boîte opaque de ${2 * r.demi[0]} cqh`);
+  assert.equal(r.n, 40);
+  assert.ok(r.pleins >= 0.8 * r.n, `${r.pleins} éclats sur ${r.n} couvrent le texte`);
+  const [a, b, c] = r.parts;
+  assert.ok(a > 0.1 && a < 0.4, `libérés à 0,25 s : ${a}`);
+  assert.ok(b > 0.35 && b < 0.65, `libérés à 0,5 s : ${b}`);
+  assert.ok(c > 0.6 && c < 0.9, `libérés à 0,75 s : ${c}`);
 });

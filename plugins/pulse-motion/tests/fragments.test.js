@@ -194,3 +194,39 @@ test('eclats : centre, sommets relatifs, rayon englobant, 36 nombres par éclat 
   assert.ok(garde.every((p) => cercle.some((q) => Math.hypot(p[0] - q[0], p[1] - q[1]) < 1e-4)), 'sommets d\'origine');
   assert.ok(Math.abs(F.aire(garde)) > 0.95 * Math.abs(F.aire(cercle)), 'aire presque gardée');
 });
+
+test('boiteOpaque, recadrer, listerPixels : photographie réduite à ses pixels opaques, positions gardées dans la boîte', () => {
+  // Boîte de 20 × 10 pixels pour 40 × 20 cqh ; pixels opaques en x 2 à 5, y 6 à 7 (texte à gauche d'un bloc large).
+  const p = photo(20, 10, (x, y) => (x >= 2 && x <= 5 && y >= 6 && y <= 7 ? [x, y, 0, 255] : [0, 0, 0, 0]), 40, 20);
+  const b = F.boiteOpaque(p);
+  assert.deepEqual(b, { x0: 2, y0: 6, x1: 6, y1: 8 });
+  assert.equal(F.boiteOpaque(photo(3, 3, () => [0, 0, 0, 25])), null);
+  const r = F.recadrer(p, b);
+  assert.deepEqual([r.largeur, r.hauteur, r.largeurCqh, r.hauteurCqh], [4, 2, 8, 4]);
+  assert.deepEqual(r.centre, [(4 - 10) * 2, (7 - 5) * 2]);
+  const avant = F.listerPixels(p);
+  const apres = F.listerPixels(r);
+  assert.deepEqual(Array.from(apres.donnees), Array.from(avant.donnees), 'mêmes pixels aux mêmes positions locales');
+  assert.deepEqual([apres.demi, apres.centre], [[4, 2], [-12, 4]]);
+  // Recadrage d'une photographie déjà décalée : les centres s'ajoutent.
+  const rr = F.recadrer(r, { x0: 1, y0: 0, x1: 4, y1: 2 });
+  assert.deepEqual(rr.centre, [-12 + 1, 4]);
+  assert.deepEqual(Array.from(F.listerPixels(rr).donnees), Array.from(avant.donnees).slice(4, 16).concat(Array.from(avant.donnees).slice(20)));
+});
+
+test('voronoi : pavage d\'une boîte décalée (boîte opaque d\'un texte en bloc), impact relatif à cette boîte', () => {
+  const o = { largeur: 30, hauteur: 10, morceaux: 40, graine: 5, origine: [0.5, 0.5], centre: [-60, 3] };
+  const cellules = F.voronoi(o);
+  const somme = cellules.reduce((s, c) => s + Math.abs(F.aire(c.sommets)), 0);
+  assert.ok(Math.abs(somme - 300) < 300 * 1e-9, `aire totale ${somme}`);
+  for (const c of cellules) {
+    assert.ok(c.sommets.length >= 3);
+    assert.ok(c.sommets.every(([x, y]) => x >= -75 - 1e-9 && x <= -45 + 1e-9 && y >= -2 - 1e-9 && y <= 8 + 1e-9), 'dans la boîte décalée');
+    assert.ok(dedans(c.sommets, c.germe, -1e-9));
+  }
+  // Même pavage que sans décalage, translaté.
+  const sans = F.voronoi({ ...o, centre: undefined });
+  cellules.forEach((c, i) => c.sommets.forEach((s, k) => {
+    assert.ok(Math.abs(s[0] - sans[i].sommets[k][0] + 60) < 1e-9 && Math.abs(s[1] - sans[i].sommets[k][1] - 3) < 1e-9);
+  }));
+});

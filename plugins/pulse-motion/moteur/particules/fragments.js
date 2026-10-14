@@ -3,17 +3,23 @@
  * dimensionsPhoto(largeurCqh, hauteurCqh, hauteurSortie, densite) -> { largeur, hauteur }
  *   résolution de la photographie d'un élément : sa boîte en pixels de sortie (hauteurSortie px pour 100 cqh), divisée
  *   par √densité, COTE_MAX px au plus sur le grand côté.
- * listerPixels(photo) -> { total, donnees: Float32Array(4 × total), cote, demi }
- *   photo : { largeur, hauteur, rgba (non prémultiplié), largeurCqh, hauteurCqh } ; pixels opaques (alpha > 0,1) dans
- *   l'ordre des lignes. Par pixel : x, y (cqh locaux sans échelle, relatifs au centre de la boîte, centre du pixel),
- *   r × 256 + v, b × 256 + a + 65536 × drapeaux (entiers exacts en f32 ; drapeaux : 1 entre en fondu, 2 sort en fondu).
+ * boiteOpaque(photo) -> { x0, y0, x1, y1 } | null   pixels opaques (alpha > 0,1) : colonnes x0 ≤ x < x1, lignes y0 ≤ y < y1
+ * recadrer(photo, boite) -> photo   photographie réduite à la boîte (pixels inchangés), cqh et centre recalculés
+ * listerPixels(photo) -> { total, donnees: Float32Array(4 × total), cote, demi, centre }
+ *   photo : { largeur, hauteur, rgba (non prémultiplié), largeurCqh, hauteurCqh, centre? } ; centre : position du centre
+ *   de la photographie relative au centre de la boîte de l'élément (cqh locaux, [0, 0] par défaut : la photographie
+ *   d'une boîte opaque recadrée n'est plus centrée). Pixels opaques (alpha > 0,1) dans l'ordre des lignes. Par pixel :
+ *   x, y (cqh locaux sans échelle, relatifs au centre de la boîte de l'élément, centre du pixel), r × 256 + v,
+ *   b × 256 + a + 65536 × drapeaux (entiers exacts en f32 ; drapeaux : 1 entre en fondu, 2 sort en fondu).
+ *   demi, centre : demi-taille et centre de la photographie (boîte opaque) : ordres de libération et d'arrivée, impact.
  * pasPremier(total, graine), permuter(liste, pas) : particule n -> pixel de rang (n × pas) mod total.
  * cleHilbert(x, y, ordre), ordonnerHilbert([{ liste, repere }]) : listes triées le long d'une courbe de Hilbert, dans le
  *   repère commun de la scène (repere : { centre, angle, echelle }, comme les obstacles : monde = centre + R(angle)(l·echelle)).
  * apparier(a, b) -> { total, a, b } : particule i ↔ pixel ⌊i·nA/N⌋ de a et ⌊i·nB/N⌋ de b (N = max) ; une particule en
  *   double d'un côté entre (côté a) ou sort (côté b) en fondu : bijection sur le plus petit ensemble.
- * decouper(polygone, a, b, c), aire(polygone), voronoi({ largeur, hauteur, morceaux, graine, origine }), eclats(cellules) :
- *   pavage de Voronoï de la boîte par découpe de demi-plans ; éclats : 36 nombres chacun (centre, sommets, rayon englobant).
+ * decouper(polygone, a, b, c), aire(polygone), voronoi({ largeur, hauteur, morceaux, graine, origine, centre? }),
+ *   eclats(cellules) : pavage de Voronoï de la boîte (largeur × hauteur centrée sur « centre », [0, 0] par défaut) par
+ *   découpe de demi-plans ; éclats : 36 nombres chacun (centre, sommets, rayon englobant).
  * ajusterCapacites(effet, totaux) -> effet : nombre de particules des émetteurs de fragments fixé (salve à τ = 0),
  *   capacités des sous-émetteurs recalculées (copie).
  * pasDe(tau), raccord(effet, tau) -> { ancre, cible } : éléments cachés à τ (le moteur pose la classe pm-fragment-cache) ;
@@ -44,6 +50,38 @@
     return { largeur: Math.max(1, Math.round(l * k)), hauteur: Math.max(1, Math.round(h * k)) };
   }
 
+  function boiteOpaque(photo) {
+    var L = photo.largeur;
+    var H = photo.hauteur;
+    var rgba = photo.rgba;
+    var x0 = L, y0 = H, x1 = 0, y1 = 0;
+    for (var y = 0; y < H; y++) {
+      for (var x = 0; x < L; x++) {
+        if (rgba[(y * L + x) * 4 + 3] < SEUIL_ALPHA) continue;
+        if (x < x0) x0 = x;
+        if (x >= x1) x1 = x + 1;
+        if (y < y0) y0 = y;
+        y1 = y + 1;
+      }
+    }
+    return x1 > x0 ? { x0: x0, y0: y0, x1: x1, y1: y1 } : null;
+  }
+
+  function recadrer(photo, b) {
+    var L = photo.largeur;
+    var l = b.x1 - b.x0;
+    var h = b.y1 - b.y0;
+    var rgba = new Uint8ClampedArray(l * h * 4);
+    for (var y = 0; y < h; y++) rgba.set(photo.rgba.subarray(((b.y0 + y) * L + b.x0) * 4, ((b.y0 + y) * L + b.x1) * 4), y * l * 4);
+    var cx = photo.largeurCqh / L;
+    var cy = photo.hauteurCqh / photo.hauteur;
+    var c = photo.centre || [0, 0];
+    return {
+      largeur: l, hauteur: h, rgba: rgba, largeurCqh: l * cx, hauteurCqh: h * cy,
+      centre: [c[0] + ((b.x0 + b.x1) / 2 - L / 2) * cx, c[1] + ((b.y0 + b.y1) / 2 - photo.hauteur / 2) * cy],
+    };
+  }
+
   function listerPixels(photo) {
     var L = photo.largeur;
     var H = photo.hauteur;
@@ -53,19 +91,20 @@
     var d = new Float32Array(total * 4);
     var cx = photo.largeurCqh / L;
     var cy = photo.hauteurCqh / H;
+    var c = photo.centre || [0, 0];
     var k = 0;
     for (var y = 0; y < H; y++) {
       for (var x = 0; x < L; x++) {
         var j = (y * L + x) * 4;
         if (rgba[j + 3] < SEUIL_ALPHA) continue;
-        d[k] = (x + 0.5) * cx - photo.largeurCqh / 2;
-        d[k + 1] = (y + 0.5) * cy - photo.hauteurCqh / 2;
+        d[k] = c[0] + (x + 0.5) * cx - photo.largeurCqh / 2;
+        d[k + 1] = c[1] + (y + 0.5) * cy - photo.hauteurCqh / 2;
         d[k + 2] = rgba[j] * 256 + rgba[j + 1];
         d[k + 3] = rgba[j + 2] * 256 + rgba[j + 3];
         k += 4;
       }
     }
-    return { total: total, donnees: d, cote: Math.max(cx, cy), demi: [photo.largeurCqh / 2, photo.hauteurCqh / 2] };
+    return { total: total, donnees: d, cote: Math.max(cx, cy), demi: [photo.largeurCqh / 2, photo.hauteurCqh / 2], centre: c.slice() };
   }
 
   function pgcd(a, b) {
@@ -82,7 +121,7 @@
   }
 
   function copieListe(liste, donnees) {
-    return { total: liste.total, donnees: donnees, cote: liste.cote, demi: liste.demi.slice() };
+    return { total: liste.total, donnees: donnees, cote: liste.cote, demi: liste.demi.slice(), centre: (liste.centre || [0, 0]).slice() };
   }
 
   function permuter(liste, pas) {
@@ -255,12 +294,14 @@
     return g;
   }
 
-  /** Cellules de Voronoï de la boîte [−largeur/2, largeur/2] × [−hauteur/2, hauteur/2] (cqh locaux). */
+  /** Cellules de Voronoï de la boîte [−largeur/2, largeur/2] × [−hauteur/2, hauteur/2] décalée de « centre » (cqh
+   *  locaux) ; germes et point d'impact relatifs à cette boîte. */
   function voronoi(o) {
     var W = o.largeur;
     var H = o.hauteur;
-    var g = germes(o);
-    var boite = [[-W / 2, -H / 2], [W / 2, -H / 2], [W / 2, H / 2], [-W / 2, H / 2]];
+    var c = o.centre || [0, 0];
+    var g = germes(o).map(function (p) { return [p[0] + c[0], p[1] + c[1]]; });
+    var boite = [[c[0] - W / 2, c[1] - H / 2], [c[0] + W / 2, c[1] - H / 2], [c[0] + W / 2, c[1] + H / 2], [c[0] - W / 2, c[1] + H / 2]];
     return g.map(function (p, i) {
       var poly = boite;
       for (var j = 0; j < g.length && poly.length; j++) {
@@ -357,6 +398,8 @@
     SOMMETS_MAX: SOMMETS_MAX,
     FLOTTANTS_ECLAT: FLOTTANTS_ECLAT,
     dimensionsPhoto: dimensionsPhoto,
+    boiteOpaque: boiteOpaque,
+    recadrer: recadrer,
     listerPixels: listerPixels,
     pasPremier: pasPremier,
     permuter: permuter,

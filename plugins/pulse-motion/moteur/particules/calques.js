@@ -34,7 +34,7 @@
  *   ancre-vide (rien à photographier : effet désactivé), photographie-trop-grande (densité augmentée) ; sans GPU
  * M.particules.donneesFragments(idScene, ordre) -> [données | null]   données de fragments de l'effet (tests)
  * Fragments (P4) : chaque élément photographié (M.figer.photo) une fois par instant et densité, après la porte de
- * disponibilité, à la résolution de sortie 1080p du format ; listes de pixels, appariement de Hilbert, éclats
+ * disponibilité, à la résolution de sortie 1080p du format, recadré sur sa boîte opaque (contenu visible) ; listes de pixels, appariement de Hilbert, éclats
  * (M.fragments) ; fx.effet : fx.effetOrigine avec le nombre de particules de la photographie ; repères de l'ancre et de
  * l'élément visé mesurés avec la zone d'émission ; raccords : classe pm-fragment-cache (visibility: hidden) posée selon t
  * (M.fragments.raccord), seulement quand l'effet est affiché.
@@ -367,7 +367,10 @@
 
   /** Photographie d'un élément à l'instant t : { photo, liste, densite, image? }, ou null si rien n'est visible. Gardée par
    *  élément, instant, densité ; densité multipliée par 4 tant qu'il y a plus de PIXELS_MAX pixels opaques (pas pour les
-   *  éclats : leur nombre ne dépend pas des pixels). La classe du moteur est retirée le temps du figement. */
+   *  éclats : leur nombre ne dépend pas des pixels). La classe du moteur est retirée le temps du figement.
+   *  Boîte opaque : la photographie est recadrée sur ses pixels opaques (un titre en bloc a une boîte de toute la largeur
+   *  de la scène pour quelques cqh de texte) ; si la boîte entière a été réduite par le plafond de COTE_MAX px, la boîte
+   *  opaque (marge d'un pixel) est photographiée de nouveau à sa propre résolution, puis recadrée. */
   function photographier(el, t, densite, image) {
     const Fr = M.fragments;
     if (!etat.photos.has(el)) etat.photos.set(el, new Map());
@@ -377,8 +380,8 @@
     const promesse = (async () => {
       const section = el.closest('#pm-scene > section');
       const id = section.getAttribute('data-scene');
-      let d = densite;
-      for (;;) {
+      // Figement de l'élément à t (boîte en cqh, photographie de dims, ou de la zone en px CSS).
+      const figer = async (dimsDe, zone) => {
         let attente = null;
         let taille = null;
         M.rendreScene(id, t);
@@ -388,16 +391,40 @@
           try {
             const h = Math.max(1, section.clientHeight);
             const b = M.figer.boite(el);
-            taille = { largeurCqh: b.largeur * 100 / h, hauteurCqh: b.hauteur * 100 / h };
-            attente = M.figer.photo(el, Fr.dimensionsPhoto(taille.largeurCqh, taille.hauteurCqh, hauteurSortie(), d));
+            taille = { largeurCqh: b.largeur * 100 / h, hauteurCqh: b.hauteur * 100 / h, pxCqh: 100 / h, largeurPx: b.largeur, hauteurPx: b.hauteur };
+            const dims = dimsDe(taille);
+            attente = M.figer.photo(el, zone ? Object.assign({ zone }, dims) : dims);
           } finally {
             if (cachee) el.classList.add(CACHE);
           }
         });
         M.rendreScene(id, etat.t);
-        const ph = await attente;
-        if (!ph.largeur) return null;
-        const photo = { largeur: ph.largeur, hauteur: ph.hauteur, rgba: ph.rgba, largeurCqh: taille.largeurCqh, hauteurCqh: taille.hauteurCqh };
+        return { ph: await attente, taille };
+      };
+      let d = densite;
+      for (;;) {
+        const f0 = await figer((ta) => Fr.dimensionsPhoto(ta.largeurCqh, ta.hauteurCqh, hauteurSortie(), d));
+        if (!f0.ph.largeur) return null;
+        const ta = f0.taille;
+        let photo = { largeur: f0.ph.largeur, hauteur: f0.ph.hauteur, rgba: f0.ph.rgba, largeurCqh: ta.largeurCqh, hauteurCqh: ta.hauteurCqh };
+        const b0 = Fr.boiteOpaque(photo);
+        if (!b0) return null;
+        photo = Fr.recadrer(photo, b0);
+        // Résolution voulue pour la boîte opaque, comparée à celle de la photographie de la boîte entière.
+        const voulue = Fr.dimensionsPhoto(photo.largeurCqh, photo.hauteurCqh, hauteurSortie(), d);
+        if (voulue.largeur > (b0.x1 - b0.x0) * 1.02 + 1 || voulue.hauteur > (b0.y1 - b0.y0) * 1.02 + 1) {
+          const sx = ta.largeurPx / f0.ph.largeur;
+          const sy = ta.hauteurPx / f0.ph.hauteur;
+          const x0 = Math.max(0, (b0.x0 - 1) * sx);
+          const y0 = Math.max(0, (b0.y0 - 1) * sy);
+          const zone = { x: x0, y: y0, largeur: Math.min(ta.largeurPx, (b0.x1 + 1) * sx) - x0, hauteur: Math.min(ta.hauteurPx, (b0.y1 + 1) * sy) - y0 };
+          const f1 = await figer((t1) => Fr.dimensionsPhoto(zone.largeur * t1.pxCqh, zone.hauteur * t1.pxCqh, hauteurSortie(), d), zone);
+          const t1 = f1.taille;
+          const zoom = { largeur: f1.ph.largeur, hauteur: f1.ph.hauteur, rgba: f1.ph.rgba, largeurCqh: zone.largeur * t1.pxCqh, hauteurCqh: zone.hauteur * t1.pxCqh,
+            centre: [(zone.x + zone.largeur / 2 - t1.largeurPx / 2) * t1.pxCqh, (zone.y + zone.hauteur / 2 - t1.hauteurPx / 2) * t1.pxCqh] };
+          const b1 = f1.ph.largeur ? Fr.boiteOpaque(zoom) : null;
+          if (b1) photo = Fr.recadrer(zoom, b1);
+        }
         const liste = Fr.listerPixels(photo);
         if (!liste.total) return null;
         if (!image && liste.total > Fr.PIXELS_MAX) { d *= 4; continue; }
@@ -453,7 +480,7 @@
     const totaux = {};
     for (const em of effet.emetteurs) {
       if (!em.fragment) continue;
-      const d = { a: null, b: null, eclats: null, image: null, demiA: [0, 0], demiB: [0, 0], coteA: 0, coteB: 0, nA: 0, nB: 0 };
+      const d = { a: null, b: null, eclats: null, image: null, demiA: [0, 0], demiB: [0, 0], centreA: [0, 0], centreB: [0, 0], coteA: 0, coteB: 0, nA: 0, nB: 0 };
       let A = null;
       let B = null;
       if (em.pixels || em.eclats) {
@@ -461,6 +488,7 @@
         A = await photoOuVide(fx, fx.ancre, dansScene(fx, t), em.eclats ? 1 : em.pixels.densite, !!em.eclats);
         if (!A) return false;
         d.demiA = A.liste.demi;
+        d.centreA = A.liste.centre;
         d.coteA = A.liste.cote;
         d.nA = A.liste.total;
       }
@@ -469,12 +497,13 @@
         B = await photoOuVide(fx, el, dansScene(fx, fx.debut + em.cible.a / fx.info.rythme), em.cible.densite, false);
         if (!B) return false;
         d.demiB = B.liste.demi;
+        d.centreB = B.liste.centre;
         d.coteB = B.liste.cote;
         d.nB = B.liste.total;
       }
       if (em.eclats) {
         const graine = (effet.graine ^ Math.imul(em.index + 1, 0x9e3779b1)) >>> 0;
-        d.eclats = Fr.eclats(Fr.voronoi({ largeur: A.photo.largeurCqh, hauteur: A.photo.hauteurCqh, morceaux: em.eclats.morceaux, graine, origine: em.eclats.origine }));
+        d.eclats = Fr.eclats(Fr.voronoi({ largeur: A.photo.largeurCqh, hauteur: A.photo.hauteurCqh, morceaux: em.eclats.morceaux, graine, origine: em.eclats.origine, centre: A.photo.centre }));
         d.image = A.image;
       } else if (A && B) {
         const r0 = reperesDebut(fx);

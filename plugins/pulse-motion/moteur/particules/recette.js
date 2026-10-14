@@ -191,7 +191,7 @@
           ips: nb('Images par seconde', 0, { curseur: [0, 60] }),
         }),
         morceaux: nb('Morceaux (éclats)', 24, { min: MORCEAUX_MIN, max: MORCEAUX_MAX, pas: 1, curseur: [MORCEAUX_MIN, MORCEAUX_MAX] }),
-        origine: pr('Point d\'impact des éclats (fraction de la boîte)', [0.5, 0.5]),
+        origine: pr('Point d\'impact des éclats (fraction de la boîte du contenu visible)', [0.5, 0.5]),
         impulsion: nb('Impulsion des éclats', 40, { unite: 'cqh/s', curseur: [0, 300] }),
         rotation_max: nb('Rotation maximale des éclats', 180, { min: 0, unite: '°/s', curseur: [0, 1080] }),
       }),

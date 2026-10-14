@@ -245,7 +245,7 @@ fn vsTrainee(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -
 
 // Éclat : polygone de la photographie de l'ancre (éventail de triangles, 16 sommets au plus) autour de la particule,
 // sommets à l'échelle de l'ancre à la naissance et selon la table de taille, tournés de l'angle de la particule ;
-// coordonnées de texture d'origine (la photographie couvre la boîte locale de l'ancre).
+// coordonnées de texture d'origine (la photographie couvre la boîte opaque de l'ancre : centre E[184..185], demi E[164..165]).
 @vertex
 fn vsEclat(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> Sortie {
   let idx = indice(ii);
@@ -267,7 +267,7 @@ fn vsEclat(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> 
   var sortie: Sortie;
   sortie.pos = ecran(w);
   sortie.uv = vec2f(0.0);
-  sortie.uvTex = (centre + decal) / max(2.0 * vec2f(ef(164u), ef(165u)), vec2f(1e-6)) + 0.5;
+  sortie.uvTex = (centre + decal - vec2f(ef(184u), ef(185u))) / max(2.0 * vec2f(ef(164u), ef(165u)), vec2f(1e-6)) + 0.5;
   let couleur = teinte(u);
   sortie.couleur = vec4f(couleur.rgb * table(320u, u), couleur.a * table(384u, u) * fondu(idx));
   sortie.alea = p.alea;
