@@ -118,3 +118,60 @@ await envoyer({ webgpu: true, res });`);
   assert.ok(r.res.grain.temps > 0.01, 'le grain change avec t');
   assert.equal(r.res.vignettage.temps, 0, 'le vignettage ne dépend pas de t');
 });
+
+const R = require('../moteur/particules/recette.js');
+
+test('fonds et auras : dessinés sans NaN ; l\'aura éclaire autour de la boîte', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const noms = ['nebuleuse', 'plasma', 'degrade-vivant', 'grille-neon', 'rayons', 'halo', 'energie-contour'];
+  const r = await page({ liste: noms.map(donnee) }, `
+const res = {};
+for (const d of DONNEES.liste) {
+  const s = await compiler(d);
+  // Boîte de 60 × 30 cqh au centre (0,9 px par cqh), débord du shader.
+  const px = await dessiner(s, { temps: 1.2, progres: 0.3, duree: 4, mode: 0, resolution: [60, 30, 54, 27], scene: [LCQH, 100, L, H],
+    repere: [LCQH / 2, 50, 0, d.debord], demi: [30, 15, 0, 0] }, null, 'fond');
+  let visibles = 0;
+  let dehors = 0;
+  for (let y = 0; y < H; y++) for (let x = 0; x < L; x++) {
+    const a = px[(y * L + x) * 4 + 3];
+    if (a > 0.02) {
+      visibles++;
+      if (Math.abs(x + 0.5 - L / 2) > 28 || Math.abs(y + 0.5 - H / 2) > 14.5) dehors++;
+    }
+  }
+  res[d.nom] = { visibles, dehors, nan: nan(px) };
+}
+await envoyer({ webgpu: true, res });`);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  for (const [nom, v] of Object.entries(r.res)) {
+    assert.equal(v.nan, false, `${nom} : aucun NaN`);
+    assert.ok(v.visibles > 50, `${nom} : dessiné (${v.visibles} pixels)`);
+  }
+  assert.ok(r.res.halo.dehors > 100, 'le halo déborde de la boîte');
+  assert.ok(r.res['energie-contour'].dehors > 20, 'l\'énergie déborde du contour');
+  assert.equal(r.res.plasma.dehors, 0, 'un fond sans débord reste dans sa boîte');
+});
+
+test('modules : compilent dans les noyaux ; la spirale fait tourner les particules', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const lire = (n) => { const s = charger(n); return { json: s.json, code: s.code, fichier: s.fichier, erreurs: [] }; };
+  const c = R.compiler({ version: 1, nom: 'essai', rendu_calque: { bloom: 0, tons: 'neutre' }, emetteurs: [{ nom: 'e',
+    naissance: { salves: [{ t: 0, nombre: 1 }], forme: { type: 'point' }, vitesse: { direction: [1, 0], cone: 0, valeur: 20 }, vie: [2, 2], taille: [5, 5] },
+    modules: { force: 'spirale', couleur: 'couleur-vitesse', forme: 'etoile' } }] }, { dur: 1, graine: 1, charte: CHARTE });
+  assert.equal(c.ok, true, JSON.stringify(c.erreurs));
+  assert.deepEqual(S.attacherModules(c.effet, lire, CHARTE), []);
+  const r = await page({ fx: c.effet }, `
+const rendu = new P.Rendu(device, gpu.format);
+const echecs = await rendu.verifierModules([DONNEES.fx]);
+const ZONE = [78.85, 40, 20, 20];
+const sim = new P.Simulation(device, DONNEES.fx, null, null);
+sim.avancer(0.5, { a: () => ZONE, grille: () => ZONE });
+const f = await sim.lireEtat(0);
+sim.detruire();
+await envoyer({ webgpu: true, echecs: echecs.size, pos: [f[0], f[1]] });`);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.equal(r.echecs, 0);
+  assert.ok(r.pos[0] > 88.85 + 2, `la particule avance (${r.pos})`);
+  assert.ok(r.pos[1] > 50 + 0.5, `la spirale la fait tourner vers le bas (sens direct à l'écran) : ${r.pos}`);
+});

@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "nom": "etoile",
+  "usage": "module-forme",
+  "description": "Module de forme : chaque particule est une étoile à N branches (célébration, magie, récompense).",
+  "parametres": {
+    "branches": { "defaut": 5, "min": 3, "max": 12 },
+    "creux": { "defaut": 0.45, "min": 0.1, "max": 0.9 },
+    "douceur": { "defaut": 0.05, "min": 0.01, "max": 0.3 }
+  }
+}
