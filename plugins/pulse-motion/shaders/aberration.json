@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "nom": "aberration",
+  "usage": "post",
+  "description": "Rouge et bleu légèrement écartés du vert, de plus en plus vers les bords : objectif imparfait, tension, image numérique.",
+  "parametres": {
+    "ecart": { "defaut": 0.4, "min": 0, "max": 3 }
+  }
+}

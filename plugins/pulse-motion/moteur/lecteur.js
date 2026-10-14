@@ -2,6 +2,7 @@
  *
  * Espace : lecture/pause · ←/→ : une image · Maj+←/→ : scène précédente/suivante
  * B : boucle sur la scène courante · clic sur l'image : lecture/pause.
+ * M.enLecture() : vrai pendant la lecture (composition des shaders : cadence des photographies).
  * M.boucler({ debut, fin } | null) : boucle de lecture posée par l'atelier des effets (fenêtre d'un effet).
  * Les champs du panneau de l'atelier (#pm-atelier) et du studio (#pm-studio) gardent le clavier.
  * Sous l'aperçu (window.__PM_APERCU__), écoute /_pm/evenements : rechargement à la
@@ -33,6 +34,8 @@
     // Son : tampon mixé par M.rendreSon, joué par un AudioContext créé au premier ▶ (geste de la personne).
     var son = { attendu: !!(M.aSon && M.aSon()), tampon: null, contexte: null, source: null, debutContexte: 0, debutT: 0, prepare: false, coupe: false };
     var lecture = false, dernier = 0, boucle = null;
+    // Composition des shaders (P6) : photographies moins fréquentes pendant la lecture.
+    M.enLecture = function () { return lecture; };
 
     var barre = el('div', { id: 'pm-lecteur' }, document.body);
     var bouton = el('button', { type: 'button', 'aria-label': 'Lecture', texte: '▶' }, barre);

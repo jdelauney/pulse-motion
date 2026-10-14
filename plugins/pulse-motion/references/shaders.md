@@ -1,0 +1,136 @@
+# Shaders : fonds, auras, transitions, post-traitements, modules
+
+## L'essentiel
+
+- Un **fond** animé : une balise vide dans la scène, `<div data-shader="nebuleuse"></div>` (plein cadre, derrière le contenu). Une **aura** autour d'un élément : `<div data-shader="halo" data-ancre="#chiffre"></div>`.
+- Une **transition** de scène par shader : dans `deroule.json`, `"transition": { "shader": "dissolution", "duree": 0.8 }` sur la scène qui entre (les transitions `fondu`, `glissement`… restent valables).
+- Un **post-traitement** (grain, vignettage…) : `"post": [{ "shader": "grain" }]` sur une scène, ou au niveau de la vidéo (appliqué après celui de la scène).
+- Un **module** change le comportement d'un effet de particules sans toucher au moteur : `"modules": { "force": "spirale" }` dans un émetteur de recette (`effets/<nom>.json`).
+- Réglages comme pour les effets : `data-reglages="vitesse: 0.5; couleur1: accent"` sur la balise, `"reglages": { "vitesse": 0.5 }` dans le déroulé ; couleurs `#rrggbb` ou `primaire`, `accent`, `texte`, `fond`.
+- Comme les particules, les shaders demandent **WebGPU** (Chrome ou Edge récent) ; sans lui, une transition par shader devient un fondu et l'export est refusé.
+- Après écriture : `pulse-motion assembler .` puis `pulse-motion controler .` ; `pulse-motion controler . --gpu` compile aussi chaque shader dans Chrome sans fenêtre.
+- **Licence** : n'écrire que des shaders originaux. Ne jamais recopier un shader trouvé en ligne : ceux de Shadertoy sont sous CC BY-NC-SA par défaut, incompatible avec la licence MIT du plugin.
+- Un shader **sert un propos** (ambiance, rupture, mise en valeur), jamais la décoration : un fond par scène au plus, un post-traitement discret.
+
+## Poser un fond ou une aura
+
+```html
+<div data-shader="degrade-vivant" data-reglages="vitesse: 0.1"></div>
+<h2 id="chiffre" class="grand-chiffre" data-texte="chiffre" data-start="0.3"></h2>
+<div data-shader="halo" data-ancre="#chiffre" data-start="#chiffre" data-dur="2"></div>
+```
+
+| Attribut | Valeurs |
+|---|---|
+| `data-shader` | nom d'un shader d'usage `fond` (table ci-dessous, ou `shaders/<nom>` du projet) |
+| `data-ancre` | `#id` d'un élément de la scène : l'aura suit sa boîte (déplacée, tournée, agrandie) ; sans ancre : la boîte de la balise (toute la scène par défaut) |
+| `data-calque` | `arriere` (défaut, derrière le contenu) ou `avant` |
+| `data-reglages` | `nom: valeur` séparés par `;` |
+| `data-image` | une image de `assets/`, lue par le shader (`canal2`) |
+| `data-start`, `data-dur` | minutage ; sans `data-dur`, le fond dure jusqu'à la fin de la scène |
+
+Le fond est dessiné dans le calque de particules de la scène, avant les particules, avec le halo et la courbe de tons de ce calque.
+
+## Transitions et post-traitements (déroulé)
+
+```json
+"scenes": [
+  { "id": "intro", "fichier": "scenes/01-intro.html", "duree": 5, "textes": { … }, "post": [{ "shader": "vignettage", "reglages": { "force": 0.4 } }] },
+  { "id": "suite", "fichier": "scenes/02-suite.html", "duree": 6, "textes": { … },
+    "transition": { "shader": "dissolution", "duree": 0.8, "reglages": { "couleur_bord": "accent" } } }
+],
+"post": [{ "shader": "grain", "reglages": { "force": 0.05 } }]
+```
+
+- `duree` d'une transition : 0,1 à 5 s (0,8 par défaut), sans dépasser la durée de la scène qui entre ni celle de la scène qui sort (sinon `deroule-invalide`) ; pendant ce temps les deux scènes s'animent, le moteur les photographie et le shader les mélange.
+- Au plus 4 post-traitements par scène et pour la vidéo, appliqués dans l'ordre de la liste. Les sous-titres restent nets (au-dessus).
+- Dans l'aperçu, pendant la lecture, la photographie des scènes est rafraîchie 10 fois par seconde en demi-résolution (le shader, lui, tourne à chaque image) : un léger retard est normal ; l'export est exact.
+
+## Bibliothèque
+
+| Shader | Usage | Réglages | Quand l'utiliser |
+|---|---|---|---|
+| `nebuleuse` | fond | `vitesse`, `echelle`, `densite`, `couleur1`, `couleur2` | Ambiance calme, espace, rêverie |
+| `plasma` | fond | `vitesse`, `echelle`, `contraste`, `couleur` | Énergie, technologie, créativité |
+| `degrade-vivant` | fond | `vitesse`, `angle`, `couleur1`, `couleur2` | Fond sobre qui évite l'image figée |
+| `grille-neon` | fond | `pas`, `vitesse`, `eclat`, `couleur` | Rétro, numérique, vitesse |
+| `rayons` | fond | `nombre`, `vitesse`, `intensite`, `centre_x`, `centre_y`, `couleur` | Révélation, élément central |
+| `halo` | aura (`data-ancre`) | `rayon`, `intensite`, `pulsation`, `couleur` | Mettre en valeur un chiffre, un titre |
+| `energie-contour` | aura (`data-ancre`) | `vitesse`, `epaisseur`, `eclat`, `couleur` | Puissance, élément actif |
+| `dissolution` | transition | `grain`, `bord`, `couleur_bord` | Transition douce et organique |
+| `ondulation` | transition | `amplitude`, `frequence`, `vitesse` | Souvenir, rêve, changement d'époque |
+| `pixels` | transition | `taille_max` | Univers numérique, jeu |
+| `glitch` | transition | `force`, `bandes` | Rupture, bug |
+| `balayage-organique` | transition | `angle`, `douceur`, `echelle` | Balayage vivant, encre |
+| `grain` | post | `force`, `taille`, `vitesse` | Cinéma, archive |
+| `vignettage` | post | `force`, `rayon`, `douceur`, `couleur` | Focalisation, intimité |
+| `aberration` | post | `ecart` | Tension, image numérique |
+| `chaleur` | post | `force`, `echelle`, `vitesse`, `haut` | Chaleur, désert, mirage |
+| `spirale` | module de force | `tours`, `attraction` | Tourbillon, aspiration |
+| `couleur-vitesse` | module de couleur | `vitesse_max`, `lent`, `rapide` | Étincelles qui refroidissent |
+| `etoile` | module de forme | `branches`, `creux`, `douceur` | Célébration, magie |
+
+Régler à l'œil un fond : bouton **Effets** de l'aperçu (les fonds de la scène sont listés avec les effets).
+
+## Écrire un shader
+
+Seulement si aucun shader de la table ne convient, dans le projet : `shaders/<nom>.wgsl` (le code) et `shaders/<nom>.json` :
+
+```json
+{ "version": 1, "nom": "vagues-douces", "usage": "fond", "description": "Vagues lentes aux couleurs de la marque",
+  "parametres": { "vitesse": { "defaut": 0.3, "min": 0, "max": 2 }, "couleur": { "defaut": "primaire", "type": "couleur" } } }
+```
+
+`usage` : `fond`, `transition`, `post`, `module-force`, `module-couleur`, `module-forme` ; `debord` (cqh, fond) : marge dessinée autour de la boîte (aura). Un fichier du projet porte un nom différent de ceux de la bibliothèque.
+
+| Usage | Fonction attendue |
+|---|---|
+| fond, aura | `fn image(coord: vec2f) -> vec4f` |
+| transition | `fn transition(coord: vec2f, progres: f32) -> vec4f` |
+| post | `fn post(coord: vec2f) -> vec4f` |
+| module-force | `fn force(p: Particule, t: f32, zone: vec4f) -> vec2f` (ajoutée à l'accélération, cqh/s²) |
+| module-couleur | `fn couleur(p: Particule, u: f32, base: vec4f) -> vec4f` (`u` : part de la vie écoulée) |
+| module-forme | `fn forme(uv: vec2f, p: Particule) -> f32` (alpha du motif, `uv` de −1 à 1) |
+
+- `coord` : en cqh, depuis le coin haut gauche de la zone (la boîte de l'élément pour une aura, négatif dans le débord ; l'image entière pour une transition ou un post-traitement).
+- Entrées : `iTime` (secondes depuis le début du fond, de la transition, de la scène ou de la vidéo), `iProgres` (0 → 1 sur la fenêtre), `iResolution` (`xy` : taille de la zone en cqh, `zw` : en pixels), `R.<réglage>` (nombre `f32`, couleur `vec4f` en RVB linéaire).
+- Images : `canal0(uv)` … `canal3(uv)` (uv de 0 à 1, y vers le bas). Transition : `canal0` = scène qui sort, `canal1` = scène qui entre ; post : `canal0` = image de la scène (particules comprises) ; `canal2` = image de `data-image` ou `"image"` ; `canal3` = texture de bruit fixe (répétée).
+- Retour : RVBA **linéaire prémultiplié** (`vec4f(couleur * a, a)`) ; des valeurs au-dessus de 1 brillent si le calque a du halo.
+- Prélude disponible : `bruit(vec3f)` et `fbm(vec3f)` (dans [−1, 1]), `curl(vec2f, f32)`, `alea2(vec2f)`, `pcg(u32)`, `alea(…)`, `palette(t, a, b, c, d)`, `rot2(angle)`, `sdCercle`, `sdBoite`, `sdSegment`, `sdEtoile`.
+- Le WGSL réserve des mots courants comme noms de variables (`trait`, `type`, `filter`, `set`, `target`, `module`, `match`…) : en choisir d'autres (`lueur`, `genre`…), sinon `shader-ne-compile-pas`.
+- Interdits : `@group` et `@binding` (réservés au moteur), les noms commençant par `pm`, `iTime`, `iProgres`, `iResolution`, `iChannel0` à `iChannel3`, `R`, `canal0` à `canal3` ; plus de 64 Ko de code. Rien d'aléatoire hors de ce qui dépend de `iTime` et de `coord` (l'image ne dépend que de t).
+- Un module : la recette qui l'utilise peut exposer un réglage de même nom (ex. `tours`) : sa valeur remplace celle du module. Dans un module, un champ de structure ne porte pas le nom d'une constante ou d'une structure du module.
+
+## Modules de particules
+
+```json
+{ "version": 1, "nom": "tourbillon", "etend": "poussiere", "parametres": { "tours": { "defaut": 1.5, "min": 0, "max": 5 } },
+  "emetteurs": [{ "nom": "grain", "modules": { "force": "spirale", "forme": "etoile" } }] }
+```
+
+Un émetteur avec un module de force est simulé pas à pas (plus coûteux qu'un effet balistique) : garder des nombres raisonnables.
+
+## Erreurs et contrôles
+
+| Règle | Cause | Correction |
+|---|---|---|
+| `shader-inconnu` | aucun `shaders/<nom>` dans le projet ni dans la bibliothèque | nom de la table, ou créer le shader |
+| `usage-incompatible` | ex. une transition posée en `data-shader` | `data-shader` : un fond ; transition et post : dans le déroulé |
+| `fonction-absente` | la fonction attendue manque ou n'a pas la bonne signature | voir la table « Fonction attendue » |
+| `liaison-reservee` | `@group` ou `@binding` dans le code | lire les images avec `canal0(uv)`… |
+| `shader-trop-gros` | plus de 64 Ko de code | simplifier |
+| `shader-invalide` | `.json` illisible ou mal formé, `.wgsl` absent | corriger le fichier |
+| `nom-reserve`, `reglage-inconnu` | nom du moteur redéfini ; `R.x` sans réglage `x` | renommer ; déclarer le réglage dans `parametres` |
+| `reglage-invalide` | réglage hors bornes ou inconnu | voir les réglages du shader |
+| `shader-ne-compile-pas` | erreur WGSL (avec `--gpu`, et dans l'aperçu : panneau avec ligne, colonne, message) | corriger la ligne indiquée ; l'export est refusé tant qu'un shader ne compile pas |
+| `shaders-non-compiles` | `--gpu` sans Chrome ou sans WebGPU | information : la compilation se fera dans l'aperçu |
+
+## Retouches en une phrase
+
+| Demande | Changement |
+|---|---|
+| « un fond plus calme » | `vitesse` plus bas, ou `degrade-vivant` |
+| « aux couleurs de la marque » | `couleur: primaire` (ou `couleur1`, `couleur2`) |
+| « une transition plus douce » | `duree` plus longue, `dissolution` ou `balayage-organique` |
+| « moins de grain » | `force` du grain divisée par 2 |
+| « enlève l'effet de chaleur » | retirer l'entrée de `post` |

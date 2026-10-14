@@ -11,6 +11,8 @@
  *   image RVBA (non prémultipliée) de l'élément seul, sans ses transformations, en largeur × hauteur pixels (fragmentation
  *   des particules, P4) ; même figement que le masque. zone { x, y, largeur, hauteur } (px CSS dans la boîte) : seule
  *   cette partie de la boîte est rastérisée.
+ *   o.scene { opacite } (composition, P6) : photographie d'une scène entière, sa transformation et son découpage de
+ *   transition gardés, son opacité imposée (la classe pm-compose la masque dans la page).
  * M.figer.boite(el) -> { largeur, hauteur }   boîte de mise en page (px CSS), transformations neutralisées
  * Utilisé par capture.js (export rapide), par les formes exactes des collisions et par la fragmentation (calques.js).
  * Navigateur seulement ; chargé dans la page livrée.
@@ -123,7 +125,8 @@
       if (a[1]) a[0].insertBefore(a[1], a[0].firstChild);
       if (a[2]) a[0].appendChild(a[2]);
     });
-    remplacements.forEach(function (r) { r[0].parentNode.replaceChild(r[1], r[0]); });
+    // Racine elle-même remplacée (canvas de composition, enfant direct de #pm-scene) : l'image devient la copie.
+    remplacements.forEach(function (r) { if (r[0] === copie) copie = r[1]; else r[0].parentNode.replaceChild(r[1], r[0]); });
     aRetirer.forEach(function (c) { c.remove(); });
     return copie;
   }
@@ -149,12 +152,14 @@
 
   /** Image RVBA (non prémultipliée) de l'élément seul, à sa boîte de mise en page, sans ses transformations, rastérisée
    *  en L × H pixels : figement synchrone (état à l'appel), rastérisation asynchrone. */
-  function rasteriser(el, boite, L, H, zone) {
+  function rasteriser(el, boite, L, H, zone, scene) {
     var largeurPx = boite.largeur;
     var hauteurPx = boite.hauteur;
     var copie = figerArbre(el);
-    copie.setAttribute('style', copie.getAttribute('style') + 'position:absolute;left:0;top:0;right:auto;bottom:auto;margin:0;' +
-      'transform:none;translate:none;rotate:none;scale:none;width:' + largeurPx + 'px;height:' + hauteurPx + 'px;');
+    var place = 'position:absolute;left:0;top:0;right:auto;bottom:auto;margin:0;width:' + largeurPx + 'px;height:' + hauteurPx + 'px;';
+    copie.setAttribute('style', copie.getAttribute('style') + place + (scene
+      ? 'opacity:' + scene.opacite + ';'
+      : 'transform:none;translate:none;rotate:none;scale:none;'));
     copie.setAttribute('xmlns', XHTML);
     var xml = new XMLSerializer().serializeToString(copie);
     var z = zone || { x: 0, y: 0, largeur: largeurPx, hauteur: hauteurPx };
@@ -198,7 +203,7 @@
     }
     var L = Math.max(1, Math.round(o.largeur));
     var H = Math.max(1, Math.round(o.hauteur));
-    return rasteriser(el, boite, L, H, o.zone).then(function (d) {
+    return rasteriser(el, boite, L, H, o.zone, o.scene).then(function (d) {
       return { largeur: L, hauteur: H, rgba: new Uint8ClampedArray(d), largeurPx: boite.largeur, hauteurPx: boite.hauteur };
     });
   }

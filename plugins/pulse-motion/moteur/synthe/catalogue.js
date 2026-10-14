@@ -8,13 +8,24 @@
   else { racine.M = racine.M || {}; racine.M.synthe = racine.M.synthe || {}; racine.M.synthe.catalogue = api; }
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
+  var SONS_TRANSITION = { fondu: 'souffle', glissement: 'whoosh', balayage: 'swoosh-inverse', zoom: 'montee', coupe: 'impact', rideau: 'whoosh' };
+  // Transitions par shader de la bibliothèque ; un shader du projet : souffle (comme un fondu).
+  var SONS_TRANSITION_SHADER = { dissolution: 'souffle', ondulation: 'souffle', pixels: 'blip', glitch: 'impact', 'balayage-organique': 'swoosh-inverse' };
   return {
     INSTRUMENTS: ['pluck', 'pad', 'basse', 'sub', 'kick', 'caisse', 'charleston', 'cloche', 'nappe-bruit', 'riser'],
     PERCUSSIONS: ['kick', 'caisse', 'charleston', 'riser', 'nappe-bruit'],
     BRUITAGES: ['whoosh', 'swoosh-inverse', 'pop', 'clic', 'tic', 'impact', 'basse', 'montee', 'carillon', 'ding', 'blip', 'souffle'],
     // Sons forts : jamais sous la voix (contrôle son-sous-voix).
     FORTS: ['impact', 'basse', 'montee'],
-    SONS_TRANSITION: { fondu: 'souffle', glissement: 'whoosh', balayage: 'swoosh-inverse', zoom: 'montee', coupe: 'impact', rideau: 'whoosh' },
+    SONS_TRANSITION: SONS_TRANSITION,
+    SONS_TRANSITION_SHADER: SONS_TRANSITION_SHADER,
+    /** Son d'une transition du déroulé (nom, ou { shader, duree }) ; null pour « aucune » ou sans transition. */
+    sonTransition: function (transition) {
+      if (transition && typeof transition === 'object') {
+        return typeof transition.shader === 'string' ? (SONS_TRANSITION_SHADER[transition.shader] || 'souffle') : null;
+      }
+      return SONS_TRANSITION[transition] || null;
+    },
     AMBIANCES: {
       calme: { tempo: 72, tonalite: 'fa' },
       entrainant: { tempo: 118, tonalite: 'sol' },

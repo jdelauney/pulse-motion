@@ -18,7 +18,7 @@ const { trouverNavigateur, ouvrirSansFenetre } = require('./lib/navigateur.js');
 const { etatProjet } = require('./etat.js');
 const { demarrerApercu, ouvrirNavigateur } = require('./apercu.js');
 const { trouverFfmpeg } = require('./lib/ffmpeg.js');
-const { exporterFidele } = require('./export-fidele.js');
+const { exporterFidele, avecEffets } = require('./export-fidele.js');
 const { scenesProvisoires, messageProvisoire, dureeVideo } = require('./lib/voix.js');
 
 /** Voie de l'export : fidèle (vraies captures + ffmpeg) si ffmpeg est utilisable, sauf --rapide et planche. */
@@ -32,13 +32,6 @@ const DELAI_DEMARRAGE = 45000;
 
 /** Nettoyages en cours (navigateur sans fenêtre, aperçu lancé) : faits aussi si la commande est interrompue. */
 const nettoyages = new Set();
-
-/** Une scène du projet pose-t-elle un effet de particules ? (Chrome devra alors garder le GPU.) */
-function avecEffets(projet, deroule) {
-  return deroule.scenes.some((s) => {
-    try { return /\sdata-effet\s*=/.test(fs.readFileSync(path.join(projet, s.fichier), 'utf8')); } catch { return false; }
-  });
-}
 
 /** Fait tous les nettoyages en cours (sans échouer) et vide la liste. */
 async function nettoyerTout() {

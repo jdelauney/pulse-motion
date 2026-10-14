@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "nom": "spirale",
+  "usage": "module-force",
+  "description": "Module de force : les particules tournent autour du centre de la zone d'émission, avec une légère attraction vers lui (tourbillon, galaxie, aspiration).",
+  "parametres": {
+    "tours": { "defaut": 1, "min": -10, "max": 10 },
+    "attraction": { "defaut": 0.3, "min": 0, "max": 5 }
+  }
+}

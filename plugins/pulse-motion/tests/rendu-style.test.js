@@ -9,6 +9,8 @@ const { verifierRendu } = require('../scripts/lib/rendu-style.js');
 const { trouverNavigateur } = require('../scripts/lib/navigateur.js');
 
 const CLAIR = path.join(__dirname, '..', 'styles', 'clair-pedagogique');
+// Délai par page allongé : la phase navigateur de npm test lance deux fichiers à la fois (GPU, exports).
+const DELAI = 360000;
 
 test('projet d\'essai : scènes du style, textes à la longueur maximale, sélection de types possible', () => {
   const dir = projetEssai({ dossierStyle: CLAIR, ratio: '9:16', ton: 'sombre', types: ['liste', 'titre'] });
@@ -29,7 +31,7 @@ test('rendu sans navigateur : non vérifié, dit clairement', async () => {
 
 const navigateur = trouverNavigateur();
 test('rendu dans le navigateur : style livré sans problème ; titre géant : débordement nommé avec le format', { skip: !navigateur && 'Chrome ou Edge introuvable' }, async () => {
-  assert.deepEqual((await verifierRendu({ dossierStyle: CLAIR, navigateur })).problemes, []);
+  assert.deepEqual((await verifierRendu({ dossierStyle: CLAIR, navigateur, delai: DELAI })).problemes, []);
   const racine = dossierTemporaire('pm-rendu-');
   const d = path.join(racine, 'geant');
   fs.cpSync(CLAIR, d, { recursive: true });
@@ -37,7 +39,7 @@ test('rendu dans le navigateur : style livré sans problème ; titre géant : d�
     const j = JSON.parse(fs.readFileSync(path.join(d, f), 'utf8')); j.style = 'geant'; fs.writeFileSync(path.join(d, f), JSON.stringify(j));
   }
   fs.appendFileSync(path.join(d, 'style.css'), '\n@container (orientation: portrait) { .titre { font-size: 14cqh; } }\n');
-  const r = await verifierRendu({ dossierStyle: d, navigateur, dossierStyles: racine });
+  const r = await verifierRendu({ dossierStyle: d, navigateur, dossierStyles: racine, delai: DELAI });
   assert.equal(r.ok, false);
   assert.ok(r.problemes.some((p) => /^9:16 : Scène « titre » : le texte « titre » (déborde|sort de l'image)/.test(p)), r.problemes.join('\n'));
   assert.ok(!r.problemes.some((p) => p.startsWith('16:9')), r.problemes.join('\n'));
@@ -50,7 +52,7 @@ test('banc d\'essai : la zone des boutons en 9:16 est jugée avec des phrases d\
   fs.cpSync(CLAIR, dossierStyle, { recursive: true });
   // En 9:16, la liste est poussée tout en bas : ses points tombent sous la légende des réseaux.
   fs.appendFileSync(path.join(dossierStyle, 'style.css'), '\n@container (orientation: portrait) { #pm-scene > section[data-scene="liste"] { justify-content: flex-end; } }\n');
-  const r = await verifierRendu({ dossierStyle, navigateur, dossierStyles: racine });
+  const r = await verifierRendu({ dossierStyle, navigateur, dossierStyles: racine, delai: DELAI });
   const zones = r.problemes.filter((p) => /boutons des réseaux sociaux/.test(p));
   assert.ok(zones.length > 0, r.problemes.join('\n'));
   assert.ok(zones.every((p) => p.startsWith('9:16 (phrases d\'exemple) : ')), zones.join('\n'));

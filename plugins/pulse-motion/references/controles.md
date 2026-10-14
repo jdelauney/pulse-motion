@@ -16,7 +16,7 @@
 | `temps-mort` | Rien ne bouge pendant plus de 2,5 s | alerte | oui, en fin de scène (durée raccourcie, sans passer sous le temps de lecture) | Au milieu d'une scène : décor qui dérive, entrée échelonnée |
 | `pause-finale` | Moins de 0,5 s d'image stable à la fin, ou mouvement (effet de particules) qui continue après la fin de la vidéo et serait coupé | alerte | oui (dernière scène allongée, +1 s au plus) | — |
 | `lecture` | Scène plus courte que 1,5 s + 0,3 s par mot | alerte | oui (durée allongée, +50 % au plus) | Au-delà : raccourcir le texte ou couper la scène |
-| `trop-d-animations` | Plus de 4 éléments qui bougent vite au même instant | alerte | non | Décaler les départs (`data-start`) |
+| `trop-d-animations` | Plus de 4 éléments qui bougent vite au même instant (fonds et auras par shader exclus) | alerte | non | Décaler les départs (`data-start`) |
 | `texte-fugace` | Texte visible moins de 0,8 s + 0,2 s par mot | alerte | non | Le laisser plus longtemps à l'écran |
 | `mouvement-rapide` | Grand élément qui traverse plus d'une largeur d'image par seconde | alerte | non | Ralentir le mouvement |
 
@@ -84,7 +84,7 @@ Les sous-titres sont aussi contrôlés pour le contraste (`contraste-reel`, él�
 
 ## Autres règles
 
-Le contrôle signale aussi, avec un message qui dit quoi faire : un texte du déroulé absent (`texte-manquant`), une scène mal formée (`scene-invalide`), un fichier ou une ressource introuvable ou hors du projet (`fichier-introuvable`, `ressource-distante`), une police non embarquée (`police-non-embarquee`), un effet de particules invalide, trop chargé ou posé sur un texte (`effet-invalide`, `budget-particules`, `effet-sur-texte`), une scène hors du tempo de la musique (`hors-tempo`), un ton absent du style (`ton-indisponible`), un découpage en lettres inconnu (`lettres-invalide`), une correction impossible à écrire (`correction-impossible`).
+Le contrôle signale aussi, avec un message qui dit quoi faire : un texte du déroulé absent (`texte-manquant`), une scène mal formée (`scene-invalide`), un fichier ou une ressource introuvable ou hors du projet (`fichier-introuvable`, `ressource-distante`), une police non embarquée (`police-non-embarquee`), un effet de particules invalide, trop chargé ou posé sur un texte (`effet-invalide`, `budget-particules`, `effet-sur-texte`), une scène hors du tempo de la musique (`hors-tempo`), un ton absent du style (`ton-indisponible`), un découpage en lettres inconnu (`lettres-invalide`), un shader introuvable, mal déclaré ou mal écrit (`shader-inconnu`, `usage-incompatible`, `fonction-absente`, `liaison-reservee`, `shader-trop-gros`, `shader-invalide`, `nom-reserve`, `reglage-inconnu` ; avec `--gpu`, un shader qui ne compile pas : `shader-ne-compile-pas`, ou `shaders-non-compiles` sans WebGPU — voir `pulse-motion reference shaders`), une correction impossible à écrire (`correction-impossible`).
 
 ## Dire ce qui est voulu
 

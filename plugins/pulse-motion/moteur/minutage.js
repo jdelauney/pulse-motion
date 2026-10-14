@@ -21,6 +21,7 @@
   'use strict';
 
   var CHEVAUCHEMENT = 0.5;
+  var DUREE_TRANSITION_SHADER = 0.8; // transition par shader sans « duree » (P6)
   var MARGE_VOIX = 0.4;   // respiration après la voix
   var DEBUT_VOIX = 0.3;   // début de la prise dans la scène, par défaut
   var ANCRE_MOT = /^mot:(.+?)(?:#(\d+))?(:fin)?(?:\s*([+-])\s*(\d*\.?\d+t?))?$/;
@@ -45,8 +46,15 @@
     return 'Scène « ' + idScene + ' », élément « ' + cle + ' » : ' + attribut + ' « ' + valeur + ' » est en temps musicaux, mais le déroulé n\'a pas de « tempo » (ex. "tempo": { "bpm": 120 }).';
   }
 
+  /** Durée de la transition d'entrée : shader (« duree », 0,8 s par défaut), CSS (0,5 s), aucune ou coupe (0). */
+  function dureeTransitionDe(scene) {
+    var tr = scene.transition;
+    if (tr && typeof tr === 'object') return tr.duree > 0 ? tr.duree : DUREE_TRANSITION_SHADER;
+    return tr && tr !== 'aucune' && tr !== 'coupe' ? CHEVAUCHEMENT : 0;
+  }
+
   function chevauchement(scene, index) {
-    return index > 0 && scene.transition && scene.transition !== 'aucune' && scene.transition !== 'coupe' ? CHEVAUCHEMENT : 0;
+    return index > 0 ? dureeTransitionDe(scene) : 0;
   }
 
   /**
@@ -55,7 +63,7 @@
    *   elementsParScene : { [idScene]: [{ cle, start?, dur? }] }  (start, dur : textes des attributs)
    *   options.dureeTemps : secondes par temps musical (tempo du déroulé), absent sans tempo
    *   options.decalageTemps : instant du premier temps (tempo.decalage), 0 par défaut
-   * -> { duree, scenes: [{ id, debut, fin, rythme, transition, entree }],
+   * -> { duree, scenes: [{ id, debut, fin, rythme, transition, entree, dureeTransition }],
    *      elements: { [idScene]: { [cle]: { debut, fin } } }, erreurs: [{ regle, scene, element, message }] }
    */
   function calculerMinutage(scenes, elementsParScene, options) {
@@ -85,7 +93,7 @@
       }
       reelle = Math.round(reelle * 1e6) / 1e6;
       var finScene = debut + reelle;
-      resultat.scenes.push({ id: s.id, debut: debut, fin: finScene, rythme: rythme, transition: s.transition || 'aucune', entree: entree,
+      resultat.scenes.push({ id: s.id, debut: debut, fin: finScene, rythme: rythme, transition: s.transition || 'aucune', entree: entree, dureeTransition: dureeTransitionDe(s),
         allongee: allongee, dureeEffective: Math.round(reelle * rythme * 1e6) / 1e6 });
       resultat.elements[s.id] = minuterScene(s.id, debut, rythme, (elementsParScene && elementsParScene[s.id]) || [], erreurs, dureeTemps, s.voix);
       fin = finScene;
@@ -207,6 +215,7 @@
 
   return {
     CHEVAUCHEMENT: CHEVAUCHEMENT,
+    DUREE_TRANSITION_SHADER: DUREE_TRANSITION_SHADER,
     MARGE_VOIX: MARGE_VOIX,
     DEBUT_VOIX: DEBUT_VOIX,
     calculerMinutage: calculerMinutage,

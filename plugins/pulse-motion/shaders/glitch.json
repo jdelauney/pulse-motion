@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "nom": "glitch",
+  "usage": "transition",
+  "description": "Bandes horizontales décalées et canaux de couleur séparés, bande par bande vers la scène qui entre : rupture, bug, monde numérique.",
+  "parametres": {
+    "force": { "defaut": 3, "min": 0, "max": 15 },
+    "bandes": { "defaut": 24, "min": 4, "max": 80 }
+  }
+}

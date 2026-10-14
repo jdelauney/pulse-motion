@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "nom": "ondulation",
+  "usage": "transition",
+  "description": "L'image ondule comme une surface d'eau, au plus fort au milieu de la transition, puis la scène qui entre se dessine : souvenir, rêve, changement d'époque.",
+  "parametres": {
+    "amplitude": { "defaut": 2, "min": 0, "max": 8 },
+    "frequence": { "defaut": 0.3, "min": 0.05, "max": 2 },
+    "vitesse": { "defaut": 8, "min": 0, "max": 30 }
+  }
+}

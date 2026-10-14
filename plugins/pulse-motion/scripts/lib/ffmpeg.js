@@ -211,7 +211,9 @@ async function assemblerSegments({ ffmpeg, segments, sortie, audio }) {
   }
 }
 
-/** Écart moyen (0 à 1) entre deux images PNG, sur le rouge, le vert et le bleu ; 1 si les tailles diffèrent. */
+/** Écart moyen (0 à 1) entre deux images PNG, sur le rouge, le vert et le bleu, comparées par blocs d'environ 40 000 moyennes
+ *  (un grain de pellicule ou un bruit fin, que l'encodage lisse, ne compte pas ; une image décalée ou noire, si) ; 1 si les
+ *  tailles diffèrent. */
 function ecartImages(a, b) {
   const x = decoderPNG(a);
   const y = decoderPNG(b);
@@ -221,9 +223,16 @@ function ecartImages(a, b) {
   const pas = Math.max(1, Math.floor(Math.sqrt((x.largeur * x.hauteur) / 40000)));
   for (let j = 0; j < x.hauteur; j += pas) {
     for (let i = 0; i < x.largeur; i += pas) {
-      const p = x.pixel(i, j);
-      const q = y.pixel(i, j);
-      somme += Math.abs(p[0] - q[0]) + Math.abs(p[1] - q[1]) + Math.abs(p[2] - q[2]);
+      const d = [0, 0, 0];
+      for (let v = j; v < Math.min(j + pas, x.hauteur); v++) {
+        for (let u = i; u < Math.min(i + pas, x.largeur); u++) {
+          const p = x.pixel(u, v);
+          const q = y.pixel(u, v);
+          for (let k = 0; k < 3; k++) d[k] += p[k] - q[k];
+        }
+      }
+      const aire = (Math.min(j + pas, x.hauteur) - j) * (Math.min(i + pas, x.largeur) - i);
+      for (let k = 0; k < 3; k++) somme += Math.abs(d[k]) / aire;
       n += 3;
     }
   }

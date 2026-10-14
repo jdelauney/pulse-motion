@@ -15,6 +15,10 @@
  *   .lireHauteurs()       -> Promise<Float32Array> (profils d'empilement, 256 hauteurs par profil, cqh)
  *   .contributionVideo()  -> GPUBuffer (MAX_VIDEO × 256 entiers : sommes propres du dernier pas, par obstacle de la vidéo)
  * P.additionnerProfils(device, cible, source)   cible += source (tampons d'entiers de même taille)
+ * Modules de force (P6) : em.modulesWGSL.force (M.codeShader.attacherModules) ; l'appel est inséré dans integrer (pas et
+ * pasCollisions), le module et le prélude des shaders ajoutés au noyau ; pipelines mis en cache par empreinte (même mise en
+ * page) ; e.pipelinePas : pipeline du pas d'un émetteur simulé. P.verifierForce(device, force) -> erreurs situées dans le
+ * fichier du module ; P.avecForce(code, force) -> code du noyau avec le module.
  * monde.tans (tan du talus par profil), monde.bases (GPUBuffer nProfils × 256 entiers, contributions de la vidéo ;
  * la simulation le détruit avec elle) ; .hauteursBase (GPUBuffer nProfils × 256 f32, cqh) : ces bases relaxées au talus,
  * sans les particules de l'effet (couche héritée dessinée par le rendu), null sans bases. Empilement : sommes entières atomiques (seule opération atomique), puis relaxation.
@@ -32,6 +36,7 @@
  * déplacement de chaque pas contre les obstacles, dans leur repère local aux deux bouts du pas ; rebond, pose (la
  * particule suit son obstacle), mort au contact ; impacts notés pour « a_la_collision ». Événements d'un parent :
  * morts dans les cases [0, capacité), impacts dans [capacité, 2 × capacité).
+ * P.WGSL_BRUIT : bruit de valeurs et rotationnel (prélude des shaders, P6).
  * Hachage PCG d'après M. O'Neill (pcg-random.org, domaine public).
  * Navigateur seulement (Chrome, Edge) ; dépend de instantanes.js (M.instantanes) et, avec un monde, de obstacles.js.
  */
@@ -71,6 +76,34 @@ fn pcg(v: u32) -> u32 {
 fn alea(graine: u32, emetteur: u32, n: u32, canal: u32) -> f32 {
   let h = pcg(graine ^ pcg(emetteur ^ pcg(n ^ pcg(canal))));
   return f32(h >> 8u) / 16777216.0;
+}
+`;
+
+  // Bruit de valeurs 3D et rotationnel : noyaux des particules, et prélude des shaders (P6, particules/shaders.js).
+  P.WGSL_BRUIT = /* wgsl */ `
+fn bruitCoin(c: vec3f) -> f32 {
+  let q = vec3u(vec3i(c));
+  return f32(pcg(q.x ^ pcg(q.y ^ pcg(q.z))) >> 8u) / 8388608.0 - 1.0;
+}
+
+// Bruit de valeurs 3D lissé, dans [-1, 1].
+fn bruit(p: vec3f) -> f32 {
+  let c = floor(p);
+  let f = fract(p);
+  let u = f * f * (3.0 - 2.0 * f);
+  let a = mix(bruitCoin(c), bruitCoin(c + vec3f(1.0, 0.0, 0.0)), u.x);
+  let b = mix(bruitCoin(c + vec3f(0.0, 1.0, 0.0)), bruitCoin(c + vec3f(1.0, 1.0, 0.0)), u.x);
+  let d = mix(bruitCoin(c + vec3f(0.0, 0.0, 1.0)), bruitCoin(c + vec3f(1.0, 0.0, 1.0)), u.x);
+  let e = mix(bruitCoin(c + vec3f(0.0, 1.0, 1.0)), bruitCoin(c + vec3f(1.0, 1.0, 1.0)), u.x);
+  return mix(mix(a, b, u.y), mix(d, e, u.y), u.z);
+}
+
+// Rotationnel 2D d'un bruit 3D (x, y, temps) : écoulement sans source ni puits.
+fn curl(p: vec2f, t: f32) -> vec2f {
+  let h = 0.01;
+  let dy = bruit(vec3f(p.x, p.y + h, t)) - bruit(vec3f(p.x, p.y - h, t));
+  let dx = bruit(vec3f(p.x + h, p.y, t)) - bruit(vec3f(p.x - h, p.y, t));
+  return vec2f(dy, -dx) / (2.0 * h);
 }
 `;
 
@@ -198,31 +231,7 @@ struct Pas { k: u32, tau0: f32, tau1: f32, dt: f32, zoneA: vec4f, zoneB: vec4f }
 fn ef(i: u32) -> f32 { return E[i]; }
 fn eu(i: u32) -> u32 { return bitcast<u32>(E[i]); }
 
-fn bruitCoin(c: vec3f) -> f32 {
-  let q = vec3u(vec3i(c));
-  return f32(pcg(q.x ^ pcg(q.y ^ pcg(q.z))) >> 8u) / 8388608.0 - 1.0;
-}
-
-// Bruit de valeurs 3D lissé, dans [-1, 1].
-fn bruit(p: vec3f) -> f32 {
-  let c = floor(p);
-  let f = fract(p);
-  let u = f * f * (3.0 - 2.0 * f);
-  let a = mix(bruitCoin(c), bruitCoin(c + vec3f(1.0, 0.0, 0.0)), u.x);
-  let b = mix(bruitCoin(c + vec3f(0.0, 1.0, 0.0)), bruitCoin(c + vec3f(1.0, 1.0, 0.0)), u.x);
-  let d = mix(bruitCoin(c + vec3f(0.0, 0.0, 1.0)), bruitCoin(c + vec3f(1.0, 0.0, 1.0)), u.x);
-  let e = mix(bruitCoin(c + vec3f(0.0, 1.0, 1.0)), bruitCoin(c + vec3f(1.0, 1.0, 1.0)), u.x);
-  return mix(mix(a, b, u.y), mix(d, e, u.y), u.z);
-}
-
-// Rotationnel 2D d'un bruit 3D (x, y, temps) : écoulement sans source ni puits.
-fn curl(p: vec2f, t: f32) -> vec2f {
-  let h = 0.01;
-  let dy = bruit(vec3f(p.x, p.y + h, t)) - bruit(vec3f(p.x, p.y - h, t));
-  let dx = bruit(vec3f(p.x + h, p.y, t)) - bruit(vec3f(p.x - h, p.y, t));
-  return vec2f(dy, -dx) / (2.0 * h);
-}
-
+${P.WGSL_BRUIT}
 // v' = A − K v sur une durée t, exact (miroir de forme-close.js).
 fn balistique(p: vec2f, v: vec2f, A: vec2f, K: f32, t: f32) -> Etat {
   let x = K * t;
@@ -430,6 +439,7 @@ fn integrer(pIn: Particule, dt: f32, t: f32, zone: vec4f) -> Particule {
       default: { }
     }
   }
+  // [module-force]
   let r = balistique(p.pos, p.vel, A, K, dt);
   p.pos = r.pos;
   p.vel = r.vel;
@@ -1399,6 +1409,52 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
     return p;
   }
 
+  const MARQUE_FORCE = '  // [module-force]';
+
+  /** Code d'un noyau avec le module de force d'un émetteur : appel inséré dans integrer, prélude et module à la suite. */
+  function avecForce(code, force) {
+    if (!force) return code;
+    return code.replace(MARQUE_FORCE, '  A += ' + force.appel + '(p, t, zone);') + M.codeShader.OUTILS + force.wgsl;
+  }
+  P.avecForce = avecForce;
+
+  /** Pipeline du pas sans collisions : celui des particules, ou une variante avec un module de force (cache par empreinte). */
+  function pipelinePas(device, force) {
+    const p = pipelinesPour(device);
+    if (!force) return p.pas;
+    if (!p.variantes) p.variantes = new Map();
+    let v = p.variantes.get(force.empreinte);
+    if (!v) {
+      const module = device.createShaderModule({ label: 'pm-simulation-' + force.nom, code: avecForce(WGSL_SIMULATION, force) });
+      v = device.createComputePipeline({ layout: device.createPipelineLayout({ bindGroupLayouts: [p.layoutPas] }), compute: { module, entryPoint: 'pas' } });
+      p.variantes.set(force.empreinte, v);
+    }
+    return v;
+  }
+
+  /** Pipeline du pas avec collisions, ou sa variante avec un module de force (cache par empreinte). */
+  function pipelineCollisions(device, force) {
+    const p = pipelinesCollisions(device);
+    if (!force) return p.pas;
+    if (!p.variantes) p.variantes = new Map();
+    let v = p.variantes.get(force.empreinte);
+    if (!v) {
+      const module = device.createShaderModule({ label: 'pm-collisions-' + force.nom, code: avecForce(WGSL_MODULE_COLLISIONS, force) });
+      v = device.createComputePipeline({ layout: device.createPipelineLayout({ bindGroupLayouts: [p.layout] }), compute: { module, entryPoint: 'pasCollisions' } });
+      p.variantes.set(force.empreinte, v);
+    }
+    return v;
+  }
+
+  /** Compile le noyau avec un module de force -> erreurs situées dans le fichier du module ([] s'il compile). */
+  P.verifierForce = async function (device, force) {
+    const code = avecForce(WGSL_SIMULATION, force);
+    const module = device.createShaderModule({ label: 'pm-verification-' + force.nom, code });
+    const info = await module.getCompilationInfo();
+    const debut = (code.slice(0, code.length - force.wgsl.length).match(/\n/g) || []).length;
+    return M.codeShader.situerModule(info.messages, force, debut);
+  };
+
   /** cible += source (tampons d'entiers de même taille, usage STORAGE). */
   P.additionnerProfils = function (device, cible, source) {
     const p = pipelinesCollisions(device);
@@ -1480,6 +1536,12 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
             { binding: 7, resource: { buffer: e.historique || this.p.videHistorique } },
           ],
         });
+      });
+
+      // Pipeline du pas de chaque émetteur simulé : variante avec son module de force (P6), mise en cache par empreinte.
+      this.simules.forEach((e) => {
+        const force = e.em.modulesWGSL ? e.em.modulesWGSL.force : null;
+        e.pipelinePas = e.collisions ? pipelineCollisions(device, force) : pipelinePas(device, force);
       });
 
       // Voie rapide : zones de la grille (points g / 30) envoyées au GPU.
@@ -1698,7 +1760,7 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
           this.ecrirePas(o, a.k);
           if (!passe) passe = enc.beginComputePass();
           for (const e of this.simules) {
-            passe.setPipeline(e.collisions ? this.pc.pas : this.p.pas);
+            passe.setPipeline(e.pipelinePas);
             passe.setBindGroup(0, e.groupePas, [n * 256]);
             passe.dispatchWorkgroups(Math.ceil(e.capacite / 64));
           }

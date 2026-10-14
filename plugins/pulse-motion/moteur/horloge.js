@@ -11,6 +11,7 @@
  * M.surSeek(fn(t))    M.seek attend la promesse renvoyée (calques de particules)
  * M.modeCapture(bool) Date.now et performance.now suivent t (export)
  * M.enCapture()      vrai entre M.modeCapture(true) et M.modeCapture(false) (classe pm-capture sur <html>)
+ * M.typeTransition(info) transition CSS d'une scène (une transition par shader : « aucune » si prête, sinon « fondu »)
  *
  * Aléa reproductible et horloge virtuelle : idée et algorithme mulberry32 repris de
  * showtime (skills/showtime/runtime/stage.js), licence MIT.
@@ -99,8 +100,8 @@
   function lireElements(section) {
     var liste = [];
     var n = 0;
-    // Un effet de particules est minuté même sans data-start (comme dans scripts/lib/extraire.js).
-    section.querySelectorAll('[data-start],[data-dur],[data-tween],[data-effet],[data-son]').forEach(function (el) {
+    // Un effet de particules ou un shader (data-shader) est minuté même sans data-start (comme dans scripts/lib/extraire.js).
+    section.querySelectorAll('[data-start],[data-dur],[data-tween],[data-effet],[data-son],[data-shader]').forEach(function (el) {
       var cle = el.id || ('_' + (++n));
       el.setAttribute('data-pm-cle', cle);
       liste.push({ cle: cle, start: el.getAttribute('data-start'), dur: el.getAttribute('data-dur'), el: el });
@@ -167,14 +168,23 @@
     document.documentElement.setAttribute('data-pm-pret', '');
   };
 
+  /** Transition CSS d'une scène : celle du déroulé ; une transition par shader prête (calques, M.transitionShader) n'en a
+   *  pas, sinon repli en fondu (GPU pas encore prêt, absent, ou shader qui ne compile pas). */
+  function typeTransition(info) {
+    var tr = info.transition;
+    if (!tr || typeof tr === 'string') return tr;
+    return M.transitionShader && M.transitionShader(info.id) ? 'aucune' : 'fondu';
+  }
+  M.typeTransition = typeTransition;
+
   function rendreScene(s, t) {
     var info = s.info;
     // Aléa propre à la scène : ne dépend que de t et de la scène, pas du chemin pour arriver à t.
     Math.random = mulberry32((0x5eed1234 ^ Math.imul(Math.round(t * M.ips) + 1, 0x9e3779b1) ^ Math.imul(s.index + 1, 0x85ebca6b)) >>> 0);
     // Transition d'entrée : chevauchement, ou entrée depuis le fond pour la première scène.
-    var dureeEntree = info.entree > 0 ? info.entree : (s.index === 0 ? M.CHEVAUCHEMENT : 0);
+    var dureeEntree = info.entree > 0 ? info.entree : (s.index === 0 ? (info.dureeTransition || 0) : 0);
     var q = dureeEntree > 0 ? (t - info.debut) / dureeEntree : 1;
-    var st = M.styleTransition(info.transition, q);
+    var st = M.styleTransition(typeTransition(info), q);
     s.sec.style.opacity = st.opacity;
     s.sec.style.transform = st.transform;
     s.sec.style.clipPath = st.clipPath;
