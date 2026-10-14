@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "nom": "miel",
+  "etend": "eau",
+  "description": "Liquide épais et lent (miel, sirop, lave) qui coule depuis l'ancre et s'étale sur les obstacles déclarés ; dérivé de l'eau, plus visqueux et plus dense à l'œil.",
+  "parametres": {
+    "couleur": {
+      "defaut": "#d99a1e",
+      "type": "couleur"
+    },
+    "refraction": {
+      "defaut": 0.1,
+      "min": 0,
+      "max": 1
+    }
+  },
+  "emetteurs": [
+    {
+      "nom": "goutte",
+      "naissance": {
+        "vitesse": {
+          "valeur": [
+            2,
+            4
+          ]
+        }
+      },
+      "interactions": {
+        "viscosite": 0.7,
+        "tension": 0.5,
+        "incompressibilite": 5
+      },
+      "rendu": {
+        "opacite": 0.9,
+        "absorption": 0.8,
+        "lissage": 1.2
+      }
+    }
+  ]
+}
