@@ -459,6 +459,93 @@ fn viscosite(@builtin(global_invocation_id) gid: vec3u) {
 }
 `;
 
+  // Grains (PBD).
+  const WGSL_GRAINS = /* wgsl */ `
+const RELAXATION = 1.5;     // surrelaxation de la moyenne des corrections (Jacobi)
+
+// Position au début du pas : notée avant le pas des émetteurs (même particule), sinon déduite de la prédiction.
+fn ancienne(i: u32) -> vec2f {
+  let a = anciennes[i];
+  if (a.w > 0.5 && bitcast<u32>(a.z) == corps[i].n) { return a.xy; }
+  return corps[i].pos - corps[i].vel * P.dt;
+}
+
+// Contacts entre grains (posL -> posE) : chaque grain prend la moitié de la pénétration le long de la normale ; frottement
+// sur le déplacement relatif tangentiel depuis le début du pas (annulé sous statique × pénétration, réduit à dynamique ×
+// pénétration au-delà) ; cohésion : attraction jusqu'à (r_i + r_j)(1 + 0,25 cohésion) ; moyenne surrelaxée.
+@compute @workgroup_size(64)
+fn contacts(@builtin(global_invocation_id) gid: vec3u) {
+  let i = gid.x;
+  if (i >= GR.nCorps) { return; }
+  let pi = posL[i];
+  if (corps[i].membre == AUCUN || !dansGrille(i)) {
+    posE[i] = pi;
+    return;
+  }
+  let m = GR.m[corps[i].membre];
+  let ri = corps[i].rayon;
+  let dep = pi - ancienne(i);
+  var dp = vec2f(0.0);
+  var nb = 0.0;
+  for (var vc = 0u; vc < 9u; vc++) {
+    let pl = plage(cles[i], vc);
+    for (var k = pl.a; k < pl.b; k++) {
+      let j = ordre[k];
+      if (j == i) { continue; }
+      let pj = posL[j];
+      let d = pi - pj;
+      let r = length(d);
+      let contact = ri + corps[j].rayon;
+      if (r <= 1e-6 || r >= contact * (1.0 + 0.25 * m.a.z)) { continue; }
+      let u = d / r;
+      let pen = contact - r;
+      if (pen > 0.0) {
+        var c = 0.5 * pen * u;
+        let rel = dep - (pj - ancienne(j));
+        let tg = rel - dot(rel, u) * u;
+        let lt = length(tg);
+        if (lt < m.a.x * pen) { c -= 0.5 * tg; } else if (lt > 1e-9) { c -= 0.5 * tg * min(m.a.y * pen / lt, 1.0); }
+        dp += c;
+      } else {
+        dp += 0.5 * m.a.z * pen * u;
+      }
+      nb += 1.0;
+    }
+  }
+  if (nb > 0.0) { posE[i] = pi + RELAXATION * dp / nb; } else { posE[i] = pi; }
+}
+
+// Vitesse finale des grains : prédiction + déplacement des contacts / dt ; rebond entre grains (restitution) sur la vitesse
+// normale d'approche prédite.
+@compute @workgroup_size(64)
+fn vitessesGrains(@builtin(global_invocation_id) gid: vec3u) {
+  let i = gid.x;
+  if (i >= GR.nCorps) { return; }
+  let ci = corps[i];
+  let v = ci.vel + (posL[i] - ci.pos) / P.dt;
+  if (ci.membre == AUCUN || !dansGrille(i)) {
+    vitesses[i] = v;
+    return;
+  }
+  let e = GR.m[ci.membre].a.w;
+  var dv = vec2f(0.0);
+  for (var vc = 0u; vc < 9u; vc++) {
+    let pl = plage(cles[i], vc);
+    for (var k = pl.a; k < pl.b; k++) {
+      let j = ordre[k];
+      if (j == i) { continue; }
+      let d = posL[i] - posL[j];
+      let r = length(d);
+      if (r <= 1e-6 || r >= (ci.rayon + corps[j].rayon) * 1.01) { continue; }
+      let u = d / r;
+      let vn = dot(ci.vel - corps[j].vel, u);
+      if (vn < 0.0) { dv -= 0.5 * e * vn * u; }
+    }
+  }
+  vitesses[i] = v + dv;
+}
+`;
+
   // Rendu aux particules : déclarations et code communs aux deux modules.
   const WGSL_RENDRE_DECL = /* wgsl */ `
 struct Limite { ok: bool, pos: vec2f, n: vec2f };
@@ -568,7 +655,7 @@ fn rendreC(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_
   }
   P.codeRendreInteractions = codeRendre;
 
-  P.WGSL_VOISINAGE = P.WGSL_COMMUN + WGSL_PAS + P.WGSL_GROUPE + WGSL_LIAISONS + WGSL_GRILLE + WGSL_BORNER + WGSL_VOISINS + WGSL_ESSAIM + WGSL_FLUIDE;
+  P.WGSL_VOISINAGE = P.WGSL_COMMUN + WGSL_PAS + P.WGSL_GROUPE + WGSL_LIAISONS + WGSL_GRILLE + WGSL_BORNER + WGSL_VOISINS + WGSL_ESSAIM + WGSL_FLUIDE + WGSL_GRAINS;
 
   // Liaisons de chaque noyau (disposition explicite : 8 tampons de stockage au plus chacune). Liaison 0 : décalage dynamique.
   const NOYAUX = {
@@ -582,6 +669,8 @@ fn rendreC(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_
     densite: [1, 4, 5, 7, 8, 9, 11],
     corriger: [1, 4, 5, 7, 8, 9, 10, 11],
     viscosite: [0, 1, 4, 5, 7, 8, 9, 12],
+    contacts: [0, 1, 4, 5, 7, 8, 9, 10, 13],
+    vitessesGrains: [0, 1, 4, 5, 7, 8, 9, 12],
   };
   P.NOYAUX_VOISINAGE = NOYAUX;
 
@@ -655,6 +744,11 @@ fn rendreC(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_
         g.lancer(passe, 'corriger', v, null, blocs, n);
       }
       g.lancer(passe, 'viscosite', 'AB', null, blocs, n);
+    },
+    // Itérations de contacts en ping-pong (2 × 3 : résultat dans posA), puis vitesses ; mise au repos au rendu.
+    grains(g, passe, n, blocs) {
+      for (let k = 0; k < g.iterations; k++) g.lancer(passe, 'contacts', k % 2 === 0 ? 'AB' : 'BA', null, blocs, n);
+      g.lancer(passe, 'vitessesGrains', 'AB', null, blocs, n);
     },
   };
 
