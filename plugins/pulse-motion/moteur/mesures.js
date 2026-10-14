@@ -63,7 +63,8 @@
   /** Une scène est-elle en train d'entrer à t (transition d'entrée, ou entrée de la première depuis le fond) ? */
   function enEntree(t) {
     return M.minutage.scenes.some(function (s, i) {
-      var duree = s.entree > 0 ? s.entree : (i === 0 ? (M.CHEVAUCHEMENT || 0.5) : 0);
+      // Première scène : la durée de sa transition (0,8 s par défaut pour un shader, 0,5 s en CSS, 0 sans transition).
+      var duree = s.entree > 0 ? s.entree : (i === 0 ? (s.dureeTransition || 0) : 0);
       return t >= s.debut - 1e-9 && t < s.debut + duree - 1e-9;
     });
   }

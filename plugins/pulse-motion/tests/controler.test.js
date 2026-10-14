@@ -170,6 +170,17 @@ test('première scène en coupe : pas d\'entrée de 0,5 s comptée comme mouveme
   assert.equal(avec('coupe'), 1);
 });
 
+test('première scène à transition par shader : son entrée dure « duree » (comme dans la vidéo), pas 0,5 s', () => {
+  const avec = (transition) => {
+    const dir = copierProjet('projet-simple');
+    fs.writeFileSync(path.join(dir, 'scenes', '01-intro.html'), '<section data-scene="intro"><h1 data-texte="titre" data-start="3.2" data-dur="1"></h1><p data-texte="sous" data-start="3.2" data-dur="1"></p><span data-start="3.2" data-dur="5.8" data-tween="--x 0cqh→1cqh linear"></span></section>');
+    modifierDeroule(dir, (d) => { d.scenes[0].transition = transition; d.scenes[0].duree = 9; });
+    return controler({ dossier: dir, dossierStyles: STYLES, ecrire: false }).problemes.filter((p) => p.regle === 'temps-mort' && p.scene === 'intro').length;
+  };
+  assert.equal(avec('fondu'), 1, 'entrée de 0,5 s : 2,7 s sans mouvement');
+  assert.equal(avec({ shader: 'dissolution', duree: 1 }), 0, 'entrée de 1 s : 2,2 s sans mouvement');
+});
+
 test('ton sombre demandé sur un style sans ton sombre : alerte « ton-indisponible »', () => {
   const dir = copierProjet('projet-simple');
   modifierDeroule(dir, (d) => { d.charte.ton = 'sombre'; });

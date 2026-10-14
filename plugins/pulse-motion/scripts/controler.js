@@ -25,7 +25,7 @@ const { cheminDansProjet } = require('./lib/embarquer.js');
 const W = require('../moteur/wav.js');
 const { corrigerTypographie, corrigerMajuscules, motsDoubles, termesVariables, cleTerme } = require('./lib/typographie.js');
 const { extraireScene, textesEnDur } = require('./lib/extraire.js');
-const { calculerMinutage, CHEVAUCHEMENT } = require('../moteur/minutage.js');
+const { calculerMinutage } = require('../moteur/minutage.js');
 const CATALOGUE = require('../moteur/synthe/catalogue.js');
 const { appliquerCorrections } = require('./lib/corriger.js');
 const { controlerRendu } = require('./lib/rendu-controle.js');
@@ -260,7 +260,7 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
     // Temps morts : aucun élément en mouvement pendant plus que le seuil (pause finale exceptée).
     const derniere = min.scenes[min.scenes.length - 1];
     min.scenes.forEach((s, i) => {
-      const dureeEntree = s.entree > 0 ? s.entree : (i === 0 && s.transition !== 'aucune' && s.transition !== 'coupe' ? CHEVAUCHEMENT : 0);
+      const dureeEntree = s.entree > 0 ? s.entree : (i === 0 ? s.dureeTransition || 0 : 0);
       const intervalles = Object.entries(min.elements[s.id]).map(([cle, e]) => [e.debut, finElement(s.id, cle, e)]);
       if (dureeEntree) intervalles.push([s.debut, s.debut + dureeEntree]);
       const suivante = min.scenes[i + 1];
