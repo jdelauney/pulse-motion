@@ -305,9 +305,12 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
       problemes.push(p);
     }
 
-    // Trop d'animations vives en même temps : l'œil ne sait plus où regarder (les mouvements lents du décor ne comptent pas).
+    // Trop d'animations vives en même temps : l'œil ne sait plus où regarder (les mouvements lents du décor ne comptent pas,
+    // ni les fonds et auras par shader : une ambiance, pas un point d'attention).
     for (const s of min.scenes) {
-      const vifs = Object.values(min.elements[s.id]).filter((e) => e.fin - e.debut > 0 && e.fin - e.debut < SEUILS.animationLongue).sort((x, y) => x.debut - y.debut);
+      const ambiances = new Set(elementsParScene[s.id].filter((e) => e.shader !== undefined).map((e) => e.cle));
+      const vifs = Object.entries(min.elements[s.id]).filter(([cle]) => !ambiances.has(cle)).map(([, e]) => e)
+        .filter((e) => e.fin - e.debut > 0 && e.fin - e.debut < SEUILS.animationLongue).sort((x, y) => x.debut - y.debut);
       let max = 0;
       let instant = 0;
       for (const e of vifs) {
