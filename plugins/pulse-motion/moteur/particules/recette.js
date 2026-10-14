@@ -983,6 +983,67 @@
         }
       }
 
+      /** Règles d'un émetteur à interactions (après sa compilation : fragments, collisions, taille connus). */
+      function verifierInteractions(em, ch) {
+        var c = ch + '.interactions';
+        if (em.fragment) {
+          throw invalide(c, 'un émetteur de fragments (forme « pixels », éclats, « cible ») suit sa photographie ou son trajet (voie rapide forcée pour une arrivée chorégraphiée) : retirer « interactions »');
+        }
+        if (em.collisions && em.collisions.reponse === 'poser') {
+          throw invalide(c, 'des particules qui interagissent ne se posent pas sur les obstacles : « collisions.reponse » « rebond » ou « mourir » (les grains forment eux-mêmes leur tas, sans « empiler »)');
+        }
+        if (em.interactions.type === 'grains' && em.taille[1] > em.interactions.rayon) {
+          throw invalide(c + '.rayon', 'un grain doit tenir dans une cellule de voisinage : rayon ' + em.interactions.rayon + ' cqh sous la taille maximale ' +
+            em.taille[1] + ' cqh ; augmenter « rayon » ou réduire « naissance.taille »');
+        }
+      }
+
+      /** Groupes de voisinage : composantes connexes des liens « avec » (un lien dans un seul sens suffit), membres dans
+       *  l'ordre de la recette, même type, GROUPE_MAX au plus ; pose em.interactions.groupe. */
+      function grouperInteractions(emetteurs) {
+        var racineDe = emetteurs.map(function (e, i) { return i; });
+        function trouver(i) { while (racineDe[i] !== i) i = racineDe[i]; return i; }
+        var noms = emetteurs.map(function (x) { return x.nom; }).join(', ');
+        emetteurs.forEach(function (em, i) {
+          if (!em.interactions) return;
+          em.interactions.avec.forEach(function (nom, k) {
+            var c = 'emetteurs[' + em.nom + '].interactions.avec[' + k + ']';
+            var j = parNom[nom];
+            if (j === undefined) throw invalide(c, '« ' + nom + ' » n\'est pas un émetteur de cet effet (émetteurs : ' + noms + ')');
+            if (j === i) throw invalide(c, 'un émetteur interagit déjà avec lui-même : retirer « ' + nom + ' »');
+            var autre = emetteurs[j];
+            if (!autre.interactions) throw invalide(c, '« ' + nom + ' » n\'a pas de bloc « interactions » : lui en donner un du même type (« ' + em.interactions.type + ' »)');
+            if (autre.interactions.type !== em.interactions.type) {
+              throw invalide(c, '« ' + nom + ' » est de type « ' + autre.interactions.type + ' », « ' + em.interactions.type + ' » attendu (un groupe lié a un seul type)');
+            }
+            var a = trouver(i);
+            var b = trouver(j);
+            if (a !== b) racineDe[Math.max(a, b)] = Math.min(a, b);
+          });
+        });
+        var parRacine = {};
+        var groupes = [];
+        emetteurs.forEach(function (em, i) {
+          if (!em.interactions) return;
+          var r = trouver(i);
+          if (parRacine[r] === undefined) {
+            parRacine[r] = groupes.length;
+            groupes.push({ type: em.interactions.type, code: em.interactions.code, membres: [], cote: 0 });
+          }
+          var g = groupes[parRacine[r]];
+          g.membres.push(i);
+          g.cote = Math.max(g.cote, em.interactions.cote);
+          em.interactions.groupe = parRacine[r];
+        });
+        groupes.forEach(function (g) {
+          if (g.membres.length > GROUPE_MAX) {
+            var premier = emetteurs[g.membres[0]].nom;
+            throw invalide('emetteurs[' + premier + '].interactions.avec', GROUPE_MAX + ' émetteurs liés au plus (le groupe de « ' + premier + ' » en compte ' + g.membres.length + ')');
+          }
+        });
+        return groupes;
+      }
+
       // Émetteurs : noms, liens parent → enfant, profondeur.
       var liste = recette.emetteurs;
       if (!Array.isArray(liste) || !liste.length) throw invalide('', '« emetteurs » doit être une liste non vide');
@@ -1081,6 +1142,7 @@
         else if (em.tables.source.some(function (x) { return x > 0; })) {
           throw invalide(ch + '.vie.couleur', '« source » est la couleur des pixels d\'un élément photographié : seulement avec la forme « pixels » ou une « cible »');
         }
+        if (em.interactions) verifierInteractions(em, ch);
         if (cible) {
           // Bruit du trajet chorégraphié : celui de la première turbulence (amplitude = force × 0,1 cqh).
           var turbulence = em.forces.filter(function (f) { return f.type === 'turbulence'; })[0];
@@ -1184,6 +1246,8 @@
       var emetteurs = [];
       ordre.forEach(function (i) { emetteurs[i] = compilerEmetteur(liste[i], i, parent[i] >= 0 ? emetteurs[parent[i]] : null); });
 
+      var groupes = grouperInteractions(emetteurs);
+
       var rc = objet(recette.rendu_calque, 'rendu_calque');
       var effet = {
         version: 1,
@@ -1200,6 +1264,8 @@
         capacite: emetteurs.reduce(function (s, e) { return s + e.capacite; }, 0),
         fin: emetteurs.reduce(function (s, e) { return Math.max(s, e.fin); }, 0),
         emetteurs: emetteurs,
+        // Interactions (P5a) : groupes de voisinage ([] sans interactions).
+        groupes: groupes,
       };
       emetteurs.forEach(function (e) { delete e.espacement; delete e.gigue; delete e.finNaissances; });
       return { ok: true, effet: effet, erreurs: [] };
