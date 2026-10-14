@@ -243,6 +243,38 @@ fn vsTrainee(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -
   return o;
 }
 
+// Éclat : polygone de la photographie de l'ancre (éventail de triangles, 16 sommets au plus) autour de la particule,
+// sommets à l'échelle de l'ancre à la naissance et selon la table de taille, tournés de l'angle de la particule ;
+// coordonnées de texture d'origine (la photographie couvre la boîte locale de l'ancre).
+@vertex
+fn vsEclat(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> Sortie {
+  let idx = indice(ii);
+  if (idx >= arrayLength(&particules)) { return cachee(); }
+  let p = particules[idx];
+  if (p.vivante == 0u) { return cachee(); }
+  let b = eu(179u) + p.n * 36u;
+  let k = u32(ef(b + 2u));
+  let tri = vi / 3u;
+  if (tri + 2u >= k) { return cachee(); }
+  let coin = vi % 3u;
+  var j = 0u;
+  if (coin > 0u) { j = tri + coin; }
+  let decal = vec2f(ef(b + 4u + 2u * j), ef(b + 5u + 2u * j));
+  let centre = vec2f(ef(b), ef(b + 1u));
+  let r0 = repereElement(0u, p.naissance);
+  let u = p.age / p.vie;
+  let w = p.pos + p.vel * C.delta + tournerF(p.rot + p.vrot * C.delta, decal * r0.echelle) * table(256u, u);
+  var sortie: Sortie;
+  sortie.pos = ecran(w);
+  sortie.uv = vec2f(0.0);
+  sortie.uvTex = (centre + decal) / max(2.0 * vec2f(ef(164u), ef(165u)), vec2f(1e-6)) + 0.5;
+  let couleur = teinte(u);
+  sortie.couleur = vec4f(couleur.rgb * table(320u, u), couleur.a * table(384u, u) * fondu(idx));
+  sortie.alea = p.alea;
+  sortie.echantillons = 1.0;
+  return sortie;
+}
+
 fn coin2(c: vec2f) -> f32 {
   let q = vec2u(vec2i(c));
   return f32(pcg(q.x ^ pcg(q.y)) >> 8u) / 16777216.0;
@@ -487,6 +519,13 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
   };
 
   function puissanceDeDeux(n) { let p = 64; while (p < n) p *= 2; return p; }
+  const SOMMETS_ECLAT = 16;
+  // Pipelines de dessin des particules : entrées et topologie par genre.
+  const GENRES = {
+    quad: { sommets: 'vsQuad', fragment: 'fsQuad', topologie: 'triangle-list' },
+    trainee: { sommets: 'vsTrainee', fragment: 'fsTrainee', topologie: 'triangle-strip' },
+    eclat: { sommets: 'vsEclat', fragment: 'fsQuad', topologie: 'triangle-list' },
+  };
 
   function detruireCible(c) {
     [c.hdr, c.sortie, ...c.niveaux.map((n) => n.texture), c.uniformeFinal, ...c.bas.map((b) => b.uniforme), ...c.haut.map((b) => b.uniforme)].forEach((t) => t.destroy());
@@ -519,12 +558,13 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
       const module = device.createShaderModule({ label: 'pm-particules', code: WGSL_PARTICULES });
       const layout = device.createPipelineLayout({ bindGroupLayouts: [this.layout] });
       this.pipelines = {};
-      ['quad', 'trainee'].forEach((forme) => Object.keys(MELANGES).forEach((melange) => {
-        this.pipelines[forme + '-' + melange] = device.createRenderPipeline({
+      Object.keys(GENRES).forEach((genre) => Object.keys(MELANGES).forEach((melange) => {
+        const g = GENRES[genre];
+        this.pipelines[genre + '-' + melange] = device.createRenderPipeline({
           layout,
-          vertex: { module, entryPoint: forme === 'quad' ? 'vsQuad' : 'vsTrainee' },
-          fragment: { module, entryPoint: forme === 'quad' ? 'fsQuad' : 'fsTrainee', targets: [{ format: 'rgba16float', blend: MELANGES[melange] }] },
-          primitive: { topology: forme === 'quad' ? 'triangle-list' : 'triangle-strip' },
+          vertex: { module, entryPoint: g.sommets },
+          fragment: { module, entryPoint: g.fragment, targets: [{ format: 'rgba16float', blend: MELANGES[melange] }] },
+          primitive: { topology: g.topologie },
         });
       }));
 
@@ -776,7 +816,8 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
     groupe(e) {
       let g = this.groupes.get(e);
       if (!g) {
-        const image = e.em.rendu.textureImage && this.images.get(e.em.rendu.textureImage);
+        // Éclats : la photographie de l'ancre (plan 2) ; sinon l'image de assets/ de la recette.
+        const image = e.photo ? e.photo.vue : e.em.rendu.textureImage && this.images.get(e.em.rendu.textureImage);
         g = this.device.createBindGroup({
           layout: this.layout,
           entries: [
@@ -849,10 +890,11 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
         u[4] = sim.k || 0; u[5] = this.estTrie(e) ? 1 : 0; u[6] = r.flou ? 1 : 0; u[7] = e.contacts ? 1 : 0;
         f[8] = sim.tau || 0;
         device.queue.writeBuffer(e.uniformeRendu, 0, v);
-        const trainee = r.type === 'trainee';
-        rp.setPipeline(this.pipelines[(trainee ? 'trainee-' : 'quad-') + (r.melange === 'additif' ? 'additif' : 'alpha')]);
+        const genre = r.type === 'trainee' ? 'trainee' : r.type === 'eclats' ? 'eclat' : 'quad';
+        rp.setPipeline(this.pipelines[genre + '-' + (r.melange === 'additif' ? 'additif' : 'alpha')]);
         rp.setBindGroup(0, this.groupe(e));
-        if (trainee) rp.draw(2 * (r.longueur + 1), e.capacite);
+        if (genre === 'trainee') rp.draw(2 * (r.longueur + 1), e.capacite);
+        else if (genre === 'eclat') rp.draw(3 * (SOMMETS_ECLAT - 2), e.capacite);
         else rp.draw(6, e.capacite * (r.flou ? 4 : 1));
       });
       rp.end();
