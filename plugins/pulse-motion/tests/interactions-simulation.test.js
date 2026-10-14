@@ -6,8 +6,8 @@ const { optionsWebGPU, executerPage, pageMoteur } = require('./aide/gpu.js');
 
 const FICHIERS = ['particules/instantanes.js', 'particules/gpu.js', 'particules/obstacles.js', 'particules/simulation.js', 'particules/voisinage.js'];
 
-function compiler(emetteurs, dur = 1) {
-  const r = R.compiler({ version: 1, nom: 'essai', emetteurs }, { dur, graine: 7, charte: {} });
+function compiler(emetteurs, dur = 1, graine = 7) {
+  const r = R.compiler({ version: 1, nom: 'essai', emetteurs }, { dur, graine, charte: {} });
   assert.equal(r.ok, true, JSON.stringify(r.erreurs));
   return r.effet;
 }
@@ -200,24 +200,49 @@ function angleTas(grains, sol) {
 const grains = (debit, extra = {}) => ({ nom: 'g', naissance: { debit, forme: { type: 'rectangle' }, vitesse: { direction: [0, 1], cone: 20, valeur: [0, 2] }, vie: [30, 30], taille: [0.8, 0.8] },
   forces: [{ type: 'gravite', valeur: 40 }], ...extra });
 
-test('interactions GPU : grains : tas à l\'angle de frottement (± 5°), sans tremblement au repos', async (t) => {
+test("interactions GPU : grains : tas à l'angle de frottement (± 5°, moyenne de deux graines), sans tremblement au repos", async (t) => {
   if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
-  // 2 000 grains versés depuis un petit carré en (88, 51), sur le sol de la recette (y = 90).
-  const sable = compiler([grains(400, { collisions: { cibles: ['sol'], restitution: 0, frottement: 0.6 },
-    interactions: { type: 'grains', rayon: 1, frottement: { statique: 0.6, dynamique: 0.5 }, restitution: 0 } })], 5);
-  const r = await page({ sable }, `
+  // 3 000 grains versés depuis un petit carré en (88, 51), sur le sol de la recette (y = 90) ; deux graines.
+  const sable = (graine) => compiler([grains(400, { collisions: { cibles: ['sol'], restitution: 0, frottement: 0.6 },
+    interactions: { type: 'grains', rayon: 1, frottement: { statique: 0.6, dynamique: 0.5 }, restitution: 0 } })], 7.5, graine);
+  const r = await page({ a: sable(7), b: sable(8) }, `
 const { m, reperes } = monde([], 90);
 const zones = { a: () => [87, 50, 2, 2], grille: () => [87, 50, 2, 2], reperes };
-const fin = await etat(DONNEES.sable, zones, [9], m);
+const a = await etat(DONNEES.a, zones, [11], m);
+const b = await etat(DONNEES.b, zones, [11], m);
+await envoyer({ webgpu: true, tas: [a[0].p, b[0].p] });`);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  const attendu = Math.atan(0.6) * 180 / Math.PI;
+  const angles = [];
+  for (const p of r.tas) {
+    assert.equal(p.length, 3000);
+    assert.ok(p.every((q) => q.y <= 89.6 + 0.05), 'aucun grain sous le sol');
+    angles.push(angleTas(p, 90));
+    const vitesse = p.reduce((s, q) => s + Math.hypot(q.vx, q.vy), 0) / p.length;
+    assert.ok(vitesse < 1, `vitesse moyenne ${vitesse.toFixed(3)} cqh/s : tas au repos, sans tremblement`);
+  }
+  const angle = (angles[0] + angles[1]) / 2;
+  assert.ok(Math.abs(angle - attendu) <= 5, `angle du tas ${angle.toFixed(1)}° (${angles.map((x) => x.toFixed(1)).join('° et ')}°) ; frottement statique 0,6 : ${attendu.toFixed(1)}° ± 5°`);
+});
+
+test("interactions GPU : grains : un amas lâché de 30 cqh s'étale à l'impact (au moins deux fois sa largeur)", async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  // 300 grains nés dans un carré de 10 × 10 cqh (bas en y = 60), sol de la recette en y = 90.
+  const amas = compiler([{ nom: 'g', naissance: { salves: [{ t: 0, nombre: 300 }], forme: { type: 'rectangle' }, vie: [30, 30], taille: [0.8, 0.8] },
+    forces: [{ type: 'gravite', valeur: 40 }], collisions: { cibles: ['sol'], restitution: 0, frottement: 0.6 },
+    interactions: { type: 'grains', rayon: 1, frottement: { statique: 0.6, dynamique: 0.5 }, restitution: 0 } }]);
+  const r = await page({ amas }, `
+const { m, reperes } = monde([], 90);
+const zones = { a: () => [83, 50, 10, 10], grille: () => [83, 50, 10, 10], reperes };
+const fin = await etat(DONNEES.amas, zones, [4], m);
 await envoyer({ webgpu: true, p: fin[0].p });`);
   if (r.webgpu === false) return t.skip('WebGPU indisponible');
-  assert.equal(r.p.length, 2000);
-  assert.ok(r.p.every((q) => q.y <= 89.6 + 0.05), 'aucun grain sous le sol');
-  const angle = angleTas(r.p, 90);
-  const attendu = Math.atan(0.6) * 180 / Math.PI;
-  assert.ok(Math.abs(angle - attendu) <= 5, `angle du tas ${angle.toFixed(1)}° (frottement statique 0,6 : ${attendu.toFixed(1)}° ± 5°)`);
-  const vitesse = r.p.reduce((s, q) => s + Math.hypot(q.vx, q.vy), 0) / r.p.length;
-  assert.ok(vitesse < 1, `vitesse moyenne ${vitesse.toFixed(3)} cqh/s : tas au repos, sans tremblement`);
+  assert.equal(r.p.length, 300);
+  assert.ok(r.p.every((q) => q.y > 75), 'amas tombé au sol');
+  // Largeur au sol entre les 2e et 98e centiles des x (un grain projeté seul ne compte pas).
+  const xs = r.p.map((q) => q.x).sort((a, b) => a - b);
+  const largeur = xs[Math.floor(0.98 * xs.length)] - xs[Math.floor(0.02 * xs.length)];
+  assert.ok(largeur >= 20, `largeur au sol ${largeur.toFixed(1)} cqh (amas de 10 cqh : au moins 20)`);
 });
 
 test('interactions GPU : grains : un tas posé sur un support qui part s\'écroule ; même état au bit près par deux chemins', async (t) => {
