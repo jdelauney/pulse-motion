@@ -1076,8 +1076,9 @@ fn collisionner(p: ptr<function, Particule>, c: ptr<function, Contact>, p0: vec2
   let depart = materiel(B, m) + normalize(tourner(B, t.n)) * MARGE;
   (*p).pos = depart + (vNouv - vs) * (1.0 - t.t) * duree;
   // Reste du pas après le rebond : arrêté au second obstacle touché (coin d'une cuve : paroi puis sol), sans quoi la
-  // particule entre dans le second et n'en ressort plus (départ dedans : aucun contact).
-  let t2 = chercher(depart, (*p).pos, tc, false, rayon);
+  // particule entre dans le second et n'en ressort plus (départ dedans : aucun contact). Départ placé sur l'obstacle à τ1 :
+  // obstacles pris immobiles à τ1 pour ce reste (un obstacle qui bouge ne se rattrape pas lui-même).
+  let t2 = chercher(depart, (*p).pos, P.tau1, false, rayon);
   if (t2.ok) {
     let B2 = cadresB[t2.o];
     let n2 = normalize(tourner(B2, t2.n));
