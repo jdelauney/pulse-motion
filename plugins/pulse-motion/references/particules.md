@@ -54,6 +54,8 @@ Pour une zone précise sans élément à viser, donner une classe à la balise (
 
 Voir une recette : `pulse-motion effet <nom>`.
 
+Particules qui interagissent (nuée, banc, lucioles, eau, miel, sable, neige lourde) : voir « Interactions ».
+
 ## Dosage
 
 - **Nombre** : c'est `/pulse-motion:creer` qui décide quelles scènes reçoivent un effet (au plus deux effets simultanés à l'écran ; en formation courte, un ou deux effets dans toute la vidéo) et le dit à l'animateur ; l'animateur n'en ajoute pas de lui-même. Un effet devant (`avant`) ne dure pas pendant la lecture d'un texte long (le contrôle `effet-sur-texte` le signale) ; préférer `arriere` pour une ambiance.
@@ -161,7 +163,7 @@ Couche commune : un effet qui **empile** sur un obstacle de la vidéo (`"empiler
 
 Bibliothèque : `confettis` et `neige` se posent et s'empilent, `pluie` meurt au contact et lance `eclabousse`, `etincelles` (et `braises`) rebondissent. Retouche : « la neige doit tenir sur le titre » → `data-obstacle="forme"` sur le titre.
 
-Limites : une couche ne s'écroule pas quand son obstacle bouge, les grains ne roulent pas les uns sur les autres, les particules ne se heurtent pas entre elles. Un émetteur à collisions garde `z` pour la taille et l'ordre de dessin, mais sans décalage de perspective (ses particules restent sur leurs obstacles).
+Limites : une couche ne s'écroule pas quand son obstacle bouge, les grains ne roulent pas les uns sur les autres, les particules ne se heurtent pas entre elles (sauf avec un bloc `interactions` : voir « Interactions »). Un émetteur à collisions garde `z` pour la taille et l'ordre de dessin, mais sans décalage de perspective (ses particules restent sur leurs obstacles).
 
 Contrôles : `obstacle-introuvable` (déclaration mal écrite), `collisions-invalides` (recette), `obstacles-video` (déroulé), alerte `trop-d-obstacles` (au-delà de 16 obstacles par scène ou de 8 obstacles de vidéo), alerte `obstacle-forme-vide` (forme exacte invisible à la fin de son minutage ; contrôle de la vidéo rendue, donc avec Chrome ou Edge ; aussi un panneau sur l'effet dans l'aperçu).
 
@@ -204,6 +206,68 @@ Un émetteur de fragmentation naît tout entier au début de l'effet (pas de `de
 Contrôles : `ancre-vide` (pas de `data-ancre`, ou élément invisible à l'instant photographié : l'effet n'est pas affiché, l'élément reste visible), `cible-introuvable` (`data-cible` mal écrit), `metamorphose-sans-cible` (recette qui vise `cible` sans `data-cible`), alerte `photographie-trop-grande`.
 
 Limites : pas de fracture réaliste (les éclats sont des polygones de Voronoï), pas de découpe vectorielle des lettres, pas d'éléments 3D, pas de fragmentation d'une scène entière d'un seul tenant.
+
+## Interactions : essaims, fluides, grains
+
+Les particules d'un émetteur peuvent **interagir entre elles** : une nuée d'oiseaux qui garde ses distances, de l'eau qui coule et remplit une cuve, du sable qui forme un vrai tas et s'écroule quand son support bouge. Un bloc `interactions` dans l'émetteur suffit ; le reste de la recette (naissance, forces, collisions, couleurs) ne change pas.
+
+| Effet | Réglages | Quand l'utiliser |
+|---|---|---|
+| `nuee` | `nombre`, `vitesse`, `taille`, `couleur` | Collectif, mouvement d'ensemble, migration ; calque arrière, ancre sur une zone dégagée (la nuée tourne autour). |
+| `banc` | `nombre`, `vitesse`, `couleur1`, `couleur2` | Mer, équipe, foule qui avance ensemble ; deux teintes dans un même banc. |
+| `lucioles` | `nombre`, `couleur`, `eclat`, `vitesse` | Nuit, magie, idées qui flottent ; halo doux, petits groupes lâches. |
+| `eau` | `nombre`, `couleur`, `refraction`, `gravite` | Eau versée depuis l'ancre qui remplit ce qui l'arrête : déclarer un sol ou une cuve (`data-obstacle`). |
+| `miel` | `nombre`, `couleur`, `refraction`, `gravite` | Liquide épais et lent (miel, sirop, lave) ; dérivé de `eau`. |
+| `sable` | `nombre`, `couleur`, `taille`, `frottement` | Sablier, temps qui passe, accumulation ; le tas s'écroule si son support bouge. |
+| `neige-lourde` | `nombre`, `vitesse`, `taille`, `couleur` | Neige collante qui forme de vrais tas sur les obstacles ; plus coûteuse que `neige`. |
+
+```html
+<div id="cuve" data-obstacle data-start="0"></div>
+<div data-effet="eau" data-ancre="#robinet" data-start="1" data-dur="2"></div>
+```
+
+### Réglages d'une recette (`interactions`, par émetteur)
+
+```json
+"interactions": { "type": "fluide", "rayon": 2, "viscosite": 0.05, "avec": ["autre-goutte"] }
+```
+
+| Champ | Rôle |
+|---|---|
+| `type` | `essaim`, `fluide` ou `grains`. |
+| `rayon` | Rayon d'interaction en cqh (2) ; pour des grains, au moins leur taille maximale. |
+| `avec` | Autres émetteurs du même effet qui interagissent avec celui-ci (même type ; 8 émetteurs liés au plus). |
+| `separation`, `alignement`, `cohesion` | Essaim : poids de 0 à 5 (1,5 ; 1 ; 1). |
+| `vision` | Essaim : `{ "rayon": 6, "angle": 270 }` (cqh, degrés) : ce que chaque individu voit devant lui. |
+| `vitesse` | Essaim : vitesse bornée `[min, max]` en cqh/s (`[5, 20]`). |
+| `cible` | Essaim : point visé, fraction de la zone (`[0.5, 0.5]`) ou `"ancre"`. |
+| `fuite` | Essaim : évitement des obstacles vus devant (30) ; un attracteur à force négative de la recette repousse aussi. |
+| `densite` | Fluide : particules par cellule au repos (6). |
+| `viscosite` | Fluide : de 0 (eau) à 1 (miel épais) (0,05). |
+| `tension` | Fluide : cohésion de surface de 0 à 1 (0,1) : gouttes qui tiennent et fusionnent. |
+| `incompressibilite` | Fluide : itérations, de 2 à 6 (4) ; plus : moins compressible, plus coûteux. |
+| `frottement` | Grains : `{ "statique": 0.6, "dynamique": 0.4 }` ; le tas prend l'angle dont la tangente vaut `statique` (0,6 : 31°). |
+| `cohesion` (grains) | De 0 à 1 (0) : grains collants (neige mouillée). |
+| `restitution` | Grains : rebond entre grains, de 0 à 1 (0,1). |
+
+Rendu `fluide` (dans `rendu`) : une nappe lisse au lieu de points.
+
+| Champ | Rôle |
+|---|---|
+| `"type": "fluide"` | Nappe en espace écran : particules fondues en une surface, avec reflet. |
+| `teinte` | Couleur du fluide (`#4aa8ff`). |
+| `opacite` | De 0 à 1 (0,85). |
+| `absorption` | Assombrissement selon l'épaisseur, par cqh (0,25) : une flaque fine est claire, une cuve profonde dense. |
+| `refraction` | De 0 à 1 (0) : la scène vue déformée à travers le fluide (photographie de la scène : approchée dans l'aperçu, exacte à l'export). |
+| `lissage` | Rayon du lissage de la nappe, en cqh (1). |
+
+- Obstacles : les `collisions` (réponse `rebond` ou `mourir`) s'appliquent aux trois types ; les grains forment eux-mêmes leur tas : ni `poser` ni `empiler` avec `interactions`.
+- Coût : jusqu'à 100 000 particules par émetteur en essaim, 60 000 en fluide ou en grains ; un fluide ou des grains coûtent bien plus que des particules simples : partir des réglages de la bibliothèque.
+- Déterminisme : l'image ne dépend que de l'instant (aperçu et export identiques).
+
+Contrôles : `interactions-invalides` (type inconnu, `avec` vers un émetteur absent, sans `interactions` ou d'un autre type, émetteur de fragmentation, réponse `poser`, grain plus grand que `rayon`), alerte `budget-interactions` (au-delà des limites par émetteur). Dans l'aperçu, la console signale une réfraction ignorée tant que la photographie de la scène n'est pas prête.
+
+Limites : pas de mélange de fluides (eau et huile), pas de grains de forme complexe, pas d'interaction avec des cordes ou des tissus.
 
 ## Régler à l'œil : l'atelier
 
