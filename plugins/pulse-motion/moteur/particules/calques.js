@@ -50,6 +50,15 @@
  * M.shaders.erreurs() -> [{ nom, usage, scene, message, erreurs }]   shaders qui ne compilent pas (panneau ; export refusé)
  * M.shaders.decrire(idScene) -> [{ ordre, nom, calque, debut, fin, actif, erreur }]   fonds d'une scène (atelier, tests)
  * M.shaders.regler(idScene, ordre, valeurs) -> Promise   atelier : réglages d'un fond réécrits, instant courant redessiné
+ * Composition (P6) : transitions par shader et post-traitements (M.donnees.shaders, usages « transition » et « post ») sur un
+ * canvas .pm-composition au-dessus des scènes (M.codeShader.planComposition, P.Composition) ; photographies des scènes
+ * visibles (M.figer.photo, option scene ; images des calques posées avant) : pleine résolution à chaque seek en capture
+ * (export), demi-résolution sinon, au plus toutes les 100 ms pendant la lecture, à chaque image à l'arrêt ; classe pm-compose
+ * sur #pm-scene (scènes réelles invisibles) quand toutes les photographies du plan existent. Une transition qui ne compile
+ * pas : panneau sur la scène, fondu (M.transitionShader faux) ; un post-traitement : panneau, ignoré ; export refusé.
+ * M.transitionShader(id) -> bool        transition par shader de la scène prête (horloge : pas de style CSS d'entrée)
+ * M.shaders.lireComposition() -> Promise<{ largeur, hauteur, donnees }>   pixels du canvas de composition (tests)
+ * M.shaders.composition() -> { photos: [{ scene, t, exact }], faites }    état des photographies (tests)
  * ordre : rang de la balise parmi les data-effet de la scène, effets en erreur compris (comme l'assemblage).
  *
  * Réglages d'un calque (bloom, seuil, tons) : ceux de la recette au bloom le plus fort parmi tous les
@@ -743,6 +752,7 @@
         sc.effets.forEach((fx) => { liberer(fx); panneau(fx.el, 'Effet non affiché : ' + message(e)); });
       }
     });
+    rendreComposition(t);
   }
 
   /** Effet désactivé (mémoire GPU insuffisante, texture illisible) : tampons libérés, panneau ; l'export le refuse. */
@@ -881,6 +891,185 @@
     });
   }
 
+  // ---- Composition (P6) : transitions et post-traitements par shader, sur un canvas au-dessus des scènes ----
+
+  const COMPOSE = 'pm-compose';
+  const PERIODE_PHOTOS = 100; // ms : photographies de l'aperçu, 10 par seconde au plus pendant la lecture
+  const comp = {
+    transitions: new Map(), posts: new Map(), postsVideo: [], canvas: null,
+    photos: new Map(), enCours: null, derniere: -Infinity, aRefaire: false, file: Promise.resolve(), faites: 0,
+  };
+
+  function compositionDeclaree() { return comp.transitions.size > 0 || comp.posts.size > 0 || comp.postsVideo.length > 0; }
+
+  function recenserComposition() {
+    (M.donnees.shaders || []).forEach((d) => {
+      if (d.usage === 'transition') comp.transitions.set(d.scene, { donnee: d, shader: null });
+      else if (d.usage === 'post') {
+        const p = { donnee: d, shader: null };
+        if (d.scene === null) comp.postsVideo.push(p);
+        else {
+          if (!comp.posts.has(d.scene)) comp.posts.set(d.scene, []);
+          comp.posts.get(d.scene).push(p);
+        }
+      }
+    });
+    const parRang = (a, b) => a.donnee.rang - b.donnee.rang;
+    comp.postsVideo.sort(parRang);
+    comp.posts.forEach((l) => l.sort(parRang));
+    return compositionDeclaree();
+  }
+
+  function sectionDe(id) { return document.querySelector('#pm-scene > section[data-scene="' + CSS.escape(id) + '"]'); }
+
+  /** Transitions et post-traitements compilés (après les fonds) ; une erreur : panneau sur la scène, repli. */
+  async function compilerComposition(compiler) {
+    const sur = (id, prefixe) => (m) => { const s = id && sectionDe(id); if (s) panneau(s, prefixe + m); };
+    for (const [id, tr] of comp.transitions) tr.shader = await compiler(tr.donnee, sur(id, 'Transition remplacée par un fondu : '));
+    for (const [id, liste] of comp.posts) for (const p of liste) p.shader = await compiler(p.donnee, sur(id, 'Post-traitement non appliqué : '));
+    const premiere = M.minutage.scenes.length ? M.minutage.scenes[0].id : null;
+    for (const p of comp.postsVideo) p.shader = await compiler(p.donnee, sur(premiere, 'Post-traitement de la vidéo non appliqué : '));
+  }
+
+  M.transitionShader = (id) => !!(etat.gpu && comp.transitions.has(id) && comp.transitions.get(id).shader);
+
+  function planA(t) {
+    const transitions = {};
+    comp.transitions.forEach((tr, id) => { if (tr.shader) transitions[id] = true; });
+    const posts = {};
+    comp.posts.forEach((l, id) => { posts[id] = l.filter((p) => p.shader).length; });
+    return M.codeShader.planComposition({ scenes: M.minutage.scenes, t, transitions, posts, postsVideo: comp.postsVideo.filter((p) => p.shader).length });
+  }
+
+  function canvasComposition() {
+    const scene = document.getElementById('pm-scene');
+    if (!comp.canvas) {
+      const c = document.createElement('canvas');
+      c.className = 'pm-composition';
+      c.setAttribute('aria-hidden', 'true');
+      c.style.display = 'none';
+      scene.appendChild(c);
+      comp.canvas = c;
+    }
+    const dpr = M.enCapture && M.enCapture() ? 1 : racine.devicePixelRatio || 1;
+    const l = Math.max(1, Math.round(scene.clientWidth * dpr));
+    const h = Math.max(1, Math.round(scene.clientHeight * dpr));
+    if (comp.canvas.width !== l) comp.canvas.width = l;
+    if (comp.canvas.height !== h) comp.canvas.height = h;
+    return comp.canvas;
+  }
+
+  function masquerComposition() {
+    if (comp.canvas) comp.canvas.style.display = 'none';
+    const scene = document.getElementById('pm-scene');
+    if (scene) scene.classList.remove(COMPOSE);
+  }
+
+  /** Composition de t avec les photographies disponibles ; sans plan ou sans toutes ses photographies : masquée (les scènes
+   *  réelles restent visibles). -> plan | null */
+  function composer(t) {
+    const plan = etat.gpu && etat.composition ? planA(t) : null;
+    if (!plan || !plan.couches.every((id) => comp.photos.has(id))) { masquerComposition(); return plan; }
+    const canvas = canvasComposition();
+    const cible = etat.composition.cible(canvas);
+    const largeurCqh = largeurScene();
+    const plein = (temps, progres, duree) => ({ temps, progres, duree, mode: 1, resolution: [largeurCqh, 100, cible.largeur, cible.hauteur], scene: [largeurCqh, 100, cible.largeur, cible.hauteur] });
+    const couches = plan.couches.map((id) => {
+      const s = M.minutage.scenes.find((x) => x.id === id);
+      const e = plein((t - s.debut) * s.rythme, Math.min(1, Math.max(0, (t - s.debut) / Math.max(1e-6, s.fin - s.debut))), (s.fin - s.debut) * s.rythme);
+      return { vue: comp.photos.get(id).vue, posts: (comp.posts.get(id) || []).filter((p) => p.shader).map((p) => ({ shader: p.shader, entrees: e })) };
+    });
+    let transition = null;
+    if (plan.transition) {
+      const tr = plan.transition;
+      transition = { shader: comp.transitions.get(tr.entrante).shader, entrees: plein(tr.temps, tr.progres, tr.duree),
+        sortante: tr.sortante ? plan.couches.indexOf(tr.sortante) : -1, entrante: plan.couches.indexOf(tr.entrante) };
+    }
+    const ev = plein(t, Math.min(1, t / Math.max(1e-6, M.duree)), M.duree);
+    etat.composition.dessiner(cible, { couches, transition, postsVideo: comp.postsVideo.filter((p) => p.shader).map((p) => ({ shader: p.shader, entrees: ev })) });
+    canvas.style.display = '';
+    document.getElementById('pm-scene').classList.add(COMPOSE);
+    return plan;
+  }
+
+  /** Images des calques (particules, fonds) des scènes données, posées sur leurs canvas pour le figement (__pmImage). */
+  async function imagesCalques(ids) {
+    for (const sc of etat.scenes) {
+      if (ids.indexOf(sc.info.id) < 0) continue;
+      for (const nom of Object.keys(sc.calques)) {
+        const canvas = sc.calques[nom];
+        const cible = canvas.__pmCible;
+        canvas.__pmImage = !etat.rendu || !cible ? null : cible.vide ? vide() : versDataURL(await etat.rendu.lirePixels(cible));
+      }
+    }
+  }
+
+  /** Photographies des scènes du plan dans leur état courant (pleine résolution si exact, sinon demi) ; figements
+   *  synchrones ensemble (même instant), rastérisations ensuite. */
+  async function photographier(plan, t, exact) {
+    const scene = document.getElementById('pm-scene');
+    const dpr = M.enCapture && M.enCapture() ? 1 : racine.devicePixelRatio || 1;
+    const k = exact ? 1 : 0.5;
+    const L = Math.max(1, Math.round(scene.clientWidth * dpr * k));
+    const H = Math.max(1, Math.round(scene.clientHeight * dpr * k));
+    await imagesCalques(plan.couches);
+    const promesses = plan.couches.map((id) => {
+      const section = sectionDe(id);
+      // Opacité de la transition CSS de la scène (fondu de repli compris), la règle pm-compose mise à part.
+      const opacite = section.style.opacity === '' ? 1 : Number(section.style.opacity);
+      return M.figer.photo(section, { largeur: L, hauteur: H, scene: { opacite } });
+    });
+    const photos = await Promise.all(promesses);
+    for (let i = 0; i < photos.length; i++) {
+      const ph = photos[i];
+      if (!ph.largeur || !etat.composition) continue;
+      const bitmap = await createImageBitmap(new ImageData(new Uint8ClampedArray(ph.rgba), ph.largeur, ph.hauteur));
+      comp.photos.set(plan.couches[i], { vue: etat.composition.photo(plan.couches[i], bitmap), t, exact });
+    }
+    comp.faites++;
+    const garder = new Set(plan.couches);
+    Array.from(comp.photos.keys()).forEach((id) => { if (!garder.has(id)) comp.photos.delete(id); });
+    if (etat.composition) etat.composition.oublierPhotos(garder);
+  }
+
+  /** Aperçu : composition redessinée à chaque image avec les dernières photographies ; nouvelles photographies
+   *  (demi-résolution) au plus toutes les 100 ms pendant la lecture, à chaque image à l'arrêt ; une seule à la fois. */
+  function rendreComposition(t) {
+    if (!compositionDeclaree()) return;
+    const plan = composer(t);
+    if (!plan) return;
+    // Export : les photographies exactes sont faites au seek (seekComposition), pas ici.
+    if (M.enCapture && M.enCapture()) return;
+    if (plan.couches.every((id) => comp.photos.has(id) && comp.photos.get(id).t === t)) return;
+    if (comp.enCours) { comp.aRefaire = true; return; }
+    if (M.enLecture && M.enLecture() && M.reel.now() - comp.derniere < PERIODE_PHOTOS) return;
+    comp.aRefaire = false;
+    comp.enCours = comp.file = comp.file.then(() => photographier(plan, t, false)).then(() => {
+      comp.enCours = null;
+      comp.derniere = M.reel.now();
+      if (etat.gpu) composer(etat.t);
+      if (comp.aRefaire) { comp.aRefaire = false; rendreComposition(etat.t); }
+    }, (e) => {
+      comp.enCours = null;
+      console.error('[Pulse Motion] Composition : ' + message(e));
+    });
+  }
+
+  /** Seek (export, lecteur) : photographies faites à t (pleine résolution en capture), composition dessinée, GPU attendu. */
+  async function seekComposition(t) {
+    if (!compositionDeclaree() || !etat.gpu) return;
+    const plan = planA(t);
+    if (!plan) { masquerComposition(); return; }
+    // Style d'entrée à jour : une transition par shader prête n'a pas de style CSS (le seek a pu rendre avant le GPU).
+    plan.couches.forEach((id) => M.rendreScene(id, t));
+    const exact = !!(M.enCapture && M.enCapture());
+    const fait = comp.file.then(() => photographier(plan, t, exact));
+    comp.file = fait.catch(() => {});
+    await fait;
+    composer(t);
+    await etat.gpu.device.queue.onSubmittedWorkDone();
+  }
+
   function demarrerGPU() {
     const obtention = obtenirAvecGarde();
     obtention.then((gpu) => {
@@ -899,7 +1088,10 @@
         etat.scenes.forEach((sc) => sc.effets.forEach((fx) => {
           if (fx.effet.emetteurs.some((em) => illisibles.has(em.rendu.textureImage))) desactiver(fx, 'texture illisible');
         }));
-        return compilerShaders(gpu.device).then(() => preparerFormes(gpu.device)).then(fragmentsPromis);
+        return compilerShaders(gpu.device).then((compiler) => {
+          etat.composition = new P.Composition(gpu.device, gpu.format, etat.shaders);
+          return compilerComposition(compiler);
+        }).then(() => preparerFormes(gpu.device)).then(fragmentsPromis);
       }).then(() => {
         etat.gpu = gpu;
         etat.rendu = rendu;
@@ -925,6 +1117,13 @@
     etat.disponible = false;
     etat.formes = null; // texture de l'ancien device ; les masques (processeur) sont gardés
     etat.shaders = null; // pipelines et uniformes de l'ancien device : recompilés par demarrerGPU
+    etat.composition = null;
+    comp.photos.clear();
+    if (comp.canvas) delete comp.canvas.__pmCible;
+    comp.transitions.forEach((tr) => { tr.shader = null; });
+    comp.posts.forEach((l) => l.forEach((p) => { p.shader = null; }));
+    comp.postsVideo.forEach((p) => { p.shader = null; });
+    masquerComposition();
     etat.scenes.forEach((sc) => sc.fonds.forEach((f) => { f.shader = null; }));
     contributions.clear(); // tampons de l'ancien device
     etat.scenes.forEach((sc) => {
@@ -976,7 +1175,10 @@
         ]);
       } catch (e) { perte = true; }
       if (!perte) await new Promise((ok) => setTimeout(ok, 0));
-      if (!perte && etat.gpu === gpu) return null;
+      if (!perte && etat.gpu === gpu) {
+        await seekComposition(t);
+        return null;
+      }
       await gpu.device.lost;
     }
   }
@@ -985,7 +1187,7 @@
   const SANS_GPU_SHADERS = 'Cette vidéo contient des shaders (fonds, transitions, post-traitements), qui demandent WebGPU : ouvrez l\'aperçu dans Chrome ou Edge récent pour l\'exporter.';
 
   /** Vrai si la page a des calques (effets, fonds) ; la composition s'y ajoute au plan 5. */
-  function aDuTravail() { return etat.scenes.length > 0; }
+  function aDuTravail() { return etat.scenes.length > 0 || compositionDeclaree(); }
 
   /** Pixels lus (prémultipliés) -> ImageData (non prémultipliée). */
   function versImageData(p) {
@@ -1025,6 +1227,7 @@
 
   function oublierImages() {
     etat.scenes.forEach((sc) => Object.keys(sc.calques).forEach((nom) => { sc.calques[nom].__pmImage = null; }));
+    if (comp.canvas) comp.canvas.__pmImage = null;
   }
 
   function refuser(raison) {
@@ -1058,6 +1261,11 @@
           if (sc.section.style.display === 'none' || !cible) canvas.__pmImage = null;
           else canvas.__pmImage = cible.vide ? vide() : versDataURL(await etat.rendu.lirePixels(cible));
         }
+      }
+      // Canvas de composition : son image, s'il est affiché (export rapide : copie figée de #pm-scene).
+      if (comp.canvas) {
+        comp.canvas.__pmImage = comp.canvas.style.display === 'none' || !comp.canvas.__pmCible || !etat.composition
+          ? null : versDataURL(await etat.composition.lirePixels(comp.canvas.__pmCible));
       }
     } catch (e) {
       oublierImages();
@@ -1193,6 +1401,13 @@
       const sc = trouver(idScene);
       return sc ? sc.fonds.map((f) => ({ ordre: f.ordre, nom: f.donnee.nom, calque: f.calque, debut: f.debut, fin: f.fin, actif: !!f.shader, erreur: f.erreur })) : [];
     },
+    lireComposition() {
+      if (!comp.canvas || comp.canvas.style.display === 'none' || !comp.canvas.__pmCible || !etat.composition) return Promise.reject(new Error('Composition non affichée.'));
+      return etat.composition.lirePixels(comp.canvas.__pmCible);
+    },
+    composition() {
+      return { photos: Array.from(comp.photos.entries()).map(([scene, p]) => ({ scene, t: p.t, exact: p.exact })), faites: comp.faites };
+    },
     async regler(idScene, ordre, valeurs) {
       await etat.pret;
       const sc = trouver(idScene);
@@ -1208,7 +1423,8 @@
   M.demarrerParticules = function () {
     etat.obstacles = recenserObstacles();
     etat.scenes = recenser();
-    if (!etat.scenes.length) return;
+    const avecComposition = recenserComposition();
+    if (!etat.scenes.length && !avecComposition) return;
     M.surRendu(rendre);
     M.surSeek(seekGPU);
     if (racine.document && document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', polices_changees);
