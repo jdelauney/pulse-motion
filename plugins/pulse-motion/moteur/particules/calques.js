@@ -56,7 +56,9 @@
  * (export), demi-résolution sinon, au plus toutes les 100 ms pendant la lecture, à chaque image à l'arrêt ; classe pm-compose
  * sur #pm-scene (scènes réelles invisibles) quand toutes les photographies du plan existent. Une transition qui ne compile
  * pas : panneau sur la scène, fondu (M.transitionShader faux) ; un post-traitement : panneau, ignoré ; export refusé.
- * M.transitionShader(id) -> bool        transition par shader de la scène prête (horloge : pas de style CSS d'entrée)
+ * M.transitionShader(id) -> bool        transition par shader de la scène prête (horloge : pas de style CSS d'entrée) :
+ *   compilée, composition affichée et scène déjà photographiée ; sinon fondu CSS d'attente (jamais photographié : une
+ *   scène à transition par shader compilée est photographiée opaque).
  * M.shaders.lireComposition() -> Promise<{ largeur, hauteur, donnees }>   pixels du canvas de composition (tests)
  * M.shaders.composition() -> { photos: [{ scene, t, exact }], faites }    état des photographies (tests)
  * ordre : rang de la balise parmi les data-effet de la scène, effets en erreur compris (comme l'assemblage).
@@ -899,7 +901,7 @@
   const PERIODE_PHOTOS = 100; // ms : photographies de l'aperçu, 10 par seconde au plus pendant la lecture
   const comp = {
     transitions: new Map(), posts: new Map(), postsVideo: [], canvas: null,
-    photos: new Map(), enCours: null, derniere: -Infinity, aRefaire: false, file: Promise.resolve(), faites: 0,
+    photos: new Map(), enCours: null, derniere: -Infinity, aRefaire: false, file: Promise.resolve(), faites: 0, affichee: false,
   };
 
   function compositionDeclaree() { return comp.transitions.size > 0 || comp.posts.size > 0 || comp.postsVideo.length > 0; }
@@ -933,7 +935,11 @@
     for (const p of comp.postsVideo) p.shader = await compiler(p.donnee, sur(premiere, 'Post-traitement de la vidéo non appliqué : '));
   }
 
-  M.transitionShader = (id) => !!(etat.gpu && comp.transitions.has(id) && comp.transitions.get(id).shader);
+  function shaderDeTransition(id) { return !!(comp.transitions.has(id) && comp.transitions.get(id).shader); }
+
+  // Prête = compilée ET composition affichée avec une photographie de la scène : sinon (premières images d'une transition,
+  // photographie pas encore faite), repli en fondu CSS plutôt qu'une coupe sèche de la scène réelle.
+  M.transitionShader = (id) => !!(etat.gpu && shaderDeTransition(id) && comp.affichee && comp.photos.has(id));
 
   function planA(t) {
     const transitions = {};
@@ -962,6 +968,7 @@
   }
 
   function masquerComposition() {
+    comp.affichee = false;
     if (comp.canvas) comp.canvas.style.display = 'none';
     const scene = document.getElementById('pm-scene');
     if (scene) scene.classList.remove(COMPOSE);
@@ -990,6 +997,7 @@
     const ev = plein(t, Math.min(1, t / Math.max(1e-6, M.duree)), M.duree);
     etat.composition.dessiner(cible, { couches, transition, postsVideo: comp.postsVideo.filter((p) => p.shader).map((p) => ({ shader: p.shader, entrees: ev })) });
     canvas.style.display = '';
+    comp.affichee = true;
     document.getElementById('pm-scene').classList.add(COMPOSE);
     return plan;
   }
@@ -1017,8 +1025,9 @@
     await imagesCalques(plan.couches);
     const promesses = plan.couches.map((id) => {
       const section = sectionDe(id);
-      // Opacité de la transition CSS de la scène (fondu de repli compris), la règle pm-compose mise à part.
-      const opacite = section.style.opacity === '' ? 1 : Number(section.style.opacity);
+      // Opacité de la transition CSS de la scène (fondu de repli compris), la règle pm-compose mise à part ; une
+      // transition par shader compilée : opaque (le fondu CSS d'attente n'est pas photographié, le shader fait l'entrée).
+      const opacite = shaderDeTransition(id) || section.style.opacity === '' ? 1 : Number(section.style.opacity);
       return M.figer.photo(section, { largeur: L, hauteur: H, scene: { opacite } });
     });
     const photos = await Promise.all(promesses);
@@ -1069,6 +1078,8 @@
     comp.file = fait.catch(() => {});
     await fait;
     composer(t);
+    // Composition affichée : la scène à transition par shader quitte le fondu CSS d'attente (aucun style d'entrée).
+    if (comp.affichee) plan.couches.filter(shaderDeTransition).forEach((id) => M.rendreScene(id, t));
     await etat.gpu.device.queue.onSubmittedWorkDone();
   }
 
