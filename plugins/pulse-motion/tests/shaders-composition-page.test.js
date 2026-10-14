@@ -164,3 +164,28 @@ await envoyer({ webgpu: true, apercu, enLecture: n1 - n0, arret: M.shaders.compo
   assert.ok(r.enLecture >= 1 && r.enLecture <= 5, `${r.enLecture} photographies pour 12 images en 360 ms (une toutes les 100 ms au plus)`);
   assert.deepEqual(r.arret, [2.71, 2.71], 'à l\'arrêt : photographies de l\'instant affiché');
 });
+
+test('composition : en lecture, photographie en retard : fondu CSS d\'attente, jamais la scène entrante opaque sans la composition', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const r = await page({ script: `
+const photo = M.figer.photo;
+M.figer.photo = async (...a) => { await attendre(250); return photo(...a); };
+M.enLecture = () => true;
+const scene = document.getElementById('pm-scene');
+const b = document.querySelector('section[data-scene="b"]');
+const images = [];
+for (let i = 0; i < 25; i++) {
+  const t = 1.9 + i * 0.04;
+  M.rendre(t);
+  images.push({ t, compose: scene.classList.contains('pm-compose'), opaciteB: Number(getComputedStyle(b).opacity), affichee: getComputedStyle(b).display !== 'none' });
+  await attendre(40);
+}
+M.figer.photo = photo;
+await envoyer({ webgpu: true, images });` });
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  const pendant = r.images.filter((x) => x.t >= 2 && x.t < 3);
+  const coupes = pendant.filter((x) => x.affichee && !x.compose && x.opaciteB > 0.99);
+  assert.deepEqual(coupes, [], 'aucune image de la transition avec B opaque hors composition');
+  assert.ok(pendant.some((x) => !x.compose && x.opaciteB > 0 && x.opaciteB < 1), 'fondu CSS en attendant la photographie');
+  assert.ok(pendant.some((x) => x.compose), 'la composition prend le relais');
+});
