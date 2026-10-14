@@ -182,7 +182,7 @@
     // Aléa propre à la scène : ne dépend que de t et de la scène, pas du chemin pour arriver à t.
     Math.random = mulberry32((0x5eed1234 ^ Math.imul(Math.round(t * M.ips) + 1, 0x9e3779b1) ^ Math.imul(s.index + 1, 0x85ebca6b)) >>> 0);
     // Transition d'entrée : chevauchement, ou entrée depuis le fond pour la première scène.
-    var dureeEntree = info.entree > 0 ? info.entree : (s.index === 0 ? (info.dureeTransition || M.CHEVAUCHEMENT) : 0);
+    var dureeEntree = info.entree > 0 ? info.entree : (s.index === 0 ? (info.dureeTransition || 0) : 0);
     var q = dureeEntree > 0 ? (t - info.debut) / dureeEntree : 1;
     var st = M.styleTransition(typeTransition(info), q);
     s.sec.style.opacity = st.opacity;
