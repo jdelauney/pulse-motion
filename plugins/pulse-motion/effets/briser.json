@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "nom": "briser",
+  "description": "L'élément visé (data-ancre) se brise en éclats qui partent du point d'impact, tournent et retombent ; ils rebondissent sur les obstacles déclarés de la scène.",
+  "parametres": {
+    "morceaux": { "defaut": 40, "min": 8, "max": 512 },
+    "impulsion": { "defaut": 60, "min": 0, "max": 300 },
+    "gravite": { "defaut": 90, "min": 0, "max": 300 },
+    "rebond": { "defaut": 0.35, "min": 0, "max": 1 }
+  },
+  "rendu_calque": { "bloom": 0, "tons": "neutre" },
+  "emetteurs": [
+    {
+      "nom": "eclat",
+      "naissance": {
+        "vitesse": { "direction": [0, -1], "cone": 90, "valeur": [5, 20] },
+        "vie": [2.2, 3]
+      },
+      "forces": [
+        { "type": "gravite", "valeur": "gravite" },
+        { "type": "trainee", "coef": 0.3 }
+      ],
+      "vie": {
+        "opacite": { "de": 1, "a": 0, "courbe": "expo-in" }
+      },
+      "rendu": { "type": "eclats", "morceaux": "morceaux", "impulsion": "impulsion", "rotation_max": 240, "melange": "alpha" },
+      "collisions": { "cibles": ["sol", "elements", "formes"], "reponse": "rebond", "restitution": "rebond", "frottement": 0.4 }
+    }
+  ]
+}

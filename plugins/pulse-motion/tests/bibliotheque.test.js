@@ -7,7 +7,7 @@ const R = require('../moteur/particules/recette.js');
 const { SEUILS } = require('../scripts/controler.js');
 
 const DOSSIER = path.join(__dirname, '..', 'effets');
-const NOMS = ['braises', 'confettis', 'energie', 'etincelles', 'explosion', 'feu', 'feu-artifice', 'fumee', 'neige', 'paillettes', 'pluie', 'poussiere'];
+const NOMS = ['assembler', 'braises', 'briser', 'confettis', 'desintegrer', 'energie', 'etincelles', 'explosion', 'feu', 'feu-artifice', 'fumee', 'metamorphose', 'neige', 'paillettes', 'pluie', 'poussiere'];
 const CHARTE = { primaire: '#0a6cff', accent: '#b45309', fond: '#ffffff', texte: '#1a1a1a' };
 const charger = (nom) => {
   const f = path.join(DOSSIER, `${nom}.json`);
@@ -15,7 +15,7 @@ const charger = (nom) => {
 };
 const compiler = (nom, reglages = '', dur = 3) => R.compiler(R.resoudre(nom, charger), { reglages, charte: CHARTE, dur, graine: 1 });
 
-test('bibliothèque : les 12 effets de la spec, nommés comme leur fichier, décrits', () => {
+test('bibliothèque : les 16 effets des specs (P1, P4), nommés comme leur fichier, décrits', () => {
   const fichiers = fs.readdirSync(DOSSIER).filter((f) => f.endsWith('.json')).map((f) => f.replace(/\.json$/, '')).sort();
   assert.deepEqual(fichiers, NOMS);
   for (const nom of NOMS) {
@@ -73,8 +73,8 @@ test('bibliothèque : la bibliothèque couvre toutes les familles utiles', () =>
       em.forces.forEach((f) => forces.add(f.type));
     }
   }
-  assert.deepEqual([...types].sort(), ['etincelle', 'sprite', 'trainee'], 'la planche demande une image : pas dans la bibliothèque');
-  assert.deepEqual([...textures].sort(), ['confetti', 'disque-doux', 'etoile', 'flamme', 'fumee']);
+  assert.deepEqual([...types].sort(), ['eclats', 'etincelle', 'sprite', 'trainee'], 'la planche demande une image : pas dans la bibliothèque');
+  assert.deepEqual([...textures].sort(), ['confetti', 'disque-doux', 'etoile', 'flamme', 'fumee', 'image', 'pixel'], 'image : photographie des éclats');
   assert.deepEqual([...forces].sort(), ['attracteur', 'gravite', 'trainee', 'turbulence', 'vent', 'vortex']);
 });
 
@@ -182,4 +182,43 @@ test('référence : section Collisions (déclarations, réponses, empilement, vi
     assert.ok(section.includes('`' + champ + '`'), `champ « ${champ} » documenté`);
   }
   assert.match(texte.split('## Collisions avec la scène')[0], /data-obstacle/, 'l\'essentiel mentionne les obstacles');
+});
+
+test('bibliothèque : fragmentation (briser, désintégrer, assembler, métamorphose)', () => {
+  const em = (nom, reglages = '') => compiler(nom, reglages).effet.emetteurs[0];
+  for (const nom of ['briser', 'desintegrer', 'assembler', 'metamorphose']) {
+    const e = compiler(nom).effet;
+    assert.deepEqual(e.rendu_calque, { bloom: 0, seuil_bloom: 1, tons: 'neutre' }, `${nom} : couleurs exactes`);
+    assert.ok(e.emetteurs.every((x) => x.fragment), `${nom} : émetteur de fragments`);
+  }
+  const b = em('briser');
+  assert.deepEqual([b.eclats.morceaux, b.eclats.impulsion, b.collisions.reponse, b.collisions.sol, b.voieRapide], [40, 60, 'rebond', null, true]);
+  assert.deepEqual([b.tables.opacite[0], b.tables.taille[0]], [1, 1], 'éclats intacts au début');
+  const d = em('desintegrer');
+  assert.deepEqual([d.pixels.densite, d.pixels.liberation, d.pixels.ordre], [4, 3, 'gauche-droite'], 'libération sur data-dur');
+  assert.deepEqual([d.tables.source[0], d.tables.opacite[0], d.tables.taille[0], d.tables.intensite[0]], [1, 1, 1, 1], 'grain de la couleur de son pixel au départ');
+  assert.deepEqual(d.tables.couleur.slice(0, 4), [1, 1, 1, 1]);
+  const a = em('assembler');
+  assert.deepEqual([a.cible.source, a.cible.arrivee, a.cible.a, a.cible.densite, a.pixels], ['ancre', 'guidee', 3, 4, null]);
+  assert.deepEqual([a.tables.opacite[63], a.tables.source[63]], [1, 1], 'opaque et de la couleur de son pixel à l\'arrivée');
+  assert.equal(em('assembler', 'arrivee: 0.5').cible.a, 1.5);
+  const m = em('metamorphose');
+  assert.deepEqual([m.cible.source, m.cible.arrivee, m.voieRapide, m.pixels.densite, m.cible.ordre], ['cible', 'choree', true, 4, 'centre']);
+  assert.ok(m.cible.bruit[1] > 0, 'tourbillon en chemin');
+  assert.deepEqual([m.tables.opacite[0], m.tables.opacite[63], m.tables.source[0]], [1, 1, 1]);
+});
+
+test('référence : section Fragmentation (déclarations, champs du schéma, contrôles)', () => {
+  const texte = fs.readFileSync(path.join(__dirname, '..', 'references', 'particules.md'), 'utf8');
+  const debut = texte.indexOf('## Fragmentation');
+  const fin = texte.indexOf('## Régler à l\'œil');
+  assert.ok(debut > 0 && fin > debut, 'section Fragmentation avant l\'atelier');
+  const section = texte.slice(debut, fin);
+  const em = R.SCHEMA.champs.emetteurs.element.champs;
+  const champs = [...Object.keys(em.cible.champs), 'densite', 'instant', 'liberation', 'ordre', 'morceaux', 'origine', 'impulsion', 'rotation_max'];
+  for (const mot of [...champs, 'data-cible', '"pixels"', '"source"', '"eclats"', '"neutre"', 'guidee', 'choree', 'ancre-vide', 'cible-introuvable', 'metamorphose-sans-cible', 'photographie-trop-grande']) {
+    assert.ok(section.includes(mot), `la section parle de « ${mot} »`);
+  }
+  for (const nom of ['briser', 'desintegrer', 'assembler', 'metamorphose']) assert.ok(section.includes('`' + nom + '`'), nom);
+  assert.ok(texte.includes('| `data-cible` |'), 'data-cible dans la table des attributs');
 });

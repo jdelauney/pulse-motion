@@ -76,3 +76,33 @@ test('masque d\'un élément en ligne (span sur deux lignes, scène agrandie) : 
   assert.ok(Math.abs(m.largeurPx - m.attendue[0]) < 0.01 && Math.abs(m.hauteurPx - m.attendue[1]) < 0.01, `boîte ${m.largeurPx} × ${m.hauteurPx} au lieu de ${m.attendue}`);
   assert.ok(m.pleins > 0, 'les lettres sont dans le masque');
 });
+
+test('photo : couleurs de l\'élément seul, sans ses transformations, à la taille demandée ; boîte de mise en page', { skip: !navigateur && 'Chrome ou Edge introuvable' }, async () => {
+  const dir = copierProjet('projet-particules');
+  fs.writeFileSync(path.join(dir, 'scenes', '01-s.html'), `<section data-scene="s">
+  <style>@scope {
+    #fond { position: absolute; inset: 0; background: #00ff00; }
+    #bloc { position: absolute; left: 20cqh; top: 20cqh; width: 40px; height: 20px;
+      background: linear-gradient(90deg, #ff0000 50%, #0000ff 50%); transform: rotate(30deg) scale(2); }
+  }</style>
+  <div id="fond"></div>
+  <h1 id="titre" data-texte="titre" data-start="0"></h1>
+  <div id="bloc" data-start="0"></div>
+</section>`);
+  const r = assembler({ dossier: dir, dossierStyles: STYLES, dossierEffets: EFFETS, ecrire: false });
+  assert.deepEqual(r.erreurs, []);
+  const mesure = await mesurerPage({ html: r.html, navigateur, script: `
+    const el = document.getElementById('bloc');
+    const b = M.figer.boite(el);
+    const p = await M.figer.photo(el, { largeur: 40, hauteur: 20 });
+    const px = (x, y) => Array.from(p.rgba.slice((y * p.largeur + x) * 4, (y * p.largeur + x) * 4 + 4));
+    const petite = await M.figer.photo(el, { largeur: 10, hauteur: 5 });
+    return { b, L: p.largeur, H: p.hauteur, n: p.rgba.length, gauche: px(5, 10), droite: px(35, 10), petite: [petite.largeur, petite.hauteur, petite.rgba.length] };` });
+  assert.equal(mesure.erreur, undefined, mesure.erreur);
+  const m = mesure.resultat;
+  assert.deepEqual(m.b, { largeur: 40, hauteur: 20 }, 'boîte de mise en page, sans la transformation');
+  assert.deepEqual([m.L, m.H, m.n], [40, 20, 3200]);
+  assert.deepEqual(m.gauche, [255, 0, 0, 255], 'rouge à gauche, sans le fond vert de la scène');
+  assert.deepEqual(m.droite, [0, 0, 255, 255]);
+  assert.deepEqual(m.petite, [10, 5, 200]);
+});

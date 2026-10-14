@@ -370,5 +370,5 @@ test('compiler : courbe de tons du calque', () => {
   recette.rendu_calque = { bloom: 1.2, tons: 'aces' };
   assert.deepEqual(R.compiler(recette, { dur: 2, graine: 1 }).effet.rendu_calque, { bloom: 1.2, seuil_bloom: 1, tons: 'aces' });
   recette.rendu_calque = { tons: 'cinema' };
-  assert.match(R.compiler(recette, { dur: 2, graine: 1 }).erreurs[0].message, /rendu_calque\.tons : « cinema » inconnu \(douce, aces\)/);
+  assert.match(R.compiler(recette, { dur: 2, graine: 1 }).erreurs[0].message, /rendu_calque\.tons : « cinema » inconnu \(douce, aces, neutre\)/);
 });
