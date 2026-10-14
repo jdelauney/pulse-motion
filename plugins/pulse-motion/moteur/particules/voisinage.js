@@ -115,6 +115,7 @@ const PLEINE = ${PLEINE}u;
 @group(0) @binding(11) var<storage, read_write> lambdas: array<f32>;
 @group(0) @binding(12) var<storage, read_write> vitesses: array<vec2f>;
 @group(0) @binding(13) var<storage, read_write> anciennes: array<vec4f>;
+@group(0) @binding(14) var<storage, read_write> parcours: array<u32>;
 `;
 
   const WGSL_GRILLE = /* wgsl */ `
@@ -129,7 +130,7 @@ fn cellule(p: vec2f) -> u32 {
 
 @compute @workgroup_size(64)
 fn effacer(@builtin(global_invocation_id) gid: vec3u) {
-  if (gid.x < GR.nCellules) { atomicStore(&comptes[gid.x], 0u); }
+  if (gid.x <= GR.nCellules) { atomicStore(&comptes[gid.x], 0u); }
 }
 
 // Grains : position au début du pas et numéro de la particule qui occupe la case (avant le pas des émetteurs).
@@ -190,14 +191,21 @@ fn prefixe(@builtin(local_invocation_index) li: u32) {
   if (li == 255u) { debuts[n] = partielles[255]; }
 }
 
-// Rangement : chaque corps prend une place de sa cellule (ordre d'arrivée quelconque, trié ensuite).
+// Rangement : chaque corps prend une place de sa cellule (ordre d'arrivée quelconque, trié ensuite). Parcours des
+// solveurs : les corps de la grille cellule par cellule, puis les autres (compteur comptes[nCellules]) ; un fil par corps,
+// voisins des fils proches dans la mémoire (le résultat de chaque corps ne dépend pas du fil qui le calcule).
 @compute @workgroup_size(64)
 fn ranger(@builtin(global_invocation_id) gid: vec3u) {
   let i = gid.x;
   if (i >= GR.nCorps) { return; }
   let c = cles[i];
-  if (c == AUCUN) { return; }
-  ordre[debuts[c] + atomicAdd(&comptes[c], 1u)] = i;
+  if (c == AUCUN) {
+    parcours[debuts[GR.nCellules] + atomicAdd(&comptes[GR.nCellules], 1u)] = i;
+    return;
+  }
+  let k = debuts[c] + atomicAdd(&comptes[c], 1u);
+  ordre[k] = i;
+  parcours[k] = i;
 }
 
 // Tri de chaque cellule par indice croissant (insertion) : ordre (cellule, émetteur, case) indépendant des fils. Cellule
@@ -285,8 +293,8 @@ fn direction(i: u32, j: u32, d: vec2f, r: f32) -> vec2f {
 // des recouvrements). Position finale : prédiction + (vitesse pilotée − vitesse prédite) × dt.
 @compute @workgroup_size(64)
 fn essaim(@builtin(global_invocation_id) gid: vec3u) {
-  let i = gid.x;
-  if (i >= GR.nCorps) { return; }
+  if (gid.x >= GR.nCorps) { return; }
+  let i = parcours[gid.x];
   let ci = corps[i];
   posE[i] = ci.pos;
   vitesses[i] = ci.vel;
@@ -370,8 +378,8 @@ fn gradW(q: f32, u: vec2f) -> vec2f {
 // « tension »), multiplicateur λ_i = −C_i / (Σ |∇C|² + ε).
 @compute @workgroup_size(64)
 fn densite(@builtin(global_invocation_id) gid: vec3u) {
-  let i = gid.x;
-  if (i >= GR.nCorps) { return; }
+  if (gid.x >= GR.nCorps) { return; }
+  let i = parcours[gid.x];
   if (corps[i].membre == AUCUN || !dansGrille(i)) {
     lambdas[i] = 0.0;
     return;
@@ -406,8 +414,8 @@ fn densite(@builtin(global_invocation_id) gid: vec3u) {
 // PBF, étape 2 : Δp_i = h / ρ0 · Σ (λ_i + λ_j + s) ∇W, s = −K (W(q) / W(0,2))⁴ ; posL -> posE, déplacement borné.
 @compute @workgroup_size(64)
 fn corriger(@builtin(global_invocation_id) gid: vec3u) {
-  let i = gid.x;
-  if (i >= GR.nCorps) { return; }
+  if (gid.x >= GR.nCorps) { return; }
+  let i = parcours[gid.x];
   let pi = posL[i];
   if (corps[i].membre == AUCUN || !dansGrille(i)) {
     posE[i] = pi;
@@ -443,8 +451,8 @@ fn vitesseCorrigee(j: u32) -> vec2f { return corps[j].vel + (posL[j] - corps[j].
 // Vitesse finale du fluide : vitesse corrigée, puis viscosité XSPH v_i += c Σ (v_j − v_i) W / ρ0.
 @compute @workgroup_size(64)
 fn viscosite(@builtin(global_invocation_id) gid: vec3u) {
-  let i = gid.x;
-  if (i >= GR.nCorps) { return; }
+  if (gid.x >= GR.nCorps) { return; }
+  let i = parcours[gid.x];
   let vi = vitesseCorrigee(i);
   if (corps[i].membre == AUCUN || !dansGrille(i)) {
     vitesses[i] = vi;
@@ -483,8 +491,8 @@ fn ancienne(i: u32) -> vec2f {
 // pénétration au-delà) ; cohésion : attraction jusqu'à (r_i + r_j)(1 + 0,25 cohésion) ; moyenne surrelaxée.
 @compute @workgroup_size(64)
 fn contacts(@builtin(global_invocation_id) gid: vec3u) {
-  let i = gid.x;
-  if (i >= GR.nCorps) { return; }
+  if (gid.x >= GR.nCorps) { return; }
+  let i = parcours[gid.x];
   let pi = posL[i];
   if (corps[i].membre == AUCUN || !dansGrille(i)) {
     posE[i] = pi;
@@ -528,8 +536,8 @@ fn contacts(@builtin(global_invocation_id) gid: vec3u) {
 // tombe sur le tas n'y creuse pas de cratère) ; rebond entre grains (restitution) sur la vitesse normale d'approche prédite.
 @compute @workgroup_size(64)
 fn vitessesGrains(@builtin(global_invocation_id) gid: vec3u) {
-  let i = gid.x;
-  if (i >= GR.nCorps) { return; }
+  if (gid.x >= GR.nCorps) { return; }
+  let i = parcours[gid.x];
   let ci = corps[i];
   var v = ci.vel + (posL[i] - ci.pos) / P.dt;
   if (ci.membre == AUCUN || !dansGrille(i)) {
@@ -693,14 +701,14 @@ fn rendreC(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_
     noter: [2, 3, 13],
     rassembler: [1, 2, 3, 4, 5, 6, 10],
     prefixe: [1, 6, 7],
-    ranger: [1, 5, 6, 7, 8],
+    ranger: [1, 5, 6, 7, 8, 14],
     trier: [1, 7, 8],
-    essaim: [0, 1, 4, 5, 7, 8, 10, 12],
-    densite: [1, 4, 5, 7, 8, 9, 11],
-    corriger: [1, 4, 5, 7, 8, 9, 10, 11],
-    viscosite: [0, 1, 4, 5, 7, 8, 9, 12],
-    contacts: [0, 1, 4, 5, 7, 8, 9, 10, 13],
-    vitessesGrains: [0, 1, 4, 5, 7, 8, 9, 12],
+    essaim: [0, 1, 4, 5, 7, 8, 10, 12, 14],
+    densite: [1, 4, 5, 7, 8, 9, 11, 14],
+    corriger: [1, 4, 5, 7, 8, 9, 10, 11, 14],
+    viscosite: [0, 1, 4, 5, 7, 8, 9, 12, 14],
+    contacts: [0, 1, 4, 5, 7, 8, 9, 10, 13, 14],
+    vitessesGrains: [0, 1, 4, 5, 7, 8, 9, 12, 14],
   };
   P.NOYAUX_VOISINAGE = NOYAUX;
 
@@ -808,7 +816,7 @@ fn rendreC(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_
       device.queue.writeBuffer(this.uniforme, 0, P.emballerGroupe(def, this.membres, this.grille, this.nCorps));
       this.corps = tampon(n * OCTETS_CORPS);
       this.cles = tampon(n * 4);
-      this.comptes = tampon(this.grille.n * 4);
+      this.comptes = tampon((this.grille.n + 1) * 4);
       this.debuts = tampon((this.grille.n + 1) * 4);
       this.ordre = tampon(n * 4);
       this.posA = tampon(n * 8);
@@ -816,6 +824,7 @@ fn rendreC(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_
       this.lambdas = tampon(n * 4);
       this.vitesses = tampon(n * 8);
       this.anciennes = tampon(n * 16);
+      this.parcours = tampon(n * 4);
       this.liaisons = new Map();
     }
 
@@ -835,7 +844,8 @@ fn rendreC(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_
         case 10: return { buffer: variante === 'BA' ? this.posA : this.posB };
         case 11: return { buffer: this.lambdas };
         case 12: return { buffer: this.vitesses };
-        default: return { buffer: this.anciennes };
+        case 13: return { buffer: this.anciennes };
+        default: return { buffer: this.parcours };
       }
     }
 
@@ -870,8 +880,9 @@ fn rendreC(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_
     /** Pas n du lot : voisinage (corps, comptage, préfixe, rangement, tri), solveur du type, rendu aux particules. */
     executer(passe, n) {
       const cellules = Math.ceil(this.grille.n / 64);
+      const cellules1 = Math.ceil((this.grille.n + 1) / 64);
       const blocs = Math.ceil(this.nCorps / 64);
-      this.lancer(passe, 'effacer', 'AB', null, cellules, n);
+      this.lancer(passe, 'effacer', 'AB', null, cellules1, n);
       for (const m of this.membres) this.lancer(passe, 'rassembler', 'BA', m, Math.ceil(m.capacite / 64), n);
       this.lancer(passe, 'prefixe', 'AB', null, 1, n);
       this.lancer(passe, 'ranger', 'AB', null, blocs, n);
@@ -931,7 +942,7 @@ fn rendreC(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_
     }
 
     detruire() {
-      [this.uniforme, this.corps, this.cles, this.comptes, this.debuts, this.ordre, this.posA, this.posB, this.lambdas, this.vitesses, this.anciennes]
+      [this.uniforme, this.corps, this.cles, this.comptes, this.debuts, this.ordre, this.posA, this.posB, this.lambdas, this.vitesses, this.anciennes, this.parcours]
         .forEach((b) => b.destroy());
       this.membres.forEach((m) => m.uniforme.destroy());
       this.liaisons.clear();
