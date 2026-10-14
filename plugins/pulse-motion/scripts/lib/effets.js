@@ -65,17 +65,22 @@ function masquer(html) {
   return String(html).replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, blanc).replace(/<!--[\s\S]*?-->/g, blanc);
 }
 
-/** balisesEffets(html) -> [{ ordre, debut, fin, balise, attributs, texte }] : balises data-effet dans l'ordre du document. */
-function balisesEffets(html) {
+/** balisesAvec(html, attribut) -> [{ ordre, debut, fin, balise, attributs, texte }] : balises portant l'attribut, dans l'ordre du document. */
+function balisesAvec(html, attribut) {
   const source = String(html);
   const liste = [];
   for (const m of masquer(source).matchAll(BALISE)) {
     const attributs = lireAttributs(m[2]);
-    if (!('data-effet' in attributs)) continue;
+    if (!(attribut in attributs)) continue;
     const fin = m.index + m[0].length;
     liste.push({ ordre: liste.length, debut: m.index, fin, balise: m[1], attributs, texte: source.slice(m.index, fin) });
   }
   return liste;
+}
+
+/** balisesEffets(html) -> balises data-effet dans l'ordre du document. */
+function balisesEffets(html) {
+  return balisesAvec(html, 'data-effet');
 }
 
 const ATTRIBUT_EN_PLACE = /(\s*)([^\s"'=<>/]+)(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'>]+))?/g;
@@ -198,4 +203,4 @@ function preparerEffets(html, { scene, projet, bibliotheque, charte = {}, premie
   return { html: sortie, effets, erreurs };
 }
 
-module.exports = { chargeurRecettes, fnv1a, graineParDefaut, preparerEffets, balisesEffets, reecrireBalise, modifierEffet };
+module.exports = { chargeurRecettes, fnv1a, graineParDefaut, preparerEffets, balisesAvec, balisesEffets, reecrireBalise, modifierEffet };
