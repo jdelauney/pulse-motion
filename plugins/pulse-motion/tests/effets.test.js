@@ -199,6 +199,27 @@ test('contrôles : particules vivantes jusqu\'à la fin de la dernière scène (
   assert.equal(controler2(dir).problemes.filter((x) => x.regle === 'pause-finale').length, 0);
 });
 
+test("contrôles : effet qui dépasse la fin de la vidéo (pause-finale négative) : message dédié qui nomme l'effet", () => {
+  const dir = copierProjet('projet-effets');
+  ecrire(dir, 'scenes/01-etincelles.html', `<section data-scene="etincelles">
+  <h1 id="titre" data-texte="titre" data-start="0.2"></h1>
+  <div data-effet="briser" data-ancre="#titre" data-start="3"></div>
+</section>`);
+  modifierDeroule(dir, (d) => { d.scenes[0].duree = 4.5; });
+  const r = controler({ dossier: dir, dossierStyles: STYLES, dossierEffets: path.join(__dirname, '..', 'effets'), ecrire: false });
+  const p = r.problemes.filter((x) => x.regle === 'pause-finale');
+  assert.equal(p.length, 1);
+  assert.match(p[0].message, /^Scène « etincelles » : l'effet « briser » continue 1,5 s après la fin de la vidéo et sera coupé : avancer data-start, donner un data-dur plus court ou allonger la scène/);
+  assert.doesNotMatch(p[0].message, /-\d/, 'pas de durée négative');
+  assert.equal(p[0].correction, undefined, "plus d'une seconde à ajouter : pas de correction automatique");
+  // Dépassement court (moins d'une seconde à ajouter) : correction de durée gardée.
+  modifierDeroule(dir, (d) => { d.scenes[0].duree = 5.7; });
+  const q = controler({ dossier: dir, dossierStyles: STYLES, dossierEffets: path.join(__dirname, '..', 'effets'), ecrire: false }).problemes.find((x) => x.regle === 'pause-finale');
+  assert.match(q.message, /continue 0,3 s après la fin de la vidéo/);
+  // Fin de l'effet à 3 + 3,008 s (vie de 3 s et un pas de 1/120 s) : 0,308 + 0,5 s à ajouter à 5,7 s -> 6,6 s au dixième supérieur.
+  assert.deepEqual(q.correction, { scene: 'etincelles', duree: 6.6 });
+});
+
 test("effet minuté en temps musicaux : même compilation qu'en secondes", () => {
   const capacite = (dur) => {
     const dir = copierProjet('projet-effets');

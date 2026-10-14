@@ -169,7 +169,7 @@ Un élément de la scène (titre, logo, image, bloc) devient des particules, ou 
 
 | Effet | Réglages | Quand l'utiliser |
 |---|---|---|
-| `briser` | `morceaux`, `impulsion`, `gravite`, `rebond` | Un élément vole en éclats (choc, rupture, idée reçue démolie) : `data-ancre` sur l'élément, au moment du choc. Les éclats rebondissent sur les obstacles déclarés (`data-obstacle`). |
+| `briser` | `morceaux`, `impulsion`, `gravite`, `rebond` | Un élément vole en éclats (choc, rupture, idée reçue démolie) : `data-ancre` sur l'élément, au moment du choc. Les éclats rebondissent sur les obstacles déclarés (`data-obstacle`). Sans `data-dur`, les éclats vivent environ 3 s : prévoir la scène en conséquence (sinon alerte `pause-finale` : l'effet serait coupé). |
 | `desintegrer` | `densite`, `vent`, `turbulence`, `lueur` | Un élément part en poussière de gauche à droite (disparition, oubli, obsolescence) ; `data-dur` = durée du balayage. |
 | `assembler` | `densite`, `arrivee`, `echelonnement`, `etendue` | Un titre ou un logo se forme à partir de particules venues de tout l'écran ; il apparaît à la fin de `data-dur` (ou plus tôt : `arrivee: 0.7`). |
 | `metamorphose` | `densite`, `arrivee`, `echelonnement`, `tourbillon` | Un mot ou un pictogramme se transforme en un autre (avant/après, cause/effet) : `data-ancre` = départ, `data-cible` = arrivée. |

@@ -14,7 +14,7 @@
 | Règle | Ce qui la déclenche | Gravité | Corrigé seul ? | Que faire |
 |---|---|---|---|---|
 | `temps-mort` | Rien ne bouge pendant plus de 2,5 s | alerte | oui, en fin de scène (durée raccourcie, sans passer sous le temps de lecture) | Au milieu d'une scène : décor qui dérive, entrée échelonnée |
-| `pause-finale` | Moins de 0,5 s d'image stable à la fin | alerte | oui (dernière scène allongée, +1 s au plus) | — |
+| `pause-finale` | Moins de 0,5 s d'image stable à la fin, ou mouvement (effet de particules) qui continue après la fin de la vidéo et serait coupé | alerte | oui (dernière scène allongée, +1 s au plus) | — |
 | `lecture` | Scène plus courte que 1,5 s + 0,3 s par mot | alerte | oui (durée allongée, +50 % au plus) | Au-delà : raccourcir le texte ou couper la scène |
 | `trop-d-animations` | Plus de 4 éléments qui bougent vite au même instant | alerte | non | Décaler les départs (`data-start`) |
 | `texte-fugace` | Texte visible moins de 0,8 s + 0,2 s par mot | alerte | non | Le laisser plus longtemps à l'écran |
