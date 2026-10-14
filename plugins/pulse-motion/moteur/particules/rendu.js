@@ -750,6 +750,7 @@ fn fsFinal(@builtin(position) pos: vec4f) -> Sorties {
             usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
           });
           device.queue.copyExternalImageToTexture({ source: bitmap }, { texture, premultipliedAlpha: true }, [bitmap.width, bitmap.height]);
+          bitmap.close();
           this.images.set(url, texture.createView());
         }
       }
