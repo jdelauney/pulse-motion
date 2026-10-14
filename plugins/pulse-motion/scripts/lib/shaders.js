@@ -9,6 +9,8 @@
  *   data-start data-dur> : shader d'usage « fond » ; la balise reçoit data-pm-shader="N" (index dans M.donnees.shaders)
  *   ou data-pm-shader-erreur ; calque arrière par défaut ; ordre : rang parmi les data-shader de la scène.
  * donneeShader(src, extra) -> entrée de M.donnees.shaders ; embarquerImage(projet, chemin) -> { uri } | { erreur }
+ * shadersDuDeroule(deroule, { charger, charte, projet }) -> { shaders, erreurs }   transitions (usage « transition », scene :
+ *   scène qui entre, duree) et post-traitements (usage « post », scene : id ou null pour la vidéo, rang) ; entrées après les fonds.
  * balisesShaders(html), modifierShader(html, ordre, changements) : atelier.
  */
 const fs = require('node:fs');
@@ -18,6 +20,7 @@ const { lireAttributs } = require('./extraire.js');
 const { echapperHTML } = require('./scenes.js');
 const { cheminDansProjet, versDataURI } = require('./embarquer.js');
 const { balisesAvec, reecrireBalise } = require('./effets.js');
+const { DUREE_TRANSITION_SHADER } = require('../../moteur/minutage.js');
 
 const BIBLIOTHEQUE = path.resolve(__dirname, '..', '..', 'shaders');
 const NOM = /^[a-z0-9-]+$/;
@@ -119,6 +122,36 @@ function preparerShaders(html, { scene, charger, charte = {}, projet, premierInd
   return { html: sortie, shaders, erreurs };
 }
 
+function shadersDuDeroule(deroule, { charger, charte = {}, projet }) {
+  const shaders = [];
+  const erreurs = [];
+  const declarer = (decl, usage, contexte, extra) => {
+    const erreur = (regle, message) => erreurs.push({ regle, gravite: 'erreur', ...(extra.scene ? { scene: extra.scene } : {}), message: `${contexte} : ${message}` });
+    let src;
+    try { src = charger(decl.shader); } catch (e) { erreur('shader-inconnu', e.message); return; }
+    if (!src) { erreur('shader-inconnu', `shader « ${decl.shader} » introuvable (ni dans shaders/ du projet, ni dans la bibliothèque).`); return; }
+    if (src.erreurs.length) { src.erreurs.forEach((e) => erreur(e.regle, e.message)); return; }
+    if (src.json.usage !== usage) { erreur('usage-incompatible', `shader « ${decl.shader} » : c'est un « ${src.json.usage} », « ${usage} » attendu.`); return; }
+    const v = S.valeursShader(src.json, decl.reglages || {}, charte);
+    if (v.erreurs.length) { v.erreurs.forEach((e) => erreur('reglage-invalide', e.message)); return; }
+    let image = null;
+    if (decl.image !== undefined) {
+      const im = embarquerImage(projet, decl.image);
+      if (im.erreur) { erreur('fichier-introuvable', im.erreur); return; }
+      image = im.uri;
+    }
+    shaders.push(donneeShader(src, { ...extra, usage, valeurs: v.valeurs, image }));
+  };
+  deroule.scenes.forEach((s) => {
+    if (s.transition && typeof s.transition === 'object') {
+      declarer(s.transition, 'transition', `Scène « ${s.id} », transition`, { scene: s.id, duree: s.transition.duree > 0 ? s.transition.duree : DUREE_TRANSITION_SHADER });
+    }
+    (s.post || []).forEach((p, rang) => declarer(p, 'post', `Scène « ${s.id} », post-traitement n° ${rang + 1}`, { scene: s.id, rang }));
+  });
+  (deroule.post || []).forEach((p, rang) => declarer(p, 'post', `Vidéo, post-traitement n° ${rang + 1}`, { scene: null, rang }));
+  return { shaders, erreurs };
+}
+
 function balisesShaders(html) { return balisesAvec(html, 'data-shader'); }
 
 function modifierShader(html, ordre, changements) {
@@ -127,4 +160,4 @@ function modifierShader(html, ordre, changements) {
   return html.slice(0, b.debut) + reecrireBalise(b.texte, changements) + html.slice(b.fin);
 }
 
-module.exports = { BIBLIOTHEQUE, chargeurShaders, embarquerImage, donneeShader, preparerShaders, balisesShaders, modifierShader };
+module.exports = { BIBLIOTHEQUE, chargeurShaders, embarquerImage, donneeShader, preparerShaders, shadersDuDeroule, balisesShaders, modifierShader };
