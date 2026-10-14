@@ -1,7 +1,11 @@
 /* Pulse Motion – simulation des particules sur le GPU (WebGPU).
  *
- * new P.Simulation(device, effet, monde?)   effet : recette compilée ; monde : obstacles de l'effet (collisions), facultatif
+ * new P.Simulation(device, effet, monde?, fragments?)   effet : recette compilée ; monde : obstacles de l'effet (collisions),
+ *   facultatif ; fragments : données des émetteurs de fragments (P4), un élément par émetteur (null hors fragments) :
+ *   { a, b (listes de pixels, 4 nombres par particule), eclats (36 nombres par éclat), image (ImageBitmap, éclats),
+ *     demiA, demiB, coteA, coteB } (fragments.js, calques.js)
  *   monde = { entrees: [{ type, categorie, forme, profil }], largeurCqh, actif, formes?: { vue } }   (obstacles.js)
+ *   .tau                  dernier τ demandé (rendu des fragments)
  *   .avancer(tau, zones) -> deltas  amène chaque émetteur à τ ; δ = τ − k/120 pour les simulés, 0 pour la voie rapide
  *   .emetteurs[i].inerte  enfant « a_la_collision » d'un parent sans collisions actives : ni simulé ni dessiné
  *   .lireEtat(i)          -> Promise<Float32Array> (16 nombres par case, disposition « Particule »)
@@ -17,6 +21,11 @@
  * zones.a(τ) et zones.grille(g) -> [x, y, largeur, hauteur] en cqh (zone d'émission à τ, au point g / 30 de la grille) ;
  * zones.reperes(g) -> Float32Array (8 nombres par obstacle de monde.entrees, disposition « Repere » de obstacles.js)
  * au point g de la grille ; demandé seulement quand un émetteur a des collisions actives.
+ * zones.ancres(g) -> Float32Array(16) : repères de l'ancre et de l'élément visé au point g (émetteurs de fragments),
+ * écrits une fois chacun dans la queue du tampon E de ces émetteurs.
+ * Fragments (P4) : naissance sur un pixel de l'ancre ou au centre d'un éclat, tenue à sa place (au moins un pas : l'état
+ * du pas 1 est l'élément intact), libération étalée ; éclats en corps rigides ; arrivée sur une cible, guidée (forces puis
+ * rattrapage critique, pose exacte) ou chorégraphiée (voie rapide) ; mort au pas de l'arrivée.
  *
  * Pas fixe de 1/120 s de τ, intégrateur exponentiel (exact pour gravité et traînée linéaire), naissances calculées,
  * instantanés pour revenir en arrière. Collisions (monde actif et recette avec « collisions ») : test balayé du
@@ -33,8 +42,8 @@
 
   const PAS = 1 / 120;
   const GRILLE = 30;
-  const E_TAILLE = 160;
-  const TABLES = 448;
+  const E_TAILLE = 256;     // en-tête de E ; fragments : repères, listes et éclats à la suite
+  const TABLES = 512;
   const OCTETS_PARTICULE = 64;
   const OCTETS_MORT = 48;
   const OCTETS_CONTACT = 32;
@@ -63,6 +72,106 @@ fn alea(graine: u32, emetteur: u32, n: u32, canal: u32) -> f32 {
   let h = pcg(graine ^ pcg(emetteur ^ pcg(n ^ pcg(canal))));
   return f32(h >> 8u) / 16777216.0;
 }
+`;
+
+  // Fragments (P4), commun à la simulation et au rendu (demande E, ef, eu et alea). En-tête de E : mots 154 à 191, courbe
+  // du trajet 192 à 255 ; à la suite : repères des éléments (16 nombres par point de grille), listes de pixels, éclats.
+  P.WGSL_FRAGMENTS = /* wgsl */ `
+const F_PIXELS = 1u;
+const F_CIBLE = 2u;
+const F_ECLATS = 4u;
+const PAS_TAU = 0.0083333333;
+
+struct RepereF { centre: vec2f, angle: f32, actif: f32, demi: vec2f, echelle: vec2f };
+struct PixelF { pos: vec2f, couleur: vec4f, drapeaux: u32 };
+struct Trajet { depart: f32, arrivee: f32 };
+
+// Vrai si l'émetteur a l'un des genres de fragments demandés.
+fn aFragment(genres: u32) -> bool { return (eu(154u) & genres) != 0u; }
+
+fn repereGrilleF(g: u32, quel: u32) -> RepereF {
+  let b = eu(176u) + min(g, eu(175u) - 1u) * 16u + quel * 8u;
+  return RepereF(vec2f(ef(b), ef(b + 1u)), ef(b + 2u), ef(b + 3u), vec2f(ef(b + 4u), ef(b + 5u)), vec2f(ef(b + 6u), ef(b + 7u)));
+}
+
+// Repère d'un élément à τ (quel : 0 l'ancre, 1 l'élément visé) : grille de 30 points par seconde, position et échelle
+// linéaires, angle par le plus court chemin (comme les obstacles, P3).
+fn repereElement(quel: u32, tau: f32) -> RepereF {
+  let x = max(tau, 0.0) * 30.0;
+  let i = u32(floor(x));
+  let f = x - f32(i);
+  let a = repereGrilleF(i, quel);
+  let b = repereGrilleF(i + 1u, quel);
+  var d = b.angle - a.angle;
+  d = d - 6.2831853 * round(d / 6.2831853);
+  return RepereF(mix(a.centre, b.centre, f), a.angle + d * f, a.actif, mix(a.demi, b.demi, f), mix(a.echelle, b.echelle, f));
+}
+
+fn tournerF(angle: f32, v: vec2f) -> vec2f {
+  let c = cos(angle);
+  let s = sin(angle);
+  return vec2f(c * v.x - s * v.y, s * v.x + c * v.y);
+}
+
+// Point local d'un élément (cqh sans échelle, relatif au centre de sa boîte) dans la scène.
+fn versMondeF(r: RepereF, l: vec2f) -> vec2f { return r.centre + tournerF(r.angle, l * r.echelle); }
+
+// Pixel i d'une liste (quel : 0 naissance, 1 cible) : position locale, couleur sRGB non prémultipliée dans [0, 1],
+// drapeaux (1 : particule en trop qui entre en fondu, 2 : qui sort en fondu). Entiers exacts en f32 (fragments.js).
+fn pixelF(i: u32, quel: u32) -> PixelF {
+  let b = eu(177u + quel) + i * 4u;
+  let rv = ef(b + 2u);
+  let w = ef(b + 3u);
+  let r = floor(rv / 256.0);
+  let drapeaux = floor(w / 65536.0);
+  let ba = w - drapeaux * 65536.0;
+  let bl = floor(ba / 256.0);
+  return PixelF(vec2f(ef(b), ef(b + 1u)), vec4f(r, rv - r * 256.0, bl, ba - bl * 256.0) / 255.0, u32(drapeaux));
+}
+
+// Rang dans l'ordre demandé, dans [0, 1] : 0 hasard, 1 de gauche à droite, 2 du centre vers les bords.
+fn fractionOrdre(code: u32, l: vec2f, demi: vec2f, n: u32, canal: u32) -> f32 {
+  if (code == 1u) { return clamp(l.x / max(2.0 * demi.x, 1e-6) + 0.5, 0.0, 1.0); }
+  if (code == 2u) { return clamp(length(l / max(demi, vec2f(1e-6))) * 0.70710678, 0.0, 1.0); }
+  return alea(eu(5u), eu(6u), n, canal);
+}
+
+// Instant de libération d'un fragment tenu à sa place (pixel ou éclat) : au plus tôt la fin du pas 0 (E[183], le τ1 du
+// pas 0 en f32), puis étalée sur « liberation » selon l'ordre (pixels).
+fn liberation(n: u32) -> f32 {
+  if (!aFragment(F_PIXELS | F_ECLATS)) { return 0.0; }
+  var l = ef(183u);
+  if (aFragment(F_PIXELS) && ef(162u) > 0.0) {
+    l = l + ef(162u) * fractionOrdre(eu(163u), pixelF(n, 0u).pos, vec2f(ef(164u), ef(165u)), n, 21u);
+  }
+  return l;
+}
+
+// Fenêtre du trajet vers la cible : départ échelonné selon l'ordre (rang du pixel visé), arrivée au plus tard à celle de
+// l'effet.
+fn trajet(n: u32) -> Trajet {
+  let D = ef(158u);
+  let e = ef(159u);
+  let depart = fractionOrdre(eu(160u), pixelF(n, 1u).pos, vec2f(ef(166u), ef(167u)), n, 20u) * e * D;
+  return Trajet(depart, depart + (1.0 - e) * D);
+}
+
+// Avancement du trajet à τ, dans [0, 1].
+fn progression(n: u32, tau: f32) -> f32 {
+  let t = trajet(n);
+  return clamp((tau - t.depart) / max(t.arrivee - t.depart, 1e-4), 0.0, 1.0);
+}
+
+// Courbe du trajet chorégraphié (64 valeurs, mots 192 à 255).
+fn courbeTrajet(s: f32) -> f32 {
+  let x = clamp(s, 0.0, 1.0) * 63.0;
+  let i = u32(floor(x));
+  let j = min(i + 1u, 63u);
+  return mix(ef(192u + i), ef(192u + j), x - f32(i));
+}
+
+// Cible d'une particule à τ : son pixel de la liste « cible », dans le repère de l'élément visé.
+fn cibleF(n: u32, tau: f32) -> vec2f { return versMondeF(repereElement(1u, tau), pixelF(n, 1u).pos); }
 `;
 
   const WGSL_STRUCTS = /* wgsl */ `
@@ -236,6 +345,25 @@ fn naissanceDuPas(s: u32) -> Naissance {
   return r;
 }
 
+// Vitesse de départ : cône autour de la direction (radiale : depuis le centre), repère de la surface pour l'enfant d'un
+// impact, part de la vitesse du parent.
+fn vitesseDepart(n: u32, origine: vec2f, centre: vec2f, ne: Naissance) -> vec2f {
+  let g = eu(5u);
+  let e = eu(6u);
+  var base = vec2f(ef(26u), ef(27u));
+  if (eu(29u) == 1u) {
+    let d = origine - centre;
+    if (dot(d, d) > 1e-10) { base = normalize(d); }
+  }
+  if (dot(ne.normale, ne.normale) > 0.25) {
+    // Enfant d'un impact : direction donnée dans le repère de la surface ([0, -1] = le long de la normale).
+    let nn = ne.normale;
+    base = vec2f(-nn.y * base.x - nn.x * base.y, nn.x * base.x - nn.y * base.y);
+  }
+  let angle = atan2(base.y, base.x) + (alea(g, e, n, 3u) - 0.5) * ef(28u);
+  return vec2f(cos(angle), sin(angle)) * mix(ef(24u), ef(25u), alea(g, e, n, 4u)) + ef(30u) * ne.vel;
+}
+
 fn initialiser(ne: Naissance, zone: vec4f) -> Particule {
   let g = eu(5u);
   let e = eu(6u);
@@ -249,24 +377,18 @@ fn initialiser(ne: Naissance, zone: vec4f) -> Particule {
   p.rot = mix(ef(20u), ef(21u), alea(g, e, n, 9u));
   p.vrot = mix(ef(22u), ef(23u), alea(g, e, n, 10u));
   p.alea = alea(g, e, n, 11u);
+  if (aFragment(F_PIXELS | F_ECLATS)) {
+    // Fragment : né sur son pixel ou au centre de son éclat, tenu à sa place (vitesse de départ à sa libération).
+    naitreFragment(&p, ne);
+    return p;
+  }
   let decalage = vec2f(ef(38u), ef(39u));
   var centre = zone.xy + 0.5 * zone.zw + decalage;
   var taille = zone.zw;
   if (eu(7u) > 0u) { centre = ne.pos + decalage; taille = vec2f(0.0); }
   let origine = forme(centre, taille, g, e, n);
-  var base = vec2f(ef(26u), ef(27u));
-  if (eu(29u) == 1u) {
-    let d = origine - centre;
-    if (dot(d, d) > 1e-10) { base = normalize(d); }
-  }
-  if (dot(ne.normale, ne.normale) > 0.25) {
-    // Enfant d'un impact : direction donnée dans le repère de la surface ([0, -1] = le long de la normale).
-    let nn = ne.normale;
-    base = vec2f(-nn.y * base.x - nn.x * base.y, nn.x * base.x - nn.y * base.y);
-  }
-  let angle = atan2(base.y, base.x) + (alea(g, e, n, 3u) - 0.5) * ef(28u);
   p.pos = origine;
-  p.vel = vec2f(cos(angle), sin(angle)) * mix(ef(24u), ef(25u), alea(g, e, n, 4u)) + ef(30u) * ne.vel;
+  p.vel = vitesseDepart(n, origine, centre, ne);
   return p;
 }
 
@@ -322,6 +444,89 @@ fn mourir(pIn: Particule, s: u32) -> Particule {
 }
 `;
 
+  // Fragments (P4), simulation seulement : naissance, tenue, libération, pilotage, mort.
+  const WGSL_FRAGMENTS_SIM = /* wgsl */ `
+// Point local tenu d'un fragment : son pixel de l'ancre.
+fn pointTenu(n: u32) -> vec2f {
+  return pixelF(n, 0u).pos;
+}
+
+// Vitesse d'un point local de l'ancre (différence sur 1/120 s de τ).
+fn vitesseElement(l: vec2f, t: f32) -> vec2f {
+  return (versMondeF(repereElement(0u, t + PAS_TAU), l) - versMondeF(repereElement(0u, t), l)) / PAS_TAU;
+}
+
+// Vitesse d'un fragment à sa libération : vitesse de départ de la recette (radiale : depuis le centre de l'ancre) et
+// vitesse de l'ancre.
+fn vitesseLiberation(n: u32, t: f32) -> vec2f {
+  let r = repereElement(0u, t);
+  let l = pointTenu(n);
+  return vitesseDepart(n, versMondeF(r, l), r.centre, naissanceVide()) + vitesseElement(l, t);
+}
+
+// Vitesse de rotation d'un fragment libéré : celle de la recette.
+fn vrotLiberation(n: u32) -> f32 {
+  return mix(ef(22u), ef(23u), alea(eu(5u), eu(6u), n, 10u));
+}
+
+// Naissance d'un fragment, tenu à sa place : position, angle et taille dans le repère de l'ancre (rotation, échelle) ;
+// sans rotation propre tant qu'il est tenu (le rendu extrapole l'angle : l'image du pas 1 doit être l'élément intact).
+fn naitreFragment(p: ptr<function, Particule>, ne: Naissance) {
+  let n = (*p).n;
+  let r = repereElement(0u, ne.t);
+  let l = pointTenu(n);
+  (*p).pos = versMondeF(r, l);
+  (*p).vel = vitesseElement(l, ne.t);
+  (*p).rot = r.angle;
+  (*p).vrot = 0.0;
+  (*p).taille = ef(168u) * max(r.echelle.x, r.echelle.y);
+}
+
+// Fragment tenu à sa place à τ (voie rapide).
+fn tenir(q: Particule, t: f32) -> Particule {
+  var p = q;
+  let l = pointTenu(q.n);
+  let r = repereElement(0u, t);
+  p.pos = versMondeF(r, l);
+  p.vel = vitesseElement(l, t);
+  p.rot = r.angle;
+  p.age = 0.0;
+  return p;
+}
+
+// Mouvement de t0 à t1 : forces de la recette (integrer), sauf pour un fragment tenu à sa place avant sa libération (il
+// suit l'ancre sans vieillir). Renvoie 0 libre, 1 tenu, 2 posé sur sa cible, 3 rattrapage ; 1 et 2 sans collisions.
+fn piloter(p: ptr<function, Particule>, t0: f32, t1: f32, zone: vec4f) -> u32 {
+  let n = (*p).n;
+  var debut = t0;
+  if (aFragment(F_PIXELS | F_ECLATS)) {
+    let lib = liberation(n);
+    if (t1 <= lib) {
+      let l = pointTenu(n);
+      let a = versMondeF(repereElement(0u, t0), l);
+      let b = versMondeF(repereElement(0u, t1), l);
+      (*p).pos = b;
+      (*p).vel = (b - a) / max(t1 - t0, 1e-6);
+      (*p).rot = repereElement(0u, t1).angle;
+      return 1u;
+    }
+    if (t0 <= lib) {
+      // Libération pendant le pas : départ de sa place à l'instant lib (comme la voie rapide).
+      (*p).pos = versMondeF(repereElement(0u, lib), pointTenu(n));
+      (*p).vel = vitesseLiberation(n, lib);
+      (*p).vrot = vrotLiberation(n);
+      debut = lib;
+    }
+  }
+  // Arrivée sur une cible : plan 2, tâche 3.
+  *p = integrer(*p, t1 - debut, debut, zone);
+  return 0u;
+}
+
+// Mort par l'âge.
+fn meurt(p: Particule) -> bool { return p.age >= p.vie; }
+`;
+
   const WGSL_ENTREES_P1 = /* wgsl */ `
 @compute @workgroup_size(64)
 fn pas(@builtin(global_invocation_id) gid: vec3u) {
@@ -330,9 +535,9 @@ fn pas(@builtin(global_invocation_id) gid: vec3u) {
   let N = eu(136u);
   var p = particules[s];
   if (p.vivante == 1u) {
-    p = integrer(p, P.dt, P.tau0, P.zoneA);
-    p.age += P.dt;
-    if (p.age >= p.vie) { p = mourir(p, s); }
+    // Un fragment tenu à sa place ne vieillit pas.
+    if (piloter(&p, P.tau0, P.tau1, P.zoneA) != 1u) { p.age += P.dt; }
+    if (meurt(p)) { p = mourir(p, s); }
   }
   let ne = naissanceDuPas(s);
   if (ne.ok) {
@@ -340,9 +545,8 @@ fn pas(@builtin(global_invocation_id) gid: vec3u) {
     p = initialiser(ne, z);
     for (var i = 0u; i < N; i++) { historique[s * N + i] = p.pos; }
     let reste = P.tau1 - ne.t;
-    p = integrer(p, reste, ne.t, z);
-    p.age = reste;
-    if (p.age >= p.vie) { p = mourir(p, s); }
+    if (piloter(&p, ne.t, P.tau1, z) != 1u) { p.age = reste; }
+    if (meurt(p)) { p = mourir(p, s); }
   }
   // Traînée : une position tous les 2 pas (1/60 s de τ).
   if (N > 0u && p.vivante == 1u && (P.k + 1u) % 2u == 0u) {
@@ -358,7 +562,8 @@ fn zoneGrille(t: f32) -> vec4f {
   return mix(zones[i], zones[j], fract(x));
 }
 
-// Voie rapide : état à τ exact, en forme close, sans pas ni instantanés.
+// Voie rapide : état à τ exact, en forme close, sans pas ni instantanés. Fragment : tenu à sa place jusqu'à sa
+// libération, balistique ensuite.
 @compute @workgroup_size(64)
 fn evaluer(@builtin(global_invocation_id) gid: vec3u) {
   let s = gid.x;
@@ -367,8 +572,22 @@ fn evaluer(@builtin(global_invocation_id) gid: vec3u) {
   p.vivante = 0u;
   let ne = occupant(s, V.tau);
   if (ne.ok) {
-    let q = initialiser(ne, zoneGrille(ne.t));
-    let age = V.tau - ne.t;
+    var q = initialiser(ne, zoneGrille(ne.t));
+    var t0 = ne.t;
+    if (aFragment(F_PIXELS | F_ECLATS)) {
+      let lib = liberation(q.n);
+      if (V.tau < lib) {
+        particules[s] = tenir(q, V.tau);
+        return;
+      }
+      let rl = repereElement(0u, lib);
+      q.pos = versMondeF(rl, pointTenu(q.n));
+      q.vel = vitesseLiberation(q.n, lib);
+      q.vrot = vrotLiberation(q.n);
+      q.rot = rl.angle;
+      t0 = lib;
+    }
+    let age = V.tau - t0;
     if (age < q.vie) {
       var A = vec2f(0.0);
       var K = 0.0;
@@ -790,16 +1009,19 @@ fn pasCollisions(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invoc
   var p = particules[s];
   var c = contacts[s];
   if (p.vivante == 1u) {
+    var tenue = false;
     if (c.obstacle != AUCUN) {
       suivre(&p, &c, s);
     } else {
       let p0 = p.pos;
-      p = integrer(p, P.dt, P.tau0, P.zoneA);
-      collisionner(&p, &c, p0, P.tau0, true, s);
+      let mode = piloter(&p, P.tau0, P.tau1, P.zoneA);
+      tenue = mode == 1u;
+      // Fragment tenu ou posé sur sa cible : pas de collision.
+      if (mode == 0u || mode == 3u) { collisionner(&p, &c, p0, P.tau0, true, s); }
     }
     if (p.vivante == 1u) {
-      p.age += P.dt;
-      if (p.age >= p.vie) { noterMort(p, s, p.naissance + p.vie); p.vivante = 0u; }
+      if (!tenue) { p.age += P.dt; }
+      if (meurt(p)) { noterMort(p, s, p.naissance + p.vie); p.vivante = 0u; }
     }
   }
   let ne = naissanceDuPas(s);
@@ -810,11 +1032,11 @@ fn pasCollisions(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invoc
     for (var i = 0u; i < N; i++) { historique[s * N + i] = p.pos; }
     let reste = P.tau1 - ne.t;
     let p0 = p.pos;
-    p = integrer(p, reste, ne.t, z);
-    collisionner(&p, &c, p0, ne.t, false, s);
+    let mode = piloter(&p, ne.t, P.tau1, z);
+    if (mode == 0u || mode == 3u) { collisionner(&p, &c, p0, ne.t, false, s); }
     if (p.vivante == 1u) {
-      p.age = reste;
-      if (p.age >= p.vie) { noterMort(p, s, p.naissance + p.vie); p.vivante = 0u; }
+      if (mode != 1u) { p.age = reste; }
+      if (meurt(p)) { noterMort(p, s, p.naissance + p.vie); p.vivante = 0u; }
     }
   }
   if (N > 0u && p.vivante == 1u && (P.k + 1u) % 2u == 0u) {
@@ -884,8 +1106,8 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
 }
 `;
 
-  const WGSL_SIMULATION = P.WGSL_COMMUN + WGSL_STRUCTS + WGSL_DECL_P1 + WGSL_FONCTIONS + WGSL_ENTREES_P1;
-  const WGSL_MODULE_COLLISIONS = P.WGSL_COMMUN + WGSL_STRUCTS + WGSL_DECL_C + WGSL_FONCTIONS + WGSL_COLLISIONS;
+  const WGSL_SIMULATION = P.WGSL_COMMUN + WGSL_STRUCTS + WGSL_DECL_P1 + WGSL_FONCTIONS + P.WGSL_FRAGMENTS + WGSL_FRAGMENTS_SIM + WGSL_ENTREES_P1;
+  const WGSL_MODULE_COLLISIONS = P.WGSL_COMMUN + WGSL_STRUCTS + WGSL_DECL_C + WGSL_FONCTIONS + P.WGSL_FRAGMENTS + WGSL_FRAGMENTS_SIM + WGSL_COLLISIONS;
   P.WGSL_MODULE_COLLISIONS = () => WGSL_MODULE_COLLISIONS;
 
   function parametresForce(f) {
@@ -899,9 +1121,16 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
     }
   }
 
-  /** Paramètres d'un émetteur (disposition « E » : 160 mots). collisions : collisions actives pour cet émetteur. */
-  function emballer(em, effet, collisions) {
-    const tampon = new ArrayBuffer(E_TAILLE * 4);
+  /** Mots du tampon E d'un émetteur : en-tête, puis (fragments) repères des éléments, listes et éclats. */
+  function tailleE(nZones, frag) {
+    if (!frag) return E_TAILLE;
+    return E_TAILLE + nZones * 16 + (frag.a ? frag.a.length : 0) + (frag.b ? frag.b.length : 0) + (frag.eclats ? frag.eclats.length : 0);
+  }
+
+  /** Paramètres d'un émetteur (disposition « E » : en-tête de 256 mots ; fragments : queue, voir tailleE). collisions :
+   *  collisions actives pour cet émetteur ; frag : données de fragments (repères des éléments écrits ensuite, assurerAncres). */
+  function emballer(em, effet, collisions, nZones, frag) {
+    const tampon = new ArrayBuffer(tailleE(nZones, frag) * 4);
     const f = new Float32Array(tampon);
     const u = new Uint32Array(tampon);
     u[0] = em.capacite; u[1] = em.capContinu; u[2] = em.nTotal; u[3] = em.salves.length;
@@ -936,6 +1165,31 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
       u[152] = em.aLaCollision >= 0 ? 1 : 0;
       f[153] = em.aLaCollision >= 0 ? effet.emetteurs[em.aLaCollision].vie[1] + PAS : 0;
     }
+    if (frag) {
+      u[154] = (em.pixels ? 1 : 0) | (em.cible ? 2 : 0) | (em.eclats ? 4 : 0);
+      if (em.cible) {
+        // Fenêtre des trajets : jusqu'au pas kA − 1, pour que l'image d'avant l'arrivée montre toutes les particules posées.
+        u[156] = em.cible.arriveeCode; u[157] = em.cible.k; f[158] = (em.cible.k - 1) * PAS; f[159] = em.cible.echelonnement;
+        u[160] = em.cible.ordreCode; f[161] = em.cible.guidage;
+        f.set(em.cible.bruit, 180);
+        f.set(em.cible.progression, 192);
+      }
+      if (em.pixels) { f[162] = em.pixels.liberation; u[163] = em.pixels.ordreCode; }
+      f[164] = frag.demiA[0]; f[165] = frag.demiA[1]; f[166] = frag.demiB[0]; f[167] = frag.demiB[1];
+      f[168] = frag.coteA; f[169] = frag.coteB;
+      if (em.eclats) {
+        f[170] = em.eclats.impulsion; f[171] = em.eclats.rotationMax;
+        f[172] = em.eclats.origine[0]; f[173] = em.eclats.origine[1]; u[174] = em.eclats.morceaux;
+      }
+      u[175] = nZones;
+      u[176] = E_TAILLE;
+      // Tenue minimale : le τ1 du pas 0, en f32 (comme ecrirePas).
+      f[183] = PAS;
+      let o = E_TAILLE + nZones * 16;
+      if (frag.a) { u[177] = o; f.set(frag.a, o); o += frag.a.length; }
+      if (frag.b) { u[178] = o; f.set(frag.b, o); o += frag.b.length; }
+      if (frag.eclats) { u[179] = o; f.set(frag.eclats, o); }
+    }
     return tampon;
   }
 
@@ -945,6 +1199,7 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
     t.set(em.tables.taille, 256);
     t.set(em.tables.intensite, 320);
     t.set(em.tables.opacite, 384);
+    t.set(em.tables.source, 448);
     return t;
   }
 
@@ -1053,23 +1308,28 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
   };
 
   class Simulation {
-    constructor(device, effet, monde) {
+    constructor(device, effet, monde, fragments) {
       const U = GPUBufferUsage;
       this.device = device;
       this.effet = effet;
       this.p = pipelinesPour(device);
       this.monde = monde && monde.actif ? monde : null;
       this.nZones = Math.ceil(effet.fin * GRILLE) + 2;
+      this.tau = 0;
       this.emetteurs = effet.emetteurs.map((em) => {
         const capacite = Math.max(1, em.capacite);
-        const collisions = !!(this.monde && em.collisions);
+        const frag = em.fragment ? (fragments && fragments[em.index]) || null : null;
+        if (em.fragment && !frag) throw new Error('Effet « ' + effet.nom + ' », émetteur « ' + em.nom + ' » : photographie de son élément manquante.');
+        // L'arrivée chorégraphiée ignore les obstacles (voie rapide).
+        const collisions = !!(this.monde && em.collisions) && !(em.cible && em.cible.arrivee === 'choree');
         const evenements = em.aLaMort >= 0 || em.aLaCollision >= 0;
         return {
           em,
+          frag,
           collisions,
           rapide: em.voieRapide && !collisions,
           capacite,
-          params: tamponAvec(device, E_TAILLE * 4, U.STORAGE | U.COPY_DST, emballer(em, effet, collisions)),
+          params: tamponAvec(device, tailleE(this.nZones, frag) * 4, U.STORAGE | U.COPY_DST, emballer(em, effet, collisions, this.nZones, frag)),
           tables: tamponAvec(device, TABLES * 4, U.STORAGE | U.COPY_DST, tables(em)),
           particules: device.createBuffer({ size: capacite * OCTETS_PARTICULE, usage: U.STORAGE | U.COPY_SRC | U.COPY_DST }),
           // Morts dans [0, capacité), impacts dans [capacité, 2 × capacité) : lus par les enfants.
@@ -1078,9 +1338,12 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
           historique: em.rendu.type === 'trainee'
             ? device.createBuffer({ size: capacite * em.rendu.longueur * 8, usage: U.STORAGE | U.COPY_SRC | U.COPY_DST })
             : null,
-          uniformeRendu: device.createBuffer({ size: 32, usage: U.UNIFORM | U.COPY_DST }),
+          uniformeRendu: device.createBuffer({ size: 48, usage: U.UNIFORM | U.COPY_DST }),
         };
       });
+      // Fragments : repères de l'ancre et de l'élément visé, écrits dans leur tampon E au fil des pas (assurerAncres).
+      this.fragmentes = this.emetteurs.filter((e) => e.frag);
+      this.ancresConnues = new Uint8Array(this.nZones);
 
       // Inertes : enfants « a_la_collision » d'un parent sans collisions actives (et leurs descendants) ; rien n'y naît,
       // ils ne sont ni simulés ni dessinés (le parent garde la voie rapide).
@@ -1253,12 +1516,25 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
       }
     }
 
+    /** Repères de l'ancre et de l'élément visé aux points de grille [g0, g1], écrits une fois chacun dans le tampon E des
+     *  émetteurs de fragments (queue de E, 16 nombres par point). */
+    assurerAncres(g0, g1, zones) {
+      if (!this.fragmentes.length) return;
+      for (let g = Math.max(0, g0); g <= Math.min(this.nZones - 1, g1); g++) {
+        if (this.ancresConnues[g]) continue;
+        const r = zones.ancres(g);
+        this.fragmentes.forEach((e) => this.device.queue.writeBuffer(e.params, (E_TAILLE + g * 16) * 4, r));
+        this.ancresConnues[g] = 1;
+      }
+    }
+
     avancer(tau, zones) {
       const k = Math.min(this.kFin, Math.max(0, Math.floor(tau / PAS + 1e-6)));
       const delta = Math.max(0, tau - k * PAS);
       this.k = k;
+      this.tau = tau;
       if (this.simules.length) this.executer(this.planificateur.planifier(k), zones);
-      if (this.rapides.length) this.evaluer(tau, zones);
+      if (this.rapides.length) this.evaluer(tau, zones, k);
       return this.emetteurs.map((e) => (e.rapide || e.inerte ? 0 : delta));
     }
 
@@ -1310,6 +1586,7 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
           f.set(zones.a(a.k * PAS), o + 4);
           f.set(zones.a((a.k + 1) * PAS), o + 8);
           if (this.texReperes) this.assurerReperes(a.k, zones);
+          this.assurerAncres(Math.floor(a.k * PAS * GRILLE) - 1, Math.floor((a.k + 1) * PAS * GRILLE) + 2, zones);
           this.ecrirePas(o, a.k);
           if (!passe) passe = enc.beginComputePass();
           for (const e of this.simules) {
@@ -1366,8 +1643,11 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
       envoyer();
     }
 
-    evaluer(tau, zones) {
+    evaluer(tau, zones, k) {
       const { device } = this;
+      // Fragments : repères à la naissance (τ = 0) et autour de τ.
+      this.assurerAncres(0, 1, zones);
+      this.assurerAncres(Math.floor(tau * GRILLE) - 1, Math.floor(tau * GRILLE) + 2, zones);
       const gMax = Math.min(this.nZones - 1, Math.floor(tau * GRILLE) + 1);
       let gMin = gMax;
       this.rapides.forEach((e) => { gMin = Math.min(gMin, Math.floor(Math.max(0, tau - e.em.vie[1]) * GRILLE)); });
@@ -1388,6 +1668,7 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
         const v = new ArrayBuffer(16);
         new Float32Array(v)[0] = tau;
         new Uint32Array(v)[1] = this.nZones;
+        new Uint32Array(v)[2] = k;
         device.queue.writeBuffer(e.uniformeEval, 0, v);
         passe.setBindGroup(0, e.groupeEval);
         passe.dispatchWorkgroups(Math.ceil(e.capacite / 64));
