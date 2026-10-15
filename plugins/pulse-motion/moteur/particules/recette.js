@@ -1093,12 +1093,32 @@
         }
       }
 
+      /** Règles de l'émetteur des perles d'une corde : posé sur ses sommets, sans mouvement propre. corde : nom de la corde. */
+      function verifierPerles(e, n, ch, P, corde) {
+        var de = '« ' + corde + ' »';
+        if (P) throw invalideS(ch, 'les perles de ' + de + ' sont posées sur ses sommets, pas lancées par « ' + P.nom + ' »');
+        if (e.structure !== undefined && e.structure !== null) throw invalideS(ch + '.structure', 'les perles de ' + de + ' ne sont pas une structure');
+        ['forces', 'collisions', 'interactions', 'cible', 'a_la_mort', 'a_la_collision'].forEach(function (k) {
+          var x = e[k];
+          if (x !== undefined && x !== null && !(Array.isArray(x) && !x.length)) throw invalideS(ch + '.' + k, 'les perles suivent les sommets de ' + de + ' : retirer « ' + k + ' »');
+        });
+        if (estObjet(e.modules) && e.modules.force) throw invalideS(ch + '.modules.force', 'les perles suivent les sommets de ' + de + ' : pas de module de force');
+        Object.keys(n).forEach(function (k) {
+          if (['taille', 'z', 'rotation'].indexOf(k) < 0) {
+            throw invalideS(ch + '.naissance.' + k, 'les perles de ' + de + ' naissent une fois sur ses sommets : seuls « taille », « z » et « rotation » s\'y règlent');
+          }
+        });
+        var r = estObjet(e.rendu) ? e.rendu.type : undefined;
+        if (r === 'trainee' || r === 'eclats' || r === 'fluide') throw invalideS(ch + '.rendu.type', 'les perles se dessinent en points (sprite, étincelle, planche) : pas « ' + r + ' »');
+      }
+
       /** Groupes de voisinage : composantes connexes des liens « avec » (un lien dans un seul sens suffit), membres dans
        *  l'ordre de la recette, même type, GROUPE_MAX au plus ; pose em.interactions.groupe. */
       function grouperInteractions(emetteurs) {
         var racineDe = emetteurs.map(function (e, i) { return i; });
         function trouver(i) { while (racineDe[i] !== i) i = racineDe[i]; return i; }
         var noms = emetteurs.map(function (x) { return x.nom; }).join(', ');
+        var liensStructures = [];
         emetteurs.forEach(function (em, i) {
           if (!em.interactions) return;
           em.interactions.avec.forEach(function (nom, k) {
@@ -1107,6 +1127,8 @@
             if (j === undefined) throw invalide(c, '« ' + nom + ' » n\'est pas un émetteur de cet effet (émetteurs : ' + noms + ')');
             if (j === i) throw invalide(c, 'un émetteur interagit déjà avec lui-même : retirer « ' + nom + ' »');
             var autre = emetteurs[j];
+            // Corde ou tissu (P5b) : ses sommets rejoignent le groupe (corps que les particules repoussent et qui les retiennent).
+            if (autre.structure) { liensStructures.push({ i: i, j: j, chemin: c }); return; }
             if (!autre.interactions) throw invalide(c, '« ' + nom + ' » n\'a pas de bloc « interactions » : lui en donner un du même type (« ' + em.interactions.type + ' »)');
             if (autre.interactions.type !== em.interactions.type) {
               throw invalide(c, '« ' + nom + ' » est de type « ' + autre.interactions.type + ' », « ' + em.interactions.type + ' » attendu (un groupe lié a un seul type)');
@@ -1134,6 +1156,27 @@
           if (g.membres.length > GROUPE_MAX) {
             var premier = emetteurs[g.membres[0]].nom;
             throw invalide('emetteurs[' + premier + '].interactions.avec', GROUPE_MAX + ' émetteurs liés au plus (le groupe de « ' + premier + ' » en compte ' + g.membres.length + ')');
+          }
+        });
+        // Structures liées : un seul groupe chacune, épaisseur dans la cellule de voisinage, 8 corps liés au plus en tout.
+        liensStructures.forEach(function (l) {
+          var g = groupes[emetteurs[l.i].interactions.groupe];
+          var st = emetteurs[l.j];
+          if (groupes.some(function (x) { return x !== g && x.structures && x.structures.indexOf(l.j) >= 0; })) {
+            throw invalide(l.chemin, 'la structure « ' + st.nom + ' » est déjà liée à un autre groupe d\'interactions');
+          }
+          if (st.structure.epaisseur > g.cote) {
+            throw invalide(l.chemin, 'épaisseur ' + st.structure.epaisseur + ' cqh de « ' + st.nom + ' » au-delà de la cellule de voisinage (' + g.cote + ' cqh) : augmenter « rayon » ou réduire « epaisseur »');
+          }
+          if (!g.structures) g.structures = [];
+          if (g.structures.indexOf(l.j) < 0) g.structures.push(l.j);
+        });
+        groupes.forEach(function (g) {
+          if (!g.structures) return;
+          g.structures.sort(function (a, b) { return a - b; });
+          if (g.membres.length + g.structures.length > GROUPE_MAX) {
+            var premier = emetteurs[g.membres[0]].nom;
+            throw invalide('emetteurs[' + premier + '].interactions.avec', GROUPE_MAX + ' émetteurs liés au plus, structures comprises (le groupe de « ' + premier + ' » en compte ' + (g.membres.length + g.structures.length) + ')');
           }
         });
         return groupes;
@@ -1175,6 +1218,15 @@
       }
       liste.forEach(function (e, i) { lier(e, i, 'a_la_mort'); });
       liste.forEach(function (e, i) { lier(e, i, 'a_la_collision'); });
+      // Perles (P5b) : émetteur porté par une seule corde (règles complètes dans compilerStructure et verifierPerles).
+      var perlesDe = liste.map(function () { return -1; });
+      liste.forEach(function (e, i) {
+        var pl = estObjet(e.structure) && estObjet(e.structure.perles) ? e.structure.perles : null;
+        if (!pl || typeof pl.emetteur !== 'string' || parNom[pl.emetteur] === undefined || parNom[pl.emetteur] === i) return;
+        var j = parNom[pl.emetteur];
+        if (perlesDe[j] >= 0) throw invalideS('emetteurs[' + e.nom + '].structure.perles.emetteur', '« ' + pl.emetteur + ' » porte déjà les perles de « ' + liste[perlesDe[j]].nom + ' »');
+        perlesDe[j] = i;
+      });
       var profondeur = liste.map(function (e, i) {
         var p = 0, k = i, vus = [i];
         while (parent[k] >= 0) {
@@ -1402,8 +1454,11 @@
         var estStructure = e.structure !== undefined && e.structure !== null;
         if (estStructure) verifierStructure(e, n, ch, P);
         var cs = estStructure ? compilerStructure(e.structure, ch + '.structure', i) : null;
+        // Perles d'une corde : présentes pendant toute la fenêtre de l'effet, nombre fixé par la corde (après la compilation).
+        var estPerle = perlesDe[i] >= 0;
+        if (estPerle) verifierPerles(e, n, ch, P, liste[perlesDe[i]].nom);
         var cible = compilerCible(e.cible, ch + '.cible');
-        var vie = estStructure ? [dur, dur] : intervalle(n.vie, ch + '.naissance.vie', [1, 1]);
+        var vie = estStructure || estPerle ? [dur, dur] : intervalle(n.vie, ch + '.naissance.vie', [1, 1]);
         if (cible) {
           if (n.vie !== undefined) throw invalide(ch + '.naissance.vie', 'une particule qui vise une cible vit jusqu\'à son arrivée : retirer « vie »');
           vie = [cible.a, cible.a];
@@ -1486,7 +1541,7 @@
           em.espacement = P.espacement === Infinity ? Infinity : em.G * P.espacement;
           em.gigue = gigueNaissances + etendueMorts;
           em.finNaissances = P.fin;
-        } else if (estStructure) {
+        } else if (estStructure || estPerle) {
           // Structure : un sommet par case, aucun né en flux (les sommets sont posés au pas 0 par la simulation).
           em.k = 0;
           em.G = 1;
@@ -1494,7 +1549,7 @@
           em.nTotal = 0;
           em.capContinu = 0;
           em.salves = [];
-          em.capacite = cs.structure.nSommets;
+          em.capacite = estStructure ? cs.structure.nSommets : 1;
           em.espacement = Infinity;
           em.gigue = 0;
           em.finNaissances = 0;
@@ -1560,7 +1615,7 @@
         // Interactions : l'état d'une particule dépend de ses voisines, aucune forme close.
         if (em.interactions) em.voieRapide = false;
         // Structure : sommets reliés, simulés pas à pas.
-        if (estStructure) em.voieRapide = false;
+        if (estStructure || estPerle) em.voieRapide = false;
         return em;
       }
 
@@ -1568,6 +1623,14 @@
       var ordre = liste.map(function (e, i) { return i; }).sort(function (a, b) { return profondeur[a] - profondeur[b] || a - b; });
       var emetteurs = [];
       ordre.forEach(function (i) { emetteurs[i] = compilerEmetteur(liste[i], i, parent[i] >= 0 ? emetteurs[parent[i]] : null); });
+      // Perles : émetteur rattaché à sa corde, une perle tous les « tous » sommets, toutes nées à τ = 0.
+      emetteurs.forEach(function (em) {
+        if (!em.structure || !em.structure.perles) return;
+        var p = emetteurs[em.structure.perles.emetteur];
+        p.perlesDe = em.index;
+        p.capacite = em.structure.perles.nombre;
+        p.salves = [{ t: 0, nombre: p.capacite, debut: 0 }];
+      });
       var nStructures = emetteurs.filter(function (em) { return em.structure; }).length;
       if (nStructures > STRUCTURES_EFFET_MAX) throw invalideS('emetteurs', STRUCTURES_EFFET_MAX + ' cordes et tissus au plus par effet (ici ' + nStructures + ')');
 
