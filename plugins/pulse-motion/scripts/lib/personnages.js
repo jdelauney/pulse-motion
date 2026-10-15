@@ -112,7 +112,10 @@ function validerVisage(v, erreurs) {
   if (!estObjet(v.oeil) || typeof v.oeil.blanc !== 'string') erreurs.push('visage : « oeil.blanc » obligatoire (SVG du blanc de l\'œil).');
   if (estObjet(v.oeil)) {
     champsInconnus(v.oeil, ORDRE_OEIL, erreurs, 'visage, oeil : ');
-    for (const k of ['blanc', 'pupille', 'paupiere']) if (typeof v.oeil[k] === 'string') for (const m of verifierSVG(v.oeil[k])) erreurs.push(`visage, oeil.${k} : ${m}.`);
+    for (const k of ['blanc', 'pupille', 'paupiere']) {
+      if (v.oeil[k] !== undefined && typeof v.oeil[k] !== 'string') erreurs.push(`visage : « oeil.${k} » : SVG attendu (texte).`);
+      else if (typeof v.oeil[k] === 'string') for (const m of verifierSVG(v.oeil[k])) erreurs.push(`visage, oeil.${k} : ${m}.`);
+    }
     for (const k of ['course', 'hauteur']) if (v.oeil[k] !== undefined && !(estNombre(v.oeil[k]) && v.oeil[k] > 0)) erreurs.push(`visage : « oeil.${k} » doit être un nombre positif.`);
   }
   if (v.sourcil !== undefined) {

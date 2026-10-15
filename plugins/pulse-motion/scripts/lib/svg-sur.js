@@ -4,7 +4,7 @@
  *   verifierSVG(texte) -> [messages]   (vide : le fragment est sûr et s'insère tel quel)
  *
  * Liste blanche d'éléments et d'attributs de dessin ; refusés : tout autre élément (script, image, use,
- * foreignObject, a…), tout autre attribut (on…, href, style…), « url( » et « javascript: » dans une valeur,
+ * foreignObject, a…), tout autre attribut (on…, href, style…), « url( », « javascript: », « & » et « \ » dans une valeur,
  * commentaires, texte hors des balises, balises mal fermées.
  */
 const ELEMENTS = new Set(['g', 'path', 'circle', 'ellipse', 'rect', 'polygon', 'polyline', 'line']);
@@ -41,6 +41,7 @@ function verifierSVG(texte) {
       if (!ATTRIBUTS.has(a[1])) erreurs.push(`attribut « ${a[1]} » interdit sur « ${nom} »`);
       else if (/url\(/i.test(valeur)) erreurs.push(`« url( » interdit dans « ${a[1]} »`);
       else if (/javascript:/i.test(valeur)) erreurs.push(`« javascript: » interdit dans « ${a[1]} »`);
+      else if (/[&\\]/.test(valeur)) erreurs.push(`« & » et « \\ » interdits dans « ${a[1]} » (entités et échappements : écrire la valeur en clair)`);
     }
     if (!autoFermee) pile.push(nom);
   }
