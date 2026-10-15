@@ -7,6 +7,9 @@
  * « ancre ») demande data-ancre (ancre-vide), une métamorphose data-cible (metamorphose-sans-cible).
  * Structures (P5b) : un tissu photographié (apparence.source « ancre ») demande data-ancre (ancre-vide) ; chaque « #id » visé
  * par une attache (effet.elements) existe dans la scène (attache-introuvable).
+ * Milieux (P5c) : une recette de milieu (bloc « milieu ») se pose avec data-milieu (milieu-invalide) ; un effet couplé au
+ * milieu (force « milieu », « structure.milieu », « injecte ») demande un milieu valide dans sa scène (option milieu :
+ * couplage-sans-milieu).
  * Les recettes sont cherchées dans <projet>/effets/ puis dans la bibliothèque du plugin.
  * Chaque balise reçoit data-pm-effet="N" (index dans M.donnees.effets) ou data-pm-effet-erreur.
  * Atelier : balisesEffets repère les balises (positions dans le texte d'origine, même rang que l'assemblage),
@@ -121,14 +124,15 @@ function modifierEffet(html, ordre, changements) {
 }
 
 /**
- * preparerEffets(html, { scene, projet, bibliotheque, charte, premierIndex, dureeTemps, chargerShader })
+ * preparerEffets(html, { scene, projet, bibliotheque, charte, premierIndex, dureeTemps, chargerShader, milieu })
  * chargerShader : chargeurShaders (scripts/lib/shaders.js), pour les modules des recettes.
+ * milieu : la scène a un milieu valide (data-milieu ; P5c).
  * dureeTemps : secondes par temps musical (tempo du déroulé), pour un data-dur écrit en « t ».
  * -> { html, effets: [{ scene, ordre, calque, ancre, cible, effet }], erreurs: [{ regle, gravite, scene, element?, message }],
  *    modules: { nom: { json, code } } }
  * ordre : position de la balise parmi les data-effet de la scène (erreurs comprises).
  */
-function preparerEffets(html, { scene, projet, bibliotheque, charte = {}, premierIndex = 0, dureeTemps = null, chargerShader = null }) {
+function preparerEffets(html, { scene, projet, bibliotheque, charte = {}, premierIndex = 0, dureeTemps = null, chargerShader = null, milieu = false }) {
   const effets = [];
   const erreurs = [];
   const modules = {};
@@ -185,6 +189,14 @@ function preparerEffets(html, { scene, projet, bibliotheque, charte = {}, premie
       compile = { ok: false, erreurs: [{ regle: e.regle, message: e.message }] };
     }
     if (!compile.ok) return signaler(compile.erreurs);
+    // Milieu (P5c) : une recette de milieu se pose avec data-milieu ; un effet couplé demande un milieu dans sa scène.
+    if (compile.effet.milieu) {
+      return signaler([{ regle: 'milieu-invalide', message: `« ${nom} » est un milieu fluide : le poser avec data-milieu="${nom}" (un par scène), pas data-effet.` }]);
+    }
+    const couplage = compile.effet.couplage;
+    if (couplage && (couplage.vent || couplage.injecte) && !milieu) {
+      return signaler([{ regle: 'couplage-sans-milieu', message: `l'effet « ${nom} » est couplé au milieu de la scène (force « milieu », « structure.milieu » ou « injecte »), mais la scène n'en a pas : ajouter un milieu (<div data-milieu="air"></div>, un par scène), ou retirer le couplage.` }]);
+    }
     // Fragmentation : un élément à photographier (ancre), un élément d'arrivée (cible).
     const ems = compile.effet.emetteurs;
     if (ems.some((em) => em.cible && em.cible.source === 'cible') && !cible) {

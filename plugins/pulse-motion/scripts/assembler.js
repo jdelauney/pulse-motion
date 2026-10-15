@@ -15,6 +15,7 @@ const { embarquerRessources, versDataURI, cheminDansProjet } = require('./lib/em
 const S = require('./lib/scenes.js');
 const { preparerEffets } = require('./lib/effets.js');
 const { preparerObstacles, obstaclesVideo } = require('./lib/obstacles.js');
+const { preparerMilieux } = require('./lib/milieux.js');
 const { chargeurShaders, preparerShaders, shadersDuDeroule, BIBLIOTHEQUE: BIBLIOTHEQUE_SHADERS } = require('./lib/shaders.js');
 const { variablesCSS } = require('../moteur/courbes.js');
 const { trouverStyle, messageStyleInconnu } = require('./styles.js');
@@ -111,7 +112,7 @@ function jsonDansHTML(objet) {
 
 /**
  * assembler({ dossier, dossierStyles?: string | string[], dossierEffets?, dossierShaders?, ecrire? })
- * -> { ok, fichier, html, erreurs: [{ regle, gravite, scene?, message }], effets: [{ scene, ordre, calque, ancre, effet }], shaders, donnees (pm-donnees) }
+ * -> { ok, fichier, html, erreurs: [{ regle, gravite, scene?, message }], effets: [{ scene, ordre, calque, ancre, effet }], milieux: [{ scene, calque, ancre, sansDuree, effet }], shaders, donnees (pm-donnees) }
  * Sans dossierStyles : styles livrés, puis styles personnels (~/.pulse-motion/styles). dossierShaders : bibliothèque des
  * shaders (plugins/pulse-motion/shaders par défaut), après shaders/ du projet.
  */
@@ -119,11 +120,11 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   const projet = path.resolve(dossier);
   const { deroule, erreurs: erreursDeroule } = lireDeroule(projet);
   if (erreursDeroule.length) {
-    return { ok: false, fichier: null, html: null, effets: [], shaders: [], donnees: null, erreurs: erreursDeroule.map((message) => ({ regle: 'deroule-invalide', gravite: 'erreur', message })) };
+    return { ok: false, fichier: null, html: null, effets: [], milieux: [], shaders: [], donnees: null, erreurs: erreursDeroule.map((message) => ({ regle: 'deroule-invalide', gravite: 'erreur', message })) };
   }
   const style = trouverStyle(deroule.style, dossierStyles);
   if (!style) {
-    return { ok: false, fichier: null, html: null, effets: [], shaders: [], donnees: null, erreurs: [{ regle: 'style-inconnu', gravite: 'erreur', message: messageStyleInconnu(deroule.style, dossierStyles) }] };
+    return { ok: false, fichier: null, html: null, effets: [], milieux: [], shaders: [], donnees: null, erreurs: [{ regle: 'style-inconnu', gravite: 'erreur', message: messageStyleInconnu(deroule.style, dossierStyles) }] };
   }
   const dossierStyle = style.dossier;
 
@@ -144,6 +145,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   let fichiersSons = 0;
   const sonsEmbarques = new Map();   // chemin du son -> id du bloc
   const effets = [];
+  const milieux = [];
   const obstacles = [];
   const shaders = [];
   const chargerShader = chargeurShaders(projet, dossierShaders);
@@ -170,8 +172,15 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     const { html: sansScripts, scripts } = S.extraireScripts(html);
     const { html: avecTextes, manquants } = S.injecterTextes(sansScripts, scene.textes, scene.ajustements);
     manquants.forEach((cle) => erreurs.push({ regle: 'texte-manquant', gravite: 'erreur', scene: scene.id, message: `Scène « ${scene.id} » : data-texte="${cle}" n'a pas de texte dans le déroulé.` }));
-    const { html: avecEffets, effets: effetsScene, erreurs: erreursEffets, modules: modulesScene } = preparerEffets(avecTextes, {
+    // Milieu fluide (P5c) : un par scène, préparé avant les effets (qui peuvent s'y coupler).
+    const { html: avecMilieux, milieux: milieuxScene, erreurs: erreursMilieux } = preparerMilieux(avecTextes, {
+      scene: scene.id, projet, bibliotheque: dossierEffets, charte: charte.couleurs, premierIndex: milieux.length, dureeTemps: dureeTemps(deroule),
+    });
+    milieux.push(...milieuxScene);
+    erreurs.push(...erreursMilieux);
+    const { html: avecEffets, effets: effetsScene, erreurs: erreursEffets, modules: modulesScene } = preparerEffets(avecMilieux, {
       scene: scene.id, projet, bibliotheque: dossierEffets, charte: charte.couleurs, premierIndex: effets.length, dureeTemps: dureeTemps(deroule), chargerShader,
+      milieu: milieuxScene.length > 0,
     });
     Object.assign(sourcesModules, modulesScene);
     effets.push(...effetsScene);
@@ -264,6 +273,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
       transition: s.transition && typeof s.transition === 'object' ? { shader: s.transition.shader, duree: s.transition.duree > 0 ? s.transition.duree : DUREE_TRANSITION_SHADER } : (s.transition || 'aucune'),
       ...(voixScenes[s.id] ? { voix: voixScenes[s.id] } : {}) })),
     effets: effets.map(({ calque, ancre, cible, effet }) => ({ calque, ancre, cible, effet })),
+    milieux: milieux.map(({ calque, ancre, sansDuree, effet }) => ({ calque, ancre, sansDuree, effet })),
     obstacles,
     obstaclesVideo: video.obstacles,
     shaders,
@@ -354,7 +364,7 @@ M.demarrerParticules();
     // Le rapport de débordement portait sur l'ancienne page : l'aperçu en renverra un pour la nouvelle.
     fs.rmSync(path.join(dossierSortie, 'controle-page.json'), { force: true });
   }
-  return { ok: true, fichier: sortie, html: page, erreurs, effets, shaders, donnees };
+  return { ok: true, fichier: sortie, html: page, erreurs, effets, milieux, shaders, donnees };
 }
 
 if (require.main === module) {
