@@ -7,8 +7,8 @@ const R = require('../moteur/particules/recette.js');
 const { SEUILS } = require('../scripts/controler.js');
 
 const DOSSIER = path.join(__dirname, '..', 'effets');
-const NOMS = ['assembler', 'banc', 'braises', 'briser', 'confettis', 'desintegrer', 'eau', 'energie', 'etincelles', 'explosion', 'feu', 'feu-artifice', 'fumee',
-  'lucioles', 'metamorphose', 'miel', 'neige', 'neige-lourde', 'nuee', 'paillettes', 'pluie', 'poussiere', 'sable'];
+const NOMS = ['assembler', 'banc', 'banniere', 'braises', 'briser', 'confettis', 'corde', 'desintegrer', 'drapeau', 'eau', 'energie', 'etincelles', 'explosion', 'feu',
+  'feu-artifice', 'filet', 'fumee', 'guirlande', 'lucioles', 'metamorphose', 'miel', 'neige', 'neige-lourde', 'nuee', 'paillettes', 'pluie', 'poussiere', 'rideau', 'sable'];
 const CHARTE = { primaire: '#0a6cff', accent: '#b45309', fond: '#ffffff', texte: '#1a1a1a' };
 const charger = (nom) => {
   const f = path.join(DOSSIER, `${nom}.json`);
@@ -16,7 +16,7 @@ const charger = (nom) => {
 };
 const compiler = (nom, reglages = '', dur = 3) => R.compiler(R.resoudre(nom, charger), { reglages, charte: CHARTE, dur, graine: 1 });
 
-test('bibliothèque : les 23 effets des specs (P1, P4, P5a), nommés comme leur fichier, décrits', () => {
+test('bibliothèque : les 29 effets des specs (P1, P4, P5a, P5b), nommés comme leur fichier, décrits', () => {
   const fichiers = fs.readdirSync(DOSSIER).filter((f) => f.endsWith('.json')).map((f) => f.replace(/\.json$/, '')).sort();
   assert.deepEqual(fichiers, NOMS);
   for (const nom of NOMS) {
@@ -273,4 +273,42 @@ test('référence : section Interactions (types, champs du schéma, rendu fluide
   assert.match(texte.split('## Interactions')[0], /voir « Interactions »/, 'la bibliothèque y renvoie');
   const controles = fs.readFileSync(path.join(__dirname, '..', 'references', 'controles.md'), 'utf8');
   for (const r of ['interactions-invalides', 'budget-interactions']) assert.match(controles, new RegExp('`' + r + '`'), r);
+});
+
+test('bibliothèque : cordes et tissus (drapeau, banniere, rideau, guirlande, filet, corde)', () => {
+  const r6 = (x) => Math.round(x * 1e6) / 1e6;
+  const TYPES = { drapeau: 'tissu', banniere: 'tissu', rideau: 'tissu', guirlande: 'corde', filet: 'tissu', corde: 'corde' };
+  for (const [nom, type] of Object.entries(TYPES)) {
+    const e = compiler(nom).effet;
+    const st = e.emetteurs.filter((em) => em.structure);
+    assert.equal(st.length, 1, `${nom} : une structure`);
+    assert.equal(st[0].structure.type, type, nom);
+    assert.ok(st[0].structure.nSommets <= R.SOMMETS_TISSU_MAX, `${nom} : 64 × 64 sommets au plus`);
+    assert.deepEqual(e.elements, [], `${nom} : aucun « #id » (posé sur n'importe quelle ancre)`);
+    assert.equal(st[0].voieRapide, false);
+  }
+  const drapeau = compiler('drapeau').effet.emetteurs[0];
+  assert.deepEqual([drapeau.structure.apparence.mode, drapeau.structure.apparence.bandes], ['degrade', true]);
+  assert.deepEqual(drapeau.structure.attaches.map((a) => [a.sommets.length, a.cible]), [[16, { genre: 'element', element: 0 }]], 'bord gauche tenu à l\'ancre');
+  assert.deepEqual(drapeau.tables.couleur.slice(0, 4).map(r6), R.couleurLineaire('#0a6cff', {}).map(r6), 'première bande : primaire de la charte');
+  assert.deepEqual(drapeau.tables.couleur.slice(252, 256).map(r6), R.couleurLineaire('#b45309', {}).map(r6), 'dernière bande : accent');
+  const banniere = compiler('banniere').effet.emetteurs[0];
+  assert.equal(banniere.structure.apparence.source, 'ancre');
+  assert.equal(banniere.structure.attaches[0].lacher, 1.5);
+  assert.equal(compiler('banniere', 'chute: 3').effet.emetteurs[0].structure.attaches[0].lacher, 3);
+  assert.equal(banniere.collisions.reponse, 'rebond');
+  const rideau = compiler('rideau').effet.emetteurs[0];
+  assert.equal(rideau.structure.dechirure, 1.3);
+  assert.ok(rideau.forces.some((f) => f.type === 'attracteur' && f.force < 0), 'répulseur au centre : le rideau s\'ouvre');
+  const [fil, ampoule] = compiler('guirlande').effet.emetteurs;
+  assert.deepEqual(fil.structure.perles, { emetteur: 1, tous: 6, debut: 3, nombre: 8 });
+  assert.deepEqual([ampoule.perlesDe, ampoule.capacite, ampoule.rendu.melange], [0, 8, 'additif']);
+  assert.deepEqual(compiler('guirlande', 'mou: 0').effet.emetteurs[0].structure.attaches[1].cible.point, [1, 0.5], 'sans mou : guirlande tendue');
+  const filet = compiler('filet').effet.emetteurs[0];
+  assert.deepEqual([filet.structure.apparence.mailles, filet.structure.dechirure, filet.structure.flexion], [true, 1.4, 0]);
+  assert.equal(compiler('filet', 'souplesse: 1').effet.emetteurs[0].structure.raideur, 0.5);
+  assert.ok(filet.collisions.masque & R.CODES.cible.elements, 'le filet retient les éléments déclarés');
+  const corde = compiler('corde').effet.emetteurs[0];
+  assert.deepEqual(corde.structure.attaches, [{ sommets: [0], cible: { genre: 'point', point: [0.5, 0] }, lacher: null }]);
+  assert.equal(compiler('corde', 'epaisseur: 2').effet.emetteurs[0].structure.epaisseur, 2);
 });
