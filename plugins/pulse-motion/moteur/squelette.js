@@ -14,7 +14,7 @@
  *     (torsionBras 90 = le coude plie sur le côté) ;
  *   - torseRot : rotation des épaules ; torseIncl : inclinaison latérale ; teteTourne positif = vers le côté Avant.
  * Côtés anatomiques Avant et Arrière (pas gauche / droite). Clés absentes : valeur de REPOS.
- * Les clés d'expression (yeux, regard, touffe) font partie de la pose, mais le noyau les ignore (habillage).
+ * Les clés d'expression (yeux, regard, sourcils, touffe) font partie de la pose, mais le noyau les ignore (habillage).
  * Contraintes : chaque angle est borné (LIMITES, surchargées par gabarit.contraintes ; « cuisse » vaut pour
  * les deux côtés, « cuisseAvant » pour un seul) ; `efficace` rend la pose réellement appliquée.
  * Os en plus (gabarit.osEnPlus) : balancement recalculé à chaque appel à partir de contexte.poseA(t) sur les
@@ -39,11 +39,11 @@
     cuisseArriere: 4, tibiaArriere: 2, piedArriere: 0, ecartJambeArriere: 3, torsionJambeArriere: 0,
     brasAvant: 8, avantBrasAvant: -10, ecartBrasAvant: 8, torsionBrasAvant: 0,
     brasArriere: -6, avantBrasArriere: -12, ecartBrasArriere: 8, torsionBrasArriere: 0,
-    yeuxY: 0, tailleYeux: 1, paupieres: 1, regardX: 0, regardY: 0, taillePupilles: 1,
+    yeuxY: 0, tailleYeux: 1, paupieres: 1, regardX: 0, regardY: 0, taillePupilles: 1, sourcilsY: 0, sourcilsAngle: 0,
     touffeRot: 0, touffeEtire: 1, touffeEventail: 1, touffeOnde: 0
   });
   var PLACEMENT = ['x', 'y', 'echelle', 'vue'];
-  var EXPRESSION = ['yeuxY', 'tailleYeux', 'paupieres', 'regardX', 'regardY', 'taillePupilles',
+  var EXPRESSION = ['yeuxY', 'tailleYeux', 'paupieres', 'regardX', 'regardY', 'taillePupilles', 'sourcilsY', 'sourcilsAngle',
     'touffeRot', 'touffeEtire', 'touffeEventail', 'touffeOnde'];
   var OS = Object.keys(REPOS).filter(function (k) { return PLACEMENT.indexOf(k) < 0 && EXPRESSION.indexOf(k) < 0; });
   var NOMS = Object.freeze({ placement: PLACEMENT, os: OS, expression: EXPRESSION });

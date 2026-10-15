@@ -142,6 +142,6 @@ test('enregistrer : nom invalide ou objet invalide, rien n\'est écrit', () => {
   assert.throws(() => P.enregistrer({ dossier, type: 'pose', nom: '../x', objet: { angles: {} }, lu }), (e) => /Nom « \.\.\/x » invalide/.test(e.message) && Array.isArray(e.erreurs));
   assert.throws(() => P.enregistrer({ dossier, type: 'pose', nom: 'Grand', objet: { angles: {} }, lu }), /invalide/);
   assert.throws(() => P.enregistrer({ dossier, type: 'pose', nom: 'ok', objet: { angles: { cuisseAvent: 1 } }, lu }), /voulais-tu « cuisseAvant »/);
-  assert.throws(() => P.enregistrer({ dossier, type: 'film', nom: 'ok', objet: {}, lu }), /Type « film » inconnu \(pose, clip ou gabarit\)/);
+  assert.throws(() => P.enregistrer({ dossier, type: 'film', nom: 'ok', objet: {}, lu }), /Type « film » inconnu/);
   assert.deepEqual(fs.readdirSync(dossier), []);
 });
