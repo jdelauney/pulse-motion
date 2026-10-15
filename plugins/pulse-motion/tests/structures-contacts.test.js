@@ -103,3 +103,29 @@ await envoyer({ webgpu: true, s: fin[0].s });`);
   assert.ok(moyenne(r.s, (p) => p.y) < 85, `y moyen ${moyenne(r.s, (p) => p.y).toFixed(1)} : la toile est retenue`);
   assert.ok(r.s.some((p) => Math.hypot(p.x - 80, p.y - 60) < 6), 'des sommets restent autour du point d\'appui');
 });
+
+test('structures GPU : perles posées sur les sommets de leur corde (position, vitesse, taille, profondeur, âge), effacées en revenant au début', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const guirlande = compiler([
+    { nom: 'fil', structure: { type: 'corde', resolution: 33, attaches: [{ ou: 'debut', a: [0, 0.5] }, { ou: 'fin', a: [0.9, 0.5] }], perles: { tous: 8, emetteur: 'ampoule' } },
+      forces: [{ type: 'gravite', valeur: 40 }] },
+    { nom: 'ampoule', naissance: { taille: [1.5, 1.5], z: [0.2, 0.2] }, rendu: { melange: 'additif' } },
+  ], 3);
+  const r = await page({ guirlande }, `
+const zones = zonesDe([40, 30, 64, 2]);
+const a = await etat(DONNEES.guirlande, zones, [1.5]);
+const b = await etat(DONNEES.guirlande, zones, [2.5, 1.5]);
+const debut = await etat(DONNEES.guirlande, zones, [1.5, 0]);
+await envoyer({ webgpu: true, fil: a[0].s, perles: a[1].s, egal: memes(a, b), vides: debut[1].s.map((p) => p.vivante) });`);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.equal(r.egal, true, 'mêmes perles par deux chemins (retour en arrière)');
+  assert.equal(r.perles.length, 4, 'sommets 4, 12, 20, 28');
+  r.perles.forEach((p, k) => {
+    const s = r.fil[4 + 8 * k];
+    assert.deepEqual([p.x, p.y, p.vx, p.vy, p.vivante], [s.x, s.y, s.vx, s.vy, 1], `perle ${k} sur son sommet`);
+    assert.ok(Math.abs(p.taille - 1.5) < 1e-6 && Math.abs(p.z - 0.2) < 1e-6, `perle ${k} : taille ${p.taille}, profondeur ${p.z}`);
+    assert.deepEqual([p.age, p.vie], [1.5, 3], `perle ${k} : âge (τ1) et vie (fenêtre de l'effet)`);
+  });
+  assert.ok(r.fil[16].y > 31 + 1, 'la guirlande pend');
+  assert.deepEqual(r.vides, [0, 0, 0, 0], 'état 0 : aucune perle');
+});
