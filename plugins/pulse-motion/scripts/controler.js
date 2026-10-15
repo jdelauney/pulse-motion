@@ -30,6 +30,7 @@ const CATALOGUE = require('../moteur/synthe/catalogue.js');
 const { appliquerCorrections } = require('./lib/corriger.js');
 const { controlerRendu } = require('./lib/rendu-controle.js');
 const { aDesShaders, compilerShadersGPU } = require('./lib/shaders-gpu.js');
+const { LIMITES_INTERACTIONS, PLEINE_VOISINAGE } = require('../moteur/particules/recette.js');
 const { EFFETS: EFFETS_LETTRES } = require('../moteur/lettres.js');
 const { analyserCamera } = require('../moteur/camera.js');
 const { analyserTemps } = require('../moteur/temps.js');
@@ -351,12 +352,35 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
     }
 
     // Effets de particules : budget par scène, effet du calque avant posé sur un texte long.
+    // Aire de la scène en cqh² (hauteur 100 cqh, largeur selon le format déclaré).
+    const [rl, rh] = String((deroule.format && deroule.format.ratio) || '16:9').split(':').map(Number);
+    const aireScene = 100 * (rl > 0 && rh > 0 ? 100 * rl / rh : 177.78);
     for (const s of min.scenes) {
       const effets = (assemblage.effets || []).filter((e) => e.scene === s.id);
       if (!effets.length) continue;
       const total = effets.reduce((n, e) => n + e.effet.capacite, 0);
       if (total > SEUILS.budgetParticules) {
         problemes.push({ regle: 'budget-particules', gravite: 'alerte', scene: s.id, message: `Scène « ${s.id} » : jusqu'à ${total} particules en même temps (au-delà de ${SEUILS.budgetParticules}, l'aperçu ralentit) ; baisser « nombre » ou la durée de vie.` });
+      }
+      // Interactions (P5a) : au-delà de la limite de son type, un émetteur dépasse le temps de simulation d'une image.
+      for (const e of effets) {
+        for (const em of e.effet.emetteurs) {
+          if (!em.interactions) continue;
+          const limite = LIMITES_INTERACTIONS[em.interactions.type];
+          const nom = `Scène « ${s.id} » : l'effet « ${e.effet.nom} », émetteur « ${em.nom} » (${em.interactions.type}), peut compter ${em.capacite} particules`;
+          if (em.capacite > limite) {
+            problemes.push({ regle: 'budget-interactions', gravite: 'alerte', scene: s.id, message: `${nom} ; au-delà de ${limite} par émetteur, la simulation des interactions dépasse son temps (aperçu saccadé). Baisser « nombre », « debit » ou la durée de vie.` });
+          }
+          // Cellules pleines : même étalées sur toute la scène, plus de PLEINE_VOISINAGE / 2 particules en moyenne par
+          // cellule de voisinage (côté : rayon, ou vision d'un essaim) ; une cellule de plus de PLEINE_VOISINAGE corps est
+          // ignorée (ses particules s'ignorent entre elles), ce qui arrive vite là où elles se rassemblent.
+          const cote = em.interactions.cote;
+          const parCellule = em.capacite * cote * cote / aireScene;
+          if (parCellule > PLEINE_VOISINAGE / 2) {
+            const champ = em.interactions.type === 'essaim' ? '« vision.rayon » et « rayon »' : '« rayon »';
+            problemes.push({ regle: 'budget-interactions', gravite: 'alerte', scene: s.id, message: `${nom} pour des cellules de voisinage de ${virgule(cote)} cqh de côté : ${Math.round(parCellule)} par cellule en moyenne sur toute la scène ; au-delà de ${PLEINE_VOISINAGE} dans une cellule, ses particules s'ignorent entre elles. Baisser ${champ} ou le nombre de particules.` });
+          }
+        }
       }
       const lus = scenesLues[s.id];
       const balisesEffet = lus.elements.filter((e) => e.effet !== undefined);

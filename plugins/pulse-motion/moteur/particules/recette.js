@@ -13,6 +13,9 @@
  * Fragments (P4) : forme « pixels » (naissance sur les pixels de l'ancre photographiée), couleur « source », rendu
  * « eclats », « cible » (arrivée sur un élément) ; un émetteur de fragments naît tout entier à τ = 0 (une salve dont le
  * nombre est fixé à la photographie : fragments.js).
+ * Interactions (P5a) : bloc « interactions » d'un émetteur (essaim, fluide, grains : em.interactions), liens « avec » entre
+ * émetteurs d'un même effet (effet.groupes : un groupe de voisinage par ensemble lié, un type par groupe) ; rendu « fluide »
+ * (em.fluide : nappe lissée). Un émetteur à interactions quitte la voie rapide ; erreurs « interactions-invalides ».
  *
  * Module pur : chargé tel quel dans la page (global M.recette) et par Node (require).
  */
@@ -38,10 +41,17 @@
   var DENSITE_MAX = 64;
   var MORCEAUX_MIN = 8;
   var MORCEAUX_MAX = 512;
+  var RAYON_INTERACTION = 2;   // cqh : rayon d'interaction par défaut
+  var RAYON_MIN = 0.25;        // cqh : grille d'un million de cellules au plus (scène élargie, plan 2)
+  var RAYON_MAX = 20;
+  var GROUPE_MAX = 8;          // émetteurs liés par « avec » (uniforme du groupe sur le GPU)
+  var ITERATIONS_GRAINS = 6;   // itérations de contacts par sous-pas (deux sous-pas : plan 3)
+  var LIMITES_INTERACTIONS = { essaim: 100000, fluide: 60000, grains: 60000 };
+  var PLEINE_VOISINAGE = 96;   // corps par cellule au-delà desquels la cellule est ignorée pour le pas (voisinage.js, PLEINE)
   var CODES = {
     forme: { point: 0, cercle: 1, anneau: 2, rectangle: 3, ligne: 4, ancre: 5, pixels: 6 },
     force: { gravite: 0, trainee: 1, vent: 2, turbulence: 3, attracteur: 4, vortex: 5, rappel: 6 },
-    rendu: { sprite: 0, etincelle: 1, trainee: 2, planche: 3, eclats: 4 },
+    rendu: { sprite: 0, etincelle: 1, trainee: 2, planche: 3, eclats: 4, fluide: 5 },
     melange: { additif: 0, alpha: 1, premultiplie: 2 },
     texture: { 'disque-doux': 0, etoile: 1, fumee: 2, flamme: 3, eclat: 4, confetti: 5, image: 6, pixel: 7 },
     reponse: { rebond: 0, poser: 1, mourir: 2 },
@@ -49,6 +59,7 @@
     ordre: { hasard: 0, 'gauche-droite': 1, centre: 2 },
     arrivee: { guidee: 0, choree: 1 },
     source: { ancre: 0, cible: 1 },
+    interaction: { essaim: 0, fluide: 1, grains: 2 },
   };
   var COULEURS_CHARTE = ['primaire', 'accent', 'texte', 'fond'];
   var HEX = /^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
@@ -197,6 +208,11 @@
         origine: pr('Point d\'impact des éclats (fraction de la boîte du contenu visible)', [0.5, 0.5]),
         impulsion: nb('Impulsion des éclats', 40, { unite: 'cqh/s', curseur: [0, 300] }),
         rotation_max: nb('Rotation maximale des éclats', 180, { min: 0, unite: '°/s', curseur: [0, 1080] }),
+        teinte: noeud('couleur', 'Teinte du fluide', '#4aa8ff'),
+        opacite: nb('Opacité du fluide', 0.85, { min: 0, max: 1, curseur: [0, 1], pas: 0.05 }),
+        absorption: nb('Absorption du fluide (par cqh d\'épaisseur)', 0.25, { min: 0, curseur: [0, 2], pas: 0.05 }),
+        refraction: nb('Réfraction de la scène sous le fluide', 0, { min: 0, max: 1, curseur: [0, 1], pas: 0.05 }),
+        lissage: nb('Lissage de la nappe', 1, { min: 0, max: 5, unite: 'cqh', curseur: [0, 5], pas: 0.1 }),
       }),
       a_la_mort: ob('À la mort', {
         emetteur: noeud('texte', 'Émetteur lancé', null, { motif: '^[a-z0-9-]+$', parmi: 'emetteurs', exemple: 'b' }),
@@ -229,6 +245,45 @@
         guidage: nb('Début du rattrapage (fraction du trajet)', 0.6, { min: 0, max: 1, curseur: [0, 1], pas: 0.05 }),
         densite: nb('Densité de la cible : une particule pour N pixels', DENSITE, { min: 1, max: DENSITE_MAX, pas: 1, curseur: [1, DENSITE_MAX] }),
         courbe: cb('Courbe du trajet (chorégraphié)'),
+      }),
+      interactions: ob('Interactions entre particules', {
+        type: ch('Type', Object.keys(CODES.interaction), null, { requis: true, exemple: 'essaim' }),
+        rayon: nb('Rayon d\'interaction', RAYON_INTERACTION, { min: RAYON_MIN, max: RAYON_MAX, unite: 'cqh', curseur: [0.5, 10], pas: 0.1 }),
+        avec: li('Interagit aussi avec (émetteurs du même effet, même type)',
+          noeud('texte', 'Émetteur', null, { motif: '^[a-z0-9-]+$', parmi: 'emetteurs', exemple: 'b' }), { defaut: [], maximum: GROUPE_MAX - 1 }),
+      }, {
+        exemple: { type: 'essaim' },
+        variantes: {
+          cle: 'type',
+          types: {
+            essaim: { libelle: 'Essaim (nuée, banc, lucioles)', champs: {
+              separation: nb('Séparation', 1.5, { min: 0, max: 5, curseur: [0, 5], pas: 0.1 }),
+              alignement: nb('Alignement', 1, { min: 0, max: 5, curseur: [0, 5], pas: 0.1 }),
+              cohesion: nb('Cohésion', 1, { min: 0, max: 5, curseur: [0, 5], pas: 0.1 }),
+              vision: ob('Vision', {
+                rayon: nb('Rayon de vision', 6, { min: RAYON_MIN, max: 40, unite: 'cqh', curseur: [1, 30] }),
+                angle: nb('Angle de vision', 270, { min: 10, max: 360, unite: '°', curseur: [10, 360] }),
+              }),
+              vitesse: iv('Vitesse', [5, 20], { unite: 'cqh/s', curseur: [0, 100] }),
+              cible: pr('Cible (fraction de la zone, ou « ancre »)', null, { exemple: [0.5, 0.5] }),
+              fuite: nb('Fuite des obstacles', 30, { min: 0, curseur: [0, 200] }),
+            } },
+            fluide: { libelle: 'Fluide (eau, miel)', champs: {
+              densite: nb('Densité au repos (particules par cellule)', 6, { min: 1, max: 30, curseur: [2, 20] }),
+              viscosite: nb('Viscosité', 0.05, { min: 0, max: 1, curseur: [0, 1], pas: 0.01 }),
+              tension: nb('Tension de surface', 0.1, { min: 0, max: 1, curseur: [0, 1], pas: 0.01 }),
+              incompressibilite: nb('Incompressibilité (itérations)', 4, { min: 2, max: 6, pas: 1, curseur: [2, 6] }),
+            } },
+            grains: { libelle: 'Grains (sable, neige lourde)', champs: {
+              frottement: ob('Frottement entre grains', {
+                statique: nb('Statique', 0.6, { min: 0, max: 1.5, curseur: [0, 1.5], pas: 0.05 }),
+                dynamique: nb('Dynamique', 0.4, { min: 0, max: 1.5, curseur: [0, 1.5], pas: 0.05 }),
+              }),
+              cohesion: nb('Cohésion', 0, { min: 0, max: 1, curseur: [0, 1], pas: 0.05 }),
+              restitution: nb('Rebond entre grains', 0.1, { min: 0, max: 1, curseur: [0, 1], pas: 0.05 }),
+            } },
+          },
+        },
       }),
     }, { exemple: { nom: 'emetteur', naissance: { debit: 50, vie: [0.5, 1] } } }), { requis: true }),
   });
@@ -493,7 +548,9 @@
     var nomEffet = recette && recette.nom ? recette.nom : '?';
     var prefixe = 'Effet « ' + nomEffet + ' »';
     function invalide(chemin, message) {
-      var regle = /(^|\.)(collisions|a_la_collision)(\.|\[|$)/.test(chemin || '') ? 'collisions-invalides' : 'effet-invalide';
+      var c = chemin || '';
+      var regle = /(^|\.)interactions(\.|\[|$)/.test(c) ? 'interactions-invalides'
+        : /(^|\.)(collisions|a_la_collision)(\.|\[|$)/.test(c) ? 'collisions-invalides' : 'effet-invalide';
       return ErreurRecette(regle, prefixe + (chemin ? ', ' + chemin : '') + ' : ' + message + '.', chemin || '');
     }
     try {
@@ -820,6 +877,27 @@
         return { morceaux: morceaux, origine: origine, impulsion: impulsion, rotationMax: rad(rotation) };
       }
 
+      /** Rendu « fluide » (P5a) : champs vérifiés pour tout rendu, gardés pour le rendu « fluide » (nappe en espace écran). */
+      function compilerFluide(r, ch) {
+        r = objet(r, ch);
+        function entre(cle, defaut, max) {
+          var x = nombre(r[cle], ch + '.' + cle, defaut);
+          if (x < 0 || (max !== undefined && x > max)) {
+            throw invalide(ch + '.' + cle, max !== undefined ? 'valeur entre 0 et ' + max + ' attendue' : 'valeur positive ou nulle attendue');
+          }
+          return x;
+        }
+        var res = {
+          teinte: couleur(r.teinte === undefined ? '#4aa8ff' : r.teinte, ch + '.teinte'),
+          opacite: entre('opacite', 0.85, 1),
+          absorption: entre('absorption', 0.25),
+          refraction: entre('refraction', 0, 1),
+          lissage: entre('lissage', 1, 5),
+        };
+        if (r.type !== 'fluide') return null;
+        return res;
+      }
+
       /** Arrivée sur un élément : instant arrondi au pas de 1/120 s (au moins un pas), fenêtre et ordre des trajets. */
       function compilerCible(c, ch) {
         if (c === undefined || c === null) return null;
@@ -852,6 +930,68 @@
         };
       }
 
+      /** Bloc « interactions » (P5a) : type, rayon, émetteurs liés (noms vérifiés avec les groupes), réglages du type ;
+       *  cote : côté de cellule de voisinage propre à l'émetteur (essaim : rayon de vision s'il est plus grand). */
+      function compilerInteractions(v, ch) {
+        if (v === undefined || v === null) return null;
+        v = objet(v, ch);
+        var type = choix(v.type, CODES.interaction, ch + '.type');
+        function entre(o, cle, chemin, defaut, min, max) {
+          var x = nombre(o[cle], chemin, defaut);
+          if (x < min || (max !== undefined && x > max)) {
+            throw invalide(chemin, max !== undefined ? 'valeur entre ' + min + ' et ' + max + ' attendue' : 'valeur supérieure ou égale à ' + min + ' attendue');
+          }
+          return x;
+        }
+        function sousObjet(cle) { return v[cle] === undefined || v[cle] === null ? {} : objet(v[cle], ch + '.' + cle); }
+        var r = { type: type, code: CODES.interaction[type], rayon: entre(v, 'rayon', ch + '.rayon', RAYON_INTERACTION, RAYON_MIN, RAYON_MAX), avec: [] };
+        if (v.avec !== undefined && v.avec !== null) {
+          if (!Array.isArray(v.avec)) throw invalide(ch + '.avec', 'liste de noms d\'émetteurs attendue');
+          if (v.avec.length > GROUPE_MAX - 1) throw invalide(ch + '.avec', (GROUPE_MAX - 1) + ' émetteurs au plus');
+          r.avec = v.avec.map(function (nom, k) {
+            if (typeof nom !== 'string') throw invalide(ch + '.avec[' + k + ']', 'nom d\'émetteur attendu');
+            return nom;
+          });
+        }
+        if (type === 'essaim') {
+          var vision = sousObjet('vision');
+          var vitesse = intervalle(v.vitesse, ch + '.vitesse', [5, 20]);
+          if (vitesse[0] < 0 || vitesse[1] <= 0) throw invalide(ch + '.vitesse', 'vitesses positives attendues (minimum ≥ 0, maximum > 0)');
+          var cible = null;
+          if (v.cible === 'ancre') cible = [0.5, 0.5];
+          else if (v.cible !== undefined && v.cible !== null) cible = paire(v.cible, ch + '.cible', [0.5, 0.5]);
+          r.separation = entre(v, 'separation', ch + '.separation', 1.5, 0, 5);
+          r.alignement = entre(v, 'alignement', ch + '.alignement', 1, 0, 5);
+          r.cohesion = entre(v, 'cohesion', ch + '.cohesion', 1, 0, 5);
+          r.vision = {
+            rayon: entre(vision, 'rayon', ch + '.vision.rayon', 6, RAYON_MIN, 40),
+            angle: rad(entre(vision, 'angle', ch + '.vision.angle', 270, 10, 360)),
+          };
+          r.vitesse = vitesse;
+          r.cible = cible;
+          r.fuite = entre(v, 'fuite', ch + '.fuite', 30, 0);
+          r.cote = Math.max(r.rayon, r.vision.rayon);
+        } else if (type === 'fluide') {
+          r.densite = entre(v, 'densite', ch + '.densite', 6, 1, 30);
+          r.viscosite = entre(v, 'viscosite', ch + '.viscosite', 0.05, 0, 1);
+          r.tension = entre(v, 'tension', ch + '.tension', 0.1, 0, 1);
+          r.incompressibilite = Math.round(entre(v, 'incompressibilite', ch + '.incompressibilite', 4, 2, 6));
+          // Densité au repos visée par le solveur : somme du noyau (1 − q²)³ sur « densite » particules par cellule h × h.
+          r.rho0 = arrondi(r.densite * Math.PI / 4);
+          r.cote = r.rayon;
+        } else {
+          var fr = sousObjet('frottement');
+          r.frottement = {
+            statique: entre(fr, 'statique', ch + '.frottement.statique', 0.6, 0, 1.5),
+            dynamique: entre(fr, 'dynamique', ch + '.frottement.dynamique', 0.4, 0, 1.5),
+          };
+          r.cohesion = entre(v, 'cohesion', ch + '.cohesion', 0, 0, 1);
+          r.restitution = entre(v, 'restitution', ch + '.restitution', 0.1, 0, 1);
+          r.cote = r.rayon;
+        }
+        return r;
+      }
+
       /** Règles d'un émetteur de fragments (pixels, éclats ou cible). */
       function verifierFragment(n, em, ch, P) {
         if (P) throw invalide(ch, 'un sous-émetteur ne naît pas d\'une photographie (forme « pixels », éclats, « cible ») : réservé aux émetteurs lancés par la scène');
@@ -868,6 +1008,74 @@
         if (em.cible && em.cible.arrivee === 'choree' && (em.aLaMort >= 0 || em.aLaCollision >= 0 || em.rendu.type === 'trainee')) {
           throw invalide(ch + '.cible.arrivee', 'une arrivée chorégraphiée (calculée sans état) n\'a ni sous-émetteur ni traînée : « guidee »');
         }
+      }
+
+      /** Règles d'un émetteur à interactions (après sa compilation : fragments, collisions, taille connus). */
+      function verifierInteractions(em, ch) {
+        var c = ch + '.interactions';
+        if (em.fragment) {
+          throw invalide(c, 'un émetteur de fragments (forme « pixels », éclats, « cible ») suit sa photographie ou son trajet (voie rapide forcée pour une arrivée chorégraphiée) : retirer « interactions »');
+        }
+        if (em.collisions && em.collisions.reponse === 'poser') {
+          throw invalide(c, 'des particules qui interagissent ne se posent pas sur les obstacles : « collisions.reponse » « rebond » ou « mourir » (les grains forment eux-mêmes leur tas, sans « empiler »)');
+        }
+        if (em.interactions.type === 'grains' && em.taille[1] > em.interactions.rayon) {
+          throw invalide(c + '.rayon', 'un grain doit tenir dans une cellule de voisinage : rayon ' + em.interactions.rayon + ' cqh sous la taille maximale ' +
+            em.taille[1] + ' cqh ; augmenter « rayon » ou réduire « naissance.taille »');
+        }
+        // Une cellule de voisinage (côté « rayon ») tient (rayon / taille)² grains tassés ; au-delà de PLEINE_VOISINAGE
+        // corps, elle est ignorée et ses grains passent les uns à travers les autres (marge de 1,2 pour un tas serré).
+        if (em.interactions.type === 'grains' && Math.pow(em.interactions.rayon / Math.max(em.taille[0], 1e-6), 2) > PLEINE_VOISINAGE / 1.2) {
+          throw invalide(c + '.rayon', 'rayon ' + em.interactions.rayon + ' cqh trop grand pour des grains de ' + em.taille[0] +
+            ' cqh : une cellule de voisinage en tiendrait plus de ' + PLEINE_VOISINAGE + ' (au-delà, ils passent les uns à travers les autres) ; garder « rayon » sous ' +
+            Math.floor(Math.sqrt(PLEINE_VOISINAGE / 1.2) * 10) / 10 + ' × la taille minimale (« rayon » proche de la taille maximale)');
+        }
+      }
+
+      /** Groupes de voisinage : composantes connexes des liens « avec » (un lien dans un seul sens suffit), membres dans
+       *  l'ordre de la recette, même type, GROUPE_MAX au plus ; pose em.interactions.groupe. */
+      function grouperInteractions(emetteurs) {
+        var racineDe = emetteurs.map(function (e, i) { return i; });
+        function trouver(i) { while (racineDe[i] !== i) i = racineDe[i]; return i; }
+        var noms = emetteurs.map(function (x) { return x.nom; }).join(', ');
+        emetteurs.forEach(function (em, i) {
+          if (!em.interactions) return;
+          em.interactions.avec.forEach(function (nom, k) {
+            var c = 'emetteurs[' + em.nom + '].interactions.avec[' + k + ']';
+            var j = parNom[nom];
+            if (j === undefined) throw invalide(c, '« ' + nom + ' » n\'est pas un émetteur de cet effet (émetteurs : ' + noms + ')');
+            if (j === i) throw invalide(c, 'un émetteur interagit déjà avec lui-même : retirer « ' + nom + ' »');
+            var autre = emetteurs[j];
+            if (!autre.interactions) throw invalide(c, '« ' + nom + ' » n\'a pas de bloc « interactions » : lui en donner un du même type (« ' + em.interactions.type + ' »)');
+            if (autre.interactions.type !== em.interactions.type) {
+              throw invalide(c, '« ' + nom + ' » est de type « ' + autre.interactions.type + ' », « ' + em.interactions.type + ' » attendu (un groupe lié a un seul type)');
+            }
+            var a = trouver(i);
+            var b = trouver(j);
+            if (a !== b) racineDe[Math.max(a, b)] = Math.min(a, b);
+          });
+        });
+        var parRacine = {};
+        var groupes = [];
+        emetteurs.forEach(function (em, i) {
+          if (!em.interactions) return;
+          var r = trouver(i);
+          if (parRacine[r] === undefined) {
+            parRacine[r] = groupes.length;
+            groupes.push({ type: em.interactions.type, code: em.interactions.code, membres: [], cote: 0 });
+          }
+          var g = groupes[parRacine[r]];
+          g.membres.push(i);
+          g.cote = Math.max(g.cote, em.interactions.cote);
+          em.interactions.groupe = parRacine[r];
+        });
+        groupes.forEach(function (g) {
+          if (g.membres.length > GROUPE_MAX) {
+            var premier = emetteurs[g.membres[0]].nom;
+            throw invalide('emetteurs[' + premier + '].interactions.avec', GROUPE_MAX + ' émetteurs liés au plus (le groupe de « ' + premier + ' » en compte ' + g.membres.length + ')');
+          }
+        });
+        return groupes;
       }
 
       // Émetteurs : noms, liens parent → enfant, profondeur.
@@ -959,14 +1167,18 @@
           collisions: compilerCollisions(e.collisions, ch + '.collisions'),
           pixels: compilerPixels(n.forme, ch + '.naissance.forme'),
           eclats: compilerEclats(e.rendu, ch + '.rendu'),
+          fluide: compilerFluide(e.rendu, ch + '.rendu'),
           cible: cible,
           modules: compilerModules(e.modules, ch + '.modules'),
+          interactions: compilerInteractions(e.interactions, ch + '.interactions'),
         };
         em.fragment = !!(em.pixels || em.eclats || em.cible);
         if (em.fragment) verifierFragment(n, em, ch, P);
         else if (em.tables.source.some(function (x) { return x > 0; })) {
           throw invalide(ch + '.vie.couleur', '« source » est la couleur des pixels d\'un élément photographié : seulement avec la forme « pixels » ou une « cible »');
         }
+        if (em.fluide && em.fragment) throw invalide(ch + '.rendu.type', 'un émetteur de fragments se dessine en grains ou en éclats : pas de rendu « fluide »');
+        if (em.interactions) verifierInteractions(em, ch);
         if (cible) {
           // Bruit du trajet chorégraphié : celui de la première turbulence (amplitude = force × 0,1 cqh).
           var turbulence = em.forces.filter(function (f) { return f.type === 'turbulence'; })[0];
@@ -1060,6 +1272,8 @@
           : em.forces.every(function (f) { return f.type === 'gravite' || (f.type === 'trainee' && !f.quadratique); }));
         // Un module de force n'a pas de forme close : l'émetteur est simulé pas à pas.
         if (em.modules.force) em.voieRapide = false;
+        // Interactions : l'état d'une particule dépend de ses voisines, aucune forme close.
+        if (em.interactions) em.voieRapide = false;
         return em;
       }
 
@@ -1067,6 +1281,8 @@
       var ordre = liste.map(function (e, i) { return i; }).sort(function (a, b) { return profondeur[a] - profondeur[b] || a - b; });
       var emetteurs = [];
       ordre.forEach(function (i) { emetteurs[i] = compilerEmetteur(liste[i], i, parent[i] >= 0 ? emetteurs[parent[i]] : null); });
+
+      var groupes = grouperInteractions(emetteurs);
 
       var rc = objet(recette.rendu_calque, 'rendu_calque');
       var effet = {
@@ -1084,6 +1300,8 @@
         capacite: emetteurs.reduce(function (s, e) { return s + e.capacite; }, 0),
         fin: emetteurs.reduce(function (s, e) { return Math.max(s, e.fin); }, 0),
         emetteurs: emetteurs,
+        // Interactions (P5a) : groupes de voisinage ([] sans interactions).
+        groupes: groupes,
       };
       emetteurs.forEach(function (e) { delete e.espacement; delete e.gigue; delete e.finNaissances; });
       return { ok: true, effet: effet, erreurs: [] };
@@ -1106,6 +1324,13 @@
     DENSITE_MAX: DENSITE_MAX,
     MORCEAUX_MIN: MORCEAUX_MIN,
     MORCEAUX_MAX: MORCEAUX_MAX,
+    RAYON_INTERACTION: RAYON_INTERACTION,
+    RAYON_MIN: RAYON_MIN,
+    RAYON_MAX: RAYON_MAX,
+    GROUPE_MAX: GROUPE_MAX,
+    ITERATIONS_GRAINS: ITERATIONS_GRAINS,
+    LIMITES_INTERACTIONS: LIMITES_INTERACTIONS,
+    PLEINE_VOISINAGE: PLEINE_VOISINAGE,
     SCHEMA: SCHEMA,
     ErreurRecette: ErreurRecette,
     resoudre: resoudre,

@@ -1,0 +1,158 @@
+{
+  "version": 1,
+  "nom": "banc",
+  "description": "Banc de poissons de deux teintes qui nagent ensemble autour de l'ancre (essaims liés) ; calque arrière, pour la mer, l'équipe, le collectif.",
+  "parametres": {
+    "nombre": {
+      "defaut": 200,
+      "min": 20,
+      "max": 2000
+    },
+    "vitesse": {
+      "defaut": 1,
+      "min": 0.3,
+      "max": 3
+    },
+    "couleur1": {
+      "defaut": "primaire",
+      "type": "couleur"
+    },
+    "couleur2": {
+      "defaut": "accent",
+      "type": "couleur"
+    }
+  },
+  "rendu_calque": {
+    "bloom": 0,
+    "tons": "neutre"
+  },
+  "emetteurs": [
+    {
+      "nom": "poisson",
+      "naissance": {
+        "salves": [
+          {
+            "t": 0,
+            "nombre": "nombre"
+          }
+        ],
+        "forme": {
+          "type": "ancre"
+        },
+        "vitesse": {
+          "direction": [
+            1,
+            0
+          ],
+          "cone": 60,
+          "valeur": [
+            "8 * vitesse",
+            "12 * vitesse"
+          ]
+        },
+        "vie": [
+          "dur + 1",
+          "dur + 1"
+        ],
+        "taille": [
+          0.8,
+          1.2
+        ]
+      },
+      "interactions": {
+        "type": "essaim",
+        "rayon": 2.5,
+        "separation": 1.2,
+        "alignement": 2,
+        "cohesion": 1.2,
+        "vision": {
+          "rayon": 8,
+          "angle": 240
+        },
+        "vitesse": [
+          "6 * vitesse",
+          "14 * vitesse"
+        ],
+        "cible": "ancre",
+        "avec": [
+          "poisson-clair"
+        ]
+      },
+      "vie": {
+        "couleur": "couleur1",
+        "opacite": {
+          "de": 1,
+          "a": 0,
+          "courbe": "expo-in"
+        }
+      },
+      "rendu": {
+        "type": "etincelle",
+        "melange": "alpha",
+        "etirement": 0.06
+      }
+    },
+    {
+      "nom": "poisson-clair",
+      "naissance": {
+        "salves": [
+          {
+            "t": 0,
+            "nombre": "nombre / 2"
+          }
+        ],
+        "forme": {
+          "type": "ancre"
+        },
+        "vitesse": {
+          "direction": [
+            1,
+            0
+          ],
+          "cone": 60,
+          "valeur": [
+            "8 * vitesse",
+            "12 * vitesse"
+          ]
+        },
+        "vie": [
+          "dur + 1",
+          "dur + 1"
+        ],
+        "taille": [
+          0.6,
+          1
+        ]
+      },
+      "interactions": {
+        "type": "essaim",
+        "rayon": 2.5,
+        "separation": 1.2,
+        "alignement": 2,
+        "cohesion": 1.2,
+        "vision": {
+          "rayon": 8,
+          "angle": 240
+        },
+        "vitesse": [
+          "6 * vitesse",
+          "14 * vitesse"
+        ],
+        "cible": "ancre"
+      },
+      "vie": {
+        "couleur": "couleur2",
+        "opacite": {
+          "de": 1,
+          "a": 0,
+          "courbe": "expo-in"
+        }
+      },
+      "rendu": {
+        "type": "etincelle",
+        "melange": "alpha",
+        "etirement": 0.06
+      }
+    }
+  ]
+}

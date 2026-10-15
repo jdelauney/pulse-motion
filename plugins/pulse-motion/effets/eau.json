@@ -1,0 +1,93 @@
+{
+  "version": 1,
+  "nom": "eau",
+  "description": "Eau qui se déverse depuis l'ancre, coule sur les obstacles déclarés et forme une nappe lisse avec reflets (fluide) ; déclarer un sol ou une cuve (data-obstacle).",
+  "parametres": {
+    "nombre": {
+      "defaut": 4000,
+      "min": 200,
+      "max": 20000
+    },
+    "couleur": {
+      "defaut": "#3a9bdc",
+      "type": "couleur"
+    },
+    "refraction": {
+      "defaut": 0.3,
+      "min": 0,
+      "max": 1
+    },
+    "gravite": {
+      "defaut": 60,
+      "min": 10,
+      "max": 200
+    }
+  },
+  "rendu_calque": {
+    "bloom": 0,
+    "tons": "neutre"
+  },
+  "emetteurs": [
+    {
+      "nom": "goutte",
+      "naissance": {
+        "debit": "nombre / dur",
+        "forme": {
+          "type": "ancre"
+        },
+        "vitesse": {
+          "direction": [
+            0,
+            1
+          ],
+          "cone": 10,
+          "valeur": [
+            5,
+            10
+          ]
+        },
+        "vie": [
+          "dur + 6",
+          "dur + 6"
+        ],
+        "taille": [
+          1.6,
+          1.6
+        ]
+      },
+      "forces": [
+        {
+          "type": "gravite",
+          "valeur": "gravite"
+        }
+      ],
+      "collisions": {
+        "cibles": [
+          "sol",
+          "murs",
+          "elements",
+          "formes"
+        ],
+        "reponse": "rebond",
+        "restitution": 0,
+        "frottement": 0.05
+      },
+      "interactions": {
+        "type": "fluide",
+        "rayon": 2,
+        "densite": 6,
+        "viscosite": 0.05,
+        "tension": 0.15,
+        "incompressibilite": 4
+      },
+      "rendu": {
+        "type": "fluide",
+        "teinte": "couleur",
+        "opacite": 0.8,
+        "absorption": 0.35,
+        "refraction": "refraction",
+        "lissage": 0.8
+      }
+    }
+  ]
+}

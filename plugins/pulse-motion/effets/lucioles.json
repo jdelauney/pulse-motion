@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "nom": "lucioles",
+  "description": "Lucioles qui flottent en petits groupes lâches autour de l'ancre et s'allument puis s'éteignent (essaim lent, halo) ; calque arrière, nuit ou magie.",
+  "parametres": {
+    "nombre": {
+      "defaut": 120,
+      "min": 10,
+      "max": 1500
+    },
+    "couleur": {
+      "defaut": "#ffd86b",
+      "type": "couleur"
+    },
+    "eclat": {
+      "defaut": 2,
+      "min": 0.5,
+      "max": 6
+    },
+    "vitesse": {
+      "defaut": 1,
+      "min": 0.3,
+      "max": 3
+    }
+  },
+  "rendu_calque": {
+    "bloom": 1.2,
+    "seuil_bloom": 0.8
+  },
+  "emetteurs": [
+    {
+      "nom": "luciole",
+      "naissance": {
+        "salves": [
+          {
+            "t": 0,
+            "nombre": "nombre"
+          }
+        ],
+        "forme": {
+          "type": "ancre"
+        },
+        "vitesse": {
+          "cone": 360,
+          "valeur": [
+            "1 * vitesse",
+            "3 * vitesse"
+          ]
+        },
+        "vie": [
+          "dur + 1",
+          "dur + 1"
+        ],
+        "taille": [
+          0.6,
+          1.2
+        ]
+      },
+      "forces": [
+        {
+          "type": "turbulence",
+          "echelle": 15,
+          "force": "4 * vitesse",
+          "vitesse": 0.3
+        }
+      ],
+      "interactions": {
+        "type": "essaim",
+        "rayon": 3,
+        "separation": 2,
+        "alignement": 0.2,
+        "cohesion": 0.4,
+        "vision": {
+          "rayon": 10,
+          "angle": 360
+        },
+        "vitesse": [
+          "1 * vitesse",
+          "4 * vitesse"
+        ],
+        "cible": "ancre",
+        "fuite": 10
+      },
+      "vie": {
+        "couleur": "couleur",
+        "intensite": "eclat",
+        "opacite": {
+          "de": 0,
+          "a": 1,
+          "courbe": "sine-arch"
+        }
+      },
+      "rendu": {
+        "type": "sprite",
+        "texture": "disque-doux",
+        "melange": "additif"
+      }
+    }
+  ]
+}

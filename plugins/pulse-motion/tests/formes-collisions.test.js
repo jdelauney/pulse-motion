@@ -77,3 +77,61 @@ await envoyer({ webgpu: true, pluie, rebond, large });`;
     assert.ok(Math.abs(e - 1) < 0.08, `équation de l'ellipse : ${e}`);
   }
 });
+
+test("formes GPU : glissement le long d'une forme exacte (position) : rebond sans frottement et grains sans frottement tombent du disque", async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const compiler = (emetteurs) => {
+    const r = R.compiler({ version: 1, nom: 'f', emetteurs }, { dur: 0.1, graine: 9, charte: {} });
+    assert.equal(r.ok, true, JSON.stringify(r.erreurs));
+    return r.effet;
+  };
+  // 20 particules lâchées au-dessus d'un disque (rayon 10, centre (50, 50)), décalées à gauche de son sommet.
+  // Disque tramé finement (256 px) : sur 64 px, les marches du contour retiennent des particules lentes (et main les
+  // laissait traverser le disque, ce qui gonflait son compte).
+  const glisse = compiler([{ nom: 'a', naissance: { salves: [{ t: 0, nombre: 20 }], forme: { type: 'ligne', largeur: 4 }, vie: [10, 10], taille: [0.2, 0.2] },
+    forces: [{ type: 'gravite', valeur: 40 }], collisions: { cibles: ['formes'], restitution: 0, frottement: 0 } }]);
+  const grains = compiler([{ nom: 'g', naissance: { salves: [{ t: 0, nombre: 20 }], forme: { type: 'rectangle' }, vie: [10, 10], taille: [0.8, 0.8] },
+    forces: [{ type: 'gravite', valeur: 40 }], collisions: { cibles: ['formes'], restitution: 0, frottement: 0 },
+    interactions: { type: 'grains', rayon: 1, frottement: { statique: 0, dynamique: 0 }, restitution: 0 } }]);
+  const code = `
+const P = M.particulesInterne;
+const O = M.obstacles;
+const gpu = await P.obtenirGPU();
+if (!gpu) { await envoyer({ webgpu: false }); return; }
+const { device } = gpu;
+const L = 177.78;
+const disque = new Uint8ClampedArray(256 * 256);
+for (let y = 0; y < 256; y++) for (let x = 0; x < 256; x++) disque[y * 256 + x] = (x + 0.5 - 128) ** 2 + (y + 0.5 - 128) ** 2 < 128 * 128 ? 255 : 0;
+const formes = P.creerFormes(device, [{ largeur: 256, hauteur: 256, alpha: disque, hauteurCqh: 20 }]);
+const table = O.construireTable({ largeurCqh: L, solRecette: null, propres: [{ scene: 's', genre: 'forme', video: false, index: 0 }] });
+O.attacherFormes(table, () => 0);
+const monde = { entrees: table.entrees, largeurCqh: L, actif: true, formes: { vue: formes.vue } };
+const cercle = { centre: [50, 50], angle: 0, demi: [10, 10], echelle: [1, 1], actif: true };
+const t8 = new Float32Array(table.entrees.length * 8);
+table.entrees.forEach((e, i) => O.ecrireRepere(t8, i * 8, i < 3 ? O.repereFixe(e.source, L, table.sol) : cercle));
+async function ys(effet, ZONE, tau) {
+  const z = { a: () => ZONE, grille: () => ZONE, reperes: () => t8 };
+  const sim = new P.Simulation(device, effet, monde, null, L);
+  sim.avancer(tau, z);
+  const f = await sim.lireEtat(0);
+  const u = new Uint32Array(f.buffer);
+  const l = [];
+  for (let s = 0; s < f.length / 16; s++) if (u[s * 16 + 14] === 1) l.push(f[s * 16 + 1]);
+  sim.detruire();
+  return l;
+}
+const glisse = await ys(DONNEES.glisse, [43, 30, 4, 0], 2);
+const grains = await ys(DONNEES.grains, [52, 30, 4, 3], 4);
+await envoyer({ webgpu: true, glisse, grains });`;
+  const r = JSON.parse(await executerPage(pageMoteur({ fichiers: FICHIERS.concat('particules/voisinage.js'), donnees: { glisse, grains }, code })));
+  assert.equal(r.erreur, undefined, r.erreur);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  // Sans frottement, rien ne retient les particules sur le disque : toutes glissent et passent sous son équateur (y > 60) ;
+  // grains sans frottement statique : ni mis au repos au sommet, ni posés sur le haut de la boîte de la forme.
+  assert.equal(r.glisse.length, 20);
+  const tombees = r.glisse.filter((y) => y > 60).length;
+  assert.equal(tombees, 20, `${tombees}/20 particules tombées du disque à τ = 2 s (glissement le long de la forme)`);
+  assert.equal(r.grains.length, 20);
+  const grainsTombes = r.grains.filter((y) => y > 60).length;
+  assert.equal(grainsTombes, 20, `${grainsTombes}/20 grains tombés du disque à τ = 4 s (écoulement le long de la forme)`);
+});

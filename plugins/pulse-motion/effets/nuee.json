@@ -1,0 +1,90 @@
+{
+  "version": 1,
+  "nom": "nuee",
+  "description": "Nuée d'oiseaux qui tournoie autour de l'ancre en gardant ses distances (essaim) ; calque arrière, sur une zone dégagée de la scène.",
+  "parametres": {
+    "nombre": {
+      "defaut": 300,
+      "min": 20,
+      "max": 3000
+    },
+    "vitesse": {
+      "defaut": 1,
+      "min": 0.3,
+      "max": 3
+    },
+    "taille": {
+      "defaut": 1,
+      "min": 0.3,
+      "max": 3
+    },
+    "couleur": {
+      "defaut": "texte",
+      "type": "couleur"
+    }
+  },
+  "rendu_calque": {
+    "bloom": 0,
+    "tons": "neutre"
+  },
+  "emetteurs": [
+    {
+      "nom": "oiseau",
+      "naissance": {
+        "salves": [
+          {
+            "t": 0,
+            "nombre": "nombre"
+          }
+        ],
+        "forme": {
+          "type": "ancre"
+        },
+        "vitesse": {
+          "cone": 360,
+          "valeur": [
+            "6 * vitesse",
+            "14 * vitesse"
+          ]
+        },
+        "vie": [
+          "dur + 1",
+          "dur + 1"
+        ],
+        "taille": [
+          "0.5 * taille",
+          "0.8 * taille"
+        ]
+      },
+      "interactions": {
+        "type": "essaim",
+        "rayon": "2 * taille",
+        "separation": 1.5,
+        "alignement": 1.2,
+        "cohesion": 0.8,
+        "vision": {
+          "rayon": "6 + 2 * taille",
+          "angle": 270
+        },
+        "vitesse": [
+          "6 * vitesse",
+          "18 * vitesse"
+        ],
+        "cible": "ancre"
+      },
+      "vie": {
+        "couleur": "couleur",
+        "opacite": {
+          "de": 1,
+          "a": 0,
+          "courbe": "expo-in"
+        }
+      },
+      "rendu": {
+        "type": "etincelle",
+        "melange": "alpha",
+        "etirement": 0.04
+      }
+    }
+  ]
+}
