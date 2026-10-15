@@ -56,6 +56,8 @@ test('dessin : SVG filtré', () => {
   assert.ok(e.some((m) => /pièce « cuisseAvant », vue « profil » : attribut « onclick » interdit/.test(m)), e.join('\n'));
   assert.ok(e.some((m) => /pièce « cuisseAvant », vue « profil » : élément « script » interdit/.test(m)));
   assert.ok(P.valider('dessin', dessin({ visage: Object.assign({}, VISAGE, { sourcil: '<image href="x"/>' }) }), ctx()).some((m) => /sourcil : élément « image » interdit/.test(m)));
+  const piege = Object.assign({}, VISAGE, { oeil: Object.assign({}, VISAGE.oeil, { pupille: ['<img src=x onerror=alert(1)>'] }) });
+  assert.ok(P.valider('dessin', dessin({ visage: piege }), ctx()).some((m) => /« oeil\.pupille » : SVG attendu/.test(m)));
 });
 
 test('dessin : visage', () => {

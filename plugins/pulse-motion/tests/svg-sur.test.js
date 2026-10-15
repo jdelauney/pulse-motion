@@ -23,6 +23,8 @@ test('svg-sur : refus', () => {
     ['<path d="M0 0"></g>', /fermeture « g » inattendue/],
     ['<path d=M0/>', /illisible/],
     ['<a xlink:href="x"><path d="M0 0"/></a>', /élément « a » interdit/],
+    ['<path d="M0 0" fill="&#x75;rl(https://e.x/a.svg#p)"/>', /« & » et « \\ » interdits/],
+    ['<path d="M0 0" fill="u\\72 l(https://e.x)"/>', /« & » et « \\ » interdits/],
   ];
   for (const [svg, motif] of cas) assert.ok(verifierSVG(svg).some((m) => motif.test(m)), `${svg} : ${verifierSVG(svg).join(' | ')}`);
 });
