@@ -1,0 +1,28 @@
+{
+  "nom": "accroupi",
+  "description": "s'accroupit, bras devant pour l'équilibre",
+  "boucle": false,
+  "pieds": "au-sol",
+  "cles": [
+    {
+      "t": 0,
+      "pose": "debout"
+    },
+    {
+      "t": 0.45,
+      "pose": "debout",
+      "angles": {
+        "torse": 30,
+        "tete": -15,
+        "cuisseAvant": -95,
+        "tibiaAvant": 125,
+        "cuisseArriere": -90,
+        "tibiaArriere": 120,
+        "brasAvant": -50,
+        "avantBrasAvant": -40,
+        "brasArriere": -40,
+        "avantBrasArriere": -45
+      }
+    }
+  ]
+}

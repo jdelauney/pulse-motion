@@ -1,0 +1,12 @@
+{
+  "nom": "montrer",
+  "description": "bras avant tendu vers un point, regard dans la même direction",
+  "angles": {
+    "torse": -4,
+    "tete": -6,
+    "brasAvant": -90,
+    "avantBrasAvant": -5,
+    "ecartBrasAvant": 0,
+    "regardX": 3
+  }
+}

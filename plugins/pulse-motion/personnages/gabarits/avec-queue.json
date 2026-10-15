@@ -1,0 +1,19 @@
+{
+  "nom": "avec-queue",
+  "description": "gabarit standard avec une queue qui balance",
+  "osEnPlus": [
+    {
+      "nom": "queue",
+      "parent": "bassin",
+      "attache": [
+        -4,
+        -4,
+        0
+      ],
+      "angle": 120,
+      "longueur": 40,
+      "raideur": 0.5,
+      "amorti": 0.3
+    }
+  ]
+}

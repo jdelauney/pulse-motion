@@ -1,0 +1,162 @@
+{
+  "nom": "course",
+  "description": "course, bras pliés, petit rebond",
+  "boucle": true,
+  "duree": 0.6,
+  "foulee": 330,
+  "pieds": "au-sol",
+  "miroir": 0.5,
+  "cles": [
+    {
+      "t": 0,
+      "angles": {
+        "torse": 16,
+        "tete": -10,
+        "cuisseAvant": -42,
+        "tibiaAvant": 22,
+        "piedAvant": -10,
+        "avantBrasAvant": -80,
+        "regardX": 2,
+        "touffeRot": -18,
+        "touffeEtire": 0.9,
+        "touffeOnde": 0
+      }
+    },
+    {
+      "t": 0.1,
+      "angles": {
+        "bassinY": 0,
+        "brasAvant": -33
+      }
+    },
+    {
+      "t": 0.125,
+      "angles": {
+        "touffeEtire": 0.98,
+        "touffeOnde": 8
+      }
+    },
+    {
+      "t": 0.15,
+      "angles": {
+        "cuisseAvant": -22,
+        "tibiaAvant": 38,
+        "piedAvant": 0
+      }
+    },
+    {
+      "t": 0.22,
+      "angles": {
+        "bassinY": -14
+      }
+    },
+    {
+      "t": 0.25,
+      "angles": {
+        "touffeEtire": 0.9,
+        "touffeOnde": 0
+      }
+    },
+    {
+      "t": 0.3,
+      "angles": {
+        "cuisseAvant": 8,
+        "tibiaAvant": 25,
+        "piedAvant": 10,
+        "brasAvant": 27.5
+      }
+    },
+    {
+      "t": 0.35,
+      "angles": {
+        "bassinY": 0
+      }
+    },
+    {
+      "t": 0.375,
+      "angles": {
+        "touffeEtire": 0.82,
+        "touffeOnde": -8
+      }
+    },
+    {
+      "t": 0.45,
+      "angles": {
+        "cuisseAvant": 34,
+        "tibiaAvant": 45,
+        "piedAvant": 35
+      }
+    },
+    {
+      "t": 0.5,
+      "angles": {
+        "brasAvant": 46.2,
+        "touffeEtire": 0.9,
+        "touffeOnde": 0
+      }
+    },
+    {
+      "t": 0.6,
+      "angles": {
+        "bassinY": 0,
+        "cuisseAvant": 30,
+        "tibiaAvant": 100,
+        "piedAvant": 20
+      }
+    },
+    {
+      "t": 0.625,
+      "angles": {
+        "touffeEtire": 0.98,
+        "touffeOnde": 8
+      }
+    },
+    {
+      "t": 0.65,
+      "angles": {
+        "brasAvant": 24.2
+      }
+    },
+    {
+      "t": 0.72,
+      "angles": {
+        "bassinY": -14
+      }
+    },
+    {
+      "t": 0.75,
+      "angles": {
+        "touffeEtire": 0.9,
+        "touffeOnde": 0
+      }
+    },
+    {
+      "t": 0.8,
+      "angles": {
+        "cuisseAvant": -25,
+        "tibiaAvant": 105,
+        "piedAvant": -5,
+        "brasAvant": -8.8
+      }
+    },
+    {
+      "t": 0.85,
+      "angles": {
+        "bassinY": 0
+      }
+    },
+    {
+      "t": 0.875,
+      "angles": {
+        "touffeEtire": 0.82,
+        "touffeOnde": -8
+      }
+    },
+    {
+      "t": 0.95,
+      "angles": {
+        "brasAvant": -37.4
+      }
+    }
+  ]
+}
