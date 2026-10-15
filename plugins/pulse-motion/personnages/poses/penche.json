@@ -1,0 +1,11 @@
+{
+  "nom": "penche",
+  "description": "penché en avant, curieux",
+  "angles": {
+    "torse": 35,
+    "tete": -20,
+    "brasAvant": -20,
+    "avantBrasAvant": -20,
+    "brasArriere": -10
+  }
+}

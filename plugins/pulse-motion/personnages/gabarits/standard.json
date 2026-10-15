@@ -1,0 +1,20 @@
+{
+  "nom": "standard",
+  "description": "proportions du rig LemStick",
+  "cuisse": 68,
+  "tibia": 68,
+  "pied": 15,
+  "colonne": 82,
+  "hauteurEpaules": 72,
+  "baseTete": 84,
+  "bras": 50,
+  "avantBras": 46,
+  "demiBassin": 6,
+  "demiEpaules": 9,
+  "tete": {
+    "rx": 34,
+    "ry": 50
+  },
+  "osEnPlus": [],
+  "contraintes": {}
+}

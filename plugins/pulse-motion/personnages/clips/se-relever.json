@@ -1,0 +1,28 @@
+{
+  "nom": "se-relever",
+  "description": "se relève depuis la position accroupie",
+  "boucle": false,
+  "pieds": "au-sol",
+  "cles": [
+    {
+      "t": 0,
+      "pose": "debout",
+      "angles": {
+        "torse": 30,
+        "tete": -15,
+        "cuisseAvant": -95,
+        "tibiaAvant": 125,
+        "cuisseArriere": -90,
+        "tibiaArriere": 120,
+        "brasAvant": -50,
+        "avantBrasAvant": -40,
+        "brasArriere": -40,
+        "avantBrasArriere": -45
+      }
+    },
+    {
+      "t": 0.6,
+      "pose": "debout"
+    }
+  ]
+}

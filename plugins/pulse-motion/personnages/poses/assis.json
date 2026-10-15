@@ -1,0 +1,18 @@
+{
+  "nom": "assis",
+  "description": "assis sur un siège invisible, cuisses à l'horizontale",
+  "angles": {
+    "bassinY": 68,
+    "torse": -5,
+    "cuisseAvant": -90,
+    "tibiaAvant": 90,
+    "piedAvant": 0,
+    "cuisseArriere": -90,
+    "tibiaArriere": 90,
+    "piedArriere": 0,
+    "brasAvant": -20,
+    "avantBrasAvant": -40,
+    "brasArriere": -10,
+    "avantBrasArriere": -40
+  }
+}

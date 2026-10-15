@@ -1,0 +1,46 @@
+{
+  "nom": "peur",
+  "description": "tremble de peur, yeux ronds, touffe hérissée",
+  "boucle": true,
+  "duree": 0.09,
+  "pieds": "au-sol",
+  "cles": [
+    {
+      "t": 0,
+      "angles": {
+        "torse": -10,
+        "tete": 6,
+        "cuisseAvant": -10,
+        "tibiaAvant": 18,
+        "ecartJambeAvant": 8,
+        "cuisseArriere": 12,
+        "tibiaArriere": 14,
+        "ecartJambeArriere": 8,
+        "brasAvant": -45,
+        "avantBrasAvant": -70,
+        "ecartBrasAvant": 30,
+        "brasArriere": -35,
+        "avantBrasArriere": -75,
+        "ecartBrasArriere": 30,
+        "tailleYeux": 1.28,
+        "taillePupilles": 0.5,
+        "touffeEtire": 1.35,
+        "touffeEventail": 1.7
+      }
+    },
+    {
+      "t": 0.25,
+      "angles": {
+        "torse": -8.5,
+        "tete": 4.5
+      }
+    },
+    {
+      "t": 0.75,
+      "angles": {
+        "torse": -11.5,
+        "tete": 7.5
+      }
+    }
+  ]
+}

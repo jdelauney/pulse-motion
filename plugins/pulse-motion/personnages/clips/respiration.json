@@ -1,0 +1,36 @@
+{
+  "nom": "respiration",
+  "description": "respiration à ajouter à un autre mouvement (calque additif)",
+  "boucle": true,
+  "duree": 2.86,
+  "additif": true,
+  "cles": [
+    {
+      "t": 0,
+      "angles": {
+        "torse": 0,
+        "tete": 0,
+        "brasAvant": 0,
+        "brasArriere": 0
+      }
+    },
+    {
+      "t": 0.25,
+      "angles": {
+        "torse": 1.5,
+        "tete": -1,
+        "brasAvant": 2,
+        "brasArriere": -2
+      }
+    },
+    {
+      "t": 0.75,
+      "angles": {
+        "torse": -1.5,
+        "tete": 1,
+        "brasAvant": -2,
+        "brasArriere": 2
+      }
+    }
+  ]
+}
