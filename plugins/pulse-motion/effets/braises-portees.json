@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "nom": "braises-portees",
+  "etend": "braises",
+  "description": "Braises emportées par le milieu de la scène (data-milieu) : elles suivent le panache et tourbillonnent autour des obstacles ; dérivées des braises.",
+  "parametres": {
+    "prise": { "defaut": 3, "min": 0.5, "max": 10 }
+  },
+  "emetteurs": [
+    {
+      "nom": "gerbe",
+      "forces": [
+        { "type": "gravite", "valeur": "4 * gravite" },
+        { "type": "milieu", "coef": "prise" },
+        { "type": "turbulence", "echelle": 12, "force": 8, "vitesse": 0.4 }
+      ]
+    }
+  ]
+}
