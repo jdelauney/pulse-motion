@@ -30,6 +30,7 @@
     polygon: ['points'], polyline: ['points'], line: ['x1', 'y1', 'x2', 'y2'] };
   var LONGUEURS = { cuisse: 'cuisseAvant', tibia: 'tibiaAvant', pied: 'piedAvant', bras: 'brasAvant', avantBras: 'avantBrasAvant', colonne: 'torse' };
 
+  function style(el) { return (el.ownerDocument && el.ownerDocument.defaultView || window).getComputedStyle(el); }
   function r(v, n) { var k = Math.pow(10, n === undefined ? 2 : n); return Math.round(v * k) / k + 0; }
 
   /* ---------- éléments ---------- */
@@ -69,14 +70,14 @@
   }
   function visible(svg, el) {
     if (cache(svg, el)) return false;
-    if (getComputedStyle(el).visibility === 'hidden') return false;
-    for (var e = el; e && e !== svg.parentNode; e = e.parentNode) if (e.style && getComputedStyle(e).display === 'none') return false;
+    if (style(el).visibility === 'hidden') return false;
+    for (var e = el; e && e !== svg.parentNode; e = e.parentNode) if (e.style && style(e).display === 'none') return false;
     return true;
   }
   /** Opacité cumulée de l'élément et de ses groupes. */
   function opaciteCumulee(svg, el) {
     var o = 1;
-    for (var e = el; e && e !== svg.parentNode; e = e.parentNode) if (e.style) o *= parseFloat(getComputedStyle(e).opacity);
+    for (var e = el; e && e !== svg.parentNode; e = e.parentNode) if (e.style) o *= parseFloat(style(e).opacity);
     return o;
   }
   /** Sans viewBox, la grille et les coordonnées seraient fausses dès qu'on agrandit le dessin : on le pose. */
@@ -90,7 +91,7 @@
   function heritage(svg, el, prop) {
     for (var e = el; e && e !== svg.parentNode; e = e.parentNode) {
       if (!e.style) continue;
-      var v = getComputedStyle(e)[prop];
+      var v = style(e)[prop];
       if (v && v !== 'none') return true;
     }
     return false;
@@ -137,7 +138,7 @@
         var ref = g.getAttribute('href') || g.getAttribute('xlink:href');
         g = ref && ref.charAt(0) === '#' ? element(svg, ref) : null;
       }
-      return stop ? (hex(getComputedStyle(stop).stopColor) || 'none') : 'none';
+      return stop ? (hex(style(stop).stopColor) || 'none') : 'none';
     }
     return hex(valeur) || 'none';
   }
@@ -155,7 +156,7 @@
       if (heritage(svg, el, 'filter')) refuses.push({ selecteur: sel, type: 'filtre', message: 'Forme « ' + sel + ' » : un filtre (flou, ombre portée…) : le retirer.' });
       if (heritage(svg, el, 'mask')) refuses.push({ selecteur: sel, type: 'masque', message: 'Forme « ' + sel + ' » : un masque : le retirer ou l\'appliquer (Objet > Masque > Retirer).' });
       if (heritage(svg, el, 'clipPath')) avertissements.push('Forme « ' + sel + ' » : une découpe (masque d\'écrêtage) sera ignorée : la forme sera dessinée entière.');
-      var cs = getComputedStyle(el);
+      var cs = style(el);
       formes.push({ n: ++n, selecteur: sel, id: el.id || null, calque: calque(svg, el), boite: boite(svg, el).map(function (v) { return r(v, 1); }),
         remplissage: couleur(svg, cs.fill), trait: couleur(svg, cs.stroke) });
     });
@@ -184,7 +185,7 @@
 
   /** Copie d'une forme : géométrie, matrice finale, couleurs calculées (variables posées plus tard). */
   function copie(svg, el, avant) {
-    var cs = getComputedStyle(el);
+    var cs = style(el);
     var m = avant.multiply(matrice(svg, el));
     var illisible = false;
     var attrs = GEOMETRIE[el.localName].map(function (a) {
@@ -348,5 +349,60 @@
     return { partiel: { gabarit: g, couleurs: couleurs, pieces: pieces, visage: partielVisage }, signalees: signalees, erreurs: erreurs, echelle: r(e, 4) };
   }
 
-  return { analyser: analyser, decouper: decouper, normaliser: normaliser, element: element, selecteur: selecteur, repere: repere, REFUSES: REFUSES, FORMES: FORMES };
+
+  /* ---------- édition de la découpe (atelier) ---------- */
+  var CENTRES = ['tete', 'bassin'];
+  function contient(svg, sel, el) { var c = element(svg, sel); return !!c && (c === el || c.contains(el)); }
+
+  /** Où va cette forme : { type: 'os', nom } | { type: 'ignorer' } | { type: 'visage' } | null. */
+  function proprietaire(decoupe, svg, el) {
+    var v = decoupe.visage;
+    if (v && ((v.yeux || []).some(function (y) { return contient(svg, y.blanc, el) || (y.pupille && contient(svg, y.pupille, el)); }) || (v.bouche && contient(svg, v.bouche, el)))) return { type: 'visage' };
+    var os = decoupe.os || {};
+    for (var n in os) if ((os[n].formes || []).some(function (s) { return contient(svg, s, el); })) return { type: 'os', nom: n };
+    if ((decoupe.ignorer || []).some(function (s) { return contient(svg, s, el); })) return { type: 'ignorer' };
+    return null;
+  }
+
+  /** Retire la forme el d'une liste de sélecteurs ; un groupe qui la contient est remplacé par ses autres formes. */
+  function retirer(svg, liste, el) {
+    var out = [];
+    (liste || []).forEach(function (s) {
+      var c = element(svg, s);
+      if (!c || !(c === el || c.contains(el))) { out.push(s); return; }
+      if (c === el) return;
+      feuilles(svg, c).forEach(function (f) { if (f !== el) out.push(selecteur(svg, f)); });
+    });
+    return out;
+  }
+
+  /** Copie de la découpe où la forme el va à cible : un os (créé au besoin, pivots par défaut) ou 'ignorer'. */
+  function reattribuer(decoupe, svg, el, cible) {
+    var d = JSON.parse(JSON.stringify(decoupe));
+    d.os = d.os || {};
+    Object.keys(d.os).forEach(function (n) {
+      d.os[n].formes = retirer(svg, d.os[n].formes, el);
+      if (!d.os[n].formes.length) delete d.os[n];
+    });
+    d.ignorer = retirer(svg, d.ignorer, el);
+    if (d.visage) {
+      d.visage.yeux = (d.visage.yeux || []).filter(function (y) { return !contient(svg, y.blanc, el) && !(y.pupille && contient(svg, y.pupille, el)); });
+      if (d.visage.bouche && contient(svg, d.visage.bouche, el)) delete d.visage.bouche;
+      if (!d.visage.yeux.length) delete d.visage;
+    }
+    var sel = selecteur(svg, el);
+    if (cible === 'ignorer') d.ignorer.push(sel);
+    else {
+      if (!d.os[cible]) {
+        var b = boite(svg, el);
+        d.os[cible] = CENTRES.indexOf(cible) >= 0 ? { formes: [], centre: [r(b[0] + b[2] / 2, 1), r(b[1] + b[3] / 2, 1)] }
+          : { formes: [], de: [r(b[0] + b[2] / 2, 1), r(b[1], 1)], a: [r(b[0] + b[2] / 2, 1), r(b[1] + b[3], 1)] };
+      }
+      d.os[cible].formes.push(sel);
+    }
+    if (!d.ignorer.length) delete d.ignorer;
+    return d;
+  }
+
+  return { analyser: analyser, decouper: decouper, normaliser: normaliser, proprietaire: proprietaire, reattribuer: reattribuer, boite: boite, feuilles: feuilles, element: element, selecteur: selecteur, repere: repere, REFUSES: REFUSES, FORMES: FORMES };
 });
