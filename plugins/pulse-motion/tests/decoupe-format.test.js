@@ -39,6 +39,12 @@ test('preparerSource : ni script, ni on…, ni prologue', () => {
   assert.equal(s.startsWith('<svg'), true);
   assert.doesNotMatch(s, /script|onload|onclick|javascript|<\?xml|DOCTYPE|note/);
   assert.throws(() => D.preparerSource('<html></html>'), /n'est pas un SVG/);
+  assert.doesNotMatch(D.preparerSource('<svg/onload=alert(1)><image href="x"/onerror=y()/></svg>'), /onload|onerror/);
+  assert.throws(() => D.preparerSource('<!DOCTYPE svg [<!ENTITY st0 "fill:red">]><svg><path style="&st0;"/></svg>'), /par entités/);
+  const html = D.page('<svg></svg>', {}, 'window.x = 1;');
+  const nonce = /'nonce-([^']+)'/.exec(html)[1];
+  assert.match(html, /default-src 'none'; script-src 'nonce-/);
+  assert.equal((html.match(new RegExp(`<script nonce="${nonce.replace(/[+/=]/g, (c) => `\\${c}`)}">`, 'g')) || []).length, 2);
 });
 
 test('fusionnerDessin : la vue découpée remplace l\'ancienne, le reste est gardé ; profil rempli au besoin', () => {
@@ -59,6 +65,11 @@ test('fusionnerDessin : la vue découpée remplace l\'ancienne, le reste est gar
   assert.deepEqual(dessin.visage.vues.profil, { yeux: [[1, 1]], bouche: [0, 1] });
   assert.deepEqual(dessin.gabarit, { cuisse: 50 });
   assert.equal(D.fusionnerDessin(null, partiel, 'profil').profilCopie, false);
+  // Redécouper la face : le profil, qui en était une copie, suit.
+  const encore = D.fusionnerDessin(Object.assign({}, dessin), Object.assign({}, partiel, { pieces: { tete: 'H2' }, visage: Object.assign({}, partiel.visage, { bouche: 'N3', vue: { yeux: [[3, 3]], bouche: [0, 4] } }) }), 'face');
+  assert.deepEqual(encore.dessin.pieces.tete, { face: 'H2', profil: 'H2' });
+  assert.equal(encore.dessin.visage.bouches.neutre.profil, 'n', 'profil dessiné à part : gardé');
+  assert.deepEqual(encore.dessin.visage.vues.profil, { yeux: [[1, 1]], bouche: [0, 1] });
 });
 
 test('renommerCouleur : clé et variables, sans confondre c1 et c10', () => {
