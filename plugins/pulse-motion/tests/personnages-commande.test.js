@@ -36,7 +36,7 @@ test('personnages afficher : le fichier, au format stable ; nom inconnu', async 
 test('personnages verifier : code 1 et messages si un fichier est invalide', async () => {
   const ok = await executer(['verifier']);
   assert.equal(ok.code, 0);
-  assert.match(ok.sortie, /6 poses, 10 clips, 2 gabarits, 6 expressions, 0 dessins, aucune erreur/);
+  assert.match(ok.sortie, /6 poses, 10 clips, 2 gabarits, 6 expressions, 1 dessins, aucune erreur/);
   const video = dossierTemporaire();
   fs.mkdirSync(path.join(video, 'personnages', 'clips'), { recursive: true });
   fs.writeFileSync(path.join(video, 'personnages', 'clips', 'mal.json'), JSON.stringify({ nom: 'mal', boucle: true, cles: [{ t: 2, angles: {} }] }));
