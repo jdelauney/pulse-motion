@@ -89,3 +89,17 @@ test('déterminisme et hauteur', () => {
   const g = S.completerGabarit(gab);
   assert.equal(PA.hauteur(gab), g.cuisse + g.tibia + g.baseTete + 2 * g.tete.ry - 2);
 });
+
+test('enchaînements rapprochés : pas de saut (fondus en chaîne, trajets et rotations qui se chevauchent)', () => {
+  const pas = (p, de, a, f) => { let max = 0, prec = f(PA.etatAuTemps(p, de, bib, gab)); for (let t = de + 0.005; t <= a; t += 0.005) { const v = f(PA.etatAuTemps(p, t, bib, gab)); max = Math.max(max, Math.abs(v - prec)); prec = v; } return max; };
+  const rapproche = partition([{ type: 'marcher', debut: 0, fin: 1.7, vers: 40 }, { type: 'pose', debut: 1.8, fin: 3, pose: 'bras-leves' }]);
+  assert.ok(pas(rapproche, 1.6, 2.2, (e) => e.pose.brasAvant) < 8, 'fin de marche puis pose 0,1 s après');
+  const chevauche = partition([{ type: 'marcher', debut: 0, fin: 2, vers: 30 }, { type: 'courir', debut: 1, fin: 2, vers: 80 }]);
+  assert.ok(pas(chevauche, 0, 3, (e) => e.x) < 1, 'deux trajets qui se chevauchent');
+  proche(PA.xAuTemps(chevauche, 3), 80);
+  const tours = partition([{ type: 'tourner', debut: 0, fin: 2, vue: 90 }, { type: 'marcher', debut: 1, fin: 3, vers: 0 }], { x0: 50 });
+  assert.ok(pas(tours, 0, 3, (e) => e.vue) < 10, 'rotation interrompue par un demi-tour');
+  proche(PA.vueAuTemps(tours, 3), 180);
+  const surPlace = partition([{ type: 'marcher', debut: 0, fin: 1, vers: 10 }], { vue0: 180 });
+  proche(PA.vueAuTemps(surPlace, 2), 180, 1e-9, 'marche sur place : pas de demi-tour');
+});

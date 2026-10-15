@@ -43,6 +43,13 @@ test('assemblage : erreurs nommées', () => {
     assert.match(m, motif);
   }
   assert.ok(r.erreurs.every((e) => e.regle === 'personnage-invalide' && e.gravite === 'erreur'));
+  assert.match(m, /action « pose » hors d'un personnage/, 'action après la fermeture du conteneur');
+  const imbrique = preparerPersonnages('<section><div data-personnage="touffu"><span><i data-action="pose" data-pose="montrer" data-start="0"></i></span></div></section>', { scene: 's', lu });
+  assert.match(imbrique.erreurs.map((e) => e.message).join(), /hors d'un personnage/, 'action dans un sous-élément');
+  const sansDebut = preparerPersonnages('<section><div data-personnage="touffu"><i data-action="expression" data-expression="joie"></i><br><i data-action="jouer" data-clip="saut"/></div></section>', { scene: 's', lu });
+  assert.deepEqual(sansDebut.erreurs, []);
+  assert.match(sansDebut.html, /data-expression="joie" data-start="0"><\/i>/);
+  assert.match(sansDebut.html, /data-clip="saut" data-start="0" data-dur="1.3"\/>/);
 });
 
 test('assemblage : durée d\'un geste écrite, données embarquées seulement s\'il y a un personnage', () => {

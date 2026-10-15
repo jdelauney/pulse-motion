@@ -26,22 +26,40 @@
   var DEPLACEMENTS = ['marcher', 'courir'];
   var GESTES = ['pose', 'jouer'];
 
+  var memo = typeof WeakMap === 'function' ? new WeakMap() : null;
+  function structure(part) {
+    var m = memo && memo.get(part);
+    if (m) return m;
+    m = { trajets: calculerTrajets(part), bornes: null, vues: null };
+    m.bornes = calculerBornes(part, m.trajets);
+    m.vues = calculerVues(part, m.trajets);
+    if (memo) memo.set(part, m);
+    return m;
+  }
+
   function lisse(k) { k = Math.max(0, Math.min(1, k)); return k * k * (3 - 2 * k); }
   function triees(actions) { return actions.slice().sort(function (a, b) { return a.debut - b.debut; }); }
 
-  /** Trajets successifs : { debut, fin, de, vers, allure, vue? } (x en %). */
-  function trajets(part) {
+  /** Trajets successifs : { debut, fin, de, vers, allure, vue? } (x en %). Un trajet qui commence avant la fin du
+   *  précédent part de la position atteinte à cet instant ; le précédent s'arrête là. */
+  function calculerTrajets(part) {
     var x = part.x0, out = [];
     triees(part.actions).forEach(function (a) {
       if (DEPLACEMENTS.indexOf(a.type) < 0) return;
+      var prec = out[out.length - 1];
+      if (prec && a.debut < prec.fin) {
+        x = prec.de + (prec.vers - prec.de) * Math.max(0, a.debut - prec.debut) / (prec.fin - prec.debut);
+        prec.vers = x; prec.fin = Math.max(prec.debut + 1e-6, a.debut);
+      }
       out.push({ debut: a.debut, fin: Math.max(a.fin, a.debut + 1e-6), de: x, vers: a.vers, allure: a.type === 'courir' ? 'course' : 'marche', vue: a.vue });
       x = a.vers;
     });
     return out;
   }
+  function trajets(part) { return structure(part).trajets; }
 
   function xAuTemps(part, t) {
-    var x = part.x0, tr = trajets(part);
+    var x = part.x0, tr = structure(part).trajets;
     for (var i = 0; i < tr.length; i++) {
       var d = tr[i];
       if (t < d.debut) break;
@@ -63,7 +81,7 @@
       if (GESTES.indexOf(a.type) >= 0 && a.debut <= t && t < a.fin && (!actif || a.debut >= actif.debut)) actif = a;
     });
     if (actif) return { type: actif.type, a: actif, debut: actif.debut };
-    var tr = trajets(part);
+    var tr = structure(part).trajets;
     for (var i = 0; i < tr.length; i++) if (tr[i].debut <= t && t < tr[i].fin) return { type: tr[i].allure, trajet: tr[i], debut: tr[i].debut };
     return { type: 'repos', debut: -Infinity };
   }
@@ -92,23 +110,25 @@
   }
 
   /** Instants où l'état du corps change (débuts et fins des gestes et des trajets). */
-  function bornes(part) {
+  function calculerBornes(part, tr) {
     var b = [];
     part.actions.forEach(function (a) { if (GESTES.indexOf(a.type) >= 0) b.push(a.debut, a.fin); });
-    trajets(part).forEach(function (d) { b.push(d.debut, d.fin); });
+    tr.forEach(function (d) { b.push(d.debut, d.fin); });
     return b.sort(function (x, y) { return x - y; });
   }
 
-  function corpsAuTemps(part, t, bib, gabarit) {
+  function corpsAuTemps(part, t, bib, gabarit, profondeur) {
     var cur = etatCorps(part, t);
     var pose = poseDuCorps(part, cur, t, bib, gabarit);
-    // Fondu : depuis l'état d'avant la dernière borne franchie, évalué au même instant.
+    // Fondu : depuis la pose affichée juste avant la dernière borne franchie (elle-même peut-être en plein fondu :
+    // deux changements rapprochés s'enchaînent sans saut). Sans mémoire : tout se recalcule à partir de t.
     var dernier = null;
-    bornes(part).forEach(function (b) { if (b <= t) dernier = b; });
+    structure(part).bornes.forEach(function (b) { if (b <= t) dernier = b; });
     if (dernier !== null && t - dernier < FONDU) {
       var avant = etatCorps(part, dernier - 1e-6);
       if (avant.type !== cur.type || avant.a !== cur.a || avant.trajet !== cur.trajet) {
-        pose = S.melanger(Object.assign({}, S.REPOS, poseDuCorps(part, avant, t, bib, gabarit)), Object.assign({}, S.REPOS, pose), lisse((t - dernier) / FONDU));
+        var depart = (profondeur || 0) < 6 ? corpsAuTemps(part, dernier - 1e-6, bib, gabarit, (profondeur || 0) + 1).pose : poseDuCorps(part, avant, dernier - 1e-6, bib, gabarit);
+        pose = S.melanger(Object.assign({}, S.REPOS, depart), Object.assign({}, S.REPOS, pose), lisse((t - dernier) / FONDU));
       }
     }
     return { pose: pose, type: cur.type };
@@ -117,21 +137,29 @@
   function normaliser(a) { a = ((a + 180) % 360 + 360) % 360 - 180; return a === -180 ? 180 : a; }
   function versAngle(de, a, k) { return de + normaliser(a - de) * k; }
 
-  function vueAuTemps(part, t) {
-    var v = part.vue0 || 0;
-    var evenements = [];
-    trajets(part).forEach(function (d) {
-      var cible = typeof d.vue === 'number' ? d.vue : (d.vers >= d.de ? 0 : 180);
-      evenements.push({ debut: d.debut, duree: FONDU, vue: cible });
+  function calculerVues(part, tr) {
+    var ev = [];
+    tr.forEach(function (d) {
+      if (typeof d.vue !== 'number' && Math.abs(d.vers - d.de) < 1e-9) return; // sur place : pas de demi-tour
+      ev.push({ debut: d.debut, duree: FONDU, vue: typeof d.vue === 'number' ? d.vue : (d.vers >= d.de ? 0 : 180) });
     });
-    part.actions.forEach(function (a) { if (a.type === 'tourner' && typeof a.vue === 'number') evenements.push({ debut: a.debut, duree: Math.max(1e-6, a.fin - a.debut), vue: a.vue }); });
-    evenements.sort(function (x, y) { return x.debut - y.debut; });
-    for (var i = 0; i < evenements.length; i++) {
-      var e = evenements[i];
-      if (t < e.debut) break;
-      var k = lisse((t - e.debut) / e.duree);
-      if (k < 1) return normaliser(versAngle(v, e.vue, k));
-      v = e.vue;
+    part.actions.forEach(function (a) { if (a.type === 'tourner' && typeof a.vue === 'number') ev.push({ debut: a.debut, duree: Math.max(1e-6, a.fin - a.debut), vue: a.vue }); });
+    ev.sort(function (x, y) { return x.debut - y.debut; });
+    // Chaque rotation part de la vue atteinte à son début (même si la précédente n'était pas finie).
+    var v = part.vue0 || 0;
+    ev.forEach(function (e, i) {
+      e.de = v;
+      var suivant = ev[i + 1];
+      if (suivant) { var k = lisse((suivant.debut - e.debut) / e.duree); v = versAngle(e.de, e.vue, k); }
+    });
+    return ev;
+  }
+
+  function vueAuTemps(part, t) {
+    var ev = structure(part).vues, v = part.vue0 || 0;
+    for (var i = 0; i < ev.length; i++) {
+      if (t < ev[i].debut) break;
+      v = versAngle(ev[i].de, ev[i].vue, lisse((t - ev[i].debut) / ev[i].duree));
     }
     return normaliser(v);
   }

@@ -123,7 +123,7 @@ Un personnage (bâtonnets, dessin ou illustration découpée) se pose dans la sc
 
 - Conteneur : `data-personnage` = un dessin (`pulse-motion personnages liste --dossier .`) ou `batonnets` ; `data-x` (% de la largeur, hors cadre permis : -10, 110), `data-sol` (ligne des pieds, % de la hauteur, 90), `data-taille` (% de la hauteur, 40), `data-vue` (0 = profil vers la droite, 90 = face), `data-calme="non"` (sans respiration ni clignement). Il couvre toute la scène ; le contrôle ne le juge pas.
 - Actions (`<i>` vides, enfants du conteneur) : `marcher` / `courir` (`data-vers`, `data-dur` obligatoire ; pas de glissement, se tourne dans le sens du trajet) ; `pose` (`data-pose`, tenue pendant `data-dur`) ; `jouer` (`data-clip` : saut, coucou… ; sa durée propre si `data-dur` manque) ; `tourner` (`data-vue`, `data-dur`) ; `expression` (`data-expression` : joie, peur… jusqu'à la suivante) ; `bouche` (`data-bouche`, `aucune` pour revenir).
-- Entre deux actions : le personnage respire au repos ; chaque changement est fondu (0,25 s).
+- Entre deux actions : le personnage respire au repos ; chaque changement est fondu (0,25 s). Une pose ou un geste pendant une marche le fait glisser : les placer après la fin du trajet (`#entree:fin`). Une action sans `data-start` part du début de la scène.
 - Placer les textes hors du chemin du personnage, ou lui faire traverser la scène quand le texte n'est pas encore là. Vérifier à la planche (`pulse-motion planche . <id>`).
 - Les personnages vivent au temps réel de la scène (ni `data-gel`, ni `data-vitesse`).
 
