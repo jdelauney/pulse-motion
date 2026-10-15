@@ -7,8 +7,9 @@ const R = require('../moteur/particules/recette.js');
 const { SEUILS } = require('../scripts/controler.js');
 
 const DOSSIER = path.join(__dirname, '..', 'effets');
-const NOMS = ['assembler', 'banc', 'banniere', 'braises', 'briser', 'confettis', 'corde', 'desintegrer', 'drapeau', 'eau', 'energie', 'etincelles', 'explosion', 'feu',
-  'feu-artifice', 'filet', 'fumee', 'guirlande', 'lucioles', 'metamorphose', 'miel', 'neige', 'neige-lourde', 'nuee', 'paillettes', 'pluie', 'poussiere', 'rideau', 'sable'];
+const NOMS = ['air', 'assembler', 'banc', 'banniere', 'braises', 'braises-portees', 'brasier', 'briser', 'confettis', 'corde', 'desintegrer', 'drapeau', 'eau',
+  'eau-encre', 'energie', 'etincelles', 'explosion', 'feu', 'feu-artifice', 'filet', 'fumee', 'fusee-panache', 'guirlande', 'lucioles', 'metamorphose', 'miel',
+  'neige', 'neige-lourde', 'nuee', 'paillettes', 'pluie', 'poussiere', 'rideau', 'sable'];
 const CHARTE = { primaire: '#0a6cff', accent: '#b45309', fond: '#ffffff', texte: '#1a1a1a' };
 const charger = (nom) => {
   const f = path.join(DOSSIER, `${nom}.json`);
@@ -16,7 +17,7 @@ const charger = (nom) => {
 };
 const compiler = (nom, reglages = '', dur = 3) => R.compiler(R.resoudre(nom, charger), { reglages, charte: CHARTE, dur, graine: 1 });
 
-test('bibliothèque : les 29 effets des specs (P1, P4, P5a, P5b), nommés comme leur fichier, décrits', () => {
+test('bibliothèque : les 34 effets des specs (P1, P4, P5a, P5b, P5c), nommés comme leur fichier, décrits', () => {
   const fichiers = fs.readdirSync(DOSSIER).filter((f) => f.endsWith('.json')).map((f) => f.replace(/\.json$/, '')).sort();
   assert.deepEqual(fichiers, NOMS);
   for (const nom of NOMS) {
@@ -27,6 +28,7 @@ test('bibliothèque : les 29 effets des specs (P1, P4, P5a, P5b), nommés comme 
   }
   assert.equal(charger('braises').etend, 'etincelles', 'braises dérive des étincelles');
   assert.equal(charger('miel').etend, 'eau', 'miel dérive de l\'eau');
+  assert.equal(charger('braises-portees').etend, 'braises', 'braises-portees dérive des braises');
 });
 
 test('bibliothèque : 3 à 6 paramètres, compilation par défaut sous le budget', () => {
@@ -77,7 +79,7 @@ test('bibliothèque : la bibliothèque couvre toutes les familles utiles', () =>
   }
   assert.deepEqual([...types].sort(), ['eclats', 'etincelle', 'fluide', 'sprite', 'trainee'], 'la planche demande une image : pas dans la bibliothèque');
   assert.deepEqual([...textures].sort(), ['confetti', 'disque-doux', 'etoile', 'flamme', 'fumee', 'image', 'pixel'], 'image : photographie des éclats');
-  assert.deepEqual([...forces].sort(), ['attracteur', 'gravite', 'trainee', 'turbulence', 'vent', 'vortex']);
+  assert.deepEqual([...forces].sort(), ['attracteur', 'gravite', 'milieu', 'trainee', 'turbulence', 'vent', 'vortex']);
 });
 
 test('bibliothèque : neige : les flocons traversent l\'image à leurs réglages par défaut', () => {
@@ -334,4 +336,34 @@ test('référence : section Cordes et tissus (champs du schéma, attaches, appar
   assert.doesNotMatch(texte, /pas d'interaction avec des cordes ou des tissus/, 'la section Interactions est à jour');
   const controles = fs.readFileSync(path.join(__dirname, '..', 'references', 'controles.md'), 'utf8');
   for (const r of ['structure-invalide', 'attache-introuvable', 'budget-structures']) assert.match(controles, new RegExp('`' + r + '`'), r);
+});
+
+test('bibliothèque : milieux (air, brasier, eau-encre) et effets couplés (braises-portees, fusee-panache)', () => {
+  const RENDUS = { air: 'fumee', brasier: 'feu', 'eau-encre': 'encre' };
+  for (const [nom, type] of Object.entries(RENDUS)) {
+    const e = compiler(nom).effet;
+    assert.ok(e.milieu, `${nom} : un milieu`);
+    assert.deepEqual(e.emetteurs, [], `${nom} : aucun émetteur`);
+    assert.equal(e.milieu.rendu.type, type, nom);
+    assert.ok(e.milieu.resolution <= R.RESOLUTION_MILIEU_ALERTE, `${nom} : sans alerte par défaut`);
+    assert.ok(e.milieu.sources.length >= 1, `${nom} : une source au moins`);
+    assert.deepEqual(e.couplage, { vent: false, injecte: false });
+  }
+  assert.equal(compiler('air', 'resolution: 256').effet.milieu.resolution, 256);
+  assert.equal(compiler('air').effet.milieu.rendu.corpsNoir, true);
+  const brasier = compiler('brasier').effet;
+  assert.ok(brasier.rendu_calque.bloom > 0, 'le feu brille (halo)');
+  assert.deepEqual(brasier.milieu.sources.map((s) => s.type), ['chaleur', 'fumee']);
+  assert.equal(compiler('brasier', 'fumee: 0').effet.milieu.sources[1].debit, 0, 'feu sans fumée');
+  const encre = compiler('eau-encre').effet.milieu;
+  assert.deepEqual([encre.bords, encre.flottaison < 0, encre.sources.map((s) => s.type)], ['fermes', true, ['encre', 'encre']]);
+  assert.deepEqual(encre.sources[0].encre, R.absorbanceEncre(R.couleurLineaire('#0a6cff', {})), 'première encre : primaire de la charte');
+  const portees = compiler('braises-portees').effet;
+  assert.equal(portees.couplage.vent, true);
+  assert.deepEqual(portees.emetteurs[0].forces.find((f) => f.type === 'milieu'), { type: 'milieu', code: 7, coef: 3 });
+  assert.equal(compiler('braises-portees', 'prise: 6').effet.emetteurs[0].forces.find((f) => f.type === 'milieu').coef, 6);
+  const fusee = compiler('fusee-panache').effet;
+  assert.equal(fusee.couplage.injecte, true);
+  assert.ok(fusee.emetteurs[0].injecte.fumee > 0 && fusee.emetteurs[0].injecte.chaleur > 0, 'fumée et chaleur déposées');
+  assert.equal(fusee.emetteurs[0].salves[0].nombre, 3);
 });
