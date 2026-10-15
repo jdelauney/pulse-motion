@@ -91,12 +91,14 @@ test('page de découpe : réattribuer, déplacer, découper, enregistrer ; aucun
       const apresMain = D.etat();
       D.reattribuer('#toque', 'bassin');
       const apresToque = D.etat();
+      D.reattribuer('#pupille', 'ignorer');
+      const apresPupille = D.etat();
       D.deplacer('cuisseAvant', 'a', [203, 505]);
       const res = D.decouper();
       document.querySelector('#annuler').click();
       const annule = D.etat();
       const enr = await D.enregistrer();
-      return { debut, apresMain, apresToque, cuisse: D.etat().os.cuisseAvant.a, erreurs: res.erreurs, annule, enr, script: D.script() };
+      return { debut, apresMain, apresToque, apresPupille, cuisse: D.etat().os.cuisseAvant.a, erreurs: res.erreurs, annule, enr, script: D.script() };
     })()`);
     assert.equal(r.script, null, 'le script de l\'illustration ne tourne pas');
     assert.ok(r.debut.boites >= 16 && r.debut.pivots >= 20 && r.debut.perso, JSON.stringify(r.debut));
@@ -107,6 +109,9 @@ test('page de découpe : réattribuer, déplacer, découper, enregistrer ; aucun
     assert.deepEqual(r.apresToque.os.bassin.formes, ['#toque'], 'nouvel os créé');
     assert.ok(Array.isArray(r.apresToque.os.bassin.centre));
     assert.deepEqual(r.erreurs, []);
+    assert.equal(r.apresPupille.visage.yeux[0].blanc, '#oeil-blanc', 'la pupille part seule');
+    assert.equal(r.apresPupille.visage.yeux[0].pupille, undefined);
+    assert.equal(r.apresPupille.visage.bouche, '#bouche');
     assert.deepEqual(r.annule.os.cuisseAvant.a, [201, 500], 'annuler défait le déplacement');
     assert.equal(r.enr.ok, true, JSON.stringify(r.enr));
     const lu = P.lire(v);
