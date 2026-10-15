@@ -136,3 +136,54 @@ test('page : hors d\'une vidéo, bouton Enregistrer désactivé et message', { s
     assert.equal(r.type, 'clip', 'sans nom : nouveau clip');
   } finally { await page.fermer(); await a.fermer(); }
 });
+
+test('page : habillage dessiné, expression d\'une clé enregistrée ; changer d\'habillage garde le travail', { skip: sauter }, async () => {
+  const { bib, video } = preparer();
+  const a = await demarrerApercu({ dossier: video, port: 47661, bibliothequePersonnages: bib });
+  const page = await ouvrirPage({ navigateur, largeur: 1400, hauteur: 900 });
+  try {
+    await page.aller(`${a.url}_pm/personnages?nom=coucou&dessin=touffu`);
+    await attendrePret(page);
+    const r = await page.evaluer(`(async () => {
+      const ed = __atelier.ed();
+      const avant = { habillage: __atelier.habillage(), pieces: !!document.querySelector('#perso [data-piece="cuisseAvant"]'), sourcils: !!document.querySelector('#curseurs [data-curseur="sourcilsAngle"]'), gabaritBloque: document.querySelector('#gabarit').disabled };
+      ed.allerA(0.5); __atelier.rendre();
+      const s = document.querySelector('#expression'); s.value = 'joie'; s.dispatchEvent(new Event('change', { bubbles: true }));
+      const cles = ed.objet.cles.length;
+      const h = document.querySelector('#habillage'); h.value = 'batonnets'; h.dispatchEvent(new Event('change', { bubbles: true }));
+      const apres = { habillage: __atelier.habillage(), batonnets: !!document.querySelector('#perso [data-os="cuisseAvant"]'), cles: ed.objet.cles.length, peutAnnuler: ed.annuler() && ed.retablir() };
+      document.querySelector('#nom').value = 'coucou-joyeux';
+      const enr = await __atelier.enregistrer();
+      return { avant, cles, apres, enr, visage: !!document.querySelector('#bouche') };
+    })()`);
+    assert.deepEqual(r.avant, { habillage: 'touffu', pieces: true, sourcils: true, gabaritBloque: true });
+    assert.equal(r.apres.habillage, 'batonnets');
+    assert.equal(r.apres.batonnets, true);
+    assert.equal(r.apres.cles, r.cles, 'les clés sont gardées');
+    assert.equal(r.apres.peutAnnuler, true);
+    assert.equal(r.enr.ok, true, JSON.stringify(r.enr));
+    const ecrit = JSON.parse(fs.readFileSync(path.join(video, 'personnages', 'clips', 'coucou-joyeux.json'), 'utf8'));
+    assert.ok(ecrit.cles.some((k) => k.expression === 'joie'));
+  } finally { await page.fermer(); await a.fermer(); }
+});
+
+test('page : dessin inconnu, bâtonnets et message ; dessin avec queue, curseurs des os en plus', { skip: sauter }, async () => {
+  const { bib, video } = preparer();
+  const touffu = JSON.parse(fs.readFileSync(path.join(bib, 'dessins', 'touffu.json'), 'utf8'));
+  touffu.nom = 'touffu-queue'; touffu.gabarit = 'avec-queue';
+  touffu.pieces.queue = { profil: "<rect x='-4' y='-4' width='8' height='48' rx='4' fill='var(--corps)'/>" };
+  fs.writeFileSync(path.join(bib, 'dessins', 'touffu-queue.json'), JSON.stringify(touffu));
+  const a = await demarrerApercu({ dossier: video, port: 47671, bibliothequePersonnages: bib });
+  const page = await ouvrirPage({ navigateur, largeur: 1400, hauteur: 900 });
+  try {
+    await page.aller(`${a.url}_pm/personnages?nom=marche&dessin=geant`);
+    await attendrePret(page);
+    assert.equal(await page.evaluer('__atelier.habillage()'), 'batonnets');
+    assert.match(await page.evaluer('document.querySelector("#message").textContent'), /dessin « geant » introuvable/);
+    const r = await page.evaluer(`(() => {
+      const h = document.querySelector('#habillage'); h.value = 'touffu-queue'; h.dispatchEvent(new Event('change', { bubbles: true }));
+      return { queue: !!document.querySelector('#curseurs [data-curseur="queue"]'), piece: !!document.querySelector('#perso [data-piece="queue"]') };
+    })()`);
+    assert.deepEqual(r, { queue: true, piece: true });
+  } finally { await page.fermer(); await a.fermer(); }
+});

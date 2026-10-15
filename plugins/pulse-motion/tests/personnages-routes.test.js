@@ -56,6 +56,8 @@ test('routes : modules du moteur servis, contexte d\'une vidéo', async () => {
     assert.ok(c.json.lu.clips.marche && c.json.lu.poses.debout && c.json.lu.gabarits.standard);
     assert.equal(c.json.lu.sources.clips.marche, 'plugin');
     assert.deepEqual(c.json.erreurs, []);
+    assert.ok(c.json.lu.dessins.touffu && c.json.lu.expressions.joie);
+    assert.equal((await requete(`${a.url}_pm/personnages/modules/habillage-pieces.js`)).statut, 200);
     assert.equal((await requete(`${a.url}_pm/personnages/modules/../../scripts/pm.js`)).statut, 404);
   } finally { await a.fermer(); }
 });
