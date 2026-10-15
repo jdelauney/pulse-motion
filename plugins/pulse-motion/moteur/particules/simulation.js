@@ -18,6 +18,11 @@
  * Interactions (P5a) : un groupe de voisinage (P.Groupe, voisinage.js) par entrée de effet.groupes, sur une grille fixe (scène
  * de largeurCqh × 100 cqh élargie ; largeurCqh : 1600/9 par défaut) ; à chaque pas, « noter » (grains) avant le pas des
  * émetteurs, puis comptage, tri et solveurs après, dans la même passe de calcul ; rien n'entre dans les instantanés.
+ * Structures (P5b) : cordes et tissus de l'effet (P.Structures, structures.js), créés avant les groupes d'interactions et
+ * exécutés après eux à chaque pas, dans la même passe ; sommets et liens rompus dans les instantanés ; e.structure,
+ * e.perles (émetteur des perles d'une corde, hors du pas des particules), e.photoStructure (photographie de l'élément,
+ * source « ancre » : fragments[em.index] = { image, centreA, demiA }) ; zones.attaches(g) -> Float32Array (8 nombres par
+ * élément d'attache : l'ancre, puis effet.elements) ; .lireRompus(i) -> Promise<Uint32Array> (masques des liens rompus).
  * P.additionnerProfils(device, cible, source)   cible += source (tampons d'entiers de même taille)
  * Modules de force (P6) : em.modulesWGSL.force (M.codeShader.attacherModules) ; l'appel est inséré dans integrer (pas et
  * pasCollisions), le module et le prélude des shaders ajoutés au noyau ; pipelines mis en cache par empreinte (même mise en
@@ -1513,6 +1518,11 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
         const capacite = Math.max(1, em.capacite);
         const frag = em.fragment ? (fragments && fragments[em.index]) || null : null;
         if (em.fragment && !frag) throw new Error('Effet « ' + effet.nom + ' », émetteur « ' + em.nom + ' » : photographie de son élément manquante.');
+        // Structure (P5b) : photographie de son élément (source « ancre ») ; ses sommets sont dans les tampons des structures.
+        const photoStructure = em.structure && em.structure.apparence.source ? (fragments && fragments[em.index]) || null : null;
+        if (em.structure && em.structure.apparence.source && !photoStructure) {
+          throw new Error('Effet « ' + effet.nom + ' », structure « ' + em.nom + ' » : photographie de son élément manquante.');
+        }
         // L'arrivée chorégraphiée ignore les obstacles (voie rapide).
         const collisions = !!(this.monde && em.collisions) && !(em.cible && em.cible.arrivee === 'choree');
         const evenements = em.aLaMort >= 0 || em.aLaCollision >= 0;
@@ -1520,19 +1530,22 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
           em,
           frag,
           collisions,
+          structure: !!em.structure,
+          perles: em.perlesDe >= 0,
+          photoStructure,
           rapide: em.voieRapide && !collisions,
           capacite,
           params: tamponAvec(device, tailleE(this.nZones, frag) * 4, U.STORAGE | U.COPY_DST, emballer(em, effet, collisions, this.nZones, frag)),
           tables: tamponAvec(device, TABLES * 4, U.STORAGE | U.COPY_DST, tables(em)),
-          particules: device.createBuffer({ size: capacite * OCTETS_PARTICULE, usage: U.STORAGE | U.COPY_SRC | U.COPY_DST }),
+          particules: em.structure ? null : device.createBuffer({ size: capacite * OCTETS_PARTICULE, usage: U.STORAGE | U.COPY_SRC | U.COPY_DST }),
           // Morts dans [0, capacité), impacts dans [capacité, 2 × capacité) : lus par les enfants.
           morts: evenements ? device.createBuffer({ size: 2 * capacite * OCTETS_MORT, usage: U.STORAGE | U.COPY_DST }) : null,
-          contacts: collisions ? device.createBuffer({ size: capacite * OCTETS_CONTACT, usage: U.STORAGE | U.COPY_SRC | U.COPY_DST }) : null,
+          contacts: collisions && !em.structure ? device.createBuffer({ size: capacite * OCTETS_CONTACT, usage: U.STORAGE | U.COPY_SRC | U.COPY_DST }) : null,
           historique: em.rendu.type === 'trainee'
             ? device.createBuffer({ size: capacite * em.rendu.longueur * 8, usage: U.STORAGE | U.COPY_SRC | U.COPY_DST })
             : null,
           uniformeRendu: device.createBuffer({ size: 48, usage: U.UNIFORM | U.COPY_DST }),
-          photo: frag && frag.image ? creerPhoto(device, frag.image) : null,
+          photo: frag && frag.image ? creerPhoto(device, frag.image) : photoStructure ? creerPhoto(device, photoStructure.image) : null,
         };
       });
       // Fragments : repères de l'ancre et de l'élément visé, écrits dans leur tampon E au fil des pas (assurerAncres).
@@ -1547,7 +1560,9 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
         if (e.inerte) e.rapide = false;
       });
       // Émetteurs simulés, parents avant enfants.
-      this.simules = this.emetteurs.filter((e) => !e.rapide && !e.inerte).sort((a, b) => a.em.profondeur - b.em.profondeur || a.em.index - b.em.index);
+      // Structures et perles : pas propres (structures.js), hors du pas des particules.
+      this.simules = this.emetteurs.filter((e) => !e.rapide && !e.inerte && !e.structure && !e.perles)
+        .sort((a, b) => a.em.profondeur - b.em.profondeur || a.em.index - b.em.index);
       this.tamponPas = device.createBuffer({ size: 256 * PAS_PAR_LOT, usage: U.UNIFORM | U.COPY_DST });
       this.donneesPas = new ArrayBuffer(256 * PAS_PAR_LOT);
       this.u32Pas = new Uint32Array(this.donneesPas);
@@ -1573,6 +1588,11 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
         const force = e.em.modulesWGSL ? e.em.modulesWGSL.force : null;
         e.pipelinePas = e.collisions ? pipelineCollisions(device, force) : pipelinePas(device, force);
       });
+
+      // Structures (P5b) : cordes et tissus de l'effet, simulés ensemble ; avant les groupes, qui lient leurs sommets.
+      const avecStructures = this.emetteurs.some((e) => e.structure);
+      if (avecStructures && !P.Structures) throw new Error('Structures : moteur/particules/structures.js n\'est pas chargé.');
+      this.structures = avecStructures ? new P.Structures(device, this) : null;
 
       // Interactions (P5a) : un groupe de voisinage par ensemble d'émetteurs liés, émetteurs simulés seulement.
       const groupes = effet.groupes || [];
@@ -1602,7 +1622,7 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
 
       this.kFin = Math.ceil(effet.fin / PAS) + 1;
       const tailleEtat = this.simules.reduce((s, e) => s + e.capacite * OCTETS_PARTICULE + (e.historique ? e.historique.size : 0) + (e.contacts ? e.contacts.size : 0), 0)
-        + (this.hauteurs ? this.hauteurs.size : 0);
+        + (this.hauteurs ? this.hauteurs.size : 0) + (this.structures ? this.structures.tailleEtat : 0);
       this.k = 0;
       this.planificateur = M.instantanes.creerPlanificateur({
         intervalle: M.instantanes.intervallePour({ tailleEtat, pasTotal: this.kFin, budget: BUDGET_INSTANTANES }),
@@ -1739,7 +1759,7 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
       const delta = Math.max(0, tau - k * PAS);
       this.k = k;
       this.tau = tau;
-      if (this.simules.length) this.executer(this.planificateur.planifier(k), zones);
+      if (this.simules.length || this.structures) this.executer(this.planificateur.planifier(k), zones);
       if (this.rapides.length) this.evaluer(tau, zones, k);
       return this.emetteurs.map((e) => (e.rapide || e.inerte ? 0 : delta));
     }
@@ -1793,6 +1813,7 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
           f.set(zones.a((a.k + 1) * PAS), o + 8);
           if (this.texReperes) this.assurerReperes(a.k, zones);
           this.assurerAncres(Math.floor(a.k * PAS * GRILLE) - 1, Math.floor((a.k + 1) * PAS * GRILLE) + 2, zones);
+          if (this.structures) this.structures.assurerElements(a.k, zones);
           this.ecrirePas(o, a.k);
           if (!passe) passe = enc.beginComputePass();
           // Interactions : positions au début du pas (grains), avant le pas des émetteurs.
@@ -1804,6 +1825,8 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
           }
           // Interactions : voisinage (et solveurs) après le pas de tous les émetteurs.
           for (const g of this.groupesActifs) g.executer(passe, n);
+          // Structures (P5b) : cordes et tissus, après les groupes (réactions des particules liées, plan 3).
+          if (this.structures) this.structures.executer(passe, n);
           if (this.nProfils) {
             passe.setPipeline(this.pc.relaxer);
             passe.setBindGroup(0, this.groupeRelax, [n * 256]);
@@ -1822,6 +1845,7 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
             if (e.contacts) enc.clearBuffer(e.contacts);
           });
           if (this.nProfils) { enc.clearBuffer(this.profils); enc.clearBuffer(this.hauteurs); enc.clearBuffer(this.brut); }
+          if (this.structures) this.structures.vider(enc);
         } else if (a.type === 'restaurer') {
           const copie = this.instantanes.get(a.k);
           this.simules.forEach((e, i) => {
@@ -1830,6 +1854,7 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
             if (e.contacts) enc.copyBufferToBuffer(copie[i].contacts, 0, e.contacts, 0, e.contacts.size);
           });
           if (this.nProfils) enc.copyBufferToBuffer(copie.hauteurs, 0, this.hauteurs, 0, this.hauteurs.size);
+          if (this.structures) this.structures.restaurer(enc, copie.structures);
         } else if (a.type === 'sauver') {
           let copie = this.instantanes.get(a.k);
           if (!copie) {
@@ -1848,6 +1873,7 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
             if (e.contacts) enc.copyBufferToBuffer(e.contacts, 0, copie[i].contacts, 0, e.contacts.size);
           });
           if (this.nProfils) enc.copyBufferToBuffer(this.hauteurs, 0, copie.hauteurs, 0, this.hauteurs.size);
+          if (this.structures) copie.structures = this.structures.sauver(enc, copie.structures);
         }
       }
       envoyer();
@@ -1898,7 +1924,16 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
       return copie;
     }
 
-    lireEtat(i) { return this.lireTampon(this.emetteurs[i].particules); }
+    lireEtat(i) {
+      const e = this.emetteurs[i];
+      return e.structure ? this.structures.lireSommets(e) : this.lireTampon(e.particules);
+    }
+
+    /** Masques des liens rompus d'une structure (un mot par sommet propriétaire) ; vide pour un autre émetteur. */
+    lireRompus(i) {
+      const e = this.emetteurs[i];
+      return e.structure ? this.structures.lireRompus(e) : Promise.resolve(new Uint32Array(0));
+    }
 
     lireHistorique(i) {
       const e = this.emetteurs[i];
@@ -1941,7 +1976,9 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
       this.instantanes.forEach((copie) => {
         copie.forEach((c) => [c.particules, c.historique, c.contacts].forEach((b) => b && b.destroy()));
         if (copie.hauteurs) copie.hauteurs.destroy();
+        if (copie.structures) this.structures.detruireCopie(copie.structures);
       });
+      if (this.structures) this.structures.detruire();
       this.instantanes.clear();
       (this.groupesActifs || []).forEach((g) => g.detruire());
       this.tamponPas.destroy();
