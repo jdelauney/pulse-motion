@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "nom": "drapeau",
+  "description": "Drapeau aux couleurs de la charte (trois bandes verticales) qui flotte au vent, tenu par son bord gauche au bord gauche de l'ancre (le mât) ; l'ancre est la place du drapeau au repos ; plis éclairés.",
+  "parametres": {
+    "vent": { "defaut": 60, "min": 0, "max": 200 },
+    "ondulation": { "defaut": 1, "min": 0, "max": 3 },
+    "couleur1": { "defaut": "primaire", "type": "couleur" },
+    "couleur2": { "defaut": "fond", "type": "couleur" },
+    "couleur3": { "defaut": "accent", "type": "couleur" }
+  },
+  "rendu_calque": { "bloom": 0, "tons": "neutre" },
+  "emetteurs": [
+    {
+      "nom": "toile",
+      "structure": {
+        "type": "tissu",
+        "resolution": [24, 16],
+        "attaches": [{ "ou": "gauche", "a": "ancre" }],
+        "raideur": 0.95,
+        "flexion": 0.05,
+        "amortissement": 0.02,
+        "apparence": { "degrade": ["couleur1", "couleur2", "couleur3"], "bandes": true }
+      },
+      "forces": [
+        { "type": "gravite", "valeur": 20 },
+        { "type": "vent", "vitesse": ["vent", 0], "coef": 1.5 },
+        { "type": "turbulence", "echelle": 12, "force": "25 * ondulation", "vitesse": 1.5 }
+      ]
+    }
+  ]
+}

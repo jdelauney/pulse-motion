@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "nom": "filet",
+  "description": "Filet tendu entre les bords gauche et droit de l'ancre, qui retient ce qui tombe dedans (élément animé déclaré data-obstacle, particules liées par « avec ») et cède au-delà de sa résistance ; mailles seules dessinées.",
+  "parametres": {
+    "resistance": { "defaut": 1.4, "min": 1.1, "max": 3 },
+    "souplesse": { "defaut": 0.5, "min": 0, "max": 1 },
+    "couleur": { "defaut": "texte", "type": "couleur" }
+  },
+  "rendu_calque": { "bloom": 0, "tons": "neutre" },
+  "emetteurs": [
+    {
+      "nom": "mailles",
+      "structure": {
+        "type": "tissu",
+        "resolution": [24, 12],
+        "attaches": [{ "ou": "gauche", "a": "ancre" }, { "ou": "droite", "a": "ancre" }],
+        "raideur": "1 - 0.5 * souplesse",
+        "flexion": 0,
+        "amortissement": 0.05,
+        "dechirure": "resistance",
+        "epaisseur": 0.5,
+        "apparence": { "couleur": "couleur", "mailles": true }
+      },
+      "forces": [{ "type": "gravite", "valeur": 20 }],
+      "collisions": { "cibles": ["elements", "formes"], "reponse": "rebond", "restitution": 0, "frottement": 0.3 }
+    }
+  ]
+}
