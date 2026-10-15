@@ -1,6 +1,6 @@
 {
   "name": "pulse-motion",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "Créer des vidéos de motion design sur votre ordinateur, sans cloud : décrivez votre idée, validez le déroulé, regardez la vidéo.",
   "author": { "name": "Jérôme Delauney" },
   "license": "MIT"
