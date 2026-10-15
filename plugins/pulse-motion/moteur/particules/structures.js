@@ -41,7 +41,7 @@
 
   const STRUCTURES_MAX = 32;           // par effet (uniforme ST) ; recette.js : STRUCTURES_EFFET_MAX
   const ATTACHES = 320;                // premier mot des attaches dans un bloc
-  const COMPLIANCE = 1e-4;             // compliance d'un lien de raideur 0,5 (cqh par unité de force)
+  const COMPLIANCE = 1e-3;             // compliance d'un lien de raideur 0,5 (cqh par unité de force)
   const AMORTISSEMENT = 10;            // taux d'amortissement (par seconde) d'un amortissement 1
   const AUCUN = 0xffffffff;
   const OCTETS_UNIFORME = 16 + STRUCTURES_MAX * 16;
@@ -322,7 +322,9 @@ fn predire(v: u32, base: u32, sp: u32, ta: f32, tb: f32, h: f32) {
       p.gen = 1u;
     }
   }
-  if (p.gen == 0u) { p = integrer(p, h, ta, zoneS(ta)); }
+  // Euler symplectique : déplacement = vitesse de fin de sous-pas × h (la position balistique exacte ne donnerait, une fois
+  // la vitesse reprise du déplacement, que la moitié de l'accélération).
+  if (p.gen == 0u) { let x0 = p.pos; p = integrer(p, h, ta, zoneS(ta)); p.pos = x0 + p.vel * h; }
   p.age = p.age + h;
   sommets[i] = p;
 }
@@ -334,14 +336,16 @@ fn resoudreLien(j: u32, base: u32, lb: u32, h: f32, rp: Repos) {
   let v = code >> 3u;
   let genre = code & 7u;
   if (((rompus[base + v] >> genre) & 1u) != 0u) { return; }
-  var alpha = ef(S_ALPHA);
-  if (genre >= 4u) { alpha = ef(S_ALPHA_B); }
-  if (alpha < 0.0) { return; }
   let ab = extremites(v, genre);
   let ia = base + ab.x;
   let ib = base + ab.y;
   let pa = sommets[ia];
   let pb = sommets[ib];
+  // Lien étiré : raideur (flexion pour un lien de flexion) ; lien comprimé : flexion seulement (tissu plan : un axe
+  // comprimé se plie hors du plan, ses plis éclairés au rendu ; flexion nulle : compression libre).
+  var alpha = ef(S_ALPHA);
+  if (genre >= 4u || length(pa.pos - pb.pos) < longueurRepos(genre, rp)) { alpha = ef(S_ALPHA_B); }
+  if (alpha < 0.0) { return; }
   let wa = invMasse(pa);
   let wb = invMasse(pb);
   let at = alpha / (h * h);
