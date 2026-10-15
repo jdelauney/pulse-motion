@@ -14,6 +14,7 @@ test('bibliothèque : complète et valide', () => {
   assert.deepEqual(Object.keys(lu.clips).sort(), ['accroupi', 'clignement', 'coucou', 'course', 'marche', 'peur', 'repos', 'respiration', 'saut', 'se-relever']);
   assert.deepEqual(Object.keys(lu.gabarits).sort(), ['avec-queue', 'standard']);
   assert.deepEqual(Object.keys(lu.expressions).sort(), ['colere', 'joie', 'neutre', 'peur', 'surprise', 'tristesse']);
+  assert.deepEqual(Object.keys(lu.dessins), ['touffu']);
   for (const [nom, c] of Object.entries(lu.clips)) assert.ok(c.description && c.description.length > 5, `${nom} : description`);
   assert.equal(lu.clips.respiration.additif, true);
   assert.equal(lu.clips.clignement.additif, true);
@@ -63,4 +64,11 @@ test('bibliothèque : le coucou garde le bras levé pendant tout le salut', () =
     const p = K.echantillonner(lu.clips.coucou, t, lu);
     assert.ok(Math.abs(p.ecartBrasAvant - 140) < 1e-6 && Math.abs(p.torsionBrasAvant - 90) < 1e-6, `t=${t} : ${p.ecartBrasAvant} / ${p.torsionBrasAvant}`);
   }
+});
+
+test('bibliothèque : touffu a toutes les bouches standard et un visage en trois vues', () => {
+  const t = lu.dessins.touffu;
+  assert.deepEqual(Object.keys(t.visage.bouches), P.BOUCHES);
+  assert.deepEqual(Object.keys(t.visage.vues), ['profil', 'troisQuarts', 'face']);
+  assert.equal(t.gabarit, 'standard');
 });
