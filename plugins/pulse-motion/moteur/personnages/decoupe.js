@@ -386,9 +386,15 @@
     });
     d.ignorer = retirer(svg, d.ignorer, el);
     if (d.visage) {
-      d.visage.yeux = (d.visage.yeux || []).filter(function (y) { return !contient(svg, y.blanc, el) && !(y.pupille && contient(svg, y.pupille, el)); });
+      // Seule la forme cliquée quitte le visage : une pupille part seule ; un blanc emporte son œil (la pupille reste à ranger).
+      d.visage.yeux = (d.visage.yeux || []).filter(function (y) { return !contient(svg, y.blanc, el); });
+      d.visage.yeux.forEach(function (y) { if (y.pupille && contient(svg, y.pupille, el)) delete y.pupille; });
       if (d.visage.bouche && contient(svg, d.visage.bouche, el)) delete d.visage.bouche;
-      if (!d.visage.yeux.length) delete d.visage;
+      if (!d.visage.yeux.length) {
+        // Plus d'œil : plus de visage vivant ; la bouche reste dessinée, dans la tête.
+        if (d.visage.bouche && d.os.tete) d.os.tete.formes.push(d.visage.bouche);
+        delete d.visage;
+      }
     }
     var sel = selecteur(svg, el);
     if (cible === 'ignorer') d.ignorer.push(sel);

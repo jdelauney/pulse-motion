@@ -28,6 +28,8 @@ function preparerSource(texte) {
   s = s.replace(/<script\b[\s\S]*?<\/script\s*>/gi, '').replace(/<script\b[^>]*\/>/gi, '');
   s = s.replace(/[\s/](on[a-z]+)\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, ' ');
   s = s.replace(/(href\s*=\s*["'])\s*javascript:[^"']*/gi, '$1#');
+  // Liens et ressources extérieurs retirés (les références internes « #id », comme les dégradés, restent).
+  s = s.replace(/\s(xlink:)?href\s*=\s*("(?!#)[^"]*"|'(?!#)[^']*')/gi, '');
   if (/&(?!(amp|lt|gt|quot|apos|#\d+|#x[0-9a-f]+);)[A-Za-z_][\w.-]*;/i.test(s)) throw ErreurDecoupe('Ce SVG utilise des styles « par entités » (export Illustrator) : le réexporter avec « Propriétés CSS : éléments de style » ou « attributs de présentation ».');
   const debut = s.search(/<svg[\s>]/i);
   if (debut < 0) throw ErreurDecoupe('Ce fichier n\'est pas un SVG (aucune balise <svg>).');

@@ -57,7 +57,7 @@ function dessinerCalque() {
   for (const [n, def] of Object.entries(decoupe.os || {})) {
     const t = teinte(n);
     if (def.de && def.a) {
-      el('line', { x1: def.de[0], y1: def.de[1], x2: def.a[0], y2: def.a[1], stroke: t, 'stroke-width': 2 * u }, calque);
+      el('line', { x1: def.de[0], y1: def.de[1], x2: def.a[0], y2: def.a[1], stroke: t, 'stroke-width': 2 * u, 'data-os': n }, calque);
       el('circle', { cx: def.de[0], cy: def.de[1], r: 5 * u, fill: t, stroke: '#FFFFFF', 'stroke-width': u, class: 'pivot', 'data-os': n, 'data-champ': 'de' }, calque);
       el('circle', { cx: def.a[0], cy: def.a[1], r: 5 * u, fill: '#FFFFFF', stroke: t, 'stroke-width': 2 * u, class: 'pivot', 'data-os': n, 'data-champ': 'a' }, calque);
     } else if (def.centre) {
@@ -85,9 +85,15 @@ function rendre() { dessinerCalque(); majOs(); }
 
 /* ---------- actions ---------- */
 function choisir(sel) { choix = sel; rendre(); }
+const pivotsOublies = {};
 function reattribuer(sel, cible) {
   memoriser();
+  for (const [n, def] of Object.entries(decoupe.os || {})) pivotsOublies[n] = def;
+  const existait = !!(decoupe.os || {})[cible];
   decoupe = DC.reattribuer(decoupe, svg, DC.element(svg, sel), cible);
+  // Un os vidé puis rempli de nouveau retrouve ses articulations.
+  const ancien = pivotsOublies[cible];
+  if (!existait && ancien && decoupe.os[cible]) for (const k of ['de', 'a', 'centre']) if (ancien[k]) decoupe.os[cible][k] = ancien[k];
   choix = sel;
   rendre();
 }
@@ -126,8 +132,8 @@ function boucle(t) {
 }
 
 async function enregistrer() {
-  if (!resultat || resultat.erreurs.length) decouper();
-  if (resultat.erreurs.length) return { ok: false };
+  decouper(); // toujours sur la découpe telle qu'elle est : dessin et découpe enregistrés vont ensemble
+  if (resultat.erreurs.length) return { ok: false, erreurs: resultat.erreurs };
   const r = await fetch('/_pm/personnages/decoupe/enregistrer', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nom: donnees.nom, decoupe, partiel: resultat.partiel }) });
   const d = await r.json();
   if (!r.ok) { message((d.erreurs || [d.message]).join('\n'), 'erreur'); return d; }
@@ -147,14 +153,20 @@ $('#calque').addEventListener('pointerdown', (ev) => {
   const t = ev.target;
   if (!t.classList.contains('pivot')) return;
   ev.preventDefault();
-  t.setPointerCapture(ev.pointerId);
   memoriser();
-  glisse = { os: t.dataset.os, champ: t.dataset.champ };
+  glisse = { os: t.dataset.os, champ: t.dataset.champ, cercle: t, ligne: $(`#calque line[data-os="${t.dataset.os}"]`) };
+  $('#source').style.pointerEvents = 'none'; // le geste reste sur cette page même s'il passe au-dessus de l'illustration
 });
-$('#calque').addEventListener('pointermove', (ev) => { if (glisse) { const p = pointDoc(ev); deplacer(glisse.os, glisse.champ, [p.x, p.y]); } });
-const fin = () => { glisse = null; };
-$('#calque').addEventListener('pointerup', fin);
-$('#calque').addEventListener('pointercancel', fin);
+window.addEventListener('pointermove', (ev) => {
+  if (!glisse) return;
+  const p = pointDoc(ev), pos = [Math.round(p.x * 10) / 10, Math.round(p.y * 10) / 10];
+  decoupe.os[glisse.os][glisse.champ] = pos;
+  glisse.cercle.setAttribute('cx', pos[0]); glisse.cercle.setAttribute('cy', pos[1]);
+  if (glisse.ligne && glisse.champ !== 'centre') { const i = glisse.champ === 'de' ? 1 : 2; glisse.ligne.setAttribute(`x${i}`, pos[0]); glisse.ligne.setAttribute(`y${i}`, pos[1]); }
+});
+const fin = () => { if (!glisse) return; glisse = null; $('#source').style.pointerEvents = ''; rendre(); };
+window.addEventListener('pointerup', fin);
+window.addEventListener('pointercancel', fin);
 $('#os').addEventListener('click', (ev) => { const b = ev.target.closest('button'); if (b && choix) reattribuer(choix, b.dataset.os); });
 $('#annuler').addEventListener('click', () => { if (passe.length) { decoupe = JSON.parse(passe.pop()); rendre(); } });
 $('#decouper').addEventListener('click', decouper);
@@ -181,9 +193,11 @@ document.querySelectorAll('[data-vue]').forEach((b) => b.addEventListener('click
   const vb = svg.viewBox.baseVal;
   cadre.style.height = `${cadre.clientWidth * vb.height / vb.width}px`;
   cadre.contentDocument.addEventListener('click', (ev) => {
+    ev.preventDefault(); // un lien de l'illustration ne doit pas faire naviguer le cadre
     const f = ev.target.closest(DC.FORMES.join(','));
     if (f) choisir(DC.selecteur(svg, f));
-  });
+  }, true);
+  new ResizeObserver(() => { cadre.style.height = `${cadre.clientWidth * vb.height / vb.width}px`; }).observe(cadre);
   rendre();
   decouper();
   requestAnimationFrame(boucle);
