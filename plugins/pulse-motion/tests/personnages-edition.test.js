@@ -110,7 +110,8 @@ test('édition : au sol, bassinY affiché et réglé comme un décalage', () => 
   const ed = clip(lu.clips.course);
   ed.allerA(0.22);
   assert.ok(Math.abs(ed.valeurs().bassinY + 14) < 1e-6, `décalage ${ed.valeurs().bassinY}`);
-  assert.ok(ed.pose().bassinY > 0, 'la pose affichée est posée au sol');
+  const sol = S.poserAuSol(Object.assign({}, K.echantillonner(Object.assign({}, lu.clips.course, { pieds: 'libres' }), ed.temps, lu), { bassinY: 0 })).bassinY;
+  assert.ok(Math.abs(ed.pose().bassinY - (sol - 14)) < 1e-6, 'la pose affichée est posée au sol, puis décalée');
   ed.regler('bassinY', -20);
   assert.equal(ed.objet.cles[ed.selection].angles.bassinY, -20);
   ed.allerA(0.4);
