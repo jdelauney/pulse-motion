@@ -95,12 +95,12 @@
     return u;
   };
 
-  const WGSL_STRUCTURES = /* wgsl */ `
+  const WGSL_STRUCTURES = (FILS) => /* wgsl */ `
 // ---- Structures (P5b) : cordes et tissus, XPBD (sous-pas, liens colorés) ----
 const S_SOUS_PAS = 4u;
 const S_ITERATIONS = 4u;
 const S_COULEURS = 12u;
-const S_FILS = 256u;
+const S_FILS = ${FILS}u;
 const S_TYPE = ${S.TYPE}u;
 const S_C = ${S.C}u;
 const S_R = ${S.R}u;
@@ -136,6 +136,12 @@ struct CibleS { ok: bool, pos: vec2f };
 
 // Bloc de paramètres de la structure du groupe de travail : ef et eu y lisent.
 var<private> baseE: u32;
+// Réglages lus une fois par le noyau (liens, compliances, inverse de la masse des sommets).
+var<private> gLiens: u32;
+var<private> gAlpha: f32;
+var<private> gAlphaB: f32;
+var<private> gW: f32;
+const TENU_S = 256u;
 
 // Fin d'une phase : écritures des sommets et des liens visibles de tout le groupe de travail.
 fn barriere() {
@@ -310,7 +316,7 @@ fn initialiserSommet(v: u32, base: u32, rp: Repos) {
 fn predire(v: u32, base: u32, sp: u32, ta: f32, tb: f32, h: f32) {
   let i = base + v;
   var p = sommets[i];
-  anciennes[i] = p.pos;
+  let xd = p.pos;
   if (sp == 0u) { p.vel = p.vel + poussees[i]; }
   p.gen = 0u;
   let a = attacheDe(v);
@@ -326,39 +332,47 @@ fn predire(v: u32, base: u32, sp: u32, ta: f32, tb: f32, h: f32) {
   // la vitesse reprise du déplacement, que la moitié de l'accélération).
   if (p.gen == 0u) { let x0 = p.pos; p = integrer(p, h, ta, zoneS(ta)); p.pos = x0 + p.vel * h; }
   p.age = p.age + h;
+  // Pendant le sous-pas : position prédite (puis corrigée) dans « anciennes » (8 octets par sommet, lue par chaque lien),
+  // position du début dans le sommet ; sommet tenu marqué dans ses liens rompus (bit TENU_S, retiré en fin de sous-pas).
+  anciennes[i] = p.pos;
+  p.pos = xd;
   sommets[i] = p;
+  rompus[i] = select(rompus[i] & ~TENU_S, rompus[i] | TENU_S, p.gen == 1u);
 }
 
 // XPBD, contrainte de distance du lien j (rang dans la liste rangée par couleur) : Δλ = (−C − α̃ λ) / (wa + wb + α̃),
 // α̃ = α / h² ; lien rompu ou de flexion sans raideur : ignoré.
 fn resoudreLien(j: u32, base: u32, lb: u32, h: f32, rp: Repos) {
-  let code = eu(eu(S_LIENS) + j);
+  let code = eu(gLiens + j);
   let v = code >> 3u;
   let genre = code & 7u;
   if (((rompus[base + v] >> genre) & 1u) != 0u) { return; }
   let ab = extremites(v, genre);
   let ia = base + ab.x;
   let ib = base + ab.y;
-  let pa = sommets[ia];
-  let pb = sommets[ib];
+  // Positions du sous-pas (tableau compact) ; masse de la structure, nulle pour un sommet tenu.
+  let xa = anciennes[ia];
+  let xb = anciennes[ib];
+  let wa = select(gW, 0.0, (rompus[ia] & TENU_S) != 0u);
+  let wb = select(gW, 0.0, (rompus[ib] & TENU_S) != 0u);
+  let d = xa - xb;
+  let L = length(d);
+  let L0 = longueurRepos(genre, rp);
   // Lien étiré : raideur (flexion pour un lien de flexion) ; lien comprimé : flexion seulement (tissu plan : un axe
   // comprimé se plie hors du plan, ses plis éclairés au rendu ; flexion nulle : compression libre).
-  var alpha = ef(S_ALPHA);
-  if (genre >= 4u || length(pa.pos - pb.pos) < longueurRepos(genre, rp)) { alpha = ef(S_ALPHA_B); }
+  var alpha = gAlpha;
+  if (genre >= 4u || L < L0) { alpha = gAlphaB; }
   if (alpha < 0.0) { return; }
-  let wa = invMasse(pa);
-  let wb = invMasse(pb);
   let at = alpha / (h * h);
   let den = wa + wb + at;
   if (den <= 0.0) { return; }
-  let d = pa.pos - pb.pos;
-  let L = length(d);
   if (L < 1e-9) { return; }
-  let dl = (-(L - longueurRepos(genre, rp)) - at * lambdas[lb + j]) / den;
-  lambdas[lb + j] = lambdas[lb + j] + dl;
+  let lam = lambdas[lb + j];
+  let dl = (-(L - L0) - at * lam) / den;
+  lambdas[lb + j] = lam + dl;
   let nrm = d / L;
-  sommets[ia].pos = pa.pos + wa * dl * nrm;
-  sommets[ib].pos = pb.pos - wb * dl * nrm;
+  anciennes[ia] = xa + wa * dl * nrm;
+  anciennes[ib] = xb - wb * dl * nrm;
 }
 
 struct ContactS { ok: bool, pos: vec2f };
@@ -391,8 +405,8 @@ fn contactPoint(p0: vec2f, p1: vec2f, r: f32, tb: f32) -> ContactS {
 fn contactSommet(i: u32, tb: f32) {
   let p = sommets[i];
   if (p.gen == 1u) { return; }
-  let c = contactPoint(anciennes[i], p.pos, 0.5 * p.taille, tb);
-  if (c.ok) { sommets[i].pos = c.pos; }
+  let c = contactPoint(p.pos, anciennes[i], 0.5 * p.taille, tb);
+  if (c.ok) { anciennes[i] = c.pos; }
 }
 
 // Cellule (r, c) d'un tissu : son centre (moyenne de ses 4 sommets) balayé ; au contact, ses sommets libres sont déplacés
@@ -409,8 +423,8 @@ fn contactCellule(base: u32, r: u32, c: u32, tb: f32) {
   var rayon = 0.0;
   for (var k = 0u; k < 4u; k++) {
     let p = sommets[ids[k]];
-    c0 += 0.25 * anciennes[ids[k]];
-    c1 += 0.25 * p.pos;
+    c0 += 0.25 * p.pos;
+    c1 += 0.25 * anciennes[ids[k]];
     rayon = max(rayon, 0.5 * p.taille);
     if (p.gen == 0u) { libres += 1u; }
   }
@@ -419,7 +433,7 @@ fn contactCellule(base: u32, r: u32, c: u32, tb: f32) {
   if (!ct.ok) { return; }
   let dx = ct.pos - c1;
   for (var k = 0u; k < 4u; k++) {
-    if (sommets[ids[k]].gen == 0u) { sommets[ids[k]].pos = sommets[ids[k]].pos + dx; }
+    if (sommets[ids[k]].gen == 0u) { anciennes[ids[k]] = anciennes[ids[k]] + dx; }
   }
 }
 
@@ -457,8 +471,11 @@ fn contactsStructure(base: u32, n: u32, li: u32, ta: f32, tb: f32) {
 fn vitesseSommet(v: u32, base: u32, h: f32) {
   let i = base + v;
   var p = sommets[i];
-  if (p.gen == 0u) { p.vel = (p.pos - anciennes[i]) / h * exp(-ef(S_AMORTI) * h); }
+  let x = anciennes[i];
+  if (p.gen == 0u) { p.vel = (x - p.pos) / h * exp(-ef(S_AMORTI) * h); }
+  p.pos = x;
   sommets[i] = p;
+  rompus[i] = rompus[i] & ~TENU_S;
 }
 
 // Déchirure en fin de sous-pas : le sommet v décide de ses propres liens (sommet propriétaire), sur les positions de fin
@@ -478,13 +495,17 @@ fn dechirer(v: u32, base: u32, rp: Repos) {
 
 // Un pas de 1/120 s d'une structure (groupe de travail wg.x) : pose au pas 0, puis 4 sous-pas (prédiction, 4 itérations
 // sur les 12 couleurs, contacts, vitesses, déchirure).
-@compute @workgroup_size(256)
+@compute @workgroup_size(${FILS})
 fn structures(@builtin(workgroup_id) wg: vec3u, @builtin(local_invocation_index) li: u32) {
   let d = ST.s[wg.x];
   baseE = d.x;
   let base = d.y;
   let lb = d.z;
   let n = d.w;
+  gLiens = eu(S_LIENS);
+  gAlpha = ef(S_ALPHA);
+  gAlphaB = ef(S_ALPHA_B);
+  gW = 1.0 / ef(S_MASSE);
   let rp = reposStructure();
   if (li == 0u) { infos[wg.x] = vec4f(rp.Lu, rp.Lv, 0.0, 0.0); }
   let h = P.dt / f32(S_SOUS_PAS);
@@ -515,15 +536,24 @@ fn structures(@builtin(workgroup_id) wg: vec3u, @builtin(local_invocation_index)
 
   const EF = 'fn ef(i: u32) -> f32 { return E[i]; }';
   const EU = 'fn eu(i: u32) -> u32 { return bitcast<u32>(E[i]); }';
-  let code = null;
+  const codes = new Map();
 
-  /** Module « pm-structures » : module des collisions de P3 (ef et eu lisent le bloc de la structure) et noyau. */
-  P.codeStructures = function () {
-    if (code) return code;
+  /** Module « pm-structures » : module des collisions de P3 (ef et eu lisent le bloc de la structure) et noyau de fils
+   *  fils par groupe de travail (256 par défaut ; davantage si le device le permet : chaque couleur est indépendante de
+   *  l'ordre de ses liens, le résultat ne dépend pas du nombre de fils). */
+  P.codeStructures = function (fils = 256) {
+    if (codes.has(fils)) return codes.get(fils);
     const base = P.WGSL_MODULE_COLLISIONS();
     if (base.indexOf(EF) < 0 || base.indexOf(EU) < 0) throw new Error('Structures : lecture des paramètres (ef, eu) introuvable dans le module des collisions.');
-    code = base.replace(EF, 'fn ef(i: u32) -> f32 { return E[baseE + i]; }').replace(EU, 'fn eu(i: u32) -> u32 { return bitcast<u32>(E[baseE + i]); }') + WGSL_STRUCTURES;
+    const code = base.replace(EF, 'fn ef(i: u32) -> f32 { return E[baseE + i]; }').replace(EU, 'fn eu(i: u32) -> u32 { return bitcast<u32>(E[baseE + i]); }') + WGSL_STRUCTURES(fils);
+    codes.set(fils, code);
     return code;
+  };
+
+  /** Fils par groupe de travail du noyau sur ce device : 1024 au plus, 256 au moins (limites par défaut de WebGPU). */
+  P.filsStructures = function (device) {
+    const l = device.limits || {};
+    return Math.max(256, Math.min(1024, l.maxComputeInvocationsPerWorkgroup || 256, l.maxComputeWorkgroupSizeX || 256));
   };
 
   // Pipeline du noyau « structures », un par device ; disposition explicite (8 tampons de stockage).
@@ -546,7 +576,7 @@ fn structures(@builtin(workgroup_id) wg: vec3u, @builtin(local_invocation_index)
         stockage(22),
       ],
     });
-    const module = device.createShaderModule({ label: 'pm-structures', code: P.codeStructures() });
+    const module = device.createShaderModule({ label: 'pm-structures', code: P.codeStructures(P.filsStructures(device)) });
     p = { layout, pipeline: device.createComputePipeline({ layout: device.createPipelineLayout({ bindGroupLayouts: [layout] }), compute: { module, entryPoint: 'structures' } }) };
     parDevice.set(device, p);
     return p;
