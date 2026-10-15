@@ -47,6 +47,7 @@
       <label>Type <select id="type"><option value="clip">mouvement (clip)</option><option value="pose">pose</option></select></label>
       <label>Nom <input id="nom" pattern="[a-z0-9-]+" placeholder="ex. gratte-tete"></label>
       <label>Description <input id="description"></label>
+      <label>Habillage <select id="habillage"></select></label>
       <label>Gabarit <select id="gabarit"></select></label>
       <div class="barre"><button id="annuler">Annuler</button><button id="retablir">Rétablir</button><button id="enregistrer" class="principal">Enregistrer</button></div>
       <p id="message" role="status"></p>
@@ -58,6 +59,11 @@
       <label>Pieds <select id="pieds"><option value="libres">libres</option><option value="au-sol">au sol</option></select></label>
       <label>Miroir (phase) <input id="miroir" type="number" min="0" max="0.95" step="0.05"></label>
       <label><input id="additif" type="checkbox"> Calque additif</label>
+    </fieldset>
+    <fieldset id="visage"><legend>Visage</legend>
+      <label>Expression <select id="expression"></select></label>
+      <label>Bouche <select id="bouche"></select></label>
+      <p class="aide">Dans un mouvement, le choix vaut à partir de l'instant courant, jusqu'à la clé suivante qui en donne un autre.</p>
     </fieldset>
     <div id="curseurs"></div>
     <fieldset><legend>Bibliothèque</legend>
@@ -71,6 +77,7 @@
 <script src="/_pm/personnages/modules/squelette.js"></script>
 <script src="/_pm/personnages/modules/clips.js"></script>
 <script src="/_pm/personnages/modules/habillage-batonnets.js"></script>
+<script src="/_pm/personnages/modules/habillage-pieces.js"></script>
 <script type="module" src="/_pm/personnages/atelier.mjs"></script>
 </body>
 </html>
