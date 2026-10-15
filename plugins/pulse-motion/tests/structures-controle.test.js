@@ -25,8 +25,8 @@ test('contrôles : 16 cordes et tissus au plus par scène, 64 × 64 sommets par 
   const p = controler2(dir).problemes.filter((x) => x.regle === 'budget-structures');
   assert.equal(p.length, 2, JSON.stringify(p));
   assert.ok(p.every((x) => x.gravite === 'alerte' && x.scene === 'etincelles'));
-  assert.match(p[0].message, /Scène « etincelles » : 19 cordes et tissus ; au-delà de 16 par scène, leur simulation dépasse son temps \(aperçu saccadé\)\. En retirer, ou les répartir sur plusieurs scènes\./);
-  assert.match(p[1].message, /Scène « etincelles » : l'effet « voile », tissu « v » de 80 × 60 sommets ; au-delà de 64 × 64 \(4096\), sa simulation dépasse son temps \(aperçu saccadé\)\. Baisser « resolution »\./);
+  assert.match(p[0].message, /Scène « etincelles » : 19 cordes et tissus ; au-delà de 16 par scène, leur simulation dépasse son temps \(aperçu saccadé\)\. En retirer, ou les répartir sur plusieurs scènes\. Même sous cette limite, mesurée sur une carte graphique récente, une machine modeste peut saccader à l'aperçu \(l'export reste exact\)\./);
+  assert.match(p[1].message, /Scène « etincelles » : l'effet « voile », tissu « v » de 80 × 60 sommets ; au-delà de 64 × 64 \(4096\), sa simulation dépasse son temps \(aperçu saccadé\)\. Baisser « resolution » \(même sous cette limite, mesurée sur une carte graphique récente, une machine modeste peut saccader à l'aperçu\)\./);
   // 16 structures, tissu de 64 × 64 : aucune alerte.
   ecrire(dir, 'effets/voile.json', { version: 1, nom: 'voile', emetteurs: [{ nom: 'v', structure: { type: 'tissu', resolution: [64, 64] } }] });
   ecrire(dir, 'effets/cordes.json', { version: 1, nom: 'cordes', emetteurs: Array.from({ length: 5 }, (_, i) => ({ nom: 'c' + i, structure: { type: 'corde', resolution: 8 } })) });
