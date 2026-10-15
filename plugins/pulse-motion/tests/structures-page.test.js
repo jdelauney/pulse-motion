@@ -122,7 +122,7 @@ envoyer({ webgpu: true, ecart: ecart(calque, ref), avant, pas0, pendant, actif: 
   assert.ok(r.yChute > r.yDebut + 5, `lâchée à 1 s de τ : la bannière tombe (y moyen ${r.yDebut.toFixed(1)} -> ${r.yChute.toFixed(1)})`);
 });
 
-test('page : un fanion attaché à un élément animé par CSS suit son bord gauche', async (t) => {
+test('page : un fanion attaché à un élément animé par CSS le suit, à sa place de repos', async (t) => {
   if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
   const html = pageStructures({
     textes: { titre: 'Mât' },
@@ -152,8 +152,9 @@ envoyer({ webgpu: true, mesures, panneau });`,
   assert.equal(r.panneau, '', 'aucun panneau d\'erreur');
   for (const { mat, gauche } of r.mesures) {
     gauche.forEach((p, ligne) => {
-      assert.ok(Math.abs(p.x - mat.x) < 0.05, `x ${p.x.toFixed(3)} au lieu de ${mat.x.toFixed(3)} (bord gauche de #mat)`);
-      assert.ok(Math.abs(p.y - (mat.y + mat.h * ligne / 5)) < 0.05, `ligne ${ligne} : y ${p.y.toFixed(3)}`);
+      // Place de repos gardée dans le repère de #mat : 2 cqh à droite de son bord gauche, sur la hauteur de la zone (20 cqh).
+      assert.ok(Math.abs(p.x - (mat.x + 2)) < 0.05, `x ${p.x.toFixed(3)} au lieu de ${(mat.x + 2).toFixed(3)} (place de repos, suit #mat)`);
+      assert.ok(Math.abs(p.y - (mat.y + 20 * ligne / 5)) < 0.05, `ligne ${ligne} : y ${p.y.toFixed(3)}`);
     });
   }
   assert.ok(r.mesures[1].mat.x > r.mesures[0].mat.x + 15, '#mat a bougé');

@@ -307,6 +307,10 @@
           }),
           a: noeud('texte', 'Tenus par (« ancre », « #id », ou point [x, y] de la zone)', 'ancre', { motif: '^(ancre|#[A-Za-z0-9_-]+)$' }),
           lacher: nb('Lâchée à (s de τ ; absent : jamais)', null, { min: 0, exemple: 2.5, unite: 's', curseur: [0, 10] }),
+          glisse: ob('Glissement (les sommets tenus s\'écartent de leur place)', {
+            vers: pr('Décalage final (fraction de l\'élément ou de la zone)', [0, 0], { requis: true, exemple: [-0.25, 0] }),
+            duree: nb('Durée du glissement depuis le début de l\'effet', 1, { min: 0.05, unite: 's', curseur: [0.05, 5] }),
+          }),
         }), { defaut: [], exemple: [{ ou: 'debut', a: 'ancre' }], maximum: ATTACHES_MAX }),
         raideur: nb('Raideur', 0.9, { min: 0, max: 1, curseur: [0, 1], pas: 0.01 }),
         flexion: nb('Raideur de flexion', 0.1, { min: 0, max: 1, curseur: [0, 1], pas: 0.01 }),
@@ -1366,7 +1370,17 @@
             lacher = nombre(a.lacher, c + '.lacher');
             if (lacher < 0) throw invalide(c + '.lacher', 'secondes de τ positives ou nulles attendues');
           }
-          return { sommets: sommets, cible: cible, lacher: lacher };
+          // Glissement : les points tenus s'écartent de leur place de « vers » (fraction de l'élément visé, ou de la zone pour
+          // un point), en douceur, de τ = 0 à τ = duree (rideau ouvert par ses attaches).
+          var glisse = null;
+          if (a.glisse !== undefined && a.glisse !== null) {
+            var g = objet(a.glisse, c + '.glisse');
+            if (g.vers === undefined || g.vers === null) throw invalide(c + '.glisse.vers', 'décalage [x, y] obligatoire (fraction de l\'élément ou de la zone)');
+            var duree = nombre(g.duree, c + '.glisse.duree', 1);
+            if (duree < 0.05) throw invalide(c + '.glisse.duree', 'au moins 0,05 s attendu');
+            glisse = { vers: paire(g.vers, c + '.glisse.vers'), duree: duree };
+          }
+          return { sommets: sommets, cible: cible, lacher: lacher, glisse: glisse };
         });
 
         // Apparence.

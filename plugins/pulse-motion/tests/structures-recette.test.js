@@ -39,24 +39,28 @@ test('structures : corde et tissu par défaut (sommets, réglages, apparence), f
 
 test('structures : attaches (places, indices, ancre, #id, point de la zone, lâcher)', () => {
   const e = ok(compiler([tissu({ resolution: [4, 3], attaches: [
-    { ou: 'haut', a: 'ancre' }, { ou: 'bas', a: '#barre', lacher: 2.5 }, { ou: 'gauche', a: '#mat' }, { ou: 'droite', a: '#barre' },
+    { ou: 'haut', a: 'ancre' }, { ou: 'bas', a: '#barre', lacher: 2.5, glisse: { vers: [-0.25, '0.1 * 2'], duree: 1.5 } }, { ou: 'gauche', a: '#mat' }, { ou: 'droite', a: '#barre' },
     { ou: 'coins' }, { ou: '5, 6', a: '#mat' }, { ou: 7, a: [0.5, 1] }, { ou: [1, 2] },
   ] }), corde({ resolution: 10, attaches: [{ ou: 'debut', a: [0, 0.5] }, { ou: 'fin', a: ['0.25 + 0.5', 0.5], lacher: 'dur - 1' }] })]));
   assert.deepEqual(e.elements, ['barre', 'mat']);
   assert.deepEqual(e.emetteurs[0].structure.attaches, [
-    { sommets: [0, 1, 2, 3], cible: { genre: 'element', element: 0 }, lacher: null },
-    { sommets: [8, 9, 10, 11], cible: { genre: 'element', element: 1 }, lacher: 2.5 },
-    { sommets: [0, 4, 8], cible: { genre: 'element', element: 2 }, lacher: null },
-    { sommets: [3, 7, 11], cible: { genre: 'element', element: 1 }, lacher: null },
-    { sommets: [0, 3, 8, 11], cible: { genre: 'element', element: 0 }, lacher: null },
-    { sommets: [5, 6], cible: { genre: 'element', element: 2 }, lacher: null },
-    { sommets: [7], cible: { genre: 'point', point: [0.5, 1] }, lacher: null },
-    { sommets: [1, 2], cible: { genre: 'element', element: 0 }, lacher: null },
+    { sommets: [0, 1, 2, 3], cible: { genre: 'element', element: 0 }, lacher: null, glisse: null },
+    { sommets: [8, 9, 10, 11], cible: { genre: 'element', element: 1 }, lacher: 2.5, glisse: { vers: [-0.25, 0.2], duree: 1.5 } },
+    { sommets: [0, 4, 8], cible: { genre: 'element', element: 2 }, lacher: null, glisse: null },
+    { sommets: [3, 7, 11], cible: { genre: 'element', element: 1 }, lacher: null, glisse: null },
+    { sommets: [0, 3, 8, 11], cible: { genre: 'element', element: 0 }, lacher: null, glisse: null },
+    { sommets: [5, 6], cible: { genre: 'element', element: 2 }, lacher: null, glisse: null },
+    { sommets: [7], cible: { genre: 'point', point: [0.5, 1] }, lacher: null, glisse: null },
+    { sommets: [1, 2], cible: { genre: 'element', element: 0 }, lacher: null, glisse: null },
   ]);
   assert.deepEqual(e.emetteurs[1].structure.attaches, [
-    { sommets: [0], cible: { genre: 'point', point: [0, 0.5] }, lacher: null },
-    { sommets: [9], cible: { genre: 'point', point: [0.75, 0.5] }, lacher: 2 },
+    { sommets: [0], cible: { genre: 'point', point: [0, 0.5] }, lacher: null, glisse: null },
+    { sommets: [9], cible: { genre: 'point', point: [0.75, 0.5] }, lacher: 2, glisse: null },
   ]);
+  // Glissement : décalage obligatoire, durée d'au moins 0,05 s (1 s par défaut).
+  assert.deepEqual(ok(compiler([tissu({ attaches: [{ ou: 'haut', glisse: { vers: [0.3, 0] } }] })])).emetteurs[0].structure.attaches[0].glisse, { vers: [0.3, 0], duree: 1 });
+  assert.match(erreurDe(compiler([tissu({ attaches: [{ ou: 'haut', glisse: {} }] })])).message, /attaches\[0\]\.glisse\.vers : décalage \[x, y\] obligatoire/);
+  assert.match(erreurDe(compiler([tissu({ attaches: [{ ou: 'haut', glisse: { vers: [0.3, 0], duree: 0 } }] })])).message, /attaches\[0\]\.glisse\.duree : au moins 0,05 s attendu/);
 });
 
 test('structures : apparence (dégradé lissé ou en bandes, image de assets/, photographie de l\'ancre, mailles, lumière)', () => {
@@ -129,7 +133,8 @@ test('structures : schéma (variantes corde et tissu, attaches, apparence)', () 
   assert.deepEqual(Object.keys(n.variantes.types), ['corde', 'tissu']);
   assert.deepEqual(Object.keys(n.variantes.types.corde.champs), ['resolution', 'perles']);
   assert.deepEqual(Object.keys(n.variantes.types.tissu.champs), ['resolution']);
-  assert.deepEqual(Object.keys(n.champs.attaches.element.champs), ['ou', 'a', 'lacher']);
+  assert.deepEqual(Object.keys(n.champs.attaches.element.champs), ['ou', 'a', 'lacher', 'glisse']);
+  assert.deepEqual(Object.keys(n.champs.attaches.element.champs.glisse.champs), ['vers', 'duree']);
   assert.deepEqual(Object.keys(n.champs.apparence.champs), ['couleur', 'degrade', 'sens', 'bandes', 'image', 'source', 'mailles', 'lumiere']);
   assert.equal(n.champs.attaches.maximum, R.ATTACHES_MAX);
   assert.equal(n.champs.dechirure.min, R.DECHIRURE_MIN);
