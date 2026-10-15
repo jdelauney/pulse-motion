@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "nom": "guirlande",
+  "description": "Guirlande d'ampoules sur un fil qui pend d'un bord à l'autre de la zone (l'ancre, ou la balise placée d'un élément à l'autre), balancée par un souffle ; halo des ampoules.",
+  "parametres": {
+    "couleur": { "defaut": "#ffd27a", "type": "couleur" },
+    "eclat": { "defaut": 2, "min": 0.5, "max": 6 },
+    "mou": { "defaut": 0.1, "min": 0, "max": 0.3 },
+    "vent": { "defaut": 4, "min": 0, "max": 40 }
+  },
+  "rendu_calque": { "bloom": 1, "seuil_bloom": 0.8 },
+  "emetteurs": [
+    {
+      "nom": "fil",
+      "structure": {
+        "type": "corde",
+        "resolution": 49,
+        "attaches": [{ "ou": "debut", "a": [0, 0.5] }, { "ou": "fin", "a": ["1 - mou", 0.5] }],
+        "raideur": 1,
+        "flexion": 0.02,
+        "amortissement": 0.05,
+        "epaisseur": 0.3,
+        "perles": { "tous": 6, "emetteur": "ampoule" },
+        "apparence": { "couleur": "#2b2b2b" }
+      },
+      "forces": [
+        { "type": "gravite", "valeur": 40 },
+        { "type": "turbulence", "echelle": 20, "force": "vent", "vitesse": 0.5 }
+      ]
+    },
+    {
+      "nom": "ampoule",
+      "naissance": { "taille": [1.6, 1.6] },
+      "vie": { "couleur": "couleur", "intensite": "eclat" },
+      "rendu": { "type": "sprite", "texture": "disque-doux", "melange": "additif" }
+    }
+  ]
+}

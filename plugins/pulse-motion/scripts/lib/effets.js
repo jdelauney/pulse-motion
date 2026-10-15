@@ -5,6 +5,8 @@
  * data-reglages="nom: valeur; …" data-graine="7" data-start="…" data-dur="…"></div> ; data-cible="#id" : élément
  * d'arrivée d'une métamorphose (fragmentation, P4). Une recette qui photographie son ancre (pixels, éclats, cible
  * « ancre ») demande data-ancre (ancre-vide), une métamorphose data-cible (metamorphose-sans-cible).
+ * Structures (P5b) : un tissu photographié (apparence.source « ancre ») demande data-ancre (ancre-vide) ; chaque « #id » visé
+ * par une attache (effet.elements) existe dans la scène (attache-introuvable).
  * Les recettes sont cherchées dans <projet>/effets/ puis dans la bibliothèque du plugin.
  * Chaque balise reçoit data-pm-effet="N" (index dans M.donnees.effets) ou data-pm-effet-erreur.
  * Atelier : balisesEffets repère les balises (positions dans le texte d'origine, même rang que l'assemblage),
@@ -188,8 +190,13 @@ function preparerEffets(html, { scene, projet, bibliotheque, charte = {}, premie
     if (ems.some((em) => em.cible && em.cible.source === 'cible') && !cible) {
       return signaler([{ regle: 'metamorphose-sans-cible', message: `l'effet « ${nom} » transforme son ancre en un autre élément : data-cible="#id" attendu (l'élément d'arrivée, dans la même scène).` }]);
     }
-    if (ems.some((em) => em.pixels || em.eclats || (em.cible && em.cible.source === 'ancre')) && !ancre) {
+    if (ems.some((em) => em.pixels || em.eclats || (em.cible && em.cible.source === 'ancre') || (em.structure && em.structure.apparence.source === 'ancre')) && !ancre) {
       return signaler([{ regle: 'ancre-vide', message: `l'effet « ${nom} » photographie son ancre : data-ancre="#id" attendu (rien à photographier sans elle).` }]);
+    }
+    // Structures : chaque élément visé par une attache « #id » est dans la scène.
+    const absents = (compile.effet.elements || []).filter((id) => !ids.has(id));
+    if (absents.length) {
+      return signaler([{ regle: 'attache-introuvable', message: `l'effet « ${nom} » attache une structure à « #${absents[0]} », absent de la scène (attendu : #id d'un élément de la même scène, ou « ancre »).` }]);
     }
 
     // Modules WGSL : code assemblé avec les réglages de la recette (S.attacherModules), sources gardées pour l'atelier.

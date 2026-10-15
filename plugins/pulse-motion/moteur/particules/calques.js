@@ -61,6 +61,10 @@
  * demi-résolution dans l'aperçu (10 par seconde au plus en lecture, à chaque image à l'arrêt), exacte et attendue au seek en
  * capture ; passée au rendu (o.photoScene) ; sans photographie, réfraction ignorée et alerte dans la console (hors capture).
  * M.particules.refraction(idScene) -> { t, exact } | null   photographie de réfraction de la scène (tests)
+ * Cordes et tissus (P5b) : éléments d'attache d'un effet = l'ancre (ou la balise), puis les « #id » de effet.elements ;
+ * leurs repères mesurés avec la zone à chaque point de la grille (zones.attaches) ; un élément absent désactive l'effet.
+ * Tissu photographié (apparence.source « ancre ») : l'ancre au début de l'effet (chemin des photographies de P4, densité 1,
+ * recadrée sur sa boîte opaque) en texture, fx.fragments[em.index] = { image, centreA, demiA } ; cachée à partir du pas 1.
  * M.transitionShader(id) -> bool        transition par shader de la scène prête (horloge : pas de style CSS d'entrée) :
  *   compilée, composition affichée et scène déjà photographiée ; sinon fondu CSS d'attente (jamais photographié : une
  *   scène à transition par shader compilée est photographiée opaque).
@@ -180,6 +184,7 @@
           effetOrigine: d.effet,
           fragments: null,
           ancres: new Map(),
+          attaches: new Map(),
           debut: temps ? temps.debut : info.debut,
           zones: new Map(),
           sim: null,
@@ -412,8 +417,9 @@
 
   // ---- Fragments (P4) ----
 
-  /** Effet dont une recette photographie un élément (naissance sur les pixels, éclats, arrivée sur une cible). */
-  function fragmente(fx) { return fx.effetOrigine.emetteurs.some((em) => em.fragment); }
+  /** Effet dont une recette photographie un élément (naissance sur les pixels, éclats, arrivée sur une cible, tissu fait de
+   *  son ancre). */
+  function fragmente(fx) { return fx.effetOrigine.emetteurs.some((em) => em.fragment || (em.structure && em.structure.apparence.source)); }
 
   /** Élément visé par les émetteurs à cible : data-cible si l'un vise « cible », sinon l'ancre. */
   function elementVise(fx) {
@@ -541,6 +547,13 @@
     const donnees = effet.emetteurs.map(() => null);
     const totaux = {};
     for (const em of effet.emetteurs) {
+      // Tissu fait de son ancre (P5b) : l'ancre au début de l'effet, recadrée sur sa boîte opaque, gardée en image.
+      if (em.structure && em.structure.apparence.source === 'ancre') {
+        const A = await photoOuVide(fx, fx.ancre, dansScene(fx, fx.debut), 1, true);
+        if (!A) return false;
+        donnees[em.index] = { image: A.image, demiA: [A.photo.largeurCqh / 2, A.photo.hauteurCqh / 2], centreA: (A.photo.centre || [0, 0]).slice() };
+        continue;
+      }
       if (!em.fragment) continue;
       const d = { a: null, b: null, eclats: null, image: null, demiA: [0, 0], demiB: [0, 0], centreA: [0, 0], centreB: [0, 0], coteA: 0, coteB: 0, nA: 0, nB: 0 };
       let A = null;
@@ -618,6 +631,31 @@
   function ancresGrille(fx, g, mesures) {
     grille(fx, g, mesures);
     return fx.ancres.get(g);
+  }
+
+  // ---- Cordes et tissus (P5b) : éléments d'attache ----
+
+  /** Effet dont un émetteur est une corde ou un tissu. */
+  function avecStructures(fx) { return fx.effet.emetteurs.some((em) => em.structure); }
+
+  /** Éléments visés par les attaches : l'ancre (ou la balise de l'effet), puis les « #id » de la recette (effet.elements) ;
+   *  null à la place d'un élément absent de la scène. */
+  function elementsAttaches(fx) {
+    return [fx.ancre || fx.el].concat((fx.effet.elements || []).map((id) => fx.section.querySelector('#' + CSS.escape(id))));
+  }
+
+  /** Repères des éléments d'attache, scène rendue et affichée (zones.attaches) : 8 nombres par élément. */
+  function mesurerAttaches(fx) {
+    const O = M.obstacles;
+    const elements = elementsAttaches(fx);
+    const t = new Float32Array(elements.length * O.REPERE);
+    P.mesurerReperes(elements, fx.section).forEach((r, k) => O.ecrireRepere(t, k * O.REPERE, r));
+    return t;
+  }
+
+  function attachesGrille(fx, g, mesures) {
+    grille(fx, g, mesures);
+    return fx.attaches.get(g);
   }
 
   /** Raccords (fonction de t) : un élément photographié est caché pendant que ses particules le remplacent (classe
@@ -713,7 +751,8 @@
     let z = fx.zones.get(g);
     const avecReperes = !!(fx.table && fx.table.actif);
     const avecAncres = !!fx.fragments;
-    if (!z || (avecReperes && !fx.reperes.has(g)) || (avecAncres && !fx.ancres.has(g))) {
+    const avecAttaches = avecStructures(fx);
+    if (!z || (avecReperes && !fx.reperes.has(g)) || (avecAncres && !fx.ancres.has(g)) || (avecAttaches && !fx.attaches.has(g))) {
       const t = instantGrille(fx, g);
       M.rendreScene(fx.info.id, t);
       mesures.scenes.add(fx.info.id);
@@ -725,6 +764,7 @@
           fx.reperes.set(g, avecInteractions(fx) ? arrondirReperes(r) : r);
         }
         if (avecAncres) fx.ancres.set(g, mesurerAncres(fx));
+        if (avecAttaches) fx.attaches.set(g, mesurerAttaches(fx));
       });
       fx.zones.set(g, z);
     }
@@ -753,6 +793,7 @@
       grille: (g) => grille(fx, g, mesures),
       reperes: (g) => reperesGrille(fx, g, mesures),
       ancres: (g) => ancresGrille(fx, g, mesures),
+      attaches: (g) => attachesGrille(fx, g, mesures),
     };
   }
 
@@ -915,6 +956,11 @@
       if (fx.desactive) return;
       // Effet de fragmentation : seulement une fois ses photographies faites.
       if (fragmente(fx) && !fx.fragments) return;
+      // Cordes et tissus : un élément d'attache absent de la scène (balise qui contourne l'assemblage) désactive l'effet.
+      if (!fx.sim && avecStructures(fx) && elementsAttaches(fx).some((el) => !el)) {
+        desactiver(fx, 'élément d\'attache introuvable dans la scène');
+        return;
+      }
       device.pushErrorScope('out-of-memory');
       try {
         if (!fx.sim) {
@@ -1215,6 +1261,14 @@
     }));
   }
 
+  /** Noyau des cordes et tissus préparé avant les simulations (repli à 256 fils si le pilote en refuse davantage) ; refusé
+   *  tout à fait : leurs effets sont désactivés. */
+  async function preparerStructures(device) {
+    const fxs = etat.scenes.flatMap((sc) => sc.effets).filter((fx) => avecStructures(fx));
+    if (!fxs.length || !P.preparerStructures) return;
+    try { await P.preparerStructures(device); } catch (e) { fxs.forEach((fx) => desactiver(fx, message(e))); }
+  }
+
   function demarrerGPU() {
     const obtention = obtenirAvecGarde();
     obtention.then((gpu) => {
@@ -1236,7 +1290,7 @@
         return compilerShaders(gpu.device).then((compiler) => {
           etat.composition = new P.Composition(gpu.device, gpu.format, etat.shaders);
           return compilerComposition(compiler);
-        }).then(() => verifierModules(rendu)).then(() => preparerFormes(gpu.device)).then(fragmentsPromis);
+        }).then(() => verifierModules(rendu)).then(() => preparerStructures(gpu.device)).then(() => preparerFormes(gpu.device)).then(fragmentsPromis);
       }).then(() => {
         etat.gpu = gpu;
         etat.rendu = rendu;
@@ -1286,7 +1340,7 @@
     etat.scenes.forEach((sc) => sc.effets.forEach((fx) => {
       fx.zones.clear(); fx.table = null; fx.reperes = new Map(); liberer(fx);
       // Photographies et données des fragments refaites avec les nouvelles polices.
-      fx.fragments = null; fx.effet = fx.effetOrigine; fx.ancres = new Map();
+      fx.fragments = null; fx.effet = fx.effetOrigine; fx.ancres = new Map(); fx.attaches = new Map();
     }));
     etat.masques = null;
     etat.promesseMasques = null;
@@ -1450,6 +1504,7 @@
     fx.reperes = new Map();
     fx.fragments = null;
     fx.ancres = new Map();
+    fx.attaches = new Map();
     if (fragmente(fx) && !(await preparerFragmentsEffet(fx))) throw new Error('Effet non affiché : rien à photographier (ancre vide).');
     // Les couches communes en dépendent : tous les effets repartent de contributions recalculées.
     oublierContributions();

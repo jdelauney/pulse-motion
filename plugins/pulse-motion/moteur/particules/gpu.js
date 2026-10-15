@@ -15,7 +15,13 @@
     let adaptateur = null;
     try {
       adaptateur = await navigator.gpu.requestAdapter();
-      if (adaptateur) device = await adaptateur.requestDevice();
+      if (adaptateur) {
+        // Groupes de travail jusqu'à 1024 fils si l'adaptateur le permet (noyau des cordes et tissus, P5b).
+        const l = adaptateur.limits || {};
+        const fils = Math.min(1024, l.maxComputeInvocationsPerWorkgroup || 256, l.maxComputeWorkgroupSizeX || 256);
+        const requiredLimits = fils > 256 ? { maxComputeInvocationsPerWorkgroup: fils, maxComputeWorkgroupSizeX: fils } : undefined;
+        device = await adaptateur.requestDevice(requiredLimits ? { requiredLimits } : undefined);
+      }
     } catch (e) { device = null; }
     if (!device) return null;
     return { device, adaptateur, format: navigator.gpu.getPreferredCanvasFormat() };
