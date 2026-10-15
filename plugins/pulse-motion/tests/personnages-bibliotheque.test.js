@@ -13,6 +13,7 @@ test('bibliothèque : complète et valide', () => {
   assert.deepEqual(Object.keys(lu.poses).sort(), ['assis', 'bras-leves', 'debout', 'mains-hanches', 'montrer', 'penche']);
   assert.deepEqual(Object.keys(lu.clips).sort(), ['accroupi', 'clignement', 'coucou', 'course', 'marche', 'peur', 'repos', 'respiration', 'saut', 'se-relever']);
   assert.deepEqual(Object.keys(lu.gabarits).sort(), ['avec-queue', 'standard']);
+  assert.deepEqual(Object.keys(lu.expressions).sort(), ['colere', 'joie', 'neutre', 'peur', 'surprise', 'tristesse']);
   for (const [nom, c] of Object.entries(lu.clips)) assert.ok(c.description && c.description.length > 5, `${nom} : description`);
   assert.equal(lu.clips.respiration.additif, true);
   assert.equal(lu.clips.clignement.additif, true);

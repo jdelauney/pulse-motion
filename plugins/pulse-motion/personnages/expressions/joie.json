@@ -1,0 +1,10 @@
+{
+  "nom": "joie",
+  "description": "content, sourire, sourcils levés",
+  "bouche": "sourire",
+  "angles": {
+    "tailleYeux": 1.05,
+    "paupieres": 0.85,
+    "sourcilsY": 4
+  }
+}
