@@ -192,6 +192,11 @@ test('édition : retirer un choix', () => {
   const seule = E.creerEdition({ type: 'clip', nom: 's', objet: { boucle: true, duree: 1, cles: [{ t: 0, bouche: 'O' }] }, lu }, outils);
   seule.reglerChoix('bouche', null);
   assert.equal(seule.objet.cles.length, 1, 'la dernière clé reste');
+  assert.deepEqual(seule.objet.cles[0], { t: 0, pose: 'debout' }, 'et revient au repos plutôt que de rester vide');
+  const entre = E.creerEdition({ type: 'clip', nom: 'e', objet: { boucle: false, cles: [{ t: 0, pose: 'debout', bouche: 'O' }, { t: 1, angles: { torse: 4 } }] }, lu }, outils);
+  entre.aller(0.4);
+  assert.throws(() => entre.reglerChoix('bouche', null), /aucune clé à cet instant/);
+  assert.equal(entre.annuler(), false, 'rien n\'a été mémorisé');
 });
 
 test('édition : calque additif, champ inconnu', () => {

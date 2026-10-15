@@ -208,18 +208,20 @@ export function creerEdition(options, { clips: K, squelette: S }) {
     reglerChoix(champ, valeur) {
       if (champ !== 'bouche' && champ !== 'expression') throw new Error(`Atelier : choix « ${champ} » inconnu (bouche ou expression).`);
       if (estClip() && objet.additif) throw new Error('Atelier : un calque additif ne choisit ni bouche ni expression.');
-      memoriser();
-      if (!estClip()) { if (valeur === null) delete objet[champ]; else objet[champ] = valeur; return; }
+      if (!estClip()) { memoriser(); if (valeur === null) delete objet[champ]; else objet[champ] = valeur; return; }
       const u = arrondi(position());
       let i = cleSous(u);
-      if (i < 0) {
-        if (valeur === null) return;
-        objet.cles.push({ t: u }); selection = objet.cles.length - 1; trier(); i = selection;
-      }
+      // Retirer un choix là où il n'y a pas de clé : la valeur vient d'une clé précédente, rien à retirer ici.
+      if (i < 0 && valeur === null) throw new Error(`Atelier : aucune clé à cet instant ; ce choix vient d'une clé précédente : aller sur cette clé pour le retirer.`);
+      memoriser();
+      if (i < 0) { objet.cles.push({ t: u }); selection = objet.cles.length - 1; trier(); i = selection; }
       const c = objet.cles[i];
       if (valeur === null) delete c[champ]; else c[champ] = valeur;
       const vide = c.pose === undefined && c.angles === undefined && c.bouche === undefined && c.expression === undefined;
-      if (vide && objet.cles.length > 1) { objet.cles.splice(i, 1); selection = null; } else selection = i;
+      if (vide && objet.cles.length > 1) { objet.cles.splice(i, 1); selection = null; } else {
+        if (vide) c.pose = 'debout'; // une clé seule ne peut pas rester vide : elle revient au repos
+        selection = i;
+      }
     },
     annuler() {
       if (!passe.length) return false;

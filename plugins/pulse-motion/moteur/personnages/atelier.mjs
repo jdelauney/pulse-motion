@@ -382,13 +382,23 @@ $('#annuler').addEventListener('click', () => { if (ed.annuler()) rendre(); });
 $('#retablir').addEventListener('click', () => { if (ed.retablir()) rendre(); });
 
 /* ---------- visage et habillage ---------- */
+/** Bouches proposées : les noms standard, puis celles propres au dessin choisi. */
+function listeBouches() {
+  const dessin = habillage !== 'batonnets' && lu.dessins[habillage];
+  const propres = Object.keys((dessin && dessin.visage && dessin.visage.bouches) || {}).filter((b) => !BOUCHES.includes(b)).sort();
+  $('#bouche').innerHTML = ['<option value="">aucune (selon l\'expression)</option>', ...[...BOUCHES, ...propres].map((b) => `<option value="${b}">${b}</option>`)].join('');
+}
 function majChoix() {
   const visible = !(ed.type === 'clip' && ed.objet.additif);
   $('#visage').hidden = !visible;
   if (!visible) return;
   const c = ed.choix();
   if (document.activeElement !== $('#expression')) $('#expression').value = c.expression || '';
-  if (document.activeElement !== $('#bouche')) $('#bouche').value = c.bouche || '';
+  if (document.activeElement !== $('#bouche')) {
+    const b = $('#bouche');
+    if (c.bouche && ![...b.options].some((o) => o.value === c.bouche)) b.add(new Option(c.bouche, c.bouche));
+    b.value = c.bouche || '';
+  }
 }
 for (const champ of ['expression', 'bouche']) {
   $(`#${champ}`).addEventListener('change', (ev) => {
@@ -402,6 +412,7 @@ function choisirHabillage(nom) {
   $('#habillage').value = habillage;
   $('#gabarit').disabled = habillage !== 'batonnets';
   ed.changerGabarit(gabaritCourant());
+  listeBouches();
   creerPersos();
   construireCurseurs();
   rendre();
@@ -470,10 +481,10 @@ function boucle(maintenant) {
   $('#gabarit').innerHTML = gabarits.map((g) => `<option value="${g}"${g === 'standard' ? ' selected' : ''}>${g}</option>`).join('');
   $('#habillage').innerHTML = ['<option value="batonnets">bâtonnets</option>', ...Object.keys(lu.dessins).sort().map((d) => `<option value="${d}">${d}</option>`)].join('');
   $('#expression').innerHTML = ['<option value="">aucune</option>', ...Object.keys(lu.expressions).map((e) => `<option value="${e}">${e}</option>`)].join('');
-  $('#bouche').innerHTML = ['<option value="">aucune (selon l\'expression)</option>', ...BOUCHES.map((b) => `<option value="${b}">${b}</option>`)].join('');
   const voulu = new URLSearchParams(location.search).get('dessin');
   if (voulu && lu.dessins[voulu]) habillage = voulu;
   $('#habillage').value = habillage;
+  listeBouches();
   $('#gabarit').disabled = habillage !== 'batonnets';
   creerPersos();
   construireBibliotheque();
