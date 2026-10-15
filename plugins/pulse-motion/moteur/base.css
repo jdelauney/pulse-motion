@@ -17,7 +17,8 @@ body {
 /* Effets de particules et fonds par shader : la balise donne la zone d'émission par défaut ; les canvas des calques
    couvrent la scène, derrière le contenu (arriere) ou devant (avant). */
 /* Le préfixe #pm-scene doit l'emporter sur les règles des styles comme `.decor ~ *`. */
-#pm-scene [data-effet], #pm-scene [data-shader], #pm-scene [data-milieu] { position: absolute; }
+#pm-scene [data-effet], #pm-scene [data-shader] { position: absolute; }
+#pm-scene [data-milieu] { position: absolute; }
 [data-effet], [data-shader], [data-milieu] { inset: 0; pointer-events: none; }
 /* Formes d'obstacles invisibles (collisions de particules) : déclarations lues par le moteur, rien à afficher. */
 [data-obstacle-forme] { display: none; }
