@@ -16,6 +16,7 @@ const { assembler } = require('./assembler.js');
 const { creerRoutesExport } = require('./lib/routes-export.js');
 const { creerRoutesVoix } = require('./lib/routes-voix.js');
 const { creerRoutesAtelier } = require('./lib/routes-atelier.js');
+const { creerRoutesPersonnages } = require('./lib/routes-personnages.js');
 const { whisperParDefaut } = require('./lib/whisper.js');
 const { trouverFfmpeg } = require('./lib/ffmpeg.js');
 
@@ -66,9 +67,11 @@ function ecouter(serveur, hote, port) {
 /**
  * demarrerApercu({ dossier, port?, dossierStyles?, dossierEffets?, delai?, whisper?, maxPrise? })
  * dossierEffets : bibliothèque des effets de particules (tests) ; par défaut celle du plugin.
+ * bibliothequePersonnages : dossier personnages/ de la bibliothèque (tests) ; ecrireBibliothequePersonnages : l'atelier
+ * des personnages enregistre dans la bibliothèque (pulse-motion personnages atelier --bibliotheque).
  * -> Promise<{ port, url, fermer(): Promise }>
  */
-async function demarrerApercu({ dossier, port = 4321, dossierStyles, dossierEffets, delai = 150, whisper, maxPrise }) {
+async function demarrerApercu({ dossier, port = 4321, dossierStyles, dossierEffets, delai = 150, whisper, maxPrise, bibliothequePersonnages, ecrireBibliothequePersonnages = false }) {
   const projet = path.resolve(dossier);
   const optionsAssemblage = { dossier: projet, ...(dossierStyles ? { dossierStyles } : {}), ...(dossierEffets ? { dossierEffets } : {}) };
   let dernier = assembler(optionsAssemblage);
@@ -83,6 +86,7 @@ async function demarrerApercu({ dossier, port = 4321, dossierStyles, dossierEffe
   const routesExport = creerRoutesExport(projet);
   const routesVoix = creerRoutesVoix(projet, { whisper: whisper || whisperParDefaut, maxOctets: maxPrise, outil: trouverFfmpeg });
   const routesAtelier = creerRoutesAtelier(projet, { dossierStyles, ...(dossierEffets ? { bibliotheque: dossierEffets } : {}) });
+  const routesPersonnages = creerRoutesPersonnages(projet, { ...(bibliothequePersonnages ? { bibliotheque: bibliothequePersonnages } : {}), ecrireBibliotheque: ecrireBibliothequePersonnages });
 
   /** Rapport de débordement envoyé par la page : JSON seulement (une autre origine serait bloquée par CORS). */
   function recevoirControle(req, res) {
@@ -140,6 +144,8 @@ async function demarrerApercu({ dossier, port = 4321, dossierStyles, dossierEffe
       recevoirControle(req, res);
     } else if (routesAtelier(req, res, url)) {
       // route de l'atelier des effets traitée
+    } else if (routesPersonnages(req, res, url)) {
+      // route de l'atelier des personnages traitée
     } else if (routesExport(req, res, url)) {
       // route d'export traitée
     } else if (routesVoix(req, res, url)) {
