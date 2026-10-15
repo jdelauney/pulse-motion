@@ -21,6 +21,10 @@ Ouvrir l'atelier des personnages dans le navigateur, sur le mouvement ou la pose
 2. `pulse-motion personnages atelier <nom> --dessin <dessin> --dossier .` en arrière-plan (sans `--dessin` pour les bâtonnets), et attendre sa ligne « Atelier des personnages ». Sans vidéo dans ce dossier, l'atelier s'ouvre quand même mais n'enregistre pas : le dire.
 3. Expliquer en trois phrases : glisser une articulation tourne le membre ; Maj + glisser une main ou un pied l'amène sous la souris ; la frise du bas porte les moments du mouvement, « Enregistrer » range le résultat avec la vidéo (et « annule » le défait).
 
+## Ajuster une découpe (« le pivot du coude est mal placé », « cette forme va dans la jambe », « laisse-moi corriger la découpe »)
+
+Personnage découpé depuis une illustration (il a une découpe : `pulse-motion personnages liste --dossier .`, rubrique des découpes) : `pulse-motion personnages atelier --decoupe <nom> --dossier .` en arrière-plan. Expliquer : cliquer une forme puis un os pour l'y ranger ; glisser les ronds pour déplacer les articulations ; « Découper » montre le résultat qui marche ; « Enregistrer » le range. Après : regarder `pulse-motion personnages planche marche --dessin <nom> --dossier .`.
+
 ## 2. Après
 
 Quand la personne dit avoir fini : `pulse-motion personnages liste --dossier .`, lire le fichier enregistré, puis `pulse-motion personnages planche <nom> --dessin <dessin> --dossier .` et le montrer en une phrase. Si elle a enregistré sous un nouveau nom, le dire.

@@ -8,7 +8,7 @@
  *   node scripts/personnages.js planche <nom> [--type pose|clip] [--vues 0,45,90] [--images 8] [--gabarit standard]
  *                                  [--dossier <d>] [--sortie <fichier.png>] [--ouvrir]   PNG des vignettes
  *
- *   node scripts/personnages.js atelier [<nom>] [--dessin <d>] [--bibliotheque] [--dossier <d>] [--port 4321]
+ *   node scripts/personnages.js atelier [<nom>] [--dessin <d>] [--decoupe <nom>] [--bibliotheque] [--dossier <d>] [--port 4321]
  *        atelier des personnages (page de l'aperçu) ; dans une vidéo : enregistre dans ses personnages/ ;
  *        --bibliotheque : enregistre dans la bibliothèque du plugin ; le processus reste ouvert s'il sert l'aperçu
  *   node scripts/personnages.js analyser <fichier.svg> [--dossier <d>] [--sortie <fichier.png>]   formes d'une illustration, PNG annoté
@@ -33,13 +33,13 @@ const USAGE = [
   '        pulse-motion personnages verifier [--dossier <d>]',
   `        ${USAGE_PLANCHE.slice('Usage : '.length)}`,
   `        ${USAGE_DECOUPE.slice('Usage : '.length)}`,
-  '        pulse-motion personnages atelier [<nom>] [--dessin <d>] [--bibliotheque] [--dossier <d>] [--port 4321]',
+  '        pulse-motion personnages atelier [<nom>] [--dessin <d>] [--decoupe <nom>] [--bibliotheque] [--dossier <d>] [--port 4321]',
 ].join('\n');
-const USAGE_ATELIER = 'Usage : pulse-motion personnages atelier [<nom>] [--dessin <d>] [--bibliotheque] [--dossier <d>] [--port 4321]';
+const USAGE_ATELIER = 'Usage : pulse-motion personnages atelier [<nom>] [--dessin <d>] [--decoupe <nom>] [--bibliotheque] [--dossier <d>] [--port 4321]';
 
 
 // Options suivies d'une valeur (les autres, comme --ouvrir ou --bibliotheque, sont de simples drapeaux).
-const AVEC_VALEUR = ['--dessin', '--dossier', '--type', '--vues', '--images', '--gabarit', '--sortie', '--port'];
+const AVEC_VALEUR = ['--decoupe', '--dessin', '--dossier', '--type', '--vues', '--images', '--gabarit', '--sortie', '--port'];
 
 function options(args) {
   const valeur = (nom) => { const i = args.indexOf(nom); return i >= 0 ? args[i + 1] : undefined; };
@@ -61,8 +61,8 @@ function dossierNomme(nom) {
 }
 
 /** Ouvre l'atelier dans l'aperçu (rouvert s'il tourne déjà). -> { url, deja, cible } */
-async function lancerAtelierPersonnages({ dossier = '.', nom = null, dessin = null, bibliotheque = false, port = 4321, lancer, ouvrirUrl } = {}) {
-  for (const n of [nom, dessin]) if (n !== null && !NOM.test(n)) throw new Error(`Nom « ${n} » invalide (minuscules, chiffres, tirets ; exemple : marche).`);
+async function lancerAtelierPersonnages({ dossier = '.', nom = null, dessin = null, decoupe = null, bibliotheque = false, port = 4321, lancer, ouvrirUrl } = {}) {
+  for (const n of [nom, dessin, decoupe]) if (n !== null && !NOM.test(n)) throw new Error(`Nom « ${n} » invalide (minuscules, chiffres, tirets ; exemple : marche).`);
   const A = require('./apercu.js');
   const projet = !bibliotheque && fs.existsSync(path.join(dossier, 'deroule.json'));
   const cible = bibliotheque ? dossierNomme('pm-personnages-bibliotheque') : projet ? dossier : dossierNomme('pm-personnages');
@@ -73,7 +73,8 @@ async function lancerAtelierPersonnages({ dossier = '.', nom = null, dessin = nu
   if (nom) params.set('nom', nom);
   if (dessin) params.set('dessin', dessin);
   const q = params.toString();
-  const adresse = `${url}_pm/personnages${q ? `?${q}` : ''}`;
+  // --decoupe : la page de découpe de ce personnage (illustration, pivots, aperçu).
+  const adresse = decoupe ? `${url}_pm/personnages/decoupe?nom=${encodeURIComponent(decoupe)}` : `${url}_pm/personnages${q ? `?${q}` : ''}`;
   (ouvrirUrl || A.ouvrirNavigateur)(adresse);
   return { url: adresse, deja, cible: bibliotheque ? 'bibliotheque' : projet ? 'video' : null };
 }
@@ -158,7 +159,7 @@ async function executer(args, { bibliotheque } = {}) {
     const port = o.valeur('--port') === undefined ? 4321 : parseInt(o.valeur('--port'), 10);
     if (o.libres.length > 1 || !Number.isInteger(port) || (o.libres[0] !== undefined && !NOM.test(o.libres[0]))) return { code: 2, sortie: '', erreur: USAGE_ATELIER };
     try {
-      const r = await lancerAtelierPersonnages({ dossier: o.valeur('--dossier') || '.', nom: o.libres[0] || null, dessin: o.valeur('--dessin') || null, bibliotheque: o.drapeau('--bibliotheque'), port });
+      const r = await lancerAtelierPersonnages({ dossier: o.valeur('--dossier') || '.', nom: o.libres[0] || null, dessin: o.valeur('--dessin') || null, decoupe: o.valeur('--decoupe') || null, bibliotheque: o.drapeau('--bibliotheque'), port });
       const lignes = [`Atelier des personnages : ${r.url}`];
       if (r.cible === null) lignes.push('Aucune vidéo dans ce dossier : on peut poser et animer, mais pour enregistrer, lancez l\'atelier depuis le dossier d\'une vidéo.');
       if (r.cible === 'bibliotheque') lignes.push('Mode bibliothèque : les enregistrements vont dans la bibliothèque du plugin.');

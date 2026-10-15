@@ -187,17 +187,33 @@ async function decouperVideo({ dossier, nom, navigateur, ecrire }) {
   const decoupe = Object.hasOwn(lu.decoupes, nom) ? lu.decoupes[nom] : null;
   if (!decoupe) throw ErreurDecoupe(`Découpe « ${nom} » introuvable (personnages/decoupes/${nom}.json).`);
   const gabarit = lu.gabarits[decoupe.gabarit || 'standard'] || {};
-  const ancien = Object.hasOwn(lu.dessins, nom) && lu.sources.dessins[nom] === 'video' ? lu.dessins[nom] : null;
-  // Une couleur déjà nommée dans le dessin garde son nom (les autres vues s'y réfèrent).
-  const alias = {};
-  for (const [n, h] of Object.entries((ancien && ancien.couleurs) || {})) if (/^#[0-9a-f]{6}$/i.test(h)) alias[h.toUpperCase()] = n;
-  const avecAlias = Object.assign({}, decoupe, { couleurs: Object.assign(alias, decoupe.couleurs || {}) });
-  const r = await executer(page(lireSource(path.join(dossier, decoupe.source)), { decoupe: avecAlias, gabarit }, SCRIPT_DECOUPE), { navigateur });
+  const r = await executer(page(lireSource(path.join(dossier, decoupe.source)), { decoupe: avecAlias(decoupe, lu, nom), gabarit }, SCRIPT_DECOUPE), { navigateur });
   if (r.erreurs.length) throw ErreurDecoupe(r.erreurs.join('\n'));
-  const { dessin, profilCopie } = fusionnerDessin(ancien, r.partiel, decoupe.vue);
-  require('../historique.js').sauvegarder(dossier);
-  const { fichier } = P.enregistrer({ dossier: path.join(dossier, 'personnages'), type: 'dessin', nom, objet: dessin, lu, ecrire });
-  return { fichier, signalees: r.signalees, profilCopie, echelle: r.echelle, couleurs: r.partiel.couleurs };
+  const e = enregistrerDecoupe({ dossier, nom, partiel: r.partiel, vue: decoupe.vue, lu, ecrire });
+  return Object.assign(e, { signalees: r.signalees, echelle: r.echelle, couleurs: r.partiel.couleurs });
 }
 
-module.exports = { preparerSource, fusionnerDessin, renommerCouleur, analyserFichier, decouperVideo, page, SANS_NAVIGATEUR };
+/** Découpe complétée des noms de couleurs déjà donnés dans le dessin de la vidéo (les autres vues s'y réfèrent). */
+function avecAlias(decoupe, lu, nom) {
+  const ancien = Object.hasOwn(lu.dessins, nom) && lu.sources.dessins[nom] === 'video' ? lu.dessins[nom] : null;
+  const alias = {};
+  for (const [n, h] of Object.entries((ancien && ancien.couleurs) || {})) if (/^#[0-9a-f]{6}$/i.test(h)) alias[h.toUpperCase()] = n;
+  return Object.assign({}, decoupe, { couleurs: Object.assign(alias, decoupe.couleurs || {}) });
+}
+
+/** Fusionne le résultat d'une découpe dans le dessin de la vidéo et l'enregistre (historique avant ; découpe aussi si donnée). */
+function enregistrerDecoupe({ dossier, nom, partiel, vue, decoupe = null, lu = P.lire(dossier), ecrire }) {
+  const ancien = Object.hasOwn(lu.dessins, nom) && lu.sources.dessins[nom] === 'video' ? lu.dessins[nom] : null;
+  const { dessin, profilCopie } = fusionnerDessin(ancien, partiel, vue);
+  const cible = path.join(dossier, 'personnages');
+  // Tout est validé avant d'écrire : une découpe ou un dessin refusés ne laissent rien à moitié fait.
+  const ctx = Object.assign({ nom }, P.contexteDe(lu));
+  const erreurs = [...(decoupe ? P.valider('decoupe', Object.assign({}, decoupe, { nom }), ctx) : []), ...P.valider('dessin', Object.assign({}, dessin, { nom }), ctx)];
+  if (erreurs.length) throw Object.assign(ErreurDecoupe(erreurs.join('\n')), { erreurs });
+  require('../historique.js').sauvegarder(dossier);
+  if (decoupe) P.enregistrer({ dossier: cible, type: 'decoupe', nom, objet: decoupe, lu, ecrire });
+  const { fichier } = P.enregistrer({ dossier: cible, type: 'dessin', nom, objet: dessin, lu, ecrire });
+  return { fichier, profilCopie };
+}
+
+module.exports = { preparerSource, fusionnerDessin, renommerCouleur, analyserFichier, decouperVideo, enregistrerDecoupe, avecAlias, lireSource, page, SANS_NAVIGATEUR };
