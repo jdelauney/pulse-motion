@@ -4,7 +4,7 @@
   "description": "Air de la scène : fumée volumineuse qui monte du bas, s'enroule et contourne les obstacles déclarés ; sert de vent aux effets couplés (data-milieu).",
   "parametres": {
     "resolution": { "defaut": 192, "min": 64, "max": 512 },
-    "flottaison": { "defaut": 1.2, "min": 0, "max": 3 },
+    "flottaison": { "defaut": 1.6, "min": 0, "max": 3 },
     "debit": { "defaut": 3, "min": 0, "max": 10 },
     "couleur": { "defaut": "#8a8f99", "type": "couleur" },
     "opacite": { "defaut": 0.8, "min": 0.1, "max": 1 }
@@ -17,7 +17,7 @@
     "dissipation": 0.3,
     "vorticite": 0.4,
     "sources": [
-      { "type": "fumee", "forme": { "type": "rectangle", "largeur": 24, "hauteur": 4, "decalage": [0, 40] }, "debit": "debit", "temperature": 0.6 }
+      { "type": "fumee", "forme": { "type": "rectangle", "largeur": 24, "hauteur": 4, "decalage": [0, 40] }, "debit": "debit", "temperature": 1 }
     ],
     "rendu": { "type": "fumee", "couleur": "couleur", "opacite": "opacite", "lumiere": [-0.4, -1] }
   }
