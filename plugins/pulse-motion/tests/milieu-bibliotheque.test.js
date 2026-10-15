@@ -14,9 +14,9 @@ test('bibliothèque dans la page : air (avec braises-portees et fusee-panache), 
   const dir = copierProjet('projet-particules');
   modifierDeroule(dir, (d) => {
     d.scenes = [
-      { id: 's', fichier: 'scenes/01-s.html', duree: 4 },
-      { id: 'f', fichier: 'scenes/02-f.html', duree: 4 },
-      { id: 'e', fichier: 'scenes/03-e.html', duree: 4 },
+      { id: 's', fichier: 'scenes/01-s.html', duree: 4, textes: { titre: 'Air' } },
+      { id: 'f', fichier: 'scenes/02-f.html', duree: 4, textes: { titre: 'Brasier' } },
+      { id: 'e', fichier: 'scenes/03-e.html', duree: 4, textes: { titre: 'Encre' } },
     ];
   });
   fs.writeFileSync(path.join(dir, 'scenes', '01-s.html'), `<section data-scene="s">
