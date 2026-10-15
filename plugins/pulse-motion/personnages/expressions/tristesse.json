@@ -1,0 +1,11 @@
+{
+  "nom": "tristesse",
+  "description": "triste, sourcils relevés au centre, regard bas",
+  "bouche": "triste",
+  "angles": {
+    "paupieres": 0.7,
+    "regardY": 3,
+    "sourcilsY": 1,
+    "sourcilsAngle": -18
+  }
+}

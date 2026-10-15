@@ -1,0 +1,11 @@
+{
+  "nom": "colere",
+  "description": "fâché, sourcils froncés",
+  "bouche": "colere",
+  "angles": {
+    "paupieres": 0.8,
+    "taillePupilles": 0.8,
+    "sourcilsY": -3,
+    "sourcilsAngle": 20
+  }
+}

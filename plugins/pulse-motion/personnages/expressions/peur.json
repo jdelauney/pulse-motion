@@ -1,0 +1,11 @@
+{
+  "nom": "peur",
+  "description": "effrayé, yeux ronds, petites pupilles",
+  "bouche": "surprise",
+  "angles": {
+    "tailleYeux": 1.25,
+    "taillePupilles": 0.55,
+    "sourcilsY": 6,
+    "sourcilsAngle": -14
+  }
+}
