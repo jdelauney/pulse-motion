@@ -104,6 +104,17 @@ Préparez un SVG de personnage de profil (dessiné dans Inkscape, Illustrator ou
 
 **Attendu** : le geste se cale sur le mot (scène avec voix).
 
+## 9. Un personnage qui parle (10 min)
+
+Prérequis : une vidéo dont une scène a une voix (provisoire ou enregistrée) et un personnage dessiné (partie 6).
+
+1. Demander : « Fais parler le personnage pendant la voix de la scène 2. »
+   - Attendu : une action `parler` dans le conteneur ; l'assemblage passe sans erreur.
+2. Ouvrir l'aperçu, écouter la scène.
+   - Attendu : la bouche bouge pendant les mots, se ferme entre deux mots proches, revient à celle de l'expression dans les silences longs ; rien ne bouge en dehors de la voix.
+3. Demander la même chose sur une scène sans voix.
+   - Attendu : erreur claire « la scène n'a pas de voix ».
+
 ## À me rapporter
 
 - Chaque entorse aux trois règles.

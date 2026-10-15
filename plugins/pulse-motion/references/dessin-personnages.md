@@ -43,7 +43,7 @@ Même repère que l'os (tête : centre de la tête). `devant: false` (par défau
 
 - `oeil` : `blanc` (obligatoire, formes simples sans `g` : il sert aussi à découper pupille et paupière), `pupille`, `paupiere` (dessinée pour couvrir tout l'œil, elle remonte quand l'œil s'ouvre), `course` (recul des pupilles, 4), `hauteur` (course de la paupière, 24).
 - `sourcil` : un trait, centré en (0, 0).
-- `bouches` : `neutre` obligatoire ; expressions `sourire`, `rire`, `triste`, `surprise`, `colere` ; visèmes (pour la voix) `repos`, `A`, `E`, `I`, `O`, `U`, `MBP`, `FV`, `L`. Une bouche absente est remplacée par la plus proche.
+- `bouches` : `neutre` obligatoire ; expressions `sourire`, `rire`, `triste`, `surprise`, `colere` ; visèmes (pour la voix) `repos`, `A`, `E`, `I`, `O`, `U`, `MBP`, `FV`, `L`. Une bouche absente est remplacée par la plus proche. Pour un personnage qui parle (action `parler`), dessiner au moins `A`, `O` et `MBP` (bouche fermée lèvres serrées) : les autres s'en déduisent.
 - `vues` (repère de la tête) : `profil` obligatoire, `troisQuarts`, `face` ; chacune `{ "yeux": [[x, y], …], "sourcils": [[x, y], …], "bouche": [x, y] }`. De dos, le visage est caché.
 - Les poses et clés choisissent `"expression": "joie"` (neutre, joie, tristesse, peur, colere, surprise) et `"bouche": "O"` ; `sourcilsY` (levés) et `sourcilsAngle` (positif : colère, négatif : tristesse) se règlent comme les angles.
 
