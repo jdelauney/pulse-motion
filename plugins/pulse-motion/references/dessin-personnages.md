@@ -12,7 +12,7 @@
   1. `pulse-motion personnages verifier --dossier .`
   2. `pulse-motion personnages planche marche --dessin <nom> --vues 0,45,90,-90 --dossier .` (le corps en mouvement)
   3. `pulse-motion personnages planche --dessin <nom> --visage --dossier .` (expressions et bouches)
-  Corriger (trois tours au plus) : trou ou pointe aux articulations, pièce à l'envers, visage décalé, bouche illisible.
+  Corriger (trois tours au plus) : tête séparée du corps dans une vue, élément présent dans une vue et absent d'une autre, trou ou pointe aux articulations, pièce à l'envers, visage décalé, bouche illisible.
 
 ## Repère et longueurs (gabarit standard)
 
@@ -24,6 +24,7 @@
    bras : 0 → 50               avant-bras : 0 → 46   main : depuis le poignet, vers +y
 ```
 
+- **Cohérence entre les vues** : chaque vue dessinée (profil, 3/4, face, dos) a les mêmes éléments aux mêmes proportions ; le cou (ou le haut du torse) recouvre le bas de la tête **dans chaque vue** (sinon la tête flotte) ; un élément ajouté dans une vue (cou, col, accessoire, mèche) l'est dans toutes. Sur les planches, comparer les vues entre elles, pas seulement chacune pour elle-même.
 - Une pièce **déborde de son pivot** (bouts arrondis, `rx`) : une cuisse de 68 se dessine de y = -7 à y = 75, pour recouvrir le genou sans trou ni pointe.
 - Avant de l'animal ou du personnage : +x (vers la droite, de profil).
 - Pièces `…Arriere` absentes : on reprend la pièce `…Avant`. Os sans pièce : rien n'est dessiné.

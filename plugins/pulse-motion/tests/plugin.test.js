@@ -26,7 +26,7 @@ const fichiersGuides = () => [
 ];
 
 test('skills : creer, exporter, retoucher, reprendre, lancés par la personne, outils limités', () => {
-  assert.deepEqual(SKILLS.sort(), ['creer', 'exporter', 'outils', 'reprendre', 'retoucher', 'style', 'voix']);
+  assert.deepEqual(SKILLS.sort(), ['animer-personnage', 'atelier-particules', 'atelier-personnages', 'creer', 'dessiner-personnage', 'exporter', 'outils', 'reprendre', 'retoucher', 'style', 'voix']);
   for (const s of SKILLS) {
     const e = enTete(lire('skills', s, 'SKILL.md'));
     assert.ok(e.description && e.description.length > 20, `${s} : description`);
@@ -106,16 +106,27 @@ test('consignes : les effets de particules sont guidés', () => {
   assert.match(animateur, /effet-sur-texte/);
 });
 
-test('consignes : les personnages sont guidés', () => {
-  const retoucher = lire('skills', 'retoucher', 'SKILL.md');
+test('consignes : les personnages sont guidés, un skill par action', () => {
+  const skill = (n) => lire('skills', n, 'SKILL.md');
+  const retoucher = skill('retoucher');
   assert.match(retoucher, /\| Personnages \|/);
-  assert.match(retoucher, /pulse-motion personnages atelier <nom>/);
-  assert.match(retoucher, /pulse-motion personnages planche <nom>/);
-  assert.match(retoucher, /pulse-motion reference personnages/);
+  for (const n of ['dessiner-personnage', 'animer-personnage', 'atelier-personnages', 'atelier-particules']) assert.match(retoucher, new RegExp(n), `retoucher renvoie vers ${n}`);
+  const dessiner = skill('dessiner-personnage');
+  assert.match(dessiner, /pulse-motion reference dessin-personnages/);
+  assert.match(dessiner, /--dessin <nom> --visage/);
+  assert.match(dessiner, /Cohérence entre les vues|cohérence entre les vues/);
+  assert.match(dessiner, /dans chaque vue/);
+  const animer = skill('animer-personnage');
+  assert.match(animer, /pulse-motion reference personnages/);
+  assert.match(animer, /pulse-motion personnages planche/);
+  const atelier = skill('atelier-personnages');
+  assert.match(atelier, /pulse-motion personnages atelier <nom> --dessin <dessin>/);
+  assert.match(enTete(atelier).description, /éditeur de personnage/);
+  assert.match(enTete(skill('atelier-particules')).description, /éditeur de particules/);
+  assert.match(skill('atelier-particules'), /pulse-motion atelier <effet>/);
   assert.match(lire('references', 'personnages.md'), /^# .+\n\n## L'essentiel\n/);
-  assert.match(retoucher, /pulse-motion reference dessin-personnages/);
-  assert.match(retoucher, /--dessin <nom> --visage/);
   assert.match(lire('references', 'dessin-personnages.md'), /^# .+\n\n## L'essentiel\n/);
+  assert.match(lire('references', 'dessin-personnages.md'), /dans chaque vue/);
 });
 
 test('creer : style choisi alors que des scènes existent déjà → changement de style', () => {
@@ -348,7 +359,8 @@ test('consignes : l\'atelier des effets est guidé', () => {
   assert.match(ref, /pulse-motion atelier/);
   assert.match(ref, /bouton \*\*Effets\*\*/);
   assert.match(ref, /« Enregistrer comme nouvel effet »/);
-  const retoucher = lire('skills', 'retoucher', 'SKILL.md');
-  assert.match(retoucher, /pulse-motion atelier/);
-  assert.match(retoucher, /bouton « Effets »/);
+  const skill = lire('skills', 'atelier-particules', 'SKILL.md');
+  assert.match(skill, /pulse-motion atelier/);
+  assert.match(skill, /bouton « Effets »/);
+  assert.match(lire('skills', 'retoucher', 'SKILL.md'), /atelier-particules/);
 });
