@@ -30,7 +30,7 @@ const CATALOGUE = require('../moteur/synthe/catalogue.js');
 const { appliquerCorrections } = require('./lib/corriger.js');
 const { controlerRendu } = require('./lib/rendu-controle.js');
 const { aDesShaders, compilerShadersGPU } = require('./lib/shaders-gpu.js');
-const { LIMITES_INTERACTIONS, PLEINE_VOISINAGE, STRUCTURES_SCENE_MAX, SOMMETS_TISSU_MAX } = require('../moteur/particules/recette.js');
+const { LIMITES_INTERACTIONS, PLEINE_VOISINAGE, STRUCTURES_SCENE_MAX, SOMMETS_TISSU_MAX, RESOLUTION_MILIEU_ALERTE } = require('../moteur/particules/recette.js');
 const { EFFETS: EFFETS_LETTRES } = require('../moteur/lettres.js');
 const { analyserCamera } = require('../moteur/camera.js');
 const { analyserTemps } = require('../moteur/temps.js');
@@ -411,6 +411,12 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
           problemes.push({ regle: 'effet-sur-texte', gravite: 'alerte', scene: s.id, element: balise.cle, message: `Scène « ${s.id} » : l'effet « ${e.effet.nom} » passe devant le texte « ${gene.cle} » pendant sa lecture ; le poser en data-calque="arriere" ou le décaler après la lecture.` });
         }
       }
+    }
+    // Milieu (P5c) : au-delà de 512 cellules sur le grand côté, la simulation de la grille dépasse son temps.
+    for (const mi of assemblage.milieux || []) {
+      const res = mi.effet.milieu.resolution;
+      if (res <= RESOLUTION_MILIEU_ALERTE) continue;
+      problemes.push({ regle: 'budget-milieu', gravite: 'alerte', scene: mi.scene, message: `Scène « ${mi.scene} » : le milieu « ${mi.effet.nom} » a ${res} cellules sur le grand côté ; au-delà de ${RESOLUTION_MILIEU_ALERTE}, sa simulation dépasse son temps (aperçu saccadé). Baisser « resolution » (192 suffit à une fumée nette : la grille est échantillonnée en bicubique ; l'export reste exact).` });
     }
     // Glossaire de la charte : formes à éviter, sigles mal écrits ; typographie et graphie des textes.
     const termesGlossaire = lireGlossaire(projet).termes;
