@@ -92,6 +92,18 @@ Préparez un SVG de personnage de profil (dessiné dans Inkscape, Illustrator ou
 
 **Attendu** : la couleur change sans refaire la découpe.
 
+## 8. Un personnage dans une scène (15 min)
+
+**Vous dites** : « Mets le cuisinier dans la scène du chiffre : qu'il entre, montre le chiffre en souriant, salue et reparte. »
+
+**Attendu** : Claude modifie la scène, la contrôle et montre des images clés : le cuisinier entre en marchant (sans glisser), s'arrête, montre le chiffre au moment où il apparaît, sourit, salue, repart.
+
+**À vérifier** : dans l'aperçu, en avançant image par image et en revenant en arrière, le personnage est toujours au même endroit pour un même instant ; il ne cache pas les textes ; les pieds restent sur la même ligne ; l'export MP4 montre la même chose.
+
+**Vous dites** : « Qu'il montre le chiffre quand la voix dit « record ». »
+
+**Attendu** : le geste se cale sur le mot (scène avec voix).
+
 ## À me rapporter
 
 - Chaque entorse aux trois règles.
