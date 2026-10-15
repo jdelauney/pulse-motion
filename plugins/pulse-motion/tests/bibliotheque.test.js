@@ -7,7 +7,8 @@ const R = require('../moteur/particules/recette.js');
 const { SEUILS } = require('../scripts/controler.js');
 
 const DOSSIER = path.join(__dirname, '..', 'effets');
-const NOMS = ['assembler', 'braises', 'briser', 'confettis', 'desintegrer', 'energie', 'etincelles', 'explosion', 'feu', 'feu-artifice', 'fumee', 'metamorphose', 'neige', 'paillettes', 'pluie', 'poussiere'];
+const NOMS = ['assembler', 'banc', 'braises', 'briser', 'confettis', 'desintegrer', 'eau', 'energie', 'etincelles', 'explosion', 'feu', 'feu-artifice', 'fumee',
+  'lucioles', 'metamorphose', 'miel', 'neige', 'neige-lourde', 'nuee', 'paillettes', 'pluie', 'poussiere', 'sable'];
 const CHARTE = { primaire: '#0a6cff', accent: '#b45309', fond: '#ffffff', texte: '#1a1a1a' };
 const charger = (nom) => {
   const f = path.join(DOSSIER, `${nom}.json`);
@@ -15,7 +16,7 @@ const charger = (nom) => {
 };
 const compiler = (nom, reglages = '', dur = 3) => R.compiler(R.resoudre(nom, charger), { reglages, charte: CHARTE, dur, graine: 1 });
 
-test('bibliothèque : les 16 effets des specs (P1, P4), nommés comme leur fichier, décrits', () => {
+test('bibliothèque : les 23 effets des specs (P1, P4, P5a), nommés comme leur fichier, décrits', () => {
   const fichiers = fs.readdirSync(DOSSIER).filter((f) => f.endsWith('.json')).map((f) => f.replace(/\.json$/, '')).sort();
   assert.deepEqual(fichiers, NOMS);
   for (const nom of NOMS) {
@@ -25,6 +26,7 @@ test('bibliothèque : les 16 effets des specs (P1, P4), nommés comme leur fichi
     assert.ok(typeof brute.description === 'string' && brute.description.length > 30, `${nom} : description`);
   }
   assert.equal(charger('braises').etend, 'etincelles', 'braises dérive des étincelles');
+  assert.equal(charger('miel').etend, 'eau', 'miel dérive de l\'eau');
 });
 
 test('bibliothèque : 3 à 6 paramètres, compilation par défaut sous le budget', () => {
@@ -73,7 +75,7 @@ test('bibliothèque : la bibliothèque couvre toutes les familles utiles', () =>
       em.forces.forEach((f) => forces.add(f.type));
     }
   }
-  assert.deepEqual([...types].sort(), ['eclats', 'etincelle', 'sprite', 'trainee'], 'la planche demande une image : pas dans la bibliothèque');
+  assert.deepEqual([...types].sort(), ['eclats', 'etincelle', 'fluide', 'sprite', 'trainee'], 'la planche demande une image : pas dans la bibliothèque');
   assert.deepEqual([...textures].sort(), ['confetti', 'disque-doux', 'etoile', 'flamme', 'fumee', 'image', 'pixel'], 'image : photographie des éclats');
   assert.deepEqual([...forces].sort(), ['attracteur', 'gravite', 'trainee', 'turbulence', 'vent', 'vortex']);
 });
@@ -221,4 +223,54 @@ test('référence : section Fragmentation (déclarations, champs du schéma, con
   }
   for (const nom of ['briser', 'desintegrer', 'assembler', 'metamorphose']) assert.ok(section.includes('`' + nom + '`'), nom);
   assert.ok(texte.includes('| `data-cible` |'), 'data-cible dans la table des attributs');
+});
+
+test('bibliothèque : interactions (nuee, banc, lucioles, eau, miel, sable, neige-lourde)', () => {
+  const TYPES = { nuee: 'essaim', banc: 'essaim', lucioles: 'essaim', eau: 'fluide', miel: 'fluide', sable: 'grains', 'neige-lourde': 'grains' };
+  for (const [nom, type] of Object.entries(TYPES)) {
+    const e = compiler(nom).effet;
+    assert.ok(e.emetteurs.every((em) => em.interactions && em.interactions.type === type && !em.voieRapide), `${nom} : ${type}`);
+    // Aux bornes hautes des réglages, chaque émetteur reste sous la limite de son type (pas d'alerte budget-interactions).
+    const params = R.resoudre(nom, charger).parametres;
+    const reglages = Object.entries(params).map(([cle, p]) => (p.type === 'couleur' ? `${cle}: accent` : `${cle}: ${p.max}`)).join('; ');
+    const haut = compiler(nom, reglages);
+    assert.equal(haut.ok, true, `${nom} : ${JSON.stringify(haut.erreurs)}`);
+    for (const em of haut.effet.emetteurs) assert.ok(em.capacite <= R.LIMITES_INTERACTIONS[type], `${nom} : ${em.capacite} particules au maximum`);
+  }
+  assert.deepEqual(compiler('banc').effet.groupes.map((g) => g.membres), [[0, 1]], 'deux teintes de poissons dans un même banc');
+  for (const nom of ['nuee', 'banc', 'lucioles']) assert.ok(compiler(nom).effet.emetteurs.every((em) => em.interactions.cible), `${nom} : autour de l'ancre`);
+  const eau = compiler('eau').effet.emetteurs[0];
+  const miel = compiler('miel').effet.emetteurs[0];
+  for (const em of [eau, miel]) {
+    assert.equal(em.rendu.type, 'fluide');
+    assert.ok(em.fluide, 'nappe');
+    assert.equal(em.collisions.reponse, 'rebond');
+  }
+  assert.equal(eau.fluide.refraction, 0.3);
+  assert.ok(miel.interactions.viscosite > eau.interactions.viscosite && miel.interactions.tension > eau.interactions.tension, 'miel plus visqueux');
+  assert.ok(miel.fluide.absorption > eau.fluide.absorption, 'miel plus dense à l\'œil');
+  for (const nom of ['sable', 'neige-lourde']) {
+    const em = compiler(nom).effet.emetteurs[0];
+    assert.equal(em.collisions.reponse, 'rebond', `${nom} : le tas se forme par les grains, sans « empiler »`);
+    assert.ok(em.taille[1] <= em.interactions.rayon, `${nom} : grain dans sa cellule`);
+  }
+  assert.ok(compiler('neige-lourde').effet.emetteurs[0].interactions.cohesion > 0, 'neige collante');
+});
+
+test('référence : section Interactions (types, champs du schéma, rendu fluide, limites, contrôles, bibliothèque)', () => {
+  const texte = fs.readFileSync(path.join(__dirname, '..', 'references', 'particules.md'), 'utf8');
+  const debut = texte.indexOf('## Interactions');
+  const fin = texte.indexOf('## Régler à l\'œil');
+  assert.ok(debut > texte.indexOf('## Fragmentation') && fin > debut, 'section Interactions après la fragmentation, avant l\'atelier');
+  const section = texte.slice(debut, fin);
+  const n = R.SCHEMA.champs.emetteurs.element.champs.interactions;
+  const champs = [...Object.keys(n.champs), ...Object.values(n.variantes.types).flatMap((v) => Object.keys(v.champs)), 'teinte', 'opacite', 'absorption', 'refraction', 'lissage'];
+  for (const c of champs) assert.ok(section.includes('`' + c + '`'), `champ « ${c} » documenté`);
+  for (const mot of ['"type": "fluide"', '`essaim`', '`grains`', 'interactions-invalides', 'budget-interactions', '100 000', '60 000', 'data-obstacle', '`poser`', '`empiler`']) {
+    assert.ok(section.includes(mot), `la section parle de « ${mot} »`);
+  }
+  for (const nom of ['nuee', 'banc', 'lucioles', 'eau', 'miel', 'sable', 'neige-lourde']) assert.ok(section.includes('`' + nom + '`'), nom);
+  assert.match(texte.split('## Interactions')[0], /voir « Interactions »/, 'la bibliothèque y renvoie');
+  const controles = fs.readFileSync(path.join(__dirname, '..', 'references', 'controles.md'), 'utf8');
+  for (const r of ['interactions-invalides', 'budget-interactions']) assert.match(controles, new RegExp('`' + r + '`'), r);
 });

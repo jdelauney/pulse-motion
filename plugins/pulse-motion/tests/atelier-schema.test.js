@@ -62,6 +62,8 @@ function avec(chemin, v, contexte) {
   }
   // cible : un émetteur de fragments naît de la photographie de son élément, sans salves.
   if (chemin[2] === 'cible') delete r.emetteurs[0].naissance.salves;
+  // interactions.avec : l'émetteur visé (« b ») a lui aussi un bloc « interactions », du type de l'exemple (essaim).
+  if (chemin[2] === 'interactions' && chemin[3] === 'avec') r.emetteurs[1].interactions = { type: 'essaim' };
   let cible = r;
   let noeud = S;
   for (let i = 0; i < chemin.length; i++) {
@@ -198,7 +200,9 @@ test('compiler : un champ hors du schéma est refusé, à chaque niveau', () => 
   for (const chemin of liste) {
     const r = compiler(avec([...chemin, 'zz_inconnu'], 1));
     assert.equal(r.ok, false, cle(chemin));
-    const attendue = /(^|.)(collisions|a_la_collision)(.|$)/.test(cle(chemin)) ? 'collisions-invalides' : 'effet-invalide';
+    const k = cle(chemin);
+    const attendue = /(^|\.)interactions(\.|$)/.test(k) ? 'interactions-invalides'
+      : /(^|.)(collisions|a_la_collision)(.|$)/.test(k) ? 'collisions-invalides' : 'effet-invalide';
     assert.equal(r.erreurs[0].regle, attendue, cle(chemin));
     assert.match(r.erreurs[0].message, /zz_inconnu : champ inconnu \(champs possibles : /, cle(chemin));
   }
