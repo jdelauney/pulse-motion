@@ -138,3 +138,56 @@ test('structures : schéma (variantes corde et tissu, attaches, apparence)', () 
   assert.equal(r.regle, 'structure-invalide');
   assert.match(r.message, /emetteurs\[c\]\.structure\.longueur : champ inconnu \(champs possibles : type, attaches, raideur, flexion, amortissement, dechirure, epaisseur, apparence, resolution, perles\)/);
 });
+
+test('structures : perles d\'une corde (émetteur décoratif posé sur ses sommets)', () => {
+  const e = ok(compiler([corde({ resolution: 33, perles: { tous: 8, emetteur: 'ampoule' } }),
+    { nom: 'ampoule', naissance: { taille: [1.5, 1.5], z: [0.2, 0.2] }, vie: { couleur: '#ffd27a' }, rendu: { melange: 'additif' } }]));
+  const [c, a] = e.emetteurs;
+  assert.deepEqual(c.structure.perles, { emetteur: 1, tous: 8, debut: 4, nombre: 4 }, 'sommets 4, 12, 20, 28');
+  assert.equal(a.perlesDe, 0);
+  assert.equal(a.capacite, 4);
+  assert.deepEqual(a.salves, [{ t: 0, nombre: 4, debut: 0 }]);
+  assert.deepEqual(a.vie, [3, 3]);
+  assert.equal(a.fin, 3);
+  assert.equal(a.voieRapide, false);
+  assert.equal(e.capacite, 37);
+  // Plus espacées que la corde : une seule perle, sur le dernier sommet au plus.
+  const courte = ok(compiler([corde({ resolution: 8, perles: { tous: 64, emetteur: 'p' } }), { nom: 'p' }]));
+  assert.deepEqual(courte.emetteurs[0].structure.perles, { emetteur: 1, tous: 64, debut: 7, nombre: 1 });
+  const cas = [
+    [[corde({ perles: { emetteur: 'zz' } })], 'emetteurs[c].structure.perles.emetteur', /« zz » n'est pas un émetteur de cet effet \(émetteurs : c\)/],
+    [[corde({ perles: { emetteur: 'c' } })], 'emetteurs[c].structure.perles.emetteur', /une corde ne porte pas ses propres perles/],
+    [[tissu({ perles: { emetteur: 'p' } }), { nom: 'p' }], 'emetteurs[t].structure.perles', /des perles se posent sur une corde/],
+    [[corde({ perles: { emetteur: 'p' } }), { nom: 'p', naissance: { salves: [{ t: 0, nombre: 3 }] } }], 'emetteurs[p].naissance.salves', /les perles de « c » naissent une fois sur ses sommets : seuls « taille », « z » et « rotation » s'y règlent/],
+    [[corde({ perles: { emetteur: 'p' } }), { nom: 'p', forces: [{ type: 'gravite' }] }], 'emetteurs[p].forces', /les perles suivent les sommets de « c » : retirer « forces »/],
+    [[corde({ perles: { emetteur: 'p' } }), { nom: 'p', rendu: { type: 'trainee' } }], 'emetteurs[p].rendu.type', /pas « trainee »/],
+    [[corde({ perles: { emetteur: 'p' } }), corde({ perles: { emetteur: 'p' } }, { nom: 'd' }), { nom: 'p' }], 'emetteurs[d].structure.perles.emetteur', /« p » porte déjà les perles de « c »/],
+    [[corde({ perles: { emetteur: 'd' } }), corde({}, { nom: 'd' })], 'emetteurs[d].structure', /les perles de « c » ne sont pas une structure/],
+  ];
+  for (const [emetteurs, chemin, message] of cas) {
+    const er = erreurDe(compiler(emetteurs));
+    assert.equal(er.regle, 'structure-invalide', chemin);
+    assert.equal(er.chemin, chemin);
+    assert.match(er.message, message, chemin);
+  }
+});
+
+test('structures : liées à un groupe d\'interactions par « avec » (couplage avec les particules de P5a)', () => {
+  const grains = (avec, nom = 'g') => ({ nom, naissance: { salves: [{ t: 0, nombre: 50 }], taille: [0.6, 0.6] }, interactions: { type: 'grains', rayon: 1, avec } });
+  const e = ok(compiler([corde({ epaisseur: 0.8 }), grains(['c'])]));
+  assert.deepEqual(e.groupes, [{ type: 'grains', code: 2, membres: [1], cote: 1, structures: [0] }]);
+  assert.equal(e.emetteurs[0].interactions, null, 'la structure n\'a pas de bloc « interactions »');
+  // Deux émetteurs du même groupe qui la citent : une seule fois.
+  const deuxFois = ok(compiler([corde({ epaisseur: 0.8 }), grains(['c', 'h']), grains(['c'], 'h')]));
+  assert.deepEqual(deuxFois.groupes.map((g) => [g.membres, g.structures]), [[[1, 2], [0]]]);
+  const epaisse = erreurDe(compiler([corde({ epaisseur: 1.5 }), grains(['c'])]));
+  assert.deepEqual([epaisse.regle, epaisse.chemin], ['interactions-invalides', 'emetteurs[g].interactions.avec[0]']);
+  assert.match(epaisse.message, /épaisseur 1\.5 cqh de « c » au-delà de la cellule de voisinage \(1 cqh\) : augmenter « rayon » ou réduire « epaisseur »/);
+  const ailleurs = erreurDe(compiler([corde(), grains(['c']), { nom: 'f', naissance: { salves: [{ t: 0, nombre: 10 }] }, interactions: { type: 'fluide', avec: ['c'] } }]));
+  assert.deepEqual([ailleurs.regle, ailleurs.chemin], ['interactions-invalides', 'emetteurs[f].interactions.avec[0]']);
+  assert.match(ailleurs.message, /la structure « c » est déjà liée à un autre groupe d'interactions/);
+  const neuf = [corde()].concat(Array.from({ length: 8 }, (_, i) => grains(i ? ['g' + (i - 1)] : ['c'], 'g' + i)));
+  const plein = erreurDe(compiler(neuf));
+  assert.equal(plein.chemin, 'emetteurs[g0].interactions.avec');
+  assert.match(plein.message, /8 émetteurs liés au plus, structures comprises \(le groupe de « g0 » en compte 9\)/);
+});
