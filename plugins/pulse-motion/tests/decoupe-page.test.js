@@ -43,7 +43,7 @@ async function dansLaPage(code, source = fs.readFileSync(SVG, 'utf8')) {
 
 test('analyse : formes, sélecteurs, calques, boîtes, couleurs calculées', { skip: sauter }, async () => {
   const a = await dansLaPage('return M.decoupe.analyser(svg);');
-  assert.equal(a.formes.length, 15);
+  assert.equal(a.formes.length, 16);
   assert.deepEqual(a.viewBox, [0, 0, 400, 700]);
   const f = (sel) => a.formes.find((x) => x.selecteur === sel);
   assert.ok(f('g2>rect2'), 'forme sans id : chemin d\'index');
@@ -105,7 +105,7 @@ test('commandes : analyser, decouper, renommer-couleur, puis planche du dessin d
   const a = await executer(['analyser', 'assets/cuisinier.svg', '--dossier', video]);
   assert.equal(a.code, 0, a.erreur);
   const analyse = JSON.parse(a.sortie);
-  assert.equal(analyse.formes.length, 15);
+  assert.equal(analyse.formes.length, 16);
   assert.ok(fs.existsSync(analyse.png) && analyse.png.endsWith('cuisinier-analyse.png'));
   fs.mkdirSync(path.join(video, 'personnages', 'decoupes'), { recursive: true });
   fs.writeFileSync(path.join(video, 'personnages', 'decoupes', 'cuisinier.json'), JSON.stringify(Object.assign({ nom: 'cuisinier' }, DECOUPE)));
