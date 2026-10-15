@@ -20,8 +20,8 @@ test('lancerAtelierPersonnages : dans une vidéo, aperçu du projet sur /_pm/per
   const video = dossierTemporaire();
   fs.writeFileSync(path.join(video, 'deroule.json'), '{}');
   const f = faux();
-  const r = await lancerAtelierPersonnages({ dossier: video, nom: 'marche', lancer: f.lancer, ouvrirUrl: f.ouvrirUrl });
-  assert.equal(r.url, 'http://127.0.0.1:4321/_pm/personnages?nom=marche');
+  const r = await lancerAtelierPersonnages({ dossier: video, nom: 'marche', dessin: 'touffu', lancer: f.lancer, ouvrirUrl: f.ouvrirUrl });
+  assert.equal(r.url, 'http://127.0.0.1:4321/_pm/personnages?nom=marche&dessin=touffu');
   assert.equal(r.cible, 'video');
   assert.equal(f.appels[0].dossier, video);
   assert.equal(f.appels[0].demarrer, undefined);
@@ -43,6 +43,7 @@ test('lancerAtelierPersonnages : hors d\'une vidéo, dossier temporaire ; --bibl
 test('lancerAtelierPersonnages : nom invalide refusé avant tout lancement ; usage', async () => {
   const f = faux();
   await assert.rejects(lancerAtelierPersonnages({ nom: '../x', lancer: f.lancer, ouvrirUrl: f.ouvrirUrl }), /Nom « \.\.\/x » invalide/);
+  await assert.rejects(lancerAtelierPersonnages({ dessin: '../x', lancer: f.lancer, ouvrirUrl: f.ouvrirUrl }), /Nom « \.\.\/x » invalide/);
   assert.equal(f.appels.length, 0);
   const u = await executer(['atelier', 'a', 'b']);
   assert.equal(u.code, 2);

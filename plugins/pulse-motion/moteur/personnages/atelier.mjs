@@ -6,7 +6,7 @@
  */
 import { creerEdition, nouvelObjet, PAS_IMAGE } from './edition.mjs';
 
-const { squelette: S, clips: K, batonnets: B } = window.M;
+const { squelette: S, clips: K, batonnets: B, pieces: PI } = window.M;
 const NS = 'http://www.w3.org/2000/svg';
 const DEG = Math.PI / 180;
 const X = 450, SOL = 500, ECHELLE = 1.1;
@@ -25,13 +25,14 @@ const LIBELLES = {
   tete: 'Tête ↻', teteTourne: 'Tête tourne', tetePenche: 'Tête penche', bras: 'Bras', avantBras: 'Avant-bras', ecartBras: 'Écart',
   torsionBras: 'Torsion', cuisse: 'Cuisse', tibia: 'Genou (tibia)', pied: 'Pied', ecartJambe: 'Écart', torsionJambe: 'Torsion',
   yeuxY: 'Yeux ↕', tailleYeux: 'Taille des yeux', paupieres: 'Paupières', regardX: 'Regard ↔', regardY: 'Regard ↕',
-  taillePupilles: 'Pupilles', touffeRot: 'Touffe ↻', touffeEtire: 'Touffe étirée', touffeEventail: 'Touffe en éventail', touffeOnde: 'Touffe ondule',
+  taillePupilles: 'Pupilles', sourcilsY: 'Sourcils ↕', sourcilsAngle: 'Sourcils (angle)', touffeRot: 'Touffe ↻', touffeEtire: 'Touffe étirée', touffeEventail: 'Touffe en éventail', touffeOnde: 'Touffe ondule',
 };
 const AUTRES = {
   bassinY: [-200, 100, 1], yeuxY: [-10, 10, 0.5], tailleYeux: [0.6, 1.5, 0.01], paupieres: [0.05, 1, 0.01], regardX: [-6, 6, 0.1],
   regardY: [-7, 7, 0.1], taillePupilles: [0.4, 1.4, 0.01], touffeRot: [-40, 40, 1], touffeEtire: [0.5, 1.6, 0.01],
-  touffeEventail: [0.3, 2, 0.01], touffeOnde: [-25, 25, 0.5],
+  touffeEventail: [0.3, 2, 0.01], touffeOnde: [-25, 25, 0.5], sourcilsY: [-10, 12, 0.5], sourcilsAngle: [-30, 30, 1],
 };
+const BOUCHES = ['neutre', 'sourire', 'rire', 'triste', 'surprise', 'colere', 'repos', 'A', 'E', 'I', 'O', 'U', 'MBP', 'FV', 'L'];
 const POIGNEES = {
   bassin: { glisse: 'bassinY' }, cou: { os: 'torse', pivot: 'bassin' }, centreTete: { os: 'tete', pivot: 'cou' },
   genouAvant: { os: 'cuisseAvant', pivot: 'hancheAvant' }, chevilleAvant: { os: 'tibiaAvant', pivot: 'genouAvant', ik: 'chevilleAvant' },
@@ -59,9 +60,17 @@ let vue = 0;
 let tourne = false;
 let lecture = false;
 let dernier = null;
+let habillage = 'batonnets';
 let sale = true;
 
-function gabaritCourant() { return lu.gabarits[$('#gabarit').value] || lu.gabarits.standard || null; }
+function gabaritDessin(d) {
+  if (d && d.gabarit && typeof d.gabarit === 'object') return d.gabarit;
+  return lu.gabarits[(d && d.gabarit) || 'standard'] || lu.gabarits.standard || null;
+}
+function gabaritCourant() {
+  if (habillage !== 'batonnets') return gabaritDessin(lu.dessins[habillage]);
+  return lu.gabarits[$('#gabarit').value] || lu.gabarits.standard || null;
+}
 function placement() { return { x: X, y: SOL - (S.sol(ed.gabarit) + 7) * ECHELLE, echelle: ECHELLE, vue }; }
 const additif = () => ed.type === 'clip' && !!ed.objet.additif;
 const auSol = () => ed.type === 'clip' && ed.objet.pieds === 'au-sol' && !ed.objet.additif;
@@ -88,8 +97,15 @@ function borner(n, v) {
 
 /* ---------- scène ---------- */
 const svg = $('#scene');
-const fantomes = [0, 1].map(() => B.creer(el('g', { opacity: 0.22 }, $('#fantomes'))));
-const perso = B.creer($('#perso'));
+let perso;
+let fantomes;
+function creerUn(g) { return habillage === 'batonnets' ? B.creer(g) : PI.creer(g, lu.dessins[habillage], gabaritDessin(lu.dessins[habillage])); }
+function creerPersos() {
+  $('#perso').replaceChildren();
+  $('#fantomes').replaceChildren();
+  perso = creerUn($('#perso'));
+  fantomes = [0, 1].map(() => creerUn(el('g', { opacity: 0.22 }, $('#fantomes'))));
+}
 const poignees = {};
 for (const n of Object.keys(POIGNEES)) poignees[n] = el('circle', { r: 8, class: 'poignee', 'data-poignee': n }, $('#poignees'));
 
@@ -118,6 +134,7 @@ function rendre() {
   majCurseurs();
   majFrise();
   majProprietes();
+  majChoix();
   sale = false;
 }
 
@@ -364,6 +381,44 @@ $('#enregistrer').addEventListener('click', () => { enregistrer().catch((e) => m
 $('#annuler').addEventListener('click', () => { if (ed.annuler()) rendre(); });
 $('#retablir').addEventListener('click', () => { if (ed.retablir()) rendre(); });
 
+/* ---------- visage et habillage ---------- */
+/** Bouches proposées : les noms standard, puis celles propres au dessin choisi. */
+function listeBouches() {
+  const dessin = habillage !== 'batonnets' && lu.dessins[habillage];
+  const propres = Object.keys((dessin && dessin.visage && dessin.visage.bouches) || {}).filter((b) => !BOUCHES.includes(b)).sort();
+  $('#bouche').innerHTML = ['<option value="">aucune (selon l\'expression)</option>', ...[...BOUCHES, ...propres].map((b) => `<option value="${b}">${b}</option>`)].join('');
+}
+function majChoix() {
+  const visible = !(ed.type === 'clip' && ed.objet.additif);
+  $('#visage').hidden = !visible;
+  if (!visible) return;
+  const c = ed.choix();
+  if (document.activeElement !== $('#expression')) $('#expression').value = c.expression || '';
+  if (document.activeElement !== $('#bouche')) {
+    const b = $('#bouche');
+    if (c.bouche && ![...b.options].some((o) => o.value === c.bouche)) b.add(new Option(c.bouche, c.bouche));
+    b.value = c.bouche || '';
+  }
+}
+for (const champ of ['expression', 'bouche']) {
+  $(`#${champ}`).addEventListener('change', (ev) => {
+    try { ed.reglerChoix(champ, ev.target.value || null); } catch (e) { message(e.message, 'erreur'); }
+    rendre();
+  });
+}
+
+function choisirHabillage(nom) {
+  habillage = nom === 'batonnets' || lu.dessins[nom] ? nom : 'batonnets';
+  $('#habillage').value = habillage;
+  $('#gabarit').disabled = habillage !== 'batonnets';
+  ed.changerGabarit(gabaritCourant());
+  listeBouches();
+  creerPersos();
+  construireCurseurs();
+  rendre();
+}
+$('#habillage').addEventListener('change', (ev) => choisirHabillage(ev.target.value));
+
 /* ---------- vue, lecture, clavier ---------- */
 document.querySelectorAll('[data-vue]').forEach((b) => b.addEventListener('click', () => { $('#tourner').checked = tourne = false; vue = Number(b.dataset.vue); rendre(); }));
 $('#vue').addEventListener('input', (ev) => { $('#tourner').checked = tourne = false; vue = Number(ev.target.value); rendre(); });
@@ -424,16 +479,26 @@ function boucle(maintenant) {
   if (contexte.erreurs.length) message(`Fichiers ignorés :\n${contexte.erreurs.join('\n')}`, 'erreur');
   const gabarits = Object.keys(lu.gabarits).sort();
   $('#gabarit').innerHTML = gabarits.map((g) => `<option value="${g}"${g === 'standard' ? ' selected' : ''}>${g}</option>`).join('');
+  $('#habillage').innerHTML = ['<option value="batonnets">bâtonnets</option>', ...Object.keys(lu.dessins).sort().map((d) => `<option value="${d}">${d}</option>`)].join('');
+  $('#expression').innerHTML = ['<option value="">aucune</option>', ...Object.keys(lu.expressions).map((e) => `<option value="${e}">${e}</option>`)].join('');
+  const voulu = new URLSearchParams(location.search).get('dessin');
+  if (voulu && lu.dessins[voulu]) habillage = voulu;
+  $('#habillage').value = habillage;
+  listeBouches();
+  $('#gabarit').disabled = habillage !== 'batonnets';
+  creerPersos();
   construireBibliotheque();
   const nom = new URLSearchParams(location.search).get('nom');
   if (nom && lu.clips[nom]) ouvrir('clip', nom, lu.clips[nom]);
   else if (nom && lu.poses[nom]) ouvrir('pose', nom, lu.poses[nom]);
   else ouvrir('clip', nom || '', null);
+  if (voulu && !lu.dessins[voulu]) message(`Dessin « ${voulu} » introuvable : l'atelier montre les bâtonnets.`, 'erreur');
   window.__atelier = {
     pret: true,
     ed: () => ed,
     rendre,
     enregistrer,
+    habillage: () => habillage,
     poignee(n) {
       const c = poignees[n];
       if (!c) return null;
