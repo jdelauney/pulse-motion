@@ -18,7 +18,7 @@ test('structures : corde et tissu par défaut (sommets, réglages, apparence), f
   const l = Math.hypot(-0.4, -1);
   const apparence = { couleur: [1, 1, 1, 1], mode: 'couleur', sens: 'horizontal', bandes: false, mailles: false, source: null, lumiere: [r6(-0.4 / l), r6(-1 / l)] };
   assert.deepEqual(c.structure, { type: 'corde', code: 0, colonnes: 32, lignes: 1, nSommets: 32, attaches: [], raideur: 0.9, flexion: 0.1,
-    amortissement: 0.02, dechirure: null, epaisseur: 0.4, perles: null, apparence });
+    amortissement: 0.02, dechirure: null, fente: null, epaisseur: 0.4, perles: null, apparence });
   assert.deepEqual([t.structure.type, t.structure.code, t.structure.colonnes, t.structure.lignes, t.structure.nSommets], ['tissu', 1, 24, 16, 384]);
   for (const em of [c, t]) {
     assert.deepEqual(em.vie, [3, 3], 'présente pendant toute la fenêtre de l\'effet');
@@ -103,6 +103,10 @@ test('structures : erreurs (structure-invalide, chemin du champ en cause)', () =
     [[corde({ attaches: Array.from({ length: 8 }, (_, i) => ({ ou: 'debut', a: '#e' + i })) })], 'emetteurs[c].structure.attaches[7].a', /7 éléments « #id » au plus par effet/],
     [[corde({ raideur: 1.5 })], 'emetteurs[c].structure.raideur', /valeur entre 0 et 1 attendue/],
     [[corde({ dechirure: 1.01 })], 'emetteurs[c].structure.dechirure', /rapport d'étirement d'au moins 1\.05 attendu/],
+    [[tissu({ fente: 0 })], 'emetteurs[t].structure.fente', /indice de colonne entier entre 1 et 23 attendu/],
+    [[tissu({ fente: 24 })], 'emetteurs[t].structure.fente', /indice de colonne entier entre 1 et 23 attendu/],
+    [[tissu({ resolution: [8, 4], fente: 2.5 })], 'emetteurs[t].structure.fente', /indice de colonne entier entre 1 et 7 attendu/],
+    [[corde({ fente: 4 })], 'emetteurs[c].structure.fente', /fente : tissu seulement/],
     [[corde({ epaisseur: 0 })], 'emetteurs[c].structure.epaisseur', /valeur entre 0\.05 et 10 attendue/],
     [[tissu({ apparence: { degrade: [] } })], 'emetteurs[t].structure.apparence.degrade', /liste non vide de couleurs attendue/],
     [[tissu({ apparence: { degrade: ['#ffffff', '#000000'], image: 'assets/a.png' } })], 'emetteurs[t].structure.apparence', /une seule texture : « degrade », « image » ou « source » \(ici degrade, image\)/],
@@ -132,7 +136,9 @@ test('structures : schéma (variantes corde et tissu, attaches, apparence)', () 
   assert.deepEqual(n.champs.type.valeurs, Object.keys(R.CODES.structure));
   assert.deepEqual(Object.keys(n.variantes.types), ['corde', 'tissu']);
   assert.deepEqual(Object.keys(n.variantes.types.corde.champs), ['resolution', 'perles']);
-  assert.deepEqual(Object.keys(n.variantes.types.tissu.champs), ['resolution']);
+  assert.deepEqual(Object.keys(n.variantes.types.tissu.champs), ['resolution', 'fente']);
+  assert.equal(ok(compiler([tissu({ fente: 12 })])).emetteurs[0].structure.fente, 12, 'fente d\'un tissu (colonne)');
+  assert.equal(ok(compiler([tissu({ resolution: [8, 4], fente: 7 })])).emetteurs[0].structure.fente, 7, 'fente : colonnes − 1 au plus');
   assert.deepEqual(Object.keys(n.champs.attaches.element.champs), ['ou', 'a', 'lacher', 'glisse']);
   assert.deepEqual(Object.keys(n.champs.attaches.element.champs.glisse.champs), ['vers', 'duree']);
   assert.deepEqual(Object.keys(n.champs.apparence.champs), ['couleur', 'degrade', 'sens', 'bandes', 'image', 'source', 'mailles', 'lumiere']);

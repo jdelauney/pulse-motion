@@ -331,7 +331,7 @@
         exemple: { type: 'corde' },
         variantes: {
           cle: 'type',
-          horsType: { perles: 'des perles se posent sur une corde' },
+          horsType: { perles: 'des perles se posent sur une corde', fente: 'fente : tissu seulement (couture coupée entre deux colonnes)' },
           types: {
             corde: { libelle: 'Corde (fil, guirlande)', champs: {
               resolution: nb('Sommets', 32, { min: RESOLUTION_CORDE[0], max: RESOLUTION_CORDE[1], pas: 1, curseur: [8, 128] }),
@@ -342,6 +342,7 @@
             } },
             tissu: { libelle: 'Tissu (drapeau, rideau, filet)', champs: {
               resolution: pr('Sommets [colonnes, lignes]', [24, 16]),
+              fente: nb('Fente (couture coupée avant la colonne indiquée, de haut en bas ; absent : aucune)', null, { min: 1, pas: 1, exemple: 12, curseur: [1, 127] }),
             } },
           },
         },
@@ -1334,6 +1335,13 @@
           if (x < min || x > max) throw invalide(ch + '.' + cle, 'valeur entre ' + min + ' et ' + max + ' attendue');
           return x;
         }
+        // Fente (tissu) : couture coupée entre les colonnes fente − 1 et fente, sur toute la hauteur (rideau en deux pans).
+        var fente = null;
+        if (v.fente !== undefined && v.fente !== null) {
+          if (type !== 'tissu') throw invalide(ch + '.fente', 'fente : tissu seulement (couture coupée entre deux colonnes)');
+          fente = nombre(v.fente, ch + '.fente');
+          if (fente !== Math.floor(fente) || fente < 1 || fente > C - 1) throw invalide(ch + '.fente', 'indice de colonne entier entre 1 et ' + (C - 1) + ' attendu (couture coupée avant cette colonne)');
+        }
         var dechirure = null;
         if (v.dechirure !== undefined && v.dechirure !== null) {
           dechirure = nombre(v.dechirure, ch + '.dechirure');
@@ -1437,7 +1445,7 @@
           structure: {
             type: type, code: CODES.structure[type], colonnes: C, lignes: R, nSommets: C * R, attaches: attaches,
             raideur: entre('raideur', 0.9, 0, 1), flexion: entre('flexion', 0.1, 0, 1), amortissement: entre('amortissement', 0.02, 0, 1),
-            dechirure: dechirure, epaisseur: entre('epaisseur', 0.4, 0.05, 10), perles: perles, apparence: apparence,
+            dechirure: dechirure, fente: fente, epaisseur: entre('epaisseur', 0.4, 0.05, 10), perles: perles, apparence: apparence,
           },
           degrade: degrade,
           image: image,
