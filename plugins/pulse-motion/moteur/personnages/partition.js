@@ -2,24 +2,26 @@
  *
  *   var e = M.partition.etatAuTemps(partition, t, bibliotheque, gabarit);   // { pose, x, vue, corps }
  *
- * partition = { x0, vue0, calme, largeur, echelle, actions: [{ type, debut, fin, vers?, pose?, clip?, vue?, expression?, bouche? }] }
+ * partition = { x0, vue0, calme, largeur, echelle, actions: [{ type, debut, fin, vers?, pose?, clip?, vue?, expression?, bouche?, piste? }] }
  *   temps absolus (résolus par le minutage) ; x en % de la largeur de la scène ; largeur en unités de la scène ;
  *   echelle : unités de scène par unité du squelette.
  * - Position : x0, puis interpolée pendant chaque marche ou course (« vers »), gardée après.
  * - Corps, par priorité : pose ou geste (« jouer ») en cours, le plus récent ; sinon marche ou course (phase calée sur la
  *   distance parcourue : pas de glissement) ; sinon repos. Fondu de 0,25 s à chaque changement, sans mémoire.
  * - Vue : vue0 ; une marche se tourne dans le sens du trajet (sauf « vue » donnée) ; « tourner » interpole.
- * - Visage : dernière expression et dernière bouche commencées ; respiration et clignement sauf calme === false.
+ * - Visage : dernière expression et dernière bouche commencées ; « parler » (piste de visèmes, M.levres) l'emporte sur une
+ *   bouche commencée avant lui, pendant les paroles ; respiration et clignement sauf calme === false.
  * Aucune mémoire d'un appel à l'autre : même t, même pose.
  */
 (function (racine, fabrique) {
   var nodeJS = typeof require === 'function' && typeof module === 'object';
   var S = nodeJS ? require('../squelette.js') : racine.M.squelette;
   var K = nodeJS ? require('../clips.js') : racine.M.clips;
-  var api = fabrique(S, K);
+  var L = nodeJS ? require('./levres.js') : racine.M.levres;
+  var api = fabrique(S, K, L);
   if (typeof module === 'object' && module.exports) module.exports = api;
   else { racine.M = racine.M || {}; racine.M.partition = api; }
-})(typeof globalThis !== 'undefined' ? globalThis : this, function (S, K) {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (S, K, L) {
   'use strict';
 
   var FONDU = 0.25;
@@ -177,6 +179,12 @@
     var ex = dernier(part, 'expression', t), bo = dernier(part, 'bouche', t);
     if (ex && ex.expression) pose.expression = ex.expression;
     if (bo && bo.bouche && bo.bouche !== 'aucune') pose.bouche = bo.bouche;
+    // Paroles : la piste de visèmes du dernier « parler » commencé, s'il est plus récent que la bouche demandée.
+    var pa = dernier(part, 'parler', t);
+    if (pa && t < pa.fin && (!bo || pa.debut >= bo.debut)) {
+      var v = L.boucheAuTemps(pa.piste, t);
+      if (v) pose.bouche = v;
+    }
     K.appliquerExpression(pose, bib, explicites);
     if (part.calme !== false) {
       if (corps.type === 'repos' && bib.clips.respiration && !bib.clips.repos) pose = K.ajouter(pose, bib.clips.respiration, t, bib);

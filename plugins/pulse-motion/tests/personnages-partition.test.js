@@ -103,3 +103,22 @@ test('enchaînements rapprochés : pas de saut (fondus en chaîne, trajets et ro
   const surPlace = partition([{ type: 'marcher', debut: 0, fin: 1, vers: 10 }], { vue0: 180 });
   proche(PA.vueAuTemps(surPlace, 2), 180, 1e-9, 'marche sur place : pas de demi-tour');
 });
+
+test('parler : la piste donne la bouche ; une bouche plus récente l\'emporte ; silence long -> bouche de l\'expression', () => {
+  const L = require('../moteur/personnages/levres.js');
+  const piste = L.piste([{ w: 'Bonjour', t0: 0, t1: 0.6 }, { w: 'Fin', t0: 2, t1: 2.4 }], 1, 0, Infinity);
+  const p = partition([
+    { type: 'expression', debut: 0, fin: 1, expression: 'joie' },
+    { type: 'parler', debut: 0.5, fin: Infinity, piste },
+    { type: 'bouche', debut: 3.1, fin: 4, bouche: 'O' },
+  ]);
+  assert.equal(PA.etatAuTemps(p, 1.05, bib, gab).pose.bouche, 'MBP');
+  assert.equal(PA.etatAuTemps(p, 1.5, bib, gab).pose.bouche, 'U');
+  assert.equal(PA.etatAuTemps(p, 2.3, bib, gab).pose.bouche, 'sourire', 'silence long : bouche de la joie');
+  assert.equal(PA.etatAuTemps(p, 3.05, bib, gab).pose.bouche, 'FV');
+  assert.equal(PA.etatAuTemps(p, 3.2, bib, gab).pose.bouche, 'O', 'bouche demandée après : elle l\'emporte');
+  const fini = partition([{ type: 'parler', debut: 0, fin: 1.2, piste }]);
+  assert.notEqual(PA.etatAuTemps(fini, 3.05, bib, gab).pose.bouche, 'FV', 'hors de la fenêtre : rien');
+  assert.doesNotThrow(() => PA.etatAuTemps(partition([{ type: 'parler', debut: 0, fin: 5, piste: [] }]), 1, bib, gab), 'voix absente');
+});
+
