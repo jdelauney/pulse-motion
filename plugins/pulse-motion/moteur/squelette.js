@@ -17,6 +17,8 @@
  * Les clés d'expression (yeux, regard, touffe) font partie de la pose, mais le noyau les ignore (habillage).
  * Contraintes : chaque angle est borné (LIMITES, surchargées par gabarit.contraintes ; « cuisse » vaut pour
  * les deux côtés, « cuisseAvant » pour un seul) ; `efficace` rend la pose réellement appliquée.
+ * Os en plus (gabarit.osEnPlus) : balancement recalculé à chaque appel à partir de contexte.poseA(t) sur les
+ * FENETRE_OS secondes précédentes (grille absolue de PAS_OS) ; sans contexte, l'os reste à son angle de repos.
  * Module pur : chargé tel quel dans la page (M.squelette) et par Node (require).
  */
 (function (racine, fabrique) {
@@ -171,8 +173,50 @@
     return out;
   }
 
-  // Tâche 1 : sans balancement (la tâche 3 le calcule à partir de contexte.poseA).
-  function calculerOsEnPlus(p, g, geo, ctx) { return placerOs(p, g, geo, null); }
+  var FENETRE_OS = 0.6, PAS_OS = 1 / 60;
+
+  /** Point d'attache et direction de repos d'un os, à l'écran (repère du parent du personnage). */
+  function attacheEcran(pose, g, os) {
+    var p = contraindre(pose, g, true);
+    var geo = geometrie(p, g);
+    var o = placerOs(p, g, geo, null)[os.nom];
+    var dx = o.bout[0] - o.base[0], dy = o.bout[1] - o.base[1], l = Math.hypot(dx, dy) || 1;
+    return { x: p.x + o.base[0] * p.echelle, y: p.y + o.base[1] * p.echelle, n: [dy / l, -dx / l], vue: p.vue };
+  }
+
+  /** Balancement (degrés) d'un os à l'instant t : ressort amorti intégré sur la fenêtre passée, depuis le repos.
+   *  Grille absolue (multiples de PAS_OS) : même t ⇒ même résultat, quel que soit l'ordre des appels. */
+  function balancement(os, g, t, poseA) {
+    var n = Math.round(FENETRE_OS / PAS_OS);
+    var k0 = Math.floor(t / PAS_OS + 1e-9);
+    var pts = [];
+    for (var i = -n - 1; i <= 0; i++) pts.push(attacheEcran(poseA((k0 + i) * PAS_OS), g, os));
+    var f = 0.8 + 4 * Math.max(0, Math.min(1, os.raideur === undefined ? 0.5 : os.raideur));
+    var raid = Math.pow(2 * Math.PI * f, 2);
+    var amort = 2 * Math.max(0, Math.min(1, os.amorti === undefined ? 0.4 : os.amorti)) * Math.sqrt(raid);
+    var L = os.longueur || 1;
+    var theta = 0, omega = 0, h = PAS_OS;
+    for (var j = 1; j < pts.length - 1; j++) {
+      var ax = (pts[j + 1].x - 2 * pts[j].x + pts[j - 1].x) / (h * h);
+      var ay = (pts[j + 1].y - 2 * pts[j].y + pts[j - 1].y) / (h * h);
+      var pousse = (ax * pts[j].n[0] + ay * pts[j].n[1]) / L / DEG;
+      omega += h * (pousse - raid * theta - amort * omega);
+      theta += h * omega;
+    }
+    theta += omega * (t - k0 * PAS_OS);
+    var signe = Math.cos(pts[pts.length - 1].vue * DEG) < 0 ? -1 : 1;
+    var v = Math.max(-80, Math.min(80, signe * theta));
+    return Math.abs(v) < 1e-9 ? 0 : v;
+  }
+
+  function calculerOsEnPlus(p, g, geo, ctx) {
+    var bal = {};
+    var anime = typeof ctx.poseA === 'function' && typeof ctx.temps === 'number';
+    g.osEnPlus.forEach(function (os) { bal[os.nom] = anime ? balancement(os, g, ctx.temps, ctx.poseA) : 0; });
+    var out = placerOs(p, g, geo, bal);
+    Object.keys(out).forEach(function (nom) { out[nom].balancement = bal[nom]; });
+    return out;
+  }
 
   function moyenne(A, noms) { return noms.reduce(function (s, n) { return s + A[n][2]; }, 0) / noms.length; }
 
@@ -287,7 +331,7 @@
     REPOS: REPOS, NOMS: NOMS, LIMITES: LIMITES, GABARIT: GABARIT, SEUIL_LOIN: SEUIL_LOIN,
     completerGabarit: completerGabarit, generique: generique, limite: limite, contraindre: contraindre,
     calculer: calculer, sol: sol, poserAuSol: poserAuSol, melanger: melanger, pointDe: pointDe,
-    ik2: ik2, CHAINES: CHAINES, atteindre: atteindre,
+    ik2: ik2, CHAINES: CHAINES, atteindre: atteindre, FENETRE_OS: FENETRE_OS, PAS_OS: PAS_OS,
     // Interne, pour l'IK et le balancement (tâches 2 et 3).
     _geometrie: geometrie, _placerOs: placerOs
   };
