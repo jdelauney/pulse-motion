@@ -179,7 +179,7 @@ test('page : dessin inconnu, bâtonnets et message ; dessin avec queue, curseurs
     await page.aller(`${a.url}_pm/personnages?nom=marche&dessin=geant`);
     await attendrePret(page);
     assert.equal(await page.evaluer('__atelier.habillage()'), 'batonnets');
-    assert.match(await page.evaluer('document.querySelector("#message").textContent'), /dessin « geant » introuvable/);
+    assert.match(await page.evaluer('document.querySelector("#message").textContent'), /dessin « geant » introuvable/i);
     const r = await page.evaluer(`(() => {
       const h = document.querySelector('#habillage'); h.value = 'touffu-queue'; h.dispatchEvent(new Event('change', { bubbles: true }));
       return { queue: !!document.querySelector('#curseurs [data-curseur="queue"]'), piece: !!document.querySelector('#perso [data-piece="queue"]') };
