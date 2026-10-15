@@ -129,3 +129,40 @@ await envoyer({ webgpu: true, fil: a[0].s, perles: a[1].s, egal: memes(a, b), vi
   assert.ok(r.fil[16].y > 31 + 1, 'la guirlande pend');
   assert.deepEqual(r.vides, [0, 0, 0, 0], 'état 0 : aucune perle');
 });
+
+test('structures GPU : corde liée à des grains (avec) : les grains s\'y posent, elle ploie sous leur poids ; même état par deux chemins', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  // Une corde de 33 sommets d'abord : la corde liée commence au sommet 36 du tampon commun (liaison décalée de 2 304 octets).
+  const effet = (avec) => compiler([
+    { nom: 'tresse', structure: { type: 'corde', resolution: 33 } },
+    { nom: 'corde', structure: { type: 'corde', resolution: 61, raideur: 0.9, flexion: 0.05, amortissement: 0.3, epaisseur: 0.8,
+      attaches: [{ ou: 'debut', a: [0, 0.5] }, { ou: 'fin', a: [0.9, 0.5] }] }, forces: [{ type: 'gravite', valeur: 40 }] },
+    { nom: 'sable', naissance: { salves: [{ t: 0.5, nombre: 300 }], forme: { type: 'rectangle', largeur: 30, hauteur: 6, decalage: [0, -12] }, vie: [10, 10], taille: [0.6, 0.6] },
+      forces: [{ type: 'gravite', valeur: 40 }], interactions: { type: 'grains', rayon: 1, avec } },
+  ], 4);
+  const lie = effet(['corde']);
+  assert.deepEqual(lie.groupes[0].structures, [1]);
+  const r = await page({ lie, libre: effet([]) }, `
+// Corde de 60 cqh tenue en (50, 40,5) et (104, 40,5) ; sable versé au-dessus de sa partie centrale.
+const zones = zonesDe([50, 40, 60, 1]);
+const a = await etat(DONNEES.lie, zones, [3]);
+const b = await etat(DONNEES.lie, zones, [1.5, 0.7, 3]);
+const sans = await etat(DONNEES.libre, zones, [3]);
+await envoyer({ webgpu: true, corde: a[1].s, grains: a[2].s.filter((p) => p.vivante === 1), seule: sans[1].s, egal: memes(a, b) });`);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.equal(r.egal, true, 'même état au bit près par deux chemins, couplage compris');
+  const fleche = (s) => Math.max(...s.map((p) => p.y)) - 40.5;
+  assert.ok(fleche(r.corde) > fleche(r.seule) + 1, `flèche ${fleche(r.corde).toFixed(2)} cqh avec le sable, ${fleche(r.seule).toFixed(2)} sans : la corde ploie`);
+  // Hauteur de la corde sous chaque grain (interpolée entre ses sommets) : le grain reste au-dessus.
+  const yCorde = (x) => {
+    const s = r.corde;
+    for (let i = 0; i + 1 < s.length; i++) {
+      const [a, b] = s[i].x <= s[i + 1].x ? [s[i], s[i + 1]] : [s[i + 1], s[i]];
+      if (x >= a.x && x <= b.x) return a.y + (b.y - a.y) * ((x - a.x) / Math.max(b.x - a.x, 1e-6));
+    }
+    return Infinity;
+  };
+  const dessus = r.grains.filter((p) => p.y < yCorde(p.x) + 0.2).length;
+  assert.equal(r.grains.length, 300);
+  assert.ok(dessus >= 0.9 * r.grains.length, `${dessus} grains sur 300 au-dessus de la corde`);
+});
