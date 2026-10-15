@@ -299,7 +299,9 @@ test('bibliothèque : cordes et tissus (drapeau, banniere, rideau, guirlande, fi
   assert.equal(banniere.collisions.reponse, 'rebond');
   const rideau = compiler('rideau').effet.emetteurs[0];
   assert.equal(rideau.structure.dechirure, 1.3);
-  assert.ok(rideau.forces.some((f) => f.type === 'attracteur' && f.force < 0), 'répulseur au centre : le rideau s\'ouvre');
+  assert.deepEqual(rideau.structure.attaches.map((a) => [a.sommets.length, a.glisse]), [[16, { vers: [-0.2, 0], duree: 1 }], [16, { vers: [0.2, 0], duree: 1 }]],
+    'deux moitiés du bord haut qui s\'écartent : le rideau s\'ouvre');
+  assert.deepEqual(rideau.forces.map((f) => f.type), ['gravite'], 'aucune force qui projette ses morceaux');
   const [fil, ampoule] = compiler('guirlande').effet.emetteurs;
   assert.deepEqual(fil.structure.perles, { emetteur: 1, tous: 6, debut: 3, nombre: 8 });
   assert.deepEqual([ampoule.perlesDe, ampoule.capacite, ampoule.rendu.melange], [0, 8, 'additif']);
@@ -309,7 +311,7 @@ test('bibliothèque : cordes et tissus (drapeau, banniere, rideau, guirlande, fi
   assert.equal(compiler('filet', 'souplesse: 1').effet.emetteurs[0].structure.raideur, 0.5);
   assert.ok(filet.collisions.masque & R.CODES.cible.elements, 'le filet retient les éléments déclarés');
   const corde = compiler('corde').effet.emetteurs[0];
-  assert.deepEqual(corde.structure.attaches, [{ sommets: [0], cible: { genre: 'point', point: [0.5, 0] }, lacher: null }]);
+  assert.deepEqual(corde.structure.attaches, [{ sommets: [0], cible: { genre: 'point', point: [0.5, 0] }, lacher: null, glisse: null }]);
   assert.equal(compiler('corde', 'epaisseur: 2').effet.emetteurs[0].structure.epaisseur, 2);
 });
 
