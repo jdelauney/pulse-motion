@@ -1,0 +1,55 @@
+{
+  "nom": "coucou",
+  "description": "coucou de la main, bras levé sur le côté",
+  "boucle": false,
+  "pieds": "au-sol",
+  "cles": [
+    {
+      "t": 0,
+      "pose": "debout"
+    },
+    {
+      "t": 0.25,
+      "angles": {
+        "torseIncl": -4,
+        "tetePenche": 6,
+        "brasAvant": 0,
+        "avantBrasAvant": -7,
+        "ecartBrasAvant": 140,
+        "torsionBrasAvant": 90
+      }
+    },
+    {
+      "t": 0.51,
+      "angles": {
+        "tetePenche": -6,
+        "avantBrasAvant": -63
+      }
+    },
+    {
+      "t": 0.77,
+      "angles": {
+        "tetePenche": 6,
+        "avantBrasAvant": -7
+      }
+    },
+    {
+      "t": 1.03,
+      "angles": {
+        "tetePenche": -6,
+        "avantBrasAvant": -63
+      }
+    },
+    {
+      "t": 1.29,
+      "angles": {
+        "tetePenche": 6,
+        "avantBrasAvant": -7
+      }
+    },
+    {
+      "t": 1.6,
+      "pose": "debout"
+    }
+  ]
+}

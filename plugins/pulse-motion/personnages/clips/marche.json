@@ -1,0 +1,102 @@
+{
+  "nom": "marche",
+  "description": "marche tranquille, bras en balancier",
+  "boucle": true,
+  "duree": 1,
+  "foulee": 248,
+  "pieds": "au-sol",
+  "miroir": 0.5,
+  "cles": [
+    {
+      "t": 0,
+      "angles": {
+        "torse": 7,
+        "tete": -3,
+        "cuisseAvant": -25,
+        "tibiaAvant": 5,
+        "piedAvant": -12,
+        "brasAvant": -20,
+        "avantBrasAvant": -30,
+        "regardX": 1,
+        "touffeRot": -4,
+        "touffeOnde": 0
+      }
+    },
+    {
+      "t": 0.125,
+      "angles": {
+        "cuisseAvant": -18,
+        "tibiaAvant": 22,
+        "piedAvant": 0,
+        "brasAvant": -16,
+        "avantBrasAvant": -27.6,
+        "touffeOnde": 6
+      }
+    },
+    {
+      "t": 0.25,
+      "angles": {
+        "cuisseAvant": 0,
+        "tibiaAvant": 8,
+        "brasAvant": 6.4,
+        "avantBrasAvant": -18,
+        "touffeOnde": 0
+      }
+    },
+    {
+      "t": 0.375,
+      "angles": {
+        "cuisseAvant": 14,
+        "tibiaAvant": 2,
+        "piedAvant": 0,
+        "brasAvant": 25.6,
+        "avantBrasAvant": -18,
+        "touffeOnde": -6
+      }
+    },
+    {
+      "t": 0.5,
+      "angles": {
+        "cuisseAvant": 25,
+        "tibiaAvant": 15,
+        "piedAvant": 18,
+        "brasAvant": 20,
+        "avantBrasAvant": -18,
+        "touffeOnde": 0
+      }
+    },
+    {
+      "t": 0.625,
+      "angles": {
+        "cuisseAvant": 20,
+        "tibiaAvant": 45,
+        "piedAvant": 30,
+        "brasAvant": 14.4,
+        "avantBrasAvant": -18,
+        "touffeOnde": 6
+      }
+    },
+    {
+      "t": 0.75,
+      "angles": {
+        "cuisseAvant": -8,
+        "tibiaAvant": 70,
+        "piedAvant": 0,
+        "brasAvant": 0,
+        "avantBrasAvant": -18,
+        "touffeOnde": 0
+      }
+    },
+    {
+      "t": 0.875,
+      "angles": {
+        "cuisseAvant": -32,
+        "tibiaAvant": 28,
+        "piedAvant": -8,
+        "brasAvant": -11.2,
+        "avantBrasAvant": -24.72,
+        "touffeOnde": -6
+      }
+    }
+  ]
+}
