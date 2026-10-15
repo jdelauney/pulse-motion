@@ -17,6 +17,9 @@
  *   .lireSommets(e) -> Promise<Float32Array>, .lireRompus(e) -> Promise<Uint32Array>   (tests, M.particules.lireEtat)
  *   .tailleEtat (octets), .sommets, .rompus, .infos, .poussees (GPUBuffer), .detruire()
  *   e.infoStructure = { s, base, n, colonnes, lignes, type, mots, liens } pour chaque émetteur de structure.
+ * Perles (corde) : module « pm-perles », un dispatch par émetteur de perles après les structures : perle k posée sur le
+ * sommet debut + k × tous (position, vitesse, vivante), taille, profondeur et angle tirés comme une naissance de P1, âge = τ1 ;
+ * leurs particules sont dans l'état (effacées par vider, copiées dans les instantanés).
  * Pas d'une structure : au pas 0, sommets posés au repos (rectangle de l'élément 0 au point de grille 0 : ancre ou balise,
  * ou rectangle de sa photographie ; corde tenue aux deux bouts : entre ses deux points d'attache) ; puis 4 sous-pas de
  * 1/480 s : sommets tenus posés sur leur attache (vitesse de l'attache), autres prédits par les forces de la recette
@@ -545,6 +548,66 @@ fn structures(@builtin(workgroup_id) wg: vec3u, @builtin(local_invocation_index)
     return p;
   }
 
+  const WGSL_PERLES = /* wgsl */ `
+struct Pas { k: u32, tau0: f32, tau1: f32, dt: f32, zoneA: vec4f, zoneB: vec4f };
+struct Perles { base: u32, debut: u32, tous: u32, nombre: u32 };
+@group(0) @binding(0) var<storage, read> E: array<f32>;
+@group(0) @binding(1) var<storage, read_write> particules: array<Particule>;
+@group(0) @binding(4) var<uniform> P: Pas;
+@group(0) @binding(15) var<storage, read> sommets: array<Particule>;
+@group(0) @binding(23) var<uniform> PL: Perles;
+
+fn ef(i: u32) -> f32 { return E[i]; }
+fn eu(i: u32) -> u32 { return bitcast<u32>(E[i]); }
+
+// Perle k : sur le sommet debut + k × tous de sa corde (position, vitesse, vivante) ; taille, profondeur et angle tirés
+// comme une naissance de P1 (mêmes canaux) ; âge = τ1 : les couleurs de vie suivent la fenêtre de l'effet.
+@compute @workgroup_size(64)
+fn perles(@builtin(global_invocation_id) gid: vec3u) {
+  let k = gid.x;
+  if (k >= PL.nombre) { return; }
+  let s = sommets[PL.base + PL.debut + k * PL.tous];
+  let g = eu(5u);
+  let e = eu(6u);
+  var p: Particule;
+  p.pos = s.pos;
+  p.vel = s.vel;
+  p.z = mix(ef(18u), ef(19u), alea(g, e, k, 8u));
+  p.age = P.tau1;
+  p.vie = max(ef(12u), 1e-3);
+  p.taille = mix(ef(14u), ef(15u), alea(g, e, k, 6u));
+  p.masse = 1.0;
+  p.rot = mix(ef(20u), ef(21u), alea(g, e, k, 9u));
+  p.vrot = 0.0;
+  p.alea = alea(g, e, k, 11u);
+  p.n = k;
+  p.gen = 0u;
+  p.vivante = s.vivante;
+  p.naissance = 0.0;
+  particules[k] = p;
+}
+`;
+
+  const parDevicePerles = new WeakMap();
+  function pipelinePerles(device) {
+    let p = parDevicePerles.get(device);
+    if (p) return p;
+    const C = GPUShaderStage.COMPUTE;
+    const layout = device.createBindGroupLayout({
+      entries: [
+        { binding: 0, visibility: C, buffer: { type: 'read-only-storage' } },
+        { binding: 1, visibility: C, buffer: { type: 'storage' } },
+        { binding: 4, visibility: C, buffer: { type: 'uniform', hasDynamicOffset: true, minBindingSize: 48 } },
+        { binding: 15, visibility: C, buffer: { type: 'read-only-storage' } },
+        { binding: 23, visibility: C, buffer: { type: 'uniform' } },
+      ],
+    });
+    const module = device.createShaderModule({ label: 'pm-perles', code: P.WGSL_COMMUN + WGSL_PERLES });
+    p = { layout, pipeline: device.createComputePipeline({ layout: device.createPipelineLayout({ bindGroupLayouts: [layout] }), compute: { module, entryPoint: 'perles' } }) };
+    parDevicePerles.set(device, p);
+    return p;
+  }
+
   class Structures {
     constructor(device, sim) {
       const U = GPUBufferUsage;
@@ -593,8 +656,15 @@ fn structures(@builtin(workgroup_id) wg: vec3u, @builtin(local_invocation_index)
         u.set([i.mots, i.base, i.liens, i.n], 4 + i.s * 4);
       });
       device.queue.writeBuffer(this.uniforme, 0, u);
-      this.tailleEtat = this.nSommets * (P.OCTETS_PARTICULE + 4);
-      this.perles = [];
+      // Perles : émetteur posé sur les sommets de sa corde, une perle tous les « tous » sommets.
+      this.perles = sim.emetteurs.filter((e) => e.perles).map((e) => {
+        const corde = sim.emetteurs[e.em.perlesDe];
+        const pl = corde.em.structure.perles;
+        const uniforme = tampon(16, U.UNIFORM | U.COPY_DST);
+        device.queue.writeBuffer(uniforme, 0, new Uint32Array([corde.infoStructure.base, pl.debut, pl.tous, pl.nombre]));
+        return { e, uniforme, nombre: pl.nombre, groupe: null };
+      });
+      this.tailleEtat = this.nSommets * (P.OCTETS_PARTICULE + 4) + this.perles.reduce((s, pl) => s + pl.e.particules.size, 0);
 
       // Monde des obstacles : celui de la simulation, ou un monde vide (aucun obstacle, n = 0).
       const T = GPUTextureUsage;
@@ -627,6 +697,21 @@ fn structures(@builtin(workgroup_id) wg: vec3u, @builtin(local_invocation_index)
           { binding: 22, resource: { buffer: this.infos } },
         ],
       });
+      if (this.perles.length) {
+        this.pp = pipelinePerles(device);
+        this.perles.forEach((pl) => {
+          pl.groupe = device.createBindGroup({
+            layout: this.pp.layout,
+            entries: [
+              { binding: 0, resource: { buffer: pl.e.params } },
+              { binding: 1, resource: { buffer: pl.e.particules } },
+              { binding: 4, resource: { buffer: sim.tamponPas, size: 48 } },
+              { binding: 15, resource: { buffer: this.sommets } },
+              { binding: 23, resource: { buffer: pl.uniforme } },
+            ],
+          });
+        });
+      }
     }
 
     /** Repères des éléments d'attache au point de grille 0 (repos) et autour du pas k, envoyés une fois chacun. */
@@ -650,38 +735,49 @@ fn structures(@builtin(workgroup_id) wg: vec3u, @builtin(local_invocation_index)
       return r;
     }
 
-    /** Pas n du lot : toutes les structures, un groupe de travail chacune. */
+    /** Pas n du lot : toutes les structures, un groupe de travail chacune, puis les perles posées sur leurs sommets. */
     executer(passe, n) {
       passe.setPipeline(this.p.pipeline);
       passe.setBindGroup(0, this.groupe, [n * 256]);
       passe.dispatchWorkgroups(this.liste.length);
+      for (const pl of this.perles) {
+        passe.setPipeline(this.pp.pipeline);
+        passe.setBindGroup(0, pl.groupe, [n * 256]);
+        passe.dispatchWorkgroups(Math.ceil(pl.nombre / 64));
+      }
     }
 
     vider(enc) {
       enc.clearBuffer(this.sommets);
       enc.clearBuffer(this.rompus);
+      this.perles.forEach((pl) => enc.clearBuffer(pl.e.particules));
     }
 
-    /** Copie de l'état (sommets, liens rompus) dans un instantané ; créé à la première sauvegarde. */
+    /** Copie de l'état (sommets, liens rompus, perles) dans un instantané ; créé à la première sauvegarde. */
     sauver(enc, copie) {
       const U = GPUBufferUsage;
+      const nouveau = (taille) => this.device.createBuffer({ size: taille, usage: U.COPY_SRC | U.COPY_DST });
       const c = copie || {
-        sommets: this.device.createBuffer({ size: this.sommets.size, usage: U.COPY_SRC | U.COPY_DST }),
-        rompus: this.device.createBuffer({ size: this.rompus.size, usage: U.COPY_SRC | U.COPY_DST }),
+        sommets: nouveau(this.sommets.size),
+        rompus: nouveau(this.rompus.size),
+        perles: this.perles.map((pl) => nouveau(pl.e.particules.size)),
       };
       enc.copyBufferToBuffer(this.sommets, 0, c.sommets, 0, this.sommets.size);
       enc.copyBufferToBuffer(this.rompus, 0, c.rompus, 0, this.rompus.size);
+      this.perles.forEach((pl, i) => enc.copyBufferToBuffer(pl.e.particules, 0, c.perles[i], 0, pl.e.particules.size));
       return c;
     }
 
     restaurer(enc, c) {
       enc.copyBufferToBuffer(c.sommets, 0, this.sommets, 0, this.sommets.size);
       enc.copyBufferToBuffer(c.rompus, 0, this.rompus, 0, this.rompus.size);
+      this.perles.forEach((pl, i) => enc.copyBufferToBuffer(c.perles[i], 0, pl.e.particules, 0, pl.e.particules.size));
     }
 
     detruireCopie(c) {
       c.sommets.destroy();
       c.rompus.destroy();
+      c.perles.forEach((b) => b.destroy());
     }
 
     async lireSommets(e) {
@@ -700,6 +796,7 @@ fn structures(@builtin(workgroup_id) wg: vec3u, @builtin(local_invocation_index)
       [this.params, this.sommets, this.anciennes, this.lambdas, this.rompus, this.elements, this.poussees, this.infos, this.uniforme, this.mondeVide]
         .forEach((b) => b && b.destroy());
       [this.texVide, this.sdfVide].forEach((t) => t && t.destroy());
+      this.perles.forEach((pl) => pl.uniforme.destroy());
     }
   }
 
