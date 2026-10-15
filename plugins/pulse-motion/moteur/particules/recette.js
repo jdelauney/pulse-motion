@@ -327,6 +327,7 @@
         exemple: { type: 'corde' },
         variantes: {
           cle: 'type',
+          horsType: { perles: 'des perles se posent sur une corde' },
           types: {
             corde: { libelle: 'Corde (fil, guirlande)', champs: {
               resolution: nb('Sommets', 32, { min: RESOLUTION_CORDE[0], max: RESOLUTION_CORDE[1], pas: 1, curseur: [8, 128] }),
@@ -530,6 +531,9 @@
       }
       Object.keys(v).forEach(function (k) {
         var c = chemin ? chemin + '.' + k : k;
+        if (!Object.prototype.hasOwnProperty.call(champs, k) && n.variantes && n.variantes.horsType && Object.prototype.hasOwnProperty.call(n.variantes.horsType, k)) {
+          throw invalide(c, n.variantes.horsType[k]); // champ d'un autre type : message propre
+        }
         if (!Object.prototype.hasOwnProperty.call(champs, k)) throw invalide(c, 'champ inconnu (champs possibles : ' + Object.keys(champs).join(', ') + ')');
         verifierChamps(v[k], champs[k], c, invalide);
       });
