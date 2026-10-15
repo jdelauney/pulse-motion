@@ -55,6 +55,14 @@ test('analyse : formes, sélecteurs, calques, boîtes, couleurs calculées', { s
   assert.deepEqual(a.refuses, []);
   const t = await dansLaPage('return M.decoupe.analyser(svg);', '<svg viewBox="0 0 10 10"><text x="1" y="5">Bonjour</text><rect width="2" height="2" style="filter: blur(2px)"/></svg>');
   assert.deepEqual(t.refuses.map((r) => r.type).sort(), ['filtre', 'text']);
+  const piege = await dansLaPage(`var a = M.decoupe.analyser(svg); return { n: a.formes.length, couleurs: a.formes.map(function (f) { return f.remplissage; }), viewBox: a.viewBox, script: window.__piege || null };`,
+    '<svg width="200" height="100"><script>window.__piege = 1;</script><g style="display:none"><rect id="cache" width="5" height="5"/></g>'
+    + '<defs><linearGradient id="A"><stop offset="0" stop-color="#123456"/></linearGradient><linearGradient id="B" href="#A"/></defs>'
+    + '<rect width="10" height="10" fill="url(#B)"/><rect width="10" height="10" fill="transparent"/></svg>');
+  assert.equal(piege.script, null, 'aucun script de la source ne s\'exécute');
+  assert.equal(piege.n, 2, 'calque caché ignoré');
+  assert.deepEqual(piege.couleurs, ['#123456', 'none']);
+  assert.deepEqual(piege.viewBox, [0, 0, 200, 100], 'viewBox posé quand il manque');
 });
 
 test('découpe : repères « os debout », gabarit, couleurs, visage, formes signalées', { skip: sauter }, async () => {
@@ -89,6 +97,10 @@ test('découpe : repères « os debout », gabarit, couleurs, visage, formes sig
   proche(res.partiel.visage.vue.yeux[0][0], 23 * e, 'position de l\'œil');
   proche(res.partiel.visage.vue.yeux[0][1], -10 * e, 'position de l\'œil');
   assert.match(res.partiel.visage.bouche, /^<path /);
+  const opa = await dansLaPage(`var d = { os: { torse: { formes: ['#a'], de: [0, 10], a: [0, 0] } } }; return M.decoupe.decouper(svg, d, D.gabarit).partiel.pieces.torse;`,
+    '<svg viewBox="0 0 20 20"><g opacity="0.5"><rect id="a" width="4" height="10" fill="rgba(255,0,0,0.5)"/></g></svg>');
+  assert.match(opa, /opacity='0.5'/);
+  assert.match(opa, /fill-opacity='0.5'/);
 });
 
 test('découpe : forme oubliée signalée, forme introuvable en erreur', { skip: sauter }, async () => {

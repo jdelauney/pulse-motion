@@ -26,8 +26,9 @@ function preparerSource(texte) {
   let s = String(texte).replace(/^﻿/, '');
   s = s.replace(/<\?xml[\s\S]*?\?>/g, '').replace(/<!DOCTYPE[\s\S]*?>/gi, '').replace(/<!--[\s\S]*?-->/g, '');
   s = s.replace(/<script\b[\s\S]*?<\/script\s*>/gi, '').replace(/<script\b[^>]*\/>/gi, '');
-  s = s.replace(/\s(on[a-z]+)\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+  s = s.replace(/[\s/](on[a-z]+)\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, ' ');
   s = s.replace(/(href\s*=\s*["'])\s*javascript:[^"']*/gi, '$1#');
+  if (/&(?!(amp|lt|gt|quot|apos|#\d+|#x[0-9a-f]+);)[A-Za-z_][\w.-]*;/i.test(s)) throw ErreurDecoupe('Ce SVG utilise des styles « par entités » (export Illustrator) : le réexporter avec « Propriétés CSS : éléments de style » ou « attributs de présentation ».');
   const debut = s.search(/<svg[\s>]/i);
   if (debut < 0) throw ErreurDecoupe('Ce fichier n\'est pas un SVG (aucune balise <svg>).');
   return s.slice(debut).trim();
@@ -41,6 +42,8 @@ function fusionnerDessin(ancien, partiel, vue) {
   d.pieces = d.pieces || {};
   let profilCopie = false;
   for (const k of Object.keys(d.pieces)) {
+    // Un profil identique à l'ancienne vue découpée en était une copie : il est remplacé lui aussi.
+    if (vue !== 'profil' && d.pieces[k][vue] !== undefined && d.pieces[k].profil === d.pieces[k][vue]) delete d.pieces[k].profil;
     delete d.pieces[k][vue];
     if (!Object.keys(d.pieces[k]).length) delete d.pieces[k];
   }
@@ -56,7 +59,11 @@ function fusionnerDessin(ancien, partiel, vue) {
     const v = d.visage || {};
     v.oeil = Object.assign({}, partiel.visage.oeil);
     v.bouches = v.bouches || {};
-    v.bouches.neutre = Object.assign({}, v.bouches.neutre || {}, { [vue]: partiel.visage.bouche });
+    const neutre = Object.assign({}, v.bouches.neutre || {});
+    if (vue !== 'profil' && neutre[vue] !== undefined && neutre.profil === neutre[vue]) delete neutre.profil;
+    v.bouches.neutre = Object.assign(neutre, { [vue]: partiel.visage.bouche });
+    v.vues = v.vues || {};
+    if (vue !== 'profil' && v.vues[vue] && JSON.stringify(v.vues.profil) === JSON.stringify(v.vues[vue])) delete v.vues.profil;
     if (!v.bouches.neutre.profil) v.bouches.neutre.profil = partiel.visage.bouche;
     v.vues = v.vues || {};
     v.vues[vue] = partiel.visage.vue;
@@ -84,11 +91,16 @@ const enLigne = (t) => t.replace(/<\/script/gi, '<\\/script');
 const json = (o) => JSON.stringify(o).replace(/</g, '\\u003c');
 
 function page(source, donnees, script) {
-  return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><style>html,body{margin:0;background:#FFFFFF}#cadre{position:relative;display:inline-block}#cadre>svg{display:block}#calque{position:absolute;left:0;top:0;pointer-events:none}</style></head>
+  // La source vient de la personne : la politique de sécurité n'autorise que nos trois scripts (nonce) et aucun
+  // chargement extérieur (images, polices, feuilles importées, cadres). Le nettoyage de preparerSource s'y ajoute.
+  const nonce = require('node:crypto').randomBytes(16).toString('base64');
+  return `<!doctype html><html lang="fr"><head><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-${nonce}'; style-src 'unsafe-inline'; img-src data:; font-src data:">
+<style>html,body{margin:0;background:#FFFFFF}#cadre{position:relative;display:inline-block}#cadre>svg{display:block}#calque{position:absolute;left:0;top:0;pointer-events:none}</style></head>
 <body><div id="cadre"><div id="source">${source}</div></div>
 <script type="application/json" id="donnees">${json(donnees)}</script>
-<script>${enLigne(fs.readFileSync(MODULE, 'utf8'))}</script>
-<script>${script}</script></body></html>`;
+<script nonce="${nonce}">${enLigne(fs.readFileSync(MODULE, 'utf8'))}</script>
+<script nonce="${nonce}">${script}</script></body></html>`;
 }
 
 const SCRIPT_ANALYSE = `
@@ -175,9 +187,13 @@ async function decouperVideo({ dossier, nom, navigateur, ecrire }) {
   const decoupe = Object.hasOwn(lu.decoupes, nom) ? lu.decoupes[nom] : null;
   if (!decoupe) throw ErreurDecoupe(`Découpe « ${nom} » introuvable (personnages/decoupes/${nom}.json).`);
   const gabarit = lu.gabarits[decoupe.gabarit || 'standard'] || {};
-  const r = await executer(page(lireSource(path.join(dossier, decoupe.source)), { decoupe, gabarit }, SCRIPT_DECOUPE), { navigateur });
-  if (r.erreurs.length) throw ErreurDecoupe(r.erreurs.join('\n'));
   const ancien = Object.hasOwn(lu.dessins, nom) && lu.sources.dessins[nom] === 'video' ? lu.dessins[nom] : null;
+  // Une couleur déjà nommée dans le dessin garde son nom (les autres vues s'y réfèrent).
+  const alias = {};
+  for (const [n, h] of Object.entries((ancien && ancien.couleurs) || {})) if (/^#[0-9a-f]{6}$/i.test(h)) alias[h.toUpperCase()] = n;
+  const avecAlias = Object.assign({}, decoupe, { couleurs: Object.assign(alias, decoupe.couleurs || {}) });
+  const r = await executer(page(lireSource(path.join(dossier, decoupe.source)), { decoupe: avecAlias, gabarit }, SCRIPT_DECOUPE), { navigateur });
+  if (r.erreurs.length) throw ErreurDecoupe(r.erreurs.join('\n'));
   const { dessin, profilCopie } = fusionnerDessin(ancien, r.partiel, decoupe.vue);
   require('../historique.js').sauvegarder(dossier);
   const { fichier } = P.enregistrer({ dossier: path.join(dossier, 'personnages'), type: 'dessin', nom, objet: dessin, lu, ecrire });

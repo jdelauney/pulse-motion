@@ -69,8 +69,23 @@
   }
   function visible(svg, el) {
     if (cache(svg, el)) return false;
-    var cs = getComputedStyle(el);
-    return cs.display !== 'none' && cs.visibility !== 'hidden';
+    if (getComputedStyle(el).visibility === 'hidden') return false;
+    for (var e = el; e && e !== svg.parentNode; e = e.parentNode) if (e.style && getComputedStyle(e).display === 'none') return false;
+    return true;
+  }
+  /** Opacité cumulée de l'élément et de ses groupes. */
+  function opaciteCumulee(svg, el) {
+    var o = 1;
+    for (var e = el; e && e !== svg.parentNode; e = e.parentNode) if (e.style) o *= parseFloat(getComputedStyle(e).opacity);
+    return o;
+  }
+  /** Sans viewBox, la grille et les coordonnées seraient fausses dès qu'on agrandit le dessin : on le pose. */
+  function normaliser(svg) {
+    if (svg.getAttribute('viewBox')) return svg;
+    var l = svg.width && svg.width.baseVal.value, h = svg.height && svg.height.baseVal.value;
+    if (!(l > 0 && h > 0)) { var b = svg.getBBox(); l = b.x + b.width; h = b.y + b.height; }
+    svg.setAttribute('viewBox', '0 0 ' + l + ' ' + h);
+    return svg;
   }
   function heritage(svg, el, prop) {
     for (var e = el; e && e !== svg.parentNode; e = e.parentNode) {
@@ -103,17 +118,25 @@
   function centre(b) { return [b[0] + b[2] / 2, b[1] + b[3] / 2]; }
 
   /* ---------- couleurs ---------- */
+  function alpha(valeur) {
+    var m = /rgba\(\s*[\d.]+[,\s]+[\d.]+[,\s]+[\d.]+[,\s/]+([\d.]+)/.exec(valeur || '');
+    return m ? parseFloat(m[1]) : 1;
+  }
   function hex(rgb) {
     var m = /rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/.exec(rgb || '');
-    if (!m) return null;
+    if (!m || alpha(rgb) === 0) return null;
     return '#' + [m[1], m[2], m[3]].map(function (v) { var h = (+v).toString(16).toUpperCase(); return h.length < 2 ? '0' + h : h; }).join('');
   }
   function couleur(svg, valeur) {
     if (!valeur || valeur === 'none') return 'none';
     var u = /url\(["']?#([^"')]+)["']?\)/.exec(valeur);
     if (u) {
-      var g = element(svg, '#' + u[1]);
-      var stop = g && g.querySelector('stop');
+      var g = element(svg, '#' + u[1]), stop = null;
+      // Inkscape : un dégradé peut emprunter ses arrêts à un autre (href / xlink:href).
+      for (var n = 0; g && n < 8 && !(stop = g.querySelector('stop')); n++) {
+        var ref = g.getAttribute('href') || g.getAttribute('xlink:href');
+        g = ref && ref.charAt(0) === '#' ? element(svg, ref) : null;
+      }
       return stop ? (hex(getComputedStyle(stop).stopColor) || 'none') : 'none';
     }
     return hex(valeur) || 'none';
@@ -121,7 +144,8 @@
 
   /* ---------- analyse ---------- */
   function analyser(svg) {
-    var formes = [], refuses = [], n = 0;
+    normaliser(svg);
+    var formes = [], refuses = [], avertissements = [], n = 0;
     Array.prototype.forEach.call(svg.querySelectorAll('*'), function (el) {
       var tag = el.localName;
       if (!visible(svg, el)) return;
@@ -130,13 +154,14 @@
       if (FORMES.indexOf(tag) < 0) return;
       if (heritage(svg, el, 'filter')) refuses.push({ selecteur: sel, type: 'filtre', message: 'Forme « ' + sel + ' » : un filtre (flou, ombre portée…) : le retirer.' });
       if (heritage(svg, el, 'mask')) refuses.push({ selecteur: sel, type: 'masque', message: 'Forme « ' + sel + ' » : un masque : le retirer ou l\'appliquer (Objet > Masque > Retirer).' });
+      if (heritage(svg, el, 'clipPath')) avertissements.push('Forme « ' + sel + ' » : une découpe (masque d\'écrêtage) sera ignorée : la forme sera dessinée entière.');
       var cs = getComputedStyle(el);
       formes.push({ n: ++n, selecteur: sel, id: el.id || null, calque: calque(svg, el), boite: boite(svg, el).map(function (v) { return r(v, 1); }),
         remplissage: couleur(svg, cs.fill), trait: couleur(svg, cs.stroke) });
     });
     var vb = svg.viewBox && svg.viewBox.baseVal;
     var viewBox = vb && vb.width ? [vb.x, vb.y, vb.width, vb.height] : [0, 0, svg.width.baseVal.value, svg.height.baseVal.value];
-    return { viewBox: viewBox, formes: formes, refuses: refuses };
+    return { viewBox: viewBox, formes: formes, refuses: refuses, avertissements: avertissements };
   }
 
   /* ---------- découpe ---------- */
@@ -161,9 +186,11 @@
   function copie(svg, el, avant) {
     var cs = getComputedStyle(el);
     var m = avant.multiply(matrice(svg, el));
+    var illisible = false;
     var attrs = GEOMETRIE[el.localName].map(function (a) {
       var v = el.getAttribute(a);
-      return v === null || /['"]/.test(v) ? '' : ' ' + a + "='" + v.replace(/\s+/g, ' ').trim() + "'";
+      if (v !== null && /['"&\\]/.test(v)) { illisible = true; return ''; }
+      return v === null ? '' : ' ' + a + "='" + v.replace(/\s+/g, ' ').trim() + "'";
     }).join('');
     var b = boite(svg, el);
     var c = {
@@ -171,8 +198,8 @@
       matrice: [m.a, m.b, m.c, m.d, m.e, m.f].map(function (v) { return r(v, 4); }).join(' '),
       fill: couleur(svg, cs.fill), stroke: couleur(svg, cs.stroke),
       largeurTrait: parseFloat(cs.strokeWidth) || 0,
-      opacite: parseFloat(cs.opacity), opaciteFond: parseFloat(cs.fillOpacity), opaciteTrait: parseFloat(cs.strokeOpacity),
-      regle: cs.fillRule, aire: b[2] * b[3]
+      opacite: opaciteCumulee(svg, el), opaciteFond: parseFloat(cs.fillOpacity) * alpha(cs.fill), opaciteTrait: parseFloat(cs.strokeOpacity) * alpha(cs.stroke),
+      regle: cs.fillRule, aire: b[2] * b[3], illisible: illisible
     };
     if (c.largeurTrait <= 0) c.stroke = 'none';
     return c;
@@ -190,6 +217,7 @@
   }
 
   function decouper(svg, d, gabarit) {
+    normaliser(svg);
     var erreurs = [], utilises = new Set();
     var os = d.os || {};
     var e = 1;
@@ -240,7 +268,11 @@
       var R = repere(nom, def, e);
       var bonnes = elementsDe(def.formes, 'os « ' + nom + ' »').filter(function (f) { return !elementsVisage.has(f); });
       bonnes.forEach(function (f) { if (utilises.has(f)) erreurs.push('Forme « ' + selecteur(svg, f) + ' » donnée à deux os.'); utilises.add(f); });
-      copies[nom] = bonnes.map(function (f) { return copie(svg, f, R); });
+      copies[nom] = bonnes.map(function (f) {
+        var c = copie(svg, f, R);
+        if (c.illisible) erreurs.push('Forme « ' + selecteur(svg, f) + ' » : géométrie illisible (guillemet, « & » ou « \\ ») : la simplifier ou la réexporter.');
+        return c;
+      });
     });
     if (os.tete) {
       var bt = null;
@@ -285,6 +317,8 @@
     Object.keys(copies).forEach(function (k) { copies[k].forEach(compter); });
     if (copiesVisage) ['blanc', 'pupille', 'bouche'].forEach(function (k) { (copiesVisage[k] || []).forEach(compter); });
     var alias = d.couleurs || {}, noms = {}, couleurs = {}, rang = 0;
+    // Les nouvelles couleurs sont numérotées après les noms déjà pris (cN) : une couleur garde son nom d'une découpe à l'autre.
+    Object.keys(alias).forEach(function (h) { var m = /^c(\d+)$/.exec(alias[h]); if (m) rang = Math.max(rang, +m[1]); });
     Object.keys(aires).sort(function (a, b) { return aires[b] - aires[a]; }).forEach(function (h) {
       var nom = alias[h] || alias[h.toLowerCase()] || ('c' + (++rang));
       while (couleurs[nom] !== undefined) nom = 'c' + (++rang);
@@ -314,5 +348,5 @@
     return { partiel: { gabarit: g, couleurs: couleurs, pieces: pieces, visage: partielVisage }, signalees: signalees, erreurs: erreurs, echelle: r(e, 4) };
   }
 
-  return { analyser: analyser, decouper: decouper, element: element, selecteur: selecteur, repere: repere, REFUSES: REFUSES, FORMES: FORMES };
+  return { analyser: analyser, decouper: decouper, normaliser: normaliser, element: element, selecteur: selecteur, repere: repere, REFUSES: REFUSES, FORMES: FORMES };
 });
