@@ -22,7 +22,7 @@ const PARENTS = ['bassin', 'torse', 'tete'];
 const LONGUEURS = ['cuisse', 'tibia', 'pied', 'colonne', 'hauteurEpaules', 'baseTete', 'bras', 'avantBras'];
 const DEMI = ['demiBassin', 'demiEpaules'];
 const RANG = [...S.NOMS.os, ...S.NOMS.expression];
-const TYPES = { pose: 'poses', clip: 'clips', gabarit: 'gabarits', expression: 'expressions', dessin: 'dessins' };
+const TYPES = { pose: 'poses', clip: 'clips', gabarit: 'gabarits', expression: 'expressions', dessin: 'dessins', decoupe: 'decoupes' };
 const VUES = ['profil', 'troisQuarts', 'face', 'dos'];
 const PIECES = ['bassin', 'torse', 'tete', ...['cuisse', 'tibia', 'pied', 'bras', 'avantBras', 'main'].flatMap((n) => [`${n}Avant`, `${n}Arriere`])];
 const BOUCHES = ['neutre', 'sourire', 'rire', 'triste', 'surprise', 'colere', 'repos', 'A', 'E', 'I', 'O', 'U', 'MBP', 'FV', 'L'];
@@ -35,6 +35,7 @@ const ORDRE = {
   gabarit: ['nom', 'description', ...Object.keys(S.GABARIT)],
   expression: ['nom', 'description', 'bouche', 'angles'],
   dessin: ['nom', 'description', 'gabarit', 'couleurs', 'pieces', 'accessoires', 'visage'],
+  decoupe: ['nom', 'description', 'source', 'vue', 'gabarit', 'couleurs', 'os', 'visage', 'ignorer'],
 };
 const ORDRE_CLE = ['t', 'pose', 'expression', 'bouche', 'angles', 'courbe'];
 const ORDRE_ACCESSOIRE = ['nom', 'os', 'devant', 'dessins'];
@@ -179,6 +180,50 @@ function validerDessin(objet, contexte, erreurs) {
   if (objet.visage !== undefined) validerVisage(objet.visage, erreurs);
 }
 
+const SELECTEUR = /^(#[^\s'"<>]+|([A-Za-z][\w-]*?\d+>)*[A-Za-z][\w-]*?\d+)$/;
+const CENTRES = ['tete', 'bassin'];
+
+/** Découpe d'un SVG existant (personnages/decoupes/<nom>.json) : validée sans ouvrir le SVG. */
+function validerDecoupe(objet, contexte, erreurs) {
+  champsInconnus(objet, ORDRE.decoupe, erreurs);
+  verifierNom(objet, contexte, erreurs);
+  if (typeof objet.source !== 'string' || !/^assets\/[^\\]+\.svg$/i.test(objet.source) || objet.source.split('/').includes('..')) erreurs.push('« source » : fichier SVG dans assets/ de la vidéo (ex. "assets/cuisinier.svg").');
+  if (!VUES.includes(objet.vue)) erreurs.push(`« vue » : ${VUES.join(', ')}.`);
+  if (objet.gabarit !== undefined && !(contexte.gabarits || []).includes(objet.gabarit)) erreurs.push(`gabarit « ${objet.gabarit} » introuvable (gabarits : ${(contexte.gabarits || []).join(', ')}).`);
+  if (objet.couleurs !== undefined && !(estObjet(objet.couleurs) && Object.entries(objet.couleurs).every(([h, n]) => /^#[0-9a-f]{6}$/i.test(h) && NOM_COULEUR.test(n)))) erreurs.push('« couleurs » : { "#RRGGBB": "nom" } (ex. { "#F2C9A0": "peau" }).');
+  const vus = new Map();
+  const formes = (liste, ou) => {
+    if (!Array.isArray(liste) || !liste.length) { erreurs.push(`${ou} : « formes » : liste de sélecteurs (ex. ["#jambe", "g2>path3"]).`); return; }
+    for (const sel of liste) {
+      if (typeof sel !== 'string' || !SELECTEUR.test(sel)) erreurs.push(`${ou} : sélecteur « ${sel} » illisible (« #id » ou « g2>path3 »).`);
+      else if (vus.has(sel)) erreurs.push(`${ou} : la forme « ${sel} » est déjà dans ${vus.get(sel)}.`);
+      else vus.set(sel, ou);
+    }
+  };
+  if (!estObjet(objet.os) || !Object.keys(objet.os).length) erreurs.push('« os » : au moins un os (ex. { "torse": { "formes": ["#veste"], "de": [200, 400], "a": [200, 280] } }).');
+  else for (const [n, def] of Object.entries(objet.os)) {
+    const ou = `os « ${n} »`;
+    if (!PIECES.includes(n)) { erreurs.push(`${ou} : inconnu${suggestion(n, PIECES)} (les os en plus ne se découpent pas encore).`); continue; }
+    if (!estObjet(def)) { erreurs.push(`${ou} : objet { formes, de, a } attendu.`); continue; }
+    formes(def.formes, ou);
+    if (CENTRES.includes(n)) { if (!estPosition(def.centre)) erreurs.push(`${ou} : « centre » : position [x, y] dans le SVG.`); }
+    else {
+      if (!estPosition(def.de) || !estPosition(def.a)) erreurs.push(`${ou} : « de » et « a » : positions [x, y] dans le SVG (pivot, puis bout de l'os).`);
+      else if (Math.hypot(def.a[0] - def.de[0], def.a[1] - def.de[1]) < 1e-6) erreurs.push(`${ou} : « de » et « a » confondus.`);
+    }
+  }
+  if (objet.visage !== undefined) {
+    const v = objet.visage;
+    if (!estObjet(v)) erreurs.push('« visage » : objet { yeux, bouche } attendu.');
+    else {
+      if (!Array.isArray(v.yeux) || !v.yeux.length || !v.yeux.every((y) => estObjet(y) && typeof y.blanc === 'string' && SELECTEUR.test(y.blanc) && (y.pupille === undefined || (typeof y.pupille === 'string' && SELECTEUR.test(y.pupille))))) erreurs.push('visage : « yeux » : liste de { "blanc": "#oeil", "pupille": "#pupille" }.');
+      if (v.bouche !== undefined && !(typeof v.bouche === 'string' && SELECTEUR.test(v.bouche))) erreurs.push('visage : « bouche » : un sélecteur (ex. "#bouche").');
+      if (!estObjet(objet.os) || !objet.os.tete) erreurs.push('visage : il faut l\'os « tete » (avec son « centre »).');
+    }
+  }
+  if (objet.ignorer !== undefined && !(Array.isArray(objet.ignorer) && objet.ignorer.every((x) => typeof x === 'string' && SELECTEUR.test(x)))) erreurs.push('« ignorer » : liste de sélecteurs.');
+}
+
 function validerExpression(objet, contexte, erreurs) {
   champsInconnus(objet, ORDRE.expression, erreurs);
   verifierNom(objet, contexte, erreurs);
@@ -284,7 +329,8 @@ function valider(type, objet, contexte) {
   else if (type === 'gabarit') validerGabarit(objet, contexte, erreurs);
   else if (type === 'expression') validerExpression(objet, contexte, erreurs);
   else if (type === 'dessin') validerDessin(objet, contexte, erreurs);
-  else erreurs.push(`Type « ${type} » inconnu (pose, clip, gabarit, expression ou dessin).`);
+  else if (type === 'decoupe') validerDecoupe(objet, contexte, erreurs);
+  else erreurs.push(`Type « ${type} » inconnu (pose, clip, gabarit, expression, dessin ou découpe).`);
   return erreurs;
 }
 
@@ -310,11 +356,11 @@ function nomsJSON(dossier) {
 }
 
 function lire(dossierVideo, { bibliotheque = BIBLIOTHEQUE } = {}) {
-  const vide = () => ({ poses: {}, clips: {}, gabarits: {}, expressions: {}, dessins: {} });
+  const vide = () => ({ poses: {}, clips: {}, gabarits: {}, expressions: {}, dessins: {}, decoupes: {} });
   const lu = Object.assign(vide(), { sources: vide(), fichiers: vide(), erreurs: [] });
   const racines = [[bibliotheque, 'plugin', 'bibliothèque']];
   if (dossierVideo) racines.push([path.join(dossierVideo, 'personnages'), 'video', 'vidéo']);
-  for (const type of ['gabarit', 'expression', 'pose', 'clip', 'dessin']) {
+  for (const type of ['gabarit', 'expression', 'pose', 'clip', 'dessin', 'decoupe']) {
     const pluriel = TYPES[type];
     for (const [racine, source, libelle] of racines) {
       for (const nom of nomsJSON(path.join(racine, pluriel))) {
@@ -386,6 +432,11 @@ function serialiser(type, objet) {
     if (o.contraintes) o.contraintes = profond(ordonner(o.contraintes, []));
   }
   if (type === 'expression') o.angles = angles(o.angles || {});
+  if (type === 'decoupe') {
+    if (estObjet(o.os)) { const r = {}; for (const k of [...PIECES, ...Object.keys(o.os).filter((n) => !PIECES.includes(n)).sort()]) if (o.os[k] !== undefined) r[k] = profond(ordonner(o.os[k], ['formes', 'de', 'a', 'centre'])); o.os = r; }
+    if (estObjet(o.visage)) o.visage = ordonner(o.visage, ['yeux', 'bouche']);
+    if (estObjet(o.couleurs)) o.couleurs = ordonner(o.couleurs, []);
+  }
   if (type === 'dessin') {
     const vues = (v) => (estObjet(v) ? ordonner(v, VUES) : v);
     const ordrePieces = (p) => { const r = {}; for (const k of [...PIECES, ...Object.keys(p).filter((n) => !PIECES.includes(n)).sort()]) if (p[k] !== undefined) r[k] = vues(p[k]); return r; };
