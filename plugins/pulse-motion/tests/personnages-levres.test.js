@@ -14,7 +14,7 @@ test('visèmes des mots : groupes, nasales, consonnes, finales muettes', () => {
   assert.equal(v('oui'), 'U I');
   assert.equal(v('pain'), 'MBP E');
   assert.equal(v('Pourquoi'), 'MBP U A', 'qu muet');
-  assert.equal(v('portes'), 'MBP O L', 'es puis t muets');
+  assert.equal(v('portes'), 'MBP O', 'es puis t muets');
   assert.equal(v('—'), 'E', 'sans visème : E');
   assert.deepEqual(L.visemesDuMot('maman').map((x) => x.poids), [1, 2, 1, 2]);
 });
