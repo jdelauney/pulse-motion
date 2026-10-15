@@ -109,7 +109,7 @@ test('lire : dessins et expressions, contexte, gabaritDe ; écriture stable', ()
     assert.equal(P.serialiser(type, JSON.parse(texte)), texte, type);
   }
   const d = P.serialiser('dessin', { visage: VISAGE, pieces: { tete: CUISSE, cuisseAvant: { face: 'b', profil: 'a' } }, couleurs: { b: '#000', a: '#fff' }, nom: 'z' });
-  assert.ok(d.indexOf('"cuisseAvant"') < d.indexOf('"tete"'), 'pièces dans l\'ordre du squelette');
+  assert.ok(d.indexOf('"tete"') < d.indexOf('"cuisseAvant"'), "pièces dans l'ordre du squelette (tronc, tête, puis membres)");
   assert.ok(d.indexOf('"profil"') < d.indexOf('"face"'));
   assert.ok(d.indexOf('"a": "#fff"') < d.indexOf('"b": "#000"'));
   assert.ok(d.indexOf('"nom"') < d.indexOf('"couleurs"') && d.indexOf('"couleurs"') < d.indexOf('"pieces"') && d.indexOf('"pieces"') < d.indexOf('"visage"'));

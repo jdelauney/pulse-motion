@@ -93,11 +93,12 @@ function verifierChoix(objet, ou, contexte, erreurs) {
   if (objet.bouche !== undefined && !(typeof objet.bouche === 'string' && /^[A-Za-z][\w-]{0,19}$/.test(objet.bouche))) erreurs.push(`${ou}« bouche » : nom de bouche (ex. sourire, O, MBP).`);
 }
 
-function verifierVues(vues, ou, erreurs) {
-  if (!estObjet(vues)) { erreurs.push(`${ou}: dessins par vue attendus ({ "profil": "<path …/>" }).`); return; }
-  if (vues.profil === undefined) erreurs.push(`${ou}: vue « profil » obligatoire.`);
+function verifierVues(vues, lieu, erreurs) {
+  const ou = lieu.trim();
+  if (!estObjet(vues)) { erreurs.push(`${ou} : dessins par vue attendus ({ "profil": "<path …/>" }).`); return; }
+  if (vues.profil === undefined) erreurs.push(`${ou} : vue « profil » obligatoire.`);
   for (const [v, svg] of Object.entries(vues)) {
-    if (!VUES.includes(v)) { erreurs.push(`${ou}: vue « ${v} » inconnue (${VUES.join(', ')}).`); continue; }
+    if (!VUES.includes(v)) { erreurs.push(`${ou} : vue « ${v} » inconnue (${VUES.join(', ')}).`); continue; }
     if (typeof svg !== 'string') { erreurs.push(`${ou}, vue « ${v} » : SVG attendu (texte).`); continue; }
     for (const m of verifierSVG(svg)) erreurs.push(`${ou}, vue « ${v} » : ${m}.`);
   }
