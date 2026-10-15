@@ -102,7 +102,16 @@ test('page : le personnage entre, montre, salue ; même image quel que soit l\'o
 test('parler : erreur sans voix ; avec la voix, la bouche suit les mots puis revient', { skip: !navigateur && 'Chrome ou Edge introuvable' }, async () => {
   const sansVoix = preparerPersonnages('<section><div data-personnage="touffu"><i data-action="parler"></i></div></section>', { scene: 's', lu });
   assert.match(sansVoix.erreurs.map((e) => e.message).join(), /la scène n'a pas de voix/);
-  assert.deepEqual(preparerPersonnages('<section><div data-personnage="touffu"><i data-action="parler"></i></div></section>', { scene: 's', lu, voix: true }).erreurs, []);
+  const avec = preparerPersonnages('<section><div data-personnage="touffu"><i data-action="parler"></i></div></section>', { scene: 's', lu, voix: true });
+  assert.deepEqual(avec.erreurs, []);
+  assert.equal(avec.parle, true);
+  const muet = { ...lu, dessins: { muet: { ...lu.dessins.touffu, visage: { ...lu.dessins.touffu.visage, bouches: { neutre: lu.dessins.touffu.visage.bouches.neutre } } } } };
+  const r0 = preparerPersonnages('<section><div data-personnage="muet"><i data-action="parler"></i></div></section>', { scene: 's', lu: muet, voix: true });
+  assert.deepEqual(r0.erreurs.map((e) => [e.gravite, /aucune bouche de parole/.test(e.message)]), [['alerte', true]]);
+  const sansPrise = video('<section data-scene="chiffre"><div data-personnage="touffu"><i data-action="parler"></i></div></section>');
+  modifierDeroule(sansPrise, (d) => { d.scenes[1].voix = { texte: 'Mille deux cent cinquante' }; });
+  const rs = assembler({ dossier: sansPrise, dossierStyles: STYLES, ecrire: false });
+  assert.ok(rs.erreurs.some((e) => e.regle === 'personnage-invalide' && /voix n'est pas enregistrée/.test(e.message)), JSON.stringify(rs.erreurs));
 
   const dir = copierProjet('projet-simple');
   const taux = 48000, x = new Float32Array(taux * 4);

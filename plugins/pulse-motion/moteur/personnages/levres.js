@@ -22,18 +22,23 @@
   var CONSONNES = { m: 'MBP', b: 'MBP', p: 'MBP', f: 'FV', v: 'FV', l: 'L', n: 'L', t: 'L', d: 'L' };
   // Groupes lus avant les lettres seules (le plus long d'abord) : [graphie, visèmes].
   var GROUPES = [
-    ['eau', ['O']], ['ill', ['I']], ['œu', ['O']], ['qu', []],
+    ['eau', ['O']], ['ill', ['I']], ['œu', ['O']], ['ien', ['I', 'E']], ['qu', []],
     ['au', ['O']], ['oi', ['U', 'A']], ['oy', ['U', 'A']], ['ou', ['U']], ['où', ['U']], ['ai', ['E']], ['ei', ['E']], ['eu', ['O']], ['ph', ['FV']]
   ];
   var NASALES = { a: 'A', e: 'A', o: 'O', i: 'E', u: 'E', y: 'E' };
 
   function estVoyelle(c) { return c !== undefined && Object.prototype.hasOwnProperty.call(VOYELLES, c); }
 
-  /** Lettres prononcées du mot : minuscules, lettres seules, finales muettes retirées. */
+  var VOYELLE = /[aàâäeéèêëiîïoôöuùûüyœæ]/;
+  /** Lettres prononcées du mot : minuscules, lettres seules, finales muettes retirées (si une voyelle reste).
+   *  Un « e » final muet laisse une marque « _ » : la consonne d'avant se prononce (« une » n'est pas nasale). */
   function lettres(w) {
     var s = String(w || '').toLowerCase().replace(/[^a-zàâäéèêëîïôöùûüÿçœæ]/g, '');
-    if (s.length > 2) s = s.replace(/es$/, '').replace(/e$/, '');
-    if (s.length > 2) s = s.replace(/[stdxz]$/, '');
+    // « -ent » des verbes (ils parlent) ; pas « -ment » (moment, vraiment).
+    if (/[^aeiouym]ent$/.test(s) && s.length > 4 && VOYELLE.test(s.slice(0, -3))) s = s.slice(0, -3) + '_';
+    else if (/es$/.test(s) && VOYELLE.test(s.slice(0, -2))) s = s.slice(0, -2) + '_';
+    else if (/e$/.test(s) && VOYELLE.test(s.slice(0, -1))) s = s.slice(0, -1) + '_';
+    else if (/[stdxz]$/.test(s) && VOYELLE.test(s.slice(0, -1))) s = s.slice(0, -1);
     return s;
   }
 
@@ -48,7 +53,7 @@
     var i = 0;
     while (i < s.length) {
       // « ain », « ein » nasals -> E.
-      if ((s[i] === 'a' || s[i] === 'e') && s[i + 1] === 'i' && (s[i + 2] === 'n' || s[i + 2] === 'm') && !estVoyelle(s[i + 3])) { ajouter('E', 2); i += 3; continue; }
+      if ((s[i] === 'a' || s[i] === 'e') && s[i + 1] === 'i' && (s[i + 2] === 'n' || s[i + 2] === 'm') && !estVoyelle(s[i + 3]) && s[i + 3] !== '_') { ajouter('E', 2); i += 3; continue; }
       var lu = false;
       for (var g = 0; g < GROUPES.length && !lu; g++) {
         var gr = GROUPES[g][0];
@@ -60,7 +65,7 @@
       if (lu) continue;
       var c = s[i];
       // Nasale : voyelle + n/m non suivi d'une voyelle (ni d'un autre n/m) -> la voyelle seule.
-      if (NASALES[c] && (s[i + 1] === 'n' || s[i + 1] === 'm') && !estVoyelle(s[i + 2]) && s[i + 2] !== 'n' && s[i + 2] !== 'm') {
+      if (NASALES[c] && (s[i + 1] === 'n' || s[i + 1] === 'm') && !estVoyelle(s[i + 2]) && s[i + 2] !== 'n' && s[i + 2] !== 'm' && s[i + 2] !== '_') {
         ajouter(NASALES[c], 2); i += 2; continue;
       }
       if (estVoyelle(c)) ajouter(VOYELLES[c], 2);
@@ -97,7 +102,8 @@
       if (!m || typeof m.t0 !== 'number' || typeof m.t1 !== 'number' || !(m.t1 > m.t0)) return;
       if (!lettres(m.w) && !/[a-z0-9]/i.test(String(m.w || ''))) return;
       var t0 = origine + m.t0, t1 = origine + m.t1;
-      if (t0 < debut || t0 >= fin) return;
+      // Tolérance : un « parler » calé sur un mot (mot:…) tombe à l'arrondi près sur son début.
+      if (t0 < debut - 1e-6 || t0 >= fin - 1e-6) return;
       retenus.push({ w: m.w, t0: t0, t1: t1 });
     });
     retenus.sort(function (a, b) { return a.t0 - b.t0; });

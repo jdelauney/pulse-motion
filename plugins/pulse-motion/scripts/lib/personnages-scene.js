@@ -1,7 +1,7 @@
 'use strict';
 /* Pulse Motion – personnages dans les scènes, côté assemblage.
  *
- *   preparerPersonnages(html, { scene, lu, voix }) -> { html, utilises: { dessins: Set, gabarits: Set }, erreurs }
+ *   preparerPersonnages(html, { scene, lu, voix }) -> { html, utilises: { dessins: Set, gabarits: Set }, erreurs, parle }
  *     voix : la scène a un texte dit (sinon « parler » est une erreur)
  *   donneesPersonnages(utilises, lu)         -> M.donnees.personnages (ce que la page doit connaître)
  *
@@ -20,13 +20,15 @@ const ACTIONS = {
   marcher: ['vers'], courir: ['vers'], pose: ['pose'], jouer: ['clip'], tourner: ['vue'], expression: ['expression'], bouche: ['bouche'], parler: [],
 };
 const NOMBRES = ['data-x', 'data-sol', 'data-taille', 'data-vue', 'data-vers'];
+const VISEMES = ['A', 'E', 'I', 'O', 'U', 'MBP', 'FV', 'L'];
 
 function erreur(scene, message) { return { regle: 'personnage-invalide', gravite: 'erreur', scene, message: `Scène « ${scene} » : ${message}` }; }
 
 function preparerPersonnages(html, { scene, lu, voix = false }) {
   const erreurs = [];
   const utilises = { dessins: new Set(), gabarits: new Set() };
-  if (!/data-personnage|data-action/.test(html)) return { html, utilises, erreurs };
+  if (!/data-personnage|data-action/.test(html)) return { html, utilises, erreurs, parle: false };
+  let parle = false;
   let courant = null;
   // Pile des balises ouvertes : une action n'est lue que si elle est enfant direct d'un conteneur data-personnage.
   const pile = [];
@@ -64,6 +66,12 @@ function preparerPersonnages(html, { scene, lu, voix = false }) {
     if (!ACTIONS[type]) { erreurs.push(erreur(scene, `${qui} : action inconnue (${Object.keys(ACTIONS).join(', ')}).`)); return tout; }
     for (const champ of ACTIONS[type]) if (a[`data-${champ}`] === undefined) erreurs.push(erreur(scene, `${qui} : il manque data-${champ}.`));
     if ((type === 'marcher' || type === 'courir' || type === 'tourner') && a['data-dur'] === undefined) erreurs.push(erreur(scene, `${qui} : data-dur obligatoire (durée du trajet ou de la rotation, ex. data-dur="2").`));
+    if (type === 'parler') {
+      parle = true;
+      const d = dans && Object.hasOwn(lu.dessins, dans) ? lu.dessins[dans] : null;
+      const bouches = d && d.visage && d.visage.bouches ? Object.keys(d.visage.bouches) : [];
+      if (d && !VISEMES.some((v) => bouches.includes(v))) erreurs.push({ ...erreur(scene, `${qui} : le dessin « ${dans} » n'a aucune bouche de parole (${VISEMES.join(', ')}) : la bouche ne bougera pas ; dessiner au moins A, O et MBP.`), gravite: 'alerte' });
+    }
     if (type === 'parler' && !voix) erreurs.push(erreur(scene, `${qui} : la scène n'a pas de voix ; ajouter son texte dit (voix.texte) au déroulé, ou retirer l'action.`));
     if (type === 'pose' && a['data-pose'] !== undefined && !Object.hasOwn(lu.poses, a['data-pose'])) erreurs.push(erreur(scene, `${qui} : pose « ${a['data-pose']} » introuvable (poses : ${Object.keys(lu.poses).join(', ')}).`));
     if (type === 'expression' && a['data-expression'] !== undefined && !Object.hasOwn(lu.expressions, a['data-expression'])) erreurs.push(erreur(scene, `${qui} : expression « ${a['data-expression']} » introuvable (expressions : ${Object.keys(lu.expressions).join(', ')}).`));
@@ -82,7 +90,7 @@ function preparerPersonnages(html, { scene, lu, voix = false }) {
     if (a['data-start'] === undefined && a['data-dur'] === undefined && ACTIONS[type]) return tout.replace(/\s*\/?>$/, (fin) => ` data-start="0"${fin}`);
     return tout;
   });
-  return { html: sortie, utilises, erreurs };
+  return { html: sortie, utilises, erreurs, parle };
 }
 
 function donneesPersonnages(utilises, lu) {

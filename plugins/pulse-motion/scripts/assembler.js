@@ -152,6 +152,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   const sourcesModules = {};
   let luPersonnages = null;
   const utilisesPersonnages = { dessins: new Set(), gabarits: new Set() };
+  const scenesQuiParlent = new Set();
   for (const scene of deroule.scenes) {
     const fichier = cheminDansProjet(projet, scene.fichier);
     let html = null;
@@ -197,6 +198,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
       }
       const r = preparerPersonnages(avecObstacles, { scene: scene.id, lu: luPersonnages, voix: !!(scene.voix && scene.voix.texte) });
       avecPersonnages = r.html;
+      if (r.parle) scenesQuiParlent.add(scene.id);
       r.utilises.dessins.forEach((n) => utilisesPersonnages.dessins.add(n));
       r.utilises.gabarits.forEach((n) => utilisesPersonnages.gabarits.add(n));
       erreurs.push(...r.erreurs);
@@ -251,6 +253,10 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
       erreurs.push({ regle: 'voix-provisoire', gravite: 'alerte', scene: scene.id,
         message: `Scène « ${scene.id} » : c'est encore la voix provisoire du système ; enregistrez la vôtre avant d'exporter.` });
     }
+  }
+  for (const id of scenesQuiParlent) {
+    if (!voixScenes[id]) erreurs.push({ regle: 'personnage-invalide', gravite: 'alerte', scene: id,
+      message: `Scène « ${id} » : un personnage doit parler, mais la voix n'est pas enregistrée : il restera bouche fermée (enregistrer la voix de la scène, ou « pulse-motion voix provisoire --scene ${id} »).` });
   }
   if (calageApproche) {
     erreurs.push({ regle: 'calage-approche', gravite: 'info',

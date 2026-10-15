@@ -180,8 +180,9 @@
     if (ex && ex.expression) pose.expression = ex.expression;
     if (bo && bo.bouche && bo.bouche !== 'aucune') pose.bouche = bo.bouche;
     // Paroles : la piste de visèmes du dernier « parler » commencé, s'il est plus récent que la bouche demandée.
-    var pa = dernier(part, 'parler', t);
-    if (pa && t < pa.fin && (!bo || pa.debut >= bo.debut)) {
+    var pa = null;
+    part.actions.forEach(function (a) { if (a.type === 'parler' && a.debut <= t && t < a.fin && (!pa || a.debut >= pa.debut)) pa = a; });
+    if (pa && (!bo || pa.debut >= bo.debut)) {
       var v = L.boucheAuTemps(pa.piste, t);
       if (v) pose.bouche = v;
     }
