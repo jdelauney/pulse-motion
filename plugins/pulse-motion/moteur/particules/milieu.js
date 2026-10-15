@@ -23,6 +23,11 @@
  *   .avancer(tau, zones) -> [membre.positionner(k, τ, zones[i])]   (tau : s depuis le début du groupe ; zones[i] du membre i)
  *   .kFin, .detruire()
  *
+ * P.emballerDepot(em, grille, capacite) -> ArrayBuffer (64)   uniforme « Depot » d'un émetteur à « injecte »
+ * P.codeDepots() -> WGSL du module « pm-depots » ; P.creerDepots(device, sim, milieu) -> { encoder(passe), detruire() } | null :
+ *   dépôts des émetteurs à « injecte » de sim dans la grille (un dispatch par émetteur, à la fin du pas de sim : particule
+ *   vivante, cellule qui la contient, quantité × dt en entiers de 1/65536 ; encre fixe ou −ln de la couleur de la particule)
+ *
  * Pas de la grille (1/120 s de τ, un dispatch par phase) : obstacles de P3 rastérisés à τ1 (vitesse du point matériel) ;
  * injection (sources ; dépôts des effets en entiers de 1/65536, remis à zéro) ; advection MacCormack des scalaires (fumée,
  * température, encre ; départ RK2 ; bornée ; dissipation, refroidissement) ; tourbillon ; forces (flottaison, confinement
@@ -55,6 +60,7 @@
     ABSORPTION: 0.6,         // absorption de la lumière par unité de densité de fumée et par cqh
     PAROI: 60,               // frottement des parois (par seconde)
     MASQUE: 4 | 8,           // obstacles contournés : éléments et formes déclarés (catégories de P3)
+    ENCRE: 1,                // encre déposée par seconde et par particule (« injecte »)
   };
   P.MILIEU = C;
   P.NOYAUX_MILIEU = ['gObstacles', 'gInjecter', 'gAdvecterS', 'gCorrigerS', 'gRecopierS', 'gTourbillon', 'gForcer', 'gAdvecterV',
@@ -916,6 +922,110 @@ fn gPublier(@builtin(global_invocation_id) gid: vec3u) {
       this.instantanes.clear();
     }
   }
+
+  P.emballerDepot = function (em, grille, capacite) {
+    const b = new ArrayBuffer(64);
+    const f = new Float32Array(b);
+    const u = new Uint32Array(b);
+    const inj = em.injecte;
+    f[0] = grille.origine[0]; f[1] = grille.origine[1]; f[2] = grille.cote; f[3] = PAS;
+    u[4] = grille.nx; u[5] = grille.ny;
+    u[6] = !inj.encre ? 0 : inj.encre.mode === 'fixe' ? 1 : 2;
+    u[7] = capacite;
+    f[8] = inj.fumee; f[9] = inj.chaleur; f[10] = inj.encre ? C.ENCRE : 0;
+    f.set(inj.encre ? inj.encre.absorbance : [0, 0, 0], 12);
+    return b;
+  };
+
+  const WGSL_DEPOTS = /* wgsl */ `
+struct Depot { origine: vec2f, cote: f32, dt: f32, n: vec2u, mode: u32, capacite: u32, quantites: vec4f, encre: vec4f };
+@group(0) @binding(0) var<storage, read> particules: array<Particule>;
+@group(0) @binding(1) var<storage, read> T: array<f32>;
+@group(0) @binding(2) var<storage, read_write> depots: array<atomic<u32>>;
+@group(0) @binding(3) var<uniform> D: Depot;
+
+// Quantité en entiers de 1/65536 (au plus 4 unités par dépôt).
+fn entier(x: f32) -> u32 { return u32(round(clamp(x, 0.0, 4.0) * 65536.0)); }
+
+// Couleur (linéaire) de la particule à son âge : table des couleurs de l'émetteur (64 RVBA).
+fn couleurVie(p: Particule) -> vec3f {
+  let x = clamp(p.age / max(p.vie, 1e-6), 0.0, 1.0) * 63.0;
+  let i = u32(floor(x));
+  let j = min(i + 1u, 63u);
+  let a = vec3f(T[i * 4u], T[i * 4u + 1u], T[i * 4u + 2u]);
+  let b = vec3f(T[j * 4u], T[j * 4u + 1u], T[j * 4u + 2u]);
+  return mix(a, b, x - f32(i));
+}
+
+// Dépôt d'une particule vivante dans la cellule de la grille qui la contient (fin du pas) : fumée, chaleur, encre (absorbance
+// fixe, ou −ln de sa couleur) × quantité × dt ; additions entières (même somme dans tout ordre).
+@compute @workgroup_size(64)
+fn deposer(@builtin(global_invocation_id) gid: vec3u) {
+  let s = gid.x;
+  if (s >= D.capacite || D.n.x == 0u) { return; }
+  let p = particules[s];
+  if (p.vivante != 1u) { return; }
+  let g = (p.pos - D.origine) / D.cote;
+  if (g.x < 0.0 || g.y < 0.0 || g.x >= f32(D.n.x) || g.y >= f32(D.n.y)) { return; }
+  let b = (u32(g.y) * D.n.x + u32(g.x)) * 5u;
+  if (D.quantites.x > 0.0) { atomicAdd(&depots[b], entier(D.quantites.x * D.dt)); }
+  if (D.quantites.y > 0.0) { atomicAdd(&depots[b + 1u], entier(D.quantites.y * D.dt)); }
+  if (D.mode > 0u) {
+    var a = D.encre.xyz;
+    if (D.mode == 2u) { a = -log(max(couleurVie(p), vec3f(0.02))); }
+    let q = D.quantites.z * D.dt;
+    atomicAdd(&depots[b + 2u], entier(a.x * q));
+    atomicAdd(&depots[b + 3u], entier(a.y * q));
+    atomicAdd(&depots[b + 4u], entier(a.z * q));
+  }
+}
+`;
+
+  P.codeDepots = function () { return P.WGSL_COMMUN + WGSL_DEPOTS; };
+
+  const parDeviceDepots = new WeakMap();
+  function pipelineDepots(device) {
+    let p = parDeviceDepots.get(device);
+    if (!p) {
+      const module = device.createShaderModule({ label: 'pm-depots', code: P.codeDepots() });
+      p = device.createComputePipeline({ layout: 'auto', compute: { module, entryPoint: 'deposer' } });
+      parDeviceDepots.set(device, p);
+    }
+    return p;
+  }
+
+  P.creerDepots = function (device, sim, milieu) {
+    const liste = sim.emetteurs.filter((e) => e.em.injecte && !e.inerte && e.particules);
+    if (!liste.length) return null;
+    const pipeline = pipelineDepots(device);
+    const lots = liste.map((e) => {
+      const uniforme = device.createBuffer({ size: 64, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+      device.queue.writeBuffer(uniforme, 0, P.emballerDepot(e.em, milieu.grille, e.capacite));
+      return {
+        e,
+        uniforme,
+        groupe: device.createBindGroup({
+          layout: pipeline.getBindGroupLayout(0),
+          entries: [
+            { binding: 0, resource: { buffer: e.particules } },
+            { binding: 1, resource: { buffer: e.tables } },
+            { binding: 2, resource: { buffer: milieu.depots } },
+            { binding: 3, resource: { buffer: uniforme } },
+          ],
+        }),
+      };
+    });
+    return {
+      encoder(passe) {
+        passe.setPipeline(pipeline);
+        lots.forEach((l) => {
+          passe.setBindGroup(0, l.groupe);
+          passe.dispatchWorkgroups(Math.ceil(l.e.capacite / 64));
+        });
+      },
+      detruire() { lots.forEach((l) => l.uniforme.destroy()); },
+    };
+  };
 
   P.Couplage = Couplage;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
