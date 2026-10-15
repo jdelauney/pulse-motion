@@ -238,10 +238,56 @@
     return { x: p.x + j[0] * p.echelle, y: p.y + j[1] * p.echelle, profondeur: j[2] };
   }
 
+  /* ---------- IK à deux os (plan sagittal) ---------- */
+  function normaliser(a) { a = ((a + 180) % 360 + 360) % 360 - 180; return a === -180 ? 180 : a; }
+
+  /** Angles d'une chaîne à deux os dont l'extrémité vise `cible`. sens 1 : genou ; -1 : coude. */
+  function ik2(racine, l1, l2, cible, sens) {
+    var dx = cible[0] - racine[0], dy = cible[1] - racine[1];
+    var d = Math.hypot(dx, dy);
+    var max = l1 + l2, min = Math.abs(l1 - l2);
+    var atteint = d <= max + 1e-9 && d >= min - 1e-9 && d > 1e-9;
+    var dd = Math.min(max - 1e-6, Math.max(min + 1e-6, d));
+    var phi = d > 1e-9 ? Math.atan2(-dx, dy) : 0;
+    var borne = function (x) { return Math.max(-1, Math.min(1, x)); };
+    var alpha = Math.acos(borne((l1 * l1 + dd * dd - l2 * l2) / (2 * l1 * dd)));
+    var beta = Math.acos(borne((l1 * l1 + l2 * l2 - dd * dd) / (2 * l1 * l2)));
+    return {
+      a1: normaliser((phi - sens * alpha) / DEG),
+      a2: normaliser(sens * (Math.PI - beta) / DEG),
+      atteint: atteint
+    };
+  }
+
+  var CHAINES = Object.freeze({
+    mainAvant: { racine: 'epauleAvant', os1: 'brasAvant', os2: 'avantBrasAvant', l1: 'bras', l2: 'avantBras', sens: -1, base: ['bassinRot', 'torse'] },
+    mainArriere: { racine: 'epauleArriere', os1: 'brasArriere', os2: 'avantBrasArriere', l1: 'bras', l2: 'avantBras', sens: -1, base: ['bassinRot', 'torse'] },
+    chevilleAvant: { racine: 'hancheAvant', os1: 'cuisseAvant', os2: 'tibiaAvant', l1: 'cuisse', l2: 'tibia', sens: 1, base: ['bassinRot'] },
+    chevilleArriere: { racine: 'hancheArriere', os1: 'cuisseArriere', os2: 'tibiaArriere', l1: 'cuisse', l2: 'tibia', sens: 1, base: ['bassinRot'] }
+  });
+
+  /** Angles qui amènent `extremite` (mainAvant…, chevilleArriere) sur `cible` (repère du personnage). */
+  function atteindre(pose, gabarit, extremite, cible) {
+    var c = CHAINES[extremite];
+    if (!c) throw new Error('IK : extrémité « ' + extremite + ' » inconnue (mainAvant, mainArriere, chevilleAvant ou chevilleArriere).');
+    var g = completerGabarit(gabarit);
+    var p = contraindre(pose, g, true);
+    var cv = Math.cos(p.vue * DEG);
+    if (Math.abs(cv) < 0.25) return null;
+    var r = geometrie(p, g).A[c.racine];
+    var res = ik2([0, 0], g[c.l1], g[c.l2], [(cible[0] - r[0]) / cv, cible[1] - r[1]], c.sens);
+    var base = c.base.reduce(function (s, k) { return s + p[k]; }, 0);
+    var out = { atteint: res.atteint };
+    out[c.os1] = normaliser(res.a1 - base);
+    out[c.os2] = res.a2;
+    return out;
+  }
+
   return {
     REPOS: REPOS, NOMS: NOMS, LIMITES: LIMITES, GABARIT: GABARIT, SEUIL_LOIN: SEUIL_LOIN,
     completerGabarit: completerGabarit, generique: generique, limite: limite, contraindre: contraindre,
     calculer: calculer, sol: sol, poserAuSol: poserAuSol, melanger: melanger, pointDe: pointDe,
+    ik2: ik2, CHAINES: CHAINES, atteindre: atteindre,
     // Interne, pour l'IK et le balancement (tâches 2 et 3).
     _geometrie: geometrie, _placerOs: placerOs
   };
