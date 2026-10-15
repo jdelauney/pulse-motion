@@ -25,6 +25,11 @@
  * texture de demi-résolution, flou bilatéral séparable (bords gardés), puis ombrage plein écran dans la cible HDR : teinte,
  * absorption selon l'épaisseur, réfraction de la photographie de la scène (o.photoScene, refraction > 0), reflet ; ressources
  * par (émetteur, cible) ; .photo(cle, bitmap) -> vue, .oublierPhoto(cle) : photographies de scène (calques.js).
+ * Cordes et tissus (P5b) : module « pm-structures-rendu », lu dans les tampons des structures (sim.structures : sommets,
+ * liens rompus, longueurs de repos) ; tissu en triangles de ses cellules (un triangle dont un lien est rompu est retiré),
+ * plis éclairés (axe comprimé relevé hors du plan, normale tournée vers l'œil ; tissu plat : éclairage 1 exactement),
+ * revers assombri (face arrière) ; corde en ruban de son épaisseur ; couleur, dégradé (e.tables, en bandes si « bandes »),
+ * image de assets/ ou photographie de l'élément (e.photo), mailles ; dessinée à sa place dans la liste, mélange alpha.
  * Chaîne : tri bitonique des émetteurs en mélange alpha (clé z) -> particules dans une cible rgba16float
  * (sprite, étincelle étirée, traînée en ruban, planche ; textures procédurales ou image ; flou de
  * mouvement en 4 échantillons ; perspective selon z, sauf pour les émetteurs à collisions) -> bloom (seuil, dual Kawase sur 5 niveaux dans un
@@ -630,6 +635,164 @@ fn fsNappe(@builtin(position) pos: vec4f) -> @location(0) vec4f {
 }
 `;
 
+  // Cordes et tissus (P5b) : maillage d'un tissu et ruban d'une corde, depuis le tampon commun des sommets.
+  const WGSL_STRUCTURES_RENDU = P.WGSL_COMMUN + /* wgsl */ `
+struct Tissu { largeur: f32, hauteur: f32, delta: f32, mode: u32, base: u32, colonnes: u32, lignes: u32, sens: u32,
+  couleur: vec4f, lumiere: vec2f, epaisseur: f32, bandes: u32, mailles: u32, structure: u32, genre: u32, r1: u32 };
+@group(0) @binding(0) var<storage, read> sommets: array<Particule>;
+@group(0) @binding(1) var<storage, read> T: array<f32>;
+@group(0) @binding(2) var<uniform> S: Tissu;
+@group(0) @binding(3) var<storage, read> rompus: array<u32>;
+@group(0) @binding(4) var<storage, read> infos: array<vec4f>;
+@group(0) @binding(5) var image: texture_2d<f32>;
+@group(0) @binding(6) var lisse: sampler;
+
+const REVERS = 0.55;   // revers d'un tissu (face arrière) assombri
+const RELIEF = 0.8;    // force de l'éclairage des plis
+
+struct SortieS { @builtin(position) pos: vec4f, @location(0) uv: vec2f, @location(1) ombre: f32, @location(2) travers: f32 };
+
+fn ecranS(w: vec2f) -> vec4f { return vec4f(w.x / S.largeur * 2.0 - 1.0, 1.0 - w.y / S.hauteur * 2.0, 0.0, 1.0); }
+
+fn cacheeS() -> SortieS {
+  var o: SortieS;
+  o.pos = vec4f(2.0, 2.0, 2.0, 1.0);
+  return o;
+}
+
+// Sommet (r, c) de la structure à l'instant de l'image (extrapolé de delta).
+fn sommetS(r: u32, c: u32) -> vec2f {
+  let p = sommets[S.base + r * S.colonnes + c];
+  return p.pos + p.vel * S.delta;
+}
+
+fn rompu(v: u32, genre: u32) -> bool { return ((rompus[S.base + v] >> genre) & 1u) != 0u; }
+
+// Pente hors du plan d'un axe du tissu (t : axe dans le plan rapporté à sa longueur de repos) : la longueur manquante d'un
+// axe comprimé part hors du plan, du côté de sa courbure k ; axe étiré ou à sa longueur : à plat.
+fn pente(t: vec2f, k: vec2f) -> f32 {
+  let z = sqrt(max(1.0 - dot(t, t), 0.0));
+  return select(-z, z, t.x * k.y - t.y * k.x >= 0.0);
+}
+
+// Éclairage d'un sommet : normale du tissu relevé (différences centrées sur les voisins), tournée vers l'œil ; lumière
+// directionnelle ; tissu plat : 1 exactement.
+fn ombreTissu(r: u32, c: u32) -> f32 {
+  let L = infos[S.structure];
+  let c0 = select(c - 1u, c, c == 0u);
+  let c1 = min(c + 1u, S.colonnes - 1u);
+  let r0 = select(r - 1u, r, r == 0u);
+  let r1 = min(r + 1u, S.lignes - 1u);
+  let p = sommetS(r, c);
+  let tu = (sommetS(r, c1) - sommetS(r, c0)) / max(f32(c1 - c0) * L.x, 1e-6);
+  let tv = (sommetS(r1, c) - sommetS(r0, c)) / max(f32(r1 - r0) * L.y, 1e-6);
+  let ku = sommetS(r, c1) + sommetS(r, c0) - 2.0 * p;
+  let kv = sommetS(r1, c) + sommetS(r0, c) - 2.0 * p;
+  let x = cross(vec3f(tu, pente(tu, ku)), vec3f(tv, pente(tv, kv)));
+  if (dot(x, x) < 1e-12) { return 1.0; }
+  var n = normalize(x);
+  if (n.z < 0.0) { n = -n; }
+  let l = normalize(vec3f(S.lumiere, 1.0));
+  return clamp(1.0 + RELIEF * (dot(n, l) - l.z), 0.3, 1.6);
+}
+
+// Tissu : 6 sommets par cellule (triangles A et B) ; triangle retiré si l'un de ses liens est rompu.
+@vertex
+fn vsTissu(@builtin(vertex_index) vi: u32) -> SortieS {
+  let C = S.colonnes;
+  let q = vi / 6u;
+  let k = vi % 6u;
+  let r = q / (C - 1u);
+  let c = q % (C - 1u);
+  let v = r * C + c;
+  if (k < 3u) {
+    if (rompu(v, 0u) || rompu(v + 1u, 1u) || rompu(v, 2u)) { return cacheeS(); }
+  } else if (rompu(v, 1u) || rompu(v + C, 0u) || rompu(v, 2u)) { return cacheeS(); }
+  var dr = array<u32, 6>(0u, 0u, 1u, 0u, 1u, 1u);
+  var dc = array<u32, 6>(0u, 1u, 1u, 0u, 1u, 0u);
+  let rr = r + dr[k];
+  let cc = c + dc[k];
+  var o: SortieS;
+  o.pos = ecranS(sommetS(rr, cc));
+  o.uv = vec2f(f32(cc) / f32(C - 1u), f32(rr) / f32(S.lignes - 1u));
+  o.ombre = ombreTissu(rr, cc);
+  o.travers = 0.0;
+  return o;
+}
+
+// Corde : 6 sommets par segment (ruban de largeur « epaisseur ») ; segment rompu retiré ; tangente sur les voisins reliés.
+@vertex
+fn vsCorde(@builtin(vertex_index) vi: u32) -> SortieS {
+  let C = S.colonnes;
+  let seg = vi / 6u;
+  let k = vi % 6u;
+  if (rompu(seg, 0u)) { return cacheeS(); }
+  var dj = array<u32, 6>(0u, 1u, 0u, 0u, 1u, 1u);
+  var cote = array<f32, 6>(-1.0, -1.0, 1.0, 1.0, -1.0, 1.0);
+  let j = seg + dj[k];
+  var a = j;
+  var b = j;
+  if (j > 0u && !rompu(j - 1u, 0u)) { a = j - 1u; }
+  if (j + 1u < C && !rompu(j, 0u)) { b = j + 1u; }
+  let t = sommetS(0u, b) - sommetS(0u, a);
+  let l = length(t);
+  var n = vec2f(0.0, 1.0);
+  if (l > 1e-6) { n = vec2f(-t.y, t.x) / l; }
+  var o: SortieS;
+  o.pos = ecranS(sommetS(0u, j) + n * (0.5 * S.epaisseur * cote[k]));
+  o.uv = vec2f(f32(j) / f32(C - 1u), cote[k] * 0.5 + 0.5);
+  o.ombre = 1.0;
+  o.travers = cote[k];
+  return o;
+}
+
+// Dégradé (64 RVBA linéaires) : interpolé, ou au plus proche en bandes.
+fn teinteS(x: f32) -> vec4f {
+  let u = clamp(x, 0.0, 1.0) * 63.0;
+  var i = u32(floor(u));
+  var j = min(i + 1u, 63u);
+  var f = u - f32(i);
+  if (S.bandes == 1u) {
+    i = min(u32(floor(clamp(x, 0.0, 0.99999) * 64.0)), 63u);
+    j = i;
+    f = 0.0;
+  }
+  let a = vec4f(T[i * 4u], T[i * 4u + 1u], T[i * 4u + 2u], T[i * 4u + 3u]);
+  let b = vec4f(T[j * 4u], T[j * 4u + 1u], T[j * 4u + 2u], T[j * 4u + 3u]);
+  return mix(a, b, f);
+}
+
+// Couleur (mode 0), dégradé (1) ou image prémultipliée (2), multipliée par « couleur » ; éclairage, revers, mailles (tissu),
+// ombrage de cylindre (corde) ; alpha prémultiplié.
+@fragment
+fn fsStructure(e: SortieS, @builtin(front_facing) face: bool) -> @location(0) vec4f {
+  var rgb = vec3f(1.0);
+  var a = 1.0;
+  if (S.mode == 1u) {
+    let t = teinteS(select(e.uv.x, e.uv.y, S.sens == 1u));
+    rgb = t.rgb;
+    a = t.a;
+  } else if (S.mode == 2u) {
+    let t = textureSample(image, lisse, e.uv);
+    a = t.a;
+    rgb = select(vec3f(0.0), t.rgb / max(t.a, 1e-4), t.a > 1e-4);
+  }
+  var ombre = e.ombre;
+  if (S.genre == 1u) {
+    if (!face) { ombre = ombre * REVERS; }
+    if (S.mailles == 1u) {
+      let g = fract(e.uv * vec2f(f32(S.colonnes - 1u), f32(S.lignes - 1u)) + 0.5) - 0.5;
+      a = a * (1.0 - smoothstep(0.06, 0.12, min(abs(g.x), abs(g.y))));
+    }
+  } else {
+    ombre = ombre * (0.7 + 0.3 * sqrt(max(1.0 - e.travers * e.travers, 0.0)));
+  }
+  let k = a * S.couleur.a;
+  return vec4f(rgb * S.couleur.rgb * ombre * k, k);
+}
+`;
+  const MODES_STRUCTURE = { couleur: 0, degrade: 1, image: 2, source: 2 };
+
   const MELANGES = {
     additif: { color: { srcFactor: 'one', dstFactor: 'one', operation: 'add' }, alpha: { srcFactor: 'one', dstFactor: 'one', operation: 'add' } },
     alpha: { color: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' }, alpha: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' } },
@@ -723,6 +886,30 @@ fn fsNappe(@builtin(position) pos: vec4f) -> @location(0) vec4f {
       });
       this.fluides = new WeakMap();
       this.photos = new Map();
+
+      // Cordes et tissus (P5b) : maillage et ruban, depuis les tampons des structures ; endroit du tissu dans le sens horaire.
+      this.layoutStructure = device.createBindGroupLayout({
+        entries: [
+          { binding: 0, visibility: V, buffer: { type: 'read-only-storage' } },
+          { binding: 1, visibility: Fr, buffer: { type: 'read-only-storage' } },
+          { binding: 2, visibility: V | Fr, buffer: { type: 'uniform' } },
+          { binding: 3, visibility: V, buffer: { type: 'read-only-storage' } },
+          { binding: 4, visibility: V, buffer: { type: 'read-only-storage' } },
+          { binding: 5, visibility: Fr, texture: { sampleType: 'float' } },
+          { binding: 6, visibility: Fr, sampler: { type: 'filtering' } },
+        ],
+      });
+      const moduleStructures = device.createShaderModule({ label: 'pm-structures-rendu', code: WGSL_STRUCTURES_RENDU });
+      const layoutStructures = device.createPipelineLayout({ bindGroupLayouts: [this.layoutStructure] });
+      const pipelineStructure = (sommets, frontFace) => device.createRenderPipeline({
+        layout: layoutStructures,
+        vertex: { module: moduleStructures, entryPoint: sommets },
+        fragment: { module: moduleStructures, entryPoint: 'fsStructure', targets: [{ format: 'rgba16float', blend: MELANGES.alpha }] },
+        primitive: { topology: 'triangle-list', frontFace, cullMode: 'none' },
+      });
+      this.pipelineTissu = pipelineStructure('vsTissu', 'cw');
+      this.pipelineCorde = pipelineStructure('vsCorde', 'cw');
+      this.structuresRendu = new WeakMap();
 
       // Couches héritées des obstacles de la vidéo.
       this.layoutCouche = device.createBindGroupLayout({
@@ -951,8 +1138,8 @@ fn fsNappe(@builtin(position) pos: vec4f) -> @location(0) vec4f {
     }
 
     /** Mélange alpha : tri par z ; sauf un émetteur de fragments à z constant (l'ordre trié est alors celui des cases) et un
-     *  émetteur « fluide » (nappe : hauteur au maximum, épaisseur additionnée, sans ordre). */
-    estTrie(e) { return !e.em.fluide && e.em.rendu.melange !== 'additif' && !(e.em.fragment && e.em.z[0] === e.em.z[1]); }
+     *  émetteur « fluide » (nappe : hauteur au maximum, épaisseur additionnée, sans ordre) et une corde ou un tissu (surface d'un seul tenant). */
+    estTrie(e) { return !e.structure && !e.em.fluide && e.em.rendu.melange !== 'additif' && !(e.em.fragment && e.em.z[0] === e.em.z[1]); }
 
     tri(e) {
       let t = this.tris.get(e);
@@ -996,6 +1183,8 @@ fn fsNappe(@builtin(position) pos: vec4f) -> @location(0) vec4f {
       const couches = sim.hauteursBase && this.couches.get(sim.hauteursBase);
       if (couches) { couches.forEach((c) => c.uniforme.destroy()); this.couches.delete(sim.hauteursBase); }
       sim.emetteurs.forEach((e) => {
+        const sr = this.structuresRendu.get(e);
+        if (sr) { sr.uniforme.destroy(); this.structuresRendu.delete(e); }
         const t = this.tris.get(e);
         if (t) t.ordre.destroy();
         const s = this.styles.get(e);
@@ -1010,6 +1199,8 @@ fn fsNappe(@builtin(position) pos: vec4f) -> @location(0) vec4f {
 
     /** Tampons propres à un émetteur, créés d'avance (dans la portée d'erreur mémoire de l'effet). */
     preparerEmetteur(e) {
+      // Corde ou tissu : uniforme et liaisons créés au premier dessin (tampons des structures).
+      if (e.structure) return;
       if (this.estTrie(e)) this.tri(e);
       this.style(e);
     }
@@ -1071,6 +1262,51 @@ fn fsNappe(@builtin(position) pos: vec4f) -> @location(0) vec4f {
       u[4] = sim.k || 0; u[5] = this.estTrie(e) ? 1 : 0; u[6] = r.flou ? 1 : 0; u[7] = e.contacts ? 1 : 0;
       f[8] = sim.tau || 0;
       this.device.queue.writeBuffer(e.uniformeRendu, 0, v);
+    }
+
+    /** Uniforme « Tissu » et groupe de liaisons d'un émetteur de structure, créés une fois. */
+    structureRendu(sim, e) {
+      let s = this.structuresRendu.get(e);
+      if (!s) {
+        const st = sim.structures;
+        const ap = e.em.structure.apparence;
+        const image = ap.mode === 'source' ? e.photo && e.photo.vue : ap.mode === 'image' ? this.images.get(e.em.rendu.textureImage) : null;
+        const uniforme = this.device.createBuffer({ size: 80, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+        s = {
+          uniforme,
+          groupe: this.device.createBindGroup({
+            layout: this.layoutStructure,
+            entries: [
+              { binding: 0, resource: { buffer: st.sommets } },
+              { binding: 1, resource: { buffer: e.tables } },
+              { binding: 2, resource: { buffer: uniforme } },
+              { binding: 3, resource: { buffer: st.rompus } },
+              { binding: 4, resource: { buffer: st.infos } },
+              { binding: 5, resource: image || this.vueBlanc },
+              { binding: 6, resource: this.lisse },
+            ],
+          }),
+        };
+        this.structuresRendu.set(e, s);
+      }
+      return s;
+    }
+
+    /** Uniforme « Tissu » d'un émetteur de structure pour l'image : scène (cqh), extrapolation, apparence, sommets. */
+    ecrireStructure(sim, e, delta, o) {
+      const s = this.structureRendu(sim, e);
+      const st = e.em.structure;
+      const ap = st.apparence;
+      const i = e.infoStructure;
+      const v = new ArrayBuffer(80);
+      const f = new Float32Array(v);
+      const u = new Uint32Array(v);
+      f[0] = o.largeurCqh; f[1] = 100; f[2] = delta; u[3] = MODES_STRUCTURE[ap.mode];
+      u[4] = i.base; u[5] = i.colonnes; u[6] = i.lignes; u[7] = ap.sens === 'vertical' ? 1 : 0;
+      f.set(ap.couleur, 8);
+      f[12] = ap.lumiere[0]; f[13] = ap.lumiere[1]; f[14] = st.epaisseur; u[15] = ap.bandes ? 1 : 0;
+      u[16] = ap.mailles ? 1 : 0; u[17] = i.s; u[18] = st.code;
+      this.device.queue.writeBuffer(s.uniforme, 0, v);
     }
 
     /** Textures de la nappe d'un émetteur « fluide » dans une cible (demi-résolution, A et B pour le flou), uniformes, groupes
@@ -1184,7 +1420,11 @@ fn fsNappe(@builtin(position) pos: vec4f) -> @location(0) vec4f {
       const fonds = o.fonds || [];
       cible.vide = liste.length === 0 && couches.length === 0 && fonds.length === 0;
       // Uniforme « Calque » de chaque émetteur, une fois par image (lu par les sphères des nappes et par le dessin).
-      liste.forEach(({ sim, i, delta }) => this.ecrireCalque(sim, sim.emetteurs[i], delta, o));
+      liste.forEach(({ sim, i, delta }) => {
+        const e = sim.emetteurs[i];
+        if (e.structure) this.ecrireStructure(sim, e, delta, o);
+        else this.ecrireCalque(sim, e, delta, o);
+      });
 
       // 1. Tri des émetteurs en mélange alpha (clé z croissante : du plus loin au plus proche).
       const aTrier = liste.filter(({ sim, i }) => this.estTrie(sim.emetteurs[i]));
@@ -1230,6 +1470,14 @@ fn fsNappe(@builtin(position) pos: vec4f) -> @location(0) vec4f {
       liste.forEach(({ sim, i }) => {
         const e = sim.emetteurs[i];
         const r = e.em.rendu;
+        if (e.structure) {
+          // Corde ou tissu (P5b) : maillage (6 sommets par cellule) ou ruban (6 par segment).
+          const inf = e.infoStructure;
+          rp.setPipeline(inf.type === 'tissu' ? this.pipelineTissu : this.pipelineCorde);
+          rp.setBindGroup(0, this.structureRendu(sim, e).groupe);
+          rp.draw(inf.type === 'tissu' ? 6 * (inf.colonnes - 1) * (inf.lignes - 1) : 6 * (inf.colonnes - 1));
+          return;
+        }
         if (e.em.fluide) {
           // Nappe : ombrage plein écran (teinte, absorption, réfraction de la photographie de la scène, reflet).
           rp.setPipeline(this.pipelineNappe);
