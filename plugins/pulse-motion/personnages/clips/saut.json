@@ -1,0 +1,121 @@
+{
+  "nom": "saut",
+  "description": "saut sur place : élan, envol, réception amortie",
+  "boucle": false,
+  "pieds": "libres",
+  "cles": [
+    {
+      "t": 0,
+      "pose": "debout"
+    },
+    {
+      "t": 0.286,
+      "pose": "debout",
+      "angles": {
+        "bassinY": 50,
+        "torse": 28,
+        "tete": -8,
+        "cuisseAvant": -60,
+        "tibiaAvant": 100,
+        "cuisseArriere": -50,
+        "tibiaArriere": 95,
+        "brasAvant": 50,
+        "avantBrasAvant": -10,
+        "brasArriere": 45,
+        "avantBrasArriere": -10,
+        "paupieres": 0.55,
+        "touffeEtire": 0.85
+      }
+    },
+    {
+      "t": 0.468,
+      "pose": "debout",
+      "angles": {
+        "bassinY": -60,
+        "torse": 4,
+        "cuisseAvant": -5,
+        "tibiaAvant": 5,
+        "piedAvant": 35,
+        "cuisseArriere": 5,
+        "tibiaArriere": 10,
+        "piedArriere": 40,
+        "brasAvant": -160,
+        "avantBrasAvant": -10,
+        "ecartBrasAvant": 20,
+        "brasArriere": -150,
+        "avantBrasArriere": -10,
+        "ecartBrasArriere": 20,
+        "tailleYeux": 1.15,
+        "touffeEtire": 0.75
+      }
+    },
+    {
+      "t": 0.715,
+      "pose": "debout",
+      "angles": {
+        "bassinY": -150,
+        "torse": 10,
+        "cuisseAvant": -70,
+        "tibiaAvant": 90,
+        "piedAvant": 10,
+        "ecartJambeAvant": 12,
+        "cuisseArriere": -55,
+        "tibiaArriere": 85,
+        "piedArriere": 10,
+        "ecartJambeArriere": 12,
+        "brasAvant": -100,
+        "avantBrasAvant": -30,
+        "ecartBrasAvant": 35,
+        "brasArriere": -90,
+        "avantBrasArriere": -30,
+        "ecartBrasArriere": 35,
+        "tailleYeux": 1.2,
+        "regardY": -3,
+        "touffeEtire": 1.15,
+        "touffeEventail": 1.3
+      }
+    },
+    {
+      "t": 0.936,
+      "pose": "debout",
+      "angles": {
+        "bassinY": 7,
+        "torse": 15,
+        "cuisseAvant": -25,
+        "tibiaAvant": 30,
+        "cuisseArriere": -10,
+        "tibiaArriere": 25,
+        "brasAvant": -60,
+        "avantBrasAvant": -20,
+        "ecartBrasAvant": 25,
+        "brasArriere": -50,
+        "avantBrasArriere": -20,
+        "ecartBrasArriere": 25,
+        "touffeEtire": 1.3,
+        "touffeEventail": 1.2
+      }
+    },
+    {
+      "t": 1.092,
+      "pose": "debout",
+      "angles": {
+        "bassinY": 50,
+        "torse": 25,
+        "cuisseAvant": -60,
+        "tibiaAvant": 100,
+        "cuisseArriere": -50,
+        "tibiaArriere": 95,
+        "brasAvant": 20,
+        "avantBrasAvant": -15,
+        "brasArriere": 15,
+        "avantBrasArriere": -15,
+        "paupieres": 0.4,
+        "touffeEtire": 0.72
+      }
+    },
+    {
+      "t": 1.3,
+      "pose": "debout"
+    }
+  ]
+}

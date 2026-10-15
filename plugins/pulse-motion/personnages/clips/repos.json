@@ -1,0 +1,39 @@
+{
+  "nom": "repos",
+  "description": "debout, respire doucement",
+  "boucle": true,
+  "duree": 2.86,
+  "pieds": "au-sol",
+  "cles": [
+    {
+      "t": 0,
+      "angles": {
+        "torse": 3,
+        "tete": 0,
+        "brasAvant": 8,
+        "brasArriere": -6,
+        "touffeEtire": 1
+      }
+    },
+    {
+      "t": 0.25,
+      "angles": {
+        "torse": 4.5,
+        "tete": -1,
+        "brasAvant": 10,
+        "brasArriere": -8,
+        "touffeEtire": 1.02
+      }
+    },
+    {
+      "t": 0.75,
+      "angles": {
+        "torse": 1.5,
+        "tete": 1,
+        "brasAvant": 6,
+        "brasArriere": -4,
+        "touffeEtire": 0.98
+      }
+    }
+  ]
+}

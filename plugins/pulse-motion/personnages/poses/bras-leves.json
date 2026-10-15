@@ -1,0 +1,12 @@
+{
+  "nom": "bras-leves",
+  "description": "les deux bras levés au-dessus de la tête (victoire, pancarte)",
+  "angles": {
+    "brasAvant": -168,
+    "avantBrasAvant": -8,
+    "ecartBrasAvant": 12,
+    "brasArriere": -168,
+    "avantBrasArriere": -8,
+    "ecartBrasArriere": 12
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "nom": "mains-hanches",
+  "description": "poings sur les hanches, coudes écartés",
+  "angles": {
+    "brasAvant": 0,
+    "avantBrasAvant": -100,
+    "ecartBrasAvant": 50,
+    "torsionBrasAvant": 90,
+    "brasArriere": 0,
+    "avantBrasArriere": -100,
+    "ecartBrasArriere": 50,
+    "torsionBrasArriere": 90
+  }
+}

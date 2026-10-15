@@ -1,0 +1,36 @@
+{
+  "nom": "clignement",
+  "description": "clignement des yeux toutes les 3,2 s (calque additif)",
+  "boucle": true,
+  "duree": 3.2,
+  "additif": true,
+  "cles": [
+    {
+      "t": 0,
+      "angles": {
+        "paupieres": 0
+      }
+    },
+    {
+      "t": 0.94,
+      "angles": {
+        "paupieres": 0
+      },
+      "courbe": "linear"
+    },
+    {
+      "t": 0.955,
+      "angles": {
+        "paupieres": -0.92
+      },
+      "courbe": "linear"
+    },
+    {
+      "t": 0.985,
+      "angles": {
+        "paupieres": -0.92
+      },
+      "courbe": "linear"
+    }
+  ]
+}
