@@ -43,6 +43,7 @@
     ['jambeAvant', ['cuisseAvant', 'tibiaAvant', 'piedAvant']]
   ];
   var compteur = 0;
+  var RACCOURCI_MIN = 0.15; // un membre pointé droit vers la caméra garde un peu de longueur (ses bouts arrondis)
 
   function r2(v) { return Math.round(v * 100) / 100 + 0; }
   function el(tag, attrs, parent) {
@@ -77,6 +78,10 @@
     var id = 'pm-perso-' + (++compteur);
     var couleurs = dessin.couleurs || {};
     var accessoires = dessin.accessoires || [];
+    // Le groupe peut être réutilisé (l'atelier change de dessin) : on repart d'un groupe vide.
+    while (groupe.firstChild) groupe.removeChild(groupe.firstChild);
+    (groupe.__pmVariables || []).forEach(function (k) { groupe.style.removeProperty(k); });
+    groupe.__pmVariables = Object.keys(couleurs).map(function (k) { return '--' + k; });
     groupe.classList.add('pm-perso');
     groupe.setAttribute('data-decor', '');
     Object.keys(couleurs).forEach(function (k) { groupe.style.setProperty('--' + k, couleurs[k]); });
@@ -145,7 +150,8 @@
       var dessins = p[nom] || p[nom.replace(/Arriere$/, 'Avant')] || null;
       var acc = accessoires.filter(function (a) { return a.os === nom; });
       var visage = nom === 'tete' && dessin.visage;
-      if (!dessins && !acc.length && !visage) return;
+      // Les mains existent toujours (même vides) : on y accroche les objets tenus.
+      if (!dessins && !acc.length && !visage && !/^main/.test(nom)) return;
       var gp = el('g', { 'data-piece': nom }, partie);
       var piece = { g: gp, vues: {}, actuelle: null, accessoires: [], visage: null };
       acc.filter(function (a) { return !a.devant; }).forEach(function (a) { piece.accessoires.push(accessoire(gp, a)); });
@@ -183,7 +189,7 @@
       var piece = pieces[nom];
       if (!piece || !A || !B) return;
       var dx = B[0] - A[0], dy = B[1] - A[1];
-      var th = -Math.atan2(dx, dy) / DEG, l = Math.hypot(dx, dy) / L;
+      var th = -Math.atan2(dx, dy) / DEG, l = Math.max(RACCOURCI_MIN, Math.hypot(dx, dy) / L);
       placer(piece, angle, function (m) { return 'translate(' + r2(A[0]) + ' ' + r2(A[1]) + ') rotate(' + r2(th) + ') scale(' + m + ' ' + r2(l) + ')'; });
     }
 
@@ -198,13 +204,13 @@
       var course = oeil.course || 4, hauteur = oeil.hauteur || 24;
       var borne = function (x) { return Math.max(-1, Math.min(1, x)); };
       pv.yeux.forEach(function (e) {
-        e.g.setAttribute('transform', 'translate(' + r2(e.pos[0]) + ' ' + r2(e.pos[1]) + ') scale(' + r2(p.tailleYeux) + ')');
+        e.g.setAttribute('transform', 'translate(' + r2(e.pos[0]) + ' ' + r2(e.pos[1] + p.yeuxY) + ') scale(' + r2(p.tailleYeux) + ')');
         e.pupille.setAttribute('transform', 'translate(' + r2(borne(p.regardX / 6) * course) + ' ' + r2(borne(p.regardY / 7) * course) + ') scale(' + r2(p.taillePupilles) + ')');
         e.paupiere.setAttribute('transform', 'translate(0 ' + r2(-Math.max(0, Math.min(1, p.paupieres)) * hauteur) + ')');
       });
       pv.sourcils.forEach(function (s) {
         var sens = s.pos[0] <= pv.centre ? 1 : -1;
-        s.g.setAttribute('transform', 'translate(' + r2(s.pos[0]) + ' ' + r2(s.pos[1] - p.sourcilsY) + ') rotate(' + r2(sens * p.sourcilsAngle) + ')');
+        s.g.setAttribute('transform', 'translate(' + r2(s.pos[0]) + ' ' + r2(s.pos[1] + p.yeuxY - p.sourcilsY) + ') rotate(' + r2(sens * p.sourcilsAngle) + ')');
       });
       var nom = boucheDe(typeof p.bouche === 'string' ? p.bouche : 'neutre', Object.keys(pv.bouches));
       if (pv.actuelle !== nom) {
@@ -231,7 +237,12 @@
         if (pied) {
           var a = A['cheville' + s], b = A['orteil' + s];
           var thp = Math.atan2(b[1] - a[1], b[0] - a[0]) / DEG, lp = Math.hypot(b[0] - a[0], b[1] - a[1]) / g.pied;
-          placer(pied, aCorps, function (m) { return 'translate(' + r2(a[0]) + ' ' + r2(a[1]) + ') rotate(' + r2(m < 0 ? thp + 180 : thp) + ') scale(' + r2(m * lp) + ' 1)'; });
+          var vuePied = vueDe(aCorps);
+          placer(pied, aCorps, function (m) {
+            // De face ou de dos, le pied pointe vers la caméra : dessin de face, à plat, sans rotation.
+            if (vuePied === 'face' || vuePied === 'dos') return 'translate(' + r2(a[0]) + ' ' + r2(a[1]) + ') scale(1 1)';
+            return 'translate(' + r2(a[0]) + ' ' + r2(a[1]) + ') rotate(' + r2(m < 0 ? thp + 180 : thp) + ') scale(' + r2(m * Math.max(RACCOURCI_MIN, lp)) + ' 1)';
+          });
         }
       });
       var torse = pieces.torse;
@@ -249,7 +260,7 @@
         var vueTete = placer(tete, aTete, function (m) { return 'translate(' + r2(ct[0]) + ' ' + r2(ct[1]) + ') rotate(' + r2(r.tete.roulis) + ') scale(' + m + ' 1)'; });
         if (tete.visage) rendreVisage(tete.visage, vueTete, p);
       }
-      g.osEnPlus.forEach(function (o) { os(o.nom, A[o.nom], A[o.nom + 'Bout'], o.longueur, aCorps); });
+      g.osEnPlus.forEach(function (o) { os(o.nom, A[o.nom], A[o.nom + 'Bout'], o.longueur, o.parent === 'tete' ? aTete : o.parent === 'torse' ? aTorse : aCorps); });
       Object.keys(parties).forEach(function (n) {
         if (n === 'colonne' || n === 'tete') return;
         var loin = r.profondeurs[n] < SEUIL_LOIN;

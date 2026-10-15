@@ -18,7 +18,7 @@
 
 ```
         cou (0, -82)         torse : du bassin (0, 0) vers le haut, y de 0 à -82
-          |                  tête : centrée sur son centre, ellipse de 34 × 50 environ
+          |                  tête : centrée sur son centre, ellipse rx 34, ry 50 (68 de large, 100 de haut)
         bassin (0, 0)
    cuisse : 0 → 68 (vers +y)   tibia : 0 → 68   pied : à plat depuis la cheville, 0 → 15 vers +x
    bras : 0 → 50               avant-bras : 0 → 46   main : depuis le poignet, vers +y
@@ -40,7 +40,7 @@ Même repère que l'os (tête : centre de la tête). `devant: false` (par défau
 
 ## Visage
 
-- `oeil` : `blanc` (obligatoire), `pupille`, `paupiere` (dessinée pour couvrir tout l'œil, elle remonte quand l'œil s'ouvre), `course` (recul des pupilles, 4), `hauteur` (course de la paupière, 24).
+- `oeil` : `blanc` (obligatoire, formes simples sans `g` : il sert aussi à découper pupille et paupière), `pupille`, `paupiere` (dessinée pour couvrir tout l'œil, elle remonte quand l'œil s'ouvre), `course` (recul des pupilles, 4), `hauteur` (course de la paupière, 24).
 - `sourcil` : un trait, centré en (0, 0).
 - `bouches` : `neutre` obligatoire ; expressions `sourire`, `rire`, `triste`, `surprise`, `colere` ; visèmes (pour la voix) `repos`, `A`, `E`, `I`, `O`, `U`, `MBP`, `FV`, `L`. Une bouche absente est remplacée par la plus proche.
 - `vues` (repère de la tête) : `profil` obligatoire, `troisQuarts`, `face` ; chacune `{ "yeux": [[x, y], …], "sourcils": [[x, y], …], "bouche": [x, y] }`. De dos, le visage est caché.

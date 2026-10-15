@@ -25,7 +25,8 @@
       "profil": "<rect x='-7' y='-7' width='14' height='82' rx='7' fill='var(--teinte-loin, var(--corps))'/>"
     },
     "piedAvant": {
-      "profil": "<rect x='-7' y='-7' width='29' height='14' rx='7' fill='var(--teinte-loin, var(--corps))'/>"
+      "profil": "<rect x='-7' y='-7' width='29' height='14' rx='7' fill='var(--teinte-loin, var(--corps))'/>",
+      "face": "<rect x='-7' y='-7' width='14' height='14' rx='7' fill='var(--teinte-loin, var(--corps))'/>"
     },
     "brasAvant": {
       "profil": "<rect x='-7' y='-7' width='14' height='64' rx='7' fill='var(--teinte-loin, var(--corps))'/>"
