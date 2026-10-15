@@ -119,6 +119,8 @@ test('parler : la piste donne la bouche ; une bouche plus récente l\'emporte ; 
   assert.equal(PA.etatAuTemps(p, 3.2, bib, gab).pose.bouche, 'O', 'bouche demandée après : elle l\'emporte');
   const fini = partition([{ type: 'parler', debut: 0, fin: 1.2, piste }]);
   assert.notEqual(PA.etatAuTemps(fini, 3.05, bib, gab).pose.bouche, 'FV', 'hors de la fenêtre : rien');
+  const deux = partition([{ type: 'parler', debut: 0, fin: Infinity, piste }, { type: 'parler', debut: 1.9, fin: 2, piste: [] }]);
+  assert.equal(PA.etatAuTemps(deux, 3.05, bib, gab).pose.bouche, 'FV', 'le parler plus récent fini : le précédent reprend');
   assert.doesNotThrow(() => PA.etatAuTemps(partition([{ type: 'parler', debut: 0, fin: 5, piste: [] }]), 1, bib, gab), 'voix absente');
 });
 

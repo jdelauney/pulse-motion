@@ -14,8 +14,17 @@ test('visèmes des mots : groupes, nasales, consonnes, finales muettes', () => {
   assert.equal(v('oui'), 'U I');
   assert.equal(v('pain'), 'MBP E');
   assert.equal(v('Pourquoi'), 'MBP U A', 'qu muet');
-  assert.equal(v('portes'), 'MBP O', 'es puis t muets');
+  assert.equal(v('portes'), 'MBP O L', 'es muet, t prononcé');
   assert.equal(v('—'), 'E', 'sans visème : E');
+  assert.equal(v('les'), 'L E', 'déterminant : la voyelle reste');
+  assert.equal(v('des'), 'L E');
+  assert.equal(v('mes'), 'MBP E');
+  assert.equal(v('une'), 'U L', 'e muet : pas de nasale');
+  assert.equal(v('parlent'), 'MBP A L', '-ent muet');
+  assert.equal(v('bien'), 'MBP I E');
+  assert.equal(v('rien'), 'I E');
+  assert.equal(v('lent'), 'L A', 'mot court en -ent : nasale');
+  assert.equal(v('et'), 'E');
   assert.deepEqual(L.visemesDuMot('maman').map((x) => x.poids), [1, 2, 1, 2]);
 });
 
@@ -33,6 +42,7 @@ test('piste : contiguë dans un mot, silences gardés, au repos, puis rendus ; f
   assert.ok(p.every((s) => s.t1 > s.t0), 'aucun segment vide (mot de durée nulle ignoré)');
   const fen = L.piste(mots, 10, 10.9, 12);
   assert.deepEqual([...new Set(fen.map((s) => s.v))], ['L', 'U'], 'fenêtre : seul « tous »');
+  assert.equal(L.boucheAuTemps(L.piste(mots, 10, 11 + 1e-9, Infinity), 11.05), 'L', 'début à l\'arrondi près du mot : retenu');
 });
 
 test('débit rapide : segments trop courts retirés, consonnes d\'abord', () => {
