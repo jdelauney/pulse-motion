@@ -4,7 +4,7 @@
  *   GET  /_pm/personnages                        page de l'atelier (moteur/personnages/atelier.html)
  *   GET  /_pm/personnages/atelier.mjs, edition.mjs, atelier.css
  *   GET  /_pm/personnages/modules/<module>       modules du moteur (courbes, squelette, clips, habillage-batonnets)
- *   GET  /_pm/personnages/contexte               { cible: 'video' | 'bibliotheque' | null, message, lu: { poses, clips, gabarits, sources }, erreurs }
+ *   GET  /_pm/personnages/contexte               { cible: 'video' | 'bibliotheque' | null, message, lu: { poses, clips, gabarits, expressions, dessins, sources }, erreurs }
  *   POST /_pm/personnages/enregistrer            { type, nom, objet, remplacer? } -> { ok, cible, fichier }
  *        403 sans cible ; 409 { existe } si le fichier existe déjà dans la cible (sans « remplacer ») ; 415 sans JSON ;
  *        422 { message, erreurs } si invalide.
@@ -103,7 +103,7 @@ function creerRoutesPersonnages(projet, { bibliotheque = P.BIBLIOTHEQUE, ecrireB
     if (req.method === 'GET' && url.pathname === '/_pm/personnages/contexte') {
       const lu = lireTout();
       const c = cible();
-      repondre(res, 200, { cible: c, message: c ? MESSAGES[c] : SANS_CIBLE, lu: { poses: lu.poses, clips: lu.clips, gabarits: lu.gabarits, sources: lu.sources }, erreurs: lu.erreurs.map((e) => e.message) });
+      repondre(res, 200, { cible: c, message: c ? MESSAGES[c] : SANS_CIBLE, lu: { poses: lu.poses, clips: lu.clips, gabarits: lu.gabarits, expressions: lu.expressions, dessins: lu.dessins, sources: lu.sources }, erreurs: lu.erreurs.map((e) => e.message) });
       return true;
     }
     if (req.method === 'POST' && url.pathname === '/_pm/personnages/enregistrer') {
