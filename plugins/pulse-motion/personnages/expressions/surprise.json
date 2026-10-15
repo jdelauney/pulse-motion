@@ -1,0 +1,10 @@
+{
+  "nom": "surprise",
+  "description": "étonné, sourcils très hauts, bouche ronde",
+  "bouche": "surprise",
+  "angles": {
+    "tailleYeux": 1.2,
+    "taillePupilles": 0.7,
+    "sourcilsY": 8
+  }
+}

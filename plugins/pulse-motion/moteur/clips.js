@@ -11,7 +11,9 @@
  *   - une clé qui cite une pose fixe tous les angles animés du clip : ceux de la pose, les autres au repos ;
  *   - miroir m : membres Arrière = membres Avant à la phase + m (sauf piste Arrière explicite) ;
  *   - au-sol : poserAuSol à chaque image, la piste bassinY devient un décalage ;
- *   - additif : valeurs = différences (0 = rien), à combiner par ajouter().
+ *   - additif : valeurs = différences (0 = rien), à combiner par ajouter() ;
+ *   - bouche, expression : pistes discrètes (la valeur tient jusqu'à la clé suivante) ; l'expression règle les clés
+ *     d'expression que le clip n'anime pas ; resoudrePose() fait de même pour un fichier de pose.
  * Module pur : chargé tel quel dans la page (M.clips) et par Node (require).
  */
 (function (racine, fabrique) {
@@ -98,6 +100,47 @@
     return u - Math.floor(u);
   }
 
+  var DISCRETS = ['bouche', 'expression'];
+
+  /** Pistes discrètes (bouche, expression) : [[t, valeur], …] ; une clé qui cite une pose prend ses choix. */
+  function pistesDiscretes(clip, bib) {
+    var out = { bouche: [], expression: [] };
+    (clip.cles || []).forEach(function (c) {
+      var p = c.pose ? (bib && bib.poses && bib.poses[c.pose]) || {} : {};
+      DISCRETS.forEach(function (k) {
+        var v = c[k] !== undefined ? c[k] : p[k];
+        if (v !== undefined) out[k].push([c.t, v]);
+      });
+    });
+    return out;
+  }
+
+  function lireDiscret(pts, u, boucle) {
+    if (!pts.length) return undefined;
+    var v;
+    for (var i = 0; i < pts.length; i++) if (pts[i][0] <= u + 1e-9) v = pts[i][1];
+    if (v === undefined) v = boucle ? pts[pts.length - 1][1] : pts[0][1];
+    return v;
+  }
+
+  /** Applique l'expression nommée par pose.expression aux clés d'expression que la pose ne donne pas. */
+  function appliquerExpression(pose, bib, explicites) {
+    var e = pose.expression && bib && bib.expressions && bib.expressions[pose.expression];
+    if (!e) return pose;
+    Object.keys(e.angles || {}).forEach(function (k) { if (explicites.indexOf(k) < 0) pose[k] = e.angles[k]; });
+    if (pose.bouche === undefined && e.bouche !== undefined) pose.bouche = e.bouche;
+    return pose;
+  }
+
+  /** Pose d'un fichier de pose { angles, bouche?, expression? } -> pose à rendre. */
+  function resoudrePose(objet, bib) {
+    var out = Object.assign({}, objet.angles || {});
+    var explicites = Object.keys(out);
+    if (objet.bouche !== undefined) out.bouche = objet.bouche;
+    if (objet.expression !== undefined) out.expression = objet.expression;
+    return appliquerExpression(out, bib, explicites);
+  }
+
   function echantillonner(clip, temps, bib, gabarit) {
     var ps = pistes(clip, bib);
     var u = position(clip, temps);
@@ -110,6 +153,10 @@
         if (ps[a] && ps[a].length && !(ps[b] && ps[b].length)) out[b] = lirePiste(ps[a], v, true);
       });
     }
+    var explicites = Object.keys(out);
+    var discretes = pistesDiscretes(clip, bib);
+    DISCRETS.forEach(function (k) { var v = lireDiscret(discretes[k], u, clip.boucle); if (v !== undefined) out[k] = v; });
+    appliquerExpression(out, bib, explicites);
     if (clip.pieds === 'au-sol' && !clip.additif) {
       var decalage = out.bassinY || 0;
       out.bassinY = S.poserAuSol(Object.assign({}, out, { bassinY: 0 }), gabarit).bassinY + decalage;
@@ -128,5 +175,5 @@
     return out;
   }
 
-  return { MEMBRES: MEMBRES, pistes: pistes, duree: duree, position: position, echantillonner: echantillonner, ajouter: ajouter };
+  return { MEMBRES: MEMBRES, pistesDiscretes: pistesDiscretes, appliquerExpression: appliquerExpression, resoudrePose: resoudrePose, pistes: pistes, duree: duree, position: position, echantillonner: echantillonner, ajouter: ajouter };
 });

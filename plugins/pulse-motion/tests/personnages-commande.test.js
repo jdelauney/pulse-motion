@@ -25,6 +25,7 @@ test('personnages afficher : le fichier, au format stable ; nom inconnu', async 
   const r = await executer(['afficher', 'marche']);
   assert.equal(r.code, 0);
   assert.equal(JSON.parse(r.sortie).foulee, 248);
+  assert.equal(JSON.parse((await executer(['afficher', 'joie'])).sortie).bouche, 'sourire');
   const g = await executer(['afficher', 'standard', '--type', 'gabarit']);
   assert.equal(JSON.parse(g.sortie).cuisse, 68);
   const x = await executer(['afficher', 'marcher']);
@@ -35,7 +36,7 @@ test('personnages afficher : le fichier, au format stable ; nom inconnu', async 
 test('personnages verifier : code 1 et messages si un fichier est invalide', async () => {
   const ok = await executer(['verifier']);
   assert.equal(ok.code, 0);
-  assert.match(ok.sortie, /6 poses, 10 clips, 2 gabarits, aucune erreur/);
+  assert.match(ok.sortie, /6 poses, 10 clips, 2 gabarits, 6 expressions, 0 dessins, aucune erreur/);
   const video = dossierTemporaire();
   fs.mkdirSync(path.join(video, 'personnages', 'clips'), { recursive: true });
   fs.writeFileSync(path.join(video, 'personnages', 'clips', 'mal.json'), JSON.stringify({ nom: 'mal', boucle: true, cles: [{ t: 2, angles: {} }] }));

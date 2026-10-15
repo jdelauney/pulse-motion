@@ -3,7 +3,7 @@
 /* Pulse Motion – personnages : bibliothèque des poses, clips et gabarits.
  *
  *   node scripts/personnages.js liste [--dossier <d>]                                   JSON des poses, clips, gabarits
- *   node scripts/personnages.js afficher <nom> [--type pose|clip|gabarit] [--dossier <d>]   le fichier JSON
+ *   node scripts/personnages.js afficher <nom> [--type pose|clip|gabarit|dessin|expression] [--dossier <d>]   le fichier JSON
  *   node scripts/personnages.js verifier [--dossier <d>]                                 erreurs de la bibliothèque et de la vidéo
  *   node scripts/personnages.js planche <nom> [--type pose|clip] [--vues 0,45,90] [--images 8] [--gabarit standard]
  *                                  [--dossier <d>] [--sortie <fichier.png>] [--ouvrir]   PNG des vignettes
@@ -21,7 +21,7 @@ const P = require('./lib/personnages.js');
 const USAGE_PLANCHE = 'Usage : pulse-motion personnages planche <nom> [--type pose|clip] [--vues 0,45,90] [--images 1 à 16] [--gabarit standard] [--dossier <d>] [--sortie <fichier.png>] [--ouvrir]';
 const USAGE = [
   'Usage : pulse-motion personnages liste [--dossier <d>]',
-  '        pulse-motion personnages afficher <nom> [--type pose|clip|gabarit] [--dossier <d>]',
+  '        pulse-motion personnages afficher <nom> [--type pose|clip|gabarit|dessin|expression] [--dossier <d>]',
   '        pulse-motion personnages verifier [--dossier <d>]',
   `        ${USAGE_PLANCHE.slice('Usage : '.length)}`,
   '        pulse-motion personnages atelier [<nom>] [--bibliotheque] [--dossier <d>] [--port 4321]',
@@ -76,6 +76,8 @@ async function executer(args, { bibliotheque } = {}) {
       poses: resume(l, 'poses'),
       clips: resume(l, 'clips', (c) => ({ boucle: c.boucle, duree: c.boucle ? c.duree : c.cles[c.cles.length - 1].t })),
       gabarits: resume(l, 'gabarits'),
+      dessins: resume(l, 'dessins'),
+      expressions: resume(l, 'expressions'),
       erreurs: l.erreurs.map((e) => e.message),
     }, null, 2), erreur: '' };
   }
@@ -83,17 +85,17 @@ async function executer(args, { bibliotheque } = {}) {
     const l = lu();
     const nom = o.libres[0];
     const type = o.valeur('--type');
-    if (type && !P.TYPES[type]) return { code: 2, sortie: '', erreur: `Type « ${type} » inconnu (pose, clip ou gabarit).` };
-    for (const t of type ? [type] : ['clip', 'pose', 'gabarit']) {
+    if (type && !P.TYPES[type]) return { code: 2, sortie: '', erreur: `Type « ${type} » inconnu (pose, clip, gabarit, dessin ou expression).` };
+    for (const t of type ? [type] : ['clip', 'pose', 'gabarit', 'dessin', 'expression']) {
       const objet = Object.hasOwn(l[P.TYPES[t]], nom) ? l[P.TYPES[t]][nom] : null;
       if (objet) return { code: 0, sortie: P.serialiser(t, objet).trimEnd(), erreur: '' };
     }
-    const tous = ['clips', 'poses', 'gabarits'].flatMap((p) => Object.keys(l[p]));
+    const tous = ['clips', 'poses', 'gabarits', 'dessins', 'expressions'].flatMap((p) => Object.keys(l[p]));
     return { code: 1, sortie: '', erreur: `Personnage : « ${nom} » introuvable. Disponibles : ${tous.sort().join(', ')}.` };
   }
   if (sous === 'verifier') {
     const l = lu();
-    const bilan = `${Object.keys(l.poses).length} poses, ${Object.keys(l.clips).length} clips, ${Object.keys(l.gabarits).length} gabarits`;
+    const bilan = `${Object.keys(l.poses).length} poses, ${Object.keys(l.clips).length} clips, ${Object.keys(l.gabarits).length} gabarits, ${Object.keys(l.expressions).length} expressions, ${Object.keys(l.dessins).length} dessins`;
     if (!l.erreurs.length) return { code: 0, sortie: `Personnages : ${bilan}, aucune erreur.`, erreur: '' };
     return { code: 1, sortie: `Personnages : ${bilan}.`, erreur: l.erreurs.map((e) => e.message).join('\n') };
   }
