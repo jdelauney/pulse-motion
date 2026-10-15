@@ -106,6 +106,15 @@ test('consignes : les effets de particules sont guidés', () => {
   assert.match(animateur, /effet-sur-texte/);
 });
 
+test('consignes : les personnages sont guidés', () => {
+  const retoucher = lire('skills', 'retoucher', 'SKILL.md');
+  assert.match(retoucher, /\| Personnages \|/);
+  assert.match(retoucher, /pulse-motion personnages atelier <nom>/);
+  assert.match(retoucher, /pulse-motion personnages planche <nom>/);
+  assert.match(retoucher, /pulse-motion reference personnages/);
+  assert.match(lire('references', 'personnages.md'), /^# .+\n\n## L'essentiel\n/);
+});
+
 test('creer : style choisi alors que des scènes existent déjà → changement de style', () => {
   assert.match(lire('skills', 'creer', 'SKILL.md'), /scènes existent déjà[^\n]*pulse-motion changer-style \. <style>/);
 });
