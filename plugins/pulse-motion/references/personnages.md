@@ -8,6 +8,7 @@
 - Pour régler à l'œil, ou si la personne veut le faire elle-même : `pulse-motion personnages atelier <nom>` en arrière-plan (page de l'aperçu, « Enregistrer » écrit dans la vidéo ; « annule » défait).
 - Côtés **Avant** et **Arrière** (côté tourné vers la caméra de profil, et l'autre), jamais gauche / droite.
 - Au jalon actuel, les personnages ne se placent pas encore dans les scènes : on prépare poses et mouvements.
+- Pour un personnage dessiné (pièces SVG, visage complet) : `pulse-motion reference dessin-personnages`.
 
 ## Angles (degrés)
 
@@ -23,6 +24,7 @@
 | `tete`, `teteTourne`, `tetePenche` | hochement, tourner (positif = vers la caméra de profil), pencher |
 | `bassinY`, `bassinRot` | hauteur du bassin (négatif = plus haut), bascule |
 | `yeuxY`, `tailleYeux`, `paupieres`, `regardX`, `regardY`, `taillePupilles` | expression (paupières : 1 = ouvertes, 0,1 = fermées) |
+| `sourcilsY`, `sourcilsAngle` | sourcils : levés ; angle positif = colère, négatif = tristesse |
 | `touffeRot`, `touffeEtire`, `touffeEventail`, `touffeOnde` | la touffe de cheveux |
 
 Les angles sont bornés (genou, coude, épaule…) : une valeur trop forte est ramenée à la limite.
@@ -56,6 +58,8 @@ Une pose ne donne que ce qui change ; le reste est la pose de repos. Pas de `x`,
 ## Bibliothèque
 
 Poses : `debout`, `montrer`, `bras-leves`, `mains-hanches`, `assis`, `penche`. Mouvements : `repos`, `marche`, `course`, `saut`, `accroupi`, `se-relever`, `coucou`, `peur`, `respiration` (additif), `clignement` (additif). Gabarits : `standard`, `avec-queue`.
+
+Expressions : `neutre`, `joie`, `tristesse`, `peur`, `colere`, `surprise` (`"expression": "joie"` dans une pose ou une clé ; `"bouche": "O"` choisit une bouche). Dessins : `touffu`.
 
 ## Retouches en une phrase
 

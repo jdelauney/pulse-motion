@@ -74,3 +74,28 @@ test('planche : clip additif sur la pose de repos, dans le dossier d\'une vidéo
   const html = PL.pagePlanche({ nom: 'respiration', type: 'clip', objet: lu.clips.respiration, lu, gabarit: lu.gabarits.standard, vues: [0], images: 2 }).html;
   assert.match(html, /K\.ajouter\(\{\}, D\.objet/);
 });
+
+test('planche : dessin inconnu, visage sans dessin, colonnes du visage', async () => {
+  const d = await executer(['planche', 'marche', '--dessin', 'geant']);
+  assert.equal(d.code, 1);
+  assert.match(d.erreur, /dessin « geant » introuvable.*touffu/);
+  assert.equal((await executer(['planche', '--visage'])).code, 2);
+  assert.equal((await executer(['planche', 'marche', '--visage', '--dessin', 'touffu'])).code, 2, 'visage : pas de clip');
+  const cols = PL.colonnesVisage(lu.dessins.touffu, lu);
+  assert.deepEqual(cols.slice(0, 6).map((c) => c.etiquette), ['neutre', 'joie', 'tristesse', 'peur', 'colere', 'surprise']);
+  assert.equal(cols.length, 6 + 15);
+  const { largeur, hauteur } = PL.pageVisage({ nom: 'touffu', dessin: lu.dessins.touffu, lu, gabarit: lu.gabarits.standard, vues: [0, 90] });
+  assert.equal(largeur, PL.MARGE + 8 * PL.CELLULE);
+  assert.equal(hauteur, 3 * 2 * (PL.CELLULE + PL.ENTETE), '21 colonnes → 3 bandes de 8, deux vues chacune');
+});
+
+test('planche : marche de touffu, visage de touffu', { skip: !navigateur && 'Chrome ou Edge introuvable' }, async () => {
+  const dir = dossierTemporaire();
+  const a = await executer(['planche', 'marche', '--dessin', 'touffu', '--images', '4', '--vues', '0,90', '--sortie', path.join(dir, 'm.png')]);
+  assert.equal(a.code, 0, a.erreur);
+  const fin = await PL.rendrePlanche({ nom: 'marche', type: 'clip', objet: lu.clips.marche, lu, gabarit: lu.gabarits.standard, dessin: lu.dessins.touffu, vues: [0, 90], images: 4, sortie: path.join(dir, 'm2.png'), navigateur });
+  assert.equal(fin.personnages, 8);
+  const v = await PL.rendrePlanche({ nom: 'touffu', visage: true, dessin: lu.dessins.touffu, lu, gabarit: lu.gabarits.standard, vues: [0, 90], sortie: path.join(dir, 'v.png'), navigateur });
+  assert.equal(v.personnages, 2 * 21);
+  assert.deepEqual(dimensions(fs.readFileSync(path.join(dir, 'v.png'))).largeur, PL.MARGE + 8 * PL.CELLULE);
+});

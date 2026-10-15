@@ -1,0 +1,185 @@
+{
+  "nom": "touffu",
+  "description": "le LemStick en pièces : corps en bâtonnets blancs, grands yeux, touffe verte",
+  "gabarit": "standard",
+  "couleurs": {
+    "corps": "#F5F5F5",
+    "dos": "#C9C2D3",
+    "oeil": "#FFFFFF",
+    "pupille": "#0B0A0E",
+    "touffe": "#63D13E",
+    "touffe-trait": "#2A7A22",
+    "trait": "#17151C"
+  },
+  "pieces": {
+    "torse": {
+      "profil": "<rect x='-8' y='-90' width='16' height='98' rx='8' fill='var(--corps)'/>"
+    },
+    "tete": {
+      "profil": "<ellipse rx='34' ry='50' fill='var(--corps)'/>"
+    },
+    "cuisseAvant": {
+      "profil": "<rect x='-7' y='-7' width='14' height='82' rx='7' fill='var(--teinte-loin, var(--corps))'/>"
+    },
+    "tibiaAvant": {
+      "profil": "<rect x='-7' y='-7' width='14' height='82' rx='7' fill='var(--teinte-loin, var(--corps))'/>"
+    },
+    "piedAvant": {
+      "profil": "<rect x='-7' y='-7' width='29' height='14' rx='7' fill='var(--teinte-loin, var(--corps))'/>",
+      "face": "<rect x='-7' y='-7' width='14' height='14' rx='7' fill='var(--teinte-loin, var(--corps))'/>"
+    },
+    "brasAvant": {
+      "profil": "<rect x='-7' y='-7' width='14' height='64' rx='7' fill='var(--teinte-loin, var(--corps))'/>"
+    },
+    "avantBrasAvant": {
+      "profil": "<rect x='-7' y='-7' width='14' height='60' rx='7' fill='var(--teinte-loin, var(--corps))'/>"
+    }
+  },
+  "accessoires": [
+    {
+      "nom": "touffe",
+      "os": "tete",
+      "devant": true,
+      "dessins": {
+        "profil": "<g transform='translate(0 -44)'><g transform='rotate(-60)'><path d='M -8 6 C -7 -8.399999999999999 -4 -17.28 2 -24 C 4 -16.799999999999997 7 -8.399999999999999 8 6 Z' fill='var(--touffe)' stroke='var(--touffe-trait)' stroke-width='2.5' stroke-linejoin='round'/></g><g transform='rotate(58)'><path d='M -8 6 C -7 -8.049999999999999 -4 -16.56 2 -23 C 4 -16.099999999999998 7 -8.049999999999999 8 6 Z' fill='var(--touffe)' stroke='var(--touffe-trait)' stroke-width='2.5' stroke-linejoin='round'/></g><g transform='rotate(-36)'><path d='M -8 6 C -7 -11.2 -4 -23.04 2 -32 C 4 -22.4 7 -11.2 8 6 Z' fill='var(--touffe)' stroke='var(--touffe-trait)' stroke-width='2.5' stroke-linejoin='round'/></g><g transform='rotate(34)'><path d='M -8 6 C -7 -10.5 -4 -21.599999999999998 2 -30 C 4 -21 7 -10.5 8 6 Z' fill='var(--touffe)' stroke='var(--touffe-trait)' stroke-width='2.5' stroke-linejoin='round'/></g><g transform='rotate(-13)'><path d='M -8 6 C -7 -12.6 -4 -25.919999999999998 2 -36 C 4 -25.2 7 -12.6 8 6 Z' fill='var(--touffe)' stroke='var(--touffe-trait)' stroke-width='2.5' stroke-linejoin='round'/></g><g transform='rotate(11)'><path d='M -8 6 C -7 -11.899999999999999 -4 -24.48 2 -34 C 4 -23.799999999999997 7 -11.899999999999999 8 6 Z' fill='var(--touffe)' stroke='var(--touffe-trait)' stroke-width='2.5' stroke-linejoin='round'/></g><ellipse cx='0' cy='3' rx='21' ry='9' fill='var(--touffe)' stroke='var(--touffe-trait)' stroke-width='2.5'/></g>"
+      }
+    }
+  ],
+  "visage": {
+    "oeil": {
+      "blanc": "<ellipse rx='13' ry='15' fill='var(--oeil)' stroke='var(--trait)' stroke-width='3'/>",
+      "pupille": "<circle r='6' fill='var(--pupille)'/><circle cx='-2' cy='-2.5' r='1.8' fill='#FFFFFF'/>",
+      "paupiere": "<rect x='-16' y='-18' width='32' height='36' fill='var(--corps)'/>",
+      "course": 5,
+      "hauteur": 36
+    },
+    "sourcil": "<path d='M -9 2 Q 0 -3 9 2' fill='none' stroke='var(--trait)' stroke-width='3.5' stroke-linecap='round'/>",
+    "bouches": {
+      "neutre": {
+        "profil": "<path d='M -8 0 L 8 0' stroke='var(--trait)' stroke-width='3' stroke-linecap='round' fill='none'/>"
+      },
+      "sourire": {
+        "profil": "<path d='M -10 -2 Q 0 8 10 -2' stroke='var(--trait)' stroke-width='3' stroke-linecap='round' fill='none'/>"
+      },
+      "rire": {
+        "profil": "<path d='M -11 -3 Q 0 14 11 -3 Z' fill='var(--trait)'/>"
+      },
+      "triste": {
+        "profil": "<path d='M -9 4 Q 0 -4 9 4' stroke='var(--trait)' stroke-width='3' stroke-linecap='round' fill='none'/>"
+      },
+      "surprise": {
+        "profil": "<ellipse rx='6' ry='8' fill='var(--trait)'/>"
+      },
+      "colere": {
+        "profil": "<path d='M -9 2 L 9 -1' stroke='var(--trait)' stroke-width='3' stroke-linecap='round' fill='none'/>"
+      },
+      "repos": {
+        "profil": "<path d='M -7 0 L 7 0' stroke='var(--trait)' stroke-width='3' stroke-linecap='round' fill='none'/>"
+      },
+      "A": {
+        "profil": "<ellipse rx='8' ry='9' fill='var(--trait)'/>"
+      },
+      "E": {
+        "profil": "<ellipse rx='10' ry='4' fill='var(--trait)'/>"
+      },
+      "I": {
+        "profil": "<ellipse rx='9' ry='2.5' fill='var(--trait)'/>"
+      },
+      "O": {
+        "profil": "<ellipse rx='6' ry='7' fill='var(--trait)'/>"
+      },
+      "U": {
+        "profil": "<ellipse rx='4' ry='5' fill='var(--trait)'/>"
+      },
+      "MBP": {
+        "profil": "<path d='M -8 0 L 8 0' stroke='var(--trait)' stroke-width='4.5' stroke-linecap='round'/>"
+      },
+      "FV": {
+        "profil": "<path d='M -8 0 Q 0 3 8 0' stroke='var(--trait)' stroke-width='3' stroke-linecap='round' fill='none'/>"
+      },
+      "L": {
+        "profil": "<ellipse rx='7' ry='6' fill='var(--trait)'/><ellipse cx='0' cy='-2' rx='3' ry='2' fill='#E7A0D5'/>"
+      }
+    },
+    "vues": {
+      "profil": {
+        "yeux": [
+          [
+            16,
+            -6
+          ],
+          [
+            30,
+            -6
+          ]
+        ],
+        "sourcils": [
+          [
+            16,
+            -24
+          ],
+          [
+            30,
+            -24
+          ]
+        ],
+        "bouche": [
+          24,
+          22
+        ]
+      },
+      "troisQuarts": {
+        "yeux": [
+          [
+            2,
+            -6
+          ],
+          [
+            24,
+            -6
+          ]
+        ],
+        "sourcils": [
+          [
+            2,
+            -24
+          ],
+          [
+            24,
+            -24
+          ]
+        ],
+        "bouche": [
+          14,
+          22
+        ]
+      },
+      "face": {
+        "yeux": [
+          [
+            -13,
+            -6
+          ],
+          [
+            13,
+            -6
+          ]
+        ],
+        "sourcils": [
+          [
+            -13,
+            -24
+          ],
+          [
+            13,
+            -24
+          ]
+        ],
+        "bouche": [
+          0,
+          22
+        ]
+      }
+    }
+  }
+}

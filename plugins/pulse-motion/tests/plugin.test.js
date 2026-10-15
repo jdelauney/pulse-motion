@@ -113,6 +113,9 @@ test('consignes : les personnages sont guidés', () => {
   assert.match(retoucher, /pulse-motion personnages planche <nom>/);
   assert.match(retoucher, /pulse-motion reference personnages/);
   assert.match(lire('references', 'personnages.md'), /^# .+\n\n## L'essentiel\n/);
+  assert.match(retoucher, /pulse-motion reference dessin-personnages/);
+  assert.match(retoucher, /--dessin <nom> --visage/);
+  assert.match(lire('references', 'dessin-personnages.md'), /^# .+\n\n## L'essentiel\n/);
 });
 
 test('creer : style choisi alors que des scènes existent déjà → changement de style', () => {

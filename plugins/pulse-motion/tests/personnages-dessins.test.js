@@ -58,6 +58,8 @@ test('dessin : SVG filtré', () => {
   assert.ok(P.valider('dessin', dessin({ visage: Object.assign({}, VISAGE, { sourcil: '<image href="x"/>' }) }), ctx()).some((m) => /sourcil : élément « image » interdit/.test(m)));
   const piege = Object.assign({}, VISAGE, { oeil: Object.assign({}, VISAGE.oeil, { pupille: ['<img src=x onerror=alert(1)>'] }) });
   assert.ok(P.valider('dessin', dessin({ visage: piege }), ctx()).some((m) => /« oeil\.pupille » : SVG attendu/.test(m)));
+  const groupe = Object.assign({}, VISAGE, { oeil: Object.assign({}, VISAGE.oeil, { blanc: "<g><ellipse rx='9' ry='9'/></g>" }) });
+  assert.ok(P.valider('dessin', dessin({ visage: groupe }), ctx()).some((m) => /« oeil\.blanc » : formes simples sans « g »/.test(m)));
 });
 
 test('dessin : visage', () => {
