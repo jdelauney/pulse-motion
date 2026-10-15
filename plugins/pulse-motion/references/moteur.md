@@ -107,6 +107,26 @@ Avec `"tempo": { "bpm": 120 }` dans le déroulé (`"decalage"` : instant du prem
 - `data-profondeur` sur un enfant de la caméra : 1 suit la caméra (défaut), 0 reste fixe, 0,3 = plan lointain. Utilise la propriété CSS `translate` : ne pas l'animer soi-même sur ces plans (`transform` reste libre).
 - Le décor peut dépasser l'image (`left: 150%`) : la caméra va le chercher.
 
+### Personnages
+
+Un personnage (bâtonnets, dessin ou illustration découpée) se pose dans la scène par un conteneur et des actions minutées comme tout élément (`data-start`, `data-dur`, références `#id:fin`, `mot:…`, temps `t`) :
+
+```html
+<div id="chef" data-personnage="cuisinier" data-x="-10" data-sol="90" data-taille="45">
+  <i id="entree" data-action="marcher" data-vers="30" data-start="0.2" data-dur="1.5"></i>
+  <i id="montre" data-action="pose" data-pose="montrer" data-start="#chiffre" data-dur="1.5"></i>
+  <i data-action="expression" data-expression="joie" data-start="#montre"></i>
+  <i id="salut" data-action="jouer" data-clip="coucou" data-start="#montre:fin"></i>
+  <i data-action="courir" data-vers="115" data-start="#salut:fin+0.2" data-dur="0.8"></i>
+</div>
+```
+
+- Conteneur : `data-personnage` = un dessin (`pulse-motion personnages liste --dossier .`) ou `batonnets` ; `data-x` (% de la largeur, hors cadre permis : -10, 110), `data-sol` (ligne des pieds, % de la hauteur, 90), `data-taille` (% de la hauteur, 40), `data-vue` (0 = profil vers la droite, 90 = face), `data-calme="non"` (sans respiration ni clignement). Il couvre toute la scène ; le contrôle ne le juge pas.
+- Actions (`<i>` vides, enfants du conteneur) : `marcher` / `courir` (`data-vers`, `data-dur` obligatoire ; pas de glissement, se tourne dans le sens du trajet) ; `pose` (`data-pose`, tenue pendant `data-dur`) ; `jouer` (`data-clip` : saut, coucou… ; sa durée propre si `data-dur` manque) ; `tourner` (`data-vue`, `data-dur`) ; `expression` (`data-expression` : joie, peur… jusqu'à la suivante) ; `bouche` (`data-bouche`, `aucune` pour revenir).
+- Entre deux actions : le personnage respire au repos ; chaque changement est fondu (0,25 s). Une pose ou un geste pendant une marche le fait glisser : les placer après la fin du trajet (`#entree:fin`). Une action sans `data-start` part du début de la scène.
+- Placer les textes hors du chemin du personnage, ou lui faire traverser la scène quand le texte n'est pas encore là. Vérifier à la planche (`pulse-motion planche . <id>`).
+- Les personnages vivent au temps réel de la scène (ni `data-gel`, ni `data-vitesse`).
+
 ### Figer et accélérer le temps
 
 - `data-gel="1.2+1.5"` sur un conteneur : à 1,2 s, tout son contenu s'arrête 1,5 s (image figée), puis reprend où il en était. Les éléments après le gel arrivent donc 1,5 s plus tard.
