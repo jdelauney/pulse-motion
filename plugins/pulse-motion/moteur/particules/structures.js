@@ -8,8 +8,9 @@
  * P.complianceStructure(k)   compliance XPBD d'une raideur k (0 à 1)
  * P.codeStructures() -> WGSL du module « pm-structures » : module des collisions de P3, ef et eu lisant le bloc de la
  *   structure du groupe de travail (baseE), et noyau « structures »
- * new P.Structures(device, sim)   structures de sim.effet (émetteurs e.structure) ; un groupe de travail de 256 fils par
- *   structure, une seule passe par pas de 1/120 s (sim.tamponPas, décalage n × 256), toutes les structures dans un dispatch :
+ * P.preparerStructures(device[, fils]) -> Promise<fils>   pipeline préparé (repli à 256 fils si le pilote refuse davantage)
+ * new P.Structures(device, sim)   structures de sim.effet (émetteurs e.structure) ; un groupe de travail de 256 à 1024 fils
+ *   par structure (.fils), une seule passe par pas de 1/120 s (sim.tamponPas, décalage n × 256), toutes les structures dans un dispatch :
  *   .assurerElements(k, zones)   repères des éléments d'attache aux points de grille du pas k et au point 0, une fois chacun
  *     (zones.attaches(g) : 8 nombres par élément ; sans elle, élément 0 = zone d'émission, autres inactifs)
  *   .executer(passe, n)          pas n du lot (après les groupes d'interactions)
@@ -21,10 +22,13 @@
  * sommet debut + k × tous (position, vitesse, vivante), taille, profondeur et angle tirés comme une naissance de P1, âge = τ1 ;
  * leurs particules sont dans l'état (effacées par vider, copiées dans les instantanés).
  * Pas d'une structure : au pas 0, sommets posés au repos (rectangle de l'élément 0 au point de grille 0 : ancre ou balise,
- * ou rectangle de sa photographie ; corde tenue aux deux bouts : entre ses deux points d'attache) ; puis 4 sous-pas de
+ * ou rectangle de sa photographie ; sommets tenus d'un tissu sur leur attache ; corde pendue dans le sens de la gravité :
+ * en chaînette entre ses deux points d'attache, à la verticale sous son seul bout tenu) ; un sommet tenu par un « #id »
+ * garde sa position de repos dans le repère de l'élément au point de grille 0 ; puis 4 sous-pas de
  * 1/480 s : sommets tenus posés sur leur attache (vitesse de l'attache), autres prédits par les forces de la recette
  * (integrer de P1, exact sur le sous-pas) ; 4 itérations XPBD (λ remis à zéro à chaque sous-pas) qui résolvent chacune les
- * 12 couleurs de liens dans l'ordre, une passe parallèle par couleur (aucun sommet partagé dans une couleur) ; contacts
+ * 12 couleurs de liens dans l'ordre, une passe parallèle par couleur (aucun sommet partagé dans une couleur ; lien
+ * comprimé : souplesse de flexion, au plus 50 fois celle de la raideur pour un lien horizontal ou vertical) ; contacts
  * avec les obstacles de P3 (émetteur à collisions actives : repères aux deux bouts du sous-pas, chaque sommet libre balayé,
  * puis le centre de chaque cellule d'un tissu en 4 couleurs, ses sommets libres déplacés avec lui ; arrêt, replacement à
  * MARGE, glissement freiné par le frottement) ;
@@ -44,10 +48,11 @@
   const COMPLIANCE = 1e-3;             // compliance d'un lien de raideur 0,5 (cqh par unité de force)
   const AMORTISSEMENT = 10;            // taux d'amortissement (par seconde) d'un amortissement 1
   const AUCUN = 0xffffffff;
+  const PLANCHER = 50;                 // compliance d'un lien comprimé : au plus PLANCHER fois celle de la raideur
   const OCTETS_UNIFORME = 16 + STRUCTURES_MAX * 16;
   const S = {
     TYPE: 256, C: 257, R: 258, N: 259, NATT: 260, ATT: 261, SEL: 262, LIENS: 263, COUL: 264, ALPHA: 277, ALPHA_B: 278,
-    AMORTI: 279, DECH: 280, EPAIS: 281, MASSE: 282, CL: 283, DL: 285, FIN: 287, Z: 288,
+    AMORTI: 279, DECH: 280, EPAIS: 281, MASSE: 282, CL: 283, DL: 285, FIN: 287, Z: 288, G: 289, ALPHA_C: 291,
   };
   P.MOTS_STRUCTURE = S;
   P.STRUCTURES_MAX = STRUCTURES_MAX;
@@ -55,6 +60,24 @@
   /** Compliance XPBD d'une raideur k de 0 à 1 : nulle à 1 (lien rigide), (1 − k) / k × COMPLIANCE sinon. */
   function compliance(k) { return (1 - k) / Math.max(k, 1e-3) * COMPLIANCE; }
   P.complianceStructure = compliance;
+
+  /** Compliance XPBD d'une flexion k de 0 à 1 : celle d'une raideur k jusqu'à 0,5 (COMPLIANCE), puis décroissance
+   *  logarithmique jusqu'à COMPLIANCE / 1 000 à 1 (α̃ ≈ 0,2 au sous-pas de 1/480 s : presque rigide), au lieu de tomber à 0
+   *  seulement au-delà de 0,9 ; −1 pour une flexion nulle (aucune contrainte de flexion). */
+  function complianceFlexion(k) {
+    if (!(k > 0)) return -1;
+    return k <= 0.5 ? compliance(k) : COMPLIANCE * Math.pow(1e-3, (Math.min(k, 1) - 0.5) / 0.5);
+  }
+  P.complianceFlexion = complianceFlexion;
+
+  /** Compliance d'un lien horizontal ou vertical comprimé : celle de la flexion, au plus 50 fois celle de la raideur
+   *  (plancher : un tissu ne se froisse pas sous une force non uniforme ; il se plie encore par ses diagonales). */
+  function complianceCompression(raideur, flexion) {
+    const plancher = PLANCHER * compliance(raideur);
+    const b = complianceFlexion(flexion);
+    return b < 0 ? plancher : Math.min(b, plancher);
+  }
+  P.complianceCompression = complianceCompression;
 
   P.emballerStructure = function (em, effet, collisions, nZones, liens, photo) {
     const st = em.structure;
@@ -70,7 +93,12 @@
     u[S.NATT] = nAtt; u[S.ATT] = ATTACHES; u[S.SEL] = sel; u[S.LIENS] = offLiens;
     u.set(liens.debuts, S.COUL);
     f[S.ALPHA] = compliance(st.raideur);
-    f[S.ALPHA_B] = st.flexion > 0 ? compliance(st.flexion) : -1;
+    f[S.ALPHA_B] = complianceFlexion(st.flexion);
+    f[S.ALPHA_C] = complianceCompression(st.raideur, st.flexion);
+    // Gravité de la recette (somme des forces « gravite ») : sens où pend une corde posée au pas 0.
+    const g = em.forces.reduce((a, x) => (x.type === 'gravite' ? [a[0] + x.a[0], a[1] + x.a[1]] : a), [0, 0]);
+    f[S.G] = g[0];
+    f[S.G + 1] = g[1];
     f[S.AMORTI] = AMORTISSEMENT * st.amortissement;
     f[S.DECH] = st.dechirure === null ? -1 : st.dechirure;
     f[S.EPAIS] = st.epaisseur;
@@ -88,6 +116,8 @@
       u[o + 1] = point ? 0 : a.cible.element;
       f[o + 2] = a.lacher === null ? -1 : a.lacher;
       if (point) { f[o + 3] = a.cible.point[0]; f[o + 4] = a.cible.point[1]; }
+      // Glissement : décalage final (fraction de l'élément ou de la zone) et durée ; 0 : aucun.
+      if (a.glisse) { f[o + 5] = a.glisse.vers[0]; f[o + 6] = a.glisse.vers[1]; f[o + 7] = a.glisse.duree; }
     });
     u.fill(AUCUN, sel, sel + st.nSommets);
     st.attaches.forEach((a, k) => a.sommets.forEach((v) => { if (u[sel + v] === AUCUN) u[sel + v] = k; }));
@@ -120,6 +150,8 @@ const S_CL = ${S.CL}u;
 const S_DL = ${S.DL}u;
 const S_FIN = ${S.FIN}u;
 const S_Z = ${S.Z}u;
+const S_G = ${S.G}u;
+const S_ALPHA_C = ${S.ALPHA_C}u;
 
 struct UStructures { n: u32, nElements: u32, nGrille: u32, r0: u32, s: array<vec4u, ${STRUCTURES_MAX}> };
 struct Repos { centre: vec2f, angle: f32, demi: vec2f, Lu: f32, Lv: f32 };
@@ -140,6 +172,7 @@ var<private> baseE: u32;
 var<private> gLiens: u32;
 var<private> gAlpha: f32;
 var<private> gAlphaB: f32;
+var<private> gAlphaC: f32;
 var<private> gW: f32;
 const TENU_S = 256u;
 
@@ -205,26 +238,39 @@ fn zoneS(t: f32) -> vec4f { return mix(P.zoneA, P.zoneB, clamp((t - P.tau0) / ma
 // Attache d'un sommet (première attache qui le cite), ou AUCUN.
 fn attacheDe(v: u32) -> u32 { return eu(eu(S_SEL) + v); }
 
-// Point tenu par l'attache a pour le sommet de coordonnée u à l'instant t : point de la zone, ou point du rectangle de
-// l'élément visé (élément 0 : rectangle de repos) à cet instant ; libre après le lâcher ou si l'élément est inactif.
-fn cibleAttache(a: u32, u: vec2f, t: f32) -> CibleS {
+// Point tenu par l'attache a pour le sommet de coordonnée u à l'instant t : point de la zone ; élément 0 (ancre ou
+// balise) : point du rectangle de repos à cet instant ; élément « #id » (k ≥ 1) : position de repos du sommet exprimée
+// dans le repère de l'élément au point de grille 0 (il suit déplacement, rotation, échelle sans être étalé sur le bord de
+// l'élément ; élément inactif au point 0 : point de son rectangle) ; libre après le lâcher ou si l'élément est inactif.
+fn cibleAttache(a: u32, u: vec2f, t: f32, rp: Repos) -> CibleS {
   let b = eu(S_ATT) + a * 8u;
   let lacher = ef(b + 2u);
   if (lacher >= 0.0 && t >= lacher) { return CibleS(false, vec2f(0.0)); }
+  // Glissement : décalage vers × smoothstep(t / duree) (fraction de l'élément visé ou de la zone).
+  var gl = vec2f(0.0);
+  let dg = ef(b + 7u);
+  if (dg > 0.0) { gl = vec2f(ef(b + 5u), ef(b + 6u)) * smoothstep(0.0, dg, t); }
   if (eu(b) == 0u) {
     let z = zoneS(t);
-    return CibleS(true, z.xy + z.zw * vec2f(ef(b + 3u), ef(b + 4u)));
+    return CibleS(true, z.xy + z.zw * (vec2f(ef(b + 3u), ef(b + 4u)) + gl));
   }
   let k = eu(b + 1u);
   let R = repereEl(k, t);
   if (R.actif < 0.5) { return CibleS(false, vec2f(0.0)); }
+  if (k > 0u) {
+    let R0 = repereElGrille(k, 0u);
+    if (R0.actif >= 0.5) {
+      let l = tournerF(-R0.angle, pointRepos(rp, u) - R0.centre) / max(R0.echelle, vec2f(1e-6));
+      return CibleS(true, versMondeF(R, l) + tournerF(R.angle, 2.0 * gl * R.demi));
+    }
+  }
   var cl = vec2f(0.0);
   var demi = R.demi;
   if (k == 0u && ef(S_DL) >= 0.0) {
     cl = vec2f(ef(S_CL), ef(S_CL + 1u)) * R.echelle;
     demi = vec2f(ef(S_DL), ef(S_DL + 1u)) * R.echelle;
   }
-  return CibleS(true, R.centre + tournerF(R.angle, cl + (2.0 * u - 1.0) * demi));
+  return CibleS(true, R.centre + tournerF(R.angle, cl + (2.0 * u - 1.0 + 2.0 * gl) * demi));
 }
 
 // Extrémités du lien (v, genre) : H, V, D1, D2, BH, BV (maillage.js).
@@ -270,8 +316,41 @@ fn invMasse(p: Particule) -> f32 {
   return 1.0 / p.masse;
 }
 
-// Pas 0 : sommet posé au repos ; corde tenue aux deux bouts : entre ses deux points d'attache (elle pend : longueur de
-// repos inchangée) ; tenue à un bout : ligne médiane décalée sur ce point.
+// Corde de longueur L tenue en p0 et p1, pendue dans le sens gd (gravité, unitaire) : point à l'abscisse curviligne s
+// depuis p0. Écart au moins L : ligne droite ; bouts presque l'un au-dessus de l'autre : deux brins verticaux ; sinon
+// chaînette y = a ch((x − x0) / a) (paramètre t = d / 2a tel que sh(t) / t = √(L² − h²) / d, par dichotomie ;
+// x0 = d / 2 − a th⁻¹(h / L), h : hauteur de p1 au-dessus de p0, d : écart horizontal).
+fn pointChainette(p0: vec2f, p1: vec2f, L: f32, s: f32, gd: vec2f) -> vec2f {
+  let D = p1 - p0;
+  if (length(D) >= 0.9999 * L) { return mix(p0, p1, clamp(s / max(L, 1e-9), 0.0, 1.0)); }
+  var e = vec2f(-gd.y, gd.x);
+  var dx = dot(D, e);
+  if (dx < 0.0) { e = -e; dx = -dx; }
+  let dh = -dot(D, gd);
+  if (dx < 1e-3 * L) {
+    let b0 = 0.5 * (L - dh);
+    if (s <= b0) { return p0 + gd * s; }
+    return p0 + gd * b0 - gd * (s - b0);
+  }
+  let r = sqrt(max(L * L - dh * dh, 0.0)) / dx;
+  var lo = 1e-4;
+  var hi = 30.0;
+  for (var i = 0u; i < 48u; i++) {
+    let m = 0.5 * (lo + hi);
+    if (sinh(m) / m < r) { lo = m; } else { hi = m; }
+  }
+  let t = 0.5 * (lo + hi);
+  let a = dx / (2.0 * t);
+  let x0 = 0.5 * dx - a * atanh(clamp(dh / L, -0.9999, 0.9999));
+  let x = x0 + a * asinh(s / a - sinh(x0 / a));
+  let monte = 2.0 * a * sinh((x - 2.0 * x0) / (2.0 * a)) * sinh(x / (2.0 * a));
+  return p0 + e * x - gd * monte;
+}
+
+// Pas 0 : sommet posé au repos. Tissu : sommet tenu posé sur son attache. Corde (gravité g de la recette) : tenue aux
+// deux bouts, pendue en chaînette entre ses deux points d'attache (longueur de repos gardée, ligne droite si l'écart la
+// dépasse) ; tenue à un bout, pendue à la verticale sous ce point ; sans gravité, ligne droite entre les deux bouts ou
+// ligne médiane décalée sur le bout tenu.
 fn initialiserSommet(v: u32, base: u32, rp: Repos) {
   let u = uDe(v);
   var x = pointRepos(rp, u);
@@ -281,14 +360,33 @@ fn initialiserSommet(v: u32, base: u32, rp: Repos) {
     let a1 = attacheDe(n - 1u);
     var c0 = CibleS(false, vec2f(0.0));
     var c1 = CibleS(false, vec2f(0.0));
-    if (a0 != AUCUN) { c0 = cibleAttache(a0, uDe(0u), 0.0); }
-    if (a1 != AUCUN) { c1 = cibleAttache(a1, uDe(n - 1u), 0.0); }
-    if (c0.ok && c1.ok) {
+    if (a0 != AUCUN) { c0 = cibleAttache(a0, uDe(0u), 0.0, rp); }
+    if (a1 != AUCUN) { c1 = cibleAttache(a1, uDe(n - 1u), 0.0, rp); }
+    let g = vec2f(ef(S_G), ef(S_G + 1u));
+    let lg = length(g);
+    let L = rp.Lu * f32(n - 1u);
+    let sv = rp.Lu * f32(v);
+    if (lg > 1e-6) {
+      let gd = g / lg;
+      if (c0.ok && c1.ok) {
+        x = pointChainette(c0.pos, c1.pos, L, sv, gd);
+      } else if (c0.ok) {
+        x = c0.pos + gd * sv;
+      } else if (c1.ok) {
+        x = c1.pos + gd * (L - sv);
+      }
+    } else if (c0.ok && c1.ok) {
       x = mix(c0.pos, c1.pos, u.x);
     } else if (c0.ok) {
       x = c0.pos + x - pointRepos(rp, uDe(0u));
     } else if (c1.ok) {
       x = c1.pos + x - pointRepos(rp, uDe(n - 1u));
+    }
+  } else {
+    let a = attacheDe(v);
+    if (a != AUCUN) {
+      let c = cibleAttache(a, u, 0.0, rp);
+      if (c.ok) { x = c.pos; }
     }
   }
   var p: Particule;
@@ -313,7 +411,7 @@ fn initialiserSommet(v: u32, base: u32, rp: Repos) {
 // Début d'un sous-pas [ta, tb] : position notée ; sommet tenu posé sur son attache à tb (vitesse de l'attache, masse
 // infinie : gen = 1) ; autre sommet prédit par les forces de la recette (exact sur le sous-pas) ; au premier sous-pas, la
 // poussée des particules liées (P5a) s'ajoute à sa vitesse.
-fn predire(v: u32, base: u32, sp: u32, ta: f32, tb: f32, h: f32) {
+fn predire(v: u32, base: u32, sp: u32, ta: f32, tb: f32, h: f32, rp: Repos) {
   let i = base + v;
   var p = sommets[i];
   let xd = p.pos;
@@ -321,7 +419,7 @@ fn predire(v: u32, base: u32, sp: u32, ta: f32, tb: f32, h: f32) {
   p.gen = 0u;
   let a = attacheDe(v);
   if (a != AUCUN) {
-    let c = cibleAttache(a, uDe(v), tb);
+    let c = cibleAttache(a, uDe(v), tb, rp);
     if (c.ok) {
       p.vel = (c.pos - p.pos) / h;
       p.pos = c.pos;
@@ -340,39 +438,44 @@ fn predire(v: u32, base: u32, sp: u32, ta: f32, tb: f32, h: f32) {
   rompus[i] = select(rompus[i] & ~TENU_S, rompus[i] | TENU_S, p.gen == 1u);
 }
 
-// XPBD, contrainte de distance du lien j (rang dans la liste rangée par couleur) : Δλ = (−C − α̃ λ) / (wa + wb + α̃),
-// α̃ = α / h² ; lien rompu ou de flexion sans raideur : ignoré.
-fn resoudreLien(j: u32, base: u32, lb: u32, h: f32, rp: Repos) {
+// Lien j (rang dans la liste rangée par couleur) lu avant d'être résolu : toutes les lectures d'abord (deux liens d'une
+// même couleur, sans sommet commun, lus ensemble puis résolus : leurs accès à la mémoire se recouvrent).
+struct LienS { ia: u32, ib: u32, genre: u32, rompu: bool, xa: vec2f, xb: vec2f, wa: f32, wb: f32, lam: f32 };
+
+fn chargerLien(j: u32, base: u32, lb: u32) -> LienS {
   let code = eu(gLiens + j);
   let v = code >> 3u;
   let genre = code & 7u;
-  if (((rompus[base + v] >> genre) & 1u) != 0u) { return; }
   let ab = extremites(v, genre);
   let ia = base + ab.x;
   let ib = base + ab.y;
   // Positions du sous-pas (tableau compact) ; masse de la structure, nulle pour un sommet tenu.
-  let xa = anciennes[ia];
-  let xb = anciennes[ib];
-  let wa = select(gW, 0.0, (rompus[ia] & TENU_S) != 0u);
-  let wb = select(gW, 0.0, (rompus[ib] & TENU_S) != 0u);
-  let d = xa - xb;
+  return LienS(ia, ib, genre, ((rompus[base + v] >> genre) & 1u) != 0u, anciennes[ia], anciennes[ib],
+    select(gW, 0.0, (rompus[ia] & TENU_S) != 0u), select(gW, 0.0, (rompus[ib] & TENU_S) != 0u), lambdas[lb + j]);
+}
+
+// XPBD, contrainte de distance du lien l : Δλ = (−C − α̃ λ) / (wa + wb + α̃), α̃ = α / h² ; lien rompu ou de flexion sans
+// raideur : ignoré.
+fn resoudreLien(l: LienS, j: u32, lb: u32, h: f32, rp: Repos) {
+  if (l.rompu) { return; }
+  let d = l.xa - l.xb;
   let L = length(d);
-  let L0 = longueurRepos(genre, rp);
-  // Lien étiré : raideur (flexion pour un lien de flexion) ; lien comprimé : flexion seulement (tissu plan : un axe
-  // comprimé se plie hors du plan, ses plis éclairés au rendu ; flexion nulle : compression libre).
+  let L0 = longueurRepos(l.genre, rp);
+  // Lien étiré : raideur (flexion pour un lien de flexion) ; lien comprimé : flexion (tissu plan : un axe comprimé se
+  // plie hors du plan, ses plis éclairés au rendu), au plus 50 fois la souplesse de la raideur pour un lien horizontal
+  // ou vertical (plancher : le tissu ne se froisse pas ; il se plie par ses diagonales et ses liens de flexion).
   var alpha = gAlpha;
-  if (genre >= 4u || L < L0) { alpha = gAlphaB; }
+  if (l.genre >= 4u || (L < L0 && l.genre >= 2u)) { alpha = gAlphaB; } else if (L < L0) { alpha = gAlphaC; }
   if (alpha < 0.0) { return; }
   let at = alpha / (h * h);
-  let den = wa + wb + at;
+  let den = l.wa + l.wb + at;
   if (den <= 0.0) { return; }
   if (L < 1e-9) { return; }
-  let lam = lambdas[lb + j];
-  let dl = (-(L - L0) - at * lam) / den;
-  lambdas[lb + j] = lam + dl;
+  let dl = (-(L - L0) - at * l.lam) / den;
+  lambdas[lb + j] = l.lam + dl;
   let nrm = d / L;
-  anciennes[ia] = xa + wa * dl * nrm;
-  anciennes[ib] = xb - wb * dl * nrm;
+  anciennes[l.ia] = l.xa + l.wa * dl * nrm;
+  anciennes[l.ib] = l.xb - l.wb * dl * nrm;
 }
 
 struct ContactS { ok: bool, pos: vec2f };
@@ -505,6 +608,7 @@ fn structures(@builtin(workgroup_id) wg: vec3u, @builtin(local_invocation_index)
   gLiens = eu(S_LIENS);
   gAlpha = ef(S_ALPHA);
   gAlphaB = ef(S_ALPHA_B);
+  gAlphaC = ef(S_ALPHA_C);
   gW = 1.0 / ef(S_MASSE);
   let rp = reposStructure();
   if (li == 0u) { infos[wg.x] = vec4f(rp.Lu, rp.Lv, 0.0, 0.0); }
@@ -516,12 +620,21 @@ fn structures(@builtin(workgroup_id) wg: vec3u, @builtin(local_invocation_index)
   for (var sp = 0u; sp < S_SOUS_PAS; sp++) {
     let ta = P.tau0 + f32(sp) * h;
     let tb = ta + h;
-    for (var v = li; v < n; v += S_FILS) { predire(v, base, sp, ta, tb, h); }
+    for (var v = li; v < n; v += S_FILS) { predire(v, base, sp, ta, tb, h, rp); }
     for (var j = li; j < eu(S_COUL + S_COULEURS); j += S_FILS) { lambdas[lb + j] = 0.0; }
     barriere();
     for (var it = 0u; it < S_ITERATIONS; it++) {
       for (var k = 0u; k < S_COULEURS; k++) {
-        for (var j = eu(S_COUL + k) + li; j < eu(S_COUL + k + 1u); j += S_FILS) { resoudreLien(j, base, lb, h, rp); }
+        let fin = eu(S_COUL + k + 1u);
+        var j = eu(S_COUL + k) + li;
+        while (j + S_FILS < fin) {
+          let A = chargerLien(j, base, lb);
+          let B = chargerLien(j + S_FILS, base, lb);
+          resoudreLien(A, j, lb, h, rp);
+          resoudreLien(B, j + S_FILS, lb, h, rp);
+          j += 2u * S_FILS;
+        }
+        if (j < fin) { resoudreLien(chargerLien(j, base, lb), j, lb, h, rp); }
         barriere();
       }
     }
@@ -558,12 +671,10 @@ fn structures(@builtin(workgroup_id) wg: vec3u, @builtin(local_invocation_index)
 
   // Pipeline du noyau « structures », un par device ; disposition explicite (8 tampons de stockage).
   const parDevice = new WeakMap();
-  function pipeline(device) {
-    let p = parDevice.get(device);
-    if (p) return p;
+  function dispositionStructures(device) {
     const C = GPUShaderStage.COMPUTE;
     const stockage = (b, lecture) => ({ binding: b, visibility: C, buffer: { type: lecture ? 'read-only-storage' : 'storage' } });
-    const layout = device.createBindGroupLayout({
+    return device.createBindGroupLayout({
       entries: [
         stockage(0, true),
         { binding: 4, visibility: C, buffer: { type: 'uniform', hasDynamicOffset: true, minBindingSize: 80 } },
@@ -576,11 +687,45 @@ fn structures(@builtin(workgroup_id) wg: vec3u, @builtin(local_invocation_index)
         stockage(22),
       ],
     });
-    const module = device.createShaderModule({ label: 'pm-structures', code: P.codeStructures(P.filsStructures(device)) });
-    p = { layout, pipeline: device.createComputePipeline({ layout: device.createPipelineLayout({ bindGroupLayouts: [layout] }), compute: { module, entryPoint: 'structures' } }) };
+  }
+  function descripteur(device, layout, fils) {
+    const module = device.createShaderModule({ label: 'pm-structures', code: P.codeStructures(fils) });
+    return { layout: device.createPipelineLayout({ bindGroupLayouts: [layout] }), compute: { module, entryPoint: 'structures' } };
+  }
+  // Sans P.preparerStructures (tests du moteur) : pipeline créé tout de suite, aux fils permis par le device.
+  function pipeline(device) {
+    let p = parDevice.get(device);
+    if (p) return p;
+    const layout = dispositionStructures(device);
+    const fils = P.filsStructures(device);
+    p = { layout, fils, pipeline: device.createComputePipeline(descripteur(device, layout, fils)) };
     parDevice.set(device, p);
     return p;
   }
+
+  /** Pipeline du noyau des structures préparé une fois par device, avant les simulations (calques.js) : groupes de
+   *  fils fils (P.filsStructures par défaut), dans une portée d'erreur ; refusé par le pilote (pression de registres,
+   *  limite propre au pipeline) : repli à 256 fils, même résultat au bit près. Rend le nombre de fils retenu. */
+  P.preparerStructures = async function (device, fils = P.filsStructures(device)) {
+    const deja = parDevice.get(device);
+    if (deja) return deja.fils;
+    const layout = dispositionStructures(device);
+    const essayer = async (f) => {
+      device.pushErrorScope('validation');
+      device.pushErrorScope('internal');
+      let p = null;
+      try { p = await device.createComputePipelineAsync(descripteur(device, layout, f)); } catch (e) { p = null; }
+      const interne = await device.popErrorScope();
+      const validation = await device.popErrorScope();
+      return interne || validation ? null : p;
+    };
+    let retenus = fils;
+    let p = await essayer(fils);
+    if (!p && fils !== 256) { retenus = 256; p = await essayer(256); }
+    if (!p) throw new Error('Structures : la carte graphique refuse le noyau des cordes et tissus.');
+    if (!parDevice.has(device)) parDevice.set(device, { layout, fils: retenus, pipeline: p });
+    return parDevice.get(device).fils;
+  };
 
   const WGSL_PERLES = /* wgsl */ `
 struct Pas { k: u32, tau0: f32, tau1: f32, dt: f32, zoneA: vec4f, zoneB: vec4f };
@@ -712,6 +857,7 @@ fn perles(@builtin(global_invocation_id) gid: vec3u) {
         ? (sim.monde && sim.monde.formes ? sim.monde.formes.vue : sim.pc.vueSdfVide)
         : this.sdfVide.createView({ dimension: '2d-array' });
       this.p = pipeline(device);
+      this.fils = this.p.fils;
       this.groupe = device.createBindGroup({
         layout: this.p.layout,
         entries: [

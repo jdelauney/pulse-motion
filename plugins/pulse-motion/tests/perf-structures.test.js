@@ -23,22 +23,31 @@ const CODE = `
 const P = M.particulesInterne;
 const gpu = await P.obtenirGPU();
 if (!gpu) { await envoyer({ webgpu: false }); return; }
-const { device } = gpu;
 const zones = { a: () => [40, 10, 60, 60], grille: () => [40, 10, 60, 60] };
-const sim = new P.Simulation(device, DONNEES.tissus, null, null, 177.78);
-sim.avancer(0.5, zones);
-await device.queue.onSubmittedWorkDone();
-let t = 0.5;
-const debut = performance.now();
-for (let n = 0; n < 30; n++) {
-  t += 1 / 30;
-  sim.avancer(t, zones);
+async function mesurer(device) {
+  const sim = new P.Simulation(device, DONNEES.tissus, null, null, 177.78);
+  sim.avancer(0.5, zones);
   await device.queue.onSubmittedWorkDone();
+  let t = 0.5;
+  const debut = performance.now();
+  for (let n = 0; n < 30; n++) {
+    t += 1 / 30;
+    sim.avancer(t, zones);
+    await device.queue.onSubmittedWorkDone();
+  }
+  const ms = (performance.now() - debut) / 30;
+  const fils = sim.structures.fils;
+  sim.detruire();
+  return { ms, fils };
 }
-const ms = (performance.now() - debut) / 30;
-sim.detruire();
+// Fils permis par l'adaptateur (1024 au plus), puis 256 fils (repli, ou adaptateur modeste) sur un second device.
+const a = await mesurer(gpu.device);
+const autre = await (await navigator.gpu.requestAdapter()).requestDevice();
+await P.preparerStructures(autre, 256);
+const b = await mesurer(autre);
+autre.destroy();
 const info = gpu.adaptateur && gpu.adaptateur.info ? gpu.adaptateur.info : {};
-await envoyer({ webgpu: true, ms, adaptateur: [info.vendor, info.architecture, info.description].filter(Boolean).join(' ') });
+await envoyer({ webgpu: true, ms: a.ms, fils: a.fils, ms256: b.ms, fils256: b.fils, adaptateur: [info.vendor, info.architecture, info.description].filter(Boolean).join(' ') });
 `;
 
 test('performances : 16 tissus de 64 × 64 sommets en moins de 4 ms de simulation par image', async (t) => {
@@ -47,6 +56,8 @@ test('performances : 16 tissus de 64 × 64 sommets en moins de 4 ms de simulatio
   assert.equal(r.erreur, undefined, r.erreur);
   if (r.webgpu === false) return t.skip('WebGPU indisponible');
   t.diagnostic(`adaptateur : ${r.adaptateur || 'inconnu'}`);
-  t.diagnostic(`16 tissus de 64 × 64 : ${r.ms.toFixed(2)} ms de simulation par image (spec : < 4 ms)`);
+  t.diagnostic(`16 tissus de 64 × 64 : ${r.ms.toFixed(2)} ms de simulation par image à ${r.fils} fils (spec : < 4 ms)`);
+  t.diagnostic(`à ${r.fils256} fils (repli, adaptateur modeste) : ${r.ms256.toFixed(2)} ms par image (indicatif)`);
+  assert.equal(r.fils256, 256);
   if (process.env.PM_PERF === '1') assert.ok(r.ms < 4, `16 tissus : ${r.ms.toFixed(2)} ms par image`);
 });

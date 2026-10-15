@@ -1261,6 +1261,14 @@
     }));
   }
 
+  /** Noyau des cordes et tissus préparé avant les simulations (repli à 256 fils si le pilote en refuse davantage) ; refusé
+   *  tout à fait : leurs effets sont désactivés. */
+  async function preparerStructures(device) {
+    const fxs = etat.scenes.flatMap((sc) => sc.effets).filter((fx) => avecStructures(fx));
+    if (!fxs.length || !P.preparerStructures) return;
+    try { await P.preparerStructures(device); } catch (e) { fxs.forEach((fx) => desactiver(fx, message(e))); }
+  }
+
   function demarrerGPU() {
     const obtention = obtenirAvecGarde();
     obtention.then((gpu) => {
@@ -1282,7 +1290,7 @@
         return compilerShaders(gpu.device).then((compiler) => {
           etat.composition = new P.Composition(gpu.device, gpu.format, etat.shaders);
           return compilerComposition(compiler);
-        }).then(() => verifierModules(rendu)).then(() => preparerFormes(gpu.device)).then(fragmentsPromis);
+        }).then(() => verifierModules(rendu)).then(() => preparerStructures(gpu.device)).then(() => preparerFormes(gpu.device)).then(fragmentsPromis);
       }).then(() => {
         etat.gpu = gpu;
         etat.rendu = rendu;
