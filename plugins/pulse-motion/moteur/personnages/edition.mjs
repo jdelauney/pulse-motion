@@ -57,7 +57,7 @@ export function creerEdition(options, { clips: K, squelette: S }) {
   const pistesEn = (t) => (estClip() ? K.echantillonner(Object.assign({}, objet, { pieds: 'libres' }), t, lu, gabarit) : Object.assign({}, objet.angles));
 
   function poseEn(t) {
-    if (!estClip()) return Object.assign({}, S.REPOS, objet.angles);
+    if (!estClip()) return Object.assign({}, S.REPOS, K.resoudrePose(objet, lu));
     if (objet.additif) return K.ajouter(Object.assign({}, S.REPOS), objet, t, lu);
     return Object.assign({}, S.REPOS, K.echantillonner(objet, t, lu, gabarit));
   }
@@ -199,6 +199,27 @@ export function creerEdition(options, { clips: K, squelette: S }) {
         futur = [];
         if (geste) gesteMemorise = true;
       }
+    },
+    choix() {
+      if (!estClip()) return { bouche: objet.bouche || null, expression: objet.expression || null };
+      const e = K.echantillonner(objet, temps, Object.assign({}, lu, { expressions: {} }), gabarit);
+      return { bouche: e.bouche || null, expression: e.expression || null };
+    },
+    reglerChoix(champ, valeur) {
+      if (champ !== 'bouche' && champ !== 'expression') throw new Error(`Atelier : choix « ${champ} » inconnu (bouche ou expression).`);
+      if (estClip() && objet.additif) throw new Error('Atelier : un calque additif ne choisit ni bouche ni expression.');
+      memoriser();
+      if (!estClip()) { if (valeur === null) delete objet[champ]; else objet[champ] = valeur; return; }
+      const u = arrondi(position());
+      let i = cleSous(u);
+      if (i < 0) {
+        if (valeur === null) return;
+        objet.cles.push({ t: u }); selection = objet.cles.length - 1; trier(); i = selection;
+      }
+      const c = objet.cles[i];
+      if (valeur === null) delete c[champ]; else c[champ] = valeur;
+      const vide = c.pose === undefined && c.angles === undefined && c.bouche === undefined && c.expression === undefined;
+      if (vide && objet.cles.length > 1) { objet.cles.splice(i, 1); selection = null; } else selection = i;
     },
     annuler() {
       if (!passe.length) return false;

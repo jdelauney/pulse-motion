@@ -156,3 +156,47 @@ test('édition : clés voisines (pelure d\'oignon), versObjet valide', () => {
   assert.equal('nom' in o, false);
   assert.deepEqual(P.valider('clip', o, Object.assign({ nom: 'marche' }, P.contexteDe(lu))), []);
 });
+
+test('édition : expression d\'une pose résolue à l\'affichage', () => {
+  const ed = E.creerEdition({ type: 'pose', nom: 'p', objet: { expression: 'colere', angles: { tete: -5 } }, lu }, outils);
+  assert.equal(ed.pose().sourcilsAngle, lu.expressions.colere.angles.sourcilsAngle);
+  assert.equal(ed.pose().bouche, 'colere');
+  assert.deepEqual(ed.choix(), { bouche: null, expression: 'colere' });
+});
+
+test('édition : choisir une bouche ou une expression (pose et clip)', () => {
+  const p = E.creerEdition({ type: 'pose', nom: 'p', objet: { angles: {} }, lu }, outils);
+  p.reglerChoix('bouche', 'O');
+  assert.equal(p.objet.bouche, 'O');
+  p.reglerChoix('bouche', null);
+  assert.equal('bouche' in p.objet, false);
+  const c = E.creerEdition({ type: 'clip', nom: 'c', objet: { boucle: false, cles: [{ t: 0, pose: 'debout' }, { t: 1, angles: { torse: 4 } }] }, lu }, outils);
+  c.aller(0.5);
+  c.reglerChoix('bouche', 'A');
+  assert.deepEqual(c.objet.cles[1], { t: 0.5, bouche: 'A' });
+  assert.deepEqual(c.choix(), { bouche: 'A', expression: null });
+  c.aller(0.7);
+  assert.equal(c.choix().bouche, 'A', 'la bouche tient jusqu\'à la clé suivante');
+  c.aller(0);
+  c.reglerChoix('expression', 'joie');
+  assert.equal(c.objet.cles[0].expression, 'joie');
+  assert.equal(c.annuler(), true);
+  assert.equal('expression' in c.objet.cles[0], false);
+});
+
+test('édition : retirer un choix', () => {
+  const c = E.creerEdition({ type: 'clip', nom: 'c', objet: { boucle: false, cles: [{ t: 0, pose: 'debout' }, { t: 0.5, bouche: 'A' }, { t: 1, angles: { torse: 4 } }] }, lu }, outils);
+  c.aller(0.5);
+  c.reglerChoix('bouche', null);
+  assert.deepEqual(c.objet.cles.map((k) => k.t), [0, 1], 'clé vide retirée');
+  const seule = E.creerEdition({ type: 'clip', nom: 's', objet: { boucle: true, duree: 1, cles: [{ t: 0, bouche: 'O' }] }, lu }, outils);
+  seule.reglerChoix('bouche', null);
+  assert.equal(seule.objet.cles.length, 1, 'la dernière clé reste');
+});
+
+test('édition : calque additif, champ inconnu', () => {
+  const r = E.creerEdition({ type: 'clip', nom: 'r', objet: lu.clips.respiration, lu }, outils);
+  assert.throws(() => r.reglerChoix('bouche', 'O'), /calque additif/);
+  assert.equal(r.annuler(), false, 'rien n\'a été mémorisé');
+  assert.throws(() => r.reglerChoix('sourcil', 'x'), /choix « sourcil » inconnu/);
+});
