@@ -1,7 +1,8 @@
 'use strict';
 /* Pulse Motion – personnages dans les scènes, côté assemblage.
  *
- *   preparerPersonnages(html, { scene, lu }) -> { html, utilises: { dessins: Set, gabarits: Set }, erreurs }
+ *   preparerPersonnages(html, { scene, lu, voix }) -> { html, utilises: { dessins: Set, gabarits: Set }, erreurs }
+ *     voix : la scène a un texte dit (sinon « parler » est une erreur)
  *   donneesPersonnages(utilises, lu)         -> M.donnees.personnages (ce que la page doit connaître)
  *
  * Repère les conteneurs <… data-personnage> et leurs actions <… data-action> ; valide (personnage, action, pose,
@@ -16,13 +17,13 @@ const BALISE = /<(\/?)([a-zA-Z][\w-]*)\b((?:[^>"']|"[^"]*"|'[^']*')*)>/g;
 // Éléments sans fermeture : ils ne changent pas la profondeur.
 const VIDES = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr']);
 const ACTIONS = {
-  marcher: ['vers'], courir: ['vers'], pose: ['pose'], jouer: ['clip'], tourner: ['vue'], expression: ['expression'], bouche: ['bouche'],
+  marcher: ['vers'], courir: ['vers'], pose: ['pose'], jouer: ['clip'], tourner: ['vue'], expression: ['expression'], bouche: ['bouche'], parler: [],
 };
 const NOMBRES = ['data-x', 'data-sol', 'data-taille', 'data-vue', 'data-vers'];
 
 function erreur(scene, message) { return { regle: 'personnage-invalide', gravite: 'erreur', scene, message: `Scène « ${scene} » : ${message}` }; }
 
-function preparerPersonnages(html, { scene, lu }) {
+function preparerPersonnages(html, { scene, lu, voix = false }) {
   const erreurs = [];
   const utilises = { dessins: new Set(), gabarits: new Set() };
   if (!/data-personnage|data-action/.test(html)) return { html, utilises, erreurs };
@@ -63,6 +64,7 @@ function preparerPersonnages(html, { scene, lu }) {
     if (!ACTIONS[type]) { erreurs.push(erreur(scene, `${qui} : action inconnue (${Object.keys(ACTIONS).join(', ')}).`)); return tout; }
     for (const champ of ACTIONS[type]) if (a[`data-${champ}`] === undefined) erreurs.push(erreur(scene, `${qui} : il manque data-${champ}.`));
     if ((type === 'marcher' || type === 'courir' || type === 'tourner') && a['data-dur'] === undefined) erreurs.push(erreur(scene, `${qui} : data-dur obligatoire (durée du trajet ou de la rotation, ex. data-dur="2").`));
+    if (type === 'parler' && !voix) erreurs.push(erreur(scene, `${qui} : la scène n'a pas de voix ; ajouter son texte dit (voix.texte) au déroulé, ou retirer l'action.`));
     if (type === 'pose' && a['data-pose'] !== undefined && !Object.hasOwn(lu.poses, a['data-pose'])) erreurs.push(erreur(scene, `${qui} : pose « ${a['data-pose']} » introuvable (poses : ${Object.keys(lu.poses).join(', ')}).`));
     if (type === 'expression' && a['data-expression'] !== undefined && !Object.hasOwn(lu.expressions, a['data-expression'])) erreurs.push(erreur(scene, `${qui} : expression « ${a['data-expression']} » introuvable (expressions : ${Object.keys(lu.expressions).join(', ')}).`));
     if (type === 'jouer' && a['data-clip'] !== undefined) {
