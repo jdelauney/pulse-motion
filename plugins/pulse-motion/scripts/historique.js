@@ -5,14 +5,14 @@
  *   node scripts/historique.js sauvegarder <dossier-du-projet>
  *   node scripts/historique.js annuler <dossier-du-projet>
  *
- * Copie deroule.json, scenes/, assets/, charte/ et effets/ dans .historique/NNN/ ; garde les 20 dernières copies.
+ * Copie deroule.json, scenes/, assets/, charte/, effets/ et personnages/ dans .historique/NNN/ ; garde les 20 dernières copies.
  * Affiche un résumé JSON ; code de sortie 1 avec un message en français en cas d'échec.
  */
 const fs = require('node:fs');
 const path = require('node:path');
 
 const CONSERVEES = 20;
-const CONTENU = ['deroule.json', 'scenes', 'assets', 'charte', 'effets'];
+const CONTENU = ['deroule.json', 'scenes', 'assets', 'charte', 'effets', 'personnages'];
 // Voix provisoires : recalculables, hors des copies, et gardées telles quelles par « annule ».
 const PROVISOIRES = path.join('assets', 'voix', 'provisoire');
 
