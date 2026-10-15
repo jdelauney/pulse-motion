@@ -56,3 +56,10 @@ test('bibliothèque : les poses et les clips ne butent pas sur les contraintes',
   for (const [nom, p] of Object.entries(lu.poses)) verifier(`pose ${nom}`, p.angles);
   for (const [nom, c] of Object.entries(lu.clips)) c.cles.forEach((k, i) => k.angles && !c.additif && verifier(`clip ${nom} clé ${i + 1}`, k.angles));
 });
+
+test('bibliothèque : le coucou garde le bras levé pendant tout le salut', () => {
+  for (const t of [0.25, 0.6, 0.9, 1.2, 1.29]) {
+    const p = K.echantillonner(lu.clips.coucou, t, lu);
+    assert.ok(Math.abs(p.ecartBrasAvant - 140) < 1e-6 && Math.abs(p.torsionBrasAvant - 90) < 1e-6, `t=${t} : ${p.ecartBrasAvant} / ${p.torsionBrasAvant}`);
+  }
+});
