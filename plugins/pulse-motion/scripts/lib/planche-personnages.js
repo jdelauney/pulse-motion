@@ -84,11 +84,12 @@ async function rendrePlanche(options) {
   if (!navigateur) throw new Error(SANS_NAVIGATEUR);
   const { html, largeur, hauteur } = pagePlanche(options);
   const dossier = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-planche-perso-'));
-  const fichierPage = path.join(dossier, 'planche.html');
-  fs.writeFileSync(fichierPage, html);
-  const { ouvrirPage } = require('./cdp.js');
-  const page = await ouvrirPage({ navigateur, largeur, hauteur });
+  let page = null;
   try {
+    const fichierPage = path.join(dossier, 'planche.html');
+    fs.writeFileSync(fichierPage, html);
+    const { ouvrirPage } = require('./cdp.js');
+    page = await ouvrirPage({ navigateur, largeur, hauteur });
     await page.aller(pathToFileURL(fichierPage).href);
     const etat = await page.evaluer('window.__planche || null');
     if (!etat) throw new Error('Planche : la page n\'a pas fini de dessiner (erreur dans le moteur des personnages).');
@@ -97,7 +98,7 @@ async function rendrePlanche(options) {
     fs.writeFileSync(options.sortie, png);
     return { fichier: options.sortie, largeur, hauteur, personnages: etat.personnages };
   } finally {
-    await page.fermer();
+    if (page) await page.fermer();
     fs.rmSync(dossier, { recursive: true, force: true });
   }
 }
