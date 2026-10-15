@@ -53,7 +53,7 @@ test('pièces : une pièce suit son os (pivot, angle, raccourcissement, miroir)'
   })()`);
   assert.match(r.droit.t, /^translate\(0 0\) rotate\(-90\) scale\(1 1\)$/);
   assert.match(r.gauche.t, /rotate\(90\) scale\(-1 1\)$/);
-  assert.match(r.vers.t, /scale\(1 0\)$/, 'de face, la cuisse tendue vers la caméra est raccourcie à rien');
+  assert.match(r.vers.t, /scale\(1 0\.15\)$/, 'de face, la cuisse tendue vers la caméra garde une longueur minimale');
   assert.equal(r.decor, true);
   assert.equal(r.corps, '#F5F5F5');
 });
@@ -87,7 +87,7 @@ test('pièces : profondeur, chaîne éloignée, accessoires, os sans pièce, mai
     const ids = [...document.querySelectorAll('clipPath')].map((c) => c.id);
     return { parties, tete, torse, loin: loin.classList.contains('pm-perso-loin'), teinte: loin.style.getPropertyValue('--teinte-loin'),
       arriere: !!g.querySelector('[data-piece="cuisseArriere"] [data-vue="profil"]'), sansBras: !g.querySelector('[data-piece="brasAvant"]'),
-      main: perso.main('Avant') && perso.main('Avant').dataset.piece, mainArriere: perso.main('Arriere') && perso.main('Arriere').dataset.piece, sansMain: M.pieces.creer(document.getElementById('h').appendChild(document.createElementNS('http://www.w3.org/2000/svg', 'g')), { pieces: { torse: DESSIN.pieces.torse } }, {}).main('Avant'), ids, unique: new Set(ids).size === ids.length };
+      main: perso.main('Avant') && perso.main('Avant').dataset.piece, mainArriere: perso.main('Arriere') && perso.main('Arriere').dataset.piece, sansMain: M.pieces.creer(document.getElementById('h').appendChild(document.createElementNS('http://www.w3.org/2000/svg', 'g')), { pieces: { torse: DESSIN.pieces.torse } }, {}).main('Avant').dataset.piece, ids, unique: new Set(ids).size === ids.length };
   })()`);
   assert.ok(r.parties.indexOf('jambeArriere') < r.parties.indexOf('jambeAvant'));
   assert.deepEqual(r.tete, ['profil', 'dos', 'visage', 'toque']);
@@ -98,7 +98,7 @@ test('pièces : profondeur, chaîne éloignée, accessoires, os sans pièce, mai
   assert.equal(r.sansBras, true);
   assert.equal(r.main, 'mainAvant');
   assert.equal(r.mainArriere, 'mainArriere', 'main Arrière reprise de la main Avant');
-  assert.equal(r.sansMain, null);
+  assert.equal(r.sansMain, 'mainAvant', 'main vide mais présente, pour les objets tenus');
   assert.ok(r.ids.length >= 8 && r.unique, JSON.stringify(r.ids));
 });
 
@@ -143,4 +143,35 @@ test('pièces : os sans pièce, visage sans tête dessinée', { skip: sauter }, 
   assert.equal(r.tete, true);
   assert.equal(r.visage, true);
   assert.match(r.transform, new RegExp(`^translate\\(${Math.round(r.centre[0] * 100) / 100} ${Math.round(r.centre[1] * 100) / 100}\\)`));
+});
+
+test('pièces : pied de face, mains toujours présentes, groupe réutilisé, yeuxY, os en plus de la tête', { skip: sauter }, async () => {
+  const r = await evaluer(`(() => {
+    const g = document.getElementById('g');
+    const d = JSON.parse(JSON.stringify(DESSIN)); delete d.pieces.mainAvant;
+    let perso = M.pieces.creer(g, d, {});
+    perso.rendre(M.squelette.calculer({ vue: 90 }));
+    const pied = g.querySelector('[data-piece="piedAvant"]').getAttribute('transform');
+    const main = perso.main('Avant') && perso.main('Avant').dataset.piece;
+    const autre = { couleurs: { tenue: '#FF0000' }, pieces: { torse: DESSIN.pieces.torse } };
+    perso = M.pieces.creer(g, autre, {});
+    perso.rendre(M.squelette.calculer({}));
+    const racines = g.querySelectorAll('[data-pm-perso-racine]').length;
+    const ancienne = g.style.getPropertyValue('--corps');
+    const yeux = M.pieces.creer(document.getElementById('h'), DESSIN, {});
+    yeux.rendre(M.squelette.calculer({ yeuxY: 3 }));
+    const oeil = document.querySelector('#h [data-visage-vue="profil"] [data-oeil="0"]').getAttribute('transform');
+    const oreille = { pieces: { oreille: { profil: "<rect width='4' height='20'/>", face: "<rect data-face='1' width='4' height='20'/>" } } };
+    const gab = { osEnPlus: [{ nom: 'oreille', parent: 'tete', attache: [0, -40, 0], angle: 170, longueur: 20 }] };
+    const o = M.pieces.creer(document.getElementById('h'), oreille, gab);
+    o.rendre(M.squelette.calculer({ teteTourne: 85, vue: 10 }, gab));
+    const vueOreille = [...document.querySelectorAll('#h [data-piece="oreille"] > [data-vue]')].filter((e) => e.style.display !== 'none').map((e) => e.dataset.vue);
+    return { pied, main, racines, ancienne, oeil, vueOreille };
+  })()`);
+  assert.match(r.pied, /^translate\([-\d.]+ [-\d.]+\) scale\(1 1\)$/);
+  assert.equal(r.main, 'mainAvant');
+  assert.equal(r.racines, 1, 'un seul personnage après recréation');
+  assert.equal(r.ancienne, '', 'les couleurs du dessin précédent sont retirées');
+  assert.equal(r.oeil, 'translate(16 -3) scale(1)');
+  assert.deepEqual(r.vueOreille, ['face'], 'l\'oreille suit la tête tournée vers la caméra');
 });
