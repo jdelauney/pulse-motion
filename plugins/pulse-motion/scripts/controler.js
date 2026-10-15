@@ -386,12 +386,12 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
       // image dépasse son temps.
       const structures = effets.flatMap((e) => e.effet.emetteurs.filter((em) => em.structure).map((em) => ({ e, em })));
       if (structures.length > STRUCTURES_SCENE_MAX) {
-        problemes.push({ regle: 'budget-structures', gravite: 'alerte', scene: s.id, message: `Scène « ${s.id} » : ${structures.length} cordes et tissus ; au-delà de ${STRUCTURES_SCENE_MAX} par scène, leur simulation dépasse son temps (aperçu saccadé). En retirer, ou les répartir sur plusieurs scènes.` });
+        problemes.push({ regle: 'budget-structures', gravite: 'alerte', scene: s.id, message: `Scène « ${s.id} » : ${structures.length} cordes et tissus ; au-delà de ${STRUCTURES_SCENE_MAX} par scène, leur simulation dépasse son temps (aperçu saccadé). En retirer, ou les répartir sur plusieurs scènes. Même sous cette limite, mesurée sur une carte graphique récente, une machine modeste peut saccader à l'aperçu (l'export reste exact).` });
       }
       for (const { e, em } of structures) {
         const st = em.structure;
         if (st.type !== 'tissu' || st.nSommets <= SOMMETS_TISSU_MAX) continue;
-        problemes.push({ regle: 'budget-structures', gravite: 'alerte', scene: s.id, message: `Scène « ${s.id} » : l'effet « ${e.effet.nom} », tissu « ${em.nom} » de ${st.colonnes} × ${st.lignes} sommets ; au-delà de 64 × 64 (${SOMMETS_TISSU_MAX}), sa simulation dépasse son temps (aperçu saccadé). Baisser « resolution ».` });
+        problemes.push({ regle: 'budget-structures', gravite: 'alerte', scene: s.id, message: `Scène « ${s.id} » : l'effet « ${e.effet.nom} », tissu « ${em.nom} » de ${st.colonnes} × ${st.lignes} sommets ; au-delà de 64 × 64 (${SOMMETS_TISSU_MAX}), sa simulation dépasse son temps (aperçu saccadé). Baisser « resolution » (même sous cette limite, mesurée sur une carte graphique récente, une machine modeste peut saccader à l'aperçu).` });
       }
       const lus = scenesLues[s.id];
       const balisesEffet = lus.elements.filter((e) => e.effet !== undefined);
