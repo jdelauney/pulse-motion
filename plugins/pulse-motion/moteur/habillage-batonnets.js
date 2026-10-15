@@ -90,6 +90,7 @@
     });
     var osEnPlus = {};
     var signature = '';
+    var signatureYeux = '';
 
     function ligne(el, A, B) {
       el.setAttribute('x1', r2(A[0])); el.setAttribute('y1', r2(A[1]));
@@ -143,10 +144,13 @@
         E.pupille.style.display = p.paupieres < 0.25 ? 'none' : '';
         return { E: E, nd: nd };
       });
-      places.sort(function (a, b) { return a.nd - b.nd; }).forEach(function (x) {
-        var place = x.nd < 0 ? derriere : devant;
-        if (x.E.g.parentNode !== place || place.lastChild !== x.E.g) place.appendChild(x.E.g);
-      });
+      // Yeux rangés (devant ou derrière la tête, le plus proche en dernier) seulement quand leur place change.
+      places.sort(function (a, b) { return a.nd - b.nd; });
+      var sigYeux = places.map(function (x) { return x.E.s + (x.nd < 0 ? '-' : '+'); }).join();
+      if (sigYeux !== signatureYeux) {
+        places.forEach(function (x) { (x.nd < 0 ? derriere : devant).appendChild(x.E.g); });
+        signatureYeux = sigYeux;
+      }
     }
 
     function rendre(r) {

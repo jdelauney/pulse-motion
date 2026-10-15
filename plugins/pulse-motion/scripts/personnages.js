@@ -30,7 +30,9 @@ const AVEC_VALEUR = ['--dossier', '--type', '--vues', '--images', '--gabarit', '
 function options(args) {
   const valeur = (nom) => { const i = args.indexOf(nom); return i >= 0 ? args[i + 1] : undefined; };
   const libres = args.filter((a, i) => !a.startsWith('--') && !(i > 0 && AVEC_VALEUR.includes(args[i - 1])));
-  return { valeur, libres, drapeau: (nom) => args.includes(nom) };
+  // Une option à valeur placée en dernier, ou suivie d'une autre option : elle est incomplète.
+  const incomplete = args.some((a, i) => AVEC_VALEUR.includes(a) && (i + 1 >= args.length || args[i + 1].startsWith('--')));
+  return { valeur, libres, incomplete, drapeau: (nom) => args.includes(nom) };
 }
 
 const resume = (lu, pluriel, plus = () => ({})) => Object.keys(lu[pluriel]).sort().map((nom) => Object.assign(
@@ -55,7 +57,7 @@ async function executer(args, { bibliotheque } = {}) {
     const type = o.valeur('--type');
     if (type && !P.TYPES[type]) return { code: 2, sortie: '', erreur: `Type « ${type} » inconnu (pose, clip ou gabarit).` };
     for (const t of type ? [type] : ['clip', 'pose', 'gabarit']) {
-      const objet = l[P.TYPES[t]][nom];
+      const objet = Object.hasOwn(l[P.TYPES[t]], nom) ? l[P.TYPES[t]][nom] : null;
       if (objet) return { code: 0, sortie: P.serialiser(t, objet).trimEnd(), erreur: '' };
     }
     const tous = ['clips', 'poses', 'gabarits'].flatMap((p) => Object.keys(l[p]));
@@ -67,6 +69,7 @@ async function executer(args, { bibliotheque } = {}) {
     if (!l.erreurs.length) return { code: 0, sortie: `Personnages : ${bilan}, aucune erreur.`, erreur: '' };
     return { code: 1, sortie: `Personnages : ${bilan}.`, erreur: l.erreurs.map((e) => e.message).join('\n') };
   }
+  if (o.incomplete) return { code: 2, sortie: '', erreur: sous === 'planche' ? USAGE_PLANCHE : USAGE };
   if (sous === 'planche') {
     const vues = String(o.valeur('--vues') || '0,45,90').split(',').map((v) => (/^-?\d+(\.\d+)?$/.test(v.trim()) ? Number(v) : NaN));
     const images = o.valeur('--images') === undefined ? 8 : Number(o.valeur('--images'));
@@ -78,10 +81,10 @@ async function executer(args, { bibliotheque } = {}) {
     const dossier = o.valeur('--dossier') || '.';
     const l = lu();
     const nom = o.libres[0];
-    const trouve = (type ? [type] : ['clip', 'pose']).map((t) => [t, l[P.TYPES[t]][nom]]).find(([, x]) => x);
+    const trouve = (type ? [type] : ['clip', 'pose']).map((t) => [t, Object.hasOwn(l[P.TYPES[t]], nom) ? l[P.TYPES[t]][nom] : null]).find(([, x]) => x);
     if (!trouve) return { code: 1, sortie: '', erreur: `Personnage : « ${nom} » introuvable (clips : ${Object.keys(l.clips).join(', ')} ; poses : ${Object.keys(l.poses).join(', ')}).` };
     const nomGabarit = o.valeur('--gabarit') || 'standard';
-    const gabarit = l.gabarits[nomGabarit];
+    const gabarit = Object.hasOwn(l.gabarits, nomGabarit) ? l.gabarits[nomGabarit] : null;
     if (!gabarit) return { code: 1, sortie: '', erreur: `Personnage : gabarit « ${nomGabarit} » introuvable (gabarits : ${Object.keys(l.gabarits).join(', ')}).` };
     const sortie = o.valeur('--sortie') || (fs.existsSync(path.join(dossier, 'deroule.json'))
       ? path.join(dossier, 'sortie', 'personnages', `${nom}.png`)

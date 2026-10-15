@@ -36,6 +36,11 @@ test('planche : arguments refusés, sans lancer le navigateur', async () => {
     assert.equal(r.code, 2, args.join(' '));
     assert.match(r.erreur, /Usage : pulse-motion personnages planche/);
   }
+  assert.equal((await executer(['planche', 'marche', '--images'])).code, 2, 'option sans valeur');
+  const herite = await executer(['planche', 'constructor']);
+  assert.equal(herite.code, 1);
+  assert.match(herite.erreur, /« constructor » introuvable/);
+  assert.match((await executer(['planche', 'marche', '--gabarit', 'toString'])).erreur, /gabarit « toString » introuvable/);
   const inconnu = await executer(['planche', 'nage']);
   assert.equal(inconnu.code, 1);
   assert.match(inconnu.erreur, /« nage » introuvable/);
