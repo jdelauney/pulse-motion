@@ -66,7 +66,8 @@ await envoyer({ webgpu: true, tiede, moyen, chaud, saut: Math.max(...a.map((v, k
   if (r.webgpu === false) return t.skip('WebGPU indisponible');
   t.diagnostic(`tiède ${r.tiede}, moyen ${r.moyen}, chaud ${r.chaud}`);
   const [rt, vt, bt] = r.tiede;
-  assert.ok(rt > 60 && rt > 1.6 * vt && bt < 0.25 * rt, `tiède : rouge (${r.tiede})`);
+  // Émission intensite × t² (un feu tiède luit à peine) : à t ≈ 0,25, 0,18 en linéaire, lue prémultipliée (alpha = luminance) : ≈ 46.
+  assert.ok(rt > 30 && rt > 1.6 * vt && bt < 0.25 * rt, `tiède : rouge sombre (${r.tiede})`);
   const [rm, vm, bm] = r.moyen;
   assert.ok(rm >= vm && vm > bm && vm > 0.6 * rm, `moyen : orangé à jaune (${r.moyen})`);
   const [rc, vc, bc] = r.chaud;
