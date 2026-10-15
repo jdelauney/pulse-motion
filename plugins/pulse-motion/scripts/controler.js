@@ -30,7 +30,7 @@ const CATALOGUE = require('../moteur/synthe/catalogue.js');
 const { appliquerCorrections } = require('./lib/corriger.js');
 const { controlerRendu } = require('./lib/rendu-controle.js');
 const { aDesShaders, compilerShadersGPU } = require('./lib/shaders-gpu.js');
-const { LIMITES_INTERACTIONS, PLEINE_VOISINAGE } = require('../moteur/particules/recette.js');
+const { LIMITES_INTERACTIONS, PLEINE_VOISINAGE, STRUCTURES_SCENE_MAX, SOMMETS_TISSU_MAX } = require('../moteur/particules/recette.js');
 const { EFFETS: EFFETS_LETTRES } = require('../moteur/lettres.js');
 const { analyserCamera } = require('../moteur/camera.js');
 const { analyserTemps } = require('../moteur/temps.js');
@@ -381,6 +381,17 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
             problemes.push({ regle: 'budget-interactions', gravite: 'alerte', scene: s.id, message: `${nom} pour des cellules de voisinage de ${virgule(cote)} cqh de côté : ${Math.round(parCellule)} par cellule en moyenne sur toute la scène ; au-delà de ${PLEINE_VOISINAGE} dans une cellule, ses particules s'ignorent entre elles. Baisser ${champ} ou le nombre de particules.` });
           }
         }
+      }
+      // Structures (P5b) : au-delà de 16 cordes et tissus par scène, ou de 64 × 64 sommets par tissu, la simulation d'une
+      // image dépasse son temps.
+      const structures = effets.flatMap((e) => e.effet.emetteurs.filter((em) => em.structure).map((em) => ({ e, em })));
+      if (structures.length > STRUCTURES_SCENE_MAX) {
+        problemes.push({ regle: 'budget-structures', gravite: 'alerte', scene: s.id, message: `Scène « ${s.id} » : ${structures.length} cordes et tissus ; au-delà de ${STRUCTURES_SCENE_MAX} par scène, leur simulation dépasse son temps (aperçu saccadé). En retirer, ou les répartir sur plusieurs scènes.` });
+      }
+      for (const { e, em } of structures) {
+        const st = em.structure;
+        if (st.type !== 'tissu' || st.nSommets <= SOMMETS_TISSU_MAX) continue;
+        problemes.push({ regle: 'budget-structures', gravite: 'alerte', scene: s.id, message: `Scène « ${s.id} » : l'effet « ${e.effet.nom} », tissu « ${em.nom} » de ${st.colonnes} × ${st.lignes} sommets ; au-delà de 64 × 64 (${SOMMETS_TISSU_MAX}), sa simulation dépasse son temps (aperçu saccadé). Baisser « resolution ».` });
       }
       const lus = scenesLues[s.id];
       const balisesEffet = lus.elements.filter((e) => e.effet !== undefined);
