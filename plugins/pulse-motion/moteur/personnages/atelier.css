@@ -1,0 +1,40 @@
+:root {
+  --fond: oklch(0.141 0.005 285.823); --surface: oklch(0.16 0.02 290); --dim: oklch(0.22 0.02 300);
+  --trait: oklch(0.4 0.08 320 / 30%); --texte: oklch(0.96 0 0); --doux: oklch(0.7 0.03 300); --accent: oklch(0.68 0.2 30);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--fond); color: var(--texte); font: 14px/1.5 Figtree, ui-sans-serif, system-ui, sans-serif; }
+header { padding: 16px 24px 0; }
+h1 { font-size: 24px; margin: 0; }
+h2 { font-size: 14px; margin: 12px 0 4px; color: var(--doux); }
+#cible { color: var(--doux); margin: 4px 0 0; }
+main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; padding: 16px 24px 32px; }
+.scene svg { display: block; width: 100%; height: auto; border: 1px solid var(--trait); border-radius: 16px; background: var(--surface); }
+.fond { fill: oklch(0.16 0.02 290); } .sol { fill: oklch(0.25 0.03 30); }
+.poignee { fill: oklch(0.96 0 0 / 0.35); stroke: var(--accent); stroke-width: 2; cursor: grab; }
+.poignee:hover { fill: var(--accent); }
+.poignee.bute { fill: var(--accent); stroke: oklch(0.98 0 0); }
+.barre { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
+button, select, input { font: inherit; color: var(--texte); background: var(--dim); border: 1px solid var(--trait); border-radius: 10px; padding: 4px 10px; }
+button { cursor: pointer; }
+button[aria-pressed="true"], button.principal { background: var(--accent); border-color: transparent; }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.aide { color: var(--doux); font-size: 13px; }
+.temps { font-variant-numeric: tabular-nums; color: var(--doux); min-width: 90px; }
+#piste { position: relative; height: 44px; border: 1px solid var(--trait); border-radius: 10px; background: var(--surface); cursor: pointer; }
+#tete-lecture { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--accent); pointer-events: none; }
+.cle { position: absolute; top: 12px; width: 18px; height: 18px; margin-left: -9px; padding: 0; transform: rotate(45deg); border-radius: 3px; background: var(--doux); }
+.cle.pose { background: oklch(0.65 0.22 310); }
+.cle.choisie { background: var(--accent); outline: 2px solid var(--texte); }
+.panneau fieldset { border: 1px solid var(--trait); border-radius: 16px; margin: 0 0 12px; padding: 8px 12px 12px; }
+.panneau legend { font-weight: 600; padding: 0 4px; }
+.panneau label { display: flex; justify-content: space-between; gap: 8px; align-items: center; margin: 4px 0; color: var(--doux); }
+.curseur { display: grid !important; grid-template-columns: 1fr 72px; }
+.curseur input[type=range] { grid-column: 1 / -1; width: 100%; accent-color: var(--accent); padding: 0; }
+.curseur.anime span { color: var(--texte); font-weight: 600; }
+#message.erreur { color: oklch(0.7 0.2 25); white-space: pre-line; }
+#message.ok { color: oklch(0.8 0.15 150); }
+ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+li button { font-size: 13px; }
+@media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
