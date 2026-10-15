@@ -367,3 +367,23 @@ test('bibliothèque : milieux (air, brasier, eau-encre) et effets couplés (brai
   assert.ok(fusee.emetteurs[0].injecte.fumee > 0 && fusee.emetteurs[0].injecte.chaleur > 0, 'fumée et chaleur déposées');
   assert.equal(fusee.emetteurs[0].salves[0].nombre, 3);
 });
+
+test('référence : section Milieux (balise, champs du schéma, sources, rendu, couplages, contrôles, bibliothèque)', () => {
+  const texte = fs.readFileSync(path.join(__dirname, '..', 'references', 'particules.md'), 'utf8');
+  const debut = texte.indexOf('## Milieux');
+  const fin = texte.indexOf('## Régler à l\'œil');
+  assert.ok(debut > texte.indexOf('## Cordes et tissus') && fin > debut, 'section après les cordes et tissus, avant l\'atelier');
+  const section = texte.slice(debut, fin);
+  const n = R.SCHEMA.champs.milieu;
+  const champs = [...Object.keys(n.champs), ...Object.keys(n.champs.sources.element.champs), ...Object.keys(n.champs.rendu.champs),
+    ...Object.keys(R.SCHEMA.champs.emetteurs.element.champs.injecte.champs), 'coef', 'injecte'];
+  for (const c of champs) assert.ok(section.includes('`' + c + '`'), `champ « ${c} » documenté`);
+  for (const mot of ['data-milieu', 'data-ancre', 'data-calque', 'data-dur', '"type": "milieu"', '`ouverts`', '`fermes`', '`fumee`', '`chaleur`', '`encre`', '`feu`',
+    'milieu-invalide', 'deux-milieux', 'couplage-sans-milieu', 'budget-milieu', '512', 'un par scène', '256 × 144']) {
+    assert.ok(section.includes(mot), `la section parle de « ${mot} »`);
+  }
+  for (const nom of ['air', 'brasier', 'eau-encre', 'braises-portees', 'fusee-panache']) assert.ok(section.includes('`' + nom + '`'), nom);
+  assert.match(texte.split('## Milieux')[0], /voir « Milieux »/, 'la bibliothèque y renvoie');
+  const controles = fs.readFileSync(path.join(__dirname, '..', 'references', 'controles.md'), 'utf8');
+  for (const r of ['milieu-invalide', 'deux-milieux', 'couplage-sans-milieu', 'budget-milieu']) assert.match(controles, new RegExp('`' + r + '`'), r);
+});
