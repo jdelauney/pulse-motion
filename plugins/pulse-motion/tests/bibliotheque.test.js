@@ -312,3 +312,24 @@ test('bibliothèque : cordes et tissus (drapeau, banniere, rideau, guirlande, fi
   assert.deepEqual(corde.structure.attaches, [{ sommets: [0], cible: { genre: 'point', point: [0.5, 0] }, lacher: null }]);
   assert.equal(compiler('corde', 'epaisseur: 2').effet.emetteurs[0].structure.epaisseur, 2);
 });
+
+test('référence : section Cordes et tissus (champs du schéma, attaches, apparence, perles, contrôles, bibliothèque)', () => {
+  const texte = fs.readFileSync(path.join(__dirname, '..', 'references', 'particules.md'), 'utf8');
+  const debut = texte.indexOf('## Cordes et tissus');
+  const fin = texte.indexOf('## Régler à l\'œil');
+  assert.ok(debut > texte.indexOf('## Interactions') && fin > debut, 'section après les interactions, avant l\'atelier');
+  const section = texte.slice(debut, fin);
+  const n = R.SCHEMA.champs.emetteurs.element.champs.structure;
+  const champs = [...Object.keys(n.champs), ...Object.values(n.variantes.types).flatMap((v) => Object.keys(v.champs)),
+    ...Object.keys(n.champs.attaches.element.champs), ...Object.keys(n.champs.apparence.champs), 'tous', 'emetteur'];
+  for (const c of champs) assert.ok(section.includes('`' + c + '`'), `champ « ${c} » documenté`);
+  for (const mot of ['"type": "tissu"', '`debut`', '`fin`', '`haut`', '`bas`', '`gauche`', '`droite`', '`coins`', '`ancre`', '#id', '`avec`', 'data-ancre',
+    'structure-invalide', 'attache-introuvable', 'ancre-vide', 'budget-structures', '64 × 64', '16 cordes et tissus']) {
+    assert.ok(section.includes(mot), `la section parle de « ${mot} »`);
+  }
+  for (const nom of ['drapeau', 'banniere', 'rideau', 'guirlande', 'filet', 'corde']) assert.ok(section.includes('`' + nom + '`'), nom);
+  assert.match(texte.split('## Cordes et tissus')[0], /voir « Cordes et tissus »/, 'l\'essentiel et la bibliothèque y renvoient');
+  assert.doesNotMatch(texte, /pas d'interaction avec des cordes ou des tissus/, 'la section Interactions est à jour');
+  const controles = fs.readFileSync(path.join(__dirname, '..', 'references', 'controles.md'), 'utf8');
+  for (const r of ['structure-invalide', 'attache-introuvable', 'budget-structures']) assert.match(controles, new RegExp('`' + r + '`'), r);
+});
