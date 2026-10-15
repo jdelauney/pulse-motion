@@ -119,7 +119,7 @@ test('parler : erreur sans voix ; avec la voix, la bouche suit les mots puis rev
     await page.aller(pathToFileURL(r.fichier).href);
     const res = await page.evaluer(`(async () => {
       await M.pret;
-      const visible = () => [...document.querySelectorAll('#parleur [data-bouche-nom]')].filter((b) => b.checkVisibility()).map((b) => b.getAttribute('data-bouche-nom'));
+      const visible = () => [...document.querySelectorAll('#parleur [data-bouche-nom]')].filter((b) => { for (let e = b; e && e.id !== 'parleur'; e = e.parentNode) if (e.style && e.style.display === 'none') return false; return true; }).map((b) => b.getAttribute('data-bouche-nom'));
       const v = M.donnees.scenes[0].voix, d = M.minutage.scenes[0].debut + v.debut;
       const pendant = [];
       for (const m of v.mots) { await M.seek(d + (m.t0 + m.t1) / 2); pendant.push(visible().join()); }
