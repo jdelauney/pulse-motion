@@ -14,6 +14,8 @@ const { lireDeroule, dureeTemps, tempoMusique } = require('./lib/deroule.js');
 const { embarquerRessources, versDataURI, cheminDansProjet } = require('./lib/embarquer.js');
 const S = require('./lib/scenes.js');
 const { preparerEffets } = require('./lib/effets.js');
+const { preparerPersonnages, donneesPersonnages } = require('./lib/personnages-scene.js');
+const Pers = require('./lib/personnages.js');
 const { preparerObstacles, obstaclesVideo } = require('./lib/obstacles.js');
 const { chargeurShaders, preparerShaders, shadersDuDeroule, BIBLIOTHEQUE: BIBLIOTHEQUE_SHADERS } = require('./lib/shaders.js');
 const { variablesCSS } = require('../moteur/courbes.js');
@@ -27,7 +29,7 @@ const SA = require('../moteur/synthe/ambiances.js');
 const { trouverFichiersPolice } = require('./lib/police.js');
 
 const RACINE = path.resolve(__dirname, '..');
-const MOTEUR = ['courbes.js', 'aligner.js', 'sous-titres.js', 'minutage.js', 'transitions.js', 'tween.js', 'lettres.js', 'camera.js', 'temps.js', 'horloge.js', 'tailles.js', 'wav.js', 'sonie.js', 'mixage.js', 'synthe/catalogue.js', 'synthe/partition.js', 'synthe/ambiances.js', 'synthe/instruments.js', 'synthe/bruitages.js', 'audio.js', 'lecteur.js', 'sous-titres-rendu.js', 'debordement.js', 'mesures.js', 'pixels.js',
+const MOTEUR = ['courbes.js', 'aligner.js', 'sous-titres.js', 'minutage.js', 'transitions.js', 'tween.js', 'lettres.js', 'camera.js', 'squelette.js', 'clips.js', 'habillage-batonnets.js', 'habillage-pieces.js', 'personnages/partition.js', 'personnages/scene.js', 'temps.js', 'horloge.js', 'tailles.js', 'wav.js', 'sonie.js', 'mixage.js', 'synthe/catalogue.js', 'synthe/partition.js', 'synthe/ambiances.js', 'synthe/instruments.js', 'synthe/bruitages.js', 'audio.js', 'lecteur.js', 'sous-titres-rendu.js', 'debordement.js', 'mesures.js', 'pixels.js',
   'figer.js', 'shaders/code.js', 'particules/instantanes.js', 'particules/gpu.js', 'particules/obstacles.js', 'particules/fragments.js', 'particules/simulation.js', 'particules/voisinage.js', 'particules/maillage.js', 'particules/structures.js', 'particules/rendu.js', 'particules/shaders.js', 'particules/composition.js', 'particules/formes.js', 'particules/reperes.js', 'particules/calques.js'];
 function slug(texte) {
   return String(texte).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
@@ -148,6 +150,8 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   const shaders = [];
   const chargerShader = chargeurShaders(projet, dossierShaders);
   const sourcesModules = {};
+  let luPersonnages = null;
+  const utilisesPersonnages = { dessins: new Set(), gabarits: new Set() };
   for (const scene of deroule.scenes) {
     const fichier = cheminDansProjet(projet, scene.fichier);
     let html = null;
@@ -184,10 +188,23 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     const { html: avecObstacles, obstacles: obstaclesScene, erreurs: erreursObstacles } = preparerObstacles(avecShaders, { scene: scene.id, premierIndex: obstacles.length });
     obstacles.push(...obstaclesScene);
     erreurs.push(...erreursObstacles);
+    // Personnages : validés, durée des gestes écrite ; la bibliothèque n'est lue qu'au premier personnage rencontré.
+    let avecPersonnages = avecObstacles;
+    if (/data-personnage|data-action/.test(avecObstacles)) {
+      if (!luPersonnages) {
+        luPersonnages = Pers.lire(projet);
+        luPersonnages.erreurs.forEach((e) => erreurs.push({ regle: 'personnage-invalide', gravite: 'alerte', message: e.message }));
+      }
+      const r = preparerPersonnages(avecObstacles, { scene: scene.id, lu: luPersonnages });
+      avecPersonnages = r.html;
+      r.utilises.dessins.forEach((n) => utilisesPersonnages.dessins.add(n));
+      r.utilises.gabarits.forEach((n) => utilisesPersonnages.gabarits.add(n));
+      erreurs.push(...r.erreurs);
+    }
     // Sons importés (data-son="assets/…") : embarqués en bloc, l'attribut désigne le bloc ; un nom de bruitage reste tel quel.
     // Valeur entre guillemets doubles ou simples (une apostrophe dans un chemin entre guillemets doubles reste au chemin) ;
     // un même fichier n'est embarqué qu'une fois.
-    const avecSons = avecObstacles.replace(/(\sdata-son=)(?:"([^"]+)"|'([^']+)')/g, (tout, debut, double, simple) => {
+    const avecSons = avecPersonnages.replace(/(\sdata-son=)(?:"([^"]+)"|'([^']+)')/g, (tout, debut, double, simple) => {
       const valeur = double !== undefined ? double : simple;
       const guillemet = double !== undefined ? '"' : "'";
       if (!/[/.]/.test(valeur)) return tout;
@@ -268,6 +285,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     obstaclesVideo: video.obstacles,
     shaders,
     modules: sourcesModules,
+    ...(luPersonnages ? { personnages: donneesPersonnages(utilisesPersonnages, luPersonnages) } : {}),
   };
 
   // Sous-titres : cartons en temps absolus (minutage des scènes avec leurs voix), fichiers SRT et VTT.
@@ -334,6 +352,7 @@ ${lireMoteur(RACINE)}
 <script>
 ${scriptsScenes.join('\n')}
 M.demarrer();
+M.demarrerPersonnages();
 M.demarrerLecteur();
 M.demarrerSousTitres();
 M.demarrerParticules();
