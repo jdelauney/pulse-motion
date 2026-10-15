@@ -174,7 +174,8 @@ const reperesDe = (cadre) => (g) => ligne(fixes.map((r) => r || cadre(g)));
 test('milieu GPU : la fumée contourne une boîte (rien dedans, présente de chaque côté et au-dessus)', async (t) => {
   if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
   const r = await page({ effet: compiler(PANACHE) }, MONDE + `
-// Boîte de 24 × 8 cqh au-dessus de la source (y de 51 à 59).
+// Boîte de 24 × 8 cqh au-dessus de la source (y de 51 à 59). Le jet qui la heurte s'étale sous elle et remonte jusqu'à
+// une vingtaine de cqh de ses bords : fumée cherchée sur 30 cqh de chaque côté.
 const boite = { centre: [L / 2, 55], angle: 0, demi: [12, 4], echelle: [1, 1], actif: true };
 const e = await milieuApres(DONNEES.effet, [2.5], monde, reperesDe(() => boite));
 const g = e.grille;
@@ -185,8 +186,8 @@ for (let c = 0; c < g.nx * g.ny; c++) {
   masse += f;
   const dansBoite = Math.abs(x - L / 2) <= 12 && Math.abs(y - 55) <= 4;
   if (e.solide[c * 4] > 0.5) { pleines++; dedans += f; }
-  if (!dansBoite && y >= 51 && y <= 59 && x < L / 2 - 12 && x > L / 2 - 22) gauche += f;
-  if (!dansBoite && y >= 51 && y <= 59 && x > L / 2 + 12 && x < L / 2 + 22) droite += f;
+  if (!dansBoite && y >= 51 && y <= 59 && x < L / 2 - 12 && x > L / 2 - 42) gauche += f;
+  if (!dansBoite && y >= 51 && y <= 59 && x > L / 2 + 12 && x < L / 2 + 42) droite += f;
   if (Math.abs(x - L / 2) <= 12 && y < 48 && y > 20) dessus += f;
 }
 await envoyer({ webgpu: true, dedans, pleines, attendues: 24 * 8 / (g.cote * g.cote), gauche, droite, dessus, masse });`);
