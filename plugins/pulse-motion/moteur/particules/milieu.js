@@ -582,5 +582,340 @@ fn gPublier(@builtin(global_invocation_id) gid: vec3u) {
     return code;
   };
 
-  // La classe P.Milieu et P.Couplage : tâche 2.
+  // Pipelines du module « pm-milieu », un par device ; disposition explicite (2 tampons de stockage, 3 textures de stockage).
+  const parDevice = new WeakMap();
+  function pipelinesMilieu(device) {
+    let p = parDevice.get(device);
+    if (p) return p;
+    const V = GPUShaderStage.COMPUTE;
+    const ecriture = (b) => ({ binding: b, visibility: V, storageTexture: { access: 'write-only', format: 'rgba32float' } });
+    const layout = device.createBindGroupLayout({
+      entries: [
+        { binding: 4, visibility: V, buffer: { type: 'uniform', hasDynamicOffset: true, minBindingSize: 80 } },
+        { binding: 11, visibility: V, buffer: { type: 'uniform' } },
+        { binding: 12, visibility: V, texture: { sampleType: 'unfilterable-float', viewDimension: '2d-array' } },
+        { binding: 13, visibility: V, texture: { sampleType: 'float', viewDimension: '2d-array' } },
+        { binding: 14, visibility: V, sampler: { type: 'filtering' } },
+        { binding: 30, visibility: V, buffer: { type: 'uniform' } },
+        { binding: 31, visibility: V, buffer: { type: 'storage' } },
+        { binding: 32, visibility: V, buffer: { type: 'storage' } },
+        ecriture(33), ecriture(34), ecriture(35),
+        { binding: 36, visibility: V, buffer: { type: 'uniform', hasDynamicOffset: true, minBindingSize: 16 } },
+      ],
+    });
+    const module = device.createShaderModule({ label: 'pm-milieu', code: P.codeMilieu() });
+    const pl = device.createPipelineLayout({ bindGroupLayouts: [layout] });
+    const pipelines = {};
+    P.NOYAUX_MILIEU.forEach((nom) => { pipelines[nom] = device.createComputePipeline({ layout: pl, compute: { module, entryPoint: nom } }); });
+    p = {
+      layout,
+      pipelines,
+      lisse: device.createSampler({ magFilter: 'linear', minFilter: 'linear', addressModeU: 'clamp-to-edge', addressModeV: 'clamp-to-edge' }),
+    };
+    parDevice.set(device, p);
+    return p;
+  }
+
+  class Milieu {
+    constructor(device, effet, zone, monde, duree) {
+      if (!effet || !effet.milieu) throw new Error('Milieu : la recette « ' + (effet && effet.nom) + ' » n\'a pas de bloc « milieu ».');
+      const U = GPUBufferUsage;
+      const T = GPUTextureUsage;
+      this.device = device;
+      this.effet = effet;
+      this.zone = zone.slice();
+      this.grille = P.grilleMilieu(zone, effet.milieu.resolution);
+      const g = this.grille;
+      this.d = P.dispositionMilieu(g.nx, g.ny);
+      this.duree = Math.max(PAS, duree);
+      this.nZones = Math.ceil(this.duree * GRILLE) + 2;
+      this.kFin = Math.ceil(this.duree / PAS) + 1;
+      this.k = 0;
+      this.tau = 0;
+      this.tailleEtat = this.d.etat * 4;
+      this.monde = monde && monde.actif ? monde : null;
+      this.champ = device.createBuffer({ size: this.d.total * 4, usage: U.STORAGE | U.COPY_SRC | U.COPY_DST });
+      this.depots = device.createBuffer({ size: this.d.n * 5 * 4, usage: U.STORAGE | U.COPY_DST });
+      this.uniforme = device.createBuffer({ size: C.OCTETS_GRILLE, usage: U.UNIFORM | U.COPY_DST });
+      device.queue.writeBuffer(this.uniforme, 0, P.emballerGrille(effet, g, this.d, zone));
+      // Itérations de Jacobi : source et destination alternées (tranches de 256 octets : A -> B, puis B -> A).
+      this.iterations = device.createBuffer({ size: 512, usage: U.UNIFORM | U.COPY_DST });
+      const it = new Uint32Array(128);
+      it.set([this.d.pA, this.d.pB], 0);
+      it.set([this.d.pB, this.d.pA], 64);
+      device.queue.writeBuffer(this.iterations, 0, it);
+      this.tamponPas = device.createBuffer({ size: 256 * PAS_PAR_LOT, usage: U.UNIFORM | U.COPY_DST });
+      this.donneesPas = new ArrayBuffer(256 * PAS_PAR_LOT);
+      this.u32Pas = new Uint32Array(this.donneesPas);
+      this.f32Pas = new Float32Array(this.donneesPas);
+      const texture = () => device.createTexture({ size: [g.nx, g.ny], format: 'rgba32float', usage: T.STORAGE_BINDING | T.TEXTURE_BINDING });
+      this.texVent = texture();
+      this.texA = texture();
+      this.texB = texture();
+      this.vueVent = this.texVent.createView();
+      this.vueA = this.texA.createView();
+      this.vueB = this.texB.createView();
+      // Géométrie de la grille pour les effets qui lisent le vent (liaison 25 de simulation.js) : origine, côté, nx, ny.
+      this.uniformeVent = device.createBuffer({ size: 32, usage: U.UNIFORM | U.COPY_DST });
+      const v = new ArrayBuffer(32);
+      new Float32Array(v).set([g.origine[0], g.origine[1], g.cote], 0);
+      new Uint32Array(v).set([g.nx, g.ny], 4);
+      device.queue.writeBuffer(this.uniformeVent, 0, v);
+      this.p = pipelinesMilieu(device);
+      if (this.monde) this.preparerMonde(); else this.mondeVide();
+      this.groupe = device.createBindGroup({
+        layout: this.p.layout,
+        entries: [
+          { binding: 4, resource: { buffer: this.tamponPas, size: 80 } },
+          { binding: 11, resource: { buffer: this.uniformeMonde } },
+          { binding: 12, resource: this.vueReperes },
+          { binding: 13, resource: this.vueSdf },
+          { binding: 14, resource: this.p.lisse },
+          { binding: 30, resource: { buffer: this.uniforme } },
+          { binding: 31, resource: { buffer: this.champ } },
+          { binding: 32, resource: { buffer: this.depots } },
+          { binding: 33, resource: this.vueVent },
+          { binding: 34, resource: this.vueA },
+          { binding: 35, resource: this.vueB },
+          { binding: 36, resource: { buffer: this.iterations, size: 16 } },
+        ],
+      });
+    }
+
+    /** Obstacles : uniforme « Monde », texture des repères (une ligne par point de grille), champs de distance des formes. */
+    preparerMonde() {
+      const { device } = this;
+      const O = M.obstacles;
+      const entrees = this.monde.entrees;
+      this.nObs = entrees.length;
+      this.reperesConnus = new Uint8Array(this.nZones);
+      this.texReperes = device.createTexture({
+        size: [2 * this.nObs, Math.min(this.nZones, LIGNES_REPERES), Math.ceil(this.nZones / LIGNES_REPERES)],
+        format: 'rgba32float',
+        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+      });
+      this.vueReperes = this.texReperes.createView({ dimension: '2d-array' });
+      this.uniformeMonde = device.createBuffer({ size: O.OCTETS_MONDE, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+      device.queue.writeBuffer(this.uniformeMonde, 0, O.emballerMonde(entrees, this.nZones, this.monde.largeurCqh, []));
+      if (this.monde.formes) this.vueSdf = this.monde.formes.vue;
+      else {
+        this.sdfVide = device.createTexture({ size: [1, 1, 1], format: 'rgba16float', usage: GPUTextureUsage.TEXTURE_BINDING });
+        this.vueSdf = this.sdfVide.createView({ dimension: '2d-array' });
+      }
+    }
+
+    /** Sans obstacle : monde vide (n = 0), textures d'un texel. */
+    mondeVide() {
+      const { device } = this;
+      this.uniformeMonde = device.createBuffer({ size: M.obstacles ? M.obstacles.OCTETS_MONDE : 816, usage: GPUBufferUsage.UNIFORM });
+      this.texVide = device.createTexture({ size: [1, 1, 1], format: 'rgba32float', usage: GPUTextureUsage.TEXTURE_BINDING });
+      this.sdfVide = device.createTexture({ size: [1, 1, 1], format: 'rgba16float', usage: GPUTextureUsage.TEXTURE_BINDING });
+      this.vueReperes = this.texVide.createView({ dimension: '2d-array' });
+      this.vueSdf = this.sdfVide.createView({ dimension: '2d-array' });
+    }
+
+    /** Repères des obstacles aux points de grille utiles au pas k (et à ses voisins), envoyés une fois chacun. */
+    assurerReperes(k, zones) {
+      const n = this.nObs;
+      const g0 = Math.max(0, Math.floor(k * PAS * GRILLE) - 1);
+      const g1 = Math.min(this.nZones - 1, Math.floor((k + 1) * PAS * GRILLE) + 2);
+      for (let g = g0; g <= g1; g++) {
+        if (this.reperesConnus[g]) continue;
+        this.device.queue.writeTexture(
+          { texture: this.texReperes, origin: [0, g % LIGNES_REPERES, Math.floor(g / LIGNES_REPERES)] },
+          zones.reperes(g), { bytesPerRow: n * 2 * 16 }, [n * 2, 1, 1]);
+        this.reperesConnus[g] = 1;
+      }
+    }
+
+    /** Membre : données du pas k (local au milieu) dans la tranche o (mots) ; repères des obstacles utiles. */
+    preparerPas(o, k, zones) {
+      if (this.texReperes) this.assurerReperes(k, zones);
+      const u = this.u32Pas;
+      const f = this.f32Pas;
+      const tau0 = Math.fround(k * PAS);
+      const tau1 = Math.fround((k + 1) * PAS);
+      u[o] = k;
+      f[o + 1] = tau0;
+      f[o + 2] = tau1;
+      f[o + 3] = tau1 - tau0;
+    }
+
+    envoyerPas(n) {
+      if (n) this.device.queue.writeBuffer(this.tamponPas, 0, this.donneesPas, 0, n * 256);
+    }
+
+    /** Membre : pas de la tranche n, une phase par dispatch (Jacobi : 40 dispatches, source et destination alternées). */
+    encoderPas(passe, n) {
+      const cellules = Math.ceil(this.d.n / 64);
+      const faces = Math.ceil(this.d.nf / 64);
+      const lancer = (nom, groupes, it = 0) => {
+        passe.setPipeline(this.p.pipelines[nom]);
+        passe.setBindGroup(0, this.groupe, [n * 256, it * 256]);
+        passe.dispatchWorkgroups(groupes);
+      };
+      lancer('gObstacles', cellules);
+      lancer('gInjecter', cellules);
+      lancer('gAdvecterS', cellules);
+      lancer('gCorrigerS', cellules);
+      lancer('gRecopierS', cellules);
+      lancer('gTourbillon', cellules);
+      lancer('gForcer', faces);
+      lancer('gAdvecterV', faces);
+      lancer('gCorrigerV', faces);
+      lancer('gLimites', faces);
+      lancer('gDivergence', cellules);
+      for (let it = 0; it < C.JACOBI; it++) lancer('gJacobi', cellules, it % 2);
+      lancer('gProjeter', faces);
+      lancer('gPublier', cellules);
+    }
+
+    /** Membre : pas et τ atteints (le rendu lit les textures publiées). */
+    positionner(k, tau) {
+      this.k = k;
+      this.tau = tau;
+      return null;
+    }
+
+    /** Textures recalculées depuis l'état (après vider ou restaurer : elles ne sont pas dans l'état). */
+    republier(enc) {
+      const p = enc.beginComputePass();
+      p.setPipeline(this.p.pipelines.gPublier);
+      p.setBindGroup(0, this.groupe, [0, 0]);
+      p.dispatchWorkgroups(Math.ceil(this.d.n / 64));
+      p.end();
+    }
+
+    viderEtat(enc) {
+      enc.clearBuffer(this.champ);
+      enc.clearBuffer(this.depots);
+      this.republier(enc);
+    }
+
+    /** Copie de l'état (vitesse, scalaires, pression) dans un instantané ; créé à la première sauvegarde. */
+    sauverEtat(enc, copie) {
+      const c = copie || this.device.createBuffer({ size: this.tailleEtat, usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST });
+      enc.copyBufferToBuffer(this.champ, 0, c, 0, this.tailleEtat);
+      return c;
+    }
+
+    restaurerEtat(enc, c) {
+      enc.copyBufferToBuffer(c, 0, this.champ, 0, this.tailleEtat);
+      enc.clearBuffer(this.depots);
+      this.republier(enc);
+    }
+
+    detruireCopie(c) { c.destroy(); }
+
+    async lire() {
+      const { device } = this;
+      const lecture = device.createBuffer({ size: this.champ.size, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
+      const enc = device.createCommandEncoder();
+      enc.copyBufferToBuffer(this.champ, 0, lecture, 0, this.champ.size);
+      device.queue.submit([enc.finish()]);
+      await lecture.mapAsync(GPUMapMode.READ);
+      const f = new Float32Array(lecture.getMappedRange().slice(0));
+      lecture.unmap();
+      lecture.destroy();
+      const d = this.d;
+      return {
+        vitesse: f.slice(d.vA, d.vA + d.nf),
+        scalaires: f.slice(d.sA, d.sA + 8 * d.n),
+        pression: f.slice(d.pA, d.pA + d.n),
+        divergence: f.slice(d.dv, d.dv + d.n),
+        solide: f.slice(d.sol, d.sol + 4 * d.n),
+        etat: new Uint32Array(f.buffer.slice(0, d.etat * 4)),
+      };
+    }
+
+    /** Tests : scalaires de l'état imposés (8 valeurs par cellule), textures publiées. */
+    ecrireScalaires(valeurs) {
+      this.device.queue.writeBuffer(this.champ, this.d.sA * 4, valeurs);
+      const enc = this.device.createCommandEncoder();
+      this.republier(enc);
+      this.device.queue.submit([enc.finish()]);
+    }
+
+    detruire() {
+      [this.champ, this.depots, this.uniforme, this.iterations, this.tamponPas, this.uniformeVent, this.uniformeMonde].forEach((b) => b && b.destroy());
+      [this.texVent, this.texA, this.texB, this.texReperes, this.texVide, this.sdfVide].forEach((t) => t && t.destroy());
+    }
+  }
+
+  P.Milieu = Milieu;
+
+  class Couplage {
+    constructor(device, membres) {
+      this.device = device;
+      this.membres = membres.map((m) => ({ membre: m.membre, debut: Math.max(0, Math.round(m.debut)) }));
+      this.kFin = Math.max(1, ...this.membres.map((m) => m.debut + m.membre.kFin));
+      const tailleEtat = this.membres.reduce((s, m) => s + m.membre.tailleEtat, 0);
+      this.planificateur = M.instantanes.creerPlanificateur({
+        intervalle: M.instantanes.intervallePour({ tailleEtat, pasTotal: this.kFin, budget: BUDGET_INSTANTANES }),
+      });
+      this.instantanes = new Map();
+      this.k = 0;
+    }
+
+    avancer(tau, zones) {
+      const k = Math.min(this.kFin, Math.max(0, Math.floor(tau / PAS + 1e-6)));
+      this.executer(this.planificateur.planifier(k), zones);
+      this.k = k;
+      return this.membres.map((m, i) => m.membre.positionner(Math.min(m.membre.kFin, Math.max(0, k - m.debut)), tau - m.debut * PAS, zones[i]));
+    }
+
+    executer(actions, zones) {
+      if (!actions.length) return;
+      const { device } = this;
+      let enc = null;
+      let passe = null;
+      let n = 0;
+      const ouvrir = () => { if (!enc) enc = device.createCommandEncoder(); };
+      const fermerPasse = () => { if (passe) { passe.end(); passe = null; } };
+      const envoyer = () => {
+        fermerPasse();
+        if (!enc) return;
+        this.membres.forEach((m) => m.membre.envoyerPas(n));
+        device.queue.submit([enc.finish()]);
+        enc = null;
+        n = 0;
+      };
+      for (const a of actions) {
+        if (a.type === 'pas') {
+          if (n === PAS_PAR_LOT) envoyer();
+          ouvrir();
+          // Membres actifs à ce pas du groupe, dans l'ordre : effets, puis le milieu (dernier) ; données d'abord, puis la passe.
+          const actifs = [];
+          this.membres.forEach((m, i) => {
+            const k = a.k - m.debut;
+            if (k >= 0 && k < m.membre.kFin) actifs.push({ m, i, k });
+          });
+          actifs.forEach((x) => x.m.membre.preparerPas(n * 64, x.k, zones[x.i]));
+          if (!passe) passe = enc.beginComputePass();
+          actifs.forEach((x) => x.m.membre.encoderPas(passe, n));
+          n++;
+          continue;
+        }
+        ouvrir();
+        fermerPasse();
+        if (a.type === 'vider') this.membres.forEach((m) => m.membre.viderEtat(enc));
+        else if (a.type === 'restaurer') {
+          const c = this.instantanes.get(a.k);
+          this.membres.forEach((m, i) => m.membre.restaurerEtat(enc, c[i]));
+        } else if (a.type === 'sauver') {
+          const c = this.instantanes.get(a.k) || [];
+          this.membres.forEach((m, i) => { c[i] = m.membre.sauverEtat(enc, c[i]); });
+          this.instantanes.set(a.k, c);
+        }
+      }
+      envoyer();
+    }
+
+    detruire() {
+      this.instantanes.forEach((c) => c.forEach((x, i) => this.membres[i].membre.detruireCopie(x)));
+      this.instantanes.clear();
+    }
+  }
+
+  P.Couplage = Couplage;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
