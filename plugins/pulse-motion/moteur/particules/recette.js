@@ -451,7 +451,7 @@
 
   /** Absorbance par canal d'une encre de couleur linéaire c : −ln(c), bornée (une encre blanche n'absorbe rien). */
   function absorbanceEncre(c) {
-    return [0, 1, 2].map(function (k) { return arrondi(-Math.log(Math.max(c[k], 0.02))); });
+    return [0, 1, 2].map(function (k) { return arrondi(-Math.log(Math.max(c[k], 0.02))) + 0; }); // + 0 : pas de « -0 » pour le blanc
   }
 
   // ---- Héritage ----
