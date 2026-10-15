@@ -21,7 +21,10 @@
  * ou rectangle de sa photographie ; corde tenue aux deux bouts : entre ses deux points d'attache) ; puis 4 sous-pas de
  * 1/480 s : sommets tenus posés sur leur attache (vitesse de l'attache), autres prédits par les forces de la recette
  * (integrer de P1, exact sur le sous-pas) ; 4 itérations XPBD (λ remis à zéro à chaque sous-pas) qui résolvent chacune les
- * 12 couleurs de liens dans l'ordre, une passe parallèle par couleur (aucun sommet partagé dans une couleur) ; contacts ;
+ * 12 couleurs de liens dans l'ordre, une passe parallèle par couleur (aucun sommet partagé dans une couleur) ; contacts
+ * avec les obstacles de P3 (émetteur à collisions actives : repères aux deux bouts du sous-pas, chaque sommet libre balayé,
+ * puis le centre de chaque cellule d'un tissu en 4 couleurs, ses sommets libres déplacés avec lui ; arrêt, replacement à
+ * MARGE, glissement freiné par le frottement) ;
  * vitesse = déplacement / h, amortie ; déchirure : chaque sommet marque ses propres liens (bit du genre dans son mot de
  * « rompus ») étirés au-delà de dechirure × longueur de repos, d'après les positions de fin de sous-pas seulement (aucune
  * position ne bouge pendant la décision : même résultat dans tout ordre) ; un lien rompu n'est plus résolu, ses triangles
@@ -351,8 +354,96 @@ fn resoudreLien(j: u32, base: u32, lb: u32, h: f32, rp: Repos) {
   sommets[ib].pos = pb.pos - wb * dl * nrm;
 }
 
-// Contacts avec les obstacles de P3 : aucun dans ce module (plan 3).
+struct ContactS { ok: bool, pos: vec2f };
+
+// Point balayé de p0 (début du sous-pas, obstacles à ta : cadresA) à p1 (fin, à tb : cadresB) : arrêté au premier obstacle
+// ciblé touché, replacé à MARGE de sa surface ; reste du déplacement glissé le long de la surface, freiné par le
+// frottement de la recette (Coulomb : la part tangentielle perd frottement × la part normale), arrêté au second obstacle.
+fn contactPoint(p0: vec2f, p1: vec2f, r: f32, tb: f32) -> ContactS {
+  let t = chercher(p0, p1, 0.0, true, r);
+  if (!t.ok) { return ContactS(false, p1); }
+  let B = cadresB[t.o];
+  let nrm = normalize(tourner(B, t.n));
+  let q = versMonde(B, t.l) + nrm * MARGE;
+  let reste = (p1 - p0) * (1.0 - t.t);
+  let rn = max(-dot(reste, nrm), 0.0);
+  let rt = reste + rn * nrm;
+  let lt = length(rt);
+  var f = 1.0;
+  if (lt > 1e-9) { f = max(0.0, 1.0 - 0.5 * (ef(145u) + ef(146u)) * rn / lt); }
+  var x = q + rt * f;
+  let t2 = chercher(q, x, tb, false, r);
+  if (t2.ok) {
+    let B2 = cadresB[t2.o];
+    x = versMonde(B2, t2.l) + normalize(tourner(B2, t2.n)) * MARGE;
+  }
+  return ContactS(true, x);
+}
+
+// Sommet libre balayé de sa position du début du sous-pas à sa position corrigée (rayon : épaisseur / 2).
+fn contactSommet(i: u32, tb: f32) {
+  let p = sommets[i];
+  if (p.gen == 1u) { return; }
+  let c = contactPoint(anciennes[i], p.pos, 0.5 * p.taille, tb);
+  if (c.ok) { sommets[i].pos = c.pos; }
+}
+
+// Cellule (r, c) d'un tissu : son centre (moyenne de ses 4 sommets) balayé ; au contact, ses sommets libres sont déplacés
+// du déplacement de son centre. Cellule dont un lien est rompu (H, V, diagonales du sommet v ; V de v + 1 ; H de v + C) :
+// ignorée.
+fn contactCellule(base: u32, r: u32, c: u32, tb: f32) {
+  let C = eu(S_C);
+  let v = r * C + c;
+  if ((rompus[base + v] & 15u) != 0u || (rompus[base + v + 1u] & 2u) != 0u || (rompus[base + v + C] & 1u) != 0u) { return; }
+  var ids = array<u32, 4>(base + v, base + v + 1u, base + v + C, base + v + C + 1u);
+  var c0 = vec2f(0.0);
+  var c1 = vec2f(0.0);
+  var libres = 0u;
+  var rayon = 0.0;
+  for (var k = 0u; k < 4u; k++) {
+    let p = sommets[ids[k]];
+    c0 += 0.25 * anciennes[ids[k]];
+    c1 += 0.25 * p.pos;
+    rayon = max(rayon, 0.5 * p.taille);
+    if (p.gen == 0u) { libres += 1u; }
+  }
+  if (libres == 0u) { return; }
+  let ct = contactPoint(c0, c1, rayon, tb);
+  if (!ct.ok) { return; }
+  let dx = ct.pos - c1;
+  for (var k = 0u; k < 4u; k++) {
+    if (sommets[ids[k]].gen == 0u) { sommets[ids[k]].pos = sommets[ids[k]].pos + dx; }
+  }
+}
+
+// Contacts du sous-pas [ta, tb] avec les obstacles de P3 (émetteur à collisions actives) : repères aux deux bouts, une
+// fois par groupe de travail ; sommets ; puis cellules d'un tissu en 4 couleurs (r mod 2, c mod 2), aucune cellule d'une
+// couleur ne partageant de sommet. Barrières entre les phases (bornes constantes).
 fn contactsStructure(base: u32, n: u32, li: u32, ta: f32, tb: f32) {
+  if (li < Mo.n) {
+    cadresA[li] = repere(li, ta);
+    cadresB[li] = repere(li, tb);
+  }
+  barriere();
+  let actif = eu(140u) == 1u;
+  if (actif) {
+    for (var v = li; v < n; v += S_FILS) { contactSommet(base + v, tb); }
+  }
+  barriere();
+  let C = eu(S_C);
+  let R = eu(S_R);
+  for (var k = 0u; k < 4u; k++) {
+    let pr = k / 2u;
+    let pc = k % 2u;
+    var nr = 0u;
+    var nc = 0u;
+    if (R > pr + 1u) { nr = (R - pr) / 2u; }
+    if (C > pc + 1u) { nc = (C - pc) / 2u; }
+    if (actif) {
+      for (var j = li; j < nr * nc; j += S_FILS) { contactCellule(base, pr + 2u * (j / nc), pc + 2u * (j % nc), tb); }
+    }
+    barriere();
+  }
 }
 
 // Fin du sous-pas : vitesse = déplacement / h, amortie (sommet tenu : vitesse de son attache).
