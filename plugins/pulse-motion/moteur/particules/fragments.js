@@ -23,6 +23,7 @@
  * ajusterCapacites(effet, totaux) -> effet : nombre de particules des émetteurs de fragments fixé (salve à τ = 0),
  *   capacités des sous-émetteurs recalculées (copie).
  * pasDe(tau), raccord(effet, tau) -> { ancre, cible } : éléments cachés à τ (le moteur pose la classe pm-fragment-cache) ;
+ *   un tissu photographié (structure, apparence.source « ancre », P5b) cache son ancre comme les pixels et les éclats ;
  *   le pas est celui de la simulation (P.Simulation.avancer).
  *
  * Module pur : chargé tel quel dans la page (global M.fragments) et par Node (require).
@@ -377,7 +378,7 @@
     var versCible = false;
     var kA = 0;
     effet.emetteurs.forEach(function (em) {
-      if (em.pixels || em.eclats) source = true;
+      if (em.pixels || em.eclats || (em.structure && em.structure.apparence.source === 'ancre')) source = true;
       if (em.cible) {
         if (em.cible.source === 'cible') versCible = true; else versAncre = true;
         kA = Math.max(kA, em.cible.k);
