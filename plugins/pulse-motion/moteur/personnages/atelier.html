@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atelier des personnages – Pulse Motion</title>
+<link rel="stylesheet" href="/_pm/personnages/atelier.css">
+</head>
+<body>
+<header>
+  <h1>Atelier des personnages</h1>
+  <p id="cible" role="note"></p>
+</header>
+<main>
+  <section class="scene" aria-label="Personnage">
+    <svg id="scene" viewBox="0 0 900 560" role="img" aria-label="Personnage à poser">
+      <rect width="900" height="560" class="fond"/>
+      <rect y="500" width="900" height="60" class="sol"/>
+      <g id="fantomes"></g><g id="perso"></g><g id="poignees"></g>
+    </svg>
+    <div class="barre" role="group" aria-label="Vue">
+      <button data-vue="0">Profil</button><button data-vue="45">3/4</button><button data-vue="90">Face</button>
+      <button data-vue="135">3/4 gauche</button><button data-vue="-90">Dos</button>
+      <label>Rotation <input id="vue" type="range" min="-180" max="180" step="1" value="0"></label>
+      <label><input id="tourner" type="checkbox"> Tourner</label>
+      <span class="aide">Glisser une articulation : tourner l'os · Maj + glisser une main ou un pied : l'amener à la souris</span>
+    </div>
+    <section id="frise" aria-label="Images-clés">
+      <div class="barre">
+        <button id="lecture" aria-label="Lecture">▶</button>
+        <label><input id="boucle-lecture" type="checkbox" checked> En boucle</label>
+        <button id="image-avant" aria-label="Image précédente">‹</button>
+        <button id="image-apres" aria-label="Image suivante">›</button>
+        <span id="temps" class="temps"></span>
+        <button id="ajouter">+ Clé</button><button id="dupliquer">Dupliquer</button><button id="supprimer">Supprimer</button>
+        <label>Courbe <select id="courbe">
+          <option value="sine-inout">douce (par défaut)</option><option value="linear">régulière</option>
+          <option value="cubic-out">freine</option><option value="cubic-in">accélère</option>
+          <option value="back-out">dépasse puis revient</option><option value="bounce-out">rebondit</option>
+        </select></label>
+      </div>
+      <div id="piste" aria-label="Frise : cliquer pour aller à un instant, glisser une clé pour la déplacer, déposer une pose pour créer une clé"><div id="tete-lecture"></div></div>
+    </section>
+  </section>
+  <aside class="panneau">
+    <fieldset class="fichier"><legend>Fichier</legend>
+      <label>Type <select id="type"><option value="clip">mouvement (clip)</option><option value="pose">pose</option></select></label>
+      <label>Nom <input id="nom" pattern="[a-z0-9-]+" placeholder="ex. gratte-tete"></label>
+      <label>Description <input id="description"></label>
+      <label>Gabarit <select id="gabarit"></select></label>
+      <div class="barre"><button id="annuler">Annuler</button><button id="retablir">Rétablir</button><button id="enregistrer" class="principal">Enregistrer</button></div>
+      <p id="message" role="status"></p>
+    </fieldset>
+    <fieldset id="proprietes"><legend>Mouvement</legend>
+      <label><input id="boucle" type="checkbox"> Cycle (boucle)</label>
+      <label>Durée d'un cycle (s) <input id="duree" type="number" min="0.05" step="0.05"></label>
+      <label>Foulée <input id="foulee" type="number" min="0" step="1"></label>
+      <label>Pieds <select id="pieds"><option value="libres">libres</option><option value="au-sol">au sol</option></select></label>
+      <label>Miroir (phase) <input id="miroir" type="number" min="0" max="0.95" step="0.05"></label>
+      <label><input id="additif" type="checkbox"> Calque additif</label>
+    </fieldset>
+    <div id="curseurs"></div>
+    <fieldset><legend>Bibliothèque</legend>
+      <p class="aide">Cliquer une pose : la poser à l'instant courant. La glisser sur la frise : créer une clé. Cliquer un mouvement : l'ouvrir.</p>
+      <h2>Poses</h2><ul id="poses"></ul>
+      <h2>Mouvements</h2><ul id="clips"></ul>
+    </fieldset>
+  </aside>
+</main>
+<script src="/_pm/personnages/modules/courbes.js"></script>
+<script src="/_pm/personnages/modules/squelette.js"></script>
+<script src="/_pm/personnages/modules/clips.js"></script>
+<script src="/_pm/personnages/modules/habillage-batonnets.js"></script>
+<script type="module" src="/_pm/personnages/atelier.mjs"></script>
+</body>
+</html>
