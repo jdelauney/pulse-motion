@@ -1,0 +1,98 @@
+'use strict';
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const { pathToFileURL } = require('node:url');
+const { assembler } = require('../scripts/assembler.js');
+const { preparerPersonnages } = require('../scripts/lib/personnages-scene.js');
+const { ouvrirPage } = require('../scripts/lib/cdp.js');
+const { trouverNavigateur } = require('./aide/navigateur.js');
+const { STYLES, copierProjet } = require('./aide/projet.js');
+const P = require('../scripts/lib/personnages.js');
+
+const navigateur = trouverNavigateur();
+const lu = P.lire(null);
+
+const SCENE = `<section data-scene="chiffre">
+  <style>@scope { .grand { font-size: 20cqh; } }</style>
+  <p id="nombre" class="grand" data-tween="nombre 0→1250 cubic-out" data-dur="2">0</p>
+  <p data-texte="legende" data-start="0.5"></p>
+  <div id="chef" data-personnage="touffu" data-x="-10" data-sol="92" data-taille="50">
+    <i id="entree" data-action="marcher" data-vers="30" data-start="0" data-dur="1.2"></i>
+    <i id="montre" data-action="pose" data-pose="montrer" data-start="#entree:fin" data-dur="0.8"></i>
+    <i data-action="expression" data-expression="joie" data-start="#montre"></i>
+    <i id="salut" data-action="jouer" data-clip="coucou" data-start="#montre:fin"></i>
+  </div>
+</section>`;
+
+function video(scene = SCENE) {
+  const dir = copierProjet('projet-simple');
+  fs.writeFileSync(path.join(dir, 'scenes', '02-chiffre.html'), scene);
+  return dir;
+}
+
+test('assemblage : erreurs nommées', () => {
+  const mauvais = `<section data-scene="s"><div data-personnage="geant" data-x="dix"><i data-action="danser" data-start="0"></i><i data-action="marcher" data-vers="40"></i>
+    <i data-action="pose" data-pose="assise"></i><i data-action="jouer" data-clip="respiration"></i><i data-action="expression" data-expression="rage"></i></div>
+    <i data-action="pose" data-pose="montrer"></i></section>`;
+  const r = preparerPersonnages(mauvais, { scene: 's', lu });
+  const m = r.erreurs.map((e) => e.message).join('\n');
+  for (const motif of [/personnage « geant » introuvable.*touffu/, /data-x="dix" doit être un nombre/, /action « danser » : action inconnue/,
+    /action « marcher » : data-dur obligatoire/, /pose « assise » introuvable/, /« respiration » est un calque/, /expression « rage » introuvable/]) {
+    assert.match(m, motif);
+  }
+  assert.ok(r.erreurs.every((e) => e.regle === 'personnage-invalide' && e.gravite === 'erreur'));
+  assert.match(m, /action « pose » hors d'un personnage/, 'action après la fermeture du conteneur');
+  const imbrique = preparerPersonnages('<section><div data-personnage="touffu"><span><i data-action="pose" data-pose="montrer" data-start="0"></i></span></div></section>', { scene: 's', lu });
+  assert.match(imbrique.erreurs.map((e) => e.message).join(), /hors d'un personnage/, 'action dans un sous-élément');
+  const sansDebut = preparerPersonnages('<section><div data-personnage="touffu"><i data-action="expression" data-expression="joie"></i><br><i data-action="jouer" data-clip="saut"/></div></section>', { scene: 's', lu });
+  assert.deepEqual(sansDebut.erreurs, []);
+  assert.match(sansDebut.html, /data-expression="joie" data-start="0"><\/i>/);
+  assert.match(sansDebut.html, /data-clip="saut" data-start="0" data-dur="1.3"\/>/);
+});
+
+test('assemblage : durée d\'un geste écrite, données embarquées seulement s\'il y a un personnage', () => {
+  const r = preparerPersonnages(SCENE, { scene: 'chiffre', lu });
+  assert.deepEqual(r.erreurs, []);
+  assert.match(r.html, /data-clip="coucou" data-start="#montre:fin" data-dur="1.6"/);
+  assert.deepEqual([...r.utilises.dessins], ['touffu']);
+  const avec = assembler({ dossier: video(), dossierStyles: STYLES, ecrire: false });
+  assert.equal(avec.ok, true, JSON.stringify(avec.erreurs));
+  assert.deepEqual(avec.erreurs.filter((e) => e.regle === 'personnage-invalide'), []);
+  assert.ok(avec.donnees.personnages.dessins.touffu && avec.donnees.personnages.bib.clips.marche);
+  assert.match(avec.html, /M\.demarrerPersonnages\(\);/);
+  const sans = assembler({ dossier: copierProjet('projet-simple'), dossierStyles: STYLES, ecrire: false });
+  assert.equal(sans.donnees.personnages, undefined);
+});
+
+test('page : le personnage entre, montre, salue ; même image quel que soit l\'ordre ; décor pour le contrôle', { skip: !navigateur && 'Chrome ou Edge introuvable' }, async () => {
+  const dir = video();
+  const r = assembler({ dossier: dir, dossierStyles: STYLES });
+  assert.equal(r.ok, true);
+  const page = await ouvrirPage({ navigateur, largeur: 1280, hauteur: 720 });
+  try {
+    await page.aller(pathToFileURL(r.fichier).href);
+    const res = await page.evaluer(`(async () => {
+      await M.pret;
+      const E = M.minutage.elements.chiffre;
+      const racine = () => document.querySelector('#chef [data-pm-perso-racine]');
+      const lire = async (t) => { await M.seek(t); const m = /translate\\(([-\\d.]+) ([-\\d.]+)\\)/.exec(racine().getAttribute('transform')); return { x: +m[1], bras: document.querySelector('#chef [data-piece="brasAvant"]').getAttribute('transform') }; };
+      const entree = E.entree, montre = E.montre, salut = E.salut;
+      const milieu = await lire((entree.debut + entree.fin) / 2);
+      const pose = await lire((montre.debut + montre.fin) / 2);
+      const fin = await lire(salut.fin + 0.1);
+      const encore = await lire((entree.debut + entree.fin) / 2);
+      return { milieu, pose, fin, encore, decor: document.querySelector('#chef').hasAttribute('data-decor'), cache: document.querySelector('#chef svg').getAttribute('aria-hidden'),
+        dureeSalut: salut.fin - salut.debut, erreurs: (M.erreurs || []).map((e) => e.message) };
+    })()`);
+    assert.deepEqual(res.erreurs, []);
+    assert.ok(Math.abs(res.milieu.x - 0.10 * 1600) < 2, `milieu de la marche : x ${res.milieu.x}`);
+    assert.ok(Math.abs(res.pose.x - 0.30 * 1600) < 1e-6, `arrêté à 30 % : ${res.pose.x}`);
+    assert.notEqual(res.pose.bras, res.milieu.bras, 'la pose change le bras');
+    assert.equal(JSON.stringify(res.encore), JSON.stringify(res.milieu), 'même image en revenant en arrière');
+    assert.ok(Math.abs(res.dureeSalut - 1.6 / 0.8) < 0.01 || Math.abs(res.dureeSalut - 1.6) < 0.01, `durée du salut ${res.dureeSalut}`);
+    assert.equal(res.decor, true);
+    assert.equal(res.cache, 'true');
+  } finally { await page.fermer(); }
+});
