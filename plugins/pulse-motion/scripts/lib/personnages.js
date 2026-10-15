@@ -12,22 +12,35 @@ const fs = require('node:fs');
 const path = require('node:path');
 const S = require('../../moteur/squelette.js');
 const C = require('../../moteur/courbes.js');
+const { verifierSVG } = require('./svg-sur.js');
 
 const RACINE = path.resolve(__dirname, '..', '..');
 const BIBLIOTHEQUE = path.join(RACINE, 'personnages');
-const TYPES = { pose: 'poses', clip: 'clips', gabarit: 'gabarits' };
 const NOM = /^[a-z0-9-]+$/;
 const NOM_OS = /^[a-z][a-zA-Z0-9]*$/;
 const PARENTS = ['bassin', 'torse', 'tete'];
 const LONGUEURS = ['cuisse', 'tibia', 'pied', 'colonne', 'hauteurEpaules', 'baseTete', 'bras', 'avantBras'];
 const DEMI = ['demiBassin', 'demiEpaules'];
 const RANG = [...S.NOMS.os, ...S.NOMS.expression];
+const TYPES = { pose: 'poses', clip: 'clips', gabarit: 'gabarits', expression: 'expressions', dessin: 'dessins' };
+const VUES = ['profil', 'troisQuarts', 'face', 'dos'];
+const PIECES = ['bassin', 'torse', 'tete', ...['cuisse', 'tibia', 'pied', 'bras', 'avantBras', 'main'].flatMap((n) => [`${n}Avant`, `${n}Arriere`])];
+const BOUCHES = ['neutre', 'sourire', 'rire', 'triste', 'surprise', 'colere', 'repos', 'A', 'E', 'I', 'O', 'U', 'MBP', 'FV', 'L'];
+const ANGLES_VISAGE = ['sourcilsY', 'sourcilsAngle', 'paupieres', 'tailleYeux', 'taillePupilles', 'regardX', 'regardY'];
+const COULEUR = /^(#[0-9a-f]{3,4}|#[0-9a-f]{6}|#[0-9a-f]{8}|none|transparent)$/i;
+const NOM_COULEUR = /^[a-z][a-z0-9-]*$/;
 const ORDRE = {
-  pose: ['nom', 'description', 'angles'],
+  pose: ['nom', 'description', 'expression', 'bouche', 'angles'],
   clip: ['nom', 'description', 'boucle', 'duree', 'foulee', 'pieds', 'miroir', 'additif', 'cles'],
   gabarit: ['nom', 'description', ...Object.keys(S.GABARIT)],
+  expression: ['nom', 'description', 'bouche', 'angles'],
+  dessin: ['nom', 'description', 'gabarit', 'couleurs', 'pieces', 'accessoires', 'visage'],
 };
-const ORDRE_CLE = ['t', 'pose', 'angles', 'courbe'];
+const ORDRE_CLE = ['t', 'pose', 'expression', 'bouche', 'angles', 'courbe'];
+const ORDRE_ACCESSOIRE = ['nom', 'os', 'devant', 'dessins'];
+const ORDRE_VISAGE = ['oeil', 'sourcil', 'bouches', 'vues'];
+const ORDRE_OEIL = ['blanc', 'pupille', 'paupiere', 'course', 'hauteur'];
+const ORDRE_VUE_VISAGE = ['yeux', 'sourcils', 'bouche'];
 const ORDRE_OS = ['nom', 'parent', 'attache', 'angle', 'longueur', 'raideur', 'amorti'];
 
 const arrondir = (v) => (typeof v === 'number' ? Math.round(v * 1000) / 1000 + 0 : v);
@@ -75,10 +88,113 @@ function verifierNom(objet, contexte, erreurs) {
   if (objet.description !== undefined && typeof objet.description !== 'string') erreurs.push('« description » doit être un texte.');
 }
 
+function verifierChoix(objet, ou, contexte, erreurs) {
+  if (objet.expression !== undefined && !(contexte.expressions || []).includes(objet.expression)) erreurs.push(`${ou}expression « ${objet.expression} » introuvable (expressions : ${(contexte.expressions || []).join(', ')}).`);
+  if (objet.bouche !== undefined && !(typeof objet.bouche === 'string' && /^[A-Za-z][\w-]{0,19}$/.test(objet.bouche))) erreurs.push(`${ou}« bouche » : nom de bouche (ex. sourire, O, MBP).`);
+}
+
+function verifierVues(vues, lieu, erreurs) {
+  const ou = lieu.trim();
+  if (!estObjet(vues)) { erreurs.push(`${ou} : dessins par vue attendus ({ "profil": "<path …/>" }).`); return; }
+  if (vues.profil === undefined) erreurs.push(`${ou} : vue « profil » obligatoire.`);
+  for (const [v, svg] of Object.entries(vues)) {
+    if (!VUES.includes(v)) { erreurs.push(`${ou} : vue « ${v} » inconnue (${VUES.join(', ')}).`); continue; }
+    if (typeof svg !== 'string') { erreurs.push(`${ou}, vue « ${v} » : SVG attendu (texte).`); continue; }
+    for (const m of verifierSVG(svg)) erreurs.push(`${ou}, vue « ${v} » : ${m}.`);
+  }
+}
+
+const estPosition = (p) => Array.isArray(p) && p.length === 2 && p.every(estNombre);
+
+function validerVisage(v, erreurs) {
+  if (!estObjet(v)) { erreurs.push('visage : objet attendu { oeil, sourcil?, bouches, vues }.'); return; }
+  champsInconnus(v, ORDRE_VISAGE, erreurs, 'visage : ');
+  if (!estObjet(v.oeil) || typeof v.oeil.blanc !== 'string') erreurs.push('visage : « oeil.blanc » obligatoire (SVG du blanc de l\'œil).');
+  if (estObjet(v.oeil)) {
+    champsInconnus(v.oeil, ORDRE_OEIL, erreurs, 'visage, oeil : ');
+    for (const k of ['blanc', 'pupille', 'paupiere']) {
+      if (v.oeil[k] !== undefined && typeof v.oeil[k] !== 'string') erreurs.push(`visage : « oeil.${k} » : SVG attendu (texte).`);
+      else if (typeof v.oeil[k] === 'string') for (const m of verifierSVG(v.oeil[k])) erreurs.push(`visage, oeil.${k} : ${m}.`);
+    }
+    for (const k of ['course', 'hauteur']) if (v.oeil[k] !== undefined && !(estNombre(v.oeil[k]) && v.oeil[k] > 0)) erreurs.push(`visage : « oeil.${k} » doit être un nombre positif.`);
+  }
+  if (v.sourcil !== undefined) {
+    if (typeof v.sourcil !== 'string') erreurs.push('visage : « sourcil » : SVG attendu.');
+    else for (const m of verifierSVG(v.sourcil)) erreurs.push(`visage, sourcil : ${m}.`);
+  }
+  if (!estObjet(v.bouches) || v.bouches.neutre === undefined) erreurs.push('visage : bouche « neutre » obligatoire (dans « bouches »).');
+  if (estObjet(v.bouches)) for (const [n, vues] of Object.entries(v.bouches)) verifierVues(vues, `visage, bouche « ${n} » `, erreurs);
+  if (!estObjet(v.vues) || v.vues.profil === undefined) { erreurs.push('visage : vue « profil » obligatoire (dans « vues »).'); }
+  for (const [nom, vue] of Object.entries(estObjet(v.vues) ? v.vues : {})) {
+    const ou = `visage, vue « ${nom} » : `;
+    if (!VUES.includes(nom) || nom === 'dos') { erreurs.push(`${ou}vue inconnue (profil, troisQuarts, face ; de dos, le visage est caché).`); continue; }
+    if (!estObjet(vue)) { erreurs.push(`${ou}objet { yeux, sourcils?, bouche } attendu.`); continue; }
+    champsInconnus(vue, ORDRE_VUE_VISAGE, erreurs, ou);
+    if (!Array.isArray(vue.yeux) || !vue.yeux.length || !vue.yeux.every(estPosition)) erreurs.push(`${ou}« yeux » : liste de positions [x, y] (ex. [[-13, -6], [13, -6]]).`);
+    if (vue.sourcils !== undefined && !(Array.isArray(vue.sourcils) && vue.sourcils.every(estPosition))) erreurs.push(`${ou}« sourcils » : liste de positions [x, y].`);
+    if (!estPosition(vue.bouche)) erreurs.push(`${ou}« bouche » : position [x, y] (ex. [0, 22]).`);
+  }
+}
+
+function validerDessin(objet, contexte, erreurs) {
+  champsInconnus(objet, ORDRE.dessin, erreurs);
+  verifierNom(objet, contexte, erreurs);
+  let os = [];
+  if (objet.gabarit === undefined || typeof objet.gabarit === 'string') {
+    const nom = objet.gabarit === undefined ? 'standard' : objet.gabarit;
+    if (objet.gabarit !== undefined && !(contexte.gabarits || []).includes(nom)) erreurs.push(`gabarit « ${nom} » introuvable (gabarits : ${(contexte.gabarits || []).join(', ')}).`);
+    os = (contexte.osParGabarit || {})[nom] || [];
+  } else if (estObjet(objet.gabarit)) {
+    const e = [];
+    validerGabarit(objet.gabarit, { nom: contexte.nom }, e);
+    for (const m of e) erreurs.push(`gabarit : ${m}`);
+    os = (objet.gabarit.osEnPlus || []).map((o) => o && o.nom).filter(Boolean);
+  } else erreurs.push('« gabarit » : nom d\'un gabarit (ex. "standard") ou proportions { cuisse, tibia, … }.');
+  if (objet.couleurs !== undefined) {
+    if (!estObjet(objet.couleurs)) erreurs.push('« couleurs » : objet { nom: couleur } (ex. { "peau": "#F2C9A0" }).');
+    else for (const [n, c] of Object.entries(objet.couleurs)) {
+      if (!NOM_COULEUR.test(n)) erreurs.push(`couleur « ${n} » : nom invalide (minuscules, chiffres, tirets).`);
+      else if (typeof c !== 'string' || !COULEUR.test(c)) erreurs.push(`couleur « ${n} » : « ${c} » n'est pas une couleur (ex. #F2C9A0).`);
+    }
+  }
+  const connus = [...PIECES, ...os];
+  if (!estObjet(objet.pieces) || !Object.keys(objet.pieces).length) erreurs.push('« pieces » : il faut au moins une pièce (ex. { "tete": { "profil": "<ellipse …/>" } }).');
+  else for (const [n, vues] of Object.entries(objet.pieces)) {
+    if (!connus.includes(n)) erreurs.push(`pièce « ${n} » : os inconnu${suggestion(n, connus)}`);
+    else verifierVues(vues, `pièce « ${n} » `, erreurs);
+  }
+  if (objet.accessoires !== undefined) {
+    if (!Array.isArray(objet.accessoires)) erreurs.push('« accessoires » : liste attendue.');
+    else objet.accessoires.forEach((a, i) => {
+      const ou = `accessoire ${i + 1} « ${a && a.nom} » `;
+      if (!estObjet(a)) { erreurs.push(`accessoire ${i + 1} : objet { nom, os, dessins } attendu.`); return; }
+      champsInconnus(a, ORDRE_ACCESSOIRE, erreurs, `${ou}: `);
+      if (typeof a.nom !== 'string' || !NOM.test(a.nom)) erreurs.push(`${ou}: « nom » en minuscules, chiffres, tirets.`);
+      if (!connus.includes(a.os)) erreurs.push(`${ou}: os « ${a.os} » inconnu${suggestion(String(a.os), connus)}`);
+      if (a.devant !== undefined && typeof a.devant !== 'boolean') erreurs.push(`${ou}: « devant » vaut true ou false.`);
+      verifierVues(a.dessins, ou, erreurs);
+    });
+  }
+  if (objet.visage !== undefined) validerVisage(objet.visage, erreurs);
+}
+
+function validerExpression(objet, contexte, erreurs) {
+  champsInconnus(objet, ORDRE.expression, erreurs);
+  verifierNom(objet, contexte, erreurs);
+  verifierChoix({ bouche: objet.bouche }, '', contexte, erreurs);
+  const a = objet.angles === undefined ? {} : objet.angles;
+  if (!estObjet(a)) { erreurs.push('« angles » doit être un objet (ex. { "sourcilsY": 4 }).'); return; }
+  for (const [n, v] of Object.entries(a)) {
+    if (!ANGLES_VISAGE.includes(n)) erreurs.push(RANG.includes(n) ? `« ${n} » : une expression ne règle que le visage (${ANGLES_VISAGE.join(', ')}).` : `« ${n} » : clé inconnue${suggestion(n, ANGLES_VISAGE)}`);
+    else if (!estNombre(v)) erreurs.push(`« ${n} » doit être un nombre.`);
+  }
+}
+
 function validerPose(objet, contexte, erreurs) {
   champsInconnus(objet, ORDRE.pose, erreurs);
   verifierNom(objet, contexte, erreurs);
   verifierAngles(objet.angles === undefined ? {} : objet.angles, '', contexte, erreurs);
+  verifierChoix(objet, '', contexte, erreurs);
 }
 
 function validerClip(objet, contexte, erreurs) {
@@ -107,7 +223,9 @@ function validerClip(objet, contexte, erreurs) {
       if (arrondir(cle.t) <= precedent) erreurs.push(`${ou}les clés doivent être rangées par « t » croissant, sans doublon (au millième près).`);
       precedent = arrondir(cle.t);
     }
-    if (cle.pose === undefined && cle.angles === undefined) erreurs.push(`${ou}il faut une « pose » ou des « angles ».`);
+    if (cle.pose === undefined && cle.angles === undefined && cle.bouche === undefined && cle.expression === undefined) erreurs.push(`${ou}il faut une « pose », des « angles », une « bouche » ou une « expression ».`);
+    if (objet.additif === true && (cle.bouche !== undefined || cle.expression !== undefined)) erreurs.push(`${ou}un calque additif ne choisit ni bouche ni expression.`);
+    verifierChoix(cle, ou, contexte, erreurs);
     if (cle.pose !== undefined && objet.additif === true) erreurs.push(`${ou}un clip additif ne cite pas de pose (ses valeurs sont des différences) : donner des « angles ».`);
     else if (cle.pose !== undefined && !(contexte.poses || []).includes(cle.pose)) erreurs.push(`${ou}pose « ${cle.pose} » introuvable (poses connues : ${(contexte.poses || []).join(', ')}).`);
     if (cle.angles !== undefined) verifierAngles(cle.angles, ou, contexte, erreurs);
@@ -163,14 +281,27 @@ function valider(type, objet, contexte) {
   if (type === 'pose') validerPose(objet, contexte, erreurs);
   else if (type === 'clip') validerClip(objet, contexte, erreurs);
   else if (type === 'gabarit') validerGabarit(objet, contexte, erreurs);
-  else erreurs.push(`Type « ${type} » inconnu (pose, clip ou gabarit).`);
+  else if (type === 'expression') validerExpression(objet, contexte, erreurs);
+  else if (type === 'dessin') validerDessin(objet, contexte, erreurs);
+  else erreurs.push(`Type « ${type} » inconnu (pose, clip, gabarit, expression ou dessin).`);
   return erreurs;
 }
 
 function contexteDe(lu) {
   const os = new Set();
-  for (const g of Object.values(lu.gabarits || {})) for (const o of g.osEnPlus || []) os.add(o.nom);
-  return { poses: Object.keys(lu.poses || {}), osEnPlus: [...os].sort() };
+  const osParGabarit = {};
+  for (const [nom, g] of Object.entries(lu.gabarits || {})) {
+    osParGabarit[nom] = (g.osEnPlus || []).map((o) => o.nom);
+    for (const o of g.osEnPlus || []) os.add(o.nom);
+  }
+  return { poses: Object.keys(lu.poses || {}), osEnPlus: [...os].sort(), gabarits: Object.keys(lu.gabarits || {}), osParGabarit, expressions: Object.keys(lu.expressions || {}) };
+}
+
+/** Gabarit d'un dessin : nommé (bibliothèque), en ligne, ou standard. */
+function gabaritDe(dessin, lu) {
+  if (dessin && estObjet(dessin.gabarit)) return dessin.gabarit;
+  const nom = dessin && typeof dessin.gabarit === 'string' ? dessin.gabarit : 'standard';
+  return (lu.gabarits || {})[nom] || {};
 }
 
 function nomsJSON(dossier) {
@@ -178,10 +309,11 @@ function nomsJSON(dossier) {
 }
 
 function lire(dossierVideo, { bibliotheque = BIBLIOTHEQUE } = {}) {
-  const lu = { poses: {}, clips: {}, gabarits: {}, sources: { poses: {}, clips: {}, gabarits: {} }, fichiers: { poses: {}, clips: {}, gabarits: {} }, erreurs: [] };
+  const vide = () => ({ poses: {}, clips: {}, gabarits: {}, expressions: {}, dessins: {} });
+  const lu = Object.assign(vide(), { sources: vide(), fichiers: vide(), erreurs: [] });
   const racines = [[bibliotheque, 'plugin', 'bibliothèque']];
   if (dossierVideo) racines.push([path.join(dossierVideo, 'personnages'), 'video', 'vidéo']);
-  for (const type of ['gabarit', 'pose', 'clip']) {
+  for (const type of ['gabarit', 'expression', 'pose', 'clip', 'dessin']) {
     const pluriel = TYPES[type];
     for (const [racine, source, libelle] of racines) {
       for (const nom of nomsJSON(path.join(racine, pluriel))) {
@@ -252,12 +384,28 @@ function serialiser(type, objet) {
     if (o.osEnPlus) o.osEnPlus = o.osEnPlus.map((x) => profond(ordonner(x, ORDRE_OS)));
     if (o.contraintes) o.contraintes = profond(ordonner(o.contraintes, []));
   }
+  if (type === 'expression') o.angles = angles(o.angles || {});
+  if (type === 'dessin') {
+    const vues = (v) => (estObjet(v) ? ordonner(v, VUES) : v);
+    const ordrePieces = (p) => { const r = {}; for (const k of [...PIECES, ...Object.keys(p).filter((n) => !PIECES.includes(n)).sort()]) if (p[k] !== undefined) r[k] = vues(p[k]); return r; };
+    if (estObjet(o.gabarit)) o.gabarit = JSON.parse(serialiser('gabarit', o.gabarit));
+    if (estObjet(o.couleurs)) o.couleurs = ordonner(o.couleurs, []);
+    if (estObjet(o.pieces)) o.pieces = ordrePieces(o.pieces);
+    if (Array.isArray(o.accessoires)) o.accessoires = o.accessoires.map((a) => { const r = ordonner(a, ORDRE_ACCESSOIRE); r.dessins = vues(r.dessins); return r; });
+    if (estObjet(o.visage)) {
+      const v = ordonner(o.visage, ORDRE_VISAGE);
+      if (estObjet(v.oeil)) v.oeil = profond(ordonner(v.oeil, ORDRE_OEIL));
+      if (estObjet(v.bouches)) { const b = {}; for (const k of [...BOUCHES, ...Object.keys(v.bouches).filter((n) => !BOUCHES.includes(n)).sort()]) if (v.bouches[k] !== undefined) b[k] = vues(v.bouches[k]); v.bouches = b; }
+      if (estObjet(v.vues)) { const r = ordonner(v.vues, VUES); for (const k of Object.keys(r)) r[k] = profond(ordonner(r[k], ORDRE_VUE_VISAGE)); v.vues = r; }
+      o.visage = v;
+    }
+  }
   return `${JSON.stringify(o, null, 2)}\n`;
 }
 
 /** Valide puis écrit <dossier>/<poses|clips|gabarits>/<nom>.json (écriture atomique). lu : résultat de lire() (contexte). */
 function enregistrer({ dossier, type, nom, objet, lu, ecrire }) {
-  if (!TYPES[type]) throw ErreurPersonnage([`Type « ${type} » inconnu (pose, clip ou gabarit).`]);
+  if (!TYPES[type]) throw ErreurPersonnage([`Type « ${type} » inconnu (pose, clip, gabarit, expression ou dessin).`]);
   if (typeof nom !== 'string' || !NOM.test(nom)) throw ErreurPersonnage([`Nom « ${nom} » invalide (minuscules, chiffres, tirets ; ex. gratte-tete).`]);
   const complet = Object.assign({}, objet, { nom });
   const erreurs = valider(type, complet, Object.assign({ nom }, contexteDe(lu || {})));
@@ -272,4 +420,4 @@ function enregistrer({ dossier, type, nom, objet, lu, ecrire }) {
   return { fichier };
 }
 
-module.exports = { BIBLIOTHEQUE, TYPES, valider, lire, contexteDe, serialiser, enregistrer, ErreurPersonnage };
+module.exports = { BIBLIOTHEQUE, TYPES, VUES, PIECES, BOUCHES, ANGLES_VISAGE, valider, lire, contexteDe, gabaritDe, serialiser, enregistrer, ErreurPersonnage };

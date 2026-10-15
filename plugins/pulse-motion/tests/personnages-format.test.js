@@ -35,7 +35,7 @@ test('valider clip : phase hors de [0, 1], clés non triées, pose introuvable, 
   assert.ok(P.valider('clip', { nom: 'x', boucle: true, cles: [{ t: 0, angles: {} }] }, ctx()).some((m) => /« duree » .*secondes/.test(m)));
   assert.ok(P.valider('clip', { nom: 'x', boucle: false, miroir: 0.5, cles: [{ t: 0, angles: {} }] }, ctx()).some((m) => /« miroir » .*bouclé/.test(m)));
   assert.ok(P.valider('clip', { nom: 'x', boucle: true, duree: 1, additif: true, pieds: 'au-sol', cles: [{ t: 0, angles: {} }] }, ctx()).some((m) => /additif.*au-sol/.test(m)));
-  assert.ok(P.valider('clip', { nom: 'x', boucle: false, cles: [{ t: 0 }] }, ctx()).some((m) => /clé 1 : .*« pose » ou des « angles »/.test(m)));
+  assert.ok(P.valider('clip', { nom: 'x', boucle: false, cles: [{ t: 0 }] }, ctx()).some((m) => /clé 1 : il faut une « pose », des « angles », une « bouche » ou une « expression »/.test(m)));
   assert.deepEqual(P.valider('clip', { nom: 'x', boucle: false, pieds: 'au-sol', cles: [{ t: 0, pose: 'debout' }, { t: 0.4, angles: { torse: 20 }, courbe: 'back-out' }] }, ctx()), []);
   assert.ok(P.valider('clip', { nom: 'x', boucle: true, duree: 1, additif: true, cles: [{ t: 0, pose: 'debout' }] }, ctx()).some((m) => /clip additif ne cite pas de pose/.test(m)));
   assert.ok(P.valider('clip', { nom: 'x', boucle: false, cles: [{ t: 0, pose: 'debout' }] }, ctx()).some((m) => /au moins une clé après 0/.test(m)));
@@ -142,6 +142,6 @@ test('enregistrer : nom invalide ou objet invalide, rien n\'est écrit', () => {
   assert.throws(() => P.enregistrer({ dossier, type: 'pose', nom: '../x', objet: { angles: {} }, lu }), (e) => /Nom « \.\.\/x » invalide/.test(e.message) && Array.isArray(e.erreurs));
   assert.throws(() => P.enregistrer({ dossier, type: 'pose', nom: 'Grand', objet: { angles: {} }, lu }), /invalide/);
   assert.throws(() => P.enregistrer({ dossier, type: 'pose', nom: 'ok', objet: { angles: { cuisseAvent: 1 } }, lu }), /voulais-tu « cuisseAvant »/);
-  assert.throws(() => P.enregistrer({ dossier, type: 'film', nom: 'ok', objet: {}, lu }), /Type « film » inconnu \(pose, clip ou gabarit\)/);
+  assert.throws(() => P.enregistrer({ dossier, type: 'film', nom: 'ok', objet: {}, lu }), /Type « film » inconnu/);
   assert.deepEqual(fs.readdirSync(dossier), []);
 });
