@@ -5,7 +5,7 @@
  *                                     résout l'ensemble des images illisibles (URL data:)
  *   .cible(canvas)                    cible HDR, niveaux de bloom, copie lisible, contexte du canvas
  *   .oublierCible(canvas)             libère la cible (scène masquée) ; .cible la recrée au retour
- *   .dessiner(cible, liste, o)        liste : [{ sim, i, delta }] ; o : { largeurCqh, dureeImage, bloom, seuil, tons, couches?, fonds?, photoScene? } ;
+ *   .dessiner(cible, liste, o)        liste : [{ sim, i, delta }] ; o : { largeurCqh, dureeImage, bloom, seuil, tons, couches?, fonds?, photoScene?, milieu? } ;
  *                                     fonds : [(passe) => void] fonds par shader (P6), dessinés dans la cible HDR en premier ;
  *                                     pose cible.vide (rien à dessiner) ; couches : [{ tampon (f32, cqh), debut (case),
  *                                     repere, genre (type d'obstacle), couleur [r, v, b, a], flou (cqh) }] couches héritées
@@ -30,6 +30,11 @@
  * plis éclairés (axe comprimé relevé hors du plan, normale tournée vers l'œil ; tissu plat : éclairage 1 exactement),
  * revers assombri (face arrière) ; corde en ruban de son épaisseur ; couleur, dégradé (e.tables, en bandes si « bandes »),
  * image de assets/ ou photographie de l'élément (e.photo), mailles ; dessinée à sa place dans la liste, mélange alpha.
+ * Milieu fluide (P5c) : o.milieu (P.Milieu, milieu.js) dessiné dans la cible HDR après les fonds, avant les couches
+ * héritées et les particules : triangle plein écran, textures de la grille échantillonnées en bicubique (Catmull-Rom,
+ * 16 lectures) ; fumée : couleur × (0,35 + 0,65 × lumière reçue), alpha 1 − e^(−1,5 ρ) ; feu : la fumée, plus l'émission
+ * de la table du corps noir selon la température (HDR, nourrit le bloom) ; encre : transmission T = e^(−σ), sortie
+ * prémultipliée (T − min T, alpha 1 − min T) : exacte sur fond blanc (mélange soustractif). .oublierMilieu(milieu).
  * Chaîne : tri bitonique des émetteurs en mélange alpha (clé z) -> particules dans une cible rgba16float
  * (sprite, étincelle étirée, traînée en ruban, planche ; textures procédurales ou image ; flou de
  * mouvement en 4 échantillons ; perspective selon z, sauf pour les émetteurs à collisions) -> bloom (seuil, dual Kawase sur 5 niveaux dans un
@@ -798,6 +803,82 @@ fn fsStructure(e: SortieS, @builtin(front_facing) face: bool) -> @location(0) ve
     alpha: { color: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' }, alpha: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' } },
   };
 
+  // Milieu fluide (P5c) : plein écran ; textures de la grille échantillonnées en bicubique.
+  const WGSL_MILIEU_RENDU = /* wgsl */ `
+struct RenduMilieu {
+  scene: vec2f, origine: vec2f,
+  cote: f32, genre: u32, opacite: f32, r0: f32,
+  n: vec2u, ecran: vec2f,
+  couleur: vec4f,
+  feu: array<vec4f, 64>,
+};
+@group(0) @binding(0) var texA: texture_2d<f32>;
+@group(0) @binding(1) var texB: texture_2d<f32>;
+@group(0) @binding(2) var<uniform> RM: RenduMilieu;
+
+const AMBIANT = 0.35;        // lumière reçue par la fumée à l'ombre d'elle-même
+const OPACITE_FUMEE = 1.5;   // opacité par unité de densité de fumée
+const ENCRE = 1.0;           // absorption par unité d'encre transportée
+
+@vertex
+fn vsMilieu(@builtin(vertex_index) i: u32) -> @builtin(position) vec4f {
+  var p = array<vec2f, 3>(vec2f(-1.0, -3.0), vec2f(-1.0, 1.0), vec2f(3.0, 1.0));
+  return vec4f(p[i], 0.0, 1.0);
+}
+
+// Poids de Catmull-Rom des quatre échantillons qui entourent la fraction f.
+fn poidsCR(f: f32) -> vec4f {
+  let f2 = f * f;
+  let f3 = f2 * f;
+  return vec4f(-0.5 * f3 + f2 - 0.5 * f, 1.5 * f3 - 2.5 * f2 + 1.0, -1.5 * f3 + 2.0 * f2 + 0.5 * f, 0.5 * f3 - 0.5 * f2);
+}
+
+// Échantillonnage bicubique (16 lectures, indices bornés à la grille) au point q (centres des cellules aux entiers).
+fn bicubique(t: texture_2d<f32>, q: vec2f) -> vec4f {
+  let b = floor(q);
+  let f = q - b;
+  let wx = poidsCR(f.x);
+  let wy = poidsCR(f.y);
+  let nmax = vec2i(RM.n) - 1;
+  var s = vec4f(0.0);
+  for (var j = 0; j < 4; j++) {
+    var ligne = vec4f(0.0);
+    for (var i = 0; i < 4; i++) {
+      ligne += textureLoad(t, clamp(vec2i(b) + vec2i(i - 1, j - 1), vec2i(0), nmax), 0) * wx[i];
+    }
+    s += ligne * wy[j];
+  }
+  return s;
+}
+
+// Émission du feu à la température T (table du corps noir, 64 valeurs, T bornée à [0, 1]).
+fn emission(T: f32) -> vec3f {
+  let x = clamp(T, 0.0, 1.0) * 63.0;
+  let i = u32(floor(x));
+  let j = min(i + 1u, 63u);
+  return mix(RM.feu[i].rgb, RM.feu[j].rgb, x - f32(i));
+}
+
+@fragment
+fn fsMilieu(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+  let w = pos.xy / RM.ecran * RM.scene;
+  let q = (w - RM.origine) / RM.cote - 0.5;
+  let nf = vec2f(RM.n);
+  if (q.x < -0.5 || q.y < -0.5 || q.x > nf.x - 0.5 || q.y > nf.y - 0.5) { discard; }
+  if (RM.genre == 2u) {
+    // Encre : transmission par canal ; exacte sur fond blanc (alpha 1 − min T, couleur T − min T).
+    let T = exp(-max(bicubique(texB, q).xyz, vec3f(0.0)) * ENCRE);
+    let tmin = min(T.x, min(T.y, T.z));
+    return vec4f((T - vec3f(tmin)) * RM.opacite, (1.0 - tmin) * RM.opacite);
+  }
+  let a = bicubique(texA, q);
+  let alpha = (1.0 - exp(-OPACITE_FUMEE * max(a.x, 0.0))) * RM.opacite;
+  var c = RM.couleur.rgb * (AMBIANT + (1.0 - AMBIANT) * clamp(a.z, 0.0, 1.0)) * alpha;
+  if (RM.genre == 1u) { c += emission(a.y); }
+  return vec4f(c, alpha);
+}
+`;
+
   // Nappe : hauteur au maximum (couleur), épaisseur additionnée (alpha).
   const MELANGE_NAPPE = { color: { srcFactor: 'one', dstFactor: 'one', operation: 'max' }, alpha: { srcFactor: 'one', dstFactor: 'one', operation: 'add' } };
   const FLOU_MAX = 32;
@@ -910,6 +991,22 @@ fn fsStructure(e: SortieS, @builtin(front_facing) face: bool) -> @location(0) ve
       this.pipelineTissu = pipelineStructure('vsTissu', 'cw');
       this.pipelineCorde = pipelineStructure('vsCorde', 'cw');
       this.structuresRendu = new WeakMap();
+
+      // Milieu fluide (P5c) : plein écran, textures de la grille (non filtrables : lectures directes).
+      this.layoutMilieu = device.createBindGroupLayout({
+        entries: [
+          { binding: 0, visibility: Fr, texture: { sampleType: 'unfilterable-float' } },
+          { binding: 1, visibility: Fr, texture: { sampleType: 'unfilterable-float' } },
+          { binding: 2, visibility: Fr, buffer: { type: 'uniform' } },
+        ],
+      });
+      const moduleMilieu = device.createShaderModule({ label: 'pm-milieu-rendu', code: WGSL_MILIEU_RENDU });
+      this.pipelineMilieu = device.createRenderPipeline({
+        layout: device.createPipelineLayout({ bindGroupLayouts: [this.layoutMilieu] }),
+        vertex: { module: moduleMilieu, entryPoint: 'vsMilieu' },
+        fragment: { module: moduleMilieu, entryPoint: 'fsMilieu', targets: [{ format: 'rgba16float', blend: MELANGES.alpha }] },
+      });
+      this.milieux = new WeakMap();
 
       // Couches héritées des obstacles de la vidéo.
       this.layoutCouche = device.createBindGroupLayout({
@@ -1178,6 +1275,52 @@ fn fsStructure(e: SortieS, @builtin(front_facing) face: bool) -> @location(0) ve
       return c;
     }
 
+    /** Uniforme et groupe de liaisons du dessin d'un milieu (P5c), créés une fois. */
+    milieuRendu(milieu) {
+      let r = this.milieux.get(milieu);
+      if (!r) {
+        const uniforme = this.device.createBuffer({ size: 1088, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+        r = {
+          uniforme,
+          groupe: this.device.createBindGroup({
+            layout: this.layoutMilieu,
+            entries: [
+              { binding: 0, resource: milieu.vueA },
+              { binding: 1, resource: milieu.vueB },
+              { binding: 2, resource: { buffer: uniforme } },
+            ],
+          }),
+        };
+        this.milieux.set(milieu, r);
+      }
+      return r;
+    }
+
+    /** Uniforme « RenduMilieu » pour l'image : scène (cqh), grille, genre, opacité, couleur, table du feu. */
+    ecrireMilieu(milieu, cible, o) {
+      const r = this.milieuRendu(milieu);
+      const rd = milieu.effet.milieu.rendu;
+      const g = milieu.grille;
+      const v = new ArrayBuffer(1088);
+      const f = new Float32Array(v);
+      const u = new Uint32Array(v);
+      f[0] = o.largeurCqh; f[1] = 100; f[2] = g.origine[0]; f[3] = g.origine[1];
+      f[4] = g.cote; u[5] = rd.code; f[6] = rd.opacite;
+      u[8] = g.nx; u[9] = g.ny; f[10] = cible.largeur; f[11] = cible.hauteur;
+      f.set(rd.couleur, 12);
+      f.set(rd.feu, 16);
+      this.device.queue.writeBuffer(r.uniforme, 0, v);
+      return r;
+    }
+
+    /** Libère l'uniforme du dessin d'un milieu détruit. */
+    oublierMilieu(milieu) {
+      const r = this.milieux.get(milieu);
+      if (!r) return;
+      r.uniforme.destroy();
+      this.milieux.delete(milieu);
+    }
+
     /** Libère les tampons de rendu des émetteurs d'une simulation détruite. */
     oublier(sim) {
       const couches = sim.hauteursBase && this.couches.get(sim.hauteursBase);
@@ -1418,7 +1561,7 @@ fn fsStructure(e: SortieS, @builtin(front_facing) face: bool) -> @location(0) ve
       const enc = device.createCommandEncoder();
       const couches = o.couches || [];
       const fonds = o.fonds || [];
-      cible.vide = liste.length === 0 && couches.length === 0 && fonds.length === 0;
+      cible.vide = liste.length === 0 && couches.length === 0 && fonds.length === 0 && !o.milieu;
       // Uniforme « Calque » de chaque émetteur, une fois par image (lu par les sphères des nappes et par le dessin).
       liste.forEach(({ sim, i, delta }) => {
         const e = sim.emetteurs[i];
@@ -1452,6 +1595,13 @@ fn fsStructure(e: SortieS, @builtin(front_facing) face: bool) -> @location(0) ve
       const rp = enc.beginRenderPass({ colorAttachments: [{ view: cible.vueHdr, loadOp: 'clear', storeOp: 'store', clearValue: [0, 0, 0, 0] }] });
       // Fonds et auras par shader (P6) : sous les couches héritées et les particules du calque.
       fonds.forEach((dessinerFond) => dessinerFond(rp));
+      // Milieu fluide (P5c) : sous les couches héritées et les particules du calque.
+      if (o.milieu) {
+        const m = this.ecrireMilieu(o.milieu, cible, o);
+        rp.setPipeline(this.pipelineMilieu);
+        rp.setBindGroup(0, m.groupe);
+        rp.draw(3);
+      }
       // Couches héritées d'abord : les particules de l'effet se dessinent dessus.
       couches.forEach((k) => {
         const c = this.couche(k.tampon, k.debut);
