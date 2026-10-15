@@ -73,7 +73,7 @@
   var PLACES = { corde: ['debut', 'fin'], tissu: ['haut', 'bas', 'gauche', 'droite', 'coins'] };
   var CODES = {
     forme: { point: 0, cercle: 1, anneau: 2, rectangle: 3, ligne: 4, ancre: 5, pixels: 6 },
-    force: { gravite: 0, trainee: 1, vent: 2, turbulence: 3, attracteur: 4, vortex: 5, rappel: 6 },
+    force: { gravite: 0, trainee: 1, vent: 2, turbulence: 3, attracteur: 4, vortex: 5, rappel: 6, milieu: 7 },
     rendu: { sprite: 0, etincelle: 1, trainee: 2, planche: 3, eclats: 4, fluide: 5 },
     melange: { additif: 0, alpha: 1, premultiplie: 2 },
     texture: { 'disque-doux': 0, etoile: 1, fumee: 2, flamme: 3, eclat: 4, confetti: 5, image: 6, pixel: 7 },
@@ -234,6 +234,7 @@
             attracteur: { libelle: 'Attracteur (force négative : répulseur)', champs: attraction() },
             vortex: { libelle: 'Vortex', champs: attraction() },
             rappel: { libelle: 'Rappel (ressort)', champs: { raideur: nb('Raideur', 10, { curseur: [0, 100] }), amortissement: nb('Amortissement', 1, { curseur: [0, 10] }), centre: centre() } },
+            milieu: { libelle: 'Milieu (entraînée par le vent du milieu de la scène, data-milieu)', champs: { coef: nb('Prise au vent', 1, { min: 0, curseur: [0, 10] }) } },
           },
         },
       }), { defaut: [], maximum: FORCES_MAX }),
@@ -369,6 +370,9 @@
           mailles: bo('Mailles seules (filet)'),
           lumiere: pr('Direction de la lumière', [-0.4, -1]),
         }),
+        milieu: ob('Prise au vent du milieu (poussée selon la surface exposée)', {
+          coef: nb('Prise au vent', 1, { min: 0, curseur: [0, 10] }),
+        }),
       }, {
         exemple: { type: 'corde' },
         variantes: {
@@ -388,6 +392,13 @@
             } },
           },
         },
+      }),
+      injecte: ob('Dépôt dans le milieu de la scène (là où passe chaque particule)', {
+        fumee: nb('Fumée déposée (par seconde et par particule)', 0, { min: 0, curseur: [0, 5], pas: 0.05 }),
+        chaleur: nb('Chaleur déposée (par seconde et par particule)', 0, { min: 0, curseur: [0, 5], pas: 0.05 }),
+        encre: noeud('texte', 'Encre déposée (couleur, ou « couleur » : celle de la particule)', null, {
+          motif: '^(couleur|#[0-9a-fA-F]{3,8}|[a-z_][a-z0-9_]*)$', exemple: '#202060',
+        }),
       }),
     }, { exemple: { nom: 'emetteur', naissance: { debit: 50, vie: [0.5, 1] } } }), { requis: true }),
   });
@@ -851,6 +862,8 @@
             r.rayon = nombre(f.rayon, c + '.rayon', 10);
             r.centre = paire(f.centre, c + '.centre', [0.5, 0.5]);
             if (r.rayon <= 0) throw invalide(c + '.rayon', 'valeur positive attendue');
+          } else if (type === 'milieu') {
+            r.coef = nombre(f.coef, c + '.coef', 1);
           } else {
             r.raideur = nombre(f.raideur, c + '.raideur', 10);
             r.amortissement = nombre(f.amortissement, c + '.amortissement', 1);
@@ -1083,6 +1096,26 @@
         };
       }
 
+      /** Dépôt dans le milieu (P5c) : fumée et chaleur par seconde, encre (couleur fixe, ou « couleur » : celle de la particule
+       *  au cours de sa vie) ; null si rien n'est déposé. */
+      function compilerInjecte(v, ch) {
+        if (v === undefined || v === null) return null;
+        v = objet(v, ch);
+        function positif(cle) {
+          var x = nombre(v[cle], ch + '.' + cle, 0);
+          if (x < 0) throw invalide(ch + '.' + cle, 'valeur positive ou nulle attendue');
+          return x;
+        }
+        var fumee = positif('fumee');
+        var chaleur = positif('chaleur');
+        var encre = null;
+        if (v.encre !== undefined && v.encre !== null) {
+          encre = v.encre === 'couleur' ? { mode: 'particule', absorbance: [0, 0, 0] } : { mode: 'fixe', absorbance: absorbanceEncre(couleur(v.encre, ch + '.encre')) };
+        }
+        if (!fumee && !chaleur && !encre) return null;
+        return { fumee: fumee, chaleur: chaleur, encre: encre };
+      }
+
       /** Bloc « interactions » (P5a) : type, rayon, émetteurs liés (noms vérifiés avec les groupes), réglages du type ;
        *  cote : côté de cellule de voisinage propre à l'émetteur (essaim : rayon de vision s'il est plus grand). */
       function compilerInteractions(v, ch) {
@@ -1190,7 +1223,7 @@
         var de = '« ' + corde + ' »';
         if (P) throw invalideS(ch, 'les perles de ' + de + ' sont posées sur ses sommets, pas lancées par « ' + P.nom + ' »');
         if (e.structure !== undefined && e.structure !== null) throw invalideS(ch + '.structure', 'les perles de ' + de + ' ne sont pas une structure');
-        ['forces', 'collisions', 'interactions', 'cible', 'a_la_mort', 'a_la_collision'].forEach(function (k) {
+        ['forces', 'collisions', 'interactions', 'cible', 'a_la_mort', 'a_la_collision', 'injecte'].forEach(function (k) {
           var x = e[k];
           if (x !== undefined && x !== null && !(Array.isArray(x) && !x.length)) throw invalideS(ch + '.' + k, 'les perles suivent les sommets de ' + de + ' : retirer « ' + k + ' »');
         });
@@ -1607,6 +1640,15 @@
           lumiere: [arrondi(lu[0] / ll), arrondi(lu[1] / ll)],
         };
 
+        // Prise au vent du milieu (P5c) : poussée selon la surface exposée (force « milieu » ajoutée par compilerEmetteur).
+        var milieu = null;
+        if (v.milieu !== undefined && v.milieu !== null) {
+          var mi = objet(v.milieu, ch + '.milieu');
+          var coef = nombre(mi.coef, ch + '.milieu.coef', 1);
+          if (coef < 0) throw invalide(ch + '.milieu.coef', 'valeur positive ou nulle attendue');
+          milieu = { coef: coef };
+        }
+
         // Perles (tâche 3 : émetteur des perles).
         var perles = null;
         if (v.perles !== undefined && v.perles !== null) {
@@ -1628,7 +1670,7 @@
           structure: {
             type: type, code: CODES.structure[type], colonnes: C, lignes: R, nSommets: C * R, attaches: attaches,
             raideur: entre('raideur', 0.9, 0, 1), flexion: entre('flexion', 0.1, 0, 1), amortissement: entre('amortissement', 0.02, 0, 1),
-            dechirure: dechirure, fente: fente, epaisseur: entre('epaisseur', 0.4, 0.05, 10), perles: perles, apparence: apparence,
+            dechirure: dechirure, fente: fente, epaisseur: entre('epaisseur', 0.4, 0.05, 10), perles: perles, apparence: apparence, milieu: milieu,
           },
           degrade: degrade,
           image: image,
@@ -1643,6 +1685,7 @@
           interactions: 'une structure rejoint un groupe d\'interactions par le « avec » de ses particules',
           vie: 'elle se dessine selon son « apparence »', rendu: 'elle se dessine selon son type (maillage d\'un tissu, ruban d\'une corde) et son « apparence »',
           modules: 'pas de module WGSL sur une structure',
+          injecte: 'une structure ne dépose rien dans le milieu (elle en prend le vent par « milieu »)',
         };
         Object.keys(interdits).forEach(function (k) {
           if (e[k] !== undefined && e[k] !== null) throw invalideS(ch + '.' + k, 'une structure ne prend pas « ' + k + ' » : ' + interdits[k]);
@@ -1700,6 +1743,7 @@
           modules: compilerModules(e.modules, ch + '.modules'),
           interactions: compilerInteractions(e.interactions, ch + '.interactions'),
           structure: cs ? cs.structure : null,
+          injecte: compilerInjecte(e.injecte, ch + '.injecte'),
           perlesDe: -1,
         };
         em.fragment = !!(em.pixels || em.eclats || em.cible);
@@ -1709,6 +1753,17 @@
         }
         if (em.fluide && em.fragment) throw invalide(ch + '.rendu.type', 'un émetteur de fragments se dessine en grains ou en éclats : pas de rendu « fluide »');
         if (em.interactions) verifierInteractions(em, ch);
+        // Milieu (P5c) : une corde ou un tissu prend le vent du milieu par « structure.milieu » (force de la structure, pondérée
+        // sur le GPU par sa surface exposée), jamais par une force « milieu ».
+        if (estStructure) {
+          em.forces.forEach(function (f, k) {
+            if (f.type === 'milieu') throw invalideS(ch + '.forces[' + k + ']', 'une corde ou un tissu prend le vent du milieu par « structure.milieu » (poussée selon sa surface exposée), pas par une force « milieu »');
+          });
+          if (em.structure.milieu) {
+            if (em.forces.length >= FORCES_MAX) throw invalideS(ch + '.structure.milieu', FORCES_MAX + ' forces au plus, poussée du milieu comprise');
+            em.forces.push({ type: 'milieu', code: CODES.force.milieu, coef: em.structure.milieu.coef });
+          }
+        }
         // Structure : dégradé dans la table des couleurs, image de assets/ comme une texture de P1 (chargée à l'assemblage).
         if (cs && cs.degrade) em.tables.couleur = tableDegrade(cs.degrade, cs.structure.apparence.bandes);
         if (cs && cs.image) {
@@ -1825,6 +1880,8 @@
         if (em.interactions) em.voieRapide = false;
         // Structure : sommets reliés, simulés pas à pas.
         if (estStructure || estPerle) em.voieRapide = false;
+        // Milieu (P5c) : vent du milieu et dépôts se calculent pas à pas.
+        if (em.injecte || em.forces.some(function (f) { return f.type === 'milieu'; })) em.voieRapide = false;
         return em;
       }
 
@@ -1860,6 +1917,11 @@
         groupes: groupes,
         // Structures (P5b) : ids des éléments visés par les attaches « #id » ([] sans structure).
         elements: elementsEffet,
+        // Milieu (P5c) : effet couplé au milieu de sa scène (vent lu, ou dépôts).
+        couplage: {
+          vent: emetteurs.some(function (e) { return e.forces.some(function (f) { return f.type === 'milieu'; }); }),
+          injecte: emetteurs.some(function (e) { return !!e.injecte; }),
+        },
       };
       emetteurs.forEach(function (e) { delete e.espacement; delete e.gigue; delete e.finNaissances; });
       return { ok: true, effet: effet, erreurs: [] };
