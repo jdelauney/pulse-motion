@@ -63,3 +63,102 @@ test('milieu : WGSL du module (noyaux, liaisons, dépôts entiers, aucune additi
   assert.doesNotMatch(code, /atomic<f32>/);
   assert.match(code, /fn repere\(o: u32, tau: f32\) -> Repere/, 'module des collisions de P3 inclus (repères des obstacles)');
 });
+
+const { optionsWebGPU, executerPage, pageMoteur } = require('./aide/gpu.js');
+
+const FICHIERS = ['particules/instantanes.js', 'particules/gpu.js', 'particules/obstacles.js', 'particules/simulation.js', 'particules/milieu.js'];
+
+/** Code commun des pages : GPU, milieu seul dans un groupe, empreinte d'un état, grandeurs d'une grille. */
+const COMMUN = `
+const P = M.particulesInterne;
+const O = M.obstacles;
+const gpu = await P.obtenirGPU();
+if (!gpu) { await envoyer({ webgpu: false }); return; }
+const { device } = gpu;
+const L = 1600 / 9;
+const ZONE = [0, 0, L, 100];
+function ligne(cadres) { const t = new Float32Array(cadres.length * 8); cadres.forEach((r, i) => O.ecrireRepere(t, i * 8, r)); return t; }
+/** Milieu seul dans un groupe couplé : état après le chemin de τ ; m : monde des obstacles ; reperes(g) : leurs repères. */
+async function milieuApres(effet, chemin, m = null, reperes = () => new Float32Array(0)) {
+  const milieu = new P.Milieu(device, effet, ZONE, m, effet.fin);
+  const groupe = new P.Couplage(device, [{ membre: milieu, debut: 0 }]);
+  for (const t of chemin) groupe.avancer(t, [{ reperes }]);
+  const r = await milieu.lire();
+  r.grille = milieu.grille;
+  groupe.detruire();
+  milieu.detruire();
+  return r;
+}
+const empreinte = (u) => { let h = 0x811c9dc5; for (let i = 0; i < u.length; i++) { h ^= u[i]; h = Math.imul(h, 0x01000193) >>> 0; } return h; };
+const finis = (f) => f.every(Number.isFinite);
+/** Centre de la cellule c (cqh). */
+const centre = (g, c) => [g.origine[0] + (c % g.nx + 0.5) * g.cote, g.origine[1] + (Math.floor(c / g.nx) + 0.5) * g.cote];
+/** Divergence (flux sortant) de la cellule (i, j) d'un champ de faces. */
+function divergence(g, v, i, j) {
+  const nu = (g.nx + 1) * g.ny;
+  return v[j * (g.nx + 1) + i + 1] - v[j * (g.nx + 1) + i] + v[nu + (j + 1) * g.nx + i] - v[nu + j * g.nx + i];
+}
+`;
+
+async function page(donnees, code) {
+  const r = JSON.parse(await executerPage(pageMoteur({ fichiers: FICHIERS, donnees, code: COMMUN + code }), { delai: 300000 }));
+  assert.equal(r.erreur, undefined, r.erreur);
+  return r;
+}
+
+// Fumée chaude au centre bas de la scène (cercle de 6 cqh, centre à y = 80).
+const PANACHE = { resolution: 96, sources: [{ type: 'fumee', forme: { type: 'cercle', rayon: 6, decalage: [0, 30] }, debit: 4, temperature: 1 }] };
+
+test('milieu GPU : la fumée chaude monte de sa source (panache centré, valeurs finies)', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const r = await page({ effet: compiler(PANACHE) }, `
+const e = await milieuApres(DONNEES.effet, [2]);
+const g = e.grille;
+let masse = 0, mx = 0, my = 0;
+for (let c = 0; c < g.nx * g.ny; c++) {
+  const f = e.scalaires[c * 8];
+  const [x, y] = centre(g, c);
+  masse += f; mx += f * x; my += f * y;
+}
+await envoyer({ webgpu: true, masse, x: mx / masse, y: my / masse, finis: finis(e.vitesse) && finis(e.scalaires) && finis(e.pression) });`);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.equal(r.finis, true, 'aucune valeur non finie');
+  assert.ok(r.masse > 1, `fumée présente (${r.masse})`);
+  assert.ok(r.y < 65, `centre de la fumée à y = ${r.y.toFixed(1)} : elle monte au-dessus de sa source (y = 80)`);
+  assert.ok(Math.abs(r.x - L / 2) < 4, `panache centré (x = ${r.x.toFixed(1)})`);
+});
+
+test('milieu GPU : divergence quasi nulle après la projection (40 itérations de Jacobi, départ du pas précédent)', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const r = await page({ effet: compiler(PANACHE) }, `
+const e = await milieuApres(DONNEES.effet, [1.5]);
+const g = e.grille;
+let apres = 0, avant = 0, n = 0, v2 = 0;
+for (let j = 0; j < g.ny; j++) for (let i = 0; i < g.nx; i++) {
+  const c = j * g.nx + i;
+  if (e.solide[c * 4] > 0.5) continue;
+  apres += divergence(g, e.vitesse, i, j) ** 2;
+  avant += e.divergence[c] ** 2;
+  n++;
+}
+for (const x of e.vitesse) v2 += x * x;
+await envoyer({ webgpu: true, apres: Math.sqrt(apres / n), avant: Math.sqrt(avant / n), vitesse: Math.sqrt(v2 / e.vitesse.length) });`);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  t.diagnostic(`divergence : ${r.avant.toFixed(4)} avant la projection, ${r.apres.toFixed(4)} après ; vitesse ${r.vitesse.toFixed(3)} cqh/s`);
+  assert.ok(r.vitesse > 0.5, 'le fluide bouge');
+  assert.ok(r.apres <= 0.3 * r.avant, `divergence réduite à ${(r.apres / r.avant * 100).toFixed(1)} % par la projection`);
+  assert.ok(r.apres <= 0.05 * r.vitesse, `divergence résiduelle ${(r.apres / r.vitesse * 100).toFixed(2)} % de la vitesse`);
+});
+
+test('milieu GPU : même état au bit près par deux chemins (instantanés, pression et dépôts compris)', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const r = await page({ effet: compiler(PANACHE, 3) }, `
+const a = await milieuApres(DONNEES.effet, [1, 2]);
+const b = await milieuApres(DONNEES.effet, [2.5, 1.7, 2]);
+const c = await milieuApres(DONNEES.effet, [2]);
+await envoyer({ webgpu: true, a: empreinte(a.etat), b: empreinte(b.etat), c: empreinte(c.etat), n: a.etat.length });`);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.ok(r.n > 1000);
+  assert.equal(r.a, r.b, 'retour en arrière : même état');
+  assert.equal(r.a, r.c, 'chemin direct : même état');
+});
