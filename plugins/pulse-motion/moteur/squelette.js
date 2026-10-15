@@ -47,6 +47,10 @@
     'touffeRot', 'touffeEtire', 'touffeEventail', 'touffeOnde'];
   var OS = Object.keys(REPOS).filter(function (k) { return PLACEMENT.indexOf(k) < 0 && EXPRESSION.indexOf(k) < 0; });
   var NOMS = Object.freeze({ placement: PLACEMENT, os: OS, expression: EXPRESSION });
+  // Noms des articulations et des chaînes : interdits aux os en plus (ils écraseraient le résultat).
+  var RESERVES = Object.freeze(['bassin', 'cou', 'centreTete', 'sommetTete', 'colonne', 'tete',
+    'jambeAvant', 'jambeArriere', 'brasAvant', 'brasArriere'].concat(['hanche', 'genou', 'cheville', 'orteil', 'epaule', 'coude', 'main']
+    .reduce(function (l, n) { return l.concat([n + 'Avant', n + 'Arriere']); }, [])));
 
   // Bornes par défaut [min, max] (degrés), clés génériques : un humanoïde souple de cartoon.
   var LIMITES = Object.freeze({
@@ -164,6 +168,7 @@
   function placerOs(p, g, geo, balancements) {
     var out = {};
     g.osEnPlus.forEach(function (os) {
+      if (RESERVES.indexOf(os.nom) >= 0 || os.nom in REPOS) throw new Error('Os en plus : le nom « ' + os.nom + ' » est déjà pris par le squelette (ex. queue, oreille, cape).');
       var rp = repereParent(os.parent, geo);
       var angle = (os.angle || 0) + (typeof p[os.nom] === 'number' ? p[os.nom] : 0) + ((balancements && balancements[os.nom]) || 0);
       var base = add(rp.O, tf(rp.R, os.attache || [0, 0, 0]));
@@ -173,46 +178,59 @@
     return out;
   }
 
-  var FENETRE_OS = 0.6, PAS_OS = 1 / 60;
+  var FENETRE_OS = 1, PAS_OS = 1 / 60;
 
-  /** Point d'attache et direction de repos d'un os, à l'écran (repère du parent du personnage). */
-  function attacheEcran(pose, g, os) {
-    var p = contraindre(pose, g, true);
+  /** Point d'attache à l'écran (repère du parent du personnage) et tangente du balancement à l'écran
+   *  (déplacement du bout par radian ; sa composante horizontale s'efface quand l'os est vu de face). */
+  function attacheEcran(pose, g, os, contraintes) {
+    var p = contraindre(pose, g, contraintes !== false);
     var geo = geometrie(p, g);
-    var o = placerOs(p, g, geo, null)[os.nom];
-    var dx = o.bout[0] - o.base[0], dy = o.bout[1] - o.base[1], l = Math.hypot(dx, dy) || 1;
-    return { x: p.x + o.base[0] * p.echelle, y: p.y + o.base[1] * p.echelle, n: [dy / l, -dx / l], vue: p.vue };
+    var a = placerOs(p, g, geo, null)[os.nom];
+    var b = {}; b[os.nom] = 1;
+    var d = placerOs(p, g, geo, b)[os.nom];
+    var e = p.echelle / DEG;
+    return { x: p.x + a.base[0] * p.echelle, y: p.y + a.base[1] * p.echelle, T: [(d.bout[0] - a.bout[0]) * e, (d.bout[1] - a.bout[1]) * e], L: (os.longueur || 1) * p.echelle };
   }
 
-  /** Balancement (degrés) d'un os à l'instant t : ressort amorti intégré sur la fenêtre passée, depuis le repos.
+  /** Poids d'une poussée selon son âge : entier sur la première moitié de la fenêtre, puis s'efface en douceur
+   *  jusqu'à 0 au bout de la fenêtre (pas de saut quand une poussée en sort). */
+  function poids(age) {
+    var k = (age - FENETRE_OS / 2) / (FENETRE_OS / 2);
+    if (k <= 0) return 1;
+    if (k >= 1) return 0;
+    return 1 - k * k * (3 - 2 * k);
+  }
+
+  /** Balancement (degrés) d'un os à l'instant t : ressort amorti intégré sur la fenêtre passée, depuis le repos,
+   *  piloté par l'accélération du point d'attache projetée sur la tangente du balancement (pendule).
    *  Grille absolue (multiples de PAS_OS) : même t ⇒ même résultat, quel que soit l'ordre des appels. */
-  function balancement(os, g, t, poseA) {
+  function balancement(os, g, t, poseA, contraintes) {
     var n = Math.round(FENETRE_OS / PAS_OS);
     var k0 = Math.floor(t / PAS_OS + 1e-9);
     var pts = [];
-    for (var i = -n - 1; i <= 0; i++) pts.push(attacheEcran(poseA((k0 + i) * PAS_OS), g, os));
+    for (var i = -n - 1; i <= 0; i++) pts.push(attacheEcran(poseA((k0 + i) * PAS_OS), g, os, contraintes));
     var f = 0.8 + 4 * Math.max(0, Math.min(1, os.raideur === undefined ? 0.5 : os.raideur));
     var raid = Math.pow(2 * Math.PI * f, 2);
     var amort = 2 * Math.max(0, Math.min(1, os.amorti === undefined ? 0.4 : os.amorti)) * Math.sqrt(raid);
-    var L = os.longueur || 1;
     var theta = 0, omega = 0, h = PAS_OS;
     for (var j = 1; j < pts.length - 1; j++) {
-      var ax = (pts[j + 1].x - 2 * pts[j].x + pts[j - 1].x) / (h * h);
-      var ay = (pts[j + 1].y - 2 * pts[j].y + pts[j - 1].y) / (h * h);
-      var pousse = (ax * pts[j].n[0] + ay * pts[j].n[1]) / L / DEG;
+      var q = pts[j];
+      var ax = (pts[j + 1].x - 2 * q.x + pts[j - 1].x) / (h * h);
+      var ay = (pts[j + 1].y - 2 * q.y + pts[j - 1].y) / (h * h);
+      var age = t - (k0 + j - n - 1) * PAS_OS;
+      var pousse = -(ax * q.T[0] + ay * q.T[1]) / (q.L * q.L) / DEG * poids(age);
       omega += h * (pousse - raid * theta - amort * omega);
       theta += h * omega;
     }
     theta += omega * (t - k0 * PAS_OS);
-    var signe = Math.cos(pts[pts.length - 1].vue * DEG) < 0 ? -1 : 1;
-    var v = Math.max(-80, Math.min(80, signe * theta));
+    var v = Math.max(-80, Math.min(80, theta));
     return Math.abs(v) < 1e-9 ? 0 : v;
   }
 
   function calculerOsEnPlus(p, g, geo, ctx) {
     var bal = {};
     var anime = typeof ctx.poseA === 'function' && typeof ctx.temps === 'number';
-    g.osEnPlus.forEach(function (os) { bal[os.nom] = anime ? balancement(os, g, ctx.temps, ctx.poseA) : 0; });
+    g.osEnPlus.forEach(function (os) { bal[os.nom] = anime ? balancement(os, g, ctx.temps, ctx.poseA, ctx.contraintes) : 0; });
     var out = placerOs(p, g, geo, bal);
     Object.keys(out).forEach(function (nom) { out[nom].balancement = bal[nom]; });
     return out;
@@ -249,18 +267,14 @@
   /* ---------- utilitaires ---------- */
   function sol(gabarit) { var g = completerGabarit(gabarit); return g.cuisse + g.tibia; }
 
-  function profondeurPied(g, cuisse, tibia, rot, ecart) {
-    var a = (rot + cuisse) * DEG, b = (rot + cuisse + tibia) * DEG;
-    return (g.cuisse * Math.cos(a) + g.tibia * Math.cos(b)) * Math.cos(ecart * DEG);
-  }
-
-  /** Copie de la pose dont bassinY pose le pied le plus bas sur le sol. */
+  /** Copie de la pose dont bassinY pose la cheville la plus basse sur le sol (géométrie complète : bascule,
+   *  écart et torsion compris). */
   function poserAuSol(pose, gabarit) {
     var g = completerGabarit(gabarit);
     var q = contraindre(pose, g, true);
-    var bas = Math.max(
-      profondeurPied(g, q.cuisseAvant, q.tibiaAvant, q.bassinRot, q.ecartJambeAvant),
-      profondeurPied(g, q.cuisseArriere, q.tibiaArriere, q.bassinRot, q.ecartJambeArriere));
+    q.bassinY = 0;
+    var A = geometrie(q, g).A;
+    var bas = Math.max(A.chevilleAvant[1], A.chevilleArriere[1]);
     return Object.assign({}, pose, { bassinY: g.cuisse + g.tibia - bas });
   }
 
@@ -310,7 +324,9 @@
     chevilleArriere: { racine: 'hancheArriere', os1: 'cuisseArriere', os2: 'tibiaArriere', l1: 'cuisse', l2: 'tibia', sens: 1, base: ['bassinRot'] }
   });
 
-  /** Angles qui amènent `extremite` (mainAvant…, chevilleArriere) sur `cible` (repère du personnage). */
+  /** Angles qui amènent `extremite` (mainAvant…, chevilleArriere) sur `cible` (repère du personnage, à l'écran).
+   *  Résolu dans le plan de la chaîne, puis affiné par la méthode de Newton sur la géométrie complète (écart, torsion,
+   *  rotation du torse, vue de 3/4) ; angles bornés par les contraintes. atteint : extrémité à moins de 0,5 de la cible. */
   function atteindre(pose, gabarit, extremite, cible) {
     var c = CHAINES[extremite];
     if (!c) throw new Error('IK : extrémité « ' + extremite + ' » inconnue (mainAvant, mainArriere, chevilleAvant ou chevilleArriere).');
@@ -319,11 +335,35 @@
     var cv = Math.cos(p.vue * DEG);
     if (Math.abs(cv) < 0.25) return null;
     var r = geometrie(p, g).A[c.racine];
-    var res = ik2([0, 0], g[c.l1], g[c.l2], [(cible[0] - r[0]) / cv, cible[1] - r[1]], c.sens);
     var base = c.base.reduce(function (s, k) { return s + p[k]; }, 0);
-    var out = { atteint: res.atteint };
-    out[c.os1] = normaliser(res.a1 - base);
-    out[c.os2] = res.a2;
+    var borner = function (nom, v) { var l = limite(nom, g); return l ? Math.min(l[1], Math.max(l[0], v)) : v; };
+    var res = ik2([0, 0], g[c.l1], g[c.l2], [(cible[0] - r[0]) / cv, cible[1] - r[1]], c.sens);
+    var x = [borner(c.os1, normaliser(res.a1 - base)), borner(c.os2, res.a2)];
+    function bout(v) {
+      var q = Object.assign({}, p);
+      q[c.os1] = v[0]; q[c.os2] = v[1];
+      return geometrie(q, g).A[extremite];
+    }
+    // Newton sur la géométrie complète, à partir de la solution du plan de la chaîne.
+    var b = bout(x), erreur = Math.hypot(cible[0] - b[0], cible[1] - b[1]), d = 0.05;
+    for (var it = 0; it < 20 && erreur > 1e-3; it++) {
+      var e0 = cible[0] - b[0], e1 = cible[1] - b[1];
+      var u = bout([x[0] + d, x[1]]), w = bout([x[0], x[1] + d]);
+      var j00 = (u[0] - b[0]) / d, j10 = (u[1] - b[1]) / d, j01 = (w[0] - b[0]) / d, j11 = (w[1] - b[1]) / d;
+      var det = j00 * j11 - j01 * j10;
+      if (Math.abs(det) < 1e-9) break;
+      var p0 = (e0 * j11 - e1 * j01) / det, p1 = (j00 * e1 - j10 * e0) / det;
+      var pas = Math.hypot(p0, p1);
+      if (pas > 30) { p0 *= 30 / pas; p1 *= 30 / pas; }
+      var y = [borner(c.os1, x[0] + p0), borner(c.os2, x[1] + p1)];
+      var by = bout(y), ey = Math.hypot(cible[0] - by[0], cible[1] - by[1]);
+      if (ey >= erreur) break;
+      x = y; b = by; erreur = ey;
+    }
+    var out = {};
+    out[c.os1] = x[0];
+    out[c.os2] = x[1];
+    out.atteint = res.atteint && erreur < 0.5;
     return out;
   }
 
@@ -331,8 +371,8 @@
     REPOS: REPOS, NOMS: NOMS, LIMITES: LIMITES, GABARIT: GABARIT, SEUIL_LOIN: SEUIL_LOIN,
     completerGabarit: completerGabarit, generique: generique, limite: limite, contraindre: contraindre,
     calculer: calculer, sol: sol, poserAuSol: poserAuSol, melanger: melanger, pointDe: pointDe,
-    ik2: ik2, CHAINES: CHAINES, atteindre: atteindre, FENETRE_OS: FENETRE_OS, PAS_OS: PAS_OS,
-    // Interne, pour l'IK et le balancement (tâches 2 et 3).
+    ik2: ik2, CHAINES: CHAINES, atteindre: atteindre, FENETRE_OS: FENETRE_OS, PAS_OS: PAS_OS, RESERVES: RESERVES,
+    // Interne (débogage).
     _geometrie: geometrie, _placerOs: placerOs
   };
 });

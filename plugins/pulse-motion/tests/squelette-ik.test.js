@@ -64,3 +64,30 @@ test('atteindre : de face, null ; extrémité inconnue, erreur en français', ()
   assert.equal(S.atteindre({ vue: 90 }, {}, 'mainAvant', [0, 0]), null);
   assert.throws(() => S.atteindre({}, {}, 'piedAvant', [0, 0]), /extrémité « piedAvant » inconnue.*mainAvant/);
 });
+
+test('atteindre : de 3/4, bras écarté et torse tourné, la main rejoint quand même la cible', () => {
+  for (const pose of [{ vue: 45 }, { vue: 30, torseRot: 15 }, { vue: 45, torseRot: -30 }, { vue: 0, torseRot: 30, ecartBrasAvant: 25 }, { vue: 135, torseIncl: 10 }]) {
+    const r0 = S.calculer(pose);
+    const e = r0.articulations.epauleAvant;
+    const devant = Math.cos(pose.vue * Math.PI / 180) < 0 ? -1 : 1;
+    const cible = [e[0] + 25 * devant, e[1] + 60];
+    const angles = S.atteindre(pose, {}, 'mainAvant', cible);
+    const r = S.calculer(Object.assign({}, pose, angles));
+    assert.ok(dist(r.articulations.mainAvant, cible) < 0.5, `${JSON.stringify(pose)} : ${dist(r.articulations.mainAvant, cible)}`);
+    assert.equal(angles.atteint, true);
+  }
+  // Bras presque perpendiculaire à l'écran (vue 45, épaules tournées de 30°) : cible hors d'atteinte, dit comme tel.
+  const loin = { vue: 45, torseRot: 30 };
+  const e = S.calculer(loin).articulations.epauleAvant;
+  assert.equal(S.atteindre(loin, {}, 'mainAvant', [e[0] + 25, e[1] + 60]).atteint, false);
+});
+
+test('atteindre : angles bornés ; hors d\'atteinte, atteint faux', () => {
+  const r0 = S.calculer(plan);
+  const h = r0.articulations.hancheAvant;
+  const angles = S.atteindre(plan, {}, 'chevilleAvant', [h[0] - 5, h[1] - 120]);
+  const lim = S.LIMITES;
+  assert.ok(angles.cuisseAvant >= lim.cuisse[0] && angles.cuisseAvant <= lim.cuisse[1]);
+  assert.ok(angles.tibiaAvant >= lim.tibia[0] && angles.tibiaAvant <= lim.tibia[1]);
+  assert.equal(angles.atteint, false);
+});

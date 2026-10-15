@@ -106,3 +106,11 @@ test('calculer : la tête expose son repère pour l\'habillage', () => {
   const de90 = S.calculer({ vue: 90 });
   proche(de90.tete.avant[2], Math.cos(3 * Math.PI / 180), 1e-9, 'de face, la tête regarde la caméra (torse 3°)');
 });
+
+test('poserAuSol : exact avec bascule du bassin, écart et torsion', () => {
+  for (const pose of [{ bassinRot: 30, cuisseAvant: -60, ecartJambeAvant: 40 }, { torsionJambeAvant: 45, tibiaAvant: 90 }, { bassinRot: -20, ecartJambeArriere: 30, torsionJambeArriere: -30, tibiaArriere: 60 }]) {
+    const r = S.calculer(S.poserAuSol(pose));
+    const bas = Math.max(r.articulations.chevilleAvant[1], r.articulations.chevilleArriere[1]);
+    proche(bas, 136, 1e-6, JSON.stringify(pose));
+  }
+});
