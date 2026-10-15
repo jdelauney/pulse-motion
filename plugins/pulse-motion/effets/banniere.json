@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "nom": "banniere",
+  "description": "Bannière faite de l'ancre (titre, logo, image) : l'élément devient un tissu tenu par son bord haut, qui flotte au vent, puis se détache et tombe sur les obstacles déclarés (data-obstacle) ; l'élément réel est caché pendant ce temps.",
+  "parametres": {
+    "vent": { "defaut": 30, "min": 0, "max": 150 },
+    "chute": { "defaut": 1.5, "min": 0.2, "max": 10 },
+    "gravite": { "defaut": 40, "min": 10, "max": 150 }
+  },
+  "rendu_calque": { "bloom": 0, "tons": "neutre" },
+  "emetteurs": [
+    {
+      "nom": "toile",
+      "structure": {
+        "type": "tissu",
+        "resolution": [32, 12],
+        "attaches": [{ "ou": "haut", "a": "ancre", "lacher": "chute" }],
+        "raideur": 0.95,
+        "flexion": 0.1,
+        "amortissement": 0.03,
+        "apparence": { "source": "ancre" }
+      },
+      "forces": [
+        { "type": "gravite", "valeur": "gravite" },
+        { "type": "vent", "vitesse": ["vent", 0], "coef": 0.6 },
+        { "type": "turbulence", "echelle": 15, "force": 12, "vitesse": 1 }
+      ],
+      "collisions": { "cibles": ["sol", "elements", "formes"], "reponse": "rebond", "restitution": 0, "frottement": 0.6 }
+    }
+  ]
+}

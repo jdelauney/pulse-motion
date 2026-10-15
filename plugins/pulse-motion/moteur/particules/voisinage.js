@@ -4,7 +4,8 @@
  *   de chaque côté (cqh), cellules de côté « cote » ; Error au-delà de CELLULES_MAX cellules
  * P.iterationsGroupe(def, membres) -> itérations du solveur (fluide 2 × max(incompressibilite), grains 2 × ITERATIONS_GRAINS, essaim 0)
  * P.emballerGroupe(def, membres, grille, nCorps) -> ArrayBuffer   uniforme « Groupe » (560 octets) ; membres :
- *   [{ em, base, capacite }] (émetteurs simulés du groupe, dans l'ordre de la recette)
+ *   [{ em, base, capacite, sommets? }] (émetteurs simulés du groupe, dans l'ordre de la recette, puis structures liées :
+ *   sommets = base de leurs sommets dans structures.sommets)
  * P.WGSL_GROUPE    structures WGSL partagées (ParamsMembre, Groupe, Membre, Corps) ; P.WGSL_PAS_GROUPE : struct Pas (48 octets)
  * P.WGSL_VOISINAGE module des noyaux du groupe
  * new P.Groupe(device, sim, def)   def : effet.groupes[g] ; sim : P.Simulation (emetteurs, tamponPas, largeurCqh, lireTampon)
@@ -15,6 +16,11 @@
  * positions de travail en ping-pong (résultat dans posA). Rendu aux particules : module « pm-rendre », ou, pour un émetteur
  * à collisions, module des collisions de P3 augmenté (« rendreC » : correction arrêtée aux obstacles, fuite de l'essaim) ;
  * grains soutenus et presque immobiles mis au repos.
+ * Structures liées (P5b, effet.groupes[g].structures) : sommets d'une corde ou d'un tissu rangés comme corps du groupe après
+ * les particules (rassembler lit le tampon commun des sommets, liaison décalée ; ParamsMembre.d.w = 1 + base des sommets),
+ * de masse infinie pour les solveurs (jamais déplacés ; grains : le grain prend toute la pénétration ; fluide : particule
+ * de bord ; essaim : séparation seulement) ; noyau « reagir » : réaction des particules sur chaque sommet, sommée dans l'ordre
+ * trié, écrite dans « poussees » (structures.js l'ajoute à la vitesse du sommet). Corps.r0 : masse.
  *   .lire() -> Promise<{ corps, cles, debuts, ordre, grille, membres }>   (tests)
  *   .detruire()
  * Corps du groupe : les cases des émetteurs membres à la suite (base de chacun : somme des capacités avant lui) ; indice
@@ -69,11 +75,12 @@
     const u = new Uint32Array(b);
     f[0] = grille.origine[0]; f[1] = grille.origine[1]; f[2] = grille.cote; u[3] = grille.n;
     u[4] = grille.nx; u[5] = grille.ny; u[6] = nCorps; u[7] = def.code;
-    u[8] = P.iterationsGroupe(def, membres); u[9] = membres.length;
+    // Entrées de structures liées (sommets !== undefined) : sans paramètres de type ; d.w = 1 + base de leurs sommets.
+    u[8] = P.iterationsGroupe(def, membres.filter((m) => m.sommets === undefined)); u[9] = membres.length;
     membres.forEach((m, r) => {
       const o = 12 + r * 16;
-      f.set(parametres(m.em.interactions), o);
-      u[o + 12] = m.base; u[o + 13] = m.capacite; u[o + 14] = def.code;
+      if (m.sommets === undefined) f.set(parametres(m.em.interactions), o);
+      u[o + 12] = m.base; u[o + 13] = m.capacite; u[o + 14] = def.code; u[o + 15] = m.sommets === undefined ? 0 : 1 + m.sommets;
     });
     return b;
   };
@@ -116,6 +123,7 @@ const PLEINE = ${PLEINE}u;
 @group(0) @binding(12) var<storage, read_write> vitesses: array<vec2f>;
 @group(0) @binding(13) var<storage, read_write> anciennes: array<vec4f>;
 @group(0) @binding(14) var<storage, read_write> parcours: array<u32>;
+@group(0) @binding(15) var<storage, read_write> poussees: array<vec2f>;
 `;
 
   const WGSL_GRILLE = /* wgsl */ `
@@ -143,14 +151,15 @@ fn noter(@builtin(global_invocation_id) gid: vec3u) {
 }
 
 // Corps du groupe : état de chaque particule du membre après son pas (prédiction), cellule, comptage par cellule
-// (additions entières atomiques : le total ne dépend pas de l'ordre des fils) ; position de travail initiale (posE).
+// (additions entières atomiques : le total ne dépend pas de l'ordre des fils) ; position de travail initiale (posE) ;
+// r0 : masse (réaction sur les structures liées).
 @compute @workgroup_size(64)
 fn rassembler(@builtin(global_invocation_id) gid: vec3u) {
   let s = gid.x;
   if (s >= MB.capacite) { return; }
   let i = MB.base + s;
   let p = particules[s];
-  var c = Corps(p.pos, p.vel, 0.5 * p.taille, AUCUN, p.n, 0u);
+  var c = Corps(p.pos, p.vel, 0.5 * p.taille, AUCUN, p.n, bitcast<u32>(p.masse));
   var cle = AUCUN;
   if (p.vivante == 1u) {
     c.membre = MB.rang;
@@ -262,6 +271,13 @@ fn dansGrille(i: u32) -> bool {
   return c != AUCUN && debuts[c + 1u] - debuts[c] <= PLEINE;
 }
 
+// Corps d'une structure liée (P5b) : sommet de corde ou de tissu, déplacé par sa propre simulation ; masse infinie pour
+// les solveurs (jamais déplacé ici) : il repousse les particules, qui le poussent en retour (reagir).
+fn estStructure(i: u32) -> bool {
+  let m = corps[i].membre;
+  return m != AUCUN && GR.m[m].d.w != 0u;
+}
+
 // Plage (dans ordre) de la cellule voisine numéro v (0 à 8, de (−1, −1) à (1, 1) ligne par ligne) de la cellule c ; vide
 // hors de la grille ou pour une cellule pleine.
 fn plage(c: u32, v: u32) -> Plage {
@@ -298,7 +314,7 @@ fn essaim(@builtin(global_invocation_id) gid: vec3u) {
   let ci = corps[i];
   posE[i] = ci.pos;
   vitesses[i] = ci.vel;
-  if (ci.membre == AUCUN) { return; }
+  if (ci.membre == AUCUN || estStructure(i)) { return; }
   let m = GR.m[ci.membre];
   let R = m.c.w;
   let vision = m.b.x;
@@ -328,8 +344,9 @@ fn essaim(@builtin(global_invocation_id) gid: vec3u) {
           pousse += u * (0.5 * R - l);
           nPousse += 1.0;
         }
-        // Cône de vision : direction de i vers j à moins du demi-angle de la vitesse de i (vitesse nulle : tout est vu).
-        if (dot(dir, dir) < 0.5 || dot(-u, dir) >= m.b.y) {
+        // Cône de vision : direction de i vers j à moins du demi-angle de la vitesse de i (vitesse nulle : tout est vu) ;
+        // un sommet de structure liée ne compte que pour la séparation (obstacle souple).
+        if (!estStructure(j) && (dot(dir, dir) < 0.5 || dot(-u, dir) >= m.b.y)) {
           vMoy += cj.vel;
           pMoy += cj.pos;
           nVus += 1.0;
@@ -383,7 +400,7 @@ const VOISINES_TENSION = 3u;
 fn densite(@builtin(global_invocation_id) gid: vec3u) {
   if (gid.x >= GR.nCorps) { return; }
   let i = parcours[gid.x];
-  if (corps[i].membre == AUCUN || !dansGrille(i)) {
+  if (corps[i].membre == AUCUN || !dansGrille(i) || estStructure(i)) {
     lambdas[i] = 0.0;
     return;
   }
@@ -422,7 +439,7 @@ fn corriger(@builtin(global_invocation_id) gid: vec3u) {
   if (gid.x >= GR.nCorps) { return; }
   let i = parcours[gid.x];
   let pi = posL[i];
-  if (corps[i].membre == AUCUN || !dansGrille(i)) {
+  if (corps[i].membre == AUCUN || !dansGrille(i) || estStructure(i)) {
     posE[i] = pi;
     return;
   }
@@ -459,7 +476,7 @@ fn viscosite(@builtin(global_invocation_id) gid: vec3u) {
   if (gid.x >= GR.nCorps) { return; }
   let i = parcours[gid.x];
   let vi = vitesseCorrigee(i);
-  if (corps[i].membre == AUCUN || !dansGrille(i)) {
+  if (corps[i].membre == AUCUN || !dansGrille(i) || estStructure(i)) {
     vitesses[i] = vi;
     return;
   }
@@ -470,7 +487,7 @@ fn viscosite(@builtin(global_invocation_id) gid: vec3u) {
     let pl = plage(cles[i], vc);
     for (var k = pl.a; k < pl.b; k++) {
       let j = ordre[k];
-      if (j == i) { continue; }
+      if (j == i || estStructure(j)) { continue; }
       let q = length(posL[i] - posL[j]) / h;
       if (q >= 1.0) { continue; }
       dv += (vitesseCorrigee(j) - vi) * noyauW(q);
@@ -499,7 +516,7 @@ fn contacts(@builtin(global_invocation_id) gid: vec3u) {
   if (gid.x >= GR.nCorps) { return; }
   let i = parcours[gid.x];
   let pi = posL[i];
-  if (corps[i].membre == AUCUN || !dansGrille(i)) {
+  if (corps[i].membre == AUCUN || !dansGrille(i) || estStructure(i)) {
     posE[i] = pi;
     return;
   }
@@ -520,14 +537,18 @@ fn contacts(@builtin(global_invocation_id) gid: vec3u) {
       if (r >= contact * (1.0 + 0.25 * m.a.z)) { continue; }
       let u = direction(i, j, d, r);
       let pen = contact - r;
+      // Sommet de structure liée : masse infinie ici, le grain prend toute la pénétration ; frottement sur la vitesse du
+      // sommet ; pas de cohésion avec lui.
+      let structureJ = estStructure(j);
       if (pen > 0.0) {
-        var c = 0.5 * pen * u;
-        let rel = dep - (pj - ancienne(j));
+        var c = select(0.5, 1.0, structureJ) * pen * u;
+        var rel = dep - (pj - ancienne(j));
+        if (structureJ) { rel = dep - corps[j].vel * P.dt; }
         let tg = rel - dot(rel, u) * u;
         let lt = length(tg);
         if (lt < m.a.x * pen) { c -= 0.5 * tg; } else if (lt > 1e-9) { c -= 0.5 * tg * min(m.a.y * pen / lt, 1.0); }
         dp += c;
-      } else {
+      } else if (!structureJ) {
         dp += 0.5 * m.a.z * pen * u;
       }
       nb += 1.0;
@@ -545,7 +566,7 @@ fn vitessesGrains(@builtin(global_invocation_id) gid: vec3u) {
   let i = parcours[gid.x];
   let ci = corps[i];
   var v = ci.vel + (posL[i] - ci.pos) / P.dt;
-  if (ci.membre == AUCUN || !dansGrille(i)) {
+  if (ci.membre == AUCUN || !dansGrille(i) || estStructure(i)) {
     vitesses[i] = v;
     return;
   }
@@ -572,6 +593,44 @@ fn vitessesGrains(@builtin(global_invocation_id) gid: vec3u) {
 `;
 
   // Rendu aux particules : déclarations et code communs aux deux modules.
+  // Réaction des particules sur les sommets des structures liées (P5b).
+  const WGSL_REACTION = /* wgsl */ `
+const REACTION_MAX = 200.0;   // cqh/s : changement de vitesse d'un sommet par pas, au plus
+
+// Pour chaque sommet de structure liée : somme, dans l'ordre trié des voisines, des recouvrements prévus avec les
+// particules (rayons additionnés), pondérés par le rapport des masses : Δv = Σ (m_j / m_i) · pénétration · u / dt (u : de
+// la particule vers le sommet), bornée ; écrite dans « poussees » (structures.js l'ajoute à la vitesse du sommet au premier
+// sous-pas). Écrite pour chaque sommet lié, même sans contact (zéro).
+@compute @workgroup_size(64)
+fn reagir(@builtin(global_invocation_id) gid: vec3u) {
+  let i = gid.x;
+  if (i >= GR.nCorps) { return; }
+  if (!estStructure(i)) { return; }
+  let ci = corps[i];
+  let m = GR.m[ci.membre];
+  var dv = vec2f(0.0);
+  if (dansGrille(i)) {
+    let mi = max(bitcast<f32>(ci.r0), 1e-6);
+    for (var vc = 0u; vc < 9u; vc++) {
+      let pl = plage(cles[i], vc);
+      for (var k = pl.a; k < pl.b; k++) {
+        let j = ordre[k];
+        if (j == i || estStructure(j)) { continue; }
+        let cj = corps[j];
+        let d = ci.pos - cj.pos;
+        let r = length(d);
+        let pen = ci.rayon + cj.rayon - r;
+        if (pen <= 0.0) { continue; }
+        dv += bitcast<f32>(cj.r0) / mi * pen * direction(i, j, d, r) / P.dt;
+      }
+    }
+  }
+  let l = length(dv);
+  if (l > REACTION_MAX) { dv = dv * (REACTION_MAX / l); }
+  poussees[m.d.w - 1u + (i - m.d.x)] = dv;
+}
+`;
+
   const WGSL_RENDRE_DECL = /* wgsl */ `
 struct Limite { ok: bool, pos: vec2f, n: vec2f, f: f32 };
 const SEUIL_REPOS = 2.0;   // cqh/s : un grain soutenu plus lent que cela est mis au repos (plus haut, des grains qui
@@ -700,7 +759,7 @@ fn rendreC(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_
   }
   P.codeRendreInteractions = codeRendre;
 
-  P.WGSL_VOISINAGE = P.WGSL_COMMUN + WGSL_PAS + P.WGSL_GROUPE + WGSL_LIAISONS + WGSL_GRILLE + WGSL_BORNER + WGSL_VOISINS + WGSL_ESSAIM + WGSL_FLUIDE + WGSL_GRAINS;
+  P.WGSL_VOISINAGE = P.WGSL_COMMUN + WGSL_PAS + P.WGSL_GROUPE + WGSL_LIAISONS + WGSL_GRILLE + WGSL_BORNER + WGSL_VOISINS + WGSL_ESSAIM + WGSL_FLUIDE + WGSL_GRAINS + WGSL_REACTION;
 
   // Liaisons de chaque noyau (disposition explicite : 8 tampons de stockage au plus chacune). Liaison 0 : décalage dynamique.
   const NOYAUX = {
@@ -716,6 +775,7 @@ fn rendreC(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_
     viscosite: [0, 1, 4, 5, 7, 8, 9, 12, 14],
     contacts: [0, 1, 4, 5, 7, 8, 9, 10, 13, 14],
     vitessesGrains: [0, 1, 4, 5, 7, 8, 9, 12, 14],
+    reagir: [0, 1, 4, 5, 7, 8, 15],
   };
   P.NOYAUX_VOISINAGE = NOYAUX;
 
@@ -812,6 +872,14 @@ fn rendreC(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_
         device.queue.writeBuffer(m.uniforme, 0, new Uint32Array([rang, m.base, m.capacite, 0]));
         return m;
       });
+      // Structures liées (P5b) : leurs sommets à la suite des particules, rangs après les membres.
+      this.liees = (def.structures || []).map((i) => sim.emetteurs[i]).map((e, k) => {
+        const m = { e, em: e.em, rang: this.membres.length + k, base, capacite: e.infoStructure.n, sommets: e.infoStructure.base };
+        base += m.capacite;
+        m.uniforme = device.createBuffer({ size: 16, usage: U.UNIFORM | U.COPY_DST });
+        device.queue.writeBuffer(m.uniforme, 0, new Uint32Array([m.rang, m.base, m.capacite, 0]));
+        return m;
+      });
       this.nCorps = base;
       if (this.nCorps > 65535 * 64) throw new Error('Interactions : ' + this.nCorps + ' particules liées dans un même groupe, au-delà de ' + 65535 * 64 + '.');
       this.grille = P.grilleInteractions(sim.largeurCqh, def.cote);
@@ -820,7 +888,7 @@ fn rendreC(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_
       const S = U.STORAGE | U.COPY_SRC;
       const tampon = (octets) => device.createBuffer({ size: Math.max(16, octets), usage: S });
       this.uniforme = device.createBuffer({ size: OCTETS_GROUPE, usage: U.UNIFORM | U.COPY_DST });
-      device.queue.writeBuffer(this.uniforme, 0, P.emballerGroupe(def, this.membres, this.grille, this.nCorps));
+      device.queue.writeBuffer(this.uniforme, 0, P.emballerGroupe(def, this.membres.concat(this.liees), this.grille, this.nCorps));
       this.corps = tampon(n * OCTETS_CORPS);
       this.cles = tampon(n * 4);
       this.comptes = tampon((this.grille.n + 1) * 4);
@@ -841,7 +909,8 @@ fn rendreC(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_
         case 0: return { buffer: this.sim.tamponPas, size: 48 };
         case 1: return { buffer: this.uniforme };
         case 2: return { buffer: m.uniforme };
-        case 3: return { buffer: m.e.particules };
+        // Structure liée : ses sommets dans le tampon commun des structures (base multiple de 4 : décalage aligné sur 256 octets).
+        case 3: return m.sommets !== undefined ? { buffer: this.sim.structures.sommets, offset: m.sommets * 64, size: m.capacite * 64 } : { buffer: m.e.particules };
         case 4: return { buffer: this.corps };
         case 5: return { buffer: this.cles };
         case 6: return { buffer: this.comptes };
@@ -852,7 +921,8 @@ fn rendreC(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_
         case 11: return { buffer: this.lambdas };
         case 12: return { buffer: this.vitesses };
         case 13: return { buffer: this.anciennes };
-        default: return { buffer: this.parcours };
+        case 14: return { buffer: this.parcours };
+        default: return { buffer: this.sim.structures.poussees };
       }
     }
 
@@ -890,11 +960,13 @@ fn rendreC(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_
       const cellules1 = Math.ceil((this.grille.n + 1) / 64);
       const blocs = Math.ceil(this.nCorps / 64);
       this.lancer(passe, 'effacer', 'AB', null, cellules1, n);
-      for (const m of this.membres) this.lancer(passe, 'rassembler', 'BA', m, Math.ceil(m.capacite / 64), n);
+      for (const m of this.membres.concat(this.liees)) this.lancer(passe, 'rassembler', 'BA', m, Math.ceil(m.capacite / 64), n);
       this.lancer(passe, 'prefixe', 'AB', null, 1, n);
       this.lancer(passe, 'ranger', 'AB', null, blocs, n);
       this.lancer(passe, 'trier', 'AB', null, cellules, n);
       SOLVEURS[this.def.type](this, passe, n, blocs);
+      // Structures liées : réaction des particules sur leurs sommets (lue par structures.js au pas suivant de la passe).
+      if (this.liees.length) this.lancer(passe, 'reagir', 'AB', null, blocs, n);
       for (const m of this.membres) {
         const r = pipelinesRendre(this.device, m.e.collisions);
         passe.setPipeline(r.pipeline);
@@ -951,7 +1023,7 @@ fn rendreC(@builtin(global_invocation_id) gid: vec3u, @builtin(local_invocation_
     detruire() {
       [this.uniforme, this.corps, this.cles, this.comptes, this.debuts, this.ordre, this.posA, this.posB, this.lambdas, this.vitesses, this.anciennes, this.parcours]
         .forEach((b) => b.destroy());
-      this.membres.forEach((m) => m.uniforme.destroy());
+      this.membres.concat(this.liees).forEach((m) => m.uniforme.destroy());
       this.liaisons.clear();
     }
   }

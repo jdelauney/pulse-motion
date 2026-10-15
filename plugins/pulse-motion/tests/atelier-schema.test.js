@@ -64,6 +64,9 @@ function avec(chemin, v, contexte) {
   if (chemin[2] === 'cible') delete r.emetteurs[0].naissance.salves;
   // interactions.avec : l'émetteur visé (« b ») a lui aussi un bloc « interactions », du type de l'exemple (essaim).
   if (chemin[2] === 'interactions' && chemin[3] === 'avec') r.emetteurs[1].interactions = { type: 'essaim' };
+  // structure : l'émetteur « a » devient une corde ou un tissu, seul (ni salves ni sous-émetteur) ; avec des perles, « b »
+  // est l'émetteur des perles (sans naissance).
+  if (chemin[2] === 'structure') r.emetteurs = chemin.includes('perles') ? [{ nom: 'a' }, { nom: 'b' }] : [{ nom: 'a' }];
   let cible = r;
   let noeud = S;
   for (let i = 0; i < chemin.length; i++) {
@@ -131,6 +134,9 @@ test('schéma : valeurs tirées des tables du compilateur, types connus, libell�
   assert.deepEqual(em.collisions.champs.reponse.valeurs, Object.keys(R.CODES.reponse));
   assert.deepEqual(em.collisions.champs.cibles.element.valeurs, Object.keys(R.CODES.cible));
   assert.deepEqual(em.collisions.champs.cibles.defaut, Object.keys(R.CODES.cible));
+  assert.deepEqual(em.structure.champs.type.valeurs, Object.keys(R.CODES.structure));
+  assert.deepEqual(Object.keys(em.structure.variantes.types), Object.keys(R.CODES.structure), 'chaque type de structure a ses champs décrits');
+  assert.equal(em.structure.champs.attaches.maximum, R.ATTACHES_MAX);
   for (const { chemin, noeud } of feuilles(S)) {
     assert.ok(TYPES.includes(noeud.type), `${cle(chemin)} : type « ${noeud.type} »`);
     assert.ok(typeof noeud.libelle === 'string' && noeud.libelle.length > 1, `${cle(chemin)} : libellé`);
@@ -202,6 +208,7 @@ test('compiler : un champ hors du schéma est refusé, à chaque niveau', () => 
     assert.equal(r.ok, false, cle(chemin));
     const k = cle(chemin);
     const attendue = /(^|\.)interactions(\.|$)/.test(k) ? 'interactions-invalides'
+      : /(^|\.)structure(\.|$)/.test(k) ? 'structure-invalide'
       : /(^|.)(collisions|a_la_collision)(.|$)/.test(k) ? 'collisions-invalides' : 'effet-invalide';
     assert.equal(r.erreurs[0].regle, attendue, cle(chemin));
     assert.match(r.erreurs[0].message, /zz_inconnu : champ inconnu \(champs possibles : /, cle(chemin));

@@ -16,6 +16,10 @@
  * Interactions (P5a) : bloc « interactions » d'un émetteur (essaim, fluide, grains : em.interactions), liens « avec » entre
  * émetteurs d'un même effet (effet.groupes : un groupe de voisinage par ensemble lié, un type par groupe) ; rendu « fluide »
  * (em.fluide : nappe lissée). Un émetteur à interactions quitte la voie rapide ; erreurs « interactions-invalides ».
+ * Structures (P5b) : bloc « structure » d'un émetteur (corde ou tissu : sommets, attaches, réglages XPBD, déchirure, perles,
+ * apparence : em.structure) ; un émetteur de structure existe pendant toute la fenêtre de l'effet (vie = dur, pas de
+ * naissance en flux), hors voie rapide ; effet.elements : ids visés par les attaches « #id » ; le dégradé est dans
+ * em.tables.couleur, l'image de assets/ dans em.rendu.textureFichier ; erreurs « structure-invalide ».
  *
  * Module pur : chargé tel quel dans la page (global M.recette) et par Node (require).
  */
@@ -48,6 +52,15 @@
   var ITERATIONS_GRAINS = 6;   // itérations de contacts par sous-pas (deux sous-pas : plan 3)
   var LIMITES_INTERACTIONS = { essaim: 100000, fluide: 60000, grains: 60000 };
   var PLEINE_VOISINAGE = 96;   // corps par cellule au-delà desquels la cellule est ignorée pour le pas (voisinage.js, PLEINE)
+  var RESOLUTION_CORDE = [8, 128];   // sommets d'une corde
+  var RESOLUTION_TISSU = [2, 128];   // colonnes et lignes d'un tissu
+  var SOMMETS_TISSU_MAX = 4096;      // 64 × 64 : au-delà, alerte budget-structures (contrôle)
+  var STRUCTURES_SCENE_MAX = 16;     // cordes et tissus par scène : au-delà, alerte budget-structures
+  var STRUCTURES_EFFET_MAX = 32;     // par effet (uniforme des structures sur le GPU)
+  var ATTACHES_MAX = 16;             // attaches par structure
+  var ELEMENTS_MAX = 8;              // éléments visés par les attaches d'un effet : l'ancre (ou la balise) et 7 « #id »
+  var DECHIRURE_MIN = 1.05;
+  var PLACES = { corde: ['debut', 'fin'], tissu: ['haut', 'bas', 'gauche', 'droite', 'coins'] };
   var CODES = {
     forme: { point: 0, cercle: 1, anneau: 2, rectangle: 3, ligne: 4, ancre: 5, pixels: 6 },
     force: { gravite: 0, trainee: 1, vent: 2, turbulence: 3, attracteur: 4, vortex: 5, rappel: 6 },
@@ -60,6 +73,7 @@
     arrivee: { guidee: 0, choree: 1 },
     source: { ancre: 0, cible: 1 },
     interaction: { essaim: 0, fluide: 1, grains: 2 },
+    structure: { corde: 0, tissu: 1 },
   };
   var COULEURS_CHARTE = ['primaire', 'accent', 'texte', 'fond'];
   var HEX = /^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
@@ -285,6 +299,54 @@
           },
         },
       }),
+      structure: ob('Corde ou tissu (sommets reliés, simulés ensemble)', {
+        type: ch('Type', Object.keys(CODES.structure), null, { requis: true, exemple: 'corde' }),
+        attaches: li('Attaches (sommets tenus)', ob('Attache', {
+          ou: ch('Sommets tenus', PLACES.corde.concat(PLACES.tissu), null, {
+            requis: true, exemple: 'debut', autre: { motif: '^\\s*\\d+(\\s*,\\s*\\d+)*\\s*$', libelle: 'Indices de sommets (« 0, 12 »)' },
+          }),
+          a: noeud('texte', 'Tenus par (« ancre », « #id », ou point [x, y] de la zone)', 'ancre', { motif: '^(ancre|#[A-Za-z0-9_-]+)$' }),
+          lacher: nb('Lâchée à (s de τ ; absent : jamais)', null, { min: 0, exemple: 2.5, unite: 's', curseur: [0, 10] }),
+          glisse: ob('Glissement (les sommets tenus s\'écartent de leur place)', {
+            vers: pr('Décalage final (fraction de l\'élément ou de la zone)', [0, 0], { requis: true, exemple: [-0.25, 0] }),
+            duree: nb('Durée du glissement depuis le début de l\'effet', 1, { min: 0.05, unite: 's', curseur: [0.05, 5] }),
+          }),
+        }), { defaut: [], exemple: [{ ou: 'debut', a: 'ancre' }], maximum: ATTACHES_MAX }),
+        raideur: nb('Raideur', 0.9, { min: 0, max: 1, curseur: [0, 1], pas: 0.01 }),
+        flexion: nb('Raideur de flexion', 0.1, { min: 0, max: 1, curseur: [0, 1], pas: 0.01 }),
+        amortissement: nb('Amortissement', 0.02, { min: 0, max: 1, curseur: [0, 1], pas: 0.01 }),
+        dechirure: nb('Déchirure (étirement de rupture d\'un lien ; absent : indéchirable)', null, { min: DECHIRURE_MIN, exemple: 1.6, curseur: [1.05, 3], pas: 0.01 }),
+        epaisseur: nb('Épaisseur', 0.4, { min: 0.05, max: 10, unite: 'cqh', curseur: [0.05, 3], pas: 0.05 }),
+        apparence: ob('Apparence', {
+          couleur: noeud('couleur', 'Couleur (teinte qui multiplie dégradé, image et photographie)', '#ffffff'),
+          degrade: li('Dégradé', noeud('couleur', 'Couleur', '#ffffff'), { exemple: ['#ff0000', '#0000ff'] }),
+          sens: ch('Sens du dégradé', ['horizontal', 'vertical'], 'horizontal'),
+          bandes: bo('Bandes nettes (drapeau)'),
+          image: noeud('texte', 'Image du projet (assets/…)', null, { motif: '^assets/.+\\.(png|webp|jpe?g|svg)$', exemple: 'assets/toile.png' }),
+          source: ch('Photographie de l\'ancre (cachée pendant que le tissu la remplace)', ['ancre'], null, { exemple: 'ancre' }),
+          mailles: bo('Mailles seules (filet)'),
+          lumiere: pr('Direction de la lumière', [-0.4, -1]),
+        }),
+      }, {
+        exemple: { type: 'corde' },
+        variantes: {
+          cle: 'type',
+          horsType: { perles: 'des perles se posent sur une corde', fente: 'fente : tissu seulement (couture coupée entre deux colonnes)' },
+          types: {
+            corde: { libelle: 'Corde (fil, guirlande)', champs: {
+              resolution: nb('Sommets', 32, { min: RESOLUTION_CORDE[0], max: RESOLUTION_CORDE[1], pas: 1, curseur: [8, 128] }),
+              perles: ob('Perles (émetteur posé sur les sommets)', {
+                tous: nb('Une perle tous les N sommets', 4, { min: 2, max: 64, pas: 1, curseur: [2, 16] }),
+                emetteur: noeud('texte', 'Émetteur des perles', null, { requis: true, motif: '^[a-z0-9-]+$', parmi: 'emetteurs', exemple: 'b' }),
+              }),
+            } },
+            tissu: { libelle: 'Tissu (drapeau, rideau, filet)', champs: {
+              resolution: pr('Sommets [colonnes, lignes]', [24, 16]),
+              fente: nb('Fente (couture coupée avant la colonne indiquée, de haut en bas ; absent : aucune)', null, { min: 1, pas: 1, exemple: 12, curseur: [1, 127] }),
+            } },
+          },
+        },
+      }),
     }, { exemple: { nom: 'emetteur', naissance: { debit: 50, vie: [0.5, 1] } } }), { requis: true }),
   });
 
@@ -474,6 +536,9 @@
       }
       Object.keys(v).forEach(function (k) {
         var c = chemin ? chemin + '.' + k : k;
+        if (!Object.prototype.hasOwnProperty.call(champs, k) && n.variantes && n.variantes.horsType && Object.prototype.hasOwnProperty.call(n.variantes.horsType, k)) {
+          throw invalide(c, n.variantes.horsType[k]); // champ d'un autre type : message propre
+        }
         if (!Object.prototype.hasOwnProperty.call(champs, k)) throw invalide(c, 'champ inconnu (champs possibles : ' + Object.keys(champs).join(', ') + ')');
         verifierChamps(v[k], champs[k], c, invalide);
       });
@@ -550,8 +615,13 @@
     function invalide(chemin, message) {
       var c = chemin || '';
       var regle = /(^|\.)interactions(\.|\[|$)/.test(c) ? 'interactions-invalides'
+        : /(^|\.)structure(\.|\[|$)/.test(c) ? 'structure-invalide'
         : /(^|\.)(collisions|a_la_collision)(\.|\[|$)/.test(c) ? 'collisions-invalides' : 'effet-invalide';
       return ErreurRecette(regle, prefixe + (chemin ? ', ' + chemin : '') + ' : ' + message + '.', chemin || '');
+    }
+    // Règle des structures (P5b) quel que soit le champ en cause (naissance, rendu, perles d'un émetteur de structure).
+    function invalideS(chemin, message) {
+      return ErreurRecette('structure-invalide', prefixe + (chemin ? ', ' + chemin : '') + ' : ' + message + '.', chemin || '');
     }
     try {
       if (!estObjet(recette)) throw invalide('', 'objet JSON attendu');
@@ -1032,12 +1102,32 @@
         }
       }
 
+      /** Règles de l'émetteur des perles d'une corde : posé sur ses sommets, sans mouvement propre. corde : nom de la corde. */
+      function verifierPerles(e, n, ch, P, corde) {
+        var de = '« ' + corde + ' »';
+        if (P) throw invalideS(ch, 'les perles de ' + de + ' sont posées sur ses sommets, pas lancées par « ' + P.nom + ' »');
+        if (e.structure !== undefined && e.structure !== null) throw invalideS(ch + '.structure', 'les perles de ' + de + ' ne sont pas une structure');
+        ['forces', 'collisions', 'interactions', 'cible', 'a_la_mort', 'a_la_collision'].forEach(function (k) {
+          var x = e[k];
+          if (x !== undefined && x !== null && !(Array.isArray(x) && !x.length)) throw invalideS(ch + '.' + k, 'les perles suivent les sommets de ' + de + ' : retirer « ' + k + ' »');
+        });
+        if (estObjet(e.modules) && e.modules.force) throw invalideS(ch + '.modules.force', 'les perles suivent les sommets de ' + de + ' : pas de module de force');
+        Object.keys(n).forEach(function (k) {
+          if (['taille', 'z', 'rotation'].indexOf(k) < 0) {
+            throw invalideS(ch + '.naissance.' + k, 'les perles de ' + de + ' naissent une fois sur ses sommets : seuls « taille », « z » et « rotation » s\'y règlent');
+          }
+        });
+        var r = estObjet(e.rendu) ? e.rendu.type : undefined;
+        if (r === 'trainee' || r === 'eclats' || r === 'fluide') throw invalideS(ch + '.rendu.type', 'les perles se dessinent en points (sprite, étincelle, planche) : pas « ' + r + ' »');
+      }
+
       /** Groupes de voisinage : composantes connexes des liens « avec » (un lien dans un seul sens suffit), membres dans
        *  l'ordre de la recette, même type, GROUPE_MAX au plus ; pose em.interactions.groupe. */
       function grouperInteractions(emetteurs) {
         var racineDe = emetteurs.map(function (e, i) { return i; });
         function trouver(i) { while (racineDe[i] !== i) i = racineDe[i]; return i; }
         var noms = emetteurs.map(function (x) { return x.nom; }).join(', ');
+        var liensStructures = [];
         emetteurs.forEach(function (em, i) {
           if (!em.interactions) return;
           em.interactions.avec.forEach(function (nom, k) {
@@ -1046,6 +1136,8 @@
             if (j === undefined) throw invalide(c, '« ' + nom + ' » n\'est pas un émetteur de cet effet (émetteurs : ' + noms + ')');
             if (j === i) throw invalide(c, 'un émetteur interagit déjà avec lui-même : retirer « ' + nom + ' »');
             var autre = emetteurs[j];
+            // Corde ou tissu (P5b) : ses sommets rejoignent le groupe (corps que les particules repoussent et qui les retiennent).
+            if (autre.structure) { liensStructures.push({ i: i, j: j, chemin: c }); return; }
             if (!autre.interactions) throw invalide(c, '« ' + nom + ' » n\'a pas de bloc « interactions » : lui en donner un du même type (« ' + em.interactions.type + ' »)');
             if (autre.interactions.type !== em.interactions.type) {
               throw invalide(c, '« ' + nom + ' » est de type « ' + autre.interactions.type + ' », « ' + em.interactions.type + ' » attendu (un groupe lié a un seul type)');
@@ -1075,8 +1167,32 @@
             throw invalide('emetteurs[' + premier + '].interactions.avec', GROUPE_MAX + ' émetteurs liés au plus (le groupe de « ' + premier + ' » en compte ' + g.membres.length + ')');
           }
         });
+        // Structures liées : un seul groupe chacune, épaisseur dans la cellule de voisinage, 8 corps liés au plus en tout.
+        liensStructures.forEach(function (l) {
+          var g = groupes[emetteurs[l.i].interactions.groupe];
+          var st = emetteurs[l.j];
+          if (groupes.some(function (x) { return x !== g && x.structures && x.structures.indexOf(l.j) >= 0; })) {
+            throw invalide(l.chemin, 'la structure « ' + st.nom + ' » est déjà liée à un autre groupe d\'interactions');
+          }
+          if (st.structure.epaisseur > g.cote) {
+            throw invalide(l.chemin, 'épaisseur ' + st.structure.epaisseur + ' cqh de « ' + st.nom + ' » au-delà de la cellule de voisinage (' + g.cote + ' cqh) : augmenter « rayon » ou réduire « epaisseur »');
+          }
+          if (!g.structures) g.structures = [];
+          if (g.structures.indexOf(l.j) < 0) g.structures.push(l.j);
+        });
+        groupes.forEach(function (g) {
+          if (!g.structures) return;
+          g.structures.sort(function (a, b) { return a - b; });
+          if (g.membres.length + g.structures.length > GROUPE_MAX) {
+            var premier = emetteurs[g.membres[0]].nom;
+            throw invalide('emetteurs[' + premier + '].interactions.avec', GROUPE_MAX + ' émetteurs liés au plus, structures comprises (le groupe de « ' + premier + ' » en compte ' + (g.membres.length + g.structures.length) + ')');
+          }
+        });
         return groupes;
       }
+
+      // Structures (P5b) : ids des éléments visés par les attaches « #id » (élément k ≥ 1 = elementsEffet[k − 1]).
+      var elementsEffet = [];
 
       // Émetteurs : noms, liens parent → enfant, profondeur.
       var liste = recette.emetteurs;
@@ -1111,6 +1227,15 @@
       }
       liste.forEach(function (e, i) { lier(e, i, 'a_la_mort'); });
       liste.forEach(function (e, i) { lier(e, i, 'a_la_collision'); });
+      // Perles (P5b) : émetteur porté par une seule corde (règles complètes dans compilerStructure et verifierPerles).
+      var perlesDe = liste.map(function () { return -1; });
+      liste.forEach(function (e, i) {
+        var pl = estObjet(e.structure) && estObjet(e.structure.perles) ? e.structure.perles : null;
+        if (!pl || typeof pl.emetteur !== 'string' || parNom[pl.emetteur] === undefined || parNom[pl.emetteur] === i) return;
+        var j = parNom[pl.emetteur];
+        if (perlesDe[j] >= 0) throw invalideS('emetteurs[' + e.nom + '].structure.perles.emetteur', '« ' + pl.emetteur + ' » porte déjà les perles de « ' + liste[perlesDe[j]].nom + ' »');
+        perlesDe[j] = i;
+      });
       var profondeur = liste.map(function (e, i) {
         var p = 0, k = i, vus = [i];
         while (parent[k] >= 0) {
@@ -1135,11 +1260,231 @@
         return r;
       }
 
+      /** Sommets désignés par « ou » : place (debut, fin d'une corde ; haut, bas, gauche, droite, coins d'un tissu), indice,
+       *  liste d'indices, ou texte « 0, 12 ». */
+      function selectionner(ou, type, C, R, chemin) {
+        var n = C * R;
+        var indices = null;
+        var x;
+        if (typeof ou === 'string' && PLACES[type].indexOf(ou) >= 0) {
+          indices = [];
+          if (ou === 'debut') indices = [0];
+          else if (ou === 'fin') indices = [C - 1];
+          else if (ou === 'haut') for (x = 0; x < C; x++) indices.push(x);
+          else if (ou === 'bas') for (x = 0; x < C; x++) indices.push((R - 1) * C + x);
+          else if (ou === 'gauche') for (x = 0; x < R; x++) indices.push(x * C);
+          else if (ou === 'droite') for (x = 0; x < R; x++) indices.push(x * C + C - 1);
+          else indices = [0, C - 1, (R - 1) * C, R * C - 1];
+          return indices;
+        }
+        if (typeof ou === 'number') indices = [ou];
+        else if (Array.isArray(ou)) indices = ou.slice();
+        else if (typeof ou === 'string' && /^\s*\d+(\s*,\s*\d+)*\s*$/.test(ou)) indices = ou.split(',').map(Number);
+        if (!indices || !indices.length) {
+          throw invalide(chemin, '« ' + (typeof ou === 'string' ? ou : JSON.stringify(ou)) + ' » inconnu : ' + PLACES[type].join(', ') + ' (' + type + '), ou indices de sommets (« 0, 12 »)');
+        }
+        indices.forEach(function (v) {
+          if (typeof v !== 'number' || v !== Math.floor(v) || v < 0 || v >= n) throw invalide(chemin, 'indice de sommet ' + v + ' hors de [0, ' + (n - 1) + ']');
+        });
+        return indices;
+      }
+
+      /** Dégradé (couleurs linéaires) en table de 64 RVBA : lissé, ou en bandes nettes (entrée i : couleur ⌊i × n / 64⌋) ;
+       *  une seule couleur : aplat. */
+      function tableDegrade(cs, bandes) {
+        var t = [];
+        for (var i = 0; i < TAILLE_TABLE; i++) {
+          var c;
+          if (cs.length === 1) c = cs[0];
+          else if (bandes) c = cs[Math.min(cs.length - 1, Math.floor(i * cs.length / TAILLE_TABLE))];
+          else {
+            var u = i / (TAILLE_TABLE - 1) * (cs.length - 1);
+            var k = Math.min(Math.floor(u), cs.length - 2);
+            var r = u - k;
+            c = cs[k].map(function (x, j) { return x + (cs[k + 1][j] - x) * r; });
+          }
+          for (var j = 0; j < 4; j++) t.push(arrondi(c[j]));
+        }
+        return t;
+      }
+
+      /** Bloc « structure » (P5b) : corde (resolution : sommets) ou tissu ([colonnes, lignes]) ; attaches (sommets tenus, élément
+       *  ou point visé, lâcher) ; réglages XPBD ; déchirure ; perles (corde) ; apparence. i : rang de l'émetteur.
+       *  -> { structure (contrat em.structure), degrade (couleurs linéaires | null), image (chemin | null) } */
+      function compilerStructure(v, ch, i) {
+        v = objet(v, ch);
+        var type = choix(v.type, CODES.structure, ch + '.type');
+        var C;
+        var R;
+        if (type === 'corde') {
+          if (Array.isArray(v.resolution)) throw invalide(ch + '.resolution', 'nombre de sommets attendu pour une corde (entre ' + RESOLUTION_CORDE[0] + ' et ' + RESOLUTION_CORDE[1] + ')');
+          C = Math.round(nombre(v.resolution, ch + '.resolution', 32));
+          if (C < RESOLUTION_CORDE[0] || C > RESOLUTION_CORDE[1]) throw invalide(ch + '.resolution', 'entre ' + RESOLUTION_CORDE[0] + ' et ' + RESOLUTION_CORDE[1] + ' sommets');
+          R = 1;
+        } else {
+          if (v.resolution !== undefined && v.resolution !== null && !Array.isArray(v.resolution)) throw invalide(ch + '.resolution', '[colonnes, lignes] attendu pour un tissu');
+          var cr = paire(v.resolution, ch + '.resolution', [24, 16]).map(Math.round);
+          if (cr.some(function (x) { return x < RESOLUTION_TISSU[0] || x > RESOLUTION_TISSU[1]; })) {
+            throw invalide(ch + '.resolution', 'colonnes et lignes entre ' + RESOLUTION_TISSU[0] + ' et ' + RESOLUTION_TISSU[1]);
+          }
+          C = cr[0];
+          R = cr[1];
+        }
+        function entre(cle, defaut, min, max) {
+          var x = nombre(v[cle], ch + '.' + cle, defaut);
+          if (x < min || x > max) throw invalide(ch + '.' + cle, 'valeur entre ' + min + ' et ' + max + ' attendue');
+          return x;
+        }
+        // Fente (tissu) : couture coupée entre les colonnes fente − 1 et fente, sur toute la hauteur (rideau en deux pans).
+        var fente = null;
+        if (v.fente !== undefined && v.fente !== null) {
+          if (type !== 'tissu') throw invalide(ch + '.fente', 'fente : tissu seulement (couture coupée entre deux colonnes)');
+          fente = nombre(v.fente, ch + '.fente');
+          if (fente !== Math.floor(fente) || fente < 1 || fente > C - 1) throw invalide(ch + '.fente', 'indice de colonne entier entre 1 et ' + (C - 1) + ' attendu (couture coupée avant cette colonne)');
+        }
+        var dechirure = null;
+        if (v.dechirure !== undefined && v.dechirure !== null) {
+          dechirure = nombre(v.dechirure, ch + '.dechirure');
+          if (dechirure < DECHIRURE_MIN) throw invalide(ch + '.dechirure', 'rapport d\'étirement d\'au moins ' + DECHIRURE_MIN + ' attendu (1,6 : un lien rompt à 160 % de sa longueur ; absent : indéchirable)');
+        }
+
+        // Attaches.
+        var lesAttaches = v.attaches === undefined || v.attaches === null ? [] : v.attaches;
+        if (!Array.isArray(lesAttaches)) throw invalide(ch + '.attaches', 'liste attendue');
+        if (lesAttaches.length > ATTACHES_MAX) throw invalide(ch + '.attaches', ATTACHES_MAX + ' attaches au plus');
+        var attaches = lesAttaches.map(function (a, k) {
+          var c = ch + '.attaches[' + k + ']';
+          a = objet(a, c);
+          if (a.ou === undefined || a.ou === null) throw invalide(c + '.ou', 'valeur obligatoire (' + PLACES[type].join(', ') + ', ou indices de sommets)');
+          var sommets = selectionner(a.ou, type, C, R, c + '.ou');
+          var but = a.a === undefined || a.a === null ? 'ancre' : a.a;
+          var cible;
+          if (but === 'ancre') cible = { genre: 'element', element: 0 };
+          else if (typeof but === 'string' && /^#[A-Za-z0-9_-]+$/.test(but)) {
+            var id = but.slice(1);
+            var e = elementsEffet.indexOf(id);
+            if (e < 0) {
+              if (elementsEffet.length >= ELEMENTS_MAX - 1) throw invalide(c + '.a', (ELEMENTS_MAX - 1) + ' éléments « #id » au plus par effet (avec l\'ancre)');
+              elementsEffet.push(id);
+              e = elementsEffet.length - 1;
+            }
+            cible = { genre: 'element', element: e + 1 };
+          } else if (Array.isArray(but)) {
+            if (sommets.length !== 1) throw invalide(c + '.a', 'un point de la zone tient un seul sommet (« debut », « fin » ou un indice) : viser « ancre » ou « #id » pour tenir un bord');
+            cible = { genre: 'point', point: paire(but, c + '.a') };
+          } else throw invalide(c + '.a', '« ancre », « #id » ou point [x, y] de la zone attendu');
+          var lacher = null;
+          if (a.lacher !== undefined && a.lacher !== null) {
+            lacher = nombre(a.lacher, c + '.lacher');
+            if (lacher < 0) throw invalide(c + '.lacher', 'secondes de τ positives ou nulles attendues');
+          }
+          // Glissement : les points tenus s'écartent de leur place de « vers » (fraction de l'élément visé, ou de la zone pour
+          // un point), en douceur, de τ = 0 à τ = duree (rideau ouvert par ses attaches).
+          var glisse = null;
+          if (a.glisse !== undefined && a.glisse !== null) {
+            var g = objet(a.glisse, c + '.glisse');
+            if (g.vers === undefined || g.vers === null) throw invalide(c + '.glisse.vers', 'décalage [x, y] obligatoire (fraction de l\'élément ou de la zone)');
+            var duree = nombre(g.duree, c + '.glisse.duree', 1);
+            if (duree < 0.05) throw invalide(c + '.glisse.duree', 'au moins 0,05 s attendu');
+            glisse = { vers: paire(g.vers, c + '.glisse.vers'), duree: duree };
+          }
+          return { sommets: sommets, cible: cible, lacher: lacher, glisse: glisse };
+        });
+
+        // Apparence.
+        var cha = ch + '.apparence';
+        var ap = v.apparence === undefined || v.apparence === null ? {} : objet(v.apparence, cha);
+        var textures = ['degrade', 'image', 'source'].filter(function (k) { return ap[k] !== undefined && ap[k] !== null; });
+        if (textures.length > 1) throw invalide(cha, 'une seule texture : « degrade », « image » ou « source » (ici ' + textures.join(', ') + ')');
+        var degrade = null;
+        if (ap.degrade !== undefined && ap.degrade !== null) {
+          if (!Array.isArray(ap.degrade) || !ap.degrade.length) throw invalide(cha + '.degrade', 'liste non vide de couleurs attendue');
+          degrade = ap.degrade.map(function (x, k) { return couleur(x, cha + '.degrade[' + k + ']'); });
+        }
+        var image = null;
+        if (ap.image !== undefined && ap.image !== null) {
+          if (typeof ap.image !== 'string' || !/^assets\/.+\.(png|webp|jpe?g|svg)$/i.test(ap.image)) throw invalide(cha + '.image', 'image de assets/ (PNG, WebP, JPEG ou SVG) attendue');
+          image = ap.image;
+        }
+        var source = ap.source === undefined || ap.source === null ? null : choix(ap.source, { ancre: 1 }, cha + '.source');
+        ['bandes', 'mailles'].forEach(function (k) {
+          if (ap[k] !== undefined && typeof ap[k] !== 'boolean') throw invalide(cha + '.' + k, 'true ou false attendu');
+        });
+        if (ap.mailles === true && type === 'corde') throw invalide(cha + '.mailles', 'mailles : tissu seulement (filet)');
+        var lu = paire(ap.lumiere, cha + '.lumiere', [-0.4, -1]);
+        var ll = Math.sqrt(lu[0] * lu[0] + lu[1] * lu[1]);
+        if (ll === 0) throw invalide(cha + '.lumiere', 'direction nulle');
+        var apparence = {
+          couleur: couleur(ap.couleur === undefined ? '#ffffff' : ap.couleur, cha + '.couleur'),
+          mode: textures.length ? textures[0] : 'couleur',
+          sens: choix(ap.sens, { horizontal: 1, vertical: 1 }, cha + '.sens', 'horizontal'),
+          bandes: ap.bandes === true,
+          mailles: ap.mailles === true,
+          source: source,
+          lumiere: [arrondi(lu[0] / ll), arrondi(lu[1] / ll)],
+        };
+
+        // Perles (tâche 3 : émetteur des perles).
+        var perles = null;
+        if (v.perles !== undefined && v.perles !== null) {
+          if (type !== 'corde') throw invalide(ch + '.perles', 'des perles se posent sur une corde');
+          var pl = objet(v.perles, ch + '.perles');
+          var tous = Math.round(nombre(pl.tous, ch + '.perles.tous', 4));
+          if (tous < 2 || tous > 64) throw invalide(ch + '.perles.tous', 'entre 2 et 64 sommets');
+          if (typeof pl.emetteur !== 'string') throw invalide(ch + '.perles.emetteur', 'nom d\'émetteur attendu');
+          var j = parNom[pl.emetteur];
+          if (j === undefined) {
+            throw invalide(ch + '.perles.emetteur', '« ' + pl.emetteur + ' » n\'est pas un émetteur de cet effet (émetteurs : ' + liste.map(function (x) { return x.nom; }).join(', ') + ')');
+          }
+          if (j === i) throw invalide(ch + '.perles.emetteur', 'une corde ne porte pas ses propres perles : un autre émetteur de la recette');
+          var debut = Math.min(Math.floor(tous / 2), C - 1);
+          perles = { emetteur: j, tous: tous, debut: debut, nombre: Math.floor((C - 1 - debut) / tous) + 1 };
+        }
+
+        return {
+          structure: {
+            type: type, code: CODES.structure[type], colonnes: C, lignes: R, nSommets: C * R, attaches: attaches,
+            raideur: entre('raideur', 0.9, 0, 1), flexion: entre('flexion', 0.1, 0, 1), amortissement: entre('amortissement', 0.02, 0, 1),
+            dechirure: dechirure, fente: fente, epaisseur: entre('epaisseur', 0.4, 0.05, 10), perles: perles, apparence: apparence,
+          },
+          degrade: degrade,
+          image: image,
+        };
+      }
+
+      /** Règles d'un émetteur de structure : posé par la scène, sans naissance en flux ni rendu de particules. */
+      function verifierStructure(e, n, ch, P) {
+        if (P) throw invalideS(ch, 'une structure est posée par la scène, pas lancée par « ' + P.nom + ' »');
+        var interdits = {
+          a_la_mort: 'elle ne meurt pas', a_la_collision: 'elle ne lance rien au contact', cible: 'elle ne vise pas d\'élément d\'arrivée',
+          interactions: 'une structure rejoint un groupe d\'interactions par le « avec » de ses particules',
+          vie: 'elle se dessine selon son « apparence »', rendu: 'elle se dessine selon son type (maillage d\'un tissu, ruban d\'une corde) et son « apparence »',
+          modules: 'pas de module WGSL sur une structure',
+        };
+        Object.keys(interdits).forEach(function (k) {
+          if (e[k] !== undefined && e[k] !== null) throw invalideS(ch + '.' + k, 'une structure ne prend pas « ' + k + ' » : ' + interdits[k]);
+        });
+        Object.keys(n).forEach(function (k) {
+          if (k !== 'masse' && k !== 'z') throw invalideS(ch + '.naissance.' + k, 'une structure existe pendant toute la fenêtre de l\'effet : seuls « masse » et « z » s\'y règlent');
+        });
+        if (estObjet(e.collisions) && e.collisions.reponse !== undefined && e.collisions.reponse !== 'rebond') {
+          throw invalideS(ch + '.collisions.reponse', 'une structure ne se pose ni ne meurt sur un obstacle : seulement « rebond »');
+        }
+      }
+
+
       function compilerEmetteur(e, i, P) {
         var ch = 'emetteurs[' + e.nom + ']';
         var n = objet(e.naissance, ch + '.naissance');
+        // Structure (P5b) : règles de l'émetteur, puis le bloc ; présente pendant toute la fenêtre de l'effet.
+        var estStructure = e.structure !== undefined && e.structure !== null;
+        if (estStructure) verifierStructure(e, n, ch, P);
+        var cs = estStructure ? compilerStructure(e.structure, ch + '.structure', i) : null;
+        // Perles d'une corde : présentes pendant toute la fenêtre de l'effet, nombre fixé par la corde (après la compilation).
+        var estPerle = perlesDe[i] >= 0;
+        if (estPerle) verifierPerles(e, n, ch, P, liste[perlesDe[i]].nom);
         var cible = compilerCible(e.cible, ch + '.cible');
-        var vie = intervalle(n.vie, ch + '.naissance.vie', [1, 1]);
+        var vie = estStructure || estPerle ? [dur, dur] : intervalle(n.vie, ch + '.naissance.vie', [1, 1]);
         if (cible) {
           if (n.vie !== undefined) throw invalide(ch + '.naissance.vie', 'une particule qui vise une cible vit jusqu\'à son arrivée : retirer « vie »');
           vie = [cible.a, cible.a];
@@ -1171,6 +1516,8 @@
           cible: cible,
           modules: compilerModules(e.modules, ch + '.modules'),
           interactions: compilerInteractions(e.interactions, ch + '.interactions'),
+          structure: cs ? cs.structure : null,
+          perlesDe: -1,
         };
         em.fragment = !!(em.pixels || em.eclats || em.cible);
         if (em.fragment) verifierFragment(n, em, ch, P);
@@ -1179,6 +1526,13 @@
         }
         if (em.fluide && em.fragment) throw invalide(ch + '.rendu.type', 'un émetteur de fragments se dessine en grains ou en éclats : pas de rendu « fluide »');
         if (em.interactions) verifierInteractions(em, ch);
+        // Structure : dégradé dans la table des couleurs, image de assets/ comme une texture de P1 (chargée à l'assemblage).
+        if (cs && cs.degrade) em.tables.couleur = tableDegrade(cs.degrade, cs.structure.apparence.bandes);
+        if (cs && cs.image) {
+          em.rendu.texture = 'image';
+          em.rendu.textureCode = CODES.texture.image;
+          em.rendu.textureFichier = cs.image;
+        }
         if (cible) {
           // Bruit du trajet chorégraphié : celui de la première turbulence (amplitude = force × 0,1 cqh).
           var turbulence = em.forces.filter(function (f) { return f.type === 'turbulence'; })[0];
@@ -1213,6 +1567,18 @@
           em.espacement = P.espacement === Infinity ? Infinity : em.G * P.espacement;
           em.gigue = gigueNaissances + etendueMorts;
           em.finNaissances = P.fin;
+        } else if (estStructure || estPerle) {
+          // Structure : un sommet par case, aucun né en flux (les sommets sont posés au pas 0 par la simulation).
+          em.k = 0;
+          em.G = 1;
+          em.debit = 0;
+          em.nTotal = 0;
+          em.capContinu = 0;
+          em.salves = [];
+          em.capacite = estStructure ? cs.structure.nSommets : 1;
+          em.espacement = Infinity;
+          em.gigue = 0;
+          em.finNaissances = 0;
         } else if (em.fragment) {
           // Une particule par éclat, ou par pixel (nombre fixé à la photographie : fragments.ajusterCapacites), toutes
           // nées à τ = 0.
@@ -1274,6 +1640,8 @@
         if (em.modules.force) em.voieRapide = false;
         // Interactions : l'état d'une particule dépend de ses voisines, aucune forme close.
         if (em.interactions) em.voieRapide = false;
+        // Structure : sommets reliés, simulés pas à pas.
+        if (estStructure || estPerle) em.voieRapide = false;
         return em;
       }
 
@@ -1281,6 +1649,16 @@
       var ordre = liste.map(function (e, i) { return i; }).sort(function (a, b) { return profondeur[a] - profondeur[b] || a - b; });
       var emetteurs = [];
       ordre.forEach(function (i) { emetteurs[i] = compilerEmetteur(liste[i], i, parent[i] >= 0 ? emetteurs[parent[i]] : null); });
+      // Perles : émetteur rattaché à sa corde, une perle tous les « tous » sommets, toutes nées à τ = 0.
+      emetteurs.forEach(function (em) {
+        if (!em.structure || !em.structure.perles) return;
+        var p = emetteurs[em.structure.perles.emetteur];
+        p.perlesDe = em.index;
+        p.capacite = em.structure.perles.nombre;
+        p.salves = [{ t: 0, nombre: p.capacite, debut: 0 }];
+      });
+      var nStructures = emetteurs.filter(function (em) { return em.structure; }).length;
+      if (nStructures > STRUCTURES_EFFET_MAX) throw invalideS('emetteurs', STRUCTURES_EFFET_MAX + ' cordes et tissus au plus par effet (ici ' + nStructures + ')');
 
       var groupes = grouperInteractions(emetteurs);
 
@@ -1302,6 +1680,8 @@
         emetteurs: emetteurs,
         // Interactions (P5a) : groupes de voisinage ([] sans interactions).
         groupes: groupes,
+        // Structures (P5b) : ids des éléments visés par les attaches « #id » ([] sans structure).
+        elements: elementsEffet,
       };
       emetteurs.forEach(function (e) { delete e.espacement; delete e.gigue; delete e.finNaissances; });
       return { ok: true, effet: effet, erreurs: [] };
@@ -1331,6 +1711,14 @@
     ITERATIONS_GRAINS: ITERATIONS_GRAINS,
     LIMITES_INTERACTIONS: LIMITES_INTERACTIONS,
     PLEINE_VOISINAGE: PLEINE_VOISINAGE,
+    RESOLUTION_CORDE: RESOLUTION_CORDE,
+    RESOLUTION_TISSU: RESOLUTION_TISSU,
+    SOMMETS_TISSU_MAX: SOMMETS_TISSU_MAX,
+    STRUCTURES_SCENE_MAX: STRUCTURES_SCENE_MAX,
+    STRUCTURES_EFFET_MAX: STRUCTURES_EFFET_MAX,
+    ATTACHES_MAX: ATTACHES_MAX,
+    ELEMENTS_MAX: ELEMENTS_MAX,
+    DECHIRURE_MIN: DECHIRURE_MIN,
     SCHEMA: SCHEMA,
     ErreurRecette: ErreurRecette,
     resoudre: resoudre,
