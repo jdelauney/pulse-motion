@@ -1238,6 +1238,9 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
   const WGSL_SIMULATION = P.WGSL_COMMUN + WGSL_STRUCTS + WGSL_DECL_P1 + WGSL_FONCTIONS + P.WGSL_FRAGMENTS + WGSL_FRAGMENTS_SIM + WGSL_ENTREES_P1;
   const WGSL_MODULE_COLLISIONS = P.WGSL_COMMUN + WGSL_STRUCTS + WGSL_DECL_C + WGSL_FONCTIONS + P.WGSL_FRAGMENTS + WGSL_FRAGMENTS_SIM + WGSL_COLLISIONS;
   P.WGSL_MODULE_COLLISIONS = () => WGSL_MODULE_COLLISIONS;
+  // Structures (P5b, structures.js) : en-tête E d'un émetteur, taille d'une particule.
+  P.emballerE = emballer;
+  P.OCTETS_PARTICULE = OCTETS_PARTICULE;
 
   function parametresForce(f) {
     switch (f.type) {
