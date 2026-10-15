@@ -54,6 +54,10 @@ test('structures : bloc de paramètres (en-tête de l\'émetteur, en-tête de la
   const fg = new Float32Array(P.emballerStructure(gl.emetteurs[0], gl, false, 10, Mm.liens(4, 3), null).buffer);
   assert.deepEqual([fg[325], fg[326], fg[327]], [-0.25, 0.5, 2]);
   assert.equal(new Uint32Array(fc.buffer)[S.R], 1);
+  // Fente d'un tissu : indice de colonne (0 : aucune).
+  assert.equal(u[S.FENTE], 0, 'sans fente');
+  const fendu = compiler([{ nom: 't', structure: { type: 'tissu', resolution: [6, 3], fente: 3 } }]);
+  assert.equal(P.emballerStructure(fendu.emetteurs[0], fendu, false, 10, Mm.liens(6, 3), null)[S.FENTE], 3);
 });
 
 test('structures : WGSL du module (lecture du bloc par structure, noyau, liaisons)', () => {
@@ -297,10 +301,10 @@ await envoyer({ webgpu: true, deux: deux.s, un: un.s, pas1, image3 });`);
   assert.ok(r.image3.rompus.every((m) => (m & 63) === 0), 'aucun lien rompu aux trois premières images');
 });
 
-test('structures GPU : rideau de la bibliothèque, ouvert par ses attaches ; après la déchirure, ses morceaux pendent ou tombent (ni projetés, ni remontés)', async (t) => {
+test('structures GPU : rideau de la bibliothèque, fendu et ouvert par ses attaches jusqu\'en bas ; ses pans pendent, ses morceaux déchirés tombent (ni projetés, ni remontés)', async (t) => {
   if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
   const recette = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '..', 'effets', 'rideau.json'), 'utf8'));
-  const rideaux = ['', 'resistance: 1.1'].map((reglages) => {
+  const rideaux = ['', 'resistance: 1.1', 'ouverture: 0.5'].map((reglages) => {
     const r = R.compiler(recette, { dur: 5, graine: 1, charte: {}, reglages });
     assert.equal(r.ok, true, JSON.stringify(r.erreurs));
     return r.effet;
@@ -340,27 +344,39 @@ await envoyer({ webgpu: true, res });`);
     const haut = new Set(Array.from({ length: C }, (_, c) => racine(c)));
     return Array.from({ length: N }, (_, i) => haut.has(racine(i)));
   };
+  // Liens qui traversent la couture (fente 16, entre les colonnes 15 et 16) : H, D1, D2 de la colonne 15, BH des colonnes 14
+  // et 15, à chaque rang.
+  const traversants = codes.filter((code) => {
+    const [a, b] = Mm.extremites(code, C);
+    return (a % C < 16) !== (b % C < 16);
+  });
+  assert.equal(traversants.length, 24 * 3 + 23 * 2, 'H, BH des colonnes 14 et 15 sur 24 rangs ; D1 et D2 sur 23');
   r.res.forEach((images, q) => {
-    const nom = q === 0 ? 'rideau' : 'rideau peu résistant';
-    const k0 = images.findIndex((im) => im.rompus.some((m) => (m & 63) !== 0));
-    assert.ok(k0 >= 0 && k0 < 30, `${nom} : déchiré dans la première seconde (image ${k0 + 1})`);
-    for (let k = k0; k < images.length; k++) {
-      const { xy } = images[k];
+    const nom = ['rideau', 'rideau peu résistant', 'rideau grand ouvert'][q];
+    // Pans : bord tenu écarté de ouverture × 40 cqh, balancement au-delà d'au plus 3/4 de cet écart (+ 2 cqh) ; morceaux
+    // déchirés (rideau peu résistant) : dérive lente en tombant, au plus 25 cqh hors de la zone.
+    const ecart = (q === 2 ? 0.5 : 0.2) * 40;
+    const marge = q === 1 ? 25 : 1.75 * ecart + 2;
+    for (let k = 0; k < images.length; k++) {
+      const { xy, rompus } = images[k];
+      const intact = traversants.find((code) => ((rompus[code >> 3] >> (code & 7)) & 1) === 0);
+      assert.equal(intact, undefined, `${nom}, image ${k + 1} : lien ${intact} intact à travers la couture`);
       for (let i = 0; i < N; i++) {
-        // Zone élargie de 25 % de sa largeur de chaque côté : [120, 180].
-        assert.ok(xy[2 * i] >= 120 - 0.05 && xy[2 * i] <= 180 + 0.05, `${nom}, image ${k + 1} : sommet ${i} projeté en x = ${xy[2 * i].toFixed(1)}`);
-        if (k > k0) assert.ok(images[k - 1].xy[2 * i + 1] - xy[2 * i + 1] <= 2, `${nom}, image ${k + 1} : sommet ${i} remonté de ${(images[k - 1].xy[2 * i + 1] - xy[2 * i + 1]).toFixed(2)} cqh`);
+        assert.ok(xy[2 * i] >= 130 - marge - 0.05 && xy[2 * i] <= 170 + marge + 0.05, `${nom}, image ${k + 1} : sommet ${i} projeté en x = ${xy[2 * i].toFixed(1)}`);
+        if (k > 0) assert.ok(images[k - 1].xy[2 * i + 1] - xy[2 * i + 1] <= 2, `${nom}, image ${k + 1} : sommet ${i} remonté de ${(images[k - 1].xy[2 * i + 1] - xy[2 * i + 1]).toFixed(2)} cqh`);
       }
     }
     const fin = images[images.length - 1];
     const tenus = lies(fin.rompus);
-    if (q === 0) {
-      // Ouvert : écart entre les deux moitiés au milieu de la hauteur ; aucun morceau détaché.
-      const ligne = 12;
-      const gauche = Math.max(...Array.from({ length: 16 }, (_, c) => fin.xy[2 * (ligne * C + c)]));
-      const droite = Math.min(...Array.from({ length: 16 }, (_, c) => fin.xy[2 * (ligne * C + c + 16)]));
-      assert.ok(droite - gauche >= 8, `rideau ouvert de ${(droite - gauche).toFixed(1)} cqh au milieu de sa hauteur`);
-      assert.ok(tenus.every(Boolean), 'aucun morceau détaché');
+    if (q !== 1) {
+      // Ouvert jusqu'en bas : écart entre les deux pans au milieu de la hauteur et au dernier rang ; aucun morceau détaché
+      // (rien ne tombe d'un bloc).
+      for (const ligne of [12, 23]) {
+        const gauche = Math.max(...Array.from({ length: 16 }, (_, c) => fin.xy[2 * (ligne * C + c)]));
+        const droite = Math.min(...Array.from({ length: 16 }, (_, c) => fin.xy[2 * (ligne * C + c + 16)]));
+        assert.ok(droite - gauche >= 8, `${nom} ouvert de ${(droite - gauche).toFixed(1)} cqh au rang ${ligne}`);
+      }
+      assert.ok(tenus.every(Boolean), `${nom} : aucun morceau détaché`);
     } else {
       // Morceaux détachés : ils tombent (y moyen qui croît d'une seconde à l'autre).
       const libres = tenus.map((x, i) => (x ? -1 : i)).filter((i) => i >= 0);

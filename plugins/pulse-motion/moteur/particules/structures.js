@@ -52,7 +52,7 @@
   const OCTETS_UNIFORME = 16 + STRUCTURES_MAX * 16;
   const S = {
     TYPE: 256, C: 257, R: 258, N: 259, NATT: 260, ATT: 261, SEL: 262, LIENS: 263, COUL: 264, ALPHA: 277, ALPHA_B: 278,
-    AMORTI: 279, DECH: 280, EPAIS: 281, MASSE: 282, CL: 283, DL: 285, FIN: 287, Z: 288, G: 289, ALPHA_C: 291,
+    AMORTI: 279, DECH: 280, EPAIS: 281, MASSE: 282, CL: 283, DL: 285, FIN: 287, Z: 288, G: 289, ALPHA_C: 291, FENTE: 292,
   };
   P.MOTS_STRUCTURE = S;
   P.STRUCTURES_MAX = STRUCTURES_MAX;
@@ -99,6 +99,7 @@
     const g = em.forces.reduce((a, x) => (x.type === 'gravite' ? [a[0] + x.a[0], a[1] + x.a[1]] : a), [0, 0]);
     f[S.G] = g[0];
     f[S.G + 1] = g[1];
+    u[S.FENTE] = st.fente ? st.fente : 0;
     f[S.AMORTI] = AMORTISSEMENT * st.amortissement;
     f[S.DECH] = st.dechirure === null ? -1 : st.dechirure;
     f[S.EPAIS] = st.epaisseur;
@@ -152,6 +153,7 @@ const S_FIN = ${S.FIN}u;
 const S_Z = ${S.Z}u;
 const S_G = ${S.G}u;
 const S_ALPHA_C = ${S.ALPHA_C}u;
+const S_FENTE = ${S.FENTE}u;
 
 struct UStructures { n: u32, nElements: u32, nGrille: u32, r0: u32, s: array<vec4u, ${STRUCTURES_MAX}> };
 struct Repos { centre: vec2f, angle: f32, demi: vec2f, Lu: f32, Lv: f32 };
@@ -405,7 +407,21 @@ fn initialiserSommet(v: u32, base: u32, rp: Repos) {
   p.vivante = 1u;
   p.naissance = 0.0;
   sommets[base + v] = p;
-  rompus[base + v] = 0u;
+  // Fente (tissu) : liens qui traversent la couture entre les colonnes f − 1 et f déjà rompus, à chaque rang (H, D1, D2 de
+  // la colonne f − 1 ; BH des colonnes f − 2 et f − 1) : le tissu s'ouvre sur toute sa hauteur.
+  var r0 = 0u;
+  let fe = eu(S_FENTE);
+  if (fe > 0u) {
+    let c = v % eu(S_C);
+    if (c + 1u == fe) {
+      for (var g = 0u; g < 5u; g++) {
+        if (g != 1u && existeLien(g, v)) { r0 = r0 | (1u << g); }
+      }
+    } else if (c + 2u == fe && existeLien(4u, v)) {
+      r0 = 1u << 4u;
+    }
+  }
+  rompus[base + v] = r0;
 }
 
 // Début d'un sous-pas [ta, tb] : position notée ; sommet tenu posé sur son attache à tb (vitesse de l'attache, masse
