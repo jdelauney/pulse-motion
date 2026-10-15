@@ -26,7 +26,7 @@ const fichiersGuides = () => [
 ];
 
 test('skills : creer, exporter, retoucher, reprendre, lancés par la personne, outils limités', () => {
-  assert.deepEqual(SKILLS.sort(), ['animer-personnage', 'atelier-particules', 'atelier-personnages', 'creer', 'dessiner-personnage', 'exporter', 'outils', 'reprendre', 'retoucher', 'style', 'voix']);
+  assert.deepEqual(SKILLS.sort(), ['animer-personnage', 'atelier-particules', 'atelier-personnages', 'creer', 'decouper-personnage', 'dessiner-personnage', 'exporter', 'outils', 'reprendre', 'retoucher', 'style', 'voix']);
   for (const s of SKILLS) {
     const e = enTete(lire('skills', s, 'SKILL.md'));
     assert.ok(e.description && e.description.length > 20, `${s} : description`);
@@ -127,6 +127,14 @@ test('consignes : les personnages sont guidés, un skill par action', () => {
   assert.match(lire('references', 'personnages.md'), /^# .+\n\n## L'essentiel\n/);
   assert.match(lire('references', 'dessin-personnages.md'), /^# .+\n\n## L'essentiel\n/);
   assert.match(lire('references', 'dessin-personnages.md'), /dans chaque vue/);
+  const decouper = skill('decouper-personnage');
+  assert.match(decouper, /pulse-motion reference decoupe-personnages/);
+  assert.match(decouper, /pulse-motion personnages analyser assets\/<fichier>\.svg/);
+  assert.match(decouper, /pulse-motion personnages decouper <nom>/);
+  assert.match(decouper, /pulse-motion personnages renommer-couleur/);
+  assert.match(atelier, /pulse-motion personnages atelier --decoupe <nom>/);
+  assert.match(retoucher, /decouper-personnage/);
+  assert.match(lire('references', 'decoupe-personnages.md'), /^# .+\n\n## L'essentiel\n/);
 });
 
 test('creer : style choisi alors que des scènes existent déjà → changement de style', () => {
