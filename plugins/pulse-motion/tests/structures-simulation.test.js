@@ -194,3 +194,44 @@ await envoyer({ webgpu: true, avant: avant.map((e) => e.s), apres: apres.map((e)
     assert.ok(Math.abs(p.vx - 10) < 0.05, `vitesse du bord tenu ${p.vx} : celle de son élément`);
   }
 });
+
+test('structures GPU : rideau déchiré au seuil prévu (liens intacts sous le seuil, déchirures définitives), même état au bit près par deux chemins', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  // 20 × 10 sommets sur [40, 30, 38, 18] (Lu = Lv = 2) ; moitié gauche du bord haut tenue par #gauche (fixe, lâchée à
+  // 2,5 s), moitié droite par #droite, qui part vers la droite à 12 cqh/s : le rideau se déchire au milieu.
+  const gauche = Array.from({ length: 10 }, (_, i) => i).join(', ');
+  const droite = Array.from({ length: 10 }, (_, i) => i + 10).join(', ');
+  const rideau = compiler([{ nom: 'r', structure: { type: 'tissu', resolution: [20, 10], raideur: 1, flexion: 0.05, dechirure: 1.3,
+    attaches: [{ ou: gauche, a: '#gauche', lacher: 2.5 }, { ou: droite, a: '#droite' }] }, forces: [{ type: 'gravite', valeur: 40 }] }], 4);
+  const r = await page({ rideau }, `
+const Z = [40, 30, 38, 18];
+const zones = zonesDe(Z, (g) => [Z, [40 + 12 * g / 30, 30, 38, 18]]);
+const etats = {};
+for (const tau of [0.03, 1, 2, 3]) etats[tau] = (await etat(DONNEES.rideau, zones, [tau]))[0];
+const autre = (await etat(DONNEES.rideau, zones, [1.2, 0.4, 2]))[0];
+const encore = (await etat(DONNEES.rideau, zones, [3, 2]))[0];
+await envoyer({ webgpu: true, etats, egal: memes([etats[2]], [autre]) && memes([etats[2]], [encore]) });`);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.equal(r.egal, true, 'même état au bit près par deux chemins (retours en arrière compris), déchirures comprises');
+  const C = 20;
+  const { codes } = Mm.liens(C, 10);
+  const repos = [2, 2, Math.hypot(2, 2), Math.hypot(2, 2), 4, 4];
+  const rompu = (e, code) => ((e.rompus[code >> 3] >> (code & 7)) & 1) === 1;
+  const nRompus = (e) => codes.filter((c) => rompu(e, c)).length;
+  assert.equal(nRompus(r.etats[0.03]), 0, 'pas 3 : écart de 0,3 cqh (étirement 1,15) : aucun lien rompu');
+  for (const tau of [1, 2, 3]) {
+    const e = r.etats[tau];
+    assert.ok(nRompus(e) > 0, `τ = ${tau} : liens rompus`);
+    for (const code of codes) {
+      if (rompu(e, code)) continue;
+      const [a, b] = Mm.extremites(code, C);
+      const l = Math.hypot(e.s[a].x - e.s[b].x, e.s[a].y - e.s[b].y);
+      assert.ok(l <= 1.3 * repos[code & 7] * (1 + 1e-5), `τ = ${tau} : lien intact ${code} étiré à ${(l / repos[code & 7]).toFixed(4)}`);
+    }
+  }
+  assert.ok(rompu(r.etats[1], 9 * 8), 'le lien du bord haut entre les deux moitiés (sommets 9 et 10) est rompu');
+  for (const code of codes) if (rompu(r.etats[1], code)) assert.ok(rompu(r.etats[2], code) && rompu(r.etats[3], code), `lien ${code} : rupture définitive`);
+  // Lâcher de la moitié gauche à 2,5 s : elle tombe (ou pend de la moitié droite).
+  assert.ok(r.etats[2].s[0].y < 30 + 1e-3, 'avant le lâcher : sommet 0 tenu');
+  assert.ok(r.etats[3].s[0].y > 30 + 2, `sommet 0 à y = ${r.etats[3].s[0].y.toFixed(2)} après le lâcher`);
+});

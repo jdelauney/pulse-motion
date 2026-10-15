@@ -22,7 +22,10 @@
  * 1/480 s : sommets tenus posés sur leur attache (vitesse de l'attache), autres prédits par les forces de la recette
  * (integrer de P1, exact sur le sous-pas) ; 4 itérations XPBD (λ remis à zéro à chaque sous-pas) qui résolvent chacune les
  * 12 couleurs de liens dans l'ordre, une passe parallèle par couleur (aucun sommet partagé dans une couleur) ; contacts ;
- * vitesse = déplacement / h, amortie. Phases séparées par des barrières de stockage ; boucles à barrière de bornes constantes.
+ * vitesse = déplacement / h, amortie ; déchirure : chaque sommet marque ses propres liens (bit du genre dans son mot de
+ * « rompus ») étirés au-delà de dechirure × longueur de repos, d'après les positions de fin de sous-pas seulement (aucune
+ * position ne bouge pendant la décision : même résultat dans tout ordre) ; un lien rompu n'est plus résolu, ses triangles
+ * ne sont plus dessinés (rendu). Phases séparées par des barrières de stockage ; boucles à barrière de bornes constantes.
  * Navigateur seulement ; dépend de simulation.js (P.WGSL_MODULE_COLLISIONS, P.emballerE) et de maillage.js (M.maillage).
  */
 (function (racine) {
@@ -360,8 +363,23 @@ fn vitesseSommet(v: u32, base: u32, h: f32) {
   sommets[i] = p;
 }
 
+// Déchirure en fin de sous-pas : le sommet v décide de ses propres liens (sommet propriétaire), sur les positions de fin
+// de sous-pas ; un lien marqué le reste (état de la simulation, instantanés compris).
+fn dechirer(v: u32, base: u32, rp: Repos) {
+  let seuil = ef(S_DECH);
+  if (seuil <= 0.0) { return; }
+  let i = base + v;
+  var m = rompus[i];
+  for (var g = 0u; g < 6u; g++) {
+    if (((m >> g) & 1u) != 0u || !existeLien(g, v)) { continue; }
+    let ab = extremites(v, g);
+    if (length(sommets[base + ab.x].pos - sommets[base + ab.y].pos) > seuil * longueurRepos(g, rp)) { m = m | (1u << g); }
+  }
+  rompus[i] = m;
+}
+
 // Un pas de 1/120 s d'une structure (groupe de travail wg.x) : pose au pas 0, puis 4 sous-pas (prédiction, 4 itérations
-// sur les 12 couleurs, contacts, vitesses).
+// sur les 12 couleurs, contacts, vitesses, déchirure).
 @compute @workgroup_size(256)
 fn structures(@builtin(workgroup_id) wg: vec3u, @builtin(local_invocation_index) li: u32) {
   let d = ST.s[wg.x];
@@ -390,6 +408,8 @@ fn structures(@builtin(workgroup_id) wg: vec3u, @builtin(local_invocation_index)
     }
     contactsStructure(base, n, li, ta, tb);
     for (var v = li; v < n; v += S_FILS) { vitesseSommet(v, base, h); }
+    barriere();
+    for (var v = li; v < n; v += S_FILS) { dechirer(v, base, rp); }
     barriere();
   }
 }
