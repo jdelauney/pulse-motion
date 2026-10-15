@@ -30,6 +30,7 @@ const ORDRE = {
 const ORDRE_CLE = ['t', 'pose', 'angles', 'courbe'];
 const ORDRE_OS = ['nom', 'parent', 'attache', 'angle', 'longueur', 'raideur', 'amorti'];
 
+const arrondir = (v) => (typeof v === 'number' ? Math.round(v * 1000) / 1000 + 0 : v);
 const estObjet = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const estNombre = (v) => typeof v === 'number' && Number.isFinite(v);
 
@@ -93,6 +94,8 @@ function validerClip(objet, contexte, erreurs) {
   if (objet.additif === true && objet.pieds === 'au-sol') erreurs.push('Un clip additif ne peut pas être « au-sol » : ses valeurs sont des différences.');
   if (!Array.isArray(objet.cles) || objet.cles.length === 0) { erreurs.push('« cles » : il faut au moins une clé (ex. [{ "t": 0, "pose": "debout" }]).'); return; }
   let precedent = -Infinity;
+  const derniere = objet.cles[objet.cles.length - 1];
+  if (objet.boucle === false && estObjet(derniere) && estNombre(derniere.t) && derniere.t <= 0) erreurs.push('Un clip ponctuel dure jusqu\'à sa dernière clé : il faut au moins une clé après 0 (ex. « t »: 0.5).');
   objet.cles.forEach((cle, i) => {
     const ou = `clé ${i + 1} : `;
     if (!estObjet(cle)) { erreurs.push(`${ou}doit être un objet { t, pose?, angles?, courbe? }.`); return; }
@@ -101,11 +104,12 @@ function validerClip(objet, contexte, erreurs) {
     else {
       if (objet.boucle === true && (cle.t < 0 || cle.t > 1)) erreurs.push(`${ou}« t » vaut ${cle.t}, hors de [0, 1] (phase d'un clip bouclé).`);
       if (objet.boucle === false && cle.t < 0) erreurs.push(`${ou}« t » vaut ${cle.t} : les secondes d'un clip ponctuel commencent à 0.`);
-      if (cle.t <= precedent) erreurs.push(`${ou}les clés doivent être rangées par « t » croissant, sans doublon.`);
-      precedent = cle.t;
+      if (arrondir(cle.t) <= precedent) erreurs.push(`${ou}les clés doivent être rangées par « t » croissant, sans doublon (au millième près).`);
+      precedent = arrondir(cle.t);
     }
     if (cle.pose === undefined && cle.angles === undefined) erreurs.push(`${ou}il faut une « pose » ou des « angles ».`);
-    if (cle.pose !== undefined && !(contexte.poses || []).includes(cle.pose)) erreurs.push(`${ou}pose « ${cle.pose} » introuvable (poses connues : ${(contexte.poses || []).join(', ')}).`);
+    if (cle.pose !== undefined && objet.additif === true) erreurs.push(`${ou}un clip additif ne cite pas de pose (ses valeurs sont des différences) : donner des « angles ».`);
+    else if (cle.pose !== undefined && !(contexte.poses || []).includes(cle.pose)) erreurs.push(`${ou}pose « ${cle.pose} » introuvable (poses connues : ${(contexte.poses || []).join(', ')}).`);
     if (cle.angles !== undefined) verifierAngles(cle.angles, ou, contexte, erreurs);
     if (cle.courbe !== undefined) {
       try { C.courbeNommee(String(cle.courbe)); } catch { erreurs.push(`${ou}courbe « ${cle.courbe} » inconnue (exemples : linear, sine-inout, back-out, bounce-out).`); }
@@ -203,7 +207,6 @@ function lire(dossierVideo, { bibliotheque = BIBLIOTHEQUE } = {}) {
 }
 
 /* ---------- écriture stable ---------- */
-const arrondir = (v) => (typeof v === 'number' ? Math.round(v * 1000) / 1000 + 0 : v);
 
 function ordonner(objet, ordre) {
   const o = {};
@@ -259,9 +262,13 @@ function enregistrer({ dossier, type, nom, objet, lu, ecrire }) {
   const complet = Object.assign({}, objet, { nom });
   const erreurs = valider(type, complet, Object.assign({ nom }, contexteDe(lu || {})));
   if (erreurs.length) throw ErreurPersonnage(erreurs);
+  // Validé aussi tel qu'il sera écrit (nombres arrondis) : jamais un fichier que lire() refuserait ensuite.
+  const texte = serialiser(type, complet);
+  const ecrits = valider(type, JSON.parse(texte), Object.assign({ nom }, contexteDe(lu || {})));
+  if (ecrits.length) throw ErreurPersonnage(ecrits);
   const fichier = path.join(dossier, TYPES[type], `${nom}.json`);
   fs.mkdirSync(path.dirname(fichier), { recursive: true });
-  (ecrire || require('./routes-atelier.js').ecrireAtomique)(fichier, serialiser(type, complet));
+  (ecrire || require('./routes-atelier.js').ecrireAtomique)(fichier, texte);
   return { fichier };
 }
 

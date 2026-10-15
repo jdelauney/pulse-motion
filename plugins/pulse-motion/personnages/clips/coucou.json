@@ -43,8 +43,12 @@
     {
       "t": 1.29,
       "angles": {
+        "torseIncl": -4,
         "tetePenche": 6,
-        "avantBrasAvant": -7
+        "brasAvant": 0,
+        "avantBrasAvant": -7,
+        "ecartBrasAvant": 140,
+        "torsionBrasAvant": 90
       }
     },
     {

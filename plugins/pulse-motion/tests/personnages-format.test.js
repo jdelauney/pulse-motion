@@ -37,6 +37,9 @@ test('valider clip : phase hors de [0, 1], clés non triées, pose introuvable, 
   assert.ok(P.valider('clip', { nom: 'x', boucle: true, duree: 1, additif: true, pieds: 'au-sol', cles: [{ t: 0, angles: {} }] }, ctx()).some((m) => /additif.*au-sol/.test(m)));
   assert.ok(P.valider('clip', { nom: 'x', boucle: false, cles: [{ t: 0 }] }, ctx()).some((m) => /clé 1 : .*« pose » ou des « angles »/.test(m)));
   assert.deepEqual(P.valider('clip', { nom: 'x', boucle: false, pieds: 'au-sol', cles: [{ t: 0, pose: 'debout' }, { t: 0.4, angles: { torse: 20 }, courbe: 'back-out' }] }, ctx()), []);
+  assert.ok(P.valider('clip', { nom: 'x', boucle: true, duree: 1, additif: true, cles: [{ t: 0, pose: 'debout' }] }, ctx()).some((m) => /clip additif ne cite pas de pose/.test(m)));
+  assert.ok(P.valider('clip', { nom: 'x', boucle: false, cles: [{ t: 0, pose: 'debout' }] }, ctx()).some((m) => /au moins une clé après 0/.test(m)));
+  assert.ok(P.valider('clip', { nom: 'x', boucle: false, cles: [{ t: 0.3331, angles: {} }, { t: 0.3334, angles: {} }] }, ctx()).some((m) => /au millième près/.test(m)));
 });
 
 test('valider gabarit : longueur nulle, os en plus, contraintes', () => {
@@ -59,7 +62,7 @@ test('lire : fusion bibliothèque et vidéo, la vidéo l\'emporte', () => {
   ecrire(bib, 'pose', 'debout', { nom: 'debout', angles: {} });
   ecrire(bib, 'pose', 'montrer', { nom: 'montrer', angles: { brasAvant: -90 } });
   ecrire(path.join(video, 'personnages'), 'pose', 'montrer', { nom: 'montrer', angles: { brasAvant: -80 } });
-  ecrire(path.join(video, 'personnages'), 'clip', 'salut', { nom: 'salut', boucle: false, cles: [{ t: 0, pose: 'montrer' }] });
+  ecrire(path.join(video, 'personnages'), 'clip', 'salut', { nom: 'salut', boucle: false, cles: [{ t: 0, pose: 'montrer' }, { t: 0.5, angles: { tete: 5 } }] });
   const lu = P.lire(video, { bibliotheque: bib });
   assert.deepEqual(lu.erreurs, []);
   assert.equal(lu.poses.montrer.angles.brasAvant, -80);
@@ -77,7 +80,7 @@ test('lire : un fichier invalide de la vidéo laisse la version de la bibliothè
   const video = dossierTemporaire();
   ecrire(bib, 'pose', 'montrer', { nom: 'montrer', angles: { brasAvant: -90 } });
   ecrire(path.join(video, 'personnages'), 'pose', 'montrer', '{ pas du json');
-  ecrire(path.join(video, 'personnages'), 'clip', 'casse', { nom: 'casse', boucle: false, cles: [{ t: 0, pose: 'inconnue' }] });
+  ecrire(path.join(video, 'personnages'), 'clip', 'casse', { nom: 'casse', boucle: false, cles: [{ t: 0, pose: 'inconnue' }, { t: 1, angles: {} }] });
   const lu = P.lire(video, { bibliotheque: bib });
   assert.equal(lu.poses.montrer.angles.brasAvant, -90);
   assert.equal(lu.erreurs.length, 2);
