@@ -173,7 +173,7 @@ export function creerEdition(options, { clips: K, squelette: S }) {
       selection = i;
     },
     proprietes(ch) {
-      memoriser();
+      const avant = JSON.stringify(objet);
       if (estClip() && ch.boucle !== undefined && ch.boucle !== objet.boucle) {
         if (ch.boucle === false) {
           const d = objet.duree || 1;
@@ -191,6 +191,13 @@ export function creerEdition(options, { clips: K, squelette: S }) {
         if (!(k in ch) || (k !== 'description' && !estClip())) continue;
         if (ch[k] === null || ch[k] === '') delete objet[k];
         else objet[k] = ch[k];
+      }
+      // Un pas d'annulation seulement si quelque chose a changé.
+      if (JSON.stringify(objet) !== avant && !(geste && gesteMemorise)) {
+        passe.push(avant);
+        if (passe.length > 100) passe.shift();
+        futur = [];
+        if (geste) gesteMemorise = true;
       }
     },
     annuler() {

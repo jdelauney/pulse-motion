@@ -134,6 +134,10 @@ test('édition : changer « boucle » convertit les instants des clés', () => {
   ed.proprietes({ boucle: true });
   assert.deepEqual(ed.objet.cles.map((c) => c.t), [0, 1]);
   assert.equal(ed.objet.duree, 1);
+  const pas = () => { let n = 0; while (ed.annuler()) n++; for (let i = 0; i < n; i++) ed.retablir(); return n; };
+  const avant = pas();
+  ed.proprietes({ boucle: true });
+  assert.equal(pas(), avant, 'aucun changement : aucun pas d\'annulation');
   ed.proprietes({ foulee: 120, miroir: 0.5, description: 'test' });
   ed.proprietes({ miroir: null });
   assert.equal(ed.objet.foulee, 120);

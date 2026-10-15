@@ -192,7 +192,11 @@ function majCurseurs() {
     l.classList.toggle('anime', n in animes);
   });
 }
-$('#curseurs').addEventListener('pointerdown', (ev) => { if (ev.target.dataset.curseur) ed.debutGeste(); });
+let gesteCurseur = false;
+$('#curseurs').addEventListener('pointerdown', (ev) => { if (ev.target.dataset.curseur) { gesteCurseur = true; ed.debutGeste(); } });
+const finCurseur = () => { if (gesteCurseur) { gesteCurseur = false; ed.finGeste(); } };
+document.addEventListener('pointerup', finCurseur);
+document.addEventListener('pointercancel', finCurseur);
 $('#curseurs').addEventListener('input', (ev) => {
   const n = ev.target.dataset.curseur;
   if (!n) return;
@@ -202,7 +206,7 @@ $('#curseurs').addEventListener('input', (ev) => {
 $('#curseurs').addEventListener('change', (ev) => {
   const n = ev.target.dataset.valeur;
   if (n && ev.target.value !== '') { ed.regler(n, borner(n, Number(ev.target.value))); }
-  ed.finGeste();
+  finCurseur();
   rendre();
 });
 
@@ -218,15 +222,17 @@ function majFrise() {
   if (!visible) return;
   const L = ed.longueurFrise();
   const piste = $('#piste');
-  piste.querySelectorAll('.cle').forEach((e) => e.remove());
+  // Marqueurs réutilisés (pas recréés) : un marqueur tenu par la souris garde la capture du pointeur.
+  const marqueurs = [...piste.querySelectorAll('.cle')];
+  while (marqueurs.length > ed.objet.cles.length) marqueurs.pop().remove();
+  while (marqueurs.length < ed.objet.cles.length) { const b = document.createElement('button'); piste.appendChild(b); marqueurs.push(b); }
   ed.objet.cles.forEach((c, i) => {
-    const b = document.createElement('button');
+    const b = marqueurs[i];
     b.className = 'cle' + (c.pose ? ' pose' : '') + (i === ed.selection ? ' choisie' : '');
     b.style.left = `${c.t / L * 100}%`;
     b.dataset.indice = i;
     b.title = `${c.pose ? `pose « ${c.pose} » · ` : ''}${ed.unite() === 'phase' ? 'phase ' : ''}${virgule(c.t, 3)}${ed.unite() === 's' ? ' s' : ''}`;
     b.setAttribute('aria-label', `Clé ${i + 1} : ${b.title}`);
-    piste.appendChild(b);
   });
   $('#tete-lecture').style.left = `${ed.position() / L * 100}%`;
   $('#temps').textContent = ed.unite() === 'phase' ? `phase ${virgule(ed.position())}` : `${virgule(ed.temps)} s / ${virgule(ed.duree())} s`;
@@ -252,10 +258,12 @@ $('#piste').addEventListener('pointerdown', (ev) => {
 });
 $('#piste').addEventListener('pointermove', (ev) => {
   if (!cleGlissee) return;
+  if (ev.buttons === 0) { finCle(); return; }
   const u = versU(ev);
   if (ed.deplacerCle(ed.selection, u)) { cleGlissee.bouge = true; ed.allerA(ed.objet.cles[ed.selection].t); rendre(); }
 });
-$('#piste').addEventListener('pointerup', () => { if (cleGlissee) { cleGlissee = null; ed.finGeste(); rendre(); } });
+function finCle() { if (cleGlissee) { cleGlissee = null; ed.finGeste(); rendre(); } }
+for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) $('#piste').addEventListener(type, finCle);
 $('#piste').addEventListener('dragover', (ev) => ev.preventDefault());
 $('#piste').addEventListener('drop', (ev) => {
   ev.preventDefault();
@@ -280,7 +288,11 @@ function majProprietes() {
 $('#proprietes').addEventListener('change', (ev) => {
   const id = ev.target.id;
   const v = ev.target.type === 'checkbox' ? ev.target.checked : ev.target.value;
-  if (id === 'boucle') ed.proprietes({ boucle: v });
+  if (id === 'boucle') {
+    const miroir = ed.objet.miroir;
+    ed.proprietes({ boucle: v });
+    if (!v && miroir) message('Le miroir ne sert qu\'aux cycles : il a été retiré, les membres Arrière ne suivent plus les membres Avant (Annuler pour revenir).', '');
+  }
   else if (id === 'additif') ed.proprietes({ additif: v ? true : null, ...(v ? { pieds: null } : {}) });
   else if (id === 'pieds') ed.proprietes({ pieds: v === 'libres' ? null : v });
   else if (['duree', 'foulee', 'miroir'].includes(id)) ed.proprietes({ [id]: v === '' || Number(v) === 0 && id === 'miroir' ? null : Number(v) });
