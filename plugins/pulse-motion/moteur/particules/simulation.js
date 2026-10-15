@@ -1686,6 +1686,11 @@ fn ventMilieu(x: vec2f) -> vec2f {
       this.groupes = groupes.map((g) => (g.membres.some((i) => !this.emetteurs[i].inerte) ? new P.Groupe(device, this, g) : null));
       this.groupesActifs = this.groupes.filter(Boolean);
 
+      // Milieu (P5c) : dépôts des émetteurs à « injecte » dans la grille du milieu (sans milieu : rien n'est déposé).
+      const injecteurs = this.emetteurs.some((e) => e.em.injecte && !e.inerte);
+      if (injecteurs && this.milieu && !P.creerDepots) throw new Error('Milieu : moteur/particules/milieu.js n\'est pas chargé.');
+      this.depots = injecteurs && this.milieu ? P.creerDepots(device, this, this.milieu) : null;
+
       // Voie rapide : zones de la grille (points g / 30) envoyées au GPU.
       this.zones = new Float32Array(this.nZones * 4);
       this.zonesConnues = new Uint8Array(this.nZones);
@@ -1707,7 +1712,7 @@ fn ventMilieu(x: vec2f) -> vec2f {
       }
 
       this.kFin = Math.ceil(effet.fin / PAS) + 1;
-      const tailleEtat = this.simules.reduce((s, e) => s + e.capacite * OCTETS_PARTICULE + (e.historique ? e.historique.size : 0) + (e.contacts ? e.contacts.size : 0), 0)
+      const tailleEtat = this.tailleEtat = this.simules.reduce((s, e) => s + e.capacite * OCTETS_PARTICULE + (e.historique ? e.historique.size : 0) + (e.contacts ? e.contacts.size : 0), 0)
         + (this.hauteurs ? this.hauteurs.size : 0) + (this.structures ? this.structures.tailleEtat : 0);
       this.k = 0;
       this.planificateur = M.instantanes.creerPlanificateur({
@@ -1881,8 +1886,6 @@ fn ventMilieu(x: vec2f) -> vec2f {
     executer(actions, zones) {
       if (!actions.length) return;
       const { device } = this;
-      const donnees = this.donneesPas;
-      const f = this.f32Pas;
       let enc = null;
       let passe = null;
       let n = 0;
@@ -1891,7 +1894,7 @@ fn ventMilieu(x: vec2f) -> vec2f {
       const envoyer = () => {
         fermerPasse();
         if (!enc) return;
-        if (n) device.queue.writeBuffer(this.tamponPas, 0, donnees, 0, n * 256);
+        this.envoyerPas(n);
         device.queue.submit([enc.finish()]);
         enc = null;
         n = 0;
@@ -1900,75 +1903,113 @@ fn ventMilieu(x: vec2f) -> vec2f {
         if (a.type === 'pas') {
           if (n === PAS_PAR_LOT) envoyer();
           ouvrir();
-          const o = n * 64;
-          f.set(zones.a(a.k * PAS), o + 4);
-          f.set(zones.a((a.k + 1) * PAS), o + 8);
-          if (this.texReperes) this.assurerReperes(a.k, zones);
-          this.assurerAncres(Math.floor(a.k * PAS * GRILLE) - 1, Math.floor((a.k + 1) * PAS * GRILLE) + 2, zones);
-          if (this.structures) this.structures.assurerElements(a.k, zones);
-          this.ecrirePas(o, a.k);
+          this.preparerPas(n * 64, a.k, zones);
           if (!passe) passe = enc.beginComputePass();
-          // Interactions : positions au début du pas (grains), avant le pas des émetteurs.
-          for (const g of this.groupesActifs) g.noter(passe);
-          for (const e of this.simules) {
-            passe.setPipeline(e.pipelinePas);
-            passe.setBindGroup(0, e.groupePas, [n * 256]);
-            passe.dispatchWorkgroups(Math.ceil(e.capacite / 64));
-          }
-          // Interactions : voisinage (et solveurs) après le pas de tous les émetteurs.
-          for (const g of this.groupesActifs) g.executer(passe, n);
-          // Structures (P5b) : cordes et tissus, après les groupes (réactions des particules liées, plan 3).
-          if (this.structures) this.structures.executer(passe, n);
-          if (this.nProfils) {
-            passe.setPipeline(this.pc.relaxer);
-            passe.setBindGroup(0, this.groupeRelax, [n * 256]);
-            passe.dispatchWorkgroups(this.nProfils);
-          }
+          this.encoderPas(passe, n);
           n++;
           continue;
         }
         ouvrir();
         fermerPasse();
-        if (a.type === 'vider') {
-          this.simules.forEach((e) => {
-            enc.clearBuffer(e.particules);
-            if (e.morts) enc.clearBuffer(e.morts);
-            if (e.historique) enc.clearBuffer(e.historique);
-            if (e.contacts) enc.clearBuffer(e.contacts);
-          });
-          if (this.nProfils) { enc.clearBuffer(this.profils); enc.clearBuffer(this.hauteurs); enc.clearBuffer(this.brut); }
-          if (this.structures) this.structures.vider(enc);
-        } else if (a.type === 'restaurer') {
-          const copie = this.instantanes.get(a.k);
-          this.simules.forEach((e, i) => {
-            enc.copyBufferToBuffer(copie[i].particules, 0, e.particules, 0, e.capacite * OCTETS_PARTICULE);
-            if (e.historique) enc.copyBufferToBuffer(copie[i].historique, 0, e.historique, 0, e.historique.size);
-            if (e.contacts) enc.copyBufferToBuffer(copie[i].contacts, 0, e.contacts, 0, e.contacts.size);
-          });
-          if (this.nProfils) enc.copyBufferToBuffer(copie.hauteurs, 0, this.hauteurs, 0, this.hauteurs.size);
-          if (this.structures) this.structures.restaurer(enc, copie.structures);
-        } else if (a.type === 'sauver') {
-          let copie = this.instantanes.get(a.k);
-          if (!copie) {
-            const U = GPUBufferUsage;
-            copie = this.simules.map((e) => ({
-              particules: device.createBuffer({ size: e.capacite * OCTETS_PARTICULE, usage: U.COPY_SRC | U.COPY_DST }),
-              historique: e.historique ? device.createBuffer({ size: e.historique.size, usage: U.COPY_SRC | U.COPY_DST }) : null,
-              contacts: e.contacts ? device.createBuffer({ size: e.contacts.size, usage: U.COPY_SRC | U.COPY_DST }) : null,
-            }));
-            this.instantanes.set(a.k, copie);
-            if (this.nProfils) copie.hauteurs = device.createBuffer({ size: this.hauteurs.size, usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST });
-          }
-          this.simules.forEach((e, i) => {
-            enc.copyBufferToBuffer(e.particules, 0, copie[i].particules, 0, e.capacite * OCTETS_PARTICULE);
-            if (e.historique) enc.copyBufferToBuffer(e.historique, 0, copie[i].historique, 0, e.historique.size);
-            if (e.contacts) enc.copyBufferToBuffer(e.contacts, 0, copie[i].contacts, 0, e.contacts.size);
-          });
-          if (this.nProfils) enc.copyBufferToBuffer(this.hauteurs, 0, copie.hauteurs, 0, this.hauteurs.size);
-          if (this.structures) copie.structures = this.structures.sauver(enc, copie.structures);
-        }
+        if (a.type === 'vider') this.viderEtat(enc);
+        else if (a.type === 'restaurer') this.restaurerEtat(enc, this.instantanes.get(a.k));
+        else if (a.type === 'sauver') this.instantanes.set(a.k, this.sauverEtat(enc, this.instantanes.get(a.k)));
       }
       envoyer();
+    }
+
+    /** Membre : données du pas k dans la tranche o (mots) du tampon des pas : zones, repères, ancres, éléments d'attache, temps. */
+    preparerPas(o, k, zones) {
+      const f = this.f32Pas;
+      f.set(zones.a(k * PAS), o + 4);
+      f.set(zones.a((k + 1) * PAS), o + 8);
+      if (this.texReperes) this.assurerReperes(k, zones);
+      this.assurerAncres(Math.floor(k * PAS * GRILLE) - 1, Math.floor((k + 1) * PAS * GRILLE) + 2, zones);
+      if (this.structures) this.structures.assurerElements(k, zones);
+      this.ecrirePas(o, k);
+    }
+
+    envoyerPas(n) {
+      if (n) this.device.queue.writeBuffer(this.tamponPas, 0, this.donneesPas, 0, n * 256);
+    }
+
+    /** Membre : pas de la tranche n (groupes d'interactions, émetteurs simulés, structures, relaxation, dépôts dans le milieu). */
+    encoderPas(passe, n) {
+      // Interactions : positions au début du pas (grains), avant le pas des émetteurs.
+      for (const g of this.groupesActifs) g.noter(passe);
+      for (const e of this.simules) {
+        passe.setPipeline(e.pipelinePas);
+        passe.setBindGroup(0, e.groupePas, [n * 256]);
+        passe.dispatchWorkgroups(Math.ceil(e.capacite / 64));
+      }
+      // Interactions : voisinage (et solveurs) après le pas de tous les émetteurs.
+      for (const g of this.groupesActifs) g.executer(passe, n);
+      // Structures (P5b) : cordes et tissus, après les groupes (réactions des particules liées).
+      if (this.structures) this.structures.executer(passe, n);
+      if (this.nProfils) {
+        passe.setPipeline(this.pc.relaxer);
+        passe.setBindGroup(0, this.groupeRelax, [n * 256]);
+        passe.dispatchWorkgroups(this.nProfils);
+      }
+      // Milieu (P5c) : dépôts là où sont les particules à la fin du pas (la grille les lit dans le même pas).
+      if (this.depots) this.depots.encoder(passe);
+    }
+
+    /** Membre : pas k et τ atteints ; voie rapide évaluée à τ ; δ d'extrapolation de chaque émetteur (rendu). */
+    positionner(k, tau, zones) {
+      this.k = k;
+      this.tau = tau;
+      if (this.rapides.length && tau >= 0) this.evaluer(tau, zones, k);
+      return this.emetteurs.map((e) => (e.rapide || e.inerte ? 0 : Math.max(0, tau - k * PAS)));
+    }
+
+    viderEtat(enc) {
+      this.simules.forEach((e) => {
+        enc.clearBuffer(e.particules);
+        if (e.morts) enc.clearBuffer(e.morts);
+        if (e.historique) enc.clearBuffer(e.historique);
+        if (e.contacts) enc.clearBuffer(e.contacts);
+      });
+      if (this.nProfils) { enc.clearBuffer(this.profils); enc.clearBuffer(this.hauteurs); enc.clearBuffer(this.brut); }
+      if (this.structures) this.structures.vider(enc);
+    }
+
+    /** Copie de l'état (particules, traînées, contacts, couches, structures) dans un instantané ; créé à la première sauvegarde. */
+    sauverEtat(enc, copie) {
+      const U = GPUBufferUsage;
+      let c = copie;
+      if (!c) {
+        c = this.simules.map((e) => ({
+          particules: this.device.createBuffer({ size: e.capacite * OCTETS_PARTICULE, usage: U.COPY_SRC | U.COPY_DST }),
+          historique: e.historique ? this.device.createBuffer({ size: e.historique.size, usage: U.COPY_SRC | U.COPY_DST }) : null,
+          contacts: e.contacts ? this.device.createBuffer({ size: e.contacts.size, usage: U.COPY_SRC | U.COPY_DST }) : null,
+        }));
+        if (this.nProfils) c.hauteurs = this.device.createBuffer({ size: this.hauteurs.size, usage: U.COPY_SRC | U.COPY_DST });
+      }
+      this.simules.forEach((e, i) => {
+        enc.copyBufferToBuffer(e.particules, 0, c[i].particules, 0, e.capacite * OCTETS_PARTICULE);
+        if (e.historique) enc.copyBufferToBuffer(e.historique, 0, c[i].historique, 0, e.historique.size);
+        if (e.contacts) enc.copyBufferToBuffer(e.contacts, 0, c[i].contacts, 0, e.contacts.size);
+      });
+      if (this.nProfils) enc.copyBufferToBuffer(this.hauteurs, 0, c.hauteurs, 0, this.hauteurs.size);
+      if (this.structures) c.structures = this.structures.sauver(enc, c.structures);
+      return c;
+    }
+
+    restaurerEtat(enc, c) {
+      this.simules.forEach((e, i) => {
+        enc.copyBufferToBuffer(c[i].particules, 0, e.particules, 0, e.capacite * OCTETS_PARTICULE);
+        if (e.historique) enc.copyBufferToBuffer(c[i].historique, 0, e.historique, 0, e.historique.size);
+        if (e.contacts) enc.copyBufferToBuffer(c[i].contacts, 0, e.contacts, 0, e.contacts.size);
+      });
+      if (this.nProfils) enc.copyBufferToBuffer(c.hauteurs, 0, this.hauteurs, 0, this.hauteurs.size);
+      if (this.structures) this.structures.restaurer(enc, c.structures);
+    }
+
+    detruireCopie(c) {
+      c.forEach((x) => [x.particules, x.historique, x.contacts].forEach((b) => b && b.destroy()));
+      if (c.hauteurs) c.hauteurs.destroy();
+      if (c.structures) this.structures.detruireCopie(c.structures);
     }
 
     evaluer(tau, zones, k) {
@@ -2065,11 +2106,8 @@ fn ventMilieu(x: vec2f) -> vec2f {
         [e.params, e.tables, e.particules, e.morts, e.contacts, e.historique, e.uniformeRendu, e.uniformeEval].forEach((b) => b && b.destroy());
         if (e.photo) e.photo.texture.destroy();
       });
-      this.instantanes.forEach((copie) => {
-        copie.forEach((c) => [c.particules, c.historique, c.contacts].forEach((b) => b && b.destroy()));
-        if (copie.hauteurs) copie.hauteurs.destroy();
-        if (copie.structures) this.structures.detruireCopie(copie.structures);
-      });
+      this.instantanes.forEach((copie) => this.detruireCopie(copie));
+      if (this.depots) this.depots.detruire();
       if (this.structures) this.structures.detruire();
       this.instantanes.clear();
       (this.groupesActifs || []).forEach((g) => g.detruire());
