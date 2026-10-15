@@ -29,7 +29,7 @@ const SA = require('../moteur/synthe/ambiances.js');
 const { trouverFichiersPolice } = require('./lib/police.js');
 
 const RACINE = path.resolve(__dirname, '..');
-const MOTEUR = ['courbes.js', 'aligner.js', 'sous-titres.js', 'minutage.js', 'transitions.js', 'tween.js', 'lettres.js', 'camera.js', 'squelette.js', 'clips.js', 'habillage-batonnets.js', 'habillage-pieces.js', 'personnages/partition.js', 'personnages/scene.js', 'temps.js', 'horloge.js', 'tailles.js', 'wav.js', 'sonie.js', 'mixage.js', 'synthe/catalogue.js', 'synthe/partition.js', 'synthe/ambiances.js', 'synthe/instruments.js', 'synthe/bruitages.js', 'audio.js', 'lecteur.js', 'sous-titres-rendu.js', 'debordement.js', 'mesures.js', 'pixels.js',
+const MOTEUR = ['courbes.js', 'aligner.js', 'sous-titres.js', 'minutage.js', 'transitions.js', 'tween.js', 'lettres.js', 'camera.js', 'squelette.js', 'clips.js', 'habillage-batonnets.js', 'habillage-pieces.js', 'personnages/levres.js', 'personnages/partition.js', 'personnages/scene.js', 'temps.js', 'horloge.js', 'tailles.js', 'wav.js', 'sonie.js', 'mixage.js', 'synthe/catalogue.js', 'synthe/partition.js', 'synthe/ambiances.js', 'synthe/instruments.js', 'synthe/bruitages.js', 'audio.js', 'lecteur.js', 'sous-titres-rendu.js', 'debordement.js', 'mesures.js', 'pixels.js',
   'figer.js', 'shaders/code.js', 'particules/instantanes.js', 'particules/gpu.js', 'particules/obstacles.js', 'particules/fragments.js', 'particules/simulation.js', 'particules/voisinage.js', 'particules/maillage.js', 'particules/structures.js', 'particules/rendu.js', 'particules/shaders.js', 'particules/composition.js', 'particules/formes.js', 'particules/reperes.js', 'particules/calques.js'];
 function slug(texte) {
   return String(texte).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
@@ -152,6 +152,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   const sourcesModules = {};
   let luPersonnages = null;
   const utilisesPersonnages = { dessins: new Set(), gabarits: new Set() };
+  const scenesQuiParlent = new Set();
   for (const scene of deroule.scenes) {
     const fichier = cheminDansProjet(projet, scene.fichier);
     let html = null;
@@ -195,8 +196,9 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
         luPersonnages = Pers.lire(projet);
         luPersonnages.erreurs.forEach((e) => erreurs.push({ regle: 'personnage-invalide', gravite: 'alerte', message: e.message }));
       }
-      const r = preparerPersonnages(avecObstacles, { scene: scene.id, lu: luPersonnages });
+      const r = preparerPersonnages(avecObstacles, { scene: scene.id, lu: luPersonnages, voix: !!(scene.voix && scene.voix.texte) });
       avecPersonnages = r.html;
+      if (r.parle) scenesQuiParlent.add(scene.id);
       r.utilises.dessins.forEach((n) => utilisesPersonnages.dessins.add(n));
       r.utilises.gabarits.forEach((n) => utilisesPersonnages.gabarits.add(n));
       erreurs.push(...r.erreurs);
@@ -251,6 +253,10 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
       erreurs.push({ regle: 'voix-provisoire', gravite: 'alerte', scene: scene.id,
         message: `Scène « ${scene.id} » : c'est encore la voix provisoire du système ; enregistrez la vôtre avant d'exporter.` });
     }
+  }
+  for (const id of scenesQuiParlent) {
+    if (!voixScenes[id]) erreurs.push({ regle: 'personnage-invalide', gravite: 'alerte', scene: id,
+      message: `Scène « ${id} » : un personnage doit parler, mais la voix n'est pas enregistrée : il restera bouche fermée (enregistrer la voix de la scène, ou « pulse-motion voix provisoire --scene ${id} »).` });
   }
   if (calageApproche) {
     erreurs.push({ regle: 'calage-approche', gravite: 'info',

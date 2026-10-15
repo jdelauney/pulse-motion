@@ -8,6 +8,7 @@
  * pour un dessin, bâtonnets sinon), la partition lue sur ses actions (temps résolus par le minutage) ; puis, à chaque
  * rendu (M.surRendu), la pose à l'instant t (M.partition.etatAuTemps), le squelette et l'habillage. Déterministe.
  * Données : M.donnees.personnages = { bib: { poses, clips, expressions }, dessins, gabarits, gabaritsDessins }.
+ * « parler » : piste de visèmes (M.levres) tirée des mots de la voix de la scène ; sans data-dur, jusqu'à la fin.
  */
 (function (racine) {
   'use strict';
@@ -20,8 +21,21 @@
     return isFinite(n) ? n : defaut;
   }
 
-  function lireAction(el, temps) {
+  /** Voix de la scène : { mots, origine } (origine : instant absolu du début de la prise), ou null. */
+  function voixDe(idScene) {
+    var s = ((M.donnees && M.donnees.scenes) || []).filter(function (x) { return x.id === idScene; })[0];
+    var m = ((M.minutage && M.minutage.scenes) || []).filter(function (x) { return x.id === idScene; })[0];
+    if (!s || !s.voix || !s.voix.mots || !m) return null;
+    return { mots: s.voix.mots, origine: m.debut + (typeof s.voix.debut === 'number' ? s.voix.debut : 0.3) };
+  }
+
+  function lireAction(el, temps, idScene) {
     var a = { type: el.getAttribute('data-action'), debut: temps.debut, fin: temps.fin };
+    if (a.type === 'parler') {
+      if (!el.hasAttribute('data-dur')) a.fin = Infinity;
+      var v = voixDe(idScene);
+      a.piste = v ? M.levres.piste(v.mots, v.origine, a.debut, a.fin) : [];
+    }
     if (el.hasAttribute('data-vers')) a.vers = nombre(el, 'data-vers', 50);
     if (el.hasAttribute('data-vue')) a.vue = nombre(el, 'data-vue', 0);
     ['pose', 'clip', 'expression', 'bouche'].forEach(function (k) { if (el.hasAttribute('data-' + k)) a[k] = el.getAttribute('data-' + k); });
@@ -60,7 +74,7 @@
       Array.prototype.forEach.call(div.children, function (el) {
         if (!el.hasAttribute('data-action')) return;
         var temps = elements[el.getAttribute('data-pm-cle')];
-        if (temps) actions.push(lireAction(el, temps));
+        if (temps) actions.push(lireAction(el, temps, idScene));
       });
       var echelle = nombre(div, 'data-taille', 40) / 100 * H / P.hauteur(gabarit);
       persos.push({

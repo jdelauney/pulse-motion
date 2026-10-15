@@ -8,7 +8,9 @@ const { assembler } = require('../scripts/assembler.js');
 const { preparerPersonnages } = require('../scripts/lib/personnages-scene.js');
 const { ouvrirPage } = require('../scripts/lib/cdp.js');
 const { trouverNavigateur } = require('./aide/navigateur.js');
-const { STYLES, copierProjet } = require('./aide/projet.js');
+const { STYLES, copierProjet, modifierDeroule } = require('./aide/projet.js');
+const V = require('../scripts/lib/voix.js');
+const W = require('../moteur/wav.js');
 const P = require('../scripts/lib/personnages.js');
 
 const navigateur = trouverNavigateur();
@@ -96,3 +98,47 @@ test('page : le personnage entre, montre, salue ; même image quel que soit l\'o
     assert.equal(res.cache, 'true');
   } finally { await page.fermer(); }
 });
+
+test('parler : erreur sans voix ; avec la voix, la bouche suit les mots puis revient', { skip: !navigateur && 'Chrome ou Edge introuvable' }, async () => {
+  const sansVoix = preparerPersonnages('<section><div data-personnage="touffu"><i data-action="parler"></i></div></section>', { scene: 's', lu });
+  assert.match(sansVoix.erreurs.map((e) => e.message).join(), /la scène n'a pas de voix/);
+  const avec = preparerPersonnages('<section><div data-personnage="touffu"><i data-action="parler"></i></div></section>', { scene: 's', lu, voix: true });
+  assert.deepEqual(avec.erreurs, []);
+  assert.equal(avec.parle, true);
+  const muet = { ...lu, dessins: { muet: { ...lu.dessins.touffu, visage: { ...lu.dessins.touffu.visage, bouches: { neutre: lu.dessins.touffu.visage.bouches.neutre } } } } };
+  const r0 = preparerPersonnages('<section><div data-personnage="muet"><i data-action="parler"></i></div></section>', { scene: 's', lu: muet, voix: true });
+  assert.deepEqual(r0.erreurs.map((e) => [e.gravite, /aucune bouche de parole/.test(e.message)]), [['alerte', true]]);
+  const sansPrise = video('<section data-scene="chiffre"><div data-personnage="touffu"><i data-action="parler"></i></div></section>');
+  modifierDeroule(sansPrise, (d) => { d.scenes[1].voix = { texte: 'Mille deux cent cinquante' }; });
+  const rs = assembler({ dossier: sansPrise, dossierStyles: STYLES, ecrire: false });
+  assert.ok(rs.erreurs.some((e) => e.regle === 'personnage-invalide' && /voix n'est pas enregistrée/.test(e.message)), JSON.stringify(rs.erreurs));
+
+  const dir = copierProjet('projet-simple');
+  const taux = 48000, x = new Float32Array(taux * 4);
+  for (let i = taux / 2; i < 2.5 * taux; i++) x[i] = 0.3 * Math.sin(i / 5);
+  const prise = await V.ecrirePrise({ projet: dir, scene: 'intro', octets: W.ecrire({ taux, canaux: [x] }), texte: 'Pourquoi garder le froid' });
+  modifierDeroule(dir, (d) => { d.scenes[0].voix = { texte: 'Pourquoi garder le froid', fichier: prise.relatif }; });
+  const fichier = fs.readdirSync(path.join(dir, 'scenes')).find((f) => /intro/.test(f));
+  const html = fs.readFileSync(path.join(dir, 'scenes', fichier), 'utf8');
+  fs.writeFileSync(path.join(dir, 'scenes', fichier), html.replace(/<\/section>\s*$/, '<div id="parleur" data-personnage="touffu" data-x="80" data-vue="90"><i data-action="parler"></i></div>\n</section>\n'));
+  const r = assembler({ dossier: dir, dossierStyles: STYLES });
+  assert.equal(r.ok, true, JSON.stringify(r.erreurs));
+  const page = await ouvrirPage({ navigateur, largeur: 1280, hauteur: 720 });
+  try {
+    await page.aller(pathToFileURL(r.fichier).href);
+    const res = await page.evaluer(`(async () => {
+      await M.pret;
+      const visible = () => [...document.querySelectorAll('#parleur [data-bouche-nom]')].filter((b) => { for (let e = b; e && e.id !== 'parleur'; e = e.parentNode) if (e.style && e.style.display === 'none') return false; return true; }).map((b) => b.getAttribute('data-bouche-nom'));
+      const v = M.donnees.scenes[0].voix, d = M.minutage.scenes[0].debut + v.debut;
+      const pendant = [];
+      for (const m of v.mots) { await M.seek(d + (m.t0 + m.t1) / 2); pendant.push(visible().join()); }
+      await M.seek(d + v.duree + 1);
+      const apres = visible().join();
+      return { pendant, apres, erreurs: (M.erreurs || []).map((e) => e.message) };
+    })()`);
+    assert.deepEqual(res.erreurs, []);
+    assert.ok(new Set(res.pendant).size >= 2, `la bouche change pendant la voix : ${res.pendant}`);
+    assert.ok(!['A', 'E', 'I', 'O', 'U', 'MBP', 'FV', 'L'].includes(res.apres), `après la voix : ${res.apres}`);
+  } finally { await page.fermer(); }
+});
+

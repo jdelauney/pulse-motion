@@ -26,6 +26,7 @@ Créer ou modifier une pose ou un mouvement (marche, course, saut, geste, expres
 | « il marche trop vite », « saute plus haut » | copie du mouvement dans la vidéo (`pulse-motion personnages afficher <mouvement>`), puis la modification (`duree`, angles d'une clé) |
 | « fais-lui une tête surprise quand il salue » | copie du mouvement, `"expression": "surprise"` (ou `"bouche"`) sur la clé du moment voulu |
 | « mets le cuisinier dans la scène 3, qu'il montre le chiffre », « fais-le entrer puis repartir » | lire la section « Personnages » de `pulse-motion reference moteur` ; ajouter dans le fichier de la scène le conteneur `data-personnage` et ses actions (ou confier la scène à l'agent `animateur` avec cette consigne) ; puis `pulse-motion assembler .`, `pulse-motion controler .` et `pulse-motion planche . <id>` (regarder avec `Read`) |
+| « fais-le parler », « qu'il dise le texte de la scène » | dans le conteneur du personnage : `<i data-action="parler"></i>` (la scène doit avoir une voix ; fenêtre avec `data-start="mot:…"` et `data-dur` si deux personnages se partagent la voix) ; assembler, puis `pulse-motion planche . <id>` pendant la voix |
 | « un nouveau geste » | nouveau mouvement : clés à partir de `"pose": "debout"`, pieds `au-sol` s'il reste debout |
 
 ## Vérifier et montrer
