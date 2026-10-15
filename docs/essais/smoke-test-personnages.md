@@ -1,7 +1,7 @@
 # Smoke test : personnages (jalon 1)
 
 > Essai manuel, **comme le ferait une personne qui ne code pas**, entièrement par des demandes dans Claude Code : bibliothèque de mouvements, pose écrite par Claude, planche, atelier. Durée : environ 40 min.
-> Prérequis : le plugin installé **et à jour** (voir [smoke-test-complet.md](smoke-test-complet.md), partie 0.2 : « vérifie mon ordinateur » doit annoncer la version du dépôt, 0.13.0 ou plus) et une vidéo d'essai déjà créée (dossier ouvert dans Claude Code).
+> Prérequis : le plugin installé **et à jour** (voir [smoke-test-complet.md](smoke-test-complet.md), partie 0.2 : « vérifie mon ordinateur » doit annoncer la version du dépôt, 0.14.0 ou plus) et une vidéo d'essai déjà créée (dossier ouvert dans Claude Code).
 
 ## Comment lire ce document
 
