@@ -100,8 +100,9 @@
   function lireElements(section) {
     var liste = [];
     var n = 0;
-    // Un effet de particules ou un shader (data-shader) est minuté même sans data-start (comme dans scripts/lib/extraire.js).
-    section.querySelectorAll('[data-start],[data-dur],[data-tween],[data-effet],[data-son],[data-shader]').forEach(function (el) {
+    // Un effet de particules, un milieu (data-milieu) ou un shader (data-shader) est minuté même sans data-start (comme dans
+    // scripts/lib/extraire.js).
+    section.querySelectorAll('[data-start],[data-dur],[data-tween],[data-effet],[data-milieu],[data-son],[data-shader]').forEach(function (el) {
       var cle = el.id || ('_' + (++n));
       el.setAttribute('data-pm-cle', cle);
       liste.push({ cle: cle, start: el.getAttribute('data-start'), dur: el.getAttribute('data-dur'), el: el });
