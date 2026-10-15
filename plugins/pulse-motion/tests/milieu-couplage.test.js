@@ -60,3 +60,26 @@ test('dépôts : uniforme « Depot » (géométrie de la grille, quantités, enc
   assert.match(code, /atomicAdd\(&depots\[b\], entier\(D\.quantites\.x \* D\.dt\)\)/);
   assert.doesNotMatch(code, /atomic<f32>/);
 });
+
+test('structures couplées : mot MILIEU du bloc, force « milieu » de la structure, exposition dans « rot », variante du noyau', () => {
+  const effet = compiler([{ nom: 'd', structure: { type: 'tissu', resolution: [6, 4], milieu: { coef: 2 } }, forces: [{ type: 'gravite', valeur: 20 }] }]);
+  const em = effet.emetteurs[0];
+  const u = P.emballerStructure(em, effet, false, 10, Mm.liens(6, 4), null);
+  const f = new Float32Array(u.buffer);
+  assert.equal(P.MOTS_STRUCTURE.MILIEU, 293);
+  assert.equal(u[293], 1);
+  assert.deepEqual([u[11], u[72], u[80], f[82]], [2, 0, 7, 2], 'gravité, puis la poussée du milieu (code 7, coef 2)');
+  const libre = compiler([{ nom: 'c', structure: { type: 'corde' } }]);
+  assert.equal(P.emballerStructure(libre.emetteurs[0], libre, false, 10, Mm.liens(32, 1), null)[293], 0);
+  const base = P.codeStructures(256);
+  const vent = P.codeStructures(256, true);
+  for (const code of [base, vent]) {
+    assert.match(code, /fn expositionMilieu\(p: Particule\) -> f32 \{ return p\.rot; \}/);
+    assert.ok(!code.includes(P.NEUTRE_EXPOSITION));
+    assert.match(code, /fn exposer\(v: u32, base: u32, rp: Repos\)/);
+    assert.match(code, /for \(var v = li; v < n; v \+= S_FILS\) \{ exposer\(v, base, rp\); \}\n  barriere\(\);/);
+  }
+  assert.doesNotMatch(base, /@binding\(24\)/);
+  assert.match(vent, /@binding\(24\) var ventTex: texture_2d<f32>;/);
+  assert.ok(!vent.includes(P.NEUTRE_VENT));
+});
