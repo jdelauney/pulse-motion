@@ -114,3 +114,55 @@ test('milieu : schéma (champs du bloc, sources sans les champs des pixels, rend
   assert.deepEqual(Object.keys(R.SCHEMA.champs.emetteurs.element.champs.naissance.champs.forme.champs),
     ['type', 'zone', 'rayon', 'rayon_interieur', 'largeur', 'hauteur', 'angle', 'decalage', 'densite', 'instant', 'liberation', 'ordre']);
 });
+
+test('couplages : force « milieu », « injecte », structure.milieu ; hors voie rapide ; effet.couplage', () => {
+  const e = ok(compiler({ emetteurs: [
+    { nom: 'braise', naissance: { debit: 20 }, forces: [{ type: 'gravite', valeur: 10 }, { type: 'milieu', coef: 2 }] },
+    { nom: 'fusee', naissance: { salves: [{ t: 0, nombre: 1 }] }, injecte: { fumee: 0.5, chaleur: 0.2, encre: 'couleur' } },
+    { nom: 'plume', naissance: { salves: [{ t: 0, nombre: 1 }] }, injecte: { encre: '#2050c0' } },
+    { nom: 'drapeau', structure: { type: 'tissu', resolution: [8, 6], milieu: { coef: 3 } } },
+    { nom: 'calme', naissance: { debit: 5 }, forces: [{ type: 'gravite' }] },
+  ] }));
+  const [braise, fusee, plume, drapeau, calme] = e.emetteurs;
+  assert.equal(R.CODES.force.milieu, 7);
+  assert.deepEqual(braise.forces[1], { type: 'milieu', code: 7, coef: 2 });
+  assert.deepEqual(fusee.injecte, { fumee: 0.5, chaleur: 0.2, encre: { mode: 'particule', absorbance: [0, 0, 0] } });
+  assert.deepEqual(plume.injecte, { fumee: 0, chaleur: 0, encre: { mode: 'fixe', absorbance: R.absorbanceEncre(R.couleurLineaire('#2050c0', {})) } });
+  assert.deepEqual(drapeau.structure.milieu, { coef: 3 });
+  assert.deepEqual(drapeau.forces[drapeau.forces.length - 1], { type: 'milieu', code: 7, coef: 3 }, 'poussée du milieu : une force de la structure');
+  assert.deepEqual([braise.voieRapide, fusee.voieRapide, plume.voieRapide, drapeau.voieRapide, calme.voieRapide], [false, false, false, false, true]);
+  assert.equal(calme.injecte, null);
+  assert.equal(calme.structure, null);
+  assert.deepEqual(e.couplage, { vent: true, injecte: true });
+  const rien = ok(compiler({ emetteurs: [{ nom: 'a', naissance: { debit: 5 }, injecte: {} }, { nom: 'b', naissance: { debit: 5 }, injecte: { fumee: 0 } }] }));
+  assert.deepEqual([rien.emetteurs[0].injecte, rien.emetteurs[1].injecte], [null, null], 'rien à déposer');
+  assert.deepEqual(rien.couplage, { vent: false, injecte: false }, 'pas de couplage');
+  assert.deepEqual(ok(compiler({ emetteurs: [{ nom: 'a', naissance: { debit: 5 } }] })).couplage, { vent: false, injecte: false });
+});
+
+test('couplages : erreurs (force « milieu » sur une structure, dépôt d\'une structure ou de perles, coefficients, encre, forces en trop)', () => {
+  const huit = Array.from({ length: 8 }, () => ({ type: 'gravite' }));
+  const cas = [
+    [[{ nom: 'd', structure: { type: 'corde' }, forces: [{ type: 'milieu' }] }], 'structure-invalide', 'emetteurs[d].forces[0]', /« structure\.milieu »/],
+    [[{ nom: 'd', structure: { type: 'corde' }, injecte: { fumee: 1 } }], 'structure-invalide', 'emetteurs[d].injecte', /une structure ne dépose rien/],
+    [[{ nom: 'c', structure: { type: 'corde', perles: { emetteur: 'b' } } }, { nom: 'b', injecte: { fumee: 1 } }], 'structure-invalide', 'emetteurs[b].injecte', /retirer « injecte »/],
+    [[{ nom: 'a', naissance: { debit: 5 }, forces: [{ type: 'milieu', coef: -1 }] }], 'effet-invalide', 'emetteurs[a].forces[0].coef', /positive ou nulle/],
+    [[{ nom: 'a', naissance: { debit: 5 }, injecte: { fumee: -1 } }], 'effet-invalide', 'emetteurs[a].injecte.fumee', /positive ou nulle/],
+    [[{ nom: 'a', naissance: { debit: 5 }, injecte: { encre: 'violet' } }], 'effet-invalide', 'emetteurs[a].injecte.encre', /couleur « violet » inconnue/],
+    [[{ nom: 'd', structure: { type: 'corde', milieu: { coef: -2 } } }], 'structure-invalide', 'emetteurs[d].structure.milieu.coef', /positive ou nulle/],
+    [[{ nom: 'd', structure: { type: 'corde', milieu: {} }, forces: huit }], 'structure-invalide', 'emetteurs[d].structure.milieu', /8 forces au plus, poussée du milieu comprise/],
+  ];
+  for (const [emetteurs, regle, chemin, motif] of cas) {
+    const e = erreurDe(compiler({ emetteurs }));
+    assert.deepEqual([e.regle, e.chemin], [regle, chemin], JSON.stringify(emetteurs));
+    assert.match(e.message, motif, JSON.stringify(emetteurs));
+  }
+});
+
+test('couplages : schéma (variante de force « milieu », bloc « injecte », structure.milieu)', () => {
+  const em = R.SCHEMA.champs.emetteurs.element.champs;
+  assert.deepEqual(Object.keys(em.forces.element.variantes.types.milieu.champs), ['coef']);
+  assert.deepEqual(Object.keys(em.injecte.champs), ['fumee', 'chaleur', 'encre']);
+  assert.deepEqual(Object.keys(em.structure.champs.milieu.champs), ['coef']);
+  assert.equal(em.structure.champs.milieu.champs.coef.defaut, 1);
+});

@@ -67,6 +67,8 @@ function avec(chemin, v, contexte) {
   // structure : l'émetteur « a » devient une corde ou un tissu, seul (ni salves ni sous-émetteur) ; avec des perles, « b »
   // est l'émetteur des perles (sans naissance).
   if (chemin[2] === 'structure') r.emetteurs = chemin.includes('perles') ? [{ nom: 'a' }, { nom: 'b' }] : [{ nom: 'a' }];
+  // milieu (P5c) : une recette de milieu n'a pas d'émetteurs.
+  if (chemin[0] === 'milieu') delete r.emetteurs;
   let cible = r;
   let noeud = S;
   for (let i = 0; i < chemin.length; i++) {
@@ -209,7 +211,8 @@ test('compiler : un champ hors du schéma est refusé, à chaque niveau', () => 
     const k = cle(chemin);
     const attendue = /(^|\.)interactions(\.|$)/.test(k) ? 'interactions-invalides'
       : /(^|\.)structure(\.|$)/.test(k) ? 'structure-invalide'
-      : /(^|.)(collisions|a_la_collision)(.|$)/.test(k) ? 'collisions-invalides' : 'effet-invalide';
+      : /(^|.)(collisions|a_la_collision)(.|$)/.test(k) ? 'collisions-invalides'
+      : /^milieu(\.|$)/.test(k) ? 'milieu-invalide' : 'effet-invalide';
     assert.equal(r.erreurs[0].regle, attendue, cle(chemin));
     assert.match(r.erreurs[0].message, /zz_inconnu : champ inconnu \(champs possibles : /, cle(chemin));
   }
