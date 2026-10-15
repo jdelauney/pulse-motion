@@ -162,3 +162,78 @@ await envoyer({ webgpu: true, a: empreinte(a.etat), b: empreinte(b.etat), c: emp
   assert.equal(r.a, r.b, 'retour en arrière : même état');
   assert.equal(r.a, r.c, 'chemin direct : même état');
 });
+
+/** Monde d'un obstacle « élément » (boîte) : table de P3 et repères (bords fixes, puis l'élément donné par cadre(g)). */
+const MONDE = `
+const table = O.construireTable({ largeurCqh: L, solRecette: null, propres: [{ scene: 's', genre: 'element', video: false, index: 0 }] });
+const fixes = table.entrees.map((e) => (e.source.element ? null : O.repereFixe(e.source, L, table.sol)));
+const monde = { entrees: table.entrees, largeurCqh: L, actif: true };
+const reperesDe = (cadre) => (g) => ligne(fixes.map((r) => r || cadre(g)));
+`;
+
+test('milieu GPU : la fumée contourne une boîte (rien dedans, présente de chaque côté et au-dessus)', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const r = await page({ effet: compiler(PANACHE) }, MONDE + `
+// Boîte de 24 × 8 cqh au-dessus de la source (y de 51 à 59).
+const boite = { centre: [L / 2, 55], angle: 0, demi: [12, 4], echelle: [1, 1], actif: true };
+const e = await milieuApres(DONNEES.effet, [2.5], monde, reperesDe(() => boite));
+const g = e.grille;
+let dedans = 0, pleines = 0, gauche = 0, droite = 0, dessus = 0, masse = 0;
+for (let c = 0; c < g.nx * g.ny; c++) {
+  const f = e.scalaires[c * 8];
+  const [x, y] = centre(g, c);
+  masse += f;
+  const dansBoite = Math.abs(x - L / 2) <= 12 && Math.abs(y - 55) <= 4;
+  if (e.solide[c * 4] > 0.5) { pleines++; dedans += f; }
+  if (!dansBoite && y >= 51 && y <= 59 && x < L / 2 - 12 && x > L / 2 - 22) gauche += f;
+  if (!dansBoite && y >= 51 && y <= 59 && x > L / 2 + 12 && x < L / 2 + 22) droite += f;
+  if (Math.abs(x - L / 2) <= 12 && y < 48 && y > 20) dessus += f;
+}
+await envoyer({ webgpu: true, dedans, pleines, attendues: 24 * 8 / (g.cote * g.cote), gauche, droite, dessus, masse });`);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.equal(r.dedans, 0, 'aucune fumée dans la boîte');
+  assert.ok(Math.abs(r.pleines - r.attendues) <= 0.2 * r.attendues, `${r.pleines} cellules pleines pour ${r.attendues.toFixed(0)} attendues`);
+  assert.ok(r.gauche > 0.01 * r.masse && r.droite > 0.01 * r.masse, `fumée de chaque côté de la boîte (${r.gauche.toFixed(2)}, ${r.droite.toFixed(2)} sur ${r.masse.toFixed(1)})`);
+  assert.ok(r.dessus > 0, 'la fumée passe au-dessus de la boîte');
+});
+
+test('milieu GPU : une barre en rotation entraîne le fluide dans son sens (moment cinétique du signe de sa rotation)', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const r = await page({ calme: compiler({ resolution: 96, vorticite: 0 }, 2) }, MONDE + `
+// Barre de 40 × 3 cqh au centre de la scène, angle ± 3 rad/s ; fluide au repos, sans source.
+const barre = (sens) => reperesDe((g) => ({ centre: [L / 2, 50], angle: sens * 3 * g / 30, demi: [20, 1.5], echelle: [1, 1], actif: true }));
+async function moment(sens) {
+  const e = await milieuApres(DONNEES.calme, [1], monde, barre(sens));
+  const g = e.grille;
+  const nu = (g.nx + 1) * g.ny;
+  let l = 0;
+  for (let c = 0; c < g.nx * g.ny; c++) {
+    if (e.solide[c * 4] > 0.5) continue;
+    const i = c % g.nx, j = Math.floor(c / g.nx);
+    const [x, y] = centre(g, c);
+    const dx = x - L / 2, dy = y - 50;
+    if (dx * dx + dy * dy > 26 * 26) continue;
+    const vx = 0.5 * (e.vitesse[j * (g.nx + 1) + i] + e.vitesse[j * (g.nx + 1) + i + 1]);
+    const vy = 0.5 * (e.vitesse[nu + j * g.nx + i] + e.vitesse[nu + (j + 1) * g.nx + i]);
+    l += dx * vy - dy * vx;
+  }
+  return l;
+}
+await envoyer({ webgpu: true, plus: await moment(1), moins: await moment(-1) });`);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  t.diagnostic(`moment cinétique du fluide : ${r.plus.toFixed(1)} (barre +3 rad/s), ${r.moins.toFixed(1)} (−3 rad/s)`);
+  assert.ok(r.plus > 0 && r.moins < 0, 'le fluide tourne dans le sens de la barre');
+  assert.ok(Math.abs(r.plus + r.moins) <= 0.1 * Math.abs(r.plus), 'sens opposés : moments opposés (symétrie)');
+});
+
+test('milieu GPU : même état au bit près par deux chemins avec un obstacle qui bouge', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const r = await page({ effet: compiler(PANACHE, 3) }, MONDE + `
+// Boîte qui glisse de 15 cqh/s vers la droite en tournant de 1 rad/s.
+const mobile = reperesDe((g) => ({ centre: [60 + 15 * g / 30, 55], angle: g / 30, demi: [10, 4], echelle: [1, 1], actif: true }));
+const a = await milieuApres(DONNEES.effet, [1, 2], monde, mobile);
+const b = await milieuApres(DONNEES.effet, [2.5, 1.2, 2], monde, mobile);
+await envoyer({ webgpu: true, a: empreinte(a.etat), b: empreinte(b.etat) });`);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.equal(r.a, r.b);
+});
