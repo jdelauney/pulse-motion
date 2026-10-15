@@ -18,7 +18,7 @@ const os = require('node:os');
 const path = require('node:path');
 const P = require('./lib/personnages.js');
 
-const USAGE_PLANCHE = 'Usage : pulse-motion personnages planche <nom> [--type pose|clip] [--vues 0,45,90] [--images 1 à 16] [--gabarit standard] [--dossier <d>] [--sortie <fichier.png>] [--ouvrir]';
+const USAGE_PLANCHE = 'Usage : pulse-motion personnages planche <nom> [--type pose|clip] [--dessin <dessin>] [--vues 0,45,90] [--images 1 à 16] [--gabarit standard] [--dossier <d>] [--sortie <fichier.png>] [--ouvrir]\n        pulse-motion personnages planche --dessin <dessin> --visage [--vues 0,90] [--dossier <d>] [--sortie <fichier.png>] [--ouvrir]';
 const USAGE = [
   'Usage : pulse-motion personnages liste [--dossier <d>]',
   '        pulse-motion personnages afficher <nom> [--type pose|clip|gabarit|dessin|expression] [--dossier <d>]',
@@ -30,7 +30,7 @@ const USAGE_ATELIER = 'Usage : pulse-motion personnages atelier [<nom>] [--bibli
 
 
 // Options suivies d'une valeur (les autres, comme --ouvrir ou --bibliotheque, sont de simples drapeaux).
-const AVEC_VALEUR = ['--dossier', '--type', '--vues', '--images', '--gabarit', '--sortie', '--port'];
+const AVEC_VALEUR = ['--dessin', '--dossier', '--type', '--vues', '--images', '--gabarit', '--sortie', '--port'];
 
 function options(args) {
   const valeur = (nom) => { const i = args.indexOf(nom); return i >= 0 ? args[i + 1] : undefined; };
@@ -104,30 +104,43 @@ async function executer(args, { bibliotheque } = {}) {
     const vues = String(o.valeur('--vues') || '0,45,90').split(',').map((v) => (/^-?\d+(\.\d+)?$/.test(v.trim()) ? Number(v) : NaN));
     const images = o.valeur('--images') === undefined ? 8 : Number(o.valeur('--images'));
     const type = o.valeur('--type');
-    if (o.libres.length !== 1 || !vues.length || vues.some((v) => !Number.isFinite(v) || v < -180 || v > 180)
+    const visage = o.drapeau('--visage');
+    const nomDessin = o.valeur('--dessin');
+    if ((visage ? (o.libres.length !== 0 || nomDessin === undefined) : o.libres.length !== 1) || !vues.length || vues.some((v) => !Number.isFinite(v) || v < -180 || v > 180)
       || !Number.isInteger(images) || images < 1 || images > 16 || (type && !['pose', 'clip'].includes(type))) {
       return { code: 2, sortie: '', erreur: USAGE_PLANCHE };
     }
     const dossier = o.valeur('--dossier') || '.';
     const l = lu();
+    const dessin = nomDessin === undefined ? null : (Object.hasOwn(l.dessins, nomDessin) ? l.dessins[nomDessin] : null);
+    if (nomDessin !== undefined && !dessin) return { code: 1, sortie: '', erreur: `Personnage : dessin « ${nomDessin} » introuvable (dessins : ${Object.keys(l.dessins).join(', ') || 'aucun'}).` };
+    const dossierSortie = fs.existsSync(path.join(dossier, 'deroule.json')) ? path.join(dossier, 'sortie', 'personnages') : path.join(os.tmpdir(), 'pm-personnages');
+    const { rendrePlanche } = require('./lib/planche-personnages.js');
+    const produire = async (options, nomFichier) => {
+      try {
+        const r = await rendrePlanche(Object.assign(options, { sortie: path.resolve(o.valeur('--sortie') || path.join(dossierSortie, nomFichier)) }));
+        if (o.drapeau('--ouvrir')) require('./apercu.js').ouvrirNavigateur(r.fichier);
+        return { code: 0, sortie: `Planche : ${r.fichier}`, erreur: '' };
+      } catch (e) {
+        return { code: 1, sortie: '', erreur: e.message };
+      }
+    };
+    if (visage) {
+      return produire({ nom: nomDessin, visage: true, dessin, lu: l, gabarit: P.gabaritDe(dessin, l), vues: o.valeur('--vues') ? vues : [0, 90] }, `${nomDessin}-visage.png`);
+    }
     const nom = o.libres[0];
     const trouve = (type ? [type] : ['clip', 'pose']).map((t) => [t, Object.hasOwn(l[P.TYPES[t]], nom) ? l[P.TYPES[t]][nom] : null]).find(([, x]) => x);
     if (!trouve) return { code: 1, sortie: '', erreur: `Personnage : « ${nom} » introuvable (clips : ${Object.keys(l.clips).join(', ')} ; poses : ${Object.keys(l.poses).join(', ')}).` };
-    const nomGabarit = o.valeur('--gabarit') || 'standard';
-    const gabarit = Object.hasOwn(l.gabarits, nomGabarit) ? l.gabarits[nomGabarit] : null;
-    if (!gabarit) return { code: 1, sortie: '', erreur: `Personnage : gabarit « ${nomGabarit} » introuvable (gabarits : ${Object.keys(l.gabarits).join(', ')}).` };
-    const sortie = o.valeur('--sortie') || (fs.existsSync(path.join(dossier, 'deroule.json'))
-      ? path.join(dossier, 'sortie', 'personnages', `${nom}.png`)
-      : path.join(os.tmpdir(), 'pm-personnages', `${nom}.png`));
-    const { rendrePlanche } = require('./lib/planche-personnages.js');
-    try {
-      const r = await rendrePlanche({ nom, type: trouve[0], objet: trouve[1], lu: l, gabarit, vues, images, sortie: path.resolve(sortie) });
-      if (o.drapeau('--ouvrir')) require('./apercu.js').ouvrirNavigateur(r.fichier);
-      return { code: 0, sortie: `Planche : ${r.fichier}`, erreur: '' };
-    } catch (e) {
-      return { code: 1, sortie: '', erreur: e.message };
+    let gabarit;
+    if (dessin) gabarit = P.gabaritDe(dessin, l);
+    else {
+      const nomGabarit = o.valeur('--gabarit') || 'standard';
+      gabarit = Object.hasOwn(l.gabarits, nomGabarit) ? l.gabarits[nomGabarit] : null;
+      if (!gabarit) return { code: 1, sortie: '', erreur: `Personnage : gabarit « ${nomGabarit} » introuvable (gabarits : ${Object.keys(l.gabarits).join(', ')}).` };
     }
+    return produire({ nom, type: trouve[0], objet: trouve[1], lu: l, gabarit, dessin, vues, images }, `${nom}${dessin ? `-${nomDessin}` : ''}.png`);
   }
+
   if (sous === 'atelier') {
     const port = o.valeur('--port') === undefined ? 4321 : parseInt(o.valeur('--port'), 10);
     if (o.libres.length > 1 || !Number.isInteger(port) || (o.libres[0] !== undefined && !NOM.test(o.libres[0]))) return { code: 2, sortie: '', erreur: USAGE_ATELIER };
