@@ -78,7 +78,7 @@ test('tourner, expression et bouche discrètes, calques', () => {
   assert.equal(PA.etatAuTemps(p, 5.5, bib, gab).pose.bouche, 'sourire', '« aucune » : retour à la bouche de l\'expression');
   const cligne = PA.etatAuTemps(p, 3.2 * 0.96, bib, gab).pose.paupieres;
   assert.ok(cligne < 0.5, `clignement à 96 % du cycle : ${cligne}`);
-  assert.equal(PA.etatAuTemps(Object.assign({}, p, { calme: false }), 3.2 * 0.96, bib, gab).pose.paupieres, 1);
+  assert.equal(PA.etatAuTemps(Object.assign({}, p, { calme: false }), 3.2 * 0.96, bib, gab).pose.paupieres, lu.expressions.joie.angles.paupieres, "sans clignement : les paupières de l'expression");
 });
 
 test('déterminisme et hauteur', () => {

@@ -7,7 +7,7 @@
 - Après avoir écrit : `pulse-motion personnages verifier --dossier .`, puis `pulse-motion personnages planche <nom> --dossier .` et regarder le PNG avec `Read` (vignettes sous plusieurs angles). Corriger tant que le mouvement ne ressemble pas à la demande.
 - Pour régler à l'œil, ou si la personne veut le faire elle-même : `pulse-motion personnages atelier <nom>` en arrière-plan (page de l'aperçu, « Enregistrer » écrit dans la vidéo ; « annule » défait).
 - Côtés **Avant** et **Arrière** (côté tourné vers la caméra de profil, et l'autre), jamais gauche / droite.
-- Au jalon actuel, les personnages ne se placent pas encore dans les scènes : on prépare poses et mouvements.
+- Mettre un personnage dans une scène (entrer, montrer, saluer, repartir, calé sur les autres éléments ou la voix) : section « Personnages » de `pulse-motion reference moteur`.
 - Pour un personnage dessiné (pièces SVG, visage complet) : `pulse-motion reference dessin-personnages`.
 
 ## Angles (degrés)
