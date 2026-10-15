@@ -40,6 +40,9 @@ test('preparerSource : ni script, ni on…, ni prologue', () => {
   assert.doesNotMatch(s, /script|onload|onclick|javascript|<\?xml|DOCTYPE|note/);
   assert.throws(() => D.preparerSource('<html></html>'), /n'est pas un SVG/);
   assert.doesNotMatch(D.preparerSource('<svg/onload=alert(1)><image href="x"/onerror=y()/></svg>'), /onload|onerror/);
+  const liens = D.preparerSource('<svg><a href="https://x.invalid"><rect/></a><linearGradient id="B" xlink:href="#A"/></svg>');
+  assert.doesNotMatch(liens, /x\.invalid/);
+  assert.match(liens, /xlink:href="#A"/, 'références internes gardées');
   assert.throws(() => D.preparerSource('<!DOCTYPE svg [<!ENTITY st0 "fill:red">]><svg><path style="&st0;"/></svg>'), /par entités/);
   const html = D.page('<svg></svg>', {}, 'window.x = 1;');
   const nonce = /'nonce-([^']+)'/.exec(html)[1];

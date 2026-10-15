@@ -74,6 +74,24 @@ Chaque étape donne **Vous dites**, **Attendu**, **À vérifier**, **À noter** 
 
 **Attendu** : l'atelier s'ouvre sur le salut avec le cuisinier ; la liste « Habillage » permet de revenir aux bâtonnets ; les listes « Expression » et « Bouche » changent le visage à l'instant courant ; les curseurs des sourcils marchent ; « Enregistrer » garde le choix.
 
+## 7. Animer une illustration fournie (20 min)
+
+Préparez un SVG de personnage de profil (dessiné dans Inkscape, Illustrator ou trouvé en ligne, sans texte ni image), par exemple `mascotte.svg`, dans le dossier de la vidéo.
+
+**Vous dites** : « Voici notre mascotte, mascotte.svg : fais-la marcher. »
+
+**Attendu** : Claude regarde l'illustration, range chaque partie dans un membre, place les articulations, et montre la mascotte qui marche (plusieurs angles) en au plus trois tours. Il nomme les couleurs principales.
+
+**À vérifier** : les membres tournent autour des bonnes articulations (genou, coude) ; rien ne se détache ; l'ombre ou le décor ne suivent pas le personnage ; Claude ne parle ni de SVG, ni de sélecteurs, ni de pivots.
+
+**Vous dites** : « Le coude n'est pas au bon endroit, laisse-moi corriger. »
+
+**Attendu** : la page de découpe s'ouvre ; cliquer une forme puis un membre la range ; glisser un rond déplace l'articulation ; « Découper » montre le résultat qui marche ; « Enregistrer » le range (« annule » le défait).
+
+**Vous dites** : « Change sa couleur principale en bleu. »
+
+**Attendu** : la couleur change sans refaire la découpe.
+
 ## À me rapporter
 
 - Chaque entorse aux trois règles.
