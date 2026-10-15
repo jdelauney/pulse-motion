@@ -12,7 +12,9 @@ const { lireAttributs } = require('./extraire.js');
 const P = require('./personnages.js');
 const K = require('../../moteur/clips.js');
 
-const BALISE = /<([a-zA-Z][\w-]*)\b((?:[^>"']|"[^"]*"|'[^']*')*)>/g;
+const BALISE = /<(\/?)([a-zA-Z][\w-]*)\b((?:[^>"']|"[^"]*"|'[^']*')*)>/g;
+// Éléments sans fermeture : ils ne changent pas la profondeur.
+const VIDES = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr']);
 const ACTIONS = {
   marcher: ['vers'], courir: ['vers'], pose: ['pose'], jouer: ['clip'], tourner: ['vue'], expression: ['expression'], bouche: ['bouche'],
 };
@@ -25,8 +27,19 @@ function preparerPersonnages(html, { scene, lu }) {
   const utilises = { dessins: new Set(), gabarits: new Set() };
   if (!/data-personnage|data-action/.test(html)) return { html, utilises, erreurs };
   let courant = null;
-  const sortie = html.replace(BALISE, (tout, tag, texte) => {
+  // Pile des balises ouvertes : une action n'est lue que si elle est enfant direct d'un conteneur data-personnage.
+  const pile = [];
+  const sortie = html.replace(BALISE, (tout, fermeture, tag, texte) => {
+    const nomTag = tag.toLowerCase();
+    if (fermeture) {
+      const i = pile.map((x) => x.tag).lastIndexOf(nomTag);
+      if (i >= 0) pile.splice(i);
+      return tout;
+    }
+    const autoFermee = /\/\s*$/.test(texte) || VIDES.has(nomTag);
+    const parent = pile[pile.length - 1];
     const a = lireAttributs(texte);
+    if (!autoFermee) pile.push({ tag: nomTag, personnage: a['data-personnage'] !== undefined ? a['data-personnage'].trim() : null });
     for (const n of NOMBRES) {
       if (a[n] !== undefined && !Number.isFinite(Number(a[n]))) erreurs.push(erreur(scene, `${n}="${a[n]}" doit être un nombre (ex. ${n === 'data-vue' ? '90' : '40'}).`));
     }
@@ -44,8 +57,9 @@ function preparerPersonnages(html, { scene, lu }) {
     }
     if (a['data-action'] === undefined) return tout;
     const type = a['data-action'].trim();
-    const qui = `personnage « ${courant || '?'} », action « ${type} »${a.id ? ` (#${a.id})` : ''}`;
-    if (!courant) erreurs.push(erreur(scene, `action « ${type} » hors d'un personnage : la placer dans l'élément data-personnage.`));
+    const dans = parent && parent.personnage !== null ? parent.personnage : null;
+    const qui = `personnage « ${dans || courant || '?'} », action « ${type} »${a.id ? ` (#${a.id})` : ''}`;
+    if (dans === null) erreurs.push(erreur(scene, `action « ${type} » hors d'un personnage : la placer directement dans l'élément data-personnage.`));
     if (!ACTIONS[type]) { erreurs.push(erreur(scene, `${qui} : action inconnue (${Object.keys(ACTIONS).join(', ')}).`)); return tout; }
     for (const champ of ACTIONS[type]) if (a[`data-${champ}`] === undefined) erreurs.push(erreur(scene, `${qui} : il manque data-${champ}.`));
     if ((type === 'marcher' || type === 'courir' || type === 'tourner') && a['data-dur'] === undefined) erreurs.push(erreur(scene, `${qui} : data-dur obligatoire (durée du trajet ou de la rotation, ex. data-dur="2").`));
@@ -58,9 +72,12 @@ function preparerPersonnages(html, { scene, lu }) {
       else if (a['data-dur'] === undefined) {
         // Durée propre du geste (un cycle : 1 tour), écrite pour que les éléments calés sur sa fin tombent juste.
         const duree = Math.round(K.duree(clip) * 1000) / 1000;
-        return tout.replace(/\s*\/?>$/, (fin) => ` data-dur="${duree}"${fin}`);
+        const sansDebut = a['data-start'] === undefined ? ' data-start="0"' : '';
+        return tout.replace(/\s*\/?>$/, (fin) => `${sansDebut} data-dur="${duree}"${fin}`);
       }
     }
+    // Une action sans minutage part du début de la scène (sinon le moteur ne lui donne pas de temps).
+    if (a['data-start'] === undefined && a['data-dur'] === undefined && ACTIONS[type]) return tout.replace(/\s*\/?>$/, (fin) => ` data-start="0"${fin}`);
     return tout;
   });
   return { html: sortie, utilises, erreurs };
