@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "nom": "trainees-lumineuses",
+  "usage": "fond",
+  "description": "Traînées lumineuses : des points de lumière dessinent des courbes et laissent un sillage qui s'efface ; technologie, énergie, nuit.",
+  "passes": [{ "nom": "A", "lit": ["A"], "echelle": 0.5 }, { "nom": "image", "lit": ["A"] }],
+  "parametres": {
+    "nombre": { "defaut": 4, "min": 1, "max": 6 },
+    "vitesse": { "defaut": 1, "min": 0, "max": 3 },
+    "persistance": { "defaut": 0.96, "min": 0.8, "max": 0.995 },
+    "epaisseur": { "defaut": 1, "min": 0.2, "max": 5 },
+    "couleur1": { "defaut": "accent", "type": "couleur" },
+    "couleur2": { "defaut": "primaire", "type": "couleur" }
+  }
+}

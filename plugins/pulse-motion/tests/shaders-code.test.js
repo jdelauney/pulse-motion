@@ -86,7 +86,7 @@ test('disposition : décalages WGSL (f32 sur 4 octets, vec4f sur 16), taille mul
   assert.equal(f[8], 7);
 });
 
-test('ecrireEntrees : 80 octets, mode entier au mot 3', () => {
+test('ecrireEntrees : 128 octets, mode entier au mot 3', () => {
   const b = S.ecrireEntrees({ temps: 1.5, progres: 0.25, duree: 3, mode: 1, resolution: [177.7, 100, 1920, 1080], scene: [177.7, 100, 1920, 1080], repere: [50, 40, 0.5, 2], demi: [10, 5, 0, 0] });
   assert.equal(b.byteLength, S.OCTETS_ENTREES);
   const f = new Float32Array(b);

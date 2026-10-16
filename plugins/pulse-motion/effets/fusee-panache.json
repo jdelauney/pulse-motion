@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "nom": "fusee-panache",
+  "description": "Fusées qui montent en laissant un panache de fumée chaude dans le milieu de la scène (data-milieu) : il s'élargit, s'enroule et monte.",
+  "parametres": {
+    "fusees": { "defaut": 3, "min": 1, "max": 12 },
+    "vitesse": { "defaut": 45, "min": 10, "max": 90 },
+    "fumee": { "defaut": 4, "min": 0.5, "max": 10 },
+    "couleur": { "defaut": "#ffd27a", "type": "couleur" }
+  },
+  "rendu_calque": { "bloom": 1.8 },
+  "emetteurs": [
+    {
+      "nom": "fusee",
+      "naissance": {
+        "salves": [{ "t": 0, "nombre": "fusees" }],
+        "forme": { "type": "ligne" },
+        "vitesse": { "direction": [0, -1], "cone": 12, "valeur": ["vitesse * 0.9", "vitesse"] },
+        "vie": [1.6, 2.2],
+        "taille": [1.2, 1.6]
+      },
+      "forces": [{ "type": "gravite", "valeur": 8 }],
+      "injecte": { "fumee": "fumee", "chaleur": "fumee * 0.25" },
+      "vie": { "couleur": "couleur", "intensite": { "de": 4, "a": 2 } },
+      "rendu": { "type": "sprite", "texture": "etoile" }
+    }
+  ]
+}

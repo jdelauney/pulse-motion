@@ -22,7 +22,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const { lireDeroule, dureeTemps } = require('./deroule.js');
-const { chargeurRecettes, balisesEffets, modifierEffet, graineParDefaut } = require('./effets.js');
+const { chargeurRecettes, balisesEffets, modifierEffet, graineParDefaut, dureeStructures } = require('./effets.js');
 const { cheminDansProjet, versDataURI } = require('./embarquer.js');
 const { charteFinale, CHARTE_DEFAUT } = require('./fusion-charte.js');
 const { trouverStyle } = require('../styles.js');
@@ -161,11 +161,17 @@ function creerRoutesAtelier(projet, { dossierStyles, bibliotheque = BIBLIOTHEQUE
     }
   }
 
+  /** Durée écrite d'une scène du déroulé (s de τ), ou null. */
+  function dureeSceneDe(deroule) {
+    return (id) => { const s = deroule && deroule.scenes.find((x) => x.id === id); return s && s.duree > 0 ? s.duree : null; };
+  }
+
   function decrireEffet(scene, b, ctx) {
     const a = b.attributs;
     const nom = a['data-effet'].trim();
     const lu = lireSecondes(String(a['data-dur'] || ''), ctx.temps);
-    const dur = lu.erreur ? 1 : lu.valeur;
+    let dur = lu.erreur ? 1 : lu.valeur;
+    let durScene = false;
     const graineEcrite = a['data-graine'] !== undefined && /^\d+$/.test(a['data-graine'].trim());
     const graine = graineEcrite ? Number(a['data-graine'].trim()) >>> 0 : graineParDefaut(scene, b.ordre, nom);
     const reglages = a['data-reglages'] || '';
@@ -176,13 +182,17 @@ function creerRoutesAtelier(projet, { dossierStyles, bibliotheque = BIBLIOTHEQUE
       erreur = e.message;
     }
     if (resolue) {
-      const c = R.compiler(resolue, { reglages, charte: ctx.charte, dur, graine });
+      let c = R.compiler(resolue, { reglages, charte: ctx.charte, dur, graine });
+      // Effet fait uniquement de structures sans data-dur : jusqu'à la fin de la scène (durée écrite dans le déroulé ; la
+      // page la remplace par celle du minutage, allongement par la voix compris : durScene).
+      const d = c.ok ? dureeStructures(a, c.effet, ctx.dureeScene ? ctx.dureeScene(scene) : null) : null;
+      if (d) { dur = d; durScene = true; c = R.compiler(resolue, { reglages, charte: ctx.charte, dur, graine }); }
       if (!c.ok) erreur = c.erreurs.map((x) => x.message).join(' ');
     }
     return {
       ordre: b.ordre, nom, calque: (a['data-calque'] || 'avant').trim(),
       ancre: a['data-ancre'] ? a['data-ancre'].trim().replace(/^#/, '') : null,
-      reglages, graine, graineEcrite, dur, recette: resolue, erreur,
+      reglages, graine, graineEcrite, dur, ...(durScene ? { durScene } : {}), recette: resolue, erreur,
     };
   }
 
@@ -211,7 +221,7 @@ function creerRoutesAtelier(projet, { dossierStyles, bibliotheque = BIBLIOTHEQUE
   function scenes(res) {
     const deroule = lireLeDeroule();
     if (!deroule) return repondre(res, 200, { charte: charte(null), scenes: [] });
-    const ctx = { charte: charte(deroule), temps: dureeTemps(deroule), charger: charger(), shaders: chargerShaders() };
+    const ctx = { charte: charte(deroule), temps: dureeTemps(deroule), charger: charger(), shaders: chargerShaders(), dureeScene: dureeSceneDe(deroule) };
     const liste = deroule.scenes.map((s) => {
       const absolu = cheminDansProjet(projet, String(s.fichier || ''));
       let brut = null;
@@ -278,7 +288,7 @@ function creerRoutesAtelier(projet, { dossierStyles, bibliotheque = BIBLIOTHEQUE
     if (v.statut) return refuser(res, v);
     // Compilés avant d'être écrits, comme à l'assemblage : un réglage refusé n'entre pas dans la scène.
     const deroule = lireLeDeroule();
-    const d = decrireEffet(c.scene, balisesEffets(v.html)[c.ordre], { charte: charte(deroule), temps: dureeTemps(deroule), charger: charger() });
+    const d = decrireEffet(c.scene, balisesEffets(v.html)[c.ordre], { charte: charte(deroule), temps: dureeTemps(deroule), charger: charger(), dureeScene: dureeSceneDe(deroule) });
     if (!d.recette) return repondre(res, 422, { message: d.erreur, erreurs: [{ chemin: 'effet', message: d.erreur }] });
     const graine = c.graine === null || c.graine === undefined ? graineParDefaut(c.scene, c.ordre, d.nom) : c.graine;
     const compile = R.compiler(d.recette, { reglages, charte: charte(deroule), dur: d.dur, graine });

@@ -28,13 +28,13 @@ const TAILLES = {
 const CRF = { '1080p': 18, '720p': 21 };
 const ECART_MAX = 0.02;
 
-/** Le projet demande-t-il WebGPU (Chrome gardera alors le GPU) ? Un effet de particules ou un fond par shader dans une
+/** Le projet demande-t-il WebGPU (Chrome gardera alors le GPU) ? Un effet de particules, un milieu (P5c) ou un fond par shader dans une
  *  scène, une transition par shader ou un post-traitement dans le déroulé. */
 function avecEffets(projet, deroule) {
   const shaderDeroule = (deroule.post || []).length > 0
     || deroule.scenes.some((s) => (s.post || []).length > 0 || (s.transition && typeof s.transition === 'object'));
   return shaderDeroule || deroule.scenes.some((s) => {
-    try { return /\sdata-(?:effet|shader)\s*=/.test(fs.readFileSync(path.join(projet, s.fichier), 'utf8')); } catch { return false; }
+    try { return /\sdata-(?:effet|milieu|shader)\s*=/.test(fs.readFileSync(path.join(projet, s.fichier), 'utf8')); } catch { return false; }
   });
 }
 

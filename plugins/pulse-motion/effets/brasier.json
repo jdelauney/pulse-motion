@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "nom": "brasier",
+  "description": "Brasier : feu coloré par sa température (du rouge sombre au blanc, corps noir), qui lèche les obstacles et brille (halo), surmonté de fumée.",
+  "parametres": {
+    "intensite": { "defaut": 3, "min": 0.5, "max": 8 },
+    "chaleur": { "defaut": 4, "min": 1, "max": 10 },
+    "largeur": { "defaut": 30, "min": 5, "max": 120 },
+    "fumee": { "defaut": 1, "min": 0, "max": 4 }
+  },
+  "rendu_calque": { "bloom": 1.6, "seuil_bloom": 0.9, "tons": "aces" },
+  "milieu": {
+    "resolution": 192,
+    "flottaison": 1.5,
+    "refroidissement": 1.4,
+    "dissipation": 0.5,
+    "vorticite": 0.8,
+    "sources": [
+      { "type": "chaleur", "forme": { "type": "rectangle", "largeur": "largeur", "hauteur": 3, "decalage": [0, 42] }, "debit": "chaleur" },
+      { "type": "fumee", "forme": { "type": "rectangle", "largeur": "largeur * 0.8", "hauteur": 3, "decalage": [0, 40] }, "debit": "fumee", "temperature": 0.3 }
+    ],
+    "rendu": { "type": "feu", "couleur": "#3a3633", "opacite": 0.7, "intensite": "intensite" }
+  }
+}

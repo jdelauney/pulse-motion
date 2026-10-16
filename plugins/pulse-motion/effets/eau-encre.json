@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "nom": "eau-encre",
+  "description": "Encre dans l'eau : deux encres versées en haut de la zone, l'une un peu plus bas que l'autre, qui coulent en volutes, se rencontrent et se mêlent par absorption ; sur fond clair.",
+  "parametres": {
+    "couleur1": { "defaut": "primaire", "type": "couleur" },
+    "couleur2": { "defaut": "accent", "type": "couleur" },
+    "debit": { "defaut": 1.5, "min": 0.2, "max": 5 },
+    "tourbillons": { "defaut": 0.8, "min": 0, "max": 2 }
+  },
+  "rendu_calque": { "bloom": 0, "tons": "neutre" },
+  "milieu": {
+    "resolution": 160,
+    "flottaison": -0.6,
+    "refroidissement": 0.2,
+    "dissipation": 0.05,
+    "vorticite": "tourbillons",
+    "bords": "fermes",
+    "sources": [
+      { "type": "encre", "forme": { "type": "cercle", "rayon": 4, "decalage": [-4, -38] }, "debit": "debit", "temperature": 0.8, "couleur": "couleur1" },
+      { "type": "encre", "forme": { "type": "cercle", "rayon": 4, "decalage": [4, -26] }, "debit": "debit", "temperature": 0.8, "couleur": "couleur2" }
+    ],
+    "rendu": { "type": "encre", "opacite": 0.9 }
+  }
+}

@@ -6,7 +6,7 @@
  *   structure ; attaches (8 mots chacune, à partir de 320) ; attache de chaque sommet (AUCUN : libre) ; codes des liens
  *   (M.maillage.liens, triés par couleur). photo : { centreA, demiA } (rectangle local de la photographie, source « ancre »)
  * P.complianceStructure(k)   compliance XPBD d'une raideur k (0 à 1)
- * P.codeStructures() -> WGSL du module « pm-structures » : module des collisions de P3, ef et eu lisant le bloc de la
+ * P.codeStructures(fils?, vent?) -> WGSL du module « pm-structures » (vent : variante qui lit le vent du milieu) : module des collisions de P3, ef et eu lisant le bloc de la
  *   structure du groupe de travail (baseE), et noyau « structures »
  * P.preparerStructures(device[, fils]) -> Promise<fils>   pipeline préparé (repli à 256 fils si le pilote refuse davantage)
  * new P.Structures(device, sim)   structures de sim.effet (émetteurs e.structure) ; un groupe de travail de 256 à 1024 fils
@@ -36,6 +36,11 @@
  * « rompus ») étirés au-delà de dechirure × longueur de repos, d'après les positions de fin de sous-pas seulement (aucune
  * position ne bouge pendant la décision : même résultat dans tout ordre) ; un lien rompu n'est plus résolu, ses triangles
  * ne sont plus dessinés (rendu). Phases séparées par des barrières de stockage ; boucles à barrière de bornes constantes.
+ * Milieu (P5c, structure.milieu) : mot MILIEU du bloc ; au début de chaque pas, phase « exposer » : part de surface de chaque
+ * sommet offerte au vent du milieu (corde : longueur de ses segments voisins rapportée au repos × |sin| de l'angle avec le
+ * vent relatif ; tissu : aire de ses cellules voisines rapportée au repos, au plus 1), rangée dans son champ « rot » et lue
+ * par expositionMilieu dans integrer (force « milieu » de la structure) ; noyau lisant la texture du vent (variante,
+ * liaisons 24 et 25 : sim.sourceVent). P.codeStructures(fils, vent).
  * Navigateur seulement ; dépend de simulation.js (P.WGSL_MODULE_COLLISIONS, P.emballerE) et de maillage.js (M.maillage).
  */
 (function (racine) {
@@ -52,7 +57,7 @@
   const OCTETS_UNIFORME = 16 + STRUCTURES_MAX * 16;
   const S = {
     TYPE: 256, C: 257, R: 258, N: 259, NATT: 260, ATT: 261, SEL: 262, LIENS: 263, COUL: 264, ALPHA: 277, ALPHA_B: 278,
-    AMORTI: 279, DECH: 280, EPAIS: 281, MASSE: 282, CL: 283, DL: 285, FIN: 287, Z: 288, G: 289, ALPHA_C: 291, FENTE: 292,
+    AMORTI: 279, DECH: 280, EPAIS: 281, MASSE: 282, CL: 283, DL: 285, FIN: 287, Z: 288, G: 289, ALPHA_C: 291, FENTE: 292, MILIEU: 293,
   };
   P.MOTS_STRUCTURE = S;
   P.STRUCTURES_MAX = STRUCTURES_MAX;
@@ -100,6 +105,8 @@
     f[S.G] = g[0];
     f[S.G + 1] = g[1];
     u[S.FENTE] = st.fente ? st.fente : 0;
+    // Milieu (P5c) : la structure prend le vent du milieu (exposition calculée en début de pas).
+    u[S.MILIEU] = st.milieu ? 1 : 0;
     f[S.AMORTI] = AMORTISSEMENT * st.amortissement;
     f[S.DECH] = st.dechirure === null ? -1 : st.dechirure;
     f[S.EPAIS] = st.epaisseur;
@@ -154,6 +161,7 @@ const S_Z = ${S.Z}u;
 const S_G = ${S.G}u;
 const S_ALPHA_C = ${S.ALPHA_C}u;
 const S_FENTE = ${S.FENTE}u;
+const S_MILIEU = ${S.MILIEU}u;
 
 struct UStructures { n: u32, nElements: u32, nGrille: u32, r0: u32, s: array<vec4u, ${STRUCTURES_MAX}> };
 struct Repos { centre: vec2f, angle: f32, demi: vec2f, Lu: f32, Lv: f32 };
@@ -612,6 +620,48 @@ fn dechirer(v: u32, base: u32, rp: Repos) {
   rompus[i] = m;
 }
 
+// Exposition au vent du milieu (P5c, structure.milieu) : part de surface du sommet offerte au vent relatif, rangée dans son
+// champ « rot » (inutilisé par une structure), lue par expositionMilieu dans integrer. Corde : longueur de ses segments
+// voisins rapportée à leur longueur de repos × |sin| de l'angle entre la corde et le vent relatif (une corde dans le sens du
+// vent n'est pas poussée) ; tissu : aire de ses cellules voisines rapportée à leur aire de repos, au plus 1 (un pli replié
+// offre moins de prise). Positions du début du pas : cette phase n'écrit que le champ « rot » de son sommet.
+fn exposer(v: u32, base: u32, rp: Repos) {
+  if (eu(S_MILIEU) == 0u) { return; }
+  let C = eu(S_C);
+  let R = eu(S_R);
+  let c = v % C;
+  let r = v / C;
+  let p = sommets[base + v];
+  var e = 0.0;
+  if (R == 1u) {
+    let a = select(v - 1u, v, c == 0u);
+    let b = min(v + 1u, C - 1u);
+    let t = sommets[base + b].pos - sommets[base + a].pos;
+    let L = length(t);
+    let w = ventMilieu(p.pos) - p.vel;
+    let lw = length(w);
+    if (L > 1e-6 && lw > 1e-6) {
+      e = clamp(L / max(f32(b - a) * rp.Lu, 1e-6), 0.0, 2.0) * abs(t.x * w.y - t.y * w.x) / (L * lw);
+    }
+  } else {
+    var aire = 0.0;
+    var nCel = 0.0;
+    for (var dr = 0u; dr < 2u; dr++) {
+      for (var dc = 0u; dc < 2u; dc++) {
+        if (r + dr < 1u || c + dc < 1u || r + dr > R - 1u || c + dc > C - 1u) { continue; }
+        let r0 = r + dr - 1u;
+        let c0 = c + dc - 1u;
+        let d1 = sommets[base + (r0 + 1u) * C + c0 + 1u].pos - sommets[base + r0 * C + c0].pos;
+        let d2 = sommets[base + (r0 + 1u) * C + c0].pos - sommets[base + r0 * C + c0 + 1u].pos;
+        aire += 0.5 * abs(d1.x * d2.y - d1.y * d2.x);
+        nCel += 1.0;
+      }
+    }
+    if (nCel > 0.0) { e = min(aire / (nCel * max(rp.Lu * rp.Lv, 1e-9)), 1.0); }
+  }
+  sommets[base + v].rot = e;
+}
+
 // Un pas de 1/120 s d'une structure (groupe de travail wg.x) : pose au pas 0, puis 4 sous-pas (prédiction, 4 itérations
 // sur les 12 couleurs, contacts, vitesses, déchirure).
 @compute @workgroup_size(${FILS})
@@ -632,6 +682,8 @@ fn structures(@builtin(workgroup_id) wg: vec3u, @builtin(local_invocation_index)
   if (P.k == 0u) {
     for (var v = li; v < n; v += S_FILS) { initialiserSommet(v, base, rp); }
   }
+  barriere();
+  for (var v = li; v < n; v += S_FILS) { exposer(v, base, rp); }
   barriere();
   for (var sp = 0u; sp < S_SOUS_PAS; sp++) {
     let ta = P.tau0 + f32(sp) * h;
@@ -670,12 +722,17 @@ fn structures(@builtin(workgroup_id) wg: vec3u, @builtin(local_invocation_index)
   /** Module « pm-structures » : module des collisions de P3 (ef et eu lisent le bloc de la structure) et noyau de fils
    *  fils par groupe de travail (256 par défaut ; davantage si le device le permet : chaque couleur est indépendante de
    *  l'ordre de ses liens, le résultat ne dépend pas du nombre de fils). */
-  P.codeStructures = function (fils = 256) {
-    if (codes.has(fils)) return codes.get(fils);
+  P.codeStructures = function (fils = 256, vent = false) {
+    const cle = fils + (vent ? '|vent' : '');
+    if (codes.has(cle)) return codes.get(cle);
     const base = P.WGSL_MODULE_COLLISIONS();
     if (base.indexOf(EF) < 0 || base.indexOf(EU) < 0) throw new Error('Structures : lecture des paramètres (ef, eu) introuvable dans le module des collisions.');
-    const code = base.replace(EF, 'fn ef(i: u32) -> f32 { return E[baseE + i]; }').replace(EU, 'fn eu(i: u32) -> u32 { return bitcast<u32>(E[baseE + i]); }') + WGSL_STRUCTURES(fils);
-    codes.set(fils, code);
+    if (base.indexOf(P.NEUTRE_EXPOSITION) < 0) throw new Error('Structures : exposition au milieu introuvable dans le module des collisions.');
+    let code = base.replace(EF, 'fn ef(i: u32) -> f32 { return E[baseE + i]; }').replace(EU, 'fn eu(i: u32) -> u32 { return bitcast<u32>(E[baseE + i]); }')
+      .replace(P.NEUTRE_EXPOSITION, 'fn expositionMilieu(p: Particule) -> f32 { return p.rot; }') + WGSL_STRUCTURES(fils);
+    // Milieu (P5c) : variante qui lit la texture du vent (structures couplées).
+    if (vent) code = P.avecMilieu(code);
+    codes.set(cle, code);
     return code;
   };
 
@@ -687,22 +744,23 @@ fn structures(@builtin(workgroup_id) wg: vec3u, @builtin(local_invocation_index)
 
   // Pipeline du noyau « structures », un par device ; disposition explicite (8 tampons de stockage).
   const parDevice = new WeakMap();
-  function dispositionStructures(device) {
+  function entreesStructures() {
     const C = GPUShaderStage.COMPUTE;
     const stockage = (b, lecture) => ({ binding: b, visibility: C, buffer: { type: lecture ? 'read-only-storage' : 'storage' } });
-    return device.createBindGroupLayout({
-      entries: [
-        stockage(0, true),
-        { binding: 4, visibility: C, buffer: { type: 'uniform', hasDynamicOffset: true, minBindingSize: 80 } },
-        { binding: 11, visibility: C, buffer: { type: 'uniform' } },
-        { binding: 12, visibility: C, texture: { sampleType: 'unfilterable-float', viewDimension: '2d-array' } },
-        { binding: 13, visibility: C, texture: { sampleType: 'float', viewDimension: '2d-array' } },
-        { binding: 14, visibility: C, sampler: { type: 'filtering' } },
-        stockage(15), stockage(16), stockage(17), stockage(18), stockage(19, true), stockage(20, true),
-        { binding: 21, visibility: C, buffer: { type: 'uniform' } },
-        stockage(22),
-      ],
-    });
+    return [
+      stockage(0, true),
+      { binding: 4, visibility: C, buffer: { type: 'uniform', hasDynamicOffset: true, minBindingSize: 80 } },
+      { binding: 11, visibility: C, buffer: { type: 'uniform' } },
+      { binding: 12, visibility: C, texture: { sampleType: 'unfilterable-float', viewDimension: '2d-array' } },
+      { binding: 13, visibility: C, texture: { sampleType: 'float', viewDimension: '2d-array' } },
+      { binding: 14, visibility: C, sampler: { type: 'filtering' } },
+      stockage(15), stockage(16), stockage(17), stockage(18), stockage(19, true), stockage(20, true),
+      { binding: 21, visibility: C, buffer: { type: 'uniform' } },
+      stockage(22),
+    ];
+  }
+  function dispositionStructures(device) {
+    return device.createBindGroupLayout({ entries: entreesStructures() });
   }
   function descripteur(device, layout, fils) {
     const module = device.createShaderModule({ label: 'pm-structures', code: P.codeStructures(fils) });
@@ -716,6 +774,19 @@ fn structures(@builtin(workgroup_id) wg: vec3u, @builtin(local_invocation_index)
     const fils = P.filsStructures(device);
     p = { layout, fils, pipeline: device.createComputePipeline(descripteur(device, layout, fils)) };
     parDevice.set(device, p);
+    return p;
+  }
+
+  // Milieu (P5c) : variante du noyau qui lit le vent (liaisons 24 et 25), aux fils retenus pour le noyau de base, une par device.
+  const parDeviceVent = new WeakMap();
+  function pipelineVent(device) {
+    let p = parDeviceVent.get(device);
+    if (p) return p;
+    const fils = pipeline(device).fils;
+    const layout = device.createBindGroupLayout({ entries: entreesStructures().concat(P.entreesVent()) });
+    const module = device.createShaderModule({ label: 'pm-structures-vent', code: P.codeStructures(fils, true) });
+    p = { layout, fils, pipeline: device.createComputePipeline({ layout: device.createPipelineLayout({ bindGroupLayouts: [layout] }), compute: { module, entryPoint: 'structures' } }) };
+    parDeviceVent.set(device, p);
     return p;
   }
 
@@ -872,7 +943,10 @@ fn perles(@builtin(global_invocation_id) gid: vec3u) {
       const sdf = sim.uniformeMonde
         ? (sim.monde && sim.monde.formes ? sim.monde.formes.vue : sim.pc.vueSdfVide)
         : this.sdfVide.createView({ dimension: '2d-array' });
-      this.p = pipeline(device);
+      // Milieu (P5c) : une structure couplée lit le vent du milieu (variante du noyau).
+      this.vent = this.liste.some((e) => e.em.structure.milieu);
+      if (this.vent && !sim.sourceVent) throw new Error('Structures : vent du milieu absent (simulation.js).');
+      this.p = this.vent ? pipelineVent(device) : pipeline(device);
       this.fils = this.p.fils;
       this.groupe = device.createBindGroup({
         layout: this.p.layout,
@@ -891,6 +965,7 @@ fn perles(@builtin(global_invocation_id) gid: vec3u) {
           { binding: 20, resource: { buffer: this.poussees } },
           { binding: 21, resource: { buffer: this.uniforme } },
           { binding: 22, resource: { buffer: this.infos } },
+          ...(this.vent ? [{ binding: 24, resource: sim.sourceVent.vueVent }, { binding: 25, resource: { buffer: sim.sourceVent.uniformeVent } }] : []),
         ],
       });
       if (this.perles.length) {
