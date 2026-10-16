@@ -29,6 +29,7 @@ Créer ou modifier une pose ou un mouvement (marche, course, saut, geste, expres
 | « fais-le parler », « qu'il dise le texte de la scène » | dans le conteneur du personnage : `<i data-action="parler"></i>` (la scène doit avoir une voix ; fenêtre avec `data-start="mot:…"` et `data-dur` si deux personnages se partagent la voix) ; assembler, puis `pulse-motion planche . <id>` pendant la voix |
 | « qu'il monte la colline », « qu'il saute sur la corniche », « fais surgir les têtes du bas de l'image » | dans le fichier de la scène : `data-sol` (nombre, ou tracé `#id` du décor), actions `bondir` ou `glisser` (`pulse-motion reference moteur`, section Personnages) ; puis assembler, contrôler, planche |
 | « il tient une pancarte au-dessus de sa tête », « il boit son café », « il lâche le crayon » | dans le fichier de la scène : l'objet avec `data-tenu-par="#<id du personnage>"`, `data-main`, `data-orientation`, `data-lacher`, dans le même conteneur que le personnage (`pulse-motion reference moteur`, section Personnages) ; puis assembler, contrôler, planche |
+| « qu'il attrape le bras du voisin », « qu'ils se tapent dans la main », « qu'il regarde la pancarte », « qu'il nous regarde » | dans le fichier de la scène : actions `atteindre` et `regarder` (`pulse-motion reference moteur`, section Personnages) ; pas de nouveau geste pour cela |
 | « un nouveau geste » | nouveau mouvement : clés à partir de `"pose": "debout"`, pieds `au-sol` s'il reste debout |
 
 ## Vérifier et montrer
