@@ -1,5 +1,6 @@
 // Ondes sur l'eau : équation des ondes discrète (tampon A : r = hauteur, g = hauteur au pas précédent), une goutte à
-// chaque intervalle à un endroit tiré de son numéro ; image : reflet selon la pente de la surface.
+// chaque intervalle à un endroit tiré de son numéro ; image : reflet selon la pente de la surface, sur une eau sombre
+// (« fond » de la charte, teintée de « primaire ») ; opacite : fragColor.a.
 
 float hasard(float n) { return fract(sin(n * 127.1) * 43758.5453); }
 
@@ -26,5 +27,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
   float dy = texture(iChannel0, uv + vec2(0.0, px.y)).r - texture(iChannel0, uv - vec2(0.0, px.y)).r;
   vec3 normale = normalize(vec3(-dx, -dy, 0.08));
   float lumiere = clamp(dot(normale, normalize(vec3(-0.4, 0.6, 0.7))), 0.0, 1.0);
-  fragColor = vec4(mix(R_profondeur.rgb, R_reflet.rgb, pow(lumiere, 6.0)), 1.0);
+  // Eau : la couleur « fond » de la charte, un peu teintée (un texte posé dessus reste lisible) ; reflets selon la pente.
+  vec3 eau = mix(R_profondeur.rgb, R_teinte.rgb, R_melange);
+  fragColor = vec4(mix(eau, R_reflet.rgb, pow(lumiere, 6.0)), R_opacite);
 }
