@@ -56,6 +56,31 @@
   }
   P.texelsBruit = texelsBruit;
 
+  const BUDGET_MULTIPASSE = 256 * 1024 * 1024;
+
+  /** Évolution d'un multipasse par pas fixes de τ (P7) : planificateur de P1 (M.instantanes), un instantané tous les pps pas
+   *  (1 s de τ), intervalle doublé tant que les instantanés ne tiennent pas dans le budget (256 Mio).
+   *  ops : { tailleEtat, vider(), pas(k), sauver(k), restaurer(k), oublierTout() } -> { intervalle, avancer(k), oublier() } */
+  function etatMultipasse(ops, pps, pasTotal) {
+    let intervalle = pps;
+    const max = Math.max(1, Math.floor(BUDGET_MULTIPASSE / Math.max(1, ops.tailleEtat)));
+    while (Math.ceil(pasTotal / intervalle) > max) intervalle *= 2;
+    const plan = M.instantanes.creerPlanificateur({ intervalle });
+    return {
+      intervalle,
+      avancer(k) {
+        plan.planifier(k).forEach((a) => {
+          if (a.type === 'vider') ops.vider();
+          else if (a.type === 'restaurer') ops.restaurer(a.k);
+          else if (a.type === 'pas') ops.pas(a.k);
+          else ops.sauver(a.k);
+        });
+      },
+      oublier() { plan.oublier(); ops.oublierTout(); },
+    };
+  }
+  P.etatMultipasse = etatMultipasse;
+
   class Shaders {
     constructor(device) {
       this.device = device;

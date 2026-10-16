@@ -72,6 +72,9 @@ function donneeShader(src, extra) {
     calque: extra.calque || null, ancre: extra.ancre || null,
     duree: extra.duree === undefined ? null : extra.duree,
     langage: src.json.langage || 'wgsl',
+    // Multipasse (P7) : passes complétées (lit [], échelle 0,5 ; « image » à la taille de la sortie), pas par seconde de τ.
+    passes: src.json.passes ? src.json.passes.map((p) => ({ nom: p.nom, lit: p.lit || [], echelle: p.nom === 'image' ? 1 : (p.echelle || 0.5) })) : null,
+    pas_par_seconde: src.json.pas_par_seconde || 60,
     code: src.code, parametres: src.json.parametres || {}, debord: src.json.debord || 0,
     valeurs: extra.valeurs, image: extra.image || null,
     // Son réactif (P7) : piste lue par iSon et la texture du son ; pistes : [] si le code ne lit pas le son.
