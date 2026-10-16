@@ -61,15 +61,15 @@
     return d.allure === 'glisse' ? d.courbe(u) : u;
   }
 
-  /** Position { x, sol } dans un trajet, à t (borné à son arrêt). */
-  function positionTrajet(part, d, t) {
+  /** Position { x, sol } dans un trajet, à t (borné à son arrêt) ; sansArc : le sol sans la hauteur du bond. */
+  function positionTrajet(part, d, t, sansArc) {
     t = Math.min(t, d.arret);
     var u = Math.max(0, Math.min(1, (t - d.debut) / (d.fin - d.debut)));
     var k = avancement(d, t);
     var x = d.de + (d.vers - d.de) * k;
     var s0 = solValeur(part, d.solDe, x), s1 = solValeur(part, d.solVers, x);
     var sol = s0 + (s1 - s0) * k;
-    if (d.allure === 'bond') sol -= d.hauteur * 4 * u * (1 - u);
+    if (d.allure === 'bond' && !sansArc) sol -= d.hauteur * 4 * u * (1 - u);
     return { x: x, sol: sol };
   }
 
@@ -83,23 +83,25 @@
   /** Trajets successifs : { debut, fin, arret, de, vers, solDe, solVers, allure, … } (x en %). Un trajet qui commence avant
    *  la fin du précédent part de la position atteinte à cet instant ; le précédent s'arrête là (« arret »). */
   function calculerTrajets(part) {
-    var x = part.x0, sol = solDepart(part), out = [];
+    var x = part.x0, sol = solDepart(part), cible = sol, out = [];
     triees(part.actions).forEach(function (a) {
       if (!ALLURES[a.type]) return;
       var prec = out[out.length - 1];
       if (prec && a.debut < prec.arret) {
         prec.arret = Math.max(prec.debut + 1e-6, a.debut);
+        // Coupé en route : on repart du point atteint (en l'air pour un bond : pas de saut) ; un trajet coupé sur un
+        // même tracé le garde ; le suivant vise encore le sol d'arrivée du coupé s'il n'en donne pas (il redescend).
         var p = positionTrajet(part, prec, prec.arret);
         x = p.x;
-        // Un trajet coupé sur un même tracé le garde ; sinon, le sol atteint (un nombre).
         sol = prec.solDe === prec.solVers && prec.allure !== 'bond' ? prec.solVers : p.sol;
+        cible = prec.solVers;
       }
       var fin = Math.max(a.fin, a.debut + 1e-6);
       var d = { debut: a.debut, fin: fin, arret: fin, de: x, vers: typeof a.vers === 'number' ? a.vers : x, solDe: sol,
-        solVers: a.sol === undefined || a.sol === null ? sol : a.sol, allure: ALLURES[a.type], vue: a.vue, clip: a.clip,
+        solVers: a.sol === undefined || a.sol === null ? cible : a.sol, allure: ALLURES[a.type], vue: a.vue, clip: a.clip,
         hauteur: typeof a.hauteur === 'number' ? a.hauteur : 15, courbe: a.type === 'glisser' ? courbeDe(a.courbe) : null, a: a };
       out.push(d);
-      x = d.vers; sol = d.solVers;
+      x = d.vers; sol = d.solVers; cible = d.solVers;
     });
     return out;
   }
@@ -120,11 +122,24 @@
   }
   function xAuTemps(part, t) { return positionAuTemps(part, t).x; }
 
-  /** Distance parcourue (unités de scène) depuis le début du trajet en cours, pente comprise. */
+  /** Distance parcourue (unités de scène) depuis le début du trajet en cours, le long du chemin (pente, colline) :
+   *  longueurs cumulées sur 128 points, calculées une fois par trajet. */
+  var POINTS = 128;
   function distanceDansTrajet(part, d, t) {
-    var a = positionTrajet(part, d, d.debut), b = positionTrajet(part, d, t);
-    var dx = (b.x - a.x) * part.largeur / 100, dy = (b.sol - a.sol) * (part.hauteur || 0) / 100;
-    return Math.sqrt(dx * dx + dy * dy);
+    if (!d.longueurs) {
+      var cumul = [0], prec = positionTrajet(part, d, d.debut, true), total = 0;
+      for (var i = 1; i <= POINTS; i++) {
+        var q = positionTrajet(part, d, d.debut + (d.fin - d.debut) * i / POINTS, true);
+        var dx = (q.x - prec.x) * part.largeur / 100, dy = (q.sol - prec.sol) * (part.hauteur || 0) / 100;
+        total += Math.sqrt(dx * dx + dy * dy);
+        cumul.push(total);
+        prec = q;
+      }
+      d.longueurs = cumul;
+    }
+    var f = Math.max(0, Math.min(1, (Math.min(t, d.arret) - d.debut) / (d.fin - d.debut))) * POINTS;
+    var i0 = Math.floor(f), i1 = Math.min(POINTS, i0 + 1);
+    return d.longueurs[i0] + (d.longueurs[i1] - d.longueurs[i0]) * (f - i0);
   }
 
   /** État du corps à t : { type, a?, trajet?, debut }. Un bond est un geste (le saut) ; un glissement ne change pas le corps. */

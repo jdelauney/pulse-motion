@@ -37,15 +37,19 @@
     return v !== '' && isFinite(n) ? n : 90;
   }
 
-  /** Tracé d'un sol courbe -> fonction x (% de la largeur) -> hauteur (% de la hauteur), mesurée une fois, sans les
-   *  transformations de caméra ni de parallaxe (repère du conteneur du personnage). Le plus haut point à un même x. */
+  /** Tracé d'un sol courbe -> fonction x (% de la largeur) -> hauteur (% de la hauteur), mesurée au démarrage et à chaque
+   *  changement de taille, sans les mouvements de caméra ni de parallaxe (les autres transformations du décor comptent :
+   *  repère du conteneur du personnage). Le plus haut point à un même x. Null si la mesure est impossible. */
   function mesurerTrace(chemin, div, sec) {
     var modifies = [];
     function neutraliser(el) {
       for (; el && el !== sec.parentElement; el = el.parentElement) {
-        if (!el.style) continue;
+        if (!el.style || !el.hasAttribute) continue;
+        var camera = el.hasAttribute('data-camera'), plan = el.hasAttribute('data-profondeur');
+        if (!camera && !plan) continue;
         modifies.push([el, el.style.transform, el.style.translate]);
-        el.style.transform = 'none'; el.style.translate = 'none';
+        if (camera) el.style.transform = 'none';
+        if (plan) el.style.translate = 'none';
       }
     }
     var affichage = sec.style.display;
@@ -98,6 +102,12 @@
     return a;
   }
 
+  function alerter(idScene, message) {
+    var e = { regle: 'personnage-invalide', gravite: 'alerte', scene: idScene, message: 'Scène « ' + idScene + ' » : ' + message };
+    if (M.erreurs) M.erreurs.push(e);
+    if (typeof console !== 'undefined') console.warn('[Pulse Motion] ' + e.message);
+  }
+
   M.demarrerPersonnages = function () {
     var D = M.donnees && M.donnees.personnages;
     if (!D || !M.minutage) return;
@@ -134,15 +144,29 @@
       });
       var echelle = nombre(div, 'data-taille', 40) / 100 * H / P.hauteur(gabarit);
       var sol0 = div.hasAttribute('data-sol') ? valeurSol(div.getAttribute('data-sol')) : 90;
-      // Sols courbes : chaque tracé cité (conteneur ou actions), mesuré une fois.
-      var sols = {};
+      // Sols courbes : chaque tracé cité (conteneur ou actions), mesuré au démarrage et à chaque changement de taille.
+      var sols = {}, traces = [];
       [sol0].concat(actions.map(function (a) { return a.sol; })).forEach(function (v) {
-        if (typeof v !== 'string' || sols[v.slice(1)] !== undefined) return;
+        if (typeof v !== 'string' || traces.some(function (x) { return x.id === v.slice(1); })) return;
         var id = v.slice(1), chemin = null;
-        try { chemin = sec.querySelector('#' + (typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(id) : id)); } catch (e) { chemin = null; }
-        sols[id] = chemin && chemin.tagName.toLowerCase() === 'path' ? mesurerTrace(chemin, div, sec) : null;
+        try { chemin = sec.querySelector('path#' + (typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(id) : id)); } catch (e) { chemin = null; }
+        traces.push({ id: id, chemin: chemin });
       });
-      persos.push({
+      function mesurer(signaler) {
+        traces.forEach(function (tr) {
+          var f = tr.chemin ? mesurerTrace(tr.chemin, div, sec) : null;
+          if (f) sols[tr.id] = f;
+          else if (signaler) alerter(idScene, 'personnage « ' + nom + ' » : le sol « #' + tr.id + ' » n\'a pas pu être mesuré (tracé introuvable, vide ou caché) ; ligne droite à 90 % à la place.');
+        });
+      }
+      mesurer(true);
+      // Actions qui commencent pendant un arrêt sur image de leur conteneur : retardées jusqu'à sa fin.
+      if (M.tempsVuPar) actions.forEach(function (a) {
+        if (isFinite(a.debut) && M.tempsVuPar(div, a.debut + 0.05) - M.tempsVuPar(div, a.debut) < 1e-3) {
+          alerter(idScene, 'personnage « ' + nom + ' », action « ' + a.type + ' » : elle commence pendant un arrêt sur image de son conteneur (data-gel) ; elle ne se jouera qu\'à la fin de l\'arrêt, ou jamais s\'il dure jusqu\'à la fin de la scène. Sortir le personnage du conteneur figé, ou déplacer l\'action.');
+        }
+      });
+      persos.push({ mesurer: mesurer,
         div: div, habillage: habillage, gabarit: gabarit, echelle: echelle,
         partition: { x0: nombre(div, 'data-x', 50), sol0: sol0, vue0: nombre(div, 'data-vue', 0), calme: div.getAttribute('data-calme') !== 'non', largeur: W, hauteur: H, echelle: echelle, sols: sols, actions: actions }
       });
@@ -163,5 +187,13 @@
     }
     M.surRendu(rendre);
     rendre(M.temps ? M.temps() : 0);
+    // La place du décor peut changer avec la taille de l'image : les sols courbes sont remesurés.
+    if (typeof window !== 'undefined' && window.addEventListener) {
+      window.addEventListener('resize', function () {
+        // Nouvelle partition : ses longueurs de trajet (mémorisées) suivent les sols remesurés.
+        persos.forEach(function (p) { p.mesurer(false); p.partition = Object.assign({}, p.partition); });
+        rendre(M.temps ? M.temps() : 0);
+      });
+    }
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

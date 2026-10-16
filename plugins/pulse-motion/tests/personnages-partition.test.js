@@ -167,3 +167,24 @@ test('glisser : sans marcher, garde la pose et la vue ; bondir : arc, corps du s
   let prec = PA.etatAuTemps(enchaine, 0.55, bib, gab).sol;
   for (let t = 0.56; t < 1.2; t += 0.01) { const s = PA.etatAuTemps(enchaine, t, bib, gab).sol; assert.ok(Math.abs(s - prec) < 2, `pas de saut à ${t} : ${prec} → ${s}`); prec = s; }
 });
+
+test('revue : foulée le long d\'une colline qui descend, bond coupé par une marche sans rester en l\'air', () => {
+  // Colline en V : la distance parcourue augmente toujours, même quand le chemin redescend.
+  const sols = { v: (x) => 50 + Math.abs(x - 50) * 0.6 };
+  const p = partition([{ type: 'marcher', debut: 0, fin: 8, vers: 90 }], { sol0: '#v', sols, hauteur: 900 });
+  const tr = PA.trajets(p)[0];
+  let precedente = -1;
+  for (let t = 0; t <= 8; t += 0.25) {
+    PA.etatAuTemps(p, t, bib, gab);
+    const e = PA.positionAuTemps(p, t);
+    proche(e.sol, 50 + Math.abs(e.x - 50) * 0.6, 1e-9);
+  }
+  assert.ok(Array.isArray(tr.longueurs) || tr.longueurs === undefined);
+  const lg = PA.trajets(p)[0].longueurs;
+  for (let i = 1; i < lg.length; i++) assert.ok(lg[i] >= lg[i - 1] - 1e-9, 'longueur cumulée croissante');
+  const coupe = partition([{ type: 'bondir', debut: 0, fin: 1, vers: 30, sol: 70, hauteur: 30 }, { type: 'marcher', debut: 0.5, fin: 2, vers: 50 }], { sol0: 90 });
+  const apres = PA.etatAuTemps(coupe, 3, bib, gab);
+  proche(apres.sol, 70, 1e-9, 'la marche vise encore le sol d\'arrivée du bond, sans l\'arc');
+  const depart = PA.etatAuTemps(coupe, 0.5, bib, gab).sol;
+  proche(depart, 80 - 30, 1e-6, 'repart du point atteint en l\'air (pas de saut), puis redescend');
+});

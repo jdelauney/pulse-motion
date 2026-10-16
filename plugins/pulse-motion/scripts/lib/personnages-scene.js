@@ -33,7 +33,7 @@ function preparerPersonnages(html, { scene, lu, voix = false }) {
   let parle = false;
   let courant = null;
   // Tracés de la scène (sols courbes) et sols cités, vérifiés à la fin.
-  const chemins = new Set(), autresIds = new Set(), solsCites = [];
+  const chemins = new Set(), autresIds = new Set(), idsDoubles = new Set(), solsCites = [];
   // Pile des balises ouvertes : une action n'est lue que si elle est enfant direct d'un conteneur data-personnage.
   const pile = [];
   const sortie = html.replace(BALISE, (tout, fermeture, tag, texte) => {
@@ -47,7 +47,11 @@ function preparerPersonnages(html, { scene, lu, voix = false }) {
     const parent = pile[pile.length - 1];
     const a = lireAttributs(texte);
     if (!autoFermee) pile.push({ tag: nomTag, personnage: a['data-personnage'] !== undefined ? a['data-personnage'].trim() : null });
-    if (a.id) (nomTag === 'path' ? chemins : autresIds).add(a.id.trim());
+    if (a.id) {
+      const id = a.id.trim();
+      if (chemins.has(id) || autresIds.has(id)) idsDoubles.add(id);
+      (nomTag === 'path' ? chemins : autresIds).add(id);
+    }
     if (a['data-sol'] !== undefined && /^\s*#/.test(a['data-sol'])) solsCites.push({ id: a['data-sol'].trim().slice(1), ou: a['data-action'] !== undefined ? `action « ${a['data-action'].trim()} »` : `personnage « ${(a['data-personnage'] || '?').trim()} »` });
     for (const n of NOMBRES) {
       if (n === 'data-sol' && a[n] !== undefined && /^\s*#/.test(a[n])) continue;
@@ -73,6 +77,9 @@ function preparerPersonnages(html, { scene, lu, voix = false }) {
     if (!ACTIONS[type]) { erreurs.push(erreur(scene, `${qui} : action inconnue (${Object.keys(ACTIONS).join(', ')}).`)); return tout; }
     for (const champ of ACTIONS[type]) if (a[`data-${champ}`] === undefined) erreurs.push(erreur(scene, `${qui} : il manque data-${champ}.`));
     if ((type === 'glisser' || type === 'bondir') && a['data-vers'] === undefined && a['data-sol'] === undefined) erreurs.push(erreur(scene, `${qui} : il faut data-vers (où aller) ou data-sol (à quelle hauteur), ou les deux.`));
+    if (a['data-sol'] !== undefined && !TRAJETS.includes(type)) erreurs.push(erreur(scene, `${qui} : data-sol ne sert qu'aux déplacements (marcher, courir, glisser, bondir) ou au personnage lui-même.`));
+    if (a['data-hauteur'] !== undefined && type !== 'bondir') erreurs.push(erreur(scene, `${qui} : data-hauteur ne sert qu'à « bondir » (hauteur de l'arc).`));
+    if (a['data-courbe'] !== undefined && type !== 'glisser') erreurs.push(erreur(scene, `${qui} : data-courbe ne sert qu'à « glisser ».`));
     if (a['data-courbe'] !== undefined) { try { C.courbeNommee(a['data-courbe'].trim()); } catch (e) { erreurs.push(erreur(scene, `${qui} : ${e.message}`)); } }
     if (type === 'bondir' && a['data-clip'] !== undefined && !Object.hasOwn(lu.clips, a['data-clip'].trim())) erreurs.push(erreur(scene, `${qui} : mouvement « ${a['data-clip'].trim()} » introuvable pour le bond (par défaut : saut).`));
     if (TRAJETS.includes(type) && type !== 'marcher' && type !== 'courir' && a['data-dur'] === undefined) erreurs.push(erreur(scene, `${qui} : data-dur obligatoire (durée du déplacement, ex. data-dur="1").`));
@@ -109,6 +116,7 @@ function preparerPersonnages(html, { scene, lu, voix = false }) {
     return tout;
   });
   for (const s of solsCites) {
+    if (idsDoubles.has(s.id)) erreurs.push({ ...erreur(scene, `${s.ou} : plusieurs éléments portent l'id « ${s.id} » ; le sol doit être un seul tracé.`), gravite: 'alerte' });
     if (chemins.has(s.id)) continue;
     erreurs.push(erreur(scene, autresIds.has(s.id)
       ? `${s.ou} : le sol « #${s.id} » doit être un tracé (un élément path d'un SVG de la scène).`
