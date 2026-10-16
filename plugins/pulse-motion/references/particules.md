@@ -366,7 +366,7 @@ Un **milieu** est un fluide simulé sur une grille dans la scène : fumée volum
 <div data-effet="braises-portees" data-ancre="#foyer" data-start="1" data-dur="5"></div>
 ```
 
-Balise : `data-milieu="nom"` ; `data-ancre="#id"` (zone du milieu : l'élément au début du milieu ; sans : la scène entière) ; `data-calque` (`arriere` par défaut, ou `avant`) ; `data-reglages` ; `data-start` ; `data-dur` (sans : jusqu'à la fin de la scène).
+Balise : `data-milieu="nom"` ; `data-ancre="#id"` (zone du milieu : l'élément au début du milieu ; sans : la scène entière) ; `data-calque` (`arriere` par défaut, ou `avant`) ; `data-reglages` ; `data-start` ; `data-dur` (sans : jusqu'à la fin de la scène ; avec : le milieu s'arrête net à la fin de `data-dur`, et les effets couplés qui durent plus longtemps ne reçoivent plus de vent).
 
 ### Réglages d'une recette de milieu (`milieu`, à la racine, sans `emetteurs`)
 

@@ -266,3 +266,23 @@ await envoyer({ webgpu: true, premier: fumee(premier), avant: somme(await apres(
   assert.deepEqual(r.continu, r.direct, 'lecture continue = chemin direct');
   assert.deepEqual(r.retour, r.direct, 'retour en arrière depuis 3 s = chemin direct');
 });
+
+test('couplage GPU : après la fin d'un milieu (data-dur), les effets couplés qui continuent ne lisent plus de vent', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  // Panache de 1 s ; braises sans gravité, nées au repos, vie 0,4 s, émises 3 s : seul le vent du milieu les fait bouger.
+  const milieu = compilerMilieu({ resolution: 64, flottaison: 1.5, sources: [{ type: 'fumee', forme: { type: 'cercle', rayon: 8, decalage: [0, 30] }, debit: 6, temperature: 1 }] }, 1);
+  const braises = compiler([{ nom: 'b', naissance: { debit: 80, forme: { type: 'rectangle' }, vie: [0.4, 0.4], taille: [0.3, 0.3] },
+    forces: [{ type: 'milieu', coef: 4 }] }], 3);
+  const r = await page({ milieu, braises }, `
+const zone = [L / 2 - 5, 72, 10, 10];
+const vmax = (e) => { const v = e.effets[0][0].p.filter((p) => p.vivante === 1); return { n: v.length, v: Math.max(...v.map((p) => Math.hypot(p.vx, p.vy))) }; };
+const pendant = vmax(await groupeApres(DONNEES.milieu, [{ effet: DONNEES.braises, zone }], [0.9]));
+const apres = vmax(await groupeApres(DONNEES.milieu, [{ effet: DONNEES.braises, zone }], [2.5]));
+const retour = vmax(await groupeApres(DONNEES.milieu, [{ effet: DONNEES.braises, zone }], [2.5, 1.5, 2.5]));
+await envoyer({ webgpu: true, pendant, apres, retour });`);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  t.diagnostic(`vitesse max : ${r.pendant.v.toFixed(2)} pendant le milieu, ${r.apres.v} après sa fin`);
+  assert.ok(r.pendant.n > 10 && r.pendant.v > 2, 'pendant le milieu : le vent les emporte');
+  assert.ok(r.apres.n > 10 && r.apres.v < 1e-3, 'après la fin du milieu : vent nul (aucune vitesse)');
+  assert.ok(r.retour.n > 10 && r.retour.v < 1e-3, 'après un retour en arrière : vent nul aussi');
+});

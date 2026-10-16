@@ -57,7 +57,7 @@ test('milieu : uniforme « Grille » (géométrie, régions, réglages, sources)
 test('milieu : WGSL du module (noyaux, liaisons, dépôts entiers, aucune addition flottante atomique)', () => {
   const code = P.codeMilieu();
   for (const nom of P.NOYAUX_MILIEU) assert.match(code, new RegExp('@compute @workgroup_size\\(64\\)\\s*fn ' + nom + '\\('), nom);
-  assert.deepEqual(P.NOYAUX_MILIEU, ['gObstacles', 'gInjecter', 'gAdvecterS', 'gCorrigerS', 'gRecopierS', 'gTourbillon', 'gForcer', 'gAdvecterV', 'gCorrigerV', 'gLimites', 'gDivergence', 'gJacobi', 'gProjeter', 'gPublier']);
+  assert.deepEqual(P.NOYAUX_MILIEU, ['gObstacles', 'gInjecter', 'gAdvecterS', 'gCorrigerS', 'gRecopierS', 'gTourbillon', 'gForcer', 'gAdvecterV', 'gCorrigerV', 'gLimites', 'gDivergence', 'gJacobi', 'gProjeter', 'gPublier', 'gEteindreVent']);
   for (const b of [30, 31, 32, 33, 34, 35, 36]) assert.match(code, new RegExp('@binding\\(' + b + '\\)'), 'liaison ' + b);
   assert.match(code, /atomicExchange\(&depots\[/);
   assert.doesNotMatch(code, /atomic<f32>/);
