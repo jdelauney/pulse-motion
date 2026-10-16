@@ -10,12 +10,15 @@
  *       iChannel0–2 (null : image du shader pour iChannel2, transparent sinon) ; iChannel3 : bruit ; genre : 'fond' | 'composition'.
  *       Un shader n'est dessiné qu'une fois par soumission (son uniforme d'entrées est réécrit à chaque dessin).
  *   .image(uri) -> Promise<vue>             image (data:) en texture sRGB prémultipliée, gardée par URI
+ *   .copierImage(source, porteur, l, h)     image du navigateur (canvas, ImageBitmap : sRGB, alpha droit ou prémultiplié)
+ *       copiée dans porteur.texture (rgba8unorm-srgb, l × h) en linéaire prémultiplié ; .oublierBrut(porteur)
  *   .ecrireSon(piste, spectre, onde), .vueSon(piste)   texture du son (P7), liaison 8 (iSonTexture)
  * Multipasse (P7) : P.etatMultipasse (planificateur de P1) ; .avancerMultipasse(shader, o) amène les tampons d'un fond
  * (rgba16float, ping-pong, une soumission par pas, instantanés par copie de textures) à l'état ⌊τ × pps⌋ ; la passe image
  * lit les tampons de son « lit ». .libererMultipasse(shader) : tampons et instantanés libérés (recréés au prochain avancement,
  * même état : il ne dépend que de τ) ; .oublier(shader) : en plus, programmes WebGL2 d'un shader GLSL (perte du GPU).
- * Fond GLSL : shader.transparent (vrai si sa première image, hors multipasse, est entièrement transparente).
+ * Fond GLSL : shader.transparent (vrai si sa première image dessinée à partir du milieu de sa fenêtre, multipasse compris, est
+ * entièrement transparente ; indéfini avant).
  * GLSL (P7) : donnee.langage « glsl » compilé par P.Glsl (contexte WebGL2 partagé) ; fond : image WebGL2 de la zone et de
  * son débord copiée (copyExternalImageToTexture) puis relais WGSL sur le repère ; .imageGLSLComposition pour la composition.
  *   .vueBruit, .vueVide                     texture de bruit 256 × 256 (P.texelsBruit), texture transparente 1 × 1
@@ -42,6 +45,30 @@
     '}',
     '',
   ].join('\n');
+
+  // Conversion d'une image du navigateur (P6, reliquats) : copyExternalImageToTexture prémultiplie dans l'espace encodé
+  // (sRGB(c)·a), ce qui, lu en linéaire, assombrit les bords semi-transparents. L'image est donc copiée telle quelle (alpha
+  // droit) dans une texture brute rgba8unorm, puis réécrite en linéaire prémultiplié (linéaire(c)·a) dans la texture sRGB.
+  // Une image opaque garde exactement ses octets (décodage puis réencodage sRGB).
+  const CONVERSION = /* wgsl */ `
+@group(0) @binding(0) var brut: texture_2d<f32>;
+
+@vertex
+fn vs(@builtin(vertex_index) i: u32) -> @builtin(position) vec4f {
+  var p = array<vec2f, 3>(vec2f(-1.0, -3.0), vec2f(-1.0, 1.0), vec2f(3.0, 1.0));
+  return vec4f(p[i], 0.0, 1.0);
+}
+
+fn versLineaire(c: vec3f) -> vec3f {
+  return select(pow((c + 0.055) / 1.055, vec3f(2.4)), c / 12.92, c <= vec3f(0.04045));
+}
+
+@fragment
+fn fs(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+  let c = textureLoad(brut, vec2i(pos.xy), 0);
+  return vec4f(versLineaire(c.rgb) * c.a, c.a);
+}
+`;
 
   function pcg(v) {
     const s = (Math.imul(v >>> 0, 747796405) + 2891336453) >>> 0;
@@ -124,11 +151,46 @@
       const bitmap = await createImageBitmap(img);
       const T = GPUTextureUsage;
       const texture = this.device.createTexture({ size: [bitmap.width, bitmap.height], format: 'rgba8unorm-srgb', usage: T.TEXTURE_BINDING | T.COPY_DST | T.RENDER_ATTACHMENT });
-      this.device.queue.copyExternalImageToTexture({ source: bitmap }, { texture, premultipliedAlpha: true }, [bitmap.width, bitmap.height]);
+      const porteur = { texture };
+      this.copierImage(bitmap, porteur, bitmap.width, bitmap.height);
+      this.oublierBrut(porteur);
       bitmap.close();
       const vue = texture.createView();
       this.images.set(uri, vue);
       return vue;
+    }
+
+    /** Image du navigateur copiée dans porteur.texture (rgba8unorm-srgb, largeur × hauteur) en linéaire prémultiplié, par
+     *  la texture brute porteur.brut (rgba8unorm, gardée pour les copies suivantes, recréée si sa taille change). */
+    copierImage(source, porteur, largeur, hauteur) {
+      const { device } = this;
+      const T = GPUTextureUsage;
+      if (!this.conversion) {
+        const module = device.createShaderModule({ label: 'pm-conversion', code: CONVERSION });
+        this.conversion = device.createRenderPipeline({
+          layout: 'auto', vertex: { module, entryPoint: 'vs' },
+          fragment: { module, entryPoint: 'fs', targets: [{ format: 'rgba8unorm-srgb' }] },
+        });
+      }
+      let b = porteur.brut;
+      if (!b || b.largeur !== largeur || b.hauteur !== hauteur) {
+        if (b) b.texture.destroy();
+        const texture = device.createTexture({ size: [largeur, hauteur], format: 'rgba8unorm', usage: T.TEXTURE_BINDING | T.COPY_DST | T.RENDER_ATTACHMENT });
+        b = porteur.brut = { texture, largeur, hauteur };
+        b.groupe = device.createBindGroup({ layout: this.conversion.getBindGroupLayout(0), entries: [{ binding: 0, resource: texture.createView() }] });
+      }
+      device.queue.copyExternalImageToTexture({ source }, { texture: b.texture, premultipliedAlpha: false }, [largeur, hauteur]);
+      const enc = device.createCommandEncoder();
+      const p = enc.beginRenderPass({ colorAttachments: [{ view: porteur.texture.createView(), loadOp: 'clear', clearValue: [0, 0, 0, 0], storeOp: 'store' }] });
+      p.setPipeline(this.conversion);
+      p.setBindGroup(0, b.groupe);
+      p.draw(3);
+      p.end();
+      device.queue.submit([enc.finish()]);
+    }
+
+    oublierBrut(porteur) {
+      if (porteur && porteur.brut) { try { porteur.brut.texture.destroy(); } catch (e) { /* device déjà perdu */ } porteur.brut = null; }
     }
 
     /** Son réactif (P7) : texture r8unorm 512 × 2 d'une piste (ligne 0 spectre, ligne 1 onde), créée à la première écriture. */
@@ -430,6 +492,7 @@
       if (!shader) return;
       try { this.libererMultipasse(shader); } catch (e) { /* device déjà perdu */ }
       if (shader.texture) { try { shader.texture.destroy(); } catch (e) { /* device déjà perdu */ } shader.texture = null; }
+      this.oublierBrut(shader);
       if (shader.glsl) {
         const gl = shader.moteurGL.gl;
         gl.deleteProgram(shader.glsl.programme);
@@ -438,7 +501,8 @@
       }
     }
 
-    /** Image WebGL2 copiée dans la texture du shader (rgba8unorm-srgb, prémultipliée) ; recréée si sa taille change. */
+    /** Image WebGL2 (sRGB, alpha droit) copiée dans la texture du shader (rgba8unorm-srgb, linéaire prémultiplié, comme une
+     *  sortie WGSL) ; recréée si sa taille change. */
     copierGLSL(shader, canvas, largeur, hauteur) {
       const { device } = this;
       if (!shader.texture || shader.largeur !== largeur || shader.hauteur !== hauteur) {
@@ -449,7 +513,7 @@
         shader.largeur = largeur;
         shader.hauteur = hauteur;
       }
-      device.queue.copyExternalImageToTexture({ source: canvas }, { texture: shader.texture, premultipliedAlpha: true }, [largeur, hauteur]);
+      this.copierImage(canvas, shader, largeur, hauteur);
       return shader.vue;
     }
 
@@ -466,8 +530,9 @@
       const largeur = Math.max(1, Math.round((entrees.resolution[0] + 2 * d) * k));
       const hauteur = Math.max(1, Math.round((entrees.resolution[1] + 2 * d) * k));
       const canvas = shader.moteurGL.dessiner(shader.glsl, { largeur, hauteur, entrees, valeurs: shader.valeurs, canaux: this.canauxGL(shader, []) });
-      // Première image d'un fond (hors multipasse, dont les tampons partent de 0) : sortie entièrement transparente ?
-      if (shader.transparent === undefined) shader.transparent = shader.multi ? false : shader.moteurGL.toutTransparent(largeur, hauteur);
+      // Sortie entièrement transparente ? Vérifié une fois, à la première image dessinée à partir du milieu de la fenêtre du fond :
+      // un fond qui apparaît en fondu depuis alpha 0, ou un multipasse dont les tampons partent de 0, n'est pas signalé.
+      if (shader.transparent === undefined && entrees.progres >= 0.5) shader.transparent = shader.moteurGL.toutTransparent(largeur, hauteur);
       return this.copierGLSL(shader, canvas, largeur, hauteur);
     }
 

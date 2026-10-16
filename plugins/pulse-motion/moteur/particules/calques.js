@@ -46,7 +46,7 @@
  * Fonds multipasses (P7) : avant le dessin du calque, chaque fond multipasse actif est amené au pas ⌊τ × pps⌋
  * (P.Shaders.avancerMultipasse) ; taille de ses tampons : sa zone mesurée à son début (zoneAuDebut). Tampons et
  * instantanés libérés quand la scène est masquée ou le fond hors de sa fenêtre (recréés au besoin : même image), et
- * à la perte du GPU (faces WebGL2 comprises). Fond GLSL entièrement transparent à sa première image : alerte.
+ * à la perte du GPU (faces WebGL2 comprises). Fond GLSL entièrement transparent au milieu de sa fenêtre : alerte.
  * M.shaders.multipasses(idScene) -> [{ ordre, nom, etat, instantanes }]   (tests)
  * Fonds et auras par shader (P6) : balises data-pm-shader (M.donnees.shaders, usage « fond ») ; une scène a des calques
  * dès qu'elle a des effets ou des fonds ; shaders compilés au démarrage du GPU (P.Shaders) ; chaque fond actif (de son
@@ -1294,7 +1294,7 @@
         fonds: fonds.filter((a) => a.f.calque === nom).map((a) => (passe) => etat.shaders.dessiner(passe, a.f.shader, entreesFond(a, largeurCqh, canvas), null, 'fond')),
       });
     });
-    // Fond GLSL entièrement transparent à sa première image (alpha laissé à 0, ignoré sur Shadertoy) : alerte.
+    // Fond GLSL entièrement transparent au milieu de sa fenêtre (alpha laissé à 0, ignoré sur Shadertoy) : alerte.
     fonds.forEach((a) => {
       if (!a.f.shader || a.f.shader.transparent !== true || a.f.alerteTransparent) return;
       a.f.alerteTransparent = true;

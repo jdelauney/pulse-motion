@@ -117,12 +117,20 @@ async function ys(effet, ZONE, tau) {
   const u = new Uint32Array(f.buffer);
   const l = [];
   for (let s = 0; s < f.length / 16; s++) if (u[s * 16 + 14] === 1) l.push(f[s * 16 + 1]);
+  // Plus petite distance d'une particule vivante au centre du disque.
+  let d = Infinity;
+  for (let s = 0; s < f.length / 16; s++) if (u[s * 16 + 14] === 1) d = Math.min(d, Math.hypot(f[s * 16] - 50, f[s * 16 + 1] - 50));
   sim.detruire();
+  l.distance = d;
   return l;
 }
+const INSTANTS = [0.75, 0.85, 0.95, 1.05, 1.2, 1.4];
 const glisse = await ys(DONNEES.glisse, [43, 30, 4, 0], 2);
 const grains = await ys(DONNEES.grains, [52, 30, 4, 3], 4);
-await envoyer({ webgpu: true, glisse, grains });`;
+// Pendant le glissement (contact vers τ = 0,7 s) : plus petite distance au centre, à plusieurs instants.
+const distances = [];
+for (const tau of INSTANTS) distances.push((await ys(DONNEES.glisse, [43, 30, 4, 0], tau)).distance);
+await envoyer({ webgpu: true, glisse, grains, distances });`;
   const r = JSON.parse(await executerPage(pageMoteur({ fichiers: FICHIERS.concat('particules/voisinage.js'), donnees: { glisse, grains }, code })));
   assert.equal(r.erreur, undefined, r.erreur);
   if (r.webgpu === false) return t.skip('WebGPU indisponible');
@@ -131,6 +139,8 @@ await envoyer({ webgpu: true, glisse, grains });`;
   assert.equal(r.glisse.length, 20);
   const tombees = r.glisse.filter((y) => y > 60).length;
   assert.equal(tombees, 20, `${tombees}/20 particules tombées du disque à τ = 2 s (glissement le long de la forme)`);
+  // Glissement le long du contour, sans entrer dans le disque (rayon 10, tramé à 0,08 cqh : marge 0,3 cqh).
+  r.distances.forEach((d, i) => assert.ok(d >= 10 - 0.3, `τ = ${[0.75, 0.85, 0.95, 1.05, 1.2, 1.4][i]} s : une particule à ${d.toFixed(2)} cqh du centre, dans le disque (rayon 10)`));
   assert.equal(r.grains.length, 20);
   const grainsTombes = r.grains.filter((y) => y > 60).length;
   assert.equal(grainsTombes, 20, `${grainsTombes}/20 grains tombés du disque à τ = 4 s (écoulement le long de la forme)`);
