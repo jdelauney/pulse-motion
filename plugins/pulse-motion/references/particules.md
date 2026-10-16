@@ -32,7 +32,7 @@
 | `data-calque` | `avant` (défaut) ou `arriere` |
 | `data-reglages` | `nom: valeur` séparés par `;` |
 | `data-graine` | entier |
-| `data-start`, `data-dur` | comme tout élément minuté ; `data-dur` = durée d'émission (1 s par défaut) |
+| `data-start`, `data-dur` | comme tout élément minuté ; `data-dur` = durée d'émission (1 s par défaut ; cordes et tissus sans `data-dur` : jusqu'à la fin de la scène) |
 
 Pour une zone précise sans élément à viser, donner une classe à la balise (`<div class="zone-feu" data-effet="feu">`) et une position et une taille dans le `@scope` de la scène : `.zone-feu { inset: 70% auto auto 30%; width: 40%; height: 10%; }`.
 
@@ -289,6 +289,8 @@ Un émetteur peut être une **corde** (fil, guirlande) ou un **tissu** (drapeau,
 <h1 id="titre" data-texte="titre" data-start="0"></h1>
 <div data-effet="banniere" data-ancre="#titre" data-start="2" data-dur="4"></div>
 ```
+
+Durée : une corde ou un tissu est un objet posé, pas une émission. Un effet fait uniquement de structures (cordes, tissus, et leurs perles) **sans `data-dur` dure jusqu'à la fin de sa scène** (comme un milieu ou un fond) ; avec `data-dur`, il disparaît à la fin de `data-dur`. Un effet qui mêle une structure et des particules émises suit la règle commune (`data-dur` = durée d'émission, 1 s par défaut).
 
 ### Réglages d'une recette (`structure`, par émetteur)
 

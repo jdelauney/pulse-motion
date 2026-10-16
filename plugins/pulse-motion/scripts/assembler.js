@@ -155,7 +155,34 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   let luPersonnages = null;
   const utilisesPersonnages = { dessins: new Set(), gabarits: new Set() };
   const scenesQuiParlent = new Set();
+  // Voix : une prise par scène (ou la voix provisoire), mots calés ; Opus si encodé, sinon WAV. Lues avant les scènes : la
+  // durée d'une scène allongée par sa voix sert aux effets faits de structures sans data-dur (jusqu'à la fin de la scène).
+  const voixScenes = {};
+  const sonsVoix = [];
+  const erreursVoix = [];
+  let calageApproche = false;
   for (const scene of deroule.scenes) {
+    const v = lireVoixScene(projet, deroule, scene);
+    if (!v) continue;
+    if (v.erreur) { erreursVoix.push({ regle: 'voix-illisible', gravite: 'erreur', scene: scene.id, message: v.erreur }); continue; }
+    erreursVoix.push(...v.alertes);
+    const uri = embarquerFichier(projet, v.opus || v.prise.relatif, `Voix de la scène « ${scene.id} »`, erreursVoix);
+    if (!uri) continue;
+    const id = `pm-son-voix-${scene.id}`;
+    sonsVoix.push(blocSon(id, uri));
+    voixScenes[scene.id] = { source: id, debut: scene.voix.debut ?? DEBUT_VOIX, duree: v.duree, mots: v.mots, ...(v.prise.provisoire ? { provisoire: true } : {}) };
+    if (v.approche !== 'whisper') calageApproche = true;
+    if (v.prise.provisoire) {
+      erreursVoix.push({ regle: 'voix-provisoire', gravite: 'alerte', scene: scene.id,
+        message: `Scène « ${scene.id} » : c'est encore la voix provisoire du système ; enregistrez la vôtre avant d'exporter.` });
+    }
+  }
+  const scenesDonnees = deroule.scenes.map((s) => ({ id: s.id, duree: s.duree, rythme: s.rythme || 1,
+    transition: s.transition && typeof s.transition === 'object' ? { shader: s.transition.shader, duree: s.transition.duree > 0 ? s.transition.duree : DUREE_TRANSITION_SHADER } : (s.transition || 'aucune'),
+    ...(voixScenes[s.id] ? { voix: voixScenes[s.id] } : {}) }));
+  const minutageScenes = calculerMinutage(scenesDonnees, {}, { dureeTemps: dureeTemps(deroule), decalageTemps: (deroule.tempo && deroule.tempo.decalage) || 0 });
+
+  for (const [rang, scene] of deroule.scenes.entries()) {
     const fichier = cheminDansProjet(projet, scene.fichier);
     let html = null;
     let probleme = null;
@@ -185,7 +212,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     erreurs.push(...erreursMilieux);
     const { html: avecEffets, effets: effetsScene, erreurs: erreursEffets, modules: modulesScene } = preparerEffets(avecMilieux, {
       scene: scene.id, projet, bibliotheque: dossierEffets, charte: charte.couleurs, premierIndex: effets.length, dureeTemps: dureeTemps(deroule), chargerShader,
-      milieu: milieuxScene.length > 0,
+      milieu: milieuxScene.length > 0, dureeScene: minutageScenes.scenes[rang].dureeEffective,
     });
     Object.assign(sourcesModules, modulesScene);
     effets.push(...effetsScene);
@@ -244,25 +271,9 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     if (uri) { sourceMusique = 'pm-son-musique'; sons.push(blocSon(sourceMusique, uri)); }
   }
 
-  // Voix : une prise par scène (ou la voix provisoire), mots calés ; Opus si encodé, sinon WAV.
-  const voixScenes = {};
-  let calageApproche = false;
-  for (const scene of deroule.scenes) {
-    const v = lireVoixScene(projet, deroule, scene);
-    if (!v) continue;
-    if (v.erreur) { erreurs.push({ regle: 'voix-illisible', gravite: 'erreur', scene: scene.id, message: v.erreur }); continue; }
-    erreurs.push(...v.alertes);
-    const uri = embarquerFichier(projet, v.opus || v.prise.relatif, `Voix de la scène « ${scene.id} »`, erreurs);
-    if (!uri) continue;
-    const id = `pm-son-voix-${scene.id}`;
-    sons.push(blocSon(id, uri));
-    voixScenes[scene.id] = { source: id, debut: scene.voix.debut ?? DEBUT_VOIX, duree: v.duree, mots: v.mots, ...(v.prise.provisoire ? { provisoire: true } : {}) };
-    if (v.approche !== 'whisper') calageApproche = true;
-    if (v.prise.provisoire) {
-      erreurs.push({ regle: 'voix-provisoire', gravite: 'alerte', scene: scene.id,
-        message: `Scène « ${scene.id} » : c'est encore la voix provisoire du système ; enregistrez la vôtre avant d'exporter.` });
-    }
-  }
+  // Voix (lues avant les scènes) : blocs et messages rangés ici, à leur place habituelle.
+  sons.push(...sonsVoix);
+  erreurs.push(...erreursVoix);
   for (const id of scenesQuiParlent) {
     if (!voixScenes[id]) erreurs.push({ regle: 'personnage-invalide', gravite: 'alerte', scene: id,
       message: `Scène « ${id} » : un personnage doit parler, mais la voix n'est pas enregistrée : il restera bouche fermée (enregistrer la voix de la scène, ou « pulse-motion voix provisoire --scene ${id} »).` });
@@ -292,9 +303,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     // Tempo du déroulé, sinon celui de la musique générée.
     tempo: deroule.tempo ? { bpm: deroule.tempo.bpm, decalage: deroule.tempo.decalage || 0 } : tempoMusique(deroule) ? { bpm: tempoMusique(deroule), decalage: 0 } : null,
     bruitages: deroule.bruitages ? { transitions: deroule.bruitages.transitions === true, volume: deroule.bruitages.volume ?? 1 } : null,
-    scenes: deroule.scenes.map((s) => ({ id: s.id, duree: s.duree, rythme: s.rythme || 1,
-      transition: s.transition && typeof s.transition === 'object' ? { shader: s.transition.shader, duree: s.transition.duree > 0 ? s.transition.duree : DUREE_TRANSITION_SHADER } : (s.transition || 'aucune'),
-      ...(voixScenes[s.id] ? { voix: voixScenes[s.id] } : {}) })),
+    scenes: scenesDonnees,
     effets: effets.map(({ calque, ancre, cible, effet }) => ({ calque, ancre, cible, effet })),
     milieux: milieux.map(({ calque, ancre, sansDuree, effet }) => ({ calque, ancre, sansDuree, effet })),
     obstacles,

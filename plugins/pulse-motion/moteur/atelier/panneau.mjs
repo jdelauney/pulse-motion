@@ -290,7 +290,10 @@ async function appliquer() {
   const info = effetDe(etat.scene, etat.ordre);
   if (!info || !etat.recette) return;
   const numero = ++generation;
-  const r = await compilerPourPage(M.recette, etat.recette, { reglages: reglagesEnTexte(etat.valeurs), charte: donnees.charte, dur: info.dur, graine: etat.graine }, textures);
+  // Effet fait uniquement de structures sans data-dur : jusqu'à la fin de la scène (minutage de la page, voix comprise).
+  const scene = info.durScene && M.minutage ? M.minutage.scenes.find((s) => s.id === etat.scene) : null;
+  const dur = scene && scene.dureeEffective > 0 ? scene.dureeEffective : info.dur;
+  const r = await compilerPourPage(M.recette, etat.recette, { reglages: reglagesEnTexte(etat.valeurs), charte: donnees.charte, dur, graine: etat.graine }, textures);
   if (numero !== generation) return;
   etat.erreurs = r.ok ? [] : r.erreurs;
   marquer();
