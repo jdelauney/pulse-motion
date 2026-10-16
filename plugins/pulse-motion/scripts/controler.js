@@ -220,17 +220,6 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
       }
     }
 
-    // Tempo : chaque scène commence sur un temps (à une demi-image près) ; la première commence la vidéo.
-    if (temps) {
-      const tolerance = 0.5 / (deroule.format.ips || 30);
-      for (const s of min.scenes.slice(1)) {
-        const ecart = (s.debut - ((deroule.tempo && deroule.tempo.decalage) || 0)) / temps;
-        if (Math.abs(ecart - Math.round(ecart)) * temps > tolerance) {
-          problemes.push({ regle: 'hors-tempo', gravite: 'alerte', scene: s.id, message: `Scène « ${s.id} » : elle commence à ${virgule(s.debut)} s, entre deux temps (${Math.round(60 / temps)} bpm) ; ajuster la durée de la scène précédente pour tomber sur la musique.` });
-        }
-      }
-    }
-
     // Fenêtre d'une balise d'effet : jusqu'à la mort de la dernière particule, pas seulement data-dur.
     const nomsEffets = {};
     const finEffet = (scene, rythme) => {
@@ -255,8 +244,8 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
       const mots = Object.values(s.textes).reduce((n, t) => n + compterMots(t), 0);
       besoinLecture[s.id] = { mots, besoin: SEUILS.lectureBase + SEUILS.lectureParMot * mots };
     }
-    // Une durée corrigée décalerait les scènes suivantes par rapport à la musique : rien avec un tempo.
-    const corrigeable = !temps;
+    // La musique se cale sur les scènes : une durée corrigée ne la décale pas.
+    const corrigeable = true;
 
     // Temps morts : aucun élément en mouvement pendant plus que le seuil (pause finale exceptée).
     const derniere = min.scenes[min.scenes.length - 1];

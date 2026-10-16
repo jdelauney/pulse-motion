@@ -65,6 +65,9 @@
       if (C.INSTRUMENTS.indexOf(piste.instrument) < 0) err.push(nom + ' : instrument « ' + piste.instrument + ' » inconnu (' + C.INSTRUMENTS.join(', ') + ').');
       if (piste.volume !== undefined && !(typeof piste.volume === 'number' && piste.volume >= 0 && piste.volume <= 1)) err.push(nom + ' : « volume » de 0 à 1.');
       ['de', 'a'].forEach(function (k) { if (piste[k] !== undefined && !(Number.isInteger(piste[k]) && piste[k] >= 0)) err.push(nom + ' : « ' + k + ' » doit être un numéro de mesure (entier, à partir de 0).'); });
+      // Piste calée sur une scène : « scene » (écrit par la personne) ou « origine » / « jusqua » (secondes, posés à l'assemblage).
+      if (piste.scene !== undefined && !(typeof piste.scene === 'string' && /^[a-z0-9-]+$/.test(piste.scene))) err.push(nom + ' : « scene » doit être l\'identifiant d\'une scène du déroulé.');
+      ['origine', 'jusqua'].forEach(function (k) { if (piste[k] !== undefined && !(typeof piste[k] === 'number' && isFinite(piste[k]) && piste[k] >= 0)) err.push(nom + ' : « ' + k + ' » doit être un nombre de secondes positif ou nul.'); });
       var de = piste.de === undefined ? 0 : piste.de, a = piste.a === undefined ? p.mesures : piste.a;
       if (Number.isInteger(de) && Number.isInteger(a) && de >= a) err.push(nom + ' : « de » (' + de + ') doit être avant « a » (' + a + ') : la piste ne jouerait rien.');
       if (!Array.isArray(piste.motif) || !piste.motif.length) { err.push(nom + ' : motif vide.'); return; }
@@ -86,12 +89,19 @@
   /** Partition valide -> évènements [{ t, instrument, frequences, duree, velocite, volume }], triés, coupés à duree. */
   function evenements(p, options) {
     var mesure = dureeMesure(p.tempo), fin = p.mesures * mesure;
-    if (options && options.duree !== undefined) fin = Math.min(fin, options.duree);
+    var limite = options && options.duree !== undefined ? options.duree : Infinity;
+    fin = Math.min(fin, limite);
     var liste = [];
     p.pistes.forEach(function (piste) {
       var pas = piste.motif.map(lirePas);
-      var debut = (piste.de || 0) * mesure;
-      var arret = Math.min(fin, (piste.a === undefined ? p.mesures : piste.a) * mesure);
+      // Piste calée sur une scène : sa grille part de « origine » (début réel de la scène) et s'arrête à « jusqua ».
+      var ancree = typeof piste.origine === 'number';
+      var origine = ancree ? piste.origine : 0;
+      var debut = origine + (piste.de || 0) * mesure;
+      var arret = ancree
+        ? Math.min(limite, piste.jusqua === undefined ? Infinity : piste.jusqua, piste.a === undefined ? Infinity : origine + piste.a * mesure)
+        : Math.min(fin, (piste.a === undefined ? p.mesures : piste.a) * mesure);
+      if (!isFinite(arret)) arret = Math.max(fin, debut);
       var t = debut, k = 0, garde = 0;
       while (t < arret - 1e-9 && garde++ < 100000) {
         var s = pas[k % pas.length];

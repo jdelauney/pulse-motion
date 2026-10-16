@@ -82,12 +82,8 @@
       if (s.voix && s.voix.duree > 0) {
         var finVoix = (s.voix.debut === undefined ? DEBUT_VOIX : s.voix.debut) + s.voix.duree + MARGE_VOIX;
         if (finVoix > reelle + 1e-9) {
-          // Avec un tempo : la scène suivante commence sur un temps (premier temps à decalageTemps, entrée chevauchée comprise).
-          if (dureeTemps) {
-            var entreeSuivante = i + 1 < scenes.length ? chevauchement(scenes[i + 1], i + 1) : 0;
-            var k = Math.ceil((debut + finVoix - entreeSuivante - decalageTemps) / dureeTemps - 1e-9);
-            reelle = k * dureeTemps + decalageTemps + entreeSuivante - debut;
-          } else reelle = finVoix;
+          // La scène finit avec la voix (la musique se cale sur les scènes, pas l'inverse).
+          reelle = finVoix;
           allongee = true;
         }
       }

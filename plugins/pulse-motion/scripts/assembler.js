@@ -335,7 +335,8 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   if (deroule.musique && deroule.musique.generee) {
     const min = calculerMinutage(donnees.scenes, {}, { dureeTemps: dureeTemps(deroule), decalageTemps: (deroule.tempo && deroule.tempo.decalage) || 0 });
     donnees.musique.partition = SA.generer({ ambiance: deroule.musique.generee, tempo: deroule.musique.tempo, tonalite: deroule.musique.tonalite,
-      intensite: deroule.musique.intensite, graine: deroule.musique.graine, duree: min.duree, scenes: min.scenes.map((s) => ({ debut: s.debut, fin: s.fin })) });
+      intensite: deroule.musique.intensite, graine: deroule.musique.graine, duree: min.duree,
+      scenes: min.scenes.map((s, i) => ({ debut: s.debut, fin: s.fin, humeur: deroule.scenes[i].musique })) });
   } else if (deroule.musique && deroule.musique.partition) {
     const absolu = cheminDansProjet(projet, deroule.musique.partition);
     let lue = null;
@@ -345,7 +346,19 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     if (lue) {
       const fautes = SP.validerPartition(lue);
       if (fautes.length) erreurs.push({ regle: 'partition-invalide', gravite: 'erreur', message: `Partition « ${deroule.musique.partition} » : ${fautes.join(' ')}` });
-      else donnees.musique.partition = lue;
+      else {
+        // Pistes calées sur une scène : leur grille part du vrai début de la scène et s'arrête au début de la suivante.
+        const min = calculerMinutage(donnees.scenes, {}, { dureeTemps: dureeTemps(deroule), decalageTemps: (deroule.tempo && deroule.tempo.decalage) || 0 });
+        const ids = min.scenes.map((s) => s.id);
+        const inconnues = [...new Set(lue.pistes.filter((p) => p.scene !== undefined && !ids.includes(p.scene)).map((p) => p.scene))];
+        if (inconnues.length) erreurs.push({ regle: 'partition-invalide', gravite: 'erreur', message: `Partition « ${deroule.musique.partition} » : scène${inconnues.length > 1 ? 's' : ''} ${inconnues.map((x) => `« ${x} »`).join(', ')} inconnue${inconnues.length > 1 ? 's' : ''} (scènes : ${ids.join(', ')}).` });
+        donnees.musique.partition = { ...lue, pistes: lue.pistes.filter((p) => p.scene === undefined || ids.includes(p.scene)).map((p) => {
+          if (p.scene === undefined) return p;
+          const i = ids.indexOf(p.scene);
+          const { scene, ...reste } = p;
+          return { ...reste, origine: Math.round(min.scenes[i].debut * 1e6) / 1e6, jusqua: Math.round((i + 1 < ids.length ? min.scenes[i + 1].debut : min.duree) * 1e6) / 1e6 };
+        }) };
+      }
     }
   }
 
