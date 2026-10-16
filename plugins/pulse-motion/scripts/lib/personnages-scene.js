@@ -73,6 +73,13 @@ function preparerPersonnages(html, { scene, lu, voix = false }) {
       if (d && !VISEMES.some((v) => bouches.includes(v))) erreurs.push({ ...erreur(scene, `${qui} : le dessin « ${dans} » n'a aucune bouche de parole (${VISEMES.join(', ')}) : la bouche ne bougera pas ; dessiner au moins A, O et MBP.`), gravite: 'alerte' });
     }
     if (type === 'parler' && !voix) erreurs.push(erreur(scene, `${qui} : la scène n'a pas de voix ; ajouter son texte dit (voix.texte) au déroulé, ou retirer l'action.`));
+    if ((type === 'marcher' || type === 'courir') && a['data-clip'] !== undefined) {
+      const nomClip = a['data-clip'].trim();
+      const c = Object.hasOwn(lu.clips, nomClip) ? lu.clips[nomClip] : null;
+      const modele = type === 'courir' ? 'course' : 'marche';
+      if (!c) erreurs.push(erreur(scene, `${qui} : démarche « ${nomClip} » introuvable ; la créer d'abord dans personnages/clips/ de la vidéo (un mouvement en boucle, copié de « ${modele} » : pulse-motion personnages afficher ${modele}).`));
+      else if (!c.boucle || c.additif) erreurs.push(erreur(scene, `${qui} : « ${nomClip} » ne peut pas servir de démarche : il faut un mouvement en boucle, comme « ${modele} ».`));
+    }
     if (type === 'pose' && a['data-pose'] !== undefined && !Object.hasOwn(lu.poses, a['data-pose'])) erreurs.push(erreur(scene, `${qui} : pose « ${a['data-pose']} » introuvable (poses : ${Object.keys(lu.poses).join(', ')}).`));
     if (type === 'expression' && a['data-expression'] !== undefined && !Object.hasOwn(lu.expressions, a['data-expression'])) erreurs.push(erreur(scene, `${qui} : expression « ${a['data-expression']} » introuvable (expressions : ${Object.keys(lu.expressions).join(', ')}).`));
     if (type === 'jouer' && a['data-clip'] !== undefined) {

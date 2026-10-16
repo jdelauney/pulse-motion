@@ -160,7 +160,7 @@ test('tempo : durée d\'un temps et bpm en variables CSS, tempo dans les donnée
   modifierDeroule(dir, (d) => { d.tempo = { bpm: 120, decalage: 0.25 }; });
   const { html } = assembler({ dossier: dir, dossierStyles: STYLES, ecrire: false });
   assert.match(html, /--pm-temps: 0\.5s; --pm-bpm: 120;/);
-  assert.match(html, /"tempo":\{"bpm":120,"decalage":0\.25\}/);
+  assert.match(html, /"tempo":\{"bpm":120,"decalage":0\.25,"grille":true\}/, 'tempo sans musique qui suit les scènes : grille fixe');
 });
 
 test('revue : aucun fichier du moteur embarqué ne contient « </script » (il fermerait le script de la page)', () => {

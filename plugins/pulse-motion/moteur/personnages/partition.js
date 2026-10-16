@@ -5,7 +5,8 @@
  * partition = { x0, vue0, calme, largeur, echelle, actions: [{ type, debut, fin, vers?, pose?, clip?, vue?, expression?, bouche?, piste? }] }
  *   temps absolus (résolus par le minutage) ; x en % de la largeur de la scène ; largeur en unités de la scène ;
  *   echelle : unités de scène par unité du squelette.
- * - Position : x0, puis interpolée pendant chaque marche ou course (« vers »), gardée après.
+ * - Position : x0, puis interpolée pendant chaque marche ou course (« vers »), gardée après ; « clip » : démarche à soi
+ *   (mouvement en boucle) à la place de la marche ou de la course.
  * - Corps, par priorité : pose ou geste (« jouer ») en cours, le plus récent ; sinon marche ou course (phase calée sur la
  *   distance parcourue : pas de glissement) ; sinon repos. Fondu de 0,25 s à chaque changement, sans mémoire.
  * - Vue : vue0 ; une marche se tourne dans le sens du trajet (sauf « vue » donnée) ; « tourner » interpole.
@@ -53,7 +54,7 @@
         x = prec.de + (prec.vers - prec.de) * Math.max(0, a.debut - prec.debut) / (prec.fin - prec.debut);
         prec.vers = x; prec.fin = Math.max(prec.debut + 1e-6, a.debut);
       }
-      out.push({ debut: a.debut, fin: Math.max(a.fin, a.debut + 1e-6), de: x, vers: a.vers, allure: a.type === 'courir' ? 'course' : 'marche', vue: a.vue });
+      out.push({ debut: a.debut, fin: Math.max(a.fin, a.debut + 1e-6), de: x, vers: a.vers, allure: a.type === 'courir' ? 'course' : 'marche', vue: a.vue, clip: a.clip });
       x = a.vers;
     });
     return out;
@@ -101,9 +102,12 @@
       return c.additif ? K.ajouter({}, c, tt, bib) : K.echantillonner(c, tt, bib, gabarit);
     }
     if (e.type === 'marche' || e.type === 'course') {
-      var clip = bib.clips[e.type];
+      // Démarche à soi (data-clip : un mouvement en boucle), sinon la marche ou la course.
+      var propre = e.trajet && e.trajet.clip ? bib.clips[e.trajet.clip] : null;
+      var defaut = bib.clips[e.type];
+      var clip = propre && propre.boucle && !propre.additif ? propre : defaut;
       if (!clip) return {};
-      var foulee = (clip.foulee || 248) * part.echelle;
+      var foulee = (clip.foulee || (defaut && defaut.foulee) || 248) * part.echelle;
       var tc = distanceDansTrajet(part, e.trajet, t) / foulee * clip.duree;
       return K.echantillonner(clip, tc, bib, gabarit);
     }
