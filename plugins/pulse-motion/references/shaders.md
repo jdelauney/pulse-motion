@@ -70,7 +70,7 @@ Le fond est dessiné dans le calque de particules de la scène, avant les partic
 | `trainees-lumineuses` | fond multipasse | `nombre`, `vitesse`, `persistance`, `epaisseur`, `couleur1`, `couleur2` | Énergie, technologie, nuit |
 | `peinture` | fond multipasse | `pinceau`, `courant`, `echelle`, `couleur1`, `couleur2`, `couleur3` | Création, art, douceur |
 | `automate` | fond multipasse | `densite`, `graine`, `couleur`, `opacite` | Numérique, émergence |
-| `ondes-glsl` | fond multipasse (GLSL) | `intervalle`, `force`, `amortissement`, `profondeur`, `reflet` | Calme, réflexion, nature |
+| `ondes-glsl` | fond multipasse (GLSL) | `intervalle`, `force`, `amortissement`, `profondeur`, `teinte`, `melange`, `reflet`, `opacite` | Calme, réflexion, nature |
 | `spirale` | module de force | `tours`, `attraction` | Tourbillon, aspiration |
 | `couleur-vitesse` | module de couleur | `vitesse_max`, `lent`, `rapide` | Étincelles qui refroidissent |
 | `etoile` | module de forme | `branches`, `creux`, `douceur` | Célébration, magie |
@@ -155,6 +155,7 @@ fn image(coord: vec2f) -> vec4f { return canal0(coord / iResolution.xy); }
 - Une fonction par tampon : `fn passeA(coord: vec2f) -> vec4f` (WGSL) ou `void passeA(out vec4 c, in vec2 p)` (GLSL), et `image` / `mainImage` pour la sortie. Au premier pas (`iFrame == 0`), les tampons valent 0 : y poser l'état de départ.
 - `pas_par_seconde` (1 à 240, 60 par défaut) : les tampons avancent à ce rythme, quel que soit l'affichage ; l'aperçu, un retour en arrière et l'export donnent la même image.
 - Un shader multipasse est un fond (`data-shader`, aura comprise). Les tampons coûtent de la mémoire et du calcul : un seul fond multipasse par scène, `echelle` basse pour un motif lent.
+- Texte posé sur un fond multipasse : vérifier le contraste (planche ou aperçu) ; sinon baisser `opacite`, ou prendre des couleurs plus sombres (la couleur « fond » de la charte) sous un titre clair.
 
 ## Modules de particules
 
