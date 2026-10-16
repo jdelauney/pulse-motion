@@ -1158,6 +1158,7 @@
       repere: [r.centre[0], r.centre[1], r.angle, f.donnee.debord || 0],
       demi: [r.demi[0], r.demi[1], 0, 0],
       son: sonPour(f.donnee, a.t),
+      instant: a.t,
       image: [Math.floor((a.t - f.debut) * f.info.rythme * (M.ips || 30) + 1e-6), f.info.rythme / (M.ips || 30)],
     };
   }
@@ -1378,7 +1379,7 @@
     const largeurCqh = largeurScene();
     ecrireSonShaders(t);
     const plein = (temps, progres, duree, donnee) => ({ temps, progres, duree, mode: 1, resolution: [largeurCqh, 100, cible.largeur, cible.hauteur], scene: [largeurCqh, 100, cible.largeur, cible.hauteur],
-      son: sonPour(donnee, t), image: [Math.floor(temps * (M.ips || 30) + 1e-6), 1 / (M.ips || 30)] });
+      son: sonPour(donnee, t), instant: t, image: [Math.floor(temps * (M.ips || 30) + 1e-6), 1 / (M.ips || 30)] });
     const couches = plan.couches.map((id) => {
       const s = M.minutage.scenes.find((x) => x.id === id);
       const temps = (t - s.debut) * s.rythme;

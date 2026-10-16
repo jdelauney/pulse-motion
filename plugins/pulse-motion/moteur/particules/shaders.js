@@ -11,6 +11,8 @@
  *       Un shader n'est dessiné qu'une fois par soumission (son uniforme d'entrées est réécrit à chaque dessin).
  *   .image(uri) -> Promise<vue>             image (data:) en texture sRGB prémultipliée, gardée par URI
  *   .ecrireSon(piste, spectre, onde), .vueSon(piste)   texture du son (P7), liaison 8 (iSonTexture)
+ * GLSL (P7) : donnee.langage « glsl » compilé par P.Glsl (contexte WebGL2 partagé) ; fond : image WebGL2 de la zone et de
+ * son débord copiée (copyExternalImageToTexture) puis relais WGSL sur le repère ; .imageGLSLComposition pour la composition.
  *   .vueBruit, .vueVide                     texture de bruit 256 × 256 (P.texelsBruit), texture transparente 1 × 1
  * P.pcg(v), P.texelsBruit() -> Uint8Array   hachage PCG (comme le WGSL) ; texels du bruit, les mêmes à chaque chargement
  * Hachage PCG d'après M. O'Neill (pcg-random.org, domaine public).
@@ -25,6 +27,16 @@
     color: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' },
     alpha: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' },
   };
+
+  // Relais d'un fond GLSL (P7) : l'image du contexte WebGL2 (canal0), qui couvre la boîte du fond et son débord, placée
+  // sur le repère du fond comme un fond WGSL (aura comprise).
+  const RELAIS = [
+    'fn image(coord: vec2f) -> vec4f {',
+    '  let d = PM.repere.w;',
+    '  return canal0((coord + vec2f(d)) / (iResolution.xy + vec2f(2.0 * d)));',
+    '}',
+    '',
+  ].join('\n');
 
   function pcg(v) {
     const s = (Math.imul(v >>> 0, 747796405) + 2891336453) >>> 0;
@@ -102,11 +114,55 @@
       texels.set(spectre, 0);
       texels.set(onde, 512);
       device.queue.writeTexture({ texture: s.texture }, texels, { bytesPerRow: 512 }, [512, 2]);
+      if (this.glslActif) P.Glsl.partage().ecrireSon(piste, spectre, onde);
     }
 
     vueSon(piste) { const s = this.sons.get(piste); return s ? s.vue : this.vueVide; }
 
     async compiler(donnee) {
+      if (donnee.langage === 'glsl') return this.compilerGLSL(donnee);
+      return this.compilerWGSL(donnee);
+    }
+
+    /** Pipelines du relais des fonds GLSL, compilés une fois par device. -> { ok, disposition, pipelines, erreurs } */
+    async relaisPour() {
+      if (!this.relais) {
+        const r = await this.compilerWGSL({ nom: 'pm-relais', fichier: 'moteur', usage: 'fond', code: RELAIS, parametres: {}, valeurs: {} });
+        this.relais = r.ok ? { ok: true, disposition: r.shader.disposition, pipelines: r.shader.pipelines, erreurs: [] } : { ok: false, erreurs: r.erreurs };
+      }
+      return this.relais;
+    }
+
+    async compilerGLSL(donnee) {
+      const S = M.codeShader;
+      const { device } = this;
+      const echec = (erreurs) => ({ ok: false, erreurs, message: S.messageErreur(donnee.nom, donnee.fichier, erreurs) });
+      let gl;
+      try { gl = P.Glsl.partage(); } catch (e) { return echec([{ ligne: null, colonne: null, message: String(e && e.message || e) }]); }
+      this.glslActif = true;
+      const r = gl.compiler(donnee);
+      if (!r.ok) return echec(r.erreurs);
+      let imageGL = null;
+      if (donnee.image) {
+        try { imageGL = await gl.image(donnee.image); } catch (e) { return echec([{ ligne: null, colonne: null, message: 'image de iChannel2 illisible' }]); }
+      }
+      const relais = await this.relaisPour();
+      if (!relais.ok) return echec(relais.erreurs);
+      const U = GPUBufferUsage;
+      const shader = {
+        donnee, glsl: r.prog, moteurGL: gl, imageGL, valeurs: null, texture: null, vue: null, largeur: 0, hauteur: 0,
+        // Relais propre au shader (ses uniformes) : deux fonds GLSL peuvent être dessinés dans la même soumission.
+        relais: {
+          donnee: { nom: 'pm-relais', piste: donnee.piste }, disposition: relais.disposition, pipelines: relais.pipelines, image: null, valeurs: {},
+          entrees: device.createBuffer({ size: S.OCTETS_ENTREES, usage: U.UNIFORM | U.COPY_DST }),
+          reglages: device.createBuffer({ size: relais.disposition.taille, usage: U.UNIFORM | U.COPY_DST }),
+        },
+      };
+      this.regler(shader, donnee.valeurs || {});
+      return { ok: true, shader, erreurs: [] };
+    }
+
+    async compilerWGSL(donnee) {
       const S = M.codeShader;
       const { device } = this;
       const echec = (erreurs) => ({ ok: false, erreurs, message: S.messageErreur(donnee.nom, donnee.fichier, erreurs) });
@@ -146,10 +202,55 @@
 
     regler(shader, valeurs) {
       shader.valeurs = valeurs;
+      // GLSL : réglages relus à chaque dessin (uniformes WebGL2).
+      if (shader.glsl) return;
       this.device.queue.writeBuffer(shader.reglages, 0, M.codeShader.ecrireReglages(shader.disposition, valeurs));
     }
 
+    /** Image WebGL2 copiée dans la texture du shader (rgba8unorm-srgb, prémultipliée) ; recréée si sa taille change. */
+    copierGLSL(shader, canvas, largeur, hauteur) {
+      const { device } = this;
+      if (!shader.texture || shader.largeur !== largeur || shader.hauteur !== hauteur) {
+        if (shader.texture) shader.texture.destroy();
+        const T = GPUTextureUsage;
+        shader.texture = device.createTexture({ size: [largeur, hauteur], format: 'rgba8unorm-srgb', usage: T.TEXTURE_BINDING | T.COPY_DST | T.RENDER_ATTACHMENT });
+        shader.vue = shader.texture.createView();
+        shader.largeur = largeur;
+        shader.hauteur = hauteur;
+      }
+      device.queue.copyExternalImageToTexture({ source: canvas }, { texture: shader.texture, premultipliedAlpha: true }, [largeur, hauteur]);
+      return shader.vue;
+    }
+
+    canauxGL(shader, premiers) {
+      const son = shader.moteurGL.texSon(shader.donnee.piste || 'musique');
+      return [premiers[0] || null, premiers[1] || null, shader.imageGL, son];
+    }
+
+    /** Fond GLSL : dessiné en WebGL2 à la taille de sa zone et de son débord (pixels du calque), copié. -> vue */
+    imageGLSL(shader, entrees) {
+      const k = entrees.scene[3] / 100;
+      const d = entrees.repere[3];
+      const largeur = Math.max(1, Math.round((entrees.resolution[0] + 2 * d) * k));
+      const hauteur = Math.max(1, Math.round((entrees.resolution[1] + 2 * d) * k));
+      const canvas = shader.moteurGL.dessiner(shader.glsl, { largeur, hauteur, entrees, valeurs: shader.valeurs, canaux: this.canauxGL(shader, []) });
+      return this.copierGLSL(shader, canvas, largeur, hauteur);
+    }
+
+    /** Transition ou post-traitement GLSL (composition) : images d'entrée (ImageBitmap, ou null). -> vue */
+    imageGLSLComposition(shader, entrees, bitmaps, largeur, hauteur) {
+      const canvas = shader.moteurGL.dessiner(shader.glsl, { largeur, hauteur, entrees, valeurs: shader.valeurs, canaux: this.canauxGL(shader, bitmaps) });
+      return this.copierGLSL(shader, canvas, largeur, hauteur);
+    }
+
     dessiner(passe, shader, entrees, canaux, genre) {
+      if (shader.glsl) {
+        // Fond GLSL : image WebGL2 copiée, puis relais WGSL sur le repère du fond. La composition dessine les autres usages.
+        if (genre !== 'fond') throw new Error('Shader GLSL « ' + shader.donnee.nom + ' » : dessiné par la composition.');
+        const vue = this.imageGLSL(shader, entrees);
+        this.dessiner(passe, shader.relais, entrees, [vue, null, null], 'fond');
+        return;
+      }
       const { device } = this;
       device.queue.writeBuffer(shader.entrees, 0, M.codeShader.ecrireEntrees(entrees));
       const c = canaux || [];
