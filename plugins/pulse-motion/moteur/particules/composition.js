@@ -11,6 +11,7 @@
  *                                 chaque couche passe par ses post-traitements ; puis la transition (iChannel0 = sortante ou
  *                                 transparent, iChannel1 = entrante) ou l'empilement des couches dans l'ordre (prémultiplié) ;
  *                                 puis les post-traitements de la vidéo ; enfin sRGB prémultiplié dans le canvas et la copie.
+ *                                 Un shader GLSL (P7) passe par le pont : imagePont, P.Shaders.imageGLSLComposition.
  *   .lirePixels(cible) -> Promise<{ largeur, hauteur, donnees }>   (RVBA 8 bits, prémultiplié, sRGB)
  * Navigateur seulement ; dépend de shaders.js (P.Shaders).
  */
@@ -49,15 +50,28 @@ fn versSRGB(c: vec3f) -> vec3f {
 struct Sorties { @location(0) ecran: vec4f, @location(1) copie: vec4f };
 
 // Linéaire prémultiplié -> sRGB prémultiplié (sans tramage : les photographies exactes sont rendues à l'identique).
-@fragment
-fn fsFinal(e: Sortie) -> Sorties {
-  let c = textureLoad(source, vec2i(e.pos.xy), 0);
+fn versSortie(pos: vec4f) -> vec4f {
+  let c = textureLoad(source, vec2i(pos.xy), 0);
   let a = clamp(c.a, 0.0, 1.0);
   var o = vec4f(0.0);
   if (a > 0.5 / 255.0) {
     o = vec4f(clamp(versSRGB(max(c.rgb, vec3f(0.0)) / a), vec3f(0.0), vec3f(1.0)) * a, a);
   }
+  return o;
+}
+
+@fragment
+fn fsFinal(e: Sortie) -> Sorties {
+  let o = versSortie(e.pos);
   return Sorties(o, o);
+}
+
+// Pont vers WebGL2 (P7) : la même image, retournée verticalement (WebGL ignore le retournement au téléversement d'une
+// ImageBitmap ; la première ligne téléversée doit être le bas de l'image, comme sur Shadertoy).
+@fragment
+fn fsPont(e: Sortie) -> @location(0) vec4f {
+  let h = i32(textureDimensions(source).y);
+  return versSortie(vec4f(e.pos.x, f32(h - 1 - i32(e.pos.y)) + 0.5, 0.0, 1.0));
 }
 `;
 
@@ -88,6 +102,11 @@ fn fsFinal(e: Sortie) -> Sorties {
         layout, vertex: { module, entryPoint: 'vsPlein' },
         fragment: { module, entryPoint: 'fsFinal', targets: [{ format }, { format: 'rgba8unorm' }] },
       });
+      this.pipelinePont = device.createRenderPipeline({
+        layout, vertex: { module, entryPoint: 'vsPlein' },
+        fragment: { module, entryPoint: 'fsPont', targets: [{ format }] },
+      });
+      this.pont = null;
       this.lisse = device.createSampler({ magFilter: 'linear', minFilter: 'linear', addressModeU: 'clamp-to-edge', addressModeV: 'clamp-to-edge' });
       this.photos = new Map();
     }
@@ -143,9 +162,29 @@ fn fsFinal(e: Sortie) -> Sorties {
       });
     }
 
+    /** Image d'une texture de travail (linéaire prémultipliée) en ImageBitmap sRGB, par un canvas WebGPU hors écran (P7). */
+    imagePont(vue, largeur, hauteur) {
+      const { device } = this;
+      if (!this.pont || this.pont.canvas.width !== largeur || this.pont.canvas.height !== hauteur) {
+        const canvas = new OffscreenCanvas(largeur, hauteur);
+        const contexte = canvas.getContext('webgpu');
+        contexte.configure({ device, format: this.format, alphaMode: 'premultiplied' });
+        this.pont = { canvas, contexte };
+      }
+      const enc = device.createCommandEncoder();
+      const p = enc.beginRenderPass({ colorAttachments: [{ view: this.pont.contexte.getCurrentTexture().createView(), loadOp: 'clear', clearValue: [0, 0, 0, 0], storeOp: 'store' }] });
+      p.setPipeline(this.pipelinePont);
+      p.setBindGroup(0, device.createBindGroup({ layout: this.layout, entries: [{ binding: 0, resource: vue }, { binding: 1, resource: this.lisse }] }));
+      p.draw(3);
+      p.end();
+      device.queue.submit([enc.finish()]);
+      return this.pont.canvas.transferToImageBitmap();
+    }
+
     dessiner(cible, e) {
       const { device } = this;
-      const enc = device.createCommandEncoder();
+      let enc = device.createCommandEncoder();
+      const soumettre = () => { device.queue.submit([enc.finish()]); enc = device.createCommandEncoder(); };
       const libres = cible.travail.slice();
       const prendre = () => {
         const t = libres.shift();
@@ -159,9 +198,22 @@ fn fsFinal(e: Sortie) -> Sorties {
       };
       const groupe = (vue) => device.createBindGroup({ layout: this.layout, entries: [{ binding: 0, resource: vue }, { binding: 1, resource: this.lisse }] });
       const copier = (p, vue) => { p.setPipeline(this.pipelineCopier); p.setBindGroup(0, groupe(vue)); p.draw(3); };
+      // Un shader WGSL dessine dans la passe ; un shader GLSL (P7) : travail soumis, images d'entrée par le pont, dessin
+      // WebGL2, image recopiée dans la texture de travail.
+      const appliquer = (vers, shader, entrees, vues) => {
+        if (!shader.glsl) {
+          passe(vers, (p) => this.shaders.dessiner(p, shader, entrees, [vues[0], vues[1], null], 'composition'));
+          return;
+        }
+        soumettre();
+        const bitmaps = vues.map((v) => (v ? this.imagePont(v, cible.largeur, cible.hauteur) : null));
+        let vue;
+        try { vue = this.shaders.imageGLSLComposition(shader, entrees, bitmaps, cible.largeur, cible.hauteur); } finally { bitmaps.forEach((b) => b && b.close()); }
+        passe(vers, (p) => copier(p, vue));
+      };
       const chaine = (depart, posts) => (posts || []).reduce((cur, post) => {
         const suivante = prendre();
-        passe(suivante, (p) => this.shaders.dessiner(p, post.shader, post.entrees, [cur.vue, null, null], 'composition'));
+        appliquer(suivante, post.shader, post.entrees, [cur.vue, null]);
         libres.push(cur);
         return suivante;
       }, depart);
@@ -175,8 +227,7 @@ fn fsFinal(e: Sortie) -> Sorties {
       const image = prendre();
       if (e.transition) {
         const tr = e.transition;
-        const sortante = tr.sortante >= 0 ? scenes[tr.sortante].vue : null;
-        passe(image, (p) => this.shaders.dessiner(p, tr.shader, tr.entrees, [sortante, scenes[tr.entrante].vue, null], 'composition'));
+        appliquer(image, tr.shader, tr.entrees, [tr.sortante >= 0 ? scenes[tr.sortante].vue : null, scenes[tr.entrante].vue]);
       } else {
         passe(image, (p) => scenes.forEach((s) => copier(p, s.vue)));
       }
