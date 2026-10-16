@@ -267,7 +267,7 @@ await envoyer({ webgpu: true, premier: fumee(premier), avant: somme(await apres(
   assert.deepEqual(r.retour, r.direct, 'retour en arrière depuis 3 s = chemin direct');
 });
 
-test('couplage GPU : après la fin d'un milieu (data-dur), les effets couplés qui continuent ne lisent plus de vent', async (t) => {
+test("couplage GPU : après la fin d'un milieu (data-dur), les effets couplés qui continuent ne lisent plus de vent", async (t) => {
   if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
   // Panache de 1 s ; braises sans gravité, nées au repos, vie 0,4 s, émises 3 s : seul le vent du milieu les fait bouger.
   const milieu = compilerMilieu({ resolution: 64, flottaison: 1.5, sources: [{ type: 'fumee', forme: { type: 'cercle', rayon: 8, decalage: [0, 30] }, debit: 6, temperature: 1 }] }, 1);

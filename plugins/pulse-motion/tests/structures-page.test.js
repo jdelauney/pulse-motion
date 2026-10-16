@@ -160,7 +160,7 @@ envoyer({ webgpu: true, mesures, panneau });`,
   assert.ok(r.mesures[1].mat.x > r.mesures[0].mat.x + 15, '#mat a bougé');
 });
 
-test('page : un effet fait uniquement de structures, sans data-dur, dure jusqu'à la fin de sa scène (fanion encore dessiné à 3,5 s d'une scène de 4 s)', async (t) => {
+test("page : un effet fait uniquement de structures, sans data-dur, dure jusqu'à la fin de sa scène (fanion encore dessiné à 3,5 s d'une scène de 4 s)", async (t) => {
   if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
   const html = pageStructures({
     textes: { titre: 'Mât' },
