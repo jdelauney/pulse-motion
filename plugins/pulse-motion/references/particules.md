@@ -358,7 +358,7 @@ Un **milieu** est un fluide simulé sur une grille dans la scène : fumée volum
 |---|---|---|
 | `air` | `resolution`, `flottaison`, `debit`, `couleur`, `opacite` | Ambiance, mystère, chaleur qui monte : fumée volumineuse depuis le bas de la scène, qui contourne les obstacles déclarés ; vent des effets couplés. |
 | `brasier` | `intensite`, `chaleur`, `largeur`, `fumee` | Combustion, danger, énergie : feu du rouge sombre au blanc selon sa température, qui brille (halo), surmonté de fumée. |
-| `eau-encre` | `couleur1`, `couleur2`, `debit`, `tourbillons` | Idées qui se mêlent, diffusion, calme : deux encres (charte) qui coulent en volutes et se mélangent par absorption ; sur fond clair. |
+| `eau-encre` | `couleur1`, `couleur2`, `debit`, `tourbillons` | Idées qui se mêlent, diffusion, calme : deux encres (charte) versées l'une au-dessus de l'autre, qui coulent en volutes, se rencontrent et se mélangent par absorption (dès 2 à 3 s) ; sur fond clair. |
 | `braises-portees` | `nombre`, `vitesse`, `couleur`, `gravite`, `taille`, `prise` | Braises emportées par le milieu de la scène : elles suivent le panache et tourbillonnent autour des obstacles (`prise` : force de l'entraînement). |
 | `fusee-panache` | `fusees`, `vitesse`, `fumee`, `couleur` | Lancement, décollage : fusées qui montent en laissant dans le milieu un panache de fumée chaude qui s'élargit. |
 
