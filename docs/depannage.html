@@ -88,6 +88,16 @@
 <details class="probleme"><summary>Je ne trouve pas le bouton « Voix » ou « MP4 »</summary>
 <p>Ils sont dans la barre de lecture de l'<strong>aperçu</strong>, pas dans la page animée de <code>sortie/</code>. Ouvrez l'aperçu (adresse en <code>http://localhost:…</code>) dans Chrome ou Edge.</p>
 </details>
+<details class="probleme"><summary>« Effet non affiché : WebGPU indisponible »</summary>
+<p>Les effets de particules (étincelles, confettis…) et l'atelier des effets demandent <strong>WebGPU</strong>, plus récent que le WebGL des fonds animés de beaucoup de sites : un site qui affiche bien ses shaders ne prouve donc pas que WebGPU marche. Le plus simple : ouvrir la même adresse dans Chrome ou Edge récent (Edge est déjà là sous Windows).</p>
+<p>Dans un autre navigateur basé sur Chromium (Opera, Brave, Vivaldi…), WebGPU peut être activé mais la carte graphique refusée. Pour savoir ce qui bloque, ouvrez la console (<kbd>F12</kbd>, onglet « Console ») sur la page de l'aperçu et collez :</p>
+<pre><code>console.log('gpu :', !!navigator.gpu); console.log('carte :', await navigator.gpu?.requestAdapter());</code></pre>
+<ul>
+<li><code>gpu : false</code> : WebGPU n'est pas proposé. Activez « Unsafe WebGPU Support » dans la page des fonctions expérimentales (<code>opera://flags/#enable-unsafe-webgpu</code> sous Opera), puis redémarrez le navigateur.</li>
+<li><code>carte : null</code> : la carte graphique est refusée. Le même réglage lève ce refus ; vérifiez aussi que l'accélération matérielle est activée dans les réglages du navigateur, et que la ligne « WebGPU » de <code>opera://gpu</code> (ou <code>chrome://gpu</code>) indique « Hardware accelerated ». Sinon, mettez à jour le pilote de la carte graphique.</li>
+<li>Une carte s'affiche : rechargez la page (<kbd>Ctrl</kbd> + <kbd>F5</kbd>).</li>
+</ul>
+</details>
 </section>
 
 <!-- ===================================================================================================== -->
