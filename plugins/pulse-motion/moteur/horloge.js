@@ -269,6 +269,14 @@
   };
 
   M.temps = function () { return etat.t; };
+  /** Instant vu par un élément à travers les arrêts sur image et accélérés (data-gel, data-vitesse) de ses conteneurs. */
+  M.tempsVuPar = function (el, t) {
+    for (var i = 0; i < etat.scenes.length; i++) {
+      var s = etat.scenes[i];
+      if (s.sec && s.sec.contains(el)) return tempsVu(s.chaine(el), t, s.info);
+    }
+    return t;
+  };
   M.chaqueImage = function (idScene, fn) { (etat.rappels[idScene] = etat.rappels[idScene] || []).push(fn); };
   M.surRendu = function (fn) { etat.auditeurs.push(fn); };
   M.surSeek = function (fn) { etat.attentes.push(fn); };

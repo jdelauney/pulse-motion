@@ -296,12 +296,12 @@ Un projet, une scène par séquence (`scenes/01-generique.html` … `scenes/07-p
 | Cartons en frappe, en fondu flouté | `data-lettres="frappe" data-pas="0.03"`, `data-mots="flou"` |
 | Gros plan d'ouverture, dézoom, secousse du logo | `data-camera="zoom 3→1 1.2+0.4 cubic-out; y 72→50 1.2+0.4 cubic-out; secousse 0.6 1.8+0.2"` |
 | Travelling avec parallaxe (séquences 2 et 5) | `data-camera="x 50→90 3+3 linear"` + `data-profondeur="0.1"` (étoiles), `"0.5"` (collines) |
-| Accéléré ×2 du designer (séquence 3) | `data-vitesse="9+2 x2"` sur le décor et le pont ; les personnages vivent au temps réel : le designer joue son mouvement « dessiner » deux fois plus vite pendant ces 2 s |
-| Arrêt sur image désaturé (séquence 4) | `data-gel="1+7"` (jusqu'à la fin de la scène) sur le décor + `saturation 1→0.6 1+0.3 ; saturation 0.6→1 5+0.4` dans sa caméra, qui continue de zoomer ; les Touffus ne se figent pas avec le décor : une pose tenue, `data-calme="non"` (ni respiration ni clignement), puis le mouvement « lever-les-yeux » où seules les pupilles bougent |
+| Accéléré ×2 du designer (séquence 3) | `data-vitesse="9+2 x2"` sur le conteneur du décor, du pont et du designer : un personnage vit au temps de ce qui le contient |
+| Arrêt sur image désaturé (séquence 4) | `data-gel="1+7"` (jusqu'à la fin de la scène) sur le décor et la file de Touffus, qui se figent avec lui + `saturation 1→0.6 1+0.3 ; saturation 0.6→1 5+0.4` dans sa caméra, qui continue de zoomer ; le premier Touffu hors du conteneur figé, `data-calme="non"`, puis le mouvement « lever-les-yeux » où seules les pupilles bougent |
 | Planches posées une par une | `data-start` en demi-temps (`0.5t` d'écart), courbe `back-out` |
 | Lanternes, étoiles de la tape dans la main | effets de particules `etincelles`, `paillettes` |
 | Touffus | personnages de pulse-motion : `<div data-personnage="touffu" data-x="…" data-sol="…" data-taille="14">` et leurs actions minutées (`marcher`, `courir`, `pose`, `jouer`, `tourner`, `expression`) ; le designer et la silhouette sont deux dessins dérivés du Touffu (`touffu-designer` avec béret et crayon en accessoires, `touffu-silhouette`) ; les gestes propres au film (« chut », « sursaut », « dessiner », « mesurer », « fier »…) sont des poses et mouvements rangés dans `personnages/` du projet |
-| Touffus qui montent du bas (séquence 1) | les déplacements des personnages sont horizontaux : la scène déplace un cadre autour de chaque Touffu (`data-tween`) |
+| Touffus qui montent du bas (séquence 1) | sol de départ sous l'image (`data-sol="110"`), puis l'action `glisser` jusqu'au sol 92 ; le designer bondit de côté et hors de sa pelote avec `bondir` |
 | Pancartes, flèche, terminal, pont | éléments dessinés en SVG dans des scènes composées librement (pas de scène toute faite), animés aux instants du scénario |
 | Extrait réel de la séquence 6 | image PNG tirée de l'export de « La chaîne du froid », dans `assets/` ; la caméra zoome dessus (le moteur n'embarque pas encore de fichier vidéo) |
 
