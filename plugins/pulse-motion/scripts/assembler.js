@@ -235,7 +235,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
         luPersonnages = Pers.lire(projet);
         luPersonnages.erreurs.forEach((e) => erreurs.push({ regle: 'personnage-invalide', gravite: 'alerte', message: e.message }));
       }
-      const r = preparerPersonnages(avecObstacles, { scene: scene.id, lu: luPersonnages, voix: !!(scene.voix && scene.voix.texte) });
+      const r = preparerPersonnages(avecObstacles, { scene: scene.id, lu: luPersonnages, voix: !!(scene.voix && scene.voix.texte), dureeTemps: dureeTemps(deroule) });
       avecPersonnages = r.html;
       if (r.parle) scenesQuiParlent.add(scene.id);
       r.utilises.dessins.forEach((n) => utilisesPersonnages.dessins.add(n));

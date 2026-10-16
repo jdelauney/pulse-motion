@@ -30,6 +30,7 @@ Créer ou modifier une pose ou un mouvement (marche, course, saut, geste, expres
 | « qu'il monte la colline », « qu'il saute sur la corniche », « fais surgir les têtes du bas de l'image » | dans le fichier de la scène : `data-sol` (nombre, ou tracé `#id` du décor), actions `bondir` ou `glisser` (`pulse-motion reference moteur`, section Personnages) ; puis assembler, contrôler, planche |
 | « il tient une pancarte au-dessus de sa tête », « il boit son café », « il lâche le crayon » | dans le fichier de la scène : l'objet avec `data-tenu-par="#<id du personnage>"`, `data-main`, `data-orientation`, `data-lacher`, dans le même conteneur que le personnage (`pulse-motion reference moteur`, section Personnages) ; puis assembler, contrôler, planche |
 | « qu'il attrape le bras du voisin », « qu'ils se tapent dans la main », « qu'il regarde la pancarte », « qu'il nous regarde » | dans le fichier de la scène : actions `atteindre` et `regarder` (`pulse-motion reference moteur`, section Personnages) ; pas de nouveau geste pour cela |
+| « une file de Touffus », « six personnages qui sortent un par un » | dans le fichier de la scène : un groupe (`data-groupe`, `data-ecart`, `data-decalage`, `data-depart`, `data-membre`, `pulse-motion reference moteur`) ; puis assembler, contrôler, planche |
 | « un nouveau geste » | nouveau mouvement : clés à partir de `"pose": "debout"`, pieds `au-sol` s'il reste debout |
 
 ## Vérifier et montrer
