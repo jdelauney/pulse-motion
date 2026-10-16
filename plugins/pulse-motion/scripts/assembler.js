@@ -15,6 +15,7 @@ const { embarquerRessources, versDataURI, cheminDansProjet } = require('./lib/em
 const S = require('./lib/scenes.js');
 const { preparerEffets } = require('./lib/effets.js');
 const { preparerPersonnages, donneesPersonnages } = require('./lib/personnages-scene.js');
+const { deplierGroupes } = require('./lib/groupes-personnages.js');
 const Pers = require('./lib/personnages.js');
 const { preparerObstacles, obstaclesVideo } = require('./lib/obstacles.js');
 const { preparerMilieux } = require('./lib/milieux.js');
@@ -203,6 +204,12 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
       erreurs.push({ regle: 'scene-invalide', gravite: 'erreur', scene: scene.id, message: `Scène « ${scene.id} » : ${probleme}` });
       sections.push(S.panneauErreur(scene.id, probleme));
       continue;
+    }
+    // Groupes de personnages dépliés d'abord : effets, obstacles et personnages voient les membres (#file-2).
+    if (/data-groupe/.test(html)) {
+      const deplie = deplierGroupes(html, { scene: scene.id, dureeTemps: dureeTemps(deroule) });
+      html = deplie.html;
+      erreurs.push(...deplie.erreurs);
     }
     const { html: sansScripts, scripts } = S.extraireScripts(html);
     const { html: avecTextes, manquants } = S.injecterTextes(sansScripts, scene.textes, scene.ajustements);

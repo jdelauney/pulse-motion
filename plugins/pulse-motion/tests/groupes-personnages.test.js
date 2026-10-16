@@ -41,5 +41,25 @@ test('départ commun, variation déterministe, erreurs', () => {
     <div id="k" data-personnage="touffu" data-groupe="2" data-decalage="2t"></div><div id="m" data-personnage="touffu" data-groupe="2"><i data-action="jouer" data-clip="coucou" data-membre="5" data-start="0"></i></div>
     <p id="m-2"></p><div id="z" data-personnage="touffu"><i data-action="pose" data-pose="montrer" data-membre="1" data-start="0" data-dur="1"></i></div></section>`, { scene: 's', lu });
   const m = mauvais.erreurs.map((e) => e.message).join(' | ');
-  for (const motif of [/data-groupe="40" doit être un nombre de membres, de 2 à 20/, /data-ecart="loin"/, /data-decalage="2t" illisible/, /data-membre="5" doit être un numéro de membre, de 1 à 2/, /l'id « m-2 » est déjà pris/, /data-membre="1" hors d'un groupe/]) assert.match(m, motif);
+  for (const motif of [/data-groupe="40" doit être un nombre de membres, de 2 à 20/, /data-ecart="loin"/, /data-decalage="2t" est en temps musicaux, mais le déroulé n'a pas de tempo/, /data-membre="5" doit être un numéro de membre, de 1 à 2/, /l'id « m-2 » est déjà pris/, /data-membre="1" hors d'un groupe/]) assert.match(m, motif);
 });
+
+test('revue : groupe imbriqué refusé, groupe invalide rendu ordinaire, renvoi #groupe vers la tête, référence à un membre seul, attribut sûr, mot à trait d\'union', () => {
+  const imbrique = deplierGroupes('<section><div id="a" data-personnage="touffu" data-groupe="2"><div id="b" data-personnage="touffu" data-groupe="2"></div></div></section>', {});
+  assert.match(imbrique.erreurs.map((e) => e.message).join(), /un groupe ne peut pas en contenir un autre/);
+  assert.ok(!/data-groupe/.test(imbrique.html), 'neutralisé');
+  const invalide = deplierGroupes('<div id="g" data-personnage="touffu" data-groupe="99"><i data-action="jouer" data-clip="coucou" data-membre="1" data-start="0"></i></div>', {});
+  assert.equal(invalide.erreurs.length, 1);
+  assert.ok(!/data-groupe|data-membre/.test(invalide.html));
+  const r = deplierGroupes(`<section><div id="file" data-personnage="touffu" data-groupe="2" data-decalage="0.5">
+    <i id="salut" data-action="jouer" data-clip="coucou" data-membre="2" data-start="0"></i>
+    <i data-action="regarder" data-cible="#salut" data-start="mot:peut-être+0.1"></i>
+    <i data-action="pose" data-pose="montrer" data-dire="mon id est là" data-start="1" data-dur="1"></i>
+  </div><p id="pancarte" data-tenu-par="#file" data-start="0" data-dur="1"></p></section>`, { scene: 's' });
+  assert.deepEqual(r.erreurs, []);
+  assert.match(r.html, /data-tenu-par="#file-1"/, '#file vise la tête');
+  assert.deepEqual([...r.html.matchAll(/data-cible="([^"]+)"/g)].map((m) => m[1]), ['#salut-2', '#salut-2'], 'enfant du seul membre 2');
+  assert.deepEqual([...r.html.matchAll(/data-start="(mot:[^"]+)"/g)].map((m) => m[1]), ['mot:peut-être+0.1', 'mot:peut-être+0.6']);
+  assert.ok([...r.html.matchAll(/data-dire="mon id est là"/g)].length === 2 && !/id="[^"]*"[^>]*\sid=/.test(r.html), 'une valeur qui contient « id » ne perturbe pas');
+});
+

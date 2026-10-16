@@ -142,7 +142,7 @@ Le Touffu designer tente de sauver tout le monde en dessinant à la main un pont
 **Beat 3 : l'effondrement et la chute (0:31 – 0:39)**
 
 - **0:31 – 0:33 :** l'action passe en accéléré ×2. Le designer trace frénétiquement et le pont atteint l'autre rive en x 75 %, mais il est tordu, en forme de vague, planches de travers. Il s'essuie le front, fier.
-- **0:33 – 0:34,5 :** le premier Touffu de la file s'engage sur le pont tordu et avance jusqu'au milieu (x 60 %), en suivant ses vagues.
+- **0:33 – 0:34,5 :** le Touffu en tête de la file s'engage sur le pont tordu et avance jusqu'au milieu (x 60 %), en suivant ses vagues.
 - **0:34,5 :** le pont se défait en gribouillis sous ses pieds. Les traits s'envolent, retombent sur le designer et s'enroulent autour de lui en une pelote blanche dont ne dépassent que ses yeux paniqués et son béret.
 - **0:34,5 – 0:36,5 :** le Touffu reste suspendu en l'air, comme dans un dessin animé. Il regarde ses pieds, puis la caméra : yeux écarquillés, pupilles rétrécies, touffe hérissée, la surprise puis la peur. La caméra zoome sur son visage (0:34,8 – 0:35,2), puis dézoome (0:36 – 0:36,4).
 - **0:36,5 – 0:37,7 :** il tombe en agitant les bras de bas en haut, de plus en plus vite, jusqu'au fond du précipice.
@@ -199,7 +199,7 @@ Le cœur de la vidéo : une seule commande dans Claude Code, et le pont se const
 **Beat 3 : la traversée (1:00 – 1:10)**
 
 - **Caméra :** travelling latéral lent qui suit la file de gauche à droite.
-- **Personnages :** les 6 Touffus traversent au pas. Leurs touffes rebondissent en vague, avec 60 ms de décalage d'un Touffu à l'autre. Sur la rive droite, chacun fait un petit saut de joie puis entre dans la porte lumineuse. À côté de la porte se dresse un poteau : quand le premier Touffu passe la porte, un drapeau suisse (rouge, croix blanche) se hisse en haut du poteau en 1 s et flotte au vent. À chaque Touffu qui passe la porte, une salve de confettis aux couleurs de la traînée de marque éclate au-dessus de la porte.
+- **Personnages :** les 4 Touffus qui restent (le designer est resté sur la rive gauche, un autre a disparu dans le précipice) traversent au pas. Leurs touffes rebondissent en vague, avec 60 ms de décalage d'un Touffu à l'autre. Sur la rive droite, chacun fait un petit saut de joie puis entre dans la porte lumineuse. À côté de la porte se dresse un poteau : quand le premier Touffu passe la porte, un drapeau suisse (rouge, croix blanche) se hisse en haut du poteau en 1 s et flotte au vent. À chaque Touffu qui passe la porte, une salve de confettis aux couleurs de la traînée de marque éclate au-dessus de la porte.
 - **Objets :** au fil de la traversée, le pont s'enrichit. À 1:02, des rambardes se dessinent d'un trait continu ; à 1:04, des lanternes Orange Incandescent s'allument une à une ; à 1:06, une onde aux couleurs de la traînée parcourt le tablier.
 - **Textes :** « Du motion design pro » à 1:02, puis « En quelques minutes » à 1:06. Même style et même position que « Une commande » ; chaque carton remplace le précédent en fondu flouté.
 - **Son :** la mélodie épique continue, un son de pièce à chaque Touffu qui atteint la rive.
@@ -296,14 +296,20 @@ Un projet, une scène par séquence (`scenes/01-generique.html` … `scenes/07-p
 | Format carré, 25 images/s | `"format": { "ratio": "1:1", "ips": 25 }` |
 | Tout calé sur la musique | musique composée à 120 bpm (`"musique": { "generee": "entrainant", "tempo": 120 }`), qui se cale sur l'image : une section par séquence, pile à son début ; humeur par séquence (`scenes[].musique` : `silence` pour la 4, `intense` pour la 5, `calme` pour la 6) ; gestes calés en temps `data-start="4t"` |
 | « PULSE-MOTION » en onde, logo final | `data-lettres="onde" data-pas="0.02"` + `class="pm-degrade"` (traînée en `--pm-degrade`) |
-| « VIBE CONNECTION » qui tombe lettre par lettre | `data-lettres="chute" data-pas="0.05"` + `class="pm-degrade pm-contour"` |
+| « VIBE CONNECTION » révélé dans la fumée | effet de particules `fumee` (Mauve de Rémanence, Gris de Veille) devant le titre, titre en `data-mots="flou"` + `class="pm-degrade pm-contour"` |
 | Cartons en frappe, en fondu flouté | `data-lettres="frappe" data-pas="0.03"`, `data-mots="flou"` |
 | Gros plan d'ouverture, dézoom, secousse du logo | `data-camera="zoom 3→1 1.2+0.4 cubic-out; y 72→50 1.2+0.4 cubic-out; secousse 0.6 1.8+0.2"` |
 | Travelling avec parallaxe (séquences 2 et 5) | `data-camera="x 50→90 3+3 linear"` + `data-profondeur="0.1"` (étoiles), `"0.5"` (collines) |
 | Accéléré ×2 du designer (séquence 3) | `data-vitesse="9+2 x2"` sur le conteneur du décor, du pont et du designer : un personnage vit au temps de ce qui le contient |
-| Arrêt sur image désaturé (séquence 4) | `data-gel="1+7"` (jusqu'à la fin de la scène) sur le décor et la file de Touffus, qui se figent avec lui + `saturation 1→0.6 1+0.3 ; saturation 0.6→1 5+0.4` dans sa caméra, qui continue de zoomer ; le premier Touffu hors du conteneur figé, `data-calme="non"`, puis le mouvement « lever-les-yeux » où seules les pupilles bougent |
+| Arrêt sur image désaturé (séquence 4) | `data-gel="1+7"` (jusqu'à la fin de la scène) sur le décor et la file de Touffus, qui se figent avec lui + `saturation 1→0.6 1+0.3 ; saturation 0.6→1 5+0.4` dans sa caméra, qui continue de zoomer ; le premier Touffu hors du conteneur figé, `data-calme="non"`, puis l'action `regarder` vers le terminal |
 | Planches posées une par une | `data-start` en demi-temps (`0.5t` d'écart), courbe `back-out` |
 | Lanternes, étoiles de la tape dans la main | effets de particules `etincelles`, `paillettes` |
+| Explosion du Touffu au fond du précipice (séquence 3) | effet `explosion` à l'impact, calé sur la fin de sa chute |
+| Drapeau suisse hissé (séquence 5) | copie de l'effet `drapeau` dont l'apparence prend l'image `assets/drapeau-suisse.svg` (sans dégradé : une seule texture), attachée à une drisse (`"a": "#drisse"`), petit élément qui monte le long du poteau |
+| Confettis à chaque Touffu qui passe la porte (séquence 5) | quatre effets `confettis`, chacun calé sur l'arrivée d'un membre du groupe (`#traversee-1:fin` …) : exception assumée à la règle « une seule fois par vidéo » |
+| Feux d'artifice à la tape dans la main (séquence 7) | effet `feu-artifice`, calé sur la rencontre des deux mains |
+| Files de Touffus (séquences 1 à 5) | groupes : `data-groupe`, `data-ecart`, `data-decalage`, `data-depart="commun"` (portail), `data-membre` pour un geste à part |
+| Attraper, se taper dans la main, regarder | actions `atteindre` (rencontre de deux mains) et `regarder` (une cible, ou la caméra) |
 | Touffus | personnages de pulse-motion : `<div data-personnage="touffu" data-x="…" data-sol="…" data-taille="14">` et leurs actions minutées (`marcher`, `courir`, `pose`, `jouer`, `tourner`, `expression`) ; le designer et la silhouette sont deux dessins dérivés du Touffu (`touffu-designer` avec son béret en accessoire, `touffu-silhouette`) ; les gestes propres au film (« chut », « sursaut », « dessiner », « mesurer », « fier »…) sont des poses et mouvements rangés dans `personnages/` du projet |
 | Touffus qui montent du bas (séquence 1) | sol de départ sous l'image (`data-sol="110"`), puis l'action `glisser` jusqu'au sol 92 ; le designer bondit de côté et hors de sa pelote avec `bondir` |
 | Crayon, pancartes, flèche, tasse, ordinateur, pelote | objets de la scène tenus en main : `data-tenu-par="#designer"`, `data-main` (`deux` pour la pancarte et l'ordinateur), `data-orientation="main"` pour le crayon, `data-lacher="tombe"` pour la pelote |
