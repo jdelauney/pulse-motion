@@ -15,6 +15,7 @@ const { embarquerRessources, versDataURI, cheminDansProjet } = require('./lib/em
 const S = require('./lib/scenes.js');
 const { preparerEffets } = require('./lib/effets.js');
 const { preparerPersonnages, donneesPersonnages } = require('./lib/personnages-scene.js');
+const { deplierGroupes } = require('./lib/groupes-personnages.js');
 const Pers = require('./lib/personnages.js');
 const { preparerObstacles, obstaclesVideo } = require('./lib/obstacles.js');
 const { preparerMilieux } = require('./lib/milieux.js');
@@ -204,6 +205,12 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
       sections.push(S.panneauErreur(scene.id, probleme));
       continue;
     }
+    // Groupes de personnages dépliés d'abord : effets, obstacles et personnages voient les membres (#file-2).
+    if (/data-groupe/.test(html)) {
+      const deplie = deplierGroupes(html, { scene: scene.id, dureeTemps: dureeTemps(deroule) });
+      html = deplie.html;
+      erreurs.push(...deplie.erreurs);
+    }
     const { html: sansScripts, scripts } = S.extraireScripts(html);
     const { html: avecTextes, manquants } = S.injecterTextes(sansScripts, scene.textes, scene.ajustements);
     manquants.forEach((cle) => erreurs.push({ regle: 'texte-manquant', gravite: 'erreur', scene: scene.id, message: `Scène « ${scene.id} » : data-texte="${cle}" n'a pas de texte dans le déroulé.` }));
@@ -235,7 +242,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
         luPersonnages = Pers.lire(projet);
         luPersonnages.erreurs.forEach((e) => erreurs.push({ regle: 'personnage-invalide', gravite: 'alerte', message: e.message }));
       }
-      const r = preparerPersonnages(avecObstacles, { scene: scene.id, lu: luPersonnages, voix: !!(scene.voix && scene.voix.texte) });
+      const r = preparerPersonnages(avecObstacles, { scene: scene.id, lu: luPersonnages, voix: !!(scene.voix && scene.voix.texte), dureeTemps: dureeTemps(deroule) });
       avecPersonnages = r.html;
       if (r.parle) scenesQuiParlent.add(scene.id);
       r.utilises.dessins.forEach((n) => utilisesPersonnages.dessins.add(n));
