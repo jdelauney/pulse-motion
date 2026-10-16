@@ -67,6 +67,7 @@ Expressions : `neutre`, `joie`, `tristesse`, `peur`, `colere`, `surprise` (`"exp
 |---|---|
 | « fais une pose où il se gratte la tête » | `personnages/poses/gratte-tete.json`, vérifier, planche |
 | « il marche trop vite » | copie de `marche` dans la vidéo, `duree` plus grande (ex. 1,3) |
+| « une démarche fière pour lui seul » | nouveau cycle `personnages/clips/marche-fiere.json` (copie de `marche`, `boucle: true`, sa `foulee`), puis `data-clip="marche-fiere"` sur son action `marcher` |
 | « il saute plus haut » | copie de `saut`, `bassinY` de l'envol plus négatif (ex. -150 → -200) |
 | « montre-moi la course de face et de profil » | `pulse-motion personnages planche course --vues 0,90 --dossier .` puis `Read` |
 | « je veux régler moi-même » | `pulse-motion personnages atelier <nom>` en arrière-plan |

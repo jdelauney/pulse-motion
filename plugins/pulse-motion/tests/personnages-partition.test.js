@@ -124,3 +124,14 @@ test('parler : la piste donne la bouche ; une bouche plus récente l\'emporte ; 
   assert.doesNotThrow(() => PA.etatAuTemps(partition([{ type: 'parler', debut: 0, fin: 5, piste: [] }]), 1, bib, gab), 'voix absente');
 });
 
+
+test('démarche à soi : la marche utilise le cycle donné, phase calée sur sa foulée ou celle de la marche', () => {
+  const fiere = Object.assign({}, lu.clips.marche, { nom: 'marche-fiere', foulee: undefined, cles: lu.clips.marche.cles.map((k) => Object.assign({}, k, { angles: Object.assign({}, k.angles, { torse: -15 }) })) });
+  const b = Object.assign({}, bib, { clips: Object.assign({}, bib.clips, { 'marche-fiere': fiere, coucou: bib.clips.coucou }) });
+  const p = partition([{ type: 'marcher', debut: 0, fin: 10, vers: 10 + 15.5 * 4, clip: 'marche-fiere' }]);
+  proche(PA.etatAuTemps(p, 1, b, gab).pose.torse, -15, 1e-6, 'le torse de la démarche');
+  const a1 = PA.etatAuTemps(p, 1, b, gab).pose.cuisseAvant, a2 = PA.etatAuTemps(p, 1 + 10 / 4, b, gab).pose.cuisseAvant;
+  proche(a1, a2, 1e-6, 'un cycle plus loin (foulée de la marche), même pose');
+  const geste = partition([{ type: 'marcher', debut: 0, fin: 10, vers: 60, clip: 'coucou' }]);
+  assert.equal(PA.etatAuTemps(geste, 1, b, gab).corps, 'marche', 'un geste ponctuel ne sert pas de démarche : la marche normale');
+});
