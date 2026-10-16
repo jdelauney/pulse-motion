@@ -38,7 +38,7 @@
     }
     if (el.hasAttribute('data-vers')) a.vers = nombre(el, 'data-vers', 50);
     if (el.hasAttribute('data-vue')) a.vue = nombre(el, 'data-vue', 0);
-    ['pose', 'clip', 'expression', 'bouche'].forEach(function (k) { if (el.hasAttribute('data-' + k)) a[k] = el.getAttribute('data-' + k); });
+    ['pose', 'clip', 'expression', 'bouche'].forEach(function (k) { if (el.hasAttribute('data-' + k)) a[k] = el.getAttribute('data-' + k).trim(); });
     return a;
   }
 

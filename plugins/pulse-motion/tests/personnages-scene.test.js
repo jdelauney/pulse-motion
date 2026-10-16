@@ -45,6 +45,11 @@ test('assemblage : erreurs nommées', () => {
     assert.match(m, motif);
   }
   assert.ok(r.erreurs.every((e) => e.regle === 'personnage-invalide' && e.gravite === 'erreur'));
+  const demarches = preparerPersonnages('<section><div data-personnage="touffu"><i data-action="marcher" data-vers="40" data-dur="2" data-clip="marche-fiere"></i><i data-action="courir" data-vers="80" data-start="3" data-dur="1" data-clip="coucou"></i><i data-action="marcher" data-vers="20" data-start="5" data-dur="2" data-clip="course"></i></div></section>', { scene: 's', lu });
+  const md = demarches.erreurs.map((e) => e.message).join(' | ');
+  assert.match(md, /démarche « marche-fiere » introuvable ; la créer d'abord/);
+  assert.match(md, /« coucou » ne peut pas servir de démarche : il faut un mouvement en boucle, comme « course »/);
+  assert.equal(demarches.erreurs.length, 2, 'la course sert de démarche');
   assert.match(m, /action « pose » hors d'un personnage/, 'action après la fermeture du conteneur');
   const imbrique = preparerPersonnages('<section><div data-personnage="touffu"><span><i data-action="pose" data-pose="montrer" data-start="0"></i></span></div></section>', { scene: 's', lu });
   assert.match(imbrique.erreurs.map((e) => e.message).join(), /hors d'un personnage/, 'action dans un sous-élément');
