@@ -142,6 +142,7 @@ La musique et la voix peuvent faire bouger la vidéo. Chaque piste lue est analy
 - **Effets de particules** : `modulation` et salves `au: battement` (voir `pulse-motion reference particules`). **Shaders** : `iSon` et la texture audio (voir `pulse-motion reference shaders`).
 - Une animation qui suit la voix passe par `var(--voix-enveloppe)` (`data-son` reste l'attribut des bruitages). Pour allumer un mot quand il est dit : sous-titres en mode `mot`, ou une ancre `mot:` (sections plus haut).
 - Sans la piste suivie : contrôle `son-sans-piste` (alerte pour des variables CSS, qui restent à 0) ; une piste qui n'existe pas : `piste-inconnue`.
+- Piste présente mais illisible (fichier abîmé) : ce qui la suit (effet, shader, variables CSS d'une scène ou du style) affiche un panneau dans l'aperçu et l'export est refusé ; remplacer le fichier de la musique ou de la voix.
 - Dosage : un battement qui fait pulser un titre de 5 à 10 % suffit ; jamais un flash sur chaque battement (3 flashs par seconde au plus).
 
 ## Mixage

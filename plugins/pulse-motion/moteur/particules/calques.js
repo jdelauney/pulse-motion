@@ -96,7 +96,8 @@
  * son effet (panneau, M.shaders.erreurs, usage « module ») ; l'atelier refuse une recette dont un module ne compile pas.
  * Son réactif (P7) : la porte de disponibilité attend M.son.pret quand la vidéo lit le son (M.son.actif() ; l'atelier ne démarre pas l'analyse) ; avant chaque simulation, les tables du son de l'effet
  * (modulation, salves au son : P.tablesSon) sont posées sur ses émetteurs (em.son) ; salve sans instant : alerte ; piste
- * illisible : effet désactivé (export refusé tant qu'il est visible).
+ * illisible : effet désactivé (export refusé tant qu'il est visible) ; shader (fond, transition, post-traitement) qui la suit
+ * non dessiné, panneau, M.shaders.erreurs (export refusé) ; variables CSS qui la suivent : M.son.refus (export refusé).
  * M.particules.sonEffet(idScene, ordre) -> [{ n, cMax, instants } | null]   (tests)
  * Son réactif des shaders (P7) : textures du son (P.Shaders.ecrireSon) écrites une fois par instant rendu ; entrées son
  * (M.son.lire de la piste du shader, à t) et image (iFrame, iTimeDelta) des fonds et de la composition.
@@ -996,13 +997,41 @@
     effet.emetteurs.forEach((em, i) => { if (fx.tablesSon[i]) em.son = fx.tablesSon[i]; });
   }
 
-  /** Après l'analyse : un effet qui suit une piste illisible est désactivé (panneau ; export refusé tant qu'il est visible). */
+  /** Message de la première piste illisible d'une liste (null : toutes lisibles, ou pas d'analyse). */
+  function pisteIllisible(pistes) {
+    if (!M.son) return null;
+    const p = (pistes || []).find((x) => M.son.erreur(x));
+    return p ? M.son.erreur(p) : null;
+  }
+
+  /** Après l'analyse (spec P7 §6) : un effet qui suit une piste illisible est désactivé (panneau ; export refusé tant qu'il
+   *  est visible) ; un shader (fond, transition, post-traitement) qui la suit n'est pas dessiné, comme un shader qui ne
+   *  compile pas (panneau ; export refusé). */
   function verifierSon() {
     if (!M.son) return;
     etat.scenes.forEach((sc) => sc.effets.forEach((fx) => {
-      const p = (fx.effet.pistes || []).find((x) => M.son.erreur(x));
-      if (p) desactiver(fx, M.son.erreur(p));
+      const m = pisteIllisible(fx.effet.pistes);
+      if (m) desactiver(fx, m);
     }));
+    const refuserShader = (donnee, m, surPanneau) => {
+      const msg = 'Shader « ' + donnee.nom + ' » : ' + m;
+      etat.erreursShaders.push({ nom: donnee.nom, usage: donnee.usage, scene: donnee.scene, message: msg, erreurs: [] });
+      console.error('[Pulse Motion] ' + msg);
+      surPanneau(msg);
+    };
+    const retirer = (porteur, surPanneau) => {
+      const m = porteur.shader && pisteIllisible(porteur.donnee.pistes);
+      if (!m) return;
+      etat.shaders.oublier(porteur.shader);
+      porteur.shader = null;
+      refuserShader(porteur.donnee, m, surPanneau);
+    };
+    etat.scenes.forEach((sc) => sc.fonds.forEach((f) => retirer(f, (msg) => { f.erreur = msg; panneau(f.el, 'Fond non affiché : ' + msg); })));
+    const sur = (id, prefixe) => (msg) => { const s = id && sectionDe(id); if (s) panneau(s, prefixe + msg); };
+    comp.transitions.forEach((tr, id) => retirer(tr, sur(id, 'Transition remplacée par un fondu : ')));
+    comp.posts.forEach((liste, id) => liste.forEach((p) => retirer(p, sur(id, 'Post-traitement non appliqué : '))));
+    const premiere = M.minutage.scenes.length ? M.minutage.scenes[0].id : null;
+    comp.postsVideo.forEach((p) => retirer(p, sur(premiere, 'Post-traitement de la vidéo non appliqué : ')));
   }
 
   function liberer(fx) {
@@ -1730,6 +1759,9 @@
   /** Avant une capture foreignObject : l'image de chaque calque affiché, en PNG, sur son canvas.
    *  Pas de vidéo sans ses effets (spec §10) : en cas de refus, aucune image périmée ne reste. */
   async function preparerCapture() {
+    // Variables CSS du son d'une scène affichée (ou du style) qui suivent une piste illisible (spec P7 §6).
+    const sonRefus = M.son && M.son.fait() ? M.son.refus(true) : null;
+    if (sonRefus) { oublierImages(); throw new Error(sonRefus.replace(/\.$/, '') + ' : export interrompu.'); }
     if (!aDuTravail()) return;
     try {
       await etat.pret;
@@ -1912,8 +1944,13 @@
       return M.particules.lirePixels(idScene, calque).then((p) => createImageBitmap(versImageData(p)));
     },
     verifierExport() {
-      if (!aDuTravail()) return Promise.resolve();
-      return etat.pret.then(() => {
+      return Promise.resolve(M.son && M.son.actif() ? M.son.pret : null).then(() => {
+        const sonRefus = M.son && M.son.actif() ? M.son.refus(false) : null;
+        if (sonRefus) throw new Error('Export refusé : ' + sonRefus);
+        if (!aDuTravail()) return null;
+        return etat.pret;
+      }).then(() => {
+        if (!aDuTravail()) return;
         if (!etat.disponible) throw new Error(etat.scenes.some((sc) => sc.effets.length) ? SANS_GPU_EXPORT : SANS_GPU_SHADERS);
         if (etat.erreursShaders.length) throw new Error('Export refusé : ' + etat.erreursShaders[0].message);
       });
