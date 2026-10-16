@@ -150,7 +150,7 @@ await envoyer({ webgpu: true, apres: Math.sqrt(apres / n), avant: Math.sqrt(avan
   assert.ok(r.apres <= 0.05 * r.vitesse, `divergence résiduelle ${(r.apres / r.vitesse * 100).toFixed(2)} % de la vitesse`);
 });
 
-test('milieu GPU : même état au bit près par deux chemins (instantanés, pression et dépôts compris)', async (t) => {
+test('milieu GPU : même état au bit près par deux chemins (instantanés, pression comprise ; les dépôts, hors de l'état, sont vides entre deux pas)', async (t) => {
   if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
   const r = await page({ effet: compiler(PANACHE, 3) }, `
 const a = await milieuApres(DONNEES.effet, [1, 2]);
