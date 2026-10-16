@@ -129,7 +129,8 @@ function modifierEffet(html, ordre, changements) {
  * milieu : la scène a un milieu valide (data-milieu ; P5c).
  * dureeTemps : secondes par temps musical (tempo du déroulé), pour un data-dur écrit en « t ».
  * dureeScene : durée de la scène (s de τ, allongement par la voix compris) : un effet fait uniquement de structures (cordes,
- * tissus, perles) sans data-dur dure jusqu'à la fin de sa scène (compilé avec cette durée) ; sinon data-dur, 1 s par défaut.
+ * tissus, perles) sans data-dur dure de son début (data-start) à la fin de sa scène (compilé avec cette durée) ; sinon
+ * data-dur, 1 s par défaut.
  * -> { html, effets: [{ scene, ordre, calque, ancre, cible, effet }], erreurs: [{ regle, gravite, scene, element?, message }],
  *    modules: { nom: { json, code } } }
  * ordre : position de la balise parmi les data-effet de la scène (erreurs comprises).
@@ -139,10 +140,17 @@ function structuresSeules(effet) {
   return effet.emetteurs.length > 0 && effet.emetteurs.every((em) => em.structure || em.perlesDe >= 0);
 }
 
-/** Durée d'un effet fait uniquement de structures, sans data-dur : dureeScene (τ de la scène), ou null (règle commune :
- *  data-dur, 1 s par défaut). attributs : attributs de la balise ; effet : effet compilé. */
-function dureeStructures(attributs, effet, dureeScene) {
-  return attributs['data-dur'] === undefined && dureeScene > 0 && structuresSeules(effet) ? dureeScene : null;
+/** Durée d'un effet fait uniquement de structures, sans data-dur : du début de l'effet à la fin de la scène (dureeScene − début,
+ *  τ de la scène ; début : data-start en secondes ou en temps, 0 sans data-start ; un début relatif, « #id » ou « mot: »,
+ *  n'est connu que de la page : toute la scène), ou null (règle commune : data-dur, 1 s par défaut). attributs : attributs
+ *  de la balise ; effet : effet compilé ; dureeTemps : secondes par temps musical (ou null). Un effet qui commence à la fin
+ *  de la scène ou après garde 1 s (règle commune). */
+function dureeStructures(attributs, effet, dureeScene, dureeTemps = null) {
+  if (attributs['data-dur'] !== undefined || !(dureeScene > 0) || !structuresSeules(effet)) return null;
+  const debut = attributs['data-start'] === undefined ? { valeur: 0 } : lireSecondes(String(attributs['data-start']), dureeTemps);
+  if (debut.valeur === undefined) return dureeScene;
+  const reste = Math.round((dureeScene - debut.valeur) * 1e6) / 1e6;
+  return reste > 0 ? reste : null;
 }
 
 function preparerEffets(html, { scene, projet, bibliotheque, charte = {}, premierIndex = 0, dureeTemps = null, chargerShader = null, milieu = false, dureeScene = null }) {
@@ -199,7 +207,7 @@ function preparerEffets(html, { scene, projet, bibliotheque, charte = {}, premie
       const resolue = R.resoudre(nom, charger);
       compile = R.compiler(resolue, { reglages: a['data-reglages'] || '', charte, dur, graine });
       // Effet fait uniquement de structures (cordes, tissus) sans data-dur : un objet posé, présent jusqu'à la fin de la scène.
-      const durScene = compile.ok ? dureeStructures(a, compile.effet, dureeScene) : null;
+      const durScene = compile.ok ? dureeStructures(a, compile.effet, dureeScene, dureeTemps) : null;
       if (durScene) compile = R.compiler(resolue, { reglages: a['data-reglages'] || '', charte, dur: durScene, graine });
     } catch (e) {
       if (!e.regle) throw e;

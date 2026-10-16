@@ -200,7 +200,7 @@ function angleTas(grains, sol) {
 const grains = (debit, extra = {}) => ({ nom: 'g', naissance: { debit, forme: { type: 'rectangle' }, vitesse: { direction: [0, 1], cone: 20, valeur: [0, 2] }, vie: [30, 30], taille: [0.8, 0.8] },
   forces: [{ type: 'gravite', valeur: 40 }], ...extra });
 
-test("interactions GPU : grains : tas à l'angle de frottement (± 5°, moyenne de deux graines), sans tremblement au repos", async (t) => {
+test("interactions GPU : grains : tas à l'angle de frottement (± 5° en moyenne de deux graines, ± 6° pour chacune), sans tremblement au repos", async (t) => {
   if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
   // 3 000 grains versés depuis un petit carré en (88, 51), sur le sol de la recette (y = 90) ; deux graines.
   const sable = (graine) => compiler([grains(400, { collisions: { cibles: ['sol'], restitution: 0, frottement: 0.6 },
@@ -223,6 +223,7 @@ await envoyer({ webgpu: true, tas: [a[0].p, b[0].p] });`);
   }
   const angle = (angles[0] + angles[1]) / 2;
   assert.ok(Math.abs(angle - attendu) <= 5, `angle du tas ${angle.toFixed(1)}° (${angles.map((x) => x.toFixed(1)).join('° et ')}°) ; frottement statique 0,6 : ${attendu.toFixed(1)}° ± 5°`);
+  angles.forEach((x, i) => assert.ok(Math.abs(x - attendu) <= 6, `graine ${7 + i} : angle du tas ${x.toFixed(1)}° ; frottement statique 0,6 : ${attendu.toFixed(1)}° ± 6°`));
 });
 
 test("interactions GPU : grains : un amas lâché de 30 cqh s'étale à l'impact (au moins deux fois sa largeur)", async (t) => {

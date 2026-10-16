@@ -3,14 +3,16 @@
  * new P.Composition(device, format, shaders)       shaders : P.Shaders du même device
  *   .cible(canvas) -> cible       contexte WebGPU du canvas, 4 textures de travail rgba16float (taille du canvas), copie lisible
  *   .oublierCible(canvas)
- *   .photo(id, bitmap) -> vue     photographie d'une scène en texture rgba8unorm-srgb prémultipliée (lue en linéaire), gardée
- *                                 par scène et réutilisée tant que sa taille ne change pas
+ *   .photo(id, bitmap) -> vue     photographie d'une scène en texture rgba8unorm-srgb, linéaire prémultipliée (P.Shaders.copierImage :
+ *                                 bords semi-transparents justes), gardée par scène et réutilisée tant que sa taille ne change pas
  *   .oublierPhotos(garder)        libère les photographies des scènes absentes de garder (Set d'id)
  *   .dessiner(cible, e)           e : { couches: [{ vue, posts: [{ shader, entrees }] }], transition: { shader, entrees,
  *                                 sortante (rang | -1), entrante } | null, postsVideo: [{ shader, entrees }] } :
  *                                 chaque couche passe par ses post-traitements ; puis la transition (iChannel0 = sortante ou
  *                                 transparent, iChannel1 = entrante) ou l'empilement des couches dans l'ordre (prémultiplié) ;
  *                                 puis les post-traitements de la vidéo ; enfin sRGB prémultiplié dans le canvas et la copie.
+ *                                 Convention : textures de travail en linéaire prémultiplié (rvb = linéaire(c)·a) ; sortie et pont en
+ *                                 sRGB prémultiplié (rvb = sRGB(c)·a), c étant la couleur droite.
  *                                 Un shader GLSL (P7) passe par le pont : imagePont, P.Shaders.imageGLSLComposition.
  *   .lirePixels(cible) -> Promise<{ largeur, hauteur, donnees }>   (RVBA 8 bits, prémultiplié, sRGB)
  * Navigateur seulement ; dépend de shaders.js (P.Shaders).
@@ -49,9 +51,8 @@ fn versSRGB(c: vec3f) -> vec3f {
 
 struct Sorties { @location(0) ecran: vec4f, @location(1) copie: vec4f };
 
-// Linéaire prémultiplié -> sRGB prémultiplié (sans tramage : les photographies exactes sont rendues à l'identique).
-fn versSortie(pos: vec4f) -> vec4f {
-  let c = textureLoad(source, vec2i(pos.xy), 0);
+// Linéaire prémultiplié -> sRGB prémultiplié : sRGB(c / a)·a (sans tramage : les photographies exactes sont rendues à l'identique).
+fn premultiplierSRGB(c: vec4f) -> vec4f {
   let a = clamp(c.a, 0.0, 1.0);
   var o = vec4f(0.0);
   if (a > 0.5 / 255.0) {
@@ -62,21 +63,18 @@ fn versSortie(pos: vec4f) -> vec4f {
 
 @fragment
 fn fsFinal(e: Sortie) -> Sorties {
-  let o = versSortie(e.pos);
+  let o = premultiplierSRGB(textureLoad(source, vec2i(e.pos.xy), 0));
   return Sorties(o, o);
 }
 
 // Pont vers WebGL2 (P7) : la même image, retournée verticalement (WebGL ignore le retournement au téléversement d'une
-// ImageBitmap ; la première ligne téléversée doit être le bas de l'image, comme sur Shadertoy). Codage inverse du retour
-// (P.Shaders.copierGLSL : prémultiplication des valeurs sRGB, texture rgba8unorm-srgb) : rvb = sRGB(rvb linéaire prémultiplié),
-// que WebGL2 divise par alpha ; une copie GLSL qui ne change rien rend la même image (alpha appliqué une seule fois).
+// ImageBitmap ; la première ligne téléversée doit être le bas de l'image, comme sur Shadertoy). Même codage que la sortie
+// (sRGB prémultiplié), que P.Glsl divise par alpha : le shader GLSL lit la couleur sRGB droite ; son image (alpha droit)
+// revient en linéaire prémultiplié par P.Shaders.copierGLSL. Une copie GLSL qui ne change rien rend la même image.
 @fragment
 fn fsPont(e: Sortie) -> @location(0) vec4f {
   let h = i32(textureDimensions(source).y);
-  let c = textureLoad(source, vec2i(i32(e.pos.x), h - 1 - i32(e.pos.y)), 0);
-  let a = clamp(c.a, 0.0, 1.0);
-  if (a <= 0.5 / 255.0) { return vec4f(0.0); }
-  return vec4f(min(versSRGB(clamp(c.rgb, vec3f(0.0), vec3f(1.0))), vec3f(a)), a);
+  return premultiplierSRGB(textureLoad(source, vec2i(i32(e.pos.x), h - 1 - i32(e.pos.y)), 0));
 }
 `;
 
@@ -149,25 +147,27 @@ fn fsPont(e: Sortie) -> @location(0) vec4f {
       const { device } = this;
       let p = this.photos.get(id);
       if (!p || p.largeur !== bitmap.width || p.hauteur !== bitmap.height) {
-        if (p) p.texture.destroy();
+        if (p) { p.texture.destroy(); this.shaders.oublierBrut(p); }
         const T = GPUTextureUsage;
         const texture = device.createTexture({ size: [bitmap.width, bitmap.height], format: 'rgba8unorm-srgb', usage: T.TEXTURE_BINDING | T.COPY_DST | T.RENDER_ATTACHMENT });
         p = { texture, vue: texture.createView(), largeur: bitmap.width, hauteur: bitmap.height };
         this.photos.set(id, p);
       }
-      device.queue.copyExternalImageToTexture({ source: bitmap }, { texture: p.texture, premultipliedAlpha: true }, [bitmap.width, bitmap.height]);
+      this.shaders.copierImage(bitmap, p, bitmap.width, bitmap.height);
       return p.vue;
     }
 
     oublierPhotos(garder) {
       Array.from(this.photos.keys()).forEach((id) => {
         if (garder.has(id)) return;
-        this.photos.get(id).texture.destroy();
+        const p = this.photos.get(id);
+        p.texture.destroy();
+        this.shaders.oublierBrut(p);
         this.photos.delete(id);
       });
     }
 
-    /** Image d'une texture de travail (linéaire prémultipliée) en ImageBitmap (rvb : sRGB du linéaire prémultiplié), par un canvas WebGPU hors
+    /** Image d'une texture de travail (linéaire prémultipliée) en ImageBitmap (sRGB prémultiplié), par un canvas WebGPU hors
      *  écran (P7) ; P.Glsl la dé-prémultiplie avant le shader (WebGL ignore UNPACK_PREMULTIPLY_ALPHA pour une ImageBitmap). */
     imagePont(vue, largeur, hauteur) {
       const { device } = this;
