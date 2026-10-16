@@ -94,12 +94,12 @@ function lireVoixScene(projet, deroule, scene) {
 /** Durée de la vidéo avec les scènes allongées par leur voix (délais maximaux de l'export et du contrôle). -> secondes */
 function dureeVideo(projet, deroule) {
   const { calculerMinutage } = require('../../moteur/minutage.js');
-  const { dureeTemps } = require('./deroule.js');
+  const { optionsMinutage } = require('./deroule.js');
   const scenes = deroule.scenes.map((s) => {
     const v = s.voix && s.voix.texte ? lireVoixScene(projet, deroule, s) : null;
     return { ...s, voix: v && !v.erreur ? { debut: s.voix.debut, duree: v.duree } : undefined };
   });
-  return calculerMinutage(scenes, {}, { dureeTemps: dureeTemps(deroule), decalageTemps: (deroule.tempo && deroule.tempo.decalage) || 0 }).duree;
+  return calculerMinutage(scenes, {}, optionsMinutage(deroule)).duree;
 }
 
 /** Prise brute (WAV) -> prise prête, écrite avec ses mots (et son Opus si ffmpeg est donné). -> { relatif, duree } */

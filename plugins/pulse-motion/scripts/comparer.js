@@ -13,7 +13,7 @@
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { lireDeroule } = require('./lib/deroule.js');
+const { lireDeroule, tempoMusique } = require('./lib/deroule.js');
 const { cheminDansProjet } = require('./lib/embarquer.js');
 const { echapperHTML } = require('./lib/scenes.js');
 const { adapterScene, choisirType, textesPour, lireNombre } = require('./lib/adapter.js');
@@ -51,6 +51,8 @@ function preparerProjet(projet, deroule, st, ids, temporaires = []) {
   });
   const copie = { ...deroule, titre: `${deroule.titre} – ${st.nom}`, style: st.nom, scenes };
   delete copie.musique;
+  // Sans la musique, garder son tempo : les scènes en temps musicaux (« 4t ») restent lisibles.
+  if (!copie.tempo && tempoMusique(deroule)) copie.tempo = { bpm: tempoMusique(deroule) };
   fs.writeFileSync(path.join(dossier, 'deroule.json'), JSON.stringify(copie, null, 2));
   return { dossier, avertissements };
 }
