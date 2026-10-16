@@ -7,6 +7,9 @@
  * « ancre ») demande data-ancre (ancre-vide), une métamorphose data-cible (metamorphose-sans-cible).
  * Structures (P5b) : un tissu photographié (apparence.source « ancre ») demande data-ancre (ancre-vide) ; chaque « #id » visé
  * par une attache (effet.elements) existe dans la scène (attache-introuvable).
+ * Milieux (P5c) : une recette de milieu (bloc « milieu ») se pose avec data-milieu (milieu-invalide) ; un effet couplé au
+ * milieu (force « milieu », « structure.milieu », « injecte ») demande un milieu valide dans sa scène (option milieu :
+ * couplage-sans-milieu).
  * Les recettes sont cherchées dans <projet>/effets/ puis dans la bibliothèque du plugin.
  * Chaque balise reçoit data-pm-effet="N" (index dans M.donnees.effets) ou data-pm-effet-erreur.
  * Atelier : balisesEffets repère les balises (positions dans le texte d'origine, même rang que l'assemblage),
@@ -121,14 +124,28 @@ function modifierEffet(html, ordre, changements) {
 }
 
 /**
- * preparerEffets(html, { scene, projet, bibliotheque, charte, premierIndex, dureeTemps, chargerShader })
+ * preparerEffets(html, { scene, projet, bibliotheque, charte, premierIndex, dureeTemps, chargerShader, milieu })
  * chargerShader : chargeurShaders (scripts/lib/shaders.js), pour les modules des recettes.
+ * milieu : la scène a un milieu valide (data-milieu ; P5c).
  * dureeTemps : secondes par temps musical (tempo du déroulé), pour un data-dur écrit en « t ».
+ * dureeScene : durée de la scène (s de τ, allongement par la voix compris) : un effet fait uniquement de structures (cordes,
+ * tissus, perles) sans data-dur dure jusqu'à la fin de sa scène (compilé avec cette durée) ; sinon data-dur, 1 s par défaut.
  * -> { html, effets: [{ scene, ordre, calque, ancre, cible, effet }], erreurs: [{ regle, gravite, scene, element?, message }],
  *    modules: { nom: { json, code } } }
  * ordre : position de la balise parmi les data-effet de la scène (erreurs comprises).
  */
-function preparerEffets(html, { scene, projet, bibliotheque, charte = {}, premierIndex = 0, dureeTemps = null, chargerShader = null }) {
+/** Effet dont tous les émetteurs sont des structures (cordes, tissus) ou leurs perles. */
+function structuresSeules(effet) {
+  return effet.emetteurs.length > 0 && effet.emetteurs.every((em) => em.structure || em.perlesDe >= 0);
+}
+
+/** Durée d'un effet fait uniquement de structures, sans data-dur : dureeScene (τ de la scène), ou null (règle commune :
+ *  data-dur, 1 s par défaut). attributs : attributs de la balise ; effet : effet compilé. */
+function dureeStructures(attributs, effet, dureeScene) {
+  return attributs['data-dur'] === undefined && dureeScene > 0 && structuresSeules(effet) ? dureeScene : null;
+}
+
+function preparerEffets(html, { scene, projet, bibliotheque, charte = {}, premierIndex = 0, dureeTemps = null, chargerShader = null, milieu = false, dureeScene = null }) {
   const effets = [];
   const erreurs = [];
   const modules = {};
@@ -179,12 +196,24 @@ function preparerEffets(html, { scene, projet, bibliotheque, charte = {}, premie
 
     let compile;
     try {
-      compile = R.compiler(R.resoudre(nom, charger), { reglages: a['data-reglages'] || '', charte, dur, graine });
+      const resolue = R.resoudre(nom, charger);
+      compile = R.compiler(resolue, { reglages: a['data-reglages'] || '', charte, dur, graine });
+      // Effet fait uniquement de structures (cordes, tissus) sans data-dur : un objet posé, présent jusqu'à la fin de la scène.
+      const durScene = compile.ok ? dureeStructures(a, compile.effet, dureeScene) : null;
+      if (durScene) compile = R.compiler(resolue, { reglages: a['data-reglages'] || '', charte, dur: durScene, graine });
     } catch (e) {
       if (!e.regle) throw e;
       compile = { ok: false, erreurs: [{ regle: e.regle, message: e.message }] };
     }
     if (!compile.ok) return signaler(compile.erreurs);
+    // Milieu (P5c) : une recette de milieu se pose avec data-milieu ; un effet couplé demande un milieu dans sa scène.
+    if (compile.effet.milieu) {
+      return signaler([{ regle: 'milieu-invalide', message: `« ${nom} » est un milieu fluide : le poser avec data-milieu="${nom}" (un par scène), pas data-effet.` }]);
+    }
+    const couplage = compile.effet.couplage;
+    if (couplage && (couplage.vent || couplage.injecte) && !milieu) {
+      return signaler([{ regle: 'couplage-sans-milieu', message: `l'effet « ${nom} » est couplé au milieu de la scène (force « milieu », « structure.milieu » ou « injecte »), mais la scène n'en a pas : ajouter un milieu (<div data-milieu="air"></div>, un par scène), ou retirer le couplage.` }]);
+    }
     // Fragmentation : un élément à photographier (ancre), un élément d'arrivée (cible).
     const ems = compile.effet.emetteurs;
     if (ems.some((em) => em.cible && em.cible.source === 'cible') && !cible) {
@@ -227,4 +256,4 @@ function preparerEffets(html, { scene, projet, bibliotheque, charte = {}, premie
   return { html: sortie, effets, erreurs, modules };
 }
 
-module.exports = { chargeurRecettes, fnv1a, graineParDefaut, preparerEffets, balisesAvec, balisesEffets, reecrireBalise, modifierEffet };
+module.exports = { chargeurRecettes, fnv1a, graineParDefaut, preparerEffets, structuresSeules, dureeStructures, balisesAvec, balisesEffets, reecrireBalise, modifierEffet };

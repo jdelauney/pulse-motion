@@ -20,6 +20,11 @@
  * apparence : em.structure) ; un émetteur de structure existe pendant toute la fenêtre de l'effet (vie = dur, pas de
  * naissance en flux), hors voie rapide ; effet.elements : ids visés par les attaches « #id » ; le dégradé est dans
  * em.tables.couleur, l'image de assets/ dans em.rendu.textureFichier ; erreurs « structure-invalide ».
+ * Milieux (P5c) : bloc « milieu » à la racine d'une recette (milieu fluide posé par data-milieu : grille, flottaison,
+ * refroidissement, dissipation, vorticité, viscosité, bords, sources sur une forme de P1, rendu fumée, feu ou encre, table du
+ * feu) ; une recette de milieu n'a pas d'émetteurs (effet.milieu, capacité nulle) ; erreurs « milieu-invalide ». Couplages
+ * des effets : force « milieu » (vent du milieu), bloc « injecte » d'un émetteur (dépôt de fumée, de chaleur, d'encre),
+ * « structure.milieu » (poussée sur une corde ou un tissu) ; effet.couplage.
  *
  * Module pur : chargé tel quel dans la page (global M.recette) et par Node (require).
  */
@@ -60,10 +65,15 @@
   var ATTACHES_MAX = 16;             // attaches par structure
   var ELEMENTS_MAX = 8;              // éléments visés par les attaches d'un effet : l'ancre (ou la balise) et 7 « #id »
   var DECHIRURE_MIN = 1.05;
+  var RESOLUTION_MILIEU = [64, 1024];   // cellules sur le grand côté d'un milieu (P5c)
+  var RESOLUTION_MILIEU_ALERTE = 512;   // au-delà : alerte budget-milieu (contrôle)
+  var SOURCES_MILIEU_MAX = 8;           // sources d'un milieu (uniforme de la grille sur le GPU)
+  var KELVIN_MIN = 800;                 // feu le plus froid de la table (rouge sombre)
+  var KELVIN_MAX = 6500;                // feu le plus chaud de la table (blanc)
   var PLACES = { corde: ['debut', 'fin'], tissu: ['haut', 'bas', 'gauche', 'droite', 'coins'] };
   var CODES = {
     forme: { point: 0, cercle: 1, anneau: 2, rectangle: 3, ligne: 4, ancre: 5, pixels: 6 },
-    force: { gravite: 0, trainee: 1, vent: 2, turbulence: 3, attracteur: 4, vortex: 5, rappel: 6 },
+    force: { gravite: 0, trainee: 1, vent: 2, turbulence: 3, attracteur: 4, vortex: 5, rappel: 6, milieu: 7 },
     rendu: { sprite: 0, etincelle: 1, trainee: 2, planche: 3, eclats: 4, fluide: 5 },
     melange: { additif: 0, alpha: 1, premultiplie: 2 },
     texture: { 'disque-doux': 0, etoile: 1, fumee: 2, flamme: 3, eclat: 4, confetti: 5, image: 6, pixel: 7 },
@@ -74,6 +84,8 @@
     source: { ancre: 0, cible: 1 },
     interaction: { essaim: 0, fluide: 1, grains: 2 },
     structure: { corde: 0, tissu: 1 },
+    sourceMilieu: { fumee: 0, chaleur: 1, encre: 2 },
+    renduMilieu: { fumee: 0, feu: 1, encre: 2 },
   };
   var COULEURS_CHARTE = ['primaire', 'accent', 'texte', 'fond'];
   var HEX = /^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
@@ -123,6 +135,20 @@
     return { force: nb('Force', 20, { curseur: [-200, 200] }), rayon: nb('Rayon', 10, { unite: 'cqh', curseur: [1, 100] }), centre: centre() };
   }
 
+  /** Champs d'une forme de P1 (types donnés) : émetteurs, et sources d'un milieu (P5c, sans les champs des pixels). */
+  function champsForme(types) {
+    return {
+      type: ch('Forme', types, 'ancre'),
+      zone: ch('Zone', ['surface', 'contour'], 'surface'),
+      rayon: nb('Rayon', null, { min: 0, unite: 'cqh', exemple: 5, curseur: [0, 50] }),
+      rayon_interieur: nb('Rayon intérieur', 0, { min: 0, unite: 'cqh', curseur: [0, 50] }),
+      largeur: nb('Largeur', null, { min: 0, unite: 'cqh', exemple: 10, curseur: [0, 180] }),
+      hauteur: nb('Hauteur', null, { min: 0, unite: 'cqh', exemple: 10, curseur: [0, 100] }),
+      angle: nb('Angle', 0, { unite: '°', curseur: [-180, 180] }),
+      decalage: pr('Décalage (fraction de la zone)', [0, 0]),
+    };
+  }
+
   var SCHEMA = ob('Recette', {
     version: nb('Version du format', 1, { requis: true, min: 1, max: 1, expression: false }),
     nom: noeud('texte', 'Nom', null, { motif: '^[a-z0-9-]+$', exemple: 'essai' }),
@@ -142,6 +168,30 @@
       seuil_bloom: nb('Seuil du halo', 1, { curseur: [0, 4], pas: 0.05 }),
       tons: ch('Courbe de tons', ['douce', 'aces', 'neutre'], 'douce'),
     }),
+    milieu: ob('Milieu fluide (balise data-milieu : fumée, feu, encre ; sans émetteurs)', {
+      resolution: nb('Cellules sur le grand côté', 192, { min: RESOLUTION_MILIEU[0], max: RESOLUTION_MILIEU[1], pas: 1, curseur: [64, RESOLUTION_MILIEU_ALERTE] }),
+      flottaison: nb('Flottaison (la chaleur monte ; négative : elle descend)', 1, { min: -5, max: 5, curseur: [-2, 3], pas: 0.05 }),
+      refroidissement: nb('Refroidissement (par seconde)', 0.6, { min: 0, max: 10, curseur: [0, 3], pas: 0.05 }),
+      dissipation: nb('Dissipation de la fumée et de l\'encre (par seconde)', 0.3, { min: 0, max: 10, curseur: [0, 3], pas: 0.05 }),
+      vorticite: nb('Tourbillons (confinement de vorticité)', 0.4, { min: 0, max: 2, curseur: [0, 2], pas: 0.05 }),
+      viscosite: nb('Viscosité', 0, { min: 0, max: 1, curseur: [0, 1], pas: 0.01 }),
+      bords: ch('Bords de la zone (ouverts : la fumée en sort)', ['ouverts', 'fermes'], 'ouverts'),
+      sources: li('Sources (posées dans la zone)', ob('Source', {
+        type: ch('Type', Object.keys(CODES.sourceMilieu), null, { requis: true, exemple: 'fumee' }),
+        forme: ob('Forme de la source (centrée sur la zone)', champsForme(Object.keys(CODES.forme).filter(function (t) { return t !== 'pixels'; }))),
+        debit: nb('Débit (par seconde)', 1, { min: 0, curseur: [0, 10], pas: 0.1 }),
+        temperature: nb('Température apportée (fumée, encre)', 0, { min: 0, max: 5, curseur: [0, 3], pas: 0.05 }),
+        couleur: noeud('couleur', 'Couleur de l\'encre', null, { exemple: '#1d3fbf' }),
+      }), { defaut: [], exemple: [{ type: 'fumee' }], maximum: SOURCES_MILIEU_MAX }),
+      rendu: ob('Rendu', {
+        type: ch('Type', Object.keys(CODES.renduMilieu), 'fumee'),
+        couleur: noeud('couleur', 'Couleur de la fumée', '#8a8f99'),
+        corps_noir: noeud('booleen', 'Feu : couleur du corps noir selon la température', true),
+        opacite: nb('Opacité', 0.8, { min: 0, max: 1, curseur: [0, 1], pas: 0.05 }),
+        intensite: nb('Éclat du feu (au-delà de 1 : halo)', 3, { min: 0, max: 20, curseur: [0, 8], pas: 0.1 }),
+        lumiere: pr('Direction de la lumière (ombrage de la fumée)', [-0.4, -1]),
+      }),
+    }),
     emetteurs: li('Émetteurs', ob('Émetteur', {
       nom: noeud('texte', 'Nom', null, { requis: true, motif: '^[a-z0-9-]+$', exemple: 'e' }),
       naissance: ob('Naissance', {
@@ -151,20 +201,12 @@
           nombre: nb('Nombre', null, { requis: true, min: 1, exemple: 10, curseur: [1, 5000] }),
         }), { defaut: [], exemple: [{ t: 0, nombre: 10 }], maximum: SALVES_MAX, contexte: 'racine' }),
         nombre: nb('Nombre par particule morte', null, { requis: true, min: 1, exemple: 2, contexte: 'sous-emetteur', curseur: [1, 50] }),
-        forme: ob('Forme d\'émission', {
-          type: ch('Forme', Object.keys(CODES.forme), 'ancre'),
-          zone: ch('Zone', ['surface', 'contour'], 'surface'),
-          rayon: nb('Rayon', null, { min: 0, unite: 'cqh', exemple: 5, curseur: [0, 50] }),
-          rayon_interieur: nb('Rayon intérieur', 0, { min: 0, unite: 'cqh', curseur: [0, 50] }),
-          largeur: nb('Largeur', null, { min: 0, unite: 'cqh', exemple: 10, curseur: [0, 180] }),
-          hauteur: nb('Hauteur', null, { min: 0, unite: 'cqh', exemple: 10, curseur: [0, 100] }),
-          angle: nb('Angle', 0, { unite: '°', curseur: [-180, 180] }),
-          decalage: pr('Décalage (fraction de la zone)', [0, 0]),
+        forme: ob('Forme d\'émission', Object.assign(champsForme(Object.keys(CODES.forme)), {
           densite: nb('Densité (forme « pixels ») : une particule pour N pixels de l\'ancre', DENSITE, { min: 1, max: DENSITE_MAX, pas: 1, curseur: [1, DENSITE_MAX] }),
           instant: nb('Photographie de l\'ancre (s de scène ; absent : début de l\'effet)', null, { min: 0, exemple: 1, unite: 's', curseur: [0, 30] }),
           liberation: nb('Libération des pixels étalée sur', 0, { min: 0, unite: 's', curseur: [0, 5] }),
           ordre: ch('Ordre de libération', Object.keys(CODES.ordre), 'hasard'),
-        }),
+        })),
         vitesse: ob('Vitesse de départ', {
           direction: pr('Direction', [0, -1]),
           cone: nb('Ouverture du cône', 0, { min: 0, max: 360, unite: '°', curseur: [0, 360] }),
@@ -192,6 +234,7 @@
             attracteur: { libelle: 'Attracteur (force négative : répulseur)', champs: attraction() },
             vortex: { libelle: 'Vortex', champs: attraction() },
             rappel: { libelle: 'Rappel (ressort)', champs: { raideur: nb('Raideur', 10, { curseur: [0, 100] }), amortissement: nb('Amortissement', 1, { curseur: [0, 10] }), centre: centre() } },
+            milieu: { libelle: 'Milieu (entraînée par le vent du milieu de la scène, data-milieu)', champs: { coef: nb('Prise au vent', 1, { min: 0, curseur: [0, 10] }) } },
           },
         },
       }), { defaut: [], maximum: FORCES_MAX }),
@@ -327,6 +370,9 @@
           mailles: bo('Mailles seules (filet)'),
           lumiere: pr('Direction de la lumière', [-0.4, -1]),
         }),
+        milieu: ob('Prise au vent du milieu (poussée selon la surface exposée)', {
+          coef: nb('Prise au vent', 1, { min: 0, curseur: [0, 10] }),
+        }),
       }, {
         exemple: { type: 'corde' },
         variantes: {
@@ -347,6 +393,13 @@
           },
         },
       }),
+      injecte: ob('Dépôt dans le milieu de la scène (là où passe chaque particule)', {
+        fumee: nb('Fumée déposée (par seconde et par particule)', 0, { min: 0, curseur: [0, 5], pas: 0.05 }),
+        chaleur: nb('Chaleur déposée (par seconde et par particule)', 0, { min: 0, curseur: [0, 5], pas: 0.05 }),
+        encre: noeud('texte', 'Encre déposée (couleur, ou « couleur » : celle de la particule)', null, {
+          motif: '^(couleur|#[0-9a-fA-F]{3,8}|[a-z_][a-z0-9_]*)$', exemple: '#202060',
+        }),
+      }),
     }, { exemple: { nom: 'emetteur', naissance: { debit: 50, vie: [0.5, 1] } } }), { requis: true }),
   });
 
@@ -360,6 +413,46 @@
 
   function estObjet(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
   function cloner(v) { return v === undefined ? undefined : JSON.parse(JSON.stringify(v)); }
+
+  // ---- Milieu (P5c) : corps noir, encre ----
+
+  /** Couleur d'un corps noir à k kelvins, sRGB dans [0, 1] (approximation publique de T. Helland, 2012). */
+  function corpsNoir(k) {
+    var t = k / 100;
+    var r;
+    var g;
+    var b;
+    if (t <= 66) {
+      r = 255;
+      g = 99.4708025861 * Math.log(t) - 161.1195681661;
+    } else {
+      r = 329.698727446 * Math.pow(t - 60, -0.1332047592);
+      g = 288.1221695283 * Math.pow(t - 60, -0.0755148492);
+    }
+    if (t >= 66) b = 255;
+    else if (t <= 19) b = 0;
+    else b = 138.5177312231 * Math.log(t - 10) - 305.0447927307;
+    return [r, g, b].map(function (x) { return Math.max(0, Math.min(255, x)) / 255; });
+  }
+
+  /** Table du feu : 64 RVBA linéaires d'émission (HDR) pour la température normalisée t = i / 63 : couleur du corps noir de
+   *  KELVIN_MIN (rouge sombre) à KELVIN_MAX (blanc), ou teinte fixe [r, v, b, a] linéaire ; intensité × t² (un feu tiède
+   *  luit à peine) ; alpha : min(1, t²). */
+  function tableFeu(teinte, intensite) {
+    var t = [];
+    for (var i = 0; i < TAILLE_TABLE; i++) {
+      var x = i / (TAILLE_TABLE - 1);
+      var c = teinte ? teinte.slice(0, 3) : corpsNoir(KELVIN_MIN + (KELVIN_MAX - KELVIN_MIN) * x).map(versLineaire);
+      var e = intensite * x * x;
+      t.push(arrondi(c[0] * e), arrondi(c[1] * e), arrondi(c[2] * e), arrondi(Math.min(1, x * x)));
+    }
+    return t;
+  }
+
+  /** Absorbance par canal d'une encre de couleur linéaire c : −ln(c), bornée (une encre blanche n'absorbe rien). */
+  function absorbanceEncre(c) {
+    return [0, 1, 2].map(function (k) { return arrondi(-Math.log(Math.max(c[k], 0.02))) + 0; }); // + 0 : pas de « -0 » pour le blanc
+  }
 
   // ---- Héritage ----
 
@@ -616,7 +709,8 @@
       var c = chemin || '';
       var regle = /(^|\.)interactions(\.|\[|$)/.test(c) ? 'interactions-invalides'
         : /(^|\.)structure(\.|\[|$)/.test(c) ? 'structure-invalide'
-        : /(^|\.)(collisions|a_la_collision)(\.|\[|$)/.test(c) ? 'collisions-invalides' : 'effet-invalide';
+        : /(^|\.)(collisions|a_la_collision)(\.|\[|$)/.test(c) ? 'collisions-invalides'
+        : /(^|\.)milieu(\.|\[|$)/.test(c) ? 'milieu-invalide' : 'effet-invalide';
       return ErreurRecette(regle, prefixe + (chemin ? ', ' + chemin : '') + ' : ' + message + '.', chemin || '');
     }
     // Règle des structures (P5b) quel que soit le champ en cause (naissance, rendu, perles d'un émetteur de structure).
@@ -768,6 +862,8 @@
             r.rayon = nombre(f.rayon, c + '.rayon', 10);
             r.centre = paire(f.centre, c + '.centre', [0.5, 0.5]);
             if (r.rayon <= 0) throw invalide(c + '.rayon', 'valeur positive attendue');
+          } else if (type === 'milieu') {
+            r.coef = nombre(f.coef, c + '.coef', 1);
           } else {
             r.raideur = nombre(f.raideur, c + '.raideur', 10);
             r.amortissement = nombre(f.amortissement, c + '.amortissement', 1);
@@ -1000,6 +1096,26 @@
         };
       }
 
+      /** Dépôt dans le milieu (P5c) : fumée et chaleur par seconde, encre (couleur fixe, ou « couleur » : celle de la particule
+       *  au cours de sa vie) ; null si rien n'est déposé. */
+      function compilerInjecte(v, ch) {
+        if (v === undefined || v === null) return null;
+        v = objet(v, ch);
+        function positif(cle) {
+          var x = nombre(v[cle], ch + '.' + cle, 0);
+          if (x < 0) throw invalide(ch + '.' + cle, 'valeur positive ou nulle attendue');
+          return x;
+        }
+        var fumee = positif('fumee');
+        var chaleur = positif('chaleur');
+        var encre = null;
+        if (v.encre !== undefined && v.encre !== null) {
+          encre = v.encre === 'couleur' ? { mode: 'particule', absorbance: [0, 0, 0] } : { mode: 'fixe', absorbance: absorbanceEncre(couleur(v.encre, ch + '.encre')) };
+        }
+        if (!fumee && !chaleur && !encre) return null;
+        return { fumee: fumee, chaleur: chaleur, encre: encre };
+      }
+
       /** Bloc « interactions » (P5a) : type, rayon, émetteurs liés (noms vérifiés avec les groupes), réglages du type ;
        *  cote : côté de cellule de voisinage propre à l'émetteur (essaim : rayon de vision s'il est plus grand). */
       function compilerInteractions(v, ch) {
@@ -1107,7 +1223,7 @@
         var de = '« ' + corde + ' »';
         if (P) throw invalideS(ch, 'les perles de ' + de + ' sont posées sur ses sommets, pas lancées par « ' + P.nom + ' »');
         if (e.structure !== undefined && e.structure !== null) throw invalideS(ch + '.structure', 'les perles de ' + de + ' ne sont pas une structure');
-        ['forces', 'collisions', 'interactions', 'cible', 'a_la_mort', 'a_la_collision'].forEach(function (k) {
+        ['forces', 'collisions', 'interactions', 'cible', 'a_la_mort', 'a_la_collision', 'injecte'].forEach(function (k) {
           var x = e[k];
           if (x !== undefined && x !== null && !(Array.isArray(x) && !x.length)) throw invalideS(ch + '.' + k, 'les perles suivent les sommets de ' + de + ' : retirer « ' + k + ' »');
         });
@@ -1191,10 +1307,110 @@
         return groupes;
       }
 
+      /** Réglages du calque (bloom, seuil, tons). */
+      function compilerCalque(v) {
+        var rc = objet(v, 'rendu_calque');
+        return {
+          bloom: nombre(rc.bloom, 'rendu_calque.bloom', 0.6),
+          seuil_bloom: nombre(rc.seuil_bloom, 'rendu_calque.seuil_bloom', 1),
+          tons: choix(rc.tons, { douce: 1, aces: 1, neutre: 1 }, 'rendu_calque.tons', 'douce'),
+        };
+      }
+
+      /** Bloc « milieu » (P5c) : grille, réglages du solveur, sources (forme de P1), rendu. -> contrat effet.milieu */
+      function compilerMilieu(v, ch) {
+        v = objet(v, ch);
+        function entre(o, cle, chemin, defaut, min, max) {
+          var x = nombre(o[cle], chemin, defaut);
+          if (x < min || x > max) throw invalide(chemin, 'valeur entre ' + min + ' et ' + max + ' attendue');
+          return x;
+        }
+        var resolution = Math.round(nombre(v.resolution, ch + '.resolution', 192));
+        if (resolution < RESOLUTION_MILIEU[0] || resolution > RESOLUTION_MILIEU[1]) {
+          throw invalide(ch + '.resolution', 'cellules sur le grand côté entre ' + RESOLUTION_MILIEU[0] + ' et ' + RESOLUTION_MILIEU[1] +
+            ' attendues (192 : une fumée nette ; au-delà de ' + RESOLUTION_MILIEU_ALERTE + ', l\'aperçu saccade)');
+        }
+        var bords = choix(v.bords, { ouverts: 1, fermes: 1 }, ch + '.bords', 'ouverts');
+        var lesSources = v.sources === undefined || v.sources === null ? [] : v.sources;
+        if (!Array.isArray(lesSources)) throw invalide(ch + '.sources', 'liste attendue');
+        if (lesSources.length > SOURCES_MILIEU_MAX) throw invalide(ch + '.sources', SOURCES_MILIEU_MAX + ' sources au plus');
+        var sources = lesSources.map(function (s, k) {
+          var c = ch + '.sources[' + k + ']';
+          s = objet(s, c);
+          var type = choix(s.type, CODES.sourceMilieu, c + '.type');
+          var forme = compilerForme(s.forme, c + '.forme');
+          if (forme.type === 'pixels') {
+            throw invalide(c + '.forme.type', 'une source se pose sur une forme (point, cercle, anneau, rectangle, ligne, ancre), pas sur les pixels d\'un élément');
+          }
+          var debit = nombre(s.debit, c + '.debit', 1);
+          if (debit < 0) throw invalide(c + '.debit', 'valeur positive ou nulle attendue');
+          var temperature = entre(s, 'temperature', c + '.temperature', 0, 0, 5);
+          var teinte = s.couleur === undefined || s.couleur === null ? null : couleur(s.couleur, c + '.couleur');
+          if (type === 'encre' && !teinte) throw invalide(c + '.couleur', 'une source d\'encre a une couleur (#rrggbb, ou primaire, accent, texte, fond)');
+          return {
+            type: type, code: CODES.sourceMilieu[type], forme: forme, debit: debit, temperature: temperature,
+            encre: type === 'encre' ? absorbanceEncre(teinte) : [0, 0, 0],
+          };
+        });
+        var chr = ch + '.rendu';
+        var r = v.rendu === undefined || v.rendu === null ? {} : objet(v.rendu, chr);
+        var typeRendu = choix(r.type, CODES.renduMilieu, chr + '.type', 'fumee');
+        if (r.corps_noir !== undefined && typeof r.corps_noir !== 'boolean') throw invalide(chr + '.corps_noir', 'true ou false attendu');
+        var lu = paire(r.lumiere, chr + '.lumiere', [-0.4, -1]);
+        var ll = Math.sqrt(lu[0] * lu[0] + lu[1] * lu[1]);
+        if (ll === 0) throw invalide(chr + '.lumiere', 'direction nulle');
+        var teinteRendu = couleur(r.couleur === undefined ? '#8a8f99' : r.couleur, chr + '.couleur');
+        var intensite = entre(r, 'intensite', chr + '.intensite', 3, 0, 20);
+        var corpsNoirActif = r.corps_noir !== false;
+        return {
+          resolution: resolution,
+          flottaison: entre(v, 'flottaison', ch + '.flottaison', 1, -5, 5),
+          refroidissement: entre(v, 'refroidissement', ch + '.refroidissement', 0.6, 0, 10),
+          dissipation: entre(v, 'dissipation', ch + '.dissipation', 0.3, 0, 10),
+          vorticite: entre(v, 'vorticite', ch + '.vorticite', 0.4, 0, 2),
+          viscosite: entre(v, 'viscosite', ch + '.viscosite', 0, 0, 1),
+          bords: bords,
+          bordsCode: bords === 'fermes' ? 1 : 0,
+          sources: sources,
+          rendu: {
+            type: typeRendu, code: CODES.renduMilieu[typeRendu], couleur: teinteRendu, corpsNoir: corpsNoirActif,
+            opacite: entre(r, 'opacite', chr + '.opacite', 0.8, 0, 1), intensite: intensite,
+            lumiere: [arrondi(lu[0] / ll), arrondi(lu[1] / ll)],
+            feu: tableFeu(corpsNoirActif ? null : teinteRendu, intensite),
+          },
+        };
+      }
+
       // Structures (P5b) : ids des éléments visés par les attaches « #id » (élément k ≥ 1 = elementsEffet[k − 1]).
       var elementsEffet = [];
 
       // Émetteurs : noms, liens parent → enfant, profondeur.
+      // Milieu (P5c) : recette d'un milieu fluide (balise data-milieu), sans émetteurs.
+      if (recette.milieu !== undefined && recette.milieu !== null) {
+        if (recette.emetteurs !== undefined && recette.emetteurs !== null) {
+          throw invalide('milieu', 'une recette de milieu n\'a pas d\'« emetteurs » : le milieu se pose avec data-milieu, les effets qui s\'y couplent sont des recettes à part (force « milieu », « injecte », « structure.milieu »)');
+        }
+        return {
+          ok: true,
+          erreurs: [],
+          effet: {
+            version: 1,
+            nom: nomEffet,
+            graine: (o.graine >>> 0),
+            duree: dur,
+            reglages: { nombres: Object.assign({}, vp.nombres), couleurs: Object.assign({}, vp.couleurs) },
+            rendu_calque: compilerCalque(recette.rendu_calque),
+            capacite: 0,
+            fin: dur,
+            emetteurs: [],
+            groupes: [],
+            elements: [],
+            couplage: { vent: false, injecte: false },
+            milieu: compilerMilieu(recette.milieu, 'milieu'),
+          },
+        };
+      }
+
       var liste = recette.emetteurs;
       if (!Array.isArray(liste) || !liste.length) throw invalide('', '« emetteurs » doit être une liste non vide');
       var parNom = Object.create(null);
@@ -1424,6 +1640,15 @@
           lumiere: [arrondi(lu[0] / ll), arrondi(lu[1] / ll)],
         };
 
+        // Prise au vent du milieu (P5c) : poussée selon la surface exposée (force « milieu » ajoutée par compilerEmetteur).
+        var milieu = null;
+        if (v.milieu !== undefined && v.milieu !== null) {
+          var mi = objet(v.milieu, ch + '.milieu');
+          var coef = nombre(mi.coef, ch + '.milieu.coef', 1);
+          if (coef < 0) throw invalide(ch + '.milieu.coef', 'valeur positive ou nulle attendue');
+          milieu = { coef: coef };
+        }
+
         // Perles (tâche 3 : émetteur des perles).
         var perles = null;
         if (v.perles !== undefined && v.perles !== null) {
@@ -1445,7 +1670,7 @@
           structure: {
             type: type, code: CODES.structure[type], colonnes: C, lignes: R, nSommets: C * R, attaches: attaches,
             raideur: entre('raideur', 0.9, 0, 1), flexion: entre('flexion', 0.1, 0, 1), amortissement: entre('amortissement', 0.02, 0, 1),
-            dechirure: dechirure, fente: fente, epaisseur: entre('epaisseur', 0.4, 0.05, 10), perles: perles, apparence: apparence,
+            dechirure: dechirure, fente: fente, epaisseur: entre('epaisseur', 0.4, 0.05, 10), perles: perles, apparence: apparence, milieu: milieu,
           },
           degrade: degrade,
           image: image,
@@ -1460,6 +1685,7 @@
           interactions: 'une structure rejoint un groupe d\'interactions par le « avec » de ses particules',
           vie: 'elle se dessine selon son « apparence »', rendu: 'elle se dessine selon son type (maillage d\'un tissu, ruban d\'une corde) et son « apparence »',
           modules: 'pas de module WGSL sur une structure',
+          injecte: 'une structure ne dépose rien dans le milieu (elle en prend le vent par « milieu »)',
         };
         Object.keys(interdits).forEach(function (k) {
           if (e[k] !== undefined && e[k] !== null) throw invalideS(ch + '.' + k, 'une structure ne prend pas « ' + k + ' » : ' + interdits[k]);
@@ -1517,6 +1743,7 @@
           modules: compilerModules(e.modules, ch + '.modules'),
           interactions: compilerInteractions(e.interactions, ch + '.interactions'),
           structure: cs ? cs.structure : null,
+          injecte: compilerInjecte(e.injecte, ch + '.injecte'),
           perlesDe: -1,
         };
         em.fragment = !!(em.pixels || em.eclats || em.cible);
@@ -1526,6 +1753,17 @@
         }
         if (em.fluide && em.fragment) throw invalide(ch + '.rendu.type', 'un émetteur de fragments se dessine en grains ou en éclats : pas de rendu « fluide »');
         if (em.interactions) verifierInteractions(em, ch);
+        // Milieu (P5c) : une corde ou un tissu prend le vent du milieu par « structure.milieu » (force de la structure, pondérée
+        // sur le GPU par sa surface exposée), jamais par une force « milieu ».
+        if (estStructure) {
+          em.forces.forEach(function (f, k) {
+            if (f.type === 'milieu') throw invalideS(ch + '.forces[' + k + ']', 'une corde ou un tissu prend le vent du milieu par « structure.milieu » (poussée selon sa surface exposée), pas par une force « milieu »');
+          });
+          if (em.structure.milieu) {
+            if (em.forces.length >= FORCES_MAX) throw invalideS(ch + '.structure.milieu', FORCES_MAX + ' forces au plus, poussée du milieu comprise');
+            em.forces.push({ type: 'milieu', code: CODES.force.milieu, coef: em.structure.milieu.coef });
+          }
+        }
         // Structure : dégradé dans la table des couleurs, image de assets/ comme une texture de P1 (chargée à l'assemblage).
         if (cs && cs.degrade) em.tables.couleur = tableDegrade(cs.degrade, cs.structure.apparence.bandes);
         if (cs && cs.image) {
@@ -1642,6 +1880,8 @@
         if (em.interactions) em.voieRapide = false;
         // Structure : sommets reliés, simulés pas à pas.
         if (estStructure || estPerle) em.voieRapide = false;
+        // Milieu (P5c) : vent du milieu et dépôts se calculent pas à pas.
+        if (em.injecte || em.forces.some(function (f) { return f.type === 'milieu'; })) em.voieRapide = false;
         return em;
       }
 
@@ -1662,7 +1902,6 @@
 
       var groupes = grouperInteractions(emetteurs);
 
-      var rc = objet(recette.rendu_calque, 'rendu_calque');
       var effet = {
         version: 1,
         nom: nomEffet,
@@ -1670,11 +1909,7 @@
         duree: dur,
         // Valeurs des réglages (modules WGSL : réglages de même nom).
         reglages: { nombres: Object.assign({}, vp.nombres), couleurs: Object.assign({}, vp.couleurs) },
-        rendu_calque: {
-          bloom: nombre(rc.bloom, 'rendu_calque.bloom', 0.6),
-          seuil_bloom: nombre(rc.seuil_bloom, 'rendu_calque.seuil_bloom', 1),
-          tons: choix(rc.tons, { douce: 1, aces: 1, neutre: 1 }, 'rendu_calque.tons', 'douce'),
-        },
+        rendu_calque: compilerCalque(recette.rendu_calque),
         capacite: emetteurs.reduce(function (s, e) { return s + e.capacite; }, 0),
         fin: emetteurs.reduce(function (s, e) { return Math.max(s, e.fin); }, 0),
         emetteurs: emetteurs,
@@ -1682,6 +1917,11 @@
         groupes: groupes,
         // Structures (P5b) : ids des éléments visés par les attaches « #id » ([] sans structure).
         elements: elementsEffet,
+        // Milieu (P5c) : effet couplé au milieu de sa scène (vent lu, ou dépôts).
+        couplage: {
+          vent: emetteurs.some(function (e) { return e.forces.some(function (f) { return f.type === 'milieu'; }); }),
+          injecte: emetteurs.some(function (e) { return !!e.injecte; }),
+        },
       };
       emetteurs.forEach(function (e) { delete e.espacement; delete e.gigue; delete e.finNaissances; });
       return { ok: true, effet: effet, erreurs: [] };
@@ -1719,6 +1959,12 @@
     ATTACHES_MAX: ATTACHES_MAX,
     ELEMENTS_MAX: ELEMENTS_MAX,
     DECHIRURE_MIN: DECHIRURE_MIN,
+    RESOLUTION_MILIEU: RESOLUTION_MILIEU,
+    RESOLUTION_MILIEU_ALERTE: RESOLUTION_MILIEU_ALERTE,
+    SOURCES_MILIEU_MAX: SOURCES_MILIEU_MAX,
+    corpsNoir: corpsNoir,
+    tableFeu: tableFeu,
+    absorbanceEncre: absorbanceEncre,
     SCHEMA: SCHEMA,
     ErreurRecette: ErreurRecette,
     resoudre: resoudre,
