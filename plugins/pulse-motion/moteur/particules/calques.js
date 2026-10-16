@@ -93,6 +93,9 @@
  * (modulation, salves au son : P.tablesSon) sont posées sur ses émetteurs (em.son) ; salve sans instant : alerte ; piste
  * illisible : effet désactivé (export refusé tant qu'il est visible).
  * M.particules.sonEffet(idScene, ordre) -> [{ n, cMax, instants } | null]   (tests)
+ * Son réactif des shaders (P7) : textures du son (P.Shaders.ecrireSon) écrites une fois par instant rendu ; entrées son
+ * (M.son.lire de la piste du shader, à t) et image (iFrame, iTimeDelta) des fonds et de la composition.
+ * M.shaders.sonEcrit() -> { t, pistes }   (tests)
  * Navigateur seulement ; dépend de horloge, gpu, simulation, voisinage (interactions, P5a : largeur de la scène passée à
  * la simulation pour sa grille de voisinage), rendu.
  */
@@ -1014,6 +1017,7 @@
     if (!etat.gpu) return;
     etat.rendu_t = t;
     const { device } = etat.gpu;
+    ecrireSonShaders(t);
     etat.scenes.forEach((sc) => {
       if (sc.section.style.display === 'none') {
         sc.effets.forEach(liberer);
@@ -1125,6 +1129,21 @@
     await etat.gpu.device.queue.onSubmittedWorkDone();
   }
 
+  // ---- Son réactif des shaders (P7) ----
+
+  const sonShaders = { t: null, pistes: [] };
+
+  /** Textures du son de chaque piste analysée, écrites une fois par instant rendu. */
+  function ecrireSonShaders(t) {
+    if (!etat.shaders || !M.son || sonShaders.t === t) return;
+    sonShaders.t = t;
+    sonShaders.pistes = M.son.pistes();
+    sonShaders.pistes.forEach((p) => etat.shaders.ecrireSon(p, M.son.spectre(p, t), M.son.onde(p, t)));
+  }
+
+  /** Valeurs du son d'un shader à l'instant t de la vidéo (zéros sans analyse). */
+  function sonPour(donnee, t) { return M.son ? M.son.lire(donnee.piste || 'musique', t) : null; }
+
   /** Entrées d'un fond : τ depuis son début, part de sa fenêtre, zone (boîte de l'élément, échelle comprise) en cqh et en px. */
   function entreesFond(a, largeurCqh, canvas) {
     const { f, r } = a;
@@ -1138,6 +1157,8 @@
       scene: [largeurCqh, 100, canvas.width, canvas.height],
       repere: [r.centre[0], r.centre[1], r.angle, f.donnee.debord || 0],
       demi: [r.demi[0], r.demi[1], 0, 0],
+      son: sonPour(f.donnee, a.t),
+      image: [Math.floor((a.t - f.debut) * f.info.rythme * (M.ips || 30) + 1e-6), f.info.rythme / (M.ips || 30)],
     };
   }
 
@@ -1355,20 +1376,23 @@
     const canvas = canvasComposition();
     const cible = etat.composition.cible(canvas);
     const largeurCqh = largeurScene();
-    const plein = (temps, progres, duree) => ({ temps, progres, duree, mode: 1, resolution: [largeurCqh, 100, cible.largeur, cible.hauteur], scene: [largeurCqh, 100, cible.largeur, cible.hauteur] });
+    ecrireSonShaders(t);
+    const plein = (temps, progres, duree, donnee) => ({ temps, progres, duree, mode: 1, resolution: [largeurCqh, 100, cible.largeur, cible.hauteur], scene: [largeurCqh, 100, cible.largeur, cible.hauteur],
+      son: sonPour(donnee, t), image: [Math.floor(temps * (M.ips || 30) + 1e-6), 1 / (M.ips || 30)] });
     const couches = plan.couches.map((id) => {
       const s = M.minutage.scenes.find((x) => x.id === id);
-      const e = plein((t - s.debut) * s.rythme, Math.min(1, Math.max(0, (t - s.debut) / Math.max(1e-6, s.fin - s.debut))), (s.fin - s.debut) * s.rythme);
-      return { vue: comp.photos.get(id).vue, posts: (comp.posts.get(id) || []).filter((p) => p.shader).map((p) => ({ shader: p.shader, entrees: e })) };
+      const temps = (t - s.debut) * s.rythme;
+      const progres = Math.min(1, Math.max(0, (t - s.debut) / Math.max(1e-6, s.fin - s.debut)));
+      return { vue: comp.photos.get(id).vue, posts: (comp.posts.get(id) || []).filter((p) => p.shader).map((p) => ({ shader: p.shader, entrees: plein(temps, progres, (s.fin - s.debut) * s.rythme, p.donnee) })) };
     });
     let transition = null;
     if (plan.transition) {
       const tr = plan.transition;
-      transition = { shader: comp.transitions.get(tr.entrante).shader, entrees: plein(tr.temps, tr.progres, tr.duree),
+      const donnee = comp.transitions.get(tr.entrante);
+      transition = { shader: donnee.shader, entrees: plein(tr.temps, tr.progres, tr.duree, donnee.donnee),
         sortante: tr.sortante ? plan.couches.indexOf(tr.sortante) : -1, entrante: plan.couches.indexOf(tr.entrante) };
     }
-    const ev = plein(t, Math.min(1, t / Math.max(1e-6, M.duree)), M.duree);
-    etat.composition.dessiner(cible, { couches, transition, postsVideo: comp.postsVideo.filter((p) => p.shader).map((p) => ({ shader: p.shader, entrees: ev })) });
+    etat.composition.dessiner(cible, { couches, transition, postsVideo: comp.postsVideo.filter((p) => p.shader).map((p) => ({ shader: p.shader, entrees: plein(t, Math.min(1, t / Math.max(1e-6, M.duree)), M.duree, p.donnee) })) });
     canvas.style.display = '';
     comp.affichee = true;
     document.getElementById('pm-scene').classList.add(COMPOSE);
@@ -1524,6 +1548,7 @@
     etat.formes = null; // texture de l'ancien device ; les masques (processeur) sont gardés
     etat.shaders = null; // pipelines et uniformes de l'ancien device : recompilés par demarrerGPU
     etat.composition = null;
+    sonShaders.t = null; // textures du son de l'ancien device
     comp.photos.clear();
     if (comp.canvas) delete comp.canvas.__pmCible;
     comp.transitions.forEach((tr) => { tr.shader = null; });
@@ -1853,6 +1878,8 @@
   };
 
   M.shaders = {
+    /** Son réactif (tests) : instant et pistes de la dernière écriture des textures du son. */
+    sonEcrit() { return { t: sonShaders.t, pistes: sonShaders.pistes.slice() }; },
     erreurs() { return etat.erreursShaders.map((e) => Object.assign({}, e)); },
     decrire(idScene) {
       const sc = trouver(idScene);
