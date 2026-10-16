@@ -89,11 +89,16 @@
  * (M.rendreScene) : elle ne dépend que de τ, jamais du chemin suivi pour arriver à t.
  * Modules WGSL des recettes (P6) : compilés au démarrage du GPU (Rendu.verifierModules) ; un module qui ne compile pas désactive
  * son effet (panneau, M.shaders.erreurs, usage « module ») ; l'atelier refuse une recette dont un module ne compile pas.
+ * Son réactif (P7) : la porte de disponibilité attend M.son.pret ; avant chaque simulation, les tables du son de l'effet
+ * (modulation, salves au son : P.tablesSon) sont posées sur ses émetteurs (em.son) ; salve sans instant : alerte ; piste
+ * illisible : effet désactivé (export refusé tant qu'il est visible).
+ * M.particules.sonEffet(idScene, ordre) -> [{ n, cMax, instants } | null]   (tests)
  * Navigateur seulement ; dépend de horloge, gpu, simulation, voisinage (interactions, P5a : largeur de la scène passée à
  * la simulation pour sa grille de voisinage), rendu.
  */
 (function (racine) {
   'use strict';
+  if (!racine.document) { (racine.M = racine.M || {}).particulesInterne = racine.M.particulesInterne || {}; racine.M.particulesInterne.tablesSon = tablesSonPur; return; }
   const M = racine.M = racine.M || {};
   const P = M.particulesInterne = M.particulesInterne || {};
   const CALQUES = ['arriere', 'avant'];
@@ -421,6 +426,7 @@
     const mesures = { scenes: new Set() };
     const m = monde(f);
     m.bases = basesPour(f, device);
+    sonoriser(f);
     const sim = new P.Simulation(device, f.effet, m, f.fragments, largeurSimulation(f));
     sim.avancer(Math.max(0, (t - f.debut) * f.info.rythme - 1e-6), zonesDe(f, mesures));
     const c = sim.contributionVideo();
@@ -736,6 +742,7 @@
     membres.forEach((fx) => {
       const m = monde(fx);
       if (m) m.bases = basesPour(fx, device);
+      sonoriser(fx);
       fx.sim = new P.Simulation(device, fx.effet, m, fx.fragments, largeurSimulation(fx), milieu);
       fx.sim.emetteurs.forEach((e) => etat.rendu.preparerEmetteur(e));
     });
@@ -938,6 +945,58 @@
 
   function message(e) { return String(e && e.message || e); }
 
+  /** Son réactif (P7) : pour chaque émetteur à modulation ou salve au son, la table des coefficients (60 points par
+   *  seconde de τ, n = ⌈fin × 60⌉ + 2 ; débit, forces, couleur, taille : de + (a − de) × grandeur à t = début + τ / rythme)
+   *  et les instants des salves (τ dans [0, durée), les « max » premiers ; 1e30 ailleurs). son : M.son. -> [em.son | null] */
+  function tablesSonPur(effet, debut, rythme, son) {
+    const n = Math.ceil(effet.fin * 60) + 2;
+    const CLES = ['debit', 'forces', 'couleur', 'taille'];
+    return effet.emetteurs.map((em) => {
+      const mod = em.modulation;
+      const s = em.salveSon;
+      if (!mod && !s) return null;
+      const coefs = new Float32Array(4 * n).fill(1);
+      CLES.forEach((cle, q) => {
+        const m = mod && mod[cle];
+        if (!m) return;
+        for (let j = 0; j < n; j++) coefs[q * n + j] = m.de + (m.a - m.de) * son.lire(m.piste, debut + j / 60 / rythme)[m.par];
+      });
+      const instants = new Float32Array(s ? s.max : 0).fill(1e30);
+      if (s) {
+        const liste = s.au === 'syllabe' ? son.syllabes(s.piste) : son.battements(s.piste);
+        const taus = liste.map((t) => (t - debut) * rythme).filter((tau) => tau >= 0 && tau < effet.duree).slice(0, s.max);
+        instants.set(taus);
+      }
+      return { n, coefs, instants, cMax: mod && mod.debit ? Math.max(mod.debit.de, mod.debit.a) : 1 };
+    });
+  }
+
+  /** Tables du son posées sur les émetteurs de fx.effet (em.son) avant la création de sa simulation ; calculées une fois
+   *  par effet (fx.tablesSon), après l'analyse (porte de disponibilité). Salve au son sans instant : alerte. */
+  function sonoriser(fx) {
+    const effet = fx.effet;
+    if (!effet.pistes || !effet.pistes.length || !M.son) return;
+    if (!fx.tablesSon) {
+      fx.tablesSon = tablesSonPur(effet, fx.debut, fx.info.rythme, M.son);
+      effet.emetteurs.forEach((em, i) => {
+        const t = fx.tablesSon[i];
+        if (!t || !em.salveSon || t.instants[0] < 1e29) return;
+        const quoi = em.salveSon.au === 'syllabe' ? 'aucune syllabe détectée dans la voix' : 'aucun battement détecté dans la musique';
+        alerter('Scène « ' + fx.info.id + ' », effet « ' + effet.nom + ' » : ' + quoi + ' pendant l\'effet : la salve « au ' + em.salveSon.au + ' » ne part pas.');
+      });
+    }
+    effet.emetteurs.forEach((em, i) => { if (fx.tablesSon[i]) em.son = fx.tablesSon[i]; });
+  }
+
+  /** Après l'analyse : un effet qui suit une piste illisible est désactivé (panneau ; export refusé tant qu'il est visible). */
+  function verifierSon() {
+    if (!M.son) return;
+    etat.scenes.forEach((sc) => sc.effets.forEach((fx) => {
+      const p = (fx.effet.pistes || []).find((x) => M.son.erreur(x));
+      if (p) desactiver(fx, M.son.erreur(p));
+    }));
+  }
+
   function liberer(fx) {
     if (!fx.sim) return;
     // Effet couplé (P5c) : sa simulation appartient au groupe de sa scène, libéré tout entier.
@@ -1111,6 +1170,7 @@
         if (!fx.sim) {
           const m = monde(fx);
           if (m) m.bases = basesPour(fx, device);
+          sonoriser(fx);
           fx.sim = new P.Simulation(device, fx.effet, m, fx.fragments, largeurSimulation(fx));
           fx.sim.emetteurs.forEach((e) => etat.rendu.preparerEmetteur(e));
         }
@@ -1425,8 +1485,8 @@
       etat.raison = msg;
       panneauxTous(msg);
     });
-    // Aucune mesure d'ancre avant que la page soit prête : polices, temps SMIL, position du lecteur.
-    etat.pret = Promise.all([obtention, M.pret, polices()]).then((r) => {
+    // Aucune mesure d'ancre avant que la page soit prête : polices, temps SMIL, position du lecteur ; son analysé (P7).
+    etat.pret = Promise.all([obtention, M.pret, polices(), M.son ? M.son.pret : null]).then((r) => {
       const gpu = r[0];
       if (!gpu || gpu.erreur) return;
       const rendu = new P.Rendu(gpu.device, gpu.format);
@@ -1437,7 +1497,7 @@
         return compilerShaders(gpu.device).then((compiler) => {
           etat.composition = new P.Composition(gpu.device, gpu.format, etat.shaders);
           return compilerComposition(compiler);
-        }).then(() => verifierModules(rendu)).then(() => preparerStructures(gpu.device)).then(() => preparerFormes(gpu.device)).then(fragmentsPromis);
+        }).then(() => verifierModules(rendu)).then(verifierSon).then(() => preparerStructures(gpu.device)).then(() => preparerFormes(gpu.device)).then(fragmentsPromis);
       }).then(() => {
         etat.gpu = gpu;
         etat.rendu = rendu;
@@ -1658,6 +1718,7 @@
     fx.fragments = null;
     fx.ancres = new Map();
     fx.attaches = new Map();
+    fx.tablesSon = null;
     if (fragmente(fx) && !(await preparerFragmentsEffet(fx))) throw new Error('Effet non affiché : rien à photographier (ancre vide).');
     // Les couches communes en dépendent : tous les effets repartent de contributions recalculées.
     oublierContributions();
@@ -1741,6 +1802,13 @@
       const canvas = sc && sc.calques[calque];
       if (!canvas || !etat.rendu || !canvas.__pmCible) return Promise.reject(new Error('Calque « ' + calque + ' » de la scène « ' + idScene + ' » introuvable.'));
       return etat.rendu.lirePixels(canvas.__pmCible);
+    },
+    /** Tables du son d'un effet (tests) : [{ n, cMax, instants: [τ] } | null]. */
+    sonEffet(idScene, ordre) {
+      const sc = trouver(idScene);
+      const fx = sc && sc.effets.find((f) => f.ordre === ordre);
+      if (!fx || !fx.tablesSon) return null;
+      return fx.tablesSon.map((t) => t && { n: t.n, cMax: t.cMax, instants: Array.from(t.instants) });
     },
     lireEtat(idScene, ordre, emetteur) {
       const sc = trouver(idScene);
