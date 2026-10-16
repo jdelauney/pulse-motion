@@ -45,6 +45,9 @@
  * Fragments (P4) : naissance sur un pixel de l'ancre ou au centre d'un éclat, tenue à sa place (au moins un pas : l'état
  * du pas 1 est l'élément intact), libération étalée ; éclats en corps rigides ; arrivée sur une cible, guidée (forces puis
  * rattrapage critique, pose exacte) ou chorégraphiée (voie rapide) ; mort au pas de l'arrivée.
+ * Son réactif (P7) : em.son (calques.js) = { n, coefs (4 tables de 60 points par seconde de τ), instants, cMax } en queue
+ * de E (tailleE) ; débit éclairci dans occupant(), bloc de la salve au son, forces × coefficient dans integrer() ;
+ * P.WGSL_SON : coefSon(quel, τ), partagé avec le rendu.
  *
  * Pas fixe de 1/120 s de τ, intégrateur exponentiel (exact pour gravité et traînée linéaire), naissances calculées,
  * instantanés pour revenir en arrière. Collisions (monde actif et recette avec « collisions ») : test balayé du
@@ -223,6 +226,22 @@ fn courbeTrajet(s: f32) -> f32 {
 fn cibleF(n: u32, tau: f32) -> vec2f { return versMondeF(repereElement(1u, tau), pixelF(n, 1u).pos); }
 `;
 
+  // Son réactif (P7), commun à la simulation et au rendu (demande E, ef, eu) : coefficients de modulation à τ (quel :
+  // 0 débit, 1 forces, 2 couleur, 3 taille), 60 points par seconde de τ, en queue de E (E[138] : début, 0 sans
+  // modulation ; E[139] : nombre de points) ; 1 sans modulation.
+  P.WGSL_SON = /* wgsl */ `
+fn coefSon(quel: u32, tau: f32) -> f32 {
+  let o = eu(138u);
+  if (o == 0u) { return 1.0; }
+  let n = eu(139u);
+  let x = clamp(tau * 60.0, 0.0, f32(n - 1u));
+  let i = u32(floor(x));
+  let j = min(i + 1u, n - 1u);
+  let b = o + quel * n;
+  return mix(ef(b + i), ef(b + j), x - f32(i));
+}
+`;
+
   const WGSL_STRUCTS = /* wgsl */ `
 struct Mort { pos: vec2f, vel: vec2f, t: f32, n: u32, gen: u32, pas: u32, normale: vec2f, r0: u32, r1: u32 };
 struct Eval { tau: f32, nZones: u32, a: u32, b: u32 };
@@ -318,7 +337,9 @@ fn forme(centre: vec2f, wh: vec2f, g: u32, e: u32, n: u32) -> vec2f {
 
 fn naissanceVide() -> Naissance { return Naissance(false, 0u, 0u, 0.0, vec2f(0.0), vec2f(0.0), vec2f(0.0)); }
 
-// Occupant d'une case racine parmi les naissances strictement avant tau (miroir de naissances.js).
+// Occupant d'une case racine parmi les naissances strictement avant tau (miroir de naissances.js). Débit modulé (P7) :
+// naissance gardée si alea(…, n, 30) < coefficient du débit / coefficient maximal (E[191]). Salve au son (P7) : bloc de
+// E[189] × E[190] cases dès la case E[188], la j-ième salve à l'instant E[E[155] + j].
 fn occupant(s: u32, tau: f32) -> Naissance {
   var r = naissanceVide();
   let capC = eu(1u);
@@ -328,8 +349,18 @@ fn occupant(s: u32, tau: f32) -> Naissance {
     if (nes > s) {
       let n = s + capC * ((nes - 1u - s) / capC);
       r.ok = true; r.n = n; r.gen = n / capC; r.t = f32(n) / ef(4u);
+      if (eu(138u) != 0u && alea(eu(5u), eu(6u), n, 30u) >= coefSon(0u, r.t) / ef(191u)) { r.ok = false; }
     }
     return r;
+  }
+  if (eu(155u) != 0u) {
+    let d = eu(188u);
+    let nb = eu(189u);
+    if (s >= d && s < d + nb * eu(190u)) {
+      let tj = ef(eu(155u) + (s - d) / nb);
+      if (tj < tau) { r.ok = true; r.n = nTot + (s - capC); r.gen = 0u; r.t = tj; }
+      return r;
+    }
   }
   for (var i = 0u; i < eu(3u); i++) {
     let b = 40u + i * 4u;
@@ -466,6 +497,8 @@ fn integrer(pIn: Particule, dt: f32, t: f32, zone: vec4f) -> Particule {
       default: { }
     }
   }
+  // Forces modulées par le son (P7) : accélération des forces de la recette × coefficient à τ du pas.
+  A = A * coefSon(1u, t);
   // [module-force]
   let r = balistique(p.pos, p.vel, A, K, dt);
   p.pos = r.pos;
@@ -1258,8 +1291,8 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
 }
 `;
 
-  const WGSL_SIMULATION = P.WGSL_COMMUN + WGSL_STRUCTS + WGSL_DECL_P1 + WGSL_FONCTIONS + P.WGSL_FRAGMENTS + WGSL_FRAGMENTS_SIM + WGSL_ENTREES_P1;
-  const WGSL_MODULE_COLLISIONS = P.WGSL_COMMUN + WGSL_STRUCTS + WGSL_DECL_C + WGSL_FONCTIONS + P.WGSL_FRAGMENTS + WGSL_FRAGMENTS_SIM + WGSL_COLLISIONS;
+  const WGSL_SIMULATION = P.WGSL_COMMUN + WGSL_STRUCTS + WGSL_DECL_P1 + WGSL_FONCTIONS + P.WGSL_FRAGMENTS + P.WGSL_SON + WGSL_FRAGMENTS_SIM + WGSL_ENTREES_P1;
+  const WGSL_MODULE_COLLISIONS = P.WGSL_COMMUN + WGSL_STRUCTS + WGSL_DECL_C + WGSL_FONCTIONS + P.WGSL_FRAGMENTS + P.WGSL_SON + WGSL_FRAGMENTS_SIM + WGSL_COLLISIONS;
   P.WGSL_MODULE_COLLISIONS = () => WGSL_MODULE_COLLISIONS;
   // Structures (P5b, structures.js) : en-tête E d'un émetteur, taille d'une particule.
   P.emballerE = emballer;
@@ -1329,16 +1362,21 @@ fn ventMilieu(x: vec2f) -> vec2f {
     }
   }
 
-  /** Mots du tampon E d'un émetteur : en-tête, puis (fragments) repères des éléments, listes et éclats. */
-  function tailleE(nZones, frag) {
-    if (!frag) return E_TAILLE;
-    return E_TAILLE + nZones * 16 + (frag.a ? frag.a.length : 0) + (frag.b ? frag.b.length : 0) + (frag.eclats ? frag.eclats.length : 0);
+  /** Mots de la queue du son (P7) : 4 tables de coefficients, puis les instants des salves au son. */
+  function tailleSon(son) { return son ? 4 * son.n + son.instants.length : 0; }
+
+  /** Mots du tampon E d'un émetteur : en-tête, puis (fragments) repères des éléments, listes et éclats, puis le son. */
+  function tailleE(nZones, frag, son) {
+    const base = !frag ? E_TAILLE
+      : E_TAILLE + nZones * 16 + (frag.a ? frag.a.length : 0) + (frag.b ? frag.b.length : 0) + (frag.eclats ? frag.eclats.length : 0);
+    return base + tailleSon(son);
   }
 
   /** Paramètres d'un émetteur (disposition « E » : en-tête de 256 mots ; fragments : queue, voir tailleE). collisions :
    *  collisions actives pour cet émetteur ; frag : données de fragments (repères des éléments écrits ensuite, assurerAncres). */
   function emballer(em, effet, collisions, nZones, frag) {
-    const tampon = new ArrayBuffer(tailleE(nZones, frag) * 4);
+    const son = em.son || null;
+    const tampon = new ArrayBuffer(tailleE(nZones, frag, son) * 4);
     const f = new Float32Array(tampon);
     const u = new Uint32Array(tampon);
     u[0] = em.capacite; u[1] = em.capContinu; u[2] = em.nTotal; u[3] = em.salves.length;
@@ -1400,6 +1438,22 @@ fn ventMilieu(x: vec2f) -> vec2f {
       if (frag.a) { u[177] = o; f.set(frag.a, o); o += frag.a.length; }
       if (frag.b) { u[178] = o; f.set(frag.b, o); o += frag.b.length; }
       if (frag.eclats) { u[179] = o; f.set(frag.eclats, o); }
+    }
+    // Son réactif (P7) : coefficients (débit, forces, couleur, taille), puis instants des salves au son.
+    f[191] = 1;
+    if (son) {
+      const o = tailleE(nZones, frag, null);
+      u[138] = o;
+      u[139] = son.n;
+      f[191] = son.cMax;
+      f.set(son.coefs, o);
+      if (em.salveSon) {
+        u[155] = o + 4 * son.n;
+        u[188] = em.salveSon.debut;
+        u[189] = em.salveSon.nombre;
+        u[190] = em.salveSon.max;
+        f.set(son.instants, o + 4 * son.n);
+      }
     }
     return tampon;
   }
@@ -1618,7 +1672,7 @@ fn ventMilieu(x: vec2f) -> vec2f {
           photoStructure,
           rapide: em.voieRapide && !collisions,
           capacite,
-          params: tamponAvec(device, tailleE(this.nZones, frag) * 4, U.STORAGE | U.COPY_DST, emballer(em, effet, collisions, this.nZones, frag)),
+          params: tamponAvec(device, tailleE(this.nZones, frag, em.son || null) * 4, U.STORAGE | U.COPY_DST, emballer(em, effet, collisions, this.nZones, frag)),
           tables: tamponAvec(device, TABLES * 4, U.STORAGE | U.COPY_DST, tables(em)),
           particules: em.structure ? null : device.createBuffer({ size: capacite * OCTETS_PARTICULE, usage: U.STORAGE | U.COPY_SRC | U.COPY_DST }),
           // Morts dans [0, capacité), impacts dans [capacité, 2 × capacité) : lus par les enfants.
