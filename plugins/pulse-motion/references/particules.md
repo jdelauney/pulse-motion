@@ -420,7 +420,7 @@ Rendu :
 | `"injecte": { "fumee": 0.2, "chaleur": 0.5, "encre": "couleur" }` (émetteur, bloc `injecte`) | Dépôt dans le milieu, là où passe chaque particule (par seconde) : `fumee`, `chaleur`, `encre` (une couleur, ou `couleur` : celle de la particule au cours de sa vie). |
 
 - Groupe couplé : le milieu et les effets couplés de sa scène avancent ensemble (les particules lisent le vent, déposent, puis la grille avance) ; les autres effets restent indépendants. Un effet couplé dans une scène sans milieu valide est refusé (`couplage-sans-milieu`).
-- Coût : grille de 256 × 144 (résolution 256 en 16:9) avec 100 000 particules couplées : moins de 6 ms de simulation par image visées sur une carte graphique récente ; au-delà de 512 cellules sur le grand côté, alerte. Sur une machine modeste, l'aperçu peut saccader ; l'export reste exact.
+- Coût : grille de 256 × 144 (résolution 256 en 16:9) avec 100 000 particules couplées : moins de 6 ms de simulation par image visées ; mesuré sur une carte graphique récente (NVIDIA, 2023) : 3,6 ms de simulation par image, image 1080p complète (simulation, particules, milieu) en 4 ms ; au-delà de 512 cellules sur le grand côté, alerte. Sur une machine modeste, l'aperçu peut saccader ; l'export reste exact.
 - Déterminisme : l'image ne dépend que de l'instant, milieu et effets couplés compris.
 
 Contrôles : `milieu-invalide` (recette sans bloc `milieu` posée en `data-milieu`, milieu posé en `data-effet`, bloc mal écrit, `data-calque` inconnu), `deux-milieux` (un seul milieu par scène : le premier est gardé), `couplage-sans-milieu`, alerte `budget-milieu` (plus de 512 cellules sur le grand côté) ; `ancre-introuvable` pour un `data-ancre` absent. Dans l'aperçu, un panneau signale le milieu en erreur.
