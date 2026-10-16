@@ -25,6 +25,9 @@
  * feu) ; une recette de milieu n'a pas d'émetteurs (effet.milieu, capacité nulle) ; erreurs « milieu-invalide ». Couplages
  * des effets : force « milieu » (vent du milieu), bloc « injecte » d'un émetteur (dépôt de fumée, de chaleur, d'encre),
  * « structure.milieu » (poussée sur une corde ou un tissu) ; effet.couplage.
+ * Son réactif (P7) : « modulation » à la racine ({ debit, forces, couleur, taille } : { par, de, a, piste }) -> em.modulation
+ * (débit compilé au coefficient maximal ; forces modulées : hors voie rapide) ; salve { au: battement | syllabe, nombre,
+ * piste } -> em.salveSon (bloc de cases réservé, une par émetteur) ; effet.pistes : pistes lues.
  *
  * Module pur : chargé tel quel dans la page (global M.recette) et par Node (require).
  */
@@ -64,6 +67,9 @@
   var STRUCTURES_EFFET_MAX = 32;     // par effet (uniforme des structures sur le GPU)
   var ATTACHES_MAX = 16;             // attaches par structure
   var ELEMENTS_MAX = 8;              // éléments visés par les attaches d'un effet : l'ancre (ou la balise) et 7 « #id »
+  var GRANDEURS_SON = ['volume', 'basses', 'mediums', 'aigus', 'battement', 'phase', 'enveloppe', 'syllabe'];
+  var CLES_MODULATION = ['debit', 'forces', 'couleur', 'taille'];
+  var SALVES_SON = { battement: 4, syllabe: 8 };   // instants au plus par seconde de τ (cases réservées)
   var DECHIRURE_MIN = 1.05;
   var RESOLUTION_MILIEU = [64, 1024];   // cellules sur le grand côté d'un milieu (P5c)
   var RESOLUTION_MILIEU_ALERTE = 512;   // au-delà : alerte budget-milieu (contrôle)
@@ -149,6 +155,15 @@
     };
   }
 
+  function modulationSon(libelle) {
+    return ob(libelle, {
+      par: ch('Suit', GRANDEURS_SON, null, { requis: true, exemple: 'basses' }),
+      de: nb('Coefficient au silence', 1, { min: 0, expression: false, curseur: [0, 4], pas: 0.05 }),
+      a: nb('Coefficient au plus fort', 1, { min: 0, expression: false, curseur: [0, 4], pas: 0.05 }),
+      piste: noeud('texte', 'Piste (musique, voix)', null, { motif: '^[a-z0-9-]+$', exemple: 'musique' }),
+    });
+  }
+
   var SCHEMA = ob('Recette', {
     version: nb('Version du format', 1, { requis: true, min: 1, max: 1, expression: false }),
     nom: noeud('texte', 'Nom', null, { motif: '^[a-z0-9-]+$', exemple: 'essai' }),
@@ -167,6 +182,12 @@
       bloom: nb('Halo lumineux', 0.6, { curseur: [0, 4], pas: 0.05 }),
       seuil_bloom: nb('Seuil du halo', 1, { curseur: [0, 4], pas: 0.05 }),
       tons: ch('Courbe de tons', ['douce', 'aces', 'neutre'], 'douce'),
+    }),
+    modulation: ob('Modulation par le son', {
+      debit: modulationSon('Débit'),
+      forces: modulationSon('Forces'),
+      couleur: modulationSon('Couleur (éclat)'),
+      taille: modulationSon('Taille'),
     }),
     milieu: ob('Milieu fluide (balise data-milieu : fumée, feu, encre ; sans émetteurs)', {
       resolution: nb('Cellules sur le grand côté', 192, { min: RESOLUTION_MILIEU[0], max: RESOLUTION_MILIEU[1], pas: 1, curseur: [64, RESOLUTION_MILIEU_ALERTE] }),
@@ -199,6 +220,8 @@
         salves: li('Salves', ob('Salve', {
           t: nb('Instant', 0, { min: 0, unite: 's', curseur: [0, 10] }),
           nombre: nb('Nombre', null, { requis: true, min: 1, exemple: 10, curseur: [1, 5000] }),
+          au: ch('Au son (au lieu d\'un instant)', ['battement', 'syllabe'], null, { exemple: 'battement' }),
+          piste: noeud('texte', 'Piste (musique, voix)', null, { motif: '^[a-z0-9-]+$', exemple: 'musique' }),
         }), { defaut: [], exemple: [{ t: 0, nombre: 10 }], maximum: SALVES_MAX, contexte: 'racine' }),
         nombre: nb('Nombre par particule morte', null, { requis: true, min: 1, exemple: 2, contexte: 'sous-emetteur', curseur: [1, 50] }),
         forme: ob('Forme d\'émission', Object.assign(champsForme(Object.keys(CODES.forme)), {
@@ -701,6 +724,18 @@
    * structure ; toutes les erreurs de réglage sont listées. chemin : champ en cause (emetteurs[gerbe].naissance.vie,
    * reglages.nombre), '' si aucun.
    */
+  /** Pistes lues par la modulation et les salves au son des émetteurs, dans l'ordre de première lecture. */
+  function pistesDuSon(emetteurs) {
+    var r = [];
+    function ajouter(p) { if (r.indexOf(p) < 0) r.push(p); }
+    emetteurs.forEach(function (em) {
+      var m = em.modulation || {};
+      CLES_MODULATION.forEach(function (k) { if (m[k]) ajouter(m[k].piste); });
+      if (em.salveSon) ajouter(em.salveSon.piste);
+    });
+    return r;
+  }
+
   function compiler(recette, options) {
     var o = options || {};
     var nomEffet = recette && recette.nom ? recette.nom : '?';
@@ -732,6 +767,29 @@
       Object.keys(vp.nombres).forEach(function (k) { valeurs[k] = vp.nombres[k]; });
       valeurs.dur = dur;
       var ctxCouleur = { couleurs: vp.couleurs, charte: o.charte };
+      // Son réactif (P7) : modulation de la recette, compilée une fois pour tous les émetteurs.
+      function pisteParDefaut(par) { return par === 'enveloppe' || par === 'syllabe' ? 'voix' : 'musique'; }
+      function compilerModulation(m) {
+        if (m === undefined || m === null) return null;
+        if (!estObjet(m)) throw invalide('modulation', 'objet attendu');
+        var r = {};
+        CLES_MODULATION.forEach(function (cle) {
+          var x = m[cle];
+          var c = 'modulation.' + cle;
+          if (x === undefined) { r[cle] = null; return; }
+          if (!estObjet(x)) throw invalide(c, 'objet { par, de, a } attendu');
+          if (GRANDEURS_SON.indexOf(x.par) < 0) throw invalide(c + '.par', '« ' + x.par + ' » : l\'une de ' + GRANDEURS_SON.join(', '));
+          var de = x.de === undefined ? 1 : x.de;
+          var a = x.a === undefined ? 1 : x.a;
+          if (!(typeof de === 'number' && isFinite(de) && de >= 0 && typeof a === 'number' && isFinite(a) && a >= 0)) {
+            throw invalide(c, '« de » et « a » : nombres positifs ou nuls');
+          }
+          if (cle === 'debit' && Math.max(de, a) <= 0) throw invalide(c, 'au moins l\'un de « de » et « a » au-dessus de 0 (sinon aucune particule ne naît)');
+          r[cle] = { par: x.par, de: de, a: a, piste: x.piste === undefined ? pisteParDefaut(x.par) : String(x.piste) };
+        });
+        return r;
+      }
+      var modulation = compilerModulation(recette.modulation);
 
       function nombre(v, chemin, defaut) {
         if (v === undefined || v === null) {
@@ -1786,6 +1844,8 @@
           throw invalide(ch + '.naissance.vie', 'durée de vie minimale ' + vie[0] + ' sous 1/120 s : deux morts dans le même pas feraient perdre des enfants');
         }
         if (em.masse[0] <= 0) throw invalide(ch + '.naissance.masse', 'la masse doit être positive');
+        var modDebit = null;
+        em.salveSon = null;
         if (P) {
           if (n.debit !== undefined || n.salves !== undefined) {
             throw invalide(ch + '.naissance', 'un sous-émetteur naît de la mort de « ' + P.nom + ' » : utiliser « nombre », pas « debit » ni « salves »');
@@ -1838,6 +1898,9 @@
           em.G = 1;
           em.debit = nombre(n.debit, ch + '.naissance.debit', 0);
           if (em.debit < 0) throw invalide(ch + '.naissance.debit', 'valeur positive ou nulle attendue');
+          // Débit modulé (P7) : compilé au coefficient maximal, naissances éclaircies dans la page.
+          modDebit = modulation && modulation.debit && em.debit > 0 ? modulation.debit : null;
+          if (modDebit) em.debit = em.debit * Math.max(modDebit.de, modDebit.a);
           var salves = n.salves === undefined ? [] : n.salves;
           if (!Array.isArray(salves)) throw invalide(ch + '.naissance.salves', 'liste attendue');
           if (salves.length > SALVES_MAX) throw invalide(ch + '.naissance.salves', SALVES_MAX + ' salves au plus');
@@ -1845,18 +1908,32 @@
           em.capContinu = em.debit > 0 ? Math.min(em.nTotal, Math.ceil(em.debit * vie[1]) + 1) : 0;
           var debut = em.capContinu;
           var finN = em.nTotal > 0 ? (em.nTotal - 1) / em.debit : 0;
-          em.salves = salves.map(function (s, k) {
+          em.salves = [];
+          salves.forEach(function (s, k) {
             var c = ch + '.naissance.salves[' + k + ']';
-            if (!estObjet(s)) throw invalide(c, 'objet { t, nombre } attendu');
-            var t = nombre(s.t, c + '.t', 0);
+            if (!estObjet(s)) throw invalide(c, 'objet { t, nombre } ou { au, nombre } attendu');
             var nb = Math.round(nombre(s.nombre, c + '.nombre'));
+            if (s.au !== undefined) {
+              // Salve au son (P7) : un bloc de cases réservé, une salve par battement ou syllabe (instants posés dans la page).
+              if (!SALVES_SON.hasOwnProperty(s.au)) throw invalide(c + '.au', '« battement » ou « syllabe » attendu');
+              if (s.t !== undefined) throw invalide(c, '« t » ou « au », pas les deux');
+              if (em.salveSon) throw invalide(c, 'une seule salve « au » par émetteur');
+              if (nb < 1) throw invalide(c, 'nombre ≥ 1 attendu');
+              em.salveSon = { au: s.au, piste: s.piste === undefined ? (s.au === 'syllabe' ? 'voix' : 'musique') : String(s.piste), nombre: nb, debut: 0, max: Math.ceil(dur * SALVES_SON[s.au]) + 1 };
+              return;
+            }
+            var t = nombre(s.t, c + '.t', 0);
             if (t < 0 || nb < 1) throw invalide(c, 't ≥ 0 et nombre ≥ 1 attendus');
-            var r = { t: t, nombre: nb, debut: debut };
+            em.salves.push({ t: t, nombre: nb, debut: debut });
             debut += nb;
             finN = Math.max(finN, t);
-            return r;
           });
-          if (em.nTotal === 0 && !em.salves.length) {
+          if (em.salveSon) {
+            em.salveSon.debut = debut;
+            debut += em.salveSon.nombre * em.salveSon.max;
+            finN = Math.max(finN, dur);
+          }
+          if (em.nTotal === 0 && !em.salves.length && !em.salveSon) {
             throw invalide(ch + '.naissance', 'indiquer « debit » (avec une durée data-dur suffisante) ou « salves » ; un sous-émetteur se lance par « a_la_mort » de son parent');
           }
           em.capacite = debut;
@@ -1882,6 +1959,13 @@
         if (estStructure || estPerle) em.voieRapide = false;
         // Milieu (P5c) : vent du milieu et dépôts se calculent pas à pas.
         if (em.injecte || em.forces.some(function (f) { return f.type === 'milieu'; })) em.voieRapide = false;
+        // Son réactif (P7) : modulation des émetteurs de particules (ni fragments, ni cordes, ni tissus, ni perles) ; débit
+        // des seuls émetteurs racine à débit ; une force modulée n'a pas de forme close.
+        em.modulation = null;
+        if (modulation && !em.fragment && !estStructure && !estPerle) {
+          em.modulation = { debit: modDebit, forces: modulation.forces, couleur: modulation.couleur, taille: modulation.taille };
+          if (em.modulation.forces) em.voieRapide = false;
+        }
         return em;
       }
 
@@ -1922,6 +2006,8 @@
           vent: emetteurs.some(function (e) { return e.forces.some(function (f) { return f.type === 'milieu'; }); }),
           injecte: emetteurs.some(function (e) { return !!e.injecte; }),
         },
+        // Son réactif (P7) : pistes lues par la modulation et les salves au son.
+        pistes: pistesDuSon(emetteurs),
       };
       emetteurs.forEach(function (e) { delete e.espacement; delete e.gigue; delete e.finNaissances; });
       return { ok: true, effet: effet, erreurs: [] };
@@ -1958,6 +2044,8 @@
     STRUCTURES_EFFET_MAX: STRUCTURES_EFFET_MAX,
     ATTACHES_MAX: ATTACHES_MAX,
     ELEMENTS_MAX: ELEMENTS_MAX,
+    GRANDEURS_SON: GRANDEURS_SON,
+    CLES_MODULATION: CLES_MODULATION,
     DECHIRURE_MIN: DECHIRURE_MIN,
     RESOLUTION_MILIEU: RESOLUTION_MILIEU,
     RESOLUTION_MILIEU_ALERTE: RESOLUTION_MILIEU_ALERTE,
