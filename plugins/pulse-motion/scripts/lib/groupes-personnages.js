@@ -23,13 +23,16 @@ const TRAJETS = ['marcher', 'courir', 'glisser', 'bondir'];
 function erreur(scene, message) { return { regle: 'personnage-invalide', gravite: 'erreur', scene, message: `Scène « ${scene} » : ${message}` }; }
 const arrondi = (x) => Math.round(x * 10000) / 10000;
 
-/** Attribut d'une balise ouvrante (texte) : remplacé, ajouté (valeur non nulle) ou retiré (valeur null). */
+/** Attribut d'une balise ouvrante : remplacé, ajouté (valeur non nulle) ou retiré (valeur null). La balise est relue
+ *  attribut par attribut (même grammaire que lireAttributs) puis réécrite : une valeur qui contient « id= » est sûre. */
 function attribut(balise, nom, valeur) {
-  const re = new RegExp(`\\s${nom}(?:\\s*=\\s*(?:"[^"]*"|'[^']*'|[^\\s>"']+))?(?=[\\s/>])`);
-  const sans = balise.replace(re, '');
-  if (valeur === null) return sans;
-  const v = String(valeur).replace(/"/g, '&quot;');
-  return sans.replace(/\s*(\/?)>$/, (fin, barre) => ` ${nom}="${v}"${barre ? ' /' : ''}>`);
+  const m = /^<([a-zA-Z][\w-]*)((?:[^>"']|"[^"]*"|'[^']*')*?)(\/?)>$/.exec(balise);
+  if (!m) return balise;
+  const attrs = lireAttributs(m[2]);
+  if (valeur === null) delete attrs[nom];
+  else attrs[nom] = String(valeur);
+  const texte = Object.entries(attrs).map(([k, v]) => (v === '' ? ` ${k}` : ` ${k}="${String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;')}"`)).join('');
+  return `<${m[1]}${texte}${m[3] ? ' /' : ''}>`;
 }
 
 /** Jetons de balises : { debut, fin, fermeture, tag, texte, auto }. */
@@ -65,7 +68,11 @@ function retarder(start, retard, renommer, dureeTemps) {
   if (s === '') return arrondi(retard);
   const direct = lireSecondes(s, dureeTemps);
   if (direct.valeur !== undefined) return arrondi(direct.valeur + retard);
-  const m = /^(#[\w-]+(?::fin)?|mot:[^+\-\s]+(?:#\d+)?(?::fin)?)\s*(?:([+-])\s*([\d.]+t?))?$/.exec(s);
+  if (direct.erreur === 'tempo-absent') return { erreur: 'tempo-absent' };
+  // Mêmes formes que le moteur (moteur/minutage.js : REFERENCE et ANCRE_MOT).
+  const ref = /^(#[A-Za-z0-9_-]+(?::fin)?)\s*(?:([+-])\s*(\d*\.?\d+t?))?$/.exec(s);
+  const mot = ref ? null : /^(mot:.+?(?:#\d+)?(?::fin)?)(?:\s*([+-])\s*(\d*\.?\d+t?))?$/.exec(s);
+  const m = ref || mot;
   if (!m) return null;
   let base = m[1];
   if (base.startsWith('#')) {
@@ -76,6 +83,7 @@ function retarder(start, retard, renommer, dureeTemps) {
   let ecart = 0;
   if (m[3]) {
     const lu = lireSecondes(m[3], dureeTemps);
+    if (lu.erreur === 'tempo-absent') return { erreur: 'tempo-absent' };
     if (lu.valeur === undefined) return null;
     ecart = (m[2] === '-' ? -1 : 1) * lu.valeur;
   }
@@ -94,25 +102,42 @@ function deplierGroupes(html, { scene = '?', dureeTemps = null } = {}) {
   const erreurs = [];
   if (!/data-groupe/.test(html)) return { html, erreurs };
   let sortie = html;
+  const renvois = [];
   // Du dernier groupe au premier : les positions des précédents ne bougent pas.
   const js = jetons(html);
   const groupes = [];
   js.forEach((j, i) => { if (!j.fermeture && /\sdata-groupe\b/.test(' ' + j.texte)) groupes.push(i); });
   const idsExistants = new Set(js.filter((j) => !j.fermeture).map((j) => (lireAttributs(j.texte).id || '').trim()).filter(Boolean));
+  const bornes = groupes.map((gi) => [gi, fermant(js, gi)]);
+  const remplacements = [];
   for (const gi of groupes.reverse()) {
     const ouvre = js[gi], fin = fermant(js, gi);
     const a = lireAttributs(ouvre.texte);
     const qui = `groupe${a.id ? ` « ${a.id} »` : ''}`;
+    // Groupe invalide : signalé une fois, puis rendu ordinaire (un seul personnage, sans data-membre).
+    const refuser = (message) => {
+      erreurs.push(erreur(scene, `${qui} : ${message}`));
+      if (fin < 0) return;
+      let texte = sortie.slice(ouvre.debut, js[fin].fin);
+      let tete = ouvre.brut;
+      for (const p of PROPRES) tete = attribut(tete, p, null);
+      texte = tete + texte.slice(ouvre.brut.length);
+      // Tout le contenu redevient ordinaire (un groupe intérieur aussi).
+      texte = texte.replace(/\sdata-(?:membre|groupe|ecart|decalage|depart|variation)(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>"']+))?/g, '');
+      remplacements.push([ouvre.debut, js[fin].fin, texte]);
+    };
     if (fin < 0 || ouvre.auto) { erreurs.push(erreur(scene, `${qui} : conteneur non fermé.`)); continue; }
-    if (a['data-personnage'] === undefined) { erreurs.push(erreur(scene, `${qui} : data-groupe se pose sur un conteneur data-personnage.`)); continue; }
+    if (bornes.some(([autre, f]) => autre !== gi && (autre > gi && autre < fin))) { refuser('un groupe ne peut pas en contenir un autre.'); continue; }
+    if (bornes.some(([autre, f]) => autre !== gi && autre < gi && f > fin)) continue; // groupe intérieur : refusé avec l'extérieur
+    if (a['data-personnage'] === undefined) { refuser('data-groupe se pose sur un conteneur data-personnage.'); continue; }
     const n = Number(a['data-groupe']);
-    if (!Number.isInteger(n) || n < 2 || n > 20) { erreurs.push(erreur(scene, `${qui} : data-groupe="${a['data-groupe']}" doit être un nombre de membres, de 2 à 20.`)); continue; }
+    if (!Number.isInteger(n) || n < 2 || n > 20) { refuser(`data-groupe="${a['data-groupe']}" doit être un nombre de membres, de 2 à 20.`); continue; }
     const ecart = a['data-ecart'] === undefined ? 5 : Number(a['data-ecart']);
-    if (!Number.isFinite(ecart)) { erreurs.push(erreur(scene, `${qui} : data-ecart="${a['data-ecart']}" doit être un nombre (% de la largeur).`)); continue; }
+    if (!Number.isFinite(ecart)) { refuser(`data-ecart="${a['data-ecart']}" doit être un nombre (% de la largeur).`); continue; }
     const dec = a['data-decalage'] === undefined ? { valeur: 0 } : lireSecondes(String(a['data-decalage']).trim(), dureeTemps);
-    if (dec.valeur === undefined) { erreurs.push(erreur(scene, `${qui} : data-decalage="${a['data-decalage']}" illisible (secondes, ou temps musicaux avec un tempo : « 0.5t »).`)); continue; }
+    if (dec.valeur === undefined) { refuser(dec.erreur === 'tempo-absent' ? `data-decalage="${a['data-decalage']}" est en temps musicaux, mais le déroulé n'a pas de tempo.` : `data-decalage="${a['data-decalage']}" illisible (secondes, ou temps musicaux avec un tempo : « 0.5t »).`); continue; }
     const variation = a['data-variation'] === undefined ? 0 : Number(a['data-variation']);
-    if (!(variation >= 0 && variation < 1)) { erreurs.push(erreur(scene, `${qui} : data-variation="${a['data-variation']}" doit être un nombre de 0 à 0,9 (part de la taille).`)); continue; }
+    if (!(variation >= 0 && variation < 1)) { refuser(`data-variation="${a['data-variation']}" doit être un nombre de 0 à 0,9 (part de la taille).`); continue; }
     const commun = (a['data-depart'] || '').trim() === 'commun';
     const base = (a.id || '').trim() || `groupe-${gi}`;
     const x0 = a['data-x'] === undefined ? 50 : Number(a['data-x']);
@@ -128,7 +153,8 @@ function deplierGroupes(html, { scene = '?', dureeTemps = null } = {}) {
       enfants.push({ texte: sortie.slice(j.debut, js[f].fin), ouvre: j, a: lireAttributs(j.texte) });
       k = f;
     }
-    const idsInternes = new Set(enfants.map((e) => (e.a.id || '').trim()).filter(Boolean));
+    // Ids internes -> membre qui les porte (null : tous). Une référence à un enfant d'un seul membre vise ce membre.
+    const idsInternes = new Map(enfants.filter((e) => (e.a.id || '').trim()).map((e) => [e.a.id.trim(), e.a['data-membre'] !== undefined ? Number(e.a['data-membre']) : null]));
     for (const e of enfants) {
       if (e.a['data-membre'] !== undefined) {
         const k = Number(e.a['data-membre']);
@@ -142,7 +168,7 @@ function deplierGroupes(html, { scene = '?', dureeTemps = null } = {}) {
 
     const membres = [];
     for (let i = 1; i <= n; i++) {
-      const renommer = (id) => (idsInternes.has(id) ? `${id}-${i}` : id);
+      const renommer = (id) => (idsInternes.has(id) ? `${id}-${idsInternes.get(id) || i}` : id);
       const retard = (i - 1) * dec.valeur;
       let tete = ouvre.brut;
       for (const p of PROPRES) tete = attribut(tete, p, null);
@@ -163,12 +189,13 @@ function deplierGroupes(html, { scene = '?', dureeTemps = null } = {}) {
           if (decale || (e.a['data-start'] || '').includes('#')) {
             const s = retarder(e.a['data-start'], decale, renommer, dureeTemps);
             if (s === null) erreurs.push(erreur(scene, `${qui} : data-start="${e.a['data-start']}" ne peut pas être retardé pour le membre ${i}.`));
+            else if (typeof s === 'object') { if (i === 2) erreurs.push(erreur(scene, `${qui} : data-start="${e.a['data-start']}" est en temps musicaux, mais le déroulé n'a pas de tempo.`)); }
             else balise = attribut(balise, 'data-start', s);
           }
           if (TRAJETS.includes(type) && e.a['data-vers'] !== undefined && Number.isFinite(Number(e.a['data-vers'])) && membre === null) {
             balise = attribut(balise, 'data-vers', arrondi(Number(e.a['data-vers']) - (i - 1) * ecart));
           }
-          for (const attr of ['data-cible']) {
+          for (const attr of ['data-cible', 'data-sol']) {
             if (e.a[attr] !== undefined && /^#/.test(e.a[attr].trim())) balise = attribut(balise, attr, '#' + renommer(e.a[attr].trim().slice(1)));
           }
         }
@@ -176,7 +203,15 @@ function deplierGroupes(html, { scene = '?', dureeTemps = null } = {}) {
       }
       membres.push(`${tete}\n${corps.join('\n')}\n</${ouvre.tag}>`);
     }
-    sortie = sortie.slice(0, ouvre.debut) + membres.join('\n') + sortie.slice(js[fin].fin);
+    remplacements.push([ouvre.debut, js[fin].fin, membres.join('\n')]);
+    renvois.push(base);
+  }
+  // Du dernier au premier : les positions des précédents ne bougent pas (groupes sans chevauchement).
+  remplacements.sort((x, y) => y[0] - x[0]).forEach(([d, f, texte]) => { sortie = sortie.slice(0, d) + texte + sortie.slice(f); });
+  // Le groupe visé par son id (#file) : sa tête (#file-1).
+  for (const base of renvois) {
+    const re = new RegExp(`((?:data-start|data-tenu-par|data-cible|data-relais|data-ancre|data-sol)\\s*=\\s*["']\\s*#)${base.replace(/[-]/g, '\\-')}(?![\\w-])`, 'g');
+    sortie = sortie.replace(re, `$1${base}-1`);
   }
   return { html: sortie, erreurs };
 }
