@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "nom": "reaction-diffusion",
+  "usage": "fond",
+  "description": "Réaction-diffusion : des taches et des coraux qui poussent lentement, aux couleurs de la marque ; vivant, organique, scientifique.",
+  "passes": [{ "nom": "A", "lit": ["A"], "echelle": 0.25 }, { "nom": "image", "lit": ["A"] }],
+  "pas_par_seconde": 120,
+  "parametres": {
+    "alimentation": { "defaut": 0.037, "min": 0.01, "max": 0.1 },
+    "destruction": { "defaut": 0.06, "min": 0.03, "max": 0.08 },
+    "couleur1": { "defaut": "fond", "type": "couleur" },
+    "couleur2": { "defaut": "primaire", "type": "couleur" },
+    "opacite": { "defaut": 1, "min": 0, "max": 1 }
+  }
+}

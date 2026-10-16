@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "nom": "automate",
+  "usage": "fond",
+  "description": "Automate cellulaire : des cellules naissent et meurent selon leurs voisines, en mosaïque lumineuse ; numérique, émergence, vie.",
+  "passes": [{ "nom": "A", "lit": ["A"], "echelle": 0.1 }, { "nom": "image", "lit": ["A"] }],
+  "pas_par_seconde": 8,
+  "parametres": {
+    "densite": { "defaut": 0.3, "min": 0.05, "max": 0.6 },
+    "graine": { "defaut": 1, "min": 0, "max": 100 },
+    "couleur": { "defaut": "accent", "type": "couleur" },
+    "opacite": { "defaut": 0.8, "min": 0, "max": 1 }
+  }
+}

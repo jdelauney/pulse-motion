@@ -66,6 +66,11 @@ Le fond est dessiné dans le calque de particules de la scène, avant les partic
 | `vignettage` | post | `force`, `rayon`, `douceur`, `couleur` | Focalisation, intimité |
 | `aberration` | post | `ecart` | Tension, image numérique |
 | `chaleur` | post | `force`, `echelle`, `vitesse`, `haut` | Chaleur, désert, mirage |
+| `reaction-diffusion` | fond multipasse | `alimentation`, `destruction`, `couleur1`, `couleur2`, `opacite` | Vivant, organique, science |
+| `trainees-lumineuses` | fond multipasse | `nombre`, `vitesse`, `persistance`, `epaisseur`, `couleur1`, `couleur2` | Énergie, technologie, nuit |
+| `peinture` | fond multipasse | `pinceau`, `courant`, `echelle`, `couleur1`, `couleur2`, `couleur3` | Création, art, douceur |
+| `automate` | fond multipasse | `densite`, `graine`, `couleur`, `opacite` | Numérique, émergence |
+| `ondes-glsl` | fond multipasse (GLSL) | `intervalle`, `force`, `amortissement`, `profondeur`, `reflet` | Calme, réflexion, nature |
 | `spirale` | module de force | `tours`, `attraction` | Tourbillon, aspiration |
 | `couleur-vitesse` | module de couleur | `vitesse_max`, `lent`, `rapide` | Étincelles qui refroidissent |
 | `etoile` | module de forme | `branches`, `creux`, `douceur` | Célébration, magie |
@@ -125,6 +130,31 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
 - Interdits : `uniform`, `#version`, `main` (posés par le moteur), redéclarer une entrée. Un module de particules s'écrit en WGSL.
 - Erreurs : ligne et message du compilateur GLSL (panneau dans l'aperçu, `pulse-motion controler . --gpu`) ; l'export est refusé tant qu'un shader ne compile pas.
 - **Licence** : un shader de Shadertoy appartient à son auteur (CC BY-NC-SA par défaut) : ne l'utiliser que si sa licence le permet ; ne jamais l'ajouter à la bibliothèque du plugin.
+
+## Shaders multipasses
+
+Un fond peut garder un état d'une image à l'autre (taches qui poussent, sillages, peinture, ondes) : des **tampons** `A` à `D` que des passes mettent à jour par pas fixes, puis une passe `image` qui dessine.
+
+```json
+{ "version": 1, "nom": "sillage", "usage": "fond",
+  "passes": [{ "nom": "A", "lit": ["A"], "echelle": 0.5 }, { "nom": "image", "lit": ["A"] }],
+  "pas_par_seconde": 60 }
+```
+
+```wgsl
+// Sillage : le tampon A garde l'image précédente, assombrie, plus un point qui tourne.
+fn passeA(coord: vec2f) -> vec4f {
+  let uv = coord / iResolution.xy;
+  let p = vec2f(0.5) + 0.3 * vec2f(cos(iTime), sin(iTime));
+  return canal0(uv) * 0.95 + vec4f(1.0) * smoothstep(0.03, 0.0, length(uv - p));
+}
+fn image(coord: vec2f) -> vec4f { return canal0(coord / iResolution.xy); }
+```
+
+- `passes` : les tampons (`A`, `B`, `C`, `D`), puis `image` ; `lit` : les tampons que la passe lit (le premier en `canal0` / `iChannel0`, le deuxième en `canal1`…), dans leur état du pas précédent ; `echelle` : taille du tampon par rapport à la vidéo (0,5 par défaut, au plus 1).
+- Une fonction par tampon : `fn passeA(coord: vec2f) -> vec4f` (WGSL) ou `void passeA(out vec4 c, in vec2 p)` (GLSL), et `image` / `mainImage` pour la sortie. Au premier pas (`iFrame == 0`), les tampons valent 0 : y poser l'état de départ.
+- `pas_par_seconde` (1 à 240, 60 par défaut) : les tampons avancent à ce rythme, quel que soit l'affichage ; l'aperçu, un retour en arrière et l'export donnent la même image.
+- Un shader multipasse est un fond (`data-shader`, aura comprise). Les tampons coûtent de la mémoire et du calcul : un seul fond multipasse par scène, `echelle` basse pour un motif lent.
 
 ## Modules de particules
 
