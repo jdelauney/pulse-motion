@@ -14,7 +14,11 @@
  * dispositionReglages(parametres) -> { wgsl, taille, champs }   struct « Reglages » (uniforme) : f32 ou vec4f (couleur)
  * ecrireReglages(disposition, valeurs) -> Float32Array           contenu de l'uniforme des réglages
  * ecrireEntrees(o) -> ArrayBuffer (OCTETS_ENTREES)               uniforme « PmEntrees » (iTime, iProgres, iResolution…)
- * assemblerShader({ code, usage, disposition, prelude }) -> { wgsl, ligneCode, lignesCode }
+ * GLSL (P7) : « langage » glsl (fond, transition, post) : code .glsl contrôlé par M.codeGLSL (shaders/glsl.js).
+ * Son réactif (P7) : PmEntrees.son, son2 (iSon), image (iFrame, iTimeDelta) ; liaison 8 iSonTexture (spectre, onde :
+ * sonSpectre(x), sonOnde(x)) ; « piste » du .json (musique par défaut) ; pistesShader(json, code) -> pistes lues.
+ * Multipasse (P7) : « passes » ([{ nom: A–D, lit, echelle }, …, { nom: 'image', lit }]), « pas_par_seconde » ; fond seulement ; une fonction passeX par tampon.
+ * assemblerShader({ code, usage, disposition, prelude, appel? }) -> { wgsl, ligneCode, lignesCode }
  *   fond, transition, post : prélude (particules) + OUTILS + entrées + code de la personne (tel quel) + enveloppe
  *   (sommets pmSommets, fragment pmImage) ; ligneCode : nombre de lignes avant le code.
  * situer(messages, assemblage) -> [{ ligne, colonne, message }]  erreurs de getCompilationInfo ramenées au fichier .wgsl
@@ -36,15 +40,18 @@
 (function (racine, fabrique) {
   var noeud = typeof require === 'function' && typeof module === 'object';
   var R = noeud ? require('../particules/recette.js') : null;
-  var api = fabrique(function () { return R || (racine.M && racine.M.recette); });
+  var G = noeud ? require('./glsl.js') : null;
+  var api = fabrique(function () { return R || (racine.M && racine.M.recette); }, function () { return G || (racine.M && racine.M.codeGLSL); });
   if (noeud && module.exports) module.exports = api;
   else { racine.M = racine.M || {}; racine.M.codeShader = api; }
-})(typeof globalThis !== 'undefined' ? globalThis : this, function (recette) {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (recette, glsl) {
   'use strict';
 
   var USAGES = ['fond', 'transition', 'post', 'module-force', 'module-couleur', 'module-forme'];
   var TAILLE_MAX = 65536;
-  var CHAMPS = ['version', 'nom', 'usage', 'description', 'parametres', 'debord'];
+  var CHAMPS = ['version', 'nom', 'usage', 'description', 'parametres', 'debord', 'piste', 'langage', 'passes', 'pas_par_seconde'];
+  var LANGAGES = ['wgsl', 'glsl'];
+  var NOMS_TAMPONS = ['A', 'B', 'C', 'D'];
   var DEBORD_MAX = 50;
   // Charte de contrôle : les couleurs de la charte par défaut d'un réglage se résolvent sans projet.
   var CHARTE_CONTROLE = { primaire: '#3366cc', accent: '#ff9900', texte: '#111111', fond: '#ffffff' };
@@ -64,7 +71,7 @@
     'module-couleur': { nom: 'couleur', texte: 'fn couleur(p: Particule, u: f32, base: vec4f) -> vec4f', motif: signature('couleur', ['Particule', 'f32', V4], V4) },
     'module-forme': { nom: 'forme', texte: 'fn forme(uv: vec2f, p: Particule) -> f32', motif: signature('forme', [V2, 'Particule'], 'f32') },
   };
-  var RESERVES = /\b(?:fn|var|const|struct|alias|override)\s+(pm[A-Za-z0-9_]*|PM[A-Za-z0-9_]*|iTime|iProgres|iResolution|iChannel[0-3]|iEchantillon|iRepete|R|canal[0-3])\b/;
+  var RESERVES = /\b(?:fn|var|const|struct|alias|override)\s+(pm[A-Za-z0-9_]*|PM[A-Za-z0-9_]*|PmSon|iTime|iTimeDelta|iFrame|iProgres|iResolution|iChannel[0-3]|iEchantillon|iRepete|iSon|iSonTexture|sonSpectre|sonOnde|R|canal[0-3])\b/;
   var REFS_R = /(^|[^.A-Za-z0-9_])R\.([A-Za-z_][A-Za-z0-9_]*)/g;
 
   function estObjet(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
@@ -113,6 +120,52 @@
   }
 
   /** Contrôle des fichiers d'un shader (sans GPU). -> [{ regle, message }] */
+  var LIT_LE_SON = /\biSon\b|\bsonSpectre\s*\(|\bsonOnde\s*\(/;
+
+  /** Pistes lues par un shader : [piste du .json, musique par défaut] si son code (hors commentaires) lit le son. */
+  function pistesShader(json, code) {
+    if (json && json.langage === 'glsl') return glsl().pistesGLSL(json, code);
+    return LIT_LE_SON.test(sansCommentaires(code || '')) ? [(json && json.piste) || 'musique'] : [];
+  }
+
+  /** Passes d'un multipasse (P7) : contrôle de la déclaration. -> noms des tampons déclarés ([] sans passes). */
+  function validerPasses(json, e) {
+    if (json.passes === undefined) {
+      if (json.pas_par_seconde !== undefined) e('shader-invalide', '« pas_par_seconde » va avec « passes »');
+      return [];
+    }
+    var p = json.passes;
+    if (!Array.isArray(p) || p.length < 2 || p.length > 5) { e('shader-invalide', '« passes » : de 2 à 5 passes (tampons A à D, puis « image »)'); return []; }
+    if (json.usage !== 'fond') e('shader-invalide', 'un shader multipasse est un fond (usage « fond »)');
+    var noms = [];
+    p.forEach(function (x, i) {
+      var ch = '« passes[' + i + '] »';
+      if (!estObjet(x)) { e('shader-invalide', ch + ' : objet { nom, lit, echelle } attendu'); return; }
+      Object.keys(x).forEach(function (k) { if (['nom', 'lit', 'echelle'].indexOf(k) < 0) e('shader-invalide', ch + ' : champ « ' + k + ' » inconnu (nom, lit, echelle)'); });
+      var derniere = i === p.length - 1;
+      if (derniere && x.nom !== 'image') e('shader-invalide', ch + " : la dernière passe s'appelle « image » (elle dessine la sortie)");
+      else if (!derniere && NOMS_TAMPONS.indexOf(x.nom) < 0) e('shader-invalide', ch + ' : « nom » : A, B, C ou D');
+      else if (!derniere && noms.indexOf(x.nom) >= 0) e('shader-invalide', ch + ' : tampon « ' + x.nom + ' » déclaré deux fois');
+      else if (!derniere) noms.push(x.nom);
+      if (x.echelle !== undefined) {
+        if (derniere) e('shader-invalide', ch + " : « image » n'a pas d'« echelle » (taille de la sortie)");
+        else if (!(typeof x.echelle === 'number' && x.echelle > 0 && x.echelle <= 1)) e('shader-invalide', ch + ' : « echelle » : nombre de 0 (exclu) à 1');
+      }
+    });
+    p.forEach(function (x, i) {
+      if (!estObjet(x) || x.lit === undefined) return;
+      var ch = '« passes[' + i + '].lit »';
+      if (!Array.isArray(x.lit) || x.lit.length > 4) { e('shader-invalide', ch + ' : liste de 4 tampons au plus'); return; }
+      x.lit.forEach(function (n) {
+        if (noms.indexOf(n) < 0) e('shader-invalide', ch + ' : « ' + n + " » n'est pas un tampon déclaré (" + (noms.join(', ') || 'aucun') + ')');
+      });
+    });
+    if (json.pas_par_seconde !== undefined && !(typeof json.pas_par_seconde === 'number' && json.pas_par_seconde % 1 === 0 && json.pas_par_seconde >= 1 && json.pas_par_seconde <= 240)) {
+      e('shader-invalide', '« pas_par_seconde » : entier de 1 à 240');
+    }
+    return noms;
+  }
+
   function validerShader(nom, json, code) {
     var err = [];
     function e(regle, m) { err.push({ regle: regle, message: 'Shader « ' + nom + ' » : ' + m + '.' }); }
@@ -124,6 +177,15 @@
     if (json.debord !== undefined && !(typeof json.debord === 'number' && json.debord >= 0 && json.debord <= DEBORD_MAX)) {
       e('shader-invalide', '« debord » doit être un nombre de cqh entre 0 et ' + DEBORD_MAX);
     }
+    if (json.piste !== undefined && !(typeof json.piste === 'string' && /^[a-z0-9-]+$/.test(json.piste))) {
+      e('shader-invalide', '« piste » doit être le nom d\'une piste du déroulé (musique, voix)');
+    }
+    var langage = json.langage === undefined ? 'wgsl' : json.langage;
+    if (LANGAGES.indexOf(langage) < 0) e('shader-invalide', '« langage » doit être wgsl ou glsl');
+    if (langage === 'glsl' && /^module-/.test(String(json.usage))) {
+      e('shader-invalide', "un module de particules s'écrit en WGSL (« langage » glsl : fond, transition ou post-traitement seulement)");
+    }
+    var tampons = validerPasses(json, e);
     var params = json.parametres === undefined ? {} : json.parametres;
     if (!estObjet(params)) e('shader-invalide', '« parametres » doit être un objet');
     else {
@@ -133,12 +195,20 @@
         err.push({ regle: 'shader-invalide', message: x.message });
       }
     }
-    if (typeof code !== 'string') { e('shader-invalide', 'fichier .wgsl illisible'); return err; }
+    var ext = langage === 'glsl' ? 'glsl' : 'wgsl';
+    if (typeof code !== 'string') { e('shader-invalide', 'fichier .' + ext + ' illisible'); return err; }
     if (octets(code) > TAILLE_MAX) { e('shader-trop-gros', 'le code fait ' + octets(code) + ' octets, au-delà de ' + TAILLE_MAX + ' (64 Ko)'); return err; }
+    if (langage === 'glsl') {
+      glsl().verifierCodeGLSL(json, code, ['mainImage'].concat(tampons.map(function (n) { return 'passe' + n; }))).forEach(function (x) { e(x.regle, x.message); });
+      return err;
+    }
     var nu = sansCommentaires(code);
     if (/@\s*(?:group|binding)\s*\(/.test(nu)) e('liaison-reservee', '@group et @binding sont réservés au moteur : lire les images avec canal0(uv)… canal3(uv) et les réglages avec R.<nom>');
     var f = FONCTIONS[json.usage];
     if (f && !f.motif.test(nu)) e('fonction-absente', 'fonction attendue absente : « ' + f.texte + ' »');
+    tampons.forEach(function (n) {
+      if (!signature('passe' + n, [V2], V4).test(nu)) e('fonction-absente', 'fonction attendue absente : « fn passe' + n + '(coord: vec2f) -> vec4f » (tampon ' + n + ')');
+    });
     var r = RESERVES.exec(nu);
     if (r) e('nom-reserve', '« ' + r[1] + ' » est un nom réservé au moteur : en choisir un autre');
     if (estObjet(params)) {
@@ -215,7 +285,7 @@
     return f;
   }
 
-  var OCTETS_ENTREES = 80;
+  var OCTETS_ENTREES = 128;
   var ENTREES = [
     'struct PmEntrees {',
     '  temps: f32, progres: f32, duree: f32, mode: u32,',
@@ -223,7 +293,11 @@
     '  scene: vec4f,',
     '  repere: vec4f,',
     '  demi: vec4f,',
+    '  son: vec4f,',
+    '  son2: vec4f,',
+    '  image: vec4f,',
     '};',
+    'struct PmSon { volume: f32, basses: f32, mediums: f32, aigus: f32, battement: f32, phase: f32, enveloppe: f32, syllabe: f32 };',
     '',
   ].join('\n');
 
@@ -239,6 +313,9 @@
     f.set(o.scene || [0, 0, 0, 0], 8);
     f.set(o.repere || [0, 0, 0, 0], 12);
     f.set(o.demi || [0, 0, 0, 0], 16);
+    var s = o.son;
+    if (s) f.set([s.volume || 0, s.basses || 0, s.mediums || 0, s.aigus || 0, s.battement || 0, s.phase || 0, s.enveloppe || 0, s.syllabe || 0], 20);
+    if (o.image) f.set([o.image[0] || 0, o.image[1] || 0], 28);
     return b;
   }
 
@@ -303,14 +380,21 @@
     '@group(0) @binding(5) var iChannel3: texture_2d<f32>;',
     '@group(0) @binding(6) var iEchantillon: sampler;',
     '@group(0) @binding(7) var iRepete: sampler;',
+    '@group(0) @binding(8) var iSonTexture: texture_2d<f32>;',
     'var<private> iTime: f32;',
     'var<private> iProgres: f32;',
     'var<private> iResolution: vec4f;',
+    'var<private> iSon: PmSon;',
+    'var<private> iFrame: i32;',
+    'var<private> iTimeDelta: f32;',
     'var<private> R: Reglages;',
     'fn canal0(uv: vec2f) -> vec4f { return textureSampleLevel(iChannel0, iEchantillon, uv, 0.0); }',
     'fn canal1(uv: vec2f) -> vec4f { return textureSampleLevel(iChannel1, iEchantillon, uv, 0.0); }',
     'fn canal2(uv: vec2f) -> vec4f { return textureSampleLevel(iChannel2, iEchantillon, uv, 0.0); }',
     'fn canal3(uv: vec2f) -> vec4f { return textureSampleLevel(iChannel3, iRepete, uv, 0.0); }',
+    '// Son réactif (P7) : spectre (ligne 0) et onde (ligne 1) de la piste du shader, x de 0 à 1.',
+    'fn sonSpectre(x: f32) -> f32 { return textureSampleLevel(iSonTexture, iEchantillon, vec2f(x, 0.25), 0.0).r; }',
+    'fn sonOnde(x: f32) -> f32 { return textureSampleLevel(iSonTexture, iEchantillon, vec2f(x, 0.75), 0.0).r; }',
     '',
   ].join('\n');
 
@@ -344,6 +428,9 @@
     '  iTime = PM.temps;',
     '  iProgres = PM.progres;',
     '  iResolution = PM.resolution;',
+    '  iSon = PmSon(PM.son.x, PM.son.y, PM.son.z, PM.son.w, PM.son2.x, PM.son2.y, PM.son2.z, PM.son2.w);',
+    '  iFrame = i32(PM.image.x);',
+    '  iTimeDelta = PM.image.y;',
     '  R = PM_R;',
     '  return /*APPEL*/;',
     '}',
@@ -359,7 +446,7 @@
     var avant = [o.prelude || '', OUTILS, ENTREES, o.disposition.wgsl, LIAISONS].join('\n') + '\n// ---- code du shader ----\n';
     var code = String(o.code).replace(/\r\n?/g, '\n');
     return {
-      wgsl: avant + code + '\n// ---- enveloppe du moteur ----\n' + ENVELOPPE.replace('/*APPEL*/', APPELS[o.usage]),
+      wgsl: avant + code + '\n// ---- enveloppe du moteur ----\n' + ENVELOPPE.replace('/*APPEL*/', o.appel || APPELS[o.usage]),
       ligneCode: compterLignes(avant),
       lignesCode: code.split('\n').length,
     };
@@ -376,7 +463,7 @@
 
   function messageErreur(nom, fichier, erreurs) {
     var liste = erreurs.slice(0, 3).map(function (e) {
-      return (e.ligne ? 'ligne ' + e.ligne + ', colonne ' + e.colonne : 'hors du code du shader (nom déjà pris par le moteur ?)') + ' : ' + e.message;
+      return (e.ligne ? 'ligne ' + e.ligne + (e.colonne ? ', colonne ' + e.colonne : '') : 'hors du code du shader (nom déjà pris par le moteur ?)') + ' : ' + e.message;
     });
     return 'Shader « ' + nom + ' » (' + fichier + ') ne compile pas : ' + liste.join(' ; ') +
       (erreurs.length > 3 ? ' (et ' + (erreurs.length - 3) + ' autre(s))' : '') + '.';
@@ -560,6 +647,8 @@
     sansCommentaires: sansCommentaires,
     octets: octets,
     validerShader: validerShader,
+    pistesShader: pistesShader,
+    NOMS_TAMPONS: NOMS_TAMPONS,
     reglagesEnTexte: reglagesEnTexte,
     valeursShader: valeursShader,
     dispositionReglages: dispositionReglages,

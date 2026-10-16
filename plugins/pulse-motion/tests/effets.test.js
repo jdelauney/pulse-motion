@@ -232,3 +232,15 @@ test("effet minuté en temps musicaux : même compilation qu'en secondes", () =>
   assert.equal(capacite('4t'), capacite('2'));
   assert.notEqual(capacite('4t'), capacite('1'));
 });
+
+test('effet fait uniquement de structures sans data-dur : compilé sur la durée de la scène ; avec data-dur, ou effet émis : règle commune', () => {
+  const dir = copierProjet('projet-effets');
+  const r = preparerEffets('<section data-scene="s"><div data-effet="drapeau"></div><div data-effet="drapeau" data-dur="2"></div><div data-effet="etincelles"></div></section>',
+    { scene: 's', projet: dir, bibliotheque: path.join(__dirname, '..', 'effets'), charte: { primaire: '#0a6cff', accent: '#ff8a00', texte: '#1a1a1a', fond: '#ffffff' }, dureeScene: 4 });
+  assert.deepEqual(r.erreurs, []);
+  const [sans, avec, simple] = r.effets.map((e) => e.effet);
+  assert.equal(sans.duree, 4, 'drapeau sans data-dur : jusqu\'à la fin de la scène (4 s)');
+  assert.ok(sans.fin >= 4 && sans.emetteurs.every((em) => em.vie[1] === 4));
+  assert.equal(avec.duree, 2, 'data-dur écrit : gardé');
+  assert.equal(simple.duree, 1, 'effet émis sans data-dur : 1 s');
+});

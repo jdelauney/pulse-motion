@@ -18,7 +18,8 @@ body {
    couvrent la scène, derrière le contenu (arriere) ou devant (avant). */
 /* Le préfixe #pm-scene doit l'emporter sur les règles des styles comme `.decor ~ *`. */
 #pm-scene [data-effet], #pm-scene [data-shader] { position: absolute; }
-[data-effet], [data-shader] { inset: 0; pointer-events: none; }
+#pm-scene [data-milieu] { position: absolute; }
+[data-effet], [data-shader], [data-milieu] { inset: 0; pointer-events: none; }
 /* Formes d'obstacles invisibles (collisions de particules) : déclarations lues par le moteur, rien à afficher. */
 [data-obstacle-forme] { display: none; }
 /* Fragmentation des particules : élément remplacé par ses particules (raccord posé par le moteur selon t). */

@@ -3,6 +3,7 @@
  *
  *   M.aSon()       vrai si la vidéo a au moins une source sonore
  *   M.rendreSon()  -> Promise<{ buffer: AudioBuffer|null, sonie: number|null, avertissements: [texte] }>, une fois par page
+ *   M.pistesBrutes(noms) -> Promise<{ taux, pistes: { musique?, voix? } }>   pistes mono sans volume, fondus ni ducking (P7)
  *
  * Sources embarquées par l'assembleur : un bloc script de type text/plain d'id « pm-son-… » contenant une URL data:,
  * désigné dans pm-donnees (musique.source, scenes[].voix.source). Musique baissée sous la parole (ducking : gain et creux à 2,5 kHz),
@@ -203,5 +204,55 @@
     if (options && options.seulement) return rendre(options);
     if (!promesse) promesse = rendre();
     return promesse;
+  };
+
+  /** Pistes brutes du son réactif (P7) : mono 48 kHz à la durée de la vidéo, sans volume, fondus ni ducking.
+   *  musique : fichier décodé, ou partition jouée par le synthétiseur (même graine que le mixage) ; voix : toutes les
+   *  prises posées à leur début. -> { taux, pistes: { musique?: { echantillons } | { erreur }, voix?: … } } */
+  M.pistesBrutes = async function (noms) {
+    var d = M.donnees || {};
+    var duree = M.duree;
+    var pistes = {};
+    function contexte() { return new OfflineAudioContext(1, Math.max(1, Math.ceil(duree * TAUX)), TAUX); }
+    function texte(e) { return String(e && e.message || e); }
+    if (noms.indexOf('musique') >= 0 && d.musique && (d.musique.source || d.musique.partition)) {
+      try {
+        var c = contexte();
+        if (d.musique.source) {
+          var s = c.createBufferSource();
+          s.buffer = await decoder(c, d.musique.source);
+          s.connect(c.destination);
+          s.start(0);
+        } else {
+          var entree = c.createGain();
+          entree.connect(c.destination);
+          var bruit = M.synthe.bruit(c, 4242);
+          planifierParFenetres(c, M.synthe.partition.evenements(d.musique.partition, { duree: duree }), duree, function (e) { M.synthe.instruments.jouer(c, entree, e, bruit); });
+        }
+        pistes.musique = { echantillons: (await c.startRendering()).getChannelData(0) };
+      } catch (e) {
+        pistes.musique = { erreur: 'La musique n\'a pas pu être lue (' + texte(e) + ').' };
+      }
+    }
+    if (noms.indexOf('voix') >= 0) {
+      var prises = prisesVoix();
+      if (prises.length) {
+        var cv = contexte();
+        var lues = 0;
+        var fautes = [];
+        for (var i = 0; i < prises.length; i++) {
+          try {
+            var v = cv.createBufferSource();
+            v.buffer = await decoder(cv, prises[i].source);
+            v.connect(cv.destination);
+            v.start(prises[i].debut);
+            lues++;
+          } catch (e) { fautes.push(prises[i].scene); }
+        }
+        pistes.voix = lues ? { echantillons: (await cv.startRendering()).getChannelData(0) }
+          : { erreur: 'La voix n\'a pas pu être lue (scènes : ' + fautes.join(', ') + ').' };
+      }
+    }
+    return { taux: TAUX, pistes: pistes };
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

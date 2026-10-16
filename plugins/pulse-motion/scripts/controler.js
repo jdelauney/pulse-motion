@@ -20,7 +20,7 @@ const path = require('node:path');
 const { assembler, charteFinale, RACINE } = require('./assembler.js');
 const { trouverStyle } = require('./styles.js');
 const { lireGlossaire, verifierGlossaire } = require('./vocabulaire.js');
-const { lireDeroule, dureeTemps } = require('./lib/deroule.js');
+const { lireDeroule, dureeTemps, grilleFixe, optionsMinutage } = require('./lib/deroule.js');
 const { cheminDansProjet } = require('./lib/embarquer.js');
 const W = require('../moteur/wav.js');
 const { corrigerTypographie, corrigerMajuscules, motsDoubles, termesVariables, cleTerme } = require('./lib/typographie.js');
@@ -30,7 +30,7 @@ const CATALOGUE = require('../moteur/synthe/catalogue.js');
 const { appliquerCorrections } = require('./lib/corriger.js');
 const { controlerRendu } = require('./lib/rendu-controle.js');
 const { aDesShaders, compilerShadersGPU } = require('./lib/shaders-gpu.js');
-const { LIMITES_INTERACTIONS, PLEINE_VOISINAGE, STRUCTURES_SCENE_MAX, SOMMETS_TISSU_MAX } = require('../moteur/particules/recette.js');
+const { LIMITES_INTERACTIONS, PLEINE_VOISINAGE, STRUCTURES_SCENE_MAX, SOMMETS_TISSU_MAX, RESOLUTION_MILIEU_ALERTE } = require('../moteur/particules/recette.js');
 const { EFFETS: EFFETS_LETTRES } = require('../moteur/lettres.js');
 const { analyserCamera } = require('../moteur/camera.js');
 const { analyserTemps } = require('../moteur/temps.js');
@@ -159,7 +159,7 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
     const temps = dureeTemps(deroule);
     // Scènes de la page (avec leur voix) : durées effectives et ancres « mot: » comme dans le navigateur.
     const scenesMinutees = (assemblage.donnees && assemblage.donnees.scenes) || deroule.scenes;
-    const min = calculerMinutage(scenesMinutees, elementsParScene, { dureeTemps: temps, decalageTemps: (deroule.tempo && deroule.tempo.decalage) || 0 });
+    const min = calculerMinutage(scenesMinutees, elementsParScene, optionsMinutage(deroule));
     for (const e of min.erreurs) problemes.push({ ...e, gravite: 'erreur' });
     for (const s of min.scenes.filter((x) => x.allongee)) {
       problemes.push({ regle: 'voix-allonge', gravite: 'info', scene: s.id,
@@ -220,13 +220,13 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
       }
     }
 
-    // Tempo : chaque scène commence sur un temps (à une demi-image près) ; la première commence la vidéo.
-    if (temps) {
+    // Grille fixe : chaque scène commence sur un temps (à une demi-image près) ; la première commence la vidéo.
+    if (temps && grilleFixe(deroule)) {
       const tolerance = 0.5 / (deroule.format.ips || 30);
       for (const s of min.scenes.slice(1)) {
         const ecart = (s.debut - ((deroule.tempo && deroule.tempo.decalage) || 0)) / temps;
         if (Math.abs(ecart - Math.round(ecart)) * temps > tolerance) {
-          problemes.push({ regle: 'hors-tempo', gravite: 'alerte', scene: s.id, message: `Scène « ${s.id} » : elle commence à ${virgule(s.debut)} s, entre deux temps (${Math.round(60 / temps)} bpm) ; ajuster la durée de la scène précédente pour tomber sur la musique.` });
+          problemes.push({ regle: 'hors-tempo', gravite: 'alerte', scene: s.id, message: `Scène « ${s.id} » : elle commence à ${virgule(s.debut)} s, entre deux temps (${Math.round(60 / temps)} bpm), alors que la musique ne se recale pas sur les scènes ; ajuster la durée de la scène précédente, ou passer à une musique composée ou à une partition calée sur les scènes.` });
         }
       }
     }
@@ -255,8 +255,10 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
       const mots = Object.values(s.textes).reduce((n, t) => n + compterMots(t), 0);
       besoinLecture[s.id] = { mots, besoin: SEUILS.lectureBase + SEUILS.lectureParMot * mots };
     }
-    // Une durée corrigée décalerait les scènes suivantes par rapport à la musique : rien avec un tempo.
-    const corrigeable = !temps;
+    // Musique calée sur les scènes : une durée corrigée ne la décale pas. Grille fixe (fichier, partition continue) :
+    // une durée corrigée décalerait les scènes suivantes par rapport à la musique.
+    const fixe = grilleFixe(deroule);
+    const corrigeable = !fixe;
 
     // Temps morts : aucun élément en mouvement pendant plus que le seuil (pause finale exceptée).
     const derniere = min.scenes[min.scenes.length - 1];
@@ -414,6 +416,12 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
           problemes.push({ regle: 'effet-sur-texte', gravite: 'alerte', scene: s.id, element: balise.cle, message: `Scène « ${s.id} » : l'effet « ${e.effet.nom} » passe devant le texte « ${gene.cle} » pendant sa lecture ; le poser en data-calque="arriere" ou le décaler après la lecture.` });
         }
       }
+    }
+    // Milieu (P5c) : au-delà de 512 cellules sur le grand côté, la simulation de la grille dépasse son temps.
+    for (const mi of assemblage.milieux || []) {
+      const res = mi.effet.milieu.resolution;
+      if (res <= RESOLUTION_MILIEU_ALERTE) continue;
+      problemes.push({ regle: 'budget-milieu', gravite: 'alerte', scene: mi.scene, message: `Scène « ${mi.scene} » : le milieu « ${mi.effet.nom} » a ${res} cellules sur le grand côté ; au-delà de ${RESOLUTION_MILIEU_ALERTE}, sa simulation dépasse son temps (aperçu saccadé). Baisser « resolution » (192 suffit à une fumée nette : la grille est échantillonnée en bicubique ; l'export reste exact).` });
     }
     // Glossaire de la charte : formes à éviter, sigles mal écrits ; typographie et graphie des textes.
     const termesGlossaire = lireGlossaire(projet).termes;

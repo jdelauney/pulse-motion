@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { TYPES } = require('./contrat.js');
 const { AMBIANCES } = require('../../moteur/synthe/catalogue.js');
-const { tonaliteValide } = require('../../moteur/synthe/ambiances.js');
+const { tonaliteValide, HUMEURS } = require('../../moteur/synthe/ambiances.js');
 
 const TYPES_SCENE = Object.keys(TYPES);
 
@@ -198,6 +198,7 @@ function validerDeroule(d) {
         }
       }
     }
+    if (s.musique !== undefined && !HUMEURS.includes(s.musique)) err.push(`La ${nom} : « musique » (humeur de la musique pendant la scène) doit être l'une de : ${HUMEURS.join(', ')}.`);
     if (s.post !== undefined) err.push(...validerPost(s.post, `La ${nom} : « post »`));
     if (s.type !== undefined && !TYPES_SCENE.includes(s.type)) {
       err.push(`La ${nom} : « type » doit être l'un de : ${TYPES_SCENE.join(', ')} (ou absent pour une scène composée librement).`);
@@ -206,10 +207,30 @@ function validerDeroule(d) {
   return err;
 }
 
-/** Durée d'un temps musical en secondes (60 / bpm), ou null sans tempo. */
-/** Tempo d'une musique générée (le sien, ou celui de l'ambiance), ou null. */
+/** Tempo de la musique : celui d'une musique générée (le sien, ou celui de l'ambiance), ou celui de la partition
+ *  (retenu par lireDeroule), ou null. */
 function tempoMusique(d) {
-  return d && d.musique && d.musique.generee && Object.hasOwn(AMBIANCES, d.musique.generee) ? (d.musique.tempo || AMBIANCES[d.musique.generee].tempo) : null;
+  if (!d || !d.musique) return null;
+  if (d.musique.generee && Object.hasOwn(AMBIANCES, d.musique.generee)) return d.musique.tempo || AMBIANCES[d.musique.generee].tempo;
+  if (d.musique.partition && typeof d.musique.tempoPartition === 'number') return d.musique.tempoPartition;
+  return null;
+}
+
+/** La musique se recale-t-elle sur les scènes ? Oui pour une musique composée, et pour une partition dont toutes les
+ *  pistes sont calées sur une scène (« scene », retenu par lireDeroule). */
+function musiqueSuitScenes(d) {
+  return !!(d && d.musique && (d.musique.generee || (d.musique.partition && d.musique.partitionCalee === true)));
+}
+
+/** Grille fixe : un tempo, mais une musique qui ne suit pas les scènes (fichier, partition à grille continue, pas de
+ *  musique) ; les scènes doivent alors commencer sur un temps (contrôle hors-tempo, voix arrondie au temps). */
+function grilleFixe(d) {
+  return !!dureeTemps(d) && !musiqueSuitScenes(d);
+}
+
+/** Options du minutage pour ce déroulé. */
+function optionsMinutage(d) {
+  return { dureeTemps: dureeTemps(d), decalageTemps: (d && d.tempo && d.tempo.decalage) || 0, grilleFixe: grilleFixe(d) };
 }
 
 /** Durée d'un temps musical en secondes (tempo du déroulé, sinon celui de la musique générée), ou null. */
@@ -229,7 +250,24 @@ function lireDeroule(dossier) {
   try { d = JSON.parse(brut.replace(/^\uFEFF/, '')); } catch (e) {
     return { deroule: null, erreurs: [`deroule.json n'est pas un JSON valide : ${e.message}`] };
   }
-  return { deroule: d, erreurs: validerDeroule(d) };
+  const erreurs = validerDeroule(d);
+  // Partition : son tempo devient celui de la vidéo (retenu sans être écrit dans deroule.json).
+  if (estObjet(d.musique) && estTexte(d.musique.partition)) {
+    let tempo = null, calee = false;
+    try {
+      const lue = JSON.parse(fs.readFileSync(path.join(dossier, d.musique.partition), 'utf8').replace(/^\uFEFF/, ''));
+      tempo = lue.tempo;
+      calee = Array.isArray(lue.pistes) && lue.pistes.length > 0 && lue.pistes.every((p) => p && typeof p.scene === 'string');
+    } catch { /* signalé à l'assemblage (partition-invalide) */ }
+    Object.defineProperty(d.musique, 'partitionCalee', { value: calee, enumerable: false, configurable: true, writable: true });
+    if (typeof tempo === 'number' && tempo > 0) {
+      Object.defineProperty(d.musique, 'tempoPartition', { value: tempo, enumerable: false, configurable: true, writable: true });
+      if (estObjet(d.tempo) && typeof d.tempo.bpm === 'number' && d.tempo.bpm !== tempo) {
+        erreurs.push(`Le tempo de la partition (${tempo}) et « tempo.bpm » (${d.tempo.bpm}) diffèrent : n'en garder qu'un (le tempo de la partition suffit).`);
+      }
+    }
+  }
+  return { deroule: d, erreurs };
 }
 
-module.exports = { validerDeroule, validerCharte, lireDeroule, dureeTemps, tempoMusique, GENRES, PARCOURS, RATIOS, TRANSITIONS, TYPES_SCENE, TONS, MAX_POST };
+module.exports = { validerDeroule, validerCharte, lireDeroule, dureeTemps, tempoMusique, musiqueSuitScenes, grilleFixe, optionsMinutage, GENRES, PARCOURS, RATIOS, TRANSITIONS, TYPES_SCENE, TONS, MAX_POST };
