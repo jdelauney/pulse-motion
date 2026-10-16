@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="fr" data-racine="">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Les personnages – Wiki Pulse Motion</title>
+<meta name="description" content="Les personnages animés de Pulse Motion : un personnage dessiné sur demande ou tiré de votre illustration, ses poses, ses mouvements et ses expressions, l'atelier pour le régler à la souris, et comment le faire entrer, montrer, saluer ou parler dans une scène.">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/animations.css">
+<script src="js/donnees.js" defer></script>
+<script src="js/gabarit.js" defer></script>
+<script src="js/animations.js" defer></script>
+<script src="js/console.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<div class="mise-en-page">
+<nav class="laterale" aria-label="Sur cette page" data-laterale="sommaire"></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille">Guide</p>
+<h1>Les personnages</h1>
+<p class="chapo">Un cuisinier qui entre en marchant, montre un chiffre en souriant, salue et repart ; une mascotte qui dit le texte de la scène avec votre voix. Un personnage se dessine sur demande, ou part de votre propre illustration, puis s'anime d'une phrase. Vous pouvez aussi le régler vous-même, à la souris.</p>
+</header>
+
+<!-- ===================================================================================================== -->
+<section id="essentiel">
+<h2>L'essentiel</h2>
+<ul>
+<li><strong>Un même squelette pour tous.</strong> Chaque personnage a un bassin, une colonne, une tête, deux bras et deux jambes (et parfois une queue, pour un animal). C'est ce squelette qui bouge.</li>
+<li><strong>Trois habillages possibles</strong> sur ce squelette : les bâtonnets, un dessin fait par Pulse Motion, ou votre illustration découpée.</li>
+<li><strong>Les poses et les mouvements vont à tous.</strong> La marche, le salut ou la pose « montrer » marchent de la même façon pour les bâtonnets, pour un cuisinier dessiné et pour votre mascotte.</li>
+<li><strong>Tout se demande d'une phrase</strong>, et tout se vérifie en images avant de vous être montré.</li>
+<li><strong>Tout est rangé avec votre vidéo.</strong> Un mouvement modifié pour elle ne change rien aux autres vidéos.</li>
+</ul>
+<figure class="anim" data-etapes="4" data-duree="1300">
+<svg viewBox="0 0 900 220" role="img" aria-labelledby="perso-squelette-titre">
+<title id="perso-squelette-titre">Un squelette commun, trois habillages, les mêmes mouvements</title>
+<g class="e1" data-etape="1"><rect class="actif-halo schema-halo-primaire" x="4" y="76" width="224" height="68" rx="16"/><rect class="schema-boite-active" x="10" y="82" width="212" height="56" rx="12"/><text class="schema-texte" x="116" y="106" text-anchor="middle">Le squelette</text><text class="schema-texte-secondaire" x="116" y="126" text-anchor="middle">tête · bras · jambes</text></g>
+<path class="schema-fleche trace e2" pathLength="1" d="M222 100 C270 100 280 34 326 34" marker-end="url(#perso-pointe)"/>
+<path class="schema-fleche trace e2" pathLength="1" d="M222 110 H326" marker-end="url(#perso-pointe)"/>
+<path class="schema-fleche trace e2" pathLength="1" d="M222 120 C270 120 280 186 326 186" marker-end="url(#perso-pointe)"/>
+<g class="e2" data-etape="2"><rect class="actif-halo schema-halo-primaire" x="320" y="4" width="244" height="60" rx="16"/><rect class="schema-boite" x="326" y="10" width="232" height="48" rx="12"/><text class="schema-texte" x="442" y="40" text-anchor="middle">Bâtonnets</text></g>
+<g class="e2"><rect class="actif-halo schema-halo-primaire" x="320" y="80" width="244" height="60" rx="16"/><rect class="schema-boite" x="326" y="86" width="232" height="48" rx="12"/><text class="schema-texte" x="442" y="116" text-anchor="middle">Dessin sur demande</text></g>
+<g class="e2"><rect class="actif-halo schema-halo-primaire" x="320" y="156" width="244" height="60" rx="16"/><rect class="schema-boite" x="326" y="162" width="232" height="48" rx="12"/><text class="schema-texte" x="442" y="192" text-anchor="middle">Votre illustration</text></g>
+<path class="schema-fleche trace e3" pathLength="1" d="M558 34 C600 34 610 104 650 108" marker-end="url(#perso-pointe)"/>
+<path class="schema-fleche trace e3" pathLength="1" d="M558 110 H650" marker-end="url(#perso-pointe)"/>
+<path class="schema-fleche trace e3" pathLength="1" d="M558 186 C600 186 610 116 650 112" marker-end="url(#perso-pointe)"/>
+<g class="e4" data-etape="4"><rect class="actif-halo schema-halo-primaire" x="650" y="60" width="246" height="100" rx="18"/><rect class="schema-boite-active" x="656" y="66" width="234" height="88" rx="14"/><text class="schema-texte" x="773" y="100" text-anchor="middle">Mêmes poses</text><text class="schema-texte" x="773" y="124" text-anchor="middle">mêmes mouvements</text><text class="schema-texte-secondaire" x="773" y="144" text-anchor="middle">expressions · parole</text></g>
+<defs><marker id="perso-pointe" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" class="schema-pointe-grise"/></marker></defs>
+</svg>
+<figcaption>Tous les personnages partagent le même squelette. On l'habille de bâtonnets, d'un dessin fait par Pulse Motion, ou de votre propre illustration. Quel que soit l'habillage, il prend les mêmes poses, fait les mêmes mouvements et change d'expression de la même façon.</figcaption>
+</figure>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="habillages">
+<h2>Trois habillages</h2>
+<table>
+<thead><tr><th>Habillage</th><th>Ce que c'est</th><th>Comment l'obtenir</th></tr></thead>
+<tbody>
+<tr><td><strong>Les bâtonnets</strong></td><td>Un petit bonhomme fait de traits, aux grands yeux, avec une touffe de cheveux. Prêt tout de suite, idéal pour essayer un mouvement.</td><td>Rien à faire : c'est le personnage par défaut.</td></tr>
+<tr><td><strong>Un dessin</strong></td><td>Un personnage dessiné pour votre vidéo (un cuisinier rondouillard, une docteure à lunettes, un chat), avec son visage, ses yeux qui clignent et ses bouches.</td><td><a href="commandes/dessiner-personnage.html"><code>/pulse-motion:dessiner-personnage</code></a></td></tr>
+<tr><td><strong>Votre illustration découpée</strong></td><td>Le personnage de votre marque, dessiné dans votre logiciel habituel, découpé en membres pour qu'il bouge.</td><td><a href="commandes/decouper-personnage.html"><code>/pulse-motion:decouper-personnage</code></a></td></tr>
+</tbody>
+</table>
+<p>Pulse Motion livre aussi un dessin tout fait, <strong>touffu</strong> : le bonhomme aux bâtonnets blancs, aux grands yeux et à la touffe verte, dessiné en pièces. Il sert de modèle de départ pour les nouveaux dessins.</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="dessiner">
+<h2>Le dessiner sur demande</h2>
+<p>Décrivez le personnage avec vos mots : son métier, sa silhouette, un détail qui le rend reconnaissable.</p>
+<pre class="commande"><code>/pulse-motion:dessiner-personnage un cuisinier rondouillard avec une toque blanche</code></pre>
+<p>Pulse Motion le dessine de profil d'abord, puis de face (et de trois quarts, de dos) s'il doit se tourner vers vous. Il lui donne un visage complet : des yeux qui regardent et clignent, des sourcils, et des bouches pour chaque expression. Avant de vous le montrer, il le regarde marcher sous plusieurs angles et corrige ce qui cloche, en trois tours au plus. Si votre demande laisse un doute qui change tout le dessin (un humain ou un animal ?), il vous pose une seule question.</p>
+<p>Ensuite, tout se retouche d'une phrase, sans tout redessiner :</p>
+<ul>
+<li>« change sa tenue en rouge » : seule la couleur change ;</li>
+<li>« ajoute-lui des lunettes », « refais-lui la tête » : le dessin est repris là où il faut ;</li>
+<li>un accessoire (une toque, un sac à dos, une cape) est attaché à une partie du corps et la suit dans tous ses mouvements.</li>
+</ul>
+<aside class="encadre encadre-conseil"><p><strong>Conseil :</strong> le dessin se range dans le dossier d'une vidéo. Créez d'abord la vidéo avec <a href="commandes/creer.html"><code>/pulse-motion:creer</code></a>, puis dessinez son personnage depuis ce dossier.</p></aside>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="decouper">
+<h2>Animer votre illustration</h2>
+<p>Vous avez déjà le personnage de votre marque, dessiné dans Illustrator, Inkscape ou Figma ? Exportez-le au format SVG, posez le fichier dans le dossier de la vidéo, et demandez :</p>
+<pre class="commande"><code>/pulse-motion:decouper-personnage voici notre mascotte, mascotte.svg : fais-la marcher</code></pre>
+<p>Pulse Motion regarde votre illustration, range chaque forme dans un membre (la tête, le bras, la jambe…), place les articulations (épaule, coude, genou, cheville), puis vous montre la mascotte qui marche. Ce qui n'est pas le personnage, comme une ombre au sol ou un décor, est laissé de côté. Il donne un nom aux couleurs principales, pour que « change sa couleur principale en bleu » marche ensuite.</p>
+<ul>
+<li><strong>Un seul personnage par illustration</strong>, de profil de préférence (sinon de face).</li>
+<li><strong>Des yeux et une bouche en formes séparées</strong> donnent un visage vivant : les yeux regardent et clignent. Sinon, le visage reste tel quel dans la tête.</li>
+<li><strong>Une illustration de profil seulement ?</strong> Pulse Motion peut ensuite lui dessiner une vue de face, et d'autres bouches, avec <a href="commandes/dessiner-personnage.html"><code>/pulse-motion:dessiner-personnage</code></a>.</li>
+</ul>
+<p>Certaines illustrations doivent être retouchées dans votre logiciel avant la découpe. Pulse Motion vous dit lesquelles et comment :</p>
+<table>
+<thead><tr><th>L'illustration contient</th><th>À faire dans votre logiciel de dessin</th></tr></thead>
+<tbody>
+<tr><td>du texte</td><td>Convertir le texte en formes (« Vectoriser », « Objet en chemin »).</td></tr>
+<tr><td>une image collée</td><td>La redessiner en formes, ou la laisser de côté.</td></tr>
+<tr><td>une copie liée (un clone)</td><td>Délier le clone (« Objet » → « Décomposer »).</td></tr>
+<tr><td>un filtre ou un masque</td><td>Les retirer, ou les appliquer.</td></tr>
+<tr><td>des styles « par entités » (Illustrator)</td><td>Réexporter avec « Propriétés CSS : éléments de style ».</td></tr>
+</tbody>
+</table>
+<p>Une articulation mal placée se voit tout de suite : le membre tourne autour du mauvais point. Pour la corriger vous-même, dites « le coude n'est pas au bon endroit, laisse-moi corriger » : la page de découpe s'ouvre (voir <a href="#atelier">l'atelier</a>).</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="animer">
+<h2>Poses, mouvements, expressions</h2>
+<p>Une <dfn>pose</dfn> est une attitude tenue, comme une photo : debout, le bras tendu pour montrer. Un <dfn>mouvement</dfn> s'anime dans le temps : une marche, un saut, un salut. Une <dfn>expression</dfn> change le visage : la joie, la surprise. Tout se crée ou se modifie avec <a href="commandes/animer-personnage.html"><code>/pulse-motion:animer-personnage</code></a>.</p>
+<pre class="commande"><code>/pulse-motion:animer-personnage fais une pose où il se gratte la tête, l'air perplexe</code></pre>
+<p>Pulse Motion écrit la pose, la regarde sous trois angles, l'ajuste si la main n'est pas au bon endroit, puis vous la montre. Un mouvement de la bibliothèque n'est jamais modifié : quand vous dites « il marche trop vite », Pulse Motion fait une copie plus lente de la marche, rangée avec votre vidéo, qui remplace la marche pour elle seule.</p>
+
+<h3>La bibliothèque livrée</h3>
+<table>
+<thead><tr><th>Poses</th><th>L'attitude</th></tr></thead>
+<tbody>
+<tr><td><strong>debout</strong></td><td>Au repos, la pose de départ de tous les mouvements.</td></tr>
+<tr><td><strong>montrer</strong></td><td>Le bras tendu vers un point, le regard dans la même direction.</td></tr>
+<tr><td><strong>bras levés</strong></td><td>Les deux bras au-dessus de la tête : une victoire, une pancarte.</td></tr>
+<tr><td><strong>mains sur les hanches</strong></td><td>Poings sur les hanches, coudes écartés.</td></tr>
+<tr><td><strong>assis</strong></td><td>Assis sur un siège invisible, les cuisses à l'horizontale.</td></tr>
+<tr><td><strong>penché</strong></td><td>Penché en avant, curieux.</td></tr>
+</tbody>
+</table>
+<table>
+<thead><tr><th>Mouvements</th><th>Ce qu'il fait</th></tr></thead>
+<tbody>
+<tr><td><strong>marche</strong></td><td>Une marche tranquille, les bras en balancier.</td></tr>
+<tr><td><strong>course</strong></td><td>Une course, bras pliés, avec un petit rebond.</td></tr>
+<tr><td><strong>saut</strong></td><td>Un saut sur place : l'élan, l'envol, une réception amortie.</td></tr>
+<tr><td><strong>s'accroupir</strong></td><td>Il s'accroupit, les bras devant pour l'équilibre.</td></tr>
+<tr><td><strong>se relever</strong></td><td>Il se relève depuis la position accroupie.</td></tr>
+<tr><td><strong>coucou</strong></td><td>Un salut de la main, le bras levé sur le côté.</td></tr>
+<tr><td><strong>peur</strong></td><td>Il tremble de peur, les yeux ronds, la touffe hérissée.</td></tr>
+<tr><td><strong>repos</strong></td><td>Debout, il respire doucement.</td></tr>
+</tbody>
+</table>
+<p class="legende">Deux détails s'ajoutent tout seuls aux mouvements : la respiration et le clignement des yeux. Vous n'avez pas à les demander.</p>
+<table>
+<thead><tr><th>Expressions</th><th>Le visage</th></tr></thead>
+<tbody>
+<tr><td><strong>neutre</strong></td><td>Le visage au repos.</td></tr>
+<tr><td><strong>joie</strong></td><td>Content : un sourire, les sourcils levés.</td></tr>
+<tr><td><strong>tristesse</strong></td><td>Triste : les sourcils relevés au centre, le regard bas.</td></tr>
+<tr><td><strong>peur</strong></td><td>Effrayé : les yeux ronds, les pupilles petites.</td></tr>
+<tr><td><strong>colère</strong></td><td>Fâché : les sourcils froncés.</td></tr>
+<tr><td><strong>surprise</strong></td><td>Étonné : les sourcils très hauts, la bouche ronde.</td></tr>
+</tbody>
+</table>
+
+<h3>Les bouches</h3>
+<p>Un personnage dessiné a plusieurs bouches : celles des expressions (sourire, rire, triste, surprise, colère) et celles de la parole, une par famille de sons (le « a » grand ouvert, le « o » arrondi, les lèvres serrées du « m », du « b » et du « p », et quelques autres). Une bouche qui manque est remplacée par la plus proche. Pour qu'un personnage parle, son dessin doit avoir au moins les bouches du « a », du « o » et des lèvres serrées : Pulse Motion les dessine quand vous le lui demandez.</p>
+
+<h3>Retoucher d'une phrase</h3>
+<table>
+<thead><tr><th>Vous dites</th><th>Ce qui change</th></tr></thead>
+<tbody>
+<tr><td>« quels mouvements existent ? »</td><td>La liste des poses, des mouvements, des expressions et des personnages dessinés, en mots simples.</td></tr>
+<tr><td>« il marche trop vite »</td><td>Une copie plus lente de la marche, pour cette vidéo.</td></tr>
+<tr><td>« fais-le sauter plus haut »</td><td>Une copie du saut, avec un envol plus haut.</td></tr>
+<tr><td>« fais-lui une tête surprise quand il salue »</td><td>Une copie du salut qui passe par la surprise au bon moment.</td></tr>
+<tr><td>« montre-moi la course de face et de profil »</td><td>Une planche de la course sous ces deux angles.</td></tr>
+<tr><td>« un nouveau geste : il applaudit »</td><td>Un nouveau mouvement, qui part de la pose debout.</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="atelier">
+<h2>L'atelier : régler à la souris</h2>
+<p>L'<dfn>atelier des personnages</dfn> est une page qui s'ouvre dans votre navigateur, comme l'aperçu, pour poser et animer un personnage vous-même. Il s'ouvre sur le mouvement ou la pose demandés, avec votre personnage, par <a href="commandes/atelier-personnages.html"><code>/pulse-motion:atelier-personnages</code></a>.</p>
+<pre class="commande"><code>/pulse-motion:atelier-personnages je veux régler son salut moi-même</code></pre>
+<ul>
+<li><strong>Glisser une articulation</strong> (le genou, le coude) fait tourner le membre. Une articulation arrivée au bout de sa course devient orange : un coude ne plie pas à l'envers.</li>
+<li><kbd>Maj</kbd> <strong>+ glisser une main ou un pied</strong> l'amène sous la souris, et tout le bras ou toute la jambe suit.</li>
+<li><strong>Les boutons de vue</strong> (Profil, 3/4, Face, Dos) montrent le personnage sous un autre angle ; la case « Tourner » le fait tourner sur lui-même.</li>
+<li><strong>La frise</strong>, en bas, porte les moments du mouvement. <strong>▶</strong> joue le geste ; <kbd>,</kbd> et <kbd>.</kbd> avancent image par image ; les silhouettes pâles montrent les moments voisins. Un moment se déplace, s'ajoute (« + Clé »), se duplique ou se supprime ; sa courbe dit comment on va au suivant (« douce », « dépasse puis revient », « rebondit »…).</li>
+<li><strong>Les listes « Expression » et « Bouche »</strong> changent le visage au moment choisi ; la liste « Habillage » passe d'un personnage dessiné aux bâtonnets.</li>
+<li><kbd>Ctrl</kbd> + <kbd>Z</kbd> annule le dernier geste dans l'atelier.</li>
+<li><strong>Enregistrer</strong> range le résultat avec votre vidéo ; le message « Enregistré » le confirme. Enregistrer sous un nom déjà pris vous demande avant de remplacer.</li>
+</ul>
+<p>Revenez ensuite dans Claude Code et dites que vous avez fini : Pulse Motion relit ce que vous avez enregistré et vous le montre. Si le résultat ne vous plaît pas, « annule » défait le dernier enregistrement de l'atelier.</p>
+<h3>Corriger une découpe</h3>
+<p>Pour une illustration découpée, l'atelier a une page de découpe : votre illustration, chaque forme encadrée de la couleur de son membre, et les articulations en ronds. Cliquez une forme, puis un membre, pour l'y ranger ; glissez un rond pour déplacer une articulation ; <strong>Découper</strong> montre le résultat qui marche ; <strong>Enregistrer</strong> le range.</p>
+<aside class="encadre encadre-conseil"><p><strong>Conseil :</strong> si votre vidéo a aussi des effets de particules, précisez « l'atelier des personnages » : Pulse Motion a un autre atelier pour les effets.</p></aside>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="scene">
+<h2>Un personnage dans une scène</h2>
+<p>Dites ce que le personnage doit faire, dans quelle scène, et à quel moment :</p>
+<pre class="commande"><code>/pulse-motion:animer-personnage mets le cuisinier dans la scène 3 : qu'il entre, montre le chiffre en souriant, salue et reparte</code></pre>
+<p>Pulse Motion modifie la scène, la contrôle, puis vous montre quelques images clés. Le cuisinier entre en marchant (sans glisser), s'arrête, montre le chiffre au moment où il apparaît, sourit, salue, et repart.</p>
+<h3>Ce qu'on peut lui faire faire</h3>
+<table>
+<thead><tr><th>Action</th><th>Ce qu'il fait</th></tr></thead>
+<tbody>
+<tr><td><strong>Entrer, traverser, repartir</strong></td><td>Il marche ou court jusqu'à un point, même depuis l'extérieur de l'image. Ses pieds ne glissent pas, et il se tourne dans le sens de sa marche.</td></tr>
+<tr><td><strong>Prendre une pose</strong></td><td>Il prend une pose (montrer, bras levés…) et la tient le temps voulu.</td></tr>
+<tr><td><strong>Faire un geste</strong></td><td>Il joue un mouvement : un salut, un saut, la peur…</td></tr>
+<tr><td><strong>Se tourner</strong></td><td>Il pivote vers vous (de face) ou repasse de profil.</td></tr>
+<tr><td><strong>Changer d'expression</strong></td><td>Il sourit, s'étonne, se fâche, jusqu'à l'expression suivante.</td></tr>
+<tr><td><strong>Ouvrir la bouche</strong></td><td>Il prend une bouche choisie (un « o » d'étonnement) et la garde jusqu'à ce qu'on lui rende celle de son expression.</td></tr>
+<tr><td><strong>Parler</strong></td><td>Sa bouche suit les mots de la voix de la scène. Entre deux mots, elle se met au repos ; dans les silences longs, elle reprend la bouche de son expression.</td></tr>
+</tbody>
+</table>
+<p>Entre deux actions, il respire et cligne des yeux. Chaque changement est fondu, en un quart de seconde : rien ne saute.</p>
+<h3>Calé sur le reste de la scène</h3>
+<p>Chaque action part au moment que vous voulez : au début de la scène, quand un élément apparaît (« quand le chiffre arrive »), à la fin d'une autre action (« dès qu'il s'est arrêté »), quand la voix dit un mot (« quand je dis « record » »), ou sur un temps de la musique. Si vous réenregistrez votre voix, les gestes calés sur vos mots se recalent seuls.</p>
+<pre class="commande"><code>/pulse-motion:retoucher qu'il montre le chiffre quand la voix dit « record »</code></pre>
+<p>Pour faire parler un personnage, la scène doit avoir une voix. Deux personnages peuvent se partager la voix d'une scène : chacun parle pendant son passage, à partir d'un mot.</p>
+<pre class="commande"><code>/pulse-motion:animer-personnage fais parler le cuisinier pendant la voix de la scène 2</code></pre>
+<h3>Ce qu'il ne fait pas encore</h3>
+<ul>
+<li><strong>Tenir un objet de la scène qui suit sa main.</strong> Seul un accessoire dessiné avec le personnage (une toque, un sac, un objet dans la main) le suit dans ses mouvements.</li>
+<li><strong>Interagir avec un autre personnage</strong> : se serrer la main, se passer un objet. Deux personnages peuvent être dans la même scène, chacun avec ses actions.</li>
+<li><strong>Se figer avec un arrêt sur image, ou s'accélérer avec un accéléré.</strong> Le personnage vit au temps réel de la scène.</li>
+</ul>
+<aside class="encadre encadre-attention"><p><strong>Attention :</strong> un personnage ne doit pas cacher les textes. Pulse Motion le fait entrer par le côté, le garde assez petit, ou lui fait traverser la scène avant l'arrivée du texte. S'il gêne quand même : « fais-le entrer par la droite », « rends le cuisinier plus petit ».</p></aside>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="verifications">
+<h2>Les vérifications</h2>
+<p>Pulse Motion ne vous montre pas un personnage sans l'avoir regardé. Il fabrique des <dfn>planches</dfn> : des images fixes côte à côte, sous plusieurs angles, qu'il examine lui-même avant de vous les montrer.</p>
+<table>
+<thead><tr><th>Planche</th><th>Ce qui est regardé</th></tr></thead>
+<tbody>
+<tr><td>La marche sous plusieurs angles (profil, trois quarts, face, l'autre profil)</td><td>La tête bien posée sur le cou, rien qui manque d'une vue à l'autre, aucun trou ni aucune pointe aux articulations, un accessoire qui reste en place.</td></tr>
+<tr><td>Les expressions et les bouches</td><td>Un visage centré, des bouches lisibles.</td></tr>
+<tr><td>Une pose ou un mouvement</td><td>Des membres qui ne plient pas à l'envers, les pieds sur le sol, un geste lisible et ressemblant à votre demande.</td></tr>
+<tr><td>Les images clés de la scène</td><td>Le personnage au bon endroit au bon moment, sans cacher les textes.</td></tr>
+</tbody>
+</table>
+<p>Ce qui cloche est corrigé, en trois tours au plus. Vous pouvez aussi demander une planche vous-même :</p>
+<pre class="commande"><code>/pulse-motion:animer-personnage montre-moi la course de face et de profil</code></pre>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="phrases">
+<h2>Des phrases prêtes à copier</h2>
+<h3>Dessiner</h3>
+<pre class="commande"><code>/pulse-motion:dessiner-personnage une docteure souriante avec des lunettes rondes et une blouse blanche</code></pre>
+<pre class="commande"><code>/pulse-motion:dessiner-personnage change sa tenue en rouge</code></pre>
+<pre class="commande"><code>/pulse-motion:dessiner-personnage redessine sa tête de face</code></pre>
+<h3>Animer</h3>
+<pre class="commande"><code>/pulse-motion:animer-personnage quels mouvements existent ?</code></pre>
+<pre class="commande"><code>/pulse-motion:animer-personnage il marche trop vite</code></pre>
+<pre class="commande"><code>/pulse-motion:animer-personnage fais-lui une tête surprise quand il salue</code></pre>
+<h3>Dans la vidéo</h3>
+<pre class="commande"><code>/pulse-motion:retoucher dans la scène 1, fais entrer le cuisinier en courant par la gauche, puis qu'il salue</code></pre>
+<pre class="commande"><code>/pulse-motion:retoucher qu'il prenne la pose bras levés quand le titre arrive</code></pre>
+<pre class="commande"><code>/pulse-motion:retoucher rends le cuisinier plus petit, il cache le titre</code></pre>
+<pre class="commande"><code>/pulse-motion:retoucher annule</code></pre>
+<aside class="encadre encadre-conseil"><p><strong>Pour aller plus loin :</strong> le <a href="tutoriels/vibe-connection.html">tutoriel 3</a> recrée <strong>Vibe Connection</strong>, un film avec des personnages, pas à pas.</p></aside>
+</section>
+
+</article>
+</div>
+</main>
+</body>
+</html>

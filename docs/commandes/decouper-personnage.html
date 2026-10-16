@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="fr" data-racine="../" data-commande="decouper-personnage">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>/pulse-motion:decouper-personnage – Wiki Pulse Motion</title>
+<meta name="description" content="Animer l'illustration d'un personnage que vous fournissez (Illustrator, Inkscape, Figma…) en la découpant sur le squelette de Pulse Motion (« voici notre mascotte, fais-la marcher »).">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/animations.css">
+<script src="../js/donnees.js" defer></script>
+<script src="../js/gabarit.js" defer></script>
+<script src="../js/animations.js" defer></script>
+<script src="../js/console.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<div class="mise-en-page">
+<nav class="laterale" aria-label="Les commandes" data-laterale></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille pastille-etape" data-couleur="0">Étape 4 · Personnaliser</p>
+<h1><code>/pulse-motion:decouper-personnage</code></h1>
+<p class="chapo">Animer l'illustration d'un personnage que vous fournissez (Illustrator, Inkscape, Figma…) en la découpant sur le squelette de Pulse Motion (« voici notre mascotte, fais-la marcher »).</p>
+</header>
+
+<ul class="sommaire" aria-label="Sur cette page" data-sommaire></ul>
+
+<section id="description">
+<h2>Description</h2>
+<p>Vous avez déjà le dessin de votre personnage, une mascotte par exemple, exporté de votre logiciel de dessin en fichier vectoriel <code>.svg</code>. Pulse Motion le découpe pour l'animer :</p>
+<ol>
+<li><strong>Il regarde l'illustration.</strong> Il la copie avec votre vidéo, puis en fait une image annotée : chaque forme numérotée, sur une grille.</li>
+<li><strong>Il range chaque forme dans un membre</strong> du squelette (la tête, le torse, chaque bras, chaque jambe…) et place les articulations au centre de celles du dessin : hanche, genou, cheville ; épaule, coude, poignet ; le bassin et le cou ; le centre de la tête. Le décor et l'ombre au sol sont mis de côté.</li>
+<li><strong>Il nomme les couleurs principales</strong> (la peau, la tenue…), pour que « change sa tenue en rouge » marche ensuite.</li>
+<li><strong>Il le fait marcher</strong> sur une planche, sous plusieurs angles, et corrige ce qui cloche, en trois tours au plus.</li>
+</ol>
+<p>Votre illustration devient un personnage dessiné, qui s'anime avec toutes les poses et tous les mouvements de Pulse Motion. Si les yeux et la bouche sont des formes à part dans votre dessin, le visage devient vivant : les yeux regardent et clignent.</p>
+</section>
+
+<section id="pourquoi">
+<h2>Pourquoi l'utiliser</h2>
+<ul>
+<li><strong>Votre personnage, tel que vous l'avez dessiné.</strong> Il garde son allure et ses proportions.</li>
+<li><strong>Il bouge aussitôt</strong> : marche, course, saut, coucou, et toutes les poses.</li>
+<li><strong>Ses couleurs se retouchent en une phrase</strong>, une fois nommées.</li>
+<li><strong>La découpe se corrige à la souris</strong>, dans l'atelier des personnages, si une articulation est mal placée.</li>
+</ul>
+</section>
+
+<section id="quand">
+<h2>Quand l'utiliser</h2>
+<ol class="parcours" aria-label="Le parcours Pulse Motion, cette commande à l'étape mise en avant">
+  <li data-couleur="1"><span class="parcours-numero">1</span> Créer</li>
+  <li data-couleur="3"><span class="parcours-numero">2</span> Retoucher</li>
+  <li data-couleur="4"><span class="parcours-numero">3</span> Exporter</li>
+  <li data-couleur="0" aria-current="step"><span class="parcours-numero">4</span> Personnaliser</li>
+</ol>
+<ul>
+<li><strong>Après <a href="creer.html"><code>/pulse-motion:creer</code></a></strong> : la découpe se range dans le dossier d'une vidéo.</li>
+<li><strong>Quand vous avez déjà une illustration.</strong> Pour un personnage à inventer, c'est <a href="dessiner-personnage.html"><code>/pulse-motion:dessiner-personnage</code></a>.</li>
+<li><strong>Avant <a href="animer-personnage.html"><code>/pulse-motion:animer-personnage</code></a></strong>, pour lui donner des gestes ou le faire jouer dans une scène.</li>
+</ul>
+<p>Tout ce que les personnages savent faire est réuni sur la page <a href="../personnages.html">Personnages</a>.</p>
+</section>
+
+<section id="arguments">
+<h2>Comment la lancer</h2>
+<pre class="commande"><code>/pulse-motion:decouper-personnage [le fichier SVG du personnage]</code></pre>
+<p class="legende">Entre crochets <code>[ ]</code> : facultatif. Vous pouvez aussi lancer la commande seule et donner le fichier ensuite : son chemin, ou son nom s'il est déjà dans le dossier <code>assets/</code> de la vidéo.</p>
+<pre class="commande"><code>/pulse-motion:decouper-personnage assets/mascotte.svg</code></pre>
+<pre class="commande"><code>/pulse-motion:decouper-personnage j'ai un personnage dans assets, anime-le</code></pre>
+
+<h3>Préparer l'illustration</h3>
+<p>Un seul personnage par fichier, de profil de préférence (tourné vers la droite), sinon de face. Certains éléments empêchent la découpe : Pulse Motion vous dit lesquels, et ce qu'il faut changer dans votre logiciel de dessin.</p>
+<table>
+<thead><tr><th>Votre illustration contient</th><th>Dans le logiciel de dessin</th></tr></thead>
+<tbody>
+<tr><td>Du texte</td><td>Convertir le texte en formes (« Vectoriser », « Objet en chemin »).</td></tr>
+<tr><td>Une image (une photo, une texture)</td><td>La redessiner en formes, ou la laisser de côté.</td></tr>
+<tr><td>Une copie liée (un clone)</td><td>Délier le clone (« Objet &gt; Décomposer »).</td></tr>
+<tr><td>Un filtre, un masque</td><td>Les retirer, ou les appliquer.</td></tr>
+<tr><td>Des styles « par entités » (Illustrator)</td><td>Réexporter avec « Propriétés CSS : éléments de style ».</td></tr>
+</tbody>
+</table>
+<p>Un masque d'écrêtage, lui, n'empêche rien : la forme est dessinée entière, et Pulse Motion vous le signale.</p>
+</section>
+
+<section id="produit">
+<h2>Ce qu'elle produit</h2>
+<table>
+<thead><tr><th>Fichier</th><th>À quoi il sert</th></tr></thead>
+<tbody>
+<tr><td><code>assets/&lt;nom&gt;.svg</code></td><td>La copie de votre illustration, rangée avec la vidéo. L'original reste où il était.</td></tr>
+<tr><td><code>personnages/decoupes/&lt;nom&gt;.json</code></td><td>La découpe : chaque forme rangée dans un membre, et la place des articulations.</td></tr>
+<tr><td><code>personnages/dessins/&lt;nom&gt;.json</code></td><td>Le personnage dessiné qui en sort, prêt à bouger.</td></tr>
+</tbody>
+</table>
+<p>Pulse Motion termine par la planche de la marche et la suite possible : corriger la découpe à la souris, faire bouger le personnage, dessiner sa face si l'illustration n'est que de profil.</p>
+</section>
+
+<section id="risques">
+<h2>Risques et précautions</h2>
+<ul>
+<li><strong>Il faut une vidéo dans le dossier.</strong> Sans elle, Pulse Motion vous le dit et vous propose d'en créer une avec <a href="creer.html"><code>/pulse-motion:creer</code></a>.</li>
+<li><strong>Un élément refusé arrête la découpe</strong> tant qu'il n'est pas corrigé dans votre logiciel. S'il est seulement décoratif, Pulse Motion peut proposer de le laisser de côté.</li>
+<li><strong>Une illustration de face sert aussi de profil</strong>, en attendant mieux. Pour un vrai profil, ou une face qui manque, demandez-la à <a href="dessiner-personnage.html"><code>/pulse-motion:dessiner-personnage</code></a>.</li>
+<li><strong>Le visage reste figé</strong> si les yeux et la bouche ne sont pas des formes à part. Avec un visage vivant, les autres bouches (sourire, surprise…) se dessinent ensuite avec <a href="dessiner-personnage.html"><code>/pulse-motion:dessiner-personnage</code></a>.</li>
+<li><strong>Refaire la découpe ne défait pas le reste.</strong> Les autres vues dessinées et les bouches ajoutées sont gardées ; les couleurs gardent leur nom.</li>
+</ul>
+<aside class="encadre encadre-conseil"><p><strong>Conseil :</strong> avant d'exporter votre illustration, gardez les yeux et la bouche en formes séparées : votre personnage aura un visage vivant, qui regarde et cligne des yeux.</p></aside>
+</section>
+
+<section id="problemes">
+<h2>Problèmes et solutions</h2>
+<details class="probleme"><summary>Pulse Motion refuse mon illustration</summary><p>Elle contient un texte, une image, un clone, un filtre ou un masque. Pulse Motion vous dit lequel : corrigez-le dans votre logiciel de dessin (voir le tableau <a href="#arguments">Préparer l'illustration</a>), réexportez, puis redonnez-lui le fichier.</p></details>
+<details class="probleme"><summary>Un membre se détache ou tourne autour du mauvais point</summary><p>Une articulation est mal placée. Pulse Motion le voit sur la planche et corrige ; si le défaut reste, corrigez-la vous-même à la souris avec <a href="atelier-personnages.html"><code>/pulse-motion:atelier-personnages</code></a> (« laisse-moi corriger la découpe »).</p></details>
+<details class="probleme"><summary>Pulse Motion signale des formes laissées de côté</summary><p>Ces formes n'ont été rangées dans aucun membre. Pulse Motion les range, ou les met de côté si elles ne font pas partie du personnage (une ombre, un décor).</p></details>
+<details class="probleme"><summary>Les yeux de mon personnage ne bougent pas</summary><p>Dans votre dessin, les yeux font partie de la même forme que la tête. Séparez-les dans votre logiciel de dessin (le blanc de l'œil et la pupille), réexportez, et relancez la découpe.</p></details>
+<details class="probleme"><summary>« node » introuvable</summary><p>Node.js n'est pas installé. Installez-le en version LTS depuis <a href="https://nodejs.org/fr/download" target="_blank" rel="noopener noreferrer">nodejs.org</a>, puis relancez Claude Code. Voir les <a href="../prerequis.html#node">prérequis</a>.</p></details>
+</section>
+
+<section id="exemples">
+<h2>Exemples</h2>
+<div class="conversation" data-titre="Exemple : faire marcher une mascotte">
+<p data-role="vous">/pulse-motion:decouper-personnage voici notre mascotte, fais-la marcher : C:\Users\Marie\Bureau\mascotte.svg</p>
+<p data-role="outil">pulse-motion personnages analyser assets/mascotte.svg --dossier .</p>
+<p data-role="outil">pulse-motion personnages decouper mascotte --dossier .</p>
+<p data-role="outil">pulse-motion personnages renommer-couleur mascotte c1 tenue --dossier .</p>
+<p data-role="outil">pulse-motion personnages planche marche --dessin mascotte --vues 0,45,180 --dossier .</p>
+<p data-role="claude">Votre mascotte marche ! Voici la planche, sous trois angles.
+Ensuite, vous pouvez corriger la découpe à la souris (/pulse-motion:atelier-personnages), la faire bouger (/pulse-motion:animer-personnage), ou dessiner sa face (/pulse-motion:dessiner-personnage) : votre illustration n'est que de profil.</p>
+</div>
+<div class="conversation" data-titre="Exemple : une illustration à corriger d'abord">
+<p data-role="vous">/pulse-motion:decouper-personnage assets/chef.svg</p>
+<p data-role="outil">pulse-motion personnages analyser assets/chef.svg --dossier .</p>
+<p data-role="claude">Votre illustration contient du texte : le nom brodé sur le tablier. Dans votre logiciel de dessin, convertissez-le en formes (« Vectoriser » ou « Objet en chemin »), réexportez le fichier, puis redonnez-le-moi.</p>
+</div>
+</section>
+
+<section id="liees">
+<h2>Commandes liées</h2>
+<ul>
+<li><a href="atelier-personnages.html"><code>/pulse-motion:atelier-personnages</code></a> : corriger la découpe à la souris.</li>
+<li><a href="animer-personnage.html"><code>/pulse-motion:animer-personnage</code></a> : ses poses, ses mouvements, sa place dans une scène.</li>
+<li><a href="dessiner-personnage.html"><code>/pulse-motion:dessiner-personnage</code></a> : dessiner une vue qui manque, ou les bouches de son visage.</li>
+</ul>
+</section>
+
+<nav class="suite" aria-label="Commande précédente et suivante" data-suite></nav>
+</article>
+</div>
+</main>
+</body>
+</html>

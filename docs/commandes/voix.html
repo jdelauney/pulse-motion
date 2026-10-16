@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="fr" data-racine="../" data-commande="voix">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>/pulse-motion:voix – Wiki Pulse Motion</title>
+<meta name="description" content="Enregistrer, importer et caler la voix de la vidéo, ou faire écouter sa musique (« j'enregistre la scène 2 », « j'ai un fichier de ma voix », « recale les mots »).">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/animations.css">
+<script src="../js/donnees.js" defer></script>
+<script src="../js/gabarit.js" defer></script>
+<script src="../js/animations.js" defer></script>
+<script src="../js/console.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<div class="mise-en-page">
+<nav class="laterale" aria-label="Les commandes" data-laterale></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille pastille-etape" data-couleur="3">Étape 2 · Retoucher</p>
+<h1><code>/pulse-motion:voix</code></h1>
+<p class="chapo">Enregistrer, importer et caler la voix de la vidéo, ou faire écouter sa musique (« j'enregistre la scène 2 », « j'ai un fichier de ma voix », « recale les mots »).</p>
+</header>
+
+<ul class="sommaire" aria-label="Sur cette page" data-sommaire></ul>
+
+<section id="description">
+<h2>Description</h2>
+<p>C'est la commande de la voix de votre vidéo, scène par scène. Elle sait faire quatre choses :</p>
+<ul>
+<li><strong>Enregistrer</strong> votre voix dans le <em>studio</em> de l'aperçu. Le texte de la scène s'affiche en grand ; vous cliquez sur « Enregistrer », vous lisez après le compte à rebours, puis « Arrêter ». Vous réécoutez, puis « Garder » ou « Refaire ».</li>
+<li><strong>Importer</strong> un enregistrement fait ailleurs, pour une scène ou pour toute la vidéo. Un enregistrement de toute la vidéo est découpé par scène.</li>
+<li><strong>Poser une voix provisoire</strong> : la voix de l'ordinateur lit les textes, pour caler l'animation en attendant votre enregistrement.</li>
+<li><strong>Recaler les mots</strong> sur ce que vous avez vraiment dit, grâce à la <a href="../son.html#transcription">transcription</a>.</li>
+</ul>
+<p>Elle sait aussi vous <strong>faire écouter la musique seule</strong>, dans le lecteur de votre ordinateur.</p>
+<p>Les scènes à dire sont celles qui ont un texte dit dans le <a href="../concepts.html#deroule">déroulé</a>. Une vidéo sans aucun texte dit n'a rien à enregistrer : Pulse Motion vous propose alors d'en ajouter un avec <a href="retoucher.html"><code>/pulse-motion:retoucher</code></a> (« ajoute une voix à la vidéo »).</p>
+<p>Cette commande ne change ni les volumes, ni le texte dit, ni les sous-titres, ni l'ambiance de la musique : pour cela, c'est <a href="retoucher.html"><code>/pulse-motion:retoucher</code></a> (« baisse la voix », « change ce que je dis dans l'intro »).</p>
+</section>
+
+<section id="pourquoi">
+<h2>Pourquoi l'utiliser</h2>
+<ul>
+<li><strong>Pas de logiciel d'enregistrement à apprendre.</strong> Le studio est dans l'aperçu : le texte à lire est sous vos yeux.</li>
+<li><strong>Un enregistrement fait ailleurs sert aussi.</strong> Pulse Motion le lit là où il est et range la prise avec la vidéo : l'original ne bouge pas.</li>
+<li><strong>La vidéo se cale sur votre voix.</strong> Une scène dure au moins le temps de sa prise, et une animation qui part sur un mot de la voix suit ce mot. Réenregistrer une scène la recale toute seule.</li>
+<li><strong>Vous pouvez avancer avant d'enregistrer.</strong> La voix provisoire tient la place ; vos vraies prises, elles, sont toujours gardées.</li>
+</ul>
+</section>
+
+<section id="quand">
+<h2>Quand l'utiliser</h2>
+<ol class="parcours" aria-label="Le parcours Pulse Motion, cette commande à l'étape mise en avant">
+  <li data-couleur="1"><span class="parcours-numero">1</span> Créer</li>
+  <li data-couleur="3" aria-current="step"><span class="parcours-numero">2</span> Retoucher</li>
+  <li data-couleur="4"><span class="parcours-numero">3</span> Exporter</li>
+  <li data-couleur="0"><span class="parcours-numero">4</span> Personnaliser</li>
+</ol>
+<ul>
+<li><strong>Après <a href="creer.html"><code>/pulse-motion:creer</code></a></strong>, si vous avez répondu « Je l'enregistre » ou « J'ai un fichier » à la question de la voix.</li>
+<li><strong>Pendant les retouches</strong>, pour refaire une prise ou recaler les sous-titres.</li>
+<li><strong>Avant <a href="exporter.html"><code>/pulse-motion:exporter</code></a></strong> : l'export refuse la voix provisoire, sauf si vous demandez une version de travail.</li>
+</ul>
+</section>
+
+<section id="arguments">
+<h2>Comment la lancer</h2>
+<pre class="commande"><code>/pulse-motion:voix</code></pre>
+<p class="legende">Elle ne demande rien après le nom : dites ce que vous voulez avec vos mots, juste après le nom ou dans la conversation.</p>
+<pre class="commande"><code>/pulse-motion:voix j'enregistre la scène 2</code></pre>
+<pre class="commande"><code>/pulse-motion:voix j'ai un fichier de ma voix</code></pre>
+
+<h3>Ce que vous pouvez demander</h3>
+<table>
+<thead><tr><th>Vous dites</th><th>Ce qui se passe</th></tr></thead>
+<tbody>
+<tr><td>« j'enregistre la scène 2 », « je veux enregistrer ma voix »</td><td>L'aperçu s'ouvre sur le studio de la scène demandée (sinon, la première à enregistrer). La première fois, le navigateur vous demande d'autoriser le micro.</td></tr>
+<tr><td>« j'ai un fichier de ma voix », « importe mon enregistrement »</td><td>Pulse Motion vous demande le fichier (son chemin, ou glissez-le dans la conversation), puis : « pour une scène ou pour toute la vidéo ? ». Il conseille toute la vidéo si l'enregistrement dure plus d'une minute.</td></tr>
+<tr><td>« mets une voix provisoire », « je veux entendre le texte »</td><td>La voix de l'ordinateur lit les textes de toute la vidéo, ou d'une seule scène. Les prises déjà enregistrées sont gardées.</td></tr>
+<tr><td>« recale les mots », « la voix est décalée », « les sous-titres sont en avance »</td><td>La transcription recale les mots de vos prises. Si elle n'est pas installée, Pulse Motion vous propose de l'installer d'abord.</td></tr>
+<tr><td>« fais-moi écouter la musique »</td><td>La musique seule s'ouvre dans le lecteur de votre ordinateur. Sans musique, Pulse Motion vous propose d'en ajouter une avec <a href="retoucher.html"><code>/pulse-motion:retoucher</code></a>.</td></tr>
+</tbody>
+</table>
+<p>Le détail de la voix, des sous-titres et de la musique est sur la page <a href="../son.html">Le son</a>.</p>
+</section>
+
+<section id="produit">
+<h2>Ce qu'elle produit</h2>
+<ul>
+<li><strong>Vos prises de voix</strong>, une par scène, rangées avec la vidéo dans <code>assets/voix/</code>. À côté de chaque prise, Pulse Motion garde le moment où chaque mot est dit.</li>
+<li><strong>La vidéo à jour</strong> : <code>sortie/&lt;titre&gt;.html</code>, et l'aperçu qui se recharge tout seul.</li>
+<li><strong>Un contrôle</strong> après chaque enregistrement, import ou voix provisoire. Pulse Motion vous dit en une phrase ce qui reste : les scènes encore en voix provisoire, une scène allongée par la voix, des mots calés au mieux.</li>
+<li><strong>La musique seule</strong>, quand vous demandez à l'écouter : <code>sortie/musique.wav</code>.</li>
+</ul>
+</section>
+
+<section id="risques">
+<h2>Risques et précautions</h2>
+<ul>
+<li><strong>La voix fixe la durée des scènes.</strong> Une scène dure au moins le temps de sa prise, plus un court silence. Une prise plus longue que prévu allonge donc la scène : Pulse Motion vous le dit.</li>
+<li><strong>La voix provisoire n'est jamais livrée.</strong> Elle sert seulement à caler l'animation. L'export la refuse, sauf si vous demandez vous-même une version de travail.</li>
+<li><strong>Un enregistrement de toute la vidéo demande la transcription.</strong> C'est elle qui le découpe par scène. Elle s'installe une fois, avec votre accord (environ 800 Mo, voir <a href="outils.html"><code>/pulse-motion:outils</code></a>). Sans elle, importez une prise par scène.</li>
+<li><strong>Les sous-titres reprennent le texte écrit</strong>, jamais ce que la transcription a cru entendre. Si vous avez dit autre chose que le texte, changez le texte dit avec <a href="retoucher.html"><code>/pulse-motion:retoucher</code></a>.</li>
+</ul>
+<aside class="encadre encadre-conseil"><p><strong>Conseil :</strong> pour refaire une seule scène, donnez son numéro (« j'enregistre la scène 3 ») : seule sa prise est remplacée.</p></aside>
+</section>
+
+<section id="problemes">
+<h2>Problèmes et solutions</h2>
+<details class="probleme"><summary>Pulse Motion dit qu'il n'y a pas de vidéo ici</summary><p>Le dossier ouvert ne contient pas de vidéo. Ouvrez le dossier de votre vidéo dans VS Code, ou créez-en une avec <a href="creer.html"><code>/pulse-motion:creer</code></a>.</p></details>
+<details class="probleme"><summary>Aucune scène n'a de texte à dire</summary><p>La vidéo a été créée sans voix. Demandez « ajoute une voix à la vidéo » avec <a href="retoucher.html"><code>/pulse-motion:retoucher</code></a> : Pulse Motion écrit le texte dit de chaque scène. Vous pourrez ensuite l'enregistrer.</p></details>
+<details class="probleme"><summary>L'import de toute la vidéo est refusé</summary><p>La transcription n'est pas installée, et c'est elle qui découpe l'enregistrement par scène. Pulse Motion vous propose de l'installer, puis relance le même import. Si vous préférez ne pas l'installer, importez ou enregistrez une prise par scène.</p></details>
+<details class="probleme"><summary>Pulse Motion signale une scène mal reconnue</summary><p>Après un import de toute la vidéo, moins de la moitié des mots de cette scène ont été reconnus : sa prise est peut-être mal découpée. Réenregistrez cette scène dans le studio (« j'enregistre la scène 4 »), ou importez une prise rien que pour elle.</p></details>
+<details class="probleme"><summary>Le studio n'enregistre pas ma voix</summary><p>Le navigateur demande l'autorisation d'utiliser le micro la première fois. Si vous l'avez refusée, autorisez le micro pour la page de l'aperçu dans les réglages du navigateur, puis redemandez « j'enregistre la scène 1 ».</p></details>
+<details class="probleme"><summary>Les sous-titres sont en avance ou en retard sur la voix</summary><p>Les mots ont été calés au mieux, sans transcription. Demandez « recale les mots » : Pulse Motion les recale sur votre voix, après avoir installé la transcription si besoin.</p></details>
+<details class="probleme"><summary>« node » introuvable</summary><p>Node.js n'est pas installé. Installez-le en version LTS depuis <a href="https://nodejs.org/fr/download" target="_blank" rel="noopener noreferrer">nodejs.org</a>, puis relancez Claude Code. Voir les <a href="../prerequis.html#node">prérequis</a>.</p></details>
+</section>
+
+<section id="exemples">
+<h2>Exemples</h2>
+<div class="conversation" data-titre="Exemple : enregistrer une scène">
+<p data-role="vous">/pulse-motion:voix j'enregistre la scène 2</p>
+<p data-role="outil">pulse-motion apercu . --ouvrir</p>
+<p data-role="outil">pulse-motion voix studio maillons .</p>
+<p data-role="claude">Le texte s'affiche en grand ; cliquez sur Enregistrer, lisez après le compte à rebours, puis Arrêter. Réécoutez, puis Garder ou Refaire.</p>
+<p data-role="vous">C'est gardé.</p>
+<p data-role="outil">pulse-motion controler .</p>
+<p data-role="claude">✅ Fait : la scène 2 parle maintenant avec votre voix. Les scènes 3 à 6 sont encore en voix provisoire.
+📄 Fichiers : la voix est rangée avec la vidéo ; sortie/la-chaine-du-froid.html est à jour.
+➡️ Ensuite : enregistrer une autre scène (« j'enregistre la scène 3 »), retoucher avec /pulse-motion:retoucher, ou exporter en MP4 avec /pulse-motion:exporter.</p>
+</div>
+<div class="conversation" data-titre="Exemple : importer l'enregistrement de toute la vidéo">
+<p data-role="vous">/pulse-motion:voix j'ai un fichier de ma voix</p>
+<p data-role="claude">Où est votre fichier ? Donnez son chemin, ou glissez-le ici.</p>
+<p data-role="vous">C:\Users\Marie\Documents\voix-chaine-du-froid.wav</p>
+<p data-role="claude">Pour une scène ou pour toute la vidéo ?
+→ Toute la vidéo (Recommandé) / Une scène</p>
+<p data-role="vous">Toute la vidéo</p>
+<p data-role="outil">pulse-motion voix importer "C:\Users\Marie\Documents\voix-chaine-du-froid.wav" .</p>
+<p data-role="outil">pulse-motion controler .</p>
+<p data-role="claude">✅ Fait : votre enregistrement est découpé en 6 prises, une par scène. La scène 5 a été allongée d'une seconde pour laisser finir la voix.</p>
+</div>
+<div class="conversation" data-titre="Exemple : écouter la musique">
+<p data-role="vous">/pulse-motion:voix fais-moi écouter la musique</p>
+<p data-role="outil">pulse-motion musique ecouter . --ouvrir</p>
+<p data-role="claude">✅ Fait : la musique seule s'est ouverte dans le lecteur de votre ordinateur. Pour la changer (« plus calme », « une autre variante »), c'est /pulse-motion:retoucher.</p>
+</div>
+</section>
+
+<section id="liees">
+<h2>Commandes liées</h2>
+<ul>
+<li><a href="retoucher.html"><code>/pulse-motion:retoucher</code></a> : le volume de la voix, le texte dit, les sous-titres, l'ambiance de la musique.</li>
+<li><a href="outils.html"><code>/pulse-motion:outils</code></a> : installer la transcription.</li>
+<li><a href="exporter.html"><code>/pulse-motion:exporter</code></a> : fabriquer le MP4 une fois la voix enregistrée.</li>
+<li><a href="animer-personnage.html"><code>/pulse-motion:animer-personnage</code></a> : faire parler un personnage sur votre voix.</li>
+</ul>
+</section>
+
+<nav class="suite" aria-label="Commande précédente et suivante" data-suite></nav>
+</article>
+</div>
+</main>
+</body>
+</html>
