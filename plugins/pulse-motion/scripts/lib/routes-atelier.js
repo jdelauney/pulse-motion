@@ -185,7 +185,7 @@ function creerRoutesAtelier(projet, { dossierStyles, bibliotheque = BIBLIOTHEQUE
       let c = R.compiler(resolue, { reglages, charte: ctx.charte, dur, graine });
       // Effet fait uniquement de structures sans data-dur : jusqu'à la fin de la scène (durée écrite dans le déroulé ; la
       // page la remplace par celle du minutage, allongement par la voix compris : durScene).
-      const d = c.ok ? dureeStructures(a, c.effet, ctx.dureeScene ? ctx.dureeScene(scene) : null) : null;
+      const d = c.ok ? dureeStructures(a, c.effet, ctx.dureeScene ? ctx.dureeScene(scene) : null, ctx.temps) : null;
       if (d) { dur = d; durScene = true; c = R.compiler(resolue, { reglages, charte: ctx.charte, dur, graine }); }
       if (!c.ok) erreur = c.erreurs.map((x) => x.message).join(' ');
     }
