@@ -189,3 +189,29 @@ envoyer({ webgpu: true, couverts, fin: effet.fin, finScene: scene.fin });`,
   assert.ok(r.fin >= r.finScene - 1e-6, `fenêtre de l'effet jusqu'à ${r.fin} s (fin de la scène : ${r.finScene} s)`);
   assert.ok(r.couverts > 100, `fanion encore dessiné à 3,5 s (${r.couverts} pixels)`);
 });
+
+test("page : un effet fait uniquement de structures, sans data-dur, au data-start relatif (#id, :fin) dure de son début réel à la fin de sa scène", async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const html = pageStructures({
+    textes: { titre: 'Mât' },
+    recettes: [FANION],
+    duree: 4,
+    scene: `<section data-scene="s">
+  ${style('#mat { position: absolute; left: 20cqh; top: 20cqh; width: 2cqh; height: 30cqh; background: #333; } .zone { position: absolute; left: 22cqh; top: 20cqh; width: 30cqh; height: 20cqh; }')}
+  <h1 data-texte="titre"></h1>
+  <div id="mat" data-start="0.5" data-dur="1"></div>
+  <div class="zone" data-effet="fanion" data-start="#mat+1"></div>
+  <div class="zone" data-effet="fanion" data-start="#mat:fin+0.5"></div>
+</section>`,
+    script: `
+await M.particules.pret;
+if (!M.particules.disponible) return envoyer({ webgpu: false });
+const scene = M.minutage.scenes.find((x) => x.id === 's');
+envoyer({ webgpu: true, effets: M.particules.decrire('s').map((e) => ({ debut: e.debut - scene.debut, fin: e.fin })), finScene: scene.fin });`,
+  });
+  const r = JSON.parse(await executerPage(html));
+  assert.equal(r.erreur, undefined, r.erreur);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.deepEqual(r.effets.map((e) => Math.round(e.debut * 1e6) / 1e6), [1.5, 2], 'débuts résolus par le minutage de la page');
+  r.effets.forEach((e, i) => assert.ok(Math.abs(e.fin - r.finScene) < 1e-6, `effet ${i} : fin ${e.fin} s, attendu la fin de la scène (${r.finScene} s), pas au-delà`));
+});

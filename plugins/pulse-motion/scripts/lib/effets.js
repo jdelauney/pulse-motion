@@ -24,11 +24,13 @@ const { cheminDansProjet, versDataURI } = require('./embarquer.js');
 const { echapperHTML } = require('./scenes.js');
 const R = require('../../moteur/particules/recette.js');
 const S = require('../../moteur/shaders/code.js');
-const { lireSecondes } = require('../../moteur/minutage.js');
+const { lireSecondes, calculerMinutage } = require('../../moteur/minutage.js');
 
 const NOM = /^[a-z0-9-]+$/;
 const BALISE = /<([a-zA-Z][\w-]*)\b((?:[^>"']|"[^"]*"|'[^']*')*)>/g;
 const CALQUES = ['avant', 'arriere'];
+// Attributs qui font d'un élément un élément minuté (moteur/horloge.js, lireElements ; scripts/lib/extraire.js).
+const MINUTES = ['data-start', 'data-dur', 'data-tween', 'data-effet', 'data-milieu', 'data-son', 'data-shader'];
 
 /** charger(nom) -> recette JSON (projet d'abord, puis bibliothèque) | null ; lève une ErreurRecette si le JSON est cassé. */
 function chargeurRecettes(projet, bibliotheque) {
@@ -130,7 +132,9 @@ function modifierEffet(html, ordre, changements) {
  * dureeTemps : secondes par temps musical (tempo du déroulé), pour un data-dur écrit en « t ».
  * dureeScene : durée de la scène (s de τ, allongement par la voix compris) : un effet fait uniquement de structures (cordes,
  * tissus, perles) sans data-dur dure de son début (data-start) à la fin de sa scène (compilé avec cette durée) ; sinon
- * data-dur, 1 s par défaut.
+ * data-dur, 1 s par défaut. Un data-start relatif (« #id », « mot: ») est résolu comme dans la page (minutage de la scène :
+ * éléments minutés de html, voix et rythme de la scène).
+ * voix : voix de la scène ({ debut, duree, mots }, comme dans les données de la page), ou null ; rythme : rythme de la scène.
  * -> { html, effets: [{ scene, ordre, calque, ancre, cible, effet }], erreurs: [{ regle, gravite, scene, element?, message }],
  *    modules: { nom: { json, code } } }
  * ordre : position de la balise parmi les data-effet de la scène (erreurs comprises).
@@ -142,18 +146,41 @@ function structuresSeules(effet) {
 
 /** Durée d'un effet fait uniquement de structures, sans data-dur : du début de l'effet à la fin de la scène (dureeScene − début,
  *  τ de la scène ; début : data-start en secondes ou en temps, 0 sans data-start ; un début relatif, « #id » ou « mot: »,
- *  n'est connu que de la page : toute la scène), ou null (règle commune : data-dur, 1 s par défaut). attributs : attributs
- *  de la balise ; effet : effet compilé ; dureeTemps : secondes par temps musical (ou null). Un effet qui commence à la fin
- *  de la scène ou après garde 1 s (règle commune). */
-function dureeStructures(attributs, effet, dureeScene, dureeTemps = null) {
+ *  par debutRelatif(texte) -> s de τ depuis le début de la scène (minuteurScene) ; sans debutRelatif, toute la scène :
+ *  l'atelier, dont la page refait le calcul par son minutage), ou null (règle commune : data-dur, 1 s par défaut).
+ *  attributs : attributs de la balise ; effet : effet compilé ; dureeTemps : secondes par temps musical (ou null). Un effet
+ *  qui commence à la fin de la scène ou après garde 1 s (règle commune). */
+function dureeStructures(attributs, effet, dureeScene, dureeTemps = null, debutRelatif = null) {
   if (attributs['data-dur'] !== undefined || !(dureeScene > 0) || !structuresSeules(effet)) return null;
-  const debut = attributs['data-start'] === undefined ? { valeur: 0 } : lireSecondes(String(attributs['data-start']), dureeTemps);
+  const texte = attributs['data-start'] === undefined ? '' : String(attributs['data-start']).trim();
+  let debut = texte === '' ? { valeur: 0 } : lireSecondes(texte, dureeTemps);
+  if (debut.valeur === undefined && debut.erreur === 'illisible' && debutRelatif) debut = { valeur: debutRelatif(texte) };
   if (debut.valeur === undefined) return dureeScene;
   const reste = Math.round((dureeScene - debut.valeur) * 1e6) / 1e6;
   return reste > 0 ? reste : null;
 }
 
-function preparerEffets(html, { scene, projet, bibliotheque, charte = {}, premierIndex = 0, dureeTemps = null, chargerShader = null, milieu = false, dureeScene = null }) {
+/** Début relatif d'un effet résolu comme dans la page (moteur/horloge.js : éléments minutés, puis M.calculerMinutage) :
+ *  -> debutRelatif(texte) -> s de τ depuis le début de la scène (une référence introuvable, un mot non dit : 0, comme dans
+ *  la page, qui le signale). html : la scène ; voix : { debut, duree, mots } ou null ; rythme : rythme de la scène. */
+function minuteurScene(html, { scene, dureeTemps = null, voix = null, rythme = 1 }) {
+  let elements = null;
+  return (texte) => {
+    if (!elements) {
+      elements = [];
+      let n = 0;
+      for (const m of String(html).matchAll(BALISE)) {
+        const a = lireAttributs(m[2]);
+        if (MINUTES.some((k) => k in a)) elements.push({ cle: a.id || `_${++n}`, start: a['data-start'], dur: a['data-dur'] });
+      }
+    }
+    const cle = ' effet'; // jamais un id (espace)
+    const min = calculerMinutage([{ id: scene, duree: 1, rythme, ...(voix ? { voix } : {}) }], { [scene]: elements.concat([{ cle, start: texte }]) }, { dureeTemps });
+    return Math.round((min.elements[scene][cle].debut - min.scenes[0].debut) * min.scenes[0].rythme * 1e6) / 1e6;
+  };
+}
+
+function preparerEffets(html, { scene, projet, bibliotheque, charte = {}, premierIndex = 0, dureeTemps = null, chargerShader = null, milieu = false, dureeScene = null, voix = null, rythme = 1 }) {
   const effets = [];
   const erreurs = [];
   const modules = {};
@@ -164,6 +191,7 @@ function preparerEffets(html, { scene, projet, bibliotheque, charte = {}, premie
     if (a.id) ids.add(a.id);
   }
   const charger = chargeurRecettes(projet, bibliotheque);
+  const debutRelatif = minuteurScene(source, { scene, dureeTemps, voix, rythme });
   let ordre = 0;
 
   const sortie = source.replace(BALISE, (tout, balise, texteAttributs) => {
@@ -207,7 +235,7 @@ function preparerEffets(html, { scene, projet, bibliotheque, charte = {}, premie
       const resolue = R.resoudre(nom, charger);
       compile = R.compiler(resolue, { reglages: a['data-reglages'] || '', charte, dur, graine });
       // Effet fait uniquement de structures (cordes, tissus) sans data-dur : un objet posé, présent jusqu'à la fin de la scène.
-      const durScene = compile.ok ? dureeStructures(a, compile.effet, dureeScene, dureeTemps) : null;
+      const durScene = compile.ok ? dureeStructures(a, compile.effet, dureeScene, dureeTemps, debutRelatif) : null;
       if (durScene) compile = R.compiler(resolue, { reglages: a['data-reglages'] || '', charte, dur: durScene, graine });
     } catch (e) {
       if (!e.regle) throw e;
@@ -264,4 +292,4 @@ function preparerEffets(html, { scene, projet, bibliotheque, charte = {}, premie
   return { html: sortie, effets, erreurs, modules };
 }
 
-module.exports = { chargeurRecettes, fnv1a, graineParDefaut, preparerEffets, structuresSeules, dureeStructures, balisesAvec, balisesEffets, reecrireBalise, modifierEffet };
+module.exports = { chargeurRecettes, fnv1a, graineParDefaut, preparerEffets, structuresSeules, dureeStructures, minuteurScene, balisesAvec, balisesEffets, reecrireBalise, modifierEffet };
