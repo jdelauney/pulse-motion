@@ -62,7 +62,7 @@ Milieux fluides (air, brasier, eau-encre) et effets qui s'y couplent (braises-po
 ## Dosage
 
 - **Nombre** : c'est `/pulse-motion:creer` qui décide quelles scènes reçoivent un effet (au plus deux effets simultanés à l'écran ; en formation courte, un ou deux effets dans toute la vidéo) et le dit à l'animateur ; l'animateur n'en ajoute pas de lui-même. Un effet devant (`avant`) ne dure pas pendant la lecture d'un texte long (le contrôle `effet-sur-texte` le signale) ; préférer `arriere` pour une ambiance.
-- **Fond clair** : la neige et la poussière, blanches par défaut, disparaissent sur un fond clair (style `clair-pedagogique`) : régler `couleur: primaire` ou un gris-bleu comme `#8fa6c4`.
+- **Fond clair** : la neige et la poussière, blanches par défaut, disparaissent sur un fond clair (style `clair-pedagogique`) : régler `couleur: primaire` ou un gris-bleu comme `#8fa6c4`. Le feu (`feu`, `etincelles`, le milieu `brasier`) est de la lumière ajoutée à l'image : à utiliser sur fond sombre ; sur fond clair, il paraît pâle.
 - **Durées** : mise en valeur 1 à 2 s ; ambiance sur toute la scène ; célébration 2 à 3 s.
 - **Quantité** : rester sous 300 000 particules par scène (contrôle `budget-particules`) ; les valeurs par défaut sont faites pour une image 16:9.
 - **Couleurs** : laisser la charte (`primaire`, `accent`) pour les effets de mise en valeur ; une couleur de matière (feu, fumée, neige) reste réaliste.
@@ -357,7 +357,7 @@ Un **milieu** est un fluide simulé sur une grille dans la scène : fumée volum
 | Effet | Réglages | Quand l'utiliser |
 |---|---|---|
 | `air` | `resolution`, `flottaison`, `debit`, `couleur`, `opacite` | Ambiance, mystère, chaleur qui monte : fumée volumineuse depuis le bas de la scène, qui contourne les obstacles déclarés ; vent des effets couplés. |
-| `brasier` | `intensite`, `chaleur`, `largeur`, `fumee` | Combustion, danger, énergie : feu du rouge sombre au blanc selon sa température, qui brille (halo), surmonté de fumée. |
+| `brasier` | `intensite`, `chaleur`, `largeur`, `fumee` | Combustion, danger, énergie : feu du rouge sombre au blanc selon sa température, qui brille (halo), surmonté de fumée. Sur fond sombre : le feu est de la lumière ajoutée ; sur fond clair, il paraît pâle. |
 | `eau-encre` | `couleur1`, `couleur2`, `debit`, `tourbillons` | Idées qui se mêlent, diffusion, calme : deux encres (charte) versées l'une au-dessus de l'autre, qui coulent en volutes, se rencontrent et se mélangent par absorption (dès 2 à 3 s) ; sur fond clair. |
 | `braises-portees` | `nombre`, `vitesse`, `couleur`, `gravite`, `taille`, `prise` | Braises emportées par le milieu de la scène : elles suivent le panache et tourbillonnent autour des obstacles (`prise` : force de l'entraînement). |
 | `fusee-panache` | `fusees`, `vitesse`, `fumee`, `couleur` | Lancement, décollage : fusées qui montent en laissant dans le milieu un panache de fumée chaude qui s'élargit. |
