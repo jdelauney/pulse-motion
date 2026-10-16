@@ -14,6 +14,7 @@ const W = require('../moteur/wav.js');
 const P = require('../scripts/lib/personnages.js');
 
 const navigateur = trouverNavigateur();
+const proche = (a, b, tol = 1e-6) => assert.ok(Math.abs(a - b) <= tol, `${a} ≠ ${b}`);
 const lu = P.lire(null);
 
 const SCENE = `<section data-scene="chiffre">
@@ -190,6 +191,47 @@ test('hauteur et temps : erreurs d\'assemblage ; dans la page, les pieds sur la 
     assert.ok(Math.abs((p3[1] - p2[1]) - attendu(p2, p3)) < 2);
     assert.deepEqual(res.a, res.b, 'figé pendant le gel de son conteneur');
     assert.ok(res.c[0] > res.b[0], 'il reprend après le gel');
+  } finally { await page.fermer(); }
+});
+
+test('objets tenus : erreurs d\'assemblage ; dans la page, l\'objet suit la main puis est lâché', { skip: !navigateur && 'Chrome ou Edge introuvable' }, async () => {
+  const mauvais = preparerPersonnages('<section><div id="a" data-personnage="touffu"></div><p id="o1" data-tenu-par="#b" data-start="0" data-dur="1"></p><p id="o2" data-tenu-par="#a" data-main="gauche" data-orientation="penche" data-lacher="vole" data-prise="milieu" data-start="0"></p><div><p id="o3" data-tenu-par="#a" data-start="0" data-dur="1"></p></div></section>', { scene: 's', lu });
+  const m = mauvais.erreurs.map((e) => e.message).join(' | ');
+  for (const motif of [/« o1 » : porteur « #b » introuvable/, /data-main="gauche"/, /data-orientation="penche"/, /data-lacher="vole"/, /data-prise="milieu"/, /« o2 » : data-dur obligatoire/, /« o3 » : il doit être dans le même conteneur que son porteur/]) assert.match(m, motif);
+  const SCENE_O = `<section data-scene="chiffre">
+  <style>@scope { .objet { position: absolute; left: 5%; top: 5%; width: 6cqh; height: 10cqh; background: var(--c-primaire); } }</style>
+  <p id="nombre" data-tween="nombre 0→1250 cubic-out" data-dur="3">0</p>
+  <div id="porteur" data-personnage="touffu" data-x="20" data-sol="90" data-taille="30">
+    <i id="va" data-action="marcher" data-vers="60" data-start="0" data-dur="2"></i>
+  </div>
+  <div id="crayon" class="objet" data-decor data-tenu-par="#porteur" data-orientation="main" data-start="0.5" data-dur="1" data-lacher="tombe"></div>
+  <div id="tasse" class="objet" data-decor data-tenu-par="#porteur" data-main="arriere" data-start="0.5" data-dur="1" data-lacher="cache"></div>
+</section>`;
+  const r = assembler({ dossier: video(SCENE_O), dossierStyles: STYLES });
+  assert.equal(r.ok, true, JSON.stringify(r.erreurs));
+  const page = await ouvrirPage({ navigateur, largeur: 1280, hauteur: 720 });
+  try {
+    await page.aller(pathToFileURL(r.fichier).href);
+    const res = await page.evaluer(`(async () => {
+      await M.pret;
+      const d = M.minutage.scenes.find((s) => s.id === 'chiffre').debut;
+      const E = M.minutage.elements.chiffre, cr = E.crayon;
+      const porteur = document.getElementById('porteur');
+      const lire = (id) => { const s = document.getElementById(id).style; return { left: s.left, top: s.top, transform: s.transform, visibility: s.visibility, position: s.position }; };
+      await M.seek(d + 0.2); const avant = lire('crayon');
+      const t1 = cr.debut + 0.4; await M.seek(t1); const pendant = lire('crayon'); const m1 = M.personnages.mains(porteur, t1);
+      await M.seek(cr.fin + 3); const tombe = lire('crayon'); const tasse = lire('tasse'); const mf = M.personnages.mains(porteur, cr.fin);
+      await M.seek(d + 0.2); await M.seek(t1); const encore = lire('crayon');
+      return { avant, pendant, m1, tombe, tasse, mf, encore, W: M.personnages.W, H: M.personnages.H, erreurs: (M.erreurs || []).map((e) => e.message) };
+    })()`);
+    assert.deepEqual(res.erreurs, []);
+    assert.equal(res.avant.position, '', 'avant la prise : ses styles d\'origine');
+    proche(parseFloat(res.pendant.left), res.m1.avant.x / res.W * 100, 0.01);
+    proche(parseFloat(res.pendant.top), res.m1.avant.y / res.H * 100, 0.01);
+    assert.match(res.pendant.transform, new RegExp('rotate\\(' + (Math.round((res.m1.avant.angle + 90) * 100) / 100).toString().replace('.', '\\.') + 'deg\\)'), 'tourne avec l\'avant-bras');
+    proche(parseFloat(res.tombe.top), res.mf.sol / res.H * 100, 0.01);
+    assert.equal(res.tasse.visibility, 'hidden', 'lâchée : cachée');
+    assert.deepEqual(res.encore, res.pendant, 'même image quel que soit l\'ordre');
   } finally { await page.fermer(); }
 });
 

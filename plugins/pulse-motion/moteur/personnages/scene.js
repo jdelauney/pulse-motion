@@ -187,6 +187,26 @@
     }
     M.surRendu(rendre);
     rendre(M.temps ? M.temps() : 0);
+    // Mains des personnages (repère de la scène, au temps de chacun) : pour les objets tenus.
+    M.personnages = {
+      W: W, H: H,
+      connu: function (div) { return persos.some(function (p) { return p.div === div; }); },
+      mains: function (div, t) {
+        var p = persos.filter(function (x) { return x.div === div; })[0];
+        if (!p) return null;
+        var tp = M.tempsVuPar ? M.tempsVuPar(div, t) : t;
+        var pose = placer(p, tp);
+        var r = S.calculer(pose, p.gabarit), A = r.articulations, e = r.efficace;
+        function point(nom) { return [e.x + A[nom][0] * e.echelle, e.y + A[nom][1] * e.echelle]; }
+        var out = { sol: pose.y + (S.sol(p.gabarit) + 7) * p.echelle };
+        [['avant', 'Avant'], ['arriere', 'Arriere']].forEach(function (c) {
+          var h = point('main' + c[1]), k = point('coude' + c[1]);
+          out[c[0]] = { x: h[0], y: h[1], angle: Math.atan2(h[1] - k[1], h[0] - k[0]) * 180 / Math.PI };
+        });
+        return out;
+      }
+    };
+    if (M.demarrerObjetsTenus) M.demarrerObjetsTenus();
     // La place du décor peut changer avec la taille de l'image : les sols courbes sont remesurés.
     if (typeof window !== 'undefined' && window.addEventListener) {
       window.addEventListener('resize', function () {
