@@ -330,3 +330,30 @@ test('atteindre, rencontre, regarder, relais : erreurs d\'assemblage et effets d
   } finally { await page.fermer(); }
 });
 
+test('groupe dans la page : trois membres en file, espacés et décalés', { skip: !navigateur && 'Chrome ou Edge introuvable' }, async () => {
+  const SCENE_G = `<section data-scene="chiffre">
+  <p id="nombre" data-tween="nombre 0→1250 cubic-out" data-dur="3">0</p>
+  <div id="file" data-personnage="touffu" data-groupe="3" data-ecart="5" data-decalage="0.4" data-x="10" data-sol="90" data-taille="20">
+    <i data-action="marcher" data-vers="40" data-start="0" data-dur="1.5"></i>
+  </div>
+</section>`;
+  const r = assembler({ dossier: video(SCENE_G), dossierStyles: STYLES });
+  assert.equal(r.ok, true, JSON.stringify(r.erreurs));
+  const page = await ouvrirPage({ navigateur, largeur: 1280, hauteur: 720 });
+  try {
+    await page.aller(pathToFileURL(r.fichier).href);
+    const res = await page.evaluer(`(async () => {
+      await M.pret;
+      const sc = M.minutage.scenes.find((s) => s.id === 'chiffre');
+      const x = (i) => { const m = /translate\\(([-\\d.e]+)/.exec(document.querySelector('#file-' + i + ' [data-pm-perso-racine]').getAttribute('transform')); return +m[1]; };
+      await M.seek(sc.debut + 0.2); const debut = [1, 2, 3].map(x);
+      await M.seek(sc.fin - 0.05); const fin = [1, 2, 3].map(x);
+      return { debut, fin, n: document.querySelectorAll('[data-personnage]').length, erreurs: (M.erreurs || []).map((e) => e.message) };
+    })()`);
+    assert.deepEqual(res.erreurs, []);
+    assert.equal(res.n, 3);
+    assert.ok(res.debut[0] > 0.10 * 1600 + 1 && Math.abs(res.debut[2] - 0.0 * 1600) < 1, `le 3e n'est pas encore parti : ${res.debut}`);
+    proche(res.fin[0] - res.fin[1], 0.05 * 1600, 0.5); proche(res.fin[1] - res.fin[2], 0.05 * 1600, 0.5);
+  } finally { await page.fermer(); }
+});
+

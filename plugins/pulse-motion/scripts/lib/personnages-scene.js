@@ -13,6 +13,7 @@ const { lireAttributs } = require('./extraire.js');
 const P = require('./personnages.js');
 const K = require('../../moteur/clips.js');
 const C = require('../../moteur/courbes.js');
+const { deplierGroupes } = require('./groupes-personnages.js');
 
 // Les commentaires HTML sont reconnus d'abord, et laissés tels quels (une balise commentée ne compte pas).
 const BALISE = /<!--[\s\S]*?-->|<(\/?)([a-zA-Z][\w-]*)\b((?:[^>"']|"[^"]*"|'[^']*')*)>/g;
@@ -27,8 +28,11 @@ const VISEMES = ['A', 'E', 'I', 'O', 'U', 'MBP', 'FV', 'L'];
 
 function erreur(scene, message) { return { regle: 'personnage-invalide', gravite: 'erreur', scene, message: `Scène « ${scene} » : ${message}` }; }
 
-function preparerPersonnages(html, { scene, lu, voix = false }) {
-  const erreurs = [];
+function preparerPersonnages(html0, { scene, lu, voix = false, dureeTemps = null }) {
+  // Groupes dépliés d'abord en personnages ordinaires (validés ensuite comme les autres).
+  const deplie = deplierGroupes(html0, { scene, dureeTemps });
+  const html = deplie.html;
+  const erreurs = deplie.erreurs.slice();
   const utilises = { dessins: new Set(), gabarits: new Set() };
   if (!/data-personnage|data-action|data-tenu-par/.test(html)) return { html, utilises, erreurs, parle: false };
   let parle = false;
@@ -75,6 +79,7 @@ function preparerPersonnages(html, { scene, lu, voix = false }) {
       } else utilises.dessins.add(nom);
       return tout;
     }
+    if (a['data-membre'] !== undefined) erreurs.push(erreur(scene, `data-membre="${a['data-membre']}" hors d'un groupe : il sert dans un conteneur data-groupe.`));
     if (a['data-action'] === undefined) return tout;
     const type = a['data-action'].trim();
     const dans = parent && parent.personnage !== null ? parent.personnage : null;
