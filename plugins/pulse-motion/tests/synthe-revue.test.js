@@ -53,14 +53,15 @@ test('revue : accord final de tonique audible (au moins une demi-mesure), même 
   }
 });
 
-test('revue : la montée occupe la dernière seconde de l\'avant-dernière scène', () => {
+test('revue : la montée occupe la dernière seconde avant la dernière scène (son vrai début, transition comprise)', () => {
   for (const [ambiance, frontiere] of [['calme', 5.05], ['entrainant', 14], ['tech', 9.3]]) {
     const scenes = [{ debut: 0, fin: 4 }, { debut: 3.5, fin: frontiere }, { debut: frontiere - 0.5, fin: frontiere + 6 }];
     const p = A.generer({ ambiance, intensite: 1, duree: frontiere + 6, scenes });
     const riser = P.evenements(p, { duree: frontiere + 6 }).filter((x) => x.instrument === 'riser');
     assert.equal(riser.length, 1, ambiance);
     const pas = P.dureeMesure(p.tempo) / 16;
-    assert.ok(Math.abs(riser[0].t - (frontiere - 1)) <= pas, `${ambiance} : début ${riser[0].t}`);
-    assert.ok(Math.abs(riser[0].t + riser[0].duree - frontiere) <= 2 * pas, `${ambiance} : fin ${riser[0].t + riser[0].duree}`);
+    const debutDerniere = frontiere - 0.5;
+    assert.ok(Math.abs(riser[0].t - (debutDerniere - 1)) <= pas, `${ambiance} : début ${riser[0].t}`);
+    assert.ok(Math.abs(riser[0].t + riser[0].duree - debutDerniere) <= 2 * pas, `${ambiance} : fin ${riser[0].t + riser[0].duree}`);
   }
 });
