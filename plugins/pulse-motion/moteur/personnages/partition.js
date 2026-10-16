@@ -2,11 +2,14 @@
  *
  *   var e = M.partition.etatAuTemps(partition, t, bibliotheque, gabarit);   // { pose, x, vue, corps }
  *
- * partition = { x0, vue0, calme, largeur, echelle, actions: [{ type, debut, fin, vers?, pose?, clip?, vue?, expression?, bouche?, piste? }] }
- *   temps absolus (résolus par le minutage) ; x en % de la largeur de la scène ; largeur en unités de la scène ;
- *   echelle : unités de scène par unité du squelette.
- * - Position : x0, puis interpolée pendant chaque marche ou course (« vers »), gardée après ; « clip » : démarche à soi
- *   (mouvement en boucle) à la place de la marche ou de la course.
+ * partition = { x0, sol0?, vue0, calme, largeur, hauteur?, echelle, sols?, actions: [{ type, debut, fin, vers?, sol?, hauteur?,
+ *   courbe?, pose?, clip?, vue?, expression?, bouche?, piste? }] }
+ *   temps absolus (résolus par le minutage) ; x en % de la largeur de la scène ; largeur et hauteur en unités de la scène ;
+ *   echelle : unités de scène par unité du squelette ; sol (ligne des pieds) : % de la hauteur, ou « #id » d'un tracé dont
+ *   sols[id](x) donne la hauteur (sol courbe).
+ * - Position (x, sol) : x0 et sol0, puis interpolés pendant chaque trajet, gardés après. Trajets : « marcher », « courir »
+ *   (démarche : « clip », mouvement en boucle), « glisser » (sans marcher, « courbe »), « bondir » (le saut, arc de
+ *   « hauteur » % au milieu). D'un sol à l'autre : mélange progressif (pente, montée sur un tracé).
  * - Corps, par priorité : pose ou geste (« jouer ») en cours, le plus récent ; sinon marche ou course (phase calée sur la
  *   distance parcourue : pas de glissement) ; sinon repos. Fondu de 0,25 s à chaque changement, sans mémoire.
  * - Vue : vue0 ; une marche se tourne dans le sens du trajet (sauf « vue » donnée) ; « tourner » interpole.
@@ -26,8 +29,9 @@
   'use strict';
 
   var FONDU = 0.25;
-  var DEPLACEMENTS = ['marcher', 'courir'];
+  var ALLURES = { marcher: 'marche', courir: 'course', glisser: 'glisse', bondir: 'bond' };
   var GESTES = ['pose', 'jouer'];
+  var SOL = 90;
 
   var memo = typeof WeakMap === 'function' ? new WeakMap() : null;
   function structure(part) {
@@ -43,49 +47,101 @@
   function lisse(k) { k = Math.max(0, Math.min(1, k)); return k * k * (3 - 2 * k); }
   function triees(actions) { return actions.slice().sort(function (a, b) { return a.debut - b.debut; }); }
 
-  /** Trajets successifs : { debut, fin, de, vers, allure, vue? } (x en %). Un trajet qui commence avant la fin du
-   *  précédent part de la position atteinte à cet instant ; le précédent s'arrête là. */
+  /** Hauteur du sol (% de l'image) pour une valeur (nombre, ou « #id » d'un tracé) à la position x. */
+  function solValeur(part, v, x) {
+    if (typeof v === 'number') return v;
+    var f = typeof v === 'string' && part.sols ? part.sols[v.replace(/^#/, '')] : null;
+    return typeof f === 'function' ? f(x) : SOL;
+  }
+  function solDepart(part) { return part.sol0 === undefined || part.sol0 === null ? SOL : part.sol0; }
+
+  /** Avancement du trajet à t (0 → 1), selon sa courbe pour un glissement. */
+  function avancement(d, t) {
+    var u = Math.max(0, Math.min(1, (t - d.debut) / (d.fin - d.debut)));
+    return d.allure === 'glisse' ? d.courbe(u) : u;
+  }
+
+  /** Position { x, sol } dans un trajet, à t (borné à son arrêt). */
+  function positionTrajet(part, d, t) {
+    t = Math.min(t, d.arret);
+    var u = Math.max(0, Math.min(1, (t - d.debut) / (d.fin - d.debut)));
+    var k = avancement(d, t);
+    var x = d.de + (d.vers - d.de) * k;
+    var s0 = solValeur(part, d.solDe, x), s1 = solValeur(part, d.solVers, x);
+    var sol = s0 + (s1 - s0) * k;
+    if (d.allure === 'bond') sol -= d.hauteur * 4 * u * (1 - u);
+    return { x: x, sol: sol };
+  }
+
+  function courbeDe(nom) {
+    var C = typeof require === 'function' && typeof module === 'object' ? require('../courbes.js') : (typeof M !== 'undefined' ? M : null);
+    var f = null;
+    try { f = C && C.courbeNommee ? C.courbeNommee(nom || 'sine-inout') : null; } catch (e) { f = null; }
+    return typeof f === 'function' ? f : lisse;
+  }
+
+  /** Trajets successifs : { debut, fin, arret, de, vers, solDe, solVers, allure, … } (x en %). Un trajet qui commence avant
+   *  la fin du précédent part de la position atteinte à cet instant ; le précédent s'arrête là (« arret »). */
   function calculerTrajets(part) {
-    var x = part.x0, out = [];
+    var x = part.x0, sol = solDepart(part), out = [];
     triees(part.actions).forEach(function (a) {
-      if (DEPLACEMENTS.indexOf(a.type) < 0) return;
+      if (!ALLURES[a.type]) return;
       var prec = out[out.length - 1];
-      if (prec && a.debut < prec.fin) {
-        x = prec.de + (prec.vers - prec.de) * Math.max(0, a.debut - prec.debut) / (prec.fin - prec.debut);
-        prec.vers = x; prec.fin = Math.max(prec.debut + 1e-6, a.debut);
+      if (prec && a.debut < prec.arret) {
+        prec.arret = Math.max(prec.debut + 1e-6, a.debut);
+        var p = positionTrajet(part, prec, prec.arret);
+        x = p.x;
+        // Un trajet coupé sur un même tracé le garde ; sinon, le sol atteint (un nombre).
+        sol = prec.solDe === prec.solVers && prec.allure !== 'bond' ? prec.solVers : p.sol;
       }
-      out.push({ debut: a.debut, fin: Math.max(a.fin, a.debut + 1e-6), de: x, vers: a.vers, allure: a.type === 'courir' ? 'course' : 'marche', vue: a.vue, clip: a.clip });
-      x = a.vers;
+      var fin = Math.max(a.fin, a.debut + 1e-6);
+      var d = { debut: a.debut, fin: fin, arret: fin, de: x, vers: typeof a.vers === 'number' ? a.vers : x, solDe: sol,
+        solVers: a.sol === undefined || a.sol === null ? sol : a.sol, allure: ALLURES[a.type], vue: a.vue, clip: a.clip,
+        hauteur: typeof a.hauteur === 'number' ? a.hauteur : 15, courbe: a.type === 'glisser' ? courbeDe(a.courbe) : null, a: a };
+      out.push(d);
+      x = d.vers; sol = d.solVers;
     });
     return out;
   }
   function trajets(part) { return structure(part).trajets; }
 
-  function xAuTemps(part, t) {
-    var x = part.x0, tr = structure(part).trajets;
+  /** Position { x, sol } à t (x en % de la largeur, sol en % de la hauteur). */
+  function positionAuTemps(part, t) {
+    var x = part.x0, solV = solDepart(part), tr = structure(part).trajets;
     for (var i = 0; i < tr.length; i++) {
       var d = tr[i];
       if (t < d.debut) break;
-      if (t < d.fin) return d.de + (d.vers - d.de) * (t - d.debut) / (d.fin - d.debut);
-      x = d.vers;
+      if (t < d.arret) return positionTrajet(part, d, t);
+      var p = positionTrajet(part, d, d.arret);
+      x = p.x;
+      solV = d.arret < d.fin ? (d.solDe === d.solVers && d.allure !== 'bond' ? d.solVers : p.sol) : d.solVers;
     }
-    return x;
+    return { x: x, sol: solValeur(part, solV, x) };
   }
+  function xAuTemps(part, t) { return positionAuTemps(part, t).x; }
 
-  /** Distance parcourue (unités de scène) depuis le début du trajet en cours. */
+  /** Distance parcourue (unités de scène) depuis le début du trajet en cours, pente comprise. */
   function distanceDansTrajet(part, d, t) {
-    return Math.abs(d.vers - d.de) * Math.min(1, (t - d.debut) / (d.fin - d.debut)) * part.largeur / 100;
+    var a = positionTrajet(part, d, d.debut), b = positionTrajet(part, d, t);
+    var dx = (b.x - a.x) * part.largeur / 100, dy = (b.sol - a.sol) * (part.hauteur || 0) / 100;
+    return Math.sqrt(dx * dx + dy * dy);
   }
 
-  /** État du corps à t : { type, a?, trajet?, debut }. */
+  /** État du corps à t : { type, a?, trajet?, debut }. Un bond est un geste (le saut) ; un glissement ne change pas le corps. */
   function etatCorps(part, t) {
     var actif = null;
     part.actions.forEach(function (a) {
-      if (GESTES.indexOf(a.type) >= 0 && a.debut <= t && t < a.fin && (!actif || a.debut >= actif.debut)) actif = a;
+      if (GESTES.indexOf(a.type) >= 0 && a.debut <= t && t < a.fin && (!actif || a.debut >= actif.debut)) actif = { type: a.type, a: a, debut: a.debut };
     });
-    if (actif) return { type: actif.type, a: actif, debut: actif.debut };
     var tr = structure(part).trajets;
-    for (var i = 0; i < tr.length; i++) if (tr[i].debut <= t && t < tr[i].fin) return { type: tr[i].allure, trajet: tr[i], debut: tr[i].debut };
+    tr.forEach(function (d) {
+      if (d.allure === 'bond' && d.debut <= t && t < d.arret && (!actif || d.debut >= actif.debut)) actif = { type: 'bond', trajet: d, debut: d.debut };
+    });
+    if (actif) return actif;
+    for (var i = 0; i < tr.length; i++) {
+      var d = tr[i];
+      if ((d.allure === 'marche' || d.allure === 'course') && d.debut <= t && t < d.arret) return { type: d.allure, trajet: d, debut: d.debut };
+    }
     return { type: 'repos', debut: -Infinity };
   }
 
@@ -100,6 +156,12 @@
       var tt = t - e.a.debut;
       if (!c.boucle) tt = Math.min(tt, K.duree(c));
       return c.additif ? K.ajouter({}, c, tt, bib) : K.echantillonner(c, tt, bib, gabarit);
+    }
+    if (e.type === 'bond') {
+      var saut = (e.trajet.clip && bib.clips[e.trajet.clip]) || bib.clips.saut;
+      if (!saut) return {};
+      var ts = saut.boucle ? t - e.trajet.debut : Math.max(0, Math.min(1, (t - e.trajet.debut) / (e.trajet.fin - e.trajet.debut))) * K.duree(saut);
+      return saut.additif ? K.ajouter({}, saut, ts, bib) : K.echantillonner(saut, ts, bib, gabarit);
     }
     if (e.type === 'marche' || e.type === 'course') {
       // Démarche à soi (data-clip : un mouvement en boucle), sinon la marche ou la course.
@@ -119,7 +181,7 @@
   function calculerBornes(part, tr) {
     var b = [];
     part.actions.forEach(function (a) { if (GESTES.indexOf(a.type) >= 0) b.push(a.debut, a.fin); });
-    tr.forEach(function (d) { b.push(d.debut, d.fin); });
+    tr.forEach(function (d) { if (d.allure !== 'glisse') b.push(d.debut, d.arret); });
     return b.sort(function (x, y) { return x - y; });
   }
 
@@ -146,6 +208,7 @@
   function calculerVues(part, tr) {
     var ev = [];
     tr.forEach(function (d) {
+      if (d.allure === 'glisse' && typeof d.vue !== 'number') return; // un glissement garde la vue
       if (typeof d.vue !== 'number' && Math.abs(d.vers - d.de) < 1e-9) return; // sur place : pas de demi-tour
       ev.push({ debut: d.debut, duree: FONDU, vue: typeof d.vue === 'number' ? d.vue : (d.vers >= d.de ? 0 : 180) });
     });
@@ -196,7 +259,8 @@
       if (bib.clips.clignement) pose = K.ajouter(pose, bib.clips.clignement, t, bib);
     }
     var vue = vueAuTemps(part, t);
-    return { pose: Object.assign({}, S.REPOS, pose, { vue: vue }), x: xAuTemps(part, t), vue: vue, corps: corps.type };
+    var pos = positionAuTemps(part, t);
+    return { pose: Object.assign({}, S.REPOS, pose, { vue: vue }), x: pos.x, sol: pos.sol, vue: vue, corps: corps.type };
   }
 
   /** Hauteur du personnage debout (unités du squelette) : des pieds au haut de la tête. */
@@ -205,5 +269,5 @@
     return g.cuisse + g.tibia + g.baseTete + 2 * g.tete.ry - 2;
   }
 
-  return { etatAuTemps: etatAuTemps, xAuTemps: xAuTemps, vueAuTemps: vueAuTemps, trajets: trajets, hauteur: hauteur, FONDU: FONDU };
+  return { etatAuTemps: etatAuTemps, xAuTemps: xAuTemps, positionAuTemps: positionAuTemps, vueAuTemps: vueAuTemps, trajets: trajets, hauteur: hauteur, FONDU: FONDU };
 });
