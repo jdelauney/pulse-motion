@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="fr" data-racine="../" data-commande="atelier-personnages">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>/pulse-motion:atelier-personnages – Wiki Pulse Motion</title>
+<meta name="description" content="Ouvrir l'atelier des personnages pour poser et animer un personnage à la souris (« je veux régler son salut moi-même », « laisse-moi placer ses bras »).">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/animations.css">
+<script src="../js/donnees.js" defer></script>
+<script src="../js/gabarit.js" defer></script>
+<script src="../js/animations.js" defer></script>
+<script src="../js/console.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<div class="mise-en-page">
+<nav class="laterale" aria-label="Les commandes" data-laterale></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille pastille-etape" data-couleur="0">Étape 4 · Personnaliser</p>
+<h1><code>/pulse-motion:atelier-personnages</code></h1>
+<p class="chapo">Ouvrir l'atelier des personnages pour poser et animer un personnage à la souris (« je veux régler son salut moi-même », « laisse-moi placer ses bras »).</p>
+</header>
+
+<ul class="sommaire" aria-label="Sur cette page" data-sommaire></ul>
+
+<section id="description">
+<h2>Description</h2>
+<p>L'<em>atelier des personnages</em> est un éditeur qui s'ouvre dans votre navigateur. Pulse Motion l'ouvre sur la pose ou le mouvement que vous demandez (« son salut », c'est le coucou), avec votre personnage : celui de la vidéo s'il n'y en a qu'un, sinon il vous demande lequel. Sans personnage dessiné, c'est le personnage en bâtonnets.</p>
+<p>Dans l'atelier :</p>
+<ul>
+<li><strong>Glisser une articulation</strong> tourne le membre.</li>
+<li><strong><kbd>Maj</kbd> + glisser une main ou un pied</strong> l'amène sous la souris : le bras ou la jambe suit.</li>
+<li><strong>La frise du bas</strong> porte les moments du mouvement : vous réglez le personnage à chaque moment.</li>
+<li><strong>« Enregistrer »</strong> range le résultat avec votre vidéo ; « annule » le défait.</li>
+</ul>
+<p>L'atelier sert aussi à <strong>corriger une découpe</strong>, pour un personnage tiré de votre illustration avec <a href="decouper-personnage.html"><code>/pulse-motion:decouper-personnage</code></a> : cliquer une forme puis un os du squelette pour l'y ranger, glisser les ronds pour déplacer les articulations, « Découper » pour voir le résultat qui marche, et « Enregistrer ».</p>
+<p>Quand vous dites avoir fini, Pulse Motion relit ce que vous avez enregistré, regarde la planche du mouvement et vous le montre en une phrase.</p>
+</section>
+
+<section id="pourquoi">
+<h2>Pourquoi l'utiliser</h2>
+<ul>
+<li><strong>Certains gestes se montrent mieux qu'ils ne se disent.</strong> Placer une main à un endroit précis, régler l'angle d'un coude : c'est plus simple à la souris.</li>
+<li><strong>Vous voyez le résultat en le faisant</strong>, sous tous les angles.</li>
+<li><strong>Vous ne risquez rien.</strong> Tant que vous n'avez pas enregistré, rien ne change ; après, « annule » revient en arrière.</li>
+<li><strong>Une découpe se corrige sans tout recommencer.</strong> Un coude mal placé se déplace d'un geste.</li>
+</ul>
+</section>
+
+<section id="quand">
+<h2>Quand l'utiliser</h2>
+<ol class="parcours" aria-label="Le parcours Pulse Motion, cette commande à l'étape mise en avant">
+  <li data-couleur="1"><span class="parcours-numero">1</span> Créer</li>
+  <li data-couleur="3"><span class="parcours-numero">2</span> Retoucher</li>
+  <li data-couleur="4"><span class="parcours-numero">3</span> Exporter</li>
+  <li data-couleur="0" aria-current="step"><span class="parcours-numero">4</span> Personnaliser</li>
+</ol>
+<ul>
+<li><strong>Après <a href="animer-personnage.html"><code>/pulse-motion:animer-personnage</code></a></strong>, quand une phrase ne suffit plus pour obtenir le geste exact.</li>
+<li><strong>Après <a href="dessiner-personnage.html"><code>/pulse-motion:dessiner-personnage</code></a></strong>, pour voir votre personnage sous tous les angles.</li>
+<li><strong>Après <a href="decouper-personnage.html"><code>/pulse-motion:decouper-personnage</code></a></strong>, si un membre tourne autour du mauvais point ou si une forme est dans le mauvais membre.</li>
+</ul>
+<p>Tout ce que les personnages savent faire est réuni sur la page <a href="../personnages.html">Personnages</a>.</p>
+</section>
+
+<section id="arguments">
+<h2>Comment la lancer</h2>
+<pre class="commande"><code>/pulse-motion:atelier-personnages [le mouvement ou la pose à ouvrir, et le personnage]</code></pre>
+<p class="legende">Entre crochets <code>[ ]</code> : facultatif. Vous pouvez aussi lancer la commande seule et dire ensuite ce que vous voulez régler.</p>
+<pre class="commande"><code>/pulse-motion:atelier-personnages je veux régler son salut moi-même</code></pre>
+<pre class="commande"><code>/pulse-motion:atelier-personnages je veux voir le cuisinier sous tous les angles</code></pre>
+<pre class="commande"><code>/pulse-motion:atelier-personnages laisse-moi corriger la découpe</code></pre>
+<p>Vous dites seulement « ouvre l'éditeur », et votre vidéo a aussi des effets de particules ? Pulse Motion vous demande lequel : « Les personnages (Recommandé) » ou « Les effets de particules ». Pour les effets, c'est <a href="atelier-particules.html"><code>/pulse-motion:atelier-particules</code></a>.</p>
+</section>
+
+<section id="produit">
+<h2>Ce qu'elle produit</h2>
+<ul>
+<li><strong>L'atelier ouvert dans votre navigateur</strong>, sur le mouvement ou la pose demandés.</li>
+<li><strong>Ce que vous enregistrez</strong>, rangé avec la vidéo : la pose ou le mouvement réglé, ou la découpe corrigée. Si vous l'avez enregistré sous un nouveau nom, Pulse Motion vous le dit.</li>
+<li><strong>Une planche</strong> du résultat, quand vous avez fini, pour le revoir en mouvement.</li>
+</ul>
+</section>
+
+<section id="risques">
+<h2>Risques et précautions</h2>
+<ul>
+<li><strong>Sans vidéo dans le dossier, rien n'est enregistré.</strong> L'atelier s'ouvre quand même, pour regarder et essayer ; Pulse Motion vous prévient.</li>
+<li><strong>Dites à Claude quand vous avez fini.</strong> C'est à ce moment que Pulse Motion relit ce que vous avez enregistré et vous montre le résultat.</li>
+<li><strong>Un enregistrement se défait.</strong> « annule » revient à l'état d'avant, comme pour toute retouche.</li>
+</ul>
+<aside class="encadre encadre-conseil"><p><strong>Conseil :</strong> commencez par le moment le plus parlant du geste (le bras tout en haut d'un salut), enregistrez, regardez, puis affinez les autres moments sur la frise.</p></aside>
+</section>
+
+<section id="problemes">
+<h2>Problèmes et solutions</h2>
+<details class="probleme"><summary>J'ai cliqué sur « Enregistrer » et rien n'a changé dans ma vidéo</summary><p>Le dossier ouvert ne contient sans doute pas de vidéo : l'atelier règle, mais n'enregistre pas. Ouvrez le dossier de votre vidéo dans VS Code et relancez la commande.</p></details>
+<details class="probleme"><summary>Pulse Motion me demande quel éditeur ouvrir</summary><p>Votre vidéo a des personnages et des effets de particules, et « l'éditeur » peut désigner les deux. Choisissez « Les personnages » ; pour les effets, c'est <a href="atelier-particules.html"><code>/pulse-motion:atelier-particules</code></a>.</p></details>
+<details class="probleme"><summary>Un membre tourne autour du mauvais point</summary><p>L'articulation est mal placée dans la découpe. Demandez « laisse-moi corriger la découpe », puis glissez le rond de l'articulation (le coude, le genou) au centre de celle-ci, et « Enregistrer ».</p></details>
+<details class="probleme"><summary>Je veux revenir à la version d'avant</summary><p>Dites « annule », par exemple avec <a href="retoucher.html"><code>/pulse-motion:retoucher annule</code></a> : votre enregistrement est défait.</p></details>
+<details class="probleme"><summary>« node » introuvable</summary><p>Node.js n'est pas installé. Installez-le en version LTS depuis <a href="https://nodejs.org/fr/download" target="_blank" rel="noopener noreferrer">nodejs.org</a>, puis relancez Claude Code. Voir les <a href="../prerequis.html#node">prérequis</a>.</p></details>
+</section>
+
+<section id="exemples">
+<h2>Exemples</h2>
+<div class="conversation" data-titre="Exemple : régler un salut">
+<p data-role="vous">/pulse-motion:atelier-personnages je veux régler son salut moi-même</p>
+<p data-role="outil">pulse-motion personnages liste --dossier .</p>
+<p data-role="outil">pulse-motion personnages atelier coucou --dessin cuisinier --dossier .</p>
+<p data-role="claude">L'atelier des personnages est ouvert sur le salut du cuisinier. Glissez une articulation pour tourner le membre ; Maj + glisser une main ou un pied l'amène sous la souris. La frise du bas porte les moments du salut : « Enregistrer » range le résultat avec la vidéo, et « annule » le défait.</p>
+<p data-role="vous">J'ai fini.</p>
+<p data-role="outil">pulse-motion personnages planche coucou --dessin cuisinier --dossier .</p>
+<p data-role="claude">Votre salut est enregistré : le bras monte plus haut et la main reste ouverte. Voici la planche.</p>
+</div>
+<div class="conversation" data-titre="Exemple : corriger une découpe">
+<p data-role="vous">/pulse-motion:atelier-personnages le coude de la mascotte est mal placé</p>
+<p data-role="outil">pulse-motion personnages atelier --decoupe mascotte --dossier .</p>
+<p data-role="claude">L'atelier montre votre illustration découpée. Cliquez une forme puis un os pour l'y ranger, glissez les ronds pour déplacer les articulations. « Découper » montre le résultat qui marche ; « Enregistrer » le range.</p>
+<p data-role="vous">C'est bon.</p>
+<p data-role="outil">pulse-motion personnages planche marche --dessin mascotte --dossier .</p>
+<p data-role="claude">Le bras de la mascotte plie maintenant au bon endroit. Voici sa marche.</p>
+</div>
+</section>
+
+<section id="liees">
+<h2>Commandes liées</h2>
+<ul>
+<li><a href="animer-personnage.html"><code>/pulse-motion:animer-personnage</code></a> : créer une pose ou un mouvement en une phrase.</li>
+<li><a href="decouper-personnage.html"><code>/pulse-motion:decouper-personnage</code></a> : découper votre illustration avant de la corriger ici.</li>
+<li><a href="atelier-particules.html"><code>/pulse-motion:atelier-particules</code></a> : l'éditeur des effets de particules.</li>
+</ul>
+</section>
+
+<nav class="suite" aria-label="Commande précédente et suivante" data-suite></nav>
+</article>
+</div>
+</main>
+</body>
+</html>

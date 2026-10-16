@@ -10,7 +10,8 @@ window.PULSE_WIKI = {
       "couleur": 1,
       "commandes": [
         "creer",
-        "reprendre"
+        "reprendre",
+        "outils"
       ]
     },
     {
@@ -19,7 +20,8 @@ window.PULSE_WIKI = {
       "nom": "Retoucher",
       "couleur": 3,
       "commandes": [
-        "retoucher"
+        "retoucher",
+        "voix"
       ]
     },
     {
@@ -37,7 +39,12 @@ window.PULSE_WIKI = {
       "nom": "Personnaliser",
       "couleur": 0,
       "commandes": [
-        "style"
+        "style",
+        "dessiner-personnage",
+        "animer-personnage",
+        "decouper-personnage",
+        "atelier-personnages",
+        "atelier-particules"
       ]
     }
   ],
@@ -67,6 +74,10 @@ window.PULSE_WIKI = {
       "href": "son.html"
     },
     {
+      "titre": "Personnages",
+      "href": "personnages.html"
+    },
+    {
       "titre": "Catalogue",
       "href": "catalogue.html"
     },
@@ -91,11 +102,25 @@ window.PULSE_WIKI = {
       "note": ""
     },
     {
+      "nom": "outils",
+      "etape": "creer",
+      "description": "Vérifier que l'ordinateur est prêt pour les vidéos et installer ce qui manque (ffmpeg, la transcription, Python), avec votre accord. Ne crée ni ne modifie aucune vidéo",
+      "forme": "",
+      "note": ""
+    },
+    {
       "nom": "retoucher",
       "etape": "retoucher",
       "description": "Retoucher la vidéo en une phrase (« ralentis la scène 3 », « change le titre », « annule ») et la voir aussitôt",
       "forme": "[la retouche en une phrase]",
       "note": "facultatif : sans phrase, Pulse Motion vous demande ce qu'il faut changer"
+    },
+    {
+      "nom": "voix",
+      "etape": "retoucher",
+      "description": "Enregistrer, importer et caler la voix de la vidéo, ou faire écouter sa musique (« j'enregistre la scène 2 », « j'ai un fichier de ma voix », « recale les mots »)",
+      "forme": "",
+      "note": ""
     },
     {
       "nom": "exporter",
@@ -110,6 +135,41 @@ window.PULSE_WIKI = {
       "description": "Créer son propre style de vidéo (« un style papercraft aux couleurs pop-art ») : allure, couleurs, polices et mouvements, vérifiés avant usage",
       "forme": "[le style voulu en une phrase]",
       "note": "facultatif : sans description, Pulse Motion vous la demande"
+    },
+    {
+      "nom": "dessiner-personnage",
+      "etape": "personnaliser",
+      "description": "Dessiner un personnage pour la vidéo, ou retoucher son dessin, et le montrer qui bouge (« dessine-moi un cuisinier rondouillard avec une toque », « change sa tenue en rouge »)",
+      "forme": "[le personnage à dessiner, ou la retouche de son dessin]",
+      "note": "facultatif : vous pouvez aussi le décrire ensuite, avec vos mots"
+    },
+    {
+      "nom": "animer-personnage",
+      "etape": "personnaliser",
+      "description": "Créer ou modifier une pose ou un mouvement de personnage, et le montrer sous plusieurs angles (« fais une pose où il se gratte la tête », « il marche trop vite »)",
+      "forme": "[la pose ou le mouvement voulu]",
+      "note": "facultatif : vous pouvez aussi le décrire ensuite, avec vos mots"
+    },
+    {
+      "nom": "decouper-personnage",
+      "etape": "personnaliser",
+      "description": "Animer l'illustration d'un personnage que vous fournissez (Illustrator, Inkscape, Figma…) en la découpant sur le squelette de Pulse Motion (« voici notre mascotte, fais-la marcher »)",
+      "forme": "[le fichier SVG du personnage]",
+      "note": "facultatif : vous pouvez aussi donner le fichier ensuite"
+    },
+    {
+      "nom": "atelier-personnages",
+      "etape": "personnaliser",
+      "description": "Ouvrir l'atelier des personnages pour poser et animer un personnage à la souris (« je veux régler son salut moi-même », « laisse-moi placer ses bras »)",
+      "forme": "[le mouvement ou la pose à ouvrir, et le personnage]",
+      "note": "facultatif : vous pouvez aussi le dire ensuite, avec vos mots"
+    },
+    {
+      "nom": "atelier-particules",
+      "etape": "personnaliser",
+      "description": "Ouvrir l'atelier des effets de particules pour régler un effet en le regardant (« laisse-moi régler les étincelles », « je veux voir ce que donne la neige »)",
+      "forme": "[l'effet à régler]",
+      "note": "facultatif : vous pouvez aussi le dire ensuite, avec vos mots"
     }
   ]
 };

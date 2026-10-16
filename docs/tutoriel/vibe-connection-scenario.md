@@ -281,7 +281,7 @@ L'appel à l'action, porté par deux Touffus maladroits et leurs pancartes.
 - **Lecture muette :** sans voix off, tout passe par les cartons et l'expressivité des yeux et des touffes. Chaque carton reste lisible au moins 2 secondes une fois entièrement affiché.
 - **Post LinkedIn :** placer le lien d'installation dans le premier commentaire, comme l'annonce la pancarte de la séquence 7.
 - **Personnages :** les Touffus restent une création originale (corps de stickman, sans tunique ni design repris d'un jeu existant). Les bruitages sont des sons originaux.
-- **Son :** pulse-motion n'a pas encore de moteur de bruitages (prévu dans la feuille de route). La musique se pose dans le déroulé ; les bruitages se mixent à part, sur l'export MP4. La mention de fin dit donc « animé avec », et non « entièrement fabriqué avec ».
+- **Son :** la musique est une partition écrite pour le film (déroulé) ; les bruitages sont les sons fabriqués par pulse-motion (`whoosh`, `pop`, `clic`, `tic`, `impact`, `carillon`, `ding`, `blip`, `montee`, `souffle`…), ou des fichiers WAV originaux rangés dans `assets/sons/`, tous mixés dans la page et dans l'export MP4. Correspondances : voir l'étape 15 du tutoriel 3 du wiki (`docs/tutoriels/vibe-connection.html`).
 
 ## Fabrication avec pulse-motion
 
@@ -290,19 +290,23 @@ Un projet, une scène par séquence (`scenes/01-generique.html` … `scenes/07-p
 | Besoin du scénario | Outil pulse-motion |
 | --- | --- |
 | Format carré, 25 images/s | `"format": { "ratio": "1:1", "ips": 25 }` |
-| Tout calé sur la musique | `"tempo": { "bpm": 120 }` ; temps écrits `data-start="4t"`, pas de marche en `var(--pm-temps)` |
+| Tout calé sur la musique | musique composée à 120 bpm (`"musique": { "generee": "entrainant", "tempo": 120 }`), qui se cale sur l'image : une section par séquence, pile à son début ; humeur par séquence (`scenes[].musique` : `silence` pour la 4, `intense` pour la 5, `calme` pour la 6) ; gestes calés en temps `data-start="4t"` |
 | « PULSE-MOTION » en onde, logo final | `data-lettres="onde" data-pas="0.02"` + `class="pm-degrade"` (traînée en `--pm-degrade`) |
 | « VIBE CONNECTION » qui tombe lettre par lettre | `data-lettres="chute" data-pas="0.05"` + `class="pm-degrade pm-contour"` |
 | Cartons en frappe, en fondu flouté | `data-lettres="frappe" data-pas="0.03"`, `data-mots="flou"` |
 | Gros plan d'ouverture, dézoom, secousse du logo | `data-camera="zoom 3→1 1.2+0.4 cubic-out; y 72→50 1.2+0.4 cubic-out; secousse 0.6 1.8+0.2"` |
 | Travelling avec parallaxe (séquences 2 et 5) | `data-camera="x 50→90 3+3 linear"` + `data-profondeur="0.1"` (étoiles), `"0.5"` (collines) |
-| Accéléré ×2 du designer (séquence 3) | `data-vitesse="9+2 x2"` sur le conteneur du designer |
-| Arrêt sur image désaturé (séquence 4) | `data-gel="1+7"` (jusqu'à la fin de la scène) sur le décor et les corps des Touffus + `saturation 1→0.6 1+0.3 ; saturation 0.6→1 5+0.4` dans sa caméra, qui continue de zoomer ; les pupilles dans un calque hors du gel, pour qu'elles seules bougent |
+| Accéléré ×2 du designer (séquence 3) | `data-vitesse="9+2 x2"` sur le décor et le pont ; les personnages vivent au temps réel : le designer joue son mouvement « dessiner » deux fois plus vite pendant ces 2 s |
+| Arrêt sur image désaturé (séquence 4) | `data-gel="1+7"` (jusqu'à la fin de la scène) sur le décor + `saturation 1→0.6 1+0.3 ; saturation 0.6→1 5+0.4` dans sa caméra, qui continue de zoomer ; les Touffus ne se figent pas avec le décor : une pose tenue, `data-calme="non"` (ni respiration ni clignement), puis le mouvement « lever-les-yeux » où seules les pupilles bougent |
 | Planches posées une par une | `data-start` en demi-temps (`0.5t` d'écart), courbe `back-out` |
 | Lanternes, étoiles de la tape dans la main | effets de particules `etincelles`, `paillettes` |
-| Touffus, pancartes, terminal | dessinés en SVG dans des scènes composées librement (pas de scène toute faite) |
+| Touffus | personnages de pulse-motion : `<div data-personnage="touffu" data-x="…" data-sol="…" data-taille="14">` et leurs actions minutées (`marcher`, `courir`, `pose`, `jouer`, `tourner`, `expression`) ; le designer et la silhouette sont deux dessins dérivés du Touffu (`touffu-designer` avec béret et crayon en accessoires, `touffu-silhouette`) ; les gestes propres au film (« chut », « sursaut », « dessiner », « mesurer », « fier »…) sont des poses et mouvements rangés dans `personnages/` du projet |
+| Touffus qui montent du bas (séquence 1) | les déplacements des personnages sont horizontaux : la scène déplace un cadre autour de chaque Touffu (`data-tween`) |
+| Pancartes, flèche, terminal, pont | éléments dessinés en SVG dans des scènes composées librement (pas de scène toute faite), animés aux instants du scénario |
 | Extrait réel de la séquence 6 | image PNG tirée de l'export de « La chaîne du froid », dans `assets/` ; la caméra zoome dessus (le moteur n'embarque pas encore de fichier vidéo) |
 
 * [x] Valider la version courte de la commande affichée dans le terminal en séquence 5 (`/pulse-motion:creer …`)
 * [ ] Préparer le lien d'installation pour le commentaire
 * [ ] Composer ou choisir la musique à 120 bpm et les bruitages originaux
+
+La fabrication pas à pas, commande par commande, est le tutoriel 3 du wiki : `docs/tutoriels/vibe-connection.html`.

@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="fr" data-racine="../" data-commande="atelier-particules">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>/pulse-motion:atelier-particules – Wiki Pulse Motion</title>
+<meta name="description" content="Ouvrir l'atelier des effets de particules pour régler un effet en le regardant (« laisse-moi régler les étincelles », « je veux voir ce que donne la neige »).">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/animations.css">
+<script src="../js/donnees.js" defer></script>
+<script src="../js/gabarit.js" defer></script>
+<script src="../js/animations.js" defer></script>
+<script src="../js/console.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<div class="mise-en-page">
+<nav class="laterale" aria-label="Les commandes" data-laterale></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille pastille-etape" data-couleur="0">Étape 4 · Personnaliser</p>
+<h1><code>/pulse-motion:atelier-particules</code></h1>
+<p class="chapo">Ouvrir l'atelier des effets de particules pour régler un effet en le regardant (« laisse-moi régler les étincelles », « je veux voir ce que donne la neige »).</p>
+</header>
+
+<ul class="sommaire" aria-label="Sur cette page" data-sommaire></ul>
+
+<section id="description">
+<h2>Description</h2>
+<p>Les <a href="../catalogue.html#effets">effets de particules</a> (étincelles, confettis, neige, fumée…) se retouchent d'ordinaire en une phrase : « plus d'étincelles », « en bleu ». Cette commande vous laisse les régler <strong>à l'œil</strong>, avec des curseurs, en regardant le résultat. Selon votre demande, Pulse Motion vous ouvre l'un de ces deux endroits :</p>
+<ul>
+<li><strong>Le bouton « Effets » de l'aperçu</strong>, pour un effet déjà posé dans une scène. Vous choisissez l'effet dans la liste, ou vous cliquez dessus dans l'image ; les curseurs changent l'image tout de suite, et la lecture boucle sur l'effet. « Enregistrer » range vos réglages dans la scène. « Recette complète » montre tous les réglages de l'effet, et « Enregistrer comme nouvel effet » en fait un effet à vous, que la scène utilise aussitôt.</li>
+<li><strong>La page d'atelier</strong>, pour travailler un effet seul (« laisse-moi régler les étincelles »). L'effet tourne en boucle, sur un fond clair (celui de votre charte) ou sombre ; vous déplacez et agrandissez à la souris la zone où naissent les particules. « Enregistrer » range l'effet avec votre vidéo : vos réglages deviennent ses réglages de départ.</li>
+</ul>
+<p>Quand vous dites avoir fini, Pulse Motion relit le réglage retenu et vous le dit en une phrase.</p>
+</section>
+
+<section id="pourquoi">
+<h2>Pourquoi l'utiliser</h2>
+<ul>
+<li><strong>Un effet se juge à l'œil.</strong> La bonne quantité de neige ou la bonne vitesse d'une gerbe se trouve plus vite en la regardant.</li>
+<li><strong>Le résultat est immédiat</strong>, sans recharger la page.</li>
+<li><strong>Vous pouvez créer votre propre effet</strong> à partir d'un effet livré, et le réutiliser dans la vidéo.</li>
+<li><strong>Rien n'est perdu.</strong> Chaque enregistrement passe par l'<a href="../concepts.html#historique">historique</a> : « annule » le défait.</li>
+</ul>
+</section>
+
+<section id="quand">
+<h2>Quand l'utiliser</h2>
+<ol class="parcours" aria-label="Le parcours Pulse Motion, cette commande à l'étape mise en avant">
+  <li data-couleur="1"><span class="parcours-numero">1</span> Créer</li>
+  <li data-couleur="3"><span class="parcours-numero">2</span> Retoucher</li>
+  <li data-couleur="4"><span class="parcours-numero">3</span> Exporter</li>
+  <li data-couleur="0" aria-current="step"><span class="parcours-numero">4</span> Personnaliser</li>
+</ol>
+<ul>
+<li><strong>Après <a href="creer.html"><code>/pulse-motion:creer</code></a></strong>, quand une scène a un effet que vous voulez affiner.</li>
+<li><strong>Pour essayer un effet</strong> avant de le mettre dans une scène : « je veux voir ce que donne la neige ».</li>
+<li><strong>À la place de <a href="retoucher.html"><code>/pulse-motion:retoucher</code></a></strong> quand une phrase ne suffit plus. Pour un changement simple (« plus d'étincelles », « enlève les confettis »), une retouche va plus vite.</li>
+</ul>
+</section>
+
+<section id="arguments">
+<h2>Comment la lancer</h2>
+<pre class="commande"><code>/pulse-motion:atelier-particules [l'effet à régler]</code></pre>
+<p class="legende">Entre crochets <code>[ ]</code> : facultatif. Vous pouvez aussi lancer la commande seule et dire ensuite quel effet régler.</p>
+<pre class="commande"><code>/pulse-motion:atelier-particules laisse-moi régler les étincelles</code></pre>
+<pre class="commande"><code>/pulse-motion:atelier-particules je veux voir ce que donne la neige</code></pre>
+<p>Les effets livrés : étincelles, braises, confettis, feu d'artifice, fumée, feu, poussière, neige, pluie, paillettes, énergie, explosion. Ils sont décrits dans le <a href="../catalogue.html#effets">catalogue</a>.</p>
+<p>Vous dites seulement « ouvre l'éditeur », et votre vidéo a aussi des personnages ? Pulse Motion vous demande lequel : « Les effets de particules » ou « Les personnages ». Pour les personnages, c'est <a href="atelier-personnages.html"><code>/pulse-motion:atelier-personnages</code></a>.</p>
+</section>
+
+<section id="produit">
+<h2>Ce qu'elle produit</h2>
+<ul>
+<li><strong>Les réglages de l'effet, rangés dans la scène</strong>, quand vous enregistrez depuis le bouton « Effets » de l'aperçu.</li>
+<li><strong>Un effet à vous</strong>, rangé avec la vidéo dans <code>effets/&lt;nom&gt;.json</code>, quand vous enregistrez un nouvel effet ou un effet réglé dans la page d'atelier.</li>
+<li><strong>Une phrase</strong> qui résume le réglage retenu, quand vous avez fini.</li>
+</ul>
+</section>
+
+<section id="risques">
+<h2>Risques et précautions</h2>
+<ul>
+<li><strong>Hors du dossier d'une vidéo, l'atelier n'enregistre pas.</strong> Il s'ouvre quand même pour essayer ; Pulse Motion vous prévient.</li>
+<li><strong>Une scène modifiée entre-temps n'est pas écrasée.</strong> Si la scène a changé pendant que vous régliez (une retouche, par exemple), l'atelier refuse d'enregistrer et vous propose de recharger la page.</li>
+<li><strong>Le nom d'un nouvel effet</strong> s'écrit en minuscules, avec des chiffres et des tirets, et doit être différent de ceux des effets livrés.</li>
+</ul>
+<aside class="encadre encadre-conseil"><p><strong>Conseil :</strong> un effet sert un propos : mettre en valeur un chiffre, célébrer une conclusion, poser une ambiance. Un effet discret bien placé vaut mieux que trois effets spectaculaires.</p></aside>
+</section>
+
+<section id="problemes">
+<h2>Problèmes et solutions</h2>
+<details class="probleme"><summary>J'ai enregistré, mais rien n'a changé dans ma vidéo</summary><p>Le dossier ouvert ne contient sans doute pas de vidéo : l'atelier règle, mais n'enregistre pas. Ouvrez le dossier de votre vidéo dans VS Code et relancez la commande.</p></details>
+<details class="probleme"><summary>L'atelier refuse d'enregistrer et propose de recharger la page</summary><p>La scène a été modifiée pendant que vous régliez l'effet. Rechargez la page, refaites votre réglage, puis enregistrez : rien de la retouche n'a été écrasé.</p></details>
+<details class="probleme"><summary>La neige ne se voit pas sur un fond clair</summary><p>La neige et la poussière sont blanches au départ. Sur un fond clair, choisissez la couleur primaire de votre charte, ou un gris-bleu.</p></details>
+<details class="probleme"><summary>Pulse Motion me demande quel éditeur ouvrir</summary><p>Votre vidéo a des effets et des personnages, et « l'éditeur » peut désigner les deux. Choisissez « Les effets de particules » ; pour les personnages, c'est <a href="atelier-personnages.html"><code>/pulse-motion:atelier-personnages</code></a>.</p></details>
+<details class="probleme"><summary>« node » introuvable</summary><p>Node.js n'est pas installé. Installez-le en version LTS depuis <a href="https://nodejs.org/fr/download" target="_blank" rel="noopener noreferrer">nodejs.org</a>, puis relancez Claude Code. Voir les <a href="../prerequis.html#node">prérequis</a>.</p></details>
+</section>
+
+<section id="exemples">
+<h2>Exemples</h2>
+<div class="conversation" data-titre="Exemple : régler un effet déjà posé">
+<p data-role="vous">/pulse-motion:atelier-particules laisse-moi régler les étincelles de la scène 3</p>
+<p data-role="outil">pulse-motion apercu . --ouvrir</p>
+<p data-role="claude">L'aperçu est ouvert. Cliquez sur « Effets », puis choisissez les étincelles : les curseurs changent l'image tout de suite, et la lecture boucle sur l'effet. Cliquez sur « Enregistrer » quand elles vous plaisent.</p>
+<p data-role="vous">C'est fait.</p>
+<p data-role="claude">Les étincelles de la scène 3 sont enregistrées : plus nombreuses et un peu plus lentes, dans la couleur d'accent de votre charte.</p>
+</div>
+<div class="conversation" data-titre="Exemple : essayer un effet seul">
+<p data-role="vous">/pulse-motion:atelier-particules je veux voir ce que donne la neige</p>
+<p data-role="outil">pulse-motion atelier neige</p>
+<p data-role="claude">L'atelier est ouvert sur la neige, qui tombe en boucle. Passez du fond clair au fond sombre, déplacez à la souris la zone d'où tombent les flocons, réglez les curseurs. « Enregistrer » range l'effet avec votre vidéo.</p>
+</div>
+</section>
+
+<section id="liees">
+<h2>Commandes liées</h2>
+<ul>
+<li><a href="retoucher.html"><code>/pulse-motion:retoucher</code></a> : retoucher un effet en une phrase, l'ajouter ou l'enlever.</li>
+<li><a href="atelier-personnages.html"><code>/pulse-motion:atelier-personnages</code></a> : l'éditeur des personnages.</li>
+</ul>
+</section>
+
+<nav class="suite" aria-label="Commande précédente et suivante" data-suite></nav>
+</article>
+</div>
+</main>
+</body>
+</html>

@@ -95,10 +95,11 @@
 <tr><td><strong>La charte</strong></td><td>« mets mes couleurs », « prends les couleurs de mon logo », « applique la charte Dupont », « change la police des titres », « passe en sombre »</td></tr>
 <tr><td><strong>La transition</strong></td><td>« change la transition », « coupe sèche entre les scènes 4 et 5 »</td></tr>
 <tr><td><strong>La voix</strong></td><td>« baisse la voix », « je réenregistre la scène 3 », « j'ai un nouvel enregistrement », « change ce que je dis dans l'intro »</td></tr>
-<tr><td><strong>La musique</strong></td><td>« plus calme », « plus entraînant », « une autre variante », « baisse la musique », « enlève la musique », « fais-moi écouter »</td></tr>
+<tr><td><strong>La musique</strong></td><td>« plus calme », « plus entraînant », « une autre variante », « baisse la musique », « enlève la musique », « coupe la musique pendant la scène 4 », « la musique à fond sur la démo », « fais-moi écouter »</td></tr>
 <tr><td><strong>Les bruitages</strong></td><td>« mets un son quand le titre arrive », « moins fort », « enlève les bruitages »</td></tr>
 <tr><td><strong>Les sous-titres</strong></td><td>« sous-titres en haut », « mot par mot », « enlève-les de l'image », « enlève les sous-titres »</td></tr>
 <tr><td><strong>La structure</strong></td><td>« ajoute une scène sur le lavage des mains », « supprime la scène 4 »</td></tr>
+<tr><td><strong>Un personnage</strong></td><td>« dessine-moi un cuisinier », « il marche trop vite », « fais-lui une tête surprise », « ouvre l'éditeur de personnage » : Pulse Motion suit la commande dédiée, <a href="dessiner-personnage.html"><code>/pulse-motion:dessiner-personnage</code></a>, <a href="decouper-personnage.html"><code>/pulse-motion:decouper-personnage</code></a>, <a href="animer-personnage.html"><code>/pulse-motion:animer-personnage</code></a> ou <a href="atelier-personnages.html"><code>/pulse-motion:atelier-personnages</code></a></td></tr>
 <tr><td><strong>Revenir en arrière</strong></td><td>« annule », « reviens en arrière »</td></tr>
 </tbody>
 </table>
@@ -119,7 +120,7 @@
 <ul>
 <li><strong>Une durée ou une graphie précise est respectée.</strong> Si vous demandez « la scène 3 dure 4 secondes » ou une orthographe particulière, Pulse Motion contrôle sans corriger seul, pour ne pas défaire votre demande. Il vous signale seulement ce qui pose problème.</li>
 <li><strong>Un changement de style réécrit certaines scènes.</strong> Les scènes toutes faites sont recopiées dans le nouveau style ; les scènes composées librement sont réécrites par un animateur. « annule » ramène l'ancien style.</li>
-<li><strong>Une musique composée fixe le pas des durées.</strong> Chaque scène doit commencer sur un temps de la musique (à 120 battements par minute, toutes les demi-secondes). Le contrôle ne corrige alors plus seul les durées, pour ne pas décaler la musique : Pulse Motion les ajuste lui-même, sur les temps.</li>
+<li><strong>La musique suit l'image.</strong> Une durée ou une transition changée ne décale pas la musique composée : elle est refaite sur le nouveau minutage, chaque scène avec sa section. Une musique en fichier, elle, ne bouge pas : avec son tempo, chaque scène doit commencer sur un temps, et Pulse Motion ajuste lui-même les durées.</li>
 </ul>
 <aside class="encadre encadre-conseil"><p><strong>Conseil :</strong> une retouche à la fois. Si vous en enchaînez trois dans une même phrase, « annule » les défera toutes les trois ensemble.</p></aside>
 </section>
