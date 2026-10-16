@@ -29,6 +29,59 @@
     return { mots: s.voix.mots, origine: m.debut + (typeof s.voix.debut === 'number' ? s.voix.debut : 0.3) };
   }
 
+  /** Sol : un nombre (% de la hauteur) ou « #id » d'un tracé. */
+  function valeurSol(texte) {
+    var v = String(texte || '').trim();
+    if (v.charAt(0) === '#') return v;
+    var n = Number(v);
+    return v !== '' && isFinite(n) ? n : 90;
+  }
+
+  /** Tracé d'un sol courbe -> fonction x (% de la largeur) -> hauteur (% de la hauteur), mesurée une fois, sans les
+   *  transformations de caméra ni de parallaxe (repère du conteneur du personnage). Le plus haut point à un même x. */
+  function mesurerTrace(chemin, div, sec) {
+    var modifies = [];
+    function neutraliser(el) {
+      for (; el && el !== sec.parentElement; el = el.parentElement) {
+        if (!el.style) continue;
+        modifies.push([el, el.style.transform, el.style.translate]);
+        el.style.transform = 'none'; el.style.translate = 'none';
+      }
+    }
+    var affichage = sec.style.display;
+    sec.style.display = '';
+    neutraliser(chemin); neutraliser(div);
+    var r = div.getBoundingClientRect(), points = [];
+    try {
+      var m = chemin.getScreenCTM(), long = chemin.getTotalLength();
+      var n = Math.max(200, Math.min(4000, Math.ceil(long / 2)));
+      for (var i = 0; i <= n; i++) {
+        var p = chemin.getPointAtLength(long * i / n), q = new DOMPoint(p.x, p.y).matrixTransform(m);
+        if (r.width > 0 && r.height > 0) points.push([(q.x - r.left) / r.width * 100, (q.y - r.top) / r.height * 100]);
+      }
+    } catch (e) { points = []; }
+    modifies.reverse().forEach(function (x) { x[0].style.transform = x[1]; x[0].style.translate = x[2]; });
+    sec.style.display = affichage;
+    if (!points.length) return null;
+    var pas = 0.25, x0 = Infinity, x1 = -Infinity;
+    points.forEach(function (p) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); });
+    var debut = Math.floor(x0 / pas), nb = Math.max(1, Math.ceil(x1 / pas) - debut + 1), table = new Array(nb);
+    points.forEach(function (p) { var k = Math.round(p[0] / pas) - debut; if (table[k] === undefined || p[1] < table[k]) table[k] = p[1]; });
+    // Cases vides : interpolées entre leurs voisines.
+    var connus = [];
+    for (var k = 0; k < nb; k++) if (table[k] !== undefined) connus.push(k);
+    for (var j = 0; j < nb; j++) {
+      if (table[j] !== undefined) continue;
+      var a = null, b = null;
+      connus.forEach(function (c) { if (c < j) a = c; else if (b === null && c > j) b = c; });
+      table[j] = a === null ? table[b] : b === null ? table[a] : table[a] + (table[b] - table[a]) * (j - a) / (b - a);
+    }
+    return function (x) {
+      var f = Math.max(0, Math.min(nb - 1, x / pas - debut)), i0 = Math.floor(f), i1 = Math.min(nb - 1, i0 + 1);
+      return table[i0] + (table[i1] - table[i0]) * (f - i0);
+    };
+  }
+
   function lireAction(el, temps, idScene) {
     var a = { type: el.getAttribute('data-action'), debut: temps.debut, fin: temps.fin };
     if (a.type === 'parler') {
@@ -37,6 +90,9 @@
       a.piste = v ? M.levres.piste(v.mots, v.origine, a.debut, a.fin) : [];
     }
     if (el.hasAttribute('data-vers')) a.vers = nombre(el, 'data-vers', 50);
+    if (el.hasAttribute('data-sol')) a.sol = valeurSol(el.getAttribute('data-sol'));
+    if (el.hasAttribute('data-hauteur')) a.hauteur = nombre(el, 'data-hauteur', 15);
+    if (el.hasAttribute('data-courbe')) a.courbe = el.getAttribute('data-courbe').trim();
     if (el.hasAttribute('data-vue')) a.vue = nombre(el, 'data-vue', 0);
     ['pose', 'clip', 'expression', 'bouche'].forEach(function (k) { if (el.hasAttribute('data-' + k)) a[k] = el.getAttribute('data-' + k).trim(); });
     return a;
@@ -77,21 +133,32 @@
         if (temps) actions.push(lireAction(el, temps, idScene));
       });
       var echelle = nombre(div, 'data-taille', 40) / 100 * H / P.hauteur(gabarit);
+      var sol0 = div.hasAttribute('data-sol') ? valeurSol(div.getAttribute('data-sol')) : 90;
+      // Sols courbes : chaque tracé cité (conteneur ou actions), mesuré une fois.
+      var sols = {};
+      [sol0].concat(actions.map(function (a) { return a.sol; })).forEach(function (v) {
+        if (typeof v !== 'string' || sols[v.slice(1)] !== undefined) return;
+        var id = v.slice(1), chemin = null;
+        try { chemin = sec.querySelector('#' + (typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(id) : id)); } catch (e) { chemin = null; }
+        sols[id] = chemin && chemin.tagName.toLowerCase() === 'path' ? mesurerTrace(chemin, div, sec) : null;
+      });
       persos.push({
-        habillage: habillage, gabarit: gabarit, sol: nombre(div, 'data-sol', 90) / 100 * H, echelle: echelle,
-        partition: { x0: nombre(div, 'data-x', 50), vue0: nombre(div, 'data-vue', 0), calme: div.getAttribute('data-calme') !== 'non', largeur: W, echelle: echelle, actions: actions }
+        div: div, habillage: habillage, gabarit: gabarit, echelle: echelle,
+        partition: { x0: nombre(div, 'data-x', 50), sol0: sol0, vue0: nombre(div, 'data-vue', 0), calme: div.getAttribute('data-calme') !== 'non', largeur: W, hauteur: H, echelle: echelle, sols: sols, actions: actions }
       });
     });
     if (!persos.length) return;
 
     function placer(p, t) {
       var e = P.etatAuTemps(p.partition, t, D.bib, p.gabarit);
-      return Object.assign(e.pose, { x: e.x / 100 * W, y: p.sol - (S.sol(p.gabarit) + 7) * p.echelle, echelle: p.echelle });
+      return Object.assign(e.pose, { x: e.x / 100 * W, y: e.sol / 100 * H - (S.sol(p.gabarit) + 7) * p.echelle, echelle: p.echelle });
     }
     function rendre(t) {
       persos.forEach(function (p) {
-        var contexte = p.gabarit.osEnPlus.length ? { temps: t, poseA: function (u) { return placer(p, u); } } : undefined;
-        p.habillage.rendre(S.calculer(placer(p, t), p.gabarit, contexte));
+        // Le personnage vit au temps de ses conteneurs (arrêt sur image, accéléré).
+        var tp = M.tempsVuPar ? M.tempsVuPar(p.div, t) : t;
+        var contexte = p.gabarit.osEnPlus.length ? { temps: tp, poseA: function (u) { return placer(p, u); } } : undefined;
+        p.habillage.rendre(S.calculer(placer(p, tp), p.gabarit, contexte));
       });
     }
     M.surRendu(rendre);
