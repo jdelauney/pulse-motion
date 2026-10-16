@@ -75,3 +75,20 @@ test('partition : pistes calées sur les scènes à l\'assemblage, scène inconn
   const r2 = assembler({ dossier: dir, dossierStyles: STYLES, ecrire: false });
   assert.match(r2.erreurs.filter((e) => e.regle === 'partition-invalide').map((e) => e.message).join(' '), /scène « fin » inconnue \(scènes : intro, chiffre\)/);
 });
+
+test('grille fixe : musique en fichier avec tempo, ou partition continue ; pas de note de durée nulle aux jointures', () => {
+  const { grilleFixe } = require('../scripts/lib/deroule.js');
+  const base = { scenes: [] };
+  assert.equal(grilleFixe({ ...base, musique: { fichier: 'assets/m.mp3' }, tempo: { bpm: 120 } }), true);
+  assert.equal(grilleFixe({ ...base, musique: { generee: 'entrainant', tempo: 120 } }), false);
+  const calee = { partition: 'p.json' }; Object.defineProperty(calee, 'tempoPartition', { value: 120 }); Object.defineProperty(calee, 'partitionCalee', { value: true });
+  assert.equal(grilleFixe({ ...base, musique: calee }), false);
+  const continue_ = { partition: 'p.json' }; Object.defineProperty(continue_, 'tempoPartition', { value: 120 }); Object.defineProperty(continue_, 'partitionCalee', { value: false });
+  assert.equal(grilleFixe({ ...base, musique: continue_ }), true);
+  for (const tempo of [123, 133, 161]) {
+    const min = calculerMinutage([{ id: 'a', duree: 3.7 }, { id: 'b', duree: 2.9, transition: 'fondu' }, { id: 'c', duree: 4.1 }], {});
+    const gen = A.generer({ ambiance: 'tech', tempo, intensite: 0.9, graine: 2, duree: min.duree, scenes: min.scenes.map((s) => ({ debut: s.debut, fin: s.fin })) });
+    assert.ok(P.evenements(gen, { duree: min.duree }).every((e) => e.duree > 1e-4), `${tempo} bpm : aucune note de durée nulle`);
+  }
+  assert.deepEqual(P.validerPartition({ tempo: 120, mesures: 4, pistes: [{ instrument: 'kick', motif: ['x 1/4'], scene: 'demo', de: 4 }] }), [], 'piste calée sans « a » : jusqu\'à la fin de sa scène');
+});
