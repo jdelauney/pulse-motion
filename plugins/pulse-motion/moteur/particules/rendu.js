@@ -30,6 +30,7 @@
  * plis éclairés (axe comprimé relevé hors du plan, normale tournée vers l'œil ; tissu plat : éclairage 1 exactement),
  * revers assombri (face arrière) ; corde en ruban de son épaisseur ; couleur, dégradé (e.tables, en bandes si « bandes »),
  * image de assets/ ou photographie de l'élément (e.photo), mailles ; dessinée à sa place dans la liste, mélange alpha.
+ * Son réactif (P7) : couleur et taille × coefSon (P.WGSL_SON) à C.tau.
  * Milieu fluide (P5c) : o.milieu (P.Milieu, milieu.js) dessiné dans la cible HDR après les fonds, avant les couches
  * héritées et les particules : triangle plein écran, textures de la grille échantillonnées en bicubique (Catmull-Rom,
  * 16 lectures) ; fumée : couleur × (0,35 + 0,65 × lumière reçue), alpha 1 − e^(−1,5 ρ) ; feu : la fumée, plus l'émission
@@ -62,7 +63,7 @@ fn vsPlein(@builtin(vertex_index) i: u32) -> @builtin(position) vec4f {
 }
 `;
 
-  const WGSL_PARTICULES = P.WGSL_COMMUN + P.WGSL_FRAGMENTS + /* wgsl */ `
+  const WGSL_PARTICULES = P.WGSL_COMMUN + P.WGSL_FRAGMENTS + P.WGSL_SON + /* wgsl */ `
 struct Calque { largeur: f32, hauteur: f32, delta: f32, dureeImage: f32, k: u32, trie: u32, flou: u32, fondu: u32,
   tau: f32, r0: f32, r1: f32, r2: f32 };
 struct Contact { local: vec2f, obstacle: u32, pose: f32, impact: f32, nImpacts: u32, opacite: f32, cellule: u32 };
@@ -180,7 +181,8 @@ fn vsQuad(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> S
   // Fragments : couleur du pixel d'origine, fondu des particules en trop, taille vers celle des pixels de la cible.
   var fr = Fragment(vec4f(1.0), 1.0, p.taille);
   if (aFragment(F_PIXELS | F_CIBLE)) { fr = fragmentRendu(p); }
-  let taille = fr.taille * table(256u, u) * f;
+  // Son réactif (P7) : taille et éclat × coefficients à τ de l'image.
+  let taille = fr.taille * table(256u, u) * f * coefSon(3u, C.tau);
   let recul = f32(ii % echantillons) / f32(echantillons) * C.dureeImage;
   let centre = perspective(p.pos + p.vel * (C.delta - recul), p.z);
   var coins = array<vec2f, 6>(vec2f(-1.0, -1.0), vec2f(1.0, -1.0), vec2f(-1.0, 1.0), vec2f(-1.0, 1.0), vec2f(1.0, -1.0), vec2f(1.0, 1.0));
@@ -220,7 +222,7 @@ fn vsQuad(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> S
   o.pos = ecran(centre + q);
   o.uv = c;
   o.uvTex = uvTex;
-  o.couleur = vec4f(couleur.rgb * table(320u, u), couleur.a * table(384u, u) * fondu(idx) * fr.opacite);
+  o.couleur = vec4f(couleur.rgb * table(320u, u) * coefSon(2u, C.tau), couleur.a * table(384u, u) * fondu(idx) * fr.opacite);
   o.alea = p.alea;
   o.echantillons = f32(echantillons);
   o.idx = idx;
@@ -253,14 +255,14 @@ fn vsTrainee(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -
   let u = p.age / p.vie;
   let k = 1.0 - f32(j) / f32(N);
   let f = 1.0 + 0.35 * p.z;
-  let demiLargeur = p.taille * table(256u, u) * f * 0.5 * k;
+  let demiLargeur = p.taille * table(256u, u) * f * 0.5 * k * coefSon(3u, C.tau);
   let cote = select(-1.0, 1.0, (vi & 1u) == 1u);
   o.pos = ecran(perspective(a, p.z) + normale * demiLargeur * cote);
   o.uv = vec2f(0.0, cote);
   o.uvTex = vec2f(f32(j) / f32(N), cote * 0.5 + 0.5);
   var couleur = teinte(u);
   // [module-couleur]
-  o.couleur = vec4f(couleur.rgb * table(320u, u), couleur.a * table(384u, u) * k * fondu(idx));
+  o.couleur = vec4f(couleur.rgb * table(320u, u) * coefSon(2u, C.tau), couleur.a * table(384u, u) * k * fondu(idx));
   o.alea = p.alea;
   o.echantillons = 1.0;
   o.idx = idx;
@@ -294,7 +296,7 @@ fn vsEclat(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> 
   sortie.uvTex = (centre + decal - vec2f(ef(184u), ef(185u))) / max(2.0 * vec2f(ef(164u), ef(165u)), vec2f(1e-6)) + 0.5;
   var couleur = teinte(u);
   // [module-couleur]
-  sortie.couleur = vec4f(couleur.rgb * table(320u, u), couleur.a * table(384u, u) * fondu(idx));
+  sortie.couleur = vec4f(couleur.rgb * table(320u, u) * coefSon(2u, C.tau), couleur.a * table(384u, u) * fondu(idx));
   sortie.alea = p.alea;
   sortie.echantillons = 1.0;
   sortie.idx = idx;

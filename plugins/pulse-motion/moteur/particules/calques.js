@@ -43,6 +43,11 @@
  * Formes exactes : masque de chaque élément data-obstacle="forme" à la fin de son minutage (M.figer.masque), une fois,
  * après la porte de disponibilité (polices chargées) ; champs de distance sur le GPU (P.creerFormes), recréés après une
  * perte du GPU (masques gardés) ; refaits après un changement de polices.
+ * Fonds multipasses (P7) : avant le dessin du calque, chaque fond multipasse actif est amené au pas ⌊τ × pps⌋
+ * (P.Shaders.avancerMultipasse) ; taille de ses tampons : sa zone mesurée à son début (zoneAuDebut). Tampons et
+ * instantanés libérés quand la scène est masquée ou le fond hors de sa fenêtre (recréés au besoin : même image), et
+ * à la perte du GPU (faces WebGL2 comprises). Fond GLSL entièrement transparent à sa première image : alerte.
+ * M.shaders.multipasses(idScene) -> [{ ordre, nom, etat, instantanes }]   (tests)
  * Fonds et auras par shader (P6) : balises data-pm-shader (M.donnees.shaders, usage « fond ») ; une scène a des calques
  * dès qu'elle a des effets ou des fonds ; shaders compilés au démarrage du GPU (P.Shaders) ; chaque fond actif (de son
  * début à sa fin, ou à la fin de la scène sans data-dur) est mesuré à t (repère de l'ancre, ou de la balise : plein cadre)
@@ -89,11 +94,20 @@
  * (M.rendreScene) : elle ne dépend que de τ, jamais du chemin suivi pour arriver à t.
  * Modules WGSL des recettes (P6) : compilés au démarrage du GPU (Rendu.verifierModules) ; un module qui ne compile pas désactive
  * son effet (panneau, M.shaders.erreurs, usage « module ») ; l'atelier refuse une recette dont un module ne compile pas.
+ * Son réactif (P7) : la porte de disponibilité attend M.son.pret quand la vidéo lit le son (M.son.actif() ; l'atelier ne démarre pas l'analyse) ; avant chaque simulation, les tables du son de l'effet
+ * (modulation, salves au son : P.tablesSon) sont posées sur ses émetteurs (em.son) ; salve sans instant : alerte ; piste
+ * illisible : effet désactivé (export refusé tant qu'il est visible) ; shader (fond, transition, post-traitement) qui la suit
+ * non dessiné, panneau, M.shaders.erreurs (export refusé) ; variables CSS qui la suivent : M.son.refus (export refusé).
+ * M.particules.sonEffet(idScene, ordre) -> [{ n, cMax, instants } | null]   (tests)
+ * Son réactif des shaders (P7) : textures du son (P.Shaders.ecrireSon) écrites une fois par instant rendu ; entrées son
+ * (M.son.lire de la piste du shader, à t) et image (iFrame, iTimeDelta) des fonds et de la composition.
+ * M.shaders.sonEcrit() -> { t, pistes }   (tests)
  * Navigateur seulement ; dépend de horloge, gpu, simulation, voisinage (interactions, P5a : largeur de la scène passée à
  * la simulation pour sa grille de voisinage), rendu.
  */
 (function (racine) {
   'use strict';
+  if (!racine.document) { (racine.M = racine.M || {}).particulesInterne = racine.M.particulesInterne || {}; racine.M.particulesInterne.tablesSon = tablesSonPur; return; }
   const M = racine.M = racine.M || {};
   const P = M.particulesInterne = M.particulesInterne || {};
   const CALQUES = ['arriere', 'avant'];
@@ -421,6 +435,7 @@
     const mesures = { scenes: new Set() };
     const m = monde(f);
     m.bases = basesPour(f, device);
+    sonoriser(f);
     const sim = new P.Simulation(device, f.effet, m, f.fragments, largeurSimulation(f));
     sim.avancer(Math.max(0, (t - f.debut) * f.info.rythme - 1e-6), zonesDe(f, mesures));
     const c = sim.contributionVideo();
@@ -736,6 +751,7 @@
     membres.forEach((fx) => {
       const m = monde(fx);
       if (m) m.bases = basesPour(fx, device);
+      sonoriser(fx);
       fx.sim = new P.Simulation(device, fx.effet, m, fx.fragments, largeurSimulation(fx), milieu);
       fx.sim.emetteurs.forEach((e) => etat.rendu.preparerEmetteur(e));
     });
@@ -938,6 +954,86 @@
 
   function message(e) { return String(e && e.message || e); }
 
+  /** Son réactif (P7) : pour chaque émetteur à modulation ou salve au son, la table des coefficients (60 points par
+   *  seconde de τ, n = ⌈fin × 60⌉ + 2 ; débit, forces, couleur, taille : de + (a − de) × grandeur à t = début + τ / rythme)
+   *  et les instants des salves (τ dans [0, durée), les « max » premiers ; 1e30 ailleurs). son : M.son. -> [em.son | null] */
+  function tablesSonPur(effet, debut, rythme, son) {
+    const n = Math.ceil(effet.fin * 60) + 2;
+    const CLES = ['debit', 'forces', 'couleur', 'taille'];
+    return effet.emetteurs.map((em) => {
+      const mod = em.modulation;
+      const s = em.salveSon;
+      if (!mod && !s) return null;
+      const coefs = new Float32Array(4 * n).fill(1);
+      CLES.forEach((cle, q) => {
+        const m = mod && mod[cle];
+        if (!m) return;
+        for (let j = 0; j < n; j++) coefs[q * n + j] = m.de + (m.a - m.de) * son.lire(m.piste, debut + j / 60 / rythme)[m.par];
+      });
+      const instants = new Float32Array(s ? s.max : 0).fill(1e30);
+      if (s) {
+        const liste = s.au === 'syllabe' ? son.syllabes(s.piste) : son.battements(s.piste);
+        const taus = liste.map((t) => (t - debut) * rythme).filter((tau) => tau >= 0 && tau < effet.duree).slice(0, s.max);
+        instants.set(taus);
+      }
+      return { n, coefs, instants, cMax: mod && mod.debit ? Math.max(mod.debit.de, mod.debit.a) : 1 };
+    });
+  }
+
+  /** Tables du son posées sur les émetteurs de fx.effet (em.son) avant la création de sa simulation ; calculées une fois
+   *  par effet (fx.tablesSon), après l'analyse (porte de disponibilité). Salve au son sans instant : alerte. */
+  function sonoriser(fx) {
+    const effet = fx.effet;
+    if (!effet.pistes || !effet.pistes.length || !M.son) return;
+    if (!fx.tablesSon) {
+      fx.tablesSon = tablesSonPur(effet, fx.debut, fx.info.rythme, M.son);
+      effet.emetteurs.forEach((em, i) => {
+        const t = fx.tablesSon[i];
+        if (!t || !em.salveSon || t.instants[0] < 1e29) return;
+        const quoi = em.salveSon.au === 'syllabe' ? 'aucune syllabe détectée dans la voix' : 'aucun battement détecté dans la musique';
+        alerter('Scène « ' + fx.info.id + ' », effet « ' + effet.nom + ' » : ' + quoi + ' pendant l\'effet : la salve « au ' + em.salveSon.au + ' » ne part pas.');
+      });
+    }
+    effet.emetteurs.forEach((em, i) => { if (fx.tablesSon[i]) em.son = fx.tablesSon[i]; });
+  }
+
+  /** Message de la première piste illisible d'une liste (null : toutes lisibles, ou pas d'analyse). */
+  function pisteIllisible(pistes) {
+    if (!M.son) return null;
+    const p = (pistes || []).find((x) => M.son.erreur(x));
+    return p ? M.son.erreur(p) : null;
+  }
+
+  /** Après l'analyse (spec P7 §6) : un effet qui suit une piste illisible est désactivé (panneau ; export refusé tant qu'il
+   *  est visible) ; un shader (fond, transition, post-traitement) qui la suit n'est pas dessiné, comme un shader qui ne
+   *  compile pas (panneau ; export refusé). */
+  function verifierSon() {
+    if (!M.son) return;
+    etat.scenes.forEach((sc) => sc.effets.forEach((fx) => {
+      const m = pisteIllisible(fx.effet.pistes);
+      if (m) desactiver(fx, m);
+    }));
+    const refuserShader = (donnee, m, surPanneau) => {
+      const msg = 'Shader « ' + donnee.nom + ' » : ' + m;
+      etat.erreursShaders.push({ nom: donnee.nom, usage: donnee.usage, scene: donnee.scene, message: msg, erreurs: [] });
+      console.error('[Pulse Motion] ' + msg);
+      surPanneau(msg);
+    };
+    const retirer = (porteur, surPanneau) => {
+      const m = porteur.shader && pisteIllisible(porteur.donnee.pistes);
+      if (!m) return;
+      etat.shaders.oublier(porteur.shader);
+      porteur.shader = null;
+      refuserShader(porteur.donnee, m, surPanneau);
+    };
+    etat.scenes.forEach((sc) => sc.fonds.forEach((f) => retirer(f, (msg) => { f.erreur = msg; panneau(f.el, 'Fond non affiché : ' + msg); })));
+    const sur = (id, prefixe) => (msg) => { const s = id && sectionDe(id); if (s) panneau(s, prefixe + msg); };
+    comp.transitions.forEach((tr, id) => retirer(tr, sur(id, 'Transition remplacée par un fondu : ')));
+    comp.posts.forEach((liste, id) => liste.forEach((p) => retirer(p, sur(id, 'Post-traitement non appliqué : '))));
+    const premiere = M.minutage.scenes.length ? M.minutage.scenes[0].id : null;
+    comp.postsVideo.forEach((p) => retirer(p, sur(premiere, 'Post-traitement de la vidéo non appliqué : ')));
+  }
+
   function liberer(fx) {
     if (!fx.sim) return;
     // Effet couplé (P5c) : sa simulation appartient au groupe de sa scène, libéré tout entier.
@@ -955,9 +1051,11 @@
     if (!etat.gpu) return;
     etat.rendu_t = t;
     const { device } = etat.gpu;
+    ecrireSonShaders(t);
     etat.scenes.forEach((sc) => {
       if (sc.section.style.display === 'none') {
         sc.effets.forEach(liberer);
+        sc.fonds.forEach(libererFond);
         libererGroupe(sc);
         Object.keys(sc.calques).forEach((nom) => etat.rendu.oublierCible(sc.calques[nom]));
         return;
@@ -976,12 +1074,26 @@
     rendreComposition(t);
   }
 
+  /** Fond multipasse dont la scène est masquée ou hors de sa fenêtre : tampons et instantanés libérés ; recréés au besoin
+   *  (l'état ne dépend que de τ : même image). */
+  function libererFond(f) {
+    if (f.shader && f.shader.multi && f.shader.multi.etat && etat.shaders) etat.shaders.libererMultipasse(f.shader);
+  }
+
   /** Effet désactivé (mémoire GPU insuffisante, texture illisible) : tampons libérés, panneau ; l'export le refuse. */
   function desactiver(fx, raison) {
     fx.desactive = raison;
     liberer(fx);
     console.error('[Pulse Motion] Effet de particules : ' + raison + '.');
     panneau(fx.el, 'Effet non affiché : ' + raison);
+  }
+
+  /** Zone d'un fond à son début (cqh), pour la taille de ses tampons multipasses : la même quel que soit le chemin suivi. */
+  function zoneAuDebut(sc, f, t) {
+    M.rendreScene(sc.info.id, f.debut);
+    const r = P.mesurerReperes([f.ancre || f.el], sc.section)[0];
+    M.rendreScene(sc.info.id, t);
+    return [Math.max(1e-3, 2 * r.demi[0]), Math.max(1e-3, 2 * r.demi[1])];
   }
 
   /** Fonds affichés à t (shader compilé, dans leur fenêtre) et repère de leur zone (ancre, ou balise), mesuré à t. */
@@ -1066,6 +1178,39 @@
     await etat.gpu.device.queue.onSubmittedWorkDone();
   }
 
+  // ---- Son réactif des shaders (P7) ----
+
+  const sonShaders = { t: null, pistes: [] };
+
+  /** Textures du son de chaque piste analysée, écrites une fois par instant rendu. */
+  function ecrireSonShaders(t) {
+    if (!etat.shaders || !M.son || sonShaders.t === t) return;
+    sonShaders.t = t;
+    sonShaders.pistes = M.son.pistes();
+    sonShaders.pistes.forEach((p) => etat.shaders.ecrireSon(p, M.son.spectre(p, t), M.son.onde(p, t)));
+  }
+
+  /** Valeurs du son d'un shader à l'instant t de la vidéo (zéros sans analyse). */
+  function sonPour(donnee, t) { return M.son ? M.son.lire(donnee.piste || 'musique', t) : null; }
+
+  /** Fonds multipasses actifs (P7) : tampons amenés au pas de τ de l'image ; textures du son reposées à t ensuite. */
+  function avancerMultipasses(sc, fonds, t) {
+    let avance = false;
+    fonds.forEach((a) => {
+      const f = a.f;
+      if (!f.shader || !f.shader.multi) return;
+      if (!f.zoneMultipasse) f.zoneMultipasse = zoneAuDebut(sc, f, t);
+      etat.shaders.avancerMultipasse(f.shader, {
+        tau: (t - f.debut) * f.info.rythme, debut: f.debut, rythme: f.info.rythme, fin: (f.fin - f.debut) * f.info.rythme,
+        largeurZone: f.zoneMultipasse[0], hauteurZone: f.zoneMultipasse[1], hauteurSortie: hauteurSortie(),
+        son: (x) => sonPour(f.donnee, x),
+        textures: (x) => { if (M.son) M.son.pistes().forEach((p) => etat.shaders.ecrireSon(p, M.son.spectre(p, x), M.son.onde(p, x))); },
+      });
+      avance = true;
+    });
+    if (avance) { sonShaders.t = null; ecrireSonShaders(t); }
+  }
+
   /** Entrées d'un fond : τ depuis son début, part de sa fenêtre, zone (boîte de l'élément, échelle comprise) en cqh et en px. */
   function entreesFond(a, largeurCqh, canvas) {
     const { f, r } = a;
@@ -1079,6 +1224,9 @@
       scene: [largeurCqh, 100, canvas.width, canvas.height],
       repere: [r.centre[0], r.centre[1], r.angle, f.donnee.debord || 0],
       demi: [r.demi[0], r.demi[1], 0, 0],
+      son: sonPour(f.donnee, a.t),
+      instant: a.t,
+      image: [Math.floor((a.t - f.debut) * f.info.rythme * (M.ips || 30) + 1e-6), f.info.rythme / (M.ips || 30)],
     };
   }
 
@@ -1111,6 +1259,7 @@
         if (!fx.sim) {
           const m = monde(fx);
           if (m) m.bases = basesPour(fx, device);
+          sonoriser(fx);
           fx.sim = new P.Simulation(device, fx.effet, m, fx.fragments, largeurSimulation(fx));
           fx.sim.emetteurs.forEach((e) => etat.rendu.preparerEmetteur(e));
         }
@@ -1131,6 +1280,8 @@
     const largeurCqh = largeurScene();
     // Fonds mesurés après le retour de toutes les scènes à t.
     const fonds = fondsActifs(sc, t);
+    sc.fonds.forEach((f) => { if (!(t >= f.debut && t < f.fin)) libererFond(f); });
+    avancerMultipasses(sc, fonds, t);
     Object.keys(sc.calques).forEach((nom) => {
       const canvas = sc.calques[nom];
       ajuster(canvas, sc.section);
@@ -1142,6 +1293,14 @@
         milieu: groupe && sc.milieu.calque === nom && t >= sc.milieu.debut && t < sc.milieu.fin ? sc.groupe.milieu : null,
         fonds: fonds.filter((a) => a.f.calque === nom).map((a) => (passe) => etat.shaders.dessiner(passe, a.f.shader, entreesFond(a, largeurCqh, canvas), null, 'fond')),
       });
+    });
+    // Fond GLSL entièrement transparent à sa première image (alpha laissé à 0, ignoré sur Shadertoy) : alerte.
+    fonds.forEach((a) => {
+      if (!a.f.shader || a.f.shader.transparent !== true || a.f.alerteTransparent) return;
+      a.f.alerteTransparent = true;
+      const msg = 'Fond « ' + a.f.donnee.nom + ' » entièrement transparent : sur Shadertoy l\'alpha est ignoré, ici fragColor.a est l\'opacité ; écrire fragColor = vec4(couleur, 1.0).';
+      console.warn('[Pulse Motion] ' + msg);
+      panneauAlerte(a.f.el, msg);
     });
   }
 
@@ -1295,20 +1454,23 @@
     const canvas = canvasComposition();
     const cible = etat.composition.cible(canvas);
     const largeurCqh = largeurScene();
-    const plein = (temps, progres, duree) => ({ temps, progres, duree, mode: 1, resolution: [largeurCqh, 100, cible.largeur, cible.hauteur], scene: [largeurCqh, 100, cible.largeur, cible.hauteur] });
+    ecrireSonShaders(t);
+    const plein = (temps, progres, duree, donnee) => ({ temps, progres, duree, mode: 1, resolution: [largeurCqh, 100, cible.largeur, cible.hauteur], scene: [largeurCqh, 100, cible.largeur, cible.hauteur],
+      son: sonPour(donnee, t), instant: t, image: [Math.floor(temps * (M.ips || 30) + 1e-6), 1 / (M.ips || 30)] });
     const couches = plan.couches.map((id) => {
       const s = M.minutage.scenes.find((x) => x.id === id);
-      const e = plein((t - s.debut) * s.rythme, Math.min(1, Math.max(0, (t - s.debut) / Math.max(1e-6, s.fin - s.debut))), (s.fin - s.debut) * s.rythme);
-      return { vue: comp.photos.get(id).vue, posts: (comp.posts.get(id) || []).filter((p) => p.shader).map((p) => ({ shader: p.shader, entrees: e })) };
+      const temps = (t - s.debut) * s.rythme;
+      const progres = Math.min(1, Math.max(0, (t - s.debut) / Math.max(1e-6, s.fin - s.debut)));
+      return { vue: comp.photos.get(id).vue, posts: (comp.posts.get(id) || []).filter((p) => p.shader).map((p) => ({ shader: p.shader, entrees: plein(temps, progres, (s.fin - s.debut) * s.rythme, p.donnee) })) };
     });
     let transition = null;
     if (plan.transition) {
       const tr = plan.transition;
-      transition = { shader: comp.transitions.get(tr.entrante).shader, entrees: plein(tr.temps, tr.progres, tr.duree),
+      const donnee = comp.transitions.get(tr.entrante);
+      transition = { shader: donnee.shader, entrees: plein(tr.temps, tr.progres, tr.duree, donnee.donnee),
         sortante: tr.sortante ? plan.couches.indexOf(tr.sortante) : -1, entrante: plan.couches.indexOf(tr.entrante) };
     }
-    const ev = plein(t, Math.min(1, t / Math.max(1e-6, M.duree)), M.duree);
-    etat.composition.dessiner(cible, { couches, transition, postsVideo: comp.postsVideo.filter((p) => p.shader).map((p) => ({ shader: p.shader, entrees: ev })) });
+    etat.composition.dessiner(cible, { couches, transition, postsVideo: comp.postsVideo.filter((p) => p.shader).map((p) => ({ shader: p.shader, entrees: plein(t, Math.min(1, t / Math.max(1e-6, M.duree)), M.duree, p.donnee) })) });
     canvas.style.display = '';
     comp.affichee = true;
     document.getElementById('pm-scene').classList.add(COMPOSE);
@@ -1425,8 +1587,8 @@
       etat.raison = msg;
       panneauxTous(msg);
     });
-    // Aucune mesure d'ancre avant que la page soit prête : polices, temps SMIL, position du lecteur.
-    etat.pret = Promise.all([obtention, M.pret, polices()]).then((r) => {
+    // Aucune mesure d'ancre avant que la page soit prête : polices, temps SMIL, position du lecteur ; son analysé (P7).
+    etat.pret = Promise.all([obtention, M.pret, polices(), M.son && M.son.actif() ? M.son.pret : null]).then((r) => {
       const gpu = r[0];
       if (!gpu || gpu.erreur) return;
       const rendu = new P.Rendu(gpu.device, gpu.format);
@@ -1437,7 +1599,7 @@
         return compilerShaders(gpu.device).then((compiler) => {
           etat.composition = new P.Composition(gpu.device, gpu.format, etat.shaders);
           return compilerComposition(compiler);
-        }).then(() => verifierModules(rendu)).then(() => preparerStructures(gpu.device)).then(() => preparerFormes(gpu.device)).then(fragmentsPromis);
+        }).then(() => verifierModules(rendu)).then(verifierSon).then(() => preparerStructures(gpu.device)).then(() => preparerFormes(gpu.device)).then(fragmentsPromis);
       }).then(() => {
         etat.gpu = gpu;
         etat.rendu = rendu;
@@ -1457,6 +1619,14 @@
   /** Perte du GPU : tout ce qui vivait sur l'ancien device est oublié, puis recréé. */
   function perdu(gpu) {
     if (etat.gpu !== gpu) return;
+    // Ressources WebGL2 (contexte partagé, qui survit au device) et multipasses des anciens shaders : libérées.
+    if (etat.shaders) {
+      const oublier = (sh) => { if (sh) { try { etat.shaders.oublier(sh); } catch (e) { /* device déjà perdu */ } } };
+      etat.scenes.forEach((sc) => sc.fonds.forEach((f) => oublier(f.shader)));
+      comp.transitions.forEach((tr) => oublier(tr.shader));
+      comp.posts.forEach((l) => l.forEach((p) => oublier(p.shader)));
+      comp.postsVideo.forEach((p) => oublier(p.shader));
+    }
     etat.gpu = null;
     etat.rendu = null;
     etat.rendu_t = null;
@@ -1464,6 +1634,7 @@
     etat.formes = null; // texture de l'ancien device ; les masques (processeur) sont gardés
     etat.shaders = null; // pipelines et uniformes de l'ancien device : recompilés par demarrerGPU
     etat.composition = null;
+    sonShaders.t = null; // textures du son de l'ancien device
     comp.photos.clear();
     if (comp.canvas) delete comp.canvas.__pmCible;
     comp.transitions.forEach((tr) => { tr.shader = null; });
@@ -1596,6 +1767,9 @@
   /** Avant une capture foreignObject : l'image de chaque calque affiché, en PNG, sur son canvas.
    *  Pas de vidéo sans ses effets (spec §10) : en cas de refus, aucune image périmée ne reste. */
   async function preparerCapture() {
+    // Variables CSS du son d'une scène affichée (ou du style) qui suivent une piste illisible (spec P7 §6).
+    const sonRefus = M.son && M.son.fait() ? M.son.refus(true) : null;
+    if (sonRefus) { oublierImages(); throw new Error(sonRefus.replace(/\.$/, '') + ' : export interrompu.'); }
     if (!aDuTravail()) return;
     try {
       await etat.pret;
@@ -1658,6 +1832,7 @@
     fx.fragments = null;
     fx.ancres = new Map();
     fx.attaches = new Map();
+    fx.tablesSon = null;
     if (fragmente(fx) && !(await preparerFragmentsEffet(fx))) throw new Error('Effet non affiché : rien à photographier (ancre vide).');
     // Les couches communes en dépendent : tous les effets repartent de contributions recalculées.
     oublierContributions();
@@ -1742,6 +1917,13 @@
       if (!canvas || !etat.rendu || !canvas.__pmCible) return Promise.reject(new Error('Calque « ' + calque + ' » de la scène « ' + idScene + ' » introuvable.'));
       return etat.rendu.lirePixels(canvas.__pmCible);
     },
+    /** Tables du son d'un effet (tests) : [{ n, cMax, instants: [τ] } | null]. */
+    sonEffet(idScene, ordre) {
+      const sc = trouver(idScene);
+      const fx = sc && sc.effets.find((f) => f.ordre === ordre);
+      if (!fx || !fx.tablesSon) return null;
+      return fx.tablesSon.map((t) => t && { n: t.n, cMax: t.cMax, instants: Array.from(t.instants) });
+    },
     lireEtat(idScene, ordre, emetteur) {
       const sc = trouver(idScene);
       const fx = sc && sc.effets.find((f) => f.ordre === ordre);
@@ -1770,8 +1952,13 @@
       return M.particules.lirePixels(idScene, calque).then((p) => createImageBitmap(versImageData(p)));
     },
     verifierExport() {
-      if (!aDuTravail()) return Promise.resolve();
-      return etat.pret.then(() => {
+      return Promise.resolve(M.son && M.son.actif() ? M.son.pret : null).then(() => {
+        const sonRefus = M.son && M.son.actif() ? M.son.refus(false) : null;
+        if (sonRefus) throw new Error('Export refusé : ' + sonRefus);
+        if (!aDuTravail()) return null;
+        return etat.pret;
+      }).then(() => {
+        if (!aDuTravail()) return;
         if (!etat.disponible) throw new Error(etat.scenes.some((sc) => sc.effets.length) ? SANS_GPU_EXPORT : SANS_GPU_SHADERS);
         if (etat.erreursShaders.length) throw new Error('Export refusé : ' + etat.erreursShaders[0].message);
       });
@@ -1785,7 +1972,15 @@
   };
 
   M.shaders = {
+    /** Son réactif (tests) : instant et pistes de la dernière écriture des textures du son. */
+    sonEcrit() { return { t: sonShaders.t, pistes: sonShaders.pistes.slice() }; },
     erreurs() { return etat.erreursShaders.map((e) => Object.assign({}, e)); },
+    /** Fonds multipasses d'une scène (tests) : [{ ordre, nom, etat: bool, instantanes }]. */
+    multipasses(idScene) {
+      const sc = trouver(idScene);
+      return sc ? sc.fonds.filter((f) => f.shader && f.shader.multi).map((f) => ({ ordre: f.ordre, nom: f.donnee.nom, etat: !!f.shader.multi.etat,
+        instantanes: f.shader.multi.etat ? f.shader.multi.etat.instantanes() : 0 })) : [];
+    },
     decrire(idScene) {
       const sc = trouver(idScene);
       return sc ? sc.fonds.map((f) => ({ ordre: f.ordre, nom: f.donnee.nom, calque: f.calque, debut: f.debut, fin: f.fin, actif: !!f.shader, erreur: f.erreur })) : [];

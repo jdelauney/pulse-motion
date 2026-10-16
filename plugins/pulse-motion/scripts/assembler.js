@@ -19,6 +19,7 @@ const Pers = require('./lib/personnages.js');
 const { preparerObstacles, obstaclesVideo } = require('./lib/obstacles.js');
 const { preparerMilieux } = require('./lib/milieux.js');
 const { chargeurShaders, preparerShaders, shadersDuDeroule, BIBLIOTHEQUE: BIBLIOTHEQUE_SHADERS } = require('./lib/shaders.js');
+const { besoinsSon } = require('./lib/son.js');
 const { variablesCSS } = require('../moteur/courbes.js');
 const { trouverStyle, messageStyleInconnu } = require('./styles.js');
 const { charteFinale, chartePour, variablesDerivees } = require('./lib/fusion-charte.js');
@@ -30,8 +31,8 @@ const SA = require('../moteur/synthe/ambiances.js');
 const { trouverFichiersPolice } = require('./lib/police.js');
 
 const RACINE = path.resolve(__dirname, '..');
-const MOTEUR = ['courbes.js', 'aligner.js', 'sous-titres.js', 'minutage.js', 'transitions.js', 'tween.js', 'lettres.js', 'camera.js', 'squelette.js', 'clips.js', 'habillage-batonnets.js', 'habillage-pieces.js', 'personnages/levres.js', 'personnages/partition.js', 'personnages/scene.js', 'temps.js', 'horloge.js', 'tailles.js', 'wav.js', 'sonie.js', 'mixage.js', 'synthe/catalogue.js', 'synthe/partition.js', 'synthe/ambiances.js', 'synthe/instruments.js', 'synthe/bruitages.js', 'audio.js', 'lecteur.js', 'sous-titres-rendu.js', 'debordement.js', 'mesures.js', 'pixels.js',
-  'figer.js', 'shaders/code.js', 'particules/instantanes.js', 'particules/gpu.js', 'particules/obstacles.js', 'particules/fragments.js', 'particules/simulation.js', 'particules/voisinage.js', 'particules/maillage.js', 'particules/structures.js', 'particules/milieu.js', 'particules/rendu.js', 'particules/shaders.js', 'particules/composition.js', 'particules/formes.js', 'particules/reperes.js', 'particules/calques.js'];
+const MOTEUR = ['courbes.js', 'aligner.js', 'sous-titres.js', 'minutage.js', 'transitions.js', 'tween.js', 'lettres.js', 'camera.js', 'squelette.js', 'clips.js', 'habillage-batonnets.js', 'habillage-pieces.js', 'personnages/levres.js', 'personnages/partition.js', 'personnages/scene.js', 'temps.js', 'horloge.js', 'tailles.js', 'wav.js', 'sonie.js', 'mixage.js', 'synthe/catalogue.js', 'synthe/partition.js', 'synthe/ambiances.js', 'synthe/instruments.js', 'synthe/bruitages.js', 'analyse-son.js', 'audio.js', 'son-reactif.js', 'lecteur.js', 'sous-titres-rendu.js', 'debordement.js', 'mesures.js', 'pixels.js',
+  'figer.js', 'shaders/glsl.js', 'shaders/code.js', 'particules/instantanes.js', 'particules/gpu.js', 'particules/obstacles.js', 'particules/fragments.js', 'particules/simulation.js', 'particules/voisinage.js', 'particules/maillage.js', 'particules/structures.js', 'particules/milieu.js', 'particules/rendu.js', 'particules/glsl.js', 'particules/shaders.js', 'particules/composition.js', 'particules/formes.js', 'particules/reperes.js', 'particules/calques.js'];
 function slug(texte) {
   return String(texte).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'video';
@@ -182,6 +183,8 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     ...(voixScenes[s.id] ? { voix: voixScenes[s.id] } : {}) }));
   const minutageScenes = calculerMinutage(scenesDonnees, {}, optionsMinutage(deroule));
 
+  // Son réactif (P7) : texte de chaque scène, cherché ensuite pour les variables CSS du son.
+  const textesScenes = [];
   for (const [rang, scene] of deroule.scenes.entries()) {
     const fichier = cheminDansProjet(projet, scene.fichier);
     let html = null;
@@ -259,6 +262,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     const { html: embarque, erreurs: erreursRes } = embarquerRessources(S.injecterLogo(avecSons, uriLogo), projet, `scène « ${scene.id} »`);
     erreursRes.forEach((e) => erreurs.push({ ...e, scene: scene.id }));
     sections.push(embarque.trim());
+    textesScenes.push({ scene: scene.id, texte: embarque });
     scripts.forEach((code) => scriptsScenes.push(`(function () { try {\n${code}\n} catch (e) { console.error('[Pulse Motion] Scène « ${scene.id} » : ' + e.message); } })();`));
   }
 
@@ -312,6 +316,15 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     modules: sourcesModules,
     ...(luPersonnages ? { personnages: donneesPersonnages(utilisesPersonnages, luPersonnages) } : {}),
   };
+
+  // Son réactif (P7) : pistes lues par les effets, les shaders et le CSS ; analysées une fois dans la page.
+  const besoins = besoinsSon({
+    effets, shaders,
+    css: [{ scene: null, texte: cssStyle }, { scene: null, texte: cssDeCharte }, ...textesScenes],
+    presentes: { musique: !!deroule.musique, voix: Object.keys(voixScenes).length > 0 },
+  });
+  donnees.son = besoins.son;
+  erreurs.push(...besoins.erreurs);
 
   // Sous-titres : cartons en temps absolus (minutage des scènes avec leurs voix), fichiers SRT et VTT.
   let cartons = [];
@@ -393,6 +406,7 @@ M.demarrer();
 M.demarrerPersonnages();
 M.demarrerLecteur();
 M.demarrerSousTitres();
+M.demarrerSonReactif();
 M.demarrerParticules();
 </script>
 </body>
