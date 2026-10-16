@@ -23,6 +23,18 @@ const SHADERS = {
   inverse: glsl('inverse', 'post', 'void mainImage(out vec4 c, in vec2 p) {\n  vec4 s = texture(iChannel0, p / iResolution.xy);\n  c = vec4(1.0 - s.rgb, 1.0);\n}\n'),
   'copie-st': glsl('copie-st', 'post', 'void mainImage(out vec4 c, in vec2 p) {\n  c = texture(iChannel0, p / iResolution.xy);\n}\n'),
   invisible: glsl('invisible', 'fond', 'void mainImage(out vec4 fragColor, in vec2 fragCoord) {\n  fragColor = vec4(1.0, 0.0, 0.0, 0.0); // alpha laissé à 0, comme un shader Shadertoy\n}\n'),
+  fondu: glsl('fondu', 'fond', 'void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+  fragColor = vec4(1.0, 0.0, 0.0, smoothstep(0.0, 0.3, iProgres)); // fondu depuis alpha 0
+}
+'),
+  'invisible-mp': glsl('invisible-mp', 'fond', 'void passeA(out vec4 c, in vec2 p) {
+  c = vec4(1.0);
+}
+void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+  fragColor = vec4(texture(iChannel0, fragCoord / iResolution.xy).rgb, 0.0);
+}
+',
+    { passes: [{ nom: 'A', lit: ['A'] }, { nom: 'image', lit: ['A'] }] }),
   'basses-st': glsl('basses-st', 'fond', 'void mainImage(out vec4 c, in vec2 p) {\n  c = vec4(iSon.basses, texture(iChannel3, vec2(0.15, 0.25)).r, 0.0, 1.0);\n}\n'),
 };
 const OUTILS = `
@@ -194,7 +206,7 @@ await envoyer({ panneau: panneau && panneau.textContent, erreurs: M.shaders.erre
 test("GLSL : fond Shadertoy dont l'alpha reste à 0 -> alerte dans l'aperçu", async (t) => {
   if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
   const r = await executer({ scenes: { a: '<section data-scene="a"><div data-shader="invisible"></div><div data-shader="degrade-st"></div></section>' }, script: `
-await M.seek(1);
+await M.seek(2.5);
 const alertes = Array.from(document.querySelectorAll('[data-shader] .pm-effet-alerte')).map((d) => d.textContent);
 await envoyer({ alertes, erreurs: M.shaders.erreurs() });` });
   if (r.webgpu === false) return t.skip('WebGPU indisponible');
@@ -203,3 +215,17 @@ await envoyer({ alertes, erreurs: M.shaders.erreurs() });` });
   assert.match(r.alertes[0], /Fond « invisible » entièrement transparent .*vec4\(couleur, 1\.0\)/);
 });
 
+test("GLSL : fond en fondu depuis alpha 0 -> pas d'alerte ; multipasse invisible -> alerte (vérification au milieu de la fenêtre)", async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const r = await executer({ scenes: { a: '<section data-scene="a"><div data-shader="fondu"></div><div data-shader="invisible-mp"></div></section>' }, script: `
+await M.seek(0);
+const lire = () => Array.from(document.querySelectorAll('[data-shader] .pm-effet-alerte')).map((d) => d.closest('[data-shader]').dataset.shader + ' : ' + d.textContent);
+const debut = lire();
+await M.seek(2.5);
+await envoyer({ debut, milieu: lire(), erreurs: M.shaders.erreurs() });` });
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.deepEqual(r.erreurs, []);
+  assert.deepEqual(r.debut, [], 'aucune alerte à la première image (fondu à alpha 0)');
+  assert.equal(r.milieu.length, 1, JSON.stringify(r.milieu));
+  assert.match(r.milieu[0], /^invisible-mp : Fond « invisible-mp » entièrement transparent/);
+});

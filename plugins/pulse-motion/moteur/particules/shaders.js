@@ -17,7 +17,8 @@
  * (rgba16float, ping-pong, une soumission par pas, instantanés par copie de textures) à l'état ⌊τ × pps⌋ ; la passe image
  * lit les tampons de son « lit ». .libererMultipasse(shader) : tampons et instantanés libérés (recréés au prochain avancement,
  * même état : il ne dépend que de τ) ; .oublier(shader) : en plus, programmes WebGL2 d'un shader GLSL (perte du GPU).
- * Fond GLSL : shader.transparent (vrai si sa première image, hors multipasse, est entièrement transparente).
+ * Fond GLSL : shader.transparent (vrai si sa première image dessinée à partir du milieu de sa fenêtre, multipasse compris, est
+ * entièrement transparente ; indéfini avant).
  * GLSL (P7) : donnee.langage « glsl » compilé par P.Glsl (contexte WebGL2 partagé) ; fond : image WebGL2 de la zone et de
  * son débord copiée (copyExternalImageToTexture) puis relais WGSL sur le repère ; .imageGLSLComposition pour la composition.
  *   .vueBruit, .vueVide                     texture de bruit 256 × 256 (P.texelsBruit), texture transparente 1 × 1
@@ -529,8 +530,9 @@ fn fs(@builtin(position) pos: vec4f) -> @location(0) vec4f {
       const largeur = Math.max(1, Math.round((entrees.resolution[0] + 2 * d) * k));
       const hauteur = Math.max(1, Math.round((entrees.resolution[1] + 2 * d) * k));
       const canvas = shader.moteurGL.dessiner(shader.glsl, { largeur, hauteur, entrees, valeurs: shader.valeurs, canaux: this.canauxGL(shader, []) });
-      // Première image d'un fond (hors multipasse, dont les tampons partent de 0) : sortie entièrement transparente ?
-      if (shader.transparent === undefined) shader.transparent = shader.multi ? false : shader.moteurGL.toutTransparent(largeur, hauteur);
+      // Sortie entièrement transparente ? Vérifié une fois, à la première image dessinée à partir du milieu de la fenêtre du fond :
+      // un fond qui apparaît en fondu depuis alpha 0, ou un multipasse dont les tampons partent de 0, n'est pas signalé.
+      if (shader.transparent === undefined && entrees.progres >= 0.5) shader.transparent = shader.moteurGL.toutTransparent(largeur, hauteur);
       return this.copierGLSL(shader, canvas, largeur, hauteur);
     }
 
