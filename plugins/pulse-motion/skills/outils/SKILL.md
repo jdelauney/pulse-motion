@@ -16,7 +16,7 @@ Dire simplement ce qui est prêt, ce qui manque, et l'installer avec l'accord de
 
 ## 1. Vérifier (« vérifie mon ordinateur », « tout est prêt ? »)
 
-`pulse-motion outils`, puis un tableau en mots simples :
+`pulse-motion outils`, puis la version de Pulse Motion (`pulseMotion.version`, « Pulse Motion <version> est installé »), et un tableau en mots simples :
 
 | Outil | Prêt ? | À quoi il sert |
 |---|---|---|

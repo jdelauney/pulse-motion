@@ -34,7 +34,7 @@ test('projet valide : page autonome écrite dans sortie/', () => {
   assert.doesNotMatch(html, /src="assets\//);
   assert.match(html, /M\.chaqueImage\('chiffre'/);
   assert.match(html, /"rythme":0\.8/);
-  assert.match(html, /M\.demarrer\(\);\s*M\.demarrerLecteur\(\);/);
+  assert.match(html, /M\.demarrer\(\);\s*M\.demarrerPersonnages\(\);\s*M\.demarrerLecteur\(\);/);
   assert.equal((html.match(/<section /g) || []).length, 2);
 });
 

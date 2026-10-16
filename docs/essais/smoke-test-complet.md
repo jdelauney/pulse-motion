@@ -39,11 +39,20 @@ Dans Claude Code :
 
 Redémarrez Claude Code si on vous le demande.
 
-**Attendu** : `/pulse-motion:` propose `creer`, `style`, `retoucher`, `voix`, `exporter`, `reprendre` et `outils`.
+**Le plugin est déjà installé ?** Mettez-le à jour, **dans cet ordre** (la seconde commande compare avec le catalogue : sans la première, elle répond « à jour » avec une ancienne version) :
+
+```
+/plugin marketplace update pulse-motion
+/plugin update pulse-motion@pulse-motion
+```
+
+puis redémarrez Claude Code.
+
+**Attendu** : `/pulse-motion:` propose `creer`, `style`, `retoucher`, `voix`, `exporter`, `reprendre`, `outils`, `dessiner-personnage`, `animer-personnage`, `atelier-personnages` et `atelier-particules`.
 
 Ouvrez Claude Code dans un dossier quelconque, puis **dites** : `vérifie mon ordinateur`.
 
-**Attendu** : sans slash commande, Claude vérifie les outils et répond par un tableau en mots simples (Chrome ou Edge, ffmpeg, Python, transcription, voix de l'ordinateur). Pour chacun : prêt ou non, et à quoi il sert. Les outils absents s'installent par une phrase (« installe ffmpeg »), avec votre accord.
+**Attendu** : sans slash commande, Claude dit la version de Pulse Motion installée (**elle doit être celle du dépôt**, champ `version` de `plugins/pulse-motion/.claude-plugin/plugin.json` ; sinon, refaire la mise à jour ci-dessus avant d'aller plus loin), vérifie les outils et répond par un tableau en mots simples (Chrome ou Edge, ffmpeg, Python, transcription, voix de l'ordinateur). Pour chacun : prêt ou non, et à quoi il sert. Les outils absents s'installent par une phrase (« installe ffmpeg »), avec votre accord.
 
 ### 0.3 Repartir d'un poste « neuf » (recommandé)
 

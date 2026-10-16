@@ -264,6 +264,9 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
       const dureeEntree = s.entree > 0 ? s.entree : (i === 0 ? s.dureeTransition || 0 : 0);
       const intervalles = Object.entries(min.elements[s.id]).map(([cle, e]) => [e.debut, finElement(s.id, cle, e)]);
       if (dureeEntree) intervalles.push([s.debut, s.debut + dureeEntree]);
+      // Un personnage qui parle bouge pendant toute la voix de sa scène.
+      const sv = scenesMinutees.find((x) => x.id === s.id);
+      if (sv && sv.voix && /data-action\s*=\s*["']?parler/.test(scenesHtml[s.id] || '')) intervalles.push([s.debut + sv.voix.debut, s.debut + sv.voix.debut + sv.voix.duree]);
       const suivante = min.scenes[i + 1];
       if (suivante && suivante.entree > 0) intervalles.push([suivante.debut, s.fin]);
       let morceaux = trous(s.debut, s.fin, intervalles);

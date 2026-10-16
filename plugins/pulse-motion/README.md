@@ -21,6 +21,11 @@ Tout se fait par une demande dans Claude Code, jamais dans un terminal. Créer u
 | `/pulse-motion:exporter` | une phrase, ou avec le `/` | « exporte ma vidéo », « une version légère pour l'envoyer par courriel » |
 | `/pulse-motion:reprendre` | une phrase, ou avec le `/` | « où en est ma vidéo ? », « on reprend » |
 | `/pulse-motion:outils` | une phrase, ou avec le `/` | « vérifie mon ordinateur », « installe la transcription », « installe ffmpeg » |
+| `/pulse-motion:dessiner-personnage` | une phrase, ou avec le `/` | « dessine-moi un cuisinier rondouillard avec une toque », « change sa tenue en rouge » |
+| `/pulse-motion:decouper-personnage` | une phrase, ou avec le `/` | « voici notre mascotte en SVG, fais-la marcher », « découpe ce dessin pour l'animer » |
+| `/pulse-motion:animer-personnage` | une phrase, ou avec le `/` | « fais une pose où il se gratte la tête », « il marche trop vite », « montre-moi la course de face » |
+| `/pulse-motion:atelier-personnages` | une phrase, ou avec le `/` | « ouvre l'éditeur de personnage », « je veux régler son salut moi-même » |
+| `/pulse-motion:atelier-particules` | une phrase, ou avec le `/` | « ouvre l'éditeur de particules », « laisse-moi régler les étincelles » |
 
 ## Prérequis
 
