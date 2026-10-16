@@ -18,17 +18,18 @@ const PROPRES = {
   'casse-b.wgsl': '// Passe A fausse.\nfn passeA(coord: vec2f) -> vec4f {\n  let x: f32 = vec2f(1.0);\n  return vec4f(x);\n}\nfn image(coord: vec2f) -> vec4f {\n  return canal0(coord / iResolution.xy);\n}\n',
 };
 
-function page({ balise, script }) {
+function page({ balise, script, scenes }) {
   const dir = copierProjet('projet-particules');
-  modifierDeroule(dir, (d) => { d.scenes = [{ id: 'a', fichier: 'scenes/a.html', duree: 6, textes: {} }]; });
+  const liste = scenes || [{ id: 'a', duree: 6, balise }];
+  modifierDeroule(dir, (d) => { d.scenes = liste.map((x) => ({ id: x.id, fichier: `scenes/${x.id}.html`, duree: x.duree, textes: {} })); });
   for (const [f, c] of Object.entries(PROPRES)) ecrire(dir, `shaders/${f}`, c);
-  ecrire(dir, 'scenes/a.html', `<section data-scene="a">${balise}</section>`);
+  liste.forEach((x) => ecrire(dir, `scenes/${x.id}.html`, `<section data-scene="${x.id}">${x.balise}</section>`));
   const a = assembler({ dossier: dir, dossierStyles: STYLES, dossierEffets: EFFETS, ecrire: false });
   return a.html.replace('</body>', `<script>
 (async () => {
 const envoyer = (o) => fetch('/_resultat', { method: 'POST', body: JSON.stringify(o) });
 const px = (p, x, y) => Array.from(p.donnees.slice((y * p.largeur + x) * 4, (y * p.largeur + x) * 4 + 4));
-const image = async (t) => { await M.seek(t); return Array.from((await M.particules.lirePixels('a', 'arriere')).donnees); };
+const image = async (t, id = 'a') => { await M.seek(t); return Array.from((await M.particules.lirePixels(id, 'arriere')).donnees); };
 const egal = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
 try {
   await M.pret;
@@ -97,4 +98,28 @@ await envoyer({ panneau: panneau && panneau.textContent, refus });` });
   if (r.webgpu === false) return t.skip('WebGPU indisponible');
   assert.match(r.panneau, /Shader « casse-b » \(shaders\/casse-b\.wgsl\) ne compile pas : ligne 3/);
   assert.match(r.refus, /ne compile pas/);
+});
+
+test('multipasse : tampons et instantanés libérés hors de la scène, recréés au retour avec la même image (WGSL et GLSL)', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const r = await executer({ scenes: [{ id: 'a', duree: 3, balise: '<div data-shader="reaction-diffusion"></div>' }, { id: 'b', duree: 3, balise: '<div data-shader="ondes-glsl"></div>' }], script: `
+const directA = await image(2.5, 'a');
+const dansA = { a: M.shaders.multipasses('a'), b: M.shaders.multipasses('b') };
+const directB = await image(5.5, 'b');
+const dansB = { a: M.shaders.multipasses('a'), b: M.shaders.multipasses('b') };
+const retourA = await image(2.5, 'a');
+const apresRetour = { a: M.shaders.multipasses('a'), b: M.shaders.multipasses('b') };
+const retourB = await image(5.5, 'b');
+await envoyer({ dansA, dansB, apresRetour, egalA: egal(directA, retourA), egalB: egal(directB, retourB), erreurs: M.shaders.erreurs() });` });
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.deepEqual(r.erreurs, []);
+  assert.equal(r.dansA.a[0].etat, true);
+  assert.ok(r.dansA.a[0].instantanes > 0, 'des instantanés dans la scène a');
+  assert.equal(r.dansA.b[0].etat, false, 'scène b pas encore affichée : rien');
+  assert.deepEqual(r.dansB.a, [{ ordre: r.dansA.a[0].ordre, nom: 'reaction-diffusion', etat: false, instantanes: 0 }], 'scène a masquée : tampons et instantanés libérés');
+  assert.equal(r.dansB.b[0].etat, true);
+  assert.ok(r.dansB.b[0].instantanes > 0, 'des instantanés dans la scène b (GLSL)');
+  assert.equal(r.apresRetour.b[0].etat, false, 'scène b masquée : faces WebGL2 libérées');
+  assert.equal(r.egalA, true, 'scène a : même image au retour (WGSL)');
+  assert.equal(r.egalB, true, 'scène b : même image au retour (GLSL)');
 });

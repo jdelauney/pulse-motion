@@ -44,7 +44,10 @@
  * après la porte de disponibilité (polices chargées) ; champs de distance sur le GPU (P.creerFormes), recréés après une
  * perte du GPU (masques gardés) ; refaits après un changement de polices.
  * Fonds multipasses (P7) : avant le dessin du calque, chaque fond multipasse actif est amené au pas ⌊τ × pps⌋
- * (P.Shaders.avancerMultipasse) ; taille de ses tampons : sa zone mesurée à son début (zoneAuDebut).
+ * (P.Shaders.avancerMultipasse) ; taille de ses tampons : sa zone mesurée à son début (zoneAuDebut). Tampons et
+ * instantanés libérés quand la scène est masquée ou le fond hors de sa fenêtre (recréés au besoin : même image), et
+ * à la perte du GPU (faces WebGL2 comprises). Fond GLSL entièrement transparent à sa première image : alerte.
+ * M.shaders.multipasses(idScene) -> [{ ordre, nom, etat, instantanes }]   (tests)
  * Fonds et auras par shader (P6) : balises data-pm-shader (M.donnees.shaders, usage « fond ») ; une scène a des calques
  * dès qu'elle a des effets ou des fonds ; shaders compilés au démarrage du GPU (P.Shaders) ; chaque fond actif (de son
  * début à sa fin, ou à la fin de la scène sans data-dur) est mesuré à t (repère de l'ancre, ou de la balise : plein cadre)
@@ -1023,6 +1026,7 @@
     etat.scenes.forEach((sc) => {
       if (sc.section.style.display === 'none') {
         sc.effets.forEach(liberer);
+        sc.fonds.forEach(libererFond);
         libererGroupe(sc);
         Object.keys(sc.calques).forEach((nom) => etat.rendu.oublierCible(sc.calques[nom]));
         return;
@@ -1039,6 +1043,12 @@
     oublierRefractions();
     rafraichirRefractions(t);
     rendreComposition(t);
+  }
+
+  /** Fond multipasse dont la scène est masquée ou hors de sa fenêtre : tampons et instantanés libérés ; recréés au besoin
+   *  (l'état ne dépend que de τ : même image). */
+  function libererFond(f) {
+    if (f.shader && f.shader.multi && f.shader.multi.etat && etat.shaders) etat.shaders.libererMultipasse(f.shader);
   }
 
   /** Effet désactivé (mémoire GPU insuffisante, texture illisible) : tampons libérés, panneau ; l'export le refuse. */
@@ -1241,6 +1251,7 @@
     const largeurCqh = largeurScene();
     // Fonds mesurés après le retour de toutes les scènes à t.
     const fonds = fondsActifs(sc, t);
+    sc.fonds.forEach((f) => { if (!(t >= f.debut && t < f.fin)) libererFond(f); });
     avancerMultipasses(sc, fonds, t);
     Object.keys(sc.calques).forEach((nom) => {
       const canvas = sc.calques[nom];
@@ -1571,6 +1582,14 @@
   /** Perte du GPU : tout ce qui vivait sur l'ancien device est oublié, puis recréé. */
   function perdu(gpu) {
     if (etat.gpu !== gpu) return;
+    // Ressources WebGL2 (contexte partagé, qui survit au device) et multipasses des anciens shaders : libérées.
+    if (etat.shaders) {
+      const oublier = (sh) => { if (sh) { try { etat.shaders.oublier(sh); } catch (e) { /* device déjà perdu */ } } };
+      etat.scenes.forEach((sc) => sc.fonds.forEach((f) => oublier(f.shader)));
+      comp.transitions.forEach((tr) => oublier(tr.shader));
+      comp.posts.forEach((l) => l.forEach((p) => oublier(p.shader)));
+      comp.postsVideo.forEach((p) => oublier(p.shader));
+    }
     etat.gpu = null;
     etat.rendu = null;
     etat.rendu_t = null;
@@ -1911,6 +1930,12 @@
     /** Son réactif (tests) : instant et pistes de la dernière écriture des textures du son. */
     sonEcrit() { return { t: sonShaders.t, pistes: sonShaders.pistes.slice() }; },
     erreurs() { return etat.erreursShaders.map((e) => Object.assign({}, e)); },
+    /** Fonds multipasses d'une scène (tests) : [{ ordre, nom, etat: bool, instantanes }]. */
+    multipasses(idScene) {
+      const sc = trouver(idScene);
+      return sc ? sc.fonds.filter((f) => f.shader && f.shader.multi).map((f) => ({ ordre: f.ordre, nom: f.donnee.nom, etat: !!f.shader.multi.etat,
+        instantanes: f.shader.multi.etat ? f.shader.multi.etat.instantanes() : 0 })) : [];
+    },
     decrire(idScene) {
       const sc = trouver(idScene);
       return sc ? sc.fonds.map((f) => ({ ordre: f.ordre, nom: f.donnee.nom, calque: f.calque, debut: f.debut, fin: f.fin, actif: !!f.shader, erreur: f.erreur })) : [];
