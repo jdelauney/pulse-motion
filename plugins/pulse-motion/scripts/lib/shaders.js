@@ -2,8 +2,8 @@
 /* Pulse Motion – shaders WGSL à l'assemblage : fichiers (projet, puis bibliothèque), balises data-shader.
  *
  * chargeurShaders(projet, bibliotheque) -> charger(nom) -> { nom, json, code, fichier, source, erreurs } | null
- *   cherche shaders/<nom>.json et .wgsl dans le projet, puis dans la bibliothèque ; erreurs : JSON invalide, fichier .wgsl
- *   absent, contrôle (M.codeShader.validerShader) ; fichier : nom lisible dans les messages.
+ *   cherche shaders/<nom>.json et .wgsl (ou .glsl) dans le projet, puis dans la bibliothèque ; erreurs : JSON invalide, fichier .wgsl
+ *   (ou .glsl) absent, contrôle (M.codeShader.validerShader) ; fichier : nom lisible dans les messages.
  * preparerShaders(html, { scene, charger, charte, projet, premierIndex }) -> { html, shaders, erreurs }
  *   <div data-shader="nom" data-calque="arriere|avant" data-ancre="#id" data-reglages="…" data-image="assets/…"
  *   data-start data-dur> : shader d'usage « fond » ; la balise reçoit data-pm-shader="N" (index dans M.donnees.shaders)
@@ -37,13 +37,16 @@ function chargeurShaders(projet, bibliotheque = BIBLIOTHEQUE) {
     for (const [dossier, source] of dossiers) {
       const fichierJSON = path.join(dossier, `${nom}.json`);
       if (!fs.existsSync(fichierJSON)) continue;
-      const fichier = source === 'projet' ? `shaders/${nom}.wgsl` : `bibliothèque : ${nom}.wgsl`;
-      r = { nom, json: null, code: null, fichier, source, erreurs: [] };
+      const nomJSON = source === 'projet' ? `shaders/${nom}.json` : `bibliothèque : ${nom}.json`;
+      r = { nom, json: null, code: null, fichier: null, source, erreurs: [] };
       try { r.json = JSON.parse(fs.readFileSync(fichierJSON, 'utf8').replace(/^﻿/, '')); } catch (e) {
-        r.erreurs.push({ regle: 'shader-invalide', message: `Shader « ${nom} » : le fichier ${fichier.replace(/\.wgsl$/, '.json')} n'est pas un JSON valide (${e.message}).` });
+        r.erreurs.push({ regle: 'shader-invalide', message: `Shader « ${nom} » : le fichier ${nomJSON} n'est pas un JSON valide (${e.message}).` });
       }
-      try { r.code = fs.readFileSync(path.join(dossier, `${nom}.wgsl`), 'utf8').replace(/^﻿/, ''); } catch {
-        r.erreurs.push({ regle: 'shader-invalide', message: `Shader « ${nom} » : fichier ${fichier} introuvable.` });
+      // GLSL (P7) : le code est dans <nom>.glsl quand le .json le dit.
+      const ext = r.json && r.json.langage === 'glsl' ? 'glsl' : 'wgsl';
+      r.fichier = source === 'projet' ? `shaders/${nom}.${ext}` : `bibliothèque : ${nom}.${ext}`;
+      try { r.code = fs.readFileSync(path.join(dossier, `${nom}.${ext}`), 'utf8').replace(/^﻿/, ''); } catch {
+        r.erreurs.push({ regle: 'shader-invalide', message: `Shader « ${nom} » : fichier ${r.fichier} introuvable.` });
       }
       if (!r.erreurs.length) r.erreurs = S.validerShader(nom, r.json, r.code);
       break;
@@ -68,6 +71,7 @@ function donneeShader(src, extra) {
     rang: extra.rang === undefined ? null : extra.rang,
     calque: extra.calque || null, ancre: extra.ancre || null,
     duree: extra.duree === undefined ? null : extra.duree,
+    langage: src.json.langage || 'wgsl',
     code: src.code, parametres: src.json.parametres || {}, debord: src.json.debord || 0,
     valeurs: extra.valeurs, image: extra.image || null,
     // Son réactif (P7) : piste lue par iSon et la texture du son ; pistes : [] si le code ne lit pas le son.
