@@ -24,7 +24,10 @@
   // Une page est « la page actuelle » quand l'adresse se termine par son chemin depuis la racine du wiki.
   function estIci(href) {
     var cible = href.replace(/^\.\//, "");
-    return ici.slice(-cible.length) === cible || (cible === "index.html" && racine === "" && /\/$/.test(ici));
+    // Le chemin (vu depuis la racine du wiki) se termine par la cible, à une frontière de dossier :
+    // l'accueil (index.html) n'est pas marqué sur commandes/index.html.
+    var depuisRacine = ici.split("/").slice(-(racine.split("../").length)).join("/");
+    return depuisRacine === cible || (cible === "index.html" && racine === "" && /\/$/.test(ici));
   }
 
   // Logo : une onde de pouls qui sort d'un triangle de lecture, aux couleurs de la traînée.
