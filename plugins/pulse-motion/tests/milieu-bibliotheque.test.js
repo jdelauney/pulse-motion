@@ -60,6 +60,24 @@ test('bibliothèque dans la page : air (avec braises-portees et fusee-panache), 
     const f = { milieu: M.particules.decrireMilieu('f'), brillants: brillants(await M.particules.lirePixels('f', 'avant')) };
     await M.seek(10);
     const e = { milieu: M.particules.decrireMilieu('e'), encre: couverts(await M.particules.lirePixels('e', 'arriere')) };
+    // Mélange des encres à 3,9 s : concentration de chaque encre par cellule (absorbance décomposée sur celles des sources).
+    await M.seek(11.9);
+    const grille = await M.particules.lireMilieu('e');
+    const [A, B] = M.donnees.milieux.find((m) => m.effet.nom === 'eau-encre').effet.milieu.sources.filter((x) => x.type === 'encre').map((x) => x.encre);
+    const pr = (u, v) => u[0] * v[0] + u[1] * v[1] + u[2] * v[2];
+    const aa = pr(A, A), bb = pr(B, B), ab = pr(A, B), det = aa * bb - ab * ab;
+    const n = grille.scalaires.length / 8;
+    const c1 = [], c2 = [];
+    for (let c = 0; c < n; c++) {
+      const v = [grille.scalaires[c * 8 + 4], grille.scalaires[c * 8 + 5], grille.scalaires[c * 8 + 6]];
+      c1.push((bb * pr(v, A) - ab * pr(v, B)) / det);
+      c2.push((aa * pr(v, B) - ab * pr(v, A)) / det);
+    }
+    const m1 = Math.max(...c1), m2 = Math.max(...c2);
+    let melange = 0, encre1 = 0;
+    for (let c = 0; c < n; c++) { if (c1[c] > 0.1 * m1) encre1++; if (c1[c] > 0.1 * m1 && c2[c] > 0.1 * m2) melange++; }
+    e.melange = melange;
+    e.encre1 = encre1;
     await M.seek(2.5);
     await M.seek(1);
     await M.seek(2);
@@ -83,5 +101,6 @@ test('bibliothèque dans la page : air (avec braises-portees et fusee-panache), 
   assert.ok(r.f.brillants > 2000, `${r.f.brillants} pixels de feu brillant`);
   assert.deepEqual([r.e.milieu.nom, r.e.milieu.actif], ['eau-encre', true]);
   assert.ok(r.e.encre > 5000, `${r.e.encre} pixels d'encre`);
+  assert.ok(r.e.melange > 0.15 * r.e.encre1, `encres mêlées à 3,9 s : ${r.e.melange} cellules où les deux encres dépassent 10 % de leur maximum (${r.e.encre1} cellules de la première)`);
   assert.equal(r.ecartS, 0, 'même image au bit près par deux chemins');
 });
