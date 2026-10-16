@@ -44,7 +44,7 @@
  * courbe de tons (douce ou ACES) -> tramage -> sRGB, alpha = max(alpha, max(r, g, b)), prémultiplié.
  * Tri bitonique : K. Batcher (1968). ACES : approximation de K. Narkowicz (2015). Dual Kawase :
  * M. Bjørge (2015). Algorithmes publics, réimplémentés.
- * Navigateur seulement ; dépend de simulation.js (P.WGSL_COMMUN).
+ * Navigateur seulement ; dépend de simulation.js (P.WGSL_COMMUN) et de gpu.js (P.copierImage : images en linéaire prémultiplié).
  */
 (function (racine) {
   'use strict';
@@ -1171,7 +1171,9 @@ fn fsMilieu(@builtin(position) pos: vec4f) -> @location(0) vec4f {
             format: 'rgba8unorm-srgb',
             usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
           });
-          device.queue.copyExternalImageToTexture({ source: bitmap }, { texture, premultipliedAlpha: true }, [bitmap.width, bitmap.height]);
+          const porteur = { texture };
+          P.copierImage(device, bitmap, porteur, bitmap.width, bitmap.height);
+          P.oublierBrut(porteur);
           bitmap.close();
           this.images.set(url, texture.createView());
         }
@@ -1532,13 +1534,13 @@ fn fsMilieu(@builtin(position) pos: vec4f) -> @location(0) vec4f {
       return r.groupe;
     }
 
-    /** Photographie d'une scène (réfraction des fluides) en texture sRGB prémultipliée, lue en linéaire ; gardée par clé et
-     *  réutilisée (même vue) tant que sa taille ne change pas. -> GPUTextureView */
+    /** Photographie d'une scène (réfraction des fluides) en texture rgba8unorm-srgb, linéaire prémultipliée (P.copierImage :
+     *  bords semi-transparents justes) ; gardée par clé et réutilisée (même vue) tant que sa taille ne change pas. -> GPUTextureView */
     photo(cle, bitmap) {
       const { device } = this;
       let p = this.photos.get(cle);
       if (!p || p.largeur !== bitmap.width || p.hauteur !== bitmap.height) {
-        if (p) p.texture.destroy();
+        if (p) { p.texture.destroy(); P.oublierBrut(p); }
         const texture = device.createTexture({
           size: [bitmap.width, bitmap.height],
           format: 'rgba8unorm-srgb',
@@ -1547,7 +1549,7 @@ fn fsMilieu(@builtin(position) pos: vec4f) -> @location(0) vec4f {
         p = { texture, vue: texture.createView(), largeur: bitmap.width, hauteur: bitmap.height };
         this.photos.set(cle, p);
       }
-      device.queue.copyExternalImageToTexture({ source: bitmap }, { texture: p.texture, premultipliedAlpha: true }, [bitmap.width, bitmap.height]);
+      P.copierImage(device, bitmap, p, bitmap.width, bitmap.height);
       return p.vue;
     }
 
@@ -1555,6 +1557,7 @@ fn fsMilieu(@builtin(position) pos: vec4f) -> @location(0) vec4f {
       const p = this.photos.get(cle);
       if (!p) return;
       p.texture.destroy();
+      P.oublierBrut(p);
       this.photos.delete(cle);
     }
 
