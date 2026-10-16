@@ -20,7 +20,7 @@ test('durée effective : la voix allonge la scène (0,3 + 2 + 0,4 = 2,7 s) ; sin
 });
 
 test('avec un tempo : allongement arrondi au temps suivant (120 bpm : 0,5 s)', () => {
-  const m = calculerMinutage([{ id: 'a', duree: 1, voix }], {}, { dureeTemps: 0.5 });
+  const m = calculerMinutage([{ id: 'a', duree: 1, voix }], {}, { dureeTemps: 0.5, grilleFixe: true });
   assert.equal(m.scenes[0].fin, 3);
 });
 
@@ -58,10 +58,10 @@ test('une ancre peut servir de référence : #x:fin après un mot', () => {
 
 test('correctifs : allongement au temps musical compté depuis le décalage du tempo, scène suivante sur un temps', () => {
   // 120 bpm (0,5 s), premier temps à 0,25 s : la voix finit à 2,7 s, la scène suivante commence à 2,75 s.
-  const m = calculerMinutage([{ id: 'a', duree: 1, voix }, { id: 'b', duree: 3 }], {}, { dureeTemps: 0.5, decalageTemps: 0.25 });
+  const m = calculerMinutage([{ id: 'a', duree: 1, voix }, { id: 'b', duree: 3 }], {}, { dureeTemps: 0.5, decalageTemps: 0.25, grilleFixe: true });
   assert.equal(m.scenes[1].debut, 2.75);
   // Avec une transition (entrée chevauchée), c'est le début de la scène suivante qui tombe sur un temps.
-  const t = calculerMinutage([{ id: 'a', duree: 1, voix }, { id: 'b', duree: 3, transition: 'fondu' }], {}, { dureeTemps: 0.5, decalageTemps: 0.25 });
+  const t = calculerMinutage([{ id: 'a', duree: 1, voix }, { id: 'b', duree: 3, transition: 'fondu' }], {}, { dureeTemps: 0.5, decalageTemps: 0.25, grilleFixe: true });
   const k = (t.scenes[1].debut - 0.25) / 0.5;
   assert.ok(Math.abs(k - Math.round(k)) < 1e-6, String(t.scenes[1].debut));
   assert.ok(t.scenes[0].fin >= 2.7 - 1e-9);

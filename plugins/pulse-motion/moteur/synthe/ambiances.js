@@ -52,7 +52,16 @@
     return parseInt(f[0], 10) / (f[1] ? parseInt(f[1], 10) : 1);
   }
 
-  /** { ambiance, tempo?, tonalite?, intensite?, graine?, duree, scenes } -> partition */
+  var HUMEURS = ['silence', 'calme', 'normale', 'intense'];
+  function arrondi(x) { return Math.round(x * 1e6) / 1e6; }
+
+  /**
+   * { ambiance, tempo?, tonalite?, intensite?, graine?, duree, scenes: [{ debut, fin, humeur? }] } -> partition
+   * Une section par scène, calée sur son vrai début (transitions comprises) et arrêtée au début de la suivante : la grille
+   * des temps repart à chaque scène, les temps musicaux de la scène tombent sur la musique. Humeur : « silence » (rien),
+   * « calme » (nappe seule), « normale » (couches selon l'intensité ; la première scène, sans humeur, est une introduction
+   * sans percussion), « intense » (toutes les couches). La progression d'accords continue d'une section à l'autre.
+   */
   function generer(o) {
     var base = C.AMBIANCES[o.ambiance];
     var recette = RECETTES[o.ambiance];
@@ -64,96 +73,114 @@
     var intensite = o.intensite === undefined ? 0.5 : o.intensite;
     var hasard = mulberry32((o.graine === undefined ? 1 : o.graine) * 9973 + Object.keys(RECETTES).indexOf(o.ambiance) + 1);
     var mesure = P.dureeMesure(tempo);
-    var mesures = Math.max(1, Math.ceil(o.duree / mesure));
-    var scenes = o.scenes && o.scenes.length ? o.scenes : [{ debut: 0, fin: o.duree }];
-    // Accord final : la dernière mesure, ou les deux dernières si la vidéo finit en début de mesure (accord audible).
-    var reste = o.duree - (mesures - 1) * mesure;
-    var mesuresFinales = mesures >= 2 && reste < mesure / 2 ? 2 : 1;
-    var corps = Math.max(0, mesures - mesuresFinales);
-    var intro = Math.min(corps, Math.max(0, Math.round(scenes[0].fin / mesure)));
+    var duree = o.duree;
+    var mesures = Math.max(1, Math.ceil(duree / mesure - 1e-9));
+    var brutes = o.scenes && o.scenes.length ? o.scenes : [{ debut: 0, fin: duree }];
+    var sections = brutes.map(function (sc, i) {
+      var finSection = i + 1 < brutes.length ? brutes[i + 1].debut : duree;
+      return { debut: Math.max(0, sc.debut), fin: Math.min(finSection, duree), humeur: sc.humeur || (i === 0 ? 'intro' : 'normale') };
+    }).filter(function (sec) { return sec.fin - sec.debut > 1e-6; });
     var progression = recette.progressions[Math.floor(hasard() * recette.progressions.length)];
     var nom = P.nomDeMidi;
     var pistes = [];
+    var compteur = 0, renverse = false;
 
     // Un accord par mesure ; tous les 2 mesures (8 temps), la graine choisit le renversement.
     // racines : fondamentale de chaque accord, gardée pour la basse quand l'accord est renversé.
-    var accords = [], racines = [], renverse = false;
-    for (var i = 0; i < corps; i++) {
-      var notes = accord(tonique, gamme, progression[i % progression.length]);
-      racines.push(notes[0]);
-      if (i % 2 === 0) renverse = hasard() < 0.5;
-      if (renverse) notes = [notes[1], notes[2], notes[0] + 12];
-      accords.push(notes);
+    function accordsSuivants(n) {
+      var accords = [], racines = [];
+      for (var i = 0; i < n; i++) {
+        var k = compteur + i;
+        var notes = accord(tonique, gamme, progression[k % progression.length]);
+        racines.push(notes[0]);
+        if (k % 2 === 0) renverse = hasard() < 0.5;
+        if (renverse) notes = [notes[1], notes[2], notes[0] + 12];
+        accords.push(notes);
+      }
+      compteur += n;
+      return { accords: accords, racines: racines };
     }
 
-    if (corps > 0) {
-      // Nappe (ou arpèges en tech).
-      if (o.ambiance === 'tech') {
-        pistes.push({ instrument: 'pluck', volume: 0.5, motif: [].concat.apply([], accords.map(function (a) {
-          var seq = [a[0] + 12, a[1] + 12, a[2] + 12, a[1] + 12];
-          return [].concat(seq, seq, seq, seq).map(function (n) { return nom(n) + ' 1/16'; });
-        })), de: 0, a: corps });
-        pistes.push({ instrument: 'pad', volume: 0.35, motif: accords.map(function (a) { return a.map(nom).join('+') + ' 1'; }), de: 0, a: corps });
-      } else if (recette.nappe === 'nappe-bruit') {
-        pistes.push({ instrument: 'nappe-bruit', volume: 0.5, motif: ['x 1'], de: 0, a: corps });
-        pistes.push({ instrument: 'pad', volume: 0.4, motif: racines.map(function (n) { return nom(n - 12) + '+' + nom(n) + ' 1'; }), de: 0, a: corps });
-      } else {
-        pistes.push({ instrument: 'pad', volume: 0.55, motif: accords.map(function (a) { return a.map(nom).join('+') + ' 1'; }), de: 0, a: corps });
+    sections.forEach(function (sec, idx) {
+      var longueur = sec.fin - sec.debut;
+      var n = Math.max(1, Math.ceil(longueur / mesure - 1e-9));
+      var h = sec.humeur;
+      if (h === 'silence') { compteur += n; return; }
+      // Accord final : la dernière mesure de la vidéo, ou les deux dernières si elle finit en début de mesure.
+      var finales = 0;
+      if (idx === sections.length - 1) {
+        var reste = longueur - (n - 1) * mesure;
+        finales = n >= 2 && reste < mesure / 2 ? 2 : 1;
       }
-      // Basse : fondamentale une octave plus bas, au rythme de l'ambiance.
-      if (intensite >= 0.25) {
-        pistes.push({ instrument: 'basse', volume: 0.6, motif: [].concat.apply([], racines.map(function (n) {
-          var pas = [], temps = 0, j = 0;
-          while (temps < 1 - 1e-9) { var r = recette.rythmeBasse[j++ % recette.rythmeBasse.length]; pas.push(nom(n - 12) + ' ' + r); temps += fraction(r); }
-          return pas;
-        })), de: 0, a: corps });
+      var corps = n - finales;
+      function cadre(piste, de, a) {
+        piste.de = de; piste.a = a; piste.origine = arrondi(sec.debut); piste.jusqua = arrondi(sec.fin);
+        pistes.push(piste);
       }
-      // Pluck (cloche en suspense) : notes de l'accord, variées par la graine.
-      if (intensite >= 0.45 && o.ambiance !== 'tech') {
-        var motif = [];
-        accords.forEach(function (a) {
-          var temps = 0, j = 0;
-          while (temps < 1 - 1e-9) {
-            var r = recette.rythmePluck[j++ % recette.rythmePluck.length];
-            var silence = r.indexOf('- ') === 0;
-            var d = silence ? r.slice(2) : r;
-            var n = a[Math.floor(hasard() * 3)] + 12;
-            motif.push(silence ? '- ' + d : nom(n) + ' ' + d + ' ' + (0.6 + 0.4 * hasard()).toFixed(2));
-            temps += fraction(d);
-          }
-        });
-        pistes.push({ instrument: recette.cloche ? 'cloche' : 'pluck', volume: 0.45, motif: motif, de: 0, a: corps });
-      }
-      // Percussions après l'introduction.
-      if (recette.percussions && intensite >= 0.65 && intro < corps) {
-        pistes.push({ instrument: 'kick', volume: 0.7, motif: ['x 1/4'], de: intro, a: corps });
-        pistes.push({ instrument: 'charleston', volume: 0.35, motif: ['- 1/8', 'x 1/8 0.7'], de: intro, a: corps });
-        if (o.ambiance !== 'suspense') pistes.push({ instrument: 'caisse', volume: 0.5, motif: ['- 1/4', 'x 1/4'], de: intro, a: corps });
-      }
-      // Sub (basse profonde) sur le premier temps, pour les ambiances qui poussent, à forte intensité.
-      if ((o.ambiance === 'tech' || o.ambiance === 'entrainant') && intensite >= 0.8 && intro < corps) {
-        pistes.push({ instrument: 'sub', volume: 0.5, motif: racines.slice(intro).map(function (n) { return nom(n - 24) + ' 1/4'; }).reduce(function (m, p) { return m.concat([p, '- 3/4']); }, []), de: intro, a: corps });
-      }
-      // Montée sur la dernière seconde de l'avant-dernière scène, au seizième de mesure près.
-      if (scenes.length >= 2) {
-        var frontiere = scenes[scenes.length - 2].fin;
-        var longueur = Math.min(1, mesure);
-        var debutMontee = frontiere - longueur;
-        if (debutMontee >= 0) {
-          var mesureMontee = Math.floor(debutMontee / mesure);
-          var avant = Math.round(16 * (debutMontee - mesureMontee * mesure) / mesure);
-          var duree16 = Math.max(1, Math.round(16 * longueur / mesure));
-          var fin = mesureMontee + Math.ceil((avant + duree16) / 16);
-          var apres = 16 * (fin - mesureMontee) - avant - duree16;
-          var motifMontee = (avant ? ['- ' + avant + '/16'] : []).concat(['x ' + duree16 + '/16'], apres ? ['- ' + apres + '/16'] : []);
-          if (fin <= corps) pistes.push({ instrument: 'riser', volume: 0.5, motif: motifMontee, de: mesureMontee, a: fin });
+      var pleine = h === 'intense';
+      var normale = h === 'normale' || h === 'intro';
+      if (corps > 0) {
+        var ac = accordsSuivants(corps), accords = ac.accords, racines = ac.racines;
+        // Nappe (ou arpèges en tech).
+        if (o.ambiance === 'tech' && h !== 'calme') {
+          cadre({ instrument: 'pluck', volume: 0.5, motif: [].concat.apply([], accords.map(function (a) {
+            var seq = [a[0] + 12, a[1] + 12, a[2] + 12, a[1] + 12];
+            return [].concat(seq, seq, seq, seq).map(function (x) { return nom(x) + ' 1/16'; });
+          })) }, 0, corps);
+          cadre({ instrument: 'pad', volume: 0.35, motif: accords.map(function (a) { return a.map(nom).join('+') + ' 1'; }) }, 0, corps);
+        } else if (recette.nappe === 'nappe-bruit') {
+          cadre({ instrument: 'nappe-bruit', volume: 0.5, motif: ['x 1'] }, 0, corps);
+          cadre({ instrument: 'pad', volume: 0.4, motif: racines.map(function (x) { return nom(x - 12) + '+' + nom(x) + ' 1'; }) }, 0, corps);
+        } else {
+          cadre({ instrument: 'pad', volume: 0.55, motif: accords.map(function (a) { return a.map(nom).join('+') + ' 1'; }) }, 0, corps);
+        }
+        // Basse : fondamentale une octave plus bas, au rythme de l'ambiance.
+        if (pleine || (normale && intensite >= 0.25)) {
+          cadre({ instrument: 'basse', volume: 0.6, motif: [].concat.apply([], racines.map(function (x) {
+            var pas = [], temps = 0, j = 0;
+            while (temps < 1 - 1e-9) { var r = recette.rythmeBasse[j++ % recette.rythmeBasse.length]; pas.push(nom(x - 12) + ' ' + r); temps += fraction(r); }
+            return pas;
+          })) }, 0, corps);
+        }
+        // Pluck (cloche en suspense) : notes de l'accord, variées par la graine.
+        if ((pleine || (normale && intensite >= 0.45)) && o.ambiance !== 'tech') {
+          var motif = [];
+          accords.forEach(function (a) {
+            var temps = 0, j = 0;
+            while (temps < 1 - 1e-9) {
+              var r = recette.rythmePluck[j++ % recette.rythmePluck.length];
+              var silence = r.indexOf('- ') === 0;
+              var d = silence ? r.slice(2) : r;
+              var x = a[Math.floor(hasard() * 3)] + 12;
+              motif.push(silence ? '- ' + d : nom(x) + ' ' + d + ' ' + (0.6 + 0.4 * hasard()).toFixed(2));
+              temps += fraction(d);
+            }
+          });
+          cadre({ instrument: recette.cloche ? 'cloche' : 'pluck', volume: 0.45, motif: motif }, 0, corps);
+        }
+        // Percussions : pas dans l'introduction.
+        if (pleine || (h === 'normale' && recette.percussions && intensite >= 0.65)) {
+          cadre({ instrument: 'kick', volume: 0.7, motif: ['x 1/4'] }, 0, corps);
+          cadre({ instrument: 'charleston', volume: 0.35, motif: ['- 1/8', 'x 1/8 0.7'] }, 0, corps);
+          if (o.ambiance !== 'suspense') cadre({ instrument: 'caisse', volume: 0.5, motif: ['- 1/4', 'x 1/4'] }, 0, corps);
+        }
+        // Sub (basse profonde) sur le premier temps, pour les ambiances qui poussent.
+        if ((o.ambiance === 'tech' || o.ambiance === 'entrainant') && (pleine || (h === 'normale' && intensite >= 0.8))) {
+          cadre({ instrument: 'sub', volume: 0.5, motif: racines.map(function (x) { return nom(x - 24) + ' 1/4'; }).reduce(function (mo, p) { return mo.concat([p, '- 3/4']); }, []) }, 0, corps);
         }
       }
+      if (finales) cadre({ instrument: 'pad', volume: 0.55, motif: [accord(tonique, gamme, 1).map(nom).join('+') + ' ' + finales] }, corps, n);
+    });
+
+    // Montée sur la dernière seconde avant la dernière scène (au seizième de mesure près), sauf si elle est muette.
+    if (sections.length >= 2 && sections[sections.length - 1].humeur !== 'silence') {
+      var frontiere = sections[sections.length - 1].debut;
+      var seiziemes = Math.max(1, Math.round(16 * Math.min(1, mesure) / mesure));
+      var departMontee = frontiere - seiziemes / 16 * mesure;
+      if (departMontee >= 0) pistes.push({ instrument: 'riser', volume: 0.5, motif: ['x ' + seiziemes + '/16'], de: 0, a: 1, origine: arrondi(departMontee), jusqua: arrondi(frontiere) });
     }
-    // Accord final : tonique tenue jusqu'à la fin de la vidéo.
-    pistes.push({ instrument: 'pad', volume: 0.55, motif: [accord(tonique, gamme, 1).map(nom).join('+') + ' ' + mesuresFinales], de: mesures - mesuresFinales, a: mesures });
     return { tempo: tempo, tonalite: tonalite, mesures: mesures, pistes: pistes };
   }
 
-  return { generer: generer, tonaliteValide: tonaliteValide };
+  return { generer: generer, tonaliteValide: tonaliteValide, HUMEURS: HUMEURS };
 });
