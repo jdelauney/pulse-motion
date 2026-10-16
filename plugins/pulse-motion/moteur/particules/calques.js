@@ -91,7 +91,7 @@
  * (M.rendreScene) : elle ne dépend que de τ, jamais du chemin suivi pour arriver à t.
  * Modules WGSL des recettes (P6) : compilés au démarrage du GPU (Rendu.verifierModules) ; un module qui ne compile pas désactive
  * son effet (panneau, M.shaders.erreurs, usage « module ») ; l'atelier refuse une recette dont un module ne compile pas.
- * Son réactif (P7) : la porte de disponibilité attend M.son.pret ; avant chaque simulation, les tables du son de l'effet
+ * Son réactif (P7) : la porte de disponibilité attend M.son.pret quand la vidéo lit le son (M.son.actif() ; l'atelier ne démarre pas l'analyse) ; avant chaque simulation, les tables du son de l'effet
  * (modulation, salves au son : P.tablesSon) sont posées sur ses émetteurs (em.son) ; salve sans instant : alerte ; piste
  * illisible : effet désactivé (export refusé tant qu'il est visible).
  * M.particules.sonEffet(idScene, ordre) -> [{ n, cMax, instants } | null]   (tests)
@@ -1540,7 +1540,7 @@
       panneauxTous(msg);
     });
     // Aucune mesure d'ancre avant que la page soit prête : polices, temps SMIL, position du lecteur ; son analysé (P7).
-    etat.pret = Promise.all([obtention, M.pret, polices(), M.son ? M.son.pret : null]).then((r) => {
+    etat.pret = Promise.all([obtention, M.pret, polices(), M.son && M.son.actif() ? M.son.pret : null]).then((r) => {
       const gpu = r[0];
       if (!gpu || gpu.erreur) return;
       const rendu = new P.Rendu(gpu.device, gpu.format);
