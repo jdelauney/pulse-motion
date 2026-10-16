@@ -135,3 +135,56 @@ test('démarche à soi : la marche utilise le cycle donné, phase calée sur sa 
   const geste = partition([{ type: 'marcher', debut: 0, fin: 10, vers: 60, clip: 'coucou' }]);
   assert.equal(PA.etatAuTemps(geste, 1, b, gab).corps, 'marche', 'un geste ponctuel ne sert pas de démarche : la marche normale');
 });
+
+test('hauteur : pente en marchant, sol courbe (tracé), mélange vers un tracé', () => {
+  const pente = partition([{ type: 'marcher', debut: 0, fin: 2, vers: 50, sol: 70 }], { sol0: 90, hauteur: 900 });
+  proche(PA.etatAuTemps(pente, 1, bib, gab).sol, 80);
+  proche(PA.etatAuTemps(pente, 5, bib, gab).sol, 70);
+  const sols = { colline: (x) => 80 - x / 5 };
+  const colline = partition([{ type: 'marcher', debut: 0, fin: 4, vers: 90 }], { sol0: '#colline', sols });
+  for (const t of [0, 1, 2.5, 4, 6]) { const e = PA.etatAuTemps(colline, t, bib, gab); proche(e.sol, 80 - e.x / 5, 1e-9, `t ${t}`); }
+  const melange = partition([{ type: 'marcher', debut: 0, fin: 2, vers: 50, sol: '#colline' }], { sol0: 90, sols });
+  const m = PA.etatAuTemps(melange, 1, bib, gab);
+  proche(m.sol, (90 + (80 - m.x / 5)) / 2, 1e-9, 'à mi-chemin : moitié droite, moitié tracé');
+  proche(PA.etatAuTemps(melange, 3, bib, gab).sol, 80 - 50 / 5);
+});
+
+test('glisser : sans marcher, garde la pose et la vue ; bondir : arc, corps du saut, arrivée', () => {
+  const g = partition([
+    { type: 'pose', debut: 0, fin: 5, pose: 'bras-leves' },
+    { type: 'glisser', debut: 1, fin: 3, sol: 60, courbe: 'linear' },
+  ], { sol0: 100, vue0: 90 });
+  const mi = PA.etatAuTemps(g, 2, bib, gab);
+  proche(mi.sol, 80); proche(mi.x, 10); proche(mi.vue, 90, 1e-9, 'la vue ne change pas');
+  assert.equal(mi.corps, 'pose');
+  const b = partition([{ type: 'bondir', debut: 0, fin: 1, vers: 30, sol: 70, hauteur: 20 }], { sol0: 90 });
+  const haut = PA.etatAuTemps(b, 0.5, bib, gab);
+  proche(haut.x, 20); proche(haut.sol, 80 - 20, 1e-9, 'milieu : sol moyen moins la hauteur de l\'arc');
+  assert.equal(haut.corps, 'bond');
+  proche(PA.etatAuTemps(b, 2, bib, gab).sol, 70);
+  proche(PA.etatAuTemps(b, 0.5, bib, gab).vue, 0, 1e-9, 'un bond se tourne dans le sens du trajet');
+  const enchaine = partition([{ type: 'bondir', debut: 0, fin: 1, vers: 30, sol: 70 }, { type: 'glisser', debut: 0.6, fin: 2, vers: 40 }], { sol0: 90 });
+  let prec = PA.etatAuTemps(enchaine, 0.55, bib, gab).sol;
+  for (let t = 0.56; t < 1.2; t += 0.01) { const s = PA.etatAuTemps(enchaine, t, bib, gab).sol; assert.ok(Math.abs(s - prec) < 2, `pas de saut à ${t} : ${prec} → ${s}`); prec = s; }
+});
+
+test('revue : foulée le long d\'une colline qui descend, bond coupé par une marche sans rester en l\'air', () => {
+  // Colline en V : la distance parcourue augmente toujours, même quand le chemin redescend.
+  const sols = { v: (x) => 50 + Math.abs(x - 50) * 0.6 };
+  const p = partition([{ type: 'marcher', debut: 0, fin: 8, vers: 90 }], { sol0: '#v', sols, hauteur: 900 });
+  const tr = PA.trajets(p)[0];
+  let precedente = -1;
+  for (let t = 0; t <= 8; t += 0.25) {
+    PA.etatAuTemps(p, t, bib, gab);
+    const e = PA.positionAuTemps(p, t);
+    proche(e.sol, 50 + Math.abs(e.x - 50) * 0.6, 1e-9);
+  }
+  assert.ok(Array.isArray(tr.longueurs) || tr.longueurs === undefined);
+  const lg = PA.trajets(p)[0].longueurs;
+  for (let i = 1; i < lg.length; i++) assert.ok(lg[i] >= lg[i - 1] - 1e-9, 'longueur cumulée croissante');
+  const coupe = partition([{ type: 'bondir', debut: 0, fin: 1, vers: 30, sol: 70, hauteur: 30 }, { type: 'marcher', debut: 0.5, fin: 2, vers: 50 }], { sol0: 90 });
+  const apres = PA.etatAuTemps(coupe, 3, bib, gab);
+  proche(apres.sol, 70, 1e-9, 'la marche vise encore le sol d\'arrivée du bond, sans l\'arc');
+  const depart = PA.etatAuTemps(coupe, 0.5, bib, gab).sol;
+  proche(depart, 80 - 30, 1e-6, 'repart du point atteint en l\'air (pas de saut), puis redescend');
+});
