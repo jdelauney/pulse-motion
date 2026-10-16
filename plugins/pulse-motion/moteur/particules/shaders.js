@@ -170,6 +170,17 @@
       this.glslActif = true;
       const r = gl.compiler(donnee);
       if (!r.ok) return echec(r.erreurs);
+      // Multipasse (P7) : un programme par tampon (appel passeX) ; tampons flottants indispensables.
+      let multi = null;
+      if (donnee.passes) {
+        if (!gl.flottant) return echec([{ ligne: null, colonne: null, message: 'tampons flottants indisponibles en WebGL2 (EXT_color_buffer_float) : shader multipasse non affiché' }]);
+        multi = { pps: donnee.pas_par_seconde || 60, image: donnee.passes[donnee.passes.length - 1], passes: [], etat: null };
+        for (const p of donnee.passes.slice(0, -1)) {
+          const rp = gl.compiler(donnee, 'passe' + p.nom);
+          if (!rp.ok) return echec(rp.erreurs);
+          multi.passes.push({ nom: p.nom, lit: p.lit, echelle: p.echelle, prog: rp.prog });
+        }
+      }
       let imageGL = null;
       if (donnee.image) {
         try { imageGL = await gl.image(donnee.image); } catch (e) { return echec([{ ligne: null, colonne: null, message: 'image de iChannel2 illisible' }]); }
@@ -178,7 +189,7 @@
       if (!relais.ok) return echec(relais.erreurs);
       const U = GPUBufferUsage;
       const shader = {
-        donnee, glsl: r.prog, moteurGL: gl, imageGL, valeurs: null, texture: null, vue: null, largeur: 0, hauteur: 0,
+        donnee, glsl: r.prog, moteurGL: gl, imageGL, multi, valeurs: null, texture: null, vue: null, largeur: 0, hauteur: 0,
         // Relais propre au shader (ses uniformes) : deux fonds GLSL peuvent être dessinés dans la même soumission.
         relais: {
           donnee: { nom: 'pm-relais', piste: donnee.piste }, disposition: relais.disposition, pipelines: relais.pipelines, image: null, valeurs: {},
@@ -343,6 +354,56 @@
       return etat;
     }
 
+    etatGLSL(shader, o) {
+      const gl = shader.moteurGL;
+      const m = shader.multi;
+      const k = o.hauteurSortie / 100;
+      const tampons = {};
+      m.passes.forEach((p) => {
+        tampons[p.nom] = gl.tampon(Math.max(1, Math.round(o.largeurZone * k * p.echelle)), Math.max(1, Math.round(o.hauteurZone * k * p.echelle)));
+      });
+      const lu = (n) => { const t = tampons[n]; return { texture: t.faces[t.courant].texture, largeur: t.largeur, hauteur: t.hauteur }; };
+      const parDefaut = (i) => (i === 2 ? shader.imageGL : i === 3 ? gl.texSon(shader.donnee.piste || 'musique') : null);
+      const canaux = (lit) => [0, 1, 2, 3].map((i) => (lit[i] ? lu(lit[i]) : parDefaut(i)));
+      const instantanes = new Map();
+      const ops = {
+        tailleEtat: Object.values(tampons).reduce((s, t) => s + t.largeur * t.hauteur * 8, 0),
+        vider: () => Object.values(tampons).forEach((t) => gl.viderFace(t.faces[t.courant], t.largeur, t.hauteur)),
+        pas: (kk) => {
+          const temps = kk / m.pps;
+          const instant = o.debut + temps / o.rythme;
+          o.textures(instant);
+          const entrees = { temps, image: [kk, 1 / m.pps], son: o.son(instant), instant };
+          m.passes.forEach((p) => {
+            const t = tampons[p.nom];
+            gl.executer(p.prog, { entrees, valeurs: shader.valeurs, canaux: canaux(p.lit) }, t.faces[1 - t.courant].fb, t.largeur, t.hauteur);
+          });
+          m.passes.forEach((p) => { tampons[p.nom].courant = 1 - tampons[p.nom].courant; });
+        },
+        sauver: (kk) => {
+          instantanes.set(kk, m.passes.map((p) => {
+            const t = tampons[p.nom];
+            const copie = gl.face(t.largeur, t.hauteur);
+            gl.copierFace(t.faces[t.courant], copie, t.largeur, t.hauteur);
+            return copie;
+          }));
+        },
+        restaurer: (kk) => {
+          instantanes.get(kk).forEach((copie, i) => {
+            const t = tampons[m.passes[i].nom];
+            gl.copierFace(copie, t.faces[t.courant], t.largeur, t.hauteur);
+          });
+        },
+        oublierTout: () => {
+          instantanes.forEach((copies) => copies.forEach((c) => gl.libererFace(c)));
+          instantanes.clear();
+        },
+      };
+      const etat = P.etatMultipasse(ops, m.pps, Math.ceil(o.fin * m.pps) + 1);
+      etat.canauxImage = () => canaux(m.image.lit);
+      return etat;
+    }
+
     /** Image WebGL2 copiée dans la texture du shader (rgba8unorm-srgb, prémultipliée) ; recréée si sa taille change. */
     copierGLSL(shader, canvas, largeur, hauteur) {
       const { device } = this;
@@ -359,6 +420,7 @@
     }
 
     canauxGL(shader, premiers) {
+      if (shader.multi && shader.multi.etat) return shader.multi.etat.canauxImage();
       const son = shader.moteurGL.texSon(shader.donnee.piste || 'musique');
       return [premiers[0] || null, premiers[1] || null, shader.imageGL, son];
     }

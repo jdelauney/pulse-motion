@@ -8,6 +8,7 @@
  *       (ImageBitmap téléversée, retournée et non prémultipliée ; ou { texture, largeur, hauteur }) ; sortie RVBA sRGB non
  *       prémultipliée, y vers le haut (Shadertoy), gardée jusqu'au dessin suivant (preserveDrawingBuffer)
  *   .executer(prog, o, cible, largeur, hauteur)   un dessin plein cadre vers un framebuffer (null : le canvas) ; multipasse
+ *   .face(l, h), .tampon(l, h), .viderFace, .copierFace, .libererFace   tampons RGBA16F des multipasses (P7)
  * Navigateur seulement ; dépend de shaders/glsl.js (M.codeGLSL).
  */
 (function (racine) {
@@ -187,6 +188,42 @@
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     }
+
+    /** Face d'un tampon multipasse (P7) : texture RGBA16F et son framebuffer. */
+    face(largeur, hauteur) {
+      const gl = this.gl;
+      const texture = gl.createTexture();
+      this.parametrer(texture);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, largeur, hauteur, 0, gl.RGBA, gl.HALF_FLOAT, null);
+      const fb = gl.createFramebuffer();
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      return { texture, fb };
+    }
+
+    tampon(largeur, hauteur) { return { largeur, hauteur, faces: [this.face(largeur, hauteur), this.face(largeur, hauteur)], courant: 0 }; }
+
+    viderFace(f, largeur, hauteur) {
+      const gl = this.gl;
+      gl.bindFramebuffer(gl.FRAMEBUFFER, f.fb);
+      gl.viewport(0, 0, largeur, hauteur);
+      gl.clearColor(0, 0, 0, 0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    }
+
+    /** Copie exacte d'une face dans une autre de même taille (instantanés). */
+    copierFace(de, vers, largeur, hauteur) {
+      const gl = this.gl;
+      gl.bindFramebuffer(gl.READ_FRAMEBUFFER, de.fb);
+      gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, vers.fb);
+      gl.blitFramebuffer(0, 0, largeur, hauteur, 0, 0, largeur, hauteur, gl.COLOR_BUFFER_BIT, gl.NEAREST);
+      gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null);
+      gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null);
+    }
+
+    libererFace(f) { this.gl.deleteTexture(f.texture); this.gl.deleteFramebuffer(f.fb); }
 
     dessiner(prog, o) {
       if (this.canvas.width !== o.largeur) this.canvas.width = o.largeur;
