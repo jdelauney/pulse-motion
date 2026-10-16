@@ -125,6 +125,7 @@
       gl.attachShader(programme, this.sommets);
       gl.attachShader(programme, fs);
       gl.linkProgram(programme);
+      gl.deleteShader(fs); // libéré avec le programme
       if (!gl.getProgramParameter(programme, gl.LINK_STATUS)) {
         const message = gl.getProgramInfoLog(programme) || 'édition des liens GLSL refusée';
         gl.deleteProgram(programme);

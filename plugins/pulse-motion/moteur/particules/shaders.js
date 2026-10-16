@@ -13,7 +13,9 @@
  *   .ecrireSon(piste, spectre, onde), .vueSon(piste)   texture du son (P7), liaison 8 (iSonTexture)
  * Multipasse (P7) : P.etatMultipasse (planificateur de P1) ; .avancerMultipasse(shader, o) amène les tampons d'un fond
  * (rgba16float, ping-pong, une soumission par pas, instantanés par copie de textures) à l'état ⌊τ × pps⌋ ; la passe image
- * lit les tampons de son « lit ».
+ * lit les tampons de son « lit ». .libererMultipasse(shader) : tampons et instantanés libérés (recréés au prochain avancement,
+ * même état : il ne dépend que de τ) ; .oublier(shader) : en plus, programmes WebGL2 d'un shader GLSL (perte du GPU).
+ * Fond GLSL : shader.transparent (vrai si sa première image, hors multipasse, est entièrement transparente).
  * GLSL (P7) : donnee.langage « glsl » compilé par P.Glsl (contexte WebGL2 partagé) ; fond : image WebGL2 de la zone et de
  * son débord copiée (copyExternalImageToTexture) puis relais WGSL sur le repère ; .imageGLSLComposition pour la composition.
  *   .vueBruit, .vueVide                     texture de bruit 256 × 256 (P.texelsBruit), texture transparente 1 × 1
@@ -351,6 +353,11 @@
       };
       const etat = P.etatMultipasse(ops, m.pps, Math.ceil(o.fin * m.pps) + 1);
       etat.canauxImage = () => canaux(m.image.lit);
+      etat.instantanes = () => instantanes.size;
+      etat.liberer = () => {
+        etat.oublier();
+        Object.values(tampons).forEach((t) => t.faces.forEach((f) => f.destroy()));
+      };
       return etat;
     }
 
@@ -401,7 +408,34 @@
       };
       const etat = P.etatMultipasse(ops, m.pps, Math.ceil(o.fin * m.pps) + 1);
       etat.canauxImage = () => canaux(m.image.lit);
+      etat.instantanes = () => instantanes.size;
+      etat.liberer = () => {
+        etat.oublier();
+        Object.values(tampons).forEach((t) => t.faces.forEach((f) => gl.libererFace(f)));
+      };
       return etat;
+    }
+
+    /** Tampons et instantanés d'un fond multipasse libérés ; recréés au prochain avancement (même état, fonction de τ). */
+    libererMultipasse(shader) {
+      const m = shader && shader.multi;
+      if (!m || !m.etat) return;
+      const etat = m.etat;
+      m.etat = null;
+      etat.liberer();
+    }
+
+    /** Shader abandonné (perte du GPU, piste illisible) : multipasse libéré, texture de copie, programmes WebGL2. */
+    oublier(shader) {
+      if (!shader) return;
+      try { this.libererMultipasse(shader); } catch (e) { /* device déjà perdu */ }
+      if (shader.texture) { try { shader.texture.destroy(); } catch (e) { /* device déjà perdu */ } shader.texture = null; }
+      if (shader.glsl) {
+        const gl = shader.moteurGL.gl;
+        gl.deleteProgram(shader.glsl.programme);
+        if (shader.multi) shader.multi.passes.forEach((p) => gl.deleteProgram(p.prog.programme));
+        shader.glsl = null;
+      }
     }
 
     /** Image WebGL2 copiée dans la texture du shader (rgba8unorm-srgb, prémultipliée) ; recréée si sa taille change. */
