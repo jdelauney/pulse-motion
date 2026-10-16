@@ -9,6 +9,8 @@
  * M.son.lire(piste, t) -> { volume, basses, mediums, aigus, battement, phase, enveloppe, syllabe }  (zéros sans la piste)
  * M.son.spectre(piste, t), M.son.onde(piste, t) -> Uint8Array(512) | null
  * M.son.battements(piste), M.son.syllabes(piste) -> [t] ; M.son.empreinte(piste) -> texte | null (tests)
+ * M.son.refus(visibles) -> message | null   variables CSS du son (M.donnees.son.variables) qui suivent une piste illisible
+ *     (visibles : seulement les scènes affichées et le style) ; un panneau sur la scène (ou #pm-scene) après l'analyse
  * Variables CSS (M.donnees.son.css) : --son-volume, --son-basses, --son-mediums, --son-aigus, --son-battement, --son-phase
  * (musique), --voix-enveloppe (voix), 4 décimales, 0 tant que l'analyse n'est pas faite.
  * Navigateur seulement ; dépend de horloge, audio (M.pistesBrutes), analyse-son.
@@ -41,7 +43,42 @@
     battements: function (p) { var tb = etat.tables[p]; return tb ? tb.battements.slice() : []; },
     syllabes: function (p) { var tb = etat.tables[p]; return tb ? tb.syllabes.slice() : []; },
     empreinte: function (p) { var tb = etat.tables[p]; return tb ? M.analyseSon.empreinte(tb) : null; },
+    refus: function (visibles) {
+      var pb = problemesVariables().filter(function (x) {
+        if (!visibles || !x.scene) return true;
+        var s = sectionDe(x.scene);
+        return !!s && s.style.display !== 'none';
+      })[0];
+      return pb ? pb.message : null;
+    },
   };
+
+  function sectionDe(id) { return document.querySelector('#pm-scene > section[data-scene="' + CSS.escape(id) + '"]'); }
+
+  /** Variables CSS du son qui suivent une piste illisible (spec P7 §6) : [{ scene | null, message }]. */
+  function problemesVariables() {
+    var b = besoin();
+    if (!b || !b.variables || !etat.fait) return [];
+    var r = [];
+    b.variables.forEach(function (v) {
+      var p = v.pistes.filter(function (x) { return etat.erreurs[x]; })[0];
+      if (!p) return;
+      r.push({ scene: v.scene, message: (v.scene ? 'Scène « ' + v.scene + ' »' : 'Style de la vidéo') + ' : variables CSS du son à 0, piste illisible. ' + etat.erreurs[p] });
+    });
+    return r;
+  }
+
+  /** Panneau (aperçu) sur chaque scène dont le CSS suit une piste illisible ; sur #pm-scene pour le style. */
+  function panneauxVariables() {
+    problemesVariables().forEach(function (pb) {
+      var el = pb.scene ? sectionDe(pb.scene) : document.getElementById('pm-scene');
+      if (!el || el.querySelector(':scope > .pm-effet-panneau')) return;
+      var d = document.createElement('div');
+      d.className = 'pm-effet-panneau';
+      d.textContent = pb.message;
+      el.appendChild(d);
+    });
+  }
 
   function poserVariables(t) {
     var b = besoin();
@@ -82,6 +119,7 @@
       console.error('[Pulse Motion] ' + m);
     }).then(function () {
       etat.fait = true;
+      panneauxVariables();
       resoudre();
       poserVariables(M.temps());
     });

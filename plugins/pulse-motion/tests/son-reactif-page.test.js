@@ -72,17 +72,26 @@ test('page : variables CSS fonction de t, deux chemins, même valeur en capture'
   } finally { await page.fermer(); }
 });
 
-test('page : musique illisible -> erreur de la piste, variables à 0, seek qui n\'attend pas indéfiniment', sans, async () => {
+test('page : musique illisible -> erreur de la piste, variables à 0, panneau, export refusé, seek qui n\'attend pas indéfiniment', sans, async () => {
   const dir = projetClics();
   fs.writeFileSync(path.join(dir, 'assets', 'clics.wav'), Buffer.from('pas un son'));
   const page = await ouvrirPageSon({ dir, navigateur });
   try {
-    const r = await page.evaluer(`M.seek(1).then(function () {
-      return { erreur: M.son.erreur('musique'), pistes: M.son.pistes(),
+    const r = await page.evaluer(`M.seek(1).then(async function () {
+      var panneau = document.querySelector('section[data-scene="intro"] > .pm-effet-panneau');
+      var refus = null;
+      try { await M.particules.verifierExport(); } catch (e) { refus = e.message; }
+      var capture = null;
+      try { await M.particules.preparerCapture(); } catch (e) { capture = e.message; }
+      return { erreur: M.son.erreur('musique'), pistes: M.son.pistes(), panneau: panneau && panneau.textContent, refus: refus, capture: capture,
         battement: getComputedStyle(document.getElementById('pm-scene')).getPropertyValue('--son-battement').trim() };
     })`);
     assert.match(r.erreur, /La musique n'a pas pu être lue/);
     assert.deepEqual(r.pistes, []);
     assert.equal(r.battement, '0.0000');
+    // Spec P7 §6 : panneau sur la scène dont le CSS suit la musique ; export refusé.
+    assert.match(r.panneau, /Scène « intro » : variables CSS du son à 0, piste illisible\. La musique n'a pas pu être lue/);
+    assert.match(r.refus, /^Export refusé : Scène « intro »/);
+    assert.match(r.capture, /Scène « intro ».*export interrompu/);
   } finally { await page.fermer(); }
 });

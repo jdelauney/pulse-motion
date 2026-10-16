@@ -25,7 +25,7 @@ test('besoins : pistes utilisées, piste inconnue, piste absente de la vidéo', 
     css: [{ scene: null, texte: '.x { opacity: var(--son-volume); }' }],
     presentes,
   });
-  assert.deepEqual(r.son, { pistes: ['musique'], css: true });
+  assert.deepEqual(r.son, { pistes: ['musique'], css: true, variables: [{ scene: null, pistes: ['musique'] }] });
   assert.deepEqual(regles(r), ['piste-inconnue:erreur', 'son-sans-piste:erreur']);
   assert.match(r.erreurs[0].message, /Scène « a », effet « neige » : piste « batterie » inconnue \(pistes : musique, voix\)/);
   assert.match(r.erreurs[1].message, /shader « halo » suit la voix, mais la vidéo n'en a pas/);
@@ -58,7 +58,7 @@ test('assemblage : variables CSS dans une scène, avec et sans musique', () => {
   fs.writeFileSync(path.join(avec, 'assets', 'musique.wav'), wavSinus({ secondes: 2 }));
   modifierDeroule(avec, (d) => { d.musique = { fichier: 'assets/musique.wav' }; });
   const b = assembler({ dossier: avec, dossierStyles: STYLES, ecrire: false });
-  assert.deepEqual(b.donnees.son, { pistes: ['musique'], css: true });
+  assert.deepEqual(b.donnees.son, { pistes: ['musique'], css: true, variables: [{ scene: 'intro', pistes: ['musique'] }] });
   assert.equal(b.erreurs.filter((e) => e.regle === 'son-sans-piste').length, 0);
   assert.match(b.html, /M\.demarrerSonReactif\(\);\nM\.demarrerParticules\(\);/);
   assert.match(b.html, /M\.analyseSon = api/);

@@ -127,3 +127,20 @@ await envoyer({ note: px(note, note.largeur >> 1, note.hauteur >> 1), silence: p
   assert.ok(r.note[0] > 200 && r.note[1] > 100, `note : ${r.note}`);
   assert.ok(r.silence[0] < 30 && r.silence[1] < 30, `silence : ${r.silence}`);
 });
+
+test('GLSL : musique illisible suivie par un fond -> panneau, M.shaders.erreurs, export refusé', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const r = await executer({ musique: Buffer.from('pas un son'),
+    scenes: { a: '<section data-scene="a"><div data-shader="basses-st"></div></section>' }, script: `
+await M.seek(1);
+const panneau = document.querySelector('[data-shader] .pm-effet-panneau');
+let refus = null;
+try { await M.particules.verifierExport(); } catch (e) { refus = e.message; }
+await envoyer({ panneau: panneau && panneau.textContent, erreurs: M.shaders.erreurs(), decrire: M.shaders.decrire('a'), refus });` });
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.match(r.panneau, /Fond non affiché : Shader « basses-st » : La musique n'a pas pu être lue/);
+  assert.equal(r.erreurs.length, 1);
+  assert.equal(r.erreurs[0].nom, 'basses-st');
+  assert.equal(r.decrire[0].actif, false);
+  assert.match(r.refus, /^Export refusé : Shader « basses-st »/);
+});
