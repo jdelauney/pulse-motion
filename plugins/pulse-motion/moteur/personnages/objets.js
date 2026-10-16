@@ -122,7 +122,8 @@
         else o.el.style.setProperty('visibility', o.origine.visibility[0], o.origine.visibility[1]);
       });
     }
-    M.surRendu(rendre);
+    // Rendu appelé par celui des personnages (avant eux), à chaque image.
+    M.rendreObjetsTenus = rendre;
     rendre(M.temps ? M.temps() : 0);
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

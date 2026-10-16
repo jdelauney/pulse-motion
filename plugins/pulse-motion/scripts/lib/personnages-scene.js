@@ -52,7 +52,7 @@ function preparerPersonnages(html, { scene, lu, voix = false }) {
     const a = lireAttributs(texte);
     if (a['data-personnage'] !== undefined && a.id) porteurs.set(a.id.trim(), parent || null);
     if (a['data-tenu-par'] !== undefined) objetsTenus.push({ a, parent: parent || null });
-    if (!autoFermee) pile.push({ tag: nomTag, personnage: a['data-personnage'] !== undefined ? a['data-personnage'].trim() : null });
+    if (!autoFermee) pile.push({ tag: nomTag, personnage: a['data-personnage'] !== undefined ? a['data-personnage'].trim() : null, id: a.id ? a.id.trim() : null });
     if (a.id) {
       const id = a.id.trim();
       if (chemins.has(id) || autresIds.has(id)) idsDoubles.add(id);
@@ -87,7 +87,11 @@ function preparerPersonnages(html, { scene, lu, voix = false }) {
       const c = (a['data-cible'] || '').trim();
       if (c && !/^#[\w-]+$/.test(c) && !/^-?\d*\.?\d+%\s+-?\d*\.?\d+%$/.test(c) && !(type === 'regarder' && (c === 'camera' || c === 'aucune'))) {
         erreurs.push(erreur(scene, `${qui} : data-cible="${c}" doit être « #id » (un élément ou un personnage de la scène), un point « x% y% »${type === 'regarder' ? ', « camera » ou « aucune »' : ''}.`));
-      } else if (/^#/.test(c)) ciblesCitees.push({ id: c.slice(1), ou: qui });
+      } else if (/^#/.test(c)) {
+        ciblesCitees.push({ id: c.slice(1), ou: qui });
+        if (parent && parent.id === c.slice(1)) erreurs.push({ ...erreur(scene, `${qui} : la cible « ${c} » est le personnage lui-même.`), gravite: 'alerte' });
+      }
+      if (type === 'regarder') for (const k of ['data-niveau', 'data-main']) if (a[k] !== undefined) erreurs.push({ ...erreur(scene, `${qui} : ${k} ne sert qu'à « atteindre ».`), gravite: 'alerte' });
       if (a['data-point'] !== undefined && !/^\s*-?\d*\.?\d+%\s+-?\d*\.?\d+%\s*$/.test(a['data-point'])) erreurs.push(erreur(scene, `${qui} : data-point="${a['data-point']}" doit être un point en % de l'élément, ex. « 50% 0% ».`));
       if (type === 'atteindre' && a['data-dur'] === undefined) erreurs.push(erreur(scene, `${qui} : data-dur obligatoire (combien de temps la main reste sur la cible).`));
       if (type === 'atteindre' && a['data-main'] !== undefined && !['avant', 'arriere', 'deux'].includes(a['data-main'].trim())) erreurs.push(erreur(scene, `${qui} : data-main="${a['data-main']}" doit être avant, arriere ou deux.`));
@@ -147,6 +151,8 @@ function preparerPersonnages(html, { scene, lu, voix = false }) {
       if (!mr) erreurs.push(erreur(scene, `${qui} : data-relais="${a['data-relais']}" doit être « #id à secondes », ex. « #n2 à 1.5 ».`));
       else if (!porteurs.has(mr[1])) erreurs.push(erreur(scene, `${qui} : relais « #${mr[1]} » introuvable (un conteneur data-personnage de la scène).`));
       else if (porteurs.get(mr[1]) !== parent) erreurs.push(erreur(scene, `${qui} : le relais « #${mr[1]} » doit être dans le même conteneur que l'objet.`));
+      if (mr && mr[1] === id) erreurs.push({ ...erreur(scene, `${qui} : le relais « #${mr[1]} » est déjà son porteur.`), gravite: 'alerte' });
+      if (mr && a['data-dur'] !== undefined && Number.isFinite(Number(a['data-dur'])) && Number(mr[2]) >= Number(a['data-dur'])) erreurs.push({ ...erreur(scene, `${qui} : le relais à ${mr[2]} s tombe après la fin de la prise (${a['data-dur']} s) : il ne se fera pas.`), gravite: 'alerte' });
     }
   }
   for (const c of ciblesCitees) {

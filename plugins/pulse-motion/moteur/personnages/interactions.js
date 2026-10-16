@@ -17,6 +17,7 @@
   var FONDU = 0.25, DEG = Math.PI / 180;
   var NIVEAUX = { haut: -0.6, epaule: 0.15, bas: 0.6 };
 
+  function normaliser(a) { a = ((a + 180) % 360 + 360) % 360 - 180; return a === -180 ? 180 : a; }
   function lisse(k) { k = Math.max(0, Math.min(1, k)); return k * k * (3 - 2 * k); }
   function poids(a, t) {
     if (!(t >= a.debut && t < a.fin)) return 0;
@@ -29,8 +30,15 @@
   function echapper(id) { return typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(id) : id; }
   function versScene(pose, local) { return { x: pose.x + local[0] * pose.echelle, y: pose.y + local[1] * pose.echelle }; }
 
-  /** Cible d'une action : { x, y } (unités de la scène), { perso }, { camera: true }, ou null. */
-  function cible(a, p, ctx) {
+  /** Cible d'une action : { x, y } (unités de la scène), { perso }, { camera: true }, ou null. Mesurée une fois par instant
+   *  (même t, même cible : les rectangles ne sont relus qu'à un nouvel instant). */
+  function cible(a, p, ctx, t) {
+    if (a.mesure && a.mesure.t === t) return a.mesure.v;
+    var v = mesurerCible(a, p, ctx);
+    a.mesure = { t: t, v: v };
+    return v;
+  }
+  function mesurerCible(a, p, ctx) {
     var c = (a.cible || '').trim();
     if (!c || c === 'aucune') return null;
     if (c === 'camera') return { camera: true };
@@ -40,10 +48,18 @@
     try { el = p.sec.querySelector('#' + echapper(c.replace(/^#/, ''))); } catch (e) { el = null; }
     if (!el) return null;
     var q = ctx.persos.filter(function (x) { return x.div === el; })[0];
-    if (q) return q === p ? null : { perso: q };
+    if (q) {
+      if (q === p) return null;
+      if (q.div.parentElement !== p.div.parentElement && !a.alerte) {
+        a.alerte = true;
+        if (ctx.alerter) ctx.alerter(p, 'la cible « ' + c + ' » est dans un autre conteneur : sa position et son temps (arrêt sur image, parallaxe) peuvent différer ; mettre les deux personnages dans le même conteneur.');
+      }
+      return { perso: q };
+    }
     // Élément : son point dans le repère du personnage (rectangles à l'écran : caméra et parallaxe comprises).
     var rd = p.div.getBoundingClientRect(), re = el.getBoundingClientRect();
     if (!(rd.width > 0 && rd.height > 0)) return null;
+    if (!(re.width > 0 || re.height > 0) && el.getClientRects().length === 0) return null; // élément non rendu (display:none)
     var pp = lirePoint(a.point, [50, 50]);
     return { x: (re.left + re.width * pp[0] / 100 - rd.left) / rd.width * ctx.W, y: (re.top + re.height * pp[1] / 100 - rd.top) / rd.height * ctx.H };
   }
@@ -51,31 +67,41 @@
   function cote(main) { return main === 'arriere' ? 'Arriere' : 'Avant'; }
 
   function appliquerAtteindre(p, t, pose, ctx, S) {
+    // Près de la vue de face, l'IK n'a plus de sens : son effet s'estompe entre |cos(vue)| 0,45 et 0,25 (pas de saut).
+    var cv = Math.abs(Math.cos((pose.vue || 0) * DEG));
+    var face = Math.max(0, Math.min(1, (cv - 0.25) / 0.2));
+    if (face <= 0) return;
     p.partition.actions.forEach(function (a) {
       if (a.type !== 'atteindre') return;
-      var k = poids(a, t);
+      var k = poids(a, t) * face;
       if (k <= 0) return;
-      var c = cible(a, p, ctx);
+      var c = cible(a, p, ctx, t);
       if (!c || c.camera) return;
       var mains = a.main === 'deux' ? ['Avant', 'Arriere'] : [cote(a.main)];
       var pt = c;
       if (c.perso) {
         var q = c.perso, poseQ = ctx.placerBase(q, t), rQ = S.calculer(poseQ, q.gabarit);
+        var main = S.pointDe(rQ, 'mainAvant');
         var retour = q.partition.actions.filter(function (b) {
           return b.type === 'atteindre' && (b.cible || '').trim().replace(/^#/, '') === p.div.id && poids(b, t) > 0;
         })[0];
+        pt = main;
         if (retour) {
-          // Rencontre : les deux mains vont au même point, entre les deux épaules, à la hauteur demandée.
+          // Rencontre : les deux mains vont au même point, entre les deux épaules. Mêmes réglages des deux côtés : le bras
+          // le plus court des deux, et le niveau de celui dont l'id vient en premier.
           var rP = S.calculer(pose, p.gabarit), e1 = S.pointDe(rP, 'epaule' + mains[0]), e2 = S.pointDe(rQ, 'epaule' + cote(retour.main === 'deux' ? 'avant' : retour.main));
-          var g = S.completerGabarit(p.gabarit), bras = (g.bras + g.avantBras) * pose.echelle;
-          var niveau = NIVEAUX[a.niveau] !== undefined ? NIVEAUX[a.niveau] : NIVEAUX.epaule;
+          var gP = S.completerGabarit(p.gabarit), gQ = S.completerGabarit(q.gabarit);
+          var bras = Math.min((gP.bras + gP.avantBras) * pose.echelle, (gQ.bras + gQ.avantBras) * poseQ.echelle);
+          var nomNiveau = p.div.id < q.div.id ? a.niveau : retour.niveau;
+          var niveau = NIVEAUX[nomNiveau] !== undefined ? NIVEAUX[nomNiveau] : NIVEAUX.epaule;
           // Hauteur demandée, ramenée à ce que les deux bras atteignent (les mains se rejoignent si la distance le permet).
           var demi = Math.hypot(e1.x - e2.x, e1.y - e2.y) / 2, portee = 0.97 * bras;
           var haut = niveau * bras;
           if (demi * demi + haut * haut > portee * portee) haut = (haut < 0 ? -1 : 1) * Math.sqrt(Math.max(0, portee * portee - demi * demi));
-          pt = { x: (e1.x + e2.x) / 2, y: (e1.y + e2.y) / 2 + haut };
-        } else {
-          pt = S.pointDe(rQ, 'mainAvant');
+          var commun = { x: (e1.x + e2.x) / 2, y: (e1.y + e2.y) / 2 + haut };
+          // L'autre arrive ou repart : on glisse de sa main vers le point commun (pas de saut de cible).
+          var kr = poids(retour, t);
+          pt = { x: main.x + (commun.x - main.x) * kr, y: main.y + (commun.y - main.y) * kr };
         }
       }
       mains.forEach(function (s) {
@@ -93,10 +119,11 @@
       if (a.type !== 'regarder') return;
       var k = poids(a, t);
       if (k <= 0) return;
-      var c = cible(a, p, ctx);
+      var c = cible(a, p, ctx, t);
       var voulu;
       if (!c) return;
-      if (c.camera) voulu = { regardX: 0, regardY: 0, tete: 0, teteTourne: 40 };
+      // Caméra : la tête se tourne vers le spectateur, quel que soit le côté où il est tourné (face : rien à tourner).
+      if (c.camera) voulu = { regardX: 0, regardY: 0, tete: 0, teteTourne: Math.max(-60, Math.min(60, normaliser(90 - (pose.vue || 0)))) };
       else {
         var pt = c;
         if (c.perso) {
@@ -106,7 +133,13 @@
         var rP = S.calculer(pose, p.gabarit), tete = versScene(rP.efficace, rP.tete.centre);
         var dx = pt.x - tete.x, dy = pt.y - tete.y, d = Math.hypot(dx, dy);
         if (d < 1e-6) return;
-        var cv = Math.cos((pose.vue || 0) * DEG), sens = Math.abs(cv) < 0.25 ? 1 : (cv > 0 ? 1 : -1);
+        // Pupilles : un dessin en pièces dessine le visage en miroir quand il regarde à gauche (regardX inversé) ;
+        // les bâtonnets placent les pupilles à l'écran.
+        var sens = 1;
+        if (p.miroir && M.pieces) {
+          var vv = M.pieces.vueDe(pose.vue || 0);
+          sens = vv === 'face' || vv === 'dos' ? 1 : (Math.cos((pose.vue || 0) * DEG) < 0 ? -1 : 1);
+        }
         var ux = dx / d * sens, uy = dy / d;
         voulu = { regardX: 6 * ux, regardY: 7 * uy, tete: Math.max(-25, Math.min(25, uy * 25)) };
       }
