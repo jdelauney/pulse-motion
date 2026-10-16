@@ -14,11 +14,12 @@ const P = require('./personnages.js');
 const K = require('../../moteur/clips.js');
 const C = require('../../moteur/courbes.js');
 
-const BALISE = /<(\/?)([a-zA-Z][\w-]*)\b((?:[^>"']|"[^"]*"|'[^']*')*)>/g;
+// Les commentaires HTML sont reconnus d'abord, et laissés tels quels (une balise commentée ne compte pas).
+const BALISE = /<!--[\s\S]*?-->|<(\/?)([a-zA-Z][\w-]*)\b((?:[^>"']|"[^"]*"|'[^']*')*)>/g;
 // Éléments sans fermeture : ils ne changent pas la profondeur.
 const VIDES = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr']);
 const ACTIONS = {
-  marcher: ['vers'], courir: ['vers'], glisser: [], bondir: [], pose: ['pose'], jouer: ['clip'], tourner: ['vue'], expression: ['expression'], bouche: ['bouche'], parler: [],
+  marcher: ['vers'], courir: ['vers'], glisser: [], bondir: [], atteindre: ['cible'], regarder: ['cible'], pose: ['pose'], jouer: ['clip'], tourner: ['vue'], expression: ['expression'], bouche: ['bouche'], parler: [],
 };
 const NOMBRES = ['data-x', 'data-sol', 'data-taille', 'data-vue', 'data-vers', 'data-hauteur'];
 const TRAJETS = ['marcher', 'courir', 'glisser', 'bondir'];
@@ -29,14 +30,17 @@ function erreur(scene, message) { return { regle: 'personnage-invalide', gravite
 function preparerPersonnages(html, { scene, lu, voix = false }) {
   const erreurs = [];
   const utilises = { dessins: new Set(), gabarits: new Set() };
-  if (!/data-personnage|data-action/.test(html)) return { html, utilises, erreurs, parle: false };
+  if (!/data-personnage|data-action|data-tenu-par/.test(html)) return { html, utilises, erreurs, parle: false };
   let parle = false;
   let courant = null;
   // Tracés de la scène (sols courbes) et sols cités, vérifiés à la fin.
   const chemins = new Set(), autresIds = new Set(), idsDoubles = new Set(), solsCites = [];
+  // Personnages (id -> conteneur parent) et objets tenus, vérifiés à la fin.
+  const porteurs = new Map(), objetsTenus = [], ciblesCitees = [];
   // Pile des balises ouvertes : une action n'est lue que si elle est enfant direct d'un conteneur data-personnage.
   const pile = [];
   const sortie = html.replace(BALISE, (tout, fermeture, tag, texte) => {
+    if (tout.startsWith('<!--')) return tout;
     const nomTag = tag.toLowerCase();
     if (fermeture) {
       const i = pile.map((x) => x.tag).lastIndexOf(nomTag);
@@ -46,7 +50,9 @@ function preparerPersonnages(html, { scene, lu, voix = false }) {
     const autoFermee = /\/\s*$/.test(texte) || VIDES.has(nomTag);
     const parent = pile[pile.length - 1];
     const a = lireAttributs(texte);
-    if (!autoFermee) pile.push({ tag: nomTag, personnage: a['data-personnage'] !== undefined ? a['data-personnage'].trim() : null });
+    if (a['data-personnage'] !== undefined && a.id) porteurs.set(a.id.trim(), parent || null);
+    if (a['data-tenu-par'] !== undefined) objetsTenus.push({ a, parent: parent || null });
+    if (!autoFermee) pile.push({ tag: nomTag, personnage: a['data-personnage'] !== undefined ? a['data-personnage'].trim() : null, id: a.id ? a.id.trim() : null });
     if (a.id) {
       const id = a.id.trim();
       if (chemins.has(id) || autresIds.has(id)) idsDoubles.add(id);
@@ -77,6 +83,20 @@ function preparerPersonnages(html, { scene, lu, voix = false }) {
     if (!ACTIONS[type]) { erreurs.push(erreur(scene, `${qui} : action inconnue (${Object.keys(ACTIONS).join(', ')}).`)); return tout; }
     for (const champ of ACTIONS[type]) if (a[`data-${champ}`] === undefined) erreurs.push(erreur(scene, `${qui} : il manque data-${champ}.`));
     if ((type === 'glisser' || type === 'bondir') && a['data-vers'] === undefined && a['data-sol'] === undefined) erreurs.push(erreur(scene, `${qui} : il faut data-vers (où aller) ou data-sol (à quelle hauteur), ou les deux.`));
+    if (type === 'atteindre' || type === 'regarder') {
+      const c = (a['data-cible'] || '').trim();
+      if (c && !/^#[\w-]+$/.test(c) && !/^-?\d*\.?\d+%\s+-?\d*\.?\d+%$/.test(c) && !(type === 'regarder' && (c === 'camera' || c === 'aucune'))) {
+        erreurs.push(erreur(scene, `${qui} : data-cible="${c}" doit être « #id » (un élément ou un personnage de la scène), un point « x% y% »${type === 'regarder' ? ', « camera » ou « aucune »' : ''}.`));
+      } else if (/^#/.test(c)) {
+        ciblesCitees.push({ id: c.slice(1), ou: qui });
+        if (parent && parent.id === c.slice(1)) erreurs.push({ ...erreur(scene, `${qui} : la cible « ${c} » est le personnage lui-même.`), gravite: 'alerte' });
+      }
+      if (type === 'regarder') for (const k of ['data-niveau', 'data-main']) if (a[k] !== undefined) erreurs.push({ ...erreur(scene, `${qui} : ${k} ne sert qu'à « atteindre ».`), gravite: 'alerte' });
+      if (a['data-point'] !== undefined && !/^\s*-?\d*\.?\d+%\s+-?\d*\.?\d+%\s*$/.test(a['data-point'])) erreurs.push(erreur(scene, `${qui} : data-point="${a['data-point']}" doit être un point en % de l'élément, ex. « 50% 0% ».`));
+      if (type === 'atteindre' && a['data-dur'] === undefined) erreurs.push(erreur(scene, `${qui} : data-dur obligatoire (combien de temps la main reste sur la cible).`));
+      if (type === 'atteindre' && a['data-main'] !== undefined && !['avant', 'arriere', 'deux'].includes(a['data-main'].trim())) erreurs.push(erreur(scene, `${qui} : data-main="${a['data-main']}" doit être avant, arriere ou deux.`));
+      if (a['data-niveau'] !== undefined && !['haut', 'epaule', 'bas'].includes(a['data-niveau'].trim())) erreurs.push(erreur(scene, `${qui} : data-niveau="${a['data-niveau']}" doit être haut, epaule ou bas.`));
+    }
     if (a['data-sol'] !== undefined && !TRAJETS.includes(type)) erreurs.push(erreur(scene, `${qui} : data-sol ne sert qu'aux déplacements (marcher, courir, glisser, bondir) ou au personnage lui-même.`));
     if (a['data-hauteur'] !== undefined && type !== 'bondir') erreurs.push(erreur(scene, `${qui} : data-hauteur ne sert qu'à « bondir » (hauteur de l'arc).`));
     if (a['data-courbe'] !== undefined && type !== 'glisser') erreurs.push(erreur(scene, `${qui} : data-courbe ne sert qu'à « glisser ».`));
@@ -115,6 +135,29 @@ function preparerPersonnages(html, { scene, lu, voix = false }) {
     if (a['data-start'] === undefined && a['data-dur'] === undefined && ACTIONS[type]) return tout.replace(/\s*\/?>$/, (fin) => ` data-start="0"${fin}`);
     return tout;
   });
+  for (const { a, parent } of objetsTenus) {
+    const id = a['data-tenu-par'].trim().replace(/^#/, '');
+    const qui = `objet tenu${a.id ? ` « ${a.id} »` : ''}`;
+    if (idsDoubles.has(id)) erreurs.push(erreur(scene, `${qui} : plusieurs éléments portent l'id « ${id} » ; le porteur doit être unique.`));
+    if (!porteurs.has(id)) erreurs.push(erreur(scene, `${qui} : porteur « #${id} » introuvable (data-tenu-par = l'id d'un conteneur data-personnage de la scène).`));
+    else if (porteurs.get(id) !== parent) erreurs.push(erreur(scene, `${qui} : il doit être dans le même conteneur que son porteur « #${id} » (même parent), pour suivre sa main.`));
+    if (a['data-devant'] !== undefined && a['data-derriere'] !== undefined) erreurs.push(erreur(scene, `${qui} : data-devant et data-derriere ensemble ; n'en garder qu'un.`));
+    const liste = { 'data-main': ['avant', 'arriere', 'deux'], 'data-orientation': ['droit', 'main'], 'data-lacher': ['reste', 'cache', 'tombe'] };
+    for (const [k, valeurs] of Object.entries(liste)) if (a[k] !== undefined && !valeurs.includes(a[k].trim())) erreurs.push(erreur(scene, `${qui} : ${k}="${a[k]}" doit être ${valeurs.join(', ')}.`));
+    if (a['data-prise'] !== undefined && !/^\s*-?\d*\.?\d+%\s+-?\d*\.?\d+%\s*$/.test(a['data-prise'])) erreurs.push(erreur(scene, `${qui} : data-prise="${a['data-prise']}" doit être un point en % de l'objet, ex. « 50% 100% » (milieu du bas).`));
+    if (a['data-dur'] === undefined) erreurs.push(erreur(scene, `${qui} : data-dur obligatoire (combien de temps il est tenu).`));
+    if (a['data-relais'] !== undefined) {
+      const mr = /^\s*#?([\w-]+)\s+à\s+(\d*\.?\d+)\s*$/.exec(a['data-relais']);
+      if (!mr) erreurs.push(erreur(scene, `${qui} : data-relais="${a['data-relais']}" doit être « #id à secondes », ex. « #n2 à 1.5 ».`));
+      else if (!porteurs.has(mr[1])) erreurs.push(erreur(scene, `${qui} : relais « #${mr[1]} » introuvable (un conteneur data-personnage de la scène).`));
+      else if (porteurs.get(mr[1]) !== parent) erreurs.push(erreur(scene, `${qui} : le relais « #${mr[1]} » doit être dans le même conteneur que l'objet.`));
+      if (mr && mr[1] === id) erreurs.push({ ...erreur(scene, `${qui} : le relais « #${mr[1]} » est déjà son porteur.`), gravite: 'alerte' });
+      if (mr && a['data-dur'] !== undefined && Number.isFinite(Number(a['data-dur'])) && Number(mr[2]) >= Number(a['data-dur'])) erreurs.push({ ...erreur(scene, `${qui} : le relais à ${mr[2]} s tombe après la fin de la prise (${a['data-dur']} s) : il ne se fera pas.`), gravite: 'alerte' });
+    }
+  }
+  for (const c of ciblesCitees) {
+    if (!chemins.has(c.id) && !autresIds.has(c.id)) erreurs.push(erreur(scene, `${c.ou} : cible « #${c.id} » introuvable dans la scène.`));
+  }
   for (const s of solsCites) {
     if (idsDoubles.has(s.id)) erreurs.push({ ...erreur(scene, `${s.ou} : plusieurs éléments portent l'id « ${s.id} » ; le sol doit être un seul tracé.`), gravite: 'alerte' });
     if (chemins.has(s.id)) continue;
