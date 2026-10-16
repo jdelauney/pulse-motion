@@ -20,6 +20,8 @@
         ["J'ai une vidéo en cours", "en-cours"],
         ["Ma vidéo est prête, je veux la partager", "partager"],
         ["Je veux une allure à moi", "allure"],
+        ["Je veux un personnage dans ma vidéo", "personnage"],
+        ["Je prépare mon ordinateur", "ordinateur"],
         ["J'ai un problème", "probleme"]
       ]
     },
@@ -38,6 +40,8 @@
         ["Continuer là où je m'étais arrêté", "reprendre"],
         ["Changer un texte, une durée, une animation", "retoucher"],
         ["Changer le son : musique, voix, bruitages", "retoucher-son"],
+        ["Enregistrer ou importer ma voix", "voix"],
+        ["Régler un effet de particules à l'œil", "atelier-particules"],
         ["Changer de style", "retoucher-style"],
         ["Revenir en arrière", "retoucher-annuler"]
       ]
@@ -58,12 +62,31 @@
         ["Seulement mon logo et mes couleurs sur ma vidéo", "retoucher-charte"]
       ]
     },
+    "personnage": {
+      question: "Que voulez-vous faire avec ce personnage ?",
+      choix: [
+        ["Le dessiner, ou changer son dessin", "dessiner-personnage"],
+        ["Animer une illustration que j'ai déjà", "decouper-personnage"],
+        ["Le faire bouger : pose, mouvement, expression", "animer-personnage"],
+        ["Le mettre dans une scène, le faire parler", "animer-personnage-scene"],
+        ["Le régler moi-même, à la souris", "atelier-personnages"]
+      ]
+    },
+    "ordinateur": {
+      question: "Que voulez-vous faire ?",
+      choix: [
+        ["Vérifier que tout est prêt", "outils"],
+        ["Installer ffmpeg, pour un export de qualité", "outils-ffmpeg"],
+        ["Installer la transcription", "outils-transcription"]
+      ]
+    },
     "probleme": {
       question: "Que se passe-t-il ?",
       choix: [
         ["Un texte déborde ou se lit mal", "retoucher-texte"],
         ["La vidéo parle avec la voix de l'ordinateur", "retoucher-voix"],
         ["L'export MP4 refuse ou échoue", "exporter-probleme"],
+        ["Il manque un outil sur mon ordinateur", "outils"],
         ["Je ne sais plus où j'en suis", "reprendre"]
       ]
     }
@@ -154,7 +177,63 @@
     "retoucher-voix": {
       commande: "retoucher", arguments: "je réenregistre la scène 1",
       pourquoi: "La voix de l'ordinateur sert seulement à caler l'animation. Le studio s'ouvre dans l'aperçu : le texte défile, vous parlez, vous réécoutez, vous gardez ou refaites.",
-      note: "Vous pouvez aussi cliquer sur « Voix » dans la barre de l'aperçu."
+      note: "Vous pouvez aussi cliquer sur « Voix » dans la barre de l'aperçu.",
+      autre: { commande: "voix", arguments: "j'ai un fichier de ma voix", pourquoi: "Si vous avez déjà enregistré ailleurs : Pulse Motion importe votre fichier, pour une scène ou pour toute la vidéo." }
+    },
+    "voix": {
+      commande: "voix", arguments: "j'enregistre la scène 2",
+      pourquoi: "Le studio s'ouvre dans l'aperçu : le texte s'affiche en grand, vous enregistrez, vous réécoutez, puis vous gardez ou refaites. La scène se recale toute seule sur votre voix.",
+      note: "Vous avez déjà un enregistrement ? Dites « j'ai un fichier de ma voix » : Pulse Motion l'importe, pour une scène ou pour toute la vidéo.",
+      autre: { commande: "retoucher", arguments: "baisse la voix", pourquoi: "Pour le volume de la voix, le texte dit ou les sous-titres." }
+    },
+    "outils": {
+      commande: "outils", arguments: "",
+      pourquoi: "Pulse Motion vous dit en mots simples ce qui est prêt et ce qui manque : Chrome ou Edge, ffmpeg, Python, la transcription, la voix de l'ordinateur. Il installe ce qui manque, avec votre accord.",
+      note: "Aucune vidéo n'est créée ni modifiée."
+    },
+    "outils-ffmpeg": {
+      commande: "outils", arguments: "installe ffmpeg",
+      pourquoi: "ffmpeg est un petit logiciel libre qui fabrique la vidéo en haute qualité, avec un son propre ; il s'installe une fois, avec votre accord.",
+      note: "Sans lui, l'export se fait dans le navigateur.",
+      autre: { commande: "exporter", arguments: "", pourquoi: "Une fois ffmpeg installé : l'export fidèle de votre vidéo." }
+    },
+    "outils-transcription": {
+      commande: "outils", arguments: "installe la transcription",
+      pourquoi: "La transcription cale les sous-titres et les animations sur les vrais mots de votre voix. Environ 800 Mo à télécharger une fois, ou 250 Mo en version légère ; Python est installé d'abord s'il manque.",
+      note: "Elle est facultative : sans elle, les mots sont calés au mieux. Elle est nécessaire pour importer l'enregistrement de toute la vidéo."
+    },
+    "dessiner-personnage": {
+      commande: "dessiner-personnage", arguments: "dessine-moi un cuisinier rondouillard avec une toque",
+      pourquoi: "Pulse Motion dessine votre personnage pièce par pièce, sur le squelette commun : il s'anime aussitôt avec toutes les poses et tous les mouvements. Il le vérifie, puis vous le montre en train de marcher.",
+      note: "Le dessin se range avec la vidéo : lancez la commande dans son dossier.",
+      autre: { commande: "decouper-personnage", arguments: "assets/mascotte.svg", pourquoi: "Si vous avez déjà l'illustration de votre personnage." }
+    },
+    "decouper-personnage": {
+      commande: "decouper-personnage", arguments: "assets/mascotte.svg",
+      pourquoi: "Pulse Motion découpe votre illustration (Illustrator, Inkscape, Figma…) sur son squelette : chaque forme dans un membre, les articulations à leur place. Votre personnage marche avec tous les mouvements de Pulse Motion.",
+      note: "Un seul personnage par fichier, de profil de préférence.",
+      autre: { commande: "atelier-personnages", arguments: "laisse-moi corriger la découpe", pourquoi: "Pour corriger vous-même, à la souris, une articulation mal placée." }
+    },
+    "animer-personnage": {
+      commande: "animer-personnage", arguments: "fais une pose où il se gratte la tête",
+      pourquoi: "Une phrase suffit pour une nouvelle pose, un mouvement modifié (« il marche trop vite ») ou une expression (« une tête surprise quand il salue »). Pulse Motion vous le montre sous plusieurs angles.",
+      note: "Les mouvements livrés ne sont jamais changés : votre version vaut pour cette vidéo.",
+      autre: { commande: "atelier-personnages", arguments: "je veux régler son salut moi-même", pourquoi: "Pour régler le geste vous-même, à la souris." }
+    },
+    "animer-personnage-scene": {
+      commande: "animer-personnage", arguments: "mets le cuisinier dans la scène 3, qu'il montre le chiffre",
+      pourquoi: "Dans une scène, un personnage marche, court, prend une pose, joue un mouvement, se tourne, change d'expression, et parle : sa bouche suit les mots de la voix de la scène.",
+      note: "Pour parler, la scène doit avoir une voix."
+    },
+    "atelier-personnages": {
+      commande: "atelier-personnages", arguments: "je veux régler son salut moi-même",
+      pourquoi: "L'atelier s'ouvre dans votre navigateur : vous tournez les membres en glissant les articulations, vous réglez chaque moment du mouvement sur la frise, puis « Enregistrer » le range avec la vidéo.",
+      note: "« annule » défait un enregistrement."
+    },
+    "atelier-particules": {
+      commande: "atelier-particules", arguments: "laisse-moi régler les étincelles",
+      pourquoi: "Des curseurs changent l'effet sous vos yeux, dans l'aperçu (bouton « Effets ») ou dans la page d'atelier, où l'effet tourne seul en boucle. « Enregistrer » range le réglage avec la vidéo.",
+      autre: { commande: "retoucher", arguments: "plus d'étincelles", pourquoi: "Pour un changement simple, une phrase va plus vite." }
     },
     "exporter-probleme": {
       commande: "exporter", arguments: "",

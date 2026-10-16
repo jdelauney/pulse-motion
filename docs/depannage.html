@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Je suis bloqué – Wiki Pulse Motion</title>
-<meta name="description" content="Les situations de blocage avec Pulse Motion et leur solution : installation, aperçu, voix, contrôles, export. Les messages du contrôle traduits en mots simples.">
+<meta name="description" content="Les situations de blocage avec Pulse Motion et leur solution : installation, aperçu, voix, contrôles, export, personnages. Les messages du contrôle traduits en mots simples.">
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/animations.css">
 <script src="js/donnees.js" defer></script>
@@ -87,6 +87,16 @@
 </details>
 <details class="probleme"><summary>Je ne trouve pas le bouton « Voix » ou « MP4 »</summary>
 <p>Ils sont dans la barre de lecture de l'<strong>aperçu</strong>, pas dans la page animée de <code>sortie/</code>. Ouvrez l'aperçu (adresse en <code>http://localhost:…</code>) dans Chrome ou Edge.</p>
+</details>
+<details class="probleme"><summary>« Effet non affiché : WebGPU indisponible »</summary>
+<p>Les effets de particules (étincelles, confettis…) et l'atelier des effets demandent <strong>WebGPU</strong>, plus récent que le WebGL des fonds animés de beaucoup de sites : un site qui affiche bien ses shaders ne prouve donc pas que WebGPU marche. Le plus simple : ouvrir la même adresse dans Chrome ou Edge récent (Edge est déjà là sous Windows).</p>
+<p>Dans un autre navigateur basé sur Chromium (Opera, Brave, Vivaldi…), WebGPU peut être activé mais la carte graphique refusée. Pour savoir ce qui bloque, ouvrez la console (<kbd>F12</kbd>, onglet « Console ») sur la page de l'aperçu et collez :</p>
+<pre><code>console.log('gpu :', !!navigator.gpu); console.log('carte :', await navigator.gpu?.requestAdapter());</code></pre>
+<ul>
+<li><code>gpu : false</code> : WebGPU n'est pas proposé. Activez « Unsafe WebGPU Support » dans la page des fonctions expérimentales (<code>opera://flags/#enable-unsafe-webgpu</code> sous Opera), puis redémarrez le navigateur.</li>
+<li><code>carte : null</code> : la carte graphique est refusée. Le même réglage lève ce refus ; vérifiez aussi que l'accélération matérielle est activée dans les réglages du navigateur, et que la ligne « WebGPU » de <code>opera://gpu</code> (ou <code>chrome://gpu</code>) indique « Hardware accelerated ». Sinon, mettez à jour le pilote de la carte graphique.</li>
+<li>Une carte s'affiche : rechargez la page (<kbd>Ctrl</kbd> + <kbd>F5</kbd>).</li>
+</ul>
 </details>
 </section>
 
@@ -188,6 +198,44 @@
 </details>
 <details class="probleme"><summary>Après un changement de style, une scène est différente</summary>
 <p>C'était une scène composée librement : elle a été réécrite dans le nouveau style. Décrivez ce qui vous manque (« remets le personnage à gauche »), ou dites « annule » pour revenir à l'ancien style.</p>
+</details>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="personnages">
+<h2>Avec les personnages</h2>
+<details class="probleme"><summary>Je ne trouve pas la commande <code>/pulse-motion:dessiner-personnage</code></summary>
+<p>Votre plugin n'est pas à jour : les personnages sont arrivés dans les versions récentes. Tapez ces deux commandes dans Claude Code, une à la fois :</p>
+<pre class="commande"><code>/plugin marketplace update pulse-motion</code></pre>
+<pre class="commande"><code>/plugin update pulse-motion@pulse-motion</code></pre>
+<p>Puis fermez complètement Claude Code et relancez-le : les commandes <code>/pulse-motion:dessiner-personnage</code>, <code>/pulse-motion:animer-personnage</code>, <code>/pulse-motion:atelier-personnages</code> et <code>/pulse-motion:decouper-personnage</code> apparaissent.</p>
+</details>
+<details class="probleme"><summary>La tête flotte au-dessus du corps, ou un élément manque dans une vue</summary>
+<p>Le dessin n'est pas le même d'une vue à l'autre : le cou ne rejoint pas la tête de face, ou la toque n'existe que de profil. Dites ce que vous voyez, par exemple :</p>
+<pre class="commande"><code>/pulse-motion:dessiner-personnage redessine sa tête de face</code></pre>
+<p>Pulse Motion reprend la vue fautive et compare à nouveau les vues entre elles.</p>
+</details>
+<details class="probleme"><summary>Le personnage cache un texte</summary>
+<p>Faites-le entrer par le côté, rendez-le plus petit, ou faites-lui traverser la scène avant l'arrivée du texte : « fais entrer le cuisinier par la droite », « rends-le plus petit ». Voir <a href="personnages.html#scene">un personnage dans une scène</a>.</p>
+</details>
+<details class="probleme"><summary>Un mouvement ne ressemble pas à ce que j'ai demandé</summary>
+<p>Demandez à le voir : « montre-moi le salut de face et de profil ». Sur la planche, dites ce qui ne va pas (« la main doit monter plus haut »). Pour le régler vous-même, ouvrez <a href="commandes/atelier-personnages.html"><code>/pulse-motion:atelier-personnages</code></a> : glissez les articulations, puis <strong>Enregistrer</strong>.</p>
+</details>
+<details class="probleme"><summary>Le personnage glisse pendant une pose ou un geste</summary>
+<p>La pose a été placée pendant sa marche. Demandez qu'elle commence après la fin de la marche : « qu'il montre le chiffre une fois arrivé ».</p>
+</details>
+<details class="probleme"><summary>« La scène n'a pas de voix »</summary>
+<p>Un personnage ne peut parler que dans une scène qui a un texte dit. Ajoutez le texte que la voix dit dans cette scène (« ajoute un texte dit à la scène 2 : … »), ou retirez la parole de ce personnage. Voir <a href="son.html#voix">la voix</a>.</p>
+</details>
+<details class="probleme"><summary>Le personnage reste bouche fermée alors qu'il doit parler</summary>
+<p>Deux causes possibles, que Pulse Motion vous signale :</p>
+<ul>
+<li><strong>la voix de la scène n'est pas encore enregistrée</strong> : enregistrez-la dans le studio (bouton <strong>Voix</strong> de l'aperçu), ou demandez une voix provisoire en attendant ;</li>
+<li><strong>le dessin n'a pas de bouches de parole</strong> : demandez « dessine-lui les bouches pour parler » avec <a href="commandes/dessiner-personnage.html"><code>/pulse-motion:dessiner-personnage</code></a>.</li>
+</ul>
+</details>
+<details class="probleme"><summary>Mon illustration est refusée à la découpe</summary>
+<p>Elle contient du texte, une image collée, une copie liée, un filtre ou un masque. Pulse Motion vous dit quoi changer dans votre logiciel de dessin ; le détail est sur la page <a href="personnages.html#decouper">animer votre illustration</a>.</p>
 </details>
 </section>
 

@@ -232,12 +232,16 @@ code {
   text-decoration: none;
   font-size: var(--texte-sm);
   font-weight: 500;
+  white-space: nowrap;
 }
+/* Neuf entrées : des pilules serrées pour tenir sur une ligne (la barre ne dépasse pas 1152 px). */
+@media (min-width: 1150px) { .navigation a { padding: 6px 9px; } .navigation ul { gap: 0; } }
 .navigation a:hover { background: var(--surface-attenuee); }
 .navigation a[aria-current="page"] { color: var(--primaire); }
 .entete-site .bouton-menu { display: none; }
 
-@media (max-width: 767px) {
+/* Le menu se replie sous un bouton dès que les neuf entrées ne tiennent plus sur une ligne. */
+@media (max-width: 1149px) {
   .entete-site .bouton-menu { display: inline-flex; margin-left: auto; }
   .navigation { display: none; position: absolute; top: calc(100% + 8px); right: var(--gouttiere); left: var(--gouttiere); }
   .navigation.ouverte { display: block; }

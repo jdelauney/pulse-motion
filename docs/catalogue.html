@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Catalogue – Wiki Pulse Motion</title>
-<meta name="description" content="Ce que Pulse Motion livre : six styles avec leurs polices et leur signature, huit scènes toutes faites par style, douze effets de particules, quatre formats d'image.">
+<meta name="description" content="Ce que Pulse Motion livre : six styles avec leurs polices et leur signature, huit scènes toutes faites par style, douze effets de particules, des personnages animés et leurs mouvements, quatre formats d'image.">
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/animations.css">
 <script src="js/donnees.js" defer></script>
@@ -20,7 +20,7 @@
 <header class="entete-page">
 <p class="pastille">Ce qui est livré</p>
 <h1>Catalogue</h1>
-<p class="chapo">Les styles, les scènes, les effets et les formats livrés avec Pulse Motion. Vous n'avez pas à les connaître par cœur : Pulse Motion vous propose ceux qui conviennent à votre vidéo. Cette page vous aide à savoir quoi demander.</p>
+<p class="chapo">Les styles, les scènes, les effets, les personnages et les formats livrés avec Pulse Motion. Vous n'avez pas à les connaître par cœur : Pulse Motion vous propose ceux qui conviennent à votre vidéo. Cette page vous aide à savoir quoi demander.</p>
 </header>
 
 <!-- ===================================================================================================== -->
@@ -104,6 +104,36 @@
 </table>
 <aside class="encadre encadre-conseil"><p><strong>Conseil :</strong> sur un fond clair, la neige et la poussière, blanches par défaut, deviennent invisibles. Pulse Motion les passe à la couleur de votre charte ou à un gris-bleu ; si vous ne les voyez pas, demandez « neige plus visible ».</p></aside>
 <p>Aucun effet ne convient ? Pulse Motion peut en créer un pour votre vidéo, de préférence en partant d'un effet existant (« des étincelles bleues et plus lentes, pour un sujet sur le froid »).</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="personnages">
+<h2>Les personnages</h2>
+<p>Un personnage s'anime sur un squelette commun : les bâtonnets, un dessin fait sur demande (<a href="commandes/dessiner-personnage.html"><code>/pulse-motion:dessiner-personnage</code></a>) ou votre illustration découpée (<a href="commandes/decouper-personnage.html"><code>/pulse-motion:decouper-personnage</code></a>) prennent tous les mêmes poses et font les mêmes mouvements. Le détail est sur la page <a href="personnages.html">les personnages</a>.</p>
+<table>
+<thead><tr><th>Ce qui est livré</th><th>Le détail</th></tr></thead>
+<tbody>
+<tr><td><strong>Un dessin</strong></td><td><code>touffu</code> : le bonhomme aux bâtonnets blancs, aux grands yeux et à la touffe verte, qui sert de modèle aux nouveaux dessins.</td></tr>
+<tr><td><strong>Six poses</strong></td><td>debout, montrer, bras levés, mains sur les hanches, assis, penché.</td></tr>
+<tr><td><strong>Huit mouvements</strong></td><td>marche, course, saut, s'accroupir, se relever, coucou (un salut de la main), peur, repos. La respiration et le clignement des yeux s'y ajoutent tout seuls.</td></tr>
+<tr><td><strong>Six expressions</strong></td><td>neutre, joie, tristesse, peur, colère, surprise.</td></tr>
+<tr><td><strong>Des bouches</strong></td><td>Celles des expressions (sourire, rire, triste, surprise, colère) et celles de la parole, pour suivre les mots de la voix.</td></tr>
+<tr><td><strong>Deux gabarits</strong></td><td>Les proportions standard, et les mêmes avec une queue qui balance, pour un animal.</td></tr>
+</tbody>
+</table>
+<h3>Ce qu'il fait dans une scène</h3>
+<table>
+<thead><tr><th>Action</th><th>Vous dites</th></tr></thead>
+<tbody>
+<tr><td>Marcher ou courir jusqu'à un point, sans glisser</td><td>« qu'il entre en marchant », « qu'il reparte en courant »</td></tr>
+<tr><td>Prendre une pose et la tenir</td><td>« qu'il montre le chiffre »</td></tr>
+<tr><td>Faire un geste</td><td>« qu'il salue », « qu'il saute de joie »</td></tr>
+<tr><td>Se tourner</td><td>« qu'il se tourne vers nous »</td></tr>
+<tr><td>Changer d'expression, ouvrir la bouche</td><td>« qu'il sourie », « qu'il ait l'air surpris »</td></tr>
+<tr><td>Parler avec la voix de la scène</td><td>« fais-le parler pendant la voix de la scène 2 »</td></tr>
+</tbody>
+</table>
+<p>Chaque action se cale sur un autre élément de la scène, sur un mot de la voix ou sur un temps de la musique. Pour créer une pose ou un mouvement : <a href="commandes/animer-personnage.html"><code>/pulse-motion:animer-personnage</code></a> ; pour les régler à la souris : <a href="commandes/atelier-personnages.html"><code>/pulse-motion:atelier-personnages</code></a>.</p>
 </section>
 
 <!-- ===================================================================================================== -->

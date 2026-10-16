@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="fr" data-racine="../" data-commande="outils">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>/pulse-motion:outils – Wiki Pulse Motion</title>
+<meta name="description" content="Vérifier que l'ordinateur est prêt pour les vidéos et installer ce qui manque (ffmpeg, la transcription, Python), avec votre accord. Ne crée ni ne modifie aucune vidéo.">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/animations.css">
+<script src="../js/donnees.js" defer></script>
+<script src="../js/gabarit.js" defer></script>
+<script src="../js/animations.js" defer></script>
+<script src="../js/console.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<div class="mise-en-page">
+<nav class="laterale" aria-label="Les commandes" data-laterale></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille pastille-etape" data-couleur="1">Étape 1 · Créer</p>
+<h1><code>/pulse-motion:outils</code></h1>
+<p class="chapo">Vérifier que l'ordinateur est prêt pour les vidéos et installer ce qui manque (ffmpeg, la transcription, Python), avec votre accord. Ne crée ni ne modifie aucune vidéo.</p>
+</header>
+
+<ul class="sommaire" aria-label="Sur cette page" data-sommaire></ul>
+
+<section id="description">
+<h2>Description</h2>
+<p>Pulse Motion s'appuie sur quelques logiciels de votre ordinateur. Cette commande vous dit simplement ce qui est prêt et ce qui manque, puis installe ce qui manque, <strong>avec votre accord</strong>. Elle fonctionne dans n'importe quel dossier, avec ou sans vidéo.</p>
+<p>Elle commence par la version de Pulse Motion installée (« Pulse Motion 0.16.0 est installé »), puis montre un tableau :</p>
+<table>
+<thead><tr><th>Outil</th><th>À quoi il sert</th></tr></thead>
+<tbody>
+<tr><td><strong>Chrome ou Edge</strong></td><td>Regarder la vidéo, la contrôler, l'exporter.</td></tr>
+<tr><td><strong>ffmpeg</strong></td><td>Un MP4 de qualité avec un son propre. Sans lui, l'export se fait dans le navigateur.</td></tr>
+<tr><td><strong>Python</strong></td><td>Nécessaire à la transcription.</td></tr>
+<tr><td><strong>La transcription</strong></td><td>Caler les sous-titres et les animations sur les vrais mots de votre voix. Facultative.</td></tr>
+<tr><td><strong>La voix de l'ordinateur</strong></td><td>La voix provisoire, avant d'enregistrer la vôtre.</td></tr>
+</tbody>
+</table>
+<p>Chaque outil manquant est suivi de ce que vous pouvez faire, par exemple : dites « installe ffmpeg ».</p>
+</section>
+
+<section id="pourquoi">
+<h2>Pourquoi l'utiliser</h2>
+<ul>
+<li><strong>Vous savez d'un coup d'œil si tout est prêt</strong>, avant un premier export ou un premier enregistrement.</li>
+<li><strong>Rien ne s'installe sans votre accord.</strong> Pulse Motion vous demande « Installer (Recommandé) » ou « Pas maintenant », une installation à la fois.</li>
+<li><strong>Vous n'avez rien à taper</strong> sur Windows et sur Mac : Pulse Motion lance lui-même l'installation. Sur Linux, il vous donne la ligne à taper.</li>
+<li><strong>Vos vidéos ne sont pas touchées.</strong> Les outils s'installent sur l'ordinateur ; aucune vidéo n'est créée ni modifiée.</li>
+</ul>
+</section>
+
+<section id="quand">
+<h2>Quand l'utiliser</h2>
+<ol class="parcours" aria-label="Le parcours Pulse Motion, cette commande à l'étape mise en avant">
+  <li data-couleur="1" aria-current="step"><span class="parcours-numero">1</span> Créer</li>
+  <li data-couleur="3"><span class="parcours-numero">2</span> Retoucher</li>
+  <li data-couleur="4"><span class="parcours-numero">3</span> Exporter</li>
+  <li data-couleur="0"><span class="parcours-numero">4</span> Personnaliser</li>
+</ol>
+<ul>
+<li><strong>Avant votre première vidéo</strong>, une fois le plugin installé (voir les <a href="../prerequis.html">prérequis</a>).</li>
+<li><strong>Avant <a href="exporter.html"><code>/pulse-motion:exporter</code></a></strong>, pour installer ffmpeg et obtenir un export fidèle.</li>
+<li><strong>Avant <a href="voix.html"><code>/pulse-motion:voix</code></a></strong>, pour installer la transcription si vous voulez importer l'enregistrement de toute la vidéo ou recaler les mots.</li>
+<li><strong>Quand un message parle d'un outil qui manque.</strong></li>
+</ul>
+</section>
+
+<section id="arguments">
+<h2>Comment la lancer</h2>
+<pre class="commande"><code>/pulse-motion:outils</code></pre>
+<p class="legende">Seule, elle vérifie l'ordinateur. Pour installer un outil, dites-le juste après le nom ou dans la conversation.</p>
+<pre class="commande"><code>/pulse-motion:outils installe ffmpeg</code></pre>
+<pre class="commande"><code>/pulse-motion:outils installe la transcription</code></pre>
+
+<h3>Ce que vous pouvez demander</h3>
+<table>
+<thead><tr><th>Vous dites</th><th>Ce qui se passe</th></tr></thead>
+<tbody>
+<tr><td>« vérifie mon ordinateur », « est-ce que tout est prêt pour l'export ? »</td><td>La version de Pulse Motion et le tableau des outils, prêts ou manquants.</td></tr>
+<tr><td>« installe ffmpeg »</td><td>Pulse Motion explique en une phrase à quoi il sert, demande votre accord, l'installe, puis vérifie qu'il est bien là.</td></tr>
+<tr><td>« installe la transcription »</td><td>Trois choix : « Installer (Recommandé) », environ 800 Mo à télécharger une fois ; « Version légère », 250 Mo, un peu moins précise ; « Pas maintenant ». Si Python manque, il est installé d'abord, avec votre accord.</td></tr>
+<tr><td>« installe Python »</td><td>Seulement s'il manque ou s'il est trop ancien : Pulse Motion demande votre accord, l'installe, puis vérifie.</td></tr>
+</tbody>
+</table>
+<p>Les mêmes outils, installés à la main, sont décrits dans les <a href="../prerequis.html#ffmpeg">prérequis</a>.</p>
+</section>
+
+<section id="produit">
+<h2>Ce qu'elle produit</h2>
+<ul>
+<li><strong>Un état des lieux</strong> en mots simples : ce qui est prêt, ce qui manque, et comment l'obtenir.</li>
+<li><strong>Les outils installés sur l'ordinateur</strong>, si vous l'acceptez : ffmpeg, Python, la transcription. Rien dans votre vidéo ne change.</li>
+<li><strong>La suite à donner</strong> : l'action qui attendait l'outil (l'export, l'enregistrement d'une voix), sinon la création d'une vidéo avec <a href="creer.html"><code>/pulse-motion:creer</code></a>.</li>
+</ul>
+</section>
+
+<section id="risques">
+<h2>Risques et précautions</h2>
+<ul>
+<li><strong>La transcription est un gros téléchargement.</strong> Environ 800 Mo (250 Mo en version légère), une seule fois. L'installation prend quelques minutes : Pulse Motion vous prévient et attend la fin.</li>
+<li><strong>Un outil tout juste installé peut rester invisible.</strong> L'ordinateur ne voit un nouveau logiciel qu'au redémarrage de Claude Code. Relancez-le, puis redemandez « vérifie mon ordinateur ».</li>
+<li><strong>Sur Linux, c'est vous qui tapez la ligne d'installation</strong>, dans un terminal, parce qu'elle demande votre mot de passe. Pulse Motion attend que vous lui disiez que c'est fait, puis vérifie.</li>
+<li><strong>Le navigateur et le micro ne s'installent pas d'ici.</strong> Chrome ou Edge s'installent depuis leur site. Le micro se teste dans le studio de voix : demandez « j'enregistre la scène 1 » quand une vidéo est ouverte.</li>
+</ul>
+<aside class="encadre encadre-conseil"><p><strong>Conseil :</strong> ffmpeg et la transcription sont facultatifs. Sans ffmpeg, l'export se fait dans le navigateur ; sans transcription, les mots de la voix sont calés au mieux. Tout le reste fonctionne.</p></aside>
+</section>
+
+<section id="problemes">
+<h2>Problèmes et solutions</h2>
+<details class="probleme"><summary>ffmpeg est toujours absent après l'installation</summary><p>L'ordinateur ne le voit qu'au redémarrage de Claude Code. Fermez Claude Code, relancez-le, puis redemandez « vérifie mon ordinateur ».</p></details>
+<details class="probleme"><summary>Python reste introuvable</summary><p>Même cause : relancez Claude Code pour finir l'installation, puis redemandez « installe la transcription ».</p></details>
+<details class="probleme"><summary>« Python est trop ancien »</summary><p>La transcription a besoin d'une version plus récente. Demandez « installe Python » : Pulse Motion installe la version qu'il faut, avec votre accord.</p></details>
+<details class="probleme"><summary>L'installation de la transcription a échoué</summary><p>Pulse Motion vous dit pourquoi, simplement. Tout fonctionne sans elle : les mots de la voix sont calés au mieux. Vous pourrez réessayer plus tard.</p></details>
+<details class="probleme"><summary>Chrome ou Edge sont signalés absents</summary><p>Installez l'un des deux depuis son site, puis redemandez « vérifie mon ordinateur ». Voir <a href="../prerequis.html#navigateur">Chrome ou Edge</a>.</p></details>
+<details class="probleme"><summary>« node » introuvable</summary><p>Node.js n'est pas installé : Pulse Motion ne peut rien vérifier sans lui. Installez-le en version LTS depuis <a href="https://nodejs.org/fr/download" target="_blank" rel="noopener noreferrer">nodejs.org</a> (programme d'installation), puis relancez Claude Code. Voir les <a href="../prerequis.html#node">prérequis</a>.</p></details>
+</section>
+
+<section id="exemples">
+<h2>Exemples</h2>
+<div class="conversation" data-titre="Exemple : vérifier l'ordinateur">
+<p data-role="vous">/pulse-motion:outils</p>
+<p data-role="outil">pulse-motion outils</p>
+<p data-role="claude">Pulse Motion 0.16.0 est installé.
+✅ Chrome ou Edge : regarder la vidéo, la contrôler, l'exporter
+❌ ffmpeg : un MP4 de qualité avec un son propre (sans lui, l'export se fait dans le navigateur). Dites « installe ffmpeg ».
+✅ Python : nécessaire à la transcription
+❌ Transcription : caler les sous-titres et les animations sur les vrais mots de la voix (facultative). Dites « installe la transcription ».
+✅ Voix de l'ordinateur : la voix provisoire, avant d'enregistrer la vôtre</p>
+</div>
+<div class="conversation" data-titre="Exemple : installer la transcription">
+<p data-role="vous">/pulse-motion:outils installe la transcription</p>
+<p data-role="outil">pulse-motion whisper</p>
+<p data-role="claude">La transcription cale les sous-titres et les animations sur les vrais mots de votre voix ; environ 800 Mo à télécharger une fois.
+→ Installer (Recommandé) / Version légère (250 Mo, un peu moins précise) / Pas maintenant</p>
+<p data-role="vous">Installer</p>
+<p data-role="outil">pulse-motion whisper installer</p>
+<p data-role="claude">L'installation prend quelques minutes, je vous préviens dès qu'elle est finie.</p>
+<p data-role="claude">✅ Fait : la transcription est installée. Votre vidéo a déjà des prises de voix : voulez-vous que je recale leurs mots ?
+📄 Fichiers : rien dans votre vidéo n'a changé ; les outils sont installés sur l'ordinateur.</p>
+</div>
+</section>
+
+<section id="liees">
+<h2>Commandes liées</h2>
+<ul>
+<li><a href="exporter.html"><code>/pulse-motion:exporter</code></a> : l'export fidèle, avec ffmpeg.</li>
+<li><a href="voix.html"><code>/pulse-motion:voix</code></a> : importer un enregistrement de toute la vidéo, recaler les mots.</li>
+<li><a href="creer.html"><code>/pulse-motion:creer</code></a> : créer une vidéo une fois l'ordinateur prêt.</li>
+</ul>
+</section>
+
+<nav class="suite" aria-label="Commande précédente et suivante" data-suite></nav>
+</article>
+</div>
+</main>
+</body>
+</html>

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Concepts – Wiki Pulse Motion</title>
-<meta name="description" content="Les idées de Pulse Motion expliquées simplement : genre et style, charte, déroulé, scènes, parcours, aperçu, contrôles automatiques, export, et où sont rangés vos fichiers.">
+<meta name="description" content="Les idées de Pulse Motion expliquées simplement : genre et style, charte, déroulé, scènes, personnages, parcours, aperçu, contrôles automatiques, export, et où sont rangés vos fichiers.">
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/animations.css">
 <script src="js/donnees.js" defer></script>
@@ -129,10 +129,12 @@
 <tr><td><code>conclusion</code></td><td>Le message à retenir et le logo</td><td>6 s</td></tr>
 </tbody>
 </table>
-<p>Les durées et longueurs varient un peu selon le style (le style énergique est plus court). Quand aucune ne convient, l'animateur <strong>compose</strong> la scène librement : un personnage, un décor, une caméra qui se déplace.</p>
+<p>Les durées et longueurs varient un peu selon le style (le style énergique est plus court). Quand aucune ne convient, l'animateur <strong>compose</strong> la scène librement : un <a href="personnages.html">personnage</a>, un décor, une caméra qui se déplace.</p>
 <p><strong>La différence compte au changement de style :</strong> une scène toute faite se recopie telle quelle dans le nouveau style ; une scène composée doit être réécrite.</p>
 <h3>Les animateurs</h3>
 <p>Un <dfn>animateur</dfn> est un assistant spécialisé de Pulse Motion qui écrit <strong>une</strong> scène. À la fabrication, il y en a un par scène, et ils travaillent tous en même temps : une vidéo de 10 scènes ne prend pas dix fois plus de temps qu'une vidéo d'une scène. C'est Pulse Motion qui décide des effets de particules et les confie aux animateurs concernés, pour garder la vidéo sobre.</p>
+<h3>Les personnages</h3>
+<p>Un <dfn>personnage</dfn> est un acteur animé de la scène : il entre en marchant, montre un chiffre, salue, change d'expression, et peut même dire le texte de la scène avec votre voix. Tous partagent le même squelette, habillé de bâtonnets, d'un dessin fait sur demande ou de votre propre illustration ; ils prennent donc tous les mêmes poses et font les mêmes mouvements. Tout est expliqué sur la page <a href="personnages.html">les personnages</a>.</p>
 </section>
 
 <!-- ===================================================================================================== -->
@@ -189,8 +191,9 @@
 <!-- ===================================================================================================== -->
 <section id="tempo">
 <h2>Le tempo : caler l'image sur la musique</h2>
-<p>Avec une musique composée, ou un fichier dont vous connaissez le tempo, la vidéo prend le <dfn>tempo</dfn> de la musique, en battements par minute. À 120 battements par minute, il y a un temps toutes les demi-secondes. Les animations peuvent alors partir <strong>sur les temps</strong>, et chaque scène commence sur un temps.</p>
-<p>Conséquence pratique : les durées des scènes se comptent en demi-secondes, et le contrôle ne corrige plus seul une durée (il décalerait la musique). Pulse Motion ajuste lui-même, sur les temps.</p>
+<p>Avec une musique composée, une partition, ou un fichier dont vous connaissez le tempo, la vidéo prend le <dfn>tempo</dfn> de la musique, en battements par minute. À 120 battements par minute, il y a un temps toutes les demi-secondes. Les animations peuvent alors partir <strong>sur les temps</strong>.</p>
+<p>C'est la musique qui se cale sur l'image, pas l'inverse : la musique composée (ou une partition calée sur les scènes) repart au début de chaque scène. Les durées des scènes restent libres, et le contrôle peut corriger seul une durée sans décaler la musique.</p>
+<p>Une musique en fichier, elle, ne bouge pas : si vous donnez son tempo, chaque scène doit commencer sur un temps (à 120 battements par minute, toutes les demi-secondes), et le contrôle ne corrige plus seul une durée, pour ne pas décaler l'image par rapport à la musique.</p>
 </section>
 
 <!-- ===================================================================================================== -->
