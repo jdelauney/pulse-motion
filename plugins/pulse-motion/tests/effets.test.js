@@ -244,3 +244,17 @@ test('effet fait uniquement de structures sans data-dur : compilé sur la durée
   assert.equal(avec.duree, 2, 'data-dur écrit : gardé');
   assert.equal(simple.duree, 1, 'effet émis sans data-dur : 1 s');
 });
+
+test('effet fait uniquement de structures, data-start > 0 et sans data-dur : dure de son début à la fin de la scène', () => {
+  const dir = copierProjet('projet-effets');
+  const r = preparerEffets('<section data-scene="s"><div data-effet="drapeau" data-start="1.5"></div><div data-effet="drapeau" data-start="2t"></div>'
+    + '<div data-effet="drapeau" data-start="5"></div><div data-effet="drapeau" data-start="#titre+1"></div><h1 id="titre" data-start="0.2"></h1></section>',
+  { scene: 's', projet: dir, bibliotheque: path.join(__dirname, '..', 'effets'), charte: { primaire: '#0a6cff', accent: '#ff8a00', texte: '#1a1a1a', fond: '#ffffff' }, dureeScene: 4, dureeTemps: 0.5 });
+  assert.deepEqual(r.erreurs, []);
+  const [secondes, temps, apres, relatif] = r.effets.map((e) => e.effet);
+  assert.equal(secondes.duree, 2.5, 'data-start="1.5" dans une scène de 4 s : 2,5 s, pas toute la scène');
+  assert.ok(secondes.emetteurs.every((em) => em.vie[1] === 2.5));
+  assert.equal(temps.duree, 3, 'data-start="2t" à 0,5 s par temps : 4 − 1 = 3 s');
+  assert.equal(apres.duree, 1, 'début après la fin de la scène : règle commune (1 s)');
+  assert.equal(relatif.duree, 4, 'début relatif (connu de la page seulement) : toute la scène');
+});
