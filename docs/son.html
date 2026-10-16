@@ -87,8 +87,18 @@
 <tr><td>« fais-moi écouter la musique »</td><td>La musique seule, dans <code>sortie/musique.wav</code>.</td></tr>
 </tbody>
 </table>
+<h3>La musique suit l'image</h3>
+<p>La musique composée est refaite à chaque changement, sur le minutage réel de la vidéo : chaque scène a sa section, qui commence pile au début de la scène, même quand une transition ou votre voix déplace ce début. Vous pouvez donc changer une durée ou une transition sans rien casser : la musique suit. Chaque scène peut aussi avoir son <strong>humeur</strong> :</p>
+<table>
+<thead><tr><th>Vous dites</th><th>Ce qui change</th></tr></thead>
+<tbody>
+<tr><td>« coupe la musique pendant la scène 4 »</td><td>La scène est en <strong>silence</strong>.</td></tr>
+<tr><td>« juste une nappe sur la conclusion »</td><td>La scène est <strong>calme</strong> : une nappe seule.</td></tr>
+<tr><td>« la musique à fond sur la démo »</td><td>La scène est <strong>intense</strong> : toutes les couches, percussions comprises.</td></tr>
+</tbody>
+</table>
 <details class="probleme"><summary>Pour aller plus loin : une partition écrite pour la vidéo</summary>
-<p>Si vous lisez la musique, vous pouvez demander une <strong>partition</strong> : des pistes d'instruments (nappe, corde pincée, basse, basse profonde, grosse caisse, caisse claire, charleston, cloche, souffle, montée), chacune avec un motif de notes répété sur des mesures. Pulse Motion l'écrit avec vous dans <code>assets/partition.json</code>. Une partition mal formée est signalée en nommant la piste et la note fautives.</p>
+<p>Si vous lisez la musique, vous pouvez demander une <strong>partition</strong> : des pistes d'instruments (nappe, corde pincée, basse, basse profonde, grosse caisse, caisse claire, charleston, cloche, souffle, montée), chacune avec un motif de notes répété sur des mesures. Pulse Motion l'écrit avec vous dans <code>assets/partition.json</code>, de préférence à la fin, avec des pistes calées chacune sur une scène : elles suivent l'image comme la musique composée. Le tempo de la partition devient celui de la vidéo. Une partition mal formée est signalée en nommant la piste et la note fautives.</p>
 </details>
 </section>
 

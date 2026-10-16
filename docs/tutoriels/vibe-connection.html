@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Recréer Vibe Connection – Wiki Pulse Motion</title>
-<meta name="description" content="Tutoriel 3, avancé : recréer « Vibe Connection », un faux film muet de 1 min 30 avec des personnages animés, sept séquences, une caméra, un arrêt sur image, une partition calée à 120 bpm, des bruitages et l'export MP4 carré pour LinkedIn.">
+<meta name="description" content="Tutoriel 3, avancé : recréer « Vibe Connection », un faux film muet de 1 min 30 avec des personnages animés, sept séquences, une caméra, un arrêt sur image, une musique calée sur l'image, des bruitages et l'export MP4 carré pour LinkedIn.">
 <link rel="stylesheet" href="../css/base.css">
 <link rel="stylesheet" href="../css/animations.css">
 <script src="../js/donnees.js" defer></script>
@@ -20,7 +20,7 @@
 <header class="entete-page">
 <p class="pastille pastille-etape" data-couleur="2">Tutoriel 3 · Avancé · Environ 5 heures</p>
 <h1>Recréer « Vibe Connection »</h1>
-<p class="chapo">« Vibe Connection » est un faux film muet et rétro de 1 min 30 qui fait la promotion de Pulse Motion : des petits personnages, les Touffus, marchent vers un précipice, un designer tente de dessiner un pont à la main et échoue, puis une seule commande construit le pont. Vous allez le refaire en entier, séquence par séquence, avec des personnages animés, une caméra, un arrêt sur image, une partition calée à 120 battements par minute et des bruitages.</p>
+<p class="chapo">« Vibe Connection » est un faux film muet et rétro de 1 min 30 qui fait la promotion de Pulse Motion : des petits personnages, les Touffus, marchent vers un précipice, un designer tente de dessiner un pont à la main et échoue, puis une seule commande construit le pont. Vous allez le refaire en entier, séquence par séquence, avec des personnages animés, une caméra, un arrêt sur image, une musique qui se cale sur l'image et des bruitages.</p>
 </header>
 
 <p>Ce tutoriel va plus loin que les deux premiers : la vidéo n'utilise aucune scène toute faite, tout est <strong>composé</strong>, et les personnages jouent la comédie. La méthode est celle d'un vrai tournage : un premier jet de tout le film, puis chaque séquence reprise une à une, en vérifiant à l'image.</p>
@@ -33,7 +33,7 @@
 <h2><span class="etape-numero">0</span> Avant de commencer <span class="duree">15 minutes</span></h2>
 <p><strong>Objectif :</strong> un Pulse Motion à jour, un ordinateur prêt pour l'export, et le scénario dans un dossier neuf.</p>
 <ol>
-<li><strong>Mettez Pulse Motion à jour.</strong> Les personnages qui jouent dans les scènes demandent la version <strong>0.16.0</strong> ou plus récente. Dans le panneau Claude Code, tapez ces deux commandes l'une après l'autre, puis relancez Claude Code (fermez et rouvrez VS Code) :
+<li><strong>Mettez Pulse Motion à jour.</strong> Ce tutoriel demande la version <strong>0.17.0</strong> ou plus récente (personnages dans les scènes, démarches à soi, musique calée sur l'image). Dans le panneau Claude Code, tapez ces deux commandes l'une après l'autre, puis relancez Claude Code (fermez et rouvrez VS Code) :
 <pre class="commande"><code>/plugin marketplace update pulse-motion</code></pre>
 <pre class="commande"><code>/plugin update pulse-motion@pulse-motion</code></pre>
 La première récupère la liste des nouveautés, la seconde installe la nouvelle version : sans la première, la seconde croit que tout est déjà à jour.</li>
@@ -70,8 +70,8 @@ Acceptez l'installation de ce qui manque. La transcription n'est pas utile ici :
 <ol>
 <li><strong>Le premier jet</strong> (étapes 2 à 4) : Pulse Motion écrit le déroulé et les 7 scènes avec les Touffus livrés et les gestes de la bibliothèque.</li>
 <li><strong>Les acteurs</strong> (étapes 5 et 6) : le designer et la silhouette, puis les gestes propres au film (« chut », « fier », « mesurer »…).</li>
-<li><strong>La musique</strong> (étape 7) : une partition écrite pour le film, qui suit ses changements d'humeur.</li>
-<li><strong>Les séquences</strong> (étapes 8 à 14) : chacune reprise en suivant le scénario à la lettre, et vérifiée à l'image.</li>
+<li><strong>Les séquences</strong> (étapes 7 à 13) : chacune reprise en suivant le scénario à la lettre, et vérifiée à l'image.</li>
+<li><strong>La musique</strong> (étape 14), une fois l'image finie : elle se cale sur les séquences et change d'humeur avec elles.</li>
 <li><strong>Les bruitages</strong> (étape 15).</li>
 <li><strong>Le contrôle, la validation et l'export</strong> (étapes 16 à 18).</li>
 </ol>
@@ -88,14 +88,14 @@ Acceptez l'installation de ce qui manque. La transcription n'est pas utile ici :
 </tbody>
 </table>
 <aside class="encadre encadre-conseil"><p><strong>Conseil :</strong> les tailles en pixels du scénario sont données pour une image de 1080 × 1080. Pulse Motion les convertit : dans une scène, 1 % de la hauteur de l'image vaut 10,8 pixels. Les petites mentions du scénario (20 à 32 px) sont agrandies à 38 px, la plus petite taille que le contrôle juge lisible, surtout sur un téléphone.</p></aside>
-<aside class="encadre encadre-attention"><p><strong>Attention :</strong> aucune transition entre les scènes. Un fondu ou un glissement fait commencer la scène suivante une demi-seconde plus tôt : sur sept scènes, le film perdrait 3 secondes et la musique ne tomberait plus sur l'image.</p></aside>
+<aside class="encadre encadre-conseil"><p><strong>Conseil :</strong> les instants du scénario sont donnés depuis le début du film. Les commandes de ce tutoriel les donnent depuis le début de chaque séquence, ce qui reste juste même si une transition fait commencer une scène un peu plus tôt : la musique, elle, se cale sur l'image à la fin.</p></aside>
 </section>
 
 <!-- ===================================================================================================== -->
 <section id="creer" class="etape-tuto">
 <h2><span class="etape-numero">2</span> Lancer le film <span class="duree">10 minutes</span></h2>
 <p><strong>Objectif :</strong> répondre aux deux rondes de questions, en parcours accompagné, sans voix.</p>
-<pre class="commande"><code>/pulse-motion:creer le film « Vibe Connection » décrit dans scenario.md (dans ce dossier) : lis-le en entier avant tout. C'est un faux film muet et rétro de 1 min 30 qui fait la promotion de pulse-motion, en 7 scènes composées librement, une par séquence, avec exactement les durées du scénario (16, 6, 15, 8, 23, 10 et 12 secondes) et ces noms de scènes : generique, installation, probleme, tournant, demo, preuve, pancartes. Genre storytelling, format carré 1:1 à 25 images par seconde, style tech-sombre, ton sombre, sans voix ni sous-titres, une musique composée entraînante à 120 battements par minute. Aucune transition entre les scènes (coupe franche partout), pour que chaque séquence commence pile à son instant du scénario. Les textes à l'écran sont les cartons du scénario, mot pour mot ; aucun texte plus petit que 3,5 % de la hauteur de l'image (38 px) : les petites mentions du scénario (20 à 32 px) passent à cette taille. Pour ce premier jet : décors, cartons, caméra et objets de chaque séquence, avec les Touffus du plugin (le dessin « touffu », hauteur 14 % de l'image en plan large) et seulement les poses et mouvements de la bibliothèque ; le designer, les gestes propres au film, la partition et les bruitages viendront ensuite.</code></pre>
+<pre class="commande"><code>/pulse-motion:creer le film « Vibe Connection » décrit dans scenario.md (dans ce dossier) : lis-le en entier avant tout. C'est un faux film muet et rétro de 1 min 30 qui fait la promotion de pulse-motion, en 7 scènes composées librement, une par séquence, avec exactement les durées du scénario (16, 6, 15, 8, 23, 10 et 12 secondes) et ces noms de scènes : generique, installation, probleme, tournant, demo, preuve, pancartes. Genre storytelling, format carré 1:1 à 25 images par seconde, style tech-sombre, ton sombre, sans voix ni sous-titres, une musique composée entraînante à 120 battements par minute. Les textes à l'écran sont les cartons du scénario, mot pour mot ; aucun texte plus petit que 3,5 % de la hauteur de l'image (38 px) : les petites mentions du scénario (20 à 32 px) passent à cette taille. Pour ce premier jet : décors, cartons, caméra et objets de chaque séquence, avec les Touffus du plugin (le dessin « touffu », hauteur 14 % de l'image en plan large) et seulement les poses et mouvements de la bibliothèque ; le designer, les gestes propres au film, l'humeur de la musique par séquence et les bruitages viendront ensuite.</code></pre>
 <p>Pulse Motion lit le scénario, puis pose sa première ronde de questions. Répondez ainsi :</p>
 <div class="conversation" data-titre="La première ronde">
 <p data-role="claude">Durée ? → 30 s / 1 min (Recommandé pour une formation courte) / 3 min / 5 min
@@ -172,8 +172,7 @@ Sous-titres ? → Oui (Recommandé) / Non</p>
 <p>Regardez le film entier dans l'aperçu, avec le son. Puis demandez les images fixes des sept scènes, pour les avoir sous les yeux pendant le tournage :</p>
 <pre class="commande"><code>/pulse-motion:retoucher fais une planche des scènes generique, installation, probleme, tournant, demo, preuve et pancartes</code></pre>
 <aside class="encadre encadre-attendu"><p><strong>Résultat attendu :</strong> le film dure 1 min 30, au format carré, sur fond noir. Les Touffus sont là, les cartons apparaissent aux bons moments. Les gestes sont encore approximatifs, le designer n'a ni béret ni crayon : c'est normal.</p></aside>
-<aside class="encadre encadre-conseil"><p><strong>Conseil :</strong> notez au fil du visionnage ce qui ne va pas, séquence par séquence. Les étapes 8 à 14 reprennent chaque séquence : vous ajouterez vos remarques à la fin de leur commande.</p></aside>
-<details class="probleme"><summary>Le contrôle signale « hors-tempo »</summary><p>Une scène ne commence pas sur un temps de la musique. À 120 battements par minute, un temps dure une demi-seconde : les durées du scénario (toutes en secondes entières) tombent juste. Demandez : <code>remets les durées exactes du scénario : 16, 6, 15, 8, 23, 10 et 12 secondes</code>.</p></details>
+<aside class="encadre encadre-conseil"><p><strong>Conseil :</strong> notez au fil du visionnage ce qui ne va pas, séquence par séquence. Les étapes 7 à 13 reprennent chaque séquence : vous ajouterez vos remarques à la fin de leur commande.</p></aside>
 <details class="probleme"><summary>Le contrôle signale un « temps mort »</summary><p>Rien ne bouge pendant plus de 2,5 secondes, souvent dans un premier jet où un beat n'a pas encore son action. Ignorez-le pour l'instant : il disparaîtra quand la séquence sera reprise.</p></details>
 </section>
 
@@ -197,7 +196,7 @@ Sous-titres ? → Oui (Recommandé) / Non</p>
 <h2><span class="etape-numero">6</span> Les gestes du film <span class="duree">45 minutes</span></h2>
 <p><strong>Objectif :</strong> les poses et mouvements que la bibliothèque n'a pas, chacun vérifié sur sa planche.</p>
 <p>La bibliothèque connaît déjà les poses <em>debout, montrer, bras levés, mains sur les hanches, assis, penché</em> et les mouvements <em>marche, course, saut, accroupi, se relever, coucou, peur</em>. Le film a besoin de gestes en plus. Lancez ces commandes <strong>une par une</strong> : après chacune, Pulse Motion écrit le geste, vérifie la planche et vous la montre. Les noms entre guillemets sont ceux que les séquences utiliseront.</p>
-<p>Une marche ou une course utilise toujours le mouvement de la marche ou de la course : pour une démarche différente (plus fière, plus pressée), on modifie la marche de toute la vidéo, pas celle d'un seul Touffu. Le film n'en a pas besoin.</p>
+<p>Une <dfn>démarche</dfn> est un mouvement en boucle qui remplace la marche (ou la course) d'un seul personnage, le temps d'un trajet : il avance toujours sans glisser.</p>
 <pre class="commande"><code>/pulse-motion:animer-personnage une pose « chut » : l'index de la main avant posé devant la bouche, l'autre bras le long du corps, tête légèrement penchée vers la caméra, yeux ronds</code></pre>
 <pre class="commande"><code>/pulse-motion:animer-personnage un mouvement « sursaut » de 0,4 s : il bondit sur place, bras écartés, yeux écarquillés, pupilles rétrécies, touffe hérissée en éventail, puis retombe</code></pre>
 <pre class="commande"><code>/pulse-motion:animer-personnage un mouvement « dessiner » en boucle de 0,6 s : le bras avant trace de grands gestes devant lui, comme avec un crayon géant, le corps un peu penché en avant</code></pre>
@@ -209,37 +208,26 @@ Sous-titres ? → Oui (Recommandé) / Non</p>
 <pre class="commande"><code>/pulse-motion:animer-personnage un mouvement « attraper » de 0,6 s : le bras avant se tend devant lui à hauteur d'épaule, la main se referme, puis le bras redescend en tirant (pour baisser le bras d'un voisin, redresser une lettre, décrocher une flèche)</code></pre>
 <pre class="commande"><code>/pulse-motion:animer-personnage un mouvement « lancer » de 0,6 s : il lance quelque chose par-dessus son épaule sans regarder, le bras avant part de devant et finit derrière la tête</code></pre>
 <pre class="commande"><code>/pulse-motion:animer-personnage une pose « fier » : torse bombé, menton levé, mains sur les hanches, expression joie</code></pre>
+<pre class="commande"><code>/pulse-motion:animer-personnage une démarche « marche-fiere » : une marche en boucle copiée de la marche, torse bombé, menton levé, genoux levés haut, même foulée, pour un Touffu qui entre fièrement</code></pre>
 <pre class="commande"><code>/pulse-motion:animer-personnage une pose « brandir » : les deux bras tendus au-dessus de la tête, mains rapprochées comme pour tenir le manche d'une pancarte</code></pre>
 <pre class="commande"><code>/pulse-motion:animer-personnage une pose « freiner » : penché en arrière, jambe avant tendue devant lui, bras rejetés en arrière, comme à la fin d'une glissade</code></pre>
 <pre class="commande"><code>/pulse-motion:animer-personnage un mouvement « soupir » d'une seconde : les épaules montent puis retombent, la tête penche, les paupières se baissent à moitié</code></pre>
 <pre class="commande"><code>/pulse-motion:animer-personnage une pose « tape-main » : bras avant levé devant lui à hauteur de la tête, paume ouverte, expression joie</code></pre>
 <pre class="commande"><code>/pulse-motion:animer-personnage une pose « allonge » : assis très en arrière comme dans une chaise longue, jambes tendues et croisées, une main près de la bouche comme pour tenir une tasse</code></pre>
-<aside class="encadre encadre-attendu"><p><strong>Résultat attendu :</strong> 16 gestes rangés avec votre vidéo. Pour les revoir tous : <code>/pulse-motion:animer-personnage quels gestes existent ?</code></p></aside>
+<aside class="encadre encadre-attendu"><p><strong>Résultat attendu :</strong> 17 gestes rangés avec votre vidéo. Pour les revoir tous : <code>/pulse-motion:animer-personnage quels gestes existent ?</code></p></aside>
 <p>Réglez ensuite vous-même celui qui compte le plus, le « chut » de la toute première image : il décide si le spectateur reste.</p>
 <pre class="commande"><code>/pulse-motion:atelier-personnages ouvre la pose chut avec le touffu</code></pre>
 <p>Dans l'<dfn>atelier</dfn> : glissez une articulation pour tourner le membre ; <kbd>Maj</kbd> + glisser une main l'amène sous la souris (pratique pour poser l'index devant la bouche). Cliquez sur <strong>Enregistrer</strong>, puis dites à Pulse Motion que vous avez fini.</p>
+<aside class="encadre encadre-conseil"><p><strong>Bon à savoir :</strong> si une séquence demande plus tard un geste qui n'existe pas encore, l'animateur qui la réécrit le crée lui-même, le vérifie sur sa planche, puis vous le dit. Créer les gestes ici d'abord vous permet de les régler avant.</p></aside>
 <aside class="encadre encadre-conseil"><p><strong>Conseil :</strong> un geste ne ressemble pas à la demande ? Décrivez ce qui cloche, pas la solution : <code>/pulse-motion:animer-personnage dans « mesurer », on dirait qu'il fait coucou : le bras doit être tendu droit devant, à hauteur des yeux</code>.</p></aside>
 </section>
 
 <!-- ===================================================================================================== -->
-<section id="musique" class="etape-tuto">
-<h2><span class="etape-numero">7</span> La partition du film <span class="duree">20 minutes</span></h2>
-<p><strong>Objectif :</strong> une musique écrite pour le film, qui change d'humeur avec lui et se tait à la séquence 4.</p>
-<p>La musique composée du premier jet suit une structure générale (introduction, montée, accord final). Le film demande plus : une fanfare, une marche, un silence total, une musique de boss final, une détente. Pulse Motion peut écrire une <dfn>partition</dfn> pour la vidéo, mesure par mesure. À 120 battements par minute, une mesure de 4 temps dure 2 secondes : le film en compte 45.</p>
-<pre class="commande"><code>/pulse-motion:retoucher remplace la musique par une partition écrite pour le film, à la manière d'une chiptune de jeu vidéo rétro, à 120 battements par minute, 45 mesures de 4 temps (2 secondes par mesure), qui suit le scénario : de 0 à 16 s une fanfare 8-bit qui éclate à 1,8 s, avec un arpège qui monte de 4 à 7 s et une note grave tenue de 7 à 9 s ; de 16 à 22 s une boucle de marche aux tambours réguliers ; de 22 à 37 s la même marche plus inquiétante, avec un tic-tac sur les temps qui s'accélère à partir de 31 s ; à 38 s la musique s'arrête net, silence total jusqu'à 45 s ; de 45 à 68 s une musique épique façon boss final ; de 68 à 78 s une version détente en demi-tempo ; de 78 à 90 s une mélodie de fin de niveau qui se termine sur un accord. Instruments : pluck pour la mélodie et l'arpège, basse, kick, caisse et charleston pour la rythmique, cloche pour le tic-tac. Garde le tempo de la vidéo à 120 battements par minute dans le déroulé, pour que les temps musicaux des scènes restent justes ; les entrées qui ne tombent pas sur un début de mesure (1,8 s, 7 s, 9 s, 31 s, 45 s) commencent par des silences dans leur motif.</code></pre>
-<p>Écoutez-la seule, sans l'image :</p>
-<pre class="commande"><code>/pulse-motion:retoucher fais-moi écouter la musique</code></pre>
-<aside class="encadre encadre-attendu"><p><strong>Résultat attendu :</strong> la musique s'ouvre dans le lecteur de votre ordinateur. Elle dure 1 min 30, se tait de 38 à 45 s, et repart en force à 45 s.</p></aside>
-<aside class="encadre encadre-attention"><p><strong>Attention :</strong> une musique composée donne son tempo à la vidéo ; une partition, non. C'est pourquoi la commande demande de garder le tempo de 120 dans le déroulé : sans lui, les instants écrits en temps musicaux des scènes deviendraient des erreurs.</p></aside>
-<aside class="encadre encadre-conseil"><p><strong>Conseil :</strong> retouchez la partition comme une scène, une phrase à la fois : <code>/pulse-motion:retoucher dans la partition, la fanfare du début est trop longue : qu'elle commence à 1,8 s, à la chute du logo</code>. Une composition plus simple vous suffit ? Gardez la musique composée et demandez seulement <code>coupe la musique de 38 à 45 secondes</code> : si ce n'est pas possible avec une musique composée, Pulse Motion vous le dira et vous proposera la partition.</p></aside>
-</section>
-
-<!-- ===================================================================================================== -->
 <section id="sequence-1" class="etape-tuto">
-<h2><span class="etape-numero">8</span> Séquence 1 : le générique <span class="duree">45 minutes</span></h2>
+<h2><span class="etape-numero">7</span> Séquence 1 : le générique <span class="duree">45 minutes</span></h2>
 <p><strong>Objectif :</strong> les 16 premières secondes, celles qui décident si le spectateur reste.</p>
 <p>Chaque séquence se reprend de la même façon : une commande qui demande de refaire la scène en suivant le scénario à la lettre, avec les points techniques qui comptent ; puis la vérification à l'image ; puis vos retouches, une phrase à la fois.</p>
-<pre class="commande"><code>/pulse-motion:retoucher refais la scène generique en suivant à la lettre la séquence 1 de scenario.md (ses 5 beats, positions, tailles, couleurs, polices et instants). Points techniques : la première image est déjà pleine, avec le Touffu en gros plan dans la pose « chut », caméra en zoom 3 sur lui en (50 %, 72 %), puis dézoom vers le plan large de 1,2 s à 1,6 s ; à 1,8 s le logo PULSEIA (texte Figtree 900 en traînée de marque #FF6B35, #FF8C42, #C56CF0, #9B59B6, #8E44AD) tombe avec une secousse de la caméra de 6 px pendant 0,2 s, et le Touffu joue « sursaut » puis sort en courant par la droite ; « PULSE-MOTION » apparaît lettre par lettre en onde (0,02 s par lettre) avec la traînée de marque ; le petit Touffu au loin est le personnage « touffu-silhouette » ; au beat 4, les 7 Touffus montent du bas un par un sur les demi-temps (en déplaçant leur cadre), le 4e fait coucou et le 5e joue « attraper » pour lui baisser le bras ; au beat 5, « VIBE CONNECTION » tombe lettre par lettre (chute, 0,05 s par lettre) en traînée de marque avec un contour blanc de 2 px, puis le Touffu entre par la droite, bute contre le dernier N qui pivote de 30°, se tourne vers la caméra, redresse le N avec « attraper » et sort par la gauche. Tous les instants en temps musicaux, à 120 battements par minute.</code></pre>
+<pre class="commande"><code>/pulse-motion:retoucher refais la scène generique en suivant à la lettre la séquence 1 de scenario.md (ses 5 beats, positions, tailles, couleurs, polices et instants). Points techniques : la première image est déjà pleine, avec le Touffu en gros plan dans la pose « chut », caméra en zoom 3 sur lui en (50 %, 72 %), puis dézoom vers le plan large de 1,2 s à 1,6 s ; à 1,8 s le logo PULSEIA (texte Figtree 900 en traînée de marque #FF6B35, #FF8C42, #C56CF0, #9B59B6, #8E44AD) tombe avec une secousse de la caméra de 6 px pendant 0,2 s, et le Touffu joue « sursaut » puis sort en courant par la droite ; « PULSE-MOTION » apparaît lettre par lettre en onde (0,02 s par lettre) avec la traînée de marque ; le petit Touffu au loin est le personnage « touffu-silhouette » ; au beat 4, les 7 Touffus montent du bas un par un sur les demi-temps (en déplaçant leur cadre), le 4e fait coucou et le 5e joue « attraper » pour lui baisser le bras ; au beat 5, « VIBE CONNECTION » tombe lettre par lettre (chute, 0,05 s par lettre) en traînée de marque avec un contour blanc de 2 px, puis le Touffu entre par la droite, bute contre le dernier N qui pivote de 30°, se tourne vers la caméra, redresse le N avec « attraper » et sort par la gauche. Les gestes calés sur la musique en temps musicaux, à 120 battements par minute.</code></pre>
 <p>Vérifiez à l'image, en mettant l'aperçu en pause à ces instants (cliquez sur la barre de lecture) :</p>
 <table>
 <thead><tr><th>Instant</th><th>Ce que vous devez voir</th></tr></thead>
@@ -261,7 +249,7 @@ Sous-titres ? → Oui (Recommandé) / Non</p>
 
 <!-- ===================================================================================================== -->
 <section id="sequence-2" class="etape-tuto">
-<h2><span class="etape-numero">9</span> Séquence 2 : l'installation <span class="duree">30 minutes</span></h2>
+<h2><span class="etape-numero">8</span> Séquence 2 : l'installation <span class="duree">30 minutes</span></h2>
 <p><strong>Objectif :</strong> le monde des Touffus, le portail, et leur marche aveugle.</p>
 <pre class="commande"><code>/pulse-motion:retoucher refais la scène installation en suivant à la lettre la séquence 2 de scenario.md. Points techniques : le portail mauve se dessine en (8 %, 66 %) avec un rebond ; les 6 Touffus en sortent un toutes les 0,25 s (un demi-temps), chacun avec le mouvement « saut » puis une marche vers la droite, un pas par demi-temps ; au beat 2, travelling de la caméra vers la droite à la vitesse de la marche, avec une parallaxe sur trois plans : étoiles (profondeur 0,1), collines (0,5), corniche (1) ; le carton s'écrit en frappe (0,03 s par lettre) à 17,5 s du film, donc 1,5 s après le début de la scène, et sort en fondu à la fin de la scène ; une seule source de lumière chaude, la lueur orange à l'horizon.</code></pre>
 <pre class="commande"><code>/pulse-motion:retoucher fais une planche de la scène installation</code></pre>
@@ -271,7 +259,7 @@ Sous-titres ? → Oui (Recommandé) / Non</p>
 
 <!-- ===================================================================================================== -->
 <section id="sequence-3" class="etape-tuto">
-<h2><span class="etape-numero">10</span> Séquence 3 : le problème <span class="duree">45 minutes</span></h2>
+<h2><span class="etape-numero">9</span> Séquence 3 : le problème <span class="duree">45 minutes</span></h2>
 <p><strong>Objectif :</strong> le designer, son pont dessiné à la main, et l'effondrement.</p>
 <pre class="commande"><code>/pulse-motion:retoucher refais la scène probleme en suivant à la lettre la séquence 3 de scenario.md. Points techniques : le précipice de x 45 % à x 75 %, la porte lumineuse en (90 %, 62 %) ; le panneau DEADLINE tombe et se plante en (42 %, 66 %) avec une vibration, texte en Rouge d'Alerte ; le designer est le personnage « touffu-designer » : il quitte la file d'un saut de côté, se poste au bord en (43 %, 70 %), joue « dessiner » pendant que des planches en traits blancs tremblotants apparaissent une toutes les 0,6 s, puis « mesurer », puis efface une planche ; la file continue d'avancer lentement derrière ; de 9 à 11 s de la scène, l'accéléré ×2 s'applique au décor et au pont, et le designer joue « dessiner-vite » ; puis le pont tordu s'affaisse et se défait en gribouillis, le designer joue « essuyer-front » avant, puis se retrouve enroulé dans une pelote de traits dont ne dépassent que ses yeux et son béret ; les deux cartons à 9 s et 11,5 s de la scène, le mot « deadline » en orange.</code></pre>
 <pre class="commande"><code>/pulse-motion:retoucher fais une planche de la scène probleme</code></pre>
@@ -281,7 +269,7 @@ Sous-titres ? → Oui (Recommandé) / Non</p>
 
 <!-- ===================================================================================================== -->
 <section id="sequence-4" class="etape-tuto">
-<h2><span class="etape-numero">11</span> Séquence 4 : le tournant <span class="duree">30 minutes</span></h2>
+<h2><span class="etape-numero">10</span> Séquence 4 : le tournant <span class="duree">30 minutes</span></h2>
 <p><strong>Objectif :</strong> le pied suspendu au-dessus du vide, l'arrêt sur image, le silence, puis le terminal.</p>
 <pre class="commande"><code>/pulse-motion:retoucher refais la scène tournant en suivant à la lettre la séquence 4 de scenario.md. Points techniques : le premier Touffu arrive au bord en (44 %, 70 %) et prend la pose « pied-dans-le-vide », qu'il tient jusqu'à la fin ; à 1 s, arrêt sur image du décor jusqu'à la fin de la scène (le terminal, son curseur, le voile et le carton sont hors du décor figé, sinon ils n'arriveraient jamais), avec la caméra qui continue : zoom rapide sur son visage puis dézoom vers le plan large à 5 s, saturation qui baisse à 0,6 pendant l'arrêt et revient à 1 à 5 s ; les Touffus ne se figent pas avec le décor : ils tiennent leur pose, sans respiration ni clignement, et seuls ses yeux s'écarquillent et sa touffe se hérisse (expression peur) ; voile Noir de Chambre à 70 % pendant le carton « Jusqu'à aujourd'hui. », en fondu flouté de 2,6 à 4,7 s ; à 5 s, la fenêtre du terminal s'ouvre depuis son centre en (50 %, 30 %), invite orange et curseur qui clignote sur chaque temps ; les Touffus jouent « lever-les-yeux » vers elle.</code></pre>
 <pre class="commande"><code>/pulse-motion:retoucher fais une planche de la scène tournant</code></pre>
@@ -291,7 +279,7 @@ Sous-titres ? → Oui (Recommandé) / Non</p>
 
 <!-- ===================================================================================================== -->
 <section id="sequence-5" class="etape-tuto">
-<h2><span class="etape-numero">12</span> Séquence 5 : la démo <span class="duree">45 minutes</span></h2>
+<h2><span class="etape-numero">11</span> Séquence 5 : la démo <span class="duree">45 minutes</span></h2>
 <p><strong>Objectif :</strong> une commande tapée, un pont qui se construit sur les demi-temps, une traversée triomphale.</p>
 <pre class="commande"><code>/pulse-motion:retoucher refais la scène demo en suivant à la lettre la séquence 5 de scenario.md. Points techniques : le terminal occupe 80 % de l'image au début ; la commande s'écrit en frappe (0,04 s par lettre) à 0,5 s, clignote une fois en orange à la validation, puis les trois réponses s'écrivent en frappe rapide (0,015 s par lettre), avec une coche orange devant « Vidéo prête. » ; dézoom vers le plan large à 6 s ; le pont se construit de x 45 % à x 75 % : 12 planches Braise Sourde aux bords en traînée de marque, une par demi-temps, chacune descend de 40 px et se pose avec un rebond, la première exactement sous le pied du Touffu ; le Touffu regarde ses pieds, puis la caméra (il se tourne de face) ; à 13 s, travelling lent qui suit la file ; les 6 Touffus traversent au pas, chacun fait un « saut » de joie sur la rive droite puis disparaît dans la porte lumineuse ; rambardes à 15 s, lanternes orange à 17 s (effet de particules discret, des étincelles), onde aux couleurs de la traînée sur le tablier à 19 s ; cartons « Une commande » à 9 s, « Du motion design pro » à 15 s, « En quelques minutes » à 19 s, chacun remplaçant le précédent en fondu flouté.</code></pre>
 <pre class="commande"><code>/pulse-motion:retoucher fais une planche de la scène demo</code></pre>
@@ -302,7 +290,7 @@ Sous-titres ? → Oui (Recommandé) / Non</p>
 
 <!-- ===================================================================================================== -->
 <section id="sequence-6" class="etape-tuto">
-<h2><span class="etape-numero">13</span> Séquence 6 : la chute comique et la preuve <span class="duree">40 minutes</span></h2>
+<h2><span class="etape-numero">12</span> Séquence 6 : la chute comique et la preuve <span class="duree">40 minutes</span></h2>
 <p><strong>Objectif :</strong> le designer savoure la fin de ses galères, puis on découvre une vraie vidéo Pulse Motion.</p>
 <p>La preuve est une image de votre vidéo du tutoriel 1. Pulse Motion va la chercher dans le dossier voisin et la range avec le film :</p>
 <pre class="commande"><code>/pulse-motion:retoucher fais une planche de la scène du chiffre (4 °C) de ma vidéo « La chaîne du froid », dans le dossier ../chaine-du-froid, puis copie l'image la plus lisible dans assets/preuve.png de ce dossier-ci</code></pre>
@@ -315,13 +303,39 @@ Sous-titres ? → Oui (Recommandé) / Non</p>
 
 <!-- ===================================================================================================== -->
 <section id="sequence-7" class="etape-tuto">
-<h2><span class="etape-numero">14</span> Séquence 7 : les pancartes <span class="duree">40 minutes</span></h2>
+<h2><span class="etape-numero">13</span> Séquence 7 : les pancartes <span class="duree">40 minutes</span></h2>
 <p><strong>Objectif :</strong> l'appel à l'action, porté par deux Touffus maladroits, puis le logo final.</p>
-<pre class="commande"><code>/pulse-motion:retoucher refais la scène pancartes en suivant à la lettre la séquence 7 de scenario.md. Points techniques : le Touffu n°1 entre par la gauche en marchant, torse bombé (expression joie), s'arrête en x 40 % et prend la pose « brandir » ; la pancarte est un élément de la scène, au-dessus de ses mains, centrée en (45 %, 45 %), d'abord à l'envers ; il joue « lever-les-yeux » (pupilles vers la pancarte), puis la pancarte pivote de 180° d'un coup sec avec rebond à 3,5 s de la scène, et il prend la pose « fier » ; le Touffu n°2 entre en courant par la droite, s'arrête en x 75 % dans la pose « freiner » avec un petit nuage de poussière ; le n°1 joue « soupir », puis « attraper » pour décrocher la flèche orange, qui se repique pointe vers le bas ; ils se tapent dans la main (pose « tape-main » tous les deux, petites étoiles orange au contact), puis repartent vers la droite ; le n°2 pose le pied au-delà du bord, arrêt sur image du décor de 0,5 s, trois planches se posent sous son pied avec le rebond de la séquence 5, et il sort du cadre ; à 9 s, le logo pulse-motion en onde aux couleurs de la traînée de marque, puis les deux mentions en Gris de Veille, et la dernière image tient 0,5 s sans mouvement.</code></pre>
+<pre class="commande"><code>/pulse-motion:retoucher refais la scène pancartes en suivant à la lettre la séquence 7 de scenario.md. Points techniques : le Touffu n°1 entre par la gauche avec la démarche « marche-fiere » (expression joie), s'arrête en x 40 % et prend la pose « brandir » ; la pancarte est un élément de la scène, au-dessus de ses mains, centrée en (45 %, 45 %), d'abord à l'envers ; il joue « lever-les-yeux » (pupilles vers la pancarte), puis la pancarte pivote de 180° d'un coup sec avec rebond à 3,5 s de la scène, et il prend la pose « fier » ; le Touffu n°2 entre en courant par la droite, s'arrête en x 75 % dans la pose « freiner » avec un petit nuage de poussière ; le n°1 joue « soupir », puis « attraper » pour décrocher la flèche orange, qui se repique pointe vers le bas ; ils se tapent dans la main (pose « tape-main » tous les deux, petites étoiles orange au contact), puis repartent vers la droite ; le n°2 pose le pied au-delà du bord, arrêt sur image du décor de 0,5 s, trois planches se posent sous son pied avec le rebond de la séquence 5, et il sort du cadre ; à 9 s, le logo pulse-motion en onde aux couleurs de la traînée de marque, puis les deux mentions en Gris de Veille, et la dernière image tient 0,5 s sans mouvement.</code></pre>
 <pre class="commande"><code>/pulse-motion:retoucher fais une planche de la scène pancartes</code></pre>
 <aside class="encadre encadre-attendu"><p><strong>Résultat attendu :</strong> la pancarte se lit à l'endroit à partir de 3,8 s, et reste lisible environ 5 secondes. Le film se termine sur le logo, immobile.</p></aside>
 <details class="probleme"><summary>Le contrôle signale « Essayez pulse-motion » : contraste trop faible</summary><p>Un orange vif sur une pancarte blanche ne se lit pas assez : environ 2,8 pour 1, alors qu'il en faut 4,5 à cette taille. <code>/pulse-motion:retoucher sur la pancarte blanche, écris « Essayez pulse-motion » dans un orange plus foncé, juste assez pour être lisible</code>.</p></details>
 <details class="probleme"><summary>La pancarte cache la tête du Touffu</summary><p><code>/pulse-motion:retoucher dans la scène pancartes, remonte la pancarte : son bas doit toucher les mains du Touffu, sa tête doit rester visible dessous</code>.</p></details>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="musique" class="etape-tuto">
+<h2><span class="etape-numero">14</span> La musique, calée sur l'image <span class="duree">20 minutes</span></h2>
+<p><strong>Objectif :</strong> une musique qui change d'humeur avec le film et se tait pendant l'arrêt sur image.</p>
+<p>La musique se fait <strong>à la fin</strong>, une fois l'image en place : Pulse Motion la recompose à chaque assemblage sur le minutage réel du film. Chaque séquence a sa section de musique, qui commence pile au début de la séquence (même si une transition la fait commencer un peu plus tôt) ; les gestes calés sur les temps tombent donc sur la musique. Il suffit de dire l'humeur de chaque séquence :</p>
+<pre class="commande"><code>/pulse-motion:retoucher la musique suit l'humeur du scénario : scène generique normale, installation normale, probleme normale, tournant en silence, demo intense, preuve calme, pancartes normale</code></pre>
+<table>
+<thead><tr><th>Humeur</th><th>Ce qu'on entend</th></tr></thead>
+<tbody>
+<tr><td>silence</td><td>Rien : l'arrêt sur image de la séquence 4, avec seulement le clic du curseur.</td></tr>
+<tr><td>calme</td><td>Une nappe seule : la pause café de la séquence 6.</td></tr>
+<tr><td>normale</td><td>Les couches de l'ambiance (nappe, basse, mélodie, percussions selon l'intensité).</td></tr>
+<tr><td>intense</td><td>Toutes les couches, percussions et basse profonde comprises : le pont de la séquence 5.</td></tr>
+</tbody>
+</table>
+<p>Écoutez-la seule, sans l'image :</p>
+<pre class="commande"><code>/pulse-motion:retoucher fais-moi écouter la musique</code></pre>
+<aside class="encadre encadre-attendu"><p><strong>Résultat attendu :</strong> la musique s'ouvre dans le lecteur de votre ordinateur. Elle se tait pendant toute la séquence 4, repart en force à la séquence 5, et finit sur un accord.</p></aside>
+<aside class="encadre encadre-conseil"><p><strong>Conseil :</strong> retouchez la musique comme une scène, une phrase à la fois : <code>/pulse-motion:retoucher une autre variante de la musique</code>, <code>/pulse-motion:retoucher la musique plus énergique</code>.</p></aside>
+<details class="probleme"><summary>Pour aller plus loin : une partition à vous, au temps près</summary>
+<p>L'humeur s'applique à toute une séquence : le silence commence donc au début de la séquence 4 (37 s), une seconde avant l'arrêt sur image du scénario (38 s). Pour un calage plus fin (le silence pile à l'arrêt sur image, une fanfare qui éclate à la chute du logo), demandez une partition écrite, piste par séquence : chaque piste se cale sur sa séquence, comme la musique composée.</p>
+<pre class="commande"><code>/pulse-motion:retoucher remplace la musique par une partition écrite pour le film, à la manière d'une chiptune de jeu vidéo rétro, à 120 battements par minute, avec des pistes calées sur chaque scène : generique, une fanfare 8-bit qui éclate à 1,8 s de la scène, un arpège qui monte de 4 à 7 s et une note grave tenue de 7 à 9 s ; installation, une marche aux tambours réguliers ; probleme, la même marche plus inquiétante avec un tic-tac sur les temps ; tournant, la marche jusqu'à 1 s puis le silence ; demo, une musique épique façon boss final ; preuve, une détente en demi-tempo ; pancartes, une mélodie de fin de niveau qui se termine sur un accord. Instruments : pluck pour la mélodie et l'arpège, basse, kick, caisse et charleston pour la rythmique, cloche pour le tic-tac.</code></pre>
+<p>Le tempo de la partition devient celui de la vidéo tout seul.</p>
+</details>
 </section>
 
 <!-- ===================================================================================================== -->
