@@ -9,7 +9,7 @@
  * lâché), « cache », ou « tombe » (jusqu'au sol du porteur). Tout ne dépend que de t : même image quel que soit l'ordre.
  * L'objet doit être dans le même conteneur que son porteur (repère commun), positionné en absolu ; ses styles de
  * placement (left, top, transform…) sont pris par la prise, en priorité : animer plutôt un enfant de l'objet.
- * data-devant : au-dessus du porteur ; data-derriere : derrière lui.
+ * data-devant : au-dessus du porteur ; data-derriere : derrière lui. data-relais="#n2 à 1.5" : passé à la main de #n2.
  */
 (function (racine) {
   'use strict';
@@ -56,13 +56,20 @@
       if (boite.width > 0 && boite.height > 0 && Math.abs(boite.width / boite.height - P.W / P.H) > 0.02 * P.W / P.H) {
         alerter(idScene, 'l\'objet tenu' + (el.id ? ' « ' + el.id + ' »' : '') + ' : le conteneur de « ' + id + ' » n\'a pas le format de l\'image ; mettre le personnage et ses objets dans un conteneur qui couvre l\'image.');
       }
+      // Relais : « #n2 à 1.5 » : à 1,5 s dans la prise, la main de #n2 le tient (même conteneur).
+      var relais = null, mr = /^\s*#?([\w-]+)\s+à\s+(\d*\.?\d+)\s*$/.exec(el.getAttribute('data-relais') || '');
+      if (mr) {
+        var autre = null;
+        try { autre = sec.querySelector('#' + (typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(mr[1]) : mr[1])); } catch (e) { autre = null; }
+        if (autre && P.connu(autre) && autre.parentElement === el.parentElement) relais = { div: autre, t: temps.debut + Number(mr[2]) };
+      }
       var origine = {};
       PROPRIETES.forEach(function (k) { origine[k] = [el.style.getPropertyValue(k), el.style.getPropertyPriority(k)]; });
       objets.push({
         el: el, porteur: porteur, debut: temps.debut, fin: temps.fin, origine: origine,
         main: choix(el, 'data-main', MAINS, 'avant'), prise: lirePrise(el.getAttribute('data-prise')),
         orientation: choix(el, 'data-orientation', ['droit', 'main'], 'droit'), lacher: choix(el, 'data-lacher', LACHERS, 'reste'),
-        devant: el.hasAttribute('data-devant'), derriere: el.hasAttribute('data-derriere'), finale: null
+        devant: el.hasAttribute('data-devant'), derriere: el.hasAttribute('data-derriere'), finale: null, relais: relais
       });
       // Derrière : le porteur passe au-dessus de l'objet.
       if (el.hasAttribute('data-derriere') && !porteur.style.zIndex) porteur.style.zIndex = '2';
@@ -74,7 +81,7 @@
 
     /** Point de prise (unités de la scène) et angle (degrés) au temps local tl (celui du conteneur commun). */
     function prise(o, tl) {
-      var m = P.mains(o.porteur, tl, true);
+      var m = P.mains(o.relais && tl >= o.relais.t ? o.relais.div : o.porteur, tl, true);
       if (!m) return null;
       if (o.main === 'deux') {
         var a = m.avant, b = m.arriere;
