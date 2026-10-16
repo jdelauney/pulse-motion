@@ -126,7 +126,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
 
 - Entrées : `iResolution` (pixels de la zone), `iTime`, `iTimeDelta`, `iFrame`, `iFrameRate`, `iDate` (figée sur l'instant de la vidéo), `iMouse` (toujours 0), `iChannelResolution`, `iProgres` (transition), `iSon` (`iSon.basses`…), réglages `R_<nom>` (`float` ; couleur : `vec4` sRGB).
 - Canaux : fond : `iChannel2` = `data-image`, `iChannel3` = son (spectre en `y = 0.25`, onde en `y = 0.75`) ; transition : `iChannel0` = scène qui sort, `iChannel1` = scène qui entre ; post-traitement : `iChannel0` = image de la scène. Les images des canaux sont en couleurs non prémultipliées (alpha à part), comme sur Shadertoy.
-- Comme sur Shadertoy : `fragCoord` en pixels depuis le coin **bas** gauche, couleurs sRGB, `fragColor.a` = opacité (1 pour un fond plein).
+- Comme sur Shadertoy : `fragCoord` en pixels depuis le coin **bas** gauche, couleurs sRGB. Différence : **`fragColor.a` = opacité** (Shadertoy l'ignore). Un shader copié tel quel qui laisse l'alpha à 0 donne un fond invisible (alerte dans l'aperçu) : écrire `fragColor = vec4(col, 1.0);`.
 - Interdits : `uniform`, `#version`, `main` (posés par le moteur), redéclarer une entrée. Un module de particules s'écrit en WGSL.
 - Erreurs : ligne et message du compilateur GLSL (panneau dans l'aperçu, `pulse-motion controler . --gpu`) ; l'export est refusé tant qu'un shader ne compile pas.
 - **Licence** : un shader de Shadertoy appartient à son auteur (CC BY-NC-SA par défaut) : ne l'utiliser que si sa licence le permet ; ne jamais l'ajouter à la bibliothèque du plugin.

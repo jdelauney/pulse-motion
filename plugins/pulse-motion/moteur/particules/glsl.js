@@ -266,6 +266,16 @@
 
     libererFace(f) { this.gl.deleteTexture(f.texture); this.gl.deleteFramebuffer(f.fb); }
 
+    /** Vrai si l'image du canvas (dernier dessin) a un alpha nul partout. */
+    toutTransparent(largeur, hauteur) {
+      const gl = this.gl;
+      const px = new Uint8Array(largeur * hauteur * 4);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.readPixels(0, 0, largeur, hauteur, gl.RGBA, gl.UNSIGNED_BYTE, px);
+      for (let i = 3; i < px.length; i += 4) if (px[i] !== 0) return false;
+      return true;
+    }
+
     dessiner(prog, o) {
       if (this.canvas.width !== o.largeur) this.canvas.width = o.largeur;
       if (this.canvas.height !== o.hauteur) this.canvas.height = o.hauteur;
