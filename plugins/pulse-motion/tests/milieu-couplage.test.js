@@ -106,12 +106,12 @@ const lireP = (f) => { const u = new Uint32Array(f.buffer); const l = [];
   return l; };
 const empreinte = (u) => { let h = 0x811c9dc5; for (let i = 0; i < u.length; i++) { h ^= u[i]; h = Math.imul(h, 0x01000193) >>> 0; } return h; };
 const finis = (l) => l.every((p) => Number.isFinite(p.x) && Number.isFinite(p.y) && Number.isFinite(p.vx) && Number.isFinite(p.vy));
-/** Groupe couplé : effets [{ effet, zone }] (pas 0 avec le milieu), milieu en dernier ; état après le chemin de τ.
- *  m, reperes : obstacles du milieu (facultatifs). -> { effets: [[{ p, brut }]], milieu, grille } */
-async function groupeApres(effetMilieu, effets, chemin, m = null, reperes = () => new Float32Array(0)) {
+/** Groupe couplé : effets [{ effet, zone, debut? }] (debut : pas du groupe, 0 par défaut), milieu en dernier (au pas
+ *  debutMilieu) ; état après le chemin de τ. m, reperes : obstacles du milieu (facultatifs). -> { effets: [[{ p, brut }]], milieu, grille } */
+async function groupeApres(effetMilieu, effets, chemin, m = null, reperes = () => new Float32Array(0), debutMilieu = 0) {
   const milieu = new P.Milieu(device, effetMilieu, ZONE, m, effetMilieu.fin);
   const sims = effets.map((x) => new P.Simulation(device, x.effet, null, null, L, milieu));
-  const groupe = new P.Couplage(device, sims.map((s) => ({ membre: s, debut: 0 })).concat([{ membre: milieu, debut: 0 }]));
+  const groupe = new P.Couplage(device, sims.map((s, i) => ({ membre: s, debut: effets[i].debut || 0 })).concat([{ membre: milieu, debut: debutMilieu }]));
   const zones = effets.map((x) => zonesDe(x.zone)).concat([{ reperes }]);
   for (const t of chemin) groupe.avancer(t, zones);
   const r = { effets: [], milieu: await milieu.lire(), grille: milieu.grille };
@@ -239,4 +239,30 @@ await envoyer({ webgpu: true, a: [empreinte(a.milieu.etat), ...a.effets[0].map((
   if (r.webgpu === false) return t.skip('WebGPU indisponible');
   assert.ok(r.encre > 0, 'encre déposée par les braises');
   assert.deepEqual(r.a, r.b, 'grille, braises et tissu : même état au bit près');
+});
+
+test('couplage GPU : débuts décalés (injecteur à 0 s, milieu à 1 s) : rien déposé avant le milieu, même état par trois chemins', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  // Milieu immobile de 2 s qui commence à 1 s (pas 120 du groupe) ; fusée injectrice (comme fusee-panache) dès 0 s.
+  const milieu = compilerMilieu({ resolution: 64, flottaison: 0, dissipation: 0, refroidissement: 0, vorticite: 0 }, 2);
+  const fusee = compiler([{ nom: 'f', naissance: { salves: [{ t: 0, nombre: 1 }], forme: { type: 'point' }, vitesse: { direction: [1, 0], valeur: [30, 30] }, vie: [3, 3] },
+    injecte: { fumee: 3, encre: 'couleur' }, vie: { couleur: { degrade: ['#ff8000', '#2040ff'] } } }], 3);
+  const r = await page({ milieu, fusee }, `
+const effets = [{ effet: DONNEES.fusee, zone: [30, 50, 0, 0] }];
+const apres = (chemin) => groupeApres(DONNEES.milieu, effets, chemin, null, () => new Float32Array(0), 120);
+const somme = (e) => e.milieu.scalaires.reduce((s, x, i) => (i % 8 === 0 || (i % 8 >= 4 && i % 8 <= 6) ? s + x : s), 0);
+const fumee = (e) => e.milieu.scalaires.reduce((s, x, i) => (i % 8 === 0 ? s + x : s), 0);
+const premier = await apres([1 + 1.5 / 120]);
+const direct = await apres([3]);
+const continu = await apres([0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3]);
+const retour = await apres([3, 0.4, 3]);
+const em = (e) => [empreinte(e.milieu.etat), ...e.effets[0].map((x) => x.brut)];
+await envoyer({ webgpu: true, premier: fumee(premier), avant: somme(await apres([0.9])), direct: em(direct), continu: em(continu), retour: em(retour), total: fumee(direct) });`);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  const pasDepot = Math.round(3 / 120 * 65536) / 65536;
+  assert.equal(r.avant, 0, 'rien dans la grille avant le début du milieu');
+  assert.ok(Math.abs(r.premier - pasDepot) < 1e-6, `fumée au pas 0 du milieu : ${r.premier}, un pas de dépôt : ${pasDepot}`);
+  assert.ok(r.total > 100 * pasDepot, 'la fusée dépose pendant le milieu');
+  assert.deepEqual(r.continu, r.direct, 'lecture continue = chemin direct');
+  assert.deepEqual(r.retour, r.direct, 'retour en arrière depuis 3 s = chemin direct');
 });

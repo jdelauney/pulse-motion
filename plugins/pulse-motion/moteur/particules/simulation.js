@@ -27,7 +27,7 @@
  * de la grille (texture P.Milieu.vueVent, liaisons 24 et 25 : variante des pipelines du pas, P.avecMilieu ; sans milieu,
  * P.milieuVide : vent nul) ; « injecte » : dépôts dans la grille à la fin du pas (P.creerDepots, milieu.js) ; structures
  * couplées : structures.js. Membre d'un groupe couplé (P.Couplage) : .kFin, .tailleEtat, .preparerPas(o, k, zones),
- * .envoyerPas(n), .encoderPas(passe, n), .positionner(k, tau, zones) -> deltas, .viderEtat(enc), .sauverEtat(enc, copie)
+ * .envoyerPas(n), .encoderPas(passe, n, milieuActif), .positionner(k, tau, zones) -> deltas, .viderEtat(enc), .sauverEtat(enc, copie)
  * -> copie, .restaurerEtat(enc, copie), .detruireCopie(copie) ; seule, avancer() les appelle avec ses propres instantanés.
  * P.additionnerProfils(device, cible, source)   cible += source (tampons d'entiers de même taille)
  * Modules de force (P6) : em.modulesWGSL.force (M.codeShader.attacherModules) ; l'appel est inséré dans integrer (pas et
@@ -1934,7 +1934,7 @@ fn ventMilieu(x: vec2f) -> vec2f {
     }
 
     /** Membre : pas de la tranche n (groupes d'interactions, émetteurs simulés, structures, relaxation, dépôts dans le milieu). */
-    encoderPas(passe, n) {
+    encoderPas(passe, n, milieuActif) {
       // Interactions : positions au début du pas (grains), avant le pas des émetteurs.
       for (const g of this.groupesActifs) g.noter(passe);
       for (const e of this.simules) {
@@ -1951,8 +1951,9 @@ fn ventMilieu(x: vec2f) -> vec2f {
         passe.setBindGroup(0, this.groupeRelax, [n * 256]);
         passe.dispatchWorkgroups(this.nProfils);
       }
-      // Milieu (P5c) : dépôts là où sont les particules à la fin du pas (la grille les lit dans le même pas).
-      if (this.depots) this.depots.encoder(passe);
+      // Milieu (P5c) : dépôts là où sont les particules à la fin du pas (la grille les lit dans le même pas), seulement aux pas
+      // où le milieu avance aussi (milieuActif, P.Couplage) : rien ne s'accumule hors de l'état.
+      if (this.depots && milieuActif) this.depots.encoder(passe);
     }
 
     /** Membre : pas k et τ atteints ; voie rapide évaluée à τ ; δ d'extrapolation de chaque émetteur (rendu). */

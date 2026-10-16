@@ -20,6 +20,7 @@
  * new P.Couplage(device, membres)   groupe couplé : membres = [{ membre, debut }] (debut : pas du groupe où le membre fait son
  *   pas 0) ; à chaque pas du groupe, les membres actifs avancent dans l'ordre (effets, puis le milieu en dernier : les effets
  *   lisent le vent du pas précédent et déposent, la grille avance), dans une même passe de calcul ; instantanés communs (P1).
+ *   Les effets ne déposent qu'aux pas où le milieu avance (encoderPas(passe, n, milieuActif)).
  *   .avancer(tau, zones) -> [membre.positionner(k, τ, zones[i])]   (tau : s depuis le début du groupe ; zones[i] du membre i)
  *   .kFin, .detruire()
  *
@@ -891,14 +892,21 @@ fn gPublier(@builtin(global_invocation_id) gid: vec3u) {
           if (n === PAS_PAR_LOT) envoyer();
           ouvrir();
           // Membres actifs à ce pas du groupe, dans l'ordre : effets, puis le milieu (dernier) ; données d'abord, puis la passe.
+          // Les effets ne déposent dans la grille qu'aux pas où le milieu avance aussi (sinon les dépôts s'accumuleraient hors
+          // de l'état).
           const actifs = [];
+          let milieuActif = false;
           this.membres.forEach((m, i) => {
             const k = a.k - m.debut;
-            if (k >= 0 && k < m.membre.kFin) actifs.push({ m, i, k });
+            const milieu = m.membre instanceof Milieu;
+            if (k >= 0 && k < m.membre.kFin) {
+              actifs.push({ m, i, k });
+              if (milieu) milieuActif = true;
+            }
           });
           actifs.forEach((x) => x.m.membre.preparerPas(n * 64, x.k, zones[x.i]));
           if (!passe) passe = enc.beginComputePass();
-          actifs.forEach((x) => x.m.membre.encoderPas(passe, n));
+          actifs.forEach((x) => x.m.membre.encoderPas(passe, n, milieuActif));
           n++;
           continue;
         }
