@@ -102,6 +102,30 @@ Seulement si aucun shader de la table ne convient, dans le projet : `shaders/<no
 - Interdits : `@group` et `@binding` (réservés au moteur), les noms commençant par `pm`, `iTime`, `iProgres`, `iResolution`, `iChannel0` à `iChannel3`, `iSon`, `iSonTexture`, `iFrame`, `iTimeDelta`, `sonSpectre`, `sonOnde`, `R`, `canal0` à `canal3` ; plus de 64 Ko de code. Rien d'aléatoire hors de ce qui dépend de `iTime` et de `coord` (l'image ne dépend que de t).
 - Un module : la recette qui l'utilise peut exposer un réglage de même nom (ex. `tours`) : sa valeur remplace celle du module. Dans un module, un champ de structure ne porte pas le nom d'une constante ou d'une structure du module.
 
+## Shaders GLSL (Shadertoy)
+
+Un shader écrit en GLSL pour Shadertoy s'utilise tel quel comme fond, aura, transition ou post-traitement : `shaders/<nom>.glsl` (le code) et `shaders/<nom>.json` avec `"langage": "glsl"`.
+
+```json
+{ "version": 1, "nom": "vagues-st", "usage": "fond", "langage": "glsl", "description": "Vagues écrites en GLSL",
+  "parametres": { "vitesse": { "defaut": 1, "min": 0, "max": 3 }, "teinte": { "defaut": "primaire", "type": "couleur" } } }
+```
+
+```glsl
+void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+  vec2 uv = fragCoord / iResolution.xy;
+  float v = 0.5 + 0.5 * sin(uv.x * 12.0 + iTime * R_vitesse);
+  fragColor = vec4(R_teinte.rgb * v, 1.0);
+}
+```
+
+- Entrées : `iResolution` (pixels de la zone), `iTime`, `iTimeDelta`, `iFrame`, `iFrameRate`, `iDate` (figée sur l'instant de la vidéo), `iMouse` (toujours 0), `iChannelResolution`, `iProgres` (transition), `iSon` (`iSon.basses`…), réglages `R_<nom>` (`float` ; couleur : `vec4` sRGB).
+- Canaux : fond : `iChannel2` = `data-image`, `iChannel3` = son (spectre en `y = 0.25`, onde en `y = 0.75`) ; transition : `iChannel0` = scène qui sort, `iChannel1` = scène qui entre ; post-traitement : `iChannel0` = image de la scène.
+- Comme sur Shadertoy : `fragCoord` en pixels depuis le coin **bas** gauche, couleurs sRGB, `fragColor.a` = opacité (1 pour un fond plein).
+- Interdits : `uniform`, `#version`, `main` (posés par le moteur), redéclarer une entrée. Un module de particules s'écrit en WGSL.
+- Erreurs : ligne et message du compilateur GLSL (panneau dans l'aperçu, `pulse-motion controler . --gpu`) ; l'export est refusé tant qu'un shader ne compile pas.
+- **Licence** : un shader de Shadertoy appartient à son auteur (CC BY-NC-SA par défaut) : ne l'utiliser que si sa licence le permet ; ne jamais l'ajouter à la bibliothèque du plugin.
+
 ## Modules de particules
 
 ```json
