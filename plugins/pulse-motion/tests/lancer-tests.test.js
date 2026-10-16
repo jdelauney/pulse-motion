@@ -4,7 +4,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { dossierTemporaire } = require('./aide/temporaire.js');
-const { repartir } = require('../scripts/lancer-tests.js');
+const { repartir, aRelancer } = require('../scripts/lancer-tests.js');
+const rapport = require('../scripts/lib/rapport-tests.js');
 
 test('lancer-tests : les fichiers qui pilotent un navigateur vont dans la phase navigateur', () => {
   const d = dossierTemporaire('pm-repartir-');
@@ -26,4 +27,24 @@ test('lancer-tests : les fichiers de tests réels sont tous répartis', () => {
   assert.equal(r.unitaires.length + r.navigateur.length, tous.length);
   assert.ok(r.navigateur.some((f) => f.endsWith('atelier-panneau.test.js')));
   assert.ok(r.unitaires.some((f) => f.endsWith('atelier-routes.test.js')));
+});
+
+test('lancer-tests : rapporteur des échecs (délai dépassé ou non), fichiers à relancer seuls', async () => {
+  const delaiPage = Object.assign(new Error('test failed'), { failureType: 'testCodeFailure', cause: new Error('Pas de résultat de la page après 90000 ms.') });
+  const delaiTest = Object.assign(new Error('test timed out after 1000ms'), { failureType: 'testTimeoutFailure' });
+  const autre = Object.assign(new Error('test failed'), { failureType: 'testCodeFailure', cause: new Error('Expected values to be strictly equal') });
+  async function* evenements() {
+    yield { type: 'test:pass', data: { name: 'ok', file: 'a.test.js' } };
+    yield { type: 'test:fail', data: { name: 'page', file: 'a.test.js', details: { error: delaiPage } } };
+    yield { type: 'test:fail', data: { name: 'lent', file: 'b.test.js', details: { error: delaiTest } } };
+    yield { type: 'test:fail', data: { name: 'faux', file: 'c.test.js', details: { error: autre } } };
+  }
+  let texte = '';
+  for await (const l of rapport(evenements())) texte += l;
+  assert.deepEqual(texte.trim().split('\n').map((l) => JSON.parse(l)), [
+    { fichier: 'a.test.js', nom: 'page', delai: true }, { fichier: 'b.test.js', nom: 'lent', delai: true }, { fichier: 'c.test.js', nom: 'faux', delai: false }]);
+  assert.deepEqual(aRelancer(texte), { relancer: ['a.test.js', 'b.test.js'], autres: ['c.test.js'], inconnu: false });
+  // Un fichier qui a dépassé un délai et a aussi un autre échec : relancé (son résultat seul décide).
+  assert.deepEqual(aRelancer(texte + JSON.stringify({ fichier: 'a.test.js', nom: 'x', delai: false }) + '\n').autres, ['c.test.js']);
+  assert.equal(aRelancer('{"nom":"sans fichier","delai":true}\n').inconnu, true);
 });
