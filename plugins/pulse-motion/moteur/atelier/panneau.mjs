@@ -290,9 +290,12 @@ async function appliquer() {
   const info = effetDe(etat.scene, etat.ordre);
   if (!info || !etat.recette) return;
   const numero = ++generation;
-  // Effet fait uniquement de structures sans data-dur : jusqu'à la fin de la scène (minutage de la page, voix comprise).
+  // Effet fait uniquement de structures sans data-dur : de son début (data-start, relatif compris, résolu par le minutage de
+  // la page) à la fin de la scène (voix comprise), en s de τ ; un effet qui commence à la fin de la scène ou après : 1 s.
   const scene = info.durScene && M.minutage ? M.minutage.scenes.find((s) => s.id === etat.scene) : null;
-  const dur = scene && scene.dureeEffective > 0 ? scene.dureeEffective : info.dur;
+  const fx = scene && M.particules ? M.particules.decrire(etat.scene).find((x) => x.ordre === etat.ordre) : null;
+  const reste = fx ? Math.round((scene.fin - fx.debut) * scene.rythme * 1e6) / 1e6 : null;
+  const dur = reste !== null ? (reste > 0 ? reste : 1) : scene && scene.dureeEffective > 0 ? scene.dureeEffective : info.dur;
   const r = await compilerPourPage(M.recette, etat.recette, { reglages: reglagesEnTexte(etat.valeurs), charte: donnees.charte, dur, graine: etat.graine }, textures);
   if (numero !== generation) return;
   etat.erreurs = r.ok ? [] : r.erreurs;

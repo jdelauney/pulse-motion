@@ -256,5 +256,31 @@ test('effet fait uniquement de structures, data-start > 0 et sans data-dur : dur
   assert.ok(secondes.emetteurs.every((em) => em.vie[1] === 2.5));
   assert.equal(temps.duree, 3, 'data-start="2t" à 0,5 s par temps : 4 − 1 = 3 s');
   assert.equal(apres.duree, 1, 'début après la fin de la scène : règle commune (1 s)');
-  assert.equal(relatif.duree, 4, 'début relatif (connu de la page seulement) : toute la scène');
+  assert.equal(relatif.duree, 2.8, 'data-start="#titre+1" (#titre à 0,2 s) : 4 − 1,2 = 2,8 s, résolu comme dans la page');
+});
+
+test('effet fait uniquement de structures sans data-dur, data-start relatif (#id, :fin, temps, mot:, rythme) : dure de son début réel à la fin de la scène', () => {
+  const dir = copierProjet('projet-effets');
+  const charte = { primaire: '#0a6cff', accent: '#ff8a00', texte: '#1a1a1a', fond: '#ffffff' };
+  const voix = { debut: 0.3, duree: 2, mots: [{ w: 'Bonjour', t0: 0.1, t1: 0.4 }, { w: 'monde', t0: 0.5, t1: 0.9 }] };
+  const r = preparerEffets('<section data-scene="s"><h1 id="titre" data-start="0.5" data-dur="1"></h1><p id="suite" data-start="#titre:fin+1t"></p>'
+    + '<div data-effet="drapeau" data-start="#suite+0.5"></div><div data-effet="drapeau" data-start="mot:monde"></div>'
+    + '<div data-effet="drapeau" data-start="mot:monde:fin-0.3"></div><div data-effet="drapeau" data-start="#absent+1"></div>'
+    + '<div data-effet="drapeau" data-start="#titre+9"></div></section>',
+  { scene: 's', projet: dir, bibliotheque: path.join(__dirname, '..', 'effets'), charte, dureeScene: 6, dureeTemps: 0.5, voix, rythme: 2 });
+  assert.deepEqual(r.erreurs, []);
+  const [chaine, mot, motFin, absent, apres] = r.effets.map((e) => e.effet.duree);
+  assert.equal(chaine, 3.5, '#suite = fin de #titre (1,5) + 1 temps (0,5) = 2 ; + 0,5 -> 6 − 2,5');
+  assert.equal(mot, 4.4, 'mot « monde » à (0,3 + 0,5) s réelles × rythme 2 = 1,6 s de τ -> 6 − 1,6');
+  assert.equal(motFin, 3.9, 'fin du mot : (0,3 + 0,9) × 2 − 0,3 = 2,1 -> 6 − 2,1');
+  assert.equal(absent, 6, 'référence introuvable : début 0, comme dans la page (qui la signale)');
+  assert.equal(apres, 1, 'début relatif après la fin de la scène : règle commune (1 s)');
+});
+
+test('effet fait uniquement de structures, data-start « #id:fin » sans voix ni rythme (options par défaut)', () => {
+  const dir = copierProjet('projet-effets');
+  const html = '<section data-scene="s"><h1 id="titre" data-start="0.5" data-dur="1"></h1><div data-effet="drapeau" data-start="#titre:fin"></div></section>';
+  const r = preparerEffets(html, { scene: 's', projet: dir, bibliotheque: path.join(__dirname, '..', 'effets'), charte: { primaire: '#0a6cff', accent: '#ff8a00', texte: '#1a1a1a', fond: '#ffffff' }, dureeScene: 4 });
+  assert.deepEqual(r.erreurs, []);
+  assert.equal(r.effets[0].effet.duree, 2.5, 'sans voix ni rythme : 4 − 1,5');
 });
