@@ -4,7 +4,9 @@
  * La page est servie sur 127.0.0.1 et envoie son résultat par POST /_resultat.
  * Les options qui donnent un adaptateur WebGPU sont cherchées une fois parmi les candidates
  * (GPU de la machine, puis repli logiciel SwiftShader) ; PM_OPTIONS_WEBGPU les impose, PM_SANS_WEBGPU=1 dit qu'il n'y
- * en a pas (scripts/lancer-tests.js sonde une fois pour toute la suite et le transmet aux fichiers de test).
+ * en a pas (scripts/lancer-tests.js sonde une fois pour toute la suite et le transmet aux fichiers de test : un fichier
+ * ne relance pas la sonde, qui, sous charge, pouvait dépasser son délai et faire ignorer ses tests).
+ * Une page sans résultat dans son délai : l'erreur cite les dernières lignes du journal du navigateur (GPU perdu, console…).
  */
 const http = require('node:http');
 const fs = require('node:fs');
@@ -63,9 +65,19 @@ function servir(html) {
 function lancer(navigateur, url, options) {
   const profil = dossierTemporaire('pm-gpu-');
   const processus = spawn(navigateur, [
-    '--headless=new', '--no-first-run', '--no-default-browser-check', '--hide-scrollbars',
+    '--headless=new', '--no-first-run', '--no-default-browser-check', '--hide-scrollbars', '--enable-logging=stderr',
     `--user-data-dir=${profil}`, '--window-size=1280,720', ...options, url,
-  ], { stdio: 'ignore' });
+  ], { stdio: ['ignore', 'ignore', 'pipe'] });
+  // Journal du navigateur : dernières lignes gardées pour expliquer une page sans résultat.
+  const journal = [];
+  let reste = '';
+  processus.stderr.setEncoding('utf8');
+  processus.stderr.on('data', (m) => {
+    const lignes = (reste + m).split(/\r?\n/);
+    reste = lignes.pop();
+    for (const l of lignes) if (l.trim()) { journal.push(l.slice(0, 300)); if (journal.length > 40) journal.shift(); }
+  });
+  processus.stderr.on('error', () => {});
   const echec = new Promise((ok, ko) => {
     processus.once('error', (e) => ko(new Error(`Lancement du navigateur impossible : ${e.message}`)));
   });
@@ -81,7 +93,7 @@ function lancer(navigateur, url, options) {
     processus.once('exit', nettoyer);
     processus.kill();
   });
-  return { echec, fermer };
+  return { echec, fermer, journal: () => journal.concat(reste ? [reste] : []) };
 }
 
 async function ouvrir(html, options, delai) {
@@ -96,7 +108,12 @@ async function ouvrir(html, options, delai) {
     return await Promise.race([
       serveur.resultat,
       navigation.echec,
-      new Promise((ok, ko) => { minuterie = setTimeout(() => ko(new Error(`Pas de résultat de la page après ${delai} ms.`)), delai); }),
+      new Promise((ok, ko) => {
+        minuterie = setTimeout(() => {
+          const lignes = navigation.journal().filter((l) => /gpu|webgpu|device|lost|perdu|crash|hung|console|error|erreur/i.test(l)).slice(-12);
+          ko(new Error(`Pas de résultat de la page après ${delai} ms.${lignes.length ? '\nJournal du navigateur :\n' + lignes.join('\n') : ''}`));
+        }, delai);
+      }),
     ]);
   } finally {
     clearTimeout(minuterie);
@@ -112,7 +129,9 @@ function optionsWebGPU() {
   if (!sondage) {
     sondage = (async () => {
       if (process.env.PM_SANS_WEBGPU === '1' || !trouverNavigateur()) return null;
-      const candidates = process.env.PM_OPTIONS_WEBGPU ? [process.env.PM_OPTIONS_WEBGPU.split(/\s+/).filter(Boolean)] : CANDIDATES;
+      // Sonde déjà faite par le lanceur de la suite : ses options sont reprises telles quelles.
+      if (process.env.PM_OPTIONS_WEBGPU) return process.env.PM_OPTIONS_WEBGPU.split(/\s+/).filter(Boolean);
+      const candidates = CANDIDATES;
       for (const options of candidates) {
         const r = await ouvrir(SONDE, options, 20000).catch(() => 'SANS');
         if (r === 'OK') return options;
