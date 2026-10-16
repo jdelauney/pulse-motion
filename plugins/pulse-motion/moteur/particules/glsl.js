@@ -5,8 +5,11 @@
  *   .image(uri) -> Promise<{ texture, largeur, hauteur }>   image de assets/ (iChannel2), retournée (y vers le haut), gardée
  *   .ecrireSon(piste, spectre, onde) ; .texSon(piste) -> { texture, largeur: 512, hauteur: 2 } | null   (iChannel3)
  *   .dessiner(prog, { largeur, hauteur, entrees, valeurs, canaux }) -> OffscreenCanvas   canaux : 4 sources | null
- *       (ImageBitmap téléversée, retournée et non prémultipliée ; ou { texture, largeur, hauteur }) ; sortie RVBA sRGB non
- *       prémultipliée, y vers le haut (Shadertoy), gardée jusqu'au dessin suivant (preserveDrawingBuffer)
+ *       (ImageBitmap prémultipliée, déjà retournée : les images du pont de la composition, dé-prémultipliées par une passe
+ *       WebGL2 dans une texture RGBA16F, ou RGBA8 sans tampons flottants ; ou { texture, largeur, hauteur }) ; le shader lit
+ *       donc des couleurs non prémultipliées ; sortie RVBA sRGB non prémultipliée, y vers le haut (Shadertoy), gardée jusqu'au
+ *       dessin suivant (preserveDrawingBuffer)
+ *   .toutTransparent(largeur, hauteur) -> bool   alpha nul partout sur l'image du canvas (alerte d'un fond invisible)
  *   .executer(prog, o, cible, largeur, hauteur)   un dessin plein cadre vers un framebuffer (null : le canvas) ; multipasse
  *   .face(l, h), .tampon(l, h), .viderFace, .copierFace, .libererFace   tampons RGBA16F des multipasses (P7)
  * Navigateur seulement ; dépend de shaders/glsl.js (M.codeGLSL).
@@ -44,7 +47,19 @@
       this.vide = { texture: this.texture8(1, 1, new Uint8Array(4)), largeur: 1, hauteur: 1 };
       this.images = new Map();
       this.sons = new Map();
-      this.entrees = [0, 1, 2, 3].map(() => gl.createTexture());
+      this.entrees = [null, null, null, null];
+      this.brut = gl.createTexture();
+      // Dé-prémultiplication des images du pont (ImageBitmap prémultipliée : WebGL ignore UNPACK_PREMULTIPLY_ALPHA).
+      const fs = gl.createShader(gl.FRAGMENT_SHADER);
+      gl.shaderSource(fs, ['#version 300 es', 'precision highp float;', 'uniform sampler2D s;', 'out vec4 o;', 'void main() {',
+        '  vec4 c = texelFetch(s, ivec2(gl_FragCoord.xy), 0);', '  o = c.a > 0.0 ? vec4(min(c.rgb / c.a, vec3(1.0)), c.a) : vec4(0.0);', '}', ''].join('\n'));
+      gl.compileShader(fs);
+      this.depremul = gl.createProgram();
+      gl.attachShader(this.depremul, this.sommets);
+      gl.attachShader(this.depremul, fs);
+      gl.linkProgram(this.depremul);
+      gl.deleteShader(fs);
+      this.depremulSource = gl.getUniformLocation(this.depremul, 's');
     }
 
     parametrer(texture) {
@@ -138,18 +153,43 @@
       return { ok: true, prog: { programme, uniformes }, erreurs: [] };
     }
 
-    /** Source d'un canal à l'unité i : vide, texture donnée, ou ImageBitmap téléversée dans la texture d'entrée i. */
+    /** Source d'un canal à l'unité i : vide, texture donnée, ou ImageBitmap (prémultipliée) téléversée puis dé-prémultipliée
+     *  dans la texture d'entrée i. */
     source(i, s) {
       if (!s) return this.vide;
       if (s.texture) return s;
-      this.televerser(this.entrees[i], s);
-      return { texture: this.entrees[i], largeur: s.width, hauteur: s.height };
+      const gl = this.gl;
+      const largeur = s.width;
+      const hauteur = s.height;
+      let e = this.entrees[i];
+      if (!e || e.largeur !== largeur || e.hauteur !== hauteur) {
+        if (e) this.libererFace(e);
+        e = this.flottant ? this.face(largeur, hauteur) : this.face(largeur, hauteur, gl.RGBA8);
+        e.largeur = largeur;
+        e.hauteur = hauteur;
+        this.entrees[i] = e;
+      }
+      gl.activeTexture(gl.TEXTURE0);
+      this.televerser(this.brut, s);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, e.fb);
+      gl.viewport(0, 0, largeur, hauteur);
+      gl.useProgram(this.depremul);
+      gl.bindVertexArray(this.vao);
+      gl.bindTexture(gl.TEXTURE_2D, this.brut);
+      gl.uniform1i(this.depremulSource, 0);
+      gl.disable(gl.BLEND);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      return { texture: e.texture, largeur, hauteur };
     }
 
     executer(prog, o, cible, largeur, hauteur) {
       const gl = this.gl;
       const U = prog.uniformes;
       const e = o.entrees || {};
+      // Sources préparées d'abord : la dé-prémultiplication dessine dans ses propres framebuffers.
+      const canaux = o.canaux || [];
+      const sources = [0, 1, 2, 3].map((i) => this.source(i, canaux[i]));
       gl.bindFramebuffer(gl.FRAMEBUFFER, cible);
       gl.viewport(0, 0, largeur, hauteur);
       gl.useProgram(prog.programme);
@@ -175,10 +215,9 @@
         } else gl.uniform1f(r.lieu, typeof v === 'number' ? v : 0);
       });
       const resolutions = new Float32Array(12);
-      const canaux = o.canaux || [];
       for (let i = 0; i < 4; i++) {
         gl.activeTexture(gl.TEXTURE0 + i);
-        const s = this.source(i, canaux[i]);
+        const s = sources[i];
         gl.bindTexture(gl.TEXTURE_2D, s.texture);
         gl.uniform1i(U.canaux[i], i);
         resolutions.set([s.largeur, s.hauteur, 1], i * 3);
@@ -190,12 +229,13 @@
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     }
 
-    /** Face d'un tampon multipasse (P7) : texture RGBA16F et son framebuffer. */
-    face(largeur, hauteur) {
+    /** Face d'un tampon multipasse (P7) : texture RGBA16F (ou RGBA8) et son framebuffer. */
+    face(largeur, hauteur, format) {
       const gl = this.gl;
       const texture = gl.createTexture();
       this.parametrer(texture);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, largeur, hauteur, 0, gl.RGBA, gl.HALF_FLOAT, null);
+      if (format === gl.RGBA8) gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, largeur, hauteur, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+      else gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, largeur, hauteur, 0, gl.RGBA, gl.HALF_FLOAT, null);
       const fb = gl.createFramebuffer();
       gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);

@@ -67,11 +67,16 @@ fn fsFinal(e: Sortie) -> Sorties {
 }
 
 // Pont vers WebGL2 (P7) : la même image, retournée verticalement (WebGL ignore le retournement au téléversement d'une
-// ImageBitmap ; la première ligne téléversée doit être le bas de l'image, comme sur Shadertoy).
+// ImageBitmap ; la première ligne téléversée doit être le bas de l'image, comme sur Shadertoy). Codage inverse du retour
+// (P.Shaders.copierGLSL : prémultiplication des valeurs sRGB, texture rgba8unorm-srgb) : rvb = sRGB(rvb linéaire prémultiplié),
+// que WebGL2 divise par alpha ; une copie GLSL qui ne change rien rend la même image (alpha appliqué une seule fois).
 @fragment
 fn fsPont(e: Sortie) -> @location(0) vec4f {
   let h = i32(textureDimensions(source).y);
-  return versSortie(vec4f(e.pos.x, f32(h - 1 - i32(e.pos.y)) + 0.5, 0.0, 1.0));
+  let c = textureLoad(source, vec2i(i32(e.pos.x), h - 1 - i32(e.pos.y)), 0);
+  let a = clamp(c.a, 0.0, 1.0);
+  if (a <= 0.5 / 255.0) { return vec4f(0.0); }
+  return vec4f(min(versSRGB(clamp(c.rgb, vec3f(0.0), vec3f(1.0))), vec3f(a)), a);
 }
 `;
 
@@ -162,7 +167,8 @@ fn fsPont(e: Sortie) -> @location(0) vec4f {
       });
     }
 
-    /** Image d'une texture de travail (linéaire prémultipliée) en ImageBitmap sRGB, par un canvas WebGPU hors écran (P7). */
+    /** Image d'une texture de travail (linéaire prémultipliée) en ImageBitmap (rvb : sRGB du linéaire prémultiplié), par un canvas WebGPU hors
+     *  écran (P7) ; P.Glsl la dé-prémultiplie avant le shader (WebGL ignore UNPACK_PREMULTIPLY_ALPHA pour une ImageBitmap). */
     imagePont(vue, largeur, hauteur) {
       const { device } = this;
       if (!this.pont || this.pont.canvas.width !== largeur || this.pont.canvas.height !== hauteur) {

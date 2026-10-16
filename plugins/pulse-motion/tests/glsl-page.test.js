@@ -21,6 +21,7 @@ const SHADERS = {
   casse: glsl('casse', 'fond', 'void mainImage(out vec4 c, in vec2 p) {\n  c = vec4(inconnu, 1.0);\n}\n'),
   entrante: glsl('entrante', 'transition', 'void mainImage(out vec4 c, in vec2 p) {\n  c = texture(iChannel1, p / iResolution.xy);\n}\n'),
   inverse: glsl('inverse', 'post', 'void mainImage(out vec4 c, in vec2 p) {\n  vec4 s = texture(iChannel0, p / iResolution.xy);\n  c = vec4(1.0 - s.rgb, 1.0);\n}\n'),
+  'copie-st': glsl('copie-st', 'post', 'void mainImage(out vec4 c, in vec2 p) {\n  c = texture(iChannel0, p / iResolution.xy);\n}\n'),
   'basses-st': glsl('basses-st', 'fond', 'void mainImage(out vec4 c, in vec2 p) {\n  c = vec4(iSon.basses, texture(iChannel3, vec2(0.15, 0.25)).r, 0.0, 1.0);\n}\n'),
 };
 const OUTILS = `
@@ -32,6 +33,9 @@ function page({ scenes, deroule, script, musique }) {
   const dir = copierProjet('projet-particules');
   modifierDeroule(dir, (d) => { d.scenes = deroule || [{ id: 'a', fichier: 'scenes/a.html', duree: 4, textes: {} }]; if (musique) d.musique = { fichier: 'assets/m.wav' }; });
   for (const [nom, [json, code]] of Object.entries(SHADERS)) { ecrire(dir, `shaders/${nom}.json`, json); ecrire(dir, `shaders/${nom}.glsl`, code); }
+  // Copie en WGSL : la référence d'un post-traitement qui ne change rien.
+  ecrire(dir, 'shaders/copie-w.json', { version: 1, nom: 'copie-w', usage: 'post' });
+  ecrire(dir, 'shaders/copie-w.wgsl', '// Copie.\nfn post(coord: vec2f) -> vec4f {\n  return canal0(coord / iResolution.xy);\n}\n');
   if (musique) ecrire(dir, 'assets/m.wav', musique);
   for (const [id, html] of Object.entries(scenes)) ecrire(dir, `scenes/${id}.html`, html);
   const a = assembler({ dossier: dir, dossierStyles: STYLES, dossierEffets: EFFETS, ecrire: false });
@@ -126,6 +130,25 @@ await envoyer({ note: px(note, note.largeur >> 1, note.hauteur >> 1), silence: p
   if (r.webgpu === false) return t.skip('WebGPU indisponible');
   assert.ok(r.note[0] > 200 && r.note[1] > 100, `note : ${r.note}`);
   assert.ok(r.silence[0] < 30 && r.silence[1] < 30, `silence : ${r.silence}`);
+});
+
+test('GLSL : post-traitement qui recopie iChannel0 sur une zone semi-transparente : mêmes pixels que la copie WGSL (alpha appliqué une fois)', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const zones = '<div style="position:absolute;left:0;top:0;width:50%;height:100%;background:rgba(255,0,0,0.5)"></div>'
+    + '<div style="position:absolute;right:0;top:0;width:50%;height:100%;background:rgba(200,100,50,0.4)"></div>';
+  const r = await executer({
+    deroule: [{ id: 'a', fichier: 'scenes/a.html', duree: 2, textes: {}, post: [{ shader: 'copie-st' }] },
+      { id: 'b', fichier: 'scenes/b.html', duree: 2, textes: {}, post: [{ shader: 'copie-w' }] }],
+    scenes: { a: `<section data-scene="a" style="background:transparent">${zones}</section>`, b: `<section data-scene="b" style="background:transparent">${zones}</section>` },
+    script: `
+await M.seek(1); const g = await M.shaders.lireComposition();
+await M.seek(3); const w = await M.shaders.lireComposition();
+const y = g.hauteur >> 1;
+await envoyer({ g: [px(g, g.largeur >> 2, y), px(g, (3 * g.largeur) >> 2, y)], w: [px(w, w.largeur >> 2, y), px(w, (3 * w.largeur) >> 2, y)], erreurs: M.shaders.erreurs() });` });
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.deepEqual(r.erreurs, []);
+  r.w.forEach((p) => assert.ok(p[3] > 90 && p[3] < 140, `zone semi-transparente : ${p}`));
+  r.g.forEach((p, i) => proche(p, r.w[i], 1, 'copie GLSL = copie WGSL'));
 });
 
 test('GLSL : musique illisible suivie par un fond -> panneau, M.shaders.erreurs, export refusé', async (t) => {
