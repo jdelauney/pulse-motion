@@ -152,6 +152,28 @@ await envoyer({ g: [px(g, g.largeur >> 2, y), px(g, (3 * g.largeur) >> 2, y)], w
   r.g.forEach((p, i) => proche(p, r.w[i], 1, 'copie GLSL = copie WGSL'));
 });
 
+test('composition : rouge et blanc à 50 % ressortent justes (pas de bords assombris), en WGSL et en GLSL', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const zones = '<div style="position:absolute;left:0;top:0;width:50%;height:100%;background:rgba(255,0,0,0.5)"></div>'
+    + '<div style="position:absolute;right:0;top:0;width:50%;height:100%;background:rgba(255,255,255,0.5)"></div>';
+  const r = await executer({
+    deroule: [{ id: 'a', fichier: 'scenes/a.html', duree: 2, textes: {}, post: [{ shader: 'copie-st' }] },
+      { id: 'b', fichier: 'scenes/b.html', duree: 2, textes: {}, post: [{ shader: 'copie-w' }] }],
+    scenes: { a: `<section data-scene="a" style="background:transparent">${zones}</section>`, b: `<section data-scene="b" style="background:transparent">${zones}</section>` },
+    script: `
+await M.seek(1); const g = await M.shaders.lireComposition();
+await M.seek(3); const w = await M.shaders.lireComposition();
+const y = g.hauteur >> 1;
+await envoyer({ g: [px(g, g.largeur >> 2, y), px(g, (3 * g.largeur) >> 2, y)], w: [px(w, w.largeur >> 2, y), px(w, (3 * w.largeur) >> 2, y)], erreurs: M.shaders.erreurs() });` });
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.deepEqual(r.erreurs, []);
+  // Lecture en sRGB prémultiplié : rouge 50 % -> (128, 0, 0, 128) ; blanc 50 % -> (128, 128, 128, 128).
+  for (const [quoi, p] of [['WGSL', r.w], ['GLSL', r.g]]) {
+    proche(p[0], [128, 0, 0, 128], 2, `${quoi} : rouge à 50 %`);
+    proche(p[1], [128, 128, 128, 128], 2, `${quoi} : blanc à 50 %`);
+  }
+});
+
 test('GLSL : musique illisible suivie par un fond -> panneau, M.shaders.erreurs, export refusé', async (t) => {
   if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
   const r = await executer({ musique: Buffer.from('pas un son'),
@@ -180,3 +202,4 @@ await envoyer({ alertes, erreurs: M.shaders.erreurs() });` });
   assert.equal(r.alertes.length, 1, JSON.stringify(r.alertes));
   assert.match(r.alertes[0], /Fond « invisible » entièrement transparent .*vec4\(couleur, 1\.0\)/);
 });
+
