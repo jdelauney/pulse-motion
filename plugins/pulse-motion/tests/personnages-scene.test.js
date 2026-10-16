@@ -14,6 +14,7 @@ const W = require('../moteur/wav.js');
 const P = require('../scripts/lib/personnages.js');
 
 const navigateur = trouverNavigateur();
+const proche = (a, b, tol = 1e-6) => assert.ok(Math.abs(a - b) <= tol, `${a} ≠ ${b}`);
 const lu = P.lire(null);
 
 const SCENE = `<section data-scene="chiffre">
@@ -190,6 +191,82 @@ test('hauteur et temps : erreurs d\'assemblage ; dans la page, les pieds sur la 
     assert.ok(Math.abs((p3[1] - p2[1]) - attendu(p2, p3)) < 2);
     assert.deepEqual(res.a, res.b, 'figé pendant le gel de son conteneur');
     assert.ok(res.c[0] > res.b[0], 'il reprend après le gel');
+  } finally { await page.fermer(); }
+});
+
+test('objets tenus : erreurs d\'assemblage ; dans la page, l\'objet suit la main puis est lâché', { skip: !navigateur && 'Chrome ou Edge introuvable' }, async () => {
+  const mauvais = preparerPersonnages('<section><div id="a" data-personnage="touffu"></div><p id="o1" data-tenu-par="#b" data-start="0" data-dur="1"></p><p id="o2" data-tenu-par="#a" data-main="gauche" data-orientation="penche" data-lacher="vole" data-prise="milieu" data-start="0"></p><div><p id="o3" data-tenu-par="#a" data-start="0" data-dur="1"></p></div></section>', { scene: 's', lu });
+  const m = mauvais.erreurs.map((e) => e.message).join(' | ');
+  for (const motif of [/« o1 » : porteur « #b » introuvable/, /data-main="gauche"/, /data-orientation="penche"/, /data-lacher="vole"/, /data-prise="milieu"/, /« o2 » : data-dur obligatoire/, /« o3 » : il doit être dans le même conteneur que son porteur/]) assert.match(m, motif);
+  const SCENE_O = `<section data-scene="chiffre">
+  <style>@scope { .objet { position: absolute; left: 5%; top: 5%; width: 6cqh; height: 10cqh; background: var(--c-primaire); } }</style>
+  <p id="nombre" data-tween="nombre 0→1250 cubic-out" data-dur="3">0</p>
+  <div id="porteur" data-personnage="touffu" data-x="20" data-sol="90" data-taille="30">
+    <i id="va" data-action="marcher" data-vers="60" data-start="0" data-dur="2"></i>
+  </div>
+  <div id="crayon" class="objet" data-decor data-tenu-par="#porteur" data-orientation="main" data-start="0.5" data-dur="1" data-lacher="tombe"></div>
+  <div id="tasse" class="objet" data-decor data-tenu-par="#porteur" data-main="arriere" data-start="0.5" data-dur="1" data-lacher="cache"></div>
+</section>`;
+  const r = assembler({ dossier: video(SCENE_O), dossierStyles: STYLES });
+  assert.equal(r.ok, true, JSON.stringify(r.erreurs));
+  const page = await ouvrirPage({ navigateur, largeur: 1280, hauteur: 720 });
+  try {
+    await page.aller(pathToFileURL(r.fichier).href);
+    const res = await page.evaluer(`(async () => {
+      await M.pret;
+      const d = M.minutage.scenes.find((s) => s.id === 'chiffre').debut;
+      const E = M.minutage.elements.chiffre, cr = E.crayon;
+      const porteur = document.getElementById('porteur');
+      const lire = (id) => { const s = document.getElementById(id).style; return { left: s.left, top: s.top, transform: s.transform, visibility: s.visibility, position: s.position }; };
+      await M.seek(d + 0.2); const avant = lire('crayon');
+      const t1 = cr.debut + 0.4; await M.seek(t1); const pendant = lire('crayon'); const m1 = M.personnages.mains(porteur, t1);
+      await M.seek(cr.fin + 3); const tombe = lire('crayon'); const tasse = lire('tasse'); const mf = M.personnages.mains(porteur, cr.fin);
+      await M.seek(d + 0.2); await M.seek(t1); const encore = lire('crayon');
+      return { avant, pendant, m1, tombe, tasse, mf, encore, W: M.personnages.W, H: M.personnages.H, erreurs: (M.erreurs || []).map((e) => e.message) };
+    })()`);
+    assert.deepEqual(res.erreurs, []);
+    assert.equal(res.avant.position, '', 'avant la prise : ses styles d\'origine');
+    proche(parseFloat(res.pendant.left), res.m1.avant.x / res.W * 100, 0.01);
+    proche(parseFloat(res.pendant.top), res.m1.avant.y / res.H * 100, 0.01);
+    assert.match(res.pendant.transform, new RegExp('rotate\\(' + (Math.round((res.m1.avant.angle + 90) * 100) / 100).toString().replace('.', '\\.') + 'deg\\)'), 'tourne avec l\'avant-bras');
+    proche(parseFloat(res.tombe.top), res.mf.sol / res.H * 100, 0.01);
+    assert.equal(res.tasse.visibility, 'hidden', 'lâchée : cachée');
+    assert.deepEqual(res.encore, res.pendant, 'même image quel que soit l\'ordre');
+  } finally { await page.fermer(); }
+});
+
+test('objets tenus (revue) : temps du conteneur figé, personnage tourné, deux mains droit, animation CSS sans effet sur la prise, commentaire ignoré', { skip: !navigateur && 'Chrome ou Edge introuvable' }, async () => {
+  const commente = preparerPersonnages('<section><!-- <div id="b" data-personnage="touffu"></div> --><p id="o" data-tenu-par="#b" data-start="0" data-dur="1"></p></section>', { scene: 's', lu });
+  assert.match(commente.erreurs.map((e) => e.message).join(), /porteur « #b » introuvable/, 'un porteur dans un commentaire ne compte pas');
+  const SCENE_R = `<section data-scene="chiffre">
+  <style>@scope { .objet { position: absolute; left: 5%; top: 5%; width: 6cqh; height: 10cqh; background: var(--c-primaire); }
+    .bouge { animation: tremble 0.3s linear both infinite; } @keyframes tremble { from { transform: translateX(-20px); } to { transform: translateX(20px); } } } </style>
+  <p id="nombre" data-tween="nombre 0→1250 cubic-out" data-dur="3">0</p>
+  <div id="cadre" data-gel="0.5+1" style="position:absolute;inset:0">
+    <div id="g" data-personnage="touffu" data-x="70" data-vue="180" data-sol="90" data-taille="30"><i data-action="marcher" data-vers="30" data-start="0" data-dur="3"></i></div>
+    <div id="sac" class="objet bouge" data-decor data-tenu-par="#g" data-main="deux" data-start="0.2" data-dur="2"></div>
+  </div>
+</section>`;
+  const r = assembler({ dossier: video(SCENE_R), dossierStyles: STYLES });
+  assert.equal(r.ok, true, JSON.stringify(r.erreurs));
+  const page = await ouvrirPage({ navigateur, largeur: 1280, hauteur: 720 });
+  try {
+    await page.aller(pathToFileURL(r.fichier).href);
+    const res = await page.evaluer(`(async () => {
+      await M.pret;
+      const d = M.minutage.scenes.find((s) => s.id === 'chiffre').debut;
+      const sac = document.getElementById('sac'), g = document.getElementById('g');
+      const lire = () => ({ left: sac.style.left, top: sac.style.top, transform: getComputedStyle(sac).transform, inline: sac.style.transform });
+      // Rythme 0,8 : le gel « 0.5+1 » couvre 0,625 s à 1,875 s (temps global de la scène).
+      await M.seek(d + 1); const a = lire(); await M.seek(d + 1.8); const b = lire();
+      const tl = M.tempsVuPar(sac, d + 1.8), m = M.personnages.mains(g, tl, true);
+      return { a, b, attendu: { x: (m.avant.x + m.arriere.x) / 2 / M.personnages.W * 100, y: (m.avant.y + m.arriere.y) / 2 / M.personnages.H * 100 }, erreurs: (M.erreurs || []).map((e) => e.message) };
+    })()`);
+    assert.deepEqual(res.erreurs, []);
+    assert.deepEqual([res.a.left, res.a.top], [res.b.left, res.b.top], 'figé avec son conteneur');
+    proche(parseFloat(res.b.left), res.attendu.x, 0.01); proche(parseFloat(res.b.top), res.attendu.y, 0.01);
+    assert.match(res.b.inline, /rotate\(0deg\)/, 'deux mains, droit : 0°');
+    assert.match(res.b.transform, /^matrix\(1, 0, 0, 1, /, 'l\'animation CSS ne remplace pas la prise');
   } finally { await page.fermer(); }
 });
 
