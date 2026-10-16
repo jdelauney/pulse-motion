@@ -68,8 +68,10 @@
       // Piste calée sur une scène : « scene » (écrit par la personne) ou « origine » / « jusqua » (secondes, posés à l'assemblage).
       if (piste.scene !== undefined && !(typeof piste.scene === 'string' && /^[a-z0-9-]+$/.test(piste.scene))) err.push(nom + ' : « scene » doit être l\'identifiant d\'une scène du déroulé.');
       ['origine', 'jusqua'].forEach(function (k) { if (piste[k] !== undefined && !(typeof piste[k] === 'number' && isFinite(piste[k]) && piste[k] >= 0)) err.push(nom + ' : « ' + k + ' » doit être un nombre de secondes positif ou nul.'); });
-      var de = piste.de === undefined ? 0 : piste.de, a = piste.a === undefined ? p.mesures : piste.a;
-      if (Number.isInteger(de) && Number.isInteger(a) && de >= a) err.push(nom + ' : « de » (' + de + ') doit être avant « a » (' + a + ') : la piste ne jouerait rien.');
+      // Piste calée sur une scène : sans « a », elle joue jusqu'à la fin de sa scène (pas de borne en mesures).
+      var ancree = piste.scene !== undefined || piste.origine !== undefined;
+      var de = piste.de === undefined ? 0 : piste.de, a = piste.a === undefined ? (ancree ? Infinity : p.mesures) : piste.a;
+      if (Number.isInteger(de) && (Number.isInteger(a) || a === Infinity) && de >= a) err.push(nom + ' : « de » (' + de + ') doit être avant « a » (' + a + ') : la piste ne jouerait rien.');
       if (!Array.isArray(piste.motif) || !piste.motif.length) { err.push(nom + ' : motif vide.'); return; }
       var percussion = C.PERCUSSIONS.indexOf(piste.instrument) >= 0, ronde = 0, valide = true;
       piste.motif.forEach(function (pas, j) {
@@ -79,7 +81,7 @@
         ronde += r.fraction;
       });
       // Notes jouées par la piste : au plus 100 000 (au-delà, la musique serait coupée sans le dire).
-      if (valide && Number.isInteger(p.mesures) && (a - de) / ronde * piste.motif.length > 100000) {
+      if (valide && Number.isInteger(p.mesures) && isFinite(a) && (a - de) / ronde * piste.motif.length > 100000) {
         err.push(nom + ' : trop de notes (plus de 100 000 sur la durée de la piste) ; allonger les durées ou réduire « de » … « a ».');
       }
     });
@@ -103,10 +105,10 @@
         : Math.min(fin, (piste.a === undefined ? p.mesures : piste.a) * mesure);
       if (!isFinite(arret)) arret = Math.max(fin, debut);
       var t = debut, k = 0, garde = 0;
-      while (t < arret - 1e-9 && garde++ < 100000) {
+      while (t < arret - 1e-6 && garde++ < 100000) {
         var s = pas[k % pas.length];
         var duree = s.fraction * mesure;
-        if (s.notes) {
+        if (s.notes && Math.min(duree, arret - t) > 1e-4) {
           liste.push({
             t: Math.round(t * 1e6) / 1e6, instrument: piste.instrument,
             frequences: s.notes === 'x' ? [] : s.notes.map(frequence),

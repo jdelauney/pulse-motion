@@ -216,6 +216,23 @@ function tempoMusique(d) {
   return null;
 }
 
+/** La musique se recale-t-elle sur les scènes ? Oui pour une musique composée, et pour une partition dont toutes les
+ *  pistes sont calées sur une scène (« scene », retenu par lireDeroule). */
+function musiqueSuitScenes(d) {
+  return !!(d && d.musique && (d.musique.generee || (d.musique.partition && d.musique.partitionCalee === true)));
+}
+
+/** Grille fixe : un tempo, mais une musique qui ne suit pas les scènes (fichier, partition à grille continue, pas de
+ *  musique) ; les scènes doivent alors commencer sur un temps (contrôle hors-tempo, voix arrondie au temps). */
+function grilleFixe(d) {
+  return !!dureeTemps(d) && !musiqueSuitScenes(d);
+}
+
+/** Options du minutage pour ce déroulé. */
+function optionsMinutage(d) {
+  return { dureeTemps: dureeTemps(d), decalageTemps: (d && d.tempo && d.tempo.decalage) || 0, grilleFixe: grilleFixe(d) };
+}
+
 /** Durée d'un temps musical en secondes (tempo du déroulé, sinon celui de la musique générée), ou null. */
 function dureeTemps(d) {
   const bpm = d && d.tempo && d.tempo.bpm > 0 ? d.tempo.bpm : tempoMusique(d);
@@ -236,8 +253,13 @@ function lireDeroule(dossier) {
   const erreurs = validerDeroule(d);
   // Partition : son tempo devient celui de la vidéo (retenu sans être écrit dans deroule.json).
   if (estObjet(d.musique) && estTexte(d.musique.partition)) {
-    let tempo = null;
-    try { tempo = JSON.parse(fs.readFileSync(path.join(dossier, d.musique.partition), 'utf8').replace(/^\uFEFF/, '')).tempo; } catch { /* signalé à l'assemblage (partition-invalide) */ }
+    let tempo = null, calee = false;
+    try {
+      const lue = JSON.parse(fs.readFileSync(path.join(dossier, d.musique.partition), 'utf8').replace(/^\uFEFF/, ''));
+      tempo = lue.tempo;
+      calee = Array.isArray(lue.pistes) && lue.pistes.length > 0 && lue.pistes.every((p) => p && typeof p.scene === 'string');
+    } catch { /* signalé à l'assemblage (partition-invalide) */ }
+    Object.defineProperty(d.musique, 'partitionCalee', { value: calee, enumerable: false, configurable: true, writable: true });
     if (typeof tempo === 'number' && tempo > 0) {
       Object.defineProperty(d.musique, 'tempoPartition', { value: tempo, enumerable: false, configurable: true, writable: true });
       if (estObjet(d.tempo) && typeof d.tempo.bpm === 'number' && d.tempo.bpm !== tempo) {
@@ -248,4 +270,4 @@ function lireDeroule(dossier) {
   return { deroule: d, erreurs };
 }
 
-module.exports = { validerDeroule, validerCharte, lireDeroule, dureeTemps, tempoMusique, GENRES, PARCOURS, RATIOS, TRANSITIONS, TYPES_SCENE, TONS, MAX_POST };
+module.exports = { validerDeroule, validerCharte, lireDeroule, dureeTemps, tempoMusique, musiqueSuitScenes, grilleFixe, optionsMinutage, GENRES, PARCOURS, RATIOS, TRANSITIONS, TYPES_SCENE, TONS, MAX_POST };

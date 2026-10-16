@@ -63,12 +63,14 @@
    *   elementsParScene : { [idScene]: [{ cle, start?, dur? }] }  (start, dur : textes des attributs)
    *   options.dureeTemps : secondes par temps musical (tempo du déroulé), absent sans tempo
    *   options.decalageTemps : instant du premier temps (tempo.decalage), 0 par défaut
+   *   options.grilleFixe : la musique ne suit pas les scènes (une scène allongée par la voix finit sur un temps)
    * -> { duree, scenes: [{ id, debut, fin, rythme, transition, entree, dureeTransition }],
    *      elements: { [idScene]: { [cle]: { debut, fin } } }, erreurs: [{ regle, scene, element, message }] }
    */
   function calculerMinutage(scenes, elementsParScene, options) {
     var dureeTemps = options && options.dureeTemps > 0 ? options.dureeTemps : null;
     var decalageTemps = options && options.decalageTemps > 0 ? options.decalageTemps : 0;
+    var grilleFixe = !!(options && options.grilleFixe);
     var erreurs = [];
     var resultat = { duree: 0, scenes: [], elements: {}, erreurs: erreurs };
     var fin = 0;
@@ -82,8 +84,13 @@
       if (s.voix && s.voix.duree > 0) {
         var finVoix = (s.voix.debut === undefined ? DEBUT_VOIX : s.voix.debut) + s.voix.duree + MARGE_VOIX;
         if (finVoix > reelle + 1e-9) {
-          // La scène finit avec la voix (la musique se cale sur les scènes, pas l'inverse).
-          reelle = finVoix;
+          // Grille fixe (musique qui ne suit pas les scènes) : la scène suivante commence sur un temps (premier temps à
+          // decalageTemps, entrée chevauchée comprise). Sinon la scène finit avec la voix : la musique se cale dessus.
+          if (dureeTemps && grilleFixe) {
+            var entreeSuivante = i + 1 < scenes.length ? chevauchement(scenes[i + 1], i + 1) : 0;
+            var k = Math.ceil((debut + finVoix - entreeSuivante - decalageTemps) / dureeTemps - 1e-9);
+            reelle = k * dureeTemps + decalageTemps + entreeSuivante - debut;
+          } else reelle = finVoix;
           allongee = true;
         }
       }
