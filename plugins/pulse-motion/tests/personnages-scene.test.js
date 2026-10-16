@@ -235,3 +235,38 @@ test('objets tenus : erreurs d\'assemblage ; dans la page, l\'objet suit la main
   } finally { await page.fermer(); }
 });
 
+test('objets tenus (revue) : temps du conteneur figé, personnage tourné, deux mains droit, animation CSS sans effet sur la prise, commentaire ignoré', { skip: !navigateur && 'Chrome ou Edge introuvable' }, async () => {
+  const commente = preparerPersonnages('<section><!-- <div id="b" data-personnage="touffu"></div> --><p id="o" data-tenu-par="#b" data-start="0" data-dur="1"></p></section>', { scene: 's', lu });
+  assert.match(commente.erreurs.map((e) => e.message).join(), /porteur « #b » introuvable/, 'un porteur dans un commentaire ne compte pas');
+  const SCENE_R = `<section data-scene="chiffre">
+  <style>@scope { .objet { position: absolute; left: 5%; top: 5%; width: 6cqh; height: 10cqh; background: var(--c-primaire); }
+    .bouge { animation: tremble 0.3s linear both infinite; } @keyframes tremble { from { transform: translateX(-20px); } to { transform: translateX(20px); } } } </style>
+  <p id="nombre" data-tween="nombre 0→1250 cubic-out" data-dur="3">0</p>
+  <div id="cadre" data-gel="0.5+1" style="position:absolute;inset:0">
+    <div id="g" data-personnage="touffu" data-x="70" data-vue="180" data-sol="90" data-taille="30"><i data-action="marcher" data-vers="30" data-start="0" data-dur="3"></i></div>
+    <div id="sac" class="objet bouge" data-decor data-tenu-par="#g" data-main="deux" data-start="0.2" data-dur="2"></div>
+  </div>
+</section>`;
+  const r = assembler({ dossier: video(SCENE_R), dossierStyles: STYLES });
+  assert.equal(r.ok, true, JSON.stringify(r.erreurs));
+  const page = await ouvrirPage({ navigateur, largeur: 1280, hauteur: 720 });
+  try {
+    await page.aller(pathToFileURL(r.fichier).href);
+    const res = await page.evaluer(`(async () => {
+      await M.pret;
+      const d = M.minutage.scenes.find((s) => s.id === 'chiffre').debut;
+      const sac = document.getElementById('sac'), g = document.getElementById('g');
+      const lire = () => ({ left: sac.style.left, top: sac.style.top, transform: getComputedStyle(sac).transform, inline: sac.style.transform });
+      // Rythme 0,8 : le gel « 0.5+1 » couvre 0,625 s à 1,875 s (temps global de la scène).
+      await M.seek(d + 1); const a = lire(); await M.seek(d + 1.8); const b = lire();
+      const tl = M.tempsVuPar(sac, d + 1.8), m = M.personnages.mains(g, tl, true);
+      return { a, b, attendu: { x: (m.avant.x + m.arriere.x) / 2 / M.personnages.W * 100, y: (m.avant.y + m.arriere.y) / 2 / M.personnages.H * 100 }, erreurs: (M.erreurs || []).map((e) => e.message) };
+    })()`);
+    assert.deepEqual(res.erreurs, []);
+    assert.deepEqual([res.a.left, res.a.top], [res.b.left, res.b.top], 'figé avec son conteneur');
+    proche(parseFloat(res.b.left), res.attendu.x, 0.01); proche(parseFloat(res.b.top), res.attendu.y, 0.01);
+    assert.match(res.b.inline, /rotate\(0deg\)/, 'deux mains, droit : 0°');
+    assert.match(res.b.transform, /^matrix\(1, 0, 0, 1, /, 'l\'animation CSS ne remplace pas la prise');
+  } finally { await page.fermer(); }
+});
+

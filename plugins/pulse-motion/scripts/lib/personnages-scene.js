@@ -14,7 +14,8 @@ const P = require('./personnages.js');
 const K = require('../../moteur/clips.js');
 const C = require('../../moteur/courbes.js');
 
-const BALISE = /<(\/?)([a-zA-Z][\w-]*)\b((?:[^>"']|"[^"]*"|'[^']*')*)>/g;
+// Les commentaires HTML sont reconnus d'abord, et laissés tels quels (une balise commentée ne compte pas).
+const BALISE = /<!--[\s\S]*?-->|<(\/?)([a-zA-Z][\w-]*)\b((?:[^>"']|"[^"]*"|'[^']*')*)>/g;
 // Éléments sans fermeture : ils ne changent pas la profondeur.
 const VIDES = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr']);
 const ACTIONS = {
@@ -39,6 +40,7 @@ function preparerPersonnages(html, { scene, lu, voix = false }) {
   // Pile des balises ouvertes : une action n'est lue que si elle est enfant direct d'un conteneur data-personnage.
   const pile = [];
   const sortie = html.replace(BALISE, (tout, fermeture, tag, texte) => {
+    if (tout.startsWith('<!--')) return tout;
     const nomTag = tag.toLowerCase();
     if (fermeture) {
       const i = pile.map((x) => x.tag).lastIndexOf(nomTag);
@@ -122,8 +124,10 @@ function preparerPersonnages(html, { scene, lu, voix = false }) {
   for (const { a, parent } of objetsTenus) {
     const id = a['data-tenu-par'].trim().replace(/^#/, '');
     const qui = `objet tenu${a.id ? ` « ${a.id} »` : ''}`;
+    if (idsDoubles.has(id)) erreurs.push(erreur(scene, `${qui} : plusieurs éléments portent l'id « ${id} » ; le porteur doit être unique.`));
     if (!porteurs.has(id)) erreurs.push(erreur(scene, `${qui} : porteur « #${id} » introuvable (data-tenu-par = l'id d'un conteneur data-personnage de la scène).`));
     else if (porteurs.get(id) !== parent) erreurs.push(erreur(scene, `${qui} : il doit être dans le même conteneur que son porteur « #${id} » (même parent), pour suivre sa main.`));
+    if (a['data-devant'] !== undefined && a['data-derriere'] !== undefined) erreurs.push(erreur(scene, `${qui} : data-devant et data-derriere ensemble ; n'en garder qu'un.`));
     const liste = { 'data-main': ['avant', 'arriere', 'deux'], 'data-orientation': ['droit', 'main'], 'data-lacher': ['reste', 'cache', 'tombe'] };
     for (const [k, valeurs] of Object.entries(liste)) if (a[k] !== undefined && !valeurs.includes(a[k].trim())) erreurs.push(erreur(scene, `${qui} : ${k}="${a[k]}" doit être ${valeurs.join(', ')}.`));
     if (a['data-prise'] !== undefined && !/^\s*-?\d*\.?\d+%\s+-?\d*\.?\d+%\s*$/.test(a['data-prise'])) erreurs.push(erreur(scene, `${qui} : data-prise="${a['data-prise']}" doit être un point en % de l'objet, ex. « 50% 100% » (milieu du bas).`));

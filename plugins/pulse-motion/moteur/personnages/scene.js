@@ -188,13 +188,18 @@
     M.surRendu(rendre);
     rendre(M.temps ? M.temps() : 0);
     // Mains des personnages (repère de la scène, au temps de chacun) : pour les objets tenus.
+    var memoMains = { t: null, par: new Map() };
     M.personnages = {
       W: W, H: H,
       connu: function (div) { return persos.some(function (p) { return p.div === div; }); },
-      mains: function (div, t) {
+      /** Mains de div à t (temps global ; tLocal : t est déjà au temps du personnage). Mémorisées pour l'image en cours. */
+      mains: function (div, t, tLocal) {
+        var cle = t + (tLocal ? 'l' : 'g');
+        if (memoMains.t !== cle) memoMains = { t: cle, par: new Map() };
+        if (memoMains.par.has(div)) return memoMains.par.get(div);
         var p = persos.filter(function (x) { return x.div === div; })[0];
         if (!p) return null;
-        var tp = M.tempsVuPar ? M.tempsVuPar(div, t) : t;
+        var tp = tLocal || !M.tempsVuPar ? t : M.tempsVuPar(div, t);
         var pose = placer(p, tp);
         var r = S.calculer(pose, p.gabarit), A = r.articulations, e = r.efficace;
         function point(nom) { return [e.x + A[nom][0] * e.echelle, e.y + A[nom][1] * e.echelle]; }
@@ -203,6 +208,7 @@
           var h = point('main' + c[1]), k = point('coude' + c[1]);
           out[c[0]] = { x: h[0], y: h[1], angle: Math.atan2(h[1] - k[1], h[0] - k[0]) * 180 / Math.PI };
         });
+        memoMains.par.set(div, out);
         return out;
       }
     };
