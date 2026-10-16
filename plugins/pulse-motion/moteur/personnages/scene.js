@@ -98,7 +98,8 @@
     if (el.hasAttribute('data-hauteur')) a.hauteur = nombre(el, 'data-hauteur', 15);
     if (el.hasAttribute('data-courbe')) a.courbe = el.getAttribute('data-courbe').trim();
     if (el.hasAttribute('data-vue')) a.vue = nombre(el, 'data-vue', 0);
-    ['pose', 'clip', 'expression', 'bouche'].forEach(function (k) { if (el.hasAttribute('data-' + k)) a[k] = el.getAttribute('data-' + k).trim(); });
+    ['pose', 'clip', 'expression', 'bouche', 'cible', 'point', 'main', 'niveau'].forEach(function (k) { if (el.hasAttribute('data-' + k)) a[k] = el.getAttribute('data-' + k).trim(); });
+    if (a.type === 'regarder' && !el.hasAttribute('data-dur')) a.jusquAuSuivant = true;
     return a;
   }
 
@@ -166,27 +167,70 @@
           alerter(idScene, 'personnage « ' + nom + ' », action « ' + a.type + ' » : elle commence pendant un arrêt sur image de son conteneur (data-gel) ; elle ne se jouera qu\'à la fin de l\'arrêt, ou jamais s\'il dure jusqu\'à la fin de la scène. Sortir le personnage du conteneur figé, ou déplacer l\'action.');
         }
       });
-      persos.push({ mesurer: mesurer,
+      if (M.interactions) M.interactions.preparer(actions);
+      persos.push({ mesurer: mesurer, sec: sec, miroir: !!dessin,
         div: div, habillage: habillage, gabarit: gabarit, echelle: echelle,
         partition: { x0: nombre(div, 'data-x', 50), sol0: sol0, vue0: nombre(div, 'data-vue', 0), calme: div.getAttribute('data-calme') !== 'non', largeur: W, hauteur: H, echelle: echelle, sols: sols, actions: actions }
       });
     });
     if (!persos.length) return;
 
-    function placer(p, t) {
+    function placerBase(p, t) {
       var e = P.etatAuTemps(p.partition, t, D.bib, p.gabarit);
       return Object.assign(e.pose, { x: e.x / 100 * W, y: e.sol / 100 * H - (S.sol(p.gabarit) + 7) * p.echelle, echelle: p.echelle });
     }
+    // Pose complète : la partition, puis les interactions (atteindre, regarder).
+    var ctxInteractions = { persos: persos, W: W, H: H, placerBase: placerBase,
+      alerter: function (p, message) { alerter(p.sec.getAttribute('data-scene'), 'personnage « ' + p.div.getAttribute('data-personnage') + ' » : ' + message); } };
+    function placer(p, t) {
+      var pose = placerBase(p, t);
+      return M.interactions ? M.interactions.appliquer(p, t, pose, ctxInteractions) : pose;
+    }
     function rendre(t) {
-      persos.forEach(function (p) {
+      // Objets tenus d'abord : une cible qui est un objet tenu est lue à sa place de cet instant.
+      if (M.rendreObjetsTenus) M.rendreObjetsTenus(t);
+      // Poses de tous les personnages avant toute écriture dans la page (les cibles sont mesurées sans relayout).
+      var poses = persos.map(function (p) {
         // Le personnage vit au temps de ses conteneurs (arrêt sur image, accéléré).
         var tp = M.tempsVuPar ? M.tempsVuPar(p.div, t) : t;
-        var contexte = p.gabarit.osEnPlus.length ? { temps: tp, poseA: function (u) { return placer(p, u); } } : undefined;
-        p.habillage.rendre(S.calculer(placer(p, tp), p.gabarit, contexte));
+        return { p: p, tp: tp, pose: placer(p, tp) };
+      });
+      poses.forEach(function (x) {
+        // Os en plus : balancement calculé sur la pose de base (sans interactions : 60 poses par os et par image).
+        var contexte = x.p.gabarit.osEnPlus.length ? { temps: x.tp, poseA: function (u) { return placerBase(x.p, u); } } : undefined;
+        x.p.habillage.rendre(S.calculer(x.pose, x.p.gabarit, contexte));
       });
     }
     M.surRendu(rendre);
     rendre(M.temps ? M.temps() : 0);
+    // Mains des personnages (repère de la scène, au temps de chacun) : pour les objets tenus.
+    var memoMains = { t: null, par: new Map() };
+    M.personnages = {
+      W: W, H: H,
+      connu: function (div) { return persos.some(function (p) { return p.div === div; }); },
+      /** Pose complète de div au temps du personnage t (pour les vérifications). */
+      pose: function (div, t) { var p = persos.filter(function (x) { return x.div === div; })[0]; return p ? placer(p, t) : null; },
+      /** Mains de div à t (temps global ; tLocal : t est déjà au temps du personnage). Mémorisées pour l'image en cours. */
+      mains: function (div, t, tLocal) {
+        var cle = t + (tLocal ? 'l' : 'g');
+        if (memoMains.t !== cle) memoMains = { t: cle, par: new Map() };
+        if (memoMains.par.has(div)) return memoMains.par.get(div);
+        var p = persos.filter(function (x) { return x.div === div; })[0];
+        if (!p) return null;
+        var tp = tLocal || !M.tempsVuPar ? t : M.tempsVuPar(div, t);
+        var pose = placer(p, tp);
+        var r = S.calculer(pose, p.gabarit), A = r.articulations, e = r.efficace;
+        function point(nom) { return [e.x + A[nom][0] * e.echelle, e.y + A[nom][1] * e.echelle]; }
+        var out = { sol: pose.y + (S.sol(p.gabarit) + 7) * p.echelle };
+        [['avant', 'Avant'], ['arriere', 'Arriere']].forEach(function (c) {
+          var h = point('main' + c[1]), k = point('coude' + c[1]);
+          out[c[0]] = { x: h[0], y: h[1], angle: Math.atan2(h[1] - k[1], h[0] - k[0]) * 180 / Math.PI };
+        });
+        memoMains.par.set(div, out);
+        return out;
+      }
+    };
+    if (M.demarrerObjetsTenus) M.demarrerObjetsTenus();
     // La place du décor peut changer avec la taille de l'image : les sols courbes sont remesurés.
     if (typeof window !== 'undefined' && window.addEventListener) {
       window.addEventListener('resize', function () {
