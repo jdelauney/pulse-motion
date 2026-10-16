@@ -215,7 +215,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     erreurs.push(...erreursMilieux);
     const { html: avecEffets, effets: effetsScene, erreurs: erreursEffets, modules: modulesScene } = preparerEffets(avecMilieux, {
       scene: scene.id, projet, bibliotheque: dossierEffets, charte: charte.couleurs, premierIndex: effets.length, dureeTemps: dureeTemps(deroule), chargerShader,
-      milieu: milieuxScene.length > 0, dureeScene: minutageScenes.scenes[rang].dureeEffective,
+      milieu: milieuxScene.length > 0, dureeScene: minutageScenes.scenes[rang].dureeEffective, voix: voixScenes[scene.id] || null, rythme: scenesDonnees[rang].rythme,
     });
     Object.assign(sourcesModules, modulesScene);
     effets.push(...effetsScene);

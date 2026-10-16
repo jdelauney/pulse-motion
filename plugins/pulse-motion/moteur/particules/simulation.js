@@ -54,9 +54,11 @@
  * déplacement de chaque pas contre les obstacles, dans leur repère local aux deux bouts du pas ; rebond, pose (la
  * particule suit son obstacle), mort au contact ; impacts notés pour « a_la_collision ». Événements d'un parent :
  * morts dans les cases [0, capacité), impacts dans [capacité, 2 × capacité).
+ * P.creerPhoto(device, image) -> { texture, vue } : photographie (ancre des éclats, tissu photographié) en linéaire prémultiplié.
  * P.WGSL_BRUIT : bruit de valeurs et rotationnel (prélude des shaders, P6).
  * Hachage PCG d'après M. O'Neill (pcg-random.org, domaine public).
- * Navigateur seulement (Chrome, Edge) ; dépend de instantanes.js (M.instantanes) et, avec un monde, de obstacles.js.
+ * Navigateur seulement (Chrome, Edge) ; dépend de instantanes.js (M.instantanes), de gpu.js (P.copierImage, photographies)
+ * et, avec un monde, de obstacles.js.
  */
 (function (racine) {
   'use strict';
@@ -1474,16 +1476,20 @@ fn ventMilieu(x: vec2f) -> vec2f {
     return b;
   }
 
-  /** Photographie de l'ancre (éclats) en texture sRGB prémultipliée, comme les images de assets/ (rendu, liaison 6). */
+  /** Photographie de l'ancre (éclats, tissu photographié) en texture rgba8unorm-srgb, linéaire prémultipliée (P.copierImage),
+   *  comme les images de assets/ (rendu, liaison 6). */
   function creerPhoto(device, image) {
     const texture = device.createTexture({
       size: [image.width, image.height],
       format: 'rgba8unorm-srgb',
       usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
     });
-    device.queue.copyExternalImageToTexture({ source: image }, { texture, premultipliedAlpha: true }, [image.width, image.height]);
+    const porteur = { texture };
+    P.copierImage(device, image, porteur, image.width, image.height);
+    P.oublierBrut(porteur);
     return { texture, vue: texture.createView() };
   }
+  P.creerPhoto = creerPhoto;
 
   const parDevice = new WeakMap();
   function pipelinesPour(device) {

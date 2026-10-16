@@ -290,7 +290,7 @@ Un émetteur peut être une **corde** (fil, guirlande) ou un **tissu** (drapeau,
 <div data-effet="banniere" data-ancre="#titre" data-start="2" data-dur="4"></div>
 ```
 
-Durée : une corde ou un tissu est un objet posé, pas une émission. Un effet fait uniquement de structures (cordes, tissus, et leurs perles) **sans `data-dur` dure jusqu'à la fin de sa scène** (comme un milieu ou un fond) ; avec `data-dur`, il disparaît à la fin de `data-dur`. Un effet qui mêle une structure et des particules émises suit la règle commune (`data-dur` = durée d'émission, 1 s par défaut).
+Durée : une corde ou un tissu est un objet posé, pas une émission. Un effet fait uniquement de structures (cordes, tissus, et leurs perles) **sans `data-dur` dure jusqu'à la fin de sa scène** (comme un milieu ou un fond), à partir de son début réel (`data-start` absolu, en temps, ou relatif : `#id`, `mot:`) ; avec `data-dur`, il disparaît à la fin de `data-dur`. Un effet qui mêle une structure et des particules émises suit la règle commune (`data-dur` = durée d'émission, 1 s par défaut).
 
 ### Réglages d'une recette (`structure`, par émetteur)
 
