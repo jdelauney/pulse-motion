@@ -20,7 +20,8 @@
  * new P.Couplage(device, membres)   groupe couplé : membres = [{ membre, debut }] (debut : pas du groupe où le membre fait son
  *   pas 0) ; à chaque pas du groupe, les membres actifs avancent dans l'ordre (effets, puis le milieu en dernier : les effets
  *   lisent le vent du pas précédent et déposent, la grille avance), dans une même passe de calcul ; instantanés communs (P1).
- *   Les effets ne déposent qu'aux pas où le milieu avance (encoderPas(passe, n, milieuActif)).
+ *   Les effets ne déposent qu'aux pas où le milieu avance (encoderPas(passe, n, milieuActif)) ; après le dernier pas du
+ *   milieu, vent nul (.eteindreVent(passe)).
  *   .avancer(tau, zones) -> [membre.positionner(k, τ, zones[i])]   (tau : s depuis le début du groupe ; zones[i] du membre i)
  *   .kFin, .detruire()
  *
@@ -65,7 +66,7 @@
   };
   P.MILIEU = C;
   P.NOYAUX_MILIEU = ['gObstacles', 'gInjecter', 'gAdvecterS', 'gCorrigerS', 'gRecopierS', 'gTourbillon', 'gForcer', 'gAdvecterV',
-    'gCorrigerV', 'gLimites', 'gDivergence', 'gJacobi', 'gProjeter', 'gPublier'];
+    'gCorrigerV', 'gLimites', 'gDivergence', 'gJacobi', 'gProjeter', 'gPublier', 'gEteindreVent'];
 
   P.grilleMilieu = function (zone, resolution) {
     const w = Math.max(zone[2], 1e-3);
@@ -580,6 +581,16 @@ fn gPublier(@builtin(global_invocation_id) gid: vec3u) {
   textureStore(texA, q, vec4f(champ[b], champ[b + 1u], lum, plein));
   textureStore(texB, q, vec4f(champ[b + 4u], champ[b + 5u], champ[b + 6u], 0.0));
 }
+
+// Après le dernier pas du milieu (data-dur) : vent nul pour les effets couplés qui continuent (au lieu d'un vent figé).
+@compute @workgroup_size(64)
+fn gEteindreVent(@builtin(global_invocation_id) gid: vec3u) {
+  let c = gid.x;
+  if (c >= GR.n) { return; }
+  let i = i32(c % GR.nx);
+  let j = i32(c / GR.nx);
+  textureStore(texVent, vec2u(u32(i), u32(j)), vec4f(0.0, 0.0, select(0.0, 1.0, solideG(i, j)), 0.0));
+}
 `;
 
   let code = null;
@@ -777,6 +788,13 @@ fn gPublier(@builtin(global_invocation_id) gid: vec3u) {
       lancer('gPublier', cellules);
     }
 
+    /** Vent nul (après le dernier pas du milieu : les effets couplés qui continuent ne lisent plus de vent). */
+    eteindreVent(passe) {
+      passe.setPipeline(this.p.pipelines.gEteindreVent);
+      passe.setBindGroup(0, this.groupe, [0, 0]);
+      passe.dispatchWorkgroups(Math.ceil(this.d.n / 64));
+    }
+
     /** Membre : pas et τ atteints (le rendu lit les textures publiées). */
     positionner(k, tau) {
       this.k = k;
@@ -893,19 +911,21 @@ fn gPublier(@builtin(global_invocation_id) gid: vec3u) {
           ouvrir();
           // Membres actifs à ce pas du groupe, dans l'ordre : effets, puis le milieu (dernier) ; données d'abord, puis la passe.
           // Les effets ne déposent dans la grille qu'aux pas où le milieu avance aussi (sinon les dépôts s'accumuleraient hors
-          // de l'état).
+          // de l'état) ; après le dernier pas du milieu, le vent est nul.
           const actifs = [];
           let milieuActif = false;
+          let milieuFini = null;
           this.membres.forEach((m, i) => {
             const k = a.k - m.debut;
             const milieu = m.membre instanceof Milieu;
             if (k >= 0 && k < m.membre.kFin) {
               actifs.push({ m, i, k });
               if (milieu) milieuActif = true;
-            }
+            } else if (milieu && k >= m.membre.kFin) milieuFini = m.membre;
           });
           actifs.forEach((x) => x.m.membre.preparerPas(n * 64, x.k, zones[x.i]));
           if (!passe) passe = enc.beginComputePass();
+          if (milieuFini) milieuFini.eteindreVent(passe);
           actifs.forEach((x) => x.m.membre.encoderPas(passe, n, milieuActif));
           n++;
           continue;
