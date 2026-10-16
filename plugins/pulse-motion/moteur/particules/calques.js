@@ -43,6 +43,8 @@
  * Formes exactes : masque de chaque élément data-obstacle="forme" à la fin de son minutage (M.figer.masque), une fois,
  * après la porte de disponibilité (polices chargées) ; champs de distance sur le GPU (P.creerFormes), recréés après une
  * perte du GPU (masques gardés) ; refaits après un changement de polices.
+ * Fonds multipasses (P7) : avant le dessin du calque, chaque fond multipasse actif est amené au pas ⌊τ × pps⌋
+ * (P.Shaders.avancerMultipasse) ; taille de ses tampons : sa zone mesurée à son début (zoneAuDebut).
  * Fonds et auras par shader (P6) : balises data-pm-shader (M.donnees.shaders, usage « fond ») ; une scène a des calques
  * dès qu'elle a des effets ou des fonds ; shaders compilés au démarrage du GPU (P.Shaders) ; chaque fond actif (de son
  * début à sa fin, ou à la fin de la scène sans data-dur) est mesuré à t (repère de l'ancre, ou de la balise : plein cadre)
@@ -1047,6 +1049,14 @@
     panneau(fx.el, 'Effet non affiché : ' + raison);
   }
 
+  /** Zone d'un fond à son début (cqh), pour la taille de ses tampons multipasses : la même quel que soit le chemin suivi. */
+  function zoneAuDebut(sc, f, t) {
+    M.rendreScene(sc.info.id, f.debut);
+    const r = P.mesurerReperes([f.ancre || f.el], sc.section)[0];
+    M.rendreScene(sc.info.id, t);
+    return [Math.max(1e-3, 2 * r.demi[0]), Math.max(1e-3, 2 * r.demi[1])];
+  }
+
   /** Fonds affichés à t (shader compilé, dans leur fenêtre) et repère de leur zone (ancre, ou balise), mesuré à t. */
   function fondsActifs(sc, t) {
     const actifs = sc.fonds.filter((f) => f.shader && t >= f.debut && t < f.fin);
@@ -1144,6 +1154,24 @@
   /** Valeurs du son d'un shader à l'instant t de la vidéo (zéros sans analyse). */
   function sonPour(donnee, t) { return M.son ? M.son.lire(donnee.piste || 'musique', t) : null; }
 
+  /** Fonds multipasses actifs (P7) : tampons amenés au pas de τ de l'image ; textures du son reposées à t ensuite. */
+  function avancerMultipasses(sc, fonds, t) {
+    let avance = false;
+    fonds.forEach((a) => {
+      const f = a.f;
+      if (!f.shader || !f.shader.multi) return;
+      if (!f.zoneMultipasse) f.zoneMultipasse = zoneAuDebut(sc, f, t);
+      etat.shaders.avancerMultipasse(f.shader, {
+        tau: (t - f.debut) * f.info.rythme, debut: f.debut, rythme: f.info.rythme, fin: (f.fin - f.debut) * f.info.rythme,
+        largeurZone: f.zoneMultipasse[0], hauteurZone: f.zoneMultipasse[1], hauteurSortie: hauteurSortie(),
+        son: (x) => sonPour(f.donnee, x),
+        textures: (x) => { if (M.son) M.son.pistes().forEach((p) => etat.shaders.ecrireSon(p, M.son.spectre(p, x), M.son.onde(p, x))); },
+      });
+      avance = true;
+    });
+    if (avance) { sonShaders.t = null; ecrireSonShaders(t); }
+  }
+
   /** Entrées d'un fond : τ depuis son début, part de sa fenêtre, zone (boîte de l'élément, échelle comprise) en cqh et en px. */
   function entreesFond(a, largeurCqh, canvas) {
     const { f, r } = a;
@@ -1213,6 +1241,7 @@
     const largeurCqh = largeurScene();
     // Fonds mesurés après le retour de toutes les scènes à t.
     const fonds = fondsActifs(sc, t);
+    avancerMultipasses(sc, fonds, t);
     Object.keys(sc.calques).forEach((nom) => {
       const canvas = sc.calques[nom];
       ajuster(canvas, sc.section);

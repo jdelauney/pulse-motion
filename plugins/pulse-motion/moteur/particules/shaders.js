@@ -11,6 +11,9 @@
  *       Un shader n'est dessiné qu'une fois par soumission (son uniforme d'entrées est réécrit à chaque dessin).
  *   .image(uri) -> Promise<vue>             image (data:) en texture sRGB prémultipliée, gardée par URI
  *   .ecrireSon(piste, spectre, onde), .vueSon(piste)   texture du son (P7), liaison 8 (iSonTexture)
+ * Multipasse (P7) : P.etatMultipasse (planificateur de P1) ; .avancerMultipasse(shader, o) amène les tampons d'un fond
+ * (rgba16float, ping-pong, une soumission par pas, instantanés par copie de textures) à l'état ⌊τ × pps⌋ ; la passe image
+ * lit les tampons de son « lit ».
  * GLSL (P7) : donnee.langage « glsl » compilé par P.Glsl (contexte WebGL2 partagé) ; fond : image WebGL2 de la zone et de
  * son débord copiée (copyExternalImageToTexture) puis relais WGSL sur le repère ; .imageGLSLComposition pour la composition.
  *   .vueBruit, .vueVide                     texture de bruit 256 × 256 (P.texelsBruit), texture transparente 1 × 1
@@ -215,21 +218,129 @@
           return echec([{ ligne: null, colonne: null, message: 'image de iChannel2 illisible' }]);
         }
       }
+      // Multipasse (P7) : un module et un pipeline par tampon (cible rgba16float, sans mélange), même code, appel passeX.
+      let multi = null;
+      if (donnee.passes) {
+        multi = { pps: donnee.pas_par_seconde || 60, image: donnee.passes[donnee.passes.length - 1], passes: [], etat: null };
+        for (const p of donnee.passes.slice(0, -1)) {
+          const a = S.assemblerShader({ code: donnee.code, usage: 'fond', disposition, prelude: P.WGSL_COMMUN + P.WGSL_BRUIT, appel: 'passe' + p.nom + '(e.coord)' });
+          const mod = device.createShaderModule({ label: 'pm-shader-' + donnee.nom + '-' + p.nom, code: a.wgsl });
+          const err = S.situer((await mod.getCompilationInfo()).messages, a);
+          if (err.length) return echec(err);
+          let pipeline;
+          try {
+            pipeline = await device.createRenderPipelineAsync({
+              layout: this.layoutPipeline,
+              vertex: { module: mod, entryPoint: 'pmSommets' },
+              fragment: { module: mod, entryPoint: 'pmImage', targets: [{ format: 'rgba16float' }] },
+              primitive: { topology: 'triangle-list' },
+            });
+          } catch (e) { return echec([{ ligne: null, colonne: null, message: String(e && e.message || e) }]); }
+          multi.passes.push({ nom: p.nom, lit: p.lit, echelle: p.echelle, pipeline, entrees: device.createBuffer({ size: S.OCTETS_ENTREES, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST }) });
+        }
+      }
       const U = GPUBufferUsage;
       const shader = {
         donnee, disposition, pipelines, image, valeurs: null,
         entrees: device.createBuffer({ size: S.OCTETS_ENTREES, usage: U.UNIFORM | U.COPY_DST }),
         reglages: device.createBuffer({ size: disposition.taille, usage: U.UNIFORM | U.COPY_DST }),
       };
+      shader.multi = multi;
+      // Chaque passe se dessine comme un shader (ses entrées, les réglages du shader), pipeline « passe ».
+      if (multi) multi.passes.forEach((p) => {
+        p.objet = { donnee: { nom: donnee.nom + ' (' + p.nom + ')', piste: donnee.piste }, disposition, pipelines: { passe: p.pipeline }, image, valeurs: null, entrees: p.entrees, reglages: shader.reglages };
+      });
       this.regler(shader, donnee.valeurs || {});
       return { ok: true, shader, erreurs: [] };
     }
 
     regler(shader, valeurs) {
+      // Multipasse : l'état dépend des réglages, il repart de 0.
+      if (shader.multi && shader.multi.etat) shader.multi.etat.oublier();
       shader.valeurs = valeurs;
       // GLSL : réglages relus à chaque dessin (uniformes WebGL2).
       if (shader.glsl) return;
       this.device.queue.writeBuffer(shader.reglages, 0, M.codeShader.ecrireReglages(shader.disposition, valeurs));
+    }
+
+    /** Fond multipasse (P7) : tampons créés à la première image (zone du fond à son début × hauteur de sortie / 100 ×
+     *  échelle), amenés à l'état ⌊τ × pps⌋. */
+    avancerMultipasse(shader, o) {
+      const m = shader.multi;
+      if (!m) return;
+      if (!m.etat) m.etat = shader.glsl ? this.etatGLSL(shader, o) : this.etatWGSL(shader, o);
+      m.etat.avancer(Math.max(0, Math.floor(o.tau * m.pps + 1e-6)));
+    }
+
+    etatWGSL(shader, o) {
+      const { device } = this;
+      const m = shader.multi;
+      const T = GPUTextureUsage;
+      const k = o.hauteurSortie / 100;
+      const tampons = {};
+      m.passes.forEach((p) => {
+        const largeur = Math.max(1, Math.round(o.largeurZone * k * p.echelle));
+        const hauteur = Math.max(1, Math.round(o.hauteurZone * k * p.echelle));
+        const cree = () => device.createTexture({ size: [largeur, hauteur], format: 'rgba16float', usage: T.RENDER_ATTACHMENT | T.TEXTURE_BINDING | T.COPY_SRC | T.COPY_DST });
+        const faces = [cree(), cree()];
+        tampons[p.nom] = { largeur, hauteur, cree, faces, vues: faces.map((f) => f.createView()), courant: 0 };
+      });
+      const vueLue = (n) => tampons[n].vues[tampons[n].courant];
+      const canaux = (lit) => [0, 1, 2, 3].map((i) => (lit[i] ? vueLue(lit[i]) : null));
+      const vers = (enc, vue, fn) => {
+        const rp = enc.beginRenderPass({ colorAttachments: [{ view: vue, loadOp: 'clear', clearValue: [0, 0, 0, 0], storeOp: 'store' }] });
+        if (fn) fn(rp);
+        rp.end();
+      };
+      const instantanes = new Map();
+      const ops = {
+        tailleEtat: Object.values(tampons).reduce((s, t) => s + t.largeur * t.hauteur * 8, 0),
+        vider: () => {
+          const enc = device.createCommandEncoder();
+          Object.values(tampons).forEach((t) => vers(enc, t.vues[t.courant], null));
+          device.queue.submit([enc.finish()]);
+        },
+        pas: (kk) => {
+          const temps = kk / m.pps;
+          const instant = o.debut + temps / o.rythme;
+          o.textures(instant);
+          const enc = device.createCommandEncoder();
+          m.passes.forEach((p) => {
+            const t = tampons[p.nom];
+            const entrees = { temps, progres: 0, duree: 0, mode: 1, resolution: [o.largeurZone, o.hauteurZone, t.largeur, t.hauteur],
+              scene: [o.largeurZone, o.hauteurZone, t.largeur, t.hauteur], son: o.son(instant), image: [kk, 1 / m.pps], instant };
+            vers(enc, t.vues[1 - t.courant], (rp) => this.dessiner(rp, p.objet, entrees, canaux(p.lit), 'passe'));
+          });
+          device.queue.submit([enc.finish()]);
+          // Échange après toutes les passes : chaque passe a lu l'état précédent des tampons.
+          m.passes.forEach((p) => { tampons[p.nom].courant = 1 - tampons[p.nom].courant; });
+        },
+        sauver: (kk) => {
+          const enc = device.createCommandEncoder();
+          instantanes.set(kk, m.passes.map((p) => {
+            const t = tampons[p.nom];
+            const copie = t.cree();
+            enc.copyTextureToTexture({ texture: t.faces[t.courant] }, { texture: copie }, [t.largeur, t.hauteur]);
+            return copie;
+          }));
+          device.queue.submit([enc.finish()]);
+        },
+        restaurer: (kk) => {
+          const enc = device.createCommandEncoder();
+          instantanes.get(kk).forEach((copie, i) => {
+            const t = tampons[m.passes[i].nom];
+            enc.copyTextureToTexture({ texture: copie }, { texture: t.faces[t.courant] }, [t.largeur, t.hauteur]);
+          });
+          device.queue.submit([enc.finish()]);
+        },
+        oublierTout: () => {
+          instantanes.forEach((copies) => copies.forEach((c) => c.destroy()));
+          instantanes.clear();
+        },
+      };
+      const etat = P.etatMultipasse(ops, m.pps, Math.ceil(o.fin * m.pps) + 1);
+      etat.canauxImage = () => canaux(m.image.lit);
+      return etat;
     }
 
     /** Image WebGL2 copiée dans la texture du shader (rgba8unorm-srgb, prémultipliée) ; recréée si sa taille change. */
@@ -278,7 +389,7 @@
       }
       const { device } = this;
       device.queue.writeBuffer(shader.entrees, 0, M.codeShader.ecrireEntrees(entrees));
-      const c = canaux || [];
+      const c = shader.multi && genre === 'fond' ? (shader.multi.etat ? shader.multi.etat.canauxImage() : []) : (canaux || []);
       const vue = (i) => c[i] || (i === 2 && shader.image) || this.vueVide;
       const groupe = device.createBindGroup({
         layout: this.layout,
@@ -288,7 +399,7 @@
           { binding: 2, resource: vue(0) },
           { binding: 3, resource: vue(1) },
           { binding: 4, resource: vue(2) },
-          { binding: 5, resource: this.vueBruit },
+          { binding: 5, resource: c[3] || this.vueBruit },
           { binding: 6, resource: this.lisse },
           { binding: 7, resource: this.repete },
           { binding: 8, resource: this.vueSon(shader.donnee.piste || 'musique') },
