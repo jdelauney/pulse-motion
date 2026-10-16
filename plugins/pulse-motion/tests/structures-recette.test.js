@@ -18,7 +18,7 @@ test('structures : corde et tissu par défaut (sommets, réglages, apparence), f
   const l = Math.hypot(-0.4, -1);
   const apparence = { couleur: [1, 1, 1, 1], mode: 'couleur', sens: 'horizontal', bandes: false, mailles: false, source: null, lumiere: [r6(-0.4 / l), r6(-1 / l)] };
   assert.deepEqual(c.structure, { type: 'corde', code: 0, colonnes: 32, lignes: 1, nSommets: 32, attaches: [], raideur: 0.9, flexion: 0.1,
-    amortissement: 0.02, dechirure: null, fente: null, epaisseur: 0.4, perles: null, apparence });
+    amortissement: 0.02, dechirure: null, fente: null, epaisseur: 0.4, perles: null, apparence, milieu: null });
   assert.deepEqual([t.structure.type, t.structure.code, t.structure.colonnes, t.structure.lignes, t.structure.nSommets], ['tissu', 1, 24, 16, 384]);
   for (const em of [c, t]) {
     assert.deepEqual(em.vie, [3, 3], 'présente pendant toute la fenêtre de l\'effet');
@@ -147,7 +147,7 @@ test('structures : schéma (variantes corde et tissu, attaches, apparence)', () 
   // Champ inconnu dans le bloc : refusé avec la liste des champs du type.
   const r = erreurDe(compiler([corde({ longueur: 3 })]));
   assert.equal(r.regle, 'structure-invalide');
-  assert.match(r.message, /emetteurs\[c\]\.structure\.longueur : champ inconnu \(champs possibles : type, attaches, raideur, flexion, amortissement, dechirure, epaisseur, apparence, resolution, perles\)/);
+  assert.match(r.message, /emetteurs\[c\]\.structure\.longueur : champ inconnu \(champs possibles : type, attaches, raideur, flexion, amortissement, dechirure, epaisseur, apparence, milieu, resolution, perles\)/);
 });
 
 test('structures : perles d\'une corde (émetteur décoratif posé sur ses sommets)', () => {

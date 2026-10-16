@@ -65,6 +65,15 @@
  * leurs repères mesurés avec la zone à chaque point de la grille (zones.attaches) ; un élément absent désactive l'effet.
  * Tissu photographié (apparence.source « ancre ») : l'ancre au début de l'effet (chemin des photographies de P4, densité 1,
  * recadrée sur sa boîte opaque) en texture, fx.fragments[em.index] = { image, centreA, demiA } ; cachée à partir du pas 1.
+ * Milieu fluide (P5c) : balise data-pm-milieu (M.donnees.milieux), un par scène ; décrite comme un effet pour les mesures
+ * (zone de l'ancre ou de la balise, repères des obstacles déclarés de la scène, mesurés sur la grille de 30 points par
+ * seconde de son τ). Groupe couplé de la scène (P.Couplage) : le milieu (P.Milieu) et les effets couplés (force
+ * « milieu », structure.milieu, « injecte » : P.Simulation(…, milieu)), créé à la première image de sa fenêtre (du début du
+ * premier au dernier), libéré hors d'elle, scène masquée, polices, formes ou recette changées ; débuts des membres au pas de
+ * 1/120 s du groupe ; effets couplés dessinés dans leur fenêtre, milieu dans le calque de sa balise ; mémoire insuffisante :
+ * milieu et effets couplés désactivés (panneau) ; data-pm-milieu-erreur : panneau.
+ * M.particules.decrireMilieu(idScene) -> { nom, calque, debut, fin, actif, desactive, couples, grille } | null
+ * M.particules.lireMilieu(idScene) -> Promise<état de la grille>   (tests)
  * M.transitionShader(id) -> bool        transition par shader de la scène prête (horloge : pas de style CSS d'entrée) :
  *   compilée, composition affichée et scène déjà photographiée ; sinon fondu CSS d'attente (jamais photographié : une
  *   scène à transition par shader compilée est photographiée opaque).
@@ -194,11 +203,12 @@
         });
       });
       const fonds = recenserFonds(info, section);
-      if (!effets.length && !fonds.length) return;
-      const sc = { info, section, effets, fonds, calques: {}, reglages: {} };
+      const milieu = recenserMilieu(info, section);
+      if (!effets.length && !fonds.length && !milieu) return;
+      const sc = { info, section, effets, fonds, milieu, groupe: null, calques: {}, reglages: {} };
       CALQUES.forEach((nom) => {
-        if (!effets.some((fx) => fx.calque === nom) && !fonds.some((f) => f.calque === nom)) return;
-        sc.reglages[nom] = reglagesCalque(effets, nom) || REGLAGES_FONDS;
+        if (!effets.some((fx) => fx.calque === nom) && !fonds.some((f) => f.calque === nom) && !(milieu && milieu.calque === nom)) return;
+        sc.reglages[nom] = reglagesCalque(milieu ? effets.concat([milieu]) : effets, nom) || REGLAGES_FONDS;
         const canvas = document.createElement('canvas');
         canvas.className = 'pm-calque';
         canvas.setAttribute('data-pm-calque', nom);
@@ -333,7 +343,12 @@
       const f = P.creerFormes(device, indices.map((i) => etat.masques.get(i)));
       etat.formes = { texture: f.texture, vue: f.vue, couches: new Map(indices.map((i, k) => [i, k])) };
     }
-    etat.scenes.forEach((sc) => sc.effets.forEach((fx) => { fx.table = null; fx.reperes = new Map(); liberer(fx); }));
+    etat.scenes.forEach((sc) => {
+      sc.effets.forEach((fx) => { fx.table = null; fx.reperes = new Map(); liberer(fx); });
+      // Milieu (P5c) : obstacles refaits avec les nouveaux champs de distance.
+      if (sc.milieu) { sc.milieu.table = null; sc.milieu.reperes = new Map(); }
+      libererGroupe(sc);
+    });
   }
 
   // Contributions des effets à la couche commune des obstacles de la vidéo : fx -> (instant -> GPUBuffer, MAX_VIDEO × 256 entiers).
@@ -658,6 +673,121 @@
     return fx.attaches.get(g);
   }
 
+  // ---- Milieu fluide (P5c) : un par scène, groupe couplé avec les effets qui lisent son vent ou y déposent ----
+
+  /** Effet couplé au milieu de sa scène (force « milieu », structure.milieu, « injecte »). */
+  function couple(fx) { return !!(fx.effet.couplage && (fx.effet.couplage.vent || fx.effet.couplage.injecte)); }
+
+  /** Milieu d'une scène (balise data-pm-milieu), décrit comme un effet pour les mesures (grille, mesurerTable) ; panneaux des
+   *  balises en erreur. */
+  function recenserMilieu(info, section) {
+    section.querySelectorAll('[data-pm-milieu-erreur]').forEach((el) => panneau(el, el.getAttribute('data-pm-milieu-erreur')));
+    const el = section.querySelector('[data-pm-milieu]');
+    const d = el ? (M.donnees.milieux || [])[Number(el.getAttribute('data-pm-milieu'))] : null;
+    if (!d) return null;
+    const temps = (M.minutage.elements[info.id] || {})[el.getAttribute('data-pm-cle')];
+    const debut = temps ? temps.debut : info.debut;
+    return {
+      el, info, section, ordre: 0, effet: d.effet, effetOrigine: d.effet, calque: d.calque,
+      ancre: d.ancre ? section.querySelector('#' + CSS.escape(d.ancre)) : null, cible: null,
+      debut, fin: d.sansDuree ? info.fin : Math.min(info.fin, debut + d.effet.fin / info.rythme),
+      fragments: null, ancres: new Map(), attaches: new Map(), zones: new Map(), reperes: new Map(), table: null, largeurCqh: 0, desactive: null,
+    };
+  }
+
+  /** Obstacles contournés par le milieu : éléments et formes déclarés de sa scène (les bords sont ceux de sa zone). */
+  function mondeMilieu(mx) {
+    if (!mx.table) {
+      const O = M.obstacles;
+      mx.largeurCqh = largeurScene();
+      mx.table = O.construireTable({ largeurCqh: mx.largeurCqh, solRecette: null, propres: etat.obstacles.get(mx.info.id) || [], voisins: [], video: [] });
+      O.attacherFormes(mx.table, couchePour);
+      mx.reperes = new Map();
+    }
+    return { entrees: mx.table.entrees, largeurCqh: mx.largeurCqh, actif: mx.table.actif, tans: [], formes: etat.formes ? { vue: etat.formes.vue } : null };
+  }
+
+  /** Fenêtre du groupe couplé d'une scène : du début du premier (milieu, effets couplés) à la fin du dernier (s de la vidéo). */
+  function fenetreGroupe(sc) {
+    const membres = sc.effets.filter(couple);
+    return {
+      debut: Math.min(sc.milieu.debut, ...membres.map((fx) => fx.debut)),
+      fin: Math.max(sc.milieu.fin, ...membres.map(finAffichage)),
+    };
+  }
+
+  /** Groupe couplé de la scène : milieu (zone et repères mesurés au début du milieu) et simulations des effets couplés. */
+  function creerGroupe(sc, device, mesures) {
+    const mx = sc.milieu;
+    const g = fenetreGroupe(sc);
+    const rythme = sc.info.rythme;
+    const mm = mondeMilieu(mx);
+    const zone = grille(mx, 0, mesures);
+    const milieu = new P.Milieu(device, mx.effet, zone, mm.actif ? mm : null, (mx.fin - mx.debut) * rythme);
+    const membres = sc.effets.filter((fx) => {
+      if (!couple(fx) || fx.desactive) return false;
+      if (avecStructures(fx) && elementsAttaches(fx).some((el) => !el)) {
+        desactiver(fx, 'élément d\'attache introuvable dans la scène');
+        return false;
+      }
+      return true;
+    });
+    const pas = (debut) => Math.round((debut - g.debut) * rythme / P.PAS);
+    membres.forEach((fx) => {
+      const m = monde(fx);
+      if (m) m.bases = basesPour(fx, device);
+      fx.sim = new P.Simulation(device, fx.effet, m, fx.fragments, largeurSimulation(fx), milieu);
+      fx.sim.emetteurs.forEach((e) => etat.rendu.preparerEmetteur(e));
+    });
+    const couplage = new P.Couplage(device, membres.map((fx) => ({ membre: fx.sim, debut: pas(fx.debut) })).concat([{ membre: milieu, debut: pas(mx.debut) }]));
+    sc.groupe = { couplage, milieu, membres, debut: g.debut, fin: g.fin };
+  }
+
+  /** Avance le groupe couplé de la scène à t (créé au besoin) -> { resultats } (un par membre, le milieu en dernier) ; null
+   *  hors de sa fenêtre (groupe libéré) ou tant que les photographies d'un effet couplé ne sont pas faites. */
+  function avancerGroupe(sc, t, device, mesures) {
+    const g = fenetreGroupe(sc);
+    if (t < g.debut || t >= g.fin) { libererGroupe(sc); return null; }
+    if (sc.effets.some((fx) => couple(fx) && !fx.desactive && fragmente(fx) && !fx.fragments)) return null;
+    let resultats = null;
+    device.pushErrorScope('out-of-memory');
+    try {
+      if (!sc.groupe) creerGroupe(sc, device, mesures);
+      const zones = sc.groupe.membres.map((fx) => zonesDe(fx, mesures)).concat([zonesDe(sc.milieu, mesures)]);
+      resultats = sc.groupe.couplage.avancer((t - sc.groupe.debut) * sc.info.rythme, zones);
+    } finally {
+      device.popErrorScope().then((err) => { if (err) desactiverMilieu(sc, 'mémoire du GPU insuffisante'); }, () => {});
+    }
+    return { resultats };
+  }
+
+  /** Groupe couplé libéré : instantanés, simulations des effets couplés, grille, uniforme de son dessin. */
+  function libererGroupe(sc) {
+    const g = sc.groupe;
+    if (!g) return;
+    sc.groupe = null;
+    try { g.couplage.detruire(); } catch (e) { /* device déjà perdu */ }
+    g.membres.forEach((fx) => {
+      const sim = fx.sim;
+      if (!sim) return;
+      fx.sim = null;
+      try { if (etat.rendu) etat.rendu.oublier(sim); } catch (e) { /* device déjà perdu */ }
+      try { sim.detruire(); } catch (e) { /* device déjà perdu */ }
+    });
+    try { if (etat.rendu) etat.rendu.oublierMilieu(g.milieu); } catch (e) { /* device déjà perdu */ }
+    try { g.milieu.detruire(); } catch (e) { /* device déjà perdu */ }
+  }
+
+  /** Milieu désactivé (mémoire du GPU insuffisante) : groupe libéré, panneau ; ses effets couplés aussi ; l'export le refuse. */
+  function desactiverMilieu(sc, raison) {
+    const mx = sc.milieu;
+    mx.desactive = raison;
+    libererGroupe(sc);
+    console.error('[Pulse Motion] Milieu : ' + raison + '.');
+    panneau(mx.el, 'Milieu non affiché : ' + raison);
+    sc.effets.forEach((fx) => { if (couple(fx) && !fx.desactive) desactiver(fx, 'milieu de la scène non affiché (' + raison + ')'); });
+  }
+
   /** Raccords (fonction de t) : un élément photographié est caché pendant que ses particules le remplacent (classe
    *  pm-fragment-cache) ; seulement si l'effet est affiché (GPU prêt, photographies faites, ni désactivé ni en échec),
    *  ou, dans la page de contrôle (photosVides appelé), dès que ses photographies sont faites, même sans GPU. */
@@ -810,6 +940,9 @@
 
   function liberer(fx) {
     if (!fx.sim) return;
+    // Effet couplé (P5c) : sa simulation appartient au groupe de sa scène, libéré tout entier.
+    const sc = etat.scenes.find((s) => s.groupe && s.groupe.membres.indexOf(fx) >= 0);
+    if (sc) { libererGroupe(sc); return; }
     const sim = fx.sim;
     fx.sim = null;
     try { if (etat.rendu) etat.rendu.oublier(sim); } catch (e) { /* device déjà perdu */ }
@@ -825,6 +958,7 @@
     etat.scenes.forEach((sc) => {
       if (sc.section.style.display === 'none') {
         sc.effets.forEach(liberer);
+        libererGroupe(sc);
         Object.keys(sc.calques).forEach((nom) => etat.rendu.oublierCible(sc.calques[nom]));
         return;
       }
@@ -833,6 +967,8 @@
         sc.echec = message(e);
         console.error('[Pulse Motion] Effets de particules : ' + message(e));
         sc.effets.forEach((fx) => { liberer(fx); panneau(fx.el, 'Effet non affiché : ' + message(e)); });
+        libererGroupe(sc);
+        if (sc.milieu) panneau(sc.milieu.el, 'Milieu non affiché : ' + message(e));
       }
     });
     oublierRefractions();
@@ -950,8 +1086,17 @@
     const mesures = { scenes: new Set() };
     const listes = { arriere: [], avant: [] };
     const couches = { arriere: [], avant: [] };
+    // Milieu et effets couplés (P5c) : avancés ensemble dans la fenêtre du groupe de la scène.
+    const groupe = sc.milieu && !sc.milieu.desactive ? avancerGroupe(sc, t, device, mesures) : null;
     sc.effets.forEach((fx) => {
       const tau = (t - fx.debut) * fx.info.rythme;
+      if (sc.milieu && couple(fx)) {
+        // Effet couplé : simulé par le groupe, dessiné dans sa propre fenêtre.
+        const m = groupe ? sc.groupe.membres.indexOf(fx) : -1;
+        if (m < 0 || tau < 0 || tau >= fx.effet.fin) return;
+        groupe.resultats[m].forEach((delta, i) => { if (!fx.sim.emetteurs[i].inerte) listes[fx.calque].push({ sim: fx.sim, i, delta }); });
+        return;
+      }
       if (tau < 0 || tau >= fx.effet.fin) { liberer(fx); return; }
       if (fx.desactive) return;
       // Effet de fragmentation : seulement une fois ses photographies faites.
@@ -993,6 +1138,8 @@
       etat.rendu.dessiner(etat.rendu.cible(canvas), listes[nom], {
         largeurCqh, dureeImage: sc.info.rythme / (M.ips || 30), bloom: rc.bloom, seuil: rc.seuil_bloom, tons: rc.tons, couches: couches[nom],
         photoScene: sc.refraction ? sc.refraction.vue : null,
+        // Milieu fluide (P5c) : dans le calque de sa balise, pendant sa fenêtre.
+        milieu: groupe && sc.milieu.calque === nom && t >= sc.milieu.debut && t < sc.milieu.fin ? sc.groupe.milieu : null,
         fonds: fonds.filter((a) => a.f.calque === nom).map((a) => (passe) => etat.shaders.dessiner(passe, a.f.shader, entreesFond(a, largeurCqh, canvas), null, 'fond')),
       });
     });
@@ -1329,6 +1476,7 @@
     etat.scenes.forEach((sc) => {
       sc.echec = false;
       sc.effets.forEach(liberer);
+      libererGroupe(sc);
     });
     demarrerGPU();
   }
@@ -1342,6 +1490,10 @@
       // Photographies et données des fragments refaites avec les nouvelles polices.
       fx.fragments = null; fx.effet = fx.effetOrigine; fx.ancres = new Map(); fx.attaches = new Map();
     }));
+    etat.scenes.forEach((sc) => {
+      if (sc.milieu) { sc.milieu.zones.clear(); sc.milieu.table = null; sc.milieu.reperes = new Map(); }
+      libererGroupe(sc);
+    });
     etat.masques = null;
     etat.promesseMasques = null;
     etat.photos = new Map();
@@ -1456,6 +1608,7 @@
       for (const sc of etat.scenes) {
         if (sc.section.style.display === 'none') continue;
         if (sc.echec) refuser(sc.echec);
+        if (sc.milieu && sc.milieu.desactive && t >= sc.milieu.debut && t < sc.milieu.fin) refuser(sc.milieu.desactive);
         sc.effets.forEach((fx) => {
           const tau = (t - fx.debut) * fx.info.rythme;
           if (fx.desactive && tau >= 0 && tau < fx.effet.fin) refuser(fx.desactive);
@@ -1508,7 +1661,10 @@
     if (fragmente(fx) && !(await preparerFragmentsEffet(fx))) throw new Error('Effet non affiché : rien à photographier (ancre vide).');
     // Les couches communes en dépendent : tous les effets repartent de contributions recalculées.
     oublierContributions();
-    etat.scenes.forEach((s) => s.effets.forEach((f) => { if (f !== fx) liberer(f); }));
+    etat.scenes.forEach((s) => {
+      s.effets.forEach((f) => { if (f !== fx) liberer(f); });
+      libererGroupe(s);
+    });
     fx.el.querySelectorAll(':scope > .pm-effet-panneau').forEach((p) => p.remove());
     sc.reglages[fx.calque] = reglagesCalque(sc.effets, fx.calque);
     sc.echec = false;
@@ -1559,8 +1715,26 @@
       const sc = trouver(idScene);
       return sc ? sc.effets.map((fx) => ({
         ordre: fx.ordre, calque: fx.calque, nom: fx.effet.nom, debut: fx.debut,
-        fin: fx.debut + fx.effet.fin / fx.info.rythme, rythme: fx.info.rythme, actif: !!fx.sim, desactive: fx.desactive || null, collisions: !!(monde(fx) && fx.table.actif),
+        fin: fx.debut + fx.effet.fin / fx.info.rythme, rythme: fx.info.rythme, actif: !!fx.sim, desactive: fx.desactive || null, collisions: !!(monde(fx) && fx.table.actif), couple: couple(fx),
       })) : [];
+    },
+    /** Milieu de la scène (P5c) : { nom, calque, debut, fin, actif (groupe en cours), desactive, couples (rangs des effets
+     *  couplés), grille } ; null sans milieu. */
+    decrireMilieu(idScene) {
+      const sc = trouver(idScene);
+      const mx = sc && sc.milieu;
+      if (!mx) return null;
+      return {
+        nom: mx.effet.nom, calque: mx.calque, debut: mx.debut, fin: mx.fin, actif: !!sc.groupe, desactive: mx.desactive || null,
+        couples: sc.effets.filter(couple).map((fx) => fx.ordre),
+        grille: sc.groupe ? { nx: sc.groupe.milieu.grille.nx, ny: sc.groupe.milieu.grille.ny, cote: sc.groupe.milieu.grille.cote, origine: sc.groupe.milieu.grille.origine.slice() } : null,
+      };
+    },
+    /** État de la grille du milieu de la scène (tests) ; rejette s'il n'est pas simulé. */
+    lireMilieu(idScene) {
+      const sc = trouver(idScene);
+      if (!sc || !sc.groupe) return Promise.reject(new Error('Milieu de la scène « ' + idScene + ' » non simulé.'));
+      return sc.groupe.milieu.lire();
     },
     lirePixels(idScene, calque) {
       const sc = trouver(idScene);

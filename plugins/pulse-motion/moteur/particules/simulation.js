@@ -1,6 +1,6 @@
 /* Pulse Motion – simulation des particules sur le GPU (WebGPU).
  *
- * new P.Simulation(device, effet, monde?, fragments?, largeurCqh?)   effet : recette compilée ; monde : obstacles de l'effet (collisions),
+ * new P.Simulation(device, effet, monde?, fragments?, largeurCqh?, milieu?)   effet : recette compilée ; monde : obstacles de l'effet (collisions),
  *   facultatif ; fragments : données des émetteurs de fragments (P4), un élément par émetteur (null hors fragments) :
  *   { a, b (listes de pixels, 4 nombres par particule), eclats (36 nombres par éclat), image (ImageBitmap, éclats),
  *     demiA, demiB, centreA, centreB (boîtes opaques des photographies), coteA, coteB } (fragments.js, calques.js)
@@ -23,6 +23,12 @@
  * e.perles (émetteur des perles d'une corde, hors du pas des particules), e.photoStructure (photographie de l'élément,
  * source « ancre » : fragments[em.index] = { image, centreA, demiA }) ; zones.attaches(g) -> Float32Array (8 nombres par
  * élément d'attache : l'ancre, puis effet.elements) ; .lireRompus(i) -> Promise<Uint32Array> (masques des liens rompus).
+ * Milieu (P5c) : milieu : P.Milieu de la scène (milieu.js) ou null ; force « milieu » (code 7) : entraînement par le vent
+ * de la grille (texture P.Milieu.vueVent, liaisons 24 et 25 : variante des pipelines du pas, P.avecMilieu ; sans milieu,
+ * P.milieuVide : vent nul) ; « injecte » : dépôts dans la grille à la fin du pas (P.creerDepots, milieu.js) ; structures
+ * couplées : structures.js. Membre d'un groupe couplé (P.Couplage) : .kFin, .tailleEtat, .preparerPas(o, k, zones),
+ * .envoyerPas(n), .encoderPas(passe, n, milieuActif), .positionner(k, tau, zones) -> deltas, .viderEtat(enc), .sauverEtat(enc, copie)
+ * -> copie, .restaurerEtat(enc, copie), .detruireCopie(copie) ; seule, avancer() les appelle avec ses propres instantanés.
  * P.additionnerProfils(device, cible, source)   cible += source (tampons d'entiers de même taille)
  * Modules de force (P6) : em.modulesWGSL.force (M.codeShader.attacherModules) ; l'appel est inséré dans integrer (pas et
  * pasCollisions), le module et le prélude des shaders ajoutés au noyau ; pipelines mis en cache par empreinte (même mise en
@@ -411,6 +417,12 @@ fn initialiser(ne: Naissance, zone: vec4f) -> Particule {
   return p;
 }
 
+// Milieu (P5c) : vent du milieu au point x (cqh/s) et part de surface d'un sommet de structure offerte au vent. Ici, sans
+// milieu : vent nul, exposition 1 ; P.avecMilieu remplace le vent par la lecture de la texture de la grille, structures.js
+// l'exposition par celle du sommet.
+fn ventMilieu(x: vec2f) -> vec2f { return vec2f(0.0); }
+fn expositionMilieu(p: Particule) -> f32 { return 1.0; }
+
 // Avance une particule de dt : forces prises constantes sur le pas, traînée intégrée exactement.
 fn integrer(pIn: Particule, dt: f32, t: f32, zone: vec4f) -> Particule {
   var p = pIn;
@@ -444,6 +456,12 @@ fn integrer(pIn: Particule, dt: f32, t: f32, zone: vec4f) -> Particule {
         let centre = zone.xy + zone.zw * vec2f(ef(b + 4u), ef(b + 5u));
         A += -ef(b + 2u) * invm * (p.pos - centre);
         K += ef(b + 3u) * invm;
+      }
+      case 7u: {
+        // Milieu (P5c) : entraînement par le vent du milieu, comme la force « vent » (coef × (vent − v) / masse).
+        let c = ef(b + 2u) * invm * expositionMilieu(p);
+        K += c;
+        A += c * ventMilieu(p.pos);
       }
       default: { }
     }
@@ -1247,6 +1265,58 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
   P.emballerE = emballer;
   P.OCTETS_PARTICULE = OCTETS_PARTICULE;
 
+  // Milieu (P5c) : vent lu dans la texture de la grille (liaisons 24 et 25), à la place de la fonction neutre du noyau.
+  P.NEUTRE_VENT = 'fn ventMilieu(x: vec2f) -> vec2f { return vec2f(0.0); }';
+  P.NEUTRE_EXPOSITION = 'fn expositionMilieu(p: Particule) -> f32 { return 1.0; }';
+  P.WGSL_VENT = /* wgsl */ `struct GrilleVent { origine: vec2f, cote: f32, r0: f32, n: vec2u, r1: u32, r2: u32 };
+@group(0) @binding(24) var ventTex: texture_2d<f32>;
+@group(0) @binding(25) var<uniform> GV: GrilleVent;
+
+// Vent du milieu au point x (cqh/s) : vitesse au centre des cellules de la grille, interpolée ; nul hors de la grille et
+// sans milieu (nx = 0).
+fn ventMilieu(x: vec2f) -> vec2f {
+  if (GV.n.x == 0u || GV.n.y == 0u) { return vec2f(0.0); }
+  let q = (x - GV.origine) / GV.cote - 0.5;
+  let nmax = vec2f(GV.n) - 1.0;
+  if (q.x < -0.5 || q.y < -0.5 || q.x > nmax.x + 0.5 || q.y > nmax.y + 0.5) { return vec2f(0.0); }
+  let qc = clamp(q, vec2f(0.0), nmax);
+  let i = vec2u(floor(qc));
+  let j = min(i + 1u, GV.n - 1u);
+  let f = qc - floor(qc);
+  let a = textureLoad(ventTex, i, 0).xy;
+  let b = textureLoad(ventTex, vec2u(j.x, i.y), 0).xy;
+  let c = textureLoad(ventTex, vec2u(i.x, j.y), 0).xy;
+  let d = textureLoad(ventTex, j, 0).xy;
+  return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}`;
+
+  /** Code d'un noyau qui lit le vent du milieu (fonction neutre remplacée par la lecture de la texture). */
+  P.avecMilieu = function (code) {
+    if (code.indexOf(P.NEUTRE_VENT) < 0) throw new Error('Milieu : fonction du vent du milieu introuvable dans le noyau.');
+    return code.replace(P.NEUTRE_VENT, P.WGSL_VENT);
+  };
+
+  /** Entrées de disposition du vent du milieu (texture de la grille, géométrie). */
+  P.entreesVent = function () {
+    const C = GPUShaderStage.COMPUTE;
+    return [
+      { binding: 24, visibility: C, texture: { sampleType: 'unfilterable-float' } },
+      { binding: 25, visibility: C, buffer: { type: 'uniform' } },
+    ];
+  };
+
+  // Milieu absent (effet couplé simulé seul : couche commune, atelier) : texture d'un texel, géométrie nulle (vent nul).
+  const vides = new WeakMap();
+  P.milieuVide = function (device) {
+    let v = vides.get(device);
+    if (!v) {
+      const tex = device.createTexture({ size: [1, 1], format: 'rgba32float', usage: GPUTextureUsage.TEXTURE_BINDING });
+      v = { vueVent: tex.createView(), uniformeVent: device.createBuffer({ size: 32, usage: GPUBufferUsage.UNIFORM }) };
+      vides.set(device, v);
+    }
+    return v;
+  };
+
   function parametresForce(f) {
     switch (f.type) {
       case 'gravite': return [f.a[0], f.a[1]];
@@ -1254,6 +1324,7 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
       case 'vent': return [f.vitesse[0], f.vitesse[1], f.coef];
       case 'turbulence': return [f.echelle, f.force, f.vitesse];
       case 'attracteur': case 'vortex': return [f.force, f.rayon, f.centre[0], f.centre[1]];
+      case 'milieu': return [f.coef];
       default: return [f.raideur, f.amortissement, f.centre[0], f.centre[1]];
     }
   }
@@ -1366,19 +1437,20 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
     if (p) return p;
     const module = device.createShaderModule({ label: 'pm-simulation', code: WGSL_SIMULATION });
     const C = GPUShaderStage.COMPUTE;
-    const layoutPas = device.createBindGroupLayout({
-      entries: [
-        { binding: 0, visibility: C, buffer: { type: 'read-only-storage' } },
-        { binding: 1, visibility: C, buffer: { type: 'storage' } },
-        { binding: 2, visibility: C, buffer: { type: 'read-only-storage' } },
-        { binding: 3, visibility: C, buffer: { type: 'storage' } },
-        { binding: 4, visibility: C, buffer: { type: 'uniform', hasDynamicOffset: true, minBindingSize: 48 } },
-        { binding: 7, visibility: C, buffer: { type: 'storage' } },
-      ],
-    });
+    const entreesPas = [
+      { binding: 0, visibility: C, buffer: { type: 'read-only-storage' } },
+      { binding: 1, visibility: C, buffer: { type: 'storage' } },
+      { binding: 2, visibility: C, buffer: { type: 'read-only-storage' } },
+      { binding: 3, visibility: C, buffer: { type: 'storage' } },
+      { binding: 4, visibility: C, buffer: { type: 'uniform', hasDynamicOffset: true, minBindingSize: 48 } },
+      { binding: 7, visibility: C, buffer: { type: 'storage' } },
+    ];
+    const layoutPas = device.createBindGroupLayout({ entries: entreesPas });
     const U = GPUBufferUsage;
     p = {
       layoutPas,
+      // Variante couplée au milieu (P5c) : texture du vent et géométrie de la grille.
+      layoutPasVent: device.createBindGroupLayout({ entries: entreesPas.concat(P.entreesVent()) }),
       pas: device.createComputePipeline({ layout: device.createPipelineLayout({ bindGroupLayouts: [layoutPas] }), compute: { module, entryPoint: 'pas' } }),
       evaluer: device.createComputePipeline({ layout: 'auto', compute: { module, entryPoint: 'evaluer' } }),
       videLecture: device.createBuffer({ size: OCTETS_MORT, usage: U.STORAGE }),
@@ -1396,27 +1468,28 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
     if (p) return p;
     const module = device.createShaderModule({ label: 'pm-collisions', code: WGSL_MODULE_COLLISIONS });
     const C = GPUShaderStage.COMPUTE;
-    const layout = device.createBindGroupLayout({
-      entries: [
-        { binding: 0, visibility: C, buffer: { type: 'read-only-storage' } },
-        { binding: 1, visibility: C, buffer: { type: 'storage' } },
-        { binding: 2, visibility: C, buffer: { type: 'read-only-storage' } },
-        { binding: 3, visibility: C, buffer: { type: 'storage' } },
-        { binding: 4, visibility: C, buffer: { type: 'uniform', hasDynamicOffset: true, minBindingSize: 80 } },
-        { binding: 7, visibility: C, buffer: { type: 'storage' } },
-        { binding: 8, visibility: C, buffer: { type: 'storage' } },
-        { binding: 9, visibility: C, buffer: { type: 'storage' } },
-        { binding: 10, visibility: C, buffer: { type: 'read-only-storage' } },
-        { binding: 11, visibility: C, buffer: { type: 'uniform' } },
-        { binding: 12, visibility: C, texture: { sampleType: 'unfilterable-float', viewDimension: '2d-array' } },
-        { binding: 13, visibility: C, texture: { sampleType: 'float', viewDimension: '2d-array' } },
-        { binding: 14, visibility: C, sampler: { type: 'filtering' } },
-      ],
-    });
+    const entreesC = [
+      { binding: 0, visibility: C, buffer: { type: 'read-only-storage' } },
+      { binding: 1, visibility: C, buffer: { type: 'storage' } },
+      { binding: 2, visibility: C, buffer: { type: 'read-only-storage' } },
+      { binding: 3, visibility: C, buffer: { type: 'storage' } },
+      { binding: 4, visibility: C, buffer: { type: 'uniform', hasDynamicOffset: true, minBindingSize: 80 } },
+      { binding: 7, visibility: C, buffer: { type: 'storage' } },
+      { binding: 8, visibility: C, buffer: { type: 'storage' } },
+      { binding: 9, visibility: C, buffer: { type: 'storage' } },
+      { binding: 10, visibility: C, buffer: { type: 'read-only-storage' } },
+      { binding: 11, visibility: C, buffer: { type: 'uniform' } },
+      { binding: 12, visibility: C, texture: { sampleType: 'unfilterable-float', viewDimension: '2d-array' } },
+      { binding: 13, visibility: C, texture: { sampleType: 'float', viewDimension: '2d-array' } },
+      { binding: 14, visibility: C, sampler: { type: 'filtering' } },
+    ];
+    const layout = device.createBindGroupLayout({ entries: entreesC });
     const U = GPUBufferUsage;
     const sdfVide = device.createTexture({ size: [1, 1, 1], format: 'rgba16float', usage: GPUTextureUsage.TEXTURE_BINDING });
     p = {
       layout,
+      // Variante couplée au milieu (P5c).
+      layoutVent: device.createBindGroupLayout({ entries: entreesC.concat(P.entreesVent()) }),
       module,
       pas: device.createComputePipeline({ layout: device.createPipelineLayout({ bindGroupLayouts: [layout] }), compute: { module, entryPoint: 'pasCollisions' } }),
       layoutRelax: device.createBindGroupLayout({
@@ -1452,30 +1525,37 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
   }
   P.avecForce = avecForce;
 
-  /** Pipeline du pas sans collisions : celui des particules, ou une variante avec un module de force (cache par empreinte). */
-  function pipelinePas(device, force) {
+  /** Pipeline du pas sans collisions : celui des particules, ou une variante avec un module de force et/ou le vent du milieu
+   *  (P5c) (cache par empreinte). */
+  function pipelinePas(device, force, vent) {
     const p = pipelinesPour(device);
-    if (!force) return p.pas;
+    if (!force && !vent) return p.pas;
     if (!p.variantes) p.variantes = new Map();
-    let v = p.variantes.get(force.empreinte);
+    const cle = (force ? force.empreinte : '-') + (vent ? '|vent' : '');
+    let v = p.variantes.get(cle);
     if (!v) {
-      const module = device.createShaderModule({ label: 'pm-simulation-' + force.nom, code: avecForce(WGSL_SIMULATION, force) });
-      v = device.createComputePipeline({ layout: device.createPipelineLayout({ bindGroupLayouts: [p.layoutPas] }), compute: { module, entryPoint: 'pas' } });
-      p.variantes.set(force.empreinte, v);
+      let code = avecForce(WGSL_SIMULATION, force);
+      if (vent) code = P.avecMilieu(code);
+      const module = device.createShaderModule({ label: 'pm-simulation-' + (force ? force.nom : '') + (vent ? '-vent' : ''), code });
+      v = device.createComputePipeline({ layout: device.createPipelineLayout({ bindGroupLayouts: [vent ? p.layoutPasVent : p.layoutPas] }), compute: { module, entryPoint: 'pas' } });
+      p.variantes.set(cle, v);
     }
     return v;
   }
 
-  /** Pipeline du pas avec collisions, ou sa variante avec un module de force (cache par empreinte). */
-  function pipelineCollisions(device, force) {
+  /** Pipeline du pas avec collisions, ou sa variante avec un module de force et/ou le vent du milieu (cache par empreinte). */
+  function pipelineCollisions(device, force, vent) {
     const p = pipelinesCollisions(device);
-    if (!force) return p.pas;
+    if (!force && !vent) return p.pas;
     if (!p.variantes) p.variantes = new Map();
-    let v = p.variantes.get(force.empreinte);
+    const cle = (force ? force.empreinte : '-') + (vent ? '|vent' : '');
+    let v = p.variantes.get(cle);
     if (!v) {
-      const module = device.createShaderModule({ label: 'pm-collisions-' + force.nom, code: avecForce(WGSL_MODULE_COLLISIONS, force) });
-      v = device.createComputePipeline({ layout: device.createPipelineLayout({ bindGroupLayouts: [p.layout] }), compute: { module, entryPoint: 'pasCollisions' } });
-      p.variantes.set(force.empreinte, v);
+      let code = avecForce(WGSL_MODULE_COLLISIONS, force);
+      if (vent) code = P.avecMilieu(code);
+      const module = device.createShaderModule({ label: 'pm-collisions-' + (force ? force.nom : '') + (vent ? '-vent' : ''), code });
+      v = device.createComputePipeline({ layout: device.createPipelineLayout({ bindGroupLayouts: [vent ? p.layoutVent : p.layout] }), compute: { module, entryPoint: 'pasCollisions' } });
+      p.variantes.set(cle, v);
     }
     return v;
   }
@@ -1505,11 +1585,12 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
   };
 
   class Simulation {
-    constructor(device, effet, monde, fragments, largeurCqh) {
+    constructor(device, effet, monde, fragments, largeurCqh, milieu) {
       const U = GPUBufferUsage;
       this.device = device;
       this.effet = effet;
       this.p = pipelinesPour(device);
+      this.milieu = milieu || null;
       this.monde = monde && monde.actif ? monde : null;
       this.nZones = Math.ceil(effet.fin * GRILLE) + 2;
       this.tau = 0;
@@ -1532,6 +1613,8 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
           collisions,
           structure: !!em.structure,
           perles: em.perlesDe >= 0,
+          // Milieu (P5c) : émetteur (non structure) entraîné par le vent du milieu.
+          vent: !em.structure && em.forces.some((f) => f.type === 'milieu'),
           photoStructure,
           rapide: em.voieRapide && !collisions,
           capacite,
@@ -1559,6 +1642,9 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
         e.inerte = !!parent && (parent.inerte || (e.em.declencheur === 'collision' && !parent.collisions));
         if (e.inerte) e.rapide = false;
       });
+      // Milieu (P5c) : vent lu par les émetteurs et les structures couplés (texture du milieu ; sans milieu : vent nul).
+      const avecVent = this.emetteurs.some((e) => e.vent || (e.em.structure && e.em.structure.milieu));
+      this.sourceVent = avecVent ? (this.milieu || P.milieuVide(device)) : null;
       // Émetteurs simulés, parents avant enfants.
       // Structures et perles : pas propres (structures.js), hors du pas des particules.
       this.simules = this.emetteurs.filter((e) => !e.rapide && !e.inerte && !e.structure && !e.perles)
@@ -1571,7 +1657,7 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
       this.simules.forEach((e) => {
         const parent = e.em.parent >= 0 ? this.emetteurs[e.em.parent] : null;
         e.groupePas = e.collisions ? this.groupeCollisions(e, parent) : device.createBindGroup({
-          layout: this.p.layoutPas,
+          layout: e.vent ? this.p.layoutPasVent : this.p.layoutPas,
           entries: [
             { binding: 0, resource: { buffer: e.params } },
             { binding: 1, resource: { buffer: e.particules } },
@@ -1579,14 +1665,14 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
             { binding: 3, resource: { buffer: e.morts || this.p.videEcriture } },
             { binding: 4, resource: { buffer: this.tamponPas, size: 48 } },
             { binding: 7, resource: { buffer: e.historique || this.p.videHistorique } },
-          ],
+          ].concat(this.entreesVent(e)),
         });
       });
 
       // Pipeline du pas de chaque émetteur simulé : variante avec son module de force (P6), mise en cache par empreinte.
       this.simules.forEach((e) => {
         const force = e.em.modulesWGSL ? e.em.modulesWGSL.force : null;
-        e.pipelinePas = e.collisions ? pipelineCollisions(device, force) : pipelinePas(device, force);
+        e.pipelinePas = e.collisions ? pipelineCollisions(device, force, e.vent) : pipelinePas(device, force, e.vent);
       });
 
       // Structures (P5b) : cordes et tissus de l'effet, simulés ensemble ; avant les groupes, qui lient leurs sommets.
@@ -1599,6 +1685,11 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
       if (groupes.length && !P.Groupe) throw new Error('Interactions : moteur/particules/voisinage.js n\'est pas chargé.');
       this.groupes = groupes.map((g) => (g.membres.some((i) => !this.emetteurs[i].inerte) ? new P.Groupe(device, this, g) : null));
       this.groupesActifs = this.groupes.filter(Boolean);
+
+      // Milieu (P5c) : dépôts des émetteurs à « injecte » dans la grille du milieu (sans milieu : rien n'est déposé).
+      const injecteurs = this.emetteurs.some((e) => e.em.injecte && !e.inerte);
+      if (injecteurs && this.milieu && !P.creerDepots) throw new Error('Milieu : moteur/particules/milieu.js n\'est pas chargé.');
+      this.depots = injecteurs && this.milieu ? P.creerDepots(device, this, this.milieu) : null;
 
       // Voie rapide : zones de la grille (points g / 30) envoyées au GPU.
       this.zones = new Float32Array(this.nZones * 4);
@@ -1621,7 +1712,7 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
       }
 
       this.kFin = Math.ceil(effet.fin / PAS) + 1;
-      const tailleEtat = this.simules.reduce((s, e) => s + e.capacite * OCTETS_PARTICULE + (e.historique ? e.historique.size : 0) + (e.contacts ? e.contacts.size : 0), 0)
+      const tailleEtat = this.tailleEtat = this.simules.reduce((s, e) => s + e.capacite * OCTETS_PARTICULE + (e.historique ? e.historique.size : 0) + (e.contacts ? e.contacts.size : 0), 0)
         + (this.hauteurs ? this.hauteurs.size : 0) + (this.structures ? this.structures.tailleEtat : 0);
       this.k = 0;
       this.planificateur = M.instantanes.creerPlanificateur({
@@ -1707,7 +1798,7 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
 
     groupeCollisions(e, parent) {
       return this.device.createBindGroup({
-        layout: this.pc.layout,
+        layout: e.vent ? this.pc.layoutVent : this.pc.layout,
         entries: [
           { binding: 0, resource: { buffer: e.params } },
           { binding: 1, resource: { buffer: e.particules } },
@@ -1722,8 +1813,14 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
           { binding: 12, resource: this.vueReperes },
           { binding: 13, resource: this.monde.formes ? this.monde.formes.vue : this.pc.vueSdfVide },
           { binding: 14, resource: this.pc.lisse },
-        ],
+        ].concat(this.entreesVent(e)),
       });
+    }
+
+    /** Liaisons du vent du milieu (P5c) d'un émetteur couplé ([] sinon). */
+    entreesVent(e) {
+      if (!e.vent) return [];
+      return [{ binding: 24, resource: this.sourceVent.vueVent }, { binding: 25, resource: { buffer: this.sourceVent.uniformeVent } }];
     }
 
     /** Repères des points de grille utiles au pas k (et à ses voisins) envoyés au GPU, une fois chacun. */
@@ -1789,8 +1886,6 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
     executer(actions, zones) {
       if (!actions.length) return;
       const { device } = this;
-      const donnees = this.donneesPas;
-      const f = this.f32Pas;
       let enc = null;
       let passe = null;
       let n = 0;
@@ -1799,7 +1894,7 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
       const envoyer = () => {
         fermerPasse();
         if (!enc) return;
-        if (n) device.queue.writeBuffer(this.tamponPas, 0, donnees, 0, n * 256);
+        this.envoyerPas(n);
         device.queue.submit([enc.finish()]);
         enc = null;
         n = 0;
@@ -1808,75 +1903,114 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
         if (a.type === 'pas') {
           if (n === PAS_PAR_LOT) envoyer();
           ouvrir();
-          const o = n * 64;
-          f.set(zones.a(a.k * PAS), o + 4);
-          f.set(zones.a((a.k + 1) * PAS), o + 8);
-          if (this.texReperes) this.assurerReperes(a.k, zones);
-          this.assurerAncres(Math.floor(a.k * PAS * GRILLE) - 1, Math.floor((a.k + 1) * PAS * GRILLE) + 2, zones);
-          if (this.structures) this.structures.assurerElements(a.k, zones);
-          this.ecrirePas(o, a.k);
+          this.preparerPas(n * 64, a.k, zones);
           if (!passe) passe = enc.beginComputePass();
-          // Interactions : positions au début du pas (grains), avant le pas des émetteurs.
-          for (const g of this.groupesActifs) g.noter(passe);
-          for (const e of this.simules) {
-            passe.setPipeline(e.pipelinePas);
-            passe.setBindGroup(0, e.groupePas, [n * 256]);
-            passe.dispatchWorkgroups(Math.ceil(e.capacite / 64));
-          }
-          // Interactions : voisinage (et solveurs) après le pas de tous les émetteurs.
-          for (const g of this.groupesActifs) g.executer(passe, n);
-          // Structures (P5b) : cordes et tissus, après les groupes (réactions des particules liées, plan 3).
-          if (this.structures) this.structures.executer(passe, n);
-          if (this.nProfils) {
-            passe.setPipeline(this.pc.relaxer);
-            passe.setBindGroup(0, this.groupeRelax, [n * 256]);
-            passe.dispatchWorkgroups(this.nProfils);
-          }
+          this.encoderPas(passe, n);
           n++;
           continue;
         }
         ouvrir();
         fermerPasse();
-        if (a.type === 'vider') {
-          this.simules.forEach((e) => {
-            enc.clearBuffer(e.particules);
-            if (e.morts) enc.clearBuffer(e.morts);
-            if (e.historique) enc.clearBuffer(e.historique);
-            if (e.contacts) enc.clearBuffer(e.contacts);
-          });
-          if (this.nProfils) { enc.clearBuffer(this.profils); enc.clearBuffer(this.hauteurs); enc.clearBuffer(this.brut); }
-          if (this.structures) this.structures.vider(enc);
-        } else if (a.type === 'restaurer') {
-          const copie = this.instantanes.get(a.k);
-          this.simules.forEach((e, i) => {
-            enc.copyBufferToBuffer(copie[i].particules, 0, e.particules, 0, e.capacite * OCTETS_PARTICULE);
-            if (e.historique) enc.copyBufferToBuffer(copie[i].historique, 0, e.historique, 0, e.historique.size);
-            if (e.contacts) enc.copyBufferToBuffer(copie[i].contacts, 0, e.contacts, 0, e.contacts.size);
-          });
-          if (this.nProfils) enc.copyBufferToBuffer(copie.hauteurs, 0, this.hauteurs, 0, this.hauteurs.size);
-          if (this.structures) this.structures.restaurer(enc, copie.structures);
-        } else if (a.type === 'sauver') {
-          let copie = this.instantanes.get(a.k);
-          if (!copie) {
-            const U = GPUBufferUsage;
-            copie = this.simules.map((e) => ({
-              particules: device.createBuffer({ size: e.capacite * OCTETS_PARTICULE, usage: U.COPY_SRC | U.COPY_DST }),
-              historique: e.historique ? device.createBuffer({ size: e.historique.size, usage: U.COPY_SRC | U.COPY_DST }) : null,
-              contacts: e.contacts ? device.createBuffer({ size: e.contacts.size, usage: U.COPY_SRC | U.COPY_DST }) : null,
-            }));
-            this.instantanes.set(a.k, copie);
-            if (this.nProfils) copie.hauteurs = device.createBuffer({ size: this.hauteurs.size, usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST });
-          }
-          this.simules.forEach((e, i) => {
-            enc.copyBufferToBuffer(e.particules, 0, copie[i].particules, 0, e.capacite * OCTETS_PARTICULE);
-            if (e.historique) enc.copyBufferToBuffer(e.historique, 0, copie[i].historique, 0, e.historique.size);
-            if (e.contacts) enc.copyBufferToBuffer(e.contacts, 0, copie[i].contacts, 0, e.contacts.size);
-          });
-          if (this.nProfils) enc.copyBufferToBuffer(this.hauteurs, 0, copie.hauteurs, 0, this.hauteurs.size);
-          if (this.structures) copie.structures = this.structures.sauver(enc, copie.structures);
-        }
+        if (a.type === 'vider') this.viderEtat(enc);
+        else if (a.type === 'restaurer') this.restaurerEtat(enc, this.instantanes.get(a.k));
+        else if (a.type === 'sauver') this.instantanes.set(a.k, this.sauverEtat(enc, this.instantanes.get(a.k)));
       }
       envoyer();
+    }
+
+    /** Membre : données du pas k dans la tranche o (mots) du tampon des pas : zones, repères, ancres, éléments d'attache, temps. */
+    preparerPas(o, k, zones) {
+      const f = this.f32Pas;
+      f.set(zones.a(k * PAS), o + 4);
+      f.set(zones.a((k + 1) * PAS), o + 8);
+      if (this.texReperes) this.assurerReperes(k, zones);
+      this.assurerAncres(Math.floor(k * PAS * GRILLE) - 1, Math.floor((k + 1) * PAS * GRILLE) + 2, zones);
+      if (this.structures) this.structures.assurerElements(k, zones);
+      this.ecrirePas(o, k);
+    }
+
+    envoyerPas(n) {
+      if (n) this.device.queue.writeBuffer(this.tamponPas, 0, this.donneesPas, 0, n * 256);
+    }
+
+    /** Membre : pas de la tranche n (groupes d'interactions, émetteurs simulés, structures, relaxation, dépôts dans le milieu). */
+    encoderPas(passe, n, milieuActif) {
+      // Interactions : positions au début du pas (grains), avant le pas des émetteurs.
+      for (const g of this.groupesActifs) g.noter(passe);
+      for (const e of this.simules) {
+        passe.setPipeline(e.pipelinePas);
+        passe.setBindGroup(0, e.groupePas, [n * 256]);
+        passe.dispatchWorkgroups(Math.ceil(e.capacite / 64));
+      }
+      // Interactions : voisinage (et solveurs) après le pas de tous les émetteurs.
+      for (const g of this.groupesActifs) g.executer(passe, n);
+      // Structures (P5b) : cordes et tissus, après les groupes (réactions des particules liées).
+      if (this.structures) this.structures.executer(passe, n);
+      if (this.nProfils) {
+        passe.setPipeline(this.pc.relaxer);
+        passe.setBindGroup(0, this.groupeRelax, [n * 256]);
+        passe.dispatchWorkgroups(this.nProfils);
+      }
+      // Milieu (P5c) : dépôts là où sont les particules à la fin du pas (la grille les lit dans le même pas), seulement aux pas
+      // où le milieu avance aussi (milieuActif, P.Couplage) : rien ne s'accumule hors de l'état.
+      if (this.depots && milieuActif) this.depots.encoder(passe);
+    }
+
+    /** Membre : pas k et τ atteints ; voie rapide évaluée à τ ; δ d'extrapolation de chaque émetteur (rendu). */
+    positionner(k, tau, zones) {
+      this.k = k;
+      this.tau = tau;
+      if (this.rapides.length && tau >= 0) this.evaluer(tau, zones, k);
+      return this.emetteurs.map((e) => (e.rapide || e.inerte ? 0 : Math.max(0, tau - k * PAS)));
+    }
+
+    viderEtat(enc) {
+      this.simules.forEach((e) => {
+        enc.clearBuffer(e.particules);
+        if (e.morts) enc.clearBuffer(e.morts);
+        if (e.historique) enc.clearBuffer(e.historique);
+        if (e.contacts) enc.clearBuffer(e.contacts);
+      });
+      if (this.nProfils) { enc.clearBuffer(this.profils); enc.clearBuffer(this.hauteurs); enc.clearBuffer(this.brut); }
+      if (this.structures) this.structures.vider(enc);
+    }
+
+    /** Copie de l'état (particules, traînées, contacts, couches, structures) dans un instantané ; créé à la première sauvegarde. */
+    sauverEtat(enc, copie) {
+      const U = GPUBufferUsage;
+      let c = copie;
+      if (!c) {
+        c = this.simules.map((e) => ({
+          particules: this.device.createBuffer({ size: e.capacite * OCTETS_PARTICULE, usage: U.COPY_SRC | U.COPY_DST }),
+          historique: e.historique ? this.device.createBuffer({ size: e.historique.size, usage: U.COPY_SRC | U.COPY_DST }) : null,
+          contacts: e.contacts ? this.device.createBuffer({ size: e.contacts.size, usage: U.COPY_SRC | U.COPY_DST }) : null,
+        }));
+        if (this.nProfils) c.hauteurs = this.device.createBuffer({ size: this.hauteurs.size, usage: U.COPY_SRC | U.COPY_DST });
+      }
+      this.simules.forEach((e, i) => {
+        enc.copyBufferToBuffer(e.particules, 0, c[i].particules, 0, e.capacite * OCTETS_PARTICULE);
+        if (e.historique) enc.copyBufferToBuffer(e.historique, 0, c[i].historique, 0, e.historique.size);
+        if (e.contacts) enc.copyBufferToBuffer(e.contacts, 0, c[i].contacts, 0, e.contacts.size);
+      });
+      if (this.nProfils) enc.copyBufferToBuffer(this.hauteurs, 0, c.hauteurs, 0, this.hauteurs.size);
+      if (this.structures) c.structures = this.structures.sauver(enc, c.structures);
+      return c;
+    }
+
+    restaurerEtat(enc, c) {
+      this.simules.forEach((e, i) => {
+        enc.copyBufferToBuffer(c[i].particules, 0, e.particules, 0, e.capacite * OCTETS_PARTICULE);
+        if (e.historique) enc.copyBufferToBuffer(c[i].historique, 0, e.historique, 0, e.historique.size);
+        if (e.contacts) enc.copyBufferToBuffer(c[i].contacts, 0, e.contacts, 0, e.contacts.size);
+      });
+      if (this.nProfils) enc.copyBufferToBuffer(c.hauteurs, 0, this.hauteurs, 0, this.hauteurs.size);
+      if (this.structures) this.structures.restaurer(enc, c.structures);
+    }
+
+    detruireCopie(c) {
+      c.forEach((x) => [x.particules, x.historique, x.contacts].forEach((b) => b && b.destroy()));
+      if (c.hauteurs) c.hauteurs.destroy();
+      if (c.structures) this.structures.detruireCopie(c.structures);
     }
 
     evaluer(tau, zones, k) {
@@ -1973,11 +2107,8 @@ fn additionner(@builtin(global_invocation_id) g: vec3u) {
         [e.params, e.tables, e.particules, e.morts, e.contacts, e.historique, e.uniformeRendu, e.uniformeEval].forEach((b) => b && b.destroy());
         if (e.photo) e.photo.texture.destroy();
       });
-      this.instantanes.forEach((copie) => {
-        copie.forEach((c) => [c.particules, c.historique, c.contacts].forEach((b) => b && b.destroy()));
-        if (copie.hauteurs) copie.hauteurs.destroy();
-        if (copie.structures) this.structures.detruireCopie(copie.structures);
-      });
+      this.instantanes.forEach((copie) => this.detruireCopie(copie));
+      if (this.depots) this.depots.detruire();
       if (this.structures) this.structures.detruire();
       this.instantanes.clear();
       (this.groupesActifs || []).forEach((g) => g.detruire());
