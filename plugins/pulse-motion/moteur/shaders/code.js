@@ -14,6 +14,7 @@
  * dispositionReglages(parametres) -> { wgsl, taille, champs }   struct « Reglages » (uniforme) : f32 ou vec4f (couleur)
  * ecrireReglages(disposition, valeurs) -> Float32Array           contenu de l'uniforme des réglages
  * ecrireEntrees(o) -> ArrayBuffer (OCTETS_ENTREES)               uniforme « PmEntrees » (iTime, iProgres, iResolution…)
+ * GLSL (P7) : « langage » glsl (fond, transition, post) : code .glsl contrôlé par M.codeGLSL (shaders/glsl.js).
  * Son réactif (P7) : PmEntrees.son, son2 (iSon), image (iFrame, iTimeDelta) ; liaison 8 iSonTexture (spectre, onde :
  * sonSpectre(x), sonOnde(x)) ; « piste » du .json (musique par défaut) ; pistesShader(json, code) -> pistes lues.
  * assemblerShader({ code, usage, disposition, prelude }) -> { wgsl, ligneCode, lignesCode }
@@ -38,15 +39,17 @@
 (function (racine, fabrique) {
   var noeud = typeof require === 'function' && typeof module === 'object';
   var R = noeud ? require('../particules/recette.js') : null;
-  var api = fabrique(function () { return R || (racine.M && racine.M.recette); });
+  var G = noeud ? require('./glsl.js') : null;
+  var api = fabrique(function () { return R || (racine.M && racine.M.recette); }, function () { return G || (racine.M && racine.M.codeGLSL); });
   if (noeud && module.exports) module.exports = api;
   else { racine.M = racine.M || {}; racine.M.codeShader = api; }
-})(typeof globalThis !== 'undefined' ? globalThis : this, function (recette) {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (recette, glsl) {
   'use strict';
 
   var USAGES = ['fond', 'transition', 'post', 'module-force', 'module-couleur', 'module-forme'];
   var TAILLE_MAX = 65536;
-  var CHAMPS = ['version', 'nom', 'usage', 'description', 'parametres', 'debord', 'piste'];
+  var CHAMPS = ['version', 'nom', 'usage', 'description', 'parametres', 'debord', 'piste', 'langage'];
+  var LANGAGES = ['wgsl', 'glsl'];
   var DEBORD_MAX = 50;
   // Charte de contrôle : les couleurs de la charte par défaut d'un réglage se résolvent sans projet.
   var CHARTE_CONTROLE = { primaire: '#3366cc', accent: '#ff9900', texte: '#111111', fond: '#ffffff' };
@@ -119,6 +122,7 @@
 
   /** Pistes lues par un shader : [piste du .json, musique par défaut] si son code (hors commentaires) lit le son. */
   function pistesShader(json, code) {
+    if (json && json.langage === 'glsl') return glsl().pistesGLSL(json, code);
     return LIT_LE_SON.test(sansCommentaires(code || '')) ? [(json && json.piste) || 'musique'] : [];
   }
 
@@ -136,6 +140,11 @@
     if (json.piste !== undefined && !(typeof json.piste === 'string' && /^[a-z0-9-]+$/.test(json.piste))) {
       e('shader-invalide', '« piste » doit être le nom d\'une piste du déroulé (musique, voix)');
     }
+    var langage = json.langage === undefined ? 'wgsl' : json.langage;
+    if (LANGAGES.indexOf(langage) < 0) e('shader-invalide', '« langage » doit être wgsl ou glsl');
+    if (langage === 'glsl' && /^module-/.test(String(json.usage))) {
+      e('shader-invalide', "un module de particules s'écrit en WGSL (« langage » glsl : fond, transition ou post-traitement seulement)");
+    }
     var params = json.parametres === undefined ? {} : json.parametres;
     if (!estObjet(params)) e('shader-invalide', '« parametres » doit être un objet');
     else {
@@ -145,8 +154,13 @@
         err.push({ regle: 'shader-invalide', message: x.message });
       }
     }
-    if (typeof code !== 'string') { e('shader-invalide', 'fichier .wgsl illisible'); return err; }
+    var ext = langage === 'glsl' ? 'glsl' : 'wgsl';
+    if (typeof code !== 'string') { e('shader-invalide', 'fichier .' + ext + ' illisible'); return err; }
     if (octets(code) > TAILLE_MAX) { e('shader-trop-gros', 'le code fait ' + octets(code) + ' octets, au-delà de ' + TAILLE_MAX + ' (64 Ko)'); return err; }
+    if (langage === 'glsl') {
+      glsl().verifierCodeGLSL(json, code).forEach(function (x) { e(x.regle, x.message); });
+      return err;
+    }
     var nu = sansCommentaires(code);
     if (/@\s*(?:group|binding)\s*\(/.test(nu)) e('liaison-reservee', '@group et @binding sont réservés au moteur : lire les images avec canal0(uv)… canal3(uv) et les réglages avec R.<nom>');
     var f = FONCTIONS[json.usage];
@@ -405,7 +419,7 @@
 
   function messageErreur(nom, fichier, erreurs) {
     var liste = erreurs.slice(0, 3).map(function (e) {
-      return (e.ligne ? 'ligne ' + e.ligne + ', colonne ' + e.colonne : 'hors du code du shader (nom déjà pris par le moteur ?)') + ' : ' + e.message;
+      return (e.ligne ? 'ligne ' + e.ligne + (e.colonne ? ', colonne ' + e.colonne : '') : 'hors du code du shader (nom déjà pris par le moteur ?)') + ' : ' + e.message;
     });
     return 'Shader « ' + nom + ' » (' + fichier + ') ne compile pas : ' + liste.join(' ; ') +
       (erreurs.length > 3 ? ' (et ' + (erreurs.length - 3) + ' autre(s))' : '') + '.';
