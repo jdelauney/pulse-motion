@@ -466,6 +466,8 @@
       const largeur = Math.max(1, Math.round((entrees.resolution[0] + 2 * d) * k));
       const hauteur = Math.max(1, Math.round((entrees.resolution[1] + 2 * d) * k));
       const canvas = shader.moteurGL.dessiner(shader.glsl, { largeur, hauteur, entrees, valeurs: shader.valeurs, canaux: this.canauxGL(shader, []) });
+      // Première image d'un fond (hors multipasse, dont les tampons partent de 0) : sortie entièrement transparente ?
+      if (shader.transparent === undefined) shader.transparent = shader.multi ? false : shader.moteurGL.toutTransparent(largeur, hauteur);
       return this.copierGLSL(shader, canvas, largeur, hauteur);
     }
 

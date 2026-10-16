@@ -1294,6 +1294,14 @@
         fonds: fonds.filter((a) => a.f.calque === nom).map((a) => (passe) => etat.shaders.dessiner(passe, a.f.shader, entreesFond(a, largeurCqh, canvas), null, 'fond')),
       });
     });
+    // Fond GLSL entièrement transparent à sa première image (alpha laissé à 0, ignoré sur Shadertoy) : alerte.
+    fonds.forEach((a) => {
+      if (!a.f.shader || a.f.shader.transparent !== true || a.f.alerteTransparent) return;
+      a.f.alerteTransparent = true;
+      const msg = 'Fond « ' + a.f.donnee.nom + ' » entièrement transparent : sur Shadertoy l\'alpha est ignoré, ici fragColor.a est l\'opacité ; écrire fragColor = vec4(couleur, 1.0).';
+      console.warn('[Pulse Motion] ' + msg);
+      panneauAlerte(a.f.el, msg);
+    });
   }
 
   function erreurNonCapturee(ev) {

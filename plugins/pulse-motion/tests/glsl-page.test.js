@@ -22,6 +22,7 @@ const SHADERS = {
   entrante: glsl('entrante', 'transition', 'void mainImage(out vec4 c, in vec2 p) {\n  c = texture(iChannel1, p / iResolution.xy);\n}\n'),
   inverse: glsl('inverse', 'post', 'void mainImage(out vec4 c, in vec2 p) {\n  vec4 s = texture(iChannel0, p / iResolution.xy);\n  c = vec4(1.0 - s.rgb, 1.0);\n}\n'),
   'copie-st': glsl('copie-st', 'post', 'void mainImage(out vec4 c, in vec2 p) {\n  c = texture(iChannel0, p / iResolution.xy);\n}\n'),
+  invisible: glsl('invisible', 'fond', 'void mainImage(out vec4 fragColor, in vec2 fragCoord) {\n  fragColor = vec4(1.0, 0.0, 0.0, 0.0); // alpha laissé à 0, comme un shader Shadertoy\n}\n'),
   'basses-st': glsl('basses-st', 'fond', 'void mainImage(out vec4 c, in vec2 p) {\n  c = vec4(iSon.basses, texture(iChannel3, vec2(0.15, 0.25)).r, 0.0, 1.0);\n}\n'),
 };
 const OUTILS = `
@@ -166,4 +167,16 @@ await envoyer({ panneau: panneau && panneau.textContent, erreurs: M.shaders.erre
   assert.equal(r.erreurs[0].nom, 'basses-st');
   assert.equal(r.decrire[0].actif, false);
   assert.match(r.refus, /^Export refusé : Shader « basses-st »/);
+});
+
+test("GLSL : fond Shadertoy dont l'alpha reste à 0 -> alerte dans l'aperçu", async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const r = await executer({ scenes: { a: '<section data-scene="a"><div data-shader="invisible"></div><div data-shader="degrade-st"></div></section>' }, script: `
+await M.seek(1);
+const alertes = Array.from(document.querySelectorAll('[data-shader] .pm-effet-alerte')).map((d) => d.textContent);
+await envoyer({ alertes, erreurs: M.shaders.erreurs() });` });
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.deepEqual(r.erreurs, []);
+  assert.equal(r.alertes.length, 1, JSON.stringify(r.alertes));
+  assert.match(r.alertes[0], /Fond « invisible » entièrement transparent .*vec4\(couleur, 1\.0\)/);
 });
