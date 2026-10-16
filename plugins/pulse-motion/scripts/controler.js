@@ -21,6 +21,7 @@ const { assembler, charteFinale, RACINE } = require('./assembler.js');
 const { trouverStyle } = require('./styles.js');
 const { lireGlossaire, verifierGlossaire } = require('./vocabulaire.js');
 const { lireDeroule, dureeTemps, grilleFixe, optionsMinutage } = require('./lib/deroule.js');
+const { deplierGroupes } = require('./lib/groupes-personnages.js');
 const { cheminDansProjet } = require('./lib/embarquer.js');
 const W = require('../moteur/wav.js');
 const { corrigerTypographie, corrigerMajuscules, motsDoubles, termesVariables, cleTerme } = require('./lib/typographie.js');
@@ -153,6 +154,8 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
       let html = '';
       try { html = fs.readFileSync(fichier, 'utf8'); } catch { /* déjà signalé par l'assemblage */ }
       scenesHtml[s.id] = html;
+      // Groupes de personnages dépliés comme à l'assemblage : mêmes éléments minutés que dans la page.
+      if (/data-groupe/.test(html)) html = deplierGroupes(html, { scene: s.id, dureeTemps: dureeTemps(deroule) }).html;
       scenesLues[s.id] = extraireScene(html);
       elementsParScene[s.id] = scenesLues[s.id].elements;
     }
