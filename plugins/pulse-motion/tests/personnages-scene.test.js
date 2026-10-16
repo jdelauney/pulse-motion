@@ -270,3 +270,57 @@ test('objets tenus (revue) : temps du conteneur figé, personnage tourné, deux 
   } finally { await page.fermer(); }
 });
 
+test('atteindre, rencontre, regarder, relais : erreurs d\'assemblage et effets dans la page', { skip: !navigateur && 'Chrome ou Edge introuvable' }, async () => {
+  const mauvais = preparerPersonnages('<section><div id="a" data-personnage="touffu"><i data-action="atteindre" data-cible="#absent" data-start="0"></i><i data-action="atteindre" data-cible="loin" data-main="pied" data-niveau="ciel" data-dur="1" data-start="1"></i><i data-action="regarder" data-cible="camera" data-point="haut" data-start="2"></i></div><p id="o" data-tenu-par="#a" data-relais="#z à 1" data-dur="2" data-start="0"></p><p id="o2" data-tenu-par="#a" data-relais="plus tard" data-dur="2" data-start="0"></p></section>', { scene: 's', lu });
+  const m = mauvais.erreurs.map((e) => e.message).join(' | ');
+  for (const motif of [/cible « #absent » introuvable/, /« atteindre ».*data-dur obligatoire/, /data-cible="loin" doit être/, /data-main="pied"/, /data-niveau="ciel"/, /data-point="haut"/, /relais « #z » introuvable/, /data-relais="plus tard"/]) assert.match(m, motif);
+  const SCENE_I = `<section data-scene="chiffre">
+  <style>@scope { .cible { position: absolute; left: 29%; top: 66%; width: 4cqh; height: 4cqh; } .objet { position: absolute; left: 5%; top: 5%; width: 4cqh; height: 6cqh; background: var(--c-primaire); } }</style>
+  <p id="nombre" data-tween="nombre 0→1250 cubic-out" data-dur="3">0</p>
+  <span id="point" class="cible" data-decor></span>
+  <div id="un" data-personnage="touffu" data-x="25" data-sol="90" data-taille="30">
+    <i id="vise" data-action="atteindre" data-cible="#point" data-start="0" data-dur="1"></i>
+    <i data-action="atteindre" data-cible="#deux" data-niveau="haut" data-start="1.2" data-dur="1"></i>
+    <i data-action="regarder" data-cible="#point" data-start="0"></i>
+  </div>
+  <div id="deux" data-personnage="touffu" data-x="36" data-vue="180" data-sol="90" data-taille="30">
+    <i data-action="atteindre" data-cible="#un" data-niveau="haut" data-start="1.2" data-dur="1"></i>
+  </div>
+  <div id="fleche" class="objet" data-decor data-tenu-par="#un" data-relais="#deux à 1.5" data-start="0.5" data-dur="2"></div>
+</section>`;
+  const r = assembler({ dossier: video(SCENE_I), dossierStyles: STYLES });
+  assert.equal(r.ok, true, JSON.stringify(r.erreurs));
+  assert.deepEqual(r.erreurs.filter((e) => e.regle === 'personnage-invalide'), []);
+  const page = await ouvrirPage({ navigateur, largeur: 1280, hauteur: 720 });
+  try {
+    await page.aller(pathToFileURL(r.fichier).href);
+    const res = await page.evaluer(`(async () => {
+      await M.pret;
+      const sc = M.minutage.scenes.find((s) => s.id === 'chiffre'), d = sc.debut;
+      const un = document.getElementById('un'), deux = document.getElementById('deux'), P = M.personnages;
+      const W = P.W, H = P.H;
+      const loc = (t) => M.tempsVuPar(un, t);
+      // Atteindre l'élément : au milieu de la fenêtre, la main sur son centre.
+      const E = M.minutage.elements.chiffre, tv = (E.vise.debut + E.vise.fin) / 2;
+      await M.seek(tv);
+      const rp = document.getElementById('point').getBoundingClientRect(), rd = un.getBoundingClientRect();
+      const cible = { x: (rp.left + rp.width / 2 - rd.left) / rd.width * W, y: (rp.top + rp.height / 2 - rd.top) / rd.height * H };
+      const main = P.mains(un, tv).avant;
+      const regard = P.pose(un, loc(tv)).regardX;
+      // Rencontre : les deux mains au même point.
+      const tr = d + 1.7 / sc.rythme; await M.seek(tr);
+      const m1 = P.mains(un, tr).avant, m2 = P.mains(deux, tr).avant;
+      // Relais : après 1,5 s de prise, la flèche suit la main de « deux ».
+      const fl = E.fleche, tf = fl.debut + 1.8; await M.seek(tf);
+      const s = document.getElementById('fleche').style, md = P.mains(deux, tf).avant;
+      return { ecart: Math.hypot(main.x - cible.x, main.y - cible.y), regard, rencontre: Math.hypot(m1.x - m2.x, m1.y - m2.y),
+        relais: [parseFloat(s.left) - md.x / W * 100, parseFloat(s.top) - md.y / H * 100], echelle: H, erreurs: (M.erreurs || []).map((e) => e.message) };
+    })()`);
+    assert.deepEqual(res.erreurs, []);
+    assert.ok(res.ecart < 0.02 * res.echelle, `main sur la cible : écart ${res.ecart}`);
+    assert.ok(res.regard > 0.5, `regard vers la cible (devant lui) : ${res.regard}`);
+    assert.ok(res.rencontre < 0.03 * res.echelle, `mains qui se rencontrent : écart ${res.rencontre}`);
+    assert.ok(Math.abs(res.relais[0]) < 0.05 && Math.abs(res.relais[1]) < 0.05, `relais : ${res.relais}`);
+  } finally { await page.fermer(); }
+});
+
