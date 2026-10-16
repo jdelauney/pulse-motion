@@ -63,9 +63,9 @@ function boiteCqh(el) {
 }
 `;
 
-function pageStructures({ textes, recettes, scene, script }) {
+function pageStructures({ textes, recettes, scene, script, duree }) {
   const dir = copierProjet('projet-particules');
-  modifierDeroule(dir, (d) => { d.scenes[0].textes = textes; });
+  modifierDeroule(dir, (d) => { d.scenes[0].textes = textes; if (duree) d.scenes[0].duree = duree; });
   for (const r of recettes) ecrire(dir, `effets/${r.nom}.json`, r);
   ecrire(dir, 'scenes/01-s.html', scene);
   const a = assembler({ dossier: dir, dossierStyles: STYLES, dossierEffets: EFFETS, ecrire: false });
@@ -158,4 +158,34 @@ envoyer({ webgpu: true, mesures, panneau });`,
     });
   }
   assert.ok(r.mesures[1].mat.x > r.mesures[0].mat.x + 15, '#mat a bougé');
+});
+
+test('page : un effet fait uniquement de structures, sans data-dur, dure jusqu'à la fin de sa scène (fanion encore dessiné à 3,5 s d'une scène de 4 s)', async (t) => {
+  if (!(await optionsWebGPU())) return t.skip('WebGPU indisponible sans fenêtre');
+  const html = pageStructures({
+    textes: { titre: 'Mât' },
+    recettes: [FANION],
+    duree: 4,
+    scene: `<section data-scene="s">
+  ${style('#mat { position: absolute; left: 20cqh; top: 20cqh; width: 2cqh; height: 30cqh; background: #333; } .zone { position: absolute; left: 22cqh; top: 20cqh; width: 30cqh; height: 20cqh; }')}
+  <h1 data-texte="titre"></h1>
+  <div id="mat" data-start="0"></div>
+  <div class="zone" data-effet="fanion" data-start="0"></div>
+</section>`,
+    script: `
+await M.particules.pret;
+if (!M.particules.disponible) return envoyer({ webgpu: false });
+await M.seek(3.5);
+const calque = await M.particules.lirePixels('s', 'avant');
+let couverts = 0;
+for (let i = 3; i < calque.donnees.length; i += 4) if (calque.donnees[i] > 0) couverts++;
+const effet = M.particules.decrire('s')[0];
+const scene = M.minutage.scenes.find((x) => x.id === 's');
+envoyer({ webgpu: true, couverts, fin: effet.fin, finScene: scene.fin });`,
+  });
+  const r = JSON.parse(await executerPage(html));
+  assert.equal(r.erreur, undefined, r.erreur);
+  if (r.webgpu === false) return t.skip('WebGPU indisponible');
+  assert.ok(r.fin >= r.finScene - 1e-6, `fenêtre de l'effet jusqu'à ${r.fin} s (fin de la scène : ${r.finScene} s)`);
+  assert.ok(r.couverts > 100, `fanion encore dessiné à 3,5 s (${r.couverts} pixels)`);
 });
