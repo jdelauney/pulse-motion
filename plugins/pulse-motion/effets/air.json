@@ -3,7 +3,7 @@
   "nom": "air",
   "description": "Air de la scène : fumée volumineuse qui monte du bas, s'enroule et contourne les obstacles déclarés ; sert de vent aux effets couplés (data-milieu).",
   "parametres": {
-    "resolution": { "defaut": 192, "min": 64, "max": 512 },
+    "resolution": { "defaut": 192, "min": 64, "max": 1024 },
     "flottaison": { "defaut": 1.6, "min": 0, "max": 3 },
     "debit": { "defaut": 3, "min": 0, "max": 10 },
     "couleur": { "defaut": "#8a8f99", "type": "couleur" },
