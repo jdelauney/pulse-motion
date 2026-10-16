@@ -1,7 +1,7 @@
 # Smoke test : personnages (jalon 1)
 
 > Essai manuel, **comme le ferait une personne qui ne code pas**, entièrement par des demandes dans Claude Code : bibliothèque de mouvements, pose écrite par Claude, planche, atelier. Durée : environ 40 min.
-> Prérequis : le plugin installé (voir [smoke-test-complet.md](smoke-test-complet.md), partie 0) et une vidéo d'essai déjà créée (dossier ouvert dans Claude Code).
+> Prérequis : le plugin installé **et à jour** (voir [smoke-test-complet.md](smoke-test-complet.md), partie 0.2 : « vérifie mon ordinateur » doit annoncer la version du dépôt, 0.14.0 ou plus) et une vidéo d'essai déjà créée (dossier ouvert dans Claude Code).
 
 ## Comment lire ce document
 
@@ -73,6 +73,47 @@ Chaque étape donne **Vous dites**, **Attendu**, **À vérifier**, **À noter** 
 **Vous dites** : « Je veux régler son salut moi-même. »
 
 **Attendu** : l'atelier s'ouvre sur le salut avec le cuisinier ; la liste « Habillage » permet de revenir aux bâtonnets ; les listes « Expression » et « Bouche » changent le visage à l'instant courant ; les curseurs des sourcils marchent ; « Enregistrer » garde le choix.
+
+## 7. Animer une illustration fournie (20 min)
+
+Préparez un SVG de personnage de profil (dessiné dans Inkscape, Illustrator ou trouvé en ligne, sans texte ni image), par exemple `mascotte.svg`, dans le dossier de la vidéo.
+
+**Vous dites** : « Voici notre mascotte, mascotte.svg : fais-la marcher. »
+
+**Attendu** : Claude regarde l'illustration, range chaque partie dans un membre, place les articulations, et montre la mascotte qui marche (plusieurs angles) en au plus trois tours. Il nomme les couleurs principales.
+
+**À vérifier** : les membres tournent autour des bonnes articulations (genou, coude) ; rien ne se détache ; l'ombre ou le décor ne suivent pas le personnage ; Claude ne parle ni de SVG, ni de sélecteurs, ni de pivots.
+
+**Vous dites** : « Le coude n'est pas au bon endroit, laisse-moi corriger. »
+
+**Attendu** : la page de découpe s'ouvre ; cliquer une forme puis un membre la range ; glisser un rond déplace l'articulation ; « Découper » montre le résultat qui marche ; « Enregistrer » le range (« annule » le défait).
+
+**Vous dites** : « Change sa couleur principale en bleu. »
+
+**Attendu** : la couleur change sans refaire la découpe.
+
+## 8. Un personnage dans une scène (15 min)
+
+**Vous dites** : « Mets le cuisinier dans la scène du chiffre : qu'il entre, montre le chiffre en souriant, salue et reparte. »
+
+**Attendu** : Claude modifie la scène, la contrôle et montre des images clés : le cuisinier entre en marchant (sans glisser), s'arrête, montre le chiffre au moment où il apparaît, sourit, salue, repart.
+
+**À vérifier** : dans l'aperçu, en avançant image par image et en revenant en arrière, le personnage est toujours au même endroit pour un même instant ; il ne cache pas les textes ; les pieds restent sur la même ligne ; l'export MP4 montre la même chose.
+
+**Vous dites** : « Qu'il montre le chiffre quand la voix dit « record ». »
+
+**Attendu** : le geste se cale sur le mot (scène avec voix).
+
+## 9. Un personnage qui parle (10 min)
+
+Prérequis : une vidéo dont une scène a une voix (provisoire ou enregistrée) et un personnage dessiné (partie 6).
+
+1. Demander : « Fais parler le personnage pendant la voix de la scène 2. »
+   - Attendu : une action `parler` dans le conteneur ; l'assemblage passe sans erreur.
+2. Ouvrir l'aperçu, écouter la scène.
+   - Attendu : la bouche bouge pendant les mots, se ferme entre deux mots proches, revient à celle de l'expression dans les silences longs ; rien ne bouge en dehors de la voix.
+3. Demander la même chose sur une scène sans voix.
+   - Attendu : erreur claire « la scène n'a pas de voix ».
 
 ## À me rapporter
 

@@ -81,6 +81,7 @@ function etatOutils(options = {}) {
   };
 
   return {
+    pulseMotion: { ok: true, version: require('../.claude-plugin/plugin.json').version },
     node: { ok: majeure >= 20, version: process.versions.node },
     navigateur,
     ffmpeg,

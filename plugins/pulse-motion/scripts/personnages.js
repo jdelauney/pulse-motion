@@ -8,9 +8,12 @@
  *   node scripts/personnages.js planche <nom> [--type pose|clip] [--vues 0,45,90] [--images 8] [--gabarit standard]
  *                                  [--dossier <d>] [--sortie <fichier.png>] [--ouvrir]   PNG des vignettes
  *
- *   node scripts/personnages.js atelier [<nom>] [--dessin <d>] [--bibliotheque] [--dossier <d>] [--port 4321]
+ *   node scripts/personnages.js atelier [<nom>] [--dessin <d>] [--decoupe <nom>] [--bibliotheque] [--dossier <d>] [--port 4321]
  *        atelier des personnages (page de l'aperçu) ; dans une vidéo : enregistre dans ses personnages/ ;
  *        --bibliotheque : enregistre dans la bibliothèque du plugin ; le processus reste ouvert s'il sert l'aperçu
+ *   node scripts/personnages.js analyser <fichier.svg> [--dossier <d>] [--sortie <fichier.png>]   formes d'une illustration, PNG annoté
+ *   node scripts/personnages.js decouper <nom> [--dossier <d>]                         découpe (personnages/decoupes/<nom>.json) -> dessin
+ *   node scripts/personnages.js renommer-couleur <dessin> <ancien> <nouveau> [--dossier <d>]   nom d'une couleur d'un dessin
  * --dossier : dossier de la vidéo (par défaut le dossier courant) ; ses fichiers personnages/ l'emportent sur la bibliothèque.
  */
 const fs = require('node:fs');
@@ -19,18 +22,24 @@ const path = require('node:path');
 const P = require('./lib/personnages.js');
 
 const USAGE_PLANCHE = 'Usage : pulse-motion personnages planche <nom> [--type pose|clip] [--dessin <dessin>] [--vues 0,45,90] [--images 1 à 16] [--gabarit standard] [--dossier <d>] [--sortie <fichier.png>] [--ouvrir]\n        pulse-motion personnages planche --dessin <dessin> --visage [--vues 0,90] [--dossier <d>] [--sortie <fichier.png>] [--ouvrir]';
+const USAGE_DECOUPE = [
+  'Usage : pulse-motion personnages analyser <fichier.svg> [--dossier <d>] [--sortie <fichier.png>]',
+  '        pulse-motion personnages decouper <nom> [--dossier <d>]',
+  '        pulse-motion personnages renommer-couleur <dessin> <ancien> <nouveau> [--dossier <d>]',
+].join('\n');
 const USAGE = [
   'Usage : pulse-motion personnages liste [--dossier <d>]',
-  '        pulse-motion personnages afficher <nom> [--type pose|clip|gabarit|dessin|expression] [--dossier <d>]',
+  '        pulse-motion personnages afficher <nom> [--type pose|clip|gabarit|dessin|expression|decoupe] [--dossier <d>]',
   '        pulse-motion personnages verifier [--dossier <d>]',
   `        ${USAGE_PLANCHE.slice('Usage : '.length)}`,
-  '        pulse-motion personnages atelier [<nom>] [--dessin <d>] [--bibliotheque] [--dossier <d>] [--port 4321]',
+  `        ${USAGE_DECOUPE.slice('Usage : '.length)}`,
+  '        pulse-motion personnages atelier [<nom>] [--dessin <d>] [--decoupe <nom>] [--bibliotheque] [--dossier <d>] [--port 4321]',
 ].join('\n');
-const USAGE_ATELIER = 'Usage : pulse-motion personnages atelier [<nom>] [--dessin <d>] [--bibliotheque] [--dossier <d>] [--port 4321]';
+const USAGE_ATELIER = 'Usage : pulse-motion personnages atelier [<nom>] [--dessin <d>] [--decoupe <nom>] [--bibliotheque] [--dossier <d>] [--port 4321]';
 
 
 // Options suivies d'une valeur (les autres, comme --ouvrir ou --bibliotheque, sont de simples drapeaux).
-const AVEC_VALEUR = ['--dessin', '--dossier', '--type', '--vues', '--images', '--gabarit', '--sortie', '--port'];
+const AVEC_VALEUR = ['--decoupe', '--dessin', '--dossier', '--type', '--vues', '--images', '--gabarit', '--sortie', '--port'];
 
 function options(args) {
   const valeur = (nom) => { const i = args.indexOf(nom); return i >= 0 ? args[i + 1] : undefined; };
@@ -52,8 +61,8 @@ function dossierNomme(nom) {
 }
 
 /** Ouvre l'atelier dans l'aperçu (rouvert s'il tourne déjà). -> { url, deja, cible } */
-async function lancerAtelierPersonnages({ dossier = '.', nom = null, dessin = null, bibliotheque = false, port = 4321, lancer, ouvrirUrl } = {}) {
-  for (const n of [nom, dessin]) if (n !== null && !NOM.test(n)) throw new Error(`Nom « ${n} » invalide (minuscules, chiffres, tirets ; exemple : marche).`);
+async function lancerAtelierPersonnages({ dossier = '.', nom = null, dessin = null, decoupe = null, bibliotheque = false, port = 4321, lancer, ouvrirUrl } = {}) {
+  for (const n of [nom, dessin, decoupe]) if (n !== null && !NOM.test(n)) throw new Error(`Nom « ${n} » invalide (minuscules, chiffres, tirets ; exemple : marche).`);
   const A = require('./apercu.js');
   const projet = !bibliotheque && fs.existsSync(path.join(dossier, 'deroule.json'));
   const cible = bibliotheque ? dossierNomme('pm-personnages-bibliotheque') : projet ? dossier : dossierNomme('pm-personnages');
@@ -64,7 +73,8 @@ async function lancerAtelierPersonnages({ dossier = '.', nom = null, dessin = nu
   if (nom) params.set('nom', nom);
   if (dessin) params.set('dessin', dessin);
   const q = params.toString();
-  const adresse = `${url}_pm/personnages${q ? `?${q}` : ''}`;
+  // --decoupe : la page de découpe de ce personnage (illustration, pivots, aperçu).
+  const adresse = decoupe ? `${url}_pm/personnages/decoupe?nom=${encodeURIComponent(decoupe)}` : `${url}_pm/personnages${q ? `?${q}` : ''}`;
   (ouvrirUrl || A.ouvrirNavigateur)(adresse);
   return { url: adresse, deja, cible: bibliotheque ? 'bibliotheque' : projet ? 'video' : null };
 }
@@ -89,8 +99,8 @@ async function executer(args, { bibliotheque } = {}) {
     const l = lu();
     const nom = o.libres[0];
     const type = o.valeur('--type');
-    if (type && !P.TYPES[type]) return { code: 2, sortie: '', erreur: `Type « ${type} » inconnu (pose, clip, gabarit, dessin ou expression).` };
-    for (const t of type ? [type] : ['clip', 'pose', 'gabarit', 'dessin', 'expression']) {
+    if (type && !P.TYPES[type]) return { code: 2, sortie: '', erreur: `Type « ${type} » inconnu (pose, clip, gabarit, dessin, expression ou decoupe).` };
+    for (const t of type ? [type] : ['clip', 'pose', 'gabarit', 'dessin', 'expression', 'decoupe']) {
       const objet = Object.hasOwn(l[P.TYPES[t]], nom) ? l[P.TYPES[t]][nom] : null;
       if (objet) return { code: 0, sortie: P.serialiser(t, objet).trimEnd(), erreur: '' };
     }
@@ -149,13 +159,54 @@ async function executer(args, { bibliotheque } = {}) {
     const port = o.valeur('--port') === undefined ? 4321 : parseInt(o.valeur('--port'), 10);
     if (o.libres.length > 1 || !Number.isInteger(port) || (o.libres[0] !== undefined && !NOM.test(o.libres[0]))) return { code: 2, sortie: '', erreur: USAGE_ATELIER };
     try {
-      const r = await lancerAtelierPersonnages({ dossier: o.valeur('--dossier') || '.', nom: o.libres[0] || null, dessin: o.valeur('--dessin') || null, bibliotheque: o.drapeau('--bibliotheque'), port });
+      const r = await lancerAtelierPersonnages({ dossier: o.valeur('--dossier') || '.', nom: o.libres[0] || null, dessin: o.valeur('--dessin') || null, decoupe: o.valeur('--decoupe') || null, bibliotheque: o.drapeau('--bibliotheque'), port });
       const lignes = [`Atelier des personnages : ${r.url}`];
       if (r.cible === null) lignes.push('Aucune vidéo dans ce dossier : on peut poser et animer, mais pour enregistrer, lancez l\'atelier depuis le dossier d\'une vidéo.');
       if (r.cible === 'bibliotheque') lignes.push('Mode bibliothèque : les enregistrements vont dans la bibliothèque du plugin.');
       return { code: 0, sortie: lignes.join('\n'), erreur: '', garder: !r.deja };
     } catch (e) {
       return { code: 1, sortie: '', erreur: e.message };
+    }
+  }
+  if (sous === 'analyser' || sous === 'decouper' || sous === 'renommer-couleur') {
+    const D = require('./lib/decoupe-personnages.js');
+    const dossier = o.valeur('--dossier') || '.';
+    const attendus = { analyser: 1, decouper: 1, 'renommer-couleur': 3 }[sous];
+    if (o.libres.length !== attendus) return { code: 2, sortie: '', erreur: USAGE_DECOUPE };
+    try {
+      if (sous === 'analyser') {
+        const fichier = path.resolve(dossier, o.libres[0]);
+        const base = path.basename(fichier).replace(/\.svg$/i, '');
+        const sortie = path.resolve(o.valeur('--sortie') || path.join(fs.existsSync(path.join(dossier, 'deroule.json')) ? path.join(dossier, 'sortie', 'personnages') : path.join(os.tmpdir(), 'pm-personnages'), `${base}-analyse.png`));
+        const r = await D.analyserFichier({ fichier, sortie });
+        return { code: 0, sortie: JSON.stringify(Object.assign({ png: r.png }, r.analyse), null, 2), erreur: '' };
+      }
+      if (sous === 'decouper') {
+        const r = await D.decouperVideo({ dossier, nom: o.libres[0] });
+        const lignes = [`Dessin découpé : ${path.relative(dossier, r.fichier).split(path.sep).join('/')} (échelle ${r.echelle}).`,
+          `Couleurs : ${Object.entries(r.couleurs).map(([n, c]) => `${n} ${c}`).join(', ') || 'aucune'}.`];
+        if (r.profilCopie) lignes.push('La vue découpée sert aussi de profil (aucun profil dessiné).');
+        if (r.signalees.length) lignes.push(`Formes laissées de côté (ni dans un os, ni dans le visage, ni ignorées) : ${r.signalees.join(', ')}.`);
+        return { code: 0, sortie: lignes.join('\n'), erreur: '' };
+      }
+      const [nom, ancien, nouveau] = o.libres;
+      if (!fs.existsSync(path.join(dossier, 'deroule.json'))) return { code: 1, sortie: '', erreur: 'Renommer une couleur : ouvrez le dossier d\'une vidéo.' };
+      const l = lu();
+      if (!Object.hasOwn(l.dessins, nom)) return { code: 1, sortie: '', erreur: `Dessin « ${nom} » introuvable (dessins : ${Object.keys(l.dessins).join(', ') || 'aucun'}).` };
+      const dessin = D.renommerCouleur(l.dessins[nom], ancien, nouveau);
+      require('./historique.js').sauvegarder(dossier);
+      const cible = path.join(dossier, 'personnages');
+      P.enregistrer({ dossier: cible, type: 'dessin', nom, objet: dessin, lu: l });
+      // La découpe garde le nom choisi pour cette couleur : une nouvelle découpe le reprend.
+      if (Object.hasOwn(l.decoupes, nom) && l.sources.decoupes[nom] === 'video') {
+        const d = JSON.parse(JSON.stringify(l.decoupes[nom]));
+        d.couleurs = Object.assign({}, d.couleurs || {}, { [dessin.couleurs[nouveau]]: nouveau });
+        P.enregistrer({ dossier: cible, type: 'decoupe', nom, objet: d, lu: l });
+      }
+      return { code: 0, sortie: `Couleur « ${ancien} » renommée « ${nouveau} » dans le dessin « ${nom} ».`, erreur: '' };
+    } catch (e) {
+      if (e.decoupe || e.erreurs) return { code: 1, sortie: '', erreur: e.message };
+      throw e;
     }
   }
   return { code: 2, sortie: '', erreur: USAGE };

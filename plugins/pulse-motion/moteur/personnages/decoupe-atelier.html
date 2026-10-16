@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Découpe d'un personnage – Pulse Motion</title>
+<link rel="stylesheet" href="/_pm/personnages/atelier.css">
+<style>
+  .decoupe { display: grid; grid-template-columns: minmax(0, 1fr) 300px minmax(0, 1fr); gap: 16px; padding: 16px 24px 32px; }
+  .source { position: relative; border: 1px solid var(--trait); border-radius: 16px; background: #FFFFFF; overflow: hidden; }
+  .source iframe { display: block; border: 0; width: 100%; }
+  #calque { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  #calque .pivot { pointer-events: all; cursor: grab; touch-action: none; }
+  #os button { width: 100%; text-align: left; display: flex; gap: 8px; align-items: center; margin: 2px 0; }
+  #os button[aria-pressed="true"] { outline: 2px solid var(--accent); }
+  .pastille { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+  #apercu { display: block; width: 100%; height: auto; border: 1px solid var(--trait); border-radius: 16px; background: var(--surface); }
+  #signalees { color: var(--doux); font-size: 13px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Découpe d'un personnage</h1>
+  <p id="cible" role="note"></p>
+</header>
+<main class="decoupe">
+  <section aria-label="Illustration d'origine">
+    <div class="source"><iframe id="source" sandbox="allow-same-origin" title="Illustration d'origine"></iframe><svg id="calque" aria-hidden="true"></svg></div>
+    <p class="aide">Cliquer une forme, puis un os à droite pour l'y ranger. Glisser un point pour déplacer un pivot (le rond plein est l'articulation de départ, le rond vide le bout de l'os).</p>
+  </section>
+  <aside class="panneau">
+    <fieldset><legend>Forme choisie</legend><p id="choix" class="aide">aucune</p></fieldset>
+    <fieldset><legend>Os</legend><div id="os"></div></fieldset>
+    <div class="barre">
+      <button id="annuler">Annuler</button>
+      <button id="decouper">Découper</button>
+      <button id="enregistrer" class="principal">Enregistrer</button>
+    </div>
+    <p id="message" role="status"></p>
+    <p id="signalees"></p>
+  </aside>
+  <section aria-label="Personnage découpé">
+    <svg id="apercu" viewBox="0 0 500 560"><rect y="500" width="500" height="60" class="sol"/><g id="perso"></g></svg>
+    <div class="barre" role="group" aria-label="Vue">
+      <button data-vue="0">Profil</button><button data-vue="45">3/4</button><button data-vue="90">Face</button><button data-vue="180">Profil gauche</button>
+      <label><input id="lecture" type="checkbox" checked> Marche</label>
+    </div>
+  </section>
+</main>
+<script src="/_pm/personnages/modules/courbes.js"></script>
+<script src="/_pm/personnages/modules/squelette.js"></script>
+<script src="/_pm/personnages/modules/clips.js"></script>
+<script src="/_pm/personnages/modules/habillage-pieces.js"></script>
+<script src="/_pm/personnages/modules/personnages/decoupe.js"></script>
+<script type="module" src="/_pm/personnages/decoupe-atelier.mjs"></script>
+</body>
+</html>
