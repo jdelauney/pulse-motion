@@ -235,8 +235,8 @@ test("effet minuté en temps musicaux : même compilation qu'en secondes", () =>
 
 test('effet fait uniquement de structures sans data-dur : compilé sur la durée de la scène ; avec data-dur, ou effet émis : règle commune', () => {
   const dir = copierProjet('projet-effets');
-  const r = preparerEffets('<section data-scene="s"><div data-effet="drapeau"></div><div data-effet="drapeau" data-dur="2"></div><div data-effet="simple"></div></section>',
-    { scene: 's', projet: dir, bibliotheque: EFFETS, charte: {}, dureeScene: 4 });
+  const r = preparerEffets('<section data-scene="s"><div data-effet="drapeau"></div><div data-effet="drapeau" data-dur="2"></div><div data-effet="etincelles"></div></section>',
+    { scene: 's', projet: dir, bibliotheque: path.join(__dirname, '..', 'effets'), charte: { primaire: '#0a6cff', accent: '#ff8a00', texte: '#1a1a1a', fond: '#ffffff' }, dureeScene: 4 });
   assert.deepEqual(r.erreurs, []);
   const [sans, avec, simple] = r.effets.map((e) => e.effet);
   assert.equal(sans.duree, 4, 'drapeau sans data-dur : jusqu\'à la fin de la scène (4 s)');
