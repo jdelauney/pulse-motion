@@ -70,6 +70,9 @@ function donneeShader(src, extra) {
     duree: extra.duree === undefined ? null : extra.duree,
     code: src.code, parametres: src.json.parametres || {}, debord: src.json.debord || 0,
     valeurs: extra.valeurs, image: extra.image || null,
+    // Son réactif (P7) : piste lue par iSon et la texture du son ; pistes : [] si le code ne lit pas le son.
+    piste: src.json.piste || 'musique',
+    pistes: S.pistesShader(src.json, src.code),
   };
 }
 
