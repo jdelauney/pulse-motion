@@ -290,7 +290,7 @@ Un projet, une scène par séquence (`scenes/01-generique.html` … `scenes/07-p
 | Besoin du scénario | Outil pulse-motion |
 | --- | --- |
 | Format carré, 25 images/s | `"format": { "ratio": "1:1", "ips": 25 }` |
-| Tout calé sur la musique | `"tempo": { "bpm": 120 }` ; temps écrits `data-start="4t"`, pas de marche en `var(--pm-temps)` |
+| Tout calé sur la musique | musique composée à 120 bpm (`"musique": { "generee": "entrainant", "tempo": 120 }`), qui se cale sur l'image : une section par séquence, pile à son début ; humeur par séquence (`scenes[].musique` : `silence` pour la 4, `intense` pour la 5, `calme` pour la 6) ; gestes calés en temps `data-start="4t"` |
 | « PULSE-MOTION » en onde, logo final | `data-lettres="onde" data-pas="0.02"` + `class="pm-degrade"` (traînée en `--pm-degrade`) |
 | « VIBE CONNECTION » qui tombe lettre par lettre | `data-lettres="chute" data-pas="0.05"` + `class="pm-degrade pm-contour"` |
 | Cartons en frappe, en fondu flouté | `data-lettres="frappe" data-pas="0.03"`, `data-mots="flou"` |
