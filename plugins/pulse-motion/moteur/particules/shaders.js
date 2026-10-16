@@ -10,6 +10,7 @@
  *       iChannel0–2 (null : image du shader pour iChannel2, transparent sinon) ; iChannel3 : bruit ; genre : 'fond' | 'composition'.
  *       Un shader n'est dessiné qu'une fois par soumission (son uniforme d'entrées est réécrit à chaque dessin).
  *   .image(uri) -> Promise<vue>             image (data:) en texture sRGB prémultipliée, gardée par URI
+ *   .ecrireSon(piste, spectre, onde), .vueSon(piste)   texture du son (P7), liaison 8 (iSonTexture)
  *   .vueBruit, .vueVide                     texture de bruit 256 × 256 (P.texelsBruit), texture transparente 1 × 1
  * P.pcg(v), P.texelsBruit() -> Uint8Array   hachage PCG (comme le WGSL) ; texels du bruit, les mêmes à chaque chargement
  * Hachage PCG d'après M. O'Neill (pcg-random.org, domaine public).
@@ -57,6 +58,7 @@
           texture(2), texture(3), texture(4), texture(5),
           { binding: 6, visibility: F, sampler: { type: 'filtering' } },
           { binding: 7, visibility: F, sampler: { type: 'filtering' } },
+          texture(8),
         ],
       });
       this.layoutPipeline = device.createPipelineLayout({ bindGroupLayouts: [this.layout] });
@@ -69,6 +71,7 @@
       device.queue.writeTexture({ texture: this.bruit }, texelsBruit(), { bytesPerRow: COTE_BRUIT * 4 }, [COTE_BRUIT, COTE_BRUIT]);
       this.vueBruit = this.bruit.createView();
       this.images = new Map();
+      this.sons = new Map();
     }
 
     async image(uri) {
@@ -85,6 +88,23 @@
       this.images.set(uri, vue);
       return vue;
     }
+
+    /** Son réactif (P7) : texture r8unorm 512 × 2 d'une piste (ligne 0 spectre, ligne 1 onde), créée à la première écriture. */
+    ecrireSon(piste, spectre, onde) {
+      const { device } = this;
+      let s = this.sons.get(piste);
+      if (!s) {
+        const texture = device.createTexture({ size: [512, 2], format: 'r8unorm', usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST });
+        s = { texture, vue: texture.createView() };
+        this.sons.set(piste, s);
+      }
+      const texels = new Uint8Array(1024);
+      texels.set(spectre, 0);
+      texels.set(onde, 512);
+      device.queue.writeTexture({ texture: s.texture }, texels, { bytesPerRow: 512 }, [512, 2]);
+    }
+
+    vueSon(piste) { const s = this.sons.get(piste); return s ? s.vue : this.vueVide; }
 
     async compiler(donnee) {
       const S = M.codeShader;
@@ -145,6 +165,7 @@
           { binding: 5, resource: this.vueBruit },
           { binding: 6, resource: this.lisse },
           { binding: 7, resource: this.repete },
+          { binding: 8, resource: this.vueSon(shader.donnee.piste || 'musique') },
         ],
       });
       passe.setPipeline(shader.pipelines[genre]);
