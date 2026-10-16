@@ -9,9 +9,9 @@
  *   .dessiner(passe, shader, entrees, canaux, genre)   entrees : objet de M.codeShader.ecrireEntrees ; canaux : [vue | null] pour
  *       iChannel0–2 (null : image du shader pour iChannel2, transparent sinon) ; iChannel3 : bruit ; genre : 'fond' | 'composition'.
  *       Un shader n'est dessiné qu'une fois par soumission (son uniforme d'entrées est réécrit à chaque dessin).
- *   .image(uri) -> Promise<vue>             image (data:) en texture sRGB prémultipliée, gardée par URI
+ *   .image(uri) -> Promise<vue>             image (data:) en texture rgba8unorm-srgb, linéaire prémultipliée, gardée par URI
  *   .copierImage(source, porteur, l, h)     image du navigateur (canvas, ImageBitmap : sRGB, alpha droit ou prémultiplié)
- *       copiée dans porteur.texture (rgba8unorm-srgb, l × h) en linéaire prémultiplié ; .oublierBrut(porteur)
+ *       copiée dans porteur.texture (rgba8unorm-srgb, l × h) en linéaire prémultiplié ; .oublierBrut(porteur) (P.copierImage, gpu.js)
  *   .ecrireSon(piste, spectre, onde), .vueSon(piste)   texture du son (P7), liaison 8 (iSonTexture)
  * Multipasse (P7) : P.etatMultipasse (planificateur de P1) ; .avancerMultipasse(shader, o) amène les tampons d'un fond
  * (rgba16float, ping-pong, une soumission par pas, instantanés par copie de textures) à l'état ⌊τ × pps⌋ ; la passe image
@@ -45,30 +45,6 @@
     '}',
     '',
   ].join('\n');
-
-  // Conversion d'une image du navigateur (P6, reliquats) : copyExternalImageToTexture prémultiplie dans l'espace encodé
-  // (sRGB(c)·a), ce qui, lu en linéaire, assombrit les bords semi-transparents. L'image est donc copiée telle quelle (alpha
-  // droit) dans une texture brute rgba8unorm, puis réécrite en linéaire prémultiplié (linéaire(c)·a) dans la texture sRGB.
-  // Une image opaque garde exactement ses octets (décodage puis réencodage sRGB).
-  const CONVERSION = /* wgsl */ `
-@group(0) @binding(0) var brut: texture_2d<f32>;
-
-@vertex
-fn vs(@builtin(vertex_index) i: u32) -> @builtin(position) vec4f {
-  var p = array<vec2f, 3>(vec2f(-1.0, -3.0), vec2f(-1.0, 1.0), vec2f(3.0, 1.0));
-  return vec4f(p[i], 0.0, 1.0);
-}
-
-fn versLineaire(c: vec3f) -> vec3f {
-  return select(pow((c + 0.055) / 1.055, vec3f(2.4)), c / 12.92, c <= vec3f(0.04045));
-}
-
-@fragment
-fn fs(@builtin(position) pos: vec4f) -> @location(0) vec4f {
-  let c = textureLoad(brut, vec2i(pos.xy), 0);
-  return vec4f(versLineaire(c.rgb) * c.a, c.a);
-}
-`;
 
   function pcg(v) {
     const s = (Math.imul(v >>> 0, 747796405) + 2891336453) >>> 0;
@@ -160,37 +136,13 @@ fn fs(@builtin(position) pos: vec4f) -> @location(0) vec4f {
       return vue;
     }
 
-    /** Image du navigateur copiée dans porteur.texture (rgba8unorm-srgb, largeur × hauteur) en linéaire prémultiplié, par
-     *  la texture brute porteur.brut (rgba8unorm, gardée pour les copies suivantes, recréée si sa taille change). */
+    /** Image du navigateur en linéaire prémultiplié dans porteur.texture : P.copierImage (gpu.js). */
     copierImage(source, porteur, largeur, hauteur) {
-      const { device } = this;
-      const T = GPUTextureUsage;
-      if (!this.conversion) {
-        const module = device.createShaderModule({ label: 'pm-conversion', code: CONVERSION });
-        this.conversion = device.createRenderPipeline({
-          layout: 'auto', vertex: { module, entryPoint: 'vs' },
-          fragment: { module, entryPoint: 'fs', targets: [{ format: 'rgba8unorm-srgb' }] },
-        });
-      }
-      let b = porteur.brut;
-      if (!b || b.largeur !== largeur || b.hauteur !== hauteur) {
-        if (b) b.texture.destroy();
-        const texture = device.createTexture({ size: [largeur, hauteur], format: 'rgba8unorm', usage: T.TEXTURE_BINDING | T.COPY_DST | T.RENDER_ATTACHMENT });
-        b = porteur.brut = { texture, largeur, hauteur };
-        b.groupe = device.createBindGroup({ layout: this.conversion.getBindGroupLayout(0), entries: [{ binding: 0, resource: texture.createView() }] });
-      }
-      device.queue.copyExternalImageToTexture({ source }, { texture: b.texture, premultipliedAlpha: false }, [largeur, hauteur]);
-      const enc = device.createCommandEncoder();
-      const p = enc.beginRenderPass({ colorAttachments: [{ view: porteur.texture.createView(), loadOp: 'clear', clearValue: [0, 0, 0, 0], storeOp: 'store' }] });
-      p.setPipeline(this.conversion);
-      p.setBindGroup(0, b.groupe);
-      p.draw(3);
-      p.end();
-      device.queue.submit([enc.finish()]);
+      P.copierImage(this.device, source, porteur, largeur, hauteur);
     }
 
     oublierBrut(porteur) {
-      if (porteur && porteur.brut) { try { porteur.brut.texture.destroy(); } catch (e) { /* device déjà perdu */ } porteur.brut = null; }
+      P.oublierBrut(porteur);
     }
 
     /** Son réactif (P7) : texture r8unorm 512 × 2 d'une piste (ligne 0 spectre, ligne 1 onde), créée à la première écriture. */
