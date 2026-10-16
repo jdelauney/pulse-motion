@@ -192,7 +192,7 @@ function creerRoutesAtelier(projet, { dossierStyles, bibliotheque = BIBLIOTHEQUE
     return {
       ordre: b.ordre, nom, calque: (a['data-calque'] || 'avant').trim(),
       ancre: a['data-ancre'] ? a['data-ancre'].trim().replace(/^#/, '') : null,
-      reglages, graine, graineEcrite, dur, durScene, recette: resolue, erreur,
+      reglages, graine, graineEcrite, dur, ...(durScene ? { durScene } : {}), recette: resolue, erreur,
     };
   }
 
