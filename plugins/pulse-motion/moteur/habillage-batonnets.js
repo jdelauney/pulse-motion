@@ -18,7 +18,7 @@
   var NS = 'http://www.w3.org/2000/svg';
   var DEG = Math.PI / 180;
   var SEUIL_LOIN = -6;
-  var OEIL_R = 30, OEIL_ECART = 26, OEIL_TRICHE = 32;
+  var OEIL_R = 30, OEIL_ECART = 30, OEIL_TRICHE = 80;
   var MECHES = [[1, -60, 24], [6, 58, 23], [2, -36, 32], [5, 34, 30], [3, -13, 36], [4, 11, 34]];
 
   var CSS = [
@@ -37,8 +37,8 @@
 
   function trait(nom, classe) { return '<line class="pm-perso-membre' + (classe ? ' ' + classe : '') + '" data-os="' + nom + '"/>'; }
   function oeil(s) {
-    return '<g data-oeil="' + s + '"><ellipse class="pm-perso-oeil"/><g data-pupille><circle class="pm-perso-pupille" r="6"/>' +
-      '<circle class="pm-perso-reflet" cx="-2" cy="-2.5" r="1.8"/></g></g>';
+    return '<g data-oeil="' + s + '"><ellipse class="pm-perso-oeil"/><g data-pupille><circle class="pm-perso-pupille" r="5"/>' +
+      '<circle class="pm-perso-reflet" cx="-1.6" cy="-2" r="1.5"/></g></g>';
   }
   function meche(m) {
     var h = m[2];
@@ -132,13 +132,13 @@
         var pos = T.vers([OEIL_R * k * Math.cos(a), -6 * k + p.yeuxY, OEIL_R * k * Math.sin(a)]);
         var nd = T.direction([Math.cos(a), 0, Math.sin(a)])[2];
         var w = 0.55 + 0.45 * Math.max(0, nd);
-        var rx = 13 * k * p.tailleYeux * w, ry = 15 * k * p.tailleYeux * p.paupieres;
+        var rx = 10.5 * k * p.tailleYeux * w, ry = 12.5 * k * p.tailleYeux * p.paupieres;
         E.el.setAttribute('rx', r2(rx)); E.el.setAttribute('ry', r2(ry));
         E.g.setAttribute('transform', 'translate(' + r2(pos[0]) + ' ' + r2(pos[1]) + ') rotate(' + r2(T.roulis) + ')');
         E.g.style.display = nd < -0.35 ? 'none' : '';
         var px = fwd[0] * 3.5 * k + p.regardX * w, py = fwd[1] * 3.5 * k + p.regardY;
         var sp = k * p.taillePupilles;
-        var lim = Math.max(0, Math.min(rx, ry) - 6 * sp), d = Math.hypot(px, py);
+        var lim = Math.max(0, Math.min(rx, ry) - 5 * sp), d = Math.hypot(px, py);
         if (d > lim) { px *= lim / d; py *= lim / d; }
         E.pupille.setAttribute('transform', 'translate(' + r2(px) + ' ' + r2(py) + ') scale(' + r2(sp) + ')');
         E.pupille.style.display = p.paupieres < 0.25 ? 'none' : '';
