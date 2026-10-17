@@ -47,11 +47,11 @@
   ],
   "visage": {
     "oeil": {
-      "blanc": "<ellipse rx='13' ry='15' fill='var(--oeil)' stroke='var(--trait)' stroke-width='3'/>",
-      "pupille": "<circle r='6' fill='var(--pupille)'/><circle cx='-2' cy='-2.5' r='1.8' fill='#FFFFFF'/>",
-      "paupiere": "<rect x='-16' y='-18' width='32' height='36' fill='var(--corps)'/>",
-      "course": 5,
-      "hauteur": 36
+      "blanc": "<ellipse rx='10.5' ry='12.5' fill='var(--oeil)' stroke='var(--trait)' stroke-width='3'/>",
+      "pupille": "<circle r='5' fill='var(--pupille)'/><circle cx='-1.6' cy='-2' r='1.5' fill='#FFFFFF'/>",
+      "paupiere": "<rect x='-13' y='-15' width='26' height='30' fill='var(--corps)'/>",
+      "course": 4,
+      "hauteur": 30
     },
     "sourcil": "<path d='M -9 2 Q 0 -3 9 2' fill='none' stroke='var(--trait)' stroke-width='3.5' stroke-linecap='round'/>",
     "bouches": {
@@ -105,73 +105,73 @@
       "profil": {
         "yeux": [
           [
-            16,
+            -10,
             -6
           ],
           [
-            30,
+            18,
             -6
           ]
         ],
         "sourcils": [
           [
-            16,
+            -10,
             -24
           ],
           [
-            30,
+            18,
             -24
           ]
         ],
         "bouche": [
-          24,
+          10,
           22
         ]
       },
       "troisQuarts": {
         "yeux": [
           [
-            2,
+            -12,
             -6
           ],
           [
-            24,
+            16,
             -6
           ]
         ],
         "sourcils": [
           [
-            2,
+            -12,
             -24
           ],
           [
-            24,
+            16,
             -24
           ]
         ],
         "bouche": [
-          14,
+          4,
           22
         ]
       },
       "face": {
         "yeux": [
           [
-            -13,
+            -15,
             -6
           ],
           [
-            13,
+            15,
             -6
           ]
         ],
         "sourcils": [
           [
-            -13,
+            -15,
             -24
           ],
           [
-            13,
+            15,
             -24
           ]
         ],
