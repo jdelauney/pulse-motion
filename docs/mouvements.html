@@ -1,0 +1,951 @@
+<!doctype html>
+<html lang="fr" data-racine="">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mouvements – Wiki Pulse Motion</title>
+<meta name="description" content="La galerie des mouvements de Pulse Motion : 68 noms du métier du motion design (pop-in, révélé par masque, whip pan, zoom traversant…), chacun en image, avec la phrase pour le demander à Claude.">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/animations.css">
+<script src="js/donnees.js" defer></script>
+<script src="js/gabarit.js" defer></script>
+<script src="js/galerie.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<article class="typographie galerie">
+
+<header class="entete-page">
+<p class="pastille">Le dictionnaire de mouvements</p>
+<h1>Mouvements</h1>
+<p class="chapo">Le nom de chaque mouvement, pour le demander à Claude : « un pop-in sur le titre », « un whip pan entre la scène 2 et la 3 », ou simplement son numéro : « #001 ». Chaque aperçu est rendu par Pulse Motion lui-même.</p>
+</header>
+
+<section id="mode-emploi">
+<h2>Comment s'en servir</h2>
+<ol>
+<li><strong>Regardez</strong> : les aperçus jouent quand ils sont à l'écran.</li>
+<li><strong>Ouvrez la fiche</strong> d'un mouvement et copiez la phrase pour le demander.</li>
+<li><strong>Donnez-la</strong> à <a href="commandes/retoucher.html"><code>/pulse-motion:retoucher</code></a> sur une vidéo en cours, ou glissez-la dans votre demande à <a href="commandes/creer.html"><code>/pulse-motion:creer</code></a>.</li>
+</ol>
+<p>Sur votre ordinateur, vous pouvez aussi choisir en regardant : dites « montre-moi les mouvements », cochez ceux qui vous plaisent dans la page qui s'ouvre, puis cliquez sur « Envoyer à Claude ».</p>
+</section>
+
+<div class="galerie-outils" data-galerie-outils hidden>
+<label class="galerie-recherche">Chercher <input type="search" data-galerie-recherche placeholder="pop-in, masque, #042…" autocomplete="off"></label>
+<div class="galerie-filtres" role="group" aria-label="Catégories" data-galerie-filtres></div>
+<button class="bouton" type="button" data-galerie-pause>Tout mettre en pause</button>
+<p class="galerie-compte" aria-live="polite" data-galerie-compte></p>
+</div>
+
+<!-- galerie:mouvements -->
+<section class="categorie-mouvements" id="categorie-entrees" data-categorie="entrees">
+<h2>Entrées et sorties</h2>
+<div class="grille-mouvements">
+<article class="carte-mouvement" id="m001" data-categorie="entrees" data-mots="001 #001 apparition rebondie pop in pop in pop apparition rebond icone badge surgir">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/001.jpg" aria-label="Aperçu : Apparition rebondie"><source src="medias/galerie/mouvements/001.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#001</p>
+<h3 class="carte-mouvement-nom">Apparition rebondie <span lang="en">Pop-in</span></h3>
+<p class="carte-mouvement-sens">Grandit depuis rien, dépasse un peu sa taille, puis se pose</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais entrer le logo en pop-in, en 0,45 s, avec un léger rebond.</code></pre>
+<p><strong>Quand :</strong> Une icône, un badge, un chiffre qui doit attirer l'œil sans brusquer.</p>
+<p><strong>Recette :</strong> <code>&lt;h2 data-texte=&quot;titre&quot; class=&quot;pm-m-pop&quot; data-start=&quot;0.3&quot;&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#001</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m002" data-categorie="entrees" data-mots="002 #002 fondu montant fade up fondu montant fondu monte fade apparition texte sobre">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/002.jpg" aria-label="Aperçu : Fondu montant"><source src="medias/galerie/mouvements/002.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#002</p>
+<h3 class="carte-mouvement-nom">Fondu montant <span lang="en">Fade up</span></h3>
+<p class="carte-mouvement-sens">Monte de quelques hauteurs de ligne en apparaissant</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais monter le sous-titre en fondu, sur 0,6 s, depuis 4 % de la hauteur.</code></pre>
+<p><strong>Quand :</strong> L'entrée la plus neutre, pour presque tous les textes.</p>
+<p><strong>Recette :</strong> <code>&lt;h2 data-texte=&quot;titre&quot; class=&quot;pm-m-monte&quot; data-start=&quot;0.3&quot;&gt;&lt;/h2&gt;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m003" data-categorie="entrees" data-mots="003 #003 glisse lateral slide in glisse glisse slide gauche droite lateral entree">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/003.jpg" aria-label="Aperçu : Glissé latéral"><source src="medias/galerie/mouvements/003.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#003</p>
+<h3 class="carte-mouvement-nom">Glissé latéral <span lang="en">Slide in</span></h3>
+<p class="carte-mouvement-sens">Arrive sur le côté en apparaissant</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais glisser l'image depuis la gauche, en 0,6 s, sur 10 % de la hauteur.</code></pre>
+<p><strong>Quand :</strong> Une image ou un bloc qui vient compléter ce qui est déjà là.</p>
+<p><strong>Recette :</strong> <code>&lt;h2 data-texte=&quot;titre&quot; class=&quot;pm-m-glisse-gauche&quot; data-start=&quot;0.3&quot;&gt;&lt;/h2&gt;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m004" data-categorie="entrees" data-mots="004 #004 zoom d entree scale in zoom entree zoom scale agrandir apparition carte">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/004.jpg" aria-label="Aperçu : Zoom d'entrée"><source src="medias/galerie/mouvements/004.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#004</p>
+<h3 class="carte-mouvement-nom">Zoom d'entrée <span lang="en">Scale in</span></h3>
+<p class="carte-mouvement-sens">Part un peu plus petit et grandit jusqu'à sa taille en apparaissant</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais apparaître la carte en zoom, en 0,6 s, depuis 80 % de sa taille.</code></pre>
+<p><strong>Quand :</strong> Une carte, une photo, un encadré.</p>
+<p><strong>Recette :</strong> <code>&lt;h2 data-texte=&quot;titre&quot; class=&quot;pm-m-zoom-entree&quot; data-start=&quot;0.3&quot;&gt;&lt;/h2&gt;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m005" data-categorie="entrees" data-mots="005 #005 de flou a net blur in flou net flou net blur focus doux reveal">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/005.jpg" aria-label="Aperçu : De flou à net"><source src="medias/galerie/mouvements/005.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#005</p>
+<h3 class="carte-mouvement-nom">De flou à net <span lang="en">Blur in</span></h3>
+<p class="carte-mouvement-sens">Apparaît flou puis devient net</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais apparaître le titre de flou à net, en 0,6 s.</code></pre>
+<p><strong>Quand :</strong> Une ambiance douce, un souvenir, une révélation calme.</p>
+<p><strong>Recette :</strong> <code>&lt;h2 data-texte=&quot;titre&quot; class=&quot;pm-m-net&quot; data-start=&quot;0.3&quot;&gt;&lt;/h2&gt;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m006" data-categorie="entrees" data-mots="006 #006 revele par masque mask reveal masque masque mask reveal devoiler editorial ligne">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/006.jpg" aria-label="Aperçu : Révélé par masque"><source src="medias/galerie/mouvements/006.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#006</p>
+<h3 class="carte-mouvement-nom">Révélé par masque <span lang="en">Mask reveal</span></h3>
+<p class="carte-mouvement-sens">Le texte monte de derrière un bord invisible qui reste fixe</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Révèle le titre par masque, en 0,7 s, ligne par ligne.</code></pre>
+<p><strong>Quand :</strong> Un titre éditorial, élégant, qui « sort » de la page.</p>
+<p><strong>Recette :</strong> <code>&lt;h2 data-texte=&quot;titre&quot; class=&quot;pm-m-masque&quot; data-start=&quot;0.3&quot;&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#005</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m007" data-categorie="entrees" data-mots="007 #007 chute avec rebond drop in chute chute tomber rebond bounce drop ludique">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/007.jpg" aria-label="Aperçu : Chute avec rebond"><source src="medias/galerie/mouvements/007.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#007</p>
+<h3 class="carte-mouvement-nom">Chute avec rebond <span lang="en">Drop in</span></h3>
+<p class="carte-mouvement-sens">Tombe d'en haut et rebondit en touchant le sol</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais tomber le chiffre d'en haut, en 0,9 s, avec des rebonds.</code></pre>
+<p><strong>Quand :</strong> Un chiffre, un mot fort, un ton ludique.</p>
+<p><strong>Recette :</strong> <code>&lt;h2 data-texte=&quot;titre&quot; class=&quot;pm-m-chute&quot; data-start=&quot;0.3&quot;&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#123</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m008" data-categorie="entrees" data-mots="008 #008 anticipation anticipation anticipation anticipation elan recul cartoon dessin anime">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/008.jpg" aria-label="Aperçu : Anticipation"><source src="medias/galerie/mouvements/008.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#008</p>
+<h3 class="carte-mouvement-nom">Anticipation <span lang="en">Anticipation</span></h3>
+<p class="carte-mouvement-sens">Recule un peu avant de partir vers sa place</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais entrer la flèche avec une anticipation : elle recule d'un tiers puis part, en 0,8 s.</code></pre>
+<p><strong>Quand :</strong> Donner de l'élan à une entrée, à la façon des dessins animés.</p>
+<p><strong>Recette :</strong> <code>&lt;h2 data-texte=&quot;titre&quot; class=&quot;pm-m-anticipe&quot; data-start=&quot;0.3&quot;&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#121</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m009" data-categorie="entrees" data-mots="009 #009 ecrasement etirement squash stretch ecrasement ecrasement etirement squash stretch elastique balle">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/009.jpg" aria-label="Aperçu : Écrasement-étirement"><source src="medias/galerie/mouvements/009.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#009</p>
+<h3 class="carte-mouvement-nom">Écrasement-étirement <span lang="en">Squash &amp; stretch</span></h3>
+<p class="carte-mouvement-sens">S'écrase en touchant le sol puis reprend sa forme, comme une balle</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais tomber le bouton avec un écrasement à l'arrivée, en 0,7 s.</code></pre>
+<p><strong>Quand :</strong> Un objet qui doit paraître souple, vivant, élastique.</p>
+<p><strong>Recette :</strong> <code>&lt;h2 data-texte=&quot;titre&quot; class=&quot;pm-m-ecrase&quot; data-start=&quot;0.3&quot;&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#011</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m010" data-categorie="entrees" data-mots="010 #010 entree en cascade stagger cascade cascade stagger decalage liste suite un par un">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/010.jpg" aria-label="Aperçu : Entrée en cascade"><source src="medias/galerie/mouvements/010.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#010</p>
+<h3 class="carte-mouvement-nom">Entrée en cascade <span lang="en">Stagger</span></h3>
+<p class="carte-mouvement-sens">Les éléments entrent l'un après l'autre, avec un petit décalage</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais entrer les trois points de la liste en cascade, à 0,2 s d'écart.</code></pre>
+<p><strong>Quand :</strong> Une liste, une grille d'icônes, plusieurs cartes.</p>
+<p><strong>Recette :</strong> <code>&lt;h2 id=&quot;c1&quot; class=&quot;pm-m-monte&quot; data-texte=&quot;titre&quot; data-start=&quot;0.2&quot;&gt;&lt;/h2&gt; &lt;p id=&quot;c2&quot; class=&quot;pm-m-monte&quot; data-texte=&quot;texte&quot; data-start=&quot;#c1+0.2&quot;&gt;&lt;/p&gt;</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#002</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m011" data-categorie="entrees" data-mots="011 #011 trace de ligne line draw trace trace ligne dessin stroke fleche schema">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/011.jpg" aria-label="Aperçu : Tracé de ligne"><source src="medias/galerie/mouvements/011.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#011</p>
+<h3 class="carte-mouvement-nom">Tracé de ligne <span lang="en">Line draw</span></h3>
+<p class="carte-mouvement-sens">Une ligne se dessine, comme tracée au crayon</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Trace la flèche du schéma en 1 s, de gauche à droite.</code></pre>
+<p><strong>Quand :</strong> Un schéma, une flèche, un soulignement dessiné, une signature.</p>
+<p><strong>Recette :</strong> <code>&lt;svg viewBox=&quot;0 0 100 20&quot; style=&quot;width: 60cqh&quot; aria-hidden=&quot;true&quot; data-start=&quot;0.3&quot; data-dur=&quot;1&quot;&gt;&lt;path d=&quot;M2 10 H 98&quot; pathLength=&quot;100&quot; stroke=&quot;var(--c-accent)&quot; s…</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#004</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m012" data-categorie="entrees" data-mots="012 #012 sortie en fondu fade out sortie sortie disparition fade out effacer partir">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/012.jpg" aria-label="Aperçu : Sortie en fondu"><source src="medias/galerie/mouvements/012.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#012</p>
+<h3 class="carte-mouvement-nom">Sortie en fondu <span lang="en">Fade out</span></h3>
+<p class="carte-mouvement-sens">Descend un peu en s'effaçant</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais sortir le premier titre en fondu à 2 s, en 0,5 s, avant que le second arrive.</code></pre>
+<p><strong>Quand :</strong> Libérer la place pour l'élément suivant dans la même scène.</p>
+<p><strong>Recette :</strong> <code>&lt;div class=&quot;pm-m-monte&quot; data-start=&quot;0.2&quot;&gt;&lt;h2 class=&quot;pm-m-sortie&quot; data-texte=&quot;titre&quot; data-start=&quot;2&quot;&gt;&lt;/h2&gt;&lt;/div&gt;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m013" data-categorie="entrees" data-mots="013 #013 image par image stop motion style saccade saccade stop motion image par image a coups artisanal">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/013.jpg" aria-label="Aperçu : Image par image"><source src="medias/galerie/mouvements/013.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#013</p>
+<h3 class="carte-mouvement-nom">Image par image <span lang="en">Stop-motion style</span></h3>
+<p class="carte-mouvement-sens">Bouge par à-coups, comme une animation image par image</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais monter le titre par à-coups, en 6 images sur 0,6 s.</code></pre>
+<p><strong>Quand :</strong> Un ton artisanal, papier découpé, bricolé.</p>
+<p><strong>Recette :</strong> <code>&lt;h2 data-texte=&quot;titre&quot; class=&quot;pm-m-saccade&quot; data-start=&quot;0.3&quot;&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#128</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m014" data-categorie="entrees" data-mots="014 #014 eclat burst eclat eclat burst etincelles jaillir explosion legere">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/014.jpg" aria-label="Aperçu : Éclat"><source src="medias/galerie/mouvements/014.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#014</p>
+<h3 class="carte-mouvement-nom">Éclat <span lang="en">Burst</span></h3>
+<p class="carte-mouvement-sens">Des étincelles jaillissent quand quelque chose apparaît</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais jaillir des étincelles autour du chiffre quand il apparaît, pendant 1 s.</code></pre>
+<p><strong>Quand :</strong> Souligner l'arrivée d'un chiffre clé ou d'un résultat.</p>
+<p><strong>Recette :</strong> <code>&lt;h2 id=&quot;chiffre&quot; class=&quot;pm-m-pop&quot; data-texte=&quot;titre&quot; data-start=&quot;0.5&quot;&gt;&lt;/h2&gt; &lt;div data-effet=&quot;etincelles&quot; data-start=&quot;#chiffre&quot; data-dur=&quot;1&quot;&gt;&lt;/div&gt;</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#003</a></p>
+</details>
+</article>
+</div>
+</section>
+<section class="categorie-mouvements" id="categorie-texte" data-categorie="texte">
+<h2>Texte</h2>
+<div class="grille-mouvements">
+<article class="carte-mouvement" id="m015" data-categorie="texte" data-mots="015 #015 machine a ecrire typewriter machine a ecrire machine a ecrire typewriter ecrire frappe clavier lettre">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/015.jpg" aria-label="Aperçu : Machine à écrire"><source src="medias/galerie/mouvements/015.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#015</p>
+<h3 class="carte-mouvement-nom">Machine à écrire <span lang="en">Typewriter</span></h3>
+<p class="carte-mouvement-sens">Le texte s'écrit lettre après lettre</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Écris la phrase en machine à écrire, une lettre toutes les 0,04 s.</code></pre>
+<p><strong>Quand :</strong> Un code, une citation, une ambiance technique ou rétro.</p>
+<p><strong>Recette :</strong> <code>&lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.3&quot; data-lettres=&quot;frappe&quot;&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#006</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m016" data-categorie="texte" data-mots="016 #016 vague de lettres wave text vague vague wave onde lettres saut joyeux">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/016.jpg" aria-label="Aperçu : Vague de lettres"><source src="medias/galerie/mouvements/016.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#016</p>
+<h3 class="carte-mouvement-nom">Vague de lettres <span lang="en">Wave text</span></h3>
+<p class="carte-mouvement-sens">Les lettres sautent l'une après l'autre, comme une vague</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais onduler les lettres du titre en vague, à 0,02 s d'écart.</code></pre>
+<p><strong>Quand :</strong> Un titre joyeux, une annonce, un mot à faire vivre.</p>
+<p><strong>Recette :</strong> <code>&lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.3&quot; data-lettres=&quot;onde&quot;&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#130</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m017" data-categorie="texte" data-mots="017 #017 mots qui montent word by word mots montants mots mot par mot word monte phrase">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/017.jpg" aria-label="Aperçu : Mots qui montent"><source src="medias/galerie/mouvements/017.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#017</p>
+<h3 class="carte-mouvement-nom">Mots qui montent <span lang="en">Word by word</span></h3>
+<p class="carte-mouvement-sens">Les mots montent l'un après l'autre</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais monter la phrase mot par mot, à 0,12 s d'écart.</code></pre>
+<p><strong>Quand :</strong> Une phrase à lire au rythme de la voix.</p>
+<p><strong>Recette :</strong> <code>&lt;p data-texte=&quot;texte&quot; data-start=&quot;0.3&quot; data-mots=&quot;monte&quot;&gt;&lt;/p&gt;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m018" data-categorie="texte" data-mots="018 #018 lettres de flou a net blur letters lettres floues flou lettres blur net doux">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/018.jpg" aria-label="Aperçu : Lettres de flou à net"><source src="medias/galerie/mouvements/018.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#018</p>
+<h3 class="carte-mouvement-nom">Lettres de flou à net <span lang="en">Blur letters</span></h3>
+<p class="carte-mouvement-sens">Chaque lettre apparaît floue puis devient nette</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais apparaître le titre lettre par lettre, de flou à net, à 0,05 s d'écart.</code></pre>
+<p><strong>Quand :</strong> Un titre doux, élégant.</p>
+<p><strong>Recette :</strong> <code>&lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.3&quot; data-lettres=&quot;flou&quot;&gt;&lt;/h2&gt;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m019" data-categorie="texte" data-mots="019 #019 lettres qui tombent falling letters lettres tombantes tomber lettres chute rebond ludique">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/019.jpg" aria-label="Aperçu : Lettres qui tombent"><source src="medias/galerie/mouvements/019.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#019</p>
+<h3 class="carte-mouvement-nom">Lettres qui tombent <span lang="en">Falling letters</span></h3>
+<p class="carte-mouvement-sens">Chaque lettre tombe du haut et rebondit</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais tomber les lettres du titre une à une, à 0,05 s d'écart.</code></pre>
+<p><strong>Quand :</strong> Un titre énergique, ludique.</p>
+<p><strong>Recette :</strong> <code>&lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.3&quot; data-lettres=&quot;chute&quot;&gt;&lt;/h2&gt;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m020" data-categorie="texte" data-mots="020 #020 texte brouille text scramble brouillage brouille scramble hasard decoder numerique hacker">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/020.jpg" aria-label="Aperçu : Texte brouillé"><source src="medias/galerie/mouvements/020.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#020</p>
+<h3 class="carte-mouvement-nom">Texte brouillé <span lang="en">Text scramble</span></h3>
+<p class="carte-mouvement-sens">Les lettres défilent au hasard puis se fixent sur le bon texte</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais apparaître le mot en texte brouillé, une lettre fixée toutes les 0,04 s.</code></pre>
+<p><strong>Quand :</strong> Un code, un mot de passe, une ambiance numérique.</p>
+<p><strong>Recette :</strong> <code>&lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.3&quot; data-lettres=&quot;brouille&quot;&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#129</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m021" data-categorie="texte" data-mots="021 #021 compteur count up compteur compteur count up nombre chiffre statistique defiler">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/021.jpg" aria-label="Aperçu : Compteur"><source src="medias/galerie/mouvements/021.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#021</p>
+<h3 class="carte-mouvement-nom">Compteur <span lang="en">Count-up</span></h3>
+<p class="carte-mouvement-sens">Un nombre défile rapidement jusqu'à sa valeur</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais compter le chiffre de 0 à 1 250 en 1,5 s.</code></pre>
+<p><strong>Quand :</strong> Un chiffre clé, une statistique, un résultat.</p>
+<p><strong>Recette :</strong> <code>&lt;p class=&quot;titre&quot; data-start=&quot;0.3&quot; data-dur=&quot;1.5&quot; data-tween=&quot;nombre 0→1250 cubic-out&quot; aria-label=&quot;1 250&quot;&gt;&lt;/p&gt;</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#007</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m022" data-categorie="texte" data-mots="022 #022 typographie cinetique kinetic typography typo cinetique typographie cinetique kinetic mots rythme accroche">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/022.jpg" aria-label="Aperçu : Typographie cinétique"><source src="medias/galerie/mouvements/022.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#022</p>
+<h3 class="carte-mouvement-nom">Typographie cinétique <span lang="en">Kinetic typography</span></h3>
+<p class="carte-mouvement-sens">Les mots tombent en rythme pendant que le cadre se resserre</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais tomber les mots du titre un par un, toutes les 0,25 s, avec un zoom lent de 15 %.</code></pre>
+<p><strong>Quand :</strong> Une phrase choc, une accroche pour les réseaux.</p>
+<p><strong>Recette :</strong> <code>&lt;div data-camera=&quot;zoom 1→1.15 0+3&quot; style=&quot;display: grid; place-items: center&quot;&gt;&lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.2&quot; data-mots=&quot;chute&quot; data-pas=&quot;0.25&quot;&gt;&lt;/h2&gt;&lt;/d…</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#008</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m023" data-categorie="texte" data-mots="023 #023 texte en degrade gradient text degrade degrade gradient couleur titre marque">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/023.jpg" aria-label="Aperçu : Texte en dégradé"><source src="medias/galerie/mouvements/023.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#023</p>
+<h3 class="carte-mouvement-nom">Texte en dégradé <span lang="en">Gradient text</span></h3>
+<p class="carte-mouvement-sens">Le texte est rempli d'un dégradé des couleurs de la charte</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Mets le titre en dégradé à 90 degrés, de la couleur principale à la couleur d'accent.</code></pre>
+<p><strong>Quand :</strong> Un titre de marque, une accroche.</p>
+<p><strong>Recette :</strong> <code>&lt;h2 data-texte=&quot;titre&quot; class=&quot;pm-degrade pm-m-monte&quot; data-start=&quot;0.3&quot;&gt;&lt;/h2&gt;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m024" data-categorie="texte" data-mots="024 #024 surlignage highlight surlignage surligner highlight mot cle marqueur insister">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/024.jpg" aria-label="Aperçu : Surlignage"><source src="medias/galerie/mouvements/024.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#024</p>
+<h3 class="carte-mouvement-nom">Surlignage <span lang="en">Highlight</span></h3>
+<p class="carte-mouvement-sens">Un aplat de couleur se pose derrière un mot, comme au surligneur</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Surligne le mot-clé à 1 s, en 0,6 s.</code></pre>
+<p><strong>Quand :</strong> Faire ressortir un mot dans une phrase.</p>
+<p><strong>Recette :</strong> <code>&lt;p&gt;&lt;span class=&quot;pm-m-surligne&quot; data-texte=&quot;texte&quot; data-start=&quot;1&quot;&gt;&lt;/span&gt;&lt;/p&gt;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m025" data-categorie="texte" data-mots="025 #025 soulignement trace underline draw soulignement souligner underline trait tracer insister">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/025.jpg" aria-label="Aperçu : Soulignement tracé"><source src="medias/galerie/mouvements/025.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#025</p>
+<h3 class="carte-mouvement-nom">Soulignement tracé <span lang="en">Underline draw</span></h3>
+<p class="carte-mouvement-sens">Un trait se trace sous le texte</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Souligne le titre d'un trait qui se trace en 0,6 s.</code></pre>
+<p><strong>Quand :</strong> Un titre de partie, une conclusion.</p>
+<p><strong>Recette :</strong> <code>&lt;h2&gt;&lt;span class=&quot;pm-m-souligne&quot; data-texte=&quot;titre&quot; data-start=&quot;0.5&quot;&gt;&lt;/span&gt;&lt;/h2&gt;</code></p>
+</details>
+</article>
+</div>
+</section>
+<section class="categorie-mouvements" id="categorie-finition" data-categorie="finition">
+<h2>Finition du mouvement</h2>
+<div class="grille-mouvements">
+<article class="carte-mouvement" id="m026" data-categorie="finition" data-mots="026 #026 acceleration douce easing courbe douce easing courbe douceur ralentir accelerer">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/026.jpg" aria-label="Aperçu : Accélération douce"><source src="medias/galerie/mouvements/026.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#026</p>
+<h3 class="carte-mouvement-nom">Accélération douce <span lang="en">Easing</span></h3>
+<p class="carte-mouvement-sens">Le mouvement accélère puis ralentit, au lieu d'aller à vitesse constante</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais glisser la carte avec une courbe douce (sine-inout), en 0,8 s.</code></pre>
+<p><strong>Quand :</strong> Tout mouvement : une vitesse constante paraît mécanique.</p>
+<p><strong>Recette :</strong> <code>&lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.3&quot; data-dur=&quot;0.8&quot; data-tween=&quot;--x -20cqh→0cqh sine-inout&quot; style=&quot;transform: translateX(var(--x))&quot;&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#009</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m027" data-categorie="finition" data-mots="027 #027 depassement overshoot depassement depassement overshoot back revenir dynamique">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/027.jpg" aria-label="Aperçu : Dépassement"><source src="medias/galerie/mouvements/027.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#027</p>
+<h3 class="carte-mouvement-nom">Dépassement <span lang="en">Overshoot</span></h3>
+<p class="carte-mouvement-sens">Va un peu au-delà de sa place puis revient</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais arriver le bouton avec un léger dépassement (back-out), en 0,6 s.</code></pre>
+<p><strong>Quand :</strong> Un élément d'interface, un ton dynamique.</p>
+<p><strong>Recette :</strong> <code>&lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.3&quot; data-dur=&quot;0.6&quot; data-tween=&quot;--x -20cqh→0cqh back-out&quot; style=&quot;transform: translateX(var(--x))&quot;&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#010</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m028" data-categorie="finition" data-mots="028 #028 rebond bounce rebond rebond bounce rebondir ludique balle">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/028.jpg" aria-label="Aperçu : Rebond"><source src="medias/galerie/mouvements/028.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#028</p>
+<h3 class="carte-mouvement-nom">Rebond <span lang="en">Bounce</span></h3>
+<p class="carte-mouvement-sens">Arrive et rebondit plusieurs fois avant de s'arrêter</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais arriver l'icône avec des rebonds (bounce-out), en 0,9 s.</code></pre>
+<p><strong>Quand :</strong> Un ton ludique, un objet qui tombe.</p>
+<p><strong>Recette :</strong> <code>&lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.3&quot; data-dur=&quot;0.9&quot; data-tween=&quot;--y -20cqh→0cqh bounce-out&quot; style=&quot;transform: translateY(var(--y))&quot;&gt;&lt;/h2&gt;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m029" data-categorie="finition" data-mots="029 #029 elastique elastic elastique elastique ressort osciller elastic follow through">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/029.jpg" aria-label="Aperçu : Élastique"><source src="medias/galerie/mouvements/029.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#029</p>
+<h3 class="carte-mouvement-nom">Élastique <span lang="en">Elastic</span></h3>
+<p class="carte-mouvement-sens">Oscille autour de sa place avant de se fixer, comme un ressort</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais arriver la pastille avec un effet élastique (elastic-out), en 1 s.</code></pre>
+<p><strong>Quand :</strong> Après un arrêt brusque, des parties qui continuent de bouger.</p>
+<p><strong>Recette :</strong> <code>&lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.3&quot; data-dur=&quot;1&quot; data-tween=&quot;--s 0→1 elastic-out&quot; style=&quot;transform: scale(var(--s))&quot;&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#122</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m030" data-categorie="finition" data-mots="030 #030 trajectoire courbe motion path trajectoire trajectoire motion path arc courbe voler lancer">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/030.jpg" aria-label="Aperçu : Trajectoire courbe"><source src="medias/galerie/mouvements/030.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#030</p>
+<h3 class="carte-mouvement-nom">Trajectoire courbe <span lang="en">Motion path</span></h3>
+<p class="carte-mouvement-sens">Se déplace en arc au lieu d'aller en ligne droite</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais voler l'avion en arc vers la droite, sur 60 % de la hauteur, en 2 s.</code></pre>
+<p><strong>Quand :</strong> Un objet qui vole, saute ou se lance.</p>
+<p><strong>Recette :</strong> <code>&lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.3&quot; data-dur=&quot;2&quot; data-tween=&quot;--x 0cqh→60cqh sine-inout; --y 0cqh→-20cqh sine-arch&quot; style=&quot;transform: translate(var(--x), var…</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#126</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m031" data-categorie="finition" data-mots="031 #031 forme qui se transforme shape morph morphing morphing morph forme transformer icone">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/031.jpg" aria-label="Aperçu : Forme qui se transforme"><source src="medias/galerie/mouvements/031.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#031</p>
+<h3 class="carte-mouvement-nom">Forme qui se transforme <span lang="en">Shape morph</span></h3>
+<p class="carte-mouvement-sens">Une forme se change en une autre, en douceur</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Transforme l'octogone en étoile à 4 branches en 0,8 s.</code></pre>
+<p><strong>Quand :</strong> Passer d'une idée à une autre, une icône qui change d'état.</p>
+<p><strong>Recette :</strong> <code>&lt;style&gt;@scope { @keyframes morphe { from { d: path('M50 10 L78 22 L90 50 L78 78 L50 90 L22 78 L10 50 L22 22 Z'); } to { d: path('M50 5 L60 40 L95 50 L60 60 L50 …</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#012</a></p>
+</details>
+</article>
+</div>
+</section>
+<section class="categorie-mouvements" id="categorie-valeur" data-categorie="valeur">
+<h2>Mise en valeur</h2>
+<div class="grille-mouvements">
+<article class="carte-mouvement" id="m032" data-categorie="valeur" data-mots="032 #032 battement pulse battement battement pulse coeur attirer bouton appel">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/032.jpg" aria-label="Aperçu : Battement"><source src="medias/galerie/mouvements/032.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#032</p>
+<h3 class="carte-mouvement-nom">Battement <span lang="en">Pulse</span></h3>
+<p class="carte-mouvement-sens">Grossit et revient, comme un cœur qui bat</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais battre le bouton 3 fois, de 8 %, toutes les 0,8 s.</code></pre>
+<p><strong>Quand :</strong> Attirer l'œil sur un appel à l'action.</p>
+<p><strong>Recette :</strong> <code>&lt;h2 data-texte=&quot;titre&quot; class=&quot;pm-m-pulse&quot; data-start=&quot;0.5&quot;&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#125</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m033" data-categorie="valeur" data-mots="033 #033 tremblotement wiggle tremblement trembler wiggle secouer alerte notification">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/033.jpg" aria-label="Aperçu : Tremblotement"><source src="medias/galerie/mouvements/033.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#033</p>
+<h3 class="carte-mouvement-nom">Tremblotement <span lang="en">Wiggle</span></h3>
+<p class="carte-mouvement-sens">Petites secousses rapides, comme un objet qui s'agite</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais trembloter la cloche 3 fois, de 3 degrés.</code></pre>
+<p><strong>Quand :</strong> Une alerte, une notification, une erreur.</p>
+<p><strong>Recette :</strong> <code>&lt;h2 data-texte=&quot;titre&quot; class=&quot;pm-m-tremblote&quot; data-start=&quot;0.5&quot;&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#124</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m034" data-categorie="valeur" data-mots="034 #034 aller retour ping pong loop va et vient aller retour ping pong balancer boucle fleche">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/034.jpg" aria-label="Aperçu : Aller-retour"><source src="medias/galerie/mouvements/034.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#034</p>
+<h3 class="carte-mouvement-nom">Aller-retour <span lang="en">Ping-pong loop</span></h3>
+<p class="carte-mouvement-sens">Glisse d'un côté puis revient, plusieurs fois</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais faire 2 allers-retours à la flèche, de 6 %, en 1,2 s chacun.</code></pre>
+<p><strong>Quand :</strong> Montrer un sens, inviter à glisser ou à faire défiler.</p>
+<p><strong>Recette :</strong> <code>&lt;h2 data-texte=&quot;titre&quot; class=&quot;pm-m-va-vient&quot; data-start=&quot;0.5&quot;&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#127</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m035" data-categorie="valeur" data-mots="035 #035 reflet lumineux light sweep reflet reflet brillance light sweep lumiere premium shine">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/035.jpg" aria-label="Aperçu : Reflet lumineux"><source src="medias/galerie/mouvements/035.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#035</p>
+<h3 class="carte-mouvement-nom">Reflet lumineux <span lang="en">Light sweep</span></h3>
+<p class="carte-mouvement-sens">Une bande de lumière traverse l'élément</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais passer un reflet sur le titre à 1 s, en 0,9 s.</code></pre>
+<p><strong>Quand :</strong> Un logo, un produit, un bouton premium.</p>
+<p><strong>Recette :</strong> <code>&lt;h2&gt;&lt;span class=&quot;pm-m-reflet&quot; data-texte=&quot;titre&quot; data-start=&quot;1&quot;&gt;&lt;/span&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#022</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m036" data-categorie="valeur" data-mots="036 #036 secousse d impact impact shake secousse impact secousse shake impact trembler choc camera">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/036.jpg" aria-label="Aperçu : Secousse d'impact"><source src="medias/galerie/mouvements/036.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#036</p>
+<h3 class="carte-mouvement-nom">Secousse d'impact <span lang="en">Impact shake</span></h3>
+<p class="carte-mouvement-sens">Tout le cadre tremble quand quelque chose atterrit</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais trembler l'image quand le titre touche le sol, à 0,63 s, pendant 0,3 s.</code></pre>
+<p><strong>Quand :</strong> Un choc, un chiffre qui tombe, une révélation forte.</p>
+<p><strong>Recette :</strong> <code>&lt;div data-camera=&quot;secousse 1.2 0.63+0.3&quot; style=&quot;display: grid; place-items: center&quot;&gt;&lt;div class=&quot;decor&quot; data-decor&gt;&lt;/div&gt;&lt;h2 class=&quot;pm-m-chute&quot; data-texte=&quot;titre…</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#024</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m037" data-categorie="valeur" data-mots="037 #037 zoom sur un detail punch in zoom sur zoom punch in gros plan detail insister">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/037.jpg" aria-label="Aperçu : Zoom sur un détail"><source src="medias/galerie/mouvements/037.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#037</p>
+<h3 class="carte-mouvement-nom">Zoom sur un détail <span lang="en">Punch in</span></h3>
+<p class="carte-mouvement-sens">Le cadre se resserre vite sur un point précis</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Zoome vite sur le chiffre à 2 s : 1,4 fois, en 0,3 s, centré sur 40 % de la largeur.</code></pre>
+<p><strong>Quand :</strong> Insister sur un détail, une réaction, un chiffre.</p>
+<p><strong>Recette :</strong> <code>&lt;div data-camera=&quot;zoom 1→1.4 2+0.3 back-out; x 50→40 2+0.3 back-out&quot; style=&quot;display: grid; place-items: center&quot;&gt;&lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.3&quot;&gt;&lt;/h2&gt;&lt;/d…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m038" data-categorie="valeur" data-mots="038 #038 pluie de confettis particles confettis confettis particules fete celebration reussite">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/038.jpg" aria-label="Aperçu : Pluie de confettis"><source src="medias/galerie/mouvements/038.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#038</p>
+<h3 class="carte-mouvement-nom">Pluie de confettis <span lang="en">Particles</span></h3>
+<p class="carte-mouvement-sens">Une nuée de petits morceaux s'envole et retombe</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais tomber des confettis sur la conclusion pendant 3 s.</code></pre>
+<p><strong>Quand :</strong> Une réussite, une fête, une conclusion.</p>
+<p><strong>Recette :</strong> <code>&lt;h2 class=&quot;pm-m-pop&quot; data-texte=&quot;titre&quot; data-start=&quot;0.3&quot;&gt;&lt;/h2&gt; &lt;div data-effet=&quot;confettis&quot; data-start=&quot;0.5&quot; data-dur=&quot;3&quot;&gt;&lt;/div&gt;</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#015</a></p>
+</details>
+</article>
+</div>
+</section>
+<section class="categorie-mouvements" id="categorie-transitions" data-categorie="transitions">
+<h2>Transitions entre scènes</h2>
+<div class="grille-mouvements">
+<article class="carte-mouvement" id="m039" data-categorie="transitions" data-mots="039 #039 fondu enchaine cross dissolve fondu enchaine fondu enchaine dissolve cross doux">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/039.jpg" aria-label="Aperçu : Fondu enchaîné"><source src="medias/galerie/mouvements/039.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#039</p>
+<h3 class="carte-mouvement-nom">Fondu enchaîné <span lang="en">Cross dissolve</span></h3>
+<p class="carte-mouvement-sens">La scène suivante apparaît en fondu par-dessus</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Passe à la scène 3 en fondu enchaîné.</code></pre>
+<p><strong>Quand :</strong> La transition par défaut, discrète.</p>
+<p><strong>Recette :</strong> <code>&quot;transition&quot;: &quot;fondu&quot;</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#044</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m040" data-categorie="transitions" data-mots="040 #040 glissement slide transition glissement glissement slide suivant etape">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/040.jpg" aria-label="Aperçu : Glissement"><source src="medias/galerie/mouvements/040.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#040</p>
+<h3 class="carte-mouvement-nom">Glissement <span lang="en">Slide transition</span></h3>
+<p class="carte-mouvement-sens">La scène suivante glisse depuis la droite</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Passe de l'étape 1 à l'étape 2 en glissement.</code></pre>
+<p><strong>Quand :</strong> Avancer dans une suite (étapes).</p>
+<p><strong>Recette :</strong> <code>&quot;transition&quot;: &quot;glissement&quot;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m041" data-categorie="transitions" data-mots="041 #041 poussee push transition poussee poussee push pousser diaporama">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/041.jpg" aria-label="Aperçu : Poussée"><source src="medias/galerie/mouvements/041.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#041</p>
+<h3 class="carte-mouvement-nom">Poussée <span lang="en">Push transition</span></h3>
+<p class="carte-mouvement-sens">La scène suivante pousse la précédente hors du cadre</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais pousser la scène 2 par la scène 3.</code></pre>
+<p><strong>Quand :</strong> Une suite logique, un diaporama.</p>
+<p><strong>Recette :</strong> <code>&quot;transition&quot;: &quot;poussee&quot;</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#137</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m042" data-categorie="transitions" data-mots="042 #042 panoramique file whip pan whip pan whip pan file rapide flou energique">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/042.jpg" aria-label="Aperçu : Panoramique filé"><source src="medias/galerie/mouvements/042.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#042</p>
+<h3 class="carte-mouvement-nom">Panoramique filé <span lang="en">Whip pan</span></h3>
+<p class="carte-mouvement-sens">Un mouvement très rapide et flou emmène vers la scène suivante</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais un whip pan entre la scène 2 et la 3.</code></pre>
+<p><strong>Quand :</strong> Un changement énergique, un rythme rapide.</p>
+<p><strong>Recette :</strong> <code>&quot;transition&quot;: &quot;whip&quot;</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#043</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m043" data-categorie="transitions" data-mots="043 #043 balayage wipe balayage balayage wipe volet partie">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/043.jpg" aria-label="Aperçu : Balayage"><source src="medias/galerie/mouvements/043.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#043</p>
+<h3 class="carte-mouvement-nom">Balayage <span lang="en">Wipe</span></h3>
+<p class="carte-mouvement-sens">Un bord qui se déplace dévoile la scène suivante</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Change de partie à la scène 4 avec un balayage.</code></pre>
+<p><strong>Quand :</strong> Changer de partie.</p>
+<p><strong>Recette :</strong> <code>&quot;transition&quot;: &quot;balayage&quot;</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#045</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m044" data-categorie="transitions" data-mots="044 #044 rideau barn door rideau rideau ouverture centre barn door">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/044.jpg" aria-label="Aperçu : Rideau"><source src="medias/galerie/mouvements/044.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#044</p>
+<h3 class="carte-mouvement-nom">Rideau <span lang="en">Barn door</span></h3>
+<p class="carte-mouvement-sens">La scène suivante s'ouvre depuis le centre</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Ouvre la scène 6, la conclusion, en rideau.</code></pre>
+<p><strong>Quand :</strong> Une ouverture, une révélation élégante.</p>
+<p><strong>Recette :</strong> <code>&quot;transition&quot;: &quot;rideau&quot;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m045" data-categorie="transitions" data-mots="045 #045 ouverture en cercle iris mask transition cercle cercle iris masque rond retro">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/045.jpg" aria-label="Aperçu : Ouverture en cercle"><source src="medias/galerie/mouvements/045.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#045</p>
+<h3 class="carte-mouvement-nom">Ouverture en cercle <span lang="en">Iris / mask transition</span></h3>
+<p class="carte-mouvement-sens">La scène suivante apparaît dans un cercle qui grandit</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Ouvre la scène 2 dans un cercle qui grandit.</code></pre>
+<p><strong>Quand :</strong> Un ton ludique, rétro, un focus.</p>
+<p><strong>Recette :</strong> <code>&quot;transition&quot;: &quot;cercle&quot;</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#017</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m046" data-categorie="transitions" data-mots="046 #046 volets blinds transition volets volets blinds bandes stores">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/046.jpg" aria-label="Aperçu : Volets"><source src="medias/galerie/mouvements/046.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#046</p>
+<h3 class="carte-mouvement-nom">Volets <span lang="en">Blinds transition</span></h3>
+<p class="carte-mouvement-sens">La scène suivante apparaît par bandes qui s'élargissent</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Passe à la scène 4 avec des volets.</code></pre>
+<p><strong>Quand :</strong> Un ton graphique, une présentation.</p>
+<p><strong>Recette :</strong> <code>&quot;transition&quot;: &quot;volets&quot;</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#138</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m047" data-categorie="transitions" data-mots="047 #047 zoom zoom transition zoom zoom approcher agrandir">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/047.jpg" aria-label="Aperçu : Zoom"><source src="medias/galerie/mouvements/047.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#047</p>
+<h3 class="carte-mouvement-nom">Zoom <span lang="en">Zoom transition</span></h3>
+<p class="carte-mouvement-sens">La scène suivante approche en grandissant</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais approcher la scène 5 en zoom.</code></pre>
+<p><strong>Quand :</strong> Entrer dans un détail.</p>
+<p><strong>Recette :</strong> <code>&quot;transition&quot;: &quot;zoom&quot;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m048" data-categorie="transitions" data-mots="048 #048 zoom traversant zoom through traversee traverser zoom through plonger entrer">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/048.jpg" aria-label="Aperçu : Zoom traversant"><source src="medias/galerie/mouvements/048.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#048</p>
+<h3 class="carte-mouvement-nom">Zoom traversant <span lang="en">Zoom through</span></h3>
+<p class="carte-mouvement-sens">On traverse la scène qui grossit pour arriver dans la suivante</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Traverse la scène 1 en zoom pour arriver dans la 2.</code></pre>
+<p><strong>Quand :</strong> Plonger dans le sujet, changer d'échelle.</p>
+<p><strong>Recette :</strong> <code>&quot;transition&quot;: &quot;traversee&quot;</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#020</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m049" data-categorie="transitions" data-mots="049 #049 retournement flip retournement retourner flip carte pivoter reponse">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/049.jpg" aria-label="Aperçu : Retournement"><source src="medias/galerie/mouvements/049.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#049</p>
+<h3 class="carte-mouvement-nom">Retournement <span lang="en">Flip</span></h3>
+<p class="carte-mouvement-sens">La scène suivante pivote comme une carte qu'on retourne</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Retourne la scène 3 comme une carte pour montrer la réponse.</code></pre>
+<p><strong>Quand :</strong> Une question puis sa réponse, un avant/après.</p>
+<p><strong>Recette :</strong> <code>&quot;transition&quot;: &quot;retournement&quot;</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#021</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m050" data-categorie="transitions" data-mots="050 #050 coupe franche jump cut coupe coupe cut sec net jump cut smash cut">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/050.jpg" aria-label="Aperçu : Coupe franche"><source src="medias/galerie/mouvements/050.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#050</p>
+<h3 class="carte-mouvement-nom">Coupe franche <span lang="en">Jump cut</span></h3>
+<p class="carte-mouvement-sens">Passage sec d'une scène à l'autre, sans effet</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Coupe net entre la scène 2 et la 3.</code></pre>
+<p><strong>Quand :</strong> Un rythme rapide, un contraste fort.</p>
+<p><strong>Recette :</strong> <code>&quot;transition&quot;: &quot;coupe&quot;</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#041</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m051" data-categorie="transitions" data-mots="051 #051 dissolution organique organic dissolve dissolution dissolution grain organique doux">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/051.jpg" aria-label="Aperçu : Dissolution organique"><source src="medias/galerie/mouvements/051.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#051</p>
+<h3 class="carte-mouvement-nom">Dissolution organique <span lang="en">Organic dissolve</span></h3>
+<p class="carte-mouvement-sens">La scène se dissout par grains, avec un bord coloré</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais une dissolution organique de 0,8 s vers la scène suivante.</code></pre>
+<p><strong>Quand :</strong> Une transition douce et vivante.</p>
+<p><strong>Recette :</strong> <code>&quot;transition&quot;: {&quot;shader&quot;:&quot;dissolution&quot;,&quot;duree&quot;:0.8}</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m052" data-categorie="transitions" data-mots="052 #052 ondulation ripple ondulation ondulation ripple eau reve souvenir">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/052.jpg" aria-label="Aperçu : Ondulation"><source src="medias/galerie/mouvements/052.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#052</p>
+<h3 class="carte-mouvement-nom">Ondulation <span lang="en">Ripple</span></h3>
+<p class="carte-mouvement-sens">L'image ondule comme de l'eau pendant le passage</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Passe au souvenir avec une ondulation de 1 s.</code></pre>
+<p><strong>Quand :</strong> Un souvenir, un rêve, un changement d'époque.</p>
+<p><strong>Recette :</strong> <code>&quot;transition&quot;: {&quot;shader&quot;:&quot;ondulation&quot;,&quot;duree&quot;:1}</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m053" data-categorie="transitions" data-mots="053 #053 pixellisation pixelate pixels pixels pixelate carres jeu numerique">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/053.jpg" aria-label="Aperçu : Pixellisation"><source src="medias/galerie/mouvements/053.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#053</p>
+<h3 class="carte-mouvement-nom">Pixellisation <span lang="en">Pixelate</span></h3>
+<p class="carte-mouvement-sens">L'image se découpe en gros carrés, puis change</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Passe à la scène suivante en pixellisant, en 0,8 s.</code></pre>
+<p><strong>Quand :</strong> Univers numérique, jeu vidéo.</p>
+<p><strong>Recette :</strong> <code>&quot;transition&quot;: {&quot;shader&quot;:&quot;pixels&quot;,&quot;duree&quot;:0.8}</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#141</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m054" data-categorie="transitions" data-mots="054 #054 glitch glitch glitch glitch bug panne brouille tech">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/054.jpg" aria-label="Aperçu : Glitch"><source src="medias/galerie/mouvements/054.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#054</p>
+<h3 class="carte-mouvement-nom">Glitch <span lang="en">Glitch</span></h3>
+<p class="carte-mouvement-sens">L'image se brouille comme un écran en panne</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais un glitch de 0,5 s entre les deux scènes.</code></pre>
+<p><strong>Quand :</strong> Une rupture, un bug, une ambiance tech.</p>
+<p><strong>Recette :</strong> <code>&quot;transition&quot;: {&quot;shader&quot;:&quot;glitch&quot;,&quot;duree&quot;:0.5}</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#023</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m055" data-categorie="transitions" data-mots="055 #055 balayage a l encre ink wipe balayage organique encre ink liquide organique balayage">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/055.jpg" aria-label="Aperçu : Balayage à l'encre"><source src="medias/galerie/mouvements/055.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#055</p>
+<h3 class="carte-mouvement-nom">Balayage à l'encre <span lang="en">Ink wipe</span></h3>
+<p class="carte-mouvement-sens">Un bord vivant, comme de l'encre, recouvre l'image</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Passe à la scène suivante avec un balayage à l'encre de 1 s.</code></pre>
+<p><strong>Quand :</strong> Un ton artistique, fluide.</p>
+<p><strong>Recette :</strong> <code>&quot;transition&quot;: {&quot;shader&quot;:&quot;balayage-organique&quot;,&quot;duree&quot;:1}</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#019</a></p>
+</details>
+</article>
+</div>
+</section>
+<section class="categorie-mouvements" id="categorie-camera" data-categorie="camera">
+<h2>Caméra</h2>
+<div class="grille-mouvements">
+<article class="carte-mouvement" id="m056" data-categorie="camera" data-mots="056 #056 zoom avant lent dolly in zoom avant zoom avant dolly approcher lent tension">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/056.jpg" aria-label="Aperçu : Zoom avant lent"><source src="medias/galerie/mouvements/056.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#056</p>
+<h3 class="carte-mouvement-nom">Zoom avant lent <span lang="en">Dolly in</span></h3>
+<p class="carte-mouvement-sens">La caméra s'approche lentement du sujet</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais un zoom avant lent de 10 % pendant toute la scène.</code></pre>
+<p><strong>Quand :</strong> Donner de la tension, garder une image vivante.</p>
+<p><strong>Recette :</strong> <code>&lt;div data-camera=&quot;zoom 1→1.1 0+4&quot;&gt;&lt;div class=&quot;decor&quot; data-decor&gt;&lt;/div&gt;&lt;/div&gt; &lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.3&quot; style=&quot;position: relative&quot;&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#027</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m057" data-categorie="camera" data-mots="057 #057 panoramique pan panoramique panoramique pan gauche droite decor">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/057.jpg" aria-label="Aperçu : Panoramique"><source src="medias/galerie/mouvements/057.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#057</p>
+<h3 class="carte-mouvement-nom">Panoramique <span lang="en">Pan</span></h3>
+<p class="carte-mouvement-sens">La caméra pivote de gauche à droite pour suivre la scène</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais un panoramique de gauche à droite sur 4 s.</code></pre>
+<p><strong>Quand :</strong> Découvrir un décor plus large que l'image.</p>
+<p><strong>Recette :</strong> <code>&lt;div data-camera=&quot;zoom 1.3→1.3 0+4; x 35→65 0+4&quot;&gt;&lt;div class=&quot;decor&quot; data-decor&gt;&lt;/div&gt;&lt;/div&gt; &lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.3&quot; style=&quot;position: relative&quot;&gt;&lt;…</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#025</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m058" data-categorie="camera" data-mots="058 #058 bascule verticale tilt bascule tilt bascule haut bas vertical">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/058.jpg" aria-label="Aperçu : Bascule verticale"><source src="medias/galerie/mouvements/058.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#058</p>
+<h3 class="carte-mouvement-nom">Bascule verticale <span lang="en">Tilt</span></h3>
+<p class="carte-mouvement-sens">La caméra pivote de haut en bas</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Descends la caméra du ciel vers le sol, en 3 s.</code></pre>
+<p><strong>Quand :</strong> Révéler quelque chose en haut ou en bas.</p>
+<p><strong>Recette :</strong> <code>&lt;div data-camera=&quot;zoom 1.3→1.3 0+3; y 35→65 0+3&quot;&gt;&lt;div class=&quot;decor&quot; data-decor&gt;&lt;/div&gt;&lt;/div&gt; &lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.3&quot; style=&quot;position: relative&quot;&gt;&lt;…</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#026</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m059" data-categorie="camera" data-mots="059 #059 montee en grue crane up grue grue crane monter elever ensemble">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/059.jpg" aria-label="Aperçu : Montée en grue"><source src="medias/galerie/mouvements/059.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#059</p>
+<h3 class="carte-mouvement-nom">Montée en grue <span lang="en">Crane up</span></h3>
+<p class="carte-mouvement-sens">La caméra s'élève en reculant pour découvrir l'ensemble</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais monter la caméra en reculant sur 4 s.</code></pre>
+<p><strong>Quand :</strong> Une ouverture, une conclusion qui prend de la hauteur.</p>
+<p><strong>Recette :</strong> <code>&lt;div data-camera=&quot;zoom 1.4→1 0+4; y 70→50 0+4&quot;&gt;&lt;div class=&quot;decor&quot; data-decor&gt;&lt;/div&gt;&lt;/div&gt; &lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.3&quot; style=&quot;position: relative&quot;&gt;&lt;/h…</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#031</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m060" data-categorie="camera" data-mots="060 #060 plan incline dutch angle plan incline incline dutch pencher diagonale tension">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/060.jpg" aria-label="Aperçu : Plan incliné"><source src="medias/galerie/mouvements/060.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#060</p>
+<h3 class="carte-mouvement-nom">Plan incliné <span lang="en">Dutch angle</span></h3>
+<p class="carte-mouvement-sens">Le cadre penche en diagonale</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Penche le cadre de 6 degrés pendant la scène d'alerte.</code></pre>
+<p><strong>Quand :</strong> Un malaise, une tension, un ton décalé.</p>
+<p><strong>Recette :</strong> <code>&lt;div data-camera=&quot;rotation 0→6 0+1&quot;&gt;&lt;div class=&quot;decor&quot; data-decor&gt;&lt;/div&gt;&lt;/div&gt; &lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.3&quot; style=&quot;position: relative&quot;&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#036</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m061" data-categorie="camera" data-mots="061 #061 bascule de mise au point rack focus mise au point mise au point rack focus flou net premier plan">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/061.jpg" aria-label="Aperçu : Bascule de mise au point"><source src="medias/galerie/mouvements/061.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#061</p>
+<h3 class="carte-mouvement-nom">Bascule de mise au point <span lang="en">Rack focus</span></h3>
+<p class="carte-mouvement-sens">La netteté passe du premier plan au fond</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Passe la netteté du premier plan au fond à 2 s, en 0,6 s.</code></pre>
+<p><strong>Quand :</strong> Diriger le regard d'un élément à un autre.</p>
+<p><strong>Recette :</strong> <code>&lt;div class=&quot;decor&quot; data-decor data-start=&quot;2&quot; data-dur=&quot;0.6&quot; data-tween=&quot;--flou 1cqh→0cqh&quot; style=&quot;filter: blur(var(--flou))&quot;&gt;&lt;/div&gt; &lt;h2 data-texte=&quot;titre&quot; data-s…</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#033</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m062" data-categorie="camera" data-mots="062 #062 camera a l epaule handheld epaule epaule handheld main documentaire flottement">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/062.jpg" aria-label="Aperçu : Caméra à l'épaule"><source src="medias/galerie/mouvements/062.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#062</p>
+<h3 class="carte-mouvement-nom">Caméra à l'épaule <span lang="en">Handheld</span></h3>
+<p class="carte-mouvement-sens">Un léger flottement, comme une caméra tenue à la main</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Ajoute un léger effet caméra à l'épaule pendant 6 s.</code></pre>
+<p><strong>Quand :</strong> Un ton documentaire, vivant, proche.</p>
+<p><strong>Recette :</strong> <code>&lt;div data-camera=&quot;zoom 1.05→1.05 0+6&quot;&gt;&lt;div class=&quot;pm-m-epaule&quot; data-start=&quot;0&quot; data-dur=&quot;6&quot; style=&quot;display: grid; place-items: center&quot;&gt;&lt;div class=&quot;decor&quot; data-de…</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#034</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m063" data-categorie="camera" data-mots="063 #063 parallaxe parallax parallaxe parallaxe parallax profondeur plans travelling">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/063.jpg" aria-label="Aperçu : Parallaxe"><source src="medias/galerie/mouvements/063.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#063</p>
+<h3 class="carte-mouvement-nom">Parallaxe <span lang="en">Parallax</span></h3>
+<p class="carte-mouvement-sens">Les plans proches bougent plus vite que les plans lointains</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais un travelling avec parallaxe : fond à 20 %, collines à 60 %.</code></pre>
+<p><strong>Quand :</strong> Donner de la profondeur à un décor.</p>
+<p><strong>Recette :</strong> <code>&lt;div data-camera=&quot;zoom 1.2→1.2 0+4; x 40→60 0+4&quot;&gt;&lt;div class=&quot;decor&quot; data-decor data-profondeur=&quot;0.2&quot;&gt;&lt;/div&gt;&lt;div class=&quot;decor&quot; data-decor data-profondeur=&quot;0.6&quot;&gt;&lt;…</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#016</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m064" data-categorie="camera" data-mots="064 #064 effet vertigo dolly zoom vertigo vertigo dolly zoom choc fond vertige">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/064.jpg" aria-label="Aperçu : Effet vertigo"><source src="medias/galerie/mouvements/064.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#064</p>
+<h3 class="carte-mouvement-nom">Effet vertigo <span lang="en">Dolly zoom</span></h3>
+<p class="carte-mouvement-sens">Le sujet garde sa taille pendant que le fond se déforme</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fais un effet vertigo : le fond grossit de 40 % en 2 s, le titre ne bouge pas.</code></pre>
+<p><strong>Quand :</strong> Un choc, une prise de conscience.</p>
+<p><strong>Recette :</strong> <code>&lt;div data-camera=&quot;zoom 1→1.4 0.5+2 sine-inout&quot;&gt;&lt;div class=&quot;decor&quot; data-decor&gt;&lt;/div&gt;&lt;/div&gt; &lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.3&quot; style=&quot;position: relative&quot;&gt;&lt;/h…</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#032</a></p>
+</details>
+</article>
+</div>
+</section>
+<section class="categorie-mouvements" id="categorie-temps" data-categorie="temps">
+<h2>Le temps</h2>
+<div class="grille-mouvements">
+<article class="carte-mouvement" id="m065" data-categorie="temps" data-mots="065 #065 ralenti slow motion ralenti ralenti slow motion lent savourer">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/065.jpg" aria-label="Aperçu : Ralenti"><source src="medias/galerie/mouvements/065.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#065</p>
+<h3 class="carte-mouvement-nom">Ralenti <span lang="en">Slow motion</span></h3>
+<p class="carte-mouvement-sens">L'action se joue plus lentement</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Passe la chute au ralenti, de 1 s à 3 s, à moitié de la vitesse.</code></pre>
+<p><strong>Quand :</strong> Savourer un geste, un impact.</p>
+<p><strong>Recette :</strong> <code>&lt;div data-vitesse=&quot;1+2 x0.5&quot;&gt;&lt;h2 class=&quot;pm-m-chute&quot; data-texte=&quot;titre&quot; data-start=&quot;0.8&quot;&gt;&lt;/h2&gt;&lt;/div&gt;</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#037</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m066" data-categorie="temps" data-mots="066 #066 variation de vitesse speed ramp rampe speed ramp vitesse accelerer ralentir dynamique">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/066.jpg" aria-label="Aperçu : Variation de vitesse"><source src="medias/galerie/mouvements/066.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#066</p>
+<h3 class="carte-mouvement-nom">Variation de vitesse <span lang="en">Speed ramp</span></h3>
+<p class="carte-mouvement-sens">L'action accélère puis ralentit dans le même plan</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Accélère l'entrée ×2 pendant 1 s, puis ralentis à moitié pendant 1 s.</code></pre>
+<p><strong>Quand :</strong> Un rythme dynamique, une mise en valeur.</p>
+<p><strong>Recette :</strong> <code>&lt;div data-vitesse=&quot;0.5+1 x2; 1.5+1 x0.5&quot;&gt;&lt;h2 class=&quot;pm-m-glisse-gauche&quot; data-texte=&quot;titre&quot; data-start=&quot;0.5&quot; style=&quot;--pm-dur: 2s&quot;&gt;&lt;/h2&gt;&lt;/div&gt;</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#038</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m067" data-categorie="temps" data-mots="067 #067 arret sur image freeze frame arret sur image arret sur image freeze figer pause moment cle">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/067.jpg" aria-label="Aperçu : Arrêt sur image"><source src="medias/galerie/mouvements/067.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#067</p>
+<h3 class="carte-mouvement-nom">Arrêt sur image <span lang="en">Freeze frame</span></h3>
+<p class="carte-mouvement-sens">L'action s'arrête un instant, puis reprend</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Fige l'image à 1,2 s pendant 1,5 s, en la passant en gris.</code></pre>
+<p><strong>Quand :</strong> Un moment clé, un « c'est là que… ».</p>
+<p><strong>Recette :</strong> <code>&lt;div data-gel=&quot;1.2+1.5&quot; data-camera=&quot;saturation 1→0.4 1.2+0.3; saturation 0.4→1 2.7+0.3&quot; style=&quot;display: grid; place-items: center&quot;&gt;&lt;h2 class=&quot;pm-m-glisse-gauch…</code></p>
+<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#040</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m068" data-categorie="temps" data-mots="068 #068 accelere fast forward accelere accelere fast forward rapide resumer time lapse">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/mouvements/068.jpg" aria-label="Aperçu : Accéléré"><source src="medias/galerie/mouvements/068.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#068</p>
+<h3 class="carte-mouvement-nom">Accéléré <span lang="en">Fast forward</span></h3>
+<p class="carte-mouvement-sens">L'action passe beaucoup plus vite</p>
+<details><summary>Fiche</summary>
+<p><strong>Pour le demander :</strong></p>
+<pre class="commande"><code>Passe la préparation en accéléré ×4 pendant 2 s.</code></pre>
+<p><strong>Quand :</strong> Résumer une étape longue.</p>
+<p><strong>Recette :</strong> <code>&lt;div data-vitesse=&quot;0.5+2 x4&quot;&gt;&lt;h2 class=&quot;pm-m-va-vient&quot; data-texte=&quot;titre&quot; data-start=&quot;0.5&quot; style=&quot;--pm-fois: 6&quot;&gt;&lt;/h2&gt;&lt;/div&gt;</code></p>
+</details>
+</article>
+</div>
+</section>
+<!-- /galerie:mouvements -->
+
+<footer class="galerie-source">
+<p>Noms, sens et idées de phrases inspirés de <a href="https://github.com/showheyohtaki/motion-prompt" rel="noopener">Motion Prompt</a> de Shohei Ohtaki (licence MIT), traduits et adaptés au moteur de Pulse Motion. Chaque mouvement est réalisé par le moteur de Pulse Motion.</p>
+</footer>
+
+</article>
+</main>
+</body>
+</html>

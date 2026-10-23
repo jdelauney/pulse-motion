@@ -86,6 +86,10 @@ window.PULSE_WIKI = {
       "href": "catalogue.html"
     },
     {
+      "titre": "Mouvements",
+      "href": "mouvements.html"
+    },
+    {
       "titre": "Je suis bloqué",
       "href": "depannage.html"
     }

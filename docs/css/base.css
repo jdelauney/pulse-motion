@@ -765,3 +765,36 @@ a[target="_blank"]::after { content: "\00a0↗"; font-size: 0.85em; }
 .resultat .capture { margin: 0; }
 .etapes-resultat { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
 .etapes-resultat .carte-titre-espace { margin-top: 12px; }
+
+/* Galerie des mouvements, effets et personnages : cartes avec leur aperçu (boucle muette, image fixe sans JavaScript). */
+.grille-mouvements { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); margin: 16px 0 32px; }
+.carte-mouvement, .carte-effet {
+  display: flex; flex-direction: column; gap: 6px; padding: 12px; min-width: 0;
+  background: oklch(0.16 0.02 290 / 80%); border: 1px solid var(--lisere); border-radius: var(--rayon-xl); box-shadow: var(--ombre-surface);
+}
+.carte-mouvement figure, .carte-effet figure { margin: 0; }
+.apercu { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; border-radius: var(--rayon-lg); background: oklch(0.22 0.02 290); cursor: pointer; }
+.carte-mouvement-numero { margin: 4px 0 0; font-variant-numeric: tabular-nums; color: var(--texte-secondaire); font-size: var(--texte-sm); }
+.carte-mouvement-nom, .carte-effet h3 { margin: 0; font-size: var(--texte-lg); line-height: 1.25; }
+.carte-mouvement-nom span { display: block; font-size: var(--texte-sm); font-weight: 400; color: var(--texte-secondaire); }
+.carte-mouvement-sens, .carte-effet p { margin: 0; color: var(--texte-secondaire); font-size: var(--texte-sm); line-height: 1.5; }
+.carte-mouvement details { margin-top: auto; font-size: var(--texte-sm); }
+.carte-mouvement details summary { cursor: pointer; color: var(--texte); }
+.carte-mouvement details code { word-break: break-word; }
+.carte-mouvement-source { font-size: var(--texte-sm); color: var(--texte-secondaire); }
+.galerie-outils { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 24px 0; }
+.galerie-outils[hidden] { display: none; }
+.galerie-recherche { display: flex; gap: 8px; align-items: center; }
+.galerie-recherche input { min-width: 14rem; padding: 8px 12px; border-radius: var(--rayon-md); border: 1px solid var(--lisere); background: var(--surface); color: var(--texte); }
+.galerie-filtres { display: flex; flex-wrap: wrap; gap: 8px; }
+.bouton-filtre[aria-pressed="true"] { border-color: currentColor; background: var(--surface-attenuee); }
+.galerie-compte { margin: 0; color: var(--texte-secondaire); font-size: var(--texte-sm); }
+.galerie-source { margin-top: 48px; color: var(--texte-secondaire); font-size: var(--texte-sm); }
+.categorie-mouvements[hidden], .carte-mouvement[hidden] { display: none; }
+.style-en-mouvement { margin: 12px 0; padding: 12px 16px; border: 1px solid var(--lisere); border-radius: var(--rayon-xl); }
+.style-en-mouvement summary { cursor: pointer; }
+.grille-vignettes { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); margin: 12px 0; }
+.vignette { margin: 0; }
+.vignette img { display: block; width: 100%; height: auto; border-radius: var(--rayon-md); border: 1px solid var(--lisere); }
+.vignette figcaption { margin-top: 4px; font-size: var(--texte-sm); color: var(--texte-secondaire); }
+.liste-mots li { margin: 4px 0; }
