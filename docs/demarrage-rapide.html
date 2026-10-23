@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="fr" data-racine="">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>En 5 minutes – Wiki Pulse Motion</title>
+<meta name="description" content="Démarrer avec Pulse Motion en 5 minutes : une phrase pour créer la vidéo, l'aperçu qui s'ouvre dans votre navigateur, puis l'export en MP4.">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/animations.css">
+<script src="js/donnees.js" defer></script>
+<script src="js/gabarit.js" defer></script>
+<script src="js/animations.js" defer></script>
+<script src="js/console.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<div class="mise-en-page">
+<nav class="laterale" aria-label="Sur cette page" data-laterale="sommaire"></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille pastille-etape" data-couleur="1">Démarrage rapide · 5 minutes</p>
+<h1>En 5 minutes</h1>
+<p class="chapo">Une phrase, quelques réponses, et vous regardez une vidéo animée d'environ une minute dans votre navigateur, prête à exporter en MP4. Cinq minutes à vous, et quelques minutes de fabrication pendant lesquelles vous n'avez rien à faire.</p>
+</header>
+
+<figure class="capture"><video controls preload="none" playsinline poster="assets/captures/chaine-du-froid-affiche.jpg" width="1280" height="720"><source src="medias/chaine-du-froid.mp4" type="video/mp4">Votre navigateur ne lit pas la vidéo : <a href="medias/chaine-du-froid.mp4">téléchargez-la</a>.</video><figcaption>Voici ce que donne une seule phrase : « Expliquer la chaîne du froid en une minute ». Six scènes, une musique composée pour la vidéo, sans voix.</figcaption></figure>
+
+<!-- ===================================================================================================== -->
+<section id="pret" class="etape-tuto">
+<h2><span class="etape-numero">0</span> Avant <span class="duree">1 minute</span></h2>
+<p>Il vous faut Claude Code, Node.js, Chrome ou Edge, et le plugin Pulse Motion. Si l'un des quatre manque, les <a href="prerequis.html">prérequis</a> les installent pas à pas, puis revenez ici.</p>
+<p>Ouvrez un <strong>dossier vide</strong> dans VS Code (la vidéo y sera rangée), puis demandez à Claude de vérifier votre ordinateur :</p>
+<pre class="commande"><code>/pulse-motion:outils</code></pre>
+<aside class="encadre encadre-attendu"><p><strong>Résultat attendu :</strong> Pulse Motion confirme que Node.js et le navigateur sont prêts. Il peut proposer d'installer ffmpeg : ce n'est pas obligatoire pour commencer.</p></aside>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="creer" class="etape-tuto">
+<h2><span class="etape-numero">1</span> Créer <span class="duree">2 minutes</span></h2>
+<p>Décrivez votre vidéo en une phrase, après la commande :</p>
+<pre class="commande"><code>/pulse-motion:creer Expliquer la chaîne du froid en une minute</code></pre>
+<p>Pulse Motion pose deux petites rondes de questions (durée, public, musique, voix…). Pour aller vite, gardez à chaque fois la réponse marquée <strong>(Recommandé)</strong>, sauf pour la voix : choisissez « Pas de voix ». Il vous montre ensuite le <a href="concepts.html#deroule">déroulé</a>, la liste des scènes avec leurs textes, et trois styles possibles.</p>
+<div class="conversation" data-titre="Valider">
+<p data-role="claude">Voici le déroulé : 6 scènes, environ 1 minute.
+→ Je valide, avec le style posé, lisible et rassurant (Recommandé) / … / Je veux changer quelque chose</p>
+<p data-role="vous">Je valide, avec le style posé, lisible et rassurant</p>
+</div>
+<aside class="encadre encadre-attendu"><p><strong>Résultat attendu :</strong> Pulse Motion annonce la fabrication. Il anime les scènes et contrôle tout seul la lisibilité : comptez quelques minutes, vous n'avez rien à faire.</p></aside>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="regarder" class="etape-tuto">
+<h2><span class="etape-numero">2</span> Regarder <span class="duree">1 minute</span></h2>
+<p>L'<a href="concepts.html#apercu">aperçu</a> s'ouvre tout seul dans votre navigateur : c'est la vidéo, avec une barre de lecture en bas. Cliquez sur <strong>▶</strong> ou appuyez sur la barre d'<kbd>Espace</kbd>.</p>
+<p>Quelque chose ne vous plaît pas ? Dites-le en une phrase, l'aperçu se recharge aussitôt :</p>
+<pre class="commande"><code>/pulse-motion:retoucher ralentis la scène 3</code></pre>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="exporter" class="etape-tuto">
+<h2><span class="etape-numero">3</span> Exporter <span class="duree">1 minute</span></h2>
+<pre class="commande"><code>/pulse-motion:exporter</code></pre>
+<p>Pulse Motion fabrique le fichier MP4 sur votre ordinateur, en quelques minutes pour une vidéo d'une minute.</p>
+<aside class="encadre encadre-attendu"><p><strong>Résultat attendu :</strong> le dossier <code>sortie/</code> contient le MP4, à publier ou à envoyer, et la page animée, qui s'ouvre sans connexion.</p></aside>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="ensuite" class="etape-tuto">
+<h2><span class="etape-numero">✓</span> Et ensuite ?</h2>
+<ul>
+<li>Le même parcours, expliqué pas à pas : le <a href="tutoriels/premiere-video.html">tutoriel 1, Première vidéo</a>.</li>
+<li>Votre logo, vos couleurs et votre voix : le <a href="tutoriels/complet.html">tutoriel 2, Vidéo complète</a>.</li>
+<li>Tout ce qu'une phrase peut changer : <a href="commandes/retoucher.html"><code>/pulse-motion:retoucher</code></a>.</li>
+<li>Vous ne savez pas quelle commande prendre ? <a href="quelle-commande.html">Quelle commande ?</a></li>
+</ul>
+</section>
+
+</article>
+</div>
+</main>
+</body>
+</html>
