@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="fr" data-racine="">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Concepts – Wiki Pulse Motion</title>
+<meta name="description" content="Les idées de Pulse Motion expliquées simplement : genre et style, charte, déroulé, scènes, personnages, parcours, aperçu, contrôles automatiques, export, et où sont rangés vos fichiers.">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/animations.css">
+<script src="js/donnees.js" defer></script>
+<script src="js/gabarit.js" defer></script>
+<script src="js/animations.js" defer></script>
+<script src="js/console.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<div class="mise-en-page">
+<nav class="laterale" aria-label="Sur cette page" data-laterale="sommaire"></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille">Comprendre</p>
+<h1>Concepts</h1>
+<p class="chapo">Les idées sur lesquelles repose Pulse Motion, expliquées avec des mots simples. Vous n'avez pas besoin de les connaître pour faire une vidéo : elles vous aident à comprendre ce que Pulse Motion vous propose, et pourquoi.</p>
+</header>
+
+<!-- ===================================================================================================== -->
+<section id="chaine">
+<h2>De l'idée au fichier vidéo</h2>
+<p>Une vidéo Pulse Motion n'est pas montée comme dans un logiciel de montage. Elle est <strong>décrite</strong>, puis <strong>dessinée par le navigateur</strong>, image par image, comme une page web qui bouge. C'est ce qui la rend retouchable en une phrase : changer un mot du déroulé suffit à changer la vidéo.</p>
+<figure class="anim" data-etapes="6" data-duree="1300">
+<svg viewBox="0 0 900 230" role="img" aria-labelledby="concepts-chaine-titre">
+<title id="concepts-chaine-titre">De l'idée au fichier vidéo, en six maillons</title>
+<g class="e1" data-etape="1"><rect class="actif-halo schema-halo-primaire" x="4" y="24" width="132" height="84" rx="18"/><rect class="schema-boite" x="10" y="30" width="120" height="72" rx="14"/><text class="schema-texte" x="70" y="62" text-anchor="middle">Votre idée</text><text class="schema-texte-secondaire" x="70" y="82" text-anchor="middle">en une phrase</text></g>
+<path class="schema-fleche trace e2" pathLength="1" d="M130 66 H156" marker-end="url(#concepts-pointe)"/>
+<g class="e2" data-etape="2"><rect class="actif-halo schema-halo-primaire" x="154" y="24" width="132" height="84" rx="18"/><rect class="schema-boite-active" x="160" y="30" width="120" height="72" rx="14"/><text class="schema-texte" x="220" y="62" text-anchor="middle">Déroulé</text><text class="schema-texte-secondaire" x="220" y="82" text-anchor="middle">scènes · textes</text></g>
+<path class="schema-fleche trace e3" pathLength="1" d="M280 66 H306" marker-end="url(#concepts-pointe)"/>
+<g class="e3" data-etape="3"><rect class="actif-halo schema-halo-primaire" x="304" y="24" width="132" height="84" rx="18"/><rect class="schema-boite" x="310" y="30" width="120" height="72" rx="14"/><text class="schema-texte" x="370" y="62" text-anchor="middle">Scènes</text><text class="schema-texte-secondaire" x="370" y="82" text-anchor="middle">une par fichier</text></g>
+<path class="schema-fleche trace e4" pathLength="1" d="M430 66 H456" marker-end="url(#concepts-pointe)"/>
+<g class="e4" data-etape="4"><rect class="actif-halo schema-halo-primaire" x="454" y="24" width="132" height="84" rx="18"/><rect class="schema-boite" x="460" y="30" width="120" height="72" rx="14"/><text class="schema-texte" x="520" y="62" text-anchor="middle">Assemblage</text><text class="schema-texte-secondaire" x="520" y="82" text-anchor="middle">style · charte · son</text></g>
+<path class="schema-fleche trace e5" pathLength="1" d="M580 66 H606" marker-end="url(#concepts-pointe)"/>
+<g class="e5" data-etape="5"><rect class="actif-halo schema-halo-primaire" x="604" y="24" width="132" height="84" rx="18"/><rect class="schema-boite-active" x="610" y="30" width="120" height="72" rx="14"/><text class="schema-texte" x="670" y="62" text-anchor="middle">Page animée</text><text class="schema-texte-secondaire" x="670" y="82" text-anchor="middle">aperçu · site</text></g>
+<path class="schema-fleche trace e6" pathLength="1" d="M730 66 H756" marker-end="url(#concepts-pointe)"/>
+<g class="e6" data-etape="6"><rect class="actif-halo schema-halo-primaire" x="754" y="24" width="142" height="84" rx="18"/><rect class="schema-boite-active" x="760" y="30" width="130" height="72" rx="14"/><text class="schema-texte" x="825" y="62" text-anchor="middle">MP4</text><text class="schema-texte-secondaire" x="825" y="82" text-anchor="middle">à publier</text></g>
+<g class="e4" data-etape="4"><path class="schema-accompagne trace e4" pathLength="1" d="M520 104 V150 H370 V108" marker-end="url(#concepts-pointe-mauve)"/><text class="schema-texte-secondaire" x="445" y="172" text-anchor="middle">contrôles : corrigé seul, ou à corriger</text></g>
+<g class="e6"><path class="schema-accompagne trace e6" pathLength="1" d="M670 104 V200 H220 V108" marker-end="url(#concepts-pointe-mauve)"/><text class="schema-texte-secondaire" x="445" y="222" text-anchor="middle">une retouche change le déroulé ou une scène, et tout se refait</text></g>
+<defs>
+<marker id="concepts-pointe" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" class="schema-pointe-grise"/></marker>
+<marker id="concepts-pointe-mauve" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" class="schema-pointe"/></marker>
+</defs>
+</svg>
+<figcaption>Votre idée devient un déroulé (la liste des scènes et de leurs textes). Chaque scène est écrite dans son fichier. L'assemblage réunit les scènes, le style, votre charte et le son dans une seule page animée, contrôlée au passage. Cette page sert d'aperçu et peut aller sur un site ; l'export en tire le fichier MP4. Une retouche change le déroulé ou une scène, puis tout se refait.</figcaption>
+</figure>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="genre">
+<h2>Genre et style : deux choix séparés</h2>
+<p>Pulse Motion distingue deux choses qu'on mélange souvent :</p>
+<ul>
+<li>le <dfn>genre</dfn>, c'est <strong>ce que fait</strong> la vidéo : former, présenter un produit, raconter une histoire, publier sur les réseaux ;</li>
+<li>le <dfn>style</dfn>, c'est <strong>à quoi elle ressemble</strong> : ses formes, ses polices, sa façon de bouger, comme un thème de présentation.</li>
+</ul>
+<p>N'importe quel genre se combine avec n'importe quel style. Le genre se déduit de votre sujet ; il décide de la <strong>structure</strong> de la vidéo et du format, et classe les styles du plus adapté au moins adapté.</p>
+<table>
+<thead><tr><th>Genre</th><th>Structure conseillée</th><th>Format</th><th>Styles proposés en premier</th></tr></thead>
+<tbody>
+<tr><td><strong>Formation</strong></td><td>Titre → pourquoi (chiffre ou alerte) → étapes ou liste → à faire, à éviter → conclusion</td><td>16:9</td><td>clair-pedagogique, chaleureux</td></tr>
+<tr><td><strong>Présentation de produit</strong></td><td>Problème → produit → 3 bénéfices → chiffre clé → appel à l'action</td><td>16:9</td><td>minimal, tech-sombre</td></tr>
+<tr><td><strong>Storytelling</strong></td><td>Situation → difficulté → déclic → résolution → morale</td><td>16:9</td><td>editorial, chaleureux</td></tr>
+<tr><td><strong>Publication sociale</strong></td><td>Accroche en 2 s → 2 ou 3 scènes courtes → conclusion</td><td>9:16 (4:5 pour le fil)</td><td>energique, minimal</td></tr>
+</tbody>
+</table>
+<p>Le troisième style proposé est volontairement <strong>contrasté</strong> : il vous montre une autre direction possible. Les six styles sont présentés dans le <a href="catalogue.html#styles">catalogue</a>.</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="charte">
+<h2>La charte et le glossaire</h2>
+<p>La <dfn>charte</dfn>, ce sont les couleurs, les polices et le logo de votre marque. Elle s'applique <strong>par-dessus le style</strong> : le style donne l'allure, la charte donne votre identité. C'est ce qui évite l'effet « toutes les vidéos se ressemblent ».</p>
+<ul>
+<li><strong>Deux couleurs :</strong> la primaire (titres, éléments principaux) et l'accent (mise en valeur). Pulse Motion les tire de votre logo, ou les prend dans vos mots (« bleu marine »).</li>
+<li><strong>Des couleurs toujours lisibles :</strong> Pulse Motion calcule, pour chaque couleur, une version juste assez foncée ou éclaircie pour se lire sur le fond, et le blanc ou le noir à poser sur un aplat de cette couleur.</li>
+<li><strong>Deux polices :</strong> une pour les titres, une pour le texte, embarquées dans la vidéo.</li>
+<li><strong>Un ton :</strong> clair ou sombre, quand le style propose les deux.</li>
+</ul>
+<p>Une charte se crée pendant une vidéo, puis s'<strong>enregistre</strong> sous un nom (« atelier-nord ») pour être proposée aux vidéos suivantes. Si vous la modifiez plus tard, <a href="commandes/reprendre.html"><code>/pulse-motion:reprendre</code></a> vous signale qu'une vidéo utilise une version ancienne, et propose de la mettre à jour.</p>
+<p>Le <dfn>glossaire</dfn> accompagne la charte : ce sont les mots de <em>votre métier</em> (sigles, noms de produits), avec leur graphie exacte et les formes à éviter. Le contrôle signale toute faute sur ces mots. À ne pas confondre avec le <a href="#lexique">lexique</a>, qui note les mots de l'<em>outil</em> qu'on vous a déjà expliqués.</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="deroule">
+<h2>Le déroulé</h2>
+<p>Le <dfn>déroulé</dfn> est la liste des scènes dans l'ordre, comme le conducteur d'une émission. C'est le cœur de la vidéo : un seul fichier, <code>deroule.json</code>, qui contient tout ce qui peut changer d'une phrase.</p>
+<table>
+<thead><tr><th>Pour toute la vidéo</th><th>Pour chaque scène</th></tr></thead>
+<tbody>
+<tr><td>Le titre, le genre, le parcours</td><td>Les textes affichés à l'écran</td></tr>
+<tr><td>Le format (16:9, 9:16, 1:1, 4:5) et les images par seconde</td><td>Le texte dit, si la vidéo a une voix</td></tr>
+<tr><td>Le style et les réglages de charte propres à cette vidéo</td><td>La durée, et le rythme (plus lent, plus vif)</td></tr>
+<tr><td>La musique, la voix, les sous-titres, les bruitages</td><td>La transition vers la scène suivante</td></tr>
+</tbody>
+</table>
+<p><strong>Pourquoi c'est important :</strong> les textes ne sont jamais écrits dans les scènes, seulement dans le déroulé. « Change le titre » change donc une seule ligne, sans risque de casser l'animation.</p>
+<h3>Les règles de rythme</h3>
+<ul>
+<li><strong>Une idée par scène.</strong> Si le texte tient en deux idées, ce sont deux scènes.</li>
+<li><strong>Le temps de lire :</strong> une scène dure au moins 1,5 s + 0,3 s par mot affiché.</li>
+<li><strong>Rien d'immobile plus de 2,5 s</strong> : un décor qui dérive ou une entrée échelonnée suffit.</li>
+<li><strong>Finir sur une image stable</strong> d'au moins une demi-seconde.</li>
+<li><strong>Textes courts :</strong> un titre de 40 caractères au plus, un texte de scène de 80 au plus, les nombres en chiffres.</li>
+</ul>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="scenes">
+<h2>Scènes toutes faites et scènes composées</h2>
+<p>Une <dfn>scène</dfn> est un écran animé de la vidéo, comme une diapositive qui bouge. Chaque style propose <strong>huit scènes toutes faites</strong>, une par rôle :</p>
+<table>
+<thead><tr><th>Scène</th><th>Rôle</th><th>Durée conseillée</th></tr></thead>
+<tbody>
+<tr><td><code>titre</code></td><td>Ouvrir la vidéo ou un chapitre</td><td>7 s</td></tr>
+<tr><td><code>liste</code></td><td>2 à 4 points révélés un par un</td><td>12 s</td></tr>
+<tr><td><code>chiffre</code></td><td>Un chiffre clé qui compte jusqu'à sa valeur</td><td>7 s</td></tr>
+<tr><td><code>comparaison</code></td><td>Deux colonnes : avant / après, à faire / à éviter</td><td>12 s</td></tr>
+<tr><td><code>etape</code></td><td>Une étape numérotée d'une procédure</td><td>8 s</td></tr>
+<tr><td><code>alerte</code></td><td>Un point de vigilance, une erreur à éviter</td><td>8 s</td></tr>
+<tr><td><code>schema</code></td><td>Trois étapes reliées par des flèches</td><td>8 s</td></tr>
+<tr><td><code>conclusion</code></td><td>Le message à retenir et le logo</td><td>6 s</td></tr>
+</tbody>
+</table>
+<p>Les durées et longueurs varient un peu selon le style (le style énergique est plus court). Quand aucune ne convient, l'animateur <strong>compose</strong> la scène librement : un <a href="personnages.html">personnage</a>, un décor, une caméra qui se déplace.</p>
+<p><strong>La différence compte au changement de style :</strong> une scène toute faite se recopie telle quelle dans le nouveau style ; une scène composée doit être réécrite.</p>
+<h3>Les animateurs</h3>
+<p>Un <dfn>animateur</dfn> est un assistant spécialisé de Pulse Motion qui écrit <strong>une</strong> scène. À la fabrication, il y en a un par scène, et ils travaillent tous en même temps : une vidéo de 10 scènes ne prend pas dix fois plus de temps qu'une vidéo d'une scène. C'est Pulse Motion qui décide des effets de particules et les confie aux animateurs concernés, pour garder la vidéo sobre.</p>
+<h3>Les personnages</h3>
+<p>Un <dfn>personnage</dfn> est un acteur animé de la scène : il entre en marchant, montre un chiffre, salue, change d'expression, et peut même dire le texte de la scène avec votre voix. Tous partagent le même squelette, habillé de bâtonnets, d'un dessin fait sur demande ou de votre propre illustration ; ils prennent donc tous les mêmes poses et font les mêmes mouvements. Tout est expliqué sur la page <a href="personnages.html">les personnages</a>.</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="parcours">
+<h2>Le parcours : rapide ou accompagné</h2>
+<p>Au départ, vous choisissez votre <dfn>parcours</dfn>, c'est-à-dire le nombre de fois où Pulse Motion s'arrête pour votre accord.</p>
+<table>
+<thead><tr><th>Parcours</th><th>Vos accords</th><th>Pour qui</th></tr></thead>
+<tbody>
+<tr><td><strong>Rapide</strong> (par défaut)</td><td>Un seul : le déroulé, avec le choix du style dans la même question</td><td>Vous voulez voir la vidéo vite, et retoucher ensuite.</td></tr>
+<tr><td><strong>Accompagné</strong></td><td>Trois : le déroulé, puis le style, puis la vidéo finale</td><td>Vous voulez valider chaque étape, ou la vidéo est importante.</td></tr>
+</tbody>
+</table>
+<p>Dans les deux cas, <strong>rien n'est animé avant votre accord sur le déroulé</strong>, et tout reste retouchable ensuite.</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="apercu">
+<h2>L'aperçu</h2>
+<p>L'<dfn>aperçu</dfn> est la vidéo elle-même, ouverte dans votre navigateur, avec une barre de lecture. Il est servi par un petit serveur sur votre ordinateur (une adresse en <code>http://localhost:…</code>) : rien ne sort sur Internet.</p>
+<ul>
+<li><strong>Il se recharge seul</strong> après chaque retouche, à la même position.</li>
+<li><strong>Il se pilote au clavier :</strong> <kbd>Espace</kbd> lecture/pause, <kbd>←</kbd> <kbd>→</kbd> image par image, <kbd>Maj</kbd> + flèche pour changer de scène, <kbd>B</kbd> pour rejouer une scène en boucle.</li>
+<li><strong>Il héberge le studio de voix</strong> (bouton <strong>Voix</strong>) et un bouton <strong>MP4</strong> qui exporte directement dans le navigateur.</li>
+</ul>
+<p>La vidéo est <strong>déterministe</strong> : à un instant donné correspond toujours exactement la même image. C'est ce qui permet de la contrôler image par image, et de l'exporter sans saccade, quelle que soit la puissance de l'ordinateur.</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="controles">
+<h2>Les contrôles automatiques</h2>
+<p>Après chaque fabrication et chaque retouche, Pulse Motion <strong>contrôle</strong> la vidéo en deux temps : d'abord le déroulé et les textes, puis la vidéo rendue, dans Chrome ou Edge sans fenêtre, image par image.</p>
+<p>Les cas sûrs sont <strong>corrigés seuls</strong>, et Pulse Motion vous dit en une phrase ce qu'il a fait. Le reste est corrigé par Pulse Motion lui-même, en deux tours au plus ; ce qui résiste vous est signalé.</p>
+<table>
+<thead><tr><th>Ce qui est vérifié</th><th>Corrigé seul ?</th></tr></thead>
+<tbody>
+<tr><td>Une scène trop courte pour lire son texte</td><td>Oui : allongée, de 50 % au plus</td></tr>
+<tr><td>Un temps mort en fin de scène (rien ne bouge plus de 2,5 s)</td><td>Oui : scène raccourcie, sans passer sous le temps de lecture</td></tr>
+<tr><td>Une fin de vidéo sans image stable</td><td>Oui : dernière scène allongée d'une seconde au plus</td></tr>
+<tr><td>La typographie française (espaces avant ; : ! ?, guillemets « », apostrophe ’, points de suspension)</td><td>Oui, dans les textes du déroulé</td></tr>
+<tr><td>Une majuscule sans accent (« Etape » → « Étape »)</td><td>Oui</td></tr>
+<tr><td>Un texte qui déborde de son cadre ou de l'image</td><td>Oui : taille réduite jusqu'à 80 %, jamais en dessous du lisible</td></tr>
+<tr><td>Deux éléments qui se chevauchent, un logo masqué, un texte trop près du bord</td><td>Non : signalé et corrigé dans la scène</td></tr>
+<tr><td>En vertical : un texte sous les boutons des réseaux sociaux</td><td>Non : signalé</td></tr>
+<tr><td>Le contraste réel d'un texte avec ce qu'il y a derrière ses lettres</td><td>Non : signalé</td></tr>
+<tr><td>Plus de 3 flashs par seconde sur un quart de l'image</td><td>Non : <strong>erreur</strong>, risque de crise d'épilepsie</td></tr>
+<tr><td>Un mot du glossaire mal écrit, un mot écrit deux fois de suite</td><td>Non : signalé</td></tr>
+</tbody>
+</table>
+<p>Chaque correction faite seule est sauvegardée avant : « annule » la défait. Si vous avez demandé une durée ou une graphie précise, Pulse Motion contrôle sans corriger, pour respecter votre demande.</p>
+<aside class="encadre encadre-conseil"><p><strong>Conseil :</strong> le contrôle à l'image demande Chrome ou Edge. Sans eux, Pulse Motion vous dit que le rendu n'a pas été vérifié : la vidéo est fabriquée, mais les débordements n'ont pas été mesurés.</p></aside>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="tempo">
+<h2>Le tempo : caler l'image sur la musique</h2>
+<p>Avec une musique composée, une partition, ou un fichier dont vous connaissez le tempo, la vidéo prend le <dfn>tempo</dfn> de la musique, en battements par minute. À 120 battements par minute, il y a un temps toutes les demi-secondes. Les animations peuvent alors partir <strong>sur les temps</strong>.</p>
+<p>C'est la musique qui se cale sur l'image, pas l'inverse : la musique composée (ou une partition calée sur les scènes) repart au début de chaque scène. Les durées des scènes restent libres, et le contrôle peut corriger seul une durée sans décaler la musique.</p>
+<p>Une musique en fichier, elle, ne bouge pas : si vous donnez son tempo, chaque scène doit commencer sur un temps (à 120 battements par minute, toutes les demi-secondes), et le contrôle ne corrige plus seul une durée, pour ne pas décaler l'image par rapport à la musique.</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="transitions">
+<h2>Les transitions</h2>
+<p>La <dfn>transition</dfn> est le passage d'une scène à la suivante. Elle dure une demi-seconde.</p>
+<table>
+<thead><tr><th>Transition</th><th>Pour</th></tr></thead>
+<tbody>
+<tr><td><code>fondu</code></td><td>Le choix par défaut, partout.</td></tr>
+<tr><td><code>glissement</code></td><td>Avancer dans une suite (des étapes).</td></tr>
+<tr><td><code>balayage</code></td><td>Changer de partie.</td></tr>
+<tr><td><code>rideau</code></td><td>Une ouverture depuis le centre (style éditorial).</td></tr>
+<tr><td><code>zoom</code></td><td>La scène approche (style énergique).</td></tr>
+<tr><td><code>coupe</code></td><td>Un passage sec, sans chevauchement (styles énergique et minimal).</td></tr>
+<tr><td><code>whip</code></td><td>Un panoramique filé, rapide et flou : un changement énergique.</td></tr>
+<tr><td><code>poussee</code></td><td>La nouvelle scène pousse l'ancienne hors du cadre : une suite logique, un diaporama.</td></tr>
+<tr><td><code>traversee</code></td><td>On traverse la scène pour entrer dans la suivante : plonger dans le sujet.</td></tr>
+<tr><td><code>cercle</code></td><td>La scène s'ouvre dans un cercle qui grandit : un ton ludique ou rétro.</td></tr>
+<tr><td><code>volets</code></td><td>La scène apparaît par bandes : un ton graphique.</td></tr>
+<tr><td><code>retournement</code></td><td>La scène pivote comme une carte : une question puis sa réponse.</td></tr>
+<tr><td><code>aucune</code></td><td>Enchaîner deux scènes qui se répondent (avant / après).</td></tr>
+</tbody>
+</table>
+<p>Deux ou trois familles au plus dans une vidéo, et la même pour des scènes de même nature.</p>
+<p>Les transitions, comme les entrées de texte et les mouvements de caméra, ont aussi un <strong>nom du métier</strong> et un <strong>numéro</strong> dans le dictionnaire de mouvements : « un whip pan entre la scène 2 et la 3 » ou « #042 » sont compris. Pour la liste : « quels mouvements existent ? ».</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="export">
+<h2>Les deux exports</h2>
+<p>Une même vidéo donne <strong>deux livrables</strong> :</p>
+<ul>
+<li>la <strong>page animée</strong> (<code>sortie/&lt;titre&gt;.html</code>), toujours à jour : un seul fichier qui contient tout (images, polices, son) et s'ouvre sans connexion, à déposer sur un site ;</li>
+<li>le <strong>fichier MP4</strong>, fabriqué à la demande par <a href="commandes/exporter.html"><code>/pulse-motion:exporter</code></a>, à publier ou à envoyer.</li>
+</ul>
+<p>Le MP4 se fabrique de deux façons :</p>
+<table>
+<thead><tr><th></th><th>Export fidèle</th><th>Export dans le navigateur</th></tr></thead>
+<tbody>
+<tr><td>Ce qu'il faut</td><td>ffmpeg, installé une fois</td><td>Rien de plus que Chrome ou Edge</td></tr>
+<tr><td>Les images</td><td>Les vraies images du navigateur, une par une</td><td>Dessinées dans le navigateur ; quelques effets avancés y sont moins bien rendus</td></tr>
+<tr><td>Le son</td><td>Le mixage de la page, niveau vérifié</td><td>Le même mixage</td></tr>
+<tr><td>La durée</td><td>Environ 2 s de calcul par seconde de vidéo en 1080p</td><td>Variable selon l'ordinateur</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="historique">
+<h2>L'historique des retouches</h2>
+<p>Avant chaque retouche, Pulse Motion copie l'état de la vidéo (déroulé, scènes, fichiers, charte) dans un dossier caché, <code>.historique/</code>. Les <strong>20 dernières</strong> copies sont gardées. « annule » restaure la plus récente ; répété, il remonte le temps, copie après copie.</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="lexique">
+<h2>Le lexique personnel</h2>
+<p>Pulse Motion vous parle sans jargon. Quand il doit vous expliquer un mot de l'outil (déroulé, scène, charte, export…), il le fait <strong>une fois</strong>, avec une image du quotidien, et le note dans votre <dfn>lexique personnel</dfn>. La fois suivante, il ne vous le réexplique pas en entier. Vous pouvez lire et corriger ce lexique : c'est un fichier texte, <code>lexique.md</code>, dans votre dossier personnel Pulse Motion. Le <a href="lexique.html">lexique de ce wiki</a> reprend ces mots.</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="donnees">
+<h2>Où sont vos fichiers</h2>
+<p>Pulse Motion fonctionne <strong>sans cloud</strong> : rien n'est envoyé à un service de vidéo. Tout est sur votre ordinateur, à deux endroits.</p>
+<table>
+<thead><tr><th>Où</th><th>Ce qu'on y trouve</th></tr></thead>
+<tbody>
+<tr><td><strong>Le dossier de la vidéo</strong></td><td>Le déroulé, les scènes, la charte de la vidéo, vos fichiers (<code>assets/</code>), les sorties (<code>sortie/</code>), l'historique. Copiez ce dossier pour sauvegarder ou transmettre la vidéo.</td></tr>
+<tr><td><strong>Votre dossier personnel Pulse Motion</strong><br><code>.pulse-motion</code>, dans votre dossier utilisateur</td><td>Vos chartes enregistrées (<code>chartes/</code>), vos styles personnels (<code>styles/</code>), votre lexique (<code>lexique.md</code>).</td></tr>
+</tbody>
+</table>
+<p>Claude, lui, lit les fichiers du dossier pour travailler avec vous, comme pour tout projet dans Claude Code.</p>
+</section>
+
+</article>
+</div>
+</main>
+</body>
+</html>

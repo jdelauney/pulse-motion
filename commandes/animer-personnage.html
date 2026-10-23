@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="fr" data-racine="../" data-commande="animer-personnage">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>/pulse-motion:animer-personnage – Wiki Pulse Motion</title>
+<meta name="description" content="Créer ou modifier une pose ou un mouvement de personnage, et le montrer sous plusieurs angles (« fais une pose où il se gratte la tête », « il marche trop vite »).">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/animations.css">
+<script src="../js/donnees.js" defer></script>
+<script src="../js/gabarit.js" defer></script>
+<script src="../js/animations.js" defer></script>
+<script src="../js/console.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<div class="mise-en-page">
+<nav class="laterale" aria-label="Les commandes" data-laterale></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille pastille-etape" data-couleur="0">Étape 4 · Personnaliser</p>
+<h1><code>/pulse-motion:animer-personnage</code></h1>
+<p class="chapo">Créer ou modifier une pose ou un mouvement de personnage, et le montrer sous plusieurs angles (« fais une pose où il se gratte la tête », « il marche trop vite »).</p>
+</header>
+
+<ul class="sommaire" aria-label="Sur cette page" data-sommaire></ul>
+
+<section id="description">
+<h2>Description</h2>
+<p>Un personnage de Pulse Motion bouge avec des <strong>poses</strong> (une attitude tenue : montrer, mains sur les hanches, assis) et des <strong>mouvements</strong> (la marche, la course, un saut, un geste). Il change aussi d'<strong>expression</strong> : joie, tristesse, peur, colère, surprise. Cette commande en crée de nouveaux ou modifie ceux qui existent, pour un personnage dessiné comme pour le personnage en bâtonnets.</p>
+<p>Après chaque changement, Pulse Motion vérifie le résultat et le regarde sur une <em>planche</em>, une image en vignettes qui montre le mouvement sous plusieurs angles : les membres ne doivent pas plier à l'envers, les pieds doivent rester sur le sol, le geste doit ressembler à votre demande. Il corrige, en trois tours au plus, puis vous montre la planche.</p>
+<p>Elle sert aussi à <strong>mettre un personnage dans une scène</strong> et à l'y faire jouer : entrer en marchant, montrer un chiffre, saluer, repartir, ou parler sur la voix de la scène.</p>
+</section>
+
+<section id="pourquoi">
+<h2>Pourquoi l'utiliser</h2>
+<ul>
+<li><strong>Un nouveau geste en une phrase.</strong> « Fais une pose où il se gratte la tête », « fais-le sauter plus haut ».</li>
+<li><strong>Vous le voyez sous tous les angles</strong> : de profil, de trois quarts, de face.</li>
+<li><strong>Les mouvements livrés restent intacts.</strong> Pour modifier la marche, Pulse Motion en fait une copie rangée avec votre vidéo, qui remplace la marche pour cette vidéo seulement.</li>
+<li><strong>Le personnage joue avec la scène.</strong> Ses actions se calent sur les autres éléments ou sur un mot de la voix ; entre deux actions, il respire, et chaque changement se fait en douceur.</li>
+</ul>
+</section>
+
+<section id="quand">
+<h2>Quand l'utiliser</h2>
+<ol class="parcours" aria-label="Le parcours Pulse Motion, cette commande à l'étape mise en avant">
+  <li data-couleur="1"><span class="parcours-numero">1</span> Créer</li>
+  <li data-couleur="3"><span class="parcours-numero">2</span> Retoucher</li>
+  <li data-couleur="4"><span class="parcours-numero">3</span> Exporter</li>
+  <li data-couleur="0" aria-current="step"><span class="parcours-numero">4</span> Personnaliser</li>
+</ol>
+<ul>
+<li><strong>Après <a href="dessiner-personnage.html"><code>/pulse-motion:dessiner-personnage</code></a></strong> ou <a href="decouper-personnage.html"><code>/pulse-motion:decouper-personnage</code></a>, pour faire bouger votre personnage. Le personnage en bâtonnets, lui, est toujours là.</li>
+<li><strong>Pour savoir ce qui existe déjà</strong> : « quels mouvements existent ? ». Cela marche même sans vidéo dans le dossier.</li>
+<li><strong>Avant <a href="atelier-personnages.html"><code>/pulse-motion:atelier-personnages</code></a></strong>, si vous voulez ensuite affiner le geste à la souris.</li>
+</ul>
+<p>Tout ce que les personnages savent faire est réuni sur la page <a href="../personnages.html">Personnages</a>.</p>
+</section>
+
+<section id="arguments">
+<h2>Comment la lancer</h2>
+<pre class="commande"><code>/pulse-motion:animer-personnage [la pose ou le mouvement voulu]</code></pre>
+<p class="legende">Entre crochets <code>[ ]</code> : facultatif. Vous pouvez aussi lancer la commande seule et décrire le geste ensuite, avec vos mots.</p>
+<pre class="commande"><code>/pulse-motion:animer-personnage fais une pose où il se gratte la tête</code></pre>
+<pre class="commande"><code>/pulse-motion:animer-personnage montre-moi la course de face et de profil</code></pre>
+<pre class="commande"><code>/pulse-motion:animer-personnage mets le cuisinier dans la scène 3, qu'il montre le chiffre</code></pre>
+
+<h3>Ce que vous pouvez demander</h3>
+<table>
+<thead><tr><th>Ce que vous voulez</th><th>Exemples de phrases</th></tr></thead>
+<tbody>
+<tr><td><strong>Savoir ce qui existe</strong></td><td>« quels mouvements existent ? »</td></tr>
+<tr><td><strong>Voir un mouvement</strong></td><td>« montre-moi la course de face et de profil »</td></tr>
+<tr><td><strong>Une nouvelle pose</strong></td><td>« fais une pose où il se gratte la tête »</td></tr>
+<tr><td><strong>Un mouvement modifié</strong></td><td>« il marche trop vite », « fais-le sauter plus haut »</td></tr>
+<tr><td><strong>Une expression à un moment</strong></td><td>« fais-lui une tête surprise quand il salue »</td></tr>
+<tr><td><strong>Un nouveau geste</strong></td><td>« un geste où il applaudit »</td></tr>
+<tr><td><strong>Le personnage dans une scène</strong></td><td>« mets le cuisinier dans la scène 3, qu'il montre le chiffre », « fais-le entrer puis repartir »</td></tr>
+<tr><td><strong>Le faire parler</strong></td><td>« fais-le parler », « qu'il dise le texte de la scène »</td></tr>
+</tbody>
+</table>
+
+<h3>Ce qui existe déjà</h3>
+<table>
+<thead><tr><th>Famille</th><th>Livrés avec Pulse Motion</th></tr></thead>
+<tbody>
+<tr><td><strong>Poses</strong></td><td>debout, montrer, bras levés, mains sur les hanches, assis, penché</td></tr>
+<tr><td><strong>Mouvements</strong></td><td>repos, marche, course, saut, accroupi, se relever, coucou, peur</td></tr>
+<tr><td><strong>Expressions</strong></td><td>neutre, joie, tristesse, peur, colère, surprise</td></tr>
+<tr><td><strong>Personnage dessiné</strong></td><td>touffu</td></tr>
+</tbody>
+</table>
+
+<h3>Ce qu'un personnage fait dans une scène</h3>
+<table>
+<thead><tr><th>Action</th><th>Ce qu'elle fait</th></tr></thead>
+<tbody>
+<tr><td><strong>Marcher, courir</strong></td><td>Aller d'un point à un autre, sans glisser, en se tournant dans le sens du trajet.</td></tr>
+<tr><td><strong>Prendre une pose</strong></td><td>Tenir une attitude pendant une durée.</td></tr>
+<tr><td><strong>Jouer un mouvement</strong></td><td>Un saut, un coucou…</td></tr>
+<tr><td><strong>Se tourner</strong></td><td>De profil, de face, de trois quarts.</td></tr>
+<tr><td><strong>Changer d'expression</strong></td><td>Joie, peur… jusqu'à l'expression suivante.</td></tr>
+<tr><td><strong>Changer de bouche</strong></td><td>Une bouche précise, le temps voulu.</td></tr>
+<tr><td><strong>Parler</strong></td><td>La bouche suit les mots de la voix de la scène.</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="produit">
+<h2>Ce qu'elle produit</h2>
+<ul>
+<li><strong>Les poses et les mouvements nouveaux ou modifiés</strong>, rangés avec la vidéo : <code>personnages/poses/&lt;nom&gt;.json</code> et <code>personnages/clips/&lt;nom&gt;.json</code>.</li>
+<li><strong>Une planche</strong> qui montre le mouvement sous plusieurs angles, avec une phrase sur ce qui a changé.</li>
+<li><strong>Pour un personnage dans une scène</strong> : la scène mise à jour, la vidéo contrôlée, et une planche de la scène pour vérifier sa place.</li>
+</ul>
+</section>
+
+<section id="risques">
+<h2>Risques et précautions</h2>
+<ul>
+<li><strong>Il faut une vidéo dans le dossier pour créer.</strong> Sans elle, Pulse Motion peut seulement vous montrer les mouvements ; il vous propose de créer une vidéo avec <a href="creer.html"><code>/pulse-motion:creer</code></a>.</li>
+<li><strong>Une modification ne vaut que pour cette vidéo.</strong> Les mouvements livrés ne sont jamais changés : votre marche plus lente reste propre à la vidéo du dossier.</li>
+<li><strong>Pour parler, la scène doit avoir une voix.</strong> Si deux personnages se partagent la voix, chacun parle pendant sa part, qui commence sur un mot.</li>
+<li><strong>Un geste pendant une marche ferait glisser le personnage.</strong> Pulse Motion place les poses et les gestes après la fin du trajet.</li>
+<li><strong>Les textes restent lisibles.</strong> Pulse Motion les place hors du chemin du personnage, ou le fait traverser la scène avant que le texte n'arrive.</li>
+</ul>
+</section>
+
+<section id="problemes">
+<h2>Problèmes et solutions</h2>
+<details class="probleme"><summary>Pulse Motion dit qu'il faut le dossier d'une vidéo</summary><p>Vous pouvez regarder les mouvements partout, mais une pose ou un mouvement nouveau se range avec une vidéo. Ouvrez le dossier de votre vidéo, ou créez-en une avec <a href="creer.html"><code>/pulse-motion:creer</code></a>.</p></details>
+<details class="probleme"><summary>Le mouvement ne ressemble pas à ce que je voulais</summary><p>Dites ce qui ne va pas, en une phrase : « il lève le bras trop haut », « plus lentement ». Pour régler vous-même la position des bras et des jambes, ouvrez <a href="atelier-personnages.html"><code>/pulse-motion:atelier-personnages</code></a>.</p></details>
+<details class="probleme"><summary>Le personnage ne parle pas</summary><p>La scène n'a pas de voix. Ajoutez-en une avec <a href="retoucher.html"><code>/pulse-motion:retoucher</code></a> (« ajoute une voix à la vidéo »), ou enregistrez-la avec <a href="voix.html"><code>/pulse-motion:voix</code></a>.</p></details>
+<details class="probleme"><summary>Sa bouche bouge mal quand il parle</summary><p>Un personnage dessiné a besoin de bouches de parole. Demandez-les avec <a href="dessiner-personnage.html"><code>/pulse-motion:dessiner-personnage</code></a> (« dessine-lui les bouches pour parler »).</p></details>
+<details class="probleme"><summary>Ma marche modifiée n'apparaît pas dans une autre vidéo</summary><p>C'est voulu : une modification est rangée avec la vidéo où vous l'avez faite. Refaites la demande dans l'autre vidéo.</p></details>
+<details class="probleme"><summary>« node » introuvable</summary><p>Node.js n'est pas installé. Installez-le en version LTS depuis <a href="https://nodejs.org/fr/download" target="_blank" rel="noopener noreferrer">nodejs.org</a>, puis relancez Claude Code. Voir les <a href="../prerequis.html#node">prérequis</a>.</p></details>
+</section>
+
+<section id="exemples">
+<h2>Exemples</h2>
+<div class="conversation" data-titre="Exemple : une marche plus lente">
+<p data-role="vous">/pulse-motion:animer-personnage il marche trop vite</p>
+<p data-role="outil">pulse-motion personnages afficher marche</p>
+<p data-role="outil">pulse-motion personnages verifier --dossier .</p>
+<p data-role="outil">pulse-motion personnages planche marche --vues 0,45,90 --dessin cuisinier --dossier .</p>
+<p data-role="claude">Le cuisinier marche plus posément : chaque pas dure un peu plus longtemps. Ce changement vaut pour cette vidéo seulement.
+Pour régler la marche vous-même, à la souris : /pulse-motion:atelier-personnages.</p>
+</div>
+<div class="conversation" data-titre="Exemple : un personnage dans une scène">
+<p data-role="vous">/pulse-motion:animer-personnage mets le cuisinier dans la scène 3, qu'il entre et montre le chiffre</p>
+<p data-role="outil">pulse-motion assembler .</p>
+<p data-role="outil">pulse-motion controler .</p>
+<p data-role="outil">pulse-motion planche . chiffre</p>
+<p data-role="claude">Dans la scène 3, le cuisinier entre en marchant par la gauche, s'arrête, puis montre le chiffre quand il apparaît. Le texte reste dégagé. L'aperçu s'est rechargé.</p>
+</div>
+<div class="conversation" data-titre="Exemple : le faire parler">
+<p data-role="vous">/pulse-motion:animer-personnage fais-le parler dans l'intro</p>
+<p data-role="outil">pulse-motion assembler .</p>
+<p data-role="outil">pulse-motion planche . intro</p>
+<p data-role="claude">Dans l'intro, la bouche du cuisinier suit maintenant les mots de la voix, jusqu'à la fin de la scène.</p>
+</div>
+</section>
+
+<section id="liees">
+<h2>Commandes liées</h2>
+<ul>
+<li><a href="dessiner-personnage.html"><code>/pulse-motion:dessiner-personnage</code></a> : dessiner le personnage, ou retoucher son dessin.</li>
+<li><a href="atelier-personnages.html"><code>/pulse-motion:atelier-personnages</code></a> : régler une pose ou un mouvement à la souris.</li>
+<li><a href="voix.html"><code>/pulse-motion:voix</code></a> : enregistrer la voix sur laquelle il parle.</li>
+</ul>
+</section>
+
+<nav class="suite" aria-label="Commande précédente et suivante" data-suite></nav>
+</article>
+</div>
+</main>
+</body>
+</html>

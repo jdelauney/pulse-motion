@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="fr" data-racine="">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quelle commande pour… ? – Wiki Pulse Motion</title>
+<meta name="description" content="Répondez à deux ou trois questions : l'assistant vous propose la commande Pulse Motion qui convient à votre situation, et vous dit pourquoi.">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/animations.css">
+<script src="js/donnees.js" defer></script>
+<script src="js/gabarit.js" defer></script>
+<script src="js/animations.js" defer></script>
+<script src="js/console.js" defer></script>
+<script src="js/quelle-commande.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-lecture">
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille">Assistant</p>
+<h1>Quelle commande pour… ?</h1>
+<p class="chapo">Vous ne savez pas quelle commande taper ? Répondez à deux ou trois questions : l'assistant vous propose la commande qui convient, vous dit pourquoi, et vous mène à sa page.</p>
+</header>
+
+<!-- L'assistant : rempli par js/quelle-commande.js, qui masque alors le tableau ci-dessous. -->
+<div class="assistant" data-assistant hidden>
+<ol class="assistant-fil" data-fil aria-label="Vos réponses"></ol>
+<div class="assistant-question" data-question></div>
+<div class="assistant-resultat" data-resultat aria-live="polite"></div>
+<div class="heros-actions" data-actions hidden>
+<button type="button" class="bouton bouton-fantome" data-retour>Question précédente</button>
+<button type="button" class="bouton" data-recommencer>Recommencer</button>
+</div>
+</div>
+
+<!-- Version sans JavaScript : toutes les situations et leur commande. -->
+<div data-statique>
+<h2 id="tableau">Votre situation, votre commande</h2>
+<p>Trouvez la ligne qui ressemble à votre situation, puis tapez la commande dans Claude Code. Le lien mène à sa page.</p>
+<table>
+<thead><tr><th>Votre situation</th><th>La commande</th></tr></thead>
+<tbody>
+<tr><th colspan="2">Je n'ai pas encore de vidéo</th></tr>
+<tr><td>Je veux une vidéo à partir d'une idée, vite</td><td><a href="commandes/creer.html"><code>/pulse-motion:creer</code></a></td></tr>
+<tr><td>Je veux une vidéo aux couleurs de ma marque</td><td><a href="commandes/creer.html"><code>/pulse-motion:creer</code></a>, puis « mon logo et mes couleurs »</td></tr>
+<tr><td>Je veux une vidéo avec ma voix et des sous-titres</td><td><a href="commandes/creer.html"><code>/pulse-motion:creer</code></a>, puis « Je l'enregistre » et « Sous-titres : Oui »</td></tr>
+<tr><td>Je veux une vidéo verticale pour les réseaux</td><td><a href="commandes/creer.html"><code>/pulse-motion:creer</code></a> avec « pour Instagram » dans le sujet</td></tr>
+<tr><th colspan="2">J'ai une vidéo en cours</th></tr>
+<tr><td>Je veux continuer là où je m'étais arrêté</td><td><a href="commandes/reprendre.html"><code>/pulse-motion:reprendre</code></a></td></tr>
+<tr><td>Je veux changer un texte, une durée, une animation</td><td><a href="commandes/retoucher.html"><code>/pulse-motion:retoucher</code></a></td></tr>
+<tr><td>Je veux changer la musique, la voix, les bruitages</td><td><a href="commandes/retoucher.html"><code>/pulse-motion:retoucher</code></a></td></tr>
+<tr><td>Je veux enregistrer ou importer ma voix</td><td><a href="commandes/voix.html"><code>/pulse-motion:voix</code></a></td></tr>
+<tr><td>Je veux régler un effet de particules à l'œil</td><td><a href="commandes/atelier-particules.html"><code>/pulse-motion:atelier-particules</code></a></td></tr>
+<tr><td>Je veux changer de style</td><td><a href="commandes/retoucher.html"><code>/pulse-motion:retoucher</code></a> « passe en style… »</td></tr>
+<tr><td>Je veux revenir en arrière</td><td><a href="commandes/retoucher.html"><code>/pulse-motion:retoucher annule</code></a></td></tr>
+<tr><th colspan="2">Ma vidéo est prête</th></tr>
+<tr><td>Je veux la publier ou l'envoyer en MP4</td><td><a href="commandes/exporter.html"><code>/pulse-motion:exporter</code></a></td></tr>
+<tr><td>Je veux la mettre sur mon site</td><td>Rien à lancer : la page animée est dans <code>sortie/</code></td></tr>
+<tr><th colspan="2">Je veux une allure à moi</th></tr>
+<tr><td>Un style complet à moi : allure, polices, mouvements</td><td><a href="commandes/style.html"><code>/pulse-motion:style</code></a></td></tr>
+<tr><td>Seulement mon logo et mes couleurs sur ma vidéo</td><td><a href="commandes/retoucher.html"><code>/pulse-motion:retoucher</code></a> « prends les couleurs de mon logo »</td></tr>
+<tr><th colspan="2">Je veux un personnage dans ma vidéo</th></tr>
+<tr><td>Le dessiner, ou changer son dessin</td><td><a href="commandes/dessiner-personnage.html"><code>/pulse-motion:dessiner-personnage</code></a></td></tr>
+<tr><td>Animer une illustration que j'ai déjà</td><td><a href="commandes/decouper-personnage.html"><code>/pulse-motion:decouper-personnage</code></a></td></tr>
+<tr><td>Le faire bouger : pose, mouvement, expression</td><td><a href="commandes/animer-personnage.html"><code>/pulse-motion:animer-personnage</code></a></td></tr>
+<tr><td>Le mettre dans une scène, le faire parler</td><td><a href="commandes/animer-personnage.html"><code>/pulse-motion:animer-personnage</code></a></td></tr>
+<tr><td>Le régler moi-même, à la souris</td><td><a href="commandes/atelier-personnages.html"><code>/pulse-motion:atelier-personnages</code></a></td></tr>
+<tr><th colspan="2">Je prépare mon ordinateur</th></tr>
+<tr><td>Vérifier que tout est prêt, ou il manque un outil</td><td><a href="commandes/outils.html"><code>/pulse-motion:outils</code></a></td></tr>
+<tr><td>Installer ffmpeg, pour un export de qualité</td><td><a href="commandes/outils.html"><code>/pulse-motion:outils installe ffmpeg</code></a></td></tr>
+<tr><td>Installer la transcription</td><td><a href="commandes/outils.html"><code>/pulse-motion:outils installe la transcription</code></a></td></tr>
+<tr><th colspan="2">J'ai un problème</th></tr>
+<tr><td>Un message, un blocage</td><td>La page <a href="depannage.html">Je suis bloqué</a></td></tr>
+</tbody>
+</table>
+</div>
+
+</article>
+</main>
+</body>
+</html>

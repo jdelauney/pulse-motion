@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="fr" data-racine="../">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Première vidéo – Wiki Pulse Motion</title>
+<meta name="description" content="Tutoriel 1 : créer en environ 30 minutes une vidéo de formation d'une minute sur la chaîne du froid, la regarder, la retoucher et l'exporter en MP4, avec Pulse Motion.">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/animations.css">
+<script src="../js/donnees.js" defer></script>
+<script src="../js/gabarit.js" defer></script>
+<script src="../js/animations.js" defer></script>
+<script src="../js/console.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large"><div class="mise-en-page">
+<nav class="laterale" aria-label="Sur cette page" data-laterale="sommaire"></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille pastille-etape" data-couleur="1">Tutoriel 1 · Environ 30 minutes</p>
+<h1>Première vidéo</h1>
+<p class="chapo">Claire est formatrice en hygiène alimentaire. Elle veut une courte vidéo pour ouvrir sa prochaine session : « La chaîne du froid », en une minute. Vous allez la créer avec elle, la regarder dans votre navigateur, la retoucher d'une phrase, puis l'exporter en MP4.</p>
+</header>
+
+<p>Ce tutoriel suit le <strong>parcours rapide</strong> : vous validez seulement le déroulé et le style, Pulse Motion fait tout le reste. Pour rester simple, la vidéo aura une musique composée, mais pas de voix. Vous ajouterez votre voix, votre logo et vos couleurs dans le <a href="complet.html">tutoriel 2</a>.</p>
+<p>Les réponses montrées ici sont des exemples : donnez les vôtres, ou prenez un autre sujet.</p>
+<figure class="capture"><video aria-describedby="video-legende" controls preload="none" playsinline poster="../assets/captures/chaine-du-froid-affiche.jpg" width="1280" height="720"><source src="../medias/chaine-du-froid.mp4" type="video/mp4">Votre navigateur ne lit pas la vidéo : <a href="../medias/chaine-du-froid.mp4">téléchargez-la</a>.</video><figcaption id="video-legende">Une vidéo faite avec Pulse Motion sur ce sujet : 1 minute, musique composée, sans voix. La vôtre lui ressemblera, avec vos réponses. <a href="../medias/chaine-du-froid.mp4">Télécharger la vidéo (MP4, 2,4 Mo)</a>.</figcaption></figure>
+
+<!-- ===================================================================================================== -->
+<section id="avant" class="etape-tuto">
+<h2><span class="etape-numero">0</span> Avant de commencer <span class="duree">5 minutes</span></h2>
+<p><strong>Objectif :</strong> un dossier vide, ouvert dans VS Code, avec le panneau Claude Code prêt et Pulse Motion installé.</p>
+<ol>
+<li>Vérifiez que tout est installé avec la page <a href="../prerequis.html">Prérequis</a> : Claude Code, Node.js 20 ou plus, Chrome ou Edge, et le plugin <code>pulse-motion</code>.</li>
+<li>Créez un dossier vide nommé <code>chaine-du-froid</code>, là où vous rangez vos documents. <strong>Une vidéo = un dossier</strong> : chaque nouvelle vidéo aura le sien.</li>
+<li>Dans VS Code, menu <strong>File</strong> → <strong>Open Folder…</strong>, choisissez <code>chaine-du-froid</code>. Si VS Code vous demande si vous faites confiance aux auteurs, répondez <strong>Yes, I trust the authors</strong> : c'est votre dossier.</li>
+<li>Ouvrez le panneau Claude Code : cliquez sur <strong>✻ Claude Code</strong>, en bas à droite, ou sur l'icône en forme d'étincelle dans la barre de gauche.</li>
+</ol>
+<aside class="encadre encadre-attendu"><p><strong>Résultat attendu :</strong> en tapant <code>/pulse-motion</code> dans la zone de saisie du panneau, la commande <code>/pulse-motion:creer</code> apparaît dans la liste.</p></aside>
+<details class="probleme"><summary>Les commandes <code>/pulse-motion:…</code> n'apparaissent pas</summary><p>Le plugin n'est pas installé, ou VS Code n'a pas été relancé après l'installation. Suivez l'étape <a href="../prerequis.html#plugin">Installer Pulse Motion</a>, puis fermez et rouvrez VS Code.</p></details>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="creer" class="etape-tuto">
+<h2><span class="etape-numero">1</span> Décrire la vidéo <span class="duree">3 minutes</span></h2>
+<p><strong>Objectif :</strong> donner le sujet et répondre à la première ronde de questions.</p>
+<pre class="commande"><code>/pulse-motion:creer la chaîne du froid pour mes stagiaires</code></pre>
+<p>Pulse Motion vérifie d'abord que tout est prêt (Node.js, dossier vide), puis pose quatre questions. Chaque question a une réponse marquée <strong>(Recommandé)</strong> en premier : dans le doute, prenez-la.</p>
+<div class="conversation" data-titre="La première ronde">
+<p data-role="vous">/pulse-motion:creer la chaîne du froid pour mes stagiaires</p>
+<p data-role="outil">pulse-motion etat .</p>
+<p data-role="claude">Durée ? → 30 s / 1 min (Recommandé pour une formation courte) / 3 min / 5 min
+Public ? → Grand public / Professionnels de la restauration / Stagiaires en formation
+Parcours ? → Rapide (Recommandé) : je valide seulement le déroulé / Accompagné : je valide aussi le style et la vidéo finale
+À ajouter ? → Mon logo et mes couleurs / Rien pour l'instant</p>
+<p data-role="vous">1 min · Stagiaires en formation · Rapide · Rien pour l'instant</p>
+</div>
+<aside class="encadre encadre-conseil"><p><strong>Conseil :</strong> le sujet suffit à Pulse Motion pour deviner le <a href="../concepts.html#genre">genre</a> de la vidéo (ici une formation) et son format (16:9, en paysage). Pour une vidéo verticale destinée aux réseaux, dites-le dans le sujet : « … pour Instagram ».</p></aside>
+<aside class="encadre encadre-attendu"><p><strong>Résultat attendu :</strong> Pulse Motion enchaîne sur la ronde du son.</p></aside>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="son" class="etape-tuto">
+<h2><span class="etape-numero">2</span> Choisir le son <span class="duree">2 minutes</span></h2>
+<p><strong>Objectif :</strong> une musique composée pour la vidéo, sans voix pour ce premier essai.</p>
+<div class="conversation" data-titre="La ronde du son">
+<p data-role="claude">Musique ? → Une musique composée pour la vidéo (Recommandé), lumineuse, posée, qui avance / J'ai un fichier / Pas de musique
+Voix ? → Je l'enregistre (Recommandé) / J'ai un fichier / Pas de voix
+Sous-titres ? → Oui (Recommandé) / Non</p>
+<p data-role="vous">Une musique composée · Pas de voix · Non</p>
+<p data-role="claude">Sans voix, il n'y aura pas de sous-titres : ils reprennent le texte dit.</p>
+</div>
+<p>La musique est <strong>composée sur votre ordinateur</strong>, pour cette vidéo : elle commence doucement sur la première scène, monte avant la dernière, et se termine sur un accord. Pulse Motion décrit son ambiance en trois mots ; vous pourrez la changer d'une phrase plus tard (« plus calme », « une autre variante »). Tout est expliqué sur la page <a href="../son.html">Le son</a>.</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="deroule" class="etape-tuto">
+<h2><span class="etape-numero">3</span> Lire le déroulé et choisir le style <span class="duree">5 minutes</span></h2>
+<p><strong>Objectif :</strong> valider la liste des scènes, et choisir l'allure de la vidéo parmi trois styles.</p>
+<p>Pulse Motion écrit le <dfn>déroulé</dfn> : la liste des scènes dans l'ordre, comme le conducteur d'une émission. Une idée par scène, assez de temps pour lire chaque texte. Il vous le présente en tableau :</p>
+<table>
+<thead><tr><th>N°</th><th>Scène</th><th>Texte à l'écran</th><th>Durée</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Titre</td><td>Hygiène alimentaire · La chaîne du froid · 1 minute pour comprendre l'essentiel</td><td>8 s</td></tr>
+<tr><td>2</td><td>Chiffre</td><td>La température à ne pas dépasser : 4 °C, pour les produits frais au réfrigérateur</td><td>9 s</td></tr>
+<tr><td>3</td><td>Liste</td><td>Les 4 maillons de la chaîne : camion, chambre froide, vitrine, réfrigérateur</td><td>13 s</td></tr>
+<tr><td>4</td><td>Comparaison</td><td>Les bons réflexes : à faire, à éviter</td><td>13 s</td></tr>
+<tr><td>5</td><td>Alerte</td><td>Ne jamais recongeler</td><td>10 s</td></tr>
+<tr><td>6</td><td>Conclusion</td><td>Le froid, c'est la sécurité</td><td>9,5 s</td></tr>
+</tbody>
+</table>
+<p class="legende">Durée totale : environ 1 minute. Ce déroulé est celui de l'exemple livré avec le plugin.</p>
+
+<figure class="anim" data-etapes="6" data-duree="900">
+<svg viewBox="0 0 900 150" role="img" aria-labelledby="premiere-deroule-titre">
+<title id="premiere-deroule-titre">Le déroulé de « La chaîne du froid », scène par scène, sur une ligne de temps</title>
+<g class="e1" data-etape="1"><rect class="actif-halo schema-halo-primaire" x="6" y="30" width="122" height="76" rx="16"/><rect class="schema-boite" x="10" y="34" width="114" height="68" rx="12"/><text class="schema-texte" x="67" y="64" text-anchor="middle">Titre</text><text class="schema-texte-secondaire" x="67" y="84" text-anchor="middle">8 s</text></g>
+<g class="e2" data-etape="2"><rect class="actif-halo schema-halo-primaire" x="128" y="30" width="134" height="76" rx="16"/><rect class="schema-boite" x="132" y="34" width="126" height="68" rx="12"/><text class="schema-texte" x="195" y="64" text-anchor="middle">4 °C</text><text class="schema-texte-secondaire" x="195" y="84" text-anchor="middle">9 s</text></g>
+<g class="e3" data-etape="3"><rect class="actif-halo schema-halo-primaire" x="262" y="30" width="186" height="76" rx="16"/><rect class="schema-boite" x="266" y="34" width="178" height="68" rx="12"/><text class="schema-texte" x="355" y="64" text-anchor="middle">4 maillons</text><text class="schema-texte-secondaire" x="355" y="84" text-anchor="middle">13 s</text></g>
+<g class="e4" data-etape="4"><rect class="actif-halo schema-halo-primaire" x="448" y="30" width="186" height="76" rx="16"/><rect class="schema-boite" x="452" y="34" width="178" height="68" rx="12"/><text class="schema-texte" x="541" y="64" text-anchor="middle">Bons réflexes</text><text class="schema-texte-secondaire" x="541" y="84" text-anchor="middle">13 s</text></g>
+<g class="e5" data-etape="5"><rect class="actif-halo schema-halo-primaire" x="634" y="30" width="146" height="76" rx="16"/><rect class="schema-boite" x="638" y="34" width="138" height="68" rx="12"/><text class="schema-texte" x="707" y="64" text-anchor="middle">Alerte</text><text class="schema-texte-secondaire" x="707" y="84" text-anchor="middle">10 s</text></g>
+<g class="e6" data-etape="6"><rect class="actif-halo schema-halo-primaire" x="780" y="30" width="116" height="76" rx="16"/><rect class="schema-boite-active" x="784" y="34" width="108" height="68" rx="12"/><text class="schema-texte" x="838" y="64" text-anchor="middle">Fin</text><text class="schema-texte-secondaire" x="838" y="84" text-anchor="middle">9,5 s</text></g>
+<path class="schema-fleche trace e6" pathLength="1" d="M10 128 H892"/>
+<text class="schema-texte-secondaire" x="10" y="146">0:00</text>
+<text class="schema-texte-secondaire" x="892" y="146" text-anchor="end">≈ 1:00</text>
+</svg>
+<figcaption>Les six scènes du déroulé sur une ligne de temps, chacune avec sa durée : le titre (8 s), le chiffre 4 °C (9 s), les 4 maillons (13 s), les bons réflexes (13 s), l'alerte (10 s), la conclusion (9,5 s). Environ une minute en tout.</figcaption>
+</figure>
+
+<p>Pendant ce temps, une page s'ouvre dans votre navigateur : la <strong>comparaison des styles</strong>. Vos deux premières scènes y sont dessinées dans les trois styles conseillés pour une formation. Regardez-les, puis revenez dans VS Code.</p>
+<figure class="capture"><img src="../assets/captures/premiere-comparaison-styles.png" alt="La page de comparaison des styles dans le navigateur, avec les scènes « titre » et « chiffre » de la chaîne du froid dans les styles clair-pedagogique, chaleureux et minimal" loading="lazy" width="1440" height="900"><figcaption>La comparaison des styles, faite sur vos propres scènes.</figcaption></figure>
+<div class="conversation" data-titre="Valider le déroulé et le style">
+<p data-role="claude">Voici le déroulé : 6 scènes, environ 1 minute.
+→ Je valide, avec le style posé, lisible et rassurant (Recommandé) / Je valide, avec le style accueillant, doux et humain / Je valide, avec le style net, sûr et essentiel / Je veux changer quelque chose</p>
+<p data-role="vous">Je valide, avec le style posé, lisible et rassurant</p>
+</div>
+<aside class="encadre encadre-conseil"><p><strong>Conseil :</strong> c'est le moment de corriger un texte ou l'ordre des scènes : choisissez « Je veux changer quelque chose » et dites-le avec vos mots (« remplace “vitrine” par “rayon frais” »). Pulse Motion corrige et vous représente le déroulé. Une fois les scènes animées, tout reste modifiable, mais une correction ici coûte moins cher.</p></aside>
+<aside class="encadre encadre-attendu"><p><strong>Résultat attendu :</strong> le dossier contient maintenant <code>deroule.json</code>, et Pulse Motion annonce la fabrication.</p></aside>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="fabrication" class="etape-tuto">
+<h2><span class="etape-numero">4</span> Laisser fabriquer <span class="duree">5 minutes</span></h2>
+<p><strong>Objectif :</strong> attendre que les scènes soient écrites et contrôlées. Vous n'avez rien à faire.</p>
+<p>Pulse Motion confie chaque scène à un <dfn>animateur</dfn>, un assistant spécialisé, et les six travaillent en même temps. Chacun part d'une scène toute faite du style (titre, chiffre, liste…) et l'adapte à vos textes. Pulse Motion décide aussi des effets : ici, par exemple, des étincelles sur le chiffre 4 °C.</p>
+<p>Ensuite viennent les <a href="../concepts.html#controles">contrôles</a>. Ils vérifient que chaque texte a le temps d'être lu, que rien ne déborde, que rien ne reste immobile trop longtemps, que la typographie française est respectée. Les cas sûrs sont <strong>corrigés seuls</strong>, et Pulse Motion vous le dit :</p>
+<div class="conversation" data-titre="La fabrication">
+<p data-role="outil">pulse-motion assembler .</p>
+<p data-role="outil">pulse-motion controler .</p>
+<p data-role="claude">J'ai allongé la scène 3 d'une seconde pour laisser le temps de lire, et remplacé les guillemets droits par des guillemets français dans la scène 4.</p>
+</div>
+<aside class="encadre encadre-attendu"><p><strong>Résultat attendu :</strong> le dossier contient <code>scenes/</code> (six fichiers) et <code>sortie/la-chaine-du-froid.html</code>, la vidéo animée.</p></aside>
+<details class="probleme"><summary>Pulse Motion signale que le rendu n'a pas pu être vérifié</summary><p>Ni Chrome ni Edge n'ont été trouvés. La vidéo est fabriquée, mais les contrôles à l'image (débordements, contraste) n'ont pas pu se faire. Voir <a href="../prerequis.html#navigateur">Chrome ou Edge</a>.</p></details>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="apercu" class="etape-tuto">
+<h2><span class="etape-numero">5</span> Regarder la vidéo <span class="duree">5 minutes</span></h2>
+<p><strong>Objectif :</strong> lire la vidéo dans l'aperçu et apprendre à s'y déplacer.</p>
+<p>L'<dfn>aperçu</dfn> s'ouvre tout seul dans votre navigateur. C'est la vidéo elle-même, avec une barre de lecture en bas. Cliquez sur <strong>▶</strong> (ou appuyez sur la barre d'espace) : la musique démarre avec l'image.</p>
+<figure class="capture"><img src="../assets/captures/premiere-apercu.png" alt="L'aperçu de « La chaîne du froid » dans le navigateur, sur la scène du chiffre 4 °C, avec la barre de lecture en bas" loading="lazy" width="1440" height="900"><figcaption>L'aperçu : la vidéo, et sa barre de lecture.</figcaption></figure>
+<table>
+<thead><tr><th>Pour…</th><th>Faites</th></tr></thead>
+<tbody>
+<tr><td>Lire ou mettre en pause</td><td>▶ ou la barre d'<kbd>Espace</kbd></td></tr>
+<tr><td>Aller à un moment précis</td><td>Glissez le curseur ; les petits repères marquent le début de chaque scène</td></tr>
+<tr><td>Avancer ou reculer d'une image</td><td><kbd>→</kbd> ou <kbd>←</kbd></td></tr>
+<tr><td>Passer à la scène suivante ou précédente</td><td><kbd>Maj</kbd> + <kbd>→</kbd> ou <kbd>Maj</kbd> + <kbd>←</kbd></td></tr>
+<tr><td>Rejouer une scène en boucle</td><td><kbd>B</kbd> (encore <kbd>B</kbd> pour arrêter)</td></tr>
+</tbody>
+</table>
+<p>L'étiquette de la barre indique la scène en cours : « Scène 3/6 · maillons ». Notez le numéro d'une scène à retoucher.</p>
+<aside class="encadre encadre-attendu"><p><strong>Résultat attendu :</strong> la vidéo se lit jusqu'au bout, en musique, et se termine sur une image stable.</p></aside>
+<details class="probleme"><summary>Je n'entends pas la musique</summary><p>Les navigateurs attendent un premier geste de votre part avant de jouer un son : cliquez sur ▶. Vérifiez aussi le volume de l'ordinateur et de l'onglet.</p></details>
+<details class="probleme"><summary>J'ai fermé l'onglet de l'aperçu</summary><p>Demandez simplement « rouvre l'aperçu » dans Claude Code, ou lancez <a href="../commandes/reprendre.html"><code>/pulse-motion:reprendre</code></a>.</p></details>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="retouche" class="etape-tuto">
+<h2><span class="etape-numero">6</span> Une première retouche <span class="duree">3 minutes</span></h2>
+<p><strong>Objectif :</strong> changer quelque chose d'une phrase, puis revenir en arrière.</p>
+<p>Disons que la liste des quatre maillons défile trop vite pour vos stagiaires :</p>
+<pre class="commande"><code>/pulse-motion:retoucher ralentis la scène 3</code></pre>
+<div class="conversation" data-titre="Ralentir une scène">
+<p data-role="vous">/pulse-motion:retoucher ralentis la scène 3</p>
+<p data-role="outil">pulse-motion historique sauvegarder .</p>
+<p data-role="claude">✅ Fait : la scène 3, « Les 4 maillons de la chaîne », se déroule plus lentement.
+L'aperçu s'est rechargé.</p>
+</div>
+<p>Regardez l'aperçu : il s'est rechargé tout seul, à la même position. Si le résultat ne vous plaît pas :</p>
+<pre class="commande"><code>/pulse-motion:retoucher annule</code></pre>
+<aside class="encadre encadre-conseil"><p><strong>Conseil :</strong> d'autres idées de phrases sont sur la page <a href="../commandes/retoucher.html#arguments"><code>/pulse-motion:retoucher</code></a> : « change le titre », « plus calme », « ajoute des confettis à la fin »…</p></aside>
+<aside class="encadre encadre-attendu"><p><strong>Résultat attendu :</strong> la scène 3 dure plus longtemps dans l'aperçu ; après « annule », elle reprend son rythme d'avant.</p></aside>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="export" class="etape-tuto">
+<h2><span class="etape-numero">7</span> Exporter en MP4 <span class="duree">5 minutes</span></h2>
+<p><strong>Objectif :</strong> obtenir le fichier MP4 à partager avec vos stagiaires.</p>
+<pre class="commande"><code>/pulse-motion:exporter</code></pre>
+<p>Pulse Motion contrôle une dernière fois la vidéo, puis regarde si <strong>ffmpeg</strong> est installé. S'il ne l'est pas, il vous propose de l'installer : c'est un petit logiciel libre qui fabrique la vidéo en haute qualité, avec un son propre. Acceptez (conseillé), ou choisissez d'exporter dans le navigateur, sans rien installer.</p>
+<div class="conversation" data-titre="L'export">
+<p data-role="vous">/pulse-motion:exporter</p>
+<p data-role="claude">→ Installer ffmpeg (Recommandé) / Exporter sans, dans le navigateur</p>
+<p data-role="vous">Installer ffmpeg</p>
+<p data-role="outil">pulse-motion exporter .</p>
+<p data-role="claude">✅ Fait : la vidéo « La chaîne du froid » est exportée en MP4 (1 min 03, avec le son, export fidèle).</p>
+</div>
+<p>L'export fidèle demande environ deux secondes de calcul par seconde de vidéo : une minute de vidéo, deux minutes d'attente.</p>
+<aside class="encadre encadre-attendu"><p><strong>Résultat attendu :</strong> le dossier <code>sortie/</code> contient <code>la-chaine-du-froid.mp4</code>, à côté de la page animée <code>la-chaine-du-froid.html</code>. Double-cliquez sur le MP4 : il se lit dans le lecteur vidéo de votre ordinateur.</p></aside>
+<details class="probleme"><summary>L'installation de ffmpeg a échoué</summary><p>Pulse Motion exporte alors dans le navigateur, sans rien installer. Le MP4 est là ; vous pourrez installer ffmpeg plus tard en suivant les <a href="../prerequis.html#ffmpeg">prérequis</a>.</p></details>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="ensuite" class="etape-tuto">
+<h2><span class="etape-numero">✓</span> Et ensuite ?</h2>
+<p>Vous avez fait le tour du parcours : décrire, valider, regarder, retoucher, exporter. Vous avez maintenant deux fichiers :</p>
+<ul>
+<li><strong>le MP4</strong>, à envoyer, à publier, à déposer sur votre plateforme de formation ;</li>
+<li><strong>la page animée</strong>, qui s'ouvre dans n'importe quel navigateur, même sans connexion, et qui se met à jour à chaque retouche.</li>
+</ul>
+<p>Pour reprendre cette vidéo un autre jour : rouvrez le dossier <code>chaine-du-froid</code> dans VS Code. Pulse Motion vous rappelle la vidéo en cours ; tapez <a href="../commandes/reprendre.html"><code>/pulse-motion:reprendre</code></a>.</p>
+<p class="centre"><a class="bouton bouton-grand" href="complet.html">Tutoriel 2 : à vos couleurs, avec votre voix →</a></p>
+</section>
+
+</article>
+</div></main>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="fr" data-racine="../" data-commande="dessiner-personnage">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>/pulse-motion:dessiner-personnage – Wiki Pulse Motion</title>
+<meta name="description" content="Dessiner un personnage pour la vidéo, ou retoucher son dessin, et le montrer qui bouge (« dessine-moi un cuisinier rondouillard avec une toque », « change sa tenue en rouge »).">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/animations.css">
+<script src="../js/donnees.js" defer></script>
+<script src="../js/gabarit.js" defer></script>
+<script src="../js/animations.js" defer></script>
+<script src="../js/console.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<div class="mise-en-page">
+<nav class="laterale" aria-label="Les commandes" data-laterale></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille pastille-etape" data-couleur="0">Étape 4 · Personnaliser</p>
+<h1><code>/pulse-motion:dessiner-personnage</code></h1>
+<p class="chapo">Dessiner un personnage pour la vidéo, ou retoucher son dessin, et le montrer qui bouge (« dessine-moi un cuisinier rondouillard avec une toque », « change sa tenue en rouge »).</p>
+</header>
+
+<ul class="sommaire" aria-label="Sur cette page" data-sommaire></ul>
+
+<section id="description">
+<h2>Description</h2>
+<p>Décrivez votre personnage en une phrase : Pulse Motion le dessine pièce par pièce (la tête, le torse, les bras, les jambes, les mains, les pieds), posées sur le même squelette que tous les personnages de Pulse Motion. Résultat : il s'anime tout de suite avec toutes les poses et tous les mouvements déjà prêts, de la marche au coucou. Pulse Motion part du personnage livré avec le plugin, « touffu », et le transforme.</p>
+<p>Le dessin se fait dans cet ordre :</p>
+<ul>
+<li><strong>Le profil d'abord</strong>, toujours : le personnage tourné vers la droite (vers la gauche, c'est le même dessin en miroir).</li>
+<li><strong>Puis la face</strong>, et au besoin le dos et le trois quarts, si le personnage doit se tourner vers vous.</li>
+<li><strong>Le visage</strong> : les yeux, les sourcils et les bouches de chaque expression (neutre, sourire, rire, triste, surprise, colère).</li>
+<li><strong>Les accessoires</strong> : une toque, des lunettes, une cape, un sac à dos, posés devant ou derrière la pièce qui les porte.</li>
+</ul>
+<p>Avant de vous le montrer, Pulse Motion vérifie le dessin et le regarde sur deux <em>planches</em>, des images en vignettes : sa marche sous plusieurs angles, puis ses expressions et ses bouches. Il compare les vues entre elles et corrige ce qui ne va pas, en trois tours au plus.</p>
+<p>Le dessin est rangé avec votre vidéo : il faut donc lancer la commande dans le dossier d'une vidéo.</p>
+</section>
+
+<section id="pourquoi">
+<h2>Pourquoi l'utiliser</h2>
+<ul>
+<li><strong>Un personnage à vous, en une phrase.</strong> Un métier, une silhouette, une tenue : vous décrivez, Pulse Motion dessine.</li>
+<li><strong>Il bouge aussitôt.</strong> Marche, course, saut, coucou, peur : les mouvements de Pulse Motion lui vont sans rien refaire.</li>
+<li><strong>Les retouches sont simples.</strong> Les couleurs sont nommées (la peau, la tenue…) : « change sa tenue en rouge » change une couleur, sans redessiner.</li>
+<li><strong>Il est vérifié avant d'arriver chez vous.</strong> Pulse Motion cherche une tête séparée du corps, un trou à une articulation, un accessoire qui flotte, un élément présent dans une vue et absent d'une autre.</li>
+</ul>
+</section>
+
+<section id="quand">
+<h2>Quand l'utiliser</h2>
+<ol class="parcours" aria-label="Le parcours Pulse Motion, cette commande à l'étape mise en avant">
+  <li data-couleur="1"><span class="parcours-numero">1</span> Créer</li>
+  <li data-couleur="3"><span class="parcours-numero">2</span> Retoucher</li>
+  <li data-couleur="4"><span class="parcours-numero">3</span> Exporter</li>
+  <li data-couleur="0" aria-current="step"><span class="parcours-numero">4</span> Personnaliser</li>
+</ol>
+<ul>
+<li><strong>Après <a href="creer.html"><code>/pulse-motion:creer</code></a></strong> : le personnage se range dans le dossier d'une vidéo.</li>
+<li><strong>Avant <a href="animer-personnage.html"><code>/pulse-motion:animer-personnage</code></a></strong>, pour lui donner de nouveaux gestes ou le faire jouer dans une scène.</li>
+<li><strong>À la place de <a href="decouper-personnage.html"><code>/pulse-motion:decouper-personnage</code></a></strong> si vous n'avez pas encore d'illustration. Si vous en avez une, c'est elle qu'il faut découper.</li>
+</ul>
+<p>Tout ce que les personnages savent faire est réuni sur la page <a href="../personnages.html">Personnages</a>.</p>
+</section>
+
+<section id="arguments">
+<h2>Comment la lancer</h2>
+<pre class="commande"><code>/pulse-motion:dessiner-personnage [le personnage à dessiner, ou la retouche de son dessin]</code></pre>
+<p class="legende">Entre crochets <code>[ ]</code> : facultatif. Vous pouvez aussi lancer la commande seule et décrire le personnage ensuite, avec vos mots.</p>
+<pre class="commande"><code>/pulse-motion:dessiner-personnage dessine-moi un cuisinier rondouillard avec une toque</code></pre>
+<pre class="commande"><code>/pulse-motion:dessiner-personnage change sa tenue en rouge</code></pre>
+<pre class="commande"><code>/pulse-motion:dessiner-personnage ajoute-lui des lunettes</code></pre>
+<p>Si votre description laisse ouvert un point qui change tout le dessin (un humain ou un animal, la silhouette), Pulse Motion vous pose une seule question, avec la réponse conseillée en premier. Sinon, il décide.</p>
+
+<h3>Ce que vous pouvez demander</h3>
+<table>
+<thead><tr><th>Ce que vous voulez</th><th>Exemples de phrases</th></tr></thead>
+<tbody>
+<tr><td><strong>Un nouveau personnage</strong></td><td>« dessine-moi un cuisinier rondouillard avec une toque », « une docteure avec des lunettes »</td></tr>
+<tr><td><strong>Une couleur</strong></td><td>« change sa tenue en rouge », « des cheveux plus foncés »</td></tr>
+<tr><td><strong>Une partie du dessin</strong></td><td>« refais-lui la tête »</td></tr>
+<tr><td><strong>Un accessoire</strong></td><td>« ajoute-lui des lunettes », « donne-lui un sac à dos »</td></tr>
+<tr><td><strong>Une vue de plus</strong></td><td>« il doit pouvoir se tourner vers nous » : Pulse Motion dessine sa face</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="produit">
+<h2>Ce qu'elle produit</h2>
+<ul>
+<li><strong>Le dessin du personnage</strong>, rangé avec la vidéo : <code>personnages/dessins/&lt;nom&gt;.json</code>. Le nom est tiré de votre demande, en minuscules et avec des tirets : <code>cuisinier</code>, <code>docteur-lunettes</code>.</li>
+<li><strong>Deux planches</strong> : la marche sous plusieurs angles, et les expressions avec les bouches. Pulse Motion vous montre celle de la marche, et l'ouvre si vous voulez la voir.</li>
+<li><strong>La suite possible</strong> : le faire bouger, le régler vous-même à la souris, ou changer une couleur.</li>
+</ul>
+</section>
+
+<section id="risques">
+<h2>Risques et précautions</h2>
+<ul>
+<li><strong>Il faut une vidéo dans le dossier.</strong> Sans elle, Pulse Motion vous le dit et vous propose d'en créer une avec <a href="creer.html"><code>/pulse-motion:creer</code></a>.</li>
+<li><strong>Un personnage qui se tourne demande plus de dessin.</strong> Le profil suffit tant qu'il reste de côté. S'il doit vous faire face, dites-le : sa face est dessinée, avec les mêmes éléments aux mêmes proportions.</li>
+<li><strong>Un personnage qui parle a besoin de bouches de parole.</strong> Si vous comptez le faire parler sur la voix de la scène, dites-le : Pulse Motion dessine au moins la bouche ouverte, la bouche arrondie et les lèvres serrées ; les autres s'en déduisent.</li>
+<li><strong>Le style reste simple.</strong> Des formes nettes, peu de détails, un trait régulier, et les couleurs de votre charte quand c'est possible : le personnage doit se lire en mouvement, sur une vidéo.</li>
+</ul>
+<aside class="encadre encadre-conseil"><p><strong>Conseil :</strong> pour changer la couleur d'une tenue, demandez-le avec ces mots-là (« change sa tenue en rouge ») : seule la couleur change, le dessin reste identique.</p></aside>
+</section>
+
+<section id="problemes">
+<h2>Problèmes et solutions</h2>
+<details class="probleme"><summary>Pulse Motion dit qu'il n'y a pas de vidéo dans ce dossier</summary><p>Le dessin se range avec une vidéo. Ouvrez le dossier de votre vidéo dans VS Code, ou créez-en une avec <a href="creer.html"><code>/pulse-motion:creer</code></a>, puis relancez la commande.</p></details>
+<details class="probleme"><summary>Quelque chose cloche sur la planche</summary><p>La tête semble décollée, un accessoire flotte, une main est mal placée ? Dites-le en une phrase (« de face, la tête flotte au-dessus du cou ») : Pulse Motion corrige le dessin et vous remontre la planche.</p></details>
+<details class="probleme"><summary>Je veux qu'il fasse un autre geste</summary><p>Les poses et les mouvements ne se dessinent pas : ils se créent avec <a href="animer-personnage.html"><code>/pulse-motion:animer-personnage</code></a> (« fais une pose où il se gratte la tête »).</p></details>
+<details class="probleme"><summary>Je veux placer ses bras moi-même</summary><p>Ouvrez l'atelier des personnages avec <a href="atelier-personnages.html"><code>/pulse-motion:atelier-personnages</code></a> : vous le posez à la souris.</p></details>
+<details class="probleme"><summary>J'ai déjà le dessin de mon personnage</summary><p>Inutile de le faire redessiner : <a href="decouper-personnage.html"><code>/pulse-motion:decouper-personnage</code></a> découpe votre illustration pour l'animer.</p></details>
+<details class="probleme"><summary>« node » introuvable</summary><p>Node.js n'est pas installé. Installez-le en version LTS depuis <a href="https://nodejs.org/fr/download" target="_blank" rel="noopener noreferrer">nodejs.org</a>, puis relancez Claude Code. Voir les <a href="../prerequis.html#node">prérequis</a>.</p></details>
+</section>
+
+<section id="exemples">
+<h2>Exemples</h2>
+<div class="conversation" data-titre="Exemple : un nouveau personnage">
+<p data-role="vous">/pulse-motion:dessiner-personnage dessine-moi un cuisinier rondouillard avec une toque</p>
+<p data-role="outil">pulse-motion personnages afficher touffu --type dessin</p>
+<p data-role="outil">pulse-motion personnages verifier --dossier .</p>
+<p data-role="outil">pulse-motion personnages planche marche --dessin cuisinier --vues 0,45,90,-90 --dossier .</p>
+<p data-role="outil">pulse-motion personnages planche --dessin cuisinier --visage --dossier .</p>
+<p data-role="claude">Voici votre cuisinier : tout rond, en tablier blanc, avec une grande toque, dessiné de profil et de face. La planche le montre en train de marcher, sous quatre angles.
+Ensuite, vous pouvez le faire bouger (/pulse-motion:animer-personnage), le régler vous-même (/pulse-motion:atelier-personnages) ou changer une couleur.</p>
+</div>
+<div class="conversation" data-titre="Exemple : changer une couleur">
+<p data-role="vous">/pulse-motion:dessiner-personnage change sa tenue en rouge</p>
+<p data-role="outil">pulse-motion personnages afficher cuisinier --type dessin --dossier .</p>
+<p data-role="outil">pulse-motion personnages verifier --dossier .</p>
+<p data-role="claude">Le cuisinier porte maintenant une tenue rouge. Seule la couleur a changé : le dessin et ses mouvements restent les mêmes.</p>
+</div>
+</section>
+
+<section id="liees">
+<h2>Commandes liées</h2>
+<ul>
+<li><a href="animer-personnage.html"><code>/pulse-motion:animer-personnage</code></a> : ses poses, ses mouvements, ses expressions, sa place dans une scène.</li>
+<li><a href="atelier-personnages.html"><code>/pulse-motion:atelier-personnages</code></a> : le poser et l'animer à la souris.</li>
+<li><a href="decouper-personnage.html"><code>/pulse-motion:decouper-personnage</code></a> : animer une illustration que vous avez déjà.</li>
+</ul>
+</section>
+
+<nav class="suite" aria-label="Commande précédente et suivante" data-suite></nav>
+</article>
+</div>
+</main>
+</body>
+</html>

@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="fr" data-racine="">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Le son – Wiki Pulse Motion</title>
+<meta name="description" content="Le son d'une vidéo Pulse Motion : musique composée sur l'ordinateur ou importée, votre voix enregistrée dans le studio, la transcription, les sous-titres, les bruitages et le mixage.">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/animations.css">
+<script src="js/donnees.js" defer></script>
+<script src="js/gabarit.js" defer></script>
+<script src="js/animations.js" defer></script>
+<script src="js/console.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<div class="mise-en-page">
+<nav class="laterale" aria-label="Sur cette page" data-laterale="sommaire"></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille">Guide</p>
+<h1>Le son</h1>
+<p class="chapo">Une musique composée pour votre vidéo, votre voix enregistrée dans l'aperçu, des sous-titres calés sur vos mots, quelques bruitages bien placés : tout se fabrique sur votre ordinateur, et tout se règle d'une phrase.</p>
+</header>
+
+<!-- ===================================================================================================== -->
+<section id="essentiel">
+<h2>L'essentiel</h2>
+<ul>
+<li><strong>Tout est facultatif.</strong> Une vidéo sans son est une vidéo valide ; sur les réseaux, beaucoup se regardent muettes.</li>
+<li><strong>Un seul mixage.</strong> Musique, voix et bruitages sont mélangés une fois, dans la page. L'aperçu, la page animée et les deux exports MP4 ont exactement le même son.</li>
+<li><strong>La voix commande la durée.</strong> Une scène dure au moins le temps de ce que vous y dites.</li>
+<li><strong>Les sous-titres reprennent le texte écrit</strong>, jamais ce que la transcription a cru entendre : pas de faute d'oreille dans vos sous-titres.</li>
+</ul>
+<figure class="anim" data-etapes="4" data-duree="1300">
+<svg viewBox="0 0 900 220" role="img" aria-labelledby="son-mixage-titre">
+<title id="son-mixage-titre">Trois sources mélangées en un seul son</title>
+<g class="e1" data-etape="1"><rect class="actif-halo schema-halo-primaire" x="4" y="4" width="204" height="60" rx="16"/><rect class="schema-boite" x="10" y="10" width="192" height="48" rx="12"/><text class="schema-texte" x="106" y="40" text-anchor="middle">Musique</text></g>
+<g class="e2" data-etape="2"><rect class="actif-halo schema-halo-primaire" x="4" y="80" width="204" height="60" rx="16"/><rect class="schema-boite" x="10" y="86" width="192" height="48" rx="12"/><text class="schema-texte" x="106" y="116" text-anchor="middle">Votre voix</text></g>
+<g class="e3" data-etape="3"><rect class="actif-halo schema-halo-primaire" x="4" y="156" width="204" height="60" rx="16"/><rect class="schema-boite" x="10" y="162" width="192" height="48" rx="12"/><text class="schema-texte" x="106" y="192" text-anchor="middle">Bruitages</text></g>
+<path class="schema-fleche trace e4" pathLength="1" d="M202 34 C260 34 270 104 318 108" marker-end="url(#son-pointe)"/>
+<path class="schema-fleche trace e4" pathLength="1" d="M202 110 H318" marker-end="url(#son-pointe)"/>
+<path class="schema-fleche trace e4" pathLength="1" d="M202 186 C260 186 270 116 318 112" marker-end="url(#son-pointe)"/>
+<g class="e4" data-etape="4"><rect class="actif-halo schema-halo-primaire" x="318" y="66" width="244" height="88" rx="18"/><rect class="schema-boite-active" x="324" y="72" width="232" height="76" rx="14"/><text class="schema-texte" x="440" y="104" text-anchor="middle">Un seul mixage</text><text class="schema-texte-secondaire" x="440" y="126" text-anchor="middle">musique baissée sous la voix</text>
+<path class="schema-fleche trace e4" pathLength="1" d="M556 110 H600" marker-end="url(#son-pointe)"/>
+<rect class="schema-boite" x="600" y="20" width="290" height="40" rx="12"/><text class="schema-texte" x="745" y="45" text-anchor="middle">Aperçu</text>
+<rect class="schema-boite" x="600" y="90" width="290" height="40" rx="12"/><text class="schema-texte" x="745" y="115" text-anchor="middle">Page animée</text>
+<rect class="schema-boite" x="600" y="160" width="290" height="40" rx="12"/><text class="schema-texte" x="745" y="185" text-anchor="middle">MP4 (les deux exports)</text></g>
+<defs><marker id="son-pointe" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" class="schema-pointe-grise"/></marker></defs>
+</svg>
+<figcaption>La musique, votre voix et les bruitages sont mélangés une seule fois, dans la page : la musique se baisse pendant que vous parlez, et l'ensemble est ramené au niveau des plateformes de diffusion. L'aperçu, la page animée et le MP4 ont donc exactement le même son.</figcaption>
+</figure>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="musique">
+<h2>La musique</h2>
+<p>Trois possibilités, au choix pendant <a href="commandes/creer.html"><code>/pulse-motion:creer</code></a> :</p>
+<ul>
+<li><strong>Une musique composée pour la vidéo</strong> (conseillé) : écrite sur votre ordinateur, sans droits à payer, calée sur vos scènes ;</li>
+<li><strong>votre fichier</strong> : une musique que vous avez le droit d'utiliser, copiée dans <code>assets/</code> ;</li>
+<li><strong>pas de musique.</strong></li>
+</ul>
+<h3>Les six ambiances</h3>
+<table>
+<thead><tr><th>Ambiance</th><th>Caractère</th><th>Tempo</th><th>Pour</th></tr></thead>
+<tbody>
+<tr><td><code>calme</code></td><td>Nappes douces, posé</td><td>72</td><td>Formation, explication</td></tr>
+<tr><td><code>entrainant</code></td><td>Rythmé, joyeux</td><td>118</td><td>Réseaux sociaux, annonce</td></tr>
+<tr><td><code>inspirant</code></td><td>Lumineux, qui avance</td><td>100</td><td>Formation, storytelling</td></tr>
+<tr><td><code>corporate</code></td><td>Net, rassurant</td><td>108</td><td>Produit, entreprise</td></tr>
+<tr><td><code>suspense</code></td><td>Sombre, tendu (cloche, souffle)</td><td>84</td><td>Storytelling, alerte</td></tr>
+<tr><td><code>tech</code></td><td>Arpèges rapides</td><td>124</td><td>Produit, numérique</td></tr>
+</tbody>
+</table>
+<p class="legende">Tempo en battements par minute. Pulse Motion vous décrit l'ambiance en trois mots, jamais par son nom technique.</p>
+<p>La musique composée suit la vidéo : une <strong>introduction sans percussion</strong> pendant la première scène, une <strong>montée</strong> juste avant la dernière, un <strong>accord final</strong> jusqu'à la fin. Son tempo devient celui de la vidéo : les animations peuvent partir sur les temps (voir <a href="concepts.html#tempo">le tempo</a>).</p>
+<h3>Régler la musique d'une phrase</h3>
+<table>
+<thead><tr><th>Vous dites</th><th>Ce qui change</th></tr></thead>
+<tbody>
+<tr><td>« plus calme », « plus riche »</td><td>L'<strong>intensité</strong> : en dessous d'un quart, une nappe seule ; puis s'ajoutent la basse, la mélodie, les percussions.</td></tr>
+<tr><td>« plus entraînant », « plus mystérieux »</td><td>L'<strong>ambiance</strong>.</td></tr>
+<tr><td>« une autre variante »</td><td>Une autre composition dans la même ambiance. La même variante redonne toujours la même musique.</td></tr>
+<tr><td>« baisse la musique », « enlève la musique »</td><td>Le volume (0,4 à 0,6 sous une voix, 0,8 sans voix), ou plus de musique du tout.</td></tr>
+<tr><td>« fais-moi écouter la musique »</td><td>La musique seule, dans <code>sortie/musique.wav</code>.</td></tr>
+</tbody>
+</table>
+<h3>La musique suit l'image</h3>
+<p>La musique composée est refaite à chaque changement, sur le minutage réel de la vidéo : chaque scène a sa section, qui commence pile au début de la scène, même quand une transition ou votre voix déplace ce début. Vous pouvez donc changer une durée ou une transition sans rien casser : la musique suit. Chaque scène peut aussi avoir son <strong>humeur</strong> :</p>
+<table>
+<thead><tr><th>Vous dites</th><th>Ce qui change</th></tr></thead>
+<tbody>
+<tr><td>« coupe la musique pendant la scène 4 »</td><td>La scène est en <strong>silence</strong>.</td></tr>
+<tr><td>« juste une nappe sur la conclusion »</td><td>La scène est <strong>calme</strong> : une nappe seule.</td></tr>
+<tr><td>« la musique à fond sur la démo »</td><td>La scène est <strong>intense</strong> : toutes les couches, percussions comprises.</td></tr>
+</tbody>
+</table>
+<details class="probleme"><summary>Pour aller plus loin : une partition écrite pour la vidéo</summary>
+<p>Si vous lisez la musique, vous pouvez demander une <strong>partition</strong> : des pistes d'instruments (nappe, corde pincée, basse, basse profonde, grosse caisse, caisse claire, charleston, cloche, souffle, montée), chacune avec un motif de notes répété sur des mesures. Pulse Motion l'écrit avec vous dans <code>assets/partition.json</code>, de préférence à la fin, avec des pistes calées chacune sur une scène : elles suivent l'image comme la musique composée. Le tempo de la partition devient celui de la vidéo. Une partition mal formée est signalée en nommant la piste et la note fautives.</p>
+</details>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="voix">
+<h2>La voix</h2>
+<p>La voix est facultative, mais c'est souvent elle qui rend une vidéo de formation vivante. Pulse Motion écrit le <strong>texte dit</strong> de chaque scène dans le déroulé, pour l'oreille :</p>
+<ul>
+<li>une idée par phrase, des phrases courtes ;</li>
+<li>au plus 3,5 mots par seconde : une scène dure au moins le nombre de mots divisé par 3,5, plus 0,7 seconde ;</li>
+<li>les nombres écrits comme on les dit quand ils comptent pour le calage (« quatre degrés »).</li>
+</ul>
+<h3>Trois façons de donner votre voix</h3>
+<table>
+<thead><tr><th>Façon</th><th>Comment</th></tr></thead>
+<tbody>
+<tr><td><strong>Enregistrer dans le studio</strong> (conseillé)</td><td>Dans l'aperçu, bouton <strong>Voix</strong>. Une prise par scène, avec prompteur et réécoute. Voir ci-dessous.</td></tr>
+<tr><td><strong>Une prise par scène, en fichier</strong></td><td>Donnez le fichier en disant pour quelle scène : « voici la voix de la scène 2 ». WAV, ou tout format courant si ffmpeg est installé.</td></tr>
+<tr><td><strong>Un enregistrement de toute la vidéo</strong></td><td>Donnez le fichier : Pulse Motion le découpe lui-même, scène par scène. Il faut la <a href="#transcription">transcription</a>. Une scène mal reconnue (moins de la moitié des mots) vous est signalée : écoutez-la, et réenregistrez-la seule si besoin.</td></tr>
+</tbody>
+</table>
+<h3>Le studio</h3>
+<p>Le studio s'ouvre dans l'aperçu, par le bouton <strong>Voix</strong> de la barre de lecture, ou quand vous demandez « je réenregistre la scène 3 ».</p>
+<ol>
+<li>Choisissez la scène. Chacune est marquée « à enregistrer », « voix provisoire » ou « enregistrée ».</li>
+<li><strong>● Enregistrer</strong> : un compte à rebours de 3 secondes, puis le texte défile comme un prompteur pendant que vous parlez.</li>
+<li><strong>■ Arrêter</strong>, puis <strong>▶ Réécouter</strong> : votre voix avec l'image.</li>
+<li><strong>Garder</strong> ou <strong>Refaire</strong>.</li>
+</ol>
+<p>Une prise gardée est rangée dans <code>assets/voix/</code> et recale la scène toute seule : sa durée, ses sous-titres, et les animations qui partent sur un mot.</p>
+<h3>La voix provisoire</h3>
+<p>Si vous enregistrez vous-même, Pulse Motion fait d'abord lire les textes par la <strong>voix de l'ordinateur</strong>. Elle sert seulement à caler l'animation avant votre enregistrement. Elle n'est <strong>jamais livrée</strong> : l'export la refuse, sauf si vous demandez explicitement « une version de travail ».</p>
+<h3>Les animations qui partent sur un mot</h3>
+<p>Dans une scène qui a une prise, un élément peut entrer <strong>quand vous dites un mot</strong> : le chiffre 4 °C apparaît quand vous dites « quatre ». Si vous réenregistrez, tout se recale seul. Si le mot n'est plus dit (texte changé), Pulse Motion vous le signale et propose un autre mot.</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="transcription">
+<h2>La transcription</h2>
+<p>La <dfn>transcription</dfn> écoute vos prises et retrouve l'instant exact de chaque mot. Elle tourne sur votre ordinateur, avec Python et un modèle de reconnaissance de la parole (environ 800 Mo, ou 250 Mo en version allégée).</p>
+<table>
+<thead><tr><th>Avec la transcription</th><th>Sans</th></tr></thead>
+<tbody>
+<tr><td>Sous-titres et animations calés sur vos vrais mots</td><td>Mots calés au mieux, d'après leur longueur</td></tr>
+<tr><td>Un enregistrement de toute la vidéo se découpe seul</td><td>Une prise par scène, ou le studio</td></tr>
+</tbody>
+</table>
+<p>Pulse Motion vous la propose quand vous ajoutez une voix, et l'installe avec votre accord. Si vous l'installez après avoir enregistré, demandez « recale les mots de ma voix ». Si vous changez une prise ou son texte, le calage est refait au mieux tout de suite, puis précisément à la demande.</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="sous-titres">
+<h2>Les sous-titres</h2>
+<p>Les sous-titres reprennent le texte dit, scène par scène. Ils sont <strong>dessinés dans la vidéo</strong> et livrés aussi en deux fichiers, <code>.srt</code> et <code>.vtt</code>, pour les plateformes qui les affichent elles-mêmes (YouTube, LinkedIn, plateformes de formation).</p>
+<table>
+<thead><tr><th>Réglage</th><th>Choix</th><th>Vous dites</th></tr></thead>
+<tbody>
+<tr><td>Mode</td><td><strong>Ligne</strong> (le carton s'affiche) ou <strong>mot par mot</strong> (le mot dit passe en couleur d'accent ; conseillé en vertical, pour les réseaux)</td><td>« mot par mot »</td></tr>
+<tr><td>Position</td><td>En bas (par défaut) ou en haut</td><td>« sous-titres en haut »</td></tr>
+<tr><td>Dans l'image</td><td>Oui (par défaut), ou fichiers seulement</td><td>« enlève-les de l'image »</td></tr>
+</tbody>
+</table>
+<p>Les cartons font deux lignes au plus (42 caractères par ligne en 16:9, 32 en 4:5, 28 en 9:16), coupés aux pauses et à la ponctuation, jamais juste après un article. Le contrôle vérifie leur contraste, et signale un sous-titre qui cache un texte de la scène : passez-les en haut, ou faites remonter le texte.</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="bruitages">
+<h2>Les bruitages</h2>
+<p>Un bruitage se pose sur un élément de la scène et part quand l'élément entre. Pulse Motion en met un à trois par scène, sur les éléments clés.</p>
+<table>
+<thead><tr><th>Son</th><th>Pour</th></tr></thead>
+<tbody>
+<tr><td><code>whoosh</code></td><td>Une entrée rapide, un glissement</td></tr>
+<tr><td><code>swoosh-inverse</code></td><td>Une sortie, un balayage</td></tr>
+<tr><td><code>pop</code></td><td>Un point de liste, une bulle</td></tr>
+<tr><td><code>clic</code></td><td>Un bouton, une coche</td></tr>
+<tr><td><code>tic</code></td><td>Un compteur, une petite étape</td></tr>
+<tr><td><code>impact</code></td><td>Un mot clé qui tombe (fort)</td></tr>
+<tr><td><code>basse</code></td><td>Un chiffre choc (fort)</td></tr>
+<tr><td><code>montee</code></td><td>Une tension avant une révélation (fort)</td></tr>
+<tr><td><code>carillon</code></td><td>Une conclusion, une réussite</td></tr>
+<tr><td><code>ding</code></td><td>Un chiffre, une bonne réponse</td></tr>
+<tr><td><code>blip</code></td><td>Une alerte, une notification</td></tr>
+<tr><td><code>souffle</code></td><td>Un fondu, une respiration</td></tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Jamais un son fort pendant que vous parlez :</strong> il est placé dans une pause.</li>
+<li><strong>Au plus trois sons dans la même seconde.</strong></li>
+<li><strong>Un son à chaque transition</strong>, si vous le demandez : un souffle pour un fondu, un whoosh pour un glissement…</li>
+<li><strong>Vos propres sons</strong> sont possibles : donnez le fichier, il est copié dans le dossier de la vidéo.</li>
+</ul>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="mixage">
+<h2>Le mixage</h2>
+<ul>
+<li>La musique entre en fondu (une demi-seconde) et sort en fondu (une seconde et demie).</li>
+<li>Pendant que vous parlez, elle se baisse nettement, et laisse de la place aux fréquences de la voix.</li>
+<li>L'ensemble est ramené au <strong>niveau des plateformes de diffusion</strong> (−16 LUFS), sans saturation. Vos réglages de volume (« baisse la musique », « monte la voix ») s'appliquent ensuite.</li>
+<li>L'export fidèle vérifie ce niveau sur le fichier final.</li>
+</ul>
+<aside class="encadre encadre-attention"><p><strong>Attention :</strong> beaucoup de sons dans une vidéo rendent la page animée lourde. Au-delà de 20 Mo de sons, le contrôle vous le signale ; installer ffmpeg permet de compresser les voix.</p></aside>
+</section>
+
+</article>
+</div>
+</main>
+</body>
+</html>

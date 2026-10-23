@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="fr" data-racine="../" data-commande="exporter">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>/pulse-motion:exporter – Wiki Pulse Motion</title>
+<meta name="description" content="Exporter la vidéo en MP4 fidèle (vraies images du navigateur, son propre), fabriqué sur l'ordinateur, pour la publier ou l'envoyer.">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/animations.css">
+<script src="../js/donnees.js" defer></script>
+<script src="../js/gabarit.js" defer></script>
+<script src="../js/animations.js" defer></script>
+<script src="../js/console.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<div class="mise-en-page">
+<nav class="laterale" aria-label="Les commandes" data-laterale></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille pastille-etape" data-couleur="4">Étape 3 · Exporter</p>
+<h1><code>/pulse-motion:exporter</code></h1>
+<p class="chapo">Exporter la vidéo en MP4 fidèle (vraies images du navigateur, son propre), fabriqué sur l'ordinateur, pour la publier ou l'envoyer.</p>
+</header>
+
+<ul class="sommaire" aria-label="Sur cette page" data-sommaire></ul>
+
+<section id="description">
+<h2>Description</h2>
+<p>La page animée se regarde dans un navigateur ; le fichier <strong>MP4</strong>, lui, se publie partout : réseaux sociaux, plateforme de formation, courriel, YouTube. Cette commande le fabrique sur votre ordinateur, sans rien envoyer en ligne.</p>
+<p>Elle prend la vidéo <strong>telle qu'elle est</strong> : elle ne modifie rien. Elle la contrôle d'abord, puis choisit la meilleure façon d'exporter :</p>
+<table>
+<thead><tr><th>Mode</th><th>Quand</th><th>Ce que vous obtenez</th></tr></thead>
+<tbody>
+<tr><td><strong>Export fidèle</strong></td><td>ffmpeg est installé (Pulse Motion vous le propose une fois)</td><td>Les vraies images du navigateur, image par image, et le son au bon niveau, vérifié. Environ 2 secondes de calcul par seconde de vidéo en 1080p.</td></tr>
+<tr><td><strong>Export dans le navigateur</strong></td><td>Sans ffmpeg, ou si vous refusez de l'installer</td><td>Un MP4 fabriqué directement dans Chrome ou Edge, sans rien installer. Quelques effets avancés y sont moins bien rendus.</td></tr>
+</tbody>
+</table>
+<p>Les deux exports ont <strong>exactement le même son</strong> que l'aperçu : la musique, la voix et les bruitages sont mélangés une seule fois, dans la page, et ramenés au niveau des plateformes de diffusion.</p>
+</section>
+
+<section id="pourquoi">
+<h2>Pourquoi l'utiliser</h2>
+<ul>
+<li><strong>Tout reste chez vous.</strong> Aucun service en ligne, aucune file d'attente, aucun filigrane.</li>
+<li><strong>Ce que vous voyez est ce que vous obtenez.</strong> L'export fidèle filme le navigateur image par image : pas de saccade, même sur un ordinateur modeste.</li>
+<li><strong>Un son propre.</strong> Le niveau sonore est vérifié à l'export ; la musique se baisse d'elle-même sous la voix.</li>
+<li><strong>Un export interrompu n'est pas perdu.</strong> Les parties déjà faites sont reprises au prochain export.</li>
+</ul>
+</section>
+
+<section id="quand">
+<h2>Quand l'utiliser</h2>
+<ol class="parcours" aria-label="Le parcours Pulse Motion, cette commande à l'étape mise en avant">
+  <li data-couleur="1"><span class="parcours-numero">1</span> Créer</li>
+  <li data-couleur="3"><span class="parcours-numero">2</span> Retoucher</li>
+  <li data-couleur="4" aria-current="step"><span class="parcours-numero">3</span> Exporter</li>
+  <li data-couleur="0"><span class="parcours-numero">4</span> Personnaliser</li>
+</ol>
+<ul>
+<li><strong>Quand la vidéo vous plaît</strong> dans l'aperçu, et que votre voix est enregistrée.</li>
+<li><strong>Après chaque série de retouches</strong> : le MP4 ne se met pas à jour tout seul, contrairement à la page animée.</li>
+</ul>
+<aside class="encadre encadre-conseil"><p><strong>Conseil :</strong> vous voulez seulement mettre la vidéo sur votre site ? Inutile d'exporter : la page animée <code>sortie/&lt;titre&gt;.html</code> est déjà prête et s'ouvre sans connexion.</p></aside>
+</section>
+
+<section id="arguments">
+<h2>Comment la lancer</h2>
+<pre class="commande"><code>/pulse-motion:exporter</code></pre>
+<p>Elle ne prend rien après le nom, mais vous pouvez préciser ce que vous voulez en le disant :</p>
+<table>
+<thead><tr><th>Vous dites</th><th>Pulse Motion exporte</th></tr></thead>
+<tbody>
+<tr><td>(rien)</td><td>En 1080p, 30 images par seconde.</td></tr>
+<tr><td>« une version plus légère, pour un courriel »</td><td>En 720p : un fichier plus petit.</td></tr>
+<tr><td>« plus fluide »</td><td>En 60 images par seconde. L'export prend deux fois plus de temps.</td></tr>
+<tr><td>« une version de travail avec la voix de l'ordinateur »</td><td>Avec la voix provisoire, seulement si vous le demandez.</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="produit">
+<h2>Ce qu'elle produit</h2>
+<table>
+<thead><tr><th>Fichier</th><th>À quoi il sert</th></tr></thead>
+<tbody>
+<tr><td><code>sortie/&lt;titre&gt;.mp4</code></td><td>La vidéo à publier ou à envoyer. Le titre y est écrit en minuscules, sans accents ni espaces : « La chaîne du froid » donne <code>la-chaine-du-froid.mp4</code>.</td></tr>
+<tr><td><code>sortie/&lt;titre&gt;.html</code></td><td>La page animée, déjà là : elle s'ouvre sans connexion, à déposer sur votre site.</td></tr>
+<tr><td><code>sortie/&lt;titre&gt;.srt</code> et <code>.vtt</code></td><td>Avec des sous-titres : à joindre sur YouTube, LinkedIn ou une plateforme de formation.</td></tr>
+</tbody>
+</table>
+<p>Pulse Motion termine par un résumé : la durée, le son (ou « muette »), et le mode d'export.</p>
+</section>
+
+<section id="risques">
+<h2>Risques et précautions</h2>
+<ul>
+<li><strong>Les erreurs passent d'abord.</strong> S'il reste des erreurs, Pulse Motion vous les dit simplement et propose de les corriger d'abord avec <a href="retoucher.html"><code>/pulse-motion:retoucher</code></a>. Les simples alertes n'empêchent pas l'export : il vous les mentionne en une phrase.</li>
+<li><strong>La voix provisoire est refusée.</strong> Si une scène parle encore avec la voix de l'ordinateur, Pulse Motion vous propose d'enregistrer d'abord votre voix. Il exporte avec la voix provisoire seulement si vous choisissez « une version de travail ».</li>
+<li><strong>ffmpeg n'est installé qu'avec votre accord</strong>, et seulement avec la commande officielle de votre système (winget sous Windows, Homebrew sous macOS).</li>
+<li><strong>Aucun fichier incomplet.</strong> Si l'export échoue, aucun MP4 à moitié écrit ne reste dans <code>sortie/</code>.</li>
+</ul>
+<aside class="encadre encadre-attention"><p><strong>Attention :</strong> un flash de plus de trois fois par seconde sur une grande partie de l'image est une <strong>erreur</strong>, pas une alerte : il peut déclencher une crise d'épilepsie. Pulse Motion vous propose de l'adoucir avant d'exporter.</p></aside>
+</section>
+
+<section id="problemes">
+<h2>Problèmes et solutions</h2>
+<details class="probleme"><summary>« Chrome ou Edge introuvable »</summary><p>L'export a besoin de l'un des deux. Installez Chrome ou Edge (voir les <a href="../prerequis.html#navigateur">prérequis</a>). Autre solution : ouvrez l'aperçu dans l'un des deux et cliquez sur le bouton <strong>MP4</strong> de la barre de lecture.</p></details>
+<details class="probleme"><summary>La vidéo est exportée muette, ou sans la musique</summary><p>Un fichier son était illisible. Pulse Motion vous le dit dans un avertissement : la vidéo est exportée sans la source abîmée. Redonnez le fichier (musique ou voix), puis relancez l'export.</p></details>
+<details class="probleme"><summary>L'export a été fait « dans le navigateur » alors que je voulais l'export fidèle</summary><p>ffmpeg n'était pas installé, ou sa version est trop ancienne. Pulse Motion vous propose de l'installer pour la prochaine fois. Voir <a href="../prerequis.html#ffmpeg">ffmpeg</a>.</p></details>
+<details class="probleme"><summary>L'export s'est arrêté au milieu</summary><p>Relancez simplement <code>/pulse-motion:exporter</code> : les parties déjà faites sont reprises.</p></details>
+<details class="probleme"><summary>Le fichier est trop lourd pour un courriel</summary><p>Relancez en demandant « une version plus légère » : l'export passe en 720p.</p></details>
+</section>
+
+<section id="exemples">
+<h2>Exemples</h2>
+<div class="conversation" data-titre="Exemple : premier export, ffmpeg absent">
+<p data-role="vous">/pulse-motion:exporter</p>
+<p data-role="outil">pulse-motion controler .</p>
+<p data-role="claude">La vidéo est prête à exporter. Une alerte : un texte de la scène 4 est un peu près du bord, sans gravité.
+ffmpeg est un petit logiciel libre qui fabrique la vidéo en haute qualité, avec un son propre ; il s'installe une fois.
+→ Installer ffmpeg (Recommandé) / Exporter sans, dans le navigateur</p>
+<p data-role="vous">Installer ffmpeg</p>
+<p data-role="outil">winget install --id Gyan.FFmpeg -e --accept-source-agreements --accept-package-agreements</p>
+<p data-role="outil">pulse-motion exporter .</p>
+<p data-role="claude">✅ Fait : la vidéo « La chaîne du froid » est exportée en MP4 (1 min 04, avec le son, export fidèle).
+📄 Fichiers : sortie/la-chaine-du-froid.mp4, la page animée et les sous-titres .srt et .vtt.</p>
+</div>
+<div class="conversation" data-titre="Exemple : la voix n'est pas encore enregistrée">
+<p data-role="vous">/pulse-motion:exporter</p>
+<p data-role="claude">La vidéo parle encore avec la voix de l'ordinateur, qui sert seulement à caler l'animation.
+→ Enregistrer ma voix d'abord (Recommandé) / Exporter une version de travail avec la voix de l'ordinateur</p>
+<p data-role="vous">Enregistrer ma voix d'abord</p>
+<p data-role="claude">Dans l'aperçu, cliquez sur « Voix » : le texte défile, vous parlez, vous réécoutez, vous gardez ou refaites. Relancez ensuite /pulse-motion:exporter.</p>
+</div>
+</section>
+
+<section id="liees">
+<h2>Commandes liées</h2>
+<ul>
+<li><a href="retoucher.html"><code>/pulse-motion:retoucher</code></a> : corriger avant d'exporter, puis exporter de nouveau.</li>
+<li><a href="creer.html"><code>/pulse-motion:creer</code></a> : la prochaine vidéo.</li>
+</ul>
+</section>
+
+<nav class="suite" aria-label="Commande précédente et suivante" data-suite></nav>
+</article>
+</div>
+</main>
+</body>
+</html>

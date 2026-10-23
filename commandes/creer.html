@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="fr" data-racine="../" data-commande="creer">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>/pulse-motion:creer – Wiki Pulse Motion</title>
+<meta name="description" content="Créer une vidéo de motion design en quelques questions, valider son déroulé, puis la regarder dans le navigateur.">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/animations.css">
+<script src="../js/donnees.js" defer></script>
+<script src="../js/gabarit.js" defer></script>
+<script src="../js/animations.js" defer></script>
+<script src="../js/console.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<div class="mise-en-page">
+<nav class="laterale" aria-label="Les commandes" data-laterale></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille pastille-etape" data-couleur="1">Étape 1 · Créer</p>
+<h1><code>/pulse-motion:creer</code></h1>
+<p class="chapo">Créer une vidéo de motion design en quelques questions, valider son déroulé, puis la regarder dans le navigateur.</p>
+</header>
+
+<ul class="sommaire" aria-label="Sur cette page" data-sommaire></ul>
+
+<section id="description">
+<h2>Description</h2>
+<p>C'est la commande de départ. Vous donnez le sujet en une phrase ; Pulse Motion vous pose deux petites rondes de questions, écrit le <a href="../concepts.html#deroule">déroulé</a> (la liste des scènes, leurs textes, leur durée) et vous le présente en tableau. Rien n'est animé avant votre accord.</p>
+<p>Une fois le déroulé validé, Pulse Motion fabrique la vidéo : un assistant spécialisé, l'<em>animateur</em>, écrit chaque scène, toutes en même temps. Des <a href="../concepts.html#controles">contrôles automatiques</a> vérifient ensuite la lisibilité et corrigent seuls les cas sûrs. Enfin, la vidéo s'ouvre dans votre navigateur.</p>
+<p><strong>Une vidéo = un dossier.</strong> Lancez la commande dans un dossier vide, ouvert dans VS Code. Si le dossier contient déjà une vidéo, Pulse Motion vous propose de la <a href="reprendre.html">reprendre</a>, ou de créer la nouvelle ailleurs.</p>
+
+<figure class="anim" data-etapes="5" data-duree="1400">
+<svg viewBox="0 0 900 220" role="img" aria-labelledby="creer-flux-titre">
+<title id="creer-flux-titre">Les cinq temps de /pulse-motion:creer</title>
+<g class="e1" data-etape="1"><rect class="actif-halo schema-halo-primaire" x="4" y="44" width="164" height="100" rx="20"/><rect class="schema-boite" x="10" y="50" width="152" height="88" rx="16"/><text class="schema-texte" x="86" y="88" text-anchor="middle">Questions</text><text class="schema-texte-secondaire" x="86" y="110" text-anchor="middle">durée · public · son</text></g>
+<path class="schema-fleche trace e2" pathLength="1" d="M162 94 H186" marker-end="url(#creer-pointe)"/>
+<g class="e2" data-etape="2"><rect class="actif-halo schema-halo-primaire" x="186" y="44" width="164" height="100" rx="20"/><rect class="schema-boite-active" x="192" y="50" width="152" height="88" rx="16"/><text class="schema-texte" x="268" y="88" text-anchor="middle">Déroulé</text><text class="schema-texte-secondaire" x="268" y="110" text-anchor="middle">votre accord</text></g>
+<path class="schema-fleche trace e3" pathLength="1" d="M344 94 H368" marker-end="url(#creer-pointe)"/>
+<g class="e3" data-etape="3"><rect class="actif-halo schema-halo-primaire" x="368" y="44" width="164" height="100" rx="20"/><rect class="schema-boite" x="374" y="50" width="152" height="88" rx="16"/><text class="schema-texte" x="450" y="88" text-anchor="middle">Animateurs</text><text class="schema-texte-secondaire" x="450" y="110" text-anchor="middle">une scène chacun</text></g>
+<path class="schema-fleche trace e4" pathLength="1" d="M526 94 H550" marker-end="url(#creer-pointe)"/>
+<g class="e4" data-etape="4"><rect class="actif-halo schema-halo-primaire" x="550" y="44" width="164" height="100" rx="20"/><rect class="schema-boite" x="556" y="50" width="152" height="88" rx="16"/><text class="schema-texte" x="632" y="88" text-anchor="middle">Contrôles</text><text class="schema-texte-secondaire" x="632" y="110" text-anchor="middle">corrigés seuls</text></g>
+<path class="schema-accompagne trace e4" pathLength="1" d="M600 140 C600 200 664 200 664 140" marker-end="url(#creer-pointe-mauve)"/>
+<path class="schema-fleche trace e5" pathLength="1" d="M708 94 H732" marker-end="url(#creer-pointe)"/>
+<g class="e5" data-etape="5"><rect class="actif-halo schema-halo-primaire" x="732" y="44" width="164" height="100" rx="20"/><rect class="schema-boite-active" x="738" y="50" width="152" height="88" rx="16"/><text class="schema-texte" x="814" y="88" text-anchor="middle">Aperçu</text><text class="schema-texte-secondaire" x="814" y="110" text-anchor="middle">dans le navigateur</text></g>
+<defs>
+<marker id="creer-pointe" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" class="schema-pointe-grise"/></marker>
+<marker id="creer-pointe-mauve" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" class="schema-pointe"/></marker>
+</defs>
+</svg>
+<figcaption>Les questions mènent au déroulé, que vous validez. Les animateurs écrivent ensuite toutes les scènes en même temps. Les contrôles vérifient la vidéo et corrigent seuls les cas sûrs, en deux tours au plus. La vidéo s'ouvre enfin dans votre navigateur.</figcaption>
+</figure>
+</section>
+
+<section id="pourquoi">
+<h2>Pourquoi l'utiliser</h2>
+<ul>
+<li><strong>Vous parlez de votre sujet, pas de technique.</strong> Pulse Motion déduit le genre (formation, produit, storytelling, réseaux) et le format, puis choisit la structure qui marche pour ce genre.</li>
+<li><strong>Un seul accord suffit.</strong> En parcours rapide, vous validez seulement le déroulé, avec le style. Tout le reste est fait pour vous.</li>
+<li><strong>Le rythme est juste dès le départ.</strong> Chaque scène dure assez longtemps pour être lue (1,5 s + 0,3 s par mot), rien ne reste immobile plus de 2,5 s, la vidéo finit sur une image stable.</li>
+<li><strong>Vous comparez avant de choisir.</strong> Trois styles s'affichent côte à côte, sur vos deux premières scènes, dans votre navigateur.</li>
+</ul>
+</section>
+
+<section id="quand">
+<h2>Quand l'utiliser</h2>
+<ol class="parcours" aria-label="Le parcours Pulse Motion, cette commande à l'étape mise en avant">
+  <li data-couleur="1" aria-current="step"><span class="parcours-numero">1</span> Créer</li>
+  <li data-couleur="3"><span class="parcours-numero">2</span> Retoucher</li>
+  <li data-couleur="4"><span class="parcours-numero">3</span> Exporter</li>
+  <li data-couleur="0"><span class="parcours-numero">4</span> Personnaliser</li>
+</ol>
+<ul>
+<li><strong>Pour chaque nouvelle vidéo</strong>, dans un dossier vide.</li>
+<li><strong>Après <a href="style.html"><code>/pulse-motion:style</code></a></strong>, si vous avez créé votre propre style : il vous sera proposé avec les styles livrés.</li>
+<li><strong>Avant <a href="retoucher.html"><code>/pulse-motion:retoucher</code></a></strong> et <a href="exporter.html"><code>/pulse-motion:exporter</code></a>, qui travaillent sur la vidéo créée ici.</li>
+</ul>
+</section>
+
+<section id="arguments">
+<h2>Comment la lancer</h2>
+<pre class="commande"><code>/pulse-motion:creer [le sujet de la vidéo en une phrase]</code></pre>
+<p class="legende">Entre crochets <code>[ ]</code> : facultatif. Sans sujet, Pulse Motion vous le demande en une question ouverte.</p>
+<pre class="commande"><code>/pulse-motion:creer la chaîne du froid en une minute pour mes stagiaires</code></pre>
+<pre class="commande"><code>/pulse-motion:creer présenter notre application de réservation en 30 secondes</code></pre>
+
+<h3>Les questions posées</h3>
+<p>Une première ronde, quatre questions au plus :</p>
+<table>
+<thead><tr><th>Question</th><th>Réponses proposées</th></tr></thead>
+<tbody>
+<tr><td>Durée</td><td>30 s · 1 min (conseillé pour une formation courte) · 3 min · 5 min</td></tr>
+<tr><td>Public</td><td>Grand public · professionnels du métier · élèves ou stagiaires (adaptées à votre sujet)</td></tr>
+<tr><td>Parcours</td><td><strong>Rapide</strong> (conseillé) : vous validez seulement le déroulé · <strong>Accompagné</strong> : vous validez aussi le style et la vidéo finale</td></tr>
+<tr><td>À ajouter</td><td>Mon logo et mes couleurs · « Ma charte… » si vous en avez enregistré une · rien pour l'instant</td></tr>
+</tbody>
+</table>
+<p>Puis une ronde sur <a href="../son.html">le son</a> :</p>
+<table>
+<thead><tr><th>Question</th><th>Réponses proposées</th></tr></thead>
+<tbody>
+<tr><td>Musique</td><td>Une musique composée pour la vidéo (conseillé) · J'ai un fichier · Pas de musique</td></tr>
+<tr><td>Voix</td><td>Je l'enregistre (conseillé) · J'ai un fichier · Pas de voix</td></tr>
+<tr><td>Sous-titres</td><td>Oui (conseillé) · Non. Sans voix, pas de sous-titres : ils reprennent le texte dit.</td></tr>
+</tbody>
+</table>
+<p>Le format se déduit du genre : <strong>16:9</strong> (paysage) en général, <strong>9:16</strong> (vertical) pour les réseaux, <strong>4:5</strong> si vous visez le fil LinkedIn ou Instagram.</p>
+</section>
+
+<section id="produit">
+<h2>Ce qu'elle produit</h2>
+<p>Tout est rangé dans le dossier de la vidéo. Vous n'avez jamais à ouvrir ces fichiers, mais vous pouvez les lire.</p>
+<table>
+<thead><tr><th>Fichier</th><th>À quoi il sert</th></tr></thead>
+<tbody>
+<tr><td><code>deroule.json</code></td><td>Le déroulé : le titre, le genre, le format, le style, la musique, et pour chaque scène ses textes, son texte dit, sa durée et sa transition.</td></tr>
+<tr><td><code>scenes/01-intro.html</code>…</td><td>Une scène par fichier, numérotées dans l'ordre. Les textes n'y sont pas écrits : ils viennent du déroulé.</td></tr>
+<tr><td><code>charte/</code></td><td>Votre logo, vos couleurs (<code>charte.json</code>), vos polices et le glossaire de votre métier.</td></tr>
+<tr><td><code>assets/</code></td><td>Vos fichiers : musique, images, prises de voix (<code>assets/voix/</code>).</td></tr>
+<tr><td><code>sortie/&lt;titre&gt;.html</code></td><td><strong>La vidéo animée</strong>, en une seule page qui s'ouvre sans connexion.</td></tr>
+<tr><td><code>sortie/&lt;titre&gt;.srt</code> et <code>.vtt</code></td><td>Les sous-titres, si vous les avez demandés, pour les plateformes qui les affichent à part.</td></tr>
+<tr><td><code>sortie/controle.json</code></td><td>Le rapport du dernier contrôle : ce qui a été corrigé seul, ce qui reste.</td></tr>
+<tr><td><code>sortie/comparaison/</code></td><td>Les images de la comparaison des styles.</td></tr>
+</tbody>
+</table>
+<p>À la fin, si vous avez ajouté votre logo et vos couleurs, Pulse Motion propose de les <strong>enregistrer comme charte</strong> (« client-dupont », par exemple) : elle vous sera proposée pour les vidéos suivantes.</p>
+</section>
+
+<section id="risques">
+<h2>Risques et précautions</h2>
+<ul>
+<li><strong>Rien n'est animé avant votre accord.</strong> Si le déroulé ne vous convient pas, dites ce qu'il faut changer : Pulse Motion corrige et vous le représente.</li>
+<li><strong>Vos fichiers sont copiés, jamais déplacés.</strong> Le logo, la musique ou la voix que vous donnez sont copiés dans le dossier de la vidéo ; l'original reste où il était.</li>
+<li><strong>Les installations demandent votre accord.</strong> La transcription (Python, environ 800 Mo) n'est installée que si vous l'acceptez. Tout fonctionne sans elle.</li>
+<li><strong>La voix provisoire n'est pas la vôtre.</strong> Si vous enregistrez vous-même, la voix de l'ordinateur lit d'abord les textes pour caler l'animation. Elle n'est jamais livrée : l'export la refuse tant que vous n'avez pas enregistré.</li>
+</ul>
+<aside class="encadre encadre-attention"><p><strong>Attention :</strong> un logo en JPEG ou WebP ne suffit pas pour tirer vos couleurs proprement. Donnez un PNG ou un SVG.</p></aside>
+</section>
+
+<section id="problemes">
+<h2>Problèmes et solutions</h2>
+<details class="probleme"><summary>« node » introuvable, ou Node.js trop ancien</summary><p>Installez Node.js en version LTS depuis <a href="https://nodejs.org/fr/download" target="_blank" rel="noopener noreferrer">nodejs.org</a>, puis fermez complètement VS Code et rouvrez-le. Voir les <a href="../prerequis.html#node">prérequis</a>.</p></details>
+<details class="probleme"><summary>Pulse Motion dit qu'une vidéo existe déjà ici</summary><p>Le dossier contient déjà un déroulé. Pour continuer cette vidéo : <a href="reprendre.html"><code>/pulse-motion:reprendre</code></a>. Pour en faire une nouvelle : créez un autre dossier vide, ouvrez-le, et relancez la commande.</p></details>
+<details class="probleme"><summary>La comparaison des styles ne s'ouvre pas</summary><p>Elle s'ouvre dans Chrome ou Edge. Sans eux, Pulse Motion décrit chaque style par sa personnalité, en trois mots : choisissez sur cette base. Voir <a href="../prerequis.html#navigateur">Chrome ou Edge</a>.</p></details>
+<details class="probleme"><summary>Pulse Motion me dit qu'il a allongé une scène</summary><p>C'est le contrôle de lecture : la scène était trop courte pour lire son texte. Pulse Motion l'a allongée (de 50 % au plus) et vous le dit en une phrase. Si vous préférez une durée précise, demandez-la avec <a href="retoucher.html"><code>/pulse-motion:retoucher</code></a>.</p></details>
+<details class="probleme"><summary>« Le rendu n'a pas pu être vérifié »</summary><p>Ni Chrome ni Edge n'ont été trouvés, ou la page a rencontré une erreur. La vidéo est fabriquée, mais les débordements et le contraste n'ont pas été contrôlés à l'image. Installez l'un des deux navigateurs, puis demandez une retouche, même minime : le contrôle complet se refait.</p></details>
+<details class="probleme"><summary>Ma police n'a pas été trouvée</summary><p>Pulse Motion récupère les polices gratuites de Bunny Fonts. Si la vôtre n'y est pas, il garde la plus proche des polices du style et vous le dit. Vous pouvez lui donner le fichier de la police (<code>.ttf</code>, <code>.otf</code>, <code>.woff</code> ou <code>.woff2</code>).</p></details>
+</section>
+
+<section id="exemples">
+<h2>Exemples</h2>
+<div class="conversation" data-titre="Exemple : une formation d'une minute">
+<p data-role="vous">/pulse-motion:creer la chaîne du froid pour mes stagiaires</p>
+<p data-role="claude">Durée ? → 1 min (Recommandé pour une formation courte)
+Public ? → Élèves ou stagiaires
+Parcours ? → Rapide (Recommandé) : je valide seulement le déroulé
+À ajouter ? → Rien pour l'instant</p>
+<p data-role="claude">Musique ? → Une musique composée pour la vidéo (Recommandé), lumineuse, posée, qui avance
+Voix ? → Je l'enregistre (Recommandé)
+Sous-titres ? → Oui (Recommandé)</p>
+<p data-role="outil">pulse-motion comparer . clair-pedagogique,chaleureux,minimal --ouvrir</p>
+<p data-role="claude">Voici le déroulé : 6 scènes, 1 min 03. La comparaison des styles s'est ouverte dans votre navigateur.
+→ Je valide, avec le style posé, lisible, rassurant (Recommandé) / … accueillant, doux, humain / … net, sûr, essentiel / Je veux changer quelque chose</p>
+<p data-role="vous">Je valide, avec le style posé, lisible, rassurant</p>
+<p data-role="claude">J'ai allongé la scène 3 d'une seconde pour laisser le temps de lire.
+✅ Fait : la vidéo « La chaîne du froid » (6 scènes, 1 min 04) est prête et s'affiche dans votre navigateur.
+Pour enregistrer votre voix, cliquez sur « Voix » dans la barre de l'aperçu.</p>
+</div>
+<div class="conversation" data-titre="Exemple : un dossier qui contient déjà une vidéo">
+<p data-role="vous">/pulse-motion:creer une vidéo sur le lavage des mains</p>
+<p data-role="claude">Ce dossier contient déjà la vidéo « La chaîne du froid ». Je vous propose de la reprendre avec /pulse-motion:reprendre, ou de créer la nouvelle vidéo dans un autre dossier.</p>
+</div>
+<div class="conversation" data-titre="Exemple : demander un mouvement par son nom">
+<p data-role="vous">/pulse-motion:creer le lancement de notre application, avec un pop-in sur chaque titre et un whip pan entre les scènes</p>
+<p data-role="claude">C'est noté : les titres entreront en pop-in (mouvement n° 001), et les scènes s'enchaîneront en panoramique filé (n° 042). Voici le déroulé…</p>
+</div>
+<aside class="encadre encadre-conseil"><p><strong>Conseil :</strong> vous ne connaissez pas le nom d'un mouvement ? Demandez « quels mouvements existent ? », ou parcourez le dictionnaire des mouvements : chacun a un nom et un numéro.</p></aside>
+</section>
+
+<section id="liees">
+<h2>Commandes liées</h2>
+<ul>
+<li><a href="reprendre.html"><code>/pulse-motion:reprendre</code></a> : continuer une vidéo commencée.</li>
+<li><a href="retoucher.html"><code>/pulse-motion:retoucher</code></a> : changer la vidéo en une phrase.</li>
+<li><a href="exporter.html"><code>/pulse-motion:exporter</code></a> : fabriquer le MP4.</li>
+<li><a href="style.html"><code>/pulse-motion:style</code></a> : créer votre propre style avant de créer la vidéo.</li>
+</ul>
+</section>
+
+<nav class="suite" aria-label="Commande précédente et suivante" data-suite></nav>
+</article>
+</div>
+</main>
+</body>
+</html>

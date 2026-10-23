@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="fr" data-racine="../">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vidéo complète – Wiki Pulse Motion</title>
+<meta name="description" content="Tutoriel 2 : une vidéo de formation à vos couleurs, avec votre logo, votre police, votre voix enregistrée dans le studio, des sous-titres, des bruitages, des retouches et l'export MP4 fidèle.">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/animations.css">
+<script src="../js/donnees.js" defer></script>
+<script src="../js/gabarit.js" defer></script>
+<script src="../js/animations.js" defer></script>
+<script src="../js/console.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large"><div class="mise-en-page">
+<nav class="laterale" aria-label="Sur cette page" data-laterale="sommaire"></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille pastille-etape" data-couleur="4">Tutoriel 2 · Environ 1 h 30</p>
+<h1>Vidéo complète</h1>
+<p class="chapo">Claire forme des cuisiniers pour l'organisme « Atelier Nord ». Elle veut une vidéo d'une minute sur les 5 gestes d'hygiène en cuisine, aux couleurs de l'Atelier, avec sa propre voix et des sous-titres pour ceux qui regardent sans le son. Vous allez la construire avec elle, en validant chaque étape.</p>
+</header>
+
+<p>Ce tutoriel suit le <strong>parcours accompagné</strong> : trois accords au lieu d'un (le déroulé, le style, la vidéo finale). Il reprend les étapes du <a href="premiere-video.html">tutoriel 1</a> en ajoutant tout ce qui rend une vidéo vraiment à vous. Si vous ne l'avez pas encore fait, commencez par lui : il est plus court.</p>
+<p>Les réponses montrées ici sont des exemples : donnez les vôtres.</p>
+
+<!-- ===================================================================================================== -->
+<section id="avant" class="etape-tuto">
+<h2><span class="etape-numero">0</span> Avant de commencer <span class="duree">10 minutes</span></h2>
+<p><strong>Objectif :</strong> réunir ce que Pulse Motion va vous demander, et préparer l'enregistrement.</p>
+<ol>
+<li>Créez un dossier vide <code>gestes-hygiene</code>, ouvrez-le dans VS Code (<strong>File</strong> → <strong>Open Folder…</strong>), puis ouvrez le panneau Claude Code.</li>
+<li>Trouvez votre <strong>logo</strong>, en <strong>PNG</strong> ou en <strong>SVG</strong>. Un JPEG ou un WebP ne permet pas de tirer proprement vos couleurs.</li>
+<li>Notez le <strong>nom de votre police</strong>, si votre marque en a une (par exemple « Montserrat »). Vous pouvez aussi avoir son fichier.</li>
+<li>Préparez votre <strong>micro</strong> : un casque-micro ou le micro de l'ordinateur suffit. Choisissez une pièce calme, sans écho.</li>
+<li>Gardez <strong>Chrome ou Edge</strong> comme navigateur pour l'aperçu : c'est lui qui enregistre votre voix.</li>
+</ol>
+<aside class="encadre encadre-conseil"><p><strong>Conseil :</strong> gardez 30 minutes devant vous pour les étapes 1 à 5, puis une heure pour la voix, les retouches et l'export. Entre les deux, vous pouvez faire une pause : <code>/pulse-motion:reprendre</code> retrouve le fil.</p></aside>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="questions" class="etape-tuto">
+<h2><span class="etape-numero">1</span> Décrire la vidéo, en parcours accompagné <span class="duree">5 minutes</span></h2>
+<p><strong>Objectif :</strong> répondre à la première ronde, en choisissant le parcours accompagné et votre charte.</p>
+<pre class="commande"><code>/pulse-motion:creer les 5 gestes d'hygiène en cuisine pour mes stagiaires</code></pre>
+<div class="conversation" data-titre="La première ronde">
+<p data-role="vous">/pulse-motion:creer les 5 gestes d'hygiène en cuisine pour mes stagiaires</p>
+<p data-role="claude">Durée ? → 1 min (Recommandé pour une formation courte)
+Public ? → Stagiaires en formation
+Parcours ? → Rapide (Recommandé) / Accompagné : je valide aussi le style et la vidéo finale
+À ajouter ? → Mon logo et mes couleurs / Rien pour l'instant</p>
+<p data-role="vous">1 min · Stagiaires en formation · Accompagné · Mon logo et mes couleurs</p>
+</div>
+<aside class="encadre encadre-attendu"><p><strong>Résultat attendu :</strong> Pulse Motion vous demande votre logo.</p></aside>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="charte" class="etape-tuto">
+<h2><span class="etape-numero">2</span> Votre charte : logo, couleurs, police <span class="duree">10 minutes</span></h2>
+<p><strong>Objectif :</strong> que la vidéo porte les couleurs, le logo et la police de l'Atelier Nord.</p>
+<p>La <dfn>charte</dfn>, ce sont les couleurs, les polices et le logo de votre marque. Donnez votre logo : son chemin, ou glissez le fichier dans le panneau Claude Code. Pulse Motion le <strong>copie</strong> dans le dossier de la vidéo (l'original ne bouge pas), puis en tire deux couleurs :</p>
+<ul>
+<li>la <strong>couleur primaire</strong>, pour les titres et les éléments principaux ;</li>
+<li>la <strong>couleur d'accent</strong>, pour mettre en valeur un mot, un chiffre, une coche.</li>
+</ul>
+<p>Il les rend <strong>lisibles sur le fond du style</strong> : si votre bleu est trop clair pour un fond blanc, il le fonce juste assez, et vous le dit.</p>
+<div class="conversation" data-titre="La charte">
+<p data-role="vous">Mon logo est dans Documents/Atelier/logo-atelier.png, et notre police, c'est Montserrat.</p>
+<p data-role="outil">pulse-motion charte depuis-logo charte/logo.png --style clair-pedagogique</p>
+<p data-role="outil">pulse-motion police "Montserrat"</p>
+<p data-role="claude">J'ai copié votre logo. Vos couleurs : un bleu pétrole pour les titres, un orange pour les accents. J'ai foncé légèrement l'orange pour qu'il se lise sur fond clair.
+Montserrat est récupérée et servira pour les titres.</p>
+</div>
+<p>La police est récupérée sur <strong>Bunny Fonts</strong>, un catalogue de polices gratuites, et rangée avec la vidéo : elle s'affichera partout, même sans connexion.</p>
+<aside class="encadre encadre-conseil"><p><strong>Conseil :</strong> vos couleurs exactes plutôt que celles du logo ? Dites-les en mots (« bleu marine et jaune moutarde ») ou en code couleur (<code>#1f3a5f</code>) : Pulse Motion les traduit.</p></aside>
+<details class="probleme"><summary>Ma police n'existe pas sur Bunny Fonts</summary><p>Pulse Motion garde la plus proche des polices du style et vous le dit. Si vous avez le fichier de votre police (<code>.ttf</code>, <code>.otf</code>, <code>.woff</code> ou <code>.woff2</code>), donnez-le : il vérifie qu'elle contient bien tous les caractères français, et vous signale ceux qui manquent.</p></details>
+<details class="probleme"><summary>« Pas de couleur exploitable » dans mon logo</summary><p>Un logo noir et blanc, par exemple. Pulse Motion garde les couleurs du style et vous le dit. Donnez vos couleurs en mots si vous en avez.</p></details>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="son" class="etape-tuto">
+<h2><span class="etape-numero">3</span> Le son : musique, voix, sous-titres <span class="duree">2 minutes</span></h2>
+<p><strong>Objectif :</strong> une musique composée, votre voix, et des sous-titres.</p>
+<div class="conversation" data-titre="La ronde du son">
+<p data-role="claude">Musique ? → Une musique composée pour la vidéo (Recommandé), lumineuse, posée, qui avance
+Voix ? → Je l'enregistre (Recommandé) / J'ai un fichier / Pas de voix
+Sous-titres ? → Oui (Recommandé) / Non</p>
+<p data-role="vous">Une musique composée · Je l'enregistre · Oui</p>
+</div>
+<p>Avec une voix, la musique se <strong>baisse d'elle-même</strong> pendant que vous parlez, et les sous-titres reprennent le texte que vous direz. Tout est expliqué sur la page <a href="../son.html">Le son</a>.</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="deroule" class="etape-tuto">
+<h2><span class="etape-numero">4</span> Le déroulé, avec le texte dit <span class="duree">10 minutes</span></h2>
+<p><strong>Objectif :</strong> valider les scènes, ce qui s'affiche à l'écran, et ce que vous direz. C'est le <strong>premier accord</strong>.</p>
+<p>Avec une voix, le tableau du déroulé a une colonne de plus : le <strong>texte dit</strong>. Pulse Motion l'écrit pour être <em>entendu</em> : une idée par phrase, des phrases courtes, au plus 3,5 mots par seconde. Le texte à l'écran, lui, reste court : on ne lit pas à l'écran ce qu'on entend déjà.</p>
+<table>
+<thead><tr><th>N°</th><th>Texte à l'écran</th><th>Texte dit</th><th>Durée</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Les 5 gestes d'hygiène en cuisine</td><td>En cuisine, cinq gestes simples protègent vos clients. Les voici.</td><td>6 s</td></tr>
+<tr><td>2</td><td>1 · Se laver les mains</td><td>D'abord, lavez-vous les mains trente secondes, avant chaque tâche.</td><td>8 s</td></tr>
+<tr><td>3</td><td>2 · Séparer le cru et le cuit</td><td>Ensuite, ne mélangez jamais le cru et le cuit.</td><td>7 s</td></tr>
+<tr><td>…</td><td>…</td><td>…</td><td>…</td></tr>
+<tr><td>7</td><td>Les 5 gestes, chaque jour</td><td>Cinq gestes, chaque jour. Merci de les appliquer.</td><td>6 s</td></tr>
+</tbody>
+</table>
+<p>Pulse Motion repère aussi les <strong>mots de votre métier</strong> et propose de les noter dans le <dfn>glossaire</dfn> de votre charte : leur graphie exacte, leur sens, les formes à éviter. Le contrôle signalera ensuite toute faute sur ces mots.</p>
+<div class="conversation" data-titre="Le premier accord">
+<p data-role="claude">Je note « HACCP » au glossaire, avec son sens, et « H.A.C.C.P. » comme forme à éviter ?
+→ Oui (Recommandé) / Non</p>
+<p data-role="vous">Oui</p>
+<p data-role="claude">Voici le déroulé : 7 scènes, environ 1 minute.
+→ Je valide (Recommandé) / Je veux changer quelque chose</p>
+<p data-role="vous">Je veux changer quelque chose : dans la scène 2, dites « avant et après chaque tâche ».</p>
+<p data-role="claude">C'est corrigé. La scène 2 dure maintenant 9 s, pour laisser le temps de le dire.
+→ Je valide (Recommandé) / Je veux changer quelque chose</p>
+<p data-role="vous">Je valide</p>
+</div>
+<aside class="encadre encadre-conseil"><p><strong>Conseil :</strong> lisez le texte dit <strong>à voix haute</strong> avant de valider. Ce que vous butez à dire, vous buterez à l'enregistrer : faites-le changer maintenant.</p></aside>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="style" class="etape-tuto">
+<h2><span class="etape-numero">5</span> Choisir le style <span class="duree">5 minutes</span></h2>
+<p><strong>Objectif :</strong> choisir l'allure de la vidéo, avec vos couleurs déjà appliquées. C'est le <strong>deuxième accord</strong>.</p>
+<p>La comparaison des styles s'est ouverte dans votre navigateur, sur vos deux premières scènes, <strong>à vos couleurs</strong>. En parcours accompagné, le style se choisit par une question à part :</p>
+<div class="conversation" data-titre="Le deuxième accord">
+<p data-role="claude">Quel style ?
+→ Posé, lisible et rassurant (Recommandé) / Accueillant, doux et humain / Net, sûr et essentiel</p>
+<p data-role="vous">Accueillant, doux et humain</p>
+</div>
+<p>Vous pouvez voir tous les styles, avec leur personnalité et leurs polices, dans le <a href="../catalogue.html#styles">catalogue</a>.</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="transcription" class="etape-tuto">
+<h2><span class="etape-numero">6</span> Installer la transcription <span class="duree">10 minutes · facultatif</span></h2>
+<p><strong>Objectif :</strong> que les sous-titres et les animations se calent sur vos vrais mots.</p>
+<p>La <dfn>transcription</dfn> écoute votre voix et retrouve l'instant exact de chaque mot. Les sous-titres changent alors pile au bon moment, et une animation peut partir quand vous dites un mot (« froid », « mains »). Elle tourne sur votre ordinateur : il lui faut Python et un modèle d'environ 800 Mo.</p>
+<div class="conversation" data-titre="La transcription">
+<p data-role="outil">pulse-motion whisper</p>
+<p data-role="claude">La transcription cale les sous-titres et les animations sur les vrais mots de votre voix.
+→ Installer la transcription (Recommandé) / Plus tard</p>
+<p data-role="vous">Installer la transcription</p>
+<p data-role="outil">pulse-motion whisper installer</p>
+<p data-role="claude">La transcription est installée.</p>
+</div>
+<p>Si Python manque, Pulse Motion propose de l'installer d'abord, avec votre accord. L'installation prend quelques minutes ; la suite peut continuer pendant ce temps.</p>
+<aside class="encadre encadre-attention"><p><strong>Attention :</strong> sous Windows, un Python tout juste installé n'est visible qu'après un redémarrage de Claude Code. Si Pulse Motion vous le dit, finissez le tutoriel sans transcription ; la prochaine fois que vous rouvrirez VS Code, demandez « installe la transcription », puis « recale les mots de ma voix ».</p></aside>
+<aside class="encadre encadre-conseil"><p><strong>Conseil :</strong> « Plus tard » ne bloque rien. Les mots sont alors calés au mieux, d'après la longueur des mots et des pauses.</p></aside>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="fabrication" class="etape-tuto">
+<h2><span class="etape-numero">7</span> La fabrication, avec une voix provisoire <span class="duree">5 minutes</span></h2>
+<p><strong>Objectif :</strong> laisser Pulse Motion animer les scènes, calées sur une voix de travail.</p>
+<p>Avant d'animer, Pulse Motion fait lire tous les textes par la <dfn>voix provisoire</dfn> de l'ordinateur. Elle n'est pas belle, et ce n'est pas son rôle : elle donne à chaque scène sa durée et à chaque mot sa place, pour que l'animation se cale dessus. Votre vraie voix la remplacera, scène par scène.</p>
+<p>Puis les animateurs écrivent les scènes, chacune avec un à trois <strong>bruitages</strong> sur les éléments clés (un « pop » à chaque point d'une liste, un « ding » sur un chiffre). Les contrôles passent, et l'aperçu s'ouvre.</p>
+<div class="conversation" data-titre="La fabrication">
+<p data-role="outil">pulse-motion voix provisoire .</p>
+<p data-role="outil">pulse-motion assembler .</p>
+<p data-role="outil">pulse-motion controler .</p>
+<p data-role="claude">J'ai corrigé l'espace avant les deux-points dans la scène 4.
+Pour enregistrer votre voix, cliquez sur « Voix » dans la barre de l'aperçu : le texte défile, vous parlez, vous réécoutez, vous gardez ou refaites.</p>
+</div>
+<details class="probleme"><summary>« Aucune voix du système »</summary><p>L'ordinateur n'a pas de voix française installée. Ce n'est pas grave : les sous-titres se répartissent sur la scène en attendant votre enregistrement.</p></details>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="studio" class="etape-tuto">
+<h2><span class="etape-numero">8</span> Enregistrer votre voix dans le studio <span class="duree">20 minutes</span></h2>
+<p><strong>Objectif :</strong> remplacer la voix provisoire par la vôtre, scène par scène.</p>
+<p>Dans l'aperçu, cliquez sur <strong>Voix</strong>, dans la barre de lecture. Le <dfn>studio</dfn> s'ouvre : une liste des scènes (chacune marquée « à enregistrer », « voix provisoire » ou « enregistrée »), et le texte à dire.</p>
+<figure class="anim" data-etapes="5" data-duree="1300">
+<svg viewBox="0 0 900 200" role="img" aria-labelledby="complet-studio-titre">
+<title id="complet-studio-titre">Une prise dans le studio, en cinq temps</title>
+<g class="e1" data-etape="1"><rect class="actif-halo schema-halo-primaire" x="4" y="44" width="164" height="100" rx="20"/><rect class="schema-boite" x="10" y="50" width="152" height="88" rx="16"/><text class="schema-texte" x="86" y="88" text-anchor="middle">Choisir</text><text class="schema-texte-secondaire" x="86" y="110" text-anchor="middle">la scène</text></g>
+<path class="schema-fleche trace e2" pathLength="1" d="M162 94 H186" marker-end="url(#complet-pointe)"/>
+<g class="e2" data-etape="2"><rect class="actif-halo schema-halo-primaire" x="186" y="44" width="164" height="100" rx="20"/><rect class="schema-boite" x="192" y="50" width="152" height="88" rx="16"/><text class="schema-texte" x="268" y="88" text-anchor="middle">● Enregistrer</text><text class="schema-texte-secondaire" x="268" y="110" text-anchor="middle">3, 2, 1…</text></g>
+<path class="schema-fleche trace e3" pathLength="1" d="M344 94 H368" marker-end="url(#complet-pointe)"/>
+<g class="e3" data-etape="3"><rect class="actif-halo schema-halo-primaire" x="368" y="44" width="164" height="100" rx="20"/><rect class="schema-boite-active" x="374" y="50" width="152" height="88" rx="16"/><text class="schema-texte" x="450" y="88" text-anchor="middle">Parler</text><text class="schema-texte-secondaire" x="450" y="110" text-anchor="middle">le texte défile</text></g>
+<path class="schema-fleche trace e4" pathLength="1" d="M526 94 H550" marker-end="url(#complet-pointe)"/>
+<g class="e4" data-etape="4"><rect class="actif-halo schema-halo-primaire" x="550" y="44" width="164" height="100" rx="20"/><rect class="schema-boite" x="556" y="50" width="152" height="88" rx="16"/><text class="schema-texte" x="632" y="88" text-anchor="middle">▶ Réécouter</text><text class="schema-texte-secondaire" x="632" y="110" text-anchor="middle">avec l'image</text></g>
+<path class="schema-fleche trace e5" pathLength="1" d="M708 94 H732" marker-end="url(#complet-pointe)"/>
+<g class="e5" data-etape="5"><rect class="actif-halo schema-halo-primaire" x="732" y="44" width="164" height="100" rx="20"/><rect class="schema-boite-active" x="738" y="50" width="152" height="88" rx="16"/><text class="schema-texte" x="814" y="88" text-anchor="middle">Garder</text><text class="schema-texte-secondaire" x="814" y="110" text-anchor="middle">la scène se recale</text></g>
+<path class="schema-accompagne trace e5" pathLength="1" d="M632 140 C632 196 268 196 268 148" marker-end="url(#complet-pointe-mauve)"/>
+<text class="schema-texte-secondaire e5" x="450" y="194" text-anchor="middle">ou Refaire</text>
+<defs>
+<marker id="complet-pointe" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" class="schema-pointe-grise"/></marker>
+<marker id="complet-pointe-mauve" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" class="schema-pointe"/></marker>
+</defs>
+</svg>
+<figcaption>Une prise : choisir la scène, cliquer sur « ● Enregistrer » (un compte à rebours de 3 secondes), parler pendant que le texte défile, réécouter avec l'image, puis « Garder » : la scène se recale sur votre voix. Sinon, « Refaire » relance une prise.</figcaption>
+</figure>
+<ol>
+<li>Choisissez la scène 1 dans la liste.</li>
+<li>Cliquez sur <strong>● Enregistrer</strong>. La première fois, le navigateur demande l'accès au micro : autorisez-le.</li>
+<li>Un compte à rebours de 3 secondes, puis parlez : le texte défile devant vous, comme un prompteur. Cliquez sur <strong>■ Arrêter</strong> à la fin.</li>
+<li>Cliquez sur <strong>▶ Réécouter</strong> : votre voix joue avec l'image de la scène.</li>
+<li><strong>Garder</strong> si elle vous convient, <strong>Refaire</strong> sinon.</li>
+<li>Passez à la scène suivante, jusqu'à la dernière.</li>
+</ol>
+<p>Chaque prise gardée <strong>remplace la voix provisoire</strong> et recale la scène : si vous parlez plus lentement, la scène s'allonge d'elle-même. Avec la transcription, le message « transcription en cours » s'affiche quelques secondes, puis les sous-titres se calent sur vos mots.</p>
+<aside class="encadre encadre-conseil"><p><strong>Conseil :</strong> souriez en parlant, ça s'entend. Laissez une demi-seconde de silence avant de commencer et après la dernière phrase. Et ne cherchez pas la prise parfaite : une voix naturelle, avec une petite hésitation, passe mieux qu'une voix récitée.</p></aside>
+<aside class="encadre encadre-attendu"><p><strong>Résultat attendu :</strong> toutes les scènes sont marquées « enregistrée » dans le studio, et la vidéo parle avec votre voix, sous-titres compris.</p></aside>
+<details class="probleme"><summary>« La prise semble vide »</summary><p>Le studio n'a entendu que du silence, un souffle ou un clic. Vérifiez que le bon micro est choisi (dans les réglages du son de l'ordinateur, et dans l'icône de micro de la barre d'adresse du navigateur), puis recommencez en parlant.</p></details>
+<details class="probleme"><summary>« Ce navigateur ne sait pas enregistrer »</summary><p>L'aperçu est ouvert dans Firefox ou Safari. Copiez son adresse (<code>http://localhost:…</code>) dans Chrome ou Edge.</p></details>
+<details class="probleme"><summary>Je préfère enregistrer avec mon propre logiciel</summary><p>Donnez le fichier à Pulse Motion : une prise par scène (« voici la voix de la scène 2 »), ou un seul enregistrement de toute la vidéo, qu'il découpe lui-même par scène. Le découpage demande la transcription.</p></details>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="validation" class="etape-tuto">
+<h2><span class="etape-numero">9</span> Valider la vidéo finale <span class="duree">5 minutes</span></h2>
+<p><strong>Objectif :</strong> regarder la vidéo entière et donner le <strong>troisième accord</strong>.</p>
+<p>Revenez au début de la vidéo et regardez-la jusqu'au bout, avec le son. Puis répondez à Pulse Motion :</p>
+<div class="conversation" data-titre="Le troisième accord">
+<p data-role="claude">La vidéo vous convient ?
+→ Oui, je la valide (Recommandé) / Non, quelque chose ne va pas</p>
+<p data-role="vous">Oui, je la valide</p>
+<p data-role="claude">Votre charte a été créée pour cette vidéo. Voulez-vous l'enregistrer pour les suivantes ?
+→ Enregistrer ma charte (Recommandé) / Pas maintenant</p>
+<p data-role="vous">Enregistrer ma charte, sous le nom atelier-nord</p>
+<p data-role="outil">pulse-motion charte enregistrer atelier-nord .</p>
+</div>
+<p>La charte <code>atelier-nord</code> (logo, couleurs, police, glossaire) vous sera proposée dès la première question de vos prochaines vidéos : « Ma charte atelier-nord ».</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="retouches" class="etape-tuto">
+<h2><span class="etape-numero">10</span> Retoucher en quelques phrases <span class="duree">15 minutes</span></h2>
+<p><strong>Objectif :</strong> peaufiner, une phrase à la fois.</p>
+<p>Chaque retouche se lance avec <a href="../commandes/retoucher.html"><code>/pulse-motion:retoucher</code></a>, suivie de votre phrase. Essayez celles-ci, en regardant l'aperçu après chacune :</p>
+<pre class="commande"><code>/pulse-motion:retoucher sous-titres mot par mot</code></pre>
+<p>Le mot que vous dites passe en couleur d'accent : l'œil suit votre voix.</p>
+<pre class="commande"><code>/pulse-motion:retoucher la musique, plus calme</code></pre>
+<p>La musique perd des couches (percussions, puis mélodie). Pour une autre composition dans la même ambiance : « une autre variante ».</p>
+<pre class="commande"><code>/pulse-motion:retoucher ajoute des confettis à la fin</code></pre>
+<p>Un effet de particules sur la conclusion. Un seul par vidéo, c'est la règle des confettis : ils célèbrent.</p>
+<pre class="commande"><code>/pulse-motion:retoucher annule</code></pre>
+<p>Les confettis repartent : la vidéo revient à l'état d'avant la dernière retouche.</p>
+<aside class="encadre encadre-conseil"><p><strong>Conseil :</strong> vous voulez changer une phrase que vous dites ? Demandez « change ce que je dis dans la scène 3 : … ». Pulse Motion change le texte, puis vous propose de réenregistrer la scène dans le studio.</p></aside>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="export" class="etape-tuto">
+<h2><span class="etape-numero">11</span> Exporter en MP4 fidèle <span class="duree">10 minutes</span></h2>
+<p><strong>Objectif :</strong> le MP4 final, avec un son propre, et les fichiers de sous-titres.</p>
+<pre class="commande"><code>/pulse-motion:exporter</code></pre>
+<p>Si ffmpeg n'est pas encore installé, acceptez son installation : l'<dfn>export fidèle</dfn> filme le navigateur image par image et vérifie le niveau du son. Comptez environ deux minutes pour une minute de vidéo.</p>
+<div class="conversation" data-titre="L'export fidèle">
+<p data-role="vous">/pulse-motion:exporter</p>
+<p data-role="outil">pulse-motion controler .</p>
+<p data-role="outil">pulse-motion exporter .</p>
+<p data-role="claude">✅ Fait : la vidéo « Les 5 gestes d'hygiène en cuisine » est exportée en MP4 (1 min 04, avec le son, export fidèle).
+📄 Fichiers : le MP4 et la page animée dans sortie/, avec les sous-titres .srt et .vtt à joindre sur votre plateforme de formation.</p>
+</div>
+<aside class="encadre encadre-attendu"><p><strong>Résultat attendu :</strong> le dossier <code>sortie/</code> contient le MP4, la page animée, et deux fichiers de sous-titres (<code>.srt</code> et <code>.vtt</code>).</p></aside>
+<details class="probleme"><summary>L'export refuse : « voix provisoire »</summary><p>Une scène parle encore avec la voix de l'ordinateur. Rouvrez le studio (bouton « Voix »), enregistrez la scène marquée « voix provisoire », puis relancez l'export.</p></details>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="ensuite" class="etape-tuto">
+<h2><span class="etape-numero">✓</span> Et ensuite ?</h2>
+<ul>
+<li><strong>Une série de vidéos :</strong> créez la suivante dans un nouveau dossier ; choisissez « Ma charte atelier-nord » à la première question. Toutes vos vidéos auront la même allure.</li>
+<li><strong>Une allure qui n'appartient qu'à vous :</strong> créez votre propre style avec <a href="../commandes/style.html"><code>/pulse-motion:style</code></a>.</li>
+<li><strong>Une version pour les réseaux :</strong> dans un nouveau dossier, la même idée « pour Instagram » donne une vidéo verticale, au style énergique.</li>
+</ul>
+<p>Pour aller plus loin sur le son (ambiances, partitions, bruitages), voyez la page <a href="../son.html">Le son</a> ; pour comprendre ce qui se passe en coulisse, les <a href="../concepts.html">concepts</a>.</p>
+<p class="centre"><a class="bouton bouton-grand" href="vibe-connection.html">Tutoriel 3 : un film avec des personnages →</a></p>
+</section>
+
+</article>
+</div></main>
+</body>
+</html>

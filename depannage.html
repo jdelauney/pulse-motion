@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="fr" data-racine="">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Je suis bloqué – Wiki Pulse Motion</title>
+<meta name="description" content="Les situations de blocage avec Pulse Motion et leur solution : installation, aperçu, voix, contrôles, export, personnages. Les messages du contrôle traduits en mots simples.">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/animations.css">
+<script src="js/donnees.js" defer></script>
+<script src="js/gabarit.js" defer></script>
+<script src="js/animations.js" defer></script>
+<script src="js/console.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<div class="mise-en-page">
+<nav class="laterale" aria-label="Sur cette page" data-laterale="sommaire"></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille">À tout moment</p>
+<h1>Je suis bloqué</h1>
+<p class="chapo">Une commande qui n'apparaît pas, un aperçu muet, un export qui refuse : presque tout se règle en une phrase. Cherchez votre situation ci-dessous, avec vos mots.</p>
+</header>
+
+<aside class="encadre encadre-conseil">
+<p><strong>Les 4 réflexes</strong> qui évitent la plupart des blocages :</p>
+<ol>
+<li><strong>Une vidéo = un dossier.</strong> Ouvrez toujours le dossier de la vidéo dans VS Code, pas celui qui le contient.</li>
+<li><strong>Relancez après une installation.</strong> Claude Code lit la liste des logiciels à son démarrage : après avoir installé Node.js, Chrome, ffmpeg ou Python, fermez complètement VS Code et rouvrez-le.</li>
+<li><strong>Chrome ou Edge pour l'aperçu.</strong> La voix et le bouton MP4 n'y marchent qu'avec eux.</li>
+<li><strong>« annule » existe.</strong> Une retouche ratée se défait d'un mot.</li>
+</ol>
+</aside>
+
+<p>Si vous ne savez pas quelle commande taper, décrivez simplement votre problème à Claude, avec vos mots : il connaît Pulse Motion et vous orientera. Pour reprendre le fil d'une vidéo, <a href="commandes/reprendre.html"><code>/pulse-motion:reprendre</code></a> vous dit toujours où elle en est.</p>
+
+<!-- ===================================================================================================== -->
+<section id="installation">
+<h2>À l'installation</h2>
+<details class="probleme"><summary>Les commandes <code>/pulse-motion:…</code> n'apparaissent pas</summary>
+<p>Le plugin n'est pas installé, ou Claude Code n'a pas été relancé. Tapez <code>/plugins</code> : <code>pulse-motion</code> doit apparaître dans l'onglet <strong>Plugins</strong>, avec son interrupteur activé. Sinon, suivez l'étape <a href="prerequis.html#plugin">Installer Pulse Motion</a>, puis fermez complètement VS Code et rouvrez-le.</p>
+</details>
+<details class="probleme"><summary>« node » introuvable, ou « Node.js est trop ancien »</summary>
+<p>Pulse Motion demande Node.js 20 ou plus. Installez la version LTS depuis <a href="https://nodejs.org/fr/download" target="_blank" rel="noopener noreferrer">nodejs.org</a> (voir les <a href="prerequis.html#node">prérequis</a>), puis fermez complètement VS Code et rouvrez-le. Tant que la version est trop ancienne, Pulse Motion vous le rappelle au début de chaque session.</p>
+</details>
+<details class="probleme"><summary>« Chrome ou Edge introuvable »</summary>
+<p>Installez l'un des deux (sous Windows, Edge est déjà là). S'il est installé à un endroit inhabituel, indiquez son chemin dans la variable d'environnement <code>PM_NAVIGATEUR</code> ; demandez à Claude de vous guider. Voir <a href="prerequis.html#navigateur">Chrome ou Edge</a>.</p>
+</details>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="creation">
+<h2>Pendant la création</h2>
+<details class="probleme"><summary>« Une vidéo existe déjà ici »</summary>
+<p>Le dossier contient déjà un déroulé. Pour continuer cette vidéo : <a href="commandes/reprendre.html"><code>/pulse-motion:reprendre</code></a>. Pour une nouvelle vidéo : créez un autre dossier vide, ouvrez-le, puis relancez <a href="commandes/creer.html"><code>/pulse-motion:creer</code></a>.</p>
+</details>
+<details class="probleme"><summary>« Aucune vidéo ici » alors que j'en ai une</summary>
+<p>Le dossier ouvert n'est pas celui de la vidéo : il doit contenir <code>deroule.json</code>. Ouvrez le bon dossier avec <strong>File</strong> → <strong>Open Folder…</strong>.</p>
+</details>
+<details class="probleme"><summary>La conversation s'est arrêtée au milieu</summary>
+<p>Rien n'est perdu : l'état de la vidéo est dans son dossier. Lancez <a href="commandes/reprendre.html"><code>/pulse-motion:reprendre</code></a>.</p>
+</details>
+<details class="probleme"><summary>Mon logo ne donne pas de bonnes couleurs</summary>
+<p>Donnez un PNG ou un SVG plutôt qu'un JPEG. Si le logo est en noir et blanc, il n'a pas de couleur exploitable : dites vos couleurs en mots (« bleu marine et orange »). Après coup : « mets mes couleurs : bleu marine et orange » avec <a href="commandes/retoucher.html"><code>/pulse-motion:retoucher</code></a>.</p>
+</details>
+<details class="probleme"><summary>Ma police n'a pas été trouvée</summary>
+<p>Pulse Motion cherche dans les polices gratuites de Bunny Fonts. Si la vôtre n'y est pas, il garde la plus proche des polices du style. Donnez-lui le fichier de votre police (<code>.ttf</code>, <code>.otf</code>, <code>.woff</code> ou <code>.woff2</code>) : il vérifie qu'elle contient les caractères français.</p>
+</details>
+<details class="probleme"><summary>« Le rendu n'a pas pu être vérifié »</summary>
+<p>Ni Chrome ni Edge n'ont été trouvés, ou la page a rencontré une erreur. La vidéo est fabriquée, mais les contrôles à l'image n'ont pas été faits. Installez l'un des deux navigateurs, puis demandez une retouche : le contrôle complet se refait.</p>
+</details>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="apercu">
+<h2>Dans l'aperçu</h2>
+<details class="probleme"><summary>L'aperçu ne s'est pas ouvert, ou je l'ai fermé</summary>
+<p>Demandez « rouvre l'aperçu » à Claude, ou lancez <a href="commandes/reprendre.html"><code>/pulse-motion:reprendre</code></a>. L'aperçu est servi depuis votre ordinateur, à une adresse en <code>http://localhost:…</code>.</p>
+</details>
+<details class="probleme"><summary>Je n'entends rien</summary>
+<p>Les navigateurs attendent un geste de votre part avant de jouer un son : cliquez sur <strong>▶</strong>. Vérifiez le volume de l'ordinateur et de l'onglet. Si la vidéo n'a pas de musique ni de voix, elle est muette : c'est voulu.</p>
+</details>
+<details class="probleme"><summary>L'aperçu ne s'est pas mis à jour après une retouche</summary>
+<p>Il se recharge seul tant qu'il est ouvert depuis Pulse Motion. Sinon, rechargez la page (<kbd>F5</kbd>, ou <kbd>Cmd</kbd> + <kbd>R</kbd> sur Mac).</p>
+</details>
+<details class="probleme"><summary>Je ne trouve pas le bouton « Voix » ou « MP4 »</summary>
+<p>Ils sont dans la barre de lecture de l'<strong>aperçu</strong>, pas dans la page animée de <code>sortie/</code>. Ouvrez l'aperçu (adresse en <code>http://localhost:…</code>) dans Chrome ou Edge.</p>
+</details>
+<details class="probleme"><summary>« Effet non affiché : WebGPU indisponible »</summary>
+<p>Les effets de particules (étincelles, confettis…) et l'atelier des effets demandent <strong>WebGPU</strong>, plus récent que le WebGL des fonds animés de beaucoup de sites : un site qui affiche bien ses shaders ne prouve donc pas que WebGPU marche. Le plus simple : ouvrir la même adresse dans Chrome ou Edge récent (Edge est déjà là sous Windows).</p>
+<p>Dans un autre navigateur basé sur Chromium (Opera, Brave, Vivaldi…), WebGPU peut être activé mais la carte graphique refusée. Pour savoir ce qui bloque, ouvrez la console (<kbd>F12</kbd>, onglet « Console ») sur la page de l'aperçu et collez :</p>
+<pre><code>console.log('gpu :', !!navigator.gpu); console.log('carte :', await navigator.gpu?.requestAdapter());</code></pre>
+<ul>
+<li><code>gpu : false</code> : WebGPU n'est pas proposé. Activez « Unsafe WebGPU Support » dans la page des fonctions expérimentales (<code>opera://flags/#enable-unsafe-webgpu</code> sous Opera), puis redémarrez le navigateur.</li>
+<li><code>carte : null</code> : la carte graphique est refusée. Le même réglage lève ce refus ; vérifiez aussi que l'accélération matérielle est activée dans les réglages du navigateur, et que la ligne « WebGPU » de <code>opera://gpu</code> (ou <code>chrome://gpu</code>) indique « Hardware accelerated ». Sinon, mettez à jour le pilote de la carte graphique.</li>
+<li>Une carte s'affiche : rechargez la page (<kbd>Ctrl</kbd> + <kbd>F5</kbd>).</li>
+</ul>
+</details>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="voix">
+<h2>Avec la voix</h2>
+<details class="probleme"><summary>« Ce navigateur ne sait pas enregistrer »</summary>
+<p>L'aperçu est ouvert dans Firefox ou Safari. Copiez son adresse dans Chrome ou Edge. Autre solution : enregistrez avec votre propre logiciel et donnez le fichier à Pulse Motion.</p>
+</details>
+<details class="probleme"><summary>« La prise semble vide »</summary>
+<p>Le studio n'a entendu que du silence, un souffle ou un clic. Vérifiez le micro choisi dans les réglages du son de l'ordinateur, et l'autorisation du micro (icône dans la barre d'adresse du navigateur). Puis recommencez, en parlant au moins une seconde.</p>
+</details>
+<details class="probleme"><summary>La vidéo parle avec une voix d'ordinateur</summary>
+<p>C'est la voix provisoire, qui cale l'animation en attendant la vôtre. Dans l'aperçu, cliquez sur <strong>Voix</strong> et enregistrez les scènes marquées « voix provisoire ». Voir <a href="son.html#voix">la voix</a>.</p>
+</details>
+<details class="probleme"><summary>« Aucune voix du système »</summary>
+<p>L'ordinateur n'a pas de voix française pour la voix provisoire. Ce n'est pas bloquant : les sous-titres se répartissent sur la scène en attendant votre enregistrement.</p>
+</details>
+<details class="probleme"><summary>La transcription ne s'installe pas</summary>
+<p>Elle demande Python. Sous Windows, un Python tout juste installé n'est visible qu'après un redémarrage de Claude Code : fermez complètement VS Code, rouvrez-le, et demandez « installe la transcription ». Si elle échoue encore, continuez sans : les mots sont calés au mieux, tout fonctionne.</p>
+</details>
+<details class="probleme"><summary>Mon enregistrement de toute la vidéo est refusé</summary>
+<p>Le découpage par scène demande la transcription. Installez-la (Pulse Motion vous le propose), puis redonnez le fichier. Sinon, enregistrez scène par scène dans le studio.</p>
+</details>
+<details class="probleme"><summary>« Scène mal reconnue » à l'import de ma voix</summary>
+<p>Dans cette scène, moins de la moitié des mots du texte ont été reconnus : le découpage est peut-être décalé. Écoutez-la dans l'aperçu ; si besoin, réenregistrez-la seule : « je réenregistre la scène 4 ».</p>
+</details>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="controles">
+<h2>Les messages du contrôle</h2>
+<p>Pulse Motion corrige lui-même ce que le contrôle signale, puis vous dit ce qui reste. Voici ce que veulent dire les messages que vous pourriez croiser, et quoi demander à <a href="commandes/retoucher.html"><code>/pulse-motion:retoucher</code></a>.</p>
+<table>
+<thead><tr><th>Message</th><th>Ce qu'il veut dire</th><th>Que demander</th></tr></thead>
+<tbody>
+<tr><td><code>debordement</code></td><td>Un texte dépasse de son cadre, même réduit à 80 %.</td><td>« raccourcis le titre de la scène 2 »</td></tr>
+<tr><td><code>lecture</code></td><td>La scène est trop courte pour lire son texte.</td><td>« laisse plus de temps sur la scène 3 », ou un texte plus court</td></tr>
+<tr><td><code>texte-fugace</code></td><td>Un texte disparaît avant d'avoir pu être lu.</td><td>« laisse le sous-titre de la scène 4 plus longtemps »</td></tr>
+<tr><td><code>temps-mort</code></td><td>Rien ne bouge pendant plus de 2,5 s.</td><td>« fais entrer les points un par un », « ajoute un décor qui bouge »</td></tr>
+<tr><td><code>chevauchement</code></td><td>Deux éléments se recouvrent.</td><td>« écarte l'image du titre »</td></tr>
+<tr><td><code>marge</code></td><td>Un texte colle au bord de l'image.</td><td>« éloigne le texte du bord »</td></tr>
+<tr><td><code>zone-sure</code></td><td>En vertical, un texte passe sous les boutons des réseaux.</td><td>« raccourcis la liste », « rapproche le texte du centre »</td></tr>
+<tr><td><code>logo-masque</code></td><td>Le logo est caché par un autre élément.</td><td>« dégage le logo »</td></tr>
+<tr><td><code>contraste</code>, <code>contraste-reel</code></td><td>Un texte se détache mal de ce qu'il y a derrière.</td><td>« mets un voile sous le titre », « titre en blanc »</td></tr>
+<tr><td><code>sous-titre-cache-texte</code></td><td>Un sous-titre recouvre un texte de la scène.</td><td>« sous-titres en haut »</td></tr>
+<tr><td><code>flash</code></td><td><strong>Erreur :</strong> plus de 3 flashs par seconde, risque de crise d'épilepsie.</td><td>« adoucis le clignotement de la scène 5 »</td></tr>
+<tr><td><code>trop-d-animations</code></td><td>Plus de 4 éléments bougent vite en même temps.</td><td>« décale les entrées de la scène 3 »</td></tr>
+<tr><td><code>mouvement-rapide</code></td><td>Un grand élément traverse l'image trop vite.</td><td>« ralentis le glissement »</td></tr>
+<tr><td><code>hors-tempo</code></td><td>Une scène ne commence pas sur un temps de la musique.</td><td>Rien : Pulse Motion ajuste la durée sur les temps.</td></tr>
+<tr><td><code>terme-variable</code></td><td>Un mot est écrit de deux façons (« e-mail » / « email »).</td><td>« écris toujours e-mail »</td></tr>
+<tr><td><code>mot-double</code></td><td>Le même mot deux fois de suite.</td><td>« corrige le doublon de la scène 2 »</td></tr>
+<tr><td><code>voix-provisoire</code></td><td>Une scène parle encore avec la voix de l'ordinateur.</td><td>Enregistrer la scène dans le studio</td></tr>
+<tr><td><code>mots-perimes</code></td><td>La prise ou son texte ont changé depuis la transcription.</td><td>« recale les mots de ma voix »</td></tr>
+<tr><td><code>son-sous-voix</code></td><td>Un bruitage fort tombe pendant que vous parlez.</td><td>« déplace le son de la scène 2 dans un silence »</td></tr>
+<tr><td><code>page-lourde</code></td><td>Plus de 20 Mo de sons dans la page animée.</td><td>Installer ffmpeg, qui compresse les voix</td></tr>
+</tbody>
+</table>
+<p>La liste complète est dans la référence du plugin (<code>references/controles.md</code>), que Pulse Motion consulte pour vous.</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="export">
+<h2>À l'export</h2>
+<details class="probleme"><summary>L'export s'arrête sur la voix provisoire</summary>
+<p>Pulse Motion refuse d'exporter la voix de l'ordinateur sans votre accord. Enregistrez votre voix d'abord, ou répondez « Exporter une version de travail avec la voix de l'ordinateur ».</p>
+</details>
+<details class="probleme"><summary>Pulse Motion me propose de corriger des erreurs avant d'exporter</summary>
+<p>Le contrôle a trouvé une erreur (un texte qui déborde, un flash, un son introuvable…). Acceptez la correction proposée, ou demandez-la avec <a href="commandes/retoucher.html"><code>/pulse-motion:retoucher</code></a>, puis relancez l'export. Les simples alertes, elles, n'empêchent pas l'export.</p>
+</details>
+<details class="probleme"><summary>L'export a été fait « dans le navigateur »</summary>
+<p>ffmpeg n'est pas installé, ou sa version est trop ancienne. Le MP4 est valable ; pour l'export fidèle la prochaine fois, acceptez l'installation de ffmpeg ou suivez les <a href="prerequis.html#ffmpeg">prérequis</a>.</p>
+</details>
+<details class="probleme"><summary>La vidéo exportée est muette, ou il manque la musique</summary>
+<p>Un fichier son était illisible : Pulse Motion l'a dit dans un avertissement, et a exporté sans lui. Redonnez le fichier, puis relancez l'export.</p>
+</details>
+<details class="probleme"><summary>L'export s'est interrompu</summary>
+<p>Relancez <a href="commandes/exporter.html"><code>/pulse-motion:exporter</code></a> : les parties déjà faites sont reprises. Aucun fichier incomplet n'a été écrit.</p>
+</details>
+<details class="probleme"><summary>Le MP4 est trop lourd</summary>
+<p>Relancez l'export en demandant « une version plus légère » : il passe en 720p.</p>
+</details>
+<details class="probleme"><summary>Je ne retrouve pas le fichier MP4</summary>
+<p>Il est dans le dossier <code>sortie/</code> de la vidéo, sous le titre écrit en minuscules, sans accents ni espaces : « La chaîne du froid » donne <code>la-chaine-du-froid.mp4</code>.</p>
+</details>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="retouches">
+<h2>Avec les retouches</h2>
+<details class="probleme"><summary>La retouche a changé autre chose que ce que je voulais</summary>
+<p>Dites « annule », puis reformulez en précisant la scène et l'élément : « dans la scène 3, seulement le titre ».</p>
+</details>
+<details class="probleme"><summary>« Aucune retouche à annuler »</summary>
+<p>Vous êtes revenu au plus ancien état gardé (les 20 dernières retouches sont conservées), ou la vidéo n'a jamais été retouchée.</p>
+</details>
+<details class="probleme"><summary>J'ai demandé une durée précise, et Pulse Motion signale un problème de lecture</summary>
+<p>Il respecte votre durée et vous prévient simplement que le texte risque d'être lu trop vite. Gardez votre durée, ou raccourcissez le texte.</p>
+</details>
+<details class="probleme"><summary>Après un changement de style, une scène est différente</summary>
+<p>C'était une scène composée librement : elle a été réécrite dans le nouveau style. Décrivez ce qui vous manque (« remets le personnage à gauche »), ou dites « annule » pour revenir à l'ancien style.</p>
+</details>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="personnages">
+<h2>Avec les personnages</h2>
+<details class="probleme"><summary>Je ne trouve pas la commande <code>/pulse-motion:dessiner-personnage</code></summary>
+<p>Votre plugin n'est pas à jour : les personnages sont arrivés dans les versions récentes. Tapez ces deux commandes dans Claude Code, une à la fois :</p>
+<pre class="commande"><code>/plugin marketplace update pulse-motion</code></pre>
+<pre class="commande"><code>/plugin update pulse-motion@pulse-motion</code></pre>
+<p>Puis fermez complètement Claude Code et relancez-le : les commandes <code>/pulse-motion:dessiner-personnage</code>, <code>/pulse-motion:animer-personnage</code>, <code>/pulse-motion:atelier-personnages</code> et <code>/pulse-motion:decouper-personnage</code> apparaissent.</p>
+</details>
+<details class="probleme"><summary>La tête flotte au-dessus du corps, ou un élément manque dans une vue</summary>
+<p>Le dessin n'est pas le même d'une vue à l'autre : le cou ne rejoint pas la tête de face, ou la toque n'existe que de profil. Dites ce que vous voyez, par exemple :</p>
+<pre class="commande"><code>/pulse-motion:dessiner-personnage redessine sa tête de face</code></pre>
+<p>Pulse Motion reprend la vue fautive et compare à nouveau les vues entre elles.</p>
+</details>
+<details class="probleme"><summary>Le personnage cache un texte</summary>
+<p>Faites-le entrer par le côté, rendez-le plus petit, ou faites-lui traverser la scène avant l'arrivée du texte : « fais entrer le cuisinier par la droite », « rends-le plus petit ». Voir <a href="personnages.html#scene">un personnage dans une scène</a>.</p>
+</details>
+<details class="probleme"><summary>Un mouvement ne ressemble pas à ce que j'ai demandé</summary>
+<p>Demandez à le voir : « montre-moi le salut de face et de profil ». Sur la planche, dites ce qui ne va pas (« la main doit monter plus haut »). Pour le régler vous-même, ouvrez <a href="commandes/atelier-personnages.html"><code>/pulse-motion:atelier-personnages</code></a> : glissez les articulations, puis <strong>Enregistrer</strong>.</p>
+</details>
+<details class="probleme"><summary>Le personnage glisse pendant une pose ou un geste</summary>
+<p>La pose a été placée pendant sa marche. Demandez qu'elle commence après la fin de la marche : « qu'il montre le chiffre une fois arrivé ».</p>
+</details>
+<details class="probleme"><summary>« La scène n'a pas de voix »</summary>
+<p>Un personnage ne peut parler que dans une scène qui a un texte dit. Ajoutez le texte que la voix dit dans cette scène (« ajoute un texte dit à la scène 2 : … »), ou retirez la parole de ce personnage. Voir <a href="son.html#voix">la voix</a>.</p>
+</details>
+<details class="probleme"><summary>Le personnage reste bouche fermée alors qu'il doit parler</summary>
+<p>Deux causes possibles, que Pulse Motion vous signale :</p>
+<ul>
+<li><strong>la voix de la scène n'est pas encore enregistrée</strong> : enregistrez-la dans le studio (bouton <strong>Voix</strong> de l'aperçu), ou demandez une voix provisoire en attendant ;</li>
+<li><strong>le dessin n'a pas de bouches de parole</strong> : demandez « dessine-lui les bouches pour parler » avec <a href="commandes/dessiner-personnage.html"><code>/pulse-motion:dessiner-personnage</code></a>.</li>
+</ul>
+</details>
+<details class="probleme"><summary>Mon illustration est refusée à la découpe</summary>
+<p>Elle contient du texte, une image collée, une copie liée, un filtre ou un masque. Pulse Motion vous dit quoi changer dans votre logiciel de dessin ; le détail est sur la page <a href="personnages.html#decouper">animer votre illustration</a>.</p>
+</details>
+</section>
+
+</article>
+</div>
+</main>
+</body>
+</html>
