@@ -54,6 +54,10 @@ window.PULSE_WIKI = {
       "href": "index.html"
     },
     {
+      "titre": "En 5 minutes",
+      "href": "demarrage-rapide.html"
+    },
+    {
       "titre": "Prérequis",
       "href": "prerequis.html"
     },
