@@ -4,9 +4,14 @@ Plugin Claude Code qui fabrique, sur votre ordinateur et sans cloud, des vidéos
 
 ## Installation
 
+Dans Claude Code, une commande à la fois :
+
 ```
-/plugin install pulse-motion --marketplace jdelauney/pulse-motion
+/plugin marketplace add jdelauney/pulse-motion
+/plugin install pulse-motion@pulse-motion
 ```
+
+Fermez puis relancez Claude Code.
 
 ## Ce que vous pouvez demander
 
