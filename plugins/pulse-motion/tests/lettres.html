@@ -90,7 +90,7 @@
   verifier('brouille déterministe', etatBrouille() === brouille1, etatBrouille() + ' / ' + brouille1);
   M.rendre(3);
   verifier('brouille après : le vrai texte', etatBrouille() === 'Code42' && lettres('b').length === 6, etatBrouille());
-  verifier('brouille : texte entier pour les lecteurs d'écran', document.getElementById('b').getAttribute('aria-label') === 'Code 42');
+  verifier('brouille : texte entier pour les lecteurs d\'écran', document.getElementById('b').getAttribute('aria-label') === 'Code 42');
 
   var br = document.getElementById('br');
   verifier('retour à la ligne gardé, mots non collés', br.querySelectorAll('br').length === 1 && Array.prototype.map.call(br.querySelectorAll('.pm-mot'), function (m) { return m.textContent; }).join('|') === 'Ligne|un|Ligne|deux', br.innerHTML);
