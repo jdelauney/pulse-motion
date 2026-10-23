@@ -30,3 +30,13 @@ test("liensDuWiki : un data-id ne vaut pas un id", () => {
   fs.writeFileSync(path.join(racine, "docs", "a.html"), '<a href="b.html#ici">x</a>');
   assert.deepEqual(liensDuWiki(racine, new Set()).casses.map((c) => c.cible), ["b.html#ici"]);
 });
+
+test("liensDuWiki : un aperçu déclaré par un lot de la galerie est accepté", () => {
+  const { MEDIAS, sortiesDe } = require("./medias.js");
+  const declares = new Set(MEDIAS.flatMap(sortiesDe));
+  assert.ok(declares.has("medias/galerie/mouvements/001.mp4"));
+  const racine = fs.mkdtempSync(path.join(os.tmpdir(), "pm-liens-"));
+  fs.mkdirSync(path.join(racine, "docs"));
+  fs.writeFileSync(path.join(racine, "docs", "a.html"), '<video src="medias/galerie/mouvements/001.mp4" poster="medias/galerie/mouvements/001.jpg"></video>');
+  assert.deepEqual(liensDuWiki(racine, declares).casses, []);
+});

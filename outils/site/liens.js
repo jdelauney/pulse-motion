@@ -16,7 +16,10 @@ function pages(dossier, prefixe = "") {
 }
 
 function sortiesDeclarees() {
-  try { return new Set(require("./medias.js").MEDIAS.map((m) => m.sortie)); } catch { return new Set(); }
+  try {
+    const { MEDIAS, sortiesDe } = require("./medias.js");
+    return new Set(MEDIAS.flatMap(sortiesDe));
+  } catch { return new Set(); }
 }
 
 /** Liens cassés des pages de docs/ : { casses: [{ page, cible }] } (chemins relatifs à docs/). */
