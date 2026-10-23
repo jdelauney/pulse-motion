@@ -20,6 +20,11 @@ test('mouvements.css : chaque classe commune et ses images clés', () => {
   }
 });
 
+test('mouvements.css : les classes l\'emportent sur les entrées des styles (#pm-scene), la caméra à l\'épaule couvre l\'image', () => {
+  for (const c of CLASSES) assert.match(CSS, new RegExp(`#pm-scene \\.pm-m-${c}\\b`), c);
+  assert.match(CSS, /#pm-scene \.pm-m-epaule \{ position: absolute; inset: 0;/);
+});
+
 test('mouvements.css : ni transition CSS, ni filtre SVG, ni fusion, ni pixels, ni boucle sans fin', () => {
   const sansCommentaires = CSS.replace(/\/\*[\s\S]*?\*\//g, '');
   for (const interdit of [/transition\s*:/, /filter\s*:\s*url/, /mix-blend-mode/, /backdrop-filter/, /\d+px\b/, /\binfinite\b/]) {

@@ -144,3 +144,13 @@ test('deroule : mouvement inconnu, ou transition rangée dans les mouvements', (
   d.scenes[0].mouvements = 'pop-in';
   assert.match(validerDeroule(d).join('\n'), /« mouvements » doit être une liste/);
 });
+
+test('mouvements nommés : forme { mouvement, element }', () => {
+  const d = valide();
+  d.scenes[0].mouvements = [{ mouvement: '#024', element: 'mot-cle' }, { mouvement: 'pop-in' }];
+  assert.deepEqual(validerDeroule(d), []);
+  d.scenes[0].mouvements = [{ mouvement: '#024', element: 3 }];
+  assert.match(validerDeroule(d).join('\n'), /« mouvements » doit être une liste/);
+  d.scenes[0].mouvements = [{ mouvement: '999' }];
+  assert.match(validerDeroule(d).join('\n'), /mouvement « 999 » inconnu/);
+});

@@ -151,7 +151,8 @@
         sec.querySelectorAll(JUGES).forEach(function (el) {
           if (!estJuge(el)) return;
           var r = rectangle(el);
-          var visible = aire(r) > 0 && opacite(el) > 0.5;
+          // Un texte brouillé (data-lettres="brouille") n'est lisible qu'une fois toutes ses lettres en place.
+          var visible = aire(r) > 0 && opacite(el) > 0.5 && !el.querySelector('.pm-lettre[data-pm-brouille]');
           if (el.hasAttribute('data-texte') && visible) {
             textesVus.add(el);
             var l = lectures.get(el);

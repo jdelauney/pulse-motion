@@ -86,7 +86,8 @@
           if (/^\s$/.test(g)) lettre.className = 'pm-lettre pm-blanc';
           else {
             lettre.style.setProperty('--pm-i', String(n++));
-            if (effet === 'brouille') lettre.setAttribute('data-pm-vraie', g);
+            // Seules les lettres et les chiffres se brouillent ; la ponctuation reste en place.
+            if (effet === 'brouille' && /[\p{L}\p{N}]/u.test(g)) lettre.setAttribute('data-pm-vraie', g);
           }
           mot.appendChild(lettre);
         });
@@ -113,19 +114,33 @@
     });
     return erreurs;
   };
+  /** Durée CSS (« 0.3s », « 300ms ») en secondes, ou null. */
+  function secondes(texte) {
+    var m = /^\s*([\d.]+)\s*(ms|s)?\s*$/.exec(texte || '');
+    return m ? parseFloat(m[1]) / (m[2] === 'ms' ? 1000 : 1) : null;
+  }
+  // Signe de la lettre i au pas de brouillage k : tiré d'un hachage, il ne dépend que du temps de l'élément (figé pendant
+  // un arrêt sur image, le même à 30 ou 60 images par seconde). 30 changements par seconde.
+  function signeDe(i, k) {
+    var h = Math.imul(i + 1, 0x9e3779b1) ^ Math.imul(k + 7, 0x85ebca6b);
+    h = Math.imul(h ^ (h >>> 15), 0x2c1b3c6d);
+    return SIGNES.charAt(((h ^ (h >>> 12)) >>> 0) % SIGNES.length);
+  }
   /**
    * Texte brouillé : pose sur chaque lettre de `el` ce qu'elle montre à l'instant `local` (secondes depuis le début de
    * l'élément) : rien avant son tour (rang × pas), un signe au hasard pendant --pm-lettre-dur (0,3 s), puis la vraie lettre.
-   * Le signe est dessiné par-dessus la vraie lettre, transparente : la largeur du texte ne bouge pas.
+   * Le signe est dessiné par-dessus la vraie lettre, cachée : la largeur du texte ne bouge pas.
    */
   M.brouiller = function (el, local) {
-    var pas = parseFloat(el.style.getPropertyValue('--pm-pas')) || EFFETS.brouille;
-    var dur = parseFloat(getComputedStyle(el).getPropertyValue('--pm-lettre-dur')) || 0.3;
+    var pas = secondes(el.style.getPropertyValue('--pm-pas')) || EFFETS.brouille;
+    if (el.__pmDurBrouille === undefined) el.__pmDurBrouille = secondes(getComputedStyle(el).getPropertyValue('--pm-lettre-dur')) || 0.3;
+    var dur = el.__pmDurBrouille;
     el.querySelectorAll('.pm-lettre[data-pm-vraie]').forEach(function (l) {
-      var d = local - Number(l.style.getPropertyValue('--pm-i')) * pas;
+      var i = Number(l.style.getPropertyValue('--pm-i'));
+      var d = local - i * pas;
       if (d >= dur) { l.removeAttribute('data-pm-brouille'); return; }
       if (d < 0) { l.setAttribute('data-pm-brouille', ''); return; }
-      var signe = SIGNES.charAt(Math.floor(Math.random() * SIGNES.length));
+      var signe = signeDe(i, Math.floor(local * 30));
       var vraie = l.getAttribute('data-pm-vraie');
       l.setAttribute('data-pm-brouille', vraie !== vraie.toUpperCase() ? signe.toLowerCase() : signe);
     });
