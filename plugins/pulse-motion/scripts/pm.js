@@ -18,6 +18,7 @@
  *   pulse-motion reference <nom>          affiche references/<nom>.md (ex. moteur, rythme, styles/clair-pedagogique)
  *   pulse-motion scene <style> <nom>      affiche une scène toute faite d'un style
  *   pulse-motion effet <nom>              affiche la recette d'un effet de particules de la bibliothèque
+ *   pulse-motion mouvements liste [--categorie <id>] | chercher <mots…> | afficher <n° ou nom> | reference   dictionnaire de mouvements nommés
  *   pulse-motion personnages liste|afficher <nom>|verifier|planche <nom> [--dessin <d>]|planche --dessin <d> --visage|atelier [<nom>] [--dessin <d>] [--decoupe <nom>] [--bibliotheque]|analyser <svg>|decouper <nom>|renommer-couleur <dessin> <ancien> <nouveau> [--dossier <d>]   poses, clips et gabarits des personnages
  *   pulse-motion styles [--genre <genre>] liste les styles (JSON), classée pour le genre
  *   pulse-motion styles verifier <nom>    vérifie le contrat d'un style
@@ -58,6 +59,7 @@ const SCRIPTS = {
   outils: 'outils.js',
   musique: 'musique.js',
   personnages: 'personnages.js',
+  mouvements: 'mouvements.js',
 };
 
 function afficherFichier(fichier, quoi) {
@@ -90,6 +92,8 @@ function lancer(args) {
   }
   if (commande === 'reference') {
     const nom = reste[0] || '';
+    // Le dictionnaire de mouvements est rendu depuis sa source JSON (references/mouvements/mouvements.json).
+    if (nom === 'mouvements') return spawnSync(process.execPath, [path.join(RACINE, 'scripts', 'mouvements.js'), 'reference'], { stdio: 'inherit' }).status ?? 1;
     if (!NOM_SUR.test(nom)) { console.error('Usage : pulse-motion reference <nom> (ex. moteur, rythme, styles/clair-pedagogique)'); return 2; }
     const fichier = path.join(RACINE, 'references', `${nom}.md`);
     const m = /^styles\/([a-z0-9-]+)$/.exec(nom);
@@ -130,6 +134,7 @@ function lancer(args) {
     '  outils                   état de l\'ordinateur (ce qui est prêt, ce qui manque)',
     '  musique ecouter [dossier]   musique seule dans sortie/musique.wav',
     '  reference <nom>          scene <style> <nom>      effet <nom>      consignes <skill>',
+    '  mouvements liste [--categorie <id>] | chercher <mots…> | afficher <n° ou nom> | reference   [--json]',
     '  personnages liste|afficher <nom>|verifier|planche <nom> [--dessin <d>]|planche --dessin <d> --visage|atelier [<nom>] [--dessin <d>] [--decoupe <nom>] [--bibliotheque]|analyser <svg>|decouper <nom>|renommer-couleur <dessin> <ancien> <nouveau>   poses, clips et gabarits des personnages',
     '  styles [--genre <genre>]                         styles verifier <nom>',
     '  changer-style <dossier> <style>                  comparer <dossier> <s1,s2,s3> [--scenes a,b] [--ouvrir]',

@@ -21,7 +21,7 @@ Tout se fait par une demande dans Claude Code, jamais dans un terminal. Créer u
 |---|---|---|
 | `/pulse-motion:creer` | avec le `/` | `/pulse-motion:creer Les règles d'hygiène en cuisine` |
 | `/pulse-motion:style` | avec le `/` | `/pulse-motion:style Un style papercraft aux couleurs pop-art` |
-| `/pulse-motion:retoucher` | une phrase, ou avec le `/` | « ralentis la scène 3 », « baisse la musique », « ouvre l'aperçu », « fais une planche des scènes 2 et 3 », « enregistre ma charte », « annule » |
+| `/pulse-motion:retoucher` | une phrase, ou avec le `/` | « ralentis la scène 3 », « baisse la musique », « ouvre l'aperçu », « fais une planche des scènes 2 et 3 », « enregistre ma charte », « annule », « un pop-in sur le titre », « mets un #006 sur le titre » (dictionnaire de mouvements : « quels mouvements existent ? ») |
 | `/pulse-motion:voix` | une phrase, ou avec le `/` | « j'enregistre la scène 2 », « j'ai un fichier de ma voix », « mets une voix provisoire », « recale les mots », « fais-moi écouter la musique » |
 | `/pulse-motion:exporter` | une phrase, ou avec le `/` | « exporte ma vidéo », « une version légère pour l'envoyer par courriel » |
 | `/pulse-motion:reprendre` | une phrase, ou avec le `/` | « où en est ma vidéo ? », « on reprend » |
@@ -49,7 +49,7 @@ Tout se fait par une demande dans Claude Code, jamais dans un terminal. Créer u
 | `vendor/` | Mediabunny (MPL-2.0), assemblage du MP4 ; voir `vendor/mediabunny/PROVENANCE.md` |
 | `styles/` | Styles : CSS, charte, polices, scènes toutes faites (v1 : `clair-pedagogique`) |
 | `personnages/` | Personnages animés : poses, mouvements, expressions, gabarits et le dessin `touffu` (bibliothèque du plugin ; une vidéo peut avoir les siens) |
-| `references/` | Consignes lues par Claude : moteur, rythme, styles |
+| `references/` | Consignes lues par Claude : moteur, rythme, styles ; `mouvements/` : le dictionnaire de mouvements numérotés |
 | `exemples/` | « La chaîne du froid » : vidéo de formation de 60 s |
 | `tests/` | Tests (`npm test`), dont des tests dans Chrome ou Edge sans fenêtre |
 

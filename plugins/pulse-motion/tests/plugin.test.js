@@ -19,7 +19,7 @@ function enTete(texte) {
 }
 
 const SKILLS = fs.readdirSync(path.join(RACINE, 'skills'));
-const COMMANDES = ['etat', 'assembler', 'controler', 'apercu', 'historique', 'reference', 'scene', 'styles', 'consignes', 'exporter', 'planche', 'effet', 'comparer', 'changer-style', 'lexique', 'charte', 'police', 'glossaire', 'style', 'ffmpeg', 'voix', 'whisper', 'musique', 'outils', 'atelier', 'personnages'];
+const COMMANDES = ['etat', 'assembler', 'controler', 'apercu', 'historique', 'reference', 'scene', 'styles', 'consignes', 'exporter', 'planche', 'effet', 'comparer', 'changer-style', 'lexique', 'charte', 'police', 'glossaire', 'style', 'ffmpeg', 'voix', 'whisper', 'musique', 'outils', 'atelier', 'personnages', 'mouvements'];
 const fichiersGuides = () => [
   ...SKILLS.map((s) => path.join('skills', s, 'SKILL.md')),
   ...fs.readdirSync(path.join(RACINE, 'agents')).map((a) => path.join('agents', a)),
@@ -50,6 +50,8 @@ test('les commandes pulse-motion citées existent, avec les références et scè
     }
     for (const m of texte.matchAll(/pulse-motion reference ([a-z0-9/<>-]+)/g)) {
       if (m[1].includes('<')) continue;
+      // Le dictionnaire de mouvements est rendu depuis sa source JSON.
+      if (m[1] === 'mouvements') { assert.ok(fs.existsSync(path.join(RACINE, 'references', 'mouvements', 'mouvements.json')), `${f} : dictionnaire absent`); continue; }
       assert.ok(fs.existsSync(path.join(RACINE, 'references', `${m[1]}.md`)), `${f} : référence « ${m[1]} » absente`);
     }
     for (const m of texte.matchAll(/pulse-motion consignes ([a-z0-9-]+)/g)) {

@@ -126,7 +126,7 @@ Humeur de la musique pendant une scène : `scenes[].musique` = `"silence"` (rien
 
 - 1 à 3 sons par scène suffisent ; au plus 3 dans la même seconde (`trop-de-sons`).
 - Jamais un son fort (`impact`, `basse`, `montee`) pendant un mot de la voix (`son-sous-voix`) : le placer dans une pause.
-- `"bruitages": { "transitions": true }` : un son par transition (fondu → `souffle`, glissement et rideau → `whoosh`, balayage → `swoosh-inverse`, zoom → `montee`, coupe → `impact` ; transition par shader : `dissolution` et `ondulation` → `souffle`, `pixels` → `blip`, `glitch` → `impact`, `balayage-organique` → `swoosh-inverse`, un shader du projet → `souffle`).
+- `"bruitages": { "transitions": true }` : un son par transition (fondu → `souffle`, glissement, rideau, whip, poussée et retournement → `whoosh`, traversée → `montee`, cercle et volets → `swoosh-inverse`, balayage → `swoosh-inverse`, zoom → `montee`, coupe → `impact` ; transition par shader : `dissolution` et `ondulation` → `souffle`, `pixels` → `blip`, `glitch` → `impact`, `balayage-organique` → `swoosh-inverse`, un shader du projet → `souffle`).
 
 ## Son réactif
 

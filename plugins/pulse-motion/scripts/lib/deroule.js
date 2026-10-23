@@ -12,7 +12,8 @@ const TYPES_SCENE = Object.keys(TYPES);
 const GENRES = ['formation', 'produit', 'storytelling', 'social'];
 const PARCOURS = ['rapide', 'accompagne'];
 const RATIOS = ['16:9', '9:16', '1:1', '4:5'];
-const TRANSITIONS = ['aucune', 'fondu', 'glissement', 'balayage', 'rideau', 'zoom', 'coupe'];
+// Les transitions viennent du moteur : une seule liste pour le déroulé et la page.
+const { TRANSITIONS } = require('../../moteur/transitions.js');
 const TONS = ['clair', 'sombre', 'auto'];
 const ID = /^[a-z0-9-]+$/;
 const HEX = /^#[0-9a-fA-F]{6}$/;
@@ -173,6 +174,21 @@ function validerDeroule(d) {
         if (!estTexte(s.voix.texte)) err.push(`La ${nom} : « voix.texte » est obligatoire (le texte dit dans la scène).`);
         if (s.voix.fichier !== undefined && !estTexte(s.voix.fichier)) err.push(`La ${nom} : « voix.fichier » doit être un chemin de fichier dans assets/.`);
         if (s.voix.debut !== undefined && !(typeof s.voix.debut === 'number' && isFinite(s.voix.debut) && s.voix.debut >= 0)) err.push(`La ${nom} : « voix.debut » doit être un nombre de secondes positif ou nul.`);
+      }
+    }
+    if (s.mouvements !== undefined) {
+      // Un mouvement : son numéro ou son nom, ou { "mouvement": "#001", "element": "logo" } quand il vise un élément précis.
+      const estMouvement = (x) => typeof x === 'string' || typeof x === 'number'
+        || (estObjet(x) && (typeof x.mouvement === 'string' || typeof x.mouvement === 'number') && (x.element === undefined || estTexte(x.element)));
+      if (!Array.isArray(s.mouvements) || !s.mouvements.every(estMouvement)) {
+        err.push(`La ${nom} : « mouvements » doit être une liste de numéros ou de noms du dictionnaire, ex. ["#001", "masque", { "mouvement": "#024", "element": "mot-cle" }].`);
+      } else {
+        const { trouver } = require('../mouvements.js');
+        for (const cle of s.mouvements.map((x) => (estObjet(x) ? x.mouvement : x))) {
+          const e = trouver(String(cle));
+          if (!e) err.push(`La ${nom} : mouvement « ${cle} » inconnu. Cherchez-le avec pulse-motion mouvements chercher <mot>.`);
+          else if (e.categorie === 'transitions') err.push(`La ${nom} : « ${cle} » (#${e.no} ${e.nom.fr}) est une transition : l'écrire dans « transition » de la scène qui entre, pas dans « mouvements ».`);
+        }
       }
     }
     if (s.transition !== undefined) {

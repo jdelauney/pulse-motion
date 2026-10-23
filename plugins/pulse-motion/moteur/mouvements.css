@@ -1,0 +1,128 @@
+/* Pulse Motion – mouvements communs à tous les styles (dictionnaire : pulse-motion mouvements, references/mouvements/).
+ * Une classe pm-m-<nom> sur un élément minuté (data-start) : le moteur cale l'animation sur son début, comme toute animation CSS.
+ * Réglages par variables CSS sur l'élément : --pm-dur (durée), --pm-courbe (courbe), --pm-ampleur (amplitude, unité propre à
+ * chaque classe), --pm-fois (répétitions des mouvements qui se répètent : jamais sans fin, la vidéo finit sur une image stable).
+ * Les classes des styles (entre-bas, tombe…) restent valables ; celles-ci sont les mêmes partout et l'emportent sur elles
+ * (#pm-scene) : sur un élément d'une scène toute faite, une classe pm-m-* remplace l'entrée du style. */
+
+/* ---- Entrées et sortie ---- */
+
+/* Pop-in : grandit depuis rien, dépasse un peu sa taille (--pm-ampleur : facteur du dépassement, 1.12), puis se pose. 0,45 s. */
+@keyframes pm-m-pop { from { opacity: 0; transform: scale(0); } 60% { opacity: 1; transform: scale(var(--pm-ampleur, 1.12)); } to { opacity: 1; transform: none; } }
+#pm-scene .pm-m-pop { animation: pm-m-pop var(--pm-dur, 0.45s) var(--pm-courbe, var(--ease-cubic-out)) both; }
+
+/* Fondu montant : monte de --pm-ampleur cqh (4) en apparaissant. 0,6 s. */
+@keyframes pm-m-monte { from { opacity: 0; transform: translateY(calc(var(--pm-ampleur, 4) * 1cqh)); } to { opacity: 1; transform: none; } }
+#pm-scene .pm-m-monte { animation: pm-m-monte var(--pm-dur, 0.6s) var(--pm-courbe, var(--ease-quart-out)) both; }
+
+/* Glissé depuis la gauche ou la droite : arrive de --pm-ampleur cqh (10) sur le côté. 0,6 s. */
+@keyframes pm-m-glisse-gauche { from { opacity: 0; transform: translateX(calc(var(--pm-ampleur, 10) * -1cqh)); } to { opacity: 1; transform: none; } }
+@keyframes pm-m-glisse-droite { from { opacity: 0; transform: translateX(calc(var(--pm-ampleur, 10) * 1cqh)); } to { opacity: 1; transform: none; } }
+#pm-scene .pm-m-glisse-gauche { animation: pm-m-glisse-gauche var(--pm-dur, 0.6s) var(--pm-courbe, var(--ease-quart-out)) both; }
+#pm-scene .pm-m-glisse-droite { animation: pm-m-glisse-droite var(--pm-dur, 0.6s) var(--pm-courbe, var(--ease-quart-out)) both; }
+
+/* Zoom d'entrée : part de --pm-ampleur fois sa taille (0.8) et apparaît. 0,6 s. */
+@keyframes pm-m-zoom-entree { from { opacity: 0; transform: scale(var(--pm-ampleur, 0.8)); } to { opacity: 1; transform: none; } }
+#pm-scene .pm-m-zoom-entree { animation: pm-m-zoom-entree var(--pm-dur, 0.6s) var(--pm-courbe, var(--ease-cubic-out)) both; }
+
+/* De flou à net : flou de --pm-ampleur cqh (1.5) qui se dissipe. 0,6 s. */
+@keyframes pm-m-net { from { opacity: 0; filter: blur(calc(var(--pm-ampleur, 1.5) * 1cqh)); } to { opacity: 1; filter: blur(0); } }
+#pm-scene .pm-m-net { animation: pm-m-net var(--pm-dur, 0.6s) var(--pm-courbe, var(--ease-cubic-out)) both; }
+
+/* Révélé par masque : le texte monte de toute sa hauteur derrière un bord invisible (son bord bas), qui reste fixe. 0,7 s. */
+@keyframes pm-m-masque {
+  from { opacity: 0; transform: translateY(100%); clip-path: inset(-20% -5% 100% -5%); }
+  1% { opacity: 1; }
+  to { opacity: 1; transform: none; clip-path: inset(-20% -5% -0.3em -5%); }
+}
+#pm-scene .pm-m-masque { animation: pm-m-masque var(--pm-dur, 0.7s) var(--pm-courbe, var(--ease-quart-out)) both; }
+
+/* Chute avec rebond : tombe de --pm-ampleur cqh (20) et rebondit au sol. 0,9 s. */
+@keyframes pm-m-chute { from { opacity: 0; transform: translateY(calc(var(--pm-ampleur, 20) * -1cqh)); } 15% { opacity: 1; } to { opacity: 1; transform: none; } }
+#pm-scene .pm-m-chute { animation: pm-m-chute var(--pm-dur, 0.9s) var(--pm-courbe, var(--ease-bounce-out)) both; }
+
+/* Anticipation : recule d'un tiers de plus avant de partir vers sa place (--pm-ampleur cqh de départ, 10, à gauche). 0,8 s. */
+@keyframes pm-m-anticipe {
+  from { opacity: 0; transform: translateX(calc(var(--pm-ampleur, 10) * -1cqh)); }
+  30% { opacity: 1; transform: translateX(calc(var(--pm-ampleur, 10) * -1.3cqh)); }
+  to { opacity: 1; transform: none; }
+}
+#pm-scene .pm-m-anticipe { animation: pm-m-anticipe var(--pm-dur, 0.8s) var(--pm-courbe, var(--ease-cubic-inout)) both; }
+
+/* Écrasement-étirement : tombe de --pm-ampleur cqh (15), s'écrase en touchant le sol puis reprend sa forme. 0,7 s. */
+@keyframes pm-m-ecrase {
+  from { opacity: 0; transform: translateY(calc(var(--pm-ampleur, 15) * -1cqh)) scale(0.9, 1.1); }
+  55% { opacity: 1; transform: translateY(0) scale(1.15, 0.85); }
+  80% { transform: scale(0.95, 1.05); }
+  to { opacity: 1; transform: none; }
+}
+#pm-scene .pm-m-ecrase { transform-origin: 50% 100%; animation: pm-m-ecrase var(--pm-dur, 0.7s) var(--pm-courbe, var(--ease-quad-in)) both; }
+
+/* Image par image (style stop motion) : monte de --pm-ampleur cqh (4) en --pm-images à-coups (6). 0,6 s. */
+#pm-scene .pm-m-saccade { animation: pm-m-monte var(--pm-dur, 0.6s) steps(var(--pm-images, 6), end) both; }
+
+/* Sortie : descend de --pm-ampleur cqh (3) en s'effaçant, à partir de son data-start. 0,5 s. */
+@keyframes pm-m-sortie { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(calc(var(--pm-ampleur, 3) * 1cqh)); } }
+#pm-scene .pm-m-sortie { animation: pm-m-sortie var(--pm-dur, 0.5s) var(--pm-courbe, var(--ease-cubic-in)) both; }
+
+/* ---- Mise en valeur ---- */
+
+/* Battement : grossit jusqu'à --pm-ampleur fois sa taille (1.08) et revient, --pm-fois fois (3). 0,8 s par battement. */
+@keyframes pm-m-pulse { 0%, 100% { transform: none; } 50% { transform: scale(var(--pm-ampleur, 1.08)); } }
+#pm-scene .pm-m-pulse { animation: pm-m-pulse var(--pm-dur, 0.8s) var(--pm-courbe, var(--ease-sine-inout)) var(--pm-fois, 3) both; }
+
+/* Tremblotement (wiggle) : petites secousses de --pm-ampleur degrés (3), --pm-fois fois (3). 0,4 s par secousse. */
+@keyframes pm-m-tremblote {
+  0%, 100% { transform: none; }
+  20% { transform: rotate(calc(var(--pm-ampleur, 3) * -1deg)) translateX(-0.3cqh); }
+  40% { transform: rotate(calc(var(--pm-ampleur, 3) * 0.8deg)) translateX(0.2cqh); }
+  60% { transform: rotate(calc(var(--pm-ampleur, 3) * -0.6deg)) translateY(-0.2cqh); }
+  80% { transform: rotate(calc(var(--pm-ampleur, 3) * 0.4deg)) translateX(0.1cqh); }
+}
+#pm-scene .pm-m-tremblote { animation: pm-m-tremblote var(--pm-dur, 0.4s) linear var(--pm-fois, 3) both; }
+
+/* Aller-retour (ping-pong) : glisse de --pm-ampleur cqh (6) vers la droite et revient, --pm-fois allers-retours (2). 1,2 s chacun. */
+@keyframes pm-m-va-vient { 0%, 100% { transform: none; } 50% { transform: translateX(calc(var(--pm-ampleur, 6) * 1cqh)); } }
+#pm-scene .pm-m-va-vient { animation: pm-m-va-vient var(--pm-dur, 1.2s) var(--pm-courbe, var(--ease-sine-inout)) var(--pm-fois, 2) both; }
+
+/* Surligneur : un aplat à la couleur d'accent (35 %) se pose derrière le texte, de gauche à droite. Sur un <span> dans le texte. 0,6 s. */
+@keyframes pm-m-surligne { from { background-size: 0% 45%; } to { background-size: 100% 45%; } }
+#pm-scene .pm-m-surligne {
+  background-image: linear-gradient(color-mix(in srgb, var(--c-accent) 35%, transparent), color-mix(in srgb, var(--c-accent) 35%, transparent));
+  background-repeat: no-repeat; background-position: 0 88%;
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+  animation: pm-m-surligne var(--pm-dur, 0.6s) var(--pm-courbe, var(--ease-cubic-out)) both;
+}
+
+/* Soulignement tracé : un trait de --pm-ampleur cqh (0.5) à la couleur d'accent se trace sous l'élément. 0,6 s. */
+@keyframes pm-m-souligne { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+#pm-scene .pm-m-souligne { position: relative; }
+#pm-scene .pm-m-souligne::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -0.6cqh; height: calc(var(--pm-ampleur, 0.5) * 1cqh);
+  background: var(--c-accent-lisible, var(--c-accent)); transform-origin: left center;
+  animation: pm-m-souligne var(--pm-dur, 0.6s) var(--pm-courbe, var(--ease-cubic-inout)) both;
+}
+
+/* Reflet : une bande de lumière blanche (une lumière, pas une couleur de marque) traverse l'élément de gauche à droite. 0,9 s. */
+@keyframes pm-m-reflet { from { transform: translateX(-120%); } to { transform: translateX(120%); } }
+#pm-scene .pm-m-reflet { position: relative; overflow: hidden; }
+#pm-scene .pm-m-reflet::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(100deg, transparent 30%, rgb(255 255 255 / 0.55) 50%, transparent 70%);
+  animation: pm-m-reflet var(--pm-dur, 0.9s) var(--pm-courbe, var(--ease-cubic-inout)) both;
+}
+
+/* ---- Caméra ---- */
+
+/* Caméra à l'épaule : léger flottement (--pm-ampleur cqh, 0.6) pendant --pm-dur (6 s), qui revient au repos à la fin.
+   Sur un conteneur placé DANS le conteneur data-camera (la caméra du moteur garde la main sur le sien). */
+@keyframes pm-m-epaule {
+  0%, 100% { transform: none; }
+  12% { transform: translate(calc(var(--pm-ampleur, 0.6) * 0.8cqh), calc(var(--pm-ampleur, 0.6) * -0.5cqh)) rotate(0.3deg); }
+  27% { transform: translate(calc(var(--pm-ampleur, 0.6) * -0.6cqh), calc(var(--pm-ampleur, 0.6) * 0.7cqh)) rotate(-0.25deg); }
+  41% { transform: translate(calc(var(--pm-ampleur, 0.6) * 0.4cqh), calc(var(--pm-ampleur, 0.6) * 0.9cqh)) rotate(0.2deg); }
+  58% { transform: translate(calc(var(--pm-ampleur, 0.6) * -0.9cqh), calc(var(--pm-ampleur, 0.6) * -0.3cqh)) rotate(-0.3deg); }
+  73% { transform: translate(calc(var(--pm-ampleur, 0.6) * 0.7cqh), calc(var(--pm-ampleur, 0.6) * 0.4cqh)) rotate(0.15deg); }
+  88% { transform: translate(calc(var(--pm-ampleur, 0.6) * -0.3cqh), calc(var(--pm-ampleur, 0.6) * -0.6cqh)) rotate(-0.1deg); }
+}
+#pm-scene .pm-m-epaule { position: absolute; inset: 0; animation: pm-m-epaule var(--pm-dur, 6s) var(--pm-courbe, var(--ease-sine-inout)) both; }

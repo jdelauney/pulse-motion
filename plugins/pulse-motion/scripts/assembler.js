@@ -393,6 +393,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
 <style>
 :root { --pm-ratio-l: ${l}; --pm-ratio-h: ${h};${temps ? ` --pm-temps: ${temps}s; --pm-bpm: ${Math.round(60 / temps * 1000) / 1000};` : ''} }
 ${fs.readFileSync(path.join(RACINE, 'moteur', 'base.css'), 'utf8')}
+${fs.readFileSync(path.join(RACINE, 'moteur', 'mouvements.css'), 'utf8')}
 ${variablesCSS()}
 ${cssDeCharte}
 ${cssStyle}

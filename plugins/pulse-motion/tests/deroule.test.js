@@ -128,3 +128,29 @@ test('revue : ajustements, seules les clés propres des textes (pas « toString 
   x.scenes[0].ajustements = { toString: { taille: 0.9 } };
   assert.match(validerDeroule(x).join(' '), /« ajustements\.toString » : aucun texte « toString »/);
 });
+
+test('mouvements nommés : numéros et noms acceptés', () => {
+  const d = valide();
+  d.scenes[0].mouvements = ['#005', 'pop-in', 7];
+  assert.deepEqual(validerDeroule(d), []);
+});
+
+test('deroule : mouvement inconnu, ou transition rangée dans les mouvements', () => {
+  const d = valide();
+  d.scenes[0].mouvements = ['999'];
+  assert.match(validerDeroule(d).join('\n'), /mouvement « 999 » inconnu.*pulse-motion mouvements chercher/);
+  d.scenes[0].mouvements = ['whip-pan'];
+  assert.match(validerDeroule(d).join('\n'), /est une transition : l'écrire dans « transition »/);
+  d.scenes[0].mouvements = 'pop-in';
+  assert.match(validerDeroule(d).join('\n'), /« mouvements » doit être une liste/);
+});
+
+test('mouvements nommés : forme { mouvement, element }', () => {
+  const d = valide();
+  d.scenes[0].mouvements = [{ mouvement: '#024', element: 'mot-cle' }, { mouvement: 'pop-in' }];
+  assert.deepEqual(validerDeroule(d), []);
+  d.scenes[0].mouvements = [{ mouvement: '#024', element: 3 }];
+  assert.match(validerDeroule(d).join('\n'), /« mouvements » doit être une liste/);
+  d.scenes[0].mouvements = [{ mouvement: '999' }];
+  assert.match(validerDeroule(d).join('\n'), /mouvement « 999 » inconnu/);
+});
