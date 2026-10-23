@@ -176,6 +176,18 @@ function validerDeroule(d) {
         if (s.voix.debut !== undefined && !(typeof s.voix.debut === 'number' && isFinite(s.voix.debut) && s.voix.debut >= 0)) err.push(`La ${nom} : « voix.debut » doit être un nombre de secondes positif ou nul.`);
       }
     }
+    if (s.mouvements !== undefined) {
+      if (!Array.isArray(s.mouvements) || !s.mouvements.every((x) => typeof x === 'string' || typeof x === 'number')) {
+        err.push(`La ${nom} : « mouvements » doit être une liste de numéros ou de noms du dictionnaire, ex. ["#001", "masque"].`);
+      } else {
+        const { trouver } = require('../mouvements.js');
+        for (const cle of s.mouvements) {
+          const e = trouver(String(cle));
+          if (!e) err.push(`La ${nom} : mouvement « ${cle} » inconnu. Cherchez-le avec pulse-motion mouvements chercher <mot>.`);
+          else if (e.categorie === 'transitions') err.push(`La ${nom} : « ${cle} » (#${e.no} ${e.nom.fr}) est une transition : l'écrire dans « transition » de la scène qui entre, pas dans « mouvements ».`);
+        }
+      }
+    }
     if (s.transition !== undefined) {
       if (typeof s.transition === 'string' || !estObjet(s.transition)) {
         if (!TRANSITIONS.includes(s.transition)) {

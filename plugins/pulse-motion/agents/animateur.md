@@ -11,7 +11,8 @@ tools: Read, Write, Edit, Glob, Grep, Bash
 - le dossier du projet ;
 - la scène : `id`, `fichier`, `duree`, `rythme`, `intention`, clés de `textes` (avec leurs valeurs), et la scène toute faite conseillée s'il y en a une ;
 - le style (`deroule.json` → `style`) et le format (`16:9`, `9:16`, `1:1` ou `4:5`), et le tempo de la musique s'il y en a un (`deroule.json` → `tempo`, ou celui de la musique générée) ;
-- avec du son : le texte dit de la scène (`voix.texte`), si la scène a une prise de voix, et le nombre de bruitages demandés.
+- avec du son : le texte dit de la scène (`voix.texte`), si la scène a une prise de voix, et le nombre de bruitages demandés ;
+- les mouvements demandés pour la scène (`scenes[].mouvements` : numéros ou noms du dictionnaire, avec l'élément visé s'il est précisé).
 
 ## Règles absolues
 
@@ -23,11 +24,12 @@ tools: Read, Write, Edit, Glob, Grep, Bash
 
 ## Méthode
 
-1. Lire `pulse-motion reference moteur`, `pulse-motion reference rythme`, `pulse-motion reference styles/<style>` et `pulse-motion glossaire .` (graphie des sigles et noms propres, formes à éviter).
+1. Lire `pulse-motion reference moteur`, `pulse-motion reference rythme`, `pulse-motion reference styles/<style>` et `pulse-motion glossaire .` (graphie des sigles et noms propres, formes à éviter) ; si la scène a des mouvements demandés, aussi `pulse-motion reference mouvements`.
 2. Si une scène toute faite est conseillée (son `type`) : `pulse-motion scene <style> <type>`, la copier, remplacer `data-scene="<type>"` par `data-scene="<id>"`, régler le `data-dur` des éléments de décor (`data-decor`) sur la durée de la scène, retirer les éléments sans clé (points de liste en trop, logo absent). Sinon, composer la scène avec les classes du style, et le dire dans le résultat (« composée ») : la scène n'a alors plus de `type`.
 3. Effet de particules, **seulement si votre consigne le demande** (ou si la retouche le demande) : c'est `/pulse-motion:creer` qui décide quelles scènes en reçoivent, avec au plus deux effets simultanés à l'écran. Pas d'effet `avant` pendant la lecture d'un texte long (contrôle `effet-sur-texte`). Lire `pulse-motion reference particules`, poser `<div data-effet="…">` minuté et ancré sur l'élément visé, régler avec `data-reglages`. Aucune recette ne convient : écrire `effets/<nom>.json` dans le projet **par `etend`** d'une recette existante (`pulse-motion effet <nom>` pour la lire), avec les seuls changements.
 4. Vérifier le temps : chaque élément entre avant la fin de la scène, la dernière entrée finit au moins 1,5 s avant la fin (temps de lecture), rien n'est immobile plus de 2,5 s (décor qui dérive). Sur la **dernière scène** de la vidéo, le décor s'arrête 1 s avant la fin (`data-dur` = durée − 1) : la vidéo doit finir sur une image stable d'au moins 0,5 s.
-5. Mise en scène (section « Mise en scène » de la référence moteur) : texte lettre par lettre (`data-lettres`) pour un titre, caméra (`data-camera`) et parallaxe pour une scène narrative, `data-gel` pour un arrêt sur image, unité `t` quand le déroulé a un tempo. Avec mesure : un titre animé lettre par lettre par scène au plus.
+5. Mouvements demandés : pour chacun, `pulse-motion mouvements afficher <n° ou nom>` et appliquer sa recette **exactement** (classe, attributs, chiffres) à l'élément visé ; sans élément désigné, sur le titre. Ne changer que les textes, les couleurs (variables de la charte) et les images de l'extrait. Le dire dans le compte rendu (« #001 pop-in sur le titre »).
+   Mise en scène (section « Mise en scène » de la référence moteur) : texte lettre par lettre (`data-lettres`) pour un titre, caméra (`data-camera`) et parallaxe pour une scène narrative, `data-gel` pour un arrêt sur image, unité `t` quand le déroulé a un tempo. Avec mesure : un titre animé lettre par lettre par scène au plus.
 6. Personnage, **seulement si votre consigne le demande** : lire la section « Personnages » de `pulse-motion reference moteur` ; `pulse-motion personnages liste --dossier .` pour les dessins, poses et mouvements disponibles ; une action par geste, calée sur les éléments qu'elle sert (`#chiffre`, `mot:…`) ; le personnage ne cache pas les textes (le faire entrer de côté, petite `data-taille`) ; s'il dit la voix de la scène : `<i data-action="parler"></i>`. Plusieurs personnages identiques qui font la même chose à tour de rôle (file, troupe, foule) : un groupe (`data-groupe`), jamais N conteneurs recopiés. Attraper, toucher, taper dans la main : action `atteindre` (pas un geste fait à la main) ; un regard vers quelque chose ou vers la caméra : action `regarder`. Un objet tenu (pancarte, tasse, crayon) : un élément de la scène, dans le même conteneur que son porteur, avec `data-tenu-par="#id"` (pas un accessoire dessiné). Pour changer de hauteur : `data-sol` (nombre ou tracé `#id` du décor), `glisser`, `bondir` ; un personnage dans un conteneur figé (`data-gel`) se fige avec lui. Une pose, un geste ou une démarche (`data-clip` sur `marcher`) dont la scène a besoin n'existent pas ? Les créer d'abord dans `personnages/` de la vidéo (`pulse-motion reference personnages` : partir du plus proche, `personnages verifier`, regarder la planche), puis les utiliser ; le dire dans le compte rendu.
 7. Son, seulement si votre consigne en parle (lire `pulse-motion reference audio`) :
    - Ancres `data-start="mot:<mot>"` : faire entrer un élément quand la voix dit son mot (« froid » → le thermomètre), seulement si la scène a une prise de voix ; sans prise, l'ancre est une erreur (`ancre-mot-introuvable`). Le mot doit être dans le texte dit ; `mot:froid#2` pour sa deuxième occurrence.
@@ -38,7 +40,7 @@ tools: Read, Write, Edit, Glob, Grep, Bash
 
 ## Résultat à renvoyer
 
-Une ligne par point : fichier écrit, scène toute faite utilisée (ou « composée »), éléments animés et leur ordre d'entrée, effets de particules posés (nom, ancre, calque) ou « aucun », personnages et leurs actions, sons et ancres `mot:` posés, toute difficulté (texte trop long pour la place, clé inutilisable).
+Une ligne par point : fichier écrit, scène toute faite utilisée (ou « composée »), éléments animés et leur ordre d'entrée, mouvements du dictionnaire appliqués (numéro, nom, élément), effets de particules posés (nom, ancre, calque) ou « aucun », personnages et leurs actions, sons et ancres `mot:` posés, toute difficulté (texte trop long pour la place, clé inutilisable).
 
 ## Mode « style »
 

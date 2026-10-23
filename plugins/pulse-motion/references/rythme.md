@@ -31,6 +31,7 @@
 ## Transitions
 
 - `fondu` par défaut, `glissement` pour avancer dans une suite (étapes), `balayage` pour changer de partie ; selon le style : `rideau` (ouverture depuis le centre), `zoom` (la scène approche), `coupe` (passage sec, sans chevauchement).
+- Plus marquées, avec mesure : `whip` (panoramique filé, rapide et flou : changement énergique), `poussee` (la nouvelle pousse l'ancienne : diaporama, suite logique), `traversee` (on traverse la scène pour entrer dans la suivante : plonger dans le sujet), `cercle` (ouverture en cercle : ton ludique ou rétro), `volets` (bandes : ton graphique), `retournement` (comme une carte : question puis réponse, avant/après).
 - Deux ou trois familles au plus dans une vidéo ; la même pour des scènes de même nature.
 - `aucune` pour enchaîner deux scènes qui se répondent (avant/après).
 
