@@ -47,12 +47,15 @@ function debutScene(dossier, id) {
   return s.debut;
 }
 
-/** Lance un script du plugin et rend son résumé JSON (dernière ligne qui commence par « { »). */
+/** Lance un script du plugin et rend son résumé JSON (le dernier objet écrit, sur une ou plusieurs lignes). */
 function scriptPlugin(nom, args) {
   const r = spawnSync(process.execPath, [path.join(PLUGIN, "scripts", nom), ...args], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
-  const json = (r.stdout || "").trim().split(/\r?\n/).reverse().find((l) => l.startsWith("{"));
+  const sortie = (r.stdout || "").trim();
   let resume = null;
-  try { resume = JSON.parse(json); } catch { /* sans résumé */ }
+  for (let i = sortie.lastIndexOf("{"); i >= 0 && !resume; i = sortie.lastIndexOf("{", i - 1)) {
+    if (i > 0 && sortie[i - 1] !== "\n") continue;
+    try { resume = JSON.parse(sortie.slice(i)); } catch { /* objet incomplet : chercher plus haut */ }
+  }
   if (r.status !== 0 || !resume || resume.ok === false) {
     throw new Error(`${nom} a échoué : ${(resume && resume.message) || (r.stderr || "").trim().split(/\r?\n/).slice(-3).join(" ")}`);
   }
@@ -81,18 +84,18 @@ function alleger(png) {
 }
 
 /** Ouvre `url` dans Chrome ou Edge sans fenêtre, à la taille donnée, et rend la page pilotable. */
-async function ouvrir(url, largeur = 1440, hauteur = 900) {
+async function ouvrir(url, { largeur = 1440, hauteur = 900, gpu = false } = {}) {
   const { trouverNavigateur } = require(path.join(PLUGIN, "scripts", "lib", "navigateur.js"));
   const { ouvrirPage } = require(path.join(PLUGIN, "scripts", "lib", "cdp.js"));
   const navigateur = trouverNavigateur();
   if (!navigateur) throw new Error("Chrome ou Edge est introuvable.");
-  const page = await ouvrirPage({ navigateur, largeur, hauteur });
+  const page = await ouvrirPage({ navigateur, largeur, hauteur, gpu });
   await page.aller(url);
   return page;
 }
 
 const pause = (ms) => new Promise((r) => setTimeout(r, ms));
-const urlFichier = (f) => "file:///" + path.resolve(f).split(path.sep).join("/").replace(/^\/+/, "");
+const urlFichier = (f) => require("url").pathToFileURL(path.resolve(f)).href;
 
 /** Les médias du site. `sortie` : chemin relatif à docs/ (sert aussi à outils/site/liens.js). */
 const MEDIAS = [
@@ -122,7 +125,7 @@ const MEDIAS = [
       let page;
       try {
         const r = scriptPlugin("comparer.js", [copie, "clair-pedagogique,chaleureux,minimal"]);
-        page = await ouvrir(urlFichier(r.fichier));
+        page = await ouvrir(urlFichier(path.resolve(copie, r.fichier)));
         await pause(1500);
         const png = path.join(CAPTURES, "premiere-comparaison-styles.png");
         fs.writeFileSync(png, await page.capturer());
@@ -144,7 +147,7 @@ const MEDIAS = [
       let page;
       try {
         apercu = await demarrerApercu({ dossier: copie, port: 0 });
-        page = await ouvrir(apercu.url);
+        page = await ouvrir(apercu.url, { gpu: true });
         const t = debutScene(copie, "seuil") + 4;
         await page.evaluer(`(async () => {
           for (let i = 0; i < 100 && !document.querySelector('input[aria-label="Position"]'); i++) await new Promise((r) => setTimeout(r, 100));
