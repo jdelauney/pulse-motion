@@ -24,7 +24,7 @@ function liensDuWiki(racineDepot, declares = sortiesDeclarees()) {
   const docs = path.join(racineDepot, "docs");
   const ids = new Map();
   const idsDe = (page) => {
-    if (!ids.has(page)) ids.set(page, new Set([...fs.readFileSync(path.join(docs, page), "utf8").matchAll(/\bid="([^"]+)"/g)].map((m) => m[1])));
+    if (!ids.has(page)) ids.set(page, new Set([...fs.readFileSync(path.join(docs, page), "utf8").matchAll(/(?:^|\s)id="([^"]+)"/g)].map((m) => m[1])));
     return ids.get(page);
   };
   const casses = [];
@@ -38,9 +38,7 @@ function liensDuWiki(racineDepot, declares = sortiesDeclarees()) {
       const fichier = path.join(docs, cible);
       const existe = fs.existsSync(fichier) && (fs.statSync(fichier).isFile() || fs.existsSync(path.join(fichier, "index.html")));
       if (!existe) {
-        // Une capture fabriquée peut avoir été allégée en JPEG.
-        const variante = declares.has(cible) || declares.has(cible.replace(/\.jpg$/, ".png"));
-        if (!variante || !cible.startsWith("medias/")) casses.push({ page, cible: lien });
+        if (!(declares.has(cible) && cible.startsWith("medias/"))) casses.push({ page, cible: lien });
         continue;
       }
       if (ancre && cible.endsWith(".html") && !idsDe(cible).has(ancre)) casses.push({ page, cible: lien });

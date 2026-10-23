@@ -74,13 +74,13 @@ function extraireImage(video, t, sortie, largeur = 1280) {
   execFileSync(ffmpeg(), ["-y", "-loglevel", "error", "-ss", String(t), "-i", video, "-frames:v", "1", "-vf", `scale=${largeur}:-2`, "-q:v", "3", sortie]);
 }
 
-/** PNG trop lourd : réencodé en JPEG (qualité ≈ 85) à côté, le PNG retiré. Rend le chemin final. */
+/** Capture PNG trop lourde : arrêt, car la page la cite sous ce nom (la passer en JPEG dans MEDIAS et dans la page). */
 function alleger(png) {
-  if (fs.statSync(png).size <= POIDS_MAX_PNG) return png;
-  const jpg = png.replace(/\.png$/, ".jpg");
-  execFileSync(ffmpeg(), ["-y", "-loglevel", "error", "-i", png, "-q:v", "4", jpg]);
-  fs.rmSync(png);
-  return jpg;
+  const poids = fs.statSync(png).size;
+  if (poids > POIDS_MAX_PNG) {
+    throw new Error(`${path.relative(RACINE, png)} pèse ${Math.round(poids / 1024)} Ko (plus de ${POIDS_MAX_PNG / 1024} Ko) : passer cette capture en JPEG dans MEDIAS et dans la page qui la cite.`);
+  }
+  return png;
 }
 
 /** Ouvre `url` dans Chrome ou Edge sans fenêtre, à la taille donnée, et rend la page pilotable. */
@@ -102,7 +102,8 @@ const MEDIAS = [
   {
     id: "chaine-du-froid",
     sortie: "medias/chaine-du-froid.mp4",
-    sources: [EXEMPLE],
+    aussi: ["assets/captures/chaine-du-froid-affiche.jpg"],
+    sources: [EXEMPLE, path.join(PLUGIN, "moteur")],
     async fabriquer() {
       const copie = copieSansVoix(EXEMPLE);
       try {
@@ -119,7 +120,7 @@ const MEDIAS = [
   {
     id: "premiere-comparaison-styles",
     sortie: "assets/captures/premiere-comparaison-styles.png",
-    sources: [EXEMPLE, path.join(PLUGIN, "styles")],
+    sources: [EXEMPLE, path.join(PLUGIN, "styles"), path.join(PLUGIN, "moteur")],
     async fabriquer() {
       const copie = copieSansVoix(EXEMPLE);
       let page;
@@ -169,10 +170,11 @@ const MEDIAS = [
   },
 ];
 
+/** Empreinte des sources d'un média, sans les sorties d'un projet (sortie/, .pulse-motion/, .historique/). */
 function empreinte(media) {
   const h = crypto.createHash("sha256");
-  h.update(JSON.parse(fs.readFileSync(path.join(PLUGIN, ".claude-plugin", "plugin.json"), "utf8")).version);
   const parcourir = (f) => {
+    if (/^(sortie|\.pulse-motion|\.historique)$/.test(path.basename(f))) return;
     const st = fs.statSync(f);
     if (st.isDirectory()) fs.readdirSync(f).sort().forEach((n) => parcourir(path.join(f, n)));
     else { h.update(path.relative(RACINE, f)); h.update(fs.readFileSync(f)); }
@@ -190,7 +192,7 @@ async function principal(args) {
   const notes = fs.existsSync(EMPREINTES) ? JSON.parse(fs.readFileSync(EMPREINTES, "utf8")) : {};
   for (const m of MEDIAS.filter((x) => !ids.length || ids.includes(x.id))) {
     const e = empreinte(m);
-    const present = fs.existsSync(path.join(DOCS, m.sortie)) || fs.existsSync(path.join(DOCS, m.sortie.replace(/\.png$/, ".jpg")));
+    const present = [m.sortie, ...(m.aussi || [])].every((x) => fs.existsSync(path.join(DOCS, x)));
     if (!forcer && notes[m.id] === e && present) { console.log(`${m.id} : à jour.`); continue; }
     console.log(`${m.id} : fabrication…`);
     const fait = await m.fabriquer();

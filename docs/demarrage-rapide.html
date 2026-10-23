@@ -24,7 +24,7 @@
 <p class="chapo">Une phrase, quelques réponses, et vous regardez une vidéo animée d'environ une minute dans votre navigateur, prête à exporter en MP4. Cinq minutes à vous, et quelques minutes de fabrication pendant lesquelles vous n'avez rien à faire.</p>
 </header>
 
-<figure class="capture"><video controls preload="none" playsinline poster="assets/captures/chaine-du-froid-affiche.jpg" width="1280" height="720"><source src="medias/chaine-du-froid.mp4" type="video/mp4">Votre navigateur ne lit pas la vidéo : <a href="medias/chaine-du-froid.mp4">téléchargez-la</a>.</video><figcaption>Voici ce que donne une seule phrase : « Expliquer la chaîne du froid en une minute ». Six scènes, une musique composée pour la vidéo, sans voix.</figcaption></figure>
+<figure class="capture"><video aria-describedby="video-legende" controls preload="none" playsinline poster="assets/captures/chaine-du-froid-affiche.jpg" width="1280" height="720"><source src="medias/chaine-du-froid.mp4" type="video/mp4">Votre navigateur ne lit pas la vidéo : <a href="medias/chaine-du-froid.mp4">téléchargez-la</a>.</video><figcaption id="video-legende">Une vidéo faite avec Pulse Motion sur le sujet « la chaîne du froid pour mes stagiaires » : six scènes, une musique composée pour la vidéo, sans voix. La vôtre sera différente : Pulse Motion écrit le déroulé pour votre sujet. <a href="medias/chaine-du-froid.mp4">Télécharger la vidéo (MP4, 2,4 Mo)</a>.</figcaption></figure>
 
 <!-- ===================================================================================================== -->
 <section id="pret" class="etape-tuto">
@@ -32,15 +32,15 @@
 <p>Il vous faut Claude Code, Node.js, Chrome ou Edge, et le plugin Pulse Motion. Si l'un des quatre manque, les <a href="prerequis.html">prérequis</a> les installent pas à pas, puis revenez ici.</p>
 <p>Ouvrez un <strong>dossier vide</strong> dans VS Code (la vidéo y sera rangée), puis demandez à Claude de vérifier votre ordinateur :</p>
 <pre class="commande"><code>/pulse-motion:outils</code></pre>
-<aside class="encadre encadre-attendu"><p><strong>Résultat attendu :</strong> Pulse Motion confirme que Node.js et le navigateur sont prêts. Il peut proposer d'installer ffmpeg : ce n'est pas obligatoire pour commencer.</p></aside>
+<aside class="encadre encadre-attendu"><p><strong>Résultat attendu :</strong> Pulse Motion affiche un tableau de ce qui est prêt. Node.js et le navigateur doivent être cochés ; des lignes ❌ pour ffmpeg, Python ou la transcription ne bloquent rien pour commencer.</p></aside>
 </section>
 
 <!-- ===================================================================================================== -->
 <section id="creer" class="etape-tuto">
 <h2><span class="etape-numero">1</span> Créer <span class="duree">2 minutes</span></h2>
 <p>Décrivez votre vidéo en une phrase, après la commande :</p>
-<pre class="commande"><code>/pulse-motion:creer Expliquer la chaîne du froid en une minute</code></pre>
-<p>Pulse Motion pose deux petites rondes de questions (durée, public, musique, voix…). Pour aller vite, gardez à chaque fois la réponse marquée <strong>(Recommandé)</strong>, sauf pour la voix : choisissez « Pas de voix ». Il vous montre ensuite le <a href="concepts.html#deroule">déroulé</a>, la liste des scènes avec leurs textes, et trois styles possibles.</p>
+<pre class="commande"><code>/pulse-motion:creer la chaîne du froid pour mes stagiaires</code></pre>
+<p>Pulse Motion pose deux petites rondes de questions (durée, public, musique, voix…). Pour aller vite, gardez à chaque fois la réponse marquée <strong>(Recommandé)</strong> ; pour le public, choisissez celui de votre vidéo ; à « À ajouter », répondez « Rien pour l'instant » ; pour la voix, « Pas de voix ». Il vous montre ensuite le <a href="concepts.html#deroule">déroulé</a>, la liste des scènes avec leurs textes, et trois styles possibles.</p>
 <div class="conversation" data-titre="Valider">
 <p data-role="claude">Voici le déroulé : 6 scènes, environ 1 minute.
 → Je valide, avec le style posé, lisible et rassurant (Recommandé) / … / Je veux changer quelque chose</p>

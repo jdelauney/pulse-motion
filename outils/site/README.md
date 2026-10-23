@@ -9,6 +9,8 @@ Le wiki (`docs/`) est publié par GitHub Pages depuis la branche **`gh-pages`** 
 | `node outils/site/liens.js` | Vérifie que chaque lien, image et vidéo des pages pointe vers un fichier existant. |
 | `node outils/site/publier.js [--sec]` | Construit le site (fichiers suivis de `docs/` + `docs/medias/`) et le pousse en force sur `gh-pages`, en un seul commit. `--sec` prépare sans pousser. |
 
+Tests : `node --test outils/site/*.test.js`.
+
 Ordre pour publier : fabriquer les médias, indexer le wiki, vérifier les liens, publier.
 
 Il faut, chez la personne qui publie : Node.js 20 ou plus, Chrome ou Edge, et ffmpeg (pour les vidéos). `publier.js` refuse de publier tant qu'une page cite un média absent de `docs/medias/`.
