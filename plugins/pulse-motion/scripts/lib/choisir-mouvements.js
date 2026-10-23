@@ -63,4 +63,94 @@ function projetDeMouvements(dossier, entrees, options = {}) {
   };
 }
 
-module.exports = { projetDeDemos, demosDeMouvements, projetDeMouvements };
+const DELAI_DEFAUT = 30 * 60 * 1000;
+const MESSAGE_DELAI = 'Aucun choix envoyé : la page a été fermée ou laissée ouverte trop longtemps.';
+
+/**
+ * Page locale de choix : les mouvements (d'une catégorie, ou tous) jouent en direct dans le moteur ; la personne coche,
+ * annote, puis envoie. Écoute seulement 127.0.0.1 ; refuse un autre nom d'hôte (même règle que l'aperçu).
+ * -> Promise<{ ok: true, choix: [{ no, nom, metier, note }] } | { ok: false, message }>, une fois les choix reçus ou le délai passé.
+ * surPret(url) est appelé quand la page est servie.
+ */
+function choisirMouvements({ categorie = null, delai = DELAI_DEFAUT, port = 0, surPret = () => {} } = {}) {
+  const http = require('node:http');
+  const os = require('node:os');
+  const { charger } = require('../mouvements.js');
+  const { assembler } = require('../assembler.js');
+  const { categories, mouvements } = charger();
+  const entrees = mouvements.filter((e) => !categorie || e.categorie === categorie);
+  if (!entrees.length) return Promise.resolve({ ok: false, message: `Catégorie inconnue « ${categorie} ». Catégories : ${categories.map((c) => c.id).join(', ')}.` });
+
+  const dossier = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-choisir-'));
+  const nettoyer = () => { try { fs.rmSync(dossier, { recursive: true, force: true, maxRetries: 3 }); } catch { /* dossier verrouillé : laissé au système */ } };
+  let pageVideo;
+  let pageChoix;
+  try {
+    const { plages } = projetDeMouvements(dossier, entrees);
+    const r = assembler({ dossier });
+    if (!r.ok) throw new Error(r.erreurs.map((x) => x.message || x).join(' '));
+    pageVideo = fs.readFileSync(r.fichier, 'utf8');
+    const nomCategorie = (id) => (categories.find((c) => c.id === id) || {}).nom || id;
+    const donnees = { mouvements: entrees.map((e, i) => ({ no: e.no, nom: e.nom.fr, metier: e.nom.metier, sens: e.sens, categorie: e.categorie, nomCategorie: nomCategorie(e.categorie), debut: plages[i].debut, fin: plages[i].fin })) };
+    pageChoix = fs.readFileSync(path.join(__dirname, '..', '..', 'moteur', 'choisir', 'page.html'), 'utf8')
+      .replace('/*DONNEES*/null', JSON.stringify(donnees).replace(/</g, '\\u003c'));
+  } catch (e) {
+    nettoyer();
+    return Promise.resolve({ ok: false, message: `La page de choix n'a pas pu être préparée : ${e.message}` });
+  }
+
+  return new Promise((resoudre) => {
+    let fini = false;
+    let minuteur;
+    const serveur = http.createServer((req, res) => {
+      const { port: portEcoute } = serveur.address();
+      if (![`127.0.0.1:${portEcoute}`, `localhost:${portEcoute}`].includes(String(req.headers.host || '').toLowerCase())) {
+        res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('Refusé.');
+        return;
+      }
+      const chemin = new URL(req.url, 'http://localhost').pathname;
+      if (req.method === 'GET' && (chemin === '/' || chemin === '/video')) {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+        res.end(chemin === '/' ? pageChoix : pageVideo);
+        return;
+      }
+      if (req.method === 'POST' && chemin === '/envoyer') {
+        let corps = '';
+        req.on('data', (m) => { corps += m; if (corps.length > 1e6) req.destroy(); });
+        req.on('end', () => {
+          let choix;
+          try {
+            choix = JSON.parse(corps).choix
+              .map((c) => ({ e: entrees.find((x) => x.no === String(c.no)), note: String(c.note || '').trim().slice(0, 200) }))
+              .filter((c) => c.e)
+              .map((c) => ({ no: c.e.no, nom: c.e.nom.fr, metier: c.e.nom.metier, note: c.note }));
+          } catch {
+            res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+            res.end('Choix illisible.');
+            return;
+          }
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end('{"ok":true}');
+          terminer({ ok: true, choix });
+        });
+        return;
+      }
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('Introuvable.');
+    });
+    function terminer(resultat) {
+      if (fini) return;
+      fini = true;
+      clearTimeout(minuteur);
+      serveur.close();
+      serveur.closeAllConnections?.();
+      nettoyer();
+      resoudre(resultat);
+    }
+    minuteur = setTimeout(() => terminer({ ok: false, message: MESSAGE_DELAI }), delai);
+    serveur.listen(port, '127.0.0.1', () => surPret(`http://127.0.0.1:${serveur.address().port}/`));
+  });
+}
+
+module.exports = { projetDeDemos, demosDeMouvements, projetDeMouvements, choisirMouvements, MESSAGE_DELAI };
