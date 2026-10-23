@@ -223,6 +223,18 @@
       a.currentTime = Math.max(0, (te - base) * info.rythme * 1000);
     });
 
+    // Texte brouillé (data-lettres="brouille") : les lettres changent à chaque image, calées comme les animations.
+    if (M.brouiller) {
+      if (!s.brouilles) s.brouilles = Array.prototype.slice.call(s.sec.querySelectorAll('[data-lettres="brouille"]'));
+      s.brouilles.forEach(function (el) {
+        var base = info.debut;
+        for (var c = el; c && c !== s.sec; c = c.parentElement) {
+          if (s.debuts.has(c)) { base = s.debuts.get(c); break; }
+        }
+        M.brouiller(el, (tempsVu(s.chaine(el), t, info) - base) * info.rythme);
+      });
+    }
+
     // SMIL : temps de la scène.
     s.svgs.forEach(function (svg) {
       if (svg.pauseAnimations) {
