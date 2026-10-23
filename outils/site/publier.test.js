@@ -5,7 +5,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const { execFileSync } = require("child_process");
-const { fichiersAPublier, mediasReferences, mediasManquants } = require("./publier.js");
+const { fichiersAPublier, mediasReferences, mediasManquants, refusAvantPublication } = require("./publier.js");
 
 function depotEssai() {
   const racine = fs.mkdtempSync(path.join(os.tmpdir(), "pm-publier-"));
@@ -38,4 +38,24 @@ test("mediasReferences et mediasManquants : chemins relatifs résolus, liens ext
   const racine = depotEssai();
   assert.deepEqual(mediasReferences(racine), ["medias/absent.jpg", "medias/v.mp4"]);
   assert.deepEqual(mediasManquants(racine), ["medias/absent.jpg"]);
+});
+
+test("fichiersAPublier et mediasReferences : sans empreintes.json ; un brouillon non suivi ne bloque pas", () => {
+  const racine = depotEssai();
+  fs.writeFileSync(path.join(racine, "docs", "medias", "empreintes.json"), "{}");
+  fs.writeFileSync(path.join(racine, "docs", "brouillon2.html"), '<video src="medias/jamais.mp4"></video>');
+  assert.ok(!fichiersAPublier(racine).includes("medias/empreintes.json"));
+  assert.ok(!mediasReferences(racine).includes("medias/jamais.mp4"));
+});
+
+test("refusAvantPublication : autre branche, docs non validés, lien cassé", () => {
+  const racine = depotEssai();
+  const git = (...args) => execFileSync("git", args, { cwd: racine, stdio: "ignore" });
+  git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "init");
+  git("checkout", "-q", "-b", "travail");
+  fs.writeFileSync(path.join(racine, "docs", "a.html"), '<a href="absente.html">x</a>');
+  const refus = refusAvantPublication(racine).join("\n");
+  assert.match(refus, /travail/);
+  assert.match(refus, /pas validés/);
+  assert.match(refus, /absente\.html/);
 });
