@@ -12,7 +12,8 @@ const TYPES_SCENE = Object.keys(TYPES);
 const GENRES = ['formation', 'produit', 'storytelling', 'social'];
 const PARCOURS = ['rapide', 'accompagne'];
 const RATIOS = ['16:9', '9:16', '1:1', '4:5'];
-const TRANSITIONS = ['aucune', 'fondu', 'glissement', 'balayage', 'rideau', 'zoom', 'coupe'];
+// Les transitions viennent du moteur : une seule liste pour le déroulé et la page.
+const { TRANSITIONS } = require('../../moteur/transitions.js');
 const TONS = ['clair', 'sombre', 'auto'];
 const ID = /^[a-z0-9-]+$/;
 const HEX = /^#[0-9a-fA-F]{6}$/;

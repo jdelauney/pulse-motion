@@ -186,9 +186,18 @@
     var dureeEntree = info.entree > 0 ? info.entree : (s.index === 0 ? (info.dureeTransition || 0) : 0);
     var q = dureeEntree > 0 ? (t - info.debut) / dureeEntree : 1;
     var st = M.styleTransition(typeTransition(info), q);
-    s.sec.style.opacity = st.opacity;
-    s.sec.style.transform = st.transform;
+    // Sortie : pendant l'entrée de la scène suivante, certaines transitions (poussée, traversée) font aussi bouger celle-ci ;
+    // hors de cette plage, son style de sortie est vide (rien ne reste collé après la transition).
+    var suivante = etat.scenes[s.index + 1];
+    var sortie = null;
+    if (suivante && suivante.info.entree > 0) {
+      var qs = (t - suivante.info.debut) / suivante.info.entree;
+      if (qs > 0 && qs < 1) sortie = M.styleSortie(typeTransition(suivante.info), qs);
+    }
+    s.sec.style.opacity = sortie && sortie.opacity ? sortie.opacity : st.opacity;
+    s.sec.style.transform = sortie && sortie.transform ? sortie.transform : st.transform;
     s.sec.style.clipPath = st.clipPath;
+    s.sec.style.filter = sortie && sortie.filter ? sortie.filter : st.filter;
 
     s.elements.forEach(function (e) {
       var te = tempsVu(e.chaine, t, info);
