@@ -11,9 +11,12 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { calculerMinutage } = require('../../moteur/minutage.js');
 
-// Décor visible pour les démonstrations de caméra : un motif à la couleur de la charte sur chaque décor vide de l'extrait
-// (un plan lointain, data-profondeur faible, porte un motif plus large).
+// Mise en page des démonstrations, lisibles même en vignette : contenu centré, titre et texte grands ; un motif à la couleur
+// de la charte sur chaque décor vide de l'extrait, pour voir bouger la caméra (un plan lointain porte un motif plus large).
 const DECOR = `<style>@scope {
+  :scope { display: grid !important; place-items: center; align-content: center; gap: 2cqh; padding: 6cqh !important; text-align: center; }
+  h2 { font-size: 11cqh !important; line-height: 1.1; margin: 0; }
+  p { font-size: 6cqh !important; margin: 0; }
   .decor:empty { position: absolute; inset: -10%; pointer-events: none;
     background: radial-gradient(circle, color-mix(in srgb, var(--c-primaire) 28%, transparent) 0 0.7cqh, transparent 0.8cqh) 0 0 / 6cqh 6cqh; }
   .decor[data-profondeur="0.2"]:empty { background: radial-gradient(circle, color-mix(in srgb, var(--c-accent) 22%, transparent) 0 3cqh, transparent 3.1cqh) 0 0 / 16cqh 16cqh; }

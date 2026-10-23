@@ -163,13 +163,13 @@ function fabriquerPersonnages() {
 /** Lots de la galerie, au format de MEDIAS (outils/site/medias.js). */
 const LOTS = [
   { id: "galerie-mouvements", sortie: `${GALERIE}/mouvements/001.mp4`, sorties: () => dictionnaire().mouvements.flatMap((e) => fichiersMouvement(e.no)),
-    sources: [path.join(PLUGIN, "references", "mouvements"), path.join(PLUGIN, "moteur"), path.join(PLUGIN, "styles", "clair-pedagogique")], fabriquer: fabriquerMouvements },
+    sources: [path.join(PLUGIN, "references", "mouvements"), path.join(PLUGIN, "moteur"), path.join(PLUGIN, "styles", "clair-pedagogique"), path.join(PLUGIN, "scripts", "lib", "choisir-mouvements.js")], fabriquer: fabriquerMouvements },
   { id: "galerie-styles", sortie: `${GALERIE}/styles/clair-pedagogique.mp4`, sorties: () => STYLES_LIVRES().flatMap(fichiersStyle),
     sources: [path.join(PLUGIN, "styles"), path.join(PLUGIN, "moteur")], fabriquer: fabriquerStyles },
   { id: "galerie-effets", sortie: `${GALERIE}/effets/confettis.mp4`, sorties: () => effets().flatMap(fichiersEffet),
-    sources: [path.join(PLUGIN, "effets"), path.join(PLUGIN, "moteur")], fabriquer: fabriquerEffets },
+    sources: [path.join(PLUGIN, "effets"), path.join(PLUGIN, "moteur"), path.join(PLUGIN, "scripts", "lib", "choisir-mouvements.js")], fabriquer: fabriquerEffets },
   { id: "galerie-personnages", sortie: `${GALERIE}/personnages/coucou.mp4`, sorties: () => clipsPersonnages().flatMap(fichiersClip),
-    sources: [path.join(PLUGIN, "personnages"), path.join(PLUGIN, "moteur")], fabriquer: fabriquerPersonnages },
+    sources: [path.join(PLUGIN, "personnages"), path.join(PLUGIN, "moteur"), path.join(PLUGIN, "scripts", "lib", "choisir-mouvements.js")], fabriquer: fabriquerPersonnages },
 ];
 
 module.exports = { LOTS, GALERIE, dictionnaire, STYLES_LIVRES, scenesDuStyle, effets, clipsPersonnages, demoEffet,
