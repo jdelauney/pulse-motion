@@ -17,7 +17,7 @@ const { calculerMinutage } = require('../../moteur/minutage.js');
 const DECOR = `<style>@scope {
   .pm-demo { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: 2cqh; padding: 6cqh; text-align: center; }
   h2 { font-size: 11cqh !important; line-height: 1.1; margin: 0; }
-  p { font-size: 6cqh !important; margin: 0; }
+  p { font-size: 9cqh !important; margin: 0; }
   .decor:empty { position: absolute; inset: -10%; pointer-events: none;
     background: radial-gradient(circle, color-mix(in srgb, var(--c-primaire) 28%, transparent) 0 0.7cqh, transparent 0.8cqh) 0 0 / 6cqh 6cqh; }
   .decor[data-profondeur="0.2"]:empty { background: radial-gradient(circle, color-mix(in srgb, var(--c-accent) 22%, transparent) 0 3cqh, transparent 3.1cqh) 0 0 / 16cqh 16cqh; }
