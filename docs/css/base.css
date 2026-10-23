@@ -202,7 +202,7 @@ code {
   align-items: center;
   gap: 16px;
   margin-inline: auto;
-  width: min(1152px, calc(100% - 2 * var(--gouttiere)));
+  width: min(1296px, calc(100% - 2 * var(--gouttiere)));
   padding: 8px 16px;
   background: oklch(0.16 0.02 290 / 50%);
   backdrop-filter: blur(12px);
@@ -234,14 +234,14 @@ code {
   font-weight: 500;
   white-space: nowrap;
 }
-/* Neuf entrées : des pilules serrées pour tenir sur une ligne (la barre ne dépasse pas 1152 px). */
-@media (min-width: 1150px) { .navigation a { padding: 6px 9px; } .navigation ul { gap: 0; } }
+/* Onze entrées : des pilules serrées pour tenir sur une ligne (la barre ne dépasse pas 1296 px). */
+@media (min-width: 1320px) { .navigation a { padding: 6px 8px; } .navigation ul { gap: 0; } }
 .navigation a:hover { background: var(--surface-attenuee); }
 .navigation a[aria-current="page"] { color: var(--primaire); }
 .entete-site .bouton-menu { display: none; }
 
-/* Le menu se replie sous un bouton dès que les neuf entrées ne tiennent plus sur une ligne. */
-@media (max-width: 1149px) {
+/* Le menu se replie sous un bouton dès que les onze entrées ne tiennent plus sur une ligne. */
+@media (max-width: 1319px) {
   .entete-site .bouton-menu { display: inline-flex; margin-left: auto; }
   .navigation { display: none; position: absolute; top: calc(100% + 8px); right: var(--gouttiere); left: var(--gouttiere); }
   .navigation.ouverte { display: block; }
@@ -774,10 +774,12 @@ a[target="_blank"]::after { content: "\00a0↗"; font-size: 0.85em; }
 }
 .carte-mouvement figure, .carte-effet figure { margin: 0; }
 .apercu { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; border-radius: var(--rayon-lg); background: oklch(0.22 0.02 290); cursor: pointer; }
-.carte-mouvement-numero { margin: 4px 0 0; font-variant-numeric: tabular-nums; color: var(--texte-secondaire); font-size: var(--texte-sm); }
-.carte-mouvement-nom, .carte-effet h3 { margin: 0; font-size: var(--texte-lg); line-height: 1.25; }
+.galerie.typographie { max-width: none; }
+.galerie > .entete-page, .galerie > #mode-emploi, .galerie > .galerie-source { max-width: 95ch; }
+.typographie .carte-mouvement-numero { margin: 4px 0 0; font-variant-numeric: tabular-nums; color: var(--texte-secondaire); font-size: var(--texte-sm); }
+.typographie .carte-mouvement-nom, .typographie .carte-effet h3 { margin: 0; font-size: var(--texte-lg); line-height: 1.25; }
 .carte-mouvement-nom span { display: block; font-size: var(--texte-sm); font-weight: 400; color: var(--texte-secondaire); }
-.carte-mouvement-sens, .carte-effet p { margin: 0; color: var(--texte-secondaire); font-size: var(--texte-sm); line-height: 1.5; }
+.typographie .carte-mouvement-sens, .typographie .carte-effet p { margin: 0; color: var(--texte-secondaire); font-size: var(--texte-sm); line-height: 1.5; }
 .carte-mouvement details { margin-top: auto; font-size: var(--texte-sm); }
 .carte-mouvement details summary { cursor: pointer; color: var(--texte); }
 .carte-mouvement details code { word-break: break-word; }
