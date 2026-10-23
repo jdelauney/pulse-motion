@@ -758,3 +758,10 @@ body.recherche-ouverte { overflow: hidden; }
 
 /* Lien externe : il s'ouvre dans un nouvel onglet, signalé par une flèche. */
 a[target="_blank"]::after { content: "\00a0↗"; font-size: 0.85em; }
+
+/* Accueil : la vidéo obtenue et les trois étapes (créer, regarder, exporter). */
+.resultat { display: grid; gap: 24px; align-items: start; grid-template-columns: 1fr; margin-bottom: 32px; }
+@media (min-width: 1024px) { .resultat { grid-template-columns: 1.4fr 1fr; gap: 40px; } }
+.resultat .capture { margin: 0; }
+.etapes-resultat { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
+.etapes-resultat .carte-titre-espace { margin-top: 12px; }
