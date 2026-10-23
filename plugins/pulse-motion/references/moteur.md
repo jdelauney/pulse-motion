@@ -65,6 +65,10 @@ Nom = `<type>-<mode>` (ex. `cubic-out`, `back-inout`, `bounce-out`, `quad-spike`
 
 ## Mise en scène
 
+### Mouvements nommés
+
+Le dictionnaire de mouvements (`pulse-motion reference mouvements`, fiche : `pulse-motion mouvements afficher <n° ou nom>`) donne pour chaque nom du métier (pop-in, mask reveal, whip pan…) un numéro stable et la recette exacte. Classes communes à tous les styles, sur un élément minuté : `pm-m-pop`, `pm-m-monte`, `pm-m-glisse-gauche`, `pm-m-glisse-droite`, `pm-m-zoom-entree`, `pm-m-net`, `pm-m-masque`, `pm-m-chute`, `pm-m-anticipe`, `pm-m-ecrase`, `pm-m-saccade`, `pm-m-sortie`, `pm-m-pulse`, `pm-m-tremblote`, `pm-m-va-vient`, `pm-m-surligne`, `pm-m-souligne`, `pm-m-reflet`, `pm-m-epaule` ; réglages par variables : `--pm-dur`, `--pm-courbe`, `--pm-ampleur`, `--pm-fois` (répétitions, jamais sans fin). Une scène qui a des `mouvements` dans le déroulé applique leurs recettes telles quelles.
+
 ### Tempo (caler sur la musique)
 
 Avec `"tempo": { "bpm": 120 }` dans le déroulé (`"decalage"` : instant du premier temps, en s), toute durée peut s'écrire en **temps musicaux** avec le suffixe `t` : `data-start="4t"`, `data-dur="2t"`, `data-start="#titre:fin+1t"`, et de même dans `data-pas`, `data-camera`, `data-gel`, `data-vitesse`. Une boucle CSS se cale avec `var(--pm-temps)` (durée d'un temps) : `animation: pas var(--pm-temps) steps(2) infinite;`. Une musique composée, ou une partition dont toutes les pistes sont calées sur une scène, se cale sur les scènes : sa grille repart au vrai début de chaque scène, donc les durées de scène sont libres et les temps `t` d'une scène tombent sur la musique. Le tempo vient alors de la musique (`musique.tempo`, ou le `tempo` de la partition) : pas de `tempo` dans le déroulé. Avec une musique en fichier (`tempo.bpm`, `decalage` : instant du premier temps du fichier) ou une partition à grille continue, la musique ne bouge pas : chaque scène doit commencer sur un temps (contrôle `hors-tempo`), et une scène allongée par la voix finit sur un temps.
@@ -76,7 +80,7 @@ Avec `"tempo": { "bpm": 120 }` dans le déroulé (`"decalage"` : instant du prem
 <p class="texte" data-texte="detail" data-start="#titre:fin+0.2" data-mots="monte"></p>
 ```
 
-- `data-lettres` (par lettre) ou `data-mots` (par mot) : `monte` (monte de 0,5 em), `flou` (net en 0,5 s), `frappe` (machine à écrire), `onde` (saut puis petit rebond), `chute` (tombe du haut et rebondit).
+- `data-lettres` (par lettre) ou `data-mots` (par mot) : `monte` (monte de 0,5 em), `flou` (net en 0,5 s), `frappe` (machine à écrire), `onde` (saut puis petit rebond), `chute` (tombe du haut et rebondit) ; par lettre seulement : `brouille` (signes au hasard puis la vraie lettre, `--pm-lettre-dur` 0,3 s).
 - `data-pas` : écart entre deux lettres ou deux mots (par défaut `frappe` 0,04 s, `onde` 0,02 s, autres 0,05 s ; mots 0,12 s). Durée d'une lettre : `--pm-lettre-dur` (ex. `style="--pm-lettre-dur: 0.3s"`).
 - Le départ est le `data-start` de l'élément (ou de son ancêtre minuté). Fin de l'animation ≈ `data-start` + nombre de lettres × pas + durée d'une lettre : en tenir compte pour le temps de lecture.
 - Les mots ne sont jamais coupés, les retours à la ligne du texte sont gardés ; les lecteurs d'écran lisent le texte entier. Une balise à l'intérieur du texte (`<em>`) est aplatie.
