@@ -355,6 +355,8 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
       for (const { attribut, effet } of scenesLues[s.id].decoupes) {
         if (!Object.hasOwn(EFFETS_LETTRES, effet)) {
           problemes.push({ regle: 'lettres-invalide', gravite: 'erreur', scene: s.id, message: `Scène « ${s.id} » : ${attribut} « ${effet} » inconnu (effets : ${Object.keys(EFFETS_LETTRES).join(', ')}).` });
+        } else if (effet === 'brouille' && attribut === 'data-mots') {
+          problemes.push({ regle: 'lettres-invalide', gravite: 'erreur', scene: s.id, message: `Scène « ${s.id} » : data-mots « brouille » : le texte se brouille lettre par lettre, écrire data-lettres="brouille".` });
         }
       }
     }
