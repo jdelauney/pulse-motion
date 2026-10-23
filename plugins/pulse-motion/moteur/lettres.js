@@ -15,7 +15,9 @@
   var M = racine.M = racine.M || {};
 
   // Écart par défaut entre deux lettres, en secondes ; entre deux mots : PAS_MOTS.
-  var EFFETS = { monte: 0.05, flou: 0.05, frappe: 0.04, onde: 0.02, chute: 0.05 };
+  var EFFETS = { monte: 0.05, flou: 0.05, frappe: 0.04, onde: 0.02, chute: 0.05, brouille: 0.04 };
+  // Texte brouillé : signes tirés au hasard (même tirage pour la même image) avant la vraie lettre.
+  var SIGNES = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#%&*+=?';
   var PAS_MOTS = 0.12;
   var BLANC = /^[ \t\n\r]+$/;
 
@@ -42,6 +44,9 @@
     var debut = 'Scène « ' + idScene + ' », élément « ' + cle + ' » : ';
     if (!Object.prototype.hasOwnProperty.call(EFFETS, effet)) {
       return { regle: 'lettres-invalide', message: debut + attribut + ' « ' + effet + ' » inconnu (effets : ' + Object.keys(EFFETS).join(', ') + ').' };
+    }
+    if (effet === 'brouille' && !parLettres) {
+      return { regle: 'lettres-invalide', message: debut + 'data-mots « brouille » : le texte se brouille lettre par lettre, écrire data-lettres="brouille".' };
     }
     var pas = parLettres ? EFFETS[effet] : PAS_MOTS;
     var brut = el.getAttribute('data-pas');
@@ -79,7 +84,11 @@
           var lettre = span('pm-lettre', g);
           // Une espace insécable reste dans le mot mais ne compte pas comme une lettre.
           if (/^\s$/.test(g)) lettre.className = 'pm-lettre pm-blanc';
-          else lettre.style.setProperty('--pm-i', String(n++));
+          else {
+            lettre.style.setProperty('--pm-i', String(n++));
+            // Seules les lettres et les chiffres se brouillent ; la ponctuation reste en place.
+            if (effet === 'brouille' && /[\p{L}\p{N}]/u.test(g)) lettre.setAttribute('data-pm-vraie', g);
+          }
           mot.appendChild(lettre);
         });
       } else {
@@ -104,6 +113,37 @@
       if (e) erreurs.push({ regle: e.regle, scene: idScene, message: e.message });
     });
     return erreurs;
+  };
+  /** Durée CSS (« 0.3s », « 300ms ») en secondes, ou null. */
+  function secondes(texte) {
+    var m = /^\s*([\d.]+)\s*(ms|s)?\s*$/.exec(texte || '');
+    return m ? parseFloat(m[1]) / (m[2] === 'ms' ? 1000 : 1) : null;
+  }
+  // Signe de la lettre i au pas de brouillage k : tiré d'un hachage, il ne dépend que du temps de l'élément (figé pendant
+  // un arrêt sur image, le même à 30 ou 60 images par seconde). 30 changements par seconde.
+  function signeDe(i, k) {
+    var h = Math.imul(i + 1, 0x9e3779b1) ^ Math.imul(k + 7, 0x85ebca6b);
+    h = Math.imul(h ^ (h >>> 15), 0x2c1b3c6d);
+    return SIGNES.charAt(((h ^ (h >>> 12)) >>> 0) % SIGNES.length);
+  }
+  /**
+   * Texte brouillé : pose sur chaque lettre de `el` ce qu'elle montre à l'instant `local` (secondes depuis le début de
+   * l'élément) : rien avant son tour (rang × pas), un signe au hasard pendant --pm-lettre-dur (0,3 s), puis la vraie lettre.
+   * Le signe est dessiné par-dessus la vraie lettre, cachée : la largeur du texte ne bouge pas.
+   */
+  M.brouiller = function (el, local) {
+    var pas = secondes(el.style.getPropertyValue('--pm-pas')) || EFFETS.brouille;
+    if (el.__pmDurBrouille === undefined) el.__pmDurBrouille = secondes(getComputedStyle(el).getPropertyValue('--pm-lettre-dur')) || 0.3;
+    var dur = el.__pmDurBrouille;
+    el.querySelectorAll('.pm-lettre[data-pm-vraie]').forEach(function (l) {
+      var i = Number(l.style.getPropertyValue('--pm-i'));
+      var d = local - i * pas;
+      if (d >= dur) { l.removeAttribute('data-pm-brouille'); return; }
+      if (d < 0) { l.setAttribute('data-pm-brouille', ''); return; }
+      var signe = signeDe(i, Math.floor(local * 30));
+      var vraie = l.getAttribute('data-pm-vraie');
+      l.setAttribute('data-pm-brouille', vraie !== vraie.toUpperCase() ? signe.toLowerCase() : signe);
+    });
   };
   M.EFFETS_LETTRES = EFFETS;
   // Sous Node (controler.js) : la liste des effets seulement.

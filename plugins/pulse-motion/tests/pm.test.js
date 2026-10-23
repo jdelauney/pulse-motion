@@ -74,3 +74,16 @@ test('bin/pulse-motion (sh) relaie vers scripts/pm.js', { skip: sh.status !== 0 
   assert.equal(r.status, 0, r.stderr);
   assert.match(r.stdout, /data-scene="liste"/);
 });
+
+test('mouvements : reference, afficher, chercher et introuvable', () => {
+  const ref = pm('reference', 'mouvements');
+  assert.equal(ref.status, 0, ref.stderr);
+  assert.match(ref.stdout, /^# Dictionnaire de mouvements/);
+  const fiche = pm('mouvements', 'afficher', '#001');
+  assert.equal(fiche.status, 0, fiche.stderr);
+  assert.match(fiche.stdout, /Pop-in/);
+  assert.equal(JSON.parse(pm('mouvements', 'chercher', 'whip', '--json').stdout)[0].slug, 'whip-pan');
+  const rien = pm('mouvements', 'afficher', 'tourbillon');
+  assert.equal(rien.status, 1);
+  assert.match(rien.stderr, /pulse-motion mouvements chercher/);
+});

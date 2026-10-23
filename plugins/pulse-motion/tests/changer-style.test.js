@@ -91,3 +91,14 @@ test('changer de style retire les ajustements de taille (ils dépendaient de l\'
   assert.equal(r.ok, true, r.message);
   assert.equal(deroule(dir).scenes[0].ajustements, undefined);
 });
+
+test('changement de style : une scène toute faite qui portait des mouvements nommés est à réécrire', () => {
+  const racine = stylesEssai(['alpha', 'beta']);
+  const dir = projetTypes(racine);
+  const d = deroule(dir);
+  d.scenes[0].mouvements = ['#001'];
+  fs.writeFileSync(path.join(dir, 'deroule.json'), JSON.stringify(d, null, 2));
+  const r = changerStyle({ dossier: dir, style: 'beta', dossierStyles: racine });
+  assert.deepEqual(r.aReecrire, ['intro', 'carte']);
+  assert.deepEqual(deroule(dir).scenes[0].mouvements, ['#001']);
+});

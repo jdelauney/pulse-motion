@@ -6,7 +6,7 @@
  *
  * Sauvegarde dans l'historique (« annule » revient au style d'avant), recopie les scènes toutes
  * faites du nouveau style (scènes qui ont un « type »), liste les scènes composées librement.
- * Affiche { ok, style, recopiees, aReecrire } ; code 1 avec { ok: false, message } en cas d'échec.
+ * Affiche { ok, style, recopiees, aReecrire } (aReecrire : scènes composées, ou recopiées mais qui avaient des mouvements nommés) ; code 1 avec { ok: false, message } en cas d'échec.
  */
 const fs = require('node:fs');
 const path = require('node:path');
@@ -70,7 +70,8 @@ function changerStyle({ dossier, style, dossierStyles }) {
     ok: true,
     style,
     recopiees: plan.map((p) => p.s.id),
-    aReecrire: deroule.scenes.filter((s) => !s.type).map((s) => s.id),
+    // Scènes composées, et scènes recopiées qui portaient des mouvements nommés : la copie neuve les a perdus.
+    aReecrire: deroule.scenes.filter((s) => !s.type || (Array.isArray(s.mouvements) && s.mouvements.length)).map((s) => s.id),
   };
 }
 

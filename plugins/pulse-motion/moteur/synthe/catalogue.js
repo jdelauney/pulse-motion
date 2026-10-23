@@ -8,7 +8,8 @@
   else { racine.M = racine.M || {}; racine.M.synthe = racine.M.synthe || {}; racine.M.synthe.catalogue = api; }
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
-  var SONS_TRANSITION = { fondu: 'souffle', glissement: 'whoosh', balayage: 'swoosh-inverse', zoom: 'montee', coupe: 'impact', rideau: 'whoosh' };
+  var SONS_TRANSITION = { fondu: 'souffle', glissement: 'whoosh', balayage: 'swoosh-inverse', zoom: 'montee', coupe: 'impact', rideau: 'whoosh',
+    whip: 'whoosh', poussee: 'whoosh', traversee: 'montee', cercle: 'swoosh-inverse', volets: 'swoosh-inverse', retournement: 'whoosh' };
   // Transitions par shader de la bibliothèque ; un shader du projet : souffle (comme un fondu).
   var SONS_TRANSITION_SHADER = { dissolution: 'souffle', ondulation: 'souffle', pixels: 'blip', glitch: 'impact', 'balayage-organique': 'swoosh-inverse' };
   return {
