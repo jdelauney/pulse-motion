@@ -22,7 +22,7 @@
     <p id="dl" class="pm-degrade" data-lettres="chute">VIBE</p>
     <p id="c" class="pm-contour">Contour</p>
     <p id="br" data-lettres="monte">Ligne un<br>Ligne deux</p>
-    <p id="b" data-start="1" data-lettres="brouille" data-pas="0.1" style="--pm-lettre-dur: 0.3s">Code 42</p>
+    <p id="b" data-start="1" data-lettres="brouille" data-pas="0.1" style="--pm-lettre-dur: 300ms">Code 42 !</p>
     <p id="bm" data-mots="brouille">Non</p>
   </section>
 </div>
@@ -82,15 +82,16 @@
 
   function etatBrouille() { return Array.prototype.map.call(lettres('b'), function (l) { return l.hasAttribute('data-pm-brouille') ? '[' + l.getAttribute('data-pm-brouille') + ']' : l.textContent; }).join(''); }
   M.rendre(0.5);
-  verifier('brouille avant le début : aucune vraie lettre visible', Array.prototype.every.call(lettres('b'), function (l) { return l.getAttribute('data-pm-brouille') === ''; }), etatBrouille());
+  verifier('brouille avant le début : aucune vraie lettre visible', Array.prototype.every.call(document.querySelectorAll('#b .pm-lettre[data-pm-vraie]'), function (l) { return l.getAttribute('data-pm-brouille') === ''; }), etatBrouille());
+  verifier('brouille : la ponctuation n\'est pas brouillée', !lettres('b')[6].hasAttribute('data-pm-vraie') && lettres('b')[6].textContent === '!', etatBrouille());
   M.rendre(1.15);
   var brouille1 = etatBrouille();
   verifier('brouille pendant : des signes au hasard', Array.prototype.some.call(lettres('b'), function (l) { return (l.getAttribute('data-pm-brouille') || '').length === 1; }), brouille1);
   M.rendre(4); M.rendre(1.15);
   verifier('brouille déterministe', etatBrouille() === brouille1, etatBrouille() + ' / ' + brouille1);
   M.rendre(3);
-  verifier('brouille après : le vrai texte', etatBrouille() === 'Code42' && lettres('b').length === 6, etatBrouille());
-  verifier('brouille : texte entier pour les lecteurs d\'écran', document.getElementById('b').getAttribute('aria-label') === 'Code 42');
+  verifier('brouille après : le vrai texte (300ms lu comme 0,3 s)', etatBrouille() === 'Code42!' && lettres('b').length === 7, etatBrouille());
+  verifier('brouille : texte entier pour les lecteurs d\'écran', document.getElementById('b').getAttribute('aria-label') === 'Code 42 !');
 
   var br = document.getElementById('br');
   verifier('retour à la ligne gardé, mots non collés', br.querySelectorAll('br').length === 1 && Array.prototype.map.call(br.querySelectorAll('.pm-mot'), function (m) { return m.textContent; }).join('|') === 'Ligne|un|Ligne|deux', br.innerHTML);

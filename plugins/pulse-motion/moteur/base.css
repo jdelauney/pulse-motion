@@ -99,8 +99,8 @@ body {
 }
 /* Texte brouillé : la vraie lettre garde sa place (transparente) ; le signe tiré au hasard est dessiné par-dessus. */
 [data-lettres="brouille"] .pm-lettre { position: relative; }
-.pm-lettre[data-pm-brouille] { -webkit-text-fill-color: transparent; }
-.pm-lettre[data-pm-brouille]::after { content: attr(data-pm-brouille); position: absolute; left: 0; top: 0; -webkit-text-fill-color: currentColor; }
+.pm-lettre[data-pm-brouille] { visibility: hidden; }
+.pm-lettre[data-pm-brouille]::after { content: attr(data-pm-brouille); position: absolute; left: 0; top: 0; visibility: visible; -webkit-text-fill-color: currentColor; }
 /* Texte rempli d'un dégradé (--pm-degrade) ; avec data-lettres ou data-mots, chaque morceau en porte sa portion. */
 .pm-degrade {
   background-image: var(--pm-degrade, linear-gradient(90deg, var(--c-primaire, #ff6b35), var(--c-accent, #8e44ad)));

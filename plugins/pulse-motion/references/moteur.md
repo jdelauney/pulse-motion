@@ -101,7 +101,7 @@ Avec `"tempo": { "bpm": 120 }` dans le déroulé (`"decalage"` : instant du prem
 <h2 class="titre-moyen" data-texte="carton" data-start="1"></h2>
 ```
 
-- `data-camera` sur un conteneur **dans** la scène (jamais sur la `<section>`), qui couvre l'image ; ce qui est **hors** du conteneur (cartons, titres) reste fixe.
+- `data-camera` sur un conteneur **dans** la scène (jamais sur la `<section>`), qui couvre l'image ; ce qui est **hors** du conteneur (cartons, titres) reste fixe. Un titre placé après le conteneur prend `position: relative` pour passer devant lui.
 - Clauses `propriété départ→arrivée début+durée [courbe]` (courbe par défaut `sine-inout`) :
   - `zoom` (1 = cadre normal, 2 = gros plan) ;
   - `x`, `y` : le point visé, en % de l'image (50 = centre) — pour un travelling, déplacer `x` ; pour un gros plan sur un personnage en (44 %, 70 %), `zoom 1→3` avec `x 50→44; y 50→70` sur la même plage ;

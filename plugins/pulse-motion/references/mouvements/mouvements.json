@@ -41,7 +41,7 @@
         "metier": "Pop-in"
       },
       "sens": "Grandit depuis rien, dépasse un peu sa taille, puis se pose",
-      "demande": "Fais entrer le logo en pop-in, en 0,4 s, avec un léger rebond.",
+      "demande": "Fais entrer le logo en pop-in, en 0,45 s, avec un léger rebond.",
       "quand": "Une icône, un badge, un chiffre qui doit attirer l'œil sans brusquer.",
       "motsCles": [
         "pop",
@@ -476,7 +476,7 @@
         "metier": "Fade out"
       },
       "sens": "Descend un peu en s'effaçant",
-      "demande": "Fais sortir le premier titre en fondu à 3 s, en 0,5 s, avant que le second arrive.",
+      "demande": "Fais sortir le premier titre en fondu à 2 s, en 0,5 s, avant que le second arrive.",
       "quand": "Libérer la place pour l'élément suivant dans la même scène.",
       "motsCles": [
         "sortie",
@@ -844,7 +844,7 @@
       ],
       "recette": {
         "type": "combinaison",
-        "exemple": "<div data-camera=\"zoom 1→1.15 0+3\"><h2 data-texte=\"titre\" data-start=\"0.2\" data-mots=\"chute\" data-pas=\"0.25\"></h2></div>",
+        "exemple": "<div data-camera=\"zoom 1→1.15 0+3\" style=\"display: grid; place-items: center\"><h2 data-texte=\"titre\" data-start=\"0.2\" data-mots=\"chute\" data-pas=\"0.25\"></h2></div>",
         "reglages": [
           {
             "nom": "data-pas",
@@ -946,7 +946,7 @@
       ],
       "recette": {
         "type": "classe",
-        "exemple": "<h2 data-texte=\"titre\" class=\"pm-m-souligne\" data-start=\"0.5\"></h2>",
+        "exemple": "<h2><span class=\"pm-m-souligne\" data-texte=\"titre\" data-start=\"0.5\"></span></h2>",
         "reglages": [
           {
             "nom": "--pm-dur",
@@ -958,7 +958,8 @@
             "defaut": "0.5",
             "effet": "épaisseur du trait, en % de la hauteur"
           }
-        ]
+        ],
+        "note": "Sur un <span> autour du texte : sur un bloc, le trait couvre toute sa largeur ; pas sur une <img>."
       }
     },
     {
@@ -1131,7 +1132,7 @@
         "metier": "Shape morph"
       },
       "sens": "Une forme se change en une autre, en douceur",
-      "demande": "Transforme le cercle en étoile en 0,8 s.",
+      "demande": "Transforme l'octogone en étoile à 4 branches en 0,8 s.",
       "quand": "Passer d'une idée à une autre, une icône qui change d'état.",
       "motsCles": [
         "morphing",
@@ -1142,12 +1143,12 @@
       ],
       "recette": {
         "type": "combinaison",
-        "exemple": "<style>@scope { @keyframes morphe { from { d: path('M50 10 L90 50 L50 90 L10 50 Z'); } to { d: path('M50 5 L95 50 L50 95 L5 50 Z'); } } .forme { animation: morphe 0.8s var(--ease-cubic-inout) both; } }</style>\n<svg viewBox=\"0 0 100 100\" style=\"width: 30cqh\" aria-hidden=\"true\" data-start=\"0.3\" data-dur=\"0.8\"><path class=\"forme\" fill=\"var(--c-accent)\" d=\"M50 10 L90 50 L50 90 L10 50 Z\"/></svg>",
+        "exemple": "<style>@scope { @keyframes morphe { from { d: path('M50 10 L78 22 L90 50 L78 78 L50 90 L22 78 L10 50 L22 22 Z'); } to { d: path('M50 5 L60 40 L95 50 L60 60 L50 95 L40 60 L5 50 L40 40 Z'); } } .forme { animation: morphe 0.8s var(--ease-cubic-inout) both; } }</style>\n<svg viewBox=\"0 0 100 100\" style=\"width: 30cqh\" aria-hidden=\"true\" data-start=\"0.3\" data-dur=\"0.8\"><path class=\"forme\" fill=\"var(--c-accent)\" d=\"M50 10 L78 22 L90 50 L78 78 L50 90 L22 78 L10 50 L22 22 Z\"/></svg>",
         "reglages": [
           {
             "nom": "d: path(…)",
-            "defaut": "—",
-            "effet": "les deux formes doivent avoir le même nombre de points"
+            "defaut": "octogone → étoile",
+            "effet": "les deux tracés se remplacent par les formes voulues, avec le même nombre de points"
           }
         ],
         "note": "Les coordonnées sont celles du viewBox du SVG, pas des pixels."
@@ -1287,7 +1288,7 @@
         "metier": "Light sweep"
       },
       "sens": "Une bande de lumière traverse l'élément",
-      "demande": "Fais passer un reflet sur le logo à 1 s, en 0,9 s.",
+      "demande": "Fais passer un reflet sur le titre à 1 s, en 0,9 s.",
       "quand": "Un logo, un produit, un bouton premium.",
       "motsCles": [
         "reflet",
@@ -1299,7 +1300,7 @@
       ],
       "recette": {
         "type": "classe",
-        "exemple": "<h2 data-texte=\"titre\" class=\"pm-m-reflet\" data-start=\"1\"></h2>",
+        "exemple": "<h2><span class=\"pm-m-reflet\" data-texte=\"titre\" data-start=\"1\"></span></h2>",
         "reglages": [
           {
             "nom": "--pm-dur",
@@ -1311,7 +1312,8 @@
             "defaut": "var(--ease-cubic-inout)",
             "effet": "courbe (var(--ease-<type>-<mode>))"
           }
-        ]
+        ],
+        "note": "Sur un <span> autour du texte (sinon la bande couvre toute la largeur du bloc) ; sur une image ou le logo, sur un conteneur qui l'entoure : une <img> ne peut pas porter le reflet."
       },
       "motionPrompt": "022"
     },
@@ -1324,7 +1326,7 @@
         "metier": "Impact shake"
       },
       "sens": "Tout le cadre tremble quand quelque chose atterrit",
-      "demande": "Fais trembler l'image à l'arrivée du titre, à 1,2 s, pendant 0,3 s.",
+      "demande": "Fais trembler l'image quand le titre touche le sol, à 0,63 s, pendant 0,3 s.",
       "quand": "Un choc, un chiffre qui tombe, une révélation forte.",
       "motsCles": [
         "secousse",
@@ -1336,7 +1338,7 @@
       ],
       "recette": {
         "type": "camera",
-        "exemple": "<div data-camera=\"secousse 1.2 1.2+0.3\"><div class=\"decor\" data-decor></div></div>\n<h2 class=\"pm-m-chute\" data-texte=\"titre\" data-start=\"0.3\"></h2>",
+        "exemple": "<div data-camera=\"secousse 1.2 0.63+0.3\" style=\"display: grid; place-items: center\"><div class=\"decor\" data-decor></div><h2 class=\"pm-m-chute\" data-texte=\"titre\" data-start=\"0.3\"></h2></div>",
         "reglages": [
           {
             "nom": "secousse",
@@ -1345,8 +1347,8 @@
           },
           {
             "nom": "début+durée",
-            "defaut": "1.2+0.3",
-            "effet": "quand et combien de temps"
+            "defaut": "0.63+0.3",
+            "effet": "quand et combien de temps (ici le premier contact de la chute : son début + 0,33 s)"
           }
         ]
       },
@@ -1372,7 +1374,7 @@
       ],
       "recette": {
         "type": "camera",
-        "exemple": "<div data-camera=\"zoom 1→1.4 2+0.3 back-out; x 50→40 2+0.3 back-out\"><h2 data-texte=\"titre\" data-start=\"0.3\"></h2></div>",
+        "exemple": "<div data-camera=\"zoom 1→1.4 2+0.3 back-out; x 50→40 2+0.3 back-out\" style=\"display: grid; place-items: center\"><h2 data-texte=\"titre\" data-start=\"0.3\"></h2></div>",
         "reglages": [
           {
             "nom": "zoom",
@@ -1775,8 +1777,8 @@
         "reglages": [
           {
             "nom": "durée",
-            "defaut": "0.5 s",
-            "effet": "fixe pour les transitions CSS"
+            "defaut": "0 s",
+            "effet": "passage sec, sans chevauchement"
           }
         ]
       },
@@ -1959,7 +1961,7 @@
       ],
       "recette": {
         "type": "camera",
-        "exemple": "<div data-camera=\"zoom 1→1.1 0+4\"><div class=\"decor\" data-decor></div><h2 data-texte=\"titre\" data-start=\"0.3\"></h2></div>",
+        "exemple": "<div data-camera=\"zoom 1→1.1 0+4\"><div class=\"decor\" data-decor></div></div>\n<h2 data-texte=\"titre\" data-start=\"0.3\" style=\"position: relative\"></h2>",
         "reglages": [
           {
             "nom": "zoom",
@@ -1995,7 +1997,7 @@
       ],
       "recette": {
         "type": "camera",
-        "exemple": "<div data-camera=\"zoom 1.3→1.3 0+4; x 35→65 0+4\"><div class=\"decor\" data-decor></div><h2 data-texte=\"titre\" data-start=\"0.3\"></h2></div>",
+        "exemple": "<div data-camera=\"zoom 1.3→1.3 0+4; x 35→65 0+4\"><div class=\"decor\" data-decor></div></div>\n<h2 data-texte=\"titre\" data-start=\"0.3\" style=\"position: relative\"></h2>",
         "reglages": [
           {
             "nom": "x",
@@ -2031,7 +2033,7 @@
       ],
       "recette": {
         "type": "camera",
-        "exemple": "<div data-camera=\"zoom 1.3→1.3 0+3; y 35→65 0+3\"><div class=\"decor\" data-decor></div><h2 data-texte=\"titre\" data-start=\"0.3\"></h2></div>",
+        "exemple": "<div data-camera=\"zoom 1.3→1.3 0+3; y 35→65 0+3\"><div class=\"decor\" data-decor></div></div>\n<h2 data-texte=\"titre\" data-start=\"0.3\" style=\"position: relative\"></h2>",
         "reglages": [
           {
             "nom": "y",
@@ -2062,7 +2064,7 @@
       ],
       "recette": {
         "type": "camera",
-        "exemple": "<div data-camera=\"zoom 1.4→1 0+4; y 70→50 0+4\"><div class=\"decor\" data-decor></div><h2 data-texte=\"titre\" data-start=\"0.3\"></h2></div>",
+        "exemple": "<div data-camera=\"zoom 1.4→1 0+4; y 70→50 0+4\"><div class=\"decor\" data-decor></div></div>\n<h2 data-texte=\"titre\" data-start=\"0.3\" style=\"position: relative\"></h2>",
         "reglages": [
           {
             "nom": "zoom",
@@ -2098,7 +2100,7 @@
       ],
       "recette": {
         "type": "camera",
-        "exemple": "<div data-camera=\"rotation 0→6 0+1\"><div class=\"decor\" data-decor></div><h2 data-texte=\"titre\" data-start=\"0.3\"></h2></div>",
+        "exemple": "<div data-camera=\"rotation 0→6 0+1\"><div class=\"decor\" data-decor></div></div>\n<h2 data-texte=\"titre\" data-start=\"0.3\" style=\"position: relative\"></h2>",
         "reglages": [
           {
             "nom": "rotation",
@@ -2160,7 +2162,7 @@
       ],
       "recette": {
         "type": "classe",
-        "exemple": "<div data-camera=\"zoom 1.05→1.05 0+6\"><div class=\"pm-m-epaule\" data-start=\"0\" data-dur=\"6\"><div class=\"decor\" data-decor></div><h2 data-texte=\"titre\" data-start=\"0.3\"></h2></div></div>",
+        "exemple": "<div data-camera=\"zoom 1.05→1.05 0+6\"><div class=\"pm-m-epaule\" data-start=\"0\" data-dur=\"6\" style=\"display: grid; place-items: center\"><div class=\"decor\" data-decor></div><h2 data-texte=\"titre\" data-start=\"0.3\"></h2></div></div>",
         "reglages": [
           {
             "nom": "--pm-dur",
@@ -2197,7 +2199,7 @@
       ],
       "recette": {
         "type": "camera",
-        "exemple": "<div data-camera=\"zoom 1.2→1.2 0+4; x 40→60 0+4\"><div class=\"decor\" data-decor data-profondeur=\"0.2\"></div><div class=\"decor\" data-decor data-profondeur=\"0.6\"></div><h2 data-texte=\"titre\" data-start=\"0.3\"></h2></div>",
+        "exemple": "<div data-camera=\"zoom 1.2→1.2 0+4; x 40→60 0+4\"><div class=\"decor\" data-decor data-profondeur=\"0.2\"></div><div class=\"decor\" data-decor data-profondeur=\"0.6\"></div></div>\n<h2 data-texte=\"titre\" data-start=\"0.3\" style=\"position: relative\"></h2>",
         "reglages": [
           {
             "nom": "data-profondeur",
@@ -2228,7 +2230,7 @@
       ],
       "recette": {
         "type": "camera",
-        "exemple": "<div data-camera=\"zoom 1→1.4 0.5+2 sine-inout\"><div class=\"decor\" data-decor></div></div>\n<h2 data-texte=\"titre\" data-start=\"0.3\"></h2>",
+        "exemple": "<div data-camera=\"zoom 1→1.4 0.5+2 sine-inout\"><div class=\"decor\" data-decor></div></div>\n<h2 data-texte=\"titre\" data-start=\"0.3\" style=\"position: relative\"></h2>",
         "reglages": [
           {
             "nom": "zoom",
@@ -2321,7 +2323,7 @@
       ],
       "recette": {
         "type": "temps",
-        "exemple": "<div data-gel=\"1.2+1.5\" data-camera=\"saturation 1→0.4 1.2+0.3\"><h2 class=\"pm-m-glisse-gauche\" data-texte=\"titre\" data-start=\"0.5\" style=\"--pm-dur: 1.5s\"></h2></div>",
+        "exemple": "<div data-gel=\"1.2+1.5\" data-camera=\"saturation 1→0.4 1.2+0.3; saturation 0.4→1 2.7+0.3\" style=\"display: grid; place-items: center\"><h2 class=\"pm-m-glisse-gauche\" data-texte=\"titre\" data-start=\"0.5\" style=\"--pm-dur: 1.5s\"></h2></div>",
         "reglages": [
           {
             "nom": "data-gel",
@@ -2330,8 +2332,8 @@
           },
           {
             "nom": "saturation",
-            "defaut": "1→0.4",
-            "effet": "gris pendant le gel (facultatif)"
+            "defaut": "1→0.4 puis 0.4→1",
+            "effet": "gris pendant le gel, couleur rendue à la reprise (facultatif)"
           }
         ]
       },

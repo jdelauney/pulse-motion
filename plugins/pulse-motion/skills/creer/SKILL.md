@@ -76,7 +76,7 @@ La charte (logo, couleurs, polices) vit dans `charte/` du projet ; la musique da
 
 `charte` du déroulé ne garde que les réglages ponctuels (`ton` : `clair`, `sombre` ou `auto` ; une couleur à changer pour cette vidéo seulement) ; la charte elle-même est dans `charte/`. `charte`, `musique` et `tempo` sont facultatifs. Clés de `textes` : celles de la scène toute faite (`pulse-motion reference styles/<style>`).
 
-Mouvements nommés : quand la personne cite un mouvement ou un numéro du dictionnaire (« avec un pop-in sur les titres », « #006 pour le titre »), l'écrire dans `scenes[].mouvements` des scènes concernées (`"mouvements": ["#001"]`) ; une transition nommée (« whip pan entre les scènes ») va dans `transition` de la scène qui entre (`pulse-motion mouvements afficher <nom>` donne la valeur). Ne jamais proposer de liste de mouvements sans qu'on la demande ; « quels mouvements existent ? » : `pulse-motion mouvements liste`, résumé par catégorie en mots simples, avec deux ou trois exemples par catégorie.
+Mouvements nommés : quand la personne cite un mouvement ou un numéro du dictionnaire (« avec un pop-in sur les titres », « #006 pour le titre »), l'écrire dans `scenes[].mouvements` des scènes concernées (`"mouvements": ["#001"]`, ou `{ "mouvement": "#001", "element": "logo" }` s'il ne vise pas le titre) ; une transition nommée (« whip pan entre les scènes ») va dans `transition` de la scène qui entre (`pulse-motion mouvements afficher <nom>` donne la valeur). Ne jamais proposer de liste de mouvements sans qu'on la demande ; « quels mouvements existent ? » : `pulse-motion mouvements liste`, résumé par catégorie en mots simples, avec deux ou trois exemples par catégorie.
 
 ## 3. Fabrication
 

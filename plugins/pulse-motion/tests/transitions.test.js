@@ -83,7 +83,7 @@ test('sortie remise à zéro après la transition, même avec un rythme', { skip
   const { ouvrirPage } = require('../scripts/lib/cdp.js');
   const { pathToFileURL } = require('node:url');
   const dir = copierProjet('projet-simple');
-  modifierDeroule(dir, (d) => { d.scenes[1].transition = 'poussee'; });
+  modifierDeroule(dir, (d) => { d.scenes[1].transition = 'poussee'; d.scenes[1].rythme = 0.8; });
   const r = assembler({ dossier: dir, dossierStyles: STYLES });
   const page = await ouvrirPage({ navigateur, largeur: 640, hauteur: 400 });
   try {

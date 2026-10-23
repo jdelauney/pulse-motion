@@ -39,25 +39,38 @@ function trouver(cle) {
   return mouvements.find((e) => normaliser(e.slug) === n || normaliser(e.nom.fr) === n || normaliser(e.nom.metier) === n) || null;
 }
 
-/** Entrées dont chaque mot apparaît (nom, sens, mots-clés, slug), les plus proches d'abord. */
+// Petits mots ignorés dans une recherche (« un pop-in sur le titre », « squash and stretch »).
+const MOTS_VIDES = new Set(['a', 'au', 'aux', 'avec', 'and', 'de', 'des', 'du', 'en', 'et', 'la', 'le', 'les', 'l', 'd', 'un', 'une',
+  'sur', 'pour', 'par', 'the', 'of', 'in', 'on', 'mets', 'met', 'fais', 'fait', 'titre', 'texte', 'scene']);
+// Pluriel ou variante simple : « rebonds » → « rebond », « lettres » → « lettre ».
+const racine = (mot) => (mot.length > 3 && /[sx]$/.test(mot) ? mot.slice(0, -1) : mot);
+
+/**
+ * Entrées proches des mots cherchés (nom, sens, mots-clés, slug), les plus proches d'abord : celles qui contiennent tous les
+ * mots, puis, s'il n'y en a aucune, celles qui en contiennent le plus.
+ */
 function chercher(mots) {
-  const termes = normaliser(Array.isArray(mots) ? mots.join(' ') : mots).split(' ').filter(Boolean);
+  const normal = normaliser(Array.isArray(mots) ? mots.join(' ') : mots);
+  const termes = normal.split(' ').filter((t) => t && !MOTS_VIDES.has(t)).map(racine);
   if (!termes.length) return [];
   const requete = termes.join(' ');
-  const scores = [];
+  const resultats = [];
   for (const e of charger().mouvements) {
     const noms = [e.nom.fr, e.nom.metier, e.slug].map(normaliser);
     const cles = e.motsCles.map(normaliser);
     const tout = [...noms, ...cles, normaliser(e.sens)].join(' | ');
-    if (!termes.every((t) => tout.includes(t))) continue;
+    const trouves = termes.filter((t) => tout.includes(t)).length;
+    if (!trouves) continue;
     let score = 0;
-    if (noms.includes(requete)) score += 100;
+    if (noms.includes(normal) || noms.includes(requete)) score += 100;
     else if (noms.some((x) => x.includes(requete))) score += 50;
     if (cles.includes(requete)) score += 30;
     else if (cles.some((x) => x.includes(requete))) score += 15;
-    scores.push({ e, score });
+    resultats.push({ e, score, complet: trouves === termes.length, trouves });
   }
-  return scores.sort((a, b) => b.score - a.score || a.e.no.localeCompare(b.e.no)).map((x) => x.e);
+  const complets = resultats.filter((r) => r.complet);
+  const choisis = complets.length ? complets : resultats;
+  return choisis.sort((a, b) => b.trouves - a.trouves || b.score - a.score || a.e.no.localeCompare(b.e.no)).map((x) => x.e);
 }
 
 /** Recette résumée sur une ligne. */
@@ -98,7 +111,9 @@ function referenceMarkdown() {
     lignes.push('');
   }
   lignes.push('## Comment l\'appliquer', '',
-    '- Lire la fiche (`afficher`) et copier son extrait **tel quel** : classe, attributs, chiffres. Ne changer que les textes (`data-texte`), les couleurs (variables de la charte) et les images.',
+    '- Lire la fiche (`afficher`) et reprendre son extrait : classe, attributs et chiffres **du mouvement** (durée, ampleur, courbe, répétitions) tels quels. Le moment d\'entrée (`data-start`) et les textes (`data-texte`), couleurs (variables de la charte) et images viennent de la scène.',
+    '- Sur un élément d\'une scène toute faite, la classe `pm-m-*` remplace son entrée : retirer la classe d\'entrée du style (`entre-bas`, `tombe`, `claque`…) pour que le mouvement demandé soit le seul.',
+    '- Reflet et soulignement se posent sur un `<span>` autour du texte, ou sur un conteneur autour d\'une image (une `<img>` ne peut pas les porter).',
     '- Les réglages se changent seulement si la personne le demande (« plus lent » : `--pm-dur` ; « plus fort » : `--pm-ampleur`).',
     '- Une transition (catégorie « Transitions entre scènes ») se règle dans `deroule.json`, sur la scène qui **entre** (`transition`), jamais dans le HTML.',
     '- Les mouvements qui se répètent (battement, tremblotement, aller-retour) s\'arrêtent toujours (`--pm-fois`) : la vidéo finit sur une image stable.',
@@ -117,9 +132,9 @@ function principal(args) {
   };
   if (commande === 'liste') {
     const i = mots.indexOf('--categorie');
-    const cat = i >= 0 ? mots[i + 1] : null;
+    const cat = i >= 0 ? (mots[i + 1] || '') : null;
     const { categories, mouvements } = charger();
-    if (cat && !categories.some((c) => c.id === cat)) {
+    if (cat !== null && !categories.some((c) => c.id === cat)) {
       console.error(`Catégorie inconnue « ${cat} ». Catégories : ${categories.map((c) => c.id).join(', ')}.`);
       return 1;
     }

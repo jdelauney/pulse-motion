@@ -117,3 +117,11 @@ test('referenceMarkdown : chaque numéro, et la façon d\'appliquer', () => {
   assert.match(md, /Comment l'appliquer/);
   assert.match(md, /Motion Prompt/);
 });
+
+test('chercher : petits mots, pluriels, et les plus proches quand rien ne contient tout', () => {
+  assert.equal(chercher('squash and stretch')[0].slug, 'ecrasement');
+  assert.ok(chercher('fade in').some((e) => e.slug === 'fondu-montant'));
+  assert.ok(chercher('rebonds').some((e) => e.slug === 'rebond'));
+  assert.equal(chercher('un pop-in sur le titre')[0].slug, 'pop-in');
+  assert.ok(chercher('pop zzzz').some((e) => e.slug === 'pop-in'), 'au moins un mot trouvé');
+});
