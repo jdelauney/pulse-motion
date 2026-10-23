@@ -136,7 +136,7 @@ function demoEffet(nom) {
 
 function fabriquerEffets() {
   avecDossier("pm-galerie-effets-", (dossier) => {
-    const { plages } = projetDeDemos(dossier, effets().map(demoEffet), { titre: "Effets" });
+    const { plages } = projetDeDemos(dossier, effets().map(demoEffet), { titre: "Effets", style: "tech-sombre" }); // un fond sombre : les effets lumineux s'y voient
     const video = exporter(dossier);
     decouper(video, plages.map((p) => {
       const [mp4, jpg] = fichiersEffet(p.id);
@@ -151,7 +151,7 @@ function fabriquerPersonnages() {
       id: clip, duree: 3,
       html: `<div data-personnage="touffu" data-x="50" data-sol="90" data-taille="60" data-vue="35"><i data-action="jouer" data-clip="${clip}" data-start="0.2"></i></div>`,
     }));
-    const { plages } = projetDeDemos(dossier, demos, { titre: "Personnages" });
+    const { plages } = projetDeDemos(dossier, demos, { titre: "Personnages", style: "tech-sombre" }); // le Touffu, blanc, se voit sur un fond sombre
     const video = exporter(dossier);
     decouper(video, plages.map((p) => {
       const [mp4, jpg] = fichiersClip(p.id);
@@ -167,9 +167,9 @@ const LOTS = [
   { id: "galerie-styles", sortie: `${GALERIE}/styles/clair-pedagogique.mp4`, sorties: () => STYLES_LIVRES().flatMap(fichiersStyle),
     sources: [path.join(PLUGIN, "styles"), path.join(PLUGIN, "moteur")], fabriquer: fabriquerStyles },
   { id: "galerie-effets", sortie: `${GALERIE}/effets/confettis.mp4`, sorties: () => effets().flatMap(fichiersEffet),
-    sources: [path.join(PLUGIN, "effets"), path.join(PLUGIN, "moteur"), path.join(PLUGIN, "scripts", "lib", "choisir-mouvements.js")], fabriquer: fabriquerEffets },
+    sources: [path.join(PLUGIN, "effets"), path.join(PLUGIN, "moteur"), path.join(PLUGIN, "styles", "tech-sombre"), path.join(PLUGIN, "scripts", "lib", "choisir-mouvements.js")], fabriquer: fabriquerEffets },
   { id: "galerie-personnages", sortie: `${GALERIE}/personnages/coucou.mp4`, sorties: () => clipsPersonnages().flatMap(fichiersClip),
-    sources: [path.join(PLUGIN, "personnages"), path.join(PLUGIN, "moteur"), path.join(PLUGIN, "scripts", "lib", "choisir-mouvements.js")], fabriquer: fabriquerPersonnages },
+    sources: [path.join(PLUGIN, "personnages"), path.join(PLUGIN, "moteur"), path.join(PLUGIN, "styles", "tech-sombre"), path.join(PLUGIN, "scripts", "lib", "choisir-mouvements.js")], fabriquer: fabriquerPersonnages },
 ];
 
 module.exports = { LOTS, GALERIE, dictionnaire, STYLES_LIVRES, scenesDuStyle, effets, clipsPersonnages, demoEffet,
