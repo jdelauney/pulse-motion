@@ -1,0 +1,2371 @@
+{
+  "version": 1,
+  "source": "Noms, sens et idées de phrases inspirés de Motion Prompt (https://github.com/showheyohtaki/motion-prompt), MIT © 2026 Shohei Ohtaki ; traduits et adaptés au moteur Pulse Motion. Voir THIRD-PARTY-NOTICES.md.",
+  "categories": [
+    {
+      "id": "entrees",
+      "nom": "Entrées et sorties"
+    },
+    {
+      "id": "texte",
+      "nom": "Texte"
+    },
+    {
+      "id": "finition",
+      "nom": "Finition du mouvement"
+    },
+    {
+      "id": "valeur",
+      "nom": "Mise en valeur"
+    },
+    {
+      "id": "transitions",
+      "nom": "Transitions entre scènes"
+    },
+    {
+      "id": "camera",
+      "nom": "Caméra"
+    },
+    {
+      "id": "temps",
+      "nom": "Le temps"
+    }
+  ],
+  "mouvements": [
+    {
+      "no": "001",
+      "slug": "pop-in",
+      "categorie": "entrees",
+      "nom": {
+        "fr": "Apparition rebondie",
+        "metier": "Pop-in"
+      },
+      "sens": "Grandit depuis rien, dépasse un peu sa taille, puis se pose",
+      "demande": "Fais entrer le logo en pop-in, en 0,4 s, avec un léger rebond.",
+      "quand": "Une icône, un badge, un chiffre qui doit attirer l'œil sans brusquer.",
+      "motsCles": [
+        "pop",
+        "apparition",
+        "rebond",
+        "icone",
+        "badge",
+        "surgir"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<h2 data-texte=\"titre\" class=\"pm-m-pop\" data-start=\"0.3\"></h2>",
+        "reglages": [
+          {
+            "nom": "--pm-dur",
+            "defaut": "0.45s",
+            "effet": "durée du mouvement"
+          },
+          {
+            "nom": "--pm-ampleur",
+            "defaut": "1.12",
+            "effet": "taille au plus fort du dépassement"
+          },
+          {
+            "nom": "--pm-courbe",
+            "defaut": "var(--ease-cubic-out)",
+            "effet": "courbe (var(--ease-<type>-<mode>))"
+          }
+        ]
+      },
+      "motionPrompt": "001"
+    },
+    {
+      "no": "002",
+      "slug": "fondu-montant",
+      "categorie": "entrees",
+      "nom": {
+        "fr": "Fondu montant",
+        "metier": "Fade up"
+      },
+      "sens": "Monte de quelques hauteurs de ligne en apparaissant",
+      "demande": "Fais monter le sous-titre en fondu, sur 0,6 s, depuis 4 % de la hauteur.",
+      "quand": "L'entrée la plus neutre, pour presque tous les textes.",
+      "motsCles": [
+        "fondu",
+        "monte",
+        "fade",
+        "apparition",
+        "texte",
+        "sobre"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<h2 data-texte=\"titre\" class=\"pm-m-monte\" data-start=\"0.3\"></h2>",
+        "reglages": [
+          {
+            "nom": "--pm-dur",
+            "defaut": "0.6s",
+            "effet": "durée du mouvement"
+          },
+          {
+            "nom": "--pm-ampleur",
+            "defaut": "4",
+            "effet": "hauteur de départ, en % de la hauteur de l'image"
+          },
+          {
+            "nom": "--pm-courbe",
+            "defaut": "var(--ease-quart-out)",
+            "effet": "courbe (var(--ease-<type>-<mode>))"
+          }
+        ]
+      }
+    },
+    {
+      "no": "003",
+      "slug": "glisse",
+      "categorie": "entrees",
+      "nom": {
+        "fr": "Glissé latéral",
+        "metier": "Slide in"
+      },
+      "sens": "Arrive sur le côté en apparaissant",
+      "demande": "Fais glisser l'image depuis la gauche, en 0,6 s, sur 10 % de la hauteur.",
+      "quand": "Une image ou un bloc qui vient compléter ce qui est déjà là.",
+      "motsCles": [
+        "glisse",
+        "slide",
+        "gauche",
+        "droite",
+        "lateral",
+        "entree"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<h2 data-texte=\"titre\" class=\"pm-m-glisse-gauche\" data-start=\"0.3\"></h2>",
+        "reglages": [
+          {
+            "nom": "--pm-dur",
+            "defaut": "0.6s",
+            "effet": "durée du mouvement"
+          },
+          {
+            "nom": "--pm-ampleur",
+            "defaut": "10",
+            "effet": "distance de départ, en % de la hauteur"
+          },
+          {
+            "nom": "--pm-courbe",
+            "defaut": "var(--ease-quart-out)",
+            "effet": "courbe (var(--ease-<type>-<mode>))"
+          }
+        ],
+        "note": "pm-m-glisse-droite pour arriver par la droite."
+      }
+    },
+    {
+      "no": "004",
+      "slug": "zoom-entree",
+      "categorie": "entrees",
+      "nom": {
+        "fr": "Zoom d'entrée",
+        "metier": "Scale in"
+      },
+      "sens": "Part un peu plus petit et grandit jusqu'à sa taille en apparaissant",
+      "demande": "Fais apparaître la carte en zoom, en 0,6 s, depuis 80 % de sa taille.",
+      "quand": "Une carte, une photo, un encadré.",
+      "motsCles": [
+        "zoom",
+        "scale",
+        "agrandir",
+        "apparition",
+        "carte"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<h2 data-texte=\"titre\" class=\"pm-m-zoom-entree\" data-start=\"0.3\"></h2>",
+        "reglages": [
+          {
+            "nom": "--pm-dur",
+            "defaut": "0.6s",
+            "effet": "durée du mouvement"
+          },
+          {
+            "nom": "--pm-ampleur",
+            "defaut": "0.8",
+            "effet": "taille de départ (1 = taille finale)"
+          },
+          {
+            "nom": "--pm-courbe",
+            "defaut": "var(--ease-cubic-out)",
+            "effet": "courbe (var(--ease-<type>-<mode>))"
+          }
+        ]
+      }
+    },
+    {
+      "no": "005",
+      "slug": "flou-net",
+      "categorie": "entrees",
+      "nom": {
+        "fr": "De flou à net",
+        "metier": "Blur in"
+      },
+      "sens": "Apparaît flou puis devient net",
+      "demande": "Fais apparaître le titre de flou à net, en 0,6 s.",
+      "quand": "Une ambiance douce, un souvenir, une révélation calme.",
+      "motsCles": [
+        "flou",
+        "net",
+        "blur",
+        "focus",
+        "doux",
+        "reveal"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<h2 data-texte=\"titre\" class=\"pm-m-net\" data-start=\"0.3\"></h2>",
+        "reglages": [
+          {
+            "nom": "--pm-dur",
+            "defaut": "0.6s",
+            "effet": "durée du mouvement"
+          },
+          {
+            "nom": "--pm-ampleur",
+            "defaut": "1.5",
+            "effet": "flou de départ, en % de la hauteur"
+          },
+          {
+            "nom": "--pm-courbe",
+            "defaut": "var(--ease-cubic-out)",
+            "effet": "courbe (var(--ease-<type>-<mode>))"
+          }
+        ]
+      }
+    },
+    {
+      "no": "006",
+      "slug": "masque",
+      "categorie": "entrees",
+      "nom": {
+        "fr": "Révélé par masque",
+        "metier": "Mask reveal"
+      },
+      "sens": "Le texte monte de derrière un bord invisible qui reste fixe",
+      "demande": "Révèle le titre par masque, en 0,7 s, ligne par ligne.",
+      "quand": "Un titre éditorial, élégant, qui « sort » de la page.",
+      "motsCles": [
+        "masque",
+        "mask",
+        "reveal",
+        "devoiler",
+        "editorial",
+        "ligne"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<h2 data-texte=\"titre\" class=\"pm-m-masque\" data-start=\"0.3\"></h2>",
+        "reglages": [
+          {
+            "nom": "--pm-dur",
+            "defaut": "0.7s",
+            "effet": "durée du mouvement"
+          },
+          {
+            "nom": "--pm-courbe",
+            "defaut": "var(--ease-quart-out)",
+            "effet": "courbe (var(--ease-<type>-<mode>))"
+          }
+        ],
+        "note": "Pour plusieurs lignes, une balise par ligne, chacune avec son data-start décalé de 0,15 s."
+      },
+      "motionPrompt": "005"
+    },
+    {
+      "no": "007",
+      "slug": "chute",
+      "categorie": "entrees",
+      "nom": {
+        "fr": "Chute avec rebond",
+        "metier": "Drop in"
+      },
+      "sens": "Tombe d'en haut et rebondit en touchant le sol",
+      "demande": "Fais tomber le chiffre d'en haut, en 0,9 s, avec des rebonds.",
+      "quand": "Un chiffre, un mot fort, un ton ludique.",
+      "motsCles": [
+        "chute",
+        "tomber",
+        "rebond",
+        "bounce",
+        "drop",
+        "ludique"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<h2 data-texte=\"titre\" class=\"pm-m-chute\" data-start=\"0.3\"></h2>",
+        "reglages": [
+          {
+            "nom": "--pm-dur",
+            "defaut": "0.9s",
+            "effet": "durée du mouvement"
+          },
+          {
+            "nom": "--pm-ampleur",
+            "defaut": "20",
+            "effet": "hauteur de chute, en % de la hauteur"
+          },
+          {
+            "nom": "--pm-courbe",
+            "defaut": "var(--ease-bounce-out)",
+            "effet": "courbe (var(--ease-<type>-<mode>))"
+          }
+        ]
+      },
+      "motionPrompt": "123"
+    },
+    {
+      "no": "008",
+      "slug": "anticipation",
+      "categorie": "entrees",
+      "nom": {
+        "fr": "Anticipation",
+        "metier": "Anticipation"
+      },
+      "sens": "Recule un peu avant de partir vers sa place",
+      "demande": "Fais entrer la flèche avec une anticipation : elle recule d'un tiers puis part, en 0,8 s.",
+      "quand": "Donner de l'élan à une entrée, à la façon des dessins animés.",
+      "motsCles": [
+        "anticipation",
+        "elan",
+        "recul",
+        "cartoon",
+        "dessin anime"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<h2 data-texte=\"titre\" class=\"pm-m-anticipe\" data-start=\"0.3\"></h2>",
+        "reglages": [
+          {
+            "nom": "--pm-dur",
+            "defaut": "0.8s",
+            "effet": "durée du mouvement"
+          },
+          {
+            "nom": "--pm-ampleur",
+            "defaut": "10",
+            "effet": "distance de départ, en % de la hauteur (le recul ajoute 30 %)"
+          },
+          {
+            "nom": "--pm-courbe",
+            "defaut": "var(--ease-cubic-inout)",
+            "effet": "courbe (var(--ease-<type>-<mode>))"
+          }
+        ]
+      },
+      "motionPrompt": "121"
+    },
+    {
+      "no": "009",
+      "slug": "ecrasement",
+      "categorie": "entrees",
+      "nom": {
+        "fr": "Écrasement-étirement",
+        "metier": "Squash & stretch"
+      },
+      "sens": "S'écrase en touchant le sol puis reprend sa forme, comme une balle",
+      "demande": "Fais tomber le bouton avec un écrasement à l'arrivée, en 0,7 s.",
+      "quand": "Un objet qui doit paraître souple, vivant, élastique.",
+      "motsCles": [
+        "ecrasement",
+        "etirement",
+        "squash",
+        "stretch",
+        "elastique",
+        "balle"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<h2 data-texte=\"titre\" class=\"pm-m-ecrase\" data-start=\"0.3\"></h2>",
+        "reglages": [
+          {
+            "nom": "--pm-dur",
+            "defaut": "0.7s",
+            "effet": "durée du mouvement"
+          },
+          {
+            "nom": "--pm-ampleur",
+            "defaut": "15",
+            "effet": "hauteur de chute, en % de la hauteur"
+          },
+          {
+            "nom": "--pm-courbe",
+            "defaut": "var(--ease-quad-in)",
+            "effet": "courbe (var(--ease-<type>-<mode>))"
+          }
+        ]
+      },
+      "motionPrompt": "011"
+    },
+    {
+      "no": "010",
+      "slug": "cascade",
+      "categorie": "entrees",
+      "nom": {
+        "fr": "Entrée en cascade",
+        "metier": "Stagger"
+      },
+      "sens": "Les éléments entrent l'un après l'autre, avec un petit décalage",
+      "demande": "Fais entrer les trois points de la liste en cascade, à 0,2 s d'écart.",
+      "quand": "Une liste, une grille d'icônes, plusieurs cartes.",
+      "motsCles": [
+        "cascade",
+        "stagger",
+        "decalage",
+        "liste",
+        "suite",
+        "un par un"
+      ],
+      "recette": {
+        "type": "combinaison",
+        "exemple": "<h2 id=\"c1\" class=\"pm-m-monte\" data-texte=\"titre\" data-start=\"0.2\"></h2>\n<p id=\"c2\" class=\"pm-m-monte\" data-texte=\"texte\" data-start=\"#c1+0.2\"></p>",
+        "reglages": [
+          {
+            "nom": "data-start",
+            "defaut": "#précédent+0.2",
+            "effet": "écart entre deux éléments (0,2 à 0,4 s dans un même groupe, 0,8 à 1,2 s entre deux points à lire)"
+          }
+        ],
+        "note": "Chaque élément part du début du précédent (#id+écart). Pour les mots d'une phrase : data-mots=\"monte\"."
+      },
+      "motionPrompt": "002"
+    },
+    {
+      "no": "011",
+      "slug": "trace",
+      "categorie": "entrees",
+      "nom": {
+        "fr": "Tracé de ligne",
+        "metier": "Line draw"
+      },
+      "sens": "Une ligne se dessine, comme tracée au crayon",
+      "demande": "Trace la flèche du schéma en 1 s, de gauche à droite.",
+      "quand": "Un schéma, une flèche, un soulignement dessiné, une signature.",
+      "motsCles": [
+        "trace",
+        "ligne",
+        "dessin",
+        "stroke",
+        "fleche",
+        "schema"
+      ],
+      "recette": {
+        "type": "attribut",
+        "exemple": "<svg viewBox=\"0 0 100 20\" style=\"width: 60cqh\" aria-hidden=\"true\" data-start=\"0.3\" data-dur=\"1\"><path d=\"M2 10 H 98\" pathLength=\"100\" stroke=\"var(--c-accent)\" stroke-width=\"2\" fill=\"none\" style=\"stroke-dasharray: 100; stroke-dashoffset: calc(100 * (1 - var(--p)))\"/></svg>",
+        "reglages": [
+          {
+            "nom": "data-dur",
+            "defaut": "1",
+            "effet": "durée du tracé"
+          }
+        ],
+        "note": "Le chemin porte pathLength=\"100\" ; --p (0 → 1) vient de l'élément minuté."
+      },
+      "motionPrompt": "004"
+    },
+    {
+      "no": "012",
+      "slug": "sortie",
+      "categorie": "entrees",
+      "nom": {
+        "fr": "Sortie en fondu",
+        "metier": "Fade out"
+      },
+      "sens": "Descend un peu en s'effaçant",
+      "demande": "Fais sortir le premier titre en fondu à 3 s, en 0,5 s, avant que le second arrive.",
+      "quand": "Libérer la place pour l'élément suivant dans la même scène.",
+      "motsCles": [
+        "sortie",
+        "disparition",
+        "fade out",
+        "effacer",
+        "partir"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<div class=\"pm-m-monte\" data-start=\"0.2\"><h2 class=\"pm-m-sortie\" data-texte=\"titre\" data-start=\"2\"></h2></div>",
+        "reglages": [
+          {
+            "nom": "--pm-dur",
+            "defaut": "0.5s",
+            "effet": "durée du mouvement"
+          },
+          {
+            "nom": "--pm-ampleur",
+            "defaut": "3",
+            "effet": "descente, en % de la hauteur"
+          },
+          {
+            "nom": "--pm-courbe",
+            "defaut": "var(--ease-cubic-in)",
+            "effet": "courbe (var(--ease-<type>-<mode>))"
+          }
+        ],
+        "note": "Entrée et sortie sur le même élément : l'entrée sur un conteneur, la sortie sur l'élément."
+      }
+    },
+    {
+      "no": "013",
+      "slug": "saccade",
+      "categorie": "entrees",
+      "nom": {
+        "fr": "Image par image",
+        "metier": "Stop-motion style"
+      },
+      "sens": "Bouge par à-coups, comme une animation image par image",
+      "demande": "Fais monter le titre par à-coups, en 6 images sur 0,6 s.",
+      "quand": "Un ton artisanal, papier découpé, bricolé.",
+      "motsCles": [
+        "saccade",
+        "stop motion",
+        "image par image",
+        "a-coups",
+        "artisanal"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<h2 data-texte=\"titre\" class=\"pm-m-saccade\" data-start=\"0.3\"></h2>",
+        "reglages": [
+          {
+            "nom": "--pm-dur",
+            "defaut": "0.6s",
+            "effet": "durée du mouvement"
+          },
+          {
+            "nom": "--pm-images",
+            "defaut": "6",
+            "effet": "nombre d'à-coups"
+          },
+          {
+            "nom": "--pm-ampleur",
+            "defaut": "4",
+            "effet": "hauteur de départ, en % de la hauteur"
+          }
+        ]
+      },
+      "motionPrompt": "128"
+    },
+    {
+      "no": "014",
+      "slug": "eclat",
+      "categorie": "entrees",
+      "nom": {
+        "fr": "Éclat",
+        "metier": "Burst"
+      },
+      "sens": "Des étincelles jaillissent quand quelque chose apparaît",
+      "demande": "Fais jaillir des étincelles autour du chiffre quand il apparaît, pendant 1 s.",
+      "quand": "Souligner l'arrivée d'un chiffre clé ou d'un résultat.",
+      "motsCles": [
+        "eclat",
+        "burst",
+        "etincelles",
+        "jaillir",
+        "explosion legere"
+      ],
+      "recette": {
+        "type": "effet",
+        "exemple": "<h2 id=\"chiffre\" class=\"pm-m-pop\" data-texte=\"titre\" data-start=\"0.5\"></h2>\n<div data-effet=\"etincelles\" data-start=\"#chiffre\" data-dur=\"1\"></div>",
+        "reglages": [
+          {
+            "nom": "data-dur",
+            "defaut": "1",
+            "effet": "durée de l'éclat"
+          }
+        ],
+        "note": "Recette d'effet etincelles : pulse-motion effet etincelles ; réglages dans pulse-motion reference particules."
+      },
+      "motionPrompt": "003"
+    },
+    {
+      "no": "015",
+      "slug": "machine-a-ecrire",
+      "categorie": "texte",
+      "nom": {
+        "fr": "Machine à écrire",
+        "metier": "Typewriter"
+      },
+      "sens": "Le texte s'écrit lettre après lettre",
+      "demande": "Écris la phrase en machine à écrire, une lettre toutes les 0,04 s.",
+      "quand": "Un code, une citation, une ambiance technique ou rétro.",
+      "motsCles": [
+        "machine a ecrire",
+        "typewriter",
+        "ecrire",
+        "frappe",
+        "clavier",
+        "lettre"
+      ],
+      "recette": {
+        "type": "attribut",
+        "exemple": "<h2 data-texte=\"titre\" data-start=\"0.3\" data-lettres=\"frappe\"></h2>",
+        "reglages": [
+          {
+            "nom": "data-pas",
+            "defaut": "0.04",
+            "effet": "écart entre deux lettres, en secondes"
+          }
+        ]
+      },
+      "motionPrompt": "006"
+    },
+    {
+      "no": "016",
+      "slug": "vague",
+      "categorie": "texte",
+      "nom": {
+        "fr": "Vague de lettres",
+        "metier": "Wave text"
+      },
+      "sens": "Les lettres sautent l'une après l'autre, comme une vague",
+      "demande": "Fais onduler les lettres du titre en vague, à 0,02 s d'écart.",
+      "quand": "Un titre joyeux, une annonce, un mot à faire vivre.",
+      "motsCles": [
+        "vague",
+        "wave",
+        "onde",
+        "lettres",
+        "saut",
+        "joyeux"
+      ],
+      "recette": {
+        "type": "attribut",
+        "exemple": "<h2 data-texte=\"titre\" data-start=\"0.3\" data-lettres=\"onde\"></h2>",
+        "reglages": [
+          {
+            "nom": "data-pas",
+            "defaut": "0.02",
+            "effet": "écart entre deux lettres"
+          },
+          {
+            "nom": "--pm-lettre-dur",
+            "defaut": "0.6s",
+            "effet": "durée du saut d'une lettre"
+          }
+        ]
+      },
+      "motionPrompt": "130"
+    },
+    {
+      "no": "017",
+      "slug": "mots-montants",
+      "categorie": "texte",
+      "nom": {
+        "fr": "Mots qui montent",
+        "metier": "Word by word"
+      },
+      "sens": "Les mots montent l'un après l'autre",
+      "demande": "Fais monter la phrase mot par mot, à 0,12 s d'écart.",
+      "quand": "Une phrase à lire au rythme de la voix.",
+      "motsCles": [
+        "mots",
+        "mot par mot",
+        "word",
+        "monte",
+        "phrase"
+      ],
+      "recette": {
+        "type": "attribut",
+        "exemple": "<p data-texte=\"texte\" data-start=\"0.3\" data-mots=\"monte\"></p>",
+        "reglages": [
+          {
+            "nom": "data-pas",
+            "defaut": "0.12",
+            "effet": "écart entre deux mots"
+          }
+        ]
+      }
+    },
+    {
+      "no": "018",
+      "slug": "lettres-floues",
+      "categorie": "texte",
+      "nom": {
+        "fr": "Lettres de flou à net",
+        "metier": "Blur letters"
+      },
+      "sens": "Chaque lettre apparaît floue puis devient nette",
+      "demande": "Fais apparaître le titre lettre par lettre, de flou à net, à 0,05 s d'écart.",
+      "quand": "Un titre doux, élégant.",
+      "motsCles": [
+        "flou",
+        "lettres",
+        "blur",
+        "net",
+        "doux"
+      ],
+      "recette": {
+        "type": "attribut",
+        "exemple": "<h2 data-texte=\"titre\" data-start=\"0.3\" data-lettres=\"flou\"></h2>",
+        "reglages": [
+          {
+            "nom": "data-pas",
+            "defaut": "0.05",
+            "effet": "écart entre deux lettres"
+          },
+          {
+            "nom": "--pm-lettre-dur",
+            "defaut": "0.5s",
+            "effet": "durée d'une lettre"
+          }
+        ]
+      }
+    },
+    {
+      "no": "019",
+      "slug": "lettres-tombantes",
+      "categorie": "texte",
+      "nom": {
+        "fr": "Lettres qui tombent",
+        "metier": "Falling letters"
+      },
+      "sens": "Chaque lettre tombe du haut et rebondit",
+      "demande": "Fais tomber les lettres du titre une à une, à 0,05 s d'écart.",
+      "quand": "Un titre énergique, ludique.",
+      "motsCles": [
+        "tomber",
+        "lettres",
+        "chute",
+        "rebond",
+        "ludique"
+      ],
+      "recette": {
+        "type": "attribut",
+        "exemple": "<h2 data-texte=\"titre\" data-start=\"0.3\" data-lettres=\"chute\"></h2>",
+        "reglages": [
+          {
+            "nom": "data-pas",
+            "defaut": "0.05",
+            "effet": "écart entre deux lettres"
+          },
+          {
+            "nom": "--pm-lettre-dur",
+            "defaut": "0.7s",
+            "effet": "durée d'une lettre"
+          }
+        ]
+      }
+    },
+    {
+      "no": "020",
+      "slug": "brouillage",
+      "categorie": "texte",
+      "nom": {
+        "fr": "Texte brouillé",
+        "metier": "Text scramble"
+      },
+      "sens": "Les lettres défilent au hasard puis se fixent sur le bon texte",
+      "demande": "Fais apparaître le mot en texte brouillé, une lettre fixée toutes les 0,04 s.",
+      "quand": "Un code, un mot de passe, une ambiance numérique.",
+      "motsCles": [
+        "brouille",
+        "scramble",
+        "hasard",
+        "decoder",
+        "numerique",
+        "hacker"
+      ],
+      "recette": {
+        "type": "attribut",
+        "exemple": "<h2 data-texte=\"titre\" data-start=\"0.3\" data-lettres=\"brouille\"></h2>",
+        "reglages": [
+          {
+            "nom": "data-pas",
+            "defaut": "0.04",
+            "effet": "écart entre deux lettres"
+          },
+          {
+            "nom": "--pm-lettre-dur",
+            "defaut": "0.3s",
+            "effet": "durée du brouillage d'une lettre"
+          }
+        ]
+      },
+      "motionPrompt": "129"
+    },
+    {
+      "no": "021",
+      "slug": "compteur",
+      "categorie": "texte",
+      "nom": {
+        "fr": "Compteur",
+        "metier": "Count-up"
+      },
+      "sens": "Un nombre défile rapidement jusqu'à sa valeur",
+      "demande": "Fais compter le chiffre de 0 à 1 250 en 1,5 s.",
+      "quand": "Un chiffre clé, une statistique, un résultat.",
+      "motsCles": [
+        "compteur",
+        "count up",
+        "nombre",
+        "chiffre",
+        "statistique",
+        "defiler"
+      ],
+      "recette": {
+        "type": "attribut",
+        "exemple": "<p class=\"titre\" data-start=\"0.3\" data-dur=\"1.5\" data-tween=\"nombre 0→1250 cubic-out\" aria-label=\"1 250\"></p>",
+        "reglages": [
+          {
+            "nom": "data-dur",
+            "defaut": "1.5",
+            "effet": "durée du comptage"
+          },
+          {
+            "nom": "data-tween",
+            "defaut": "nombre 0→1250 cubic-out",
+            "effet": "valeurs de départ et d'arrivée (décimales : 0→3.5)"
+          }
+        ]
+      },
+      "motionPrompt": "007"
+    },
+    {
+      "no": "022",
+      "slug": "typo-cinetique",
+      "categorie": "texte",
+      "nom": {
+        "fr": "Typographie cinétique",
+        "metier": "Kinetic typography"
+      },
+      "sens": "Les mots tombent en rythme pendant que le cadre se resserre",
+      "demande": "Fais tomber les mots du titre un par un, toutes les 0,25 s, avec un zoom lent de 15 %.",
+      "quand": "Une phrase choc, une accroche pour les réseaux.",
+      "motsCles": [
+        "typographie cinetique",
+        "kinetic",
+        "mots",
+        "rythme",
+        "accroche"
+      ],
+      "recette": {
+        "type": "combinaison",
+        "exemple": "<div data-camera=\"zoom 1→1.15 0+3\"><h2 data-texte=\"titre\" data-start=\"0.2\" data-mots=\"chute\" data-pas=\"0.25\"></h2></div>",
+        "reglages": [
+          {
+            "nom": "data-pas",
+            "defaut": "0.25",
+            "effet": "écart entre deux mots"
+          },
+          {
+            "nom": "data-camera",
+            "defaut": "zoom 1→1.15 0+3",
+            "effet": "zoom lent pendant la phrase"
+          }
+        ]
+      },
+      "motionPrompt": "008"
+    },
+    {
+      "no": "023",
+      "slug": "degrade",
+      "categorie": "texte",
+      "nom": {
+        "fr": "Texte en dégradé",
+        "metier": "Gradient text"
+      },
+      "sens": "Le texte est rempli d'un dégradé des couleurs de la charte",
+      "demande": "Mets le titre en dégradé à 90 degrés, de la couleur principale à la couleur d'accent.",
+      "quand": "Un titre de marque, une accroche.",
+      "motsCles": [
+        "degrade",
+        "gradient",
+        "couleur",
+        "titre",
+        "marque"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<h2 data-texte=\"titre\" class=\"pm-degrade pm-m-monte\" data-start=\"0.3\"></h2>",
+        "reglages": [
+          {
+            "nom": "--pm-degrade",
+            "defaut": "linear-gradient(90deg, var(--c-primaire), var(--c-accent))",
+            "effet": "le dégradé"
+          }
+        ]
+      }
+    },
+    {
+      "no": "024",
+      "slug": "surlignage",
+      "categorie": "texte",
+      "nom": {
+        "fr": "Surlignage",
+        "metier": "Highlight"
+      },
+      "sens": "Un aplat de couleur se pose derrière un mot, comme au surligneur",
+      "demande": "Surligne le mot-clé à 1 s, en 0,6 s.",
+      "quand": "Faire ressortir un mot dans une phrase.",
+      "motsCles": [
+        "surligner",
+        "highlight",
+        "mot cle",
+        "marqueur",
+        "insister"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<p><span class=\"pm-m-surligne\" data-texte=\"texte\" data-start=\"1\"></span></p>",
+        "reglages": [
+          {
+            "nom": "--pm-dur",
+            "defaut": "0.6s",
+            "effet": "durée du mouvement"
+          },
+          {
+            "nom": "--pm-courbe",
+            "defaut": "var(--ease-cubic-out)",
+            "effet": "courbe (var(--ease-<type>-<mode>))"
+          }
+        ],
+        "note": "Sur un <span> autour du mot, dans le texte."
+      }
+    },
+    {
+      "no": "025",
+      "slug": "soulignement",
+      "categorie": "texte",
+      "nom": {
+        "fr": "Soulignement tracé",
+        "metier": "Underline draw"
+      },
+      "sens": "Un trait se trace sous le texte",
+      "demande": "Souligne le titre d'un trait qui se trace en 0,6 s.",
+      "quand": "Un titre de partie, une conclusion.",
+      "motsCles": [
+        "souligner",
+        "underline",
+        "trait",
+        "tracer",
+        "insister"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<h2 data-texte=\"titre\" class=\"pm-m-souligne\" data-start=\"0.5\"></h2>",
+        "reglages": [
+          {
+            "nom": "--pm-dur",
+            "defaut": "0.6s",
+            "effet": "durée du mouvement"
+          },
+          {
+            "nom": "--pm-ampleur",
+            "defaut": "0.5",
+            "effet": "épaisseur du trait, en % de la hauteur"
+          }
+        ]
+      }
+    },
+    {
+      "no": "026",
+      "slug": "courbe-douce",
+      "categorie": "finition",
+      "nom": {
+        "fr": "Accélération douce",
+        "metier": "Easing"
+      },
+      "sens": "Le mouvement accélère puis ralentit, au lieu d'aller à vitesse constante",
+      "demande": "Fais glisser la carte avec une courbe douce (sine-inout), en 0,8 s.",
+      "quand": "Tout mouvement : une vitesse constante paraît mécanique.",
+      "motsCles": [
+        "easing",
+        "courbe",
+        "douceur",
+        "ralentir",
+        "accelerer"
+      ],
+      "recette": {
+        "type": "attribut",
+        "exemple": "<h2 data-texte=\"titre\" data-start=\"0.3\" data-dur=\"0.8\" data-tween=\"--x -20cqh→0cqh sine-inout\" style=\"transform: translateX(var(--x))\"></h2>",
+        "reglages": [
+          {
+            "nom": "courbe",
+            "defaut": "sine-inout",
+            "effet": "type (quad, cubic, expo, sine…) et mode (in, out, inout)"
+          }
+        ],
+        "note": "Dans le CSS : animation-timing-function: var(--ease-sine-inout)."
+      },
+      "motionPrompt": "009"
+    },
+    {
+      "no": "027",
+      "slug": "depassement",
+      "categorie": "finition",
+      "nom": {
+        "fr": "Dépassement",
+        "metier": "Overshoot"
+      },
+      "sens": "Va un peu au-delà de sa place puis revient",
+      "demande": "Fais arriver le bouton avec un léger dépassement (back-out), en 0,6 s.",
+      "quand": "Un élément d'interface, un ton dynamique.",
+      "motsCles": [
+        "depassement",
+        "overshoot",
+        "back",
+        "revenir",
+        "dynamique"
+      ],
+      "recette": {
+        "type": "attribut",
+        "exemple": "<h2 data-texte=\"titre\" data-start=\"0.3\" data-dur=\"0.6\" data-tween=\"--x -20cqh→0cqh back-out\" style=\"transform: translateX(var(--x))\"></h2>",
+        "reglages": [
+          {
+            "nom": "courbe",
+            "defaut": "back-out",
+            "effet": "back-out : un dépassement, elastic-out : plusieurs"
+          }
+        ]
+      },
+      "motionPrompt": "010"
+    },
+    {
+      "no": "028",
+      "slug": "rebond",
+      "categorie": "finition",
+      "nom": {
+        "fr": "Rebond",
+        "metier": "Bounce"
+      },
+      "sens": "Arrive et rebondit plusieurs fois avant de s'arrêter",
+      "demande": "Fais arriver l'icône avec des rebonds (bounce-out), en 0,9 s.",
+      "quand": "Un ton ludique, un objet qui tombe.",
+      "motsCles": [
+        "rebond",
+        "bounce",
+        "rebondir",
+        "ludique",
+        "balle"
+      ],
+      "recette": {
+        "type": "attribut",
+        "exemple": "<h2 data-texte=\"titre\" data-start=\"0.3\" data-dur=\"0.9\" data-tween=\"--y -20cqh→0cqh bounce-out\" style=\"transform: translateY(var(--y))\"></h2>",
+        "reglages": [
+          {
+            "nom": "courbe",
+            "defaut": "bounce-out",
+            "effet": "courbe du rebond"
+          }
+        ]
+      }
+    },
+    {
+      "no": "029",
+      "slug": "elastique",
+      "categorie": "finition",
+      "nom": {
+        "fr": "Élastique",
+        "metier": "Elastic"
+      },
+      "sens": "Oscille autour de sa place avant de se fixer, comme un ressort",
+      "demande": "Fais arriver la pastille avec un effet élastique (elastic-out), en 1 s.",
+      "quand": "Après un arrêt brusque, des parties qui continuent de bouger.",
+      "motsCles": [
+        "elastique",
+        "ressort",
+        "osciller",
+        "elastic",
+        "follow through"
+      ],
+      "recette": {
+        "type": "attribut",
+        "exemple": "<h2 data-texte=\"titre\" data-start=\"0.3\" data-dur=\"1\" data-tween=\"--s 0→1 elastic-out\" style=\"transform: scale(var(--s))\"></h2>",
+        "reglages": [
+          {
+            "nom": "courbe",
+            "defaut": "elastic-out",
+            "effet": "courbe élastique"
+          }
+        ]
+      },
+      "motionPrompt": "122"
+    },
+    {
+      "no": "030",
+      "slug": "trajectoire",
+      "categorie": "finition",
+      "nom": {
+        "fr": "Trajectoire courbe",
+        "metier": "Motion path"
+      },
+      "sens": "Se déplace en arc au lieu d'aller en ligne droite",
+      "demande": "Fais voler l'avion en arc vers la droite, sur 60 % de la hauteur, en 2 s.",
+      "quand": "Un objet qui vole, saute ou se lance.",
+      "motsCles": [
+        "trajectoire",
+        "motion path",
+        "arc",
+        "courbe",
+        "voler",
+        "lancer"
+      ],
+      "recette": {
+        "type": "attribut",
+        "exemple": "<h2 data-texte=\"titre\" data-start=\"0.3\" data-dur=\"2\" data-tween=\"--x 0cqh→60cqh sine-inout; --y 0cqh→-20cqh sine-arch\" style=\"transform: translate(var(--x), var(--y))\"></h2>",
+        "reglages": [
+          {
+            "nom": "--x",
+            "defaut": "0cqh→60cqh sine-inout",
+            "effet": "avancée horizontale"
+          },
+          {
+            "nom": "--y",
+            "defaut": "0cqh→-20cqh sine-arch",
+            "effet": "hauteur de l'arc (arch : monte puis redescend)"
+          }
+        ]
+      },
+      "motionPrompt": "126"
+    },
+    {
+      "no": "031",
+      "slug": "morphing",
+      "categorie": "finition",
+      "nom": {
+        "fr": "Forme qui se transforme",
+        "metier": "Shape morph"
+      },
+      "sens": "Une forme se change en une autre, en douceur",
+      "demande": "Transforme le cercle en étoile en 0,8 s.",
+      "quand": "Passer d'une idée à une autre, une icône qui change d'état.",
+      "motsCles": [
+        "morphing",
+        "morph",
+        "forme",
+        "transformer",
+        "icone"
+      ],
+      "recette": {
+        "type": "combinaison",
+        "exemple": "<style>@scope { @keyframes morphe { from { d: path('M50 10 L90 50 L50 90 L10 50 Z'); } to { d: path('M50 5 L95 50 L50 95 L5 50 Z'); } } .forme { animation: morphe 0.8s var(--ease-cubic-inout) both; } }</style>\n<svg viewBox=\"0 0 100 100\" style=\"width: 30cqh\" aria-hidden=\"true\" data-start=\"0.3\" data-dur=\"0.8\"><path class=\"forme\" fill=\"var(--c-accent)\" d=\"M50 10 L90 50 L50 90 L10 50 Z\"/></svg>",
+        "reglages": [
+          {
+            "nom": "d: path(…)",
+            "defaut": "—",
+            "effet": "les deux formes doivent avoir le même nombre de points"
+          }
+        ],
+        "note": "Les coordonnées sont celles du viewBox du SVG, pas des pixels."
+      },
+      "motionPrompt": "012"
+    },
+    {
+      "no": "032",
+      "slug": "battement",
+      "categorie": "valeur",
+      "nom": {
+        "fr": "Battement",
+        "metier": "Pulse"
+      },
+      "sens": "Grossit et revient, comme un cœur qui bat",
+      "demande": "Fais battre le bouton 3 fois, de 8 %, toutes les 0,8 s.",
+      "quand": "Attirer l'œil sur un appel à l'action.",
+      "motsCles": [
+        "battement",
+        "pulse",
+        "coeur",
+        "attirer",
+        "bouton",
+        "appel"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<h2 data-texte=\"titre\" class=\"pm-m-pulse\" data-start=\"0.5\"></h2>",
+        "reglages": [
+          {
+            "nom": "--pm-dur",
+            "defaut": "0.8s",
+            "effet": "durée du mouvement"
+          },
+          {
+            "nom": "--pm-ampleur",
+            "defaut": "1.08",
+            "effet": "taille au plus fort"
+          },
+          {
+            "nom": "--pm-fois",
+            "defaut": "3",
+            "effet": "nombre de battements (jamais sans fin)"
+          }
+        ]
+      },
+      "motionPrompt": "125"
+    },
+    {
+      "no": "033",
+      "slug": "tremblement",
+      "categorie": "valeur",
+      "nom": {
+        "fr": "Tremblotement",
+        "metier": "Wiggle"
+      },
+      "sens": "Petites secousses rapides, comme un objet qui s'agite",
+      "demande": "Fais trembloter la cloche 3 fois, de 3 degrés.",
+      "quand": "Une alerte, une notification, une erreur.",
+      "motsCles": [
+        "trembler",
+        "wiggle",
+        "secouer",
+        "alerte",
+        "notification"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<h2 data-texte=\"titre\" class=\"pm-m-tremblote\" data-start=\"0.5\"></h2>",
+        "reglages": [
+          {
+            "nom": "--pm-dur",
+            "defaut": "0.4s",
+            "effet": "durée du mouvement"
+          },
+          {
+            "nom": "--pm-ampleur",
+            "defaut": "3",
+            "effet": "angle des secousses, en degrés"
+          },
+          {
+            "nom": "--pm-fois",
+            "defaut": "3",
+            "effet": "nombre de secousses"
+          }
+        ]
+      },
+      "motionPrompt": "124"
+    },
+    {
+      "no": "034",
+      "slug": "va-et-vient",
+      "categorie": "valeur",
+      "nom": {
+        "fr": "Aller-retour",
+        "metier": "Ping-pong loop"
+      },
+      "sens": "Glisse d'un côté puis revient, plusieurs fois",
+      "demande": "Fais faire 2 allers-retours à la flèche, de 6 %, en 1,2 s chacun.",
+      "quand": "Montrer un sens, inviter à glisser ou à faire défiler.",
+      "motsCles": [
+        "aller retour",
+        "ping pong",
+        "balancer",
+        "boucle",
+        "fleche"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<h2 data-texte=\"titre\" class=\"pm-m-va-vient\" data-start=\"0.5\"></h2>",
+        "reglages": [
+          {
+            "nom": "--pm-dur",
+            "defaut": "1.2s",
+            "effet": "durée du mouvement"
+          },
+          {
+            "nom": "--pm-ampleur",
+            "defaut": "6",
+            "effet": "distance, en % de la hauteur"
+          },
+          {
+            "nom": "--pm-fois",
+            "defaut": "2",
+            "effet": "nombre d'allers-retours"
+          }
+        ]
+      },
+      "motionPrompt": "127"
+    },
+    {
+      "no": "035",
+      "slug": "reflet",
+      "categorie": "valeur",
+      "nom": {
+        "fr": "Reflet lumineux",
+        "metier": "Light sweep"
+      },
+      "sens": "Une bande de lumière traverse l'élément",
+      "demande": "Fais passer un reflet sur le logo à 1 s, en 0,9 s.",
+      "quand": "Un logo, un produit, un bouton premium.",
+      "motsCles": [
+        "reflet",
+        "brillance",
+        "light sweep",
+        "lumiere",
+        "premium",
+        "shine"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<h2 data-texte=\"titre\" class=\"pm-m-reflet\" data-start=\"1\"></h2>",
+        "reglages": [
+          {
+            "nom": "--pm-dur",
+            "defaut": "0.9s",
+            "effet": "durée du mouvement"
+          },
+          {
+            "nom": "--pm-courbe",
+            "defaut": "var(--ease-cubic-inout)",
+            "effet": "courbe (var(--ease-<type>-<mode>))"
+          }
+        ]
+      },
+      "motionPrompt": "022"
+    },
+    {
+      "no": "036",
+      "slug": "secousse-impact",
+      "categorie": "valeur",
+      "nom": {
+        "fr": "Secousse d'impact",
+        "metier": "Impact shake"
+      },
+      "sens": "Tout le cadre tremble quand quelque chose atterrit",
+      "demande": "Fais trembler l'image à l'arrivée du titre, à 1,2 s, pendant 0,3 s.",
+      "quand": "Un choc, un chiffre qui tombe, une révélation forte.",
+      "motsCles": [
+        "secousse",
+        "shake",
+        "impact",
+        "trembler",
+        "choc",
+        "camera"
+      ],
+      "recette": {
+        "type": "camera",
+        "exemple": "<div data-camera=\"secousse 1.2 1.2+0.3\"><div class=\"decor\" data-decor></div></div>\n<h2 class=\"pm-m-chute\" data-texte=\"titre\" data-start=\"0.3\"></h2>",
+        "reglages": [
+          {
+            "nom": "secousse",
+            "defaut": "1.2",
+            "effet": "amplitude, en % de la hauteur"
+          },
+          {
+            "nom": "début+durée",
+            "defaut": "1.2+0.3",
+            "effet": "quand et combien de temps"
+          }
+        ]
+      },
+      "motionPrompt": "024"
+    },
+    {
+      "no": "037",
+      "slug": "zoom-sur",
+      "categorie": "valeur",
+      "nom": {
+        "fr": "Zoom sur un détail",
+        "metier": "Punch in"
+      },
+      "sens": "Le cadre se resserre vite sur un point précis",
+      "demande": "Zoome vite sur le chiffre à 2 s : 1,4 fois, en 0,3 s, centré sur 40 % de la largeur.",
+      "quand": "Insister sur un détail, une réaction, un chiffre.",
+      "motsCles": [
+        "zoom",
+        "punch in",
+        "gros plan",
+        "detail",
+        "insister"
+      ],
+      "recette": {
+        "type": "camera",
+        "exemple": "<div data-camera=\"zoom 1→1.4 2+0.3 back-out; x 50→40 2+0.3 back-out\"><h2 data-texte=\"titre\" data-start=\"0.3\"></h2></div>",
+        "reglages": [
+          {
+            "nom": "zoom",
+            "defaut": "1→1.4",
+            "effet": "grossissement"
+          },
+          {
+            "nom": "x, y",
+            "defaut": "50→40",
+            "effet": "point visé, en % de l'image"
+          }
+        ]
+      }
+    },
+    {
+      "no": "038",
+      "slug": "confettis",
+      "categorie": "valeur",
+      "nom": {
+        "fr": "Pluie de confettis",
+        "metier": "Particles"
+      },
+      "sens": "Une nuée de petits morceaux s'envole et retombe",
+      "demande": "Fais tomber des confettis sur la conclusion pendant 3 s.",
+      "quand": "Une réussite, une fête, une conclusion.",
+      "motsCles": [
+        "confettis",
+        "particules",
+        "fete",
+        "celebration",
+        "reussite"
+      ],
+      "recette": {
+        "type": "effet",
+        "exemple": "<h2 class=\"pm-m-pop\" data-texte=\"titre\" data-start=\"0.3\"></h2>\n<div data-effet=\"confettis\" data-start=\"0.5\" data-dur=\"3\"></div>",
+        "reglages": [
+          {
+            "nom": "data-dur",
+            "defaut": "3",
+            "effet": "durée de la pluie"
+          }
+        ],
+        "note": "Recette d'effet confettis : pulse-motion effet confettis."
+      },
+      "motionPrompt": "015"
+    },
+    {
+      "no": "039",
+      "slug": "fondu-enchaine",
+      "categorie": "transitions",
+      "nom": {
+        "fr": "Fondu enchaîné",
+        "metier": "Cross dissolve"
+      },
+      "sens": "La scène suivante apparaît en fondu par-dessus",
+      "demande": "Passe à la scène 3 en fondu enchaîné.",
+      "quand": "La transition par défaut, discrète.",
+      "motsCles": [
+        "fondu",
+        "enchaine",
+        "dissolve",
+        "cross",
+        "doux"
+      ],
+      "recette": {
+        "type": "transition",
+        "exemple": "\"transition\": \"fondu\"",
+        "reglages": [
+          {
+            "nom": "durée",
+            "defaut": "0.5 s",
+            "effet": "fixe pour les transitions CSS"
+          }
+        ]
+      },
+      "motionPrompt": "044"
+    },
+    {
+      "no": "040",
+      "slug": "glissement",
+      "categorie": "transitions",
+      "nom": {
+        "fr": "Glissement",
+        "metier": "Slide transition"
+      },
+      "sens": "La scène suivante glisse depuis la droite",
+      "demande": "Passe de l'étape 1 à l'étape 2 en glissement.",
+      "quand": "Avancer dans une suite (étapes).",
+      "motsCles": [
+        "glissement",
+        "slide",
+        "suivant",
+        "etape"
+      ],
+      "recette": {
+        "type": "transition",
+        "exemple": "\"transition\": \"glissement\"",
+        "reglages": [
+          {
+            "nom": "durée",
+            "defaut": "0.5 s",
+            "effet": "fixe pour les transitions CSS"
+          }
+        ]
+      }
+    },
+    {
+      "no": "041",
+      "slug": "poussee",
+      "categorie": "transitions",
+      "nom": {
+        "fr": "Poussée",
+        "metier": "Push transition"
+      },
+      "sens": "La scène suivante pousse la précédente hors du cadre",
+      "demande": "Fais pousser la scène 2 par la scène 3.",
+      "quand": "Une suite logique, un diaporama.",
+      "motsCles": [
+        "poussee",
+        "push",
+        "pousser",
+        "diaporama"
+      ],
+      "recette": {
+        "type": "transition",
+        "exemple": "\"transition\": \"poussee\"",
+        "reglages": [
+          {
+            "nom": "durée",
+            "defaut": "0.5 s",
+            "effet": "fixe pour les transitions CSS"
+          }
+        ]
+      },
+      "motionPrompt": "137"
+    },
+    {
+      "no": "042",
+      "slug": "whip-pan",
+      "categorie": "transitions",
+      "nom": {
+        "fr": "Panoramique filé",
+        "metier": "Whip pan"
+      },
+      "sens": "Un mouvement très rapide et flou emmène vers la scène suivante",
+      "demande": "Fais un whip pan entre la scène 2 et la 3.",
+      "quand": "Un changement énergique, un rythme rapide.",
+      "motsCles": [
+        "whip",
+        "pan",
+        "file",
+        "rapide",
+        "flou",
+        "energique"
+      ],
+      "recette": {
+        "type": "transition",
+        "exemple": "\"transition\": \"whip\"",
+        "reglages": [
+          {
+            "nom": "durée",
+            "defaut": "0.5 s",
+            "effet": "fixe pour les transitions CSS"
+          }
+        ]
+      },
+      "motionPrompt": "043"
+    },
+    {
+      "no": "043",
+      "slug": "balayage",
+      "categorie": "transitions",
+      "nom": {
+        "fr": "Balayage",
+        "metier": "Wipe"
+      },
+      "sens": "Un bord qui se déplace dévoile la scène suivante",
+      "demande": "Change de partie à la scène 4 avec un balayage.",
+      "quand": "Changer de partie.",
+      "motsCles": [
+        "balayage",
+        "wipe",
+        "volet",
+        "partie"
+      ],
+      "recette": {
+        "type": "transition",
+        "exemple": "\"transition\": \"balayage\"",
+        "reglages": [
+          {
+            "nom": "durée",
+            "defaut": "0.5 s",
+            "effet": "fixe pour les transitions CSS"
+          }
+        ]
+      },
+      "motionPrompt": "045"
+    },
+    {
+      "no": "044",
+      "slug": "rideau",
+      "categorie": "transitions",
+      "nom": {
+        "fr": "Rideau",
+        "metier": "Barn door"
+      },
+      "sens": "La scène suivante s'ouvre depuis le centre",
+      "demande": "Ouvre la scène 6, la conclusion, en rideau.",
+      "quand": "Une ouverture, une révélation élégante.",
+      "motsCles": [
+        "rideau",
+        "ouverture",
+        "centre",
+        "barn door"
+      ],
+      "recette": {
+        "type": "transition",
+        "exemple": "\"transition\": \"rideau\"",
+        "reglages": [
+          {
+            "nom": "durée",
+            "defaut": "0.5 s",
+            "effet": "fixe pour les transitions CSS"
+          }
+        ]
+      }
+    },
+    {
+      "no": "045",
+      "slug": "cercle",
+      "categorie": "transitions",
+      "nom": {
+        "fr": "Ouverture en cercle",
+        "metier": "Iris / mask transition"
+      },
+      "sens": "La scène suivante apparaît dans un cercle qui grandit",
+      "demande": "Ouvre la scène 2 dans un cercle qui grandit.",
+      "quand": "Un ton ludique, rétro, un focus.",
+      "motsCles": [
+        "cercle",
+        "iris",
+        "masque",
+        "rond",
+        "retro"
+      ],
+      "recette": {
+        "type": "transition",
+        "exemple": "\"transition\": \"cercle\"",
+        "reglages": [
+          {
+            "nom": "durée",
+            "defaut": "0.5 s",
+            "effet": "fixe pour les transitions CSS"
+          }
+        ]
+      },
+      "motionPrompt": "017"
+    },
+    {
+      "no": "046",
+      "slug": "volets",
+      "categorie": "transitions",
+      "nom": {
+        "fr": "Volets",
+        "metier": "Blinds transition"
+      },
+      "sens": "La scène suivante apparaît par bandes qui s'élargissent",
+      "demande": "Passe à la scène 4 avec des volets.",
+      "quand": "Un ton graphique, une présentation.",
+      "motsCles": [
+        "volets",
+        "blinds",
+        "bandes",
+        "stores"
+      ],
+      "recette": {
+        "type": "transition",
+        "exemple": "\"transition\": \"volets\"",
+        "reglages": [
+          {
+            "nom": "durée",
+            "defaut": "0.5 s",
+            "effet": "fixe pour les transitions CSS"
+          }
+        ]
+      },
+      "motionPrompt": "138"
+    },
+    {
+      "no": "047",
+      "slug": "zoom",
+      "categorie": "transitions",
+      "nom": {
+        "fr": "Zoom",
+        "metier": "Zoom transition"
+      },
+      "sens": "La scène suivante approche en grandissant",
+      "demande": "Fais approcher la scène 5 en zoom.",
+      "quand": "Entrer dans un détail.",
+      "motsCles": [
+        "zoom",
+        "approcher",
+        "agrandir"
+      ],
+      "recette": {
+        "type": "transition",
+        "exemple": "\"transition\": \"zoom\"",
+        "reglages": [
+          {
+            "nom": "durée",
+            "defaut": "0.5 s",
+            "effet": "fixe pour les transitions CSS"
+          }
+        ]
+      }
+    },
+    {
+      "no": "048",
+      "slug": "traversee",
+      "categorie": "transitions",
+      "nom": {
+        "fr": "Zoom traversant",
+        "metier": "Zoom through"
+      },
+      "sens": "On traverse la scène qui grossit pour arriver dans la suivante",
+      "demande": "Traverse la scène 1 en zoom pour arriver dans la 2.",
+      "quand": "Plonger dans le sujet, changer d'échelle.",
+      "motsCles": [
+        "traverser",
+        "zoom through",
+        "plonger",
+        "entrer"
+      ],
+      "recette": {
+        "type": "transition",
+        "exemple": "\"transition\": \"traversee\"",
+        "reglages": [
+          {
+            "nom": "durée",
+            "defaut": "0.5 s",
+            "effet": "fixe pour les transitions CSS"
+          }
+        ]
+      },
+      "motionPrompt": "020"
+    },
+    {
+      "no": "049",
+      "slug": "retournement",
+      "categorie": "transitions",
+      "nom": {
+        "fr": "Retournement",
+        "metier": "Flip"
+      },
+      "sens": "La scène suivante pivote comme une carte qu'on retourne",
+      "demande": "Retourne la scène 3 comme une carte pour montrer la réponse.",
+      "quand": "Une question puis sa réponse, un avant/après.",
+      "motsCles": [
+        "retourner",
+        "flip",
+        "carte",
+        "pivoter",
+        "reponse"
+      ],
+      "recette": {
+        "type": "transition",
+        "exemple": "\"transition\": \"retournement\"",
+        "reglages": [
+          {
+            "nom": "durée",
+            "defaut": "0.5 s",
+            "effet": "fixe pour les transitions CSS"
+          }
+        ]
+      },
+      "motionPrompt": "021"
+    },
+    {
+      "no": "050",
+      "slug": "coupe",
+      "categorie": "transitions",
+      "nom": {
+        "fr": "Coupe franche",
+        "metier": "Jump cut"
+      },
+      "sens": "Passage sec d'une scène à l'autre, sans effet",
+      "demande": "Coupe net entre la scène 2 et la 3.",
+      "quand": "Un rythme rapide, un contraste fort.",
+      "motsCles": [
+        "coupe",
+        "cut",
+        "sec",
+        "net",
+        "jump cut",
+        "smash cut"
+      ],
+      "recette": {
+        "type": "transition",
+        "exemple": "\"transition\": \"coupe\"",
+        "reglages": [
+          {
+            "nom": "durée",
+            "defaut": "0.5 s",
+            "effet": "fixe pour les transitions CSS"
+          }
+        ]
+      },
+      "motionPrompt": "041"
+    },
+    {
+      "no": "051",
+      "slug": "dissolution",
+      "categorie": "transitions",
+      "nom": {
+        "fr": "Dissolution organique",
+        "metier": "Organic dissolve"
+      },
+      "sens": "La scène se dissout par grains, avec un bord coloré",
+      "demande": "Fais une dissolution organique de 0,8 s vers la scène suivante.",
+      "quand": "Une transition douce et vivante.",
+      "motsCles": [
+        "dissolution",
+        "grain",
+        "organique",
+        "doux"
+      ],
+      "recette": {
+        "type": "transition",
+        "exemple": "\"transition\": {\"shader\":\"dissolution\",\"duree\":0.8}",
+        "reglages": [
+          {
+            "nom": "duree",
+            "defaut": "0.8",
+            "effet": "durée, de 0,1 à 5 s"
+          }
+        ],
+        "note": "Transition par shader : WebGPU nécessaire (sinon fondu, et l'export est refusé)."
+      }
+    },
+    {
+      "no": "052",
+      "slug": "ondulation",
+      "categorie": "transitions",
+      "nom": {
+        "fr": "Ondulation",
+        "metier": "Ripple"
+      },
+      "sens": "L'image ondule comme de l'eau pendant le passage",
+      "demande": "Passe au souvenir avec une ondulation de 1 s.",
+      "quand": "Un souvenir, un rêve, un changement d'époque.",
+      "motsCles": [
+        "ondulation",
+        "ripple",
+        "eau",
+        "reve",
+        "souvenir"
+      ],
+      "recette": {
+        "type": "transition",
+        "exemple": "\"transition\": {\"shader\":\"ondulation\",\"duree\":1}",
+        "reglages": [
+          {
+            "nom": "duree",
+            "defaut": "1",
+            "effet": "durée, de 0,1 à 5 s"
+          }
+        ],
+        "note": "Transition par shader : WebGPU nécessaire."
+      }
+    },
+    {
+      "no": "053",
+      "slug": "pixels",
+      "categorie": "transitions",
+      "nom": {
+        "fr": "Pixellisation",
+        "metier": "Pixelate"
+      },
+      "sens": "L'image se découpe en gros carrés, puis change",
+      "demande": "Passe à la scène suivante en pixellisant, en 0,8 s.",
+      "quand": "Univers numérique, jeu vidéo.",
+      "motsCles": [
+        "pixels",
+        "pixelate",
+        "carres",
+        "jeu",
+        "numerique"
+      ],
+      "recette": {
+        "type": "transition",
+        "exemple": "\"transition\": {\"shader\":\"pixels\",\"duree\":0.8}",
+        "reglages": [
+          {
+            "nom": "duree",
+            "defaut": "0.8",
+            "effet": "durée, de 0,1 à 5 s"
+          }
+        ],
+        "note": "Transition par shader : WebGPU nécessaire."
+      },
+      "motionPrompt": "141"
+    },
+    {
+      "no": "054",
+      "slug": "glitch",
+      "categorie": "transitions",
+      "nom": {
+        "fr": "Glitch",
+        "metier": "Glitch"
+      },
+      "sens": "L'image se brouille comme un écran en panne",
+      "demande": "Fais un glitch de 0,5 s entre les deux scènes.",
+      "quand": "Une rupture, un bug, une ambiance tech.",
+      "motsCles": [
+        "glitch",
+        "bug",
+        "panne",
+        "brouille",
+        "tech"
+      ],
+      "recette": {
+        "type": "transition",
+        "exemple": "\"transition\": {\"shader\":\"glitch\",\"duree\":0.5}",
+        "reglages": [
+          {
+            "nom": "duree",
+            "defaut": "0.5",
+            "effet": "durée, de 0,1 à 5 s"
+          }
+        ],
+        "note": "Transition par shader : WebGPU nécessaire."
+      },
+      "motionPrompt": "023"
+    },
+    {
+      "no": "055",
+      "slug": "balayage-organique",
+      "categorie": "transitions",
+      "nom": {
+        "fr": "Balayage à l'encre",
+        "metier": "Ink wipe"
+      },
+      "sens": "Un bord vivant, comme de l'encre, recouvre l'image",
+      "demande": "Passe à la scène suivante avec un balayage à l'encre de 1 s.",
+      "quand": "Un ton artistique, fluide.",
+      "motsCles": [
+        "encre",
+        "ink",
+        "liquide",
+        "organique",
+        "balayage"
+      ],
+      "recette": {
+        "type": "transition",
+        "exemple": "\"transition\": {\"shader\":\"balayage-organique\",\"duree\":1}",
+        "reglages": [
+          {
+            "nom": "duree",
+            "defaut": "1",
+            "effet": "durée, de 0,1 à 5 s"
+          }
+        ],
+        "note": "Transition par shader : WebGPU nécessaire."
+      },
+      "motionPrompt": "019"
+    },
+    {
+      "no": "056",
+      "slug": "zoom-avant",
+      "categorie": "camera",
+      "nom": {
+        "fr": "Zoom avant lent",
+        "metier": "Dolly in"
+      },
+      "sens": "La caméra s'approche lentement du sujet",
+      "demande": "Fais un zoom avant lent de 10 % pendant toute la scène.",
+      "quand": "Donner de la tension, garder une image vivante.",
+      "motsCles": [
+        "zoom avant",
+        "dolly",
+        "approcher",
+        "lent",
+        "tension"
+      ],
+      "recette": {
+        "type": "camera",
+        "exemple": "<div data-camera=\"zoom 1→1.1 0+4\"><div class=\"decor\" data-decor></div><h2 data-texte=\"titre\" data-start=\"0.3\"></h2></div>",
+        "reglages": [
+          {
+            "nom": "zoom",
+            "defaut": "1→1.1",
+            "effet": "grossissement"
+          },
+          {
+            "nom": "début+durée",
+            "defaut": "0+4",
+            "effet": "quand et combien de temps"
+          }
+        ]
+      },
+      "motionPrompt": "027"
+    },
+    {
+      "no": "057",
+      "slug": "panoramique",
+      "categorie": "camera",
+      "nom": {
+        "fr": "Panoramique",
+        "metier": "Pan"
+      },
+      "sens": "La caméra pivote de gauche à droite pour suivre la scène",
+      "demande": "Fais un panoramique de gauche à droite sur 4 s.",
+      "quand": "Découvrir un décor plus large que l'image.",
+      "motsCles": [
+        "panoramique",
+        "pan",
+        "gauche",
+        "droite",
+        "decor"
+      ],
+      "recette": {
+        "type": "camera",
+        "exemple": "<div data-camera=\"zoom 1.3→1.3 0+4; x 35→65 0+4\"><div class=\"decor\" data-decor></div><h2 data-texte=\"titre\" data-start=\"0.3\"></h2></div>",
+        "reglages": [
+          {
+            "nom": "x",
+            "defaut": "35→65",
+            "effet": "point visé, en % de la largeur"
+          },
+          {
+            "nom": "zoom",
+            "defaut": "1.3",
+            "effet": "cadre serré pour avoir de la marge"
+          }
+        ]
+      },
+      "motionPrompt": "025"
+    },
+    {
+      "no": "058",
+      "slug": "bascule",
+      "categorie": "camera",
+      "nom": {
+        "fr": "Bascule verticale",
+        "metier": "Tilt"
+      },
+      "sens": "La caméra pivote de haut en bas",
+      "demande": "Descends la caméra du ciel vers le sol, en 3 s.",
+      "quand": "Révéler quelque chose en haut ou en bas.",
+      "motsCles": [
+        "tilt",
+        "bascule",
+        "haut",
+        "bas",
+        "vertical"
+      ],
+      "recette": {
+        "type": "camera",
+        "exemple": "<div data-camera=\"zoom 1.3→1.3 0+3; y 35→65 0+3\"><div class=\"decor\" data-decor></div><h2 data-texte=\"titre\" data-start=\"0.3\"></h2></div>",
+        "reglages": [
+          {
+            "nom": "y",
+            "defaut": "35→65",
+            "effet": "point visé, en % de la hauteur"
+          }
+        ]
+      },
+      "motionPrompt": "026"
+    },
+    {
+      "no": "059",
+      "slug": "grue",
+      "categorie": "camera",
+      "nom": {
+        "fr": "Montée en grue",
+        "metier": "Crane up"
+      },
+      "sens": "La caméra s'élève en reculant pour découvrir l'ensemble",
+      "demande": "Fais monter la caméra en reculant sur 4 s.",
+      "quand": "Une ouverture, une conclusion qui prend de la hauteur.",
+      "motsCles": [
+        "grue",
+        "crane",
+        "monter",
+        "elever",
+        "ensemble"
+      ],
+      "recette": {
+        "type": "camera",
+        "exemple": "<div data-camera=\"zoom 1.4→1 0+4; y 70→50 0+4\"><div class=\"decor\" data-decor></div><h2 data-texte=\"titre\" data-start=\"0.3\"></h2></div>",
+        "reglages": [
+          {
+            "nom": "zoom",
+            "defaut": "1.4→1",
+            "effet": "recul"
+          },
+          {
+            "nom": "y",
+            "defaut": "70→50",
+            "effet": "montée"
+          }
+        ]
+      },
+      "motionPrompt": "031"
+    },
+    {
+      "no": "060",
+      "slug": "plan-incline",
+      "categorie": "camera",
+      "nom": {
+        "fr": "Plan incliné",
+        "metier": "Dutch angle"
+      },
+      "sens": "Le cadre penche en diagonale",
+      "demande": "Penche le cadre de 6 degrés pendant la scène d'alerte.",
+      "quand": "Un malaise, une tension, un ton décalé.",
+      "motsCles": [
+        "incline",
+        "dutch",
+        "pencher",
+        "diagonale",
+        "tension"
+      ],
+      "recette": {
+        "type": "camera",
+        "exemple": "<div data-camera=\"rotation 0→6 0+1\"><div class=\"decor\" data-decor></div><h2 data-texte=\"titre\" data-start=\"0.3\"></h2></div>",
+        "reglages": [
+          {
+            "nom": "rotation",
+            "defaut": "0→6",
+            "effet": "angle, en degrés"
+          }
+        ]
+      },
+      "motionPrompt": "036"
+    },
+    {
+      "no": "061",
+      "slug": "mise-au-point",
+      "categorie": "camera",
+      "nom": {
+        "fr": "Bascule de mise au point",
+        "metier": "Rack focus"
+      },
+      "sens": "La netteté passe du premier plan au fond",
+      "demande": "Passe la netteté du premier plan au fond à 2 s, en 0,6 s.",
+      "quand": "Diriger le regard d'un élément à un autre.",
+      "motsCles": [
+        "mise au point",
+        "rack focus",
+        "flou",
+        "net",
+        "premier plan"
+      ],
+      "recette": {
+        "type": "combinaison",
+        "exemple": "<div class=\"decor\" data-decor data-start=\"2\" data-dur=\"0.6\" data-tween=\"--flou 1cqh→0cqh\" style=\"filter: blur(var(--flou))\"></div>\n<h2 data-texte=\"titre\" data-start=\"2\" data-dur=\"0.6\" data-tween=\"--flou 0cqh→1cqh\" style=\"filter: blur(var(--flou))\"></h2>",
+        "reglages": [
+          {
+            "nom": "--flou",
+            "defaut": "0cqh→1cqh",
+            "effet": "flou du plan qui devient flou ; l'inverse sur l'autre"
+          }
+        ]
+      },
+      "motionPrompt": "033"
+    },
+    {
+      "no": "062",
+      "slug": "epaule",
+      "categorie": "camera",
+      "nom": {
+        "fr": "Caméra à l'épaule",
+        "metier": "Handheld"
+      },
+      "sens": "Un léger flottement, comme une caméra tenue à la main",
+      "demande": "Ajoute un léger effet caméra à l'épaule pendant 6 s.",
+      "quand": "Un ton documentaire, vivant, proche.",
+      "motsCles": [
+        "epaule",
+        "handheld",
+        "main",
+        "documentaire",
+        "flottement"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<div data-camera=\"zoom 1.05→1.05 0+6\"><div class=\"pm-m-epaule\" data-start=\"0\" data-dur=\"6\"><div class=\"decor\" data-decor></div><h2 data-texte=\"titre\" data-start=\"0.3\"></h2></div></div>",
+        "reglages": [
+          {
+            "nom": "--pm-dur",
+            "defaut": "6s",
+            "effet": "durée du mouvement"
+          },
+          {
+            "nom": "--pm-ampleur",
+            "defaut": "0.6",
+            "effet": "amplitude du flottement, en % de la hauteur"
+          }
+        ],
+        "note": "Sur un conteneur placé dans le conteneur data-camera ; un léger zoom évite de voir les bords."
+      },
+      "motionPrompt": "034"
+    },
+    {
+      "no": "063",
+      "slug": "parallaxe",
+      "categorie": "camera",
+      "nom": {
+        "fr": "Parallaxe",
+        "metier": "Parallax"
+      },
+      "sens": "Les plans proches bougent plus vite que les plans lointains",
+      "demande": "Fais un travelling avec parallaxe : fond à 20 %, collines à 60 %.",
+      "quand": "Donner de la profondeur à un décor.",
+      "motsCles": [
+        "parallaxe",
+        "parallax",
+        "profondeur",
+        "plans",
+        "travelling"
+      ],
+      "recette": {
+        "type": "camera",
+        "exemple": "<div data-camera=\"zoom 1.2→1.2 0+4; x 40→60 0+4\"><div class=\"decor\" data-decor data-profondeur=\"0.2\"></div><div class=\"decor\" data-decor data-profondeur=\"0.6\"></div><h2 data-texte=\"titre\" data-start=\"0.3\"></h2></div>",
+        "reglages": [
+          {
+            "nom": "data-profondeur",
+            "defaut": "0.2 / 0.6",
+            "effet": "1 suit la caméra, 0 reste fixe"
+          }
+        ]
+      },
+      "motionPrompt": "016"
+    },
+    {
+      "no": "064",
+      "slug": "vertigo",
+      "categorie": "camera",
+      "nom": {
+        "fr": "Effet vertigo",
+        "metier": "Dolly zoom"
+      },
+      "sens": "Le sujet garde sa taille pendant que le fond se déforme",
+      "demande": "Fais un effet vertigo : le fond grossit de 40 % en 2 s, le titre ne bouge pas.",
+      "quand": "Un choc, une prise de conscience.",
+      "motsCles": [
+        "vertigo",
+        "dolly zoom",
+        "choc",
+        "fond",
+        "vertige"
+      ],
+      "recette": {
+        "type": "camera",
+        "exemple": "<div data-camera=\"zoom 1→1.4 0.5+2 sine-inout\"><div class=\"decor\" data-decor></div></div>\n<h2 data-texte=\"titre\" data-start=\"0.3\"></h2>",
+        "reglages": [
+          {
+            "nom": "zoom",
+            "defaut": "1→1.4",
+            "effet": "grossissement du fond"
+          }
+        ],
+        "note": "Le sujet est hors du conteneur caméra : il garde sa taille."
+      },
+      "motionPrompt": "032"
+    },
+    {
+      "no": "065",
+      "slug": "ralenti",
+      "categorie": "temps",
+      "nom": {
+        "fr": "Ralenti",
+        "metier": "Slow motion"
+      },
+      "sens": "L'action se joue plus lentement",
+      "demande": "Passe la chute au ralenti, de 1 s à 3 s, à moitié de la vitesse.",
+      "quand": "Savourer un geste, un impact.",
+      "motsCles": [
+        "ralenti",
+        "slow motion",
+        "lent",
+        "savourer"
+      ],
+      "recette": {
+        "type": "temps",
+        "exemple": "<div data-vitesse=\"1+2 x0.5\"><h2 class=\"pm-m-chute\" data-texte=\"titre\" data-start=\"0.8\"></h2></div>",
+        "reglages": [
+          {
+            "nom": "data-vitesse",
+            "defaut": "1+2 x0.5",
+            "effet": "début+durée et vitesse"
+          }
+        ]
+      },
+      "motionPrompt": "037"
+    },
+    {
+      "no": "066",
+      "slug": "rampe",
+      "categorie": "temps",
+      "nom": {
+        "fr": "Variation de vitesse",
+        "metier": "Speed ramp"
+      },
+      "sens": "L'action accélère puis ralentit dans le même plan",
+      "demande": "Accélère l'entrée ×2 pendant 1 s, puis ralentis à moitié pendant 1 s.",
+      "quand": "Un rythme dynamique, une mise en valeur.",
+      "motsCles": [
+        "speed ramp",
+        "vitesse",
+        "accelerer",
+        "ralentir",
+        "dynamique"
+      ],
+      "recette": {
+        "type": "temps",
+        "exemple": "<div data-vitesse=\"0.5+1 x2; 1.5+1 x0.5\"><h2 class=\"pm-m-glisse-gauche\" data-texte=\"titre\" data-start=\"0.5\" style=\"--pm-dur: 2s\"></h2></div>",
+        "reglages": [
+          {
+            "nom": "data-vitesse",
+            "defaut": "0.5+1 x2; 1.5+1 x0.5",
+            "effet": "plages successives, sans chevauchement"
+          }
+        ]
+      },
+      "motionPrompt": "038"
+    },
+    {
+      "no": "067",
+      "slug": "arret-sur-image",
+      "categorie": "temps",
+      "nom": {
+        "fr": "Arrêt sur image",
+        "metier": "Freeze frame"
+      },
+      "sens": "L'action s'arrête un instant, puis reprend",
+      "demande": "Fige l'image à 1,2 s pendant 1,5 s, en la passant en gris.",
+      "quand": "Un moment clé, un « c'est là que… ».",
+      "motsCles": [
+        "arret sur image",
+        "freeze",
+        "figer",
+        "pause",
+        "moment cle"
+      ],
+      "recette": {
+        "type": "temps",
+        "exemple": "<div data-gel=\"1.2+1.5\" data-camera=\"saturation 1→0.4 1.2+0.3\"><h2 class=\"pm-m-glisse-gauche\" data-texte=\"titre\" data-start=\"0.5\" style=\"--pm-dur: 1.5s\"></h2></div>",
+        "reglages": [
+          {
+            "nom": "data-gel",
+            "defaut": "1.2+1.5",
+            "effet": "début+durée du gel"
+          },
+          {
+            "nom": "saturation",
+            "defaut": "1→0.4",
+            "effet": "gris pendant le gel (facultatif)"
+          }
+        ]
+      },
+      "motionPrompt": "040"
+    },
+    {
+      "no": "068",
+      "slug": "accelere",
+      "categorie": "temps",
+      "nom": {
+        "fr": "Accéléré",
+        "metier": "Fast forward"
+      },
+      "sens": "L'action passe beaucoup plus vite",
+      "demande": "Passe la préparation en accéléré ×4 pendant 2 s.",
+      "quand": "Résumer une étape longue.",
+      "motsCles": [
+        "accelere",
+        "fast forward",
+        "rapide",
+        "resumer",
+        "time lapse"
+      ],
+      "recette": {
+        "type": "temps",
+        "exemple": "<div data-vitesse=\"0.5+2 x4\"><h2 class=\"pm-m-va-vient\" data-texte=\"titre\" data-start=\"0.5\" style=\"--pm-fois: 6\"></h2></div>",
+        "reglages": [
+          {
+            "nom": "data-vitesse",
+            "defaut": "0.5+2 x4",
+            "effet": "début+durée et vitesse"
+          }
+        ]
+      }
+    }
+  ]
+}
