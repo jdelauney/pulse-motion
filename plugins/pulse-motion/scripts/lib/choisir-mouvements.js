@@ -11,10 +11,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { calculerMinutage } = require('../../moteur/minutage.js');
 
-// Mise en page des démonstrations, lisibles même en vignette : contenu centré, titre et texte grands ; un motif à la couleur
-// de la charte sur chaque décor vide de l'extrait, pour voir bouger la caméra (un plan lointain porte un motif plus large).
+// Mise en page des démonstrations, lisibles même en vignette : contenu centré dans un conteneur qui couvre la scène (la
+// section elle-même garde son affichage, que le moteur règle), titre et texte grands ; un motif à la couleur de la charte sur
+// chaque décor vide de l'extrait, pour voir bouger la caméra (un plan lointain porte un motif plus large).
 const DECOR = `<style>@scope {
-  :scope { display: grid !important; place-items: center; align-content: center; gap: 2cqh; padding: 6cqh !important; text-align: center; }
+  .pm-demo { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: 2cqh; padding: 6cqh; text-align: center; }
   h2 { font-size: 11cqh !important; line-height: 1.1; margin: 0; }
   p { font-size: 6cqh !important; margin: 0; }
   .decor:empty { position: absolute; inset: -10%; pointer-events: none;
@@ -27,7 +28,7 @@ function projetDeDemos(dossier, demos, { style = 'clair-pedagogique', ratio = '1
   fs.mkdirSync(path.join(dossier, 'scenes'), { recursive: true });
   const scenes = demos.map((d) => {
     const fichier = `scenes/${d.id}.html`;
-    fs.writeFileSync(path.join(dossier, fichier), `<section data-scene="${d.id}">\n${DECOR}\n${d.html}\n</section>\n`);
+    fs.writeFileSync(path.join(dossier, fichier), `<section data-scene="${d.id}">\n${DECOR}\n<div class="pm-demo">\n${d.html}\n</div>\n</section>\n`);
     return { id: d.id, fichier, duree: d.duree, textes: d.textes || {}, transition: d.transition || 'coupe' };
   });
   const deroule = { version: 1, titre, genre: 'formation', parcours: 'rapide', format: { ratio, ips: 30 }, style, scenes };

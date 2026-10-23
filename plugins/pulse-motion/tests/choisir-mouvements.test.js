@@ -68,3 +68,23 @@ test('choisir : catégorie inconnue', async () => {
   assert.equal(r.ok, false);
   assert.match(r.message, /Catégorie inconnue « cuisine »/);
 });
+
+const { trouverNavigateur } = require('./aide/navigateur.js');
+const navigateur = trouverNavigateur();
+test('démonstrations : une seule scène affichée à la fois (la mise en page ne force pas leur affichage)', { skip: !navigateur && 'Chrome ou Edge introuvable' }, async () => {
+  const { assembler } = require('../scripts/assembler.js');
+  const { ouvrirPage } = require('../scripts/lib/cdp.js');
+  const { pathToFileURL } = require('node:url');
+  const dir = dossierTemporaire('pm-demos-');
+  const { plages } = projetDeMouvements(dir, charger().mouvements.slice(0, 4));
+  const r = assembler({ dossier: dir });
+  const page = await ouvrirPage({ navigateur, largeur: 640, hauteur: 400 });
+  try {
+    await page.aller(pathToFileURL(r.fichier).href);
+    const visibles = await page.evaluer(`M.pret.then(() => { M.rendre(${(plages[2].debut + plages[2].fin) / 2});
+      return Array.from(document.querySelectorAll('section[data-scene]')).filter((s) => getComputedStyle(s).display !== 'none').map((s) => s.dataset.scene); })`);
+    assert.deepEqual(visibles, ['m003']);
+  } finally {
+    await page.fermer();
+  }
+});
