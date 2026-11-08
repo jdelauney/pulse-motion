@@ -60,3 +60,20 @@ test("chaque page qui montre des aperçus charge js/galerie.js (sinon ses vidéo
   assert.ok(avecApercus.includes("catalogue.html") && avecApercus.includes("mouvements.html"));
   for (const p of avecApercus) assert.match(fs.readFileSync(path.join(DOCS, p), "utf8"), /<script src="js\/galerie\.js" defer><\/script>/, p);
 });
+
+test("idées : les sept modèles, chacun avec au moins deux phrases, sa vidéo et sa séance", () => {
+  const b = blocs().idees;
+  const modeles = G.modelesVideo();
+  assert.equal(modeles.length, 7);
+  for (const m of modeles) {
+    const debut = b.indexOf(`<section class="idee-modele" id="modele-${m.id}">`);
+    assert.ok(debut >= 0, m.id);
+    const section = b.slice(debut, b.indexOf("</section>", debut));
+    assert.ok((section.match(/<pre class="commande">/g) || []).length >= 2, `${m.id} : au moins deux phrases`);
+    const [mp4, jpg] = G.fichiersExemple(m);
+    assert.match(section, new RegExp(`src="${mp4}"`), m.id);
+    assert.match(section, new RegExp(`poster="${jpg}"`), m.id);
+    assert.match(section, /Comment cette vidéo a été faite/, m.id);
+  }
+  assert.match(b, /idee-video-verticale/, "les modèles verticaux ont un cadre vertical");
+});

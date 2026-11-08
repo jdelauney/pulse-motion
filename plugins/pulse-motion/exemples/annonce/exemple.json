@@ -1,0 +1,18 @@
+{
+  "modele": "annonce",
+  "phrase": "/pulse-motion:creer l'annonce de l'ouverture de notre nouvelle boutique de vélos, le 15 mars",
+  "reponses": {
+    "duree": "30 s",
+    "public": "Grand public",
+    "parcours": "Rapide",
+    "ajouter": "Rien pour l'instant",
+    "musique": "Une musique composée pour la vidéo",
+    "voix": "Pas de voix",
+    "sousTitres": "Sans voix, pas de sous-titres",
+    "style": "energique"
+  },
+  "retouches": [],
+  "corrections": [
+    "J'ai allongé l'accroche à 4 s pour laisser le temps de lire ses 8 mots."
+  ]
+}

@@ -1,0 +1,106 @@
+{
+  "id": "pitch",
+  "nom": "Pitch",
+  "genre": "produit",
+  "description": "Convaincre en une minute : le problème, la solution, le marché en un chiffre, le modèle, l'équipe, la demande.",
+  "pourQui": "Porteurs de projet, jeunes entreprises : un concours, un jury, des investisseurs, un appel à projets.",
+  "format": "16:9",
+  "duree": 60,
+  "styles": [
+    "tech-sombre",
+    "minimal",
+    "editorial"
+  ],
+  "musique": {
+    "ambiance": "tech"
+  },
+  "sousTitres": true,
+  "phrases": [
+    "/pulse-motion:creer le pitch de Potagine, une plateforme qui relie les maraîchers aux cantines scolaires, pour nos investisseurs",
+    "/pulse-motion:creer un pitch d'une minute pour présenter notre projet de recyclerie au jury du concours",
+    "/pulse-motion:creer le pitch de notre application de covoiturage entre collègues"
+  ],
+  "variantes": {
+    "grandPublic": "/pulse-motion:creer le pitch de notre campagne de financement participatif pour une épicerie solidaire",
+    "professionnels": "/pulse-motion:creer le pitch d'un logiciel de maintenance pour des directeurs d'usine",
+    "eleves": "/pulse-motion:creer le pitch de notre mini-entreprise pour le concours du lycée"
+  },
+  "scenes": [
+    {
+      "id": "probleme",
+      "type": "alerte",
+      "intention": "le problème, vécu et mesurable",
+      "duree": 8,
+      "transition": "fondu",
+      "textes": {
+        "titre": "le problème en quelques mots",
+        "texte": "qui le vit et ce qu'il coûte"
+      }
+    },
+    {
+      "id": "solution",
+      "type": "titre",
+      "intention": "la solution : le nom du projet",
+      "duree": 8,
+      "transition": "zoom",
+      "textes": {
+        "etiquette": "« Notre solution »",
+        "titre": "le nom du projet",
+        "sous": "ce qu'il fait, en une phrase"
+      },
+      "mouvements": [
+        "#004"
+      ]
+    },
+    {
+      "id": "marche",
+      "type": "chiffre",
+      "intention": "la taille du marché en un chiffre",
+      "duree": 9,
+      "transition": "glissement",
+      "textes": {
+        "titre": "ce que mesure le chiffre",
+        "unite": "l'unité (M€, %, k)",
+        "legende": "le marché visé, en une phrase"
+      },
+      "effet": "etincelles"
+    },
+    {
+      "id": "modele",
+      "type": "schema",
+      "intention": "comment le projet gagne sa vie",
+      "duree": 10,
+      "transition": "glissement",
+      "textes": {
+        "titre": "« Notre modèle »",
+        "a": "qui paie",
+        "b": "pour quoi",
+        "c": "ce que ça rapporte"
+      }
+    },
+    {
+      "id": "equipe",
+      "type": "liste",
+      "intention": "l'équipe et ses forces",
+      "duree": 12,
+      "transition": "glissement",
+      "textes": {
+        "titre": "« L'équipe »",
+        "point1": "première personne et son rôle",
+        "point2": "deuxième",
+        "point3": "troisième (à retirer si l'équipe est plus petite)"
+      }
+    },
+    {
+      "id": "demande",
+      "type": "conclusion",
+      "intention": "ce qu'on demande",
+      "duree": 9,
+      "transition": "fondu",
+      "textes": {
+        "titre": "la demande (montant, partenaires, soutien)",
+        "sous": "pour faire quoi, et le contact"
+      }
+    }
+  ]
+}

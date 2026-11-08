@@ -162,6 +162,36 @@ function fabriquerPersonnages() {
   });
 }
 
+// ---------------------------------------------------------------- Exemples des modèles de vidéo (page Idées)
+
+const modelesVideo = () => require(path.join(PLUGIN, "scripts", "modeles.js")).listerModeles();
+const dossierExemple = (m) => path.join(PLUGIN, "exemples", m.exemple || m.id);
+// « La chaîne du froid » (formation courte) a déjà sa vidéo sans voix sur le site (média chaine-du-froid de medias.js).
+const DEJA_PUBLIE = { "chaine-du-froid": ["medias/chaine-du-froid.mp4", "assets/captures/chaine-du-froid-affiche.jpg"] };
+/** [mp4, jpg] de l'exemple d'un modèle (relatifs à docs/). */
+const fichiersExemple = (m) => DEJA_PUBLIE[m.exemple || m.id] || [`medias/exemples/${m.exemple || m.id}.mp4`, `medias/exemples/${m.exemple || m.id}.jpg`];
+const exemplesAFabriquer = () => modelesVideo().filter((m) => !DEJA_PUBLIE[m.exemple || m.id]);
+
+/** Exporte chaque exemple (sans voix ni sous-titres, ils n'en ont pas) en fidèle 720p, avec sa musique ; une affiche par vidéo. */
+function fabriquerExemples() {
+  const ffmpeg = outils();
+  const { calculerMinutage } = require(path.join(PLUGIN, "moteur", "minutage.js"));
+  for (const m of exemplesAFabriquer()) {
+    avecDossier(`pm-galerie-exemple-`, (dossier) => {
+      const source = dossierExemple(m);
+      fs.cpSync(source, dossier, { recursive: true, filter: (f) => !/^(sortie|\.pulse-motion|\.historique|exemple\.json)([\/]|$)/.test(path.relative(source, f)) });
+      const video = exporter(dossier);
+      const [mp4, jpg] = fichiersExemple(m);
+      fs.mkdirSync(path.dirname(path.join(DOCS, mp4)), { recursive: true });
+      fs.copyFileSync(video, path.join(DOCS, mp4));
+      // Affiche : la troisième scène presque finie (ses textes posés).
+      const d = JSON.parse(fs.readFileSync(path.join(dossier, "deroule.json"), "utf8"));
+      const s = calculerMinutage(d.scenes, {}).scenes[Math.min(2, d.scenes.length - 1)];
+      execFileSync(ffmpeg, ["-y", "-loglevel", "error", "-ss", String(s.debut + (s.fin - s.debut) * 0.85), "-i", video, "-frames:v", "1", "-vf", "scale='min(1280,iw)':-2", "-q:v", "4", path.join(DOCS, jpg)]);
+    });
+  }
+}
+
 /** Lots de la galerie, au format de MEDIAS (outils/site/medias.js). Leurs sources comprennent ce fichier et la chaîne
  * d'export : une démo ou un réglage d'export changé refait les aperçus. */
 const FABRICATION = [__filename, path.join(PLUGIN, "scripts", "assembler.js"), path.join(PLUGIN, "scripts", "exporter.js"), path.join(PLUGIN, "scripts", "lib", "choisir-mouvements.js")];
@@ -174,7 +204,9 @@ const LOTS = [
     sources: [path.join(PLUGIN, "effets"), path.join(PLUGIN, "moteur"), path.join(PLUGIN, "styles", "tech-sombre"), ...FABRICATION], fabriquer: fabriquerEffets },
   { id: "galerie-personnages", sortie: `${GALERIE}/personnages/coucou.mp4`, sorties: () => clipsPersonnages().flatMap(fichiersClip),
     sources: [path.join(PLUGIN, "personnages"), path.join(PLUGIN, "moteur"), path.join(PLUGIN, "styles", "tech-sombre"), ...FABRICATION], fabriquer: fabriquerPersonnages },
+  { id: "exemples", sortie: "medias/exemples/pitch.mp4", sorties: () => exemplesAFabriquer().flatMap(fichiersExemple),
+    sources: [path.join(PLUGIN, "exemples"), path.join(PLUGIN, "moteur"), path.join(PLUGIN, "styles"), ...FABRICATION], fabriquer: fabriquerExemples },
 ];
 
 module.exports = { LOTS, GALERIE, dictionnaire, STYLES_LIVRES, scenesDuStyle, effets, clipsPersonnages, demoEffet,
-  fichiersMouvement, fichiersStyle, fichiersEffet, fichiersClip, decouper };
+  fichiersMouvement, fichiersStyle, fichiersEffet, fichiersClip, decouper, modelesVideo, dossierExemple, fichiersExemple, exemplesAFabriquer };

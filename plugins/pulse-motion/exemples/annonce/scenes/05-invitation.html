@@ -1,0 +1,12 @@
+<!-- Scène « invitation » (6,5 s, rythme vif) : d'après la scène toute faite « conclusion » du style energique, sans logo.
+     Le titre tombe, les confettis éclatent derrière lui à son arrivée, puis le bandeau entre avec un carillon.
+     Dernière scène de la vidéo : les bandes s'arrêtent à 5,5 s (image finale stable d'1 s). -->
+<section data-scene="invitation" class="centre">
+  <div class="decor">
+    <span class="bandes" data-decor data-start="0" data-dur="5.5" data-tween="--x 0cqh→-18cqh sine-out"></span>
+  </div>
+  <h2 id="titre" class="cri tombe" data-texte="titre" data-start="0.1" data-dur="0.7"></h2>
+  <div data-effet="confettis" data-ancre="#titre" data-calque="arriere" data-start="#titre:fin" data-dur="0.5"
+       data-reglages="nombre: 150; couleur1: primaire; couleur2: accent; couleur3: #ffffff"></div>
+  <p id="sous" class="bandeau volet" data-texte="sous" data-start="#titre:fin+0.1" data-dur="0.45" data-son="carillon"></p>
+</section>

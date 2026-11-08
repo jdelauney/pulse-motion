@@ -1,0 +1,99 @@
+{
+  "version": 1,
+  "titre": "Potagine, le pitch",
+  "genre": "produit",
+  "parcours": "rapide",
+  "format": {
+    "ratio": "16:9",
+    "ips": 30
+  },
+  "style": "tech-sombre",
+  "musique": {
+    "generee": "tech",
+    "tempo": 120,
+    "volume": 0.8
+  },
+  "scenes": [
+    {
+      "id": "probleme",
+      "type": "alerte",
+      "fichier": "scenes/01-probleme.html",
+      "duree": 8,
+      "transition": "fondu",
+      "intention": "alerte – le problème, vécu et mesurable",
+      "textes": {
+        "titre": "Des cantines loin des producteurs",
+        "texte": "Les maraîchers voisins vendent peu aux écoles : trop de démarches"
+      }
+    },
+    {
+      "id": "solution",
+      "type": "titre",
+      "fichier": "scenes/02-solution.html",
+      "duree": 8,
+      "transition": "zoom",
+      "intention": "titre – la solution : le nom du projet",
+      "textes": {
+        "etiquette": "Notre solution",
+        "titre": "Potagine",
+        "sous": "Les légumes du coin, commandés en 3 clics"
+      },
+      "mouvements": [
+        "#004"
+      ]
+    },
+    {
+      "id": "marche",
+      "type": "chiffre",
+      "fichier": "scenes/03-marche.html",
+      "duree": 9,
+      "transition": "glissement",
+      "intention": "chiffre – la taille du marché en un chiffre (valeur affichée : 450)",
+      "textes": {
+        "titre": "Repas servis chaque jour dans la région",
+        "unite": "k",
+        "legende": "autant d’assiettes à remplir de produits locaux"
+      }
+    },
+    {
+      "id": "modele",
+      "type": "schema",
+      "fichier": "scenes/04-modele.html",
+      "duree": 10,
+      "transition": "glissement",
+      "intention": "schema – comment le projet gagne sa vie",
+      "textes": {
+        "titre": "Notre modèle",
+        "a": "Les cantines s’abonnent",
+        "b": "Commandes groupées",
+        "c": "5 % sur chaque vente"
+      }
+    },
+    {
+      "id": "equipe",
+      "type": "liste",
+      "fichier": "scenes/05-equipe.html",
+      "duree": 12,
+      "transition": "glissement",
+      "intention": "liste – l'équipe et ses forces",
+      "textes": {
+        "titre": "L’équipe",
+        "point1": "Une ancienne maraîchère, à la production",
+        "point2": "Un chef de cuisine collective, aux ventes",
+        "point3": "Une développeuse, à la plateforme"
+      }
+    },
+    {
+      "id": "demande",
+      "type": "conclusion",
+      "fichier": "scenes/06-demande.html",
+      "duree": 9,
+      "transition": "fondu",
+      "intention": "conclusion – ce qu'on demande",
+      "textes": {
+        "titre": "Nous levons 400 000 €",
+        "sous": "Pour ouvrir 3 nouvelles régions en 2027"
+      }
+    }
+  ]
+}

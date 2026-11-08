@@ -1,0 +1,11 @@
+<!-- Scène « appel » (style minimal, d'après la scène toute faite « conclusion ») : l'appel à l'action. Durée : 6 s.
+     Textes : titre, sous. Pas de logo dans ce projet.
+     Dernière scène de la vidéo : décor arrêté à 5 s (durée − 1 s), image finale stable. -->
+<section data-scene="appel">
+  <div class="decor">
+    <span class="repere"></span>
+    <span class="marqueur" data-decor data-start="0" data-dur="5" data-tween="--x 0cqw→60cqw expo-inout"></span>
+  </div>
+  <h2 id="titre" class="titre revele" data-texte="titre" data-start="0.2" data-dur="0.5" data-son="carillon" data-son-volume="0.7"></h2>
+  <p id="sous" class="sous-titre monte" data-texte="sous" data-start="#titre:fin+0.2" data-dur="0.45"></p>
+</section>

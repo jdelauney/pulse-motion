@@ -1,0 +1,93 @@
+{
+  "id": "publication-sociale",
+  "nom": "Publication pour les réseaux",
+  "genre": "social",
+  "description": "Une vidéo verticale de 30 secondes qui accroche en 2 secondes : un chiffre, trois idées, une astuce, la chute.",
+  "pourQui": "Communicants, créateurs, commerces : une publication pour Instagram, TikTok ou LinkedIn.",
+  "format": "9:16",
+  "duree": 30,
+  "styles": [
+    "energique",
+    "minimal",
+    "editorial"
+  ],
+  "musique": {
+    "ambiance": "entrainant"
+  },
+  "sousTitres": true,
+  "phrases": [
+    "/pulse-motion:creer une vidéo pour les réseaux : 3 astuces pour économiser l'eau à la maison",
+    "/pulse-motion:creer une publication Instagram sur les bienfaits de la marche après le repas",
+    "/pulse-motion:creer une vidéo LinkedIn : 3 conseils pour des réunions plus courtes"
+  ],
+  "variantes": {
+    "grandPublic": "/pulse-motion:creer une vidéo pour les réseaux : 3 gestes pour mieux dormir",
+    "professionnels": "/pulse-motion:creer une vidéo LinkedIn : 3 erreurs à éviter dans un devis, pour des artisans",
+    "eleves": "/pulse-motion:creer une vidéo pour les réseaux : 3 méthodes pour réviser efficacement, pour des étudiants"
+  },
+  "scenes": [
+    {
+      "id": "accroche",
+      "type": "titre",
+      "intention": "l'accroche : la promesse se lit dès les 2 premières secondes",
+      "duree": 5,
+      "transition": "coupe",
+      "textes": {
+        "etiquette": "le thème en un ou deux mots",
+        "titre": "la promesse ou la question choc",
+        "sous": "trois mots de plus, ou rien"
+      },
+      "mouvements": [
+        "#001"
+      ]
+    },
+    {
+      "id": "chiffre",
+      "type": "chiffre",
+      "intention": "un chiffre qui surprend",
+      "duree": 6,
+      "transition": "whip",
+      "textes": {
+        "titre": "ce que mesure le chiffre",
+        "unite": "l'unité (%, L, min)",
+        "legende": "pourquoi c'est surprenant"
+      }
+    },
+    {
+      "id": "idees",
+      "type": "liste",
+      "intention": "les 3 idées, courtes",
+      "duree": 9,
+      "transition": "whip",
+      "textes": {
+        "titre": "« 3 astuces »",
+        "point1": "première idée, 5 mots environ",
+        "point2": "deuxième idée",
+        "point3": "troisième idée"
+      }
+    },
+    {
+      "id": "astuce",
+      "type": "etape",
+      "intention": "l'astuce à essayer dès aujourd'hui",
+      "duree": 6,
+      "transition": "whip",
+      "textes": {
+        "numero": "« 1 » (ou le jour : « J1 »)",
+        "titre": "l'astuce en quelques mots",
+        "texte": "comment s'y prendre, en une phrase"
+      }
+    },
+    {
+      "id": "chute",
+      "type": "conclusion",
+      "intention": "la chute et l'invitation",
+      "duree": 6,
+      "transition": "fondu",
+      "textes": {
+        "titre": "la phrase à retenir",
+        "sous": "l'invitation (« Partagez à qui en a besoin »)"
+      }
+    }
+  ]
+}

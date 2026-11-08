@@ -1,0 +1,16 @@
+{
+  "modele": "presentation-produit",
+  "phrase": "/pulse-motion:creer la présentation de Plannette, une application qui organise les plannings d'une petite équipe",
+  "reponses": {
+    "duree": "45 s",
+    "public": "Grand public",
+    "parcours": "Rapide",
+    "ajouter": "Rien pour l'instant",
+    "musique": "Une musique composée pour la vidéo",
+    "voix": "Pas de voix",
+    "sousTitres": "Sans voix, pas de sous-titres",
+    "style": "minimal"
+  },
+  "retouches": [],
+  "corrections": []
+}

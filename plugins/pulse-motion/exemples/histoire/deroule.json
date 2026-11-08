@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "titre": "Le jardin des Tilleuls",
+  "genre": "storytelling",
+  "parcours": "rapide",
+  "format": {
+    "ratio": "16:9",
+    "ips": 30
+  },
+  "style": "editorial",
+  "musique": {
+    "generee": "inspirant",
+    "tempo": 120,
+    "volume": 0.8
+  },
+  "scenes": [
+    {
+      "id": "situation",
+      "type": "titre",
+      "fichier": "scenes/01-situation.html",
+      "duree": 8,
+      "transition": "fondu",
+      "intention": "titre – la situation de départ",
+      "textes": {
+        "etiquette": "Quartier des Tilleuls",
+        "titre": "Le jardin des Tilleuls",
+        "sous": "Au départ, un terrain vague entre deux immeubles"
+      },
+      "mouvements": [
+        "#017"
+      ]
+    },
+    {
+      "id": "difficulte",
+      "type": "alerte",
+      "fichier": "scenes/02-difficulte.html",
+      "duree": 10,
+      "transition": "glissement",
+      "intention": "alerte – la difficulté qui bloque tout",
+      "textes": {
+        "titre": "Un lieu que tout le monde évitait",
+        "texte": "Des herbes folles, des déchets, et personne pour s’en occuper"
+      }
+    },
+    {
+      "id": "declic",
+      "type": "chiffre",
+      "fichier": "scenes/03-declic.html",
+      "duree": 9,
+      "transition": "glissement",
+      "intention": "chiffre – le déclic, en un chiffre (valeur affichée : 300)",
+      "textes": {
+        "titre": "Une parcelle prêtée par la mairie",
+        "unite": "m²",
+        "legende": "le déclic : la mairie accepte de nous la confier"
+      }
+    },
+    {
+      "id": "solution",
+      "type": "schema",
+      "fichier": "scenes/04-solution.html",
+      "duree": 11,
+      "transition": "glissement",
+      "intention": "schema – comment on s'en est sorti, en 3 temps",
+      "textes": {
+        "titre": "Ce que nous avons fait",
+        "a": "Nettoyer ensemble",
+        "b": "Planter des bacs",
+        "c": "Ouvrir à tous"
+      }
+    },
+    {
+      "id": "avant-apres",
+      "type": "comparaison",
+      "fichier": "scenes/05-avant-apres.html",
+      "duree": 12,
+      "transition": "retournement",
+      "intention": "comparaison – l'avant et l'après",
+      "textes": {
+        "titre": "Avant, après",
+        "gauche-titre": "Avant",
+        "gauche-texte": "Un terrain vague que l’on contournait",
+        "droite-titre": "Après",
+        "droite-texte": "40 jardiniers et une fête chaque été"
+      }
+    },
+    {
+      "id": "morale",
+      "type": "conclusion",
+      "fichier": "scenes/06-morale.html",
+      "duree": 8,
+      "transition": "fondu",
+      "intention": "conclusion – la morale de l'histoire",
+      "textes": {
+        "titre": "Un jardin, ça rapproche",
+        "sous": "Venez planter avec nous le samedi matin"
+      }
+    }
+  ]
+}

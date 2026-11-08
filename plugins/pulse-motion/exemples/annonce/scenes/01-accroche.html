@@ -1,0 +1,10 @@
+<!-- Scène « accroche » (2,5 s, rythme vif) : d'après la scène toute faite « titre » du style energique.
+     Entrées serrées, tout est posé à 0,95 s ; #001 pop-in sur le titre. -->
+<section data-scene="accroche">
+  <div class="decor">
+    <span class="bandes" data-decor data-start="0" data-dur="4" data-tween="--x 0cqh→-22cqh linear"></span>
+  </div>
+  <p id="etiquette" class="bandeau volet" data-texte="etiquette" data-start="0.05" data-dur="0.45"></p>
+  <h1 id="titre" class="cri pm-m-pop" data-texte="titre" data-start="#etiquette+0.1" data-dur="0.45" data-son="pop" style="--pm-dur: 0.45s; --pm-ampleur: 1.12;"></h1>
+  <p id="sous" class="texte claque" data-texte="sous" data-start="#titre:fin-0.1" data-dur="0.45" data-son="whoosh" data-son-volume="0.6"></p>
+</section>

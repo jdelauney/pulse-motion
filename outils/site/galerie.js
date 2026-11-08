@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Wiki Pulse Motion – écrit dans les pages les cartes de la galerie, du catalogue et du lexique, à partir des sources du plugin
-// (dictionnaire de mouvements, styles, recettes d'effets, mouvements de personnages). Chaque bloc va entre
+// Wiki Pulse Motion – écrit dans les pages les cartes de la galerie, du catalogue, du lexique et des idées, à partir des sources
+// du plugin (dictionnaire de mouvements, styles, recettes d'effets, mouvements de personnages, modèles de vidéo et leurs exemples). Chaque bloc va entre
 // <!-- galerie:<nom> --> et <!-- /galerie:<nom> -->. Le contenu est dans le HTML : les pages se lisent sans JavaScript ; les
 // aperçus (docs/medias/galerie/, outils/site/medias.js) s'y ajoutent quand ils existent.
 // Lancer : node outils/site/galerie.js [--verifier]
@@ -15,7 +15,7 @@ const RACINE_DEPOT = path.join(__dirname, "..", "..");
 const PLUGIN = (racine) => path.join(racine, "plugins", "pulse-motion");
 const { normaliser } = require(path.join(PLUGIN(RACINE_DEPOT), "scripts", "mouvements.js"));
 
-const PAGES = { mouvements: "mouvements.html", styles: "catalogue.html", effets: "catalogue.html", personnages: "catalogue.html", "mots-du-mouvement": "lexique.html" };
+const PAGES = { mouvements: "mouvements.html", styles: "catalogue.html", effets: "catalogue.html", personnages: "catalogue.html", "mots-du-mouvement": "lexique.html", idees: "idees.html" };
 
 const e = (t) => String(t ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
@@ -116,6 +116,73 @@ ${mouvements.filter((m) => m.categorie === c.id).map((m) => `<li><a href="mouvem
 </ul>`).join("\n");
 }
 
+const FORMATS = { "16:9": "paysage (16:9)", "9:16": "vertical (9:16)", "4:5": "portrait (4:5)", "1:1": "carré (1:1)" };
+const duree = (s) => (s < 60 ? `${s} s` : `${Math.floor(s / 60)} min${s % 60 ? ` ${s % 60} s` : ""}`);
+const QUESTIONS = [["duree", "Durée"], ["public", "Public"], ["parcours", "Parcours"], ["ajouter", "À ajouter"], ["musique", "Musique"], ["voix", "Voix"], ["sousTitres", "Sous-titres"], ["style", "Style"]];
+
+// Ordre de la page Idées : du plus courant au plus particulier (un modèle absent de la liste vient à la fin).
+const ORDRE_IDEES = ["formation-courte", "presentation-produit", "histoire", "publication-sociale", "accueil", "pitch", "annonce"];
+const rangIdee = (m) => (ORDRE_IDEES.includes(m.id) ? ORDRE_IDEES.indexOf(m.id) : ORDRE_IDEES.length);
+
+/** Page Idées : un modèle par section, avec la vidéo de son exemple, les phrases à copier, sa structure et la séance d'origine. */
+function blocIdees() {
+  const modeles = G.modelesVideo().sort((a, b) => rangIdee(a) - rangIdee(b));
+  const sommaire = `<nav class="idees-sommaire" aria-label="Les modèles"><ul>
+${modeles.map((m) => `<li><a href="#modele-${m.id}">${e(m.nom)}</a></li>`).join("\n")}
+</ul></nav>`;
+  const sections = modeles.map((m) => {
+    const [mp4, jpg] = G.fichiersExemple(m);
+    const dossier = G.dossierExemple(m);
+    const deroule = JSON.parse(fs.readFileSync(path.join(dossier, "deroule.json"), "utf8"));
+    const fichierRecit = path.join(dossier, "exemple.json");
+    const recit = fs.existsSync(fichierRecit) ? JSON.parse(fs.readFileSync(fichierRecit, "utf8")) : null;
+    const vertical = m.format === "9:16" || m.format === "4:5";
+    const scenes = m.scenes.map((sc, i) => `<tr><td>${i + 1}</td><td>${e(sc.intention.charAt(0).toUpperCase() + sc.intention.slice(1))}</td><td>${String(sc.duree).replace(".", ",")} s</td></tr>`).join("\n");
+    const variantes = [["grandPublic", "Pour le grand public"], ["professionnels", "Pour des professionnels"], ["eleves", "Pour des élèves ou des stagiaires"]]
+      .map(([cle, titre]) => `<li><strong>${titre} :</strong> <code>${e(m.variantes[cle])}</code></li>`).join("\n");
+    const styles = m.styles.map((st, i) => `<a href="catalogue.html#style-${st}">${e(st)}</a>${i === 0 ? " (conseillé)" : ""}`).join(" · ");
+    let seance;
+    if (recit) {
+      const reponses = QUESTIONS.filter(([k]) => recit.reponses[k]).map(([k, q]) => `<dt>${q}</dt><dd>${e(recit.reponses[k])}</dd>`).join("\n");
+      const retouches = recit.retouches.length ? `<p><strong>Retouches :</strong></p>\n<ul>\n${recit.retouches.map((r) => `<li>« ${e(r)} »</li>`).join("\n")}\n</ul>` : "<p><strong>Retouches :</strong> aucune.</p>";
+      const corrections = (recit.corrections || []).length ? `\n<p><strong>Corrigé par Claude après le contrôle :</strong> ${recit.corrections.map(e).join(" ")}</p>` : "";
+      seance = `<p>La phrase de départ :</p>
+<pre class="commande"><code>${e(recit.phrase)}</code></pre>
+<p>Les réponses aux questions (les réponses conseillées, le public selon le sujet, et sans voix) :</p>
+<dl class="idee-reponses">
+${reponses}
+</dl>
+${retouches}${corrections}`;
+    } else {
+      seance = `<p>C'est la vidéo du tutoriel <a href="tutoriels/premiere-video.html">Première vidéo</a>, faite pas à pas avec <code>/pulse-motion:creer</code> ; ici sans sa voix.</p>`;
+    }
+    return `<section class="idee-modele" id="modele-${m.id}">
+<h2>${e(m.nom)}</h2>
+<p class="idee-pour">${e(m.pourQui)}</p>
+<p>${e(m.description)} <span class="idee-format">${duree(m.duree)} environ, ${FORMATS[m.format]}.</span></p>
+<figure class="capture idee-video${vertical ? " idee-video-verticale" : ""}"><video controls preload="none" playsinline poster="${jpg}" aria-label="Exemple : ${e(deroule.titre)}"><source src="${mp4}" type="video/mp4"></video><figcaption>Exemple : « ${e(deroule.titre)} », fabriqué par Pulse Motion. <a href="${mp4}" download>Télécharger la vidéo (MP4)</a></figcaption></figure>
+<h3>Des phrases à copier</h3>
+${m.phrases.map((ph) => `<pre class="commande"><code>${e(ph)}</code></pre>`).join("\n")}
+<h3>Selon votre public</h3>
+<ul>
+${variantes}
+</ul>
+<h3>Les scènes du modèle</h3>
+<table>
+<thead><tr><th>Scène</th><th>Rôle</th><th>Durée</th></tr></thead>
+<tbody>
+${scenes}
+</tbody>
+</table>
+<p><strong>Styles conseillés :</strong> ${styles}.</p>
+<details class="idee-seance"><summary>Comment cette vidéo a été faite</summary>
+${seance}
+</details>
+</section>`;
+  }).join("\n");
+  return `${sommaire}\n${sections}`;
+}
+
 /** HTML de chaque bloc (toujours depuis le plugin de ce dépôt). */
 function blocs() {
   return {
@@ -124,6 +191,7 @@ function blocs() {
     effets: blocEffets(),
     personnages: blocPersonnages(),
     "mots-du-mouvement": blocMotsDuMouvement(),
+    idees: blocIdees(),
   };
 }
 

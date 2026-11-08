@@ -4,8 +4,8 @@ Le wiki (`docs/`) est publié par GitHub Pages depuis la branche **`gh-pages`** 
 
 | Outil | Rôle |
 |---|---|
-| `node outils/site/galerie.js [--verifier]` | Écrit dans `mouvements.html`, `catalogue.html` et `lexique.html` les cartes de la galerie (mouvements, styles, effets, personnages) à partir des sources du plugin, entre les marqueurs `<!-- galerie:<nom> -->`. `--verifier` n'écrit rien et échoue si une page ne suit plus les sources. |
-| `node outils/site/medias.js [<id>…] [--forcer]` | Fabrique les médias du site à partir du plugin (vidéos d'exemple, captures, et les aperçus de la galerie décrits dans `galerie-medias.js` : `galerie-mouvements`, `galerie-styles`, `galerie-effets`, `galerie-personnages`). Un média déjà à jour n'est pas refait. |
+| `node outils/site/galerie.js [--verifier]` | Écrit dans `mouvements.html`, `catalogue.html`, `lexique.html` et `idees.html` les cartes de la galerie (mouvements, styles, effets, personnages) et des idées de vidéos (modèles et exemples) à partir des sources du plugin, entre les marqueurs `<!-- galerie:<nom> -->`. `--verifier` n'écrit rien et échoue si une page ne suit plus les sources. |
+| `node outils/site/medias.js [<id>…] [--forcer]` | Fabrique les médias du site à partir du plugin (vidéos d'exemple, captures, et les aperçus de la galerie décrits dans `galerie-medias.js` : `galerie-mouvements`, `galerie-styles`, `galerie-effets`, `galerie-personnages`, et `exemples` : la vidéo de l'exemple de chaque modèle). Un média déjà à jour n'est pas refait. |
 | `node outils/wiki/indexer.js` | Régénère l'index de recherche du wiki après une modification de page. |
 | `node outils/site/liens.js` | Vérifie que chaque lien, image et vidéo des pages pointe vers un fichier existant. |
 | `node outils/site/publier.js [--sec]` | Construit le site (fichiers suivis de `docs/` + `docs/medias/`) et le pousse en force sur `gh-pages`, en un seul commit. `--sec` prépare sans pousser. |

@@ -1,0 +1,15 @@
+<!-- Scène « date » (style energique, scène toute faite « chiffre ») : le compte à rebours jusqu'au jour J. Durée : 6 s.
+     Le compteur descend de 30 à 10 jours, puis le chiffre bat une fois au moment où il s'arrête. -->
+<section data-scene="date" class="centre">
+  <style>
+    @scope {
+      .arrivee { display: inline-block; --pm-fois: 1; --pm-dur: 0.5s; --pm-ampleur: 1.1; }
+    }
+  </style>
+  <div class="decor">
+    <span class="bandes" data-decor data-start="0" data-dur="6" data-tween="--x 0cqh→-28cqh linear"></span>
+  </div>
+  <h2 id="titre" class="cri-moyen claque" data-texte="titre" data-start="0.1" data-dur="0.45" data-son="whoosh"></h2>
+  <p class="chiffre-choc tombe" data-start="#titre:fin" data-dur="0.7"><span id="arrivee" class="arrivee pm-m-pulse" data-start="#valeur:fin" data-dur="0.5" data-son="ding"><span id="valeur" data-start="#titre:fin" data-dur="1.6" data-tween="nombre 30→10 expo-out">30</span><span class="unite" data-texte="unite"></span></span></p>
+  <p id="legende" class="bandeau volet" data-texte="legende" data-start="#valeur:fin+0.1" data-dur="0.45"></p>
+</section>

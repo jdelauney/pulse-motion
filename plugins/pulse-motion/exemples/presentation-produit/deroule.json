@@ -1,0 +1,99 @@
+{
+  "version": 1,
+  "titre": "Plannette, le planning de votre équipe",
+  "genre": "produit",
+  "parcours": "rapide",
+  "format": {
+    "ratio": "16:9",
+    "ips": 30
+  },
+  "style": "minimal",
+  "musique": {
+    "generee": "corporate",
+    "tempo": 120,
+    "volume": 0.8
+  },
+  "scenes": [
+    {
+      "id": "probleme",
+      "type": "alerte",
+      "fichier": "scenes/01-probleme.html",
+      "duree": 7,
+      "transition": "fondu",
+      "intention": "alerte – le problème que vit la personne visée",
+      "textes": {
+        "titre": "Vos plannings, un casse-tête ?",
+        "texte": "Des heures perdues chaque semaine en tableaux et en messages"
+      }
+    },
+    {
+      "id": "produit",
+      "type": "titre",
+      "fichier": "scenes/02-produit.html",
+      "duree": 7,
+      "transition": "zoom",
+      "intention": "titre – la réponse : le nom du produit",
+      "textes": {
+        "etiquette": "Application de planning",
+        "titre": "Plannette",
+        "sous": "Le planning de votre équipe, prêt en 5 minutes"
+      },
+      "mouvements": [
+        "#006"
+      ]
+    },
+    {
+      "id": "benefices",
+      "type": "liste",
+      "fichier": "scenes/03-benefices.html",
+      "duree": 11,
+      "transition": "glissement",
+      "intention": "liste – 3 bénéfices concrets",
+      "textes": {
+        "titre": "Ce que ça change",
+        "point1": "Le planning de la semaine en un clic",
+        "point2": "Chacun voit ses horaires sur son téléphone",
+        "point3": "Les échanges de créneaux se font sans vous"
+      }
+    },
+    {
+      "id": "fonctionnement",
+      "type": "schema",
+      "fichier": "scenes/04-fonctionnement.html",
+      "duree": 8,
+      "transition": "glissement",
+      "intention": "schema – comment ça marche, en 3 temps",
+      "textes": {
+        "titre": "Comment ça marche",
+        "a": "Vous ajoutez l’équipe",
+        "b": "Plannette propose",
+        "c": "Vous validez"
+      }
+    },
+    {
+      "id": "preuve",
+      "type": "chiffre",
+      "fichier": "scenes/05-preuve.html",
+      "duree": 6,
+      "transition": "glissement",
+      "intention": "chiffre – un chiffre clé qui prouve la promesse (valeur affichée : 3)",
+      "textes": {
+        "titre": "Temps gagné chaque semaine",
+        "unite": "h",
+        "legende": "en moyenne, pour une équipe de 10 personnes"
+      }
+    },
+    {
+      "id": "appel",
+      "type": "conclusion",
+      "fichier": "scenes/06-appel.html",
+      "duree": 6,
+      "transition": "fondu",
+      "intention": "conclusion – l'appel à l'action",
+      "textes": {
+        "titre": "Essayez Plannette gratuitement",
+        "sous": "30 jours offerts, sans engagement"
+      }
+    }
+  ]
+}

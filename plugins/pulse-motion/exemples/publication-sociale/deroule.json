@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "titre": "3 astuces pour économiser l'eau",
+  "genre": "social",
+  "parcours": "rapide",
+  "format": {
+    "ratio": "9:16",
+    "ips": 30
+  },
+  "style": "energique",
+  "musique": {
+    "generee": "entrainant",
+    "tempo": 120,
+    "volume": 0.8
+  },
+  "scenes": [
+    {
+      "id": "accroche",
+      "type": "titre",
+      "fichier": "scenes/01-accroche.html",
+      "duree": 5,
+      "transition": "coupe",
+      "intention": "titre – l'accroche, lisible en 2 secondes",
+      "textes": {
+        "etiquette": "Astuces maison",
+        "titre": "Moins d’eau, même confort",
+        "sous": "3 astuces en 30 secondes"
+      },
+      "mouvements": [
+        "#001"
+      ]
+    },
+    {
+      "id": "chiffre",
+      "type": "chiffre",
+      "fichier": "scenes/02-chiffre.html",
+      "duree": 6,
+      "transition": "whip",
+      "intention": "chiffre – un chiffre qui surprend (valeur affichée : 150)",
+      "textes": {
+        "titre": "Eau utilisée par jour",
+        "unite": "L",
+        "legende": "par personne, souvent sans y penser"
+      }
+    },
+    {
+      "id": "idees",
+      "type": "liste",
+      "fichier": "scenes/03-idees.html",
+      "duree": 9,
+      "transition": "whip",
+      "intention": "liste – les 3 idées, courtes",
+      "textes": {
+        "titre": "3 astuces",
+        "point1": "Une douche de 5 minutes",
+        "point2": "Robinet fermé au brossage",
+        "point3": "Un lave-linge toujours plein"
+      }
+    },
+    {
+      "id": "astuce",
+      "type": "etape",
+      "fichier": "scenes/04-astuce.html",
+      "duree": 6,
+      "transition": "whip",
+      "intention": "etape – l'astuce à essayer dès aujourd'hui",
+      "textes": {
+        "numero": "1",
+        "titre": "Le défi de la semaine",
+        "texte": "Chronométrez votre douche avec une chanson de 4 minutes"
+      }
+    },
+    {
+      "id": "chute",
+      "type": "conclusion",
+      "fichier": "scenes/05-chute.html",
+      "duree": 6,
+      "transition": "fondu",
+      "intention": "conclusion – la chute et l'invitation",
+      "textes": {
+        "titre": "Chaque goutte compte",
+        "sous": "Partagez à qui en a besoin"
+      }
+    }
+  ]
+}
