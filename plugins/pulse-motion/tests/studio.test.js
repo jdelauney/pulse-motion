@@ -1,4 +1,5 @@
 'use strict';
+const { listerSauvegardes, lireSauvegarde } = require('../scripts/historique.js');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -133,7 +134,7 @@ test('revue : changer de scène avec une prise non gardée : la prise n\'est pas
     })()`);
     assert.deepEqual(r, { autre: 'refuse', deuxieme: 'refuse' });
     assert.equal(fs.existsSync(path.join(dir, 'assets', 'voix', 'chiffre.wav')), false);
-    assert.deepEqual(fs.readdirSync(path.join(dir, '.historique')), ['001']);
+    assert.deepEqual(listerSauvegardes(dir), ['001']);
   });
 });
 

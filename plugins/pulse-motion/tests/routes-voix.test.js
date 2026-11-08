@@ -1,4 +1,5 @@
 'use strict';
+const { listerSauvegardes, lireSauvegarde } = require('../scripts/historique.js');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -53,7 +54,7 @@ test('prise gardée : écrite, déroulé mis à jour, copie d\'historique, liste
     assert.equal(r.statut, 200, r.texte);
     assert.equal(r.json.fichier, 'assets/voix/intro.wav');
     assert.equal(lireDeroule(dir).scenes[0].voix.fichier, 'assets/voix/intro.wav');
-    assert.ok(fs.existsSync(path.join(dir, '.historique', '001')));
+    assert.ok(listerSauvegardes(dir).includes('001'));
     const liste = await requete(`${url}_pm/voix/scenes`);
     assert.equal(liste.json[0].etat, 'enregistree');
   });

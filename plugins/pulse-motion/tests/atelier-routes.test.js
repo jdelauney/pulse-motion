@@ -1,4 +1,5 @@
 'use strict';
+const { listerSauvegardes, lireSauvegarde } = require('../scripts/historique.js');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -129,12 +130,12 @@ test('reglages : seuls data-reglages et data-graine de la balise visée changent
     assert.equal(r.statut, 200, r.texte);
     assert.equal(lireScene(dir), avant.replace('data-reglages="nombre: 300; couleur: accent"', 'data-reglages="nombre: 900; couleur: #00ff88" data-graine="7"'));
     assert.equal(r.json.empreinte, hache(scene(dir)));
-    assert.equal(fs.readFileSync(path.join(dir, '.historique', '001', 'scenes', '01-etincelles.html'), 'utf8'), avant);
+    assert.equal(lireSauvegarde(dir, '001', 'scenes/01-etincelles.html').toString('utf8'), avant);
     // Réglages vides et graine nulle : attributs retirés.
     const r2 = await requete(`${base}reglages`, json({ empreinte: r.json.empreinte, scene: 'etincelles', ordre: 0, reglages: '', graine: null }));
     assert.equal(r2.statut, 200, r2.texte);
     assert.equal(lireScene(dir), avant.replace(' data-reglages="nombre: 300; couleur: accent"', ''));
-    assert.ok(fs.existsSync(path.join(dir, '.historique', '002')));
+    assert.ok(listerSauvegardes(dir).includes('002'));
   });
 });
 
@@ -217,7 +218,7 @@ test('recette : dérivée par etend, seules les différences écrites ; historiq
       parametres: { nombre: { defaut: 200 } },
       emetteurs: [{ nom: 'eclat', forces: [{ type: 'trainee', coef: 3 }] }],
     });
-    assert.ok(fs.existsSync(path.join(dir, '.historique', '001')));
+    assert.ok(listerSauvegardes(dir).includes('001'));
     assert.deepEqual((await requete(`${base}contexte`)).json.recettes.projet, ['gerbe-douce', 'locale']);
   });
 });
@@ -259,7 +260,7 @@ test('recette : cible – la balise pointe vers le nouvel effet avec réglages e
     assert.equal(rep.statut, 200, rep.texte);
     assert.equal(rep.json.empreinte, hache(scene(dir)));
     assert.match(lireScene(dir), /<div data-effet="gerbe-courte" data-ancre="#titre" data-start="#titre:fin" data-dur="2" data-reglages="nombre: 300; couleur: accent" data-graine="5"><\/div>/);
-    assert.match(fs.readFileSync(path.join(dir, '.historique', '001', 'scenes', '01-etincelles.html'), 'utf8'), /data-effet="gerbe"/);
+    assert.match(lireSauvegarde(dir, '001', 'scenes/01-etincelles.html').toString('utf8'), /data-effet="gerbe"/);
     assert.deepEqual(JSON.parse(fs.readFileSync(path.join(dir, 'effets', 'gerbe-courte.json'), 'utf8')).emetteurs, [{ nom: 'gerbe', naissance: { vie: [0.4, 0.8] } }]);
   });
 });
