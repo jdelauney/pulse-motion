@@ -1,5 +1,5 @@
 ---
-description: Animer l'illustration d'un personnage fournie par la personne (fichier SVG d'Illustrator, Inkscape, Figma…) en la découpant sur le squelette de Pulse Motion (« voici notre mascotte en SVG, fais-la marcher », « découpe ce dessin pour l'animer », « j'ai un personnage dans assets, anime-le »). Pour un personnage à inventer, c'est /pulse-motion:dessiner-personnage ; pour corriger la découpe à la souris, /pulse-motion:atelier-personnages.
+description: "Animer le dessin SVG d'un personnage fourni en le découpant sur le squelette (« voici notre mascotte en SVG », « découpe ce dessin », « anime ce personnage »). À inventer : /pulse-motion:dessiner-personnage ; corriger : atelier-personnages."
 argument-hint: "[le fichier SVG du personnage]"
 allowed-tools: Bash(pulse-motion *) Bash(node *) Read Glob Grep Write Edit AskUserQuestion
 ---

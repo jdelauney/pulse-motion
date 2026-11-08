@@ -1,5 +1,5 @@
 ---
-description: Dessiner un personnage pour la vidéo Pulse Motion du dossier, ou retoucher son dessin, et le montrer qui bouge (« dessine-moi un cuisinier rondouillard avec une toque », « change sa tenue en rouge », « refais-lui la tête », « ajoute-lui des lunettes »). Pour ses poses et ses mouvements, c'est /pulse-motion:animer-personnage ; pour le régler à la souris, /pulse-motion:atelier-personnages.
+description: "Dessiner ou retoucher le dessin d'un personnage et le montrer qui bouge (« dessine-moi un cuisinier », « change sa tenue en rouge », « ajoute des lunettes »). Ses mouvements : /pulse-motion:animer-personnage ; à la souris : atelier-personnages."
 argument-hint: "[le personnage à dessiner, ou la retouche de son dessin]"
 allowed-tools: Bash(pulse-motion *) Bash(node *) Read Glob Grep Write Edit AskUserQuestion
 ---

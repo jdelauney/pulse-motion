@@ -1,5 +1,5 @@
 ---
-description: Créer ou modifier une pose ou un mouvement de personnage Pulse Motion, et le montrer sous plusieurs angles (« fais une pose où il se gratte la tête », « il marche trop vite », « fais-le sauter plus haut », « montre-moi la course de face et de profil », « fais-lui une tête surprise quand il salue », « quels mouvements existent ? »). Pour dessiner le personnage, c'est /pulse-motion:dessiner-personnage ; pour régler à la souris, /pulse-motion:atelier-personnages.
+description: "Poser ou animer un personnage Pulse Motion et le montrer sous plusieurs angles (« fais-le sauter plus haut », « il marche trop vite », « une tête surprise »). Le dessiner : /pulse-motion:dessiner-personnage ; à la souris : atelier-personnages."
 argument-hint: "[la pose ou le mouvement voulu]"
 allowed-tools: Bash(pulse-motion *) Bash(node *) Read Glob Grep Write Edit AskUserQuestion
 ---
