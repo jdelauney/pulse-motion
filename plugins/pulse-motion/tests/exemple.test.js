@@ -109,12 +109,23 @@ test('exemples des modèles : un par modèle, avec le récit de sa séance', () 
   }
 });
 
-test('exemples des modèles : chacun s\'assemble et se contrôle sans aucun problème', { skip: !navigateur && 'Chrome ou Edge introuvable' }, () => {
+test('exemples des modèles : chacun s\'assemble et se contrôle sans aucun problème', () => {
   for (const id of exemplesDeModeles()) {
     const dir = dossierTemporaire('pm-exemple-modele-');
     fs.cpSync(path.join(EXEMPLES, id), dir, { recursive: true });
     const r = assembler({ dossier: dir });
     assert.deepEqual(r.erreurs, [], id);
     assert.deepEqual(controler({ dossier: dir }).problemes, [], id);
+  }
+});
+
+test('exemples des modèles : contrôle complet de chaque vidéo rendue (débordements, zone des boutons en 9:16), rien à signaler', { skip: !navigateur && 'Chrome ou Edge introuvable' }, async () => {
+  const { controlerComplet } = require('../scripts/controler.js');
+  for (const id of exemplesDeModeles()) {
+    const dir = dossierTemporaire('pm-exemple-modele-');
+    fs.cpSync(path.join(EXEMPLES, id), dir, { recursive: true });
+    const r = await controlerComplet({ dossier: dir, corriger: false });
+    assert.equal(r.renduVerifie, true, id);
+    assert.deepEqual(r.problemes, [], id);
   }
 });

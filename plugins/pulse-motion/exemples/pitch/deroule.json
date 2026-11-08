@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "titre": "Récolto, le pitch",
+  "titre": "Potagine, le pitch",
   "genre": "produit",
   "parcours": "rapide",
   "format": {
@@ -35,7 +35,7 @@
       "intention": "titre – la solution : le nom du projet",
       "textes": {
         "etiquette": "Notre solution",
-        "titre": "Récolto",
+        "titre": "Potagine",
         "sous": "Les légumes du coin, commandés en 3 clics"
       },
       "mouvements": [

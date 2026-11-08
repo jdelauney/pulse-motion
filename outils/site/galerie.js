@@ -148,7 +148,7 @@ ${modeles.map((m) => `<li><a href="#modele-${m.id}">${e(m.nom)}</a></li>`).join(
       const corrections = (recit.corrections || []).length ? `\n<p><strong>Corrigé par Claude après le contrôle :</strong> ${recit.corrections.map(e).join(" ")}</p>` : "";
       seance = `<p>La phrase de départ :</p>
 <pre class="commande"><code>${e(recit.phrase)}</code></pre>
-<p>Les réponses aux questions (celles marquées « Recommandé », sans voix) :</p>
+<p>Les réponses aux questions (les réponses conseillées, le public selon le sujet, et sans voix) :</p>
 <dl class="idee-reponses">
 ${reponses}
 </dl>

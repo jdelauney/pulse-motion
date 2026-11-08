@@ -10,7 +10,7 @@
  *   node scripts/modeles.js trouver "<sujet>"          le modèle qui correspond au sujet, ou null
  *   node scripts/modeles.js exemple <id> <dossier>     copie l'exemple fini du modèle dans un dossier sans vidéo
  *
- * Sortie JSON. Code 1 si rien n'est trouvé ou si la copie est refusée.
+ * Sortie JSON. Code 1 si le modèle demandé n'existe pas ou si la copie est refusée ; `trouver` rend null (code 0) sans modèle.
  */
 const fs = require('node:fs');
 const path = require('node:path');
@@ -21,6 +21,7 @@ const RACINE = path.join(__dirname, '..');
 const DOSSIER_MODELES = path.join(RACINE, 'modeles', 'videos');
 const DOSSIER_EXEMPLES = path.join(RACINE, 'exemples');
 const ECART_DUREE = 0.15;
+const CLES_FACULTATIVES = ['point3', 'point4'];
 
 /** Styles livrés avec le plugin (ceux qui ont un catalogue de scènes toutes faites). */
 function stylesLivres() {
@@ -95,6 +96,10 @@ function validerModele(m) {
         for (const cle of Object.keys(s.textes || {})) {
           if (!types[s.type].includes(cle)) err.push(`La ${nom} : clé de texte inconnue « ${cle} » pour « ${s.type} » (${style}) ; clés : ${types[s.type].join(', ')}.`);
         }
+        // Toutes les clés du type sont attendues, sauf les 3e et 4e points d'une liste (2 à 4 points).
+        for (const cle of types[s.type].filter((k) => !CLES_FACULTATIVES.includes(k))) {
+          if (s.textes && !Object.hasOwn(s.textes, cle)) err.push(`La ${nom} : il manque la consigne de « ${cle} » (${s.type}).`);
+        }
       }
     }
     if (!s.textes || typeof s.textes !== 'object' || !Object.keys(s.textes).length) err.push(`La ${nom} : « textes » doit donner une consigne par texte.`);
@@ -112,28 +117,36 @@ function validerModele(m) {
   return err;
 }
 
-// Mots qui désignent chaque modèle, du plus particulier au plus général : « le lancement de notre nouvelle offre » est une
-// annonce avant d'être une présentation de produit.
+// Mots qui désignent chaque modèle. Un mot fort dit le genre de vidéo (« formation », « pitch », « bienvenue ») et compte 3 ; un
+// mot faible le suggère seulement (« application », « ouverture ») et compte 1. Le modèle au plus haut score l'emporte ; à
+// égalité, le premier de cette liste (du plus particulier au plus général).
+const NOUVEAUX = 'nouvel|nouvelle|nouveau|nouveaux|nouvelles';
+const ARRIVANTS = 'arrivant|salarie|employe|collegue|collaborateur|benevole|adherent|membre|eleve|habitant|recrue|stagiaire|infirmier|agent';
 const MOTS_CLES = [
-  ['pitch', ['pitch', 'investisseur', 'levee de fonds', 'lever des fonds', 'jury', 'appel a projets', 'business angel', 'financement participatif', 'mini entreprise']],
-  ['annonce', ['annonce', 'annoncer', 'lancement', 'lancer', 'nouveaute', 'evenement', 'inauguration', 'ouverture', 'portes ouvertes', 'fete', 'salon', 'inscription', 'webinaire', 'bientot', 'marche de noel']],
-  ['accueil', ['bienvenue', 'accueil', 'accueillir', 'nouvel arrivant', 'nouveaux arrivants', 'nouvelle recrue', 'nouveau salarie', 'nouveaux salaries', 'nouveaux benevoles', 'nouveaux adherents', 'nouveaux eleves', 'prise en main', 'integration', 'onboarding', 'premier jour']],
-  ['publication-sociale', ['reseaux sociaux', 'reseau social', 'reseaux', 'instagram', 'tiktok', 'linkedin', 'facebook', 'reel', 'story', 'short', 'publication', 'post']],
-  ['presentation-produit', ['produit', 'application', 'appli', 'logiciel', 'service', 'offre', 'outil', 'fonctionnalite', 'plateforme', 'presenter notre', 'presentation de notre']],
-  ['histoire', ['histoire', 'raconter', 'raconte', 'recit', 'parcours', 'storytelling', 'aventure', 'origine', 'est ne', 'est nee']],
-  ['formation-courte', ['formation', 'former', 'tutoriel', 'apprendre', 'expliquer', 'comprendre', 'consigne', 'securite', 'hygiene', 'procedure', 'regle', 'bonnes pratiques', 'geste', 'sensibilisation', 'rappel', 'cours']],
+  ['pitch', ['pitch', 'pitcher', 'investisseur', 'levee de fonds', 'lever des fonds', 'jury', 'appel a projets', 'business angel', 'financement participatif', 'mini entreprise'], ['concours', 'startup']],
+  ['annonce', ['annonce', 'annoncer', 'lancement', 'nouveaute', 'evenement', 'inauguration', 'portes ouvertes', 'marche de noel'], ['ouverture', 'fete', 'salon', 'inscription', 'webinaire', 'bientot', 'lancer']],
+  ['accueil', ['bienvenue', 'accueil', 'accueillir', `(${NOUVEAUX}) (${ARRIVANTS})`, 'prise en main', 'onboarding', 'premier jour'], ['integration']],
+  ['publication-sociale', ['reseaux sociaux', 'reseau social', 'reseaux', 'instagram', 'tiktok', 'linkedin', 'facebook', 'reels', 'stories'], ['publication', 'post', 'story', 'short']],
+  ['presentation-produit', ['produit', 'presentation', 'presenter'], ['application', 'appli', 'logiciel', 'service', 'offre', 'outil', 'fonctionnalite', 'plateforme']],
+  ['histoire', ['histoire', 'raconter', 'raconte', 'recit', 'storytelling', 'est ne', 'est nee'], ['parcours', 'aventure', 'origine']],
+  ['formation-courte', ['formation', 'former', 'tutoriel', 'apprendre', 'expliquer', 'consigne', 'procedure', 'regle', 'bonnes pratiques', 'geste', 'sensibilisation', 'rappel'], ['securite', 'hygiene', 'comprendre', 'prevention']],
 ];
+
+/** Expression d'un mot-clé : mots entiers, pluriel en s ou x permis (« règles », « nouveaux arrivants »). */
+const motif = (mot) => new RegExp(` ${mot.split(' ').map((x) => `${x}[sx]?`).join(' ')} `);
 
 /** Modèle qui correspond au sujet (mots-clés, sans accents ni casse, pluriels compris), ou null. */
 function trouverModele(sujet) {
   const { normaliser } = require('./mouvements.js');
   const texte = ` ${normaliser(sujet).replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim()} `;
   if (!texte.trim()) return null;
-  for (const [id, mots] of MOTS_CLES) {
-    const ok = mots.some((mot) => new RegExp(` ${mot.split(' ').map((x) => `${x}[sx]?`).join(' ')} `).test(texte));
-    if (ok) return lireModele(id);
+  let meilleur = null;
+  let score = 0;
+  for (const [id, forts, faibles] of MOTS_CLES) {
+    const s = 3 * forts.filter((m) => motif(m).test(texte)).length + faibles.filter((m) => motif(m).test(texte)).length;
+    if (s > score) { score = s; meilleur = id; }
   }
-  return null;
+  return meilleur ? lireModele(meilleur) : null;
 }
 
 /** Copie l'exemple fini du modèle `id` dans `dossier` (sans vidéo) ; -> { ok, dossier, titre } ou { ok: false, message }. */
@@ -143,12 +156,16 @@ function copierExemple(id, dossier) {
   const source = path.join(DOSSIER_EXEMPLES, m.exemple || m.id);
   if (!fs.existsSync(path.join(source, 'deroule.json'))) return { ok: false, message: `Le modèle « ${id} » n'a pas encore d'exemple fini.` };
   const cible = path.resolve(dossier || '.');
-  if (fs.existsSync(path.join(cible, 'deroule.json'))) {
+  if (['deroule.json', 'scenes'].some((f) => fs.existsSync(path.join(cible, f)))) {
     return { ok: false, message: 'Ce dossier contient déjà une vidéo : rien n\'a été copié. Choisissez un dossier vide.' };
   }
   fs.mkdirSync(cible, { recursive: true });
   // Ni les sorties ni l'état d'une séance, ni son récit (exemple.json) : seulement la vidéo.
-  fs.cpSync(source, cible, { recursive: true, filter: (f) => !/^(sortie|\.pulse-motion|\.historique|exemple\.json)([\\/]|$)/.test(path.relative(source, f)) });
+  fs.cpSync(source, cible, { recursive: true, force: false, filter: (f) => !/^(sortie|\.pulse-motion|\.historique|exemple\.json)([\\/]|$)/.test(path.relative(source, f)) });
+  // La vidéo est finie : son déroulé et son style sont déjà acceptés (reprendre ouvre l'aperçu au lieu de redemander l'accord).
+  const { donnerAccord } = require('./etat.js');
+  donnerAccord(cible, 'deroule');
+  donnerAccord(cible, 'style');
   const titre = JSON.parse(fs.readFileSync(path.join(cible, 'deroule.json'), 'utf8')).titre;
   return { ok: true, dossier: cible, titre };
 }
@@ -167,9 +184,9 @@ function principal(args) {
     return 0;
   }
   if (commande === 'trouver') {
-    const m = trouverModele(reste.join(' '));
-    ecrire(m);
-    return m ? 0 : 1;
+    // Aucun modèle n'est pas une erreur : la création continue sans modèle.
+    ecrire(trouverModele(reste.join(' ')));
+    return 0;
   }
   if (commande === 'exemple') {
     const r = copierExemple(reste[0], reste[1] || '.');
