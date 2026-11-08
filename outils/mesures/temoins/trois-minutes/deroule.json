@@ -1,0 +1,276 @@
+{
+  "version": 1,
+  "titre": "L'eau, ça s'économise",
+  "genre": "formation",
+  "parcours": "rapide",
+  "format": {
+    "ratio": "16:9",
+    "ips": 30
+  },
+  "style": "chaleureux",
+  "musique": {
+    "generee": "inspirant",
+    "tempo": 120,
+    "volume": 0.5
+  },
+  "sousTitres": {},
+  "bruitages": {
+    "transitions": true,
+    "volume": 0.7
+  },
+  "scenes": [
+    {
+      "id": "intro",
+      "type": "titre",
+      "fichier": "scenes/01-intro.html",
+      "duree": 10,
+      "transition": "fondu",
+      "intention": "titre – annoncer le sujet",
+      "textes": {
+        "etiquette": "Gestes du quotidien",
+        "titre": "L’eau, ça s’économise",
+        "sous": "3 minutes pour changer ses habitudes"
+      },
+      "mouvements": [
+        "#004"
+      ],
+      "voix": {
+        "texte": "L'eau du robinet est précieuse. En trois minutes, voyons comment en économiser sans se priver."
+      }
+    },
+    {
+      "id": "constat",
+      "type": "chiffre",
+      "fichier": "scenes/02-constat.html",
+      "duree": 11,
+      "transition": "fondu",
+      "intention": "chiffre – 148 litres d'eau par jour et par personne (le chiffre clé, avec des étincelles)",
+      "textes": {
+        "titre": "Notre consommation chaque jour",
+        "unite": "L",
+        "legende": "d’eau par personne, en moyenne, à la maison"
+      },
+      "voix": {
+        "texte": "Chaque jour, une personne utilise en moyenne cent quarante-huit litres d'eau à la maison. C'est beaucoup plus qu'on ne le croit."
+      }
+    },
+    {
+      "id": "postes",
+      "type": "liste",
+      "fichier": "scenes/03-postes.html",
+      "duree": 15,
+      "transition": "glissement",
+      "intention": "liste – où part l'eau de la maison",
+      "textes": {
+        "titre": "Où part l’eau de la maison",
+        "point1": "La douche et le bain : près de 40 %",
+        "point2": "Le linge et la vaisselle : 22 %",
+        "point3": "Les toilettes : 20 %"
+      },
+      "voix": {
+        "texte": "Où part toute cette eau ? D'abord dans la douche et le bain. Puis dans le linge et la vaisselle. Enfin dans les toilettes."
+      }
+    },
+    {
+      "id": "douche",
+      "fichier": "scenes/04-douche.html",
+      "duree": 14,
+      "transition": "glissement",
+      "intention": "composée – deux réservoirs qui se remplissent côte à côte : la douche de 5 minutes s'arrête à 60 L, le bain monte jusqu'à 150 L",
+      "textes": {
+        "titre": "Douche ou bain ?",
+        "gauche": "Douche de 5 min : 60 L",
+        "droite": "Bain : 150 L"
+      },
+      "voix": {
+        "texte": "Comparons : une douche de cinq minutes, c’est soixante litres. Un bain, c'est cent cinquante litres. Plus du double."
+      }
+    },
+    {
+      "id": "fuite",
+      "type": "alerte",
+      "fichier": "scenes/05-fuite.html",
+      "duree": 11,
+      "transition": "fondu",
+      "intention": "alerte – une fuite discrète gaspille énormément",
+      "textes": {
+        "titre": "Une fuite coûte cher",
+        "texte": "Un robinet qui goutte perd jusqu’à 120 litres par jour"
+      },
+      "mouvements": [
+        "#032"
+      ],
+      "voix": {
+        "texte": "Attention aux fuites. Un simple robinet qui goutte peut perdre jusqu'à cent vingt litres par jour."
+      }
+    },
+    {
+      "id": "etape1",
+      "type": "etape",
+      "fichier": "scenes/06-etape1.html",
+      "duree": 10,
+      "transition": "glissement",
+      "intention": "étape 1 – fermer le robinet",
+      "textes": {
+        "numero": "1",
+        "titre": "Fermer le robinet",
+        "texte": "Pendant le brossage des dents : jusqu’à 12 litres gardés à chaque fois"
+      },
+      "mouvements": [
+        "#001"
+      ],
+      "voix": {
+        "texte": "Premier geste : fermer le robinet pendant le brossage des dents. Jusqu'à douze litres gardés chaque fois."
+      }
+    },
+    {
+      "id": "etape2",
+      "type": "etape",
+      "fichier": "scenes/07-etape2.html",
+      "duree": 10,
+      "transition": "glissement",
+      "intention": "étape 2 – installer un mousseur",
+      "textes": {
+        "numero": "2",
+        "titre": "Installer un mousseur",
+        "texte": "Ce petit embout divise le débit par deux, sans perte de confort"
+      },
+      "voix": {
+        "texte": "Deuxième geste : installer un mousseur. Ce petit embout divise le débit par deux, sans perte de confort."
+      }
+    },
+    {
+      "id": "etape3",
+      "type": "etape",
+      "fichier": "scenes/08-etape3.html",
+      "duree": 10,
+      "transition": "glissement",
+      "intention": "étape 3 – lancer les machines pleines",
+      "textes": {
+        "numero": "3",
+        "titre": "Remplir les machines",
+        "texte": "Lave-linge et lave-vaisselle tournent pleins, en mode éco"
+      },
+      "voix": {
+        "texte": "Troisième geste : faire tourner le lave-linge et le lave-vaisselle bien remplis, en mode éco."
+      }
+    },
+    {
+      "id": "pluie",
+      "fichier": "scenes/09-pluie.html",
+      "duree": 16,
+      "transition": "fondu",
+      "intention": "personnage – le personnage touffu marche jusqu'à un récupérateur d'eau de pluie, puis salue",
+      "textes": {
+        "titre": "Récupérer l’eau de pluie",
+        "sous": "Pour arroser le jardin et les plantes"
+      },
+      "voix": {
+        "texte": "Au jardin, pensez à l'eau de pluie. Un simple récupérateur suffit pour arroser les plantes tout l'été, gratuitement."
+      }
+    },
+    {
+      "id": "jardin",
+      "type": "comparaison",
+      "fichier": "scenes/10-jardin.html",
+      "duree": 15,
+      "transition": "glissement",
+      "intention": "comparaison – à faire, à éviter au jardin",
+      "textes": {
+        "titre": "Bien arroser",
+        "gauche-titre": "À faire",
+        "gauche-texte": "Arroser le soir, au pied des plantes",
+        "droite-titre": "À éviter",
+        "droite-texte": "Arroser en plein soleil, au jet"
+      },
+      "voix": {
+        "texte": "Arrosez le soir, au pied des plantes. Évitez d'arroser en plein soleil ou au jet : l'eau s'évapore avant d'être bue."
+      }
+    },
+    {
+      "id": "cycle",
+      "type": "schema",
+      "fichier": "scenes/11-cycle.html",
+      "duree": 13,
+      "transition": {
+        "shader": "dissolution",
+        "duree": 0.8
+      },
+      "intention": "schéma – une même eau sert plusieurs fois",
+      "textes": {
+        "titre": "Une eau, plusieurs usages",
+        "a": "Laver les légumes",
+        "b": "Garder l’eau",
+        "c": "Arroser les plantes"
+      },
+      "voix": {
+        "texte": "Une même eau peut servir deux fois. L'eau qui a lavé les légumes peut ensuite arroser les plantes."
+      }
+    },
+    {
+      "id": "facture",
+      "fichier": "scenes/12-facture.html",
+      "duree": 14,
+      "transition": "fondu",
+      "intention": "composée – une facture d'eau dont le montant baisse : une barre « avant » pleine, une barre « après » plus courte de 30 %",
+      "textes": {
+        "titre": "Sur la facture",
+        "avant": "Avant",
+        "apres": "Après : jusqu’à 30 % de moins",
+        "note": "Environ 150 € par an pour un foyer de quatre"
+      },
+      "voix": {
+        "texte": "Et la facture suit. Ces gestes réduisent jusqu'à trente pour cent la consommation, soit environ cent cinquante euros par an pour un foyer."
+      }
+    },
+    {
+      "id": "reserve",
+      "fichier": "scenes/13-reserve.html",
+      "duree": 12,
+      "transition": "fondu",
+      "intention": "composée – une grande cuve qui se remplit par vagues jusqu'à 15 000 litres, comme une jauge",
+      "textes": {
+        "titre": "15 000 litres par an",
+        "sous": "gardés par une famille de quatre avec des mousseurs"
+      },
+      "voix": {
+        "texte": "Avec des mousseurs partout, une famille de quatre garde près de quinze mille litres par an. Une vraie réserve."
+      }
+    },
+    {
+      "id": "recap",
+      "type": "liste",
+      "fichier": "scenes/14-recap.html",
+      "duree": 15,
+      "transition": "glissement",
+      "intention": "liste – les trois réflexes à retenir",
+      "textes": {
+        "titre": "À retenir",
+        "point1": "Une douche courte plutôt qu’un bain",
+        "point2": "Les fuites réparées sans attendre",
+        "point3": "Des mousseurs sur les robinets"
+      },
+      "voix": {
+        "texte": "À retenir : une douche courte plutôt qu'un bain. Les fuites réparées sans attendre. Et des mousseurs sur les robinets."
+      }
+    },
+    {
+      "id": "fin",
+      "type": "conclusion",
+      "fichier": "scenes/15-fin.html",
+      "duree": 12,
+      "transition": "fondu",
+      "intention": "conclusion – le message à retenir, avec des confettis",
+      "textes": {
+        "titre": "Chaque goutte compte",
+        "sous": "Commencez dès ce soir"
+      },
+      "mouvements": [
+        "#016"
+      ],
+      "voix": {
+        "texte": "Chaque goutte compte. Commencez dès ce soir : votre planète et votre porte-monnaie vous diront merci."
+      }
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+<!-- Scène « facture » (composée, style chaleureux) : la facture d'eau baisse. Durée : 14 s, entrée par un fondu.
+     Une barre « avant » pleine, puis une barre « après » plus courte de 30 % ; la part économisée s'éclaire.
+     Textes : titre, avant, apres, note. Temps calés sur la musique (tempo 120 : 1t = 0,5 s). -->
+<section data-scene="facture">
+  <style>
+    @scope {
+      .facture { gap: 3.4cqh; padding: 4.4cqh 5cqh; }
+      .rangee { display: flex; flex-direction: column; gap: 1.4cqh; }
+      .libelle { margin: 0; font: 600 5cqh/1.15 var(--f-titres); color: var(--c-primaire-sur-teinte); }
+      #apres { color: var(--c-accent-sur-teinte); }
+      .piste { position: relative; height: 6.4cqh; border-radius: 99cqh; }
+      .barre { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; border-radius: 99cqh; }
+      .barre.avant { background: var(--c-primaire); }
+      .barre.apres { background: var(--c-accent); }
+      .fantome {
+        position: absolute; inset: 0; border-radius: 99cqh;
+        border: 0.4cqh dashed color-mix(in srgb, var(--c-accent) 55%, var(--c-fond));
+      }
+      .economie {
+        position: absolute; left: 70%; top: 0; bottom: 0; right: 0; opacity: 0;
+        border-radius: 0 99cqh 99cqh 0;
+        background: color-mix(in srgb, var(--c-accent) 22%, var(--c-fond));
+      }
+      .note { color: var(--c-texte); margin-bottom: 12cqh; }
+    }
+  </style>
+  <div class="decor">
+    <span class="galet sauge" data-decor style="width: 50cqh; height: 44cqh; right: -16cqh; top: -16cqh" data-start="0" data-dur="14" data-tween="--dy 0cqh→7cqh sine-inout; --m 0→1 sine-inout"></span>
+    <span class="galet" data-decor style="width: 38cqh; height: 34cqh; left: -14cqh; bottom: -16cqh" data-start="0" data-dur="14" data-tween="--dx 0cqh→6cqh sine-inout; --m 0→1 sine-inout"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen pose" data-texte="titre" data-start="0.2" data-dur="0.9"></h2>
+  <div id="facture" class="carte facture pose" data-start="#titre:fin" data-dur="0.9">
+    <div id="rangee-avant" class="rangee pose" data-start="4t" data-dur="0.9">
+      <p id="avant" class="libelle" data-texte="avant"></p>
+      <div class="piste">
+        <div id="barre-avant" class="barre avant" data-start="#rangee-avant+0.3" data-dur="1.4" data-tween="width 0%→100% quint-out" data-son="pop"></div>
+      </div>
+    </div>
+    <div id="rangee-apres" class="rangee pose" data-start="10t" data-dur="0.9">
+      <p id="apres" class="libelle" data-texte="apres"></p>
+      <div class="piste">
+        <div class="fantome" data-decor></div>
+        <div id="economie" class="economie" data-decor data-start="#barre-apres:fin+0.1" data-dur="0.8" data-tween="opacity 0→1 cubic-out"></div>
+        <div id="barre-apres" class="barre apres" data-start="12t" data-dur="1.6" data-tween="width 0%→70% quint-out" data-son="whoosh" data-son-volume="0.5"></div>
+      </div>
+    </div>
+  </div>
+  <p id="note" class="sous-titre note pose" data-texte="note" data-start="16t" data-dur="0.9" data-son="ding" data-son-volume="0.6"></p>
+</section>

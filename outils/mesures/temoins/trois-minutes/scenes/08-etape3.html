@@ -1,0 +1,14 @@
+<!-- Scène « etape3 » (style chaleureux, d'après la scène toute faite « etape ») : étape 3, lancer les machines pleines. Durée : 10 s.
+     Textes : numero, titre, texte. Dernière entrée finie à 3 s : 7 s de lecture, le galet dérive pendant toute la scène. -->
+<section data-scene="etape3">
+  <div class="decor">
+    <span class="galet" data-decor style="width: 46cqh; height: 40cqh; right: -12cqh; top: -14cqh" data-start="0" data-dur="10" data-tween="--dy 0cqh→6cqh sine-inout; --m 0→1 sine-inout"></span>
+  </div>
+  <div class="etape">
+    <span id="numero" class="rond-numero eclot" data-texte="numero" data-start="0.2" data-dur="0.8" data-son="pop"></span>
+    <div class="etape-texte">
+      <h2 id="titre" class="titre-moyen pose" data-texte="titre" data-start="#numero:fin" data-dur="0.9"></h2>
+      <p id="texte" class="texte pose" data-texte="texte" data-start="#titre:fin+0.2" data-dur="0.9" data-son="clic" data-son-volume="0.5"></p>
+    </div>
+  </div>
+</section>

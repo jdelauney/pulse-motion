@@ -1,0 +1,20 @@
+<!-- Scène « etape1 » (style chaleureux, d'après la scène toute faite « etape ») : étape 1, fermer le robinet. Durée : 10 s.
+     Numéro calé sur la musique (tempo 120 : 1t = 0,5 s) ; titre en apparition rebondie (#001 pop-in). -->
+<section data-scene="etape1">
+  <style>
+    @scope {
+      #titre { transform-origin: left center; }
+    }
+  </style>
+  <div class="decor">
+    <span class="galet" data-decor style="width: 46cqh; height: 40cqh; right: -12cqh; top: -14cqh" data-start="0" data-dur="10" data-tween="--dy 0cqh→6cqh sine-inout; --m 0→1 sine-inout"></span>
+    <span class="galet sauge" data-decor style="width: 26cqh; height: 22cqh; left: -8cqh; bottom: -8cqh" data-start="0" data-dur="10" data-tween="--dx 0cqh→4cqh sine-inout; --m 1→0 sine-inout"></span>
+  </div>
+  <div class="etape">
+    <span id="numero" class="rond-numero eclot" data-texte="numero" data-start="1t" data-dur="0.8" data-son="ding"></span>
+    <div class="etape-texte">
+      <h2 id="titre" class="titre-moyen pm-m-pop" data-texte="titre" data-start="#numero:fin" data-dur="0.45" data-son="pop"></h2>
+      <p id="texte" class="texte pose" data-texte="texte" data-start="#titre:fin+0.3" data-dur="0.9"></p>
+    </div>
+  </div>
+</section>

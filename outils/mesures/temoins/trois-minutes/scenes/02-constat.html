@@ -1,0 +1,13 @@
+<!-- Scène « constat » (scène toute faite « chiffre », style chaleureux) : 148 L d'eau par jour et par personne. Durée : 11 s. -->
+<section data-scene="constat" class="centre">
+  <div class="decor">
+    <span class="galet sauge" data-decor style="width: 44cqh; height: 40cqh; left: -12cqh; bottom: -14cqh" data-start="0" data-dur="11" data-tween="--dx 0cqh→6cqh sine-inout; --m 0→1 sine-inout"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen pose" data-texte="titre" data-start="0.2" data-dur="0.9"></h2>
+  <div id="galet" class="galet-chiffre eclot" data-start="#titre:fin" data-dur="0.8" data-son="pop">
+    <p class="chiffre-rond"><span id="valeur" data-start="#galet+0.2" data-dur="2" data-tween="nombre 0→148 quint-out">0</span><span class="unite" data-texte="unite"></span></p>
+  </div>
+  <div data-effet="etincelles" data-ancre="#valeur" data-calque="avant" data-start="#valeur:fin" data-dur="1.2"
+       data-reglages="nombre: 300; couleur: accent" data-son="ding"></div>
+  <p id="legende" class="sous-titre pose" data-texte="legende" data-start="#valeur:fin+0.1" data-dur="0.9"></p>
+</section>

@@ -1,0 +1,14 @@
+<!-- Scène « etape2 » (style chaleureux, scène toute faite « etape ») : étape 2 – installer un mousseur. Durée : 10 s.
+     Textes : numero, titre, texte. -->
+<section data-scene="etape2">
+  <div class="decor">
+    <span class="galet" data-decor style="width: 46cqh; height: 40cqh; right: -12cqh; top: -14cqh" data-start="0" data-dur="10" data-tween="--dy 0cqh→6cqh sine-inout; --m 0→1 sine-inout"></span>
+  </div>
+  <div class="etape">
+    <span id="numero" class="rond-numero eclot" data-texte="numero" data-start="0.2" data-dur="0.8" data-son="pop"></span>
+    <div class="etape-texte">
+      <h2 id="titre" class="titre-moyen pose" data-texte="titre" data-start="#numero:fin" data-dur="0.9"></h2>
+      <p id="texte" class="texte pose" data-texte="texte" data-start="#titre:fin+0.2" data-dur="0.9" data-son="clic" data-son-volume="0.6"></p>
+    </div>
+  </div>
+</section>

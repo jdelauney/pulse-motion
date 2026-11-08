@@ -1,0 +1,135 @@
+<!-- Scène composée « pluie » (style chaleureux) : le personnage touffu marche jusqu'à un récupérateur d'eau de pluie,
+     le montre, se tourne vers nous et salue. Un nuage remplit la cuve (jauge qui monte). Durée : 16 s.
+     Caméra douce (zoom 1 → 1,06 vers la cuve), galets en plan lointain. Textes : titre, sous. -->
+<section data-scene="pluie">
+  <style>
+    @scope {
+      .plan { position: absolute; inset: 0; z-index: 0; }
+      .jardin { position: absolute; inset: 0; z-index: 1; }
+      .textes { position: relative; z-index: 2; display: flex; flex-direction: column; gap: 2.4cqh; margin-bottom: auto; max-width: 96cqh; }
+
+      /* Sol du jardin : un aplat doux, à plat sous les pieds (ligne des pieds à 89 %). */
+      .sol {
+        position: absolute; left: -14cqh; right: -14cqh; top: 87cqh; bottom: -10cqh;
+        background: color-mix(in srgb, var(--c-accent) 16%, var(--c-fond));
+        border-radius: 50% 50% 0 0 / 5cqh 5cqh 0 0;
+      }
+
+      /* Récupérateur : un tonneau en terre cuite, couvercle-entonnoir, cerclages, jauge et robinet. */
+      .cuve {
+        position: absolute; left: 112cqh; bottom: 11cqh; width: 26cqh; height: 32cqh;
+        background: color-mix(in srgb, var(--c-primaire) 62%, var(--c-fond));
+        border-radius: 30% 30% 34% 34% / 10% 10% 14% 14%;
+        transform-origin: 50% 100%;
+      }
+      .couvercle {
+        position: absolute; left: -1.6cqh; right: -1.6cqh; top: -1.8cqh; height: 4cqh; border-radius: 99cqh;
+        background: color-mix(in srgb, var(--c-primaire) 70%, var(--c-texte));
+      }
+      .cerclage {
+        position: absolute; left: -0.4cqh; right: -0.4cqh; height: 1.2cqh; border-radius: 99cqh;
+        background: color-mix(in srgb, var(--c-primaire) 55%, var(--c-texte));
+      }
+      .jauge {
+        position: absolute; left: 50%; top: 6.5cqh; bottom: 4.5cqh; width: 5.4cqh; margin-left: -2.7cqh;
+        border-radius: 99cqh; overflow: hidden; background: var(--c-fond);
+        box-shadow: inset 0 0 0 0.5cqh color-mix(in srgb, var(--c-primaire) 40%, var(--c-texte));
+      }
+      .eau {
+        position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--niveau, 0) * 100%);
+        background: var(--c-accent);
+      }
+      .robinet {
+        position: absolute; right: -3.4cqh; bottom: 5cqh; width: 4.4cqh; height: 1.8cqh; border-radius: 0 99cqh 99cqh 0;
+        background: color-mix(in srgb, var(--c-texte) 70%, var(--c-fond));
+      }
+
+      /* Nuage qui dérive, puis pluie en gouttes (animation finie, calée sur #pluie). */
+      .nuage-plan { position: absolute; left: 103cqh; top: 34cqh; width: 44cqh; height: 12cqh; translate: var(--dx, 0) 0; }
+      .nuage {
+        position: absolute; inset: 0; border-radius: 99cqh;
+        background: color-mix(in srgb, var(--c-texte) 12%, var(--c-fond));
+      }
+      .nuage::before, .nuage::after {
+        content: ""; position: absolute; border-radius: 50%; background: inherit;
+      }
+      .nuage::before { width: 16cqh; height: 14cqh; left: 7cqh; top: -7cqh; }
+      .nuage::after { width: 20cqh; height: 17cqh; left: 18cqh; top: -10cqh; }
+      .pluie { position: absolute; left: 103cqh; top: 46cqh; width: 44cqh; height: 12cqh; }
+      @keyframes ch-goutte {
+        0% { opacity: 0; transform: translateY(0); }
+        20% { opacity: 1; }
+        80% { opacity: 1; }
+        100% { opacity: 0; transform: translateY(9cqh); }
+      }
+      .goutte {
+        position: absolute; top: 0; width: 1.1cqh; height: 2.6cqh; border-radius: 99cqh;
+        background: color-mix(in srgb, var(--c-accent) 70%, var(--c-fond));
+        animation: ch-goutte 0.7s linear 14 both;
+      }
+
+      /* Plantes du jardin, à droite de la cuve, qui se balancent doucement. */
+      .plante { position: absolute; bottom: 12cqh; width: 8cqh; height: 11cqh; transform-origin: 50% 100%; rotate: var(--r, 0deg); }
+      .plante .tige {
+        position: absolute; left: 3.5cqh; bottom: 0; width: 1cqh; height: 10cqh; border-radius: 99cqh;
+        background: color-mix(in srgb, var(--c-accent) 85%, var(--c-texte));
+      }
+      .plante .feuille {
+        position: absolute; width: 4.6cqh; height: 2.6cqh; background: var(--c-accent);
+        border-radius: 0 100% 0 100%;
+      }
+      .plante .feuille.g { left: 0; bottom: 5cqh; transform: scaleX(-1); }
+      .plante .feuille.d { left: 4cqh; bottom: 7cqh; }
+    }
+  </style>
+
+  <div class="plan" data-camera="zoom 1→1.06 0+16; x 50→56 0+16">
+    <div class="decor" data-profondeur="0.35">
+      <span class="galet" data-decor style="width: 52cqh; height: 46cqh; right: -14cqh; top: -18cqh" data-start="0" data-dur="16" data-tween="--dx 0cqh→-6cqh sine-inout; --dy 0cqh→5cqh sine-inout; --m 0→1 sine-inout"></span>
+      <span class="galet sauge" data-decor style="width: 44cqh; height: 38cqh; left: -14cqh; bottom: 2cqh" data-start="0" data-dur="16" data-tween="--dx 0cqh→7cqh sine-inout; --m 1→0 sine-inout"></span>
+    </div>
+
+    <div class="jardin">
+      <span class="sol" data-decor></span>
+
+      <span class="plante" data-decor style="left: 146cqh" data-start="0" data-dur="16" data-tween="--r -3deg→4deg sine-inout"><span class="tige"></span><span class="feuille g"></span><span class="feuille d"></span></span>
+      <span class="plante" data-decor style="left: 157cqh; scale: 0.8" data-start="0" data-dur="16" data-tween="--r 3deg→-4deg sine-inout"><span class="tige"></span><span class="feuille g"></span><span class="feuille d"></span></span>
+
+      <div id="cuve" class="cuve eclot" data-decor data-start="1.6" data-dur="0.8" data-son="pop">
+        <span class="couvercle"></span>
+        <span class="cerclage" style="top: 26%"></span>
+        <span class="cerclage" style="bottom: 18%"></span>
+        <span class="jauge"><span id="niveau" class="eau" data-start="#pluie+0.6" data-dur="9" data-tween="--niveau 0→0.85 sine-out"></span></span>
+        <span class="robinet"></span>
+      </div>
+
+      <div class="nuage-plan" data-decor data-start="0" data-dur="16" data-tween="--dx 3cqh→-3cqh sine-inout">
+        <div id="nuage" class="nuage eclot" data-start="#cuve:fin+0.3" data-dur="0.8" data-son="tic" data-son-volume="0.6"></div>
+      </div>
+
+      <div id="pluie" class="pluie" data-decor data-start="#nuage:fin" data-dur="10">
+        <span class="goutte" style="left: 11cqh; animation-delay: 0s"></span>
+        <span class="goutte" style="left: 17cqh; animation-delay: 0.35s"></span>
+        <span class="goutte" style="left: 22cqh; animation-delay: 0.12s"></span>
+        <span class="goutte" style="left: 27cqh; animation-delay: 0.5s"></span>
+        <span class="goutte" style="left: 32cqh; animation-delay: 0.24s"></span>
+        <span class="goutte" style="left: 14cqh; animation-delay: 0.6s"></span>
+      </div>
+    </div>
+
+    <div id="touffu" data-personnage="touffu" data-x="-10" data-sol="89" data-taille="40">
+      <i id="entree" data-action="marcher" data-vers="54" data-start="0.8" data-dur="5.2"></i>
+      <i id="montre" data-action="pose" data-pose="montrer" data-start="#entree:fin+0.1" data-dur="2"></i>
+      <i data-action="expression" data-expression="joie" data-start="#montre"></i>
+      <i id="tourne" data-action="tourner" data-vue="60" data-start="#montre:fin" data-dur="0.5"></i>
+      <i data-action="regarder" data-cible="camera" data-start="#tourne"></i>
+      <i id="salut" data-action="jouer" data-clip="coucou" data-start="#tourne:fin" data-dur="1.6"></i>
+      <i data-action="regarder" data-cible="#cuve" data-start="#salut:fin+1"></i>
+    </div>
+  </div>
+
+  <div class="textes">
+    <h2 id="titre" class="titre-moyen pose" data-texte="titre" data-start="0.4" data-dur="0.9"></h2>
+    <p id="sous" class="sous-titre pose" data-texte="sous" data-start="#titre:fin+0.2" data-dur="0.9"></p>
+  </div>
+</section>

@@ -1,0 +1,27 @@
+{
+  "role": "Vidéo témoin de 3 min du protocole de mesure (spec Rapidité, § 5.1). Figée : ne pas la retoucher, sauf à refaire toutes les mesures de référence.",
+  "fabrication": {
+    "date": "2026-11-08",
+    "plugin": "0.27.0",
+    "seance": "suit skills/creer/SKILL.md : modèle « formation-courte » trouvé puis adapté au contenu imposé, réponses fixées (3 min, grand public, parcours rapide, rien à ajouter, musique composée, voix « je l'enregistre », sous-titres oui), comparaison de 3 styles, style chaleureux, un agent animateur par scène en parallèle (15), assembler, controler.",
+    "voix": "texte dit seulement, sans prise ni voix provisoire : sous-titres et calage approchés, reproductibles",
+    "retouches": [
+      "contrôle 1 : 16 corrections automatiques (typographie) ; 3 alertes",
+      "scène douche : cuves moins hautes (sous-titres qui cachaient la légende) ; texte dit « Comparons. » fusionné avec la phrase suivante (sous-titre trop bref)",
+      "scène facture : note remontée (sous-titres qui la cachaient)",
+      "contrôle 2 : 0 erreur, 0 alerte"
+    ]
+  },
+  "contenu": {
+    "scenes": 15,
+    "duree": 180.7,
+    "format": "16:9",
+    "style": "chaleureux",
+    "toutesFaitesSansEffet": ["intro", "postes", "fuite", "etape1", "etape2", "etape3", "jardin", "cycle", "recap"],
+    "composees": ["douche", "facture", "reserve"],
+    "aEffet": { "constat": "etincelles", "fin": "confettis" },
+    "personnage": { "pluie": "touffu" },
+    "mouvements": { "intro": "#004", "fuite": "#032", "etape1": "#001", "fin": "#016" },
+    "transitionShader": { "cycle": "dissolution" }
+  }
+}

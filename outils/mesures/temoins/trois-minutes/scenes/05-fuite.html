@@ -1,0 +1,23 @@
+<!-- Scène « fuite » (d'après la scène toute faite « alerte », style chaleureux) : une fuite discrète gaspille énormément. Durée : 11 s.
+     Textes : titre, texte. Mouvement #032 Battement sur le titre. -->
+<section data-scene="fuite">
+  <style>
+    @scope {
+      #titre { transform-origin: left center; }
+    }
+  </style>
+  <div class="decor">
+    <span class="galet sauge" data-decor style="width: 50cqh; height: 44cqh; left: -18cqh; top: -18cqh" data-start="0" data-dur="11" data-tween="--dx 0cqh→6cqh sine-inout; --m 0→1 sine-inout"></span>
+    <span class="galet" data-decor style="width: 36cqh; height: 32cqh; right: -12cqh; bottom: -14cqh" data-start="0" data-dur="11" data-tween="--dy 0cqh→-5cqh sine-inout; --m 0→1 sine-inout"></span>
+  </div>
+  <div id="boite" class="conseil pose" data-start="0.2" data-dur="0.9">
+    <svg id="icone" class="conseil-icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+         data-start="#boite:fin" data-dur="0.8" data-tween="scale 1→1.15 quad-spike" data-son="blip" aria-hidden="true">
+      <circle cx="12" cy="12" r="10"/><path d="M12 8v5"/><path d="M12 16.5h.01"/>
+    </svg>
+    <div class="conseil-corps">
+      <h2 id="titre" class="titre-moyen pm-m-pulse" data-texte="titre" data-start="#texte:fin+0.5" data-dur="2.4" style="--pm-dur: 0.8s; --pm-ampleur: 1.08; --pm-fois: 3"></h2>
+      <p id="texte" class="texte pose" data-texte="texte" data-start="#boite:fin+0.6" data-dur="0.9" data-son="ding" data-son-volume="0.6"></p>
+    </div>
+  </div>
+</section>
