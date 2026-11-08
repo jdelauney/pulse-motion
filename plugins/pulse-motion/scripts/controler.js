@@ -2,13 +2,20 @@
 'use strict';
 /* Pulse Motion – contrôles automatiques d'un projet vidéo, sans navigateur.
  *
- *   node scripts/controler.js <dossier-du-projet> [--sans-correction] [--sans-rendu] [--gpu]
+ *   node scripts/controler.js <dossier-du-projet> [--sans-correction] [--sans-rendu] [--gpu] [--complet]
  *
  * --gpu : compile aussi chaque shader et chaque module WGSL dans Chrome sans fenêtre avec WebGPU (shader-ne-compile-pas).
  * Contrôle aussi la vidéo rendue dans Chrome ou Edge sans fenêtre (débordements, chevauchements, cadre, marges,
  * zone des boutons en 9:16, logo, textes fugaces, mouvements rapides) ; sans navigateur : alerte rendu-non-verifie.
- * Écrit sortie/controle.json : { problemes: [{ regle, gravite: "erreur" | "alerte" | "info" (rien à corriger : la personne est prévenue), scene?, element?, message, correction? }],
- *   corrections: [{ regle, scene, element?, avant, apres, message }], renduVerifie }.
+ * Écrit sortie/controle.json : { version: 2, problemes: [{ regle, gravite: "erreur" | "alerte" | "info" (rien à corriger : la personne est prévenue), scene?, element?, message, correction? }],
+ *   corrections: [{ regle, scene, element?, avant, apres, message }], renduVerifie, rendu: "complet" | "partiel" | null, scenesMesurees,
+ *   empreintes: { moteur, seuils, commun, scenes: { id: empreinte } } | null, rendus: { id: [problèmes du rendu] } | null }.
+ * Un seul assemblage par contrôle (deux après des corrections du déroulé) ; écrit aussi la page sortie/<titre>.html
+ * quand elle a changé (plus besoin d'assembler avant de contrôler).
+ * Contrôle du rendu incrémental (spec Rapidité 5.9) : les contrôles rapides se refont en entier ; le rendu ne mesure que
+ * les scènes dont l'empreinte a changé depuis le contrôle précédent, et reprend les résultats des autres. Aucune scène
+ * changée : aucun navigateur. Pas de contrôle précédent, ancien controle.json, moteur ou seuils changés, ou --complet :
+ * contrôle complet (exigé avant l'export).
  * Corrige seul les cas sûrs (typographie, durées) dans deroule.json, après une copie d'historique ;
  * --sans-correction : signale seulement (chaque problème corrigeable porte sa « correction »).
  * Reprend les erreurs de l'assemblage (polices, fichiers…) et le rapport de débordement
@@ -17,7 +24,12 @@
  */
 const fs = require('node:fs');
 const path = require('node:path');
-const { assembler, charteFinale, RACINE } = require('./assembler.js');
+// Appelé par le module (et non par une copie de la fonction) : les tests comptent les assemblages.
+const Assembleur = require('./assembler.js');
+const { charteFinale, RACINE } = Assembleur;
+const { controlerCSS, controlerLettres, sonConnu, problemeSonInconnu } = require('./lib/controle-scene.js');
+const { empreintesControle, plagesScenes } = require('./lib/empreintes.js');
+const { ecrireAtomique } = require('./lib/fichiers.js');
 const { trouverStyle } = require('./styles.js');
 const { lireGlossaire, verifierGlossaire } = require('./vocabulaire.js');
 const { lireDeroule, dureeTemps, grilleFixe, optionsMinutage } = require('./lib/deroule.js');
@@ -32,7 +44,6 @@ const { appliquerCorrections } = require('./lib/corriger.js');
 const { controlerRendu } = require('./lib/rendu-controle.js');
 const { aDesShaders, compilerShadersGPU } = require('./lib/shaders-gpu.js');
 const { LIMITES_INTERACTIONS, PLEINE_VOISINAGE, STRUCTURES_SCENE_MAX, SOMMETS_TISSU_MAX, RESOLUTION_MILIEU_ALERTE } = require('../moteur/particules/recette.js');
-const { EFFETS: EFFETS_LETTRES } = require('../moteur/lettres.js');
 const { analyserCamera } = require('../moteur/camera.js');
 const { analyserTemps } = require('../moteur/temps.js');
 
@@ -60,41 +71,6 @@ function trous(debut, fin, intervalles) {
   }
   if (curseur < fin) resultat.push([curseur, fin]);
   return resultat;
-}
-
-const EFFETS = [
-  [/filter\s*:[^;}]*url\(/i, 'filter: url(…)'],
-  [/mix-blend-mode\s*:/i, 'mix-blend-mode'],
-  [/backdrop-filter\s*:/i, 'backdrop-filter'],
-];
-
-const FAMILLES_PERMISES = /^(inherit|initial|unset|system-ui|sans-serif|serif|monospace|var\(--f-[a-z0-9-]+\))$/i;
-
-function controlerCSS(cssBrut, scene, ou, problemes) {
-  const css = cssBrut.replace(/\/\*[\s\S]*?\*\//g, '');
-  // Taille du texte : font-size, ou la propriété raccourcie font (« 700 5cqh/1.2 … »).
-  const tailles = /font(?:-size\s*:\s*|\s*:[^;}]*?\s)(\d*\.?\d+)cqh/gi;
-  let m;
-  while ((m = tailles.exec(css))) {
-    const valeur = parseFloat(m[1]);
-    if (valeur < SEUILS.texteMinCqh) {
-      problemes.push({ regle: 'texte-petit', gravite: 'alerte', scene, message: `${ou} : texte de ${virgule(valeur)} cqh, trop petit pour être lu (minimum ${virgule(SEUILS.texteMinCqh)} cqh).` });
-    }
-  }
-  // Polices : seules celles de la charte (variables --f-…) sont embarquées.
-  const familles = /font-family\s*:\s*([^;}]+)|font\s*:[^;}]*?(["'][^"']+["'][^;}]*)/gi;
-  while ((m = familles.exec(css))) {
-    const valeur = (m[1] || m[2]).trim();
-    const nonEmbarquees = valeur.split(',').map((f) => f.trim()).filter((f) => f && !FAMILLES_PERMISES.test(f));
-    if (nonEmbarquees.length) {
-      problemes.push({ regle: 'police-non-embarquee', gravite: 'erreur', scene, message: `${ou} : la police « ${valeur} » n'est pas embarquée ; utiliser var(--f-titres) ou var(--f-texte) (polices de la charte).` });
-    }
-  }
-  for (const [motif, nom] of EFFETS) {
-    if (motif.test(css)) {
-      problemes.push({ regle: 'effet-export', gravite: 'alerte', scene, message: `${ou} : l'effet ${nom} ne passera pas à l'export rapide (MP4 dans le navigateur).` });
-    }
-  }
 }
 
 const liste = (corrections) => corrections.join(', ');
@@ -138,9 +114,8 @@ function controlerTextes(deroule, scenesHtml, termesGlossaire, problemes) {
   }
 }
 
-/** Contrôles sans navigateur. -> { problemes, ok } (ok : le projet s'assemble) */
-function controlesRapides({ projet, dossierStyles, dossierEffets }) {
-  const assemblage = assembler({ dossier: projet, dossierStyles, dossierEffets, ecrire: false });
+/** Contrôles sans navigateur, sur l'assemblage donné (sinon assemblé ici). -> { problemes, ok } (ok : le projet s'assemble) */
+function controlesRapides({ projet, dossierStyles, dossierEffets, assemblage = Assembleur.assembler({ dossier: projet, dossierStyles, dossierEffets, ecrire: false }) }) {
   const problemes = assemblage.erreurs.map((e) => ({ ...e }));
   const { deroule } = lireDeroule(projet);
 
@@ -175,8 +150,8 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
     const sonsJoues = [];
     for (const s of min.scenes) {
       for (const e of elementsParScene[s.id].filter((x) => x.son !== undefined)) {
-        if (!CATALOGUE.BRUITAGES.includes(e.son) && !/[/.]/.test(e.son)) {
-          problemes.push({ regle: 'son-inconnu', gravite: 'erreur', scene: s.id, message: `Scène « ${s.id} » : le son « ${e.son} » n'existe pas (sons : ${CATALOGUE.BRUITAGES.join(', ')} ; ou un fichier assets/…).` });
+        if (!sonConnu(e.son)) {
+          problemes.push(problemeSonInconnu(s.id, e.son));
           continue;
         }
         const el = min.elements[s.id][e.cle];
@@ -352,13 +327,7 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
           signaler('profondeur-invalide', `data-profondeur « ${m.profondeur} » doit être un nombre (1 : suit la caméra, 0 : plan fixe, 0.3 : plan lointain).`);
         }
       }
-      for (const { attribut, effet } of scenesLues[s.id].decoupes) {
-        if (!Object.hasOwn(EFFETS_LETTRES, effet)) {
-          problemes.push({ regle: 'lettres-invalide', gravite: 'erreur', scene: s.id, message: `Scène « ${s.id} » : ${attribut} « ${effet} » inconnu (effets : ${Object.keys(EFFETS_LETTRES).join(', ')}).` });
-        } else if (effet === 'brouille' && attribut === 'data-mots') {
-          problemes.push({ regle: 'lettres-invalide', gravite: 'erreur', scene: s.id, message: `Scène « ${s.id} » : data-mots « brouille » : le texte se brouille lettre par lettre, écrire data-lettres="brouille".` });
-        }
-      }
+      controlerLettres(scenesLues[s.id].decoupes, s.id, problemes);
     }
 
     // Effets de particules : budget par scène, effet du calque avant posé sur un texte long.
@@ -465,99 +434,159 @@ function controlesRapides({ projet, dossierStyles, dossierEffets }) {
   return { problemes, ok: assemblage.ok };
 }
 
+/** Fichiers dont dépend la mesure du rendu : le moteur de la page, la capture et le code de mesure côté Node. */
+const MESURE = [path.join(RACINE, 'moteur', 'capture.js'), path.join(__dirname, 'lib', 'rendu-controle.js'), path.join(__dirname, 'lib', 'flashs.js'), path.join(__dirname, 'lib', 'page-mesures.js')];
+function codeDeMesure() {
+  return Assembleur.lireMoteur(RACINE) + MESURE.map((f) => { try { return fs.readFileSync(f, 'utf8'); } catch { return ''; } }).join('\n');
+}
+
+/** controle.json précédent, s'il est au format v2 avec ses empreintes ; sinon null (ancien format : contrôle complet). */
+function lirePrecedent(projet) {
+  try {
+    const c = JSON.parse(fs.readFileSync(path.join(projet, 'sortie', 'controle.json'), 'utf8'));
+    if (c && c.version === 2 && c.empreintes && c.empreintes.scenes && c.rendus && typeof c.rendus === 'object') return c;
+  } catch { /* pas de contrôle précédent */ }
+  return null;
+}
+
 /**
  * controler({ dossier, dossierStyles?, dossierEffets?, ecrire?, corriger? })
- * -> { problemes, corrections, fichier } ; corriger : applique les corrections sûres au déroulé.
+ * -> { problemes, corrections, fichier, assemblage } ; corriger : applique les corrections sûres au déroulé.
+ * Un assemblage, deux si des corrections changent le déroulé ; ecrire : la page sortie/<titre>.html est écrite si elle a
+ * changé, et sortie/controle.json (contrôles rapides seulement).
  */
 function controler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, 'effets'), ecrire = true, corriger = false }) {
   const projet = path.resolve(dossier);
-  const premier = controlesRapides({ projet, dossierStyles, dossierEffets });
+  let assemblage = Assembleur.assembler({ dossier: projet, dossierStyles, dossierEffets, ecrire: false });
+  const premier = controlesRapides({ projet, dossierStyles, dossierEffets, assemblage });
   let { problemes } = premier;
   let corrections = [];
   if (corriger && premier.ok) {
     const r = appliquerCorrections(projet, problemes);
     corrections = r.corrections;
     if (corrections.length) {
-      ({ problemes } = controlesRapides({ projet, dossierStyles, dossierEffets }));
-      // La page assemblée suit le déroulé corrigé (l'aperçu se recharge).
-      if (ecrire) assembler({ dossier: projet, dossierStyles, dossierEffets, ecrire: true });
+      assemblage = Assembleur.assembler({ dossier: projet, dossierStyles, dossierEffets, ecrire: false });
+      ({ problemes } = controlesRapides({ projet, dossierStyles, dossierEffets, assemblage }));
     }
     if (r.erreur) problemes.push({ regle: 'correction-impossible', gravite: 'alerte', message: r.erreur });
   }
   let fichier = null;
   if (ecrire) {
-    fs.mkdirSync(path.join(projet, 'sortie'), { recursive: true });
+    // La page suit le déroulé (corrigé) : l'aperçu se recharge seul, l'export lit cette page.
+    if (assemblage.ok) Assembleur.ecrireSortie(projet, assemblage, { siChangee: true });
     fichier = path.join(projet, 'sortie', 'controle.json');
-    fs.writeFileSync(fichier, JSON.stringify({ problemes, corrections }, null, 2));
+    ecrireAtomique(fichier, JSON.stringify({ problemes, corrections }, null, 2));
   }
-  return { problemes, corrections, fichier };
+  return { problemes, corrections, fichier, assemblage };
 }
 
 /**
- * controlerComplet({ dossier, dossierStyles?, dossierEffets?, ecrire?, corriger?, rendu?, gpu?, navigateur? })
- * -> Promise<{ problemes, corrections, renduVerifie, fichier }> : contrôles rapides, corrections, vidéo rendue, puis (gpu)
- * compilation réelle des shaders.
+ * controlerComplet({ dossier, dossierStyles?, dossierEffets?, ecrire?, corriger?, rendu?, gpu?, navigateur?, complet?, mesurer? })
+ * -> Promise<{ problemes, corrections, renduVerifie, rendu, scenesMesurees, fichier }> : contrôles rapides, corrections,
+ * vidéo rendue (seulement les scènes changées, sauf complet), puis (gpu) compilation réelle des shaders.
+ * mesurer : remplace controlerRendu (tests).
  */
-async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.join(RACINE, 'effets'), ecrire = true, corriger = true, rendu = true, gpu = false, navigateur }) {
+async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.join(RACINE, 'effets'), ecrire = true, corriger = true, rendu = true, gpu = false, navigateur, complet = false, mesurer = controlerRendu }) {
   const projet = path.resolve(dossier);
+  const precedent = lirePrecedent(projet);
   const r = controler({ dossier: projet, dossierStyles, dossierEffets, ecrire, corriger });
+  const { assemblage } = r;
   let { problemes } = r;
   let corrections = r.corrections;
   let renduVerifie = false;
-  if (rendu) {
-    const assemblage = assembler({ dossier: projet, dossierStyles, dossierEffets, ecrire: false });
-    if (assemblage.ok) {
-      const { deroule } = lireDeroule(projet);
-      const duree = dureeVideo(projet, deroule);
-      const options = { html: assemblage.html, ratio: deroule.format.ratio, duree };
-      if (navigateur !== undefined) options.navigateur = navigateur;
-      const v = await controlerRendu(options);
-      renduVerifie = v.renduVerifie;
-      // Le rendu remplace le rapport de débordement de l'aperçu (même page, plus récent).
-      if (renduVerifie) problemes = problemes.filter((p) => p.regle !== 'debordement');
-      problemes = [...problemes, ...v.problemes];
-      if (corriger && renduVerifie) {
-          // Seulement les textes dont le débordement est bien signalé par le rendu.
-          const corrigibles = v.ajustements.filter((a) => a.taille && v.problemes.some((p) => p.regle === 'debordement' && p.scene === a.scene && p.element === a.element));
-          if (corrigibles.length) {
-            const appli = appliquerCorrections(projet, corrigibles.map((a) => ({ regle: 'debordement', correction: { scene: a.scene, ajustement: { cle: a.cle, taille: a.taille } } })), { copieFaite: r.corrections.length > 0 });
-            corrections = [...corrections, ...appli.corrections];
-            const corriges = new Set(appli.corrections.map((c) => `${c.scene}|${c.element}`));
-            problemes = problemes.filter((p) => !(p.regle === 'debordement' && corrigibles.some((a) => a.scene === p.scene && a.element === p.element && corriges.has(`${a.scene}|${a.cle}`))));
-            if (appli.corrections.length && ecrire) assembler({ dossier: projet, dossierStyles, dossierEffets, ecrire: true });
-            if (appli.erreur) problemes.push({ regle: 'correction-impossible', gravite: 'alerte', message: appli.erreur });
-          }
-          // Débordement que la taille ne suffit pas à corriger : le conseil de raccourcir.
-          problemes = problemes.map((p) => (p.regle === 'debordement' && v.ajustements.some((a) => a.scene === p.scene && a.element === p.element && a.taille === null)
-            ? { ...p, message: `${p.message} Même réduit autant que possible (jusqu'à 80 %, sans passer sous ${virgule(SEUILS.texteMinCqh)} cqh), il ne tient pas : raccourcir le texte.` } : p));
+  let modeRendu = null;
+  let scenesMesurees = [];
+  let empreintes = null;
+  let rendus = null;
+  if (rendu && assemblage.ok) {
+    const { deroule } = lireDeroule(projet);
+    const duree = dureeVideo(projet, deroule);
+    const options = optionsMinutage(deroule);
+    empreintes = empreintesControle(assemblage, { seuils: SEUILS, moteur: codeDeMesure(), options });
+    const ids = assemblage.donnees.scenes.map((s) => s.id);
+    const comparable = !complet && Boolean(precedent) && precedent.empreintes.moteur === empreintes.moteur
+      && precedent.empreintes.seuils === empreintes.seuils && precedent.empreintes.commun === empreintes.commun;
+    const changees = comparable ? ids.filter((id) => precedent.empreintes.scenes[id] !== empreintes.scenes[id] || !Array.isArray(precedent.rendus[id])) : ids;
+    modeRendu = comparable ? 'partiel' : 'complet';
+    scenesMesurees = changees;
+    let v;
+    if (comparable && !changees.length) {
+      // Rien n'a changé à l'écran : aucun navigateur, les résultats du rendu sont repris tels quels.
+      v = { renduVerifie: true, problemes: [], ajustements: [] };
+    } else {
+      const opt = { html: assemblage.html, ratio: deroule.format.ratio, duree };
+      if (navigateur !== undefined) opt.navigateur = navigateur;
+      if (comparable) {
+        const minutage = calculerMinutage(assemblage.donnees.scenes, {}, options);
+        opt.scenes = changees;
+        // Mesures : deux relevés avant et après la scène (transitions, textes qui s'effacent) ; flashs : 1 s de chaque côté.
+        opt.plages = plagesScenes(minutage, changees, 2 * (SEUILS.pasMesure || 0.2));
+        opt.plagesFlashs = plagesScenes(minutage, changees, 1);
       }
+      v = await mesurer(opt);
     }
-  }
-  if (gpu) {
-    const assemblage = assembler({ dossier: projet, dossierStyles, dossierEffets, ecrire: false });
-    if (assemblage.ok && aDesShaders(assemblage.donnees)) {
-      const g = await compilerShadersGPU({ html: assemblage.html, ...(navigateur !== undefined ? { navigateur } : {}) });
-      problemes = [...problemes, ...g.problemes];
+    renduVerifie = v.renduVerifie;
+    let duRendu = v.problemes;
+    if (renduVerifie && comparable) {
+      // Scènes mesurées : leurs nouveaux résultats ; les autres : ceux du contrôle précédent (même empreinte).
+      const mesurees = new Set(changees);
+      const sansScene = duRendu.filter((p) => !p.scene || !ids.includes(p.scene));
+      duRendu = [...ids.flatMap((id) => (mesurees.has(id) ? duRendu.filter((p) => p.scene === id) : precedent.rendus[id])), ...sansScene];
     }
+    // Le rendu remplace le rapport de débordement de l'aperçu (même page, plus récent).
+    if (renduVerifie) problemes = problemes.filter((p) => p.regle !== 'debordement');
+    if (corriger && renduVerifie) {
+      // Seulement les textes dont le débordement est bien signalé par le rendu.
+      const corrigibles = v.ajustements.filter((a) => a.taille && duRendu.some((p) => p.regle === 'debordement' && p.scene === a.scene && p.element === a.element));
+      if (corrigibles.length) {
+        const appli = appliquerCorrections(projet, corrigibles.map((a) => ({ regle: 'debordement', correction: { scene: a.scene, ajustement: { cle: a.cle, taille: a.taille } } })), { copieFaite: r.corrections.length > 0 });
+        corrections = [...corrections, ...appli.corrections];
+        const corriges = new Set(appli.corrections.map((c) => `${c.scene}|${c.element}`));
+        duRendu = duRendu.filter((p) => !(p.regle === 'debordement' && corrigibles.some((a) => a.scene === p.scene && a.element === p.element && corriges.has(`${a.scene}|${a.cle}`))));
+        if (appli.corrections.length && ecrire) Assembleur.assembler({ dossier: projet, dossierStyles, dossierEffets, ecrire: true });
+        if (appli.erreur) problemes.push({ regle: 'correction-impossible', gravite: 'alerte', message: appli.erreur });
+      }
+      // Débordement que la taille ne suffit pas à corriger : le conseil de raccourcir.
+      duRendu = duRendu.map((p) => (p.regle === 'debordement' && v.ajustements.some((a) => a.scene === p.scene && a.element === p.element && a.taille === null)
+        ? { ...p, message: `${p.message} Même réduit autant que possible (jusqu'à 80 %, sans passer sous ${virgule(SEUILS.texteMinCqh)} cqh), il ne tient pas : raccourcir le texte.` } : p));
+    }
+    problemes = [...problemes, ...duRendu];
+    if (renduVerifie) {
+      rendus = Object.fromEntries(ids.map((id) => [id, duRendu.filter((p) => p.scene === id)]));
+    } else {
+      empreintes = null;
+      modeRendu = null;
+      scenesMesurees = [];
+    }
+  } else if (!rendu && precedent) {
+    // Sans rendu (--sans-rendu) : les résultats du dernier rendu restent comparables au prochain contrôle.
+    empreintes = precedent.empreintes;
+    rendus = precedent.rendus;
   }
-  if (r.fichier) fs.writeFileSync(r.fichier, JSON.stringify({ problemes, corrections, renduVerifie }, null, 2));
-  return { problemes, corrections, renduVerifie, fichier: r.fichier };
+  if (gpu && assemblage.ok && aDesShaders(assemblage.donnees)) {
+    const g = await compilerShadersGPU({ html: assemblage.html, ...(navigateur !== undefined ? { navigateur } : {}) });
+    problemes = [...problemes, ...g.problemes];
+  }
+  if (r.fichier) {
+    ecrireAtomique(r.fichier, JSON.stringify({ version: 2, problemes, corrections, renduVerifie, rendu: modeRendu, scenesMesurees, empreintes, rendus }, null, 2));
+  }
+  return { problemes, corrections, renduVerifie, rendu: modeRendu, scenesMesurees, fichier: r.fichier };
 }
 
 if (require.main === module) {
   const args = process.argv.slice(2);
   const dossier = args.find((a) => !a.startsWith('--'));
   if (!dossier) {
-    console.error('Usage : node scripts/controler.js <dossier-du-projet> [--sans-correction] [--sans-rendu] [--gpu]');
+    console.error('Usage : node scripts/controler.js <dossier-du-projet> [--sans-correction] [--sans-rendu] [--gpu] [--complet]');
     process.exit(2);
   }
-  controlerComplet({ dossier, corriger: !args.includes('--sans-correction'), rendu: !args.includes('--sans-rendu'), gpu: args.includes('--gpu') }).then(({ problemes, corrections, renduVerifie, fichier }) => {
+  controlerComplet({ dossier, corriger: !args.includes('--sans-correction'), rendu: !args.includes('--sans-rendu'), gpu: args.includes('--gpu'), complet: args.includes('--complet') }).then(({ problemes, corrections, renduVerifie, rendu, scenesMesurees, fichier }) => {
     const erreurs = problemes.filter((p) => p.gravite === 'erreur').length;
     const alertes = problemes.filter((p) => p.gravite === 'alerte').length;
     const informations = problemes.filter((p) => p.gravite === 'info').length;
-    console.log(JSON.stringify({ erreurs, alertes, informations, corrections: corrections.length, renduVerifie, fichier }, null, 2));
+    console.log(JSON.stringify({ erreurs, alertes, informations, corrections: corrections.length, renduVerifie, rendu, scenesMesurees, fichier }, null, 2));
     process.exit(erreurs ? 1 : 0);
   }, (e) => { console.error(e.message); process.exit(1); });
 }
 
-module.exports = { controler, controlerComplet, contraste, compterMots, trous, SEUILS };
+module.exports = { controler, controlerComplet, controlesRapides, contraste, compterMots, trous, SEUILS };

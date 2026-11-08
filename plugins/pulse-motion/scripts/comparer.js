@@ -6,9 +6,10 @@
  *
  * Pour chaque style, un projet temporaire reprend les scènes choisies (2 premières par défaut) avec
  * leurs textes, leurs durées, la charte et les fichiers du projet, mises dans les scènes toutes faites
- * du style ; sa planche est capturée par la voie de l'export (Chrome ou Edge sans fenêtre).
+ * du style ; sa planche est capturée par la voie de l'export (Chrome ou Edge sans fenêtre), les styles en même temps
+ * (lib/paralleles.js). Un style en échec n'arrête pas les autres : il est dit dans les avertissements (et dans echecs).
  * Écrit sortie/comparaison/comparaison.html et une image par style et par scène.
- * Affiche { ok, fichier, images, avertissements, secondes } ; code 1 avec { ok: false, message } en cas d'échec.
+ * Affiche { ok, fichier, images, avertissements, echecs?, secondes } ; code 1 avec { ok: false, message } si aucun style n'a pu être rendu.
  */
 const fs = require('node:fs');
 const os = require('node:os');
@@ -20,6 +21,7 @@ const { adapterScene, choisirType, textesPour, lireNombre } = require('./lib/ada
 const { trouverStyle, messageStyleInconnu, styleVerifie, ficheStyle, racinesStyles } = require('./styles.js');
 const { exporterVideo, arreterProprementSurSignal } = require('./exporter.js');
 const { ouvrirNavigateur } = require('./apercu.js');
+const { navigateursParalleles, enParallele } = require('./lib/paralleles.js');
 
 /** Projet temporaire : les scènes `ids` du déroulé dans le style `st`. -> { dossier, avertissements } */
 function preparerProjet(projet, deroule, st, ids, temporaires = []) {
@@ -97,39 +99,52 @@ async function comparer({
   fs.rmSync(sortie, { recursive: true, force: true });
   fs.mkdirSync(sortie, { recursive: true });
   const avertissements = [];
-  const colonnes = [];
   const temporaires = [];
-  const echec = (st, message) => {
-    // Pas de comparaison à moitié faite dans sortie/.
-    fs.rmSync(sortie, { recursive: true, force: true });
-    return fin({ ok: false, message: `Style « ${st.nom} » : ${message}` });
-  };
+  let resultats;
   try {
-    for (const st of trouves) {
-      let r;
-      let prepare;
+    // Projets temporaires préparés d'abord, puis exports de planche en même temps (spec Rapidité 5.13), au plus autant
+    // de navigateurs que la règle commune ; un style en échec n'arrête pas les autres ; l'ordre reste celui demandé.
+    const prepares = trouves.map((st) => {
       try {
-        prepare = preparerProjet(projet, deroule, st, ids, temporaires);
+        const prepare = preparerProjet(projet, deroule, st, ids, temporaires);
         avertissements.push(...prepare.avertissements);
-        r = await exporter({ dossier: prepare.dossier, planche: ids, dossierStyles: racinesStyles(dossierStyles), navigateur });
+        return { st, prepare };
       } catch (e) {
-        return echec(st, e.message);
+        return { st, erreur: e.message };
       }
-      if (!r.ok) return echec(st, r.message);
+    });
+    const { nombre } = navigateursParalleles({ taches: prepares.filter((p) => !p.erreur).length });
+    resultats = await enParallele(prepares.map((p) => async () => {
+      if (p.erreur) return { st: p.st, erreur: p.erreur };
+      let r;
+      try {
+        r = await exporter({ dossier: p.prepare.dossier, planche: ids, dossierStyles: racinesStyles(dossierStyles), navigateur });
+      } catch (e) {
+        return { st: p.st, erreur: e.message };
+      }
+      if (!r.ok) return { st: p.st, erreur: r.message };
       const images = ids.map((id) => {
-        const src = `${st.nom}-${id}.png`;
-        fs.copyFileSync(path.join(prepare.dossier, 'sortie', 'planche', `${id}-3.png`), path.join(sortie, src));
+        const src = `${p.st.nom}-${id}.png`;
+        fs.copyFileSync(path.join(p.prepare.dossier, 'sortie', 'planche', `${id}-3.png`), path.join(sortie, src));
         return { id, src };
       });
-      colonnes.push({ fiche: ficheStyle(st), images });
-    }
+      return { st: p.st, colonne: { fiche: ficheStyle(p.st), images } };
+    }), nombre);
   } finally {
     for (const t of temporaires) fs.rmSync(t, { recursive: true, force: true });
   }
+  const echecs = resultats.filter((x) => x.erreur).map((x) => ({ style: x.st.nom, message: x.erreur }));
+  const colonnes = resultats.filter((x) => x.colonne).map((x) => x.colonne);
+  if (!colonnes.length) {
+    // Pas de comparaison à moitié faite dans sortie/.
+    fs.rmSync(sortie, { recursive: true, force: true });
+    return fin({ ok: false, message: `Style « ${echecs[0].style} » : ${echecs[0].message}`, echecs });
+  }
+  for (const e of echecs) avertissements.push(`Style « ${e.style} » : ${e.message} (absent de la comparaison)`);
   fs.writeFileSync(path.join(sortie, 'comparaison.html'), pageComparaison(deroule.titre, colonnes));
   const fichier = 'sortie/comparaison/comparaison.html';
   if (ouvrir) ouvrirFichier(path.join(projet, fichier));
-  return fin({ ok: true, fichier, images: colonnes.flatMap((c) => c.images.map((i) => `sortie/comparaison/${i.src}`)), avertissements });
+  return fin({ ok: true, fichier, images: colonnes.flatMap((c) => c.images.map((i) => `sortie/comparaison/${i.src}`)), avertissements, ...(echecs.length ? { echecs } : {}) });
 }
 
 if (require.main === module) {

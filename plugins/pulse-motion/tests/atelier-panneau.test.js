@@ -1,4 +1,5 @@
 'use strict';
+const { listerSauvegardes, lireSauvegarde } = require('../scripts/historique.js');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -97,7 +98,7 @@ test('panneau : un réglage change l\'image sans rechargement ; enregistré puis
     await page.evaluer('M.atelier.enregistrer().then(() => true)');
     const scene = fs.readFileSync(SCENE(dir), 'utf8');
     assert.match(scene, /<div data-effet="gerbe" data-ancre="#cible" data-start="0\.5" data-dur="3" data-reglages="nombre: 900"><\/div>/);
-    assert.ok(fs.existsSync(path.join(dir, '.historique', '001')));
+    assert.ok(listerSauvegardes(dir).includes('001'));
     await attendre(page, '!window.__pmMarque && window.M && M.atelier && M.atelier.etat().ouvert && M.atelier.etat().ordre === 0');
     await page.evaluer('M.pret.then(() => M.particules.pret).then(() => true)');
     const apres = await page.evaluer(PIXELS(2.2));

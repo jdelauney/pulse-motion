@@ -1,4 +1,5 @@
 'use strict';
+const { listerSauvegardes, lireSauvegarde } = require('../scripts/historique.js');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -8,7 +9,8 @@ const { annuler } = require('../scripts/historique.js');
 const { copierProjet } = require('./aide/projet.js');
 
 const lire = (dir) => JSON.parse(fs.readFileSync(path.join(dir, 'deroule.json'), 'utf8'));
-const copies = (dir) => (fs.existsSync(path.join(dir, '.historique')) ? fs.readdirSync(path.join(dir, '.historique')) : []);
+// Sauvegardes d'historique (manifestes .historique/NNN.json), sans le dossier des objets.
+const copies = (dir) => (fs.existsSync(path.join(dir, '.historique')) && fs.statSync(path.join(dir, '.historique')).isDirectory() ? listerSauvegardes(dir) : []);
 
 test('corrections : textes dans l\'ordre, une durée par scène (la plus longue), une seule copie d\'historique', () => {
   const dir = copierProjet('projet-simple');

@@ -1,6 +1,6 @@
 /* Pulse Motion – détection des textes qui débordent (aperçu seulement).
  *
- * M.detecterDebordements() rend 5 instants de chaque scène et relève les éléments
+ * M.detecterDebordements({ scenes? }) rend 5 instants de chaque scène (des seules scènes données, s'il y en a) et relève les éléments
  * data-texte qui débordent de leur cadre ou sortent de l'image, puis revient à
  * l'instant de départ. Un élément encore en train d'entrer (data-etat « avant »
  * ou « pendant ») n'est pas jugé hors de l'image : il peut arriver de l'extérieur.
@@ -31,11 +31,13 @@
     });
   }
 
-  M.detecterDebordements = function () {
+  M.detecterDebordements = function (options) {
+    var choisies = (options && options.scenes) || null;
     var depart = M.temps();
     var resultats = [];
     var vus = {};
     M.minutage.scenes.forEach(function (s) {
+      if (choisies && choisies.indexOf(s.id) < 0) return;
       var sec = document.querySelector('#pm-scene > section[data-scene="' + s.id + '"]');
       if (!sec) return;
       for (var k = 0; k < INSTANTS; k++) {

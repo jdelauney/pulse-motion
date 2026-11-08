@@ -1,6 +1,8 @@
 /* Pulse Motion – mesures par pixels de la vidéo rendue (contrôle, Chrome sans fenêtre).
  *
- * M.mesurerPixels({ ratio, seuils }) -> Promise de constats { regle, scene, element, instant, valeur } :
+ * M.mesurerPixels({ ratio, seuils, scenes?, flashs?, plagesFlashs? }) -> Promise de constats { regle, scene, element, instant, valeur } :
+ * scenes : contraste des seules scènes données ; flashs: false : pas de flashs (le contrôle les mène depuis Node, par des
+ * captures réduites : scripts/lib/flashs.js, même algorithme) ; plagesFlashs : instants de la passe rapide des flashs.
  * - contraste-reel : à un instant où chaque scène est entrée, trois captures (lettres forcées en noir, en blanc,
  *   puis transparentes, aplats gardés). Les pixels où noir et blanc diffèrent sont ceux des lettres, quelle que
  *   soit leur couleur ; le fond se lit là sur la capture sans lettres (10e et 90e centiles). Couleur du texte
@@ -64,7 +66,7 @@
   }
 
   /** Flashs : passe rapide irrégulière pour repérer les passages où la lumière change, puis image par image. */
-  function mesurerFlashs(S, constats) {
+  function mesurerFlashs(S, constats, plages) {
     var n = S.flashCases;
     var l = S.largeurFlash;
     var cadre = document.getElementById('pm-scene').getBoundingClientRect();
@@ -94,11 +96,20 @@
     for (var k = 0; k < M.duree * S.flashIps; k++) instants.push(Math.min(M.duree, (k + 0.5 + 0.8 * (alea() - 0.5)) / S.flashIps));
     var passages = [];
     var avant = null;
+    var precedent = -1;
+    function dansPlages(t) {
+      return !plages || plages.some(function (p) { return t >= p[0] - 1e-9 && t <= p[1] + 1e-9; });
+    }
     var chaine = Promise.resolve();
     instants.forEach(function (t, i) {
-      chaine = chaine.then(function () { return relever(t); }).then(function (v) {
-        if (avant && change(avant, v)) passages.push([Math.max(0, instants[i - 1] - 1), Math.min(M.duree, t + 1)]);
-        avant = v;
+      chaine = chaine.then(function () {
+        // Hors des plages : la comparaison reprend au prochain instant mesuré.
+        if (!dansPlages(t)) { avant = null; return null; }
+        return relever(t).then(function (v) {
+          if (avant && precedent === i - 1 && change(avant, v)) passages.push([Math.max(0, instants[i - 1] - 1), Math.min(M.duree, t + 1)]);
+          avant = v;
+          precedent = i;
+        });
       });
     });
     return chaine.then(function () {
@@ -190,8 +201,10 @@
     var preparer = M.particules && M.particules.preparerCapture;
     if (M.particules) M.particules.preparerCapture = function () { return Promise.resolve(); };
 
+    var choisies = options.scenes || null;
     var chaine = Promise.resolve();
     M.minutage.scenes.forEach(function (s, i) {
+      if (choisies && choisies.indexOf(s.id) < 0) return;
       chaine = chaine.then(function () {
         var t = instantStable(i);
         M.rendre(t);
@@ -280,8 +293,9 @@
     var sansSousTitres = document.createElement('style');
     sansSousTitres.textContent = '#pm-sous-titres { display: none !important; }';
     return chaine.then(function () {
+      if (options.flashs === false) return null;
       document.head.appendChild(sansSousTitres);
-      return mesurerFlashs(S, constats);
+      return mesurerFlashs(S, constats, options.plagesFlashs || null);
     }).then(function () {
       finir();
       return constats;

@@ -79,7 +79,7 @@ Régler un effet de particules ou un personnage en le regardant (« ouvre l'édi
 
 ## 5. Vérifier et montrer
 
-1. `pulse-motion assembler .` puis `pulse-motion controler .` ; corriger ce que la retouche a cassé (deux tours au plus). Les `corrections` de `sortie/controle.json` (faites seules par le contrôle : typographie, durées, taille d'un texte qui débordait ; liste complète : `pulse-motion reference controles`) sont dites à la personne ; `pulse-motion controler . --sans-correction` si elle a demandé une durée ou une graphie précise.
+1. `pulse-motion controler .` (il assemble aussi la page) ; corriger ce que la retouche a cassé (deux tours au plus). Les `corrections` de `sortie/controle.json` (faites seules par le contrôle : typographie, durées, taille d'un texte qui débordait ; liste complète : `pulse-motion reference controles`) sont dites à la personne ; `pulse-motion controler . --sans-correction` si elle a demandé une durée ou une graphie précise.
 2. Aperçu : il se recharge seul s'il est ouvert ; s'il a été fermé (`apercu.actif` faux dans `pulse-motion etat .`), `pulse-motion apercu . --ouvrir` en arrière-plan.
 3. Le contrôle de l'étape 1 a vérifié la vidéo rendue (débordements, chevauchements, marges, zone des boutons en 9:16…) ; `renduVerifie: false` se dit à la personne.
 

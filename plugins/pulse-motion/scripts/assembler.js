@@ -143,6 +143,8 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
 
   const sections = [];
   const scriptsScenes = [];
+  // Par scène : section assemblée et scripts (empreintes du contrôle, lib/empreintes.js).
+  const parScene = [];
   // Sources sonores : un bloc texte par source (URL data:), lu et décodé par moteur/audio.js.
   const sons = [];
   const blocSon = (id, uri) => `<script type="text/plain" id="${id}">${uri}</script>`;
@@ -203,6 +205,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     if (probleme) {
       erreurs.push({ regle: 'scene-invalide', gravite: 'erreur', scene: scene.id, message: `Scène « ${scene.id} » : ${probleme}` });
       sections.push(S.panneauErreur(scene.id, probleme));
+      parScene.push({ id: scene.id, section: sections[sections.length - 1], scripts: [] });
       continue;
     }
     // Groupes de personnages dépliés d'abord : effets, obstacles et personnages voient les membres (#file-2).
@@ -269,6 +272,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     const { html: embarque, erreurs: erreursRes } = embarquerRessources(S.injecterLogo(avecSons, uriLogo), projet, `scène « ${scene.id} »`);
     erreursRes.forEach((e) => erreurs.push({ ...e, scene: scene.id }));
     sections.push(embarque.trim());
+    parScene.push({ id: scene.id, section: sections[sections.length - 1], scripts });
     textesScenes.push({ scene: scene.id, texte: embarque });
     scripts.forEach((code) => scriptsScenes.push(`(function () { try {\n${code}\n} catch (e) { console.error('[Pulse Motion] Scène « ${scene.id} » : ' + e.message); } })();`));
   }
@@ -383,6 +387,12 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   }
 
   const temps = dureeTemps(deroule);
+  const cssPage = `:root { --pm-ratio-l: ${l}; --pm-ratio-h: ${h};${temps ? ` --pm-temps: ${temps}s; --pm-bpm: ${Math.round(60 / temps * 1000) / 1000};` : ''} }
+${fs.readFileSync(path.join(RACINE, 'moteur', 'base.css'), 'utf8')}
+${fs.readFileSync(path.join(RACINE, 'moteur', 'mouvements.css'), 'utf8')}
+${variablesCSS()}
+${cssDeCharte}
+${cssStyle}`;
   const page = `<!doctype html>
 <html lang="fr">
 <head>
@@ -391,12 +401,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
 <meta name="generator" content="Pulse Motion">
 <title>${S.echapperHTML(deroule.titre)}</title>
 <style>
-:root { --pm-ratio-l: ${l}; --pm-ratio-h: ${h};${temps ? ` --pm-temps: ${temps}s; --pm-bpm: ${Math.round(60 / temps * 1000) / 1000};` : ''} }
-${fs.readFileSync(path.join(RACINE, 'moteur', 'base.css'), 'utf8')}
-${fs.readFileSync(path.join(RACINE, 'moteur', 'mouvements.css'), 'utf8')}
-${variablesCSS()}
-${cssDeCharte}
-${cssStyle}
+${cssPage}
 </style>
 </head>
 <body>
@@ -421,19 +426,33 @@ M.demarrerParticules();
 </html>
 `;
 
-  let sortie = null;
-  if (ecrire) {
-    const dossierSortie = path.join(projet, 'sortie');
-    fs.mkdirSync(dossierSortie, { recursive: true });
-    sortie = path.join(dossierSortie, `${slug(deroule.titre)}.html`);
-    const temporaire = `${sortie}.${process.pid}.tmp`;
-    fs.writeFileSync(temporaire, page);
-    fs.renameSync(temporaire, sortie);
-    ecrireSousTitres(dossierSortie, deroule.titre, cartons);
-    // Le rapport de débordement portait sur l'ancienne page : l'aperçu en renverra un pour la nouvelle.
-    fs.rmSync(path.join(dossierSortie, 'controle-page.json'), { force: true });
+  const resultat = { ok: true, fichier: null, html: page, erreurs, effets, milieux, shaders, donnees, parScene, cssPage };
+  if (ecrire) resultat.fichier = ecrireSortie(projet, resultat).fichier;
+  return resultat;
+}
+
+/**
+ * Écrit la page d'un assemblage réussi dans sortie/<titre>.html (écriture atomique), avec ses sous-titres.
+ * siChangee : rien n'est écrit si la page sur le disque est déjà la même (l'aperçu ne se recharge pas pour rien, et le
+ * rapport de débordement qu'il a envoyé reste valable). -> { fichier, ecrite }
+ */
+function ecrireSortie(projet, assemblage, { siChangee = false } = {}) {
+  const dossierSortie = path.join(projet, 'sortie');
+  const titre = assemblage.donnees.titre;
+  const sortie = path.join(dossierSortie, `${slug(titre)}.html`);
+  if (siChangee) {
+    let actuelle = null;
+    try { actuelle = fs.readFileSync(sortie, 'utf8'); } catch { /* pas encore de page */ }
+    if (actuelle === assemblage.html) return { fichier: sortie, ecrite: false };
   }
-  return { ok: true, fichier: sortie, html: page, erreurs, effets, milieux, shaders, donnees };
+  fs.mkdirSync(dossierSortie, { recursive: true });
+  const temporaire = `${sortie}.${process.pid}.tmp`;
+  fs.writeFileSync(temporaire, assemblage.html);
+  fs.renameSync(temporaire, sortie);
+  ecrireSousTitres(dossierSortie, titre, assemblage.donnees.sousTitres ? assemblage.donnees.sousTitres.cartons : []);
+  // Le rapport de débordement portait sur l'ancienne page : l'aperçu en renverra un pour la nouvelle.
+  fs.rmSync(path.join(dossierSortie, 'controle-page.json'), { force: true });
+  return { fichier: sortie, ecrite: true };
 }
 
 if (require.main === module) {
@@ -447,4 +466,4 @@ if (require.main === module) {
   process.exit(ok ? 0 : 1);
 }
 
-module.exports = { assembler, slug, chartePour, charteFinale, ecrireSousTitres, lireMoteur, RACINE };
+module.exports = { assembler, ecrireSortie, slug, chartePour, charteFinale, ecrireSousTitres, lireMoteur, MOTEUR, RACINE };

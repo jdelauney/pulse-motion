@@ -31,6 +31,19 @@ const RESSOURCE_CSS = /url\(\s*(?:(["'])((?:(?!\1).)+)\1|([^)"'\s]+))\s*\)/g;
 const IGNOREES = /^(data:|#|about:|javascript:)/i;
 const DISTANTES = /^(https?:)?\/\//i;
 
+const problemeDistant = (chemin, ou) => ({ regle: 'ressource-distante', gravite: 'erreur', message: `« ${chemin} » est sur internet${ou} : copiez le fichier dans assets/ pour que la vidéo fonctionne hors ligne.` });
+
+/** Ressources sur internet (src, href, url()) d'un HTML, sans rien lire sur le disque (contrôle d'une scène). -> erreurs */
+function ressourcesDistantes(html, contexte) {
+  const ou = contexte ? ` (${contexte})` : '';
+  const erreurs = [];
+  // Une fois par occurrence, comme embarquerRessources.
+  const voir = (chemin) => { if (!IGNOREES.test(chemin) && DISTANTES.test(chemin)) erreurs.push(problemeDistant(chemin, ou)); };
+  for (const m of String(html).matchAll(RESSOURCE_ATTR)) voir(m[3]);
+  for (const m of String(html).matchAll(RESSOURCE_CSS)) voir(m[2] || m[3]);
+  return erreurs;
+}
+
 /**
  * Remplace les chemins de fichiers (src, href, url()) par des URL data:.
  * -> { html, erreurs: [{ regle, gravite, message }] }
@@ -43,7 +56,7 @@ function embarquerRessources(html, dossierProjet, contexte) {
   function remplacer(chemin) {
     if (IGNOREES.test(chemin)) return null;
     if (DISTANTES.test(chemin)) {
-      erreurs.push({ regle: 'ressource-distante', gravite: 'erreur', message: `« ${chemin} » est sur internet${ou} : copiez le fichier dans assets/ pour que la vidéo fonctionne hors ligne.` });
+      erreurs.push(problemeDistant(chemin, ou));
       return null;
     }
     if (cache.has(chemin)) return cache.get(chemin);
@@ -75,4 +88,4 @@ function embarquerRessources(html, dossierProjet, contexte) {
   return { html: sortie, erreurs };
 }
 
-module.exports = { TYPES_MIME, cheminDansProjet, versDataURI, embarquerRessources };
+module.exports = { TYPES_MIME, cheminDansProjet, versDataURI, embarquerRessources, ressourcesDistantes };

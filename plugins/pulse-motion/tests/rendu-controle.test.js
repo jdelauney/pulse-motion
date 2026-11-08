@@ -53,7 +53,10 @@ test('controlerComplet : projet sans défaut rendu dans Chrome, rien à signaler
   const r = await controlerComplet({ dossier: dir, dossierStyles: STYLES, corriger: false });
   assert.equal(r.renduVerifie, true);
   assert.deepEqual(r.problemes, []);
-  assert.deepEqual(JSON.parse(fs.readFileSync(r.fichier, 'utf8')), { problemes: [], corrections: [], renduVerifie: true });
+  const c = JSON.parse(fs.readFileSync(r.fichier, 'utf8'));
+  assert.deepEqual({ problemes: c.problemes, corrections: c.corrections, renduVerifie: c.renduVerifie, rendu: c.rendu, version: c.version }, { problemes: [], corrections: [], renduVerifie: true, rendu: 'complet', version: 2 });
+  assert.deepEqual(c.scenesMesurees, ['intro', 'chiffre']);
+  assert.deepEqual(c.rendus, { intro: [], chiffre: [] });
 });
 
 test('controlerComplet : un défaut de mise en page et un débordement rendus remontent ; le rapport de l\'aperçu est remplacé', sans, async () => {

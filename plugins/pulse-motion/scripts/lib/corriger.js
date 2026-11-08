@@ -3,7 +3,7 @@
  * d'historique : « annule » les défait ensemble. Jamais le HTML des scènes, la charte ni les mots. */
 const fs = require('node:fs');
 const path = require('node:path');
-const { sauvegarder } = require('../historique.js');
+const { sauvegarder, retirerSauvegarde } = require('../historique.js');
 
 const virgule = (x) => String(Math.round(x * 100) / 100).replace('.', ',');
 const RAISONS = { lecture: 'temps de lecture', 'pause-finale': 'image stable à la fin', 'temps-mort': 'temps mort en fin de scène' };
@@ -52,13 +52,13 @@ function appliquerCorrections(projet, problemes, { copieFaite = false } = {}) {
   const temporaire = `${fichier}.${process.pid}.tmp`;
   let copie = null;
   try {
-    copie = copieFaite ? null : sauvegarder(projet).dossier;
+    copie = copieFaite ? null : sauvegarder(projet).numero;
     fs.writeFileSync(temporaire, JSON.stringify(brut, null, 2));
     fs.renameSync(temporaire, fichier);
   } catch (e) {
     try { fs.rmSync(temporaire, { force: true }); } catch { /* dossier à la place du fichier : laissé */ }
     // Rien n'a été écrit : seule la copie prise pour ce passage est retirée (« annule » ne la consommera pas à vide).
-    if (copie) { try { fs.rmSync(copie, { recursive: true, force: true }); } catch { /* copie verrouillée : laissée */ } }
+    if (copie) { try { retirerSauvegarde(projet, copie); } catch { /* sauvegarde verrouillée : laissée */ } }
     return { corrections: [], erreur: `Les corrections n'ont pas pu être écrites dans deroule.json (${e.code || e.message}) : vérifiez les droits du dossier du projet (et de son dossier .historique). Rien n'a été changé.` };
   }
   return { corrections };

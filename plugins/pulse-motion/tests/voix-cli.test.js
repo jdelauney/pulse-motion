@@ -1,4 +1,5 @@
 'use strict';
+const { lireSauvegarde } = require('../scripts/historique.js');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -23,7 +24,7 @@ test('revue : import d\'un WAV 44,1 kHz stéréo sans ffmpeg : prise mono écrit
   assert.equal(r.fichier, 'assets/voix/intro.wav');
   assert.ok(Math.abs(r.duree - 2) < 0.1, String(r.duree));
   assert.equal(lireDeroule(dir).scenes[0].voix.fichier, 'assets/voix/intro.wav');
-  assert.ok(fs.existsSync(path.join(dir, '.historique', '001', 'deroule.json')));
+  assert.ok(lireSauvegarde(dir, '001', 'deroule.json'));
   const lu = W.lire(new Uint8Array(fs.readFileSync(path.join(dir, r.fichier))));
   assert.equal(lu.canaux.length, 1);
   assert.equal(lu.taux, 44100);
@@ -146,7 +147,7 @@ test('correctifs : voix provisoire : copie d\'historique, scène qui a déjà un
   const r = await voixProvisoire({ dossier: dir, synthetiser, outil: { present: false } });
   assert.equal(r.ok, true, r.message);
   assert.deepEqual(dits, ['Les bactéries']);
-  assert.ok(fs.existsSync(path.join(dir, '.historique', '001', 'deroule.json')));
+  assert.ok(lireSauvegarde(dir, '001', 'deroule.json'));
   const seule = await voixProvisoire({ dossier: dir, scene: 'intro', synthetiser, outil: { present: false } });
   assert.equal(seule.ok, true);
   assert.deepEqual(dits, ['Les bactéries', 'Pourquoi le froid']);

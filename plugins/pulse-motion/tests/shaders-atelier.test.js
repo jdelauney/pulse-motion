@@ -1,4 +1,5 @@
 'use strict';
+const { listerSauvegardes, lireSauvegarde } = require('../scripts/historique.js');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -78,7 +79,7 @@ test('atelier : reglages-shader écrit sur le bon fond, refuse un réglage hors 
     const ok = await requete(`${base}reglages-shader`, { methode: 'POST', corps: corps() });
     assert.equal(ok.statut, 200, JSON.stringify(ok.json));
     assert.equal(fs.readFileSync(fichier, 'utf8'), SCENE.replace('<div data-shader="aplat" data-calque="avant">', '<div data-shader="aplat" data-calque="avant" data-reglages="teinte: #0000ff">'));
-    assert.ok(fs.existsSync(path.join(dir, '.historique', '001')));
+    assert.ok(listerSauvegardes(dir).includes('001'));
     const perime = await requete(`${base}reglages-shader`, { methode: 'POST', corps: corps({ reglages: 'opacite: 0.2' }) });
     assert.equal(perime.statut, 409);
     assert.equal(perime.json.conflit, true);
