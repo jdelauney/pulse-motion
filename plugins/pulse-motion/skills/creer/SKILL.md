@@ -26,7 +26,13 @@ Guider une personne **sans notion de code** de son idée jusqu'à une vidéo ani
 
 ## 1. Questions (une ronde)
 
-Le sujet vient de l'argument ; sinon, le demander d'abord en une question ouverte. Puis une ronde :
+Le sujet vient de l'argument ; sinon, le demander d'abord en une question ouverte.
+
+**Modèle de vidéo.** `pulse-motion modeles trouver "<sujet>"` (ou `pulse-motion modeles afficher <id>` si la personne en nomme un : « à partir du modèle pitch »). Un modèle trouvé fixe le genre, le format, l'ambiance musicale et l'ordre des styles (`styles`, le premier recommandé) ; sa durée (`duree`, arrondie à 30 s · 1 min) est la réponse « (Recommandé) » de la question Durée ; le déroulé (étape 2) part de ses scènes : mêmes `type`, `intention`, `transition`, `mouvements` et `effet` (l'effet se donne à l'animateur de la scène), durées ajustées à la durée choisie, textes écrits pour le sujet en suivant la consigne de chaque clé (une clé dont la consigne dit « à retirer » peut manquer). Le dire en une phrase, avant les questions : « Je pars du modèle « <nom> » : <n> scènes, environ <durée>. » La personne peut tout changer ensuite. Aucun modèle (`null`) : continuer comme ci-dessous, sans en parler.
+- « Quels modèles ? » : `pulse-motion modeles liste`, présentés en mots simples (nom et description), sans identifiant technique.
+- « Montre-moi un exemple de pitch » : `pulse-motion modeles exemple <id> .` copie l'exemple fini du modèle dans le dossier, s'il n'y a pas encore de vidéo ici (refus : proposer un autre dossier, rien n'est écrasé) ; puis `pulse-motion apercu . --ouvrir` en arrière-plan, et proposer de le modifier avec `/pulse-motion:retoucher` ou de repartir de zéro dans un autre dossier.
+
+Puis une ronde :
 
 1. **Durée** : 30 s · 1 min (Recommandé pour une formation courte) · 3 min · 5 min.
 2. **Public** : grand public · professionnels du métier · élèves ou stagiaires (adapter selon le sujet).
