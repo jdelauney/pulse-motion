@@ -9,6 +9,7 @@ const { mesurerPage, ouvrirPageControle } = require('./page-mesures.js');
 const { mesurerFlashs, casesImage, seuilsFlashs } = require('./flashs.js');
 const { decoderPNG } = require('../logo.js');
 const { scenesVisibles } = require('../../moteur/minutage.js');
+const { navigateursParalleles } = require('./paralleles.js');
 const SEUILS = require('../seuils.json');
 
 const virgule = (x) => String(Math.round(x * 10) / 10).replace('.', ',');
@@ -66,33 +67,50 @@ function traduireResultat(resultat, scenes) {
   return { renduVerifie: true, problemes: [...debordements, ...traduireConstats(resultat.constats), ...traduireFormesVides(resultat.formesVides), ...traduirePhotos(resultat.photos)].filter(garder), ajustements: (resultat.ajustements || []).filter(garder) };
 }
 
-/** Flashs depuis Node : M.rendre(t) puis capture PNG réduite à largeurFlash (clip.scale), décodée en JavaScript. */
-async function flashsParCDP(page, { plagesFlashs }) {
-  const info = await page.evaluer(`(function () {
+/** Prépare une page aux flashs (sous-titres masqués, comme dans la page) -> géométrie de la scène et minutage. */
+const PREPARER_FLASHS = `(function () {
     var r = document.getElementById('pm-scene').getBoundingClientRect();
-    // Sous-titres masqués (un carton qui change n'est pas un flash), comme dans la page.
     var st = document.createElement('style');
     st.id = 'pm-flashs-sans-sous-titres';
     st.textContent = '#pm-sous-titres { display: none !important; }';
     document.head.appendChild(st);
     return { x: r.left, y: r.top, l: r.width, h: r.height, duree: M.duree, ips: M.ips || 30, depart: M.temps(),
       scenes: M.minutage.scenes.map(function (s) { return { id: s.id, debut: s.debut, fin: s.fin }; }) };
-  })()`);
+  })()`;
+
+/**
+ * Flashs depuis Node : M.rendre(t) puis capture PNG réduite à largeurFlash (clip.scale), décodée en JavaScript.
+ * aides : autres pages de contrôle de la même vidéo ; les instants sont répartis entre toutes les pages, en morceaux
+ * contigus (chaque capture attend une image du navigateur : plusieurs pages en même temps vont plus vite).
+ */
+async function flashsParCDP(page, { plagesFlashs, aides = [] } = {}) {
+  const info = await page.evaluer(PREPARER_FLASHS);
+  const pages = [page];
+  for (const aide of aides) {
+    try { await aide.evaluer(PREPARER_FLASHS); pages.push(aide); } catch { /* page d'aide perdue : les autres suffisent */ }
+  }
   const S = seuilsFlashs(SEUILS);
   const echelle = S.largeurFlash / Math.max(1, info.l);
   const minutage = { scenes: info.scenes };
+  const relever = async (p, t) => {
+    await p.evaluer(`M.rendre(${Number(t)}), true`);
+    const r = await p.envoyer('Page.captureScreenshot', { format: 'png', optimizeForSpeed: true, captureBeyondViewport: false,
+      clip: { x: info.x, y: info.y, width: info.l, height: info.h, scale: echelle } });
+    const image = decoderPNG(Buffer.from(r.data, 'base64'));
+    return casesImage(image.pixel, image.largeur, image.hauteur, S.flashCases);
+  };
+  const releverTous = async (instants) => {
+    const k = Math.max(1, Math.min(pages.length, Math.ceil(instants.length / 8)));
+    const taille = Math.ceil(instants.length / k);
+    const morceaux = await Promise.all(Array.from({ length: k }, async (_, j) => {
+      const r = [];
+      for (const t of instants.slice(j * taille, (j + 1) * taille)) r.push(await relever(pages[j], t));
+      return r;
+    }));
+    return morceaux.flat();
+  };
   try {
-    return await mesurerFlashs({
-      duree: info.duree, ips: info.ips, seuils: SEUILS, plages: plagesFlashs || null,
-      sceneA: (t) => scenesVisibles(minutage, t)[0] || null,
-      async relever(t) {
-        await page.evaluer(`M.rendre(${Number(t)}), true`);
-        const r = await page.envoyer('Page.captureScreenshot', { format: 'png', optimizeForSpeed: true, captureBeyondViewport: false,
-          clip: { x: info.x, y: info.y, width: info.l, height: info.h, scale: echelle } });
-        const image = decoderPNG(Buffer.from(r.data, 'base64'));
-        return casesImage(image.pixel, image.largeur, image.hauteur, S.flashCases);
-      },
-    });
+    return await mesurerFlashs({ duree: info.duree, ips: info.ips, seuils: SEUILS, plages: plagesFlashs || null, sceneA: (t) => scenesVisibles(minutage, t)[0] || null, releverTous });
   } finally {
     await page.evaluer(`(function () { var st = document.getElementById('pm-flashs-sans-sous-titres'); if (st) st.remove(); M.rendre(${Number(info.depart) || 0}); return true; })()`);
   }
@@ -103,34 +121,40 @@ async function flashsParCDP(page, { plagesFlashs }) {
  * résultat par POST (flashs mesurés dans la page) si le CDP échoue. -> { renduVerifie, problemes, ajustements, voie } ;
  * jamais d'exception. scenes : seules ces scènes sont jugées (contrôle partiel) ; plages : instants des mesures ;
  * plagesFlashs : instants de la passe rapide des flashs. ouvrir : remplace l'ouverture par le CDP (tests).
+ * Pages d'aide aux flashs : autant que la règle commune des navigateurs (lib/paralleles.js) moins une, ouvertes pendant
+ * les mesures de la page principale.
  */
 async function controlerRendu({ html, ratio, duree, navigateur = trouverNavigateur(), scenes = null, plages = null, plagesFlashs = null, ouvrir }) {
   if (!navigateur) return nonVerifie('rendu-non-verifie', 'Chrome ou Edge introuvable : la vidéo rendue (chevauchements, marges, textes qui débordent…) n\'a pas été vérifiée. Installez l\'un des deux, ou indiquez son chemin avec la variable PM_NAVIGATEUR.');
   const delai = (30 + 2 * (duree || 0)) * 1000;
   const introuvable = () => nonVerifie('rendu-impossible', `Navigateur introuvable à « ${navigateur} » : vérifiez la variable PM_NAVIGATEUR (ou retirez-la pour utiliser Chrome ou Edge installés). Seuls les contrôles sans navigateur ont été faits.`);
   const impossible = (erreur) => nonVerifie('rendu-impossible', `La vidéo n'a pas pu être mesurée dans le navigateur (${erreur}) : seuls les contrôles sans navigateur ont été faits.`);
+  const ouvrirUne = () => ouvrirPageControle({ html, navigateur, delai, ...(ouvrir ? { ouvrir } : {}) });
   let controle = null;
   try {
-    controle = await ouvrirPageControle({ html, navigateur, delai, ...(ouvrir ? { ouvrir } : {}) });
+    controle = await ouvrirUne();
   } catch (e) {
     if (e.code === 'ENOENT') return introuvable();
     controle = null;
   }
   if (controle) {
+    const { nombre } = navigateursParalleles({ taches: 4 });
+    const aides = Promise.all(Array.from({ length: nombre - 1 }, () => ouvrirUne().catch(() => null)));
     try {
       const { page } = controle;
       const erreurPage = () => page.evaluer('window.__pmErreur === undefined ? null : window.__pmErreur');
       let erreur = await erreurPage();
       if (erreur !== null) return impossible(erreur);
       const resultat = await page.evaluer(`(async function () {${scriptMesures({ ratio, scenes, plages, flashs: false })}\n})()`);
-      resultat.constats = resultat.constats.concat(await flashsParCDP(page, { plagesFlashs }));
+      const pagesAide = (await aides).filter(Boolean).map((a) => a.page);
+      resultat.constats = resultat.constats.concat(await flashsParCDP(page, { plagesFlashs, aides: pagesAide }));
       erreur = await erreurPage();
       if (erreur !== null) return impossible(erreur);
       return { ...traduireResultat(resultat, scenes), voie: 'cdp' };
     } catch (e) {
       return impossible(e.message);
     } finally {
-      await controle.fermer();
+      await Promise.all([controle.fermer(), aides.then((liste) => Promise.all(liste.filter(Boolean).map((a) => a.fermer())))]);
     }
   }
   // Repli : la page renvoie son résultat par POST, les flashs sont mesurés dans la page (captures foreignObject).

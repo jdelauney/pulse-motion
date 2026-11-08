@@ -7,7 +7,8 @@
  * Idées de video-director (frame_stats, image d'analyse réduite) et de reanimate (clip.scale), réécrites.
  *
  * Fonctions pures : instantsFlashs, casesImage, change, fusionnerPassages, chercherFlash.
- * mesurerFlashs({ duree, ips, seuils, relever(t) -> Promise<cases>, sceneA(t) -> id | null, plages? }) -> Promise<constats>
+ * mesurerFlashs({ duree, ips, seuils, relever(t) -> Promise<cases> | releverTous([t]) -> Promise<[cases]>, sceneA(t) -> id | null,
+ *   plages? }) -> Promise<constats> ; releverTous peut répartir les instants sur plusieurs pages (l'ordre est gardé).
  *   plages : [[debut, fin]] ; seuls les instants de la passe rapide qui y tombent sont relevés (contrôle partiel).
  */
 
@@ -93,28 +94,28 @@ function chercherFlash(series, { n, ips, S }) {
 
 const dans = (t, plages) => !plages || plages.some(([a, b]) => t >= a - 1e-9 && t <= b + 1e-9);
 
-async function mesurerFlashs({ duree, ips = 30, seuils, relever, sceneA, plages = null }) {
+async function mesurerFlashs({ duree, ips = 30, seuils, relever, releverTous, sceneA, plages = null }) {
   const S = seuilsFlashs(seuils);
   const n = S.flashCases;
+  // releverTous(instants) -> Promise<[cases]> (plusieurs pages en même temps) ; sinon relever(t), un instant après l'autre.
+  const tous = releverTous || (async (liste) => { const r = []; for (const t of liste) r.push(await relever(t)); return r; });
   const instants = instantsFlashs(duree, S.flashIps);
+  const retenus = instants.map((t, i) => i).filter((i) => dans(instants[i], plages));
+  const valeurs = await tous(retenus.map((i) => instants[i]));
   const passages = [];
-  let avant = null;
-  let precedent = -1;
-  for (let i = 0; i < instants.length; i++) {
-    const t = instants[i];
+  for (let k = 1; k < retenus.length; k++) {
+    const i = retenus[k];
     // Hors des plages : la comparaison reprend au prochain instant mesuré (jamais entre deux plages).
-    if (!dans(t, plages)) { avant = null; continue; }
-    const v = await relever(t);
-    if (avant && precedent === i - 1 && change(avant, v, S)) passages.push([Math.max(0, instants[i - 1] - 1), Math.min(duree, t + 1)]);
-    avant = v;
-    precedent = i;
+    if (retenus[k - 1] !== i - 1) continue;
+    if (change(valeurs[k - 1], valeurs[k], S)) passages.push([Math.max(0, instants[i - 1] - 1), Math.min(duree, instants[i] + 1)]);
   }
   const constats = [];
   for (const p of fusionnerPassages(passages)) {
     const premiere = Math.ceil(p[0] * ips);
     const derniere = Math.floor(p[1] * ips);
-    const series = [];
-    for (let f = premiere; f <= derniere; f++) series.push(await relever(f / ips));
+    const images = [];
+    for (let f = premiere; f <= derniere; f++) images.push(f / ips);
+    const series = await tous(images);
     const trouve = chercherFlash(series, { n, ips, S });
     if (trouve) {
       const t = (premiere + trouve.debut + 1) / ips;

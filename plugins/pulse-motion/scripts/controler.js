@@ -504,7 +504,7 @@ async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.j
     const options = optionsMinutage(deroule);
     empreintes = empreintesControle(assemblage, { seuils: SEUILS, moteur: codeDeMesure(), options });
     const ids = assemblage.donnees.scenes.map((s) => s.id);
-    const comparable = !complet && Boolean(precedent) && precedent.renduVerifie !== false && precedent.empreintes.moteur === empreintes.moteur
+    const comparable = !complet && Boolean(precedent) && precedent.empreintes.moteur === empreintes.moteur
       && precedent.empreintes.seuils === empreintes.seuils && precedent.empreintes.commun === empreintes.commun;
     const changees = comparable ? ids.filter((id) => precedent.empreintes.scenes[id] !== empreintes.scenes[id] || !Array.isArray(precedent.rendus[id])) : ids;
     modeRendu = comparable ? 'partiel' : 'complet';

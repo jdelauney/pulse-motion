@@ -139,7 +139,8 @@ async function ouvrirPageControle({ html, navigateur, delai = 60000, gpu = false
     if (page) await page.fermer().catch(() => {});
   };
   try {
-    page = await ouvrir({ navigateur, largeur: LARGEUR_CONTROLE, hauteur: HAUTEUR_CONTROLE, gpu, delai });
+    // Sans limite de cadence : une capture d'écran attend la prochaine image du navigateur (48 ms sinon, 17 ms ainsi).
+    page = await ouvrir({ navigateur, largeur: LARGEUR_CONTROLE, hauteur: HAUTEUR_CONTROLE, gpu, delai, options: ['--disable-frame-rate-limit'] });
     await page.aller(`http://${hote}/pm-controle/${jeton}`);
     await page.evaluer('(async function () { await M.pret; if (document.fonts) await document.fonts.ready; return true; })()');
   } catch (e) {

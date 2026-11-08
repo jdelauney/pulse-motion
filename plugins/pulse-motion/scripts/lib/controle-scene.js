@@ -129,15 +129,15 @@ function controlerScene({ projet, deroule, scene, html }) {
 function sceneDuFichier(fichier) {
   if (!fichier || !/\.html?$/i.test(fichier)) return null;
   const absolu = path.resolve(fichier);
-  if (path.basename(path.dirname(absolu)) !== 'scenes') return null;
+  // Sous Windows, la casse d'un chemin ne compte pas (« e:\ » ou « E:\ » selon l'outil qui écrit).
+  const meme = (x) => (process.platform === 'win32' ? x.toLowerCase() : x);
+  if (meme(path.basename(path.dirname(absolu))) !== 'scenes') return null;
   const projet = path.dirname(path.dirname(absolu));
   const fichierDeroule = path.join(projet, 'deroule.json');
   if (!fs.existsSync(fichierDeroule)) return null;
   const { lireDeroule } = require('./deroule.js');
   const { deroule, erreurs } = lireDeroule(projet);
   if (erreurs.length || !deroule || !Array.isArray(deroule.scenes)) return null;
-  // Sous Windows, la casse d'un chemin ne compte pas (« e:\ » ou « E:\ » selon l'outil qui écrit).
-  const meme = (x) => (process.platform === 'win32' ? x.toLowerCase() : x);
   const scene = deroule.scenes.find((s) => typeof s.fichier === 'string' && meme(path.resolve(projet, s.fichier)) === meme(absolu));
   return scene ? { projet, deroule, scene } : null;
 }
