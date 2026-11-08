@@ -1,7 +1,6 @@
 ---
 description: "Vérifier que l'ordinateur est prêt pour Pulse Motion et installer ce qui manque, avec votre accord (« vérifie mon ordinateur », « installe ffmpeg », « installe la transcription »). Ne crée ni ne modifie aucune vidéo."
 allowed-tools: Bash(pulse-motion *) Bash(node *) Bash(winget install --id Python.Python.3.12 -e --accept-source-agreements --accept-package-agreements) Bash(brew install python) Bash(winget install --id Gyan.FFmpeg -e --accept-source-agreements --accept-package-agreements) Bash(brew install ffmpeg) Read AskUserQuestion
-effort: low
 ---
 
 # Pulse Motion – L'ordinateur prêt

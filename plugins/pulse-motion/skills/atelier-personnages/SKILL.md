@@ -2,7 +2,6 @@
 description: "Ouvrir l'éditeur des personnages pour les poser et les animer à la souris (« ouvre l'éditeur de personnage », « laisse-moi placer ses bras », « je règle son salut moi-même »). Pour les particules : /pulse-motion:atelier-particules."
 argument-hint: "[le mouvement ou la pose à ouvrir, et le personnage]"
 allowed-tools: Bash(pulse-motion *) Bash(node *) Read Glob Grep AskUserQuestion
-effort: low
 ---
 
 # /pulse-motion:atelier-personnages – Poser et animer à la souris

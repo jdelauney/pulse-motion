@@ -450,9 +450,15 @@ test('injection-suivie-du-repli : chaque bloc injecté est suivi de sa phrase de
   }
 });
 
-test('effort-low-sur-les-competences-procedurales : effort faible sur outils, ateliers et exporter, et seulement eux', () => {
+// Spec S1 § 5.6 : « effort: low » ne se garde que si les commandes lancées et le bloc de fin restent identiques. Mesure
+// du 2026-11-08 (3 phrases types par compétence, avec et sans le champ) : sur outils et les deux ateliers, l'effort
+// faible saute la lecture et la note du lexique ; sur exporter, il lance l'export au premier plan au lieu de
+// l'arrière-plan (première phrase après 100 à 125 s au lieu de 25 à 30 s). Aucune compétence ne le garde.
+const EFFORT_FAIBLE = [];
+
+test('effort-low-sur-les-competences-procedurales : effort faible seulement là où la mesure l\'a validé (aucune au 2026-11-08)', () => {
   const avecEffort = SKILLS.filter((s) => enTete(lire('skills', s, 'SKILL.md')).effort !== undefined).sort();
-  assert.deepEqual(avecEffort, ['atelier-particules', 'atelier-personnages', 'exporter', 'outils']);
+  assert.deepEqual(avecEffort, EFFORT_FAIBLE);
   for (const s of avecEffort) assert.equal(enTete(lire('skills', s, 'SKILL.md')).effort, 'low', s);
 });
 
