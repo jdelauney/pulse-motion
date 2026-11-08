@@ -10,6 +10,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { calculerMinutage } = require('../../moteur/minutage.js');
+const { garder } = require('./garde-locale.js');
 
 // Mise en page des démonstrations, lisibles même en vignette : contenu centré dans un conteneur qui couvre la scène (la
 // section elle-même garde son affichage, que le moteur règle), titre et texte grands ; un motif à la couleur de la charte sur
@@ -112,12 +113,9 @@ function choisirMouvements({ categorie = null, delai = DELAI_DEFAUT, port = 0, s
     let fini = false;
     let minuteur;
     const serveur = http.createServer((req, res) => {
+      // Garde commune (lib/garde-locale.js) : hôte, envoi venu de cette page seulement (Origin obligatoire), JSON seulement.
       const { port: portEcoute } = serveur.address();
-      if (![`127.0.0.1:${portEcoute}`, `localhost:${portEcoute}`].includes(String(req.headers.host || '').toLowerCase())) {
-        res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
-        res.end('Refusé.');
-        return;
-      }
+      if (!garder(req, res, { port: portEcoute, types: [['/envoyer', ['application/json']]] })) return;
       const chemin = new URL(req.url, 'http://localhost').pathname;
       if (req.method === 'GET' && (chemin === '/' || chemin === '/video')) {
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
@@ -125,21 +123,7 @@ function choisirMouvements({ categorie = null, delai = DELAI_DEFAUT, port = 0, s
         return;
       }
       if (req.method === 'POST' && chemin === '/envoyer') {
-        // Seule la page servie ici peut envoyer : une autre origine (un site ouvert dans le même navigateur) est refusée, et
-        // le corps doit être du JSON (un autre site ne peut pas en envoyer sans une requête préalable, à laquelle on ne répond pas).
-        const origine = req.headers.origin;
-        const site = req.headers['sec-fetch-site'];
-        if ((origine && ![`http://127.0.0.1:${portEcoute}`, `http://localhost:${portEcoute}`].includes(String(origine).toLowerCase()))
-          || (site && site !== 'same-origin' && site !== 'none')) {
-          res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
-          res.end('Refusé : envoi venant d\'une autre page.');
-          return;
-        }
-        if (!/^application\/json\s*(;|$)/i.test(String(req.headers['content-type'] || ''))) {
-          res.writeHead(415, { 'Content-Type': 'text/plain; charset=utf-8' });
-          res.end('Refusé : le choix doit être envoyé en JSON.');
-          return;
-        }
+        // Origine et type déjà vérifiés par la garde : seule la page servie ici a pu envoyer ce choix.
         let corps = '';
         req.on('data', (m) => { corps += m; if (corps.length > 1e6) req.destroy(); });
         req.on('end', () => {

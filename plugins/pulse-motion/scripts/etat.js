@@ -14,6 +14,7 @@ const path = require('node:path');
 const { lireDeroule } = require('./lib/deroule.js');
 const { cheminDansProjet } = require('./lib/embarquer.js');
 const { etatCharte } = require('./charte.js');
+const { ecrireJSON } = require('./lib/fichiers.js');
 
 const NODE_MINIMUM = 20;
 const ACCORDS = ['deroule', 'style', 'video'];
@@ -36,9 +37,9 @@ function lireEtat(projet) {
   try { return JSON.parse(fs.readFileSync(cheminEtat(projet), 'utf8')); } catch { return {}; }
 }
 
+/** Écriture atomique : l'aperçu et la commande pulse-motion lisent ce fichier pendant qu'il change. */
 function ecrireEtat(projet, etat) {
-  fs.mkdirSync(path.dirname(cheminEtat(projet)), { recursive: true });
-  fs.writeFileSync(cheminEtat(projet), JSON.stringify(etat, null, 2));
+  ecrireJSON(cheminEtat(projet), etat);
 }
 
 function processusActif(pid) {

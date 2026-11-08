@@ -13,7 +13,7 @@ const RELU = { ok: true, duree: 7.27, images: 218, erreurs: [], audio: false };
 
 function requete(url, { methode = 'GET', type, corps, entetes = {} } = {}) {
   return new Promise((resolve, reject) => {
-    const req = http.request(url, { method: methode, headers: { ...(type ? { 'Content-Type': type } : {}), ...entetes } }, (res) => {
+    const req = http.request(url, { method: methode, headers: { ...(type ? { 'Content-Type': type } : {}), ...(methode !== 'GET' ? { Origin: new URL(url).origin } : {}), ...entetes } }, (res) => {
       const morceaux = [];
       res.on('data', (d) => morceaux.push(d));
       res.on('end', () => {
@@ -102,7 +102,7 @@ test('renommage impossible (ancienne vidéo bloquée) : erreur en français, ape
 test('deux envois de vidéo en même temps : le second est refusé (409), le premier aboutit', async () => {
   await avecApercu(47317, async (dir, url) => {
     const premier = new Promise((resolve, reject) => {
-      const req = http.request(url + '_pm/export', { method: 'POST', headers: { 'Content-Type': 'video/mp4', ...relecture(RELU) } }, (res) => {
+      const req = http.request(url + '_pm/export', { method: 'POST', headers: { 'Content-Type': 'video/mp4', Origin: new URL(url).origin, ...relecture(RELU) } }, (res) => {
         res.resume();
         res.on('end', () => resolve(res.statusCode));
       });

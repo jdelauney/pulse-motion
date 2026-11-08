@@ -14,7 +14,7 @@
  *   GET  /_pm/atelier/expression.js, recette.js, editeur.mjs, panneau.mjs   modules de l'atelier
  *   effet : { ordre, nom, calque, ancre, reglages, graine, graineEcrite, dur, recette | null, erreur | null }
  *   fond : { ordre, nom, calque, ancre, reglages, usage, parametres, erreur | null }   (balises data-shader)
- * Écritures : JSON seulement (une autre origine est arrêtée par la requête préalable CORS), copie dans
+ * Écritures : JSON seulement, venues de la page elle-même (garde commune de l'aperçu, lib/garde-locale.js), copie dans
  * .historique/ avant, fichier temporaire puis renommage ; 409 si la scène a changé sur le disque ({ conflit: true })
  * ou si le nom de la recette est invalide ou pris. Jamais d'écriture dans la bibliothèque du plugin.
  */
@@ -24,6 +24,8 @@ const crypto = require('node:crypto');
 const { lireDeroule, dureeTemps } = require('./deroule.js');
 const { chargeurRecettes, balisesEffets, modifierEffet, graineParDefaut, dureeStructures } = require('./effets.js');
 const { cheminDansProjet, versDataURI } = require('./embarquer.js');
+const { ecrireAtomique } = require('./fichiers.js');
+const { fichierServi } = require('./garde-locale.js');
 const { charteFinale, CHARTE_DEFAUT } = require('./fusion-charte.js');
 const { trouverStyle } = require('../styles.js');
 const { lireSecondes } = require('../../moteur/minutage.js');
@@ -76,28 +78,8 @@ function empreinte(octets) {
   return crypto.createHash('sha256').update(octets).digest('hex').slice(0, 16);
 }
 
-const attendre = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
-
-/** Écrit dans un fichier temporaire voisin puis renomme : jamais de fichier à moitié écrit. Sous Windows, le
- *  renommage est réessayé quelques fois si le fichier est un instant verrouillé (antivirus, surveillance). */
-function ecrireAtomique(fichier, contenu) {
-  const temporaire = `${fichier}.${process.pid}-${Date.now()}.tmp`;
-  try {
-    fs.writeFileSync(temporaire, contenu);
-    for (let essai = 0; ; essai++) {
-      try {
-        fs.renameSync(temporaire, fichier);
-        break;
-      } catch (e) {
-        if (essai >= 4 || !['EPERM', 'EBUSY', 'EACCES'].includes(e.code)) throw e;
-        attendre(40);
-      }
-    }
-  } catch (e) {
-    try { fs.rmSync(temporaire, { force: true }); } catch { /* rien à nettoyer */ }
-    throw e;
-  }
-}
+// Écriture atomique commune (fichier temporaire voisin puis renommage, essais sous Windows) : voir lib/fichiers.js.
+// Gardée dans les exports de ce module pour personnages.js et les tests.
 
 function messageDisque(e) {
   return `Écriture impossible (${e && (e.code || e.message)}) : rien n'a été modifié. Vérifiez que le fichier n'est pas ouvert dans un autre programme et que le disque n'est pas plein.`;
@@ -237,8 +219,9 @@ function creerRoutesAtelier(projet, { dossierStyles, bibliotheque = BIBLIOTHEQUE
 
   function texture(res, url) {
     const chemin = url.searchParams.get('chemin') || '';
-    const absolu = /^assets\//.test(chemin) ? cheminDansProjet(path.join(projet, 'assets'), chemin.slice('assets/'.length)) : null;
-    if (!absolu || !fs.existsSync(absolu)) return repondre(res, 404, { message: `Image « ${chemin} » introuvable dans assets/ du projet.` });
+    // Seulement une image de assets/ : ni fichier caché, ni autre type, ni lien symbolique qui sortirait du projet.
+    const absolu = fichierServi(projet, chemin, { dossiers: ['assets'] });
+    if (!absolu) return repondre(res, 404, { message: `Image « ${chemin} » introuvable dans assets/ du projet.` });
     try { return repondre(res, 200, { uri: versDataURI(absolu) }); } catch (e) { return repondre(res, 415, { message: e.message }); }
   }
 

@@ -13,6 +13,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { lireDeroule } = require('./deroule.js');
 const { slug } = require('../assembler.js');
+const { ecrireAtomique, ecrireJSON } = require('./fichiers.js');
 
 const RACINE = path.resolve(__dirname, '..', '..');
 const STATIQUES = {
@@ -51,8 +52,7 @@ function creerRoutesExport(projet) {
   const etatExport = path.join(sortie, 'export.json');
 
   function ecrireEtatExport(etat) {
-    fs.mkdirSync(sortie, { recursive: true });
-    fs.writeFileSync(etatExport, JSON.stringify({ ...etat, date: new Date().toISOString() }, null, 2));
+    ecrireJSON(etatExport, { ...etat, date: new Date().toISOString() });
   }
 
   let envoiEnCours = false;
@@ -149,8 +149,7 @@ function creerRoutesExport(projet) {
       const image = Buffer.concat(morceaux);
       if (!image.subarray(0, 8).equals(PNG)) return repondre(res, 422, { message: 'Le fichier reçu n\'est pas une image PNG.' });
       try {
-        fs.mkdirSync(path.join(sortie, 'planche'), { recursive: true });
-        fs.writeFileSync(path.join(sortie, 'planche', `${nom}.png`), image);
+        ecrireAtomique(path.join(sortie, 'planche', `${nom}.png`), image);
       } catch (e) {
         return repondre(res, 500, { message: `L'image « ${nom} » n'a pas pu être enregistrée : ${e.message}.` });
       }
@@ -166,7 +165,7 @@ function creerRoutesExport(projet) {
       const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Planche</title>
 <style>body{margin:24px;font:15px system-ui,sans-serif;background:#f4f4f5}div{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}img{width:100%;border-radius:6px;box-shadow:0 2px 8px rgb(0 0 0/.15)}</style>
 </head><body><h1>Planche d'images clés</h1><div>${valides.map((n) => `<img src="${n}" alt="${n}">`).join('')}</div></body></html>`;
-      fs.writeFileSync(path.join(sortie, 'planche', 'planche.html'), html);
+      ecrireAtomique(path.join(sortie, 'planche', 'planche.html'), html);
       ecrireEtatExport({ etat: 'planche', images: valides.map((n) => `sortie/planche/${n}`), fichier: 'sortie/planche/planche.html' });
       return repondre(res, 200, { fichier: 'sortie/planche/planche.html' });
     } catch { return repondre(res, 400, { message: 'Liste d\'images illisible.' }); }
