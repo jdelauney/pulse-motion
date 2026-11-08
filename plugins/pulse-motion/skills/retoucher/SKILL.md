@@ -1,5 +1,5 @@
 ---
-description: Retoucher la vidéo Pulse Motion du dossier en une phrase et la voir aussitôt (« ralentis la scène 3 », « change le titre », « baisse la musique », « ouvre l'aperçu », « fais une planche des scènes 2 et 3 », « enregistre ma charte », « annule »). Pour enregistrer ou importer une voix, c'est /pulse-motion:voix ; pour une nouvelle vidéo, /pulse-motion:creer.
+description: "Retoucher la vidéo Pulse Motion du dossier en une phrase et la revoir (« ralentis la scène 3 », « change le titre », « baisse la musique », « annule »). Voix : /pulse-motion:voix ; nouvelle vidéo : /pulse-motion:creer."
 argument-hint: "[la retouche en une phrase]"
 allowed-tools: Bash(pulse-motion *) Bash(node *) Read Glob Grep Write Edit Agent AskUserQuestion
 ---
@@ -8,16 +8,28 @@ allowed-tools: Bash(pulse-motion *) Bash(node *) Read Glob Grep Write Edit Agent
 
 Appliquer la retouche demandée, puis laisser l'aperçu se recharger à la même position.
 
+## État de la vidéo, lu au lancement
+
+!`pulse-motion etat . 2>&1 || true`
+
+Si ce bloc est vide ou contient une erreur, lancer `pulse-motion etat .`.
+
+Lexique de la personne :
+
+!`pulse-motion lexique 2>&1 || true`
+
+Si ce bloc est vide ou contient une erreur, lancer `pulse-motion lexique`.
+
 ## Règles
 
 - Parler simplement, en français, sans jargon ; ne jamais montrer de commande.
 - Une retouche = le plus petit changement qui répond à la phrase. Ne pas « améliorer » autre chose.
 - Phrase ambiguë (quelle scène ? de combien ?) : une seule question avec `AskUserQuestion`, réponse recommandée en premier.
-- Lexique : avant d'expliquer un mot de l'outil (déroulé, scène, style, charte, transition, export…), lire `pulse-motion lexique`. Un mot déjà noté n'est pas réexpliqué en entier ; un mot expliqué pour la première fois se note avec `pulse-motion lexique noter "<terme>" "<phrase>" "<comme…>" "/pulse-motion:retoucher"`, en reprenant l'image fixe du lexique quand elle existe.
+- Lexique : avant d'expliquer un mot de l'outil (déroulé, scène, style, charte, transition, export…), relire le lexique ci-dessus. Un mot déjà noté n'est pas réexpliqué en entier ; un mot expliqué pour la première fois se note avec `pulse-motion lexique noter "<terme>" "<phrase>" "<comme…>" "/pulse-motion:retoucher"`, en reprenant l'image fixe du lexique quand elle existe.
 
 ## 1. Vérifier
 
-`pulse-motion etat .` : sans vidéo (`projet` faux), proposer `/pulse-motion:creer` et s'arrêter. La commande échoue avec « node » introuvable (Node.js n'est pas installé) : expliquer qu'il faut installer Node.js en version LTS depuis https://nodejs.org, puis relancer Claude Code, et s'arrêter.
+L'état ci-dessus : sans vidéo (`projet` faux), proposer `/pulse-motion:creer` et s'arrêter. L'état dit « Node.js introuvable » ou « node » introuvable (Node.js n'est pas installé) : expliquer qu'il faut installer Node.js en version LTS depuis https://nodejs.org, puis relancer Claude Code, et s'arrêter.
 
 ## 2. « Annule » (ou « reviens en arrière »)
 

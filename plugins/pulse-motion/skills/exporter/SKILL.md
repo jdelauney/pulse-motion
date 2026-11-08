@@ -1,11 +1,24 @@
 ---
-description: "Exporter la vidéo Pulse Motion du dossier en MP4, fabriqué sur l'ordinateur, pour la publier ou l'envoyer (« exporte ma vidéo », « fais-moi le MP4 », « une version légère pour l'envoyer par courriel », « exporte en plus fluide »). Ne modifie pas la vidéo : pour une retouche, c'est /pulse-motion:retoucher."
+description: "Exporter en MP4 la vidéo Pulse Motion du dossier, sans la modifier (« exporte ma vidéo », « fais-moi le MP4 », « une version légère pour le courriel »). Pour changer la vidéo : /pulse-motion:retoucher."
 allowed-tools: Bash(pulse-motion *) Bash(node *) Bash(winget install --id Gyan.FFmpeg -e --accept-source-agreements --accept-package-agreements) Bash(brew install ffmpeg) Read Glob Grep AskUserQuestion
+effort: low
 ---
 
 # /pulse-motion:exporter – La vidéo en MP4
 
 Fabriquer le fichier MP4 de la vidéo, sur l'ordinateur : en **export fidèle** (les vraies images du navigateur, le son au bon niveau) quand ffmpeg est installé, sinon directement dans le navigateur.
+
+## État de la vidéo, lu au lancement
+
+!`pulse-motion etat . 2>&1 || true`
+
+Si ce bloc est vide ou contient une erreur, lancer `pulse-motion etat .`.
+
+ffmpeg sur l'ordinateur :
+
+!`pulse-motion ffmpeg 2>&1 || true`
+
+Si ce bloc est vide ou contient une erreur, lancer `pulse-motion ffmpeg`.
 
 ## Règles
 
@@ -16,13 +29,13 @@ Fabriquer le fichier MP4 de la vidéo, sur l'ordinateur : en **export fidèle** 
 
 ## 1. Vérifier
 
-1. `pulse-motion etat .` : sans vidéo (`projet` faux), proposer `/pulse-motion:creer` et s'arrêter. La commande échoue avec « node » introuvable (Node.js n'est pas installé) : expliquer qu'il faut installer Node.js en version LTS depuis https://nodejs.org, puis relancer Claude Code, et s'arrêter.
+1. L'état ci-dessus : sans vidéo (`projet` faux), proposer `/pulse-motion:creer` et s'arrêter. L'état dit « Node.js introuvable » ou « node » introuvable (Node.js n'est pas installé) : expliquer qu'il faut installer Node.js en version LTS depuis https://nodejs.org, puis relancer Claude Code, et s'arrêter.
 2. `pulse-motion controler .` : s'il reste des **erreurs**, les dire simplement et proposer de les corriger d'abord (`/pulse-motion:retoucher`). Des **alertes** seules n'empêchent pas l'export : les mentionner en une phrase.
 3. Alerte `voix-provisoire` : la vidéo parle encore avec la voix de l'ordinateur, qui sert seulement à caler l'animation. Le dire, et proposer d'enregistrer d'abord (bouton « Voix » de l'aperçu, ou dire « j'enregistre la scène 1 ») : « Enregistrer ma voix d'abord (Recommandé) » · « Exporter une version de travail avec la voix de l'ordinateur ». Sur « Enregistrer ma voix d'abord » : expliquer comment ouvrir le studio, puis s'arrêter sans exporter. Seulement sur ce second choix, ajouter `--avec-provisoire` à l'export (sans lui, l'export est refusé).
 
 ## 2. Préparer l'export fidèle
 
-1. `pulse-motion ffmpeg` : `present` et `versionOk` vrais → étape 3.
+1. ffmpeg ci-dessus : `present` et `versionOk` vrais → étape 3.
 2. Sinon, suivre les consignes d'installation de `pulse-motion consignes outils` (étape « Installer ffmpeg »), en proposant aussi d'exporter sans. En bref : expliquer en une phrase : « ffmpeg est un petit logiciel libre qui fabrique la vidéo en haute qualité, avec un son propre ; il s'installe une fois. » Puis demander avec `AskUserQuestion` : « Installer ffmpeg (Recommandé) » · « Exporter sans, dans le navigateur ».
    - Accord et `commande` non nulle : lancer exactement cette `commande`, puis relancer `pulse-motion ffmpeg` pour vérifier.
    - Accord mais `commande` nulle (Linux : l'installation demande son mot de passe) : donner à la personne le texte `installer` à taper dans un terminal, puis attendre qu'elle dise que c'est fait et relancer `pulse-motion ffmpeg`.
