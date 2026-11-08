@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Mesures Pulse Motion – jetons et temps d'une séance de Claude Code, lus dans sa transcription.
 //
-// Lancer : node outils/mesures/jetons.js <session.jsonl> [--json]
+// Lancer : node outils/mesures/jetons.js <session.jsonl> [--json] [--jusqua <date ISO>]
 //
 // La séance principale est <session>.jsonl ; ses agents sont dans <session>/subagents/agent-*.jsonl, leur type dans
 // agent-*.meta.json (« pulse-motion:animateur »…). Une réponse du modèle s'écrit parfois sur plusieurs lignes (un bloc
@@ -28,7 +28,7 @@ function lireLignes(fichier) {
 }
 
 /** Une transcription -> { reponses: Map(id -> { model, usage }), outils: [{ id, name, input, t, ordre }], textes: [{ texte, t, ordre }], debut, fin, demande } */
-function analyserTranscription(fichier) {
+function analyserTranscription(fichier, { jusqua = null } = {}) {
   const reponses = new Map();
   const outils = new Map();
   const textes = [];
@@ -38,6 +38,7 @@ function analyserTranscription(fichier) {
   let ordre = 0;
   for (const l of lireLignes(fichier)) {
     const t = l.timestamp ? Date.parse(l.timestamp) : null;
+    if (jusqua !== null && t !== null && t > jusqua) continue;
     if (t !== null && !Number.isNaN(t)) { if (debut === null || t < debut) debut = t; if (fin === null || t > fin) fin = t; }
     if (l.type === "user" && !l.isMeta && demande === null && l.message && t !== null) {
       const c = l.message.content;
@@ -79,8 +80,9 @@ const commandesPulse = (outils) => outils.filter((o) => o.name === "Bash" && /pu
  * Bilan d'une séance. -> { session, duree, premierePhraseS, appelsAvantPremierePhrase, parModele, parAgent, total,
  *   appelsOutils, agents, commandes, blocDeFin }
  */
-function bilanSession(session) {
-  const principale = analyserTranscription(session);
+function bilanSession(session, { jusqua = null } = {}) {
+  const limite = jusqua ? Date.parse(jusqua) : null;
+  const principale = analyserTranscription(session, { jusqua: limite });
   const parModele = {};
   const parAgent = {};
   const total = zero();
@@ -100,7 +102,7 @@ function bilanSession(session) {
   let commandes = commandesPulse(principale.outils);
   let fin = principale.fin;
   for (const a of agentsDe(session)) {
-    const analyse = analyserTranscription(a.fichier);
+    const analyse = analyserTranscription(a.fichier, { jusqua: limite });
     compter(a.type, analyse);
     for (const r of analyse.reponses.values()) {
       const m = r.model;
@@ -133,9 +135,10 @@ const lus = (c) => c.input_tokens + c.cache_creation_input_tokens + c.cache_read
 
 if (require.main === module) {
   const args = process.argv.slice(2);
-  const fichier = args.find((a) => !a.startsWith("--"));
+  const fichier = args.find((a, k) => !a.startsWith("--") && args[k - 1] !== "--jusqua");
   if (!fichier) { console.error("Usage : node outils/mesures/jetons.js <session.jsonl> [--json]"); process.exit(2); }
-  const b = bilanSession(path.resolve(fichier));
+  const i = args.indexOf("--jusqua");
+  const b = bilanSession(path.resolve(fichier), { jusqua: i >= 0 ? args[i + 1] : null });
   if (args.includes("--json")) console.log(JSON.stringify(b, null, 2));
   else {
     console.log(`Séance ${b.session} : ${b.duree} s, première phrase à ${b.premierePhraseS} s après ${b.appelsAvantPremierePhrase} appel(s) d'outil`);

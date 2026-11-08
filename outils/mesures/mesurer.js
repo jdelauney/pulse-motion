@@ -24,7 +24,7 @@ const { decrireMachine } = require("./machine.js");
 const DEPOT = path.join(__dirname, "..", "..");
 const PLUGIN_DEFAUT = path.join(DEPOT, "plugins", "pulse-motion");
 const MESURES = ["assemblage", "page", "controle-complet", "controle-sans-changement", "export", "historique", "controle-retouche", "reexport", "comparer"];
-const IGNORES = new Set(["sortie", ".historique", ".pulse-motion"]);
+const IGNORES = new Set(["sortie", ".historique", ".pulse-motion", "temoin.json"]);
 
 /** Dossier source de chaque témoin : chaine-du-froid vient du plugin mesuré, les autres de outils/mesures/temoins/. */
 function sourceTemoin(nom, plugin) {
