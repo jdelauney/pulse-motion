@@ -1,0 +1,12 @@
+<!-- Scène « fin » (style chaleureux, scène toute faite « conclusion », sans logo) : le message à retenir. Durée : 12 s.
+     Textes : titre, sous. Mouvement #016 (vague de lettres) sur le titre. Confettis à la fin de l'entrée du titre.
+     Dernière scène de la vidéo : décor data-dur = 11 (image stable la dernière seconde). -->
+<section data-scene="fin" class="centre">
+  <div class="decor">
+    <span class="galet" data-decor style="width: 70cqh; height: 62cqh; left: 50%; top: 50%; margin: -31cqh 0 0 -35cqh" data-start="0" data-dur="11" data-tween="--dy 0cqh→-3cqh sine-inout; --m 0→1 sine-inout"></span>
+    <span class="galet sauge" data-decor style="width: 34cqh; height: 30cqh; right: -10cqh; bottom: -10cqh" data-start="0" data-dur="11" data-tween="--dx 0cqh→-5cqh sine-inout; --dy 0cqh→-3cqh sine-inout; --m 0→1 sine-inout"></span>
+  </div>
+  <h2 id="titre" class="titre" data-texte="titre" data-start="1t" data-dur="0.9" data-lettres="onde" data-pas="0.02" style="--pm-lettre-dur: 0.6s" data-son="carillon" data-son-volume="0.7"></h2>
+  <div data-effet="confettis" data-ancre="#titre" data-start="#titre:fin" data-dur="1"></div>
+  <p id="sous" class="sous-titre pose" data-texte="sous" data-start="#titre:fin+0.3" data-dur="0.9" data-son="pop" data-son-volume="0.5"></p>
+</section>

@@ -1,0 +1,11 @@
+<!-- Scène « intro » (style chaleureux, scène toute faite « titre ») : annoncer le sujet. Durée : 10 s.
+     Textes : etiquette, titre, sous. Mouvement #004 (zoom d'entrée) sur le titre. Décor : data-dur = 10. -->
+<section data-scene="intro" class="centre">
+  <div class="decor">
+    <span class="galet" data-decor style="width: 64cqh; height: 58cqh; left: -16cqh; top: -18cqh" data-start="0" data-dur="10" data-tween="--dx 0cqh→6cqh sine-inout; --dy 0cqh→4cqh sine-inout; --m 0→1 sine-inout"></span>
+    <span class="galet sauge" data-decor style="width: 40cqh; height: 36cqh; right: -10cqh; bottom: -12cqh" data-start="0" data-dur="10" data-tween="--dx 0cqh→-5cqh sine-inout; --m 0→1 sine-inout"></span>
+  </div>
+  <p id="etiquette" class="pastille-texte eclot" data-texte="etiquette" data-start="1t" data-dur="0.8" data-son="pop" data-son-volume="0.6"></p>
+  <h1 id="titre" class="titre pm-m-zoom-entree" data-texte="titre" data-start="2t" data-dur="0.6" data-son="whoosh" data-son-volume="0.5"></h1>
+  <p id="sous" class="sous-titre pose" data-texte="sous" data-start="4t" data-dur="0.9"></p>
+</section>

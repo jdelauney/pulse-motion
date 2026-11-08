@@ -85,8 +85,71 @@ function etatWhisper({ dossier = dossierWhisper(), python = trouverPython(), anc
   return etat;
 }
 
-/** Transcrit une prise. -> Promise<{ ok: true, mots } | { ok: false, message }> */
-function transcrire({ wav, duree, langue = 'fr', dossier = dossierWhisper(), python, env = {}, delaiMax, surProgression }) {
+// Phrases que Whisper invente sur un silence ou un bruit : génériques de sous-titrage amateur et formules de fin de
+// vidéo apprises sur des vidéos en ligne. Comparées sans accents, ponctuation ni majuscules. Liste figée : ne l'étendre
+// qu'avec une phrase réellement observée sur une prise silencieuse.
+const PHRASES_FANTOMES = [
+  'Sous-titres réalisés par la communauté d\'Amara.org',
+  'Sous-titres réalisés para la communauté d\'Amara.org',
+  'Sous-titrage ST\' 501',
+  'Sous-titrage Société Radio-Canada',
+  'Sous-titrage FR',
+  'Merci d\'avoir regardé',
+  'Merci d\'avoir regardé cette vidéo',
+  'Abonnez-vous',
+  'Abonnez-vous à la chaîne',
+  'N\'oubliez pas de vous abonner',
+];
+// Un même mot dit plus de 4 fois de suite : une boucle de Whisper, pas une phrase.
+const REPETITIONS_MAX = 4;
+// Mots au plus d'une phrase fantôme (recherche sans numéro de passage).
+const LONGUEUR_FANTOME = 12;
+
+/** Texte comparable : sans accents, ponctuation ni majuscules, espaces réduits. */
+function normaliser(texte) {
+  return String(texte).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+/**
+ * Retire d'une transcription ce que Whisper invente : les passages qui ne sont qu'une phrase fantôme connue (sauf si le
+ * texte attendu la contient : elle est alors vraiment dite), et les suites de plus de REPETITIONS_MAX fois le même mot
+ * (la suite entière). Mots [{ w, t0, t1, s? }] (s : numéro du passage ; sans lui, une suite de mots qui forme
+ * exactement une phrase fantôme est retirée). -> mots gardés, dans l'ordre, inchangés.
+ */
+function filtrerTranscription(mots, { attendu = '' } = {}) {
+  if (!Array.isArray(mots) || !mots.length) return Array.isArray(mots) ? mots : [];
+  const dit = ` ${normaliser(attendu)} `;
+  const fantomes = new Set(PHRASES_FANTOMES.map(normaliser).filter((p) => p && !dit.includes(` ${p} `)));
+  const retires = new Set();
+  if (mots.every((m) => Number.isInteger(m.s))) {
+    const passages = new Map();
+    mots.forEach((m, i) => { if (!passages.has(m.s)) passages.set(m.s, []); passages.get(m.s).push(i); });
+    for (const indices of passages.values()) {
+      if (fantomes.has(normaliser(indices.map((i) => mots[i].w).join(' ')))) indices.forEach((i) => retires.add(i));
+    }
+  } else {
+    for (let i = 0; i < mots.length; i++) {
+      let texte = '';
+      for (let j = i; j < Math.min(mots.length, i + LONGUEUR_FANTOME); j++) {
+        texte += ` ${mots[j].w}`;
+        if (fantomes.has(normaliser(texte))) { for (let k = i; k <= j; k++) retires.add(k); i = j; break; }
+      }
+    }
+  }
+  const restants = mots.map((m, i) => i).filter((i) => !retires.has(i));
+  for (let a = 0; a < restants.length;) {
+    const mot = normaliser(mots[restants[a]].w);
+    let b = a + 1;
+    while (b < restants.length && mot && normaliser(mots[restants[b]].w) === mot) b++;
+    if (mot && b - a > REPETITIONS_MAX) for (let k = a; k < b; k++) retires.add(restants[k]);
+    a = b;
+  }
+  return mots.filter((m, i) => !retires.has(i));
+}
+
+/** Transcrit une prise. attendu : le texte que la prise doit dire (une phrase fantôme qu'il contient est gardée).
+ *  -> Promise<{ ok: true, mots } | { ok: false, message }> */
+function transcrire({ wav, duree, langue = 'fr', dossier = dossierWhisper(), python, env = {}, delaiMax, surProgression, attendu = '' }) {
   const commande = python || [pythonDuVenv(dossier)];
   const v = lireVersion(dossier);
   const modele = path.join(dossier, 'modeles', (v && v.modele) || MODELE_DEFAUT);
@@ -119,7 +182,7 @@ function transcrire({ wav, duree, langue = 'fr', dossier = dossierWhisper(), pyt
         if (code !== 0) throw new Error(erreurs.trim().split(/\r?\n/).pop() || `code ${code}`);
         const mots = JSON.parse(derniere);
         if (!Array.isArray(mots)) throw new Error('réponse inattendue');
-        finir({ ok: true, mots });
+        finir({ ok: true, mots: filtrerTranscription(mots, { attendu }) });
       } catch (e) {
         finir({ ok: false, message: `La transcription a échoué (${e.message}).` });
       }
@@ -177,4 +240,4 @@ function whisperParDefaut() {
   return { pret: etatWhisper({ python: null, ancien: null }).pret, transcrire };
 }
 
-module.exports = { MODELE_DEFAUT, dossierWhisper, pythonDuVenv, trouverPython, pythonAncien, afficherCommande, commandeSysteme, commandesInstallation, etatWhisper, transcrire, installerWhisper, whisperParDefaut };
+module.exports = { MODELE_DEFAUT, PHRASES_FANTOMES, filtrerTranscription, dossierWhisper, pythonDuVenv, trouverPython, pythonAncien, afficherCommande, commandeSysteme, commandesInstallation, etatWhisper, transcrire, installerWhisper, whisperParDefaut };

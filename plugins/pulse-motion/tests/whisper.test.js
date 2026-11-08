@@ -79,3 +79,54 @@ test('installer sans Python : refus avec la commande du système', async () => {
   assert.equal(r.ok, false);
   assert.match(r.message, /Python/);
 });
+
+const mot = (w, s, t0 = 0) => ({ w, t0, t1: t0 + 0.3, ...(s === undefined ? {} : { s }) });
+const texte = (mots) => mots.map((m) => m.w).join('').trim();
+
+test('whisper-phrases-fantomes-filtrees : un passage qui n\'est qu\'une phrase fantôme est retiré, avec ou sans numéro de passage', () => {
+  const avecPassages = [mot(' Bonjour', 0), mot(' à', 0), mot(' tous.', 0),
+    mot(' Sous-titres', 1), mot(' réalisés', 1), mot(' par', 1), mot(' la', 1), mot(' communauté', 1), mot(' d\'Amara.org', 1),
+    mot(' Abonnez-vous !', 2), mot(' Merci', 3), mot(' d’avoir', 3), mot(' regarde', 3)];
+  assert.equal(texte(Wh.filtrerTranscription(avecPassages)), 'Bonjour à tous.');
+  // Ancienne sortie du script (sans « s ») : la suite de mots qui forme la phrase est retirée.
+  const sansPassages = [mot(' Le'), mot(' froid.'), mot(' Sous-titrage'), mot(' ST\''), mot(' 501'), mot(' Merci'), mot(' d\'avoir'), mot(' regardé.')];
+  assert.equal(texte(Wh.filtrerTranscription(sansPassages)), 'Le froid.');
+  // Les mots gardés ne sont pas modifiés (horodatages compris).
+  const gardes = Wh.filtrerTranscription(avecPassages);
+  assert.deepEqual(gardes[0], avecPassages[0]);
+});
+
+test('whisper-repetitions-filtrees : plus de 4 fois le même mot de suite, la suite entière est retirée', () => {
+  const mots = [mot(' Oui,', 0), mot(' merci', 1), mot(' merci', 1), mot(' Merci.', 1), mot(' merci', 1), mot(' merci', 1), mot(' fin', 2)];
+  assert.equal(texte(Wh.filtrerTranscription(mots)), 'Oui, fin');
+  const quatre = [mot(' très'), mot(' très'), mot(' très'), mot(' très'), mot(' bien')];
+  assert.equal(Wh.filtrerTranscription(quatre).length, 5, '4 fois : gardé');
+});
+
+test('whisper-mots-reels-gardes : une phrase fantôme vraiment dite (dans le texte attendu) et les vrais mots restent', () => {
+  const mots = [mot(' Chaque', 0), mot(' goutte', 0), mot(' compte.', 0), mot(' Merci', 1), mot(' d\'avoir', 1), mot(' regardé !', 1)];
+  assert.equal(texte(Wh.filtrerTranscription(mots, { attendu: 'Chaque goutte compte. Merci d’avoir regardé !' })), 'Chaque goutte compte. Merci d\'avoir regardé !');
+  assert.equal(texte(Wh.filtrerTranscription(mots)), 'Chaque goutte compte.');
+  // Un mot de la liste dans une vraie phrase plus longue n'est pas retiré.
+  const phrase = [mot(' Abonnez-vous', 0), mot(' à', 0), mot(' la', 0), mot(' lettre', 0), mot(' du', 0), mot(' service.', 0)];
+  assert.equal(Wh.filtrerTranscription(phrase).length, 6);
+  assert.deepEqual(Wh.filtrerTranscription([]), []);
+});
+
+test('transcrire-py-vad-active : filtre de silence de 500 ms, passages indépendants, numéro de passage écrit', () => {
+  const py = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'whisper', 'transcrire.py'), 'utf8');
+  assert.match(py, /vad_filter=True/);
+  assert.match(py, /vad_parameters=\{'min_silence_duration_ms': 500\}/);
+  assert.match(py, /condition_on_previous_text=False/);
+  assert.match(py, /word_timestamps=True/);
+  assert.match(py, /'s': i/);
+});
+
+test('revue : transcription par le script Python (faux modèle) : phrases fantômes retirées après la lecture', sansPython, async () => {
+  const dossier = dossierTemporaire('pm-whisper-');
+  const faux = path.join(dossier, 'faux.json');
+  fs.writeFileSync(faux, JSON.stringify([{ w: ' Le', t0: 0, t1: 0.2, s: 0 }, { w: ' froid.', t0: 0.3, t1: 0.6, s: 0 }, { w: ' Abonnez-vous !', t0: 3, t1: 3.5, s: 1 }]));
+  const r = await Wh.transcrire({ wav: 'inutile.wav', duree: 4, python: python.commande, dossier, env: { PM_WHISPER_FAUX: faux } });
+  assert.equal(r.ok, true);
+  assert.deepEqual(r.mots.map((m) => m.w), [' Le', ' froid.']);
+});

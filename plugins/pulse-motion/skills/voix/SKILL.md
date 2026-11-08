@@ -1,5 +1,5 @@
 ---
-description: Enregistrer, importer et caler la voix de la vidéo Pulse Motion, ou faire écouter sa musique (« j'enregistre la scène 2 », « j'ai un fichier de ma voix », « mets une voix provisoire », « recale les mots », « fais-moi écouter la musique »). Pour un volume, le texte dit, les sous-titres ou l'ambiance de la musique, c'est /pulse-motion:retoucher.
+description: "Enregistrer, importer ou recaler la voix de la vidéo, écouter sa musique (« j'enregistre la scène 2 », « j'ai un fichier de ma voix », « recale les mots »). Volume, texte dit, sous-titres : /pulse-motion:retoucher."
 allowed-tools: Bash(pulse-motion *) Bash(node *) Read Glob Write AskUserQuestion
 ---
 

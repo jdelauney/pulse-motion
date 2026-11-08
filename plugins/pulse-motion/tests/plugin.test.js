@@ -374,3 +374,97 @@ test('consignes : l\'atelier des effets est guidé', () => {
   assert.match(skill, /bouton « Effets »/);
   assert.match(lire('skills', 'retoucher', 'SKILL.md'), /atelier-particules/);
 });
+
+// Spec Rapidité (S1) § 5.2, 5.5 et 5.6 : descriptions courtes, budget des consignes, état injecté, effort.
+const descriptionDe = (s) => enTete(lire('skills', s, 'SKILL.md')).description.replace(/^"(.*)"$/, '$1').replace(/^'(.*)'$/, '$1');
+
+test('descriptions-250-caracteres : chaque description tient dans la liste de Claude Code (250 caractères Unicode au plus)', () => {
+  for (const s of SKILLS) {
+    const d = descriptionDe(s);
+    assert.ok([...d].length <= 250, `${s} : ${[...d].length} caractères`);
+    assert.doesNotMatch(d, /"/, `${s} : guillemet droit dans la description`);
+  }
+});
+
+test('descriptions-renvois-presents : chaque renvoi vers une autre compétence subsiste, sous une forme courte', () => {
+  const RENVOIS = {
+    'animer-personnage': ['dessiner-personnage', 'atelier-personnages'],
+    'atelier-particules': ['atelier-personnages'],
+    'atelier-personnages': ['atelier-particules'],
+    'decouper-personnage': ['dessiner-personnage', 'atelier-personnages'],
+    'dessiner-personnage': ['animer-personnage', 'atelier-personnages'],
+    exporter: ['retoucher'],
+    reprendre: ['creer'],
+    retoucher: ['voix', 'creer'],
+    voix: ['retoucher'],
+  };
+  for (const [s, cibles] of Object.entries(RENVOIS)) {
+    const d = descriptionDe(s);
+    for (const c of cibles) assert.match(d, new RegExp(`(^|[\\s/:])${c}(?![a-z-])`), `${s} : renvoi vers ${c}`);
+  }
+});
+
+test('budget-consignes : les consignes ne regrossissent pas sans qu\'on le voie (octets, état 0.28.0 + 10 %)', () => {
+  // animateur.md descendra à 6 000 o avec les références à la carte (spec S1 § 5.4, plan S1-2).
+  const PLAFONDS = {
+    'skills/animer-personnage/SKILL.md': 5884, 'skills/atelier-particules/SKILL.md': 2272, 'skills/atelier-personnages/SKILL.md': 3529,
+    'skills/creer/SKILL.md': 21315, 'skills/decouper-personnage/SKILL.md': 4020, 'skills/dessiner-personnage/SKILL.md': 4528,
+    'skills/exporter/SKILL.md': 6151, 'skills/outils/SKILL.md': 6144, 'skills/reprendre/SKILL.md': 2999,
+    'skills/retoucher/SKILL.md': 12571, 'skills/style/SKILL.md': 6460, 'skills/voix/SKILL.md': 5073,
+    'agents/animateur.md': 9132,
+  };
+  for (const f of fichiersGuides()) {
+    const cle = f.split(path.sep).join('/');
+    assert.ok(PLAFONDS[cle], `${cle} : plafond à fixer dans ce test`);
+    const octets = fs.statSync(path.join(RACINE, f)).size;
+    assert.ok(octets <= PLAFONDS[cle], `${cle} : ${octets} o, plafond ${PLAFONDS[cle]} o`);
+  }
+});
+
+test('injection-etat-reprendre-retoucher-exporter : état lu au lancement, jamais une commande qui annule la compétence', () => {
+  const ATTENDU = { reprendre: ['etat .', 'lexique'], retoucher: ['etat .', 'lexique'], exporter: ['etat .', 'ffmpeg'] };
+  for (const s of SKILLS) {
+    const texte = lire('skills', s, 'SKILL.md');
+    const blocs = [...texte.matchAll(/^!`([^`]+)`$/gm)].map((m) => m[1]);
+    // Une commande injectée qui sort en erreur annule toute la compétence : chacune finit par « || true ».
+    for (const b of blocs) assert.match(b, /^pulse-motion [a-z]+[^`]* 2>&1 \|\| true$/, `${s} : « ${b} »`);
+    assert.deepEqual(blocs.map((b) => b.replace(/^pulse-motion (.*) 2>&1 \|\| true$/, '$1')), ATTENDU[s] || [], s);
+    if (!ATTENDU[s]) continue;
+    // Le bloc vient avant toute autre consigne, sous son titre ; consignes creer n'est pas injecté.
+    const avantPremierBloc = texte.slice(0, texte.indexOf('!`'));
+    assert.match(avantPremierBloc, /## État de la vidéo, lu au lancement\n\n$/, s);
+    assert.doesNotMatch(texte, /!`pulse-motion consignes/, s);
+    assert.doesNotMatch(texte, /^shell:/m, `${s} : shell par défaut (bash)`);
+  }
+});
+
+test('injection-suivie-du-repli : chaque bloc injecté est suivi de sa phrase de repli', () => {
+  for (const s of ['reprendre', 'retoucher', 'exporter']) {
+    const texte = lire('skills', s, 'SKILL.md');
+    for (const m of texte.matchAll(/^!`pulse-motion ([^`]+) 2>&1 \|\| true`\n\n([^\n]+)/gm)) {
+      assert.equal(m[2], `Si ce bloc est vide ou contient une erreur, lancer \`pulse-motion ${m[1]}\`.`, `${s} : ${m[1]}`);
+    }
+    assert.equal([...texte.matchAll(/^Si ce bloc est vide ou contient une erreur/gm)].length, [...texte.matchAll(/^!`/gm)].length, s);
+    // Node absent : la compétence reconnaît le message des enveloppes.
+    assert.match(texte, /« Node\.js introuvable »/, s);
+  }
+});
+
+// Spec S1 § 5.6 : « effort: low » ne se garde que si les commandes lancées et le bloc de fin restent identiques. Mesure
+// du 2026-11-08 (3 phrases types par compétence, avec et sans le champ) : sur outils et les deux ateliers, l'effort
+// faible saute la lecture et la note du lexique ; sur exporter, il lance l'export au premier plan au lieu de
+// l'arrière-plan (première phrase après 100 à 125 s au lieu de 25 à 30 s). Aucune compétence ne le garde.
+const EFFORT_FAIBLE = [];
+
+test('effort-low-sur-les-competences-procedurales : effort faible seulement là où la mesure l\'a validé (aucune au 2026-11-08)', () => {
+  const avecEffort = SKILLS.filter((s) => enTete(lire('skills', s, 'SKILL.md')).effort !== undefined).sort();
+  assert.deepEqual(avecEffort, EFFORT_FAIBLE);
+  for (const s of avecEffort) assert.equal(enTete(lire('skills', s, 'SKILL.md')).effort, 'low', s);
+});
+
+test('effort-absent-sur-reprendre-et-creer : reprendre peut fabriquer toute une vidéo, creer en écrit les scènes', () => {
+  for (const s of ['reprendre', 'creer', 'retoucher', 'style', 'voix', 'dessiner-personnage', 'animer-personnage', 'decouper-personnage']) {
+    assert.equal(enTete(lire('skills', s, 'SKILL.md')).effort, undefined, s);
+  }
+  assert.equal(enTete(lire('agents', 'animateur.md')).effort, undefined);
+});

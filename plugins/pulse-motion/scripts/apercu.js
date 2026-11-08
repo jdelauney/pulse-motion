@@ -225,7 +225,9 @@ async function demarrerApercu({ dossier, port = 4321, dossierStyles, dossierEffe
   return { port: portRetenu, url: adresse, fermer };
 }
 
+/** Ouvre l'adresse dans le navigateur par défaut. PM_SANS_OUVRIR=1 : n'ouvre rien (mesures et essais automatiques). */
 function ouvrirNavigateur(url) {
+  if (process.env.PM_SANS_OUVRIR === '1') return;
   const [cmd, args] = process.platform === 'win32' ? ['cmd', ['/c', 'start', '', url]]
     : process.platform === 'darwin' ? ['open', [url]] : ['xdg-open', [url]];
   spawn(cmd, args, { stdio: 'ignore', detached: true }).unref();

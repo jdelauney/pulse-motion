@@ -80,7 +80,7 @@ async function importerUnique({ projet, deroule, fichier, outil, whisper }) {
   try {
     const wav = path.join(travail, 'tout.wav');
     fs.writeFileSync(wav, W.ecrire({ taux: son.taux, canaux: [canal] }));
-    t = await whisper.transcrire({ wav, duree });
+    t = await whisper.transcrire({ wav, duree, attendu: scenes.map((s) => s.voix.texte).join(' ') });
   } finally {
     fs.rmSync(travail, { recursive: true, force: true });
   }

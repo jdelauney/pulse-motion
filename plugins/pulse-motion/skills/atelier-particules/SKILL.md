@@ -1,5 +1,5 @@
 ---
-description: Ouvrir l'atelier (l'éditeur) des effets de particules Pulse Motion pour régler un effet en le regardant (« ouvre l'éditeur de particules », « ouvre l'atelier des effets », « laisse-moi régler les étincelles », « je veux voir ce que donne la neige »). Pour l'éditeur des personnages, c'est /pulse-motion:atelier-personnages.
+description: "Ouvrir l'éditeur des effets de particules pour régler un effet en le regardant (« ouvre l'éditeur de particules », « laisse-moi régler les étincelles », « montre-moi la neige »). Pour les personnages : /pulse-motion:atelier-personnages."
 argument-hint: "[l'effet à régler]"
 allowed-tools: Bash(pulse-motion *) Bash(node *) Read Glob Grep AskUserQuestion
 ---

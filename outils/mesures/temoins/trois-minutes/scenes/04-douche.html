@@ -1,0 +1,73 @@
+<!-- Scène composée « douche » (style chaleureux) : deux réservoirs qui se remplissent côte à côte. Durée : 14 s.
+     La douche de 5 minutes s'arrête à 60 L, le bain monte jusqu'à 150 L (réservoirs gradués sur 165 L) ;
+     un trait pointillé reporte le niveau de la douche sur le bain. Textes : titre, gauche, droite. -->
+<section data-scene="douche" class="centre">
+  <style>
+    @scope {
+      :scope { --l-col: 64cqh; --ecart: 8cqh; --l-cuve: 34cqh; --h-cuve: 34cqh; --bord: 0.8cqh; }
+      .reservoirs { display: grid; grid-template-columns: var(--l-col) var(--l-col); gap: var(--ecart); justify-content: center; }
+      .colonne { display: flex; flex-direction: column; align-items: center; gap: 2.6cqh; min-width: 0; }
+      .cuve {
+        position: relative; width: var(--l-cuve); height: var(--h-cuve); box-sizing: border-box;
+        border: var(--bord) solid color-mix(in srgb, var(--c-texte) 22%, var(--c-fond));
+        border-top-width: 0; border-radius: 1.6cqh 1.6cqh 5cqh 5cqh;
+        background: color-mix(in srgb, var(--c-primaire) 5%, var(--c-fond));
+      }
+      .interieur { position: absolute; inset: 0; overflow: hidden; border-radius: 0.8cqh 0.8cqh 4.2cqh 4.2cqh; }
+      .eau {
+        position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--niveau, 0) * 100%);
+        background: var(--c-primaire);
+      }
+      .eau.econome { background: var(--c-accent); }
+      .eau::before {
+        content: ""; position: absolute; left: -10%; right: -10%; top: -1.2cqh; height: 2.4cqh; border-radius: 50%;
+        background: color-mix(in srgb, var(--c-fond) 35%, var(--c-primaire));
+      }
+      .eau.econome::before { background: color-mix(in srgb, var(--c-fond) 35%, var(--c-accent)); }
+      .graduation {
+        position: absolute; left: 0; width: 22%; height: 0.5cqh; border-radius: 99cqh;
+        background: color-mix(in srgb, var(--c-texte) 18%, var(--c-fond));
+      }
+      .repere {
+        position: absolute; z-index: 2; bottom: calc(60 / 165 * 100%); height: 0;
+        left: calc(-1 * (var(--l-col) + var(--ecart)) - var(--bord));
+        width: calc(var(--l-col) + var(--ecart) + var(--l-cuve));
+        border-top: 0.7cqh dashed var(--c-accent-lisible);
+        transform-origin: 0 50%; transform: scaleX(var(--p, 0)); opacity: var(--p, 0);
+      }
+      .legende { margin: 0; font: 600 4.8cqh/1.2 var(--f-titres); text-wrap: balance; }
+      .legende.econome { color: var(--c-accent-lisible); }
+      .legende.gaspille { color: var(--c-primaire-lisible); }
+    }
+  </style>
+  <div class="decor">
+    <span class="galet sauge" data-decor style="width: 46cqh; height: 40cqh; left: -14cqh; bottom: -16cqh" data-start="0" data-dur="14" data-tween="--dx 0cqh→8cqh sine-inout; --m 0→1 sine-inout"></span>
+    <span class="galet" data-decor style="width: 38cqh; height: 34cqh; right: -12cqh; top: -14cqh" data-start="0" data-dur="14" data-tween="--dy 0cqh→6cqh sine-inout; --m 1→0 sine-inout"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen pose" data-texte="titre" data-start="0.2" data-dur="0.9"></h2>
+  <div class="reservoirs">
+    <div class="colonne">
+      <div id="cuve-douche" class="cuve eclot" data-start="#titre:fin+0.1" data-dur="0.8" data-son="pop">
+        <div class="interieur">
+          <div id="eau-douche" class="eau econome" data-start="#cuve-douche:fin+0.2" data-dur="2.4" data-tween="--niveau 0→0.364 cubic-out"></div>
+        </div>
+        <span class="graduation" data-decor style="bottom: 25%"></span>
+        <span class="graduation" data-decor style="bottom: 50%"></span>
+        <span class="graduation" data-decor style="bottom: 75%"></span>
+      </div>
+      <p id="gauche" class="legende econome pose" data-texte="gauche" data-start="#eau-douche:fin+0.1" data-dur="0.9" data-son="ding"></p>
+    </div>
+    <div class="colonne">
+      <div id="cuve-bain" class="cuve eclot" data-start="#cuve-douche+0.2" data-dur="0.8">
+        <div class="interieur">
+          <div id="eau-bain" class="eau" data-start="#gauche:fin+0.2" data-dur="2.8" data-tween="--niveau 0→0.909 cubic-inout"></div>
+        </div>
+        <span class="graduation" data-decor style="bottom: 25%"></span>
+        <span class="graduation" data-decor style="bottom: 50%"></span>
+        <span class="graduation" data-decor style="bottom: 75%"></span>
+        <span id="repere" class="repere" data-decor data-start="#droite:fin+0.2" data-dur="0.8"></span>
+      </div>
+      <p id="droite" class="legende gaspille pose" data-texte="droite" data-start="#eau-bain:fin+0.1" data-dur="0.9" data-son="ding"></p>
+    </div>
+  </div>
+</section>

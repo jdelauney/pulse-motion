@@ -1,4 +1,9 @@
 #!/usr/bin/env sh
-# pulse-motion – outil du plugin Pulse Motion. Claude Code place le dossier bin/ du plugin
-# dans le PATH : les skills /pulse-motion:* l'appellent sans chemin ni autorisation de lecture.
+# pulse-motion – outil du plugin Pulse Motion. Claude Code place le dossier bin/ du plugin dans le PATH : les skills
+# /pulse-motion:* l'appellent sans chemin ni autorisation de lecture. Node absent : un message en français sur la sortie
+# standard (lu aussi par les blocs injectés au lancement des skills), code 1.
+if ! command -v node >/dev/null 2>&1; then
+  echo "Node.js introuvable : « node » n'est pas installé."
+  exit 1
+fi
 exec node "$(dirname "$0")/../scripts/pm.js" "$@"

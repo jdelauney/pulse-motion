@@ -1,0 +1,19 @@
+<!-- Scène « jardin » (style chaleureux, scène toute faite « comparaison ») : à faire, à éviter au jardin. Durée : 15 s.
+     Textes : titre, gauche-titre, gauche-texte, droite-titre, droite-texte. Entrées calées sur le tempo (1t = 0,5 s à 120 bpm). -->
+<section data-scene="jardin">
+  <div class="decor">
+    <span class="galet" data-decor style="width: 48cqh; height: 42cqh; left: -16cqh; bottom: -18cqh" data-start="0" data-dur="15" data-tween="--dx 0cqh→8cqh sine-inout; --m 0→1 sine-inout"></span>
+    <span class="galet sauge" data-decor style="width: 34cqh; height: 30cqh; right: -12cqh; top: -12cqh" data-start="0" data-dur="15" data-tween="--dy 0cqh→6cqh sine-inout; --m 0→1 sine-inout"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen pose" data-texte="titre" data-start="1t" data-dur="0.9"></h2>
+  <div class="deux-cartes">
+    <div id="gauche" class="carte pose" data-start="4t" data-dur="0.9" data-son="pop">
+      <h3 class="carte-titre" data-texte="gauche-titre"></h3>
+      <p class="texte" data-texte="gauche-texte"></p>
+    </div>
+    <div id="droite" class="carte sauge pose" data-start="9t" data-dur="0.9" data-son="pop" data-son-volume="0.8">
+      <h3 class="carte-titre" data-texte="droite-titre"></h3>
+      <p class="texte" data-texte="droite-texte"></p>
+    </div>
+  </div>
+</section>

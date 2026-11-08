@@ -153,7 +153,7 @@ async function transcrirePrise({ projet, relatif, texte, whisper, surProgression
     fs.writeFileSync(wav, W.ecrire(son));
   }
   let r;
-  try { r = await whisper.transcrire({ wav, duree, surProgression }); } finally { if (copie) fs.rmSync(copie, { recursive: true, force: true }); }
+  try { r = await whisper.transcrire({ wav, duree, surProgression, attendu: texte }); } finally { if (copie) fs.rmSync(copie, { recursive: true, force: true }); }
   // Prise remplacée pendant la transcription (nouvelle prise du studio) : rien n'est écrit pour l'ancienne.
   const sceau = empreinte(octets);
   const remplacee = () => { try { return empreinte(fs.readFileSync(absolu)) !== sceau; } catch { return true; } };
