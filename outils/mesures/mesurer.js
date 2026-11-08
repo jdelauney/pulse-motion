@@ -23,7 +23,8 @@ const { decrireMachine } = require("./machine.js");
 
 const DEPOT = path.join(__dirname, "..", "..");
 const PLUGIN_DEFAUT = path.join(DEPOT, "plugins", "pulse-motion");
-const MESURES = ["assemblage", "page", "controle-complet", "controle-sans-changement", "export", "historique", "controle-retouche", "reexport", "comparer"];
+const MESURES = ["assemblage", "page", "controle-complet", "controle-sans-changement", "export", "historique", "controle-retouche", "reexport", "comparer", "historique-medias"];
+const MEDIAS_MO = 50;
 const IGNORES = new Set(["sortie", ".historique", ".pulse-motion", "temoin.json"]);
 
 /** Dossier source de chaque témoin : chaine-du-froid vient du plugin mesuré, les autres de outils/mesures/temoins/. */
@@ -191,6 +192,26 @@ async function passe({ source, plugin, seulement, lancer, mesurerPret = tempsPre
       pas("comparer", ["comparer", ".", styles.join(",")]);
       r.comparer.styles = styles;
     }
+    if (seulement && seulement.includes("historique-medias")) {
+      // Seulement sur demande (--seulement historique-medias). 50 Mo de médias (10 fichiers de 5 Mo) : une première sauvegarde, puis seul le déroulé change (spec 5.12).
+      const medias = path.join(copie, "assets", "mesure-medias");
+      fs.mkdirSync(medias, { recursive: true });
+      for (let i = 0; i < 10; i++) fs.writeFileSync(path.join(medias, `media-${i}.bin`), crypto.randomBytes(MEDIAS_MO / 10 * 1024 * 1024));
+      const retoucherDeroule = (n) => {
+        const f = path.join(copie, "deroule.json");
+        const d = JSON.parse(fs.readFileSync(f, "utf8"));
+        d.titre = `${String(d.titre).replace(/ \(\d+\)$/, "")} (${n})`;
+        fs.writeFileSync(f, JSON.stringify(d, null, 2));
+      };
+      lancer(["historique", "sauvegarder", "."], { cwd: copie });
+      retoucherDeroule(1);
+      const avant = tailleDossier(path.join(copie, ".historique"));
+      pas("historique-medias", ["historique", "sauvegarder", "."]);
+      r["historique-medias"].octets = tailleDossier(path.join(copie, ".historique")) - avant;
+      for (let n = 2; n <= 19; n++) { retoucherDeroule(n); lancer(["historique", "sauvegarder", "."], { cwd: copie }); }
+      // 20 sauvegardes : place prise sur le disque, rapportée à la taille des médias.
+      r["historique-medias"].disqueSurMedias = arrondi(tailleDossier(path.join(copie, ".historique")) / (MEDIAS_MO * 1024 * 1024));
+    }
   } finally {
     fs.rmSync(copie, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
   }
@@ -200,7 +221,7 @@ async function passe({ source, plugin, seulement, lancer, mesurerPret = tempsPre
 /** Ce qu'on garde du résultat JSON d'une commande. */
 function resume(nom, res) {
   if (!res || typeof res !== "object") return null;
-  if (nom.startsWith("controle")) return { erreurs: res.erreurs, alertes: res.alertes, corrections: res.corrections, renduVerifie: res.renduVerifie };
+  if (nom.startsWith("controle")) return { erreurs: res.erreurs, alertes: res.alertes, corrections: res.corrections, renduVerifie: res.renduVerifie, ...("rendu" in res ? { rendu: res.rendu, scenesMesurees: res.scenesMesurees } : {}) };
   if (nom === "export" || nom === "reexport") {
     const garder = ["ok", "mode", "duree", "images", "segments", "segmentsRepris", "paralleles", "audio", "message", "scenesRecapturees"];
     return Object.fromEntries(garder.filter((k) => k in res).map((k) => [k, res[k]]));
@@ -228,7 +249,8 @@ async function mesurerTemoin({ source, plugin = PLUGIN_DEFAUT, passages = 3, seu
     const valeurs = liste.map((p) => (p[nom] ? p[nom].duree : null));
     if (valeurs.every((v) => v === null)) continue;
     mesures[nom] = { ...statistiques(valeurs), valeurs, unite: "s", ok: liste.every((p) => !p[nom] || p[nom].ok) };
-    if (nom === "historique") mesures[nom].octets = liste.map((p) => p.historique && p.historique.octets);
+    if (nom === "historique" || nom === "historique-medias") mesures[nom].octets = liste.map((p) => p[nom] && p[nom].octets);
+    if (nom === "historique-medias") mesures[nom].disqueSurMedias = liste.map((p) => p[nom] && p[nom].disqueSurMedias);
   }
   const deroule = JSON.parse(fs.readFileSync(path.join(source, "deroule.json"), "utf8"));
   return { source, scenes: deroule.scenes.length, empreinteAvant, empreinteApres, intact: empreinteAvant === empreinteApres, mesures, passages: liste };
