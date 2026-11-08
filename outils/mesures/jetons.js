@@ -32,6 +32,7 @@ function analyserTranscription(fichier, { jusqua = null } = {}) {
   const reponses = new Map();
   const outils = new Map();
   const textes = [];
+  const resultats = new Map();
   let debut = null;
   let fin = null;
   let demande = null;
@@ -45,6 +46,9 @@ function analyserTranscription(fichier, { jusqua = null } = {}) {
       const estResultat = Array.isArray(c) && c.some((b) => b && b.type === "tool_result");
       if (!estResultat) demande = t;
     }
+    if (l.type === "user" && l.message && Array.isArray(l.message.content)) {
+      for (const b of l.message.content) if (b && b.type === "tool_result") resultats.set(b.tool_use_id, Buffer.byteLength(typeof b.content === "string" ? b.content : (b.content || []).map((x) => x.text || "").join("")));
+    }
     if (l.type !== "assistant" || !l.message) continue;
     const m = l.message;
     const id = m.id || l.uuid;
@@ -54,7 +58,7 @@ function analyserTranscription(fichier, { jusqua = null } = {}) {
       if (b.type === "text" && String(b.text || "").trim()) textes.push({ texte: b.text, t, ordre: ordre++ });
     }
   }
-  return { reponses, outils: [...outils.values()], textes, debut, fin, demande };
+  return { reponses, outils: [...outils.values()], textes, resultats, debut, fin, demande };
 }
 
 function ajouter(cumul, model, usage) {
@@ -73,6 +77,11 @@ function agentsDe(session) {
     return { fichier: path.join(dossier, f), type: m.agentType || "inconnu", description: m.description || null };
   });
 }
+
+// Lectures de consignes et de références : commandes qui impriment une référence, une consigne, une scène toute faite,
+// une recette, une fiche de mouvement, le glossaire ; et les fichiers lus (Read).
+const LECTURE = /pulse-motion\s+(reference|consignes|glossaire|scene|effet|mouvements\s+afficher|personnages\s+liste|styles)\b/;
+const octetsLus = (analyse) => analyse.outils.filter((o) => (o.name === "Bash" && LECTURE.test(String(o.input.command || ""))) || o.name === "Read").reduce((s, o) => s + (analyse.resultats.get(o.id) || 0), 0);
 
 const commandesPulse = (outils) => outils.filter((o) => o.name === "Bash" && /pulse-motion|pm\.js/.test(String(o.input.command || ""))).map((o) => String(o.input.command));
 
@@ -109,7 +118,10 @@ function bilanSession(session, { jusqua = null } = {}) {
       parModele[m].agents = parModele[m].agents || {};
       parModele[m].agents[a.type] = (parModele[m].agents[a.type] || 0) + 1;
     }
-    agents.push({ type: a.type, description: a.description, reponses: analyse.reponses.size, appelsOutils: analyse.outils.length, modeles: [...new Set([...analyse.reponses.values()].map((r) => r.model))] });
+    const jetons = zero();
+    for (const { model, usage } of analyse.reponses.values()) ajouter(jetons, model, usage);
+    agents.push({ type: a.type, description: a.description, reponses: analyse.reponses.size, appelsOutils: analyse.outils.length, modeles: [...new Set([...analyse.reponses.values()].map((r) => r.model))],
+      lus: lus(jetons), ecrits: jetons.output_tokens, consignesOctets: octetsLus(analyse) });
     commandes = commandes.concat(commandesPulse(analyse.outils));
     if (analyse.fin !== null && (fin === null || analyse.fin > fin)) fin = analyse.fin;
   }
@@ -124,6 +136,7 @@ function bilanSession(session, { jusqua = null } = {}) {
     appelsAvantPremierePhrase: appelsAvant,
     parModele, parAgent, total,
     appelsOutils: total.appelsOutils,
+    consignesOctetsPrincipal: octetsLus(principale),
     agents,
     commandes,
     blocDeFin: fins.length ? fins[fins.length - 1].texte.slice(fins[fins.length - 1].texte.indexOf("✅")).trim() : null,

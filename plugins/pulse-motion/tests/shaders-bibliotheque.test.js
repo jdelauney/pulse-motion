@@ -87,7 +87,7 @@ test('référence : chaque shader de la bibliothèque, licence, contrôles ; ren
     'force(p: Particule, t: f32, zone: vec4f) -> vec2f', 'couleur(p: Particule, u: f32, base: vec4f) -> vec4f', 'forme(uv: vec2f, p: Particule) -> f32']) {
     assert.ok(ref.includes(f), f);
   }
-  const particules = fs.readFileSync(path.join(__dirname, '..', 'references', 'particules.md'), 'utf8');
+  const particules = require('./aide/references.js').lireReference('particules', { parties: true });
   assert.match(particules, /pulse-motion reference shaders/);
   assert.match(particules, /`emetteurs\[\]\.modules`/);
   assert.match(fs.readFileSync(path.join(__dirname, '..', 'references', 'controles.md'), 'utf8'), /`shader-ne-compile-pas`/);

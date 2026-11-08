@@ -6,6 +6,8 @@ const path = require('node:path');
 
 const RACINE = path.join(__dirname, '..');
 const lire = (...p) => fs.readFileSync(path.join(RACINE, ...p), 'utf8');
+// Références découpées en tronc et parties (spec Rapidité § 5.4) : lues ensemble pour vérifier qu'une règle existe.
+const { lireReference, partiesDe } = require('./aide/references.js');
 
 function enTete(texte) {
   const m = /^---\n([\s\S]*?)\n---\n/.exec(texte.replace(/\r\n/g, '\n'));
@@ -190,13 +192,13 @@ test('creer et retoucher : le contrôle vérifie lui-même la vidéo rendue ; re
 });
 
 test('revue : la référence du moteur explique les marqueurs lus par le contrôle de la vidéo rendue', () => {
-  const moteur = lire('references', 'moteur.md');
+  const moteur = lireReference('moteur', { parties: true });
   for (const motif of [/data-decor/, /data-superpose/, /alt=""/, /aria-hidden="true"/]) assert.match(moteur, motif);
   assert.match(lire('skills', 'creer', 'SKILL.md'), /rendu-non-verifie.*rendu-impossible/);
 });
 
 test('référence du moteur : contraste réel et flashs expliqués', () => {
-  const moteur = lire('references', 'moteur.md');
+  const moteur = lireReference('moteur', { parties: true });
   assert.match(moteur, /contraste réel/);
   assert.match(moteur, /3 flashs par seconde/);
 });
@@ -229,8 +231,8 @@ test('revue : skill exporter, seules les commandes d\'installation exactes sont 
 });
 
 test('référence audio : champs, ancres, sons, ambiances, partition, mixage, sous-titres, commandes', () => {
-  const t = lire('references', 'audio.md');
-  assert.match(t, /^# .+\n\n## L'essentiel\n/);
+  const t = lireReference('audio', { parties: true });
+  assert.match(lire('references', 'audio.md'), /^# .+\n\n## L'essentiel\n/);
   for (const mot of ['voix.texte', 'voix.provisoire', 'voix.debut', 'sousTitres', 'incrustes', 'bruitages', 'transitions', 'generee', 'graine', 'intensite', 'tonalite', 'partition', 'mot:', 'data-son', 'data-son-volume', '−16 LUFS', '3,5 mots', '.srt', '.vtt', '--avec-provisoire',
     'pulse-motion voix importer', 'pulse-motion voix provisoire', 'pulse-motion voix transcrire', 'pulse-motion voix studio', 'pulse-motion whisper installer', 'pulse-motion musique ecouter']) {
     assert.ok(t.includes(mot), `audio.md : « ${mot} » absent`);
@@ -239,7 +241,7 @@ test('référence audio : champs, ancres, sons, ambiances, partition, mixage, so
   for (const a of Object.keys(C.AMBIANCES)) assert.ok(t.includes(`\`${a}\``), `ambiance ${a}`);
   for (const s of C.BRUITAGES) assert.ok(t.includes(`\`${s}\``), `son ${s}`);
   for (const i of C.INSTRUMENTS) assert.ok(t.includes(`\`${i}\``), `instrument ${i}`);
-  assert.match(lire('references', 'moteur.md'), /pulse-motion reference audio/);
+  assert.match(lireReference('moteur', { parties: true }), /pulse-motion reference audio/);
 });
 
 test('creer : la question du son, textes dits, voix provisoire, sous-titres, Whisper avec accord', () => {
@@ -276,7 +278,7 @@ test('guidage du son : animateur (mot:, data-son), retoucher (lignes du son), ex
 });
 
 test('revue : consignes du son exactes (pas de voix.fichier, import relancé après Whisper, repli, place du tempo)', () => {
-  const audio = lire('references', 'audio.md');
+  const audio = lireReference('audio', { parties: true });
   assert.doesNotMatch(audio, /\| `voix\.fichier` \|/);
   assert.match(audio, /\| `musique\.tempo` \|/);
   const creer = lire('skills', 'creer', 'SKILL.md');
@@ -299,13 +301,14 @@ test('correctifs : guidage du son précisé (sous-titres sans voix, arrêt avant
   assert.match(retoucher, /« enlève les sous-titres »/);
   assert.doesNotMatch(retoucher, /« plus de sous-titres »/);
   assert.match(retoucher, /\| Structure \|[^\n]*voix\.texte[^\n]*pulse-motion voix provisoire --scene <id> \./);
-  for (const f of ['audio.md', 'moteur.md']) assert.match(lire('references', f), /crête sous −1,5 dBFS/, f);
+  for (const f of ['audio', 'moteur']) assert.match(lireReference(f, { parties: true }), /crête sous −1,5 dBFS/, f);
   assert.match(lire('references', 'audio.md'), /--pm-st-largeur/);
 });
 
 test('correctifs : sous-commandes du son citées dans les guides : elles existent', () => {
   const SOUS = { voix: ['importer', 'provisoire', 'transcrire', 'studio'], whisper: ['installer'], musique: ['ecouter'] };
-  for (const f of [...fichiersGuides(), path.join('references', 'audio.md'), path.join('references', 'moteur.md')]) {
+  const references = ['audio', 'moteur'].flatMap((n) => [path.join('references', `${n}.md`), ...partiesDe(n).map((p) => path.relative(RACINE, p.fichier))]);
+  for (const f of [...fichiersGuides(), ...references]) {
     for (const m of lire(f).matchAll(/pulse-motion (voix|whisper|musique)(?: ([a-z]+))?/g)) {
       if (m[2] === undefined) continue;
       assert.ok(SOUS[m[1]].includes(m[2]), `${f} : « pulse-motion ${m[1]} ${m[2]} » n'existe pas`);
@@ -364,8 +367,8 @@ test('demandes : README et smoke tests sans terminal', () => {
 });
 
 test('consignes : l\'atelier des effets est guidé', () => {
-  const ref = lire('references', 'particules.md');
-  assert.match(ref, /## Régler à l'œil : l'atelier/);
+  const ref = lireReference('particules', { parties: true });
+  assert.match(lire('references', 'particules', 'atelier.md'), /^# Régler à l'œil : l'atelier\n/);
   assert.match(ref, /pulse-motion atelier/);
   assert.match(ref, /bouton \*\*Effets\*\*/);
   assert.match(ref, /« Enregistrer comme nouvel effet »/);
@@ -404,14 +407,14 @@ test('descriptions-renvois-presents : chaque renvoi vers une autre compétence s
   }
 });
 
-test('budget-consignes : les consignes ne regrossissent pas sans qu\'on le voie (octets, état 0.28.0 + 10 %)', () => {
-  // animateur.md descendra à 6 000 o avec les références à la carte (spec S1 § 5.4, plan S1-2).
+test('budget-consignes : les consignes ne regrossissent pas sans qu\'on le voie (octets, état 0.28.0 + 10 % ; animateur 6 000 o)', () => {
+  // animateur.md ramené à 6 000 o par les références à la carte (spec S1 § 5.4, plan S1-2, 0.29.0).
   const PLAFONDS = {
     'skills/animer-personnage/SKILL.md': 5884, 'skills/atelier-particules/SKILL.md': 2272, 'skills/atelier-personnages/SKILL.md': 3529,
     'skills/creer/SKILL.md': 21315, 'skills/decouper-personnage/SKILL.md': 4020, 'skills/dessiner-personnage/SKILL.md': 4528,
     'skills/exporter/SKILL.md': 6151, 'skills/outils/SKILL.md': 6144, 'skills/reprendre/SKILL.md': 2999,
     'skills/retoucher/SKILL.md': 12571, 'skills/style/SKILL.md': 6460, 'skills/voix/SKILL.md': 5073,
-    'agents/animateur.md': 9132,
+    'agents/animateur.md': 6000,
   };
   for (const f of fichiersGuides()) {
     const cle = f.split(path.sep).join('/');

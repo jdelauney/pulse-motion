@@ -41,6 +41,16 @@ function trouverTranscription(id) {
   return null;
 }
 
+/**
+ * Environnement de la séance. Claude Code ajoute au PATH le bin/ de chaque plugin, y compris celui du plugin installé
+ * désactivé, placé avant celui de --plugin-dir : sans rien faire, « pulse-motion » lancerait la version installée
+ * (constaté le 2026-11-08 : 0.24.0 au lieu du plugin mesuré). Le bin/ du plugin mesuré passe donc en tête du PATH.
+ */
+function envSeance(plugin) {
+  const cle = Object.keys(process.env).find((k) => k.toUpperCase() === "PATH") || "PATH";
+  return { ...process.env, [cle]: path.join(plugin, "bin") + path.delimiter + (process.env[cle] || ""), PM_SANS_OUVRIR: "1" };
+}
+
 /** Arrête l'aperçu qu'une séance aurait laissé tourner dans le dossier. */
 function arreterApercu(dossier) {
   try {
@@ -136,7 +146,7 @@ async function lancerSeance({ plugin, demande, temoin = null, sansScenes = false
   const args = ["-p", demande, "--plugin-dir", plugin, "--output-format", "json", "--permission-mode", "acceptEdits",
     "--settings", JSON.stringify({ enabledPlugins: { "pulse-motion@pulse-motion": false } }), "--allowedTools", ...OUTILS];
   const debut = Date.now();
-  const enfant = spawn("claude", args, { cwd: dossier, windowsHide: true, env: { ...process.env, PM_SANS_OUVRIR: "1" }, stdio: ["ignore", "pipe", "pipe"] });
+  const enfant = spawn("claude", args, { cwd: dossier, windowsHide: true, env: envSeance(plugin), stdio: ["ignore", "pipe", "pipe"] });
   let stdout = "";
   let stderr = "";
   enfant.stdout.on("data", (d) => { stdout += d; });
@@ -193,4 +203,4 @@ if (require.main === module) {
   }, (e) => { console.error(e); process.exit(1); });
 }
 
-module.exports = { lancerSeance, preparer, trouverTranscription, tourFini, tachesEnCours, dossierTranscriptions };
+module.exports = { lancerSeance, envSeance, preparer, trouverTranscription, tourFini, tachesEnCours, dossierTranscriptions };

@@ -7,7 +7,7 @@
 - Après avoir écrit : `pulse-motion personnages verifier --dossier .`, puis `pulse-motion personnages planche <nom> --dossier .` et regarder le PNG avec `Read` (vignettes sous plusieurs angles). Corriger tant que le mouvement ne ressemble pas à la demande.
 - Pour régler à l'œil, ou si la personne veut le faire elle-même : `pulse-motion personnages atelier <nom>` en arrière-plan (page de l'aperçu, « Enregistrer » écrit dans la vidéo ; « annule » défait).
 - Côtés **Avant** et **Arrière** (côté tourné vers la caméra de profil, et l'autre), jamais gauche / droite.
-- Mettre un personnage dans une scène (entrer, montrer, saluer, repartir, calé sur les autres éléments ou la voix) : section « Personnages » de `pulse-motion reference moteur`.
+- Mettre un personnage dans une scène (entrer, montrer, saluer, repartir, calé sur les autres éléments ou la voix) : `pulse-motion reference moteur/personnages`.
 - Pour un personnage dessiné (pièces SVG, visage complet) : `pulse-motion reference dessin-personnages`.
 
 ## Angles (degrés)
@@ -67,10 +67,10 @@ Expressions : `neutre`, `joie`, `tristesse`, `peur`, `colere`, `surprise` (`"exp
 |---|---|
 | « fais une pose où il se gratte la tête » | `personnages/poses/gratte-tete.json`, vérifier, planche |
 | « il marche trop vite » | copie de `marche` dans la vidéo, `duree` plus grande (ex. 1,3) |
-| « il monte sur la colline », « il saute sur la corniche », « les touffes surgissent du bas » | dans la scène : `marcher` avec `data-sol="#colline"` (tracé du décor), `bondir` avec `data-sol` et `data-hauteur`, `glisser` depuis un sol sous l'image (`pulse-motion reference moteur`, section Personnages) |
-| « une file de 6 Touffus qui sortent un par un », « la troupe traverse le pont » | un groupe : `data-groupe`, `data-ecart`, `data-decalage`, `data-depart="commun"`, actions communes et `data-membre` (`pulse-motion reference moteur`, section Personnages) |
-| « il attrape le bras de son voisin », « ils se tapent dans la main », « il regarde la pancarte », « il nous regarde » | dans la scène : actions `atteindre` (cible : élément, point, personnage ; rencontre si les deux s'atteignent) et `regarder` (cible, ou `camera`) (`pulse-motion reference moteur`, section Personnages) |
-| « il tient une pancarte », « il boit son café », « il lance la pelote » | dans la scène : l'objet (élément de la scène, même conteneur) avec `data-tenu-par="#id"`, `data-main`, `data-orientation`, `data-lacher` (`pulse-motion reference moteur`, section Personnages) |
+| « il monte sur la colline », « il saute sur la corniche », « les touffes surgissent du bas » | dans la scène : `marcher` avec `data-sol="#colline"` (tracé du décor), `bondir` avec `data-sol` et `data-hauteur`, `glisser` depuis un sol sous l'image (`pulse-motion reference moteur/personnages`) |
+| « une file de 6 Touffus qui sortent un par un », « la troupe traverse le pont » | un groupe : `data-groupe`, `data-ecart`, `data-decalage`, `data-depart="commun"`, actions communes et `data-membre` (`pulse-motion reference moteur/personnages`) |
+| « il attrape le bras de son voisin », « ils se tapent dans la main », « il regarde la pancarte », « il nous regarde » | dans la scène : actions `atteindre` (cible : élément, point, personnage ; rencontre si les deux s'atteignent) et `regarder` (cible, ou `camera`) (`pulse-motion reference moteur/personnages`) |
+| « il tient une pancarte », « il boit son café », « il lance la pelote » | dans la scène : l'objet (élément de la scène, même conteneur) avec `data-tenu-par="#id"`, `data-main`, `data-orientation`, `data-lacher` (`pulse-motion reference moteur/personnages`) |
 | « une démarche fière pour lui seul » | nouveau cycle `personnages/clips/marche-fiere.json` (copie de `marche`, `boucle: true`, sa `foulee`), puis `data-clip="marche-fiere"` sur son action `marcher` |
 | « il saute plus haut » | copie de `saut`, `bassinY` de l'envol plus négatif (ex. -150 → -200) |
 | « montre-moi la course de face et de profil » | `pulse-motion personnages planche course --vues 0,90 --dossier .` puis `Read` |

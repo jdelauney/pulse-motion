@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const R = require('../moteur/particules/recette.js');
 const { SEUILS } = require('../scripts/controler.js');
+const { lireReference } = require('./aide/references.js');
 
 const DOSSIER = path.join(__dirname, '..', 'effets');
 const NOMS = ['air', 'assembler', 'banc', 'banniere', 'braises', 'braises-portees', 'brasier', 'briser', 'confettis', 'corde', 'desintegrer', 'drapeau', 'eau',
@@ -96,7 +97,7 @@ const { execFileSync, spawnSync } = require('node:child_process');
 const PM = path.join(__dirname, '..', 'scripts', 'pm.js');
 
 test('référence à jour : chaque effet et ses réglages sont dans la table', () => {
-  const texte = fs.readFileSync(path.join(__dirname, '..', 'references', 'particules.md'), 'utf8');
+  const texte = lireReference('particules', { parties: true });
   const lignes = [...texte.matchAll(/^\| `([a-z-]+)` \| ([^|]+) \| ([^|]+) \|$/gm)];
   assert.deepEqual(lignes.map((m) => m[1]).sort(), NOMS);
   for (const [, nom, reglages] of lignes) {
@@ -172,11 +173,10 @@ test('bibliothèque : options de collision : aucun sol décalé, voie rapide gar
 });
 
 test('référence : section Collisions (déclarations, réponses, empilement, vidéo, limites, contrôles)', () => {
-  const texte = fs.readFileSync(path.join(__dirname, '..', 'references', 'particules.md'), 'utf8');
-  const debut = texte.indexOf('## Collisions avec la scène');
-  assert.ok(debut > 0, 'section présente');
-  const fin = texte.indexOf('\n## ', debut + 5);
-  const section = texte.slice(debut, fin > 0 ? fin : undefined);
+  const texte = lireReference('particules', { parties: true });
+  // Partie « particules/collisions » de la référence (spec Rapidité § 5.4).
+  const section = lireReference('particules/collisions');
+  assert.match(section, /^# Collisions avec la scène/, 'partie présente');
   for (const mot of ['data-obstacle', 'data-obstacle="forme"', 'data-obstacle="video"', 'data-obstacle-forme', '"obstacles"',
     'a_la_collision', 'rebond', 'poser', 'mourir', 'obstacle-introuvable', 'collisions-invalides', 'obstacles-video', 'trop-d-obstacles',
     '16 obstacles', '8 obstacles', '"sol": 90', 'confettis', 'pluie', 'neige', 'etincelles']) {
@@ -185,7 +185,7 @@ test('référence : section Collisions (déclarations, réponses, empilement, vi
   for (const champ of Object.keys(R.SCHEMA.champs.emetteurs.element.champs.collisions.champs)) {
     assert.ok(section.includes('`' + champ + '`'), `champ « ${champ} » documenté`);
   }
-  assert.match(texte.split('## Collisions avec la scène')[0], /data-obstacle/, 'l\'essentiel mentionne les obstacles');
+  assert.match(lireReference('particules'), /data-obstacle/, 'l\'essentiel mentionne les obstacles');
 });
 
 test('bibliothèque : fragmentation (briser, désintégrer, assembler, métamorphose)', () => {
@@ -213,11 +213,10 @@ test('bibliothèque : fragmentation (briser, désintégrer, assembler, métamorp
 });
 
 test('référence : section Fragmentation (déclarations, champs du schéma, contrôles)', () => {
-  const texte = fs.readFileSync(path.join(__dirname, '..', 'references', 'particules.md'), 'utf8');
-  const debut = texte.indexOf('## Fragmentation');
-  const fin = texte.indexOf('## Régler à l\'œil');
-  assert.ok(debut > 0 && fin > debut, 'section Fragmentation avant l\'atelier');
-  const section = texte.slice(debut, fin);
+  const texte = lireReference('particules', { parties: true });
+  // Partie « particules/fragmentation » de la référence (spec Rapidité § 5.4).
+  const section = lireReference('particules/fragmentation');
+  assert.match(section, /^# Fragmentation/, 'partie présente');
   const em = R.SCHEMA.champs.emetteurs.element.champs;
   const champs = [...Object.keys(em.cible.champs), 'densite', 'instant', 'liberation', 'ordre', 'morceaux', 'origine', 'impulsion', 'rotation_max'];
   for (const mot of [...champs, 'data-cible', '"pixels"', '"source"', '"eclats"', '"neutre"', 'guidee', 'choree', 'ancre-vide', 'cible-introuvable', 'metamorphose-sans-cible', 'photographie-trop-grande']) {
@@ -260,11 +259,10 @@ test('bibliothèque : interactions (nuee, banc, lucioles, eau, miel, sable, neig
 });
 
 test('référence : section Interactions (types, champs du schéma, rendu fluide, limites, contrôles, bibliothèque)', () => {
-  const texte = fs.readFileSync(path.join(__dirname, '..', 'references', 'particules.md'), 'utf8');
-  const debut = texte.indexOf('## Interactions');
-  const fin = texte.indexOf('## Régler à l\'œil');
-  assert.ok(debut > texte.indexOf('## Fragmentation') && fin > debut, 'section Interactions après la fragmentation, avant l\'atelier');
-  const section = texte.slice(debut, fin);
+  const texte = lireReference('particules', { parties: true });
+  // Partie « particules/interactions » de la référence (spec Rapidité § 5.4).
+  const section = lireReference('particules/interactions');
+  assert.match(section, /^# Interactions/, 'partie présente');
   const n = R.SCHEMA.champs.emetteurs.element.champs.interactions;
   const champs = [...Object.keys(n.champs), ...Object.values(n.variantes.types).flatMap((v) => Object.keys(v.champs)), 'teinte', 'opacite', 'absorption', 'refraction', 'lissage'];
   for (const c of champs) assert.ok(section.includes('`' + c + '`'), `champ « ${c} » documenté`);
@@ -272,7 +270,7 @@ test('référence : section Interactions (types, champs du schéma, rendu fluide
     assert.ok(section.includes(mot), `la section parle de « ${mot} »`);
   }
   for (const nom of ['nuee', 'banc', 'lucioles', 'eau', 'miel', 'sable', 'neige-lourde']) assert.ok(section.includes('`' + nom + '`'), nom);
-  assert.match(texte.split('## Interactions')[0], /voir « Interactions »/, 'la bibliothèque y renvoie');
+  assert.match(lireReference('particules'), /`particules\/interactions`/, 'le tronc y renvoie');
   const controles = fs.readFileSync(path.join(__dirname, '..', 'references', 'controles.md'), 'utf8');
   for (const r of ['interactions-invalides', 'budget-interactions']) assert.match(controles, new RegExp('`' + r + '`'), r);
 });
@@ -318,11 +316,11 @@ test('bibliothèque : cordes et tissus (drapeau, banniere, rideau, guirlande, fi
 });
 
 test('référence : section Cordes et tissus (champs du schéma, attaches, apparence, perles, contrôles, bibliothèque)', () => {
-  const texte = fs.readFileSync(path.join(__dirname, '..', 'references', 'particules.md'), 'utf8');
-  const debut = texte.indexOf('## Cordes et tissus');
-  const fin = texte.indexOf('## Régler à l\'œil');
-  assert.ok(debut > texte.indexOf('## Interactions') && fin > debut, 'section après les interactions, avant l\'atelier');
-  const section = texte.slice(debut, fin);
+  const texte = lireReference('particules', { parties: true });
+  // Partie « particules/structures » de la référence (spec Rapidité § 5.4).
+  // Le couplage d'une structure au vent d'un milieu (« milieu » dans une structure) est décrit avec les milieux.
+  const section = lireReference('particules/structures') + lireReference('particules/milieux');
+  assert.match(section, /^# Cordes et tissus/, 'partie présente');
   const n = R.SCHEMA.champs.emetteurs.element.champs.structure;
   const champs = [...Object.keys(n.champs), ...Object.values(n.variantes.types).flatMap((v) => Object.keys(v.champs)),
     ...Object.keys(n.champs.attaches.element.champs), ...Object.keys(n.champs.apparence.champs), 'tous', 'emetteur'];
@@ -332,7 +330,7 @@ test('référence : section Cordes et tissus (champs du schéma, attaches, appar
     assert.ok(section.includes(mot), `la section parle de « ${mot} »`);
   }
   for (const nom of ['drapeau', 'banniere', 'rideau', 'guirlande', 'filet', 'corde']) assert.ok(section.includes('`' + nom + '`'), nom);
-  assert.match(texte.split('## Cordes et tissus')[0], /voir « Cordes et tissus »/, 'l\'essentiel et la bibliothèque y renvoient');
+  assert.match(lireReference('particules'), /`particules\/structures`/, 'le tronc y renvoie');
   assert.doesNotMatch(texte, /pas d'interaction avec des cordes ou des tissus/, 'la section Interactions est à jour');
   const controles = fs.readFileSync(path.join(__dirname, '..', 'references', 'controles.md'), 'utf8');
   for (const r of ['structure-invalide', 'attache-introuvable', 'budget-structures']) assert.match(controles, new RegExp('`' + r + '`'), r);
@@ -369,11 +367,10 @@ test('bibliothèque : milieux (air, brasier, eau-encre) et effets couplés (brai
 });
 
 test('référence : section Milieux (balise, champs du schéma, sources, rendu, couplages, contrôles, bibliothèque)', () => {
-  const texte = fs.readFileSync(path.join(__dirname, '..', 'references', 'particules.md'), 'utf8');
-  const debut = texte.indexOf('## Milieux');
-  const fin = texte.indexOf('## Régler à l\'œil');
-  assert.ok(debut > texte.indexOf('## Cordes et tissus') && fin > debut, 'section après les cordes et tissus, avant l\'atelier');
-  const section = texte.slice(debut, fin);
+  const texte = lireReference('particules', { parties: true });
+  // Partie « particules/milieux » de la référence (spec Rapidité § 5.4).
+  const section = lireReference('particules/milieux');
+  assert.match(section, /^# Milieux/, 'partie présente');
   const n = R.SCHEMA.champs.milieu;
   const champs = [...Object.keys(n.champs), ...Object.keys(n.champs.sources.element.champs), ...Object.keys(n.champs.rendu.champs),
     ...Object.keys(R.SCHEMA.champs.emetteurs.element.champs.injecte.champs), 'coef', 'injecte'];
@@ -383,7 +380,7 @@ test('référence : section Milieux (balise, champs du schéma, sources, rendu, 
     assert.ok(section.includes(mot), `la section parle de « ${mot} »`);
   }
   for (const nom of ['air', 'brasier', 'eau-encre', 'braises-portees', 'fusee-panache']) assert.ok(section.includes('`' + nom + '`'), nom);
-  assert.match(texte.split('## Milieux')[0], /voir « Milieux »/, 'la bibliothèque y renvoie');
+  assert.match(lireReference('particules'), /`particules\/milieux`/, 'le tronc y renvoie');
   const controles = fs.readFileSync(path.join(__dirname, '..', 'references', 'controles.md'), 'utf8');
   for (const r of ['milieu-invalide', 'deux-milieux', 'couplage-sans-milieu', 'budget-milieu']) assert.match(controles, new RegExp('`' + r + '`'), r);
 });

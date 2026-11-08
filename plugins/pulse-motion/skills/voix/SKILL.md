@@ -12,7 +12,7 @@ Enregistrer la voix scène par scène dans le studio de l'aperçu, importer un e
 - Parler simplement, en français, sans jargon ; ne jamais montrer de commande.
 - Une demande ambiguë (quelle scène ? une scène ou toute la vidéo ?) : une seule question avec `AskUserQuestion`, réponse recommandée en premier.
 - Lexique : avant d'expliquer un mot de l'outil (studio, voix provisoire, transcription…), lire `pulse-motion lexique` ; un mot expliqué pour la première fois se note avec `pulse-motion lexique noter "<terme>" "<phrase>" "<comme…>" "/pulse-motion:voix"`.
-- Détail des voix, ancres et sous-titres : `pulse-motion reference audio`.
+- Détail : `pulse-motion reference audio/voix` (voix), `pulse-motion reference audio/ancres` (ancres), `pulse-motion reference audio` (sous-titres).
 - Ce skill ne change ni les volumes, ni le texte dit, ni les sous-titres, ni l'ambiance : renvoyer à `/pulse-motion:retoucher` (« baisse la voix », « change ce que je dis dans l'intro »…).
 
 ## 0. Vérifier la vidéo
