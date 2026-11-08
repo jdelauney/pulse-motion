@@ -4,7 +4,7 @@ const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
 const { dossierTemporaire } = require("../../plugins/pulse-motion/tests/aide/temporaire.js");
-const { copieSansVoix, MEDIAS } = require("./medias.js");
+const { copieSansVoix, MEDIAS, sortiesDe } = require("./medias.js");
 
 const EXEMPLE = path.join(__dirname, "..", "..", "plugins", "pulse-motion", "exemples", "chaine-du-froid");
 
