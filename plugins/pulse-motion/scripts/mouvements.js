@@ -7,6 +7,8 @@
  *   node scripts/mouvements.js chercher <mots…> [--json]           par nom (français ou du métier), sens, mot-clé
  *   node scripts/mouvements.js afficher <n° ou nom> [--json]       la fiche complète, avec sa recette
  *   node scripts/mouvements.js reference                            le dictionnaire pour les animateurs (Markdown)
+ *   node scripts/mouvements.js choisir [--categorie <id>] [--ouvrir] [--delai <minutes>]   page locale pour choisir en
+ *                                     regardant ; rend { ok, choix: [{ no, nom, metier, note }] } quand la personne envoie
  *
  * Un numéro s'écrit 5, 05, 005 ou #005. Code 1 si rien n'est trouvé.
  */
@@ -160,10 +162,26 @@ function principal(args) {
     process.stdout.write(referenceMarkdown());
     return 0;
   }
-  console.error('Usage : pulse-motion mouvements liste [--categorie <id>] | chercher <mots…> | afficher <n° ou nom> | reference  [--json]');
+  if (commande === 'choisir') {
+    const lireOption = (nom) => { const i = mots.indexOf(nom); return i >= 0 ? mots[i + 1] : undefined; };
+    const minutes = Number(lireOption('--delai') || 30);
+    const { choisirMouvements } = require('./lib/choisir-mouvements.js');
+    return choisirMouvements({
+      categorie: lireOption('--categorie') || null,
+      delai: (minutes > 0 ? minutes : 30) * 60 * 1000,
+      surPret: (url) => {
+        console.error(`Page de choix : ${url}`);
+        if (mots.includes('--ouvrir')) require('./apercu.js').ouvrirNavigateur(url);
+      },
+    }).then((r) => {
+      console.log(JSON.stringify(r, null, 2));
+      return r.ok ? 0 : 1;
+    });
+  }
+  console.error('Usage : pulse-motion mouvements liste [--categorie <id>] | chercher <mots…> | afficher <n° ou nom> | reference | choisir [--categorie <id>] [--ouvrir] [--delai <minutes>]  [--json]');
   return 2;
 }
 
-if (require.main === module) process.exitCode = principal(process.argv.slice(2));
+if (require.main === module) Promise.resolve(principal(process.argv.slice(2))).then((code) => { process.exitCode = code; });
 
 module.exports = { charger, normaliser, trouver, chercher, referenceMarkdown, principal };

@@ -569,7 +569,7 @@
       ],
       "recette": {
         "type": "effet",
-        "exemple": "<h2 id=\"chiffre\" class=\"pm-m-pop\" data-texte=\"titre\" data-start=\"0.5\"></h2>\n<div data-effet=\"etincelles\" data-start=\"#chiffre\" data-dur=\"1\"></div>",
+        "exemple": "<h2 id=\"chiffre\" class=\"pm-m-pop\" data-texte=\"titre\" data-start=\"0.5\"></h2>\n<div data-effet=\"etincelles\" data-ancre=\"#chiffre\" data-start=\"#chiffre\" data-dur=\"1\"></div>",
         "reglages": [
           {
             "nom": "data-dur",

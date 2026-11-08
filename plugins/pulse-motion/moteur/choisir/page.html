@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Choisir des mouvements – Pulse Motion</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.5 system-ui, sans-serif; background: #15131a; color: #eee; display: grid; grid-template-columns: minmax(320px, 1fr) 1.4fr; height: 100vh; }
+  #liste { overflow: auto; padding: 16px; border-right: 1px solid #333; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .aide { color: #aaa; margin: 0 0 12px; }
+  input[type=search] { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #444; background: #1f1c25; color: #eee; margin-bottom: 12px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: #c9a6f0; margin: 18px 0 6px; }
+  .carte { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; padding: 8px 10px; border-radius: 8px; border: 1px solid transparent; cursor: pointer; }
+  .carte:hover, .carte.active { border-color: #8e44ad; background: #201b28; }
+  .carte input[type=checkbox] { grid-row: span 2; margin-top: 4px; width: 18px; height: 18px; }
+  .nom { font-weight: 600; }
+  .nom small { font-weight: 400; color: #aaa; }
+  .sens { grid-column: 2; color: #bbb; font-size: 13px; }
+  .note { grid-column: 2; display: none; margin-top: 4px; padding: 4px 8px; border-radius: 6px; border: 1px solid #444; background: #1f1c25; color: #eee; }
+  .carte.cochee .note { display: block; }
+  #droite { display: grid; grid-template-rows: 1fr auto; min-height: 0; }
+  #apercu { width: 100%; height: 100%; border: 0; background: #000; pointer-events: none; }
+  #envoi { display: flex; gap: 12px; align-items: center; padding: 12px 16px; border-top: 1px solid #333; }
+  #selection { flex: 1; color: #bbb; }
+  button { padding: 10px 18px; border-radius: 999px; border: 0; font-weight: 600; background: linear-gradient(90deg, #ff6b35, #8e44ad); color: #fff; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  #merci { display: none; position: fixed; inset: 0; place-items: center; background: #15131aee; font-size: 22px; text-align: center; padding: 24px; }
+  #erreur { color: #ff8a65; }
+  #erreur:empty { display: none; }
+  :focus-visible { outline: 2px solid #c9a6f0; outline-offset: 2px; }
+</style>
+</head>
+<body>
+<div id="liste">
+  <h1>Choisir des mouvements</h1>
+  <p class="aide">Passez la souris sur un mouvement (ou allez-y avec la touche Tab) pour le voir jouer à droite. Cochez ceux qui vous plaisent ; dites, si vous voulez, pour quoi (« pour le titre »). Puis cliquez sur « Envoyer à Claude ».</p>
+  <input type="search" id="recherche" placeholder="Chercher : pop-in, masque, #042…" autocomplete="off" aria-label="Chercher un mouvement">
+  <div id="cartes"></div>
+</div>
+<div id="droite">
+  <iframe id="apercu" src="/video" title="Aperçu du mouvement" tabindex="-1" aria-hidden="true"></iframe>
+  <div id="envoi"><span id="selection" role="status">Aucun mouvement coché.</span><span id="erreur" role="alert"></span><button id="envoyer" type="button" disabled>Envoyer à Claude</button></div>
+</div>
+<div id="merci" role="status">C'est envoyé. Vous pouvez fermer cet onglet et revenir à Claude.</div>
+<script>
+(function () {
+  'use strict';
+  var DONNEES = /*DONNEES*/null;
+  var cartes = document.getElementById('cartes');
+  var apercu = document.getElementById('apercu');
+  var choisis = new Map();
+  var plage = null;
+  var depart = 0;
+
+  function norm(t) { return String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[-_'’&/#]+/g, ' ').replace(/\s+/g, ' ').trim(); }
+
+  // La vidéo de démonstration est rendue par le moteur, image par image : la plage du mouvement choisi joue en boucle.
+  function boucle(maintenant) {
+    var M = apercu.contentWindow && apercu.contentWindow.M;
+    if (plage && M && M.rendre && M.minutage) {
+      var duree = plage.fin - plage.debut;
+      M.rendre(plage.debut + ((maintenant - depart) / 1000) % duree);
+    }
+    requestAnimationFrame(boucle);
+  }
+  apercu.addEventListener('load', function () {
+    var doc = apercu.contentDocument;
+    var s = doc.createElement('style');
+    s.textContent = '#pm-lecteur, #pm-bandeau { display: none !important; } body { --pm-barre: 0px; }';
+    doc.head.appendChild(s);
+  });
+
+  function majSelection() {
+    var n = choisis.size;
+    document.getElementById('selection').textContent = n ? n + (n > 1 ? ' mouvements cochés' : ' mouvement coché') : 'Aucun mouvement coché.';
+    document.getElementById('envoyer').disabled = !n;
+  }
+
+  var categorie = null;
+  DONNEES.mouvements.forEach(function (m) {
+    if (m.categorie !== categorie) {
+      categorie = m.categorie;
+      var h = document.createElement('h2');
+      h.textContent = m.nomCategorie;
+      h.setAttribute('data-categorie', m.categorie);
+      cartes.appendChild(h);
+    }
+    var c = document.createElement('label');
+    c.className = 'carte';
+    c.setAttribute('data-mots', norm([m.no, m.nom, m.metier, m.sens].join(' ')));
+    c.setAttribute('data-categorie', m.categorie);
+    var coche = document.createElement('input');
+    coche.type = 'checkbox';
+    var nom = document.createElement('span');
+    nom.className = 'nom';
+    nom.textContent = '#' + m.no + ' ' + m.nom + ' ';
+    var metier = document.createElement('small');
+    metier.textContent = m.metier;
+    nom.appendChild(metier);
+    var sens = document.createElement('span');
+    sens.className = 'sens';
+    sens.textContent = m.sens;
+    var note = document.createElement('input');
+    note.className = 'note';
+    note.placeholder = 'Pour quoi ? (facultatif)';
+    note.setAttribute('aria-label', 'Pour quoi utiliser ' + m.nom + ' ? (facultatif)');
+    note.addEventListener('click', function (e) { e.preventDefault(); note.focus(); });
+    note.addEventListener('input', function () { if (choisis.has(m.no)) choisis.set(m.no, note.value); });
+    coche.addEventListener('change', function () {
+      if (coche.checked) choisis.set(m.no, note.value); else choisis.delete(m.no);
+      c.classList.toggle('cochee', coche.checked);
+      majSelection();
+    });
+    c.addEventListener('mouseenter', voir);
+    c.addEventListener('focusin', voir);
+    function voir() {
+      document.querySelectorAll('.carte.active').forEach(function (x) { x.classList.remove('active'); });
+      c.classList.add('active');
+      plage = m;
+      depart = performance.now();
+    }
+    c.append(coche, nom, sens, note);
+    cartes.appendChild(c);
+  });
+
+  document.getElementById('recherche').addEventListener('input', function (e) {
+    var mots = norm(e.target.value).split(' ').filter(Boolean);
+    document.querySelectorAll('.carte').forEach(function (c) {
+      var t = c.getAttribute('data-mots');
+      c.hidden = !mots.every(function (x) { return t.indexOf(x) >= 0; });
+    });
+    document.querySelectorAll('#cartes h2').forEach(function (h) {
+      h.hidden = !document.querySelector('.carte[data-categorie="' + h.getAttribute('data-categorie') + '"]:not([hidden])');
+    });
+  });
+
+  document.getElementById('envoyer').addEventListener('click', function () {
+    var choix = [];
+    choisis.forEach(function (note, no) { choix.push({ no: no, note: note }); });
+    var erreur = document.getElementById('erreur');
+    var bouton = document.getElementById('envoyer');
+    erreur.textContent = '';
+    bouton.disabled = true;
+    fetch('/envoyer', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ choix: choix }) })
+      .then(function (r) {
+        if (!r.ok) throw new Error(String(r.status));
+        document.getElementById('merci').style.display = 'grid';
+      })
+      .catch(function () {
+        // Délai passé ou commande arrêtée : la page ne parle plus à Claude.
+        erreur.textContent = 'Envoi impossible : Claude n’attend plus ce choix. Dites-lui les numéros cochés, ou demandez-lui de rouvrir la page.';
+        bouton.disabled = !choisis.size;
+      });
+  });
+
+  // Mouvements réduits demandés : rien ne joue avant qu'on désigne un mouvement.
+  var reduit = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (DONNEES.mouvements.length && !reduit) { plage = DONNEES.mouvements[0]; depart = performance.now(); }
+  requestAnimationFrame(boucle);
+})();
+</script>
+</body>
+</html>

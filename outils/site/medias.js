@@ -97,7 +97,7 @@ async function ouvrir(url, { largeur = 1440, hauteur = 900, gpu = false } = {}) 
 const pause = (ms) => new Promise((r) => setTimeout(r, ms));
 const urlFichier = (f) => require("url").pathToFileURL(path.resolve(f)).href;
 
-/** Les médias du site. `sortie` : chemin relatif à docs/ (sert aussi à outils/site/liens.js). */
+/** Les médias du site. `sortie` (ou `sorties()` pour un lot) : chemins relatifs à docs/ (servent aussi à outils/site/liens.js). */
 const MEDIAS = [
   {
     id: "chaine-du-froid",
@@ -168,7 +168,12 @@ const MEDIAS = [
       }
     },
   },
+  // Aperçus de la galerie (outils/site/galerie-medias.js).
+  ...require("./galerie-medias.js").LOTS,
 ];
+
+/** Fichiers produits par un média (relatifs à docs/). */
+const sortiesDe = (m) => [...(m.sorties ? m.sorties() : [m.sortie]), ...(m.aussi || [])];
 
 /** Empreinte des sources d'un média, sans les sorties d'un projet (sortie/, .pulse-motion/, .historique/). */
 function empreinte(media) {
@@ -192,7 +197,7 @@ async function principal(args) {
   const notes = fs.existsSync(EMPREINTES) ? JSON.parse(fs.readFileSync(EMPREINTES, "utf8")) : {};
   for (const m of MEDIAS.filter((x) => !ids.length || ids.includes(x.id))) {
     const e = empreinte(m);
-    const present = [m.sortie, ...(m.aussi || [])].every((x) => fs.existsSync(path.join(DOCS, x)));
+    const present = sortiesDe(m).every((x) => fs.existsSync(path.join(DOCS, x)));
     if (!forcer && notes[m.id] === e && present) { console.log(`${m.id} : à jour.`); continue; }
     console.log(`${m.id} : fabrication…`);
     const fait = await m.fabriquer();
@@ -206,4 +211,4 @@ if (require.main === module) {
   principal(process.argv.slice(2)).then(() => process.exit(0), (e) => { console.error(e.message); process.exit(1); });
 }
 
-module.exports = { MEDIAS, copieSansVoix, debutScene };
+module.exports = { MEDIAS, sortiesDe, copieSansVoix, debutScene };

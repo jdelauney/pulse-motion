@@ -3,6 +3,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
+const { dossierTemporaire } = require("../../plugins/pulse-motion/tests/aide/temporaire.js");
 const { copieSansVoix, MEDIAS } = require("./medias.js");
 
 const EXEMPLE = path.join(__dirname, "..", "..", "plugins", "pulse-motion", "exemples", "chaine-du-froid");
@@ -27,4 +28,30 @@ test("MEDIAS : identifiants uniques, sorties relatives à docs/", () => {
   const ids = MEDIAS.map((m) => m.id);
   assert.equal(new Set(ids).size, ids.length);
   for (const m of MEDIAS) assert.match(m.sortie, /^(medias|assets\/captures)\//);
+});
+
+test("galerie : une sortie par entrée de chaque source (mouvements, styles, effets, personnages)", () => {
+  const { MEDIAS, sortiesDe } = require("./medias.js");
+  const G = require("./galerie-medias.js");
+  const lot = (id) => sortiesDe(MEDIAS.find((m) => m.id === id));
+  assert.equal(lot("galerie-mouvements").length, G.dictionnaire().mouvements.length * 2);
+  assert.equal(lot("galerie-styles").length, G.STYLES_LIVRES().reduce((n, s) => n + 1 + G.scenesDuStyle(s).length, 0));
+  assert.equal(lot("galerie-effets").length, G.effets().length * 2);
+  assert.equal(lot("galerie-personnages").length, G.clipsPersonnages().length * 2);
+  assert.ok(!G.clipsPersonnages().includes("respiration"), "les calques additifs ne sont pas des mouvements");
+  assert.deepEqual(sortiesDe({ sortie: "medias/a.mp4", aussi: ["assets/b.jpg"] }), ["medias/a.mp4", "assets/b.jpg"]);
+});
+
+test("galerie : chaque démo d'effet et de mouvement s'assemble", () => {
+  const G = require("./galerie-medias.js");
+  const { projetDeDemos, projetDeMouvements } = require("../../plugins/pulse-motion/scripts/lib/choisir-mouvements.js");
+  const { assembler } = require("../../plugins/pulse-motion/scripts/assembler.js");
+  const d1 = dossierTemporaire("pm-galerie-");
+  projetDeDemos(d1, G.effets().map(G.demoEffet));
+  assert.deepEqual(assembler({ dossier: d1 }).erreurs, []);
+  const d2 = dossierTemporaire("pm-galerie-");
+  const { plages } = projetDeMouvements(d2, G.dictionnaire().mouvements);
+  assert.deepEqual(assembler({ dossier: d2 }).erreurs, []);
+  assert.equal(plages.length, G.dictionnaire().mouvements.length);
+  for (let i = 1; i < plages.length; i++) assert.ok(Math.abs(plages[i].debut - plages[i - 1].fin) < 1e-6, "plages contiguës");
 });
