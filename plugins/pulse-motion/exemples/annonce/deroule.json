@@ -1,0 +1,89 @@
+{
+  "version": 1,
+  "titre": "Ouverture de la boutique de vélos",
+  "genre": "social",
+  "parcours": "rapide",
+  "format": {
+    "ratio": "9:16",
+    "ips": 30
+  },
+  "style": "energique",
+  "musique": {
+    "generee": "entrainant",
+    "tempo": 120,
+    "volume": 0.8
+  },
+  "scenes": [
+    {
+      "id": "accroche",
+      "type": "titre",
+      "fichier": "scenes/01-accroche.html",
+      "duree": 4,
+      "transition": "coupe",
+      "intention": "titre – l'accroche, lisible en 2 secondes",
+      "textes": {
+        "etiquette": "Nouveau",
+        "titre": "Ça roule en ville !",
+        "sous": "Bientôt chez vous"
+      },
+      "mouvements": [
+        "#001"
+      ]
+    },
+    {
+      "id": "nouveaute",
+      "type": "titre",
+      "fichier": "scenes/02-nouveaute.html",
+      "duree": 6,
+      "transition": "whip",
+      "intention": "titre – la nouveauté annoncée",
+      "textes": {
+        "etiquette": "Rue des Lilas",
+        "titre": "Une boutique de vélos",
+        "sous": "Vente, location et réparation"
+      },
+      "mouvements": [
+        "#006"
+      ]
+    },
+    {
+      "id": "benefice",
+      "type": "liste",
+      "fichier": "scenes/03-benefice.html",
+      "duree": 9,
+      "transition": "whip",
+      "intention": "liste – ce que ça apporte",
+      "textes": {
+        "titre": "Ce qui vous attend",
+        "point1": "Des vélos à essayer sur place",
+        "point2": "Un atelier de réparation rapide",
+        "point3": "Des conseils pour bien rouler"
+      }
+    },
+    {
+      "id": "date",
+      "type": "chiffre",
+      "fichier": "scenes/04-date.html",
+      "duree": 6,
+      "transition": "whip",
+      "intention": "chiffre – le compte à rebours jusqu'au jour J (valeur affichée : 10)",
+      "textes": {
+        "titre": "Ouverture dans",
+        "unite": "j",
+        "legende": "le 15 mars, dès 10 h, rue des Lilas"
+      }
+    },
+    {
+      "id": "invitation",
+      "type": "conclusion",
+      "fichier": "scenes/05-invitation.html",
+      "duree": 6.5,
+      "transition": "fondu",
+      "intention": "conclusion – l'invitation",
+      "textes": {
+        "titre": "Venez nombreux !",
+        "sous": "Un café offert le jour de l’ouverture"
+      }
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+<!-- Scène « accroche » (style energique, scène toute faite « titre ») : l'accroche, lisible en 2 s. Durée : 3 s.
+     Entrées serrées : bandeau (0,05 s), titre en pop-in #001 sur le 2e temps (1t), sous-titre à la fin du titre ; tout est posé à 1,4 s. -->
+<section data-scene="accroche">
+  <div class="decor">
+    <span class="bandes" data-decor data-start="0" data-dur="5" data-tween="--x 0cqh→-23cqh linear"></span>
+  </div>
+  <p id="etiquette" class="bandeau volet" data-texte="etiquette" data-start="0.05" data-dur="0.4" data-son="whoosh" data-son-volume="0.6"></p>
+  <h1 id="titre" class="cri pm-m-pop" data-texte="titre" data-start="1t" data-dur="0.45" data-son="pop" style="--pm-dur: 0.45s; --pm-ampleur: 1.12; --pm-courbe: var(--ease-cubic-out)"></h1>
+  <p id="sous" class="texte claque" data-texte="sous" data-start="#titre:fin" data-dur="0.45"></p>
+</section>

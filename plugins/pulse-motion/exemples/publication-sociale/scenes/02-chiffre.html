@@ -1,0 +1,10 @@
+<!-- Scène « chiffre » (style energique, scène toute faite « chiffre ») : un chiffre qui surprend. 6 s, format 9:16.
+     Textes : titre, unite, legende. Valeur : nombre 0→150. -->
+<section data-scene="chiffre" class="centre">
+  <div class="decor">
+    <span class="bandes" data-decor data-start="0" data-dur="6" data-tween="--x 0cqh→-28cqh linear"></span>
+  </div>
+  <h2 id="titre" class="cri-moyen claque" data-texte="titre" data-start="0.1" data-dur="0.45"></h2>
+  <p class="chiffre-choc tombe" data-start="#titre:fin" data-dur="0.7"><span id="valeur" data-start="#titre:fin" data-dur="1.4" data-tween="nombre 0→150 expo-out" data-son="ding">0</span><span class="unite" data-texte="unite"></span></p>
+  <p id="legende" class="bandeau volet" data-texte="legende" data-start="#valeur:fin+0.1" data-dur="0.45" data-son="whoosh" data-son-volume="0.6"></p>
+</section>

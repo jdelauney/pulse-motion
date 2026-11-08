@@ -84,3 +84,37 @@ test('« La chaîne du froid » : contrôle complet de la vidéo rendue, rien à
   assert.deepEqual(r.problemes, []);
   assert.ok(Date.now() - debut < 20000, `${Date.now() - debut} ms`);
 });
+
+// ---- Les exemples des modèles de vidéo (exemples/<modèle>/, chacun sorti d'une séance /pulse-motion:creer)
+const { listerModeles, lireModele } = require('../scripts/modeles.js');
+const EXEMPLES = path.join(__dirname, '..', 'exemples');
+const exemplesDeModeles = () => listerModeles().map((m) => m.exemple || m.id).filter((x) => x !== 'chaine-du-froid');
+
+test('exemples des modèles : un par modèle, avec le récit de sa séance', () => {
+  assert.equal(exemplesDeModeles().length, 6);
+  for (const id of exemplesDeModeles()) {
+    const recit = JSON.parse(fs.readFileSync(path.join(EXEMPLES, id, 'exemple.json'), 'utf8'));
+    const m = lireModele(recit.modele);
+    assert.ok(m, `${id} : modèle « ${recit.modele} » inconnu`);
+    assert.ok(m.phrases.includes(recit.phrase), `${id} : la phrase vient du modèle`);
+    assert.equal(recit.reponses.voix, 'Pas de voix', id);
+    assert.ok(Array.isArray(recit.retouches), id);
+    const d = JSON.parse(fs.readFileSync(path.join(EXEMPLES, id, 'deroule.json'), 'utf8'));
+    assert.equal(d.genre, m.genre, id);
+    assert.equal(d.format.ratio, m.format, id);
+    assert.equal(d.style, m.styles[0], id);
+    assert.equal(d.sousTitres, undefined, `${id} : pas de sous-titres`);
+    assert.ok(d.scenes.every((s) => s.voix === undefined), `${id} : pas de voix`);
+    assert.deepEqual(d.scenes.map((s) => s.type), m.scenes.map((s) => s.type), `${id} : structure du modèle`);
+  }
+});
+
+test('exemples des modèles : chacun s\'assemble et se contrôle sans aucun problème', { skip: !navigateur && 'Chrome ou Edge introuvable' }, () => {
+  for (const id of exemplesDeModeles()) {
+    const dir = dossierTemporaire('pm-exemple-modele-');
+    fs.cpSync(path.join(EXEMPLES, id), dir, { recursive: true });
+    const r = assembler({ dossier: dir });
+    assert.deepEqual(r.erreurs, [], id);
+    assert.deepEqual(controler({ dossier: dir }).problemes, [], id);
+  }
+});

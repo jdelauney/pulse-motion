@@ -1,0 +1,19 @@
+<!-- Scène « modele » (style tech-sombre, d'après la scène toute faite « schema ») : comment le projet gagne sa vie.
+     Durée : 10 s. Textes : titre, a, b, c. Le dernier nœud (la commission) porte l'accent lumineux. -->
+<section data-scene="modele">
+  <div class="decor">
+    <span class="grille" data-decor data-start="0" data-dur="10" data-tween="--x 0cqh→-10cqh linear; --y 0cqh→-5cqh linear"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen glisse" data-texte="titre" data-start="0.2" data-dur="0.6"></h2>
+  <div class="graphe">
+    <div id="a" class="noeud glisse" data-texte="a" data-start="#titre:fin+0.3" data-dur="0.6" data-son="pop" data-son-volume="0.6"></div>
+    <svg id="lien1" class="connecteur" viewBox="0 0 60 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" data-start="#a:fin" data-dur="0.6" aria-hidden="true">
+      <path pathLength="100" d="M1 6h56M51 1l6 5-6 5"/>
+    </svg>
+    <div id="b" class="noeud glisse" data-texte="b" data-start="#lien1:fin" data-dur="0.6" data-son="pop" data-son-volume="0.6"></div>
+    <svg id="lien2" class="connecteur" viewBox="0 0 60 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" data-start="#b:fin" data-dur="0.6" aria-hidden="true">
+      <path pathLength="100" d="M1 6h56M51 1l6 5-6 5"/>
+    </svg>
+    <div id="c" class="noeud glisse lumineux" data-texte="c" data-start="#lien2:fin" data-dur="0.6" data-son="ding" data-son-volume="0.7"></div>
+  </div>
+</section>

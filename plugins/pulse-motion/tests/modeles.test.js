@@ -87,6 +87,10 @@ test('exemple : copie dans un dossier vide', () => {
   const copie = JSON.parse(fs.readFileSync(path.join(dir, 'deroule.json'), 'utf8'));
   assert.equal(copie.scenes.length, source.scenes.length);
   assert.ok(!fs.existsSync(path.join(dir, 'sortie')));
+  const pitch = path.join(dossierTemporaire('pm-modele-'), 'pitch');
+  assert.equal(copierExemple('pitch', pitch).ok, true);
+  assert.ok(fs.existsSync(path.join(pitch, 'deroule.json')));
+  assert.ok(!fs.existsSync(path.join(pitch, 'exemple.json')), 'le récit de la séance ne fait pas partie de la vidéo');
 });
 
 test('exemple : dossier déjà occupé refusé', () => {

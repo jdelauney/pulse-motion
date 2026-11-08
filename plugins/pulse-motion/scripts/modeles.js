@@ -147,7 +147,8 @@ function copierExemple(id, dossier) {
     return { ok: false, message: 'Ce dossier contient déjà une vidéo : rien n\'a été copié. Choisissez un dossier vide.' };
   }
   fs.mkdirSync(cible, { recursive: true });
-  fs.cpSync(source, cible, { recursive: true, filter: (f) => !/^(sortie|\.pulse-motion|\.historique)([\\/]|$)/.test(path.relative(source, f)) });
+  // Ni les sorties ni l'état d'une séance, ni son récit (exemple.json) : seulement la vidéo.
+  fs.cpSync(source, cible, { recursive: true, filter: (f) => !/^(sortie|\.pulse-motion|\.historique|exemple\.json)([\\/]|$)/.test(path.relative(source, f)) });
   const titre = JSON.parse(fs.readFileSync(path.join(cible, 'deroule.json'), 'utf8')).titre;
   return { ok: true, dossier: cible, titre };
 }

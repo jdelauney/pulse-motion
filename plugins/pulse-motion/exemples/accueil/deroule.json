@@ -1,0 +1,114 @@
+{
+  "version": 1,
+  "titre": "Bienvenue à la médiathèque des Saules",
+  "genre": "formation",
+  "parcours": "rapide",
+  "format": {
+    "ratio": "16:9",
+    "ips": 30
+  },
+  "style": "chaleureux",
+  "musique": {
+    "generee": "calme",
+    "tempo": 120,
+    "volume": 0.8
+  },
+  "scenes": [
+    {
+      "id": "bienvenue",
+      "type": "titre",
+      "fichier": "scenes/01-bienvenue.html",
+      "duree": 8,
+      "transition": "fondu",
+      "intention": "titre – souhaiter la bienvenue",
+      "textes": {
+        "etiquette": "Médiathèque des Saules",
+        "titre": "Bienvenue parmi nous",
+        "sous": "Tout ce qu’il faut savoir pour bien commencer"
+      },
+      "mouvements": [
+        "#002"
+      ]
+    },
+    {
+      "id": "sur-place",
+      "type": "liste",
+      "fichier": "scenes/02-sur-place.html",
+      "duree": 12,
+      "transition": "glissement",
+      "intention": "liste – ce qu'on trouve sur place",
+      "textes": {
+        "titre": "Ce que vous trouverez ici",
+        "point1": "Livres, BD et magazines pour tous les âges",
+        "point2": "Films et musique à emprunter",
+        "point3": "Des postes informatiques en libre accès",
+        "point4": "Un coin calme pour lire ou travailler"
+      }
+    },
+    {
+      "id": "pas-1",
+      "type": "etape",
+      "fichier": "scenes/03-pas-1.html",
+      "duree": 8,
+      "transition": "glissement",
+      "intention": "etape – le premier pas",
+      "textes": {
+        "numero": "1",
+        "titre": "Faites votre carte",
+        "texte": "À l’accueil, avec une pièce d’identité : elle est gratuite"
+      }
+    },
+    {
+      "id": "pas-2",
+      "type": "etape",
+      "fichier": "scenes/04-pas-2.html",
+      "duree": 8,
+      "transition": "glissement",
+      "intention": "etape – le deuxième pas",
+      "textes": {
+        "numero": "2",
+        "titre": "Empruntez jusqu’à 10 documents",
+        "texte": "Pour 3 semaines, à rendre sur place ou dans la boîte de retour"
+      }
+    },
+    {
+      "id": "pas-3",
+      "type": "etape",
+      "fichier": "scenes/05-pas-3.html",
+      "duree": 8,
+      "transition": "glissement",
+      "intention": "etape – le troisième pas",
+      "textes": {
+        "numero": "3",
+        "titre": "Réservez en ligne",
+        "texte": "Votre compte permet de réserver et de prolonger vos prêts"
+      }
+    },
+    {
+      "id": "aide",
+      "type": "schema",
+      "fichier": "scenes/06-aide.html",
+      "duree": 9,
+      "transition": "balayage",
+      "intention": "schema – où trouver de l'aide, du plus proche au plus large",
+      "textes": {
+        "titre": "Besoin d’aide ?",
+        "a": "Les bibliothécaires",
+        "b": "La banque d’accueil",
+        "c": "Le site de la médiathèque"
+      }
+    },
+    {
+      "id": "fin",
+      "type": "conclusion",
+      "fichier": "scenes/07-fin.html",
+      "duree": 7,
+      "transition": "fondu",
+      "intention": "conclusion – un mot chaleureux pour finir",
+      "textes": {
+        "titre": "Bonne découverte !",
+        "sous": "L’équipe de la médiathèque des Saules"
+      }
+    }
+  ]
+}

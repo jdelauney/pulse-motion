@@ -1,0 +1,12 @@
+<!-- Scène « situation » (style editorial, scène toute faite « titre ») : la situation de départ. Durée : 8 s.
+     Titre : mouvement #017 (Mots qui montent), un mot toutes les 0,12 s. -->
+<section data-scene="situation">
+  <div class="decor">
+    <span class="ligne" data-decor data-start="0" data-dur="8" data-tween="--l 0→1 sine-inout"></span>
+    <span class="guillemet" data-decor data-start="0" data-dur="8" data-tween="--dy 0cqh→-4cqh sine-inout"></span>
+  </div>
+  <p id="etiquette" class="surtitre fondu" data-texte="etiquette" data-start="0.3" data-dur="1"></p>
+  <span id="filet" class="filet court" data-start="#etiquette+0.4" data-dur="1.2"></span>
+  <h1 id="titre" class="titre" data-texte="titre" data-start="#filet+0.2" data-dur="1.1" data-mots="monte" data-pas="0.12" data-son="whoosh" data-son-volume="0.5"></h1>
+  <p id="sous" class="chapo masque" data-texte="sous" data-start="#titre:fin+0.1" data-dur="1.1" data-son="souffle" data-son-volume="0.4"></p>
+</section>

@@ -1,0 +1,12 @@
+<!-- Scène « marche » (chiffre, style tech-sombre) : la taille du marché en un chiffre, 450 k repas par jour. 9 s, rythme posé. -->
+<section data-scene="marche">
+  <div class="decor">
+    <span class="grille" data-decor data-start="0" data-dur="9" data-tween="--x 0cqh→-10cqh linear; --y 0cqh→-5cqh linear"></span>
+  </div>
+  <h2 id="titre" class="invite ecrit" data-texte="titre" data-start="0.3" data-dur="1.2"></h2>
+  <p id="chiffre" class="chiffre-mono lumineux glisse" data-start="#titre:fin" data-dur="0.5" data-son="whoosh" data-son-volume="0.5"><span id="valeur" data-start="#titre:fin" data-dur="2.4" data-tween="nombre 0→450 cubic-out">0</span><span class="unite" data-texte="unite"></span></p>
+  <span id="jauge" class="jauge" data-start="#titre:fin" data-dur="2.4"></span>
+  <div id="gerbe" data-effet="etincelles" data-ancre="#chiffre" data-calque="avant" data-start="#valeur:fin" data-dur="1"
+       data-reglages="nombre: 300; couleur: accent" data-son="ding"></div>
+  <p id="legende" class="texte ecrit" data-texte="legende" data-start="#valeur:fin+0.4" data-dur="1.2"></p>
+</section>

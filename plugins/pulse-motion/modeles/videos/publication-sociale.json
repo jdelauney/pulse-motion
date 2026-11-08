@@ -29,8 +29,8 @@
     {
       "id": "accroche",
       "type": "titre",
-      "intention": "l'accroche, lisible en 2 secondes",
-      "duree": 3,
+      "intention": "l'accroche : la promesse se lit dès les 2 premières secondes",
+      "duree": 5,
       "transition": "coupe",
       "textes": {
         "etiquette": "le thème en un ou deux mots",

@@ -1,0 +1,11 @@
+<!-- Scène « bienvenue » (style chaleureux, d'après la scène toute faite « titre ») : souhaiter la bienvenue. 8 s.
+     Titre : mouvement #002 Fondu montant (pm-m-monte, 0,6 s, 4 %, quart-out). Galets : data-dur = 8. -->
+<section data-scene="bienvenue" class="centre">
+  <div class="decor">
+    <span class="galet" data-decor style="width: 64cqh; height: 58cqh; left: -16cqh; top: -18cqh" data-start="0" data-dur="8" data-tween="--dx 0cqh→6cqh sine-inout; --dy 0cqh→4cqh sine-inout; --m 0→1 sine-inout"></span>
+    <span class="galet sauge" data-decor style="width: 40cqh; height: 36cqh; right: -10cqh; bottom: -12cqh" data-start="0" data-dur="8" data-tween="--dx 0cqh→-5cqh sine-inout; --m 0→1 sine-inout"></span>
+  </div>
+  <p id="etiquette" class="pastille-texte eclot" data-texte="etiquette" data-start="1t" data-dur="0.8" data-son="pop" data-son-volume="0.5"></p>
+  <h1 id="titre" class="titre pm-m-monte" data-texte="titre" data-start="#etiquette+1t" data-dur="0.6" style="--pm-dur: 0.6s; --pm-ampleur: 4; --pm-courbe: var(--ease-quart-out)" data-son="souffle" data-son-volume="0.6"></h1>
+  <p id="sous" class="sous-titre pose" data-texte="sous" data-start="#titre:fin+0.3" data-dur="0.9"></p>
+</section>

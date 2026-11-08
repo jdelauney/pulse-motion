@@ -29,8 +29,8 @@
     {
       "id": "accroche",
       "type": "titre",
-      "intention": "l'accroche, lisible en 2 secondes",
-      "duree": 2.5,
+      "intention": "l'accroche : la promesse se lit dès les 2 premières secondes",
+      "duree": 4,
       "transition": "coupe",
       "textes": {
         "etiquette": "« Nouveau » ou « Bientôt »",
@@ -72,13 +72,13 @@
     {
       "id": "date",
       "type": "chiffre",
-      "intention": "la date, en grand",
+      "intention": "le compte à rebours jusqu'au jour J",
       "duree": 6,
       "transition": "whip",
       "textes": {
-        "titre": "« Rendez-vous le »",
-        "unite": "le mois en 3 lettres au plus (mar, juin)",
-        "legende": "le lieu et l'heure"
+        "titre": "« Ouverture dans » ou « Rendez-vous dans »",
+        "unite": "« j » (les jours qui restent)",
+        "legende": "la date, l'heure et le lieu"
       }
     },
     {

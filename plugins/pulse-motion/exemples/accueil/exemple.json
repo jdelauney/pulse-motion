@@ -1,0 +1,16 @@
+{
+  "modele": "accueil",
+  "phrase": "/pulse-motion:creer une vidéo de bienvenue pour les nouveaux arrivants de notre médiathèque",
+  "reponses": {
+    "duree": "1 min",
+    "public": "Grand public",
+    "parcours": "Rapide",
+    "ajouter": "Rien pour l'instant",
+    "musique": "Une musique composée pour la vidéo",
+    "voix": "Pas de voix",
+    "sousTitres": "Sans voix, pas de sous-titres",
+    "style": "chaleureux"
+  },
+  "retouches": [],
+  "corrections": []
+}

@@ -1,0 +1,12 @@
+<!-- Scène « produit » : la réponse, le nom du produit (scène toute faite « titre », style minimal). 7 s.
+     Mouvement #006 (révélé par masque) sur le titre. -->
+<section data-scene="produit">
+  <div class="decor">
+    <span class="repere"></span>
+    <span class="marqueur" data-decor data-start="0" data-dur="7" data-tween="--x 0cqw→60cqw expo-inout"></span>
+  </div>
+  <p id="etiquette" class="index monte" data-texte="etiquette" data-start="0.2" data-dur="0.45"></p>
+  <h1 id="titre" class="titre pm-m-masque" data-texte="titre" data-start="#etiquette:fin+0.1" data-dur="0.7" data-son="whoosh" data-son-volume="0.5"></h1>
+  <span id="regle" class="regle" data-start="#titre:fin" data-dur="0.5"></span>
+  <p id="sous" class="sous-titre monte" data-texte="sous" data-start="#regle+0.2" data-dur="0.45" data-son="pop" data-son-volume="0.4"></p>
+</section>
