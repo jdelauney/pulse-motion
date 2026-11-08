@@ -70,6 +70,26 @@ function tourFini(fichier, { agent = false } = {}) {
   return false;
 }
 
+/** Commandes lancées en arrière-plan par la séance et pas encore finies (hors serveurs ouverts « en arrière-plan »). */
+function tachesEnCours(fichier) {
+  const lignes = lignesJSON(fichier);
+  const texte = fs.readFileSync(fichier, "utf8");
+  const commandes = new Map();
+  const enCours = [];
+  for (const l of lignes) {
+    const contenu = l.message && Array.isArray(l.message.content) ? l.message.content : [];
+    for (const b of contenu) {
+      if (b.type === "tool_use" && b.input && b.input.run_in_background) commandes.set(b.id, String(b.input.command || ""));
+      if (b.type === "tool_result" && commandes.has(b.tool_use_id)) {
+        const m = /with ID: (\w+)/.exec(typeof b.content === "string" ? b.content : JSON.stringify(b.content));
+        const commande = commandes.get(b.tool_use_id);
+        if (m && !/pulse-motion\s+(apercu|atelier|mouvements\s+choisir|personnages\s+atelier|voix\s+studio|musique\s+ecouter)\b/.test(commande) && !texte.includes(`<task-id>${m[1]}</task-id>`)) enCours.push(commande);
+      }
+    }
+  }
+  return enCours;
+}
+
 /** Tous les agents de la séance ont fini, et la séance principale a écrit après le dernier d'entre eux (elle a reçu
  *  leur compte rendu : un agent de fond qui finit relance un tour de la séance principale). */
 function agentsFinis(transcription) {
@@ -130,7 +150,7 @@ async function lancerSeance({ plugin, demande, temoin = null, sansScenes = false
       const d = dossierTranscriptions(dossier);
       if (!fs.existsSync(d)) return;
       const f = fs.readdirSync(d).filter((n) => n.endsWith(".jsonl")).map((n) => path.join(d, n)).sort((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs)[0];
-      if (!f || Date.now() - fs.statSync(f).mtimeMs < calme || !tourFini(f) || !agentsFinis(f)) return;
+      if (!f || Date.now() - fs.statSync(f).mtimeMs < calme || !tourFini(f) || !agentsFinis(f) || tachesEnCours(f).length) return;
       const actifs = descendants(enfant.pid).filter((p) => /node/i.test(p.nom) && /pm\.js|scripts[\\/]/.test(p.ligne) && !SERVEURS.test(p.ligne));
       if (actifs.length) return;
       arretee = "tour fini, serveurs laissés ouverts arrêtés";
@@ -173,4 +193,4 @@ if (require.main === module) {
   }, (e) => { console.error(e); process.exit(1); });
 }
 
-module.exports = { lancerSeance, preparer, trouverTranscription, tourFini, dossierTranscriptions };
+module.exports = { lancerSeance, preparer, trouverTranscription, tourFini, tachesEnCours, dossierTranscriptions };
