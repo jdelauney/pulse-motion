@@ -1,0 +1,97 @@
+{
+  "id": "annonce",
+  "nom": "Annonce",
+  "genre": "social",
+  "description": "Annoncer une nouveauté ou un événement en 30 secondes, en vertical : l'accroche, la nouvelle, le bénéfice, la date, l'invitation.",
+  "pourQui": "Commerces, associations, services : un lancement, une ouverture, un événement, une inscription.",
+  "format": "9:16",
+  "duree": 30,
+  "styles": [
+    "energique",
+    "editorial",
+    "chaleureux"
+  ],
+  "musique": {
+    "ambiance": "entrainant"
+  },
+  "sousTitres": true,
+  "phrases": [
+    "/pulse-motion:creer l'annonce de l'ouverture de notre nouvelle boutique de vélos, le 15 mars",
+    "/pulse-motion:creer une annonce pour le lancement de notre nouvelle offre de cours du soir",
+    "/pulse-motion:creer une vidéo pour annoncer la fête de quartier du 21 juin"
+  ],
+  "variantes": {
+    "grandPublic": "/pulse-motion:creer l'annonce du marché de Noël de la commune, le 14 décembre",
+    "professionnels": "/pulse-motion:creer l'annonce d'un salon professionnel de la menuiserie, pour des artisans",
+    "eleves": "/pulse-motion:creer l'annonce des portes ouvertes du lycée, pour des collégiens et leurs parents"
+  },
+  "scenes": [
+    {
+      "id": "accroche",
+      "type": "titre",
+      "intention": "l'accroche, lisible en 2 secondes",
+      "duree": 2.5,
+      "transition": "coupe",
+      "textes": {
+        "etiquette": "« Nouveau » ou « Bientôt »",
+        "titre": "l'accroche en quelques mots",
+        "sous": "trois mots de plus, ou rien"
+      },
+      "mouvements": [
+        "#001"
+      ]
+    },
+    {
+      "id": "nouveaute",
+      "type": "titre",
+      "intention": "la nouveauté annoncée",
+      "duree": 6,
+      "transition": "whip",
+      "textes": {
+        "etiquette": "le lieu ou l'organisateur",
+        "titre": "ce qui arrive",
+        "sous": "en une phrase"
+      },
+      "mouvements": [
+        "#006"
+      ]
+    },
+    {
+      "id": "benefice",
+      "type": "liste",
+      "intention": "ce que ça apporte",
+      "duree": 9,
+      "transition": "whip",
+      "textes": {
+        "titre": "« Ce qui vous attend »",
+        "point1": "premier bénéfice, court",
+        "point2": "deuxième",
+        "point3": "troisième"
+      }
+    },
+    {
+      "id": "date",
+      "type": "chiffre",
+      "intention": "la date, en grand",
+      "duree": 6,
+      "transition": "whip",
+      "textes": {
+        "titre": "« Rendez-vous le »",
+        "unite": "le mois en 3 lettres au plus (mar, juin)",
+        "legende": "le lieu et l'heure"
+      }
+    },
+    {
+      "id": "invitation",
+      "type": "conclusion",
+      "intention": "l'invitation",
+      "duree": 6.5,
+      "transition": "fondu",
+      "textes": {
+        "titre": "l'invitation (« Venez nombreux »)",
+        "sous": "comment s'inscrire ou venir"
+      },
+      "effet": "confettis"
+    }
+  ]
+}

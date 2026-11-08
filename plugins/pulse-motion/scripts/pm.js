@@ -60,6 +60,7 @@ const SCRIPTS = {
   musique: 'musique.js',
   personnages: 'personnages.js',
   mouvements: 'mouvements.js',
+  modeles: 'modeles.js',
 };
 
 function afficherFichier(fichier, quoi) {
@@ -136,6 +137,7 @@ function lancer(args) {
     '  reference <nom>          scene <style> <nom>      effet <nom>      consignes <skill>',
     '  mouvements liste [--categorie <id>] | chercher <mots…> | afficher <n° ou nom> | reference | choisir [--categorie <id>] [--ouvrir] [--delai <minutes>]   [--json]',
     '  personnages liste|afficher <nom>|verifier|planche <nom> [--dessin <d>]|planche --dessin <d> --visage|atelier [<nom>] [--dessin <d>] [--decoupe <nom>] [--bibliotheque]|analyser <svg>|decouper <nom>|renommer-couleur <dessin> <ancien> <nouveau>   poses, clips et gabarits des personnages',
+    '  modeles liste | afficher <id> | trouver "<sujet>" | exemple <id> <dossier>   modèles de vidéo et leurs exemples finis',
     '  styles [--genre <genre>]                         styles verifier <nom>',
     '  changer-style <dossier> <style>                  comparer <dossier> <s1,s2,s3> [--scenes a,b] [--ouvrir]',
     '  charte enregistrer <nom> <dossier> | liste | appliquer <nom> <dossier> | depuis-logo <fichier> [--style s] [--ton clair|sombre]',

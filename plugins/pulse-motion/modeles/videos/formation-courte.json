@@ -1,0 +1,106 @@
+{
+  "id": "formation-courte",
+  "nom": "Formation courte",
+  "genre": "formation",
+  "exemple": "chaine-du-froid",
+  "description": "Une minute pour faire comprendre une règle ou un geste : pourquoi c'est important, l'essentiel, ce qu'il faut faire et éviter.",
+  "pourQui": "Formateurs, responsables qualité ou sécurité, enseignants : une consigne à faire retenir.",
+  "format": "16:9",
+  "duree": 60,
+  "styles": [
+    "clair-pedagogique",
+    "chaleureux",
+    "minimal"
+  ],
+  "musique": {
+    "ambiance": "inspirant"
+  },
+  "sousTitres": true,
+  "phrases": [
+    "/pulse-motion:creer une formation d'une minute sur la chaîne du froid",
+    "/pulse-motion:creer une vidéo courte pour expliquer le tri des déchets au bureau",
+    "/pulse-motion:creer un rappel des gestes de sécurité avant d'utiliser une échelle"
+  ],
+  "variantes": {
+    "grandPublic": "/pulse-motion:creer une vidéo d'une minute pour bien laver ses fruits et légumes, pour le grand public",
+    "professionnels": "/pulse-motion:creer une formation d'une minute sur le port des gants en cuisine, pour des cuisiniers",
+    "eleves": "/pulse-motion:creer une vidéo d'une minute sur les règles du laboratoire de chimie, pour des élèves de seconde"
+  },
+  "scenes": [
+    {
+      "id": "intro",
+      "type": "titre",
+      "intention": "annoncer le sujet et la promesse (comprendre en une minute)",
+      "duree": 8,
+      "transition": "fondu",
+      "textes": {
+        "etiquette": "le domaine (« Hygiène alimentaire »)",
+        "titre": "le sujet en quelques mots",
+        "sous": "la promesse (« 1 minute pour comprendre l'essentiel »)"
+      }
+    },
+    {
+      "id": "pourquoi",
+      "type": "chiffre",
+      "intention": "pourquoi c'est important : le chiffre à retenir",
+      "duree": 9,
+      "transition": "glissement",
+      "textes": {
+        "titre": "ce que mesure le chiffre",
+        "unite": "l'unité, 3 caractères au plus (°C, %, h)",
+        "legende": "dans quelle situation ce chiffre compte"
+      },
+      "effet": "etincelles"
+    },
+    {
+      "id": "essentiel",
+      "type": "liste",
+      "intention": "les 3 ou 4 points essentiels, un par un",
+      "duree": 13,
+      "transition": "glissement",
+      "textes": {
+        "titre": "le nombre de points (« Les 4 maillons de la chaîne »)",
+        "point1": "premier point, une ligne",
+        "point2": "deuxième point",
+        "point3": "troisième point",
+        "point4": "quatrième point (à retirer s'il n'y en a que 3)"
+      }
+    },
+    {
+      "id": "bons-gestes",
+      "type": "comparaison",
+      "intention": "ce qu'il faut faire, ce qu'il faut éviter",
+      "duree": 12,
+      "transition": "balayage",
+      "textes": {
+        "titre": "la question pratique (« Les bons réflexes »)",
+        "gauche-titre": "« À faire »",
+        "gauche-texte": "le bon geste",
+        "droite-titre": "« À éviter »",
+        "droite-texte": "l'erreur courante"
+      }
+    },
+    {
+      "id": "vigilance",
+      "type": "alerte",
+      "intention": "l'erreur à ne jamais commettre",
+      "duree": 10,
+      "transition": "glissement",
+      "textes": {
+        "titre": "l'interdit en quelques mots",
+        "texte": "pourquoi, en une phrase"
+      }
+    },
+    {
+      "id": "fin",
+      "type": "conclusion",
+      "intention": "le message à retenir",
+      "duree": 8,
+      "transition": "fondu",
+      "textes": {
+        "titre": "la règle à retenir",
+        "sous": "une phrase d'encouragement ou le geste du jour"
+      }
+    }
+  ]
+}

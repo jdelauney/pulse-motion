@@ -1,0 +1,105 @@
+{
+  "id": "presentation-produit",
+  "nom": "Présentation de produit",
+  "genre": "produit",
+  "description": "Faire découvrir un produit ou un service en 45 secondes : le problème, la réponse, trois bénéfices, un chiffre, l'appel à l'action.",
+  "pourQui": "Indépendants, petites entreprises, équipes marketing : présenter une offre sur un site ou en rendez-vous.",
+  "format": "16:9",
+  "duree": 45,
+  "styles": [
+    "minimal",
+    "tech-sombre",
+    "energique"
+  ],
+  "musique": {
+    "ambiance": "corporate"
+  },
+  "sousTitres": true,
+  "phrases": [
+    "/pulse-motion:creer la présentation de Planéo, une application qui organise les plannings d'une petite équipe",
+    "/pulse-motion:creer une vidéo de 45 secondes pour présenter notre service de livraison de paniers de légumes",
+    "/pulse-motion:creer une présentation de notre logiciel de devis pour artisans"
+  ],
+  "variantes": {
+    "grandPublic": "/pulse-motion:creer la présentation d'une application pour partager les courses en colocation, pour le grand public",
+    "professionnels": "/pulse-motion:creer la présentation d'un outil de suivi de chantier, pour des conducteurs de travaux",
+    "eleves": "/pulse-motion:creer la présentation d'une application de révision par fiches, pour des lycéens"
+  },
+  "scenes": [
+    {
+      "id": "probleme",
+      "type": "alerte",
+      "intention": "le problème que vit la personne visée",
+      "duree": 7,
+      "transition": "fondu",
+      "textes": {
+        "titre": "le problème en quelques mots (une question marche bien)",
+        "texte": "ce que ce problème coûte au quotidien"
+      }
+    },
+    {
+      "id": "produit",
+      "type": "titre",
+      "intention": "la réponse : le nom du produit",
+      "duree": 7,
+      "transition": "zoom",
+      "textes": {
+        "etiquette": "la catégorie (« Application de planning »)",
+        "titre": "le nom du produit",
+        "sous": "ce qu'il fait, en une phrase"
+      },
+      "mouvements": [
+        "#006"
+      ]
+    },
+    {
+      "id": "benefices",
+      "type": "liste",
+      "intention": "3 bénéfices concrets",
+      "duree": 11,
+      "transition": "glissement",
+      "textes": {
+        "titre": "« Ce que ça change »",
+        "point1": "premier bénéfice, avec un verbe",
+        "point2": "deuxième bénéfice",
+        "point3": "troisième bénéfice"
+      }
+    },
+    {
+      "id": "fonctionnement",
+      "type": "schema",
+      "intention": "comment ça marche, en 3 temps",
+      "duree": 8,
+      "transition": "glissement",
+      "textes": {
+        "titre": "« Comment ça marche »",
+        "a": "premier temps",
+        "b": "deuxième temps",
+        "c": "le résultat"
+      }
+    },
+    {
+      "id": "preuve",
+      "type": "chiffre",
+      "intention": "un chiffre clé qui prouve la promesse",
+      "duree": 6,
+      "transition": "glissement",
+      "textes": {
+        "titre": "ce que mesure le chiffre",
+        "unite": "l'unité (%, h, min)",
+        "legende": "d'où vient ce chiffre, en une phrase"
+      }
+    },
+    {
+      "id": "appel",
+      "type": "conclusion",
+      "intention": "l'appel à l'action",
+      "duree": 6,
+      "transition": "fondu",
+      "textes": {
+        "titre": "ce qu'on veut que la personne fasse",
+        "sous": "où le faire (site, adresse, rendez-vous)"
+      }
+    }
+  ]
+}

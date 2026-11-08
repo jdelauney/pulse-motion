@@ -1,0 +1,120 @@
+{
+  "id": "accueil",
+  "nom": "Accueil d'un nouvel arrivant",
+  "genre": "formation",
+  "description": "Souhaiter la bienvenue en une minute : ce qu'on trouve sur place, les trois premiers pas, où trouver de l'aide.",
+  "pourQui": "Ressources humaines, responsables d'équipe, associations : accueillir une nouvelle recrue, un bénévole, un adhérent.",
+  "format": "16:9",
+  "duree": 60,
+  "styles": [
+    "chaleureux",
+    "clair-pedagogique",
+    "minimal"
+  ],
+  "musique": {
+    "ambiance": "calme"
+  },
+  "sousTitres": true,
+  "phrases": [
+    "/pulse-motion:creer une vidéo de bienvenue pour les nouveaux arrivants de notre médiathèque",
+    "/pulse-motion:creer l'accueil des nouveaux bénévoles de notre banque alimentaire",
+    "/pulse-motion:creer une vidéo de prise en main pour les nouveaux adhérents du club de sport"
+  ],
+  "variantes": {
+    "grandPublic": "/pulse-motion:creer une vidéo de bienvenue pour les nouveaux habitants de la commune",
+    "professionnels": "/pulse-motion:creer une vidéo d'accueil pour les nouveaux infirmiers du service de nuit",
+    "eleves": "/pulse-motion:creer une vidéo de bienvenue pour les nouveaux élèves de sixième"
+  },
+  "scenes": [
+    {
+      "id": "bienvenue",
+      "type": "titre",
+      "intention": "souhaiter la bienvenue",
+      "duree": 8,
+      "transition": "fondu",
+      "textes": {
+        "etiquette": "le lieu ou l'équipe",
+        "titre": "« Bienvenue » et à qui",
+        "sous": "ce que la vidéo va montrer"
+      },
+      "mouvements": [
+        "#002"
+      ]
+    },
+    {
+      "id": "sur-place",
+      "type": "liste",
+      "intention": "ce qu'on trouve sur place",
+      "duree": 12,
+      "transition": "glissement",
+      "textes": {
+        "titre": "« Ce que vous trouverez ici »",
+        "point1": "premier lieu ou service",
+        "point2": "deuxième",
+        "point3": "troisième",
+        "point4": "quatrième (à retirer s'il n'y en a que 3)"
+      }
+    },
+    {
+      "id": "pas-1",
+      "type": "etape",
+      "intention": "le premier pas",
+      "duree": 8,
+      "transition": "glissement",
+      "textes": {
+        "numero": "« 1 »",
+        "titre": "le premier pas en quelques mots",
+        "texte": "comment le faire, en une phrase"
+      }
+    },
+    {
+      "id": "pas-2",
+      "type": "etape",
+      "intention": "le deuxième pas",
+      "duree": 8,
+      "transition": "glissement",
+      "textes": {
+        "numero": "« 2 »",
+        "titre": "le deuxième pas",
+        "texte": "comment le faire"
+      }
+    },
+    {
+      "id": "pas-3",
+      "type": "etape",
+      "intention": "le troisième pas",
+      "duree": 8,
+      "transition": "glissement",
+      "textes": {
+        "numero": "« 3 »",
+        "titre": "le troisième pas",
+        "texte": "comment le faire"
+      }
+    },
+    {
+      "id": "aide",
+      "type": "schema",
+      "intention": "où trouver de l'aide, du plus proche au plus large",
+      "duree": 9,
+      "transition": "balayage",
+      "textes": {
+        "titre": "« Besoin d'aide ? »",
+        "a": "la personne la plus proche (référent)",
+        "b": "le lieu ou l'outil (accueil, intranet)",
+        "c": "le dernier recours (responsable)"
+      }
+    },
+    {
+      "id": "fin",
+      "type": "conclusion",
+      "intention": "un mot chaleureux pour finir",
+      "duree": 7,
+      "transition": "fondu",
+      "textes": {
+        "titre": "un mot d'accueil chaleureux",
+        "sous": "la signature (l'équipe, le lieu)"
+      },
+      "effet": "confettis"
+    }
+  ]
+}

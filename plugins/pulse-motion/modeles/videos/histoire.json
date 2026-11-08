@@ -1,0 +1,106 @@
+{
+  "id": "histoire",
+  "nom": "Histoire",
+  "genre": "storytelling",
+  "description": "Raconter un parcours en une minute : une situation, une difficulté, le déclic, la solution, l'avant et l'après, la morale.",
+  "pourQui": "Associations, entreprises, porteurs de projet : raconter une origine, un projet ou une réussite.",
+  "format": "16:9",
+  "duree": 60,
+  "styles": [
+    "editorial",
+    "chaleureux",
+    "tech-sombre"
+  ],
+  "musique": {
+    "ambiance": "inspirant"
+  },
+  "sousTitres": true,
+  "phrases": [
+    "/pulse-motion:creer l'histoire de notre jardin partagé, d'un terrain vague à un lieu de rencontre",
+    "/pulse-motion:creer une vidéo qui raconte comment notre atelier de réparation de vélos est né",
+    "/pulse-motion:creer l'histoire d'une boulangerie de village qui a changé sa façon de travailler"
+  ],
+  "variantes": {
+    "grandPublic": "/pulse-motion:creer l'histoire de la bibliothèque de notre quartier, pour les habitants",
+    "professionnels": "/pulse-motion:creer l'histoire d'une équipe qui a réduit ses délais de moitié, pour des chefs de projet",
+    "eleves": "/pulse-motion:creer l'histoire de l'invention de l'imprimerie, pour des élèves de cinquième"
+  },
+  "scenes": [
+    {
+      "id": "situation",
+      "type": "titre",
+      "intention": "la situation de départ",
+      "duree": 8,
+      "transition": "fondu",
+      "textes": {
+        "etiquette": "le lieu ou l'époque",
+        "titre": "le titre de l'histoire",
+        "sous": "la situation de départ, en une phrase"
+      },
+      "mouvements": [
+        "#017"
+      ]
+    },
+    {
+      "id": "difficulte",
+      "type": "alerte",
+      "intention": "la difficulté qui bloque tout",
+      "duree": 10,
+      "transition": "glissement",
+      "textes": {
+        "titre": "la difficulté en quelques mots",
+        "texte": "ce qu'elle empêchait, en une phrase"
+      }
+    },
+    {
+      "id": "declic",
+      "type": "chiffre",
+      "intention": "le déclic, en un chiffre",
+      "duree": 9,
+      "transition": "glissement",
+      "textes": {
+        "titre": "ce que mesure le chiffre",
+        "unite": "l'unité (%, ans, j)",
+        "legende": "pourquoi ce chiffre a tout changé"
+      }
+    },
+    {
+      "id": "solution",
+      "type": "schema",
+      "intention": "comment on s'en est sorti, en 3 temps",
+      "duree": 11,
+      "transition": "glissement",
+      "textes": {
+        "titre": "« Ce que nous avons fait »",
+        "a": "premier temps",
+        "b": "deuxième temps",
+        "c": "troisième temps"
+      }
+    },
+    {
+      "id": "avant-apres",
+      "type": "comparaison",
+      "intention": "l'avant et l'après",
+      "duree": 12,
+      "transition": "retournement",
+      "textes": {
+        "titre": "« Avant, après »",
+        "gauche-titre": "« Avant »",
+        "gauche-texte": "la situation de départ",
+        "droite-titre": "« Après »",
+        "droite-texte": "la situation aujourd'hui"
+      }
+    },
+    {
+      "id": "morale",
+      "type": "conclusion",
+      "intention": "la morale de l'histoire",
+      "duree": 8,
+      "transition": "fondu",
+      "textes": {
+        "titre": "la morale, en quelques mots",
+        "sous": "une phrase d'ouverture (la suite, une invitation)"
+      }
+    }
+  ]
+}
