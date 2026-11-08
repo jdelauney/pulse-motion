@@ -2,12 +2,16 @@
 /* Pulse Motion – page de contrôle ouverte en temps réel dans Chrome ou Edge sans fenêtre : servie sur un
  * serveur local (127.0.0.1, port libre), elle exécute un script de mesure après M.pret et les polices, puis
  * renvoie son résultat par POST. Le temps virtuel de --dump-dom n'attend pas les captures asynchrones (M.capturer).
- * Seule la page répond : adresse d'envoi avec un jeton aléatoire, en-tête Host vérifié, réponse limitée à 10 Mo. */
+ * Seule la page répond : adresse d'envoi avec un jeton aléatoire, en-tête Host vérifié, réponse limitée à 10 Mo.
+ * ouvrirPageControle() : la même page, servie de la même façon (jeton dans l'adresse, Host vérifié), mais pilotée par le
+ * protocole DevTools (cdp.js) : les mesures passent par page.evaluer et les flashs par des captures réduites
+ * (spec Rapidité 5.10). mesurerPage reste pour lib/rendu-style.js, --gpu et le repli du contrôle. */
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const http = require('node:http');
 const path = require('node:path');
 const { ouvrirSansFenetre } = require('./navigateur.js');
+const { ouvrirPage } = require('./cdp.js');
 const { garder } = require('./garde-locale.js');
 
 const CAPTURE = fs.readFileSync(path.join(__dirname, '..', '..', 'moteur', 'capture.js'), 'utf8');
@@ -92,4 +96,57 @@ function mesurerPage({ html, script, navigateur, delai = 60000, surPort, gpu = f
   });
 }
 
-module.exports = { mesurerPage };
+// Fenêtre de la page de contrôle (comme ouvrirSansFenetre) : les mesures ne changent pas avec le CDP.
+const LARGEUR_CONTROLE = 1280;
+const HAUTEUR_CONTROLE = 800;
+
+/** Page à mesurer par le CDP : capture.js, son coupé, premières erreurs de la page gardées (window.__pmErreur). */
+function pageControle(html) {
+  const garde = `<script>(function () {
+  M.sansSon = true;
+  function noter(m) { if (window.__pmErreur === undefined) window.__pmErreur = String(m); }
+  window.addEventListener('error', function (e) { noter(e.message || e); });
+  window.addEventListener('unhandledrejection', function (e) { noter((e.reason && e.reason.message) || e.reason); });
+})();</script>`;
+  return String(html).replace('</body>', `<script>${CAPTURE.replace(/<\/script/gi, '<\/script')}</script>\n${garde}\n</body>`);
+}
+
+/**
+ * ouvrirPageControle({ html, navigateur, delai?, gpu?, ouvrir? }) -> Promise<{ page, fermer() }>
+ * La page est servie sur 127.0.0.1 (port libre) à une adresse qui porte un jeton ; toute autre adresse, ou un autre
+ * en-tête Host, est refusée. page : celle de cdp.js (evaluer, envoyer…), chargée, M.pret et polices attendus.
+ * Rejette (code ENOENT si le navigateur est introuvable) ; le serveur et le navigateur sont alors fermés.
+ * ouvrir : remplace ouvrirPage (tests).
+ */
+async function ouvrirPageControle({ html, navigateur, delai = 60000, gpu = false, ouvrir = ouvrirPage }) {
+  const jeton = crypto.randomBytes(16).toString('hex');
+  const corps = pageControle(html);
+  let hote = null;
+  const serveur = http.createServer((req, res) => {
+    if (req.headers.host !== hote) { res.writeHead(403); res.end(); return; }
+    if (!garder(req, res, { port: serveur.address().port, types: [] })) return;
+    if (req.method !== 'GET' || req.url.split('?')[0] !== `/pm-controle/${jeton}`) { res.writeHead(404); res.end(); return; }
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(corps);
+  });
+  await new Promise((resolve, reject) => {
+    serveur.once('error', reject);
+    serveur.listen(0, '127.0.0.1', () => { hote = `127.0.0.1:${serveur.address().port}`; resolve(); });
+  });
+  let page = null;
+  const fermer = async () => {
+    serveur.close();
+    if (page) await page.fermer().catch(() => {});
+  };
+  try {
+    page = await ouvrir({ navigateur, largeur: LARGEUR_CONTROLE, hauteur: HAUTEUR_CONTROLE, gpu, delai });
+    await page.aller(`http://${hote}/pm-controle/${jeton}`);
+    await page.evaluer('(async function () { await M.pret; if (document.fonts) await document.fonts.ready; return true; })()');
+  } catch (e) {
+    await fermer();
+    throw e;
+  }
+  return { page, fermer };
+}
+
+module.exports = { mesurerPage, ouvrirPageControle, LARGEUR_CONTROLE, HAUTEUR_CONTROLE };

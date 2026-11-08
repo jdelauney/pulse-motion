@@ -1,11 +1,14 @@
 'use strict';
 /* Pulse Motion – contrôle de la vidéo rendue : page assemblée ouverte en temps réel dans Chrome ou Edge sans
- * fenêtre (page-mesures.js), mesures de moteur/mesures.js (M.mesurer), débordements (M.detecterDebordements) et
+ * fenêtre, pilotée par le CDP (page-mesures.js, ouvrirPageControle), flashs mesurés depuis Node (flashs.js), mesures de moteur/mesures.js (M.mesurer), débordements (M.detecterDebordements) et
  * formes exactes des collisions effacées à la fin de leur minutage (M.particules.formesVides, sans GPU) et photographies
  * des effets de fragmentation (M.particules.photosVides, sans GPU : ancre-vide, photographie-trop-grande), traduits en
  * problèmes. */
 const { trouverNavigateur } = require('./navigateur.js');
-const { mesurerPage } = require('./page-mesures.js');
+const { mesurerPage, ouvrirPageControle } = require('./page-mesures.js');
+const { mesurerFlashs, casesImage, seuilsFlashs } = require('./flashs.js');
+const { decoderPNG } = require('../logo.js');
+const { scenesVisibles } = require('../../moteur/minutage.js');
 const SEUILS = require('../seuils.json');
 
 const virgule = (x) => String(Math.round(x * 10) / 10).replace('.', ',');
@@ -41,22 +44,100 @@ function traduireConstats(constats) {
 
 const nonVerifie = (regle, message) => ({ renduVerifie: false, problemes: [{ regle, gravite: 'alerte', message }], ajustements: [] });
 
-/** -> { renduVerifie, problemes } ; jamais d'exception. */
-async function controlerRendu({ html, ratio, duree, navigateur = trouverNavigateur() }) {
-  if (!navigateur) return nonVerifie('rendu-non-verifie', 'Chrome ou Edge introuvable : la vidéo rendue (chevauchements, marges, textes qui débordent…) n\'a pas été vérifiée. Installez l\'un des deux, ou indiquez son chemin avec la variable PM_NAVIGATEUR.');
-  const r = await mesurerPage({ html, navigateur, delai: (30 + 2 * (duree || 0)) * 1000, script: `
+/** Script des mesures dans la page (après M.pret et les polices). flashs : flashs mesurés dans la page (repli). */
+function scriptMesures({ ratio, scenes, plages, plagesFlashs, flashs }) {
+  const opts = (extra) => JSON.stringify({ ratio, seuils: SEUILS, ...extra });
+  const choix = scenes ? { scenes } : {};
+  return `
     // Formes exactes des collisions effacées à la fin de leur minutage (avant les mesures : elles rendent des scènes).
     var formesVides = M.particules && M.particules.formesVides ? await M.particules.formesVides() : [];
     // Photographies des effets de fragmentation (elles rendent aussi des scènes).
     var photos = M.particules && M.particules.photosVides ? await M.particules.photosVides() : [];
-    var constats = M.mesurer({ ratio: ${JSON.stringify(ratio)}, seuils: ${JSON.stringify(SEUILS)} });
-    var debordements = M.detecterDebordements();
-    var ajustements = M.essayerTailles({ minimumCqh: ${SEUILS.texteMinCqh} });
-    return { constats: constats.concat(await M.mesurerPixels({ ratio: ${JSON.stringify(ratio)}, seuils: ${JSON.stringify(SEUILS)} })), debordements: debordements, ajustements: ajustements, formesVides: formesVides, photos: photos };` });
-  if (r.code === 'ENOENT') return nonVerifie('rendu-impossible', `Navigateur introuvable à « ${navigateur} » : vérifiez la variable PM_NAVIGATEUR (ou retirez-la pour utiliser Chrome ou Edge installés). Seuls les contrôles sans navigateur ont été faits.`);
-  if (r.erreur) return nonVerifie('rendu-impossible', `La vidéo n'a pas pu être mesurée dans le navigateur (${r.erreur}) : seuls les contrôles sans navigateur ont été faits.`);
-  const debordements = (r.resultat.debordements || []).map((d) => ({ regle: 'debordement', gravite: 'erreur', scene: d.scene, element: d.element, message: d.message }));
-  return { renduVerifie: true, problemes: [...debordements, ...traduireConstats(r.resultat.constats), ...traduireFormesVides(r.resultat.formesVides), ...traduirePhotos(r.resultat.photos)], ajustements: r.resultat.ajustements || [] };
+    var constats = M.mesurer(${opts(plages ? { plages } : {})});
+    var debordements = M.detecterDebordements(${JSON.stringify(choix)});
+    var ajustements = M.essayerTailles(${JSON.stringify({ minimumCqh: SEUILS.texteMinCqh, ...choix })});
+    return { constats: constats.concat(await M.mesurerPixels(${opts({ ...choix, flashs, ...(flashs && plagesFlashs ? { plagesFlashs } : {}) })})), debordements: debordements, ajustements: ajustements, formesVides: formesVides, photos: photos };`;
+}
+
+/** Résultat brut de la page -> { renduVerifie, problemes, ajustements } (seulement les scènes demandées, s'il y en a). */
+function traduireResultat(resultat, scenes) {
+  const garder = (p) => !scenes || !p.scene || scenes.includes(p.scene);
+  const debordements = (resultat.debordements || []).map((d) => ({ regle: 'debordement', gravite: 'erreur', scene: d.scene, element: d.element, message: d.message }));
+  return { renduVerifie: true, problemes: [...debordements, ...traduireConstats(resultat.constats), ...traduireFormesVides(resultat.formesVides), ...traduirePhotos(resultat.photos)].filter(garder), ajustements: (resultat.ajustements || []).filter(garder) };
+}
+
+/** Flashs depuis Node : M.rendre(t) puis capture PNG réduite à largeurFlash (clip.scale), décodée en JavaScript. */
+async function flashsParCDP(page, { plagesFlashs }) {
+  const info = await page.evaluer(`(function () {
+    var r = document.getElementById('pm-scene').getBoundingClientRect();
+    // Sous-titres masqués (un carton qui change n'est pas un flash), comme dans la page.
+    var st = document.createElement('style');
+    st.id = 'pm-flashs-sans-sous-titres';
+    st.textContent = '#pm-sous-titres { display: none !important; }';
+    document.head.appendChild(st);
+    return { x: r.left, y: r.top, l: r.width, h: r.height, duree: M.duree, ips: M.ips || 30, depart: M.temps(),
+      scenes: M.minutage.scenes.map(function (s) { return { id: s.id, debut: s.debut, fin: s.fin }; }) };
+  })()`);
+  const S = seuilsFlashs(SEUILS);
+  const echelle = S.largeurFlash / Math.max(1, info.l);
+  const minutage = { scenes: info.scenes };
+  try {
+    return await mesurerFlashs({
+      duree: info.duree, ips: info.ips, seuils: SEUILS, plages: plagesFlashs || null,
+      sceneA: (t) => scenesVisibles(minutage, t)[0] || null,
+      async relever(t) {
+        await page.evaluer(`M.rendre(${Number(t)}), true`);
+        const r = await page.envoyer('Page.captureScreenshot', { format: 'png', optimizeForSpeed: true, captureBeyondViewport: false,
+          clip: { x: info.x, y: info.y, width: info.l, height: info.h, scale: echelle } });
+        const image = decoderPNG(Buffer.from(r.data, 'base64'));
+        return casesImage(image.pixel, image.largeur, image.hauteur, S.flashCases);
+      },
+    });
+  } finally {
+    await page.evaluer(`(function () { var st = document.getElementById('pm-flashs-sans-sous-titres'); if (st) st.remove(); M.rendre(${Number(info.depart) || 0}); return true; })()`);
+  }
+}
+
+/**
+ * Contrôle du rendu par la page de contrôle pilotée par le CDP (spec Rapidité 5.10) ; repli par la page qui renvoie son
+ * résultat par POST (flashs mesurés dans la page) si le CDP échoue. -> { renduVerifie, problemes, ajustements, voie } ;
+ * jamais d'exception. scenes : seules ces scènes sont jugées (contrôle partiel) ; plages : instants des mesures ;
+ * plagesFlashs : instants de la passe rapide des flashs. ouvrir : remplace l'ouverture par le CDP (tests).
+ */
+async function controlerRendu({ html, ratio, duree, navigateur = trouverNavigateur(), scenes = null, plages = null, plagesFlashs = null, ouvrir }) {
+  if (!navigateur) return nonVerifie('rendu-non-verifie', 'Chrome ou Edge introuvable : la vidéo rendue (chevauchements, marges, textes qui débordent…) n\'a pas été vérifiée. Installez l\'un des deux, ou indiquez son chemin avec la variable PM_NAVIGATEUR.');
+  const delai = (30 + 2 * (duree || 0)) * 1000;
+  const introuvable = () => nonVerifie('rendu-impossible', `Navigateur introuvable à « ${navigateur} » : vérifiez la variable PM_NAVIGATEUR (ou retirez-la pour utiliser Chrome ou Edge installés). Seuls les contrôles sans navigateur ont été faits.`);
+  const impossible = (erreur) => nonVerifie('rendu-impossible', `La vidéo n'a pas pu être mesurée dans le navigateur (${erreur}) : seuls les contrôles sans navigateur ont été faits.`);
+  let controle = null;
+  try {
+    controle = await ouvrirPageControle({ html, navigateur, delai, ...(ouvrir ? { ouvrir } : {}) });
+  } catch (e) {
+    if (e.code === 'ENOENT') return introuvable();
+    controle = null;
+  }
+  if (controle) {
+    try {
+      const { page } = controle;
+      const erreurPage = () => page.evaluer('window.__pmErreur === undefined ? null : window.__pmErreur');
+      let erreur = await erreurPage();
+      if (erreur !== null) return impossible(erreur);
+      const resultat = await page.evaluer(`(async function () {${scriptMesures({ ratio, scenes, plages, flashs: false })}\n})()`);
+      resultat.constats = resultat.constats.concat(await flashsParCDP(page, { plagesFlashs }));
+      erreur = await erreurPage();
+      if (erreur !== null) return impossible(erreur);
+      return { ...traduireResultat(resultat, scenes), voie: 'cdp' };
+    } catch (e) {
+      return impossible(e.message);
+    } finally {
+      await controle.fermer();
+    }
+  }
+  // Repli : la page renvoie son résultat par POST, les flashs sont mesurés dans la page (captures foreignObject).
+  const r = await mesurerPage({ html, navigateur, delai, script: scriptMesures({ ratio, scenes, plages, plagesFlashs, flashs: true }) });
+  if (r.code === 'ENOENT') return introuvable();
+  if (r.erreur) return impossible(r.erreur);
+  return { ...traduireResultat(r.resultat, scenes), voie: 'page' };
 }
 
 /** Problèmes de photographie des fragments (M.particules.photosVides) : ancre-vide (erreur), photographie-trop-grande (alerte). */
@@ -69,4 +150,4 @@ function traduireFormesVides(liste) {
   return (liste || []).map((f) => ({ regle: 'obstacle-forme-vide', gravite: 'alerte', scene: f.scene, element: f.element, message: f.message }));
 }
 
-module.exports = { traduireConstats, traduireFormesVides, traduirePhotos, controlerRendu };
+module.exports = { traduireConstats, traduireFormesVides, traduirePhotos, controlerRendu, flashsParCDP };
