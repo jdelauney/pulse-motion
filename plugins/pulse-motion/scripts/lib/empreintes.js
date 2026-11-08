@@ -1,7 +1,7 @@
 'use strict';
-/* Pulse Motion – empreintes des scènes assemblées (spec Rapidité 5.9, partagé avec l'export en S1-4).
+/* Pulse Motion – empreintes des scènes assemblées (spec Rapidité 5.9 pour le contrôle, 5.16 pour l'export).
  *
- * empreintesControle(assemblage, { seuils, moteur, options }) -> { moteur, seuils, commun, scenes: { id: sha256 } }
+ * empreintesControle(assemblage, { seuils, moteur, options }) -> { moteur, seuils, commun, scenes: { id: sha256 }, propres: { id: sha256 } }
  *   L'empreinte de contrôle d'une scène hache ce qui la fait voir à l'écran : sa section assemblée (textes, logo,
  *   ressources injectés), ses scripts, son minutage (début, fin, entrée, transition, rythme), ses données (voix, effets,
  *   milieux, shaders, obstacles, sous-titres qui la recouvrent), celles de la scène précédente quand son entrée la
@@ -11,6 +11,16 @@
  *   post-traitements de toute la vidéo, les obstacles de la vidéo et les personnages entrent dans le commun.
  * plagesScenes(minutage, ids, marge) -> [[debut, fin]] : plages de temps où les scènes ids sont visibles, élargies de
  *   marge secondes, fusionnées.
+ *
+ * Export (5.16) : deux empreintes séparées (revue de la campagne, conflit 4).
+ * decouperSegments(minutage, cadence, dureeMax) -> [{ scene, morceau, debut, fin }] : images [debut, fin[ de chaque segment.
+ *   Le segment d'une scène va de la première image de son entrée (chevauchement compris) à la dernière image avant l'entrée
+ *   de la suivante ; une scène plus longue que dureeMax est coupée en morceaux égaux d'au plus dureeMax secondes.
+ * empreintesPixels(assemblage, { moteur, options, segments, cadence, largeur, hauteur, extra }) -> [sha256] (une par segment) :
+ *   empreinte de contrôle de la scène sans les seuils (sa scène, la précédente quand son entrée la chevauche, le commun),
+ *   le squelette de la page (tout ce qu'elle montre hors des scènes), cadence, taille, première image et nombre d'images,
+ *   extra (navigateur, GPU, réglages de pixels de S5). Aucun réglage d'encodage. Elle nomme l'intermédiaire du segment.
+ * empreinteDerivee(pixels, encodage) -> sha256 : empreinte des pixels + réglages d'encodage ; elle nomme le fichier dérivé.
  * Module pur (aucun accès au disque).
  */
 const crypto = require('node:crypto');
@@ -27,7 +37,8 @@ function stable(valeur) {
   return `{${Object.keys(valeur).sort().map((k) => `${JSON.stringify(k)}:${stable(valeur[k])}`).join(',')}}`;
 }
 
-function empreintesControle(assemblage, { seuils, moteur, options = {} }) {
+/** Parties communes aux empreintes du contrôle et de l'export : commun, empreinte propre de chaque scène, minutage. */
+function composer(assemblage, { seuils, moteur, options = {} }) {
   const d = assemblage.donnees;
   const empreinteMoteur = sha(String(moteur));
   const empreinteSeuils = sha(stable(seuils));
@@ -64,8 +75,16 @@ function empreintesControle(assemblage, { seuils, moteur, options = {} }) {
       sousTitres: cartons.filter((c) => c.scene === s.id || (c.fin > m.debut && c.debut < m.fin)),
     }));
   });
+  return { empreinteMoteur, empreinteSeuils, commun, propres, min };
+}
+
+function empreintesControle(assemblage, { seuils, moteur, options = {} }) {
+  const d = assemblage.donnees;
+  const { empreinteMoteur, empreinteSeuils, commun, propres, min } = composer(assemblage, { seuils, moteur, options });
   const scenes = {};
+  const parId = {};
   d.scenes.forEach((s, i) => {
+    parId[s.id] = propres[i];
     const m = min.scenes[i] || {};
     const suivante = min.scenes[i + 1];
     scenes[s.id] = sha(stable({
@@ -75,7 +94,94 @@ function empreintesControle(assemblage, { seuils, moteur, options = {} }) {
       suivante: suivante && suivante.entree > 0 ? propres[i + 1] : null,
     }));
   });
-  return { moteur: empreinteMoteur, seuils: empreinteSeuils, commun, scenes };
+  return { moteur: empreinteMoteur, seuils: empreinteSeuils, commun, scenes, propres: parId };
+}
+
+/** Ce qui ne touche que le son (volumes, partition) : retiré des données (changer un volume ne refait pas les images). */
+function sansReglagesSon(d) {
+  const x = { ...d };
+  if (x.musique) { x.musique = { ...x.musique }; delete x.musique.volume; delete x.musique.partition; }
+  if (x.voix) { x.voix = { ...x.voix }; delete x.voix.volume; }
+  if (x.bruitages) { x.bruitages = { ...x.bruitages }; delete x.bruitages.volume; }
+  return x;
+}
+
+/**
+ * Squelette de la page : la page assemblée sans ses scènes (sections et scripts remplacés par une marque), sans ses
+ * sources sonores, et ses données sans ce que les empreintes propres des scènes portent déjà (scènes, effets, milieux,
+ * obstacles et shaders d'une scène, cartons de sous-titres) ni les réglages du seul son. Tout ce que la page montre
+ * hors des scènes (styles, attributs de #pm-scene, une caméra qui enjamberait des scènes, moteur, démarrage) y reste.
+ */
+function squelettePage(assemblage) {
+  let h = String(assemblage.html || '');
+  for (const p of assemblage.parScene || []) {
+    if (p.section) h = h.split(p.section).join(`<!--pm-scene ${p.id}-->`);
+    for (const code of p.scripts || []) if (code) h = h.split(code).join('/*pm-script*/');
+  }
+  h = h.replace(/<script type="text\/plain" id="pm-son-[a-z0-9-]+">[^<]*<\/script>/g, '');
+  const d = assemblage.donnees || {};
+  const donnees = sansReglagesSon({
+    ...d,
+    scenes: null,
+    effets: (assemblage.effets || []).filter((e) => !e.scene),
+    milieux: (assemblage.milieux || []).filter((e) => !e.scene),
+    obstacles: (d.obstacles || []).filter((e) => !e.scene),
+    shaders: (d.shaders || []).filter((e) => !e.scene),
+    sousTitres: d.sousTitres ? { ...d.sousTitres, cartons: null } : null,
+  });
+  h = h.replace(/(<script type="application\/json" id="pm-donnees">)[\s\S]*?(<\/script>)/, (tout, a, b) => a + stable(donnees) + b);
+  return h;
+}
+
+/** Segments d'export alignés sur les scènes (minutage de la page : { duree, scenes: [{ id, debut }] }). */
+function decouperSegments(minutage, cadence, dureeMax = 10) {
+  const total = Math.round(minutage.duree * cadence);
+  const parSegment = Math.max(1, Math.round(dureeMax * cadence));
+  const scenes = minutage.scenes && minutage.scenes.length ? minutage.scenes : [{ id: null, debut: 0 }];
+  const premieres = [];
+  scenes.forEach((s, i) => {
+    const n = i === 0 ? 0 : Math.ceil(s.debut * cadence - 1e-6);
+    premieres.push(Math.min(total, Math.max(i ? premieres[i - 1] : 0, n)));
+  });
+  const segments = [];
+  scenes.forEach((s, i) => {
+    const a = premieres[i];
+    const b = i + 1 < scenes.length ? premieres[i + 1] : total;
+    if (b <= a) return;
+    const morceaux = Math.ceil((b - a) / parSegment);
+    const taille = Math.ceil((b - a) / morceaux);
+    for (let k = 0; k < morceaux; k++) segments.push({ scene: s.id, morceau: k, debut: a + k * taille, fin: Math.min(b, a + (k + 1) * taille) });
+  });
+  return segments;
+}
+
+function empreintesPixels(assemblage, { moteur, options = {}, segments, cadence, largeur, hauteur, extra = {} }) {
+  const d = assemblage.donnees;
+  // Sans les seuils : ils ne changent aucune image.
+  const { commun, propres, min } = composer(assemblage, { seuils: null, moteur, options });
+  const squelette = sha(squelettePage(assemblage));
+  const parScene = {};
+  d.scenes.forEach((s, i) => {
+    const m = min.scenes[i] || {};
+    parScene[s.id] = sha(stable({ commun, propre: propres[i], precedente: i > 0 && m.entree > 0 ? propres[i - 1] : null }));
+  });
+  // Scène inconnue du minutage de Node (ne devrait pas arriver) : rattachée à toute la page.
+  const page = sha(stable({ commun, propres }));
+  return segments.map((g) => sha(stable({
+    version: 1,
+    scene: g.scene,
+    controle: parScene[g.scene] || page,
+    squelette,
+    cadence,
+    taille: [largeur, hauteur],
+    premiere: g.debut,
+    images: g.fin - g.debut,
+    extra,
+  })));
+}
+
+function empreinteDerivee(pixels, encodage) {
+  return sha(stable({ pixels, encodage }));
 }
 
 /** Plages où les scènes ids sont visibles (minutage du moteur : { scenes: [{ id, debut, fin }], duree }), élargies, fusionnées. */
@@ -93,4 +199,4 @@ function plagesScenes(minutage, ids, marge = 0) {
   return fusion;
 }
 
-module.exports = { empreintesControle, plagesScenes, stable, sha };
+module.exports = { empreintesControle, plagesScenes, decouperSegments, empreintesPixels, empreinteDerivee, squelettePage, stable, sha };
