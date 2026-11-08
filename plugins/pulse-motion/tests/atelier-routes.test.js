@@ -13,7 +13,7 @@ const { dossierTemporaire } = require('./aide/temporaire.js');
 
 function requete(url, { methode = 'GET', type, corps } = {}) {
   return new Promise((resolve, reject) => {
-    const req = http.request(url, { method: methode, headers: type ? { 'Content-Type': type } : {} }, (res) => {
+    const req = http.request(url, { method: methode, headers: { ...(type ? { 'Content-Type': type } : {}), ...(methode !== 'GET' ? { Origin: new URL(url).origin } : {}) } }, (res) => {
       const morceaux = [];
       res.on('data', (d) => morceaux.push(d));
       res.on('end', () => {

@@ -73,7 +73,7 @@ test('choisir : un envoi venant d\'un autre site, ou qui n\'est pas du JSON, est
   assert.equal((await requete(url + 'envoyer', { methode: 'POST', corps, entetes: { Origin: 'https://exemple.fr' } })).statut, 403);
   assert.equal((await requete(url + 'envoyer', { methode: 'POST', corps, entetes: { 'Sec-Fetch-Site': 'cross-site' } })).statut, 403);
   assert.equal((await requete(url + 'envoyer', { methode: 'POST', corps, entetes: { Origin: 'null' } })).statut, 403);
-  assert.equal((await requete(url + 'envoyer', { methode: 'POST', corps, entetes: { 'Content-Type': 'text/plain' } })).statut, 415);
+  assert.equal((await requete(url + 'envoyer', { methode: 'POST', corps, entetes: { Origin: url.replace(/\/$/, ''), 'Content-Type': 'text/plain' } })).statut, 415);
   // La page attend toujours : un envoi légitime est encore accepté.
   assert.equal((await requete(url + 'envoyer', { methode: 'POST', corps, entetes: { Origin: url.replace(/\/$/, '') } })).statut, 200);
   const r = await fin;

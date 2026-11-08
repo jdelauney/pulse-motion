@@ -150,7 +150,7 @@ test('une erreur inattendue pendant le réassemblage n\'arrête pas l\'aperçu',
 
 function envoyer(url, corps, type = 'application/json') {
   return new Promise((resolve, reject) => {
-    const req = http.request(url, { method: 'POST', headers: { 'Content-Type': type } }, (res) => {
+    const req = http.request(url, { method: 'POST', headers: { 'Content-Type': type, Origin: new URL(url).origin } }, (res) => {
       res.resume();
       res.on('end', () => resolve(res.statusCode));
     });

@@ -43,7 +43,7 @@ function video({ piege = false } = {}) {
   fs.writeFileSync(path.join(v, 'personnages', 'decoupes', 'cuisinier.json'), JSON.stringify(DECOUPE));
   return v;
 }
-const poster = (url, corps) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corps) });
+const poster = (url, corps) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: new URL(url).origin }, body: JSON.stringify(corps) });
 
 test('routes de découpe : données, enregistrement refusé si invalide, hors d\'une vidéo', async () => {
   const v = video();

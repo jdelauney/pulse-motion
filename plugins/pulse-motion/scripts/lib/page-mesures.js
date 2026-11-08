@@ -8,6 +8,7 @@ const fs = require('node:fs');
 const http = require('node:http');
 const path = require('node:path');
 const { ouvrirSansFenetre } = require('./navigateur.js');
+const { garder } = require('./garde-locale.js');
 
 const CAPTURE = fs.readFileSync(path.join(__dirname, '..', '..', 'moteur', 'capture.js'), 'utf8');
 const TAILLE_MAX = 10 * 1024 * 1024;
@@ -42,8 +43,10 @@ function mesurerPage({ html, script, navigateur, delai = 60000, surPort, gpu = f
     let minuteur = null;
     let hote = null;
     const serveur = http.createServer((req, res) => {
-      // Une page web d'une autre adresse (rebinding DNS) ou sans le jeton ne peut ni lire la page ni répondre.
+      // Une page web d'une autre adresse (rebinding DNS) ou sans le jeton ne peut ni lire la page ni répondre. La garde
+      // commune ajoute l'origine obligatoire des envois, le type JSON et les en-têtes défensifs (lib/garde-locale.js).
       if (req.headers.host !== hote) { res.writeHead(403); res.end(); return; }
+      if (!garder(req, res, { port: serveur.address().port, types: [[/^\/pm-resultat\/[0-9a-f]+$/, ['application/json']]] })) return;
       if (req.method === 'POST') {
         if (req.url !== `/pm-resultat/${jeton}`) { res.writeHead(403); res.end(); return; }
         let corps = '';

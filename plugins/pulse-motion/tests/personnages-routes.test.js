@@ -13,7 +13,7 @@ const { dossierTemporaire } = require('./aide/temporaire.js');
 function requete(url, { methode = 'GET', corps, type = 'application/json' } = {}) {
   return new Promise((resolve, reject) => {
     const u = new URL(url);
-    const r = http.request({ hostname: u.hostname, port: u.port, path: u.pathname + u.search, method: methode, headers: corps === undefined ? {} : { 'Content-Type': type } }, (res) => {
+    const r = http.request({ hostname: u.hostname, port: u.port, path: u.pathname + u.search, method: methode, headers: { ...(corps === undefined ? {} : { 'Content-Type': type }), ...(methode !== 'GET' ? { Origin: new URL(url).origin } : {}) } }, (res) => {
       let texte = '';
       res.setEncoding('utf8');
       res.on('data', (d) => { texte += d; });

@@ -6,7 +6,9 @@
  *
  * Écoute seulement 127.0.0.1. Surveille deroule.json, scenes/ et assets/ ; à chaque
  * changement, réassemble et prévient la page (événement « recharger » ou « erreur »).
- * Le port retenu est écrit dans .pulse-motion/etat.json.
+ * Le port retenu est écrit dans .pulse-motion/etat.json, et retiré à l'arrêt (Ctrl+C, SIGTERM).
+ * Toute requête passe d'abord par la garde commune (lib/garde-locale.js) : hôte, origine des envois, types déclarés
+ * par route (TYPES_ECRITURE), en-têtes défensifs.
  */
 const fs = require('node:fs');
 const http = require('node:http');
@@ -19,8 +21,23 @@ const { creerRoutesAtelier } = require('./lib/routes-atelier.js');
 const { creerRoutesPersonnages } = require('./lib/routes-personnages.js');
 const { whisperParDefaut } = require('./lib/whisper.js');
 const { trouverFfmpeg } = require('./lib/ffmpeg.js');
+const { garder } = require('./lib/garde-locale.js');
+const { ecrireJSON } = require('./lib/fichiers.js');
 
-const IGNORES = /^(sortie|\.pulse-motion|\.historique|\.git)([\\/]|$)/;
+// Les fichiers temporaires des écritures atomiques (.<nom>.<pid>-<n>.part) ne déclenchent pas de réassemblage.
+const IGNORES = /^(sortie|\.pulse-motion|\.historique|\.git)([\\/]|$)|\.part$/;
+
+/** Routes d'écriture de l'aperçu et types de contenu acceptés (le premier motif qui correspond l'emporte). */
+const TYPES_ECRITURE = [
+  ['/_pm/controle', ['application/json']],
+  ['/_pm/export', ['video/mp4']],
+  ['/_pm/export-etat', ['application/json']],
+  ['/_pm/planche-fin', ['application/json']],
+  [/^\/_pm\/planche\/[a-z0-9-]+\.png$/, ['image/png']],
+  [/^\/_pm\/atelier\/(reglages|recette|reglages-shader)$/, ['application/json']],
+  [/^\/_pm\/personnages\/(enregistrer|decoupe\/enregistrer)$/, ['application/json']],
+  ['/_pm/voix', ['audio/wav']],
+];
 const ESSAIS_PORT = 20;
 
 function echapper(t) {
@@ -44,14 +61,22 @@ function injecterApercu(html, erreurs) {
   return html.replace('</head>', `${script}\n</head>`);
 }
 
+/** Écrit (ou retire, si apercu est null) l'aperçu dans .pulse-motion/etat.json, sans toucher au reste de l'état. */
 function ecrireEtat(dossier, apercu) {
-  const dossierEtat = path.join(dossier, '.pulse-motion');
-  const fichier = path.join(dossierEtat, 'etat.json');
-  fs.mkdirSync(dossierEtat, { recursive: true });
+  const fichier = path.join(dossier, '.pulse-motion', 'etat.json');
   let etat = {};
   try { etat = JSON.parse(fs.readFileSync(fichier, 'utf8')); } catch { /* premier lancement */ }
-  etat.apercu = apercu;
-  fs.writeFileSync(fichier, JSON.stringify(etat, null, 2));
+  if (apercu) etat.apercu = apercu;
+  else if (etat.apercu) delete etat.apercu;
+  else return;
+  ecrireJSON(fichier, etat);
+}
+
+/** Retire l'aperçu de l'état seulement s'il est bien celui de ce processus (un autre aperçu a pu le remplacer). */
+function retirerEtat(dossier) {
+  let etat;
+  try { etat = JSON.parse(fs.readFileSync(path.join(dossier, '.pulse-motion', 'etat.json'), 'utf8')); } catch { return; }
+  if (etat.apercu && etat.apercu.pid === process.pid) ecrireEtat(dossier, null);
 }
 
 function ecouter(serveur, hote, port) {
@@ -114,22 +139,17 @@ async function demarrerApercu({ dossier, port = 4321, dossierStyles, dossierEffe
         res.end('Rapport illisible');
         return;
       }
-      fs.mkdirSync(path.dirname(rapportPage), { recursive: true });
-      fs.writeFileSync(rapportPage, JSON.stringify({ debordements }, null, 2));
+      ecrireJSON(rapportPage, { debordements });
       res.writeHead(204);
       res.end();
     });
   }
 
   const serveur = http.createServer((req, res) => {
-    // Seuls 127.0.0.1 et localhost sont acceptés : une page d'un autre site rebranchée sur
-    // 127.0.0.1 (DNS rebinding) ne peut ni lire la vidéo ni écrire de rapport.
+    // Garde commune : seuls 127.0.0.1 et localhost, envois venus de la page elle-même, types déclarés (TYPES_ECRITURE).
+    // Une page d'un autre site (DNS rebinding, formulaire, script ou image inclus) ne peut ni lire ni écrire.
     const portEcoute = serveur.address() && serveur.address().port;
-    if (![`127.0.0.1:${portEcoute}`, `localhost:${portEcoute}`].includes(String(req.headers.host || '').toLowerCase())) {
-      res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('Accès refusé');
-      return;
-    }
+    if (!garder(req, res, { port: portEcoute, types: TYPES_ECRITURE })) return;
     const url = new URL(req.url, 'http://localhost');
     if (req.method === 'GET' && url.pathname === '/') {
       const corps = dernier.ok ? injecterApercu(dernier.html, dernier.erreurs) : pageErreur(dernier.erreurs);
@@ -160,7 +180,7 @@ async function demarrerApercu({ dossier, port = 4321, dossierStyles, dossierEffe
   let portRetenu = null;
   for (let p = port, essai = 0; essai < ESSAIS_PORT; essai++, p++) {
     try { portRetenu = await ecouter(serveur, '127.0.0.1', p); break; } catch (e) {
-      if (e.code !== 'EADDRINUSE') throw e;
+      if (e.code !== 'EADDRINUSE') throw new Error(`L'aperçu n'a pas pu démarrer : l'ordinateur refuse le port ${p} (${e.code || e.message}).`);
     }
   }
   if (portRetenu === null) {
@@ -198,6 +218,7 @@ async function demarrerApercu({ dossier, port = 4321, dossierStyles, dossierEffe
     clearInterval(battement);
     surveillant.close();
     clients.forEach((res) => res.end());
+    try { retirerEtat(projet); } catch { /* l'état sera jugé périmé : le processus est arrêté */ }
     return new Promise((resolve) => serveur.close(() => resolve()));
   }
 
@@ -221,9 +242,9 @@ async function lancerApercu({ dossier, port, ouvrir = false, etat, demarrer = de
     if (ouvrir) ouvrirUrl(actuel.url);
     return { url: actuel.url, deja: true };
   }
-  const { url } = await demarrer({ dossier, port });
+  const { url, fermer } = await demarrer({ dossier, port });
   if (ouvrir) ouvrirUrl(url);
-  return { url, deja: false };
+  return fermer ? { url, deja: false, fermer } : { url, deja: false };
 }
 
 if (require.main === module) {
@@ -235,14 +256,25 @@ if (require.main === module) {
     console.error('Usage : node scripts/apercu.js <dossier-du-projet> [--port 4321] [--ouvrir]');
     process.exit(2);
   }
-  lancerApercu({ dossier, port, ouvrir: args.includes('--ouvrir') }).then(({ url, deja }) => {
+  lancerApercu({ dossier, port, ouvrir: args.includes('--ouvrir') }).then(({ url, deja, fermer }) => {
     console.log(deja ? `Aperçu déjà ouvert : ${url}` : `Aperçu : ${url}`);
     // Aperçu déjà actif : ce processus n'a rien à servir.
     if (deja) process.exit(0);
+    // Arrêt demandé (Ctrl+C, fin de la session) : l'aperçu est retiré de l'état avant de quitter.
+    let arret = false;
+    const arreter = (signal) => {
+      if (arret) return;
+      arret = true;
+      const sortir = () => process.exit(signal === 'SIGINT' ? 130 : 143);
+      fermer().then(sortir, sortir);
+      setTimeout(sortir, 2000).unref();
+    };
+    process.once('SIGINT', arreter);
+    process.once('SIGTERM', arreter);
   }, (e) => {
     console.error(e.message);
     process.exit(1);
   });
 }
 
-module.exports = { demarrerApercu, lancerApercu, injecterApercu, ouvrirNavigateur };
+module.exports = { demarrerApercu, lancerApercu, injecterApercu, ouvrirNavigateur, TYPES_ECRITURE, ecrireEtat };

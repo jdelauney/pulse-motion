@@ -27,7 +27,7 @@ function projet() {
 
 function requete(url, { methode = 'GET', corps } = {}) {
   return new Promise((resolve, reject) => {
-    const req = http.request(url, { method: methode, headers: corps !== undefined ? { 'Content-Type': 'application/json' } : {} }, (res) => {
+    const req = http.request(url, { method: methode, headers: { ...(corps !== undefined ? { 'Content-Type': 'application/json' } : {}), ...(methode !== 'GET' ? { Origin: new URL(url).origin } : {}) } }, (res) => {
       let texte = '';
       res.setEncoding('utf8');
       res.on('data', (d) => { texte += d; });
