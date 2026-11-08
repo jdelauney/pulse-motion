@@ -29,7 +29,7 @@
  *   pulse-motion style nouveau <nom> [--depuis <style>] | verifier <nom> | planche <nom> [--scenes a,b] [--ratio r] [--ton t] [--textes exemple|maximum] [--ouvrir]   style personnel
  *   pulse-motion glossaire <dossier> | glossaire noter <dossier> "<terme>" "<sens>" ["<à éviter>"]   mots du métier (charte/glossaire.md)
  *   pulse-motion lexique [noter "<terme>" "<phrase>" "<comme…>" "<commande>"]   mots de l'outil expliqués à la personne
- *   pulse-motion consignes <skill>        affiche les consignes d'un skill (ex. creer)
+ *   pulse-motion consignes <skill> [<section>[,<section>]]   consignes d'un skill, ou ses règles et une section (ex. creer fabrication)
  */
 const fs = require('node:fs');
 const path = require('node:path');
@@ -119,8 +119,18 @@ function lancer(args) {
   }
   if (commande === 'consignes') {
     const nom = reste[0] || '';
-    if (!/^[a-z0-9-]+$/.test(nom)) { console.error('Usage : pulse-motion consignes <skill> (ex. creer)'); return 2; }
-    return afficherFichier(path.join(RACINE, 'skills', nom, 'SKILL.md'), `Consignes « ${nom} »`);
+    const sections = reste[1];
+    if (!/^[a-z0-9-]+$/.test(nom) || (sections !== undefined && !/^[a-z0-9-]+(,[a-z0-9-]+)*$/.test(sections))) {
+      console.error('Usage : pulse-motion consignes <skill> [<section>[,<section>]] (ex. creer fabrication)');
+      return 2;
+    }
+    const fichier = path.join(RACINE, 'skills', nom, 'SKILL.md');
+    if (sections === undefined || !fs.existsSync(fichier)) return afficherFichier(fichier, `Consignes « ${nom} »`);
+    // Règles et sections demandées seulement (spec Rapidité § 5.4.3).
+    const r = require('./lib/consignes.js').sectionsConsignes(fs.readFileSync(fichier, 'utf8'), sections.split(','));
+    if (!r.ok) { console.error(r.message); return 2; }
+    process.stdout.write(r.texte);
+    return 0;
   }
   console.error([
     'Usage : pulse-motion <commande> …',
@@ -134,7 +144,7 @@ function lancer(args) {
     '  whisper [installer [--modele small]]   transcription des voix',
     '  outils                   état de l\'ordinateur (ce qui est prêt, ce qui manque)',
     '  musique ecouter [dossier]   musique seule dans sortie/musique.wav',
-    '  reference <nom>          scene <style> <nom>      effet <nom>      consignes <skill>',
+    '  reference <nom>          scene <style> <nom>      effet <nom>      consignes <skill> [<section>]',
     '  mouvements liste [--categorie <id>] | chercher <mots…> | afficher <n° ou nom> | reference | choisir [--categorie <id>] [--ouvrir] [--delai <minutes>]   [--json]',
     '  personnages liste|afficher <nom>|verifier|planche <nom> [--dessin <d>]|planche --dessin <d> --visage|atelier [<nom>] [--dessin <d>] [--decoupe <nom>] [--bibliotheque]|analyser <svg>|decouper <nom>|renommer-couleur <dessin> <ancien> <nouveau>   poses, clips et gabarits des personnages',
     '  modeles liste | afficher <id> | trouver "<sujet>" | exemple <id> <dossier>   modèles de vidéo et leurs exemples finis',
