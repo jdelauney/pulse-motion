@@ -400,7 +400,7 @@ test('descriptions-renvois-presents : chaque renvoi vers une autre compétence s
   };
   for (const [s, cibles] of Object.entries(RENVOIS)) {
     const d = descriptionDe(s);
-    for (const c of cibles) assert.match(d, new RegExp(`(^|[\s/:])${c}\b`), `${s} : renvoi vers ${c}`);
+    for (const c of cibles) assert.match(d, new RegExp(`(^|[\\s/:])${c}(?![a-z-])`), `${s} : renvoi vers ${c}`);
   }
 });
 

@@ -9,7 +9,7 @@ Protocole de mesure de la spec Rapidité (`docs/superpowers/specs/2026-11-08-rap
 | `node outils/mesures/jetons.js <session.jsonl> [--json]` | Jetons d'une séance, par modèle et par agent (entrée, cache créé, cache relu, sortie), appels d'outils, temps et appels avant la première phrase, commandes `pulse-motion` lancées, bloc de fin. Aucun coût en euros : il se calcule au moment du bilan. |
 | `node outils/mesures/machine.js` | La machine qui mesure : système, processeur, fils, mémoire, carte graphique, Chrome, ffmpeg, Node, Claude Code. |
 
-Tests : `node --test outils/mesures/`.
+Tests : `node --test outils/mesures/*.test.js`.
 
 ## Les témoins
 

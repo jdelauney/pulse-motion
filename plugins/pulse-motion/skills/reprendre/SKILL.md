@@ -1,5 +1,5 @@
 ---
-description: Reprendre la vidéo Pulse Motion du dossier là où elle s'était arrêtée (« où en est ma vidéo ? », « on reprend », « rouvre ma vidéo », « continue la vidéo »). Pour une nouvelle vidéo, ou pour voir l'exemple fini d'un modèle (« montre-moi un exemple de pitch »), c'est /pulse-motion:creer.
+description: "Reprendre la vidéo Pulse Motion du dossier là où elle s'était arrêtée (« où en est ma vidéo ? », « on reprend », « continue la vidéo »). Nouvelle vidéo, ou exemple fini d'un modèle (« montre-moi un exemple de pitch ») : /pulse-motion:creer."
 allowed-tools: Bash(pulse-motion *) Bash(node *) Read Glob Grep Write Edit Agent AskUserQuestion
 ---
 

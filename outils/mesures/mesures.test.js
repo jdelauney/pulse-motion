@@ -1,5 +1,5 @@
 "use strict";
-// Tests des outils de mesure (spec Rapidité § 5.1). Lancer : node --test outils/mesures/
+// Tests des outils de mesure (spec Rapidité § 5.1). Lancer : node --test outils/mesures/*.test.js
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
