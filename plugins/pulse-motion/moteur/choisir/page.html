@@ -21,26 +21,29 @@
   .note { grid-column: 2; display: none; margin-top: 4px; padding: 4px 8px; border-radius: 6px; border: 1px solid #444; background: #1f1c25; color: #eee; }
   .carte.cochee .note { display: block; }
   #droite { display: grid; grid-template-rows: 1fr auto; min-height: 0; }
-  #apercu { width: 100%; height: 100%; border: 0; background: #000; }
+  #apercu { width: 100%; height: 100%; border: 0; background: #000; pointer-events: none; }
   #envoi { display: flex; gap: 12px; align-items: center; padding: 12px 16px; border-top: 1px solid #333; }
   #selection { flex: 1; color: #bbb; }
   button { padding: 10px 18px; border-radius: 999px; border: 0; font-weight: 600; background: linear-gradient(90deg, #ff6b35, #8e44ad); color: #fff; cursor: pointer; }
   button:disabled { opacity: .5; cursor: default; }
   #merci { display: none; position: fixed; inset: 0; place-items: center; background: #15131aee; font-size: 22px; text-align: center; padding: 24px; }
+  #erreur { color: #ff8a65; }
+  #erreur:empty { display: none; }
+  :focus-visible { outline: 2px solid #c9a6f0; outline-offset: 2px; }
 </style>
 </head>
 <body>
 <div id="liste">
   <h1>Choisir des mouvements</h1>
-  <p class="aide">Cliquez sur un mouvement pour le voir à droite. Cochez ceux qui vous plaisent ; dites, si vous voulez, pour quoi (« pour le titre »). Puis cliquez sur « Envoyer à Claude ».</p>
-  <input type="search" id="recherche" placeholder="Chercher : pop-in, masque, #042…" autocomplete="off">
+  <p class="aide">Passez la souris sur un mouvement (ou allez-y avec la touche Tab) pour le voir jouer à droite. Cochez ceux qui vous plaisent ; dites, si vous voulez, pour quoi (« pour le titre »). Puis cliquez sur « Envoyer à Claude ».</p>
+  <input type="search" id="recherche" placeholder="Chercher : pop-in, masque, #042…" autocomplete="off" aria-label="Chercher un mouvement">
   <div id="cartes"></div>
 </div>
 <div id="droite">
-  <iframe id="apercu" src="/video" title="Aperçu du mouvement"></iframe>
-  <div id="envoi"><span id="selection">Aucun mouvement coché.</span><button id="envoyer" type="button" disabled>Envoyer à Claude</button></div>
+  <iframe id="apercu" src="/video" title="Aperçu du mouvement" tabindex="-1" aria-hidden="true"></iframe>
+  <div id="envoi"><span id="selection" role="status">Aucun mouvement coché.</span><span id="erreur" role="alert"></span><button id="envoyer" type="button" disabled>Envoyer à Claude</button></div>
 </div>
-<div id="merci">C'est envoyé. Vous pouvez fermer cet onglet et revenir à Claude.</div>
+<div id="merci" role="status">C'est envoyé. Vous pouvez fermer cet onglet et revenir à Claude.</div>
 <script>
 (function () {
   'use strict';
@@ -102,6 +105,7 @@
     var note = document.createElement('input');
     note.className = 'note';
     note.placeholder = 'Pour quoi ? (facultatif)';
+    note.setAttribute('aria-label', 'Pour quoi utiliser ' + m.nom + ' ? (facultatif)');
     note.addEventListener('click', function (e) { e.preventDefault(); note.focus(); });
     note.addEventListener('input', function () { if (choisis.has(m.no)) choisis.set(m.no, note.value); });
     coche.addEventListener('change', function () {
@@ -135,11 +139,25 @@
   document.getElementById('envoyer').addEventListener('click', function () {
     var choix = [];
     choisis.forEach(function (note, no) { choix.push({ no: no, note: note }); });
+    var erreur = document.getElementById('erreur');
+    var bouton = document.getElementById('envoyer');
+    erreur.textContent = '';
+    bouton.disabled = true;
     fetch('/envoyer', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ choix: choix }) })
-      .then(function (r) { if (r.ok) document.getElementById('merci').style.display = 'grid'; });
+      .then(function (r) {
+        if (!r.ok) throw new Error(String(r.status));
+        document.getElementById('merci').style.display = 'grid';
+      })
+      .catch(function () {
+        // Délai passé ou commande arrêtée : la page ne parle plus à Claude.
+        erreur.textContent = 'Envoi impossible : Claude n’attend plus ce choix. Dites-lui les numéros cochés, ou demandez-lui de rouvrir la page.';
+        bouton.disabled = !choisis.size;
+      });
   });
 
-  if (DONNEES.mouvements.length) { plage = DONNEES.mouvements[0]; depart = performance.now(); }
+  // Mouvements réduits demandés : rien ne joue avant qu'on désigne un mouvement.
+  var reduit = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (DONNEES.mouvements.length && !reduit) { plage = DONNEES.mouvements[0]; depart = performance.now(); }
   requestAnimationFrame(boucle);
 })();
 </script>

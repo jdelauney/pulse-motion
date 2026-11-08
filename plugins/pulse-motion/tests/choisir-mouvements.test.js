@@ -10,10 +10,10 @@ const { charger } = require('../scripts/mouvements.js');
 const { validerDeroule } = require('../scripts/lib/deroule.js');
 const { dossierTemporaire } = require('./aide/temporaire.js');
 
-function requete(url, { methode = 'GET', corps, hote } = {}) {
+function requete(url, { methode = 'GET', corps, hote, entetes = {} } = {}) {
   return new Promise((resoudre, rejeter) => {
     const u = new URL(url);
-    const req = http.request({ hostname: u.hostname, port: u.port, path: u.pathname, method: methode, headers: { ...(hote ? { Host: hote } : {}), ...(corps ? { 'Content-Type': 'application/json' } : {}) } }, (res) => {
+    const req = http.request({ hostname: u.hostname, port: u.port, path: u.pathname, method: methode, headers: { ...(hote ? { Host: hote } : {}), ...(corps ? { 'Content-Type': 'application/json' } : {}), ...entetes } }, (res) => {
       let texte = '';
       res.on('data', (m) => { texte += m; });
       res.on('end', () => resoudre({ statut: res.statusCode, texte }));
@@ -53,7 +53,9 @@ test('choisir : pages servies, autre hôte refusé, choix envoyés avec leurs no
   assert.match(page.texte, /"no":"001"/);
   assert.equal((await requete(url + 'video')).statut, 200);
   assert.equal((await requete(url, { hote: 'exemple.fr' })).statut, 403);
-  const envoi = await requete(url + 'envoyer', { methode: 'POST', corps: { choix: [{ no: '001', note: 'pour le titre' }, { no: '006' }, { no: '999' }] } });
+  const corps = { choix: [{ no: '001', note: 'pour le titre' }, { no: '006' }, { no: '999' }] };
+  const origine = url.replace(/\/$/, '');
+  const envoi = await requete(url + 'envoyer', { methode: 'POST', corps, entetes: { Origin: origine, 'Sec-Fetch-Site': 'same-origin' } });
   assert.equal(envoi.statut, 200);
   const r = await fin;
   assert.equal(r.ok, true);
@@ -61,6 +63,21 @@ test('choisir : pages servies, autre hôte refusé, choix envoyés avec leurs no
     { no: '001', nom: 'Apparition rebondie', metier: 'Pop-in', note: 'pour le titre' },
     { no: '006', nom: 'Révélé par masque', metier: 'Mask reveal', note: '' },
   ]);
+});
+
+test('choisir : un envoi venant d\'un autre site, ou qui n\'est pas du JSON, est refusé et n\'arrête pas la page', async () => {
+  let url;
+  const fin = choisirMouvements({ categorie: 'entrees', delai: 20000, surPret: (u) => { url = u; } });
+  while (!url) await new Promise((r) => setTimeout(r, 20));
+  const corps = { choix: [{ no: '001' }] };
+  assert.equal((await requete(url + 'envoyer', { methode: 'POST', corps, entetes: { Origin: 'https://exemple.fr' } })).statut, 403);
+  assert.equal((await requete(url + 'envoyer', { methode: 'POST', corps, entetes: { 'Sec-Fetch-Site': 'cross-site' } })).statut, 403);
+  assert.equal((await requete(url + 'envoyer', { methode: 'POST', corps, entetes: { Origin: 'null' } })).statut, 403);
+  assert.equal((await requete(url + 'envoyer', { methode: 'POST', corps, entetes: { 'Content-Type': 'text/plain' } })).statut, 415);
+  // La page attend toujours : un envoi légitime est encore accepté.
+  assert.equal((await requete(url + 'envoyer', { methode: 'POST', corps, entetes: { Origin: url.replace(/\/$/, '') } })).statut, 200);
+  const r = await fin;
+  assert.deepEqual(r.choix.map((c) => c.no), ['001']);
 });
 
 test('choisir : catégorie inconnue', async () => {
