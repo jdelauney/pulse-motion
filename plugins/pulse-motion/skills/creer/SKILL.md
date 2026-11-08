@@ -39,7 +39,7 @@ Puis une ronde :
 3. **Parcours** : Rapide (Recommandé) – « je valide seulement le déroulé » · Accompagné – « je valide aussi le style et la vidéo finale ».
 4. **À ajouter** (choix multiple) : mon logo et mes couleurs · rien pour l'instant.
 
-Puis une deuxième ronde, **Le son** (lire d'abord `pulse-motion reference audio`) :
+Puis une deuxième ronde, **Le son** (lire d'abord `pulse-motion reference audio`, et `pulse-motion reference audio/musique` pour décrire les ambiances) :
 
 1. **Musique** : « Une musique composée pour la vidéo (Recommandé) » · « J'ai un fichier » · « Pas de musique ». L'ambiance se choisit selon le genre (formation → `calme` ou `inspirant`, produit → `corporate` ou `tech`, storytelling → `inspirant` ou `suspense`, social → `entrainant`) et se décrit en trois mots, jamais par son nom technique.
 2. **Voix** : « Je l'enregistre (Recommandé) » · « J'ai un fichier » · « Pas de voix ».
@@ -94,10 +94,24 @@ Mouvements nommés : quand la personne cite un mouvement ou un numéro du dictio
    - La personne enregistrera elle-même : `pulse-motion voix provisoire .` (la voix de l'ordinateur lit les textes, pour caler l'animation ; elle sera remplacée). Échec « aucune voix du système » : le dire, les sous-titres se répartiront sur la scène.
    - Elle a un fichier : le copier dans `assets/`. Une prise par scène : `pulse-motion voix importer assets/<fichier> --scene <id> .`. Un enregistrement de toute la vidéo : `pulse-motion voix importer assets/<fichier> .` (découpé par scène, transcription requise) ; s'il a été refusé faute de transcription et qu'elle vient d'être installée, relancer `pulse-motion voix importer assets/<fichier> .` ; sans transcription, se replier sur `pulse-motion voix provisoire .` et proposer d'enregistrer dans l'aperçu. Un `avertissement` (scène mal reconnue) se dit en une phrase.
    - Prises déjà là quand la transcription arrive : `pulse-motion voix transcrire .`.
-1. Lancer **un agent `animateur` par scène, tous dans le même message** (en parallèle). À chacun : dossier, scène (id, fichier, durée, rythme, intention, textes), style, format, scène toute faite conseillée (son `type`). C'est vous qui décidez quelles scènes reçoivent un effet de particules : au plus deux effets simultanés à l'écran, et en formation courte un ou deux effets dans toute la vidéo. Dire à l'animateur de ces scènes quel effet poser (étincelles sur un chiffre clé, confettis en conclusion) ; les autres n'en ajoutent pas. Donner aussi à chaque animateur les mouvements demandés pour sa scène (`scenes[].mouvements`, avec l'élément visé). Avec du son : donner aussi le texte dit de la scène et dire si elle a une prise de voix (ancres `mot:` permises) ; demander 1 à 3 bruitages (`data-son`) sur les éléments clés.
-2. Un agent qui a **composé** la scène au lieu de partir de la scène toute faite le dit : retirer alors `type` de cette scène dans `deroule.json`.
-3. `pulse-motion assembler .` puis `pulse-motion controler .`.
-4. `pulse-motion controler .` corrige seul les cas sûrs (typographie française, majuscules accentuées, durée trop courte pour lire, pause finale, temps mort en fin de scène, texte qui déborde réduit jusqu'à 80 % ; liste complète : `pulse-motion reference controles`) : lire `corrections` dans `sortie/controle.json` et les dire en une phrase à la personne (« J'ai allongé la scène 3 d'une seconde pour laisser le temps de lire. »). Erreurs ou alertes restantes : les corriger (dans la scène, ou dans le déroulé pour une durée), relancer assembler et controler. Deux tours au plus ; ce qui reste est dit à la personne.
+1. **Consigne de chaque animateur** : dossier, scène (id, fichier, durée, rythme, intention, textes), style, format, scène toute faite conseillée (son `type`). C'est vous qui décidez quelles scènes reçoivent un effet de particules : au plus deux effets simultanés à l'écran, et en formation courte un ou deux effets dans toute la vidéo. Dire à l'animateur de ces scènes quel effet poser (étincelles sur un chiffre clé, confettis en conclusion) ; les autres n'en ajoutent pas. Donner aussi à chaque animateur les mouvements demandés pour sa scène (`scenes[].mouvements`, avec l'élément visé). Avec du son : donner aussi le texte dit de la scène et dire si elle a une prise de voix (ancres `mot:` permises) ; demander 1 à 3 bruitages (`data-son`) sur les éléments clés.
+2. **Modèle de l'animateur**, passé à l'appel (paramètre `model`) :
+
+   | La scène | Modèle passé à l'appel |
+   |---|---|
+   | Un `type`, sans effet de particules, personnage, fond ni transition par shader, caméra narrative ; au plus 3 mouvements nommés | `sonnet` |
+   | Composée (sans `type`), ou avec effet, personnage, shader, caméra, partition calée sur la scène | aucun paramètre (modèle de la session) |
+   | Scène témoin ; seconde écriture d'une scène qui garde une erreur | aucun paramètre |
+
+   Jamais un modèle plus cher que celui de la session : si la session tourne déjà en Sonnet ou en Haiku, aucun paramètre. Jamais `haiku`.
+3. **Lancer les animateurs.** Moins de 6 scènes : un agent par scène, tous dans le même message (en parallèle). 6 scènes ou plus, en deux vagues :
+   - **Scènes témoins** : deux agents dans le même message, l'ouverture (la première scène) et la plus différente d'elle ou la plus risquée (composée, à effet, à personnage, au texte le plus long) ; jamais deux scènes du même `type`.
+   - `pulse-motion planche . <id1>,<id2>`, regarder soi-même `sortie/planche/` (avec `Read`), corriger si besoin ; les scènes pas encore écrites ne gênent pas.
+   - **Grammaire** : d'après la planche, 4 à 6 lignes « Grammaire de la vidéo » qui disent les choix de cette vidéo dans le style (titres, listes, chiffre clé, accent, marges, transitions).
+   - **Seconde vague** : toutes les autres scènes, dans le même message ; aux seules scènes **composées**, les chemins des deux témoins (marges, tailles, rythme d'entrée, couleurs à reprendre) et la note, telle quelle.
+4. Un agent qui a **composé** la scène au lieu de partir de la scène toute faite le dit : retirer alors `type` de cette scène dans `deroule.json`.
+5. `pulse-motion assembler .` puis `pulse-motion controler .`.
+6. `pulse-motion controler .` corrige seul les cas sûrs (typographie, durées, pause finale, texte qui déborde ; liste complète : `pulse-motion reference controles`) : lire `corrections` dans `sortie/controle.json` et les dire en une phrase à la personne (« J'ai allongé la scène 3 d'une seconde pour laisser le temps de lire. »). Erreurs ou alertes restantes : les corriger (dans la scène, ou dans le déroulé pour une durée), relancer assembler et controler. Une scène écrite en `sonnet` qui garde une erreur après ce premier tour : la faire réécrire par un agent sans paramètre de modèle. Deux tours au plus ; ce qui reste est dit à la personne.
 
 ## 4. Aperçu
 
