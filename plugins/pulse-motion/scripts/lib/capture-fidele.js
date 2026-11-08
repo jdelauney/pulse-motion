@@ -20,18 +20,22 @@ const PREPARER = `(async function () {
     + ' #pm-lecteur, #pm-bandeau { display: none !important; }';
   document.head.appendChild(style);
   document.documentElement.classList.add('pm-export');
+  // Horloge réelle gardée pour le profil : en mode capture, performance.now suit le temps de la vidéo.
+  window.__pmMaintenant = performance.now.bind(performance);
   M.modeCapture(true);
   var scenes = ((M.minutage && M.minutage.scenes) || []).map(function (s) { return { id: s.id, debut: s.debut, fin: s.fin, entree: s.entree }; });
   return { duree: M.duree, scenes: scenes };
 })()`;
 
-// Instant t : temps passés dans M.seek et dans la préparation des particules, mesurés dans la page (profil d'export).
+// Instant t : temps passés dans M.seek et dans la préparation des particules, mesurés dans la page à l'horloge réelle
+// (profil d'export).
 const instant = (t) => `(async function () {
-  var a = performance.now();
+  var maintenant = window.__pmMaintenant;
+  var a = maintenant();
   await M.seek(${Number(t)});
-  var b = performance.now();
+  var b = maintenant();
   if (M.particules && M.particules.preparerCapture) await M.particules.preparerCapture();
-  return [b - a, performance.now() - b];
+  return [b - a, maintenant() - b];
 })()`;
 
 // Son de la page (mixage du moteur) en WAV base64, gardé dans la page puis lu par morceaux.

@@ -346,9 +346,24 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
       if (controle.signal.aborted) throw err;
       avertissements.push('Le son n\'a pas pu être préparé : vidéo exportée sans son.');
     }
+    // Son encodé pendant les captures (ffmpeg dans son propre processus).
+    let erreurSon = null;
+    const encodageSon = son && son.wav ? (async () => {
+      const wav = path.join(travail, 'son.wav');
+      const piste = path.join(travail, 'son.m4a');
+      fs.writeFileSync(wav, son.wav);
+      try {
+        await P.mesurer('encodageSon', () => F.encoderSon({ ffmpeg: outil.chemin, wav, duree: total / cadence, sortie: piste, signal: controle.signal }));
+        return piste;
+      } catch (err) {
+        erreurSon = err;
+        return null;
+      }
+    })() : Promise.resolve(null);
     travaux.push(arreterSurErreur(travailleur(0)));
     const issues = await Promise.allSettled(travaux);
     travaux.length = 0;
+    const audio = await encodageSon;
     const echec = issues.find((i) => i.status === 'rejected' && !/export annulé/.test(i.reason && i.reason.message));
     if (echec) throw echec.reason;
     if (controle.signal.aborted) throw new Error('export annulé');
@@ -356,37 +371,28 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
     for (const [n, png] of temoins) if (!png) temoins.set(n, await pages[0].capturer(n / cadence, P.ajouter));
     for (const c of [...captures]) await fermer(c);
 
-    let audio = null;
-    if (son && son.wav) {
-      const wav = path.join(travail, 'son.wav');
-      const piste = path.join(travail, 'son.m4a');
-      fs.writeFileSync(wav, son.wav);
-      try {
-        await P.mesurer('encodageSon', () => F.encoderSon({ ffmpeg: outil.chemin, wav, duree: total / cadence, sortie: piste, signal: controle.signal }));
-        audio = piste;
-      } catch (err) {
-        if (controle.signal.aborted) throw err;
-        avertissements.push('Le son n\'a pas pu être encodé : vidéo exportée sans son.');
-      }
-    }
+    if (erreurSon) avertissements.push('Le son n\'a pas pu être encodé : vidéo exportée sans son.');
     const avertissement = avertissements.length ? avertissements.join(' ') : undefined;
 
     await P.mesurer('assemblage', () => F.assemblerSegments({ ffmpeg: outil.chemin, segments: fichiers, sortie: partiel, audio }));
     await P.mesurer('verifications', async () => {
-      // Le fichier final garde un décodage complet : la garantie de lecture.
-      const s = await F.sonder({ ffprobe: outil.cheminProbe, fichier: partiel });
+      // Le fichier final garde un décodage complet : la garantie de lecture. Sonie et images témoins lues en même temps.
+      // ebur128 ne mesure rien sous 400 ms (un bloc) : la sonie d'une vidéo plus courte n'est pas vérifiée.
+      const sonie = audio && typeof son.sonie === 'number' && total / cadence >= 0.4;
+      const [s, m, lues] = await Promise.all([
+        F.sonder({ ffprobe: outil.cheminProbe, fichier: partiel }),
+        sonie ? F.mesurerSonie({ ffmpeg: outil.chemin, fichier: partiel }) : null,
+        Promise.all([...temoins.keys()].map((n) => F.extraireImage({ ffmpeg: outil.chemin, fichier: partiel, t: Math.max(0, n / cadence - 0.001) }))),
+      ]);
       if (s.video !== 'h264' || s.largeur !== largeur || s.hauteur !== hauteur) throw new Error('la vidéo n\'a pas la piste ou la taille attendues');
       if (s.images !== total || Math.abs(s.duree - total / cadence) > 1 / cadence + 0.01) throw new Error(`la vidéo a ${s.images} images au lieu de ${total}`);
       if (audio && (s.audio !== 'aac' || Math.abs(s.dureeAudio - total / cadence) > 0.1)) throw new Error('la piste son est absente ou n\'a pas la durée de l\'image');
-      // ebur128 ne mesure rien sous 400 ms (un bloc) : la sonie d'une vidéo plus courte n'est pas vérifiée.
-      if (audio && typeof son.sonie === 'number' && total / cadence >= 0.4) {
-        const m = await F.mesurerSonie({ ffmpeg: outil.chemin, fichier: partiel });
+      if (sonie) {
         if (!(Math.abs(m.integree - son.sonie) <= 1)) throw new Error(`le son n'a pas la sonie attendue (${m.integree.toFixed(1)} LUFS au lieu de ${son.sonie.toFixed(1)})`);
       }
       // Trois images de la vidéo comparées aux captures (segment décalé, image noire).
-      for (const [n, capturee] of temoins) {
-        const lue = await F.extraireImage({ ffmpeg: outil.chemin, fichier: partiel, t: Math.max(0, n / cadence - 0.001) });
-        const ecart = F.ecartImages(lue, capturee);
+      for (const [i, [n, capturee]] of [...temoins].entries()) {
+        const ecart = F.ecartImages(lues[i], capturee);
         if (ecart > ECART_MAX) {
           // Le segment fautif est retiré : il ne sera pas repris au prochain export.
           const k = segments.findIndex((g) => n >= g.debut && n < g.fin);
