@@ -2,13 +2,13 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
-const os = require("os");
 const path = require("path");
+const { dossierTemporaire } = require("../../plugins/pulse-motion/tests/aide/temporaire.js");
 const { execFileSync } = require("child_process");
 const { fichiersAPublier, mediasReferences, mediasManquants, refusAvantPublication } = require("./publier.js");
 
 function depotEssai() {
-  const racine = fs.mkdtempSync(path.join(os.tmpdir(), "pm-publier-"));
+  const racine = dossierTemporaire("pm-publier-");
   const ecrire = (rel, contenu) => {
     fs.mkdirSync(path.dirname(path.join(racine, rel)), { recursive: true });
     fs.writeFileSync(path.join(racine, rel), contenu);

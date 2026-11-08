@@ -2,15 +2,15 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
-const os = require("os");
 const path = require("path");
+const { dossierTemporaire } = require("../../plugins/pulse-motion/tests/aide/temporaire.js");
 const { blocs, appliquer, PAGES } = require("./galerie.js");
 const G = require("./galerie-medias.js");
 
 const DOCS = path.join(__dirname, "..", "..", "docs");
 
 function copieDuWiki() {
-  const racine = fs.mkdtempSync(path.join(os.tmpdir(), "pm-galerie-"));
+  const racine = dossierTemporaire("pm-galerie-");
   fs.mkdirSync(path.join(racine, "docs"));
   for (const page of new Set(Object.values(PAGES))) fs.copyFileSync(path.join(DOCS, page), path.join(racine, "docs", page));
   return racine;
@@ -52,4 +52,11 @@ test("galerie : sans médias, cartes en texte", () => {
   }
   // Le contenu est dans le HTML : aucun script n'est nécessaire pour afficher les cartes.
   assert.ok(!/document\.write|innerHTML/.test(fs.readFileSync(path.join(DOCS, "js", "galerie.js"), "utf8")));
+});
+
+test("chaque page qui montre des aperçus charge js/galerie.js (sinon ses vidéos ne jouent jamais)", () => {
+  const pages = fs.readdirSync(DOCS).filter((f) => f.endsWith(".html"));
+  const avecApercus = pages.filter((p) => /<video class="apercu"/.test(fs.readFileSync(path.join(DOCS, p), "utf8")));
+  assert.ok(avecApercus.includes("catalogue.html") && avecApercus.includes("mouvements.html"));
+  for (const p of avecApercus) assert.match(fs.readFileSync(path.join(DOCS, p), "utf8"), /<script src="js\/galerie\.js" defer><\/script>/, p);
 });

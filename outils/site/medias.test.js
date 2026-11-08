@@ -3,6 +3,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
+const { dossierTemporaire } = require("../../plugins/pulse-motion/tests/aide/temporaire.js");
 const { copieSansVoix, MEDIAS } = require("./medias.js");
 
 const EXEMPLE = path.join(__dirname, "..", "..", "plugins", "pulse-motion", "exemples", "chaine-du-froid");
@@ -42,14 +43,13 @@ test("galerie : une sortie par entrée de chaque source (mouvements, styles, eff
 });
 
 test("galerie : chaque démo d'effet et de mouvement s'assemble", () => {
-  const os = require("os");
   const G = require("./galerie-medias.js");
   const { projetDeDemos, projetDeMouvements } = require("../../plugins/pulse-motion/scripts/lib/choisir-mouvements.js");
   const { assembler } = require("../../plugins/pulse-motion/scripts/assembler.js");
-  const d1 = fs.mkdtempSync(path.join(os.tmpdir(), "pm-galerie-"));
+  const d1 = dossierTemporaire("pm-galerie-");
   projetDeDemos(d1, G.effets().map(G.demoEffet));
   assert.deepEqual(assembler({ dossier: d1 }).erreurs, []);
-  const d2 = fs.mkdtempSync(path.join(os.tmpdir(), "pm-galerie-"));
+  const d2 = dossierTemporaire("pm-galerie-");
   const { plages } = projetDeMouvements(d2, G.dictionnaire().mouvements);
   assert.deepEqual(assembler({ dossier: d2 }).erreurs, []);
   assert.equal(plages.length, G.dictionnaire().mouvements.length);

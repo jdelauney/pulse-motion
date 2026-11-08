@@ -40,7 +40,7 @@ function blocMouvements() {
 <p><strong>Pour le demander :</strong></p>
 <pre class="commande"><code>${e(m.demande)}</code></pre>
 <p><strong>Quand :</strong> ${e(m.quand)}</p>
-<p><strong>Recette :</strong> <code>${e(recetteCourte(m))}</code></p>${m.motionPrompt ? `\n<p class="carte-mouvement-source">Motion Prompt <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">#${m.motionPrompt}</a></p>` : ""}
+<p><strong>Recette :</strong> <code>${e(recetteCourte(m))}</code></p>${m.motionPrompt ? `\n<p class="carte-mouvement-source">Inspiré de la fiche n° ${m.motionPrompt} de <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>` : ""}
 </details>
 </article>`;
     }).join("\n");

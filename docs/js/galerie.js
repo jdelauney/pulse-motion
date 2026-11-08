@@ -1,7 +1,7 @@
 // Wiki Pulse Motion – aperçus de la galerie et du catalogue : chaque boucle (video.apercu) joue seulement quand elle est à
 // l'écran ; un bouton met tout en pause. Sur la page des mouvements : recherche (nom, numéro, mot-clé, sans accents ni
 // casse), filtres par catégorie et nombre de mouvements affichés. Sous prefers-reduced-motion : rien ne joue tout seul, un
-// clic sur un aperçu le lance ou l'arrête. Sans JavaScript, les cartes restent lisibles avec leur image fixe.
+// clic (ou Entrée) sur un aperçu le lance ou l'arrête. Sans JavaScript, les cartes restent lisibles avec leur image fixe.
 (function () {
   "use strict";
 
@@ -26,9 +26,17 @@
     videos.forEach(function (v) { observateur.observe(v); });
   }
 
+  // Un clic, ou Entrée / Espace au clavier, lance ou arrête un aperçu.
+  function basculer(v) {
+    if (v.paused) { var p = v.play(); if (p && p.catch) p.catch(function () {}); } else v.pause();
+  }
   videos.forEach(function (v) {
-    v.addEventListener("click", function () {
-      if (v.paused) { var p = v.play(); if (p && p.catch) p.catch(function () {}); } else v.pause();
+    v.tabIndex = 0;
+    v.setAttribute("role", "button");
+    v.setAttribute("aria-label", (v.getAttribute("aria-label") || "Aperçu") + " (lire ou arrêter)");
+    v.addEventListener("click", function () { basculer(v); });
+    v.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); basculer(v); }
     });
   });
 

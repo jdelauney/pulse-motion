@@ -2,12 +2,12 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
-const os = require("os");
 const path = require("path");
+const { dossierTemporaire } = require("../../plugins/pulse-motion/tests/aide/temporaire.js");
 const { liensDuWiki } = require("./liens.js");
 
 test("liensDuWiki : page et ancre absentes cassées ; média déclaré absent accepté", () => {
-  const racine = fs.mkdtempSync(path.join(os.tmpdir(), "pm-liens-"));
+  const racine = dossierTemporaire("pm-liens-");
   fs.mkdirSync(path.join(racine, "docs"));
   fs.writeFileSync(path.join(racine, "docs", "b.html"), '<section id="la"></section>');
   fs.writeFileSync(path.join(racine, "docs", "a.html"), [
@@ -24,7 +24,7 @@ test("liensDuWiki : page et ancre absentes cassées ; média déclaré absent ac
 });
 
 test("liensDuWiki : un data-id ne vaut pas un id", () => {
-  const racine = fs.mkdtempSync(path.join(os.tmpdir(), "pm-liens-"));
+  const racine = dossierTemporaire("pm-liens-");
   fs.mkdirSync(path.join(racine, "docs"));
   fs.writeFileSync(path.join(racine, "docs", "b.html"), '<div data-id="ici"></div>');
   fs.writeFileSync(path.join(racine, "docs", "a.html"), '<a href="b.html#ici">x</a>');
@@ -35,7 +35,7 @@ test("liensDuWiki : un aperçu déclaré par un lot de la galerie est accepté",
   const { MEDIAS, sortiesDe } = require("./medias.js");
   const declares = new Set(MEDIAS.flatMap(sortiesDe));
   assert.ok(declares.has("medias/galerie/mouvements/001.mp4"));
-  const racine = fs.mkdtempSync(path.join(os.tmpdir(), "pm-liens-"));
+  const racine = dossierTemporaire("pm-liens-");
   fs.mkdirSync(path.join(racine, "docs"));
   fs.writeFileSync(path.join(racine, "docs", "a.html"), '<video src="medias/galerie/mouvements/001.mp4" poster="medias/galerie/mouvements/001.jpg"></video>');
   assert.deepEqual(liensDuWiki(racine, declares).casses, []);

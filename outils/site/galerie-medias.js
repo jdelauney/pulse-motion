@@ -86,9 +86,11 @@ function fabriquerMouvements() {
   avecDossier("pm-galerie-mouvements-", (dossier) => {
     const { plages } = projetDeMouvements(dossier, mouvements);
     const video = exporter(dossier);
-    decouper(video, plages.map((p) => {
+    decouper(video, plages.map((p, i) => {
       const [mp4, jpg] = fichiersMouvement(p.no);
-      return { debut: p.debut, duree: p.fin - p.debut, sortie: mp4, affiche: jpg, tAffiche: p.debut + (p.fin - p.debut) * 0.8 };
+      // Image fixe vers la fin du mouvement, ou pendant l'effet (un éclat d'étincelles est fini à 80 %).
+      const part = mouvements[i].recette.type === "effet" ? 0.35 : 0.8;
+      return { debut: p.debut, duree: p.fin - p.debut, sortie: mp4, affiche: jpg, tAffiche: p.debut + (p.fin - p.debut) * part };
     }));
   });
 }
@@ -99,7 +101,7 @@ function fabriquerStyles() {
   for (const style of STYLES_LIVRES()) {
     const dossier = projetEssai({ dossierStyle: path.join(PLUGIN, "styles", style), textes: "exemple" });
     try {
-      // 2,5 s par scène toute faite : la boucle du style montre ses 8 scènes en 20 s.
+      // 2,5 s par scène toute faite : la boucle du style montre ses scènes en une vingtaine de secondes (transitions comprises).
       const fichier = path.join(dossier, "deroule.json");
       const d = JSON.parse(fs.readFileSync(fichier, "utf8"));
       for (const s of d.scenes) s.duree = 2.5;
@@ -160,16 +162,18 @@ function fabriquerPersonnages() {
   });
 }
 
-/** Lots de la galerie, au format de MEDIAS (outils/site/medias.js). */
+/** Lots de la galerie, au format de MEDIAS (outils/site/medias.js). Leurs sources comprennent ce fichier et la chaîne
+ * d'export : une démo ou un réglage d'export changé refait les aperçus. */
+const FABRICATION = [__filename, path.join(PLUGIN, "scripts", "assembler.js"), path.join(PLUGIN, "scripts", "exporter.js"), path.join(PLUGIN, "scripts", "lib", "choisir-mouvements.js")];
 const LOTS = [
   { id: "galerie-mouvements", sortie: `${GALERIE}/mouvements/001.mp4`, sorties: () => dictionnaire().mouvements.flatMap((e) => fichiersMouvement(e.no)),
-    sources: [path.join(PLUGIN, "references", "mouvements"), path.join(PLUGIN, "moteur"), path.join(PLUGIN, "styles", "clair-pedagogique"), path.join(PLUGIN, "scripts", "lib", "choisir-mouvements.js")], fabriquer: fabriquerMouvements },
+    sources: [path.join(PLUGIN, "references", "mouvements"), path.join(PLUGIN, "moteur"), path.join(PLUGIN, "styles", "clair-pedagogique"), ...FABRICATION], fabriquer: fabriquerMouvements },
   { id: "galerie-styles", sortie: `${GALERIE}/styles/clair-pedagogique.mp4`, sorties: () => STYLES_LIVRES().flatMap(fichiersStyle),
-    sources: [path.join(PLUGIN, "styles"), path.join(PLUGIN, "moteur")], fabriquer: fabriquerStyles },
+    sources: [path.join(PLUGIN, "styles"), path.join(PLUGIN, "moteur"), ...FABRICATION], fabriquer: fabriquerStyles },
   { id: "galerie-effets", sortie: `${GALERIE}/effets/confettis.mp4`, sorties: () => effets().flatMap(fichiersEffet),
-    sources: [path.join(PLUGIN, "effets"), path.join(PLUGIN, "moteur"), path.join(PLUGIN, "styles", "tech-sombre"), path.join(PLUGIN, "scripts", "lib", "choisir-mouvements.js")], fabriquer: fabriquerEffets },
+    sources: [path.join(PLUGIN, "effets"), path.join(PLUGIN, "moteur"), path.join(PLUGIN, "styles", "tech-sombre"), ...FABRICATION], fabriquer: fabriquerEffets },
   { id: "galerie-personnages", sortie: `${GALERIE}/personnages/coucou.mp4`, sorties: () => clipsPersonnages().flatMap(fichiersClip),
-    sources: [path.join(PLUGIN, "personnages"), path.join(PLUGIN, "moteur"), path.join(PLUGIN, "styles", "tech-sombre"), path.join(PLUGIN, "scripts", "lib", "choisir-mouvements.js")], fabriquer: fabriquerPersonnages },
+    sources: [path.join(PLUGIN, "personnages"), path.join(PLUGIN, "moteur"), path.join(PLUGIN, "styles", "tech-sombre"), ...FABRICATION], fabriquer: fabriquerPersonnages },
 ];
 
 module.exports = { LOTS, GALERIE, dictionnaire, STYLES_LIVRES, scenesDuStyle, effets, clipsPersonnages, demoEffet,
