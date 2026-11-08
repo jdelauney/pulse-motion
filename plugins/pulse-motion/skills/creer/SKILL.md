@@ -101,11 +101,11 @@ Mouvements nommés : quand la personne cite un mouvement ou un numéro du dictio
    |---|---|
    | Un `type`, sans effet de particules, personnage, fond ni transition par shader, caméra narrative ; au plus 3 mouvements nommés | `sonnet` |
    | Composée (sans `type`), ou avec effet, personnage, shader, caméra, partition calée sur la scène | aucun paramètre (modèle de la session) |
-   | Scène témoin ; seconde écriture d'une scène qui garde une erreur | aucun paramètre |
+   | Scène témoin, même toute faite ; seconde écriture d'une scène qui garde une erreur | aucun paramètre |
 
    Jamais un modèle plus cher que celui de la session : si la session tourne déjà en Sonnet ou en Haiku, aucun paramètre. Jamais `haiku`.
 3. **Lancer les animateurs.** Moins de 6 scènes : un agent par scène, tous dans le même message (en parallèle). 6 scènes ou plus, en deux vagues :
-   - **Scènes témoins** : deux agents dans le même message, l'ouverture (la première scène) et la plus différente d'elle ou la plus risquée (composée, à effet, à personnage, au texte le plus long) ; jamais deux scènes du même `type`.
+   - **Scènes témoins** : deux agents sans paramètre de modèle, dans le même message, l'ouverture (la première scène) et la plus différente d'elle ou la plus risquée (composée, à effet, à personnage, au texte le plus long) ; jamais deux scènes du même `type`.
    - `pulse-motion planche . <id1>,<id2>`, regarder soi-même `sortie/planche/` (avec `Read`), corriger si besoin ; les scènes pas encore écrites ne gênent pas.
    - **Grammaire** : d'après la planche, 4 à 6 lignes « Grammaire de la vidéo » qui disent les choix de cette vidéo dans le style (titres, listes, chiffre clé, accent, marges, transitions).
    - **Seconde vague** : toutes les autres scènes, dans le même message ; aux seules scènes **composées**, les chemins des deux témoins (marges, tailles, rythme d'entrée, couleurs à reprendre) et la note, telle quelle.

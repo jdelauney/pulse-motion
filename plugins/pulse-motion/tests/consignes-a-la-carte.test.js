@@ -231,7 +231,8 @@ function verifierRoutage(texte, nom) {
 test('creer-table-de-routage-du-modele : scènes simples en Sonnet, scènes créatives et témoins au modèle de la session', () => {
   const fabrication = sectionsConsignes(lire('skills', 'creer', 'SKILL.md'), ['fabrication']).texte;
   verifierRoutage(fabrication, 'creer');
-  assert.match(fabrication, /Scène témoin ; seconde écriture/);
+  assert.match(fabrication, /Scène témoin, même toute faite ; seconde écriture/);
+  assert.match(fabrication, /\*\*Scènes témoins\*\* : deux agents sans paramètre de modèle/);
   assert.match(fabrication, /Une scène écrite en `sonnet` qui garde une erreur après ce premier tour : la faire réécrire par un agent sans paramètre de modèle\./);
 });
 
