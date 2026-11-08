@@ -377,6 +377,7 @@ a.carte:hover { transform: translateY(-8px); border-color: oklch(0.4 0.08 320 / 
 }
 @media (min-width: 640px) { .grille-cartes { grid-template-columns: repeat(2, 1fr); } }
 @media (min-width: 1024px) { .grille-cartes { grid-template-columns: repeat(3, 1fr); gap: 24px; } }
+@media (min-width: 1024px) { .grille-cartes.grille-quatre { grid-template-columns: repeat(4, 1fr); } }
 .grille-cartes > li { display: flex; }
 .grille-cartes > li > .carte { flex: 1; }
 
@@ -809,3 +810,19 @@ a[target="_blank"]::after { content: "\00a0↗"; font-size: 0.85em; }
 .vignette img { display: block; width: 100%; height: auto; border-radius: var(--rayon-md); border: 1px solid var(--lisere); }
 .vignette figcaption { margin-top: 4px; font-size: var(--texte-sm); color: var(--texte-secondaire); }
 .liste-mots li { margin: 4px 0; }
+
+/* Idées de vidéos : un modèle par section, son exemple en vidéo, ses phrases et sa structure. */
+.idees-sommaire ul { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; margin: 24px 0; }
+.idees-sommaire a { display: inline-block; padding: 6px 12px; border: 1px solid var(--lisere); border-radius: 999px; text-decoration: none; }
+.idees-sommaire a:hover { background: var(--surface-attenuee); }
+.idee-modele { margin: 56px 0; padding-top: 8px; border-top: 1px solid var(--lisere); scroll-margin-top: 96px; }
+.typographie .idee-pour { color: var(--texte-secondaire); margin-top: -4px; }
+.idee-format { color: var(--texte-secondaire); white-space: nowrap; }
+.idee-video video { aspect-ratio: 16 / 9; background: oklch(0.22 0.02 290); }
+.idee-video-verticale { max-width: 340px; }
+.idee-video-verticale video { aspect-ratio: 9 / 16; }
+.idee-reponses { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 8px 0 16px; }
+.idee-reponses dt { font-weight: 600; }
+.idee-reponses dd { margin: 0; }
+.idee-seance { margin-top: 16px; }
+.idee-seance summary { cursor: pointer; font-weight: 600; }

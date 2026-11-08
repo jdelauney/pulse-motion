@@ -55,3 +55,19 @@ test("galerie : chaque démo d'effet et de mouvement s'assemble", () => {
   assert.equal(plages.length, G.dictionnaire().mouvements.length);
   for (let i = 1; i < plages.length; i++) assert.ok(Math.abs(plages[i].debut - plages[i - 1].fin) < 1e-6, "plages contiguës");
 });
+
+test("exemples : une vidéo et une affiche par modèle (la chaîne du froid réutilise la sienne)", () => {
+  const G = require("./galerie-medias.js");
+  const lot = MEDIAS.find((m) => m.id === "exemples");
+  assert.ok(lot, "lot exemples");
+  const sorties = sortiesDe(lot);
+  assert.equal(sorties.length, G.exemplesAFabriquer().length * 2);
+  assert.equal(G.exemplesAFabriquer().length, 6);
+  for (const m of G.modelesVideo()) {
+    const [mp4, jpg] = G.fichiersExemple(m);
+    assert.match(mp4, /\.mp4$/);
+    assert.match(jpg, /\.jpg$/);
+    if (m.id !== "formation-courte") assert.ok(sorties.includes(mp4) && sorties.includes(jpg), m.id);
+  }
+  assert.deepEqual(G.fichiersExemple(G.modelesVideo().find((m) => m.id === "formation-courte")), ["medias/chaine-du-froid.mp4", "assets/captures/chaine-du-froid-affiche.jpg"]);
+});
