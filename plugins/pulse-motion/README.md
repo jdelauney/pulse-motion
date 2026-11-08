@@ -49,7 +49,7 @@ Tout se fait par une demande dans Claude Code, jamais dans un terminal. Créer u
 | `vendor/` | Mediabunny (MPL-2.0), assemblage du MP4 ; voir `vendor/mediabunny/PROVENANCE.md` |
 | `styles/` | Styles : CSS, charte, polices, scènes toutes faites (v1 : `clair-pedagogique`) |
 | `personnages/` | Personnages animés : poses, mouvements, expressions, gabarits et le dessin `touffu` (bibliothèque du plugin ; une vidéo peut avoir les siens) |
-| `references/` | Consignes lues par Claude : moteur, rythme, styles ; `mouvements/` : le dictionnaire de mouvements numérotés |
+| `references/` | Consignes lues par Claude : moteur, rythme, styles ; `moteur`, `particules` et `audio` en un tronc et des parties lues à la carte (`moteur/`, `particules/`, `audio/`) ; `mouvements/` : le dictionnaire de mouvements numérotés |
 | `exemples/` | « La chaîne du froid » : vidéo de formation de 60 s |
 | `tests/` | Tests (`npm test`), dont des tests dans Chrome ou Edge sans fenêtre |
 

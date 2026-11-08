@@ -35,28 +35,6 @@ Tous facultatifs : un déroulé sans son reste valide.
 | `scenes[].voix.fichier` | prise de la scène (écrite par le studio ou l'import) |
 | `scenes[].voix.debut` | instant du début de la prise dans la scène, en secondes (défaut 0,3) |
 
-## Voix
-
-- **Écrire le texte dit** : une idée par phrase, des phrases courtes, au plus 3,5 mots par seconde. La scène dure donc au moins mots / 3,5 + 0,7 s. Écrire les nombres comme on les dit quand ils comptent pour le calage (« quatre degrés » se cale mieux que « 4 °C »).
-- **Une prise par scène** : `assets/voix/<scène>.wav`, enregistrée dans le studio de l'aperçu (bouton « Voix », ou `pulse-motion voix studio <scène> .`) ou importée : `pulse-motion voix importer <fichier> --scene <id> .` (WAV, ou tout format avec ffmpeg).
-- **Un enregistrement de toute la vidéo** : `pulse-motion voix importer <fichier> .` sans `--scene` le découpe par scène (transcription requise). Une scène dont moins de la moitié des mots ont été reconnus est signalée.
-- **Voix provisoire** : `pulse-motion voix provisoire .` fait lire les textes par la voix du système, pour caler l'animation avant d'enregistrer. Elle n'est jamais livrée : l'export la refuse sauf `--avec-provisoire`, donné seulement si la personne le demande.
-- **Transcription** (facultative) : `pulse-motion whisper` dit si elle est prête ; `pulse-motion whisper installer` l'installe une fois (Python requis, environ 800 Mo ; `--modele small` : 250 Mo). Ensuite `pulse-motion voix transcrire .` cale les mots des prises déjà là. Sans elle, les mots sont calés au mieux (calage approché), et tout fonctionne.
-- Chaque prise a, à côté, un `.mots.json` (temps de chaque mot). Prise ou texte changés : il est périmé et recalculé au mieux ; `pulse-motion voix transcrire .` le refait.
-
-## Ancres `mot:`
-
-Dans une scène qui **a une prise**, un élément peut entrer quand la voix dit un mot :
-
-| Écriture | Instant |
-|---|---|
-| `data-start="mot:froid"` | début du premier « froid » (accents, majuscules et ponctuation ignorés) |
-| `data-start="mot:froid#2"` | deuxième « froid » |
-| `data-start="mot:froid:fin"` | fin du mot |
-| `data-start="mot:froid+0.2"` | 0,2 s après le début du mot (`-0.2` : avant) |
-
-Réenregistrer la scène recale tout seul les ancres. Une ancre sur un mot que la voix ne dit pas, ou dans une scène sans prise, est une erreur (`ancre-mot-introuvable`).
-
 ## Sous-titres
 
 - Cartons de 2 lignes au plus (42 caractères par ligne, 32 en 4:5, 28 en 9:16), découpés aux pauses et à la ponctuation, jamais après un article.
@@ -64,92 +42,6 @@ Réenregistrer la scène recale tout seul les ancres. Une ancre sur un mot que l
 - Dessinés dans la vidéo (`incrustes`) et livrés dans `sortie/<titre>.srt` et `sortie/<titre>.vtt`, pour les plateformes qui les proposent à part.
 - Habillés par le style : `--pm-st-police`, `--pm-st-taille`, `--pm-st-largeur` (largeur maximale du carton), `--pm-st-texte`, `--pm-st-fond`, `--pm-st-accent`, `--pm-st-marge`, `--pm-st-position`.
 - Le contrôle signale un sous-titre qui cache un texte de la scène (`sous-titre-cache-texte`) : remonter le texte, ou passer les sous-titres en haut.
-
-## Musique générée
-
-Composée sur l'ordinateur à partir de la graine : la même graine donne toujours la même musique ; `graine` + 1 donne une variante. Son tempo devient celui du déroulé (unité `t` des animations).
-
-**La musique se cale sur l'image, pas l'inverse.** Elle est recomposée à chaque assemblage sur le minutage réel : une section par scène, qui commence pile au vrai début de la scène (transitions et allongement par la voix compris) et s'arrête au début de la suivante ; la grille des temps repart à chaque scène, donc les temps musicaux d'une scène (`data-start="4t"`) tombent sur la musique. Les durées de scène sont libres (pas besoin de demi-secondes). Structure : introduction sans percussion pendant la première scène (sauf humeur donnée), montée sur la dernière seconde avant la dernière scène, accord final jusqu'à la fin (pas d'accord si la dernière scène est en `silence`) ; la progression d'accords continue d'une scène à l'autre.
-
-Humeur de la musique pendant une scène : `scenes[].musique` = `"silence"` (rien), `"calme"` (nappe seule), `"normale"` (défaut : couches selon `intensite`), `"intense"` (toutes les couches, percussions et basse profonde comprises). Ex. un arrêt sur image en silence, puis une démonstration en force : `"musique": "silence"` sur l'une, `"intense"` sur l'autre.
-
-| Ambiance | Caractère | Tempo, tonalité par défaut | Genres |
-|---|---|---|---|
-| `calme` | nappes douces, posé | 72 bpm, fa | formation, explication |
-| `entrainant` | rythmé, joyeux | 118 bpm, sol | social, annonce |
-| `inspirant` | lumineux, qui avance | 100 bpm, ré | formation, storytelling |
-| `corporate` | net, rassurant | 108 bpm, do | produit, entreprise |
-| `suspense` | sombre, tendu (cloche, souffle) | 84 bpm, la mineur | storytelling, alerte |
-| `tech` | arpèges rapides | 124 bpm, mi mineur | produit, numérique |
-
-`intensite` (scènes `normale`) : en dessous de 0,25, nappe seule ; puis basse (0,25), mélodie (0,45), percussions (0,65). Sous une voix, `volume` 0,4 à 0,6. `pulse-motion musique ecouter .` rend la musique seule dans `sortie/musique.wav`, pour la faire écouter.
-
-## Partition
-
-`"musique": { "partition": "assets/partition.json", "volume": 0.5 }` :
-
-```json
-{ "tempo": 100, "tonalite": "re", "mesures": 32,
-  "pistes": [
-    { "instrument": "pad", "volume": 0.5, "motif": ["re3+fa3+la3 1", "sib2+re3+fa3 1"], "de": 0, "a": 32 },
-    { "instrument": "pluck", "motif": ["re4 1/8", "- 1/8", "la4 1/8 0.7", "fa4 1/8"], "de": 4 },
-    { "instrument": "kick", "motif": ["x 1/4"], "de": 8, "a": 30 }
-  ] }
-```
-
-- Note : `do ré mi fa sol la si` (ou `c d e f g a b`), `#` ou `b`, octave (`re4`) ; `+` pour un accord ; `-` silence ; `x` frappe d'une percussion ; durée en fraction de ronde (`1`, `1/2`, `1/4`, `3/8`) ; vélocité facultative (`re4 1/4 0.7`).
-- Le motif se répète de la mesure `de` (défaut 0) à la mesure `a` (exclue, défaut `mesures`).
-- **Piste calée sur une scène** : `"scene": "demo"`. Elle commence au vrai début de la scène (transitions comprises) et s'arrête au début de la suivante ; `de` et `a` comptent alors les mesures depuis ce début. Écrire la partition **après** les scènes, une ou plusieurs pistes par scène : elle suit l'image même si une durée ou une transition change. Une scène sans piste est muette. Les pistes sans `scene` suivent une grille continue depuis 0.
-- Le `tempo` de la partition devient celui de la vidéo (unité `t` des animations) : ne pas écrire de `tempo` dans le déroulé en plus (s'il diffère, c'est une erreur).
-- Une partition dont une piste n'a pas de `scene` garde une grille continue : les scènes doivent alors commencer sur un temps (contrôle `hors-tempo`). Toutes les pistes calées sur une scène : durées libres.
-- Instruments : `pluck` (corde pincée), `pad` (nappe), `basse`, `sub` (basse profonde), `kick` (grosse caisse), `caisse` (caisse claire), `charleston`, `cloche`, `nappe-bruit` (souffle filtré), `riser` (montée).
-- Une partition mal formée est une erreur (`partition-invalide`) qui nomme la piste et la note fautives.
-
-## Bruitages
-
-`data-son="pop"` sur un élément : le son part au début de l'élément (ancres `mot:` comprises). `data-son-volume="0.6"` le baisse. Un fichier du projet : `data-son="assets/sons/porte.wav"`.
-
-| Son | Pour |
-|---|---|
-| `whoosh` | une entrée rapide, un glissement |
-| `swoosh-inverse` | une sortie, un balayage |
-| `pop` | un point de liste, une bulle |
-| `clic` | un bouton, une coche |
-| `tic` | un compteur, une petite étape |
-| `impact` | un mot clé qui tombe (fort) |
-| `basse` | un chiffre choc (fort) |
-| `montee` | une tension avant une révélation (fort) |
-| `carillon` | une conclusion, une réussite |
-| `ding` | un chiffre, une bonne réponse |
-| `blip` | une alerte, une notification |
-| `souffle` | un fondu, une respiration |
-
-- 1 à 3 sons par scène suffisent ; au plus 3 dans la même seconde (`trop-de-sons`).
-- Jamais un son fort (`impact`, `basse`, `montee`) pendant un mot de la voix (`son-sous-voix`) : le placer dans une pause.
-- `"bruitages": { "transitions": true }` : un son par transition (fondu → `souffle`, glissement, rideau, whip, poussée et retournement → `whoosh`, traversée → `montee`, cercle et volets → `swoosh-inverse`, balayage → `swoosh-inverse`, zoom → `montee`, coupe → `impact` ; transition par shader : `dissolution` et `ondulation` → `souffle`, `pixels` → `blip`, `glitch` → `impact`, `balayage-organique` → `swoosh-inverse`, un shader du projet → `souffle`).
-
-## Son réactif
-
-La musique et la voix peuvent faire bouger la vidéo. Chaque piste lue est analysée une fois, à l'ouverture de la page (60 instants par seconde, sans le volume ni les fondus du mixage) : l'aperçu et l'export donnent exactement la même chose.
-
-- **Variables CSS** posées sur la vidéo à chaque image, entre 0 et 1 : `--son-volume`, `--son-basses`, `--son-mediums`, `--son-aigus`, `--son-battement` (1 sur un battement, puis retombe en 0,15 s), `--son-phase` (de 0 à 1 entre deux battements), `--voix-enveloppe` (force de la voix).
-
-```html
-<h1 id="titre" data-texte="titre" style="transform: scale(calc(1 + 0.08 * var(--son-battement, 0)))"></h1>
-<div class="halo" style="opacity: calc(0.3 + 0.7 * var(--voix-enveloppe, 0))"></div>
-```
-
-- **Effets de particules** : `modulation` et salves `au: battement` (voir `pulse-motion reference particules`). **Shaders** : `iSon` et la texture audio (voir `pulse-motion reference shaders`).
-- Une animation qui suit la voix passe par `var(--voix-enveloppe)` (`data-son` reste l'attribut des bruitages). Pour allumer un mot quand il est dit : sous-titres en mode `mot`, ou une ancre `mot:` (sections plus haut).
-- Sans la piste suivie : contrôle `son-sans-piste` (alerte pour des variables CSS, qui restent à 0) ; une piste qui n'existe pas : `piste-inconnue`.
-- Piste présente mais illisible (fichier abîmé) : ce qui la suit (effet, shader, variables CSS d'une scène ou du style) affiche un panneau dans l'aperçu et l'export est refusé ; remplacer le fichier de la musique ou de la voix.
-- Dosage : un battement qui fait pulser un titre de 5 à 10 % suffit ; jamais un flash sur chaque battement (3 flashs par seconde au plus).
-
-## Mixage
-
-- Musique : fondu d'entrée de 0,5 s et de sortie de 1,5 s ; baissée de 10 dB pendant la voix (et creusée vers 2,5 kHz, là où se trouve la parole).
-- Le mélange à plein volume est ramené à −16 LUFS (crête sous −1,5 dBFS, limiteur réglé à −2 dBFS) ; les volumes du déroulé (`voix.volume`, `musique.volume`, `bruitages.volume`) s'appliquent ensuite : « baisse la musique » = `musique.volume` plus bas.
-- Pas d'élément `<audio>` dans une scène : tout le son passe par le déroulé et `data-son`.
 
 ## Commandes
 
@@ -169,3 +61,16 @@ La musique et la voix peuvent faire bouger la vidéo. Chaque piste lue est analy
 - Le son des deux exports est le mixage de la page ; l'export fidèle vérifie sa sonie (±1 LU).
 - Voix provisoire : export refusé ; `pulse-motion exporter . --avec-provisoire` seulement si la personne veut une version de travail.
 - Avec des sous-titres : `sortie/<titre>.srt` et `sortie/<titre>.vtt` sont écrits à côté de la vidéo.
+
+## Les parties
+
+Lire ce tronc, puis seulement la partie utile : `pulse-motion reference audio/<partie>`.
+
+| Partie | Contenu |
+|---|---|
+| `audio/voix` | écrire le texte dit, prises, voix provisoire, transcription |
+| `audio/ancres` | `data-start="mot:…"` : un élément entre quand la voix dit son mot (scène qui a une prise) |
+| `audio/musique` | musique générée (ambiances, humeur par scène, `intensite`) et partition écrite |
+| `audio/bruitages` | `data-son` sur un élément, liste des sons, sons des transitions |
+| `audio/son-reactif` | variables `--son-…` et `--voix-enveloppe`, effets et shaders qui suivent le son |
+| `audio/mixage` | fondus, baisse sous la voix, sonie |
