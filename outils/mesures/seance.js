@@ -70,14 +70,18 @@ function tourFini(fichier, { agent = false } = {}) {
   return false;
 }
 
-/** Tous les agents de la séance ont fini. */
+/** Tous les agents de la séance ont fini, et la séance principale a écrit après le dernier d'entre eux (elle a reçu
+ *  leur compte rendu : un agent de fond qui finit relance un tour de la séance principale). */
 function agentsFinis(transcription) {
   const dossier = path.join(transcription.replace(/\.jsonl$/, ""), "subagents");
   if (!fs.existsSync(dossier)) return true;
-  return fs.readdirSync(dossier).filter((f) => f.endsWith(".jsonl")).every((f) => {
+  const fichiers = fs.readdirSync(dossier).filter((f) => f.endsWith(".jsonl"));
+  const finis = fichiers.every((f) => {
     try { if (JSON.parse(fs.readFileSync(path.join(dossier, f.replace(/\.jsonl$/, ".meta.json")), "utf8")).finished === true) return true; } catch { /* méta absente */ }
     return tourFini(path.join(dossier, f), { agent: true });
   });
+  const dernier = Math.max(0, ...fichiers.map((f) => fs.statSync(path.join(dossier, f)).mtimeMs));
+  return finis && fs.statSync(transcription).mtimeMs > dernier + 1000;
 }
 
 /** Processus descendants (Windows) : [{ pid, nom, ligne }]. */
