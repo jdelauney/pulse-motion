@@ -210,8 +210,14 @@
       });
     });
 
-    // Animations CSS et WAAPI : en pause, positionnées depuis le début de l'élément minuté porteur.
-    s.sec.getAnimations({ subtree: true }).forEach(function (a) {
+    // Animations CSS et WAAPI : en pause, positionnées depuis le début de l'élément minuté porteur. Celles déjà vues sont
+    // gardées : une animation en pause après sa fin (sans fill) n'est plus rendue par getAnimations ; sans elles, revenir
+    // en arrière dans une scène restée affichée la laisserait à sa fin (l'état visible ne dépendrait plus seulement de t).
+    // Une animation annulée (scène masquée, règle CSS changée) est oubliée.
+    var vues = s.animations || (s.animations = new Set());
+    s.sec.getAnimations({ subtree: true }).forEach(function (a) { vues.add(a); });
+    vues.forEach(function (a) {
+      if (a.playState === 'idle' || !a.effect || !a.effect.target || !a.effect.target.isConnected) { vues.delete(a); return; }
       a.pause();
       var base = info.debut;
       var cible = a.effect && a.effect.target;
