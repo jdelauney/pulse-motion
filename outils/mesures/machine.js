@@ -43,7 +43,7 @@ function versionNavigateur(racinePlugin) {
 function decrireMachine({ racinePlugin = path.join(__dirname, "..", "..", "plugins", "pulse-motion") } = {}) {
   const cpus = os.cpus();
   const ffmpeg = sortie("ffmpeg", ["-hide_banner", "-version"]);
-  const claude = sortie("claude", ["--version"], { shell: process.platform === "win32" });
+  const claude = sortie("claude", ["--version"]);
   return {
     systeme: `${os.type()} ${os.release()} (${os.arch()})`,
     processeur: cpus.length ? cpus[0].model.trim() : null,

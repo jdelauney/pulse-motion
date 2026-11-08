@@ -249,7 +249,7 @@ function mesurerTests(plugin, journal = () => {}) {
 }
 
 function lireOptions(args) {
-  const valeur = (o, d) => { const i = args.indexOf(o); return i >= 0 && args[i + 1] ? args[i + 1] : d; };
+  const valeur = (o, d) => { const i = args.indexOf(o); return i >= 0 && args[i + 1] !== undefined ? args[i + 1] : d; };
   return {
     plugin: path.resolve(valeur("--plugin", PLUGIN_DEFAUT)),
     passages: Number(valeur("--passages", "3")),
