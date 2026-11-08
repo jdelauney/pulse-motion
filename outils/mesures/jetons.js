@@ -80,7 +80,7 @@ function agentsDe(session) {
 
 // Lectures de consignes et de références : commandes qui impriment une référence, une consigne, une scène toute faite,
 // une recette, une fiche de mouvement, le glossaire ; et les fichiers lus (Read).
-const LECTURE = /pulse-motions+(reference|consignes|glossaire|scene|effet|mouvementss+afficher|personnagess+liste|styles)/;
+const LECTURE = /pulse-motion\s+(reference|consignes|glossaire|scene|effet|mouvements\s+afficher|personnages\s+liste|styles)\b/;
 const octetsLus = (analyse) => analyse.outils.filter((o) => (o.name === "Bash" && LECTURE.test(String(o.input.command || ""))) || o.name === "Read").reduce((s, o) => s + (analyse.resultats.get(o.id) || 0), 0);
 
 const commandesPulse = (outils) => outils.filter((o) => o.name === "Bash" && /pulse-motion|pm\.js/.test(String(o.input.command || ""))).map((o) => String(o.input.command));
