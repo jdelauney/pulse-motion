@@ -2,8 +2,12 @@
 
     python transcrire.py <prise.wav> --modele <dossier du modele> [--langue fr]
 
-Derniere ligne de la sortie : les mots horodates en JSON [{"w", "t0", "t1"}] (ASCII echappe, lisible
-quelle que soit la page de code). Progres sur la sortie d'erreur.
+Derniere ligne de la sortie : les mots horodates en JSON [{"w", "t0", "t1", "s"}] (s : numero du passage entendu ;
+ASCII echappe, lisible quelle que soit la page de code). Progres sur la sortie d'erreur.
+Silences ecartes par le filtre de voix (VAD, 500 ms) : plus rapide, et moins de phrases inventees sur un silence ;
+faster-whisper replace les horodatages des mots sur la prise d'origine. Chaque passage est transcrit sans le texte
+du precedent (condition_on_previous_text=False) : une erreur ne se repete pas de passage en passage. Les phrases
+inventees connues (sous-titrage, abonnez-vous...) sont retirees ensuite par Pulse Motion (scripts/lib/whisper.js).
 PM_WHISPER_FAUX=<fichier.json> : renvoie ce fichier sans transcrire (tests) ; PM_WHISPER_ATTENTE : secondes d'attente.
 """
 import argparse
@@ -48,12 +52,14 @@ def main():
         return 0
     from faster_whisper import WhisperModel
     modele = WhisperModel(a.modele, device='cpu', compute_type='int8')
-    segments, _ = modele.transcribe(lire_wav(a.wav), language=a.langue, word_timestamps=True, beam_size=5)
+    segments, _ = modele.transcribe(lire_wav(a.wav), language=a.langue, word_timestamps=True, beam_size=5,
+                                    vad_filter=True, vad_parameters={'min_silence_duration_ms': 500},
+                                    condition_on_previous_text=False)
     mots = []
-    for s in segments:
+    for i, s in enumerate(segments):
         print('%.1f' % s.end, file=sys.stderr, flush=True)
         for m in (s.words or []):
-            mots.append({'w': m.word, 't0': round(m.start, 3), 't1': round(m.end, 3)})
+            mots.append({'w': m.word, 't0': round(m.start, 3), 't1': round(m.end, 3), 's': i})
     print(json.dumps(mots))
     return 0
 
