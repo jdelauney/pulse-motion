@@ -119,3 +119,12 @@ test("mesures : poids de la page, retouche scriptée, médiane, copie sans sorti
     fs.rmSync(copie, { recursive: true, force: true });
   }
 });
+
+test("mesures-seance-bin-du-plugin-en-tete : la séance lance le « pulse-motion » du plugin mesuré, pas celui installé", () => {
+  const { envSeance } = require("./seance.js");
+  const plugin = path.join(os.tmpdir(), "plugin mesuré");
+  const env = envSeance(plugin);
+  const cle = Object.keys(env).find((k) => k.toUpperCase() === "PATH");
+  assert.equal(env[cle].split(path.delimiter)[0], path.join(plugin, "bin"));
+  assert.equal(env.PM_SANS_OUVRIR, "1");
+});
