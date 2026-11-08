@@ -110,8 +110,8 @@ Mouvements nommés : quand la personne cite un mouvement ou un numéro du dictio
    - **Grammaire** : d'après la planche, 4 à 6 lignes « Grammaire de la vidéo » qui disent les choix de cette vidéo dans le style (titres, listes, chiffre clé, accent, marges, transitions).
    - **Seconde vague** : toutes les autres scènes, dans le même message ; aux seules scènes **composées**, les chemins des deux témoins (marges, tailles, rythme d'entrée, couleurs à reprendre) et la note, telle quelle.
 4. Un agent qui a **composé** la scène au lieu de partir de la scène toute faite le dit : retirer alors `type` de cette scène dans `deroule.json`.
-5. `pulse-motion assembler .` puis `pulse-motion controler .`.
-6. `pulse-motion controler .` corrige seul les cas sûrs (typographie, durées, pause finale, texte qui déborde ; liste complète : `pulse-motion reference controles`) : lire `corrections` dans `sortie/controle.json` et les dire en une phrase à la personne (« J'ai allongé la scène 3 d'une seconde pour laisser le temps de lire. »). Erreurs ou alertes restantes : les corriger (dans la scène, ou dans le déroulé pour une durée), relancer assembler et controler. Une scène écrite en `sonnet` qui garde une erreur après ce premier tour : la faire réécrire par un agent sans paramètre de modèle. Deux tours au plus ; ce qui reste est dit à la personne.
+5. `pulse-motion controler .` (il assemble aussi la page).
+6. `pulse-motion controler .` corrige seul les cas sûrs (typographie, durées, pause finale, texte qui déborde ; liste complète : `pulse-motion reference controles`) : lire `corrections` dans `sortie/controle.json` et les dire en une phrase à la personne (« J'ai allongé la scène 3 d'une seconde pour laisser le temps de lire. »). Erreurs ou alertes restantes : les corriger (dans la scène, ou dans le déroulé pour une durée), relancer `pulse-motion controler .`. Une scène écrite en `sonnet` qui garde une erreur après ce premier tour : la faire réécrire par un agent sans paramètre de modèle. Deux tours au plus ; ce qui reste est dit à la personne.
 
 ## 4. Aperçu
 

@@ -8,7 +8,7 @@
 - Un **module** change le comportement d'un effet de particules sans toucher au moteur : `"modules": { "force": "spirale" }` dans un émetteur de recette (`effets/<nom>.json`).
 - Réglages comme pour les effets : `data-reglages="vitesse: 0.5; couleur1: accent"` sur la balise, `"reglages": { "vitesse": 0.5 }` dans le déroulé ; couleurs `#rrggbb` ou `primaire`, `accent`, `texte`, `fond`.
 - Comme les particules, les shaders demandent **WebGPU** (Chrome ou Edge récent) ; sans lui, une transition par shader devient un fondu et l'export est refusé.
-- Après écriture : `pulse-motion assembler .` puis `pulse-motion controler .` ; `pulse-motion controler . --gpu` compile aussi chaque shader dans Chrome sans fenêtre.
+- Après écriture : `pulse-motion controler .` (il assemble la page) ; `pulse-motion controler . --gpu` compile aussi chaque shader dans Chrome sans fenêtre.
 - **Licence** : n'écrire que des shaders originaux. Ne jamais recopier un shader trouvé en ligne : ceux de Shadertoy sont sous CC BY-NC-SA par défaut, incompatible avec la licence MIT du plugin.
 - Un shader **sert un propos** (ambiance, rupture, mise en valeur), jamais la décoration : un fond par scène au plus, un post-traitement discret.
 

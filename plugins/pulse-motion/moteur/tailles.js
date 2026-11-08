@@ -2,7 +2,7 @@
  * taille de police de la scène (écrite dans son style, sinon celle du style) × facteur. Recalculée au chargement,
  * quand l'image change de taille (ResizeObserver, et à chaque rendu par sûreté : export) ; le facteur suit les cqh.
  * Un texte dont la taille est animée (data-tween sur font-size) n'est jamais ajusté : l'animation l'emporterait.
- * M.essayerTailles({ minimumCqh, facteurs }) : dans la page de contrôle, pour chaque texte qui déborde de son
+ * M.essayerTailles({ minimumCqh, facteurs, scenes? }) : dans la page de contrôle (des seules scènes données, s'il y en a), pour chaque texte qui déborde de son
  * cadre, le plus grand facteur (sous le facteur actuel) qui supprime le débordement sans passer sous minimumCqh.
  * Navigateur seulement ; dépend de horloge (global M).
  */
@@ -47,7 +47,9 @@
     var depart = M.temps();
     var resultats = [];
     var vus = {};
+    var choisies = options.scenes || null;
     M.minutage.scenes.forEach(function (s) {
+      if (choisies && choisies.indexOf(s.id) < 0) return;
       var sec = conteneur.querySelector(':scope > section[data-scene="' + s.id + '"]');
       if (!sec) return;
       for (var k = 0; k < 5; k++) {

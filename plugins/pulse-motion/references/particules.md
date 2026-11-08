@@ -13,7 +13,7 @@
 - Un élément peut se **briser**, se **désintégrer**, être **assemblé** par des particules ou se **métamorphoser** en un autre : `data-ancre` sur l'élément (et `data-cible` pour l'élément d'arrivée) ; le moteur cache et montre l'élément réel au bon moment (partie `particules/fragmentation`).
 - Des **cordes** et des **tissus** (drapeau, bannière faite d'un titre, rideau qui se déchire, guirlande, filet) s'attachent aux éléments de la scène et les suivent quand ils bougent (partie `particules/structures`).
 - Un effet **sert un propos** : mettre en valeur un chiffre, célébrer une conclusion, poser une ambiance. Jamais pour décorer.
-- Après écriture : `pulse-motion assembler .` puis `pulse-motion controler .` ; les erreurs `effet-…`, `reglage-invalide`, `ancre-introuvable` se corrigent dans la scène.
+- Après écriture : `pulse-motion controler .` (il assemble la page) ; les erreurs `effet-…`, `reglage-invalide`, `ancre-introuvable` se corrigent dans la scène.
 - Fonds animés, auras, transitions et post-traitements par shader, modules qui changent le comportement des particules : `pulse-motion reference shaders`.
 
 ## Poser un effet

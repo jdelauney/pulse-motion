@@ -1,12 +1,14 @@
 /* Pulse Motion – mesures de la vidéo rendue, pour les contrôles (Chrome sans fenêtre).
  *
- * M.mesurer({ ratio, seuils }) rend la vidéo tous les seuils.pasMesure secondes et renvoie des constats
+ * M.mesurer({ ratio, seuils, plages? }) rend la vidéo tous les seuils.pasMesure secondes et renvoie des constats
  * bruts { regle, scene, element, instant, valeur }, sans message (scripts/lib/rendu-controle.js les traduit) :
  * chevauchement, hors-cadre, marge, zone-sure (9:16), logo-masque, texte-fugace, mouvement-rapide, sous-titre-cache-texte.
  * Élément jugé : texte (data-texte), image (sauf alt="" décoratif), logo, SVG de contenu (sans aria-hidden),
  * hors décor (.decor, [data-decor]) et pas imbriqué dans un autre élément jugé. Immobile : même place
  * qu'au relevé précédent, porteur data-etat ni « avant » ni « pendant », lettres arrivées, pas de transition.
  * [data-superpose] autorise un élément à en recouvrir un autre. Un constat par (règle, scène, élément).
+ * plages : [[debut, fin]] ; seuls les relevés qui y tombent sont faits (contrôle partiel : les scènes changées, et un
+ * relevé de chaque côté ; les constats des autres scènes sont repris du contrôle précédent).
  * Revient à l'instant de départ. Navigateur seulement ; dépend de horloge (global M).
  */
 (function (racine) {
@@ -114,9 +116,14 @@
       lectures.delete(el);
     }
 
+    var plages = options.plages || null;
+    function dansPlages(t) {
+      return !plages || plages.some(function (p) { return t >= p[0] - 1e-9 && t <= p[1] + 1e-9; });
+    }
     var n = Math.floor(M.duree / S.pasMesure + 1e-6);
     for (var k = 0; k <= n; k++) {
       var t = Math.min(M.duree, k * S.pasMesure);
+      if (!dansPlages(t)) continue;
       M.rendre(t);
       var cadre = conteneur.getBoundingClientRect();
       var W = cadre.width;
