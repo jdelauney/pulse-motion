@@ -70,7 +70,7 @@ test('assemblage : variables CSS dans une scène, avec et sans musique', () => {
 test('référence des contrôles et du son : règles et variables documentées', () => {
   const lire = (...p) => fs.readFileSync(path.join(__dirname, '..', 'references', ...p), 'utf8');
   for (const r of ['son-sans-piste', 'piste-inconnue']) assert.match(lire('controles.md'), new RegExp('`' + r + '`'), r);
-  const audio = lire('audio.md');
-  assert.match(audio, /## Son réactif/);
+  const audio = require('./aide/references.js').lireReference('audio', { parties: true });
+  assert.match(audio, /^#+ Son réactif$/m);
   for (const v of ['--son-volume', '--son-basses', '--son-mediums', '--son-aigus', '--son-battement', '--son-phase', '--voix-enveloppe']) assert.match(audio, new RegExp(v));
 });
