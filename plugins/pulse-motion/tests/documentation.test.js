@@ -36,8 +36,10 @@ function reglesDuCode() {
   const r = new Map();
   for (const f of CODE) {
     const t = fs.readFileSync(f, 'utf8');
-    const motifs = [/regle: '([a-z][a-z0-9-]*)'/g, /constater\('([a-z][a-z0-9-]*)'/g, /\b(?:erreur|signaler|e)\('([a-z][a-z0-9]*(?:-[a-z0-9]+)+)'/g];
+    const motifs = [/regle: '([a-z][a-z0-9-]*)'/g, /constater\('([a-z][a-z0-9-]*)'/g, /\b(?:erreur|signaler|e|nonVerifie|ErreurRecette)\('([a-z][a-z0-9]*(?:-[a-z0-9]+)+)'/g];
     for (const m of motifs.flatMap((x) => [...t.matchAll(x)])) if (!PAS_DES_REGLES.has(m[1])) r.set(m[1], rel(f));
+    // Règle choisie par une expression (`var regle = … ? 'a' : 'b'`).
+    for (const s of t.matchAll(/\bregle = ([^;]+);/g)) for (const m of s[1].matchAll(/'([a-z][a-z0-9]*(?:-[a-z0-9]+)+)'/g)) r.set(m[1], rel(f));
   }
   const rendu = lire('scripts', 'lib', 'rendu-controle.js');
   const bloc = /const MESSAGES = \{([\s\S]*?)\n\};/.exec(rendu)[1];
@@ -151,7 +153,7 @@ test('documentation.test.js › chaque commande citée existe ; chaque renvoi de
         assert.ok(titres.some((x) => x.startsWith(`${m[2]}. `)), `${rel(f)} : « ${m[1]} § ${m[2]} » ne mène à aucun titre`);
       }
       // « <référence>, section « X » », « section « X » de la référence <nom> », « (table « X ») » après une référence.
-      for (const m of l.matchAll(/(?:pulse-motion reference |`)([a-z][a-z0-9/-]*)`?(?:,| \(| :)? (?:section|table|tableau) « ([^»]+) »/g)) {
+      for (const m of l.matchAll(/(?:pulse-motion reference |`)([a-z][a-z0-9/-]*)`?\s*(?:,|\(|:)?\s*(?:section|table|tableau) « ([^»]+) »/g)) {
         const titres = titresReference(m[1]);
         if (!titres) continue;
         renvois++;

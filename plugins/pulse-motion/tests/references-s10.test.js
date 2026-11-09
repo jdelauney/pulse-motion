@@ -53,7 +53,7 @@ const aVenir = (texte) => texte.slice(texte.indexOf('\n## À venir'));
 
 const NUMEROS = new Set(JSON.parse(lire('references', 'mouvements', 'mouvements.json')).mouvements.map((m) => `#${m.no}`));
 const CLASSES = new Set(lire('moteur', 'mouvements.css').match(/\.pm-m-[a-z0-9-]+/g).map((c) => c.slice(1)));
-const SONS = new Set([...lire('moteur', 'synthe', 'bruitages.js').matchAll(/^ {4}([a-z-]+|'[a-z-]+'): function/gm)].map((m) => m[1].replace(/'/g, '')));
+const SONS = new Set([.../var SONS = \{([\s\S]*?)\n {2}\};/.exec(lire('moteur', 'synthe', 'bruitages.js'))[1].matchAll(/^ {4}([a-z-]+|'[a-z-]+'): function/gm)].map((m) => m[1].replace(/'/g, '')));
 const STYLES = fs.readdirSync(path.join(RACINE, 'styles'));
 
 // --- § 5.14 Garde-fous automatiques -------------------------------------------------------------------------------
@@ -274,7 +274,7 @@ function projetEssai({ id, html, textes = {}, images = [], duree = 14 }) {
   for (const [i, f] of images.entries()) fs.writeFileSync(path.join(dir, 'assets', f), png(40 + i * 8, 120, 200 - i * 6));
   fs.writeFileSync(path.join(dir, 'scenes', `01-${id}.html`), html);
   fs.writeFileSync(path.join(dir, 'deroule.json'), JSON.stringify({
-    version: 1, titre: `Essai ${id}`, genre: 'produit', format: { ratio: '16:9', ips: 30 }, style: 'clair-pedagogique',
+    version: 1, titre: `Essai ${id}`, genre: 'produit', parcours: 'rapide', format: { ratio: '16:9', ips: 30 }, style: 'clair-pedagogique',
     scenes: [{ id, fichier: `scenes/01-${id}.html`, duree, intention: 'essai', textes }],
   }, null, 2));
   return dir;
@@ -454,7 +454,7 @@ test('recettes_rythme_parts_somment_100 : les cinq temps font 100 %', () => {
 test('recettes_rythme_exemple_respecte_lecture : l\'exemple de 30 s tient ses parts et ses scènes restent lisibles', () => {
   const t = sectionReference('recettes-rythme', 'La courbe en cinq temps');
   const ex = /Exemple pour 30 s en 6 scènes : (.+)\n/.exec(t)[1];
-  const durees = [...ex.matchAll(/(\d+(?:,\d+)?) s/g)].map((m) => Number(m[1].replace(',', '.')));
+  const durees = [...ex.matchAll(/(\d+(?:,\d+)?) s\b/g)].map((m) => Number(m[1].replace(',', '.')));
   // pose 4,5 ; montée 4,5 ; éclat 12 (2 scènes de 6) ; tenue 6 ; sortie 3.
   assert.deepEqual(durees, [4.5, 4.5, 12, 6, 6, 3]);
   assert.equal(4.5 + 4.5 + 12 + 6 + 3, 30);
@@ -528,7 +528,7 @@ test('creer_cite_directions_actifs_temoins_recettes : visuels à la première ro
   assert.match(sec('questions'), /ne jamais redessiner le produit/);
   assert.match(sec('deroule'), /Demande floue[^\n]*trois directions contrastées[^\n]*`pulse-motion reference directions`/);
   assert.match(sec('deroule'), /`pulse-motion reference recettes-rythme` : choisir le caractère de la vidéo et sa courbe d'énergie/);
-  assert.match(sec('fabrication'), /6 scènes ou plus, en deux vagues \(`pulse-motion reference scenes-temoins`\)/);
+  assert.match(sec('fabrication'), /\*\*Grammaire\*\*[^\n]*`pulse-motion reference scenes-temoins`/);
   assert.match(sec('fabrication'), /Selon la scène, à lire : `compositions`[^\n]*`cadres-pointeur`[^\n]*`mixage-fin`[^\n]*`actifs-marque`/);
 });
 
