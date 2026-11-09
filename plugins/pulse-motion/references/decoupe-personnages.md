@@ -7,6 +7,13 @@
 - Après chaque découpe, regarder `pulse-motion personnages planche marche --dessin <nom> --vues 0,45,180 --dossier .`. Une articulation mal placée se voit tout de suite : le membre tourne autour du mauvais point.
 - Refaire la découpe ne touche qu'à la vue découpée : les autres vues dessinées et les bouches ajoutées sont gardées. Les couleurs gardent leur nom.
 
+## Pièges qui se voient en mouvement
+
+À vérifier sur l'illustration fournie avant de la découper (sinon le dire à la personne, avec le remède) :
+- **Un seul contour** plutôt qu'une calotte trouée (cheveux, capuche, casque posés sur la tête) : sinon une ligne fine traverse le visage dès qu'il bouge.
+- **Paupière au moins 2 unités plus large que le blanc de l'œil** (`touffu` : paupière de 26 de large pour un blanc de 21) : sinon un « anneau de lunettes » reste autour de l'œil fermé à chaque clignement.
+- **Remplir chaque partie à part** : les sous-tracés d'un même chemin s'annulent là où ils se recouvrent (trou dans la forme).
+
 ## Format
 
 ```json
