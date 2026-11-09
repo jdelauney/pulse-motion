@@ -2,7 +2,8 @@
 'use strict';
 /* Pulse Motion – état de l'ordinateur en une commande (skill « outils »).
  *
- *   node scripts/outils.js   { node, navigateur, ffmpeg, python, transcription, voixSysteme } ; code 0 même s'il manque des outils
+ *   node scripts/outils.js   { node, navigateur, carteGraphique, ffmpeg, python, transcription, voixSysteme } ; code 0 même s'il
+ *   manque des outils. carteGraphique : sondée seulement si un navigateur est trouvé (null sinon), 20 s au plus.
  *
  * Chaque détection est indépendante : une qui échoue (exception) est rendue « ok: false » avec son message.
  */
@@ -35,7 +36,7 @@ function essayer(fn, siErreur) {
   try { return fn(); } catch (e) { return siErreur(e); }
 }
 
-/** -> { node, navigateur, ffmpeg, python, transcription, voixSysteme } */
+/** -> { node, navigateur, carteGraphique, ffmpeg, python, transcription, voixSysteme } */
 function etatOutils(options = {}) {
   const N = () => require('./lib/navigateur.js');
   const F = () => require('./lib/ffmpeg.js');
@@ -46,6 +47,7 @@ function etatOutils(options = {}) {
     etatWhisper = () => Wh().etatWhisper(),
     pythonAncien = () => Wh().pythonAncien(),
     voixSysteme: voix = () => voixSysteme(),
+    sonderCarteGraphique = (o) => require('./lib/carte-graphique.js').sonderCarteGraphique(o),
   } = options;
   const majeure = Number(process.versions.node.split('.')[0]);
   const echec = (quoi) => (e) => ({ ok: false, message: `${quoi} n'a pas pu être vérifié (${e.message}).` });
@@ -55,6 +57,9 @@ function etatOutils(options = {}) {
     return chemin ? { ok: true, chemin, message: 'Chrome ou Edge est prêt pour l\'aperçu et les contrôles.' }
       : { ok: false, chemin: null, message: 'Chrome ou Edge introuvable : en installer un pour l\'aperçu, les contrôles et l\'export.' };
   }, (e) => ({ ok: false, chemin: null, message: `Chrome ou Edge introuvable (${e.message}).` }));
+
+  // Rendu graphique logiciel (spec S2, 5.18) : seulement si un navigateur est trouvé.
+  const carteGraphique = navigateur.ok ? essayer(() => sonderCarteGraphique({ navigateur: navigateur.chemin }), echec('La carte graphique')) : null;
 
   const ffmpeg = essayer(() => {
     const f = trouverFfmpeg();
@@ -84,6 +89,7 @@ function etatOutils(options = {}) {
     pulseMotion: { ok: true, version: require('../.claude-plugin/plugin.json').version },
     node: { ok: majeure >= 20, version: process.versions.node },
     navigateur,
+    carteGraphique,
     ffmpeg,
     python,
     transcription,

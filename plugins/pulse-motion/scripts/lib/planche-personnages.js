@@ -147,7 +147,7 @@ async function rendrePlanche(options) {
   let page = null;
   try {
     const fichierPage = path.join(dossier, 'planche.html');
-    fs.writeFileSync(fichierPage, html);
+    fs.writeFileSync(fichierPage, html, 'utf8');
     const { ouvrirPage } = require('./cdp.js');
     page = await ouvrirPage({ navigateur, largeur, hauteur });
     await page.aller(pathToFileURL(fichierPage).href);

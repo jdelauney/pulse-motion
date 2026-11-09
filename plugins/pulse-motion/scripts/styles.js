@@ -231,7 +231,7 @@ function empreinteStyle(dossier) {
 
 /** Note qu'un style a passé « pulse-motion style verifier » dans son état actuel. */
 function marquerVerifie(dossier) {
-  fs.writeFileSync(path.join(dossier, MARQUE_VERIFIE), JSON.stringify({ empreinte: empreinteStyle(dossier), date: new Date().toISOString().slice(0, 10) }, null, 2));
+  fs.writeFileSync(path.join(dossier, MARQUE_VERIFIE), JSON.stringify({ empreinte: empreinteStyle(dossier), date: new Date().toISOString().slice(0, 10) }, null, 2), 'utf8');
 }
 
 /** Style proposable : livré, ou personnel conforme et vérifié depuis sa dernière modification. */

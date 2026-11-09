@@ -104,7 +104,7 @@ function sauvegarderProjetDe(dans) {
 function ajouterLicence(dans, texte) {
   const fichier = path.join(dans, 'LICENCES.md');
   const debut = fs.existsSync(fichier) ? '' : '# Licences des polices\n\n';
-  fs.appendFileSync(fichier, `${debut}${texte}\n\n`);
+  fs.appendFileSync(fichier, `${debut}${texte}\n\n`, 'utf8');
 }
 
 async function installerBunny({ famille, graisses = [400, 700], italique = false, dans, recuperer = recupererAvecDelai }) {

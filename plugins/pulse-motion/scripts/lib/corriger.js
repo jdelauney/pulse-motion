@@ -53,7 +53,7 @@ function appliquerCorrections(projet, problemes, { copieFaite = false } = {}) {
   let copie = null;
   try {
     copie = copieFaite ? null : sauvegarder(projet).numero;
-    fs.writeFileSync(temporaire, JSON.stringify(brut, null, 2));
+    fs.writeFileSync(temporaire, JSON.stringify(brut, null, 2), 'utf8');
     fs.renameSync(temporaire, fichier);
   } catch (e) {
     try { fs.rmSync(temporaire, { force: true }); } catch { /* dossier à la place du fichier : laissé */ }

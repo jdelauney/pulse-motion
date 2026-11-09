@@ -33,7 +33,7 @@ function nouveauStyle({ nom, depuis = 'clair-pedagogique' }) {
     for (const f of ['catalogue.json', 'identite.json']) {
       const j = lireJSON(path.join(cible, f)) || {};
       j.style = nom;
-      fs.writeFileSync(path.join(cible, f), JSON.stringify(j, null, 2));
+      fs.writeFileSync(path.join(cible, f), JSON.stringify(j, null, 2), 'utf8');
     }
     const sourceGuide = base.personnel ? path.join(base.dossier, 'guide.md') : path.join(RACINE, 'references', 'styles', `${depuis}.md`);
     const guide = fs.existsSync(sourceGuide) ? fs.readFileSync(sourceGuide, 'utf8') : '# Style\n\n## L\'essentiel\n';
@@ -41,7 +41,7 @@ function nouveauStyle({ nom, depuis = 'clair-pedagogique' }) {
     fs.writeFileSync(path.join(cible, 'guide.md'), guide
       .replace(/^- Repris du style « [^»]* » : .*\n\n?/gm, '')
       .replace(/^# .*$/m, `# Style « ${nom} »`)
-      .replace(/^## L'essentiel\n/m, `## L'essentiel\n\n- Repris du style « ${depuis} » : à réécrire pour ce style (personnalité, polices, signature, scènes).\n`));
+      .replace(/^## L'essentiel\n/m, `## L'essentiel\n\n- Repris du style « ${depuis} » : à réécrire pour ce style (personnalité, polices, signature, scènes).\n`), 'utf8');
   } catch (e) {
     try { fs.rmSync(cible, { recursive: true, force: true }); } catch { /* rien à nettoyer */ }
     return { ok: false, message: `Le style « ${nom} » n'a pas pu être créé (${e.code || e.message}) : vérifiez les droits de ${dossierStylesPerso()}, ou indiquez un autre dossier avec la variable PULSE_MOTION_DOSSIER.` };

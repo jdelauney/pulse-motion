@@ -32,11 +32,11 @@ function projetDeDemos(dossier, demos, { style = 'clair-pedagogique', ratio = '1
   fs.mkdirSync(path.join(dossier, 'scenes'), { recursive: true });
   const scenes = demos.map((d) => {
     const fichier = `scenes/${d.id}.html`;
-    fs.writeFileSync(path.join(dossier, fichier), `<section data-scene="${d.id}"${d.sombre ? ' data-demo-sombre' : ''}>\n${DECOR}\n<div class="pm-demo">\n${d.html}\n</div>\n</section>\n`);
+    fs.writeFileSync(path.join(dossier, fichier), `<section data-scene="${d.id}"${d.sombre ? ' data-demo-sombre' : ''}>\n${DECOR}\n<div class="pm-demo">\n${d.html}\n</div>\n</section>\n`, 'utf8');
     return { id: d.id, fichier, duree: d.duree, textes: d.textes || {}, transition: d.transition || 'coupe' };
   });
   const deroule = { version: 1, titre, genre: 'formation', parcours: 'rapide', format: { ratio, ips: 30 }, style, scenes };
-  fs.writeFileSync(path.join(dossier, 'deroule.json'), JSON.stringify(deroule, null, 2));
+  fs.writeFileSync(path.join(dossier, 'deroule.json'), JSON.stringify(deroule, null, 2), 'utf8');
   const min = calculerMinutage(scenes, {});
   return { deroule, plages: min.scenes.map((s) => ({ id: s.id, debut: s.debut, fin: s.fin })) };
 }

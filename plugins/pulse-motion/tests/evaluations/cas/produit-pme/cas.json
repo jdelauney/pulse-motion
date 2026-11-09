@@ -1,0 +1,12 @@
+{
+  "nom": "produit-pme",
+  "demande": "Je dirige une petite entreprise. Fais une vidéo d'une minute pour présenter notre nouvel outil de prise de rendez-vous, avec notre charte (logo et couleurs dans le dossier). La fiche du produit est dans fiche-produit.md.",
+  "fichiers": ["fiche-produit.md", "charte/logo.svg", "charte/couleurs.json"],
+  "format": { "ratio": "16:9", "duree": 60, "voix": false },
+  "correcteurs": [
+    { "n": 1, "quoi": "La première scène dit la promesse du produit (ce qu'on saura faire), pas seulement son nom.", "verifie": "promesse-premiere-scene", "valeur": { "scene": 1 } },
+    { "n": 2, "quoi": "La règle sujet-petit n'apparaît pas au contrôle complet.", "verifie": "regles-absentes", "valeur": ["sujet-petit"] },
+    { "n": 3, "quoi": "La charte est appliquée : le logo et les couleurs du dossier sont dans le déroulé.", "verifie": "charte", "valeur": { "logo": "charte/logo.svg", "couleurs": "charte/couleurs.json" } },
+    { "n": 4, "quoi": "Le contrôle complet ne trouve aucune erreur.", "verifie": "controle", "valeur": { "erreurs": 0 } }
+  ]
+}

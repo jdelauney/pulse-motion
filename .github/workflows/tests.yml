@@ -1,0 +1,30 @@
+# Pulse Motion – tests sur Windows, macOS et Linux (spec S2, 5.17), sans npm install (aucune dépendance).
+# ffmpeg seulement sous Linux : les deux voies d'export sont couvertes (fidèle sous Linux, navigateur ailleurs).
+# Les tests WebGPU se sautent sans carte graphique ; la non-régression visuelle se saute sans référence pour le système.
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+        node: [20, 22]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: ffmpeg (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Tests
+        run: node plugins/pulse-motion/scripts/lancer-tests.js
+        env:
+          PM_SANS_OUVRIR: '1'

@@ -268,7 +268,7 @@ async function verifierFichier({ ffmpeg, fichier, audio = true, noir = { duree: 
 /** Segments -> un fichier, sans réencodage (démultiplexeur concat), prêt à lire en flux (+faststart). */
 async function assemblerSegments({ ffmpeg, segments, sortie, audio }) {
   const liste = `${sortie}.liste.txt`;
-  fs.writeFileSync(liste, segments.map((s) => `file '${path.resolve(s).replace(/\\/g, '/').replace(/'/g, "'\\''")}'`).join('\n'));
+  fs.writeFileSync(liste, segments.map((s) => `file '${path.resolve(s).replace(/\\/g, '/').replace(/'/g, "'\\''")}'`).join('\n'), 'utf8');
   try {
     // Piste son (facultative) ajoutée sans réencodage de l'image.
     // Pas de « -shortest » : il couperait les dernières images ; la piste est déjà à la durée exacte.

@@ -21,6 +21,7 @@ Dire simplement ce qui est prêt, ce qui manque, et l'installer avec l'accord de
 | Outil | Prêt ? | À quoi il sert |
 |---|---|---|
 | Chrome ou Edge (`navigateur`) | ✅ / ❌ | regarder la vidéo, la contrôler, l'exporter |
+| Carte graphique (`carteGraphique`) | ✅ / ❌ | des particules et des effets fluides ; dire son `message` |
 | ffmpeg (`ffmpeg`) | ✅ / ❌ | un MP4 de qualité avec un son propre (sans lui, l'export se fait dans le navigateur) |
 | Python (`python`) | ✅ / ❌ | nécessaire à la transcription |
 | Transcription (`transcription`) | ✅ / ❌ | caler les sous-titres et les animations sur les vrais mots de la voix (facultative) |

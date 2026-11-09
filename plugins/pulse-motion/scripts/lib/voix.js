@@ -126,7 +126,7 @@ async function ecrirePrise({ projet, scene, octets, texte, provisoire = false, o
       donnees.opus = sceau;
     } catch { /* la page embarquera le WAV */ }
   }
-  fs.writeFileSync(fichierMots(absolu), JSON.stringify(donnees, null, 2));
+  fs.writeFileSync(fichierMots(absolu), JSON.stringify(donnees, null, 2), 'utf8');
   return { relatif, duree };
 }
 
@@ -160,13 +160,13 @@ async function transcrirePrise({ projet, relatif, texte, whisper, surProgression
   const ecrire = (champs) => {
     const ancien = lireJSON(fichierMots(absolu)) || {};
     const { echec, ...reste } = ancien;
-    fs.writeFileSync(fichierMots(absolu), JSON.stringify({ ...reste, ...champs }, null, 2));
+    fs.writeFileSync(fichierMots(absolu), JSON.stringify({ ...reste, ...champs }, null, 2), 'utf8');
   };
   // Échec : gardé à côté de la prise (alerte transcription-echouee au contrôle), mots calés approximativement.
   const echouer = (message) => {
     if (!remplacee()) {
       const ancien = lireJSON(fichierMots(absolu)) || {};
-      if (ancien.empreinte === sceau) fs.writeFileSync(fichierMots(absolu), JSON.stringify({ ...ancien, echec: message }, null, 2));
+      if (ancien.empreinte === sceau) fs.writeFileSync(fichierMots(absolu), JSON.stringify({ ...ancien, echec: message }, null, 2), 'utf8');
     }
     return { ok: false, message };
   };

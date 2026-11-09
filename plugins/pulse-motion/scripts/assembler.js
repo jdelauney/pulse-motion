@@ -122,8 +122,8 @@ function ecrireSousTitres(dossierSortie, titre, cartons) {
   const base = path.join(dossierSortie, slug(titre));
   if (cartons && cartons.length) {
     fs.mkdirSync(dossierSortie, { recursive: true });
-    fs.writeFileSync(`${base}.srt`, ST.versSRT(cartons));
-    fs.writeFileSync(`${base}.vtt`, ST.versVTT(cartons));
+    fs.writeFileSync(`${base}.srt`, ST.versSRT(cartons), 'utf8');
+    fs.writeFileSync(`${base}.vtt`, ST.versVTT(cartons), 'utf8');
   } else {
     fs.rmSync(`${base}.srt`, { force: true });
     fs.rmSync(`${base}.vtt`, { force: true });
@@ -471,7 +471,7 @@ function ecrireSortie(projet, assemblage, { siChangee = false } = {}) {
   }
   fs.mkdirSync(dossierSortie, { recursive: true });
   const temporaire = `${sortie}.${process.pid}.tmp`;
-  fs.writeFileSync(temporaire, assemblage.html);
+  fs.writeFileSync(temporaire, assemblage.html, 'utf8');
   fs.renameSync(temporaire, sortie);
   ecrireSousTitres(dossierSortie, titre, assemblage.donnees.sousTitres ? assemblage.donnees.sousTitres.cartons : []);
   // Le rapport de débordement portait sur l'ancienne page : l'aperçu en renverra un pour la nouvelle.
