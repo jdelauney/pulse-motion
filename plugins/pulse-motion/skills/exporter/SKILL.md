@@ -28,7 +28,7 @@ Si ce bloc est vide ou contient une erreur, lancer `pulse-motion ffmpeg`.
 
 ## 1. Vérifier
 
-1. L'état ci-dessus : sans vidéo (`projet` faux), proposer `/pulse-motion:creer` et s'arrêter. L'état dit « Node.js introuvable » ou « node » introuvable (Node.js n'est pas installé) : expliquer qu'il faut installer Node.js en version LTS depuis https://nodejs.org, puis relancer Claude Code, et s'arrêter.
+1. L'état ci-dessus : sans vidéo (`projet` faux), proposer `/pulse-motion:creer` et s'arrêter. « Node.js introuvable » ou « node » introuvable : faire installer Node.js (version LTS, https://nodejs.org), relancer Claude Code, et s'arrêter.
 2. `pulse-motion controler . --complet` (toute la vidéo, jamais seulement les scènes retouchées) : s'il reste des **erreurs**, les dire simplement et proposer de les corriger d'abord (`/pulse-motion:retoucher`). Des **alertes** seules n'empêchent pas l'export : les mentionner en une phrase.
 3. Alerte `voix-provisoire` : la vidéo parle encore avec la voix de l'ordinateur, qui sert seulement à caler l'animation. Le dire, et proposer d'enregistrer d'abord (bouton « Voix » de l'aperçu, ou dire « j'enregistre la scène 1 ») : « Enregistrer ma voix d'abord (Recommandé) » · « Exporter une version de travail avec la voix de l'ordinateur ». Sur « Enregistrer ma voix d'abord » : expliquer comment ouvrir le studio, puis s'arrêter sans exporter. Seulement sur ce second choix, ajouter `--avec-provisoire` à l'export (sans lui, l'export est refusé).
 
@@ -42,20 +42,21 @@ Si ce bloc est vide ou contient une erreur, lancer `pulse-motion ffmpeg`.
 
 ## 3. Exporter
 
-Lancer `pulse-motion exporter .` en arrière-plan, puis lire son résultat JSON quand elle se termine. L'export fidèle demande environ 2 secondes de calcul par seconde de vidéo en 1080p. Après une retouche, il ne refait que les scènes changées : il est alors bien plus court.
+Lancer `pulse-motion exporter .` en arrière-plan, puis lire son résultat JSON quand elle se termine. Compter environ 2 s de calcul par seconde de vidéo en 1080p ; après une retouche, seules les scènes changées sont refaites.
 
 - La personne veut une vidéo plus légère (envoi par courriel) : ajouter `--qualite 720p`. Plus fluide : `--ips 60` (export deux fois plus long).
 - Une demande d'usage (« pour LinkedIn », « un GIF », « sur fond transparent ») ou une remarque après l'export (« trop lourd », « c'est flou », « en vertical ») : répondre d'après `pulse-motion reference sorties` : un réglage d'export, une retouche (`/pulse-motion:retoucher`), ou « pas encore possible », dit franchement.
-- Réussite : le résumé donne `fichier`, `duree`, `images`, `audio`, `mode` (`fidele` ou `navigateur`), et parfois `avertissement`.
-- `avertissement` présent (musique ou voix illisible, son non encodable) : le dire simplement ; la vidéo est exportée, muette ou sans la source illisible.
+- Réussite : le résumé donne `fichier`, `duree`, `images`, `audio`, `mode` (`fidele` ou `navigateur`), `verification`, et parfois `avertissement`.
+- `verification` (`sortie/verification.json`) : une erreur (noir ou silence absent de la page) : « l'export est abîmé », le relancer une fois ; des alertes (image isolée, saut, son qui sature, voix couverte) : les dire en une phrase et proposer la retouche.
+- `avertissement` présent (musique ou voix illisible, son non encodable) : le dire ; la vidéo est exportée, muette ou sans la source illisible.
 - `conseilFfmpeg` présent : la vidéo a été faite dans le navigateur faute de ffmpeg ; le dire en une phrase, et proposer l'installation pour la prochaine fois (étape 2).
-- Export interrompu : les parties déjà faites seront reprises au prochain export.
-- « Chrome ou Edge introuvable » : expliquer qu'il faut installer Chrome ou Edge, ou ouvrir l'aperçu dans l'un des deux et cliquer sur le bouton « MP4 » de la barre de lecture (lancer `pulse-motion apercu . --ouvrir` en arrière-plan si l'aperçu n'est pas ouvert).
-- Autre échec : dire le message simplement ; aucun fichier incomplet n'a été écrit.
+- Export interrompu : les parties faites seront reprises.
+- « Chrome ou Edge introuvable » : installer l'un des deux, ou ouvrir l'aperçu dans l'un d'eux et cliquer sur « MP4 » dans la barre de lecture (`pulse-motion apercu . --ouvrir` en arrière-plan s'il n'est pas ouvert).
+- Autre échec : dire le message simplement ; aucun fichier incomplet n'est écrit.
 
 ## 4. Fin
 
 ✅ **Fait** : la vidéo « <titre> » est exportée en MP4 (<durée>, <son ou muette>, <export fidèle ou dans le navigateur>).
 📄 **Fichiers** : `<fichier>` (à publier ou envoyer) et `sortie/<titre>.html` (page animée, s'ouvre sans connexion) ; avec des sous-titres, `sortie/<titre>.srt` et `sortie/<titre>.vtt` (à joindre sur YouTube, LinkedIn ou une plateforme de formation).
-🔎 **Vérifié** : <export fidèle : nombre d'images, durée et niveau du son contrôlés dans le fichier, images comparées à la vidéo ; dans le navigateur : nombre d'images, première et dernière images non noires> ; <`relecture` du résumé : relue (prête, ou corrigée après relecture), avant les dernières retouches si `aJour` est faux ; `null` : non relue> ; le son a été mesuré, pas écouté. Ce qui n'a pas pu l'être se dit (« sans ffmpeg, le niveau du son n'a pas été contrôlé »).
+🔎 **Vérifié** : <`faites` de `sortie/verification.json` en mots simples : images une à une, noirs, silences, niveau du son> ; <`relecture` du résumé : relue (prête, ou corrigée après relecture), avant les dernières retouches si `aJour` est faux ; `null` : non relue> ; le son a été mesuré, pas écouté. Ce qui n'a pas pu l'être (`nonFaites`) se dit avec sa raison (« sans ffmpeg, le niveau du son n'a pas été contrôlé »).
 ➡️ **Ensuite** : une retouche avec `/pulse-motion:retoucher`, puis un nouvel export.

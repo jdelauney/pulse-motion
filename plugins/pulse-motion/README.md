@@ -45,7 +45,7 @@ Tout se fait par une demande dans Claude Code, jamais dans un terminal. Créer u
 | `skills/` | `creer`, `style`, `retoucher`, `voix`, `exporter`, `reprendre`, `outils`, `dessiner-personnage`, `decouper-personnage`, `animer-personnage`, `atelier-personnages`, `atelier-particules` (voir « Ce que vous pouvez demander ») |
 | `agents/` | `animateur` : écrit une scène ; `critique` : relit la vidéo d'après ses planches, comme un spectateur qui ne l'a pas vue fabriquer |
 | `moteur/` | Moteur JavaScript inclus dans chaque page : courbes, minutage, transitions, horloge déterministe, lecteur, débordements ; capture et export MP4 (servis par l'aperçu seulement) |
-| `scripts/` | Assemblage, aperçu, contrôles, état, historique, export ; `pm.js` derrière la commande `pulse-motion` (`bin/`) |
+| `scripts/` | Assemblage, aperçu, contrôles (mise en page, réalisation, vérité des chiffres, images figées, son mesuré), état, historique, export vérifié (`sortie/verification.json`) ; `pm.js` derrière la commande `pulse-motion` (`bin/`) |
 | `vendor/` | Mediabunny (MPL-2.0), assemblage du MP4 ; voir `vendor/mediabunny/PROVENANCE.md` |
 | `styles/` | Styles : CSS, charte, polices, scènes toutes faites (v1 : `clair-pedagogique`) |
 | `personnages/` | Personnages animés : poses, mouvements, expressions, gabarits et le dessin `touffu` (bibliothèque du plugin ; une vidéo peut avoir les siens) |

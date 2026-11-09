@@ -17,10 +17,25 @@ const { garder } = require('./garde-locale.js');
 // Code injecté dans toute page de mesure : les modules du contrôle (jamais dans la page livrée : moteur à la carte, spec
 // Rapidité 5.19), puis la capture.
 const lire = (f) => fs.readFileSync(path.join(__dirname, '..', '..', 'moteur', f), 'utf8');
-const CONTROLE = ['mesures.js', 'pixels.js'].map(lire).join('\n;\n');
+const CONTROLE = ['mesures.js', 'pixels.js', 'ecoute.js'].map(lire).join('\n;\n');
 const CAPTURE = lire('capture.js');
 const enScript = (code) => `<script>${code.replace(/<\/script/gi, '<\\/script')}</script>`;
 const injecte = () => `${enScript(CONTROLE)}\n${enScript(CAPTURE)}`;
+// Erreurs du code des scènes (spec S2, 5.8, erreur-de-scene) : le moteur les écrit dans la console (« [Pulse Motion] Scène « id » :
+// … »), au chargement comme à chaque image ; gardées dans window.__pmErreursScenes (une par scène). Posé en tête de page, avant
+// les scripts des scènes.
+const GARDE_CONSOLE = `<script>(function () {
+  var liste = window.__pmErreursScenes = [];
+  var vues = {};
+  var avant = console.error;
+  console.error = function () {
+    var texte = Array.prototype.map.call(arguments, String).join(' ');
+    var m = /^\\[Pulse Motion\\] Scène « ([^»]+) » : (.*)$/.exec(texte);
+    if (m && !vues[m[1]] && liste.length < 50) { vues[m[1]] = true; liste.push({ scene: m[1], message: m[2] }); }
+    return avant.apply(console, arguments);
+  };
+})();</script>`;
+const avecGardeConsole = (html) => (/<head[^>]*>/i.test(html) ? String(html).replace(/<head[^>]*>/i, (h) => `${h}\n${GARDE_CONSOLE}`) : `${GARDE_CONSOLE}\n${html}`);
 const TAILLE_MAX = 10 * 1024 * 1024;
 
 function pageAvecMesure(html, script, jeton) {
@@ -36,7 +51,7 @@ function pageAvecMesure(html, script, jeton) {
     .then(function (resultat) { return envoyer({ resultat: resultat === undefined ? null : resultat }); },
       function (e) { return envoyer({ erreur: String((e && e.message) || e) }); });
 })();</script>`;
-  return String(html).replace('</body>', () => `${injecte()}\n${envoi}\n</body>`);
+  return avecGardeConsole(html).replace('</body>', () => `${injecte()}\n${envoi}\n</body>`);
 }
 
 /**
@@ -114,7 +129,7 @@ function pageControle(html) {
   window.addEventListener('error', function (e) { noter(e.message || e); });
   window.addEventListener('unhandledrejection', function (e) { noter((e.reason && e.reason.message) || e.reason); });
 })();</script>`;
-  return String(html).replace('</body>', () => `${injecte()}\n${garde}\n</body>`);
+  return avecGardeConsole(html).replace('</body>', () => `${injecte()}\n${garde}\n</body>`);
 }
 
 /**

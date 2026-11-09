@@ -9,7 +9,8 @@
  * zone des boutons en 9:16, logo, textes fugaces, mouvements rapides) ; sans navigateur : alerte rendu-non-verifie.
  * Écrit sortie/controle.json : { version: 2, problemes: [{ regle, gravite: "erreur" | "alerte" | "info" (rien à corriger : la personne est prévenue), scene?, element?, message, correction? }],
  *   corrections: [{ regle, scene, element?, avant, apres, message }], renduVerifie, rendu: "complet" | "partiel" | null, scenesMesurees,
- *   empreintes: { moteur, seuils, commun, scenes: { id: empreinte } } | null, rendus: { id: [problèmes du rendu] } | null }.
+ *   empreintes: { moteur, seuils, commun, scenes: { id: empreinte } } | null, rendus: { id: [problèmes du rendu] } | null,
+ *   son: { empreinte, problemes } | null } (son mesuré : voix-couverte, silence-imprevu ; repris tant que son empreinte ne change pas).
  * Un seul assemblage par contrôle (deux après des corrections du déroulé) ; écrit aussi la page sortie/<titre>.html
  * quand elle a changé (plus besoin d'assembler avant de contrôler).
  * Contrôle du rendu incrémental (spec Rapidité 5.9) : les contrôles rapides se refont en entier ; le rendu ne mesure que
@@ -28,7 +29,7 @@ const path = require('node:path');
 const Assembleur = require('./assembler.js');
 const { charteFinale, RACINE } = Assembleur;
 const { controlerCSS, controlerLettres, sonConnu, problemeSonInconnu } = require('./lib/controle-scene.js');
-const { empreintesControle, plagesScenes } = require('./lib/empreintes.js');
+const { empreintesControle, plagesScenes, besoinEcoute, empreinteSonore } = require('./lib/empreintes.js');
 const { ecrireAtomique } = require('./lib/fichiers.js');
 const { trouverStyle } = require('./styles.js');
 const { lireGlossaire, verifierGlossaire } = require('./vocabulaire.js');
@@ -46,6 +47,7 @@ const { aDesShaders, compilerShadersGPU } = require('./lib/shaders-gpu.js');
 const { LIMITES_INTERACTIONS, PLEINE_VOISINAGE, STRUCTURES_SCENE_MAX, SOMMETS_TISSU_MAX, RESOLUTION_MILIEU_ALERTE } = require('../moteur/particules/recette.js');
 const { analyserCamera } = require('../moteur/camera.js');
 const { analyserTemps } = require('../moteur/temps.js');
+const { reglesRealisation } = require('./lib/realisation-regles.js');
 
 const SEUILS = JSON.parse(fs.readFileSync(path.join(__dirname, 'seuils.json'), 'utf8'));
 
@@ -55,7 +57,7 @@ const EPS = 1e-6;
 const auPasSuperieur = (x, pas) => Math.round(Math.ceil(x / pas - EPS) * pas * 1000) / 1000;
 const auPasInferieur = (x, pas) => Math.round(Math.floor(x / pas + EPS) * pas * 1000) / 1000;
 
-const { contraste } = require('./lib/couleurs.js');
+const { contraste, suggererCouleur, phraseProposition } = require('./lib/couleurs.js');
 const { dureeVideo } = require('./lib/voix.js');
 
 const compterMots = (texte) => (String(texte).match(/[\p{L}\p{N}]+(?:['’-][\p{L}\p{N}]+)*/gu) || []).length;
@@ -401,6 +403,10 @@ function controlesRapides({ projet, dossierStyles, dossierEffets, assemblage = A
     const termesGlossaire = lireGlossaire(projet).termes;
     problemes.push(...verifierGlossaire(deroule.scenes, termesGlossaire));
     controlerTextes(deroule, scenesHtml, termesGlossaire, problemes);
+    // Réalisation et vérité (spec S2, 5.7) : nouveauté, comparaison, caméra, termes clés, chiffres, glyphes, emoji, images
+    // répétées, code des scènes.
+    problemes.push(...reglesRealisation({ deroule, min, scenesMinutees, scenesHtml, scenesLues, besoinLecture, avecVoix, corrigeable,
+      temps, termes: termesGlossaire, fichiersPolices: assemblage.polices, seuils: SEUILS }));
 
     // Style : tailles de texte et effets.
     try { controlerCSS(fs.readFileSync(path.join(dossierStyle, 'style.css'), 'utf8'), undefined, `Style « ${deroule.style} »`, problemes); } catch { /* style vérifié par l'assemblage */ }
@@ -419,7 +425,12 @@ function controlesRapides({ projet, dossierStyles, dossierEffets, assemblage = A
       if (couleurs[nom] && couleurs.fond) {
         const c = contraste(couleurs[nom], couleurs.fond);
         if (c < minimum) {
-          problemes.push({ regle: 'contraste', gravite: 'alerte', message: `Charte : ${quoi} (${couleurs[nom]}) sur le fond (${couleurs.fond}) n'a qu'un contraste de ${virgule(c)}:1 ; il faut au moins ${virgule(minimum)}:1 pour être lu facilement.` });
+          // Couleur lisible proposée (spec S2, 5.9), jamais appliquée seule : la charte est celle de la personne (sans scène,
+          // corriger.js ne l'applique pas).
+          const autres = Object.fromEntries(Object.entries(couleurs).filter(([k]) => k !== 'fond' && k !== nom));
+          const s = suggererCouleur(couleurs[nom], couleurs.fond, minimum, autres);
+          problemes.push({ regle: 'contraste', gravite: 'alerte', correction: { couleur: nom, valeur: s.hex },
+            message: `Charte : ${quoi} (${couleurs[nom]}) sur le fond (${couleurs.fond}) n'a qu'un contraste de ${virgule(c)}:1 ; il faut au moins ${virgule(minimum)}:1 pour être lu facilement ; ${phraseProposition(s)}.` });
         }
       }
     }
@@ -436,10 +447,15 @@ function controlesRapides({ projet, dossierStyles, dossierEffets, assemblage = A
 
 /** Fichiers dont dépend la mesure du rendu : le moteur inclus dans la page, les modules du contrôle et la capture qu'y injecte
  *  la page de mesure, et le code de mesure côté Node. */
-const MESURE = [path.join(RACINE, 'moteur', 'mesures.js'), path.join(RACINE, 'moteur', 'pixels.js'), path.join(RACINE, 'moteur', 'capture.js'), path.join(__dirname, 'lib', 'rendu-controle.js'), path.join(__dirname, 'lib', 'flashs.js'), path.join(__dirname, 'lib', 'page-mesures.js')];
+const MESURE = [path.join(RACINE, 'moteur', 'mesures.js'), path.join(RACINE, 'moteur', 'pixels.js'), path.join(RACINE, 'moteur', 'ecoute.js'), path.join(RACINE, 'moteur', 'capture.js'), path.join(__dirname, 'lib', 'rendu-controle.js'), path.join(__dirname, 'lib', 'flashs.js'), path.join(__dirname, 'lib', 'page-mesures.js'), path.join(__dirname, 'lib', 'couleurs.js')];
+const lireCode = (f) => { try { return fs.readFileSync(f, 'utf8'); } catch { return ''; } };
 function codeDeMesure(assemblage) {
-  return String(assemblage.moteur || Assembleur.lireMoteur(RACINE)) + MESURE.map((f) => { try { return fs.readFileSync(f, 'utf8'); } catch { return ''; } }).join('\n');
+  return String(assemblage.moteur || Assembleur.lireMoteur(RACINE)) + MESURE.map(lireCode).join('\n');
 }
+/** Code dont dépend le son mesuré (spec S2, 5.11) : mixage, sonie, synthétiseur, écoute. */
+const SON = ['audio.js', 'mixage.js', 'sonie.js', 'ecoute.js', 'wav.js', 'synthe/catalogue.js', 'synthe/partition.js', 'synthe/ambiances.js', 'synthe/instruments.js', 'synthe/bruitages.js']
+  .map((f) => path.join(RACINE, 'moteur', f));
+const codeDuSon = () => SON.map(lireCode).join('\n');
 
 /** controle.json précédent, s'il est au format v2 avec ses empreintes ; sinon null (ancien format : contrôle complet). */
 function lirePrecedent(projet) {
@@ -499,6 +515,7 @@ async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.j
   let scenesMesurees = [];
   let empreintes = null;
   let rendus = null;
+  let son = null;
   if (rendu && assemblage.ok) {
     const { deroule } = lireDeroule(projet);
     const duree = dureeVideo(projet, deroule);
@@ -510,12 +527,18 @@ async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.j
     const changees = comparable ? ids.filter((id) => precedent.empreintes.scenes[id] !== empreintes.scenes[id] || !Array.isArray(precedent.rendus[id])) : ids;
     modeRendu = comparable ? 'partiel' : 'complet';
     scenesMesurees = changees;
+    // Son (spec S2, 5.11) : mesuré seulement si son empreinte a changé depuis le contrôle précédent (même en contrôle complet,
+    // le son n'est rendu qu'une fois par version du son).
+    const humeurs = Object.fromEntries(deroule.scenes.filter((s) => s.musique).map((s) => [s.id, s.musique]));
+    const empreinteSon = besoinEcoute(assemblage) ? empreinteSonore(assemblage, { seuils: SEUILS, code: codeDuSon(), humeurs }) : null;
+    const sonPrecedent = empreinteSon && precedent && precedent.son && precedent.son.empreinte === empreinteSon && Array.isArray(precedent.son.problemes) ? precedent.son : null;
+    const ecoute = empreinteSon && !sonPrecedent ? { humeurs } : null;
     let v;
-    if (comparable && !changees.length) {
+    if (comparable && !changees.length && !ecoute) {
       // Rien n'a changé à l'écran : aucun navigateur, les résultats du rendu sont repris tels quels.
       v = { renduVerifie: true, problemes: [], ajustements: [] };
     } else {
-      const opt = { html: assemblage.html, ratio: deroule.format.ratio, duree };
+      const opt = { html: assemblage.html, ratio: deroule.format.ratio, duree, genre: deroule.genre, ecoute };
       if (navigateur !== undefined) opt.navigateur = navigateur;
       if (comparable) {
         const minutage = calculerMinutage(assemblage.donnees.scenes, {}, options);
@@ -554,6 +577,9 @@ async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.j
     problemes = [...problemes, ...duRendu];
     if (renduVerifie) {
       rendus = Object.fromEntries(ids.map((id) => [id, duRendu.filter((p) => p.scene === id)]));
+      // Son : mesuré à l'instant (v.son), ou repris (empreinte inchangée) ; non mesuré (erreur du rendu du son) : rien de gardé.
+      son = sonPrecedent || (ecoute && Array.isArray(v.son) ? { empreinte: empreinteSon, problemes: v.son } : null);
+      if (son) problemes = [...problemes, ...son.problemes];
     } else {
       empreintes = null;
       modeRendu = null;
@@ -563,13 +589,14 @@ async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.j
     // Sans rendu (--sans-rendu) : les résultats du dernier rendu restent comparables au prochain contrôle.
     empreintes = precedent.empreintes;
     rendus = precedent.rendus;
+    son = precedent.son || null;
   }
   if (gpu && assemblage.ok && aDesShaders(assemblage.donnees)) {
     const g = await compilerShadersGPU({ html: assemblage.html, ...(navigateur !== undefined ? { navigateur } : {}) });
     problemes = [...problemes, ...g.problemes];
   }
   if (r.fichier) {
-    ecrireAtomique(r.fichier, JSON.stringify({ version: 2, problemes, corrections, renduVerifie, rendu: modeRendu, scenesMesurees, empreintes, rendus }, null, 2));
+    ecrireAtomique(r.fichier, JSON.stringify({ version: 2, problemes, corrections, renduVerifie, rendu: modeRendu, scenesMesurees, empreintes, rendus, son }, null, 2));
   }
   return { problemes, corrections, renduVerifie, rendu: modeRendu, scenesMesurees, fichier: r.fichier };
 }

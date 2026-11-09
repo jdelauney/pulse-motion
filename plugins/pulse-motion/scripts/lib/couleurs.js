@@ -75,4 +75,37 @@ function meilleurSur(fond) {
   return contraste('#000000', fond) >= contraste('#ffffff', fond) ? '#000000' : '#ffffff';
 }
 
-module.exports = { luminance, contraste, hexVersOklab, oklabVersHex, versOklch, depuisOklch, ajusterContraste, meilleurSur };
+const HEX = /^#[0-9a-f]{6}$/i;
+const ecartTeinte = (a, b) => { const d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; };
+
+/**
+ * Couleur lisible proposée à la place de hex sur fond (spec S2, 5.9 ; idée de suggestColor d'explainroo, MIT,
+ * © 2026 Vincent Schmalbach, adaptée à OKLCH). D'abord la couleur de la charte la plus proche en teinte qui passe le
+ * minimum sur ce fond ; sinon la même teinte, luminosité ajustée (ajusterContraste), vérifiée sur la valeur arrondie ;
+ * sinon noir ou blanc. -> { hex, depuis: 'charte' | 'teinte', nom?, plus?: 'plus sombre' | 'plus claire' }
+ * charte : { nom: '#rrggbb' } ; jamais appliquée seule (la charte est celle de la personne).
+ */
+function suggererCouleur(hex, fond, minimum, charte = {}) {
+  const depart = versOklch(hex);
+  const candidates = Object.entries(charte || {})
+    .filter(([, c]) => typeof c === 'string' && HEX.test(c) && c.toLowerCase() !== String(fond).toLowerCase() && c.toLowerCase() !== String(hex).toLowerCase())
+    .filter(([, c]) => contraste(c, fond) >= minimum)
+    .map(([nom, c]) => { const o = versOklch(c); return { nom, hex: c.toLowerCase(), teinte: o.C < 0.02 || depart.C < 0.02 ? 180 : ecartTeinte(o.h, depart.h), L: Math.abs(o.L - depart.L) }; })
+    .sort((a, b) => a.teinte - b.teinte || a.L - b.L || (a.nom < b.nom ? -1 : 1));
+  if (candidates.length) return { hex: candidates[0].hex, depuis: 'charte', nom: candidates[0].nom };
+  const ajuste = ajusterContraste(hex, fond, minimum);
+  const choisie = ajuste.ok && contraste(ajuste.hex, fond) >= minimum ? ajuste.hex : meilleurSur(fond);
+  return { hex: choisie, depuis: 'teinte', plus: luminance(choisie) < luminance(hex) ? 'plus sombre' : 'plus claire' };
+}
+
+/** Fin de message : la couleur proposée, en mots. */
+function phraseProposition(s) {
+  return `couleur lisible proposée : ${s.hex} (${s.depuis === 'charte' ? `la couleur « ${s.nom} » de la charte` : `la même teinte, ${s.plus}`})`;
+}
+
+/** « rgb(…) » ou { r, g, b } -> #rrggbb */
+function versHex(c) {
+  return `#${[c.r, c.g, c.b].map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('')}`;
+}
+
+module.exports = { luminance, contraste, hexVersOklab, oklabVersHex, versOklch, depuisOklch, ajusterContraste, meilleurSur, suggererCouleur, phraseProposition, versHex };

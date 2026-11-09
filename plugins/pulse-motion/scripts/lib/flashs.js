@@ -6,10 +6,12 @@
  * flashAire de l'image (grille de flashCases × flashCases cases), et le premier trouvé seulement.
  * Idées de video-director (frame_stats, image d'analyse réduite) et de reanimate (clip.scale), réécrites.
  *
- * Fonctions pures : instantsFlashs, casesImage, change, fusionnerPassages, chercherFlash.
- * mesurerFlashs({ duree, ips, seuils, relever(t) -> Promise<cases> | releverTous([t]) -> Promise<[cases]>, sceneA(t) -> id | null,
- *   plages? }) -> Promise<constats> ; releverTous peut répartir les instants sur plusieurs pages (l'ordre est gardé).
- *   plages : [[debut, fin]] ; seuls les instants de la passe rapide qui y tombent sont relevés (contrôle partiel).
+ * Fonctions pures : instantsFlashs, casesImage, change, fusionnerPassages, chercherFlash, vignetteGrise, statsGris,
+ * partChangee, analyserImages (images figées et vides, spec S2, 5.10).
+ * mesurerFlashs({ duree, ips, seuils, relever(t) -> Promise<cases | { cases, gris }> | releverTous([t]) -> Promise<[…]>,
+ *   sceneA(t) -> id | null, plages?, images? }) -> Promise<constats> ; releverTous peut répartir les instants sur plusieurs pages
+ *   (l'ordre est gardé). plages : [[debut, fin]] ; seuls les instants de la passe rapide qui y tombent sont relevés (contrôle
+ *   partiel). images : contexte d'analyserImages ; les relevés de la passe rapide portent alors leur vignette en gris.
  */
 
 const DEFAUTS = { flashIps: 12, flashVariation: 0.1, flashSombre: 0.8, flashAire: 0.25, flashMax: 3, flashCases: 4, largeurFlash: 64 };
@@ -94,14 +96,107 @@ function chercherFlash(series, { n, ips, S }) {
 
 const dans = (t, plages) => !plages || plages.some(([a, b]) => t >= a - 1e-9 && t <= b + 1e-9);
 
-async function mesurerFlashs({ duree, ips = 30, seuils, relever, releverTous, sceneA, plages = null }) {
+/** Vignette en gris (luma 601, 0 à 255) d'une image ; pixel(x, y) -> [r, g, b, a]. */
+function vignetteGrise(pixel, l, h) {
+  const g = new Uint8Array(l * h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < l; x++) { const p = pixel(x, y); g[y * l + x] = Math.round(0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2]); }
+  return g;
+}
+
+/** Moyenne et écart-type (niveaux de 0 à 255) d'une vignette en gris. */
+function statsGris(g) {
+  let s = 0;
+  let s2 = 0;
+  for (let i = 0; i < g.length; i++) { s += g[i]; s2 += g[i] * g[i]; }
+  const m = s / Math.max(1, g.length);
+  return { moyenne: m, ecart: Math.sqrt(Math.max(0, s2 / Math.max(1, g.length) - m * m)) };
+}
+
+/** Part des pixels qui changent de plus de niveau entre deux vignettes de même taille. */
+function partChangee(a, b, niveau) {
+  if (!a || !b || a.length !== b.length) return 1;
+  let n = 0;
+  for (let i = 0; i < a.length; i++) if (Math.abs(a[i] - b[i]) > niveau) n++;
+  return n / a.length;
+}
+
+const DEFAUTS_IMAGES = { tempsMort: 2.5, pauseFinale: 0.5, figeeSurface: 0.005, figeeNiveau: 2, imageVideEcart: 6, imageVideDuree: 1 };
+
+/**
+ * Images figées et vides (spec S2, 5.10), sur les vignettes de la passe rapide des flashs (aucune capture de plus).
+ * releves : [{ t, gris }] dans l'ordre, null entre deux plages (la comparaison reprend après) ; contexte : { duree, scenes:
+ * [{ id, debut, fin, entree, exclue, mouvements: [[debut, fin]] }] } (exclue : effets de particules, shaders ou data-gel ;
+ * mouvements : éléments minutés du contenu).
+ * - image-figee : moins de figeeSurface de l'image a changé (de plus de figeeNiveau niveaux) depuis le début du passage, pendant
+ *   plus de tempsMort, alors qu'un élément du contenu (mouvements : décors exclus) est minuté pour bouger pendant tempsMort au
+ *   moins de ce passage (sinon temps-mort le dit déjà) ; pause finale de la vidéo exclue.
+ * - image-vide : des vignettes d'écart-type sous imageVideEcart pendant imageVideDuree ; entrée de la première scène depuis le fond et dernière
+ *   demi-seconde exclues ; une par scène.
+ * Idées : frame_stats et analyse_picture de video-director (MIT, © 2026 win4r), air mort de take-one (principe seulement).
+ */
+function analyserImages(releves, contexte, seuils) {
+  const S = { ...DEFAUTS_IMAGES };
+  for (const k of Object.keys(S)) if (seuils && typeof seuils[k] === 'number') S[k] = seuils[k];
+  const scenes = (contexte && contexte.scenes) || [];
+  const duree = (contexte && contexte.duree) || 0;
+  const sceneEn = (t) => { const v = scenes.filter((s) => t >= s.debut - 1e-9 && t < s.fin); return v.length ? v[v.length - 1] : scenes[scenes.length - 1] || null; };
+  const constats = [];
+  const vues = new Set();
+  const finVideo = duree - S.pauseFinale;
+  // Images figées : passages où presque rien ne change depuis leur premier relevé.
+  const fermer = (a, b) => {
+    if (!a || !b || b.t - a.t <= S.tempsMort + 1e-6) return;
+    const debut = a.t;
+    const fin = Math.min(b.t, finVideo);
+    if (fin - debut <= S.tempsMort + 1e-6) return;
+    const s = sceneEn((debut + fin) / 2);
+    if (!s || s.exclue || vues.has(`figee|${s.id}`)) return;
+    // Un élément du contenu minuté pour bouger pendant tempsMort au moins de ce passage : une entrée brève à son bord ne suffit pas.
+    const bouge = (s.mouvements || []).some(([x, y]) => Math.min(y, fin) - Math.max(x, debut) >= S.tempsMort - 1e-6);
+    if (!bouge) return;
+    vues.add(`figee|${s.id}`);
+    constats.push({ regle: 'image-figee', scene: s.id, element: null, instant: Math.round(debut * 100) / 100, valeur: { d: Math.round((fin - debut) * 10) / 10, a: Math.round(debut * 10) / 10, b: Math.round(fin * 10) / 10 } });
+  };
+  let ref = null;
+  let precedent = null;
+  for (const r of releves) {
+    if (!r || !r.gris) { fermer(ref, precedent); ref = null; precedent = null; continue; }
+    if (!ref) { ref = r; precedent = r; continue; }
+    if (partChangee(ref.gris, r.gris, S.figeeNiveau) >= S.figeeSurface) { fermer(ref, precedent); ref = r; }
+    precedent = r;
+  }
+  fermer(ref, precedent);
+  // Images vides : unies pendant imageVideDuree au moins (un titre qui entre 0,2 s après le début de sa scène ne compte pas).
+  const premiere = scenes[0];
+  const finEntree = premiere ? premiere.debut + (premiere.entree || 0) : 0;
+  let debutVide = null;
+  for (const r of releves) {
+    const unie = r && r.gris && r.t >= finEntree - 1e-9 && r.t <= duree - 0.5 && statsGris(r.gris).ecart < S.imageVideEcart;
+    if (!unie) { debutVide = null; continue; }
+    // Un passage uni se compte dans une seule scène : il recommence quand la scène change.
+    if (debutVide === null || sceneEn(debutVide) !== sceneEn(r.t)) debutVide = r.t;
+    if (r.t - debutVide < S.imageVideDuree - 1e-6) continue;
+    const s = sceneEn(debutVide);
+    if (!s || s.exclue || vues.has(`vide|${s.id}`)) continue;
+    vues.add(`vide|${s.id}`);
+    constats.push({ regle: 'image-vide', scene: s.id, element: null, instant: Math.round(debutVide * 100) / 100, valeur: null });
+  }
+  return constats;
+}
+
+const casesDe = (v) => (Array.isArray(v) ? v : v.cases);
+
+async function mesurerFlashs({ duree, ips = 30, seuils, relever, releverTous, sceneA, plages = null, images = null }) {
   const S = seuilsFlashs(seuils);
   const n = S.flashCases;
-  // releverTous(instants) -> Promise<[cases]> (plusieurs pages en même temps) ; sinon relever(t), un instant après l'autre.
-  const tous = releverTous || (async (liste) => { const r = []; for (const t of liste) r.push(await relever(t)); return r; });
+  // releverTous(instants) -> Promise<[cases | { cases, gris }]> (plusieurs pages en même temps) ; sinon relever(t), un instant
+  // après l'autre. images : contexte de analyserImages (les relevés portent alors leur vignette en gris).
+  const tous0 = releverTous || (async (liste) => { const r = []; for (const t of liste) r.push(await relever(t)); return r; });
   const instants = instantsFlashs(duree, S.flashIps);
   const retenus = instants.map((t, i) => i).filter((i) => dans(instants[i], plages));
-  const valeurs = await tous(retenus.map((i) => instants[i]));
+  const bruts = await tous0(retenus.map((i) => instants[i]));
+  const valeurs = bruts.map(casesDe);
+  const tous = async (liste) => (await tous0(liste)).map(casesDe);
   const passages = [];
   for (let k = 1; k < retenus.length; k++) {
     const i = retenus[k];
@@ -110,12 +205,21 @@ async function mesurerFlashs({ duree, ips = 30, seuils, relever, releverTous, sc
     if (change(valeurs[k - 1], valeurs[k], S)) passages.push([Math.max(0, instants[i - 1] - 1), Math.min(duree, instants[i] + 1)]);
   }
   const constats = [];
+  if (images) {
+    // Vignettes de la passe rapide, dans l'ordre ; un trou (hors des plages) coupe les passages immobiles.
+    const releves = [];
+    retenus.forEach((i, k) => {
+      if (k > 0 && retenus[k - 1] !== i - 1) releves.push(null);
+      releves.push(bruts[k] && bruts[k].gris ? { t: instants[i], gris: bruts[k].gris } : null);
+    });
+    constats.push(...analyserImages(releves, images, seuils));
+  }
   for (const p of fusionnerPassages(passages)) {
     const premiere = Math.ceil(p[0] * ips);
     const derniere = Math.floor(p[1] * ips);
-    const images = [];
-    for (let f = premiere; f <= derniere; f++) images.push(f / ips);
-    const series = await tous(images);
+    const imagesPassage = [];
+    for (let f = premiere; f <= derniere; f++) imagesPassage.push(f / ips);
+    const series = await tous(imagesPassage);
     const trouve = chercherFlash(series, { n, ips, S });
     if (trouve) {
       const t = (premiere + trouve.debut + 1) / ips;
@@ -126,4 +230,4 @@ async function mesurerFlashs({ duree, ips = 30, seuils, relever, releverTous, sc
   return constats;
 }
 
-module.exports = { DEFAUTS, seuilsFlashs, instantsFlashs, casesImage, change, fusionnerPassages, chercherFlash, mesurerFlashs, luminance };
+module.exports = { DEFAUTS, seuilsFlashs, instantsFlashs, casesImage, change, fusionnerPassages, chercherFlash, mesurerFlashs, luminance, vignetteGrise, statsGris, partChangee, analyserImages };

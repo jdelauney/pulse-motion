@@ -232,16 +232,21 @@ test('cache : seuls les segments du dernier export réussi et de l\'export en co
   const dir = projet3();
   assert.equal((await exporter(dir)).ok, true);
   const pixels = path.join(dir, 'sortie', '.export', 'segments', 'pixels');
-  const premiers = fs.readdirSync(pixels).sort();
+  // Segments seulement (chacun a aussi ses statistiques, <segment>.stats.json, gardées et retirées avec lui).
+  const segments = () => fs.readdirSync(pixels).filter((f) => f.endsWith('.mp4')).sort();
+  const premiers = segments();
+  const statistiques = () => fs.readdirSync(pixels).filter((f) => f.endsWith('.stats.json')).map((f) => f.slice(0, -'.stats.json'.length)).sort();
+  assert.deepEqual(statistiques(), premiers);
   modifierDeroule(dir, (d) => { d.scenes[1].textes.legende = 'autre'; });
   // Interrompu : les segments du dernier export réussi restent, avec celui de l'export en cours.
   assert.equal((await exporter(dir, { arreterApres: 1 })).ok, false);
-  const pendant = fs.readdirSync(pixels).sort();
+  const pendant = segments();
   assert.ok(premiers.every((f) => pendant.includes(f)));
   assert.equal(pendant.length, premiers.length + 1);
   assert.equal((await exporter(dir)).ok, true);
-  const apres = fs.readdirSync(pixels).sort();
+  const apres = segments();
   assert.equal(apres.length, premiers.length);
+  assert.deepEqual(statistiques(), apres);
   assert.equal(apres.filter((f) => !premiers.includes(f)).length, 1);
 });
 

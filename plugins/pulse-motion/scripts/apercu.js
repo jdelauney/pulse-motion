@@ -32,6 +32,7 @@ const TYPES_ECRITURE = [
   ['/_pm/controle', ['application/json']],
   ['/_pm/export', ['video/mp4']],
   ['/_pm/export-etat', ['application/json']],
+  ['/_pm/export-stats', ['application/json']],
   ['/_pm/planche-fin', ['application/json']],
   [/^\/_pm\/planche\/[a-z0-9-]+\.png$/, ['image/png']],
   [/^\/_pm\/atelier\/(reglages|recette|reglages-shader)$/, ['application/json']],
@@ -110,7 +111,7 @@ async function demarrerApercu({ dossier, port = 4321, dossierStyles, dossierEffe
   }
 
   const rapportPage = path.join(projet, 'sortie', 'controle-page.json');
-  const routesExport = creerRoutesExport(projet);
+  const routesExport = creerRoutesExport(projet, { optionsAssemblage });
   const routesVoix = creerRoutesVoix(projet, { whisper: whisper || whisperParDefaut, maxOctets: maxPrise, outil: trouverFfmpeg });
   const routesAtelier = creerRoutesAtelier(projet, { dossierStyles, ...(dossierEffets ? { bibliotheque: dossierEffets } : {}) });
   const routesPersonnages = creerRoutesPersonnages(projet, { ...(bibliothequePersonnages ? { bibliotheque: bibliothequePersonnages } : {}), ecrireBibliotheque: ecrireBibliothequePersonnages });

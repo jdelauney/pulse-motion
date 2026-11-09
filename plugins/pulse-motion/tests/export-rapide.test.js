@@ -205,7 +205,11 @@ test('segment-tronque-detecte-par-paquets : un segment tronqué n\'est pas repri
 test('vérifications : la validité d\'un segment passe par les paquets, le fichier final garde un décodage complet', () => {
   const source = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'export-fidele.js'), 'utf8');
   assert.match(source, /async function segmentValide[\s\S]*?compter: 'paquets'/);
-  assert.match(source, /F\.sonder\(\{ ffprobe: outil\.cheminProbe, fichier: partiel \}\)/);
+  // Le décodage complet du fichier final se fait dans la passe de vérification (spec S2, 5.12), qui compte les images ;
+  // ffprobe ne lit plus que les pistes.
+  assert.match(source, /F\.sonder\(\{ ffprobe: outil\.cheminProbe, fichier: partiel, compter: 'aucun' \}\)/);
+  assert.match(source, /F\.verifierFichier\(\{ ffmpeg: outil\.chemin, fichier: partiel,/);
+  assert.match(source, /const decodees = m\.images === null \? s\.images : m\.images;/);
 });
 
 // ---------- 5.17 Voie navigateur ----------

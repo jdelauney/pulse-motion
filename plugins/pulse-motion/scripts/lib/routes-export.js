@@ -4,6 +4,8 @@
  *   GET  /_pm/capture.js, /_pm/export.mjs, /_pm/export-ui.mjs, /_pm/vendor/mediabunny.min.mjs
  *   POST /_pm/export           (video/mp4, en-tête X-PM-Relecture) → sortie/<titre>.mp4
  *   POST /_pm/export-etat      (JSON) → sortie/export.json (suivi par « pulse-motion exporter »)
+ *   POST /_pm/export-stats     (JSON) → sortie/.export/stats-navigateur.json (statistiques image par image, analysées à la
+ *                              réception de la vidéo : sortie/verification.json)
  *   POST /_pm/planche/<nom>.png (image/png) → sortie/planche/<nom>.png
  *   POST /_pm/planche-fin      (JSON { images }) → sortie/planche/planche.html
  * Les types non « simples » (video/mp4, image/png, application/json) imposent une requête
@@ -14,6 +16,7 @@ const path = require('node:path');
 const { lireDeroule } = require('./deroule.js');
 const { slug } = require('../assembler.js');
 const { ecrireAtomique, ecrireJSON } = require('./fichiers.js');
+const { verifierNavigateur, resume } = require('./verification.js');
 
 const RACINE = path.resolve(__dirname, '..', '..');
 const STATIQUES = {
@@ -46,10 +49,12 @@ function typeEst(req, type) {
   return String(req.headers['content-type'] || '').toLowerCase().split(';')[0].trim() === type;
 }
 
-/** creerRoutesExport(projet) -> (req, res, url) => bool (true si la route a été traitée) */
-function creerRoutesExport(projet) {
+/** creerRoutesExport(projet, { optionsAssemblage? }) -> (req, res, url) => bool (true si la route a été traitée) ;
+ *  optionsAssemblage : celles de l'aperçu (styles), pour analyser la vidéo reçue comme elle a été assemblée. */
+function creerRoutesExport(projet, { optionsAssemblage = {} } = {}) {
   const sortie = path.join(projet, 'sortie');
   const etatExport = path.join(sortie, 'export.json');
+  const fichierStats = path.join(sortie, '.export', 'stats-navigateur.json');
 
   function ecrireEtatExport(etat) {
     ecrireJSON(etatExport, { ...etat, date: new Date().toISOString() });
@@ -117,9 +122,17 @@ function creerRoutesExport(projet) {
           const final = path.join(sortie, nom);
           fs.renameSync(partiel, final);
           const fichier = path.relative(projet, final).split(path.sep).join('/');
+          // Vérification de la vidéo (spec S2, 5.12) : statistiques envoyées par la page juste avant, analysées ici.
+          let verification;
+          try {
+            let stats = null;
+            try { stats = JSON.parse(fs.readFileSync(fichierStats, 'utf8')); } catch { /* pas de statistiques reçues */ }
+            fs.rmSync(fichierStats, { force: true });
+            verification = resume(verifierNavigateur({ projet, stats, fichier, optionsAssemblage }));
+          } catch { verification = undefined; }
           ecrireEtatExport({
             etat: 'fini', fichier, octets: taille, duree: relecture.duree, images: relecture.images, audio: !!relecture.audio,
-            avertissement: relecture.avertissement ? String(relecture.avertissement) : undefined,
+            avertissement: relecture.avertissement ? String(relecture.avertissement) : undefined, verification,
           });
           fini = true;
           envoiEnCours = false;
@@ -127,6 +140,17 @@ function creerRoutesExport(projet) {
         } catch (e) { echec(500, messageDisque(e)); }
       });
     });
+  }
+
+  /** Statistiques image par image de l'export dans le navigateur (JSON, 32 Mo au plus) -> sortie/.export/stats-navigateur.json. */
+  async function recevoirStats(req, res) {
+    if (!typeEst(req, 'application/json')) return repondre(res, 415, { message: 'JSON attendu.' });
+    try {
+      const stats = await lireJSON(req, 32e6);
+      if (!stats || !Array.isArray(stats.m)) return repondre(res, 400, { message: 'Statistiques illisibles.' });
+      ecrireAtomique(fichierStats, JSON.stringify(stats));
+      return repondre(res, 200, {});
+    } catch { return repondre(res, 400, { message: 'Statistiques illisibles.' }); }
   }
 
   async function recevoirEtat(req, res) {
@@ -181,6 +205,7 @@ function creerRoutesExport(projet) {
     if (req.method !== 'POST') return false;
     if (url.pathname === '/_pm/export') { recevoirVideo(req, res); return true; }
     if (url.pathname === '/_pm/export-etat') { recevoirEtat(req, res); return true; }
+    if (url.pathname === '/_pm/export-stats') { recevoirStats(req, res); return true; }
     if (url.pathname === '/_pm/planche-fin') { terminerPlanche(req, res); return true; }
     const m = NOM_IMAGE.exec(url.pathname);
     if (m) { recevoirImage(req, res, m[1]); return true; }

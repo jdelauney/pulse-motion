@@ -6,7 +6,7 @@ const path = require('node:path');
 const { sauvegarder, retirerSauvegarde } = require('../historique.js');
 
 const virgule = (x) => String(Math.round(x * 100) / 100).replace('.', ',');
-const RAISONS = { lecture: 'temps de lecture', 'pause-finale': 'image stable à la fin', 'temps-mort': 'temps mort en fin de scène' };
+const RAISONS = { lecture: 'temps de lecture', 'pause-finale': 'image stable à la fin', 'temps-mort': 'temps mort en fin de scène', 'comparaison-courte': 'temps pour comparer les deux colonnes' };
 // Ce qui a été fait, en mots : l'avant et l'après ne diffèrent souvent que par des espaces invisibles.
 const quoi = (p) => (p.regle === 'typographie' ? `typographie française${p.details ? ` (${p.details})` : ''}` : p.details || 'majuscule accentuée');
 

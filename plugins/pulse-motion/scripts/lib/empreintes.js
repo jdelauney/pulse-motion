@@ -200,3 +200,34 @@ function plagesScenes(minutage, ids, marge = 0) {
 }
 
 module.exports = { empreintesControle, plagesScenes, decouperSegments, empreintesPixels, empreinteDerivee, squelettePage, stable, sha };
+
+/**
+ * Son au contrôle (spec S2, 5.11) : faut-il mesurer le son de cette page, et l'empreinte de ce qui le fait entendre.
+ * besoinEcoute(assemblage) -> bool : une voix avec une musique ou des bruitages (voix couverte), ou une musique (silences).
+ * empreinteSonore(assemblage, { seuils, code, humeurs }) -> sha256 : sources sonores de la page (blocs « pm-son-… »), données
+ *   du son (musique, voix, bruitages, scènes et leurs voix), sections qui jouent un son, humeurs de la musique par scène,
+ *   seuils et code du son. Inchangée : le son mesuré au contrôle précédent est repris sans être rendu.
+ */
+function besoinEcoute(assemblage) {
+  const d = assemblage.donnees || {};
+  const voix = (d.scenes || []).some((s) => s.voix && s.voix.source);
+  const musique = !!(d.musique && (d.musique.source || d.musique.partition) && d.musique.volume !== 0);
+  const bruitages = !!(d.bruitages && d.bruitages.transitions) || (assemblage.parScene || []).some((p) => /\sdata-son\s*=/.test(p.section || ''));
+  return musique || (voix && bruitages);
+}
+
+function empreinteSonore(assemblage, { seuils, code = '', humeurs = {} } = {}) {
+  const d = assemblage.donnees || {};
+  const blocs = String(assemblage.html || '').match(/<script type="text\/plain" id="pm-son-[^"]*">[^<]*<\/script>/g) || [];
+  const S = Object.fromEntries(Object.entries(seuils || {}).filter(([k]) => /^(voix|silence)/.test(k)));
+  return sha(stable({
+    blocs: blocs.map(sha),
+    musique: d.musique || null, voix: d.voix || null, bruitages: d.bruitages || null, tempo: d.tempo || null,
+    scenes: (d.scenes || []).map((s) => ({ id: s.id, duree: s.duree, rythme: s.rythme, transition: s.transition, voix: s.voix || null })),
+    sections: (assemblage.parScene || []).filter((p) => /\sdata-son\s*=/.test(p.section || '')).map((p) => ({ id: p.id, section: sha(p.section) })),
+    humeurs, seuils: S, code: sha(String(code)),
+  }));
+}
+
+module.exports.besoinEcoute = besoinEcoute;
+module.exports.empreinteSonore = empreinteSonore;

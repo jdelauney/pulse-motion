@@ -97,7 +97,7 @@ function trouverFfmpeg({ env = process.env, plateforme = process.platform, exist
 }
 
 /** Lance un programme ; -> Promise<{ code, sortie: Buffer, erreurs: string }> ; arrêté si signal. */
-function lancer(programme, args, { entree = null, signal } = {}) {
+function lancer(programme, args, { entree = null, signal, erreursMax = 4000 } = {}) {
   return new Promise((resoudre, rejeter) => {
     const p = spawn(programme, args, { stdio: [entree ? 'pipe' : 'ignore', 'pipe', 'pipe'], windowsHide: true });
     const sortie = [];
@@ -107,7 +107,7 @@ function lancer(programme, args, { entree = null, signal } = {}) {
     const surAnnulation = () => { annule = true; try { p.kill(); } catch { /* déjà arrêté */ } };
     if (signal) { if (signal.aborted) surAnnulation(); else signal.addEventListener('abort', surAnnulation, { once: true }); }
     p.stdout.on('data', (d) => sortie.push(d));
-    p.stderr.on('data', (d) => { erreurs = (erreurs + d.toString()).slice(-4000); });
+    p.stderr.on('data', (d) => { erreurs = (erreurs + d.toString()).slice(-erreursMax); });
     p.on('error', (e) => rejeter(e));
     p.on('close', (code) => {
       if (signal) signal.removeEventListener('abort', surAnnulation);
@@ -125,17 +125,29 @@ const derniereLigne = (texte) => String(texte).trim().split(/\r?\n/).slice(-3).j
 /** Réglages x264 d'un segment (preset, crf) -> arguments de sortie de ffmpeg. */
 const argsX264 = ({ ips, crf, preset = 'medium' }) => ['-c:v', 'libx264', '-preset', preset, '-crf', String(crf), '-pix_fmt', 'yuv420p', '-r', String(ips)];
 
+/** Largeur des vignettes en gris des statistiques d'export (spec S2, 5.12). */
+const LARGEUR_STATS = 192;
+
 /** Images PNG (itérable asynchrone) -> segment H.264 ; écriture respectant la contre-pression de ffmpeg.
- *  profil(phase, ms) : temps d'écriture vers ffmpeg, attente de la contre-pression comprise (« ecriture »). */
-async function encoderSegment({ ffmpeg, sortie, ips, crf, preset = 'medium', images, signal, profil }) {
-  const args = ['-y', '-hide_banner', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(ips), '-c:v', 'png', '-i', '-',
-    ...argsX264({ ips, crf, preset }), '-f', 'mp4', sortie];
+ *  profil(phase, ms) : temps d'écriture vers ffmpeg, attente de la contre-pression comprise (« ecriture »).
+ *  stats : seconde sortie de ffmpeg, qui décode déjà les PNG (split, réduction à 192 px en moyenne des surfaces, gris, brut
+ *  sur la sortie standard) -> { vignettes: [Uint8Array] } ; le segment lui-même est le même. */
+async function encoderSegment({ ffmpeg, sortie, ips, crf, preset = 'medium', images, signal, profil, stats = false }) {
+  let n = 0;
+  const args = stats
+    ? ['-y', '-hide_banner', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(ips), '-c:v', 'png', '-i', '-',
+      '-filter_complex', `[0:v]split=2[v][s];[s]scale=${LARGEUR_STATS}:-2:flags=area,format=gray[g]`,
+      '-map', '[v]', ...argsX264({ ips, crf, preset }), '-f', 'mp4', sortie,
+      '-map', '[g]', '-f', 'rawvideo', '-pix_fmt', 'gray', 'pipe:1']
+    : ['-y', '-hide_banner', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(ips), '-c:v', 'png', '-i', '-',
+      ...argsX264({ ips, crf, preset }), '-f', 'mp4', sortie];
   const r = await lancer(ffmpeg, args, {
     signal,
     entree: async (stdin) => {
       stdin.on('error', () => { /* ffmpeg arrêté : sa sortie d'erreur dira pourquoi */ });
       for await (const png of images) {
         if (signal && signal.aborted) break;
+        n++;
         const t0 = profil ? performance.now() : 0;
         if (!stdin.write(png)) await new Promise((r2) => stdin.once('drain', r2));
         if (profil) profil('ecriture', performance.now() - t0);
@@ -144,6 +156,13 @@ async function encoderSegment({ ffmpeg, sortie, ips, crf, preset = 'medium', ima
     },
   });
   if (r.code !== 0) throw new Error(`ffmpeg n'a pas pu encoder la vidéo (${derniereLigne(r.erreurs) || `code ${r.code}`})`);
+  if (!stats) return undefined;
+  // Vignettes brutes bout à bout : une par image écrite (taille déduite du total).
+  const taille = n ? r.sortie.length / n : 0;
+  if (!n || !Number.isInteger(taille) || taille % LARGEUR_STATS) return { vignettes: null };
+  const vignettes = [];
+  for (let k = 0; k < n; k++) vignettes.push(new Uint8Array(r.sortie.buffer, r.sortie.byteOffset + k * taille, taille));
+  return { vignettes };
 }
 
 /** Segment déjà encodé (intermédiaire) -> fichier dérivé avec d'autres réglages x264, sans recapture (spec Rapidité 5.16). */
@@ -156,7 +175,9 @@ async function reencoderSegment({ ffmpeg, entree, sortie, ips, crf, preset = 'me
  *  compter : 'images' (décode tout : -count_frames, la garantie de lecture du fichier final) ou 'paquets' (-count_packets,
  *  sans décoder : validité d'un segment, spec Rapidité 5.18 ; une image H.264 par paquet). */
 async function sonder({ ffprobe, fichier, compter = 'images' }) {
-  const r = await lancer(ffprobe, ['-v', 'error', compter === 'paquets' ? '-count_packets' : '-count_frames', '-show_streams', '-show_format', '-of', 'json', fichier]);
+  // compter : 'aucun' : pistes et durée seulement, sans rien décoder (le nombre d'images est celui qu'annonce le fichier).
+  const compte = compter === 'paquets' ? ['-count_packets'] : compter === 'aucun' ? [] : ['-count_frames'];
+  const r = await lancer(ffprobe, ['-v', 'error', ...compte, '-show_streams', '-show_format', '-of', 'json', fichier]);
   if (r.code !== 0) throw new Error(`ffprobe n'a pas pu lire la vidéo (${derniereLigne(r.erreurs)})`);
   const j = JSON.parse(r.sortie.toString('utf8'));
   const v = (j.streams || []).find((s) => s.codec_type === 'video');
@@ -210,6 +231,40 @@ async function mesurerSonie({ ffmpeg, fichier }) {
   return { integree: nombre(/I:\s+(-inf|-?[\d.]+) LUFS/g), crete: nombre(/Peak:\s+(-inf|-?[\d.]+) dBFS/g) };
 }
 
+/**
+ * Vérification du fichier exporté en une seule passe (spec S2, 5.12) : chaque image décodée (comptée), noirs (blackdetect),
+ * sonie intégrée et crête vraie (ebur128), silences (silencedetect). Le fichier n'est décodé qu'une fois.
+ * -> { images, integree, crete, noirs: [{ debut, fin, duree }], silences: [{ debut, fin | null, duree | null }] }
+ * noir : { duree, seuil } (noirDuree, noirSeuil) ; silence : { niveau, duree } (silenceNiveau, silenceDuree) ; audio : la vidéo a
+ * une piste son. Idée : verify d'explainroo (MIT, © 2026 Vincent Schmalbach), chiffres repris.
+ */
+async function verifierFichier({ ffmpeg, fichier, audio = true, noir = { duree: 0.4, seuil: 0.08 }, silence = { niveau: -50, duree: 2.5 } }) {
+  const filtres = ['-vf', `blackdetect=d=${noir.duree}:pix_th=${noir.seuil}`];
+  if (audio) filtres.push('-af', `ebur128=peak=true,silencedetect=n=${silence.niveau}dB:d=${silence.duree}`);
+  const r = await lancer(ffmpeg, ['-hide_banner', '-i', fichier, ...filtres, '-f', 'null', '-'], { erreursMax: 400000 });
+  if (r.code !== 0) throw new Error(`la vidéo n'a pas pu être relue (${derniereLigne(r.erreurs)})`);
+  const t = r.erreurs;
+  const nombre = (re) => {
+    const m = [...t.matchAll(re)].pop();
+    return !m ? NaN : m[1] === '-inf' ? -Infinity : Number(m[1]);
+  };
+  const images = nombre(/frame=\s*(\d+)/g);
+  const noirs = [...t.matchAll(/black_start:\s*(-?[\d.]+)\s+black_end:\s*([\d.]+)\s+black_duration:\s*([\d.]+)/g)]
+    .map((m) => ({ debut: Number(m[1]), fin: Number(m[2]), duree: Number(m[3]) }));
+  const silences = [];
+  for (const m of t.matchAll(/silence_start:\s*(-?[\d.]+)|silence_end:\s*([\d.]+)\s*\|\s*silence_duration:\s*([\d.]+)/g)) {
+    if (m[1] !== undefined) silences.push({ debut: Math.max(0, Number(m[1])), fin: null, duree: null });
+    else if (silences.length && silences[silences.length - 1].fin === null) Object.assign(silences[silences.length - 1], { fin: Number(m[2]), duree: Number(m[3]) });
+  }
+  return {
+    images: Number.isFinite(images) ? images : null,
+    integree: audio ? nombre(/I:\s+(-inf|-?[\d.]+) LUFS/g) : null,
+    crete: audio ? nombre(/Peak:\s+(-inf|-?[\d.]+) dBFS/g) : null,
+    noirs,
+    silences,
+  };
+}
+
 /** Segments -> un fichier, sans réencodage (démultiplexeur concat), prêt à lire en flux (+faststart). */
 async function assemblerSegments({ ffmpeg, segments, sortie, audio }) {
   const liste = `${sortie}.liste.txt`;
@@ -253,4 +308,4 @@ function ecartImages(a, b) {
   return somme / n / 255;
 }
 
-module.exports = { lireVersion, commandeSure, commandeInstallation, trouverFfmpeg, MINIMUM, encoderSegment, reencoderSegment, sonder, extraireImage, assemblerSegments, ecartImages, encoderSon, mesurerSonie, encoderOpus, importerAudio };
+module.exports = { lireVersion, commandeSure, commandeInstallation, trouverFfmpeg, MINIMUM, encoderSegment, reencoderSegment, sonder, extraireImage, assemblerSegments, ecartImages, encoderSon, mesurerSonie, verifierFichier, encoderOpus, importerAudio, LARGEUR_STATS };

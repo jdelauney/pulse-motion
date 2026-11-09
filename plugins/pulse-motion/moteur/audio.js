@@ -3,6 +3,7 @@
  *
  *   M.aSon()       vrai si la vidéo a au moins une source sonore
  *   M.rendreSon()  -> Promise<{ buffer: AudioBuffer|null, sonie: number|null, avertissements: [texte] }>, une fois par page
+ *   M.rendreSon({ detail: true }) -> la même, plus detail: { taux, voix, autres } (mono, mêmes gains, avant le limiteur ; contrôle)
  *   M.pistesBrutes(noms) -> Promise<{ taux, pistes: { musique?, voix? } }>   pistes mono sans volume, fondus ni ducking (P7)
  *
  * Sources embarquées par l'assembleur : un bloc script de type text/plain d'id « pm-son-… » contenant une URL data:,
@@ -111,7 +112,7 @@
           avertissements.push('La voix de la scène « ' + p.scene + ' » n\'a pas pu être lue.');
         }
       }
-      if (entendues.length) bus.push({ tampon: await contexteVoix.startRendering(), volume: volumeDe(d.voix) });
+      if (entendues.length) bus.push({ tampon: await contexteVoix.startRendering(), volume: volumeDe(d.voix), voix: true });
     }
 
     if (d.musique && (d.musique.source || d.musique.partition)) {
@@ -187,6 +188,18 @@
     var lref = M.sonie.mesurer(reference, TAUX).integree;
     var gain = isFinite(lref) ? Math.pow(10, Math.min(SONIE - lref, 40) / 20) : 1;
     var sortie = bus[0].tampon, mix = sources[0];
+    // Détail (contrôle, spec S2 5.11) : voix et autres sons en mono, aux mêmes gains et volumes que le mélange, avant le
+    // limiteur. Calculé avant le mélange : celui-ci réécrit le premier bus sur place.
+    var detail = null;
+    if (options && options.detail) {
+      var voixMono = new Float32Array(n), autres = new Float32Array(n);
+      for (var bd = 0; bd < bus.length; bd++) {
+        var cible = bus[bd].voix ? voixMono : autres;
+        var g = gain * bus[bd].volume / 2;
+        for (var kd = 0; kd < n; kd++) cible[kd] += g * (sources[bd][0][kd] + sources[bd][1][kd]);
+      }
+      detail = { taux: TAUX, voix: voixMono, autres: autres };
+    }
     for (var c = 0; c < 2; c++) {
       for (var k = 0; k < n; k++) {
         var somme = 0;
@@ -197,11 +210,19 @@
     // Crêtes limitées sans changer la sonie obtenue.
     var lmix = M.sonie.mesurer(mix, TAUX).integree;
     var sonie = isFinite(lmix) ? M.sonie.normaliser(mix, TAUX, { cible: lmix }).integree : null;
-    return { buffer: sortie, sonie: sonie, avertissements: avertissements };
+    var r = { buffer: sortie, sonie: sonie, avertissements: avertissements };
+    if (detail) r.detail = detail;
+    return r;
   }
 
+  var promesseDetail = null;
   M.rendreSon = function (options) {
     if (options && options.seulement) return rendre(options);
+    // detail : un rendu à part (gardé), la vidéo et l'export gardent le leur, inchangé.
+    if (options && options.detail) {
+      if (!promesseDetail) promesseDetail = rendre({ detail: true });
+      return promesseDetail;
+    }
     if (!promesse) promesse = rendre();
     return promesse;
   };

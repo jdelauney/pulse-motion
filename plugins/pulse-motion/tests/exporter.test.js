@@ -147,3 +147,34 @@ test('ligne de commande : export fidèle de l\'exemple en 720p, mode et son dans
   assert.equal(j.ok, true);
   assert.ok(fs.existsSync(j.fichier));
 });
+
+test('exporter.test.js › verification.json : faites et nonFaites, réécoute non faite sans transcription', { skip: sansNavigateur || (!require('../scripts/lib/ffmpeg.js').trouverFfmpeg().present && 'ffmpeg absent') }, async () => {
+  const { exporterFidele } = require('../scripts/export-fidele.js');
+  const V = require('../scripts/lib/voix.js');
+  const dir = copierProjet('projet-simple');
+  modifierDeroule(dir, (d) => { d.scenes[0].voix = { texte: 'Pourquoi garder le froid' }; });
+  const prise = await V.ecrirePrise({ projet: dir, scene: 'intro', octets: wavSinus({ secondes: 2, frequence: 300, taux: 48000 }), texte: 'Pourquoi garder le froid' });
+  modifierDeroule(dir, (d) => { d.scenes[0].voix.fichier = prise.relatif; });
+  const r = await exporterFidele({ dossier: dir, qualite: '720p', ips: 5, navigateur, dossierStyles: STYLES, dureeSegment: 3, paralleles: 1, whisper: { pret: false } });
+  assert.equal(r.ok, true, r.message);
+  assert.equal(r.verification.fichier, 'sortie/verification.json');
+  const v = JSON.parse(fs.readFileSync(path.join(dir, 'sortie', 'verification.json'), 'utf8'));
+  assert.ok(v.faites.includes('images') && v.faites.includes('noirs') && v.faites.includes('silences'), JSON.stringify(v.faites));
+  assert.ok(!v.faites.includes('reecoute'));
+  assert.deepEqual(v.nonFaites.find((x) => x.quoi === 'reecoute'), { quoi: 'reecoute', pourquoi: 'la transcription n\'est pas installée' });
+  // Transcription prête mais aucune scène signalée par le contrôle : non faite, et dit pourquoi.
+  const r2 = await exporterFidele({ dossier: dir, qualite: '720p', ips: 5, navigateur, dossierStyles: STYLES, dureeSegment: 3, paralleles: 1, whisper: { pret: true, transcrire: async () => ({ ok: true, mots: [] }) } });
+  assert.equal(r2.ok, true, r2.message);
+  const v2 = JSON.parse(fs.readFileSync(path.join(dir, 'sortie', 'verification.json'), 'utf8'));
+  assert.match(v2.nonFaites.find((x) => x.quoi === 'reecoute').pourquoi, /aucune scène/);
+  // Scène signalée (voix couverte au dernier contrôle) : réécoutée ; la transcription n'entend rien : voix-inaudible.
+  fs.writeFileSync(path.join(dir, 'sortie', 'controle.json'), JSON.stringify({ problemes: [{ regle: 'voix-couverte', scene: 'intro' }] }));
+  const r3 = await exporterFidele({ dossier: dir, qualite: '720p', ips: 5, navigateur, dossierStyles: STYLES, dureeSegment: 3, paralleles: 1, whisper: { pret: true, transcrire: async () => ({ ok: true, mots: [{ w: 'garder' }] }) } });
+  assert.equal(r3.ok, true, r3.message);
+  const v3 = JSON.parse(fs.readFileSync(path.join(dir, 'sortie', 'verification.json'), 'utf8'));
+  assert.ok(v3.faites.includes('reecoute'));
+  const p = v3.problemes.find((x) => x.regle === 'voix-inaudible');
+  assert.ok(p, JSON.stringify(v3.problemes));
+  assert.equal(p.scene, 'intro');
+  assert.match(p.message, /la transcription ne reconnaît que 25 % des mots dits \(100 % dans la prise seule\)/);
+});

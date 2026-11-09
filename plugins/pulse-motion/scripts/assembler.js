@@ -43,16 +43,18 @@ function slug(texte) {
 
 const POLICES_SYSTEME = new Set(['system-ui', 'sans-serif', 'serif', 'monospace']);
 
-/** Variables CSS de la charte (et dérivées) et @font-face embarqués. -> { css, erreurs } */
+/** Variables CSS de la charte (et dérivées) et @font-face embarqués. -> { css, erreurs, polices } (fichiers embarqués) */
 function cssCharte(charte, dossierProjet, dossierStyle) {
   const erreurs = [];
   const lignes = Object.entries(charte.couleurs).map(([nom, valeur]) => `  --c-${nom}: ${valeur};`);
   lignes.push(...variablesDerivees(charte.couleurs));
   const faces = [];
+  const polices = [];
   const dejaVues = new Set();
   const face = (famille, fichier, graisse, italique = false) => {
     try {
       faces.push(`@font-face { font-family: '${famille}'; src: url("${versDataURI(fichier)}"); font-weight: ${graisse || '100 900'};${italique ? ' font-style: italic;' : ''} font-display: block; }`);
+      polices.push(fichier);
     } catch (e) {
       erreurs.push({ regle: 'police-non-embarquee', gravite: 'erreur', message: `Police « ${famille} » : fichier « ${path.basename(fichier)} » illisible (${e.code || e.message}).` });
     }
@@ -79,7 +81,7 @@ function cssCharte(charte, dossierProjet, dossierStyle) {
     }
     lignes.push(`  --f-${role}: '${famille}', system-ui, sans-serif;`);
   }
-  return { css: `${faces.join('\n')}\n:root {\n${lignes.join('\n')}\n}\n`, erreurs };
+  return { css: `${faces.join('\n')}\n:root {\n${lignes.join('\n')}\n}\n`, erreurs, polices };
 }
 
 /** Fichier du projet -> URL data:, ou null avec une erreur nommée (introuvable, type, lecture). */
@@ -154,7 +156,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   const erreurs = [];
   const charte = charteFinale(deroule, dossierStyle, projet);
   charte.erreurs.forEach((message) => erreurs.push({ regle: 'charte-invalide', gravite: 'erreur', message }));
-  const { css: cssDeCharte, erreurs: erreursPolices } = cssCharte(charte, projet, dossierStyle);
+  const { css: cssDeCharte, erreurs: erreursPolices, polices } = cssCharte(charte, projet, dossierStyle);
   erreurs.push(...erreursPolices);
 
   let uriLogo = null;
@@ -448,7 +450,7 @@ M.demarrerParticules();
 </html>
 `;
 
-  const resultat = { ok: true, fichier: null, html: page, erreurs, effets, milieux, shaders, donnees, parScene, cssPage, moteur, groupes };
+  const resultat = { ok: true, fichier: null, html: page, erreurs, effets, milieux, shaders, donnees, parScene, cssPage, moteur, groupes, polices };
   if (ecrire) resultat.fichier = ecrireSortie(projet, resultat).fichier;
   return resultat;
 }

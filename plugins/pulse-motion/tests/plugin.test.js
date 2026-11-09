@@ -665,3 +665,17 @@ test('plugin.test.js › blocs de fin : le verdict de la relecture dans la ligne
   assert.match(blocDeFin('retoucher')[2], /\[ ; relue : scène la plus faible « <id> », corrigée, non relue\]/);
   assert.match(blocDeFin('exporter')[2], /`relecture` du résumé : relue \(prête, ou corrigée après relecture\)[^\n]*`null` : non relue/);
 });
+
+// --- Spec « Regard et réalisation » (S2), plan S2-6 : vérification de l'export (5.12) -----------------------------------
+
+test('plugin.test.js › exporter dit la vérification et relance une fois sur erreur', () => {
+  const e = lire('skills', 'exporter', 'SKILL.md');
+  const ligne = e.split('\n').find((l) => l.startsWith('- `verification`'));
+  assert.ok(ligne, 'une ligne pour la vérification de l\'export');
+  assert.match(ligne, /`sortie\/verification\.json`/);
+  assert.match(ligne, /une erreur[^\n]*« l'export est abîmé », le relancer une fois/);
+  assert.match(ligne, /des alertes[^\n]*les dire en une phrase et proposer la retouche/);
+  assert.match(blocDeFin('exporter')[2], /`faites` de `sortie\/verification\.json`/);
+  assert.match(blocDeFin('exporter')[2], /`nonFaites`/);
+  assert.match(lire('references', 'controles.md'), /`sortie\/verification\.json` : la vérification de l'export/);
+});
