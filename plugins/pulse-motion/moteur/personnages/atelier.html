@@ -59,6 +59,7 @@
       <label>Pieds <select id="pieds"><option value="libres">libres</option><option value="au-sol">au sol</option></select></label>
       <label>Miroir (phase) <input id="miroir" type="number" min="0" max="0.95" step="0.05"></label>
       <label><input id="additif" type="checkbox"> Calque additif</label>
+      <label title="Les poses s'enchaînent sans que le mouvement s'arrête à chaque clé"><input id="lissage" type="checkbox"> Poses enchaînées sans arrêt</label>
     </fieldset>
     <fieldset id="visage"><legend>Visage</legend>
       <label>Expression <select id="expression"></select></label>
@@ -75,6 +76,7 @@
 </main>
 <script src="/_pm/personnages/modules/courbes.js"></script>
 <script src="/_pm/personnages/modules/squelette.js"></script>
+<script src="/_pm/personnages/modules/vivant.js"></script>
 <script src="/_pm/personnages/modules/clips.js"></script>
 <script src="/_pm/personnages/modules/habillage-batonnets.js"></script>
 <script src="/_pm/personnages/modules/habillage-pieces.js"></script>

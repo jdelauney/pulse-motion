@@ -11,7 +11,7 @@ const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 
 const MOTEUR = path.resolve(__dirname, '..', '..', 'moteur');
-const MODULES = ['courbes.js', 'squelette.js', 'clips.js', 'habillage-batonnets.js', 'habillage-pieces.js'];
+const MODULES = ['courbes.js', 'squelette.js', 'vivant.js', 'clips.js', 'habillage-batonnets.js', 'habillage-pieces.js'];
 const CELLULE = 200, MARGE = 110, ENTETE = 40, ECHELLE = 0.42;
 const SANS_NAVIGATEUR = 'Chrome ou Edge introuvable : la planche se dessine dans un navigateur. Lancez « pulse-motion outils » pour voir quoi installer.';
 

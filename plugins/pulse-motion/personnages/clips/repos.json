@@ -4,6 +4,7 @@
   "boucle": true,
   "duree": 2.86,
   "pieds": "au-sol",
+  "lissage": "continu",
   "cles": [
     {
       "t": 0,

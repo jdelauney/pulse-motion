@@ -3,6 +3,7 @@
   "description": "coucou de la main, bras levé sur le côté",
   "boucle": false,
   "pieds": "au-sol",
+  "lissage": "continu",
   "cles": [
     {
       "t": 0,
