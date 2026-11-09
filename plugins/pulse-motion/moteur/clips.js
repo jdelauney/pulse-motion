@@ -180,7 +180,8 @@
     return appliquerExpression(out, bib, explicites);
   }
 
-  function echantillonner(clip, temps, bib, gabarit) {
+  /** sansSol : sans poserAuSol (le retard des personnages ne lit que le haut du corps). */
+  function echantillonner(clip, temps, bib, gabarit, sansSol) {
     var pr = preparer(clip, bib);
     var ps = pr.ps;
     var continu = clip.lissage === 'continu';
@@ -199,7 +200,7 @@
     var discretes = pr.discretes;
     DISCRETS.forEach(function (k) { var v = lireDiscret(discretes[k], u, clip.boucle); if (v !== undefined) out[k] = v; });
     appliquerExpression(out, bib, explicites);
-    if (clip.pieds === 'au-sol' && !clip.additif) {
+    if (clip.pieds === 'au-sol' && !clip.additif && !sansSol) {
       var decalage = out.bassinY || 0;
       out.bassinY = S.poserAuSol(Object.assign({}, out, { bassinY: 0 }), gabarit).bassinY + decalage;
     }

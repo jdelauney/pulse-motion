@@ -184,7 +184,7 @@
     return { type: 'repos', debut: -Infinity };
   }
 
-  function poseDuCorps(part, e, t, bib, gabarit) {
+  function poseDuCorps(part, e, t, bib, gabarit, sansSol) {
     if (e.type === 'pose') {
       var p = bib.poses[e.a.pose];
       return p ? K.resoudrePose(p, bib) : {};
@@ -194,13 +194,13 @@
       if (!c) return {};
       var tt = t - e.a.debut;
       if (!c.boucle) tt = Math.min(tt, K.duree(c));
-      return c.additif ? K.ajouter({}, c, tt, bib) : K.echantillonner(c, tt, bib, gabarit);
+      return c.additif ? K.ajouter({}, c, tt, bib) : K.echantillonner(c, tt, bib, gabarit, sansSol);
     }
     if (e.type === 'bond') {
       var saut = (e.trajet.clip && bib.clips[e.trajet.clip]) || bib.clips.saut;
       if (!saut) return {};
       var ts = saut.boucle ? t - e.trajet.debut : Math.max(0, Math.min(1, (t - e.trajet.debut) / (e.trajet.fin - e.trajet.debut))) * K.duree(saut);
-      return saut.additif ? K.ajouter({}, saut, ts, bib) : K.echantillonner(saut, ts, bib, gabarit);
+      return saut.additif ? K.ajouter({}, saut, ts, bib) : K.echantillonner(saut, ts, bib, gabarit, sansSol);
     }
     if (e.type === 'marche' || e.type === 'course') {
       // Démarche à soi (data-clip : un mouvement en boucle), sinon la marche ou la course.
@@ -210,11 +210,11 @@
       if (!clip) return {};
       var foulee = (clip.foulee || (defaut && defaut.foulee) || 248) * part.echelle;
       var tc = distanceDansTrajet(part, e.trajet, t) / foulee * clip.duree;
-      return K.echantillonner(clip, tc, bib, gabarit);
+      return K.echantillonner(clip, tc, bib, gabarit, sansSol);
     }
     var repos = bib.clips.repos;
     // Le repos respire : chaque personnage à sa phase (deux voisins ne respirent pas ensemble).
-    return repos ? K.echantillonner(repos, t + phaseRespiration(part, repos), bib, gabarit) : {};
+    return repos ? K.echantillonner(repos, t + phaseRespiration(part, repos), bib, gabarit, sansSol) : {};
   }
 
   /* ---------- vie ---------- */
@@ -240,17 +240,21 @@
   var POIDS_RESPIRATION = { repos: 0, pose: 1, jouer: 0.5, marche: 0, course: 0, bond: 0 };
   var POIDS_RESPIRATION_SEULE = { repos: 1, pose: 1, jouer: 0.5, marche: 0, course: 0, bond: 0 };
 
-  /** Poids d'une couche à t (table par état du corps), fondu sur FONDU à chaque borne, sans mémoire. */
-  function poidsAuTemps(part, t, table, profondeur) {
+  /** Poids des couches de vie à t, d'un seul passage : { retard, respiration, vie, borne } (tables par état du corps),
+   *  fondus sur FONDU à chaque borne, sans mémoire. borne : dernière borne franchie (ou null). */
+  function poidsAuTemps(part, t, tableResp, profondeur) {
     var cur = etatCorps(part, t);
-    var w = table[cur.type] || 0;
-    var dernier = null;
-    structure(part).bornes.forEach(function (b) { if (b <= t) dernier = b; });
+    var w = { retard: POIDS_RETARD[cur.type] || 0, respiration: tableResp[cur.type] || 0, vie: POIDS_VIE[cur.type] || 0, borne: null, type: cur.type };
+    var dernier = null, bornes = structure(part).bornes;
+    for (var i = 0; i < bornes.length && bornes[i] <= t; i++) dernier = bornes[i];
+    w.borne = dernier;
     if (dernier !== null && t - dernier < FONDU) {
       var avant = etatCorps(part, dernier - 1e-6);
       if (avant.type !== cur.type || avant.a !== cur.a || avant.trajet !== cur.trajet) {
-        var w0 = (profondeur || 0) < 6 ? poidsAuTemps(part, dernier - 1e-6, table, (profondeur || 0) + 1) : (table[avant.type] || 0);
-        w = w0 + (w - w0) * lisse((t - dernier) / FONDU);
+        var w0 = (profondeur || 0) < 6 ? poidsAuTemps(part, dernier - 1e-6, tableResp, (profondeur || 0) + 1)
+          : { retard: POIDS_RETARD[avant.type] || 0, respiration: tableResp[avant.type] || 0, vie: POIDS_VIE[avant.type] || 0 };
+        var k = lisse((t - dernier) / FONDU);
+        ['retard', 'respiration', 'vie'].forEach(function (c) { w[c] = w0[c] + (w[c] - w0[c]) * k; });
       }
     }
     return w;
@@ -364,9 +368,10 @@
     return b.sort(function (x, y) { return x - y; });
   }
 
-  function corpsAuTemps(part, t, bib, gabarit, profondeur) {
+  /** sansSol : sans poser les pieds au sol (bassinY non corrigé), pour le retard qui ne lit que le haut du corps. */
+  function corpsAuTemps(part, t, bib, gabarit, profondeur, sansSol) {
     var cur = etatCorps(part, t);
-    var pose = poseDuCorps(part, cur, t, bib, gabarit);
+    var pose = poseDuCorps(part, cur, t, bib, gabarit, sansSol);
     // Fondu : depuis la pose affichée juste avant la dernière borne franchie (elle-même peut-être en plein fondu :
     // deux changements rapprochés s'enchaînent sans saut). Sans mémoire : tout se recalcule à partir de t.
     var dernier = null;
@@ -374,7 +379,7 @@
     if (dernier !== null && t - dernier < FONDU) {
       var avant = etatCorps(part, dernier - 1e-6);
       if (avant.type !== cur.type || avant.a !== cur.a || avant.trajet !== cur.trajet) {
-        var depart = (profondeur || 0) < 6 ? corpsAuTemps(part, dernier - 1e-6, bib, gabarit, (profondeur || 0) + 1).pose : poseDuCorps(part, avant, dernier - 1e-6, bib, gabarit);
+        var depart = (profondeur || 0) < 6 ? corpsAuTemps(part, dernier - 1e-6, bib, gabarit, (profondeur || 0) + 1, sansSol).pose : poseDuCorps(part, avant, dernier - 1e-6, bib, gabarit, sansSol);
         pose = S.melanger(Object.assign({}, S.REPOS, depart), Object.assign({}, S.REPOS, pose), lisse((t - dernier) / FONDU));
       }
     }
@@ -423,15 +428,18 @@
     var pose = Object.assign({}, corps.pose);
     var explicites = Object.keys(pose);
     var vie = vieDe(part);
+    var poids = vie === 'aucune' ? null : poidsAuTemps(part, t, bib.clips.repos ? POIDS_RESPIRATION : POIDS_RESPIRATION_SEULE);
     // Retard : le corps relu « retard » s plus tôt (sans vie ni interactions) ; chaque bout reprend une part du
     // déplacement récent de son parent (rien quand le parent est immobile ; jambes exclues : les pieds glisseraient).
-    if (vie === 'pleine') {
-      var wr = poidsAuTemps(part, t, POIDS_RETARD);
-      if (wr > 0) {
-        var reglage = (gabarit && gabarit.vie) || S.GABARIT.vie;
-        var delai = typeof reglage.retard === 'number' ? reglage.retard : S.GABARIT.vie.retard;
-        var force = typeof reglage.force === 'number' ? reglage.force : S.GABARIT.vie.force;
-        var avant = corpsAuTemps(part, t - delai, bib, gabarit).pose;
+    if (vie === 'pleine' && poids.retard > 0) {
+      var wr = poids.retard;
+      var reglage = (gabarit && gabarit.vie) || S.GABARIT.vie;
+      var delai = typeof reglage.retard === 'number' ? reglage.retard : S.GABARIT.vie.retard;
+      var force = typeof reglage.force === 'number' ? reglage.force : S.GABARIT.vie.force;
+      // Pose tenue depuis plus longtemps que retard + fondu : le corps n'a pas bougé, rien à rattraper.
+      var tenue = poids.type === 'pose' && poids.borne !== null && t - delai >= poids.borne + FONDU;
+      if (!tenue) {
+        var avant = corpsAuTemps(part, t - delai, bib, gabarit, 0, true).pose;
         RETARDS.forEach(function (r) {
           var d = valeurDe(avant, r[1]) - valeurDe(corps.pose, r[1]);
           if (d !== 0) pose[r[0]] = valeurDe(pose, r[0]) + wr * force * r[2] * d;
@@ -453,12 +461,12 @@
       // Respiration : en pose tenue et en geste (à moitié) ; au repos, c'est le clip « repos » qui respire.
       var resp = bib.clips.respiration;
       if (resp && resp.additif) {
-        var wResp = poidsAuTemps(part, t, bib.clips.repos ? POIDS_RESPIRATION : POIDS_RESPIRATION_SEULE);
+        var wResp = poids.respiration;
         if (wResp > 0) pose = K.ajouter(pose, resp, t + phaseRespiration(part, resp), bib, wResp);
       }
       var rv = bib.clips['repos-vivant'];
       if (vie === 'pleine' && rv && rv.additif) {
-        var w = poidsAuTemps(part, t, POIDS_VIE);
+        var w = poids.vie;
         if (w > 0) pose = K.ajouter(pose, rv, t + (rv.duree || 9) * V.graine(1, selDe(part)), bib, w);
       }
       var cl = bib.clips.clignement;
