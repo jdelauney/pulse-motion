@@ -3,7 +3,9 @@
  * M.demarrer()        lit #pm-donnees et les scènes, calcule le minutage, rend t = 0
  * M.rendre(t)         pose l'état de la page à l'instant t (synchrone)
  * M.pret             Promise résolue quand le temps SMIL a démarré (après « load »)
- * M.seek(t)           attend M.pret, rend t puis attend polices et images (Promise)
+ * M.seek(t)           attend M.pret, rend t puis attend polices et images (Promise) : images non chargées, <img> dont la
+ *                     source a changé, images des scènes qui viennent de s'afficher, <image> SVG (3 passes au plus)
+ * M.tenirAJour(id, actif?) la scène est rendue à chaque image même masquée (M.rendre ne rend que les scènes visibles)
  * M.temps()           instant courant
  * M.chaqueImage(id, fn(p, tScene))   seul point d'entrée JavaScript d'une scène
  * M.surRendu(fn(t))   prévenu après chaque rendu (lecteur, export)
@@ -12,6 +14,16 @@
  * M.modeCapture(bool) Date.now et performance.now suivent t (export)
  * M.enCapture()      vrai entre M.modeCapture(true) et M.modeCapture(false) (classe pm-capture sur <html>)
  * M.typeTransition(info) transition CSS d'une scène (une transition par shader : « aucune » si prête, sinon « fondu »)
+ * M.reglagesRendu     { paresseux, differentiel } (vrais) : rendu des seules scènes visibles, écritures des seules valeurs
+ *                     changées ; faux pour comparer les images (tests)
+ *
+ * Rendu allégé (spec Rapidité 5.20) : une scène masquée n'est pas rendue (aucun module ne lit l'état d'une scène masquée :
+ * les calques de particules et les mesures rendent eux-mêmes la scène qu'ils mesurent, par M.rendreScene) ; une scène qui
+ * redevient visible est rendue à t avant d'être affichée. Les styles, --p, data-etat, propriétés des tweens, textes des
+ * nombres et currentTime des animations ne s'écrivent que si la valeur a changé depuis la dernière écriture sur cet élément
+ * (cache vidé à chaque M.demarrer). Idée de reanimate (put() avec cache), réécrite.
+ * Polices : toutes celles de la page sont chargées avant M.pret (une police n'est sinon chargée qu'à son premier usage, et
+ * une capture pouvait précéder son arrivée).
  *
  * Aléa reproductible et horloge virtuelle : idée et algorithme mulberry32 repris de
  * showtime (skills/showtime/runtime/stage.js), licence MIT.
@@ -41,11 +53,40 @@
   }
   Math.random = mulberry32(0x5eed1234);
 
-  var etat = { t: 0, scenes: [], rappels: {}, auditeurs: [], attentes: [], capture: false };
+  var etat = { t: 0, scenes: [], rappels: {}, auditeurs: [], attentes: [], capture: false, tenues: {}, ecrits: new WeakMap(), decodees: new WeakMap(), visibles: [], avertiImages: false };
+  M.reglagesRendu = { paresseux: true, differentiel: true };
+
+  /** Toutes les polices déclarées par la page, chargées (une police n'est sinon chargée qu'à son premier usage). */
+  function chargerPolices() {
+    if (!document.fonts || typeof document.fonts.forEach !== 'function') return Promise.resolve();
+    var attentes = [];
+    document.fonts.forEach(function (f) { if (f.status === 'unloaded') attentes.push(f.load().catch(function () {})); });
+    return Promise.all(attentes).then(function () { return document.fonts.ready; });
+  }
+
+  // Écritures différentielles : dernière valeur écrite, par élément et par propriété.
+  function cacheDe(el) {
+    var c = etat.ecrits.get(el);
+    if (!c) { c = {}; etat.ecrits.set(el, c); }
+    return c;
+  }
+  function changee(el, cle, valeur) {
+    if (!M.reglagesRendu.differentiel) return true;
+    var c = cacheDe(el);
+    if (c[cle] === valeur) return false;
+    c[cle] = valeur;
+    return true;
+  }
+  function ecrireStyle(el, prop, valeur) {
+    if (changee(el, 's:' + prop, valeur)) el.style[prop] = valeur;
+  }
+  function ecrirePropriete(el, prop, valeur) {
+    if (changee(el, 'p:' + prop, valeur)) el.style.setProperty(prop, valeur);
+  }
 
   // Le temps SMIL ne démarre qu'une tâche après « load » : on rend à nouveau à ce moment-là.
   M.pret = new Promise(function (resolve) {
-    function apresChargement() { setTimeout(function () { if (M.minutage) M.rendre(etat.t); resolve(); }, 0); }
+    function apresChargement() { setTimeout(function () { if (M.minutage) M.rendre(etat.t); chargerPolices().then(resolve, resolve); }, 0); }
     if (document.readyState === 'complete') apresChargement();
     else racine.addEventListener('load', apresChargement);
   });
@@ -119,6 +160,8 @@
     document.querySelectorAll('#pm-scene > section[data-scene]').forEach(function (s) { sections[s.getAttribute('data-scene')] = s; });
 
     M.dureeTemps = donnees.tempo && donnees.tempo.bpm > 0 ? 60 / donnees.tempo.bpm : null;
+    etat.ecrits = new WeakMap();
+    etat.decodees = new WeakMap();
     // Texte lettre par lettre : découpé avant de relever les animations.
     donnees.scenes.forEach(function (sc) {
       if (sections[sc.id] && M.decouper) erreurs.push.apply(erreurs, M.decouper(sections[sc.id], sc.id, M.dureeTemps));
@@ -194,19 +237,21 @@
       var qs = (t - suivante.info.debut) / suivante.info.entree;
       if (qs > 0 && qs < 1) sortie = M.styleSortie(typeTransition(suivante.info), qs);
     }
-    s.sec.style.opacity = sortie && sortie.opacity ? sortie.opacity : st.opacity;
-    s.sec.style.transform = sortie && sortie.transform ? sortie.transform : st.transform;
-    s.sec.style.clipPath = st.clipPath;
-    s.sec.style.filter = sortie && sortie.filter ? sortie.filter : st.filter;
+    ecrireStyle(s.sec, 'opacity', sortie && sortie.opacity ? sortie.opacity : st.opacity);
+    ecrireStyle(s.sec, 'transform', sortie && sortie.transform ? sortie.transform : st.transform);
+    ecrireStyle(s.sec, 'clipPath', st.clipPath);
+    ecrireStyle(s.sec, 'filter', sortie && sortie.filter ? sortie.filter : st.filter);
 
     s.elements.forEach(function (e) {
       var te = tempsVu(e.chaine, t, info);
       var p = M.progression(te, e.debut, e.fin);
-      e.el.style.setProperty('--p', String(arrondi(p)));
-      e.el.setAttribute('data-etat', M.etat(te, e.debut, e.fin));
+      ecrirePropriete(e.el, '--p', String(arrondi(p)));
+      var etatEl = M.etat(te, e.debut, e.fin);
+      if (changee(e.el, 'a:data-etat', etatEl)) e.el.setAttribute('data-etat', etatEl);
       e.tweens.forEach(function (c) {
-        if (c.prop === 'nombre') e.el.textContent = M.texteTween(c, p);
-        else e.el.style.setProperty(c.prop, M.texteTween(c, p));
+        var v = M.texteTween(c, p);
+        if (c.prop === 'nombre') { if (changee(e.el, 't:nombre', v)) e.el.textContent = v; }
+        else ecrirePropriete(e.el, c.prop, v);
       });
     });
 
@@ -218,7 +263,7 @@
     s.sec.getAnimations({ subtree: true }).forEach(function (a) { vues.add(a); });
     vues.forEach(function (a) {
       if (a.playState === 'idle' || !a.effect || !a.effect.target || !a.effect.target.isConnected) { vues.delete(a); return; }
-      a.pause();
+      if (a.playState !== 'paused' || !M.reglagesRendu.differentiel) a.pause();
       var base = info.debut;
       var cible = a.effect && a.effect.target;
       var te = cible ? tempsVu(s.chaine(cible), t, info) : t;
@@ -226,7 +271,8 @@
         if (s.debuts.has(cible)) { base = s.debuts.get(cible); break; }
         cible = cible.parentElement;
       }
-      a.currentTime = Math.max(0, (te - base) * info.rythme * 1000);
+      var instant = Math.max(0, (te - base) * info.rythme * 1000);
+      if (!M.reglagesRendu.differentiel || a.__pmInstant !== instant || a.currentTime !== instant) { a.currentTime = instant; a.__pmInstant = instant; }
     });
 
     // Texte brouillé (data-lettres="brouille") : les lettres changent à chaque image, calées comme les animations.
@@ -252,10 +298,10 @@
     // Caméras : cadrage au temps de leurs conteneurs ; --pm-cam-dx/dy pour la parallaxe (data-profondeur).
     s.cameras.forEach(function (c) {
       var st = M.styleCamera(M.etatCamera(c.clauses, (tempsVu(c.chaine, t, info) - info.debut) * info.rythme));
-      c.el.style.transform = st.transform;
-      c.el.style.filter = st.filter;
-      c.el.style.setProperty('--pm-cam-dx', String(st.dx));
-      c.el.style.setProperty('--pm-cam-dy', String(st.dy));
+      ecrireStyle(c.el, 'transform', st.transform);
+      ecrireStyle(c.el, 'filter', st.filter);
+      ecrirePropriete(c.el, '--pm-cam-dx', String(st.dx));
+      ecrirePropriete(c.el, '--pm-cam-dy', String(st.dy));
     });
 
     (etat.rappels[info.id] || []).forEach(function (fn) {
@@ -272,26 +318,68 @@
     // Aléa ré-amorcé par image : la même image quel que soit le chemin pour arriver à t.
     Math.random = mulberry32((0x5eed1234 ^ Math.imul(Math.round(t * M.ips) + 1, 0x9e3779b1)) >>> 0);
     var visibles = M.scenesVisibles(M.minutage, t);
-    // Toutes les scènes sont rendues (l'état d'une scène masquée reste juste) ; seules les visibles s'affichent.
+    etat.visibles = visibles;
+    // Seules les scènes visibles sont rendues (et celles que M.tenirAJour garde à jour) ; une scène qui redevient visible
+    // est rendue à t dans cette même image, avant d'être affichée.
+    var derniere = null;
     etat.scenes.forEach(function (s) {
       if (!s.sec) return;
-      var affichage = visibles.indexOf(s.info.id) < 0 ? 'none' : '';
+      var visible = visibles.indexOf(s.info.id) >= 0;
+      var affichage = visible ? '' : 'none';
       if (s.sec.style.display !== affichage) s.sec.style.display = affichage;
-      rendreScene(s, t);
+      derniere = s;
+      if (visible || etat.tenues[s.info.id] || !M.reglagesRendu.paresseux) { rendreScene(s, t); derniere = null; }
     });
+    // Aléa des auditeurs : celui qu'aurait laissé le rendu de la dernière scène (quand elle est rendue, c'est le sien).
+    if (derniere) Math.random = mulberry32((0x5eed1234 ^ Math.imul(Math.round(t * M.ips) + 1, 0x9e3779b1) ^ Math.imul(derniere.index + 1, 0x85ebca6b)) >>> 0);
     etat.auditeurs.forEach(function (fn) { fn(t); });
     return t;
   };
 
+  function rien() {}
+
+  /** Images à attendre avant une capture (spec Rapidité 5.21) : <img> pas encore chargée ; <img> ou <image> SVG d'une scène
+   *  visible dont la source a changé, ou qui vient de s'afficher (son décodage n'est pas garanti tant qu'elle était masquée).
+   *  Une image décodée pendant qu'elle est visible n'est plus attendue ; masquée, elle le sera de nouveau. */
+  function imagesEnAttente() {
+    var attentes = [];
+    if (document.fonts && document.fonts.status === 'loading') attentes.push(document.fonts.ready);
+    etat.scenes.forEach(function (s) {
+      if (!s.sec) return;
+      var visible = etat.visibles.indexOf(s.info.id) >= 0;
+      s.sec.querySelectorAll('img, image').forEach(function (img) {
+        var svg = img.tagName.toLowerCase() === 'image';
+        var source = svg ? (img.getAttribute('href') || img.getAttribute('xlink:href') || '') : (img.currentSrc || img.src || '');
+        if (!visible) { etat.decodees.delete(img); if (!svg && !img.complete) attentes.push(img.decode().catch(rien)); return; }
+        if (!svg && !img.complete) { etat.decodees.set(img, source); attentes.push(img.decode().catch(rien)); return; }
+        if (etat.decodees.get(img) === source) return;
+        etat.decodees.set(img, source);
+        if (source && typeof img.decode === 'function') attentes.push(img.decode().catch(rien));
+      });
+    });
+    return attentes;
+  }
+
   M.seek = function (t) {
+    function attendre(passe) {
+      var attentes = imagesEnAttente();
+      if (!attentes.length) return null;
+      if (passe >= 3) {
+        if (!etat.avertiImages) {
+          etat.avertiImages = true;
+          var e = { regle: 'image-non-decodee', message: 'Des images n\'étaient toujours pas prêtes après trois essais (vers ' + Math.round(etat.t * 100) / 100 + ' s) : elles pourraient manquer à certaines images.' };
+          if (M.erreurs) M.erreurs.push(e);
+          console.warn('[Pulse Motion] ' + e.message);
+        }
+        return null;
+      }
+      return Promise.all(attentes).then(function () { return attendre(passe + 1); });
+    }
     return M.pret.then(function () {
       M.rendre(t);
       var attentes = [document.fonts ? document.fonts.ready : Promise.resolve()];
-      document.querySelectorAll('#pm-scene img').forEach(function (img) {
-        if (!img.complete) attentes.push(img.decode().catch(function () {}));
-      });
       etat.attentes.forEach(function (fn) { attentes.push(Promise.resolve(fn(etat.t))); });
-      return Promise.all(attentes);
+      return Promise.all(attentes).then(function () { return attendre(0); });
     }).then(function () { return etat.t; });
   };
 
@@ -303,6 +391,9 @@
       if (s.sec && s.sec.contains(el)) return tempsVu(s.chaine(el), t, s.info);
     }
     return t;
+  };
+  M.tenirAJour = function (idScene, actif) {
+    if (actif === false) delete etat.tenues[idScene]; else etat.tenues[idScene] = true;
   };
   M.chaqueImage = function (idScene, fn) { (etat.rappels[idScene] = etat.rappels[idScene] || []).push(fn); };
   M.surRendu = function (fn) { etat.auditeurs.push(fn); };

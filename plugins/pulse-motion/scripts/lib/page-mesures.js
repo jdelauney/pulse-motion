@@ -14,7 +14,13 @@ const { ouvrirSansFenetre } = require('./navigateur.js');
 const { ouvrirPage } = require('./cdp.js');
 const { garder } = require('./garde-locale.js');
 
-const CAPTURE = fs.readFileSync(path.join(__dirname, '..', '..', 'moteur', 'capture.js'), 'utf8');
+// Code injecté dans toute page de mesure : les modules du contrôle (jamais dans la page livrée : moteur à la carte, spec
+// Rapidité 5.19), puis la capture.
+const lire = (f) => fs.readFileSync(path.join(__dirname, '..', '..', 'moteur', f), 'utf8');
+const CONTROLE = ['mesures.js', 'pixels.js'].map(lire).join('\n;\n');
+const CAPTURE = lire('capture.js');
+const enScript = (code) => `<script>${code.replace(/<\/script/gi, '<\\/script')}</script>`;
+const injecte = () => `${enScript(CONTROLE)}\n${enScript(CAPTURE)}`;
 const TAILLE_MAX = 10 * 1024 * 1024;
 
 function pageAvecMesure(html, script, jeton) {
@@ -30,7 +36,7 @@ function pageAvecMesure(html, script, jeton) {
     .then(function (resultat) { return envoyer({ resultat: resultat === undefined ? null : resultat }); },
       function (e) { return envoyer({ erreur: String((e && e.message) || e) }); });
 })();</script>`;
-  return String(html).replace('</body>', `<script>${CAPTURE.replace(/<\/script/gi, '<\\/script')}</script>\n${envoi}\n</body>`);
+  return String(html).replace('</body>', () => `${injecte()}\n${envoi}\n</body>`);
 }
 
 /**
@@ -100,7 +106,7 @@ function mesurerPage({ html, script, navigateur, delai = 60000, surPort, gpu = f
 const LARGEUR_CONTROLE = 1280;
 const HAUTEUR_CONTROLE = 800;
 
-/** Page à mesurer par le CDP : capture.js, son coupé, premières erreurs de la page gardées (window.__pmErreur). */
+/** Page à mesurer par le CDP : modules du contrôle et capture.js, son coupé, premières erreurs de la page gardées (window.__pmErreur). */
 function pageControle(html) {
   const garde = `<script>(function () {
   M.sansSon = true;
@@ -108,7 +114,7 @@ function pageControle(html) {
   window.addEventListener('error', function (e) { noter(e.message || e); });
   window.addEventListener('unhandledrejection', function (e) { noter((e.reason && e.reason.message) || e.reason); });
 })();</script>`;
-  return String(html).replace('</body>', `<script>${CAPTURE.replace(/<\/script/gi, '<\/script')}</script>\n${garde}\n</body>`);
+  return String(html).replace('</body>', () => `${injecte()}\n${garde}\n</body>`);
 }
 
 /**

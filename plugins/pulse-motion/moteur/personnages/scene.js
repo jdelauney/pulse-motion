@@ -9,6 +9,11 @@
  * rendu (M.surRendu), la pose à l'instant t (M.partition.etatAuTemps), le squelette et l'habillage. Déterministe.
  * Données : M.donnees.personnages = { bib: { poses, clips, expressions }, dessins, gabarits, gabaritsDessins }.
  * « parler » : piste de visèmes (M.levres) tirée des mots de la voix de la scène ; sans data-dur, jusqu'à la fin.
+ * Vie (spec Mouvement vivant) : data-vie (pleine, sobre, aucune ; data-calme="non" vaut aucune), graine propre à chaque
+ * personnage (scène + id, ou rang dans la scène) ; ombre au sol (<ellipse class="pm-perso-ombre">, sauf data-ombre="non")
+ * centrée entre les chevilles, sur la ligne du sol, plus petite quand il s'élève ; écrasement à l'atterrissage
+ * (data-ecrase, 0 à 0,25) appliqué au groupe du personnage autour du point de contact, volume gardé (sx = 1 / sy^0,6).
+ * Ombre et écrasement : rossark-motion-skill (licence MIT), formules reprises, code réécrit.
  */
 (function (racine) {
   'use strict';
@@ -96,6 +101,7 @@
     if (el.hasAttribute('data-vers')) a.vers = nombre(el, 'data-vers', 50);
     if (el.hasAttribute('data-sol')) a.sol = valeurSol(el.getAttribute('data-sol'));
     if (el.hasAttribute('data-hauteur')) a.hauteur = nombre(el, 'data-hauteur', 15);
+    if (el.hasAttribute('data-ecrase')) a.ecrase = Math.max(0, Math.min(0.25, nombre(el, 'data-ecrase', 0.12)));
     if (el.hasAttribute('data-courbe')) a.courbe = el.getAttribute('data-courbe').trim();
     if (el.hasAttribute('data-vue')) a.vue = nombre(el, 'data-vue', 0);
     ['pose', 'clip', 'expression', 'bouche', 'cible', 'point', 'main', 'niveau'].forEach(function (k) { if (el.hasAttribute('data-' + k)) a[k] = el.getAttribute('data-' + k).trim(); });
@@ -109,17 +115,28 @@
     if (typeof console !== 'undefined') console.warn('[Pulse Motion] ' + e.message);
   }
 
+  function r2(v) { return Math.round(v * 100) / 100; }
+
+  /** Bornes de la scène (minutage) : la vie (clignements) s'arrête 1 s après sa fin. */
+  function bornesScene(idScene) {
+    var m = ((M.minutage && M.minutage.scenes) || []).filter(function (x) { return x.id === idScene; })[0];
+    return m ? { debut: m.debut, fin: m.fin } : null;
+  }
+
   M.demarrerPersonnages = function () {
     var D = M.donnees && M.donnees.personnages;
     if (!D || !M.minutage) return;
-    var S = M.squelette, P = M.partition;
+    var S = M.squelette, P = M.partition, V = M.vivant;
     var ratio = String((M.donnees.format && M.donnees.format.ratio) || '16:9').split(':').map(Number);
     var W = 100 * ratio[0], H = 100 * ratio[1];
     var persos = [];
+    var rangs = {};
     document.querySelectorAll('[data-personnage]').forEach(function (div) {
       var sec = div.closest('[data-scene]');
       if (!sec) return;
       var idScene = sec.getAttribute('data-scene');
+      rangs[idScene] = (rangs[idScene] || 0) + 1;
+      var rang = rangs[idScene];
       var nom = div.getAttribute('data-personnage');
       var dessin = nom === 'batonnets' ? null : D.dessins[nom];
       if (nom !== 'batonnets' && !dessin) return; // signalé à l'assemblage
@@ -133,8 +150,18 @@
       svg.setAttribute('aria-hidden', 'true');
       svg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;overflow:visible';
       div.appendChild(svg);
+      // Ombre (sous le personnage), puis le groupe de l'écrasement, qui porte celui de l'habillage.
+      var ombre = null;
+      if ((div.getAttribute('data-ombre') || 'oui').trim() !== 'non') {
+        ombre = document.createElementNS(NS, 'ellipse');
+        ombre.setAttribute('class', 'pm-perso-ombre');
+        ombre.setAttribute('style', 'fill: var(--pm-ombre, var(--c-texte, #1a1a1a)); fill-opacity: 0.2');
+        svg.appendChild(ombre);
+      }
+      var gEcrase = document.createElementNS(NS, 'g');
+      svg.appendChild(gEcrase);
       var g = document.createElementNS(NS, 'g');
-      svg.appendChild(g);
+      gEcrase.appendChild(g);
       var habillage = dessin ? M.pieces.creer(g, dessin, gabarit) : M.batonnets.creer(g);
       var elements = (M.minutage.elements && M.minutage.elements[idScene]) || {};
       var actions = [];
@@ -168,16 +195,43 @@
         }
       });
       if (M.interactions) M.interactions.preparer(actions);
+      var vie = (div.getAttribute('data-vie') || 'pleine').trim();
+      var ecrase = div.hasAttribute('data-ecrase') ? Math.max(0, Math.min(0.25, nombre(div, 'data-ecrase', 0.12))) : undefined;
       persos.push({ mesurer: mesurer, sec: sec, miroir: !!dessin,
-        div: div, habillage: habillage, gabarit: gabarit, echelle: echelle,
-        partition: { x0: nombre(div, 'data-x', 50), sol0: sol0, vue0: nombre(div, 'data-vue', 0), calme: div.getAttribute('data-calme') !== 'non', largeur: W, hauteur: H, echelle: echelle, sols: sols, actions: actions }
+        div: div, habillage: habillage, gabarit: gabarit, echelle: echelle, ombre: ombre, gEcrase: gEcrase, hauteur: P.hauteur(gabarit),
+        partition: { x0: nombre(div, 'data-x', 50), sol0: sol0, vue0: nombre(div, 'data-vue', 0), calme: div.getAttribute('data-calme') !== 'non',
+          vie: vie === 'sobre' || vie === 'aucune' ? vie : 'pleine', sel: V.sel(idScene + '/' + (div.id || rang)), scene: bornesScene(idScene),
+          ecrase: ecrase, largeur: W, hauteur: H, echelle: echelle, sols: sols, actions: actions }
       });
     });
     if (!persos.length) return;
 
     function placerBase(p, t) {
       var e = P.etatAuTemps(p.partition, t, D.bib, p.gabarit);
-      return Object.assign(e.pose, { x: e.x / 100 * W, y: e.sol / 100 * H - (S.sol(p.gabarit) + 7) * p.echelle, echelle: p.echelle });
+      var pose = Object.assign(e.pose, { x: e.x / 100 * W, y: e.sol / 100 * H - (S.sol(p.gabarit) + 7) * p.echelle, echelle: p.echelle });
+      // Écrasement de l'atterrissage : hors de la pose (le squelette n'en sait rien), lu au rendu.
+      Object.defineProperty(pose, 'pmEcrase', { value: e.ecraseY, enumerable: false });
+      return pose;
+    }
+    /** Ombre et écrasement d'un personnage, d'après ses articulations (repère de la scène) au temps tp. */
+    function rendreSol(p, r, tp, sy) {
+      var A = r.articulations, e = r.efficace, ca = A.chevilleAvant, cr = A.chevilleArriere;
+      var xP = e.x + (ca[0] + cr[0]) / 2 * e.echelle;
+      var yP = e.y + (Math.max(ca[1], cr[1]) + 7) * e.echelle;
+      var yS = P.solAuTemps(p.partition, tp, xP / W * 100) / 100 * H;
+      if (p.ombre) {
+        var h = Math.max(0, yS - yP) / e.echelle;
+        var k = Math.max(0.35, Math.min(1, 1 - h / (0.7 * p.hauteur)));
+        var rx = 1.5 * p.gabarit.tete.rx * e.echelle * k;
+        p.ombre.setAttribute('cx', r2(xP));
+        p.ombre.setAttribute('cy', r2(yS));
+        p.ombre.setAttribute('rx', r2(rx));
+        p.ombre.setAttribute('ry', r2(0.16 * rx));
+      }
+      if (typeof sy === 'number' && Math.abs(sy - 1) > 1e-4) {
+        var sx = 1 / Math.pow(sy, 0.6);
+        p.gEcrase.setAttribute('transform', 'translate(' + r2(xP) + ' ' + r2(yS) + ') scale(' + Math.round(sx * 10000) / 10000 + ' ' + Math.round(sy * 10000) / 10000 + ') translate(' + r2(-xP) + ' ' + r2(-yS) + ')');
+      } else p.gEcrase.removeAttribute('transform');
     }
     // Pose complète : la partition, puis les interactions (atteindre, regarder).
     var ctxInteractions = { persos: persos, W: W, H: H, placerBase: placerBase,
@@ -198,7 +252,9 @@
       poses.forEach(function (x) {
         // Os en plus : balancement calculé sur la pose de base (sans interactions : 60 poses par os et par image).
         var contexte = x.p.gabarit.osEnPlus.length ? { temps: x.tp, poseA: function (u) { return placerBase(x.p, u); } } : undefined;
-        x.p.habillage.rendre(S.calculer(x.pose, x.p.gabarit, contexte));
+        var r = S.calculer(x.pose, x.p.gabarit, contexte);
+        x.p.habillage.rendre(r);
+        rendreSol(x.p, r, x.tp, x.pose.pmEcrase);
       });
     }
     M.surRendu(rendre);

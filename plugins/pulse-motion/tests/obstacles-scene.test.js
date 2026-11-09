@@ -104,7 +104,7 @@ test('page : les formes invisibles ne s\'affichent pas', () => {
 
 test('page : le moteur embarque obstacles.js et reperes.js avant la simulation', () => {
   const { lireMoteur, RACINE } = require('../scripts/assembler.js');
-  const moteur = lireMoteur(RACINE);
+  const moteur = lireMoteur(RACINE, { brut: true }); // en-têtes gardés : moteur sans minification
   const i = (motif) => moteur.indexOf(motif);
   assert.ok(i('Pulse Motion – obstacles des collisions de particules') > 0);
   assert.ok(i('Pulse Motion – repères des obstacles mesurés dans la page') > 0);

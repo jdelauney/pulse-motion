@@ -3,6 +3,9 @@
   "description": "saut sur place : élan, envol, réception amortie",
   "boucle": false,
   "pieds": "libres",
+  "contacts": [
+    0.936
+  ],
   "cles": [
     {
       "t": 0,

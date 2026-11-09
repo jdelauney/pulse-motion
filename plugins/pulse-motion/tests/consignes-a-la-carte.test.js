@@ -216,7 +216,9 @@ function verifierRoutage(texte, nom) {
   const leger = legeres[0].scene;
   assert.match(leger, /^Un `type`/, `${nom} : scène toute faite`);
   for (const exclu of [/effet de particules/, /personnage/, /shader/, /caméra narrative/, /au plus 3 mouvements nommés/]) assert.match(leger, exclu, `${nom} : ${exclu}`);
-  assert.match(leger, /sans effet de particules, personnage, fond ni transition par shader, caméra narrative/, `${nom} : exclusions`);
+  assert.match(leger, /sans effet de particules, personnage, fond par shader ni caméra narrative/, `${nom} : exclusions`);
+  // Décision de l'auteur (S1-5, b) : une transition par shader est posée par le déroulé ; la scène reste au modèle léger.
+  assert.match(leger, /sa transition peut être un shader \(c'est le déroulé qui la pose\)/, `${nom} : transition par shader`);
   const autres = table.filter((l) => l !== legeres[0]);
   for (const l of autres) assert.match(l.modele, /^aucun paramètre/, `${nom} : ${l.scene}`);
   const creatives = autres.map((l) => l.scene).join(' ; ');
@@ -269,7 +271,10 @@ test('creer-temoins-ouverture-et-plus-risquee-jamais-meme-type : l\'ouverture et
   const f = fabricationCreer();
   const ligne = f.split('\n').find((l) => l.includes('**Scènes témoins**'));
   assert.match(ligne, /l'ouverture \(la première scène\)/);
-  assert.match(ligne, /la plus différente d'elle ou la plus risquée \(composée, à effet, à personnage, au texte le plus long\)/);
+  // Décision de l'auteur (S1-5, a) : le second témoin est une scène composée, jamais la scène à personnage.
+  assert.match(ligne, /la scène \*\*composée\*\* la plus différente d'elle, sans personnage/);
+  assert.match(ligne, /sans scène composée, la plus risquée hors personnage \(à effet, au texte le plus long\)/);
+  assert.doesNotMatch(ligne, /à personnage, au texte/);
   assert.match(ligne, /jamais deux scènes du même `type`/);
   // Les témoins s'écrivent au modèle de la session (table de routage).
   assert.ok(tableDeRoutage(f).some((l) => /Scène témoin/.test(l.scene) && /^aucun paramètre/.test(l.modele)));

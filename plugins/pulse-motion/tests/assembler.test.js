@@ -147,6 +147,8 @@ test('dossier avec espaces et accents, scène enregistrée avec BOM et CRLF', ()
 const navigateur = trouverNavigateur();
 test('la page assemblée démarre dans le navigateur', { skip: !navigateur && 'Chrome ou Edge introuvable' }, async () => {
   const dir = copierProjet('projet-simple');
+  // La scène qui a un script en premier : seules les scènes visibles sont rendues (spec Rapidité 5.20), son rappel tourne à t = 0.
+  modifierDeroule(dir, (d) => { d.scenes.reverse(); });
   const r = assembler({ dossier: dir, dossierStyles: STYLES });
   const dom = await rendreDOM(navigateur, r.fichier);
   assert.match(dom, /<html lang="fr" data-pm-pret="">/);

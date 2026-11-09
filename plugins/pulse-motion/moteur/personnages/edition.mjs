@@ -58,8 +58,9 @@ export function creerEdition(options, { clips: K, squelette: S }) {
 
   function poseEn(t) {
     if (!estClip()) return Object.assign({}, S.REPOS, K.resoudrePose(objet, lu));
-    if (objet.additif) return K.ajouter(Object.assign({}, S.REPOS), objet, t, lu);
-    return Object.assign({}, S.REPOS, K.echantillonner(objet, t, lu, gabarit));
+    // Copies : le clip est modifié sur place, les pistes que clips.js garde en mémoire suivraient l'ancien.
+    if (objet.additif) return K.ajouter(Object.assign({}, S.REPOS), Object.assign({}, objet), t, lu);
+    return Object.assign({}, S.REPOS, K.echantillonner(Object.assign({}, objet), t, lu, gabarit));
   }
 
   const ed = {
@@ -187,7 +188,7 @@ export function creerEdition(options, { clips: K, squelette: S }) {
         }
         objet.boucle = ch.boucle;
       }
-      for (const k of ['duree', 'foulee', 'pieds', 'miroir', 'additif', 'description']) {
+      for (const k of ['duree', 'foulee', 'pieds', 'miroir', 'additif', 'lissage', 'description']) {
         if (!(k in ch) || (k !== 'description' && !estClip())) continue;
         if (ch[k] === null || ch[k] === '') delete objet[k];
         else objet[k] = ch[k];
@@ -202,7 +203,7 @@ export function creerEdition(options, { clips: K, squelette: S }) {
     },
     choix() {
       if (!estClip()) return { bouche: objet.bouche || null, expression: objet.expression || null };
-      const e = K.echantillonner(objet, temps, Object.assign({}, lu, { expressions: {} }), gabarit);
+      const e = K.echantillonner(Object.assign({}, objet), temps, Object.assign({}, lu, { expressions: {} }), gabarit);
       return { bouche: e.bouche || null, expression: e.expression || null };
     },
     reglerChoix(champ, valeur) {

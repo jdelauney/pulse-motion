@@ -52,14 +52,18 @@ Une pose ne donne que ce qui change ; le reste est la pose de repos. Pas de `x`,
 - `courbe` (de cette clé à la suivante) : `sine-inout` par défaut, `linear`, `cubic-out`, `back-out` (dépasse puis revient), `bounce-out`.
 - `pieds: "au-sol"` : le bassin descend tout seul pour que le pied le plus bas touche le sol ; `bassinY` devient alors un décalage (rebond).
 - `miroir: 0.5` (cycles) : n'écrire que les membres Avant ; les membres Arrière suivent avec une demi-phase de décalage.
-- `additif: true` : les valeurs sont des différences, à ajouter à un autre mouvement (respiration, clignement).
+- `additif: true` : les valeurs sont des différences, à ajouter à un autre mouvement (respiration, clignement, repos vivant).
+- `lissage: "continu"` : les poses s'enchaînent sans que le mouvement s'arrête à chaque clé (défaut `"par-cle"` : il ralentit et repart à chaque clé). Une clé qui porte une `courbe` garde la sienne (accent voulu, `back-out`). Pour « il est raide », « il fait robot ».
+- `contacts: [0.936]` (gestes) : instants où les pieds retouchent le sol ; le personnage s'y écrase un peu (8 %) en gardant son volume.
 - `foulee` : distance parcourue par cycle (marche 248, course 330), pour la marche sans glissement des scènes.
 
 ## Bibliothèque
 
-Poses : `debout`, `montrer`, `bras-leves`, `mains-hanches`, `assis`, `penche`. Mouvements : `repos`, `marche`, `course`, `saut`, `accroupi`, `se-relever`, `coucou`, `peur`, `respiration` (additif), `clignement` (additif). Gabarits : `standard`, `avec-queue`.
+Poses : `debout`, `montrer`, `bras-leves`, `mains-hanches`, `assis`, `penche`. Mouvements : `repos`, `marche`, `course`, `saut`, `accroupi`, `se-relever`, `coucou`, `peur`, `respiration` (additif), `repos-vivant` (additif : petits mouvements déphasés d'une pose tenue, ajoutés par le moteur), `clignement` (additif : la forme d'un clignement, 110 ms pour fermer, 40 de maintien, 190 pour rouvrir ; le moteur choisit les instants). `coucou`, `repos`, `respiration` et `repos-vivant` sont en `lissage: "continu"`. Gabarits : `standard`, `avec-queue`.
 
-Expressions : `neutre`, `joie`, `tristesse`, `peur`, `colere`, `surprise` (`"expression": "joie"` dans une pose ou une clé ; `"bouche": "O"` choisit une bouche). Dessins : `touffu`.
+Expressions : `neutre`, `joie`, `tristesse`, `peur`, `colere`, `surprise` (`"expression": "joie"` dans une pose ou une clé ; `"bouche": "O"` choisit une bouche). Rythme du clignement d'une expression : `"clignement": { "intervalle": [4, 5.5], "lenteur": 1.4 }` (secondes entre deux clignements, de 1,5 à 8 ; lenteur de 0,7 à 2) ; sans lui, toutes les 3 à 4 s.
+
+Gabarit : `"vie": { "retard": 0.1, "force": 0.45 }` (avant-bras et tête arrivent `retard` s après leur parent, de 0,06 à 0,15 ; `force` de 0,3 à 0,6). Dessins : `touffu`.
 
 ## Retouches en une phrase
 
@@ -74,4 +78,10 @@ Expressions : `neutre`, `joie`, `tristesse`, `peur`, `colere`, `surprise` (`"exp
 | « une démarche fière pour lui seul » | nouveau cycle `personnages/clips/marche-fiere.json` (copie de `marche`, `boucle: true`, sa `foulee`), puis `data-clip="marche-fiere"` sur son action `marcher` |
 | « il saute plus haut » | copie de `saut`, `bassinY` de l'envol plus négatif (ex. -150 → -200) |
 | « montre-moi la course de face et de profil » | `pulse-motion personnages planche course --vues 0,90 --dossier .` puis `Read` |
+| « il est raide », « il fait robot » | copie du mouvement dans la vidéo avec `"lissage": "continu"` |
+| « il ne bouge pas quand il attend » | `data-vie="pleine"` sur le conteneur (ou retirer `data-vie="sobre"`, `data-calme="non"`) |
+| « il cligne trop » | copie de l'expression dans la vidéo, `clignement.intervalle` plus grand (ex. [5, 7]) |
+| « enlève son ombre » | `data-ombre="non"` sur le conteneur |
+| « qu'il bouge moins » ; « qu'il reste immobile » | `data-vie="sobre"` (clignement et respiration seulement) ; `data-vie="aucune"` |
+| « il regarde passer la balle » | `regarder` avec `data-cible` sur l'objet |
 | « je veux régler moi-même » | `pulse-motion personnages atelier <nom>` en arrière-plan |

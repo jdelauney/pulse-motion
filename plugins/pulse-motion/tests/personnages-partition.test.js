@@ -36,7 +36,7 @@ test('priorité : pose ou geste > marche > repos ; vue dans le sens du trajet', 
     { type: 'pose', debut: 1, fin: 2, pose: 'montrer' },
     { type: 'jouer', debut: 5, fin: 6.6, clip: 'coucou' },
     { type: 'marcher', debut: 7, fin: 8, vers: 20 },
-  ]);
+  ], { vie: 'aucune' }); // le corps seul (la vie : personnages-vivant.test.js)
   const a = PA.etatAuTemps(p, 1.5, bib, gab);
   assert.equal(a.corps, 'pose');
   proche(a.pose.brasAvant, lu.poses.montrer.angles.brasAvant);
@@ -50,7 +50,7 @@ test('priorité : pose ou geste > marche > repos ; vue dans le sens du trajet', 
 });
 
 test('fondus : pas de saut aux bornes', () => {
-  const p = partition([{ type: 'pose', debut: 1, fin: 2, pose: 'bras-leves' }]);
+  const p = partition([{ type: 'pose', debut: 1, fin: 2, pose: 'bras-leves' }], { vie: 'aucune' }); // le corps seul
   for (const b of [1, 2]) {
     const avant = PA.etatAuTemps(p, b - 1e-4, bib, gab).pose.brasAvant;
     const apres = PA.etatAuTemps(p, b + 1e-4, bib, gab).pose.brasAvant;
@@ -76,9 +76,11 @@ test('tourner, expression et bouche discrètes, calques', () => {
   proche(j.sourcilsY, lu.expressions.joie.angles.sourcilsY);
   assert.equal(PA.etatAuTemps(p, 4, bib, gab).pose.bouche, 'O');
   assert.equal(PA.etatAuTemps(p, 5.5, bib, gab).pose.bouche, 'sourire', '« aucune » : retour à la bouche de l\'expression');
-  const cligne = PA.etatAuTemps(p, 3.2 * 0.96, bib, gab).pose.paupieres;
-  assert.ok(cligne < 0.5, `clignement à 96 % du cycle : ${cligne}`);
-  assert.equal(PA.etatAuTemps(Object.assign({}, p, { calme: false }), 3.2 * 0.96, bib, gab).pose.paupieres, lu.expressions.joie.angles.paupieres, "sans clignement : les paupières de l'expression");
+  // Clignement à ses instants (graine du personnage, spec Mouvement vivant 5.2) : fermé 0,11 s après le début de l'un d'eux.
+  const instant = PA.clignements(p, bib).find((x) => x.t > 3.1 && x.t < 10).t;
+  const cligne = PA.etatAuTemps(p, instant + 0.12, bib, gab).pose.paupieres;
+  assert.ok(cligne < 0.5, `clignement à ${instant} : ${cligne}`);
+  assert.equal(PA.etatAuTemps(Object.assign({}, p, { calme: false }), instant + 0.12, bib, gab).pose.paupieres, lu.expressions.joie.angles.paupieres, "sans clignement : les paupières de l'expression");
 });
 
 test('déterminisme et hauteur', () => {
