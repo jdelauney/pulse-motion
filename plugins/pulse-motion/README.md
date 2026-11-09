@@ -43,13 +43,13 @@ Tout se fait par une demande dans Claude Code, jamais dans un terminal. Créer u
 | Dossier | Rôle |
 |---|---|
 | `skills/` | `creer`, `style`, `retoucher`, `voix`, `exporter`, `reprendre`, `outils`, `dessiner-personnage`, `decouper-personnage`, `animer-personnage`, `atelier-personnages`, `atelier-particules` (voir « Ce que vous pouvez demander ») |
-| `agents/` | `animateur` : écrit une scène |
+| `agents/` | `animateur` : écrit une scène ; `critique` : relit la vidéo d'après ses planches, comme un spectateur qui ne l'a pas vue fabriquer |
 | `moteur/` | Moteur JavaScript inclus dans chaque page : courbes, minutage, transitions, horloge déterministe, lecteur, débordements ; capture et export MP4 (servis par l'aperçu seulement) |
 | `scripts/` | Assemblage, aperçu, contrôles, état, historique, export ; `pm.js` derrière la commande `pulse-motion` (`bin/`) |
 | `vendor/` | Mediabunny (MPL-2.0), assemblage du MP4 ; voir `vendor/mediabunny/PROVENANCE.md` |
 | `styles/` | Styles : CSS, charte, polices, scènes toutes faites (v1 : `clair-pedagogique`) |
 | `personnages/` | Personnages animés : poses, mouvements, expressions, gabarits et le dessin `touffu` (bibliothèque du plugin ; une vidéo peut avoir les siens) |
-| `references/` | Consignes lues par Claude : moteur, rythme, styles, contrôles ; savoir-faire de réalisation (directions, revue notée, anti-clichés, pièges, mixage fin, compositions, actifs de marque, cadres et pointeur, sorties, scènes témoins, recettes de rythme) ; `moteur`, `particules` et `audio` en un tronc et des parties lues à la carte (`moteur/`, `particules/`, `audio/`) ; `mouvements/` : le dictionnaire de mouvements numérotés |
+| `references/` | Consignes lues par Claude : moteur, rythme, styles, contrôles ; savoir-faire de réalisation (doctrine `realisation`, directions, revue notée, anti-clichés, pièges, mixage fin, compositions, actifs de marque, cadres et pointeur, sorties, scènes témoins, recettes de rythme) ; `moteur`, `particules`, `audio` et `rythme` en un tronc et des parties lues à la carte (`moteur/`, `particules/`, `audio/`, `rythme/`) ; `mouvements/` : le dictionnaire de mouvements numérotés |
 | `exemples/` | « La chaîne du froid » : vidéo de formation de 60 s |
 | `tests/` | Tests (`npm test`), dont des tests dans Chrome ou Edge sans fenêtre |
 

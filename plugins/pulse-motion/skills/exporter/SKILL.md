@@ -57,5 +57,5 @@ Lancer `pulse-motion exporter .` en arrière-plan, puis lire son résultat JSON 
 
 ✅ **Fait** : la vidéo « <titre> » est exportée en MP4 (<durée>, <son ou muette>, <export fidèle ou dans le navigateur>).
 📄 **Fichiers** : `<fichier>` (à publier ou envoyer) et `sortie/<titre>.html` (page animée, s'ouvre sans connexion) ; avec des sous-titres, `sortie/<titre>.srt` et `sortie/<titre>.vtt` (à joindre sur YouTube, LinkedIn ou une plateforme de formation).
-🔎 **Vérifié** : <export fidèle : nombre d'images, durée et niveau du son contrôlés dans le fichier, images comparées à la vidéo ; dans le navigateur : nombre d'images, première et dernière images non noires> ; le son a été mesuré, pas écouté. Ce qui n'a pas pu l'être se dit (« sans ffmpeg, le niveau du son n'a pas été contrôlé »).
+🔎 **Vérifié** : <export fidèle : nombre d'images, durée et niveau du son contrôlés dans le fichier, images comparées à la vidéo ; dans le navigateur : nombre d'images, première et dernière images non noires> ; <`relecture` du résumé : relue (prête, ou corrigée après relecture), avant les dernières retouches si `aJour` est faux ; `null` : non relue> ; le son a été mesuré, pas écouté. Ce qui n'a pas pu l'être se dit (« sans ffmpeg, le niveau du son n'a pas été contrôlé »).
 ➡️ **Ensuite** : une retouche avec `/pulse-motion:retoucher`, puis un nouvel export.

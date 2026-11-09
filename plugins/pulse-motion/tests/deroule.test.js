@@ -154,3 +154,55 @@ test('mouvements nommés : forme { mouvement, element }', () => {
   d.scenes[0].mouvements = [{ mouvement: '999' }];
   assert.match(validerDeroule(d).join('\n'), /mouvement « 999 » inconnu/);
 });
+
+// --- Spec « Regard et réalisation » (S2), plan S2-3, exigence 5.3 : faits et cadrans --------------------------------
+
+test('deroule.test.js › faits : chiffre et scène obligatoires, source ou exemple, date au bon format', () => {
+  const d = valide();
+  d.faits = [
+    { chiffre: '4 °C', scene: 'intro', source: 'Règlement (CE) n° 852/2004', date: '2004-04-29' },
+    { chiffre: '1 200', scene: 'intro', exemple: true },
+    { chiffre: '12 %', scene: 'intro', source: 'Bilan 2025', date: '2025' },
+    { chiffre: '3', scene: 'intro', source: 'Enquête', date: '2026-03' },
+  ];
+  assert.deepEqual(validerDeroule(d), []);
+  d.faits = [{ scene: 'intro', source: 'x' }, { chiffre: '4 °C', source: 'x' }, { chiffre: '4 °C', scene: 'inconnue', source: 'x' },
+    { chiffre: '4 °C', scene: 'intro' }, { chiffre: '4 °C', scene: 'intro', exemple: false, source: 'x' },
+    { chiffre: '4 °C', scene: 'intro', source: 'x', date: '29/04/2004' }, { chiffre: '4 °C', scene: 'intro', source: 'x', date: '2004-13' }, 'quatre'];
+  const e = validerDeroule(d);
+  assert.ok(e.some((m) => m.startsWith('« faits[0].chiffre » est obligatoire')), e.join('\n'));
+  assert.ok(e.some((m) => m.startsWith('« faits[1].scene » est obligatoire')));
+  assert.ok(e.includes('La scène « inconnue » n\'existe pas : « faits[2].scene ».'));
+  assert.ok(e.some((m) => m.startsWith('« faits[3] » : donner sa « source », ou « exemple »: true')));
+  assert.ok(e.some((m) => m.startsWith('« faits[4].exemple » vaut true')));
+  assert.ok(e.some((m) => m.startsWith('« faits[5].date » doit s\'écrire AAAA, AAAA-MM ou AAAA-MM-JJ')));
+  assert.ok(e.some((m) => m.startsWith('« faits[6].date »')));
+  assert.ok(e.some((m) => m.startsWith('« faits[7] » doit être un objet')));
+  d.faits = { chiffre: '4' };
+  assert.ok(validerDeroule(d).some((m) => m.startsWith('« faits » doit être une liste')));
+});
+
+test('deroule.test.js › cadrans : valeurs connues seulement, tous facultatifs', () => {
+  const d = valide();
+  d.cadrans = { horloge: 'voix', continuite: 'chapitres', registre: 'editorial', texte: 'legendes' };
+  assert.deepEqual(validerDeroule(d), []);
+  for (const c of [{}, { horloge: 'musique' }, { registre: 'fait-main', texte: 'sans-texte' }, { continuite: 'metamorphose' }, { texte: 'grand-titre' }]) {
+    d.cadrans = c;
+    assert.deepEqual(validerDeroule(d), [], JSON.stringify(c));
+  }
+  d.cadrans = { horloge: 'tempo', couleur: 'bleu' };
+  const e = validerDeroule(d);
+  assert.ok(e.some((m) => m.startsWith('« cadrans.horloge » doit être l\'un de : voix, musique, lecture')), e.join('\n'));
+  assert.ok(e.some((m) => m.startsWith('« cadrans.couleur » est inconnu')));
+  d.cadrans = 'voix';
+  assert.ok(validerDeroule(d).some((m) => m.startsWith('« cadrans » doit être un objet')));
+});
+
+test('deroule.test.js › un déroulé sans faits ni cadrans reste valide', () => {
+  const d = valide();
+  assert.equal(d.faits, undefined);
+  assert.equal(d.cadrans, undefined);
+  assert.deepEqual(validerDeroule(d), []);
+  // L'exemple livré et le témoin de 3 min restent valides.
+  for (const f of [path.join(__dirname, '..', 'exemples', 'chaine-du-froid', 'deroule.json')]) assert.deepEqual(validerDeroule(JSON.parse(fs.readFileSync(f, 'utf8'))), [], f);
+});

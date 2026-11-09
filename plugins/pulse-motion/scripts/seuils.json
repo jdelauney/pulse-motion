@@ -43,5 +43,8 @@
   "telephoneLargeur": 360,
   "regardDecalage": 0.3,
   "regardPas": 0.5,
-  "regardVignettesMax": 24
+  "regardVignettesMax": 24,
+  "critiqueBarre": 8,
+  "critiqueCorrige": 7,
+  "critiqueIntouche": 9
 }

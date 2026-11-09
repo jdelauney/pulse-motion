@@ -408,12 +408,15 @@ test('budget-consignes : les consignes ne regrossissent pas sans qu\'on le voie 
   // 0.33.0 (S10-A et S2-2) : creer +1 700 o (visuels d'un produit, directions, recettes de rythme, regarder avant de
   // montrer, ligne 🔎), retoucher +1 300 o (lignes Revue et Format, regarder, ligne 🔎), exporter +700 o (sorties, ligne 🔎) ;
   // la section « fabrication » de creer reste sous 7 000 o (consignes-a-la-carte.test.js).
+  // 0.34.0 (S2-3 et S2-4) : creer +300 o (lire la doctrine, la relecture dès 3 scènes, verdict sur la ligne 🔎),
+  // retoucher +200 o (relecture d'une refonte, ligne 🔎), exporter +100 o (verdict de la relecture) : trois renvois d'une
+  // ligne, la conduite elle-même vit dans realisation § 13 et revue.md, lus à la demande. critique.md : corps ≤ 3 500 o.
   const PLAFONDS = {
     'skills/animer-personnage/SKILL.md': 5884, 'skills/atelier-particules/SKILL.md': 2272, 'skills/atelier-personnages/SKILL.md': 3529,
-    'skills/creer/SKILL.md': 23100, 'skills/decouper-personnage/SKILL.md': 4020, 'skills/dessiner-personnage/SKILL.md': 4528,
-    'skills/exporter/SKILL.md': 6500, 'skills/outils/SKILL.md': 6144, 'skills/reprendre/SKILL.md': 2999,
-    'skills/retoucher/SKILL.md': 13650, 'skills/style/SKILL.md': 6460, 'skills/voix/SKILL.md': 5073,
-    'agents/animateur.md': 6000,
+    'skills/creer/SKILL.md': 23400, 'skills/decouper-personnage/SKILL.md': 4020, 'skills/dessiner-personnage/SKILL.md': 4528,
+    'skills/exporter/SKILL.md': 6600, 'skills/outils/SKILL.md': 6144, 'skills/reprendre/SKILL.md': 2999,
+    'skills/retoucher/SKILL.md': 13850, 'skills/style/SKILL.md': 6460, 'skills/voix/SKILL.md': 5073,
+    'agents/animateur.md': 6000, 'agents/critique.md': 3800,
   };
   for (const f of fichiersGuides()) {
     const cle = f.split(path.sep).join('/');
@@ -515,4 +518,150 @@ test("plugin.test.js › bilan : « mesuré, pas écouté » et ce qui n'a pas p
   assert.match(blocDeFin('creer')[2], /images de la vidéo regardées/);
   assert.match(blocDeFin('creer')[2], /Ce que je corrigerais ensuite/);
   assert.match(blocDeFin('retoucher')[2], /les scènes touchées ont été contrôlées et regardées ; les autres n'ont pas été modifiées/);
+});
+
+// --- Spec « Regard et réalisation » (S2), plan S2-3 : doctrine (5.1), règles de scène (5.2) ------------------------
+
+test('plugin.test.js › creer lit pulse-motion reference realisation avant d\'écrire le déroulé ; l\'animateur ne la lit pas', () => {
+  const { sectionsConsignes } = require('../scripts/lib/consignes.js');
+  const deroule = sectionsConsignes(lire('skills', 'creer', 'SKILL.md'), ['deroule']).texte;
+  const lecture = deroule.indexOf('`pulse-motion reference realisation`');
+  const ecriture = deroule.indexOf('Écrire `deroule.json`');
+  assert.ok(lecture > 0 && ecriture > lecture, 'la doctrine est lue avant d\'écrire le déroulé');
+  assert.ok(deroule.indexOf('`pulse-motion reference rythme`') < lecture, 'après la référence rythme');
+  assert.match(deroule, /`pulse-motion reference realisation` \(ses `cadrans`, ses `faits`\)/);
+  for (const f of ['agents/animateur.md', 'agents/critique.md']) assert.doesNotMatch(lire(f), /realisation/, f);
+  // Ni le tronc ni la partie de rythme (lus par l'animateur) ne renvoient à la doctrine entière.
+  assert.doesNotMatch(lireReference('rythme', { parties: true }), /reference realisation/);
+});
+
+test('plugin.test.js › rythme.md : mouvement, chiffres et clichés, sans dépasser 4 200 octets au total', () => {
+  const tronc = lire('references', 'rythme.md');
+  const partie = lire('references', 'rythme', 'scene.md');
+  assert.ok(Buffer.byteLength(tronc) + Buffer.byteLength(partie) <= 4200, `${Buffer.byteLength(tronc) + Buffer.byteLength(partie)} o`);
+  assert.ok(Buffer.byteLength(partie) <= 1500, `${Buffer.byteLength(partie)} o ajoutés`);
+  assert.deepEqual([...partie.matchAll(/^## (.+)$/gm)].map((m) => m[1]), ['Mouvement', 'Chiffres', 'À éviter']);
+  for (const r of [/fondu seul/, /un seul dépassement/i, /`back-out`, `bounce-out` et `elastic-out` seulement si le style les propose/, /Caméra immobile pendant qu'un texte important entre/,
+    /valeur d'un compteur est celle du déroulé \(texte, texte dit, intention ou `faits`\)/, /L'unité et la date entrent quand le compteur s'arrête/, /« Exemple »/, /« après » plutôt que « grâce à »/,
+    /Emoji/, /« 03\/06 »/, /même temps sur la même courbe/, /scène vide pendant sa transition/]) assert.match(partie, r);
+  // Courbes citées : de vraies courbes du moteur.
+  const C = require('../moteur/courbes.js');
+  for (const m of partie.matchAll(/`([a-z]+-(?:out|in|inout))`/g)) assert.doesNotThrow(() => C.courbeNommee(m[1]), m[1]);
+  // La partie est lue à la demande, par une scène composée ou témoin : listée par le tronc, pas dans sa tête.
+  assert.match(tronc, /\n## Les parties\n\n- `pulse-motion reference rythme\/scene` : [^\n]*scène composée ou témoin/);
+  assert.doesNotMatch(tronc.slice(0, tronc.indexOf('\n## Les parties')), /rythme\/scene/);
+});
+
+test('plugin.test.js › rythme.md : l\'accroche annoncée est celle de seuils.json (3 s)', () => {
+  const seuils = JSON.parse(lire('scripts', 'seuils.json'));
+  const ligne = lire('references', 'rythme.md').split('\n').find((l) => l.startsWith('| Publication sociale |'));
+  assert.match(ligne, /Accroche lisible avant (\d+) s \(`accrocheMax`\)/);
+  assert.equal(Number(/avant (\d+) s/.exec(ligne)[1]), seuils.accrocheMax);
+  assert.doesNotMatch(ligne, /en 2 s/);
+});
+
+test('plugin.test.js › animateur : pas de scène vide en transition, pas de nombre inventé', () => {
+  const a = lire('agents', 'animateur.md');
+  const temps = a.split('\n').find((l) => l.startsWith('4. Temps : '));
+  assert.match(temps, /jamais de scène vide pendant sa transition/);
+  assert.match(temps, /Un compteur : le nombre de la consigne, jamais inventé/);
+  // En cas de doute, le dire dans le compte rendu.
+  assert.match(a.slice(a.indexOf('## Résultat à renvoyer')), /nombre incertain/);
+  assert.ok(Buffer.byteLength(a) <= 6000, `${Buffer.byteLength(a)} o`);
+});
+
+// --- Spec « Regard et réalisation » (S2), plan S2-4 : l'agent critique (5.5), bilan (5.6) ---------------------------
+
+test('plugin.test.js › agent critique : nom, description de 250 caractères au plus, outils Read, Glob, Write, sans model: dans le frontmatter', () => {
+  const t = lire('agents', 'critique.md');
+  const e = enTete(t);
+  assert.equal(e.name, 'critique');
+  assert.ok(e.description.length <= 250, `${e.description.length} caractères`);
+  assert.match(e.description, /\/pulse-motion:creer et \/pulse-motion:retoucher/);
+  assert.equal(e.tools, 'Read, Glob, Write');
+  assert.equal(e.model, undefined);
+  assert.equal(e.effort, undefined);
+  assert.ok(Buffer.byteLength(t.replace(/^---[\s\S]*?---\n/, '')) <= 3500, 'corps ≤ 3 500 o');
+});
+
+test('plugin.test.js › creer et retoucher passent le modèle du critique à l\'appel, jamais plus cher que la session', () => {
+  const { sectionsConsignes } = require('../scripts/lib/consignes.js');
+  const apercu = sectionsConsignes(lire('skills', 'creer', 'SKILL.md'), ['apercu']).texte;
+  const r = lire('skills', 'retoucher', 'SKILL.md');
+  for (const [nom, t] of [['creer', apercu], ['retoucher', r]]) {
+    assert.match(t, /agent `critique`, (?:modèle passé à l'appel \(`model`\)|`model` passé à l'appel), selon `realisation` § 13/, nom);
+  }
+  // La règle elle-même, la même phrase que pour l'animateur (S1, 5.3), dans la section que les deux citent.
+  const regle = 'Jamais un modèle plus cher que celui de la session : si la session tourne déjà en Sonnet ou en Haiku, aucun paramètre.';
+  const treize = lire('references', 'realisation.md').split('\n## 13. ')[1].split('\n## ')[0];
+  assert.ok(treize.includes(regle));
+  assert.match(treize, /\(paramètre `model`\) : `sonnet`/);
+  for (const s of ['creer', 'retoucher']) assert.ok(lire('skills', s, 'SKILL.md').includes(regle), s);
+});
+
+test('plugin.test.js › revue.md donne la correspondance des 5 axes vers les 8 axes de critique.json, et chaque axe du critique y figure une fois', () => {
+  const { AXES } = require('../scripts/lib/relecture.js');
+  const r = lire('references', 'revue.md');
+  const s = r.slice(r.indexOf('## Depuis la relecture du critique'), r.indexOf('## Rendre la revue'));
+  const lignes = s.split('\n').filter((l) => /^\| (Message|Lisibilité|Rythme|Cohérence|Singularité) \|/.test(l)).map((l) => l.split('|').map((c) => c.trim()));
+  assert.deepEqual(lignes.map((l) => l[1]), ['Message', 'Lisibilité', 'Rythme', 'Cohérence', 'Singularité']);
+  // Singularité : aucun axe du critique (Claude la note lui-même) ; sa cellule ne cite que la doctrine.
+  const axesDe = (cellule) => (/^aucun/.test(cellule) ? [] : [...cellule.matchAll(/`([a-z]+)`/g)].map((m) => m[1]));
+  const cites = lignes.flatMap((l) => axesDe(l[2]));
+  assert.deepEqual([...cites].sort(), [...AXES].sort(), 'chaque axe du critique une fois');
+  assert.deepEqual(Object.fromEntries(lignes.map((l) => [l[1], axesDe(l[2])])),
+    { Message: ['message', 'verite'], Lisibilité: ['lisibilite', 'composition'], Rythme: ['ouverture', 'rythme'], Cohérence: ['continuite', 'mouvement'], Singularité: [] });
+  assert.match(lignes[4][2], /^aucun : Claude la note lui-même/);
+  assert.match(s, /Cette table fait foi/);
+  assert.match(s, /moyenne des axes du critique notés/);
+  // La ligne « À venir » de l'agent est retirée ; la revue lance la relecture quand elle n'est pas à jour.
+  assert.doesNotMatch(r.slice(r.indexOf('## À venir')), /critique/);
+  assert.match(r, /si elle n'est pas à jour \(`aJour` faux ou `null`\), lancer l'agent `critique`/);
+});
+
+test('plugin.test.js › critique : 8 axes, barre de 8, un seul tour, pas de son, verrouillé, invérifiable', () => {
+  const { AXES } = require('../scripts/lib/relecture.js');
+  const t = lire('agents', 'critique.md');
+  const grille = t.slice(t.indexOf('| Axe |')).split('\n').filter((l) => /^\| `/.test(l)).map((l) => /`([a-z]+)`/.exec(l)[1]);
+  assert.deepEqual(grille, AXES);
+  assert.match(t, /chaque axe noté vaut 8 \(`critiqueBarre`\) ou plus et qu'aucun défaut n'est `a-corriger`/);
+  assert.match(t, /Un seul tour de corrections suivra, sans seconde relecture/);
+  assert.match(t, /vous ne jugez pas le son/);
+  assert.match(t, /\*\*Verrouillé\*\* \(fiche\) : textes validés par la personne, style, charte/);
+  assert.match(t, /\*\*Invérifiable\*\*[^\n]*`null`[^\n]*`inverifiable`/);
+  assert.match(t, /Rejetez par défaut/);
+  assert.match(t, /Regarder toutes les planches \*\*avant\*\* la fiche/);
+  assert.match(t, /Écrire `sortie\/regard\/critique\.json`, le seul fichier que vous écrivez/);
+  assert.match(t, /résumé de 450 mots au plus/);
+  assert.match(t, /Vous ne retouchez rien/);
+});
+
+test('plugin.test.js › creer lance la critique pour 3 scènes et plus, avant l\'aperçu ; retoucher seulement pour une refonte ou sur demande ; exporter jamais', () => {
+  const { sectionsConsignes } = require('../scripts/lib/consignes.js');
+  const apercu = sectionsConsignes(lire('skills', 'creer', 'SKILL.md'), ['apercu']).texte;
+  const regard = apercu.indexOf('`pulse-motion planche . --regard`');
+  const relecture = apercu.indexOf('dès 3 scènes, la **relecture**');
+  const ouvrir = apercu.indexOf('`pulse-motion apercu . --ouvrir`');
+  assert.ok(regard > 0 && relecture > regard && ouvrir > relecture, 'regard, relecture, puis aperçu');
+  const r = lire('skills', 'retoucher', 'SKILL.md');
+  const etape = r.slice(r.indexOf('## 5. Vérifier et montrer'), r.indexOf('## 6. Fin'));
+  assert.match(etape, /Refonte \(style changé, 3 scènes réécrites ou plus, scène ajoutée ou retirée\) : puis la relecture, agent `critique`/);
+  assert.match(r.split('\n').find((l) => l.startsWith('| Revue |')), /`pulse-motion reference revue`/);
+  const e = lire('skills', 'exporter', 'SKILL.md');
+  assert.doesNotMatch(e, /agent `critique`|Agent/);
+  assert.doesNotMatch(enTete(e)['allowed-tools'], /\bAgent\b/);
+  assert.match(e, /`relecture` du résumé/);
+  const treize = lire('references', 'realisation.md').split('\n## 13. ')[1].split('\n## ')[0];
+  assert.match(treize, /`creer`, une fois, dès 3 scènes/);
+  assert.match(treize, /`retoucher` : refonte[^\n]*ou demande/);
+  assert.match(treize, /Jamais à l'export/);
+  // « Jamais deux fois sur la même version » : la relecture à jour se relit.
+  assert.match(treize, /`aJour` vrai : relire `sortie\/regard\/critique\.json`, ne pas relancer/);
+  assert.match(lire('references', 'revue.md'), /Une relecture à jour se relit, sans se relancer/);
+});
+
+test('plugin.test.js › blocs de fin : le verdict de la relecture dans la ligne 🔎 de creer, retoucher et exporter', () => {
+  assert.match(blocDeFin('creer')[2], /relue par un relecteur qui n'a pas vu la fabrication \(<prête, ou corrigée après relecture, non relue>\), scène la plus faible « <id> »/);
+  assert.match(blocDeFin('retoucher')[2], /\[ ; relue : scène la plus faible « <id> », corrigée, non relue\]/);
+  assert.match(blocDeFin('exporter')[2], /`relecture` du résumé : relue \(prête, ou corrigée après relecture\)[^\n]*`null` : non relue/);
 });
