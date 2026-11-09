@@ -62,6 +62,8 @@ test('capture-rapide-memes-pixels : PNG décodés identiques avec et sans optimi
       assert.notEqual(lent.length, 0);
     }
     const petit = decoderPNG(await page.capturer({ echelle: 0.25 }));
+    // Sans la cadence d'affichage, une capture peut précéder la présentation de l'image : drapeau exclu de l'export.
+    assert.equal(require('../scripts/lib/capture-fidele.js').OPTIONS_CAPTURE.includes('--disable-frame-rate-limit'), false);
     assert.deepEqual([petit.largeur, petit.hauteur], [160, 90]);
   } finally {
     await page.fermer();
@@ -207,17 +209,18 @@ test('vérifications : la validité d\'un segment passe par les paquets, le fich
 
 // ---------- 5.17 Voie navigateur ----------
 
-test('export-navigateur-memes-images : avec et sans recouvrement de l\'encodage, mêmes images', { skip: (!navigateur && 'Chrome ou Edge introuvable') || sansFfmpeg }, async () => {
+test('export-navigateur-memes-images : deux exports dans le navigateur donnent les mêmes images (recouvrement de l\'encodage abandonné, gain mesuré −1 %)', { skip: (!navigateur && 'Chrome ou Edge introuvable') || sansFfmpeg }, async () => {
   const dir = copierProjet('projet-simple');
   modifierDeroule(dir, (d) => { d.format.ips = 12; });
-  const sansRecouvrement = await exporterVideo({ dossier: dir, dossierStyles: STYLES, recouvrement: false });
-  assert.equal(sansRecouvrement.ok, true, sansRecouvrement.message);
+  const premier = await exporterVideo({ dossier: dir, dossierStyles: STYLES });
+  assert.equal(premier.ok, true, premier.message);
   const a = path.join(dir, 'sortie', 'a.mp4');
-  fs.renameSync(path.join(dir, sansRecouvrement.fichier), a);
-  const avec = await exporterVideo({ dossier: dir, dossierStyles: STYLES });
-  assert.equal(avec.ok, true, avec.message);
+  fs.renameSync(path.join(dir, premier.fichier), a);
+  const second = await exporterVideo({ dossier: dir, dossierStyles: STYLES });
+  assert.equal(second.ok, true, second.message);
   const x = imagesDecodees(a);
-  const y = imagesDecodees(path.join(dir, avec.fichier));
   assert.equal(x.length, 87);
-  assert.deepEqual(y, x);
+  assert.deepEqual(imagesDecodees(path.join(dir, second.fichier)), x);
+  // La boucle attend toujours l'encodage de l'image avant de dessiner la suivante.
+  assert.match(fs.readFileSync(path.join(__dirname, '..', 'moteur', 'export.mjs'), 'utf8'), /await M\.capturer\(ctx, largeur, hauteur\);\s*await video\.add\(/);
 });

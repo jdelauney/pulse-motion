@@ -5,9 +5,10 @@
 const { pathToFileURL } = require('node:url');
 const { ouvrirPage } = require('./cdp.js');
 
-/** Drapeaux des pages de capture (spec Rapidité 5.14, 5.15) : page jamais ralentie en arrière-plan, et capture sans attendre
- *  la cadence d'affichage (une capture attend sinon une image du navigateur, ≈ 48 ms au lieu de 17). Aucun ne change les pixels. */
-const OPTIONS_CAPTURE = ['--disable-renderer-backgrounding', '--disable-background-timer-throttling', '--disable-backgrounding-occluded-windows', '--disable-frame-rate-limit'];
+/** Drapeaux des pages de capture (spec Rapidité 5.15) : page jamais ralentie en arrière-plan. Aucun ne change les pixels.
+ *  Pas de --disable-frame-rate-limit (utilisé par la page de contrôle) : sans la cadence d'affichage, une capture peut précéder
+ *  la présentation de l'image (7 images sur 723 différentes sur le témoin de 3 min, encore 2 avec deux requestAnimationFrame). */
+const OPTIONS_CAPTURE = ['--disable-renderer-backgrounding', '--disable-background-timer-throttling', '--disable-backgrounding-occluded-windows'];
 
 // Scène calée sur toute la zone d'affichage ; barre du lecteur et bandeau masqués ; temps de la page suivant t.
 const PREPARER = `(async function () {
