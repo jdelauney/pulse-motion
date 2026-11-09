@@ -180,6 +180,33 @@ test('planche-regard.test.js › deux planches du même projet sont identiques �
   assert.equal(fs.readFileSync(path.join(dir, r2.fiche), 'utf8'), ficheAvant);
 });
 
+test('planche-regard.test.js › la relecture du critique est gardée, et dite à jour tant que la page ne change pas (spec 5.5)', sans, async () => {
+  const { dir, r } = await passeComplete();
+  const { AXES, empreintePage } = require('../scripts/lib/relecture.js');
+  const { assembler } = require('../scripts/assembler.js');
+  assert.match(r.empreinte, /^[0-9a-f]{16}$/);
+  assert.equal(r.empreinte, empreintePage(assembler({ dossier: dir, ecrire: false }).html));
+  assert.match(fs.readFileSync(path.join(dir, r.fiche), 'utf8'), new RegExp(`- Empreinte de la page : ${r.empreinte} \\(à recopier dans critique\\.json\\)\\.`));
+  const critique = {
+    version: 1, empreinte: r.empreinte, message: 'm', messagePrevu: 'm', ecart: '',
+    axes: Object.fromEntries(AXES.map((a) => [a, { note: 8, preuve: 'scène intro, 1 s : …' }])),
+    scenes: [{ id: 'seuil', note: 7, raison: 'r' }], defauts: [], verdict: 'prete', plusFaible: 'seuil', inverifiable: [],
+  };
+  fs.writeFileSync(path.join(dir, 'sortie', 'regard', 'critique.json'), JSON.stringify(critique));
+  const r3 = await R.planchesRegard({ dossier: dir, navigateur, scenes: ['seuil'] });
+  assert.equal(r3.ok, true, r3.message);
+  assert.ok(fs.existsSync(path.join(dir, 'sortie', 'regard', 'critique.json')), 'critique.json gardé');
+  assert.equal(r3.empreinte, r.empreinte);
+  assert.deepEqual({ ...r3.relecture, erreurs: undefined }, { verdict: 'prete', plusFaible: 'seuil', aJour: true, empreinte: r.empreinte, erreurs: undefined });
+  // La page change : la relecture reste, mais n'est plus à jour.
+  const d = JSON.parse(fs.readFileSync(path.join(dir, 'deroule.json'), 'utf8'));
+  d.scenes[1].textes.titre = `${d.scenes[1].textes.titre || 'Titre'} !`;
+  fs.writeFileSync(path.join(dir, 'deroule.json'), JSON.stringify(d, null, 2));
+  const r4 = await R.planchesRegard({ dossier: dir, navigateur, scenes: ['seuil'] });
+  assert.notEqual(r4.empreinte, r.empreinte);
+  assert.equal(r4.relecture.aJour, false);
+});
+
 test('planche-regard : sans capture fidèle, repli sur la planche du navigateur (signalé)', async () => {
   const dir = chaineDuFroid();
   let demande = null;

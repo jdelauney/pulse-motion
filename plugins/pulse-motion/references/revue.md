@@ -13,6 +13,7 @@
 1. `pulse-motion controler .` : les erreurs et alertes du contrôle sont des faits, pas des opinions ; la revue ne les répète pas, elle les cite en une ligne.
 2. `pulse-motion planche . --regard` (toute la vidéo), puis regarder chaque planche avec `Read` : `ouverture.png`, `temps-forts-*.png`, `telephone-*.png` et, pour le mouvement, `bandes.png` ; lire aussi `sortie/regard/fiche.md` (scènes, instants, index des images).
 3. Lire `deroule.json` : genre, public, format, textes, durées, voix.
+4. La relecture : le résumé de la planche donne `relecture` ; si elle n'est pas à jour (`aJour` faux ou `null`), lancer l'agent `critique` comme le dit `pulse-motion reference realisation`, section « 13. La relecture indépendante », puis lire `sortie/regard/critique.json`. Une relecture à jour se relit, sans se relancer.
 
 ## Les cinq axes
 
@@ -50,6 +51,20 @@ Ils aident à justifier une note ; ce ne sont pas des règles absolues.
 | Familles de transitions | 3 au plus |
 | Types de scène | Pas trois fois de suite le même type (liste, liste, liste) |
 
+## Depuis la relecture du critique
+
+`critique.json` note huit axes ; la personne en reçoit cinq. La note d'un axe de la revue est la moyenne des axes du critique notés (un axe `null` ne compte pas), et ses preuves sont celles du critique. Cette table fait foi :
+
+| Axe de la revue | Axes de `critique.json` |
+|---|---|
+| Message | `message`, `verite` |
+| Lisibilité | `lisibilite`, `composition` |
+| Rythme | `ouverture`, `rythme` |
+| Cohérence | `continuite`, `mouvement` |
+| Singularité | aucun : Claude la note lui-même d'après les planches et les clichés de `realisation` § 10, avec une preuve située |
+
+Les défauts `a-corriger` deviennent « à corriger » (« Gênant »), `souhaitable` « À améliorer », `detail` « Détail » ; les trois retouches rapides viennent des défauts les plus graves, une scène ou un réglage chacune. La pondération par genre reste celle du tableau ci-dessus. Le critique n'entend pas la vidéo : le son se juge d'après le contrôle, qui le mesure.
+
 ## Rendre la revue
 
 Écrire en français simple, sans jargon, dans cet ordre :
@@ -81,5 +96,4 @@ Trois retouches rapides :
 
 ## À venir
 
-- Agent `critique` à contexte neuf, qui reçoit les planches et le déroulé, rejette par défaut et note avec preuves (spec S2, plan S2-4). Il écrit `critique.json` dans sa propre grille de 8 axes. Quand il a été lancé, cette revue est la synthèse de `critique.json` pour la personne : les cinq axes ci-dessus, selon la correspondance des 8 axes vers les 5 de la spec S2 (exigence 5.5), que le plan S2-4 recopie ici, puis « à garder », « à corriger » et les trois retouches rapides.
 - Règles de vérité des chiffres (« Exemple », « à date », source) : spec S2.

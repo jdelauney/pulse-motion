@@ -157,6 +157,9 @@ if (require.main === module) {
       .then((r) => ({ ...r, mode: 'navigateur', ...(!rapide && !planche ? { conseilFfmpeg: { message: outil.message, commande: outil.commande } } : {}) }));
   }
   travail.then((r) => {
+    // La relecture du critique (spec S2, 5.5) : l'export ne la lance jamais, il dit seulement son verdict et si elle
+    // porte sur cette version (null : la vidéo n'a pas été relue).
+    if (r.ok && !planche) r.relecture = require('./lib/relecture.js').etatRelecture(path.resolve(dossier));
     console.log(JSON.stringify(r, null, 2));
     process.exit(r.ok ? 0 : 1);
   }, (e) => {

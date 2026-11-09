@@ -13,7 +13,9 @@
  *   telephone-N.png      chaque scène à son instant stable, à telephoneLargeur de large (taille réelle) ;
  *   bandes.png           3 moments au plus (transitions, instants où le plus d'éléments bougent), de −0,2 à +0,3 s ;
  *   fiche.md             ce que la vidéo veut dire et l'index des vignettes, sans code ni contrôle.
- * Résumé JSON : { ok, planches, fiche, vignettes, jetonsEstimes, capture: "fidele" | "navigateur" }.
+ * critique.json (relecture de l'agent critique, spec 5.5) est gardé : il porte l'empreinte de la page qu'il a relue.
+ * Résumé JSON : { ok, planches, fiche, vignettes, jetonsEstimes, capture: "fidele" | "navigateur", empreinte, relecture }
+ * (relecture : null, ou { verdict, plusFaible, aJour, … } ; aJour : la relecture porte sur cette page, ne pas la relancer).
  * Sans capture fidèle possible : repli sur la planche du navigateur (trois images par scène), capture "navigateur".
  */
 const fs = require('node:fs');
@@ -27,6 +29,7 @@ const { ouvrirCapture } = require('./lib/capture-fidele.js');
 const { ouvrirPage } = require('./lib/cdp.js');
 const { avecEffets } = require('./export-fidele.js');
 const { trouverStyle } = require('./styles.js');
+const { empreintePage, etatRelecture } = require('./lib/relecture.js');
 
 const SEUILS = JSON.parse(fs.readFileSync(path.join(__dirname, 'seuils.json'), 'utf8'));
 const RACINE = path.resolve(__dirname, '..');
@@ -182,7 +185,7 @@ function nomMouvement(m, dictionnaire) {
 }
 
 /** Fiche du relecteur : ce que la vidéo veut dire, scène par scène, et l'index des vignettes. Ni code, ni contrôle. */
-function ecrireFiche({ projet, deroule, infos, ids, index, doctrine, glossaire }) {
+function ecrireFiche({ projet, deroule, infos, ids, index, doctrine, glossaire, empreinte }) {
   const scenesVues = new Set(ids);
   const etat = (() => { try { return JSON.parse(fs.readFileSync(path.join(projet, '.pulse-motion', 'etat.json'), 'utf8')); } catch { return {}; } })();
   const accords = etat.accords || {};
@@ -197,7 +200,8 @@ function ecrireFiche({ projet, deroule, infos, ids, index, doctrine, glossaire }
   L.push(`# Fiche de regard : « ${deroule.titre} »`, '');
   L.push(`- Genre : ${deroule.genre} ; format : ${deroule.format.ratio} ; durée : ${virgule(infos.duree)} s.`);
   L.push(`- Style : ${deroule.style}${personnalite.length ? ` (${personnalite.join(', ')})` : ''}.`);
-  if (deroule.cadrans) L.push(`- Cadrans : ${JSON.stringify(deroule.cadrans)}`);
+  if (deroule.cadrans) L.push(`- Cadrans : ${Object.entries(deroule.cadrans).map(([k, v]) => `${k} ${v}`).join(' ; ')}.`);
+  if (empreinte) L.push(`- Empreinte de la page : ${empreinte} (à recopier dans critique.json).`);
   L.push('', '## Scènes', '');
   deroule.scenes.forEach((s, i) => {
     if (!scenesVues.has(s.id)) return;
@@ -215,7 +219,8 @@ function ecrireFiche({ projet, deroule, infos, ids, index, doctrine, glossaire }
     if (s.transition && s.transition !== 'aucune') L.push(`- Transition d'entrée : ${typeof s.transition === 'string' ? s.transition : 'shader'}`);
     L.push('');
   });
-  if (deroule.faits) L.push('## Faits', '', ...[].concat(deroule.faits).map((f) => `- ${typeof f === 'string' ? f : JSON.stringify(f)}`), '');
+  const fait = (f) => (f && typeof f === 'object' ? `${f.chiffre} (scène ${f.scene}) : ${f.exemple === true ? 'exemple, sans source' : `source : ${f.source}`}${f.date ? `, ${f.date}` : ''}` : String(f));
+  if (Array.isArray(deroule.faits) && deroule.faits.length) L.push('## Faits', '', ...deroule.faits.map((f) => `- ${fait(f)}`), '');
   if (glossaire.length) L.push('## Termes du glossaire', '', ...glossaire.map((t) => `- ${t.terme} : ${t.sens}`), '');
   const verrous = [];
   if (accords.deroule) verrous.push('les textes du déroulé, validés par la personne');
@@ -249,8 +254,11 @@ async function planchesRegard({ dossier, scenes = null, dossierStyles, navigateu
   if (!navigateur) return { ok: false, message: 'Chrome ou Edge introuvable : les images de la vidéo n\'ont pas pu être regardées.' };
 
   const sortie = path.join(projet, 'sortie', 'regard');
-  fs.rmSync(sortie, { recursive: true, force: true });
+  // Vidé, sauf la relecture du critique (elle dit elle-même quelle page elle a relue).
   fs.mkdirSync(sortie, { recursive: true });
+  for (const e of fs.readdirSync(sortie)) if (e !== 'critique.json') fs.rmSync(path.join(sortie, e), { recursive: true, force: true });
+  const empreinte = empreintePage(assemblage.html);
+  const relecture = etatRelecture(projet, { html: assemblage.html });
   const travail = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-regard-'));
   const relatif = (f) => path.relative(projet, f).split(path.sep).join('/');
   const ratio = deroule.format.ratio;
@@ -272,7 +280,7 @@ async function planchesRegard({ dossier, scenes = null, dossierStyles, navigateu
     const r = await (replier || exporterVideo)({ dossier: projet, planche: ids, dossierStyles, navigateur });
     if (!r.ok) return { ok: false, message: `Les images de la vidéo n'ont pas pu être prises (${e.message}) ; ${r.message}` };
     const planches = fs.readdirSync(path.join(projet, 'sortie', 'planche')).filter((f) => f.endsWith('.png')).sort().map((f) => `sortie/planche/${f}`);
-    return { ok: true, planches, fiche: null, vignettes: planches.length, jetonsEstimes: planches.length * jetonsImage(GRAND_COTE, Math.round(GRAND_COTE * hauteur / largeur)), capture: 'navigateur', particules: gpu ? 'absentes' : 'sans' };
+    return { ok: true, planches, fiche: null, vignettes: planches.length, jetonsEstimes: planches.length * jetonsImage(GRAND_COTE, Math.round(GRAND_COTE * hauteur / largeur)), capture: 'navigateur', particules: gpu ? 'absentes' : 'sans', empreinte, relecture };
   }
   try {
     const infos = await capture.evaluer(INFOS);
@@ -332,13 +340,13 @@ async function planchesRegard({ dossier, scenes = null, dossierStyles, navigateu
     }
     let glossaire = [];
     try { glossaire = require('./vocabulaire.js').lireGlossaire(projet).termes; } catch { /* pas de glossaire */ }
-    const fiche = ecrireFiche({ projet, deroule, infos, ids, index, doctrine: sectionsDoctrine(doctrine), glossaire });
+    const fiche = ecrireFiche({ projet, deroule, infos, ids, index, doctrine: sectionsDoctrine(doctrine), glossaire, empreinte });
     if (garder) {
       fs.mkdirSync(garder, { recursive: true });
       for (const f of prises.values()) fs.copyFileSync(path.join(travail, f), path.join(garder, f));
       fs.writeFileSync(path.join(garder, 'index.json'), JSON.stringify(groupes.map((g) => ({ nom: g.nom, vignettes: g.vignettes })), null, 2));
     }
-    return { ok: true, planches, fiche: relatif(fiche), vignettes: index.length, jetonsEstimes: jetons, capture: 'fidele', particules };
+    return { ok: true, planches, fiche: relatif(fiche), vignettes: index.length, jetonsEstimes: jetons, capture: 'fidele', particules, empreinte, relecture };
   } finally {
     await capture.fermer().catch(() => {});
     fs.rmSync(travail, { recursive: true, force: true });
