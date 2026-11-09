@@ -26,7 +26,7 @@
 | Formation | Titre → pourquoi (chiffre ou alerte) → étapes ou liste → comparaison (à faire / à éviter) → conclusion |
 | Présentation de produit | Problème → produit (titre) → 3 bénéfices (liste ou schéma) → chiffre clé → appel à l'action (conclusion) |
 | Storytelling | Situation → difficulté (alerte) → déclic (chiffre) → résolution (schéma) → morale (conclusion) |
-| Publication sociale | Accroche en 2 s → 2 ou 3 scènes courtes → conclusion ; format 9:16 |
+| Publication sociale | Accroche lisible avant 3 s (`accrocheMax`) → 2 ou 3 scènes courtes → conclusion ; format 9:16 |
 
 ## Transitions
 
@@ -40,3 +40,7 @@
 - Titres : 40 caractères au plus ; phrases courtes, sans point final.
 - Un texte de scène se lit en une fois : 80 caractères au plus.
 - Écrire des nombres en chiffres (« 4 °C », « 3 étapes ») : ils se lisent plus vite.
+
+## Les parties
+
+- `pulse-motion reference rythme/scene` : mouvement, chiffres et ce qu'il faut éviter, à lire pour une scène composée ou témoin.

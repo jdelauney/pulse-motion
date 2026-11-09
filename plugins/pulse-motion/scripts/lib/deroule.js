@@ -220,6 +220,48 @@ function validerDeroule(d) {
       err.push(`La ${nom} : « type » doit être l'un de : ${TYPES_SCENE.join(', ')} (ou absent pour une scène composée librement).`);
     }
   });
+  err.push(...validerFaits(d.faits, vus), ...validerCadrans(d.cadrans));
+  return err;
+}
+
+/** Valeurs des cadrans de réalisation (spec S2, 5.3 ; references/realisation.md § 2). Le cadran « texte » dit
+ *  `grand-titre` là où la spec disait « titre héros » (mot de la source, interdit par le test des termes de S10). */
+const CADRANS = {
+  horloge: ['voix', 'musique', 'lecture'],
+  continuite: ['chapitres', 'voyage', 'metamorphose', 'coupes'],
+  registre: ['net', 'fait-main', 'editorial', 'energique'],
+  texte: ['grand-titre', 'legendes', 'sans-texte'],
+};
+const DATE_FAIT = /^\d{4}(-(0[1-9]|1[0-2])(-(0[1-9]|[12]\d|3[01]))?)?$/;
+
+/** « faits » : d'où vient chaque chiffre, ou s'il est un exemple (sans effet sur le moteur). */
+function validerFaits(faits, ids) {
+  if (faits === undefined) return [];
+  if (!Array.isArray(faits)) return ['« faits » doit être une liste, ex. [{ "chiffre": "4 °C", "scene": "seuil", "source": "…" }].'];
+  const err = [];
+  faits.forEach((f, i) => {
+    const ou = `« faits[${i}]`;
+    if (!estObjet(f)) { err.push(`${ou} » doit être un objet { chiffre, scene, source ou exemple }.`); return; }
+    if (!estTexte(f.chiffre)) err.push(`${ou}.chiffre » est obligatoire (le chiffre tel qu'il s'affiche, ex. « 4 °C »).`);
+    if (!estTexte(f.scene)) err.push(`${ou}.scene » est obligatoire (l'id de la scène qui l'affiche).`);
+    else if (!ids.has(f.scene)) err.push(`La scène « ${f.scene} » n'existe pas : ${ou}.scene ».`);
+    if (f.source !== undefined && !estTexte(f.source)) err.push(`${ou}.source » doit être un texte (d'où vient le chiffre).`);
+    if (f.exemple !== undefined && f.exemple !== true) err.push(`${ou}.exemple » vaut true, ou s'omet.`);
+    if (f.source === undefined && f.exemple !== true) err.push(`${ou} » : donner sa « source », ou « exemple »: true pour un chiffre inventé pour l'exemple.`);
+    if (f.date !== undefined && !(typeof f.date === 'string' && DATE_FAIT.test(f.date))) err.push(`${ou}.date » doit s'écrire AAAA, AAAA-MM ou AAAA-MM-JJ.`);
+  });
+  return err;
+}
+
+/** « cadrans » : les quatre choix de réalisation, tous facultatifs. */
+function validerCadrans(c) {
+  if (c === undefined) return [];
+  if (!estObjet(c)) return ['« cadrans » doit être un objet, ex. { "horloge": "voix", "texte": "legendes" }.'];
+  const err = [];
+  for (const [cle, v] of Object.entries(c)) {
+    if (!Object.hasOwn(CADRANS, cle)) err.push(`« cadrans.${cle} » est inconnu : ${Object.keys(CADRANS).join(', ')}.`);
+    else if (!CADRANS[cle].includes(v)) err.push(`« cadrans.${cle} » doit être l'un de : ${CADRANS[cle].join(', ')}.`);
+  }
   return err;
 }
 
@@ -286,4 +328,4 @@ function lireDeroule(dossier) {
   return { deroule: d, erreurs };
 }
 
-module.exports = { validerDeroule, validerCharte, lireDeroule, dureeTemps, tempoMusique, musiqueSuitScenes, grilleFixe, optionsMinutage, GENRES, PARCOURS, RATIOS, TRANSITIONS, TYPES_SCENE, TONS, MAX_POST };
+module.exports = { validerDeroule, validerCharte, lireDeroule, dureeTemps, tempoMusique, musiqueSuitScenes, grilleFixe, optionsMinutage, GENRES, PARCOURS, RATIOS, TRANSITIONS, TYPES_SCENE, TONS, MAX_POST, CADRANS };
