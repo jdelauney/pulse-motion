@@ -512,6 +512,7 @@
       "no": "013",
       "slug": "saccade",
       "categorie": "entrees",
+      "brusque": true,
       "nom": {
         "fr": "Image par image",
         "metier": "Stop-motion style"
@@ -553,6 +554,7 @@
       "no": "014",
       "slug": "eclat",
       "categorie": "entrees",
+      "brusque": true,
       "nom": {
         "fr": "Éclat",
         "metier": "Burst"
@@ -585,6 +587,7 @@
       "no": "015",
       "slug": "machine-a-ecrire",
       "categorie": "texte",
+      "brusque": true,
       "nom": {
         "fr": "Machine à écrire",
         "metier": "Typewriter"
@@ -754,6 +757,7 @@
       "no": "020",
       "slug": "brouillage",
       "categorie": "texte",
+      "brusque": true,
       "nom": {
         "fr": "Texte brouillé",
         "metier": "Text scramble"
@@ -1201,6 +1205,7 @@
       "no": "033",
       "slug": "tremblement",
       "categorie": "valeur",
+      "brusque": true,
       "nom": {
         "fr": "Tremblotement",
         "metier": "Wiggle"
@@ -1321,6 +1326,7 @@
       "no": "036",
       "slug": "secousse-impact",
       "categorie": "valeur",
+      "brusque": true,
       "nom": {
         "fr": "Secousse d'impact",
         "metier": "Impact shake"
@@ -1756,6 +1762,7 @@
       "no": "050",
       "slug": "coupe",
       "categorie": "transitions",
+      "brusque": true,
       "nom": {
         "fr": "Coupe franche",
         "metier": "Jump cut"
@@ -1849,6 +1856,7 @@
       "no": "053",
       "slug": "pixels",
       "categorie": "transitions",
+      "brusque": true,
       "nom": {
         "fr": "Pixellisation",
         "metier": "Pixelate"
@@ -1881,6 +1889,7 @@
       "no": "054",
       "slug": "glitch",
       "categorie": "transitions",
+      "brusque": true,
       "nom": {
         "fr": "Glitch",
         "metier": "Glitch"
@@ -2307,6 +2316,7 @@
       "no": "067",
       "slug": "arret-sur-image",
       "categorie": "temps",
+      "brusque": true,
       "nom": {
         "fr": "Arrêt sur image",
         "metier": "Freeze frame"

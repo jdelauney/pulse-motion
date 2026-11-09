@@ -5,7 +5,30 @@
  * (n-ième élément minuté sans id, dans l'ordre du document).
  */
 
-const BALISE = /<([a-zA-Z][\w-]*)\b((?:[^>"']|"[^"]*"|'[^']*')*)>/g;
+// Balise fermante, ou ouvrante (pile des conteneurs : un élément posé dans un décor en est un).
+const BALISE_OU_FIN = /<\/([a-zA-Z][\w-]*)\s*>|<([a-zA-Z][\w-]*)\b((?:[^>"']|"[^"]*"|'[^']*')*)>/g;
+const VIDES = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr']);
+const estDecor = (attrs) => 'data-decor' in attrs || /(^|\s)decor(\s|$)/.test(attrs.class || '');
+
+/** Parcourt les balises ouvrantes (balise, attributs, decor) en tenant la pile des conteneurs. */
+function parcourir(html, surBalise) {
+  const pile = [];
+  let m;
+  BALISE_OU_FIN.lastIndex = 0;
+  while ((m = BALISE_OU_FIN.exec(html))) {
+    if (m[1]) {
+      // Fermante : la pile remonte jusqu'à la balise ouverte du même nom (une balise non refermée l'est avec elle).
+      const i = pile.map((x) => x.nom).lastIndexOf(m[1].toLowerCase());
+      if (i >= 0) pile.length = i;
+      continue;
+    }
+    const balise = m[2].toLowerCase();
+    const attrs = lireAttributs(m[3]);
+    const decor = (pile.length > 0 && pile[pile.length - 1].decor) || estDecor(attrs);
+    surBalise(balise, attrs, decor);
+    if (!VIDES.has(balise) && !/\/\s*$/.test(m[3])) pile.push({ nom: balise, decor });
+  }
+}
 const ATTRIBUT = /([^\s"'=<>/]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+)))?/g;
 
 function lireAttributs(texte) {
@@ -21,7 +44,8 @@ function lireAttributs(texte) {
 
 /**
  * extraireScene(html) -> {
- *   elements: [{ cle, balise, start, dur, tween, texte, effet, milieu, calque, shader, son, sonVolume }],   (éléments minutés, data-effet et data-milieu compris, ordre du document)
+ *   elements: [{ cle, balise, start, dur, tween, texte, effet, milieu, calque, shader, son, sonVolume, classe, lettres, decor }],   (éléments minutés,
+ *     data-effet et data-milieu compris, ordre du document ; decor : dans un .decor ou un [data-decor], ou décor lui-même)
  *   textes: [clé data-texte],
  *   decoupes: [{ attribut: 'data-lettres' | 'data-mots', effet }],
  *   miseEnScene: [{ balise, camera, gel, vitesse, profondeur }]   (textes des attributs, undefined si absents)
@@ -40,14 +64,11 @@ function extraireScene(html) {
   const decoupes = [];
   const miseEnScene = [];
   let n = 0;
-  let m;
-  BALISE.lastIndex = 0;
-  while ((m = BALISE.exec(sansBlocs))) {
-    const attrs = lireAttributs(m[2]);
+  parcourir(sansBlocs, (balise, attrs, decor) => {
     if ('data-texte' in attrs) textes.push(attrs['data-texte']);
     for (const attribut of ['data-lettres', 'data-mots']) if (attribut in attrs) decoupes.push({ attribut, effet: attrs[attribut] });
     if ('data-camera' in attrs || 'data-gel' in attrs || 'data-vitesse' in attrs || 'data-profondeur' in attrs) {
-      miseEnScene.push({ balise: m[1].toLowerCase(), camera: attrs['data-camera'], gel: attrs['data-gel'], vitesse: attrs['data-vitesse'], profondeur: attrs['data-profondeur'] });
+      miseEnScene.push({ balise, camera: attrs['data-camera'], gel: attrs['data-gel'], vitesse: attrs['data-vitesse'], profondeur: attrs['data-profondeur'] });
     }
     // Styles en ligne et filtre SVG comptent comme du CSS pour les contrôles.
     if (attrs.style) css.push(`[style] { ${attrs.style} }`);
@@ -56,7 +77,7 @@ function extraireScene(html) {
     if ('data-start' in attrs || 'data-dur' in attrs || 'data-tween' in attrs || 'data-effet' in attrs || 'data-milieu' in attrs || 'data-son' in attrs || 'data-shader' in attrs) {
       elements.push({
         cle: attrs.id || `_${++n}`,
-        balise: m[1].toLowerCase(),
+        balise,
         start: attrs['data-start'],
         dur: attrs['data-dur'],
         tween: attrs['data-tween'],
@@ -67,9 +88,12 @@ function extraireScene(html) {
         shader: attrs['data-shader'],
         son: attrs['data-son'],
         sonVolume: attrs['data-son-volume'],
+        classe: attrs.class,
+        lettres: attrs['data-lettres'] ?? attrs['data-mots'],
+        decor,
       });
     }
-  }
+  });
   return { elements, textes, decoupes, miseEnScene, css: css.join('\n') };
 }
 
@@ -99,4 +123,26 @@ function textesEnDur(html) {
     .filter((t) => /\p{L}/u.test(t));
 }
 
-module.exports = { extraireScene, lireAttributs, textesEnDur };
+/** Images d'une scène : [{ src, alt, logo, decor }] (alt : null sans attribut). */
+function imagesScene(html) {
+  const sans = String(html).replace(/<!--[\s\S]*?-->/g, '').replace(/<(style|script)\b[\s\S]*?<\/\1>/gi, '');
+  const images = [];
+  parcourir(sans, (balise, attrs, decor) => {
+    if (balise !== 'img') return;
+    images.push({ src: attrs.src || '', alt: 'alt' in attrs ? attrs.alt : null, logo: 'data-logo' in attrs || /(^|\s)logo(\s|$)/.test(attrs.class || ''), decor });
+  });
+  return images;
+}
+
+/** Code des scripts exécutables d'une scène (ni JSON ni texte brut). */
+function scriptsScene(html) {
+  const r = [];
+  for (const m of String(html).replace(/<!--[\s\S]*?-->/g, '').matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
+    const type = lireAttributs(m[1]).type;
+    if (type && !/javascript|module/i.test(type)) continue;
+    r.push(m[2]);
+  }
+  return r;
+}
+
+module.exports = { extraireScene, lireAttributs, textesEnDur, imagesScene, scriptsScene };

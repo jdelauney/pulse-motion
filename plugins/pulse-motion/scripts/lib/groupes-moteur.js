@@ -5,7 +5,7 @@
  * MODULES : tous les modules, dans l'ordre de chargement (l'ordre relatif est gardé quand on filtre).
  * GROUPES : { nom: [modules] } ; un module ajouté sans groupe fait échouer le test moteur-chaque-module-dans-un-seul-groupe.
  * groupesDuDeroule(donnees, sections) -> [noms] : les groupes dont la page a besoin (tronc toujours, contrôle jamais :
- *   mesures.js et pixels.js sont injectés par la page de mesure, lib/page-mesures.js).
+ *   mesures.js, pixels.js et ecoute.js sont injectés par la page de mesure, lib/page-mesures.js).
  * modulesDesGroupes(groupes | 'tous') -> [modules] dans l'ordre de MODULES, absents.js en dernier.
  */
 
@@ -14,7 +14,7 @@ const GROUPES = {
   tronc: ['courbes.js', 'aligner.js', 'sous-titres.js', 'minutage.js', 'transitions.js', 'tween.js', 'lettres.js', 'camera.js',
     'temps.js', 'horloge.js', 'tailles.js', 'wav.js', 'sonie.js', 'mixage.js', 'audio.js', 'lecteur.js', 'sous-titres-rendu.js',
     'debordement.js', 'figer.js'],
-  controle: ['mesures.js', 'pixels.js'],
+  controle: ['mesures.js', 'pixels.js', 'ecoute.js'],
   'son-reactif': ['analyse-son.js', 'son-reactif.js'],
   synthe: ['synthe/catalogue.js', 'synthe/partition.js', 'synthe/ambiances.js', 'synthe/instruments.js', 'synthe/bruitages.js'],
   personnages: ['squelette.js', 'vivant.js', 'clips.js', 'habillage-batonnets.js', 'habillage-pieces.js', 'personnages/levres.js',
@@ -31,7 +31,7 @@ const MODULES = ['courbes.js', 'aligner.js', 'sous-titres.js', 'minutage.js', 't
   'personnages/interactions.js', 'personnages/scene.js', 'personnages/objets.js', 'temps.js', 'horloge.js', 'tailles.js', 'wav.js',
   'sonie.js', 'mixage.js', 'synthe/catalogue.js', 'synthe/partition.js', 'synthe/ambiances.js', 'synthe/instruments.js',
   'synthe/bruitages.js', 'analyse-son.js', 'audio.js', 'son-reactif.js', 'lecteur.js', 'sous-titres-rendu.js', 'debordement.js',
-  'mesures.js', 'pixels.js', 'figer.js', 'shaders/glsl.js', 'shaders/code.js', 'particules/instantanes.js', 'particules/gpu.js',
+  'mesures.js', 'pixels.js', 'ecoute.js', 'figer.js', 'shaders/glsl.js', 'shaders/code.js', 'particules/instantanes.js', 'particules/gpu.js',
   'particules/obstacles.js', 'particules/fragments.js', 'particules/simulation.js', 'particules/voisinage.js',
   'particules/maillage.js', 'particules/structures.js', 'particules/milieu.js', 'particules/rendu.js', 'particules/glsl.js',
   'particules/shaders.js', 'particules/composition.js', 'particules/formes.js', 'particules/reperes.js', 'particules/calques.js'];

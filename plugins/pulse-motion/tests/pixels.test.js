@@ -144,3 +144,73 @@ test('revue : texte sombre mais très transparent sur un dégradé clair, contra
     .replace('<p data-texte="sous"', '<p data-texte="sous" style="position:relative; color:#111111"')));
   assert.ok(r.some((x) => x.regle === 'contraste-reel' && x.element === 'titre'), JSON.stringify(r));
 });
+
+// --- Spec S2 : couleur lisible proposée (5.9), images figées et vides (5.10) -------------------------------------------
+
+test('pixels.test.js › contraste-reel : fond et couleur du texte dans le constat, proposition dans le message', sans, async () => {
+  const r = await pixels(projet((h) => h
+    .replace(MARGE, `${MARGE}${DEGRADE('#ffffff', '#c8c8c8')}`)
+    .replace('<h1 id="titre"', '<h1 id="titre" style="position:relative; color:#d8d8d8"')));
+  const c = r.find((x) => x.regle === 'contraste-reel' && x.element === 'titre');
+  assert.ok(c, JSON.stringify(r));
+  assert.match(c.fond, /^#[0-9a-f]{6}$/);
+  assert.equal(c.couleur, '#d8d8d8');
+  assert.ok(c.minimum >= 3);
+  const { traduireConstats } = require('../scripts/lib/rendu-controle.js');
+  const [p] = traduireConstats([c]);
+  const hex = /couleur lisible proposée : (#[0-9a-f]{6})/.exec(p.message);
+  assert.ok(hex, p.message);
+  assert.ok(require('../scripts/lib/couleurs.js').contraste(hex[1], c.fond) >= c.minimum);
+});
+
+const { analyserImages, mesurerFlashs } = require('../scripts/lib/flashs.js');
+/** Vignette 64 × 36 : fond gris, un carré clair de côté c à la position x. */
+function vignette(x, c = 10, fond = 90) {
+  const g = new Uint8Array(64 * 36).fill(fond);
+  for (let j = 10; j < 10 + c; j++) for (let i = Math.round(x); i < Math.round(x) + c; i++) g[j * 64 + i] = 230;
+  return g;
+}
+const scene = (extra = {}) => ({ id: 's', debut: 0, fin: 6, entree: 0, exclue: false, mouvements: [[0, 6]], ...extra });
+
+test('pixels.test.js › image-figee : un élément qui dérive de 0,1 % pendant 4 s, alerte ; data-gel, rien (un décor n’est pas jugé : écart avec la spec)', () => {
+  // 12 relevés par seconde ; le carré avance de 0,06 px (0,1 % de la largeur) par seconde : rien ne se voit.
+  const releves = Array.from({ length: 6 * 12 }, (_, k) => ({ t: (k + 0.5) / 12, gris: vignette(20 + 0.06 * (k / 12)) }));
+  const c = analyserImages(releves, { duree: 6.5, scenes: [scene()] }, require('../scripts/seuils.json'));
+  const f = c.find((x) => x.regle === 'image-figee');
+  assert.ok(f, JSON.stringify(c));
+  assert.equal(f.scene, 's');
+  assert.ok(f.valeur.d > 4, JSON.stringify(f));
+  // Scène au temps figé (data-gel), ou sans mouvement minuté (temps-mort le dit déjà) : rien.
+  assert.deepEqual(analyserImages(releves, { duree: 6.5, scenes: [scene({ exclue: true })] }, {}).filter((x) => x.regle === 'image-figee'), []);
+  assert.deepEqual(analyserImages(releves, { duree: 6.5, scenes: [scene({ mouvements: [] })] }, {}).filter((x) => x.regle === 'image-figee'), []);
+  // Un vrai mouvement (2 px par relevé) : rien.
+  const bouge = Array.from({ length: 6 * 12 }, (_, k) => ({ t: (k + 0.5) / 12, gris: vignette(2 + (k % 25) * 2) }));
+  assert.deepEqual(analyserImages(bouge, { duree: 6.5, scenes: [scene()] }, {}).filter((x) => x.regle === 'image-figee'), []);
+});
+
+test('pixels.test.js › image-vide : une scène dont tous les éléments entrent après 2 s, alerte', () => {
+  const releves = Array.from({ length: 6 * 12 }, (_, k) => {
+    const t = (k + 0.5) / 12;
+    return { t, gris: t < 2 ? new Uint8Array(64 * 36).fill(90) : vignette(20, 16) };
+  });
+  const c = analyserImages(releves, { duree: 6.5, scenes: [scene({ entree: 0.5 })] }, require('../scripts/seuils.json'));
+  const v = c.filter((x) => x.regle === 'image-vide');
+  assert.deepEqual(v.map((x) => x.scene), ['s']);
+  // L'entrée de la première scène depuis le fond ne compte pas.
+  assert.ok(v[0].instant >= 0.5);
+  // Une image unie moins d'une seconde (un titre qui entre peu après le début) : rien.
+  const bref = releves.map((r) => (r.t < 1.2 ? r : { t: r.t, gris: vignette(20, 16) }));
+  assert.deepEqual(analyserImages(bref, { duree: 6.5, scenes: [scene({ entree: 0.5 })] }, require('../scripts/seuils.json')).filter((x) => x.regle === 'image-vide'), []);
+});
+
+test('pixels.test.js › aucune capture de plus que la passe des flashs', async () => {
+  let captures = 0;
+  const relever = async (t) => { captures++; return { cases: new Array(16).fill(0.2), gris: vignette(20 + t) }; };
+  const sans = await mesurerFlashs({ duree: 4, ips: 30, seuils: {}, relever, sceneA: () => 's' });
+  const n = captures;
+  captures = 0;
+  const avec = await mesurerFlashs({ duree: 4, ips: 30, seuils: {}, relever, sceneA: () => 's', images: { duree: 4, scenes: [scene({ fin: 4 })] } });
+  assert.equal(captures, n);
+  assert.deepEqual(sans, []);
+  assert.ok(Array.isArray(avec));
+});

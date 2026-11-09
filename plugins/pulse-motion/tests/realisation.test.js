@@ -50,17 +50,17 @@ test('realisation.test.js › elle a les 15 sections numérotées du plan', () =
 test('realisation.test.js › chaque seuil cité suivi de sa clé est égal à seuils.json', () => {
   let n = 0;
   DOCTRINE.split('\n').forEach((l, i) => {
-    for (const m of l.matchAll(/(\d+(?:[  ]\d{3})*(?:,\d+)?)(\s?%|:1)?[^\d(`|\n]{0,60}\(`([a-z]+(?:[A-Z][a-z0-9]*)+)`\)/g)) {
+    for (const m of l.matchAll(/([−-]?\d+(?:[  ]\d{3})*(?:,\d+)?)(\s?%|:1)?[^\d(`|\n]{0,60}\(`([a-z]+(?:[A-Z][a-z0-9]*)+)`\)/g)) {
       n++;
       assert.ok(m[3] in SEUILS, `ligne ${i + 1} : clé ${m[3]} absente`);
-      const v = Number(m[1].replace(/[  ]/g, '').replace(',', '.'));
+      const v = Number(m[1].replace(/[  ]/g, '').replace('−', '-').replace(',', '.'));
       const attendu = (m[2] || '').trim() === '%' ? Math.round(SEUILS[m[3]] * 100 * 1e6) / 1e6 : SEUILS[m[3]];
       assert.equal(v, attendu, `ligne ${i + 1} : ${m[3]}`);
     }
   });
   assert.ok(n >= 15, `${n} seuils cités avec leur clé`);
   // Les clés du relecteur et du regard sont citées, comme le veut la spec (5.19).
-  for (const k of ['critiqueBarre', 'critiqueCorrige', 'critiqueIntouche', 'regardPas', 'regardDecalage', 'regardVignettesMax', 'telephoneLargeur', 'accrocheMax', 'sousTitreMin']) {
+  for (const k of ['critiqueBarre', 'critiqueScenesMax', 'critiqueIntouche', 'regardPas', 'regardDecalage', 'regardVignettesMax', 'telephoneLargeur', 'accrocheMax', 'sousTitreMin']) {
     assert.match(DOCTRINE, new RegExp(`\\(\`${k}\`\\)`), k);
   }
 });

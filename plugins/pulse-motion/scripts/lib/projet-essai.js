@@ -74,7 +74,11 @@ function projetEssai({ dossierStyle, ratio = '16:9', ton, types = null, textes: 
       if (sorteTextes === 'exemple') textes[cle] = texteExemple(cle, max);
       else textes[cle] = cle === 'numero' ? '12' : texteDeLongueur(max, i + k);
     });
-    return { id: s.nom, type: s.nom, fichier: `scenes/${s.nom}.html`, duree: s.duree, textes, transition: catalogue.transitions[i % catalogue.transitions.length] };
+    // Le chiffre d'un compteur s'écrit dans l'intention, comme le demande la doctrine (realisation § 3, règle chiffre-invente).
+    const html = fs.readFileSync(path.join(dossierStyle, 'scenes', `${s.nom}.html`), 'utf8');
+    const chiffres = [...html.matchAll(/nombre\s+-?[\d.]+\s*→\s*(-?[\d.]+)/g)].map((m) => m[1].replace('.', ','));
+    const intention = `${s.nom} – ${s.role}${chiffres.length ? ` (${chiffres.join(', ')})` : ''}`;
+    return { id: s.nom, type: s.nom, fichier: `scenes/${s.nom}.html`, duree: s.duree, textes, intention, transition: catalogue.transitions[i % catalogue.transitions.length] };
   });
   const charte = { logo: 'assets/logo.svg' };
   if (ton) charte.ton = ton;

@@ -125,3 +125,10 @@ test('chercher : petits mots, pluriels, et les plus proches quand rien ne contie
   assert.equal(chercher('un pop-in sur le titre')[0].slug, 'pop-in');
   assert.ok(chercher('pop zzzz').some((e) => e.slug === 'pop-in'), 'au moins un mot trouvé');
 });
+
+test('mouvements.test.js › champ brusque : booléen, posé sur les entrées sèches', () => {
+  for (const e of DICO.mouvements) if (e.brusque !== undefined) assert.equal(e.brusque, true, `#${e.no} ${e.slug} : brusque vaut true, ou s'omet`);
+  const brusques = DICO.mouvements.filter((e) => e.brusque).map((e) => e.slug);
+  for (const s of ['glitch', 'brouillage', 'coupe', 'saccade', 'tremblement', 'secousse-impact', 'machine-a-ecrire']) assert.ok(brusques.includes(s), s);
+  for (const s of ['fondu-montant', 'glisse', 'courbe-douce', 'fondu-enchaine']) assert.ok(!brusques.includes(s), s);
+});

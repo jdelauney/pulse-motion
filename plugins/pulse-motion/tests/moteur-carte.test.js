@@ -102,9 +102,10 @@ test('moteur-groupes-selon-le-deroule : chaque groupe selon les données et les 
 
 test('moteur-controle-injecte-par-la-page-de-mesure : mesures et pixels jamais dans la page livrée, injectés pour mesurer', () => {
   const { html } = assembler({ dossier: copierProjet('projet-simple'), dossierStyles: STYLES, ecrire: false });
-  assert.doesNotMatch(html, /M\.mesurer = function|M\.mesurerPixels = function/);
+  assert.doesNotMatch(html, /M\.mesurer = function|M\.mesurerPixels = function|M\.ecouter = /);
   const source = fs.readFileSync(path.join(RACINE, 'scripts', 'lib', 'page-mesures.js'), 'utf8');
-  assert.match(source, /\['mesures\.js', 'pixels\.js'\]/);
+  // L'écoute du son (spec S2, 5.11) est un module du contrôle, injecté comme les mesures.
+  assert.match(source, /\['mesures\.js', 'pixels\.js', 'ecoute\.js'\]/);
   // Les deux pages de mesure (POST et CDP) passent par la même injection.
   assert.equal((source.match(/\$\{injecte\(\)\}/g) || []).length, 2);
   // L'empreinte du contrôle porte sur les modules injectés et sur le moteur inclus.

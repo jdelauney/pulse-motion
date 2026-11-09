@@ -48,7 +48,9 @@ test('controlerComplet : projet sans défaut rendu dans Chrome, rien à signaler
   const dir = copierProjet('projet-simple');
   for (const f of ['01-intro.html', '02-chiffre.html']) {
     const fichier = path.join(dir, 'scenes', f);
-    fs.writeFileSync(fichier, fs.readFileSync(fichier, 'utf8').replace(/(<section[^>]*>)/, '$1\n  <style>@scope { :scope { padding: 12cqh 12cqw; } }</style>'));
+    // Titre de l'ouverture assez grand pour être le sujet de l'image (sujet-petit, spec S2 5.8).
+    fs.writeFileSync(fichier, fs.readFileSync(fichier, 'utf8').replace(/(<section[^>]*>)/, '$1\n  <style>@scope { :scope { padding: 12cqh 12cqw; } }</style>')
+      .replace('<h1 id="titre"', '<h1 id="titre" style="font-size:14cqh"'));
   }
   const r = await controlerComplet({ dossier: dir, dossierStyles: STYLES, corriger: false });
   assert.equal(r.renduVerifie, true);

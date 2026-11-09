@@ -4,7 +4,7 @@
  * temps restant, bouton Annuler) et le résultat. Paramètres d'adresse utilisés par
  * « pulse-motion exporter » : ?export=1 lance l'export ; ?planche=id1,id2 capture la planche.
  */
-import { exporter, relire, envoyer, signaler, capturerPlanche } from '/_pm/export.mjs';
+import { exporter, relire, envoyer, envoyerStats, signaler, capturerPlanche } from '/_pm/export.mjs';
 
 const M = globalThis.M;
 
@@ -72,6 +72,8 @@ export async function lancerExport({ avecProvisoire = false } = {}) {
     panneau.titre('Vérification de la vidéo…');
     panneau.bouton.disabled = true;
     const relecture = await relire(resultat.buffer, { images: resultat.images, ips: M.ips, fondSombre: resultat.fondSombre });
+    // Statistiques image par image (spec S2, 5.12) : analysées par l'aperçu à la réception de la vidéo (verification.json).
+    await envoyerStats(resultat.stats);
     const { fichier } = await envoyer(resultat.buffer, {
       ...relecture, audio: resultat.audio, largeur: resultat.largeur, hauteur: resultat.hauteur, avertissement: resultat.avertissement,
     });

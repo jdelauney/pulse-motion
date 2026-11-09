@@ -56,3 +56,21 @@ test('revue : un envoi sans le jeton de la page est ignoré (une autre page web 
   assert.equal(statut, 403);
   assert.deepEqual(await attente, { resultat: 'vrai' });
 });
+
+test('page-mesures.test.js › erreur-de-scene : une exception dans M.chaqueImage est rapportée', sans, async () => {
+  const dir = copierProjet('projet-simple');
+  const fs = require('node:fs');
+  const f = path.join(dir, 'scenes', '02-chiffre.html');
+  fs.writeFileSync(f, fs.readFileSync(f, 'utf8').replace("document.body.dataset.vu = '1';", 'inconnue.valeur = p;'));
+  const { html } = assembler({ dossier: dir, dossierStyles: STYLES, ecrire: false });
+  const { controlerRendu } = require('../scripts/lib/rendu-controle.js');
+  const r = await controlerRendu({ html, ratio: '16:9', duree: 8, navigateur });
+  const p = r.problemes.filter((x) => x.regle === 'erreur-de-scene');
+  assert.equal(p.length, 1, JSON.stringify(r.problemes));
+  assert.equal(p[0].scene, 'chiffre');
+  assert.equal(p[0].gravite, 'erreur');
+  assert.match(p[0].message, /Scène « chiffre » : son code s'arrête sur une erreur \(« [^»]*inconnue[^»]* »\)/);
+  // Sans exception : rien.
+  const juste = await controlerRendu({ html: page(), ratio: '16:9', duree: 8, navigateur });
+  assert.deepEqual(juste.problemes.filter((x) => x.regle === 'erreur-de-scene'), []);
+});

@@ -43,7 +43,8 @@ const regles = (constats) => constats.map((c) => c.regle);
 const boite = (id, style, extra = '') => `<svg id="${id}" ${extra} style="position:absolute; ${style}" viewBox="0 0 10 10"><rect width="10" height="10"/></svg>`;
 
 test('mesures : projet sans défaut, aucun constat', sans, async () => {
-  assert.deepEqual(await mesurer(projet()), []);
+  // Titre de l'ouverture assez grand pour être le sujet de l'image (sujet-petit, spec S2 5.8).
+  assert.deepEqual(await mesurer(projet((h) => h.replace('<h1 id="titre"', '<h1 id="titre" style="font-size:14cqh"'))), []);
 });
 
 test('mesures : chevauchement de deux éléments, sauf data-superpose', sans, async () => {

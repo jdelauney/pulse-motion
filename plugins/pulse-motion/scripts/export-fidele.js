@@ -15,6 +15,7 @@
  *   segments/<empreinte du fichier dérivé>-<morceau>.mp4   segment réencodé depuis l'intermédiaire, seulement quand les
  *                                               réglages d'encodage diffèrent de ceux de l'intermédiaire (S5) ;
  *   segments/dernier.json                       segments du dernier export réussi (gardés avec ceux de l'export en cours) ;
+ *   segments/pixels/<…>.mp4.stats.json          statistiques image par image du segment (spec S2, 5.12), gardées avec lui ;
  *   profil.json                                 temps cumulé par phase (PM_PROFIL=1).
  * Suivi dans sortie/export.json ; résumé JSON ; code 1 en cas d'échec.
  */
@@ -30,6 +31,9 @@ const { cheminDansProjet } = require('./lib/embarquer.js');
 const { scenesProvisoires, messageProvisoire } = require('./lib/voix.js');
 const { navigateursParalleles, enParallele } = require('./lib/paralleles.js');
 const { decouperSegments, empreintesPixels, empreinteDerivee, stable } = require('./lib/empreintes.js');
+const V = require('./lib/verification.js');
+const { joindre, analyserSerie } = require('./lib/series.js');
+const SEUILS = require('./seuils.json');
 
 const TAILLES = {
   '1080p': { '16:9': [1920, 1080], '9:16': [1080, 1920], '1:1': [1080, 1080], '4:5': [1080, 1350] },
@@ -130,10 +134,12 @@ const navigateurArrete = (e) => /navigateur s'est arrêté/.test(String(e && e.m
  *                  dureeSegment?, arreterApres?, paralleles?, avecProvisoire?, encodage?, parametresPixels?, profil?, surOuverture? })
  * encodage : réglages x264 du fichier dérivé ({ crf, preset }) ; par défaut ceux de l'intermédiaire. parametresPixels : réglages
  * qui changent les pixels (S5), ajoutés à l'empreinte des pixels. surOuverture(capture) : chaque page ouverte (tests).
+ * whisper : { pret, transcrire } de la réécoute (tests ; par défaut la transcription installée). Résultat : verification
+ * { erreurs, alertes, fichier } (sortie/verification.json, spec S2 5.12) ; un noir ou un silence absent de la page fait échouer l'export.
  */
 async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = trouverNavigateur(), outil = F.trouverFfmpeg(), dossierStyles,
   dossierEffets = path.join(RACINE, 'effets'), surProgression = () => {}, signal, dureeSegment = 10, arreterApres, paralleles, avecProvisoire = false,
-  encodage, parametresPixels = {}, profil = process.env.PM_PROFIL === '1', surOuverture = () => {} } = {}) {
+  encodage, parametresPixels = {}, profil = process.env.PM_PROFIL === '1', surOuverture = () => {}, whisper = null } = {}) {
   const debutExport = performance.now();
   const projet = path.resolve(dossier);
   const sortieDir = path.join(projet, 'sortie');
@@ -219,7 +225,11 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
     const garder = new Set([...precedents, ...inter.map((f) => path.relative(dossierSegments, f)), ...fichiers.map((f) => path.relative(dossierSegments, f))].map((f) => f.replace(/\\/g, '/')));
     const purger = (conserves) => {
       for (const [d, prefixe] of [[dossierSegments, ''], [dossierPixels, 'pixels/']]) {
-        for (const f of fs.readdirSync(d)) if (f.endsWith('.mp4') && !conserves.has(prefixe + f)) retirer(path.join(d, f));
+        for (const f of fs.readdirSync(d)) {
+          // Statistiques d'un segment (<segment>.mp4.stats.json) : gardées avec lui.
+          const segment = f.endsWith('.stats.json') ? f.slice(0, -'.stats.json'.length) : f;
+          if (segment.endsWith('.mp4') && !conserves.has(prefixe + segment)) retirer(path.join(d, f));
+        }
       }
     };
     purger(garder);
@@ -309,7 +319,8 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
         }
         finImages = performance.now();
       }
-      await F.encoderSegment({ ffmpeg: outil.chemin, sortie: segmentPartiel, ips: cadence, crf: intermediaire.crf, preset: intermediaire.preset, images: images(), signal: controle.signal, profil: P.ajouter });
+      // Statistiques image par image (spec S2, 5.12) : seconde sortie de ffmpeg, pendant l'encodage, sans seconde capture.
+      const encode = await F.encoderSegment({ ffmpeg: outil.chemin, sortie: segmentPartiel, ips: cadence, crf: intermediaire.crf, preset: intermediaire.preset, images: images(), signal: controle.signal, profil: P.ajouter, stats: true });
       if (P.actif && finImages) P.ajouter('finEncodage', performance.now() - finImages);
       if (controle.signal.aborted) throw new Error('export annulé');
       const valide = await P.mesurer('verifications', () => segmentValide(outil, segmentPartiel, attendu));
@@ -317,6 +328,8 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
       if (!(await P.mesurer('verifications', () => premiereImageJuste(outil, segmentPartiel, premiereImage)))) throw new Error(`le segment ${k + 1} ne correspond pas à la page`);
       fs.renameSync(segmentPartiel, inter[k]);
       partiels.delete(segmentPartiel);
+      retirer(V.fichierStats(inter[k]));
+      if (encode && encode.vignettes && encode.vignettes.length === attendu.images) await P.mesurer('statistiques', () => V.ecrireStats(inter[k], encode.vignettes));
       if (!memeEncodage) await deriver(k, attendu);
       recapturees.add(g.scene);
       produits++;
@@ -386,22 +399,101 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
     if (erreurSon) avertissements.push('Le son n\'a pas pu être encodé : vidéo exportée sans son.');
     const avertissement = avertissements.length ? avertissements.join(' ') : undefined;
 
+    /**
+     * Ce que montre et fait entendre le fichier, comparé à la page (spec S2, 5.12) : images isolées et sauts (statistiques de
+     * capture), noirs et silences absents de la page (l'export échoue, segment noir retiré), crête, réécoute des scènes où la
+     * voix risque d'être couverte. Écrit sortie/verification.json. m : résultat de F.verifierFichier.
+     */
+    async function verifierContenu({ m, sonie }) {
+      const faites = [];
+      const nonFaites = [];
+      const problemes = [];
+      const serie = joindre(segments.map((g, k) => ({ images: g.fin - g.debut, stats: V.lireStats(inter[k]) })));
+      const analysees = segments.length - serie.nonAnalyses;
+      let parasites = 0;
+      let sauts = 0;
+      if (analysees > 0) {
+        let dico = [];
+        try { dico = JSON.parse(fs.readFileSync(path.join(RACINE, 'references', 'mouvements', 'mouvements.json'), 'utf8')).mouvements; } catch { /* dictionnaire absent */ }
+        const contexte = V.contexteSerie({ assemblage, deroule, dico, options: optionsMinutage(deroule) });
+        const a = analyserSerie(serie.images, { ips: cadence, ...contexte, seuils: SEUILS });
+        problemes.push(...a.problemes);
+        ({ parasites, sauts } = a);
+        faites.push('images');
+      }
+      if (serie.nonAnalyses) nonFaites.push({ quoi: 'images', pourquoi: `${serie.nonAnalyses} segment${serie.nonAnalyses > 1 ? 's' : ''} repris d'un export précédent sans statistiques` });
+      faites.push('noirs');
+      const noirs = V.noirsAbsents(m.noirs, serie.images, { ips: cadence, seuil: SEUILS.noirSeuil });
+      problemes.push(...noirs.map(V.problemeNoir));
+      let silences = [];
+      if (audio) {
+        faites.push('silences');
+        let wav = null;
+        try { wav = fs.readFileSync(path.join(travail, 'son.wav')); } catch { /* son de travail absent */ }
+        if (wav) silences = V.silencesAbsents(m.silences, wav, { duree: total / cadence, niveau: SEUILS.silenceNiveau, dureeMin: SEUILS.silenceDuree });
+        problemes.push(...silences.map(V.problemeSilence));
+        if (sonie) faites.push('sonie');
+        if (Number.isFinite(m.crete)) {
+          faites.push('crete');
+          if (m.crete > SEUILS.creteMax) problemes.push(V.problemeCrete(m.crete));
+        }
+        // Réécoute : les scènes que le dernier contrôle a signalées (voix couverte), sur le mixage.
+        const parles = (assemblage.donnees.scenes || []).filter((s) => s.voix && s.voix.source).map((s) => s.id);
+        if (parles.length) {
+          const signalees = V.scenesVoixCouverte(projet).filter((id) => parles.includes(id));
+          const w = whisper || require('./lib/whisper.js').whisperParDefaut();
+          if (!w.pret) nonFaites.push({ quoi: 'reecoute', pourquoi: 'la transcription n\'est pas installée' });
+          else if (!signalees.length) nonFaites.push({ quoi: 'reecoute', pourquoi: 'aucune scène où la musique risque de couvrir la voix' });
+          else if (wav) {
+            const min = premiere.minutage.scenes;
+            const scenes = signalees.map((id) => {
+              const sc = deroule.scenes.find((x) => x.id === id) || {};
+              const ms = min.find((x) => x.id === id) || { debut: 0, fin: 0 };
+              const dv = assemblage.donnees.scenes.find((x) => x.id === id);
+              return { id, debut: ms.debut, fin: ms.fin, texte: (sc.voix && sc.voix.texte) || '', mots: (dv && dv.voix && dv.voix.mots) || [] };
+            });
+            const r = await V.reecouter({ scenes, wav, transcrire: w.transcrire, dossier: travail, seuil: SEUILS.motsConfirmes });
+            if (r.faite) { faites.push('reecoute'); problemes.push(...r.problemes); } else nonFaites.push({ quoi: 'reecoute', pourquoi: r.pourquoi });
+          }
+        }
+      } else {
+        nonFaites.push({ quoi: 'son', pourquoi: 'la vidéo n\'a pas de son' });
+      }
+      const v = {
+        fichier: path.relative(projet, final).replace(/\\/g, '/'), faites, nonFaites,
+        mesures: { sonie: Number.isFinite(m.integree) ? Math.round(m.integree * 10) / 10 : null, crete: Number.isFinite(m.crete) ? Math.round(m.crete * 10) / 10 : null,
+          parasites, sauts, noirs: m.noirs, silences: m.silences },
+        problemes,
+      };
+      V.ecrireVerification(projet, v);
+      if (noirs.length || silences.length) {
+        // Segment noir retiré : il ne sera pas repris au prochain export.
+        for (const n of noirs) segments.forEach((g, k) => { if (g.fin / cadence > n.debut && g.debut / cadence < n.fin) { retirer(fichiers[k]); retirer(inter[k]); retirer(V.fichierStats(inter[k])); } });
+        throw Object.assign(new Error('vérification'), { verification: (noirs.length ? V.problemeNoir(noirs[0]) : V.problemeSilence(silences[0])).message, resumeVerification: V.resume(v) });
+      }
+      return v;
+    }
+
     await P.mesurer('assemblage', () => F.assemblerSegments({ ffmpeg: outil.chemin, segments: fichiers, sortie: partiel, audio }));
+    let verification = null;
     await P.mesurer('verifications', async () => {
-      // Le fichier final garde un décodage complet : la garantie de lecture. Sonie et images témoins lues en même temps.
+      // Une seule passe sur le fichier final (spec S2, 5.12) : chaque image décodée et comptée (la garantie de lecture), noirs,
+      // sonie, crête et silences ; ffprobe ne lit plus que les pistes. Images témoins lues en même temps.
       // ebur128 ne mesure rien sous 400 ms (un bloc) : la sonie d'une vidéo plus courte n'est pas vérifiée.
       const sonie = audio && typeof son.sonie === 'number' && total / cadence >= 0.4;
       const [s, m, lues] = await Promise.all([
-        F.sonder({ ffprobe: outil.cheminProbe, fichier: partiel }),
-        sonie ? F.mesurerSonie({ ffmpeg: outil.chemin, fichier: partiel }) : null,
+        F.sonder({ ffprobe: outil.cheminProbe, fichier: partiel, compter: 'aucun' }),
+        F.verifierFichier({ ffmpeg: outil.chemin, fichier: partiel, audio: Boolean(audio), noir: { duree: SEUILS.noirDuree, seuil: SEUILS.noirSeuil }, silence: { niveau: SEUILS.silenceNiveau, duree: SEUILS.silenceDuree } }),
         Promise.all([...temoins.keys()].map((n) => F.extraireImage({ ffmpeg: outil.chemin, fichier: partiel, t: Math.max(0, n / cadence - 0.001) }))),
       ]);
       if (s.video !== 'h264' || s.largeur !== largeur || s.hauteur !== hauteur) throw new Error('la vidéo n\'a pas la piste ou la taille attendues');
-      if (s.images !== total || Math.abs(s.duree - total / cadence) > 1 / cadence + 0.01) throw new Error(`la vidéo a ${s.images} images au lieu de ${total}`);
+      const decodees = m.images === null ? s.images : m.images;
+      if (decodees !== total || Math.abs(s.duree - total / cadence) > 1 / cadence + 0.01) throw new Error(`la vidéo a ${decodees} images au lieu de ${total}`);
       if (audio && (s.audio !== 'aac' || Math.abs(s.dureeAudio - total / cadence) > 0.1)) throw new Error('la piste son est absente ou n\'a pas la durée de l\'image');
       if (sonie) {
         if (!(Math.abs(m.integree - son.sonie) <= 1)) throw new Error(`le son n'a pas la sonie attendue (${m.integree.toFixed(1)} LUFS au lieu de ${son.sonie.toFixed(1)})`);
       }
+      verification = await P.mesurer('verificationContenu', () => verifierContenu({ m, sonie }));
       // Trois images de la vidéo comparées aux captures (segment décalé, image noire).
       for (const [i, [n, capturee]] of [...temoins].entries()) {
         const ecart = F.ecartImages(lues[i], capturee);
@@ -430,8 +522,10 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
       scenesRecapturees: segments.map((g) => g.scene).filter((id, i, t) => recapturees.has(id) && t.indexOf(id) === i),
       paralleles: regle.nombre, regleParalleles: regle.regle,
     };
+    if (verification) resultat.verification = V.resume(verification);
     if (avertissement) resultat.avertissement = avertissement;
-    etat({ etat: 'fini', fichier: path.relative(projet, final).replace(/\\/g, '/'), images: total, duree: total / cadence, audio: Boolean(audio), ...(avertissement ? { avertissement } : {}) });
+    etat({ etat: 'fini', fichier: path.relative(projet, final).replace(/\\/g, '/'), images: total, duree: total / cadence, audio: Boolean(audio), ...(avertissement ? { avertissement } : {}),
+      ...(verification ? { verification: resultat.verification } : {}) });
     return resultat;
   } catch (e) {
     const annule = controle.signal.aborted && !e.verrou && /annulé/.test(e.message);
@@ -439,7 +533,12 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
     if (travaux.length) { controle.abort(); await Promise.allSettled(travaux); }
     const message = annule ? 'Export annulé : les segments déjà faits seront repris au prochain export.'
       : e.verrou ? `${e.message} ; les segments déjà faits seront repris.`
-        : `L'export fidèle a échoué (${e.message}) : relancez-le ; les segments déjà faits seront repris.`;
+        : e.verification ? `${e.verification} Les autres segments déjà faits seront repris.`
+          : `L'export fidèle a échoué (${e.message}) : relancez-le ; les segments déjà faits seront repris.`;
+    if (e.verification) {
+      etat({ etat: 'erreur', message });
+      return { ok: false, audio: false, message, verification: e.resumeVerification };
+    }
     etat({ etat: annule ? 'annule' : 'erreur', message });
     return { ok: false, audio: false, message };
   } finally {

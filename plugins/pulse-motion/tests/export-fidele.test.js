@@ -245,3 +245,87 @@ test('correctifs : empreinte des pixels indépendante des volumes et de la parti
   assert.notDeepEqual(empreintesPixels(base, reglages), empreintesPixels(plusLong, reglages));
   assert.notDeepEqual(empreintesPixels(base, reglages), empreintesPixels(base, { ...reglages, cadence: 60 }));
 });
+
+// --- Spec S2, 5.12 : vérification de l'export -------------------------------------------------------------------------
+
+test('export-fidele.test.js › statistiques écrites à côté de chaque segment, sans seconde capture', sans, async () => {
+  const dir = copierProjet('projet-simple');
+  let captures = 0;
+  const surOuverture = (c) => { const avant = c.capturer; c.capturer = (...a) => { captures++; return avant(...a); }; };
+  const r = await exporter(dir, { surOuverture });
+  assert.equal(r.ok, true, r.message);
+  assert.equal(captures, r.images, 'une capture par image, pas une de plus');
+  for (const segment of cache(dir).pixels) {
+    const st = JSON.parse(fs.readFileSync(`${segment}.stats.json`, 'utf8'));
+    const { images } = await F.sonder({ ffprobe: outil.cheminProbe, fichier: segment, compter: 'paquets' });
+    assert.equal(st.images, images);
+    assert.equal(st.largeur, 192);
+    assert.equal(st.hauteur, 108);
+    assert.equal(st.m.length, images);
+    assert.equal(st.d[0], null);
+    assert.equal(st.bords.premieres.length, 2);
+  }
+  const v = JSON.parse(fs.readFileSync(path.join(dir, 'sortie', 'verification.json'), 'utf8'));
+  assert.equal(v.version, 1);
+  assert.equal(v.fichier, 'sortie/la-chaine-du-froid.mp4');
+  assert.deepEqual(v.faites, ['images', 'noirs']);
+  assert.deepEqual(v.nonFaites, [{ quoi: 'son', pourquoi: 'la vidéo n\'a pas de son' }]);
+  // Le style de test n'anime pas les entrées : le titre et le compteur apparaissent d'un coup (saut-image, à juste titre).
+  assert.deepEqual(r.verification, { erreurs: 0, alertes: v.problemes.length, fichier: 'sortie/verification.json' });
+  assert.ok(v.problemes.length >= 1 && v.problemes.every((p) => p.regle === 'saut-image' && p.gravite === 'alerte'), JSON.stringify(v.problemes));
+  assert.ok(v.problemes.some((p) => p.scene === 'intro' && p.instant === 0.3), 'le titre qui apparaît d’un coup à 0,3 s');
+  // Repris au second export : ses statistiques restent, la vérification les relit.
+  const r2 = await exporter(dir);
+  assert.equal(r2.segmentsRepris, r2.segments);
+  assert.ok(JSON.parse(fs.readFileSync(path.join(dir, 'sortie', 'verification.json'), 'utf8')).faites.includes('images'));
+});
+
+test('export-fidele.test.js › une seule passe ffmpeg pour sonie, crête, noirs et silences', sans, async () => {
+  const dir = copierProjet('projet-simple');
+  ajouterMusique(dir, 9);
+  const appels = { verifier: 0, sonie: 0, compter: [] };
+  const avant = { verifier: F.verifierFichier, sonie: F.mesurerSonie, sonder: F.sonder };
+  F.verifierFichier = (o) => { appels.verifier++; return avant.verifier(o); };
+  F.mesurerSonie = (o) => { appels.sonie++; return avant.sonie(o); };
+  F.sonder = (o) => { if (/la-chaine-du-froid\.mp4\.part$/.test(o.fichier)) appels.compter.push(o.compter || 'images'); return avant.sonder(o); };
+  try {
+    const r = await exporter(dir, { ips: 5 });
+    assert.equal(r.ok, true, r.message);
+  } finally {
+    Object.assign(F, { verifierFichier: avant.verifier, mesurerSonie: avant.sonie, sonder: avant.sonder });
+  }
+  assert.equal(appels.verifier, 1);
+  assert.equal(appels.sonie, 0);
+  assert.deepEqual(appels.compter, ['aucun'], 'ffprobe ne décode plus le fichier final');
+  const v = JSON.parse(fs.readFileSync(path.join(dir, 'sortie', 'verification.json'), 'utf8'));
+  for (const f of ['images', 'noirs', 'silences', 'sonie', 'crete']) assert.ok(v.faites.includes(f), f);
+  assert.ok(Number.isFinite(v.mesures.sonie) && Number.isFinite(v.mesures.crete), JSON.stringify(v.mesures));
+});
+
+test('export-fidele.test.js › noir-export : un segment noirci après coup fait échouer l\'export et il est retiré', sans, async () => {
+  const dir = copierProjet('projet-simple');
+  const r1 = await exporter(dir);
+  assert.equal(r1.ok, true, r1.message);
+  // Le deuxième segment garde sa première image (il est repris) mais devient noir ensuite ; ses statistiques disent la page.
+  const segment = cache(dir).pixels.sort().find((f) => /-01\.mp4$/.test(f) && fs.existsSync(`${f}.stats.json`) && JSON.parse(fs.readFileSync(`${f}.stats.json`, 'utf8')).images >= 10);
+  assert.ok(segment, 'un segment d\'au moins une seconde');
+  const { images } = await F.sonder({ ffprobe: outil.cheminProbe, fichier: segment, compter: 'paquets' });
+  const premiere = await F.extraireImage({ ffmpeg: outil.chemin, fichier: segment, t: 0 });
+  const { pngRGBA } = require('./aide/png.js');
+  const noir = pngRGBA(1280, 720, () => [0, 0, 0, 255]);
+  async function* noircies() { for (let k = 0; k < images; k++) yield k < 2 ? premiere : noir; }
+  const stats = fs.readFileSync(`${segment}.stats.json`);
+  fs.rmSync(segment);
+  await F.encoderSegment({ ffmpeg: outil.chemin, sortie: segment, ips: 10, crf: 21, images: noircies() });
+  fs.writeFileSync(`${segment}.stats.json`, stats);
+  const r2 = await exporter(dir);
+  assert.equal(r2.ok, false);
+  assert.match(r2.message, /La vidéo exportée a [\d,]+ s d'images noires vers [\d,]+ s qui n'existent pas dans la page ; l'export est abîmé : relancez-le\./);
+  assert.equal(r2.verification.erreurs, 1);
+  assert.equal(fs.existsSync(segment), false, 'le segment noirci est retiré');
+  const v = JSON.parse(fs.readFileSync(path.join(dir, 'sortie', 'verification.json'), 'utf8'));
+  assert.ok(v.problemes.some((p) => p.regle === 'noir-export' && p.gravite === 'erreur'));
+  // Relancé : refait, et juste.
+  const r3 = await exporter(dir);
+  assert.equal(r3.ok, true, r3.message);
+});

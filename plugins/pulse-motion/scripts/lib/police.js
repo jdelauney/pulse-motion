@@ -172,4 +172,4 @@ function trouverFichiersPolice(famille, dossiers) {
   return [];
 }
 
-module.exports = { lireTables, analyserPolice, trouverFichiersPolice, FRANCAIS, EXTENSIONS_POLICE };
+module.exports = { lireTables, lecteurCmap, analyserPolice, trouverFichiersPolice, FRANCAIS, EXTENSIONS_POLICE };

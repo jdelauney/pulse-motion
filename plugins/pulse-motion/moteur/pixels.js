@@ -30,6 +30,9 @@
     var h = /#([0-9a-f]{6})/i.exec(texte || '');
     return h ? { r: parseInt(h[1].slice(0, 2), 16), g: parseInt(h[1].slice(2, 4), 16), b: parseInt(h[1].slice(4, 6), 16), a: 1 } : null;
   }
+  function hex(c) {
+    return '#' + [c.r, c.g, c.b].map(function (v) { var x = Math.round(Math.max(0, Math.min(255, v))).toString(16); return x.length < 2 ? '0' + x : x; }).join('');
+  }
   function meme(a, b) { return a && b && Math.abs(a.r - b.r) + Math.abs(a.g - b.g) + Math.abs(a.b - b.b) <= 6; }
   function centile(liste, p) { var i = Math.min(liste.length - 1, Math.max(0, Math.round(p * (liste.length - 1)))); return liste[i]; }
   function arrondi(x) { return Math.round(x * 10) / 10; }
@@ -187,6 +190,9 @@
     var constats = [];
     var racineCs = getComputedStyle(conteneur);
     var charte = CHARTE.map(function (v) { return couleur(racineCs.getPropertyValue(v)); }).filter(Boolean);
+    // Couleurs de la charte par nom (proposition d'une couleur lisible, spec S2, 5.9).
+    var charteNommee = {};
+    CHARTE.concat(['--c-texte-doux', '--c-sur-primaire']).forEach(function (v) { var c = couleur(racineCs.getPropertyValue(v)); if (c) charteNommee[v.slice(4)] = hex(c); });
     var fond = couleur(racineCs.getPropertyValue('--c-fond'));
     // Lettres repeintes le temps des captures : noir, blanc, puis transparentes (aplats gardés).
     var regles = document.createElement('style');
@@ -273,7 +279,9 @@
             var grand = x.taille >= S.grandTexteCqh * cadre.height / 100;
             var minimum = grand ? S.contrasteGrandTexte : S.contrasteTexte;
             var nomTexte = x.el.id || x.el.getAttribute('data-texte') || (x.el.hasAttribute('data-pm-st') ? 'sous-titres' : '');
-            if (c < minimum) constats.push({ regle: 'contraste-reel', scene: s.id, element: nomTexte, instant: Math.round(t * 100) / 100, valeur: arrondi(c) });
+            // Fond moyen sous les lettres et couleur du texte : le contrôle en déduit une couleur lisible (jamais appliquée).
+            if (c < minimum) constats.push({ regle: 'contraste-reel', scene: s.id, element: nomTexte, instant: Math.round(t * 100) / 100, valeur: arrondi(c),
+              fond: hex(moyen), couleur: hex(x.couleur), minimum: minimum, charte: charteNommee });
           });
           return null;
         }, function (e) {

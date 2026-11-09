@@ -9,6 +9,7 @@
  * --rapide, export dans le navigateur (résultat avec conseilFfmpeg). La planche passe toujours par le navigateur.
  * Export dans le navigateur : utilise l'aperçu en cours (ou en démarre un), l'ouvre dans Chrome ou Edge sans fenêtre
  * en mode export, et suit sortie/export.json jusqu'au MP4 relu (ou aux images de la planche).
+ * Les deux voies vérifient la vidéo livrée (spec S2, 5.12) : sortie/verification.json, résumé dans « verification ».
  * Progression sur la sortie d'erreur ; résumé JSON sur la sortie standard ; code 1 en cas d'échec.
  */
 const fs = require('node:fs');
@@ -50,7 +51,7 @@ function arreterProprementSurSignal() {
 /**
  * exporterVideo({ dossier, planche?: string[] | true, ouvrir?, dossierStyles?, navigateur?,
  *                 surProgression?, delaiMax?, delaiDemarrage?, ouvrirFichier? })
- * -> { ok, fichier?, images?, duree?, audio?, avertissement?, message?, secondes }
+ * -> { ok, fichier?, images?, duree?, audio?, avertissement?, verification?: { erreurs, alertes, fichier }, message?, secondes }
  */
 async function exporterVideo({
   dossier, planche = null, ouvrir = false, dossierStyles, navigateur = trouverNavigateur(),
@@ -108,7 +109,7 @@ async function exporterVideo({
       try { e = JSON.parse(fs.readFileSync(suivi, 'utf8')); } catch { /* pas encore de suivi */ }
       if (e) {
         if (e.etat === 'en-cours' && e.total) surProgression(e.images || 0, e.total);
-        if (!ids && e.etat === 'fini') return fin({ ok: true, fichier: e.fichier, images: e.images, duree: e.duree, audio: e.audio, avertissement: e.avertissement });
+        if (!ids && e.etat === 'fini') return fin({ ok: true, fichier: e.fichier, images: e.images, duree: e.duree, audio: e.audio, avertissement: e.avertissement, ...(e.verification ? { verification: e.verification } : {}) });
         if (ids && e.etat === 'planche') {
           if (ouvrir) ouvrirFichier(path.join(projet, e.fichier));
           return fin({ ok: true, fichier: e.fichier, images: e.images });

@@ -79,6 +79,7 @@ export async function exporter({ surProgression = () => {}, signal } = {}) {
   }
 
   const remettre = preparerScene(largeur, hauteur);
+  const stats = creerStats(largeur, hauteur);
   M.modeCapture(true);
   try {
     await output.start();
@@ -88,6 +89,7 @@ export async function exporter({ surProgression = () => {}, signal } = {}) {
       await M.seek(n / ips);
       await M.capturer(ctx, largeur, hauteur);
       await video.add(n / ips, 1 / ips);
+      stats.ajouter(canvas);
       surProgression(n + 1, total);
     }
     await output.finalize();
@@ -99,7 +101,59 @@ export async function exporter({ surProgression = () => {}, signal } = {}) {
     remettre();
     M.rendre(depart);
   }
-  return { buffer: output.target.buffer, images: total, duree: total / ips, largeur, hauteur, audio: !!audio, avertissement, fondSombre };
+  return { buffer: output.target.buffer, images: total, duree: total / ips, largeur, hauteur, audio: !!audio, avertissement, fondSombre, stats: stats.finir() };
+}
+
+/** Largeur des vignettes en gris (la même que la voie fidèle, scripts/lib/ffmpeg.js LARGEUR_STATS). */
+export const LARGEUR_STATS = 192;
+
+/**
+ * Statistiques image par image de la voie navigateur (spec S2, 5.12), au même format que scripts/lib/series.js (statsSerie) :
+ * chaque image dessinée dans une toile de 192 px, en gris (luma 601), moyenne, écart-type, d(n), saut s(n) ; seules les deux
+ * images précédentes sont gardées (une vidéo longue ne pèse rien de plus), et les deux premières et dernières (bords).
+ */
+export function creerStats(largeur, hauteur) {
+  const l = LARGEUR_STATS;
+  const h = Math.max(2, Math.round(l * hauteur / largeur / 2) * 2);
+  const toile = new OffscreenCanvas(l, h);
+  const c = toile.getContext('2d', { willReadFrequently: true });
+  c.imageSmoothingQuality = 'high';
+  const m = [];
+  const e = [];
+  const d = [];
+  const s = [];
+  const premieres = [];
+  let avant = null;
+  let avantAvant = null;
+  const r2 = (x) => Math.round(x * 100) / 100;
+  const ecart = (a, b) => { let t = 0; for (let i = 0; i < a.length; i++) t += Math.abs(a[i] - b[i]); return t / a.length; };
+  const b64 = (g) => { let t = ''; for (let i = 0; i < g.length; i += 0x8000) t += String.fromCharCode.apply(null, g.subarray(i, i + 0x8000)); return btoa(t); };
+  return {
+    ajouter(source) {
+      c.drawImage(source, 0, 0, l, h);
+      const px = c.getImageData(0, 0, l, h).data;
+      const g = new Uint8Array(l * h);
+      let somme = 0;
+      let carres = 0;
+      for (let i = 0, j = 0; j < g.length; i += 4, j++) {
+        const v = Math.round(0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]);
+        g[j] = v; somme += v; carres += v * v;
+      }
+      const moy = somme / g.length;
+      m.push(r2(moy));
+      e.push(r2(Math.sqrt(Math.max(0, carres / g.length - moy * moy))));
+      d.push(avant ? r2(ecart(g, avant)) : null);
+      if (s.length) s[s.length - 1] = avantAvant ? r2(ecart(g, avantAvant)) : null;
+      s.push(null);
+      if (premieres.length < 2) premieres.push(g);
+      avantAvant = avant;
+      avant = g;
+    },
+    finir() {
+      const dernieres = [avantAvant, avant].filter(Boolean);
+      return { version: 1, largeur: l, hauteur: h, images: m.length, m, e, d, s, bords: { premieres: premieres.map(b64), dernieres: dernieres.map(b64) } };
+    },
+  };
 }
 
 /** Luminance moyenne (0–255) d'une couleur CSS calculée « rgb(…) » ou « rgba(…) ». */
@@ -153,6 +207,12 @@ export async function envoyer(buffer, relecture) {
   const corps = await reponse.json().catch(() => ({}));
   if (!reponse.ok) throw new Error(corps.message || `Enregistrement refusé (${reponse.status}).`);
   return corps;
+}
+
+/** Envoie les statistiques image par image à l'aperçu (sortie/.export/stats-navigateur.json) ; un échec ne bloque pas l'export. */
+export function envoyerStats(stats) {
+  if (!stats) return Promise.resolve();
+  return fetch('/_pm/export-stats', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(stats) }).catch(() => {});
 }
 
 /** Signale l'état de l'export à l'aperçu (suivi par la commande pulse-motion exporter). */

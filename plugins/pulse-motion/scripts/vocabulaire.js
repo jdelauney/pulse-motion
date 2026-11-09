@@ -6,7 +6,11 @@
  *   node scripts/vocabulaire.js lexique                                                    affiche le lexique
  *   node scripts/vocabulaire.js lexique noter "<terme>" "<phrase>" "<comme…>" "<commande>"   ajoute un mot
  *   node scripts/vocabulaire.js glossaire <dossier>                                        affiche le glossaire
- *   node scripts/vocabulaire.js glossaire noter <dossier> "<terme>" "<sens>" ["<à éviter>"] ["<prononciation>"]
+ *   node scripts/vocabulaire.js glossaire noter <dossier> "<terme>" "<sens>" ["<à éviter>"] ["<prononciation>"] [--cle]
+ *
+ * Glossaire à 5 colonnes : terme, sens, à éviter, prononciation, clé (« oui » : terme clé, dit et montré dans les mêmes
+ * scènes, contrôlé par terme-cle) ; un glossaire à 4 colonnes reste lu, et passe à 5 colonnes au premier ajout.
+ * --cle : le terme est clé (déjà noté, il le devient).
  *
  * Le lexique vit dans ~/.pulse-motion/lexique.md (ou $PULSE_MOTION_DOSSIER/lexique.md) ; le glossaire dans
  * charte/glossaire.md du projet. Créés depuis modeles/ au premier ajout. Une ligne par terme, triée,
@@ -21,7 +25,7 @@ const MODELE = path.join(__dirname, '..', 'modeles', 'lexique.md');
 const MODELE_GLOSSAIRE = path.join(__dirname, '..', 'modeles', 'glossaire.md');
 const EST_EN_TETE = /^\|\s*Terme\s*\|/;
 const LEXIQUE = { modele: MODELE, enTete: '| Terme | En une phrase | Comme… | Vu le | Statut |', separateur: '|---|---|---|---|---|', colonnes: 5 };
-const GLOSSAIRE = { modele: MODELE_GLOSSAIRE, enTete: '| Terme | Sens | À éviter | Prononciation |', separateur: '|---|---|---|---|', colonnes: 4 };
+const GLOSSAIRE = { modele: MODELE_GLOSSAIRE, enTete: '| Terme | Sens | À éviter | Prononciation | Clé |', separateur: '|---|---|---|---|---|', colonnes: 5, migrer: (l) => migrerGlossaire(l) };
 
 const cheminLexique = () => path.join(dossierPersonnel(), 'lexique.md');
 const cheminGlossaire = (dossier) => path.join(path.resolve(dossier), 'charte', 'glossaire.md');
@@ -47,11 +51,26 @@ function lireTableau(lignes, colonnes) {
   return { debut: i, fin: j, rangees };
 }
 
+/** Glossaire à 4 colonnes -> 5 (« Clé » vide) : en-tête, séparateur et rangées complètes à 4 cellules. */
+function migrerGlossaire(lignes) {
+  const i = lignes.findIndex((l) => EST_EN_TETE.test(l));
+  if (i < 0 || /Clé\s*\|\s*$/.test(lignes[i])) return lignes;
+  const r = lignes.slice();
+  r[i] = GLOSSAIRE.enTete;
+  if (/^\|[-\s|:]+\|\s*$/.test(r[i + 1] || '')) r[i + 1] = GLOSSAIRE.separateur;
+  for (let j = i + 2; j < r.length && r[j].startsWith('|'); j++) {
+    const morceaux = r[j].trimEnd().split(/(?<!\\)\|/);
+    if (morceaux.length === 6 && morceaux[5] === '') r[j] = `${r[j].trimEnd()}  |`;
+  }
+  return r;
+}
+
 const lireFichier = (fichier, sorte) => (fs.existsSync(fichier) ? fs.readFileSync(fichier, 'utf8') : fs.readFileSync(sorte.modele, 'utf8'));
 
 /** Ajoute une rangée (triée par première cellule, sans doublon casse et accents ignorés) ; écriture atomique. */
 function ajouterRangee(fichier, sorte, cellules) {
   let lignes = lireFichier(fichier, sorte).split(/\r?\n/);
+  if (sorte.migrer) lignes = sorte.migrer(lignes);
   let tableau = lireTableau(lignes, sorte.colonnes);
   if (tableau.debut < 0) {
     while (lignes.length && lignes[lignes.length - 1].trim() === '') lignes.pop();
@@ -91,21 +110,41 @@ function noterLexique({ terme, phrase, comme = '', commande = '', date = new Dat
 function lireGlossaire(dossier) {
   const fichier = cheminGlossaire(dossier);
   const texte = lireFichier(fichier, GLOSSAIRE);
-  const termes = lireTableau(texte.split(/\r?\n/), 4).rangees.filter((r) => r[0]).map(([terme, sens, eviter, prononciation]) => ({
-    terme, sens, eviter: eviter.split(',').map((f) => f.trim()).filter(Boolean), prononciation,
+  // 5 colonnes (la dernière : « Clé ») ; une rangée à 4 cellules est complétée d'une clé vide.
+  const termes = lireTableau(texte.split(/\r?\n/), 5).rangees.filter((r) => r[0]).map(([terme, sens, eviter, prononciation, cle]) => ({
+    terme, sens, eviter: eviter.split(',').map((f) => f.trim()).filter(Boolean), prononciation, cle: /^oui$/i.test(String(cle || '').trim()),
   }));
   return { fichier, texte, termes };
 }
 
-/** sauvegarde : copie du projet avant l'ajout (« annule » le défait) ; false quand l'appelant a déjà sauvegardé. */
-function noterGlossaire({ dossier, terme, sens, eviter = '', prononciation = '', sauvegarde = true }) {
+/** Terme déjà noté -> terme clé (5e cellule « oui »), écriture atomique. */
+function marquerCle(fichier, terme) {
+  const lignes = migrerGlossaire(fs.readFileSync(fichier, 'utf8').split(/\r?\n/));
+  const tableau = lireTableau(lignes, 5);
+  tableau.rangees.forEach((r, k) => {
+    if (cleTri(r[0]) === cleTri(terme) && r.valide) lignes[tableau.debut + 2 + k] = `| ${[...r.slice(0, 4), 'oui'].join(' | ')} |`;
+  });
+  try {
+    const temporaire = `${fichier}.${process.pid}.tmp`;
+    fs.writeFileSync(temporaire, lignes.join('\n'));
+    fs.renameSync(temporaire, fichier);
+  } catch (e) {
+    throw new Error(`Impossible d'écrire « ${fichier} » (${e.code || e.message}) : vérifiez les droits de ce dossier.`);
+  }
+  return { fichier };
+}
+
+/** sauvegarde : copie du projet avant l'ajout (« annule » le défait) ; false quand l'appelant a déjà sauvegardé.
+ *  cle : terme clé (« Clé » : oui) ; un terme déjà noté le devient. */
+function noterGlossaire({ dossier, terme, sens, eviter = '', prononciation = '', cle = false, sauvegarde = true }) {
   if (!terme || !String(terme).trim() || !sens || !String(sens).trim()) throw new Error('Il faut au moins un terme et son sens.');
-  const dejaNote = lireGlossaire(dossier).termes.some((t) => cleTri(t.terme) === cleTri(cellule(terme)));
-  if (dejaNote) return { ajoute: false, fichier: cheminGlossaire(dossier) };
+  const deja = lireGlossaire(dossier).termes.find((t) => cleTri(t.terme) === cleTri(cellule(terme)));
+  if (deja && (!cle || deja.cle)) return { ajoute: false, fichier: cheminGlossaire(dossier) };
   const copie = sauvegarde && fs.existsSync(path.join(path.resolve(dossier), 'deroule.json'));
   if (copie) sauvegarder(dossier);
   try {
-    return ajouterRangee(cheminGlossaire(dossier), GLOSSAIRE, [terme, sens, eviter, prononciation]);
+    if (deja) return { ajoute: false, cle: true, ...marquerCle(cheminGlossaire(dossier), deja.terme) };
+    return ajouterRangee(cheminGlossaire(dossier), GLOSSAIRE, [terme, sens, eviter, prononciation, cle ? 'oui' : '']);
   } catch (e) {
     // Rien d'écrit : la copie prise pour cet ajout est retirée, « annule » ne la consommera pas à vide.
     if (copie) { try { annuler(dossier); } catch { /* rien à défaire */ } }
@@ -158,11 +197,12 @@ if (require.main === module) {
       process.exit(0);
     }
     if (quoi === 'glossaire' && action === 'noter') {
-      const [dossier, terme, sens, eviter, prononciation] = args;
-      console.log(JSON.stringify(noterGlossaire({ dossier: dossier || '.', terme, sens, eviter, prononciation }), null, 2));
+      const cle = args.includes('--cle');
+      const [dossier, terme, sens, eviter, prononciation] = args.filter((a) => a !== '--cle');
+      console.log(JSON.stringify(noterGlossaire({ dossier: dossier || '.', terme, sens, eviter, prononciation, cle }), null, 2));
       process.exit(0);
     }
-    console.error('Usage : pulse-motion lexique [noter "<terme>" "<phrase>" "<comme…>" "<commande>"] | glossaire <dossier> | glossaire noter <dossier> "<terme>" "<sens>" ["<à éviter>"] ["<prononciation>"]');
+    console.error('Usage : pulse-motion lexique [noter "<terme>" "<phrase>" "<comme…>" "<commande>"] | glossaire <dossier> | glossaire noter <dossier> "<terme>" "<sens>" ["<à éviter>"] ["<prononciation>"] [--cle]');
     process.exit(2);
   } catch (e) {
     console.error(e.message);

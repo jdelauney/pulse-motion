@@ -45,9 +45,10 @@ test('documentation.test.js › chaque règle du code est dans controles.md, et 
 function seuilsCites(texte, fichier) {
   const r = [];
   texte.split('\n').forEach((l, i) => {
-    for (const m of l.matchAll(/(\d+(?:[  ]\d{3})*(?:,\d+)?)(\s?%|:1)?[^\d(`|\n]{0,60}\(`([a-z]+(?:[A-Z][a-z0-9]*)*)`\)/g)) {
+    // Un seuil négatif s'écrit avec le signe moins (« −50 dBFS »).
+    for (const m of l.matchAll(/([−-]?\d+(?:[  ]\d{3})*(?:,\d+)?)(\s?%|:1)?[^\d(`|\n]{0,60}\(`([a-z]+(?:[A-Z][a-z0-9]*)*)`\)/g)) {
       if (!(m[3] in SEUILS) && !/[A-Z]/.test(m[3])) continue; // un mot en minuscules entre parenthèses n'est un seuil que s'il en est un
-      r.push({ fichier, ligne: i + 1, cle: m[3], valeur: Number(m[1].replace(/[  ]/g, '').replace(',', '.')), pourcent: (m[2] || '').trim() === '%' });
+      r.push({ fichier, ligne: i + 1, cle: m[3], valeur: Number(m[1].replace(/[  ]/g, '').replace('−', '-').replace(',', '.')), pourcent: (m[2] || '').trim() === '%' });
     }
   });
   return r;

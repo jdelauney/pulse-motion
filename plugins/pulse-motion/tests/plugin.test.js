@@ -665,3 +665,37 @@ test('plugin.test.js › blocs de fin : le verdict de la relecture dans la ligne
   assert.match(blocDeFin('retoucher')[2], /\[ ; relue : scène la plus faible « <id> », corrigée, non relue\]/);
   assert.match(blocDeFin('exporter')[2], /`relecture` du résumé : relue \(prête, ou corrigée après relecture\)[^\n]*`null` : non relue/);
 });
+
+// --- Spec « Regard et réalisation » (S2), plan S2-6 : vérification de l'export (5.12) -----------------------------------
+
+test('plugin.test.js › exporter dit la vérification et relance une fois sur erreur', () => {
+  const e = lire('skills', 'exporter', 'SKILL.md');
+  const ligne = e.split('\n').find((l) => l.startsWith('- `verification`'));
+  assert.ok(ligne, 'une ligne pour la vérification de l\'export');
+  assert.match(ligne, /`sortie\/verification\.json`/);
+  assert.match(ligne, /une erreur[^\n]*« l'export est abîmé », le relancer une fois/);
+  assert.match(ligne, /des alertes[^\n]*les dire en une phrase et proposer la retouche/);
+  assert.match(blocDeFin('exporter')[2], /`faites` de `sortie\/verification\.json`/);
+  assert.match(blocDeFin('exporter')[2], /`nonFaites`/);
+  assert.match(lire('references', 'controles.md'), /`sortie\/verification\.json` : la vérification de l'export/);
+});
+
+// --- Décision 8 de l'auteur (2026-11-09) : tour de corrections après la critique borné --------------------------------
+
+test('plugin.test.js › tour de corrections après la critique borné : défauts à corriger seulement, 3 scènes au plus, corrigées sur place', () => {
+  const treize = lire('references', 'realisation.md').split('\n## 13. ')[1].split('\n## ')[0];
+  const ligne = treize.split('\n').find((l) => l.startsWith('- **Un seul tour'));
+  assert.ok(ligne, 'la règle du tour de corrections');
+  assert.match(ligne, /les défauts `a-corriger` seulement \(les autres se citent à la personne\)/);
+  assert.match(ligne, /3 scènes \(`critiqueScenesMax`\) au plus, les plus graves d'abord/);
+  assert.match(ligne, /sur place \(Edit ciblé : taille, « Exemple », couleur, durée\), réécrire seulement si le défaut l'exige/);
+  assert.match(ligne, /sans seconde relecture/);
+  // L'ancienne règle (« les scènes notées 7 ou moins ») a disparu partout.
+  for (const f of [['references', 'realisation.md'], ['references', 'controles.md'], ['references', 'revue.md'], ['skills', 'creer', 'SKILL.md'], ['skills', 'retoucher', 'SKILL.md'], ['agents', 'critique.md']]) {
+    assert.doesNotMatch(lire(...f), /notées 7|critiqueCorrige/, f.join('/'));
+  }
+  const SEUILS = JSON.parse(lire('scripts', 'seuils.json'));
+  assert.equal(SEUILS.critiqueScenesMax, 3);
+  assert.equal(SEUILS.critiqueCorrige, undefined);
+  assert.match(lire('references', 'controles.md'), /3 scènes \(`critiqueScenesMax`\) au plus/);
+});

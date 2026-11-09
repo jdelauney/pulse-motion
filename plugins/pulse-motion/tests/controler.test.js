@@ -399,3 +399,17 @@ test('ligne de commande : --sans-rendu, renduVerifie dans le résumé', () => {
   assert.equal(JSON.parse(r.stdout).renduVerifie, false);
   assert.equal(JSON.parse(fs.readFileSync(path.join(dir, 'sortie', 'controle.json'), 'utf8')).renduVerifie, false);
 });
+
+test('controler.test.js › contraste : correction proposée, non appliquée', () => {
+  const dir = copierProjet('projet-simple');
+  modifierDeroule(dir, (d) => { d.charte.couleurs = { primaire: '#1d4ed8', texte: '#999999', fond: '#ffffff' }; });
+  const avant = fs.readFileSync(path.join(dir, 'deroule.json'), 'utf8');
+  const r = controler({ dossier: dir, dossierStyles: STYLES, corriger: true });
+  const p = r.problemes.find((x) => x.regle === 'contraste');
+  assert.ok(p.correction && p.correction.couleur === 'texte' && /^#[0-9a-f]{6}$/.test(p.correction.valeur), JSON.stringify(p));
+  assert.match(p.message, /couleur lisible proposée : #[0-9a-f]{6} \(/);
+  assert.ok(require('../scripts/lib/couleurs.js').contraste(p.correction.valeur, '#ffffff') >= 4.5);
+  // Jamais appliquée seule : la charte est celle de la personne.
+  assert.equal(r.corrections.filter((c) => c.regle === 'contraste').length, 0);
+  assert.equal(fs.readFileSync(path.join(dir, 'deroule.json'), 'utf8'), avant);
+});

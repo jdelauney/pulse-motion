@@ -10,8 +10,10 @@
 - `--sans-correction` : signaler seulement (les problèmes de texte et de durée portent leur `correction` proposée ; un débordement reste une erreur). `--sans-rendu` : contrôles rapides seulement.
 - `renduVerifie: false` avec `rendu-non-verifie` ou `rendu-impossible` : la vidéo rendue n'a pas été contrôlée ; le dire à la personne.
 - Avant de montrer la vidéo, Claude en regarde les planches (`pulse-motion planche . --regard`, dans `sortie/regard/`) : l'ouverture de 0 à 3 s (`accrocheMax`), une image toutes les 0,5 s (`regardPas`) ; une image 0,3 s (`regardDecalage`) après la fin des entrées importantes de chaque scène, 24 images (`regardVignettesMax`) au plus ; chaque scène vue sur un téléphone, à 360 px (`telephoneLargeur`) de large ; des bandes autour des transitions, pour le relecteur. Ce sont des réglages du regard, pas des règles.
-- Le relecteur (agent `critique`, `pulse-motion reference realisation`, section « 13. La relecture indépendante ») note la vidéo sur huit axes et écrit `sortie/regard/critique.json` : prête si chaque axe noté vaut 8 (`critiqueBarre`) ou plus ; on corrige les scènes notées 7 (`critiqueCorrige`) ou moins, jamais celles notées 9 (`critiqueIntouche`) ou plus. Ce n'est pas une règle du contrôle.
+- Le relecteur (agent `critique`, `pulse-motion reference realisation`, section « 13. La relecture indépendante ») note la vidéo sur huit axes et écrit `sortie/regard/critique.json` : prête si chaque axe noté vaut 8 (`critiqueBarre`) ou plus ; on ne corrige que ses défauts « à corriger », sur 3 scènes (`critiqueScenesMax`) au plus, sur place si possible, jamais une scène notée 9 (`critiqueIntouche`) ou plus. Ce n'est pas une règle du contrôle.
 - Chaque seuil est écrit « valeur unité (`clé`) » : la clé est celle de `scripts/seuils.json`, où vit le nombre (une vérification automatique garde les deux égaux).
+- `sortie/verification.json` : la vérification de l'export (section « Vérification de l'export »), à dire après chaque export.
+- Le son est mesuré (`son` de `controle.json`), jamais écouté ; il n'est rendu de nouveau que si la musique, les voix, les bruitages ou leurs réglages ont changé.
 
 ## Minutage et lecture
 
@@ -26,6 +28,35 @@
 
 Avec un `tempo` dans le déroulé, aucune durée n'est corrigée seule (la musique se décalerait).
 
+## Réalisation
+
+`accroche` et `image-zero` ne valent que pour le genre `social`. Les « que faire » renvoient à `pulse-motion reference realisation`.
+
+| Règle | Ce qui la déclenche | Gravité | Corrigé seul ? | Que faire |
+|---|---|---|---|---|
+| `rien-de-nouveau` | Aucun élément de contenu (hors décor) n'entre pendant plus de 8 s (`nouveauteMax`), 12 s (`nouveauteMaxVoix`) si la voix parle la moitié du temps, 4 s (`nouveauteMaxSocial`) en social, ni sous le temps de lecture de la scène ; pause finale exclue | alerte | non | Échelonner les entrées (`data-start`), en caler une sur un mot dit (`mot:`), ou couper la scène en deux |
+| `comparaison-courte` | Scène `comparaison` : ses éléments sont visibles ensemble moins de 2,5 s (`comparaisonTenue`) avant la fin de la scène | alerte | oui, comme `lecture` (ni sous une voix, ni sur une grille fixe) | Allonger la scène, ou faire entrer la seconde colonne plus tôt |
+| `camera-repetee` | Deux scènes voisines ont le même mouvement de caméra (zoom avant, travelling à gauche…) d'au moins 5 % (`cameraAmpleurMin`) | alerte | non | En changer un ou le retirer (`realisation` § 6) |
+| `accroche` | Social : aucun texte complet d'au moins 7,8 % (`accrocheTaille`) du petit côté lisible avant 3 s (`accrocheMax`) | alerte | non | Première scène courte, titre sans délai, en grand |
+| `image-zero` | Social : rien du contenu n'est visible à 0 s (la vignette) | alerte | non | `data-start="0"` sans entrée sur le titre de la première scène, ou première transition `aucune` |
+| `sujet-petit` | À l'instant stable de chaque scène (dernière entrée + 0,3 s (`regardDecalage`)), le contenu occupe moins de 33 % (`sujetMin`) de la hauteur et de la largeur | alerte | non | Tailles du style, `data-camera` zoom |
+| `transition-vide` | Pendant une transition, aucun élément de contenu des deux scènes n'est visible à plus de 10 % (`transitionOpacite`) | alerte | non | `data-start="0"` sur le premier élément, ou transition `coupe` |
+| `texte-epingle` | Un petit texte (moins de 4,5 cqh (`grandTexteCqh`)) reste dans un coin (15 % (`epingleCoin`) de la largeur et de la hauteur) plus de 6 s (`epingleDuree`) au total ; sous-titres, logo et `data-repere` exclus | alerte | non | Le retirer, ou le marquer `data-repere` s'il est voulu |
+
+## Vérité des chiffres et termes
+
+Un chiffre donné avec sa source va dans `faits` du déroulé (`pulse-motion reference realisation`, section « 3. Avant d'écrire le déroulé ») :
+`"faits": [{ "chiffre": "4 °C", "scene": "seuil", "source": "Règlement (CE) n° 852/2004" }]` ; un chiffre inventé pour l'exemple :
+`{ "chiffre": "1 250", "scene": "chiffre", "exemple": true }`, et la scène affiche « Exemple ».
+
+| Règle | Ce qui la déclenche | Gravité | Corrigé seul ? | Que faire |
+|---|---|---|---|---|
+| `chiffre-invente` | Un nombre affiché (valeur finale d'un compteur, nombre écrit dans la scène) n'est ni dans les textes, ni dans l'intention, ni dans le texte dit (« quatre » compte pour 4), ni dans `faits` | alerte | non | Écrire le chiffre dans l'intention ou dans `faits`, ou corriger la scène |
+| `chiffre-sans-source` | Le déroulé a des `faits`, et un nombre affiché de la scène (numéro d'étape exclu) n'y est pas | alerte | non | Ajouter `{ chiffre, scene, source }` ou `exemple: true` |
+| `exemple-non-signale` | Un fait `exemple: true`, et aucun texte de sa scène ne dit « exemple », « fictif » ou « illustratif » | alerte | non | Un texte « Exemple » près du chiffre |
+| `cause-affirmee` | Un texte qui contient un nombre dit « grâce à » | info | — | « Après » si l'on ne sait que l'ordre des faits |
+| `terme-cle` | Un terme « clé » du glossaire est dit sans être écrit dans une scène où il est dit, écrit sans jamais être dit (vidéo avec voix), ou absent | alerte | non | Ancre `mot:<terme>` sur le texte qui l'affiche ; `pulse-motion glossaire noter . "<terme>" "<sens>" --cle` |
+
 ## Texte en français
 
 | Règle | Ce qui la déclenche | Gravité | Corrigé seul ? | Que faire |
@@ -35,7 +66,10 @@ Avec un `tempo` dans le déroulé, aucune durée n'est corrigée seule (la musiq
 | `mot-double` | Le même mot deux fois de suite (« le le ») | alerte | non | Appliquer la proposition du message |
 | `terme-variable` | Un mot écrit de deux façons (« e-mail » / « email ») | alerte | non | Choisir une graphie ; la noter au glossaire si c'est un mot du métier |
 | `texte-petit` | Texte de moins de 3,5 cqh (`texteMinCqh`) | alerte | non | Agrandir |
-| `contraste` | Couleur de la charte sur le fond de la charte : moins de 4,5:1 (`contrasteTexte`), titres moins de 3:1 (`contrasteTitres`) | alerte | non | Changer la couleur de la charte. Les couleurs lisibles (`--c-primaire-lisible`, `--c-accent-lisible`) sont ajustées avec une marge de 0,5 (`margeLisible`) au-dessus du seuil |
+| `contraste` | Couleur de la charte sur le fond de la charte : moins de 4,5:1 (`contrasteTexte`), titres moins de 3:1 (`contrasteTitres`) | alerte | non : une couleur lisible est proposée (`correction`, jamais appliquée seule : la charte est celle de la personne) | Changer la couleur de la charte. Les couleurs lisibles (`--c-primaire-lisible`, `--c-accent-lisible`) sont ajustées avec une marge de 0,5 (`margeLisible`) au-dessus du seuil |
+| `texte-casse` | Un texte ou un compteur affiche « NaN », « undefined », « Infinity », « null » ou « [object Object] » | **erreur** | non | Corriger le `data-tween` ou le code de la scène |
+| `glyphe-absent` | Un caractère d'un texte n'existe dans aucune police embarquée de la vidéo | alerte | non | Remplacer le caractère, ou choisir une police qui l'a |
+| `emoji` | Un texte contient un emoji | alerte | non | Le retirer, ou une icône SVG dans la scène |
 
 ## Mise en page rendue
 
@@ -44,24 +78,37 @@ Avec un `tempo` dans le déroulé, aucune durée n'est corrigée seule (la musiq
 | `debordement` | Texte qui déborde de son cadre ou sort de l'image | erreur | oui : taille réduite de 5 % en 5 %, jusqu'à 80 %, jamais sous 3,5 cqh (`ajustements` du déroulé) | Au-delà : raccourcir le texte |
 | `chevauchement` | Deux éléments de contenu qui se recouvrent sur plus de 10 % (`chevauchementMax`) | alerte | non | Les écarter, ou `data-superpose` sur celui qui passe par-dessus |
 | `hors-cadre` | Image, logo ou SVG qui sort de l'image | alerte | non | Le recadrer, ou le marquer comme décor |
-| `marge` | Texte à moins de 4 % (`margeMin`) du bord | alerte | non | L'éloigner du bord |
+| `marge` | Texte, image, logo ou SVG de contenu immobile à moins de 4 % (`margeMin`) du bord ; une image qui couvre plus de 90 % de l'image (photo pleine page) n'est pas jugée | alerte | non | L'éloigner du bord |
 | `zone-sure` | En 9:16 : texte dans les 7 % (`zoneHaut`) du haut, les 20 % (`zoneBas`) du bas, ou les 11 % (`zoneDroite`) de droite entre 40 % (`zoneDroiteDebut`) et 85 % (`zoneDroiteFin`) de la hauteur (boutons des réseaux) | alerte | non | Raccourcir les textes ou retirer un point, sinon rapprocher du centre |
 | `logo-masque` | Logo recouvert à plus de 20 % (`logoMasqueMax`), ou hors de l'image | alerte | non | Le dégager |
 | `sous-titre-cache-texte` | Un sous-titre recouvre plus de 10 % (`chevauchementMax`) d'un texte de la scène | alerte | non | Sous-titres en haut (`"position": "haut"`), ou remonter le texte |
 | `obstacle-forme-vide` | Élément `data-obstacle="forme"` invisible à la fin de son minutage : les particules ne s'y arrêtent pas (aussi signalé dans l'aperçu, sur l'effet) | alerte | non | Le laisser visible à la fin de son minutage, ou retirer `data-obstacle="forme"` |
+| `texte-petit-lecteur` | Taille rendue d'un texte (zooms et échelles compris), ramenée à un petit lecteur : en 16:9, à 854 px (`lecteurLargeur`) de large, sous 16 px (`lecteurTexteMin`) ; en 9:16, 1:1 et 4:5, à 360 px (`telephoneLargeur`), sous 9 px (`telephoneTexteMin`) ; sous-titres compris | alerte | non | Agrandir ou raccourcir ; complète `texte-petit`, qui ne voit ni zoom ni échelle |
+| `sous-titre-cache-sujet` | Un sous-titre recouvre plus de 10 % (`chevauchementMax`) d'une image, d'un SVG de contenu ou d'un personnage | alerte | non | Sous-titres en haut (`"sousTitres": { "position": "haut" }`), ou remonter l'élément |
+
+Un effet de particules posé sur un élément que la caméra déplace le suit : sa zone est remesurée 30 fois par seconde (aucune règle n'est nécessaire).
 
 Les sous-titres sont aussi contrôlés pour le contraste (`contraste-reel`, élément « sous-titres ») et, en 9:16, pour les zones des réseaux (`zone-sure`).
 
 La vidéo est relevée toutes les 0,2 s (`pasMesure`) ; un élément est immobile quand il bouge de moins de 0,5 % (`immobile`) de l'image entre deux relevés.
 
+## Images
+
+| Règle | Ce qui la déclenche | Gravité | Corrigé seul ? | Que faire |
+|---|---|---|---|---|
+| `image-agrandie` | Une image tramée (png, jpg, gif, webp, avif ; pas le SVG) affichée plus de 1,12 fois (`agrandissementMax`) sa taille réelle, zoom de caméra compris, rapporté à l'export en 1080p | alerte | non | Une image plus grande (le message donne la largeur), ou l'afficher plus petite |
+| `image-repetee` | Le même fichier d'`assets/` est une image de contenu (ni logo, ni `alt=""`, ni décor) dans au moins 3 scènes (`imageRepeteeScenes`) | alerte | non | En varier, ou n'en garder qu'une |
+
 ## Pixels
 
 | Règle | Ce qui la déclenche | Gravité | Corrigé seul ? | Que faire |
 |---|---|---|---|---|
-| `contraste-reel` | Texte qui ne se détache pas de ce qu'il y a derrière ses lettres : moins de 4,5:1 (`contrasteTexte`), ou 3:1 (`contrasteGrandTexte`) à partir de 4,5 cqh (`grandTexteCqh`) | alerte | non | Aplat ou voile sous le texte, autre couleur, fond déplacé |
+| `contraste-reel` | Texte qui ne se détache pas de ce qu'il y a derrière ses lettres : moins de 4,5:1 (`contrasteTexte`), ou 3:1 (`contrasteGrandTexte`) à partir de 4,5 cqh (`grandTexteCqh`) | alerte | non : le message propose une couleur lisible sur ce fond (de la charte d'abord, sinon la même teinte plus sombre ou plus claire) | Aplat ou voile sous le texte, autre couleur, fond déplacé |
+| `image-figee` | Moins de 0,5 % (`figeeSurface`) de l'image change (de plus de 2 niveaux (`figeeNiveau`) sur 255) pendant plus de 2,5 s (`tempsMort`), alors qu'un élément du contenu est minuté pour bouger pendant au moins `tempsMort` de ce passage ; décors exclus (sur la vignette, une trame fine qui glisse ne se voit pas), comme les scènes à effets, shaders ou temps figé, et la pause finale | alerte | non | Ampleur du décor (`data-tween`), une entrée de plus |
+| `image-vide` | Une image unie (écart-type sous 6 (`imageVideEcart`) niveaux sur 255) pendant 1 s (`imageVideDuree`) au moins ; entrée de la première scène, dernière demi-seconde et scènes à effets exclues ; une par scène | alerte | non | Minutage des entrées ; voir aussi `transition-vide` |
 | `flash` | Plus de 3 flashs par seconde (`flashMax`) sur 25 % (`flashAire`) de l'image | **erreur** | non | Ralentir ou adoucir le clignotement (risque de crise d'épilepsie) |
 
-Comment ils se mesurent : les lettres sont les pixels qui changent de plus de 60 (`ecartLettre`) entre un rendu du texte en noir et un en blanc ; un fond est uni quand sa luminance varie de moins de 0,05 (`fondUniEcart`) sous le texte (le contrôle de la charte en juge alors). Les flashs se cherchent sur environ 12 images par seconde (`flashIps`), réduites à 64 px (`largeurFlash`) de large, en 4 cases (`flashCases`) de côté : un flash est un écart de luminance de 0,1 (`flashVariation`) au moins, dont la valeur la plus basse reste sous 0,8 (`flashSombre`).
+Comment ils se mesurent : les lettres sont les pixels qui changent de plus de 60 (`ecartLettre`) entre un rendu du texte en noir et un en blanc ; un fond est uni quand sa luminance varie de moins de 0,05 (`fondUniEcart`) sous le texte (le contrôle de la charte en juge alors). Les flashs se cherchent sur environ 12 images par seconde (`flashIps`), réduites à 64 px (`largeurFlash`) de large, en 4 cases (`flashCases`) de côté : un flash est un écart de luminance de 0,1 (`flashVariation`) au moins, dont la valeur la plus basse reste sous 0,8 (`flashSombre`). Les images figées et vides se lisent sur ces mêmes captures, en gris : aucune capture de plus.
 
 ## Rendu
 
@@ -69,6 +116,8 @@ Comment ils se mesurent : les lettres sont les pixels qui changent de plus de 60
 |---|---|---|---|---|
 | `rendu-non-verifie` | Ni Chrome ni Edge | alerte | non | Installer l'un des deux, ou indiquer son chemin avec `PM_NAVIGATEUR` |
 | `rendu-impossible` | Page en erreur, délai dépassé, navigateur introuvable à l'adresse donnée | alerte | non | Lire la cause dans le message |
+| `script-interdit` | Le code d'une scène s'exécute hors de `M.chaqueImage`, ou utilise `setTimeout`, `setInterval`, `requestAnimationFrame`, `Date`, `performance.now`, `fetch`, `localStorage` | **erreur** | non | Tout calculer depuis `p` et `t` de `M.chaqueImage` (`pulse-motion reference moteur`) |
+| `erreur-de-scene` | Pendant la mesure, le code d'une scène s'arrête sur une erreur (écrite dans la console) | **erreur** | non | Corriger le code de `M.chaqueImage` |
 
 ## Voix et sons
 
@@ -85,10 +134,25 @@ Comment ils se mesurent : les lettres sont les pixels qui changent de plus de 60
 | `son-sous-voix` | Son fort (`impact`, `basse`, `montee`) pendant un mot de la voix | alerte | non | Le placer dans une pause |
 | `trop-de-sons` | Plus de 3 sons dans la même seconde | alerte | non | En retirer ou les espacer |
 | `partition-invalide` | Partition mal formée (la piste et la note fautives sont nommées) | erreur | non | Corriger la partition |
+| `voix-couverte` | Par scène avec voix : parmi les fenêtres de 100 ms où la voix parle (au-dessus de −45 dBFS (`voixActive`)), moins de 80 % (`voixPart`) où elle dépasse de 3 dB (`voixEmergence`) la musique et les bruitages, entre 500 Hz (`voixBasse`) et 4 000 Hz (`voixHaute`) | alerte | non | `musique.volume`, `scenes[].musique: "calme"`, `data-son-volume` |
+| `silence-imprevu` | Le mixage reste sous −50 dBFS (`silenceNiveau`) pendant 2,5 s (`silenceDuree`) au moins là où la musique doit jouer (humeur autre que `silence`) ; dernière demi-seconde exclue | alerte | non | Fichier de musique, partition, humeur de la scène |
 
 À l'import d'un enregistrement de toute la vidéo, `pulse-motion voix importer` signale (`avertissement`) une scène dont moins de la moitié des mots ont été reconnus : l'écouter, et la réenregistrer seule si besoin.
 
 « info » : rien à corriger, la personne est prévenue. Avec une voix, la durée de la scène n'est jamais corrigée seule.
+
+## Vérification de l'export
+
+Chaque export relit le fichier livré et écrit `sortie/verification.json` : `faites` (images, noirs, silences, sonie, crête, réécoute), `nonFaites` avec la raison, `mesures`, `problemes`. Le résumé `verification: { erreurs, alertes, fichier }` est dans le résultat de `pulse-motion exporter`. Les images viennent de statistiques prises pendant la capture (vignettes en gris de 192 px), sans seconde capture ; le fichier n'est décodé qu'une fois. Sans ffmpeg (export dans le navigateur), noirs, silences, sonie et crête sont « non faits » ; sans la transcription, la réécoute l'est aussi.
+
+| Règle | Ce qui la déclenche | Gravité | Effet | Que faire |
+|---|---|---|---|---|
+| `image-parasite` | Une image isolée : `d(n)` et `d(n+1)` au-dessus de 2 niveaux (`parasitePlancher`) et de 4 fois (`parasiteFacteur`) la médiane locale, et l'image suivante revient à la précédente (saut sous 0,35 (`parasiteRetour`) fois la plus petite des deux) | alerte | — | Minutage des éléments voisins de cet instant |
+| `saut-image` | L'image change d'un coup : `d(n)` plus de 3 fois (`sautFacteur`) la médiane de ses 6 voisines (`sautVoisines`) et au-dessus de `parasitePlancher` ; hors coupes, fins de transition, cartons de sous-titres, mouvements brusques du dictionnaire et séquences | alerte | — | Donner une entrée ou une sortie à l'élément |
+| `noir-export` | Des images noires du fichier, sur 0,4 s (`noirDuree`) au moins (pixels sous 0,08 (`noirSeuil`)), qui ne sont pas noires dans la page | **erreur** | l'export échoue, le segment est retiré | Relancer l'export |
+| `silence-export` | Un silence du fichier (`silenceNiveau`, `silenceDuree`) absent du mixage de la page | **erreur** | l'export échoue | Relancer l'export |
+| `crete-export` | Crête vraie au-dessus de −1 dBTP (`creteMax`) | alerte | — | Baisser les bruitages forts ou la musique |
+| `voix-inaudible` | Réécoute des scènes signalées par `voix-couverte` : moins de 85 % (`motsConfirmes`) des mots dits reconnus dans le mixage, alors que la prise seule en avait au moins autant | alerte | — | Comme `voix-couverte` |
 
 ## Autres règles
 
@@ -127,5 +191,6 @@ Le contrôle signale aussi, avec un message qui dit quoi faire : un texte du dé
 | Image décorative | `alt=""` |
 | Icône SVG décorative | `aria-hidden="true"` |
 | Élément posé volontairement sur un autre | `data-superpose` sur celui qui passe par-dessus |
+| Repère voulu, affiché longtemps dans un coin (nom du module, pagination demandée) | `data-repere` |
 
 Les seuils sont dans `scripts/seuils.json`.

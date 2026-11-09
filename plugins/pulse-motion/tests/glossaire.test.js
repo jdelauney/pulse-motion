@@ -60,3 +60,25 @@ test('glossaire : une barre échappée à la main (« \\| ») se lit comme une b
 `);
   assert.deepEqual(lireGlossaire(dir).termes.map((t) => t.terme), ['Entrée|Sortie']);
 });
+
+test('glossaire.test.js › colonne Clé lue, glossaire à 4 colonnes toujours valide, noter --cle', () => {
+  const dir = copierProjet('projet-simple');
+  fs.mkdirSync(path.join(dir, 'charte'), { recursive: true });
+  const fichier = path.join(dir, 'charte', 'glossaire.md');
+  // Ancien glossaire à 4 colonnes : lu tel quel, aucun terme clé.
+  fs.writeFileSync(fichier, '# Glossaire\n\n| Terme | Sens | À éviter | Prononciation |\n|---|---|---|---|\n| HACCP | Méthode | Haccp | |\n');
+  assert.deepEqual(V.lireGlossaire(dir).termes.map((t) => [t.terme, t.cle, t.eviter]), [['HACCP', false, ['Haccp']]]);
+  // Un ajout le passe à 5 colonnes ; --cle marque le terme.
+  V.noterGlossaire({ dossier: dir, terme: 'chambre froide', sens: 'Pièce réfrigérée', cle: true });
+  const texte = fs.readFileSync(fichier, 'utf8');
+  assert.match(texte, /\| Terme \| Sens \| À éviter \| Prononciation \| Clé \|\n\|---\|---\|---\|---\|---\|/);
+  assert.deepEqual(V.lireGlossaire(dir).termes.map((t) => [t.terme, t.cle]), [['chambre froide', true], ['HACCP', false]]);
+  // Un terme déjà noté devient clé.
+  assert.deepEqual(V.noterGlossaire({ dossier: dir, terme: 'haccp', sens: 'Méthode', cle: true }).cle, true);
+  assert.deepEqual(V.lireGlossaire(dir).termes.map((t) => [t.terme, t.cle, t.eviter]), [['chambre froide', true, []], ['HACCP', true, ['Haccp']]]);
+  // En ligne de commande : --cle.
+  const { spawnSync } = require('node:child_process');
+  const r = spawnSync(process.execPath, [path.join(__dirname, '..', 'scripts', 'pm.js'), 'glossaire', 'noter', dir, 'DLC', 'Date limite', '', '', '--cle'], { encoding: 'utf8' });
+  assert.equal(r.status, 0, r.stderr);
+  assert.ok(V.lireGlossaire(dir).termes.find((t) => t.terme === 'DLC').cle);
+});
