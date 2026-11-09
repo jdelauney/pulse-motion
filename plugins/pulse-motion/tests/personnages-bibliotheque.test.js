@@ -11,7 +11,7 @@ const lu = P.lire(null);
 test('bibliothèque : complète et valide', () => {
   assert.deepEqual(lu.erreurs.map((e) => e.message), []);
   assert.deepEqual(Object.keys(lu.poses).sort(), ['assis', 'bras-leves', 'debout', 'mains-hanches', 'montrer', 'penche']);
-  assert.deepEqual(Object.keys(lu.clips).sort(), ['accroupi', 'clignement', 'coucou', 'course', 'marche', 'peur', 'repos', 'respiration', 'saut', 'se-relever']);
+  assert.deepEqual(Object.keys(lu.clips).sort(), ['accroupi', 'clignement', 'coucou', 'course', 'marche', 'peur', 'repos', 'repos-vivant', 'respiration', 'saut', 'se-relever']);
   assert.deepEqual(Object.keys(lu.gabarits).sort(), ['avec-queue', 'standard']);
   assert.deepEqual(Object.keys(lu.expressions).sort(), ['colere', 'joie', 'neutre', 'peur', 'surprise', 'tristesse']);
   assert.deepEqual(Object.keys(lu.dessins), ['touffu']);
