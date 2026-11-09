@@ -37,7 +37,7 @@ const MESSAGES = {
   'preuve-non-faite': (p) => `Scène « ${p.scene} » : ses particules n'ont pas pu être dessinées ici ; la preuve qu'elle se dessine toujours pareil n'a pas été faite.`,
 };
 const GRAVITES = { 'rendu-hasard': 'erreur', 'rendu-ordre': 'erreur', 'preuve-non-faite': 'info' };
-const probleme = (regle, o) => ({ regle, gravite: GRAVITES[regle], scene: o.scene, instant: o.instant, message: MESSAGES[regle](o) });
+const probleme = ({ regle, ...o }) => ({ regle, gravite: GRAVITES[regle], scene: o.scene, instant: o.instant, message: MESSAGES[regle](o) });
 
 function concernees(assemblage) {
   const r = [];
@@ -158,7 +158,7 @@ async function prouver({ fichierHtml, instants, gpu = false, largeur = 640, haut
     const p2 = await page();
     const c2 = await p2.capturer(f.t);
     await fermer(p2);
-    if (!egales(c1, c2, psnrMin)) return probleme('rendu-hasard', { scene: f.scene, instant: f.t });
+    if (!egales(c1, c2, psnrMin)) return probleme({ regle: 'rendu-hasard', scene: f.scene, instant: f.t });
     // Les instants de la même scène d'abord (un état gardé d'une image à l'autre s'y voit le plus souvent).
     const autres = liste.filter((x) => x.t !== f.t).sort((x, y) => (x.scene === f.scene ? 0 : 1) - (y.scene === f.scene ? 0 : 1) || Math.abs(x.t - f.t) - Math.abs(y.t - f.t));
     for (const u of autres) {
@@ -167,9 +167,9 @@ async function prouver({ fichierHtml, instants, gpu = false, largeur = 640, haut
       await pu.capturer(u.t);
       const cu = await pu.capturer(f.t);
       await fermer(pu);
-      if (!egales(cu, c1, psnrMin)) return probleme('rendu-ordre', { scene: f.scene, instant: f.t, avant: u.t });
+      if (!egales(cu, c1, psnrMin)) return probleme({ regle: 'rendu-ordre', scene: f.scene, instant: f.t, avant: u.t });
     }
-    return probleme('rendu-hasard', { scene: f.scene, instant: f.t });
+    return probleme({ regle: 'rendu-hasard', scene: f.scene, instant: f.t });
   }
 }
 
@@ -213,7 +213,7 @@ async function verifierDeterminisme({ assemblage, precedent = null, minutage, se
   } finally {
     fs.rmSync(dossier, { recursive: true, force: true });
   }
-  const nouveaux = [...r.problemes, ...r.nonFaites.map((id) => probleme('preuve-non-faite', { scene: id }))];
+  const nouveaux = [...r.problemes, ...r.nonFaites.map((id) => probleme({ regle: 'preuve-non-faite', scene: id }))];
   // Une scène restée sans instant (plus de scènes concernées que d'instants), ou fautive sans avoir été diagnostiquée (seule
   // la première image fautive l'est), n'est pas marquée prouvée : elle le sera au contrôle suivant.
   const diagnostiquees = new Set(r.problemes.map((p) => p.scene));

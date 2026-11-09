@@ -2,11 +2,13 @@
 'use strict';
 /* Pulse Motion – évaluations de déclenchement (spec S2, 5.16), lancées en fin de plan (pas dans npm test : coût).
  *
- *   node tests/evaluations/evaluer.js preparer [--apres-r1]
+ *   node tests/evaluations/evaluer.js preparer [--apres-r1] [--copie <dossier>]
  *     écrit tests/evaluations/claude/<cas>/ (prompt.md et correcteurs tool_used) depuis declenchement.json ; dossier ignoré
- *     par git. --apres-r1 : attendus de creer et style une fois disable-model-invocation retiré (S4 R1).
- *   claude plugin eval plugins/pulse-motion --eval-dir tests/evaluations/claude --ablation none --runs 1 --model <modèle>
- *     --json <résultat.json> --no-publish
+ *     par git. --apres-r1 : attendus de creer et style une fois disable-model-invocation retiré (S4 R1). --copie : une copie
+ *     allégée du plugin (manifeste, compétences, agents : ce qui décide du choix) avec ses cas, dans <dossier>/pulse-motion ;
+ *     sous Windows, le plugin entier fait échouer le lancement des séances (ENAMETOOLONG, constaté avec Claude Code 2.1.310).
+ *   claude plugin eval <copie> --eval-dir tests/evaluations/claude --ablation none --runs 1 --model <modèle> -j 4
+ *     --json <résultat.json> --no-publish --trust-plugin
  *   node tests/evaluations/evaluer.js taux <résultat.json> [...]   taux de compétences justes, par modèle et par compétence.
  *
  * Une phrase est juste si la compétence attendue se déclenche (ou aucune, pour « aucune ») et que la compétence de
@@ -56,7 +58,7 @@ function taux(resultat) {
   const parCas = {};
   for (const c of resultat.cases || []) {
     const runs = (c.arms && (c.arms.with || c.arms.plugin)) || c.runs || [];
-    const ok = runs.length > 0 && runs.every((r) => (r.graders || []).every((g) => g.passed === true || g.pass === true || g.score === 1));
+    const ok = runs.length > 0 && runs.every((r) => (typeof r.passed === 'boolean' ? r.passed : (r.graders || []).length > 0 && r.graders.every((g) => g.passed === true)));
     parCas[c.name || c.case || c.id] = ok;
   }
   const noms = Object.keys(parCas);
@@ -66,8 +68,16 @@ function taux(resultat) {
 if (require.main === module) {
   const [commande, ...args] = process.argv.slice(2);
   if (commande === 'preparer') {
-    const cas = preparer({ apresR1: args.includes('--apres-r1') });
-    console.log(`${cas.length} cas écrits dans ${path.relative(process.cwd(), SORTIE)}`);
+    const i = args.indexOf('--copie');
+    let dossier = SORTIE;
+    if (i >= 0) {
+      const racine = path.join(path.resolve(args[i + 1]), 'pulse-motion');
+      fs.rmSync(racine, { recursive: true, force: true });
+      for (const d of ['.claude-plugin', 'skills', 'agents']) fs.cpSync(path.join(ICI, '..', '..', d), path.join(racine, d), { recursive: true });
+      dossier = path.join(racine, 'tests', 'evaluations', 'claude');
+    }
+    const cas = preparer({ apresR1: args.includes('--apres-r1'), dossier });
+    console.log(`${cas.length} cas écrits dans ${dossier}`);
   } else if (commande === 'taux') {
     for (const f of args) {
       const t = taux(JSON.parse(fs.readFileSync(f, 'utf8')));

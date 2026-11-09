@@ -67,11 +67,13 @@ test('non-regression-visuelle : étalon avec GPU identique à sa référence, au
 test('non-regression-visuelle : un changement d\'une courbe du moteur est détecté (cas témoin)', sans, async (t) => {
   const references = lireReferences('sans-gpu');
   if (!references) return t.skip(`Pas de référence pour ce système (${process.platform})`);
-  // Copie du plugin dont la courbe « cubic » (transitions, compteurs) devient quadratique.
+  // Copie du plugin dont la courbe « cubic » (transitions, compteurs) est cassée : elle vaut 1 tout de suite. Un écart plus
+  // fin (cubique devenue quadratique : 0,02 % en moyenne, 0,26 % au pire) reste sous les seuils de la spec, voulus pour
+  // ne pas confondre un changement de moteur avec le bruit du rendu.
   const copie = copierPlugin();
   const courbes = path.join(copie, 'moteur', 'courbes.js');
   const avant = fs.readFileSync(courbes, 'utf8');
-  const apres = avant.replace('cubic: function () { return function (t) { return t * t * t; }; },', 'cubic: function () { return function (t) { return t * t; }; },');
+  const apres = avant.replace('cubic: function () { return function (t) { return t * t * t; }; },', 'cubic: function () { return function () { return 1; }; },');
   assert.notEqual(apres, avant, 'la courbe cubic est trouvée dans le moteur');
   fs.writeFileSync(courbes, apres, 'utf8');
   const { assembler } = require(path.join(copie, 'scripts', 'assembler.js'));

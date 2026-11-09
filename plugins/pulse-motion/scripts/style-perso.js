@@ -38,10 +38,11 @@ function nouveauStyle({ nom, depuis = 'clair-pedagogique' }) {
     const sourceGuide = base.personnel ? path.join(base.dossier, 'guide.md') : path.join(RACINE, 'references', 'styles', `${depuis}.md`);
     const guide = fs.existsSync(sourceGuide) ? fs.readFileSync(sourceGuide, 'utf8') : '# Style\n\n## L\'essentiel\n';
     // Une seule mention du modèle : celle d'un style personnel repris est remplacée, pas empilée.
-    fs.writeFileSync(path.join(cible, 'guide.md'), guide
+    const nouveauGuide = guide
       .replace(/^- Repris du style « [^»]* » : .*\n\n?/gm, '')
       .replace(/^# .*$/m, `# Style « ${nom} »`)
-      .replace(/^## L'essentiel\n/m, `## L'essentiel\n\n- Repris du style « ${depuis} » : à réécrire pour ce style (personnalité, polices, signature, scènes).\n`), 'utf8');
+      .replace(/^## L'essentiel\n/m, `## L'essentiel\n\n- Repris du style « ${depuis} » : à réécrire pour ce style (personnalité, polices, signature, scènes).\n`);
+    fs.writeFileSync(path.join(cible, 'guide.md'), nouveauGuide, 'utf8');
   } catch (e) {
     try { fs.rmSync(cible, { recursive: true, force: true }); } catch { /* rien à nettoyer */ }
     return { ok: false, message: `Le style « ${nom} » n'a pas pu être créé (${e.code || e.message}) : vérifiez les droits de ${dossierStylesPerso()}, ou indiquez un autre dossier avec la variable PULSE_MOTION_DOSSIER.` };

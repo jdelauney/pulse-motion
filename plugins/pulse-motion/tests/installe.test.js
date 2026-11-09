@@ -41,7 +41,8 @@ function ecartMilieu(ffmpeg, mp4, duree, dossier) {
 test('installe.test.js › le plugin copié hors du dépôt fabrique et exporte chaine-du-froid', { skip: !navigateur && 'Chrome ou Edge introuvable : test du plugin installé sauté', timeout: 3 * DELAI }, async (t) => {
   const copie = copierPlugin();
   assert.equal(fs.existsSync(path.join(copie, 'tests')), false, 'copie sans ses tests');
-  assert.equal(path.relative(RACINE, copie).startsWith('..'), true, 'copie hors du dépôt');
+  const dansDepot = (x) => { const r = path.relative(path.resolve(RACINE, '..', '..'), x); return !r.startsWith('..') && !path.isAbsolute(r); };
+  assert.equal(dansDepot(copie), false, 'copie hors du dépôt');
   const projet = path.join(dossierTemporaire('pm-installe-'), 'chaine-du-froid');
   fs.cpSync(path.join(copie, 'exemples', 'chaine-du-froid'), projet, { recursive: true });
   if (!(await optionsWebGPU())) {

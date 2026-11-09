@@ -79,7 +79,7 @@ test('series.test.js › événements de l\'export : coupes, transitions et mouv
   };
   const ev = evenementsExport({ minutage, dico, elements: { a: [{ cle: 't', classe: 'pm-m-saccade' }], b: [{ cle: 'z', lettres: 'brouille' }], c: [] },
     transitions: { a: 'fondu', b: 'coupe', c: { shader: 'glitch', duree: 0.5 } }, camera: { a: [{ debut: 2, duree: 0.3 }] } });
-  // Coupe en « b » ; fin de la transition de « c » (la scène qui sort est retirée d'un coup).
-  assert.deepEqual(ev.coupes, [3, 6]);
+  // Coupe en « b » ; la fin de la transition de « c » n'en est plus une (la scène qui sort ne disparaît plus d'un coup, 0.36.0).
+  assert.deepEqual(ev.coupes, [3]);
   assert.deepEqual(ev.brusques, [[0.3, 1], [2, 2.3], [3.2, 4], [5.5, 6]]);
 });

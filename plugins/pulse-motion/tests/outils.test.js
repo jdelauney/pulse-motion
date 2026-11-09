@@ -79,7 +79,7 @@ test('outils.test.js › carteGraphique : logiciel reconnu sur SwiftShader et ll
   assert.equal(etatOutils(tout).carteGraphique.ok, true);
 });
 
-test('outils.test.js › sans navigateur, carteGraphique n'est pas sondée', () => {
+test('outils.test.js › sans navigateur, carteGraphique n\'est pas sondée', () => {
   let sondee = false;
   const e = etatOutils({ ...tout, trouverNavigateur: () => null, sonderCarteGraphique: () => { sondee = true; return {}; } });
   assert.equal(e.navigateur.ok, false);
