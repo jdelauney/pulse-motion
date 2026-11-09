@@ -262,6 +262,13 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
       partiels.delete(sortie);
     }
 
+    /** Images témoins d'un segment repris, capturées en avançant (la page ne revient jamais en arrière). */
+    async function temoinsDuSegment(g, capture) {
+      for (const n of [...temoins.keys()].sort((a, b) => a - b)) {
+        if (n > g.debut && n < g.fin && !temoins.get(n)) temoins.set(n, await capture.capturer(n / cadence, P.ajouter));
+      }
+    }
+
     /** Un segment : repris s'il est sur le disque et fidèle (première image comparée à sa capture), sinon capturé, encodé, vérifié. */
     async function traiterSegment(k, capture) {
       const g = segments[k];
@@ -270,11 +277,13 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
         const capturee = await capture.capturer(g.debut / cadence, P.ajouter);
         noter(g.debut, capturee);
         if (surDisque[k] === 'fichier' && await P.mesurer('verifications', () => premiereImageJuste(outil, fichiers[k], capturee))) {
+          await temoinsDuSegment(g, capture);
           repris++;
           avancer(attendu.images);
           return;
         }
         if (surDisque[k] === 'intermediaire' && await P.mesurer('verifications', () => premiereImageJuste(outil, inter[k], capturee))) {
+          await temoinsDuSegment(g, capture);
           await deriver(k, attendu);
           reencodes++;
           avancer(attendu.images);
@@ -314,9 +323,9 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
       if (arreterApres && produits >= arreterApres) controle.abort();
     }
 
-    // File : d'abord les segments à capturer, les plus longs en premier (les navigateurs finissent ensemble), puis les reprises.
-    const longueur = (k) => segments[k].fin - segments[k].debut;
-    const file = [...aCapturer.sort((a, b) => longueur(b) - longueur(a) || a - b), ...segments.map((g, k) => k).filter((k) => surDisque[k])];
+    // File dans l'ordre du temps : chaque page ne fait qu'avancer dans la vidéo, comme une lecture. Revenir en arrière après
+    // une scène plus tardive peut changer une image du témoin de 3 min (constat de S1-4, à corriger dans le moteur en S1-5).
+    const file = segments.map((g, k) => k);
     const relances = new Set();
     const pages = [premiere];
     // Travailleurs : chacun sa page ; un navigateur arrêté remet son segment dans la file une fois, avec une page neuve.
@@ -336,8 +345,8 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
       }
     }
     const arreterSurErreur = (p) => p.catch((err) => { controle.abort(); throw err; });
-    // Les autres navigateurs s'ouvrent et capturent pendant que la première page rend le son ; elle les rejoint ensuite.
-    for (let j = 1; j < regle.nombre; j++) travaux.push(arreterSurErreur(ouvrir().then((c) => travailleur(pages.push(c) - 1))));
+    // Son rendu et encodé avant les captures, comme avant S1-4 : rendre le son pendant que d'autres pages capturent rendait
+    // le témoin de 3 min non déterministe (des images différentes d'un export à l'autre).
     let son = null;
     try {
       son = await P.mesurer('rendreSon', () => premiere.rendreSon());
@@ -346,9 +355,8 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
       if (controle.signal.aborted) throw err;
       avertissements.push('Le son n\'a pas pu être préparé : vidéo exportée sans son.');
     }
-    // Son encodé pendant les captures (ffmpeg dans son propre processus).
     let erreurSon = null;
-    const encodageSon = son && son.wav ? (async () => {
+    const audio = await (son && son.wav ? (async () => {
       const wav = path.join(travail, 'son.wav');
       const piste = path.join(travail, 'son.m4a');
       fs.writeFileSync(wav, son.wav);
@@ -359,16 +367,20 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
         erreurSon = err;
         return null;
       }
-    })() : Promise.resolve(null);
+    })() : Promise.resolve(null));
+    if (controle.signal.aborted) throw new Error('export annulé');
+    for (let j = 1; j < regle.nombre; j++) travaux.push(arreterSurErreur(ouvrir().then((c) => travailleur(pages.push(c) - 1))));
     travaux.push(arreterSurErreur(travailleur(0)));
     const issues = await Promise.allSettled(travaux);
     travaux.length = 0;
-    const audio = await encodageSon;
     const echec = issues.find((i) => i.status === 'rejected' && !/export annulé/.test(i.reason && i.reason.message));
     if (echec) throw echec.reason;
     if (controle.signal.aborted) throw new Error('export annulé');
-    // Images témoins pas encore capturées (segments repris) : par une page encore ouverte.
-    for (const [n, png] of temoins) if (!png) temoins.set(n, await pages[0].capturer(n / cadence, P.ajouter));
+    // Image témoin encore absente (ne devrait pas arriver) : capturée par une page neuve, qui part de zéro.
+    if ([...temoins.values()].some((png) => !png)) {
+      const c = await ouvrir();
+      for (const n of [...temoins.keys()].sort((a, b) => a - b)) if (!temoins.get(n)) temoins.set(n, await c.capturer(n / cadence, P.ajouter));
+    }
     for (const c of [...captures]) await fermer(c);
 
     if (erreurSon) avertissements.push('Le son n\'a pas pu être encodé : vidéo exportée sans son.');

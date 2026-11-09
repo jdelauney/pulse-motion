@@ -62,8 +62,9 @@ test('capture-rapide-memes-pixels : PNG décodés identiques avec et sans optimi
       assert.notEqual(lent.length, 0);
     }
     const petit = decoderPNG(await page.capturer({ echelle: 0.25 }));
-    // Sans la cadence d'affichage, une capture peut précéder la présentation de l'image : drapeau exclu de l'export.
-    assert.equal(require('../scripts/lib/capture-fidele.js').OPTIONS_CAPTURE.includes('--disable-frame-rate-limit'), false);
+    // Drapeaux qui changent des images (mesures de S1-4) : exclus des pages de capture de l'export.
+    const { OPTIONS_CAPTURE } = require('../scripts/lib/capture-fidele.js');
+    for (const d of ['--disable-frame-rate-limit', '--disable-renderer-backgrounding', '--disable-background-timer-throttling', '--disable-backgrounding-occluded-windows']) assert.equal(OPTIONS_CAPTURE.includes(d), false, d);
     assert.deepEqual([petit.largeur, petit.hauteur], [160, 90]);
   } finally {
     await page.fermer();
