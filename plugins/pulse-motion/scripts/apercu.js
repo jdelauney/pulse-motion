@@ -39,6 +39,8 @@ const TYPES_ECRITURE = [
   ['/_pm/voix', ['audio/wav']],
 ];
 const ESSAIS_PORT = 20;
+/** Erreurs d'écoute après lesquelles on essaie le port suivant : port pris, port réservé par le système. */
+const PORT_SUIVANT = ['EADDRINUSE', 'EACCES'];
 
 function echapper(t) {
   return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -177,10 +179,16 @@ async function demarrerApercu({ dossier, port = 4321, dossierStyles, dossierEffe
   });
   const battement = setInterval(() => clients.forEach((res) => res.write(': battement\n\n')), 15000);
 
+  // Port pris (EADDRINUSE) ou réservé par le système (EACCES : sous Windows, plages de ports exclues, par exemple par
+  // Hyper-V) : on essaie le suivant. Toute autre erreur arrête le démarrage. Dans les deux cas, rien ne reste ouvert
+  // (battement arrêté) : le processus qui appelait peut se terminer.
   let portRetenu = null;
   for (let p = port, essai = 0; essai < ESSAIS_PORT; essai++, p++) {
     try { portRetenu = await ecouter(serveur, '127.0.0.1', p); break; } catch (e) {
-      if (e.code !== 'EADDRINUSE') throw new Error(`L'aperçu n'a pas pu démarrer : l'ordinateur refuse le port ${p} (${e.code || e.message}).`);
+      if (!PORT_SUIVANT.includes(e.code)) {
+        clearInterval(battement);
+        throw new Error(`L'aperçu n'a pas pu démarrer : l'ordinateur refuse le port ${p} (${e.code || e.message}).`);
+      }
     }
   }
   if (portRetenu === null) {

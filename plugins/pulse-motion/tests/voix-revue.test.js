@@ -81,9 +81,12 @@ async function projetProvisoire() {
 
 test('revue : bouton MP4 de l\'aperçu : la voix provisoire est refusée (message dans le suivi)', { skip: !navigateur && 'Chrome absent' }, async () => {
   const dir = await projetProvisoire();
+  // 47331 : dans une plage de ports que Windows réserve parfois (EACCES) ; l'aperçu passe alors au suivant.
   const apercu = await demarrerApercu({ dossier: dir, dossierStyles: STYLES, port: 47331 });
-  const page = await ouvrirPage({ navigateur, largeur: 800, hauteur: 450 });
+  let page = null;
   try {
+    // Ouverte dans le try : un échec ici ferme quand même l'aperçu, et le fichier de test se termine.
+    page = await ouvrirPage({ navigateur, largeur: 800, hauteur: 450 });
     await page.aller(apercu.url);
     const r = await page.evaluer('M.pret.then(function () { return import("/_pm/export-ui.mjs"); }).then(function (m) { return m.lancerExport(); }).then(function () { return document.getElementById("pm-export").textContent; })');
     assert.match(r, /voix provisoire/);
@@ -91,7 +94,7 @@ test('revue : bouton MP4 de l\'aperçu : la voix provisoire est refusée (messag
     assert.equal(suivi.etat, 'erreur');
     assert.match(suivi.message, /voix provisoire/);
   } finally {
-    await page.fermer();
+    if (page) await page.fermer();
     await apercu.fermer();
   }
 });
