@@ -37,5 +37,6 @@
   "flashAire": 0.25,
   "flashMax": 3,
   "flashCases": 4,
-  "largeurFlash": 64
+  "largeurFlash": 64,
+  "sousTitreMin": 1.25
 }
