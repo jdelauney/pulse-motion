@@ -71,13 +71,20 @@
   verifier('durée totale', proche(M.duree, 7.5), M.duree);
   verifier('aucune erreur de minutage', M.erreurs.length === 0, JSON.stringify(M.erreurs));
 
-  // Déterminisme : même image en arrivant par 0→t ou par 5→t.
-  M.rendre(0); M.rendre(2.3); var direct = photo();
-  M.rendre(5); M.rendre(2.3); var detour = photo();
+  // Déterminisme : même image en arrivant par 0→t ou par 5→t. Seules les scènes visibles sont rendues (spec Rapidité 5.20) :
+  // l'état d'une scène masquée dépend du chemin, celui des scènes visibles jamais ; toutes rendues, tout l'état est le même.
+  function photoVisible() { var o = JSON.parse(photo()); document.querySelectorAll('section[data-scene]').forEach(function (s) { if (s.style.display === 'none') s.querySelectorAll('[data-pm-cle]').forEach(function (e) { delete o[e.id || e.getAttribute('data-scene')]; }); }); return JSON.stringify(o); }
+  M.rendre(0); M.rendre(2.3); var direct = photoVisible();
+  M.rendre(5); M.rendre(2.3); var detour = photoVisible();
   verifier('seek déterministe (0→2,3 / 5→2,3)', direct === detour, direct + ' ≠ ' + detour);
-  M.rendre(6.1); M.rendre(3.75); var a1 = photo();
-  M.rendre(0.2); M.rendre(3.75); var a2 = photo();
+  M.rendre(6.1); M.rendre(3.75); var a1 = photoVisible();
+  M.rendre(0.2); M.rendre(3.75); var a2 = photoVisible();
   verifier('seek déterministe pendant le chevauchement', a1 === a2);
+  M.reglagesRendu.paresseux = false;
+  M.rendre(0); M.rendre(2.3); direct = photo();
+  M.rendre(5); M.rendre(2.3); detour = photo();
+  verifier('seek déterministe, toutes les scènes rendues', direct === detour, direct + ' ≠ ' + detour);
+  M.reglagesRendu.paresseux = true;
 
   // Animation CSS calée sur l'élément porteur : #anime commence à 1,5 s.
   M.rendre(2.0);

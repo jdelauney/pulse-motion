@@ -70,7 +70,9 @@ test('moteur-groupes-selon-le-deroule : chaque groupe selon les données et les 
   assert.deepEqual(g({ personnages: { dessins: {} } }), ['tronc', 'personnages']);
   for (const cle of ['effets', 'milieux', 'shaders']) assert.deepEqual(g({ [cle]: [{}] }), ['tronc', 'gpu'], cle);
   assert.deepEqual(g({ modules: { 'x.js': '…' } }), ['tronc', 'gpu']);
-  assert.deepEqual(g({ effets: [], milieux: [], shaders: [], modules: {} }), ['tronc']);
+  assert.deepEqual(g({ obstacles: [{ scene: 's' }] }), ['tronc', 'gpu'], 'obstacle : formes exactes jugées par les particules');
+  assert.deepEqual(g({ obstaclesVideo: [{}] }), ['tronc', 'gpu']);
+  assert.deepEqual(g({ effets: [], milieux: [], shaders: [], modules: {}, obstacles: [], obstaclesVideo: [] }), ['tronc']);
 
   // Projets d'essai assemblés : une vidéo simple n'a que le tronc ; un personnage, un bruitage ou un effet ajoutent leur groupe.
   const simple = assembler({ dossier: copierProjet('projet-simple'), dossierStyles: STYLES, ecrire: false });

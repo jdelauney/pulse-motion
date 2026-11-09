@@ -26,7 +26,8 @@ function projet(modifier = (h) => h) {
 
 async function mesurer(dir, ratio = '16:9') {
   modifierDeroule(dir, (d) => { d.format.ratio = ratio; });
-  const { html } = assembler({ dossier: dir, dossierStyles: STYLES, ecrire: false });
+  // Moteur entier : M.mesurer (groupe « contrôle ») n'est jamais dans la page livrée, ce test l'appelle directement.
+  const { html } = assembler({ dossier: dir, dossierStyles: STYLES, ecrire: false, groupes: 'tous' });
   const fichier = path.join(dir, 'mesure.html');
   const appel = `<script>M.pret.then(function () { return document.fonts.ready; }).then(function () {
     var pre = document.createElement('pre'); pre.id = 'm';

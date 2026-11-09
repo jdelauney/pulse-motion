@@ -48,7 +48,8 @@ const nonVide = (x) => (Array.isArray(x) ? x.length > 0 : !!(x && typeof x === '
  * - synthé : musique générée ou partition, bruitages des transitions, ou un data-son dans une scène (même un son importé :
  *   moteur/audio.js prépare le bruit du synthétiseur dès qu'il y a un son à jouer) ;
  * - personnages : donnees.personnages (une scène a data-personnage ou data-action) ;
- * - GPU : effet, milieu, shader (fond, transition, post-traitement) ou module d'effet.
+ * - GPU : effet, milieu, shader (fond, transition, post-traitement), module d'effet, ou obstacle (data-obstacle : le contrôle juge
+ *   ses formes exactes par M.particules.formesVides).
  */
 function groupesDuDeroule(donnees, sections = []) {
   const d = donnees || {};
@@ -58,7 +59,8 @@ function groupesDuDeroule(donnees, sections = []) {
   const musique = d.musique && (d.musique.partition || d.musique.generee);
   if (musique || (d.bruitages && d.bruitages.transitions) || /\sdata-son\s*=/.test(textes)) groupes.push('synthe');
   if (d.personnages) groupes.push('personnages');
-  if (nonVide(d.effets) || nonVide(d.milieux) || nonVide(d.shaders) || nonVide(d.modules)) groupes.push('gpu');
+  const obstacles = nonVide(d.obstacles) || nonVide(d.obstaclesVideo);
+  if (nonVide(d.effets) || nonVide(d.milieux) || nonVide(d.shaders) || nonVide(d.modules) || obstacles) groupes.push('gpu');
   return groupes;
 }
 

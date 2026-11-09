@@ -88,7 +88,8 @@ test('sortie remise à zéro après la transition, même avec un rythme', { skip
   const page = await ouvrirPage({ navigateur, largeur: 640, hauteur: 400 });
   try {
     await page.aller(pathToFileURL(r.fichier).href);
-    const lire = (t) => page.evaluer(`M.pret.then(() => { M.rendre(${t}); const s = document.querySelector('[data-scene="intro"]');
+    // La scène qui sort est masquée après la transition : tenue à jour, elle est rendue quand même (spec Rapidité 5.20).
+    const lire = (t) => page.evaluer(`M.pret.then(() => { M.tenirAJour('intro'); M.rendre(${t}); const s = document.querySelector('[data-scene="intro"]');
       const i = M.minutage.scenes[1]; return { debut: i.debut, entree: i.entree, transform: s.style.transform, filter: s.style.filter, opacity: s.style.opacity }; })`);
     const info = await lire(0);
     const pendant = await lire(info.debut + info.entree / 2);

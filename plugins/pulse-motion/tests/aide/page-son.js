@@ -11,7 +11,9 @@ const DONNEES = /(<script type="application\/json" id="pm-donnees">)([\s\S]*?)(<
 
 /** -> page CDP (aller, evaluer, fermer…) ouverte sur la page du projet, après M.pret. */
 async function ouvrirPageSon({ dir, navigateur, modifier, sons = {}, prelude = '' }) {
-  const r = assembler({ dossier: dir, dossierStyles: STYLES, ecrire: false });
+  // Moteur entier : les données de la page sont modifiées après l'assemblage (musique, son réactif), les groupes du moteur à
+  // la carte ne les suivraient pas.
+  const r = assembler({ dossier: dir, dossierStyles: STYLES, ecrire: false, groupes: 'tous' });
   if (!r.ok) throw new Error(r.erreurs.map((e) => e.message).join(' '));
   let html = r.html.replace(DONNEES, (_, a, json, b) => {
     const d = JSON.parse(json);
