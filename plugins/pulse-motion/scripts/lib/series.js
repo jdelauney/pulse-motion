@@ -167,9 +167,6 @@ function evenementsExport({ minutage, dico = [], elements = {}, transitions = {}
       if (nom && shaders.has(nom) && s.entree > 0) intervalles.push([s.debut, s.debut + s.entree]);
       else coupes.push(s.debut);
     }
-    // Fin d'une transition : la scène qui sort est retirée d'un coup (ce qui transparaît d'elle sous la scène qui entre
-    // disparaît) ; comptée comme une coupe, sinon chaque vidéo livrée aurait un saut par transition.
-    if (i > 0 && s.entree > 0) coupes.push(s.debut + s.entree);
     for (const e of elements[s.id] || []) {
       const m = minutage.elements[s.id] && minutage.elements[s.id][e.cle];
       if (!m) continue;
