@@ -43,6 +43,7 @@ const { calculerMinutage } = require('../moteur/minutage.js');
 const CATALOGUE = require('../moteur/synthe/catalogue.js');
 const { appliquerCorrections } = require('./lib/corriger.js');
 const { controlerRendu } = require('./lib/rendu-controle.js');
+const { verifierDeterminisme } = require('./lib/determinisme.js');
 const { aDesShaders, compilerShadersGPU } = require('./lib/shaders-gpu.js');
 const { LIMITES_INTERACTIONS, PLEINE_VOISINAGE, STRUCTURES_SCENE_MAX, SOMMETS_TISSU_MAX, RESOLUTION_MILIEU_ALERTE } = require('../moteur/particules/recette.js');
 const { analyserCamera } = require('../moteur/camera.js');
@@ -503,7 +504,7 @@ function controler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
  * vidéo rendue (seulement les scènes changées, sauf complet), puis (gpu) compilation réelle des shaders.
  * mesurer : remplace controlerRendu (tests).
  */
-async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.join(RACINE, 'effets'), ecrire = true, corriger = true, rendu = true, gpu = false, navigateur, complet = false, mesurer = controlerRendu }) {
+async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.join(RACINE, 'effets'), ecrire = true, corriger = true, rendu = true, gpu = false, navigateur, complet = false, mesurer = controlerRendu, prouver = verifierDeterminisme }) {
   const projet = path.resolve(dossier);
   const precedent = lirePrecedent(projet);
   const r = controler({ dossier: projet, dossierStyles, dossierEffets, ecrire, corriger });
@@ -516,6 +517,8 @@ async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.j
   let empreintes = null;
   let rendus = null;
   let son = null;
+  let determinisme = precedent && precedent.determinisme ? precedent.determinisme : null;
+  let preuve = null;
   if (rendu && assemblage.ok) {
     const { deroule } = lireDeroule(projet);
     const duree = dureeVideo(projet, deroule);
@@ -580,6 +583,12 @@ async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.j
       // Son : mesuré à l'instant (v.son), ou repris (empreinte inchangée) ; non mesuré (erreur du rendu du son) : rien de gardé.
       son = sonPrecedent || (ecoute && Array.isArray(v.son) ? { empreinte: empreinteSon, problemes: v.son } : null);
       if (son) problemes = [...problemes, ...son.problemes];
+      // Preuve du déterminisme (spec S2, 5.13) : seulement les scènes à risque dont l'empreinte a changé.
+      const p = await prouver({ assemblage, precedent: determinisme, minutage: calculerMinutage(assemblage.donnees.scenes, {}, options), seuils: SEUILS,
+        ratio: deroule.format.ratio, forcer: complet, ...(navigateur !== undefined ? { navigateur } : {}) });
+      determinisme = p.determinisme;
+      preuve = { lancee: p.lancee, scenes: p.scenes, duree: p.duree };
+      problemes = [...problemes, ...p.problemes];
     } else {
       empreintes = null;
       modeRendu = null;
@@ -596,9 +605,9 @@ async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.j
     problemes = [...problemes, ...g.problemes];
   }
   if (r.fichier) {
-    ecrireAtomique(r.fichier, JSON.stringify({ version: 2, problemes, corrections, renduVerifie, rendu: modeRendu, scenesMesurees, empreintes, rendus, son }, null, 2));
+    ecrireAtomique(r.fichier, JSON.stringify({ version: 2, problemes, corrections, renduVerifie, rendu: modeRendu, scenesMesurees, empreintes, rendus, son, determinisme }, null, 2));
   }
-  return { problemes, corrections, renduVerifie, rendu: modeRendu, scenesMesurees, fichier: r.fichier };
+  return { problemes, corrections, renduVerifie, rendu: modeRendu, scenesMesurees, determinisme: preuve, fichier: r.fichier };
 }
 
 if (require.main === module) {
@@ -608,11 +617,11 @@ if (require.main === module) {
     console.error('Usage : node scripts/controler.js <dossier-du-projet> [--sans-correction] [--sans-rendu] [--gpu] [--complet]');
     process.exit(2);
   }
-  controlerComplet({ dossier, corriger: !args.includes('--sans-correction'), rendu: !args.includes('--sans-rendu'), gpu: args.includes('--gpu'), complet: args.includes('--complet') }).then(({ problemes, corrections, renduVerifie, rendu, scenesMesurees, fichier }) => {
+  controlerComplet({ dossier, corriger: !args.includes('--sans-correction'), rendu: !args.includes('--sans-rendu'), gpu: args.includes('--gpu'), complet: args.includes('--complet') }).then(({ problemes, corrections, renduVerifie, rendu, scenesMesurees, determinisme, fichier }) => {
     const erreurs = problemes.filter((p) => p.gravite === 'erreur').length;
     const alertes = problemes.filter((p) => p.gravite === 'alerte').length;
     const informations = problemes.filter((p) => p.gravite === 'info').length;
-    console.log(JSON.stringify({ erreurs, alertes, informations, corrections: corrections.length, renduVerifie, rendu, scenesMesurees, fichier }, null, 2));
+    console.log(JSON.stringify({ erreurs, alertes, informations, corrections: corrections.length, renduVerifie, rendu, scenesMesurees, determinisme, fichier }, null, 2));
     process.exit(erreurs ? 1 : 0);
   }, (e) => { console.error(e.message); process.exit(1); });
 }

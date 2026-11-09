@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "titre": "Étalon sans GPU",
+  "genre": "formation",
+  "parcours": "rapide",
+  "format": { "ratio": "16:9", "ips": 30 },
+  "style": "clair-pedagogique",
+  "sousTitres": {},
+  "scenes": [
+    {
+      "id": "titre", "fichier": "scenes/01-titre.html", "duree": 4.5, "transition": "fondu",
+      "voix": { "texte": "Un étalon pour voir quand le moteur change." },
+      "textes": { "etiquette": "Étalon", "titre": "Le moteur, image par image", "sous": "Textes, lettres et mouvements" }
+    },
+    {
+      "id": "camera", "fichier": "scenes/02-camera.html", "duree": 5.5, "transition": "glissement",
+      "textes": { "titre": "Une caméra qui avance", "unite": "°C", "legende": "4 °C au plus pour les produits frais" }
+    },
+    {
+      "id": "personnage", "fichier": "scenes/03-personnage.html", "duree": 5, "transition": "balayage",
+      "textes": { "titre": "Un personnage qui marche" }
+    }
+  ]
+}

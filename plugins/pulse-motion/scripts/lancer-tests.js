@@ -11,7 +11,9 @@
  * Un fichier est « navigateur » s'il charge une aide qui pilote le navigateur (voir NAVIGATEUR). La sonde WebGPU
  * est faite une seule fois ici et transmise aux processus enfants (PM_OPTIONS_WEBGPU, ou PM_SANS_WEBGPU=1).
  * Un fichier seul reste lançable : node --test tests/<fichier>.
- * Arguments : --unitaires ou --navigateur pour une seule phase.
+ * Arguments : --unitaires ou --navigateur pour une seule phase ; --etalon réenregistre les références de la non-régression
+ * visuelle du moteur pour ce système (tests/fixtures/etalon/<nom>/reference-<système>/), quand un changement de rendu est
+ * voulu (à dire dans le message de commit), sans lancer les tests.
  */
 const fs = require('node:fs');
 const path = require('node:path');
@@ -81,6 +83,10 @@ function phaseNavigateur(fichiers, env) {
 }
 
 async function principal(args) {
+  if (args.includes('--etalon')) {
+    await require('../tests/aide/etalon.js').enregistrerReferences();
+    return 0;
+  }
   const seule = args.includes('--unitaires') ? 'unitaires' : args.includes('--navigateur') ? 'navigateur' : null;
   const { unitaires, navigateur } = repartir();
   const debut = Date.now();

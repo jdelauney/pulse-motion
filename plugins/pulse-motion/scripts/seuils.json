@@ -81,5 +81,8 @@
   "noirDuree": 0.4,
   "noirSeuil": 0.08,
   "creteMax": -1,
-  "motsConfirmes": 0.85
+  "motsConfirmes": 0.85,
+  "determinismeInstants": 12,
+  "determinismePsnr": 45,
+  "determinismeLargeur": 640
 }
