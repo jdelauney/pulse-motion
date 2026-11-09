@@ -223,7 +223,7 @@ function resume(nom, res) {
   if (!res || typeof res !== "object") return null;
   if (nom.startsWith("controle")) return { erreurs: res.erreurs, alertes: res.alertes, corrections: res.corrections, renduVerifie: res.renduVerifie, ...("rendu" in res ? { rendu: res.rendu, scenesMesurees: res.scenesMesurees } : {}) };
   if (nom === "export" || nom === "reexport") {
-    const garder = ["ok", "mode", "duree", "images", "segments", "segmentsRepris", "paralleles", "audio", "message", "scenesRecapturees"];
+    const garder = ["ok", "mode", "duree", "images", "segments", "segmentsRepris", "segmentsReencodes", "paralleles", "regleParalleles", "audio", "message", "scenesRecapturees"];
     return Object.fromEntries(garder.filter((k) => k in res).map((k) => [k, res[k]]));
   }
   if (nom === "comparer") return { ok: res.ok, images: Array.isArray(res.images) ? res.images.length : null, message: res.message };

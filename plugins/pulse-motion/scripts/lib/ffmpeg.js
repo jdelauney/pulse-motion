@@ -122,17 +122,23 @@ function lancer(programme, args, { entree = null, signal } = {}) {
 
 const derniereLigne = (texte) => String(texte).trim().split(/\r?\n/).slice(-3).join(' ');
 
-/** Images PNG (itérable asynchrone) -> segment H.264 ; écriture respectant la contre-pression de ffmpeg. */
-async function encoderSegment({ ffmpeg, sortie, ips, crf, images, signal }) {
+/** Réglages x264 d'un segment (preset, crf) -> arguments de sortie de ffmpeg. */
+const argsX264 = ({ ips, crf, preset = 'medium' }) => ['-c:v', 'libx264', '-preset', preset, '-crf', String(crf), '-pix_fmt', 'yuv420p', '-r', String(ips)];
+
+/** Images PNG (itérable asynchrone) -> segment H.264 ; écriture respectant la contre-pression de ffmpeg.
+ *  profil(phase, ms) : temps d'écriture vers ffmpeg, attente de la contre-pression comprise (« ecriture »). */
+async function encoderSegment({ ffmpeg, sortie, ips, crf, preset = 'medium', images, signal, profil }) {
   const args = ['-y', '-hide_banner', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(ips), '-c:v', 'png', '-i', '-',
-    '-c:v', 'libx264', '-preset', 'medium', '-crf', String(crf), '-pix_fmt', 'yuv420p', '-r', String(ips), '-f', 'mp4', sortie];
+    ...argsX264({ ips, crf, preset }), '-f', 'mp4', sortie];
   const r = await lancer(ffmpeg, args, {
     signal,
     entree: async (stdin) => {
       stdin.on('error', () => { /* ffmpeg arrêté : sa sortie d'erreur dira pourquoi */ });
       for await (const png of images) {
         if (signal && signal.aborted) break;
+        const t0 = profil ? performance.now() : 0;
         if (!stdin.write(png)) await new Promise((r2) => stdin.once('drain', r2));
+        if (profil) profil('ecriture', performance.now() - t0);
       }
       stdin.end();
     },
@@ -140,16 +146,24 @@ async function encoderSegment({ ffmpeg, sortie, ips, crf, images, signal }) {
   if (r.code !== 0) throw new Error(`ffmpeg n'a pas pu encoder la vidéo (${derniereLigne(r.erreurs) || `code ${r.code}`})`);
 }
 
-/** -> { duree, images, largeur, hauteur, video, audio } */
-async function sonder({ ffprobe, fichier }) {
-  const r = await lancer(ffprobe, ['-v', 'error', '-count_frames', '-show_streams', '-show_format', '-of', 'json', fichier]);
+/** Segment déjà encodé (intermédiaire) -> fichier dérivé avec d'autres réglages x264, sans recapture (spec Rapidité 5.16). */
+async function reencoderSegment({ ffmpeg, entree, sortie, ips, crf, preset = 'medium', signal }) {
+  const r = await lancer(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-i', entree, '-an', ...argsX264({ ips, crf, preset }), '-f', 'mp4', sortie], { signal });
+  if (r.code !== 0) throw new Error(`ffmpeg n'a pas pu réencoder le segment (${derniereLigne(r.erreurs) || `code ${r.code}`})`);
+}
+
+/** -> { duree, images, largeur, hauteur, video, audio }
+ *  compter : 'images' (décode tout : -count_frames, la garantie de lecture du fichier final) ou 'paquets' (-count_packets,
+ *  sans décoder : validité d'un segment, spec Rapidité 5.18 ; une image H.264 par paquet). */
+async function sonder({ ffprobe, fichier, compter = 'images' }) {
+  const r = await lancer(ffprobe, ['-v', 'error', compter === 'paquets' ? '-count_packets' : '-count_frames', '-show_streams', '-show_format', '-of', 'json', fichier]);
   if (r.code !== 0) throw new Error(`ffprobe n'a pas pu lire la vidéo (${derniereLigne(r.erreurs)})`);
   const j = JSON.parse(r.sortie.toString('utf8'));
   const v = (j.streams || []).find((s) => s.codec_type === 'video');
   const a = (j.streams || []).find((s) => s.codec_type === 'audio');
   return {
     duree: Number((j.format && j.format.duration) || (v && v.duration) || 0),
-    images: v ? Number(v.nb_read_frames || v.nb_frames || 0) : 0,
+    images: !v ? 0 : compter === 'paquets' ? Number(v.nb_read_packets || 0) : Number(v.nb_read_frames || v.nb_frames || 0),
     largeur: v ? v.width : 0,
     hauteur: v ? v.height : 0,
     video: v ? v.codec_name : null,
@@ -239,4 +253,4 @@ function ecartImages(a, b) {
   return somme / n / 255;
 }
 
-module.exports = { lireVersion, commandeSure, commandeInstallation, trouverFfmpeg, MINIMUM, encoderSegment, sonder, extraireImage, assemblerSegments, ecartImages, encoderSon, mesurerSonie, encoderOpus, importerAudio };
+module.exports = { lireVersion, commandeSure, commandeInstallation, trouverFfmpeg, MINIMUM, encoderSegment, reencoderSegment, sonder, extraireImage, assemblerSegments, ecartImages, encoderSon, mesurerSonie, encoderOpus, importerAudio };

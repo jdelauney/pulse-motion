@@ -34,7 +34,7 @@ function creerLecteur(surMessage) {
   };
 }
 
-/** -> Promise<{ aller, evaluer, capturer, envoyer, fermer, processus, profil }> */
+/** -> Promise<{ aller, evaluer, capturer, version, envoyer, fermer, processus, profil }> */
 function ouvrirPage({ navigateur, largeur, hauteur, gpu = false, delai = 30000, options = [] }) {
   const profil = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-cdp-'));
   const processus = spawn(navigateur, [...optionsChrome({ gpu }), ...options, `--user-data-dir=${profil}`, '--remote-debugging-pipe', `--window-size=${largeur},${hauteur}`, 'about:blank'],
@@ -154,9 +154,22 @@ function ouvrirPage({ navigateur, largeur, hauteur, gpu = false, delai = 30000, 
           }
           return r.result.value;
         },
-        async capturer() {
-          const r = await envoyerBrut('Page.captureScreenshot', { format: 'png' }, sessionId);
-          return Buffer.from(r.data, 'base64');
+        /** Capture PNG de la zone d'affichage (largeur × hauteur de la page). rapide : optimizeForSpeed (PNG toujours sans perte,
+         *  seulement moins compressé) ; echelle : image réduite (clip.scale). profil(phase, ms) : temps de capture et de décodage. */
+        async capturer({ echelle, rapide = true, profil } = {}) {
+          const params = { format: 'png', ...(rapide ? { optimizeForSpeed: true } : {}) };
+          if (echelle !== undefined && echelle !== 1) params.clip = { x: 0, y: 0, width: largeur, height: hauteur, scale: echelle };
+          const t0 = profil ? performance.now() : 0;
+          const r = await envoyerBrut('Page.captureScreenshot', params, sessionId);
+          const t1 = profil ? performance.now() : 0;
+          const png = Buffer.from(r.data, 'base64');
+          if (profil) { profil('capture', t1 - t0); profil('base64', performance.now() - t1); }
+          return png;
+        },
+        /** Produit et version du navigateur (« HeadlessChrome/… »), pour les empreintes d'export. */
+        async version() {
+          const r = await envoyerBrut('Browser.getVersion');
+          return `${r.product || ''} ${r.revision || ''}`.trim();
         },
         fermer() {
           if (fini) { nettoyer(); return Promise.resolve(); }
