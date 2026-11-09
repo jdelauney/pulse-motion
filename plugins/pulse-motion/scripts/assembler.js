@@ -30,10 +30,11 @@ const ST = require('../moteur/sous-titres.js');
 const SP = require('../moteur/synthe/partition.js');
 const SA = require('../moteur/synthe/ambiances.js');
 const { trouverFichiersPolice } = require('./lib/police.js');
+const GM = require('./lib/groupes-moteur.js');
 
 const RACINE = path.resolve(__dirname, '..');
-const MOTEUR = ['courbes.js', 'aligner.js', 'sous-titres.js', 'minutage.js', 'transitions.js', 'tween.js', 'lettres.js', 'camera.js', 'squelette.js', 'clips.js', 'habillage-batonnets.js', 'habillage-pieces.js', 'personnages/levres.js', 'personnages/partition.js', 'personnages/interactions.js', 'personnages/scene.js', 'personnages/objets.js', 'temps.js', 'horloge.js', 'tailles.js', 'wav.js', 'sonie.js', 'mixage.js', 'synthe/catalogue.js', 'synthe/partition.js', 'synthe/ambiances.js', 'synthe/instruments.js', 'synthe/bruitages.js', 'analyse-son.js', 'audio.js', 'son-reactif.js', 'lecteur.js', 'sous-titres-rendu.js', 'debordement.js', 'mesures.js', 'pixels.js',
-  'figer.js', 'shaders/glsl.js', 'shaders/code.js', 'particules/instantanes.js', 'particules/gpu.js', 'particules/obstacles.js', 'particules/fragments.js', 'particules/simulation.js', 'particules/voisinage.js', 'particules/maillage.js', 'particules/structures.js', 'particules/milieu.js', 'particules/rendu.js', 'particules/glsl.js', 'particules/shaders.js', 'particules/composition.js', 'particules/formes.js', 'particules/reperes.js', 'particules/calques.js'];
+// Modules du moteur, groupés (moteur à la carte, spec Rapidité 5.19) : lib/groupes-moteur.js.
+const MOTEUR = GM.MODULES;
 function slug(texte) {
   return String(texte).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'video';
@@ -93,8 +94,14 @@ function embarquerFichier(projet, relatif, quoi, erreurs) {
   }
 }
 
-function lireMoteur(racine) {
-  return MOTEUR.map((f) => fs.readFileSync(path.join(racine, 'moteur', f), 'utf8')).join('\n;\n');
+/**
+ * Code du moteur inclus dans une page. groupes : liste de groupes (lib/groupes-moteur.js), ou 'tous' (ateliers, pages de
+ * tests : le moteur entier, contrôle compris). M.groupes dit les groupes inclus ; moteur/absents.js, en dernier, remplace les points d'entrée des groupes absents.
+ */
+function lireMoteur(racine, { groupes = 'tous' } = {}) {
+  const noms = groupes === 'tous' ? GM.NOMS : groupes;
+  const entete = `(globalThis.M = globalThis.M || {}).groupes = ${JSON.stringify(noms)};`;
+  return [entete].concat(GM.modulesDesGroupes(groupes).map((f) => fs.readFileSync(path.join(racine, 'moteur', f), 'utf8'))).join('\n;\n');
 }
 
 /** Sous-titres pour les plateformes (sous-titres activables) : sortie/<titre>.srt et .vtt ; retirés quand il n'y en a plus. */
@@ -115,12 +122,13 @@ function jsonDansHTML(objet) {
 }
 
 /**
- * assembler({ dossier, dossierStyles?: string | string[], dossierEffets?, dossierShaders?, ecrire? })
- * -> { ok, fichier, html, erreurs: [{ regle, gravite, scene?, message }], effets: [{ scene, ordre, calque, ancre, effet }], milieux: [{ scene, calque, ancre, sansDuree, effet }], shaders, donnees (pm-donnees) }
+ * assembler({ dossier, dossierStyles?: string | string[], dossierEffets?, dossierShaders?, ecrire?, groupes? })
+ * -> { ok, fichier, html, erreurs: [{ regle, gravite, scene?, message }], effets: [{ scene, ordre, calque, ancre, effet }], milieux: [{ scene, calque, ancre, sansDuree, effet }], shaders, donnees (pm-donnees), moteur (code inclus), groupes }
+ * groupes : groupes de modules du moteur imposés ('tous' : le moteur entier) ; sinon ceux dont la vidéo se sert.
  * Sans dossierStyles : styles livrés, puis styles personnels (~/.pulse-motion/styles). dossierShaders : bibliothèque des
  * shaders (plugins/pulse-motion/shaders par défaut), après shaders/ du projet.
  */
-function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, 'effets'), dossierShaders = BIBLIOTHEQUE_SHADERS, ecrire = true }) {
+function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, 'effets'), dossierShaders = BIBLIOTHEQUE_SHADERS, ecrire = true, groupes: groupesImposes = null }) {
   const projet = path.resolve(dossier);
   const { deroule, erreurs: erreursDeroule } = lireDeroule(projet);
   if (erreursDeroule.length) {
@@ -386,6 +394,9 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     }
   }
 
+  // Moteur à la carte : seuls les groupes de modules dont la vidéo se sert (groupesImposes : 'tous' pour les tests).
+  const groupes = groupesImposes || GM.groupesDuDeroule(donnees, sections);
+  const moteur = lireMoteur(RACINE, { groupes });
   const temps = dureeTemps(deroule);
   const cssPage = `:root { --pm-ratio-l: ${l}; --pm-ratio-h: ${h};${temps ? ` --pm-temps: ${temps}s; --pm-bpm: ${Math.round(60 / temps * 1000) / 1000};` : ''} }
 ${fs.readFileSync(path.join(RACINE, 'moteur', 'base.css'), 'utf8')}
@@ -411,7 +422,7 @@ ${sections.join('\n')}
 ${sons.join('\n')}
 <script type="application/json" id="pm-donnees">${jsonDansHTML(donnees)}</script>
 <script>
-${lireMoteur(RACINE)}
+${moteur}
 </script>
 <script>
 ${scriptsScenes.join('\n')}
@@ -426,7 +437,7 @@ M.demarrerParticules();
 </html>
 `;
 
-  const resultat = { ok: true, fichier: null, html: page, erreurs, effets, milieux, shaders, donnees, parScene, cssPage };
+  const resultat = { ok: true, fichier: null, html: page, erreurs, effets, milieux, shaders, donnees, parScene, cssPage, moteur, groupes };
   if (ecrire) resultat.fichier = ecrireSortie(projet, resultat).fichier;
   return resultat;
 }

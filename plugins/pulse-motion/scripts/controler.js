@@ -434,10 +434,11 @@ function controlesRapides({ projet, dossierStyles, dossierEffets, assemblage = A
   return { problemes, ok: assemblage.ok };
 }
 
-/** Fichiers dont dépend la mesure du rendu : le moteur de la page, la capture et le code de mesure côté Node. */
-const MESURE = [path.join(RACINE, 'moteur', 'capture.js'), path.join(__dirname, 'lib', 'rendu-controle.js'), path.join(__dirname, 'lib', 'flashs.js'), path.join(__dirname, 'lib', 'page-mesures.js')];
-function codeDeMesure() {
-  return Assembleur.lireMoteur(RACINE) + MESURE.map((f) => { try { return fs.readFileSync(f, 'utf8'); } catch { return ''; } }).join('\n');
+/** Fichiers dont dépend la mesure du rendu : le moteur inclus dans la page, les modules du contrôle et la capture qu'y injecte
+ *  la page de mesure, et le code de mesure côté Node. */
+const MESURE = [path.join(RACINE, 'moteur', 'mesures.js'), path.join(RACINE, 'moteur', 'pixels.js'), path.join(RACINE, 'moteur', 'capture.js'), path.join(__dirname, 'lib', 'rendu-controle.js'), path.join(__dirname, 'lib', 'flashs.js'), path.join(__dirname, 'lib', 'page-mesures.js')];
+function codeDeMesure(assemblage) {
+  return String(assemblage.moteur || Assembleur.lireMoteur(RACINE)) + MESURE.map((f) => { try { return fs.readFileSync(f, 'utf8'); } catch { return ''; } }).join('\n');
 }
 
 /** controle.json précédent, s'il est au format v2 avec ses empreintes ; sinon null (ancien format : contrôle complet). */
@@ -502,7 +503,7 @@ async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.j
     const { deroule } = lireDeroule(projet);
     const duree = dureeVideo(projet, deroule);
     const options = optionsMinutage(deroule);
-    empreintes = empreintesControle(assemblage, { seuils: SEUILS, moteur: codeDeMesure(), options });
+    empreintes = empreintesControle(assemblage, { seuils: SEUILS, moteur: codeDeMesure(assemblage), options });
     const ids = assemblage.donnees.scenes.map((s) => s.id);
     const comparable = !complet && Boolean(precedent) && precedent.empreintes.moteur === empreintes.moteur
       && precedent.empreintes.seuils === empreintes.seuils && precedent.empreintes.commun === empreintes.commun;

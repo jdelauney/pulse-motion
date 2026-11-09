@@ -42,10 +42,10 @@ const VERROU_PERIME = 24 * 3600 * 1000;
 const MESSAGE_VERROU = 'Un export de cette vidéo est déjà en cours : attendez qu\'il se termine.';
 const GARDES = new Set(['segments', 'verrou']);
 
-/** Code dont dépendent les pixels capturés, en plus de la page : moteur, capture, pilote du navigateur et ses drapeaux. */
+/** Code dont dépendent les pixels capturés, en plus de la page : moteur inclus dans la page, capture, pilote du navigateur et ses drapeaux. */
 const CODE_CAPTURE = ['capture-fidele.js', 'cdp.js', 'navigateur.js'].map((f) => path.join(__dirname, 'lib', f));
-function codeCapture() {
-  return lireMoteur(RACINE) + CODE_CAPTURE.map((f) => { try { return fs.readFileSync(f, 'utf8'); } catch { return ''; } }).join('\n');
+function codeCapture(assemblage) {
+  return String(assemblage.moteur || lireMoteur(RACINE)) + CODE_CAPTURE.map((f) => { try { return fs.readFileSync(f, 'utf8'); } catch { return ''; } }).join('\n');
 }
 
 /** Le projet demande-t-il WebGPU (Chrome gardera alors le GPU) ? Un effet de particules, un milieu (P5c) ou un fond par shader dans une
@@ -206,7 +206,7 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
     resume.segments = segments.length;
     const version = await premiere.version().catch(() => '');
     const pixels = empreintesPixels(assemblage, {
-      moteur: codeCapture(), options: optionsMinutage(deroule), segments, cadence, largeur, hauteur,
+      moteur: codeCapture(assemblage), options: optionsMinutage(deroule), segments, cadence, largeur, hauteur,
       extra: { navigateur: version, gpu, pixels: parametresPixels },
     });
     const inter = segments.map((g, k) => path.join(dossierPixels, nomSegment(pixels[k], g.morceau)));
