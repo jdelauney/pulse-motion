@@ -45,6 +45,7 @@ Si ce bloc est vide ou contient une erreur, lancer `pulse-motion ffmpeg`.
 Lancer `pulse-motion exporter .` en arrière-plan, puis lire son résultat JSON quand elle se termine. L'export fidèle demande environ 2 secondes de calcul par seconde de vidéo en 1080p. Après une retouche, il ne refait que les scènes changées : il est alors bien plus court.
 
 - La personne veut une vidéo plus légère (envoi par courriel) : ajouter `--qualite 720p`. Plus fluide : `--ips 60` (export deux fois plus long).
+- Une demande d'usage (« pour LinkedIn », « un GIF », « sur fond transparent ») ou une remarque après l'export (« trop lourd », « c'est flou », « en vertical ») : répondre d'après `pulse-motion reference sorties` : un réglage d'export, une retouche (`/pulse-motion:retoucher`), ou « pas encore possible », dit franchement.
 - Réussite : le résumé donne `fichier`, `duree`, `images`, `audio`, `mode` (`fidele` ou `navigateur`), et parfois `avertissement`.
 - `avertissement` présent (musique ou voix illisible, son non encodable) : le dire simplement ; la vidéo est exportée, muette ou sans la source illisible.
 - `conseilFfmpeg` présent : la vidéo a été faite dans le navigateur faute de ffmpeg ; le dire en une phrase, et proposer l'installation pour la prochaine fois (étape 2).

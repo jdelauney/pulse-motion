@@ -34,19 +34,21 @@ tools: Read, Write, Edit, Glob, Grep, Bash
    | des ancres sur les mots (scène avec une prise de voix) | `pulse-motion reference audio/ancres` |
    | des bruitages | `pulse-motion reference audio/bruitages` |
    | de suivre les scènes témoins | leurs fichiers, et la note « grammaire » telle quelle |
+   | une scène composée ou témoin | `pulse-motion reference anti-cliches` et `pulse-motion reference pieges` |
+   | `compositions`, `cadres-pointeur`, `mixage-fin` ou `actifs-marque` | `pulse-motion reference <nom>` |
 
-2. Scène toute faite conseillée (son `type`) : `pulse-motion scene <style> <type>`, la copier, remplacer `data-scene="<type>"` par `data-scene="<id>"`, régler le `data-dur` des éléments de décor (`data-decor`) sur la durée de la scène, retirer les éléments sans clé (points en trop, logo absent). Sinon, composer la scène avec les classes du style et le dire (« composée ») : elle n'a alors plus de `type`.
-3. Effet de particules, **seulement si votre consigne le demande** (`/pulse-motion:creer` en décide). Pas d'effet `avant` pendant la lecture d'un texte long (contrôle `effet-sur-texte`). Poser `<div data-effet="…">` minuté et ancré sur l'élément visé, régler avec `data-reglages`. Aucune recette ne convient : écrire `effets/<nom>.json` dans le projet **par `etend`** d'une recette existante (`pulse-motion effet <nom>` pour la lire), avec les seuls changements.
+2. Scène toute faite conseillée (son `type`) : `pulse-motion scene <style> <type>`, la copier, remplacer `data-scene="<type>"` par `data-scene="<id>"`, régler le `data-dur` du décor (`data-decor`) sur la durée de la scène, retirer les éléments sans clé (points en trop, logo absent). Sinon, composer avec les classes du style et le dire (« composée »).
+3. Effet de particules, **seulement si votre consigne le demande**. Pas d'effet `avant` pendant la lecture d'un texte long (contrôle `effet-sur-texte`). Poser `<div data-effet="…">` minuté, ancré sur l'élément visé, réglé par `data-reglages`. Aucune recette ne convient : écrire `effets/<nom>.json` dans le projet **par `etend`** d'une recette existante (`pulse-motion effet <nom>` pour la lire), avec les seuls changements.
 4. Temps : chaque élément entre avant la fin de la scène, la dernière entrée finit au moins 1,5 s avant la fin (temps de lecture), rien d'immobile plus de 2,5 s (décor qui dérive). Sur la **dernière scène** de la vidéo, le décor s'arrête 1 s avant la fin (`data-dur` = durée − 1) : finir sur une image stable d'au moins 0,5 s.
 5. Mouvements demandés : pour chacun (`"#001"`, ou `{ "mouvement": "#001", "element": "logo" }`), `pulse-motion mouvements afficher <n° ou nom>`, puis appliquer sa recette à l'élément visé (clé `data-texte`, `id` ou rôle ; sans élément, le titre). Garder ses chiffres (durée, ampleur, courbe) ; le moment d'entrée vient de la scène. Sur un élément d'une scène toute faite, retirer sa classe d'entrée du style (`entre-bas`, `tombe`…). Un titre lettre par lettre (`data-lettres`) par scène au plus ; `data-gel` : arrêt sur image ; unité `t` avec un tempo.
 6. Personnage, **seulement si votre consigne le demande** : suivre `moteur/personnages`, section « Dans une scène écrite par l'animateur ».
-7. Son, seulement si votre consigne en parle : une ancre `data-start="mot:<mot>"` seulement si la scène a une prise de voix (sans prise : erreur `ancre-mot-introuvable`) ; 1 à 3 bruitages `data-son` sur les éléments clés, jamais un son fort pendant un mot de la voix (`son-sous-voix`) ; aucun `<audio>`.
-8. Format 9:16 : empiler plutôt que mettre côte à côte (`.rangee` devient une colonne : `flex-direction: column` dans `@scope`). Puis écrire le fichier.
+7. Son, seulement si votre consigne en parle : une ancre `data-start="mot:<mot>"` seulement si la scène a une prise de voix ; 1 à 3 bruitages `data-son` sur les éléments clés, jamais un son fort pendant un mot de la voix (`son-sous-voix`) ; aucun `<audio>`.
+8. Format 9:16 : empiler (`.rangee` en colonne : `flex-direction: column` dans `@scope`). Puis écrire le fichier.
 
 ## Résultat à renvoyer
 
-Une ligne par point : fichier écrit, scène toute faite utilisée (ou « composée »), éléments animés et leur ordre d'entrée, ce qui vit (action principale, boucles) et ce qui reste immobile exprès, mouvements du dictionnaire appliqués (numéro, nom, élément), effets de particules posés (nom, ancre, calque) ou « aucun », personnages et leurs actions, sons et ancres `mot:` posés, toute difficulté (texte trop long, clé inutilisable).
+Une ligne par point : fichier écrit, scène toute faite utilisée (ou « composée »), éléments animés et leur ordre d'entrée, ce qui vit (action principale, boucles) et ce qui reste immobile exprès, mouvements appliqués (numéro, nom, élément), effets posés (nom, ancre, calque) ou « aucun », personnages et actions, sons et ancres `mot:`, zone réservée laissée, toute difficulté (texte trop long, clé inutilisable).
 
 ## Mode « style »
 
-Scène toute faite d'un **style personnel** (pas une scène de vidéo) : suivre `pulse-motion reference moteur/mode-style`.
+Scène toute faite d'un **style personnel** : suivre `pulse-motion reference moteur/mode-style`.

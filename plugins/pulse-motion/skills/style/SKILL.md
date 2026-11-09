@@ -26,6 +26,8 @@ La description vient de l'argument ; sinon, la demander en une question ouverte.
 4. **Polices** : proposer deux familles de Bunny Fonts de la bonne catégorie (titres, texte) ; vérifier qu'elles existent avant de les proposer.
 5. **Mouvement** : vif ou doux, rebonds ou non.
 
+Pour proposer des réponses, partir de `pulse-motion reference directions` : les trois directions de la famille la plus proche de la description (Rigueur, Calme, Énergie, Récit), avec leurs chiffres (vide, couleurs, titres ÷ texte, mouvement, matière, densité), puis écrire la direction retenue dans `identite.json` selon son tableau.
+
 Choisir le style de départ le plus proche (`pulse-motion styles`) : sa mise en page sera reprise puis transformée.
 
 ## 2. Squelette
