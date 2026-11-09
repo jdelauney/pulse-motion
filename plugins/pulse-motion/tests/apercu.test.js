@@ -141,6 +141,23 @@ test('port réservé par le système (EACCES, plages exclues de Windows) : le su
   } finally { await apercu.fermer(); }
 });
 
+test('toute la plage essayée réservée (une plage exclue de Windows compte 100 ports) : le système choisit un port libre', async () => {
+  const depart = await portLibre();
+  const demandes = [];
+  const retablir = simulerRefus((p) => { demandes.push(p); return p >= depart && p < depart + 20 ? 'EACCES' : null; });
+  const dir = copierProjet('projet-simple');
+  let apercu;
+  try {
+    apercu = await demarrerApercu({ dossier: dir, port: depart, dossierStyles: STYLES });
+  } finally { retablir(); }
+  try {
+    assert.equal(demandes.length, 21);
+    assert.equal(demandes[20], 0, 'puis un port choisi par le système');
+    assert.ok(apercu.port > 0, `port ${apercu.port}`);
+    assert.equal(apercu.url, `http://127.0.0.1:${apercu.port}/`);
+  } finally { await apercu.fermer(); }
+});
+
 /** Lance demarrerApercu dans un processus à part dont l'écoute renvoie toujours `code` ; le processus doit se terminer seul. */
 function demarrerSansPort(code) {
   const { spawnSync } = require('node:child_process');

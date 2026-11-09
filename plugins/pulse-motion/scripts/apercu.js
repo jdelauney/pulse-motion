@@ -191,6 +191,11 @@ async function demarrerApercu({ dossier, port = 4321, dossierStyles, dossierEffe
       }
     }
   }
+  // Toute la plage essayée est prise ou réservée (une plage exclue de Windows compte souvent 100 ports) : le système
+  // choisit alors lui-même un port libre (0), hors de ses plages réservées.
+  if (portRetenu === null) {
+    try { portRetenu = await ecouter(serveur, '127.0.0.1', 0); } catch { /* aucun port du tout : message ci-dessous */ }
+  }
   if (portRetenu === null) {
     clearInterval(battement);
     throw new Error(`Aucun port libre entre ${port} et ${port + ESSAIS_PORT - 1}.`);
