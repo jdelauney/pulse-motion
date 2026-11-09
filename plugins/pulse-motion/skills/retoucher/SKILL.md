@@ -69,8 +69,8 @@ Agent `animateur` (refonte, scènes de `aReecrire`, nouvelle scène) : modèle p
 
 | La scène | Modèle passé à l'appel |
 |---|---|
-| Un `type`, sans effet de particules, personnage, fond ni transition par shader, caméra narrative ; au plus 3 mouvements nommés | `sonnet` |
-| Composée (sans `type`), ou avec effet, personnage, shader, caméra, partition calée sur la scène | aucun paramètre (modèle de la session) |
+| Un `type`, sans effet de particules, personnage, fond par shader ni caméra narrative ; au plus 3 mouvements nommés ; sa transition peut être un shader (c'est le déroulé qui la pose) | `sonnet` |
+| Composée (sans `type`), ou avec effet, personnage, fond par shader, caméra, partition calée sur la scène | aucun paramètre (modèle de la session) |
 | Seconde écriture d'une scène qui garde une erreur après correction | aucun paramètre |
 
 Jamais un modèle plus cher que celui de la session : si la session tourne déjà en Sonnet ou en Haiku, aucun paramètre. Jamais `haiku`.
