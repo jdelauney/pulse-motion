@@ -233,7 +233,8 @@ test('caméra et temps : syntaxe fautive signalée sans navigateur', () => {
 test('assemblage : les modules de mise en scène sont dans la page', () => {
   const dir = copierProjet('projet-simple');
   const { html } = require('../scripts/assembler.js').assembler({ dossier: dir, dossierStyles: STYLES, ecrire: false });
-  for (const nom of ['Pulse Motion – caméra', 'Pulse Motion – temps figé', 'Pulse Motion – texte lettre par lettre']) assert.ok(html.includes(nom), nom);
+  // Moteur minifié (spec Rapidité 5.19) : les commentaires d'en-tête sont retirés, les fonctions restent.
+  for (const nom of ['function analyserCamera(', 'function analyserTemps(', 'M.decouper = function']) assert.ok(html.includes(nom), nom);
 });
 
 test("tempo : la première scène n'est pas jugée, même avec un décalage", () => {
