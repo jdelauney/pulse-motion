@@ -42,7 +42,7 @@ Si ce bloc est vide ou contient une erreur, lancer `pulse-motion ffmpeg`.
 
 ## 3. Exporter
 
-Lancer `pulse-motion exporter .` en arrière-plan, puis lire son résultat JSON quand elle se termine. L'export fidèle demande environ 2 secondes de calcul par seconde de vidéo en 1080p.
+Lancer `pulse-motion exporter .` en arrière-plan, puis lire son résultat JSON quand elle se termine. L'export fidèle demande environ 2 secondes de calcul par seconde de vidéo en 1080p. Après une retouche, il ne refait que les scènes changées : il est alors bien plus court.
 
 - La personne veut une vidéo plus légère (envoi par courriel) : ajouter `--qualite 720p`. Plus fluide : `--ips 60` (export deux fois plus long).
 - Réussite : le résumé donne `fichier`, `duree`, `images`, `audio`, `mode` (`fidele` ou `navigateur`), et parfois `avertissement`.
