@@ -31,6 +31,7 @@ const SP = require('../moteur/synthe/partition.js');
 const SA = require('../moteur/synthe/ambiances.js');
 const { trouverFichiersPolice } = require('./lib/police.js');
 const GM = require('./lib/groupes-moteur.js');
+const { minifier } = require('./lib/minifier.js');
 
 const RACINE = path.resolve(__dirname, '..');
 // Modules du moteur, groupés (moteur à la carte, spec Rapidité 5.19) : lib/groupes-moteur.js.
@@ -94,14 +95,24 @@ function embarquerFichier(projet, relatif, quoi, erreurs) {
   }
 }
 
+// Modules minifiés, gardés en mémoire par contenu (un même processus assemble souvent plusieurs fois).
+const minifies = new Map();
+function lireModule(racine, f, brut) {
+  const code = fs.readFileSync(path.join(racine, 'moteur', f), 'utf8');
+  if (brut) return code;
+  if (!minifies.has(code)) minifies.set(code, minifier(code));
+  return minifies.get(code);
+}
+
 /**
  * Code du moteur inclus dans une page. groupes : liste de groupes (lib/groupes-moteur.js), ou 'tous' (ateliers, pages de
- * tests : le moteur entier, contrôle compris). M.groupes dit les groupes inclus ; moteur/absents.js, en dernier, remplace les points d'entrée des groupes absents.
+ * tests : le moteur entier, contrôle compris). brut : sans minification (PM_MOTEUR_BRUT=1, pour le débogage). M.groupes dit
+ * les groupes inclus ; moteur/absents.js, en dernier, remplace les points d'entrée des groupes absents.
  */
-function lireMoteur(racine, { groupes = 'tous' } = {}) {
+function lireMoteur(racine, { groupes = 'tous', brut = process.env.PM_MOTEUR_BRUT === '1' } = {}) {
   const noms = groupes === 'tous' ? GM.NOMS : groupes;
   const entete = `(globalThis.M = globalThis.M || {}).groupes = ${JSON.stringify(noms)};`;
-  return [entete].concat(GM.modulesDesGroupes(groupes).map((f) => fs.readFileSync(path.join(racine, 'moteur', f), 'utf8'))).join('\n;\n');
+  return [entete].concat(GM.modulesDesGroupes(groupes).map((f) => lireModule(racine, f, brut))).join('\n;\n');
 }
 
 /** Sous-titres pour les plateformes (sous-titres activables) : sortie/<titre>.srt et .vtt ; retirés quand il n'y en a plus. */
