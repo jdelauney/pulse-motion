@@ -1,0 +1,254 @@
+{
+  "nom": "repos-vivant",
+  "description": "vie au repos à ajouter à une pose tenue (calque additif) : bras, tête, torse et genou bougent un peu, chacun à son rythme",
+  "boucle": true,
+  "duree": 9,
+  "additif": true,
+  "lissage": "continu",
+  "cles": [
+    {
+      "t": 0,
+      "angles": {
+        "torseIncl": -1,
+        "teteTourne": 0,
+        "tibiaAvant": 0,
+        "brasAvant": 0
+      }
+    },
+    {
+      "t": 0.017,
+      "angles": {
+        "brasArriere": -2.5
+      }
+    },
+    {
+      "t": 0.033,
+      "angles": {
+        "avantBrasAvant": 0
+      }
+    },
+    {
+      "t": 0.075,
+      "angles": {
+        "tetePenche": -2,
+        "avantBrasArriere": 0
+      }
+    },
+    {
+      "t": 0.1,
+      "angles": {
+        "brasArriere": 0
+      }
+    },
+    {
+      "t": 0.117,
+      "angles": {
+        "avantBrasAvant": -4
+      }
+    },
+    {
+      "t": 0.125,
+      "angles": {
+        "tibiaAvant": -1.5,
+        "brasAvant": 3
+      }
+    },
+    {
+      "t": 0.183,
+      "angles": {
+        "brasArriere": 2.5
+      }
+    },
+    {
+      "t": 0.2,
+      "angles": {
+        "tetePenche": 0,
+        "avantBrasAvant": 0,
+        "avantBrasArriere": 3
+      }
+    },
+    {
+      "t": 0.25,
+      "angles": {
+        "torseIncl": 0,
+        "teteTourne": 4,
+        "tibiaAvant": 0,
+        "brasAvant": 0
+      }
+    },
+    {
+      "t": 0.267,
+      "angles": {
+        "brasArriere": 0
+      }
+    },
+    {
+      "t": 0.283,
+      "angles": {
+        "avantBrasAvant": 4
+      }
+    },
+    {
+      "t": 0.325,
+      "angles": {
+        "tetePenche": 2,
+        "avantBrasArriere": 0
+      }
+    },
+    {
+      "t": 0.35,
+      "angles": {
+        "brasArriere": -2.5
+      }
+    },
+    {
+      "t": 0.367,
+      "angles": {
+        "avantBrasAvant": 0
+      }
+    },
+    {
+      "t": 0.375,
+      "angles": {
+        "tibiaAvant": 1.5,
+        "brasAvant": -3
+      }
+    },
+    {
+      "t": 0.433,
+      "angles": {
+        "brasArriere": 0
+      }
+    },
+    {
+      "t": 0.45,
+      "angles": {
+        "tetePenche": 0,
+        "avantBrasAvant": -4,
+        "avantBrasArriere": -3
+      }
+    },
+    {
+      "t": 0.5,
+      "angles": {
+        "torseIncl": 1,
+        "teteTourne": 0,
+        "tibiaAvant": 0,
+        "brasAvant": 0
+      }
+    },
+    {
+      "t": 0.517,
+      "angles": {
+        "brasArriere": 2.5
+      }
+    },
+    {
+      "t": 0.533,
+      "angles": {
+        "avantBrasAvant": 0
+      }
+    },
+    {
+      "t": 0.575,
+      "angles": {
+        "tetePenche": -2,
+        "avantBrasArriere": 0
+      }
+    },
+    {
+      "t": 0.6,
+      "angles": {
+        "brasArriere": 0
+      }
+    },
+    {
+      "t": 0.617,
+      "angles": {
+        "avantBrasAvant": 4
+      }
+    },
+    {
+      "t": 0.625,
+      "angles": {
+        "tibiaAvant": -1.5,
+        "brasAvant": 3
+      }
+    },
+    {
+      "t": 0.683,
+      "angles": {
+        "brasArriere": -2.5
+      }
+    },
+    {
+      "t": 0.7,
+      "angles": {
+        "tetePenche": 0,
+        "avantBrasAvant": 0,
+        "avantBrasArriere": 3
+      }
+    },
+    {
+      "t": 0.75,
+      "angles": {
+        "torseIncl": 0,
+        "teteTourne": -4,
+        "tibiaAvant": 0,
+        "brasAvant": 0
+      }
+    },
+    {
+      "t": 0.767,
+      "angles": {
+        "brasArriere": 0
+      }
+    },
+    {
+      "t": 0.783,
+      "angles": {
+        "avantBrasAvant": -4
+      }
+    },
+    {
+      "t": 0.825,
+      "angles": {
+        "tetePenche": 2,
+        "avantBrasArriere": 0
+      }
+    },
+    {
+      "t": 0.85,
+      "angles": {
+        "brasArriere": 2.5
+      }
+    },
+    {
+      "t": 0.867,
+      "angles": {
+        "avantBrasAvant": 0
+      }
+    },
+    {
+      "t": 0.875,
+      "angles": {
+        "tibiaAvant": 1.5,
+        "brasAvant": -3
+      }
+    },
+    {
+      "t": 0.933,
+      "angles": {
+        "brasArriere": 0
+      }
+    },
+    {
+      "t": 0.95,
+      "angles": {
+        "tetePenche": 0,
+        "avantBrasAvant": 4,
+        "avantBrasArriere": -3
+      }
+    }
+  ]
+}

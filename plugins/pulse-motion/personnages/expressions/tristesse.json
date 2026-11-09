@@ -7,5 +7,12 @@
     "regardY": 3,
     "sourcilsY": 1,
     "sourcilsAngle": -18
+  },
+  "clignement": {
+    "intervalle": [
+      4,
+      5.5
+    ],
+    "lenteur": 1.4
   }
 }

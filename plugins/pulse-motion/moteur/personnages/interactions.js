@@ -8,13 +8,15 @@
  * - atteindre : bras amenés sur la cible par l'IK du squelette (S.atteindre), fondu de 0,25 s à l'entrée et à la sortie ;
  *   cible = un élément (son point data-point, centre par défaut), un point « x% y% » de l'image, ou un personnage (sa main ;
  *   s'il vise aussi celui-ci au même moment : point de rencontre entre leurs épaules, à la hauteur data-niveau) ;
- * - regarder : pupilles et tête vers la cible (élément, point, personnage : sa tête, « camera »), « aucune » : regard libre.
+ * - regarder : pupilles et tête vers la cible (élément, point, personnage : sa tête, « camera »), « aucune » : regard libre ;
+ *   les pupilles arrivent 0,1 s avant la tête (et repartent 0,1 s avant elle).
  * ctx = { persos, W, H, placerBase(q, t) } ; une cible personnage est lue sur sa pose sans interactions (pas de boucle).
  */
 (function (racine) {
   'use strict';
   var M = racine.M = racine.M || {};
   var FONDU = 0.25, DEG = Math.PI / 180;
+  var AVANCE_YEUX = 0.1; // les pupilles arrivent 0,1 s avant la tête (take-one, eyesLead ; licence MIT)
   var NIVEAUX = { haut: -0.6, epaule: 0.15, bas: 0.6 };
 
   function normaliser(a) { a = ((a + 180) % 360 + 360) % 360 - 180; return a === -180 ? 180 : a; }
@@ -118,7 +120,7 @@
     p.partition.actions.forEach(function (a) {
       if (a.type !== 'regarder') return;
       var k = poids(a, t);
-      if (k <= 0) return;
+      if (k <= 0 && poids(a, t + AVANCE_YEUX) <= 0) return;
       var c = cible(a, p, ctx, t);
       var voulu;
       if (!c) return;
@@ -143,7 +145,12 @@
         var ux = dx / d * sens, uy = dy / d;
         voulu = { regardX: 6 * ux, regardY: 7 * uy, tete: Math.max(-25, Math.min(25, uy * 25)) };
       }
-      Object.keys(voulu).forEach(function (cle) { pose[cle] = (pose[cle] || 0) + (voulu[cle] - (pose[cle] || 0)) * k; });
+      // Les yeux d'abord : les pupilles prennent le poids de t + 0,1 s, la tête celui de t (elle arrive 0,1 s après).
+      var kYeux = poids(a, t + AVANCE_YEUX);
+      Object.keys(voulu).forEach(function (cle) {
+        var kk = cle === 'regardX' || cle === 'regardY' ? kYeux : k;
+        pose[cle] = (pose[cle] || 0) + (voulu[cle] - (pose[cle] || 0)) * kk;
+      });
     });
   }
 

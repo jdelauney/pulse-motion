@@ -66,7 +66,10 @@
     cuisse: 68, tibia: 68, pied: 15, colonne: 82, hauteurEpaules: 72, baseTete: 84,
     bras: 50, avantBras: 46, demiBassin: 6, demiEpaules: 9,
     tete: Object.freeze({ rx: 34, ry: 50 }),
-    osEnPlus: Object.freeze([]), contraintes: Object.freeze({})
+    osEnPlus: Object.freeze([]), contraintes: Object.freeze({}),
+    // Vie (partition.js) : les avant-bras et la tête arrivent « retard » s après leur parent, de « force » fois son
+    // déplacement récent ; la touffe, de force × 4/3.
+    vie: Object.freeze({ retard: 0.1, force: 0.45 })
   });
 
   /* ---------- maths 3D ---------- */
@@ -90,6 +93,8 @@
     out.tete = { rx: (g.tete && g.tete.rx !== undefined) ? g.tete.rx : GABARIT.tete.rx, ry: (g.tete && g.tete.ry !== undefined) ? g.tete.ry : GABARIT.tete.ry };
     out.osEnPlus = (g.osEnPlus || []).slice();
     out.contraintes = Object.assign({}, g.contraintes || {});
+    out.vie = { retard: g.vie && typeof g.vie.retard === 'number' ? g.vie.retard : GABARIT.vie.retard,
+      force: g.vie && typeof g.vie.force === 'number' ? g.vie.force : GABARIT.vie.force };
     return out;
   }
 
