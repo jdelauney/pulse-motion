@@ -350,8 +350,8 @@
       s.sec.querySelectorAll('img, image').forEach(function (img) {
         var svg = img.tagName.toLowerCase() === 'image';
         var source = svg ? (img.getAttribute('href') || img.getAttribute('xlink:href') || '') : (img.currentSrc || img.src || '');
-        if (!svg && !img.complete) { attentes.push(img.decode().catch(rien)); return; }
-        if (!visible) { etat.decodees.delete(img); return; }
+        if (!visible) { etat.decodees.delete(img); if (!svg && !img.complete) attentes.push(img.decode().catch(rien)); return; }
+        if (!svg && !img.complete) { etat.decodees.set(img, source); attentes.push(img.decode().catch(rien)); return; }
         if (etat.decodees.get(img) === source) return;
         etat.decodees.set(img, source);
         if (source && typeof img.decode === 'function') attentes.push(img.decode().catch(rien));
