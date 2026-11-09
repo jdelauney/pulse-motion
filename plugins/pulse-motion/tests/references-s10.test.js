@@ -205,8 +205,9 @@ test('anti_cliches_aucune_police_interdite : aucune famille de police n\'est ban
   for (const f of familles) assert.ok(!t.includes(f), `police « ${f} » nommée`);
 });
 
-test('animateur_lit_anti_cliches : une scène composée ou témoin lit la référence', () => {
-  assert.match(ligneAnimateur('anti-cliches'), /une scène composée ou témoin/);
+test('animateur_lit_anti_cliches : une scène témoin lit la référence (les autres scènes composées : la note « grammaire » ; décision de l’auteur, S10-5)', () => {
+  assert.match(ligneAnimateur('anti-cliches'), /une scène témoin/);
+  assert.doesNotMatch(ligneAnimateur('anti-cliches'), /composée/);
 });
 
 // --- § 5.4 Mixage fin --------------------------------------------------------------------------------------------
@@ -492,8 +493,11 @@ test('pieges_aucun_doublon_avec_signaux_moteur : aucune ligne des signaux d\'ale
   assert.equal(tableaux(sectionReference('pieges', 'Les pièges qui restent'))[0].lignes.length, 12);
 });
 
-test('animateur_lit_pieges : une scène composée ou témoin lit la référence', () => {
-  assert.match(ligneAnimateur('pieges'), /une scène composée ou témoin/);
+test('animateur_lit_pieges : une scène témoin lit la référence (décision de l’auteur, S10-5)', () => {
+  assert.match(ligneAnimateur('pieges'), /une scène témoin/);
+  assert.doesNotMatch(ligneAnimateur('pieges'), /composée/);
+  // Le témoin le sait par sa consigne ; les autres scènes composées reçoivent la note « grammaire ».
+  assert.match(lire('skills', 'creer', 'SKILL.md'), /\*\*Scènes témoins\*\* : deux agents sans paramètre de modèle, dans le même message, chacun prévenu qu'il écrit une scène témoin/);
 });
 
 // --- § 5.13 Branchements -----------------------------------------------------------------------------------------

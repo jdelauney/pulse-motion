@@ -34,7 +34,7 @@ tools: Read, Write, Edit, Glob, Grep, Bash
    | des ancres sur les mots (scène avec une prise de voix) | `pulse-motion reference audio/ancres` |
    | des bruitages | `pulse-motion reference audio/bruitages` |
    | de suivre les scènes témoins | leurs fichiers, et la note « grammaire » telle quelle |
-   | une scène composée ou témoin | `pulse-motion reference anti-cliches` et `pulse-motion reference pieges` |
+   | une scène témoin (la consigne le dit) | `pulse-motion reference anti-cliches` et `pulse-motion reference pieges` |
    | `compositions`, `cadres-pointeur`, `mixage-fin` ou `actifs-marque` | `pulse-motion reference <nom>` |
 
 2. Scène toute faite conseillée (son `type`) : `pulse-motion scene <style> <type>`, la copier, remplacer `data-scene="<type>"` par `data-scene="<id>"`, régler le `data-dur` du décor (`data-decor`) sur la durée de la scène, retirer les éléments sans clé (points en trop, logo absent). Sinon, composer avec les classes du style et le dire (« composée »).
