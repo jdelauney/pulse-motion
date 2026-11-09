@@ -16,7 +16,7 @@
   var M = racine.M = racine.M || {};
   var JUGES = '[data-texte], img, [data-logo], .logo, svg:not([aria-hidden="true"])';
   var DEFAUTS = { pasMesure: 0.2, immobile: 0.005, chevauchementMax: 0.1, margeMin: 0.04, logoMasqueMax: 0.2, grandElement: 0.25, vitesseMax: 1, texteFugaceBase: 0.8, texteFugaceParMot: 0.2,
-    zoneHaut: 0.07, zoneBas: 0.2, zoneDroite: 0.11, zoneDroiteDebut: 0.4, zoneDroiteFin: 0.85 };
+    zoneHaut: 0.07, zoneBas: 0.2, zoneDroite: 0.11, zoneDroiteDebut: 0.4, zoneDroiteFin: 0.85, sousTitreMin: 1.25 };
 
   function estLogo(el) { return el.hasAttribute('data-logo') || el.classList.contains('logo'); }
   function estJuge(el) {
@@ -252,11 +252,11 @@
       lectures.forEach(function (l, el) { if (!textesVus.has(el)) fermerLecture(el, l); });
     }
     lectures.forEach(function (l, el) { l.fin = M.duree; fermerLecture(el, l); });
-    // Cartons de sous-titres affichés moins de 1,25 s (durée lue dans les données : c'est celle de l'affichage).
+    // Cartons de sous-titres affichés moins de sousTitreMin (durée lue dans les données : c'est celle de l'affichage).
     var st = M.donnees && M.donnees.sousTitres;
     if (st && st.incrustes !== false && st.cartons) {
       st.cartons.forEach(function (c) {
-        if (c.fin - c.debut < 1.25 - 1e-6) constater('texte-fugace', c.scene, 'sous-titres', c.debut, { duree: arrondi(c.fin - c.debut), besoin: 1.25 });
+        if (c.fin - c.debut < S.sousTitreMin - 1e-6) constater('texte-fugace', c.scene, 'sous-titres', c.debut, { duree: arrondi(c.fin - c.debut), besoin: S.sousTitreMin });
       });
     }
     M.rendre(depart);

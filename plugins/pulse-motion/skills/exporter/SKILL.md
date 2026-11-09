@@ -45,6 +45,7 @@ Si ce bloc est vide ou contient une erreur, lancer `pulse-motion ffmpeg`.
 Lancer `pulse-motion exporter .` en arrière-plan, puis lire son résultat JSON quand elle se termine. L'export fidèle demande environ 2 secondes de calcul par seconde de vidéo en 1080p. Après une retouche, il ne refait que les scènes changées : il est alors bien plus court.
 
 - La personne veut une vidéo plus légère (envoi par courriel) : ajouter `--qualite 720p`. Plus fluide : `--ips 60` (export deux fois plus long).
+- Une demande d'usage (« pour LinkedIn », « un GIF », « sur fond transparent ») ou une remarque après l'export (« trop lourd », « c'est flou », « en vertical ») : répondre d'après `pulse-motion reference sorties` : un réglage d'export, une retouche (`/pulse-motion:retoucher`), ou « pas encore possible », dit franchement.
 - Réussite : le résumé donne `fichier`, `duree`, `images`, `audio`, `mode` (`fidele` ou `navigateur`), et parfois `avertissement`.
 - `avertissement` présent (musique ou voix illisible, son non encodable) : le dire simplement ; la vidéo est exportée, muette ou sans la source illisible.
 - `conseilFfmpeg` présent : la vidéo a été faite dans le navigateur faute de ffmpeg ; le dire en une phrase, et proposer l'installation pour la prochaine fois (étape 2).
@@ -56,4 +57,5 @@ Lancer `pulse-motion exporter .` en arrière-plan, puis lire son résultat JSON 
 
 ✅ **Fait** : la vidéo « <titre> » est exportée en MP4 (<durée>, <son ou muette>, <export fidèle ou dans le navigateur>).
 📄 **Fichiers** : `<fichier>` (à publier ou envoyer) et `sortie/<titre>.html` (page animée, s'ouvre sans connexion) ; avec des sous-titres, `sortie/<titre>.srt` et `sortie/<titre>.vtt` (à joindre sur YouTube, LinkedIn ou une plateforme de formation).
+🔎 **Vérifié** : <export fidèle : nombre d'images, durée et niveau du son contrôlés dans le fichier, images comparées à la vidéo ; dans le navigateur : nombre d'images, première et dernière images non noires> ; le son a été mesuré, pas écouté. Ce qui n'a pas pu l'être se dit (« sans ffmpeg, le niveau du son n'a pas été contrôlé »).
 ➡️ **Ensuite** : une retouche avec `/pulse-motion:retoucher`, puis un nouvel export.

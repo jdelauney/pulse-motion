@@ -89,18 +89,101 @@ test('requête avec un autre nom d\'hôte (DNS rebinding) : refusée', async () 
   } finally { await apercu.fermer(); }
 });
 
+/** Un port libre au moment de l'appel (choisi par le système, donc hors des plages qu'il réserve). */
+async function portLibre() {
+  const s = net.createServer();
+  await new Promise((r) => s.listen(0, '127.0.0.1', r));
+  const { port } = s.address();
+  await new Promise((r) => s.close(r));
+  return port;
+}
+
 test('port déjà pris : le suivant est utilisé', async () => {
+  // Le port occupé est choisi par le système : un port fixe peut tomber dans une plage réservée (Windows, Hyper-V).
   const occupant = net.createServer();
-  await new Promise((r) => occupant.listen(47220, '127.0.0.1', r));
+  await new Promise((r) => occupant.listen(0, '127.0.0.1', r));
+  const pris = occupant.address().port;
   const dir = copierProjet('projet-simple');
-  const apercu = await demarrerApercu({ dossier: dir, port: 47220, dossierStyles: STYLES });
+  const apercu = await demarrerApercu({ dossier: dir, port: pris, dossierStyles: STYLES });
   try {
-    assert.equal(apercu.port, 47221);
-    assert.equal(apercu.url, 'http://127.0.0.1:47221/');
+    assert.ok(apercu.port > pris && apercu.port < pris + 20, `port ${apercu.port}`);
+    assert.equal(apercu.url, `http://127.0.0.1:${apercu.port}/`);
   } finally {
     await apercu.fermer();
     await new Promise((r) => occupant.close(r));
   }
+});
+
+/** Remplace l'écoute des serveurs HTTP : refuser(port) -> code d'erreur à simuler, ou null pour écouter vraiment. */
+function simulerRefus(refuser) {
+  const listen = http.Server.prototype.listen;
+  http.Server.prototype.listen = function (port, ...reste) {
+    const code = refuser(port);
+    if (!code) return listen.call(this, port, ...reste);
+    process.nextTick(() => this.emit('error', Object.assign(new Error(`listen ${code} 127.0.0.1:${port}`), { code })));
+    return this;
+  };
+  return () => { http.Server.prototype.listen = listen; };
+}
+
+test('port réservé par le système (EACCES, plages exclues de Windows) : le suivant est utilisé', async () => {
+  const depart = await portLibre();
+  const retablir = simulerRefus((p) => (p === depart || p === depart + 1 ? 'EACCES' : null));
+  const dir = copierProjet('projet-simple');
+  let apercu;
+  try {
+    apercu = await demarrerApercu({ dossier: dir, port: depart, dossierStyles: STYLES });
+  } finally { retablir(); }
+  try {
+    assert.ok(apercu.port >= depart + 2 && apercu.port < depart + 20, `port ${apercu.port}`);
+    const etat = JSON.parse(fs.readFileSync(path.join(dir, '.pulse-motion', 'etat.json'), 'utf8'));
+    assert.equal(etat.apercu.port, apercu.port);
+  } finally { await apercu.fermer(); }
+});
+
+test('toute la plage essayée réservée (une plage exclue de Windows compte 100 ports) : le système choisit un port libre', async () => {
+  const depart = await portLibre();
+  const demandes = [];
+  const retablir = simulerRefus((p) => { demandes.push(p); return p >= depart && p < depart + 20 ? 'EACCES' : null; });
+  const dir = copierProjet('projet-simple');
+  let apercu;
+  try {
+    apercu = await demarrerApercu({ dossier: dir, port: depart, dossierStyles: STYLES });
+  } finally { retablir(); }
+  try {
+    assert.equal(demandes.length, 21);
+    assert.equal(demandes[20], 0, 'puis un port choisi par le système');
+    assert.ok(apercu.port > 0, `port ${apercu.port}`);
+    assert.equal(apercu.url, `http://127.0.0.1:${apercu.port}/`);
+  } finally { await apercu.fermer(); }
+});
+
+/** Lance demarrerApercu dans un processus à part dont l'écoute renvoie toujours `code` ; le processus doit se terminer seul. */
+function demarrerSansPort(code) {
+  const { spawnSync } = require('node:child_process');
+  const dir = copierProjet('projet-simple');
+  const script = `
+    const http = require('node:http');
+    http.Server.prototype.listen = function (port) { process.nextTick(() => this.emit('error', Object.assign(new Error('refus'), { code: ${JSON.stringify(code)} }))); return this; };
+    require(${JSON.stringify(path.join(__dirname, '..', 'scripts', 'apercu.js'))})
+      .demarrerApercu({ dossier: ${JSON.stringify(dir)}, port: 4321, dossierStyles: ${JSON.stringify(STYLES)} })
+      .then(() => console.log('démarré'), (e) => console.log(e.message));`;
+  // Sans process.exit : le processus ne se termine que si rien n'est resté ouvert (minuterie, serveur, surveillance).
+  return spawnSync(process.execPath, ['-e', script], { encoding: 'utf8', timeout: 20000 });
+}
+
+test('tous les ports réservés : message clair, et rien ne reste ouvert (le processus se termine)', () => {
+  const r = demarrerSansPort('EACCES');
+  assert.equal(r.error, undefined, "le processus ne s'est pas terminé seul");
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /Aucun port libre entre 4321 et 4340\./);
+});
+
+test("autre erreur d'écoute : arrêt aussitôt, message clair, rien ne reste ouvert", () => {
+  const r = demarrerSansPort('EPERM');
+  assert.equal(r.error, undefined, "le processus ne s'est pas terminé seul");
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /L'aperçu n'a pas pu démarrer : l'ordinateur refuse le port 4321 \(EPERM\)\./);
 });
 
 test('une modification recharge la page ; un déroulé cassé envoie une erreur', async () => {
