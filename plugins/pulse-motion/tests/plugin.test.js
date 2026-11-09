@@ -405,11 +405,14 @@ test('descriptions-renvois-presents : chaque renvoi vers une autre compétence s
 
 test('budget-consignes : les consignes ne regrossissent pas sans qu\'on le voie (octets, état 0.28.0 + 10 % ; animateur 6 000 o)', () => {
   // animateur.md ramené à 6 000 o par les références à la carte (spec S1 § 5.4, plan S1-2, 0.29.0).
+  // 0.33.0 (S10-A et S2-2) : creer +1 700 o (visuels d'un produit, directions, recettes de rythme, regarder avant de
+  // montrer, ligne 🔎), retoucher +1 300 o (lignes Revue et Format, regarder, ligne 🔎), exporter +700 o (sorties, ligne 🔎) ;
+  // la section « fabrication » de creer reste sous 7 000 o (consignes-a-la-carte.test.js).
   const PLAFONDS = {
     'skills/animer-personnage/SKILL.md': 5884, 'skills/atelier-particules/SKILL.md': 2272, 'skills/atelier-personnages/SKILL.md': 3529,
-    'skills/creer/SKILL.md': 21315, 'skills/decouper-personnage/SKILL.md': 4020, 'skills/dessiner-personnage/SKILL.md': 4528,
-    'skills/exporter/SKILL.md': 6151, 'skills/outils/SKILL.md': 6144, 'skills/reprendre/SKILL.md': 2999,
-    'skills/retoucher/SKILL.md': 12571, 'skills/style/SKILL.md': 6460, 'skills/voix/SKILL.md': 5073,
+    'skills/creer/SKILL.md': 23100, 'skills/decouper-personnage/SKILL.md': 4020, 'skills/dessiner-personnage/SKILL.md': 4528,
+    'skills/exporter/SKILL.md': 6500, 'skills/outils/SKILL.md': 6144, 'skills/reprendre/SKILL.md': 2999,
+    'skills/retoucher/SKILL.md': 13650, 'skills/style/SKILL.md': 6460, 'skills/voix/SKILL.md': 5073,
     'agents/animateur.md': 6000,
   };
   for (const f of fichiersGuides()) {
@@ -466,4 +469,50 @@ test('effort-absent-sur-reprendre-et-creer : reprendre peut fabriquer toute une 
     assert.equal(enTete(lire('skills', s, 'SKILL.md')).effort, undefined, s);
   }
   assert.equal(enTete(lire('agents', 'animateur.md')).effort, undefined);
+});
+
+// --- Spec « Regard et réalisation » (S2), plan S2-2 : regarder avant de montrer (5.4), bilan honnête (5.6) ----------
+
+test('plugin.test.js › creer et retoucher regardent la planche de regard avant de montrer', () => {
+  const { sectionsConsignes } = require('../scripts/lib/consignes.js');
+  const apercu = sectionsConsignes(lire('skills', 'creer', 'SKILL.md'), ['apercu']).texte;
+  const regard = apercu.indexOf('`pulse-motion planche . --regard`');
+  const ouvrir = apercu.indexOf('`pulse-motion apercu . --ouvrir`');
+  assert.ok(regard > 0 && ouvrir > regard, "creer : les planches regardées avant d'ouvrir l'aperçu");
+  assert.match(apercu, /`sortie\/regard\/ouverture\.png`, `telephone-\*\.png` et `temps-forts-\*\.png` \(pas `bandes\.png`\), en trois passes/);
+  assert.match(apercu, /un tour au plus/);
+  assert.match(apercu, /sans question/);
+  const r = lire('skills', 'retoucher', 'SKILL.md');
+  const etape = r.slice(r.indexOf('## 5. Vérifier et montrer'), r.indexOf('## 6. Fin'));
+  const controle = etape.indexOf('`pulse-motion controler .`');
+  const planche = etape.indexOf('`pulse-motion planche . --regard --scenes <scènes touchées>`');
+  assert.ok(controle > 0 && planche > controle, 'retoucher : après le contrôle');
+  assert.match(etape, /deux au plus/);
+  assert.match(etape, /ne touche que le son, la charte ou le glossaire n'en fait pas/);
+});
+
+/** Bloc de fin d'une compétence : les lignes qui commencent par un pictogramme, dans l'ordre. */
+function blocDeFin(s) {
+  const t = lire('skills', s, 'SKILL.md');
+  return t.slice(t.lastIndexOf('\n## ')).split('\n').filter((l) => /^(✅|📄|🔎|➡️)/u.test(l));
+}
+
+test('plugin.test.js › blocs de fin : ✅, 📄, 🔎, ➡️ dans cet ordre, pour creer, retoucher et exporter', () => {
+  for (const s of ['creer', 'retoucher', 'exporter']) {
+    assert.deepEqual(blocDeFin(s).map((l) => [...l][0]), ['✅', '📄', '🔎', '➡'], s);
+    assert.match(blocDeFin(s)[2], /^🔎 \*\*Vérifié\*\* : /, s);
+  }
+});
+
+test("plugin.test.js › bilan : « mesuré, pas écouté » et ce qui n'a pas pu être vérifié", () => {
+  for (const s of ['creer', 'retoucher', 'exporter']) {
+    const t = lire('skills', s, 'SKILL.md');
+    const fin = t.slice(t.lastIndexOf('\n## '));
+    assert.match(fin, /le son a été mesuré, pas écouté/, s);
+    assert.match(fin, /n'a pas pu l'être|n'a pas pu être vérifié/, s);
+    assert.match(fin, /« sans (Chrome|ffmpeg)/, s);
+  }
+  assert.match(blocDeFin('creer')[2], /images de la vidéo regardées/);
+  assert.match(blocDeFin('creer')[2], /Ce que je corrigerais ensuite/);
+  assert.match(blocDeFin('retoucher')[2], /les scènes touchées ont été contrôlées et regardées ; les autres n'ont pas été modifiées/);
 });

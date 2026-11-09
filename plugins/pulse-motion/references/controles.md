@@ -9,6 +9,7 @@
 - Ce qui reste est dans `problemes` : corriger les erreurs, traiter les alertes (deux tours au plus), dire le reste à la personne.
 - `--sans-correction` : signaler seulement (les problèmes de texte et de durée portent leur `correction` proposée ; un débordement reste une erreur). `--sans-rendu` : contrôles rapides seulement.
 - `renduVerifie: false` avec `rendu-non-verifie` ou `rendu-impossible` : la vidéo rendue n'a pas été contrôlée ; le dire à la personne.
+- Avant de montrer la vidéo, Claude en regarde les planches (`pulse-motion planche . --regard`, dans `sortie/regard/`) : l'ouverture de 0 à 3 s (`accrocheMax`), une image toutes les 0,5 s (`regardPas`) ; une image 0,3 s (`regardDecalage`) après la fin des entrées importantes de chaque scène, 24 images (`regardVignettesMax`) au plus ; chaque scène vue sur un téléphone, à 360 px (`telephoneLargeur`) de large ; des bandes autour des transitions, pour le relecteur. Ce sont des réglages du regard, pas des règles.
 - Chaque seuil est écrit « valeur unité (`clé`) » : la clé est celle de `scripts/seuils.json`, où vit le nombre (une vérification automatique garde les deux égaux).
 
 ## Minutage et lecture

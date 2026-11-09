@@ -3,7 +3,7 @@
 ## L'essentiel
 
 - Déclencheurs : « qu'en penses-tu ? », « note ma vidéo », « est-ce que c'est bien ? », « qu'est-ce que tu changerais ? ».
-- On juge **ce que voit le spectateur** : les images de la planche (trois par scène), puis le déroulé (textes, durées, voix). Le code des scènes ne se lit qu'ensuite, pour trouver la cause d'un défaut.
+- On juge **ce que voit le spectateur** : les planches de regard (ouverture, temps forts, téléphone), puis le déroulé (textes, durées, voix). Le code des scènes ne se lit qu'ensuite, pour trouver la cause d'un défaut.
 - **Cinq axes notés sur 10**, chacun avec une preuve située (« scène 3, deuxième image »). Une note sans preuve ne compte pas.
 - La revue finit par **trois retouches rapides**, écrites comme des phrases que la personne pourrait dire à `/pulse-motion:retoucher`, qu'elle accepte une à une.
 - On ne retouche pas un axe noté 9 ou plus. Un seul tour de corrections après une revue ; on ne refait pas la revue pour se donner raison.
@@ -11,7 +11,7 @@
 ## Préparer
 
 1. `pulse-motion controler .` : les erreurs et alertes du contrôle sont des faits, pas des opinions ; la revue ne les répète pas, elle les cite en une ligne.
-2. `pulse-motion planche . <toutes les scènes>` puis regarder chaque image (avec `Read`). Les trois images d'une scène sont prises à 35 %, 65 % et 95 % de sa partie visible.
+2. `pulse-motion planche . --regard` (toute la vidéo), puis regarder chaque planche avec `Read` : `ouverture.png`, `temps-forts-*.png`, `telephone-*.png` et, pour le mouvement, `bandes.png` ; lire aussi `sortie/regard/fiche.md` (scènes, instants, index des images).
 3. Lire `deroule.json` : genre, public, format, textes, durées, voix.
 
 ## Les cinq axes
@@ -82,5 +82,4 @@ Trois retouches rapides :
 ## À venir
 
 - Agent `critique` à contexte neuf, qui reçoit les planches et le déroulé, rejette par défaut et note avec preuves (spec S2, plan S2-4). Il écrit `critique.json` dans sa propre grille de 8 axes. Quand il a été lancé, cette revue est la synthèse de `critique.json` pour la personne : les cinq axes ci-dessus, selon la correspondance des 8 axes vers les 5 de la spec S2 (exigence 5.5), que le plan S2-4 recopie ici, puis « à garder », « à corriger » et les trois retouches rapides.
-- Planches que Claude regarde à chaque rendu, sans attendre la demande (spec S2).
 - Règles de vérité des chiffres (« Exemple », « à date », source) : spec S2.

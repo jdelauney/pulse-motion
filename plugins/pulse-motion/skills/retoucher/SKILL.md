@@ -82,11 +82,13 @@ Régler un effet de particules ou un personnage en le regardant (« ouvre l'édi
 ## 5. Vérifier et montrer
 
 1. `pulse-motion controler .` (il assemble aussi la page) ; corriger ce que la retouche a cassé (deux tours au plus). Les `corrections` de `sortie/controle.json` (faites seules par le contrôle : typographie, durées, taille d'un texte qui débordait ; liste complète : `pulse-motion reference controles`) sont dites à la personne ; `pulse-motion controler . --sans-correction` si elle a demandé une durée ou une graphie précise.
-2. Aperçu : il se recharge seul s'il est ouvert ; s'il a été fermé (`apercu.actif` faux dans `pulse-motion etat .`), `pulse-motion apercu . --ouvrir` en arrière-plan.
-3. Le contrôle de l'étape 1 a vérifié la vidéo rendue (débordements, chevauchements, marges, zone des boutons en 9:16…) ; `renduVerifie: false` se dit à la personne.
+2. Regarder : `pulse-motion planche . --regard --scenes <scènes touchées>`, puis regarder avec `Read` ses planches `temps-forts-*.png` et `telephone-*.png` (deux au plus) ; corriger ce qui se voit (un tour au plus). Une retouche qui ne touche que le son, la charte ou le glossaire n'en fait pas.
+3. Aperçu : il se recharge seul s'il est ouvert ; s'il a été fermé (`apercu.actif` faux dans `pulse-motion etat .`), `pulse-motion apercu . --ouvrir` en arrière-plan.
+4. Le contrôle de l'étape 1 a vérifié la vidéo rendue (débordements, chevauchements, marges, zone des boutons en 9:16…) ; `renduVerifie: false` se dit à la personne.
 
 ## 6. Fin
 
 ✅ **Fait** : <la retouche, en une phrase>.
 📄 **Fichiers** : `sortie/<titre>.html` est à jour ; l'aperçu s'est rechargé.
+🔎 **Vérifié** : les scènes touchées ont été contrôlées et regardées ; les autres n'ont pas été modifiées. (Ce qui n'a pas pu l'être se dit : « sans Chrome, la scène n'a pas été regardée » ; une retouche du son : « le son a été mesuré, pas écouté ».)
 ➡️ **Ensuite** : une autre retouche avec `/pulse-motion:retoucher`, « annule » pour revenir en arrière, ou l'export en MP4 avec `/pulse-motion:exporter`.

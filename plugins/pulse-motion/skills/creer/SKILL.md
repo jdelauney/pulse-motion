@@ -117,20 +117,22 @@ Mouvements nommés : quand la personne cite un mouvement ou un numéro du dictio
 
 ## 4. Aperçu
 
-1. `pulse-motion apercu . --ouvrir` **en arrière-plan** : le navigateur s'ouvre sur la vidéo.
-2. `pulse-motion controler .` vérifie aussi la vidéo rendue (Chrome ou Edge sans fenêtre) : textes qui débordent, éléments qui se chevauchent ou sortent de l'image, marges, zone des boutons en 9:16, logo masqué, textes trop vite effacés, mouvements trop rapides. Corriger ce qui est signalé (l'aperçu se recharge seul). `renduVerifie: false` avec une alerte `rendu-non-verifie` ou `rendu-impossible` : la dire à la personne (navigateur introuvable ou page en erreur) avec le message du contrôle ; avec `--sans-rendu`, rien à dire.
-3. Parcours accompagné (le style est déjà choisi, à l'étape 2) :
+1. **Regarder avant de montrer** (la personne ne doit jamais être la première à regarder ; sans question) : `pulse-motion planche . --regard`, puis regarder avec `Read` `sortie/regard/ouverture.png`, `telephone-*.png` et `temps-forts-*.png` (pas `bandes.png`), en trois passes, une sorte de défaut à la fois : la lisibilité sur la planche téléphone ; la composition et le rythme sur les temps forts ; l'accroche et le mouvement sur l'ouverture. Corriger ce qui se voit (un tour au plus), puis relancer `pulse-motion controler .` et `pulse-motion planche . --regard --scenes <scènes corrigées>`. `ok` faux : le dire au bilan.
+2. `pulse-motion apercu . --ouvrir` **en arrière-plan** : le navigateur s'ouvre sur la vidéo.
+3. `pulse-motion controler .` vérifie aussi la vidéo rendue (Chrome ou Edge sans fenêtre) : textes qui débordent, éléments qui se chevauchent ou sortent de l'image, marges, zone des boutons en 9:16, logo masqué, textes trop vite effacés, mouvements trop rapides. Corriger ce qui est signalé (l'aperçu se recharge seul). `renduVerifie: false` avec une alerte `rendu-non-verifie` ou `rendu-impossible` : la dire à la personne (navigateur introuvable ou page en erreur) avec le message du contrôle ; avec `--sans-rendu`, rien à dire.
+4. Parcours accompagné (le style est déjà choisi, à l'étape 2) :
    - **Vidéo finale** : faire regarder la vidéo entière dans l'aperçu et demander l'accord (`--accord video`).
    - Un refus : demander ce qui ne va pas et passer par `/pulse-motion:retoucher`.
-4. Voix à enregistrer : dire à la personne « Pour enregistrer votre voix, cliquez sur « Voix » dans la barre de l'aperçu : le texte défile, vous parlez, vous réécoutez, vous gardez ou refaites. » Chaque prise gardée remplace la voix de l'ordinateur et recale la scène. Pour lui faire entendre la musique seule : `pulse-motion musique ecouter .` (fichier `sortie/musique.wav`).
-5. Pour montrer deux scènes en images fixes (à la demande de la personne) : `pulse-motion planche . <id1>,<id2> --ouvrir`, puis regarder soi-même les images de `sortie/planche/` (avec `Read`).
+5. Voix à enregistrer : dire à la personne « Pour enregistrer votre voix, cliquez sur « Voix » dans la barre de l'aperçu : le texte défile, vous parlez, vous réécoutez, vous gardez ou refaites. » Chaque prise gardée remplace la voix de l'ordinateur et recale la scène. Pour lui faire entendre la musique seule : `pulse-motion musique ecouter .` (fichier `sortie/musique.wav`).
+6. Pour montrer deux scènes en images fixes (à la demande de la personne) : `pulse-motion planche . <id1>,<id2> --ouvrir`, puis regarder soi-même les images de `sortie/planche/` (avec `Read`).
 
 ## 5. Fin
 
 Si la charte a été créée pour cette vidéo, proposer de l'enregistrer pour les suivantes (« Enregistrer ma charte » (Recommandé) · « Pas maintenant ») : `pulse-motion charte enregistrer <nom> .` (nom en minuscules et tirets, ex. `client-dupont`).
 
-Terminer par ce bloc, sans rien après :
+Terminer par ce bloc, sans rien après. La ligne 🔎 n'affirme que ce qui a été mesuré ou vu, et dit toujours ce qui n'a pas pu l'être (« sans Chrome, la vidéo rendue n'a pas été contrôlée ni regardée »).
 
 ✅ **Fait** : la vidéo « <titre> » (<n> scènes, <durée>) est prête et s'affiche dans votre navigateur.
 📄 **Fichiers** : la vidéo animée est dans `sortie/<titre>.html` (elle s'ouvre sans connexion).
+🔎 **Vérifié** : <ce qui a été mesuré, en mots simples : lisibilité, contrastes, temps de lecture…> ; <n> images de la vidéo regardées (`vignettes` des planches)[ ; le son a été mesuré, pas écouté]. Ce que je corrigerais ensuite : <une phrase>.
 ➡️ **Ensuite** : décrivez une retouche en une phrase avec `/pulse-motion:retoucher` (par exemple « ralentis la scène 3 »), ou exportez la vidéo en MP4 avec `/pulse-motion:exporter`.

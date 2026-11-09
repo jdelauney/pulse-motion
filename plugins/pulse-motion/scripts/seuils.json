@@ -38,5 +38,10 @@
   "flashMax": 3,
   "flashCases": 4,
   "largeurFlash": 64,
-  "sousTitreMin": 1.25
+  "sousTitreMin": 1.25,
+  "accrocheMax": 3,
+  "telephoneLargeur": 360,
+  "regardDecalage": 0.3,
+  "regardPas": 0.5,
+  "regardVignettesMax": 24
 }
