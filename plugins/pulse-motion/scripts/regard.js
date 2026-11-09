@@ -30,6 +30,7 @@ const { ouvrirPage } = require('./lib/cdp.js');
 const { avecEffets } = require('./export-fidele.js');
 const { trouverStyle } = require('./styles.js');
 const { empreintePage, etatRelecture } = require('./lib/relecture.js');
+const { reduirePng } = require('./lib/vignette.js');
 
 const SEUILS = JSON.parse(fs.readFileSync(path.join(__dirname, 'seuils.json'), 'utf8'));
 const RACINE = path.resolve(__dirname, '..');
@@ -294,6 +295,9 @@ async function planchesRegard({ dossier, scenes = null, dossierStyles, navigateu
     const prendre = async (instant) => {
       if (!prises.has(instant)) {
         const fichier = `v${String(prises.size + 1).padStart(3, '0')}.png`;
+        // Deux captures du même instant, la seconde gardée : la première peut encore montrer l'image composée d'avant
+        // le saut (une animation CSS presque à zéro, à 1,4 s de chaine-du-froid, diffère une fois sur quatre).
+        await capture.capturer(instant);
         fs.writeFileSync(path.join(travail, fichier), await capture.capturer(instant));
         prises.set(instant, fichier);
       }
@@ -313,6 +317,16 @@ async function planchesRegard({ dossier, scenes = null, dossierStyles, navigateu
     for (const g of groupes) for (const v of g.vignettes) v.fichier = await prendre(v.t);
 
     // Composition : la même page du navigateur, à la taille exacte de chaque planche.
+    const reductions = new Map();
+    const reduire = (fichier, l, h) => {
+      const cle = `${fichier}@${l}x${h}`;
+      if (!reductions.has(cle)) {
+        const nom = `r${String(reductions.size + 1).padStart(3, '0')}.png`;
+        fs.writeFileSync(path.join(travail, nom), reduirePng(fs.readFileSync(path.join(travail, fichier)), l, h));
+        reductions.set(cle, nom);
+      }
+      return reductions.get(cle);
+    };
     const planches = [];
     const index = [];
     let jetons = 0;
@@ -327,7 +341,10 @@ async function planchesRegard({ dossier, scenes = null, dossierStyles, navigateu
         const L = colonnes * g.mise.largeur + (colonnes + 1) * ECART;
         const H = rangees * (g.mise.hauteur + LEGENDE) + (rangees + 1) * ECART;
         const html = path.join(travail, `${g.nom}-${k + 1}.html`);
-        fs.writeFileSync(html, pageComposition(lot, g.mise));
+        // Vignettes réduites dans Node à leur taille exacte (identiques à l'octet d'un passage à l'autre), affichées sans
+        // mise à l'échelle : le navigateur ne réduit plus rien.
+        const reduites = lot.map((v) => ({ ...v, fichier: reduire(v.fichier, g.mise.largeur, g.mise.hauteur) }));
+        fs.writeFileSync(html, pageComposition(reduites, g.mise));
         await lisible.envoyer('Emulation.setDeviceMetricsOverride', { width: L, height: H, deviceScaleFactor: 1, mobile: false });
         await lisible.aller(pathToFileURL(html).href);
         await lisible.evaluer('Promise.all(Array.prototype.map.call(document.images, function (i) { return i.decode().catch(function () {}); })).then(function () { return true; })');
