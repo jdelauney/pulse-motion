@@ -31,9 +31,9 @@ const COULEUR = /^(#[0-9a-f]{3,4}|#[0-9a-f]{6}|#[0-9a-f]{8}|none|transparent)$/i
 const NOM_COULEUR = /^[a-z][a-z0-9-]*$/;
 const ORDRE = {
   pose: ['nom', 'description', 'expression', 'bouche', 'angles'],
-  clip: ['nom', 'description', 'boucle', 'duree', 'foulee', 'pieds', 'miroir', 'additif', 'cles'],
+  clip: ['nom', 'description', 'boucle', 'duree', 'foulee', 'pieds', 'miroir', 'additif', 'lissage', 'contacts', 'cles'],
   gabarit: ['nom', 'description', ...Object.keys(S.GABARIT)],
-  expression: ['nom', 'description', 'bouche', 'angles'],
+  expression: ['nom', 'description', 'bouche', 'angles', 'clignement'],
   dessin: ['nom', 'description', 'gabarit', 'couleurs', 'pieces', 'accessoires', 'visage'],
   decoupe: ['nom', 'description', 'source', 'vue', 'gabarit', 'couleurs', 'os', 'visage', 'ignorer'],
 };
@@ -228,6 +228,16 @@ function validerExpression(objet, contexte, erreurs) {
   champsInconnus(objet, ORDRE.expression, erreurs);
   verifierNom(objet, contexte, erreurs);
   verifierChoix({ bouche: objet.bouche }, '', contexte, erreurs);
+  if (objet.clignement !== undefined) {
+    const c = objet.clignement;
+    if (!estObjet(c)) erreurs.push('« clignement » : { "intervalle": [3, 4], "lenteur": 1 } (rythme des clignements de cette expression).');
+    else {
+      champsInconnus(c, ['intervalle', 'lenteur'], erreurs, 'clignement : ');
+      const i = c.intervalle;
+      if (i !== undefined && !(Array.isArray(i) && i.length === 2 && i.every(estNombre) && i[0] >= 1.5 && i[0] <= i[1] && i[1] <= 8)) erreurs.push('« clignement.intervalle » : deux durées en secondes, de 1,5 à 8 (ex. [3, 4]).');
+      if (c.lenteur !== undefined && !(estNombre(c.lenteur) && c.lenteur >= 0.7 && c.lenteur <= 2)) erreurs.push('« clignement.lenteur » : de 0,7 à 2 (1 = vitesse normale, 1.4 = plus lent).');
+    }
+  }
   const a = objet.angles === undefined ? {} : objet.angles;
   if (!estObjet(a)) { erreurs.push('« angles » doit être un objet (ex. { "sourcilsY": 4 }).'); return; }
   for (const [n, v] of Object.entries(a)) {
@@ -254,6 +264,11 @@ function validerClip(objet, contexte, erreurs) {
   if (objet.miroir !== undefined && (objet.boucle !== true || !(estNombre(objet.miroir) && objet.miroir > 0 && objet.miroir < 1))) erreurs.push('« miroir » : décalage de phase entre 0 et 1 (ex. 0.5), seulement pour un clip bouclé.');
   if (objet.additif !== undefined && typeof objet.additif !== 'boolean') erreurs.push('« additif » doit valoir true ou false.');
   if (objet.additif === true && objet.pieds === 'au-sol') erreurs.push('Un clip additif ne peut pas être « au-sol » : ses valeurs sont des différences.');
+  if (objet.lissage !== undefined && !['par-cle', 'continu'].includes(objet.lissage)) erreurs.push('« lissage » : « continu » (les poses s\'enchaînent sans s\'arrêter) ou « par-cle ».');
+  if (objet.contacts !== undefined) {
+    if (objet.boucle !== false) erreurs.push('« contacts » ne sert qu\'aux mouvements ponctuels (instants où les pieds retouchent le sol, en secondes).');
+    else if (!(Array.isArray(objet.contacts) && objet.contacts.every((c) => estNombre(c) && c >= 0))) erreurs.push('« contacts » : liste d\'instants en secondes où les pieds retouchent le sol (ex. [0.936]).');
+  }
   if (!Array.isArray(objet.cles) || objet.cles.length === 0) { erreurs.push('« cles » : il faut au moins une clé (ex. [{ "t": 0, "pose": "debout" }]).'); return; }
   let precedent = -Infinity;
   const derniere = objet.cles[objet.cles.length - 1];
@@ -286,6 +301,14 @@ function validerGabarit(objet, contexte, erreurs) {
   verifierNom(objet, contexte, erreurs);
   for (const k of LONGUEURS) if (objet[k] !== undefined && !(estNombre(objet[k]) && objet[k] > 0)) erreurs.push(`« ${k} » doit être un nombre positif (ex. ${S.GABARIT[k]}).`);
   for (const k of DEMI) if (objet[k] !== undefined && !(estNombre(objet[k]) && objet[k] >= 0)) erreurs.push(`« ${k} » doit être un nombre positif ou nul (ex. ${S.GABARIT[k]}).`);
+  if (objet.vie !== undefined) {
+    if (!estObjet(objet.vie)) erreurs.push('« vie » : { "retard": 0.1, "force": 0.45 } (combien les bouts des membres arrivent après le corps).');
+    else {
+      champsInconnus(objet.vie, ['retard', 'force'], erreurs, 'vie : ');
+      if (objet.vie.retard !== undefined && !(estNombre(objet.vie.retard) && objet.vie.retard >= 0.06 && objet.vie.retard <= 0.15)) erreurs.push('« vie.retard » : entre 0,06 et 0,15 s (ex. 0.1).');
+      if (objet.vie.force !== undefined && !(estNombre(objet.vie.force) && objet.vie.force >= 0.3 && objet.vie.force <= 0.6)) erreurs.push('« vie.force » : entre 0,3 et 0,6 (ex. 0.45).');
+    }
+  }
   if (objet.tete !== undefined) {
     if (!estObjet(objet.tete)) erreurs.push('« tete » doit être un objet { rx, ry } (ex. { "rx": 34, "ry": 50 }).');
     else for (const k of ['rx', 'ry']) if (objet.tete[k] !== undefined && !(estNombre(objet.tete[k]) && objet.tete[k] > 0)) erreurs.push(`« tete.${k} » doit être un nombre positif (ex. ${S.GABARIT.tete[k]}).`);
@@ -425,6 +448,7 @@ function serialiser(type, objet) {
     });
   }
   if (type === 'clip') for (const k of ['duree', 'foulee', 'miroir']) if (o[k] !== undefined) o[k] = arrondir(o[k]);
+  if (type === 'clip' && Array.isArray(o.contacts)) o.contacts = o.contacts.map(arrondir);
   if (type === 'gabarit') {
     for (const k of Object.keys(o)) if (!['osEnPlus', 'contraintes', 'tete'].includes(k)) o[k] = profond(o[k]);
     if (o.tete) o.tete = profond(ordonner(o.tete, ['rx', 'ry']));
@@ -432,6 +456,7 @@ function serialiser(type, objet) {
     if (o.contraintes) o.contraintes = profond(ordonner(o.contraintes, []));
   }
   if (type === 'expression') o.angles = angles(o.angles || {});
+  if (type === 'expression' && estObjet(o.clignement)) o.clignement = profond(ordonner(o.clignement, ['intervalle', 'lenteur']));
   if (type === 'decoupe') {
     if (estObjet(o.os)) { const r = {}; for (const k of [...PIECES, ...Object.keys(o.os).filter((n) => !PIECES.includes(n)).sort()]) if (o.os[k] !== undefined) r[k] = profond(ordonner(o.os[k], ['formes', 'de', 'a', 'centre'])); o.os = r; }
     if (estObjet(o.visage)) o.visage = ordonner(o.visage, ['yeux', 'bouche']);

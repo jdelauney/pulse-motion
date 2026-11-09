@@ -298,6 +298,7 @@ function majProprietes() {
   const actif = document.activeElement;
   $('#boucle').checked = !!o.boucle;
   $('#additif').checked = !!o.additif;
+  $('#lissage').checked = o.lissage === 'continu';
   $('#pieds').value = o.pieds || 'libres';
   for (const k of ['duree', 'foulee', 'miroir']) if (actif !== $(`#${k}`)) $(`#${k}`).value = o[k] === undefined ? '' : o[k];
   $('#duree').disabled = $('#miroir').disabled = !o.boucle;
@@ -311,6 +312,7 @@ $('#proprietes').addEventListener('change', (ev) => {
     if (!v && miroir) message('Le miroir ne sert qu\'aux cycles : il a été retiré, les membres Arrière ne suivent plus les membres Avant (Annuler pour revenir).', '');
   }
   else if (id === 'additif') ed.proprietes({ additif: v ? true : null, ...(v ? { pieds: null } : {}) });
+  else if (id === 'lissage') ed.proprietes({ lissage: v ? 'continu' : null });
   else if (id === 'pieds') ed.proprietes({ pieds: v === 'libres' ? null : v });
   else if (['duree', 'foulee', 'miroir'].includes(id)) ed.proprietes({ [id]: v === '' || Number(v) === 0 && id === 'miroir' ? null : Number(v) });
   construireCurseurs();

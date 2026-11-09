@@ -4,6 +4,7 @@
   "boucle": true,
   "duree": 2.86,
   "additif": true,
+  "lissage": "continu",
   "cles": [
     {
       "t": 0,

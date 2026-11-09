@@ -14,6 +14,13 @@
   3. `pulse-motion personnages planche --dessin <nom> --visage --dossier .` (expressions et bouches)
   Corriger (trois tours au plus) : tête séparée du corps dans une vue, élément présent dans une vue et absent d'une autre, trou ou pointe aux articulations, pièce à l'envers, visage décalé, bouche illisible.
 
+## Pièges qui se voient en mouvement
+
+Ces défauts ne se voient pas sur une image fixe, mais dès que le personnage bouge ou cligne (méthode de rossark-motion-skill) :
+- **Un seul contour** plutôt qu'une calotte trouée (cheveux, capuche, casque posés sur la tête) : sinon une ligne fine traverse le visage dès qu'il bouge.
+- **Paupière au moins 2 unités plus large que le blanc de l'œil** (`touffu` : paupière de 26 de large pour un blanc de 21) : sinon un « anneau de lunettes » reste autour de l'œil fermé à chaque clignement.
+- **Remplir chaque partie à part** : les sous-tracés d'un même chemin s'annulent là où ils se recouvrent (trou dans la forme).
+
 ## Repère et longueurs (gabarit standard)
 
 ```

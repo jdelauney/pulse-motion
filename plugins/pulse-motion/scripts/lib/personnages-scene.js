@@ -36,6 +36,10 @@ function preparerPersonnages(html0, { scene, lu, voix = false, dureeTemps = null
   const utilises = { dessins: new Set(), gabarits: new Set() };
   if (!/data-personnage|data-action|data-tenu-par/.test(html)) return { html, utilises, erreurs, parle: false };
   let parle = false;
+  const verifierEcrase = (v, qui) => {
+    const n = Number(v);
+    if (String(v).trim() === '' || !Number.isFinite(n) || n < 0 || n > 0.25) erreurs.push(erreur(scene, `${qui} : data-ecrase="${v}" : écrasement à l'atterrissage, de 0 (aucun) à 0,25 (ex. 0.12).`));
+  };
   let courant = null;
   // Tracés de la scène (sols courbes) et sols cités, vérifiés à la fin.
   const chemins = new Set(), autresIds = new Set(), idsDoubles = new Set(), solsCites = [];
@@ -70,6 +74,9 @@ function preparerPersonnages(html0, { scene, lu, voix = false, dureeTemps = null
     if (a['data-personnage'] !== undefined) {
       const nom = a['data-personnage'].trim();
       courant = nom;
+      if (a['data-vie'] !== undefined && !['pleine', 'sobre', 'aucune'].includes(a['data-vie'].trim())) erreurs.push(erreur(scene, `data-vie="${a['data-vie']}" : valeur inconnue (pleine, sobre ou aucune).`));
+      if (a['data-ombre'] !== undefined && !['oui', 'non'].includes(a['data-ombre'].trim())) erreurs.push(erreur(scene, `data-ombre="${a['data-ombre']}" : oui ou non.`));
+      if (a['data-ecrase'] !== undefined) verifierEcrase(a['data-ecrase'], `personnage « ${nom} »`);
       if (nom === 'batonnets') {
         const g = (a['data-gabarit'] || 'standard').trim();
         if (!Object.hasOwn(lu.gabarits, g)) erreurs.push(erreur(scene, `personnage en bâtonnets : gabarit « ${g} » introuvable (gabarits : ${Object.keys(lu.gabarits).join(', ')}).`));
@@ -103,6 +110,10 @@ function preparerPersonnages(html0, { scene, lu, voix = false, dureeTemps = null
       if (a['data-niveau'] !== undefined && !['haut', 'epaule', 'bas'].includes(a['data-niveau'].trim())) erreurs.push(erreur(scene, `${qui} : data-niveau="${a['data-niveau']}" doit être haut, epaule ou bas.`));
     }
     if (a['data-sol'] !== undefined && !TRAJETS.includes(type)) erreurs.push(erreur(scene, `${qui} : data-sol ne sert qu'aux déplacements (marcher, courir, glisser, bondir) ou au personnage lui-même.`));
+    if (a['data-ecrase'] !== undefined) {
+      if (type !== 'bondir') erreurs.push(erreur(scene, `${qui} : data-ecrase ne sert qu'à « bondir » ou au personnage lui-même (écrasement à l'atterrissage).`));
+      else verifierEcrase(a['data-ecrase'], qui);
+    }
     if (a['data-hauteur'] !== undefined && type !== 'bondir') erreurs.push(erreur(scene, `${qui} : data-hauteur ne sert qu'à « bondir » (hauteur de l'arc).`));
     if (a['data-courbe'] !== undefined && type !== 'glisser') erreurs.push(erreur(scene, `${qui} : data-courbe ne sert qu'à « glisser ».`));
     if (a['data-courbe'] !== undefined) { try { C.courbeNommee(a['data-courbe'].trim()); } catch (e) { erreurs.push(erreur(scene, `${qui} : ${e.message}`)); } }
@@ -128,7 +139,7 @@ function preparerPersonnages(html0, { scene, lu, voix = false, dureeTemps = null
     if (type === 'jouer' && a['data-clip'] !== undefined) {
       const clip = Object.hasOwn(lu.clips, a['data-clip']) ? lu.clips[a['data-clip']] : null;
       if (!clip) erreurs.push(erreur(scene, `${qui} : mouvement « ${a['data-clip']} » introuvable (mouvements : ${Object.keys(lu.clips).filter((n) => !lu.clips[n].additif).join(', ')}).`));
-      else if (clip.additif) erreurs.push(erreur(scene, `${qui} : « ${a['data-clip']} » est un calque (respiration, clignement), il s'ajoute tout seul.`));
+      else if (clip.additif) erreurs.push(erreur(scene, `${qui} : « ${a['data-clip']} » est un calque (respiration, clignement, repos vivant), il s'ajoute tout seul.`));
       else if (a['data-dur'] === undefined) {
         // Durée propre du geste (un cycle : 1 tour), écrite pour que les éléments calés sur sa fin tombent juste.
         const duree = Math.round(K.duree(clip) * 1000) / 1000;

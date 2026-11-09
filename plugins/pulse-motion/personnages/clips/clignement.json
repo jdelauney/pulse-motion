@@ -1,36 +1,34 @@
 {
   "nom": "clignement",
-  "description": "clignement des yeux toutes les 3,2 s (calque additif)",
-  "boucle": true,
-  "duree": 3.2,
+  "description": "un clignement : fermer en 110 ms, tenir 40 ms, rouvrir en 190 ms ; le moteur choisit les instants (calque additif)",
+  "boucle": false,
   "additif": true,
   "cles": [
     {
       "t": 0,
       "angles": {
         "paupieres": 0
+      },
+      "courbe": "cubic-inout"
+    },
+    {
+      "t": 0.11,
+      "angles": {
+        "paupieres": -0.92
       }
     },
     {
-      "t": 0.94,
+      "t": 0.15,
+      "angles": {
+        "paupieres": -0.92
+      },
+      "courbe": "cubic-out"
+    },
+    {
+      "t": 0.34,
       "angles": {
         "paupieres": 0
-      },
-      "courbe": "linear"
-    },
-    {
-      "t": 0.955,
-      "angles": {
-        "paupieres": -0.92
-      },
-      "courbe": "linear"
-    },
-    {
-      "t": 0.985,
-      "angles": {
-        "paupieres": -0.92
-      },
-      "courbe": "linear"
+      }
     }
   ]
 }

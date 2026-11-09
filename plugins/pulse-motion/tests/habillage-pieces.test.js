@@ -35,7 +35,7 @@ function page() {
   const src = (n) => pathToFileURL(path.join(MOTEUR, n)).href;
   fs.writeFileSync(f, `<!doctype html><meta charset="utf-8"><svg id="s" viewBox="0 0 800 600" width="800" height="600"><g id="g"></g><g id="h"></g></svg>
 <script>window.DESSIN = ${JSON.stringify(DESSIN)};</script>
-<script src="${src('courbes.js')}"></script><script src="${src('squelette.js')}"></script><script src="${src('clips.js')}"></script><script src="${src('habillage-pieces.js')}"></script>`);
+<script src="${src('courbes.js')}"></script><script src="${src('squelette.js')}"></script><script src="${src('vivant.js')}"></script><script src="${src('clips.js')}"></script><script src="${src('habillage-pieces.js')}"></script>`);
   return pathToFileURL(f).href;
 }
 async function evaluer(code) {

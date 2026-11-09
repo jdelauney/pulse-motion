@@ -6,5 +6,11 @@
     "tailleYeux": 1.2,
     "taillePupilles": 0.7,
     "sourcilsY": 8
+  },
+  "clignement": {
+    "intervalle": [
+      2.5,
+      3.5
+    ]
   }
 }
