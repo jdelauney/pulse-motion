@@ -45,7 +45,7 @@
   "regardPas": 0.5,
   "regardVignettesMax": 24,
   "critiqueBarre": 8,
-  "critiqueCorrige": 7,
+  "critiqueScenesMax": 3,
   "critiqueIntouche": 9,
   "nouveauteMax": 8,
   "nouveauteMaxVoix": 12,

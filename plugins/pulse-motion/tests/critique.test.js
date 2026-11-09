@@ -24,7 +24,7 @@ const defaut = (gravite) => ({ gravite, scene: 'seuil', instant: 12.3, symptome:
 
 test('critique.test.js › le schéma de critique.json est validé (axes connus, notes de 1 à 10 ou null, verdict cohérent avec la barre)', () => {
   assert.equal(SEUILS.critiqueBarre, 8);
-  assert.equal(SEUILS.critiqueCorrige, 7);
+  assert.equal(SEUILS.critiqueScenesMax, 3);   // décision 8 de l'auteur : le tour de corrections porte sur 3 scènes au plus
   assert.equal(SEUILS.critiqueIntouche, 9);
   assert.deepEqual(AXES, ['message', 'ouverture', 'lisibilite', 'composition', 'mouvement', 'rythme', 'continuite', 'verite']);
   const scenes = ['intro', 'seuil'];

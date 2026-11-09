@@ -54,14 +54,14 @@ Par défaut : formation → `voix` (sinon `lecture`), `chapitres`, `legendes` ; 
 
 - Durées : `pulse-motion reference rythme`. Un texte reste 1,5 s (`lectureBase`) + 0,3 s (`lectureParMot`) par mot ; un sous-titre 1,25 s (`sousTitreMin`) au moins ; rien d'immobile plus de 2,5 s (`tempsMort`).
 - Du nouveau au plus toutes les 8 s (`nouveauteMax`), 12 s (`nouveauteMaxVoix`) sous une voix, jamais sous le temps de lecture.
-- Une respiration avant le moment fort.
-- Accélérer par moitiés (0,5 s, 0,25 s, 0,125 s entre deux entrées), jamais sous 3 images.
+- Respirer avant le moment fort.
+- Accélérer par moitiés (0,5, 0,25, 0,125 s), jamais sous 3 images.
 - Une comparaison reste entière 2,5 s (`comparaisonTenue`) ; un carton titre dure 2,5 à 4 s.
 - Deux échecs : le **diaporama** (tout entre, puis se fige) et l'**économiseur d'écran** (tout bouge sans fin).
 
 ## 6. Mouvement et caméra
 
-- Courbes par rôle : une entrée finit franchement, une sortie dure 40 à 60 % de l'entrée, un déplacement accélère puis freine, le linéaire reste à la dérive.
+- Courbes par rôle : une entrée finit franchement, une sortie dure 40 à 60 % de l'entrée, un déplacement accélère puis freine ; le linéaire, à la dérive.
 - Une entrée = l'opacité **et** un trajet de 1 à 5 cqh ou une échelle de 0,86 à 0,99, en 0,6 à 0,8 s ; jamais de fondu seul.
 - Les enfants entrent 2 à 4 images après leur parent ; un seul dépassement visible par mouvement.
 - Rebond, élastique : registres `fait-main` et `energique` ; secousse : `energique` seulement.
@@ -74,7 +74,7 @@ Par défaut : formation → `voix` (sinon `lecture`), `chapitres`, `legendes` ; 
 - Marges de 4 % (`margeMin`) du petit côté au moins.
 - Chaque arrêt est une affiche, la dernière image aussi.
 - Un accent, une signification.
-- Jamais une couleur sur la même couleur ; texte à 4,5:1 (`contrasteTexte`), grand texte à 3:1 (`contrasteGrandTexte`) ; un fond sombre teinté plutôt que noir pur.
+- Jamais une couleur sur la même couleur ; texte à 4,5:1 (`contrasteTexte`), grand texte à 3:1 (`contrasteGrandTexte`) ; un fond sombre teinté, pas noir pur.
 
 ## 8. La vérité à l'écran
 
@@ -103,9 +103,9 @@ Par défaut : formation → `voix` (sinon `lecture`), `chapitres`, `legendes` ; 
 
 - **Composition** : titre centré sur un dégradé ; repère permanent en coin ; « 03/06 » ou barre de progression non demandés ; cartes empilées serrées ; dernière image sans composition.
 - **Mouvement** : tout en fondu ; tout entre ensemble sur la même courbe ; rebond dans un registre sérieux ; caméra qui pompe à chaque temps.
-- **Aspect** : halos partout ; dégradés arc-en-ciel ; emoji en guise d'illustration ; police par défaut.
+- **Aspect** : halos partout ; dégradés arc-en-ciel ; emoji en illustration ; police par défaut.
 - **Contenu** : interface grise factice ; faux texte latin ; action écrite au lieu de montrée ; chiffres inventés.
-- **Structure** : ouverture sur un logo qui se dévoile lentement ; une seule vitesse du début à la fin.
+- **Structure** : ouverture sur un logo qui se dévoile lentement ; une seule vitesse partout.
 - **Son** : un souffle sur chaque coupe ; un son sur chaque mouvement.
 
 ## 11. Symptôme → mécanisme → correction
@@ -114,7 +114,7 @@ Ce qu'on voit ou mesure sur l'image. Numéros stables : on en ajoute à la fin, 
 
 | N° | Symptôme | Mécanisme probable | Correction | Règle |
 |---|---|---|---|---|
-| 1 | Tout entre, puis rien ne bouge plus de 2,5 s (`tempsMort`) | Entrées groupées au début | Échelonner les `data-start` ; décor qui dérive | `temps-mort` |
+| 1 | Tout entre, puis rien ne bouge plus de 2,5 s (`tempsMort`) | Entrées groupées | Échelonner les `data-start` ; décor qui dérive | `temps-mort` |
 | 2 | Texte resté moins que son temps de lecture | Scène courte, entrée tardive | Allonger `duree`, avancer l'entrée | `lecture`, `texte-fugace` |
 | 3 | Plusieurs éléments de même poids | Pas de hiérarchie | Un titre 2,5 fois plus grand ; un accent | critique |
 | 4 | Rien de nouveau pendant 8 s (`nouveauteMax`) | Scène longue sans étape | Une entrée sur un mot dit (`mot:`), ou deux scènes | `rien-de-nouveau` |
@@ -123,13 +123,13 @@ Ce qu'on voit ou mesure sur l'image. Numéros stables : on en ajoute à la fin, 
 | 7 | Clic sans pointeur ni appui visible | Action écrite, pas montrée | `pulse-motion reference cadres-pointeur` | critique |
 | 8 | Première image d'une scène vide | Tout entre après la transition | Un élément visible dès `data-start="0"` | `transition-vide`, `image-vide` |
 | 9 | Tout bouge sans arrêt | Une boucle par élément | Une boucle au plus | `trop-d-animations` |
-| 10 | Tout entre au même instant, même courbe | Entrées recopiées | Décaler de 0,2 à 0,4 s ; enfants 2 à 4 images après | critique |
+| 10 | Tout entre au même instant, même courbe | Entrées recopiées | Décaler de 0,2 à 0,4 s | critique |
 | 11 | Texte qui déborde ou sort de l'image | Texte trop long | Raccourcir, ou `ajustements` | `debordement`, `hors-cadre` |
 | 12 | Deux éléments se recouvrent | Positions libres | Rangées du style (`.rangee`) | `chevauchement` |
 | 13 | Texte qui touche le bord | Marge oubliée | 4 % (`margeMin`) du petit côté | `marge` |
 | 14 | Texte illisible sur un téléphone | Taille trop basse | 3,5 cqh (`texteMinCqh`) au moins | `texte-petit` |
 | 15 | Mouvement trop rapide à suivre | Long trajet, peu de temps | Plus lent, ou moins ample | `mouvement-rapide` |
-| 16 | Particules devant un texte qu'on lit | Effet `avant` sur un texte long | Calque arrière, ou après la lecture | `effet-sur-texte` |
+| 16 | Particules sur un texte qu'on lit | Effet `avant` | Calque arrière, ou après la lecture | `effet-sur-texte` |
 | 17 | Logo caché | Élément posé dessus | Le déplacer | `logo-masque` |
 | 18 | L'image bouge encore à la dernière seconde | Décor qui dérive jusqu'au bout | Décor arrêté avant ; 0,5 s (`pauseFinale`) d'image stable | `pause-finale` |
 | 19 | Zoom avant puis arrière dans une scène | Caméra qui pompe | Un mouvement de caméra par scène | critique |
@@ -143,17 +143,17 @@ Ce qu'on voit ou mesure sur l'image. Numéros stables : on en ajoute à la fin, 
 
 ## 12. Regarder avant de montrer
 
-- `pulse-motion planche . --regard` : ouverture de 0 à 3 s (`accrocheMax`), une image toutes les 0,5 s (`regardPas`) ; une image 0,3 s (`regardDecalage`) après les entrées importantes de chaque scène, 24 (`regardVignettesMax`) au plus ; chaque scène sur un téléphone de 360 px (`telephoneLargeur`) ; des bandes autour des transitions, pour le relecteur.
+- `pulse-motion planche . --regard` : ouverture de 0 à 3 s (`accrocheMax`), une image toutes les 0,5 s (`regardPas`) ; une image 0,3 s (`regardDecalage`) après les entrées importantes de chaque scène, 24 (`regardVignettesMax`) au plus ; chaque scène sur un téléphone de 360 px (`telephoneLargeur`) ; des bandes autour des transitions.
 - Trois passes, un défaut à la fois : lisibilité (téléphone), composition et rythme (temps forts), ouverture et mouvement (ouverture).
 - Corriger avant de montrer ; un tour au plus.
 
 ## 13. La relecture indépendante
 
 - **Quand** : `creer`, une fois, dès 3 scènes, après le regard et avant l'aperçu. `retoucher` : refonte (style changé, 3 scènes réécrites ou plus, scène ajoutée ou retirée ; `--scenes` des scènes touchées si elle est partielle) ou demande (« relis la vidéo », « note-la »). Jamais à l'export.
-- **Pas deux fois la même version** : `pulse-motion planche . --regard` rend `relecture` ; `aJour` vrai : relire `sortie/regard/critique.json`, ne pas relancer. Après une planche partielle, la refaire d'abord sur toute la vidéo (ou la refonte).
+- **Pas deux fois la même version** : `pulse-motion planche . --regard` rend `relecture` ; `aJour` vrai : relire `sortie/regard/critique.json`, ne pas relancer. Après une planche partielle, la refaire d'abord sur toute la vidéo.
 - **Lancer** l'agent `critique` (outil Agent) avec ce seul message : le chemin de `sortie/regard/` et « Relisez cette vidéo. » Modèle passé à l'appel (paramètre `model`) : `sonnet`. Jamais un modèle plus cher que celui de la session : si la session tourne déjà en Sonnet ou en Haiku, aucun paramètre.
 - **Huit axes** : `message`, `ouverture`, `lisibilite`, `composition`, `mouvement`, `rythme`, `continuite`, `verite` (grille : `agents/critique.md`). Prête si chaque axe noté vaut 8 (`critiqueBarre`) ou plus, sans défaut à corriger.
-- **Un seul tour** : corriger les défauts `a-corriger` et les scènes notées 7 (`critiqueCorrige`) ou moins ; ne jamais toucher une scène notée 9 (`critiqueIntouche`) ou plus. Puis `pulse-motion controler .` et la planche des scènes corrigées, **sans seconde relecture**.
+- **Un seul tour, borné** : les défauts `a-corriger` seulement (les autres se citent à la personne), sur 3 scènes (`critiqueScenesMax`) au plus, les plus graves d'abord ; sur place (Edit ciblé : taille, « Exemple », couleur, durée), réécrire seulement si le défaut l'exige ; jamais une scène notée 9 (`critiqueIntouche`) ou plus. Puis `pulse-motion controler .` et la planche des scènes corrigées, **sans seconde relecture**.
 - **La personne l'emporte** sur le relecteur. Pour lui rendre une note : `pulse-motion reference revue`.
 
 ## 14. Dire honnêtement

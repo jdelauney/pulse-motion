@@ -60,7 +60,7 @@ test('realisation.test.js › chaque seuil cité suivi de sa clé est égal à s
   });
   assert.ok(n >= 15, `${n} seuils cités avec leur clé`);
   // Les clés du relecteur et du regard sont citées, comme le veut la spec (5.19).
-  for (const k of ['critiqueBarre', 'critiqueCorrige', 'critiqueIntouche', 'regardPas', 'regardDecalage', 'regardVignettesMax', 'telephoneLargeur', 'accrocheMax', 'sousTitreMin']) {
+  for (const k of ['critiqueBarre', 'critiqueScenesMax', 'critiqueIntouche', 'regardPas', 'regardDecalage', 'regardVignettesMax', 'telephoneLargeur', 'accrocheMax', 'sousTitreMin']) {
     assert.match(DOCTRINE, new RegExp(`\\(\`${k}\`\\)`), k);
   }
 });
