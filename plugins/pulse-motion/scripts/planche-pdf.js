@@ -109,7 +109,7 @@ async function planchePdf({ dossier, scenes = null, dossierStyles, navigateur = 
         const jpeg = await capture.capturerJpeg(t, { qualite: QUALITE, sansSousTitres: false });
         const nom = `${id}-${k + 1}.jpg`;
         ecrireAtomique(path.join(dossierPlanche, nom), jpeg);
-        fs.writeFileSync(path.join(travail, nom), jpeg);
+        fs.writeFileSync(path.join(travail, nom), Buffer.from(jpeg));
         fichiers.push(nom);
         images.push(`sortie/planche/${nom}`);
       }

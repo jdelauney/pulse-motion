@@ -31,7 +31,7 @@ Si ce bloc est vide ou contient une erreur, lancer `pulse-motion ffmpeg`.
 
 1. L'état ci-dessus : sans vidéo (`projet` faux), proposer `/pulse-motion:creer` et s'arrêter. « Node.js introuvable » : faire installer Node.js (LTS, https://nodejs.org) et s'arrêter.
 2. `pulse-motion controler . --complet` : s'il reste des **erreurs**, les dire simplement et proposer de les corriger d'abord (`/pulse-motion:retoucher`). Des **alertes** seules n'empêchent pas l'export : les mentionner en une phrase.
-3. Alerte `voix-provisoire` : la vidéo parle encore avec la voix de l'ordinateur. Proposer : « Enregistrer ma voix d'abord (Recommandé) » · « Exporter une version de travail avec la voix de l'ordinateur ». Sur « Enregistrer ma voix d'abord » : dire comment ouvrir le studio (bouton « Voix » de l'aperçu), puis s'arrêter sans exporter. Second choix seulement : `--avec-provisoire`.
+3. Alerte `voix-provisoire` : la vidéo parle encore avec la voix de l'ordinateur. Proposer : « Enregistrer ma voix d'abord (Recommandé) » · « Exporter une version de travail avec la voix de l'ordinateur ». Sur « Enregistrer ma voix d'abord » : dire comment ouvrir le studio (bouton « Voix » de l'aperçu, ou « j'enregistre la scène 1 »), puis s'arrêter sans exporter. Second choix seulement : `--avec-provisoire`.
 
 ## 2. Préparer l'export fidèle
 
@@ -55,6 +55,6 @@ Si ce bloc est vide ou contient une erreur, lancer `pulse-motion ffmpeg`.
 ## 4. Fin
 
 ✅ **Fait** : la vidéo « <titre> » est exportée en MP4 <usage en mots> (<durée>, <taille>, <son ou muette>, <fidèle ou dans le navigateur>).
-📄 **Fichiers** : chaque fichier de `fichiers`, son rôle en une ligne : la vidéo (brouillon : « version de travail, pas pour publier »), les sous-titres `.srt` et `.vtt` (à joindre sur YouTube), la couverture (miniature), les chapitres (à coller dans la description), les crédits (à vérifier avant de publier), et `sortie/<titre>.html` (s'ouvre sans connexion).
+📄 **Fichiers** : chaque fichier de `fichiers`, son rôle en une ligne : la vidéo (brouillon : « version de travail, pas pour publier »), les sous-titres `.srt` et `.vtt`, la couverture (miniature), les chapitres (à coller dans la description), les crédits (à vérifier avant de publier), et `sortie/<titre>.html` (s'ouvre sans connexion).
 🔎 **Vérifié** : <`faites` de `sortie/verification.json` en mots simples : images une à une, noirs, silences, niveau du son, couleurs, taille> ; <`relecture` du résumé : relue (prête, ou corrigée après relecture), avant les dernières retouches si `aJour` est faux ; `null` : non relue> ; le son a été mesuré, pas écouté. Ce qui n'a pas pu l'être (`nonFaites`) se dit avec sa raison (« sans ffmpeg, le niveau du son n'a pas été contrôlé »).
 ➡️ **Ensuite** : une retouche avec `/pulse-motion:retoucher`, puis un nouvel export.
