@@ -292,3 +292,13 @@ test('controler : etapes-trop-rapprochees et pointeur-hors-ecran dans la vidéo 
   assert.deepEqual(p.map((x) => [x.regle, x.gravite]), [['etapes-trop-rapprochees', 'erreur'], ['pointeur-hors-ecran', 'alerte']]);
   assert.match(p[0].message, /les gestes 1 et 2 du pointeur sont trop rapprochés \(0,4 s\) ; il faut au moins/);
 });
+
+test('exporter : un tutoriel dont le son n\'a que des clics s\'exporte (sonie intégrée non vérifiée sur des bruitages seuls)', { skip: (!navigateur && 'Chrome ou Edge introuvable') || (!require('../scripts/lib/ffmpeg.js').trouverFfmpeg().present && 'ffmpeg absent'), timeout: 300000 }, async () => {
+  const { spawnSync } = require('node:child_process');
+  const html = ecran('<i class="pm-clic" data-cible="#envoyer" data-start="1"></i><i class="pm-clic" data-cible="#liste" data-start="2.6"></i>');
+  const dir = projet([['s', html, 4]]);
+  const r = spawnSync(process.execPath, [path.join(RACINE, 'scripts', 'exporter.js'), dir, '--qualite', '540p'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  const v = JSON.parse(fs.readFileSync(path.join(dir, 'sortie', 'verification.json'), 'utf8'));
+  assert.ok(v.faites.includes('images') && !v.faites.includes('sonie'), `${r.stdout.slice(-400)} ${r.stderr.slice(-400)}`);
+  assert.ok(fs.existsSync(path.join(dir, 'sortie', 'essai-ecran.mp4')));
+});
