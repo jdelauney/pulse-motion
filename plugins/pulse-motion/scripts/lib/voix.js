@@ -193,8 +193,33 @@ function scenesProvisoires(projet, deroule) {
   return deroule.scenes.filter((s) => { const p = priseDeScene(projet, deroule, s); return p && p.provisoire; }).map((s) => s.id);
 }
 
-function messageProvisoire(ids) {
-  return `La vidéo contient encore la voix provisoire (scènes : ${ids.join(', ')}) : enregistrez votre voix, ou exportez quand même avec --avec-provisoire.`;
+/**
+ * Empreinte des prises provisoires (spec Retouches et ergonomie, 5.17) : liste des scènes et contenu de leurs fichiers ; un
+ * accord « voix provisoire » ne vaut que pour cette empreinte (il tombe dès qu'une prise provisoire change). -> texte | null
+ */
+function empreinteProvisoire(projet, deroule) {
+  const crypto = require('node:crypto');
+  const h = crypto.createHash('sha256');
+  let n = 0;
+  for (const s of deroule.scenes) {
+    const p = priseDeScene(projet, deroule, s);
+    if (!p || !p.provisoire) continue;
+    n++;
+    h.update(`${s.id}\n`);
+    try { h.update(fs.readFileSync(p.absolu)); } catch { h.update('absent'); }
+    h.update('\n');
+  }
+  return n ? h.digest('hex').slice(0, 32) : null;
 }
 
-module.exports = { minutageVideo, DOSSIER_VOIX, empreinte, priseDeScene, lireVoixScene, dureeVideo, ecrirePrise, transcrirePrise, scenesProvisoires, messageProvisoire };
+/** Nom d'un export fait avec la voix provisoire (5.17) : « <nom>-version-de-travail.mp4 », jamais le nom du définitif. */
+function nomVersionDeTravail(nom) {
+  return String(nom).replace(/(\.[a-z0-9]+)$/i, '-version-de-travail$1');
+}
+
+function messageProvisoire(ids) {
+  return `La vidéo contient encore la voix provisoire (scènes : ${ids.join(', ')}) : enregistrez votre voix d'abord, ou exportez une version de travail (un fichier à part, le MP4 définitif n'est pas touché).`;
+}
+
+module.exports = { minutageVideo, DOSSIER_VOIX, empreinte, priseDeScene, lireVoixScene, dureeVideo, ecrirePrise, transcrirePrise, scenesProvisoires, messageProvisoire,
+  empreinteProvisoire, nomVersionDeTravail };

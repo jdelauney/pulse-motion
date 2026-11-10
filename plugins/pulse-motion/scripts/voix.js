@@ -31,7 +31,13 @@ function ecrireDeroule(projet, fn) {
 
 function sceneAvecTexte(deroule, id) {
   const scene = deroule.scenes.find((s) => s.id === id);
-  if (!scene) return { message: `Scène inconnue : « ${id} » (scènes : ${deroule.scenes.map((s) => s.id).join(', ')}).` };
+  if (!scene) {
+    // Scènes proches d'abord (spec Retouches et ergonomie, 5.16) ; la liste entière si aucune ne ressemble.
+    const P = require('../moteur/proches.js');
+    const ids = deroule.scenes.map((s) => s.id);
+    const l = P.proches(id, ids);
+    return { message: `Scène inconnue : « ${id} »${l.length ? ` ; ${P.phrase(l)}` : ` (scènes : ${ids.join(', ')}).`}` };
+  }
   if (!scene.voix || !scene.voix.texte) return { message: `La scène « ${id} » n'a pas de texte de voix : écrire d'abord « voix.texte » dans le déroulé.` };
   return { scene };
 }
@@ -66,7 +72,7 @@ async function lireSon(fichier, outil) {
 }
 
 /** Enregistrement de toute la vidéo -> une prise par scène qui a un texte (transcription requise). */
-async function importerUnique({ projet, deroule, fichier, outil, whisper }) {
+async function importerUnique({ projet, deroule, fichier, outil, whisper, surScene = () => {} }) {
   if (!whisper || !whisper.pret) return { ok: false, message: 'Un enregistrement de toute la vidéo se découpe grâce à la transcription : installez-la (« pulse-motion whisper installer »), ou importez scène par scène (--scene <id>).' };
   const scenes = deroule.scenes.filter((s) => s.voix && s.voix.texte);
   if (!scenes.length) return { ok: false, message: 'Aucune scène n\'a de texte de voix (« voix.texte ») dans le déroulé.' };
@@ -98,6 +104,7 @@ async function importerUnique({ projet, deroule, fichier, outil, whisper }) {
   const douteuses = [];
   const gardees = [];
   for (let k = 0; k < scenes.length; k++) {
+    try { surScene(k + 1, scenes.length, scenes[k].id); } catch { /* suivi facultatif */ }
     const p = decoupe[k];
     const douteuse = p.reconnus < p.total / 2;
     // Une scène presque absente de l'enregistrement garde sa prise existante.
@@ -120,11 +127,11 @@ async function importerUnique({ projet, deroule, fichier, outil, whisper }) {
 }
 
 /** Une prise pour une scène ; sans scène, un enregistrement de toute la vidéo découpé. -> { ok, fichier?|scenes?, duree?, message? } */
-async function importerVoix({ dossier, fichier, scene: id, outil = F.trouverFfmpeg(), whisper = whisperParDefaut() }) {
+async function importerVoix({ dossier, fichier, scene: id, outil = F.trouverFfmpeg(), whisper = whisperParDefaut(), surScene = () => {} }) {
   const projet = path.resolve(dossier);
   const { deroule, erreurs } = lireDeroule(projet);
   if (erreurs.length) return { ok: false, message: `Le déroulé contient des erreurs : ${erreurs.join(' ')}` };
-  if (!id) return importerUnique({ projet, deroule, fichier, outil, whisper });
+  if (!id) return importerUnique({ projet, deroule, fichier, outil, whisper, surScene });
   const { scene, message } = sceneAvecTexte(deroule, id);
   if (!scene) return { ok: false, message };
   const lu = await lireSon(fichier, outil);
@@ -185,7 +192,7 @@ function ouvrirStudio({ dossier, scene: id, ouvrir }) {
 }
 
 /** Transcrit les prises (pas la voix provisoire) dont les mots ne viennent pas d'une transcription à jour. */
-async function transcrireProjet({ dossier, scene: id, whisper = whisperParDefaut() }) {
+async function transcrireProjet({ dossier, scene: id, whisper = whisperParDefaut(), surScene = () => {} }) {
   const projet = path.resolve(dossier);
   if (!whisper || !whisper.pret) return { ok: false, scenes: [], message: 'La transcription n\'est pas installée : « pulse-motion whisper installer » (une fois, avec votre accord).' };
   const { deroule, erreurs } = lireDeroule(projet);
@@ -194,7 +201,8 @@ async function transcrireProjet({ dossier, scene: id, whisper = whisperParDefaut
   if (id && !scenes.length) return { ok: false, scenes: [], message: `La scène « ${id} » n'a pas de prise de voix.` };
   const faites = [];
   const avertissements = [];
-  for (const s of scenes) {
+  for (const [k, s] of scenes.entries()) {
+    try { surScene(k + 1, scenes.length, s.id); } catch { /* suivi facultatif */ }
     const v = lireVoixScene(projet, deroule, s);
     if (!v || v.erreur || (v.approche === 'whisper' && !v.alertes.length)) continue;
     // Progrès sur la sortie d'erreur (la sortie standard reste un JSON seul).
@@ -273,16 +281,22 @@ if (require.main === module) {
   const valeur = (o) => { const i = args.indexOf(o); return i >= 0 ? args[i + 1] : undefined; };
   const libres = args.filter((a, i) => !a.startsWith('--') && args[i - 1] !== '--scene');
   let travail;
-  if (action === 'importer' && libres[0]) travail = importerVoix({ dossier: libres[1] || '.', fichier: libres[0], scene: valeur('--scene') });
+  // Avancement par scène (spec Retouches et ergonomie, 5.2) : import d'un enregistrement entier, transcription.
+  const Av = require('./lib/avancement.js');
+  const dossierAvancement = path.resolve((action === 'importer' ? libres[1] : libres[0]) || '.');
+  const avancement = ['importer', 'transcrire'].includes(action)
+    ? Av.suivre(dossierAvancement, action === 'importer' ? { travail: 'voix', libelle: 'Import de la voix' } : { travail: 'transcription', libelle: 'Transcription des voix' }) : null;
+  const surScene = avancement ? (k, n, id) => avancement(k - 1, n, `scène « ${id} » (${k} sur ${n})`) : () => {};
+  if (action === 'importer' && libres[0]) travail = importerVoix({ dossier: libres[1] || '.', fichier: libres[0], scene: valeur('--scene'), surScene });
   else if (action === 'provisoire') travail = voixProvisoire({ dossier: libres[0] || '.', scene: valeur('--scene') });
-  else if (action === 'transcrire') travail = transcrireProjet({ dossier: libres[0] || '.', scene: valeur('--scene') });
+  else if (action === 'transcrire') travail = transcrireProjet({ dossier: libres[0] || '.', scene: valeur('--scene'), surScene });
   else if (action === 'studio' && libres[0]) travail = Promise.resolve(ouvrirStudio({ dossier: libres[1] || '.', scene: libres[0] }));
   else {
     console.error('Usage : pulse-motion voix importer <fichier> [--scene <id>] [dossier] | provisoire [--scene <id>] [dossier] | transcrire [--scene <id>] [dossier] | studio <scène> [dossier]');
     process.exit(2);
   }
-  travail.then((r) => { console.log(JSON.stringify(r, null, 2)); process.exit(r.ok ? 0 : 1); },
-    (e) => { console.log(JSON.stringify({ ok: false, message: e.message }, null, 2)); process.exit(1); });
+  travail.then((r) => { if (avancement) avancement.terminer(r.ok, r.ok ? undefined : r.message); console.log(JSON.stringify(r, null, 2)); process.exit(r.ok ? 0 : 1); },
+    (e) => { if (avancement) avancement.terminer(false, e.message); console.log(JSON.stringify({ ok: false, message: e.message }, null, 2)); process.exit(1); });
 }
 
 module.exports = { importerVoix, enregistrerPrise, ecrireDeroule, voixProvisoire, transcrireProjet, ouvrirStudio, synthetiserSysteme };

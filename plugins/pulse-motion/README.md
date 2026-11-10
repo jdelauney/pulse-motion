@@ -15,15 +15,15 @@ Fermez puis relancez Claude Code.
 
 ## Ce que vous pouvez demander
 
-Tout se fait par une demande dans Claude Code, jamais dans un terminal. Créer une vidéo ou un style passe par une commande commençant par `/` ; pour le reste, une phrase suffit.
+Tout se fait par une demande dans Claude Code, jamais dans un terminal : une phrase suffit, ou la commande commençant par `/`. Pulse Motion ne crée une vidéo ou un style que si vous le demandez.
 
 | Commande | Comment la lancer | Exemples de demandes |
 |---|---|---|
-| `/pulse-motion:creer` | avec le `/` | `/pulse-motion:creer Les règles d'hygiène en cuisine` |
-| `/pulse-motion:style` | avec le `/` | `/pulse-motion:style Un style papercraft aux couleurs pop-art` |
+| `/pulse-motion:creer` | une phrase, ou avec le `/` | « fais-moi une vidéo d'une minute sur la chaîne du froid », « que sait faire Pulse Motion ? », `/pulse-motion:creer Les règles d'hygiène en cuisine` |
+| `/pulse-motion:style` | une phrase, ou avec le `/` | « crée mon propre style, sombre avec des touches néon », `/pulse-motion:style Un style papercraft aux couleurs pop-art` |
 | `/pulse-motion:retoucher` | une phrase, ou avec le `/` | « ralentis la scène 3 », « baisse la musique », « ouvre l'aperçu », « fais une planche des scènes 2 et 3 », « note ma vidéo », « enregistre ma charte », « annule », « un pop-in sur le titre », « mets un #006 sur le titre » (dictionnaire de mouvements : « quels mouvements existent ? ») |
 | `/pulse-motion:voix` | une phrase, ou avec le `/` | « j'enregistre la scène 2 », « j'ai un fichier de ma voix », « mets une voix provisoire », « recale les mots », « fais-moi écouter la musique » |
-| `/pulse-motion:exporter` | une phrase, ou avec le `/` | « exporte ma vidéo », « exporte-la pour LinkedIn », « une version légère pour l'envoyer par courriel », « un GIF de la scène 3 », « un PDF des scènes » |
+| `/pulse-motion:exporter` | une phrase, ou avec le `/` | « exporte ma vidéo », « exporte-la pour LinkedIn », « une version légère pour l'envoyer par courriel », « un GIF de la scène 3 », « un PDF des scènes », « une version à fond transparent pour mon montage » |
 | `/pulse-motion:reprendre` | une phrase, ou avec le `/` | « où en est ma vidéo ? », « on reprend » |
 | `/pulse-motion:outils` | une phrase, ou avec le `/` | « vérifie mon ordinateur », « installe la transcription », « installe ffmpeg » |
 | `/pulse-motion:dessiner-personnage` | une phrase, ou avec le `/` | « dessine-moi un cuisinier rondouillard avec une toque », « change sa tenue en rouge » |
@@ -45,7 +45,7 @@ Tout se fait par une demande dans Claude Code, jamais dans un terminal. Créer u
 | `skills/` | `creer`, `style`, `retoucher`, `voix`, `exporter`, `reprendre`, `outils`, `dessiner-personnage`, `decouper-personnage`, `animer-personnage`, `atelier-personnages`, `atelier-particules` (voir « Ce que vous pouvez demander ») |
 | `agents/` | `animateur` : écrit une scène ; `critique` : relit la vidéo d'après ses planches, comme un spectateur qui ne l'a pas vue fabriquer |
 | `moteur/` | Moteur JavaScript inclus dans chaque page : courbes, minutage, transitions, horloge déterministe, lecteur, débordements ; capture et export MP4 (servis par l'aperçu seulement) |
-| `scripts/` | Assemblage, aperçu, contrôles (mise en page, réalisation, vérité des chiffres, images figées, son mesuré), état, historique, export par usage (`scripts/usages.json` : web, réseaux, présentation, master, courriel, brouillon) et vérifié (`sortie/verification.json`), livrables joints (couverture, chapitres, crédits), extraits, GIF, cadre de téléphone et PDF des planches ; `pm.js` derrière la commande `pulse-motion` (`bin/`) |
+| `scripts/` | Assemblage, aperçu, contrôles (mise en page, réalisation, vérité des chiffres, images figées, son mesuré), état, historique, export par usage (`scripts/usages.json` : web, réseaux, présentation, master, courriel, brouillon) et vérifié (`sortie/verification.json`), livrables joints (couverture, chapitres, crédits), extraits, GIF, cadre de téléphone, PDF des planches, flou de mouvement du master, fond transparent (MOV ou WebM) et vidéo en boucle ; `pm.js` derrière la commande `pulse-motion` (`bin/`) |
 | `vendor/` | Mediabunny (MPL-2.0), assemblage du MP4 ; voir `vendor/mediabunny/PROVENANCE.md` |
 | `styles/` | Styles : CSS, charte, polices, scènes toutes faites (v1 : `clair-pedagogique`) |
 | `personnages/` | Personnages animés : poses, mouvements, expressions, gabarits et le dessin `touffu` (bibliothèque du plugin ; une vidéo peut avoir les siens) |

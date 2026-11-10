@@ -253,7 +253,12 @@ async function planchesRegard({ dossier, scenes = null, dossierStyles, navigateu
   if (erreurs.length) return { ok: false, message: `Le déroulé contient des erreurs : ${erreurs.join(' ')}` };
   const ids = scenes && scenes.length ? scenes : deroule.scenes.map((s) => s.id);
   const inconnues = ids.filter((id) => !deroule.scenes.some((s) => s.id === id));
-  if (inconnues.length) return { ok: false, message: `Scène inconnue : ${inconnues.join(', ')}.` };
+  if (inconnues.length) {
+    // Scènes proches (spec Retouches et ergonomie, 5.16).
+    const P = require('../moteur/proches.js');
+    const l = P.proches(inconnues[0], deroule.scenes.map((s) => s.id));
+    return { ok: false, message: `Scène inconnue : ${inconnues.join(', ')}${l.length ? ` ; ${P.phrase(l)}` : '.'}` };
+  }
   const assemblage = assembler({ dossier: projet, dossierStyles, ecrire: false });
   if (!assemblage.ok) return { ok: false, message: `La page ne s'assemble pas : ${assemblage.erreurs.map((e) => e.message).join(' ')}` };
   if (!navigateur) return { ok: false, message: 'Chrome ou Edge introuvable : les images de la vidéo n\'ont pas pu être regardées.' };

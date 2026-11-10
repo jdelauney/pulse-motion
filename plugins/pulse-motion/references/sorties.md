@@ -18,6 +18,8 @@
 | « en GIF » | `--gif`, avec `--scene` ou `--plage` (la vidéo entière seulement si elle dure 20 s au plus) ; « plus grand » : `--largeur 1280` ; pour le courriel : `--pour courriel` (640 px) | `sortie/<titre>-<id>.gif`, en boucle, **sans son** (le dire) ; 20 s au plus ; ffmpeg requis |
 | « dans un téléphone », « une maquette pour la présentation » | `--cadre telephone` (vidéo 9:16 seulement ; `--cadre-format 1:1` pour du carré) | `sortie/<titre>-telephone.mp4` : la vidéo dans un téléphone générique, au fond de la charte |
 | « un PDF des scènes pour le client », « à imprimer » | `pulse-motion planche . --pdf` (ou `planche . <ids> --pdf`) | `sortie/<titre>-planches.pdf` : A4 paysage, deux scènes par page, trois images et le texte dit ; jamais ffmpeg ; proposé après un export `presentation` |
+| « à incruster dans mon montage », « fond transparent » | `--transparent` (pour le montage) ; « pour le web » : `--transparent webm` ; avec `--scene` ou `--plage` si besoin. Pas pour le courriel, une taille visée, le GIF ni le cadre | `sortie/<titre>-transparent.mov` (Premiere, DaVinci Resolve, Final Cut ; fichier lourd, le dire) ou `.webm` ; ffmpeg requis pour le montage. Une scène au fond plein est refusée avec son nom : proposer de retirer son fond (retouche, sélecteur `.pm-transparent` du style) |
+| « sans flou », « plus net » (master) ; « avec du flou de mouvement » | `--flou non` ; `--flou oui` (jamais en GIF, version de travail ni fond transparent) | Le master a par défaut un flou sur les passages rapides seulement (textes à lire jamais floutés) ; l'aperçu reste net |
 | « un texte pour LinkedIn », « le message pour l'envoyer » | Aucune option : écrire `sortie/<titre>-textes.md` d'après `pulse-motion reference accompagnement` | Publication, courriel ou description YouTube, sans chiffre absent de la vidéo |
 | « la musique vient de Pixabay », « le logo est à nous » | `pulse-motion credits . noter <fichier> "<source>" "<licence>" ["<auteur>"]` (fichier de `assets/`) | Crédits complétés au prochain export ; `creditsAPreciser` du résultat liste ce qui manque |
 
@@ -29,6 +31,7 @@ L'usage s'applique aux extraits (`--pour courriel --scene 3` : la scène sous 10
 |---|---|
 | « ajoute des chapitres » | `scenes[].chapitre` (60 caractères au plus) : proposer un chapitre par scène titrée, faire valider ; sans chapitre sur la première scène, le titre de la vidéo ouvre la liste à 0:00. YouTube les montre à partir de 3 chapitres, de 10 s au moins chacun ; intégrés au MP4 seulement avec ffmpeg |
 | « pour TikTok », « pour les Shorts », « pour les Reels » | `format.plateforme` (`tiktok`, `shorts`, `reels`, `toutes`), en 9:16 seulement : le contrôle vérifie les zones de l'application, les sous-titres passent au-dessus de sa bande du bas, et `pm-dans-zone` met un bloc dans la zone sûre ; touche Z de l'aperçu pour la voir |
+| « fais-la tourner en boucle », « en boucle parfaite » | `boucle: true` : le lecteur reprend au début, la musique perd ses fondus et sa fin rejoint son début ; récrire la dernière scène pour qu'elle finisse sur l'image de départ (`pulse-motion reference rythme`, « Finir sur l'image de départ ») ; alertes `boucle-jointure` et `boucle-mesure` |
 | « prends cette image pour la miniature », « la couverture à 2 s de la scène 3 » | `couverture` : `{ "scene": "<id>", "instant": 2 }` (secondes depuis le début de la scène) ; sinon la première scène à 95 % |
 
 ## La personne dit… on fait…
@@ -40,7 +43,7 @@ L'usage s'applique aux extraits (`--pour courriel --scene 3` : la scène sous 10
 | « Ça saccade » | Chercher d'abord un mouvement trop rapide (contrôle `mouvement-rapide`) ; sinon export à 60 images par seconde | — |
 | « En vertical », « pour les stories » | Retouche : format 9:16 dans le déroulé, scènes recomposées (empilées) | Déclinaison automatique : décision de la spec S9 |
 | « En carré », « pour le fil LinkedIn » | Retouche : format 1:1 ou 4:5 | Idem |
-| « Fond transparent », « pour l'incruster dans mon montage » | Pas encore possible ; le dire | Vidéo à couche transparente (spec S5) |
+| « Fond transparent », « pour l'incruster dans mon montage » | `--transparent` (ou `--transparent webm` pour le web) ; ffmpeg requis pour le montage | — |
 | « Pour mon monteur », « sans perte » | Usage `master` (`--pour master`) : la meilleure qualité | — |
 | « Un GIF » | `--gif` avec une scène ou un passage de 20 s au plus (ffmpeg requis) ; sans ffmpeg : proposer de l'installer, ou un MP4 court et muet que la plupart des messageries lisent en boucle | GIF sans ffmpeg (spec S5) |
 | « Une image pour la miniature » | La couverture jointe à l'export (`sortie/<titre>-couverture.jpg`) ; une autre image : retouche du champ `couverture` | — |
@@ -65,7 +68,7 @@ Un GIF n'est **pas** plus léger qu'un MP4 : à durée égale, il est souvent pl
 ## Première et dernière images
 
 - **Première image** : les plateformes et les logiciels la montrent souvent avant la lecture. Elle doit au moins montrer le fond et le décor du style. Le titre peut entrer très tôt (avant 0,5 s) pour qu'une image fixe dise déjà le sujet.
-- **Dernière image** : le contrôle demande déjà 0,5 s d'image stable (`pause-finale`). Pas de fondu au noir, pas de retour à la première image (la vidéo n'est pas une boucle, sauf demande).
+- **Dernière image** : le contrôle demande déjà 0,5 s d'image stable (`pause-finale`). Pas de fondu au noir, pas de retour à la première image (la vidéo n'est pas une boucle, sauf demande : `boucle: true`).
 
 ## Planches pour une présentation ou un imprimé
 
@@ -85,5 +88,5 @@ Pour une présentation de plusieurs pages, faire valider deux pages d'abord (la 
 
 ## À venir
 
-- GIF sans ffmpeg, dans le navigateur ; vidéo à couche transparente ; vidéo en boucle parfaite ; flou de mouvement du master (spec S5).
+- GIF sans ffmpeg, dans le navigateur (spec S5).
 - Fichier de présentation modifiable (une image ou une vidéo par diapositive) : à étudier plus tard, après le PDF (spec S5).

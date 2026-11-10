@@ -47,7 +47,9 @@ test('rythme 2 : la voix joue en temps réel, l\'ancre tombe sur le mot dit ; du
 test('ancre introuvable ou scène sans voix : erreur ancre-mot-introuvable avec les mots disponibles', () => {
   const m = calculerMinutage([{ id: 'a', duree: 4, voix }, { id: 'b', duree: 2 }], { a: [el('x', 'mot:chaud')], b: [el('y', 'mot:froid')] });
   assert.deepEqual(m.erreurs.map((e) => e.regle), ['ancre-mot-introuvable', 'ancre-mot-introuvable']);
-  assert.match(m.erreurs[0].message, /« chaud ».*pourquoi, le, froid, peut-être/);
+  // Les mots dits : dans la consigne (spec Retouches et ergonomie, 5.16), le message ne propose que les plus proches.
+  assert.match(m.erreurs[0].message, /« chaud » n.est pas dit par la voix/);
+  assert.match(m.erreurs[0].consigne, /pourquoi, le, froid, peut-être/);
   assert.match(m.erreurs[1].message, /n'a pas de voix/);
 });
 

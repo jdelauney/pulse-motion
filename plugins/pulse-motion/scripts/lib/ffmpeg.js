@@ -301,7 +301,7 @@ async function sonder({ ffprobe, fichier, compter = 'images' }) {
     vignette: flux.some(image),
     chapitres: (j.chapters || []).length,
     // Couche transparente : format de pixels avec « a » (yuva420p, rgba…), ou alpha_mode du VP9 (jalon 4).
-    alpha: Boolean(v && (/^(yuva|rgba|bgra|argb|abgr|gbrap|ya)/.test(String(v.pix_fmt || '')) || (v.tags && v.tags.alpha_mode === '1'))),
+    alpha: Boolean(v && (/^(yuva|rgba|bgra|argb|abgr|gbrap|ya)/.test(String(v.pix_fmt || '')) || (v.tags && String(v.tags.alpha_mode || v.tags.ALPHA_MODE || '') === '1'))),
     octets: Number((j.format && j.format.size) || 0),
   };
 }
@@ -315,7 +315,8 @@ function controlesSortie(sonde, attendu = {}) {
   const U = require('./usages.js');
   const defauts = [];
   const c = sonde.couleurs || {};
-  if (attendu.etiquettes && !(c.espace === 'bt709' && c.primaires === 'bt709' && c.transfert === 'bt709' && c.plage === 'tv')) {
+  // etiquettes « sans-plage » : ProRes n'écrit pas la plage (toujours limitée), seulement la matrice, les primaires et le transfert.
+  if (attendu.etiquettes && !(c.espace === 'bt709' && c.primaires === 'bt709' && c.transfert === 'bt709' && (c.plage === 'tv' || attendu.etiquettes === 'sans-plage'))) {
     defauts.push('Les couleurs de la vidéo ne sont pas marquées comme il faut (certains lecteurs les montreraient fausses) : l\'export s\'arrête, rien n\'est écrit.');
   }
   if (attendu.octetsMax && sonde.octets > attendu.octetsMax) {
@@ -328,11 +329,12 @@ function controlesSortie(sonde, attendu = {}) {
   return defauts;
 }
 
-/** Image de la vidéo à l'instant t, en PNG ; taille : [largeur, hauteur] pour la comparer à une capture d'une autre taille. */
-async function extraireImage({ ffmpeg, fichier, t, taille }) {
+/** Image de la vidéo à l'instant t, en PNG ; taille : [largeur, hauteur] pour la comparer à une capture d'une autre taille ; decodeur :
+ *  « libvpx-vp9 » pour lire la couche alpha d'un WebM (le décodeur intégré l'ignore). */
+async function extraireImage({ ffmpeg, fichier, t, taille, decodeur = null, pixels = null }) {
   const filtre = taille ? ['-vf', `scale=${taille[0]}:${taille[1]}:flags=bicubic`] : [];
   // t null : une image fixe (JPEG), lue sans -ss (qui n'en rendrait aucune).
-  const r = await lancer(ffmpeg, ['-hide_banner', '-loglevel', 'error', ...(t === null || t === undefined ? [] : ['-ss', String(t)]), '-i', fichier, '-frames:v', '1', ...filtre, '-f', 'image2pipe', '-c:v', 'png', '-']);
+  const r = await lancer(ffmpeg, ['-hide_banner', '-loglevel', 'error', ...(t === null || t === undefined ? [] : ['-ss', String(t)]), ...(decodeur ? ['-c:v', decodeur] : []), '-i', fichier, '-frames:v', '1', ...filtre, ...(pixels ? ['-pix_fmt', pixels] : []), '-f', 'image2pipe', '-c:v', 'png', '-']);
   if (r.code !== 0 || !r.sortie.length) throw new Error(`ffmpeg n'a pas pu lire une image de la vidéo (${derniereLigne(r.erreurs)})`);
   return r.sortie;
 }
@@ -340,14 +342,66 @@ async function extraireImage({ ffmpeg, fichier, t, taille }) {
 /** Piste son de la vidéo : WAV déjà mixé et normalisé par la page -> AAC (debit kbit/s, 192 par défaut), 48 kHz, stéréo, à
  *  la durée exacte (complétée par du silence ou coupée). debut : tranche du mixage qui commence là (extrait, spec Rendu et
  *  export 5.12) ; fondu : fondus d'entrée et de sortie, en secondes. */
-async function encoderSon({ ffmpeg, wav, duree, sortie, signal, debit = 192, debut = 0, fondu = 0 }) {
+async function encoderSon({ ffmpeg, wav, duree, sortie, signal, debit = 192, debut = 0, fondu = 0, codec = 'aac' }) {
   const f = [];
   if (debut > 0) f.push(`atrim=start=${debut}`, 'asetpts=PTS-STARTPTS');
   f.push('apad', `atrim=0:${duree}`);
   if (fondu > 0) f.push(`afade=t=in:st=0:d=${fondu}`, `afade=t=out:st=${Math.max(0, duree - fondu)}:d=${fondu}`);
   const r = await lancer(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-i', wav, '-vn', '-af', f.join(','),
-    '-ar', '48000', '-ac', '2', '-c:a', 'aac', '-b:a', `${debit}k`, '-t', String(duree), '-f', 'mp4', sortie], { signal });
+    '-ar', '48000', '-ac', '2', ...SONS[codec](debit), '-t', String(duree), sortie], { signal });
   if (r.code !== 0) throw new Error(`son illisible (${derniereLigne(r.erreurs) || `code ${r.code}`})`);
+}
+
+/** Codecs de la piste son : AAC dans un MP4 (vidéos), PCM 16 bits dans un MOV et Opus dans un WebM (fond transparent, 5.14). */
+const SONS = {
+  aac: (debit) => ['-c:a', 'aac', '-b:a', `${debit}k`, '-f', 'mp4'],
+  pcm: () => ['-c:a', 'pcm_s16le', '-f', 'mov'],
+  opus: (debit) => ['-c:a', 'libopus', '-b:a', `${Math.min(256, debit)}k`, '-f', 'webm'],
+};
+
+/**
+ * Vidéo à fond transparent (spec Rendu et export, 5.14) : arguments vidéo de chaque format. mov : ProRes 4444 avec couche alpha
+ * (montage : Premiere, DaVinci Resolve, Final Cut) ; webm : VP9 à couche alpha (web). Étiquettes BT.709 comme les MP4. Valeurs de
+ * take-one (scripts/export.mjs, ALPHA=1, MIT, © Tal Siach) et d'explainroo (src/ffmpeg.js, MIT, © Vincent Schmalbach).
+ */
+const TRANSPARENTS = {
+  mov: { pixels: 'yuva444p10le', args: ['-c:v', 'prores_ks', '-profile:v', '4444', '-pix_fmt', 'yuva444p10le', '-vendor', 'apl0'], conteneur: 'mov', son: 'pcm', codec: 'prores' },
+  webm: { pixels: 'yuva420p', args: ['-c:v', 'libvpx-vp9', '-pix_fmt', 'yuva420p', '-crf', '24', '-b:v', '0', '-auto-alt-ref', '0', '-row-mt', '1', '-metadata:s:v:0', 'alpha_mode=1'],
+    conteneur: 'webm', son: 'opus', codec: 'vp9' },
+};
+
+/** Images PNG à couche alpha (itérable asynchrone) -> segment au format du fond transparent (mov ou webm). */
+async function encoderTransparent({ ffmpeg, sortie, ips, format, images, signal }) {
+  const t = TRANSPARENTS[format];
+  const args = ['-y', '-hide_banner', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(ips), '-c:v', 'png', '-i', '-',
+    '-vf', `scale=out_color_matrix=bt709:out_range=tv,format=${t.pixels},setparams=color_primaries=bt709:color_trc=bt709:colorspace=bt709:range=tv`, ...t.args, '-r', String(ips), ...ETIQUETTES, '-f', t.conteneur, sortie];
+  const r = await lancer(ffmpeg, args, {
+    signal,
+    entree: async (stdin) => {
+      stdin.on('error', () => { /* ffmpeg arrêté : sa sortie d'erreur dira pourquoi */ });
+      for await (const png of images) {
+        if (signal && signal.aborted) break;
+        if (!stdin.write(png)) await new Promise((r2) => stdin.once('drain', r2));
+      }
+      stdin.end();
+    },
+  });
+  if (r.code !== 0) throw new Error(`ffmpeg n'a pas pu encoder la vidéo à fond transparent (${derniereLigne(r.erreurs) || `code ${r.code}`})`);
+}
+
+/** Segments d'une vidéo à fond transparent -> un fichier, sans réencodage, avec la piste son (PCM ou Opus) et le titre. */
+async function assemblerTransparent({ ffmpeg, segments, sortie, audio = null, format, titre = null }) {
+  const t = TRANSPARENTS[format];
+  const liste = `${sortie}.liste.txt`;
+  fs.writeFileSync(liste, segments.map((x) => `file '${path.resolve(x).replace(/\\/g, '/').replace(/'/g, "'\\''")}'`).join('\n'), 'utf8');
+  try {
+    const son = audio ? ['-i', audio, '-map', '0:v:0', '-map', '1:a:0'] : ['-map', '0:v:0'];
+    const r = await lancer(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', liste, ...son, '-c', 'copy',
+      ...(titre ? ['-metadata', `title=${titre}`] : []), ...(t.conteneur === 'mov' ? ['-movflags', '+faststart'] : []), '-f', t.conteneur, sortie]);
+    if (r.code !== 0) throw new Error(`ffmpeg n'a pas pu assembler la vidéo à fond transparent (${derniereLigne(r.erreurs)})`);
+  } finally {
+    fs.rmSync(liste, { force: true });
+  }
 }
 
 /** Prise WAV -> Opus 48 kbit/s mono (Ogg), plus léger à embarquer dans la page. */
@@ -539,5 +593,5 @@ function ecartImages(a, b) {
 module.exports = {
   lireVersion, commandeSure, commandeInstallation, trouverFfmpeg, MINIMUM, encoderSegment, reencoderSegment, transcoderDeuxPasses, sonder,
   extraireImage, assemblerSegments, ecartImages, encoderSon, mesurerSonie, verifierFichier, encoderOpus, importerAudio, argsVideo,
-  detecterEncodeurs, controlesSortie, lancer, reduireVignette, transcoderExtrait, encoderGif, filtrePassage, LARGEUR_STATS, ETIQUETTES, VERS_BT709, MATERIEL, ORDRE_MATERIEL,
+  detecterEncodeurs, controlesSortie, lancer, reduireVignette, transcoderExtrait, encoderGif, filtrePassage, encoderTransparent, assemblerTransparent, TRANSPARENTS, SONS, LARGEUR_STATS, ETIQUETTES, VERS_BT709, MATERIEL, ORDRE_MATERIEL,
 };

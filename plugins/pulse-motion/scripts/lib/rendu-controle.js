@@ -151,7 +151,7 @@ const PREPARER_FLASHS = `(function () {
  * aides : autres pages de contrôle de la même vidéo ; les instants sont répartis entre toutes les pages, en morceaux
  * contigus (chaque capture attend une image du navigateur : plusieurs pages en même temps vont plus vite).
  */
-async function flashsParCDP(page, { plagesFlashs, aides = [] } = {}) {
+async function flashsParCDP(page, { plagesFlashs, aides = [], surScene = null } = {}) {
   const info = await page.evaluer(PREPARER_FLASHS);
   const pages = [page];
   for (const aide of aides) {
@@ -160,7 +160,17 @@ async function flashsParCDP(page, { plagesFlashs, aides = [] } = {}) {
   const S = seuilsFlashs(SEUILS);
   const echelle = S.largeurFlash / Math.max(1, info.l);
   const minutage = { scenes: info.scenes };
+  // Avancement par scène (spec Retouches et ergonomie, 5.2) : une scène est annoncée la première fois qu'une de ses images est
+  // relevée (les pages d'aide relèvent en même temps des morceaux différents).
+  const vues = new Set();
+  // Contrôle partiel : seules les scènes que touchent les plages comptent (une marge peut en toucher une voisine).
+  const nScenes = Math.max(1, plagesFlashs ? info.scenes.filter((sc) => plagesFlashs.some((p) => p[0] < sc.fin && p[1] > sc.debut)).length : info.scenes.length);
+  const borne = (k) => Math.min(k, nScenes);
   const relever = async (p, t) => {
+    if (surScene) {
+      const id = scenesVisibles(minutage, t)[0];
+      if (id && !vues.has(id)) { vues.add(id); try { surScene(borne(vues.size), nScenes, id); } catch { /* suivi facultatif */ } }
+    }
     await p.evaluer(`M.rendre(${Number(t)}), true`);
     const r = await p.envoyer('Page.captureScreenshot', { format: 'png', optimizeForSpeed: true, captureBeyondViewport: false,
       clip: { x: info.x, y: info.y, width: info.l, height: info.h, scale: echelle } });
@@ -186,6 +196,41 @@ async function flashsParCDP(page, { plagesFlashs, aides = [] } = {}) {
   }
 }
 
+/** Paires d'images voisines relevées pour la médiane des écarts de la jointure d'une boucle (5.18, point 4). */
+const PAIRES_BOUCLE = 24;
+
+/**
+ * Jointure d'une vidéo en boucle (spec Rendu et export, 5.18) : vignettes grises de 192 px des images 0, 1, N − 2, N − 1 et de
+ * paires d'images voisines réparties sur la vidéo (médiane des écarts), relevées par la page du contrôle ; alertes
+ * boucle-jointure (saut, vitesse, arrêt), rangées sur la dernière scène. -> [problèmes]
+ */
+async function jointureParCDP(page) {
+  const B = require('./boucle.js');
+  const info = await page.evaluer(PREPARER_FLASHS);
+  try {
+    const ips = info.ips || 30;
+    const total = Math.max(2, Math.round(info.duree * ips));
+    const echelle = B.LARGEUR / Math.max(1, info.l);
+    const vignette = async (n) => {
+      await page.evaluer(`M.rendre(${Number(Math.min(n, total - 1) / ips)}), true`);
+      const r = await page.envoyer('Page.captureScreenshot', { format: 'png', optimizeForSpeed: true, captureBeyondViewport: false,
+        clip: { x: info.x, y: info.y, width: info.l, height: info.h, scale: echelle } });
+      const image = decoderPNG(Buffer.from(r.data, 'base64'));
+      return vignetteGrise(image.pixel, image.largeur, image.hauteur);
+    };
+    const paires = [];
+    for (let j = 0; j < PAIRES_BOUCLE; j++) {
+      const n = Math.floor(((j + 0.5) * (total - 1)) / PAIRES_BOUCLE);
+      paires.push([await vignette(n), await vignette(n + 1)]);
+    }
+    const [premiere, deuxieme, avantDerniere, derniere] = [await vignette(0), await vignette(1), await vignette(total - 2), await vignette(total - 1)];
+    const derniereScene = info.scenes.length ? info.scenes[info.scenes.length - 1].id : null;
+    return B.problemesJointure(B.jointure({ premiere, deuxieme, avantDerniere, derniere, paires }), derniereScene);
+  } finally {
+    await page.evaluer(`(function () { var st = document.getElementById('pm-flashs-sans-sous-titres'); if (st) st.remove(); M.rendre(${Number(info.depart) || 0}); return true; })()`);
+  }
+}
+
 /**
  * Contrôle du rendu par la page de contrôle pilotée par le CDP (spec Rapidité 5.10) ; repli par la page qui renvoie son
  * résultat par POST (flashs mesurés dans la page) si le CDP échoue. -> { renduVerifie, problemes, ajustements, voie } ;
@@ -195,7 +240,7 @@ async function flashsParCDP(page, { plagesFlashs, aides = [] } = {}) {
  * les mesures de la page principale. genre : celui du déroulé (accroche et première image des réseaux). ecoute : { humeurs }
  * pour mesurer aussi le son (résultat dans son ; null : non mesuré).
  */
-async function controlerRendu({ html, ratio, duree, navigateur = trouverNavigateur(), scenes = null, plages = null, plagesFlashs = null, ouvrir, genre = null, ecoute = null, plateforme = null }) {
+async function controlerRendu({ html, ratio, duree, navigateur = trouverNavigateur(), scenes = null, plages = null, plagesFlashs = null, ouvrir, genre = null, ecoute = null, plateforme = null, surScene = null, boucle = false }) {
   if (!navigateur) return nonVerifie('rendu-non-verifie', 'Chrome ou Edge introuvable : la vidéo rendue (chevauchements, marges, textes qui débordent…) n\'a pas été vérifiée. Installez l\'un des deux, ou indiquez son chemin avec la variable PM_NAVIGATEUR.');
   const delai = (30 + 2 * (duree || 0)) * 1000;
   const introuvable = () => nonVerifie('rendu-impossible', `Navigateur introuvable à « ${navigateur} » : vérifiez la variable PM_NAVIGATEUR (ou retirez-la pour utiliser Chrome ou Edge installés). Seuls les contrôles sans navigateur ont été faits.`);
@@ -218,12 +263,15 @@ async function controlerRendu({ html, ratio, duree, navigateur = trouverNavigate
       if (erreur !== null) return impossible(erreur);
       const resultat = await page.evaluer(`(async function () {${scriptMesures({ ratio, scenes, plages, flashs: false, genre, ecoute, plateforme })}\n})()`);
       const pagesAide = (await aides).filter(Boolean).map((a) => a.page);
-      resultat.constats = resultat.constats.concat(await flashsParCDP(page, { plagesFlashs, aides: pagesAide }));
+      resultat.constats = resultat.constats.concat(await flashsParCDP(page, { plagesFlashs, aides: pagesAide, surScene }));
       // Son : rendu pendant les mesures et les flashs, attendu seulement maintenant.
       if (ecoute) resultat.ecoute = await page.evaluer('window.__pmEcoute');
       erreur = await erreurPage();
       if (erreur !== null) return impossible(erreur);
-      return { ...traduireResultat(resultat, scenes), voie: 'cdp' };
+      const traduit = traduireResultat(resultat, scenes);
+      // Boucle parfaite (5.18) : jointure mesurée sur la même page.
+      if (boucle) traduit.problemes = [...traduit.problemes, ...(await jointureParCDP(page))];
+      return { ...traduit, voie: 'cdp' };
     } catch (e) {
       return impossible(e.message);
     } finally {
@@ -247,4 +295,4 @@ function traduireFormesVides(liste) {
   return (liste || []).map((f) => ({ regle: 'obstacle-forme-vide', gravite: 'alerte', scene: f.scene, element: f.element, message: f.message }));
 }
 
-module.exports = { traduireConstats, traduireFormesVides, traduirePhotos, controlerRendu, flashsParCDP };
+module.exports = { traduireConstats, traduireFormesVides, traduirePhotos, controlerRendu, flashsParCDP, jointureParCDP };

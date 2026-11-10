@@ -148,3 +148,11 @@ body {
 #pm-affiche { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; border: 0; padding: 0; background: transparent; cursor: pointer; }
 #pm-affiche span { display: grid; place-items: center; width: 96px; height: 96px; border-radius: 50%; background: rgb(0 0 0 / 0.62); color: #fff; font: 40px/1 system-ui, sans-serif; box-shadow: 0 6px 24px rgb(0 0 0 / 0.35); padding-left: 6px; }
 #pm-affiche:hover span, #pm-affiche:focus-visible span { background: rgb(0 0 0 / 0.8); }
+
+/* Vidéo à fond transparent (spec Rendu et export, 5.14) : la page, la scène et les fonds des sections disparaissent ; seuls les
+   éléments restent. Un style retire ses décors de fond par des sélecteurs .pm-transparent. */
+html.pm-transparent, html.pm-transparent body, .pm-transparent #pm-scene, .pm-transparent #pm-scene > section[data-scene] {
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}

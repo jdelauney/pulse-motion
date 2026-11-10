@@ -210,6 +210,10 @@ function nomsStyles(dossierStyles) {
 function messageStyleInconnu(nom, dossierStyles) {
   const dispo = nomsStyles(dossierStyles);
   const exemple = NOM_STYLE.test(String(nom)) ? nom : '<nom>';
+  // Noms proches d'abord (spec Retouches et ergonomie, 5.16) ; la liste entière seulement si aucun ne ressemble.
+  const proches = require('../moteur/proches.js');
+  const liste = proches.proches(nom, dispo);
+  if (liste.length) return `Style « ${nom} » introuvable ; ${proches.phrase(liste)}`;
   return `Style « ${nom} » introuvable. Styles disponibles : ${dispo.join(', ') || 'aucun'}. Un style personnel se range dans ${path.join(dossierPersonnel(), 'styles', exemple)}.`;
 }
 

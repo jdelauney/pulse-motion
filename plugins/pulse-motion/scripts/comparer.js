@@ -75,7 +75,7 @@ ${lignes}</table></body></html>
 
 async function comparer({
   dossier, styles, scenes: idsDemandes = null, ouvrir = false, dossierStyles, navigateur,
-  exporter = exporterVideo, ouvrirFichier = ouvrirNavigateur,
+  exporter = exporterVideo, ouvrirFichier = ouvrirNavigateur, surStyle = () => {},
 }) {
   const debut = Date.now();
   const fin = (r) => ({ ...r, secondes: Math.round((Date.now() - debut) / 100) / 10 });
@@ -114,6 +114,8 @@ async function comparer({
       }
     });
     const { nombre } = navigateursParalleles({ taches: prepares.filter((p) => !p.erreur).length });
+    // Avancement par style (spec Retouches et ergonomie, 5.2) : annoncé quand chaque style a ses images.
+    let finis = 0;
     resultats = await enParallele(prepares.map((p) => async () => {
       if (p.erreur) return { st: p.st, erreur: p.erreur };
       let r;
@@ -121,6 +123,8 @@ async function comparer({
         r = await exporter({ dossier: p.prepare.dossier, planche: ids, dossierStyles: racinesStyles(dossierStyles), navigateur });
       } catch (e) {
         return { st: p.st, erreur: e.message };
+      } finally {
+        try { surStyle(++finis, prepares.length, p.st.nom); } catch { /* suivi facultatif */ }
       }
       if (!r.ok) return { st: p.st, erreur: r.message };
       const images = ids.map((id) => {
@@ -154,15 +158,20 @@ if (require.main === module) {
   const i = args.indexOf('--scenes');
   const positionnels = args.filter((a, k) => !a.startsWith('--') && args[k - 1] !== '--scenes');
   const [dossier = '.', liste = ''] = positionnels;
+  const avancement = require('./lib/avancement.js').suivre(path.resolve(dossier), { travail: 'comparaison', libelle: 'Comparaison des styles' });
+  avancement(0, Math.max(1, liste.split(',').filter(Boolean).length), 'images des styles en cours');
   comparer({
+    surStyle: (k, n, nom) => avancement(k, n, `style « ${nom} » prêt (${k} sur ${n})`),
     dossier,
     styles: liste.split(',').filter(Boolean),
     scenes: i >= 0 && args[i + 1] ? args[i + 1].split(',').filter(Boolean) : null,
     ouvrir: args.includes('--ouvrir'),
   }).then((r) => {
+    avancement.terminer(r.ok, r.ok ? undefined : r.message);
     console.log(JSON.stringify(r, null, 2));
     process.exit(r.ok ? 0 : 1);
   }, (e) => {
+    avancement.terminer(false, e.message);
     console.log(JSON.stringify({ ok: false, message: e.message }, null, 2));
     process.exit(1);
   });

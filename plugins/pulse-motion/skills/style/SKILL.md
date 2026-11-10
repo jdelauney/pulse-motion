@@ -1,7 +1,6 @@
 ---
-description: "Créer son propre style de vidéo (« un style papercraft aux couleurs pop-art ») : allure, couleurs, polices et mouvements, vérifiés avant usage"
+description: "Créer son propre style de vidéo, seulement sur demande expresse (« crée mon style », « un style à nos couleurs », « invente un style rétro »). Pour changer de style ou en essayer un : /pulse-motion:retoucher."
 argument-hint: "[le style voulu en une phrase]"
-disable-model-invocation: true
 allowed-tools: Bash(pulse-motion *) Read Glob Grep Write Edit Agent AskUserQuestion
 ---
 
@@ -14,7 +13,8 @@ Créer avec la personne un style à elle, rangé sur son ordinateur et proposé 
 - Parler simplement, en français, sans jargon ; ne jamais montrer de commande.
 - Questions avec `AskUserQuestion`, une à la fois, chacune avec des réponses proposées et une « (Recommandé) » en premier ; ne demander que ce qui ne se déduit pas de la description.
 - Lexique : avant d'expliquer un mot de l'outil, lire `pulse-motion lexique` ; un mot expliqué pour la première fois se note avec `pulse-motion lexique noter "<terme>" "<phrase>" "<comme…>" "/pulse-motion:style"`.
-- La commande échoue avec « node » introuvable (Node.js n'est pas installé) : expliquer qu'il faut installer Node.js en version LTS depuis https://nodejs.org, puis relancer Claude Code, et s'arrêter.
+- La commande échoue avec « Node.js introuvable » : proposer « Installer Node.js (Recommandé) » · « Je l'installe moi-même » (accord : `/pulse-motion:outils`, étape « Installer Node.js »), puis reprendre ; s'arrêter sinon.
+- Seulement pour un style à soi (changer de style : `/pulse-motion:retoucher`). Rien n'est écrit avant la première réponse.
 
 ## 1. Entretien d'identité
 

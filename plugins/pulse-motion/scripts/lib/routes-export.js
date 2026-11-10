@@ -27,7 +27,7 @@ const { slug } = require('../assembler.js');
 const { ecrireAtomique, ecrireJSON } = require('./fichiers.js');
 const { verifierNavigateur, resume } = require('./verification.js');
 const U = require('./usages.js');
-const { minutageVideo } = require('./voix.js');
+const { minutageVideo, scenesProvisoires, nomVersionDeTravail } = require('./voix.js');
 const L = require('./livrables.js');
 
 const RACINE = path.resolve(__dirname, '..', '..');
@@ -46,7 +46,7 @@ const NOM_IMAGE = /^\/_pm\/planche\/([a-z0-9-]+)\.png$/;
 const JPEG = Buffer.from([0xff, 0xd8, 0xff]);
 /** Noms des fichiers envoyés par la page (spec Rendu et export, 5.6) : usage, scène ou passage seul, extension. */
 const MOTIF_NOM = /^[a-z0-9-]+(-de-[0-9,]+s-a-[0-9,]+s)?\.(mp4|webm|gif)$/;
-const TYPE_DE_L_EXTENSION = { mp4: 'video/mp4', webm: 'video/webm', gif: 'image/gif' };
+const TYPE_DE_L_EXTENSION = { mp4: 'video/mp4', webm: 'video/webm', gif: 'image/gif', mov: 'video/quicktime' };
 
 /** Nom demandé par la page (en-tête X-PM-Nom), ou celui de l'usage web par défaut. -> { nom } | { erreur } */
 function nomDemande(req, titre) {
@@ -81,6 +81,8 @@ function typeEst(req, type) {
 /** creerRoutesExport(projet, { optionsAssemblage? }) -> (req, res, url) => bool (true si la route a été traitée) ;
  *  optionsAssemblage : celles de l'aperçu (styles), pour analyser la vidéo reçue comme elle a été assemblée. */
 function creerRoutesExport(projet, { optionsAssemblage = {} } = {}) {
+  /** Dossier du style de la vidéo (identite.json : flou refusé par un style « en pas »). */
+  const dossierStyleDe = (deroule) => { const st = require('../styles.js').trouverStyle(deroule.style, optionsAssemblage.dossierStyles); return st ? st.dossier : null; };
   const sortie = path.join(projet, 'sortie');
   const etatExport = path.join(sortie, 'export.json');
   const fichierStats = path.join(sortie, '.export', 'stats-navigateur.json');
@@ -184,6 +186,8 @@ function creerRoutesExport(projet, { optionsAssemblage = {} } = {}) {
             couleurs: relecture.couleurs && typeof relecture.couleurs === 'object' ? relecture.couleurs : undefined,
             fichiers: livrables.fichiers, creditsAPreciser: livrables.creditsAPreciser, alertes: livrables.alertes.length ? livrables.alertes : undefined,
             chapitresIntegres: false, extrait: extrait || undefined,
+            flou: relecture.flou && typeof relecture.flou === 'object' ? { applique: !!relecture.flou.applique, sousImages: nombre(relecture.flou.sousImages) || 1, imagesFloues: nombre(relecture.flou.imagesFloues) || 0 } : undefined,
+            transparent: relecture.transparent === true || undefined,
           });
           fini = true;
           envoiEnCours = false;
@@ -258,21 +262,30 @@ function creerRoutesExport(projet, { optionsAssemblage = {} } = {}) {
     if (erreurs && erreurs.length) return repondre(res, 400, { erreur: `Le déroulé contient des erreurs : ${erreurs.join(' ')}` });
     const p = (k) => { const v = url.searchParams.get(k); return v === null || v === '' ? undefined : v; };
     const minutage = minutageVideo(projet, deroule);
-    let u = U.resoudreUsage({ pour: p('pour'), qualite: p('qualite'), ips: p('ips'), tailleMax: p('taille'), deroule, duree: minutage.duree });
+    let u = U.resoudreUsage({ pour: p('pour'), qualite: p('qualite'), ips: p('ips'), tailleMax: p('taille'), flou: p('flou'), deroule, duree: minutage.duree });
     if (u.erreur) return repondre(res, 400, { erreur: u.erreur });
     // Extrait, passage seul, cadre de téléphone (spec Rendu et export, 5.12, 5.15) : images et nom du fichier.
-    const sortieDemandee = L.preparerSortie({ deroule, minutage, ips: u.ips, scene: p('scene'), plage: p('plage'), cadre: p('cadre'), cadreFormat: p('cadreFormat') });
+    // Fond transparent (5.14) : seulement « pour le web » (WebM à couche alpha) dans le navigateur ; le montage (mov) exige ffmpeg.
+    const transparent = p('transparent');
+    const sortieDemandee = L.preparerSortie({ deroule, minutage, ips: u.ips, scene: p('scene'), plage: p('plage'), cadre: p('cadre'), cadreFormat: p('cadreFormat'),
+      transparent, flou: u.flouForce, usage: u.usage, tailleMax: p('taille'), avecFfmpeg: false });
     if (sortieDemandee.erreur) return repondre(res, 400, { erreur: sortieDemandee.erreur });
     if (sortieDemandee.extrait && u.tailleMax) {
-      u = U.resoudreUsage({ pour: p('pour'), qualite: p('qualite'), ips: p('ips'), tailleMax: p('taille'), deroule, duree: sortieDemandee.duree });
+      u = U.resoudreUsage({ pour: p('pour'), qualite: p('qualite'), ips: p('ips'), tailleMax: p('taille'), flou: p('flou'), deroule, duree: sortieDemandee.duree });
       if (u.erreur) return repondre(res, 400, { erreur: u.erreur });
     }
     const base = slug(deroule.titre || 'video');
-    const special = sortieDemandee.extrait || sortieDemandee.cadre;
-    const nomFichier = special ? L.nomSortie(base, { usage: u.usage, scene: sortieDemandee.scene, plage: sortieDemandee.plage, cadre: sortieDemandee.cadre }) : U.nomFichier(base, u.usage);
+    const special = sortieDemandee.extrait || sortieDemandee.cadre || sortieDemandee.transparent;
+    const nomDefinitif = special ? L.nomSortie(base, { usage: u.usage, scene: sortieDemandee.scene, plage: sortieDemandee.plage, cadre: sortieDemandee.cadre,
+      transparent: Boolean(sortieDemandee.transparent), extension: sortieDemandee.transparent || 'mp4' }) : U.nomFichier(base, u.usage);
+    // Voix provisoire (spec Retouches et ergonomie, 5.17) : une version de travail, nommée à part.
+    const versionDeTravail = scenesProvisoires(projet, deroule).length > 0;
+    const nomFichier = versionDeTravail ? nomVersionDeTravail(nomDefinitif) : nomDefinitif;
+    // Flou (5.8) : jamais pour un fond transparent ni un style qui le refuse.
+    const flouApplique = Boolean(u.flou) && u.usage !== 'brouillon' && !sortieDemandee.transparent && U.flouDuStyle(dossierStyleDe(deroule));
     // Taille visée : ni couverture ni vignette (la reconversion ne la garderait pas), comme dans la voie fidèle.
     const couverture = !special && !u.tailleMax && (u.fichiers || []).includes('couverture');
-    return repondre(res, 200, { ...u, nomFichier, couverture, titre: deroule.titre, sortie: sortieDemandee });
+    return repondre(res, 200, { ...u, flou: flouApplique, nomFichier, versionDeTravail, couverture: couverture && !versionDeTravail, titre: deroule.titre, sortie: sortieDemandee });
   }
 
   async function terminerPlanche(req, res) {

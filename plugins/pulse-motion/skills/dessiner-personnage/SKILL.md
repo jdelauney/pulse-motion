@@ -14,7 +14,7 @@ Dessiner (ou retoucher) un personnage en pièces SVG qui s'anime avec les poses 
 - Le dessin se range dans le dossier d'une vidéo (`personnages/dessins/<nom>.json`). Sans vidéo dans ce dossier (`pulse-motion etat .` sans déroulé) : le dire simplement et proposer `/pulse-motion:creer`, puis s'arrêter.
 - Nom du dessin : minuscules, chiffres, tirets, tiré de la demande (`cuisinier`, `docteur-lunettes`).
 - Lexique : avant d'expliquer un mot de l'outil, lire `pulse-motion lexique` ; un mot expliqué pour la première fois se note avec `pulse-motion lexique noter "<terme>" "<phrase>" "<comme…>" "/pulse-motion:dessiner-personnage"`.
-- La commande échoue avec « node » introuvable (Node.js n'est pas installé) : expliquer qu'il faut installer Node.js en version LTS depuis https://nodejs.org, puis relancer Claude Code, et s'arrêter.
+- La commande échoue avec « Node.js introuvable » : proposer de l'installer (`/pulse-motion:outils`, étape « Installer Node.js »), et s'arrêter.
 
 ## 1. Préparer
 

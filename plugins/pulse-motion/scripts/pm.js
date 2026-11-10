@@ -3,17 +3,20 @@
 /* Pulse Motion – point d'entrée unique des skills (bin/pulse-motion).
  *
  *   pulse-motion etat <dossier> [--accord deroule|style|video] [--parcours rapide|accompagne]
+ *   pulse-motion rappel                 rappel de démarrage (crochet SessionStart, par le relais sh) : entrée JSON du crochet
  *   pulse-motion assembler <dossier>
  *   pulse-motion controler <dossier> [--sans-correction] [--sans-rendu] [--gpu] [--complet]   contrôle ; corrige seul les cas sûrs
  *   pulse-motion apercu <dossier> [--port 4321] [--ouvrir]
  *   pulse-motion atelier [<recette>] [--dossier <d>]   atelier des effets de particules (page de l'aperçu) : régler, enregistrer
  *   pulse-motion historique sauvegarder|annuler <dossier>
- *   pulse-motion exporter <dossier> [--pour web|reseaux|presentation|master|courriel|brouillon] [--taille-max <Mo>] [--qualite 1080p|720p|540p] [--ips 30|60] [--rapide] [--avec-provisoire] [--estimer] [--scene <id>[,<id>] | --plage <début>-<fin>] [--gif [--largeur 1280]] [--cadre telephone [--cadre-format 16:9|1:1]]   MP4 fidèle (ffmpeg) ou dans le navigateur ; extrait, passage seul, GIF, cadre de téléphone
+ *   pulse-motion exporter <dossier> [--pour web|reseaux|presentation|master|courriel|brouillon] [--taille-max <Mo>] [--qualite 1080p|720p|540p] [--ips 30|60] [--rapide] [--avec-provisoire] [--estimer] [--scene <id>[,<id>] | --plage <début>-<fin>] [--gif [--largeur 1280]] [--cadre telephone [--cadre-format 16:9|1:1]] [--flou oui|non] [--transparent [mov|webm]]   MP4 fidèle (ffmpeg) ou dans le navigateur ; extrait, passage seul, GIF, cadre de téléphone, flou de mouvement, fond transparent
  *   pulse-motion ffmpeg                  ffmpeg présent ? commande pour l'installer
  *   pulse-motion voix importer <fichier> [--scene <id>] [dossier] | provisoire [--scene <id>] [dossier] | transcrire [--scene <id>] [dossier] | studio <scène> [dossier]   voix d'une scène, voix provisoire, transcription, studio
  *   pulse-motion musique ecouter [dossier] [--ouvrir]   musique seule dans sortie/musique.wav (pour l'écouter)
  *   pulse-motion whisper [installer [--modele small]]   transcription des voix (Python, faster-whisper) : état ou installation
- *   pulse-motion outils                  état de l'ordinateur : Node, Chrome ou Edge, ffmpeg, Python, transcription, voix du système
+ *   pulse-motion outils [--plan]         état de l'ordinateur : Node, Chrome ou Edge, ffmpeg, Python, transcription, voix du système ;
+ *                                        --plan : ce qui manque, dans l'ordre où l'installer (un accord pour la liste)
+ *   pulse-motion avancement <dossier> [--suivre]   travail long en cours (contrôle, export, installation…) : une ligne, ou une par étape
  *   pulse-motion planche <dossier> [id1,id2] [--ouvrir]   images clés PNG dans sortie/planche/
  *   pulse-motion planche <dossier> [id1,id2] --pdf   PDF des planches (A4 paysage, deux scènes par page) : sortie/<titre>-planches.pdf
  *   pulse-motion credits <dossier> [noter <fichier> "<source>" "<licence>" ["<auteur>"]]   crédits de la vidéo ; source d'un fichier importé
@@ -45,6 +48,8 @@ const NOM_SUR = /^[a-z0-9-]+(\/[a-z0-9-]+)?$/;
 
 const SCRIPTS = {
   etat: 'etat.js',
+  rappel: 'rappel.js',
+  avancement: 'avancement.js',
   assembler: 'assembler.js',
   controler: 'controler.js',
   apercu: 'apercu.js',
@@ -170,7 +175,8 @@ function lancer(args) {
     '  ffmpeg                   ffmpeg présent ? commande pour l\'installer',
     '  voix importer <fichier> [--scene <id>] [dossier] | provisoire [--scene <id>] [dossier] | transcrire [--scene <id>] [dossier] | studio <scène> [dossier]',
     '  whisper [installer [--modele small]]   transcription des voix',
-    '  outils                   état de l\'ordinateur (ce qui est prêt, ce qui manque)',
+    '  outils [--plan]          état de l\'ordinateur (ce qui est prêt, ce qui manque) ; --plan : ce qu\'il faudrait installer',
+    '  avancement <dossier> [--suivre]   travail long en cours, une ligne (ou une par étape jusqu\'à la fin)',
     '  musique ecouter [dossier]   musique seule dans sortie/musique.wav',
     '  reference <nom>          scene <style> <nom>      effet <nom>      consignes <skill> [<section>]',
     '  mouvements liste [--categorie <id>] | chercher <mots…> | afficher <n° ou nom> | reference | choisir [--categorie <id>] [--ouvrir] [--delai <minutes>]   [--json]',

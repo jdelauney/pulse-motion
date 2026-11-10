@@ -5,7 +5,7 @@
  *   finalesParSeconde, date }] }, les 5 dernières. imagesParSeconde : images réellement capturées par seconde (segments repris
  *   exclus) ; finalesParSeconde : temps des phases finales (son, assemblage, vérification, seconde passe) par seconde de vidéo.
  * noterMesure(mesure, { dossier? }) ; lireMesures({ dossier? }) -> [mesure]
- * estimerSecondes({ voie, definition, ips, duree, usage?, mesures? }) -> { secondes, source: 'mesure' | 'usages' | 'defaut' }
+ * estimerSecondes({ voie, definition, ips, duree, usage?, flou?, mesures? }) -> { secondes, source: 'mesure' | 'usages' | 'defaut' }
  */
 const fs = require('node:fs');
 const path = require('node:path');
@@ -36,9 +36,12 @@ function noterMesure(mesure, { dossier = dossierPersonnel() } = {}) {
 
 const mediane = (v) => { const s = [...v].sort((a, b) => a - b); return s.length % 2 ? s[(s.length - 1) / 2] : (s[s.length / 2 - 1] + s[s.length / 2]) / 2; };
 
-function estimerSecondes({ voie = 'fidele', definition = '1080p', ips = 30, duree, usage = null, mesures = lireMesures() }) {
+function estimerSecondes({ voie = 'fidele', definition = '1080p', ips = 30, duree, usage = null, flou = false, mesures = lireMesures() }) {
   const images = Math.round(duree * ips);
-  const memes = mesures.filter((m) => m.voie === voie && m.definition === definition && m.ips === ips);
+  // Un export avec flou de mouvement (5.8) capture plus d'images : comparé d'abord aux exports qui en avaient aussi.
+  const memeFlou = (m) => Boolean(m.flou) === Boolean(flou);
+  const exacts = mesures.filter((m) => m.voie === voie && m.definition === definition && m.ips === ips);
+  const memes = exacts.filter(memeFlou).length ? exacts.filter(memeFlou) : exacts;
   const proches = memes.length ? memes : mesures.filter((m) => m.voie === voie);
   if (proches.length) {
     const vitesse = mediane(proches.map((m) => m.imagesParSeconde));

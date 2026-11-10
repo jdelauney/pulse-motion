@@ -14,7 +14,7 @@ Découper l'illustration fournie en pièces posées sur le squelette (une par os
 - La découpe se range dans le dossier d'une vidéo. Sans vidéo dans ce dossier : le dire et proposer `/pulse-motion:creer`, puis s'arrêter.
 - Un seul personnage par illustration, de profil de préférence (sinon de face) ; les autres éléments du fichier (décor, ombre au sol) vont dans « ignorer ».
 - Lexique : avant d'expliquer un mot de l'outil, lire `pulse-motion lexique` ; un mot expliqué pour la première fois se note avec `pulse-motion lexique noter "<terme>" "<phrase>" "<comme…>" "/pulse-motion:decouper-personnage"`.
-- La commande échoue avec « node » introuvable (Node.js n'est pas installé) : expliquer qu'il faut installer Node.js en version LTS depuis https://nodejs.org, puis relancer Claude Code, et s'arrêter.
+- La commande échoue avec « Node.js introuvable » : proposer de l'installer (`/pulse-motion:outils`, étape « Installer Node.js »), et s'arrêter.
 
 ## 1. Regarder l'illustration
 

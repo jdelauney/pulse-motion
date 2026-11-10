@@ -549,9 +549,7 @@ test('style_entretien_propose_les_directions : l\'entretien part des directions 
   assert.match(s, /avec leurs chiffres/);
 });
 
-test('descriptions inchangées : aucune description de compétence ne change dans ce plan (S10 5.13, point 7)', () => {
-  const attendues = {
-    creer: 'Créer une vidéo de motion design en quelques questions, valider son déroulé, puis la regarder dans le navigateur',
-  };
-  for (const [s, d] of Object.entries(attendues)) assert.match(lire('skills', s, 'SKILL.md'), new RegExp(`^description: ${d}$`, 'm'));
+test('descriptions : S10 n\'en change aucune ; seule S4 R1 change celle de creer, garde-fou en tête (S10 5.13 point 7, S4 5.5)', () => {
+  // S10 n'ajoute ni compétence ni commande ; la description de creer change avec S4 R1 (disable-model-invocation retiré).
+  assert.match(lire('skills', 'creer', 'SKILL.md'), /^description: "Créer une NOUVELLE vidéo Pulse Motion, seulement quand la personne le demande/m);
 });

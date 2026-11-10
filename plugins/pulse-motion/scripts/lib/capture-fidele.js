@@ -13,23 +13,26 @@ const { ouvrirPage } = require('./cdp.js');
  *    contre 1 sans eux). */
 const OPTIONS_CAPTURE = [];
 
-// Scène calée sur toute la zone d'affichage ; barre du lecteur et bandeau masqués ; temps de la page suivant t.
-const PREPARER = `(async function () {
+// Scène calée sur toute la zone d'affichage ; barre du lecteur et bandeau masqués ; temps de la page suivant t. Fond transparent
+// (spec Rendu et export, 5.14) : aucun fond noir, classe pm-transparent (moteur/base.css).
+const PREPARER_DE = (transparent) => `(async function () {
   await M.pret;
   if (document.fonts) await document.fonts.ready;
   var style = document.createElement('style');
-  style.textContent = 'html, body { margin: 0 !important; padding: 0 !important; overflow: hidden !important; background: #000 !important; }'
+  style.textContent = 'html, body { margin: 0 !important; padding: 0 !important; overflow: hidden !important; background: ${transparent ? 'transparent' : '#000'} !important; }'
     + ' #pm-scene { position: fixed !important; left: 0 !important; top: 0 !important; width: 100vw !important; height: 100vh !important;'
     + ' max-width: none !important; max-height: none !important; margin: 0 !important; transform: none !important; }'
     + ' #pm-lecteur, #pm-bandeau { display: none !important; }';
   document.head.appendChild(style);
   document.documentElement.classList.add('pm-export');
+  ${transparent ? "document.documentElement.classList.add('pm-transparent');" : ''}
   // Horloge réelle gardée pour le profil : en mode capture, performance.now suit le temps de la vidéo.
   window.__pmMaintenant = performance.now.bind(performance);
   M.modeCapture(true);
-  var scenes = ((M.minutage && M.minutage.scenes) || []).map(function (s) { return { id: s.id, debut: s.debut, fin: s.fin, entree: s.entree }; });
+  var scenes = ((M.minutage && M.minutage.scenes) || []).map(function (s) { return { id: s.id, debut: s.debut, fin: s.fin, entree: s.entree, dureeTransition: s.dureeTransition || 0 }; });
   return { duree: M.duree, scenes: scenes };
 })()`;
+const PREPARER = PREPARER_DE(false);
 
 // Instant t : temps passés dans M.seek et dans la préparation des particules, mesurés dans la page à l'horloge réelle
 // (profil d'export).
@@ -91,14 +94,16 @@ const SOUS_TITRES = (masquer) => `(function () { var st = document.getElementByI
  *  profil(phase, ms) : temps cumulés de seek, particules, capture, base64. parametres : ajoutés à l'adresse de la page
  *  (grainMax : plafond du grain, spec Rendu et export 5.9). erreurs (export) : une exception de la page après sa préparation
  *  (erreur de script d'une scène) fait échouer la capture suivante, avec la scène et l'instant. cadre : 'telephone' (vidéo
- *  9:16 dans la fenêtre largeur × hauteur, moteur/cadres/telephone.js). */
-async function ouvrirCapture({ fichierHtml, largeur, hauteur, navigateur, gpu = false, delai = 30000, ouvrir = ouvrirPage, parametres = {}, erreurs = false, cadre = null }) {
+ *  9:16 dans la fenêtre largeur × hauteur, moteur/cadres/telephone.js). transparent : fond transparent (5.14), captures à couche alpha. */
+async function ouvrirCapture({ fichierHtml, largeur, hauteur, navigateur, gpu = false, delai = 30000, ouvrir = ouvrirPage, parametres = {}, erreurs = false, cadre = null, transparent = false }) {
   const page = await ouvrir({ navigateur, largeur, hauteur, gpu, delai, options: OPTIONS_CAPTURE, ...(erreurs ? { erreurs: true } : {}) });
   try {
     // ?capture=1 : le lecteur ne prépare pas le son d'avance (il n'est rendu que si l'export le demande).
     const extra = Object.entries(parametres).filter(([, v]) => v !== null && v !== undefined).map(([k, v]) => `&${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('');
+    // Fond transparent : le fond par défaut de la page devient transparent (captures PNG à couche alpha).
+    if (transparent) await page.envoyer('Emulation.setDefaultBackgroundColorOverride', { color: { r: 0, g: 0, b: 0, a: 0 } });
     await page.aller(`${pathToFileURL(fichierHtml).href}?capture=1${extra}`);
-    const info = await page.evaluer(PREPARER);
+    const info = await page.evaluer(transparent ? PREPARER_DE(true) : PREPARER);
     if (cadre === 'telephone') {
       const T = require('../../moteur/cadres/telephone.js');
       const g = T.geometrie({ sortie: [largeur, hauteur], scene: [1080, 1920] });

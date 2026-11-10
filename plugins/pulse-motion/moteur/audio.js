@@ -84,8 +84,8 @@
     for (var i = 1; i < points.length; i++) param.linearRampToValueAtTime(points[i].v, points[i].t);
   }
 
-  function nouveauContexte() {
-    return new OfflineAudioContext(2, Math.max(1, Math.ceil(M.duree * TAUX)), TAUX);
+  function nouveauContexte(enPlus) {
+    return new OfflineAudioContext(2, Math.max(1, Math.ceil(M.duree * TAUX) + Math.ceil((enPlus || 0) * TAUX)), TAUX);
   }
   function canaux(tampon) { return [tampon.getChannelData(0), tampon.getChannelData(1)]; }
   function volumeDe(objet) { return objet && typeof objet.volume === 'number' ? objet.volume : 1; }
@@ -117,7 +117,10 @@
 
     if (d.musique && (d.musique.source || d.musique.partition)) {
       try {
-        var contexte = nouveauContexte();
+        // Boucle parfaite (spec Rendu et export, 5.18) : la musique est rendue un peu au-delà de la fin, sans fondus, puis sa queue
+        // est repliée au début (M.mixage.replierBoucle).
+        var enBoucle = d.boucle === true;
+        var contexte = nouveauContexte(enBoucle ? X.QUEUE_BOUCLE : 0);
         // Musique importée (décodée), ou générée : partition jouée par le synthétiseur, coupée à la durée de la vidéo.
         var entree = contexte.createGain();
         if (d.musique.source) {
@@ -130,7 +133,7 @@
           planifierParFenetres(contexte, M.synthe.partition.evenements(d.musique.partition, { duree: duree }), duree, function (e) { M.synthe.instruments.jouer(contexte, entree, e, bruit); });
         }
         var fondus = contexte.createGain();
-        automatiser(fondus.gain, X.pointsFondus(duree, 1));
+        automatiser(fondus.gain, X.pointsFondus(duree, 1, { boucle: enBoucle }));
         var points = X.pointsDucking(X.groupesParole(entendues, D.ecart), D);
         var baisse = contexte.createGain();
         automatiser(baisse.gain, points.map(function (q) { return { t: q.t, v: Math.pow(10, q.db / 20) }; }));
@@ -140,7 +143,16 @@
         creux.Q.value = D.q;
         automatiser(creux.gain, points.map(function (q) { return { t: q.t, v: q.db * D.creux }; }));
         entree.connect(fondus).connect(baisse).connect(creux).connect(contexte.destination);
-        bus.push({ tampon: await contexte.startRendering(), volume: volumeDe(d.musique) });
+        var rendue = await contexte.startRendering();
+        if (enBoucle) {
+          var nb = Math.max(1, Math.ceil(duree * TAUX));
+          var replies = X.replierBoucle(canaux(rendue), nb, TAUX);
+          var tampon = new AudioBuffer({ length: nb, numberOfChannels: 2, sampleRate: TAUX });
+          tampon.copyToChannel(replies[0], 0);
+          tampon.copyToChannel(replies[1], 1);
+          rendue = tampon;
+        }
+        bus.push({ tampon: rendue, volume: volumeDe(d.musique) });
       } catch (e) {
         musiqueIllisible = true;
       }

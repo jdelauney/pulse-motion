@@ -79,7 +79,7 @@ async function projetProvisoire() {
   return dir;
 }
 
-test('revue : bouton MP4 de l\'aperçu : la voix provisoire est refusée (message dans le suivi)', { skip: !navigateur && 'Chrome absent' }, async () => {
+test('revue : bouton MP4 de l\'aperçu : la voix provisoire n\'est pas exportée sans choix ; « Enregistrer ma voix d\'abord » arrête l\'export (message dans le suivi)', { skip: !navigateur && 'Chrome absent' }, async () => {
   const dir = await projetProvisoire();
   // 47331 : dans une plage de ports que Windows réserve parfois (EACCES) ; l'aperçu passe alors au suivant.
   const apercu = await demarrerApercu({ dossier: dir, dossierStyles: STYLES, port: 47331 });
@@ -88,11 +88,15 @@ test('revue : bouton MP4 de l\'aperçu : la voix provisoire est refusée (messag
     // Ouverte dans le try : un échec ici ferme quand même l'aperçu, et le fichier de test se termine.
     page = await ouvrirPage({ navigateur, largeur: 800, hauteur: 450 });
     await page.aller(apercu.url);
-    const r = await page.evaluer('M.pret.then(function () { return import("/_pm/export-ui.mjs"); }).then(function (m) { return m.lancerExport(); }).then(function () { return document.getElementById("pm-export").textContent; })');
-    assert.match(r, /voix provisoire/);
-    const suivi = JSON.parse(fs.readFileSync(path.join(dir, 'sortie', 'export.json'), 'utf8'));
+    // Spec Retouches et ergonomie, 5.17 : un choix au lieu d'un refus ; le premier choix ouvre le studio, sans export.
+    const r = await page.evaluer('M.pret.then(function () { return import("/_pm/export-ui.mjs"); }).then(function (m) { var p = m.lancerExport(); return new Promise(function (ok) { setTimeout(ok, 300); }).then(function () { var t = document.getElementById("pm-export").textContent; document.querySelector("#pm-export button[data-choix=voix]").click(); return p.then(function () { return t; }); }); })');
+    assert.match(r, /voix de l'ordinateur/);
+    assert.match(r, /Enregistrer ma voix d'abord \(Recommandé\)/);
+    // Le suivi est écrit par l'aperçu à la réception (requête sans attente côté page) : on lui laisse un instant.
+    let suivi = null;
+    for (let k = 0; k < 20 && !suivi; k++) { try { suivi = JSON.parse(fs.readFileSync(path.join(dir, 'sortie', 'export.json'), 'utf8')); } catch { await new Promise((ok) => setTimeout(ok, 100)); } }
     assert.equal(suivi.etat, 'erreur');
-    assert.match(suivi.message, /voix provisoire/);
+    assert.match(suivi.message, /enregistrer la voix/);
   } finally {
     if (page) await page.fermer();
     await apercu.fermer();

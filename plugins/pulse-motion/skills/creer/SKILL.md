@@ -1,8 +1,7 @@
 ---
-description: Créer une vidéo de motion design en quelques questions, valider son déroulé, puis la regarder dans le navigateur
+description: "Créer une NOUVELLE vidéo Pulse Motion, seulement quand la personne le demande (« fais-moi une vidéo sur… », « crée une vidéo », « que sait faire Pulse Motion ? »). Pour modifier une vidéo existante : /pulse-motion:retoucher."
 argument-hint: "[le sujet de la vidéo en une phrase]"
-disable-model-invocation: true
-allowed-tools: Bash(pulse-motion *) Bash(node *) Bash(winget install --id Python.Python.3.12 -e --accept-source-agreements --accept-package-agreements) Bash(brew install python) Read Glob Grep Write Edit Agent AskUserQuestion
+allowed-tools: Bash(pulse-motion *) Bash(node *) Bash(winget install --id Python.Python.3.12 -e --accept-source-agreements --accept-package-agreements) Bash(brew install python) Monitor Read Glob Grep Write Edit Agent AskUserQuestion
 ---
 
 # /pulse-motion:creer – De l'idée à la vidéo
@@ -15,24 +14,30 @@ Guider une personne **sans notion de code** de son idée jusqu'à une vidéo ani
 - Vocabulaire : **genre** (ce que fait la vidéo), **style** (à quoi elle ressemble), **charte** (logo, couleurs, polices), **déroulé** (la liste des scènes), **parcours** (rapide ou accompagné).
 - Questions avec `AskUserQuestion`, 4 au plus par ronde, une option « (Recommandé) » en premier.
 - Ne jamais montrer de commande à la personne ; les lancer soi-même.
+- Étape longue : l'annoncer en une phrase avec sa durée ; en arrière-plan, la suivre par `Monitor` sur `pulse-motion avancement . --suivre`, une phrase par minute au plus (sans lui : « l'avancement s'affiche dans l'aperçu »).
+- Problème du contrôle : dire son `message`, corriger avec sa `consigne`.
 - Lexique : avant d'expliquer un mot de l'outil (déroulé, scène, style, charte, transition, export…), lire `pulse-motion lexique`. Un mot déjà noté n'est pas réexpliqué en entier ; un mot expliqué pour la première fois se note avec `pulse-motion lexique noter "<terme>" "<phrase>" "<comme…>" "/pulse-motion:creer"`, en reprenant l'image fixe du lexique quand elle existe.
 
 ## 0. Vérifier
 
+**Rien n'est écrit dans le dossier avant la réponse à la première ronde** : jusque-là, seuls `pulse-motion etat .`, `modeles trouver`, `modeles afficher`, `modeles liste`, `modeles apercu`, `charte liste` et les lectures (`lexique`, `reference`).
+
 `pulse-motion etat .`
-- La commande échoue avec « node » introuvable (Node.js n'est pas installé) : expliquer qu'il faut installer Node.js en version LTS depuis https://nodejs.org (Windows et macOS : programme d'installation ; Linux : gestionnaire de paquets), puis relancer Claude Code. S'arrêter.
+- La commande échoue avec « Node.js introuvable » : proposer « Installer Node.js (Recommandé) » · « Je l'installe moi-même » (accord : `/pulse-motion:outils`, étape « Installer Node.js »), puis relancer `pulse-motion etat .`. S'arrêter sinon.
 - `node.ok` faux : expliquer le message `node.message` et s'arrêter.
 - `projet` vrai : une vidéo existe déjà ici. Proposer `/pulse-motion:reprendre`, ou de créer la nouvelle vidéo dans un autre dossier. S'arrêter.
+- « Que sait faire Pulse Motion ? », ou demande sans sujet : présenter ce qu'il fait d'après `pulse-motion reference demandes`, sans rien écrire, puis demander le sujet.
 
 ## 1. Questions (une ronde)
 
 Le sujet vient de l'argument ; sinon, le demander d'abord en une question ouverte.
 
-**Modèle de vidéo.** `pulse-motion modeles trouver "<sujet>"` (ou `pulse-motion modeles afficher <id>` si la personne en nomme un : « à partir du modèle pitch »). Un modèle trouvé fixe le genre, le format, l'ambiance musicale et l'ordre des styles (`styles`, le premier recommandé) ; sa durée (`duree`, par exemple « 45 s ») devient la première réponse de la question Durée, « (Recommandé) », à la place de la plus proche ; le déroulé (étape 2) part de ses scènes : mêmes `type`, `intention`, `transition`, `mouvements` et `effet` (l'effet se donne à l'animateur de la scène), durées ajustées à la durée choisie, textes écrits pour le sujet en suivant la consigne de chaque clé (une clé dont la consigne dit « à retirer » peut manquer). Le dire en une phrase, avant les questions : « Je pars du modèle « <nom> » : <n> scènes, environ <durée>. » Son `sousTitres` dit si la réponse « Oui » est recommandée à la question Sous-titres. La personne peut tout changer ensuite. Aucun modèle (`null`) : continuer comme ci-dessous, sans en parler.
-- « Quels modèles ? » : `pulse-motion modeles liste`, présentés en mots simples (nom et description), sans identifiant technique.
-- « Montre-moi un exemple de pitch » : `pulse-motion modeles exemple <id> .` copie l'exemple fini du modèle dans le dossier, s'il n'y a pas encore de vidéo ici (refus : proposer un autre dossier, rien n'est écrasé) ; puis `pulse-motion apercu . --ouvrir` en arrière-plan, et proposer de le modifier avec `/pulse-motion:retoucher` ou de repartir de zéro dans un autre dossier.
+La première question rappelle ce qui va se passer : « Nouvelle vidéo sur « <sujet> » dans ce dossier ».
 
-Puis une ronde :
+**Modèle de vidéo.** `pulse-motion modeles trouver "<sujet>"` (ou `pulse-motion modeles afficher <id>` si la personne en nomme un : « à partir du modèle pitch »). Un modèle trouvé fixe le genre, le format, l'ambiance musicale et l'ordre des styles (`styles`, le premier recommandé) ; sa durée (`duree`, par exemple « 45 s ») devient la première réponse de la question Durée, « (Recommandé) », à la place de la plus proche ; le déroulé (étape 2) part de ses scènes : mêmes `type`, `intention`, `transition`, `mouvements` et `effet` (l'effet se donne à l'animateur de la scène), durées ajustées à la durée choisie, textes écrits pour le sujet en suivant la consigne de chaque clé (une clé dont la consigne dit « à retirer » peut manquer). Le dire en une phrase, avant les questions : « Je pars du modèle « <nom> » : <n> scènes, environ <durée>. » Son `sousTitres` dit si la réponse « Oui » est recommandée à la question Sous-titres. La personne peut tout changer ensuite. Aucun modèle (`null`) : continuer comme ci-dessous, sans en parler.
+« Quels modèles ? », « montre-moi un exemple de pitch », un mouvement nommé : `pulse-motion reference demandes`.
+
+**Première ronde** :
 
 1. **Durée** : 30 s · 1 min (Recommandé pour une formation courte) · 3 min · 5 min.
 2. **Public** : grand public · professionnels du métier · élèves ou stagiaires (adapter selon le sujet).
@@ -46,6 +51,7 @@ Puis une deuxième ronde, **Le son** (lire d'abord `pulse-motion reference audio
 1. **Musique** : « Une musique composée pour la vidéo (Recommandé) » · « J'ai un fichier » · « Pas de musique ». L'ambiance se choisit selon le genre (formation → `calme` ou `inspirant`, produit → `corporate` ou `tech`, storytelling → `inspirant` ou `suspense`, social → `entrainant`) et se décrit en trois mots, jamais par son nom technique.
 2. **Voix** : « Je l'enregistre (Recommandé) » · « J'ai un fichier » · « Pas de voix ».
 3. **Sous-titres** : « Oui (Recommandé) » · « Non ». Ils reprennent le texte dit : avec « Pas de voix » à la question 2, ignorer cette réponse et dire en une phrase qu'il n'y aura pas de sous-titres sans voix. En 9:16, proposer d'abord les sous-titres mot par mot (`mode` `mot`), qui retiennent l'œil sur les réseaux.
+4. **L'ordinateur**, seulement si `pulse-motion outils --plan` liste un outil utile (la transcription avec une voix, ou ffmpeg) : « Préparer l'ordinateur pendant que je travaille : <liste> (Recommandé) » · « Plus tard ». Accord : les installations partent en arrière-plan, une à la fois (`pulse-motion consignes outils`, étape « Tout installer »).
 
 Le genre se déduit du sujet (formation, produit, storytelling, social). Format : 16:9, sauf genre `social` → 9:16 (4:5 si la personne vise le fil LinkedIn ou Instagram).
 Puis `pulse-motion etat . --parcours rapide|accompagne`.
@@ -84,15 +90,12 @@ La charte (logo, couleurs, polices) vit dans `charte/` du projet ; la musique da
 
 `charte` du déroulé ne garde que les réglages ponctuels (`ton` : `clair`, `sombre` ou `auto` ; une couleur à changer pour cette vidéo seulement) ; la charte elle-même est dans `charte/`. `charte`, `musique` et `tempo` sont facultatifs. Clés de `textes` : celles de la scène toute faite (`pulse-motion reference styles/<style>`).
 
-Mouvements nommés : quand la personne cite un mouvement ou un numéro du dictionnaire (« avec un pop-in sur les titres », « #006 pour le titre »), l'écrire dans `scenes[].mouvements` des scènes concernées (`"mouvements": ["#001"]`, ou `{ "mouvement": "#001", "element": "logo" }` s'il ne vise pas le titre) ; une transition nommée (« whip pan entre les scènes ») va dans `transition` de la scène qui entre (`pulse-motion mouvements afficher <nom>` donne la valeur). Ne jamais proposer de liste de mouvements sans qu'on la demande ; « quels mouvements existent ? » : `pulse-motion mouvements liste`, résumé par catégorie en mots simples, avec deux ou trois exemples par catégorie. La personne ne sait pas nommer le mouvement (« un truc qui claque pour le titre », « montre-moi les mouvements ») : lancer `pulse-motion mouvements choisir --ouvrir` **en arrière-plan** (avec `--categorie entrees`, `texte`, `valeur`, `transitions`, `camera`… si la demande le dit), dire en une phrase « Une page s'ouvre : cochez les mouvements qui vous plaisent, puis cliquez sur « Envoyer à Claude ». », attendre la fin de la commande, puis appliquer les `choix` (leur `note` dit à quoi chacun sert). `ok` faux : le dire en une phrase et proposer de décrire le mouvement avec ses mots.
+Mouvements nommés (« un pop-in sur les titres », « #006 pour le titre », « montre-moi les mouvements ») : `pulse-motion reference demandes`, section « Mouvements nommés ».
 
 ## 3. Fabrication
 
 0. Voix, avant les animateurs (la voix fixe la durée des scènes et le moment de chaque mot) :
-   - Transcription : `pulse-motion whisper`. `pret` faux : proposer une fois de l'installer (consignes d'installation de `pulse-motion consignes outils`, étape « Installer la transcription »), elle cale les sous-titres et les animations sur les vrais mots (« Installer la transcription (Recommandé) » · « Plus tard ») ; elle est indispensable pour découper un enregistrement de toute la vidéo.
-     - Accord, avec `commandeSysteme` (Python manque) : lancer sa `commande` (sous Linux, `commande` nulle : donner le texte `message` à taper et attendre que la personne dise que c'est fait), puis relancer `pulse-motion whisper`. Python toujours introuvable (sous Windows, il n'est vu qu'après un redémarrage de l'outil) : dire qu'il faudra relancer Claude Code pour finir l'installation, et continuer sans.
-     - Puis `pulse-motion whisper installer` en arrière-plan (quelques minutes, environ 800 Mo), et attendre sa fin. `ok` faux : dire en une phrase que la transcription n'a pas pu s'installer, et continuer sans.
-     - Refus ou échec : dire en une phrase que les mots seront calés au mieux.
+   - Transcription : `pulse-motion whisper` (installée pendant la ronde 2 : attendre sa fin si besoin). `pret` faux : proposer une fois de l'installer (« Installer la transcription (Recommandé) » · « Plus tard ») : elle cale sous-titres et animations sur les vrais mots, et découpe un enregistrement de toute la vidéo. Accord : `pulse-motion consignes outils`, étape « Installer la transcription » (Python d'abord s'il manque, puis relancer `pulse-motion whisper` ; toujours introuvable : en dernier recours, relancer Claude Code, et continuer sans), puis `pulse-motion whisper installer` en arrière-plan, et attendre sa fin. Refus ou échec : dire en une phrase que les mots seront calés au mieux.
    - La personne enregistrera elle-même : `pulse-motion voix provisoire .` (la voix de l'ordinateur lit les textes, pour caler l'animation ; elle sera remplacée). Échec « aucune voix du système » : le dire, les sous-titres se répartiront sur la scène.
    - Elle a un fichier : le copier dans `assets/`. Une prise par scène : `pulse-motion voix importer assets/<fichier> --scene <id> .`. Un enregistrement de toute la vidéo : `pulse-motion voix importer assets/<fichier> .` (découpé par scène, transcription requise) ; s'il a été refusé faute de transcription et qu'elle vient d'être installée, relancer `pulse-motion voix importer assets/<fichier> .` ; sans transcription, se replier sur `pulse-motion voix provisoire .` et proposer d'enregistrer dans l'aperçu. Un `avertissement` (scène mal reconnue) se dit en une phrase.
    - Prises déjà là quand la transcription arrive : `pulse-motion voix transcrire .`.
@@ -106,7 +109,7 @@ Mouvements nommés : quand la personne cite un mouvement ou un numéro du dictio
    | Scène témoin, même toute faite ; seconde écriture d'une scène qui garde une erreur | aucun paramètre |
 
    Jamais un modèle plus cher que celui de la session : si la session tourne déjà en Sonnet ou en Haiku, aucun paramètre. Jamais `haiku`.
-3. **Lancer les animateurs.** Moins de 6 scènes : un agent par scène, tous dans le même message (en parallèle). 6 scènes ou plus, en deux vagues :
+3. **Lancer les animateurs** (annoncés en une phrase avec leur durée). Moins de 6 scènes : un agent par scène, tous dans le même message (en parallèle). 6 scènes ou plus, en deux vagues :
    - **Scènes témoins** : deux agents sans paramètre de modèle, dans le même message, chacun prévenu qu'il écrit une scène témoin : l'ouverture (la première scène) et la scène **composée** la plus différente d'elle, sans personnage ; sans scène composée, la plus risquée hors personnage (à effet, au texte le plus long) ; jamais deux scènes du même `type`.
    - `pulse-motion planche . <id1>,<id2>`, regarder soi-même `sortie/planche/` (avec `Read`), corriger si besoin ; les scènes pas encore écrites ne gênent pas.
    - **Grammaire** : d'après la planche, 4 à 6 lignes « Grammaire de la vidéo » : les choix de cette vidéo dans le style (titres, listes, chiffre clé, accent, marges, transitions ; `pulse-motion reference scenes-temoins`).

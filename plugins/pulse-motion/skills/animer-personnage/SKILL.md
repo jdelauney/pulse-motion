@@ -14,7 +14,7 @@ Créer ou modifier une pose ou un mouvement (marche, course, saut, geste, expres
 - Lire `pulse-motion reference personnages` avant d'écrire (angles, poses, mouvements, expressions).
 - Les poses et mouvements nouveaux ou modifiés se rangent dans le dossier de la vidéo (`personnages/poses/<nom>.json`, `personnages/clips/<nom>.json`) ; un mouvement de la bibliothèque n'est jamais modifié : on en fait une copie du même nom dans la vidéo, qui le remplace pour elle. Sans vidéo dans ce dossier : seulement montrer (planche), et dire que pour créer il faut le dossier d'une vidéo (`/pulse-motion:creer`).
 - Lexique : avant d'expliquer un mot de l'outil, lire `pulse-motion lexique` ; un mot expliqué pour la première fois se note avec `pulse-motion lexique noter "<terme>" "<phrase>" "<comme…>" "/pulse-motion:animer-personnage"`.
-- La commande échoue avec « node » introuvable (Node.js n'est pas installé) : expliquer qu'il faut installer Node.js en version LTS depuis https://nodejs.org, puis relancer Claude Code, et s'arrêter.
+- La commande échoue avec « Node.js introuvable » : proposer de l'installer (`/pulse-motion:outils`, étape « Installer Node.js »), et s'arrêter.
 
 ## Selon la demande
 
