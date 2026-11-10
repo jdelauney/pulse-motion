@@ -28,6 +28,14 @@
  */
 (function (racine) {
   'use strict';
+  // Plafond du grain (spec Rendu et export, 5.9) : ?grainMax=12 dans l'adresse (export fidèle), ou ?pour=<usage> dans l'aperçu
+  // (plafonds des usages injectés par l'aperçu : window.__PM_GRAIN__). Sans eux, le grain du déroulé, inchangé.
+  if (racine.M && racine.M.grainMax === undefined && racine.location) {
+    var q = /[?&]grainMax=(\d+)(&|$)/.exec(racine.location.search || '');
+    var pour = /[?&]pour=([a-z]+)(&|$)/.exec(racine.location.search || '');
+    var plafond = q ? Number(q[1]) : (pour && racine.__PM_GRAIN__ ? racine.__PM_GRAIN__[pour[1]] : null);
+    racine.M.grainMax = plafond > 0 ? plafond : null;
+  }
   const M = racine.M = racine.M || {};
   const P = M.particulesInterne = M.particulesInterne || {};
   const COTE_BRUIT = 256;
@@ -284,6 +292,8 @@
     regler(shader, valeurs) {
       // Multipasse : l'état dépend des réglages, il repart de 0.
       if (shader.multi && shader.multi.etat) shader.multi.etat.oublier();
+      // Grain plafonné à l'export (courriel, brouillon : M.grainMax, spec Rendu et export 5.9).
+      valeurs = M.codeShader.plafonnerGrain(shader.donnee, valeurs, M.grainMax);
       shader.valeurs = valeurs;
       // GLSL : réglages relus à chaque dessin (uniformes WebGL2).
       if (shader.glsl) return;
