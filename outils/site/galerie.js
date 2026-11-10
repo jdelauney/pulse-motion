@@ -58,7 +58,11 @@ const identiteDe = (style) => JSON.parse(fs.readFileSync(path.join(PLUGIN(RACINE
 
 /** Styles livrés regroupés par catégorie, dans l'ordre de CATEGORIES : [{ categorie, styles }] (catégories vides omises). */
 function stylesParCategorie() {
-  const styles = G.STYLES_LIVRES().map((style) => ({ style, identite: identiteDe(style) }));
+  return grouperParCategorie(G.STYLES_LIVRES().map((style) => ({ style, identite: identiteDe(style) })));
+}
+
+/** [{ style, identite }] -> [{ categorie, styles }] dans l'ordre de CATEGORIES, puis « Autres styles » ; groupes vides omis. */
+function grouperParCategorie(styles) {
   const groupes = CATEGORIES.map((c) => ({ categorie: c, styles: styles.filter((x) => x.identite.categorie === c.id) }));
   const sans = styles.filter((x) => !CATEGORIES.some((c) => c.id === x.identite.categorie));
   if (sans.length) groupes.push({ categorie: { id: "autres", nom: "Autres styles" }, styles: sans });
@@ -306,4 +310,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { blocs, appliquer, PAGES, manquesStyles, stylesParCategorie };
+module.exports = { blocs, appliquer, PAGES, manquesStyles, stylesParCategorie, grouperParCategorie };
