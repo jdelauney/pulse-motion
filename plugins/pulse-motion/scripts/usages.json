@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "defaut": "web",
+  "usages": {
+    "web": {
+      "nom": "Pour le web",
+      "pourQuoi": "site, YouTube, intranet, plateforme de formation",
+      "image": "la qualité de référence, celle de l'aperçu",
+      "definition": "1080p", "ipsMax": 60,
+      "fidele": { "crf": 18, "preset": "medium", "tune": "auto", "debitMax": 8000, "tampon": 16000, "gop": 2, "profil": "high", "audio": 160 },
+      "navigateur": { "debit": 6000, "gop": 2, "acceleration": "no-preference" },
+      "flou": false, "grainHz": null, "tailleMaxMo": null,
+      "fichiers": ["couverture", "chapitres", "credits", "sous-titres"],
+      "mesures": { "moParMinute": null, "secondesParSeconde": null, "date": null }
+    },
+    "reseaux": {
+      "nom": "Pour les réseaux sociaux",
+      "pourQuoi": "LinkedIn, Instagram, TikTok, YouTube Shorts",
+      "image": "un peu plus nette que pour le web, pour résister à la recompression des plateformes",
+      "definition": "1080p", "ipsMax": 60,
+      "fidele": { "crf": 17, "preset": "medium", "tune": "auto", "debitMax": 12000, "tampon": 24000, "gop": 1, "profil": "high", "audio": 192 },
+      "navigateur": { "debit": 10000, "gop": 1, "acceleration": "no-preference" },
+      "flou": false, "grainHz": null, "tailleMaxMo": null,
+      "fichiers": ["couverture", "credits", "sous-titres"],
+      "mesures": { "moParMinute": null, "secondesParSeconde": null, "date": null }
+    },
+    "presentation": {
+      "nom": "Pour la projeter en réunion",
+      "pourQuoi": "vidéoprojecteur, PowerPoint, Keynote, salon",
+      "image": "très nette, lue par les logiciels de présentation, 30 images par seconde",
+      "definition": "1080p", "ipsMax": 30,
+      "fidele": { "crf": 16, "preset": "slow", "tune": "auto", "debitMax": null, "tampon": null, "gop": 1, "profil": "high", "niveau": "4.1", "niveau60": "4.2", "audio": 192 },
+      "navigateur": { "debit": 10000, "gop": 1, "acceleration": "no-preference", "codec": "avc1.640029", "codec60": "avc1.640032" },
+      "flou": false, "grainHz": null, "tailleMaxMo": null,
+      "fichiers": ["couverture", "credits"],
+      "mesures": { "moParMinute": null, "secondesParSeconde": null, "date": null }
+    },
+    "master": {
+      "nom": "Pour archiver ou confier à un monteur",
+      "pourQuoi": "la meilleure qualité, à garder ou à retravailler",
+      "image": "la plus fidèle possible ; fichier lourd",
+      "definition": "1080p", "ipsMax": 60,
+      "fidele": { "crf": 14, "preset": "slow", "tune": "auto", "debitMax": null, "tampon": null, "gop": 2, "profil": "high", "audio": 256 },
+      "navigateur": { "debit": 20000, "gop": 2, "acceleration": "no-preference" },
+      "flou": false, "grainHz": null, "tailleMaxMo": null,
+      "fichiers": ["couverture", "chapitres", "credits", "sous-titres"],
+      "mesures": { "moParMinute": null, "secondesParSeconde": null, "date": null }
+    },
+    "courriel": {
+      "nom": "Pour l'envoyer par courriel",
+      "pourQuoi": "pièce jointe, messagerie (WhatsApp, Teams)",
+      "image": "plus petite (720p ou 540p selon la durée), grain renouvelé moins souvent ; tient sous la taille annoncée",
+      "definition": "auto", "ipsMax": 30,
+      "fidele": { "passes": 2, "preset": "medium", "tune": "auto", "debitMax": 6000, "gop": 2, "profil": "high", "audio": 96 },
+      "navigateur": { "mode": "constant", "gop": 2, "acceleration": "no-preference" },
+      "flou": false, "grainHz": 12, "tailleMaxMo": 10,
+      "fichiers": ["credits"],
+      "mesures": { "moParMinute": null, "secondesParSeconde": null, "date": null }
+    },
+    "brouillon": {
+      "nom": "Version de travail",
+      "pourQuoi": "vérifier vite une longue vidéo, jamais pour publier",
+      "image": "petite (540p), 30 images par seconde au plus, grain renouvelé moins souvent",
+      "definition": "540p", "ipsMax": 30,
+      "fidele": { "encodeur": "materiel", "crf": 26, "preset": "veryfast", "tune": null, "debitMax": null, "tampon": null, "gop": 2, "profil": "high", "audio": 128 },
+      "navigateur": { "debit": 2500, "gop": 2, "acceleration": "prefer-hardware", "latence": "realtime" },
+      "flou": false, "grainHz": 12, "tailleMaxMo": null,
+      "fichiers": [],
+      "mesures": { "moParMinute": null, "secondesParSeconde": null, "date": null }
+    }
+  }
+}
