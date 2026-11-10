@@ -354,6 +354,8 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     format: { ratio: deroule.format.ratio, ips: deroule.format.ips || 30, ...(deroule.format.plateforme ? { plateforme: deroule.format.plateforme } : {}) },
     // Couverture déclarée (spec Rendu et export, 5.10) : la page livrée s'ouvre sur elle (moteur/lecteur.js, M.instantCouverture).
     ...(deroule.couverture ? { couverture: { scene: deroule.couverture.scene, instant: deroule.couverture.instant } } : {}),
+    // Boucle parfaite (spec Rendu et export, 5.18) : le lecteur reprend à 0, la musique perd ses fondus.
+    ...(deroule.boucle === true ? { boucle: true } : {}),
     musique: deroule.musique ? { volume: deroule.musique.volume ?? 1, source: sourceMusique, partition: null } : null,
     voix: Object.keys(voixScenes).length ? { volume: deroule.voix && typeof deroule.voix.volume === 'number' ? deroule.voix.volume : 1 } : null,
     // Tempo du déroulé, sinon celui de la musique générée.

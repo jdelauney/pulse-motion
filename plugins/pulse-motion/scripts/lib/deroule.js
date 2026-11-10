@@ -150,6 +150,8 @@ function validerDeroule(d) {
   }
 
   if (d.post !== undefined) err.push(...validerPost(d.post, '« post »'));
+  // Boucle parfaite (spec Rendu et export, 5.18) : la vidéo tourne en boucle (lecteur, musique sans fondus, contrôles de jointure).
+  if (d.boucle !== undefined && typeof d.boucle !== 'boolean') err.push('« boucle » doit valoir true ou false (true : la vidéo tourne en boucle).');
 
   if (!Array.isArray(d.scenes) || d.scenes.length === 0) {
     err.push('« scenes » doit contenir au moins une scène.');
