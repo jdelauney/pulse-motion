@@ -29,7 +29,24 @@ Ce qui fait qu'une scène paraît vivante plutôt que mécanique : à lire quand
 ## Le décor qui vit
 
 - Pluie, neige, feu en volume, étincelles : les effets de particules (`pulse-motion reference particules`).
-- Plante, flamme, vapeur, nuage : une boucle petite et lente, sur un élément intérieur (pas celui qui porte l'entrée), qui tient toute la scène et finit au repos. Les boucles de vie du dictionnaire (catégorie « vie ») sont à venir ; en attendant, un mouvement répété existant (`pulse-motion mouvements`), ampleur réduite, départs décalés d'un élément à l'autre.
+- Le reste : une boucle de vie du dictionnaire (catégorie « Vie du décor », `pulse-motion mouvements afficher <n°>`), petite et lente, sur un élément intérieur (pas celui qui porte l'entrée : l'une effacerait l'autre), minutée avec `data-dur="scene"` (lui ou son conteneur). Le moteur la fait tenir toute la scène, la finit au repos et donne à chaque élément sa phase : deux feuilles ne bougent jamais ensemble.
+
+| Sujet | N° | Chiffres par défaut |
+|---|---|---|
+| Plante, herbe, lanterne | #069 | ±2,5° autour du pied (1,5 à 4), en 4,2 s (3 à 6 s) ; feuilles : ±1,5° |
+| Flamme de bougie | #070 | ±3° en 0,7 s, s'étire de 4,5 % en 1,1 s ; flamme intérieure en 0,9 s |
+| Vapeur d'une tasse | #071 | 2 ou 3 volutes, montée de 4 % de la hauteur en 2,4 s |
+| Objet sur l'eau, ballon | #072 | ±0,8 % de la hauteur en 3,4 s, ±2° en 4,6 s |
+| Lampe, halo | #073 | +4 % (2 à 5 %) en 3 s |
+| Étoiles | #074 | un éclat toutes les 2,8 s, chacune à son moment |
+| Machine, engrenages | #075 | un tour en 6 s ; roue menée en sens inverse, durée × dents menées / dents menantes |
+| Téléphone qui sonne | #076 | 4 secousses de ±3° en 0,45 s, toutes les 1,6 s |
+| Objet qui attend | #077 | ±2 % en deux temps de 270 ms |
+| Ciel, nuages | #078 | 4 % de la hauteur par seconde ; plan lointain : 2 |
+| Signal, goutte | #079 | 2 ou 3 anneaux, 2,6 s chacun |
+| Plante qui pousse | #080 | tige en 1,6 s, une feuille toutes les 0,35 s, un pétale toutes les 0,12 s, puis #069 |
+
+- Ce qui se déplace (#071, #072, #078) se pose sur un élément HTML ou sur un `<svg>` entier, pas sur une forme à l'intérieur d'un dessin.
 
 ## Les personnages
 

@@ -3,7 +3,8 @@
  * Réglages par variables CSS sur l'élément : --pm-dur (durée), --pm-courbe (courbe), --pm-ampleur (amplitude, unité propre à
  * chaque classe), --pm-fois (répétitions des mouvements qui se répètent : jamais sans fin, la vidéo finit sur une image stable).
  * Les classes des styles (entre-bas, tombe…) restent valables ; celles-ci sont les mêmes partout et l'emportent sur elles
- * (#pm-scene) : sur un élément d'une scène toute faite, une classe pm-m-* remplace l'entrée du style. */
+ * (#pm-scene) : sur un élément d'une scène toute faite, une classe pm-m-* remplace l'entrée du style.
+ * Section « Vie » : boucles de vie pm-v-* bornées par le moteur (moteur/horloge.js : fenêtre, phase et cycles). */
 
 /* ---- Entrées et sortie ---- */
 
@@ -126,3 +127,157 @@
   88% { transform: translate(calc(var(--pm-ampleur, 0.6) * -0.3cqh), calc(var(--pm-ampleur, 0.6) * -0.6cqh)) rotate(-0.1deg); }
 }
 #pm-scene .pm-m-epaule { position: absolute; inset: 0; animation: pm-m-epaule var(--pm-dur, 6s) var(--pm-courbe, var(--ease-sine-inout)) both; }
+
+/* ---- Vie du décor (boucles de vie, catégorie « vie » du dictionnaire) ----
+   Une classe pm-v-* sur un élément intérieur (pas celui qui porte l'entrée), minuté avec data-dur="scene" (lui ou son
+   conteneur) : le moteur la répète autant de fois que sa fenêtre le permet et la finit au repos (--pm-fois pour imposer le
+   nombre de tours), et décale chaque élément de même classe (--pm-phase, de 0 à 1, pour imposer le départ dans le cycle).
+   Seulement rotate, scale, translate (et opacity pour apparaître ou disparaître), jamais transform : la vie s'ajoute aux
+   entrées et à la mise en page. Pivot : transform-origin (le pied, la base) ; dans un SVG, la boîte de l'élément. Les boucles
+   qui oscillent sont des sinus exacts : 0 % et 100 % au repos, vitesse continue d'un tour à l'autre. */
+
+/* Non héritée : une vie posée dans un engrenage ne devient pas une boucle continue. */
+@property --pm-boucle { syntax: '*'; inherits: false; }
+/* Dans un SVG, le pivot se mesure sur la forme elle-même (sans cela, sur l'origine du dessin). */
+#pm-scene svg [class*="pm-v-"] { transform-box: fill-box; }
+
+/* #069 Balancement : rotation de ±--pm-ampleur degrés (2.5) autour du pied, en --pm-dur (4.2 s). */
+@keyframes pm-v-balance {
+  0% { rotate: 0deg; animation-timing-function: cubic-bezier(0.61, 1, 0.88, 1); }
+  25% { rotate: calc(var(--pm-ampleur, 2.5) * 1deg); animation-timing-function: cubic-bezier(0.37, 0, 0.63, 1); }
+  75% { rotate: calc(var(--pm-ampleur, 2.5) * -1deg); animation-timing-function: cubic-bezier(0.12, 0, 0.39, 0); }
+  100% { rotate: 0deg; }
+}
+#pm-scene .pm-v-balance { transform-origin: 50% 100%;
+  animation: pm-v-balance var(--pm-dur, 4.2s) linear both;
+  animation-delay: calc(var(--pm-phase, var(--pm-v-phase, 0)) * -1 * var(--pm-dur, 4.2s));
+  animation-iteration-count: var(--pm-fois, var(--pm-v-fois, 1)); }
+
+/* #070 Flamme : deux vagues depuis la base, rotation de ±--pm-ampleur degrés (3) en --pm-dur (0.7 s) et étirement vertical de
+   --pm-etire (0.045) en --pm-dur-2 (1.1 s). Flamme intérieure : la même classe sur un enfant, --pm-dur: 0.9s. */
+@keyframes pm-v-flamme {
+  0% { rotate: 0deg; animation-timing-function: cubic-bezier(0.61, 1, 0.88, 1); }
+  25% { rotate: calc(var(--pm-ampleur, 3) * 1deg); animation-timing-function: cubic-bezier(0.37, 0, 0.63, 1); }
+  75% { rotate: calc(var(--pm-ampleur, 3) * -1deg); animation-timing-function: cubic-bezier(0.12, 0, 0.39, 0); }
+  100% { rotate: 0deg; }
+}
+@keyframes pm-v-flamme-etire { 0%, 100% { scale: 1 1; } 50% { scale: 1 calc(1 + var(--pm-etire, 0.045)); } }
+#pm-scene .pm-v-flamme { transform-origin: 50% 100%;
+  animation: pm-v-flamme var(--pm-dur, 0.7s) linear both, pm-v-flamme-etire var(--pm-dur-2, 1.1s) cubic-bezier(0.37, 0, 0.63, 1) both;
+  animation-delay: calc(var(--pm-phase, var(--pm-v-phase, 0)) * -1 * var(--pm-dur, 0.7s)), calc(var(--pm-phase, var(--pm-v-phase, 0)) * -1 * var(--pm-dur-2, 1.1s));
+  animation-iteration-count: var(--pm-fois, var(--pm-v-fois, 1)), var(--pm-fois-2, var(--pm-v-fois-2, 1)); }
+
+/* #071 Volutes : monte de --pm-ampleur cqh (4) en ondulant de 0,6 cqh, grandit de 0,9 à 1,15, apparaît (0,6) et s'efface, en
+   --pm-dur (2.4 s). Sur 2 ou 3 volutes. */
+@keyframes pm-v-vapeur {
+  0% { translate: 0 0; scale: 0.9; opacity: 0; }
+  35% { translate: 0.6cqh calc(var(--pm-ampleur, 4) * -0.35cqh); opacity: 0.6; }
+  70% { translate: -0.6cqh calc(var(--pm-ampleur, 4) * -0.7cqh); opacity: 0.35; }
+  100% { translate: 0 calc(var(--pm-ampleur, 4) * -1cqh); scale: 1.15; opacity: 0; }
+}
+#pm-scene .pm-v-vapeur { transform-origin: 50% 100%;
+  animation: pm-v-vapeur var(--pm-dur, 2.4s) linear both;
+  animation-delay: calc(var(--pm-phase, var(--pm-v-phase, 0)) * -1 * var(--pm-dur, 2.4s));
+  animation-iteration-count: var(--pm-fois, var(--pm-v-fois, 1)); }
+
+/* #072 Flottement : monte et descend de ±--pm-ampleur cqh (0.8) en --pm-dur (3.4 s), penche de ±--pm-ampleur-2 degrés (2) en
+   --pm-dur-2 (4.6 s). */
+@keyframes pm-v-flotte {
+  0% { translate: 0 0; animation-timing-function: cubic-bezier(0.61, 1, 0.88, 1); }
+  25% { translate: 0 calc(var(--pm-ampleur, 0.8) * -1cqh); animation-timing-function: cubic-bezier(0.37, 0, 0.63, 1); }
+  75% { translate: 0 calc(var(--pm-ampleur, 0.8) * 1cqh); animation-timing-function: cubic-bezier(0.12, 0, 0.39, 0); }
+  100% { translate: 0 0; }
+}
+@keyframes pm-v-flotte-penche {
+  0% { rotate: 0deg; animation-timing-function: cubic-bezier(0.61, 1, 0.88, 1); }
+  25% { rotate: calc(var(--pm-ampleur-2, 2) * 1deg); animation-timing-function: cubic-bezier(0.37, 0, 0.63, 1); }
+  75% { rotate: calc(var(--pm-ampleur-2, 2) * -1deg); animation-timing-function: cubic-bezier(0.12, 0, 0.39, 0); }
+  100% { rotate: 0deg; }
+}
+#pm-scene .pm-v-flotte { transform-origin: 50% 50%;
+  animation: pm-v-flotte var(--pm-dur, 3.4s) linear both, pm-v-flotte-penche var(--pm-dur-2, 4.6s) linear both;
+  animation-delay: calc(var(--pm-phase, var(--pm-v-phase, 0)) * -1 * var(--pm-dur, 3.4s)), calc(var(--pm-phase, var(--pm-v-phase, 0)) * -1 * var(--pm-dur-2, 4.6s));
+  animation-iteration-count: var(--pm-fois, var(--pm-v-fois, 1)), var(--pm-fois-2, var(--pm-v-fois-2, 1)); }
+
+/* #073 Lueur : un halo grandit de --pm-ampleur (0.04) et revient, en --pm-dur (3 s). */
+@keyframes pm-v-lueur { 0%, 100% { scale: 1; } 50% { scale: calc(1 + var(--pm-ampleur, 0.04)); } }
+#pm-scene .pm-v-lueur { transform-origin: 50% 50%;
+  animation: pm-v-lueur var(--pm-dur, 3s) cubic-bezier(0.37, 0, 0.63, 1) both;
+  animation-delay: calc(var(--pm-phase, var(--pm-v-phase, 0)) * -1 * var(--pm-dur, 3s));
+  animation-iteration-count: var(--pm-fois, var(--pm-v-fois, 1)); }
+
+/* #074 Scintillement : au repos jusqu'à 80 % du cycle, se resserre (0,75, opacité 0,35) puis brille (1,1), en --pm-dur (2.8 s). */
+@keyframes pm-v-scintille { 0%, 80%, 100% { scale: 1; opacity: 1; } 88% { scale: 0.75; opacity: 0.35; } 96% { scale: 1.1; opacity: 1; } }
+#pm-scene .pm-v-scintille { transform-origin: 50% 50%;
+  animation: pm-v-scintille var(--pm-dur, 2.8s) cubic-bezier(0.37, 0, 0.63, 1) both;
+  animation-delay: calc(var(--pm-phase, var(--pm-v-phase, 0)) * -1 * var(--pm-dur, 2.8s));
+  animation-iteration-count: var(--pm-fois, var(--pm-v-fois, 1)); }
+
+/* #075 Engrenage : un tour (360°) par --pm-dur (6 s), à vitesse constante, sans déphasage ; roue menée : classe inverse et
+   --pm-dur: calc(6s * <dents menées> / <dents menantes>). Boucle continue : elle tourne jusqu'à la fin de sa fenêtre. */
+@keyframes pm-v-engrenage { from { rotate: 0deg; } to { rotate: 360deg; } }
+@keyframes pm-v-engrenage-inverse { from { rotate: 0deg; } to { rotate: -360deg; } }
+#pm-scene .pm-v-engrenage { --pm-boucle: continue; --pm-phase: 0; transform-origin: 50% 50%;
+  animation: pm-v-engrenage var(--pm-dur, 6s) linear both;
+  animation-delay: calc(var(--pm-phase, var(--pm-v-phase, 0)) * -1 * var(--pm-dur, 6s));
+  animation-iteration-count: var(--pm-fois, var(--pm-v-fois, 1)); }
+#pm-scene .pm-v-engrenage-inverse { --pm-boucle: continue; --pm-phase: 0; transform-origin: 50% 50%;
+  animation: pm-v-engrenage-inverse var(--pm-dur, 6s) linear both;
+  animation-delay: calc(var(--pm-phase, var(--pm-v-phase, 0)) * -1 * var(--pm-dur, 6s));
+  animation-iteration-count: var(--pm-fois, var(--pm-v-fois, 1)); }
+
+/* #076 Vibreur : 4 allers-retours de ±--pm-ampleur degrés (3) en 28 % du cycle (0,45 s), puis repos, en --pm-dur (1.6 s). */
+@keyframes pm-v-vibre {
+  0%, 28%, 100% { rotate: 0deg; }
+  3.11% { rotate: calc(var(--pm-ampleur, 3) * 1deg); }
+  6.22% { rotate: calc(var(--pm-ampleur, 3) * -1deg); }
+  9.33% { rotate: calc(var(--pm-ampleur, 3) * 1deg); }
+  12.44% { rotate: calc(var(--pm-ampleur, 3) * -1deg); }
+  15.56% { rotate: calc(var(--pm-ampleur, 3) * 1deg); }
+  18.67% { rotate: calc(var(--pm-ampleur, 3) * -1deg); }
+  21.78% { rotate: calc(var(--pm-ampleur, 3) * 1deg); }
+  24.89% { rotate: calc(var(--pm-ampleur, 3) * -1deg); }
+}
+#pm-scene .pm-v-vibre { transform-origin: 50% 50%;
+  animation: pm-v-vibre var(--pm-dur, 1.6s) cubic-bezier(0.37, 0, 0.63, 1) both;
+  animation-delay: calc(var(--pm-phase, var(--pm-v-phase, 0)) * -1 * var(--pm-dur, 1.6s));
+  animation-iteration-count: var(--pm-fois, var(--pm-v-fois, 1)); }
+
+/* #077 Attente : s'élargit de --pm-ampleur (0.02) en s'aplatissant, d'un côté puis de l'autre (1 %), depuis la base, en
+   --pm-dur (0.54 s : deux temps de 270 ms). */
+@keyframes pm-v-attend {
+  0%, 50%, 100% { scale: 1 1; translate: 0 0; }
+  25% { scale: calc(1 + var(--pm-ampleur, 0.02)) calc(1 - var(--pm-ampleur, 0.02)); translate: 1% 0; }
+  75% { scale: calc(1 + var(--pm-ampleur, 0.02)) calc(1 - var(--pm-ampleur, 0.02)); translate: -1% 0; }
+}
+#pm-scene .pm-v-attend { transform-origin: 50% 100%;
+  animation: pm-v-attend var(--pm-dur, 0.54s) cubic-bezier(0.37, 0, 0.63, 1) both;
+  animation-delay: calc(var(--pm-phase, var(--pm-v-phase, 0)) * -1 * var(--pm-dur, 0.54s));
+  animation-iteration-count: var(--pm-fois, var(--pm-v-fois, 1)); }
+
+/* #078 Dérive (nuage) : avance de --pm-vitesse cqh par seconde (4 ; 2 pour un plan lointain, négatif vers la gauche), à vitesse
+   constante, pendant sa fenêtre. Sans images-clés : elle suit la progression (--p) de l'élément minuté (data-dur="scene"), lui-même
+   ou son conteneur. */
+#pm-scene .pm-v-nuage { translate: calc(var(--p, 0) * var(--pm-fenetre, 0) * var(--pm-vitesse, 4) * 1cqh) 0; }
+
+/* #079 Ondes : un anneau grandit de 0,2 à 1,6, apparaît (0,6 à 30 %) et s'efface, en --pm-dur (2.6 s). Sur 2 ou 3 anneaux. */
+@keyframes pm-v-ondes { 0% { scale: 0.2; opacity: 0; } 30% { opacity: 0.6; } 100% { scale: 1.6; opacity: 0; } }
+#pm-scene .pm-v-ondes { transform-origin: 50% 50%;
+  animation: pm-v-ondes var(--pm-dur, 2.6s) cubic-bezier(0.33, 1, 0.68, 1) both;
+  animation-delay: calc(var(--pm-phase, var(--pm-v-phase, 0)) * -1 * var(--pm-dur, 2.6s));
+  animation-iteration-count: var(--pm-fois, var(--pm-v-fois, 1)); }
+
+/* #080 Pousse (ponctuelle, une fois) : la tige se trace en deux poussées en --pm-dur (1.6 s ; chemin avec pathLength="100") ;
+   chaque feuille s'ouvre depuis sa base (--pm-pivot) en 0,6 s, --i × 0,35 s (--pm-decalage) après le début ; chaque pétale en
+   0,5 s, --i × 0,12 s après. Puis #069 sur la plante. */
+@keyframes pm-v-tige { 0% { stroke-dashoffset: 100; } 45% { stroke-dashoffset: 42; } 60% { stroke-dashoffset: 38; } 100% { stroke-dashoffset: 0; } }
+#pm-scene .pm-v-tige { --pm-fois: 1; --pm-phase: 0; stroke-dasharray: 100;
+  animation: pm-v-tige var(--pm-dur, 1.6s) cubic-bezier(0.37, 0, 0.63, 1) both;
+  animation-delay: calc(var(--pm-phase, var(--pm-v-phase, 0)) * -1 * var(--pm-dur, 1.6s));
+  animation-iteration-count: var(--pm-fois, var(--pm-v-fois, 1)); }
+@keyframes pm-v-feuille { from { scale: 0; rotate: -25deg; } to { scale: 1; rotate: 0deg; } }
+#pm-scene .pm-v-feuille { --pm-fois: 1; transform-origin: var(--pm-pivot, 50% 100%);
+  animation: pm-v-feuille var(--pm-dur, 0.6s) cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: calc(var(--i, 0) * var(--pm-decalage, 0.35s)); }
+@keyframes pm-v-petale { from { scale: 0; rotate: 40deg; } to { scale: 1; rotate: 0deg; } }
+#pm-scene .pm-v-petale { --pm-fois: 1; transform-origin: var(--pm-pivot, 50% 100%);
+  animation: pm-v-petale var(--pm-dur, 0.5s) cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: calc(var(--i, 0) * var(--pm-decalage, 0.12s)); }

@@ -123,7 +123,12 @@ test('tout-en-phase : 3 étoiles au même départ signalées, pm-v-scintille non
   assert.deepEqual(A.toutEnPhase(etoiles, SEUILS), [{ element: '.etoile', nombre: 3 }]);
   assert.deepEqual(A.toutEnPhase(etoiles.slice(0, 2), SEUILS), [], 'deux seulement');
   assert.deepEqual(A.toutEnPhase(etoiles.map((x, i) => ({ ...x, depart: 2 + i * 0.3 })), SEUILS), [], 'départs décalés');
-  assert.deepEqual(A.toutEnPhase(etoiles.map((x) => ({ ...x, nom: 'pm-v-scintille', classe: 'pm-v-scintille' })), SEUILS), []);
+  // Boucles de vie (V4) : le moteur donne à chacune sa phase (départ décalé dans le cycle) : non signalées ; une même phase
+  // imposée à trois d'entre elles l'est.
+  const MIN = require('../moteur/minutage.js');
+  const vies = etoiles.map((x, i) => ({ ...x, nom: 'pm-v-scintille', classe: 'pm-v-scintille', depart: 2 - MIN.phaseVie(i, 'ciel', 'pm-v-scintille') * 1.2 }));
+  assert.deepEqual(A.toutEnPhase(vies, SEUILS), []);
+  assert.deepEqual(A.toutEnPhase(vies.map((x) => ({ ...x, depart: 2 - 0.25 * 1.2 })), SEUILS), [{ element: '.pm-v-scintille', nombre: 3 }]);
 });
 
 // --- 5.12 a-coup-camera ---------------------------------------------------------------------------------------------

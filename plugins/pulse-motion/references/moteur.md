@@ -38,6 +38,7 @@
 | `data-start` | `0.4`, `#id+0.3`, `#id-0.2`, `#id:fin+0.2` | Début de l'élément, relatif à la scène ou à un autre élément **de la même scène** (minuté, avec un `id`) |
 | `data-start` | `mot:froid`, `mot:froid#2`, `mot:froid:fin`, `mot:froid+0.2` | Quand la voix de la scène dit « froid » (accents, majuscules et ponctuation ignorés ; `#2` deuxième fois, `:fin` fin du mot). Une nouvelle prise recale tout seul |
 | `data-dur` | `1.2` | Durée en secondes (1 par défaut) |
+| `data-dur` | `scene` | Jusqu'à la fin de la scène, voix comprise (dernière scène : 1 s avant) |
 | `data-tween` | `opacity 0→1 back-out; --x -10cqh→0cqh` | Interpole des valeurs pendant `[début, fin]` |
 
 Le moteur pose sur chaque élément minuté :
@@ -67,7 +68,7 @@ Nom = `<type>-<mode>` (ex. `cubic-out`, `back-inout`, `bounce-out`, `quad-spike`
 
 ### Mouvements nommés
 
-Le dictionnaire de mouvements (`pulse-motion reference mouvements`, fiche : `pulse-motion mouvements afficher <n° ou nom>`) donne pour chaque nom du métier (pop-in, mask reveal, whip pan…) un numéro stable et la recette exacte. Classes communes à tous les styles, sur un élément minuté : `pm-m-pop`, `pm-m-monte`, `pm-m-glisse-gauche`, `pm-m-glisse-droite`, `pm-m-zoom-entree`, `pm-m-net`, `pm-m-masque`, `pm-m-chute`, `pm-m-anticipe`, `pm-m-ecrase`, `pm-m-saccade`, `pm-m-sortie`, `pm-m-pulse`, `pm-m-tremblote`, `pm-m-va-vient`, `pm-m-surligne`, `pm-m-souligne`, `pm-m-reflet`, `pm-m-epaule` ; réglages par variables : `--pm-dur`, `--pm-courbe`, `--pm-ampleur`, `--pm-fois` (répétitions, jamais sans fin). Une scène qui a des `mouvements` dans le déroulé applique leurs recettes telles quelles.
+Le dictionnaire de mouvements (`pulse-motion reference mouvements`, fiche : `pulse-motion mouvements afficher <n° ou nom>`) donne pour chaque nom du métier (pop-in, mask reveal, whip pan…) un numéro stable et la recette exacte. Classes communes à tous les styles, sur un élément minuté : `pm-m-*` (`pm-m-pop`, `pm-m-pulse`…) ; réglages par variables : `--pm-dur`, `--pm-courbe`, `--pm-ampleur`, `--pm-fois` (répétitions, jamais sans fin). Vie du décor `pm-v-*` (plante, flamme…) : sur un élément intérieur, `data-dur="scene"` (`pulse-motion reference mouvement-vivant`). Une scène qui a des `mouvements` dans le déroulé applique leurs recettes telles quelles.
 
 ### Texte lettre par lettre
 

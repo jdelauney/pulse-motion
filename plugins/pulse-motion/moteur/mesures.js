@@ -561,12 +561,12 @@
   }
 
   /** Animations répétées d'une scène [{ nom, duree, depart, classe, element }] -> groupes d'au moins toutEnPhase éléments
-   *  de même animation, même durée, même départ effectif : [{ element, nombre }]. Boucles de vie pm-v-* exclues (le moteur
-   *  les déphase). */
+   *  de même animation, même durée, même départ effectif : [{ element, nombre }]. Les boucles de vie pm-v-* n'ont pas de
+   *  règle à part : le moteur donne à chacune sa phase (départ effectif décalé dans le cycle) ; une phase imposée identique
+   *  (--pm-phase) à trois éléments est signalée comme les autres. */
   function toutEnPhase(anims, S) {
     var groupes = {};
     anims.forEach(function (x) {
-      if (/^pm-v-/.test(x.nom)) return;
       var cle = x.nom + '|' + Math.round(x.duree * 1000) + '|' + Math.round(x.depart * 1000);
       (groupes[cle] = groupes[cle] || []).push(x);
     });

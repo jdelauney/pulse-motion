@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "source": "Noms, sens et idées de phrases inspirés de Motion Prompt (https://github.com/showheyohtaki/motion-prompt), MIT © 2026 Shohei Ohtaki ; traduits et adaptés au moteur Pulse Motion. Voir THIRD-PARTY-NOTICES.md.",
+  "source": "Noms, sens et idées de phrases inspirés de Motion Prompt (https://github.com/showheyohtaki/motion-prompt), MIT © 2026 Shohei Ohtaki ; traduits et adaptés au moteur Pulse Motion. Vie du décor (#069 à #080) : chiffres de rossark-motion-skill, MIT © 2026 rossark0, réécrits. Voir THIRD-PARTY-NOTICES.md.",
   "categories": [
     {
       "id": "entrees",
@@ -29,6 +29,10 @@
     {
       "id": "temps",
       "nom": "Le temps"
+    },
+    {
+      "id": "vie",
+      "nom": "Vie du décor"
     }
   ],
   "mouvements": [
@@ -2377,6 +2381,544 @@
             "effet": "début+durée et vitesse"
           }
         ]
+      }
+    },
+    {
+      "no": "069",
+      "slug": "balance",
+      "categorie": "vie",
+      "nom": {
+        "fr": "Balancement",
+        "metier": "Sway"
+      },
+      "sens": "Se balance doucement autour de son pied, comme une plante dans un souffle d'air",
+      "demande": "Fais balancer la plante de 2 degrés, lentement, en 4 secondes.",
+      "quand": "Une plante, une herbe, un panneau suspendu, une lanterne : un décor qui vit sans attirer l'œil.",
+      "motsCles": [
+        "balancement",
+        "sway",
+        "plante",
+        "vent",
+        "feuille",
+        "osciller"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<svg viewBox=\"0 0 60 100\" style=\"height: 50cqh\" aria-hidden=\"true\">\n  <g class=\"pm-v-balance\" data-start=\"0\" data-dur=\"scene\">\n    <path d=\"M30 100 Q28 62 31 22\" stroke=\"var(--c-primaire)\" stroke-width=\"3\" fill=\"none\"/>\n    <g class=\"pm-v-balance\" style=\"--pm-ampleur: 1.5\"><ellipse cx=\"21\" cy=\"56\" rx=\"10\" ry=\"4.5\" fill=\"var(--c-accent)\"/></g>\n    <g class=\"pm-v-balance\" style=\"--pm-ampleur: 1.5\"><ellipse cx=\"40\" cy=\"40\" rx=\"10\" ry=\"4.5\" fill=\"var(--c-accent)\"/></g>\n  </g>\n</svg>",
+        "reglages": [
+          {
+            "nom": "--pm-ampleur",
+            "defaut": "2.5",
+            "effet": "degrés de chaque côté (1,5 à 4)"
+          },
+          {
+            "nom": "--pm-dur",
+            "defaut": "4.2s",
+            "effet": "durée d'un aller-retour (3 à 6 s)"
+          },
+          {
+            "nom": "data-dur",
+            "defaut": "scene",
+            "effet": "la vie tient toute la scène (dernière scène : jusqu'à 1 s avant la fin) ; sur l'élément ou son conteneur"
+          },
+          {
+            "nom": "--pm-phase",
+            "defaut": "propre à chaque élément",
+            "effet": "départ dans le cycle, de 0 à 1 (le moteur en donne un à chacun : jamais deux ensemble)"
+          }
+        ],
+        "note": "Sur un élément intérieur, pas celui qui porte l'entrée ; le pivot est le pied (bas de l'élément). Feuilles : la même classe sur chaque feuille, ampleur plus petite (1,5) ; chacune part à sa phase."
+      }
+    },
+    {
+      "no": "070",
+      "slug": "flamme",
+      "categorie": "vie",
+      "nom": {
+        "fr": "Flamme",
+        "metier": "Flicker"
+      },
+      "sens": "Une flamme qui danse en deux vagues : elle penche et s'étire depuis sa base",
+      "demande": "Une flamme qui danse sur la bougie, deux vagues, de 3 degrés.",
+      "quand": "Une bougie, une torche, un feu de camp dessiné ; pour un feu en volume, les effets de particules.",
+      "motsCles": [
+        "flamme",
+        "flicker",
+        "bougie",
+        "feu",
+        "danser",
+        "torche"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<svg viewBox=\"0 0 40 90\" style=\"height: 45cqh\" aria-hidden=\"true\">\n  <rect x=\"14\" y=\"54\" width=\"12\" height=\"36\" rx=\"2\" fill=\"var(--c-primaire)\"/>\n  <g class=\"pm-v-flamme\" data-start=\"0\" data-dur=\"scene\">\n    <path d=\"M20 54 C9 44 13 30 20 14 C27 30 31 44 20 54 Z\" fill=\"var(--c-accent)\"/>\n    <path class=\"pm-v-flamme\" style=\"--pm-dur: 0.9s; fill: color-mix(in srgb, var(--c-accent) 35%, var(--c-fond))\" d=\"M20 53 C15 47 16 39 20 30 C24 39 25 47 20 53 Z\"/>\n  </g>\n</svg>",
+        "reglages": [
+          {
+            "nom": "--pm-ampleur",
+            "defaut": "3",
+            "effet": "degrés de chaque côté (2 à 4)"
+          },
+          {
+            "nom": "--pm-etire",
+            "defaut": "0.045",
+            "effet": "étirement vers le haut (0,03 à 0,06)"
+          },
+          {
+            "nom": "--pm-dur",
+            "defaut": "0.7s",
+            "effet": "vague qui penche"
+          },
+          {
+            "nom": "--pm-dur-2",
+            "defaut": "1.1s",
+            "effet": "vague qui s'étire"
+          },
+          {
+            "nom": "data-dur",
+            "defaut": "scene",
+            "effet": "la vie tient toute la scène (dernière scène : jusqu'à 1 s avant la fin) ; sur l'élément ou son conteneur"
+          }
+        ],
+        "note": "Flamme intérieure : la même classe sur un enfant, avec --pm-dur: 0.9s (troisième vague)."
+      }
+    },
+    {
+      "no": "071",
+      "slug": "vapeur",
+      "categorie": "vie",
+      "nom": {
+        "fr": "Volutes",
+        "metier": "Steam"
+      },
+      "sens": "Des volutes montent en ondulant, grandissent et s'effacent",
+      "demande": "Fais monter trois volutes de vapeur au-dessus de la tasse, toutes les 2,4 s.",
+      "quand": "Un café, une soupe, une machine qui chauffe.",
+      "motsCles": [
+        "vapeur",
+        "steam",
+        "volute",
+        "fumee",
+        "chaud",
+        "tasse"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<div data-decor data-start=\"0\" data-dur=\"scene\" style=\"position: relative; width: 26cqh; height: 36cqh\">\n  <svg class=\"pm-v-vapeur\" viewBox=\"0 0 10 30\" style=\"position: absolute; left: 5cqh; top: 0; height: 16cqh\" aria-hidden=\"true\"><path d=\"M5 30 q-4 -7 0 -15 q4 -7 0 -15\" fill=\"none\" stroke=\"var(--c-primaire)\" stroke-width=\"1.6\" stroke-linecap=\"round\"/></svg>\n  <svg class=\"pm-v-vapeur\" viewBox=\"0 0 10 30\" style=\"position: absolute; left: 10cqh; top: 0; height: 16cqh\" aria-hidden=\"true\"><path d=\"M5 30 q-4 -7 0 -15 q4 -7 0 -15\" fill=\"none\" stroke=\"var(--c-primaire)\" stroke-width=\"1.6\" stroke-linecap=\"round\"/></svg>\n  <svg class=\"pm-v-vapeur\" viewBox=\"0 0 10 30\" style=\"position: absolute; left: 15cqh; top: 0; height: 16cqh\" aria-hidden=\"true\"><path d=\"M5 30 q-4 -7 0 -15 q4 -7 0 -15\" fill=\"none\" stroke=\"var(--c-primaire)\" stroke-width=\"1.6\" stroke-linecap=\"round\"/></svg>\n  <div style=\"position: absolute; left: 3cqh; bottom: 0; width: 20cqh; height: 16cqh; border-radius: 0 0 9cqh 9cqh; background: var(--c-accent)\"></div>\n</div>",
+        "reglages": [
+          {
+            "nom": "--pm-ampleur",
+            "defaut": "4",
+            "effet": "hauteur de la montée, en % de la hauteur de l'image"
+          },
+          {
+            "nom": "--pm-dur",
+            "defaut": "2.4s",
+            "effet": "durée d'une volute"
+          },
+          {
+            "nom": "data-dur",
+            "defaut": "scene",
+            "effet": "la vie tient toute la scène (dernière scène : jusqu'à 1 s avant la fin) ; sur l'élément ou son conteneur"
+          },
+          {
+            "nom": "--pm-phase",
+            "defaut": "propre à chaque élément",
+            "effet": "départ dans le cycle, de 0 à 1 (le moteur en donne un à chacun : jamais deux ensemble)"
+          }
+        ],
+        "note": "Sur 2 ou 3 volutes, chacune un élément HTML ou un <svg> entier : à l'intérieur d'un dessin, le déplacement se compterait dans les unités du dessin."
+      }
+    },
+    {
+      "no": "072",
+      "slug": "flotte",
+      "categorie": "vie",
+      "nom": {
+        "fr": "Flottement",
+        "metier": "Bob"
+      },
+      "sens": "Monte et descend doucement en penchant un peu, comme posé sur l'eau",
+      "demande": "Fais flotter la bouée de 0,8 % de la hauteur, en 3,4 s.",
+      "quand": "Un objet sur l'eau, un ballon, une bulle, une icône en apesanteur.",
+      "motsCles": [
+        "flottement",
+        "bob",
+        "flotter",
+        "eau",
+        "apesanteur",
+        "bouee"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<div class=\"pm-v-flotte\" data-decor data-start=\"0\" data-dur=\"scene\" style=\"width: 24cqh; height: 24cqh; border-radius: 50%; border: 4cqh solid var(--c-accent); background: var(--c-fond)\"></div>",
+        "reglages": [
+          {
+            "nom": "--pm-ampleur",
+            "defaut": "0.8",
+            "effet": "montée et descente, en % de la hauteur de l'image"
+          },
+          {
+            "nom": "--pm-dur",
+            "defaut": "3.4s",
+            "effet": "durée d'une montée et d'une descente"
+          },
+          {
+            "nom": "--pm-ampleur-2",
+            "defaut": "2",
+            "effet": "degrés de penchement"
+          },
+          {
+            "nom": "--pm-dur-2",
+            "defaut": "4.6s",
+            "effet": "durée d'un penchement"
+          },
+          {
+            "nom": "data-dur",
+            "defaut": "scene",
+            "effet": "la vie tient toute la scène (dernière scène : jusqu'à 1 s avant la fin) ; sur l'élément ou son conteneur"
+          }
+        ],
+        "note": "Sur un élément HTML ou un <svg> entier (pas une forme à l'intérieur d'un dessin)."
+      }
+    },
+    {
+      "no": "073",
+      "slug": "lueur",
+      "categorie": "vie",
+      "nom": {
+        "fr": "Lueur",
+        "metier": "Glow"
+      },
+      "sens": "Un halo grandit et revient très doucement, comme une lumière qui respire",
+      "demande": "Fais respirer le halo de la lampe de 4 %, en 3 s.",
+      "quand": "Une lampe, une ampoule, un bouton à mettre en valeur sans le faire battre.",
+      "motsCles": [
+        "lueur",
+        "glow",
+        "halo",
+        "lumiere",
+        "respirer",
+        "lampe"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<div data-decor data-start=\"0\" data-dur=\"scene\" style=\"position: relative; display: grid; place-items: center\">\n  <div class=\"pm-v-lueur\" style=\"width: 40cqh; height: 40cqh; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--c-accent) 60%, transparent), transparent 70%)\"></div>\n  <div style=\"position: absolute; width: 12cqh; height: 12cqh; border-radius: 50%; background: var(--c-accent)\"></div>\n</div>",
+        "reglages": [
+          {
+            "nom": "--pm-ampleur",
+            "defaut": "0.04",
+            "effet": "grandit de 4 % (de 2 à 5 %)"
+          },
+          {
+            "nom": "--pm-dur",
+            "defaut": "3s",
+            "effet": "durée d'une respiration (2 à 4 s)"
+          },
+          {
+            "nom": "data-dur",
+            "defaut": "scene",
+            "effet": "la vie tient toute la scène (dernière scène : jusqu'à 1 s avant la fin) ; sur l'élément ou son conteneur"
+          }
+        ],
+        "note": "Sur le halo, derrière l'objet, jamais sur l'objet lui-même."
+      }
+    },
+    {
+      "no": "074",
+      "slug": "scintille",
+      "categorie": "vie",
+      "nom": {
+        "fr": "Scintillement",
+        "metier": "Twinkle"
+      },
+      "sens": "Une étoile reste tranquille, puis se resserre et brille un instant",
+      "demande": "Fais scintiller les cinq étoiles, chacune à son moment, toutes les 2,8 s.",
+      "quand": "Un ciel de nuit, une idée qui brille, de petites étincelles posées.",
+      "motsCles": [
+        "scintillement",
+        "twinkle",
+        "etoile",
+        "briller",
+        "etincelle",
+        "ciel"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<svg viewBox=\"0 0 120 60\" style=\"height: 40cqh\" aria-hidden=\"true\">\n  <g data-start=\"0\" data-dur=\"scene\" fill=\"var(--c-accent)\">\n    <path class=\"pm-v-scintille\" d=\"M16 14 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3 z\"/>\n    <path class=\"pm-v-scintille\" d=\"M44 30 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3 z\"/>\n    <path class=\"pm-v-scintille\" d=\"M66 6 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3 z\"/>\n    <path class=\"pm-v-scintille\" d=\"M86 32 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3 z\"/>\n    <path class=\"pm-v-scintille\" d=\"M106 12 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3 z\"/>\n  </g>\n</svg>",
+        "reglages": [
+          {
+            "nom": "--pm-dur",
+            "defaut": "2.8s",
+            "effet": "durée d'un cycle (repos, puis éclat)"
+          },
+          {
+            "nom": "data-dur",
+            "defaut": "scene",
+            "effet": "la vie tient toute la scène (dernière scène : jusqu'à 1 s avant la fin) ; sur l'élément ou son conteneur"
+          },
+          {
+            "nom": "--pm-phase",
+            "defaut": "propre à chaque élément",
+            "effet": "départ dans le cycle, de 0 à 1 (le moteur en donne un à chacun : jamais deux ensemble)"
+          }
+        ],
+        "note": "Chaque étoile part à sa phase : jamais toutes ensemble."
+      }
+    },
+    {
+      "no": "075",
+      "slug": "engrenage",
+      "categorie": "vie",
+      "nom": {
+        "fr": "Engrenage",
+        "metier": "Gear train"
+      },
+      "sens": "Des roues dentées tournent ensemble, à vitesse constante, en sens contraires",
+      "demande": "Fais tourner les deux engrenages : un tour en 6 s pour la grande roue de 16 dents.",
+      "quand": "Une machine, un processus, une méthode qui « tourne ».",
+      "motsCles": [
+        "engrenage",
+        "gear",
+        "roue",
+        "machine",
+        "mecanisme",
+        "tourner"
+      ],
+      "recette": {
+        "type": "combinaison",
+        "exemple": "<svg viewBox=\"0 0 100 60\" style=\"height: 40cqh\" aria-hidden=\"true\">\n  <g data-start=\"0\" data-dur=\"scene\" fill=\"var(--c-primaire)\" stroke=\"var(--c-primaire)\">\n    <g class=\"pm-v-engrenage\"><circle cx=\"35\" cy=\"30\" r=\"16\"/><circle cx=\"35\" cy=\"30\" r=\"19\" fill=\"none\" stroke-width=\"6\" stroke-dasharray=\"3.73 3.73\"/><circle cx=\"35\" cy=\"30\" r=\"5\" fill=\"var(--c-fond)\" stroke=\"none\"/></g>\n    <g class=\"pm-v-engrenage-inverse\" style=\"--pm-dur: calc(6s * 10 / 16)\"><circle cx=\"69\" cy=\"30\" r=\"9\"/><circle cx=\"69\" cy=\"30\" r=\"11\" fill=\"none\" stroke-width=\"6\" stroke-dasharray=\"3.46 3.46\"/><circle cx=\"69\" cy=\"30\" r=\"3\" fill=\"var(--c-fond)\" stroke=\"none\"/></g>\n  </g>\n</svg>",
+        "reglages": [
+          {
+            "nom": "--pm-dur",
+            "defaut": "6s",
+            "effet": "un tour de la roue qui entraîne"
+          },
+          {
+            "nom": "pm-v-engrenage-inverse",
+            "defaut": "roue menée",
+            "effet": "tourne dans l'autre sens"
+          },
+          {
+            "nom": "--pm-dur (roue menée)",
+            "defaut": "calc(6s * 10 / 16)",
+            "effet": "durée × dents de la roue menée / dents de la roue qui entraîne"
+          },
+          {
+            "nom": "data-dur",
+            "defaut": "scene",
+            "effet": "la vie tient toute la scène (dernière scène : jusqu'à 1 s avant la fin) ; sur l'élément ou son conteneur"
+          }
+        ],
+        "note": "Boucle continue : elle tourne jusqu'à la fin de sa fenêtre, sans déphasage (les dents restent engrenées)."
+      }
+    },
+    {
+      "no": "076",
+      "slug": "vibre",
+      "categorie": "vie",
+      "nom": {
+        "fr": "Vibreur",
+        "metier": "Buzz"
+      },
+      "sens": "Une petite rafale de secousses, puis le calme : un téléphone qui vibre",
+      "demande": "Fais vibrer le téléphone : 4 secousses de 3 degrés en 0,45 s, toutes les 1,6 s.",
+      "quand": "Une notification, un appel, un réveil.",
+      "motsCles": [
+        "vibreur",
+        "buzz",
+        "vibrer",
+        "telephone",
+        "notification",
+        "sonner"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<div class=\"pm-v-vibre\" data-decor data-start=\"0\" data-dur=\"scene\" style=\"width: 16cqh; height: 28cqh; border-radius: 2.5cqh; border: 1.2cqh solid var(--c-primaire); background: var(--c-fond)\"></div>",
+        "reglages": [
+          {
+            "nom": "--pm-ampleur",
+            "defaut": "3",
+            "effet": "degrés de chaque secousse"
+          },
+          {
+            "nom": "--pm-dur",
+            "defaut": "1.6s",
+            "effet": "une rafale (28 % du temps) et son repos"
+          },
+          {
+            "nom": "data-dur",
+            "defaut": "scene",
+            "effet": "la vie tient toute la scène (dernière scène : jusqu'à 1 s avant la fin) ; sur l'élément ou son conteneur"
+          }
+        ]
+      }
+    },
+    {
+      "no": "077",
+      "slug": "attend",
+      "categorie": "vie",
+      "nom": {
+        "fr": "Attente",
+        "metier": "Idle jiggle"
+      },
+      "sens": "Un objet qui attend se dandine : il s'aplatit d'un côté, puis de l'autre",
+      "demande": "Fais attendre le colis en se dandinant de 2 %, en deux temps de 270 ms.",
+      "quand": "Un objet ou une mascotte simple qui attend son tour, une icône qui patiente.",
+      "motsCles": [
+        "attente",
+        "idle",
+        "dandiner",
+        "patienter",
+        "attendre",
+        "jiggle"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<div class=\"pm-v-attend\" data-decor data-start=\"0\" data-dur=\"scene\" style=\"width: 26cqh; height: 20cqh; border-radius: 3cqh; background: var(--c-accent)\"></div>",
+        "reglages": [
+          {
+            "nom": "--pm-ampleur",
+            "defaut": "0.02",
+            "effet": "élargissement (1,5 à 3 %)"
+          },
+          {
+            "nom": "--pm-dur",
+            "defaut": "0.54s",
+            "effet": "deux temps de 270 ms"
+          },
+          {
+            "nom": "data-dur",
+            "defaut": "scene",
+            "effet": "la vie tient toute la scène (dernière scène : jusqu'à 1 s avant la fin) ; sur l'élément ou son conteneur"
+          }
+        ],
+        "note": "Depuis la base : l'objet reste posé."
+      }
+    },
+    {
+      "no": "078",
+      "slug": "nuage",
+      "categorie": "vie",
+      "nom": {
+        "fr": "Dérive",
+        "metier": "Cloud drift"
+      },
+      "sens": "Un nuage avance lentement, à vitesse constante, tout au long de la scène",
+      "demande": "Fais dériver les nuages vers la droite, à 4 % de la hauteur par seconde, le plus lointain à 2.",
+      "quand": "Un ciel, un paysage, un fond qui doit vivre sans bouger d'un coup.",
+      "motsCles": [
+        "nuage",
+        "derive",
+        "drift",
+        "ciel",
+        "parallaxe",
+        "avancer"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<div data-decor style=\"display: grid; gap: 6cqh; justify-items: start; width: 70cqh\">\n  <div class=\"pm-v-nuage\" data-start=\"0\" data-dur=\"scene\" style=\"--pm-vitesse: 2; width: 18cqh; height: 6cqh; border-radius: 3cqh; background: color-mix(in srgb, var(--c-primaire) 18%, transparent)\"></div>\n  <div class=\"pm-v-nuage\" data-start=\"0\" data-dur=\"scene\" style=\"width: 30cqh; height: 10cqh; border-radius: 5cqh; background: color-mix(in srgb, var(--c-primaire) 35%, transparent)\"></div>\n</div>",
+        "reglages": [
+          {
+            "nom": "--pm-vitesse",
+            "defaut": "4",
+            "effet": "en % de la hauteur par seconde (négatif : vers la gauche ; plan lointain : 2)"
+          },
+          {
+            "nom": "data-dur",
+            "defaut": "scene",
+            "effet": "sur l'élément ou son conteneur : la dérive suit sa progression"
+          }
+        ],
+        "note": "À 4, il traverse une image 16:9 en 44 s."
+      }
+    },
+    {
+      "no": "079",
+      "slug": "ondes",
+      "categorie": "vie",
+      "nom": {
+        "fr": "Ondes",
+        "metier": "Ripples"
+      },
+      "sens": "Des anneaux naissent au centre, s'élargissent et s'effacent, l'un après l'autre",
+      "demande": "Fais partir trois ondes depuis le point, toutes les 2,6 s.",
+      "quand": "Un signal, une goutte dans l'eau, un point à faire remarquer.",
+      "motsCles": [
+        "ondes",
+        "ripple",
+        "anneau",
+        "signal",
+        "goutte",
+        "radar"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<svg viewBox=\"0 0 100 100\" style=\"height: 50cqh\" aria-hidden=\"true\">\n  <g data-start=\"0\" data-dur=\"scene\" fill=\"none\" stroke=\"var(--c-accent)\" stroke-width=\"2\">\n    <circle class=\"pm-v-ondes\" cx=\"50\" cy=\"50\" r=\"30\"/>\n    <circle class=\"pm-v-ondes\" cx=\"50\" cy=\"50\" r=\"30\"/>\n    <circle class=\"pm-v-ondes\" cx=\"50\" cy=\"50\" r=\"30\"/>\n  </g>\n  <circle cx=\"50\" cy=\"50\" r=\"5\" fill=\"var(--c-primaire)\"/>\n</svg>",
+        "reglages": [
+          {
+            "nom": "--pm-dur",
+            "defaut": "2.6s",
+            "effet": "durée d'une onde"
+          },
+          {
+            "nom": "data-dur",
+            "defaut": "scene",
+            "effet": "la vie tient toute la scène (dernière scène : jusqu'à 1 s avant la fin) ; sur l'élément ou son conteneur"
+          },
+          {
+            "nom": "--pm-phase",
+            "defaut": "propre à chaque élément",
+            "effet": "départ dans le cycle, de 0 à 1 (le moteur en donne un à chacun : jamais deux ensemble)"
+          }
+        ],
+        "note": "Sur 2 ou 3 anneaux superposés : chacun part à sa phase."
+      }
+    },
+    {
+      "no": "080",
+      "slug": "croissance",
+      "categorie": "vie",
+      "nom": {
+        "fr": "Pousse",
+        "metier": "Grow"
+      },
+      "sens": "Une plante pousse : la tige se trace en deux poussées, puis les feuilles et les pétales s'ouvrent",
+      "demande": "Fais pousser la fleur en 1,6 s, puis balancer de 2 degrés.",
+      "quand": "Une croissance, un projet qui grandit, une idée qui éclot.",
+      "motsCles": [
+        "pousse",
+        "grow",
+        "croissance",
+        "fleur",
+        "plante",
+        "eclore"
+      ],
+      "recette": {
+        "type": "combinaison",
+        "exemple": "<svg viewBox=\"0 0 60 100\" style=\"height: 50cqh\" aria-hidden=\"true\">\n  <g class=\"pm-v-balance\" data-start=\"1.6\" data-dur=\"scene\" style=\"--pm-ampleur: 2\">\n    <g data-start=\"0\" data-dur=\"1.6\">\n      <path class=\"pm-v-tige\" pathLength=\"100\" d=\"M30 100 Q28 62 31 24\" stroke=\"var(--c-primaire)\" stroke-width=\"3\" fill=\"none\"/>\n      <ellipse class=\"pm-v-feuille\" style=\"--i: 1; --pm-pivot: 100% 50%\" cx=\"21\" cy=\"64\" rx=\"9\" ry=\"4\" fill=\"var(--c-accent)\"/>\n      <ellipse class=\"pm-v-feuille\" style=\"--i: 2; --pm-pivot: 0% 50%\" cx=\"40\" cy=\"46\" rx=\"9\" ry=\"4\" fill=\"var(--c-accent)\"/>\n    </g>\n    <g data-start=\"1.2\" data-dur=\"0.8\" fill=\"var(--c-accent)\">\n      <g transform=\"rotate(0 31 22)\"><ellipse class=\"pm-v-petale\" style=\"--i: 0\" cx=\"31\" cy=\"15\" rx=\"3.2\" ry=\"7\"/></g>\n      <g transform=\"rotate(72 31 22)\"><ellipse class=\"pm-v-petale\" style=\"--i: 1\" cx=\"31\" cy=\"15\" rx=\"3.2\" ry=\"7\"/></g>\n      <g transform=\"rotate(144 31 22)\"><ellipse class=\"pm-v-petale\" style=\"--i: 2\" cx=\"31\" cy=\"15\" rx=\"3.2\" ry=\"7\"/></g>\n      <g transform=\"rotate(216 31 22)\"><ellipse class=\"pm-v-petale\" style=\"--i: 3\" cx=\"31\" cy=\"15\" rx=\"3.2\" ry=\"7\"/></g>\n      <g transform=\"rotate(288 31 22)\"><ellipse class=\"pm-v-petale\" style=\"--i: 4\" cx=\"31\" cy=\"15\" rx=\"3.2\" ry=\"7\"/></g>\n      <circle cx=\"31\" cy=\"22\" r=\"3\" fill=\"var(--c-primaire)\"/>\n    </g>\n  </g>\n</svg>",
+        "reglages": [
+          {
+            "nom": "--pm-dur",
+            "defaut": "1.6s",
+            "effet": "durée de la tige (chemin avec pathLength=\"100\")"
+          },
+          {
+            "nom": "--i",
+            "defaut": "1, 2…",
+            "effet": "rang de chaque feuille (départ --i × 0,35 s) ou pétale (× 0,12 s)"
+          },
+          {
+            "nom": "--pm-pivot",
+            "defaut": "50% 100%",
+            "effet": "base d'une feuille ou d'un pétale"
+          },
+          {
+            "nom": "--pm-decalage",
+            "defaut": "0.35s / 0.12s",
+            "effet": "écart entre deux feuilles ou deux pétales"
+          }
+        ],
+        "note": "Ponctuelle : elle joue une fois. Tige et feuilles dans un groupe minuté de 1,6 s, pétales dans un groupe qui part à 1,2 s ; la plante entière porte ensuite #069 (pm-v-balance)."
       }
     }
   ]

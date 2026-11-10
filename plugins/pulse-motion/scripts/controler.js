@@ -28,7 +28,7 @@ const path = require('node:path');
 // Appelé par le module (et non par une copie de la fonction) : les tests comptent les assemblages.
 const Assembleur = require('./assembler.js');
 const { charteFinale, RACINE } = Assembleur;
-const { controlerCSS, controlerLettres, sonConnu, problemeSonInconnu } = require('./lib/controle-scene.js');
+const { controlerCSS, controlerLettres, sonConnu, problemeSonInconnu, controlerVie, classesAnimeesDuStyle } = require('./lib/controle-scene.js');
 const { empreintesControle, plagesScenes, besoinEcoute, empreinteSonore } = require('./lib/empreintes.js');
 const { ecrireAtomique } = require('./lib/fichiers.js');
 const { avecConsignes } = require('./lib/messages.js');
@@ -39,7 +39,7 @@ const { deplierGroupes } = require('./lib/groupes-personnages.js');
 const { cheminDansProjet } = require('./lib/embarquer.js');
 const W = require('../moteur/wav.js');
 const { corrigerTypographie, corrigerMajuscules, motsDoubles, termesVariables, cleTerme } = require('./lib/typographie.js');
-const { extraireScene, textesEnDur } = require('./lib/extraire.js');
+const { extraireScene, textesEnDur, viesScene } = require('./lib/extraire.js');
 const { estEbauche } = require('./lib/ebauche.js');
 const { calculerMinutage } = require('../moteur/minutage.js');
 const CATALOGUE = require('../moteur/synthe/catalogue.js');
@@ -129,6 +129,7 @@ function controlesRapides({ projet, dossierStyles, dossierEffets, assemblage = A
     const scenesLues = {};
     const scenesHtml = {};
     const elementsParScene = {};
+    const viesParScene = {};
     for (const s of deroule.scenes) {
       const fichier = cheminDansProjet(projet, s.fichier);
       let html = '';
@@ -144,6 +145,7 @@ function controlesRapides({ projet, dossierStyles, dossierEffets, assemblage = A
           message: `Scène « ${s.id} » : ce n'est encore que l'ébauche, la scène n'a pas été écrite.`,
           consigne: `Scène « ${s.id} » : le fichier « ${s.fichier} » porte encore data-ebauche (écrit par pulse-motion ebauche). Le faire réécrire en entier par un agent animateur, sans data-ebauche.` });
       }
+      viesParScene[s.id] = viesScene(html);
     }
     const temps = dureeTemps(deroule);
     // Scènes de la page (avec leur voix) : durées effectives et ancres « mot: » comme dans le navigateur.
@@ -323,6 +325,7 @@ function controlesRapides({ projet, dossierStyles, dossierEffets, assemblage = A
     }
 
     // Temps de lecture et CSS des scènes.
+    let classesStyle = null;
     for (const s of deroule.scenes) {
       const { mots, besoin } = besoinLecture[s.id];
       const minutee = min.scenes.find((x) => x.id === s.id);
@@ -344,6 +347,11 @@ function controlesRapides({ projet, dossierStyles, dossierEffets, assemblage = A
         }
       }
       controlerLettres(scenesLues[s.id].decoupes, s.id, problemes);
+      // Boucles de vie (pm-v-*) : une durée, et jamais sur l'élément qui porte l'entrée.
+      if (viesParScene[s.id].length) {
+        if (!classesStyle) { try { classesStyle = classesAnimeesDuStyle(fs.readFileSync(path.join(dossierStyle, 'style.css'), 'utf8')); } catch { classesStyle = new Set(); } }
+        controlerVie(viesParScene[s.id], s.id, classesStyle, problemes);
+      }
     }
 
     // Effets de particules : budget par scène, effet du calque avant posé sur un texte long.
