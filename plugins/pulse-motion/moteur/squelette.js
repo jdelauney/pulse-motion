@@ -52,12 +52,13 @@
     'jambeAvant', 'jambeArriere', 'brasAvant', 'brasArriere'].concat(['hanche', 'genou', 'cheville', 'orteil', 'epaule', 'coude', 'main']
     .reduce(function (l, n) { return l.concat([n + 'Avant', n + 'Arriere']); }, [])));
 
-  // Bornes par défaut [min, max] (degrés), clés génériques : un humanoïde souple de cartoon.
+  // Bornes par défaut [min, max] (degrés), clés génériques : un humanoïde souple de cartoon. Pied jusqu'à 75° : pointe
+  // tendue vers le bas d'un personnage qui flotte (70°, spec Mouvement vivant 5.7).
   var LIMITES = Object.freeze({
     bassinRot: [-70, 70],
     torse: [-40, 70], torseRot: [-50, 50], torseIncl: [-35, 35],
     tete: [-40, 45], teteTourne: [-85, 85], tetePenche: [-35, 35],
-    cuisse: [-125, 45], tibia: [0, 150], pied: [-40, 55], ecartJambe: [-15, 60], torsionJambe: [-40, 45],
+    cuisse: [-125, 45], tibia: [0, 150], pied: [-40, 75], ecartJambe: [-15, 60], torsionJambe: [-40, 45],
     bras: [-180, 60], avantBras: [-150, 0], ecartBras: [-20, 175], torsionBras: [-90, 90]
   });
 

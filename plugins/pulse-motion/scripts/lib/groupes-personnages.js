@@ -18,7 +18,7 @@ const { lireSecondes } = require('../../moteur/minutage.js');
 const BALISE = /<!--[\s\S]*?-->|<(\/?)([a-zA-Z][\w-]*)\b((?:[^>"']|"[^"]*"|'[^']*')*)>/g;
 const VIDES = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr']);
 const PROPRES = ['data-groupe', 'data-ecart', 'data-decalage', 'data-depart', 'data-variation'];
-const TRAJETS = ['marcher', 'courir', 'glisser', 'bondir'];
+const TRAJETS = ['marcher', 'courir', 'glisser', 'bondir', 'flotter'];
 
 function erreur(scene, message) { return { regle: 'personnage-invalide', gravite: 'erreur', scene, message: `Scène « ${scene} » : ${message}` }; }
 const arrondi = (x) => Math.round(x * 10000) / 10000;

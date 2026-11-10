@@ -20,7 +20,7 @@ const BALISE = /<!--[\s\S]*?-->|<(\/?)([a-zA-Z][\w-]*)\b((?:[^>"']|"[^"]*"|'[^']
 // Éléments sans fermeture : ils ne changent pas la profondeur.
 const VIDES = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr']);
 const ACTIONS = {
-  marcher: ['vers'], courir: ['vers'], glisser: [], bondir: [], atteindre: ['cible'], regarder: ['cible'], pose: ['pose'], jouer: ['clip'], tourner: ['vue'], expression: ['expression'], bouche: ['bouche'], parler: [],
+  marcher: ['vers'], courir: ['vers'], glisser: [], bondir: [], flotter: [], atteindre: ['cible'], regarder: ['cible'], pose: ['pose'], jouer: ['clip'], tourner: ['vue'], expression: ['expression'], bouche: ['bouche'], parler: [],
 };
 const NOMBRES = ['data-x', 'data-sol', 'data-taille', 'data-vue', 'data-vers', 'data-hauteur'];
 const TRAJETS = ['marcher', 'courir', 'glisser', 'bondir'];
@@ -116,10 +116,12 @@ function preparerPersonnages(html0, { scene, lu, voix = false, dureeTemps = null
     if (a['data-attention'] !== undefined && type !== 'regarder') erreurs.push(erreur(scene, `${qui} : data-attention ne sert qu'à « regarder ».`));
     if (a['data-sol'] !== undefined && !TRAJETS.includes(type)) erreurs.push(erreur(scene, `${qui} : data-sol ne sert qu'aux déplacements (marcher, courir, glisser, bondir) ou au personnage lui-même.`));
     if (a['data-ecrase'] !== undefined) {
-      if (type !== 'bondir') erreurs.push(erreur(scene, `${qui} : data-ecrase ne sert qu'à « bondir » ou au personnage lui-même (écrasement à l'atterrissage).`));
+      if (type !== 'bondir' && type !== 'flotter') erreurs.push(erreur(scene, `${qui} : data-ecrase ne sert qu'à « bondir », « flotter » ou au personnage lui-même (écrasement à l'atterrissage).`));
       else verifierEcrase(a['data-ecrase'], qui);
     }
-    if (a['data-hauteur'] !== undefined && type !== 'bondir') erreurs.push(erreur(scene, `${qui} : data-hauteur ne sert qu'à « bondir » (hauteur de l'arc).`));
+    if (a['data-hauteur'] !== undefined && type !== 'bondir' && type !== 'flotter') erreurs.push(erreur(scene, `${qui} : data-hauteur ne sert qu'à « bondir » (hauteur de l'arc) et à « flotter » (hauteur du vol).`));
+    if (type === 'flotter' && a['data-hauteur'] !== undefined && Number.isFinite(Number(a['data-hauteur'])) && (Number(a['data-hauteur']) < 2 || Number(a['data-hauteur']) > 40)) erreurs.push(erreur(scene, `${qui} : data-hauteur="${a['data-hauteur']}" : hauteur du vol en % de la hauteur de l'image, de 2 à 40 (ex. 12).`));
+    if (type === 'flotter' && a['data-dur'] === undefined) erreurs.push(erreur(scene, `${qui} : data-dur obligatoire (durée du vol, ex. data-dur="3").`));
     if (a['data-courbe'] !== undefined && type !== 'glisser') erreurs.push(erreur(scene, `${qui} : data-courbe ne sert qu'à « glisser ».`));
     if (a['data-courbe'] !== undefined) { try { C.courbeNommee(a['data-courbe'].trim()); } catch (e) { erreurs.push(erreur(scene, `${qui} : ${e.message}`)); } }
     if (type === 'bondir' && a['data-clip'] !== undefined && !Object.hasOwn(lu.clips, a['data-clip'].trim())) erreurs.push(erreur(scene, `${qui} : mouvement « ${a['data-clip'].trim()} » introuvable pour le bond (par défaut : saut).`));

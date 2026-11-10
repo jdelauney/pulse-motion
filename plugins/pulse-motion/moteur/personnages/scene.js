@@ -13,6 +13,7 @@
  * personnage (scène + id, ou rang dans la scène) ; ombre au sol (<ellipse class="pm-perso-ombre">, sauf data-ombre="non")
  * centrée entre les chevilles, sur la ligne du sol, plus petite quand il s'élève ; écrasement à l'atterrissage
  * (data-ecrase, 0 à 0,25) appliqué au groupe du personnage autour du point de contact, volume gardé (sx = 1 / sy^0,6).
+ * « flotter » (data-hauteur, data-dur) : vol pieds pendants, l'ombre reste au sol ; « regarder » : data-attention (0 à 1).
  * Ombre et écrasement : rossark-motion-skill (licence MIT), formules reprises, code réécrit.
  */
 (function (racine) {
@@ -202,7 +203,7 @@
         div: div, habillage: habillage, gabarit: gabarit, echelle: echelle, ombre: ombre, gEcrase: gEcrase, hauteur: P.hauteur(gabarit),
         partition: { x0: nombre(div, 'data-x', 50), sol0: sol0, vue0: nombre(div, 'data-vue', 0), calme: div.getAttribute('data-calme') !== 'non',
           vie: vie === 'sobre' || vie === 'aucune' ? vie : 'pleine', sel: V.sel(idScene + '/' + (div.id || rang)), scene: bornesScene(idScene),
-          ecrase: ecrase, largeur: W, hauteur: H, echelle: echelle, sols: sols, actions: actions }
+          ecrase: ecrase, largeur: W, hauteur: H, echelle: echelle, taille: nombre(div, 'data-taille', 40), sols: sols, actions: actions }
       });
     });
     if (!persos.length) return;
