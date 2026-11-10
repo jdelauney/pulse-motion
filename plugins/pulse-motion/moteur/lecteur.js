@@ -5,7 +5,7 @@
  * Page livrée ouverte hors de l'aperçu (spec Rendu et export, 5.17) : elle s'affiche sur l'image de couverture (sans
  * sous-titres) avec un grand bouton ▶ « Lire la vidéo » ; le premier clic, une touche ou le bouton de la barre lancent la
  * lecture depuis 0. Jamais sous l'aperçu, en capture (?capture=1, M.enCapture), à l'export, dans les pages du contrôle, ni dans un
- * navigateur piloté (navigator.webdriver, sauf ?affiche=1).
+ * navigateur piloté ou sans fenêtre (navigator.webdriver, HeadlessChrome), sauf ?affiche=1.
  * M.enLecture() : vrai pendant la lecture (composition des shaders : cadence des photographies).
  * M.boucler({ debut, fin } | null) : boucle de lecture posée par l'atelier des effets (fenêtre d'un effet).
  * Les champs du panneau de l'atelier (#pm-atelier) et du studio (#pm-studio) gardent le clavier.
@@ -110,8 +110,9 @@
     function sansAffiche() {
       return !!(racine.__PM_APERCU__ || pageCapture || M.sansSon || M.exportEnCours || (M.enCapture && M.enCapture())
         || /[?&](export|planche)=/.test(location.search) || !M.instantCouverture
-        // Navigateur piloté (tests, contrôle, mesures) : jamais, sauf ?affiche=1 ; une personne n'ouvre jamais la page ainsi.
-        || (racine.navigator && racine.navigator.webdriver && !/[?&]affiche=1(&|$)/.test(location.search)));
+        // Navigateur piloté ou sans fenêtre (tests, contrôle, mesures) : jamais, sauf ?affiche=1 ; une personne n'ouvre jamais
+        // la page ainsi.
+        || (racine.navigator && (racine.navigator.webdriver || /Headless/.test(racine.navigator.userAgent || '')) && !/[?&]affiche=1(&|$)/.test(location.search)));
     }
     function sousTitresMasques(oui) {
       var st = document.getElementById('pm-sous-titres');

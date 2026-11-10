@@ -270,7 +270,8 @@ function creerRoutesExport(projet, { optionsAssemblage = {} } = {}) {
     const base = slug(deroule.titre || 'video');
     const special = sortieDemandee.extrait || sortieDemandee.cadre;
     const nomFichier = special ? L.nomSortie(base, { usage: u.usage, scene: sortieDemandee.scene, plage: sortieDemandee.plage, cadre: sortieDemandee.cadre }) : U.nomFichier(base, u.usage);
-    const couverture = !special && (u.fichiers || []).includes('couverture');
+    // Taille visée : ni couverture ni vignette (la reconversion ne la garderait pas), comme dans la voie fidèle.
+    const couverture = !special && !u.tailleMax && (u.fichiers || []).includes('couverture');
     return repondre(res, 200, { ...u, nomFichier, couverture, titre: deroule.titre, sortie: sortieDemandee });
   }
 

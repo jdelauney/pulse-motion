@@ -230,7 +230,8 @@ async function exporterFidele({ dossier, pour, qualite, ips, tailleMax, navigate
   const deriveParSegment = !memeEncodage && !deuxPasses && !extrait;
   // Livrables de diffusion de la vidéo entière (5.10, 5.11) : couverture et vignette, chapitres intégrés.
   const joints = (U.lireUsages().usages[u.usage] || {}).fichiers || [];
-  const avecCouverture = joints.includes('couverture') && !extrait && !demande.cadre;
+  // Une taille visée (deux passes) n'intègre ni vignette ni chapitres : chaque octet compte.
+  const avecCouverture = joints.includes('couverture') && !extrait && !demande.cadre && !deuxPasses;
   const chapitres = joints.includes('chapitres') && !extrait && !demande.cadre && !deuxPasses ? L.chapitresDe(deroule, minutageNode) : [];
   // Plafond du grain : il ne change les pixels que si la page a un grain.
   const grainMax = u.grainMax && U.avecGrain(deroule) ? u.grainMax : null;
