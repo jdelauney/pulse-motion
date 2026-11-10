@@ -90,6 +90,15 @@ Un effet de particules posé sur un élément que la caméra déplace le suit : 
 
 Les sous-titres sont aussi contrôlés pour le contraste (`contraste-reel`, élément « sous-titres ») et, en 9:16, pour les zones des réseaux (`zone-sure`).
 
+**Zones des plateformes** : avec `format.plateforme` (vidéo 9:16), `zone-sure` prend le rectangle de la plateforme, quatre côtés compris (marges relevées en novembre 2026, clé `zonesDate` ; tableau de la clé `zonesPlateformes` de `scripts/seuils.json`), en fractions de la hauteur (haut, bas) et de la largeur (gauche, droite). Un export pour les réseaux d'une vidéo 9:16 sans plateforme vérifie la ligne `toutes`, en alerte.
+
+| Plateforme | Haut | Droite | Bas | Gauche |
+|---|---|---|---|---|
+| `tiktok` | 0,125 | 0,20 | 0,34 | 0,11 |
+| `shorts` | 0,15 | 0,12 | 0,35 | 0,06 |
+| `reels` | 0,14 | 0,11 | 0,35 | 0,06 |
+| `toutes` | 0,15 | 0,20 | 0,35 | 0,11 |
+
 La vidéo est relevée toutes les 0,2 s (`pasMesure`) ; un élément est immobile quand il bouge de moins de 0,5 % (`immobile`) de l'image entre deux relevés.
 
 ## Images
