@@ -43,11 +43,12 @@ function commandeInstallation(options = {}) {
 
 function emplacements(env, plateforme) {
   const exe = plateforme === 'win32' ? '.exe' : '';
+  // Chemins du système visé (et non de celui qui lance) : les mêmes en vrai, et justes quand un test simule un autre système.
   const chemins = plateforme === 'win32' ? path.win32 : path.posix;
   const dossiers = [];
   if (env.PM_FFMPEG) {
     const v = env.PM_FFMPEG.replace(/^"(.*)"$/, '$1');
-    dossiers.push(/ffmpeg(\.exe)?$/i.test(v) ? path.dirname(v) : v);
+    dossiers.push(/ffmpeg(\.exe)?$/i.test(v) ? chemins.dirname(v) : v);
   }
   const separateur = plateforme === 'win32' ? ';' : ':';
   for (const brut of String(env.PATH || env.Path || '').split(separateur)) {
@@ -55,15 +56,15 @@ function emplacements(env, plateforme) {
     if (d && chemins.isAbsolute(d)) dossiers.push(d);
   }
   if (plateforme === 'win32') {
-    if (env.LOCALAPPDATA) dossiers.push(path.join(env.LOCALAPPDATA, 'Microsoft', 'WinGet', 'Links'));
-    if (env.USERPROFILE) dossiers.push(path.join(env.USERPROFILE, 'scoop', 'shims'));
+    if (env.LOCALAPPDATA) dossiers.push(chemins.join(env.LOCALAPPDATA, 'Microsoft', 'WinGet', 'Links'));
+    if (env.USERPROFILE) dossiers.push(chemins.join(env.USERPROFILE, 'scoop', 'shims'));
     dossiers.push('C:\\ffmpeg\\bin', 'C:\\Program Files\\ffmpeg\\bin');
   } else if (plateforme === 'darwin') {
     dossiers.push('/opt/homebrew/bin', '/usr/local/bin');
   } else {
     dossiers.push('/usr/bin', '/usr/local/bin', '/snap/bin');
   }
-  return dossiers.map((d) => ({ ffmpeg: path.normalize(path.join(d, `ffmpeg${exe}`)), ffprobe: path.normalize(path.join(d, `ffprobe${exe}`)) }));
+  return dossiers.map((d) => ({ ffmpeg: chemins.normalize(chemins.join(d, `ffmpeg${exe}`)), ffprobe: chemins.normalize(chemins.join(d, `ffprobe${exe}`)) }));
 }
 
 const executerParDefaut = (chemin, args) => execFileSync(chemin, args, { encoding: 'utf8', timeout: 15000, windowsHide: true });

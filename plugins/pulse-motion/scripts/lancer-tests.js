@@ -13,7 +13,8 @@
  * Un fichier seul reste lançable : node --test tests/<fichier>.
  * Arguments : --unitaires ou --navigateur pour une seule phase ; --etalon réenregistre les références de la non-régression
  * visuelle du moteur pour ce système (tests/fixtures/etalon/<nom>/reference-<système>/), quand un changement de rendu est
- * voulu (à dire dans le message de commit), sans lancer les tests.
+ * voulu (à dire dans le message de commit), sans lancer les tests ; --sauter <expression> saute les tests dont le nom y
+ * répond (--test-skip-pattern de Node 22 : la CI saute ainsi les tests propres à ce poste, listés dans son fichier).
  */
 const fs = require('node:fs');
 const path = require('node:path');
@@ -89,10 +90,12 @@ async function principal(args) {
   }
   const seule = args.includes('--unitaires') ? 'unitaires' : args.includes('--navigateur') ? 'navigateur' : null;
   const { unitaires, navigateur } = repartir();
+  const i = args.indexOf('--sauter');
+  const sauter = i >= 0 && args[i + 1] ? [`--test-skip-pattern=${args[i + 1]}`] : [];
   const debut = Date.now();
   let echec = 0;
   let relances = [];
-  if (seule !== 'navigateur') echec |= phase('Tests unitaires', unitaires, [], process.env);
+  if (seule !== 'navigateur') echec |= phase('Tests unitaires', unitaires, sauter, process.env);
   if (seule !== 'unitaires' && navigateur.length) {
     const env = { ...process.env };
     if (env.PM_OPTIONS_WEBGPU === undefined && env.PM_SANS_WEBGPU === undefined) {
