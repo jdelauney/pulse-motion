@@ -590,7 +590,8 @@ async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.j
       }
       // Débordement que la taille ne suffit pas à corriger : le conseil de raccourcir.
       duRendu = duRendu.map((p) => (p.regle === 'debordement' && v.ajustements.some((a) => a.scene === p.scene && a.element === p.element && a.taille === null)
-        ? { ...p, message: `${p.message} Même réduit autant que possible (jusqu'à 80 %, sans passer sous ${virgule(SEUILS.texteMinCqh)} cqh), il ne tient pas : raccourcir le texte.` } : p));
+        ? { ...p, message: `${p.message} Même réduit autant que possible (jusqu'à 80 %), il ne tient pas : raccourcir le texte.`,
+          consigne: `${p.message} Même réduit autant que possible (jusqu'à 80 %, sans passer sous ${virgule(SEUILS.texteMinCqh)} cqh), il ne tient pas : raccourcir le texte.` } : p));
     }
     problemes = [...problemes, ...duRendu];
     if (renduVerifie) {

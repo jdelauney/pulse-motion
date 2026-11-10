@@ -74,7 +74,7 @@ export async function lancerExport({ avecProvisoire = false, pour, qualite, ips,
     travail.textContent = 'Exporter une version de travail';
     travail.style.cssText = 'margin-left:8px';
     panneau.bouton.after(travail);
-    const options = { pour, qualite, ips, taille, scene, plage, cadre, cadreFormat };
+    const options = { pour, qualite, ips, taille, scene, plage, cadre, cadreFormat, flou, transparent };
     return new Promise((resoudre) => {
       panneau.bouton.onclick = () => {
         panneau.fermerDans(0);

@@ -228,5 +228,8 @@ test('export-navigateur-memes-images : deux exports dans le navigateur donnent l
   assert.equal(x.length, 87);
   assert.deepEqual(imagesDecodees(path.join(dir, second.fichier)), x);
   // La boucle attend toujours l'encodage de l'image avant de dessiner la suivante (conversion en I420 entre les deux, S5).
-  assert.match(fs.readFileSync(path.join(__dirname, '..', 'moteur', 'export.mjs'), 'utf8'), /await M\.capturer\(ctx, largeur, hauteur\);[^]{0,500}?await video\.add\(image\)/);
+  // Image dessinée par dessinerA (sous-images du flou comprises, 5.8), puis convertie et encodée, dans la même boucle.
+  const code = fs.readFileSync(path.join(__dirname, '..', 'moteur', 'export.mjs'), 'utf8');
+  assert.match(code, /const dessinerA = async \(t\) => \{[^]{0,900}?await M\.capturer\(ctx, largeur, hauteur\);/);
+  assert.match(code, /if \(N === 1\) await dessinerA\([^]{0,1200}?await video\.add\(image\)/);
 });
