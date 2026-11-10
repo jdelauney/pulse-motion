@@ -11,7 +11,9 @@
  *     5.17), gardé avec l'empreinte des prises provisoires : il tombe dès que l'une d'elles change (accords.voixProvisoire).
  *
  * Lit et complète .pulse-motion/etat.json (accords donnés, aperçu en cours).
- * Affiche { node, projet, titre, parcours, etape, prochaine, accords, apercu } en JSON. Une scène encore à l'état d'ébauche
+ * Affiche { node, projet, titre, parcours, etape, prochaine, accords, apercu, remarques, reglagesNonControles } en JSON.
+ * remarques : { ouvertes, envoyees } (remarques laissées sur l'image dans l'aperçu, spec Retouches et ergonomie, 5.8) ;
+ * reglagesNonControles : un réglage rapide de l'aperçu (5.11) attend le prochain contrôle (reglagesChanges : lesquels). Une scène encore à l'état d'ébauche
  * (section data-ebauche, pulse-motion ebauche) compte parmi les scènes manquantes (scenesManquantes, et ebauches).
  */
 const fs = require('node:fs');
@@ -22,6 +24,8 @@ const { empreinteProvisoire } = require('./lib/voix.js');
 const { etatCharte } = require('./charte.js');
 const { ecrireJSON } = require('./lib/fichiers.js');
 const { estEbauche } = require('./lib/ebauche.js');
+const Remarques = require('./lib/remarques.js');
+const Reglages = require('./lib/reglages-rapides.js');
 
 const NODE_MINIMUM = 20;
 const ACCORDS = ['deroule', 'style', 'video', 'voix-provisoire'];
@@ -84,6 +88,10 @@ function etatProjet(dossier) {
   };
 
   if (resultat.projet) {
+    resultat.remarques = Remarques.compte(projet);
+    const reglages = Reglages.resumeNonControles(projet);
+    resultat.reglagesNonControles = reglages.nonControles;
+    if (reglages.nonControles) resultat.reglagesChanges = reglages.depuis;
     const { deroule, erreurs } = lireDeroule(projet);
     if (deroule && typeof deroule.titre === 'string') resultat.titre = deroule.titre;
     if (deroule && deroule.parcours) resultat.parcours = deroule.parcours;

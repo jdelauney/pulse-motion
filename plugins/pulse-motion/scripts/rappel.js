@@ -14,6 +14,11 @@ function messageRappel(dossier) {
   if (e.projet) {
     lignes.push(`Pulse Motion – Une vidéo est en cours dans ce dossier : « ${e.titre || 'sans titre'} » (étape : ${e.etape}). ` +
       `${e.prochaine} Proposer à la personne de reprendre avec /pulse-motion:reprendre.`);
+    // Remarques laissées sur l'image dans l'aperçu (spec Retouches et ergonomie, 5.8) : elles attendent Claude.
+    const n = e.remarques ? e.remarques.ouvertes : 0;
+    if (n > 0) {
+      lignes.push(`Pulse Motion – ${n === 1 ? 'Une remarque laissée' : `${n} remarques laissées`} sur l'image dans l'aperçu ${n === 1 ? 'attend' : 'attendent'} d'être traitée${n === 1 ? '' : 's'} : les proposer en premier (/pulse-motion:retoucher, « Remarques de l'aperçu »).`);
+    }
   }
   return lignes.join('\n');
 }
