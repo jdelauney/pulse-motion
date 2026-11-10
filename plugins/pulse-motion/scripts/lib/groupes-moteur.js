@@ -9,6 +9,8 @@
  * modulesDesGroupes(groupes | 'tous') -> [modules] dans l'ordre de MODULES, absents.js en dernier.
  */
 
+const { usagesEcran } = require('./ecrans.js');
+
 const GROUPES = {
   // tailles.js reste au tronc : la page livrée applique les tailles ajustées (M.appliquerTailles), pas seulement le contrôle.
   tronc: ['courbes.js', 'aligner.js', 'proches.js', 'sous-titres.js', 'minutage.js', 'transitions.js', 'tween.js', 'lettres.js', 'camera.js',
@@ -23,6 +25,8 @@ const GROUPES = {
     'particules/fragments.js', 'particules/simulation.js', 'particules/voisinage.js', 'particules/maillage.js',
     'particules/structures.js', 'particules/milieu.js', 'particules/rendu.js', 'particules/glsl.js', 'particules/shaders.js',
     'particules/composition.js', 'particules/formes.js', 'particules/reperes.js', 'particules/calques.js'],
+  // Écrans des tutoriels (spec S6) : pointeur, clics, projecteur, zooms ; CSS moteur/ecran.css, embarqué avec eux.
+  ecran: ['pointeur.js', 'ecran.js'],
 };
 
 // Ordre de chargement : celui de la liste historique (dépendances au chargement), puis absents.js en dernier.
@@ -31,7 +35,7 @@ const MODULES = ['courbes.js', 'aligner.js', 'proches.js', 'sous-titres.js', 'mi
   'personnages/interactions.js', 'personnages/scene.js', 'personnages/objets.js', 'temps.js', 'horloge.js', 'tailles.js', 'wav.js',
   'sonie.js', 'mixage.js', 'synthe/catalogue.js', 'synthe/partition.js', 'synthe/ambiances.js', 'synthe/instruments.js',
   'synthe/bruitages.js', 'analyse-son.js', 'audio.js', 'son-reactif.js', 'lecteur.js', 'sous-titres-rendu.js', 'debordement.js',
-  'mesures.js', 'pixels.js', 'ecoute.js', 'figer.js', 'flou.js', 'shaders/glsl.js', 'shaders/code.js', 'particules/instantanes.js', 'particules/gpu.js',
+  'mesures.js', 'pixels.js', 'ecoute.js', 'figer.js', 'flou.js', 'pointeur.js', 'ecran.js', 'shaders/glsl.js', 'shaders/code.js', 'particules/instantanes.js', 'particules/gpu.js',
   'particules/obstacles.js', 'particules/fragments.js', 'particules/simulation.js', 'particules/voisinage.js',
   'particules/maillage.js', 'particules/structures.js', 'particules/milieu.js', 'particules/rendu.js', 'particules/glsl.js',
   'particules/shaders.js', 'particules/composition.js', 'particules/formes.js', 'particules/reperes.js', 'particules/calques.js'];
@@ -49,7 +53,8 @@ const nonVide = (x) => (Array.isArray(x) ? x.length > 0 : !!(x && typeof x === '
  *   moteur/audio.js prépare le bruit du synthétiseur dès qu'il y a un son à jouer) ;
  * - personnages : donnees.personnages (une scène a data-personnage ou data-action) ;
  * - GPU : effet, milieu, shader (fond, transition, post-traitement), module d'effet, ou obstacle (data-obstacle : le contrôle juge
- *   ses formes exactes par M.particules.formesVides).
+ *   ses formes exactes par M.particules.formesVides) ;
+ * - écran : un écran (pm-ecran) ou une de ses marques (pm-clic, pm-projecteur, pm-zoom…) dans une scène.
  */
 function groupesDuDeroule(donnees, sections = []) {
   const d = donnees || {};
@@ -61,6 +66,7 @@ function groupesDuDeroule(donnees, sections = []) {
   if (d.personnages) groupes.push('personnages');
   const obstacles = nonVide(d.obstacles) || nonVide(d.obstaclesVideo);
   if (nonVide(d.effets) || nonVide(d.milieux) || nonVide(d.shaders) || nonVide(d.modules) || obstacles) groupes.push('gpu');
+  if (sections.some((s) => usagesEcran(s).moteur)) groupes.push('ecran');
   return groupes;
 }
 

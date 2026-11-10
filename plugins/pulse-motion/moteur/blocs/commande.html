@@ -1,0 +1,17 @@
+<!-- Bloc « commande » : commande dans une pastille sombre ; « Copier » devient « Copié » à l'instant de pm-bloc-copier. Texte : commande.
+     Variante terminal : data-variante="terminal", une ligne d'invite par commande (data-lettres="saisie"), puis ses lignes de sortie à leur instant ; les anciennes lignes montent quand la fenêtre est pleine ; « Copier » facultatif. -->
+<div class="pm-bloc pm-bloc-commande pm-m-pop" data-start="0.5">
+  <code class="pm-bloc-code" data-texte="commande"></code>
+  <span class="pm-bloc-copier" data-start="2.5"><svg class="pm-bloc-icone pm-bloc-avant" data-icone="copy"></svg><svg class="pm-bloc-icone pm-bloc-apres" data-icone="check"></svg></span>
+</div>
+<!-- Variante terminal :
+<div class="pm-bloc pm-bloc-commande pm-m-zoom-entree" data-variante="terminal" data-start="0.3">
+  <div class="pm-bloc-terminal-barre" data-decor aria-hidden="true"><i></i><i></i><i></i></div>
+  <div class="pm-bloc-terminal"><div class="pm-bloc-lignes">
+    <p class="pm-bloc-invite" data-texte="commande-1" data-lettres="saisie" data-start="0.8"></p>
+    <p class="pm-bloc-sortie" data-texte="sortie-1" data-start="2.2"></p>
+    <p class="pm-bloc-invite" data-texte="commande-2" data-lettres="saisie" data-start="3"></p>
+    <p class="pm-bloc-sortie" data-texte="sortie-2" data-start="4.4"></p>
+  </div></div>
+</div>
+-->

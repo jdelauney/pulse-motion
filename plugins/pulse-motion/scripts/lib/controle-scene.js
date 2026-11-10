@@ -170,6 +170,11 @@ function controlerScene({ projet, deroule, scene, html }) {
   }
   // Icônes (spec S9, 5.3) : nom inconnu ou data-icone hors d'un <svg>, comme à l'assemblage.
   if (/data-icone/.test(sansScripts)) problemes.push(...require('./icones.js').preparerIcones(sansScripts, { scene: scene.id }).erreurs);
+  // Écrans (spec S6) : cadre, pointeur, cibles et marques, comme à l'assemblage.
+  if (/pm-/.test(sansScripts)) {
+    const E = require('./ecrans.js');
+    if (E.usagesEcran(sansScripts).moteur) problemes.push(...E.preparerEcrans(sansScripts, { scene: scene.id }).erreurs);
+  }
   const lue = extraireScene(html);
   // Minutage de la scène seule, avec sa voix (ancres « mot: ») comme dans la page.
   let voix = null;
