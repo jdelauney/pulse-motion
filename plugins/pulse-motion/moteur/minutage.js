@@ -289,7 +289,8 @@
     if (!(W > 0) || !(P > 0)) return 0;
     var n = W / P;
     if (!continue_ && n >= 1 - 1e-9) n = Math.floor(n + 1e-9);
-    return Math.round(n * 1e6) / 1e6;
+    // Arrondi par défaut : la dernière image du dernier cycle ne dépasse jamais la fenêtre.
+    return Math.floor(n * 1e6 + 1e-7) / 1e6;
   }
 
   return {

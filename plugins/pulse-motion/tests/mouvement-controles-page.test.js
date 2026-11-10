@@ -31,16 +31,15 @@ const BOUCLES = `<section data-scene="boucles">
   <style>@keyframes pm-essai-glisse { from { translate: 0 0; } to { translate: 10px 0; } }
     @keyframes pm-essai-tourne { to { rotate: 360deg; } }
     @keyframes pm-essai-brille { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
-    @keyframes pm-v-scintille { 0%, 100% { scale: 1; } 50% { scale: 0.8; } }
     .boite { position: absolute; width: 4cqh; height: 4cqh; background: #888; }</style>
   <div id="glisse" class="boite" style="left: 10cqw; top: 10cqh; animation: pm-essai-glisse 1s linear 3;"></div>
   <div id="tourne" class="boite" style="left: 20cqw; top: 10cqh; animation: pm-essai-tourne 1s linear 3;"></div>
   <div class="etoile boite" style="left: 30cqw; top: 30cqh; animation: pm-essai-brille 1.2s ease-in-out 3;"></div>
   <div class="etoile boite" style="left: 40cqw; top: 30cqh; animation: pm-essai-brille 1.2s ease-in-out 3;"></div>
   <div class="etoile boite" style="left: 50cqw; top: 30cqh; animation: pm-essai-brille 1.2s ease-in-out 3;"></div>
-  <div class="pm-v-scintille boite" style="left: 30cqw; top: 60cqh; animation: pm-v-scintille 1.2s ease-in-out 3;"></div>
-  <div class="pm-v-scintille boite" style="left: 40cqw; top: 60cqh; animation: pm-v-scintille 1.2s ease-in-out 3;"></div>
-  <div class="pm-v-scintille boite" style="left: 50cqw; top: 60cqh; animation: pm-v-scintille 1.2s ease-in-out 3;"></div>
+  <div class="pm-v-scintille boite" data-start="0" data-dur="scene" style="left: 30cqw; top: 60cqh;"></div>
+  <div class="pm-v-scintille boite" data-start="0" data-dur="scene" style="left: 40cqw; top: 60cqh;"></div>
+  <div class="pm-v-scintille boite" data-start="0" data-dur="scene" style="left: 50cqw; top: 60cqh;"></div>
 </section>`;
 const CAMERA = `<section data-scene="camera">
   <div id="cam-dure" data-camera="x 50→30 1+1 cubic-out" style="position:absolute; inset:0"><p data-texte="titre">Dure</p></div>
@@ -85,7 +84,7 @@ test('contrôles du mouvement dans la page : geste bref, pose figée, raccord de
   assert.ok(figee.valeur.duree > 2.5 && figee.valeur.duree <= 3.5, JSON.stringify(figee));
   // raccord-boucle : translate 0→10 répété signalé, rotation 0→360 non.
   assert.deepEqual(de('raccord-boucle'), ['boucles/glisse']);
-  // tout-en-phase : 3 étoiles au même départ ; pm-v-scintille exclu.
+  // tout-en-phase : 3 étoiles au même départ ; les pm-v-scintille, chacune à sa phase (moteur, V4), non.
   assert.deepEqual(constats.filter((c) => c.regle === 'tout-en-phase').map((c) => [c.element, c.valeur]), [['.etoile', 3]]);
   // a-coup-camera : cubic-out qui démarre, et zoom avant puis arrière collés ; sine-inout et secousse non.
   assert.deepEqual(de('a-coup-camera'), ['camera/cam-dure', 'camera/cam-zoom']);
