@@ -375,10 +375,10 @@
 
 /* #093 Hélice : les vignettes (--i : rang) s'enroulent sur un cylindre de --pm-rayon (45 cqh), 30° et --pm-pas (3 cqh) l'une
    après l'autre, et le cylindre tourne de --pm-tour (120°) en --pm-dur (6 s). Une vignette de dos est cachée (jamais en
-   miroir). */
+   miroir), par sa face arrière et par son opacité (cos de son angle), que l'export rapide fige aussi. */
 @property --pm-helice { syntax: '<angle>'; inherits: true; initial-value: 0deg; }
 @keyframes pm-m-helice { from { --pm-helice: 0deg; } to { --pm-helice: var(--pm-tour, 120deg); } }
 #pm-scene .pm-m-helice { position: relative; animation: pm-m-helice var(--pm-dur, 6s) var(--pm-courbe, var(--ease-sine-inout)) both; }
 #pm-scene .pm-m-helice-vignette { position: absolute; inset: 0; margin: auto; width: var(--pm-largeur, 22cqh); height: var(--pm-hauteur, 14cqh);
-  backface-visibility: hidden;
+  backface-visibility: hidden; opacity: clamp(0, calc(cos(var(--i, 0) * 30deg + var(--pm-helice, 0deg)) * 40), 1);
   transform: perspective(220cqh) translateY(calc(var(--i, 0) * var(--pm-pas, 3cqh))) rotateY(calc(var(--i, 0) * 30deg + var(--pm-helice, 0deg))) translateZ(var(--pm-rayon, 45cqh)); }

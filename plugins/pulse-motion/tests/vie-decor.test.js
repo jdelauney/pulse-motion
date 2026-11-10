@@ -153,11 +153,14 @@ test('mouvements.css : aucune classe pm-v n\'anime transform', () => {
   const noms = nomsAnimationsVie();
   assert.ok(noms.length >= 14, noms.join(', '));
   const PERMISES = new Set(['rotate', 'scale', 'translate', 'opacity', 'stroke-dashoffset', 'animation-timing-function']);
-  const CONTINUES = new Set(['pm-v-engrenage', 'pm-v-engrenage-inverse']);
+  const CONTINUES = new Set(['pm-v-engrenage', 'pm-v-engrenage-inverse', 'pm-v-defile']);
+  // Battement (#083) : le coup tombe au début de chaque temps et retombe au repos à la fin du cycle.
+  const BATTEMENTS = new Set(['pm-v-cogne']);
   const PONCTUELLES = new Set(['pm-v-tige', 'pm-v-feuille', 'pm-v-petale']);
   for (const nom of noms) {
     const cles = imagesCles(nom);
     for (const c of cles) for (const prop of Object.keys(c.decl)) assert.ok(PERMISES.has(prop), `${nom} anime ${prop}`);
+    if (BATTEMENTS.has(nom)) { assert.deepEqual(cles.find((c) => c.offsets.includes(1)).decl, { scale: '1' }, nom); continue; }
     if (CONTINUES.has(nom) || PONCTUELLES.has(nom)) continue;
     // Boucle qui oscille : 0 % et 100 % identiques (le repos), ou tous deux invisibles (volutes, ondes).
     const a = cles.find((c) => c.offsets.includes(0)).decl;
@@ -253,7 +256,7 @@ const ATTENDUS = { '069': 'balance', '070': 'flamme', '071': 'vapeur', '072': 'f
   '076': 'vibre', '077': 'attend', '078': 'nuage', '079': 'ondes', '080': 'croissance' };
 
 test('dictionnaire : #069 à #080 dans la catégorie vie, figés dans numeros.json', () => {
-  assert.deepEqual(DICO.categories[DICO.categories.length - 1], { id: 'vie', nom: 'Vie du décor' }, 'catégorie ajoutée à la fin');
+  assert.deepEqual(DICO.categories[7], { id: 'vie', nom: 'Vie du décor' }, 'catégorie ajoutée après les sept premières');
   assert.deepEqual(Object.fromEntries(VIE.map((e) => [e.no, e.slug])), ATTENDUS);
   for (const [no, slug] of Object.entries(ATTENDUS)) assert.equal(NUMEROS[no], slug, `#${no}`);
   for (const e of VIE) {
@@ -276,7 +279,8 @@ test('recettes réelles : chaque classe pm-v-* citée existe dans mouvements.css
   assert.ok(citees >= 14, `${citees} classes citées`);
   // Chaque entrée de la vie se sert de sa classe ; chaque classe de la vie sert à une entrée.
   for (const e of VIE.filter((x) => x.slug !== 'croissance')) assert.match(e.recette.exemple, new RegExp(`class="[^"]*\\bpm-v-${e.slug}\\b`), e.slug);
-  const exemples = VIE.map((e) => e.recette.exemple).join('\n');
+  // Les vies des motifs (#083 pulsation, #087 défilement) servent à leurs entrées, hors de la catégorie vie.
+  const exemples = DICO.mouvements.map((e) => e.recette.exemple).join('\n');
   for (const c of lireClassesVie().keys()) assert.match(exemples, new RegExp(`\\b${c}\\b`), c);
 });
 
@@ -353,7 +357,7 @@ test('moteur.md : data-dur scene et classes pm-v documentés ; dictionnaire et c
   assert.ok(Buffer.byteLength(a) <= 6000);
   assert.match(a, /mettre `data-dur="scene"` au décor/);
   assert.match(lire('references', 'demandes.md'), /« fais vivre la plante »[^\n]*catégorie `vie` \(#069 à #080\)/);
-  assert.match(lire('references', 'demandes.md'), /`camera`, `vie`…/);
+  assert.match(lire('references', 'demandes.md'), /`camera`, `vie`, `compositions`…/);
   const retoucher = lire('skills', 'retoucher', 'SKILL.md');
   assert.ok(Buffer.byteLength(retoucher) <= 13850);
   assert.match(retoucher, /« fais vivre la plante » \(#069\)/);

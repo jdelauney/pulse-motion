@@ -3446,7 +3446,7 @@
         "metier": "Helix wall"
       },
       "sens": "Des vignettes enroulées en hélice tournent autour d'un axe vertical ; celles de dos sont cachées",
-      "demande": "Fais tourner l'hélice de 8 vignettes d'un tiers de tour en 6 s.",
+      "demande": "Fais tourner l'hélice de 12 vignettes d'un tiers de tour en 6 s.",
       "quand": "Une collection (produits, visages, réalisations) à montrer avec du relief, en ouverture ou en clôture.",
       "motsCles": [
         "helice",
@@ -3459,12 +3459,12 @@
       ],
       "recette": {
         "type": "combinaison",
-        "exemple": "<div class=\"pm-m-helice\" data-start=\"0\" data-dur=\"6\" style=\"width: 100%; height: 70cqh; translate: 0 -10cqh\">\n  <div class=\"pm-m-helice-vignette\" style=\"--i: 0; border-radius: 2cqh; background: color-mix(in srgb, var(--c-primaire) 40%, var(--c-fond))\"></div>\n  <div class=\"pm-m-helice-vignette\" style=\"--i: 1; border-radius: 2cqh; background: color-mix(in srgb, var(--c-accent) 45%, var(--c-fond))\"></div>\n  <div class=\"pm-m-helice-vignette\" style=\"--i: 2; border-radius: 2cqh; background: color-mix(in srgb, var(--c-primaire) 50%, var(--c-fond))\"></div>\n  <div class=\"pm-m-helice-vignette\" style=\"--i: 3; border-radius: 2cqh; background: color-mix(in srgb, var(--c-accent) 55%, var(--c-fond))\"></div>\n  <div class=\"pm-m-helice-vignette\" style=\"--i: 4; border-radius: 2cqh; background: color-mix(in srgb, var(--c-primaire) 60%, var(--c-fond))\"></div>\n  <div class=\"pm-m-helice-vignette\" style=\"--i: 5; border-radius: 2cqh; background: color-mix(in srgb, var(--c-accent) 65%, var(--c-fond))\"></div>\n  <div class=\"pm-m-helice-vignette\" style=\"--i: 6; border-radius: 2cqh; background: color-mix(in srgb, var(--c-primaire) 70%, var(--c-fond))\"></div>\n  <div class=\"pm-m-helice-vignette\" style=\"--i: 7; border-radius: 2cqh; background: color-mix(in srgb, var(--c-accent) 75%, var(--c-fond))\"></div>\n</div>",
+        "exemple": "<div class=\"pm-m-helice\" data-start=\"0\" data-dur=\"6\" style=\"width: 100%; height: 60cqh\">\n  <div class=\"pm-m-helice-vignette\" style=\"--i: -5; border-radius: 2cqh; background: color-mix(in srgb, var(--c-accent) 40%, var(--c-fond))\"></div>\n  <div class=\"pm-m-helice-vignette\" style=\"--i: -4; border-radius: 2cqh; background: color-mix(in srgb, var(--c-primaire) 44%, var(--c-fond))\"></div>\n  <div class=\"pm-m-helice-vignette\" style=\"--i: -3; border-radius: 2cqh; background: color-mix(in srgb, var(--c-accent) 48%, var(--c-fond))\"></div>\n  <div class=\"pm-m-helice-vignette\" style=\"--i: -2; border-radius: 2cqh; background: color-mix(in srgb, var(--c-primaire) 52%, var(--c-fond))\"></div>\n  <div class=\"pm-m-helice-vignette\" style=\"--i: -1; border-radius: 2cqh; background: color-mix(in srgb, var(--c-accent) 56%, var(--c-fond))\"></div>\n  <div class=\"pm-m-helice-vignette\" style=\"--i: 0; border-radius: 2cqh; background: color-mix(in srgb, var(--c-primaire) 60%, var(--c-fond))\"></div>\n  <div class=\"pm-m-helice-vignette\" style=\"--i: 1; border-radius: 2cqh; background: color-mix(in srgb, var(--c-accent) 64%, var(--c-fond))\"></div>\n  <div class=\"pm-m-helice-vignette\" style=\"--i: 2; border-radius: 2cqh; background: color-mix(in srgb, var(--c-primaire) 68%, var(--c-fond))\"></div>\n  <div class=\"pm-m-helice-vignette\" style=\"--i: 3; border-radius: 2cqh; background: color-mix(in srgb, var(--c-accent) 72%, var(--c-fond))\"></div>\n  <div class=\"pm-m-helice-vignette\" style=\"--i: 4; border-radius: 2cqh; background: color-mix(in srgb, var(--c-primaire) 76%, var(--c-fond))\"></div>\n  <div class=\"pm-m-helice-vignette\" style=\"--i: 5; border-radius: 2cqh; background: color-mix(in srgb, var(--c-accent) 80%, var(--c-fond))\"></div>\n  <div class=\"pm-m-helice-vignette\" style=\"--i: 6; border-radius: 2cqh; background: color-mix(in srgb, var(--c-primaire) 84%, var(--c-fond))\"></div>\n</div>",
         "reglages": [
           {
             "nom": "--i",
-            "defaut": "0, 1, 2…",
-            "effet": "rang de la vignette (30° et --pm-pas plus loin que la précédente)"
+            "defaut": "-5 à 6",
+            "effet": "rang de la vignette (30° et --pm-pas plus loin que la précédente) ; de -5 à 6, la vignette 0 de face au départ"
           },
           {
             "nom": "--pm-tour",
@@ -3487,7 +3487,7 @@
             "effet": "montée d'une vignette à la suivante"
           }
         ],
-        "note": "Les vignettes de dos sont cachées : jamais une image en miroir. Une vignette mesure --pm-largeur × --pm-hauteur (22 × 14 cqh)."
+        "note": "12 vignettes font un tour complet (30° chacune) ; celles de dos sont cachées : jamais une image en miroir. Une vignette mesure --pm-largeur × --pm-hauteur (22 × 14 cqh)."
       }
     }
   ]
