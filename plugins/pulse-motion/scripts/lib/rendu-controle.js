@@ -14,6 +14,8 @@ const { navigateursParalleles } = require('./paralleles.js');
 const SEUILS = require('../seuils.json');
 
 const virgule = (x) => String(Math.round(x * 10) / 10).replace('.', ',');
+/** « 1 image », « 3 images » (au moins une). */
+const images = (n) => { const k = Math.max(1, Math.round(n)); return `${k} image${k > 1 ? 's' : ''}`; };
 const ZONES = { haut: 'en haut', bas: 'en bas', droite: 'à droite' };
 
 const MESSAGES = {
@@ -54,6 +56,14 @@ flash: (c) => `Scène « ${c.scene} » : l'image clignote ${virgule(c.valeur)} f
   'image-figee': (c) => `Scène « ${c.scene} » : l'image ne change presque pas pendant ${virgule(c.valeur.d)} s (de ${virgule(c.valeur.a)} s à ${virgule(c.valeur.b)} s) alors que des éléments sont censés bouger ; leurs mouvements sont trop petits pour se voir.`,
   'image-vide': (c) => `Scène « ${c.scene} » : l'image est unie vers ${virgule(c.instant)} s ; un élément manque, ou n'est pas encore entré.`,
   'voix-couverte': (c) => `Scène « ${c.scene} » : la voix est couverte par la musique ou les bruitages pendant ${c.valeur} % du temps où elle parle ; baisser la musique, ou passer la musique de cette scène en « calme ».`,
+  // Mouvement (spec Mouvement vivant, 5.12).
+  'geste-bref': (c) => `Scène « ${c.scene} » : « ${c.element} » change de pose en moins de ${virgule(SEUILS.gesteBrefDuree)} s vers ${virgule(c.instant)} s (${c.valeur.partie}${c.valeur.partie === 'paupières' ? '' : `, ${Math.round(c.valeur.ampleur)}°`}) : à ${c.valeur.ips} images par seconde, ce geste tient en ${images(c.valeur.duree * c.valeur.ips)} et scintille ; l'étaler sur au moins 0,15 s.`,
+  'pose-figee': (c) => `Scène « ${c.scene} » : « ${c.element} » reste figé ${virgule(c.valeur.duree)} s (de ${virgule(c.valeur.debut)} s à ${virgule(c.valeur.fin)} s) : il paraît mort ; garder data-vie="pleine" ou lui donner un geste.`,
+  'raccord-boucle': (c) => `Scène « ${c.scene} » : « ${c.element} » : son mouvement répété ne revient pas à son point de départ et saute à chaque tour ; le finir comme il commence.`,
+  'tout-en-phase': (c) => `Scène « ${c.scene} » : ${c.valeur} éléments « ${c.element} » bougent exactement ensemble : décaler leur départ (data-start, --pm-phase) pour que chacun vive à son rythme.`,
+  'a-coup-camera': (c) => (c.valeur && c.valeur.retour
+    ? `Scène « ${c.scene} » : la caméra avance puis recule aussitôt vers ${virgule(c.instant)} s (zoom) : laisser au moins ${virgule(SEUILS.zoomRetourMin)} s entre les deux, ou n'en garder qu'un.`
+    : `Scène « ${c.scene} » : la caméra part ou s'arrête d'un coup vers ${virgule(c.instant)} s (${c.valeur ? c.valeur.partie : 'cadrage'}) : prendre une courbe douce (sine-inout) ; pour un choc voulu, une secousse.`),
   'silence-imprevu': (c) => `De ${virgule(c.valeur.a)} s à ${virgule(c.valeur.b)} s, on n'entend rien pendant ${virgule(c.valeur.d)} s alors que la musique devrait jouer ; vérifier la musique de la scène « ${c.scene} ».`,
 };
 
@@ -88,6 +98,8 @@ function scriptMesures({ ratio, scenes, plages, plagesFlashs, flashs, genre = nu
     // Photographies des effets de fragmentation (elles rendent aussi des scènes).
     var photos = M.particules && M.particules.photosVides ? await M.particules.photosVides() : [];
     var constats = M.mesurer(${opts({ ...(plages ? { plages } : {}), genre })});
+    // Contrôles du mouvement (spec Mouvement vivant, 5.12) : calculs purs, sans mise en page par image.
+    try { if (M.mesurerMouvement) constats = constats.concat(M.mesurerMouvement(${opts(choix)})); } catch (e) { console.error('[Pulse Motion] mesure du mouvement : ' + e.message); }
     var debordements = M.detecterDebordements(${JSON.stringify(choix)});
     var ajustements = M.essayerTailles(${JSON.stringify({ minimumCqh: SEUILS.texteMinCqh, ...choix })});
     var pixels = await M.mesurerPixels(${opts({ ...choix, flashs, ...(flashs && plagesFlashs ? { plagesFlashs } : {}) })});

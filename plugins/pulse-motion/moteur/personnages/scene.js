@@ -266,6 +266,28 @@
       connu: function (div) { return persos.some(function (p) { return p.div === div; }); },
       /** Pose complète de div au temps du personnage t (pour les vérifications). */
       pose: function (div, t) { var p = persos.filter(function (x) { return x.div === div; })[0]; return p ? placer(p, t) : null; },
+      /** Conteneurs des personnages : [{ div, nom, scene }] (contrôle du mouvement). */
+      liste: function () { return persos.map(function (p) { return { div: p.div, nom: p.div.id || p.div.getAttribute('data-personnage'), scene: p.sec.getAttribute('data-scene') }; }); },
+      /** Relevé pur des poses de div de debut à fin (temps global), tous les pas : poses de la partition (sans les
+       *  interactions), réduites aux angles du squelette et aux paupières. -> { t, tp, corps, poses, fixes, vie } ou null.
+       *  fixes : sans la respiration ni les clignements ; tp : temps du personnage (arrêt sur image : il n'avance pas). */
+      releve: function (div, debut, fin, pas) {
+        var p = persos.filter(function (x) { return x.div === div; })[0];
+        if (!p || !(pas > 0)) return null;
+        // Angles (degrés) : os du squelette sauf la hauteur du bassin, et la touffe ; puis les paupières.
+        var cles = S.NOMS.os.filter(function (k) { return k !== 'bassinY'; }).concat(['touffeRot', 'paupieres']);
+        var r = { t: [], tp: [], corps: [], poses: [], fixes: [], vie: null };
+        function reduire(pose) { var o = {}; cles.forEach(function (k) { o[k] = typeof pose[k] === 'number' ? pose[k] : S.REPOS[k]; }); return o; }
+        var n = Math.floor((fin - debut) / pas + 1e-6);
+        for (var i = 0; i <= n; i++) {
+          var t = debut + i * pas;
+          var tp = M.tempsVuPar ? M.tempsVuPar(p.div, t) : t;
+          var e = P.etatAuTemps(p.partition, tp, D.bib, p.gabarit, { releve: true });
+          r.t.push(t); r.tp.push(tp); r.corps.push(e.corps); r.poses.push(reduire(e.pose)); r.fixes.push(reduire(e.fixe));
+          r.vie = e.vie;
+        }
+        return r;
+      },
       /** Mains de div à t (temps global ; tLocal : t est déjà au temps du personnage). Mémorisées pour l'image en cours. */
       mains: function (div, t, tLocal) {
         var cle = t + (tLocal ? 'l' : 'g');

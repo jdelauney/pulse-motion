@@ -84,5 +84,15 @@
   "motsConfirmes": 0.85,
   "determinismeInstants": 12,
   "determinismePsnr": 45,
-  "determinismeLargeur": 640
+  "determinismeLargeur": 640,
+  "pasPersonnages": 0.0166667,
+  "gesteBrefDuree": 0.1,
+  "gesteBrefAngle": 20,
+  "gesteBrefPaupieres": 0.5,
+  "poseFigee": 2,
+  "poseFigeeAngle": 0.3,
+  "aCoupCamera": 20,
+  "aCoupRotation": 15,
+  "toutEnPhase": 3,
+  "zoomRetourMin": 0.3
 }

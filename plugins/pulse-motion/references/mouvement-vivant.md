@@ -78,4 +78,5 @@ Ce que l'animateur décide :
 - [ ] Les atterrissages sont écrasés.
 - [ ] En l'air, l'ombre change de taille.
 - [ ] Les objets entrent en mouvement, et les yeux les suivent.
+- [ ] Une planche image par image regardée sur un clignement, un atterrissage ou un geste rapide : `pulse-motion planche . <scène> --de <s> --duree <s>` (3 s au plus ; `--pas 2` : une image sur deux). Le contrôle signale aussi les gestes trop brefs, les personnages figés, les boucles qui sautent, les éléments qui bougent ensemble et les à-coups de caméra (`pulse-motion reference controles`, section « Mouvement »).
 - [ ] Une planche regardée (`pulse-motion planche . <id>`).

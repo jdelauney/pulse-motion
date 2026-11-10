@@ -392,6 +392,11 @@
     }
     return t;
   };
+  /** Caméras d'une scène : [{ el, clauses }] (clauses lues par M.analyserCamera ; contrôle du mouvement). */
+  M.camerasDeScene = function (idScene) {
+    var s = etat.scenes.filter(function (x) { return x.info.id === idScene; })[0];
+    return s ? s.cameras.map(function (c) { return { el: c.el, clauses: c.clauses }; }) : [];
+  };
   M.tenirAJour = function (idScene, actif) {
     if (actif === false) delete etat.tenues[idScene]; else etat.tenues[idScene] = true;
   };

@@ -423,7 +423,8 @@
     return trouve;
   }
 
-  function etatAuTemps(part, t, bib, gabarit) {
+  /** options.releve : rend aussi « fixe », la pose sans respiration ni clignements (contrôle du mouvement), et « vie ». */
+  function etatAuTemps(part, t, bib, gabarit, options) {
     var corps = corpsAuTemps(part, t, bib, gabarit);
     var pose = Object.assign({}, corps.pose);
     var explicites = Object.keys(pose);
@@ -457,6 +458,8 @@
       if (v) pose.bouche = v;
     }
     K.appliquerExpression(pose, bib, explicites);
+    // Relevé du contrôle (pose-figee) : la pose sans la respiration ni les clignements, repos vivant compris.
+    var fixe = options && options.releve ? pose : null;
     if (vie !== 'aucune') {
       // Respiration : en pose tenue et en geste (à moitié) ; au repos, c'est le clip « repos » qui respire.
       var resp = bib.clips.respiration;
@@ -467,7 +470,11 @@
       var rv = bib.clips['repos-vivant'];
       if (vie === 'pleine' && rv && rv.additif) {
         var w = poids.vie;
-        if (w > 0) pose = K.ajouter(pose, rv, t + (rv.duree || 9) * V.graine(1, selDe(part)), bib, w);
+        if (w > 0) {
+          var tv = t + (rv.duree || 9) * V.graine(1, selDe(part));
+          pose = K.ajouter(pose, rv, tv, bib, w);
+          if (fixe) fixe = K.ajouter(fixe, rv, tv, bib, w);
+        }
       }
       var cl = bib.clips.clignement;
       if (cl && cl.additif) {
@@ -481,8 +488,10 @@
     }
     var vue = vueAuTemps(part, t);
     var pos = positionAuTemps(part, t);
-    return { pose: Object.assign({}, S.REPOS, pose, { vue: vue }), x: pos.x, sol: pos.sol, vue: vue, corps: corps.type,
+    var etat = { pose: Object.assign({}, S.REPOS, pose, { vue: vue }), x: pos.x, sol: pos.sol, vue: vue, corps: corps.type,
       ecraseY: ecraseAuTemps(part, t, bib) };
+    if (fixe) { etat.fixe = Object.assign({}, S.REPOS, fixe); etat.vie = vie; }
+    return etat;
   }
 
   /** Hauteur du personnage debout (unités du squelette) : des pieds au haut de la tête. */
