@@ -8,7 +8,11 @@
  * Couleurs (5.2, décision 16, mesurée sur la mire le 2026-11-10) : un canevas confié tel quel à l'encodeur sort étiqueté
  * sRGB en pleine plage, et Chrome le relit jusqu'à ΔE00 2,6 de la page ; chaque image passe donc par une conversion maison
  * en I420 BT.709 plage limitée (versI420), étiquetée comme dans la voie fidèle.
+ * Livrables (spec Rendu et export, 5.10, 5.12, 5.15) : couverture JPEG sans sous-titres et vignette intégrée
+ * (setMetadataTags, coverFront), titre en métadonnée ; extrait d'une scène ou passage seul (images f0 à f1, tranche du son
+ * avec fondus de 0,1 s) ; cadre de téléphone (scène 9:16 dessinée à l'échelle dans l'écran, moteur/cadres/telephone.js).
  */
+import '/_pm/cadres/telephone.js';
 import {
   Output, Mp4OutputFormat, BufferTarget, VideoSampleSource, VideoSample, AudioBufferSource,
   Input, BufferSource, ALL_FORMATS, CanvasSink, EncodedPacketSink, Conversion, canEncodeVideo, canEncodeAudio,
@@ -127,9 +131,66 @@ async function reconvertir(buffer, { debit, octetsMax, gop }) {
  * -> { buffer: ArrayBuffer, images, duree, largeur, hauteur, audio: bool, avertissement?, fondSombre: bool, usage,
  *      definition, ips, imagesParSeconde, finalesParSeconde, reprises }
  */
+/** Tranche [debut, fin) d'un AudioBuffer, avec des fondus de fondu secondes aux bords (extrait, 5.12). */
+function trancheSon(buffer, debut, fin, fondu = 0.1) {
+  const taux = buffer.sampleRate;
+  const a = Math.max(0, Math.round(debut * taux));
+  const longueur = Math.max(1, Math.round((fin - debut) * taux));
+  const sortie = new AudioBuffer({ length: longueur, numberOfChannels: buffer.numberOfChannels, sampleRate: taux });
+  const f = Math.max(1, Math.round(fondu * taux));
+  for (let c = 0; c < buffer.numberOfChannels; c++) {
+    const src = buffer.getChannelData(c);
+    const dst = sortie.getChannelData(c);
+    for (let i = 0; i < longueur; i++) {
+      const v = a + i < src.length ? src[a + i] : 0;
+      dst[i] = v * Math.min(1, i / f, (longueur - 1 - i) / f);
+    }
+  }
+  return sortie;
+}
+
+/** Couverture (5.10) : image de l'instant t, sous-titres masqués, en JPEG 0,9 ; vignette de 1 280 px et 200 Ko au plus. */
+async function prendreCouverture(t, largeur, hauteur) {
+  const st = document.getElementById('pm-sous-titres');
+  if (st) st.classList.add('pm-sans-sous-titres');
+  const toile = new OffscreenCanvas(largeur, hauteur);
+  try {
+    await M.seek(t);
+    await M.capturer(toile.getContext('2d'), largeur, hauteur);
+  } finally {
+    if (st) st.classList.remove('pm-sans-sous-titres');
+  }
+  const couverture = await toile.convertToBlob({ type: 'image/jpeg', quality: 0.9 });
+  const k = Math.min(1, 1280 / Math.max(largeur, hauteur));
+  const petite = new OffscreenCanvas(Math.round(largeur * k / 2) * 2, Math.round(hauteur * k / 2) * 2);
+  const c = petite.getContext('2d');
+  c.imageSmoothingQuality = 'high';
+  c.drawImage(toile, 0, 0, petite.width, petite.height);
+  let vignette = null;
+  for (const q of [0.85, 0.75, 0.6, 0.45, 0.3]) {
+    vignette = await petite.convertToBlob({ type: 'image/jpeg', quality: q });
+    if (vignette.size <= 200000) break;
+  }
+  return { couverture, vignette: new Uint8Array(await vignette.arrayBuffer()) };
+}
+
+/** Cadre de téléphone (5.15) : géométrie et cadre dessiné une fois (SVG -> image), au fond de la charte. */
+async function preparerCadre(largeur, hauteur) {
+  const T = M.cadreTelephone;
+  const g = T.geometrie({ sortie: [largeur, hauteur], scene: [1080, 1920] });
+  const fond = getComputedStyle(document.getElementById('pm-scene')).backgroundColor;
+  const image = await createImageBitmap(new Blob([T.svg(g, { fond })], { type: 'image/svg+xml' }));
+  return { g, image };
+}
+
 export async function exporter({ surProgression = () => {}, signal, reglages = WEB } = {}) {
   const r = { ...WEB, ...(reglages || {}), navigateur: { ...WEB.navigateur, ...((reglages && reglages.navigateur) || {}) } };
-  const [largeur, hauteur] = taille(M.donnees.format.ratio, r.definition);
+  const sortie = r.sortie || {};
+  const cadre = sortie.cadre === 'telephone' && M.cadreTelephone ? sortie : null;
+  // Cadre : la sortie a la taille du cadre ; la scène est capturée en 9:16 à sa propre définition.
+  const [largeurScene, hauteurScene] = taille(M.donnees.format.ratio, r.definition);
+  const facteur = { '1080p': 1, '720p': 2 / 3, '540p': 0.5 }[r.definition] || 1;
+  const [largeur, hauteur] = cadre ? M.cadreTelephone.FORMATS[cadre.cadreFormat || '16:9'].map((x) => Math.round((x * facteur) / 2) * 2) : [largeurScene, hauteurScene];
   const n = { ...r.navigateur };
   const support = await verifierSupport(largeur, hauteur, n.debit * 1000);
   // Encodeur de la carte graphique demandé (brouillon) mais absent : l'encodeur du navigateur, sans le dire (5.7).
@@ -140,7 +201,11 @@ export async function exporter({ surProgression = () => {}, signal, reglages = W
   if (M.particules) await M.particules.verifierExport();
   // --qualite et --ips priment (résolus par l'aperçu) ; sinon les images par seconde du déroulé.
   const ips = r.ips || M.ips;
-  const total = Math.round(M.duree * ips);
+  const toutes = Math.round(M.duree * ips);
+  // Extrait (5.12) : images [f0, f1) résolues par l'aperçu ; sinon toute la vidéo.
+  const f0 = sortie.extrait ? Math.max(0, Math.min(toutes, sortie.f0 | 0)) : 0;
+  const f1 = sortie.extrait ? Math.max(f0 + 1, Math.min(toutes, sortie.f1 | 0)) : toutes;
+  const total = f1 - f0;
   const depart = M.temps();
   // Le son est le mixage de la page (le même que la lecture) ; illisible ou navigateur sans AAC : vidéo muette.
   let audio = null;
@@ -150,7 +215,7 @@ export async function exporter({ surProgression = () => {}, signal, reglages = W
     else {
       try {
         const son = await M.rendreSon();
-        audio = son.buffer;
+        audio = son.buffer && sortie.extrait ? trancheSon(son.buffer, f0 / ips, f1 / ips) : son.buffer;
         if (son.avertissements.length) avertissement = son.avertissements.join(' ');
       } catch {
         avertissement = 'Le son n\'a pas pu être préparé : vidéo exportée sans son.';
@@ -161,7 +226,26 @@ export async function exporter({ surProgression = () => {}, signal, reglages = W
 
   const canvas = new OffscreenCanvas(largeur, hauteur);
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  // Cadre : la scène est capturée dans une toile de travail, puis dessinée à l'échelle sur le cadre.
+  const decor = cadre ? await preparerCadre(largeur, hauteur) : null;
+  const travail = decor ? new OffscreenCanvas(largeurScene, hauteurScene) : null;
   const output = new Output({ format: new Mp4OutputFormat({ fastStart: 'in-memory' }), target: new BufferTarget() });
+  // Couverture et vignette intégrée (5.10) : avant start(), comme l'exige setMetadataTags ; titre de la vidéo en métadonnée.
+  let couverture = null;
+  const tags = { title: M.donnees.titre || '' };
+  if (r.couverture && !sortie.extrait && !cadre) {
+    const remettreCouv = preparerScene(largeurScene, hauteurScene);
+    M.modeCapture(true);
+    try {
+      const c = await prendreCouverture(M.instantCouverture(M.minutage, M.donnees.couverture), largeurScene, hauteurScene);
+      couverture = c.couverture;
+      tags.images = [{ data: c.vignette, mimeType: 'image/jpeg', kind: 'coverFront' }];
+    } finally {
+      M.modeCapture(false);
+      remettreCouv();
+    }
+  }
+  output.setMetadataTags(tags);
   const video = new VideoSampleSource(configVideo(n, n.debit));
   const i420 = new Uint8Array(largeur * hauteur * 1.5);
   output.addVideoTrack(video, { frameRate: ips });
@@ -177,7 +261,7 @@ export async function exporter({ surProgression = () => {}, signal, reglages = W
   const surErreur = (e) => { if (!/ResizeObserver/.test(String((e && (e.message || (e.reason && e.reason.message))) || ''))) erreurScript = true; };
   window.addEventListener('error', surErreur);
   window.addEventListener('unhandledrejection', surErreur);
-  const remettre = preparerScene(largeur, hauteur);
+  const remettre = preparerScene(largeurScene, hauteurScene);
   const stats = creerStats(largeur, hauteur);
   M.modeCapture(true);
   const debut = horloge();
@@ -187,13 +271,25 @@ export async function exporter({ surProgression = () => {}, signal, reglages = W
     if (pisteAudio) await pisteAudio.add(audio);
     for (let k = 0; k < total; k++) {
       if (signal && signal.aborted) throw new DOMException('Export annulé.', 'AbortError');
+      const t = (f0 + k) / ips;
       try {
-        await M.seek(k / ips);
+        await M.seek(t);
       } catch (e) {
-        throw erreurDeScript(k / ips);
+        throw erreurDeScript(t);
       }
-      await M.capturer(ctx, largeur, hauteur);
-      if (erreurScript) throw erreurDeScript(k / ips);
+      if (decor) {
+        await M.capturer(travail.getContext('2d'), largeurScene, hauteurScene);
+        const e = decor.g.ecran;
+        ctx.drawImage(decor.image, 0, 0, largeur, hauteur);
+        ctx.save();
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(e.x, e.y, e.largeur, e.hauteur, e.rayon); else ctx.rect(e.x, e.y, e.largeur, e.hauteur);
+        ctx.clip();
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(travail, e.x, e.y, e.largeur, e.hauteur);
+        ctx.restore();
+      } else await M.capturer(ctx, largeur, hauteur);
+      if (erreurScript) throw erreurDeScript(t);
       versI420(ctx.getImageData(0, 0, largeur, hauteur).data, largeur, hauteur, i420);
       const image = new VideoSample(i420, { format: 'I420', codedWidth: largeur, codedHeight: hauteur, timestamp: k / ips, duration: 1 / ips, colorSpace: BT709 });
       try { await video.add(image); } finally { image.close(); }
@@ -226,8 +322,8 @@ export async function exporter({ surProgression = () => {}, signal, reglages = W
   const secondes = Math.max(0.001, (finImages - debut) / 1000);
   const finales = Math.max(0, (horloge() - finImages) / 1000);
   return {
-    buffer, images: total, duree: total / ips, largeur, hauteur, audio: !!audio, avertissement, fondSombre, stats: stats.finir(),
-    usage: r.usage, definition: r.definition, ips, reprises,
+    buffer, images: total, duree: total / ips, largeur, hauteur, audio: !!audio, avertissement, fondSombre, stats: sortie.extrait ? null : stats.finir(),
+    usage: r.usage, definition: r.definition, ips, reprises, couverture, vignette: Boolean(tags.images), extrait: Boolean(sortie.extrait),
     imagesParSeconde: Math.round((total / secondes) * 10) / 10, finalesParSeconde: Math.round((finales / (total / ips)) * 1000) / 1000,
   };
 }
@@ -306,7 +402,7 @@ function luminanceMoyenne(canvas) {
  * (sauf si le fond de la vidéo est lui-même sombre : fondSombre).
  * -> { ok, duree, images, premiereNoire, derniereNoire, erreurs: [message] }
  */
-export async function relire(buffer, { images: attendues, ips, fondSombre = false }) {
+export async function relire(buffer, { images: attendues, ips, fondSombre = false, vignette = false }) {
   const input = new Input({ source: new BufferSource(buffer), formats: ALL_FORMATS });
   const duree = await input.computeDuration();
   const piste = await input.getPrimaryVideoTrack();
@@ -328,18 +424,31 @@ export async function relire(buffer, { images: attendues, ips, fondSombre = fals
   if (Math.abs(duree - attendues / ips) > 1 / ips + 0.05) erreurs.push(`durée ${duree.toFixed(2)} s au lieu de ${(attendues / ips).toFixed(2)} s.`);
   if (premiereNoire && !fondSombre) erreurs.push('la première image est noire.');
   if (derniereNoire && !fondSombre) erreurs.push('la dernière image est noire.');
-  return { ok: erreurs.length === 0, duree, images, premiereNoire, derniereNoire, erreurs, couleurs };
+  // Vignette intégrée (5.10, 5.22 point 4) : relue dans les métadonnées du fichier.
+  let vignetteLue = false;
+  try { const t = await input.getMetadataTags(); vignetteLue = Boolean(t && t.images && t.images.length); } catch { vignetteLue = false; }
+  if (vignette && !vignetteLue) erreurs.push('la vignette n\'a pas pu être intégrée à la vidéo.');
+  return { ok: erreurs.length === 0, duree, images, premiereNoire, derniereNoire, erreurs, couleurs, vignette: vignetteLue };
 }
 
 /** Envoie le MP4 relu à l'aperçu, qui l'écrit dans sortie/<nom> (nom : celui de l'usage, vérifié par l'aperçu). -> { fichier } */
-export async function envoyer(buffer, relecture, nom) {
+export async function envoyer(buffer, relecture, nom, { extrait = false } = {}) {
   const reponse = await fetch('/_pm/export', {
     method: 'POST',
-    headers: { 'Content-Type': 'video/mp4', 'X-PM-Relecture': encodeURIComponent(JSON.stringify(relecture)), ...(nom ? { 'X-PM-Nom': encodeURIComponent(nom) } : {}) },
+    headers: { 'Content-Type': 'video/mp4', 'X-PM-Relecture': encodeURIComponent(JSON.stringify(relecture)), ...(nom ? { 'X-PM-Nom': encodeURIComponent(nom) } : {}),
+      ...(extrait ? { 'X-PM-Extrait': '1' } : {}) },
     body: buffer,
   });
   const corps = await reponse.json().catch(() => ({}));
   if (!reponse.ok) throw new Error(corps.message || `Enregistrement refusé (${reponse.status}).`);
+  return corps;
+}
+
+/** Envoie la couverture JPEG à l'aperçu (sortie/<titre>-couverture.jpg). -> { fichier } */
+export async function envoyerCouverture(blob) {
+  const reponse = await fetch('/_pm/couverture', { method: 'POST', headers: { 'Content-Type': 'image/jpeg' }, body: blob });
+  const corps = await reponse.json().catch(() => ({}));
+  if (!reponse.ok) throw new Error(corps.message || `Couverture refusée (${reponse.status}).`);
   return corps;
 }
 

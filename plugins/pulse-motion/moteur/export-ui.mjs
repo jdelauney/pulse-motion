@@ -4,9 +4,11 @@
  * spec Rendu et export 5.4 point 6), puis affiche la progression (image n / total, temps restant estimé sur les 20
  * dernières secondes : moteur/estimation.js, bouton Annuler) et le résultat. Paramètres d'adresse utilisés par
  * « pulse-motion exporter » : ?export=1 lance l'export, avec &pour=, &qualite=, &ips=, &taille= (réglages résolus par
- * l'aperçu, /_pm/usage) ; ?planche=id1,id2 capture la planche.
+ * l'aperçu, /_pm/usage), &scene=, &plage=, &cadre=, &cadreFormat= (extrait, passage seul, cadre de téléphone : spec Rendu et
+ * export 5.12 et 5.15) ; ?planche=id1,id2 capture la planche. La couverture (5.10) est envoyée avant la vidéo ; crédits et
+ * chapitres sont écrits par l'aperçu à la réception de la vidéo.
  */
-import { exporter, relire, envoyer, envoyerStats, signaler, capturerPlanche } from '/_pm/export.mjs';
+import { exporter, relire, envoyer, envoyerStats, envoyerCouverture, signaler, capturerPlanche } from '/_pm/export.mjs';
 import '/_pm/estimation.js';
 
 const M = globalThis.M;
@@ -55,7 +57,7 @@ function scenesProvisoires() {
   return (M.donnees.scenes || []).filter((s) => s.voix && s.voix.provisoire).map((s) => s.id);
 }
 
-export async function lancerExport({ avecProvisoire = false, pour, qualite, ips, taille } = {}) {
+export async function lancerExport({ avecProvisoire = false, pour, qualite, ips, taille, scene, plage, cadre, cadreFormat } = {}) {
   if (enCours) return null;
   const provisoires = scenesProvisoires();
   if (provisoires.length && !avecProvisoire) {
@@ -76,10 +78,10 @@ export async function lancerExport({ avecProvisoire = false, pour, qualite, ips,
   panneau.bouton.onclick = () => controle.abort();
   panneau.titre('Export de la vidéo en MP4…');
   try {
-    const reglages = await reglagesDe({ pour, qualite, ips, taille });
+    const reglages = await reglagesDe({ pour, qualite, ips, taille, scene, plage, cadre, cadreFormat });
     panneau.titre(`Export de la vidéo en MP4 (${reglages.nom.toLowerCase()})…`);
     const ipsExport = reglages.ips || M.ips;
-    const total = Math.round(M.duree * ipsExport);
+    const total = reglages.sortie && reglages.sortie.extrait ? reglages.sortie.f1 - reglages.sortie.f0 : Math.round(M.duree * ipsExport);
     const estimation = M.estimation.creerEstimation({ total });
     await signaler({ etat: 'en-cours', images: 0, total });
     const resultat = await exporter({
@@ -96,13 +98,17 @@ export async function lancerExport({ avecProvisoire = false, pour, qualite, ips,
     });
     panneau.titre('Vérification de la vidéo…');
     panneau.bouton.disabled = true;
-    const relecture = await relire(resultat.buffer, { images: resultat.images, ips: resultat.ips, fondSombre: resultat.fondSombre });
-    // Statistiques image par image (spec S2, 5.12) : analysées par l'aperçu à la réception de la vidéo (verification.json).
-    await envoyerStats(resultat.stats);
+    const relecture = await relire(resultat.buffer, { images: resultat.images, ips: resultat.ips, fondSombre: resultat.fondSombre, vignette: resultat.vignette });
+    // Statistiques image par image (spec S2, 5.12) : analysées par l'aperçu à la réception de la vidéo (verification.json) ;
+    // un extrait ne remplace pas la vérification de la vidéo entière.
+    if (!resultat.extrait) await envoyerStats(resultat.stats);
+    // Couverture (5.10) : envoyée avant la vidéo, pour que le suivi de l'export la compte parmi les fichiers joints.
+    if (resultat.couverture && relecture.ok) await envoyerCouverture(resultat.couverture);
     const { fichier } = await envoyer(resultat.buffer, {
       ...relecture, audio: resultat.audio, largeur: resultat.largeur, hauteur: resultat.hauteur, avertissement: resultat.avertissement,
       usage: resultat.usage, definition: resultat.definition, ips: resultat.ips, imagesParSeconde: resultat.imagesParSeconde, finalesParSeconde: resultat.finalesParSeconde,
-    }, reglages.nomFichier);
+      couverture: Boolean(resultat.couverture), vignette: relecture.vignette, extrait: resultat.extrait,
+    }, reglages.nomFichier, { extrait: resultat.extrait });
     panneau.titre('✅ Vidéo enregistrée');
     panneau.detail(resultat.avertissement ? `${fichier} – ${resultat.avertissement}` : fichier);
     panneau.bouton.textContent = 'Fermer';
@@ -195,6 +201,9 @@ M.pret.then(() => (document.fonts ? document.fonts.ready : null)).then(() => {
   ajouterBouton();
   const parametres = new URLSearchParams(location.search);
   const choix = (k) => parametres.get(k) || undefined;
-  if (parametres.get('export') === '1') lancerExport({ avecProvisoire: parametres.get('provisoire') === '1', pour: choix('pour'), qualite: choix('qualite'), ips: choix('ips'), taille: choix('taille') });
+  if (parametres.get('export') === '1') {
+    lancerExport({ avecProvisoire: parametres.get('provisoire') === '1', pour: choix('pour'), qualite: choix('qualite'), ips: choix('ips'), taille: choix('taille'),
+      scene: choix('scene'), plage: choix('plage'), cadre: choix('cadre'), cadreFormat: choix('cadreFormat') });
+  }
   else if (parametres.get('planche')) lancerPlanche(parametres.get('planche').split(',').filter(Boolean));
 });
