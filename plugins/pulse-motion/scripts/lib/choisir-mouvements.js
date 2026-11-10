@@ -10,7 +10,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { calculerMinutage } = require('../../moteur/minutage.js');
-const { garder } = require('./garde-locale.js');
+const { servirChoix, injecterDonnees, DELAI_DEFAUT, MESSAGE_DELAI } = require('./page-choix.js');
 
 // Mise en page des démonstrations, lisibles même en vignette : contenu centré dans un conteneur qui couvre la scène (la
 // section elle-même garde son affichage, que le moteur règle), titre et texte grands ; un motif à la couleur de la charte sur
@@ -71,9 +71,6 @@ function projetDeMouvements(dossier, entrees, options = {}) {
   };
 }
 
-const DELAI_DEFAUT = 30 * 60 * 1000;
-const MESSAGE_DELAI = 'Aucun choix envoyé : la page a été fermée ou laissée ouverte trop longtemps.';
-
 /**
  * Page locale de choix : les mouvements (d'une catégorie, ou tous) jouent en direct dans le moteur ; la personne coche,
  * annote, puis envoie. Écoute seulement 127.0.0.1 ; refuse un autre nom d'hôte (même règle que l'aperçu).
@@ -81,7 +78,6 @@ const MESSAGE_DELAI = 'Aucun choix envoyé : la page a été fermée ou laissée
  * surPret(url) est appelé quand la page est servie.
  */
 function choisirMouvements({ categorie = null, delai = DELAI_DEFAUT, port = 0, surPret = () => {} } = {}) {
-  const http = require('node:http');
   const os = require('node:os');
   const { charger } = require('../mouvements.js');
   const { assembler } = require('../assembler.js');
@@ -100,73 +96,21 @@ function choisirMouvements({ categorie = null, delai = DELAI_DEFAUT, port = 0, s
     pageVideo = fs.readFileSync(r.fichier, 'utf8');
     const nomCategorie = (id) => (categories.find((c) => c.id === id) || {}).nom || id;
     const donnees = { mouvements: entrees.map((e, i) => ({ no: e.no, nom: e.nom.fr, metier: e.nom.metier, sens: e.sens, categorie: e.categorie, nomCategorie: nomCategorie(e.categorie), debut: plages[i].debut, fin: plages[i].fin })) };
-    const json = JSON.stringify(donnees).replace(/</g, '\\u003c');
-    // Remplacement par une fonction : un « $ » des données ($&, $') ne doit pas être lu comme un motif de remplacement.
-    pageChoix = fs.readFileSync(path.join(__dirname, '..', '..', 'moteur', 'choisir', 'page.html'), 'utf8')
-      .replace('/*DONNEES*/null', () => json);
+    pageChoix = injecterDonnees(fs.readFileSync(path.join(__dirname, '..', '..', 'moteur', 'choisir', 'page.html'), 'utf8'), donnees);
   } catch (e) {
     nettoyer();
     return Promise.resolve({ ok: false, message: `La page de choix n'a pas pu être préparée : ${e.message}` });
   }
 
-  return new Promise((resoudre) => {
-    let fini = false;
-    let minuteur;
-    const serveur = http.createServer((req, res) => {
-      // Garde commune (lib/garde-locale.js) : hôte, envoi venu de cette page seulement (Origin obligatoire), JSON seulement.
-      const { port: portEcoute } = serveur.address();
-      if (!garder(req, res, { port: portEcoute, types: [['/envoyer', ['application/json']]] })) return;
-      const chemin = new URL(req.url, 'http://localhost').pathname;
-      if (req.method === 'GET' && (chemin === '/' || chemin === '/video')) {
-        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
-        res.end(chemin === '/' ? pageChoix : pageVideo);
-        return;
-      }
-      if (req.method === 'POST' && chemin === '/envoyer') {
-        // Origine et type déjà vérifiés par la garde : seule la page servie ici a pu envoyer ce choix.
-        let corps = '';
-        req.on('data', (m) => { corps += m; if (corps.length > 1e6) req.destroy(); });
-        req.on('end', () => {
-          let choix;
-          try {
-            choix = JSON.parse(corps).choix
-              .map((c) => ({ e: entrees.find((x) => x.no === String(c.no)), note: String(c.note || '').trim().slice(0, 200) }))
-              .filter((c) => c.e)
-              .map((c) => ({ no: c.e.no, nom: c.e.nom.fr, metier: c.e.nom.metier, note: c.note }));
-          } catch {
-            res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-            res.end('Choix illisible.');
-            return;
-          }
-          // Terminer seulement une fois la réponse partie : fermer les connexions plus tôt la couperait.
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          const fin = () => terminer({ ok: true, choix });
-          res.once('close', fin); // la page partie avant la fin de la réponse : le choix est reçu quand même
-          res.end('{"ok":true}', fin);
-        });
-        return;
-      }
-      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('Introuvable.');
-    });
-    // Ctrl+C ou arrêt de la commande : le dossier temporaire part avec elle.
-    const surSignal = (signal) => { nettoyer(); process.exit(signal === 'SIGINT' ? 130 : 143); };
-    function terminer(resultat) {
-      if (fini) return;
-      fini = true;
-      clearTimeout(minuteur);
-      process.removeListener('SIGINT', surSignal);
-      process.removeListener('SIGTERM', surSignal);
-      serveur.close();
-      serveur.closeAllConnections?.();
-      nettoyer();
-      resoudre(resultat);
-    }
-    process.once('SIGINT', surSignal);
-    process.once('SIGTERM', surSignal);
-    minuteur = setTimeout(() => terminer({ ok: false, message: MESSAGE_DELAI }), delai);
-    serveur.on('error', (e) => terminer({ ok: false, message: `La page de choix n'a pas pu être ouverte : ${e.message}` }));
-    serveur.listen(port, '127.0.0.1', () => surPret(`http://127.0.0.1:${serveur.address().port}/`));
+  return servirChoix({
+    delai, port, surPret, nettoyer,
+    pages: (chemin) => (chemin === '/' ? pageChoix : chemin === '/video' ? pageVideo : null),
+    lireEnvoi: (corps) => ({
+      choix: corps.choix
+        .map((c) => ({ e: entrees.find((x) => x.no === String(c.no)), note: String(c.note || '').trim().slice(0, 200) }))
+        .filter((c) => c.e)
+        .map((c) => ({ no: c.e.no, nom: c.e.nom.fr, metier: c.e.nom.metier, note: c.note })),
+    }),
   });
 }
 
