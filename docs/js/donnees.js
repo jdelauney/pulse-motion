@@ -102,7 +102,7 @@ window.PULSE_WIKI = {
     {
       "nom": "creer",
       "etape": "creer",
-      "description": "Créer une vidéo de motion design en quelques questions, valider son déroulé, puis la regarder dans le navigateur",
+      "description": "Créer une nouvelle vidéo, seulement quand vous le demandez (« fais-moi une vidéo sur… », ou la commande) : quelques questions, le déroulé validé, puis la vidéo dans le navigateur",
       "forme": "[le sujet de la vidéo en une phrase]",
       "note": "facultatif : sans sujet, Pulse Motion vous le demande"
     },
@@ -144,7 +144,7 @@ window.PULSE_WIKI = {
     {
       "nom": "style",
       "etape": "personnaliser",
-      "description": "Créer son propre style de vidéo (« un style papercraft aux couleurs pop-art ») : allure, couleurs, polices et mouvements, vérifiés avant usage",
+      "description": "Créer son propre style de vidéo, seulement sur demande (« crée mon style », « un style papercraft aux couleurs pop-art ») : allure, couleurs, polices et mouvements, vérifiés avant usage",
       "forme": "[le style voulu en une phrase]",
       "note": "facultatif : sans description, Pulse Motion vous la demande"
     },

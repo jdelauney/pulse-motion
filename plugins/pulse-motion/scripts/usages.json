@@ -44,7 +44,7 @@
       "navigateur": { "debit": 20000, "gop": 2, "acceleration": "no-preference" },
       "flou": true, "grainHz": null, "tailleMaxMo": null,
       "fichiers": ["couverture", "chapitres", "credits", "sous-titres"],
-      "mesures": { "moParMinute": 6.8, "secondesParSeconde": 1.28, "date": "2026-11-10" }
+      "mesures": { "moParMinute": 6.8, "secondesParSeconde": 2.51, "date": "2026-11-10" }
     },
     "courriel": {
       "nom": "Pour l'envoyer par courriel",
