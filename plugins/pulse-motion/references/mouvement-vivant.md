@@ -45,8 +45,10 @@ Ce qui fait qu'une scène paraît vivante plutôt que mécanique : à lire quand
 | Ciel, nuages | #078 | 4 % de la hauteur par seconde ; plan lointain : 2 |
 | Signal, goutte | #079 | 2 ou 3 anneaux, 2,6 s chacun |
 | Plante qui pousse | #080 | tige en 1,6 s, une feuille toutes les 0,35 s, un pétale toutes les 0,12 s, puis #069 |
+| Bandeau de logos clients | #087 | un tour en 20 s (10 à 40 s), la liste écrite deux fois à la suite |
 
 - Ce qui se déplace (#071, #072, #078) se pose sur un élément HTML ou sur un `<svg>` entier, pas sur une forme à l'intérieur d'un dessin.
+- Sur la musique : un logo qui bat sur chaque temps (#083, +1,2 %, retombé en 0,12 s environ), départ sur un temps.
 
 ## Les personnages
 
@@ -85,8 +87,9 @@ Ce que l'animateur décide :
 
 ## Interface à l'écran
 
-- Appui sur un bouton : de 100 à 160 ms ; info-bulle : de 125 à 200 ms ; menu : de 150 à 250 ms ; panneau : de 200 à 500 ms.
+- Appui sur un bouton : de 100 à 160 ms (#081, `--pm-dur: 0.14s`), sur le bouton entier ; info-bulle : de 125 à 200 ms ; menu : de 150 à 250 ms ; panneau : de 200 à 500 ms.
 - Une carte entre depuis 0,9 à 0,97 de sa taille (#004 avec `--pm-ampleur: 0.95`), jamais depuis 0 (#001 est réservé aux petites icônes).
+- Un graphique se trace barre après barre (#082, 60 ms d'écart) et finit sur les vraies données.
 
 ## Avant de dire que c'est vivant
 
