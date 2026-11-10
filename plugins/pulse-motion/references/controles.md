@@ -146,7 +146,7 @@ Comment ils se mesurent : les lettres sont les pixels qui changent de plus de 60
 | `rendu-impossible` | Page en erreur, délai dépassé, navigateur introuvable à l'adresse donnée | alerte | non | Lire la cause dans le message |
 | `script-interdit` | Le code d'une scène s'exécute hors de `M.chaqueImage`, ou utilise `setTimeout`, `setInterval`, `requestAnimationFrame`, `Date`, `performance.now`, `fetch`, `localStorage` | **erreur** | non | Tout calculer depuis `p` et `t` de `M.chaqueImage` (`pulse-motion reference moteur`) |
 | `erreur-de-scene` | Pendant la mesure, le code d'une scène s'arrête sur une erreur (écrite dans la console) | **erreur** | non | Corriger le code de `M.chaqueImage` |
-| `rendu-hasard` | Une même image d'une scène à code, à particules ou à personnage diffère d'une page neuve à l'autre (PSNR de 45 dB (`determinismePsnr`) ou moins) | **erreur** | non | Hasard seulement dans `M.chaqueImage` (il y est tiré d'une graine), rien au chargement ; ni heure ni hasard du navigateur |
+| `rendu-hasard` | Une même image d'une scène à code, à particules, à personnage ou à décor vivant diffère d'une page neuve à l'autre (PSNR de 45 dB (`determinismePsnr`) ou moins) | **erreur** | non | Hasard seulement dans `M.chaqueImage` (il y est tiré d'une graine), rien au chargement ; ni heure ni hasard du navigateur |
 | `rendu-ordre` | L'image à t change selon qu'on a d'abord montré l'image à u | **erreur** | non | Tout recalculer depuis `t` ; pas de variable gardée entre deux images |
 | `preuve-non-faite` | Scène à particules à prouver, et Chrome n'a pas WebGPU sans fenêtre | info | non | — |
 
