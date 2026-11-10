@@ -32,7 +32,7 @@ const { trouverNavigateur } = require('./lib/navigateur.js');
 const { ouvrirCapture } = require('./lib/capture-fidele.js');
 const F = require('./lib/ffmpeg.js');
 const { cheminDansProjet } = require('./lib/embarquer.js');
-const { scenesProvisoires, messageProvisoire, minutageVideo } = require('./lib/voix.js');
+const { scenesProvisoires, messageProvisoire, minutageVideo, nomVersionDeTravail } = require('./lib/voix.js');
 const L = require('./lib/livrables.js');
 const CADRE = require('../moteur/cadres/telephone.js');
 const minutageModule = require('../moteur/minutage.js');
@@ -261,9 +261,12 @@ async function exporterFidele({ dossier, pour, qualite, ips, tailleMax, navigate
   const page = path.join(travail, 'page.html');
 
   const nomSlug = slug(deroule.titre);
-  const final = path.join(sortieDir, extrait || demande.cadre
+  const nomFinal = extrait || demande.cadre
     ? L.nomSortie(nomSlug, { usage: gif ? (pour && pour !== 'web' ? pour : 'web') : u.usage, scene: demande.scene, plage: demande.plage, cadre: demande.cadre, extension: gif ? 'gif' : 'mp4' })
-    : U.nomFichier(nomSlug, u.usage));
+    : U.nomFichier(nomSlug, u.usage);
+  // Voix provisoire (spec Retouches et ergonomie, 5.17) : une version de travail nommée à part, le MP4 définitif intact.
+  const versionDeTravail = provisoires.length > 0;
+  const final = path.join(sortieDir, versionDeTravail ? nomVersionDeTravail(nomFinal) : nomFinal);
   const partiel = `${final}.part`;
   const captures = [];
   const partiels = new Set();
@@ -804,7 +807,8 @@ async function exporterFidele({ dossier, pour, qualite, ips, tailleMax, navigate
     const joint = {};
     let livrables = { creditsAPreciser: [], alertes: [], fichiers: {} };
     try {
-      if (couverture) {
+      // Une version de travail (voix provisoire) ne remplace pas la couverture du définitif.
+      if (couverture && !versionDeTravail) {
         const cible = path.join(sortieDir, `${nomSlug}-couverture.jpg`);
         fs.copyFileSync(couverture, cible);
         joint.couverture = rel(cible);
@@ -819,7 +823,7 @@ async function exporterFidele({ dossier, pour, qualite, ips, tailleMax, navigate
     const images = gif && sonde ? sonde.images : n;
     const resultat = {
       ok: true, fichier: final, images, duree: n / cadence, largeur: gif ? tailleGif[0] : largeur, hauteur: gif ? tailleGif[1] : hauteur, audio: Boolean(audio),
-      usage: u.usage, octets, taille: U.tailleFrancaise(octets), definition: u.definition, ips: gif ? 15 : cadence,
+      usage: u.usage, octets, taille: U.tailleFrancaise(octets), definition: u.definition, ips: gif ? 15 : cadence, ...(versionDeTravail ? { versionDeTravail: true } : {}),
       flou: { applique: avecFlou, sousImages: nDe.size ? Math.max(1, ...nDe.values()) : 1, imagesFloues, sousImagesTotal }, chapitresIntegres: Boolean(chapitres.length && sonde && sonde.chapitres > 0),
       fichiers: { [gif ? 'gif' : 'video']: rel(final), ...(sousTitres.length ? { sousTitres } : {}), ...joint, ...livrables.fichiers },
       ...(demande.extrait ? { extrait: { scene: demande.scene, debut: f0 / cadence, fin: f1 / cadence } } : {}),

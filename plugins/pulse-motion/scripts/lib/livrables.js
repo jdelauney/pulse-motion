@@ -270,7 +270,13 @@ function preparerSortie({ deroule, minutage, ips, scene = null, plage = null, gi
   let id = null;
   if (scene) {
     const i = minutage.scenes.findIndex((s) => s.id === scene);
-    if (i < 0) return { erreur: `Scène « ${scene} » inconnue : ${minutage.scenes.map((s) => s.id).join(', ')}.` };
+    if (i < 0) {
+      // Scènes proches (spec Retouches et ergonomie, 5.16) ; la liste entière si aucune ne ressemble.
+      const P = require('../../moteur/proches.js');
+      const ids = minutage.scenes.map((s) => s.id);
+      const l = P.proches(scene, ids);
+      return { erreur: l.length ? `Scène « ${scene} » inconnue ; ${P.phrase(l)}` : `Scène « ${scene} » inconnue : ${ids.join(', ')}.` };
+    }
     r = imagesDeScene(minutage, i, ips);
     r.f1 = Math.min(r.f1, total);
     id = scene;

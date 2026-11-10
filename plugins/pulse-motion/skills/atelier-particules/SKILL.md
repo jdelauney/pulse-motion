@@ -13,7 +13,7 @@ Ouvrir l'atelier des effets de particules sur l'effet demandé, puis relire le r
 - Parler simplement, en français, sans jargon ni commande montrée.
 - « L'éditeur » sans autre précision, alors que la vidéo a aussi des personnages : une question avec `AskUserQuestion` (« Les effets de particules » · « Les personnages ») ; personnages : `/pulse-motion:atelier-personnages`.
 - Lexique : avant d'expliquer un mot de l'outil, lire `pulse-motion lexique` ; un mot expliqué pour la première fois se note avec `pulse-motion lexique noter "<terme>" "<phrase>" "<comme…>" "/pulse-motion:atelier-particules"`.
-- La commande échoue avec « node » introuvable (Node.js n'est pas installé) : expliquer qu'il faut installer Node.js en version LTS depuis https://nodejs.org, puis relancer Claude Code, et s'arrêter.
+- La commande échoue avec « Node.js introuvable » : proposer de l'installer (`/pulse-motion:outils`, étape « Installer Node.js »), et s'arrêter.
 
 ## 1. Ouvrir
 

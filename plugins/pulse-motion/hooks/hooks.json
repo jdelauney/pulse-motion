@@ -1,13 +1,13 @@
 {
-  "description": "Pulse Motion – au démarrage d'une session, rappelle la vidéo en cours dans le dossier et signale une version de Node.js trop ancienne ; après l'écriture d'une scène, la contrôle aussitôt.",
+  "description": "Pulse Motion – au démarrage d'une session, rappelle la vidéo en cours dans le dossier et signale un Node.js absent (par le relais sh, qui le cherche aussi hors du PATH) ou trop ancien ; après l'écriture d'une scène, la contrôle aussitôt.",
   "hooks": {
     "SessionStart": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "node",
-            "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/rappel.js"],
+            "command": "sh",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/bin/pulse-motion", "rappel"],
             "timeout": 10
           }
         ]

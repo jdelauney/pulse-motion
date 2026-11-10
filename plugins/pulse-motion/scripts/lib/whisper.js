@@ -12,9 +12,43 @@ const SCRIPT = path.join(__dirname, '..', 'whisper', 'transcrire.py');
 const dossierWhisper = () => process.env.PM_WHISPER || path.join(os.homedir(), '.pulse-motion', 'whisper');
 const pythonDuVenv = (dossier) => (process.platform === 'win32' ? path.join(dossier, 'venv', 'Scripts', 'python.exe') : path.join(dossier, 'venv', 'bin', 'python'));
 
+/** Numéro d'un dossier « Python312 » ou « Python3.12 » -> 312, pour trier du plus récent au plus ancien. */
+const numeroPython = (nom) => Number(String(nom).replace(/\D/g, '')) || 0;
+
+/**
+ * Emplacements connus de Python hors du PATH (spec Retouches et ergonomie, 5.6 point 3) : un Python installé à l'instant
+ * (winget, programme d'installation, Homebrew) n'est vu par l'outil qu'à son redémarrage ; on le cherche donc aussi ici, sur
+ * le modèle de lib/ffmpeg.js. -> [[commande, ...arguments]] existants, le plus récent d'abord.
+ */
+function emplacementsPython({ env = process.env, plateforme = process.platform, existe = fs.existsSync, lister = (d) => fs.readdirSync(d) } = {}) {
+  const chemins = plateforme === 'win32' ? path.win32 : path.posix;
+  const r = [];
+  if (plateforme === 'win32') {
+    if (env.LOCALAPPDATA) {
+      const racine = chemins.join(env.LOCALAPPDATA, 'Programs', 'Python');
+      let dossiers = [];
+      try { dossiers = lister(racine).filter((d) => /^Python3/i.test(d)); } catch { dossiers = []; }
+      dossiers.sort((a, b) => numeroPython(b) - numeroPython(a));
+      for (const d of dossiers) r.push([chemins.join(racine, d, 'python.exe')]);
+      r.push([chemins.join(racine, 'Launcher', 'py.exe'), '-3']);
+    }
+    if (env.SystemRoot) r.push([chemins.join(env.SystemRoot, 'py.exe'), '-3']);
+  } else {
+    r.push(['/opt/homebrew/bin/python3'], ['/usr/local/bin/python3']);
+  }
+  return r.filter((c) => existe(c[0]));
+}
+
+/** Commandes candidates : celles du PATH, puis les emplacements connus. */
+function candidatsPython(options = {}) {
+  const plateforme = options.plateforme || process.platform;
+  const duPath = plateforme === 'win32' ? [['py', '-3'], ['python']] : [['python3'], ['python']];
+  return [...duPath, ...emplacementsPython(options)];
+}
+
 /** Versions de Python trouvées, dans l'ordre des commandes candidates. -> [{ commande, majeure, mineure, correctif }] */
 function versionsPython(candidats) {
-  const liste = candidats || (process.platform === 'win32' ? [['py', '-3'], ['python']] : [['python3'], ['python']]);
+  const liste = candidats || candidatsPython();
   const trouvees = [];
   for (const commande of liste) {
     const r = spawnSync(commande[0], [...commande.slice(1), '--version'], { encoding: 'utf8', windowsHide: true, timeout: 10000 });
@@ -204,8 +238,9 @@ function lancerCommande(commande) {
   });
 }
 
-/** Installe la transcription (environnement isolé, faster-whisper, modèle). -> { ok, message, modele? } */
-async function installerWhisper({ dossier = dossierWhisper(), modele = MODELE_DEFAUT, python = trouverPython(), lancer = lancerCommande, ancien } = {}) {
+/** Installe la transcription (environnement isolé, faster-whisper, modèle). -> { ok, message, modele? } ; surEtape(i, n, nom) :
+ *  au début de chaque étape (avancement, spec Retouches et ergonomie 5.2). */
+async function installerWhisper({ dossier = dossierWhisper(), modele = MODELE_DEFAUT, python = trouverPython(), lancer = lancerCommande, ancien, surEtape = () => {} } = {}) {
   if (!MODELE_VALIDE.test(String(modele))) {
     return { ok: false, message: `Nom de modèle invalide : « ${modele} » (lettres minuscules, chiffres, points et tirets, ex. small ou large-v3-turbo).` };
   }
@@ -218,6 +253,7 @@ async function installerWhisper({ dossier = dossierWhisper(), modele = MODELE_DE
   fs.mkdirSync(dossier, { recursive: true });
   const commandes = commandesInstallation(python.commande, dossier, modele);
   for (let i = 0; i < commandes.length; i++) {
+    try { surEtape(i, commandes.length, ETAPES[i]); } catch { /* suivi facultatif */ }
     const r = await lancer(commandes[i]);
     if (r.code !== 0) {
       const cause = String(r.erreurs || '').trim().split(/\r?\n/).pop() || `code ${r.code}`;
@@ -240,4 +276,4 @@ function whisperParDefaut() {
   return { pret: etatWhisper({ python: null, ancien: null }).pret, transcrire };
 }
 
-module.exports = { MODELE_DEFAUT, PHRASES_FANTOMES, filtrerTranscription, dossierWhisper, pythonDuVenv, trouverPython, pythonAncien, afficherCommande, commandeSysteme, commandesInstallation, etatWhisper, transcrire, installerWhisper, whisperParDefaut };
+module.exports = { emplacementsPython, candidatsPython, MODELE_DEFAUT, PHRASES_FANTOMES, filtrerTranscription, dossierWhisper, pythonDuVenv, trouverPython, pythonAncien, afficherCommande, commandeSysteme, commandesInstallation, etatWhisper, transcrire, installerWhisper, whisperParDefaut };

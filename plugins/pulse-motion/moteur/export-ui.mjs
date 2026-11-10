@@ -61,15 +61,32 @@ export async function lancerExport({ avecProvisoire = false, pour, qualite, ips,
   if (enCours) return null;
   const provisoires = scenesProvisoires();
   if (provisoires.length && !avecProvisoire) {
-    // Pas de vidéo avec la voix du système sans accord : le dire dans le panneau et au suivi de l'export.
+    // Voix de l'ordinateur encore là (spec Retouches et ergonomie, 5.17) : un choix plutôt qu'un refus. « Enregistrer ma voix
+    // d'abord » ouvre le studio ; « Exporter une version de travail » fait un fichier à part (le MP4 définitif n'est pas touché).
     const panneau = creerPanneau();
-    const message = `La vidéo contient encore la voix provisoire (scènes : ${provisoires.join(', ')}) : enregistrez votre voix avant d'exporter.`;
-    panneau.titre('Export impossible');
-    panneau.detail(message);
-    panneau.bouton.textContent = 'Fermer';
-    panneau.bouton.onclick = () => panneau.fermerDans(0);
-    await signaler({ etat: 'erreur', message });
-    return null;
+    panneau.titre('La vidéo parle encore avec la voix de l\'ordinateur');
+    panneau.detail(`Scènes : ${provisoires.join(', ')}.`);
+    panneau.bouton.textContent = 'Enregistrer ma voix d\'abord (Recommandé)';
+    panneau.bouton.dataset.choix = 'voix';
+    const travail = document.createElement('button');
+    travail.type = 'button';
+    travail.dataset.choix = 'version-de-travail';
+    travail.textContent = 'Exporter une version de travail';
+    travail.style.cssText = 'margin-left:8px';
+    panneau.bouton.after(travail);
+    const options = { pour, qualite, ips, taille, scene, plage, cadre, cadreFormat };
+    return new Promise((resoudre) => {
+      panneau.bouton.onclick = () => {
+        panneau.fermerDans(0);
+        if (M.studio && M.studio.ouvrir) M.studio.ouvrir(provisoires[0]);
+        signaler({ etat: 'erreur', message: 'Export arrêté : enregistrer la voix d\'abord.' });
+        resoudre(null);
+      };
+      travail.onclick = () => {
+        panneau.fermerDans(0);
+        resoudre(lancerExport({ ...options, avecProvisoire: true }));
+      };
+    });
   }
   enCours = true;
   M.exportEnCours = true;

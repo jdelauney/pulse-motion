@@ -28,9 +28,13 @@ test('entrée illisible : pas de plantage', () => {
   assert.equal(typeof sortie, 'string');
 });
 
-test('hooks.json : SessionStart lance scripts/rappel.js par node', () => {
+test('hooks.json : SessionStart lance le rappel par le relais sh (Node cherché aussi hors du PATH, spec S4 5.6)', () => {
   const hooks = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'hooks', 'hooks.json'), 'utf8'));
   const h = hooks.hooks.SessionStart[0].hooks[0];
-  assert.equal(h.command, 'node');
-  assert.deepEqual(h.args, ['${CLAUDE_PLUGIN_ROOT}/scripts/rappel.js']);
+  assert.equal(h.command, 'sh');
+  assert.deepEqual(h.args, ['${CLAUDE_PLUGIN_ROOT}/bin/pulse-motion', 'rappel']);
+  // pulse-motion rappel lance scripts/rappel.js avec l'entrée du crochet.
+  const r = require('node:child_process').spawnSync(process.execPath, [path.join(__dirname, '..', 'scripts', 'pm.js'), 'rappel'], { input: JSON.stringify({ cwd: copierProjet('projet-simple') }), encoding: 'utf8' });
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(JSON.parse(r.stdout).hookSpecificOutput.additionalContext, /\/pulse-motion:reprendre/);
 });

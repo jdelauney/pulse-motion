@@ -239,7 +239,15 @@ function preparerEffets(html, { scene, projet, bibliotheque, charte = {}, premie
       if (durScene) compile = R.compiler(resolue, { reglages: a['data-reglages'] || '', charte, dur: durScene, graine });
     } catch (e) {
       if (!e.regle) throw e;
-      compile = { ok: false, erreurs: [{ regle: e.regle, message: e.message }] };
+      let message = e.message;
+      // Effet inconnu : les noms proches parmi ceux du projet et de la bibliothèque (spec Retouches et ergonomie, 5.16).
+      if (e.regle === 'effet-inconnu') {
+        const P = require('../../moteur/proches.js');
+        const noms = [path.join(projet, 'effets'), bibliotheque].flatMap((d) => { try { return fs.readdirSync(d).filter((x) => x.endsWith('.json')).map((x) => x.slice(0, -5)); } catch { return []; } });
+        const liste = P.proches(nom, noms);
+        if (liste.length) message = `${message.replace(/\.$/, '')} ; ${P.phrase(liste)}`;
+      }
+      compile = { ok: false, erreurs: [{ regle: e.regle, message }] };
     }
     if (!compile.ok) return signaler(compile.erreurs);
     // Milieu (P5c) : une recette de milieu se pose avec data-milieu ; un effet couplé demande un milieu dans sa scène.

@@ -4,7 +4,9 @@
  *
  *   node scripts/etat.js <dossier-du-projet>
  *   node scripts/etat.js <dossier-du-projet> --parcours rapide|accompagne
- *   node scripts/etat.js <dossier-du-projet> --accord deroule|style|video
+ *   node scripts/etat.js <dossier-du-projet> --accord deroule|style|video|voix-provisoire
+ *     voix-provisoire : accord pour exporter une version de travail avec la voix de l'ordinateur (spec Retouches et ergonomie,
+ *     5.17), gardé avec l'empreinte des prises provisoires : il tombe dès que l'une d'elles change (accords.voixProvisoire).
  *
  * Lit et complète .pulse-motion/etat.json (accords donnés, aperçu en cours).
  * Affiche { node, projet, titre, parcours, etape, prochaine, accords, apercu } en JSON.
@@ -13,11 +15,12 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { lireDeroule } = require('./lib/deroule.js');
 const { cheminDansProjet } = require('./lib/embarquer.js');
+const { empreinteProvisoire } = require('./lib/voix.js');
 const { etatCharte } = require('./charte.js');
 const { ecrireJSON } = require('./lib/fichiers.js');
 
 const NODE_MINIMUM = 20;
-const ACCORDS = ['deroule', 'style', 'video'];
+const ACCORDS = ['deroule', 'style', 'video', 'voix-provisoire'];
 
 /** -> { version, ok, message? } */
 function verifierNode(version = process.versions.node) {
@@ -61,7 +64,8 @@ const PROCHAINES = {
 function etatProjet(dossier) {
   const projet = path.resolve(dossier);
   const memo = lireEtat(projet);
-  const accords = { deroule: false, style: false, video: false, ...(memo.accords || {}) };
+  const { 'voix-provisoire': accordVoix, ...autres } = memo.accords || {};
+  const accords = { deroule: false, style: false, video: false, ...autres, voixProvisoire: false };
   const resultat = {
     node: verifierNode(),
     projet: fs.existsSync(path.join(projet, 'deroule.json')),
@@ -80,6 +84,8 @@ function etatProjet(dossier) {
     if (deroule && typeof deroule.titre === 'string') resultat.titre = deroule.titre;
     if (deroule && deroule.parcours) resultat.parcours = deroule.parcours;
     if (deroule && !erreurs.length) resultat.charte = etatCharte(projet, deroule);
+    // Accord pour la voix provisoire : valable tant que les prises provisoires n'ont pas changé.
+    if (deroule && !erreurs.length && typeof accordVoix === 'string') accords.voixProvisoire = accordVoix === empreinteProvisoire(projet, deroule);
     if (erreurs.length) {
       resultat.etape = 'deroule-a-corriger';
       resultat.erreurs = erreurs;
@@ -112,7 +118,13 @@ function donnerAccord(dossier, accord) {
   if (!ACCORDS.includes(accord)) throw new Error(`Accord inconnu : « ${accord} ». Accords : ${ACCORDS.join(', ')}.`);
   const projet = path.resolve(dossier);
   const memo = lireEtat(projet);
-  memo.accords = { ...(memo.accords || {}), [accord]: true };
+  let valeur = true;
+  if (accord === 'voix-provisoire') {
+    const { deroule } = lireDeroule(projet);
+    valeur = deroule ? empreinteProvisoire(projet, deroule) : null;
+    if (!valeur) throw new Error('La vidéo n\'a pas de voix provisoire : rien à accorder.');
+  }
+  memo.accords = { ...(memo.accords || {}), [accord]: valeur };
   ecrireEtat(projet, memo);
   return etatProjet(projet);
 }

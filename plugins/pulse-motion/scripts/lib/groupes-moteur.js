@@ -11,7 +11,7 @@
 
 const GROUPES = {
   // tailles.js reste au tronc : la page livrée applique les tailles ajustées (M.appliquerTailles), pas seulement le contrôle.
-  tronc: ['courbes.js', 'aligner.js', 'sous-titres.js', 'minutage.js', 'transitions.js', 'tween.js', 'lettres.js', 'camera.js',
+  tronc: ['courbes.js', 'aligner.js', 'proches.js', 'sous-titres.js', 'minutage.js', 'transitions.js', 'tween.js', 'lettres.js', 'camera.js',
     'temps.js', 'horloge.js', 'tailles.js', 'wav.js', 'sonie.js', 'mixage.js', 'audio.js', 'lecteur.js', 'sous-titres-rendu.js',
     'debordement.js', 'figer.js', 'flou.js'],
   controle: ['mesures.js', 'pixels.js', 'ecoute.js'],
@@ -26,7 +26,7 @@ const GROUPES = {
 };
 
 // Ordre de chargement : celui de la liste historique (dépendances au chargement), puis absents.js en dernier.
-const MODULES = ['courbes.js', 'aligner.js', 'sous-titres.js', 'minutage.js', 'transitions.js', 'tween.js', 'lettres.js', 'camera.js',
+const MODULES = ['courbes.js', 'aligner.js', 'proches.js', 'sous-titres.js', 'minutage.js', 'transitions.js', 'tween.js', 'lettres.js', 'camera.js',
   'squelette.js', 'vivant.js', 'clips.js', 'habillage-batonnets.js', 'habillage-pieces.js', 'personnages/levres.js', 'personnages/partition.js',
   'personnages/interactions.js', 'personnages/scene.js', 'personnages/objets.js', 'temps.js', 'horloge.js', 'tailles.js', 'wav.js',
   'sonie.js', 'mixage.js', 'synthe/catalogue.js', 'synthe/partition.js', 'synthe/ambiances.js', 'synthe/instruments.js',

@@ -81,9 +81,10 @@ const PHASES = {
 /**
  * Lignes de progression (5.5) : toutes les 10 % ou toutes les 15 s, au premier des deux, avec le temps restant estimé sur
  * une fenêtre glissante de 20 s d'images capturées (segments repris exclus). -> (faites, total, { reprises }) => void
- * ecrire(ligne) ; maintenant() en secondes ; finales : secondes des phases finales (dernière mesure).
+ * ecrire(ligne) ; maintenant() en secondes ; finales : secondes des phases finales (dernière mesure). surEtat(faites, total,
+ * restant) : à chaque appel (fichier d'avancement, spec Retouches et ergonomie 5.2 ; restant : secondes, ou null).
  */
-function suiviProgression({ ecrire, maintenant = () => performance.now() / 1000, finales = 0, intervalle = 15 }) {
+function suiviProgression({ ecrire, maintenant = () => performance.now() / 1000, finales = 0, intervalle = 15, surEtat = null }) {
   let estimation = null;
   let dernierPourcent = -10;
   let dernierInstant = -Infinity;
@@ -91,6 +92,7 @@ function suiviProgression({ ecrire, maintenant = () => performance.now() / 1000,
     const t = maintenant();
     if (!estimation) estimation = creerEstimation({ total, finales });
     estimation.noter(faites, t, info.reprises || 0);
+    if (surEtat) { try { surEtat(faites, total, estimation.restant(t)); } catch { /* suivi facultatif */ } }
     const pourcent = Math.floor((100 * faites) / total);
     if (pourcent >= dernierPourcent + 10 || t - dernierInstant >= intervalle || faites === total) {
       if (faites === total && dernierPourcent === 100) return;
@@ -146,7 +148,12 @@ async function exporterVideo({
   if (u && u.erreur) return fin({ ok: false, message: u.erreur, ...(u.propositionMo ? { propositionMo: u.propositionMo } : {}) });
   if (ids) {
     const inconnues = ids.filter((id) => !deroule.scenes.some((s) => s.id === id));
-    if (inconnues.length) return fin({ ok: false, message: `Scène inconnue : ${inconnues.join(', ')}.` });
+    if (inconnues.length) {
+      // Scènes proches (spec Retouches et ergonomie, 5.16).
+      const P = require('../moteur/proches.js');
+      const l = P.proches(inconnues[0], deroule.scenes.map((s) => s.id));
+      return fin({ ok: false, message: `Scène inconnue : ${inconnues.join(', ')}${l.length ? ` ; ${P.phrase(l)}` : '.'}` });
+    }
   } else {
     // La planche n'a pas de son ; une vidéo avec la voix provisoire du système ne sort pas sans accord.
     const provisoires = scenesProvisoires(projet, deroule);
@@ -227,7 +234,9 @@ if (require.main === module) {
   const i = args.indexOf('--planche');
   const planche = i < 0 ? null : (args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1].split(',').filter(Boolean) : true);
   const rapide = args.includes('--rapide');
-  const avecProvisoire = args.includes('--avec-provisoire');
+  // Voix provisoire (spec Retouches et ergonomie, 5.17) : un accord gardé (etat --accord voix-provisoire) vaut tant que les
+  // prises provisoires n'ont pas changé ; l'export ne redemande pas.
+  const avecProvisoire = args.includes('--avec-provisoire') || (() => { try { return Boolean(etatProjet(path.resolve(dossier)).accords.voixProvisoire); } catch { return false; } })();
   const choix = { pour: valeur('--pour'), qualite: valeur('--qualite'), ips: valeur('--ips'), tailleMax: valeur('--taille-max'), flou: valeur('--flou') };
   const transparent = args.includes('--transparent') ? (valeur('--transparent') || 'mov') : undefined;
   const sorte = { scenes: valeur('--scene') ? valeur('--scene').split(',').filter(Boolean) : null, plage: valeur('--plage'), gif: args.includes('--gif'),
@@ -252,7 +261,10 @@ if (require.main === module) {
   const finales = (() => { const m = ME.lireMesures().filter((x) => x.voie === voie); return m.length ? (m[m.length - 1].finalesParSeconde || 0) : 0; })();
   let duree = 0;
   try { const { deroule } = lireDeroule(path.resolve(dossier)); duree = deroule ? dureeVideo(path.resolve(dossier), deroule) : 0; } catch { duree = 0; }
-  const surProgression = suiviProgression({ ecrire, finales: finales * duree });
+  // Avancement (spec Retouches et ergonomie, 5.2) : .pulse-motion/avancement.json, lu par l'aperçu et « pulse-motion avancement » ;
+  // les lignes de la sortie d'erreur restent celles de la progression (une par palier de 10 %, avec le temps restant).
+  const avancement = require('./lib/avancement.js').suivre(path.resolve(dossier), { travail: 'export', libelle: planche ? 'Planche des scènes' : 'Export de la vidéo', ecrire: () => {} });
+  const surProgression = suiviProgression({ ecrire, finales: finales * duree, surEtat: (f, t, restant) => avancement(f, t, `image ${f} sur ${t}`, restant) });
   const surPhase = (nom) => { if (PHASES[nom]) ecrire(PHASES[nom]); };
   let travail;
   if (voie === 'fidele') {
@@ -274,9 +286,11 @@ if (require.main === module) {
     // La relecture du critique (spec S2, 5.5) : l'export ne la lance jamais, il dit seulement son verdict et si elle
     // porte sur cette version (null : la vidéo n'a pas été relue).
     if (r.ok && !planche) r.relecture = require('./lib/relecture.js').etatRelecture(path.resolve(dossier));
+    avancement.terminer(r.ok, r.ok ? undefined : r.message);
     console.log(JSON.stringify(r, null, 2));
     process.exit(r.ok ? 0 : 1);
   }, (e) => {
+    avancement.terminer(false, e.message);
     console.log(JSON.stringify({ ok: false, message: e.message }, null, 2));
     process.exit(1);
   });

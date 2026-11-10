@@ -15,12 +15,12 @@ Fermez puis relancez Claude Code.
 
 ## Ce que vous pouvez demander
 
-Tout se fait par une demande dans Claude Code, jamais dans un terminal. Créer une vidéo ou un style passe par une commande commençant par `/` ; pour le reste, une phrase suffit.
+Tout se fait par une demande dans Claude Code, jamais dans un terminal : une phrase suffit, ou la commande commençant par `/`. Pulse Motion ne crée une vidéo ou un style que si vous le demandez.
 
 | Commande | Comment la lancer | Exemples de demandes |
 |---|---|---|
-| `/pulse-motion:creer` | avec le `/` | `/pulse-motion:creer Les règles d'hygiène en cuisine` |
-| `/pulse-motion:style` | avec le `/` | `/pulse-motion:style Un style papercraft aux couleurs pop-art` |
+| `/pulse-motion:creer` | une phrase, ou avec le `/` | « fais-moi une vidéo d'une minute sur la chaîne du froid », « que sait faire Pulse Motion ? », `/pulse-motion:creer Les règles d'hygiène en cuisine` |
+| `/pulse-motion:style` | une phrase, ou avec le `/` | « crée mon propre style, sombre avec des touches néon », `/pulse-motion:style Un style papercraft aux couleurs pop-art` |
 | `/pulse-motion:retoucher` | une phrase, ou avec le `/` | « ralentis la scène 3 », « baisse la musique », « ouvre l'aperçu », « fais une planche des scènes 2 et 3 », « note ma vidéo », « enregistre ma charte », « annule », « un pop-in sur le titre », « mets un #006 sur le titre » (dictionnaire de mouvements : « quels mouvements existent ? ») |
 | `/pulse-motion:voix` | une phrase, ou avec le `/` | « j'enregistre la scène 2 », « j'ai un fichier de ma voix », « mets une voix provisoire », « recale les mots », « fais-moi écouter la musique » |
 | `/pulse-motion:exporter` | une phrase, ou avec le `/` | « exporte ma vidéo », « exporte-la pour LinkedIn », « une version légère pour l'envoyer par courriel », « un GIF de la scène 3 », « un PDF des scènes » |

@@ -83,6 +83,7 @@
 <h2><span class="etape-numero">3</span> Installer Node.js <span class="duree">10 min</span></h2>
 <p><dfn>Node.js</dfn> fait tourner Pulse Motion : il assemble la vidéo, la contrôle, sert l'aperçu et fabrique l'export. Pulse Motion n'a besoin d'aucune autre brique : rien à télécharger en plus.</p>
 <p>Pulse Motion demande <strong>Node.js 20 ou plus</strong>. Prenez la version marquée <strong>LTS</strong> (« support à long terme », la plus stable).</p>
+<p>Si Claude Code et le plugin sont déjà là mais pas Node.js, Pulse Motion vous propose de l'installer lui-même, avec votre accord (sous Windows et sous macOS avec Homebrew) ; il le trouve ensuite sans redémarrage.</p>
 <div class="onglets">
 <section data-onglet="Windows">
 <h3 class="onglet-titre">Windows</h3>
@@ -260,7 +261,7 @@ claude plugin update pulse-motion@pulse-motion</code></pre>
 <h2><span class="etape-numero">9</span> Facultatif : la transcription des voix <span class="duree">10 min</span></h2>
 <p>Quand vous ajoutez votre voix, la <dfn>transcription</dfn> retrouve l'instant exact de chaque mot. Les sous-titres et les animations se calent alors sur vos vrais mots. Elle est indispensable pour découper un enregistrement de toute la vidéo en scènes. Sans elle, tout marche quand même : les mots sont calés au mieux.</p>
 <p>Elle tourne sur votre ordinateur, avec <strong>Python</strong> et un modèle de reconnaissance de la parole (environ 800 Mo, ou 250 Mo en version allégée). <strong>Le plus simple, là encore :</strong> attendez que Pulse Motion vous la propose pendant <a href="commandes/creer.html"><code>/pulse-motion:creer</code></a>. Avec votre accord, il installe Python si besoin, puis la transcription, en quelques minutes.</p>
-<aside class="encadre encadre-attention"><p><strong>Attention :</strong> sous Windows, un Python tout juste installé n'est visible qu'après un redémarrage de Claude Code. Si Pulse Motion vous le dit, fermez complètement VS Code, rouvrez-le, puis relancez <a href="commandes/reprendre.html"><code>/pulse-motion:reprendre</code></a> : l'installation se termine.</p></aside>
+<aside class="encadre encadre-conseil"><p><strong>Une phrase, un accord, aucun redémarrage :</strong> demandez « installe ce qui manque » (ou acceptez « Préparer l'ordinateur pendant que je travaille » pendant <a href="commandes/creer.html"><code>/pulse-motion:creer</code></a>). Pulse Motion vous montre la liste (à quoi sert chaque outil, sa taille, sa durée), vous répondez « Tout installer », et il installe un outil après l'autre, en arrière-plan. Un Python ou un Node.js tout juste installés sont trouvés à leur emplacement habituel, sans relancer Claude Code ; il ne vous le demande qu'en dernier recours, si un outil reste introuvable.</p></aside>
 <details class="probleme"><summary>L'installation de la transcription a échoué</summary><p>Pulse Motion le dit en une phrase et continue sans : la vidéo est fabriquée, les mots sont calés au mieux. Vous pourrez réessayer plus tard en demandant « installe la transcription ».</p></details>
 </section>
 

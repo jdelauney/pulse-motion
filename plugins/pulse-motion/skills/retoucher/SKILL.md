@@ -1,7 +1,7 @@
 ---
 description: "Retoucher la vidéo Pulse Motion du dossier en une phrase et la revoir (« ralentis la scène 3 », « change le titre », « baisse la musique », « annule »). Voix : /pulse-motion:voix ; nouvelle vidéo : /pulse-motion:creer."
 argument-hint: "[la retouche en une phrase]"
-allowed-tools: Bash(pulse-motion *) Bash(node *) Read Glob Grep Write Edit Agent AskUserQuestion
+allowed-tools: Bash(pulse-motion *) Bash(node *) Monitor Read Glob Grep Write Edit Agent AskUserQuestion
 ---
 
 # /pulse-motion:retoucher – Une phrase, une retouche
@@ -25,11 +25,13 @@ Si ce bloc est vide ou contient une erreur, lancer `pulse-motion lexique`.
 - Parler simplement, en français, sans jargon ; ne jamais montrer de commande.
 - Une retouche = le plus petit changement qui répond à la phrase. Ne pas « améliorer » autre chose.
 - Phrase ambiguë (quelle scène ? de combien ?) : une seule question avec `AskUserQuestion`, réponse recommandée en premier.
+- Problème du contrôle : dire son `message`, corriger avec sa `consigne`.
+- Travail long (scènes réécrites, contrôle complet) : l'annoncer en une phrase avec sa durée ; en arrière-plan, le suivre par `Monitor` sur `pulse-motion avancement . --suivre`, une phrase par minute au plus.
 - Lexique : avant d'expliquer un mot de l'outil (déroulé, scène, style, charte, transition, export…), relire le lexique ci-dessus. Un mot déjà noté n'est pas réexpliqué en entier ; un mot expliqué pour la première fois se note avec `pulse-motion lexique noter "<terme>" "<phrase>" "<comme…>" "/pulse-motion:retoucher"`, en reprenant l'image fixe du lexique quand elle existe.
 
 ## 1. Vérifier
 
-L'état ci-dessus : sans vidéo (`projet` faux), proposer `/pulse-motion:creer` et s'arrêter. « Node.js introuvable » : faire installer Node.js (LTS, https://nodejs.org), relancer Claude Code, et s'arrêter.
+L'état ci-dessus : sans vidéo (`projet` faux), proposer `/pulse-motion:creer` et s'arrêter. « Node.js introuvable » : l'installer (`/pulse-motion:outils`), et s'arrêter.
 
 ## 2. « Annule » (ou « reviens en arrière »)
 
@@ -63,7 +65,7 @@ Classer la demande, puis :
 | Structure | « ajoute une scène sur… », « supprime la scène 4 » | déroulé + fichier de scène (agent `animateur`) ; numéroter les fichiers dans l'ordre ; écrire « type » (le nom de la scène) pour une scène tirée d'une scène toute faite du style, le retirer pour une scène composée ; vidéo avec une voix : écrire aussi le `voix.texte` de la nouvelle scène, puis `pulse-motion voix provisoire --scene <id> .` (ou proposer de l'enregistrer dans le studio) |
 | Personnages | « dessine-moi un cuisinier », « il marche trop vite », « fais-lui une tête surprise », « ouvre l'éditeur de personnage » | suivre le skill dédié (`pulse-motion consignes <skill>`) : dessiner ou retoucher un dessin → `dessiner-personnage` ; animer une illustration fournie (SVG) → `decouper-personnage` ; pose, mouvement, expression, planche → `animer-personnage` ; régler à la souris → `atelier-personnages` |
 
-Choisir en regardant : La personne ne sait pas nommer le mouvement (« un truc qui claque pour le titre », « montre-moi les mouvements ») : lancer `pulse-motion mouvements choisir --ouvrir` **en arrière-plan** (avec `--categorie entrees`, `texte`, `valeur`, `transitions`, `camera`… si la demande le dit), dire en une phrase « Une page s'ouvre : cochez les mouvements qui vous plaisent, puis cliquez sur « Envoyer à Claude ». », attendre la fin de la commande, puis appliquer les `choix` (leur `note` dit à quoi chacun sert). `ok` faux : le dire en une phrase et proposer de décrire le mouvement avec ses mots.
+Choisir en regardant (« un truc qui claque pour le titre », « montre-moi les mouvements ») : `pulse-motion reference demandes`, section « Mouvements nommés ».
 
 Avant de toucher au fichier d'une scène, lire `pulse-motion reference moteur` (le tronc), puis la partie utile qu'il liste (caméra, tempo, personnages) ; le son : `pulse-motion reference audio` et sa partie ; un effet : `pulse-motion reference particules` (table « Retouches en une phrase ») et la partie de sa famille.
 
