@@ -7,7 +7,7 @@
  *   node scripts/decisions.js <dossier-du-projet> noter "<sujet>" "<choix>" "<raison>" "<pour changer>"
  *
  * [{ "sujet": "style", "choix": "chaleureux", "raison": "formation pour des stagiaires", "pourChanger": "« passe en style éditorial »" }]
- * Un sujet déjà noté est remplacé (le dernier choix compte) ; écriture atomique. Rien n'est écrit hors d'une vidéo.
+ * Un sujet déjà noté est remplacé (le dernier choix compte) ; écriture atomique.
  */
 const fs = require('node:fs');
 const path = require('node:path');
@@ -24,7 +24,7 @@ function lireDecisions(projet) {
   } catch { return []; }
 }
 
-/** Note un choix ; -> le journal complet. Lève une erreur en français si un champ manque ou s'il n'y a pas de vidéo ici. */
+/** Note un choix (dès la première ronde, avant le déroulé) ; -> le journal complet. Lève une erreur en français si un champ manque. */
 function noterDecision(projet, decision) {
   const d = {};
   for (const c of CHAMPS) {
@@ -32,7 +32,6 @@ function noterDecision(projet, decision) {
     if (typeof v !== 'string' || !v.trim()) throw new Error(`Choix incomplet : « ${c} » manque (sujet, choix, raison, pour changer).`);
     d[c] = v.trim();
   }
-  if (!fs.existsSync(path.join(path.resolve(projet), 'deroule.json'))) throw new Error('Aucune vidéo dans ce dossier : rien à noter.');
   const journal = lireDecisions(projet).filter((x) => x.sujet !== d.sujet);
   journal.push(d);
   ecrireJSON(fichierDecisions(projet), journal);

@@ -11,12 +11,22 @@ Répondre en quelques lignes, en mots simples, sans rien écrire dans le dossier
 - ensuite, des retouches en une phrase et un MP4 pour le web, les réseaux, une présentation ;
 - des modèles de départ (`pulse-motion modeles liste`, présentés par leur nom et leur description).
 
-Puis demander le sujet de la vidéo (« Sur quoi porte votre vidéo ? »).
+Puis le menu d'entrée.
+
+## Menu d'entrée
+
+Sans sujet (« fais-moi une vidéo », « que sait faire Pulse Motion ? »), **une seule question**, sans rien écrire dans le dossier : « Que voulez-vous faire ? »
+- « Une vidéo à partir de mon idée (Recommandé) » : demander le sujet en une phrase (« Sur quoi porte votre vidéo ? »), puis la première ronde ;
+- « Partir d'un modèle de vidéo » : `pulse-motion modeles liste`, présentés par leur nom et leur description, en une question ; le modèle choisi sert comme un modèle trouvé (`pulse-motion modeles afficher <id>`), puis demander le sujet ;
+- « Voir un exemple d'abord » : le modèle à montrer, en une question, puis `pulse-motion modeles apercu <id>` en arrière-plan (l'exemple s'ouvre dans le navigateur depuis un dossier temporaire ; rien n'est écrit ici) ; ensuite, demander le sujet ;
+- « Une vidéo dans un de mes styles » si `pulse-motion styles` liste un style `personnel` (choisi en une question, il devient le style recommandé ; puis demander le sujet), sinon « Créer mon propre style » (`/pulse-motion:style`).
+
+La réponse libre reste possible : une phrase qui dit un sujet (« une vidéo sur la chaîne du froid ») est le sujet, et la création continue.
 
 ## Modèles
 
 - « Quels modèles ? » : `pulse-motion modeles liste`, présentés en mots simples (nom et description), sans identifiant technique.
-- « Montre-moi un exemple de pitch » : `pulse-motion modeles exemple <id> .` copie l'exemple fini du modèle dans le dossier, s'il n'y a pas encore de vidéo ici (refus : proposer un autre dossier, rien n'est écrasé) ; puis `pulse-motion apercu . --ouvrir` en arrière-plan, et proposer de le modifier avec `/pulse-motion:retoucher` ou de repartir de zéro dans un autre dossier.
+- « Montre-moi un exemple de pitch » : pour seulement le regarder, `pulse-motion modeles apercu <id>` en arrière-plan (rien n'est écrit ici) ; pour le garder et le modifier, `pulse-motion modeles exemple <id> .` copie l'exemple fini du modèle dans le dossier, s'il n'y a pas encore de vidéo ici (refus : proposer un autre dossier, rien n'est écrasé) ; puis `pulse-motion apercu . --ouvrir` en arrière-plan, et proposer de le modifier avec `/pulse-motion:retoucher` ou de repartir de zéro dans un autre dossier.
 
 ## Mouvements nommés
 

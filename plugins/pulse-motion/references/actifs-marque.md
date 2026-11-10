@@ -36,6 +36,7 @@ Puis demander les fichiers (chemin ou glisser-déposer) et les **copier** : logo
 - Couleurs tirées du logo : `pulse-motion charte depuis-logo` (primaire et accent, rendues lisibles sur le fond du style).
 - Couleurs tirées d'un site ou d'un document : retenir celles qui reviennent **sur le logo, les titres et les boutons principaux** ; ignorer celles des photos, des illustrations et des exemples de démonstration, qui changent d'une page à l'autre.
 - Polices : `pulse-motion police "<famille>"` ou le fichier fourni ; si elle n'existe pas en libre, garder la plus proche du style et le dire.
+- Police fournie en fichier : `pulse-motion police <fichier> --style <style> --role titres|texte` (le rôle qu'elle prend dans la charte) ; réponse `aConfirmer` : poser la question à la personne, puis relancer avec `--confirmer` ; `avertissements` (caractères absents, avec la police du style à utiliser à la place) : les dire. Puis l'indiquer dans `charte/charte.json` (`"polices": { "titres": "<famille>" }`).
 
 ## Zone réservée honnête
 
