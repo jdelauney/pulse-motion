@@ -28,8 +28,8 @@
 
 <section id="description">
 <h2>Description</h2>
-<p>C'est la commande de départ. Vous donnez le sujet en une phrase ; Pulse Motion vous pose deux petites rondes de questions, écrit le <a href="../concepts.html#deroule">déroulé</a> (la liste des scènes, leurs textes, leur durée) et vous le présente en tableau. Rien n'est animé avant votre accord.</p>
-<p>Une fois le déroulé validé, Pulse Motion fabrique la vidéo : un assistant spécialisé, l'<em>animateur</em>, écrit chaque scène, toutes en même temps. Des <a href="../concepts.html#controles">contrôles automatiques</a> vérifient ensuite la lisibilité et corrigent seuls les cas sûrs. Enfin, la vidéo s'ouvre dans votre navigateur.</p>
+<p>C'est la commande de départ. Vous donnez le sujet en une phrase ; Pulse Motion vous pose deux petites rondes de questions, écrit le <a href="../concepts.html#deroule">déroulé</a> (la liste des scènes, leurs textes, leur durée) et vous le présente en tableau. Rien n'est animé avant votre accord ; dès qu'il l'a, une <strong>première ébauche animée</strong> s'ouvre dans votre navigateur, en moins d'une minute.</p>
+<p>Une fois le déroulé validé, Pulse Motion fabrique la vidéo : un assistant spécialisé, l'<em>animateur</em>, écrit chaque scène, toutes en même temps. Chaque scène finie remplace son ébauche dans l'aperçu, sous vos yeux. Des <a href="../concepts.html#controles">contrôles automatiques</a> vérifient ensuite la lisibilité et corrigent seuls les cas sûrs : une vidéo qui contient encore une ébauche ne s'exporte pas.</p>
 <p><strong>Une vidéo = un dossier.</strong> Lancez la commande dans un dossier vide, ouvert dans VS Code. Si le dossier contient déjà une vidéo, Pulse Motion vous propose de la <a href="reprendre.html">reprendre</a>, ou de créer la nouvelle ailleurs.</p>
 
 <figure class="anim" data-etapes="5" data-duree="1400">
@@ -50,7 +50,7 @@
 <marker id="creer-pointe-mauve" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" class="schema-pointe"/></marker>
 </defs>
 </svg>
-<figcaption>Les questions mènent au déroulé, que vous validez. Les animateurs écrivent ensuite toutes les scènes en même temps. Les contrôles vérifient la vidéo et corrigent seuls les cas sûrs, en deux tours au plus. La vidéo s'ouvre enfin dans votre navigateur.</figcaption>
+<figcaption>Les questions mènent au déroulé, que vous validez. Les animateurs écrivent ensuite toutes les scènes en même temps. Les contrôles vérifient la vidéo et corrigent seuls les cas sûrs, en deux tours au plus. Dès votre accord, une ébauche animée s'ouvre dans votre navigateur ; chaque scène finie la remplace.</figcaption>
 </figure>
 </section>
 
@@ -60,6 +60,7 @@
 <li><strong>Vous parlez de votre sujet, pas de technique.</strong> Pulse Motion déduit le genre (formation, produit, storytelling, réseaux) et le format, puis choisit la structure qui marche pour ce genre.</li>
 <li><strong>Un seul accord suffit.</strong> En parcours rapide, vous validez seulement le déroulé, avec le style. Tout le reste est fait pour vous.</li>
 <li><strong>Le rythme est juste dès le départ.</strong> Chaque scène dure assez longtemps pour être lue (1,5 s + 0,3 s par mot), rien ne reste immobile plus de 2,5 s, la vidéo finit sur une image stable.</li>
+<li><strong>Vous voyez la vidéo bouger tout de suite.</strong> Une ébauche animée s'ouvre dès votre accord sur le déroulé, avec la musique ; elle se remplace scène par scène.</li>
 <li><strong>Vous comparez avant de choisir.</strong> Trois styles s'affichent côte à côte, sur vos deux premières scènes, dans votre navigateur.</li>
 </ul>
 </section>
@@ -82,7 +83,7 @@
 <section id="arguments">
 <h2>Comment la lancer</h2>
 <pre class="commande"><code>/pulse-motion:creer [le sujet de la vidéo en une phrase]</code></pre>
-<p class="legende">Entre crochets <code>[ ]</code> : facultatif. Sans sujet, Pulse Motion vous le demande en une question ouverte.</p>
+<p class="legende">Entre crochets <code>[ ]</code> : facultatif. Sans sujet, une seule question : « Que voulez-vous faire ? » : une vidéo à partir de votre idée (conseillé), partir d'un modèle de vidéo, voir un exemple d'abord, ou une vidéo dans un de vos styles (« Créer mon propre style » si vous n'en avez pas encore).</p>
 <pre class="commande"><code>/pulse-motion:creer la chaîne du froid en une minute pour mes stagiaires</code></pre>
 <pre class="commande"><code>/pulse-motion:creer présenter notre application de réservation en 30 secondes</code></pre>
 <p>Une phrase suffit aussi : « fais-moi une vidéo d'une minute sur la chaîne du froid », « que sait faire Pulse Motion ? ». Pulse Motion ne crée une vidéo que si vous le demandez, rappelle d'abord qu'il s'agit d'une nouvelle vidéo dans ce dossier, et n'écrit rien avant votre première réponse ; dans un dossier qui a déjà une vidéo, il propose de la reprendre.</p>
@@ -93,8 +94,8 @@
 <thead><tr><th>Question</th><th>Réponses proposées</th></tr></thead>
 <tbody>
 <tr><td>Durée</td><td>30 s · 1 min (conseillé pour une formation courte) · 3 min · 5 min</td></tr>
-<tr><td>Public</td><td>Grand public · professionnels du métier · élèves ou stagiaires (adaptées à votre sujet)</td></tr>
-<tr><td>Parcours</td><td><strong>Rapide</strong> (conseillé) : vous validez seulement le déroulé · <strong>Accompagné</strong> : vous validez aussi le style et la vidéo finale</td></tr>
+<tr><td>Public</td><td>Grand public · professionnels du métier · élèves ou stagiaires (adaptées à votre sujet). Pas demandé si votre sujet le dit déjà (« pour mes stagiaires »).</td></tr>
+<tr><td>Parcours</td><td><strong>Rapide</strong> (conseillé) : vous validez seulement le déroulé · <strong>Accompagné</strong> : vous validez aussi le style et la vidéo finale · <strong>Faites pour moi</strong> : plus aucune question, vous regardez le résultat</td></tr>
 <tr><td>À ajouter</td><td>Mon logo et mes couleurs · « Ma charte… » si vous en avez enregistré une · rien pour l'instant</td></tr>
 </tbody>
 </table>
@@ -103,16 +104,19 @@
 <thead><tr><th>Question</th><th>Réponses proposées</th></tr></thead>
 <tbody>
 <tr><td>Musique</td><td>Une musique composée pour la vidéo (conseillé) · J'ai un fichier · Pas de musique</td></tr>
-<tr><td>Voix</td><td>Je l'enregistre (conseillé) · J'ai un fichier · Pas de voix</td></tr>
-<tr><td>Sous-titres</td><td>Oui (conseillé) · Non. Sans voix, pas de sous-titres : ils reprennent le texte dit.</td></tr>
+<tr><td>Voix et sous-titres</td><td>Ma voix, avec sous-titres (conseillé) · Ma voix, sans sous-titres · J'ai un fichier de ma voix · Pas de voix (donc pas de sous-titres : ils reprennent le texte dit)</td></tr>
+<tr><td>L'ordinateur</td><td>Seulement s'il manque un outil utile (la transcription de la voix, ffmpeg) : Préparer l'ordinateur pendant que je travaille (conseillé) · Plus tard</td></tr>
 </tbody>
 </table>
+<p>Au total, sans charte : <strong>7 réponses au plus</strong> en parcours rapide, 9 en accompagné.</p>
+<h3>Le parcours « Faites pour moi »</h3>
+<p>Vous répondez à la première ronde, et c'est tout : <strong>4 réponses</strong>. Pulse Motion choisit le reste pour vous : une musique composée selon le genre, pas de voix ni de sous-titres (vous pourrez en ajouter ensuite), le style conseillé, les mots du métier notés au glossaire, aucune installation. Seule exception : il vous demande le fichier de votre logo si vous avez choisi « Mon logo et mes couleurs ». À la fin, le bilan liste <strong>« Mes choix »</strong> : chacun se change en une phrase avec <a href="retoucher.html"><code>/pulse-motion:retoucher</code></a> (« passe en style éditorial »).</p>
 <p>Le format se déduit du genre : <strong>16:9</strong> (paysage) en général, <strong>9:16</strong> (vertical) pour les réseaux, <strong>4:5</strong> si vous visez le fil LinkedIn ou Instagram.</p>
 </section>
 
 <section id="modeles">
 <h2>Partir d'un modèle</h2>
-<p>Pulse Motion reconnaît sept sortes de vidéos d'après votre sujet. Quand il en reconnaît une, il part de son modèle : une structure de scènes éprouvée, une durée, un format, une ambiance musicale et trois styles qui lui vont. Il vous le dit en une phrase (« Je pars du modèle « Pitch » : 6 scènes, environ 1 min. ») ; vous pouvez tout changer ensuite. Pour un sujet qui ne ressemble à aucun modèle, il fait comme d'habitude.</p>
+<p>Pulse Motion reconnaît sept sortes de vidéos d'après votre sujet. Quand il en reconnaît une, il part de son modèle : une structure de scènes éprouvée, une durée, un format, une ambiance musicale et trois styles qui lui vont. Il vous le dit en une phrase (« Je pars du modèle « Pitch » : 6 scènes, environ 1 min. ») et vous ouvre l'exemple fini de ce modèle pendant que vous répondez aux questions, sans rien écrire dans votre dossier ; vous pouvez tout changer ensuite. Pour un sujet qui ne ressemble à aucun modèle, il fait comme d'habitude.</p>
 <table>
 <thead><tr><th>Modèle</th><th>Pour</th><th>Durée, format</th></tr></thead>
 <tbody>
@@ -180,12 +184,12 @@ Public ? → Élèves ou stagiaires
 Parcours ? → Rapide (Recommandé) : je valide seulement le déroulé
 À ajouter ? → Rien pour l'instant</p>
 <p data-role="claude">Musique ? → Une musique composée pour la vidéo (Recommandé), lumineuse, posée, qui avance
-Voix ? → Je l'enregistre (Recommandé)
-Sous-titres ? → Oui (Recommandé)</p>
+Voix et sous-titres ? → Ma voix, avec sous-titres (Recommandé)</p>
 <p data-role="outil">pulse-motion comparer . clair-pedagogique,chaleureux,minimal --ouvrir</p>
 <p data-role="claude">Voici le déroulé : 6 scènes, 1 min 03. La comparaison des styles s'est ouverte dans votre navigateur.
 → Je valide, avec le style posé, lisible, rassurant (Recommandé) / … accueillant, doux, humain / … net, sûr, essentiel / Je veux changer quelque chose</p>
 <p data-role="vous">Je valide, avec le style posé, lisible, rassurant</p>
+<p data-role="claude">Voici une première ébauche animée ; je la remplace scène par scène.</p>
 <p data-role="claude">J'ai allongé la scène 3 d'une seconde pour laisser le temps de lire.
 ✅ Fait : la vidéo « La chaîne du froid » (6 scènes, 1 min 04) est prête et s'affiche dans votre navigateur.
 Pour enregistrer votre voix, cliquez sur « Voix » dans la barre de l'aperçu.</p>
