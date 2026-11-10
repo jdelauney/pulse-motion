@@ -63,5 +63,45 @@
   "aEviter": [
     "Plus de 4 points dans une liste",
     "Des textes au-delà des longueurs maximales"
-  ]
+  ],
+  "categorie": "essentiels",
+  "nonPas": "Pas un style de terminal ni de magazine : ni grille, ni chasse fixe, ni empattements. Pas de galets ni de cartes molles comme chaleureux.",
+  "usages": [
+    "Former une équipe",
+    "Expliquer une procédure",
+    "Présenter un produit"
+  ],
+  "motsCles": [
+    "pédagogique",
+    "formation",
+    "explication",
+    "clair",
+    "école",
+    "tutoriel",
+    "cours"
+  ],
+  "son": {
+    "ambiances": [
+      "calme",
+      "inspirant"
+    ],
+    "bruitages": {
+      "titre": null,
+      "texte": null,
+      "point": "pop",
+      "chiffre": "tic",
+      "trace": "whoosh",
+      "forme": null,
+      "image": null,
+      "ecriture": null,
+      "transition": null
+    },
+    "matiere": null,
+    "fort": "carillon"
+  },
+  "shaders": {
+    "conseilles": [
+      "grain"
+    ]
+  }
 }

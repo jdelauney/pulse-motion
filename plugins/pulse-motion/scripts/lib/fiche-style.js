@@ -55,7 +55,7 @@ function classesCSS(css) {
 function classesCitees(texte) {
   const vues = new Set();
   for (const c of codes(texte)) {
-    for (const m of c.matchAll(/(?:^|[^\w.])((?:\.[a-z][\w-]*)+)/g)) m[1].split('.').filter(Boolean).forEach((x) => vues.add(x));
+    for (const m of c.matchAll(/(?:^|[\s(+,])((?:\.[a-z][\w-]*)+)/g)) m[1].split('.').filter(Boolean).forEach((x) => vues.add(x));
   }
   return vues;
 }
@@ -112,11 +112,15 @@ function verifierFiche(texte, { dossierStyle, identite } = {}) {
     const classes = new Set([...classesCSS(fs.readFileSync(path.join(dossierStyle, 'style.css'), 'utf8')), ...connus.classesMoteur]);
     for (const c of classesCitees(t)) if (!classes.has(c)) erreurs.push(`Classe .${c} : ni dans style.css ni dans le moteur.`);
   }
+  // Transitions et shaders : tout nom cité au § 6, et ailleurs (hors § 7 et tableaux) sur une ligne « - Transitions … »
+  // ou qui parle de shader.
   const visuels = new Set([...connus.transitions, ...connus.shaders]);
-  for (const titre of [SECTIONS_FICHE[2], SECTIONS_FICHE[6]]) {
-    for (const c of codes(section(t, titre)).filter(nomNu)) {
-      if (!visuels.has(c)) erreurs.push(`§ ${titre} : « ${c} » n'est ni une transition ni un shader.`);
-    }
+  const verifierVisuels = (texte, ou) => {
+    for (const c of codes(texte).filter(nomNu)) if (!visuels.has(c)) erreurs.push(`${ou} : « ${c} » n'est ni une transition ni un shader.`);
+  };
+  verifierVisuels(section(t, SECTIONS_FICHE[6]), '§ 6');
+  for (const s of sections.filter((x) => x.titre !== SECTIONS_FICHE[6] && x.titre !== SECTIONS_FICHE[7])) {
+    for (const l of s.texte.split('\n')) if ((/^- Transitions?\b/.test(l) || /shader/i.test(l)) && !l.startsWith('|')) verifierVisuels(l, `« ${s.titre} »`);
   }
   const sonores = new Set([...connus.bruitages, ...connus.ambiances, ...TYPES_ENTREE, ...connus.transitions]);
   const sept = section(t, SECTIONS_FICHE[7]);

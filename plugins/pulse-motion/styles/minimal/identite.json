@@ -1,22 +1,108 @@
 {
   "style": "minimal",
   "famille": "moderne",
-  "personnalite": ["net", "sûr", "essentiel"],
-  "eviter": ["décoration", "effets appuyés"],
-  "genres": ["produit", "social"],
+  "personnalite": [
+    "net",
+    "sûr",
+    "essentiel"
+  ],
+  "eviter": [
+    "décoration",
+    "effets appuyés"
+  ],
+  "genres": [
+    "produit",
+    "social"
+  ],
   "couleur": {
     "strategie": "sobre-avec-une-touche",
-    "tons": ["clair", "sombre"],
+    "tons": [
+      "clair",
+      "sombre"
+    ],
     "tonDefaut": "clair",
-    "sombre": { "fond": "#0a0a0a", "texte": "#fafafa" },
-    "roles": { "primaire": "règles et repères", "accent": "un seul détail par scène : numéros, marqueur, barre" }
+    "sombre": {
+      "fond": "#0a0a0a",
+      "texte": "#fafafa"
+    },
+    "roles": {
+      "primaire": "règles et repères",
+      "accent": "un seul détail par scène : numéros, marqueur, barre"
+    }
   },
   "typographie": {
-    "titres": { "famille": "Schibsted Grotesk", "categorie": "sans-serif", "graisse": 900 },
-    "texte": { "famille": "Schibsted Grotesk", "categorie": "sans-serif", "graisse": 400 }
+    "titres": {
+      "famille": "Schibsted Grotesk",
+      "categorie": "sans-serif",
+      "graisse": 900
+    },
+    "texte": {
+      "famille": "Schibsted Grotesk",
+      "categorie": "sans-serif",
+      "graisse": 400
+    }
   },
-  "mouvement": { "caractere": "net", "courbes": ["expo-out"], "dureeType": 0.45, "transitions": ["coupe", "fondu"] },
+  "mouvement": {
+    "caractere": "net",
+    "courbes": [
+      "expo-out"
+    ],
+    "dureeType": 0.45,
+    "transitions": [
+      "coupe",
+      "fondu"
+    ]
+  },
   "signature": "Grille suisse, beaucoup d'espace, typographie démesurée, un seul accent, mouvements courts et nets",
-  "aFaire": ["Des titres très courts", "Un seul accent de couleur par scène"],
-  "aEviter": ["Le décor", "Plusieurs couleurs"]
+  "aFaire": [
+    "Des titres très courts",
+    "Un seul accent de couleur par scène"
+  ],
+  "aEviter": [
+    "Le décor",
+    "Plusieurs couleurs"
+  ],
+  "categorie": "essentiels",
+  "nonPas": "Pas un style vide ou froid : la grille et la typographie démesurée portent tout. Ni décor chargé, ni dégradé, ni plus d'un accent.",
+  "usages": [
+    "Présenter un produit",
+    "Montrer des résultats",
+    "Annoncer une décision"
+  ],
+  "motsCles": [
+    "minimal",
+    "suisse",
+    "grille",
+    "épuré",
+    "sobre",
+    "swiss",
+    "typographie",
+    "corporate"
+  ],
+  "son": {
+    "ambiances": [
+      "corporate",
+      "tech"
+    ],
+    "bruitages": {
+      "titre": null,
+      "texte": null,
+      "point": "tic",
+      "chiffre": null,
+      "trace": null,
+      "forme": null,
+      "image": null,
+      "ecriture": null,
+      "transition": null
+    },
+    "matiere": null,
+    "fort": "basse"
+  },
+  "provenance": [
+    {
+      "depot": "lemo-opuscar",
+      "style": "swiss-motion",
+      "licence": "MIT"
+    }
+  ]
 }
