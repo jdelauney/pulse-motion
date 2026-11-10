@@ -38,22 +38,25 @@ Ce que le moteur fait seul, pour tout personnage :
 - **respiration**, même dans une pose tenue (à moitié pendant un geste), chaque personnage à sa phase ;
 - **repos vivant** : dans une pose tenue ou au repos, bras, avant-bras, tête, torse et genou bougent de 1 à 4 degrés, chacun à son rythme (3 s, 4,5 s ou 9 s), jamais en miroir ; rien pendant une marche ou une course ;
 - **retard** : avant-bras et tête arrivent 0,1 s après le bras et le corps, la touffe après la tête, sans rebond ;
-- **les yeux d'abord** : en `regarder`, les pupilles arrivent 0,1 s avant la tête ;
+- **les yeux d'abord** : en `regarder`, les pupilles arrivent 0,1 s avant la tête ; un personnage ou un objet qui bouge est suivi des yeux avec 0,05 s de retard, de la tête avec 0,14 s ;
 - **ombre** au sol, qui rétrécit quand il s'élève (jusqu'à 35 % de sa taille) ;
-- **atterrissage** : à la fin d'un `bondir`, il s'étire de 6 % juste avant le contact, s'écrase de 12 % (8 % au contact déclaré d'un saut joué), puis revient en un seul dépassement, en gardant son volume.
+- **vol** (`flotter`) : il s'élève, dérive doucement et redescend, pieds pendants et pointés vers le bas, genoux qui alternent lentement, pieds remis à plat avant de toucher le sol ;
+- **lancer** (`data-lacher="lance"`) : l'objet suit un vrai vol jusqu'à sa cible, tourne sur lui-même, s'écrase un instant et roule à l'arrivée, ou tombe dans la main du personnage visé ;
+- **atterrissage** : à la fin d'un `bondir`, il s'étire de 6 % juste avant le contact, s'écrase de 12 % (8 % au contact déclaré d'un saut joué), puis revient en un seul dépassement, en gardant son volume (6 % à la fin d'un `flotter`).
 
 Réglages :
 - `data-vie` sur le conteneur : `pleine` (par défaut), `sobre` (clignement et respiration seulement), `aucune` (immobile exprès ; `data-calme="non"` vaut `aucune`) ;
 - `data-ombre="non"` : sans ombre ;
-- `data-ecrase` (de 0 à 0,25 ; 0 = sans) sur le conteneur ou sur un `bondir` ;
+- `data-ecrase` (de 0 à 0,25 ; 0 = sans) sur le conteneur, un `bondir` ou un `flotter` ;
+- `data-attention` sur `regarder` (de 0 à 1) : 0,5, il regarde à moitié ;
 - `"lissage": "continu"` dans un mouvement (`personnages/clips/`) : ses poses s'enchaînent sans s'arrêter à chaque clé.
 
 Ce que l'animateur décide :
 - une action principale ;
 - `regarder` au moment où quelque chose arrive (le clignement suit) ;
 - un objet entre hors champ déjà en mouvement ;
-- un objet tenu qui tombe ou est posé (`data-lacher`) plutôt qu'un objet qui disparaît ;
-- `glisser` pour être emporté, `bondir` pour changer de hauteur ;
+- `lance` (`data-lacher="lance"`) plutôt qu'un objet qui se téléporte, et le receveur qui le `regarder` ;
+- `flotter` plutôt que `glisser` en l'air ; `glisser` pour être emporté, `bondir` pour changer de hauteur ;
 - gauche et droite jamais en miroir ;
 - en 9:16, le personnage aussi grand que possible, les pieds dans le bas de l'image.
 
@@ -76,6 +79,6 @@ Ce que l'animateur décide :
 - [ ] Gauche et droite ne sont pas en miroir.
 - [ ] Au moins un clignement sur un tournant.
 - [ ] Les atterrissages sont écrasés.
-- [ ] En l'air, l'ombre change de taille.
+- [ ] En l'air, pieds pendants et ombre qui change de taille.
 - [ ] Les objets entrent en mouvement, et les yeux les suivent.
 - [ ] Une planche regardée (`pulse-motion planche . <id>`), et une planche image par image sur un clignement, un atterrissage ou un geste rapide : `pulse-motion planche . <scène> --de <s> --duree <s>` (3 s au plus ; `--pas 2` : une image sur deux). Le contrôle signale aussi les gestes trop brefs, les personnages figés, les boucles qui sautent, les éléments qui bougent ensemble et les à-coups de caméra (`pulse-motion reference controles`, section « Mouvement »).
