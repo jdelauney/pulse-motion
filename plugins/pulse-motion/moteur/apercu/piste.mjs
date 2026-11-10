@@ -226,7 +226,7 @@ function ajouterBouton() {
 /** Pour les essais. */
 M.pisteApercu = { vignette, forme: () => (onde ? { colonnes: onde.pics ? onde.pics.length : 0, mots: onde.mots.length } : null), picsParColonne };
 
-if (M.pret && typeof window !== 'undefined' && !globalThis.__PM_VERSION__ && window.top === window) {
+if (M.pret && typeof window !== 'undefined' && !globalThis.__PM_VERSION__ && window.top === window && !/[?&](export|planche|capture|studio)=/.test(location.search)) {
   M.pret.then(() => {
     ajouterBouton();
     poserReperes();

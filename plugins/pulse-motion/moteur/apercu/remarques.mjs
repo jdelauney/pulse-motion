@@ -303,7 +303,7 @@ document.addEventListener('keydown', (e) => {
 /** Pour les essais : état du mode et de la remarque en cours. */
 M.remarquesApercu = { mode: () => mode, basculer: basculerMode, attente: () => (attente ? { ...attente, pret: undefined } : null), liste: () => remarques, recharger: charger };
 
-if (!globalThis.__PM_VERSION__ && window.top === window) {
+if (!globalThis.__PM_VERSION__ && window.top === window && !/[?&](export|planche|capture|studio)=/.test(location.search)) {
   M.pret.then(async () => {
     ajouterBouton();
     await charger();

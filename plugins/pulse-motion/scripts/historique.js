@@ -147,7 +147,8 @@ function lireJournal(racine) {
     if (!cites.has(s.numero)) entrees.push({ numero: s.numero, date: null, phrase: null, nom: null, garde: false });
   }
   entrees.sort((a, b) => Number(a.numero) - Number(b.numero));
-  return { version: 1, curseur: null, entrees, retablir };
+  const pile = entrees.filter((e) => !e.garde);
+  return { version: 1, curseur: pile.length ? pile[pile.length - 1].numero : null, entrees, retablir };
 }
 
 function ecrireJournal(racine, j) {

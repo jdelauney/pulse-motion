@@ -155,8 +155,8 @@ function appliquer(projet, { cle, valeur } = {}, { dossierStyles } = {}) {
   const r = reglages.find((x) => x.cle === cle);
   const v = r.valeurs.find((x) => x.valeur === String(valeur).toLowerCase());
   if (!v) throw new ErreurReglage('Valeur hors de la liste de ce réglage.');
-  if (r.grise) throw new ErreurReglage(r.raison || 'Ce réglage n\'est pas disponible pour cette vidéo.', 409);
   if (v.valeur === r.actuelle || v.valeur === 'actuelle') return { ok: true, cle, valeur: v.valeur, inchange: true, resume: resume(r, v) };
+  if (r.grise) throw new ErreurReglage(r.raison || 'Ce réglage n\'est pas disponible pour cette vidéo.', 409);
 
   const d = lireBrut(projet);
   const memo = lireReglages(projet);

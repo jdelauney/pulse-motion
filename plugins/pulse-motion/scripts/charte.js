@@ -133,7 +133,7 @@ function appliquerCharte({ nom, dossier }) {
   const projet = path.resolve(dossier);
   const { erreurs } = lireDeroule(projet);
   if (erreurs.length) return { ok: false, message: `Le déroulé contient des erreurs : ${erreurs.join(' ')}` };
-  sauvegarder(projet);
+  sauvegarder(projet, { phrase: `applique la charte « ${nom} »` });
   const cible = path.join(projet, 'charte');
   // Les mots du métier déjà notés pour cette vidéo rejoignent le glossaire de la charte appliquée.
   const glossaireAvant = lireGlossaire(projet).termes;

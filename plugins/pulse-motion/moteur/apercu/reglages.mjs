@@ -106,7 +106,7 @@ function ajouterBouton() {
 /** Pour les essais : ouvre le panneau et rend la promesse de son dessin. */
 M.reglagesApercu = { ouvrir: () => basculer(true), fermer: () => basculer(false) };
 
-if (!globalThis.__PM_VERSION__ && window.top === window) {
+if (!globalThis.__PM_VERSION__ && window.top === window && !/[?&](export|planche|capture|studio)=/.test(location.search)) {
   M.pret.then(() => {
     ajouterBouton();
     let ouvert = false;
