@@ -187,16 +187,17 @@ test('segment-tronque-detecte-par-paquets : un segment tronqué n\'est pas repri
   fs.writeFileSync(fichier, octets.subarray(0, Math.floor(octets.length / 2)));
   const lu = await F.sonder({ ffprobe: outil.cheminProbe, fichier, compter: 'paquets' }).then((s) => s.images, () => null);
   assert.notEqual(lu, 30);
-  // Dans l'export : l'intermédiaire tronqué est recapturé, les autres sont repris.
+  // Dans l'export : l'intermédiaire tronqué est recapturé, les autres sont repris. Usage master : son intermédiaire est le
+  // fichier même (le web, lui, reprendrait son fichier dérivé, intact, spec Rendu et export 5.1.7).
   const projet = copierProjet('projet-simple');
-  const r1 = await exporter(projet);
+  const r1 = await exporter(projet, { pour: 'master' });
   assert.equal(r1.ok, true, r1.message);
   const pixelsDir = path.join(projet, 'sortie', '.export', 'segments', 'pixels');
   const [premier] = fs.readdirSync(pixelsDir).filter((f) => f.endsWith('.mp4')).sort();
   const p = path.join(pixelsDir, premier);
   const contenu = fs.readFileSync(p);
   fs.writeFileSync(p, contenu.subarray(0, Math.floor(contenu.length * 0.6)));
-  const r2 = await exporter(projet);
+  const r2 = await exporter(projet, { pour: 'master' });
   assert.equal(r2.ok, true, r2.message);
   assert.equal(r2.segmentsRepris, r2.segments - 1);
   assert.equal(r2.scenesRecapturees.length, 1);
@@ -226,6 +227,6 @@ test('export-navigateur-memes-images : deux exports dans le navigateur donnent l
   const x = imagesDecodees(a);
   assert.equal(x.length, 87);
   assert.deepEqual(imagesDecodees(path.join(dir, second.fichier)), x);
-  // La boucle attend toujours l'encodage de l'image avant de dessiner la suivante.
-  assert.match(fs.readFileSync(path.join(__dirname, '..', 'moteur', 'export.mjs'), 'utf8'), /await M\.capturer\(ctx, largeur, hauteur\);\s*await video\.add\(/);
+  // La boucle attend toujours l'encodage de l'image avant de dessiner la suivante (conversion en I420 entre les deux, S5).
+  assert.match(fs.readFileSync(path.join(__dirname, '..', 'moteur', 'export.mjs'), 'utf8'), /await M\.capturer\(ctx, largeur, hauteur\);[^]{0,500}?await video\.add\(image\)/);
 });
