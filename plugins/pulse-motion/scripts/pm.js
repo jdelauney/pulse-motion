@@ -28,12 +28,14 @@
  *   pulse-motion planche <dossier> --instants <t1,t2>   image de chaque instant (secondes de la vidéo), dans sortie/planche/instant-<ms>.png
  *   pulse-motion planche <dossier> --avant <numéro|nom|precedente> [id1,id2]   avant / après / différences des scènes modifiées : sortie/planche/avant-apres-<id>.png
  *   pulse-motion reference <nom>          affiche references/<nom>.md (ex. moteur, rythme, styles/clair-pedagogique) ; usages : tableau de scripts/usages.json
+ *   pulse-motion reference styles/<style> --pour animateur   extrait de la fiche de style lu par l'animateur
  *   pulse-motion scene <style> <nom>      affiche une scène toute faite d'un style
  *   pulse-motion effet <nom>              affiche la recette d'un effet de particules de la bibliothèque
  *   pulse-motion icones chercher <mots…> | afficher <nom> | planche <nom1,nom2…> [--ouvrir]   icônes Lucide : chercher en français, SVG, planche PNG
  *   pulse-motion mouvements liste [--categorie <id>] | chercher <mots…> | afficher <n° ou nom> | reference | choisir [--categorie <id>] [--ouvrir]   dictionnaire de mouvements nommés ; choisir en regardant
  *   pulse-motion personnages liste|afficher <nom>|verifier|planche <nom> [--dessin <d>]|planche --dessin <d> --visage|atelier [<nom>] [--dessin <d>] [--decoupe <nom>] [--bibliotheque]|analyser <svg>|decouper <nom>|renommer-couleur <dessin> <ancien> <nouveau> [--dossier <d>]   poses, clips et gabarits des personnages
  *   pulse-motion styles [--genre <genre>] liste les styles (JSON), classée pour le genre
+ *   pulse-motion styles chercher <mots…>  styles trouvés par leur nom de médium (« façon tableau blanc »)
  *   pulse-motion styles verifier <nom>    vérifie le contrat d'un style
  *   pulse-motion changer-style <dossier> <style>   recopie les scènes toutes faites du nouveau style
  *   pulse-motion comparer <dossier> <s1,s2,s3> [--scenes a,b] [--ouvrir]   comparaison des styles sur le déroulé
@@ -142,12 +144,21 @@ function lancer(args) {
     if (!NOM_SUR.test(nom)) { console.error('Usage : pulse-motion reference <nom> (ex. moteur, rythme, styles/clair-pedagogique)'); return 2; }
     const fichier = path.join(RACINE, 'references', `${nom}.md`);
     const m = /^styles\/([a-z0-9-]+)$/.exec(nom);
+    // Fiche de style : --pour animateur rend l'extrait que lit l'animateur (spec Styles et réalisation, 5.1).
+    const iPour = reste.indexOf('--pour');
+    const pour = iPour >= 0 ? reste[iPour + 1] : undefined;
+    if (iPour >= 0 && (pour !== 'animateur' || !m)) { console.error('Usage : pulse-motion reference styles/<style> --pour animateur'); return 2; }
+    let cible = fichier;
+    let quoi = `Référence « ${nom} »`;
     if (m && !fs.existsSync(fichier)) {
       // Guide d'un style personnel : rangé avec le style (guide.md).
       const st = trouverStyle(m[1]);
-      if (st && st.personnel) return afficherFichier(path.join(st.dossier, 'guide.md'), `Guide du style « ${m[1]} »`);
+      if (st && st.personnel) { cible = path.join(st.dossier, 'guide.md'); quoi = `Guide du style « ${m[1]} »`; }
     }
-    return afficherFichier(fichier, `Référence « ${nom} »`);
+    if (!pour) return afficherFichier(cible, quoi);
+    if (!fs.existsSync(cible)) { console.error(`${quoi} introuvable.`); return 1; }
+    process.stdout.write(require('./lib/fiche-style.js').extraitAnimateur(fs.readFileSync(cible, 'utf8')));
+    return 0;
   }
   if (commande === 'scene') {
     const [style, nom] = reste;
@@ -200,7 +211,7 @@ function lancer(args) {
     '  icones chercher <mots…> | afficher <nom> | planche <nom1,nom2…> [--ouvrir]   icônes Lucide, posées par <svg data-icone="nom"> (reference icones)',
     '  personnages liste|afficher <nom>|verifier|planche <nom> [--dessin <d>]|planche --dessin <d> --visage|atelier [<nom>] [--dessin <d>] [--decoupe <nom>] [--bibliotheque]|analyser <svg>|decouper <nom>|renommer-couleur <dessin> <ancien> <nouveau>   poses, clips et gabarits des personnages',
     '  modeles liste | afficher <id> | trouver "<sujet>" | exemple <id> <dossier> | apercu <id>   modèles de vidéo et leurs exemples finis',
-    '  styles [--genre <genre>]                         styles verifier <nom>',
+    '  styles [--genre <genre>]      styles chercher <mots…>      styles verifier <nom>',
     '  changer-style <dossier> <style>                  comparer <dossier> <s1,s2,s3> [--scenes a,b] [--ouvrir]',
     '  charte enregistrer <nom> <dossier> | liste | appliquer <nom> <dossier> | depuis-logo <fichier> [--style s] [--ton clair|sombre]',
     '  police "<famille>" [--graisses 400,700] [--italique] | <fichier> [--famille "<nom>"] [--confirmer] [--style <style> --role titres|texte] [--dans <dossier>]',

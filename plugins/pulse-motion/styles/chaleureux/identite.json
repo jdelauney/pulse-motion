@@ -1,21 +1,98 @@
 {
   "style": "chaleureux",
   "famille": "chaleureuse",
-  "personnalite": ["accueillant", "doux", "humain"],
-  "eviter": ["froideur technique", "agressivité"],
-  "genres": ["formation", "storytelling"],
+  "personnalite": [
+    "accueillant",
+    "doux",
+    "humain"
+  ],
+  "eviter": [
+    "froideur technique",
+    "agressivité"
+  ],
+  "genres": [
+    "formation",
+    "storytelling"
+  ],
   "couleur": {
     "strategie": "plusieurs-couleurs",
-    "tons": ["clair"],
+    "tons": [
+      "clair"
+    ],
     "tonDefaut": "clair",
-    "roles": { "primaire": "titres, galets", "accent": "pastilles, puces, flèches" }
+    "roles": {
+      "primaire": "titres, galets",
+      "accent": "pastilles, puces, flèches"
+    }
   },
   "typographie": {
-    "titres": { "famille": "Fredoka", "categorie": "sans-serif", "graisse": 600 },
-    "texte": { "famille": "Nunito Sans", "categorie": "sans-serif", "graisse": 400 }
+    "titres": {
+      "famille": "Fredoka",
+      "categorie": "sans-serif",
+      "graisse": 600
+    },
+    "texte": {
+      "famille": "Nunito Sans",
+      "categorie": "sans-serif",
+      "graisse": 400
+    }
   },
-  "mouvement": { "caractere": "doux", "courbes": ["quint-out", "back-out", "sine-inout"], "dureeType": 0.9, "transitions": ["fondu", "glissement"] },
+  "mouvement": {
+    "caractere": "doux",
+    "courbes": [
+      "quint-out",
+      "back-out",
+      "sine-inout"
+    ],
+    "dureeType": 0.9,
+    "transitions": [
+      "fondu",
+      "glissement"
+    ]
+  },
   "signature": "Formes organiques qui respirent, cartes aux rayons généreux, mouvements doux qui s'arrêtent net",
-  "aFaire": ["Un ton direct et bienveillant", "Des cartes aérées"],
-  "aEviter": ["Les angles vifs", "Les couleurs criardes"]
+  "aFaire": [
+    "Un ton direct et bienveillant",
+    "Des cartes aérées"
+  ],
+  "aEviter": [
+    "Les angles vifs",
+    "Les couleurs criardes"
+  ],
+  "categorie": "essentiels",
+  "nonPas": "Pas un style enfantin ni de dessin animé : des formes douces, sans personnage en vedette. Ni angles vifs ni couleurs criardes.",
+  "usages": [
+    "Accueillir de nouveaux arrivants",
+    "Parler santé ou prévention",
+    "Présenter une association"
+  ],
+  "motsCles": [
+    "chaleureux",
+    "doux",
+    "humain",
+    "rond",
+    "accueil",
+    "bienveillant",
+    "santé",
+    "organique"
+  ],
+  "son": {
+    "ambiances": [
+      "inspirant",
+      "calme"
+    ],
+    "bruitages": {
+      "titre": null,
+      "texte": null,
+      "point": "pop",
+      "chiffre": null,
+      "trace": null,
+      "forme": "pop",
+      "image": null,
+      "ecriture": null,
+      "transition": null
+    },
+    "matiere": null,
+    "fort": "carillon"
+  }
 }

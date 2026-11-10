@@ -21,4 +21,39 @@ const FAMILLES = ['editoriale', 'moderne', 'technique', 'affirmee', 'chaleureuse
 
 const NOM_STYLE = /^[a-z0-9-]+$/;
 
-module.exports = { TYPES, OPTIONNELLES, FAMILLES, NOM_STYLE };
+/** Catégories de la galerie et de la liste des styles, dans leur ordre d'affichage (spec Styles et réalisation, 5.2). */
+const CATEGORIES = [
+  { id: 'essentiels', nom: 'Les essentiels' },
+  { id: 'dessine', nom: 'Dessiné à la main' },
+  { id: 'schemas-donnees', nom: 'Schémas et données' },
+  { id: 'papier-imprime', nom: 'Papier et imprimé' },
+  { id: 'ecrans-annonces', nom: 'Écrans et annonces' },
+  { id: 'anime', nom: 'Animé' },
+];
+
+/**
+ * Types d'entrée d'un élément, pour la table des bruitages d'un style (identite.son.bruitages).
+ * Liste unique, partagée avec les bruitages automatiques (spec Explication narrée) : un type nouveau s'ajoute ici.
+ */
+const TYPES_ENTREE = ['titre', 'texte', 'point', 'chiffre', 'trace', 'forme', 'image', 'ecriture', 'transition'];
+
+/** Titres exacts des sections d'une fiche de style, dans l'ordre (spec Styles et réalisation, 5.1). */
+const SECTIONS_FICHE = [
+  "L'essentiel",
+  "1. Essence, et ce qu'il n'est pas",
+  '2. Matières et rendu',
+  '3. Logique de couleur',
+  '4. Typographie et sous-titres',
+  '5. Qualité du mouvement',
+  '6. Grammaire de caméra et transitions',
+  '7. Palette sonore',
+  '8. Gestes natifs',
+  '9. Pièges',
+  '10. Scènes toutes faites et classes',
+  '11. Espace de variation',
+];
+
+/** Sections lues par l'animateur (pulse-motion reference styles/<style> --pour animateur). */
+const SECTIONS_ANIMATEUR = [SECTIONS_FICHE[0], SECTIONS_FICHE[2], SECTIONS_FICHE[4], SECTIONS_FICHE[5], SECTIONS_FICHE[8], SECTIONS_FICHE[9], SECTIONS_FICHE[10]];
+
+module.exports = { TYPES, OPTIONNELLES, FAMILLES, NOM_STYLE, CATEGORIES, TYPES_ENTREE, SECTIONS_FICHE, SECTIONS_ANIMATEUR };

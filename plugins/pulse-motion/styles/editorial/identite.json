@@ -1,22 +1,108 @@
 {
   "style": "editorial",
   "famille": "editoriale",
-  "personnalite": ["élégant", "exigeant", "calme"],
-  "eviter": ["publicité criarde", "ton enfantin"],
-  "genres": ["storytelling", "formation"],
+  "personnalite": [
+    "élégant",
+    "exigeant",
+    "calme"
+  ],
+  "eviter": [
+    "publicité criarde",
+    "ton enfantin"
+  ],
+  "genres": [
+    "storytelling",
+    "formation"
+  ],
   "couleur": {
     "strategie": "sobre-avec-une-touche",
-    "tons": ["clair", "sombre"],
+    "tons": [
+      "clair",
+      "sombre"
+    ],
     "tonDefaut": "clair",
-    "sombre": { "fond": "#16130f", "texte": "#efe9df" },
-    "roles": { "primaire": "chapeaux, chiffres, numéros", "accent": "surtitres, filets courts, flèches" }
+    "sombre": {
+      "fond": "#16130f",
+      "texte": "#efe9df"
+    },
+    "roles": {
+      "primaire": "chapeaux, chiffres, numéros",
+      "accent": "surtitres, filets courts, flèches"
+    }
   },
   "typographie": {
-    "titres": { "famille": "Fraunces", "categorie": "serif", "graisse": 600 },
-    "texte": { "famille": "Instrument Sans", "categorie": "sans-serif", "graisse": 400 }
+    "titres": {
+      "famille": "Fraunces",
+      "categorie": "serif",
+      "graisse": 600
+    },
+    "texte": {
+      "famille": "Instrument Sans",
+      "categorie": "sans-serif",
+      "graisse": 400
+    }
   },
-  "mouvement": { "caractere": "lent", "courbes": ["expo-out", "sine-inout"], "dureeType": 1.1, "transitions": ["fondu", "rideau"] },
+  "mouvement": {
+    "caractere": "lent",
+    "courbes": [
+      "expo-out",
+      "sine-inout"
+    ],
+    "dureeType": 1.1,
+    "transitions": [
+      "fondu",
+      "rideau"
+    ]
+  },
   "signature": "Filets fins qui se tracent, titres à empattements très grands, textes qui montent derrière un masque",
-  "aFaire": ["Laisser respirer : grandes marges, peu d'éléments", "Une seule couleur vive par scène"],
-  "aEviter": ["Rebonds et mouvements rapides", "Aplats de couleur pleins"]
+  "aFaire": [
+    "Laisser respirer : grandes marges, peu d'éléments",
+    "Une seule couleur vive par scène"
+  ],
+  "aEviter": [
+    "Rebonds et mouvements rapides",
+    "Aplats de couleur pleins"
+  ],
+  "categorie": "essentiels",
+  "nonPas": "Pas un diaporama sobre : la typographie mène, en très grand. Ni couleur en aplat, ni rebond, rien de pressé.",
+  "usages": [
+    "Raconter un récit, un témoignage",
+    "Porter un message institutionnel",
+    "Former en prenant son temps"
+  ],
+  "motsCles": [
+    "éditorial",
+    "magazine",
+    "élégant",
+    "typographie",
+    "empattements",
+    "presse",
+    "récit",
+    "haut de gamme"
+  ],
+  "son": {
+    "ambiances": [
+      "calme",
+      "suspense"
+    ],
+    "bruitages": {
+      "titre": null,
+      "texte": null,
+      "point": null,
+      "chiffre": null,
+      "trace": "souffle",
+      "forme": null,
+      "image": null,
+      "ecriture": null,
+      "transition": null
+    },
+    "matiere": null,
+    "fort": "basse"
+  },
+  "shaders": {
+    "conseilles": [
+      "grain",
+      "vignettage"
+    ]
+  }
 }

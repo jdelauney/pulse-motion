@@ -47,7 +47,7 @@ Choisir le style de départ le plus proche (`pulse-motion styles`) : sa mise en 
 
 1. Un agent `animateur` (mode « style ») par scène, tous dans le même message : `chiffre`, `comparaison`, `etape`, `alerte`, `schema`, `conclusion`, à partir de la même identité et de `style.css`.
 2. Planche des 8 scènes : `pulse-motion style planche <nom> --scenes titre,liste,chiffre,comparaison,etape,alerte,schema,conclusion --ouvrir`, aussi en `--ratio 9:16`. `--textes maximum` : chaque texte à sa longueur maximale (rien ne doit déborder).
-3. Compléter `guide.md` du style (bloc « L'essentiel », tableau des scènes avec leurs durées, classes, à faire / à éviter), sur le modèle de `pulse-motion reference styles/<style de départ>`.
+3. Compléter `guide.md` du style : la fiche de départ (`pulse-motion reference styles/<style de départ>`) aux 11 sections, chaque section réécrite pour ce style.
 
 ## 5. Vérifier
 

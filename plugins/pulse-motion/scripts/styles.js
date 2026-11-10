@@ -2,13 +2,16 @@
 'use strict';
 /* Pulse Motion – catalogue des styles : styles livrés et personnels, recommandation, contrat.
  *
- *   node scripts/styles.js [--genre <genre>]     liste des styles (JSON), classée pour le genre
+ *   node scripts/styles.js [--genre <genre>]     liste des styles (JSON), classée pour le genre : fiche complète des
+ *                                                3 premiers, forme courte des autres
+ *   node scripts/styles.js chercher <mots…>      styles dont le nom, la catégorie, les mots-clés, les usages ou la
+ *                                                personnalité contiennent ces mots (« façon tableau blanc »)
  *   node scripts/styles.js verifier <nom>        vérifie le contrat d'un style
  */
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
-const { TYPES, FAMILLES, NOM_STYLE } = require('./lib/contrat.js');
+const { TYPES, FAMILLES, NOM_STYLE, CATEGORIES, TYPES_ENTREE } = require('./lib/contrat.js');
 const { TRANSITIONS, GENRES } = require('./lib/deroule.js');
 const { extraireScene } = require('./lib/extraire.js');
 const { verifierSection } = require('./lib/scenes.js');
@@ -16,6 +19,7 @@ const { contraste, luminance } = require('./lib/couleurs.js');
 const { dossierPersonnel } = require('./lib/personnel.js');
 const { trouverFichiersPolice } = require('./lib/police.js');
 const SEUILS = require('./seuils.json');
+const SYNTHE = require('../moteur/synthe/catalogue.js');
 
 const RACINE = path.resolve(__dirname, '..');
 const LIVRES = path.join(RACINE, 'styles');
@@ -86,7 +90,78 @@ function verifierCatalogue(dossier, nom, catalogue, erreurs, avertissements) {
   }
 }
 
-function verifierIdentite(nom, identite, css, erreurs, charteCouleurs = {}) {
+// Champs de la fiche lus par le code (spec Styles et réalisation, 5.2) : obligatoires pour un style livré,
+// facultatifs pour un style personnel (un style personnel d'avant reste valide), toujours vérifiés quand ils sont là.
+const CHAMPS_LIVRE = ['categorie', 'nonPas', 'usages', 'motsCles', 'son'];
+const USAGE_MAX = 40;
+// Sons tenus (feutre, craie…) : aucun pour l'instant ; la matière d'un style vaut null tant qu'il n'y en a pas.
+const SONS_TENUS = SYNTHE.TENUS || [];
+const listeNoms = (v) => (v.length ? v.join(', ') : 'aucun pour l\'instant');
+const chaine = (v) => typeof v === 'string' && v.trim() !== '';
+
+function nomsFichiers(dossier, ext) {
+  try { return fs.readdirSync(dossier).filter((f) => f.endsWith(ext)).map((f) => f.slice(0, -ext.length)).sort(); } catch { return []; }
+}
+
+function verifierSon(son, erreurs) {
+  if (!son || typeof son !== 'object' || Array.isArray(son)) { erreurs.push('identite.json : « son » doit être un objet { ambiances, bruitages, matiere, fort }.'); return; }
+  const ambiances = Object.keys(SYNTHE.AMBIANCES);
+  for (const champ of ['ambiances', 'bruitages', 'matiere', 'fort']) if (!(champ in son)) erreurs.push(`identite.json : « son.${champ} » manquant.`);
+  if ('ambiances' in son) {
+    if (!Array.isArray(son.ambiances) || son.ambiances.length < 1 || son.ambiances.length > 3) erreurs.push(`identite.json : « son.ambiances » : 1 à 3 ambiances parmi : ${ambiances.join(', ')}.`);
+    else for (const a of son.ambiances) if (!ambiances.includes(a)) erreurs.push(`identite.json : ambiance « ${a} » inconnue (son.ambiances). Ambiances : ${ambiances.join(', ')}.`);
+  }
+  if ('bruitages' in son) {
+    if (!son.bruitages || typeof son.bruitages !== 'object' || Array.isArray(son.bruitages)) erreurs.push('identite.json : « son.bruitages » : table « type d\'entrée → bruitage ou null ».');
+    else {
+      for (const [type, b] of Object.entries(son.bruitages)) {
+        if (!TYPES_ENTREE.includes(type)) erreurs.push(`identite.json : type d'entrée « ${type} » inconnu (son.bruitages). Types : ${TYPES_ENTREE.join(', ')}.`);
+        if (b !== null && !SYNTHE.BRUITAGES.includes(b)) erreurs.push(`identite.json : bruitage « ${b} » inconnu (son.bruitages.${type}). Bruitages : ${SYNTHE.BRUITAGES.join(', ')} ; ou null.`);
+      }
+    }
+  }
+  if ('matiere' in son && son.matiere !== null && !SONS_TENUS.includes(son.matiere)) {
+    erreurs.push(`identite.json : matière « ${son.matiere} » inconnue (son.matiere). Sons tenus : ${listeNoms(SONS_TENUS)} ; ou null.`);
+  }
+  if ('fort' in son && !SYNTHE.BRUITAGES.includes(son.fort)) erreurs.push(`identite.json : son fort « ${son.fort} » inconnu (son.fort). Bruitages : ${SYNTHE.BRUITAGES.join(', ')}.`);
+}
+
+function verifierFicheIdentite(identite, livre, erreurs) {
+  if (livre) for (const champ of CHAMPS_LIVRE) if (identite[champ] === undefined) erreurs.push(`identite.json : « ${champ} » est obligatoire pour un style livré.`);
+  if (identite.categorie !== undefined && !CATEGORIES.some((c) => c.id === identite.categorie)) {
+    erreurs.push(`identite.json : « categorie » doit être l'une de : ${CATEGORIES.map((c) => c.id).join(', ')}.`);
+  }
+  if (identite.nonPas !== undefined) {
+    const phrases = chaine(identite.nonPas) ? identite.nonPas.split(/[.!?…](?:\s|$)/).filter((p) => p.trim()).length : 0;
+    if (phrases < 1 || phrases > 3) erreurs.push('identite.json : « nonPas » : 1 à 3 phrases (ce que le style n\'est pas).');
+  }
+  if (identite.usages !== undefined && (!Array.isArray(identite.usages) || identite.usages.length !== 3 || !identite.usages.every((u) => chaine(u) && u.length <= USAGE_MAX))) {
+    erreurs.push(`identite.json : « usages » : exactement 3 phrases courtes (${USAGE_MAX} caractères au plus chacune).`);
+  }
+  if (identite.motsCles !== undefined && (!Array.isArray(identite.motsCles) || identite.motsCles.length < 3 || !identite.motsCles.every(chaine))) {
+    erreurs.push('identite.json : « motsCles » : 3 mots ou plus (pour trouver le style quand la personne le nomme avec ses mots).');
+  }
+  if (identite.son !== undefined) verifierSon(identite.son, erreurs);
+  if (identite.shaders !== undefined) {
+    const connus = nomsFichiers(path.join(RACINE, 'shaders'), '.json');
+    const c = identite.shaders && identite.shaders.conseilles;
+    if (!Array.isArray(c)) erreurs.push('identite.json : « shaders » : { "conseilles": [noms] }.');
+    else for (const n of c) if (!connus.includes(n)) erreurs.push(`identite.json : shader conseillé « ${n} » inconnu. Shaders : ${connus.join(', ')}.`);
+  }
+  if (identite.modules !== undefined) {
+    const connus = nomsFichiers(path.join(RACINE, 'moteur', 'medium'), '.js');
+    if (!Array.isArray(identite.modules)) erreurs.push('identite.json : « modules » : liste de modules du moteur (moteur/medium/<nom>.js).');
+    else for (const n of identite.modules) if (!connus.includes(n)) erreurs.push(`identite.json : module « ${n} » inconnu. Modules : ${listeNoms(connus)}.`);
+  }
+  if (identite.provenance !== undefined && (!Array.isArray(identite.provenance) || !identite.provenance.every((p) => p && chaine(p.depot) && chaine(p.style) && chaine(p.licence)))) {
+    erreurs.push('identite.json : « provenance » : [{ "depot", "style", "licence" }].');
+  }
+  if (identite.base !== undefined && !(identite.base && chaine(identite.base.style) && chaine(identite.base.empreinte) && chaine(identite.base.versionPlugin))) {
+    erreurs.push('identite.json : « base » : { "style", "empreinte", "versionPlugin" }.');
+  }
+}
+
+function verifierIdentite(nom, identite, css, erreurs, charteCouleurs = {}, livre = false) {
   if (identite.style !== nom) erreurs.push(`identite.json : « style » doit valoir « ${nom} ».`);
   if (!FAMILLES.includes(identite.famille)) erreurs.push(`identite.json : « famille » doit être l'une de : ${FAMILLES.join(', ')}.`);
   if (!Array.isArray(identite.personnalite) || identite.personnalite.length !== 3) erreurs.push('identite.json : « personnalite » doit contenir 3 mots.');
@@ -120,6 +195,7 @@ function verifierIdentite(nom, identite, css, erreurs, charteCouleurs = {}) {
   if (!Array.isArray(transitions) || !transitions.length) erreurs.push('identite.json : « mouvement.transitions » est obligatoire.');
   else for (const t of transitions) if (!TRANSITIONS.includes(t)) erreurs.push(`identite.json : transition inconnue du moteur « ${t} ».`);
   if (typeof identite.signature !== 'string' || !identite.signature.trim()) erreurs.push('identite.json : « signature » est obligatoire.');
+  verifierFicheIdentite(identite, livre, erreurs);
 }
 
 function verifierCharte(dossier, charte, erreurs) {
@@ -145,17 +221,20 @@ function verifierCharte(dossier, charte, erreurs) {
   }
 }
 
-/** Vérifie qu'un dossier de style respecte le contrat. -> { ok, erreurs, avertissements } (ne lève jamais) */
-function verifierStyle(dossier) {
+/**
+ * Vérifie qu'un dossier de style respecte le contrat. -> { ok, erreurs, avertissements } (ne lève jamais)
+ * options.livre : traiter le style comme livré (par défaut : rangé dans styles/ du plugin).
+ */
+function verifierStyle(dossier, options = {}) {
   try {
-    return verifierContrat(dossier);
+    return verifierContrat(dossier, options);
   } catch (e) {
     // Un fichier de style aux valeurs d'un mauvais type ne doit pas faire tomber la liste des styles.
     return { ok: false, erreurs: [`Style mal formé (${path.basename(dossier)}) : ${e.message}.`], avertissements: [] };
   }
 }
 
-function verifierContrat(dossier) {
+function verifierContrat(dossier, { livre = estLivre(dossier) } = {}) {
   const erreurs = [];
   const avertissements = [];
   const nom = path.basename(dossier);
@@ -168,12 +247,17 @@ function verifierContrat(dossier) {
   else verifierCatalogue(dossier, nom, catalogue, erreurs, avertissements);
   const identite = lireJSON(path.join(dossier, 'identite.json'));
   if (!identite) erreurs.push('identite.json manquant ou illisible.');
-  else verifierIdentite(nom, identite, css || '', erreurs, (lireJSON(path.join(dossier, 'charte.json')) || {}).couleurs || {});
+  else verifierIdentite(nom, identite, css || '', erreurs, (lireJSON(path.join(dossier, 'charte.json')) || {}).couleurs || {}, livre);
   verifierCharte(dossier, lireJSON(path.join(dossier, 'charte.json')) || {}, erreurs);
   return { ok: erreurs.length === 0, erreurs, avertissements };
 }
 
 const RECOMMANDATION = path.join(RACINE, 'references', 'styles', 'recommandation.json');
+
+/** Style livré : rangé dans styles/ du plugin (les champs de sa fiche sont alors obligatoires). */
+function estLivre(dossier) {
+  return path.resolve(path.dirname(dossier)) === path.resolve(LIVRES);
+}
 
 /** Dossiers où chercher les styles, du plus prioritaire au moins prioritaire. */
 function racinesStyles(dossierStyles) {
@@ -258,7 +342,9 @@ function ficheStyle(st) {
     personnel: st.personnel,
     verifie: styleVerifie(st),
     famille: texte(identite.famille) || null,
+    categorie: texte(identite.categorie) || null,
     personnalite: liste(identite.personnalite),
+    usages: liste(identite.usages),
     genres: liste(identite.genres),
     signature: texte(identite.signature),
     transitions: liste(catalogue.transitions),
@@ -272,14 +358,14 @@ function listerStyles(dossierStyles) {
 
 /**
  * Styles classés pour un genre : les 2 recommandés du tableau, les styles personnels vérifiés
- * du genre, le style de contraste (ou, à défaut, un style d'une autre famille), puis le reste.
- * Les styles personnels non vérifiés ne sont pas proposés.
+ * du genre, le style de contraste (ou, à défaut, un style d'une autre famille), les styles « aussi »
+ * du tableau, puis le reste. Les styles personnels non vérifiés ne sont pas proposés.
  */
-function recommander(genre, dossierStyles) {
+function recommander(genre, dossierStyles, recommandation = lireJSON(RECOMMANDATION)) {
   if (!GENRES.includes(genre)) throw new Error(`Genre inconnu : « ${genre} ». Genres : ${GENRES.join(', ')}.`);
   const fiches = listerStyles(dossierStyles).filter((f) => f.verifie);
   const parNom = new Map(fiches.map((f) => [f.style, f]));
-  const table = (lireJSON(RECOMMANDATION) || {})[genre] || {};
+  const table = (recommandation || {})[genre] || {};
   const ordre = [];
   const ajouter = (n) => { if (parNom.has(n) && !ordre.includes(n)) ordre.push(n); };
   (table.recommandes || []).forEach(ajouter);
@@ -290,8 +376,84 @@ function recommander(genre, dossierStyles) {
     const autre = fiches.find((f) => !ordre.includes(f.style) && !familles.has(f.famille));
     if (autre) ajouter(autre.style);
   }
+  (table.aussi || []).forEach(ajouter);
   fiches.forEach((f) => ajouter(f.style));
   return ordre.map((n) => parNom.get(n));
+}
+
+/** Nombre de styles rendus en fiche complète par « styles --genre » ; les autres ont une forme courte. */
+const PROPOSES = 3;
+
+/** Forme courte d'un style (au-delà des 3 proposés) : de quoi le reconnaître et le nommer. */
+function ficheCourte(f) {
+  return { style: f.style, categorie: f.categorie, personnalite: f.personnalite, usages: f.usages, personnel: f.personnel };
+}
+
+/**
+ * Forme courte en une ligne, pour « styles --genre » au-delà des 3 proposés (6 Ko au plus pour 25 styles) :
+ * « <style> · <catégorie> · <personnalité> · <usages> », suivie de « · personnel » pour un style personnel.
+ */
+function ligneCourte(f) {
+  return [f.style, f.categorie || 'sans catégorie', f.personnalite.join(', '), f.usages.join(' ; ') || 'usages non dits', ...(f.personnel ? ['personnel'] : [])].join(' · ');
+}
+
+/** Fiche complète d'un style proposé, resserrée : chaque scène toute faite en « durée · textes (longueurs maximales) ». */
+function fichePropose(f) {
+  const scenes = {};
+  for (const s of f.scenes) {
+    if (!s || typeof s.nom !== 'string') continue;
+    const textes = Object.entries(s.textes || {}).map(([k, n]) => `${k} ${n}`).join(', ');
+    scenes[s.nom] = `${String(s.duree).replace('.', ',')} s · ${textes}`;
+  }
+  return {
+    style: f.style, personnel: f.personnel, famille: f.famille, categorie: f.categorie, personnalite: f.personnalite,
+    usages: f.usages, genres: f.genres, signature: f.signature, transitions: f.transitions, scenes,
+  };
+}
+
+/** Liste de « styles --genre » : fiche complète des 3 premiers, forme courte (une ligne) des autres. */
+function listePourGenre(fiches) {
+  return fiches.map((f, i) => (i < PROPOSES ? fichePropose(f) : ligneCourte(f)));
+}
+
+// Petits mots ignorés dans une recherche de style (« façon tableau blanc », « quelque chose à la craie »).
+const MOTS_VIDES = new Set(['a', 'au', 'aux', 'avec', 'de', 'des', 'du', 'en', 'et', 'la', 'le', 'les', 'l', 'd', 'un', 'une', 'sur', 'pour', 'par',
+  'facon', 'style', 'comme', 'genre', 'maniere', 'mode', 'look', 'esprit', 'type', 'quelque', 'chose', 'video', 'fais', 'fait', 'moi', 'je', 'veux',
+  'plutot', 'plus', 'tres']);
+const racineMot = (mot) => (mot.length > 3 && /[sx]$/.test(mot) ? mot.slice(0, -1) : mot);
+
+/**
+ * Styles vérifiés dont le nom, la catégorie, les mots-clés, les usages ou la personnalité contiennent les mots
+ * cherchés, sans accents ni casse : ceux qui les contiennent tous, puis, s'il n'y en a aucun, ceux qui en
+ * contiennent le plus. -> formes courtes, la plus proche d'abord.
+ */
+function chercherStyles(mots, dossierStyles) {
+  const { normaliser } = require('./mouvements.js');
+  const normal = normaliser(Array.isArray(mots) ? mots.join(' ') : mots);
+  const termes = normal.split(' ').filter((t) => t && !MOTS_VIDES.has(t)).map(racineMot);
+  if (!termes.length) return [];
+  const requete = termes.join(' ');
+  const resultats = [];
+  listerStyles(dossierStyles).filter((f) => f.verifie).forEach((f, ordre) => {
+    const identite = lireJSON(path.join(trouverStyle(f.style, dossierStyles).dossier, 'identite.json')) || {};
+    const nom = normaliser(f.style);
+    const categorie = CATEGORIES.find((c) => c.id === f.categorie);
+    const cles = (Array.isArray(identite.motsCles) ? identite.motsCles : []).filter(chaine).map(normaliser);
+    const champs = [nom, normaliser(f.categorie), normaliser(categorie && categorie.nom), ...cles, ...f.usages.map(normaliser), ...f.personnalite.map(normaliser)];
+    const tout = champs.join(' | ');
+    const trouves = termes.filter((t) => tout.includes(t)).length;
+    if (!trouves) return;
+    let score = 0;
+    if (nom === normal || nom === requete) score += 100;
+    else if (nom.includes(requete)) score += 50;
+    if (cles.some((c) => c === normal || c.split(' ').map(racineMot).join(' ') === requete)) score += 30;
+    else if (cles.some((c) => c.includes(requete))) score += 15;
+    resultats.push({ f, score, trouves, complet: trouves === termes.length, ordre });
+  });
+  const complets = resultats.filter((r) => r.complet);
+  return (complets.length ? complets : resultats)
+    .sort((a, b) => b.trouves - a.trouves || b.score - a.score || a.ordre - b.ordre)
+    .map((r) => ficheCourte(r.f));
 }
 
 if (require.main === module) {
@@ -304,9 +466,15 @@ if (require.main === module) {
       console.log(JSON.stringify(r, null, 2));
       process.exit(r.ok ? 0 : 1);
     }
+    if (args[0] === 'chercher') {
+      if (!args.slice(1).join(' ').trim()) throw new Error('Indiquez des mots après chercher (ex. : chercher tableau blanc).');
+      console.log(JSON.stringify(chercherStyles(args.slice(1))));
+      process.exit(0);
+    }
     const i = args.indexOf('--genre');
     if (i >= 0 && (!args[i + 1] || args[i + 1].startsWith('--'))) throw new Error(`Indiquez un genre après --genre : ${GENRES.join(', ')}.`);
-    console.log(JSON.stringify(i >= 0 ? recommander(args[i + 1]) : listerStyles(), null, 2));
+    // Avec un genre : JSON compact (fiche complète des 3 premiers, forme courte des autres), lu à chaque création.
+    console.log(i >= 0 ? JSON.stringify(listePourGenre(recommander(args[i + 1]))) : JSON.stringify(listerStyles(), null, 2));
   } catch (e) {
     console.error(e.message);
     process.exit(1);
@@ -315,5 +483,6 @@ if (require.main === module) {
 
 module.exports = {
   verifierStyle, styleVerifie, marquerVerifie, racinesStyles, trouverStyle, nomsStyles, messageStyleInconnu, ficheStyle, listerStyles, recommander,
+  listePourGenre, ficheCourte, chercherStyles, estLivre, CHAMPS_LIVRE,
   lireJSON, RACINE, LIVRES, dossierPersonnel,
 };

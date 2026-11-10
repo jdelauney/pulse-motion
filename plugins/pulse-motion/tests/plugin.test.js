@@ -86,7 +86,8 @@ test('export : proposé à la fin de creer et de retoucher, planche dans le parc
 test('références : bloc « L\'essentiel » en tête, chaque style du catalogue documenté', () => {
   const styles = fs.readdirSync(path.join(RACINE, 'styles'));
   for (const f of ['moteur.md', 'rythme.md', 'audio.md', ...styles.map((st) => path.join('styles', `${st}.md`))]) {
-    assert.match(lire('references', f), /^# .+\n\n## L'essentiel\n/, f);
+    // Une fiche de style a son essence et ses sources en citation entre le titre et « L'essentiel ».
+    assert.match(lire('references', f), /^# .+\n\n(?:> .+\n)*\n?## L'essentiel\n/, f);
   }
   for (const st of styles) {
     const catalogue = JSON.parse(lire('styles', st, 'catalogue.json'));
