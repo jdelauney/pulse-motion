@@ -121,3 +121,86 @@ test('revue : dossiers relatifs du PATH ignorés (un dossier de projet ne fourni
   const s2 = systeme([N(`${dossier}\\ffmpeg.exe`), N(`${dossier}\\ffprobe.exe`)]);
   assert.equal(F.trouverFfmpeg({ env: { PATH: `"${dossier}"` }, plateforme: 'win32', ...s2 }).chemin, N(`${dossier}\\ffmpeg.exe`));
 });
+
+// --- Spec Rendu et export (S5), 5.2 et 5.7 : arguments par usage, encodeur de la carte graphique du brouillon -------------
+
+const { dossierTemporaire } = require('./aide/temporaire.js');
+const U = require('../scripts/lib/usages.js');
+
+/** ffmpeg simulé : liste d'encodeurs et résultat de l'essai d'une image par encodeur. */
+function ffmpegSimule(liste, essais) {
+  const appels = [];
+  const executer = async (programme, args) => {
+    appels.push(args);
+    if (args.includes('-encoders')) return { code: 0, sortie: Buffer.from(liste.map((n) => ` V....D ${n}              encodeur`).join('\n')), erreurs: '' };
+    const nom = args[args.indexOf('-c:v') + 1];
+    return { code: essais[nom] ? 0 : 1, sortie: Buffer.alloc(0), erreurs: essais[nom] ? '' : 'No capable devices found' };
+  };
+  return { executer, appels };
+}
+
+test('ffmpeg.test.js › brouillon : encodeur matériel s\'il passe l\'essai, sinon libx264 veryfast', async () => {
+  const dossier = dossierTemporaire('pm-enc-');
+  const f = ffmpegSimule(['libx264', 'h264_nvenc', 'h264_qsv', 'h264_amf'], { h264_nvenc: true });
+  const r = await F.detecterEncodeurs({ ffmpeg: 'ffmpeg', version: '7.1', dossier, executer: f.executer, plateforme: 'win32' });
+  assert.equal(r.encodeur, 'h264_nvenc');
+  assert.deepEqual(r.essayes, [{ nom: 'h264_nvenc', ok: true }]);
+  // Essai d'une image : une image grise, encodée puis jetée.
+  const essai = f.appels.find((a) => a.includes('h264_nvenc'));
+  assert.deepEqual([essai[essai.indexOf('-frames:v') + 1], essai[essai.indexOf('-f', essai.indexOf('-c:v')) + 1]], ['1', 'null']);
+  // Gardé par version de ffmpeg : le second appel n'essaie plus rien.
+  const f2 = ffmpegSimule([], {});
+  assert.equal((await F.detecterEncodeurs({ ffmpeg: 'ffmpeg', version: '7.1', dossier, executer: f2.executer })).encodeur, 'h264_nvenc');
+  assert.equal(f2.appels.length, 0);
+  // Arguments : ceux de l'encodeur, étiquettes BT.709 comprises ; sans encodeur, libx264 veryfast CRF 26.
+  const a = F.argsVideo({ encodeur: 'h264_nvenc', gop: 2 }, 30);
+  assert.deepEqual(a.slice(0, 2), ['-c:v', 'h264_nvenc']);
+  assert.ok(a.includes('-cq') && a.includes('bt709'));
+  const b = U.resoudreUsage({ pour: 'brouillon', duree: 10 });
+  const logiciel = F.argsVideo({ ...b.fidele, encodeur: null }, 30);
+  assert.deepEqual([logiciel[1], logiciel[logiciel.indexOf('-preset') + 1], logiciel[logiciel.indexOf('-crf') + 1]], ['libx264', 'veryfast', '26']);
+});
+
+test('ffmpeg.test.js › encodeur en échec à l\'essai : jamais utilisé, aucun message à la personne', async () => {
+  const dossier = dossierTemporaire('pm-enc-');
+  const f = ffmpegSimule(['h264_nvenc', 'h264_qsv', 'h264_amf'], { h264_amf: true });
+  const r = await F.detecterEncodeurs({ ffmpeg: 'ffmpeg', version: '6.0', dossier, executer: f.executer, plateforme: 'win32' });
+  assert.equal(r.encodeur, 'h264_amf');
+  assert.deepEqual(r.essayes, [{ nom: 'h264_nvenc', ok: false }, { nom: 'h264_qsv', ok: false }, { nom: 'h264_amf', ok: true }]);
+  assert.equal(r.message, undefined);
+  // Aucun ne passe : aucun encodeur, et rien à dire (le brouillon passe par libx264).
+  const aucun = await F.detecterEncodeurs({ ffmpeg: 'ffmpeg', version: '5.0', dossier, executer: ffmpegSimule(['h264_nvenc'], {}).executer });
+  assert.deepEqual([aucun.encodeur, aucun.message], [null, undefined]);
+  // VideoToolbox n'est essayé que sur macOS.
+  const mac = ffmpegSimule(['h264_videotoolbox'], { h264_videotoolbox: true });
+  assert.equal((await F.detecterEncodeurs({ ffmpeg: 'ffmpeg', version: 'x', executer: mac.executer, plateforme: 'linux' })).encodeur, null);
+  assert.equal((await F.detecterEncodeurs({ ffmpeg: 'ffmpeg', version: 'x', executer: mac.executer, plateforme: 'darwin' })).encodeur, 'h264_videotoolbox');
+});
+
+test('ffmpeg.test.js › master : jamais d\'encodeur matériel', () => {
+  for (const pour of ['web', 'reseaux', 'presentation', 'master', 'courriel']) {
+    const u = U.resoudreUsage({ pour, duree: 10 });
+    assert.equal(u.fidele.encodeur, null, pour);
+    assert.equal(F.argsVideo(u.fidele, 30)[1], 'libx264', pour);
+    assert.notEqual(u.navigateur.acceleration, 'prefer-hardware', pour);
+  }
+  assert.equal(U.resoudreUsage({ pour: 'brouillon', duree: 10 }).fidele.encodeur, 'materiel');
+});
+
+test('ffmpeg.test.js › brouillon : même nombre d\'images avec l\'encodeur de la carte graphique et avec libx264', { skip: !(F.trouverFfmpeg().present) && 'ffmpeg absent' }, async () => {
+  const o = F.trouverFfmpeg();
+  const d = await F.detecterEncodeurs({ ffmpeg: o.chemin, version: o.version, dossier: dossierTemporaire('pm-enc-') });
+  const { pngRGBA } = require('./aide/png.js');
+  const dir = dossierTemporaire('pm-enc-');
+  const compter = async (encodeur) => {
+    const sortie = path.join(dir, `${encodeur || 'libx264'}.mp4`);
+    async function* images() { for (let k = 0; k < 24; k++) yield pngRGBA(256, 144, (x) => [k * 10, x, 128, 255]); }
+    await F.encoderSegment({ ffmpeg: o.chemin, sortie, ips: 12, reglages: { encodeur, crf: 26, preset: encodeur ? null : 'veryfast', gop: 2 }, images: images() });
+    const s = await F.sonder({ ffprobe: o.cheminProbe, fichier: sortie });
+    // Étiquettes BT.709 complètes, même par l'encodeur de la carte graphique (NVENC n'écrit pas les primaires seul).
+    assert.deepEqual(s.couleurs, { espace: 'bt709', primaires: 'bt709', transfert: 'bt709', plage: 'tv' }, encodeur || 'libx264');
+    return s.images;
+  };
+  assert.equal(await compter(null), 24);
+  if (d.encodeur) assert.equal(await compter(d.encodeur), 24, d.encodeur);
+});

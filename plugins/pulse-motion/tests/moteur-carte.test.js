@@ -20,6 +20,7 @@ const HORS_PAGE = {
   'absents.js': 'toujours inclus, en dernier (points d\'entrée des groupes absents)',
   'capture.js': 'injecté par la page de mesure, l\'aperçu et l\'export',
   'export.mjs': 'export navigateur de l\'aperçu', 'export-ui.mjs': 'export navigateur de l\'aperçu', 'studio.mjs': 'studio de la voix',
+  'estimation.js': 'temps restant de l\'export (aperçu et Node)',
   'atelier/editeur.mjs': 'atelier', 'atelier/page.mjs': 'atelier', 'atelier/panneau.mjs': 'atelier',
   'particules/expression.js': 'Node et atelier', 'particules/forme-close.js': 'Node', 'particules/naissances.js': 'Node',
   'particules/recette.js': 'atelier',

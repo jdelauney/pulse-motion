@@ -28,6 +28,8 @@
  *   module de particules (force, couleur, forme) : noms déclarés au niveau du module et R.x préfixés (pmForce_, pmCouleur_,
  *   pmForme_), réglages en constantes ; appel : nom de la fonction attendue préfixée ; carte : décalages de colonnes par ligne.
  * situerModule(messages, module, debut) -> erreurs dans le fichier du module (debut : lignes avant le module dans le noyau)
+ * plafonnerGrain(donnee, valeurs, plafond) -> valeurs   grain (post « grain ») tiré au plus plafond fois par seconde (5.9 de
+ *   la spec Rendu et export : 12 pour le courriel et le brouillon) ; tout autre shader inchangé
  * planComposition({ scenes, t, transitions, posts, postsVideo }) -> null | { couches, transition, postsVideo }
  *   composition à l'instant t : scènes visibles (ordre du document) à photographier, transition par shader en cours
  *   ({ sortante: id | null, entrante, progres, temps, duree }) ; null sans transition par shader ni post-traitement.
@@ -639,7 +641,22 @@
     return { couches: visibles.map(function (s) { return s.id; }), transition: transition, postsVideo: o.postsVideo };
   }
 
+  /** Grain plus léger (spec Rendu et export, 5.9) : le post-traitement « grain » tiré au plus plafond fois par seconde
+   *  (12 pour le courriel et le brouillon) ; vitesse = min(vitesse, plafond). Tout autre shader, ou sans plafond : inchangé. */
+  function plafonnerGrain(donnee, valeurs, plafond) {
+    if (!(plafond > 0) || !donnee || donnee.usage !== 'post' || donnee.nom !== 'grain') return valeurs;
+    var v = valeurs || {};
+    var defaut = donnee.parametres && donnee.parametres.vitesse ? donnee.parametres.vitesse.defaut : 24;
+    var vitesse = typeof v.vitesse === 'number' ? v.vitesse : defaut;
+    if (!(vitesse > plafond)) return valeurs;
+    var r = {};
+    Object.keys(v).forEach(function (k) { r[k] = v[k]; });
+    r.vitesse = plafond;
+    return r;
+  }
+
   return {
+    plafonnerGrain: plafonnerGrain,
     planComposition: planComposition,
     USAGES: USAGES,
     FONCTIONS: FONCTIONS,

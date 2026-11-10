@@ -4,19 +4,23 @@
  * ffmpeg en segments alignés sur les scènes (10 s au plus), capturés par plusieurs navigateurs en parallèle selon la
  * machine, gardés d'un export à l'autre sous l'empreinte de leurs pixels (une retouche ne recapture que les scènes
  * changées), assemblés sans réencodage avec le son de la page (mixage du moteur, −16 LUFS), vérifiés (ffprobe, sonie,
- * images comparées aux captures). Spec Rapidité 5.14 à 5.18.
+ * images comparées aux captures). Spec Rapidité 5.14 à 5.18. Export par usage (spec Rendu et export, 5.1 à 5.7) : réglages
+ * de scripts/usages.json, couleurs BT.709 étiquetées, intermédiaire commun dont dérivent les usages, taille visée en deux
+ * passes, brouillon par l'encodeur de la carte graphique, contrôles du fichier (étiquettes, taille).
  *
- *   node scripts/export-fidele.js <dossier-du-projet> [--qualite 1080p|720p] [--ips 30|60]
+ *   node scripts/export-fidele.js <dossier-du-projet> [--pour <usage>] [--taille-max <Mo>] [--qualite 1080p|720p|540p] [--ips 30|60]
  *
  * Dossier de travail sortie/.export/ :
  *   verrou                                      un seul export à la fois par projet (pid, date) ;
- *   segments/pixels/<empreinte des pixels>-<morceau>.mp4   intermédiaire d'un segment (aujourd'hui encodé avec les
- *                                               réglages par défaut : c'est le segment lui-même) ;
- *   segments/<empreinte du fichier dérivé>-<morceau>.mp4   segment réencodé depuis l'intermédiaire, seulement quand les
- *                                               réglages d'encodage diffèrent de ceux de l'intermédiaire (S5) ;
+ *   segments/pixels/<empreinte des pixels et de l'intermédiaire>-<morceau>.mp4   intermédiaire d'un segment : CRF 14
+ *                                               medium, commun à tous les usages qui ont les mêmes images (le master et le
+ *                                               brouillon ont le leur, qui est leur fichier même) ;
+ *   segments/<empreinte du fichier dérivé>-<morceau>.mp4   segment d'un usage : écrit en même temps que l'intermédiaire
+ *                                               (une seule passe de ffmpeg), ou réencodé depuis lui sans recapture ;
  *   segments/dernier.json                       segments du dernier export réussi (gardés avec ceux de l'export en cours) ;
  *   segments/pixels/<…>.mp4.stats.json          statistiques image par image du segment (spec S2, 5.12), gardées avec lui ;
- *   profil.json                                 temps cumulé par phase (PM_PROFIL=1).
+ *   profil.json                                 temps cumulé par phase (PM_PROFIL=1) ;
+ *   courriel-source.mp4, passe*                 vidéo assemblée et journal des deux passes d'une taille visée (retirés).
  * Suivi dans sortie/export.json ; résumé JSON ; code 1 en cas d'échec.
  */
 const crypto = require('node:crypto');
@@ -28,7 +32,10 @@ const { trouverNavigateur } = require('./lib/navigateur.js');
 const { ouvrirCapture } = require('./lib/capture-fidele.js');
 const F = require('./lib/ffmpeg.js');
 const { cheminDansProjet } = require('./lib/embarquer.js');
-const { scenesProvisoires, messageProvisoire } = require('./lib/voix.js');
+const { scenesProvisoires, messageProvisoire, dureeVideo } = require('./lib/voix.js');
+const U = require('./lib/usages.js');
+const ME = require('./lib/mesures-export.js');
+const { dossierPersonnel } = require('./lib/personnel.js');
 const { navigateursParalleles, enParallele } = require('./lib/paralleles.js');
 const { decouperSegments, empreintesPixels, empreinteDerivee, stable } = require('./lib/empreintes.js');
 const V = require('./lib/verification.js');
@@ -38,12 +45,22 @@ const SEUILS = require('./seuils.json');
 const TAILLES = {
   '1080p': { '16:9': [1920, 1080], '9:16': [1080, 1920], '1:1': [1080, 1080], '4:5': [1080, 1350] },
   '720p': { '16:9': [1280, 720], '9:16': [720, 1280], '1:1': [720, 720], '4:5': [720, 900] },
+  '540p': { '16:9': [960, 540], '9:16': [540, 960], '1:1': [540, 540], '4:5': [540, 676] },
 };
-const CRF = { '1080p': 18, '720p': 21 };
-const PRESET = 'medium';
+/** Intermédiaire commun (spec Rendu et export, décision 1) : capturé une fois, chaque usage en dérive. */
+const INTERMEDIAIRE = { crf: 14, preset: 'medium' };
+/** Usages dont l'intermédiaire est le fichier lui-même : le master (CRF 14 slow), le brouillon (rapide, jamais réutilisé). */
+const INTERMEDIAIRE_PROPRE = new Set(['master', 'brouillon']);
 const ECART_MAX = 0.02;
 const VERROU_PERIME = 24 * 3600 * 1000;
-const MESSAGE_VERROU = 'Un export de cette vidéo est déjà en cours : attendez qu\'il se termine.';
+/** Message du verrou (spec Rendu et export, 5.23 point 1) : l'heure du premier export, « 14 h 02 ». */
+function messageVerrou(depuis) {
+  const d = new Date(depuis);
+  if (!depuis || Number.isNaN(d.getTime())) return 'Un export de cette vidéo est déjà en cours : attendez sa fin.';
+  return `Un export de cette vidéo est déjà en cours (commencé à ${d.getHours()} h ${String(d.getMinutes()).padStart(2, '0')}) : attendez sa fin.`;
+}
+/** Nom de l'usage dans les messages. */
+const NOM_COURT = { web: 'web', reseaux: 'réseaux', presentation: 'présentation', master: 'master', courriel: 'courriel', brouillon: 'de travail' };
 const GARDES = new Set(['segments', 'verrou']);
 
 /** Code dont dépendent les pixels capturés, en plus de la page : moteur inclus dans la page, capture, pilote du navigateur et ses drapeaux. */
@@ -62,11 +79,12 @@ function avecEffets(projet, deroule) {
   });
 }
 
-/** Première image du segment fidèle à sa référence (capture de la page, ou première image de l'intermédiaire). */
-async function premiereImageJuste(outil, fichier, reference) {
+/** Première image du segment fidèle à sa référence (capture de la page, ou première image de l'intermédiaire) ; taille : celle
+ *  de la référence, si le segment est plus petit (sortie réduite). */
+async function premiereImageJuste(outil, fichier, reference, taille) {
   if (!reference) return false;
   try {
-    return F.ecartImages(await F.extraireImage({ ffmpeg: outil.chemin, fichier, t: 0 }), reference) <= ECART_MAX;
+    return F.ecartImages(await F.extraireImage({ ffmpeg: outil.chemin, fichier, t: 0, taille }), reference) <= ECART_MAX;
   } catch { return false; }
 }
 
@@ -103,7 +121,7 @@ function prendreVerrou(travail) {
     let v = null;
     try { v = JSON.parse(fs.readFileSync(fichier, 'utf8')); } catch { /* illisible : repris */ }
     const recent = v && Date.now() - Date.parse(v.date) < VERROU_PERIME;
-    if (v && recent && processusVivant(v.pid)) return { ok: false };
+    if (v && recent && processusVivant(v.pid)) return { ok: false, depuis: v.date };
     fs.rmSync(fichier, { force: true });
   }
   return { ok: false };
@@ -130,16 +148,23 @@ const retirer = (f) => { try { fs.rmSync(f, { force: true, maxRetries: 5, retryD
 const navigateurArrete = (e) => /navigateur s'est arrêté/.test(String(e && e.message));
 
 /**
- * exporterFidele({ dossier, qualite?, ips?, navigateur?, outil?, dossierStyles?, dossierEffets?, surProgression?, signal?,
- *                  dureeSegment?, arreterApres?, paralleles?, avecProvisoire?, encodage?, parametresPixels?, profil?, surOuverture? })
- * encodage : réglages x264 du fichier dérivé ({ crf, preset }) ; par défaut ceux de l'intermédiaire. parametresPixels : réglages
- * qui changent les pixels (S5), ajoutés à l'empreinte des pixels. surOuverture(capture) : chaque page ouverte (tests).
- * whisper : { pret, transcrire } de la réécoute (tests ; par défaut la transcription installée). Résultat : verification
- * { erreurs, alertes, fichier } (sortie/verification.json, spec S2 5.12) ; un noir ou un silence absent de la page fait échouer l'export.
+ * exporterFidele({ dossier, pour?, qualite?, ips?, tailleMax?, navigateur?, outil?, dossierStyles?, dossierEffets?, surProgression?,
+ *                  surPhase?, signal?, dureeSegment?, arreterApres?, paralleles?, avecProvisoire?, encodage?, parametresPixels?,
+ *                  profil?, surOuverture?, whisper?, debitCourriel?, encodeurMateriel? })
+ * pour : usage d'export (scripts/usages.json, web par défaut) ; qualite et ips priment sur l'usage ; tailleMax en Mo.
+ * encodage : réglages du fichier dérivé, remplacent ceux de l'usage (tests). parametresPixels : réglages qui changent les pixels,
+ * ajoutés à l'empreinte des pixels. surOuverture(capture) : chaque page ouverte (tests). surProgression(faites, total, { reprises }) ;
+ * surPhase(nom) : « son », « assemblage », « seconde-passe », « verification ». debitCourriel(v, essai) : débit des deux passes
+ * (tests du dépassement). encodeurMateriel : { encodeur } imposé (tests), sinon détecté (~/.pulse-motion/encodeurs.json). tailleFichier(fichier, essai) :
+ * taille lue après chaque essai d'une taille visée (tests du dépassement).
+ * whisper : { pret, transcrire } de la réécoute (tests ; par défaut la transcription installée). Résultat : usage, octets,
+ * taille, definition, ips, fichiers, verification { erreurs, alertes, fichier } (sortie/verification.json, spec S2 5.12) ;
+ * un noir ou un silence absent de la page, des couleurs non étiquetées ou une taille dépassée font échouer l'export.
  */
-async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = trouverNavigateur(), outil = F.trouverFfmpeg(), dossierStyles,
-  dossierEffets = path.join(RACINE, 'effets'), surProgression = () => {}, signal, dureeSegment = 10, arreterApres, paralleles, avecProvisoire = false,
-  encodage, parametresPixels = {}, profil = process.env.PM_PROFIL === '1', surOuverture = () => {}, whisper = null } = {}) {
+async function exporterFidele({ dossier, pour, qualite, ips, tailleMax, navigateur = trouverNavigateur(), outil = F.trouverFfmpeg(), dossierStyles,
+  dossierEffets = path.join(RACINE, 'effets'), surProgression = () => {}, surPhase = () => {}, signal, dureeSegment = 10, arreterApres, paralleles, avecProvisoire = false,
+  encodage, parametresPixels = {}, profil = process.env.PM_PROFIL === '1', surOuverture = () => {}, whisper = null, debitCourriel = (v) => v,
+  encodeurMateriel = null, tailleFichier = (f) => fs.statSync(f).size } = {}) {
   const debutExport = performance.now();
   const projet = path.resolve(dossier);
   const sortieDir = path.join(projet, 'sortie');
@@ -147,35 +172,55 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
   const etat = (e) => { fs.mkdirSync(sortieDir, { recursive: true }); fs.writeFileSync(suivi, JSON.stringify({ ...e, mode: 'fidele', date: new Date().toISOString() }, null, 2), 'utf8'); };
   if (!outil || !outil.present || outil.versionOk === false) return { ok: false, audio: false, message: (outil && outil.message) || 'ffmpeg n\'est pas installé.' };
   if (!navigateur) return { ok: false, audio: false, message: 'Chrome ou Edge introuvable : installez l\'un des deux, ou indiquez son chemin avec la variable PM_NAVIGATEUR.' };
-  if (!TAILLES[qualite]) return { ok: false, audio: false, message: `Qualité « ${qualite} » inconnue : 1080p ou 720p.` };
 
   const { deroule, erreurs } = lireDeroule(projet);
   if (erreurs.length) return { ok: false, audio: false, message: `Le déroulé contient des erreurs : ${erreurs.join(' ')}` };
   const provisoires = scenesProvisoires(projet, deroule);
   if (provisoires.length && !avecProvisoire) return { ok: false, audio: false, message: messageProvisoire(provisoires) };
+  // Usage et réglages effectifs, avant toute capture (une taille visée impossible est refusée ici).
+  const u = U.resoudreUsage({ pour, qualite, ips, tailleMax, deroule, duree: dureeVideo(projet, deroule) });
+  if (u.erreur) return { ok: false, audio: false, message: u.erreur, ...(u.propositionMo ? { propositionMo: u.propositionMo } : {}) };
   const P = creerProfil(Boolean(profil));
   const assemblage = await P.mesurer('assemblagePage', () => assembler({ dossier: projet, dossierStyles, dossierEffets, ecrire: false }));
   if (!assemblage.ok) return { ok: false, audio: false, message: `La page ne s'assemble pas : ${assemblage.erreurs.map((e) => e.message).join(' ')}` };
   // Les fichiers de sous-titres suivent le texte exporté, même sans aperçu ouvert.
   ecrireSousTitres(sortieDir, deroule.titre, assemblage.donnees.sousTitres && assemblage.donnees.sousTitres.cartons);
-  const [largeur, hauteur] = TAILLES[qualite][deroule.format.ratio] || TAILLES[qualite]['16:9'];
-  const cadence = ips || (deroule.format && deroule.format.ips) || 30;
-  // Intermédiaire : réglages par défaut tant que S5 n'en fixe pas d'autres ; fichier dérivé : réglages de l'usage.
-  const intermediaire = { crf: CRF[qualite], preset: PRESET };
-  const derive = { ...intermediaire, ...(encodage || {}) };
+  const tailleDe = (definition) => TAILLES[definition][deroule.format.ratio] || TAILLES[definition]['16:9'];
+  // Taille de sortie (celle de l'usage) ; taille capturée : la même, sauf une taille visée, toujours tirée d'une capture 1080p
+  // (le courriel ne recapture rien après un export web, et deux exports du même usage donnent les mêmes images).
+  const [largeur, hauteur] = tailleDe(u.definition);
+  const deuxPasses = u.fidele.passes === 2;
+  const [largeurCapture, hauteurCapture] = deuxPasses ? tailleDe('1080p') : [largeur, hauteur];
+  const reduite = largeurCapture !== largeur;
+  const cadence = u.ips;
+  // Brouillon : l'encodeur de la carte graphique s'il a passé l'essai d'une image, sinon libx264 veryfast (5.7).
+  let encodeur = null;
+  if (u.fidele.encodeur === 'materiel') {
+    const d = encodeurMateriel || await F.detecterEncodeurs({ ffmpeg: outil.chemin, version: outil.version, dossier: dossierPersonnel() }).catch(() => ({ encodeur: null }));
+    encodeur = d.encodeur || null;
+  }
+  // Fichier dérivé : réglages vidéo de l'usage ; intermédiaire : commun (CRF 14 medium), ou le fichier lui-même (master, brouillon).
+  const usageVideo = { crf: u.fidele.crf, preset: u.fidele.preset, tune: u.fidele.tune, debitMax: u.fidele.debitMax, tampon: u.fidele.tampon, gop: u.fidele.gop, profil: u.fidele.profil, niveau: u.fidele.niveau, encodeur };
+  if (encodeur) usageVideo.preset = null;
+  const derive = Object.fromEntries(Object.entries({ ...usageVideo, ...(encodage || {}) }).filter(([, v]) => v !== null && v !== undefined));
+  const intermediaire = INTERMEDIAIRE_PROPRE.has(u.usage) && !encodage ? derive : { ...INTERMEDIAIRE, tune: u.fidele.tune || undefined, gop: 2, profil: 'high' };
   const memeEncodage = stable(derive) === stable(intermediaire);
+  // Segments dérivés un à un (les deux passes d'une taille visée portent sur la vidéo entière).
+  const deriveParSegment = !memeEncodage && !deuxPasses;
+  // Plafond du grain : il ne change les pixels que si la page a un grain.
+  const grainMax = u.grainMax && U.avecGrain(deroule) ? u.grainMax : null;
 
   const travail = path.join(sortieDir, '.export');
   const dossierSegments = path.join(travail, 'segments');
   const dossierPixels = path.join(dossierSegments, 'pixels');
   fs.mkdirSync(dossierPixels, { recursive: true });
   const verrou = prendreVerrou(travail);
-  if (!verrou.ok) return { ok: false, audio: false, message: MESSAGE_VERROU };
+  if (!verrou.ok) return { ok: false, audio: false, message: messageVerrou(verrou.depuis), usage: u.usage };
   // Musique importée seulement (une musique générée n'a pas de fichier).
   const musique = deroule.musique && deroule.musique.fichier ? cheminDansProjet(projet, deroule.musique.fichier) : null;
   const page = path.join(travail, 'page.html');
 
-  const final = path.join(sortieDir, `${slug(deroule.titre)}.mp4`);
+  const final = path.join(sortieDir, U.nomFichier(slug(deroule.titre), u.usage));
   const partiel = `${final}.part`;
   const captures = [];
   const partiels = new Set();
@@ -183,7 +228,7 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
   const controle = new AbortController();
   const fermer = async (c) => { const i = captures.indexOf(c); if (i >= 0) captures.splice(i, 1); await c.fermer().catch(() => {}); };
   const ouvrir = () => P.mesurer('ouverture', async () => {
-    const c = await ouvrirCapture({ fichierHtml: page, largeur, hauteur, navigateur, gpu });
+    const c = await ouvrirCapture({ fichierHtml: page, largeur: largeurCapture, hauteur: hauteurCapture, navigateur, gpu, erreurs: true, parametres: { grainMax } });
     captures.push(c);
     // Export arrêté pendant l'ouverture : page refermée aussitôt.
     if (controle.signal.aborted) { await fermer(c); throw new Error('export annulé'); }
@@ -192,7 +237,9 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
   });
   const surAnnulation = () => controle.abort();
   if (signal) { if (signal.aborted) controle.abort(); else signal.addEventListener('abort', surAnnulation, { once: true }); }
-  const resume = { segments: 0, imagesCapturees: 0, paralleles: 0 };
+  const resume = { segments: 0, imagesCapturees: 0, paralleles: 0, usage: u.usage };
+  let debutCaptures = 0;
+  let finCaptures = 0;
   const travaux = [];
   try {
     // Dossier de travail d'une version précédente (empreinte, segment-NN.mp4, page, son) : retiré, rien n'en est repris.
@@ -200,6 +247,7 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
     for (const d of [dossierSegments, dossierPixels]) for (const f of fs.readdirSync(d)) if (f.endsWith('.part')) retirer(path.join(d, f));
     fs.writeFileSync(page, assemblage.html, 'utf8');
     const premiere = await ouvrir();
+    surPhase('preparation');
     // Son : le mixage de la page (le même que l'aperçu), rendu une fois ; illisible : vidéo muette avec un avertissement.
     const avertissements = [];
     if (deroule.musique && deroule.musique.fichier && !(musique && fs.existsSync(musique))) avertissements.push(`La musique est introuvable (« ${deroule.musique.fichier} ») : vidéo exportée sans son.`);
@@ -212,17 +260,26 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
     resume.segments = segments.length;
     const version = await premiere.version().catch(() => '');
     const pixels = empreintesPixels(assemblage, {
-      moteur: codeCapture(assemblage), options: optionsMinutage(deroule), segments, cadence, largeur, hauteur,
-      extra: { navigateur: version, gpu, pixels: parametresPixels },
+      moteur: codeCapture(assemblage), options: optionsMinutage(deroule), segments, cadence, largeur: largeurCapture, hauteur: hauteurCapture,
+      extra: { navigateur: version, gpu, pixels: { ...parametresPixels, ...(grainMax ? { grainMax } : {}) } },
     });
-    const inter = segments.map((g, k) => path.join(dossierPixels, nomSegment(pixels[k], g.morceau)));
-    const fichiers = segments.map((g, k) => (memeEncodage ? inter[k] : path.join(dossierSegments, nomSegment(empreinteDerivee(pixels[k], derive), g.morceau))));
+    // Intermédiaire : sous l'empreinte de ses pixels et de ses propres réglages (le commun, ou celui du master) ; fichier dérivé :
+    // pixels et réglages de l'usage (rangement de S1-4, inchangé).
+    const inter = segments.map((g, k) => path.join(dossierPixels, nomSegment(empreinteDerivee(pixels[k], { intermediaire }), g.morceau)));
+    const fichiers = segments.map((g, k) => (deriveParSegment ? path.join(dossierSegments, nomSegment(empreinteDerivee(pixels[k], derive), g.morceau)) : inter[k]));
 
     // Seuls les segments du dernier export réussi et ceux de cet export restent sur le disque.
     const dernier = path.join(dossierSegments, 'dernier.json');
     let precedents = [];
-    try { precedents = JSON.parse(fs.readFileSync(dernier, 'utf8')).fichiers || []; } catch { /* aucun export réussi */ }
-    const garder = new Set([...precedents, ...inter.map((f) => path.relative(dossierSegments, f)), ...fichiers.map((f) => path.relative(dossierSegments, f))].map((f) => f.replace(/\\/g, '/')));
+    let intermediaires = [];
+    try {
+      const d = JSON.parse(fs.readFileSync(dernier, 'utf8'));
+      precedents = d.fichiers || [];
+      intermediaires = Array.isArray(d.intermediaires) ? d.intermediaires.filter((x) => x && Array.isArray(x.fichiers)) : [];
+    } catch { /* aucun export réussi */ }
+    const relatif = (f) => path.relative(dossierSegments, f).replace(/\\/g, '/');
+    // Deux intermédiaires au plus sont gardés (le commun et celui du master, par exemple) ; le plus ancien est effacé.
+    const garder = new Set([...precedents, ...intermediaires.flatMap((x) => x.fichiers), ...inter.map(relatif), ...fichiers.map(relatif)].map((f) => f.replace(/\\/g, '/')));
     const purger = (conserves) => {
       for (const [d, prefixe] of [[dossierSegments, ''], [dossierPixels, 'pixels/']]) {
         for (const f of fs.readdirSync(d)) {
@@ -236,9 +293,9 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
 
     // Ce qui est déjà sur le disque : fichier dérivé, ou intermédiaire seul (réencodé sans recapture).
     const surDisque = await P.mesurer('verifications', () => enParallele(segments.map((g, k) => async () => {
-      const attendu = { largeur, hauteur, images: g.fin - g.debut };
+      const attendu = { largeur: largeurCapture, hauteur: hauteurCapture, images: g.fin - g.debut };
       if (await segmentValide(outil, fichiers[k], attendu)) return 'fichier';
-      if (!memeEncodage && await segmentValide(outil, inter[k], attendu)) return 'intermediaire';
+      if (deriveParSegment && await segmentValide(outil, inter[k], attendu)) return 'intermediaire';
       return null;
     }), 8));
     const aCapturer = segments.map((g, k) => k).filter((k) => !surDisque[k]);
@@ -253,9 +310,11 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
     let produits = 0;
     const recapturees = new Set();
     etat({ etat: 'en-cours', images: 0, total });
-    const avancer = (n) => {
+    let reprises = 0;
+    const avancer = (n, repriseDeSegment = false) => {
       faites += n;
-      surProgression(faites, total);
+      if (repriseDeSegment) reprises += n;
+      surProgression(faites, total, { reprises });
       if (faites % 10 === 0 || faites === total) etat({ etat: 'en-cours', images: faites, total });
     };
 
@@ -263,7 +322,7 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
     async function deriver(k, attendu) {
       const sortie = `${fichiers[k]}.part`;
       partiels.add(sortie);
-      await P.mesurer('reencodage', () => F.reencoderSegment({ ffmpeg: outil.chemin, entree: inter[k], sortie, ips: cadence, crf: derive.crf, preset: derive.preset, signal: controle.signal }));
+      await P.mesurer('reencodage', () => F.reencoderSegment({ ffmpeg: outil.chemin, entree: inter[k], sortie, ips: cadence, reglages: derive, signal: controle.signal }));
       if (controle.signal.aborted) throw new Error('export annulé');
       const juste = await P.mesurer('verifications', async () => (await segmentValide(outil, sortie, attendu))
         && premiereImageJuste(outil, sortie, await F.extraireImage({ ffmpeg: outil.chemin, fichier: inter[k], t: 0 })));
@@ -282,29 +341,32 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
     /** Un segment : repris s'il est sur le disque et fidèle (première image comparée à sa capture), sinon capturé, encodé, vérifié. */
     async function traiterSegment(k, capture) {
       const g = segments[k];
-      const attendu = { largeur, hauteur, images: g.fin - g.debut };
+      const attendu = { largeur: largeurCapture, hauteur: hauteurCapture, images: g.fin - g.debut };
       if (surDisque[k]) {
         const capturee = await capture.capturer(g.debut / cadence, P.ajouter);
         noter(g.debut, capturee);
         if (surDisque[k] === 'fichier' && await P.mesurer('verifications', () => premiereImageJuste(outil, fichiers[k], capturee))) {
           await temoinsDuSegment(g, capture);
           repris++;
-          avancer(attendu.images);
+          avancer(attendu.images, true);
           return;
         }
         if (surDisque[k] === 'intermediaire' && await P.mesurer('verifications', () => premiereImageJuste(outil, inter[k], capturee))) {
           await temoinsDuSegment(g, capture);
           await deriver(k, attendu);
           reencodes++;
-          avancer(attendu.images);
+          avancer(attendu.images, true);
           return;
         }
       }
-      // Capture : l'intermédiaire, puis le fichier dérivé s'il a d'autres réglages.
+      // Capture : l'intermédiaire et, dans la même passe de ffmpeg, le fichier dérivé de l'usage s'il a d'autres réglages.
       retirer(fichiers[k]);
       retirer(inter[k]);
       const segmentPartiel = `${inter[k]}.part`;
       partiels.add(segmentPartiel);
+      const derivePartiel = deriveParSegment ? `${fichiers[k]}.part` : null;
+      if (derivePartiel) partiels.add(derivePartiel);
+      if (!debutCaptures) debutCaptures = performance.now();
       let premiereImage = null;
       let finImages = 0;
       async function* images() {
@@ -320,7 +382,9 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
         finImages = performance.now();
       }
       // Statistiques image par image (spec S2, 5.12) : seconde sortie de ffmpeg, pendant l'encodage, sans seconde capture.
-      const encode = await F.encoderSegment({ ffmpeg: outil.chemin, sortie: segmentPartiel, ips: cadence, crf: intermediaire.crf, preset: intermediaire.preset, images: images(), signal: controle.signal, profil: P.ajouter, stats: true });
+      const encode = await F.encoderSegment({ ffmpeg: outil.chemin, sortie: segmentPartiel, ips: cadence, reglages: intermediaire, images: images(), signal: controle.signal, profil: P.ajouter, stats: true,
+        derive: derivePartiel ? { sortie: derivePartiel, reglages: derive } : null });
+      finCaptures = performance.now();
       if (P.actif && finImages) P.ajouter('finEncodage', performance.now() - finImages);
       if (controle.signal.aborted) throw new Error('export annulé');
       const valide = await P.mesurer('verifications', () => segmentValide(outil, segmentPartiel, attendu));
@@ -330,7 +394,12 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
       partiels.delete(segmentPartiel);
       retirer(V.fichierStats(inter[k]));
       if (encode && encode.vignettes && encode.vignettes.length === attendu.images) await P.mesurer('statistiques', () => V.ecrireStats(inter[k], encode.vignettes));
-      if (!memeEncodage) await deriver(k, attendu);
+      if (derivePartiel) {
+        const juste = await P.mesurer('verifications', async () => (await segmentValide(outil, derivePartiel, attendu)) && premiereImageJuste(outil, derivePartiel, premiereImage));
+        if (!juste) throw new Error(`le segment ${k + 1} n'a pas pu être encodé pour cet usage`);
+        fs.renameSync(derivePartiel, fichiers[k]);
+        partiels.delete(derivePartiel);
+      }
       recapturees.add(g.scene);
       produits++;
       if (arreterApres && produits >= arreterApres) controle.abort();
@@ -361,6 +430,7 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
     // Son rendu et encodé avant les captures, comme avant S1-4 : rendre le son pendant que d'autres pages capturent rendait
     // le témoin de 3 min non déterministe (des images différentes d'un export à l'autre).
     let son = null;
+    surPhase('son');
     try {
       son = await P.mesurer('rendreSon', () => premiere.rendreSon());
       avertissements.push(...son.avertissements);
@@ -374,7 +444,7 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
       const piste = path.join(travail, 'son.m4a');
       fs.writeFileSync(wav, son.wav);
       try {
-        await P.mesurer('encodageSon', () => F.encoderSon({ ffmpeg: outil.chemin, wav, duree: total / cadence, sortie: piste, signal: controle.signal }));
+        await P.mesurer('encodageSon', () => F.encoderSon({ ffmpeg: outil.chemin, wav, duree: total / cadence, sortie: piste, signal: controle.signal, debit: u.fidele.audio }));
         return piste;
       } catch (err) {
         erreurSon = err;
@@ -382,6 +452,7 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
       }
     })() : Promise.resolve(null));
     if (controle.signal.aborted) throw new Error('export annulé');
+    surPhase('images');
     for (let j = 1; j < regle.nombre; j++) travaux.push(arreterSurErreur(ouvrir().then((c) => travailleur(pages.push(c) - 1))));
     travaux.push(arreterSurErreur(travailleur(0)));
     const issues = await Promise.allSettled(travaux);
@@ -404,7 +475,7 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
      * capture), noirs et silences absents de la page (l'export échoue, segment noir retiré), crête, réécoute des scènes où la
      * voix risque d'être couverte. Écrit sortie/verification.json. m : résultat de F.verifierFichier.
      */
-    async function verifierContenu({ m, sonie }) {
+    async function verifierContenu({ m, sonie, propres = [] }) {
       const faites = [];
       const nonFaites = [];
       const problemes = [];
@@ -459,6 +530,8 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
       } else {
         nonFaites.push({ quoi: 'son', pourquoi: 'la vidéo n\'a pas de son' });
       }
+      // Vérifications propres à l'export par usage (spec Rendu et export, 5.22 point 4), déjà faites sur le fichier.
+      faites.push(...propres);
       const v = {
         fichier: path.relative(projet, final).replace(/\\/g, '/'), faites, nonFaites,
         mesures: { sonie: Number.isFinite(m.integree) ? Math.round(m.integree * 10) / 10 : null, crete: Number.isFinite(m.crete) ? Math.round(m.crete * 10) / 10 : null,
@@ -474,8 +547,35 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
       return v;
     }
 
-    await P.mesurer('assemblage', () => F.assemblerSegments({ ffmpeg: outil.chemin, segments: fichiers, sortie: partiel, audio }));
+    const debutFinales = performance.now();
+    surPhase('assemblage');
+    let essais = 0;
+    if (deuxPasses) {
+      // Taille visée (5.3) : intermédiaires assemblés, puis deux passes au débit calculé ; une seule reprise si la taille dépasse.
+      const source = path.join(travail, 'courriel-source.mp4');
+      partiels.add(source);
+      await P.mesurer('assemblage', () => F.assemblerSegments({ ffmpeg: outil.chemin, segments: inter, sortie: source, audio: null }));
+      let debit = u.fidele.debit;
+      for (;;) {
+        const v = Math.max(1, Math.round(debitCourriel(debit, essais)));
+        surPhase(essais ? 'reprise' : 'seconde-passe');
+        await P.mesurer('deuxPasses', () => F.transcoderDeuxPasses({ ffmpeg: outil.chemin, entree: source, sortie: partiel, ips: cadence, reglages: { ...derive, crf: undefined, debit: v },
+          taille: reduite ? [largeur, hauteur] : null, audio, journal: path.join(travail, 'passe'), signal: controle.signal }));
+        const octets = tailleFichier(partiel, essais);
+        if (octets <= u.tailleMax) break;
+        // Encore au-dessus après la reprise : échec, sans fichier (5.3, point 5).
+        if (essais >= 1) throw Object.assign(new Error(F.controlesSortie({ octets }, { octetsMax: u.tailleMax, nom: NOM_COURT[u.usage] || u.usage })[0]), { sortie: true });
+        essais++;
+        debit = Math.floor(v * (u.tailleMax / octets) * 0.95);
+      }
+      retirer(source);
+      partiels.delete(source);
+    } else {
+      await P.mesurer('assemblage', () => F.assemblerSegments({ ffmpeg: outil.chemin, segments: fichiers, sortie: partiel, audio }));
+    }
     let verification = null;
+    let sonde = null;
+    surPhase('verification');
     await P.mesurer('verifications', async () => {
       // Une seule passe sur le fichier final (spec S2, 5.12) : chaque image décodée et comptée (la garantie de lecture), noirs,
       // sonie, crête et silences ; ffprobe ne lit plus que les pistes. Images témoins lues en même temps.
@@ -484,16 +584,20 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
       const [s, m, lues] = await Promise.all([
         F.sonder({ ffprobe: outil.cheminProbe, fichier: partiel, compter: 'aucun' }),
         F.verifierFichier({ ffmpeg: outil.chemin, fichier: partiel, audio: Boolean(audio), noir: { duree: SEUILS.noirDuree, seuil: SEUILS.noirSeuil }, silence: { niveau: SEUILS.silenceNiveau, duree: SEUILS.silenceDuree } }),
-        Promise.all([...temoins.keys()].map((n) => F.extraireImage({ ffmpeg: outil.chemin, fichier: partiel, t: Math.max(0, n / cadence - 0.001) }))),
+        Promise.all([...temoins.keys()].map((n) => F.extraireImage({ ffmpeg: outil.chemin, fichier: partiel, t: Math.max(0, n / cadence - 0.001), taille: reduite ? [largeurCapture, hauteurCapture] : undefined }))),
       ]);
+      sonde = s;
       if (s.video !== 'h264' || s.largeur !== largeur || s.hauteur !== hauteur) throw new Error('la vidéo n\'a pas la piste ou la taille attendues');
+      // Contrôles propres à l'usage (5.22 point 4) : étiquettes de couleur, taille sous la cible ; un défaut arrête l'export.
+      const defauts = F.controlesSortie(s, { etiquettes: true, octetsMax: u.tailleMax, nom: NOM_COURT[u.usage] || u.usage });
+      if (defauts.length) throw Object.assign(new Error(defauts[0]), { sortie: true });
       const decodees = m.images === null ? s.images : m.images;
       if (decodees !== total || Math.abs(s.duree - total / cadence) > 1 / cadence + 0.01) throw new Error(`la vidéo a ${decodees} images au lieu de ${total}`);
       if (audio && (s.audio !== 'aac' || Math.abs(s.dureeAudio - total / cadence) > 0.1)) throw new Error('la piste son est absente ou n\'a pas la durée de l\'image');
       if (sonie) {
         if (!(Math.abs(m.integree - son.sonie) <= 1)) throw new Error(`le son n'a pas la sonie attendue (${m.integree.toFixed(1)} LUFS au lieu de ${son.sonie.toFixed(1)})`);
       }
-      verification = await P.mesurer('verificationContenu', () => verifierContenu({ m, sonie }));
+      verification = await P.mesurer('verificationContenu', () => verifierContenu({ m, sonie, propres: ['couleurs', ...(u.tailleMax ? ['taille'] : [])] }));
       // Trois images de la vidéo comparées aux captures (segment décalé, image noire).
       for (const [i, [n, capturee]] of [...temoins].entries()) {
         const ecart = F.ecartImages(lues[i], capturee);
@@ -512,19 +616,41 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
       if (['EPERM', 'EBUSY', 'EACCES'].includes(err.code)) throw Object.assign(new Error(`« ${path.basename(final)} » est ouvert ailleurs : fermez la vidéo (lecteur, explorateur) puis relancez l'export`), { verrou: true });
       throw err;
     }
-    // Export réussi : ses segments deviennent « le dernier export » ; les autres sont retirés.
-    const conserves = new Set([...inter, ...fichiers].map((f) => path.relative(dossierSegments, f).replace(/\\/g, '/')));
-    fs.writeFileSync(dernier, JSON.stringify({ date: new Date().toISOString(), fichiers: [...conserves] }, null, 2), 'utf8');
+    // Export réussi : ses segments deviennent « le dernier export » ; les autres sont retirés, sauf le dernier intermédiaire
+    // d'une autre sorte (le commun et celui du master, par exemple : deux au plus). Sorte : réglages, définition, cadence.
+    const sorte = stable({ intermediaire, taille: [largeurCapture, hauteurCapture], cadence });
+    const autres = intermediaires.filter((x) => x.sorte !== sorte).slice(-1);
+    const gardes = [...autres, { sorte, fichiers: inter.map(relatif) }];
+    const conserves = new Set([...inter, ...fichiers].map(relatif));
+    for (const x of autres) for (const f of x.fichiers) conserves.add(f);
+    fs.writeFileSync(dernier, JSON.stringify({ date: new Date().toISOString(), fichiers: [...new Set([...inter, ...fichiers].map(relatif))], intermediaires: gardes }, null, 2), 'utf8');
     purger(conserves);
+    const octets = fs.statSync(final).size;
+    const rel = (f) => path.relative(projet, f).replace(/\\/g, '/');
+    const sousTitres = ['srt', 'vtt'].map((e) => path.join(sortieDir, `${slug(deroule.titre)}.${e}`)).filter((f) => fs.existsSync(f)).map(rel);
+    const secondesCapture = debutCaptures && finCaptures > debutCaptures ? (finCaptures - debutCaptures) / 1000 : 0;
+    const imagesParSeconde = resume.imagesCapturees && secondesCapture ? Math.round((resume.imagesCapturees / secondesCapture) * 10) / 10 : null;
     const resultat = {
       ok: true, fichier: final, images: total, duree: total / cadence, largeur, hauteur, audio: Boolean(audio),
+      usage: u.usage, octets, taille: U.tailleFrancaise(octets), definition: u.definition, ips: cadence,
+      flou: { applique: false, sousImages: 1 }, chapitresIntegres: false,
+      fichiers: { video: rel(final), ...(sousTitres.length ? { sousTitres } : {}) },
+      ...(u.usage === 'brouillon' ? { encodeur: encodeur ? 'materiel' : 'logiciel' } : {}),
+      ...(deuxPasses ? { tailleVisee: U.tailleFrancaise(u.tailleMax), reprises: essais } : {}),
       segments: segments.length, segmentsRepris: repris, segmentsReencodes: reencodes,
       scenesRecapturees: segments.map((g) => g.scene).filter((id, i, t) => recapturees.has(id) && t.indexOf(id) === i),
-      paralleles: regle.nombre, regleParalleles: regle.regle,
+      paralleles: regle.nombre, regleParalleles: regle.regle, imagesParSeconde,
+      secondes: Math.round((performance.now() - debutExport) / 100) / 10,
     };
+    if (sonde && sonde.couleurs) resultat.couleurs = sonde.couleurs;
     if (verification) resultat.verification = V.resume(verification);
     if (avertissement) resultat.avertissement = avertissement;
-    etat({ etat: 'fini', fichier: path.relative(projet, final).replace(/\\/g, '/'), images: total, duree: total / cadence, audio: Boolean(audio), ...(avertissement ? { avertissement } : {}),
+    // Vitesse de cet ordinateur (temps restant des prochains exports, 5.5) : seulement si des images ont été capturées.
+    if (imagesParSeconde) {
+      ME.noterMesure({ voie: 'fidele', definition: deuxPasses ? '1080p' : u.definition, ips: cadence, flou: false, imagesParSeconde,
+        finalesParSeconde: Math.round(((performance.now() - debutFinales) / 1000 / (total / cadence)) * 1000) / 1000 });
+    }
+    etat({ etat: 'fini', fichier: rel(final), images: total, duree: total / cadence, audio: Boolean(audio), usage: u.usage, octets, ...(avertissement ? { avertissement } : {}),
       ...(verification ? { verification: resultat.verification } : {}) });
     return resultat;
   } catch (e) {
@@ -532,6 +658,7 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
     // Travailleurs encore en cours (erreur ailleurs) : arrêtés, attendus avant de fermer leurs pages.
     if (travaux.length) { controle.abort(); await Promise.allSettled(travaux); }
     const message = annule ? 'Export annulé : les segments déjà faits seront repris au prochain export.'
+      : e.script || e.sortie ? e.message
       : e.verrou ? `${e.message} ; les segments déjà faits seront repris.`
         : e.verification ? `${e.verification} Les autres segments déjà faits seront repris.`
           : `L'export fidèle a échoué (${e.message}) : relancez-le ; les segments déjà faits seront repris.`;
@@ -540,12 +667,12 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
       return { ok: false, audio: false, message, verification: e.resumeVerification };
     }
     etat({ etat: annule ? 'annule' : 'erreur', message });
-    return { ok: false, audio: false, message };
+    return { ok: false, audio: false, message, usage: u.usage, ...(e.script ? { erreurScript: { scene: e.scene, instant: e.instant, detail: e.detail } } : {}) };
   } finally {
     if (signal) signal.removeEventListener('abort', surAnnulation);
     for (const c of [...captures]) await fermer(c);
     // Fichiers partiels, page et son de travail retirés ; encore verrouillés (Windows) : nouvel essai, puis laissés.
-    for (const f2 of [...partiels, partiel, page, path.join(travail, 'son.wav'), path.join(travail, 'son.m4a')]) retirer(f2);
+    for (const f2 of [...partiels, partiel, page, path.join(travail, 'son.wav'), path.join(travail, 'son.m4a'), path.join(travail, 'courriel-source.mp4')]) retirer(f2);
     if (P.actif) {
       const phases = Object.fromEntries(Object.entries(P.phases).map(([k, v]) => [k, Math.round(v)]));
       try {
@@ -559,17 +686,17 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
 if (require.main === module) {
   const args = process.argv.slice(2);
   const valeur = (o) => { const i = args.indexOf(o); return i >= 0 ? args[i + 1] : undefined; };
-  const dossier = args.find((a, i) => !a.startsWith('--') && !['--qualite', '--ips'].includes(args[i - 1]));
+  const dossier = args.find((a, i) => !a.startsWith('--') && !['--qualite', '--ips', '--pour', '--taille-max'].includes(args[i - 1]));
   if (!dossier) {
-    console.error('Usage : node scripts/export-fidele.js <dossier-du-projet> [--qualite 1080p|720p] [--ips 30|60]');
+    console.error('Usage : node scripts/export-fidele.js <dossier-du-projet> [--pour <usage>] [--taille-max <Mo>] [--qualite 1080p|720p|540p] [--ips 30|60]');
     process.exit(2);
   }
   const controle = new AbortController();
   process.on('SIGINT', () => controle.abort());
-  exporterFidele({ dossier, qualite: valeur('--qualite') || '1080p', ips: valeur('--ips') ? Number(valeur('--ips')) : undefined, signal: controle.signal,
+  exporterFidele({ dossier, pour: valeur('--pour'), tailleMax: valeur('--taille-max'), qualite: valeur('--qualite'), ips: valeur('--ips'), signal: controle.signal,
     surProgression: (n, total) => process.stderr.write(`\r${Math.round((100 * n) / total)} %`) })
     .then((r) => { process.stderr.write('\n'); console.log(JSON.stringify(r, null, 2)); process.exit(r.ok ? 0 : 1); },
       (err) => { console.log(JSON.stringify({ ok: false, message: `L'export fidèle a échoué (${err.message}).` }, null, 2)); process.exit(1); });
 }
 
-module.exports = { exporterFidele, avecEffets, prendreVerrou, TAILLES, CRF };
+module.exports = { exporterFidele, avecEffets, prendreVerrou, messageVerrou, TAILLES, INTERMEDIAIRE };

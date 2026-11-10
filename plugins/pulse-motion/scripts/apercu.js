@@ -16,6 +16,7 @@ const path = require('node:path');
 const { spawn } = require('node:child_process');
 const { assembler } = require('./assembler.js');
 const { creerRoutesExport } = require('./lib/routes-export.js');
+const { lireUsages } = require('./lib/usages.js');
 const { creerRoutesVoix } = require('./lib/routes-voix.js');
 const { creerRoutesAtelier } = require('./lib/routes-atelier.js');
 const { creerRoutesPersonnages } = require('./lib/routes-personnages.js');
@@ -30,7 +31,8 @@ const IGNORES = /^(sortie|\.pulse-motion|\.historique|\.git)([\\/]|$)|\.part$/;
 /** Routes d'écriture de l'aperçu et types de contenu acceptés (le premier motif qui correspond l'emporte). */
 const TYPES_ECRITURE = [
   ['/_pm/controle', ['application/json']],
-  ['/_pm/export', ['video/mp4']],
+  ['/_pm/export', ['video/mp4', 'video/webm', 'image/gif']],
+  ['/_pm/couverture', ['image/jpeg']],
   ['/_pm/export-etat', ['application/json']],
   ['/_pm/export-stats', ['application/json']],
   ['/_pm/planche-fin', ['application/json']],
@@ -56,7 +58,9 @@ function pageErreur(erreurs) {
 }
 
 function injecterApercu(html, erreurs) {
-  const script = `<script>window.__PM_APERCU__ = true; window.__PM_ERREURS__ = ${JSON.stringify(erreurs).replace(/</g, '\\u003c')};</script>` +
+  // Plafond du grain par usage (spec Rendu et export, 5.9) : l'aperçu ouvert avec ?pour=courriel montre le grain du courriel.
+  const grains = Object.fromEntries(Object.entries(lireUsages().usages).filter(([, u]) => u.grainHz).map(([n, u]) => [n, u.grainHz]));
+  const script = `<script>window.__PM_APERCU__ = true; window.__PM_ERREURS__ = ${JSON.stringify(erreurs).replace(/</g, '\\u003c')}; window.__PM_GRAIN__ = ${JSON.stringify(grains)};</script>` +
     '\n<script src="/_pm/capture.js"></script>\n<script type="module" src="/_pm/export-ui.mjs"></script>' +
     '\n<script type="module" src="/_pm/studio.mjs"></script>' +
     '\n<script defer src="/_pm/atelier/expression.js"></script>\n<script defer src="/_pm/atelier/recette.js"></script>' +

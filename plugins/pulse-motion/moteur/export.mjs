@@ -2,26 +2,56 @@
  *
  * Servi par l'aperçu (/_pm/export.mjs), jamais embarqué dans la page livrée.
  * Dépend du moteur (global M : seek, modeCapture, capturer, duree, ips, donnees).
+ * Export par usage (spec Rendu et export, 5.1, 5.3, 5.7) : réglages résolus par l'aperçu (/_pm/usage, scripts/usages.json),
+ * définition, images par seconde, débit, image clé, mode de débit, accélération ; taille visée tenue par une seule
+ * reconversion (Conversion) si le fichier dépasse ; erreur de script d'une scène : arrêt avec la scène et l'instant (5.23).
+ * Couleurs (5.2, décision 16, mesurée sur la mire le 2026-11-10) : un canevas confié tel quel à l'encodeur sort étiqueté
+ * sRGB en pleine plage, et Chrome le relit jusqu'à ΔE00 2,6 de la page ; chaque image passe donc par une conversion maison
+ * en I420 BT.709 plage limitée (versI420), étiquetée comme dans la voie fidèle.
  */
 import {
-  Output, Mp4OutputFormat, BufferTarget, CanvasSource, AudioBufferSource, QUALITY_HIGH,
-  Input, BufferSource, ALL_FORMATS, CanvasSink, EncodedPacketSink, canEncodeVideo, canEncodeAudio,
+  Output, Mp4OutputFormat, BufferTarget, VideoSampleSource, VideoSample, AudioBufferSource,
+  Input, BufferSource, ALL_FORMATS, CanvasSink, EncodedPacketSink, Conversion, canEncodeVideo, canEncodeAudio,
 } from '/_pm/vendor/mediabunny.min.mjs';
 
 const M = globalThis.M;
+/** Horloge réelle, prise au chargement : en mode capture, performance.now suit le temps de la vidéo. */
+const horloge = performance.now.bind(performance);
 
-/** Taille de l'image exportée selon le format du déroulé. */
-export const TAILLES = { '16:9': [1920, 1080], '9:16': [1080, 1920], '1:1': [1080, 1080], '4:5': [1080, 1350] };
+/** Taille de l'image exportée selon la définition et le format du déroulé (les mêmes que la voie fidèle). */
+export const DEFINITIONS = {
+  '1080p': { '16:9': [1920, 1080], '9:16': [1080, 1920], '1:1': [1080, 1080], '4:5': [1080, 1350] },
+  '720p': { '16:9': [1280, 720], '9:16': [720, 1280], '1:1': [720, 720], '4:5': [720, 900] },
+  '540p': { '16:9': [960, 540], '9:16': [540, 960], '1:1': [540, 540], '4:5': [540, 676] },
+};
+export const TAILLES = DEFINITIONS['1080p'];
 const TAUX_AUDIO = 48000;
+/** Réglages de l'usage web, si l'aperçu ne les donne pas (bouton d'une page ancienne). */
+const WEB = { usage: 'web', definition: '1080p', ips: null, navigateur: { debit: 6000, gop: 2, mode: 'variable', latence: 'quality', acceleration: 'no-preference', codec: null, audio: 160 }, tailleMax: null };
 
-export function taille(ratio = M.donnees.format.ratio) {
-  return TAILLES[ratio] || TAILLES['16:9'];
+export function taille(ratio = M.donnees.format.ratio, definition = '1080p') {
+  const t = DEFINITIONS[definition] || DEFINITIONS['1080p'];
+  return t[ratio] || t['16:9'];
+}
+
+/** Scène montrée à l'instant t (celle qui entre pendant une transition). */
+function sceneA(t) {
+  const scenes = (M.minutage && M.minutage.scenes) || [];
+  let id = scenes.length ? scenes[0].id : null;
+  for (const s of scenes) if (s.debut <= t + 1e-9) id = s.id;
+  return id;
+}
+
+/** Erreur de script d'une scène (spec Rendu et export, 5.23), en français. */
+function erreurDeScript(t) {
+  const instant = String(Math.round(t * 10) / 10).replace('.', ',');
+  return new Error(`La scène « ${sceneA(t)} » a une erreur de script vers ${instant} s : l'export s'arrête, rien n'est écrit.`);
 }
 
 /** -> { video: bool, audio: bool } : ce que ce navigateur sait encoder. */
-export async function verifierSupport(largeur, hauteur) {
+export async function verifierSupport(largeur, hauteur, debit = 8e6) {
   if (typeof VideoEncoder === 'undefined') return { video: false, audio: false };
-  const video = await canEncodeVideo('avc', { width: largeur, height: hauteur, bitrate: 8e6 }).catch(() => false);
+  const video = await canEncodeVideo('avc', { width: largeur, height: hauteur, bitrate: debit }).catch(() => false);
   const audio = typeof AudioEncoder !== 'undefined' && await canEncodeAudio('aac', { numberOfChannels: 2, sampleRate: TAUX_AUDIO, bitrate: 192e3 }).catch(() => false);
   return { video, audio };
 }
@@ -38,16 +68,78 @@ function preparerScene(largeur, hauteur) {
   };
 }
 
+/** Espace de couleurs des images confiées à l'encodeur : celui de la voie fidèle. */
+const BT709 = { primaries: 'bt709', transfer: 'bt709', matrix: 'bt709', fullRange: false };
+
 /**
- * exporter({ surProgression?(n, total), signal? })
- * -> { buffer: ArrayBuffer, images, duree, largeur, hauteur, audio: bool, avertissement?, fondSombre: bool }
+ * Image RVBA (sRGB, alpha ignoré) -> I420 BT.709 plage limitée (Y 16–235, Cb et Cr 16–240 ; chrominance moyennée par
+ * blocs de 2 × 2). largeur et hauteur paires. Coefficients de la recommandation UIT-R BT.709 (Kr 0,2126, Kb 0,0722).
  */
-export async function exporter({ surProgression = () => {}, signal } = {}) {
-  const [largeur, hauteur] = taille();
-  const support = await verifierSupport(largeur, hauteur);
+export function versI420(rgba, largeur, hauteur, sortie = new Uint8Array(largeur * hauteur * 1.5)) {
+  const Y = sortie;
+  const U = largeur * hauteur;
+  const V = U + (largeur * hauteur) / 4;
+  const l2 = largeur / 2;
+  for (let y = 0; y < hauteur; y += 2) {
+    for (let x = 0; x < largeur; x += 2) {
+      let r = 0; let v = 0; let b = 0;
+      for (let dy = 0; dy < 2; dy++) {
+        for (let dx = 0; dx < 2; dx++) {
+          const i = ((y + dy) * largeur + x + dx) * 4;
+          const R = rgba[i]; const G = rgba[i + 1]; const B = rgba[i + 2];
+          Y[(y + dy) * largeur + x + dx] = Math.round(16 + (219 / 255) * (0.2126 * R + 0.7152 * G + 0.0722 * B));
+          r += R; v += G; b += B;
+        }
+      }
+      r /= 4; v /= 4; b /= 4;
+      const k = (y / 2) * l2 + x / 2;
+      sortie[U + k] = Math.round(128 + (224 / 255) * (-0.114572 * r - 0.385428 * v + 0.5 * b));
+      sortie[V + k] = Math.round(128 + (224 / 255) * (0.5 * r - 0.454153 * v - 0.045847 * b));
+    }
+  }
+  return sortie;
+}
+
+/** Réglages de l'encodeur vidéo (VideoSampleSource) d'un usage : débit, image clé, mode de débit, latence, accélération. */
+function configVideo(n, debit) {
+  return {
+    codec: 'avc', bitrate: Math.max(1, Math.round(debit * 1000)), keyFrameInterval: n.gop || 2,
+    bitrateMode: n.mode === 'constant' ? 'constant' : 'variable', latencyMode: n.latence === 'realtime' ? 'realtime' : 'quality',
+    hardwareAcceleration: n.acceleration || 'no-preference', ...(n.codec ? { fullCodecString: n.codec } : {}),
+  };
+}
+
+/** Taille visée (5.3, point 4) : une seule reconversion du tampon produit, au débit ramené à la taille, sans recapture. */
+async function reconvertir(buffer, { debit, octetsMax, gop }) {
+  const input = new Input({ source: new BufferSource(buffer), formats: ALL_FORMATS });
+  const output = new Output({ format: new Mp4OutputFormat({ fastStart: 'in-memory' }), target: new BufferTarget() });
+  const nouveau = Math.max(50, Math.floor(debit * (octetsMax / buffer.byteLength) * 0.95));
+  const conversion = await Conversion.init({ input, output, video: { codec: 'avc', bitrate: nouveau * 1000, keyFrameInterval: gop || 2, forceTranscode: true } });
+  if (!conversion.isValid) throw new Error('La version légère n\'a pas pu être recompressée dans ce navigateur.');
+  await conversion.execute();
+  return { buffer: output.target.buffer, debit: nouveau };
+}
+
+/**
+ * exporter({ surProgression?(n, total), signal?, reglages? })
+ * reglages : ceux de l'aperçu (/_pm/usage) : { usage, definition, ips, navigateur: { debit, gop, mode, latence, acceleration,
+ * codec, audio }, tailleMax } ; sans eux, l'usage web.
+ * -> { buffer: ArrayBuffer, images, duree, largeur, hauteur, audio: bool, avertissement?, fondSombre: bool, usage,
+ *      definition, ips, imagesParSeconde, finalesParSeconde, reprises }
+ */
+export async function exporter({ surProgression = () => {}, signal, reglages = WEB } = {}) {
+  const r = { ...WEB, ...(reglages || {}), navigateur: { ...WEB.navigateur, ...((reglages && reglages.navigateur) || {}) } };
+  const [largeur, hauteur] = taille(M.donnees.format.ratio, r.definition);
+  const n = { ...r.navigateur };
+  const support = await verifierSupport(largeur, hauteur, n.debit * 1000);
+  // Encodeur de la carte graphique demandé (brouillon) mais absent : l'encodeur du navigateur, sans le dire (5.7).
+  if (n.acceleration === 'prefer-hardware' && !(await canEncodeVideo('avc', { width: largeur, height: hauteur, bitrate: n.debit * 1000, hardwareAcceleration: 'prefer-hardware' }).catch(() => false))) {
+    n.acceleration = 'no-preference';
+  }
   if (!support.video) throw new Error('Ce navigateur ne sait pas encoder la vidéo (H.264) : ouvrez l\'aperçu dans Chrome ou Edge.');
   if (M.particules) await M.particules.verifierExport();
-  const ips = M.ips;
+  // --qualite et --ips priment (résolus par l'aperçu) ; sinon les images par seconde du déroulé.
+  const ips = r.ips || M.ips;
   const total = Math.round(M.duree * ips);
   const depart = M.temps();
   // Le son est le mixage de la page (le même que la lecture) ; illisible ou navigateur sans AAC : vidéo muette.
@@ -68,40 +160,76 @@ export async function exporter({ surProgression = () => {}, signal } = {}) {
   const fondSombre = luminanceCouleur(getComputedStyle(document.getElementById('pm-scene')).backgroundColor) < 24;
 
   const canvas = new OffscreenCanvas(largeur, hauteur);
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
   const output = new Output({ format: new Mp4OutputFormat({ fastStart: 'in-memory' }), target: new BufferTarget() });
-  const video = new CanvasSource(canvas, { codec: 'avc', bitrate: QUALITY_HIGH });
+  const video = new VideoSampleSource(configVideo(n, n.debit));
+  const i420 = new Uint8Array(largeur * hauteur * 1.5);
   output.addVideoTrack(video, { frameRate: ips });
   let pisteAudio = null;
   if (audio) {
-    pisteAudio = new AudioBufferSource({ codec: 'aac', bitrate: 192e3 });
+    pisteAudio = new AudioBufferSource({ codec: 'aac', bitrate: (n.audio || 160) * 1000 });
     output.addAudioTrack(pisteAudio);
   }
 
+  // Erreur de script d'une scène pendant l'export (5.23, point 2) : relevée, puis l'export s'arrête à l'image suivante.
+  let erreurScript = null;
+  // « ResizeObserver loop… » : avertissement du navigateur quand la scène change de taille, jamais une erreur de la vidéo.
+  const surErreur = (e) => { if (!/ResizeObserver/.test(String((e && (e.message || (e.reason && e.reason.message))) || ''))) erreurScript = true; };
+  window.addEventListener('error', surErreur);
+  window.addEventListener('unhandledrejection', surErreur);
   const remettre = preparerScene(largeur, hauteur);
   const stats = creerStats(largeur, hauteur);
   M.modeCapture(true);
+  const debut = horloge();
+  let finImages = debut;
   try {
     await output.start();
     if (pisteAudio) await pisteAudio.add(audio);
-    for (let n = 0; n < total; n++) {
+    for (let k = 0; k < total; k++) {
       if (signal && signal.aborted) throw new DOMException('Export annulé.', 'AbortError');
-      await M.seek(n / ips);
+      try {
+        await M.seek(k / ips);
+      } catch (e) {
+        throw erreurDeScript(k / ips);
+      }
       await M.capturer(ctx, largeur, hauteur);
-      await video.add(n / ips, 1 / ips);
+      if (erreurScript) throw erreurDeScript(k / ips);
+      versI420(ctx.getImageData(0, 0, largeur, hauteur).data, largeur, hauteur, i420);
+      const image = new VideoSample(i420, { format: 'I420', codedWidth: largeur, codedHeight: hauteur, timestamp: k / ips, duration: 1 / ips, colorSpace: BT709 });
+      try { await video.add(image); } finally { image.close(); }
       stats.ajouter(canvas);
-      surProgression(n + 1, total);
+      surProgression(k + 1, total);
     }
+    finImages = horloge();
     await output.finalize();
   } catch (e) {
     await output.cancel().catch(() => {});
     throw e;
   } finally {
+    window.removeEventListener('error', surErreur);
+    window.removeEventListener('unhandledrejection', surErreur);
     M.modeCapture(false);
     remettre();
     M.rendre(depart);
   }
-  return { buffer: output.target.buffer, images: total, duree: total / ips, largeur, hauteur, audio: !!audio, avertissement, fondSombre, stats: stats.finir() };
+  let buffer = output.target.buffer;
+  let reprises = 0;
+  // Taille visée : au-dessus, une seule reconversion ; encore au-dessus, échec sans fichier (5.3, points 4 et 5).
+  if (r.tailleMax && buffer.byteLength > r.tailleMax) {
+    reprises = 1;
+    buffer = (await reconvertir(buffer, { debit: n.debit, octetsMax: r.tailleMax, gop: n.gop })).buffer;
+    if (buffer.byteLength > r.tailleMax) {
+      const mo = (x) => String(Math.round((x / 1e6) * 10) / 10).replace('.', ',');
+      throw new Error(`La version courriel fait ${mo(buffer.byteLength)} Mo, au-dessus des ${mo(r.tailleMax)} Mo demandés : je peux viser ${Math.ceil((buffer.byteLength / 1e6) * 1.1)} Mo, ou exporter une seule scène.`);
+    }
+  }
+  const secondes = Math.max(0.001, (finImages - debut) / 1000);
+  const finales = Math.max(0, (horloge() - finImages) / 1000);
+  return {
+    buffer, images: total, duree: total / ips, largeur, hauteur, audio: !!audio, avertissement, fondSombre, stats: stats.finir(),
+    usage: r.usage, definition: r.definition, ips, reprises,
+    imagesParSeconde: Math.round((total / secondes) * 10) / 10, finalesParSeconde: Math.round((finales / (total / ips)) * 1000) / 1000,
+  };
 }
 
 /** Largeur des vignettes en gris (la même que la voie fidèle, scripts/lib/ffmpeg.js LARGEUR_STATS). */
@@ -182,6 +310,12 @@ export async function relire(buffer, { images: attendues, ips, fondSombre = fals
   const input = new Input({ source: new BufferSource(buffer), formats: ALL_FORMATS });
   const duree = await input.computeDuration();
   const piste = await input.getPrimaryVideoTrack();
+  // Espace de couleurs écrit dans la piste (spec Rendu et export, 5.2 point 2) : rapporté, mesuré par la mire.
+  let couleurs = null;
+  try {
+    const c = await piste.getColorSpace();
+    couleurs = c ? { primaires: c.primaries || null, transfert: c.transfer || null, matrice: c.matrix || null, pleinePlage: c.fullRange === undefined ? null : c.fullRange } : null;
+  } catch { couleurs = null; }
   let images = 0;
   for await (const paquet of new EncodedPacketSink(piste).packets()) { if (paquet) images++; }
   const vignettes = new CanvasSink(piste, { width: 160, poolSize: 1 });
@@ -194,14 +328,14 @@ export async function relire(buffer, { images: attendues, ips, fondSombre = fals
   if (Math.abs(duree - attendues / ips) > 1 / ips + 0.05) erreurs.push(`durée ${duree.toFixed(2)} s au lieu de ${(attendues / ips).toFixed(2)} s.`);
   if (premiereNoire && !fondSombre) erreurs.push('la première image est noire.');
   if (derniereNoire && !fondSombre) erreurs.push('la dernière image est noire.');
-  return { ok: erreurs.length === 0, duree, images, premiereNoire, derniereNoire, erreurs };
+  return { ok: erreurs.length === 0, duree, images, premiereNoire, derniereNoire, erreurs, couleurs };
 }
 
-/** Envoie le MP4 relu à l'aperçu, qui l'écrit dans sortie/. -> { fichier } */
-export async function envoyer(buffer, relecture) {
+/** Envoie le MP4 relu à l'aperçu, qui l'écrit dans sortie/<nom> (nom : celui de l'usage, vérifié par l'aperçu). -> { fichier } */
+export async function envoyer(buffer, relecture, nom) {
   const reponse = await fetch('/_pm/export', {
     method: 'POST',
-    headers: { 'Content-Type': 'video/mp4', 'X-PM-Relecture': encodeURIComponent(JSON.stringify(relecture)) },
+    headers: { 'Content-Type': 'video/mp4', 'X-PM-Relecture': encodeURIComponent(JSON.stringify(relecture)), ...(nom ? { 'X-PM-Nom': encodeURIComponent(nom) } : {}) },
     body: buffer,
   });
   const corps = await reponse.json().catch(() => ({}));

@@ -137,7 +137,7 @@ window.PULSE_WIKI = {
     {
       "nom": "exporter",
       "etape": "exporter",
-      "description": "Exporter la vidéo en MP4 fidèle (vraies images du navigateur, son propre), fabriqué sur l'ordinateur, pour la publier ou l'envoyer",
+      "description": "Exporter la vidéo en MP4 réglé pour son usage (web, réseaux, présentation, master, courriel, brouillon), fabriqué sur l'ordinateur, pour la publier ou l'envoyer",
       "forme": "",
       "note": ""
     },

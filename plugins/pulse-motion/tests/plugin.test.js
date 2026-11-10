@@ -54,6 +54,8 @@ test('les commandes pulse-motion citées existent, avec les références et scè
       if (m[1].includes('<')) continue;
       // Le dictionnaire de mouvements est rendu depuis sa source JSON.
       if (m[1] === 'mouvements') { assert.ok(fs.existsSync(path.join(RACINE, 'references', 'mouvements', 'mouvements.json')), `${f} : dictionnaire absent`); continue; }
+      // Les usages d'export aussi (scripts/usages.json, spec Rendu et export 5.4).
+      if (m[1] === 'usages') { assert.ok(fs.existsSync(path.join(RACINE, 'scripts', 'usages.json')), `${f} : usages.json absent`); continue; }
       assert.ok(fs.existsSync(path.join(RACINE, 'references', `${m[1]}.md`)), `${f} : référence « ${m[1]} » absente`);
     }
     for (const m of texte.matchAll(/pulse-motion consignes ([a-z0-9-]+)/g)) {
@@ -698,4 +700,52 @@ test('plugin.test.js › tour de corrections après la critique borné : défaut
   assert.equal(SEUILS.critiqueScenesMax, 3);
   assert.equal(SEUILS.critiqueCorrige, undefined);
   assert.match(lire('references', 'controles.md'), /3 scènes \(`critiqueScenesMax`\) au plus/);
+});
+
+// --- Spec Rendu et export (S5), jalon 1 : skill exporter, mentions de tiers ---------------------------------------------
+
+test('plugin.test.js › le skill exporter cite les six usages, sans mot interdit (CRF, débit, codec, BT.709, ProRes)', () => {
+  const s = lire('skills', 'exporter', 'SKILL.md');
+  for (const u of ['web', 'reseaux', 'presentation', 'master', 'courriel', 'brouillon']) assert.match(s, new RegExp(`\`${u}\``), u);
+  assert.doesNotMatch(s, /\bCRF\b|débit|\bcodec\b|BT\.?709|ProRes/i);
+  assert.match(s, /`pulse-motion reference usages`/);
+  assert.match(s, /--pour <usage>/);
+  assert.match(s, /--estimer/);
+  assert.match(s, /--taille-max 20/);
+  // La référence des usages, rendue depuis usages.json, ne dit pas non plus de mot technique à la personne.
+  const { tableauUsages } = require('../scripts/lib/usages.js');
+  assert.doesNotMatch(tableauUsages().split('\n').filter((l) => l.startsWith('| `')).join('\n'), /\bCRF\b|débit|\bcodec\b|BT\.?709|ProRes/i);
+});
+
+test('plugin.test.js › AskUserQuestion du skill exporter : quatre options au plus, le web recommandé', () => {
+  const s = lire('skills', 'exporter', 'SKILL.md');
+  const ligne = s.split('\n').find((l) => l.includes('« Pour le web (Recommandé) »'));
+  assert.ok(ligne, 'question des usages');
+  const question = ligne.slice(ligne.indexOf('`AskUserQuestion`'));
+  const options = question.slice(0, question.indexOf(' ; ')).match(/« [^»]+ »/g);
+  assert.deepEqual(options, ['« Pour le web (Recommandé) »', '« Pour les réseaux sociaux »', '« Pour l\'envoyer par courriel »', '« Pour la projeter en réunion »']);
+  assert.ok(options.length <= 4);
+  // Vidéo 9:16 ou sociale : les réseaux en premier (décision 13).
+  assert.match(ligne, /9:16 ou de genre `social` : « Pour les réseaux sociaux \(Recommandé\) » en premier/);
+  // Seulement si la demande ne dit pas l'usage.
+  assert.match(ligne, /Si la demande ne le dit pas, `AskUserQuestion`/);
+});
+
+test('plugin.test.js › THIRD-PARTY-NOTICES.md cite Mediabunny (MPL-2.0) et chaque dépôt traduit de près par S5 ; fichiers racine et plugin identiques', () => {
+  const plugin = lire('THIRD-PARTY-NOTICES.md');
+  const racine = fs.readFileSync(path.join(RACINE, '..', '..', 'THIRD-PARTY-NOTICES.md'), 'utf8');
+  assert.equal(racine, plugin);
+  const section = (nom) => { const i = plugin.indexOf(`\n## ${nom}\n`); assert.ok(i >= 0, nom); const j = plugin.indexOf('\n## ', i + 4); return plugin.slice(i, j < 0 ? undefined : j); };
+  assert.match(section('Mediabunny'), /MPL-2\.0/);
+  assert.match(section('Mediabunny'), /1\.61\.3/);
+  assert.match(section('Mediabunny'), /non modifié/);
+  assert.match(section('argo'), /Copyright \(c\) 2026 Shreyas Karnik/);
+  assert.match(section('argo'), /usages\.json/);
+  assert.match(section('argo'), /detecterEncodeurs/);
+  assert.match(section('reanimate'), /out_color_matrix=bt709:out_range=tv/);
+  assert.match(section('video-director'), /usages\.json/);
+  assert.match(section('take-one'), /usages\.json/);
+  assert.match(section('Lemo-Opuscar'), /core\/render\/video\.mjs/);
+  // Aucune mention de huashu (idées seulement, par S10) ni d'anidoodle comme source.
+  assert.doesNotMatch(plugin, /huashu/i);
 });

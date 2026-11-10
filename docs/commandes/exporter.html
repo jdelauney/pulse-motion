@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>/pulse-motion:exporter – Wiki Pulse Motion</title>
-<meta name="description" content="Exporter la vidéo en MP4 fidèle (vraies images du navigateur, son propre), fabriqué sur l'ordinateur, pour la publier ou l'envoyer.">
+<meta name="description" content="Exporter la vidéo en MP4 réglé pour son usage (web, réseaux, présentation, master, courriel, brouillon), fabriqué sur l'ordinateur, pour la publier ou l'envoyer.">
 <link rel="stylesheet" href="../css/base.css">
 <link rel="stylesheet" href="../css/animations.css">
 <script src="../js/donnees.js" defer></script>
@@ -21,7 +21,7 @@
 <header class="entete-page">
 <p class="pastille pastille-etape" data-couleur="4">Étape 3 · Exporter</p>
 <h1><code>/pulse-motion:exporter</code></h1>
-<p class="chapo">Exporter la vidéo en MP4 fidèle (vraies images du navigateur, son propre), fabriqué sur l'ordinateur, pour la publier ou l'envoyer.</p>
+<p class="chapo">Exporter la vidéo en MP4 réglé pour son usage (le web, les réseaux sociaux, une réunion, un monteur, un courriel), fabriqué sur l'ordinateur, pour la publier ou l'envoyer.</p>
 </header>
 
 <ul class="sommaire" aria-label="Sur cette page" data-sommaire></ul>
@@ -29,15 +29,35 @@
 <section id="description">
 <h2>Description</h2>
 <p>La page animée se regarde dans un navigateur ; le fichier <strong>MP4</strong>, lui, se publie partout : réseaux sociaux, plateforme de formation, courriel, YouTube. Cette commande le fabrique sur votre ordinateur, sans rien envoyer en ligne.</p>
-<p>Elle prend la vidéo <strong>telle qu'elle est</strong> : elle ne modifie rien. Elle la contrôle d'abord, puis choisit la meilleure façon d'exporter :</p>
+<p>Elle prend la vidéo <strong>telle qu'elle est</strong> : elle ne modifie rien. Vous dites à quoi sert la vidéo (« pour LinkedIn », « pour l'envoyer par courriel ») et Pulse Motion choisit les réglages : la taille de l'image, sa netteté, le poids du fichier. Elle contrôle d'abord la vidéo, puis choisit la meilleure façon d'exporter :</p>
 <table>
 <thead><tr><th>Mode</th><th>Quand</th><th>Ce que vous obtenez</th></tr></thead>
 <tbody>
-<tr><td><strong>Export fidèle</strong></td><td>ffmpeg est installé (Pulse Motion vous le propose une fois)</td><td>Les vraies images du navigateur, image par image, et le son au bon niveau, vérifié. Environ 2 secondes de calcul par seconde de vidéo en 1080p.</td></tr>
+<tr><td><strong>Export fidèle</strong></td><td>ffmpeg est installé (Pulse Motion vous le propose une fois)</td><td>Les vraies images du navigateur, image par image, et le son au bon niveau, vérifié. Le temps dépend de l'usage (voir le tableau ci-dessous).</td></tr>
 <tr><td><strong>Export dans le navigateur</strong></td><td>Sans ffmpeg, ou si vous refusez de l'installer</td><td>Un MP4 fabriqué directement dans Chrome ou Edge, sans rien installer. Quelques effets avancés y sont moins bien rendus.</td></tr>
 </tbody>
 </table>
-<p>Les deux exports ont <strong>exactement le même son</strong> que l'aperçu : la musique, la voix et les bruitages sont mélangés une seule fois, dans la page, et ramenés au niveau des plateformes de diffusion.</p>
+<p>Les deux exports ont <strong>exactement le même son</strong> que l'aperçu : la musique, la voix et les bruitages sont mélangés une seule fois, dans la page, et ramenés au niveau des plateformes de diffusion. Les <strong>couleurs</strong> de la vidéo sont celles de la page, dans les lecteurs courants (Chrome, Safari, VLC, PowerPoint).</p>
+</section>
+
+<section id="usages">
+<h2>Les usages</h2>
+<p>Chaque usage donne son propre fichier : exporter pour le courriel n'écrase pas la version pour le web. Poids et temps mesurés sur les deux vidéos témoins (une minute et trois minutes) avec un ordinateur de bureau récent ; comptez davantage sur un portable.</p>
+<!-- usages:debut (écrit depuis plugins/pulse-motion/scripts/usages.json, mesures comprises) -->
+<table>
+<thead><tr><th>Usage</th><th>Pour quoi faire</th><th>Ce qui change à l'image</th><th>Poids</th><th>Temps d'export</th><th>Fichiers joints</th><th>Exige ffmpeg</th></tr></thead>
+<tbody>
+<tr data-usage="web"><td><strong>Pour le web</strong></td><td>site, YouTube, intranet, plateforme de formation</td><td>la qualité de référence, celle de l'aperçu</td><td>environ 5,1 Mo par minute</td><td>environ 1 min 19 s par minute de vidéo</td><td>sous-titres</td><td>non</td></tr>
+<tr data-usage="reseaux"><td><strong>Pour les réseaux sociaux</strong></td><td>LinkedIn, Instagram, TikTok, YouTube Shorts</td><td>un peu plus nette que pour le web, pour résister à la recompression des plateformes</td><td>environ 7,2 Mo par minute</td><td>environ 1 min 17 s par minute de vidéo</td><td>sous-titres</td><td>non</td></tr>
+<tr data-usage="presentation"><td><strong>Pour la projeter en réunion</strong></td><td>vidéoprojecteur, PowerPoint, Keynote, salon</td><td>très nette, lue par les logiciels de présentation, 30 images par seconde</td><td>environ 7,5 Mo par minute</td><td>environ 1 min 17 s par minute de vidéo</td><td>aucun</td><td>non</td></tr>
+<tr data-usage="master"><td><strong>Pour archiver ou confier à un monteur</strong></td><td>la meilleure qualité, à garder ou à retravailler</td><td>la plus fidèle possible, à retravailler sans perte visible</td><td>environ 6,8 Mo par minute</td><td>environ 1 min 17 s par minute de vidéo</td><td>sous-titres</td><td>non</td></tr>
+<tr data-usage="courriel"><td><strong>Pour l'envoyer par courriel</strong></td><td>pièce jointe, messagerie (WhatsApp, Teams)</td><td>plus petite (720p ou 540p selon la durée), grain renouvelé moins souvent ; tient sous la taille annoncée</td><td>moins de 10 Mo en tout (vidéo de 2 min 52 s au plus)</td><td>environ 1 min 23 s par minute de vidéo</td><td>aucun</td><td>non</td></tr>
+<tr data-usage="brouillon"><td><strong>Version de travail</strong></td><td>vérifier vite une longue vidéo, jamais pour publier</td><td>petite (540p), 30 images par seconde au plus, grain renouvelé moins souvent</td><td>environ 2,5 Mo par minute</td><td>environ 1 min 7 s par minute de vidéo</td><td>aucun</td><td>non</td></tr>
+</tbody>
+</table>
+<!-- usages:fin -->
+<p>Après un premier export, un autre usage ne refait aucune image : il repart des images déjà capturées. La version pour le courriel vise moins de 10 Mo (ou la taille que vous dites, « moins de 25 Mo pour Teams ») ; si la vidéo est trop longue pour tenir, Pulse Motion vous le dit avant de commencer, avec la taille qu'il faudrait. La version de travail est faite vite, par la carte graphique quand elle sait le faire : elle sert à vérifier, jamais à publier.</p>
+<p>Dans l'aperçu, le bouton <strong>MP4</strong> de la barre de lecture propose quatre usages : Web, Réseaux, Présentation, Courriel.</p>
 </section>
 
 <section id="pourquoi">
@@ -72,12 +92,18 @@
 <table>
 <thead><tr><th>Vous dites</th><th>Pulse Motion exporte</th></tr></thead>
 <tbody>
-<tr><td>(rien)</td><td>En 1080p, 30 images par seconde.</td></tr>
-<tr><td>« une version plus légère, pour un courriel »</td><td>En 720p : un fichier plus petit.</td></tr>
+<tr><td>(rien)</td><td>Il vous demande à quoi sert la vidéo : pour le web (recommandé), les réseaux sociaux, un courriel ou une réunion. Une vidéo verticale ou faite pour les réseaux propose d'abord les réseaux.</td></tr>
+<tr><td>« pour YouTube », « pour mon site », « pour notre plateforme de formation »</td><td>Pour le web : la qualité de l'aperçu.</td></tr>
+<tr><td>« pour LinkedIn », « pour Instagram »</td><td>Pour les réseaux sociaux : un peu plus nette, pour résister à la recompression des plateformes.</td></tr>
+<tr><td>« pour la projeter », « pour PowerPoint »</td><td>Pour la présentation : très nette, lue par PowerPoint et Keynote.</td></tr>
+<tr><td>« pour mon monteur », « la meilleure qualité »</td><td>Le master : le fichier le plus fidèle, à retravailler.</td></tr>
+<tr><td>« par courriel », « moins de 20 Mo »</td><td>Une version légère, qui tient sous la taille dite (10 Mo sans précision).</td></tr>
+<tr><td>« vite fait, juste pour vérifier »</td><td>Une version de travail, petite et rapide, à ne pas publier.</td></tr>
 <tr><td>« plus fluide »</td><td>En 60 images par seconde. L'export prend deux fois plus de temps.</td></tr>
 <tr><td>« une version de travail avec la voix de l'ordinateur »</td><td>Avec la voix provisoire, seulement si vous le demandez.</td></tr>
 </tbody>
 </table>
+<p>Avant de lancer, Pulse Motion vous dit combien de temps cela prendra ; pendant l'export, il suit le temps restant.</p>
 </section>
 
 <section id="produit">
@@ -85,12 +111,13 @@
 <table>
 <thead><tr><th>Fichier</th><th>À quoi il sert</th></tr></thead>
 <tbody>
-<tr><td><code>sortie/&lt;titre&gt;.mp4</code></td><td>La vidéo à publier ou à envoyer. Le titre y est écrit en minuscules, sans accents ni espaces : « La chaîne du froid » donne <code>la-chaine-du-froid.mp4</code>.</td></tr>
+<tr><td><code>sortie/&lt;titre&gt;.mp4</code></td><td>La vidéo pour le web, à publier ou à envoyer. Le titre y est écrit en minuscules, sans accents ni espaces : « La chaîne du froid » donne <code>la-chaine-du-froid.mp4</code>.</td></tr>
+<tr><td><code>sortie/&lt;titre&gt;-&lt;usage&gt;.mp4</code></td><td>Les autres usages, chacun son fichier : <code>-reseaux</code>, <code>-presentation</code>, <code>-master</code>, <code>-courriel</code>, <code>-brouillon</code>.</td></tr>
 <tr><td><code>sortie/&lt;titre&gt;.html</code></td><td>La page animée, déjà là : elle s'ouvre sans connexion, à déposer sur votre site.</td></tr>
 <tr><td><code>sortie/&lt;titre&gt;.srt</code> et <code>.vtt</code></td><td>Avec des sous-titres : à joindre sur YouTube, LinkedIn ou une plateforme de formation.</td></tr>
 </tbody>
 </table>
-<p>Pulse Motion termine par un résumé : la durée, le son (ou « muette »), et le mode d'export.</p>
+<p>Pulse Motion termine par un résumé : l'usage, la durée, le poids du fichier, le son (ou « muette »), le mode d'export, et chaque fichier avec son rôle.</p>
 </section>
 
 <section id="risques">
@@ -99,7 +126,8 @@
 <li><strong>Les erreurs passent d'abord.</strong> S'il reste des erreurs, Pulse Motion vous les dit simplement et propose de les corriger d'abord avec <a href="retoucher.html"><code>/pulse-motion:retoucher</code></a>. Les simples alertes n'empêchent pas l'export : il vous les mentionne en une phrase.</li>
 <li><strong>La voix provisoire est refusée.</strong> Si une scène parle encore avec la voix de l'ordinateur, Pulse Motion vous propose d'enregistrer d'abord votre voix. Il exporte avec la voix provisoire seulement si vous choisissez « une version de travail ».</li>
 <li><strong>ffmpeg n'est installé qu'avec votre accord</strong>, et seulement avec la commande officielle de votre système (winget sous Windows, Homebrew sous macOS).</li>
-<li><strong>Aucun fichier incomplet.</strong> Si l'export échoue, aucun MP4 à moitié écrit ne reste dans <code>sortie/</code>.</li>
+<li><strong>Aucun fichier incomplet.</strong> Si l'export échoue, aucun MP4 à moitié écrit ne reste dans <code>sortie/</code>. Une version pour le courriel qui dépasserait la taille annoncée n'est jamais écrite.</li>
+<li><strong>Une scène en erreur arrête l'export.</strong> Si le script d'une scène échoue pendant l'export, Pulse Motion s'arrête et vous dit laquelle, et vers quel instant.</li>
 </ul>
 <aside class="encadre encadre-attention"><p><strong>Attention :</strong> un flash de plus de trois fois par seconde sur une grande partie de l'image est une <strong>erreur</strong>, pas une alerte : il peut déclencher une crise d'épilepsie. Pulse Motion vous propose de l'adoucir avant d'exporter.</p></aside>
 </section>
@@ -110,7 +138,8 @@
 <details class="probleme"><summary>La vidéo est exportée muette, ou sans la musique</summary><p>Un fichier son était illisible. Pulse Motion vous le dit dans un avertissement : la vidéo est exportée sans la source abîmée. Redonnez le fichier (musique ou voix), puis relancez l'export.</p></details>
 <details class="probleme"><summary>L'export a été fait « dans le navigateur » alors que je voulais l'export fidèle</summary><p>ffmpeg n'était pas installé, ou sa version est trop ancienne. Pulse Motion vous propose de l'installer pour la prochaine fois. Voir <a href="../prerequis.html#ffmpeg">ffmpeg</a>.</p></details>
 <details class="probleme"><summary>L'export s'est arrêté au milieu</summary><p>Relancez simplement <code>/pulse-motion:exporter</code> : les parties déjà faites sont reprises.</p></details>
-<details class="probleme"><summary>Le fichier est trop lourd pour un courriel</summary><p>Relancez en demandant « une version plus légère » : l'export passe en 720p.</p></details>
+<details class="probleme"><summary>Le fichier est trop lourd pour un courriel</summary><p>Demandez « une version pour l'envoyer par courriel » : elle tient sous 10 Mo, ou sous la taille que vous dites. Si la vidéo est trop longue, Pulse Motion vous propose une taille plus grande ou une seule scène.</p></details>
+<details class="probleme"><summary>« Un export de cette vidéo est déjà en cours »</summary><p>Un autre export de la même vidéo tourne encore (le message dit depuis quelle heure) : attendez sa fin, puis relancez.</p></details>
 </section>
 
 <section id="exemples">
@@ -123,9 +152,12 @@ ffmpeg est un petit logiciel libre qui fabrique la vidéo en haute qualité, ave
 → Installer ffmpeg (Recommandé) / Exporter sans, dans le navigateur</p>
 <p data-role="vous">Installer ffmpeg</p>
 <p data-role="outil">winget install --id Gyan.FFmpeg -e --accept-source-agreements --accept-package-agreements</p>
-<p data-role="outil">pulse-motion exporter .</p>
-<p data-role="claude">✅ Fait : la vidéo « La chaîne du froid » est exportée en MP4 (1 min 04, avec le son, export fidèle).
-📄 Fichiers : sortie/la-chaine-du-froid.mp4, la page animée et les sous-titres .srt et .vtt.</p>
+<p data-role="claude">À quoi va servir la vidéo ?
+→ Pour le web (Recommandé) / Pour les réseaux sociaux / Pour l'envoyer par courriel / Pour la projeter en réunion</p>
+<p data-role="vous">Pour le web</p>
+<p data-role="outil">pulse-motion exporter . --pour web</p>
+<p data-role="claude">✅ Fait : la vidéo « La chaîne du froid » est exportée en MP4 pour le web (1 min 04, avec le son, export fidèle).
+📄 Fichiers : sortie/la-chaine-du-froid.mp4 (à publier), la page animée et les sous-titres .srt et .vtt.</p>
 </div>
 <div class="conversation" data-titre="Exemple : la voix n'est pas encore enregistrée">
 <p data-role="vous">/pulse-motion:exporter</p>

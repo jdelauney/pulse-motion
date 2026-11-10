@@ -1,8 +1,13 @@
 'use strict';
 /* Pulse Motion – routes d'export de l'aperçu : modules du navigateur, réception du MP4 et de la planche.
  *
- *   GET  /_pm/capture.js, /_pm/export.mjs, /_pm/export-ui.mjs, /_pm/vendor/mediabunny.min.mjs
- *   POST /_pm/export           (video/mp4, en-tête X-PM-Relecture) → sortie/<titre>.mp4
+ *   GET  /_pm/capture.js, /_pm/export.mjs, /_pm/export-ui.mjs, /_pm/estimation.js, /_pm/vendor/mediabunny.min.mjs
+ *   GET  /_pm/usages.json      usages d'export (scripts/usages.json : noms, réglages)
+ *   GET  /_pm/usage?pour=&qualite=&ips=&taille=   réglages effectifs d'un export (lib/usages.js, comme la voie fidèle),
+ *                              nom du fichier compris ; { erreur } si l'usage est inconnu ou la taille impossible
+ *   POST /_pm/export           (video/mp4, video/webm ou image/gif ; en-têtes X-PM-Relecture et X-PM-Nom) → sortie/<nom>
+ *                              (X-PM-Nom vérifié par son motif et le slug du titre ; sans lui, sortie/<titre>.mp4)
+ *   POST /_pm/couverture       (image/jpeg) → sortie/<titre>-couverture.jpg
  *   POST /_pm/export-etat      (JSON) → sortie/export.json (suivi par « pulse-motion exporter »)
  *   POST /_pm/export-stats     (JSON) → sortie/.export/stats-navigateur.json (statistiques image par image, analysées à la
  *                              réception de la vidéo : sortie/verification.json)
@@ -17,18 +22,36 @@ const { lireDeroule } = require('./deroule.js');
 const { slug } = require('../assembler.js');
 const { ecrireAtomique, ecrireJSON } = require('./fichiers.js');
 const { verifierNavigateur, resume } = require('./verification.js');
+const U = require('./usages.js');
+const { dureeVideo } = require('./voix.js');
 
 const RACINE = path.resolve(__dirname, '..', '..');
 const STATIQUES = {
   '/_pm/capture.js': path.join(RACINE, 'moteur', 'capture.js'),
   '/_pm/export.mjs': path.join(RACINE, 'moteur', 'export.mjs'),
   '/_pm/export-ui.mjs': path.join(RACINE, 'moteur', 'export-ui.mjs'),
+  '/_pm/estimation.js': path.join(RACINE, 'moteur', 'estimation.js'),
   '/_pm/vendor/mediabunny.min.mjs': path.join(RACINE, 'vendor', 'mediabunny', 'mediabunny.min.mjs'),
 };
 const MAX_VIDEO = 4 * 1024 ** 3;
 const MAX_IMAGE = 20 * 1024 ** 2;
 const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 const NOM_IMAGE = /^\/_pm\/planche\/([a-z0-9-]+)\.png$/;
+const JPEG = Buffer.from([0xff, 0xd8, 0xff]);
+/** Noms des fichiers envoyés par la page (spec Rendu et export, 5.6) : usage, scène ou passage seul, extension. */
+const MOTIF_NOM = /^[a-z0-9-]+(-de-[0-9,]+s-a-[0-9,]+s)?\.(mp4|webm|gif)$/;
+const TYPE_DE_L_EXTENSION = { mp4: 'video/mp4', webm: 'video/webm', gif: 'image/gif' };
+
+/** Nom demandé par la page (en-tête X-PM-Nom), ou celui de l'usage web par défaut. -> { nom } | { erreur } */
+function nomDemande(req, titre) {
+  const base = slug(titre || 'video');
+  const brut = req.headers['x-pm-nom'];
+  if (brut === undefined) return { nom: `${base}.mp4` };
+  let nom;
+  try { nom = decodeURIComponent(String(brut)); } catch { return { erreur: 'Nom de fichier illisible.' }; }
+  if (!MOTIF_NOM.test(nom) || !(nom.startsWith(`${base}.`) || nom.startsWith(`${base}-`))) return { erreur: `Nom de fichier refusé : « ${nom} ».` };
+  return { nom };
+}
 
 function repondre(res, statut, corps) {
   res.writeHead(statut, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -71,15 +94,18 @@ function creerRoutesExport(projet, { optionsAssemblage = {} } = {}) {
   }
 
   function recevoirVideo(req, res) {
-    if (!typeEst(req, 'video/mp4')) return repondre(res, 415, { message: 'Vidéo MP4 attendue.' });
+    const { deroule } = lireDeroule(projet);
+    const demande = nomDemande(req, deroule && deroule.titre);
+    if (demande.erreur) return repondre(res, 400, { message: demande.erreur });
+    const { nom } = demande;
+    const extension = nom.slice(nom.lastIndexOf('.') + 1);
+    if (!typeEst(req, TYPE_DE_L_EXTENSION[extension])) return repondre(res, 415, { message: `Fichier ${extension.toUpperCase()} attendu.` });
     let relecture;
     try { relecture = JSON.parse(decodeURIComponent(req.headers['x-pm-relecture'] || '')); } catch {
       return repondre(res, 400, { message: 'Relecture de la vidéo absente.' });
     }
     if (envoiEnCours) return repondre(res, 409, { message: 'Une vidéo est déjà en cours d\'enregistrement : attendez la fin de l\'export précédent.' });
     envoiEnCours = true;
-    const { deroule } = lireDeroule(projet);
-    const nom = `${slug(deroule && deroule.titre ? deroule.titre : 'video')}.mp4`;
     // Nom unique : un envoi interrompu ne peut pas se mélanger avec le suivant.
     const partiel = path.join(sortie, `.${nom}.${process.pid}-${Date.now()}.part`);
     let flux = null;
@@ -115,7 +141,8 @@ function creerRoutesExport(projet, { optionsAssemblage = {} } = {}) {
           const fd = fs.openSync(partiel, 'r');
           fs.readSync(fd, debut, 0, 8, 0);
           fs.closeSync(fd);
-          if (debut.toString('latin1', 4, 8) !== 'ftyp') return echec(422, 'Le fichier reçu n\'est pas une vidéo MP4.');
+          const signatures = { mp4: debut.toString('latin1', 4, 8) === 'ftyp', webm: debut.readUInt32BE(0) === 0x1a45dfa3, gif: debut.toString('latin1', 0, 4) === 'GIF8' };
+          if (!signatures[extension]) return echec(422, `Le fichier reçu n'est pas un fichier ${extension.toUpperCase()}.`);
           if (!relecture || relecture.ok !== true) {
             return echec(422, `La relecture de la vidéo a échoué : ${(relecture && relecture.erreurs || []).join(' ') || 'raison inconnue'}`);
           }
@@ -130,9 +157,14 @@ function creerRoutesExport(projet, { optionsAssemblage = {} } = {}) {
             fs.rmSync(fichierStats, { force: true });
             verification = resume(verifierNavigateur({ projet, stats, fichier, optionsAssemblage }));
           } catch { verification = undefined; }
+          const nombre = (x) => (Number.isFinite(Number(x)) ? Number(x) : undefined);
           ecrireEtatExport({
             etat: 'fini', fichier, octets: taille, duree: relecture.duree, images: relecture.images, audio: !!relecture.audio,
             avertissement: relecture.avertissement ? String(relecture.avertissement) : undefined, verification,
+            usage: typeof relecture.usage === 'string' ? relecture.usage : undefined,
+            definition: typeof relecture.definition === 'string' ? relecture.definition : undefined,
+            ips: nombre(relecture.ips), imagesParSeconde: nombre(relecture.imagesParSeconde), finalesParSeconde: nombre(relecture.finalesParSeconde),
+            couleurs: relecture.couleurs && typeof relecture.couleurs === 'object' ? relecture.couleurs : undefined,
           });
           fini = true;
           envoiEnCours = false;
@@ -181,6 +213,36 @@ function creerRoutesExport(projet, { optionsAssemblage = {} } = {}) {
     });
   }
 
+  /** Couverture JPEG (jalon 2 de la spec Rendu et export) -> sortie/<titre>-couverture.jpg. */
+  function recevoirCouverture(req, res) {
+    if (!typeEst(req, 'image/jpeg')) return repondre(res, 415, { message: 'Image JPEG attendue.' });
+    const morceaux = [];
+    let taille = 0;
+    req.on('data', (m) => { taille += m.length; if (taille > MAX_IMAGE) req.destroy(); else morceaux.push(m); });
+    req.on('end', () => {
+      const image = Buffer.concat(morceaux);
+      if (!image.subarray(0, 3).equals(JPEG)) return repondre(res, 422, { message: 'Le fichier reçu n\'est pas une image JPEG.' });
+      const { deroule } = lireDeroule(projet);
+      const nom = `${slug(deroule && deroule.titre ? deroule.titre : 'video')}-couverture.jpg`;
+      try {
+        ecrireAtomique(path.join(sortie, nom), image);
+      } catch (e) {
+        return repondre(res, 500, { message: `La couverture n'a pas pu être enregistrée : ${e.message}.` });
+      }
+      return repondre(res, 200, { fichier: `sortie/${nom}` });
+    });
+  }
+
+  /** Réglages effectifs d'un export, résolus comme dans la voie fidèle (même module, même déroulé). */
+  function usageResolu(res, url) {
+    const { deroule, erreurs } = lireDeroule(projet);
+    if (erreurs && erreurs.length) return repondre(res, 400, { erreur: `Le déroulé contient des erreurs : ${erreurs.join(' ')}` });
+    const p = (k) => { const v = url.searchParams.get(k); return v === null || v === '' ? undefined : v; };
+    const u = U.resoudreUsage({ pour: p('pour'), qualite: p('qualite'), ips: p('ips'), tailleMax: p('taille'), deroule, duree: dureeVideo(projet, deroule) });
+    if (u.erreur) return repondre(res, 400, { erreur: u.erreur });
+    return repondre(res, 200, { ...u, nomFichier: U.nomFichier(slug(deroule.titre || 'video'), u.usage) });
+  }
+
   async function terminerPlanche(req, res) {
     if (!typeEst(req, 'application/json')) return repondre(res, 415, { message: 'JSON attendu.' });
     try {
@@ -196,6 +258,8 @@ function creerRoutesExport(projet, { optionsAssemblage = {} } = {}) {
   }
 
   return function routes(req, res, url) {
+    if (req.method === 'GET' && url.pathname === '/_pm/usages.json') { repondre(res, 200, U.lireUsages()); return true; }
+    if (req.method === 'GET' && url.pathname === '/_pm/usage') { usageResolu(res, url); return true; }
     if (req.method === 'GET' && STATIQUES[url.pathname]) {
       const fichier = STATIQUES[url.pathname];
       res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-store' });
@@ -206,6 +270,7 @@ function creerRoutesExport(projet, { optionsAssemblage = {} } = {}) {
     if (url.pathname === '/_pm/export') { recevoirVideo(req, res); return true; }
     if (url.pathname === '/_pm/export-etat') { recevoirEtat(req, res); return true; }
     if (url.pathname === '/_pm/export-stats') { recevoirStats(req, res); return true; }
+    if (url.pathname === '/_pm/couverture') { recevoirCouverture(req, res); return true; }
     if (url.pathname === '/_pm/planche-fin') { terminerPlanche(req, res); return true; }
     const m = NOM_IMAGE.exec(url.pathname);
     if (m) { recevoirImage(req, res, m[1]); return true; }
@@ -213,4 +278,4 @@ function creerRoutesExport(projet, { optionsAssemblage = {} } = {}) {
   };
 }
 
-module.exports = { creerRoutesExport };
+module.exports = { creerRoutesExport, nomDemande, MOTIF_NOM };

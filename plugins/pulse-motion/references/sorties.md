@@ -2,27 +2,28 @@
 
 ## L'essentiel
 
+- L'export se règle par **usage** (`web`, `reseaux`, `presentation`, `master`, `courriel`, `brouillon` : `pulse-motion reference usages`), jamais par un chiffre technique.
 - Après un export, la personne dit souvent ce qui ne va pas en une phrase (« trop lourd », « c'est flou », « en vertical »). Chaque phrase a une réponse : **un réglage d'export**, **une retouche** de la vidéo, ou **« pas encore possible »**, dit franchement.
 - Un changement de **format d'image** (vertical, carré) n'est pas un réglage d'export : c'est une retouche, les scènes se recomposent.
 - Une vidéo **légère** se prépare dans l'image : moins de grain, de particules fines et de dégradés qui bougent, car ce sont eux qui alourdissent le fichier.
 - **Première et dernière images** : la première n'est jamais vide ni noire (au moins le fond et le décor de la charte), la dernière est nette et stable, sans fondu au noir sauf demande.
-- Pour un support imprimé ou une relecture, les **planches** (trois images par scène) font foi ; le PDF des planches viendra avec l'export par usage.
+- Pour un support imprimé ou une relecture, les **planches** (trois images par scène) font foi ; le PDF des planches viendra plus tard.
 
 ## La personne dit… on fait…
 
 | Elle dit | Ce qu'on fait aujourd'hui | Quand ce sera possible |
 |---|---|---|
-| « Trop lourd », « je ne peux pas l'envoyer par courriel » | Export en 720p ; si c'est encore lourd, retirer le grain et les particules fines, raccourcir | Usage « courriel », taille visée (spec S5) |
-| « C'est flou », « pixelisé » | Export fidèle (avec ffmpeg) plutôt que dans le navigateur, en 1080p ; vérifier que les images de `assets/` sont assez grandes | Usage « master » (spec S5) |
+| « Trop lourd », « je ne peux pas l'envoyer par courriel » | Usage `courriel` (`--pour courriel`, 10 Mo ; « moins de 25 Mo » : `--taille-max 25`), en 720p ou 540p selon la durée ; trop long : retirer le grain et les particules fines, raccourcir | — |
+| « C'est flou », « pixelisé » | Export fidèle (avec ffmpeg) plutôt que dans le navigateur, usage `master` ; vérifier que les images de `assets/` sont assez grandes | — |
 | « Ça saccade » | Chercher d'abord un mouvement trop rapide (contrôle `mouvement-rapide`) ; sinon export à 60 images par seconde | — |
 | « En vertical », « pour les stories » | Retouche : format 9:16 dans le déroulé, scènes recomposées (empilées) | Déclinaison automatique : décision de la spec S9 |
 | « En carré », « pour le fil LinkedIn » | Retouche : format 1:1 ou 4:5 | Idem |
 | « Fond transparent », « pour l'incruster dans mon montage » | Pas encore possible ; le dire | Vidéo à couche transparente (spec S5) |
-| « Pour mon monteur », « sans perte » | Export fidèle 1080p, la meilleure qualité actuelle | Usage « master » (spec S5) |
+| « Pour mon monteur », « sans perte » | Usage `master` (`--pour master`) : la meilleure qualité | — |
 | « Un GIF » | Pas encore possible ; proposer un MP4 court et muet, que la plupart des messageries lisent en boucle | GIF (spec S5) |
 | « Une image pour la miniature » | Planche de la scène qui résume ; choisir l'image où tout est en place | Couverture sans sous-titres (spec S5) |
 | « Juste la scène 3 » | Pas encore possible en export ; une planche de la scène | Extraction d'une scène (spec S5) |
-| « Pour le projeter en réunion », « dans PowerPoint » | Export fidèle 1080p (lu par les logiciels de présentation) ; la page `sortie/<titre>.html` s'ouvre aussi sans connexion | Usage « présentation » (spec S5) |
+| « Pour le projeter en réunion », « dans PowerPoint » | Usage `presentation` (`--pour presentation`, lu par PowerPoint et Keynote) ; la page `sortie/<titre>.html` s'ouvre aussi sans connexion | — |
 | « Les sous-titres à part » | Déjà fait : `sortie/<titre>.srt` et `.vtt` | — |
 | « Sans le son » | Retouche : retirer musique et bruitages (la voix reste si elle est voulue) | — |
 | « Un support à imprimer », « le PDF des scènes » | Planches des scènes en images | PDF des planches (spec S5) |
@@ -62,7 +63,5 @@ Pour une présentation de plusieurs pages, faire valider deux pages d'abord (la 
 
 ## À venir
 
-- Export par usage (`web`, `reseaux`, `presentation`, `master`, `courriel`), taille visée, temps restant ; GIF (15 images par seconde, 640 px pour le courriel, 960 ou 1280 px de large, palette calculée sur toute la vidéo en deux passes, ffmpeg requis) ; vidéo à couche transparente ; couverture ; extraction d'une scène ; chapitres ; cadre de téléphone autour d'un 9:16 ; **PDF des planches** par l'impression du navigateur, piloté par le CDP maison, sans dépendance ; affiche de la page livrée (spec S5).
-- Grain tiré moins souvent qu'à chaque image, pour des exports plus légers (spec S5, usages « courriel » et « brouillon »).
-- Vérification du MP4 exporté : images noires, silences, voix couverte (spec S2).
+- GIF (15 images par seconde, 640 px pour le courriel, 960 ou 1280 px de large, palette calculée sur toute la vidéo en deux passes, ffmpeg requis) ; vidéo à couche transparente ; couverture ; extraction d'une scène ; chapitres ; cadre de téléphone autour d'un 9:16 ; **PDF des planches** par l'impression du navigateur, piloté par le CDP maison, sans dépendance ; affiche de la page livrée (spec S5).
 - Fichier de présentation modifiable (une image ou une vidéo par diapositive) : à étudier plus tard, après le PDF (spec S5).

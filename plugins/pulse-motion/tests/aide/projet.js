@@ -5,6 +5,10 @@ const path = require('node:path');
 const { dossierTemporaire } = require('./temporaire.js');
 
 const FIXTURES = path.join(__dirname, '..', 'fixtures');
+
+// Les exports des tests notent leur vitesse et leurs encodeurs (spec Rendu et export, 5.5 et 5.7) : jamais dans le dossier
+// personnel de la personne qui lance les tests.
+if (!process.env.PULSE_MOTION_DOSSIER) process.env.PULSE_MOTION_DOSSIER = dossierTemporaire('pm-personnel-');
 const STYLES = path.join(FIXTURES, 'styles');
 const EFFETS = path.join(FIXTURES, 'effets');
 

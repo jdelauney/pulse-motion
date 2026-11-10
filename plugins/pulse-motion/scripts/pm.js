@@ -8,7 +8,7 @@
  *   pulse-motion apercu <dossier> [--port 4321] [--ouvrir]
  *   pulse-motion atelier [<recette>] [--dossier <d>]   atelier des effets de particules (page de l'aperçu) : régler, enregistrer
  *   pulse-motion historique sauvegarder|annuler <dossier>
- *   pulse-motion exporter <dossier> [--qualite 1080p|720p] [--ips 30|60] [--rapide] [--avec-provisoire]   MP4 fidèle (ffmpeg) ou dans le navigateur
+ *   pulse-motion exporter <dossier> [--pour web|reseaux|presentation|master|courriel|brouillon] [--taille-max <Mo>] [--qualite 1080p|720p|540p] [--ips 30|60] [--rapide] [--avec-provisoire] [--estimer]   MP4 fidèle (ffmpeg) ou dans le navigateur
  *   pulse-motion ffmpeg                  ffmpeg présent ? commande pour l'installer
  *   pulse-motion voix importer <fichier> [--scene <id>] [dossier] | provisoire [--scene <id>] [dossier] | transcrire [--scene <id>] [dossier] | studio <scène> [dossier]   voix d'une scène, voix provisoire, transcription, studio
  *   pulse-motion musique ecouter [dossier] [--ouvrir]   musique seule dans sortie/musique.wav (pour l'écouter)
@@ -17,7 +17,7 @@
  *   pulse-motion planche <dossier> [id1,id2] [--ouvrir]   images clés PNG dans sortie/planche/
  *   pulse-motion planche <dossier> --regard [--scenes a,b]   planches de regard dans sortie/regard/ (ouverture, temps forts, téléphone, bandes, fiche)
  *   pulse-motion planche <dossier> <id> --de <s> --duree <s> [--pas <n>]   planche image par image d'une scène (3 s au plus), dans sortie/planche/
- *   pulse-motion reference <nom>          affiche references/<nom>.md (ex. moteur, rythme, styles/clair-pedagogique)
+ *   pulse-motion reference <nom>          affiche references/<nom>.md (ex. moteur, rythme, styles/clair-pedagogique) ; usages : tableau de scripts/usages.json
  *   pulse-motion scene <style> <nom>      affiche une scène toute faite d'un style
  *   pulse-motion effet <nom>              affiche la recette d'un effet de particules de la bibliothèque
  *   pulse-motion mouvements liste [--categorie <id>] | chercher <mots…> | afficher <n° ou nom> | reference | choisir [--categorie <id>] [--ouvrir]   dictionnaire de mouvements nommés ; choisir en regardant
@@ -111,6 +111,8 @@ function lancer(args) {
     const nom = reste[0] || '';
     // Le dictionnaire de mouvements est rendu depuis sa source JSON (references/mouvements/mouvements.json).
     if (nom === 'mouvements') return spawnSync(process.execPath, [path.join(RACINE, 'scripts', 'mouvements.js'), 'reference'], { stdio: 'inherit' }).status ?? 1;
+    // Les usages d'export sont rendus depuis leur source (scripts/usages.json, mesures comprises).
+    if (nom === 'usages') { process.stdout.write(require('./lib/usages.js').tableauUsages()); return 0; }
     if (!NOM_SUR.test(nom)) { console.error('Usage : pulse-motion reference <nom> (ex. moteur, rythme, styles/clair-pedagogique)'); return 2; }
     const fichier = path.join(RACINE, 'references', `${nom}.md`);
     const m = /^styles\/([a-z0-9-]+)$/.exec(nom);
@@ -154,7 +156,8 @@ function lancer(args) {
     '  assembler <dossier>      controler <dossier> [--sans-correction] [--sans-rendu] [--gpu] [--complet]      apercu <dossier> [--port N] [--ouvrir]',
     '  historique sauvegarder|annuler <dossier>',
     '  atelier [<recette>] [--dossier <dossier>]   atelier des effets de particules : régler à l\'œil, enregistrer dans effets/',
-    '  exporter <dossier> [--qualite 1080p|720p] [--ips 30|60] [--rapide] [--avec-provisoire]       planche <dossier> [id1,id2]       planche <dossier> <id> --de <s> --duree <s> [--pas <n>]',
+    '  exporter <dossier> [--pour <usage>] [--taille-max <Mo>] [--qualite 1080p|720p|540p] [--ips 30|60] [--rapide] [--avec-provisoire] [--estimer]   usages : reference usages',
+    '  planche <dossier> [id1,id2]       planche <dossier> <id> --de <s> --duree <s> [--pas <n>]',
     '  ffmpeg                   ffmpeg présent ? commande pour l\'installer',
     '  voix importer <fichier> [--scene <id>] [dossier] | provisoire [--scene <id>] [dossier] | transcrire [--scene <id>] [dossier] | studio <scène> [dossier]',
     '  whisper [installer [--modele small]]   transcription des voix',
