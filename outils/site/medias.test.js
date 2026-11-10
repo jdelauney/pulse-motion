@@ -35,7 +35,8 @@ test("galerie : une sortie par entrée de chaque source (mouvements, styles, eff
   const G = require("./galerie-medias.js");
   const lot = (id) => sortiesDe(MEDIAS.find((m) => m.id === id));
   assert.equal(lot("galerie-mouvements").length, G.dictionnaire().mouvements.length * 2);
-  assert.equal(lot("galerie-styles").length, G.STYLES_LIVRES().reduce((n, s) => n + 1 + G.scenesDuStyle(s).length, 0));
+  // Par style : la boucle, une image par scène toute faite, les images témoin A et B (S8 J3).
+  assert.equal(lot("galerie-styles").length, G.STYLES_LIVRES().reduce((n, s) => n + 3 + G.scenesDuStyle(s).length, 0));
   assert.equal(lot("galerie-effets").length, G.effets().length * 2);
   assert.equal(lot("galerie-personnages").length, G.clipsPersonnages().length * 2);
   assert.ok(!G.clipsPersonnages().includes("respiration"), "les calques additifs ne sont pas des mouvements");

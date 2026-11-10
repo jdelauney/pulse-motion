@@ -1,0 +1,30 @@
+{
+  "nom": "La chaîne du froid",
+  "description": "Contenu témoin identique pour montrer chaque style, livré ou personnel : mêmes textes, mêmes images de composition fixe, même boucle. Lu par la planche des styles, la page de choix et la galerie du wiki.",
+  "textes": {
+    "etiquette": ["Chaîne du froid", "Hygiène"],
+    "titre": ["Garder la chaîne du froid", "Le froid, sans rupture"],
+    "sous": ["Les bons gestes, du camion au réfrigérateur", "Les bons gestes, de bout en bout"],
+    "point1": ["Vérifier la température à la livraison", "Contrôler chaque livraison"],
+    "point2": ["Ranger les produits frais en premier", "Ranger le frais en premier"],
+    "point3": ["Respecter les dates sur les étiquettes", "Respecter les dates"],
+    "point4": ["Ne jamais recongeler un produit", "Ne jamais recongeler"],
+    "unite": ["kg"],
+    "legende": ["De produits frais contrôlés chaque semaine", "Contrôlés chaque semaine"],
+    "gauche-titre": ["Avant"],
+    "gauche-texte": ["Produits rangés au hasard, porte souvent ouverte", "Produits rangés au hasard"],
+    "droite-titre": ["Après"],
+    "droite-texte": ["Produits datés, rangés par zone de froid", "Produits datés et rangés"],
+    "numero": ["2"],
+    "texte": ["Un produit resté trop longtemps hors du froid ne doit pas y retourner.", "Un produit sorti du froid n'y retourne pas."],
+    "a": ["Réception"],
+    "b": ["Stockage"],
+    "c": ["Préparation"]
+  },
+  "phrase": "Garder les produits au froid, du camion jusqu'à l'assiette, sans jamais rompre la chaîne",
+  "images": {
+    "A": { "scene": "titre", "part": 0.8 },
+    "B": { "scene": "chiffre", "part": 0.8, "valeur": 1250 }
+  },
+  "boucle": { "dureeScene": 2.5 }
+}

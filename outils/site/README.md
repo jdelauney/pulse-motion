@@ -4,7 +4,7 @@ Le wiki (`docs/`) est publié par GitHub Pages depuis la branche **`gh-pages`** 
 
 | Outil | Rôle |
 |---|---|
-| `node outils/site/galerie.js [--verifier]` | Écrit dans `mouvements.html`, `catalogue.html`, `lexique.html` et `idees.html` les cartes de la galerie (mouvements, styles, effets, personnages) et des idées de vidéos (modèles et exemples) à partir des sources du plugin, entre les marqueurs `<!-- galerie:<nom> -->`. `--verifier` n'écrit rien et échoue si une page ne suit plus les sources. |
+| `node outils/site/galerie.js [--verifier]` | Écrit dans `mouvements.html`, `catalogue.html`, `lexique.html` et `idees.html` les cartes de la galerie (mouvements, styles, effets, personnages) et des idées de vidéos (modèles et exemples) à partir des sources du plugin, entre les marqueurs `<!-- galerie:<nom> -->`. `--verifier` n'écrit rien et échoue si une page ne suit plus les sources, ou si un style livré n'a pas sa boucle, ses images témoin A et B (`docs/medias/`) ou ses champs `categorie` et `usages`. Les cartes des styles sont regroupées par catégorie. |
 | `node outils/site/medias.js [<id>…] [--forcer]` | Fabrique les médias du site à partir du plugin (vidéos d'exemple, captures, et les aperçus de la galerie décrits dans `galerie-medias.js` : `galerie-mouvements`, `galerie-styles`, `galerie-effets`, `galerie-personnages`, et `exemples` : la vidéo de l'exemple de chaque modèle). Un média déjà à jour n'est pas refait. |
 | `node outils/wiki/indexer.js` | Régénère l'index de recherche du wiki après une modification de page. |
 | `node outils/site/liens.js` | Vérifie que chaque lien, image et vidéo des pages pointe vers un fichier existant. |
@@ -12,7 +12,7 @@ Le wiki (`docs/`) est publié par GitHub Pages depuis la branche **`gh-pages`** 
 
 Tests : `node --test outils/site/*.test.js`.
 
-Ordre pour publier : écrire la galerie (`galerie.js`), fabriquer les médias, indexer le wiki, vérifier les liens, publier.
+Ordre pour publier : écrire la galerie (`galerie.js`), fabriquer les médias, vérifier la galerie (`galerie.js --verifier`), indexer le wiki, vérifier les liens, publier.
 
 Les aperçus de la galerie sont exportés par le plugin lui-même (une vidéo par lot, puis découpée par ffmpeg en boucles de 480 px et en images fixes) : comptez plusieurs minutes par lot. Ils ne sont refaits que si leurs sources changent (dictionnaire, moteur, styles, effets, personnages, chaîne d'export, `galerie-medias.js`).
 

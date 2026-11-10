@@ -162,6 +162,11 @@ test('planche-regard.test.js › fiche : sans code ni contrôle, avec les §§ 9
   assert.match(fiche, /- Effets : etincelles/);
   assert.match(fiche, /## Index des vignettes/);
   assert.match(fiche, /## Ce qui est verrouillé/);
+  // Le style, d'après sa fiche : essence, § 1, § 3 et § 9 seulement (budget de lecture du critique).
+  assert.match(fiche, /## Le style « [a-z-]+ »\n\n> .+\n> Sources : /);
+  assert.match(fiche, /### 1\. Essence, et ce qu'il n'est pas/);
+  assert.match(fiche, /### 9\. Pièges/);
+  assert.doesNotMatch(fiche, /### (?:2|4|5|6|7|8|10|11)\. [A-Z]/);
   assert.match(fiche, /## 9\. Les erreurs les plus vues\n\nerreur-neuf/);
   assert.match(fiche, /## 10\. Clichés à éviter\n\ncliche-dix/);
   for (const absent of [/secret-huit/, /secret-onze/, /<section|<div|data-start|@scope|```/, /controle\.json|problemes|regle/]) assert.doesNotMatch(fiche, absent);

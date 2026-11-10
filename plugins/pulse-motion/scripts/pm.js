@@ -38,11 +38,13 @@
  *   pulse-motion styles [--genre <genre>] liste les styles (JSON), classée pour le genre
  *   pulse-motion styles chercher <mots…>  styles trouvés par leur nom de médium (« façon tableau blanc »)
  *   pulse-motion styles verifier <nom>    vérifie le contrat d'un style
+ *   pulse-motion styles choisir [--categorie <id>] [--ouvrir] [--delai <minutes>]   page locale : choisir un style en le regardant
  *   pulse-motion changer-style <dossier> <style>   recopie les scènes toutes faites du nouveau style
  *   pulse-motion comparer <dossier> <s1,s2,s3> [--scenes a,b] [--ouvrir]   comparaison des styles sur le déroulé
  *   pulse-motion charte enregistrer <nom> <dossier> | liste | appliquer <nom> <dossier> | depuis-logo <fichier> [--style s] [--ton clair|sombre]
  *   pulse-motion police "<famille>" [--graisses 400,700] [--italique] | <fichier> [--famille "<nom>"] [--confirmer] [--style <style> --role titres|texte]   police de la charte (Bunny Fonts ou fichier)
- *   pulse-motion style nouveau <nom> [--depuis <style>] | verifier <nom> | planche <nom> [--scenes a,b] [--ratio r] [--ton t] [--textes exemple|maximum] [--ouvrir]   style personnel
+ *   pulse-motion style nouveau <nom> [--depuis <style>] [--emprunts s1,s2] | verifier <nom> | planche <nom> [--scenes a,b] [--ratio r] [--ton t] [--textes exemple|maximum] [--temoin | --avec-base] [--ouvrir]
+ *                      | noter <nom> <section> "<avant>" "<après>" "<pourquoi>" [--nouveau-tour] [--charte] | base <nom> [--a-jour]   style personnel
  *   pulse-motion glossaire <dossier> | glossaire noter <dossier> "<terme>" "<sens>" ["<à éviter>"] [--cle]   mots du métier (charte/glossaire.md)
  *   pulse-motion lexique [noter "<terme>" "<phrase>" "<comme…>" "<commande>"]   mots de l'outil expliqués à la personne
  *   pulse-motion consignes <skill> [<section>[,<section>]]   consignes d'un skill, ou ses règles et une section (ex. creer fabrication)
@@ -225,11 +227,12 @@ function lancer(args) {
     '  icones chercher <mots…> | afficher <nom> | planche <nom1,nom2…> [--ouvrir]   icônes Lucide, posées par <svg data-icone="nom"> (reference icones)',
     '  personnages liste|afficher <nom>|verifier|planche <nom> [--dessin <d>]|planche --dessin <d> --visage|atelier [<nom>] [--dessin <d>] [--decoupe <nom>] [--bibliotheque]|analyser <svg>|decouper <nom>|renommer-couleur <dessin> <ancien> <nouveau>   poses, clips et gabarits des personnages',
     '  modeles liste | afficher <id> | trouver "<sujet>" | exemple <id> <dossier> | apercu <id>   modèles de vidéo et leurs exemples finis',
-    '  styles [--genre <genre>]      styles chercher <mots…>      styles verifier <nom>',
+    '  styles [--genre <genre>]      styles chercher <mots…>      styles verifier <nom>      styles choisir [--categorie <id>] [--ouvrir] [--delai <minutes>]',
     '  changer-style <dossier> <style>                  comparer <dossier> <s1,s2,s3> [--scenes a,b] [--ouvrir]',
     '  charte enregistrer <nom> <dossier> | liste | appliquer <nom> <dossier> | depuis-logo <fichier> [--style s] [--ton clair|sombre]',
     '  police "<famille>" [--graisses 400,700] [--italique] | <fichier> [--famille "<nom>"] [--confirmer] [--style <style> --role titres|texte] [--dans <dossier>]',
-    '  style nouveau <nom> [--depuis <style>] | verifier <nom> | planche <nom> [--scenes a,b] [--ratio r] [--ton t] [--textes exemple|maximum] [--ouvrir]',
+    '  style nouveau <nom> [--depuis <style>] [--emprunts s1,s2] | verifier <nom> | planche <nom> [--scenes a,b] [--ratio r] [--ton t] [--textes exemple|maximum] [--temoin | --avec-base] [--ouvrir]',
+    '  style noter <nom> <section> "<avant>" "<après>" "<pourquoi>" [--nouveau-tour] [--charte] | base <nom> [--a-jour]   journal des changements, base du style',
     '  glossaire <dossier> | glossaire noter <dossier> "<terme>" "<sens>" ["<à éviter>"] ["<prononciation>"] [--cle]',
     '  lexique [noter "<terme>" "<phrase>" "<comme…>" "<commande>"]',
   ].join('\n'));

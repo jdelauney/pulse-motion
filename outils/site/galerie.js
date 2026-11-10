@@ -53,25 +53,76 @@ ${cartes}
   }).join("\n");
 }
 
-function blocStyles() {
-  return G.STYLES_LIVRES().map((style) => {
-    const dossier = path.join(PLUGIN(RACINE_DEPOT), "styles", style);
-    const id = JSON.parse(fs.readFileSync(path.join(dossier, "identite.json"), "utf8"));
-    const scenes = JSON.parse(fs.readFileSync(path.join(dossier, "catalogue.json"), "utf8")).scenes;
-    const [mp4, ...images] = G.fichiersStyle(style);
-    const vignettes = scenes.map((s, i) => `<figure class="vignette"><img src="${images[i]}" alt="Scène ${e(s.nom)} du style ${e(style)}" loading="lazy" width="480" height="270"><figcaption><code>${e(s.nom)}</code> · ${e(s.role)}</figcaption></figure>`).join("\n");
-    const liste = (titre, xs) => (xs && xs.length ? `<p><strong>${titre} :</strong> ${xs.map(e).join(" · ")}</p>` : "");
-    return `<details class="style-en-mouvement" id="style-${style}">
-<summary>Le style <strong>${e(style)}</strong> en mouvement</summary>
-<figure class="capture">${apercu(mp4, images[0], `Les huit scènes du style ${style}`)}<figcaption>Les huit scènes toutes faites du style ${e(style)}, avec des textes d'exemple.</figcaption></figure>
+const { CATEGORIES } = require(path.join(PLUGIN(RACINE_DEPOT), "scripts", "lib", "contrat.js"));
+const identiteDe = (style) => JSON.parse(fs.readFileSync(path.join(PLUGIN(RACINE_DEPOT), "styles", style, "identite.json"), "utf8"));
+
+/** Styles livrés regroupés par catégorie, dans l'ordre de CATEGORIES : [{ categorie, styles }] (catégories vides omises). */
+function stylesParCategorie() {
+  return grouperParCategorie(G.STYLES_LIVRES().map((style) => ({ style, identite: identiteDe(style) })));
+}
+
+/** [{ style, identite }] -> [{ categorie, styles }] dans l'ordre de CATEGORIES, puis « Autres styles » ; groupes vides omis. */
+function grouperParCategorie(styles) {
+  const groupes = CATEGORIES.map((c) => ({ categorie: c, styles: styles.filter((x) => x.identite.categorie === c.id) }));
+  const sans = styles.filter((x) => !CATEGORIES.some((c) => c.id === x.identite.categorie));
+  if (sans.length) groupes.push({ categorie: { id: "autres", nom: "Autres styles" }, styles: sans });
+  return groupes.filter((g) => g.styles.length);
+}
+
+/** Carte d'un style : images témoin A et B, boucle, vignettes des huit scènes, personnalité, usages, « ce qu'il n'est pas »,
+ * signature et provenance (spec Styles et réalisation, 5.6). */
+function carteStyle(style, id) {
+  const scenes = JSON.parse(fs.readFileSync(path.join(PLUGIN(RACINE_DEPOT), "styles", style, "catalogue.json"), "utf8")).scenes;
+  const [mp4, ...images] = G.fichiersStyle(style);
+  const [a, b] = G.fichiersTemoin(style);
+  const vignettes = scenes.map((sc, i) => `<figure class="vignette"><img src="${images[i]}" alt="Scène ${e(sc.nom)} du style ${e(style)}" loading="lazy" width="480" height="270"><figcaption><code>${e(sc.nom)}</code> · ${e(sc.role)}</figcaption></figure>`).join("\n");
+  const liste = (titre, xs) => (xs && xs.length ? `<p><strong>${titre} :</strong> ${xs.map(e).join(" · ")}</p>` : "");
+  const provenance = (id.provenance || []).length
+    ? `<p><strong>Provenance :</strong> ${id.provenance.map((p) => `${e(p.depot)}, style « ${e(p.style)} » (${e(p.licence)})`).join(" · ")}</p>`
+    : "<p><strong>Provenance :</strong> style d'origine Pulse Motion</p>";
+  return `<details class="style-en-mouvement" id="style-${style}" data-categorie="${e(id.categorie || "autres")}">
+<summary>Le style <strong>${e(style)}</strong> · ${e((id.personnalite || []).join(", "))}</summary>
+<div class="grille-vignettes temoin">
+<figure class="vignette"><img src="${a}" alt="Image témoin A (titre) du style ${e(style)}" loading="lazy" width="480" height="270"><figcaption>A · le titre, mêmes textes pour tous les styles</figcaption></figure>
+<figure class="vignette"><img src="${b}" alt="Image témoin B (chiffre clé) du style ${e(style)}" loading="lazy" width="480" height="270"><figcaption>B · le chiffre clé, 1 250 kg</figcaption></figure>
+</div>
+<figure class="capture">${apercu(mp4, images[0], `Les huit scènes du style ${style}`)}<figcaption>Les huit scènes toutes faites du style ${e(style)}, avec le même contenu témoin, « la chaîne du froid ».</figcaption></figure>
 <div class="grille-vignettes">
 ${vignettes}
 </div>
+${liste("Pour", id.usages)}
+${id.nonPas ? `<p><strong>Ce qu'il n'est pas :</strong> ${e(id.nonPas)}</p>` : ""}
 <p><strong>Signature :</strong> ${e(id.signature)}</p>
 ${liste("À faire", id.aFaire)}
 ${liste("À éviter", id.aEviter)}
+${provenance}
 </details>`;
-  }).join("\n");
+}
+
+function blocStyles() {
+  return stylesParCategorie().map((g) => `<section class="categorie-styles" id="styles-${g.categorie.id}" data-categorie="${g.categorie.id}">
+<h4>${e(g.categorie.nom)}</h4>
+${g.styles.map((x) => carteStyle(x.style, x.identite)).join("\n")}
+</section>`).join("\n");
+}
+
+/**
+ * Ce qui manque pour montrer chaque style livré (spec 5.6 point 3) : ses champs categorie et usages, sa boucle et ses images
+ * témoin A et B dans <racine>/docs. -> liste de messages (vide : tout y est).
+ */
+function manquesStyles(racine = RACINE_DEPOT) {
+  const manques = [];
+  for (const style of G.STYLES_LIVRES()) {
+    const id = identiteDe(style);
+    if (!id.categorie) manques.push(`${style} : « categorie » absente de identite.json.`);
+    if (!Array.isArray(id.usages) || !id.usages.length) manques.push(`${style} : « usages » absents de identite.json.`);
+    const [mp4] = G.fichiersStyle(style);
+    const [a, b] = G.fichiersTemoin(style);
+    for (const [f, quoi] of [[mp4, "boucle"], [a, "image A"], [b, "image B"]]) {
+      if (!fs.existsSync(path.join(racine, "docs", f))) manques.push(`${style} : ${quoi} absente (docs/${f}).`);
+    }
+  }
+  return manques;
 }
 
 function blocEffets() {
@@ -246,6 +297,12 @@ if (require.main === module) {
       console.error(`Pages à régénérer : ${enRetard.join(", ")}. Relancez : node outils/site/galerie.js`);
       process.exit(1);
     }
+    // Un style livré se montre par sa boucle et ses images témoin A et B : sans elles, la galerie n'est pas prête.
+    const manques = verifier ? manquesStyles(RACINE_DEPOT) : [];
+    if (manques.length) {
+      console.error(`Styles incomplets dans la galerie (node outils/site/medias.js galerie-styles) :\n  ${manques.join("\n  ")}`);
+      process.exit(1);
+    }
     console.log(enRetard.length && !verifier ? `Pages écrites : ${enRetard.join(", ")}.` : "Galerie à jour.");
   } catch (err) {
     console.error(err.message);
@@ -253,4 +310,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { blocs, appliquer, PAGES };
+module.exports = { blocs, appliquer, PAGES, manquesStyles, stylesParCategorie, grouperParCategorie };
