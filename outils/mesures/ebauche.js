@@ -62,14 +62,26 @@ async function passe({ source, plugin, lancer }) {
   }
 }
 
-/** Avant : secondes entre le début d'une séance mesurée et son premier « pulse-motion apercu . ». -> { temoin, secondes, dureeMur } */
+/** Plus longue attente sans phrase de Claude dans la conversation (séance principale), en secondes, du début de la séance
+ *  à sa dernière phrase. */
+function attenteMax(lignes) {
+  const instants = lignes.filter((l) => l.timestamp).map((l) => Date.parse(l.timestamp));
+  const phrases = lignes.filter((l) => l.type === "assistant" && !l.isSidechain && Array.isArray(l.message && l.message.content)
+    && l.message.content.some((c) => c.type === "text" && String(c.text || "").trim())).map((l) => Date.parse(l.timestamp));
+  let precedent = Math.min(...instants);
+  let max = 0;
+  for (const t of phrases) { max = Math.max(max, t - precedent); precedent = t; }
+  return Math.round(max / 100) / 10;
+}
+
+/** Avant : secondes entre le début d'une séance mesurée et son premier « pulse-motion apercu . ». -> { temoin, secondes, attenteMax, dureeMur } */
 function instantApercu(mesure) {
   const j = JSON.parse(fs.readFileSync(mesure, "utf8"));
   const lignes = fs.readFileSync(j.transcription, "utf8").split(/\r?\n/).filter(Boolean).map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
   const debut = Math.min(...lignes.filter((l) => l.timestamp).map((l) => Date.parse(l.timestamp)));
   const appel = lignes.find((l) => l.type === "assistant" && !l.isSidechain && Array.isArray(l.message && l.message.content)
     && l.message.content.some((c) => c.type === "tool_use" && /pulse-motion apercu \./.test(String(c.input && c.input.command || ""))));
-  return { mesure: path.basename(mesure), temoin: j.temoin, plugin: j.plugin, secondes: appel ? Math.round((Date.parse(appel.timestamp) - debut) / 100) / 10 : null, dureeMur: j.dureeMur };
+  return { mesure: path.basename(mesure), temoin: j.temoin, plugin: j.plugin, secondes: appel ? Math.round((Date.parse(appel.timestamp) - debut) / 100) / 10 : null, attenteMax: attenteMax(lignes), dureeMur: j.dureeMur };
 }
 
 function lireOptions(args) {
@@ -95,7 +107,7 @@ async function principal(args) {
     resultat.apres[nom] = { passes, total: statistiques(passes.map((p) => p.total)), anime: passes.every((p) => p.anime) };
     console.error(`${nom} : ${resultat.apres[nom].total.mediane} s jusqu'à la première image animée (${passes.map((p) => p.total).join(", ")}), image animée : ${resultat.apres[nom].anime ? "oui" : "non"}`);
   }
-  for (const a of resultat.avant) console.error(`avant (${a.mesure}) : premier aperçu ${a.secondes} s après le début de la séance (${a.temoin})`);
+  for (const a of resultat.avant) console.error(`avant (${a.mesure}) : premier aperçu ${a.secondes} s après le début de la séance, plus longue attente sans phrase ${a.attenteMax} s (${a.temoin})`);
   const texte = JSON.stringify(resultat, null, 2);
   if (o.sortie) fs.writeFileSync(o.sortie, texte);
   console.log(texte);
@@ -103,4 +115,4 @@ async function principal(args) {
 
 if (require.main === module) principal(process.argv.slice(2)).catch((e) => { console.error(e.stack || e.message); process.exit(1); });
 
-module.exports = { passe, instantApercu };
+module.exports = { passe, instantApercu, attenteMax };
