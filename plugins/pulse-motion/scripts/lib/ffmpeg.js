@@ -123,26 +123,69 @@ function lancer(programme, args, { entree = null, signal, erreursMax = 4000 } = 
 
 const derniereLigne = (texte) => String(texte).trim().split(/\r?\n/).slice(-3).join(' ');
 
-/** Réglages x264 d'un segment (preset, crf) -> arguments de sortie de ffmpeg. */
-const argsX264 = ({ ips, crf, preset = 'medium' }) => ['-c:v', 'libx264', '-preset', preset, '-crf', String(crf), '-pix_fmt', 'yuv420p', '-r', String(ips)];
+/** Étiquettes de couleur posées sur tout encodage H.264 (spec Rendu et export, 5.2) : BT.709 en plage limitée. */
+const ETIQUETTES = ['-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709', '-color_range', 'tv'];
+/** Conversion des PNG capturés (RVB pleine plage) en YUV 4:2:0 BT.709 plage limitée, faite une fois par ffmpeg. Idée d'argo
+ *  (src/export.ts) et de reanimate (render.ts : out_color_matrix=bt709:out_range=tv), réécrite. */
+const VERS_BT709 = 'scale=out_color_matrix=bt709:out_range=tv,format=yuv420p';
+const PARAMS_X264 = 'aq-mode=3:aq-strength=0.8:colorprim=bt709:transfer=bt709:colormatrix=bt709';
+/** Réglages des encodeurs matériels du brouillon (5.7), à qualité constante. */
+const MATERIEL = {
+  h264_nvenc: { args: ['-preset', 'p4', '-rc', 'vbr', '-cq', '26', '-b:v', '0'], pixels: 'yuv420p' },
+  h264_qsv: { args: ['-global_quality', '26'], pixels: 'nv12' },
+  h264_amf: { args: ['-quality', 'balanced', '-rc', 'cqp', '-qp_i', '26', '-qp_p', '28'], pixels: 'yuv420p' },
+  h264_videotoolbox: { args: ['-q:v', '55'], pixels: 'yuv420p' },
+};
+const ORDRE_MATERIEL = ['h264_nvenc', 'h264_qsv', 'h264_amf', 'h264_videotoolbox'];
+
+/**
+ * Réglages d'encodage vidéo (usages.json, voie fidèle : crf ou debit, preset, tune, debitMax, tampon, gop en secondes, profil,
+ * niveau, encodeur) -> arguments de sortie de ffmpeg (H.264, BT.709 étiqueté, -video_track_timescale 90000). Les segments
+ * d'un même fichier reçoivent tous les mêmes arguments : la concaténation sans réencodage l'exige.
+ */
+function argsVideo(r, ips) {
+  const gop = Math.max(1, Math.round((r.gop || 2) * ips));
+  const commun = ['-r', String(ips), '-g', String(gop), ...ETIQUETTES, '-video_track_timescale', '90000'];
+  const materiel = r.encodeur && MATERIEL[r.encodeur];
+  if (materiel) return ['-c:v', r.encodeur, ...materiel.args, '-pix_fmt', materiel.pixels, ...commun];
+  const a = ['-c:v', 'libx264', '-preset', r.preset || 'medium'];
+  if (r.tune) a.push('-tune', r.tune);
+  if (r.debit) a.push('-b:v', `${r.debit}k`); else a.push('-crf', String(r.crf === undefined || r.crf === null ? 18 : r.crf));
+  if (r.debitMax) a.push('-maxrate', `${r.debitMax}k`, '-bufsize', `${r.tampon || 2 * r.debitMax}k`);
+  if (r.profil) a.push('-profile:v', r.profil);
+  if (r.niveau) a.push('-level:v', String(r.niveau));
+  a.push('-x264-params', PARAMS_X264, '-pix_fmt', 'yuv420p');
+  return [...a, ...commun];
+}
+
+/** Ancien appel ({ crf, preset }) ou réglages complets -> réglages. */
+const reglagesDe = ({ reglages, crf, preset }) => reglages || { crf, preset: preset || 'medium' };
+const reduction = (taille) => (taille ? `scale=${taille[0]}:${taille[1]}:flags=lanczos:in_color_matrix=bt709:out_color_matrix=bt709:in_range=tv:out_range=tv` : null);
 
 /** Largeur des vignettes en gris des statistiques d'export (spec S2, 5.12). */
 const LARGEUR_STATS = 192;
 
 /** Images PNG (itérable asynchrone) -> segment H.264 ; écriture respectant la contre-pression de ffmpeg.
- *  profil(phase, ms) : temps d'écriture vers ffmpeg, attente de la contre-pression comprise (« ecriture »).
- *  stats : seconde sortie de ffmpeg, qui décode déjà les PNG (split, réduction à 192 px en moyenne des surfaces, gris, brut
- *  sur la sortie standard) -> { vignettes: [Uint8Array] } ; le segment lui-même est le même. */
-async function encoderSegment({ ffmpeg, sortie, ips, crf, preset = 'medium', images, signal, profil, stats = false }) {
+ *  Une seule passe de ffmpeg : les PNG sont convertis une fois en BT.709, puis écrits dans l'intermédiaire (sortie, reglages)
+ *  et, si derive est donné ({ sortie, reglages, taille? }), dans le fichier dérivé d'un usage (sans perte de génération ;
+ *  taille : réduction lanczos). profil(phase, ms) : temps d'écriture vers ffmpeg, attente de la contre-pression comprise
+ *  (« ecriture »). stats : vignettes en gris de 192 px sur la sortie standard -> { vignettes: [Uint8Array] }. */
+async function encoderSegment({ ffmpeg, sortie, ips, crf, preset, reglages, derive = null, images, signal, profil, stats = false }) {
   let n = 0;
-  const args = stats
-    ? ['-y', '-hide_banner', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(ips), '-c:v', 'png', '-i', '-',
-      '-filter_complex', `[0:v]split=2[v][s];[s]scale=${LARGEUR_STATS}:-2:flags=area,format=gray[g]`,
-      '-map', '[v]', ...argsX264({ ips, crf, preset }), '-f', 'mp4', sortie,
-      '-map', '[g]', '-f', 'rawvideo', '-pix_fmt', 'gray', 'pipe:1']
-    : ['-y', '-hide_banner', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(ips), '-c:v', 'png', '-i', '-',
-      ...argsX264({ ips, crf, preset }), '-f', 'mp4', sortie];
-  const r = await lancer(ffmpeg, args, {
+  const r = reglagesDe({ reglages, crf, preset });
+  const entree = ['-y', '-hide_banner', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(ips), '-c:v', 'png', '-i', '-'];
+  const branches = [];
+  if (derive) {
+    branches.push(`[c]${VERS_BT709},split=2[i][d0]`);
+    branches.push(derive.taille ? `[d0]${reduction(derive.taille)}[d]` : '[d0]null[d]');
+  } else branches.push(`[c]${VERS_BT709}[i]`);
+  const graphe = stats
+    ? ['[0:v]split=2[c][s]', ...branches, `[s]scale=${LARGEUR_STATS}:-2:flags=area,format=gray[g]`]
+    : ['[0:v]null[c]', ...branches];
+  const args = [...entree, '-filter_complex', graphe.join(';'), '-map', '[i]', ...argsVideo(r, ips), '-f', 'mp4', sortie];
+  if (derive) args.push('-map', '[d]', ...argsVideo(derive.reglages, ips), '-f', 'mp4', derive.sortie);
+  if (stats) args.push('-map', '[g]', '-f', 'rawvideo', '-pix_fmt', 'gray', 'pipe:1');
+  const res = await lancer(ffmpeg, args, {
     signal,
     entree: async (stdin) => {
       stdin.on('error', () => { /* ffmpeg arrêté : sa sortie d'erreur dira pourquoi */ });
@@ -156,33 +199,93 @@ async function encoderSegment({ ffmpeg, sortie, ips, crf, preset = 'medium', ima
       stdin.end();
     },
   });
-  if (r.code !== 0) throw new Error(`ffmpeg n'a pas pu encoder la vidéo (${derniereLigne(r.erreurs) || `code ${r.code}`})`);
+  if (res.code !== 0) throw new Error(`ffmpeg n'a pas pu encoder la vidéo (${derniereLigne(res.erreurs) || `code ${res.code}`})`);
   if (!stats) return undefined;
   // Vignettes brutes bout à bout : une par image écrite (taille déduite du total).
-  const taille = n ? r.sortie.length / n : 0;
+  const taille = n ? res.sortie.length / n : 0;
   if (!n || !Number.isInteger(taille) || taille % LARGEUR_STATS) return { vignettes: null };
   const vignettes = [];
-  for (let k = 0; k < n; k++) vignettes.push(new Uint8Array(r.sortie.buffer, r.sortie.byteOffset + k * taille, taille));
+  for (let k = 0; k < n; k++) vignettes.push(new Uint8Array(res.sortie.buffer, res.sortie.byteOffset + k * taille, taille));
   return { vignettes };
 }
 
-/** Segment déjà encodé (intermédiaire) -> fichier dérivé avec d'autres réglages x264, sans recapture (spec Rapidité 5.16). */
-async function reencoderSegment({ ffmpeg, entree, sortie, ips, crf, preset = 'medium', signal }) {
-  const r = await lancer(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-i', entree, '-an', ...argsX264({ ips, crf, preset }), '-f', 'mp4', sortie], { signal });
+/** Segment déjà encodé (intermédiaire) -> fichier dérivé avec d'autres réglages, sans recapture (spec Rapidité 5.16) ;
+ *  taille : réduction lanczos (une sortie 720p ou 540p tirée d'un intermédiaire 1080p, spec Rendu et export 5.1.7). */
+async function reencoderSegment({ ffmpeg, entree, sortie, ips, crf, preset, reglages, taille, signal }) {
+  const filtre = taille ? ['-vf', reduction(taille)] : [];
+  const r = await lancer(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-i', entree, '-an', ...filtre, ...argsVideo(reglagesDe({ reglages, crf, preset }), ips), '-f', 'mp4', sortie], { signal });
   if (r.code !== 0) throw new Error(`ffmpeg n'a pas pu réencoder le segment (${derniereLigne(r.erreurs) || `code ${r.code}`})`);
 }
 
-/** -> { duree, images, largeur, hauteur, video, audio }
+/**
+ * Taille visée (spec Rendu et export, 5.3) : vidéo assemblée -> fichier final en deux passes x264 au débit reglages.debit,
+ * réduite à taille si besoin, avec la piste son déjà encodée (copiée). journal : fichier des statistiques de la première
+ * passe (sans extension), retiré ensuite. surPasse(1 | 2) : début de chaque passe.
+ */
+async function transcoderDeuxPasses({ ffmpeg, entree, sortie, ips, reglages, taille, audio = null, journal, signal, surPasse = () => {} }) {
+  const filtre = taille ? ['-vf', reduction(taille)] : [];
+  const video = argsVideo(reglages, ips);
+  try {
+    surPasse(1);
+    const p1 = await lancer(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-i', entree, '-an', ...filtre, ...video, '-pass', '1', '-passlogfile', journal, '-f', 'null', '-'], { signal });
+    if (p1.code !== 0) throw new Error(`ffmpeg n'a pas pu préparer la version légère (${derniereLigne(p1.erreurs) || `code ${p1.code}`})`);
+    surPasse(2);
+    const son = audio ? ['-i', audio, '-map', '0:v:0', '-map', '1:a:0', '-c:a', 'copy'] : ['-an'];
+    const p2 = await lancer(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-i', entree, ...son, ...filtre, ...video, '-pass', '2', '-passlogfile', journal, '-movflags', '+faststart', '-f', 'mp4', sortie], { signal });
+    if (p2.code !== 0) throw new Error(`ffmpeg n'a pas pu écrire la version légère (${derniereLigne(p2.erreurs) || `code ${p2.code}`})`);
+  } finally {
+    const dossier = path.dirname(journal);
+    const base = path.basename(journal);
+    try { for (const f of fs.readdirSync(dossier)) if (f.startsWith(base)) fs.rmSync(path.join(dossier, f), { force: true }); } catch { /* rien à nettoyer */ }
+  }
+}
+
+/**
+ * Encodeurs matériels utilisables pour le brouillon (5.7) : ceux que ffmpeg annonce, puis chacun essayé sur une image (un
+ * encodeur listé mais sans pilote échoue ici, en silence). Résultat gardé dans <dossier>/encodeurs.json par chemin et
+ * version de ffmpeg. -> { encodeur: nom | null, essayes: [{ nom, ok }] }. Ordre et idée d'argo (src/gpu-encoder.ts), réécrits.
+ */
+async function detecterEncodeurs({ ffmpeg, version = '', dossier, executer = lancer, plateforme = process.platform }) {
+  const fichier = dossier ? path.join(dossier, 'encodeurs.json') : null;
+  const cle = `${ffmpeg}|${version}`;
+  let memoire = {};
+  if (fichier) { try { memoire = JSON.parse(fs.readFileSync(fichier, 'utf8')); } catch { /* première fois */ } }
+  if (memoire[cle] && Array.isArray(memoire[cle].essayes)) return memoire[cle];
+  let liste = '';
+  try { liste = String((await executer(ffmpeg, ['-hide_banner', '-encoders'])).sortie || ''); } catch { liste = ''; }
+  const candidats = ORDRE_MATERIEL.filter((n) => new RegExp(`\\s${n}\\s`).test(liste)).filter((n) => n !== 'h264_videotoolbox' || plateforme === 'darwin');
+  const essayes = [];
+  let choisi = null;
+  for (const nom of candidats) {
+    let ok = false;
+    try {
+      const r = await executer(ffmpeg, ['-hide_banner', '-loglevel', 'error', '-f', 'lavfi', '-i', 'color=c=gray:s=256x256:r=30', '-frames:v', '1',
+        '-c:v', nom, ...MATERIEL[nom].args, '-pix_fmt', MATERIEL[nom].pixels, '-f', 'null', '-']);
+      ok = r.code === 0;
+    } catch { ok = false; }
+    essayes.push({ nom, ok });
+    if (ok) { choisi = nom; break; }
+  }
+  const resultat = { encodeur: choisi, essayes, date: new Date().toISOString() };
+  if (fichier) {
+    try { fs.mkdirSync(dossier, { recursive: true }); fs.writeFileSync(fichier, JSON.stringify({ ...memoire, [cle]: resultat }, null, 2), 'utf8'); } catch { /* mémoire facultative */ }
+  }
+  return resultat;
+}
+
+/** -> { duree, images, largeur, hauteur, video, audio, dureeAudio, couleurs, vignette, chapitres, alpha, octets }
  *  compter : 'images' (décode tout : -count_frames, la garantie de lecture du fichier final) ou 'paquets' (-count_packets,
  *  sans décoder : validité d'un segment, spec Rapidité 5.18 ; une image H.264 par paquet). */
 async function sonder({ ffprobe, fichier, compter = 'images' }) {
   // compter : 'aucun' : pistes et durée seulement, sans rien décoder (le nombre d'images est celui qu'annonce le fichier).
   const compte = compter === 'paquets' ? ['-count_packets'] : compter === 'aucun' ? [] : ['-count_frames'];
-  const r = await lancer(ffprobe, ['-v', 'error', ...compte, '-show_streams', '-show_format', '-of', 'json', fichier]);
+  const r = await lancer(ffprobe, ['-v', 'error', ...compte, '-show_streams', '-show_format', '-show_chapters', '-of', 'json', fichier]);
   if (r.code !== 0) throw new Error(`ffprobe n'a pas pu lire la vidéo (${derniereLigne(r.erreurs)})`);
   const j = JSON.parse(r.sortie.toString('utf8'));
-  const v = (j.streams || []).find((s) => s.codec_type === 'video');
-  const a = (j.streams || []).find((s) => s.codec_type === 'audio');
+  const flux = j.streams || [];
+  const image = (s) => Boolean(s.disposition && s.disposition.attached_pic);
+  const v = flux.find((s) => s.codec_type === 'video' && !image(s));
+  const a = flux.find((s) => s.codec_type === 'audio');
   return {
     duree: Number((j.format && j.format.duration) || (v && v.duration) || 0),
     images: !v ? 0 : compter === 'paquets' ? Number(v.nb_read_packets || 0) : Number(v.nb_read_frames || v.nb_frames || 0),
@@ -191,21 +294,50 @@ async function sonder({ ffprobe, fichier, compter = 'images' }) {
     video: v ? v.codec_name : null,
     audio: a ? a.codec_name : null,
     dureeAudio: a ? Number(a.duration || 0) : null,
+    couleurs: v ? { espace: v.color_space || null, primaires: v.color_primaries || null, transfert: v.color_transfer || null, plage: v.color_range || null } : null,
+    vignette: flux.some(image),
+    chapitres: (j.chapters || []).length,
+    // Couche transparente : format de pixels avec « a » (yuva420p, rgba…), ou alpha_mode du VP9 (jalon 4).
+    alpha: Boolean(v && (/^(yuva|rgba|bgra|argb|abgr|gbrap|ya)/.test(String(v.pix_fmt || '')) || (v.tags && v.tags.alpha_mode === '1'))),
+    octets: Number((j.format && j.format.size) || 0),
   };
 }
 
-/** Image de la vidéo à l'instant t, en PNG. */
-async function extraireImage({ ffmpeg, fichier, t }) {
-  const r = await lancer(ffmpeg, ['-hide_banner', '-loglevel', 'error', '-ss', String(t), '-i', fichier, '-frames:v', '1', '-f', 'image2pipe', '-c:v', 'png', '-']);
+/**
+ * Vérifications propres à l'export par usage (spec Rendu et export, 5.22 point 4), lues par ffprobe, sans décodage :
+ * étiquettes de couleur, taille sous la cible et, pour les jalons suivants, vignette, chapitres, couche transparente.
+ * attendu : { etiquettes?, octetsMax?, vignette?, chapitres?, alpha?, nom? } -> [message français] (vide : rien à redire).
+ */
+function controlesSortie(sonde, attendu = {}) {
+  const U = require('./usages.js');
+  const defauts = [];
+  const c = sonde.couleurs || {};
+  if (attendu.etiquettes && !(c.espace === 'bt709' && c.primaires === 'bt709' && c.transfert === 'bt709' && c.plage === 'tv')) {
+    defauts.push('Les couleurs de la vidéo ne sont pas marquées comme il faut (certains lecteurs les montreraient fausses) : l\'export s\'arrête, rien n\'est écrit.');
+  }
+  if (attendu.octetsMax && sonde.octets > attendu.octetsMax) {
+    const plus = Math.ceil((sonde.octets / U.MO) * 1.1);
+    defauts.push(`La version ${attendu.nom || 'demandée'} fait ${U.tailleFrancaise(sonde.octets)}, au-dessus des ${U.nombreFrancais(attendu.octetsMax / U.MO)} Mo demandés : je peux viser ${plus} Mo, ou exporter une seule scène.`);
+  }
+  if (attendu.vignette && !sonde.vignette) defauts.push('La vignette n\'a pas pu être intégrée à la vidéo : l\'export s\'arrête, rien n\'est écrit.');
+  if (attendu.chapitres && !sonde.chapitres) defauts.push('Les chapitres n\'ont pas pu être intégrés à la vidéo : l\'export s\'arrête, rien n\'est écrit.');
+  if (attendu.alpha && !sonde.alpha) defauts.push('La transparence n\'a pas été gardée dans la vidéo : l\'export s\'arrête, rien n\'est écrit.');
+  return defauts;
+}
+
+/** Image de la vidéo à l'instant t, en PNG ; taille : [largeur, hauteur] pour la comparer à une capture d'une autre taille. */
+async function extraireImage({ ffmpeg, fichier, t, taille }) {
+  const filtre = taille ? ['-vf', `scale=${taille[0]}:${taille[1]}:flags=bicubic`] : [];
+  const r = await lancer(ffmpeg, ['-hide_banner', '-loglevel', 'error', '-ss', String(t), '-i', fichier, '-frames:v', '1', ...filtre, '-f', 'image2pipe', '-c:v', 'png', '-']);
   if (r.code !== 0 || !r.sortie.length) throw new Error(`ffmpeg n'a pas pu lire une image de la vidéo (${derniereLigne(r.erreurs)})`);
   return r.sortie;
 }
 
-/** Piste son de la vidéo : WAV déjà mixé et normalisé par la page -> AAC 192 kbit/s, 48 kHz, stéréo, à la durée
- *  exacte (complétée par du silence ou coupée). */
-async function encoderSon({ ffmpeg, wav, duree, sortie, signal }) {
+/** Piste son de la vidéo : WAV déjà mixé et normalisé par la page -> AAC (debit kbit/s, 192 par défaut), 48 kHz, stéréo, à
+ *  la durée exacte (complétée par du silence ou coupée). */
+async function encoderSon({ ffmpeg, wav, duree, sortie, signal, debit = 192 }) {
   const r = await lancer(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-i', wav, '-vn', '-af', `apad,atrim=0:${duree}`,
-    '-ar', '48000', '-ac', '2', '-c:a', 'aac', '-b:a', '192k', '-t', String(duree), '-f', 'mp4', sortie], { signal });
+    '-ar', '48000', '-ac', '2', '-c:a', 'aac', '-b:a', `${debit}k`, '-t', String(duree), '-f', 'mp4', sortie], { signal });
   if (r.code !== 0) throw new Error(`son illisible (${derniereLigne(r.erreurs) || `code ${r.code}`})`);
 }
 
@@ -274,7 +406,7 @@ async function assemblerSegments({ ffmpeg, segments, sortie, audio }) {
     // Piste son (facultative) ajoutée sans réencodage de l'image.
     // Pas de « -shortest » : il couperait les dernières images ; la piste est déjà à la durée exacte.
     const son = audio ? ['-i', audio, '-map', '0:v:0', '-map', '1:a:0'] : [];
-    const r = await lancer(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', liste, ...son, '-c', 'copy', '-movflags', '+faststart', '-f', 'mp4', sortie]);
+    const r = await lancer(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', liste, ...son, '-c', 'copy', '-movflags', '+faststart', '-video_track_timescale', '90000', '-f', 'mp4', sortie]);
     if (r.code !== 0) throw new Error(`ffmpeg n'a pas pu assembler la vidéo (${derniereLigne(r.erreurs)})`);
   } finally {
     fs.rmSync(liste, { force: true });
@@ -309,4 +441,8 @@ function ecartImages(a, b) {
   return somme / n / 255;
 }
 
-module.exports = { lireVersion, commandeSure, commandeInstallation, trouverFfmpeg, MINIMUM, encoderSegment, reencoderSegment, sonder, extraireImage, assemblerSegments, ecartImages, encoderSon, mesurerSonie, verifierFichier, encoderOpus, importerAudio, LARGEUR_STATS };
+module.exports = {
+  lireVersion, commandeSure, commandeInstallation, trouverFfmpeg, MINIMUM, encoderSegment, reencoderSegment, transcoderDeuxPasses, sonder,
+  extraireImage, assemblerSegments, ecartImages, encoderSon, mesurerSonie, verifierFichier, encoderOpus, importerAudio, argsVideo,
+  detecterEncodeurs, controlesSortie, lancer, LARGEUR_STATS, ETIQUETTES, VERS_BT709, MATERIEL, ORDRE_MATERIEL,
+};
