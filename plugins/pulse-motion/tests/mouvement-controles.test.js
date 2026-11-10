@@ -112,6 +112,9 @@ test('raccord-boucle : translate 0→10 répété signalé, rotation 0→360 non
   assert.equal(A.raccordBoucle([{ offset: 0, transform: 'rotate(0deg)' }, { offset: 1, transform: 'rotate(-720deg)' }]), null);
   assert.equal(A.raccordBoucle([{ offset: 0, rotate: '0deg' }, { offset: 1, rotate: '180deg' }]), 'rotate');
   assert.equal(A.raccordBoucle([{ offset: 0, scale: '1' }, { offset: 0.5, scale: '1.2' }, { offset: 1, scale: '1' }]), null);
+  // Une goutte qui tombe et s'efface : invisible au raccord (scène « pluie » du témoin de 3 min).
+  assert.equal(A.raccordBoucle([{ offset: 0, opacity: '0', transform: 'translateY(0px)' }, { offset: 0.2, opacity: '1' }, { offset: 1, opacity: '0', transform: 'translateY(30px)' }]), null);
+  assert.equal(A.raccordBoucle([{ offset: 0, opacity: '0.2', transform: 'translateY(0px)' }, { offset: 1, opacity: '0.2', transform: 'translateY(30px)' }]), 'transform');
   assert.equal(A.raccordBoucle([{ offset: 0.5, opacity: '0.5' }]), null, 'propriété seulement au milieu : les deux bouts valent la valeur sous-jacente');
 });
 

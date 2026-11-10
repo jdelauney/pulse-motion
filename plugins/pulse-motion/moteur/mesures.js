@@ -528,12 +528,14 @@
   var NON_PROPRIETES = { offset: true, computedOffset: true, easing: true, composite: true };
   /** Images-clés d'une animation répétée : la première propriété animée dont la valeur de départ diffère de celle
    *  d'arrivée (propriété présente à un seul bout : comparée à la valeur sous-jacente), ou null. Une rotation d'un nombre
-   *  entier de tours est permise. */
+   *  entier de tours est permise, comme un saut invisible (opacité nulle aux deux bouts). */
   function raccordBoucle(cles) {
     if (!cles || !cles.length) return null;
     var premiere = cles[0], derniere = cles[cles.length - 1];
     var off = function (c) { return typeof c.computedOffset === 'number' ? c.computedOffset : c.offset; };
     var a = off(premiere) === 0 ? premiere : {}, b = off(derniere) === 1 ? derniere : {};
+    // Invisible au raccord (opacité nulle aux deux bouts : goutte qui tombe et s'efface) : le saut ne se voit pas.
+    if (Number(a.opacity) === 0 && Number(b.opacity) === 0 && 'opacity' in a && 'opacity' in b) return null;
     var props = Object.keys(a).concat(Object.keys(b)).filter(function (p, i, l) { return !NON_PROPRIETES[p] && l.indexOf(p) === i; });
     for (var i = 0; i < props.length; i++) {
       var p = props[i];
