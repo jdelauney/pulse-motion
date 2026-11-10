@@ -347,7 +347,8 @@ test('determinisme : une scène avec un écran est prouvée (raison « ecran »)
 const BLOCS = fs.readdirSync(path.join(RACINE, 'moteur', 'blocs')).filter((f) => f.endsWith('.html')).map((f) => f.slice(0, -5)).sort();
 
 test('blocs : les dix blocs de 5.13, commande pulse-motion bloc', () => {
-  assert.deepEqual(BLOCS, ['bandeau-nom', 'carte-appli', 'commande', 'consigne', 'dialogue', 'liste', 'notification', 'publication', 'revelation-3d', 'toast']);
+  // Les dix blocs de S6 plan 1, et les cartes « graphique » et « organigramme » livrées avec S7 J2 (conflit 11).
+  assert.deepEqual(BLOCS, ['bandeau-nom', 'carte-appli', 'carte-graphique', 'carte-organigramme', 'commande', 'consigne', 'dialogue', 'liste', 'notification', 'publication', 'revelation-3d', 'toast']);
   const liste = spawnSync(process.execPath, [path.join(RACINE, 'scripts', 'pm.js'), 'bloc'], { encoding: 'utf8' });
   assert.deepEqual(JSON.parse(liste.stdout).blocs, BLOCS);
   const un = spawnSync(process.execPath, [path.join(RACINE, 'scripts', 'pm.js'), 'bloc', 'notification'], { encoding: 'utf8' });
@@ -387,11 +388,14 @@ test('blocs : notification et carte-appli rendent leur icône par data-icone, sa
 });
 
 test('blocs : carte-graphique et carte-organigramme ne sont livrées qu\'avec S7 J2 (aucun bloc vide avant)', () => {
+  // Livrées avec leur dessin : un graphique (data-graphique) et des flèches (data-fleche), jamais une carte vide.
   for (const b of ['carte-graphique', 'carte-organigramme']) {
-    assert.ok(!BLOCS.includes(b), b);
-    assert.ok(!CSS.includes(`pm-bloc-${b}`), b);
+    assert.ok(BLOCS.includes(b), b);
+    assert.ok(CSS.includes(`pm-bloc-${b}`), b);
   }
-  assert.match(lire('references', 'ecran.md'), /cartes « graphique » et « organigramme » arrivent avec les graphiques animés \(S7\)/);
+  assert.match(lire('moteur', 'blocs', 'carte-graphique.html'), /data-graphique="graphique"/);
+  assert.match(lire('moteur', 'blocs', 'carte-organigramme.html'), /data-fleche="#org-chef → #org-equipe1"/);
+  assert.doesNotMatch(lire('references', 'ecran.md'), /arrivent avec les graphiques animés/);
 });
 
 // --- 5.15 Dictionnaire ---------------------------------------------------------------------------------------------

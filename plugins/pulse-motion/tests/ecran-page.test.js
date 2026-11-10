@@ -26,7 +26,7 @@ function projet(scenes, { style = 'clair-pedagogique', images = [] } = {}) {
   for (const im of images) fs.copyFileSync(path.join(RACINE, 'tests', 'fixtures', 'projet-simple', 'assets', 'logo.svg'), path.join(dir, 'assets', im));
   scenes.forEach(([id, html]) => fs.writeFileSync(path.join(dir, 'scenes', `${id}.html`), html));
   fs.writeFileSync(path.join(dir, 'deroule.json'), JSON.stringify({ version: 1, titre: 'Essai écran', genre: 'formation', parcours: 'rapide', format: { ratio: '16:9', ips: 30 }, style,
-    scenes: scenes.map(([id, , duree = 6, textes = { titre: 'Un titre' }]) => ({ id, fichier: `scenes/${id}.html`, duree, textes, transition: 'coupe' })) }, null, 2));
+    scenes: scenes.map(([id, , duree = 6, textes = { titre: 'Un titre' }, extra = {}]) => ({ id, fichier: `scenes/${id}.html`, duree, textes, transition: 'coupe', ...extra })) }, null, 2));
   return dir;
 }
 
@@ -256,10 +256,13 @@ test('blocs : chaque bloc passe le contrôle (contraste, lecture, débordement) 
     reponses: '12', partages: '4', aime: '86', 'sous-titre': 'Gérer vos factures', bouton: 'Ouvrir', fonction: 'Comptable', commande: 'npm install', numero: '2',
     consigne: 'Cliquez sur Nouvelle facture', champ: 'Mode de paiement', 'option-1': 'Chèque', 'option-2': 'Virement', 'option-3': 'Carte', annuler: 'Annuler', ok: 'Enregistrer',
     'commande-1': 'mkdir projet', 'sortie-1': 'dossier créé', 'commande-2': 'ls', 'sortie-2': 'deroule.json',
+    // Cartes « graphique » et « organigramme » (S6 5.13, livrées avec S7 J2).
+    chiffre: '+12 %', chef: 'Direction', equipe1: 'Ventes', equipe2: 'Achats', equipe3: 'Logistique',
   };
+  const extras = { 'carte-graphique': { graphiques: { graphique: { type: 'barres', unite: '%', valeurs: [{ etiquette: 'Janv.', valeur: 4 }, { etiquette: 'Févr.', valeur: 7 }, { etiquette: 'Mars', valeur: 12, accent: true }] } } } };
   const scenes = blocs.map((b) => {
     const html = sansCommentaire(lire('moteur', 'blocs', `${b}.html`));
-    return [b, `<section data-scene="${b}">${html}</section>`, 6, Object.fromEntries(clesDe(html).map((k) => [k, textes[k]]))];
+    return [b, `<section data-scene="${b}">${html}</section>`, 6, Object.fromEntries(clesDe(html).map((k) => [k, textes[k]])), extras[b] || {}];
   });
   scenes.push(['terminal', `<section data-scene="terminal">${TERMINAL()}</section>`, 7, Object.fromEntries(clesDe(TERMINAL()).map((k) => [k, textes[k]]))]);
   const VUES = ['contraste', 'contraste-reel', 'lecture', 'debordement', 'texte-petit', 'hors-cadre', 'glyphe-absent', 'marge'];

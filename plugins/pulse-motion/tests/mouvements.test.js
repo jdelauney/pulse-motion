@@ -85,7 +85,8 @@ test('exemples assemblables : chaque extrait, dans sa scène, s\'assemble sans e
   for (const e of entrees) fs.writeFileSync(path.join(dir, 'scenes', `m${e.no}.html`), `<section data-scene="m${e.no}">\n${e.recette.exemple}\n</section>\n`);
   fs.writeFileSync(path.join(dir, 'deroule.json'), JSON.stringify({
     version: 1, titre: 'Mouvements', genre: 'formation', parcours: 'rapide', format: { ratio: '16:9', ips: 30 }, style: 'test',
-    scenes: entrees.map((e) => ({ id: `m${e.no}`, fichier: `scenes/m${e.no}.html`, duree: 5, textes: { titre: 'Un titre', texte: 'Un texte' }, transition: 'fondu' })),
+    // recette.donnees : données d'un graphique ou d'un code (scenes[].graphiques, code), comme dans un déroulé.
+    scenes: entrees.map((e) => ({ id: `m${e.no}`, fichier: `scenes/m${e.no}.html`, duree: 5, textes: { titre: 'Un titre', texte: 'Un texte' }, transition: 'fondu', ...(e.recette.donnees || {}) })),
   }, null, 2));
   const r = assembler({ dossier: dir, dossierStyles: STYLES });
   assert.deepEqual(r.erreurs, []);

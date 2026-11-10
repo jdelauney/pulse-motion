@@ -19,7 +19,13 @@
     "texte": ["Un produit resté trop longtemps hors du froid ne doit pas y retourner.", "Un produit sorti du froid n'y retourne pas."],
     "a": ["Réception"],
     "b": ["Stockage"],
-    "c": ["Préparation"]
+    "c": ["Préparation"],
+    "centre": ["Chaîne du froid", "Le froid"],
+    "partie1": ["Livraison"],
+    "partie2": ["Stockage"],
+    "partie3": ["Préparation"],
+    "partie4": ["Service"],
+    "partie5": ["Contrôle"]
   },
   "phrase": "Garder les produits au froid, du camion jusqu'à l'assiette, sans jamais rompre la chaîne",
   "images": {

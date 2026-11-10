@@ -5,7 +5,7 @@
 
 ## L'essentiel
 
-- Partir d'une des **8 scènes toutes faites** (`pulse-motion scene chaleureux <type>`) ; le `type` noté au déroulé permet de changer de style sans réécrire la scène.
+- Partir d'une des **9 scènes toutes faites** (`pulse-motion scene chaleureux <type>`) ; le `type` noté au déroulé permet de changer de style sans réécrire la scène.
 - Décor (`.galet`, `data-decor`) : `data-dur="scene"`. Sur la **dernière scène**, il s'arrête 1 s avant la fin : image stable d'au moins 0,5 s.
 - Formats 16:9, 1:1, 4:5 et 9:16. Ton clair seulement.
 - Un message par scène ; longueurs maximales du § 10 ; 1,5 s de lecture après la dernière entrée.
@@ -78,6 +78,7 @@
 | `etape` | Une étape, numéro rond | 8 s | numero 2, titre 40, texte 80 |
 | `alerte` | Un conseil important | 8 s | titre 40, texte 80 |
 | `schema` | Trois étapes, flèches courbes | 8 s | titre 40, a, b, c 25 |
+| `moyeu` | Un centre, 3 à 5 parties reliées | 10 s | titre 40, centre 24, partie1 … partie5 22 |
 | `conclusion` | Le message et le logo | 6 s | titre 40, sous 50 |
 
 Point ou logo absent : retirer son élément et sa clé.

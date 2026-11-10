@@ -1,6 +1,6 @@
-# Vidéo explicative : flèches, annotations et dessins
+# Vidéo explicative : flèches, annotations, graphiques, code et formules
 
-Lire cette partie pour une scène qui relie des éléments par une flèche, met un mot en valeur au moment où la voix le dit, ou dessine à main levée. La voix pose le rythme : un dessin se trace quand la voix le nomme (`data-start="mot:…"`, voir `pulse-motion reference audio/ancres`). « Ce qui se dit se montre » et « un changement toutes les 2 à 4 s » : `pulse-motion reference realisation`.
+Lire cette partie pour une scène qui relie des éléments par une flèche, met un mot en valeur au moment où la voix le dit, dessine à main levée, montre un graphique de données, du code ou une formule. La voix pose le rythme : un dessin se trace quand la voix le nomme (`data-start="mot:…"`, voir `pulse-motion reference audio/ancres`). « Ce qui se dit se montre » et « un changement toutes les 2 à 4 s » : `pulse-motion reference realisation`.
 
 Tout passe par le **calque de dessin** du moteur : un SVG posé sur la scène, redessiné à chaque image à partir du temps seul, net à tout zoom de caméra. Il vise les éléments par leur `id` et les trouve dans le **relevé** des boîtes de la scène (à l'état final, sans la caméra). Les textes viennent toujours du déroulé.
 
@@ -65,6 +65,75 @@ M.dessin('schema', function (d) {
 - Primitives : `d.trait(points, o)`, `d.chemin('M…', o)`, `d.rect({ x, y, l, h })`, `d.ellipse({ x, y, rx, ry })`, `d.fleche(de, vers, o)`, `d.annoter(cible, { type })`, `d.icone(nom, o)` (icône Lucide : `pulse-motion reference icones`), `d.etiquette(cle, { x, y })` (texte du déroulé), `d.groupe({ x, y, echelle, rotation }, fn)`, `d.couleur('accent')`.
 - Options : `id`, `debut`, `duree`, `fin`, `entree` (`trace`, `fondu`, `pop`, `aucune`), `sortie` (`fondu`, `aucune`), `couleur`, `epaisseur`, `main`, `pointille`, `remplir`, `calque` (`dessous` : sous le texte).
 - Une erreur dans le dessin : règle `dessin-erreur` ; la scène s'affiche sans lui.
+- Graphiques sans textes : `d.barres([12, 19, 27], { x, y, l, h, debut, max })`, `d.courbe([…], o)`, `d.secteurs([…], { anneau: true })` ; pour des étiquettes, prendre le composant `data-graphique` ci-dessous.
+
+## Graphiques de données (#122 à #124)
+
+Les données vont dans le **déroulé**, comme les textes : `scenes[].graphiques.<clé>` (la consigne de l'animateur donne la clé ; `retoucher` écrit le déroulé). La scène pose une figure qui a la place du graphique :
+
+```json
+"graphiques": { "ventes": { "type": "barres", "unite": "%", "source": "Insee, 2025",
+  "valeurs": [{ "etiquette": "2023", "valeur": 12, "debut": "mot:2023" }, { "etiquette": "2024", "valeur": 19, "debut": "mot:2024" }, { "etiquette": "2025", "valeur": 27, "accent": true }] } }
+```
+
+```html
+<figure data-graphique="ventes" data-start="mot:ventes" style="width: 90cqh; height: 50cqh"></figure>
+```
+
+| La donnée parle de… | Graphique (`type`) |
+|---|---|
+| une évolution dans le temps | `courbe` |
+| quantités à comparer, avant / après (deux barres) | `barres` |
+| un classement, des libellés longs | `barres-horizontales`, triées dans les données |
+| les parts d'un tout, 5 au plus | `anneau` (`secteurs` : disque plein) |
+| un seul chiffre clé | pas de graphique : le compteur #021 |
+
+- Axe tracé en 0,5 s ; chaque barre pousse en 0,9 s (la première 0,3 s après l'axe, puis toutes les 0,22 s, ou à son `debut`), sa valeur compte avec elle ; la courbe se trace en 1,6 s (ou passe par chaque point à son `debut`), son aire apparaît en dégradé ; l'anneau se remplit en 1,2 s, chaque étiquette (« Images 55 % ») arrive avec sa part.
+- Nombres à la française (« 1 250,5 », « 12 % ») : écrire `1250.5`, jamais « 1 250 » ni l'unité dans `valeur`. `unite`, `prefixe`, `max` (haut de l'échelle), `decimales`, `accent` (valeur à la couleur d'accent), `null` (valeur inconnue : contour pointillé).
+- Les barres partent toujours de zéro ; la source s'affiche sous le graphique. Vérité des chiffres (source, « à date », exemple) : `pulse-motion reference realisation`.
+- Étiquettes, valeurs et source sont des textes jugés par le contrôle. Données fausses (valeur non numérique, liste vide, plus de 12 barres ou de 6 secteurs) : règle `graphique-donnees-invalides`.
+
+## Code qui se transforme (#125)
+
+```json
+"code": { "formule": { "langage": "tableur", "titre": "Ventes.xlsx",
+  "etapes": [{ "code": "=SOMME(B2:B13)" }, { "code": "=MOYENNE(B2:B13)", "debut": "mot:moyenne", "surligner": [1] }] } }
+```
+
+```html
+<figure data-code="formule" data-start="mot:formule"></figure>
+```
+
+- Une fenêtre aux couleurs de la charte (barre de titre, police à chasse fixe embarquée seulement si la vidéo a du code). Langages : `tableur` (fonctions, plages `B2:B13`, `$A$1`, textes, nombres à virgule, `;`), `js`, `python`, `html`, `css`, `sql`, `json`, `sh`, `texte`.
+- D'une étape à l'autre en 0,8 s : les morceaux communs glissent, les retirés s'effacent, les nouveaux apparaissent ; chaque étape après la première a son `debut`. `surligner` : numéros des lignes mises en valeur.
+- Première apparition par lignes (0,12 s par ligne) ; `data-code-entree="frappe"` : tapé comme la saisie d'un écran. Taille : `--pm-code-taille` (3,6 cqh) ; une ligne plus large que la fenêtre : `code-trop-large`.
+
+## Formules
+
+```json
+"formules": { "aire": "\\pi r^2", "interets": "C_n = C_0 \\times (1 + t)^n" }
+```
+
+```html
+<p class="texte"><span data-texte="legende" data-start="0.6"></span> <span data-formule="aire" data-start="1.2"></span></p>
+```
+
+- Écrite en TeX simple, affichée en formule mathématique (police embarquée seulement si la vidéo en a une). Permis : lettres, chiffres (`3,5`), `+ - * / = < >`, `\frac{a}{b}`, `^`, `_`, `\sqrt{x}`, `\sqrt[3]{x}`, `\sum`, `\prod`, `\int`, `\lim`, `\to`, `\infty`, lettres grecques (`\pi`, `\alpha`…), `\cdot`, `\times`, `\div`, `\pm`, `\neq`, `\leq`, `\geq`, `\approx`, `\left( … \right)`, `\text{par an}`, `\%`, `\overline{x}`, `\vec{u}`, `\sin`, `\ln`. Autre chose : `formule-non-prise-en-charge`, qui propose une forme permise.
+- Entrée par une classe du dictionnaire (`pm-m-pop`, fondu, masque) ; pas de tracé à la main sur une formule. Une formule de tableur se montre en code (`"langage": "tableur"`).
+
+## Cinq squelettes
+
+Composer l'image finale entière (tout ce qui sera montré, à sa place), puis la faire apparaître au fil de la voix.
+
+| Squelette | Scène toute faite | Paysage | Portrait (9:16) |
+|---|---|---|---|
+| grand nombre | `chiffre` | le nombre au centre, sa légende dessous | pareil, plus petit |
+| comparaison | `comparaison` | deux colonnes | deux blocs empilés |
+| étapes | `etape`, `liste` | une étape, ou 2 à 4 points | empilés |
+| moyeu | `moyeu` | un centre, 3 à 5 parties en couronne, une flèche vers chacune | les parties en rangée sous le centre |
+| schéma | `schema` | trois boîtes reliées par `data-fleche` | les boîtes empilées, flèches verticales |
+
+`moyeu` : clés `titre`, `centre`, `partie1` à `partie5` (4 et 5 facultatives : retirer la partie et sa flèche). En portrait, des parties courtes (14 caractères). Une flèche se courbe par le style : `--pm-fleche-courbe` sur l'élément `data-fleche`, quand il n'a pas `data-fleche-courbe`.
 
 ## Encre des styles
 
@@ -78,6 +147,9 @@ Un style qui peint son encre dans son propre canevas (fusions permises) pose `da
 - Un mot de repère dit deux fois : la première fois compte (`mot:froid#2` pour la seconde).
 - Une flèche vers un élément qui traverse l'image sans `data-fleche-suivre` : elle vise sa place d'arrivée.
 - Une annotation sur un bloc entier : elle prend toute sa largeur ; viser le `<span>` du mot.
+- Un chiffre, un code ou une formule écrit dans la figure : tout vient du déroulé (`graphiques`, `code`, `formules`) ; une clé absente : `donnees-manquantes`.
+- « 19 % » dans `valeur` : écrire `19` et `"unite": "%"`.
+- L'allure appliquée à la main dans les durées : le moteur divise déjà les durées des graphiques et du code par l'allure.
 
 ## Retouches en une phrase
 
@@ -89,3 +161,8 @@ Un style qui peint son encre dans son propre canevas (fusions permises) pose `da
 | « souligne, surligne, barre, encadre ce mot » | le type d'annotation qui convient |
 | « plus dessiné », « comme au tableau » | `--pm-trait: main` sur la scène ; « qui frémit » : `--pm-ebullition: 8` |
 | « la flèche plus courbe », « dans les deux sens » | `data-fleche-courbe="0.4"`, `data-fleche-tete="deux"` |
+| « fais un graphique avec ces chiffres » | `scenes[].graphiques.<clé>` (type d'après la table), `<figure data-graphique="<clé>">` |
+| « la barre 2024 quand je dis 2024 » | `"debut": "mot:2024"` sur sa valeur |
+| « mets 2025 en avant » | `"accent": true` sur sa valeur |
+| « montre la formule, puis passe à la moyenne quand je dis moyenne » | `scenes[].code.<clé>`, une étape par version, `"debut": "mot:moyenne"` |
+| « écris la formule de l'aire du disque » | `scenes[].formules.aire = "\\pi r^2"`, `<span data-formule="aire">` |

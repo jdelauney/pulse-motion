@@ -77,7 +77,9 @@ Deux zooms dont le second commence moins de 1,5 s après la fin du premier ne re
 | `revelation-3d` | Une capture qui se redresse de 35° à plat (classe `pm-3d`) |
 | `liste` | Une liste déroulante ouverte, l'option choisie (`pm-bloc-choisie`) mise en valeur à son instant |
 | `dialogue` | Une boîte de dialogue, le bouton choisi enfoncé à son instant |
+| `carte-graphique` | Une carte de tableau de bord : titre, chiffre clé et graphique qui pousse (`data-graphique`, données dans le déroulé : `pulse-motion reference explication`) |
+| `carte-organigramme` | Une carte d'organigramme : un responsable et trois équipes reliées par des flèches qui se tracent (`data-fleche`) |
 
 ## À venir
 
-Filmer une vraie application (parcours décrit en phrases, prise figée, flou des données personnelles), importer une vidéo de l'écran : spec S6, plans 2 à 4. Les cartes « graphique » et « organigramme » arrivent avec les graphiques animés (S7).
+Filmer une vraie application (parcours décrit en phrases, prise figée, flou des données personnelles), importer une vidéo de l'écran : spec S6, plans 2 à 4.

@@ -5,7 +5,7 @@
 
 ## L'essentiel
 
-- Partir d'une des **8 scènes toutes faites** (`pulse-motion scene clair-pedagogique <type>`) ; le `type` noté au déroulé permet de changer de style sans réécrire la scène.
+- Partir d'une des **9 scènes toutes faites** (`pulse-motion scene clair-pedagogique <type>`) ; le `type` noté au déroulé permet de changer de style sans réécrire la scène.
 - Décor (`.rond`, `data-decor`) : `data-dur="scene"`. Sur la **dernière scène**, il s'arrête 1 s avant la fin : image stable d'au moins 0,5 s.
 - Formats 16:9, 1:1, 4:5 et 9:16 (en vertical, colonnes, étape et schéma s'empilent). Ton clair par défaut, sombre sur demande.
 - Un message par scène ; longueurs maximales du § 10 ; 1,5 s de lecture après la dernière entrée.
@@ -80,13 +80,14 @@
 | `etape` | Une étape numérotée | 8 s | numero 2, titre 40, texte 80 |
 | `alerte` | Un point de vigilance | 8 s | titre 40, texte 80 |
 | `schema` | Trois étapes fléchées | 8 s | titre 40, a, b, c 25 |
+| `moyeu` | Un centre, 3 à 5 parties reliées | 10 s | titre 40, centre 24, partie1 … partie5 22 |
 | `conclusion` | Le message et le logo | 6 s | titre 40, sous 50 |
 
 Point ou logo absent : retirer son élément et sa clé.
 - Texte : `.etiquette`, `.titre`, `.titre-moyen`, `.sous-titre`, `.texte`, `.grand-chiffre` ; `.centre`, `.rangee`.
 - Entrées : `.entre-bas`, `.entre-gauche`, `.entre-droite`, `.zoom`, `.fondu` ; `.trait` se trace.
 - Décor : `.decor` + `.rond`, `.rond.accent`.
-- Scènes : `.liste` ; `.colonne` (`.accent`), `.colonne-titre` ; `.etape`, `.numero`, `.etape-texte` ; `.alerte`, `.alerte-icone`, `.alerte-corps` ; `.schema`, `.boite`, `.fleche` ; `.logo`.
+- Scènes : `.liste` ; `.colonne` (`.accent`), `.colonne-titre` ; `.etape`, `.numero`, `.etape-texte` ; `.alerte`, `.alerte-icone`, `.alerte-corps` ; `.schema`, `.boite`, `.fleche` ; `.moyeu`, `.moyeu-centre`, `.moyeu-partie` ; `.logo`.
 
 Modules du moteur : aucun. Scène composée : ces classes et `<style>@scope { … }</style>`.
 

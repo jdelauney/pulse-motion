@@ -286,7 +286,7 @@ test('styles --genre : fiche complète pour 3 styles, forme courte pour les autr
   assert.ok(octets(sortie) <= 6000, `${octets(sortie)} o`);
   assert.deepEqual(liste.slice(0, 3).map((f) => f.style), ['clair-pedagogique', 'chaleureux', 'perso-1']);
   for (const f of liste.slice(0, 3)) {
-    assert.deepEqual(Object.keys(f.scenes), ['titre', 'liste', 'chiffre', 'comparaison', 'etape', 'alerte', 'schema', 'conclusion']);
+    assert.deepEqual(Object.keys(f.scenes), ['titre', 'liste', 'chiffre', 'comparaison', 'etape', 'alerte', 'schema', 'moyeu', 'conclusion']);
     assert.ok(f.signature && f.personnalite.length === 3 && f.usages.length === 3);
   }
   assert.equal(liste[0].scenes.titre, '7 s · etiquette 25, titre 40, sous 50');
