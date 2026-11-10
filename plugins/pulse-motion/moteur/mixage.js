@@ -1,4 +1,5 @@
-/* Pulse Motion – courbes du mixage : groupes de parole, baisse de la musique sous la voix (ducking), fondus.
+/* Pulse Motion – courbes du mixage : groupes de parole, baisse de la musique sous la voix (ducking), fondus ; boucle parfaite
+ * (spec Rendu et export, 5.18) : pas de fondus, et ce qui dépasse la fin replié au début (replierBoucle).
  *
  * Module pur : chargé tel quel dans la page (global M.mixage) et par Node (require).
  */
@@ -54,7 +55,9 @@
   }
 
   /** Fondus de la musique : entrée 0,5 s, sortie 1,5 s, ramenés dans la moitié d'une vidéo courte. -> [{ t, v }] */
-  function pointsFondus(duree, volume) {
+  function pointsFondus(duree, volume, options) {
+    // En boucle, la musique ne s'éteint ni ne s'allume : la fin rejoint le début.
+    if (options && options.boucle) return [{ t: 0, v: volume }, { t: arrondi(duree), v: volume }];
     var entree = Math.min(FONDU_ENTREE, duree / 2);
     var sortie = Math.max(duree - FONDU_SORTIE, duree / 2);
     var pts = [{ t: 0, v: 0 }, { t: arrondi(entree), v: volume }];
@@ -63,5 +66,22 @@
     return pts.filter(function (p, i) { return i === 0 || p.t > pts[i - 1].t; });
   }
 
-  return { DUCKING: DUCKING, groupesParole: groupesParole, pointsDucking: pointsDucking, pointsFondus: pointsFondus };
+  /** Longueur rendue en plus de la vidéo pour une boucle : la queue (réverbérations, résonances) repliée au début. */
+  var QUEUE_BOUCLE = 2;
+  /**
+   * Boucle parfaite (5.18) : canaux rendus sur n + queue échantillons -> canaux de n échantillons, la queue [n, n + q) ajoutée au
+   * début, et le tout début du son d'origine ouvert en fondu sur fondu secondes (10 ms) : au premier échantillon, la jointure vaut
+   * exactement la suite du son à la fin, sans clic.
+   */
+  function replierBoucle(canaux, n, taux, fondu) {
+    var f = Math.max(1, Math.round((fondu === undefined ? 0.01 : fondu) * taux));
+    return canaux.map(function (c) {
+      var sortie = new Float32Array(n);
+      for (var i = 0; i < n; i++) sortie[i] = c[i] * (i < f ? i / f : 1);
+      for (var j = n; j < c.length && j - n < n; j++) sortie[j - n] += c[j];
+      return sortie;
+    });
+  }
+
+  return { DUCKING: DUCKING, groupesParole: groupesParole, pointsDucking: pointsDucking, pointsFondus: pointsFondus, replierBoucle: replierBoucle, QUEUE_BOUCLE: QUEUE_BOUCLE };
 });

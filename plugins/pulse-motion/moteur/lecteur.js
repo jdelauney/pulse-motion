@@ -70,6 +70,8 @@
       if (son.contexte.state === 'suspended') son.contexte.resume();
       var s = son.contexte.createBufferSource();
       s.buffer = son.tampon;
+      // Boucle parfaite (5.18) : le son boucle de lui-même, la jointure est déjà faite dans le tampon.
+      if (M.donnees && M.donnees.boucle) s.loop = true;
       s.connect(son.contexte.destination);
       s.start(0, Math.max(0, t));
       son.source = s;
@@ -218,7 +220,11 @@
       var t = M.temps() + (maintenant - dernier) / 1000;
       dernier = maintenant;
       if (boucle && t >= boucle.fin) t = boucle.debut;
-      if (t >= M.duree) { M.rendre(M.duree); pause(); return; }
+      if (t >= M.duree) {
+        // Vidéo en boucle (5.18) : elle reprend au début, le son continue (il boucle lui-même).
+        if (M.donnees && M.donnees.boucle && M.duree > 0) { t = t % M.duree; if (!son.source) lancerSon(t); }
+        else { M.rendre(M.duree); pause(); return; }
+      }
       M.rendre(t);
       M.reel.raf(boucler);
     }

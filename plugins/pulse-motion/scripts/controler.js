@@ -202,6 +202,11 @@ function controlesRapides({ projet, dossierStyles, dossierEffets, assemblage = A
       }
     }
 
+    // Boucle parfaite (spec Rendu et export, 5.18) : avec un tempo connu, la durée fait un nombre entier de mesures de 4 temps.
+    if (deroule.boucle === true && temps) {
+      const r = require('./lib/boucle.js').mesureEntiere({ duree: min.duree, temps, ips: deroule.format.ips || 30 });
+      if (r) problemes.push(require('./lib/boucle.js').problemeMesure(r));
+    }
     // Grille fixe : chaque scène commence sur un temps (à une demi-image près) ; la première commence la vidéo.
     if (temps && grilleFixe(deroule)) {
       const tolerance = 0.5 / (deroule.format.ips || 30);
@@ -547,7 +552,10 @@ async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.j
     } else {
       av(2, 10, `vidéo rendue dans le navigateur (${changees.length} scène${changees.length > 1 ? 's' : ''})`);
       // Avancement par scène pendant le rendu : scènes dont les images ont été relevées.
-      const opt = { html: assemblage.html, ratio: deroule.format.ratio, duree, genre: deroule.genre, ecoute,
+      // Boucle (5.18) : jointure mesurée quand la première ou la dernière scène est mesurée (la dernière porte l'alerte).
+      const bout = deroule.boucle === true && (!comparable || changees.includes(ids[0]) || changees.includes(ids[ids.length - 1]));
+      if (bout && comparable && !changees.includes(ids[ids.length - 1])) changees.push(ids[ids.length - 1]);
+      const opt = { html: assemblage.html, ratio: deroule.format.ratio, duree, genre: deroule.genre, ecoute, boucle: bout,
         surScene: (k, n) => av(2 + Math.round((6 * k) / Math.max(1, n)), 10, `scène ${k} sur ${n}`) };
       if (navigateur !== undefined) opt.navigateur = navigateur;
       if (comparable) {

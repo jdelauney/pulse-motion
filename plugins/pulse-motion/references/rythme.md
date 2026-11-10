@@ -41,6 +41,10 @@
 - Un texte de scène se lit en une fois : 80 caractères au plus.
 - Écrire des nombres en chiffres (« 4 °C », « 3 étapes ») : ils se lisent plus vite.
 
+## Finir sur l'image de départ
+
+Vidéo en boucle (`boucle: true` dans le déroulé) : la dernière scène finit sur l'image de départ de la première (mêmes positions, tailles et couleurs), à la même vitesse, sans arrêt ni fondu au noir ; la première scène commence sans entrée depuis le vide. Contrôles : `boucle-jointure`, `boucle-mesure`.
+
 ## Les parties
 
 - `pulse-motion reference rythme/scene` : mouvement, chiffres et ce qu'il faut éviter, à lire pour une scène composée ou témoin.
