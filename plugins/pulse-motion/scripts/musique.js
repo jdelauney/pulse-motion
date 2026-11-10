@@ -26,7 +26,7 @@ async function ecouterMusique({ dossier, navigateur = trouverNavigateur(), dossi
   const sortie = path.join(projet, 'sortie');
   fs.mkdirSync(sortie, { recursive: true });
   const page = path.join(sortie, '.musique.html');
-  fs.writeFileSync(page, a.html);
+  fs.writeFileSync(page, a.html, 'utf8');
   let capture;
   try {
     capture = await ouvrirCapture({ fichierHtml: page, largeur: 640, hauteur: 360, navigateur });

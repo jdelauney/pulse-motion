@@ -66,7 +66,7 @@ function projetEssai({ dossierStyle, ratio = '16:9', ton, types = null, textes: 
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), `pm-essai-${style}-`));
   fs.mkdirSync(path.join(dir, 'scenes'));
   fs.mkdirSync(path.join(dir, 'assets'));
-  fs.writeFileSync(path.join(dir, 'assets', 'logo.svg'), '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><circle cx="5" cy="5" r="5"/></svg>');
+  fs.writeFileSync(path.join(dir, 'assets', 'logo.svg'), '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><circle cx="5" cy="5" r="5"/></svg>', 'utf8');
   const scenes = choisies.map((s, i) => {
     fs.copyFileSync(path.join(dossierStyle, 'scenes', `${s.nom}.html`), path.join(dir, 'scenes', `${s.nom}.html`));
     const textes = {};
@@ -84,7 +84,7 @@ function projetEssai({ dossierStyle, ratio = '16:9', ton, types = null, textes: 
   if (ton) charte.ton = ton;
   fs.writeFileSync(path.join(dir, 'deroule.json'), JSON.stringify({
     version: 1, titre: `Essai ${style}`, genre: 'formation', parcours: 'rapide', format: { ratio, ips: 30 }, style, charte, scenes,
-  }, null, 2));
+  }, null, 2), 'utf8');
   return dir;
 }
 

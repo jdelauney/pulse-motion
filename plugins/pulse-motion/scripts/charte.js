@@ -86,7 +86,7 @@ function enregistrerCharte({ nom, dossier, renommer = fs.renameSync, supprimer =
     if (ponctuel.logo) charte.logo = copier(ponctuel.logo, `logo${path.extname(ponctuel.logo).toLowerCase()}`);
     if (!Object.keys(charte.couleurs).length) delete charte.couleurs;
     if (!Object.keys(charte.polices).length) delete charte.polices;
-    fs.writeFileSync(path.join(temporaire, 'charte.json'), JSON.stringify(charte, null, 2));
+    fs.writeFileSync(path.join(temporaire, 'charte.json'), JSON.stringify(charte, null, 2), 'utf8');
     // L'ancienne version reste en place tant que la nouvelle n'a pas pris son nom.
     fs.rmSync(ancienne, { recursive: true, force: true });
     const remplace = fs.existsSync(final);
@@ -139,7 +139,7 @@ function appliquerCharte({ nom, dossier }) {
   const glossaireAvant = lireGlossaire(projet).termes;
   fs.rmSync(cible, { recursive: true, force: true });
   fs.cpSync(source, cible, { recursive: true });
-  fs.writeFileSync(path.join(cible, MARQUE), JSON.stringify({ nom, empreinte: empreinte(source) }, null, 2));
+  fs.writeFileSync(path.join(cible, MARQUE), JSON.stringify({ nom, empreinte: empreinte(source) }, null, 2), 'utf8');
   for (const t of glossaireAvant) noterGlossaire({ dossier: projet, terme: t.terme, sens: t.sens || '—', eviter: t.eviter.join(', '), prononciation: t.prononciation, sauvegarde: false });
   // Le déroulé garde son ton, et son logo si la charte n'en a pas ; le reste vient désormais de la charte.
   const brut = JSON.parse(fs.readFileSync(path.join(projet, 'deroule.json'), 'utf8').replace(/^﻿/, ''));
@@ -150,7 +150,7 @@ function appliquerCharte({ nom, dossier }) {
   if (avant.logo && !charteAppliquee.logo) garde.logo = avant.logo;
   const retires = Object.keys(avant).filter((cle) => cle !== 'modele' && !(cle in garde));
   brut.charte = garde;
-  fs.writeFileSync(path.join(projet, 'deroule.json'), JSON.stringify(brut, null, 2));
+  fs.writeFileSync(path.join(projet, 'deroule.json'), JSON.stringify(brut, null, 2), 'utf8');
   return { ok: true, nom, retires };
 }
 

@@ -4,7 +4,8 @@
  *
  * navigateursParalleles({ taches, fils?, memoireLibre?, gpu?, force?, parNavigateur? }) -> { nombre, regle }
  *   nombre = min(⌊fils / 2⌋, 4, ⌊(mémoire libre − 1,5 Go) / mémoire par navigateur⌋, taches), au moins 1 ;
- *   gpu (vidéo à effets) : 2 au plus, les navigateurs se disputent la carte graphique ;
+ *   gpu (vidéo à effets) : 2 au plus, les navigateurs se disputent la carte graphique (à 4, deux exports du témoin de
+ *   3 min diffèrent encore à trois endroits en 0.36.0, après le correctif des fins de transition : plafond gardé) ;
  *   force (PM_PARALLELES, de 1 à 8) : ce nombre, sans dépasser le nombre de tâches.
  * Idées de reanimate, explainroo (min(8, cœurs / 2)) et lemo (seuil de mémoire), réécrites.
  */

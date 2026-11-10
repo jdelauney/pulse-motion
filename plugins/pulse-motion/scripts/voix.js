@@ -26,7 +26,7 @@ function ecrireDeroule(projet, fn) {
   const fichier = path.join(projet, 'deroule.json');
   const d = JSON.parse(fs.readFileSync(fichier, 'utf8').replace(/^\uFEFF/, ''));
   fn(d);
-  fs.writeFileSync(fichier, JSON.stringify(d, null, 2) + '\n');
+  fs.writeFileSync(fichier, JSON.stringify(d, null, 2) + '\n', 'utf8');
 }
 
 function sceneAvecTexte(deroule, id) {
@@ -212,7 +212,7 @@ function synthetiserSysteme(texte, sortie, { plateforme = process.platform, lanc
   let r;
   // Texte passé par un fichier : jamais pris pour une option (« -v… ») ni coupé par les guillemets.
   const fichierTexte = `${sortie}.txt`;
-  if (plateforme !== 'win32') fs.writeFileSync(fichierTexte, texte);
+  if (plateforme !== 'win32') fs.writeFileSync(fichierTexte, texte, 'utf8');
   if (plateforme === 'win32') {
     const script = 'Add-Type -AssemblyName System.Speech; $s = New-Object System.Speech.Synthesis.SpeechSynthesizer; '
       + '$v = $s.GetInstalledVoices() | Where-Object { $_.VoiceInfo.Culture.Name -like "fr*" } | Select-Object -First 1; '

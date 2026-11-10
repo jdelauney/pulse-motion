@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { etatOutils } = require('../scripts/outils.js');
+const CG = require('../scripts/lib/carte-graphique.js');
 
 const tout = {
   trouverNavigateur: () => 'C:/chrome.exe',
@@ -11,6 +12,7 @@ const tout = {
   etatWhisper: () => ({ python: { commande: ['py'], version: '3.12.1' }, venv: true, modele: 'small', pret: true, message: 'prête' }),
   pythonAncien: () => null,
   voixSysteme: () => ({ ok: true, message: 'voix du système disponible' }),
+  sonderCarteGraphique: () => ({ ok: true, logiciel: false, webgpu: true, message: 'La carte graphique est utilisée par Chrome.' }),
 };
 
 test('tout présent : chaque outil ok', () => {
@@ -53,4 +55,34 @@ test('pulse-motion outils : JSON, code 0 même quand des outils manquent', () =>
   const e = JSON.parse(r.stdout);
   assert.equal(e.node.ok, true);
   assert.ok('transcription' in e && 'voixSysteme' in e);
+});
+
+test('outils.test.js › carteGraphique : logiciel reconnu sur SwiftShader et llvmpipe, message en français', () => {
+  const swift = CG.juger({ webgpu: true, repli: false, description: 'google swiftshader', webgl: 'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero)), SwiftShader driver)' });
+  assert.deepEqual([swift.ok, swift.logiciel], [false, true]);
+  assert.match(swift.message, /^Chrome dessine sans la carte graphique : .*pilote de la carte graphique/);
+  const llvm = CG.juger({ webgpu: false, webgl: 'llvmpipe (LLVM 15.0.7, 256 bits)' });
+  assert.deepEqual([llvm.ok, llvm.logiciel], [false, true]);
+  assert.equal(CG.juger({ webgpu: true, repli: true, webgl: 'ANGLE (NVIDIA)' }).logiciel, true, 'adaptateur de repli');
+  assert.equal(CG.juger({ webgpu: true, webgl: 'ANGLE (Microsoft, Microsoft Basic Render Driver)' }).logiciel, true);
+  const sans = CG.juger({ webgpu: false, webgl: 'ANGLE (NVIDIA GeForce)' });
+  assert.deepEqual([sans.ok, sans.logiciel, sans.webgpu], [false, false, false]);
+  assert.match(sans.message, /n'a pas WebGPU : les effets de particules ne s'afficheront pas/);
+  assert.deepEqual(CG.juger({ webgpu: true, webgl: 'ANGLE (NVIDIA GeForce RTX)' }), { ok: true, logiciel: false, webgpu: true, message: 'La carte graphique est utilisée par Chrome.' });
+  // Sonde en processus enfant synchrone, délai de 20 s : une sonde muette est dite en une phrase.
+  let vu = null;
+  const r = CG.sonderCarteGraphique({ navigateur: 'C:/chrome.exe', lancer: (cmd, args, o) => { vu = o.timeout; return { error: { code: 'ETIMEDOUT' }, status: null, stdout: '' }; } });
+  assert.equal(vu, 20000);
+  assert.match(r.message, /n'a pas pu être vérifiée \(pas de réponse en 20 s\)/);
+  const ok = CG.sonderCarteGraphique({ navigateur: 'x', lancer: () => ({ status: 0, stdout: JSON.stringify({ webgpu: true, webgl: 'llvmpipe' }) }) });
+  assert.equal(ok.logiciel, true);
+  assert.equal(etatOutils(tout).carteGraphique.ok, true);
+});
+
+test('outils.test.js › sans navigateur, carteGraphique n\'est pas sondée', () => {
+  let sondee = false;
+  const e = etatOutils({ ...tout, trouverNavigateur: () => null, sonderCarteGraphique: () => { sondee = true; return {}; } });
+  assert.equal(e.navigateur.ok, false);
+  assert.equal(e.carteGraphique, null);
+  assert.equal(sondee, false);
 });

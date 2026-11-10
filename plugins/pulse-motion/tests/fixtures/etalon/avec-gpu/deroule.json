@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "titre": "Étalon avec GPU",
+  "genre": "formation",
+  "parcours": "rapide",
+  "format": { "ratio": "16:9", "ips": 30 },
+  "style": "clair-pedagogique",
+  "scenes": [
+    {
+      "id": "etincelles", "fichier": "scenes/01-etincelles.html", "duree": 4.5, "transition": "fondu",
+      "textes": { "titre": "Des étincelles", "sous": "Un effet de particules autour du titre" }
+    },
+    {
+      "id": "fond", "fichier": "scenes/02-fond.html", "duree": 4,
+      "transition": { "shader": "dissolution", "duree": 0.8 },
+      "textes": { "titre": "Un fond par shader" }
+    }
+  ]
+}

@@ -48,14 +48,14 @@ function preparerProjet(projet, deroule, st, ids, temporaires = []) {
     try { if (fichierAncien) ancien = fs.readFileSync(fichierAncien, 'utf8'); } catch { /* scène pas encore écrite */ }
     const modele = fs.readFileSync(path.join(st.dossier, 'scenes', `${type}.html`), 'utf8');
     const fichier = `scenes/${id}.html`;
-    fs.writeFileSync(path.join(dossier, fichier), adapterScene(modele, { type, id, duree: s.duree, textes, logo, nombre: lireNombre(ancien) }));
+    fs.writeFileSync(path.join(dossier, fichier), adapterScene(modele, { type, id, duree: s.duree, textes, logo, nombre: lireNombre(ancien) }), 'utf8');
     return { id, type, fichier, duree: s.duree, rythme: s.rythme, textes, transition: s.transition };
   });
   const copie = { ...deroule, titre: `${deroule.titre} – ${st.nom}`, style: st.nom, scenes };
   delete copie.musique;
   // Sans la musique, garder son tempo : les scènes en temps musicaux (« 4t ») restent lisibles.
   if (!copie.tempo && tempoMusique(deroule)) copie.tempo = { bpm: tempoMusique(deroule) };
-  fs.writeFileSync(path.join(dossier, 'deroule.json'), JSON.stringify(copie, null, 2));
+  fs.writeFileSync(path.join(dossier, 'deroule.json'), JSON.stringify(copie, null, 2), 'utf8');
   return { dossier, avertissements };
 }
 
@@ -141,7 +141,7 @@ async function comparer({
     return fin({ ok: false, message: `Style « ${echecs[0].style} » : ${echecs[0].message}`, echecs });
   }
   for (const e of echecs) avertissements.push(`Style « ${e.style} » : ${e.message} (absent de la comparaison)`);
-  fs.writeFileSync(path.join(sortie, 'comparaison.html'), pageComparaison(deroule.titre, colonnes));
+  fs.writeFileSync(path.join(sortie, 'comparaison.html'), pageComparaison(deroule.titre, colonnes), 'utf8');
   const fichier = 'sortie/comparaison/comparaison.html';
   if (ouvrir) ouvrirFichier(path.join(projet, fichier));
   return fin({ ok: true, fichier, images: colonnes.flatMap((c) => c.images.map((i) => `sortie/comparaison/${i.src}`)), avertissements, ...(echecs.length ? { echecs } : {}) });

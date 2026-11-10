@@ -85,7 +85,7 @@ function ajouterRangee(fichier, sorte, cellules) {
   try {
     fs.mkdirSync(path.dirname(fichier), { recursive: true });
     const temporaire = `${fichier}.${process.pid}.tmp`;
-    fs.writeFileSync(temporaire, resultat);
+    fs.writeFileSync(temporaire, resultat, 'utf8');
     fs.renameSync(temporaire, fichier);
   } catch (e) {
     throw new Error(`Impossible d'écrire « ${fichier} » (${e.code || e.message}) : vérifiez les droits de ce dossier, ou indiquez un autre dossier avec la variable PULSE_MOTION_DOSSIER.`);
@@ -126,7 +126,7 @@ function marquerCle(fichier, terme) {
   });
   try {
     const temporaire = `${fichier}.${process.pid}.tmp`;
-    fs.writeFileSync(temporaire, lignes.join('\n'));
+    fs.writeFileSync(temporaire, lignes.join('\n'), 'utf8');
     fs.renameSync(temporaire, fichier);
   } catch (e) {
     throw new Error(`Impossible d'écrire « ${fichier} » (${e.code || e.message}) : vérifiez les droits de ce dossier.`);

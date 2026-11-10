@@ -154,7 +154,7 @@ async function executer(html, { navigateur, largeur = 1100, hauteur = 1100, capt
   let p = null;
   try {
     const fichier = path.join(dossier, 'page.html');
-    fs.writeFileSync(fichier, html);
+    fs.writeFileSync(fichier, html, 'utf8');
     p = await require('./cdp.js').ouvrirPage({ navigateur: nav, largeur, hauteur });
     await p.aller(pathToFileURL(fichier).href);
     const r = await p.evaluer('window.__resultat || { erreur: "la page n\'a pas fini" }');

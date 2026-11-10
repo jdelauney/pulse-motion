@@ -90,7 +90,7 @@ function prendreVerrou(travail) {
   const jeton = crypto.randomBytes(8).toString('hex');
   for (let essai = 0; essai < 3; essai++) {
     try {
-      fs.writeFileSync(fichier, JSON.stringify({ pid: process.pid, date: new Date().toISOString(), jeton }), { flag: 'wx' });
+      fs.writeFileSync(fichier, JSON.stringify({ pid: process.pid, date: new Date().toISOString(), jeton }), { encoding: 'utf8', flag: 'wx' });
       return {
         ok: true,
         liberer() {
@@ -144,7 +144,7 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
   const projet = path.resolve(dossier);
   const sortieDir = path.join(projet, 'sortie');
   const suivi = path.join(sortieDir, 'export.json');
-  const etat = (e) => { fs.mkdirSync(sortieDir, { recursive: true }); fs.writeFileSync(suivi, JSON.stringify({ ...e, mode: 'fidele', date: new Date().toISOString() }, null, 2)); };
+  const etat = (e) => { fs.mkdirSync(sortieDir, { recursive: true }); fs.writeFileSync(suivi, JSON.stringify({ ...e, mode: 'fidele', date: new Date().toISOString() }, null, 2), 'utf8'); };
   if (!outil || !outil.present || outil.versionOk === false) return { ok: false, audio: false, message: (outil && outil.message) || 'ffmpeg n\'est pas installé.' };
   if (!navigateur) return { ok: false, audio: false, message: 'Chrome ou Edge introuvable : installez l\'un des deux, ou indiquez son chemin avec la variable PM_NAVIGATEUR.' };
   if (!TAILLES[qualite]) return { ok: false, audio: false, message: `Qualité « ${qualite} » inconnue : 1080p ou 720p.` };
@@ -198,7 +198,7 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
     // Dossier de travail d'une version précédente (empreinte, segment-NN.mp4, page, son) : retiré, rien n'en est repris.
     for (const f of fs.readdirSync(travail)) if (!GARDES.has(f)) retirer(path.join(travail, f));
     for (const d of [dossierSegments, dossierPixels]) for (const f of fs.readdirSync(d)) if (f.endsWith('.part')) retirer(path.join(d, f));
-    fs.writeFileSync(page, assemblage.html);
+    fs.writeFileSync(page, assemblage.html, 'utf8');
     const premiere = await ouvrir();
     // Son : le mixage de la page (le même que l'aperçu), rendu une fois ; illisible : vidéo muette avec un avertissement.
     const avertissements = [];
@@ -514,7 +514,7 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
     }
     // Export réussi : ses segments deviennent « le dernier export » ; les autres sont retirés.
     const conserves = new Set([...inter, ...fichiers].map((f) => path.relative(dossierSegments, f).replace(/\\/g, '/')));
-    fs.writeFileSync(dernier, JSON.stringify({ date: new Date().toISOString(), fichiers: [...conserves] }, null, 2));
+    fs.writeFileSync(dernier, JSON.stringify({ date: new Date().toISOString(), fichiers: [...conserves] }, null, 2), 'utf8');
     purger(conserves);
     const resultat = {
       ok: true, fichier: final, images: total, duree: total / cadence, largeur, hauteur, audio: Boolean(audio),
@@ -549,7 +549,7 @@ async function exporterFidele({ dossier, qualite = '1080p', ips, navigateur = tr
     if (P.actif) {
       const phases = Object.fromEntries(Object.entries(P.phases).map(([k, v]) => [k, Math.round(v)]));
       try {
-        fs.writeFileSync(path.join(travail, 'profil.json'), JSON.stringify({ version: 1, unite: 'ms', totalMs: Math.round(performance.now() - debutExport), ...resume, phases }, null, 2));
+        fs.writeFileSync(path.join(travail, 'profil.json'), JSON.stringify({ version: 1, unite: 'ms', totalMs: Math.round(performance.now() - debutExport), ...resume, phases }, null, 2), 'utf8');
       } catch { /* profil facultatif */ }
     }
     verrou.liberer();

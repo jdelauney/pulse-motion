@@ -233,7 +233,7 @@ function ecrireFiche({ projet, deroule, infos, ids, index, doctrine, glossaire, 
   L.push('');
   if (doctrine) L.push(doctrine, '');
   const fichier = path.join(projet, 'sortie', 'regard', 'fiche.md');
-  fs.writeFileSync(fichier, `${L.join('\n').replace(/\n{3,}/g, '\n\n').trimEnd()}\n`);
+  fs.writeFileSync(fichier, `${L.join('\n').replace(/\n{3,}/g, '\n\n').trimEnd()}\n`, 'utf8');
   return fichier;
 }
 
@@ -265,7 +265,7 @@ async function planchesRegard({ dossier, scenes = null, dossierStyles, navigateu
   const ratio = deroule.format.ratio;
   const [largeur, hauteur] = tailleCapture(ratio);
   const pageVideo = path.join(travail, 'video.html');
-  fs.writeFileSync(pageVideo, assemblage.html);
+  fs.writeFileSync(pageVideo, assemblage.html, 'utf8');
   let lisible = null;
   let capture;
   const gpu = avecEffets(projet, deroule);
@@ -344,7 +344,7 @@ async function planchesRegard({ dossier, scenes = null, dossierStyles, navigateu
         // Vignettes réduites dans Node à leur taille exacte (identiques à l'octet d'un passage à l'autre), affichées sans
         // mise à l'échelle : le navigateur ne réduit plus rien.
         const reduites = lot.map((v) => ({ ...v, fichier: reduire(v.fichier, g.mise.largeur, g.mise.hauteur) }));
-        fs.writeFileSync(html, pageComposition(reduites, g.mise));
+        fs.writeFileSync(html, pageComposition(reduites, g.mise), 'utf8');
         await lisible.envoyer('Emulation.setDeviceMetricsOverride', { width: L, height: H, deviceScaleFactor: 1, mobile: false });
         await lisible.aller(pathToFileURL(html).href);
         await lisible.evaluer('Promise.all(Array.prototype.map.call(document.images, function (i) { return i.decode().catch(function () {}); })).then(function () { return true; })');
@@ -361,7 +361,7 @@ async function planchesRegard({ dossier, scenes = null, dossierStyles, navigateu
     if (garder) {
       fs.mkdirSync(garder, { recursive: true });
       for (const f of prises.values()) fs.copyFileSync(path.join(travail, f), path.join(garder, f));
-      fs.writeFileSync(path.join(garder, 'index.json'), JSON.stringify(groupes.map((g) => ({ nom: g.nom, vignettes: g.vignettes })), null, 2));
+      fs.writeFileSync(path.join(garder, 'index.json'), JSON.stringify(groupes.map((g) => ({ nom: g.nom, vignettes: g.vignettes })), null, 2), 'utf8');
     }
     return { ok: true, planches, fiche: relatif(fiche), vignettes: index.length, jetonsEstimes: jetons, capture: 'fidele', particules, empreinte, relecture };
   } finally {

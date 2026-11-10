@@ -231,7 +231,7 @@ async function installerWhisper({ dossier = dossierWhisper(), modele = MODELE_DE
       return { ok: false, message: `L'installation de la transcription a échoué (${ETAPES[i]} : ${cause}).` };
     }
   }
-  fs.writeFileSync(path.join(dossier, 'version.json'), JSON.stringify({ modele, date: new Date().toISOString() }, null, 2));
+  fs.writeFileSync(path.join(dossier, 'version.json'), JSON.stringify({ modele, date: new Date().toISOString() }, null, 2), 'utf8');
   return { ok: true, modele, message: `La transcription est installée (modèle ${modele}, dans ${dossier}).` };
 }
 

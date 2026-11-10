@@ -1,0 +1,13 @@
+{
+  "nom": "social-chiffres",
+  "demande": "Fais une publication de 30 s pour Instagram, en vertical, à partir de nos chiffres de fréquentation (ventes.csv) : on veut montrer que le mois en cours est notre meilleur mois.",
+  "fichiers": ["ventes.csv"],
+  "format": { "ratio": "9:16", "duree": 30, "genre": "social" },
+  "correcteurs": [
+    { "n": 1, "quoi": "Une accroche lisible avant 3 s (règle accroche absente).", "verifie": "regles-absentes", "valeur": ["accroche", "image-zero"] },
+    { "n": 2, "quoi": "Chaque chiffre affiché est égal à une valeur du CSV.", "verifie": "chiffres-csv", "valeur": { "fichier": "ventes.csv" } },
+    { "n": 3, "quoi": "Les chiffres dérivés sont justes (hausse de novembre sur octobre : +18 %, total des onze mois : 6 660).", "verifie": "chiffres-derives", "valeur": { "hausse": 18, "total": 6660 } },
+    { "n": 4, "quoi": "Le mois en cours est dit « à date » (novembre n'est pas fini).", "verifie": "texte", "valeur": { "contient": "à date" } },
+    { "n": 5, "quoi": "Aucune cause n'est affirmée (règle cause-affirmee absente).", "verifie": "regles-absentes", "valeur": ["cause-affirmee"] }
+  ]
+}

@@ -59,13 +59,13 @@ function changerStyle({ dossier, style, dossierStyles }) {
   for (const { s, fichier, modele, ancien, derniere } of plan) {
     const html = adapterScene(modele, { type: s.type, id: s.id, duree: s.duree, textes: s.textes, derniere, logo, nombre: lireNombre(ancien) });
     fs.mkdirSync(path.dirname(fichier), { recursive: true });
-    fs.writeFileSync(fichier, html);
+    fs.writeFileSync(fichier, html, 'utf8');
   }
   const brut = JSON.parse(fs.readFileSync(path.join(projet, 'deroule.json'), 'utf8').replace(/^﻿/, ''));
   brut.style = style;
   // Les ajustements de taille dépendaient de l'ancien style.
   for (const sc of brut.scenes || []) delete sc.ajustements;
-  fs.writeFileSync(path.join(projet, 'deroule.json'), JSON.stringify(brut, null, 2));
+  fs.writeFileSync(path.join(projet, 'deroule.json'), JSON.stringify(brut, null, 2), 'utf8');
   return {
     ok: true,
     style,

@@ -1,0 +1,14 @@
+{
+  "nom": "formation-haccp",
+  "demande": "Fais-moi une vidéo de formation d'une minute, en 16:9, avec une voix, pour expliquer la méthode HACCP aux nouveaux employés de notre cuisine. Tout ce qu'il faut savoir est dans notes-haccp.md.",
+  "fichiers": ["notes-haccp.md"],
+  "format": { "ratio": "16:9", "duree": 60, "voix": true },
+  "correcteurs": [
+    { "n": 1, "quoi": "La durée de la vidéo est de 60 s à 10 % près.", "verifie": "duree", "valeur": { "cible": 60, "ecart": 0.1 } },
+    { "n": 2, "quoi": "Le contrôle complet ne trouve aucune erreur.", "verifie": "controle", "valeur": { "erreurs": 0 } },
+    { "n": 3, "quoi": "Le terme « HACCP » est dit par la voix et montré à l'écran (au glossaire comme terme clé).", "verifie": "terme", "valeur": { "terme": "HACCP" } },
+    { "n": 4, "quoi": "Aucun chiffre sans source ni « Exemple » (règles chiffre-invente, chiffre-sans-source, exemple-non-signale absentes).", "verifie": "regles-absentes", "valeur": ["chiffre-invente", "chiffre-sans-source", "exemple-non-signale"] },
+    { "n": 5, "quoi": "La vérification de l'export ne trouve aucune erreur (sortie/verification.json).", "verifie": "verification", "valeur": { "erreurs": 0 } },
+    { "n": 6, "quoi": "La relecture par l'agent critique reste sous 15 000 jetons d'entrée.", "verifie": "jetons-critique", "valeur": { "max": 15000 } }
+  ]
+}

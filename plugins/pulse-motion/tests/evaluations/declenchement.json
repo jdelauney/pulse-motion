@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "note": "Phrases de tous les jours et compétence attendue (spec S2, 5.16). « aucune » : aucune compétence de Pulse Motion ne doit se déclencher. creer et style ont disable-model-invocation : attendu « aucune » tant qu'elles le gardent ; apresR1 donne l'attendu une fois le champ retiré (S4 R1), qui relance ces évaluations (retour au blocage au-delà de 5 % d'erreurs). pasAttendu : la compétence voisine, nommée par le renvoi de la description, qui ne doit pas se déclencher.",
+  "phrases": [
+    { "phrase": "Fais-moi une vidéo d'une minute sur la chaîne du froid pour mes équipes", "attendu": "aucune", "apresR1": "creer" },
+    { "phrase": "Je voudrais créer une petite vidéo pour présenter notre nouvelle offre", "attendu": "aucune", "apresR1": "creer" },
+    { "phrase": "On peut faire une vidéo pour Instagram à partir de mes chiffres de ventes ?", "attendu": "aucune", "apresR1": "creer" },
+    { "phrase": "Crée-moi un style papercraft aux couleurs pop-art pour mes vidéos", "attendu": "aucune", "apresR1": "style" },
+    { "phrase": "Je veux mon propre style de vidéo, sombre avec des touches néon", "attendu": "aucune", "apresR1": "style" },
+    { "phrase": "Invente un style rétro années 70 que je pourrai réutiliser", "attendu": "aucune", "apresR1": "style" },
+
+    { "phrase": "Ralentis un peu la scène 3, ça va trop vite", "attendu": "retoucher" },
+    { "phrase": "Change le titre de l'intro : mets « Bienvenue chez nous »", "attendu": "retoucher" },
+    { "phrase": "Baisse la musique, on n'entend pas bien la voix", "attendu": "retoucher" },
+    { "phrase": "Annule ce que tu viens de faire", "attendu": "retoucher" },
+
+    { "phrase": "J'enregistre la scène 2 maintenant", "attendu": "voix" },
+    { "phrase": "J'ai un fichier audio de ma voix, tu peux le mettre dans la vidéo ?", "attendu": "voix" },
+    { "phrase": "Recale les mots sur ma voix, les sous-titres sont décalés", "attendu": "voix" },
+
+    { "phrase": "Fais-moi le MP4", "attendu": "exporter" },
+    { "phrase": "Exporte ma vidéo, je dois la publier ce soir", "attendu": "exporter" },
+    { "phrase": "Il me faut une version légère pour l'envoyer par courriel", "attendu": "exporter" },
+
+    { "phrase": "Où en est ma vidéo ?", "attendu": "reprendre" },
+    { "phrase": "On reprend là où on s'était arrêtés hier", "attendu": "reprendre" },
+    { "phrase": "Continue la vidéo", "attendu": "reprendre" },
+
+    { "phrase": "Vérifie que mon ordinateur est prêt pour faire des vidéos", "attendu": "outils" },
+    { "phrase": "Installe ffmpeg", "attendu": "outils" },
+    { "phrase": "Est-ce que la transcription est installée ?", "attendu": "outils" },
+
+    { "phrase": "Dessine-moi un cuisinier rondouillard avec une toque", "attendu": "dessiner-personnage" },
+    { "phrase": "Change sa tenue en rouge", "attendu": "dessiner-personnage" },
+    { "phrase": "Ajoute-lui des lunettes rondes", "attendu": "dessiner-personnage" },
+
+    { "phrase": "Voici notre mascotte en SVG dans assets, fais-la marcher", "attendu": "decouper-personnage" },
+    { "phrase": "Découpe ce dessin pour qu'on puisse l'animer", "attendu": "decouper-personnage" },
+    { "phrase": "J'ai le personnage de notre logo en fichier Illustrator exporté en SVG, anime-le", "attendu": "decouper-personnage" },
+
+    { "phrase": "Fais-le sauter plus haut", "attendu": "animer-personnage" },
+    { "phrase": "Il marche trop vite, ralentis sa marche", "attendu": "animer-personnage" },
+    { "phrase": "Fais une pose où il se gratte la tête", "attendu": "animer-personnage" },
+
+    { "phrase": "Ouvre l'éditeur de personnage", "attendu": "atelier-personnages" },
+    { "phrase": "Laisse-moi placer ses bras moi-même", "attendu": "atelier-personnages" },
+    { "phrase": "Je veux régler son salut à la souris", "attendu": "atelier-personnages" },
+
+    { "phrase": "Ouvre l'éditeur de particules", "attendu": "atelier-particules" },
+    { "phrase": "Laisse-moi régler les étincelles en les regardant", "attendu": "atelier-particules" },
+    { "phrase": "Montre-moi ce que donne la neige, je veux la régler", "attendu": "atelier-particules" },
+
+    { "phrase": "Enregistre ma voix pour la scène 1", "attendu": "voix", "pasAttendu": "retoucher" },
+    { "phrase": "Baisse le volume de la voix dans la scène 4", "attendu": "retoucher", "pasAttendu": "voix" },
+    { "phrase": "Mets les sous-titres en haut de l'image", "attendu": "retoucher", "pasAttendu": "voix" },
+    { "phrase": "Ouvre l'atelier pour régler les mouvements du personnage", "attendu": "atelier-personnages", "pasAttendu": "atelier-particules" },
+    { "phrase": "Ouvre l'atelier des effets, je veux voir les confettis", "attendu": "atelier-particules", "pasAttendu": "atelier-personnages" },
+    { "phrase": "Dessine-moi une boulangère souriante", "attendu": "dessiner-personnage", "pasAttendu": "animer-personnage" },
+    { "phrase": "Fais-lui une tête surprise quand il salue", "attendu": "animer-personnage", "pasAttendu": "dessiner-personnage" },
+    { "phrase": "Voici le SVG de notre mascotte : fais-la bouger", "attendu": "decouper-personnage", "pasAttendu": "dessiner-personnage" },
+    { "phrase": "Exporte-moi la vidéo en plus fluide", "attendu": "exporter", "pasAttendu": "retoucher" },
+    { "phrase": "Le titre de la scène 2 est trop long, raccourcis-le", "attendu": "retoucher", "pasAttendu": "exporter" },
+    { "phrase": "Installe ce qu'il faut pour l'export en haute qualité", "attendu": "outils", "pasAttendu": "exporter" },
+    { "phrase": "Rouvre ma vidéo, on continue", "attendu": "reprendre", "pasAttendu": "retoucher" },
+    { "phrase": "Je veux régler son salut moi-même, à la main", "attendu": "atelier-personnages", "pasAttendu": "animer-personnage" },
+    { "phrase": "Fais-moi écouter la musique de la vidéo", "attendu": "voix", "pasAttendu": "retoucher" }
+  ]
+}
