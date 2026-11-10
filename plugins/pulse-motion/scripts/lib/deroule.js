@@ -10,7 +10,8 @@ const { tonaliteValide, HUMEURS } = require('../../moteur/synthe/ambiances.js');
 const TYPES_SCENE = Object.keys(TYPES);
 
 const GENRES = ['formation', 'produit', 'storytelling', 'social'];
-const PARCOURS = ['rapide', 'accompagne'];
+// autonome : « Faites pour moi » (spec Retouches et ergonomie, 5.4), aucune question après la première ronde.
+const PARCOURS = ['rapide', 'accompagne', 'autonome'];
 const RATIOS = ['16:9', '9:16', '1:1', '4:5'];
 // Les transitions viennent du moteur : une seule liste pour le déroulé et la page.
 const { TRANSITIONS } = require('../../moteur/transitions.js');
