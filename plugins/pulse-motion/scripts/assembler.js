@@ -258,8 +258,16 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     const { html: sansScripts, scripts } = S.extraireScripts(html);
     const { html: avecTextes, manquants } = S.injecterTextes(sansScripts, scene.textes, scene.ajustements);
     manquants.forEach((cle) => erreurs.push({ regle: 'texte-manquant', gravite: 'erreur', scene: scene.id, message: `Scène « ${scene.id} » : data-texte="${cle}" n'a pas de texte dans le déroulé.` }));
+    // Icônes Lucide (spec S9, 5.3) : <svg data-icone="nom"> devient son SVG en ligne ; la bibliothèque n'est lue qu'à la
+    // première icône (une page sans icône n'en porte rien).
+    let avecIcones = avecTextes;
+    if (/data-icone/.test(avecTextes)) {
+      const r = require('./lib/icones.js').preparerIcones(avecTextes, { scene: scene.id });
+      avecIcones = r.html;
+      erreurs.push(...r.erreurs);
+    }
     // Milieu fluide (P5c) : un par scène, préparé avant les effets (qui peuvent s'y coupler).
-    const { html: avecMilieux, milieux: milieuxScene, erreurs: erreursMilieux } = preparerMilieux(avecTextes, {
+    const { html: avecMilieux, milieux: milieuxScene, erreurs: erreursMilieux } = preparerMilieux(avecIcones, {
       scene: scene.id, projet, bibliotheque: dossierEffets, charte: charte.couleurs, premierIndex: milieux.length, dureeTemps: dureeTemps(deroule),
     });
     milieux.push(...milieuxScene);
