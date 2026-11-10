@@ -15,45 +15,47 @@ Créer avec la personne un style à elle, rangé sur son ordinateur et proposé 
 - Lexique : avant d'expliquer un mot de l'outil, lire `pulse-motion lexique` ; un mot expliqué pour la première fois se note avec `pulse-motion lexique noter "<terme>" "<phrase>" "<comme…>" "/pulse-motion:style"`.
 - La commande échoue avec « Node.js introuvable » : proposer « Installer Node.js (Recommandé) » · « Je l'installe moi-même » (accord : `/pulse-motion:outils`, étape « Installer Node.js »), puis reprendre ; s'arrêter sinon.
 - Seulement pour un style à soi (changer de style : `/pulse-motion:retoucher`). Rien n'est écrit avant la première réponse.
+- Lire `pulse-motion reference style-personnel` avant la première question.
 
-## 1. Entretien d'identité
+## 1. Départ et entretien
 
-La description vient de l'argument ; sinon, la demander en une question ouverte. Puis, une question à la fois :
+La description vient de l'argument ; sinon, une question ouverte. Un style `baseModifiee` dans `pulse-motion styles` : `style-personnel`, « Base modifiée ».
 
-1. **Personnalité** : trois mots (proposer trois triplets tirés de la description) et ce que le style ne doit pas évoquer.
-2. **Références** : une œuvre, une marque, un courant (« comme les affiches de Lichtenstein ») ; proposer deux ou trois pistes.
-3. **Couleur** : fond clair, sombre ou les deux ; stratégie (sobre avec une touche, couleur affirmée, plusieurs couleurs, la couleur partout).
-4. **Polices** : proposer deux familles de Bunny Fonts de la bonne catégorie (titres, texte) ; vérifier qu'elles existent avant de les proposer.
+D'abord le départ : « Adapter un style (Recommandé) » (base : l'essence la plus proche, fiche entière par `pulse-motion reference styles/<style>`) · « Partir d'une page blanche » (dire la base choisie en une ligne). Puis, une à la fois, ce qui change :
+
+1. **Personnalité** : trois mots (trois triplets proposés), ce qu'il ne doit pas évoquer.
+2. **Références** : une œuvre, une marque, un courant.
+3. **Couleur** : clair, sombre ou les deux ; sobre avec une touche, affirmée, plusieurs couleurs, partout.
+4. **Polices** : deux familles de Bunny Fonts (titres, texte), vérifiées avant d'être proposées.
 5. **Mouvement** : vif ou doux, rebonds ou non.
 
 Pour proposer des réponses, partir de `pulse-motion reference directions` : les trois directions de la famille la plus proche de la description (Rigueur, Calme, Énergie, Récit), avec leurs chiffres (vide, couleurs, titres ÷ texte, mouvement, matière, densité), puis écrire la direction retenue dans `identite.json` selon son tableau.
 
-Choisir le style de départ le plus proche (`pulse-motion styles`) : sa mise en page sera reprise puis transformée.
+**Trois groupes**, avec les exemples de la base : sans risque, change son caractère, impossible (`style-personnel`). **5 changements au plus par tour** (hors charte) ; avant d'écrire, un résumé avant / après / ce que ça coûte, puis l'accord. Remarque floue (« ça fait cheap », « plus premium ») : `pulse-motion reference remarques`, ses options proposées, jamais appliquées en silence.
 
 ## 2. Squelette
 
-1. Nom en minuscules et tirets (ex. `papercraft`), distinct des styles livrés : `pulse-motion style nouveau <nom> --depuis <style>`. Le dossier du style est dans la réponse (`dossier`).
+1. Nom en minuscules et tirets (ex. `papercraft`), pas celui d'un style livré : `pulse-motion style nouveau <nom> --depuis <style>` (`--emprunts <style>` : qui prête des gestes). Dans `dossier`, `guide.md` est la fiche de la base.
 2. Polices : `pulse-motion police "<famille>" --dans <dossier>/polices` pour chacune (`--italique` si le style l'emploie ; licence notée dans `polices/LICENCES.md`).
-3. Écrire `identite.json` (personnalité, à éviter, genres, couleur et tons, typographie, mouvement, signature, à faire, à éviter), `charte.json` (couleurs par défaut, polices) et `style.css` (même règles que les styles livrés : variables de la charte, tailles en `cqh`, couleurs lisibles `--c-primaire-lisible`, `--c-accent-lisible`, `--c-sur-primaire`, `--c-sur-accent` pour tout ce qui n'est pas décor, formats carré et vertical par `@container`, ton sombre par `#pm-scene[data-ton="sombre"]` si déclaré). Interdits, comme pour une scène (`pulse-motion reference moteur`) : aucune animation sans fin (`infinite`) — la vidéo doit finir sur une image stable —, aucun compteur CSS `counter()` (numéros écrits en clair), aucune `transition:` CSS.
-4. Effets à éviter, mal rendus par l'export rapide : filtres SVG (`feTurbulence`), `mix-blend-mode`, `backdrop-filter`. Une texture de papier se fait avec une image embarquée dans le dossier du style (`url("texture.png")` dans `style.css`), une ombre de découpe avec une ombre décalée (`box-shadow: 1cqh 1cqh 0 …`).
+3. Écrire `identite.json` (personnalité, à éviter, genres, couleur et tons, typographie, mouvement, signature, à faire, à éviter), `charte.json` (couleurs, polices) et `style.css` (comme les styles livrés : variables de la charte, `cqh`, `--c-primaire-lisible`, `--c-accent-lisible`, `--c-sur-primaire`, `--c-sur-accent` hors décor, carré et vertical par `@container`, ton sombre par `#pm-scene[data-ton="sombre"]`). Interdits (`pulse-motion reference moteur`) : `infinite`, `counter()`, `transition:` CSS.
+4. Mal rendus par l'export rapide : filtres SVG (`feTurbulence`), `mix-blend-mode`, `backdrop-filter`. Texture de papier : image embarquée (`url("texture.png")` dans `style.css`) ; ombre de découpe : `box-shadow: 1cqh 1cqh 0 …`.
+5. Chaque changement accepté : `pulse-motion style noter <nom> <section> "<avant>" "<après>" "<pourquoi>"` (`--nouveau-tour` au premier d'un tour, `--charte`), puis écrit dans sa section de `guide.md`.
 
 ## 3. Scènes témoins
 
 1. Réécrire les scènes `titre` et `liste` du style (agent `animateur`, mode « style », une scène par agent, en parallèle).
-2. `pulse-motion style planche <nom> --scenes titre,liste --ouvrir` : la planche s'ouvre dans le navigateur de la personne ; regarder soi-même les images (avec `Read`).
-3. Demander l'accord : « C'est ce que je veux (Recommandé) » · « Je veux changer quelque chose » ; corriger et refaire la planche jusqu'à l'accord. Remarque floue (« ça fait cheap », « plus premium ») : `pulse-motion reference remarques`, ses options proposées, jamais appliquées en silence.
+2. `pulse-motion style planche <nom> --scenes titre,liste --ouvrir`, et à chaque tour `pulse-motion style planche <nom> --avec-base --ouvrir` (base à gauche, style à droite) ; regarder soi-même les images (`Read`).
+3. Accord : « C'est ce que je veux (Recommandé) » · « Je veux changer quelque chose » (nouveau tour), jusqu'à l'accord.
 
 ## 4. Les six autres scènes
 
-1. Un agent `animateur` (mode « style ») par scène, tous dans le même message : `chiffre`, `comparaison`, `etape`, `alerte`, `schema`, `conclusion`, à partir de la même identité et de `style.css`.
-2. Planche des 8 scènes : `pulse-motion style planche <nom> --scenes titre,liste,chiffre,comparaison,etape,alerte,schema,conclusion --ouvrir`, aussi en `--ratio 9:16`. `--textes maximum` : chaque texte à sa longueur maximale (rien ne doit déborder).
-3. Compléter `guide.md` du style : la fiche de départ (`pulse-motion reference styles/<style de départ>`) aux 11 sections, chaque section réécrite pour ce style.
+1. Un agent `animateur` (mode « style ») par scène, dans le même message : `chiffre`, `comparaison`, `etape`, `alerte`, `schema`, `conclusion`.
+2. Planche des 8 scènes : `pulse-motion style planche <nom> --scenes titre,liste,chiffre,comparaison,etape,alerte,schema,conclusion --ouvrir`, aussi en `--ratio 9:16` ; `--textes maximum` : rien ne doit déborder.
+3. Finir `guide.md` : ses 11 sections, chacune dite pour ce style.
 
 ## 5. Vérifier
 
-`pulse-motion style verifier <nom>` :
-- `erreurs` (contrat), `controle` (lecture, temps morts, contrastes…), `rendu` (débordements par format et par ton) : corriger, puis relancer jusqu'à `ok`. Les `avertissements` (effets mal rendus par l'export rapide) se corrigent avec la solution proposée.
-- `renduVerifie` faux (Chrome ou Edge absent) : le dire ; le style reste utilisable mais les débordements n'ont pas été contrôlés.
+`pulse-motion style verifier <nom>` : `erreurs` (contrat), `controle` (lecture, contrastes…), `rendu` (débordements par format et ton) : corriger jusqu'à `ok`. `avertissements` (export rapide, guide, tour de plus de 5 changements) : suivre la solution proposée. `renduVerifie` faux : le dire.
 
 ## 6. Fin
 

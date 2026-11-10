@@ -23,12 +23,12 @@ test('nouveau : copie d\'un style livré, nom repris partout, guide à compléte
   for (const f of ['catalogue.json', 'identite.json']) assert.equal(JSON.parse(fs.readFileSync(path.join(r.dossier, f), 'utf8')).style, 'papercraft');
   const guide = fs.readFileSync(path.join(r.dossier, 'guide.md'), 'utf8');
   assert.match(guide, /^# Style « papercraft »\n/);
-  assert.match(guide, /Repris du style « energique »/);
+  assert.match(guide, /^# Style « papercraft »\n\nAdapté du style « energique »\.\n/);
   assert.equal(S.verifierStyle(r.dossier).ok, true);
   assert.deepEqual(S.listerStyles().filter((f) => f.personnel).map((f) => f.style), ['papercraft']);
   const second = P.nouveauStyle({ nom: 'papier-2', depuis: 'papercraft' });
   assert.equal(second.ok, true);
-  assert.match(fs.readFileSync(path.join(second.dossier, 'guide.md'), 'utf8'), /^# Style « papier-2 »\n[\s\S]*Repris du style « papercraft »/);
+  assert.match(fs.readFileSync(path.join(second.dossier, 'guide.md'), 'utf8'), /^# Style « papier-2 »\n\nAdapté du style « papercraft »\.\n/);
 }));
 
 test('nouveau : refus du nom d\'un style livré, d\'un style existant, d\'un nom dangereux, d\'une base inconnue', () => avecPersonnel(async () => {
@@ -110,12 +110,12 @@ test('navigateur qui échoue, catalogue illisible : réponse claire, jamais d\'e
   assert.match(p.message, /catalogue\.json/);
 }));
 
-test('nouveau en chaîne : une seule mention « Repris du style », celle du dernier modèle', () => avecPersonnel(async () => {
+test('nouveau en chaîne : une seule mention « Adapté du style », celle du dernier modèle', () => avecPersonnel(async () => {
   P.nouveauStyle({ nom: 'papercraft', depuis: 'energique' });
   const r = P.nouveauStyle({ nom: 'papier-2', depuis: 'papercraft' });
   const guide = fs.readFileSync(path.join(r.dossier, 'guide.md'), 'utf8');
-  assert.equal((guide.match(/Repris du style/g) || []).length, 1, guide);
-  assert.match(guide, /Repris du style « papercraft »/);
+  assert.equal((guide.match(/Adapté du style/g) || []).length, 1, guide);
+  assert.match(guide, /Adapté du style « papercraft »/);
 }));
 
 test('planche : format et ton inconnus refusés avant tout export', () => avecPersonnel(async () => {

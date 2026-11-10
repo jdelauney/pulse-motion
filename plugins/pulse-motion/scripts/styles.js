@@ -156,8 +156,12 @@ function verifierFicheIdentite(identite, livre, erreurs) {
   if (identite.provenance !== undefined && (!Array.isArray(identite.provenance) || !identite.provenance.every((p) => p && chaine(p.depot) && chaine(p.style) && chaine(p.licence)))) {
     erreurs.push('identite.json : « provenance » : [{ "depot", "style", "licence" }].');
   }
-  if (identite.base !== undefined && !(identite.base && chaine(identite.base.style) && chaine(identite.base.empreinte) && chaine(identite.base.versionPlugin))) {
-    erreurs.push('identite.json : « base » : { "style", "empreinte", "versionPlugin" }.');
+  if (identite.base !== undefined) {
+    const b = identite.base;
+    if (!(b && chaine(b.style) && chaine(b.empreinte) && chaine(b.versionPlugin))) erreurs.push('identite.json : « base » : { "style", "empreinte", "versionPlugin" }.');
+    else if (b.emprunts !== undefined && (!Array.isArray(b.emprunts) || !b.emprunts.every((n) => chaine(n) && NOM_STYLE.test(n)))) {
+      erreurs.push('identite.json : « base.emprunts » : liste des styles qui prêtent des gestes (noms de styles).');
+    }
   }
 }
 
@@ -302,19 +306,78 @@ function messageStyleInconnu(nom, dossierStyles) {
 }
 
 const MARQUE_VERIFIE = '.verifie.json';
+const MARQUE_BASE = '.base-signalee.json';
+const CHANGEMENTS = 'changements.json';
+// Fichiers d'un style qui ne changent pas son rendu : guide, journal des changements et marques écrites par le plugin.
+const HORS_EMPREINTE = new Set([MARQUE_VERIFIE, MARQUE_BASE, CHANGEMENTS, 'guide.md']);
 
-/** Empreinte des fichiers d'un style (hors guide et marque de vérification) : change dès qu'on modifie le style. */
-function empreinteStyle(dossier) {
-  const h = crypto.createHash('sha256');
+/** Fichiers d'un style, chemins relatifs dans un ordre stable (hors guide, journal et marques). */
+function fichiersStyle(dossier) {
+  const liste = [];
   const parcourir = (relatif) => {
     for (const e of fs.readdirSync(path.join(dossier, relatif), { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1))) {
       const r = relatif ? `${relatif}/${e.name}` : e.name;
       if (e.isDirectory()) parcourir(r);
-      else if (r !== MARQUE_VERIFIE && r !== 'guide.md') h.update(r).update('\0').update(fs.readFileSync(path.join(dossier, r))).update('\0');
+      else if (!HORS_EMPREINTE.has(r)) liste.push(r);
     }
   };
   parcourir('');
+  return liste;
+}
+
+/** Empreinte des fichiers d'un style (hors guide, journal et marques) : change dès qu'on modifie le style. */
+function empreinteStyle(dossier) {
+  const h = crypto.createHash('sha256');
+  for (const r of fichiersStyle(dossier)) h.update(r).update('\0').update(fs.readFileSync(path.join(dossier, r))).update('\0');
   return h.digest('hex');
+}
+
+const TEXTE = /\.(css|html|json|md|svg|txt)$/i;
+const sansCR = (b, r) => (TEXTE.test(r) ? Buffer.from(b.toString('utf8').replace(/\r\n/g, '\n'), 'utf8') : b);
+
+/** Fiche d'un style : references/styles/<style>.md pour un style livré, guide.md pour un style personnel. */
+function ficheDuStyle(st) {
+  return st.personnel ? path.join(st.dossier, 'guide.md') : path.join(RACINE, 'references', 'styles', `${st.nom}.md`);
+}
+
+/**
+ * Empreinte d'un style pris pour base d'un style personnel (spec Styles et réalisation, 5.5 point 6) : sa fiche et ses
+ * fichiers, fins de ligne normalisées (une mise à jour qui ne change que les fins de ligne ne compte pas).
+ */
+function empreinteBase(st) {
+  const h = crypto.createHash('sha256');
+  const fiche = ficheDuStyle(st);
+  h.update('fiche\0').update(sansCR(fs.existsSync(fiche) ? fs.readFileSync(fiche) : Buffer.alloc(0), 'fiche.md')).update('\0');
+  for (const r of fichiersStyle(st.dossier)) h.update(r).update('\0').update(sansCR(fs.readFileSync(path.join(st.dossier, r)), r)).update('\0');
+  return h.digest('hex');
+}
+
+/**
+ * Base d'un style personnel qui a changé depuis sa création (mise à jour du plugin) et pas encore signalée.
+ * -> { base, empreinte } | null. Style sans base notée, base absente, inchangée ou déjà signalée : null.
+ */
+function baseAChanger(st) {
+  if (!st || !st.personnel) return null;
+  const base = (lireJSON(path.join(st.dossier, 'identite.json')) || {}).base;
+  if (!base || typeof base.style !== 'string' || typeof base.empreinte !== 'string') return null;
+  const stBase = trouverStyle(base.style);
+  if (!stBase || path.resolve(stBase.dossier) === path.resolve(st.dossier)) return null;
+  let empreinte;
+  try { empreinte = empreinteBase(stBase); } catch { return null; }
+  if (empreinte === base.empreinte) return null;
+  const marque = lireJSON(path.join(st.dossier, MARQUE_BASE));
+  if (marque && marque.empreinte === empreinte) return null;
+  return { base: base.style, empreinte };
+}
+
+/** Note qu'une base modifiée a été dite à la personne : elle ne l'est qu'une fois (spec 5.5 point 6). */
+function signalerBase(st) {
+  const a = baseAChanger(st);
+  if (!a) return false;
+  try {
+    fs.writeFileSync(path.join(st.dossier, MARQUE_BASE), JSON.stringify({ style: a.base, empreinte: a.empreinte, date: new Date().toISOString().slice(0, 10) }, null, 2), 'utf8');
+    return true;
+  } catch { return false; }
 }
 
 /** Note qu'un style a passé « pulse-motion style verifier » dans son état actuel. */
@@ -336,11 +399,13 @@ function ficheStyle(st) {
   const identite = lireJSON(path.join(st.dossier, 'identite.json')) || {};
   const liste = (v) => (Array.isArray(v) ? v : []);
   const texte = (v) => (typeof v === 'string' ? v : '');
+  const aChange = baseAChanger(st);
   return {
     style: st.nom,
     description: texte(catalogue.description),
     personnel: st.personnel,
     verifie: styleVerifie(st),
+    ...(aChange ? { baseModifiee: true, base: aChange.base } : {}),
     famille: texte(identite.famille) || null,
     categorie: texte(identite.categorie) || null,
     personnalite: liste(identite.personnalite),
@@ -386,7 +451,7 @@ const PROPOSES = 3;
 
 /** Forme courte d'un style (au-delà des 3 proposés) : de quoi le reconnaître et le nommer. */
 function ficheCourte(f) {
-  return { style: f.style, categorie: f.categorie, personnalite: f.personnalite, usages: f.usages, personnel: f.personnel };
+  return { style: f.style, categorie: f.categorie, personnalite: f.personnalite, usages: f.usages, personnel: f.personnel, ...(f.baseModifiee ? { baseModifiee: true } : {}) };
 }
 
 /**
@@ -394,7 +459,8 @@ function ficheCourte(f) {
  * « <style> · <catégorie> · <personnalité> · <usages> », suivie de « · personnel » pour un style personnel.
  */
 function ligneCourte(f) {
-  return [f.style, f.categorie || 'sans catégorie', f.personnalite.join(', '), f.usages.join(' ; ') || 'usages non dits', ...(f.personnel ? ['personnel'] : [])].join(' · ');
+  return [f.style, f.categorie || 'sans catégorie', f.personnalite.join(', '), f.usages.join(' ; ') || 'usages non dits', ...(f.personnel ? ['personnel'] : []),
+    ...(f.baseModifiee ? [`base « ${f.base} » modifiée`] : [])].join(' · ');
 }
 
 /** Fiche complète d'un style proposé, resserrée : chaque scène toute faite en « durée · textes (longueurs maximales) ». */
@@ -408,6 +474,7 @@ function fichePropose(f) {
   return {
     style: f.style, personnel: f.personnel, famille: f.famille, categorie: f.categorie, personnalite: f.personnalite,
     usages: f.usages, genres: f.genres, signature: f.signature, transitions: f.transitions, scenes,
+    ...(f.baseModifiee ? { baseModifiee: true, base: f.base } : {}),
   };
 }
 
@@ -471,10 +538,30 @@ if (require.main === module) {
       console.log(JSON.stringify(chercherStyles(args.slice(1))));
       process.exit(0);
     }
+    if (args[0] === 'choisir') {
+      const lireOption = (nom) => { const k = args.indexOf(nom); return k >= 0 ? args[k + 1] : undefined; };
+      const minutes = Number(lireOption('--delai') || 30);
+      const { choisirStyles } = require('./lib/choisir-styles.js');
+      choisirStyles({
+        categorie: lireOption('--categorie') || null,
+        delai: (minutes > 0 ? minutes : 30) * 60 * 1000,
+        surPret: (url) => {
+          console.error(`Page de choix : ${url}`);
+          if (args.includes('--ouvrir')) require('./apercu.js').ouvrirNavigateur(url);
+        },
+      }).then((r) => {
+        console.log(JSON.stringify(r, null, 2));
+        process.exit(r.ok ? 0 : 1);
+      });
+      return;
+    }
     const i = args.indexOf('--genre');
     if (i >= 0 && (!args[i + 1] || args[i + 1].startsWith('--'))) throw new Error(`Indiquez un genre après --genre : ${GENRES.join(', ')}.`);
     // Avec un genre : JSON compact (fiche complète des 3 premiers, forme courte des autres), lu à chaque création.
-    console.log(i >= 0 ? JSON.stringify(listePourGenre(recommander(args[i + 1]))) : JSON.stringify(listerStyles(), null, 2));
+    const fiches = i >= 0 ? recommander(args[i + 1]) : listerStyles();
+    console.log(i >= 0 ? JSON.stringify(listePourGenre(fiches)) : JSON.stringify(fiches, null, 2));
+    // Une base modifiée n'est dite qu'une fois (creer, style) : la marque est posée une fois la liste rendue.
+    for (const f of fiches.filter((x) => x.baseModifiee)) signalerBase(trouverStyle(f.style));
   } catch (e) {
     console.error(e.message);
     process.exit(1);
@@ -484,5 +571,6 @@ if (require.main === module) {
 module.exports = {
   verifierStyle, styleVerifie, marquerVerifie, racinesStyles, trouverStyle, nomsStyles, messageStyleInconnu, ficheStyle, listerStyles, recommander,
   listePourGenre, ficheCourte, chercherStyles, estLivre, CHAMPS_LIVRE,
+  empreinteStyle, empreinteBase, ficheDuStyle, baseAChanger, signalerBase, MARQUE_BASE, CHANGEMENTS,
   lireJSON, RACINE, LIVRES, dossierPersonnel,
 };

@@ -93,7 +93,17 @@
 <tr><td>Mouvement</td><td>Vif ou doux, avec ou sans rebonds.</td></tr>
 </tbody>
 </table>
-<p>Pulse Motion part ensuite du style livré le plus proche : sa mise en page est reprise, puis transformée.</p>
+<p>Pulse Motion part ensuite du style livré le plus proche : sa mise en page est reprise, puis transformée. Vous pouvez adapter un style que vous aimez, ou partir d'une page blanche (Pulse Motion vous dit alors de quel style il part).</p>
+<h3>Ce que vous pouvez changer</h3>
+<table>
+<thead><tr><th>Groupe</th><th>Par exemple</th><th>Ce que ça fait</th></tr></thead>
+<tbody>
+<tr><td>Sans risque</td><td>les couleurs, les polices, le rythme, le son, un geste ajouté ou échangé</td><td>le style reste lui-même</td></tr>
+<tr><td>Change son caractère</td><td>les matières et le rendu, la logique des couleurs, la caméra et les transitions</td><td>possible ; Pulse Motion vous dit ce que le style y perd</td></tr>
+<tr><td>Impossible</td><td>l'essence du style, ce qui le fait reconnaître d'un coup d'œil</td><td>ce serait un autre style : Pulse Motion vous en propose un plus proche</td></tr>
+</tbody>
+</table>
+<p>Cinq changements au plus à chaque tour (une police imposée par votre charte ne compte pas). Avant d'écrire, Pulse Motion vous montre un résumé : avant, après, ce que ça coûte. Puis une planche s'ouvre : le style de départ à gauche, le vôtre à droite, avec la même petite histoire (« la chaîne du froid »).</p>
 </section>
 
 <section id="produit">
@@ -107,7 +117,8 @@
 <tr><td><code>style.css</code></td><td>L'allure commune à toutes les scènes, dans les quatre formats.</td></tr>
 <tr><td><code>scenes/</code></td><td>Les huit scènes toutes faites : titre, liste, chiffre, comparaison, étape, alerte, schéma, conclusion.</td></tr>
 <tr><td><code>polices/</code></td><td>Les fichiers des polices et leurs licences (<code>LICENCES.md</code>).</td></tr>
-<tr><td><code>guide.md</code></td><td>Le guide du style, lu par Pulse Motion pour écrire vos vidéos : durées, longueurs de texte, à faire, à éviter.</td></tr>
+<tr><td><code>guide.md</code></td><td>La fiche du style, lue par Pulse Motion pour écrire vos vidéos : la fiche du style de départ, en 11 sections (ce qu'il est et n'est pas, couleur, mouvement, son, gestes, pièges…), réécrite pour le vôtre.</td></tr>
+<tr><td><code>changements.json</code></td><td>Le journal de vos changements, tour par tour : avant, après, pourquoi.</td></tr>
 </tbody>
 </table>
 <p>Pendant la création, des <strong>planches</strong> (images fixes des scènes) s'ouvrent dans votre navigateur, en 16:9 et en vertical, avec des textes d'exemple puis à leur longueur maximale.</p>
@@ -120,6 +131,7 @@
 <li><strong>Certains effets sont écartés.</strong> Les textures générées, les mélanges de calques et les flous d'arrière-plan sont mal rendus à l'export : une texture de papier passe par une image, une ombre de découpe par une ombre décalée.</li>
 <li><strong>Rien ne tourne en boucle.</strong> Une vidéo doit finir sur une image stable : le style n'a aucune animation sans fin.</li>
 <li><strong>Un style modifié doit être revérifié.</strong> Si vous changez un fichier du style à la main, il n'est plus proposé tant qu'il n'a pas été vérifié de nouveau : demandez « vérifie mon style papercraft ».</li>
+<li><strong>Le style de départ peut changer.</strong> Après une mise à jour de Pulse Motion, si le style dont le vôtre est parti a été amélioré, Pulse Motion vous le dit une fois et vous propose d'en reprendre les corrections ; rien ne change sans votre accord.</li>
 <li><strong>Le style reste sur cet ordinateur.</strong> Pour l'utiliser ailleurs, copiez son dossier au même endroit sur l'autre ordinateur.</li>
 </ul>
 </section>

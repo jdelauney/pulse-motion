@@ -231,6 +231,10 @@ function ecrireFiche({ projet, deroule, infos, ids, index, doctrine, glossaire, 
   if (accords.deroule) verrous.push('les textes du déroulé, validés par la personne');
   if (accords.style) verrous.push(`le style « ${deroule.style} », choisi par la personne`);
   if (charte) verrous.push(`la charte (${[charte.couleurs && 'couleurs', charte.polices && 'polices', charte.logo && 'logo'].filter(Boolean).join(', ') || 'réglages'})`);
+  // Le style, d'après sa fiche (spec Styles et réalisation, 5.1) : ce qu'il est et n'est pas, sa couleur, ses pièges.
+  let ficheStyle = '';
+  try { ficheStyle = require('./lib/fiche-style.js').extraitCritique(fs.readFileSync(require('./styles.js').ficheDuStyle(style), 'utf8')); } catch { /* style sans fiche */ }
+  if (ficheStyle) L.push(`## Le style « ${deroule.style} »`, '', ficheStyle.trim(), '');
   L.push('## Ce qui est verrouillé', '', verrous.length ? verrous.map((v) => `- ${v}`).join('\n') : '- rien', '');
   L.push('## Index des vignettes', '', '| Planche | Position | Scène | Instant |', '|---|---|---|---|');
   for (const v of index) L.push(`| ${v.planche} | ${v.position} | ${v.scene} | ${virgule(v.t)} s |`);

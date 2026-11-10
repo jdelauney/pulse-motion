@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Choisir un style – Pulse Motion</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.5 system-ui, sans-serif; background: #15131a; color: #eee; display: grid; grid-template-columns: minmax(320px, 1fr) 1.4fr; height: 100vh; }
+  #liste { overflow: auto; padding: 16px; border-right: 1px solid #333; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .aide { color: #aaa; margin: 0 0 12px; }
+  #filtres { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  #filtres button { padding: 4px 12px; border-radius: 999px; border: 1px solid #444; background: #1f1c25; color: #ddd; font-weight: 500; }
+  #filtres button[aria-pressed="true"] { border-color: #c9a6f0; color: #fff; background: #2c2338; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: #c9a6f0; margin: 18px 0 6px; }
+  .carte { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; padding: 8px 10px; border-radius: 8px; border: 1px solid transparent; cursor: pointer; }
+  .carte:hover, .carte.active { border-color: #8e44ad; background: #201b28; }
+  .carte input[type=radio] { grid-row: span 3; margin-top: 4px; width: 18px; height: 18px; }
+  .nom { font-weight: 600; }
+  .nom small { font-weight: 400; color: #aaa; }
+  .usages, .non-pas { grid-column: 2; color: #bbb; font-size: 13px; }
+  .non-pas { color: #999; font-style: italic; }
+  #droite { display: grid; grid-template-rows: 1fr auto; min-height: 0; }
+  #apercu { width: 100%; height: 100%; border: 0; background: #000; pointer-events: none; }
+  #envoi { display: flex; gap: 12px; align-items: center; padding: 12px 16px; border-top: 1px solid #333; }
+  #note { flex: 1; padding: 8px 10px; border-radius: 8px; border: 1px solid #444; background: #1f1c25; color: #eee; }
+  #selection { color: #bbb; }
+  #envoyer { padding: 10px 18px; border-radius: 999px; border: 0; font-weight: 600; background: linear-gradient(90deg, #ff6b35, #8e44ad); color: #fff; cursor: pointer; }
+  #envoyer:disabled { opacity: .5; cursor: default; }
+  #merci { display: none; position: fixed; inset: 0; place-items: center; background: #15131aee; font-size: 22px; text-align: center; padding: 24px; }
+  #erreur { color: #ff8a65; }
+  #erreur:empty { display: none; }
+  :focus-visible { outline: 2px solid #c9a6f0; outline-offset: 2px; }
+</style>
+</head>
+<body>
+<div id="liste">
+  <h1>Choisir un style</h1>
+  <p class="aide">Chaque style joue la même petite histoire, « la chaîne du froid ». Passez la souris sur un style (ou allez-y avec la touche Tab) pour le voir à droite. Cochez celui qui vous plaît, dites si vous voulez pourquoi, puis cliquez sur « Envoyer à Claude ».</p>
+  <div id="filtres" role="group" aria-label="Catégories"></div>
+  <div id="cartes"></div>
+</div>
+<div id="droite">
+  <iframe id="apercu" title="Le style en mouvement" tabindex="-1" aria-hidden="true"></iframe>
+  <div id="envoi"><span id="selection" role="status">Aucun style coché.</span><input id="note" type="text" maxlength="300" placeholder="Une note pour Claude (facultatif)" aria-label="Une note pour Claude (facultatif)"><span id="erreur" role="alert"></span><button id="envoyer" type="button" disabled>Envoyer à Claude</button></div>
+</div>
+<div id="merci" role="status">C'est envoyé. Vous pouvez fermer cet onglet et revenir à Claude.</div>
+<script>
+(function () {
+  'use strict';
+  var DONNEES = /*DONNEES*/null;
+  var cartes = document.getElementById('cartes');
+  var apercu = document.getElementById('apercu');
+  var choisi = null;
+  var montre = null;
+  var depart = 0;
+
+  // La boucle témoin du style montré est rendue par le moteur, image par image, en boucle.
+  function boucle(maintenant) {
+    var M = apercu.contentWindow && apercu.contentWindow.M;
+    if (montre && M && M.rendre && M.minutage && M.duree) M.rendre(((maintenant - depart) / 1000) % M.duree);
+    requestAnimationFrame(boucle);
+  }
+  apercu.addEventListener('load', function () {
+    var doc = apercu.contentDocument;
+    if (!doc || !doc.head) return;
+    var s = doc.createElement('style');
+    s.textContent = '#pm-lecteur, #pm-bandeau { display: none !important; } body { --pm-barre: 0px; }';
+    doc.head.appendChild(s);
+    depart = performance.now();
+  });
+  function montrer(style) {
+    if (montre === style) return;
+    montre = style;
+    apercu.src = '/video/' + encodeURIComponent(style);
+  }
+
+  function majSelection() {
+    document.getElementById('selection').textContent = choisi ? 'Style coché : ' + choisi + '.' : 'Aucun style coché.';
+    document.getElementById('envoyer').disabled = !choisi;
+  }
+
+  var categorie = null;
+  var categories = [];
+  DONNEES.styles.forEach(function (s) {
+    if (s.categorie !== categorie) {
+      categorie = s.categorie;
+      categories.push({ id: s.categorie, nom: s.nomCategorie });
+      var h = document.createElement('h2');
+      h.textContent = s.nomCategorie;
+      h.setAttribute('data-categorie', s.categorie);
+      cartes.appendChild(h);
+    }
+    var c = document.createElement('label');
+    c.className = 'carte';
+    c.setAttribute('data-categorie', s.categorie);
+    var coche = document.createElement('input');
+    coche.type = 'radio';
+    coche.name = 'style';
+    coche.value = s.style;
+    var nom = document.createElement('span');
+    nom.className = 'nom';
+    nom.textContent = s.personnalite.join(', ') + ' ';
+    var technique = document.createElement('small');
+    technique.textContent = '(' + s.style + (s.personnel ? ', votre style' : '') + ')';
+    nom.appendChild(technique);
+    var usages = document.createElement('span');
+    usages.className = 'usages';
+    usages.textContent = s.usages.length ? 'Pour : ' + s.usages.join(' ; ') : s.signature;
+    var nonPas = document.createElement('span');
+    nonPas.className = 'non-pas';
+    nonPas.textContent = s.nonPas;
+    coche.addEventListener('change', function () { if (coche.checked) { choisi = s.style; majSelection(); } });
+    c.addEventListener('mouseenter', voir);
+    c.addEventListener('focusin', voir);
+    function voir() {
+      document.querySelectorAll('.carte.active').forEach(function (x) { x.classList.remove('active'); });
+      c.classList.add('active');
+      montrer(s.style);
+    }
+    c.append(coche, nom, usages, nonPas);
+    cartes.appendChild(c);
+  });
+
+  // Filtre par catégorie : « Tous », puis une catégorie à la fois.
+  var filtres = document.getElementById('filtres');
+  function filtrer(id) {
+    filtres.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-categorie') === (id || ''))); });
+    document.querySelectorAll('#cartes [data-categorie]').forEach(function (x) { x.hidden = Boolean(id) && x.getAttribute('data-categorie') !== id; });
+  }
+  [{ id: '', nom: 'Tous' }].concat(categories).forEach(function (c) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = c.nom;
+    b.setAttribute('data-categorie', c.id);
+    b.addEventListener('click', function () { filtrer(c.id); });
+    filtres.appendChild(b);
+  });
+  filtrer('');
+
+  document.getElementById('envoyer').addEventListener('click', function () {
+    var erreur = document.getElementById('erreur');
+    var bouton = document.getElementById('envoyer');
+    erreur.textContent = '';
+    bouton.disabled = true;
+    fetch('/envoyer', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ style: choisi, note: document.getElementById('note').value }) })
+      .then(function (r) {
+        if (!r.ok) throw new Error(String(r.status));
+        document.getElementById('merci').style.display = 'grid';
+      })
+      .catch(function () {
+        // Délai passé ou commande arrêtée : la page ne parle plus à Claude.
+        erreur.textContent = 'Envoi impossible : Claude n’attend plus ce choix. Dites-lui le style coché, ou demandez-lui de rouvrir la page.';
+        bouton.disabled = !choisi;
+      });
+  });
+
+  // Mouvements réduits demandés : rien ne joue avant qu'on désigne un style.
+  var reduit = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (DONNEES.styles.length && !reduit) montrer(DONNEES.styles[0].style);
+  requestAnimationFrame(boucle);
+})();
+</script>
+</body>
+</html>

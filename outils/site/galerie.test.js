@@ -98,3 +98,73 @@ test("galerie : chaque entrée #069 à #080 a son aperçu rendu par sa recette",
   }
   assert.ok(lot.sources.some((s) => /references[\\/]mouvements$/.test(s)), "le dictionnaire changé refait les aperçus");
 });
+
+// ---------- S8 J3 « Galerie à témoin » (spec Styles et réalisation, 5.6) ----------
+
+const { manquesStyles, grouperParCategorie } = require("./galerie.js");
+const { CATEGORIES } = require("../../plugins/pulse-motion/scripts/lib/contrat.js");
+
+test("témoin : projet-essai et galerie lisent les mêmes textes dans temoin.json", () => {
+  const PLUGIN = path.join(__dirname, "..", "..", "plugins", "pulse-motion");
+  const temoin = JSON.parse(fs.readFileSync(path.join(PLUGIN, "references", "styles", "temoin.json"), "utf8"));
+  const { TEMOIN } = require(path.join(PLUGIN, "scripts", "lib", "projet-essai.js"));
+  assert.deepEqual(TEMOIN, temoin);
+  // projet-essai ne garde plus ses propres phrases : il les lit dans le témoin.
+  const essai = fs.readFileSync(path.join(PLUGIN, "scripts", "lib", "projet-essai.js"), "utf8");
+  assert.doesNotMatch(essai, /Garder la chaîne du froid/);
+  assert.match(essai, /references', 'styles', 'temoin\.json'/);
+  // La galerie fabrique la boucle et les images A et B par le même témoin (lib/temoin.js), et se refait s'il change.
+  const medias = fs.readFileSync(path.join(__dirname, "galerie-medias.js"), "utf8");
+  assert.match(medias, /const \{ projetBoucle, imagesTemoin \} = require\(path\.join\(PLUGIN, "scripts", "lib", "temoin\.js"\)\)/);
+  assert.doesNotMatch(medias, /projetEssai\(/);
+  const lot = G.LOTS.find((l) => l.id === "galerie-styles");
+  assert.ok(lot.sources.some((s) => /temoin\.json$/.test(s)) && lot.sources.some((s) => /temoin\.js$/.test(s)));
+  for (const style of G.STYLES_LIVRES()) {
+    const [a, b] = G.fichiersTemoin(style);
+    assert.deepEqual([a, b], [`medias/galerie/styles/${style}-temoin-a.jpg`, `medias/galerie/styles/${style}-temoin-b.jpg`]);
+    assert.ok(lot.sorties().includes(a) && lot.sorties().includes(b), style);
+  }
+});
+
+test("galerie : un style livré sans image A ou B fait échouer --verifier", () => {
+  const racine = dossierTemporaire("pm-galerie-medias-");
+  const poser = (f) => { fs.mkdirSync(path.dirname(path.join(racine, "docs", f)), { recursive: true }); fs.writeFileSync(path.join(racine, "docs", f), "x"); };
+  for (const style of G.STYLES_LIVRES()) G.fichiersStyle(style).forEach(poser);
+  assert.deepEqual(manquesStyles(racine), []);
+  const [style] = G.STYLES_LIVRES();
+  const [a, b] = G.fichiersTemoin(style);
+  fs.rmSync(path.join(racine, "docs", a));
+  assert.deepEqual(manquesStyles(racine), [`${style} : image A absente (docs/${a}).`]);
+  fs.rmSync(path.join(racine, "docs", b));
+  fs.rmSync(path.join(racine, "docs", G.fichiersStyle(style)[0]));
+  assert.equal(manquesStyles(racine).length, 3);
+  // La ligne de commande s'en sert avec --verifier.
+  assert.match(fs.readFileSync(path.join(__dirname, "galerie.js"), "utf8"), /const manques = verifier \? manquesStyles\(RACINE_DEPOT\) : \[\];/);
+  // Chaque style livré a les champs que la galerie montre.
+  for (const s of G.STYLES_LIVRES()) {
+    const id = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "..", "plugins", "pulse-motion", "styles", s, "identite.json"), "utf8"));
+    assert.ok(id.categorie && id.usages.length === 3 && id.nonPas, s);
+  }
+});
+
+test("galerie : cartes regroupées par catégorie, dans l'ordre de CATEGORIES", () => {
+  const faux = (style, categorie) => ({ style, identite: { categorie } });
+  const groupes = grouperParCategorie([faux("riso", "papier-imprime"), faux("minimal", "essentiels"), faux("carnet", "dessine"), faux("inconnu", "vapeur"), faux("chaleureux", "essentiels")]);
+  assert.deepEqual(groupes.map((g) => g.categorie.id), ["essentiels", "dessine", "papier-imprime", "autres"]);
+  assert.deepEqual(groupes[0].styles.map((x) => x.style), ["minimal", "chaleureux"]);
+  const ordre = CATEGORIES.map((c) => c.id);
+  assert.deepEqual(groupes.slice(0, 3).map((g) => ordre.indexOf(g.categorie.id)), [0, 1, 3]);
+  // Le bloc du catalogue : une section par catégorie, chaque carte avec A, B, la boucle et ses champs.
+  const b = blocs().styles;
+  const sections = [...b.matchAll(/<section class="categorie-styles" id="styles-([a-z-]+)" data-categorie="\1">\n<h4>([^<]+)<\/h4>/g)];
+  assert.deepEqual(sections.map((m) => m[1]), ["essentiels"]);
+  assert.equal(sections[0][2], "Les essentiels");
+  for (const style of G.STYLES_LIVRES()) {
+    const carte = new RegExp(`<details class="style-en-mouvement" id="style-${style}"[\\s\\S]*?</details>`).exec(b)[0];
+    const [mp4] = G.fichiersStyle(style);
+    const [a, imgB] = G.fichiersTemoin(style);
+    for (const f of [mp4, a, imgB]) assert.ok(carte.includes(`"${f}"`), `${style} : ${f}`);
+    for (const champ of [/<strong>Pour :<\/strong>/, /<strong>Ce qu'il n'est pas :<\/strong>/, /<strong>Signature :<\/strong>/, /<strong>Provenance :<\/strong>/]) assert.match(carte, champ, style);
+  }
+  assert.match(b, /id="style-minimal"[\s\S]*?<strong>Provenance :<\/strong> lemo-opuscar, style « swiss-motion » \(MIT\)/);
+});

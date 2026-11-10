@@ -20,28 +20,12 @@ function texteDeLongueur(n, decalage = 0) {
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
-// Phrases d'exemple par texte, de la plus longue à la plus courte : la première qui tient est retenue.
-const EXEMPLES = {
-  etiquette: ['Chaîne du froid', 'Hygiène'],
-  titre: ['Garder la chaîne du froid', 'Le froid, sans rupture'],
-  sous: ['Les bons gestes, du camion au réfrigérateur', 'Les bons gestes, de bout en bout'],
-  point1: ['Vérifier la température à la livraison', 'Contrôler chaque livraison'],
-  point2: ['Ranger les produits frais en premier', 'Ranger le frais en premier'],
-  point3: ['Respecter les dates sur les étiquettes', 'Respecter les dates'],
-  point4: ['Ne jamais recongeler un produit', 'Ne jamais recongeler'],
-  unite: ['kg'],
-  legende: ['De produits frais contrôlés chaque semaine', 'Contrôlés chaque semaine'],
-  'gauche-titre': ['Avant'],
-  'gauche-texte': ['Produits rangés au hasard, porte souvent ouverte', 'Produits rangés au hasard'],
-  'droite-titre': ['Après'],
-  'droite-texte': ['Produits datés, rangés par zone de froid', 'Produits datés et rangés'],
-  numero: ['2'],
-  texte: ['Un produit resté trop longtemps hors du froid ne doit pas y retourner.', 'Un produit sorti du froid n\'y retourne pas.'],
-  a: ['Réception'],
-  b: ['Stockage'],
-  c: ['Préparation'],
-};
-const PHRASE = 'Garder les produits au froid, du camion jusqu\'à l\'assiette, sans jamais rompre la chaîne';
+// Contenu témoin (« chaîne du froid », references/styles/temoin.json) : phrases d'exemple par texte, de la plus longue à la
+// plus courte (la première qui tient est retenue), phrase de repli, images A et B, boucle. Source unique : la planche des
+// styles, la page de choix et la galerie du wiki le lisent aussi.
+const TEMOIN = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'references', 'styles', 'temoin.json'), 'utf8'));
+const EXEMPLES = TEMOIN.textes;
+const PHRASE = TEMOIN.phrase;
 
 /** Vraie phrase d'exemple pour ce texte, sans dépasser n caractères (coupée à un mot si besoin). */
 function texteExemple(cle, n) {
@@ -57,9 +41,17 @@ function texteExemple(cle, n) {
   return t.replace(/[,]$/, '') || PHRASE.slice(0, n);
 }
 
+/** Fixe la valeur d'arrivée du premier compteur (« nombre 0→1250 ») d'une scène ; scène sans compteur : inchangée. */
+function avecValeur(html, valeur) {
+  if (valeur === undefined || valeur === null) return html;
+  return html.replace(/(data-tween="[^"]*nombre\s+-?[\d.]+\s*→\s*)-?[\d.]+/, (m, debut) => `${debut}${valeur}`);
+}
+
 /** -> dossier temporaire d'un projet aux scènes toutes faites du style (toutes, ou celles de `types`).
- * textes : 'maximum' (chaque texte à sa longueur maximale, le pire cas) ou 'exemple' (vraies phrases). */
-function projetEssai({ dossierStyle, ratio = '16:9', ton, types = null, textes: sorteTextes = 'maximum' }) {
+ * textes : 'maximum' (chaque texte à sa longueur maximale, le pire cas) ou 'exemple' (vraies phrases).
+ * valeurChiffre : valeur d'arrivée du compteur de la scène « chiffre » (témoin : 1 250) ; dureeScene : durée de chaque
+ * scène (boucle du témoin), sinon celle du catalogue. */
+function projetEssai({ dossierStyle, ratio = '16:9', ton, types = null, textes: sorteTextes = 'maximum', valeurChiffre, dureeScene }) {
   const style = path.basename(dossierStyle);
   const catalogue = JSON.parse(fs.readFileSync(path.join(dossierStyle, 'catalogue.json'), 'utf8'));
   const choisies = types ? types.map((t) => catalogue.scenes.find((s) => s.nom === t)).filter(Boolean) : catalogue.scenes;
@@ -68,17 +60,17 @@ function projetEssai({ dossierStyle, ratio = '16:9', ton, types = null, textes: 
   fs.mkdirSync(path.join(dir, 'assets'));
   fs.writeFileSync(path.join(dir, 'assets', 'logo.svg'), '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><circle cx="5" cy="5" r="5"/></svg>', 'utf8');
   const scenes = choisies.map((s, i) => {
-    fs.copyFileSync(path.join(dossierStyle, 'scenes', `${s.nom}.html`), path.join(dir, 'scenes', `${s.nom}.html`));
     const textes = {};
     Object.entries(s.textes).forEach(([cle, max], k) => {
       if (sorteTextes === 'exemple') textes[cle] = texteExemple(cle, max);
       else textes[cle] = cle === 'numero' ? '12' : texteDeLongueur(max, i + k);
     });
     // Le chiffre d'un compteur s'écrit dans l'intention, comme le demande la doctrine (realisation § 3, règle chiffre-invente).
-    const html = fs.readFileSync(path.join(dossierStyle, 'scenes', `${s.nom}.html`), 'utf8');
+    const html = avecValeur(fs.readFileSync(path.join(dossierStyle, 'scenes', `${s.nom}.html`), 'utf8'), s.nom === 'chiffre' ? valeurChiffre : undefined);
+    fs.writeFileSync(path.join(dir, 'scenes', `${s.nom}.html`), html, 'utf8');
     const chiffres = [...html.matchAll(/nombre\s+-?[\d.]+\s*→\s*(-?[\d.]+)/g)].map((m) => m[1].replace('.', ','));
     const intention = `${s.nom} – ${s.role}${chiffres.length ? ` (${chiffres.join(', ')})` : ''}`;
-    return { id: s.nom, type: s.nom, fichier: `scenes/${s.nom}.html`, duree: s.duree, textes, intention, transition: catalogue.transitions[i % catalogue.transitions.length] };
+    return { id: s.nom, type: s.nom, fichier: `scenes/${s.nom}.html`, duree: dureeScene || s.duree, textes, intention, transition: catalogue.transitions[i % catalogue.transitions.length] };
   });
   const charte = { logo: 'assets/logo.svg' };
   if (ton) charte.ton = ton;
@@ -88,4 +80,4 @@ function projetEssai({ dossierStyle, ratio = '16:9', ton, types = null, textes: 
   return dir;
 }
 
-module.exports = { texteDeLongueur, texteExemple, projetEssai };
+module.exports = { texteDeLongueur, texteExemple, projetEssai, avecValeur, TEMOIN };

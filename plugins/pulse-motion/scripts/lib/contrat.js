@@ -56,4 +56,8 @@ const SECTIONS_FICHE = [
 /** Sections lues par l'animateur (pulse-motion reference styles/<style> --pour animateur). */
 const SECTIONS_ANIMATEUR = [SECTIONS_FICHE[0], SECTIONS_FICHE[2], SECTIONS_FICHE[4], SECTIONS_FICHE[5], SECTIONS_FICHE[8], SECTIONS_FICHE[9], SECTIONS_FICHE[10]];
 
-module.exports = { TYPES, OPTIONNELLES, FAMILLES, NOM_STYLE, CATEGORIES, TYPES_ENTREE, SECTIONS_FICHE, SECTIONS_ANIMATEUR };
+/** Sections reprises dans la fiche du relecteur (agent critique) : ce que le style est et n'est pas, sa logique de couleur,
+ * ses pièges. La fiche entière dépasserait le budget de lecture du critique (15 000 jetons avant d'écrire). */
+const SECTIONS_CRITIQUE = [SECTIONS_FICHE[1], SECTIONS_FICHE[3], SECTIONS_FICHE[9]];
+
+module.exports = { TYPES, OPTIONNELLES, FAMILLES, NOM_STYLE, CATEGORIES, TYPES_ENTREE, SECTIONS_FICHE, SECTIONS_ANIMATEUR, SECTIONS_CRITIQUE };
