@@ -49,7 +49,7 @@ tools: Read, Write, Edit, Glob, Grep, Bash
 
 ## Résultat à renvoyer
 
-Une ligne par point : fichier écrit, scène toute faite utilisée (ou « composée »), éléments animés et leur ordre, ce qui vit (action principale, boucles) et ce qui reste immobile exprès, mouvements appliqués (numéro, élément), effets posés (nom, ancre, calque), personnages et actions, sons et ancres `mot:`, zone réservée laissée, toute difficulté (texte trop long, clé inutilisable).
+Une ligne par point : fichier écrit, scène toute faite utilisée (ou « composée »), éléments animés et leur ordre, ce qui vit (action principale, boucles) et ce qui reste immobile exprès, mouvements appliqués (numéro, élément), effets posés (nom, ancre, calque), personnages et actions, sons et ancres `mot:`, zone réservée laissée, toute difficulté (texte trop long, nombre incertain).
 
 ## Mode « style »
 
