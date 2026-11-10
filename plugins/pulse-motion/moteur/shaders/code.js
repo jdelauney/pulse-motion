@@ -368,6 +368,18 @@
     '  let d = length(w - e * h);',
     '  return select(d, -d, e.x * w.y - e.y * w.x > 0.0);',
     '}',
+    '// Teintes d\'une couleur (transitions à la couleur de la marque, chiffres d\'argo accent.ts) : sombre (× 0,35) et claire',
+    '// (vers le blanc à 65 %), calculées en sRGB ; entrée et sortie en RVB linéaire.',
+    'fn pmVersSRGB(c: vec3f) -> vec3f {',
+    '  let x = clamp(c, vec3f(0.0), vec3f(1.0));',
+    '  return select(1.055 * pow(x, vec3f(1.0 / 2.4)) - 0.055, x * 12.92, x <= vec3f(0.0031308));',
+    '}',
+    'fn pmVersLineaire(c: vec3f) -> vec3f {',
+    '  let x = clamp(c, vec3f(0.0), vec3f(1.0));',
+    '  return select(pow((x + 0.055) / 1.055, vec3f(2.4)), x / 12.92, x <= vec3f(0.04045));',
+    '}',
+    'fn teinteSombre(c: vec3f) -> vec3f { return pmVersLineaire(pmVersSRGB(c) * 0.35); }',
+    'fn teinteClaire(c: vec3f) -> vec3f { let s = pmVersSRGB(c); return pmVersLineaire(s + (vec3f(1.0) - s) * 0.65); }',
     '',
   ].join('\n');
 

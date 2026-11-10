@@ -10,8 +10,8 @@ const DOSSIER = path.join(__dirname, '..', 'shaders');
 const CHARTE = { primaire: '#3366cc', accent: '#ff9900', texte: '#111111', fond: '#ffffff' };
 const ATTENDUS = {
   fond: ['nebuleuse', 'plasma', 'degrade-vivant', 'grille-neon', 'rayons', 'halo', 'energie-contour'],
-  transition: ['dissolution', 'ondulation', 'pixels', 'glitch', 'balayage-organique'],
-  post: ['grain', 'vignettage', 'aberration', 'chaleur'],
+  transition: ['dissolution', 'ondulation', 'pixels', 'glitch', 'balayage-organique', 'fuite-lumiere', 'brulure', 'lentille', 'iris', 'deformation'],
+  post: ['grain', 'vignettage', 'aberration', 'chaleur', 'cathodique'],
   'module-force': ['spirale'],
   'module-couleur': ['couleur-vitesse'],
   'module-forme': ['etoile'],
@@ -46,14 +46,18 @@ test('bibliothèque : fonds et auras valides, réglables, originaux', () => {
 });
 
 test('bibliothèque : transitions et post-traitements valides, réglables, originaux', () => {
-  assert.equal(presents('transition').length, 5);
-  assert.equal(presents('post').length, 4);
+  assert.equal(presents('transition').length, 10);
+  assert.equal(presents('post').length, 5);
   verifier('transition');
   verifier('post');
   // Bornes des smoothstep : bord et douceur jamais nuls.
   assert.ok(lire('dissolution').json.parametres.bord.min > 0);
   assert.ok(lire('balayage-organique').json.parametres.douceur.min > 0);
   assert.ok(lire('vignettage').json.parametres.douceur.min > 0);
+  assert.ok(lire('fuite-lumiere').json.parametres.douceur.min > 0);
+  assert.ok(lire('lentille').json.parametres.rayon.min > 0, 'rayon de la lentille jamais nul');
+  assert.ok(lire('deformation').json.parametres.echelle.min > 0, 'échelle du bruit jamais nulle');
+  assert.ok(lire('brulure').json.parametres.grain.min > 0, 'grain de la brûlure jamais nul');
 });
 
 test('bibliothèque : modules valides et attachables à une recette', () => {

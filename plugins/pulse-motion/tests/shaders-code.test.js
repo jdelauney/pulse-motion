@@ -124,7 +124,7 @@ test('assemblerShader : code à sa ligne ; situer ramène les lignes du fichier'
 });
 
 test('prélude des shaders et empreinte', () => {
-  for (const f of ['alea2', 'fbm', 'palette', 'rot2', 'sdCercle', 'sdBoite', 'sdSegment', 'sdEtoile']) assert.match(S.OUTILS, new RegExp(`fn ${f}\\(`), f);
+  for (const f of ['alea2', 'fbm', 'palette', 'rot2', 'sdCercle', 'sdBoite', 'sdSegment', 'sdEtoile', 'teinteSombre', 'teinteClaire']) assert.match(S.OUTILS, new RegExp(`fn ${f}\\(`), f);
   assert.match(S.ENTREES, /struct PmEntrees/);
   assert.equal(S.empreinte('abc'), S.empreinte('abc'));
   assert.notEqual(S.empreinte('abc'), S.empreinte('abd'));
