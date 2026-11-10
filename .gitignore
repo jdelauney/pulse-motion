@@ -11,3 +11,6 @@
 
 /plugins/pulse-motion/sortie-tests/
 /plugins/pulse-motion/tests/evaluations/claude/
+
+# État écrit par une commande lancée depuis le dossier du plugin (tests) : jamais versionné.
+/plugins/pulse-motion/.pulse-motion/
