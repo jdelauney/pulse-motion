@@ -14,7 +14,8 @@ const navigateur = trouverNavigateur();
 const sans = { skip: !navigateur && 'Chrome ou Edge introuvable' };
 
 /** Page livrée (ou celle de l'aperçu, avec prelude) ouverte par le CDP, une fois prête. */
-async function ouvrir(dir, { prelude = '', recherche = '' } = {}) {
+// ?affiche=1 : le navigateur des tests est piloté (navigator.webdriver), où l'affiche ne s'ouvre pas sans le demander.
+async function ouvrir(dir, { prelude = '', recherche = '?affiche=1' } = {}) {
   const a = assembler({ dossier: dir, dossierStyles: STYLES, ecrire: false });
   assert.equal(a.ok, true);
   const html = prelude ? a.html.replace('</head>', `<script>${prelude}</script>\n</head>`) : a.html;
@@ -69,8 +70,9 @@ test('lecteur.test.js › page livrée : à l\'ouverture, image de la couverture
 test('lecteur.test.js › aperçu : comportement inchangé (ni affiche ni saut à la couverture) ; capture et export non plus', sans, async () => {
   const dir = copierProjet('projet-simple');
   modifierDeroule(dir, (d) => { d.couverture = { scene: 'chiffre', instant: 1 }; });
-  for (const o of [{ prelude: 'window.__PM_APERCU__ = true;' }, { recherche: '?capture=1' }, { prelude: 'M.sansSon = true;' }]) {
+  for (const o of [{ prelude: 'window.__PM_APERCU__ = true;' }, { recherche: '?capture=1&affiche=1' }, { prelude: 'M.sansSon = true;' }, { recherche: '' }]) {
     // M.sansSon (pages du contrôle) est posé après le moteur : le prélude le pose avant, l'effet est le même.
+    // Navigateur piloté sans ?affiche=1 (tests, mesures) : rien non plus.
     const page = await ouvrir(dir, o.prelude === 'M.sansSon = true;' ? { prelude: 'window.M = { sansSon: true };' } : o);
     try {
       const e = await page.evaluer(ETAT);
