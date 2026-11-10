@@ -27,7 +27,7 @@ function copieDuStyle() {
 test('contrat : 8 types, clés de clair-pedagogique, clés facultatives de la liste', () => {
   assert.deepEqual(Object.keys(TYPES), ['titre', 'liste', 'chiffre', 'comparaison', 'etape', 'alerte', 'schema', 'conclusion', 'moyeu']);
   assert.deepEqual(TYPES.liste, ['titre', 'point1', 'point2', 'point3', 'point4']);
-  assert.deepEqual(OPTIONNELLES, { liste: ['point3', 'point4'] });
+  assert.deepEqual(OPTIONNELLES, { liste: ['point3', 'point4'], moyeu: ['partie4', 'partie5'] });
 });
 
 test('contraste WCAG : noir sur blanc 21:1, même couleur 1:1', () => {

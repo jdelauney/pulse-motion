@@ -78,7 +78,7 @@
 | `etape` | Une étape, numéro rond | 8 s | numero 2, titre 40, texte 80 |
 | `alerte` | Un conseil important | 8 s | titre 40, texte 80 |
 | `schema` | Trois étapes, flèches courbes | 8 s | titre 40, a, b, c 25 |
-| `moyeu` | Un centre, 3 à 5 parties reliées | 10 s | titre 40, centre 24, partie1 … partie5 22 |
+| `moyeu` | Centre et parties | 10 s | titre 40, centre 24, parties 22 |
 | `conclusion` | Le message et le logo | 6 s | titre 40, sous 50 |
 
 Point ou logo absent : retirer son élément et sa clé.
@@ -86,7 +86,7 @@ Point ou logo absent : retirer son élément et sa clé.
 - Entrées : `.pose`, `.eclot`. Décor : `.decor` + `.galet`, `.galet.sauge`.
 - Scènes : `.cartes` ; `.galet-chiffre` ; `.deux-cartes`, `.carte`, `.carte-titre` ; `.etape`, `.rond-numero` ; `.conseil`, `.conseil-icone`, `.conseil-corps` ; `.parcours`, `.etiquette-ronde`, `.courbe` ; `.logo`.
 
-Modules du moteur : aucun. Scène composée : ces classes et `<style>@scope { … }</style>` ; photos de vraies personnes bienvenues.
+Scène composée : ces classes et `<style>@scope { … }</style>` ; photos de vraies personnes bienvenues.
 
 ## 11. Espace de variation
 

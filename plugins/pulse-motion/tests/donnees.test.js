@@ -223,7 +223,7 @@ test('formule : commande inconnue → formule-non-prise-en-charge en français',
   const a = assembler1([{ id: 's', html: '<span data-formule="f" data-start="1"></span>', formules: { f: '\\sqr{2}' } }]);
   const e = a.erreurs.find((x) => x.regle === 'formule-non-prise-en-charge');
   assert.equal(e.gravite, 'erreur');
-  assert.match(e.message, /^Scène « s », formule « f » : la commande « \\sqr » n'est pas prise en charge ; vouliez-vous dire « \\sqrt » \?/);
+  assert.match(e.message, /^Scène « s », formule « f » : la commande « \\sqr » n'est pas prise en charge ; vouliez-vous dire « \\sqrt »[^.]*\?$/);
 });
 
 test('formule : la police mathématique n\'est embarquée que si la vidéo a une formule', () => {
@@ -270,14 +270,14 @@ test('moyeu : présent dans les 6 styles, passe la vérification des styles', ()
   assert.ok(verifierStyle(copie, { livre: true }).erreurs.some((e) => /scène « moyeu » absente/.test(e)));
   // Parties facultatives : la partie retirée part avec sa flèche.
   const h = A.adapterScene(lire('styles', 'clair-pedagogique', 'scenes', 'moyeu.html'), { type: 'moyeu', id: 'hub', duree: 10, textes: { titre: 't', centre: 'c', partie1: '1', partie2: '2', partie3: '3' } });
-  assert.doesNotMatch(h, /partie4|partie5/);
+  assert.doesNotMatch(h.replace(/<!--[\s\S]*?-->/, ''), /partie4|partie5/);
   assert.equal((h.match(/data-fleche=/g) || []).length, 3);
   assert.equal(A.choisirType({ textes: { titre: 'x', centre: 'c', partie1: '1', partie2: '2', partie3: '3' } }), 'moyeu');
 });
 
 test('schema : les flèches visent les boîtes dans les 6 styles (sans navigateur)', () => {
   for (const s of STYLES) {
-    const html = lire('styles', s, 'scenes', 'schema.html');
+    const html = lire('styles', s, 'scenes', 'schema.html').replace(/^<!--[\s\S]*?-->\s*/, '');
     assert.doesNotMatch(html, /<svg/, `${s} : plus de flèche dessinée à la place supposée des boîtes`);
     assert.deepEqual([...html.matchAll(/data-fleche="([^"]+)"/g)].map((m) => m[1]), ['#a → #b', '#b → #c'], s);
     const dir = miniProjet({ style: s, scenes: [{ id: 'schema', html, duree: 8, textes: { titre: 'Le trajet', a: 'Devis', b: 'Facture', c: 'Paiement' } }] });

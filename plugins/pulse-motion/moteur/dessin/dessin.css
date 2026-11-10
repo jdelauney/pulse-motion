@@ -25,3 +25,4 @@
 #pm-scene .pm-code-reference, #pm-scene .pm-code-nombre, #pm-scene .pm-code-attribut { color: var(--c-accent-lisible, var(--c-accent)); }
 #pm-scene .pm-code-chaine { color: color-mix(in oklab, var(--c-accent-lisible, var(--c-accent)) 60%, var(--c-texte)); }
 #pm-scene .pm-code-commentaire { color: color-mix(in srgb, var(--c-texte) 66%, var(--pm-code-fond)); }
+#pm-scene .pm-code-corps, #pm-scene .pm-code-titre { font-variant-ligatures: none; }

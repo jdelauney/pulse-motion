@@ -133,7 +133,7 @@ Composer l'image finale entière (tout ce qui sera montré, à sa place), puis l
 | moyeu | `moyeu` | un centre, 3 à 5 parties en couronne, une flèche vers chacune | les parties en rangée sous le centre |
 | schéma | `schema` | trois boîtes reliées par `data-fleche` | les boîtes empilées, flèches verticales |
 
-`moyeu` : clés `titre`, `centre`, `partie1` à `partie5` (4 et 5 facultatives : retirer la partie et sa flèche). En portrait, des parties courtes (14 caractères). Une flèche se courbe par le style : `--pm-fleche-courbe` sur l'élément `data-fleche`, quand il n'a pas `data-fleche-courbe`.
+`moyeu` : clés `titre`, `centre`, `partie1` à `partie5` (4 et 5 facultatives : retirer la partie et sa flèche). En portrait, des parties courtes (12 caractères avec 3 parties, 6 avec 5). Une flèche se courbe par le style : `--pm-fleche-courbe` sur l'élément `data-fleche`, quand il n'a pas `data-fleche-courbe`.
 
 ## Encre des styles
 

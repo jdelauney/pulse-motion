@@ -79,7 +79,7 @@
 | `etape` | Une étape, numéro à empattements | 8 s | numero 2, titre 40, texte 80 |
 | `alerte` | Un point de vigilance entre deux filets | 8 s | titre 40, texte 80 |
 | `schema` | Trois temps, flèches fines | 8 s | titre 40, a, b, c 25 |
-| `moyeu` | Un centre, 3 à 5 parties reliées | 10 s | titre 40, centre 24, partie1 … partie5 22 |
+| `moyeu` | Centre et parties | 10 s | titre 40, centre 24, parties 22 |
 | `conclusion` | Le message et le logo | 6 s | titre 40, sous 50 |
 
 Point ou logo absent : retirer son élément et sa clé.
@@ -87,7 +87,7 @@ Point ou logo absent : retirer son élément et sa clé.
 - Entrées : `.masque`, `.fondu` ; `.filet`, `.filet.court`, `.filet.accent` se tracent. Décor : `.decor` + `.ligne`, `.guillemet`.
 - Scènes : `.sommaire` ; `.duo`, `.volet`, `.volet-titre` ; `.etape`, `.numeral`, `.etape-texte` ; `.encadre` ; `.chaine`, `.maillon`, `.lien` ; `.logo`.
 
-Modules du moteur : aucun. Scène composée : ces classes et `<style>@scope { … }</style>`.
+Scène composée : ces classes et `<style>@scope { … }</style>`.
 
 ## 11. Espace de variation
 

@@ -187,7 +187,7 @@
   background: var(--pm-bloc-fond); box-shadow: 0 1cqh 3.6cqh rgb(0 0 0 / 0.16), 0 0 0 0.15cqh var(--pm-bloc-trait);
 }
 #pm-scene .pm-bloc-carte-graphique .pm-bloc-entete { display: flex; gap: 2cqh; align-items: baseline; justify-content: space-between; }
-#pm-scene .pm-bloc-carte-graphique .pm-bloc-chiffre { font: 800 6cqh/1 var(--f-titres, var(--f-texte, system-ui, sans-serif)); color: var(--c-accent-lisible, var(--c-accent, #b45309)); }
+#pm-scene .pm-bloc-carte-graphique .pm-bloc-chiffre { white-space: nowrap; font: 800 6cqh/1.25 var(--f-titres, var(--f-texte, system-ui, sans-serif)); color: var(--c-accent-lisible, var(--c-accent, #b45309)); }
 #pm-scene .pm-bloc-carte-graphique .pm-bloc-graphique { width: 100%; height: var(--pm-bloc-hauteur, 40cqh); margin: 0; }
 #pm-scene .pm-bloc-organigramme { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9cqh 3cqh; }
 #pm-scene .pm-bloc-case { margin: 0; padding: 1.8cqh 1.6cqh; border-radius: 1.6cqh; text-align: center; font-weight: 600;

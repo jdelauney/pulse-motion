@@ -134,7 +134,8 @@ function convertir(tex) {
       return `<mrow>${ouvre ? `<mo stretchy="true">${echapper(ouvre)}</mo>` : ''}${corps.join('')}${ferme ? `<mo stretchy="true">${echapper(ferme)}</mo>` : ''}</mrow>`;
     }
     if (v === 'right') { erreur('\\right sans \\left.'); return ''; }
-    erreur(`la commande « \\${v} » n'est pas prise en charge ; ${proposer(v)}.`);
+    const p = proposer(v);
+    erreur(`la commande « \\${v} » n'est pas prise en charge ; ${p}${/[?.]$/.test(p) ? '' : '.'}`);
     return `<mi>${echapper(v)}</mi>`;
   }
 

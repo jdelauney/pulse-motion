@@ -444,7 +444,9 @@ test('references : ecran.md cite seulement des classes et attributs qui existent
   }
   assert.ok(classes >= 10, `${classes} classes`);
   for (const [, a] of ref.matchAll(/`(data-[a-z-]+)/g)) {
-    assert.ok(MOTEUR.includes(`'${a}'`) || MOTEUR.includes(`"${a}"`) || CSS.includes(`[${a}`) || ['data-start', 'data-dur', 'data-texte', 'data-icone', 'data-gel', 'data-vitesse', 'data-camera', 'data-son', 'data-lettres'].includes(a), `attribut ${a}`);
+    assert.ok(MOTEUR.includes(`'${a}'`) || MOTEUR.includes(`"${a}"`) || CSS.includes(`[${a}`) || ['data-start', 'data-dur', 'data-texte', 'data-icone', 'data-gel', 'data-vitesse', 'data-camera', 'data-son', 'data-lettres',
+      // Les cartes « graphique » et « organigramme » (S7 J2) : attributs du calque de dessin (explication.md).
+      'data-graphique', 'data-fleche'].includes(a), `attribut ${a}`);
   }
   for (const [, v] of ref.matchAll(/`(--pm-[a-z-]+)`/g)) assert.ok(CSS.includes(v), `variable ${v}`);
   for (const b of BLOCS) assert.match(ref, new RegExp(`\\| \`${b}\` \\|`), b);

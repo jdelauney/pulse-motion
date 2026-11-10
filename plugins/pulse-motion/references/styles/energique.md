@@ -80,7 +80,7 @@
 | `etape` | Une étape, pastille | 7 s | numero 2, titre 28, texte 70 |
 | `alerte` | Bande de chantier | 7 s | titre 28, texte 70 |
 | `schema` | Trois blocs enchaînés | 7 s | titre 28, a, b, c 20 |
-| `moyeu` | Un centre, 3 à 5 parties reliées | 10 s | titre 40, centre 24, partie1 … partie5 22 |
+| `moyeu` | Centre et parties | 10 s | titre 28, centre 20, parties 16 |
 | `conclusion` | L'appel à l'action et le logo | 5 s | titre 28, sous 40 |
 
 Point ou logo absent : retirer son élément et sa clé.
@@ -88,7 +88,7 @@ Point ou logo absent : retirer son élément et sa clé.
 - Entrées : `.tombe`, `.claque`, `.volet`. Décor : `.decor` + `.bandes` (`--x`).
 - Scènes : `.pile` ; `.face-a-face`, `.carte.creuse`, `.carte.pleine`, `.carte-titre` ; `.etape`, `.pastille` ; `.danger` ; `.enchainement`, `.maillon`, `.chevron` ; `.logo`.
 
-Modules du moteur : aucun. Scène composée : ces classes et `<style>@scope { … }</style>`.
+Scène composée : ces classes et `<style>@scope { … }</style>`.
 
 ## 11. Espace de variation
 

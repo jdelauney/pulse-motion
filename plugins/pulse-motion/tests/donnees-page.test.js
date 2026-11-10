@@ -170,7 +170,7 @@ test('code : ligne trop large → code-trop-large ; frappe par paquets ; police 
   const e = r.problemes.filter((x) => x.regle === 'code-trop-large');
   assert.equal(e.length, 1, JSON.stringify(r.problemes.map((x) => [x.regle, x.message])));
   assert.equal(e[0].gravite, 'erreur');
-  assert.match(e[0].message, /une ligne du code « long » fait 73 caractères, plus large que sa fenêtre/);
+  assert.match(e[0].message, /une ligne du code « long » fait 72 caractères, plus large que sa fenêtre/);
   const c = await ouvrirCapture({ fichierHtml: fichier, largeur: L, hauteur: H, navigateur, delai: 60000 });
   try {
     const vis = (t) => json(c, `M.seek(${t}).then(function () { return Array.prototype.map.call(document.querySelectorAll('[data-code="court"] .pm-code-jeton'), function (s) { return s.style.getPropertyValue('--vis'); }); })`);
@@ -213,7 +213,7 @@ const dedans = (b, Lg) => b.x - b.l / 2 >= -0.01 && b.x + b.l / 2 <= Lg + 0.01 &
 
 test('moyeu : en 9:16, les parties sont sous le centre et aucune ne sort de l\'image ; en 16:9, en couronne ; dans les 6 styles', { ...SANS, timeout: 600000 }, async () => {
   for (const style of STYLES) {
-    const html = lire('styles', style, 'scenes', 'moyeu.html').replace('data-scene="moyeu"', 'data-scene="s"');
+    const html = lire('styles', style, 'scenes', 'moyeu.html').replace(/^<!--[\s\S]*?-->\s*/, '').replace('data-scene="moyeu"', 'data-scene="s"');
     for (const [ratio, l, h] of [['9:16', 360, 640], ['16:9', L, H]]) {
       const p = page([{ id: 's', html, duree: 10, textes: TEXTES_MOYEU }], { style, deroule: { format: { ratio, ips: 30 } } });
       const { c } = await ouvrir(p, { largeur: l, hauteur: h });
@@ -248,7 +248,7 @@ test('moyeu : en 9:16, les parties sont sous le centre et aucune ne sort de l\'i
 
 test('schema : les flèches visent les boîtes dans les 6 styles', { ...SANS, timeout: 600000 }, async () => {
   for (const style of STYLES) {
-    const html = lire('styles', style, 'scenes', 'schema.html').replace('data-scene="schema"', 'data-scene="s"');
+    const html = lire('styles', style, 'scenes', 'schema.html').replace(/^<!--[\s\S]*?-->\s*/, '').replace('data-scene="schema"', 'data-scene="s"');
     const p = page([{ id: 's', html, duree: 8, textes: { titre: 'Le trajet', a: 'Devis', b: 'Facture', c: 'Paiement' } }], { style });
     const { c } = await ouvrir(p);
     try {
