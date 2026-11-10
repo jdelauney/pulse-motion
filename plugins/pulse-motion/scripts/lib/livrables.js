@@ -11,7 +11,8 @@
  * credits({ projet, deroule, assemblage, version? }) -> { texte, aPreciser: [fichiers] }
  * lireSources(projet) · noterSource({ projet, fichier, source, licence, auteur? }) -> { ok, message }
  * nomSortie(slug, { usage, scene?, plage?, cadre?, extension? }) · lirePlage(texte) · imagesDeScene · imagesDePlage
- * preparerSortie({ deroule, minutage, ips, scene?, plage?, gif?, cadre?, cadreFormat?, avecFfmpeg? }) -> plage d'images | { erreur }
+ * preparerSortie({ deroule, minutage, ips, scene?, plage?, gif?, cadre?, cadreFormat?, avecFfmpeg?, transparent?, flou?, usage?, tailleMax? })
+ *   -> plage d'images | { erreur } ; combinaisonRefusee(options) -> message | null (fond transparent, flou forcé : 5.8, 5.14)
  * tailleGif(l, h, { usage, largeur? }) -> [largeur, hauteur]
  * ecrireLivrables({ projet, deroule, assemblage, usage, extrait? }) -> { fichiers, chapitres, creditsAPreciser, alertes }
  */
@@ -225,6 +226,26 @@ function imagesDeScene(minutage, i, ips) {
 
 /** GIF : 20 s au plus (5.13). */
 const GIF_MAX = 20;
+/** Fonds transparents (5.14) : mov (montage, par défaut) ou webm (pour le web). */
+const TRANSPARENTS = ['mov', 'webm'];
+const lireTransparent = (v) => (v === true || v === '' || v === 'oui' ? 'mov' : String(v).toLowerCase());
+
+/** Combinaison d'options refusée (5.8, 5.13, 5.14, 5.15) : message français, ou null. flou : forcé (true, false) ou null. */
+function combinaisonRefusee({ gif = false, cadre = null, avecFfmpeg = true, transparent = null, flou = null, usage = null, tailleMax = null }) {
+  if (transparent) {
+    const t = lireTransparent(transparent);
+    if (!TRANSPARENTS.includes(t)) return `Fond transparent « ${transparent} » inconnu : pour le montage (mov) ou pour le web (webm).`;
+    if (usage === 'courriel' || tailleMax) return 'Une vidéo à fond transparent est faite pour un montage : elle ne tient pas dans une taille visée (courriel). Je la fais pour le montage, ou une vidéo légère sans transparence.';
+    if (usage === 'brouillon') return 'La version de travail n\'a pas de fond transparent : je fais la vidéo à fond transparent pour le montage, ou une version de travail normale.';
+    if (gif) return 'Le GIF ne garde pas la transparence : je fais la vidéo à fond transparent pour le montage, ou un GIF sur le fond de la vidéo.';
+    if (cadre) return 'Le cadre de téléphone a son propre fond : choisir la vidéo à fond transparent, ou la vidéo dans le cadre.';
+    if (flou === true) return 'Une vidéo à fond transparent n\'a pas de flou de mouvement (il salirait ses bords à l\'incrustation) : je la fais sans flou.';
+    if (t === 'mov' && !avecFfmpeg) return 'La vidéo à fond transparent a besoin de ffmpeg sur cet ordinateur : je peux l\'installer une fois.';
+  }
+  if (flou === true && gif) return 'Le GIF n\'a pas de flou de mouvement : je le fais net.';
+  if (flou === true && usage === 'brouillon') return 'La version de travail n\'a pas de flou de mouvement (elle doit sortir vite) : je la fais sans flou, ou je fais le master.';
+  return null;
+}
 const FORMATS_CADRE = ['16:9', '1:1'];
 
 /**
@@ -232,7 +253,11 @@ const FORMATS_CADRE = ['16:9', '1:1'];
  * seul, GIF, cadre de téléphone. minutage : celui de la vidéo (voix comprises) ; avecFfmpeg : ffmpeg utilisable.
  * -> { extrait, f0, f1, scene, plage, duree, gif, cadre, cadreFormat } | { erreur }
  */
-function preparerSortie({ deroule, minutage, ips, scene = null, plage = null, gif = false, cadre = null, cadreFormat = null, avecFfmpeg = true }) {
+function preparerSortie({ deroule, minutage, ips, scene = null, plage = null, gif = false, cadre = null, cadreFormat = null, avecFfmpeg = true,
+  transparent = null, flou = null, usage = null, tailleMax = null }) {
+  // Rendu avancé (spec Rendu et export, 5.8, 5.14) : combinaisons qui n'ont pas de sens, refusées avant toute capture.
+  const refus = combinaisonRefusee({ gif, cadre, avecFfmpeg, transparent, flou, usage, tailleMax });
+  if (refus) return { erreur: refus };
   if (scene && plage) return { erreur: 'Choisir une scène ou un passage, pas les deux.' };
   if (cadre && cadre !== 'telephone') return { erreur: `Cadre « ${cadre} » inconnu : seul le cadre de téléphone existe.` };
   if (cadre && deroule.format.ratio !== '9:16') return { erreur: 'Le cadre de téléphone est fait pour une vidéo verticale.' };
@@ -260,7 +285,8 @@ function preparerSortie({ deroule, minutage, ips, scene = null, plage = null, gi
     const quoi = scene ? `de la scène « ${scene} » (${virgule(Math.round(duree))} s)` : `de ${virgule(Math.round(duree))} s`;
     return { erreur: `Un GIF ${quoi} serait très lourd : je vous propose celui d'une scène plus courte (laquelle ?) ou d'un passage de ${GIF_MAX} s au plus.` };
   }
-  return { extrait: Boolean(scene || plage), f0: r.f0, f1: r.f1, scene: id, plage: lue, duree, gif: Boolean(gif), cadre: cadre || null, cadreFormat: cadre ? cadreFormat || '16:9' : null };
+  return { extrait: Boolean(scene || plage), f0: r.f0, f1: r.f1, scene: id, plage: lue, duree, gif: Boolean(gif), cadre: cadre || null, cadreFormat: cadre ? cadreFormat || '16:9' : null,
+    transparent: transparent ? lireTransparent(transparent) : null };
 }
 
 /** Grand côté d'un GIF : 960 px, 640 pour le courriel, 1 280 au plus sur demande. -> [largeur, hauteur] paires */
@@ -314,6 +340,7 @@ function ecrireLivrables({ projet, deroule, assemblage, usage, extrait = false, 
 }
 
 module.exports = {
+  combinaisonRefusee, lireTransparent, TRANSPARENTS,
   chapitresDe, texteYouTube, vttChapitres, ffmetadata, alertesChapitres, horodatage, credits, lireSources, noterSource,
   lirePlage, imagesDePlage, imagesDeScene, nomSortie, ecrireLivrables, preparerSortie, tailleGif, RAPPEL, A_PRECISER, GIF_MAX,
 };

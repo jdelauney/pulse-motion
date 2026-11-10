@@ -81,16 +81,27 @@ function avecGrain(deroule) {
   return posts.some((p) => p && (p.shader === 'grain' || p.nom === 'grain'));
 }
 
+/** --flou : oui, non (ou vrai, faux) -> true, false ; absent -> null ; autre -> 'illisible'. */
+function lireFlou(v) {
+  if (v === undefined || v === null || v === '') return null;
+  if (v === true || /^(oui|vrai|true|1)$/i.test(String(v))) return true;
+  if (v === false || /^(non|faux|false|0)$/i.test(String(v))) return false;
+  return 'illisible';
+}
+
 const arrondiKbit = (x) => Math.max(1, Math.round(x));
 
 /**
  * Réglages effectifs d'un export. Erreurs (message français) : usage inconnu, qualité inconnue, images par seconde hors de
  * 1 à 60, taille visée trop petite pour la durée.
  */
-function resoudreUsage({ pour, qualite, ips, tailleMax, deroule = {}, duree = 0, usages = lireUsages() } = {}) {
+function resoudreUsage({ pour, qualite, ips, tailleMax, flou, deroule = {}, duree = 0, usages = lireUsages() } = {}) {
   const usage = pour || usages.defaut;
   const u = usages.usages[usage];
   if (!u) return { erreur: messageUsageInconnu(usage, usages) };
+  // Flou de mouvement (5.8) : celui de l'usage (le master), forcé par --flou oui|non.
+  const flouLu = lireFlou(flou);
+  if (flouLu === 'illisible') return { erreur: `Flou « ${flou} » illisible : oui ou non.` };
   if (qualite !== undefined && qualite !== null && !DEFINITIONS.includes(qualite)) return { erreur: `Qualité « ${qualite} » inconnue : 1080p, 720p ou 540p.` };
   let cadence;
   if (ips !== undefined && ips !== null && ips !== '') {
@@ -148,7 +159,7 @@ function resoudreUsage({ pour, qualite, ips, tailleMax, deroule = {}, duree = 0,
   return {
     usage, nom: u.nom, definition, ips: cadence, fidele, navigateur,
     grainMax: u.grainHz || null, tailleMax: cible, debitVideo,
-    flou: false, fichiers: u.fichiers || [],
+    flou: flouLu === null ? Boolean(u.flou) : flouLu, flouForce: flouLu, fichiers: u.fichiers || [],
   };
 }
 
@@ -201,5 +212,5 @@ function tableauUsages(u = lireUsages()) {
 
 module.exports = {
   lireUsages, nomsUsages, messageUsageInconnu, resoudreUsage, planTaille, nomFichier, tailleFrancaise, dureeFrancaise,
-  nombreFrancais, tableauUsages, poidsEtTemps, dureeMaxPour, avecGrain, MOTS, DEFINITIONS, SEUILS_TAILLE, FACTEUR_DEFINITION, MO,
+  nombreFrancais, tableauUsages, lireFlou, poidsEtTemps, dureeMaxPour, avecGrain, MOTS, DEFINITIONS, SEUILS_TAILLE, FACTEUR_DEFINITION, MO,
 };

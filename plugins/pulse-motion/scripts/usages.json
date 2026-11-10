@@ -42,7 +42,7 @@
       "definition": "1080p", "ipsMax": 60,
       "fidele": { "crf": 14, "preset": "slow", "tune": "auto", "debitMax": null, "tampon": null, "gop": 2, "profil": "high", "audio": 256 },
       "navigateur": { "debit": 20000, "gop": 2, "acceleration": "no-preference" },
-      "flou": false, "grainHz": null, "tailleMaxMo": null,
+      "flou": true, "grainHz": null, "tailleMaxMo": null,
       "fichiers": ["couverture", "chapitres", "credits", "sous-titres"],
       "mesures": { "moParMinute": 6.8, "secondesParSeconde": 1.28, "date": "2026-11-10" }
     },
