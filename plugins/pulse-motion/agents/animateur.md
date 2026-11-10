@@ -24,7 +24,7 @@ tools: Read, Write, Edit, Glob, Grep, Bash
 
 ## Méthode
 
-1. Lire `pulse-motion reference moteur` (le tronc), `pulse-motion reference rythme`, `pulse-motion reference styles/<style>` et `pulse-motion glossaire .` (graphie des sigles et noms propres). Puis **seulement** les parties qu'exige votre consigne :
+1. Lire `pulse-motion reference moteur` (le tronc), `pulse-motion reference rythme`, `pulse-motion reference styles/<style> --pour animateur` et `pulse-motion glossaire .` (graphie des sigles et noms propres). Puis **seulement** les parties qu'exige votre consigne :
 
    | La consigne demande… | Lire aussi |
    |---|---|
