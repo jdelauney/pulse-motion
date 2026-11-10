@@ -749,3 +749,42 @@ test('plugin.test.js › THIRD-PARTY-NOTICES.md cite Mediabunny (MPL-2.0) et cha
   // Aucune mention de huashu (idées seulement, par S10) ni d'anidoodle comme source.
   assert.doesNotMatch(plugin, /huashu/i);
 });
+
+// --- Spec Rendu et export (S5), jalons 2 et 3 : textes d'accompagnement, sorties, notices ---------------------------------
+
+test('plugin.test.js › le skill exporter renvoie à references/accompagnement.md pour réseaux et courriel ; Write limité aux textes', () => {
+  const e = lire('skills', 'exporter', 'SKILL.md');
+  const ligne = e.split('\n').find((l) => l.includes('`pulse-motion reference accompagnement`'));
+  assert.ok(ligne, 'renvoi à accompagnement');
+  assert.match(ligne, /`reseaux` ou `courriel` : proposer « Voulez-vous un texte pour accompagner la vidéo \? »/);
+  assert.match(enTete(e)['allowed-tools'], /\bWrite\b/);
+  assert.match(e, /`Write` n'écrit que `sortie\/<titre>-textes\.md`/);
+  // Les nouvelles sorties passent par la référence des sorties, qui donne leurs options.
+  const sorties = lire('references', 'sorties.md');
+  for (const o of ['--scene', '--plage', '--gif', '--cadre telephone', 'planche . --pdf', 'pulse-motion credits . noter']) assert.ok(sorties.includes(o), o);
+});
+
+test('plugin.test.js › accompagnement.md : règles d\'accroche, de chiffres et de longueur présentes', () => {
+  const t = lire('references', 'accompagnement.md');
+  assert.match(t, /^# .+\n\n## L'essentiel\n/);
+  assert.match(t, /\*\*15 mots au plus\*\*/);
+  assert.match(t, /\*\*sujet apparaît dans les 3 premiers mots\*\*/);
+  assert.match(t, /\*\*3 à 5 lignes\*\*/);
+  assert.match(t, /Seulement ceux \*\*présents dans la vidéo\*\*/);
+  assert.match(t, /« Exemple »/);
+  assert.match(t, /\*\*0 à 3\*\*/);
+  assert.match(t, /\*\*60 caractères au plus\*\*/);
+  assert.match(t, /\*\*3 phrases\*\*/);
+  assert.match(t, /\*\*2 phrases\*\*/);
+  assert.match(t, /Rien n'est publié/);
+});
+
+test('plugin.test.js › notices : chapitres et marges d\'explainroo, ffmetadata et palette d\'argo, plage de take-one, cadre de rossark', () => {
+  const n = lire('THIRD-PARTY-NOTICES.md');
+  assert.match(n, /src\/chapters\.js/);
+  assert.match(n, /zonesPlateformes/);
+  assert.match(n, /;FFMETADATA1/);
+  assert.match(n, /palettegen=stats_mode=diff/);
+  assert.match(n, /`START\/END`/);
+  assert.match(n, /moteur\/cadres\/telephone\.js/);
+});

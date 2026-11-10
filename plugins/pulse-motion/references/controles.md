@@ -94,10 +94,10 @@ Les sous-titres sont aussi contrôlés pour le contraste (`contraste-reel`, él�
 
 | Plateforme | Haut | Droite | Bas | Gauche |
 |---|---|---|---|---|
-| `tiktok` | 0,125 | 0,20 | 0,34 | 0,11 |
-| `shorts` | 0,15 | 0,12 | 0,35 | 0,06 |
-| `reels` | 0,14 | 0,11 | 0,35 | 0,06 |
-| `toutes` | 0,15 | 0,20 | 0,35 | 0,11 |
+| TikTok (`tiktok`) | 0,125 | 0,20 | 0,34 | 0,11 |
+| YouTube Shorts (`shorts`) | 0,15 | 0,12 | 0,35 | 0,06 |
+| Instagram Reels (`reels`) | 0,14 | 0,11 | 0,35 | 0,06 |
+| Toutes (`toutes`) | 0,15 | 0,20 | 0,35 | 0,11 |
 
 La vidéo est relevée toutes les 0,2 s (`pasMesure`) ; un élément est immobile quand il bouge de moins de 0,5 % (`immobile`) de l'image entre deux relevés.
 

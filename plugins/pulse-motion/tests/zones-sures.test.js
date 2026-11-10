@@ -31,7 +31,7 @@ test('zones-sures.test.js › marges des plateformes dans seuils.json, recopiée
   const doc = fs.readFileSync(path.join(__dirname, '..', 'references', 'controles.md'), 'utf8');
   for (const [p, z] of Object.entries(SEUILS.zonesPlateformes)) {
     const v = (x) => String(x).replace('.', ',').replace(/^(0,\d)$/, '$10');
-    assert.ok(doc.includes(`| \`${p}\` | ${v(z.haut)} | ${v(z.droite)} | ${v(z.bas)} | ${v(z.gauche)} |`), p);
+    assert.ok(doc.includes(`(\`${p}\`) | ${v(z.haut)} | ${v(z.droite)} | ${v(z.bas)} | ${v(z.gauche)} |`), p);
   }
 });
 
