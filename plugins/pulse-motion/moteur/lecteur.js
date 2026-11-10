@@ -8,7 +8,9 @@
  * navigateur piloté ou sans fenêtre (navigator.webdriver, HeadlessChrome), sauf ?affiche=1.
  * M.enLecture() : vrai pendant la lecture (composition des shaders : cadence des photographies).
  * M.boucler({ debut, fin } | null) : boucle de lecture posée par l'atelier des effets (fenêtre d'un effet).
- * Les champs du panneau de l'atelier (#pm-atelier) et du studio (#pm-studio) gardent le clavier.
+ * Les champs du panneau de l'atelier (#pm-atelier), du studio (#pm-studio) et de tout panneau marqué data-pm-clavier gardent le clavier.
+ * Accroches pour les panneaux de l'aperçu (neutres dans la page livrée) : M.lecteur { jouer, pause, aller, enLecture, barre,
+ * piste } ; M.surClicImage(e) : si elle rend true, le clic sur l'image lui revient (pas de lecture/pause).
  * Sous l'aperçu (window.__PM_APERCU__), écoute /_pm/evenements : rechargement à la
  * même position après une retouche, bandeau en cas d'erreur d'assemblage.
  * Son : mixage du moteur (M.rendreSon), préparé 1 s après le chargement (sauf en capture) ou au premier ▶,
@@ -250,18 +252,23 @@
       if (lecture) lancerSon(M.temps());
     }
     // Boucle posée par l'atelier des effets (fenêtre d'un effet) ; null la retire. La touche B reste la boucle de scène.
+    M.lecteur = { jouer: jouer, pause: pause, aller: aller, enLecture: function () { return lecture; }, barre: barre, piste: piste };
     M.boucler = function (plage) {
       boucle = plage && plage.fin > plage.debut ? { debut: plage.debut, fin: plage.fin } : null;
       afficher(M.temps());
     };
 
     bouton.addEventListener('click', basculer);
-    document.getElementById('pm-scene').addEventListener('click', basculer);
+    // Un panneau de l'aperçu peut prendre le clic sur l'image (M.surClicImage rend true) : sinon, lecture/pause.
+    document.getElementById('pm-scene').addEventListener('click', function (e) {
+      if (typeof M.surClicImage === 'function' && M.surClicImage(e) === true) return;
+      basculer();
+    });
     curseur.addEventListener('input', function () { retirerAffiche(); aller(parseFloat(curseur.value)); });
     document.addEventListener('keydown', function (e) {
       if (e.target && e.target.tagName === 'INPUT' && e.key !== ' ') return;
       // Studio de voix et atelier des effets : leurs champs gardent le clavier.
-      if (e.target && e.target.closest && e.target.closest('#pm-studio, #pm-atelier')) return;
+      if (e.target && e.target.closest && e.target.closest('#pm-studio, #pm-atelier, [data-pm-clavier]')) return;
       // Affiche : la première touche la retire (la vidéo repart de 0).
       if (affiche && e.key !== ' ') retirerAffiche();
       if ((e.key === 'z' || e.key === 'Z') && racine.__PM_APERCU__) { basculerZones(); return; }

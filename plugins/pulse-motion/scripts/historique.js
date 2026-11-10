@@ -389,6 +389,22 @@ function journal(dossier) {
   return lireJournal(path.join(path.resolve(dossier), '.historique'));
 }
 
+/** Empreinte d'une version (copie ancienne ou manifeste) : clé de cache, sans rien reconstituer. */
+function empreinteVersion(racine, s) {
+  if (s.type === 'copie') return empreinteDe(Buffer.from(`copie:${s.numero}:${fs.statSync(path.join(racine, s.numero)).mtimeMs}`));
+  const manifeste = lireManifeste(racine, s.numero);
+  return empreinteDe(Buffer.from(JSON.stringify(Object.entries(manifeste.fichiers || {}).map(([c, f]) => [c, f.empreinte]))));
+}
+
+/** identifier(dossier, version) -> { numero, nom, empreinte } (sans rien reconstituer). */
+function identifier(dossier, version) {
+  const { racine } = preparer(dossier, { exiger: false });
+  const j = lireJournal(racine);
+  const e = trouver(j, version);
+  if (!e) throw inconnue(j, version);
+  return { numero: e.numero, nom: e.nom, empreinte: empreinteVersion(racine, sauvegardes(racine).find((x) => x.numero === e.numero)) };
+}
+
 /**
  * materialiser(dossier, version, cible) : reconstitue une version (numéro, nom ou « precedente ») dans le dossier cible,
  * vidé d'abord (jamais le projet lui-même). Les voix provisoires, hors des sauvegardes, sont celles du projet.
@@ -412,7 +428,6 @@ function materialiser(dossier, version, cible) {
       const src = path.join(racine, e.numero, nom);
       if (fs.existsSync(src)) fs.cpSync(src, path.join(dest, nom), { recursive: true });
     }
-    empreinte = empreinteDe(Buffer.from(`copie:${e.numero}:${fs.statSync(path.join(racine, e.numero)).mtimeMs}`));
   } else {
     const manifeste = lireManifeste(racine, e.numero);
     for (const rel of (manifeste.dossiers || []).map(depuisPosix)) fs.mkdirSync(path.join(dest, rel), { recursive: true });
@@ -421,8 +436,8 @@ function materialiser(dossier, version, cible) {
       fs.mkdirSync(path.dirname(abs), { recursive: true });
       fs.copyFileSync(path.join(racine, OBJETS, f.empreinte), abs);
     }
-    empreinte = empreinteDe(Buffer.from(JSON.stringify(Object.entries(manifeste.fichiers || {}).map(([c, f]) => [c, f.empreinte]))));
   }
+  empreinte = empreinteVersion(racine, s);
   const provisoires = path.join(projet, PROVISOIRES);
   if (fs.existsSync(provisoires)) fs.cpSync(provisoires, path.join(dest, PROVISOIRES), { recursive: true });
   return { numero: e.numero, nom: e.nom, dossier: dest, empreinte };
@@ -497,4 +512,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { sauvegarder, annuler, retablir, nommer, oublier, revenir, liste, journal, materialiser, defaire, retirerSauvegarde, lireSauvegarde, listerSauvegardes, lireArguments, CONSERVEES, NOMMEES_MAX };
+module.exports = { sauvegarder, annuler, retablir, nommer, oublier, revenir, liste, journal, identifier, materialiser, defaire, retirerSauvegarde, lireSauvegarde, listerSauvegardes, lireArguments, CONSERVEES, NOMMEES_MAX };
