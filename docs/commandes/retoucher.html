@@ -56,7 +56,9 @@
 <ul>
 <li><strong>Vous parlez comme à un monteur.</strong> Pas de logiciel à apprendre : « le chiffre doit rebondir », « mets la liste à droite ».</li>
 <li><strong>Vous voyez le résultat dans la seconde.</strong> L'aperçu reste ouvert et se recharge à la même position.</li>
-<li><strong>Vous pouvez tout essayer.</strong> « annule » revient en arrière ; les 20 dernières retouches sont gardées.</li>
+<li><strong>Vous pouvez tout essayer.</strong> « annule » revient en arrière, « rétablis » revient sur l'annulation ; les 20 dernières retouches sont gardées, et une version se garde sous un nom (« envoyée au client ») pour la retrouver quand vous voulez.</li>
+<li><strong>Vous montrez au lieu de décrire.</strong> Dans l'aperçu, cliquez sur « Remarque », puis sur l'image à l'endroit voulu : la remarque est gardée avec l'instant exact. Claude les traite une à une et ne marque une remarque faite qu'après avoir regardé la nouvelle image.</li>
+<li><strong>Vos impressions deviennent des choix.</strong> « ça fait cheap », « plus premium » : Pulse Motion propose deux à quatre options, en mots simples, et n'applique rien sans votre réponse.</li>
 <li><strong>Une phrase ambiguë donne une question, pas une erreur.</strong> « Ralentis » ? Pulse Motion vous demande quelle scène, avec la réponse la plus probable en premier.</li>
 </ul>
 </section>
@@ -102,17 +104,32 @@
 <tr><td><strong>Les sous-titres</strong></td><td>« sous-titres en haut », « mot par mot », « enlève-les de l'image », « enlève les sous-titres »</td></tr>
 <tr><td><strong>La structure</strong></td><td>« ajoute une scène sur le lavage des mains », « supprime la scène 4 »</td></tr>
 <tr><td><strong>Un personnage</strong></td><td>« dessine-moi un cuisinier », « il marche trop vite », « fais-lui une tête surprise », « ouvre l'éditeur de personnage » : Pulse Motion suit la commande dédiée, <a href="dessiner-personnage.html"><code>/pulse-motion:dessiner-personnage</code></a>, <a href="decouper-personnage.html"><code>/pulse-motion:decouper-personnage</code></a>, <a href="animer-personnage.html"><code>/pulse-motion:animer-personnage</code></a> ou <a href="atelier-personnages.html"><code>/pulse-motion:atelier-personnages</code></a></td></tr>
-<tr><td><strong>Revenir en arrière</strong></td><td>« annule », « reviens en arrière »</td></tr>
+<tr><td><strong>Une impression</strong></td><td>« ça fait cheap », « plus premium », « ça fait diaporama », « trop chargé », « ça manque de punch » : des options vous sont proposées, la recommandée en premier</td></tr>
+<tr><td><strong>Vos remarques sur l'image</strong></td><td>« j'ai laissé des remarques » (ou le bouton « Envoyer à Claude » de l'aperçu)</td></tr>
+<tr><td><strong>Un réglage rapide</strong></td><td>« un peu plus vif partout », « accent en bleu », « passe en sombre », « baisse la musique », « sous-titres mot par mot », ou le bouton « Réglages » de l'aperçu</td></tr>
+<tr><td><strong>Revenir en arrière</strong></td><td>« annule », « reviens en arrière », « rétablis », « finalement remets-le »</td></tr>
+<tr><td><strong>Les versions</strong></td><td>« garde cette version sous le nom envoyée au client », « reviens à la version envoyée au client », « quelles versions ai-je ? », ou le bouton « Comparer » de l'aperçu</td></tr>
 </tbody>
 </table>
 <p>Le détail des réglages du son est sur la page <a href="../son.html">Le son</a> ; les styles et les effets sont dans le <a href="../catalogue.html">catalogue</a>.</p>
+
+<h3>Dans l'aperçu</h3>
+<ul>
+<li><strong>Remarque</strong> (ou la touche N) : un clic sur l'image met en pause et pose une épingle ; écrivez votre remarque, puis « Garder la remarque », « Sur cette image, sans épingle » ou « Sur toute la vidéo ». Les remarques apparaissent en couleur sur la barre de lecture (orange : à traiter, vert : faite). Quand vous avez fini : « Envoyer à Claude ». Une remarque faite montre l'image d'avant et celle d'après côte à côte.</li>
+<li><strong>Réglages</strong> : couleur d'accent, allure (plus posé, normal, plus vif), ton (clair, sombre, automatique), musique (plus basse, normale, plus forte, sans) et sous-titres (oui, non, mot par mot). La valeur marquée est celle de la vidéo ; un clic l'écrit aussitôt, et « annule » le défait.</li>
+<li><strong>Comparer</strong> : choisissez une version gardée ; les deux s'affichent côte à côte, pilotées par une seule barre de lecture.</li>
+<li><strong>La barre de lecture</strong> montre la forme de la voix (survolez-la pour voir les mots, cliquez pour vous placer) et, au survol du début d'une scène, une petite image de la scène avec son nom.</li>
+</ul>
+<p>Rien de tout cela n'apparaît dans la vidéo livrée ni dans le MP4.</p>
 </section>
 
 <section id="produit">
 <h2>Ce qu'elle produit</h2>
 <ul>
 <li><strong>La vidéo à jour</strong> : <code>sortie/&lt;titre&gt;.html</code>, et l'aperçu rechargé.</li>
-<li><strong>Une copie de l'état d'avant</strong>, dans le dossier caché <code>.historique/</code> de la vidéo (les 20 dernières).</li>
+<li><strong>Une copie de l'état d'avant</strong>, dans le dossier caché <code>.historique/</code> de la vidéo (les 20 dernières, et vos versions nommées, 20 au plus), avec la phrase de chaque retouche.</li>
+<li><strong>Après une retouche visuelle</strong>, une planche avant / après (<code>sortie/planche/avant-apres-&lt;scène&gt;.png</code>) : l'image d'avant, celle d'après, et les différences en rouge.</li>
+<li><strong>Vos remarques</strong> et leurs images, dans <code>sortie/remarques/</code> : « annule » ne les efface pas.</li>
 <li><strong>Un rapport de contrôle</strong> à jour (<code>sortie/controle.json</code>). Ce que le contrôle a corrigé seul vous est dit en une phrase.</li>
 </ul>
 </section>
@@ -129,6 +146,8 @@
 
 <section id="problemes">
 <h2>Problèmes et solutions</h2>
+<details class="probleme"><summary>« Rien à rétablir »</summary><p>« rétablis » revient sur la dernière annulation. Une nouvelle retouche faite depuis efface ce qui pouvait être rétabli : pour retrouver un état précis, gardez-le sous un nom avant d'essayer autre chose.</p></details>
+<details class="probleme"><summary>« Vous gardez déjà 20 versions nommées »</summary><p>Dites laquelle oublier (« oublie la version brouillon »), puis gardez la nouvelle.</p></details>
 <details class="probleme"><summary>« Aucune retouche à annuler »</summary><p>Vous êtes revenu au tout premier état gardé, ou la vidéo n'a jamais été retouchée. Il n'y a rien de plus ancien à restaurer.</p></details>
 <details class="probleme"><summary>L'aperçu ne s'est pas rechargé</summary><p>Il était peut-être fermé. Pulse Motion le rouvre s'il n'est plus actif ; sinon, rechargez la page du navigateur (<kbd>F5</kbd>, ou <kbd>Cmd</kbd> + <kbd>R</kbd> sur Mac).</p></details>
 <details class="probleme"><summary>Le texte est trop long et déborde encore</summary><p>Le contrôle réduit un texte qui déborde jusqu'à 80 % de sa taille, jamais en dessous de ce qui reste lisible. Au-delà, il faut le raccourcir : « raccourcis le titre de la scène 2 ». Les longueurs maximales de chaque style sont dans le <a href="../catalogue.html#styles">catalogue</a>.</p></details>

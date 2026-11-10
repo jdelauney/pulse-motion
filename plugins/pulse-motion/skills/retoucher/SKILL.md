@@ -35,7 +35,7 @@ L'état ci-dessus : sans vidéo (`projet` faux), proposer `/pulse-motion:creer` 
 
 ## 2. Historique
 
-« annule », « reviens en arrière » : `pulse-motion historique annuler .` ; « rétablis », « finalement remets-le » : `pulse-motion historique retablir .` ; « reviens à la version envoyée au client » : `pulse-motion historique revenir <nom ou numéro> .` (lui-même annulable) ; puis l'étape 5. « garde cette version sous le nom « envoyée au client » » : `pulse-motion historique nommer "<nom>" .` ; « quelles versions ai-je ? » : `pulse-motion historique liste .`, dite en mots simples (date, retouche, nom) ; puis la fin. Un échec se dit simplement.
+« annule », « reviens en arrière » : `pulse-motion historique annuler .` ; « rétablis », « finalement remets-le » : `pulse-motion historique retablir .` ; « reviens à la version envoyée au client » : `pulse-motion historique revenir <nom ou numéro> .` ; puis l'étape 5. « garde cette version sous le nom « envoyée au client » » : `pulse-motion historique nommer "<nom>" .` (« oublie la version … » : `historique oublier "<nom>" .`) ; « quelles versions ai-je ? » : `pulse-motion historique liste .`, dite en mots simples (date, retouche, nom) ; puis la fin.
 
 ## 3. Sauvegarder
 
