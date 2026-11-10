@@ -130,8 +130,12 @@ async function reconvertir(buffer, { debit, octetsMax, gop }) {
 export async function exporter({ surProgression = () => {}, signal, reglages = WEB } = {}) {
   const r = { ...WEB, ...(reglages || {}), navigateur: { ...WEB.navigateur, ...((reglages && reglages.navigateur) || {}) } };
   const [largeur, hauteur] = taille(M.donnees.format.ratio, r.definition);
-  const n = r.navigateur;
+  const n = { ...r.navigateur };
   const support = await verifierSupport(largeur, hauteur, n.debit * 1000);
+  // Encodeur de la carte graphique demandé (brouillon) mais absent : l'encodeur du navigateur, sans le dire (5.7).
+  if (n.acceleration === 'prefer-hardware' && !(await canEncodeVideo('avc', { width: largeur, height: hauteur, bitrate: n.debit * 1000, hardwareAcceleration: 'prefer-hardware' }).catch(() => false))) {
+    n.acceleration = 'no-preference';
+  }
   if (!support.video) throw new Error('Ce navigateur ne sait pas encoder la vidéo (H.264) : ouvrez l\'aperçu dans Chrome ou Edge.');
   if (M.particules) await M.particules.verifierExport();
   // --qualite et --ips priment (résolus par l'aperçu) ; sinon les images par seconde du déroulé.

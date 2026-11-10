@@ -71,19 +71,21 @@ test('taille-cible.test.js › vidéo trop longue : refus avant capture, message
 
 test('taille-cible.test.js › dépassement après la première passe : une seule reprise, puis réussite ou échec sans fichier', sans, async () => {
   const dir = copierProjet('projet-simple');
-  // Taille de 1 Mo sur 7,25 s ; le premier essai vise vingt fois trop haut : une reprise, réussie.
+  // Taille de 1 Mo sur 7,25 s ; le premier essai est lu vingt fois trop lourd : une reprise, à un débit ramené à la taille, réussie.
   const essais = [];
   const r = await exporterFidele({ dossier: dir, pour: 'courriel', tailleMax: 1, ips: 10, navigateur, outil, dossierStyles: STYLES, paralleles: 1,
-    debitCourriel: (v, essai) => { essais.push([essai, v]); return essai === 0 ? v * 20 : v; } });
+    debitCourriel: (v, essai) => { essais.push([essai, v]); return v; },
+    tailleFichier: (f, essai) => fs.statSync(f).size * (essai === 0 ? 20 : 1) });
   assert.equal(r.ok, true, r.message);
   assert.equal(essais.length, 2);
   assert.equal(r.reprises, 1);
+  assert.ok(essais[1][1] < essais[0][1], 'reprise à un débit plus bas');
   assert.ok(r.octets <= 1e6, String(r.octets));
-  // Toujours vingt fois trop haut : échec après une seule reprise, message en français, aucun fichier final.
+  // Toujours trop lourd : échec après une seule reprise, message en français, aucun fichier final.
   fs.rmSync(r.fichier);
   const essais2 = [];
   const r2 = await exporterFidele({ dossier: dir, pour: 'courriel', tailleMax: 1, ips: 10, navigateur, outil, dossierStyles: STYLES, paralleles: 1,
-    debitCourriel: (v, essai) => { essais2.push(essai); return v * 20; } });
+    debitCourriel: (v, essai) => { essais2.push(essai); return v; }, tailleFichier: () => 1.4e6 });
   assert.equal(r2.ok, false);
   assert.deepEqual(essais2, [0, 1]);
   assert.match(r2.message, /^La version courriel fait \d+(,\d)? Mo, au-dessus des 1 Mo demandés : je peux viser \d+ Mo, ou exporter une seule scène\.$/);

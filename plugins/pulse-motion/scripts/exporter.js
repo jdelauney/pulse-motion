@@ -232,7 +232,7 @@ if (require.main === module) {
     const controle = new AbortController();
     for (const s of ['SIGINT', 'SIGTERM']) process.on(s, () => controle.abort());
     travail = exporterFidele({ dossier, ...choix, outil, signal: controle.signal, surProgression, surPhase, avecProvisoire })
-      .then((r) => ({ ...r, mode: 'fidele', ...(r.ok && typeof r.fichier === 'string' ? { fichier: path.relative(path.resolve(dossier), r.fichier).replace(/\\/g, '/') } : {}) }));
+      .then((r) => ({ ...r, mode: 'fidele' }));
   } else {
     // Interruption : fermer le navigateur sans fenêtre et l'aperçu lancé.
     arreterProprementSurSignal();

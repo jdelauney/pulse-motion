@@ -30,7 +30,10 @@ test('export fidèle 720p : segments par scène (7,25 s, morceaux de 3 s au plus
   assert.deepEqual([s.video, s.largeur, s.hauteur, s.images], ['h264', 1280, 720, 73]);
   // Dossier de travail : seulement le cache des segments (page, son et verrou retirés).
   assert.deepEqual(fs.readdirSync(path.join(dir, 'sortie', '.export')), ['segments']);
-  assert.deepEqual(fs.readdirSync(path.join(dir, 'sortie', '.export', 'segments')).sort(), ['dernier.json', 'pixels']);
+  // Segments : intermédiaires (pixels/) et fichiers dérivés du web, écrits ensemble (spec Rendu et export, 5.1.7).
+  const rangement = fs.readdirSync(path.join(dir, 'sortie', '.export', 'segments'));
+  assert.deepEqual(rangement.filter((f) => !f.endsWith('.mp4')).sort(), ['dernier.json', 'pixels']);
+  assert.equal(rangement.filter((f) => f.endsWith('.mp4')).length, r.segments);
   assert.equal(cache(dir).pixels.length, r.segments);
   assert.ok(r.segments >= 4, String(r.segments));
   const suivi = JSON.parse(fs.readFileSync(path.join(dir, 'sortie', 'export.json'), 'utf8'));

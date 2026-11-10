@@ -155,7 +155,8 @@ const navigateurArrete = (e) => /navigateur s'est arrêté/.test(String(e && e.m
  * encodage : réglages du fichier dérivé, remplacent ceux de l'usage (tests). parametresPixels : réglages qui changent les pixels,
  * ajoutés à l'empreinte des pixels. surOuverture(capture) : chaque page ouverte (tests). surProgression(faites, total, { reprises }) ;
  * surPhase(nom) : « son », « assemblage », « seconde-passe », « verification ». debitCourriel(v, essai) : débit des deux passes
- * (tests du dépassement). encodeurMateriel : { encodeur } imposé (tests), sinon détecté (~/.pulse-motion/encodeurs.json).
+ * (tests du dépassement). encodeurMateriel : { encodeur } imposé (tests), sinon détecté (~/.pulse-motion/encodeurs.json). tailleFichier(fichier, essai) :
+ * taille lue après chaque essai d'une taille visée (tests du dépassement).
  * whisper : { pret, transcrire } de la réécoute (tests ; par défaut la transcription installée). Résultat : usage, octets,
  * taille, definition, ips, fichiers, verification { erreurs, alertes, fichier } (sortie/verification.json, spec S2 5.12) ;
  * un noir ou un silence absent de la page, des couleurs non étiquetées ou une taille dépassée font échouer l'export.
@@ -163,7 +164,7 @@ const navigateurArrete = (e) => /navigateur s'est arrêté/.test(String(e && e.m
 async function exporterFidele({ dossier, pour, qualite, ips, tailleMax, navigateur = trouverNavigateur(), outil = F.trouverFfmpeg(), dossierStyles,
   dossierEffets = path.join(RACINE, 'effets'), surProgression = () => {}, surPhase = () => {}, signal, dureeSegment = 10, arreterApres, paralleles, avecProvisoire = false,
   encodage, parametresPixels = {}, profil = process.env.PM_PROFIL === '1', surOuverture = () => {}, whisper = null, debitCourriel = (v) => v,
-  encodeurMateriel = null } = {}) {
+  encodeurMateriel = null, tailleFichier = (f) => fs.statSync(f).size } = {}) {
   const debutExport = performance.now();
   const projet = path.resolve(dossier);
   const sortieDir = path.join(projet, 'sortie');
@@ -274,11 +275,11 @@ async function exporterFidele({ dossier, pour, qualite, ips, tailleMax, navigate
     try {
       const d = JSON.parse(fs.readFileSync(dernier, 'utf8'));
       precedents = d.fichiers || [];
-      intermediaires = Array.isArray(d.intermediaires) ? d.intermediaires : [];
+      intermediaires = Array.isArray(d.intermediaires) ? d.intermediaires.filter((x) => x && Array.isArray(x.fichiers)) : [];
     } catch { /* aucun export réussi */ }
     const relatif = (f) => path.relative(dossierSegments, f).replace(/\\/g, '/');
     // Deux intermédiaires au plus sont gardés (le commun et celui du master, par exemple) ; le plus ancien est effacé.
-    const garder = new Set([...precedents, ...intermediaires.flat(), ...inter.map(relatif), ...fichiers.map(relatif)].map((f) => f.replace(/\\/g, '/')));
+    const garder = new Set([...precedents, ...intermediaires.flatMap((x) => x.fichiers), ...inter.map(relatif), ...fichiers.map(relatif)].map((f) => f.replace(/\\/g, '/')));
     const purger = (conserves) => {
       for (const [d, prefixe] of [[dossierSegments, ''], [dossierPixels, 'pixels/']]) {
         for (const f of fs.readdirSync(d)) {
@@ -560,8 +561,10 @@ async function exporterFidele({ dossier, pour, qualite, ips, tailleMax, navigate
         surPhase(essais ? 'reprise' : 'seconde-passe');
         await P.mesurer('deuxPasses', () => F.transcoderDeuxPasses({ ffmpeg: outil.chemin, entree: source, sortie: partiel, ips: cadence, reglages: { ...derive, crf: undefined, debit: v },
           taille: reduite ? [largeur, hauteur] : null, audio, journal: path.join(travail, 'passe'), signal: controle.signal }));
-        const octets = fs.statSync(partiel).size;
-        if (octets <= u.tailleMax || essais >= 1) break;
+        const octets = tailleFichier(partiel, essais);
+        if (octets <= u.tailleMax) break;
+        // Encore au-dessus après la reprise : échec, sans fichier (5.3, point 5).
+        if (essais >= 1) throw Object.assign(new Error(F.controlesSortie({ octets }, { octetsMax: u.tailleMax, nom: NOM_COURT[u.usage] || u.usage })[0]), { sortie: true });
         essais++;
         debit = Math.floor(v * (u.tailleMax / octets) * 0.95);
       }
@@ -613,14 +616,13 @@ async function exporterFidele({ dossier, pour, qualite, ips, tailleMax, navigate
       if (['EPERM', 'EBUSY', 'EACCES'].includes(err.code)) throw Object.assign(new Error(`« ${path.basename(final)} » est ouvert ailleurs : fermez la vidéo (lecteur, explorateur) puis relancez l'export`), { verrou: true });
       throw err;
     }
-    // Export réussi : ses segments deviennent « le dernier export » ; les autres sont retirés, sauf l'intermédiaire précédent
-    // s'il est d'une autre sorte (deux au plus).
-    const interActuel = inter.map(relatif);
-    const cleInter = (liste) => stable([...liste].sort());
-    const autres = intermediaires.filter((l) => cleInter(l) !== cleInter(interActuel)).slice(-1);
-    const gardes = [...autres, interActuel];
+    // Export réussi : ses segments deviennent « le dernier export » ; les autres sont retirés, sauf le dernier intermédiaire
+    // d'une autre sorte (le commun et celui du master, par exemple : deux au plus). Sorte : réglages, définition, cadence.
+    const sorte = stable({ intermediaire, taille: [largeurCapture, hauteurCapture], cadence });
+    const autres = intermediaires.filter((x) => x.sorte !== sorte).slice(-1);
+    const gardes = [...autres, { sorte, fichiers: inter.map(relatif) }];
     const conserves = new Set([...inter, ...fichiers].map(relatif));
-    for (const l of autres) for (const f of l) conserves.add(f);
+    for (const x of autres) for (const f of x.fichiers) conserves.add(f);
     fs.writeFileSync(dernier, JSON.stringify({ date: new Date().toISOString(), fichiers: [...new Set([...inter, ...fichiers].map(relatif))], intermediaires: gardes }, null, 2), 'utf8');
     purger(conserves);
     const octets = fs.statSync(final).size;
