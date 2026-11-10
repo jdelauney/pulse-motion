@@ -334,14 +334,46 @@ test('demandes : skills outils et voix, déclenchables en langage courant, consi
 });
 
 
-test('demandes : slash seulement pour creer et style ; les autres en langage courant, avec garde « pas de vidéo »', () => {
+// Spec Retouches et ergonomie (S4) 5.5 : creer et style appelables en phrase, avec garde-fous (décision validée par
+// l'auteur le 2026-11-08 ; retour au blocage au-delà de 5 % de déclenchements erronés aux évaluations).
+test('plugin : creer et style sans disable-model-invocation', () => {
+  for (const s of SKILLS) assert.equal(enTete(lire('skills', s, 'SKILL.md'))['disable-model-invocation'], undefined, s);
+});
+
+test('plugin : description de creer et de style, garde-fou dans la première phrase', () => {
+  const description = (s) => enTete(lire('skills', s, 'SKILL.md')).description.replace(/^"(.*)"$/, '$1');
+  const premiere = (s) => description(s).split(/\. (?=[A-ZÀ-Ý])/)[0];
+  assert.match(premiere('creer'), /^Créer une NOUVELLE vidéo Pulse Motion, seulement quand la personne le demande/);
+  assert.match(premiere('creer'), /« que sait faire Pulse Motion \? »/);
+  assert.match(premiere('style'), /^Créer son propre style de vidéo, seulement sur demande expresse/);
+  for (const s of ['creer', 'style']) {
+    assert.match(description(s), /\/pulse-motion:retoucher\.$/, `${s} : renvoi vers retoucher`);
+    assert.ok([...description(s)].length < 250, s);
+  }
+});
+
+test('plugin : creer n\'écrit rien avant la première ronde', () => {
+  const creer = lire('skills', 'creer', 'SKILL.md');
+  const debut = creer.indexOf('## 0. Vérifier');
+  const ronde = creer.indexOf('**Première ronde**');
+  assert.ok(debut > 0 && ronde > debut, 'sections 0 et 1, puis la première ronde');
+  assert.match(creer.slice(debut, ronde), /Rien n'est écrit dans le dossier avant la réponse à la première ronde/);
+  // Avant la première ronde, seulement des commandes qui n'écrivent rien dans le dossier (ordre des commandes du texte).
+  const PERMISES = /^(etat \.|avancement \.|modeles (trouver|afficher|liste|apercu)|charte liste|lexique|reference|consignes)/;
+  for (const m of creer.slice(0, ronde).matchAll(/pulse-motion ([a-z][^`]*)`/g)) assert.match(m[1], PERMISES, `avant la première ronde : « pulse-motion ${m[1]} »`);
+  assert.doesNotMatch(creer.slice(0, ronde), /etat \. --(parcours|accord)|modeles exemple|charte (appliquer|depuis-logo|enregistrer)/);
+  assert.ok(creer.indexOf('pulse-motion etat . --parcours') > ronde, 'le parcours se note après la première ronde');
+  assert.match(creer, /« Nouvelle vidéo sur « <sujet> » dans ce dossier »/);
+  assert.match(creer.slice(debut, ronde), /`projet` vrai[^\n]*\/pulse-motion:reprendre/);
+  assert.match(creer.slice(debut, ronde), /« Que sait faire Pulse Motion \? »[^\n]*sans rien écrire/);
+  assert.match(lire('references', 'creer-demandes.md'), /## Que sait faire Pulse Motion \?/);
+});
+
+test('demandes : les compétences en langage courant, avec garde « pas de vidéo »', () => {
   for (const s of SKILLS) {
     const e = enTete(lire('skills', s, 'SKILL.md'));
-    if (['creer', 'style'].includes(s)) assert.equal(e['disable-model-invocation'], 'true', s);
-    else {
-      assert.equal(e['disable-model-invocation'], undefined, s);
-      assert.ok((e.description.match(/« [^»]+ »/g) || []).length >= 3, `${s} : exemples de demandes`);
-    }
+    assert.equal(e['disable-model-invocation'], undefined, s);
+    assert.ok((e.description.match(/« [^»]+ »/g) || []).length >= 3, `${s} : exemples de demandes`);
   }
   for (const s of ['retoucher', 'reprendre', 'exporter', 'voix']) assert.match(lire('skills', s, 'SKILL.md'), /`projet` faux[^\n]*\/pulse-motion:creer/, s);
   const retoucher = lire('skills', 'retoucher', 'SKILL.md');
@@ -394,9 +426,11 @@ test('descriptions-renvois-presents : chaque renvoi vers une autre compétence s
     'atelier-personnages': ['atelier-particules'],
     'decouper-personnage': ['dessiner-personnage', 'atelier-personnages'],
     'dessiner-personnage': ['animer-personnage', 'atelier-personnages'],
+    creer: ['retoucher'],
     exporter: ['retoucher'],
     reprendre: ['creer'],
     retoucher: ['voix', 'creer'],
+    style: ['retoucher'],
     voix: ['retoucher'],
   };
   for (const [s, cibles] of Object.entries(RENVOIS)) {

@@ -9,6 +9,6 @@
     { "n": 3, "quoi": "Le terme « HACCP » est dit par la voix et montré à l'écran (au glossaire comme terme clé).", "verifie": "terme", "valeur": { "terme": "HACCP" } },
     { "n": 4, "quoi": "Aucun chiffre sans source ni « Exemple » (règles chiffre-invente, chiffre-sans-source, exemple-non-signale absentes).", "verifie": "regles-absentes", "valeur": ["chiffre-invente", "chiffre-sans-source", "exemple-non-signale"] },
     { "n": 5, "quoi": "La vérification de l'export ne trouve aucune erreur (sortie/verification.json).", "verifie": "verification", "valeur": { "erreurs": 0 } },
-    { "n": 6, "quoi": "La relecture par l'agent critique reste sous 15 000 jetons d'entrée.", "verifie": "jetons-critique", "valeur": { "max": 15000 } }
+    { "n": 6, "quoi": "L'agent critique lit moins de 15 000 jetons avant d'écrire critique.json (contexte de l'appel qui l'écrit, pas son dernier appel : décision 9 de l'auteur, 2026-11-10).", "verifie": "jetons-critique", "valeur": { "max": 15000, "mesure": "avant-ecriture" } }
   ]
 }
