@@ -82,7 +82,9 @@ async function ouvrirCapture({ fichierHtml, largeur, hauteur, navigateur, gpu = 
     if (erreurs && page.surEvenement) {
       page.surEvenement('Runtime.exceptionThrown', (p) => {
         const d = (p && p.exceptionDetails) || {};
-        exceptions.push((d.exception && d.exception.description) || d.text || 'erreur de script');
+        const texte = (d.exception && d.exception.description) || d.text || 'erreur de script';
+        // « ResizeObserver loop… » : avertissement du navigateur, jamais une erreur de la vidéo.
+        if (!/ResizeObserver/.test(texte)) exceptions.push(texte);
       });
     }
     const verifier = (t) => { if (exceptions.length) throw erreurDeScript(sceneA(info.scenes, t), t, exceptions[0]); };

@@ -1,16 +1,34 @@
 /* Pulse Motion – interface d'export dans l'aperçu.
  *
- * Ajoute le bouton « Exporter en MP4 » au lecteur, affiche la progression (image n / total,
- * temps restant, bouton Annuler) et le résultat. Paramètres d'adresse utilisés par
- * « pulse-motion exporter » : ?export=1 lance l'export ; ?planche=id1,id2 capture la planche.
+ * Ajoute le bouton « MP4 » au lecteur : il ouvre un petit menu de quatre usages (Web, Réseaux, Présentation, Courriel ;
+ * spec Rendu et export 5.4 point 6), puis affiche la progression (image n / total, temps restant estimé sur les 20
+ * dernières secondes : moteur/estimation.js, bouton Annuler) et le résultat. Paramètres d'adresse utilisés par
+ * « pulse-motion exporter » : ?export=1 lance l'export, avec &pour=, &qualite=, &ips=, &taille= (réglages résolus par
+ * l'aperçu, /_pm/usage) ; ?planche=id1,id2 capture la planche.
  */
 import { exporter, relire, envoyer, envoyerStats, signaler, capturerPlanche } from '/_pm/export.mjs';
+import '/_pm/estimation.js';
 
 const M = globalThis.M;
+/** Horloge réelle, prise au chargement : en mode capture, performance.now suit le temps de la vidéo. */
+const horloge = performance.now.bind(performance);
 
-function minutes(secondes) {
-  const s = Math.max(0, Math.round(secondes));
-  return s < 60 ? `${s} s` : `${Math.floor(s / 60)} min ${String(s % 60).padStart(2, '0')} s`;
+/** Usages du menu de l'aperçu (les deux autres, master et brouillon, se demandent en mots). */
+export const MENU = [['web', 'Web'], ['reseaux', 'Réseaux'], ['presentation', 'Présentation'], ['courriel', 'Courriel']];
+
+/** Réglages effectifs d'un export, résolus par l'aperçu comme dans la voie fidèle. -> réglages | throw Error(message) */
+async function reglagesDe(choix = {}) {
+  const q = new URLSearchParams();
+  for (const [k, v] of Object.entries(choix)) if (v !== undefined && v !== null && v !== '') q.set(k, v);
+  const r = await fetch(`/_pm/usage?${q}`);
+  const corps = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(corps.erreur || `Réglages d'export illisibles (${r.status}).`);
+  return corps;
+}
+
+/** La page a-t-elle un grain dont la cadence dépend de l'usage (courriel) ? */
+function grainALaCarte() {
+  return (M.donnees.shaders || []).some((sh) => sh && sh.usage === 'post' && sh.nom === 'grain');
 }
 
 function creerPanneau() {
@@ -37,7 +55,7 @@ function scenesProvisoires() {
   return (M.donnees.scenes || []).filter((s) => s.voix && s.voix.provisoire).map((s) => s.id);
 }
 
-export async function lancerExport({ avecProvisoire = false } = {}) {
+export async function lancerExport({ avecProvisoire = false, pour, qualite, ips, taille } = {}) {
   if (enCours) return null;
   const provisoires = scenesProvisoires();
   if (provisoires.length && !avecProvisoire) {
@@ -57,26 +75,34 @@ export async function lancerExport({ avecProvisoire = false } = {}) {
   const controle = new AbortController();
   panneau.bouton.onclick = () => controle.abort();
   panneau.titre('Export de la vidéo en MP4…');
-  const debut = performance.now();
   try {
-    await signaler({ etat: 'en-cours', images: 0, total: Math.round(M.duree * M.ips) });
+    const reglages = await reglagesDe({ pour, qualite, ips, taille });
+    panneau.titre(`Export de la vidéo en MP4 (${reglages.nom.toLowerCase()})…`);
+    const ipsExport = reglages.ips || M.ips;
+    const total = Math.round(M.duree * ipsExport);
+    const estimation = M.estimation.creerEstimation({ total });
+    await signaler({ etat: 'en-cours', images: 0, total });
     const resultat = await exporter({
       signal: controle.signal,
-      surProgression: (n, total) => {
-        panneau.progression(n / total);
-        const restant = (performance.now() - debut) / 1000 / n * (total - n);
-        panneau.detail(`Image ${n} / ${total} – encore environ ${minutes(restant)}`);
-        if (n % 30 === 0 || n === total) signaler({ etat: 'en-cours', images: n, total });
+      reglages,
+      surProgression: (n, tot) => {
+        panneau.progression(n / tot);
+        const t = horloge() / 1000;
+        estimation.noter(n, t, 0);
+        const restant = estimation.restant(t);
+        panneau.detail(`Image ${n} / ${tot}${restant === null ? '' : ` – encore environ ${M.estimation.texteDuree(restant)}`}`);
+        if (n % 30 === 0 || n === tot) signaler({ etat: 'en-cours', images: n, total: tot });
       },
     });
     panneau.titre('Vérification de la vidéo…');
     panneau.bouton.disabled = true;
-    const relecture = await relire(resultat.buffer, { images: resultat.images, ips: M.ips, fondSombre: resultat.fondSombre });
+    const relecture = await relire(resultat.buffer, { images: resultat.images, ips: resultat.ips, fondSombre: resultat.fondSombre });
     // Statistiques image par image (spec S2, 5.12) : analysées par l'aperçu à la réception de la vidéo (verification.json).
     await envoyerStats(resultat.stats);
     const { fichier } = await envoyer(resultat.buffer, {
       ...relecture, audio: resultat.audio, largeur: resultat.largeur, hauteur: resultat.hauteur, avertissement: resultat.avertissement,
-    });
+      usage: resultat.usage, definition: resultat.definition, ips: resultat.ips, imagesParSeconde: resultat.imagesParSeconde, finalesParSeconde: resultat.finalesParSeconde,
+    }, reglages.nomFichier);
     panneau.titre('✅ Vidéo enregistrée');
     panneau.detail(resultat.avertissement ? `${fichier} – ${resultat.avertissement}` : fichier);
     panneau.bouton.textContent = 'Fermer';
@@ -114,6 +140,41 @@ export async function lancerPlanche(scenes) {
   }
 }
 
+/** Un usage choisi dans le menu : un grain qui change avec l'usage (courriel) demande de recharger la page à ce réglage. */
+function choisirUsage(pour) {
+  const plafond = (window.__PM_GRAIN__ || {})[pour] || null;
+  if (grainALaCarte() && (plafond || null) !== (M.grainMax || null)) {
+    location.search = `?export=1&pour=${encodeURIComponent(pour)}`;
+    return;
+  }
+  lancerExport({ pour });
+}
+
+/** Petit menu des quatre usages, au-dessus du bouton MP4. */
+function ouvrirMenu(bouton) {
+  const existant = document.getElementById('pm-menu-export');
+  if (existant) { existant.remove(); bouton.setAttribute('aria-expanded', 'false'); return; }
+  const menu = document.createElement('div');
+  menu.id = 'pm-menu-export';
+  menu.setAttribute('role', 'menu');
+  menu.style.cssText = 'position:fixed;inset:auto 16px 64px auto;z-index:21;display:flex;flex-direction:column;gap:4px;padding:8px;border-radius:10px;'
+    + 'background:#1b1b1b;color:#eee;font:14px/1.4 system-ui,sans-serif;box-shadow:0 6px 24px rgb(0 0 0/.4)';
+  for (const [pour, libelle] of MENU) {
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.setAttribute('role', 'menuitem');
+    item.dataset.pour = pour;
+    item.textContent = libelle;
+    item.style.cssText = 'all:unset;cursor:pointer;padding:6px 12px;border-radius:6px';
+    item.addEventListener('click', (e) => { e.stopPropagation(); menu.remove(); bouton.setAttribute('aria-expanded', 'false'); choisirUsage(pour); });
+    menu.appendChild(item);
+  }
+  document.body.appendChild(menu);
+  bouton.setAttribute('aria-expanded', 'true');
+  const fermer = (e) => { if (!menu.contains(e.target) && e.target !== bouton) { menu.remove(); bouton.setAttribute('aria-expanded', 'false'); document.removeEventListener('click', fermer); } };
+  setTimeout(() => document.addEventListener('click', fermer), 0);
+}
+
 function ajouterBouton() {
   const barre = document.getElementById('pm-lecteur');
   if (!barre || document.getElementById('pm-bouton-export')) return;
@@ -123,14 +184,17 @@ function ajouterBouton() {
   bouton.textContent = 'MP4';
   bouton.title = 'Exporter en MP4';
   bouton.setAttribute('aria-label', 'Exporter en MP4');
+  bouton.setAttribute('aria-haspopup', 'menu');
+  bouton.setAttribute('aria-expanded', 'false');
   bouton.style.cssText = 'width:auto;padding:0 12px;border-radius:16px;font-weight:600';
-  bouton.addEventListener('click', (e) => { e.stopPropagation(); lancerExport(); });
+  bouton.addEventListener('click', (e) => { e.stopPropagation(); ouvrirMenu(bouton); });
   barre.appendChild(bouton);
 }
 
 M.pret.then(() => (document.fonts ? document.fonts.ready : null)).then(() => {
   ajouterBouton();
   const parametres = new URLSearchParams(location.search);
-  if (parametres.get('export') === '1') lancerExport({ avecProvisoire: parametres.get('provisoire') === '1' });
+  const choix = (k) => parametres.get(k) || undefined;
+  if (parametres.get('export') === '1') lancerExport({ avecProvisoire: parametres.get('provisoire') === '1', pour: choix('pour'), qualite: choix('qualite'), ips: choix('ips'), taille: choix('taille') });
   else if (parametres.get('planche')) lancerPlanche(parametres.get('planche').split(',').filter(Boolean));
 });
