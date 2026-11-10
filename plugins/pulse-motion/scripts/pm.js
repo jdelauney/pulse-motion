@@ -140,12 +140,21 @@ function lancer(args) {
     if (!NOM_SUR.test(nom)) { console.error('Usage : pulse-motion reference <nom> (ex. moteur, rythme, styles/clair-pedagogique)'); return 2; }
     const fichier = path.join(RACINE, 'references', `${nom}.md`);
     const m = /^styles\/([a-z0-9-]+)$/.exec(nom);
+    // Fiche de style : --pour animateur rend l'extrait que lit l'animateur (spec Styles et réalisation, 5.1).
+    const iPour = reste.indexOf('--pour');
+    const pour = iPour >= 0 ? reste[iPour + 1] : undefined;
+    if (iPour >= 0 && (pour !== 'animateur' || !m)) { console.error('Usage : pulse-motion reference styles/<style> --pour animateur'); return 2; }
+    let cible = fichier;
+    let quoi = `Référence « ${nom} »`;
     if (m && !fs.existsSync(fichier)) {
       // Guide d'un style personnel : rangé avec le style (guide.md).
       const st = trouverStyle(m[1]);
-      if (st && st.personnel) return afficherFichier(path.join(st.dossier, 'guide.md'), `Guide du style « ${m[1]} »`);
+      if (st && st.personnel) { cible = path.join(st.dossier, 'guide.md'); quoi = `Guide du style « ${m[1]} »`; }
     }
-    return afficherFichier(fichier, `Référence « ${nom} »`);
+    if (!pour) return afficherFichier(cible, quoi);
+    if (!fs.existsSync(cible)) { console.error(`${quoi} introuvable.`); return 1; }
+    process.stdout.write(require('./lib/fiche-style.js').extraitAnimateur(fs.readFileSync(cible, 'utf8')));
+    return 0;
   }
   if (commande === 'scene') {
     const [style, nom] = reste;
