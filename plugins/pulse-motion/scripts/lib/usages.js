@@ -162,9 +162,17 @@ const MOTS = [
   ['« vite fait, juste pour vérifier »', 'brouillon'],
 ];
 
-/** Poids par minute et temps d'export, en mots, d'après les mesures de usages.json (« à mesurer » sinon). */
-function poidsEtTemps(m) {
-  const poids = m && typeof m.moParMinute === 'number' ? `environ ${nombreFrancais(m.moParMinute)} Mo par minute` : 'à mesurer';
+/** Durée la plus longue qui tient dans une taille (Mo), au plus petit seuil de définition. -> secondes */
+function dureeMaxPour(tailleMo, audio = 96) {
+  return Math.floor((tailleMo * MO * 8 * MARGE_CONTENEUR) / ((SEUILS_TAILLE[SEUILS_TAILLE.length - 1][1] + audio) * 1000));
+}
+
+/** Poids par minute et temps d'export, en mots, d'après les mesures de usages.json (« à mesurer » sinon) ; un usage à taille
+ *  visée (courriel) dit sa taille et la durée la plus longue qui y tient, plutôt qu'un poids par minute. */
+function poidsEtTemps(m, usage = null) {
+  const cible = usage && usage.tailleMaxMo;
+  const poids = cible ? `moins de ${nombreFrancais(cible)} Mo en tout (vidéo de ${dureeFrancaise(dureeMaxPour(cible, usage.fidele && usage.fidele.audio))} au plus)`
+    : m && typeof m.moParMinute === 'number' ? `environ ${nombreFrancais(m.moParMinute)} Mo par minute` : 'à mesurer';
   const temps = m && typeof m.secondesParSeconde === 'number' ? `environ ${dureeFrancaise(m.secondesParSeconde * 60)} par minute de vidéo` : 'à mesurer';
   return { poids, temps };
 }
@@ -181,7 +189,7 @@ function tableauUsages(u = lireUsages()) {
     '|---|---|---|---|---|---|',
   ];
   for (const [nom, x] of Object.entries(u.usages)) {
-    const { poids, temps } = poidsEtTemps(x.mesures);
+    const { poids, temps } = poidsEtTemps(x.mesures, x);
     const joints = (x.fichiers || []).map((f) => FICHIERS_JOINTS[f] || f).join(', ') || 'aucun';
     lignes.push(`| \`${nom}\` (${x.nom}) | ${x.pourQuoi} | ${x.image} | ${poids} | ${temps} | ${joints} |`);
   }
@@ -193,5 +201,5 @@ function tableauUsages(u = lireUsages()) {
 
 module.exports = {
   lireUsages, nomsUsages, messageUsageInconnu, resoudreUsage, planTaille, nomFichier, tailleFrancaise, dureeFrancaise,
-  nombreFrancais, tableauUsages, poidsEtTemps, avecGrain, MOTS, DEFINITIONS, SEUILS_TAILLE, FACTEUR_DEFINITION, MO,
+  nombreFrancais, tableauUsages, poidsEtTemps, dureeMaxPour, avecGrain, MOTS, DEFINITIONS, SEUILS_TAILLE, FACTEUR_DEFINITION, MO,
 };

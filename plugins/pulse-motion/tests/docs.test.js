@@ -15,10 +15,11 @@ test('docs.test.js › exporter.html a une ligne par usage de usages.json, avec 
   const lignes = [...html.matchAll(/<tr data-usage="([a-z]+)">([\s\S]*?)<\/tr>/g)].map((m) => [m[1], m[2]]);
   assert.deepEqual(lignes.map((l) => l[0]), Object.keys(usages));
   for (const [nom, contenu] of lignes) {
-    const { poids, temps } = U.poidsEtTemps(usages[nom].mesures);
+    const { poids, temps } = U.poidsEtTemps(usages[nom].mesures, usages[nom]);
     assert.ok(contenu.includes(poids), `${nom} : poids « ${poids} » absent`);
     assert.ok(contenu.includes(temps), `${nom} : temps « ${temps} » absent`);
     assert.notEqual(poids, 'à mesurer', `${nom} : poids mesuré à la fin du plan`);
+    assert.notEqual(temps, 'à mesurer', `${nom} : temps mesuré à la fin du plan`);
     assert.ok(contenu.includes(usages[nom].nom), `${nom} : nom français`);
   }
   // Plus de « 720p pour un courriel » ni de 2 secondes par seconde estimées à la main.

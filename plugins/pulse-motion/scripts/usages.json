@@ -11,7 +11,7 @@
       "navigateur": { "debit": 6000, "gop": 2, "acceleration": "no-preference" },
       "flou": false, "grainHz": null, "tailleMaxMo": null,
       "fichiers": ["couverture", "chapitres", "credits", "sous-titres"],
-      "mesures": { "moParMinute": null, "secondesParSeconde": null, "date": null }
+      "mesures": { "moParMinute": 5.1, "secondesParSeconde": 1.31, "date": "2026-11-10" }
     },
     "reseaux": {
       "nom": "Pour les réseaux sociaux",
@@ -22,7 +22,7 @@
       "navigateur": { "debit": 10000, "gop": 1, "acceleration": "no-preference" },
       "flou": false, "grainHz": null, "tailleMaxMo": null,
       "fichiers": ["couverture", "credits", "sous-titres"],
-      "mesures": { "moParMinute": null, "secondesParSeconde": null, "date": null }
+      "mesures": { "moParMinute": 7.2, "secondesParSeconde": 1.29, "date": "2026-11-10" }
     },
     "presentation": {
       "nom": "Pour la projeter en réunion",
@@ -33,18 +33,18 @@
       "navigateur": { "debit": 10000, "gop": 1, "acceleration": "no-preference", "codec": "avc1.640029", "codec60": "avc1.640032" },
       "flou": false, "grainHz": null, "tailleMaxMo": null,
       "fichiers": ["couverture", "credits"],
-      "mesures": { "moParMinute": null, "secondesParSeconde": null, "date": null }
+      "mesures": { "moParMinute": 7.5, "secondesParSeconde": 1.29, "date": "2026-11-10" }
     },
     "master": {
       "nom": "Pour archiver ou confier à un monteur",
       "pourQuoi": "la meilleure qualité, à garder ou à retravailler",
-      "image": "la plus fidèle possible ; fichier lourd",
+      "image": "la plus fidèle possible, à retravailler sans perte visible",
       "definition": "1080p", "ipsMax": 60,
       "fidele": { "crf": 14, "preset": "slow", "tune": "auto", "debitMax": null, "tampon": null, "gop": 2, "profil": "high", "audio": 256 },
       "navigateur": { "debit": 20000, "gop": 2, "acceleration": "no-preference" },
       "flou": false, "grainHz": null, "tailleMaxMo": null,
       "fichiers": ["couverture", "chapitres", "credits", "sous-titres"],
-      "mesures": { "moParMinute": null, "secondesParSeconde": null, "date": null }
+      "mesures": { "moParMinute": 6.8, "secondesParSeconde": 1.28, "date": "2026-11-10" }
     },
     "courriel": {
       "nom": "Pour l'envoyer par courriel",
@@ -55,7 +55,7 @@
       "navigateur": { "mode": "constant", "gop": 2, "acceleration": "no-preference" },
       "flou": false, "grainHz": 12, "tailleMaxMo": 10,
       "fichiers": ["credits"],
-      "mesures": { "moParMinute": null, "secondesParSeconde": null, "date": null }
+      "mesures": { "moParMinute": 9.9, "secondesParSeconde": 1.38, "date": "2026-11-10" }
     },
     "brouillon": {
       "nom": "Version de travail",
@@ -66,7 +66,7 @@
       "navigateur": { "debit": 2500, "gop": 2, "acceleration": "prefer-hardware", "latence": "realtime" },
       "flou": false, "grainHz": 12, "tailleMaxMo": null,
       "fichiers": [],
-      "mesures": { "moParMinute": null, "secondesParSeconde": null, "date": null }
+      "mesures": { "moParMinute": 2.5, "secondesParSeconde": 1.12, "date": "2026-11-10" }
     }
   }
 }

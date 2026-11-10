@@ -43,7 +43,18 @@
 <section id="usages">
 <h2>Les usages</h2>
 <p>Chaque usage donne son propre fichier : exporter pour le courriel n'écrase pas la version pour le web. Poids et temps mesurés sur les deux vidéos témoins (une minute et trois minutes) avec un ordinateur de bureau récent ; comptez davantage sur un portable.</p>
-<!-- usages:debut -->
+<!-- usages:debut (écrit depuis plugins/pulse-motion/scripts/usages.json, mesures comprises) -->
+<table>
+<thead><tr><th>Usage</th><th>Pour quoi faire</th><th>Ce qui change à l'image</th><th>Poids</th><th>Temps d'export</th><th>Fichiers joints</th><th>Exige ffmpeg</th></tr></thead>
+<tbody>
+<tr data-usage="web"><td><strong>Pour le web</strong></td><td>site, YouTube, intranet, plateforme de formation</td><td>la qualité de référence, celle de l'aperçu</td><td>environ 5,1 Mo par minute</td><td>environ 1 min 19 s par minute de vidéo</td><td>sous-titres</td><td>non</td></tr>
+<tr data-usage="reseaux"><td><strong>Pour les réseaux sociaux</strong></td><td>LinkedIn, Instagram, TikTok, YouTube Shorts</td><td>un peu plus nette que pour le web, pour résister à la recompression des plateformes</td><td>environ 7,2 Mo par minute</td><td>environ 1 min 17 s par minute de vidéo</td><td>sous-titres</td><td>non</td></tr>
+<tr data-usage="presentation"><td><strong>Pour la projeter en réunion</strong></td><td>vidéoprojecteur, PowerPoint, Keynote, salon</td><td>très nette, lue par les logiciels de présentation, 30 images par seconde</td><td>environ 7,5 Mo par minute</td><td>environ 1 min 17 s par minute de vidéo</td><td>aucun</td><td>non</td></tr>
+<tr data-usage="master"><td><strong>Pour archiver ou confier à un monteur</strong></td><td>la meilleure qualité, à garder ou à retravailler</td><td>la plus fidèle possible, à retravailler sans perte visible</td><td>environ 6,8 Mo par minute</td><td>environ 1 min 17 s par minute de vidéo</td><td>sous-titres</td><td>non</td></tr>
+<tr data-usage="courriel"><td><strong>Pour l'envoyer par courriel</strong></td><td>pièce jointe, messagerie (WhatsApp, Teams)</td><td>plus petite (720p ou 540p selon la durée), grain renouvelé moins souvent ; tient sous la taille annoncée</td><td>moins de 10 Mo en tout (vidéo de 2 min 52 s au plus)</td><td>environ 1 min 23 s par minute de vidéo</td><td>aucun</td><td>non</td></tr>
+<tr data-usage="brouillon"><td><strong>Version de travail</strong></td><td>vérifier vite une longue vidéo, jamais pour publier</td><td>petite (540p), 30 images par seconde au plus, grain renouvelé moins souvent</td><td>environ 2,5 Mo par minute</td><td>environ 1 min 7 s par minute de vidéo</td><td>aucun</td><td>non</td></tr>
+</tbody>
+</table>
 <!-- usages:fin -->
 <p>Après un premier export, un autre usage ne refait aucune image : il repart des images déjà capturées. La version pour le courriel vise moins de 10 Mo (ou la taille que vous dites, « moins de 25 Mo pour Teams ») ; si la vidéo est trop longue pour tenir, Pulse Motion vous le dit avant de commencer, avec la taille qu'il faudrait. La version de travail est faite vite, par la carte graphique quand elle sait le faire : elle sert à vérifier, jamais à publier.</p>
 <p>Dans l'aperçu, le bouton <strong>MP4</strong> de la barre de lecture propose quatre usages : Web, Réseaux, Présentation, Courriel.</p>
@@ -85,7 +96,7 @@
 <tr><td>« pour YouTube », « pour mon site », « pour notre plateforme de formation »</td><td>Pour le web : la qualité de l'aperçu.</td></tr>
 <tr><td>« pour LinkedIn », « pour Instagram »</td><td>Pour les réseaux sociaux : un peu plus nette, pour résister à la recompression des plateformes.</td></tr>
 <tr><td>« pour la projeter », « pour PowerPoint »</td><td>Pour la présentation : très nette, lue par PowerPoint et Keynote.</td></tr>
-<tr><td>« pour mon monteur », « la meilleure qualité »</td><td>Le master : le fichier le plus fidèle, et le plus lourd.</td></tr>
+<tr><td>« pour mon monteur », « la meilleure qualité »</td><td>Le master : le fichier le plus fidèle, à retravailler.</td></tr>
 <tr><td>« par courriel », « moins de 20 Mo »</td><td>Une version légère, qui tient sous la taille dite (10 Mo sans précision).</td></tr>
 <tr><td>« vite fait, juste pour vérifier »</td><td>Une version de travail, petite et rapide, à ne pas publier.</td></tr>
 <tr><td>« plus fluide »</td><td>En 60 images par seconde. L'export prend deux fois plus de temps.</td></tr>

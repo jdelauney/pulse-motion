@@ -19,7 +19,7 @@
 | « En vertical », « pour les stories » | Retouche : format 9:16 dans le déroulé, scènes recomposées (empilées) | Déclinaison automatique : décision de la spec S9 |
 | « En carré », « pour le fil LinkedIn » | Retouche : format 1:1 ou 4:5 | Idem |
 | « Fond transparent », « pour l'incruster dans mon montage » | Pas encore possible ; le dire | Vidéo à couche transparente (spec S5) |
-| « Pour mon monteur », « sans perte » | Usage `master` (`--pour master`) : la meilleure qualité, fichier lourd | — |
+| « Pour mon monteur », « sans perte » | Usage `master` (`--pour master`) : la meilleure qualité | — |
 | « Un GIF » | Pas encore possible ; proposer un MP4 court et muet, que la plupart des messageries lisent en boucle | GIF (spec S5) |
 | « Une image pour la miniature » | Planche de la scène qui résume ; choisir l'image où tout est en place | Couverture sans sous-titres (spec S5) |
 | « Juste la scène 3 » | Pas encore possible en export ; une planche de la scène | Extraction d'une scène (spec S5) |
