@@ -3,7 +3,10 @@
 ## L'essentiel
 
 - Un personnage dessiné est un fichier `personnages/dessins/<nom>.json` dans le dossier de la vidéo : un SVG par os (« pièce »), et par vue. Il s'anime avec les mêmes poses et mouvements que les bâtonnets.
-- Partir de l'exemple : `pulse-motion personnages afficher touffu --type dessin`. Garder sa structure, changer les formes et les couleurs.
+- Partir d'un exemple : `pulse-motion personnages afficher <nom> --type dessin`. Garder sa structure, changer les formes et les couleurs. Deux manières (`"maniere"`) :
+  - **« traits »** : membres en bâtonnets arrondis d'épaisseur constante, tête en ellipse, une couleur de corps (`touffu`, `ecoliere`, `soignant`, `grand-mere`) ; son réglage `batonnets` (`{ "couleurs": { "corps": "corps", "touffe": "cheveux" }, "epaisseur": 12 }`, chaque couleur nomme une couleur du dessin) donne le même personnage en bâtonnets (`data-habillage="batonnets"` dans la scène) ;
+  - **« pièces pleines »** : tenue et volumes dessinés par pièce, peau, mains (`technicien`, `cuisiniere`) ; membres éloignés assombris : `fill='color-mix(in srgb, var(--tenue) 70%, var(--teinte-loin, var(--tenue)))'` avec une couleur `dos` sombre.
+- Personnages livrés, à proposer avant d'en dessiner un : `touffu`, `ecoliere` (enfant), `soignant` (grand et mince), `grand-mere` (personne âgée), `technicien` (carré), `cuisiniere` (petite et ronde).
 - Chaque pièce se dessine **« os debout »** : le pivot (l'articulation de départ) est en (0, 0), l'os descend vers +y sur sa longueur. Le moteur le tourne et l'allonge lui-même.
 - Le **profil** (personnage tourné vers la droite) est obligatoire ; ajouter `face` (et `troisQuarts`, `dos`) seulement si le personnage doit se tourner vers la caméra. La vue de gauche est le miroir de celle de droite.
 - Formes permises : `g`, `path`, `circle`, `ellipse`, `rect`, `polygon`, `polyline`, `line`, avec des attributs de dessin. Pas de texte, d'image, de style, de script, de `url(`.

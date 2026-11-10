@@ -19,7 +19,7 @@ Dessiner (ou retoucher) un personnage en pièces SVG qui s'anime avec les poses 
 ## 1. Préparer
 
 1. Lire `pulse-motion reference dessin-personnages` (repère « os debout », longueurs, visage, style) en entier.
-2. `pulse-motion personnages liste --dossier .` : un dessin du même nom existe déjà ? Retouche : partir de `pulse-motion personnages afficher <nom> --type dessin --dossier .`. Nouveau : partir de `pulse-motion personnages afficher touffu --type dessin`.
+2. `pulse-motion personnages liste --dossier .` : un dessin du même nom existe déjà ? Retouche : partir de `pulse-motion personnages afficher <nom> --type dessin --dossier .`. Nouveau : d'abord proposer les personnages livrés (rubrique `dessins` : le Touffu, une écolière, un soignant, une grand-mère, un technicien, une cuisinière), en une question par leur description, le plus proche « (Recommandé) », plus « Un nouveau personnage » ; un livré se choisit tel quel, ou se copie dans la vidéo pour une retouche (« la cuisinière, mais en vert »). Sinon, partir du livré le plus proche (`pulse-motion personnages afficher <nom> --type dessin`) : `ecoliere`, `soignant` ou `grand-mere` pour des traits, `technicien` ou `cuisiniere` pour une tenue en pièces pleines.
 3. Si la demande est floue sur un point qui change tout le dessin (humain ou animal, silhouette), une seule question avec `AskUserQuestion`, choix proposés et une option « (Recommandé) ». Sinon, décider.
 
 ## 2. Dessiner
