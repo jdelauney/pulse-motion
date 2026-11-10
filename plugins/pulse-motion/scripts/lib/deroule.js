@@ -242,6 +242,13 @@ function validerDeroule(d) {
     if (s.chapitre !== undefined && !(estTexte(s.chapitre) && s.chapitre.length <= CHAPITRE_MAX)) err.push(`La ${nom} : « chapitre » doit être un titre de ${CHAPITRE_MAX} caractères au plus.`);
     if (s.musique !== undefined && !HUMEURS.includes(s.musique)) err.push(`La ${nom} : « musique » (humeur de la musique pendant la scène) doit être l'une de : ${HUMEURS.join(', ')}.`);
     if (s.post !== undefined) err.push(...validerPost(s.post, `La ${nom} : « post »`));
+    // Film montré par la scène (spec S6, 5.8) : { "nom": "factures", "etapes": "2-4" } ; le film lui-même est vérifié par
+    // lireDeroule (prise choisie, étapes, durée).
+    if (s.film !== undefined) {
+      if (!estObjet(s.film) || !estTexte(s.film.nom) || !ID.test(s.film.nom)) err.push(`La ${nom} : « film » doit être { "nom": "<film>", "etapes": "2-4" } (nom : a-z, 0-9, tirets).`);
+      else if (s.film.etapes !== undefined && !require('./film.js').lireEtapes(s.film.etapes)) err.push(`La ${nom} : « film.etapes » : des numéros d'étapes (« 2-4 », « 1,3 » ou 2).`);
+      else if (Object.keys(s.film).some((k) => !['nom', 'etapes'].includes(k))) err.push(`La ${nom} : « film » n'a que « nom » et « etapes ».`);
+    }
     if (s.type !== undefined && !TYPES_SCENE.includes(s.type)) {
       err.push(`La ${nom} : « type » doit être l'un de : ${TYPES_SCENE.join(', ')} (ou absent pour une scène composée librement).`);
     }
@@ -323,6 +330,30 @@ function dureeTemps(d) {
   return bpm ? 60 / bpm : null;
 }
 
+/** Films des scènes (spec S6, 5.8) : le film existe et a une prise choisie, ses étapes existent, la scène dure assez pour
+ *  l'écart minimal de ses étapes (même calcul que le moteur, moteur/film.js). -> [messages] */
+function verifierFilms(dossier, d) {
+  const err = [];
+  if (!Array.isArray(d.scenes) || !d.scenes.some((s) => s && s.film)) return err;
+  const F = require('./film.js');
+  const { planifierFilm } = require('../../moteur/film.js');
+  const virgule = (x) => String(Math.round(x * 10) / 10).replace('.', ',');
+  for (const s of d.scenes) {
+    if (!s || !estObjet(s.film)) continue;
+    const r = F.filmChoisi(dossier, s.film.nom);
+    if (!r.film) { err.push(`La scène « ${s.id} » : ${r.message}`); continue; }
+    const voulues = s.film.etapes === undefined ? r.film.etapes.map((e) => e.n) : F.lireEtapes(s.film.etapes);
+    const absentes = voulues.filter((n) => !r.film.etapes.some((e) => e.n === n));
+    if (absentes.length) { err.push(`La scène « ${s.id} » : le film « ${s.film.nom} » (${r.prise}) n'a pas d'étape ${absentes.join(', ')} ; il en a ${r.film.etapes.length}.`); continue; }
+    const duree = s.duree / (estPositif(s.rythme) ? s.rythme : 1);
+    const plan = planifierFilm(r.film, {}, { etapes: voulues, duree });
+    if (plan.minimum > duree + 1e-9) {
+      err.push(`La scène « ${s.id} » dure ${virgule(duree)} s ; ses ${voulues.length > 1 ? `${voulues.length} étapes demandent` : 'étapes demandent'} au moins ${virgule(plan.minimum)} s (le temps de voir la page réagir puis d'aller cliquer) : allonger la scène ou montrer moins d'étapes.`);
+    }
+  }
+  return err;
+}
+
 /** Lit et valide <dossier>/deroule.json. -> { deroule, erreurs } */
 function lireDeroule(dossier) {
   const fichier = path.join(dossier, 'deroule.json');
@@ -335,6 +366,7 @@ function lireDeroule(dossier) {
     return { deroule: null, erreurs: [`deroule.json n'est pas un JSON valide : ${e.message}`] };
   }
   const erreurs = validerDeroule(d);
+  if (!erreurs.length) erreurs.push(...verifierFilms(dossier, d));
   // Partition : son tempo devient celui de la vidéo (retenu sans être écrit dans deroule.json).
   if (estObjet(d.musique) && estTexte(d.musique.partition)) {
     let tempo = null, calee = false;
@@ -354,4 +386,4 @@ function lireDeroule(dossier) {
   return { deroule: d, erreurs };
 }
 
-module.exports = { validerDeroule, validerCharte, lireDeroule, dureeTemps, tempoMusique, musiqueSuitScenes, grilleFixe, optionsMinutage, GENRES, PARCOURS, RATIOS, TRANSITIONS, TYPES_SCENE, TONS, MAX_POST, CADRANS, PLATEFORMES, CHAPITRE_MAX };
+module.exports = { validerDeroule, validerCharte, lireDeroule, verifierFilms, dureeTemps, tempoMusique, musiqueSuitScenes, grilleFixe, optionsMinutage, GENRES, PARCOURS, RATIOS, TRANSITIONS, TYPES_SCENE, TONS, MAX_POST, CADRANS, PLATEFORMES, CHAPITRE_MAX };

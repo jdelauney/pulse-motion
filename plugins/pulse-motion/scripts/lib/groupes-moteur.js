@@ -25,8 +25,8 @@ const GROUPES = {
     'particules/fragments.js', 'particules/simulation.js', 'particules/voisinage.js', 'particules/maillage.js',
     'particules/structures.js', 'particules/milieu.js', 'particules/rendu.js', 'particules/glsl.js', 'particules/shaders.js',
     'particules/composition.js', 'particules/formes.js', 'particules/reperes.js', 'particules/calques.js'],
-  // Écrans des tutoriels (spec S6) : pointeur, clics, projecteur, zooms ; CSS moteur/ecran.css, embarqué avec eux.
-  ecran: ['pointeur.js', 'ecran.js'],
+  // Écrans des tutoriels (spec S6) : pointeur, clics, projecteur, zooms, lecture des films ; CSS moteur/ecran.css, embarqué avec eux.
+  ecran: ['pointeur.js', 'film.js', 'ecran.js'],
 };
 
 // Ordre de chargement : celui de la liste historique (dépendances au chargement), puis absents.js en dernier.
@@ -35,7 +35,7 @@ const MODULES = ['courbes.js', 'aligner.js', 'proches.js', 'sous-titres.js', 'mi
   'personnages/interactions.js', 'personnages/scene.js', 'personnages/objets.js', 'temps.js', 'horloge.js', 'tailles.js', 'wav.js',
   'sonie.js', 'mixage.js', 'synthe/catalogue.js', 'synthe/partition.js', 'synthe/ambiances.js', 'synthe/instruments.js',
   'synthe/bruitages.js', 'analyse-son.js', 'audio.js', 'son-reactif.js', 'lecteur.js', 'sous-titres-rendu.js', 'debordement.js',
-  'mesures.js', 'pixels.js', 'ecoute.js', 'figer.js', 'flou.js', 'pointeur.js', 'ecran.js', 'shaders/glsl.js', 'shaders/code.js', 'particules/instantanes.js', 'particules/gpu.js',
+  'mesures.js', 'pixels.js', 'ecoute.js', 'figer.js', 'flou.js', 'pointeur.js', 'film.js', 'ecran.js', 'shaders/glsl.js', 'shaders/code.js', 'particules/instantanes.js', 'particules/gpu.js',
   'particules/obstacles.js', 'particules/fragments.js', 'particules/simulation.js', 'particules/voisinage.js',
   'particules/maillage.js', 'particules/structures.js', 'particules/milieu.js', 'particules/rendu.js', 'particules/glsl.js',
   'particules/shaders.js', 'particules/composition.js', 'particules/formes.js', 'particules/reperes.js', 'particules/calques.js'];

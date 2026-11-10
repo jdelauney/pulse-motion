@@ -1,7 +1,8 @@
 'use strict';
 /* Pulse Motion – client minimal du protocole DevTools, sur tuyau (--remote-debugging-pipe) : pas de WebSocket.
  * Les messages JSON, terminés par \0, passent par les descripteurs 3 (vers le navigateur) et 4 (depuis lui).
- * ouvrirPage() lance Chrome ou Edge sans fenêtre, crée un onglet à la taille exacte et renvoie de quoi le piloter.
+ * ouvrirPage() lance Chrome ou Edge sans fenêtre (ou avec, pour un tournage), crée un onglet à la taille exacte et renvoie
+ * de quoi le piloter.
  * Tout ce qui attend (commande, évènement) est rejeté si le navigateur s'arrête, ou au bout du délai. */
 const fs = require('node:fs');
 const os = require('node:os');
@@ -34,11 +35,29 @@ function creerLecteur(surMessage) {
   };
 }
 
-/** -> Promise<{ aller, evaluer, capturer, version, envoyer, surEvenement, fermer, processus, profil }>
- *  erreurs : Runtime.enable, pour recevoir les exceptions de la page (Runtime.exceptionThrown) par surEvenement. */
-function ouvrirPage({ navigateur, largeur, hauteur, gpu = false, delai = 30000, options = [], erreurs = false }) {
-  const profil = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-cdp-'));
-  const processus = spawn(navigateur, [...optionsChrome({ gpu }), ...options, `--user-data-dir=${profil}`, '--remote-debugging-pipe', `--window-size=${largeur},${hauteur}`, 'about:blank'],
+/** -> Promise<{ aller, evaluer, capturer, version, envoyer, envoyerNavigateur, sur, surEvenement, attendre, fermer, processus, profil, cible }>
+ *  erreurs : Runtime.enable, pour recevoir les exceptions de la page (Runtime.exceptionThrown) par surEvenement.
+ *  Tournage (spec S6, 5.1) ; sans ces options, le comportement est celui d'avant :
+ *  - fenetre : fenêtre visible (ni --headless=new ni --hide-scrollbars) ;
+ *  - profil : chemin d'un profil qui dure, jamais supprimé à l'arrêt (sans lui : profil temporaire, supprimé) ;
+ *  - echelle : deviceScaleFactor et --force-device-scale-factor (sans le drapeau, le screencast reste à l'échelle 1) ;
+ *  - mobile : écran mobile et toucher émulé ;
+ *  - base : drapeaux de départ (optionsChrome par défaut ; optionsTournage pour un tournage). options : drapeaux ajoutés. */
+/** Arguments de lancement de Chrome ou Edge (ouvrirPage) : drapeaux de départ, moins ceux d'une page sans fenêtre si fenetre,
+ *  plus l'échelle forcée, le profil, le tuyau et la taille de la fenêtre. */
+function argumentsLancement({ largeur, hauteur, gpu = false, options = [], fenetre = false, echelle = 1, base = null, profil }) {
+  let depart = base ? base.slice() : optionsChrome({ gpu });
+  if (fenetre) depart = depart.filter((o) => o !== '--headless=new' && o !== '--hide-scrollbars');
+  const facteur = Number(echelle) > 0 ? Number(echelle) : 1;
+  return [...depart, ...options, ...(facteur !== 1 ? [`--force-device-scale-factor=${facteur}`] : []), `--user-data-dir=${profil}`, '--remote-debugging-pipe', `--window-size=${largeur},${hauteur}`, 'about:blank'];
+}
+
+function ouvrirPage({ navigateur, largeur, hauteur, gpu = false, delai = 30000, options = [], erreurs = false, fenetre = false, profil: profilDonne = null, echelle = 1, mobile = false, base = null }) {
+  const durable = !!profilDonne;
+  if (durable) fs.mkdirSync(profilDonne, { recursive: true });
+  const profil = durable ? profilDonne : fs.mkdtempSync(path.join(os.tmpdir(), 'pm-cdp-'));
+  const facteur = Number(echelle) > 0 ? Number(echelle) : 1;
+  const processus = spawn(navigateur, argumentsLancement({ largeur, hauteur, gpu, options, fenetre, echelle: facteur, base, profil }),
     { stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe'] });
   const versNavigateur = processus.stdio[3];
   const depuisNavigateur = processus.stdio[4];
@@ -56,6 +75,8 @@ function ouvrirPage({ navigateur, largeur, hauteur, gpu = false, delai = 30000, 
     attentesEvenements.clear();
   }
   function nettoyer(essais = 15) {
+    // Profil donné (tournage d'un site, spec S6 5.5) : il dure, jamais supprimé.
+    if (durable) return;
     try {
       fs.rmSync(profil, { recursive: true, force: true });
     } catch {
@@ -86,7 +107,7 @@ function ouvrirPage({ navigateur, largeur, hauteur, gpu = false, delai = 30000, 
     });
   }
   /** -> { promesse, annuler } : premier évènement « nom », rejet si le navigateur s'arrête ou au délai. */
-  function attendreEvenement(nom) {
+  function attendreEvenement(nom, duree = delai) {
     let attente;
     const promesse = new Promise((resoudre, rejeter) => {
       const retirer = () => {
@@ -97,7 +118,7 @@ function ouvrirPage({ navigateur, largeur, hauteur, gpu = false, delai = 30000, 
       const fn = (p) => { retirer(); resoudre(p); };
       attente = {
         rejeter: (e) => { retirer(); rejeter(e); },
-        minuteur: setTimeout(() => { retirer(); rejeter(new Error('délai dépassé')); }, delai),
+        minuteur: setTimeout(() => { retirer(); rejeter(new Error('délai dépassé')); }, duree),
       };
       attentesEvenements.add(attente);
       ecouteurs.set(nom, [...(ecouteurs.get(nom) || []), fn]);
@@ -124,12 +145,26 @@ function ouvrirPage({ navigateur, largeur, hauteur, gpu = false, delai = 30000, 
       ({ sessionId } = await envoyerBrut('Target.attachToTarget', { targetId, flatten: true }));
       await envoyerBrut('Page.enable', {}, sessionId);
       if (erreurs) await envoyerBrut('Runtime.enable', {}, sessionId);
-      await envoyerBrut('Emulation.setDeviceMetricsOverride', { width: largeur, height: hauteur, deviceScaleFactor: 1, mobile: false }, sessionId);
+      await envoyerBrut('Emulation.setDeviceMetricsOverride', { width: largeur, height: hauteur, deviceScaleFactor: facteur, mobile: !!mobile }, sessionId);
+      if (mobile) await envoyerBrut('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 }, sessionId);
       pret = true;
       const page = {
         processus,
         profil,
+        cible: targetId,
+        echelle: facteur,
         envoyer: (method, params) => envoyerBrut(method, params, sessionId),
+        /** Commande sans session, pour le navigateur entier (Browser.setDownloadBehavior, Target.closeTarget…). */
+        envoyerNavigateur: (method, params) => envoyerBrut(method, params),
+        /** Écoute un évènement du protocole (Page.screencastFrame…) ; -> retirer(). */
+        sur(nom, fn) {
+          ecouteurs.set(nom, [...(ecouteurs.get(nom) || []), fn]);
+          return () => ecouteurs.set(nom, (ecouteurs.get(nom) || []).filter((x) => x !== fn));
+        },
+        /** -> Promise du premier évènement « nom » ; rejet au délai (celui de la page par défaut) ou si le navigateur s'arrête. */
+        attendre(nom, { delai: duree } = {}) {
+          return attendreEvenement(nom, duree === undefined ? delai : duree).promesse;
+        },
         /** Écoute un évènement du protocole (ex. Runtime.exceptionThrown) ; -> fonction qui retire l'écoute. */
         surEvenement(nom, fn) {
           ecouteurs.set(nom, [...(ecouteurs.get(nom) || []), fn]);
@@ -161,12 +196,15 @@ function ouvrirPage({ navigateur, largeur, hauteur, gpu = false, delai = 30000, 
           }
           return r.result.value;
         },
-        /** Capture PNG de la zone d'affichage (largeur × hauteur de la page). rapide : optimizeForSpeed (PNG toujours sans perte,
+        /** Capture de la zone d'affichage (largeur × hauteur de la page). rapide : optimizeForSpeed (PNG toujours sans perte,
          *  seulement moins compressé) ; echelle : image réduite (clip.scale). profil(phase, ms) : temps de capture et de décodage.
-         *  format : 'png' (défaut) ou 'jpeg' (couverture, planches du PDF : spec Rendu et export, 5.10 et 5.16), qualite 0–100. */
-        async capturer({ echelle, rapide = true, profil, format = 'png', qualite = 90 } = {}) {
-          const params = format === 'jpeg' ? { format: 'jpeg', quality: Math.round(qualite) } : { format: 'png', ...(rapide ? { optimizeForSpeed: true } : {}) };
-          if (echelle !== undefined && echelle !== 1) params.clip = { x: 0, y: 0, width: largeur, height: hauteur, scale: echelle };
+         *  format : 'png' (défaut), 'jpeg' (couverture, planches du PDF : spec Rendu et export, 5.10 et 5.16) ou 'webp' (états
+         *  calmes d'un tournage, spec S6 5.4), qualite 0–100 ; zone { x, y, largeur, hauteur } (px CSS) : cette partie seule.
+         *  Signature commune avec S1 (P12). */
+        async capturer({ echelle, rapide = true, profil, format = 'png', qualite = 90, zone } = {}) {
+          const params = format === 'jpeg' || format === 'webp' ? { format, quality: Math.round(qualite) } : { format: 'png', ...(rapide ? { optimizeForSpeed: true } : {}) };
+          if (zone) params.clip = { x: zone.x, y: zone.y, width: zone.largeur, height: zone.hauteur, scale: echelle !== undefined ? echelle : 1 };
+          else if (echelle !== undefined && echelle !== 1) params.clip = { x: 0, y: 0, width: largeur, height: hauteur, scale: echelle };
           const t0 = profil ? performance.now() : 0;
           const r = await envoyerBrut('Page.captureScreenshot', params, sessionId);
           const t1 = profil ? performance.now() : 0;
@@ -196,4 +234,4 @@ function ouvrirPage({ navigateur, largeur, hauteur, gpu = false, delai = 30000, 
   });
 }
 
-module.exports = { ouvrirPage, creerLecteur };
+module.exports = { ouvrirPage, creerLecteur, argumentsLancement };

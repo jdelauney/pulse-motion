@@ -15,6 +15,8 @@
  * remarques : { ouvertes, envoyees } (remarques laissées sur l'image dans l'aperçu, spec Retouches et ergonomie, 5.8) ;
  * reglagesNonControles : un réglage rapide de l'aperçu (5.11) attend le prochain contrôle (reglagesChanges : lesquels). Une scène encore à l'état d'ébauche
  * (section data-ebauche, pulse-motion ebauche) compte parmi les scènes manquantes (scenesManquantes, et ebauches).
+ * Étape « tournage » (spec S6, 5.15) : un parcours de films/ sans prise choisie, ou une scène qui vise un film sans prise
+ * (tournage : [{ nom, prises, choisie }]) ; elle passe avant toutes les autres, déroulé compris (le tournage précède le déroulé).
  */
 const fs = require('node:fs');
 const path = require('node:path');
@@ -59,6 +61,7 @@ function processusActif(pid) {
 }
 
 const PROCHAINES = {
+  'tournage': 'Un tournage est en cours : relire pulse-motion filmer prises, montrer la planche et faire choisir une prise, ou refilmer.',
   'questions': 'Aucune vidéo dans ce dossier : lancer /pulse-motion:creer.',
   'deroule-a-corriger': 'Le déroulé contient des erreurs : les corriger, puis le présenter à la personne.',
   'deroule-a-valider': 'Présenter le déroulé en tableau et demander l\'accord de la personne.',
@@ -67,6 +70,23 @@ const PROCHAINES = {
   'video-a-valider': 'Parcours accompagné : faire regarder la vidéo entière et demander l\'accord final.',
   'apercu': 'La vidéo est prête : proposer une retouche (/pulse-motion:retoucher) ou l\'export en MP4 (/pulse-motion:exporter).',
 };
+
+/** Films en attente d'une prise choisie : parcours sans prise, ou film visé par une scène sans prise. */
+function filmsEnAttente(projet, deroule) {
+  const F = require('./lib/film.js');
+  const noms = new Set();
+  try {
+    for (const n of fs.readdirSync(path.join(projet, 'films'))) if (fs.existsSync(path.join(projet, 'films', n, 'parcours.json'))) noms.add(n);
+  } catch { /* aucun film */ }
+  if (deroule && Array.isArray(deroule.scenes)) for (const s of deroule.scenes) if (s && s.film && typeof s.film.nom === 'string') noms.add(s.film.nom);
+  const attente = [];
+  for (const nom of [...noms].sort()) {
+    const parcours = F.lireParcoursBrut(projet, nom);
+    if (parcours && parcours.prise && fs.existsSync(path.join(projet, 'films', nom, parcours.prise, 'film.json'))) continue;
+    attente.push({ nom, prises: F.prises(projet, nom).filter((x) => x.ok).map((x) => x.prise), choisie: null });
+  }
+  return attente;
+}
 
 /** Calcule l'état du projet sans rien modifier. */
 function etatProjet(dossier) {
@@ -128,6 +148,14 @@ function etatProjet(dossier) {
       }
     }
   }
+  // Tournage en cours (spec S6, 5.15) : il passe avant tout le reste, même sans déroulé.
+  let deroulePourFilms = null;
+  try { deroulePourFilms = JSON.parse(fs.readFileSync(path.join(projet, 'deroule.json'), 'utf8').replace(/^\uFEFF/, '')); } catch { /* sans déroulé */ }
+  const tournage = filmsEnAttente(projet, deroulePourFilms);
+  if (tournage.length) {
+    resultat.etape = 'tournage';
+    resultat.tournage = tournage;
+  }
   resultat.prochaine = PROCHAINES[resultat.etape];
   return resultat;
 }
@@ -175,4 +203,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { etatProjet, donnerAccord, choisirParcours, verifierNode, NODE_MINIMUM, PARCOURS };
+module.exports = { filmsEnAttente, etatProjet, donnerAccord, choisirParcours, verifierNode, NODE_MINIMUM, PARCOURS };

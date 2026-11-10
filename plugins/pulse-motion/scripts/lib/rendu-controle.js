@@ -65,7 +65,11 @@ flash: (c) => `Scène « ${c.scene} » : l'image clignote ${virgule(c.valeur)} f
     ? `Scène « ${c.scene} » : la caméra avance puis recule aussitôt vers ${virgule(c.instant)} s (zoom) : laisser au moins ${virgule(SEUILS.zoomRetourMin)} s entre les deux, ou n'en garder qu'un.`
     : `Scène « ${c.scene} » : la caméra part ou s'arrête d'un coup vers ${virgule(c.instant)} s (${c.valeur ? c.valeur.partie : 'cadrage'}) : prendre une courbe douce (sine-inout) ; pour un choc voulu, une secousse.`),
   // Écrans des tutoriels (spec S6, 5.8 et 5.15).
-  'etapes-trop-rapprochees': (c) => `Scène « ${c.scene} » : les gestes ${c.valeur.a} et ${c.valeur.b} du pointeur sont trop rapprochés (${virgule(c.valeur.ecart)} s) ; il faut au moins ${virgule(c.valeur.minimum)} s entre eux, le temps de voir le clic puis d'aller au suivant.`,
+  'etapes-trop-rapprochees': (c) => (c.valeur.film
+    ? (c.valeur.a
+      ? `Scène « ${c.scene} » : les étapes ${c.valeur.a} et ${c.valeur.b} sont trop rapprochées. Il faut au moins ${virgule(c.valeur.minimum)} s entre elles (le temps de voir la page réagir puis d'aller cliquer).`
+      : `Scène « ${c.scene} » : l'étape ${c.valeur.b} commence trop tôt ; il faut au moins ${virgule(c.valeur.minimum)} s depuis le début de la scène (le temps d'aller cliquer).`)
+    : `Scène « ${c.scene} » : les gestes ${c.valeur.a} et ${c.valeur.b} du pointeur sont trop rapprochés (${virgule(c.valeur.ecart)} s) ; il faut au moins ${virgule(c.valeur.minimum)} s entre eux, le temps de voir le clic puis d'aller au suivant.`),
   'pointeur-hors-ecran': (c) => `Scène « ${c.scene} » : le pointeur doit aller sur « ${c.element} », qui est hors de l'image de l'écran.`,
   'silence-imprevu': (c) => `De ${virgule(c.valeur.a)} s à ${virgule(c.valeur.b)} s, on n'entend rien pendant ${virgule(c.valeur.d)} s alors que la musique devrait jouer ; vérifier la musique de la scène « ${c.scene} ».`,
 };

@@ -3,7 +3,7 @@
  * personnage ou un décor vivant (boucles pm-v-*, spec Mouvement vivant 5.9) pourraient ne pas se dessiner deux fois pareil
  * est capturée dans deux pages et dans deux ordres.
  *
- * concernees(assemblage) -> [{ id, raisons: ['code' | 'particules' | 'personnage' | 'vie' | 'ecran'], gpu }]
+ * concernees(assemblage) -> [{ id, raisons: ['code' | 'particules' | 'personnage' | 'vie' | 'ecran' | 'film'], gpu }]
  * empreinteDeterminisme(assemblage, id) -> sha256 : section et code de la scène, recettes de ses effets et milieux,
  *   personnages de la vidéo (si la scène en a), moteur et code de la preuve.
  * instantsPreuve(minutage, ids, { n, ips }) -> [{ scene, t }] : à 10, 50 et 90 % de la partie de chaque scène hors
@@ -51,6 +51,8 @@ function concernees(assemblage) {
     if (/\sclass\s*=\s*["'][^"']*\bpm-v-/.test(p.section || '')) raisons.push('vie');
     // Écran (spec S6) : pointeur et caméra du plan recalculés à chaque image par moteur/ecran.js.
     if (/\sdata-pm-ecran\s*=/.test(p.section || '')) raisons.push('ecran');
+    // Film (spec S6, 5.8) : images de la prise figée choisies par l'horloge, décodées avant chaque capture.
+    if (/\sdata-film\s*=\s*["']fichier:pm-film-/.test(p.section || '')) raisons.push('film');
     if (raisons.length) r.push({ id: p.id, raisons, gpu });
   }
   return r;
@@ -65,6 +67,7 @@ function empreinteDeterminisme(assemblage, id) {
     effets: (assemblage.effets || []).filter((e) => e.scene === id),
     milieux: (assemblage.milieux || []).filter((e) => e.scene === id),
     personnages: /\sdata-personnage[\s=>]/.test(p.section || '') ? d.personnages || null : null,
+    films: (assemblage.films || []).filter((f) => (p.section || '').includes(`fichier:pm-film-${f.nom}"`)).map((f) => f.empreinte),
     format: d.format || null,
     moteur: sha(String(assemblage.moteur || '')),
     preuve: sha(CODE_PREUVE),
