@@ -15,7 +15,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { analyserPolice, EXTENSIONS_POLICE } = require('./lib/police.js');
 const { trouverStyle, lireJSON } = require('./styles.js');
-const { sauvegarder, annuler } = require('./historique.js');
+const { sauvegarder, defaire } = require('./historique.js');
 
 const HOTE = 'fonts.bunny.net';
 const FAMILLE_ID = /^[a-z0-9-]+$/;
@@ -160,7 +160,7 @@ async function installerBunny({ famille, graisses = [400, 700], italique = false
     // Rien de partiel : ni fichier .part, ni nouveau fichier de cette installation ; une police déjà là reste.
     for (const p of [...parts, ...installes]) { try { fs.rmSync(p, { force: true }); } catch { /* déjà absent */ } }
     // Dans un projet, la copie prise avant l'écriture remet charte/ dans son état d'avant.
-    if (projet) { try { annuler(projet); } catch { /* copie absente : rien à défaire */ } }
+    if (projet) { try { defaire(projet); } catch { /* copie absente : rien à défaire */ } }
     if (e instanceof Refus) return { ok: false, message: e.message + RIEN };
     const cause = e.name === 'TimeoutError' || e.name === 'AbortError' ? 'délai dépassé' : (e.cause && e.cause.code) || e.message;
     return { ok: false, message: `Impossible d'installer « ${famille} » depuis Bunny Fonts (${cause}) : vérifiez la connexion internet et le nom de la police, puis relancez.${RIEN}` };

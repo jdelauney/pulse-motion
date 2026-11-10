@@ -19,7 +19,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { dossierPersonnel } = require('./lib/personnel.js');
-const { sauvegarder, annuler } = require('./historique.js');
+const { sauvegarder, defaire } = require('./historique.js');
 
 const MODELE = path.join(__dirname, '..', 'modeles', 'lexique.md');
 const MODELE_GLOSSAIRE = path.join(__dirname, '..', 'modeles', 'glossaire.md');
@@ -147,7 +147,7 @@ function noterGlossaire({ dossier, terme, sens, eviter = '', prononciation = '',
     return ajouterRangee(cheminGlossaire(dossier), GLOSSAIRE, [terme, sens, eviter, prononciation, cle ? 'oui' : '']);
   } catch (e) {
     // Rien d'écrit : la copie prise pour cet ajout est retirée, « annule » ne la consommera pas à vide.
-    if (copie) { try { annuler(dossier); } catch { /* rien à défaire */ } }
+    if (copie) { try { defaire(dossier); } catch { /* rien à défaire */ } }
     throw e;
   }
 }

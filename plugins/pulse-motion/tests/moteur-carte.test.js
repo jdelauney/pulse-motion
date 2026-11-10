@@ -27,6 +27,8 @@ const HORS_PAGE = {
   'personnages/atelier.mjs': 'atelier', 'personnages/decoupe-atelier.mjs': 'atelier', 'personnages/edition.mjs': 'atelier',
   'personnages/decoupe.js': 'découpe (Node et atelier)',
   'cadres/telephone.js': 'cadre de téléphone à l\'export (Node et aperçu, spec Rendu et export 5.15)',
+  // Retouches directes (spec Retouches et ergonomie, 5.8 à 5.12) : injectés par l'aperçu seulement.
+  'apercu/remarques.mjs': 'aperçu', 'apercu/reglages.mjs': 'aperçu', 'apercu/piste.mjs': 'aperçu', 'apercu/comparer.mjs': 'aperçu (page de comparaison)',
 };
 
 function fichiersMoteur(dossier = DOSSIER_MOTEUR, prefixe = '') {

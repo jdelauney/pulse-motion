@@ -21,7 +21,7 @@ function enTete(texte) {
 }
 
 const SKILLS = fs.readdirSync(path.join(RACINE, 'skills'));
-const COMMANDES = ['etat', 'assembler', 'controler', 'apercu', 'historique', 'reference', 'scene', 'styles', 'consignes', 'exporter', 'planche', 'effet', 'comparer', 'changer-style', 'lexique', 'charte', 'police', 'glossaire', 'style', 'ffmpeg', 'voix', 'whisper', 'musique', 'outils', 'atelier', 'personnages', 'mouvements', 'modeles', 'credits', 'avancement', 'ebauche', 'decisions'];
+const COMMANDES = ['etat', 'assembler', 'controler', 'apercu', 'historique', 'reference', 'scene', 'styles', 'consignes', 'exporter', 'planche', 'effet', 'comparer', 'changer-style', 'lexique', 'charte', 'police', 'glossaire', 'style', 'ffmpeg', 'voix', 'whisper', 'musique', 'outils', 'atelier', 'personnages', 'mouvements', 'modeles', 'credits', 'avancement', 'ebauche', 'decisions', 'remarques'];
 const fichiersGuides = () => [
   ...SKILLS.map((s) => path.join('skills', s, 'SKILL.md')),
   ...fs.readdirSync(path.join(RACINE, 'agents')).map((a) => path.join('agents', a)),

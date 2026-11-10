@@ -54,7 +54,7 @@ function changerStyle({ dossier, style, dossierStyles }) {
     plan.push({ s, fichier, modele, ancien, derniere: i === deroule.scenes.length - 1 });
   }
 
-  sauvegarder(projet);
+  sauvegarder(projet, { phrase: `passe en style « ${style} »` });
   const logo = Boolean(deroule.charte && deroule.charte.logo);
   for (const { s, fichier, modele, ancien, derniere } of plan) {
     const html = adapterScene(modele, { type: s.type, id: s.id, duree: s.duree, textes: s.textes, derniere, logo, nombre: lireNombre(ancien) });

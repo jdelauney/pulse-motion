@@ -10,7 +10,8 @@
  *   pulse-motion controler <dossier> [--sans-correction] [--sans-rendu] [--gpu] [--complet]   contrôle ; corrige seul les cas sûrs
  *   pulse-motion apercu <dossier> [--port 4321] [--ouvrir]
  *   pulse-motion atelier [<recette>] [--dossier <d>]   atelier des effets de particules (page de l'aperçu) : régler, enregistrer
- *   pulse-motion historique sauvegarder|annuler <dossier>
+ *   pulse-motion historique sauvegarder <dossier> [--phrase "<retouche>"] | annuler|retablir|liste <dossier> | nommer|revenir|oublier "<nom ou numéro>" <dossier>
+ *   pulse-motion remarques [liste | attendre | faite <id> "<réponse>" | discuter <id> "<question>"] <dossier>   remarques épinglées dans l'aperçu
  *   pulse-motion exporter <dossier> [--pour web|reseaux|presentation|master|courriel|brouillon] [--taille-max <Mo>] [--qualite 1080p|720p|540p] [--ips 30|60] [--rapide] [--avec-provisoire] [--estimer] [--scene <id>[,<id>] | --plage <début>-<fin>] [--gif [--largeur 1280]] [--cadre telephone [--cadre-format 16:9|1:1]] [--flou oui|non] [--transparent [mov|webm]]   MP4 fidèle (ffmpeg) ou dans le navigateur ; extrait, passage seul, GIF, cadre de téléphone, flou de mouvement, fond transparent
  *   pulse-motion ffmpeg                  ffmpeg présent ? commande pour l'installer
  *   pulse-motion voix importer <fichier> [--scene <id>] [dossier] | provisoire [--scene <id>] [dossier] | transcrire [--scene <id>] [dossier] | studio <scène> [dossier]   voix d'une scène, voix provisoire, transcription, studio
@@ -24,6 +25,8 @@
  *   pulse-motion credits <dossier> [noter <fichier> "<source>" "<licence>" ["<auteur>"]]   crédits de la vidéo ; source d'un fichier importé
  *   pulse-motion planche <dossier> --regard [--scenes a,b]   planches de regard dans sortie/regard/ (ouverture, temps forts, téléphone, bandes, fiche)
  *   pulse-motion planche <dossier> <id> --de <s> --duree <s> [--pas <n>]   planche image par image d'une scène (3 s au plus), dans sortie/planche/
+ *   pulse-motion planche <dossier> --instants <t1,t2>   image de chaque instant (secondes de la vidéo), dans sortie/planche/instant-<ms>.png
+ *   pulse-motion planche <dossier> --avant <numéro|nom|precedente> [id1,id2]   avant / après / différences des scènes modifiées : sortie/planche/avant-apres-<id>.png
  *   pulse-motion reference <nom>          affiche references/<nom>.md (ex. moteur, rythme, styles/clair-pedagogique) ; usages : tableau de scripts/usages.json
  *   pulse-motion scene <style> <nom>      affiche une scène toute faite d'un style
  *   pulse-motion effet <nom>              affiche la recette d'un effet de particules de la bibliothèque
@@ -53,6 +56,7 @@ const SCRIPTS = {
   rappel: 'rappel.js',
   avancement: 'avancement.js',
   ebauche: 'ebauche.js',
+  remarques: 'remarques.js',
   decisions: 'decisions.js',
   assembler: 'assembler.js',
   controler: 'controler.js',
@@ -107,6 +111,10 @@ function lancer(args) {
       const val = (o) => { const k = reste.indexOf(o); return k >= 0 && reste[k + 1] !== undefined ? [o, reste[k + 1]] : []; };
       const cadence = [path.join(RACINE, 'scripts', 'regard.js'), dossier, '--cadence', id, ...val('--de'), ...val('--duree'), ...val('--pas')];
       return spawnSync(process.execPath, cadence, { stdio: 'inherit' }).status ?? 1;
+    }
+    // Instants précis (remarques de l'aperçu) et avant / après (spec Retouches et ergonomie, 5.8 et 5.10).
+    if (reste.includes('--instants') || reste.includes('--avant')) {
+      return spawnSync(process.execPath, [path.join(RACINE, 'scripts', 'planche-retouche.js'), ...reste], { stdio: 'inherit' }).status ?? 1;
     }
     const [dossier = '.', ...options] = reste;
     const ids = options.filter((o) => !o.startsWith('--'));
@@ -171,11 +179,13 @@ function lancer(args) {
     '  etat <dossier> [--accord deroule|style|video] [--parcours rapide|accompagne|autonome]',
     '  ebauche <dossier>        ébauche animée des scènes absentes      decisions <dossier> [noter "<sujet>" "<choix>" "<raison>" "<pour changer>"]',
     '  assembler <dossier>      controler <dossier> [--sans-correction] [--sans-rendu] [--gpu] [--complet]      apercu <dossier> [--port N] [--ouvrir]',
-    '  historique sauvegarder|annuler <dossier>',
+    '  historique sauvegarder <dossier> [--phrase "<retouche>"] | annuler|retablir|liste <dossier> | nommer|revenir|oublier "<nom ou numéro>" <dossier>',
+    '  remarques [liste | attendre | faite <id> "<réponse>" | discuter <id> "<question>"] <dossier>   remarques épinglées sur l\'image dans l\'aperçu',
     '  atelier [<recette>] [--dossier <dossier>]   atelier des effets de particules : régler à l\'œil, enregistrer dans effets/',
     '  exporter <dossier> [--pour <usage>] [--taille-max <Mo>] [--qualite 1080p|720p|540p] [--ips 30|60] [--rapide] [--avec-provisoire] [--estimer]   usages : reference usages',
     '           [--scene <id>[,<id>] | --plage <début>-<fin>] [--gif [--largeur 1280]] [--cadre telephone [--cadre-format 16:9|1:1]]   extrait, passage seul, GIF, cadre de téléphone : reference sorties',
     '  planche <dossier> [id1,id2] [--pdf]       planche <dossier> <id> --de <s> --duree <s> [--pas <n>]',
+    '  planche <dossier> --instants <t1,t2>      planche <dossier> --avant <numéro|nom|precedente> [id1,id2]   instants précis ; avant / après d\'une retouche',
     '  credits <dossier> [noter <fichier> "<source>" "<licence>" ["<auteur>"]]   crédits de la vidéo, source d\'un fichier importé',
     '  ffmpeg                   ffmpeg présent ? commande pour l\'installer',
     '  voix importer <fichier> [--scene <id>] [dossier] | provisoire [--scene <id>] [dossier] | transcrire [--scene <id>] [dossier] | studio <scène> [dossier]',

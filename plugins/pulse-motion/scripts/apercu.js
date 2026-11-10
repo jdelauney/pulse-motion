@@ -20,6 +20,7 @@ const { lireUsages } = require('./lib/usages.js');
 const { creerRoutesVoix } = require('./lib/routes-voix.js');
 const { creerRoutesAtelier } = require('./lib/routes-atelier.js');
 const { creerRoutesPersonnages } = require('./lib/routes-personnages.js');
+const { creerRoutesRetouches } = require('./lib/routes-retouches.js');
 const { whisperParDefaut } = require('./lib/whisper.js');
 const { trouverFfmpeg } = require('./lib/ffmpeg.js');
 const { garder } = require('./lib/garde-locale.js');
@@ -41,6 +42,9 @@ const TYPES_ECRITURE = [
   [/^\/_pm\/atelier\/(reglages|recette|reglages-shader)$/, ['application/json']],
   [/^\/_pm\/personnages\/(enregistrer|decoupe\/enregistrer)$/, ['application/json']],
   ['/_pm/voix', ['audio/wav']],
+  // Retouches directes (spec Retouches et ergonomie, 5.8 et 5.11) : remarques épinglées et réglages rapides.
+  [/^\/_pm\/remarques(\/(envoyer|r-\d{4,}))?$/, ['application/json']],
+  ['/_pm/reglages', ['application/json']],
 ];
 const ESSAIS_PORT = 20;
 /** Erreurs d'écoute après lesquelles on essaie le port suivant : port pris, port réservé par le système. */
@@ -92,7 +96,11 @@ function injecterApercu(html, erreurs) {
     '\n<script src="/_pm/capture.js"></script>\n<script type="module" src="/_pm/export-ui.mjs"></script>' +
     '\n<script type="module" src="/_pm/studio.mjs"></script>' +
     '\n<script defer src="/_pm/atelier/expression.js"></script>\n<script defer src="/_pm/atelier/recette.js"></script>' +
-    '\n<script type="module" src="/_pm/atelier/panneau.mjs"></script>';
+    '\n<script type="module" src="/_pm/atelier/panneau.mjs"></script>' +
+    // Retouches directes (spec Retouches et ergonomie, 5.8 à 5.12) : remarques sur l'image, réglages rapides, forme d'onde,
+    // vignettes des scènes et comparaison de versions. Aperçu seulement : jamais dans la page livrée.
+    '\n<script type="module" src="/_pm/apercu/remarques.mjs"></script>\n<script type="module" src="/_pm/apercu/reglages.mjs"></script>' +
+    '\n<script type="module" src="/_pm/apercu/piste.mjs"></script>';
   return html.replace('</head>', `${script}\n</head>`);
 }
 
@@ -146,6 +154,7 @@ async function demarrerApercu({ dossier, port = 4321, dossierStyles, dossierEffe
   const routesExport = creerRoutesExport(projet, { optionsAssemblage });
   const routesVoix = creerRoutesVoix(projet, { whisper: whisper || whisperParDefaut, maxOctets: maxPrise, outil: trouverFfmpeg });
   const routesAtelier = creerRoutesAtelier(projet, { dossierStyles, ...(dossierEffets ? { bibliotheque: dossierEffets } : {}) });
+  const routesRetouches = creerRoutesRetouches(projet, { optionsAssemblage, pageCourante: () => dernier });
   const routesPersonnages = creerRoutesPersonnages(projet, { ...(bibliothequePersonnages ? { bibliotheque: bibliothequePersonnages } : {}), ecrireBibliotheque: ecrireBibliothequePersonnages });
 
   /** Rapport de débordement envoyé par la page : JSON seulement (une autre origine serait bloquée par CORS). */
@@ -197,6 +206,8 @@ async function demarrerApercu({ dossier, port = 4321, dossierStyles, dossierEffe
       req.on('close', () => clients.delete(res));
     } else if (req.method === 'POST' && url.pathname === '/_pm/controle') {
       recevoirControle(req, res);
+    } else if (routesRetouches(req, res, url)) {
+      // remarques, réglages rapides, versions comparées
     } else if (routesAtelier(req, res, url)) {
       // route de l'atelier des effets traitée
     } else if (routesPersonnages(req, res, url)) {

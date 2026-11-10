@@ -16,7 +16,7 @@ Guider une personne **sans notion de code** de son idée jusqu'à une vidéo ani
 - Ne jamais montrer de commande à la personne ; les lancer soi-même.
 - Étape longue : l'annoncer en une phrase avec sa durée ; en arrière-plan, la suivre par `Monitor` sur `pulse-motion avancement . --suivre`, une phrase par minute au plus (sans lui : « l'avancement s'affiche dans l'aperçu »).
 - Problème du contrôle : dire son `message`, corriger avec sa `consigne`.
-- Lexique : avant d'expliquer un mot de l'outil (déroulé, scène, style, charte, transition, export…), lire `pulse-motion lexique`. Un mot déjà noté n'est pas réexpliqué en entier ; un mot expliqué pour la première fois se note avec `pulse-motion lexique noter "<terme>" "<phrase>" "<comme…>" "/pulse-motion:creer"`, en reprenant l'image fixe du lexique quand elle existe.
+- Lexique : un mot de l'outil déjà noté (`pulse-motion lexique`) n'est pas réexpliqué en entier ; un mot expliqué pour la première fois se note avec `pulse-motion lexique noter "<terme>" "<phrase>" "<comme…>" "/pulse-motion:creer"`.
 
 ## 0. Vérifier
 
@@ -136,10 +136,10 @@ Mouvements nommés (« un pop-in sur les titres », « #006 pour le titre », «
 
 Si la charte a été créée pour cette vidéo, proposer de l'enregistrer pour les suivantes (« Enregistrer ma charte » (Recommandé) · « Pas maintenant ») : `pulse-motion charte enregistrer <nom> .` (nom en minuscules et tirets, ex. `client-dupont`).
 
-Terminer par ce bloc, sans rien après. La ligne 🔎 n'affirme que ce qui a été mesuré ou vu, et dit toujours ce qui n'a pas pu l'être (« sans Chrome, la vidéo rendue n'a pas été contrôlée ni regardée »).
+Lancer `pulse-motion remarques attendre .` en arrière-plan (son retour : `/pulse-motion:retoucher`, « Remarques de l'aperçu »), puis terminer par ce bloc, sans rien après. La ligne 🔎 n'affirme que ce qui a été mesuré ou vu, et dit toujours ce qui n'a pas pu l'être (« sans Chrome, la vidéo rendue n'a pas été contrôlée ni regardée »).
 
 ✅ **Fait** : la vidéo « <titre> » (<n> scènes, <durée>) est prête et s'affiche dans votre navigateur.
 📄 **Fichiers** : la vidéo animée est dans `sortie/<titre>.html` (elle s'ouvre sans connexion).
 🔎 **Vérifié** : <ce qui a été mesuré, en mots simples : lisibilité, contrastes, temps de lecture…> ; <n> images de la vidéo regardées (`vignettes` des planches) ; relue par un relecteur qui n'a pas vu la fabrication (<prête, ou corrigée après relecture, non relue>), scène la plus faible « <id> » (<raison courte>)[ ; le son a été mesuré, pas écouté]. Ce que je corrigerais ensuite : <une phrase>.
 🧭 **Mes choix** (Faites pour moi seulement, d'après `pulse-motion decisions .`) : chacun se change en une phrase : <sujet : choix, « pour changer »>.
-➡️ **Ensuite** : décrivez une retouche en une phrase avec `/pulse-motion:retoucher` (par exemple « ralentis la scène 3 »), ou exportez la vidéo en MP4 avec `/pulse-motion:exporter`.
+➡️ **Ensuite** : laissez vos remarques sur l'image, puis cliquez sur « Envoyer à Claude » ; ou décrivez une retouche avec `/pulse-motion:retoucher` (« ralentis la scène 3 »), ou exportez la vidéo en MP4 avec `/pulse-motion:exporter`.

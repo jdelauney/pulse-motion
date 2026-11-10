@@ -30,6 +30,7 @@ const Assembleur = require('./assembler.js');
 const { charteFinale, RACINE } = Assembleur;
 const { controlerCSS, controlerLettres, sonConnu, problemeSonInconnu, controlerVie, classesAnimeesDuStyle } = require('./lib/controle-scene.js');
 const { empreintesControle, plagesScenes, besoinEcoute, empreinteSonore } = require('./lib/empreintes.js');
+const { marquerControle } = require('./lib/reglages-rapides.js');
 const { ecrireAtomique } = require('./lib/fichiers.js');
 const { avecConsignes } = require('./lib/messages.js');
 const { trouverStyle } = require('./styles.js');
@@ -515,6 +516,8 @@ function controler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     if (assemblage.ok) Assembleur.ecrireSortie(projet, assemblage, { siChangee: true });
     fichier = path.join(projet, 'sortie', 'controle.json');
     ecrireAtomique(fichier, JSON.stringify({ problemes, corrections }, null, 2));
+    // Réglages rapides de l'aperçu (spec Retouches et ergonomie, 5.11) : contrôlés à partir de maintenant.
+    marquerControle(projet);
   }
   return { problemes, corrections, fichier, assemblage };
 }
