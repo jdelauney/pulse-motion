@@ -45,7 +45,9 @@ function projet(scenes, { tempo = null } = {}) {
 // --- 5.11 dictionnaire -------------------------------------------------------------------------------------------------
 
 test('dictionnaire : #081 à #093 figés, catégories vie et compositions déclarées', () => {
-  assert.deepEqual(DICO.categories.slice(-2), [{ id: 'vie', nom: 'Vie du décor' }, { id: 'compositions', nom: 'Compositions' }]);
+  // « logiciel » (S6) vient après : vie et compositions restent dans cet ordre, juste avant.
+  const ids = DICO.categories.map((c) => c.id);
+  assert.deepEqual(DICO.categories.slice(ids.indexOf('vie'), ids.indexOf('vie') + 2), [{ id: 'vie', nom: 'Vie du décor' }, { id: 'compositions', nom: 'Compositions' }]);
   assert.deepEqual(Object.fromEntries(MOTIFS.map((e) => [e.no, [e.slug, e.categorie]])), ATTENDUS);
   for (const [no, [slug]] of Object.entries(ATTENDUS)) assert.equal(NUMEROS[no], slug, `#${no} figé`);
   // Trié par numéro ; les 80 premiers n'ont pas bougé.
