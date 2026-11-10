@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "nom": "deformation",
+  "usage": "transition",
+  "description": "L'image se tord comme une matière liquide dont les veines prennent la couleur de la marque, puis se dénoue sur la scène qui entre : transformation, idée qui se reforme, monde qui change.",
+  "parametres": {
+    "echelle": { "defaut": 30, "min": 5, "max": 120 },
+    "couleur": { "defaut": "accent", "type": "couleur" }
+  }
+}

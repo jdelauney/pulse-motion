@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "nom": "cathodique",
+  "usage": "post",
+  "description": "Image de vieille télé ou de cassette vidéo : lignes de balayage, grille de couleurs, couleurs qui bavent, coins assombris, bande de bruit, allumage du tube en début de scène.",
+  "parametres": {
+    "force": { "defaut": 1, "min": 0, "max": 1 },
+    "lignes": { "defaut": 0.18, "min": 0, "max": 1 },
+    "grille": { "defaut": 0.06, "min": 0, "max": 0.5 },
+    "bavure": { "defaut": 7, "min": 0, "max": 8 },
+    "decalage_rouge": { "defaut": 2, "min": 0, "max": 6 },
+    "coins": { "defaut": 0.28, "min": 0, "max": 1 },
+    "bruit_bande": { "defaut": 0, "min": 0, "max": 1 },
+    "allumage": { "defaut": 0, "min": 0, "max": 3 }
+  }
+}

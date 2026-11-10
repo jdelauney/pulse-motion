@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "nom": "brulure",
+  "usage": "transition",
+  "description": "L'image brûle par plaques irrégulières : un front incandescent à la couleur de la marque, un liseré de cendre sombre et des étincelles découvrent la scène qui entre. Rupture forte, ancien qui disparaît.",
+  "parametres": {
+    "couleur": { "defaut": "accent", "type": "couleur" },
+    "grain": { "defaut": 14, "min": 2, "max": 60 },
+    "etincelles": { "defaut": 0.5, "min": 0, "max": 1 }
+  }
+}

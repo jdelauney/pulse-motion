@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "nom": "iris",
+  "usage": "transition",
+  "description": "Une forme (cercle, losange ou étoile) s'ouvre depuis le centre et découvre la scène qui entre, bordée d'un anneau à la couleur de la marque : ouverture, focus, clin d'œil au cinéma.",
+  "parametres": {
+    "forme": { "defaut": 0, "min": 0, "max": 2 },
+    "couleur": { "defaut": "accent", "type": "couleur" }
+  }
+}

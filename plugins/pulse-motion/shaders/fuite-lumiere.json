@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "nom": "fuite-lumiere",
+  "usage": "transition",
+  "description": "Un éclair de lumière chaude, à la couleur de la marque, envahit l'image et s'efface sur la scène qui entre, comme une pellicule voilée : transition chaleureuse, souvenir, ouverture.",
+  "parametres": {
+    "couleur": { "defaut": "accent", "type": "couleur" },
+    "douceur": { "defaut": 0.2, "min": 0.01, "max": 0.5 }
+  }
+}

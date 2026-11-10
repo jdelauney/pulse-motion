@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "nom": "lentille",
+  "usage": "transition",
+  "description": "L'image passe derrière une masse invisible qui courbe la lumière : elle se resserre en anneau autour d'un cœur sombre, puis la scène qui entre se déplie. Changement d'échelle, plongée, idée qui aspire.",
+  "parametres": {
+    "force": { "defaut": 1, "min": 0, "max": 3 },
+    "rayon": { "defaut": 0.4, "min": 0.05, "max": 1.5 }
+  }
+}

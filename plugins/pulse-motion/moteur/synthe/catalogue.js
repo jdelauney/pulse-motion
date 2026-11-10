@@ -11,7 +11,8 @@
   var SONS_TRANSITION = { fondu: 'souffle', glissement: 'whoosh', balayage: 'swoosh-inverse', zoom: 'montee', coupe: 'impact', rideau: 'whoosh',
     whip: 'whoosh', poussee: 'whoosh', traversee: 'montee', cercle: 'swoosh-inverse', volets: 'swoosh-inverse', retournement: 'whoosh' };
   // Transitions par shader de la bibliothèque ; un shader du projet : souffle (comme un fondu).
-  var SONS_TRANSITION_SHADER = { dissolution: 'souffle', ondulation: 'souffle', pixels: 'blip', glitch: 'impact', 'balayage-organique': 'swoosh-inverse' };
+  var SONS_TRANSITION_SHADER = { dissolution: 'souffle', ondulation: 'souffle', pixels: 'blip', glitch: 'impact', 'balayage-organique': 'swoosh-inverse',
+    'fuite-lumiere': 'souffle', brulure: 'souffle', lentille: 'whoosh', deformation: 'whoosh', iris: 'swoosh-inverse' };
   return {
     INSTRUMENTS: ['pluck', 'pad', 'basse', 'sub', 'kick', 'caisse', 'charleston', 'cloche', 'nappe-bruit', 'riser'],
     PERCUSSIONS: ['kick', 'caisse', 'charleston', 'riser', 'nappe-bruit'],
