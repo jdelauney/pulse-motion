@@ -90,7 +90,7 @@ La charte (logo, couleurs, polices) vit dans `charte/` du projet ; la musique da
 
 `charte` du déroulé ne garde que les réglages ponctuels (`ton` : `clair`, `sombre` ou `auto` ; une couleur à changer pour cette vidéo seulement) ; la charte elle-même est dans `charte/`. `charte`, `musique` et `tempo` sont facultatifs. Clés de `textes` : celles de la scène toute faite (`pulse-motion reference styles/<style>`).
 
-Mouvements nommés (« un pop-in sur les titres », « #006 pour le titre », « montre-moi les mouvements ») : `pulse-motion reference demandes`, section « Mouvements nommés ».
+Mouvements nommés (« un pop-in sur les titres », « #006 pour le titre », « une plante qui vit », « montre-moi les mouvements ») : `pulse-motion reference demandes`, section « Mouvements nommés ».
 
 ## 3. Fabrication
 
