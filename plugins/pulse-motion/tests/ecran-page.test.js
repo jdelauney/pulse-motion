@@ -75,7 +75,7 @@ test('pointeur : la pointe est au point visé à l\'instant de l\'action ; cercl
     assert.ok(Math.abs(pointe[1] - (cible[1] + 0.78 * cible[3])) < 3, `y ${pointe[1]} / ${cible[1]}`);
     const etat = (t) => c.evaluer(`M.seek(${t}).then(function () {
       var o = Array.prototype.map.call(document.querySelectorAll('.pm-onde'), function (x) { return Number(x.style.opacity); });
-      return { ondes: o.filter(function (v) { return v > 0; }).length, appui: document.getElementById('envoyer').style.scale, pointeur: document.querySelector('.pm-pointeur').style.scale };
+      return { ondes: o.filter(function (v) { return v > 0; }).length, appui: document.getElementById('envoyer').style.scale, pointeur: document.querySelector('.pm-pointeur').style.getPropertyValue('--pm-k') };
     })`);
     assert.deepEqual(await etat(1.9), { ondes: 0, appui: '', pointeur: '1' });
     const pendant = await etat(2.05);
@@ -304,4 +304,23 @@ test('exporter : un tutoriel dont le son n\'a que des clics s\'exporte (sonie in
   const v = JSON.parse(fs.readFileSync(path.join(dir, 'sortie', 'verification.json'), 'utf8'));
   assert.ok(v.faites.includes('images') && !v.faites.includes('sonie'), `${r.stdout.slice(-400)} ${r.stderr.slice(-400)}`);
   assert.ok(fs.existsSync(path.join(dir, 'sortie', 'essai-ecran.mp4')));
+});
+
+test('export rapide : un élément centré par margin: auto dans un flex vertical, hors de la première scène, reste à sa place (comme l\'export fidèle)', { ...SANS, timeout: 120000 }, async () => {
+  // Défaut relevé au plan 1 de S6 : getComputedStyle rend « 0px » pour une marge automatique d'un élément flex, la copie de
+  // l'export rapide le décalait. moteur/figer.js garde « auto » (Typed OM).
+  const centre = (id) => `<section data-scene="${id}" style="display:flex; flex-direction:column; background:#fff"><h2 data-texte="titre" style="margin:0">T</h2>`
+    + `<div class="pm-ecran" data-adresse="app.exemple.fr" style="margin:auto; align-self:auto; --pm-ecran-l: 60cqh">${MAQUETTE}</div>`
+    + `<div style="margin:auto; width:20cqh; height:6cqh; background:#d02040"></div></section>`;
+  const dir = projet([['a', centre('a'), 3], ['b', centre('b'), 3]]);
+  const { c } = await ouvrir(dir);
+  try {
+    await c.evaluer(`${CAPTURE}; true`);
+    for (const t of [1.5, 4.5]) {
+      const f = decoder(await c.capturer(t));
+      await c.evaluer(`M.seek(${t})`);
+      const r = await rapide(c);
+      assert.ok(ecart(f, r) <= 0.01, `t = ${t} : ${(100 * ecart(f, r)).toFixed(2)} %`);
+    }
+  } finally { await c.fermer(); }
 });

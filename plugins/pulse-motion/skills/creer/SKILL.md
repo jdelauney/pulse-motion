@@ -40,18 +40,19 @@ La première question rappelle ce qui va se passer : « Nouvelle vidéo sur « <
 **Première ronde** :
 
 1. **Durée** : 30 s · 1 min (Recommandé pour une formation courte) · 3 min · 5 min.
-2. **Public** : grand public · professionnels du métier · élèves ou stagiaires (adapter selon le sujet) ; omis si le sujet ou le modèle le donne.
+2. **Public** : grand public · professionnels du métier · élèves ou stagiaires ; omis si le sujet ou le modèle le donne.
 3. **Parcours** : Rapide (Recommandé) – « je valide seulement le déroulé » · Accompagné – « je valide aussi le style et la vidéo finale » · Faites pour moi – « aucune autre question, je regarde le résultat ».
 4. **À ajouter** (choix multiple) : mon logo et mes couleurs · rien pour l'instant.
 
 Sujet qui nomme une entreprise ou un produit précis : la question 4 devient celle des visuels, une seule fois (`pulse-motion reference actifs-marque` : logo, photos du produit, captures, couleurs et polices) ; ne jamais redessiner le produit, poser une zone réservée s'il manque.
+Tutoriel de logiciel : `pulse-motion consignes filmer creer`.
 
 **Faites pour moi** : aucune autre question (sauf le fichier du logo s'il est demandé) : musique composée selon le genre, ni voix (une voix provisoire bloquerait l'export) ni sous-titres, style recommandé, glossaire noté d'office, aucune installation ; chaque choix se note : `pulse-motion decisions . noter "<sujet>" "<choix>" "<raison>" "<pour changer>"`.
 
 Sinon, une deuxième ronde, **Le son** (lire d'abord `pulse-motion reference audio`, et `pulse-motion reference audio/musique` pour décrire les ambiances) :
 
 1. **Musique** : « Une musique composée pour la vidéo (Recommandé) » · « J'ai un fichier » · « Pas de musique ». L'ambiance se choisit selon le genre (formation → `calme` ou `inspirant`, produit → `corporate` ou `tech`, storytelling → `inspirant` ou `suspense`, social → `entrainant`) et se décrit en trois mots, jamais par son nom technique.
-2. **Voix et sous-titres** : « Ma voix, avec sous-titres (Recommandé) » · « Ma voix, sans sous-titres » · « J'ai un fichier de ma voix » · « Pas de voix » (donc sans sous-titres, qui reprennent le texte dit). En 9:16, les sous-titres mot par mot (`mode` `mot`), qui retiennent l'œil sur les réseaux.
+2. **Voix et sous-titres** : « Ma voix, avec sous-titres (Recommandé) » · « Ma voix, sans sous-titres » · « J'ai un fichier de ma voix » · « Pas de voix » (donc sans sous-titres, qui reprennent le texte dit). En 9:16, les sous-titres mot par mot (`mode` `mot`).
 3. **L'ordinateur**, seulement si `pulse-motion outils --plan` liste un outil utile (la transcription avec une voix, ou ffmpeg) : « Préparer l'ordinateur pendant que je travaille : <liste> (Recommandé) » · « Plus tard ». Accord : les installations partent en arrière-plan, une à la fois (`pulse-motion consignes outils`, étape « Tout installer »).
 
 Le genre se déduit du sujet (formation, produit, storytelling, social). Format : 16:9, sauf genre `social` → 9:16 (4:5 si la personne vise le fil LinkedIn ou Instagram).

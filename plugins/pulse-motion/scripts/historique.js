@@ -9,7 +9,8 @@
  *   node scripts/historique.js revenir <numéro|nom> <dossier>
  *   node scripts/historique.js oublier "<nom>" <dossier>
  *
- * Sauvegarde deroule.json, scenes/, assets/, charte/, effets/ et personnages/.
+ * Sauvegarde deroule.json, scenes/, assets/, charte/, effets/, personnages/ et les parcours des films (films/<nom>/parcours.json :
+ * les prises filmées ne sont jamais copiées, spec S6 5.15).
  * Stockage par contenu (spec Rapidité 5.12, idée des caches par empreinte d'argo) :
  * - .historique/objets/<sha256> : chaque fichier, écrit une seule fois, par copie (jamais un lien dur : une prise
  *   réenregistrée sous le même nom modifierait l'historique) ;
@@ -33,7 +34,11 @@ const { ecrireAtomique } = require('./lib/fichiers.js');
 const CONSERVEES = 20;
 const NOMMEES_MAX = 20;
 const JOURNAL = 'journal.json';
-const CONTENU = ['deroule.json', 'scenes', 'assets', 'charte', 'effets', 'personnages'];
+const CONTENU = ['deroule.json', 'scenes', 'assets', 'charte', 'effets', 'personnages', 'films'];
+// Anciennes copies complètes (avant 0.30.0) : sans films.
+const CONTENU_COPIE = CONTENU.filter((c) => c !== 'films');
+// Prises filmées (spec S6, 5.15) : jamais copiées (une prise est immuable, et son flou est définitif) ; parcours.json l'est.
+const estPrise = (rel) => /^films[\\/][^\\/]+[\\/](prise-\d+|\.prise-\d+-en-cours)([\\/]|$)/.test(rel);
 // Voix provisoires : recalculables, hors des sauvegardes, et gardées telles quelles par « annule ».
 const PROVISOIRES = path.join('assets', 'voix', 'provisoire');
 const OBJETS = 'objets';
@@ -62,7 +67,7 @@ function parcourir(projet) {
   const fichiers = [];
   const dossiers = [];
   const visiter = (rel) => {
-    if (estProvisoire(rel)) return;
+    if (estProvisoire(rel) || estPrise(rel)) return;
     const abs = path.join(projet, rel);
     let st;
     try { st = fs.statSync(abs); } catch { return; }
@@ -225,7 +230,7 @@ function restaurerCopie(projet, racine, numero) {
   const provisoires = path.join(projet, PROVISOIRES);
   const deCote = fs.existsSync(provisoires) ? fs.mkdtempSync(path.join(racine, 'provisoires-')) : null;
   if (deCote) fs.cpSync(provisoires, deCote, { recursive: true });
-  for (const nom of CONTENU) {
+  for (const nom of CONTENU_COPIE) {
     fs.rmSync(path.join(projet, nom), { recursive: true, force: true });
     if (fs.existsSync(path.join(source, nom))) fs.cpSync(path.join(source, nom), path.join(projet, nom), { recursive: true });
   }
@@ -441,6 +446,15 @@ function materialiser(dossier, version, cible) {
   empreinte = empreinteVersion(racine, s);
   const provisoires = path.join(projet, PROVISOIRES);
   if (fs.existsSync(provisoires)) fs.cpSync(provisoires, path.join(dest, PROVISOIRES), { recursive: true });
+  // Prises filmées : hors de l'historique (immuables) ; la version reconstituée reprend celles du projet qu'elle choisit.
+  try {
+    for (const nom of fs.readdirSync(path.join(dest, 'films'))) {
+      let prise = null;
+      try { prise = JSON.parse(fs.readFileSync(path.join(dest, 'films', nom, 'parcours.json'), 'utf8')).prise; } catch { prise = null; }
+      const source = prise && /^prise-\d+$/.test(prise) ? path.join(projet, 'films', nom, prise) : null;
+      if (source && fs.existsSync(source)) fs.cpSync(source, path.join(dest, 'films', nom, prise), { recursive: true });
+    }
+  } catch { /* aucun film */ }
   return { numero: e.numero, nom: e.nom, dossier: dest, empreinte };
 }
 

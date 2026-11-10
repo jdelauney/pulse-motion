@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Facturo – nouvelle facture</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="barre">
+  <span class="logo">Facturo</span>
+  <nav><ul class="menu">
+    <li><a href="factures.html">Factures</a></li>
+    <li><a href="nouvelle.html" aria-current="page">Créer</a></li>
+    <li><a href="aide.html" target="_blank">Aide</a></li>
+  </ul></nav>
+  <span class="compte">Camille Durand</span>
+</header>
+<main>
+  <h1>Nouvelle facture</h1>
+  <form class="carte" id="facture">
+    <div class="grille">
+      <div class="champ"><label for="client">Client</label><input type="text" id="client" placeholder="Nom du client"></div>
+      <div class="champ"><label for="courriel">Adresse électronique du client</label><input type="email" id="courriel" autocomplete="email"></div>
+      <div class="champ"><label for="montant">Montant hors taxes</label><input type="number" id="montant" value="1200"></div>
+      <div class="champ"><label for="remise">Remise (%)</label><input type="number" id="remise" value="10"></div>
+      <div class="champ"><label for="paiement">Mode de paiement</label><select id="paiement"><option>Carte bancaire</option><option>Virement</option><option>Chèque</option><option>Espèces</option></select></div>
+      <div class="champ"><label>Total</label><strong id="total-facture">1080,00 €</strong></div>
+    </div>
+    <label class="coche"><input type="checkbox" id="conditions"> J'accepte les conditions de vente</label>
+    <div class="actions"><span id="etat-facture" class="note"></span><button type="button" class="secondaire" id="brouillon">Supprimer le brouillon</button><button type="submit" class="primaire">Enregistrer</button></div>
+  </form>
+  <dialog id="confirmer" aria-labelledby="titre-confirmer">
+    <h2 id="titre-confirmer">Enregistrer la facture ?</h2>
+    <p>Elle sera ajoutée à la liste des factures.</p>
+    <div class="actions"><button type="button" class="secondaire" id="confirmer-non">Annuler</button><button type="button" class="primaire" id="confirmer-oui">Enregistrer</button></div>
+  </dialog>
+</main>
+<script src="app.js"></script>
+</body>
+</html>

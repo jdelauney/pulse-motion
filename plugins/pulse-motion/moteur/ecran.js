@@ -17,8 +17,14 @@
  * (valeurs de #081), opacité des mises en valeur (entrée et sortie de 0,4 s, cubic-bezier(0.4, 0, 0.2, 1)), pulsation de
  * l'anneau (1,5 s), caméra du plan (zooms pm-zoom, ou data-film-camera="suivre" : un zoom par geste, enchaînés par
  * M.enchainerZooms, puis un recul ; les pm-zoom écrits l'emportent).
- * M.mesurerEcrans({ scenes }) -> constats du contrôle rendu : etapes-trop-rapprochees (gestes trop proches pour aller de
- * l'un à l'autre), pointeur-hors-ecran (cible #id hors de l'image).
+ * M.mesurerEcrans({ scenes }) -> constats du contrôle rendu : etapes-trop-rapprochees (gestes ou étapes d'un film trop
+ * proches pour aller de l'un à l'autre), pointeur-hors-ecran (cible #id hors de l'image).
+ * Film (plan 2 de S6, 5.8) : data-film="fichier:pm-film-<nom>" désigne le bloc JSON embarqué (étapes et images en data:),
+ * data-etapes les étapes montrées ; une marque <i class="pm-etape" data-etape="N" data-start="…"> fixe l'instant de l'action
+ * de l'étape N (sinon, M.film.planifierFilm la place). L'image est choisie par M.film.etatFilm, du temps vu par l'écran, et
+ * posée dans deux <img> (l'une s'affiche une fois l'autre décodée ; M.seek attend ce décodage) ; les images des 2 s
+ * suivantes sont préchargées pendant la lecture. Le pointeur suit les gestes des étapes ; « etape:N » vise la cible relevée
+ * au tournage.
  * Valeurs de argo (src/camera.ts : spotlight, focusRing, dimAround ; src/cursor.ts ; MIT, Shreyas Karnik), rendu réécrit
  * sans filtre SVG ni backdrop-filter. Navigateur seulement ; dépend de pointeur, camera, courbes, horloge (global M).
  */
@@ -37,6 +43,22 @@
   var MAIN = 'M8 1.6a1.6 1.6 0 0 1 3.2 0V9.2l.7-.1a1.5 1.5 0 0 1 2.6.5l.6-.1a1.5 1.5 0 0 1 2.5.8l.4 0a1.5 1.5 0 0 1 2.4 1.2V16c0 4.2-2.6 7.4-6.6 7.4h-1.6c-2.4 0-4-1.1-5.3-3L2.9 15a1.6 1.6 0 0 1 2.4-2.1L8 15.4Z';
   var ecrans = [];
   var douce = null;
+  var films = {};
+  var PRECHARGE = 2;
+
+  /** Bloc d'un film (lu une fois) : { largeur, hauteur, cadence, etapes, images }. */
+  function lireFilm(ref) {
+    var id = String(ref || '').replace(/^fichier:/, '');
+    if (!Object.prototype.hasOwnProperty.call(films, id)) {
+      var b = document.getElementById(id);
+      try { films[id] = b ? JSON.parse(b.textContent) : null; } catch (err) { films[id] = null; }
+    }
+    return films[id];
+  }
+  function fenetreScene(scene) {
+    var s = M.minutage && M.minutage.scenes.filter(function (x) { return x.id === scene; })[0];
+    return s ? { debut: s.debut, fin: s.fin } : { debut: 0, fin: 0 };
+  }
 
   function nombre(v, defaut) { var n = parseFloat(v); return isFinite(n) ? n : defaut; }
   function arrondi(x) { return Math.round(x * 1000) / 1000; }
@@ -79,6 +101,7 @@
     var t = String(texte || '').trim();
     var m;
     if ((m = /^#([A-Za-z][\w-]*)$/.exec(t))) return { id: m[1] };
+    if ((m = /^etape:(\d+)$/.exec(t))) return { etape: Number(m[1]) };
     var n = t.split(',').map(function (x) { return parseFloat(x); });
     if (/%/.test(t) && (n.length === 2 || n.length === 4) && n.every(isFinite)) return { valeurs: n };
     return null;
@@ -99,7 +122,33 @@
       gestes: [], mises: [], zooms: [], ondes: [], mesure: false, ecrit: {},
     };
     var depart = lireCible(el.getAttribute('data-pointeur-depart'));
-    e.depart = depart && depart.valeurs.length === 2 ? depart.valeurs : DEPART;
+    e.depart = depart && depart.valeurs && depart.valeurs.length === 2 ? depart.valeurs : DEPART;
+    if (el.hasAttribute('data-film')) {
+      e.film = lireFilm(el.getAttribute('data-film'));
+      if (e.film) {
+        e.etapesFilm = String(el.getAttribute('data-etapes') || '').split(',').map(Number).filter(function (n) { return n > 0; });
+        e.marquesFilm = {};
+        e.fenetre = fenetreScene(scene);
+        plan.querySelectorAll('.pm-etape').forEach(function (m) {
+          var t = minuteDe(m, scene);
+          var n = Number(m.getAttribute('data-etape'));
+          if (t && n > 0) e.marquesFilm[n] = t.debut - e.fenetre.debut;
+        });
+        e.imgs = [1, 0].map(function (k) {
+          var img = document.createElement('img');
+          img.className = 'pm-ecran-film';
+          img.setAttribute('alt', '');
+          img.setAttribute('data-decor', '');
+          img.setAttribute('aria-hidden', 'true');
+          img.style.opacity = '0';
+          plan.insertBefore(img, plan.firstChild);
+          return { el: img, nom: null, pret: false, rang: k };
+        }).reverse();
+        e.montree = e.imgs[0];
+        e.attentes = [];
+        e.precharges = {};
+      }
+    }
     plan.querySelectorAll('.pm-clic, .pm-survol, .pm-double-clic').forEach(function (m) {
       var type = GESTES[Object.keys(GESTES).filter(function (c) { return m.classList.contains(c); })[0]];
       var t = minuteDe(m, scene);
@@ -113,7 +162,7 @@
       var t = minuteDe(m, scene);
       if (t) e.zooms.push({ debut: t.debut, fin: t.fin, cible: m.getAttribute('data-cible'), echelle: nombre(m.getAttribute('data-echelle'), 0) });
     });
-    if (e.forme !== 'aucun' && e.gestes.length) {
+    if (e.forme !== 'aucun' && (e.gestes.length || (e.film && e.film.etapes.some(function (x) { return x.point && M.film.gesteDe(x); })))) {
       var p = document.createElement('div');
       p.className = 'pm-pointeur';
       p.setAttribute('data-forme', e.forme);
@@ -121,7 +170,7 @@
       p.setAttribute('aria-hidden', 'true');
       if (e.forme === 'fleche') p.appendChild(svg(FLECHE, '0 0 14 21'));
       else if (e.forme === 'main') p.appendChild(svg(MAIN, '0 0 20 24'));
-      plan.appendChild(p);
+      calqueDe(e).appendChild(p);
       e.pointeur = p;
     }
     return e;
@@ -140,6 +189,12 @@
         var b = cible && boiteDans(cible, e.plan);
         return b ? { boite: [b[0] * kx, b[1] * ky, b[2] * kx, b[3] * ky], el: cible } : null;
       }
+      if (c.etape) {
+        var et = e.film && e.film.etapes.filter(function (x) { return x.n === c.etape; })[0];
+        if (!et) return null;
+        if (et.cible && et.cible.boite) return { boite: et.cible.boite.slice() };
+        return et.point ? { point: et.point.slice() } : null;
+      }
       var v = c.valeurs;
       var x = v[0] / 100 * e.page[0], y = v[1] / 100 * e.page[1];
       return v.length === 4 ? { boite: [x, y, v[2] / 100 * e.page[0], v[3] / 100 * e.page[1]] } : { point: [x, y] };
@@ -156,6 +211,16 @@
       gestes.push({ type: g.type, instant: g.instant, point: g.point, cle: g });
     });
     var diagonale = Math.sqrt(e.page[0] * e.page[0] + e.page[1] * e.page[1]);
+    e.ecartsFilm = [];
+    if (e.film && M.film) {
+      var depart = [e.depart[0] / 100 * e.page[0], e.depart[1] / 100 * e.page[1]];
+      e.planFilm = M.film.planifierFilm(e.film, e.marquesFilm, { etapes: e.etapesFilm, duree: e.fenetre.fin - e.fenetre.debut, depart: depart, diagonale: diagonale, vitesse: e.vitesse });
+      e.ecartsFilm = e.planFilm.ecarts;
+      M.film.gestesDuPlan(e.planFilm).forEach(function (g) {
+        var p = e.planFilm.etapes.filter(function (x) { return x.n === g.etape; })[0];
+        gestes.push({ type: g.type, instant: g.instant + e.fenetre.debut, point: g.point, cle: { boite: p.boite, fin: p.fin + e.fenetre.debut, film: true } });
+      });
+    }
     e.planGestes = M.pointeur.planGestes(gestes, { depart: [e.depart[0] / 100 * e.page[0], e.depart[1] / 100 * e.page[1]], diagonale: diagonale, graine: e.graine, vitesse: e.vitesse });
     e.mises.forEach(function (m) {
       if (m.sorte === 'pm-assombrir') return;
@@ -184,7 +249,7 @@
     });
     if (e.suivre) {
       e.planGestes.gestes.forEach(function (g) {
-        var debut = g.arrivee, fin = g.instant + REACTION;
+        var debut = g.arrivee, fin = g.cle && g.cle.fin !== undefined ? Math.max(g.cle.fin, g.instant + 0.4) : g.instant + REACTION;
         if (zooms.some(function (z) { return z.debut < fin && debut < z.fin; })) return;
         var b = g.cle.boite;
         var part = b ? b[2] / e.page[0] : 0;
@@ -209,23 +274,82 @@
       o.className = 'pm-onde';
       o.setAttribute('data-decor', '');
       o.setAttribute('aria-hidden', 'true');
-      e.plan.appendChild(o);
+      calqueDe(e).appendChild(o);
       e.ondes.push(o);
     }
     return e.ondes[i];
+  }
+
+  /** Calque du pointeur et des cercles, au-dessus du plan (non zoomé), à la taille de la surface. */
+  function calqueDe(e) {
+    if (!e.calque) {
+      e.calque = document.createElement('div');
+      e.calque.className = 'pm-ecran-calque';
+      e.calque.setAttribute('data-decor', '');
+      e.calque.setAttribute('aria-hidden', 'true');
+      e.plan.parentNode.appendChild(e.calque);
+    }
+    return e.calque;
+  }
+
+  function uri(e, nom) { return nom && e.film.images ? e.film.images[nom] || '' : ''; }
+
+  /** Images du film à l'instant vu par l'écran : l'image de base dans l'<img> montrée ; l'autre reçoit l'image suivante (ou le
+   *  fondu d'un « aller ») et ne passe devant qu'une fois décodée. */
+  function poserFilm(e, te) {
+    var st = M.film.etatFilm(e.planFilm, te - e.fenetre.debut);
+    var base = st.image, dessus = st.fondu ? st.fondu.image : null;
+    var autre = e.imgs[1 - e.montree.rang];
+    var charger = function (i, nom) {
+      if (i.nom === nom) return;
+      i.nom = nom; i.pret = false;
+      i.el.src = uri(e, nom);
+      var promesse = i.el.decode().catch(function () {}).then(function () {
+        if (i.nom !== nom) return;
+        i.pret = true;
+        if (!M.enCapture || !M.enCapture()) poserFilm(e, M.tempsVuPar ? M.tempsVuPar(e.el, M.temps()) : M.temps());
+      });
+      e.attentes.push(promesse);
+    };
+    if (base && e.montree.nom !== base) {
+      if (autre.nom === base && autre.pret) { e.montree = autre; autre = e.imgs[1 - e.montree.rang]; } else if (!e.montree.nom) charger(e.montree, base); else charger(autre, base);
+    }
+    if (dessus && e.montree.nom === base) charger(autre, dessus);
+    e.imgs.forEach(function (i) {
+      var o = i === e.montree ? (i.pret ? 1 : 0) : (dessus && i.nom === dessus && i.pret ? st.fondu.opacite : 0);
+      ecrire(e, 'f' + i.rang, i.el, 'opacity', String(o));
+      ecrire(e, 'f' + i.rang, i.el, 'zIndex', i === e.montree ? '0' : '1');
+    });
+    // Préchargement des 2 s suivantes (lecture seulement : une capture attend chaque image à son instant).
+    if (!M.enCapture || !M.enCapture()) {
+      M.film.imagesEntre(e.planFilm, te - e.fenetre.debut, PRECHARGE).forEach(function (nom) {
+        if (e.precharges[nom]) return;
+        var im = new Image();
+        im.src = uri(e, nom);
+        e.precharges[nom] = im;
+        if (im.decode) im.decode().catch(function () {});
+      });
+    }
   }
 
   function rendreEcran(e, t) {
     if (!e.mesure) mesurer(e);
     if (!e.mesure) return;
     var te = M.tempsVuPar ? M.tempsVuPar(e.el, t) : t;
-    var X = function (x) { return arrondi(x / e.page[0] * 100) + '%'; };
-    var Y = function (y) { return arrondi(y / e.page[1] * 100) + '%'; };
+    if (e.planFilm) poserFilm(e, te);
+    // Caméra du plan (zooms) : le pointeur et les cercles sont dans un calque au-dessus du plan, placés et dimensionnés par la
+    // mise en page (--pm-z, --pm-k) et non par une transformation : Chrome garde sinon l'échelle de dessin d'un calque déjà
+    // zoomé, et la même image dépendrait de celle d'avant.
+    var cam = e.clauses.length ? M.etatCamera(e.clauses, te) : null;
+    var z = cam ? cam.zoom : 1;
+    var X = function (x) { return arrondi(cam ? 50 + z * (x / e.page[0] * 100 - cam.x) : x / e.page[0] * 100) + '%'; };
+    var Y = function (y) { return arrondi(cam ? 50 + z * (y / e.page[1] * 100 - cam.y) : y / e.page[1] * 100) + '%'; };
+    ecrire(e, 'z', calqueDe(e), '--pm-z', String(arrondi(z)));
     var st = M.pointeur.etatPointeur(e.planGestes, te, { doigt: e.forme === 'doigt' });
     if (e.pointeur) {
       ecrire(e, 'p', e.pointeur, 'left', X(st.x));
       ecrire(e, 'p', e.pointeur, 'top', Y(st.y));
-      ecrire(e, 'p', e.pointeur, 'scale', String(st.echelle));
+      ecrire(e, 'p', e.pointeur, '--pm-k', String(st.echelle));
       ecrire(e, 'p', e.pointeur, 'opacity', String(st.opacite));
     }
     var n = e.forme === 'aucun' ? 0 : st.ondes.length;
@@ -236,7 +360,7 @@
       if (w && i < n) {
         ecrire(e, 'o' + i, o, 'left', X(w.x));
         ecrire(e, 'o' + i, o, 'top', Y(w.y));
-        ecrire(e, 'o' + i, o, 'scale', String(w.echelle));
+        ecrire(e, 'o' + i, o, '--pm-k', String(w.echelle));
       }
     }
     // Appui de l'élément visé (#081) : seulement pendant l'appui ; sinon sa propre échelle.
@@ -263,10 +387,7 @@
     });
     ecrire(e, 'e', e.el, '--pm-assombri', assombrit ? '1' : '0');
     if (e.el.classList.contains('pm-ecran-assombrit') !== assombrit) e.el.classList.toggle('pm-ecran-assombrit', assombrit);
-    if (e.clauses.length) {
-      var cam = M.styleCamera(M.etatCamera(e.clauses, te));
-      ecrire(e, 'c', e.plan, 'transform', cam.transform);
-    }
+    if (cam) ecrire(e, 'c', e.plan, 'transform', M.styleCamera(cam).transform);
   }
 
   function rendre(t) {
@@ -290,6 +411,25 @@
     });
     if (!ecrans.length) return;
     M.surRendu(rendre);
+    // M.seek attend les images du film en cours de décodage, puis les pose : la même image à chaque rendu de cet instant.
+    if (ecrans.some(function (e) { return e.film; })) {
+      var reposer = function (t) {
+        ecrans.forEach(function (e) { if (e.planFilm && e.sec.style.display !== 'none') poserFilm(e, M.tempsVuPar ? M.tempsVuPar(e.el, t) : t); });
+      };
+      var vider = function () {
+        var a = [];
+        ecrans.forEach(function (e) { if (e.film) { a = a.concat(e.attentes); e.attentes = []; } });
+        return a;
+      };
+      M.surSeek(function (t) {
+        var attendre = function (passe) {
+          var a = vider();
+          if (!a.length || passe > 3) return null;
+          return Promise.all(a).then(function () { reposer(t); return attendre(passe + 1); });
+        };
+        return attendre(0);
+      });
+    }
     // Polices et images chargées : les cibles sont mesurées de nouveau, puis l'image courante est refaite.
     M.pret.then(function () {
       ecrans.forEach(function (e) { e.mesure = false; e.ecrit = {}; });
@@ -305,7 +445,13 @@
       if (scenes && scenes.indexOf(e.scene) < 0) return;
       if (!e.mesure) mesurer(e);
       if (!e.mesure) return;
+      e.ecartsFilm.forEach(function (c) {
+        constats.push({ regle: 'etapes-trop-rapprochees', scene: e.scene, element: 'etape:' + c.a + '|etape:' + c.b, instant: 0,
+          valeur: { a: c.a, b: c.b, ecart: c.ecart, minimum: c.minimum, film: true } });
+      });
       e.planGestes.ecarts.forEach(function (c) {
+        var ga = e.planGestes.gestes[c.a - 1], gb = e.planGestes.gestes[c.b - 1];
+        if (ga && gb && ga.cle && gb.cle && ga.cle.film && gb.cle.film) return;
         constats.push({ regle: 'etapes-trop-rapprochees', scene: e.scene, element: c.a + '|' + c.b, instant: arrondi(e.planGestes.gestes[c.b - 1].instant),
           valeur: { a: c.a, b: c.b, ecart: c.ecart, minimum: c.minimum } });
       });

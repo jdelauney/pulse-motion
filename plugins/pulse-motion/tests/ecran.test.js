@@ -259,8 +259,10 @@ test('cadre : ecran.css sans filter:url, mix-blend-mode ni backdrop-filter, sans
   assert.match(SANS_COMMENTAIRES, /rgb\(0 0 0 \/ var\(--pm-projecteur, 0\.7\)\), inset 0 0 calc\(12 \* var\(--pm-px\)\) calc\(6 \* var\(--pm-px\)\)/);
   assert.match(SANS_COMMENTAIRES, /\.pm-projecteur \{[^}]*border-radius: calc\(10 \* var\(--pm-px\)\)/);
   assert.match(SANS_COMMENTAIRES, /\.pm-anneau \{[^}]*border: calc\(3 \* var\(--pm-px\)\) solid var\(--c-accent/);
-  assert.match(SANS_COMMENTAIRES, /\.pm-onde \{[^}]*width: calc\(44 \* var\(--pm-px\)\)[^}]*box-shadow: 0 0 0 calc\(2 \* var\(--pm-px\)\) #ffffff/);
-  assert.match(SANS_COMMENTAIRES, /\.pm-pointeur \{[^}]*height: calc\(30 \* var\(--pm-px\)\)[^}]*drop-shadow\(0 calc\(2 \* var\(--pm-px\)\) calc\(2 \* var\(--pm-px\)\) rgb\(0 0 0 \/ 0\.48\)\)/);
+  // Plan 2 : pointeur et cercle dans un calque, dimensionnés par --pm-t (un pixel de la page × zoom × enfoncement).
+  assert.match(SANS_COMMENTAIRES, /\.pm-ecran-calque \{[^}]*--pm-u: calc\(var\(--pm-px\) \* var\(--pm-z, 1\)\)/);
+  assert.match(SANS_COMMENTAIRES, /\.pm-onde \{[^}]*width: calc\(44 \* var\(--pm-t\)\)[^}]*box-shadow: 0 0 0 calc\(2 \* var\(--pm-t\)\) #ffffff/);
+  assert.match(SANS_COMMENTAIRES, /\.pm-pointeur \{[^}]*height: calc\(30 \* var\(--pm-t\)\)[^}]*drop-shadow\(0 calc\(2 \* var\(--pm-t\)\) calc\(2 \* var\(--pm-t\)\) rgb\(0 0 0 \/ 0\.48\)\)/);
   assert.match(SANS_COMMENTAIRES, /\[data-cadre="presentation"\] \{[^}]*padding: 3\.7cqh; border-radius: 1\.1cqh;/);
   assert.match(SANS_COMMENTAIRES, /perspective\(111cqh\) rotateX\(35deg\)/);
 });
@@ -279,7 +281,7 @@ test('assembler : une vidéo sans écran garde la même page à la liste MOTEUR 
   assert.deepEqual(b.groupes, ['tronc', 'ecran']);
   assert.match(b.html, /M\.demarrerEcrans\(\);\n<\/script>/);
   assert.match(b.html, /#pm-scene \.pm-ecran-surface \{/);
-  assert.deepEqual(GM.modulesDesGroupes(['tronc', 'ecran']).filter((m) => !GM.modulesDesGroupes(['tronc']).includes(m)), ['pointeur.js', 'ecran.js']);
+  assert.deepEqual(GM.modulesDesGroupes(['tronc', 'ecran']).filter((m) => !GM.modulesDesGroupes(['tronc']).includes(m)), ['pointeur.js', 'film.js', 'ecran.js']);
   // Un bloc seul (sans écran) : le CSS, pas le moteur.
   const dir3 = projet([['s', `<section data-scene="s">${lire('moteur', 'blocs', 'toast.html').replace('data-texte="message"', 'data-texte="titre"')}</section>`]]);
   const c = assembler1(dir3);
@@ -308,7 +310,8 @@ test('controler : ecran-invalide, pointeur-hors-ecran et suivre-desactive se dé
     [ECRAN('<i class="pm-projecteur" data-start="1"></i>'), 'ecran-invalide', /data-cible manquant/],
     [ECRAN('<i class="pm-projecteur" data-cible="etape:3" data-start="1"></i>'), 'ecran-invalide', /vise une étape d'un film/],
     [ECRAN('<i class="pm-clic" data-cible="milieu" data-start="1"></i>'), 'ecran-invalide', /illisible/],
-    ['<div class="pm-ecran" data-film="factures"></div>', 'ecran-invalide', /un film se tourne avec le tournage/],
+    // Plan 2 : un film se tourne ; un film absent du projet est film-introuvable.
+    ['<div class="pm-ecran" data-film="factures"></div>', 'film-introuvable', /le film « factures » n'existe pas/],
     [ECRAN('<i class="pm-clic" data-cible="104%,20%" data-start="1"></i>'), 'pointeur-hors-ecran', /sort de l'image/],
     [ECRAN('<i class="pm-projecteur" data-cible="80%,80%,30%,10%" data-start="1"></i>'), 'pointeur-hors-ecran', /sort de l'image/],
     [ECRAN('<i class="pm-clic" data-cible="#envoyer" data-start="1"></i>', ' data-film-camera="suivre" data-camera="zoom 1→1.1 0+4"'), 'suivre-desactive', /passe avant le suivi des gestes/],
@@ -320,8 +323,8 @@ test('controler : ecran-invalide, pointeur-hors-ecran et suivre-desactive se dé
     const crochet = controlerScene({ projet: dir, deroule, scene: deroule.scenes[0], html: section }).filter((p) => p.regle === regle);
     assert.equal(crochet.length, 1, `${regle} : ${html.slice(0, 80)}`);
     assert.match(crochet[0].message, message);
-    assert.equal(crochet[0].gravite, regle === 'ecran-invalide' ? 'erreur' : 'alerte');
-    const a = E.preparerEcrans(section, { scene: 's' }).erreurs.filter((p) => p.regle === regle);
+    assert.equal(crochet[0].gravite, ['ecran-invalide', 'film-introuvable'].includes(regle) ? 'erreur' : 'alerte');
+    const a = E.preparerEcrans(section, { scene: 's', projet: dir }).erreurs.filter((p) => p.regle === regle);
     assert.deepEqual(a, crochet);
   }
   // Une scène correcte : aucun problème d'écran.

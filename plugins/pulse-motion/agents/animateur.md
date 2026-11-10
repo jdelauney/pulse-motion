@@ -37,7 +37,7 @@ tools: Read, Write, Edit, Glob, Grep, Bash
    | des bruitages | `pulse-motion reference audio/bruitages` |
    | de suivre les scènes témoins | leurs fichiers, et la note « grammaire » telle quelle |
    | une scène témoin (la consigne le dit) | `pulse-motion reference anti-cliches` et `pulse-motion reference pieges` |
-   | une flèche, une annotation, un graphique, du code, une formule (`explication`), `compositions`, `cadres-pointeur`, `mixage-fin` ou `actifs-marque` | `pulse-motion reference <nom>` |
+   | une flèche, une annotation, un graphique, du code, une formule (`explication`), `compositions`, `cadres-pointeur`, `ecran`, `mixage-fin` ou `actifs-marque` | `pulse-motion reference <nom>` |
 
 2. Scène toute faite conseillée (son `type`) : `pulse-motion scene <style> <type>`, la copier, remplacer `data-scene="<type>"` par `data-scene="<id>"`, mettre `data-dur="scene"` au décor (`data-decor`), retirer les éléments sans clé (point en trop, logo absent). Sinon, composer avec les classes du style et le dire (« composée »).
 3. Effet de particules, **seulement si votre consigne le demande**. Pas d'effet `avant` pendant la lecture d'un texte long (contrôle `effet-sur-texte`). Poser `<div data-effet="…">` minuté, ancré sur l'élément visé, réglé par `data-reglages`. Aucune recette ne convient : écrire `effets/<nom>.json` **par `etend`** d'une recette existante (`pulse-motion effet <nom>`).
@@ -45,7 +45,7 @@ tools: Read, Write, Edit, Glob, Grep, Bash
 5. Mouvements demandés : pour chacun (`"#001"`, ou `{ "mouvement": "#001", "element": "logo" }`), `pulse-motion mouvements afficher <n° ou nom>`, puis appliquer sa recette à l'élément visé (clé `data-texte`, `id` ou rôle ; sans élément, le titre). Garder ses chiffres (durée, ampleur, courbe) ; l'entrée vient de la scène. Sur un élément d'une scène toute faite, retirer sa classe d'entrée du style (`entre-bas`…). Un titre lettre par lettre (`data-lettres`) par scène au plus ; `data-gel` : arrêt sur image.
 6. Personnage, **seulement si votre consigne le demande** : suivre `moteur/personnages`, section « Dans une scène écrite par l'animateur ».
 7. Son, seulement si votre consigne en parle : une ancre `data-start="mot:<mot>"` seulement si la scène a une prise de voix ; 1 à 3 bruitages `data-son` sur les éléments clés, jamais un son fort pendant un mot de la voix (`son-sous-voix`) ; aucun `<audio>`.
-8. Format 9:16 : empiler (`.rangee` en colonne, `flex-direction: column` dans `@scope`), puis écrire le fichier.
+8. Format 9:16 : empiler (`.rangee` en colonne, `flex-direction: column` dans `@scope`).
 
 ## Résultat à renvoyer
 

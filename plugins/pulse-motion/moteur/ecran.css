@@ -67,7 +67,7 @@
 #pm-scene .pm-ecran[data-cadre="presentation"] > .pm-ecran-surface { border-radius: 1.1cqh; box-shadow: 0 1.2cqh 3.7cqh rgb(0 0 0 / 0.5); }
 
 /* ---- Marques : instants des gestes et des zooms (rien à voir) ; mises en valeur dessinées ---- */
-#pm-scene .pm-clic, #pm-scene .pm-survol, #pm-scene .pm-double-clic, #pm-scene .pm-zoom, #pm-scene .pm-son-clic { display: none !important; }
+#pm-scene .pm-clic, #pm-scene .pm-survol, #pm-scene .pm-double-clic, #pm-scene .pm-zoom, #pm-scene .pm-son-clic, #pm-scene .pm-etape { display: none !important; }
 /* Projecteur : tout s'assombrit à 70 % sauf la cible (marge de 12 px, coins de 10 px, bord adouci de 12 px). */
 #pm-scene .pm-projecteur {
   position: absolute; display: block; z-index: 2; pointer-events: none; opacity: var(--pm-o, 0);
@@ -85,24 +85,29 @@
   box-shadow: 0 0 0 400cqh color-mix(in srgb, var(--c-fond, #fff) 70%, transparent);
 }
 
-/* ---- Pointeur (30 px de la page) et cercle de localisation (rayon 22 px, filet blanc de 2 px, anneau d'accent) ---- */
+/* ---- Pointeur (30 px de la page) et cercle de localisation (rayon 22 px, filet blanc de 2 px, anneau d'accent) ----
+   Dans un calque au-dessus du plan, à la taille de la surface : leur taille suit le zoom (--pm-z) et l'enfoncement
+   (--pm-k) par la mise en page, jamais par une transformation (même image, quelle que soit l'image d'avant). */
+#pm-scene .pm-ecran-calque { position: absolute; inset: 0; z-index: 3; pointer-events: none; --pm-u: calc(var(--pm-px) * var(--pm-z, 1)); }
 #pm-scene .pm-pointeur {
-  position: absolute; left: 0; top: 0; z-index: 3; pointer-events: none; transform-origin: 0 0;
-  width: calc(20 * var(--pm-px)); height: calc(30 * var(--pm-px));
-  filter: drop-shadow(0 calc(2 * var(--pm-px)) calc(2 * var(--pm-px)) rgb(0 0 0 / 0.48));
+  --pm-t: calc(var(--pm-u) * var(--pm-k, 1));
+  position: absolute; left: 0; top: 0; z-index: 3; pointer-events: none;
+  width: calc(20 * var(--pm-t)); height: calc(30 * var(--pm-t));
+  filter: drop-shadow(0 calc(2 * var(--pm-t)) calc(2 * var(--pm-t)) rgb(0 0 0 / 0.48));
 }
 #pm-scene .pm-pointeur > svg { display: block; width: 100%; height: 100%; overflow: visible; }
 #pm-scene .pm-pointeur path { fill: #ffffff; stroke: #161616; stroke-width: 1.1; stroke-linejoin: round; }
-#pm-scene .pm-pointeur[data-forme="main"] { width: calc(25 * var(--pm-px)); translate: -40% 0; transform-origin: 40% 0; }
+#pm-scene .pm-pointeur[data-forme="main"] { width: calc(25 * var(--pm-t)); translate: -40% 0; }
 #pm-scene .pm-pointeur[data-forme="doigt"] {
-  width: calc(44 * var(--pm-px)); height: calc(44 * var(--pm-px)); translate: -50% -50%; transform-origin: 50% 50%; border-radius: 50%;
-  background: color-mix(in srgb, var(--c-texte, #111) 35%, transparent); box-shadow: 0 0 0 calc(2 * var(--pm-px)) rgb(255 255 255 / 0.6); filter: none;
+  width: calc(44 * var(--pm-t)); height: calc(44 * var(--pm-t)); translate: -50% -50%; border-radius: 50%;
+  background: color-mix(in srgb, var(--c-texte, #111) 35%, transparent); box-shadow: 0 0 0 calc(2 * var(--pm-t)) rgb(255 255 255 / 0.6); filter: none;
 }
 #pm-scene .pm-onde {
-  position: absolute; z-index: 3; display: block; pointer-events: none; width: calc(44 * var(--pm-px)); height: calc(44 * var(--pm-px));
+  --pm-t: calc(var(--pm-u) * var(--pm-k, 1));
+  position: absolute; z-index: 3; display: block; pointer-events: none; width: calc(44 * var(--pm-t)); height: calc(44 * var(--pm-t));
   translate: -50% -50%; border-radius: 50%; opacity: 0;
-  border: calc(3 * var(--pm-px)) solid var(--c-accent, #f5a623);
-  box-shadow: 0 0 0 calc(2 * var(--pm-px)) #ffffff, inset 0 0 0 calc(2 * var(--pm-px)) #ffffff;
+  border: calc(3 * var(--pm-t)) solid var(--c-accent, #f5a623);
+  box-shadow: 0 0 0 calc(2 * var(--pm-t)) #ffffff, inset 0 0 0 calc(2 * var(--pm-t)) #ffffff;
 }
 
 /* ---- Saisie par paquets (data-lettres="saisie") : chaque lettre à son délai, curseur de saisie qui clignote à 1 Hz ---- */

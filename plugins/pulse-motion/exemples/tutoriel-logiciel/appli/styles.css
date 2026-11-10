@@ -1,0 +1,48 @@
+/* Facturo – application de démonstration de Pulse Motion (spec S6, 5.17) : fausse, locale, sans réseau. */
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { font: 15px/1.45 system-ui, "Segoe UI", Roboto, sans-serif; color: #1d2433; background: #f3f5f9; }
+@media (prefers-color-scheme: dark) { body { color: #e7eaf0; background: #161a22; } .carte, .barre, dialog, table { background: #202634 !important; } }
+a { color: #2457d6; }
+.barre { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 22px; height: 58px; padding: 0 28px; background: #fff; box-shadow: 0 1px 0 #dde2ea; }
+.logo { font-weight: 800; font-size: 19px; color: #2457d6; letter-spacing: -0.01em; }
+.menu { display: flex; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.menu a { display: block; padding: 8px 14px; border-radius: 8px; color: inherit; text-decoration: none; font-weight: 600; }
+.menu a[aria-current="page"], .menu a:hover { background: #e9effc; color: #2457d6; }
+.compte { margin-left: auto; color: #5b6475; font-size: 14px; }
+main { max-width: 1120px; margin: 0 auto; padding: 28px; }
+h1 { margin: 0 0 18px; font-size: 26px; }
+.entete { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.entete h1 { margin: 0; flex: 1; }
+.carte { padding: 22px 24px; border-radius: 12px; background: #fff; box-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 0 0 1px #e3e7ee; }
+button, .bouton { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border: 0; border-radius: 9px; font-family: inherit; font-size: 15px; font-weight: 600; line-height: 1; cursor: pointer; text-decoration: none; transition: background 0.15s, transform 0.1s; }
+.primaire { background: #2457d6; color: #fff; }
+.primaire:hover { background: #1b47b5; }
+.secondaire { background: #e9effc; color: #2457d6; }
+.secondaire:hover { background: #d8e3fb; }
+button:active { transform: scale(0.97); }
+table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 0 0 1px #e3e7ee; }
+th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #edf0f4; }
+th { font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: #5b6475; background: #f8f9fb; }
+td.montant { text-align: right; font-variant-numeric: tabular-nums; }
+.etat { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 13px; font-weight: 600; background: #e6f6ec; color: #1f7a45; }
+.etat.attente { background: #fff3dc; color: #9a6200; }
+.champ { display: grid; gap: 6px; margin-bottom: 16px; }
+.champ label { font-weight: 600; font-size: 14px; }
+input[type="text"], input[type="email"], input[type="password"], input[type="number"], select { width: 100%; padding: 10px 12px; border: 1px solid #c9d0dc; border-radius: 8px; font: inherit; background: #fff; color: inherit; }
+input:focus, select:focus { outline: 3px solid #b9cdf6; border-color: #2457d6; }
+.grille { display: grid; grid-template-columns: 1fr 1fr; gap: 0 22px; }
+.coche { display: flex; gap: 10px; align-items: center; margin: 6px 0 20px; }
+.actions { display: flex; gap: 12px; justify-content: flex-end; }
+.total { display: flex; justify-content: space-between; margin-top: 22px; padding: 18px 24px; border-radius: 12px; background: #1d2433; color: #fff; font-size: 18px; font-weight: 700; }
+.coordonnees { margin-top: 22px; color: #5b6475; font-size: 14px; }
+.toast { position: fixed; left: 50%; bottom: 28px; translate: -50% 0; padding: 12px 22px; border-radius: 99px; background: #1f7a45; color: #fff; font-weight: 600; animation: monte 0.3s ease-out; }
+@keyframes monte { from { opacity: 0; translate: -50% 12px; } }
+.attente-roue { display: inline-block; width: 16px; height: 16px; border: 3px solid #c9d0dc; border-top-color: #2457d6; border-radius: 50%; animation: tourne 0.8s linear infinite; vertical-align: -3px; }
+@keyframes tourne { to { rotate: 1turn; } }
+dialog { width: min(520px, 90vw); padding: 24px; border: 0; border-radius: 14px; box-shadow: 0 20px 60px rgb(0 0 0 / 0.3); color: inherit; }
+dialog::backdrop { background: rgb(20 26 40 / 0.45); }
+dialog h2 { margin: 0 0 14px; font-size: 20px; }
+.connexion { display: grid; place-items: center; min-height: 100%; }
+.connexion .carte { width: min(420px, 92vw); }
+.note { color: #5b6475; font-size: 14px; }

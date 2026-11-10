@@ -80,6 +80,30 @@ Deux zooms dont le second commence moins de 1,5 s après la fin du premier ne re
 | `carte-graphique` | Une carte de tableau de bord : titre, chiffre clé et graphique qui pousse (`data-graphique`, données dans le déroulé : `pulse-motion reference explication`) |
 | `carte-organigramme` | Une carte d'organigramme : un responsable et trois équipes reliées par des flèches qui se tracent (`data-fleche`) |
 
+## Un film
+
+Une application filmée par `/pulse-motion:filmer` se montre dans le même écran, sans `<img>` : le moteur pose les images de la prise choisie, une par instant.
+
+```html
+<div class="pm-ecran pm-m-monte" data-film="factures" data-etapes="2-4" data-film-camera="suivre" data-start="0">
+  <i class="pm-etape" data-etape="2" data-start="mot:nouvelle"></i>
+  <i class="pm-zoom" data-cible="etape:3" data-start="4.2" data-dur="2.4"></i>
+  <i class="pm-projecteur" data-cible="etape:4" data-start="7"></i>
+</div>
+```
+
+| Attribut ou marque | Effet |
+|---|---|
+| `data-film` | Le nom du film (`films/<nom>/`, prise choisie) ; sa taille de page, ses couleurs de bords (cadre `presentation`) et son appareil (cadre `telephone` ou `tablette` par défaut) viennent du tournage |
+| `data-etapes` | Les étapes montrées (`2-4`, `1,3`) ; sans lui, le `film.etapes` de la scène du déroulé, sinon toutes |
+| `<i class="pm-etape" data-etape="N" data-start="…">` | L'instant de l'action de l'étape N (le clic, la première lettre tapée) ; toutes les ancres marchent (`mot:enregistrez`) |
+| `data-cible="etape:N"` | La cible relevée au tournage, pour un zoom, un projecteur, un anneau |
+| `<div class="pm-bloc pm-bloc-liste" data-film-etape="N" data-choix="1">` | Bloc `liste` rempli par les options relevées et l'option choisie (mise en valeur à `data-choix`) ; `pm-bloc-dialogue` : le message de la boîte de dialogue |
+
+- Sans marque, une étape se place après la précédente et le temps libre de la scène se partage entre les états calmes. Deux actions sont séparées d'au moins la réaction de la première, 0,35 s, le trajet du pointeur et 0,2 s (`etapes-trop-rapprochees`) ; le déroulé vérifie que la scène dure assez.
+- Le pointeur va seul vers chaque cible ; chaque étape de clic reçoit le bruitage `clic` (`data-son="aucun"` sur sa marque : sans).
+- `data-vitesse` sur l'écran accélère la réaction (« accélère la saisie » : `data-vitesse="3.1+2 x2"`) ; `data-gel` la fige.
+
 ## À venir
 
-Filmer une vraie application (parcours décrit en phrases, prise figée, flou des données personnelles), importer une vidéo de l'écran : spec S6, plans 2 à 4.
+Les sites en ligne, la connexion à un compte et le flou des données personnelles (spec S6, plan 3), l'import d'une vidéo de l'écran (plan 4).

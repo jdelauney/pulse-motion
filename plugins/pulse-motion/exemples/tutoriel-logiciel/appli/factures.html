@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Facturo – factures</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="barre">
+  <span class="logo">Facturo</span>
+  <nav><ul class="menu">
+    <li><a href="factures.html" aria-current="page">Factures</a></li>
+    <li><a href="nouvelle.html">Créer</a></li>
+    <li><a href="aide.html" target="_blank">Aide</a></li>
+  </ul></nav>
+  <span class="compte">Camille Durand</span>
+</header>
+<main>
+  <div class="entete">
+    <h1>Factures</h1>
+    <span id="etat-liste" class="note"></span>
+    <button type="button" class="secondaire" id="actualiser">Actualiser</button>
+    <a class="bouton primaire" href="nouvelle.html">Nouvelle Facture</a>
+  </div>
+  <table>
+    <thead><tr><th>Numéro</th><th>Client</th><th>Date</th><th>Montant</th><th>État</th><th></th></tr></thead>
+    <tbody>
+      <tr><td>F-2041</td><td>Dupont SARL</td><td>01/10/2026</td><td class="montant">180,00 €</td><td><span class="etat">Payée</span></td><td><button type="button" class="secondaire">Modifier</button></td></tr>
+      <tr><td>F-2040</td><td>Martin et fils</td><td>02/10/2026</td><td class="montant">899,37 €</td><td><span class="etat">Payée</span></td><td><button type="button" class="secondaire">Modifier</button></td></tr>
+      <tr><td>F-2039</td><td>Boulangerie Lefèvre</td><td>03/10/2026</td><td class="montant">1618,74 €</td><td><span class="etat attente">En attente</span></td><td><button type="button" class="secondaire">Modifier</button></td></tr>
+      <tr><td>F-2038</td><td>Atelier Moreau</td><td>04/10/2026</td><td class="montant">2337,11 €</td><td><span class="etat">Payée</span></td><td><button type="button" class="secondaire">Modifier</button></td></tr>
+      <tr><td>F-2037</td><td>Garage Petit</td><td>05/10/2026</td><td class="montant">656,48 €</td><td><span class="etat">Payée</span></td><td><button type="button" class="secondaire">Modifier</button></td></tr>
+      <tr><td>F-2036</td><td>Cabinet Bernard</td><td>06/10/2026</td><td class="montant">1375,85 €</td><td><span class="etat">Payée</span></td><td><button type="button" class="secondaire">Modifier</button></td></tr>
+      <tr><td>F-2035</td><td>Ferme des Tilleuls</td><td>07/10/2026</td><td class="montant">2094,22 €</td><td><span class="etat">Payée</span></td><td><button type="button" class="secondaire">Modifier</button></td></tr>
+      <tr><td>F-2034</td><td>Librairie Roux</td><td>08/10/2026</td><td class="montant">413,59 €</td><td><span class="etat attente">En attente</span></td><td><button type="button" class="secondaire">Modifier</button></td></tr>
+      <tr><td>F-2033</td><td>Studio Fournier</td><td>09/10/2026</td><td class="montant">1132,96 €</td><td><span class="etat">Payée</span></td><td><button type="button" class="secondaire">Modifier</button></td></tr>
+      <tr><td>F-2032</td><td>Pharmacie Girard</td><td>10/10/2026</td><td class="montant">1851,33 €</td><td><span class="etat">Payée</span></td><td><button type="button" class="secondaire">Modifier</button></td></tr>
+      <tr><td>F-2031</td><td>Transports Bonnet</td><td>11/10/2026</td><td class="montant">2570,70 €</td><td><span class="etat">Payée</span></td><td><button type="button" class="secondaire">Modifier</button></td></tr>
+      <tr><td>F-2030</td><td>Menuiserie Lambert</td><td>12/10/2026</td><td class="montant">889,07 €</td><td><span class="etat">Payée</span></td><td><button type="button" class="secondaire">Modifier</button></td></tr>
+      <tr><td>F-2029</td><td>Hôtel du Port</td><td>13/10/2026</td><td class="montant">1608,44 €</td><td><span class="etat attente">En attente</span></td><td><button type="button" class="secondaire">Modifier</button></td></tr>
+      <tr><td>F-2028</td><td>Café de la Gare</td><td>14/10/2026</td><td class="montant">2327,81 €</td><td><span class="etat">Payée</span></td><td><button type="button" class="secondaire">Modifier</button></td></tr>
+      <tr><td>F-2027</td><td>Imprimerie Fontaine</td><td>15/10/2026</td><td class="montant">646,18 €</td><td><span class="etat">Payée</span></td><td><button type="button" class="secondaire">Modifier</button></td></tr>
+      <tr><td>F-2026</td><td>Jardins Chevalier</td><td>16/10/2026</td><td class="montant">1365,55 €</td><td><span class="etat">Payée</span></td><td><button type="button" class="secondaire">Modifier</button></td></tr>
+      <tr><td>F-2025</td><td>Optique Robin</td><td>17/10/2026</td><td class="montant">2084,92 €</td><td><span class="etat">Payée</span></td><td><button type="button" class="secondaire">Modifier</button></td></tr>
+      <tr><td>F-2024</td><td>Plomberie Masson</td><td>18/10/2026</td><td class="montant">403,29 €</td><td><span class="etat attente">En attente</span></td><td><button type="button" class="secondaire">Modifier</button></td></tr>
+      <tr><td>F-2023</td><td>Traiteur Blanc</td><td>19/10/2026</td><td class="montant">1122,66 €</td><td><span class="etat">Payée</span></td><td><button type="button" class="secondaire">Modifier</button></td></tr>
+      <tr><td>F-2022</td><td>École Mercier</td><td>20/10/2026</td><td class="montant">1841,03 €</td><td><span class="etat">Payée</span></td><td><button type="button" class="secondaire">Modifier</button></td></tr>
+      <tr><td>F-2021</td><td>Crèche Les Lutins</td><td>21/10/2026</td><td class="montant">2560,40 €</td><td><span class="etat">Payée</span></td><td><button type="button" class="secondaire">Modifier</button></td></tr>
+      <tr><td>F-2020</td><td>Fleurs Henry</td><td>22/10/2026</td><td class="montant">879,77 €</td><td><span class="etat">Payée</span></td><td><button type="button" class="secondaire">Modifier</button></td></tr>
+      <tr><td>F-2019</td><td>Atelier Rousseau</td><td>23/10/2026</td><td class="montant">1598,14 €</td><td><span class="etat attente">En attente</span></td><td><button type="button" class="secondaire">Modifier</button></td></tr>
+      <tr><td>F-2018</td><td>Épicerie Lucas</td><td>24/10/2026</td><td class="montant">2317,51 €</td><td><span class="etat">Payée</span></td><td><button type="button" class="secondaire">Modifier</button></td></tr>
+    </tbody>
+  </table>
+  <div class="total" id="total"><span>Total</span><span>34775,12 €</span></div>
+  <p class="coordonnees">Contact comptable : compta@facturo-demo.fr · IBAN FR76 3000 6000 0112 3456 7890 189</p>
+</main>
+<script src="app.js"></script>
+</body>
+</html>
