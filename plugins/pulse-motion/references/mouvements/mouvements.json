@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "source": "Noms, sens et idées de phrases inspirés de Motion Prompt (https://github.com/showheyohtaki/motion-prompt), MIT © 2026 Shohei Ohtaki ; traduits et adaptés au moteur Pulse Motion. Vie du décor (#069 à #080) : chiffres de rossark-motion-skill, MIT © 2026 rossark0, réécrits. Voir THIRD-PARTY-NOTICES.md.",
+  "source": "Noms, sens et idées de phrases inspirés de Motion Prompt (https://github.com/showheyohtaki/motion-prompt), MIT © 2026 Shohei Ohtaki ; traduits et adaptés au moteur Pulse Motion. Vie du décor (#069 à #080) et motifs #081, #082 : chiffres de rossark-motion-skill, MIT © 2026 rossark0 ; zoom continu, pulsation sur le temps et cercle d'inondation (#083, #086, #090) : take-one, MIT © 2026 Tal Siach ; défilement, échos, roue, avant/après, hélice et suivi retardé (#084, #085, #087, #088, #091, #093) : reanimate, MIT © 2026 Niaz Morshed ; idées et chiffres réécrits. Voir THIRD-PARTY-NOTICES.md.",
   "categories": [
     {
       "id": "entrees",
@@ -33,6 +33,10 @@
     {
       "id": "vie",
       "nom": "Vie du décor"
+    },
+    {
+      "id": "compositions",
+      "nom": "Compositions"
     }
   ],
   "mouvements": [
@@ -2919,6 +2923,571 @@
           }
         ],
         "note": "Ponctuelle : elle joue une fois. Tige et feuilles dans un groupe minuté de 1,6 s, pétales dans un groupe qui part à 1,2 s ; la plante entière porte ensuite #069 (pm-v-balance)."
+      }
+    },
+    {
+      "no": "081",
+      "slug": "appui",
+      "categorie": "valeur",
+      "nom": {
+        "fr": "Appui",
+        "metier": "Press"
+      },
+      "sens": "Le bouton s'enfonce d'un rien sous le doigt, puis revient",
+      "demande": "Fais un appui sur le bouton à 1 s, en 0,2 s.",
+      "quand": "Un bouton cliqué, une touche pressée, une carte choisie dans une interface montrée à l'écran.",
+      "motsCles": [
+        "appui",
+        "press",
+        "clic",
+        "bouton",
+        "touche",
+        "enfoncer"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<div class=\"pm-m-appui\" data-start=\"1\" style=\"padding: 2.5cqh 6cqh; border-radius: 2cqh; background: var(--c-primaire); color: var(--c-fond)\"><p data-texte=\"texte\"></p></div>",
+        "reglages": [
+          {
+            "nom": "--pm-dur",
+            "defaut": "0.22s",
+            "effet": "durée de l'appui (interface : de 0,1 à 0,16 s)"
+          },
+          {
+            "nom": "--pm-ampleur",
+            "defaut": "0.97",
+            "effet": "taille au plus enfoncé"
+          },
+          {
+            "nom": "--pm-courbe",
+            "defaut": "var(--ease-cubic-out)",
+            "effet": "courbe (var(--ease-<type>-<mode>))"
+          }
+        ],
+        "note": "Sur le bouton entier, pas sur le dessin ou le texte à l'intérieur. Le pointeur qui clique s'en sert."
+      }
+    },
+    {
+      "no": "082",
+      "slug": "trace-graphique",
+      "categorie": "valeur",
+      "nom": {
+        "fr": "Graphique qui se trace",
+        "metier": "Chart draw-on"
+      },
+      "sens": "Les barres d'un graphique montent l'une après l'autre depuis leur base, et le chiffre compte avec elles",
+      "demande": "Fais monter les 4 barres du graphique l'une après l'autre, 60 ms d'écart, puis compte jusqu'à 90.",
+      "quand": "Un graphique, un histogramme, une évolution chiffrée : l'image finale montre les données.",
+      "motsCles": [
+        "graphique",
+        "chart",
+        "barres",
+        "histogramme",
+        "donnees",
+        "evolution",
+        "courbe"
+      ],
+      "recette": {
+        "type": "combinaison",
+        "exemple": "<div data-start=\"0.3\" data-dur=\"1.5\" style=\"display: flex; align-items: flex-end; gap: 3cqh; height: 36cqh; border-bottom: 0.5cqh solid var(--c-texte)\">\n  <div class=\"pm-m-barre\" style=\"--i: 0; width: 8cqh; height: 40%; background: var(--c-primaire)\"></div>\n  <div class=\"pm-m-barre\" style=\"--i: 1; width: 8cqh; height: 65%; background: var(--c-primaire)\"></div>\n  <div class=\"pm-m-barre\" style=\"--i: 2; width: 8cqh; height: 50%; background: var(--c-primaire)\"></div>\n  <div class=\"pm-m-barre\" style=\"--i: 3; width: 8cqh; height: 90%; background: var(--c-accent)\"></div>\n</div>\n<p class=\"titre\" data-start=\"0.5\" data-dur=\"1.2\" data-tween=\"nombre 0→90 cubic-out\" aria-label=\"90\"></p>",
+        "reglages": [
+          {
+            "nom": "--i",
+            "defaut": "0, 1, 2…",
+            "effet": "rang de la barre"
+          },
+          {
+            "nom": "--pm-decalage",
+            "defaut": "60ms",
+            "effet": "écart entre deux barres (de 40 à 80 ms)"
+          },
+          {
+            "nom": "--pm-dur",
+            "defaut": "0.7s",
+            "effet": "durée de la montée d'une barre"
+          }
+        ],
+        "note": "Une courbe : #011 (tracé) sur son chemin ; les nombres : #021 (compteur) en cubic-out. Les hauteurs disent les vraies données."
+      }
+    },
+    {
+      "no": "083",
+      "slug": "cogne",
+      "categorie": "valeur",
+      "nom": {
+        "fr": "Pulsation sur le temps",
+        "metier": "Beat punch"
+      },
+      "sens": "L'élément bat sur chaque temps de la musique : un petit coup, qui retombe aussitôt",
+      "demande": "Fais battre le logo sur les temps de la musique, de 1,2 % ; plus fort sur chaque mesure.",
+      "quand": "Un logo, un titre ou un mot clé qui vit avec la musique, dans une vidéo rythmée.",
+      "motsCles": [
+        "pulsation",
+        "beat",
+        "punch",
+        "temps",
+        "musique",
+        "rythme",
+        "battre"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<div data-start=\"0\" data-dur=\"scene\">\n  <h2 class=\"pm-v-cogne\" data-texte=\"titre\"></h2>\n  <p class=\"pm-v-cogne\" data-texte=\"texte\" style=\"--pm-dur: calc(4 * var(--pm-temps, 0.5s)); --pm-ampleur: 0.03\"></p>\n</div>",
+        "reglages": [
+          {
+            "nom": "--pm-ampleur",
+            "defaut": "0.012",
+            "effet": "coup sur chaque temps (à la mesure : 0.03)"
+          },
+          {
+            "nom": "--pm-dur",
+            "defaut": "var(--pm-temps)",
+            "effet": "un temps de la musique ; à la mesure : calc(4 * var(--pm-temps))"
+          },
+          {
+            "nom": "data-start",
+            "defaut": "0",
+            "effet": "départ sur un temps (data-start=\"4t\" avec un tempo)"
+          },
+          {
+            "nom": "data-dur",
+            "defaut": "scene",
+            "effet": "sur l'élément ou son conteneur : la pulsation tient toute la scène"
+          }
+        ],
+        "note": "Demande un tempo dans le déroulé (musique) : sans lui, elle bat toutes les 0,5 s (alerte cogne-sans-tempo). Sur un élément intérieur, pas celui qui porte l'entrée."
+      }
+    },
+    {
+      "no": "084",
+      "slug": "suivi-retarde",
+      "categorie": "finition",
+      "nom": {
+        "fr": "Suivi retardé",
+        "metier": "Follow-through"
+      },
+      "sens": "Un second élément refait le mouvement du premier, un peu après et un peu moins fort",
+      "demande": "Fais suivre le sous-titre derrière le titre, 0,09 s après lui et moitié moins loin.",
+      "quand": "Un titre et son sous-titre, une carte et son ombre, un objet et ce qu'il entraîne : l'ensemble paraît souple.",
+      "motsCles": [
+        "suivi",
+        "follow",
+        "through",
+        "retard",
+        "suiveur",
+        "souple",
+        "traine"
+      ],
+      "recette": {
+        "type": "combinaison",
+        "exemple": "<h2 id=\"meneur\" class=\"pm-m-glisse-gauche\" data-texte=\"titre\" data-start=\"0.3\"></h2>\n<p class=\"pm-m-glisse-gauche\" data-texte=\"texte\" data-start=\"#meneur+0.09\" style=\"--pm-ampleur: 6\"></p>",
+        "reglages": [
+          {
+            "nom": "data-start",
+            "defaut": "#meneur+0.09",
+            "effet": "retard du suiveur, de 0,06 à 0,15 s"
+          },
+          {
+            "nom": "--pm-ampleur",
+            "defaut": "6",
+            "effet": "de 0,45 à 1 fois l'ampleur du meneur (10 pour un glissé)"
+          }
+        ],
+        "note": "Même mouvement pour les deux, suiveur plus tard et plus court. Les personnages le font seuls (avant-bras et tête après le corps)."
+      }
+    },
+    {
+      "no": "085",
+      "slug": "echo",
+      "categorie": "texte",
+      "nom": {
+        "fr": "Échos",
+        "metier": "Echo trail"
+      },
+      "sens": "Trois rémanences pâles suivent le texte qui arrive, puis se replient sur lui",
+      "demande": "Fais glisser le titre avec des échos derrière lui, repliés en 0,8 s.",
+      "quand": "Un titre qui entre vite, un mot qui doit laisser une trace : l'œil suit le chemin parcouru.",
+      "motsCles": [
+        "echos",
+        "echo",
+        "trail",
+        "remanence",
+        "onion",
+        "trainee"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<div class=\"pm-m-glisse-gauche\" data-start=\"0.3\">\n  <h2 class=\"pm-m-echo\" data-texte=\"titre\" data-start=\"0.3\"></h2>\n</div>",
+        "reglages": [
+          {
+            "nom": "--pm-ampleur",
+            "defaut": "1.2",
+            "effet": "écart entre deux échos, en % de la hauteur"
+          },
+          {
+            "nom": "--pm-dur",
+            "defaut": "0.8s",
+            "effet": "durée du repli"
+          },
+          {
+            "nom": "--pm-courbe",
+            "defaut": "var(--ease-quint-out)",
+            "effet": "courbe (var(--ease-<type>-<mode>))"
+          }
+        ],
+        "note": "L'entrée (#003) sur le conteneur, les échos sur le texte. Pas sur un texte en dégradé (#023)."
+      }
+    },
+    {
+      "no": "086",
+      "slug": "zoom-log",
+      "categorie": "camera",
+      "nom": {
+        "fr": "Zoom continu",
+        "metier": "Log zoom"
+      },
+      "sens": "La caméra plonge dans l'image à vitesse régulière : chaque doublement du zoom prend le même temps",
+      "demande": "Fais un zoom continu de 1 à 6 en 4 s, qui plonge régulièrement.",
+      "quand": "Un grand zoom (carte, détail d'une image, plongée dans un schéma) : un zoom ordinaire paraît lent puis fonce.",
+      "motsCles": [
+        "zoom",
+        "log",
+        "continu",
+        "plongee",
+        "regulier",
+        "detail"
+      ],
+      "recette": {
+        "type": "camera",
+        "exemple": "<div data-camera=\"zoom 1→6 0+4 log\"><div class=\"decor\" data-decor></div></div>\n<h2 data-texte=\"titre\" data-start=\"0.3\" style=\"position: relative\"></h2>",
+        "reglages": [
+          {
+            "nom": "zoom",
+            "defaut": "1→6",
+            "effet": "grossissement de départ et d'arrivée"
+          },
+          {
+            "nom": "début+durée",
+            "defaut": "0+4",
+            "effet": "quand et combien de temps"
+          },
+          {
+            "nom": "log",
+            "defaut": "log",
+            "effet": "après la plage, avant ou après la courbe : chaque doublement du zoom prend le même temps"
+          }
+        ],
+        "note": "Sans log, le zoom avance comme avant (linéaire)."
+      }
+    },
+    {
+      "no": "087",
+      "slug": "defile-logos",
+      "categorie": "compositions",
+      "nom": {
+        "fr": "Défilement de logos",
+        "metier": "Logo marquee"
+      },
+      "sens": "Une rangée de logos défile sans fin apparente, à vitesse constante, sans raccord visible",
+      "demande": "Fais défiler les logos de nos clients en bandeau, un tour en 20 s.",
+      "quand": "Les clients, partenaires ou financeurs d'un projet, en bandeau sous un titre.",
+      "motsCles": [
+        "defilement",
+        "marquee",
+        "logos",
+        "bandeau",
+        "clients",
+        "partenaires",
+        "carrousel"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<div data-start=\"0\" data-dur=\"scene\" style=\"width: 100%; overflow: hidden\">\n  <div class=\"pm-v-defile\">\n    <span style=\"display: block; width: 14cqh; height: 8cqh; border-radius: 2cqh; background: var(--c-primaire)\"></span>\n    <span style=\"display: block; width: 14cqh; height: 8cqh; border-radius: 2cqh; background: var(--c-accent)\"></span>\n    <span style=\"display: block; width: 14cqh; height: 8cqh; border-radius: 2cqh; background: color-mix(in srgb, var(--c-primaire) 55%, var(--c-fond))\"></span>\n    <span style=\"display: block; width: 14cqh; height: 8cqh; border-radius: 2cqh; background: color-mix(in srgb, var(--c-accent) 55%, var(--c-fond))\"></span>\n    <span style=\"display: block; width: 14cqh; height: 8cqh; border-radius: 2cqh; background: var(--c-primaire)\"></span>\n    <span style=\"display: block; width: 14cqh; height: 8cqh; border-radius: 2cqh; background: var(--c-accent)\"></span>\n    <span style=\"display: block; width: 14cqh; height: 8cqh; border-radius: 2cqh; background: color-mix(in srgb, var(--c-primaire) 55%, var(--c-fond))\"></span>\n    <span style=\"display: block; width: 14cqh; height: 8cqh; border-radius: 2cqh; background: color-mix(in srgb, var(--c-accent) 55%, var(--c-fond))\"></span>\n  </div>\n</div>",
+        "reglages": [
+          {
+            "nom": "--pm-dur",
+            "defaut": "20s",
+            "effet": "durée d'un tour (de 10 à 40 s)"
+          },
+          {
+            "nom": "--pm-ecart",
+            "defaut": "4cqh",
+            "effet": "espace après chaque logo"
+          },
+          {
+            "nom": "data-dur",
+            "defaut": "scene",
+            "effet": "sur la fenêtre (overflow: hidden) : le bandeau défile toute la scène"
+          }
+        ],
+        "note": "La piste contient deux fois la liste des logos, dans le même ordre : le raccord tombe pile à chaque tour."
+      }
+    },
+    {
+      "no": "088",
+      "slug": "avant-apres",
+      "categorie": "compositions",
+      "nom": {
+        "fr": "Avant/après balayé",
+        "metier": "Before-after wipe"
+      },
+      "sens": "Une ligne balaie l'image de gauche à droite et découvre l'« après » sur l'« avant »",
+      "demande": "Montre l'avant/après : la ligne balaie l'image en 1,2 s.",
+      "quand": "Une transformation : une pièce rénovée, un document corrigé, un tableau avant et après la formation.",
+      "motsCles": [
+        "avant",
+        "apres",
+        "before",
+        "after",
+        "wipe",
+        "comparaison",
+        "balayage"
+      ],
+      "recette": {
+        "type": "combinaison",
+        "exemple": "<div class=\"pm-m-avant-apres\" data-start=\"0.5\" data-dur=\"1.2\" data-tween=\"--pm-balai 0→100 cubic-inout\" style=\"width: 80cqh; height: 44cqh; border-radius: 2cqh\">\n  <div class=\"pm-avant\" style=\"display: grid; place-items: center; background: color-mix(in srgb, var(--c-texte) 12%, var(--c-fond))\"><p data-texte=\"titre\"></p></div>\n  <div class=\"pm-apres\" style=\"display: grid; place-items: center; background: var(--c-primaire); color: var(--c-fond)\"><p data-texte=\"texte\"></p></div>\n</div>",
+        "reglages": [
+          {
+            "nom": "data-dur",
+            "defaut": "1.2",
+            "effet": "durée du balayage"
+          },
+          {
+            "nom": "data-tween",
+            "defaut": "--pm-balai 0→100 cubic-inout",
+            "effet": "de 0 (tout « avant ») à 100 (tout « après ») ; 0→50 s'arrête au milieu"
+          }
+        ],
+        "note": "Deux enfants superposés, .pm-avant et .pm-apres (images, textes, étiquettes par data-texte) ; la ligne est à la couleur d'accent."
+      }
+    },
+    {
+      "no": "089",
+      "slug": "pastille",
+      "categorie": "compositions",
+      "nom": {
+        "fr": "Effondrement en pastille",
+        "metier": "Collapse to pill"
+      },
+      "sens": "Le bloc efface son contenu, se resserre en pastille et disparaît, et le logo surgit à sa place",
+      "demande": "Fais s'effondrer la carte en pastille en 0,7 s, puis fais surgir le logo.",
+      "quand": "Une fin de vidéo : le dernier message se resserre et laisse place au logo.",
+      "motsCles": [
+        "pastille",
+        "pill",
+        "collapse",
+        "effondrement",
+        "fin",
+        "logo",
+        "resserrer"
+      ],
+      "recette": {
+        "type": "combinaison",
+        "exemple": "<div style=\"display: grid; place-items: center\">\n  <div id=\"bloc\" class=\"pm-m-pastille\" data-start=\"1.2\" data-dur=\"0.7\" style=\"grid-area: 1 / 1; padding: 4cqh 8cqh; border-radius: 3cqh; background: var(--c-primaire); color: var(--c-fond)\"><h2 data-texte=\"titre\"></h2></div>\n  <p class=\"pm-m-pop\" data-texte=\"texte\" data-start=\"#bloc:fin-0.1\" style=\"grid-area: 1 / 1\"></p>\n</div>",
+        "reglages": [
+          {
+            "nom": "--pm-dur",
+            "defaut": "0.7s",
+            "effet": "durée de l'effondrement (data-dur du bloc : la même)"
+          },
+          {
+            "nom": "data-start",
+            "defaut": "#bloc:fin-0.1",
+            "effet": "le logo (#001) surgit juste avant la fin"
+          }
+        ],
+        "note": "Le bloc a un fond : il se recouvre de sa couleur (contenu effacé à 30 %), puis se resserre (à 55 %). Le logo au même endroit (grid-area: 1 / 1)."
+      }
+    },
+    {
+      "no": "090",
+      "slug": "inondation",
+      "categorie": "compositions",
+      "nom": {
+        "fr": "Cercle d'inondation",
+        "metier": "Flood circle"
+      },
+      "sens": "Un cercle de couleur part d'un point et couvre toute l'image en un éclair",
+      "demande": "Fais partir un cercle d'inondation depuis le bouton, à 80 % et 70 % de l'image, en 0,32 s.",
+      "quand": "Un passage vif vers la scène suivante, depuis l'endroit où l'on vient de cliquer ou de regarder.",
+      "motsCles": [
+        "inondation",
+        "flood",
+        "cercle",
+        "remplir",
+        "couvrir",
+        "passage"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<h2 data-texte=\"titre\" data-start=\"0.2\"></h2>\n<div class=\"pm-m-inonde\" data-decor data-start=\"1.5\" data-dur=\"0.32\" style=\"--pm-x: 80; --pm-y: 70\"></div>",
+        "reglages": [
+          {
+            "nom": "--pm-x",
+            "defaut": "50",
+            "effet": "point de départ, en % de la largeur"
+          },
+          {
+            "nom": "--pm-y",
+            "defaut": "50",
+            "effet": "point de départ, en % de la hauteur"
+          },
+          {
+            "nom": "--pm-dur",
+            "defaut": "0.32s",
+            "effet": "durée (de 0,3 à 0,35 s)"
+          },
+          {
+            "nom": "--pm-couleur",
+            "defaut": "var(--c-accent)",
+            "effet": "couleur du calque"
+          }
+        ],
+        "note": "Le calque couvre l'image jusqu'au coin le plus loin du point. La scène suivante entre en coupe, sur un fond de la même couleur."
+      }
+    },
+    {
+      "no": "091",
+      "slug": "roue",
+      "categorie": "compositions",
+      "nom": {
+        "fr": "Roue de sélection",
+        "metier": "Selection wheel"
+      },
+      "sens": "Une liste défile dans une fenêtre d'une ligne et s'arrête net sur le choix",
+      "demande": "Fais tourner la roue jusqu'au 5e choix en 1,4 s, sans rebond.",
+      "quand": "Un choix parmi plusieurs (un jour, une offre, un métier), une réponse qui tombe.",
+      "motsCles": [
+        "roue",
+        "wheel",
+        "selection",
+        "choix",
+        "liste",
+        "tambour",
+        "machine-a-sous"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<div data-start=\"0.4\" data-dur=\"1.4\" style=\"height: 8cqh; overflow: hidden; border-block: 0.4cqh solid var(--c-accent)\">\n  <div class=\"pm-m-roue\">\n    <div style=\"height: 8cqh; display: grid; place-items: center\"><span style=\"display: block; width: 30cqh; height: 4cqh; border-radius: 2cqh; background: color-mix(in srgb, var(--c-primaire) 18%, var(--c-fond))\"></span></div>\n    <div style=\"height: 8cqh; display: grid; place-items: center\"><span style=\"display: block; width: 30cqh; height: 4cqh; border-radius: 2cqh; background: color-mix(in srgb, var(--c-primaire) 34%, var(--c-fond))\"></span></div>\n    <div style=\"height: 8cqh; display: grid; place-items: center\"><span style=\"display: block; width: 30cqh; height: 4cqh; border-radius: 2cqh; background: color-mix(in srgb, var(--c-primaire) 50%, var(--c-fond))\"></span></div>\n    <div style=\"height: 8cqh; display: grid; place-items: center\"><span style=\"display: block; width: 30cqh; height: 4cqh; border-radius: 2cqh; background: color-mix(in srgb, var(--c-primaire) 66%, var(--c-fond))\"></span></div>\n    <div style=\"height: 8cqh; display: grid; place-items: center\"><span style=\"display: block; width: 30cqh; height: 4cqh; border-radius: 2cqh; background: color-mix(in srgb, var(--c-primaire) 82%, var(--c-fond))\"></span></div>\n    <div style=\"height: 8cqh; display: grid; place-items: center\"><span style=\"display: block; width: 30cqh; height: 4cqh; border-radius: 2cqh; background: color-mix(in srgb, var(--c-primaire) 98%, var(--c-fond))\"></span></div>\n  </div>\n</div>",
+        "reglages": [
+          {
+            "nom": "--pm-choix",
+            "defaut": "5",
+            "effet": "combien de lignes la liste monte (le choix : la 6e ligne)"
+          },
+          {
+            "nom": "--pm-pas",
+            "defaut": "8cqh",
+            "effet": "hauteur d'une ligne (celle de la fenêtre)"
+          },
+          {
+            "nom": "--pm-dur",
+            "defaut": "1.4s",
+            "effet": "durée"
+          }
+        ],
+        "note": "La fenêtre a la hauteur d'une ligne (overflow: hidden) ; chaque ligne mesure --pm-pas."
+      }
+    },
+    {
+      "no": "092",
+      "slug": "mur",
+      "categorie": "compositions",
+      "nom": {
+        "fr": "Mur de vignettes",
+        "metier": "Tile wall"
+      },
+      "sens": "Un mur de vignettes vu en biais apparaît en onde depuis un coin, puis la caméra va de l'une à l'autre",
+      "demande": "Fais apparaître le mur de 12 vignettes en onde, 60 ms entre deux, puis un gros plan sur l'une.",
+      "quand": "Des réalisations, des produits, des photos d'équipe : beaucoup d'images d'un coup, puis une en détail.",
+      "motsCles": [
+        "mur",
+        "wall",
+        "vignettes",
+        "tile",
+        "grille",
+        "galerie",
+        "onde"
+      ],
+      "recette": {
+        "type": "combinaison",
+        "exemple": "<div data-camera=\"zoom 1→1.6 1.6+1.2 quart-inout; x 50→62 1.6+1.2 quart-inout; y 50→42 1.6+1.2 quart-inout\" style=\"display: grid; place-items: center; position: absolute; inset: 0\">\n<div class=\"pm-m-mur\" data-start=\"0.2\" data-dur=\"1.4\" style=\"width: 90cqh\">\n  <div class=\"pm-m-mur-vignette\" style=\"--l: 0; --c: 0; height: 10cqh; border-radius: 1.5cqh; background: color-mix(in srgb, var(--c-primaire) 20%, var(--c-fond))\"></div>\n  <div class=\"pm-m-mur-vignette\" style=\"--l: 0; --c: 1; height: 10cqh; border-radius: 1.5cqh; background: color-mix(in srgb, var(--c-primaire) 35%, var(--c-fond))\"></div>\n  <div class=\"pm-m-mur-vignette\" style=\"--l: 0; --c: 2; height: 10cqh; border-radius: 1.5cqh; background: color-mix(in srgb, var(--c-primaire) 50%, var(--c-fond))\"></div>\n  <div class=\"pm-m-mur-vignette\" style=\"--l: 0; --c: 3; height: 10cqh; border-radius: 1.5cqh; background: color-mix(in srgb, var(--c-primaire) 65%, var(--c-fond))\"></div>\n  <div class=\"pm-m-mur-vignette\" style=\"--l: 1; --c: 0; height: 10cqh; border-radius: 1.5cqh; background: color-mix(in srgb, var(--c-primaire) 35%, var(--c-fond))\"></div>\n  <div class=\"pm-m-mur-vignette\" style=\"--l: 1; --c: 1; height: 10cqh; border-radius: 1.5cqh; background: color-mix(in srgb, var(--c-primaire) 50%, var(--c-fond))\"></div>\n  <div class=\"pm-m-mur-vignette\" style=\"--l: 1; --c: 2; height: 10cqh; border-radius: 1.5cqh; background: color-mix(in srgb, var(--c-primaire) 65%, var(--c-fond))\"></div>\n  <div class=\"pm-m-mur-vignette\" style=\"--l: 1; --c: 3; height: 10cqh; border-radius: 1.5cqh; background: color-mix(in srgb, var(--c-primaire) 20%, var(--c-fond))\"></div>\n  <div class=\"pm-m-mur-vignette\" style=\"--l: 2; --c: 0; height: 10cqh; border-radius: 1.5cqh; background: color-mix(in srgb, var(--c-primaire) 50%, var(--c-fond))\"></div>\n  <div class=\"pm-m-mur-vignette\" style=\"--l: 2; --c: 1; height: 10cqh; border-radius: 1.5cqh; background: color-mix(in srgb, var(--c-primaire) 65%, var(--c-fond))\"></div>\n  <div class=\"pm-m-mur-vignette\" style=\"--l: 2; --c: 2; height: 10cqh; border-radius: 1.5cqh; background: color-mix(in srgb, var(--c-primaire) 20%, var(--c-fond))\"></div>\n  <div class=\"pm-m-mur-vignette\" style=\"--l: 2; --c: 3; height: 10cqh; border-radius: 1.5cqh; background: color-mix(in srgb, var(--c-primaire) 35%, var(--c-fond))\"></div>\n</div>\n</div>",
+        "reglages": [
+          {
+            "nom": "--l, --c",
+            "defaut": "0, 1, 2…",
+            "effet": "rang et colonne de la vignette (l'onde part du coin 0, 0)"
+          },
+          {
+            "nom": "--pm-decalage",
+            "defaut": "60ms",
+            "effet": "écart d'une vignette à sa voisine"
+          },
+          {
+            "nom": "--pm-colonnes",
+            "defaut": "4",
+            "effet": "nombre de colonnes"
+          },
+          {
+            "nom": "data-camera",
+            "defaut": "zoom 1→1.6 1.6+1.2",
+            "effet": "gros plans successifs (#056), vers le centre de la vignette visée"
+          }
+        ],
+        "note": "Le mur reste fixe, vu en biais (18° et −6°) ; seules les vignettes apparaissent, puis la caméra bouge."
+      }
+    },
+    {
+      "no": "093",
+      "slug": "helice",
+      "categorie": "compositions",
+      "nom": {
+        "fr": "Hélice",
+        "metier": "Helix wall"
+      },
+      "sens": "Des vignettes enroulées en hélice tournent autour d'un axe vertical ; celles de dos sont cachées",
+      "demande": "Fais tourner l'hélice de 8 vignettes d'un tiers de tour en 6 s.",
+      "quand": "Une collection (produits, visages, réalisations) à montrer avec du relief, en ouverture ou en clôture.",
+      "motsCles": [
+        "helice",
+        "helix",
+        "spirale",
+        "vignettes",
+        "relief",
+        "tourner",
+        "carrousel"
+      ],
+      "recette": {
+        "type": "combinaison",
+        "exemple": "<div class=\"pm-m-helice\" data-start=\"0\" data-dur=\"6\" style=\"width: 100%; height: 70cqh; translate: 0 -10cqh\">\n  <div class=\"pm-m-helice-vignette\" style=\"--i: 0; border-radius: 2cqh; background: color-mix(in srgb, var(--c-primaire) 40%, var(--c-fond))\"></div>\n  <div class=\"pm-m-helice-vignette\" style=\"--i: 1; border-radius: 2cqh; background: color-mix(in srgb, var(--c-accent) 45%, var(--c-fond))\"></div>\n  <div class=\"pm-m-helice-vignette\" style=\"--i: 2; border-radius: 2cqh; background: color-mix(in srgb, var(--c-primaire) 50%, var(--c-fond))\"></div>\n  <div class=\"pm-m-helice-vignette\" style=\"--i: 3; border-radius: 2cqh; background: color-mix(in srgb, var(--c-accent) 55%, var(--c-fond))\"></div>\n  <div class=\"pm-m-helice-vignette\" style=\"--i: 4; border-radius: 2cqh; background: color-mix(in srgb, var(--c-primaire) 60%, var(--c-fond))\"></div>\n  <div class=\"pm-m-helice-vignette\" style=\"--i: 5; border-radius: 2cqh; background: color-mix(in srgb, var(--c-accent) 65%, var(--c-fond))\"></div>\n  <div class=\"pm-m-helice-vignette\" style=\"--i: 6; border-radius: 2cqh; background: color-mix(in srgb, var(--c-primaire) 70%, var(--c-fond))\"></div>\n  <div class=\"pm-m-helice-vignette\" style=\"--i: 7; border-radius: 2cqh; background: color-mix(in srgb, var(--c-accent) 75%, var(--c-fond))\"></div>\n</div>",
+        "reglages": [
+          {
+            "nom": "--i",
+            "defaut": "0, 1, 2…",
+            "effet": "rang de la vignette (30° et --pm-pas plus loin que la précédente)"
+          },
+          {
+            "nom": "--pm-tour",
+            "defaut": "120deg",
+            "effet": "rotation de l'hélice pendant --pm-dur"
+          },
+          {
+            "nom": "--pm-dur",
+            "defaut": "6s",
+            "effet": "durée de la rotation"
+          },
+          {
+            "nom": "--pm-rayon",
+            "defaut": "45cqh",
+            "effet": "rayon du cylindre"
+          },
+          {
+            "nom": "--pm-pas",
+            "defaut": "3cqh",
+            "effet": "montée d'une vignette à la suivante"
+          }
+        ],
+        "note": "Les vignettes de dos sont cachées : jamais une image en miroir. Une vignette mesure --pm-largeur × --pm-hauteur (22 × 14 cqh)."
       }
     }
   ]

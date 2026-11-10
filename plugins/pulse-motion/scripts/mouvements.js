@@ -121,6 +121,7 @@ function referenceMarkdown() {
     '- Les mouvements qui se répètent (battement, tremblotement, aller-retour) s\'arrêtent toujours (`--pm-fois`) : la vidéo finit sur une image stable.',
     '- La vie du décor (catégorie « Vie du décor », classes `pm-v-*`) se pose sur un élément intérieur, jamais sur celui qui porte l\'entrée (l\'une effacerait l\'autre), minuté avec `data-dur="scene"` (lui ou son conteneur) : le moteur la répète jusqu\'à la fin de la scène, la finit au repos et donne à chaque élément sa phase (`--pm-phase`) : deux feuilles ne bougent jamais ensemble.',
     '- Une vie qui se déplace (volutes, flottement, dérive) se pose sur un élément HTML ou sur un `<svg>` entier, pas sur une forme à l\'intérieur d\'un dessin.',
+    '- La pulsation sur le temps (#083) bat sur la musique : départ sur un temps (`data-start="4t"`), dans une vidéo qui a un tempo. Un défilement de logos (#087) contient deux fois sa liste, dans le même ordre ; un avant/après (#088) a deux enfants superposés, `.pm-avant` et `.pm-apres`.',
     '', `_${source}_`, '');
   return lignes.join('\n');
 }

@@ -690,7 +690,9 @@
         }
         var timing = a.effect.getTiming();
         anims.push({ nom: a.animationName, duree: Number(timing.duration) / 1000, depart: base + (Number(timing.delay) || 0) / 1000 / rythme, classe: el.classList && el.classList[0] || null });
-        var prop = A.raccordBoucle(a.effect.getKeyframes());
+        // Boucle continue (défilement, engrenage) ou battement (pulsation sur le temps) : le raccord est voulu.
+        var boucle = String(getComputedStyle(el).getPropertyValue('--pm-boucle') || '').trim();
+        var prop = boucle === 'continue' || boucle === 'battement' ? null : A.raccordBoucle(a.effect.getKeyframes());
         if (prop) constater('raccord-boucle', s.id, nom(el), t, { propriete: prop, animation: a.animationName });
       });
       A.toutEnPhase(anims, S).forEach(function (g) { constater('tout-en-phase', s.id, g.element, t, g.nombre); });

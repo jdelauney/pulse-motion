@@ -302,14 +302,14 @@
 
 /* #083 Pulsation sur le temps : grossit de --pm-ampleur (0.012) sur chaque temps de la musique (--pm-temps, 0,5 s sans tempo) et
    retombe en 0,12 s environ ; à la mesure : --pm-dur: calc(4 * var(--pm-temps)) et --pm-ampleur: 0.03. Sans déphasage : sur le
-   temps. Départ sur un temps (data-start="…t"). */
+   temps ; battement : le saut au début de chaque temps est voulu. Départ sur un temps (data-start="…t"). */
 @keyframes pm-v-cogne {
   0% { scale: calc(1 + var(--pm-ampleur, 0.012)); }
   20% { scale: calc(1 + 0.37 * var(--pm-ampleur, 0.012)); }
   45% { scale: calc(1 + 0.08 * var(--pm-ampleur, 0.012)); }
   100% { scale: 1; }
 }
-#pm-scene .pm-v-cogne { --pm-dur: var(--pm-temps, 0.5s); --pm-phase: 0; transform-origin: 50% 50%;
+#pm-scene .pm-v-cogne { --pm-boucle: battement; --pm-dur: var(--pm-temps, 0.5s); --pm-phase: 0; transform-origin: 50% 50%;
   animation: pm-v-cogne var(--pm-dur, 0.5s) cubic-bezier(0.33, 1, 0.68, 1) both;
   animation-delay: calc(var(--pm-phase, var(--pm-v-phase, 0)) * -1 * var(--pm-dur, 0.5s));
   animation-iteration-count: var(--pm-fois, var(--pm-v-fois, 1)); }
