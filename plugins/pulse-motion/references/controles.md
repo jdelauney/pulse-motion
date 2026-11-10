@@ -191,14 +191,18 @@ Chaque export relit le fichier livré et écrit `sortie/verification.json` : `fa
 
 ## Écrans des tutoriels
 
-Un écran (`pm-ecran`), ses gestes et ses mises en valeur : `pulse-motion reference ecran`. Les deux premières règles se lisent dans le HTML des scènes (contrôles rapides, et dès qu'une scène est écrite) ; les deux dernières, dans la vidéo rendue.
+Un écran (`pm-ecran`), ses gestes, ses mises en valeur et son film : `pulse-motion reference ecran`. `pointeur-hors-ecran` (pour un élément visé) et `etapes-trop-rapprochees` se lisent dans la vidéo rendue ; les autres règles, dans le HTML des scènes et les films du projet (contrôles rapides, et dès qu'une scène est écrite).
 
 | Règle | Ce qui la déclenche | Gravité | Corrigé seul ? | Que faire |
 |---|---|---|---|---|
-| `ecran-invalide` | Cadre ou pointeur inconnu, marque (`pm-clic`, `pm-projecteur`, `pm-zoom`…) hors d'un écran, sans `data-start` ou sans `data-cible`, cible illisible ou absente de l'écran, `etape:N` ou `data-film` sans film tourné | **erreur** | non | Appliquer le message |
+| `ecran-invalide` | Cadre ou pointeur inconnu, marque (`pm-clic`, `pm-projecteur`, `pm-zoom`, `pm-etape`…) hors d'un écran, sans `data-start` ou sans `data-cible`, cible illisible ou absente de l'écran, `etape:N` sans film ou hors des étapes montrées, `data-etapes` illisible | **erreur** | non | Appliquer le message |
+| `film-introuvable` | `data-film` (ou `film` d'une scène du déroulé) nomme un film qui n'existe pas dans `films/`, ou dont la prise choisie est abîmée | **erreur** | non | Tourner le film, ou corriger son nom |
+| `prise-non-choisie` | Le film existe mais la personne n'a pas encore choisi sa prise | **erreur** | non | Montrer la planche des prises et faire choisir |
+| `film-trop-lourd` | Les images filmées embarquées dépassent 25 Mo | alerte | non | Montrer moins d'étapes, raccourcir les réactions (refilmer), alléger le film |
+| `page-pas-calme` | Au tournage, la page ne s'est pas calmée en 10 s à une étape montrée (l'image peut montrer un chargement) | alerte | non | Regarder la planche ; refilmer si l'image est fausse |
 | `suivre-desactive` | `data-film-camera="suivre"` sur un écran qui a son propre `data-camera` : la caméra écrite l'emporte | alerte | non | Retirer l'un des deux |
 | `pointeur-hors-ecran` | Une cible `x%,y%` (ou une zone) hors de 0 à 100 %, ou un élément visé hors de l'image de l'écran | alerte | non | Corriger la cible |
-| `etapes-trop-rapprochees` | Deux gestes du pointeur trop proches pour aller de l'un à l'autre : moins que la fin du premier, plus 0,2 s, la pause de 0,35 s avant un clic et le trajet (0,3 à 1,1 s selon la distance) | **erreur** | non | Écarter les `data-start` de l'écart minimal donné |
+| `etapes-trop-rapprochees` | Deux gestes du pointeur, ou deux étapes d'un film, trop proches pour aller de l'un à l'autre : moins que la fin du premier (pour un film, sa réaction), plus 0,2 s, la pause de 0,35 s avant un clic et le trajet (0,3 à 1,1 s selon la distance) | **erreur** | non | Écarter les `data-start` de l'écart minimal donné |
 
 ## Autres règles
 
