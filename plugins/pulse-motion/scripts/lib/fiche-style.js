@@ -7,7 +7,7 @@
  * Format adapté du gabarit de lemo-opuscar (styles/_template/STYLE.md, MIT, © 2026 LemoLab), traduit et adapté. */
 const fs = require('node:fs');
 const path = require('node:path');
-const { SECTIONS_FICHE, SECTIONS_ANIMATEUR, TYPES_ENTREE } = require('./contrat.js');
+const { SECTIONS_FICHE, SECTIONS_ANIMATEUR, SECTIONS_CRITIQUE, TYPES_ENTREE } = require('./contrat.js');
 
 const RACINE = path.resolve(__dirname, '..', '..');
 const FICHE_MAX = 8000;
@@ -34,6 +34,18 @@ function extraitAnimateur(texte) {
   const choisies = SECTIONS_ANIMATEUR.map((t) => sections.find((s) => s.titre === t));
   if (choisies.some((s) => !s)) return String(texte || '');
   return entete + choisies.map((s) => s.texte.replace(/\n*$/, '\n')).join('\n');
+}
+
+/**
+ * Extrait pour le relecteur (fiche de regard) : l'essence et les sources (sans le titre), puis § 1, § 3 et § 9, titres
+ * abaissés d'un niveau. Une fiche à l'ancien format (une section manque) : '' (rien n'est inventé).
+ */
+function extraitCritique(texte) {
+  const { entete, sections } = decouper(texte);
+  const choisies = SECTIONS_CRITIQUE.map((t) => sections.find((s) => s.titre === t));
+  if (choisies.some((s) => !s)) return '';
+  const tete = entete.replace(/^# .*\n/, '').trim();
+  return [tete, ...choisies.map((s) => s.texte.replace(/^## /, '### ').trim())].filter(Boolean).join('\n\n') + '\n';
 }
 
 /** Corps d'une section (sans son titre), ou '' si elle manque. */
@@ -145,4 +157,4 @@ function verifierFiche(texte, { dossierStyle, identite } = {}) {
   return erreurs;
 }
 
-module.exports = { decouper, extraitAnimateur, section, gestes, classesCitees, verifierFiche, nomsConnus, FICHE_MAX, EXTRAIT_MAX };
+module.exports = { decouper, extraitAnimateur, extraitCritique, section, gestes, classesCitees, verifierFiche, nomsConnus, FICHE_MAX, EXTRAIT_MAX };
