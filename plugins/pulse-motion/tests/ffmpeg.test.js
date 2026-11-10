@@ -196,7 +196,10 @@ test('ffmpeg.test.js › brouillon : même nombre d\'images avec l\'encodeur de 
     const sortie = path.join(dir, `${encodeur || 'libx264'}.mp4`);
     async function* images() { for (let k = 0; k < 24; k++) yield pngRGBA(256, 144, (x) => [k * 10, x, 128, 255]); }
     await F.encoderSegment({ ffmpeg: o.chemin, sortie, ips: 12, reglages: { encodeur, crf: 26, preset: encodeur ? null : 'veryfast', gop: 2 }, images: images() });
-    return (await F.sonder({ ffprobe: o.cheminProbe, fichier: sortie })).images;
+    const s = await F.sonder({ ffprobe: o.cheminProbe, fichier: sortie });
+    // Étiquettes BT.709 complètes, même par l'encodeur de la carte graphique (NVENC n'écrit pas les primaires seul).
+    assert.deepEqual(s.couleurs, { espace: 'bt709', primaires: 'bt709', transfert: 'bt709', plage: 'tv' }, encodeur || 'libx264');
+    return s.images;
   };
   assert.equal(await compter(null), 24);
   if (d.encodeur) assert.equal(await compter(d.encodeur), 24, d.encodeur);

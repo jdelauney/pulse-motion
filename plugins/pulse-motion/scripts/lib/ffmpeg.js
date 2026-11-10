@@ -129,6 +129,7 @@ const ETIQUETTES = ['-colorspace', 'bt709', '-color_primaries', 'bt709', '-color
  *  (src/export.ts) et de reanimate (render.ts : out_color_matrix=bt709:out_range=tv), réécrite. */
 const VERS_BT709 = 'scale=out_color_matrix=bt709:out_range=tv,format=yuv420p';
 const PARAMS_X264 = 'aq-mode=3:aq-strength=0.8:colorprim=bt709:transfer=bt709:colormatrix=bt709';
+const BSF_BT709 = 'h264_metadata=colour_primaries=1:transfer_characteristics=1:matrix_coefficients=1:video_full_range_flag=0';
 /** Réglages des encodeurs matériels du brouillon (5.7), à qualité constante. */
 const MATERIEL = {
   h264_nvenc: { args: ['-preset', 'p4', '-rc', 'vbr', '-cq', '26', '-b:v', '0'], pixels: 'yuv420p' },
@@ -147,7 +148,9 @@ function argsVideo(r, ips) {
   const gop = Math.max(1, Math.round((r.gop || 2) * ips));
   const commun = ['-r', String(ips), '-g', String(gop), ...ETIQUETTES, '-video_track_timescale', '90000'];
   const materiel = r.encodeur && MATERIEL[r.encodeur];
-  if (materiel) return ['-c:v', r.encodeur, ...materiel.args, '-pix_fmt', materiel.pixels, ...commun];
+  // Encodeurs de la carte graphique : certains (NVENC) n'écrivent pas les primaires ni le transfert dans le flux ; le filtre
+  // h264_metadata les y pose (BT.709, plage limitée), comme libx264.
+  if (materiel) return ['-c:v', r.encodeur, ...materiel.args, '-pix_fmt', materiel.pixels, ...commun, '-bsf:v', BSF_BT709];
   const a = ['-c:v', 'libx264', '-preset', r.preset || 'medium'];
   if (r.tune) a.push('-tune', r.tune);
   if (r.debit) a.push('-b:v', `${r.debit}k`); else a.push('-crf', String(r.crf === undefined || r.crf === null ? 18 : r.crf));
