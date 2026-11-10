@@ -75,7 +75,7 @@ const arrondi = (x) => Math.round(x * 100) / 100;
 function carteNeutre({ id, duree, textes = {}, derniere = false }) {
   const cles = Object.keys(textes).filter((k) => typeof textes[k] === 'string' && textes[k].trim());
   cles.sort((a, b) => (b === 'titre') - (a === 'titre'));
-  const decor = Math.max(0.5, arrondi(derniere ? duree - 1 : duree));
+  // Décor jusqu'à la fin de la scène, voix comprise (data-dur="scene" s'arrête 1 s avant la fin sur la dernière).
   const lignes = cles.map((k, i) => {
     const balise = i === 0 ? 'h2' : 'p';
     const classe = i === 0 ? 'pm-ebauche-titre' : 'pm-ebauche-texte';
@@ -84,7 +84,7 @@ function carteNeutre({ id, duree, textes = {}, derniere = false }) {
   return [
     `<!-- Ébauche de la scène « ${id} » (pulse-motion ebauche) : point de départ, remplacé par la scène écrite. -->`,
     `<section data-scene="${echapperAttribut(id)}" data-ebauche class="pm-ebauche">`,
-    `  <span class="pm-ebauche-rond" data-decor aria-hidden="true" data-start="0" data-dur="${decor}" data-tween="--dx 0cqh→8cqh sine-inout; --dy 0cqh→5cqh sine-inout"></span>`,
+    `  <span class="pm-ebauche-rond" data-decor aria-hidden="true" data-start="0" data-dur="scene" data-tween="--dx 0cqh→8cqh sine-inout; --dy 0cqh→5cqh sine-inout"></span>`,
     '  <div class="pm-ebauche-carte">',
     ...lignes,
     `    <p class="pm-ebauche-note" aria-hidden="true" data-start="${arrondi(0.2 + 0.25 * cles.length)}" data-dur="0.6" data-tween="opacity 0→0.6"></p>`,

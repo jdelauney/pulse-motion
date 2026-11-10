@@ -81,7 +81,7 @@ test('ebauche : scène composée en carte neutre avec ses textes', () => {
   assert.deepEqual(cles, ['titre', 'point1', 'point2', 'point3', 'point4'], 'toutes ses clés, le titre d\'abord');
   assert.match(html, /<h2 class="pm-ebauche-titre" data-texte="titre"/);
   assert.deepEqual(textesEnDur(html), [], '« Scène en préparation » vient du style de base, pas de la scène');
-  assert.match(html, /data-decor[^>]*data-dur="13"[^>]*data-tween="--dx/, 'le décor dérive toute la scène');
+  assert.match(html, /data-decor[^>]*data-dur="scene"[^>]*data-tween="--dx/, 'le décor dérive toute la scène, voix comprise');
   assert.match(lire('moteur', 'base.css'), /\.pm-ebauche-note::after \{ content: "Scène en préparation"; \}/);
   // La page s'assemble avec les textes du déroulé et sait quelles scènes sont des ébauches.
   const a = assembler({ dossier: dir, ecrire: false });
