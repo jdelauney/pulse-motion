@@ -165,8 +165,27 @@ function preparerPersonnages(html0, { scene, lu, voix = false, dureeTemps = null
     if (!porteurs.has(id)) erreurs.push(erreur(scene, `${qui} : porteur « #${id} » introuvable (data-tenu-par = l'id d'un conteneur data-personnage de la scène).`));
     else if (porteurs.get(id) !== parent) erreurs.push(erreur(scene, `${qui} : il doit être dans le même conteneur que son porteur « #${id} » (même parent), pour suivre sa main.`));
     if (a['data-devant'] !== undefined && a['data-derriere'] !== undefined) erreurs.push(erreur(scene, `${qui} : data-devant et data-derriere ensemble ; n'en garder qu'un.`));
-    const liste = { 'data-main': ['avant', 'arriere', 'deux'], 'data-orientation': ['droit', 'main'], 'data-lacher': ['reste', 'cache', 'tombe'] };
+    const liste = { 'data-main': ['avant', 'arriere', 'deux'], 'data-orientation': ['droit', 'main'], 'data-lacher': ['reste', 'cache', 'tombe', 'lance'] };
     for (const [k, valeurs] of Object.entries(liste)) if (a[k] !== undefined && !valeurs.includes(a[k].trim())) erreurs.push(erreur(scene, `${qui} : ${k}="${a[k]}" doit être ${valeurs.join(', ')}.`));
+    // Lancer (spec Mouvement vivant 5.8) : une cible obligatoire, dans la scène ; un personnage visé, dans le même conteneur.
+    const lance = (a['data-lacher'] || '').trim() === 'lance';
+    if (lance) {
+      const c = (a['data-cible'] || '').trim();
+      if (!c) erreurs.push(erreur(scene, `l'objet « ${a.id || '?'} » est lancé (data-lacher="lance") sans data-cible : donner l'élément, le personnage ou le point visé (ex. data-cible="#panier").`));
+      else if (/^#[\w-]+$/.test(c)) {
+        const vise = c.slice(1);
+        if (!chemins.has(vise) && !autresIds.has(vise)) erreurs.push(erreur(scene, `${qui} : la cible « ${c} » n'existe pas dans la scène.`));
+        else if (porteurs.has(vise) && porteurs.get(vise) !== parent) erreurs.push(erreur(scene, `${qui} : le personnage visé « ${c} » doit être dans le même conteneur que l'objet (même parent), pour le recevoir dans sa main.`));
+      } else if (!/^-?\d*\.?\d+%\s+-?\d*\.?\d+%$/.test(c)) erreurs.push(erreur(scene, `${qui} : data-cible="${c}" doit être « #id » (un élément ou un personnage de la scène) ou un point « x% y% » de l'image.`));
+      const bornes = { 'data-hauteur': [0, 100, 'sommet du vol en % de la hauteur de l\'image au-dessus du plus haut des deux points, ex. 15'], 'data-tours': [-20, 20, 'tours sur lui-même en vol, ex. 1 ; négatif : dans l\'autre sens'], 'data-roule': [0, 100, '% de la largeur parcourus en roulant à l\'arrivée, ex. 10'] };
+      for (const [k, [min, max, sens]] of Object.entries(bornes)) {
+        if (a[k] === undefined) continue;
+        const n = Number(a[k]);
+        if (String(a[k]).trim() === '' || !Number.isFinite(n) || n < min || n > max) erreurs.push(erreur(scene, `${qui} : ${k}="${a[k]}" : de ${min} à ${max} (${sens}).`));
+      }
+    } else {
+      for (const k of ['data-cible', 'data-tours', 'data-roule']) if (a[k] !== undefined) erreurs.push({ ...erreur(scene, `${qui} : ${k} ne sert qu'à un objet lancé (data-lacher="lance").`), gravite: 'alerte' });
+    }
     if (a['data-prise'] !== undefined && !/^\s*-?\d*\.?\d+%\s+-?\d*\.?\d+%\s*$/.test(a['data-prise'])) erreurs.push(erreur(scene, `${qui} : data-prise="${a['data-prise']}" doit être un point en % de l'objet, ex. « 50% 100% » (milieu du bas).`));
     if (a['data-dur'] === undefined) erreurs.push(erreur(scene, `${qui} : data-dur obligatoire (combien de temps il est tenu).`));
     if (a['data-relais'] !== undefined) {

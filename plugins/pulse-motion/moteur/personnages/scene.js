@@ -242,6 +242,12 @@
       var pose = placerBase(p, t);
       return M.interactions ? M.interactions.appliquer(p, t, pose, ctxInteractions) : pose;
     }
+    // Pose pour les mains (objets tenus) : le regard ne bouge que la tête et les yeux, il est sauté (un porteur qui
+    // regarde l'objet qu'il tient ne se demande pas où est sa propre main).
+    function placerMains(p, t) {
+      var pose = placerBase(p, t);
+      return M.interactions ? M.interactions.appliquer(p, t, pose, ctxInteractions, { sansRegard: true }) : pose;
+    }
     function rendre(t) {
       // Objets tenus d'abord : une cible qui est un objet tenu est lue à sa place de cet instant.
       if (M.rendreObjetsTenus) M.rendreObjetsTenus(t);
@@ -260,7 +266,6 @@
       });
     }
     M.surRendu(rendre);
-    rendre(M.temps ? M.temps() : 0);
     // Mains des personnages (repère de la scène, au temps de chacun) : pour les objets tenus.
     var memoMains = { t: null, par: new Map() };
     M.personnages = {
@@ -298,7 +303,7 @@
         var p = persos.filter(function (x) { return x.div === div; })[0];
         if (!p) return null;
         var tp = tLocal || !M.tempsVuPar ? t : M.tempsVuPar(div, t);
-        var pose = placer(p, tp);
+        var pose = placerMains(p, tp);
         var r = S.calculer(pose, p.gabarit), A = r.articulations, e = r.efficace;
         function point(nom) { return [e.x + A[nom][0] * e.echelle, e.y + A[nom][1] * e.echelle]; }
         var out = { sol: pose.y + (S.sol(p.gabarit) + 7) * p.echelle };
@@ -311,6 +316,8 @@
       }
     };
     if (M.demarrerObjetsTenus) M.demarrerObjetsTenus();
+    // Premier rendu une fois les objets tenus connus (un regard sur un objet le suit dès la première image).
+    rendre(M.temps ? M.temps() : 0);
     // La place du décor peut changer avec la taille de l'image : les sols courbes sont remesurés.
     if (typeof window !== 'undefined' && window.addEventListener) {
       window.addEventListener('resize', function () {

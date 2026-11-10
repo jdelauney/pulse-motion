@@ -53,8 +53,8 @@
     var el = null;
     try { el = p.sec.querySelector('#' + echapper(c.replace(/^#/, ''))); } catch (e) { el = null; }
     if (!el) return null;
-    // Objet tenu ou lancé du même conteneur : sa position est une fonction du temps (M.objetsTenus.point).
-    if (M.objetsTenus && M.objetsTenus.connu(el) && el.parentElement === p.div.parentElement) return { objet: el };
+    // Regard sur un objet tenu ou lancé du même conteneur : sa position est une fonction du temps (M.objetsTenus.point).
+    if (a.type === 'regarder' && M.objetsTenus && M.objetsTenus.connu(el) && el.parentElement === p.div.parentElement) return { objet: el };
     var q = ctx.persos.filter(function (x) { return x.div === el; })[0];
     if (q) {
       if (q === p) return null;
@@ -176,10 +176,11 @@
       var regards = actions.filter(function (a) { return a.type === 'regarder'; }).sort(function (x, y) { return x.debut - y.debut; });
       regards.forEach(function (a, i) { if (a.jusquAuSuivant) a.fin = i + 1 < regards.length ? regards[i + 1].debut + FONDU : Infinity; });
     },
-    appliquer: function (p, t, pose, ctx) {
+    /** options.sansRegard : atteindre seulement (les mains ne dépendent pas du regard). */
+    appliquer: function (p, t, pose, ctx, options) {
       var S = M.squelette;
       if (!p.partition.actions.some(function (a) { return a.type === 'atteindre' || a.type === 'regarder'; })) return pose;
-      appliquerRegard(p, t, pose, ctx, S);
+      if (!(options && options.sansRegard)) appliquerRegard(p, t, pose, ctx, S);
       appliquerAtteindre(p, t, pose, ctx, S);
       return pose;
     }
