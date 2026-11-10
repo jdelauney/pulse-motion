@@ -104,11 +104,16 @@ function preparerPersonnages(html0, { scene, lu, voix = false, dureeTemps = null
         if (parent && parent.id === c.slice(1)) erreurs.push({ ...erreur(scene, `${qui} : la cible « ${c} » est le personnage lui-même.`), gravite: 'alerte' });
       }
       if (type === 'regarder') for (const k of ['data-niveau', 'data-main']) if (a[k] !== undefined) erreurs.push({ ...erreur(scene, `${qui} : ${k} ne sert qu'à « atteindre ».`), gravite: 'alerte' });
+      if (type === 'regarder' && a['data-attention'] !== undefined) {
+        const n = Number(a['data-attention']);
+        if (String(a['data-attention']).trim() === '' || !Number.isFinite(n) || n < 0 || n > 1) erreurs.push(erreur(scene, `${qui} : data-attention="${a['data-attention']}" : de 0 à 1 (1 = il regarde franchement, 0,5 = à moitié ; ex. 0.5).`));
+      }
       if (a['data-point'] !== undefined && !/^\s*-?\d*\.?\d+%\s+-?\d*\.?\d+%\s*$/.test(a['data-point'])) erreurs.push(erreur(scene, `${qui} : data-point="${a['data-point']}" doit être un point en % de l'élément, ex. « 50% 0% ».`));
       if (type === 'atteindre' && a['data-dur'] === undefined) erreurs.push(erreur(scene, `${qui} : data-dur obligatoire (combien de temps la main reste sur la cible).`));
       if (type === 'atteindre' && a['data-main'] !== undefined && !['avant', 'arriere', 'deux'].includes(a['data-main'].trim())) erreurs.push(erreur(scene, `${qui} : data-main="${a['data-main']}" doit être avant, arriere ou deux.`));
       if (a['data-niveau'] !== undefined && !['haut', 'epaule', 'bas'].includes(a['data-niveau'].trim())) erreurs.push(erreur(scene, `${qui} : data-niveau="${a['data-niveau']}" doit être haut, epaule ou bas.`));
     }
+    if (a['data-attention'] !== undefined && type !== 'regarder') erreurs.push(erreur(scene, `${qui} : data-attention ne sert qu'à « regarder ».`));
     if (a['data-sol'] !== undefined && !TRAJETS.includes(type)) erreurs.push(erreur(scene, `${qui} : data-sol ne sert qu'aux déplacements (marcher, courir, glisser, bondir) ou au personnage lui-même.`));
     if (a['data-ecrase'] !== undefined) {
       if (type !== 'bondir') erreurs.push(erreur(scene, `${qui} : data-ecrase ne sert qu'à « bondir » ou au personnage lui-même (écrasement à l'atterrissage).`));

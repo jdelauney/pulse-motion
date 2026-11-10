@@ -104,6 +104,7 @@
     if (el.hasAttribute('data-ecrase')) a.ecrase = Math.max(0, Math.min(0.25, nombre(el, 'data-ecrase', 0.12)));
     if (el.hasAttribute('data-courbe')) a.courbe = el.getAttribute('data-courbe').trim();
     if (el.hasAttribute('data-vue')) a.vue = nombre(el, 'data-vue', 0);
+    if (el.hasAttribute('data-attention')) a.attention = Math.max(0, Math.min(1, nombre(el, 'data-attention', 1)));
     ['pose', 'clip', 'expression', 'bouche', 'cible', 'point', 'main', 'niveau'].forEach(function (k) { if (el.hasAttribute('data-' + k)) a[k] = el.getAttribute('data-' + k).trim(); });
     if (a.type === 'regarder' && !el.hasAttribute('data-dur')) a.jusquAuSuivant = true;
     return a;

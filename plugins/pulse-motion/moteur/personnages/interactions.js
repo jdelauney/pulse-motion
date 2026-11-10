@@ -8,8 +8,11 @@
  * - atteindre : bras amenés sur la cible par l'IK du squelette (S.atteindre), fondu de 0,25 s à l'entrée et à la sortie ;
  *   cible = un élément (son point data-point, centre par défaut), un point « x% y% » de l'image, ou un personnage (sa main ;
  *   s'il vise aussi celui-ci au même moment : point de rencontre entre leurs épaules, à la hauteur data-niveau) ;
- * - regarder : pupilles et tête vers la cible (élément, point, personnage : sa tête, « camera »), « aucune » : regard libre ;
- *   les pupilles arrivent 0,1 s avant la tête (et repartent 0,1 s avant elle).
+ * - regarder : pupilles et tête vers la cible (élément, point, personnage : sa tête, objet tenu ou lancé, « camera »),
+ *   « aucune » : regard libre ; les pupilles arrivent 0,1 s avant la tête (et repartent 0,1 s avant elle). Une cible qui
+ *   bouge d'elle-même (personnage, objet tenu ou lancé du même conteneur) est suivie avec retard : les pupilles la visent
+ *   0,05 s plus tôt, la tête 0,14 s plus tôt (rossark-motion-skill, gaze ; licence MIT). data-attention (0 à 1, défaut 1) :
+ *   part du regard (0,5 : il regarde à moitié, puis revient à son regard libre).
  * ctx = { persos, W, H, placerBase(q, t) } ; une cible personnage est lue sur sa pose sans interactions (pas de boucle).
  */
 (function (racine) {
@@ -17,6 +20,7 @@
   var M = racine.M = racine.M || {};
   var FONDU = 0.25, DEG = Math.PI / 180;
   var AVANCE_YEUX = 0.1; // les pupilles arrivent 0,1 s avant la tête (take-one, eyesLead ; licence MIT)
+  var RETARD_YEUX = 0.05, RETARD_TETE = 0.14; // une cible mobile est suivie avec retard (rossark, ChefScene gaze ; MIT)
   var NIVEAUX = { haut: -0.6, epaule: 0.15, bas: 0.6 };
 
   function normaliser(a) { a = ((a + 180) % 360 + 360) % 360 - 180; return a === -180 ? 180 : a; }
@@ -49,6 +53,8 @@
     var el = null;
     try { el = p.sec.querySelector('#' + echapper(c.replace(/^#/, ''))); } catch (e) { el = null; }
     if (!el) return null;
+    // Objet tenu ou lancé du même conteneur : sa position est une fonction du temps (M.objetsTenus.point).
+    if (M.objetsTenus && M.objetsTenus.connu(el) && el.parentElement === p.div.parentElement) return { objet: el };
     var q = ctx.persos.filter(function (x) { return x.div === el; })[0];
     if (q) {
       if (q === p) return null;
@@ -116,25 +122,33 @@
     });
   }
 
+  /** Tête d'un personnage cible (unités de la scène), sur sa pose sans interactions, au temps u. */
+  function teteDe(q, u, ctx, S) {
+    var r = S.calculer(ctx.placerBase(q, u), q.gabarit);
+    return versScene(r.efficace, r.tete.centre);
+  }
+
   function appliquerRegard(p, t, pose, ctx, S) {
     p.partition.actions.forEach(function (a) {
       if (a.type !== 'regarder') return;
-      var k = poids(a, t);
-      if (k <= 0 && poids(a, t + AVANCE_YEUX) <= 0) return;
+      var attention = typeof a.attention === 'number' ? Math.max(0, Math.min(1, a.attention)) : 1;
+      var k = poids(a, t) * attention;
+      if (k <= 0 && poids(a, t + AVANCE_YEUX) * attention <= 0) return;
       var c = cible(a, p, ctx, t);
       var voulu;
       if (!c) return;
       // Caméra : la tête se tourne vers le spectateur, quel que soit le côté où il est tourné (face : rien à tourner).
       if (c.camera) voulu = { regardX: 0, regardY: 0, tete: 0, teteTourne: Math.max(-60, Math.min(60, normaliser(90 - (pose.vue || 0)))) };
       else {
-        var pt = c;
-        if (c.perso) {
-          var rQ = S.calculer(ctx.placerBase(c.perso, t), c.perso.gabarit);
-          pt = versScene(rQ.efficace, rQ.tete.centre);
-        }
+        // Cible fixe ou mesurée à l'image : même point pour les yeux et la tête ; cible mobile : vue avec retard.
+        var ptYeux = c, ptTete = c;
+        if (c.perso) { ptYeux = teteDe(c.perso, t - RETARD_YEUX, ctx, S); ptTete = teteDe(c.perso, t - RETARD_TETE, ctx, S); }
+        else if (c.objet) { ptYeux = M.objetsTenus.point(c.objet, t - RETARD_YEUX, true); ptTete = M.objetsTenus.point(c.objet, t - RETARD_TETE, true); }
+        if (!ptYeux || !ptTete) return;
         var rP = S.calculer(pose, p.gabarit), tete = versScene(rP.efficace, rP.tete.centre);
-        var dx = pt.x - tete.x, dy = pt.y - tete.y, d = Math.hypot(dx, dy);
-        if (d < 1e-6) return;
+        var dx = ptYeux.x - tete.x, dy = ptYeux.y - tete.y, d = Math.hypot(dx, dy);
+        var dxT = ptTete.x - tete.x, dyT = ptTete.y - tete.y, dT = Math.hypot(dxT, dyT);
+        if (d < 1e-6 || dT < 1e-6) return;
         // Pupilles : un dessin en pièces dessine le visage en miroir quand il regarde à gauche (regardX inversé) ;
         // les bâtonnets placent les pupilles à l'écran.
         var sens = 1;
@@ -143,10 +157,10 @@
           sens = vv === 'face' || vv === 'dos' ? 1 : (Math.cos((pose.vue || 0) * DEG) < 0 ? -1 : 1);
         }
         var ux = dx / d * sens, uy = dy / d;
-        voulu = { regardX: 6 * ux, regardY: 7 * uy, tete: Math.max(-25, Math.min(25, uy * 25)) };
+        voulu = { regardX: 6 * ux, regardY: 7 * uy, tete: Math.max(-25, Math.min(25, dyT / dT * 25)) };
       }
       // Les yeux d'abord : les pupilles prennent le poids de t + 0,1 s, la tête celui de t (elle arrive 0,1 s après).
-      var kYeux = poids(a, t + AVANCE_YEUX);
+      var kYeux = poids(a, t + AVANCE_YEUX) * attention;
       Object.keys(voulu).forEach(function (cle) {
         var kk = cle === 'regardX' || cle === 'regardY' ? kYeux : k;
         pose[cle] = (pose[cle] || 0) + (voulu[cle] - (pose[cle] || 0)) * kk;
