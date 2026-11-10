@@ -5,3 +5,5 @@
 *.png binary
 *.jpg binary
 *.mp3 binary
+# Fichiers de commandes Windows : CRLF (cmd relit mal un fichier en fins LF).
+*.cmd text eol=crlf
