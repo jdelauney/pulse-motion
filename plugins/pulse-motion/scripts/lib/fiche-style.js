@@ -33,7 +33,8 @@ function extraitAnimateur(texte) {
   const { entete, sections } = decouper(texte);
   const choisies = SECTIONS_ANIMATEUR.map((t) => sections.find((s) => s.titre === t));
   if (choisies.some((s) => !s)) return String(texte || '');
-  return entete + choisies.map((s) => s.texte.replace(/\n*$/, '\n')).join('\n');
+  // La ligne « Adapté du style « <base> » » d'un style personnel ne sert pas à écrire une scène.
+  return entete.replace(/^Adapté du style « [^»]* »\.?\n\n?/m, '') + choisies.map((s) => s.texte.replace(/\n*$/, '\n')).join('\n');
 }
 
 /**

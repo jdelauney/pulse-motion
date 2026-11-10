@@ -160,7 +160,7 @@ test("galerie : cartes regroupées par catégorie, dans l'ordre de CATEGORIES", 
   assert.deepEqual(sections.map((m) => m[1]), ["essentiels"]);
   assert.equal(sections[0][2], "Les essentiels");
   for (const style of G.STYLES_LIVRES()) {
-    const carte = new RegExp(`<details class="style-en-mouvement" id="style-${style}"[\s\S]*?</details>`).exec(b)[0];
+    const carte = new RegExp(`<details class="style-en-mouvement" id="style-${style}"[\\s\\S]*?</details>`).exec(b)[0];
     const [mp4] = G.fichiersStyle(style);
     const [a, imgB] = G.fichiersTemoin(style);
     for (const f of [mp4, a, imgB]) assert.ok(carte.includes(`"${f}"`), `${style} : ${f}`);

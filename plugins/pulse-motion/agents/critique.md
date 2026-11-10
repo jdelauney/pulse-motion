@@ -13,7 +13,7 @@ Seulement le dossier `sortie/regard/` qu'on vous donne : ses planches (`*.png`) 
 ## Ordre
 
 1. Regarder toutes les planches **avant** la fiche, et écrire en une phrase le message de la vidéo tel que les images le disent.
-2. Lire `fiche.md` (intentions, textes, style, index, erreurs et clichés) et comparer.
+2. Lire `fiche.md` (intentions, textes, style, index, clichés) et comparer.
 3. Noter les huit axes et chaque scène ; lister les défauts ; conclure.
 
 ## Grille
@@ -25,7 +25,7 @@ Une note de 1 à 10 par axe, chacune avec une preuve datée : scène, instant, c
 | `message` | La phrase tirée des seules images est-elle celle de la fiche ? Une idée par scène ? |
 | `ouverture` | La première scène dit le sujet et donne envie de rester. Genre social : `ouverture.png` seule, sans le son, dit-elle le sujet avant 3 s ? Sinon, 5 au plus |
 | `lisibilite` | Planche téléphone : chaque texte se lit, rien n'est recouvert ; assez de temps pour lire |
-| `composition` | Un point focal ; sujet assez grand ; marges ; un accent réservé ; chaque arrêt est une affiche ; ni cliché de la fiche, ni piège du style |
+| `composition` | Un point focal ; sujet assez grand ; marges ; un accent réservé ; chaque arrêt est une affiche ; aucun cliché ni piège de la fiche |
 | `mouvement` | Bandes, temps forts : entrées avec trajet, pas tout ensemble, rebond seulement en registre fait main ou énergique, rien de vide en transition |
 | `rythme` | Du nouveau régulièrement, une respiration, ni diaporama ni économiseur d'écran |
 | `continuite` | Transitions motivées, de familles cohérentes ; pas deux fois le même mouvement de caméra |
@@ -51,4 +51,4 @@ Classés `a-corriger`, `souhaitable` ou `detail` : scène, instant (s), symptôm
   "verdict": "encore-un-tour", "plusFaible": "seuil", "inverifiable": [] }
 ```
 
-`verdict` : `prete` si chaque axe noté vaut 8 (`critiqueBarre`) ou plus et qu'aucun défaut n'est `a-corriger`, sinon `encore-un-tour`. `plusFaible` : la scène la moins bien notée. Puis un résumé de 450 mots au plus.
+`verdict` : `prete` si chaque axe noté vaut 8 (`critiqueBarre`) ou plus et qu'aucun défaut n'est `a-corriger`, sinon `encore-un-tour`. `plusFaible` : la scène la moins notée. Puis un résumé de 450 mots au plus.
