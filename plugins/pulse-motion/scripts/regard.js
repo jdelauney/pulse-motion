@@ -389,6 +389,12 @@ function instantsCadence({ de, duree, pas = 1, ips = 30 }) {
   return r;
 }
 
+/** Légendes « n° · t s » des vignettes de la planche k (0 pour la première) : rang dans la fenêtre, instant en secondes
+ *  de la scène au centième (à l'image près). */
+function legendesCadence(lot, k) {
+  return lot.map((v, i) => `${k * CADENCE_PAR_PLANCHE + i + 1} · ${v.t.toFixed(2).replace('.', ',')} s`);
+}
+
 /** Vérifie la demande d'une planche image par image -> message d'erreur en français, ou null. */
 function verifierCadence({ de, duree, pas }) {
   if (!Number.isFinite(de) || de < 0) return 'Planche image par image : le début (--de) doit être un nombre de secondes depuis le début de la scène, 0 ou plus (ex. 2).';
@@ -458,8 +464,7 @@ async function plancheCadence({ dossier, scene, de, duree, pas = 1, dossierStyle
       const H = rangees * (mise.hauteur + LEGENDE) + (rangees + 1) * ECART;
       const html = path.join(travail, `cadence-${k + 1}.html`);
       // Légende « n° · t s » : rang dans la fenêtre, instant en secondes de la scène, au centième (à l'image près).
-      const legendes = lot.map((v, i) => `${k * CADENCE_PAR_PLANCHE + i + 1} · ${v.t.toFixed(2).replace('.', ',')} s`);
-      fs.writeFileSync(html, pageComposition(lot, { ...mise, colonnes }, legendes), 'utf8');
+      fs.writeFileSync(html, pageComposition(lot, { ...mise, colonnes }, legendesCadence(lot, k)), 'utf8');
       await lisible.envoyer('Emulation.setDeviceMetricsOverride', { width: L, height: H, deviceScaleFactor: 1, mobile: false });
       await lisible.aller(pathToFileURL(html).href);
       await lisible.evaluer('Promise.all(Array.prototype.map.call(document.images, function (i) { return i.decode().catch(function () {}); })).then(function () { return true; })');
@@ -506,4 +511,4 @@ function lancerRegard(args) {
   });
 }
 
-module.exports = { planchesRegard, plancheCadence, instantsCadence, verifierCadence, CADENCE_MAX, instantsTempsForts, momentsBandes, miseEnPage, tailleCapture, sectionsDoctrine, jetonsImage, pageComposition };
+module.exports = { planchesRegard, plancheCadence, instantsCadence, verifierCadence, legendesCadence, CADENCE_MAX, instantsTempsForts, momentsBandes, miseEnPage, tailleCapture, sectionsDoctrine, jetonsImage, pageComposition };

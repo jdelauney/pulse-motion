@@ -519,7 +519,7 @@
   function rotation(prop, v) {
     if (v === null || v === undefined) return 0;
     var s = String(v).trim();
-    if (prop === 'transform' && s === 'none') return 0;
+    if ((prop === 'transform' || prop === 'rotate') && s === 'none') return 0; // valeur sous-jacente d'une image-clé implicite
     var m = prop === 'rotate' ? /^(?:z\s+|0\s+0\s+1\s+)?(-?\d*\.?\d+)(deg|turn|rad|grad)?$/.exec(s) : prop === 'transform' ? /^rotate[Z]?\((-?\d*\.?\d+)(deg|turn|rad|grad)\)$/.exec(s) : null;
     if (!m) return null;
     var n = Number(m[1]), u = m[2] || 'deg';
