@@ -15,7 +15,7 @@ const RACINE_DEPOT = path.join(__dirname, "..", "..");
 const PLUGIN = (racine) => path.join(racine, "plugins", "pulse-motion");
 const { normaliser } = require(path.join(PLUGIN(RACINE_DEPOT), "scripts", "mouvements.js"));
 
-const PAGES = { mouvements: "mouvements.html", styles: "catalogue.html", effets: "catalogue.html", personnages: "catalogue.html", "mots-du-mouvement": "lexique.html", idees: "idees.html" };
+const PAGES = { mouvements: "mouvements.html", styles: "catalogue.html", effets: "catalogue.html", personnages: "catalogue.html", dessins: "personnages.html", "mots-du-mouvement": "lexique.html", idees: "idees.html" };
 
 const e = (t) => String(t ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
@@ -108,6 +108,22 @@ ${cartes}
 </div>`;
 }
 
+/** Page Personnages : une carte par personnage livré, son aperçu animé (il marche, se tourne, salue et saute). */
+function blocDessins() {
+  const MANIERES = { traits: "en traits", pieces: "en pièces pleines" };
+  const cartes = G.dessinsLivres().map((d) => {
+    const [mp4, jpg] = G.fichiersDessin(d.nom);
+    return `<article class="carte-effet" id="dessin-${d.nom}">
+<figure>${apercu(mp4, jpg, `Le personnage ${d.nom} marche, se tourne, salue et saute`)}</figure>
+<h3><code>${e(d.nom)}</code> <span class="carte-maniere">${e(MANIERES[d.maniere] || "")}</span></h3>
+<p>${e(d.description.charAt(0).toUpperCase() + d.description.slice(1))}.</p>
+</article>`;
+  }).join("\n");
+  return `<div class="grille-mouvements">
+${cartes}
+</div>`;
+}
+
 function blocMotsDuMouvement() {
   const { categories, mouvements } = G.dictionnaire();
   return categories.map((c) => `<h3>${e(c.nom)}</h3>
@@ -190,6 +206,7 @@ function blocs() {
     styles: blocStyles(),
     effets: blocEffets(),
     personnages: blocPersonnages(),
+    dessins: blocDessins(),
     "mots-du-mouvement": blocMotsDuMouvement(),
     idees: blocIdees(),
   };
