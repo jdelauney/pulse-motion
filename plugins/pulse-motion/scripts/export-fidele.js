@@ -753,7 +753,10 @@ async function exporterFidele({ dossier, pour, qualite, ips, tailleMax, navigate
         // Une seule passe sur le fichier final (spec S2, 5.12) : chaque image décodée et comptée (la garantie de lecture), noirs,
         // sonie, crête et silences ; ffprobe ne lit plus que les pistes. Images témoins lues en même temps.
         // ebur128 ne mesure rien sous 400 ms (un bloc) : la sonie d'une vidéo plus courte n'est pas vérifiée.
-        const sonie = audio && typeof son.sonie === 'number' && total / cadence >= 0.4;
+        // Un son fait de bruitages seuls (clics d'un tutoriel, sans voix ni musique) : sa sonie intégrée ne porte que sur quelques
+        // transitoires aigus, que l'AAC adoucit (mesuré : 1,4 LU de moins sur des clics) ; elle n'est pas vérifiée.
+        const bruitagesSeuls = !(assemblage.donnees && (assemblage.donnees.musique || assemblage.donnees.voix));
+        const sonie = audio && typeof son.sonie === 'number' && total / cadence >= 0.4 && !bruitagesSeuls;
         const [s, m, lues] = await Promise.all([
           F.sonder({ ffprobe: outil.cheminProbe, fichier: partiel, compter: 'aucun' }),
           F.verifierFichier({ ffmpeg: outil.chemin, fichier: partiel, audio: Boolean(audio), noir: { duree: SEUILS.noirDuree, seuil: SEUILS.noirSeuil }, silence: { niveau: SEUILS.silenceNiveau, duree: SEUILS.silenceDuree } }),
