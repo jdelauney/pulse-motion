@@ -2826,7 +2826,7 @@
           {
             "nom": "data-dur",
             "defaut": "scene",
-            "effet": "sur l'élément lui-même"
+            "effet": "sur l'élément ou son conteneur : la dérive suit sa progression"
           }
         ],
         "note": "À 4, il traverse une image 16:9 en 44 s."

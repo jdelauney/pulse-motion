@@ -98,11 +98,13 @@ function controlerVie(vies, scene, classesStyle, problemes) {
   for (const v of vies) {
     const qui = nomDe(v.attrs);
     const vivantes = v.vies.filter((c) => !(connues.get(c) || {}).ponctuelle);
+    // La dérive suit la progression (--p) de son élément minuté : sans lui, elle ne bouge pas du tout.
     const derive = vivantes.find((c) => (connues.get(c) || {}).sansImagesCles);
-    const sansDuree = derive ? !('data-dur' in v.attrs) : vivantes.length > 0 && v.porteur && !('data-dur' in v.porteur);
-    if (sansDuree) {
-      const conteneur = !derive && v.porteur !== v.attrs ? ` à son conteneur « ${nomDe(v.porteur)} »` : '';
-      problemes.push({ regle: 'vie-sans-duree', gravite: 'alerte', scene, message: `Scène « ${scene} » : « ${qui} » vit (${derive || vivantes[0]}) sans data-dur : il ne bougera qu'une seconde ; ajouter data-dur="scene"${conteneur}.` });
+    if (derive && !v.porteur) {
+      problemes.push({ regle: 'vie-sans-duree', gravite: 'alerte', scene, message: `Scène « ${scene} » : « ${qui} » dérive (${derive}) sans être minuté : il ne bougera pas ; ajouter data-start="0" data-dur="scene".` });
+    } else if (vivantes.length && v.porteur && !('data-dur' in v.porteur)) {
+      const conteneur = v.porteur !== v.attrs ? ` à son conteneur « ${nomDe(v.porteur)} »` : '';
+      problemes.push({ regle: 'vie-sans-duree', gravite: 'alerte', scene, message: `Scène « ${scene} » : « ${qui} » vit (${vivantes[0]}) sans data-dur : il ne bougera qu'une seconde ; ajouter data-dur="scene"${conteneur}.` });
     }
     const entrees = v.classes.filter((c) => c.startsWith('pm-m-') || (classesStyle && classesStyle.has(c)));
     if (entrees.length) {

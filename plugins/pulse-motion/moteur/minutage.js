@@ -142,7 +142,7 @@
         return DUREE_DEFAUT;
       }
       if (lu.erreur) {
-        erreur('dur-invalide', e.cle, 'Scène « ' + idScene + ' », élément « ' + e.cle + ' » : data-dur « ' + e.dur + ' » n\'est pas un nombre de secondes.');
+        erreur('dur-invalide', e.cle, 'Scène « ' + idScene + ' », élément « ' + e.cle + ' » : data-dur « ' + e.dur + ' » n\'est pas un nombre de secondes (ni « scene » : jusqu\'à la fin de la scène).');
         return DUREE_DEFAUT;
       }
       return lu.valeur;

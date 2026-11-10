@@ -256,7 +256,8 @@
   animation-iteration-count: var(--pm-fois, var(--pm-v-fois, 1)); }
 
 /* #078 Dérive (nuage) : avance de --pm-vitesse cqh par seconde (4 ; 2 pour un plan lointain, négatif vers la gauche), à vitesse
-   constante, pendant sa fenêtre. Sans images-clés : l'élément lui-même est minuté (data-dur="scene"). */
+   constante, pendant sa fenêtre. Sans images-clés : elle suit la progression (--p) de l'élément minuté (data-dur="scene"), lui-même
+   ou son conteneur. */
 #pm-scene .pm-v-nuage { translate: calc(var(--p, 0) * var(--pm-fenetre, 0) * var(--pm-vitesse, 4) * 1cqh) 0; }
 
 /* #079 Ondes : un anneau grandit de 0,2 à 1,6, apparaît (0,6 à 30 %) et s'efface, en --pm-dur (2.6 s). Sur 2 ou 3 anneaux. */
