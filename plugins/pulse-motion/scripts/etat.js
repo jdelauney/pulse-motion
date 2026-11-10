@@ -3,21 +3,25 @@
 /* Pulse Motion – où en est la vidéo, et quelle est l'étape suivante.
  *
  *   node scripts/etat.js <dossier-du-projet>
- *   node scripts/etat.js <dossier-du-projet> --parcours rapide|accompagne
+ *   node scripts/etat.js <dossier-du-projet> --parcours rapide|accompagne|autonome
+ *     autonome : « Faites pour moi » (spec Retouches et ergonomie, 5.4) : aucune question après la première ronde, donc aucun
+ *     accord demandé ; un déroulé valide mène droit à la fabrication.
  *   node scripts/etat.js <dossier-du-projet> --accord deroule|style|video|voix-provisoire
  *     voix-provisoire : accord pour exporter une version de travail avec la voix de l'ordinateur (spec Retouches et ergonomie,
  *     5.17), gardé avec l'empreinte des prises provisoires : il tombe dès que l'une d'elles change (accords.voixProvisoire).
  *
  * Lit et complète .pulse-motion/etat.json (accords donnés, aperçu en cours).
- * Affiche { node, projet, titre, parcours, etape, prochaine, accords, apercu } en JSON.
+ * Affiche { node, projet, titre, parcours, etape, prochaine, accords, apercu } en JSON. Une scène encore à l'état d'ébauche
+ * (section data-ebauche, pulse-motion ebauche) compte parmi les scènes manquantes (scenesManquantes, et ebauches).
  */
 const fs = require('node:fs');
 const path = require('node:path');
-const { lireDeroule } = require('./lib/deroule.js');
+const { lireDeroule, PARCOURS } = require('./lib/deroule.js');
 const { cheminDansProjet } = require('./lib/embarquer.js');
 const { empreinteProvisoire } = require('./lib/voix.js');
 const { etatCharte } = require('./charte.js');
 const { ecrireJSON } = require('./lib/fichiers.js');
+const { estEbauche } = require('./lib/ebauche.js');
 
 const NODE_MINIMUM = 20;
 const ACCORDS = ['deroule', 'style', 'video', 'voix-provisoire'];
@@ -54,7 +58,7 @@ const PROCHAINES = {
   'questions': 'Aucune vidéo dans ce dossier : lancer /pulse-motion:creer.',
   'deroule-a-corriger': 'Le déroulé contient des erreurs : les corriger, puis le présenter à la personne.',
   'deroule-a-valider': 'Présenter le déroulé en tableau et demander l\'accord de la personne.',
-  'fabrication': 'Écrire les scènes manquantes (agent animateur), puis assembler, contrôler et ouvrir l\'aperçu.',
+  'fabrication': 'Écrire les scènes manquantes ou encore en ébauche (agent animateur), puis contrôler la vidéo et la regarder dans l\'aperçu.',
   'style-a-valider': 'Parcours accompagné : montrer la comparaison des styles (pulse-motion comparer) et demander l\'accord sur le style, avant d\'écrire les scènes.',
   'video-a-valider': 'Parcours accompagné : faire regarder la vidéo entière et demander l\'accord final.',
   'apercu': 'La vidéo est prête : proposer une retouche (/pulse-motion:retoucher) ou l\'export en MP4 (/pulse-motion:exporter).',
@@ -89,19 +93,26 @@ function etatProjet(dossier) {
     if (erreurs.length) {
       resultat.etape = 'deroule-a-corriger';
       resultat.erreurs = erreurs;
-    } else if (!accords.deroule) {
+    } else if (!accords.deroule && resultat.parcours !== 'autonome') {
       resultat.etape = 'deroule-a-valider';
     } else if (resultat.parcours === 'accompagne' && !accords.style) {
       // Le style se choisit avant d'écrire les scènes : les scènes toutes faites dépendent de lui.
       resultat.etape = 'style-a-valider';
     } else {
+      // Une ébauche n'est pas une scène écrite : elle garde l'étape « fabrication » (spec Retouches et ergonomie, 5.3).
+      const ebauches = [];
       const manquantes = deroule.scenes.filter((s) => {
         const f = cheminDansProjet(projet, s.fichier);
-        return !f || !fs.existsSync(f);
+        if (!f || !fs.existsSync(f)) return true;
+        let html = '';
+        try { html = fs.readFileSync(f, 'utf8'); } catch { return true; }
+        if (estEbauche(html)) { ebauches.push(s.id); return true; }
+        return false;
       }).map((s) => s.id);
       if (manquantes.length) {
         resultat.etape = 'fabrication';
         resultat.scenesManquantes = manquantes;
+        if (ebauches.length) resultat.ebauches = ebauches;
       } else if (resultat.parcours === 'accompagne' && !accords.video) {
         resultat.etape = 'video-a-valider';
       } else {
@@ -131,7 +142,7 @@ function donnerAccord(dossier, accord) {
 
 /** Enregistre le parcours choisi au départ. */
 function choisirParcours(dossier, parcours) {
-  if (!['rapide', 'accompagne'].includes(parcours)) throw new Error(`Parcours inconnu : « ${parcours} ». Parcours : rapide, accompagne.`);
+  if (!PARCOURS.includes(parcours)) throw new Error(`Parcours inconnu : « ${parcours} ». Parcours : ${PARCOURS.join(', ')}.`);
   const projet = path.resolve(dossier);
   const memo = lireEtat(projet);
   memo.parcours = parcours;
@@ -156,4 +167,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { etatProjet, donnerAccord, choisirParcours, verifierNode, NODE_MINIMUM };
+module.exports = { etatProjet, donnerAccord, choisirParcours, verifierNode, NODE_MINIMUM, PARCOURS };

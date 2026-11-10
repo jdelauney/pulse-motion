@@ -19,6 +19,10 @@ Humeur de la musique pendant une scène : `scenes[].musique` = `"silence"` (rien
 
 `intensite` (scènes `normale`) : en dessous de 0,25, nappe seule ; puis basse (0,25), mélodie (0,45), percussions (0,65). Sous une voix, `volume` 0,4 à 0,6. `pulse-motion musique ecouter .` rend la musique seule dans `sortie/musique.wav`, pour la faire écouter.
 
+## Musique en fichier
+
+Copier le fichier dans `assets/`. Si la personne connaît son tempo (ou le titre l'indique : « 120 bpm »), l'écrire dans le déroulé (`"tempo": { "bpm": 120 }`) : les animateurs caleront les entrées sur les temps. Un fichier ne se recale pas sur les scènes : chaque scène doit alors commencer sur un temps (contrôle `hors-tempo`) ; à 120 bpm, des durées en demi-secondes.
+
 ## Partition
 
 `"musique": { "partition": "assets/partition.json", "volume": 0.5 }` :

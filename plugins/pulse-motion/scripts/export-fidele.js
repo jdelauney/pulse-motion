@@ -185,6 +185,9 @@ async function exporterFidele({ dossier, pour, qualite, ips, tailleMax, navigate
 
   const { deroule, erreurs } = lireDeroule(projet);
   if (erreurs.length) return { ok: false, audio: false, message: `Le déroulé contient des erreurs : ${erreurs.join(' ')}` };
+  // Ébauche restante (spec Retouches et ergonomie, 5.3) : la vidéo n'est pas finie, rien n'est capturé.
+  const ebauches = require('./lib/ebauche.js').scenesEbauche(projet, deroule);
+  if (ebauches.length) return { ok: false, audio: false, message: require('./lib/ebauche.js').messageEbauches(ebauches), ebauches };
   const provisoires = scenesProvisoires(projet, deroule);
   if (provisoires.length && !avecProvisoire) return { ok: false, audio: false, message: messageProvisoire(provisoires) };
   // Usage et réglages effectifs, avant toute capture (une taille visée impossible est refusée ici). Un GIF est capturé comme

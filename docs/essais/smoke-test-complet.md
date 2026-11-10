@@ -88,20 +88,19 @@ Ouvrez Claude Code **dans** `C:\Essais\video-1` (vide).
 - Claude vérifie l'état sans rien montrer.
 - Il pose une **première ronde de 4 questions** :
   - **Durée** : 30 s · 1 min (Recommandé pour une formation courte) · 3 min · 5 min.
-  - **Public**.
-  - **Parcours** : Rapide (Recommandé) · Accompagné.
+  - **Public** (absent si le sujet le donne déjà : « pour mes stagiaires »).
+  - **Parcours** : Rapide (Recommandé) · Accompagné · Faites pour moi.
   - **À ajouter** : « mon logo et mes couleurs » · « rien pour l'instant ».
 
 **Vous répondez** : **1 min**, **professionnels du métier**, **Accompagné**, **mon logo et mes couleurs**.
 
 ### 1.2 Deuxième ronde : le son
 
-**Attendu** : une ronde **« Le son »** de 3 questions :
+**Attendu** : une ronde **« Le son »** de 2 questions (une troisième, « Préparer l'ordinateur », seulement s'il manque la transcription ou ffmpeg) :
 - **Musique** : « Une musique composée pour la vidéo (Recommandé) » · « J'ai un fichier » · « Pas de musique ». L'ambiance est décrite en mots simples, jamais par un nom technique.
-- **Voix** : « Je l'enregistre (Recommandé) » · « J'ai un fichier » · « Pas de voix ».
-- **Sous-titres** : « Oui (Recommandé) » · « Non ».
+- **Voix et sous-titres** : « Ma voix, avec sous-titres (Recommandé) » · « Ma voix, sans sous-titres » · « J'ai un fichier de ma voix » · « Pas de voix ».
 
-**Vous répondez** : **musique composée**, **je l'enregistre**, **sous-titres oui**.
+**Vous répondez** : **musique composée**, **ma voix, avec sous-titres**.
 
 ### 1.3 Logo, couleurs, police
 
@@ -168,6 +167,15 @@ Ouvrez Claude Code **dans** `C:\Essais\video-1` (vide).
 
 ## 3. Fabrication (15 à 25 min, surtout de l'attente)
 
+### 3.0 Ébauche animée
+
+**Attendu, juste après l'accord sur le déroulé (et le style), avant la voix**
+- Claude dit « Voici une première ébauche animée ; je la remplace scène par scène. »
+- Le navigateur s'ouvre sur l'aperçu **en moins d'une minute** après l'accord : chaque scène bouge déjà (scène toute faite du style, ou carte « Scène en préparation » avec ses textes), avec la musique composée.
+- Une pastille **« Ébauche »** s'affiche en haut à gauche sur les scènes pas encore écrites ; elle disparaît scène par scène pendant la fabrication.
+
+**À noter** : le temps entre votre accord et la première image qui bouge.
+
 ### 3.1 Voix provisoire et transcription
 
 **Attendu, avant les scènes**
@@ -203,7 +211,7 @@ Ouvrez Claude Code **dans** `C:\Essais\video-1` (vide).
 ### 4.1 Aperçu
 
 **Attendu**
-- Le navigateur s'ouvre sur l'aperçu (`http://localhost:4321/` ou un autre port).
+- L'aperçu est déjà ouvert depuis l'ébauche (`http://localhost:4321/` ou un autre port) ; plus aucune pastille « Ébauche ».
 - Une barre de lecture est en bas, avec un bouton **« Voix »**.
 
 **Regardez toute la vidéo, au casque.**
@@ -537,3 +545,17 @@ Rétablissez vos données personnelles mises de côté à l'étape 0.3. Regardez
 **Attendu** : Claude montre ce qu'il va supprimer, demande confirmation, puis rétablit les trois éléments.
 
 Les dossiers `C:\Essais\video-1` et `video-2` peuvent être gardés comme témoins, ou supprimés.
+
+---
+
+## Annexe : nombre de réponses avant la vidéo (spec Retouches et ergonomie, 5.4)
+
+À faire trois fois, dans trois dossiers vides, avec un sujet donné et **sans charte** (« À ajouter » → « rien pour l'instant ») : `/pulse-motion:creer la chaîne du froid en une minute pour mes stagiaires`. Comptez chaque réponse donnée (un clic ou une phrase), jusqu'au bloc de fin. Gardez les réponses « (Recommandé) », sauf le parcours ; la question « Préparer l'ordinateur » et celle du glossaire ne comptent pas (elles dépendent du poste et du sujet).
+
+| Parcours | Objectif | Réponses attendues | Compté |
+|---|---|---|---|
+| Rapide | 7 au plus | ronde 1 : 3 (le public est donné par le sujet) ou 4 ; le son : 2 ; déroulé et style : 1 | |
+| Faites pour moi | 4 au plus | ronde 1 : 3 ou 4 ; puis plus aucune question ; le bloc de fin liste « Mes choix » | |
+| Accompagné | 9 au plus | ronde 1 : 3 ou 4 ; le son : 2 ; déroulé : 1 ; style : 1 ; vidéo finale : 1 | |
+
+Sans sujet (`/pulse-motion:creer` seul) : **une seule question** d'entrée, « Que voulez-vous faire ? », avec quatre réponses (une vidéo à partir de mon idée, partir d'un modèle, voir un exemple d'abord, un de mes styles ou créer mon propre style), et rien d'écrit dans le dossier avant la réponse à la première ronde.

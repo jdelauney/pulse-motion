@@ -34,6 +34,7 @@ const { demarrerApercu, ouvrirNavigateur } = require('./apercu.js');
 const { trouverFfmpeg } = require('./lib/ffmpeg.js');
 const { exporterFidele, avecEffets } = require('./export-fidele.js');
 const { scenesProvisoires, messageProvisoire, dureeVideo, minutageVideo } = require('./lib/voix.js');
+const { scenesEbauche, messageEbauches } = require('./lib/ebauche.js');
 const L = require('./lib/livrables.js');
 const U = require('./lib/usages.js');
 const ME = require('./lib/mesures-export.js');
@@ -156,6 +157,9 @@ async function exporterVideo({
     }
   } else {
     // La planche n'a pas de son ; une vidéo avec la voix provisoire du système ne sort pas sans accord.
+    // Ébauche restante (spec Retouches et ergonomie, 5.3) : jamais exportée ; la planche, elle, reste permise.
+    const ebauches = scenesEbauche(projet, deroule);
+    if (ebauches.length) return fin({ ok: false, message: messageEbauches(ebauches), ebauches });
     const provisoires = scenesProvisoires(projet, deroule);
     if (provisoires.length && !avecProvisoire) return fin({ ok: false, message: messageProvisoire(provisoires) });
   }

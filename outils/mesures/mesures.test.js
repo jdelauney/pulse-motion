@@ -128,3 +128,23 @@ test("mesures-seance-bin-du-plugin-en-tete : la séance lance le « pulse-motion
   assert.equal(env[cle].split(path.delimiter)[0], path.join(plugin, "bin"));
   assert.equal(env.PM_SANS_OUVRIR, "1");
 });
+
+test("mesures-ebauche-avant : instant du premier aperçu et plus longue attente sans phrase, d'après une séance", () => {
+  const { instantApercu, attenteMax } = require("./ebauche.js");
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pm-mesures-ebauche-"));
+  try {
+    const t = (s) => new Date(Date.parse("2026-11-10T10:00:00Z") + s * 1000).toISOString();
+    const outil = (s, command, sidechain = false) => ({ type: "assistant", isSidechain: sidechain, timestamp: t(s), message: { content: [{ type: "tool_use", input: { command } }] } });
+    const phrase = (s) => ({ type: "assistant", timestamp: t(s), message: { content: [{ type: "text", text: "Je continue." }] } });
+    const lignes = [{ type: "user", timestamp: t(0) }, phrase(5), outil(20, "pulse-motion apercu . --ouvrir", true), outil(30, "pulse-motion consignes creer apercu,fin"), phrase(95), outil(120, "pulse-motion apercu . --ouvrir"), phrase(130)];
+    const transcription = path.join(dir, "s.jsonl");
+    fs.writeFileSync(transcription, lignes.map((l) => JSON.stringify(l)).join("\n"));
+    const mesure = path.join(dir, "m.json");
+    fs.writeFileSync(mesure, JSON.stringify({ temoin: "chaine-du-froid", plugin: "p", dureeMur: 140, transcription }));
+    // Ni un agent, ni une simple lecture de consignes : la première commande d'aperçu de la séance principale.
+    const r = instantApercu(mesure);
+    assert.equal(r.secondes, 120);
+    assert.equal(r.attenteMax, 90);
+    assert.equal(attenteMax(lignes), 90);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});

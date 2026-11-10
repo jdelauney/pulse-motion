@@ -2,7 +2,9 @@
 'use strict';
 /* Pulse Motion – point d'entrée unique des skills (bin/pulse-motion).
  *
- *   pulse-motion etat <dossier> [--accord deroule|style|video] [--parcours rapide|accompagne]
+ *   pulse-motion etat <dossier> [--accord deroule|style|video] [--parcours rapide|accompagne|autonome]
+ *   pulse-motion ebauche <dossier>       ébauche animée des scènes absentes (scène toute faite du style ou carte neutre)
+ *   pulse-motion decisions <dossier> [noter "<sujet>" "<choix>" "<raison>" "<pour changer>"]   choix faits par Claude (« Faites pour moi »)
  *   pulse-motion rappel                 rappel de démarrage (crochet SessionStart, par le relais sh) : entrée JSON du crochet
  *   pulse-motion assembler <dossier>
  *   pulse-motion controler <dossier> [--sans-correction] [--sans-rendu] [--gpu] [--complet]   contrôle ; corrige seul les cas sûrs
@@ -50,6 +52,8 @@ const SCRIPTS = {
   etat: 'etat.js',
   rappel: 'rappel.js',
   avancement: 'avancement.js',
+  ebauche: 'ebauche.js',
+  decisions: 'decisions.js',
   assembler: 'assembler.js',
   controler: 'controler.js',
   apercu: 'apercu.js',
@@ -164,7 +168,8 @@ function lancer(args) {
   }
   console.error([
     'Usage : pulse-motion <commande> …',
-    '  etat <dossier> [--accord deroule|style|video] [--parcours rapide|accompagne]',
+    '  etat <dossier> [--accord deroule|style|video] [--parcours rapide|accompagne|autonome]',
+    '  ebauche <dossier>        ébauche animée des scènes absentes      decisions <dossier> [noter "<sujet>" "<choix>" "<raison>" "<pour changer>"]',
     '  assembler <dossier>      controler <dossier> [--sans-correction] [--sans-rendu] [--gpu] [--complet]      apercu <dossier> [--port N] [--ouvrir]',
     '  historique sauvegarder|annuler <dossier>',
     '  atelier [<recette>] [--dossier <dossier>]   atelier des effets de particules : régler à l\'œil, enregistrer dans effets/',
@@ -181,7 +186,7 @@ function lancer(args) {
     '  reference <nom>          scene <style> <nom>      effet <nom>      consignes <skill> [<section>]',
     '  mouvements liste [--categorie <id>] | chercher <mots…> | afficher <n° ou nom> | reference | choisir [--categorie <id>] [--ouvrir] [--delai <minutes>]   [--json]',
     '  personnages liste|afficher <nom>|verifier|planche <nom> [--dessin <d>]|planche --dessin <d> --visage|atelier [<nom>] [--dessin <d>] [--decoupe <nom>] [--bibliotheque]|analyser <svg>|decouper <nom>|renommer-couleur <dessin> <ancien> <nouveau>   poses, clips et gabarits des personnages',
-    '  modeles liste | afficher <id> | trouver "<sujet>" | exemple <id> <dossier>   modèles de vidéo et leurs exemples finis',
+    '  modeles liste | afficher <id> | trouver "<sujet>" | exemple <id> <dossier> | apercu <id>   modèles de vidéo et leurs exemples finis',
     '  styles [--genre <genre>]                         styles verifier <nom>',
     '  changer-style <dossier> <style>                  comparer <dossier> <s1,s2,s3> [--scenes a,b] [--ouvrir]',
     '  charte enregistrer <nom> <dossier> | liste | appliquer <nom> <dossier> | depuis-logo <fichier> [--style s] [--ton clair|sombre]',

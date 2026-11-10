@@ -156,3 +156,25 @@ html.pm-transparent, html.pm-transparent body, .pm-transparent #pm-scene, .pm-tr
   background-image: none !important;
   box-shadow: none !important;
 }
+
+/* Ébauche d'une scène composée (pulse-motion ebauche, spec Retouches et ergonomie 5.3) : carte neutre aux couleurs du style,
+   avec les textes de la scène, remplacée par la scène écrite. « Scène en préparation » est écrit ici, jamais dans la scène. */
+#pm-scene > section[data-scene].pm-ebauche {
+  display: grid; place-items: center; padding: 8cqh; overflow: hidden;
+  background: var(--c-fond, #fff); color: var(--c-texte, #111); font-family: var(--f-texte, system-ui, sans-serif);
+}
+#pm-scene .pm-ebauche-rond {
+  position: absolute; left: -16cqh; top: -20cqh; width: 64cqh; height: 64cqh; border-radius: 50%; pointer-events: none;
+  background: color-mix(in srgb, var(--c-primaire, #888) 16%, transparent); translate: var(--dx, 0cqh) var(--dy, 0cqh);
+}
+#pm-scene .pm-ebauche-carte {
+  position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 2.4cqh;
+  max-width: 82%; padding: 5cqh 6cqh; border-radius: 3cqh; text-align: center;
+  border: 0.4cqh dashed color-mix(in srgb, var(--c-texte, #111) 35%, transparent);
+  background: color-mix(in srgb, var(--c-fond, #fff) 88%, var(--c-texte, #111));
+}
+#pm-scene .pm-ebauche-carte > * { margin: 0; translate: 0 var(--pm-eb-y, 0cqh); }
+#pm-scene .pm-ebauche-titre { font: 700 6.4cqh/1.12 var(--f-titres, var(--f-texte, system-ui, sans-serif)); text-wrap: balance; }
+#pm-scene .pm-ebauche-texte { font: 400 3.6cqh/1.4 var(--f-texte, system-ui, sans-serif); }
+#pm-scene .pm-ebauche-note { font: 600 2.4cqh/1 var(--f-texte, system-ui, sans-serif); letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.6; }
+#pm-scene .pm-ebauche-note::after { content: "Scène en préparation"; }
