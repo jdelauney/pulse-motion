@@ -1,7 +1,7 @@
 /* Pulse Motion – calque de dessin des scènes (spec S7, 5.2 à 5.5) : un SVG redessiné à chaque image à partir de t et du
  * relevé (moteur/releve.js), net à tout zoom, capturé tel quel par les deux voies d'export.
  *
- *   <script>M.dessin('schema', function (d) { d.fleche('#client', '#serveur', { debut: 'mot:serveur', etiquette: 'requete' }); });</script>
+ *   M.dessin('schema', function (d) { d.fleche('#client', '#serveur', { debut: 'mot:serveur', etiquette: 'requete' }); });   (script de scène)
  *   <i data-fleche="#client → #serveur" data-start="mot:serveur" data-dur="0.7"><span data-texte="requete"></span></i>
  *   <i data-annoter="entoure" data-cible="#prix" data-start="mot:cher"></i>
  *   <path data-main-levee d="…">                       (forme SVG d'une scène redessinée à main levée au démarrage)
@@ -27,7 +27,7 @@
  * Tracé (entrée « trace ») : trait de 0 à 1 sur les 78 premiers % de l'entrée, remplissage de 42 % à 100 % (stage.js) ; une
  * flèche se trace sur toute son entrée, sa pointe au bout du trait, son étiquette de 55 % à 90 %. Main levée : --pm-trait:
  * main sur la scène (ou o.main), --pm-rugosite, --pm-courbure, --pm-ebullition (re-tracés par seconde, 0 : figé).
- * Encre des styles (conflit 9) : M.dessin.traces(idScene) -> [{ cle, genre, d, part, epaisseur, couleur, calque, remplissage?,
+ * Encre des styles (conflit 9) : M.dessin.traces(idScene) -> [{ cle, genre, d, transform? (pointe), part, epaisseur, couleur, calque, remplissage?,
  *   opacite }] de l'image en cours ; M.dessin.encreStyle(fn(idScene, traces, { L })) : le canevas d'un style s'inscrit ;
  *   data-encre="style" sur la scène : le SVG garde ses nœuds sans peindre l'encre, fn la redessine ; sans fn, encre opaque à
  *   0,94 dans le SVG, sans fusion.
@@ -371,6 +371,8 @@
     var sortie = o.sortie || (fin !== null ? 'fondu' : 'aucune');
     var calque = o.calque || spec.calque || 'dessus';
     if (cadre.mode === 'releve') {
+      // Calque du dessous créé dès le relevé (avant toute image) : la page est la même quel que soit l'ordre des seek.
+      if (calque === 'dessous' && !cadre.parents.length) calqueDe(sc, 'dessous');
       var bx = spec.formes.map(function (f) { return boiteDeForme(sc, f.forme); });
       if (spec.fleche) bx.push(M.geometrieDessin.boiteDe({ type: 'poly', points: spec.fleche.geo.pointe(spec.fleche.geo.longueur, 1) }));
       cadre.boites.push({ cle: cle, id: o.id !== undefined ? String(o.id) : null, genre: genre === 'annotation' ? 'trait' : genre, debut: r2(debut), fin: r2(fin !== null ? fin : d.duree), boite: union(bx), forme: 'rect', nu: true });
@@ -474,9 +476,18 @@
     var liste = [];
     if (fl.tete === 'fin' || fl.tete === 'deux') liste.push(geo.pointe(geo.longueur * tracee, 1));
     if ((fl.tete === 'debut' || fl.tete === 'deux') && tracee > 0.2) liste.push(geo.pointe(0.001, -1));
+    // La pointe garde le même chemin, dans son repère, et se déplace par une transformation : le rendu d'un chemin qui a changé
+    // de forme d'une image à l'autre peut différer de quelques pixels selon ce que le navigateur a déjà dessiné.
+    var hs = geo.taillePointe;
+    var local = [[-hs * Math.cos(0.5), hs * Math.sin(0.5)], [0, 0], [-hs * Math.cos(0.5), -hs * Math.sin(0.5)]];
     liste.forEach(function (pts, j) {
       var chemin = enfant(n, k++, 'path');
       var dPointe;
+      var tip = pts[1];
+      var angle = Math.atan2(tip[1] - (pts[0][1] + pts[2][1]) / 2, tip[0] - (pts[0][0] + pts[2][0]) / 2) * 180 / Math.PI;
+      var transformation = 'translate(' + r3(tip[0]) + ' ' + r3(tip[1]) + ') rotate(' + r3(angle) + ')';
+      attr(chemin, 'transform', transformation);
+      pts = local;
       if (o.main) {
         dPointe = M.mainLevee.mainLevee({ type: 'poly', points: pts }, { graine: o.g + 7 + j, rugosite: 0.6 * sc.rugosite, courbure: sc.courbure, passes: 1 }).d;
         attr(chemin, 'fill', 'none');
@@ -495,7 +506,7 @@
       attr(chemin, 'stroke-dasharray', null);
       attr(chemin, 'stroke-dashoffset', null);
       encre(sc, chemin, 1);
-      cadre.traces.push({ cle: o.cle + '/pointe' + (j ? j : ''), genre: 'fleche', d: dPointe, part: 1, epaisseur: r3(o.main ? o.ep : o.ep * 0.6), couleur: o.teinte, calque: o.calque, remplissage: !o.main, opacite: r3(o.opacite) });
+      cadre.traces.push({ cle: o.cle + '/pointe' + (j ? j : ''), genre: 'fleche', d: dPointe, transform: transformation, part: 1, epaisseur: r3(o.main ? o.ep : o.ep * 0.6), couleur: o.teinte, calque: o.calque, remplissage: !o.main, opacite: r3(o.opacite) });
     });
     return k;
   }
@@ -630,7 +641,7 @@
         attr(n, 'transform', tr.length ? tr.join(' ') : null);
         attr(n, 'opacity', o.opacite !== undefined && Number(o.opacite) < 1 ? r3(clamp(Number(o.opacite))) : null);
         cadre.parents.push(n);
-      }
+      } else if (o.calque === 'dessous') calqueDe(sc, 'dessous');
       try { fn(d); } finally {
         if (cadre.mode !== 'releve') cadre.parents.pop();
         cadre.prefixe = prefixe;
@@ -653,6 +664,7 @@
     var x = Number(o.x) || 0, y = Number(o.y) || 0;
     var debut = d.temps(o.debut !== undefined ? o.debut : 0);
     if (cadre.mode === 'releve') {
+      if (o.calque === 'dessous' && !cadre.parents.length) calqueDe(sc, 'dessous');
       cadre.boites.push({ cle: cle, id: o.id !== undefined ? String(o.id) : null, genre: 'image', debut: r2(debut), fin: r2(d.duree), boite: { x: r2(x), y: r2(y), l: r2(taille), h: r2(taille) }, forme: 'rect', nu: true });
       return cle;
     }

@@ -68,7 +68,7 @@ function preparerDessin(html, { scene, scripts = [] } = {}) {
   BALISE.lastIndex = 0;
   while ((m = BALISE.exec(vu))) {
     const [tout, balise, brut] = m;
-    if (!/\sdata-(?:fleche|annoter|main-levee)(?=[\s=>/])/.test(` ${brut}`)) continue;
+    if (!/\sdata-(?:fleche|annoter|main-levee)(?=[\s=>/]|$)/.test(` ${brut}`)) continue;
     const a = lireAttributs(brut);
     const tag = balise.toLowerCase();
     const ajouts = [];

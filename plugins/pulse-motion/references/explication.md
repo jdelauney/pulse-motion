@@ -68,7 +68,7 @@ M.dessin('schema', function (d) {
 
 ## Encre des styles
 
-Un style qui peint son encre dans son propre canevas (fusions permises) pose `data-encre="style"` sur la scène et s'inscrit par `M.dessin.encreStyle(fn)` : le calque garde ses nœuds, ses boîtes et ses étiquettes sans peindre l'encre, et `fn(idScene, traces)` reçoit à chaque image les tracés (`M.dessin.traces(idScene)` : chemin à main levée, part tracée de 0 à 1, épaisseur, couleur résolue, calque). Sans canevas inscrit, l'encre reste dans le SVG, opaque à 0,94, sans fusion.
+Un style qui peint son encre dans son propre canevas (fusions permises) pose `data-encre="style"` sur la scène et s'inscrit par `M.dessin.encreStyle(fn)` : le calque garde ses nœuds, ses boîtes et ses étiquettes sans peindre l'encre, et `fn(idScene, traces)` reçoit à chaque image les tracés (`M.dessin.traces(idScene)` : chemin à main levée, transformation d'une pointe de flèche, part tracée de 0 à 1, épaisseur, couleur résolue, calque). Sans canevas inscrit, l'encre reste dans le SVG, opaque à 0,94, sans fusion.
 
 ## Ce qui casse
 

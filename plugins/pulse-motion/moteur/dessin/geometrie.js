@@ -8,7 +8,8 @@
  *   l'écart ; contrôle milieu + normale × courbe × 0,5 × longueur ; forme 'segment' (courbe nulle) ou 'quad'.
  *   pointe(distance, sens) -> [[x, y] ×3] : pointe de longueur épaisseur × 3,2 + 1,1 cqh, ouverture ± 0,5 rad, au point du
  *   tracé à cette distance (elle suit le bout du tracé). etiquette(l, h) -> { x, y } : centre de l'étiquette, du côté
- *   extérieur de la courbe (au-dessus d'une flèche droite), à 3,1 cqh + |nx| × l / 2 (+ |ny| × max(0, h / 2 − 1,8)) du milieu.
+ *   extérieur de la courbe (au-dessus d'une flèche droite), à 3,1 cqh + |nx| × l / 2 (+ |ny| × max(0, h / 2 − 1,8)) du milieu,
+ *   éloignée par pas de 0,4 cqh tant qu'elle touche encore le tracé.
  * annotation(type, boite, o) -> [{ forme, progres(p) -> [0, 1], remplir?, calque? }] ; types TYPES_ANNOTATION. Marge 1,3 cqh :
  *   souligne (trait sous la boîte), entoure (ellipse de 1,12 × la largeur et 1,25 × la hauteur avec marge), encadre,
  *   surligne (aplat sous le texte, qui s'étend de gauche à droite), barre, croix (deux traits successifs), accolade (à gauche).
@@ -63,7 +64,7 @@
     var c = { x: (a.x + b.x) / 2 - dy * courbe * 0.5, y: (a.y + b.y) / 2 + dx * courbe * 0.5 };
     var forme = courbe ? { type: 'quad', a: [a.x, a.y], c: [c.x, c.y], b: [b.x, b.y] } : { type: 'segment', a: [a.x, a.y], b: [b.x, b.y] };
     var echantillons = [];
-    var n = courbe ? 32 : 1, s = 0, prec = null;
+    var n = courbe ? 32 : 16, s = 0, prec = null;
     for (var i = 0; i <= n; i++) {
       var t = i / n, u = 1 - t;
       var p = courbe ? { x: u * u * a.x + 2 * u * t * c.x + t * t * b.x, y: u * u * a.y + 2 * u * t * c.y + t * t * b.y } : { x: a.x + dx * t, y: a.y + dy * t };
@@ -104,7 +105,14 @@
       var off = DECALAGE_ETIQUETTE;
       var extraX = Math.abs(nx) * (l || 0) / 2;
       var extraY = Math.abs(ny) * Math.max(0, (h || 0) / 2 - 1.8);
-      return { x: mid.x + nx * (off + extraX), y: mid.y + ny * (off + extraY), nx: nx, ny: ny };
+      // Une étiquette qui toucherait encore le tracé (flèche en biais, courbe serrée) s'éloigne par pas de 0,4 cqh.
+      var pousse = 0;
+      var touche = function (px, py) {
+        return echantillons.some(function (e) { return Math.abs(e.x - px) < (l || 0) / 2 + epaisseur && Math.abs(e.y - py) < (h || 0) / 2 + epaisseur; });
+      };
+      var px = mid.x + nx * (off + extraX), py = mid.y + ny * (off + extraY);
+      while ((l || h) && touche(px, py) && pousse < 60) { pousse++; px += nx * 0.4; py += ny * 0.4; }
+      return { x: px, y: py, nx: nx, ny: ny };
     }
     return { a: a, b: b, c: c, forme: forme, longueur: longueur, echantillons: echantillons, pointA: pointA, pointe: pointe, etiquette: etiquette, taillePointe: taillePointe };
   }
