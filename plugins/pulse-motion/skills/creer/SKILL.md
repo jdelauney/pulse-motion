@@ -20,7 +20,7 @@ Guider une personne **sans notion de code** de son idée jusqu'à une vidéo ani
 
 ## 0. Vérifier
 
-**Rien n'est écrit dans le dossier avant la réponse à la première ronde** : jusque-là, seuls `pulse-motion etat .`, `modeles trouver`, `modeles afficher`, `modeles liste`, `modeles apercu`, `charte liste` et les lectures (`lexique`, `reference`).
+**Rien n'est écrit dans le dossier avant la réponse à la première ronde** : jusque-là, seuls `pulse-motion etat .`, `modeles trouver`, `modeles afficher`, `modeles liste`, `modeles apercu`, `charte liste`, `styles` et les lectures (`lexique`, `reference`).
 
 `pulse-motion etat .`
 - La commande échoue avec « Node.js introuvable » : proposer « Installer Node.js (Recommandé) » · « Je l'installe moi-même » (accord : `/pulse-motion:outils`, étape « Installer Node.js »), puis relancer `pulse-motion etat .`. S'arrêter sinon.
