@@ -293,7 +293,42 @@
         bandeau.textContent = message;
         bandeau.hidden = false;
       });
+      source.addEventListener('avancement', function (ev) {
+        try { M.afficherAvancement(JSON.parse(ev.data)); } catch (e) { /* message illisible : ignoré */ }
+      });
     }
+    // Avancement d'un travail long (spec Retouches et ergonomie, 5.2), aperçu seulement : un bandeau discret au-dessus de la
+    // barre, « Pulse Motion travaille : contrôle de la vidéo, scène 3 sur 6, encore environ 40 s » ; retiré 3 s après la fin,
+    // gardé avec son message après un échec. Jamais dans la page livrée ni dans les images (élément hors de #pm-scene).
+    var bandeauAvancement = null;
+    var finAvancement = null;
+    function dureeEnMots(s) {
+      s = Math.max(1, Math.round(s));
+      return s < 60 ? s + ' s' : Math.floor(s / 60) + ' min' + (s % 60 ? ' ' + (s % 60) + ' s' : '');
+    }
+    M.texteAvancement = function (e) {
+      var quoi = String(e.libelle || e.travail || '');
+      quoi = quoi.charAt(0).toLowerCase() + quoi.slice(1);
+      if (e.fini) return e.ok ? 'Pulse Motion a fini : ' + quoi + '.' : 'Pulse Motion n\'a pas pu finir : ' + quoi + (e.message ? ' (' + e.message + ')' : '') + '.';
+      var parts = [quoi];
+      if (e.detail) parts.push(e.detail);
+      if (typeof e.restant === 'number' && e.restant > 0) parts.push('encore environ ' + dureeEnMots(e.restant));
+      return 'Pulse Motion travaille : ' + parts.join(', ');
+    };
+    M.afficherAvancement = function (e) {
+      if (!racine.__PM_APERCU__) return;
+      if (!bandeauAvancement) {
+        bandeauAvancement = el('div', { id: 'pm-avancement', role: 'status', 'aria-live': 'polite', hidden: '' }, document.body);
+        bandeauAvancement.style.cssText = 'position:fixed;left:50%;bottom:64px;transform:translateX(-50%);z-index:19;max-width:min(90vw,40rem);'
+          + 'padding:6px 14px;border-radius:8px;background:rgb(27 27 27/.88);color:#eee;font:13px/1.4 system-ui,sans-serif;pointer-events:none';
+      }
+      clearTimeout(finAvancement);
+      if (!e) { bandeauAvancement.hidden = true; return; }
+      bandeauAvancement.textContent = M.texteAvancement(e);
+      bandeauAvancement.style.color = e.fini && !e.ok ? '#ffb4a8' : '#eee';
+      bandeauAvancement.hidden = false;
+      if (e.fini && e.ok) finAvancement = setTimeout(function () { bandeauAvancement.hidden = true; }, 3000);
+    };
     // Erreurs d'assemblage (transmises par l'aperçu) et de minutage : visibles tout de suite.
     // Les informations (gravité « info ») ne sont pas des erreurs : pas de bandeau pour elles.
     var erreurs = (racine.__PM_ERREURS__ || []).concat(M.erreurs || []).filter(function (e) { return e.gravite !== 'info'; });

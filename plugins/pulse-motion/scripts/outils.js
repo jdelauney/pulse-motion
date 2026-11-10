@@ -107,7 +107,7 @@ function etatOutils(options = {}) {
  */
 function planOutils(etat, { plateforme = process.platform, commandeFfmpeg, commandePython } = {}) {
   const F = require('./lib/ffmpeg.js');
-  const sure = (c) => (c && !/^sudos/.test(c) ? c : null);
+  const sure = (c) => (c && !/^sudo\s/.test(c) ? c : null);
   const plan = [];
   if (etat.ffmpeg && !etat.ffmpeg.ok) {
     const c = commandeFfmpeg !== undefined ? commandeFfmpeg : F.commandeSure({ plateforme });
@@ -126,7 +126,7 @@ function planOutils(etat, { plateforme = process.platform, commandeFfmpeg, comma
       duree: '3 à 6 min', commande: 'pulse-motion whisper installer', commandeLegere: 'pulse-motion whisper installer --modele small' });
   }
   if (etat.navigateur && !etat.navigateur.ok) {
-    plan.push({ outil: 'navigateur', pourquoi: 'regarder la vidéo, la contrôler, l'exporter', taille: '≈ 150 Mo', duree: '2 min', commande: null,
+    plan.push({ outil: 'navigateur', pourquoi: 'regarder la vidéo, la contrôler, l\'exporter', taille: '≈ 150 Mo', duree: '2 min', commande: null,
       texte: 'installer Chrome ou Edge depuis leur site' });
   }
   return plan;

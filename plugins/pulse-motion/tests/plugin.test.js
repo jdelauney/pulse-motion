@@ -366,7 +366,7 @@ test('plugin : creer n\'écrit rien avant la première ronde', () => {
   assert.match(creer, /« Nouvelle vidéo sur « <sujet> » dans ce dossier »/);
   assert.match(creer.slice(debut, ronde), /`projet` vrai[^\n]*\/pulse-motion:reprendre/);
   assert.match(creer.slice(debut, ronde), /« Que sait faire Pulse Motion \? »[^\n]*sans rien écrire/);
-  assert.match(lire('references', 'creer-demandes.md'), /## Que sait faire Pulse Motion \?/);
+  assert.match(lire('references', 'demandes.md'), /## Que sait faire Pulse Motion \?/);
 });
 
 test('demandes : les compétences en langage courant, avec garde « pas de vidéo »', () => {

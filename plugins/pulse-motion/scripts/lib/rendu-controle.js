@@ -151,7 +151,7 @@ const PREPARER_FLASHS = `(function () {
  * aides : autres pages de contrôle de la même vidéo ; les instants sont répartis entre toutes les pages, en morceaux
  * contigus (chaque capture attend une image du navigateur : plusieurs pages en même temps vont plus vite).
  */
-async function flashsParCDP(page, { plagesFlashs, aides = [] } = {}) {
+async function flashsParCDP(page, { plagesFlashs, aides = [], surScene = null } = {}) {
   const info = await page.evaluer(PREPARER_FLASHS);
   const pages = [page];
   for (const aide of aides) {
@@ -160,7 +160,17 @@ async function flashsParCDP(page, { plagesFlashs, aides = [] } = {}) {
   const S = seuilsFlashs(SEUILS);
   const echelle = S.largeurFlash / Math.max(1, info.l);
   const minutage = { scenes: info.scenes };
+  // Avancement par scène (spec Retouches et ergonomie, 5.2) : une scène est annoncée la première fois qu'une de ses images est
+  // relevée (les pages d'aide relèvent en même temps des morceaux différents).
+  const vues = new Set();
+  // Contrôle partiel : seules les scènes que touchent les plages comptent (une marge peut en toucher une voisine).
+  const nScenes = Math.max(1, plagesFlashs ? info.scenes.filter((sc) => plagesFlashs.some((p) => p[0] < sc.fin && p[1] > sc.debut)).length : info.scenes.length);
+  const borne = (k) => Math.min(k, nScenes);
   const relever = async (p, t) => {
+    if (surScene) {
+      const id = scenesVisibles(minutage, t)[0];
+      if (id && !vues.has(id)) { vues.add(id); try { surScene(borne(vues.size), nScenes, id); } catch { /* suivi facultatif */ } }
+    }
     await p.evaluer(`M.rendre(${Number(t)}), true`);
     const r = await p.envoyer('Page.captureScreenshot', { format: 'png', optimizeForSpeed: true, captureBeyondViewport: false,
       clip: { x: info.x, y: info.y, width: info.l, height: info.h, scale: echelle } });
@@ -195,7 +205,7 @@ async function flashsParCDP(page, { plagesFlashs, aides = [] } = {}) {
  * les mesures de la page principale. genre : celui du déroulé (accroche et première image des réseaux). ecoute : { humeurs }
  * pour mesurer aussi le son (résultat dans son ; null : non mesuré).
  */
-async function controlerRendu({ html, ratio, duree, navigateur = trouverNavigateur(), scenes = null, plages = null, plagesFlashs = null, ouvrir, genre = null, ecoute = null, plateforme = null }) {
+async function controlerRendu({ html, ratio, duree, navigateur = trouverNavigateur(), scenes = null, plages = null, plagesFlashs = null, ouvrir, genre = null, ecoute = null, plateforme = null, surScene = null }) {
   if (!navigateur) return nonVerifie('rendu-non-verifie', 'Chrome ou Edge introuvable : la vidéo rendue (chevauchements, marges, textes qui débordent…) n\'a pas été vérifiée. Installez l\'un des deux, ou indiquez son chemin avec la variable PM_NAVIGATEUR.');
   const delai = (30 + 2 * (duree || 0)) * 1000;
   const introuvable = () => nonVerifie('rendu-impossible', `Navigateur introuvable à « ${navigateur} » : vérifiez la variable PM_NAVIGATEUR (ou retirez-la pour utiliser Chrome ou Edge installés). Seuls les contrôles sans navigateur ont été faits.`);
@@ -218,7 +228,7 @@ async function controlerRendu({ html, ratio, duree, navigateur = trouverNavigate
       if (erreur !== null) return impossible(erreur);
       const resultat = await page.evaluer(`(async function () {${scriptMesures({ ratio, scenes, plages, flashs: false, genre, ecoute, plateforme })}\n})()`);
       const pagesAide = (await aides).filter(Boolean).map((a) => a.page);
-      resultat.constats = resultat.constats.concat(await flashsParCDP(page, { plagesFlashs, aides: pagesAide }));
+      resultat.constats = resultat.constats.concat(await flashsParCDP(page, { plagesFlashs, aides: pagesAide, surScene }));
       // Son : rendu pendant les mesures et les flashs, attendu seulement maintenant.
       if (ecoute) resultat.ecoute = await page.evaluer('window.__pmEcoute');
       erreur = await erreurPage();

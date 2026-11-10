@@ -1,6 +1,6 @@
-# Demandes particulières pendant la création
+# Demandes particulières
 
-Lu par `/pulse-motion:creer` à la demande : ce que sait faire Pulse Motion, les modèles de vidéo, les mouvements nommés. Rien de ce qui suit n'écrit dans le dossier, sauf l'exemple d'un modèle, sur demande expresse.
+Lu à la demande par `/pulse-motion:creer` (ce que sait faire Pulse Motion, les modèles de vidéo, les mouvements nommés) et par `/pulse-motion:retoucher` (les mouvements nommés). Rien de ce qui suit n'écrit dans le dossier, sauf l'exemple d'un modèle, sur demande expresse.
 
 ## Que sait faire Pulse Motion ?
 

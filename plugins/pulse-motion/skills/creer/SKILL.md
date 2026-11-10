@@ -26,7 +26,7 @@ Guider une personne **sans notion de code** de son idée jusqu'à une vidéo ani
 - La commande échoue avec « Node.js introuvable » : proposer « Installer Node.js (Recommandé) » · « Je l'installe moi-même » (accord : `/pulse-motion:outils`, étape « Installer Node.js »), puis relancer `pulse-motion etat .`. S'arrêter sinon.
 - `node.ok` faux : expliquer le message `node.message` et s'arrêter.
 - `projet` vrai : une vidéo existe déjà ici. Proposer `/pulse-motion:reprendre`, ou de créer la nouvelle vidéo dans un autre dossier. S'arrêter.
-- « Que sait faire Pulse Motion ? », ou demande sans sujet : présenter ce qu'il fait d'après `pulse-motion reference creer-demandes`, sans rien écrire, puis demander le sujet.
+- « Que sait faire Pulse Motion ? », ou demande sans sujet : présenter ce qu'il fait d'après `pulse-motion reference demandes`, sans rien écrire, puis demander le sujet.
 
 ## 1. Questions (une ronde)
 
@@ -35,7 +35,7 @@ Le sujet vient de l'argument ; sinon, le demander d'abord en une question ouvert
 La première question rappelle ce qui va se passer : « Nouvelle vidéo sur « <sujet> » dans ce dossier ».
 
 **Modèle de vidéo.** `pulse-motion modeles trouver "<sujet>"` (ou `pulse-motion modeles afficher <id>` si la personne en nomme un : « à partir du modèle pitch »). Un modèle trouvé fixe le genre, le format, l'ambiance musicale et l'ordre des styles (`styles`, le premier recommandé) ; sa durée (`duree`, par exemple « 45 s ») devient la première réponse de la question Durée, « (Recommandé) », à la place de la plus proche ; le déroulé (étape 2) part de ses scènes : mêmes `type`, `intention`, `transition`, `mouvements` et `effet` (l'effet se donne à l'animateur de la scène), durées ajustées à la durée choisie, textes écrits pour le sujet en suivant la consigne de chaque clé (une clé dont la consigne dit « à retirer » peut manquer). Le dire en une phrase, avant les questions : « Je pars du modèle « <nom> » : <n> scènes, environ <durée>. » Son `sousTitres` dit si la réponse « Oui » est recommandée à la question Sous-titres. La personne peut tout changer ensuite. Aucun modèle (`null`) : continuer comme ci-dessous, sans en parler.
-« Quels modèles ? », « montre-moi un exemple de pitch », un mouvement nommé : `pulse-motion reference creer-demandes`.
+« Quels modèles ? », « montre-moi un exemple de pitch », un mouvement nommé : `pulse-motion reference demandes`.
 
 **Première ronde** :
 
@@ -90,7 +90,7 @@ La charte (logo, couleurs, polices) vit dans `charte/` du projet ; la musique da
 
 `charte` du déroulé ne garde que les réglages ponctuels (`ton` : `clair`, `sombre` ou `auto` ; une couleur à changer pour cette vidéo seulement) ; la charte elle-même est dans `charte/`. `charte`, `musique` et `tempo` sont facultatifs. Clés de `textes` : celles de la scène toute faite (`pulse-motion reference styles/<style>`).
 
-Mouvements nommés (« un pop-in sur les titres », « #006 pour le titre », « montre-moi les mouvements ») : `pulse-motion reference creer-demandes`, section « Mouvements nommés ».
+Mouvements nommés (« un pop-in sur les titres », « #006 pour le titre », « montre-moi les mouvements ») : `pulse-motion reference demandes`, section « Mouvements nommés ».
 
 ## 3. Fabrication
 

@@ -13,7 +13,11 @@ if (require.main === module) {
   const args = process.argv.slice(2);
   if (args[0] === 'installer') {
     const i = args.indexOf('--modele');
-    installerWhisper(i >= 0 && args[i + 1] ? { modele: args[i + 1] } : {}).catch((e) => ({ ok: false, message: `L'installation de la transcription a échoué (${e.message}).` })).then((r) => {
+    // Avancement (spec Retouches et ergonomie, 5.2) : dans le dossier courant (celui de la vidéo, en général).
+    const avancement = require('./lib/avancement.js').suivre(process.cwd(), { travail: 'installation', libelle: 'Installation de la transcription' });
+    const surEtape = (k, n, nom) => avancement(k, n, `${nom} (étape ${k + 1} sur ${n})`);
+    installerWhisper({ ...(i >= 0 && args[i + 1] ? { modele: args[i + 1] } : {}), surEtape }).catch((e) => ({ ok: false, message: `L'installation de la transcription a échoué (${e.message}).` })).then((r) => {
+      avancement.terminer(r.ok, r.ok ? undefined : r.message);
       console.log(JSON.stringify(r, null, 2));
       process.exit(r.ok ? 0 : 1);
     });

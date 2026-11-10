@@ -238,8 +238,9 @@ function lancerCommande(commande) {
   });
 }
 
-/** Installe la transcription (environnement isolé, faster-whisper, modèle). -> { ok, message, modele? } */
-async function installerWhisper({ dossier = dossierWhisper(), modele = MODELE_DEFAUT, python = trouverPython(), lancer = lancerCommande, ancien } = {}) {
+/** Installe la transcription (environnement isolé, faster-whisper, modèle). -> { ok, message, modele? } ; surEtape(i, n, nom) :
+ *  au début de chaque étape (avancement, spec Retouches et ergonomie 5.2). */
+async function installerWhisper({ dossier = dossierWhisper(), modele = MODELE_DEFAUT, python = trouverPython(), lancer = lancerCommande, ancien, surEtape = () => {} } = {}) {
   if (!MODELE_VALIDE.test(String(modele))) {
     return { ok: false, message: `Nom de modèle invalide : « ${modele} » (lettres minuscules, chiffres, points et tirets, ex. small ou large-v3-turbo).` };
   }
@@ -252,6 +253,7 @@ async function installerWhisper({ dossier = dossierWhisper(), modele = MODELE_DE
   fs.mkdirSync(dossier, { recursive: true });
   const commandes = commandesInstallation(python.commande, dossier, modele);
   for (let i = 0; i < commandes.length; i++) {
+    try { surEtape(i, commandes.length, ETAPES[i]); } catch { /* suivi facultatif */ }
     const r = await lancer(commandes[i]);
     if (r.code !== 0) {
       const cause = String(r.erreurs || '').trim().split(/\r?\n/).pop() || `code ${r.code}`;

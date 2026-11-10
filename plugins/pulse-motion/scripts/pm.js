@@ -14,7 +14,9 @@
  *   pulse-motion voix importer <fichier> [--scene <id>] [dossier] | provisoire [--scene <id>] [dossier] | transcrire [--scene <id>] [dossier] | studio <scène> [dossier]   voix d'une scène, voix provisoire, transcription, studio
  *   pulse-motion musique ecouter [dossier] [--ouvrir]   musique seule dans sortie/musique.wav (pour l'écouter)
  *   pulse-motion whisper [installer [--modele small]]   transcription des voix (Python, faster-whisper) : état ou installation
- *   pulse-motion outils                  état de l'ordinateur : Node, Chrome ou Edge, ffmpeg, Python, transcription, voix du système
+ *   pulse-motion outils [--plan]         état de l'ordinateur : Node, Chrome ou Edge, ffmpeg, Python, transcription, voix du système ;
+ *                                        --plan : ce qui manque, dans l'ordre où l'installer (un accord pour la liste)
+ *   pulse-motion avancement <dossier> [--suivre]   travail long en cours (contrôle, export, installation…) : une ligne, ou une par étape
  *   pulse-motion planche <dossier> [id1,id2] [--ouvrir]   images clés PNG dans sortie/planche/
  *   pulse-motion planche <dossier> [id1,id2] --pdf   PDF des planches (A4 paysage, deux scènes par page) : sortie/<titre>-planches.pdf
  *   pulse-motion credits <dossier> [noter <fichier> "<source>" "<licence>" ["<auteur>"]]   crédits de la vidéo ; source d'un fichier importé
@@ -47,6 +49,7 @@ const NOM_SUR = /^[a-z0-9-]+(\/[a-z0-9-]+)?$/;
 const SCRIPTS = {
   etat: 'etat.js',
   rappel: 'rappel.js',
+  avancement: 'avancement.js',
   assembler: 'assembler.js',
   controler: 'controler.js',
   apercu: 'apercu.js',
@@ -172,7 +175,8 @@ function lancer(args) {
     '  ffmpeg                   ffmpeg présent ? commande pour l\'installer',
     '  voix importer <fichier> [--scene <id>] [dossier] | provisoire [--scene <id>] [dossier] | transcrire [--scene <id>] [dossier] | studio <scène> [dossier]',
     '  whisper [installer [--modele small]]   transcription des voix',
-    '  outils                   état de l\'ordinateur (ce qui est prêt, ce qui manque)',
+    '  outils [--plan]          état de l\'ordinateur (ce qui est prêt, ce qui manque) ; --plan : ce qu\'il faudrait installer',
+    '  avancement <dossier> [--suivre]   travail long en cours, une ligne (ou une par étape jusqu\'à la fin)',
     '  musique ecouter [dossier]   musique seule dans sortie/musique.wav',
     '  reference <nom>          scene <style> <nom>      effet <nom>      consignes <skill> [<section>]',
     '  mouvements liste [--categorie <id>] | chercher <mots…> | afficher <n° ou nom> | reference | choisir [--categorie <id>] [--ouvrir] [--delai <minutes>]   [--json]',

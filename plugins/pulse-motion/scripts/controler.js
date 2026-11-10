@@ -502,10 +502,13 @@ function controler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
  * controlerComplet({ dossier, dossierStyles?, dossierEffets?, ecrire?, corriger?, rendu?, gpu?, navigateur?, complet?, mesurer? })
  * -> Promise<{ problemes, corrections, renduVerifie, rendu, scenesMesurees, fichier }> : contrôles rapides, corrections,
  * vidéo rendue (seulement les scènes changées, sauf complet), puis (gpu) compilation réelle des shaders.
- * mesurer : remplace controlerRendu (tests).
+ * mesurer : remplace controlerRendu (tests). avancement : suivi (lib/avancement.js, suivre) annoncé à chaque étape, puis par
+ * scène pendant le rendu (spec Retouches et ergonomie, 5.2) ; null : rien d'annoncé.
  */
-async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.join(RACINE, 'effets'), ecrire = true, corriger = true, rendu = true, gpu = false, navigateur, complet = false, mesurer = controlerRendu, prouver = verifierDeterminisme }) {
+async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.join(RACINE, 'effets'), ecrire = true, corriger = true, rendu = true, gpu = false, navigateur, complet = false, mesurer = controlerRendu, prouver = verifierDeterminisme, avancement = null }) {
   const projet = path.resolve(dossier);
+  const av = avancement || (() => {});
+  av(0, 10, 'textes, durées et son');
   const precedent = lirePrecedent(projet);
   const r = controler({ dossier: projet, dossierStyles, dossierEffets, ecrire, corriger });
   const { assemblage } = r;
@@ -541,7 +544,10 @@ async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.j
       // Rien n'a changé à l'écran : aucun navigateur, les résultats du rendu sont repris tels quels.
       v = { renduVerifie: true, problemes: [], ajustements: [] };
     } else {
-      const opt = { html: assemblage.html, ratio: deroule.format.ratio, duree, genre: deroule.genre, ecoute };
+      av(2, 10, `vidéo rendue dans le navigateur (${changees.length} scène${changees.length > 1 ? 's' : ''})`);
+      // Avancement par scène pendant le rendu : scènes dont les images ont été relevées.
+      const opt = { html: assemblage.html, ratio: deroule.format.ratio, duree, genre: deroule.genre, ecoute,
+        surScene: (k, n) => av(2 + Math.round((6 * k) / Math.max(1, n)), 10, `scène ${k} sur ${n}`) };
       if (navigateur !== undefined) opt.navigateur = navigateur;
       if (comparable) {
         const minutage = calculerMinutage(assemblage.donnees.scenes, {}, options);
@@ -584,6 +590,7 @@ async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.j
       son = sonPrecedent || (ecoute && Array.isArray(v.son) ? { empreinte: empreinteSon, problemes: v.son } : null);
       if (son) problemes = [...problemes, ...son.problemes];
       // Preuve du déterminisme (spec S2, 5.13) : seulement les scènes à risque dont l'empreinte a changé.
+      av(8, 10, "la vidéo rejouée, pour vérifier qu’elle ne change pas d’une lecture à l’autre");
       const p = await prouver({ assemblage, precedent: determinisme, minutage: calculerMinutage(assemblage.donnees.scenes, {}, options), seuils: SEUILS,
         ratio: deroule.format.ratio, forcer: complet, ...(navigateur !== undefined ? { navigateur } : {}) });
       determinisme = p.determinisme;
@@ -607,6 +614,7 @@ async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.j
   if (r.fichier) {
     ecrireAtomique(r.fichier, JSON.stringify({ version: 2, problemes, corrections, renduVerifie, rendu: modeRendu, scenesMesurees, empreintes, rendus, son, determinisme }, null, 2));
   }
+  if (avancement && avancement.terminer) avancement.terminer(true);
   return { problemes, corrections, renduVerifie, rendu: modeRendu, scenesMesurees, determinisme: preuve, fichier: r.fichier };
 }
 
@@ -617,13 +625,14 @@ if (require.main === module) {
     console.error('Usage : node scripts/controler.js <dossier-du-projet> [--sans-correction] [--sans-rendu] [--gpu] [--complet]');
     process.exit(2);
   }
-  controlerComplet({ dossier, corriger: !args.includes('--sans-correction'), rendu: !args.includes('--sans-rendu'), gpu: args.includes('--gpu'), complet: args.includes('--complet') }).then(({ problemes, corrections, renduVerifie, rendu, scenesMesurees, determinisme, fichier }) => {
+  const avancement = require('./lib/avancement.js').suivre(path.resolve(dossier), { travail: 'controle', libelle: 'Contrôle de la vidéo' });
+  controlerComplet({ dossier, corriger: !args.includes('--sans-correction'), rendu: !args.includes('--sans-rendu'), gpu: args.includes('--gpu'), complet: args.includes('--complet'), avancement }).then(({ problemes, corrections, renduVerifie, rendu, scenesMesurees, determinisme, fichier }) => {
     const erreurs = problemes.filter((p) => p.gravite === 'erreur').length;
     const alertes = problemes.filter((p) => p.gravite === 'alerte').length;
     const informations = problemes.filter((p) => p.gravite === 'info').length;
     console.log(JSON.stringify({ erreurs, alertes, informations, corrections: corrections.length, renduVerifie, rendu, scenesMesurees, determinisme, fichier }, null, 2));
     process.exit(erreurs ? 1 : 0);
-  }, (e) => { console.error(e.message); process.exit(1); });
+  }, (e) => { avancement.terminer(false, e.message); console.error(e.message); process.exit(1); });
 }
 
 module.exports = { controler, controlerComplet, controlesRapides, contraste, compterMots, trous, SEUILS };

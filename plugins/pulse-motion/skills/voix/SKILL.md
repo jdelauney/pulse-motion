@@ -1,6 +1,6 @@
 ---
 description: "Enregistrer, importer ou recaler la voix de la vidéo, écouter sa musique (« j'enregistre la scène 2 », « j'ai un fichier de ma voix », « recale les mots »). Volume, texte dit, sous-titres : /pulse-motion:retoucher."
-allowed-tools: Bash(pulse-motion *) Bash(node *) Read Glob Write AskUserQuestion
+allowed-tools: Bash(pulse-motion *) Bash(node *) Monitor Read Glob Write AskUserQuestion
 ---
 
 # Pulse Motion – La voix de la vidéo
@@ -12,6 +12,7 @@ Enregistrer la voix scène par scène dans le studio de l'aperçu, importer un e
 - Parler simplement, en français, sans jargon ; ne jamais montrer de commande.
 - Une demande ambiguë (quelle scène ? une scène ou toute la vidéo ?) : une seule question avec `AskUserQuestion`, réponse recommandée en premier.
 - Lexique : avant d'expliquer un mot de l'outil (studio, voix provisoire, transcription…), lire `pulse-motion lexique` ; un mot expliqué pour la première fois se note avec `pulse-motion lexique noter "<terme>" "<phrase>" "<comme…>" "/pulse-motion:voix"`.
+- Import ou transcription de plusieurs scènes : l'annoncer en une phrase (« je découpe et je cale les mots, comptez environ une minute ») ; en arrière-plan, le suivre par `Monitor` sur `pulse-motion avancement . --suivre`, une phrase par minute au plus (sans lui : « l'avancement s'affiche dans l'aperçu »).
 - Détail : `pulse-motion reference audio/voix` (voix), `pulse-motion reference audio/ancres` (ancres), `pulse-motion reference audio` (sous-titres).
 - Ce skill ne change ni les volumes, ni le texte dit, ni les sous-titres, ni l'ambiance : renvoyer à `/pulse-motion:retoucher` (« baisse la voix », « change ce que je dis dans l'intro »…).
 

@@ -24,6 +24,7 @@ const { whisperParDefaut } = require('./lib/whisper.js');
 const { trouverFfmpeg } = require('./lib/ffmpeg.js');
 const { garder } = require('./lib/garde-locale.js');
 const { ecrireJSON } = require('./lib/fichiers.js');
+const Avancement = require('./lib/avancement.js');
 
 // Les fichiers temporaires des écritures atomiques (.<nom>.<pid>-<n>.part) ne déclenchent pas de réassemblage.
 const IGNORES = /^(sortie|\.pulse-motion|\.historique|\.git)([\\/]|$)|\.part$/;
@@ -66,6 +67,22 @@ function zonesApercu(html) {
   const plateforme = format.plateforme || 'toutes';
   const z = (require('./seuils.json').zonesPlateformes || {})[plateforme];
   return z ? { plateforme, declaree: Boolean(format.plateforme), ...z } : null;
+}
+
+/**
+ * Avancement des travaux longs (spec Retouches et ergonomie, 5.2 point 4) : une surveillance à part de
+ * .pulse-motion/avancement.json (hors de celle du réassemblage, qui ignore .pulse-motion), par lecture régulière (le dossier
+ * peut ne pas exister encore) ; chaque changement est diffusé en événement « avancement ». -> fonction qui l'arrête
+ */
+function surveillerAvancement(projet, diffuser, { intervalle = 400 } = {}) {
+  const fichier = Avancement.fichierAvancement(projet);
+  const surChangement = (actuel, avant) => {
+    if (actuel.mtimeMs === avant.mtimeMs && actuel.size === avant.size) return;
+    const e = Avancement.lire(projet);
+    if (e) diffuser('avancement', e);
+  };
+  fs.watchFile(fichier, { interval: intervalle, persistent: false }, surChangement);
+  return () => fs.unwatchFile(fichier, surChangement);
 }
 
 function injecterApercu(html, erreurs) {
@@ -241,11 +258,13 @@ async function demarrerApercu({ dossier, port = 4321, dossierStyles, dossierEffe
     }, delai);
   });
   surveillant.on('error', (e) => diffuser('erreur', { message: `Surveillance du projet interrompue : ${e.message}` }));
+  const arreterAvancement = surveillerAvancement(projet, diffuser);
 
   function fermer() {
     clearTimeout(minuterie);
     clearInterval(battement);
     surveillant.close();
+    arreterAvancement();
     clients.forEach((res) => res.end());
     try { retirerEtat(projet); } catch { /* l'état sera jugé périmé : le processus est arrêté */ }
     return new Promise((resolve) => serveur.close(() => resolve()));
@@ -308,4 +327,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { demarrerApercu, lancerApercu, injecterApercu, ouvrirNavigateur, TYPES_ECRITURE, ecrireEtat };
+module.exports = { demarrerApercu, lancerApercu, injecterApercu, ouvrirNavigateur, TYPES_ECRITURE, ecrireEtat, surveillerAvancement };
