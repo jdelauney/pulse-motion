@@ -5,7 +5,7 @@
  * dernières secondes : moteur/estimation.js, bouton Annuler) et le résultat. Paramètres d'adresse utilisés par
  * « pulse-motion exporter » : ?export=1 lance l'export, avec &pour=, &qualite=, &ips=, &taille= (réglages résolus par
  * l'aperçu, /_pm/usage), &scene=, &plage=, &cadre=, &cadreFormat= (extrait, passage seul, cadre de téléphone : spec Rendu et
- * export 5.12 et 5.15) ; ?planche=id1,id2 capture la planche. La couverture (5.10) est envoyée avant la vidéo ; crédits et
+ * export 5.12 et 5.15), &flou=oui|non, &transparent=webm (flou de mouvement, fond transparent : 5.8, 5.14) ; ?planche=id1,id2 capture la planche. La couverture (5.10) est envoyée avant la vidéo ; crédits et
  * chapitres sont écrits par l'aperçu à la réception de la vidéo.
  */
 import { exporter, relire, envoyer, envoyerStats, envoyerCouverture, signaler, capturerPlanche } from '/_pm/export.mjs';
@@ -57,7 +57,7 @@ function scenesProvisoires() {
   return (M.donnees.scenes || []).filter((s) => s.voix && s.voix.provisoire).map((s) => s.id);
 }
 
-export async function lancerExport({ avecProvisoire = false, pour, qualite, ips, taille, scene, plage, cadre, cadreFormat } = {}) {
+export async function lancerExport({ avecProvisoire = false, pour, qualite, ips, taille, scene, plage, cadre, cadreFormat, flou, transparent } = {}) {
   if (enCours) return null;
   const provisoires = scenesProvisoires();
   if (provisoires.length && !avecProvisoire) {
@@ -78,7 +78,7 @@ export async function lancerExport({ avecProvisoire = false, pour, qualite, ips,
   panneau.bouton.onclick = () => controle.abort();
   panneau.titre('Export de la vidéo en MP4…');
   try {
-    const reglages = await reglagesDe({ pour, qualite, ips, taille, scene, plage, cadre, cadreFormat });
+    const reglages = await reglagesDe({ pour, qualite, ips, taille, scene, plage, cadre, cadreFormat, flou, transparent });
     panneau.titre(`Export de la vidéo en MP4 (${reglages.nom.toLowerCase()})…`);
     const ipsExport = reglages.ips || M.ips;
     const total = reglages.sortie && reglages.sortie.extrait ? reglages.sortie.f1 - reglages.sortie.f0 : Math.round(M.duree * ipsExport);
@@ -98,7 +98,8 @@ export async function lancerExport({ avecProvisoire = false, pour, qualite, ips,
     });
     panneau.titre('Vérification de la vidéo…');
     panneau.bouton.disabled = true;
-    const relecture = await relire(resultat.buffer, { images: resultat.images, ips: resultat.ips, fondSombre: resultat.fondSombre, vignette: resultat.vignette });
+    // Fond transparent : le fond relu est vide (noir sans alpha), ce n'est pas une image noire.
+    const relecture = await relire(resultat.buffer, { images: resultat.images, ips: resultat.ips, fondSombre: resultat.fondSombre || resultat.transparent, vignette: resultat.vignette });
     // Statistiques image par image (spec S2, 5.12) : analysées par l'aperçu à la réception de la vidéo (verification.json) ;
     // un extrait ne remplace pas la vérification de la vidéo entière.
     if (!resultat.extrait) await envoyerStats(resultat.stats);
@@ -107,7 +108,7 @@ export async function lancerExport({ avecProvisoire = false, pour, qualite, ips,
     const { fichier } = await envoyer(resultat.buffer, {
       ...relecture, audio: resultat.audio, largeur: resultat.largeur, hauteur: resultat.hauteur, avertissement: resultat.avertissement,
       usage: resultat.usage, definition: resultat.definition, ips: resultat.ips, imagesParSeconde: resultat.imagesParSeconde, finalesParSeconde: resultat.finalesParSeconde,
-      couverture: Boolean(resultat.couverture), vignette: relecture.vignette, extrait: resultat.extrait,
+      couverture: Boolean(resultat.couverture), vignette: relecture.vignette, extrait: resultat.extrait, flou: resultat.flou, transparent: resultat.transparent,
     }, reglages.nomFichier, { extrait: resultat.extrait });
     panneau.titre('✅ Vidéo enregistrée');
     panneau.detail(resultat.avertissement ? `${fichier} – ${resultat.avertissement}` : fichier);
@@ -203,7 +204,7 @@ M.pret.then(() => (document.fonts ? document.fonts.ready : null)).then(() => {
   const choix = (k) => parametres.get(k) || undefined;
   if (parametres.get('export') === '1') {
     lancerExport({ avecProvisoire: parametres.get('provisoire') === '1', pour: choix('pour'), qualite: choix('qualite'), ips: choix('ips'), taille: choix('taille'),
-      scene: choix('scene'), plage: choix('plage'), cadre: choix('cadre'), cadreFormat: choix('cadreFormat') });
+      scene: choix('scene'), plage: choix('plage'), cadre: choix('cadre'), cadreFormat: choix('cadreFormat'), flou: choix('flou'), transparent: choix('transparent') });
   }
   else if (parametres.get('planche')) lancerPlanche(parametres.get('planche').split(',').filter(Boolean));
 });

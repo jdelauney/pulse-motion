@@ -10,7 +10,7 @@
  * texteYouTube(chapitres) · vttChapitres(chapitres) · ffmetadata(chapitres, titre) · alertesChapitres(chapitres)
  * credits({ projet, deroule, assemblage, version? }) -> { texte, aPreciser: [fichiers] }
  * lireSources(projet) · noterSource({ projet, fichier, source, licence, auteur? }) -> { ok, message }
- * nomSortie(slug, { usage, scene?, plage?, cadre?, extension? }) · lirePlage(texte) · imagesDeScene · imagesDePlage
+ * nomSortie(slug, { usage, scene?, plage?, cadre?, transparent?, extension? }) · lirePlage(texte) · imagesDeScene · imagesDePlage
  * preparerSortie({ deroule, minutage, ips, scene?, plage?, gif?, cadre?, cadreFormat?, avecFfmpeg?, transparent?, flou?, usage?, tailleMax? })
  *   -> plage d'images | { erreur } ; combinaisonRefusee(options) -> message | null (fond transparent, flou forcé : 5.8, 5.14)
  * tailleGif(l, h, { usage, largeur? }) -> [largeur, hauteur]
@@ -297,12 +297,13 @@ function tailleGif(largeurVideo, hauteurVideo, { usage = 'web', largeur = null }
   return [pair(largeurVideo * r), pair(hauteurVideo * r)];
 }
 
-/** Nom d'un fichier de sortie (spec Rendu et export, 5.6) : <slug>[-<usage>][-telephone][-<scène> | -de-12,5s-a-18s].<ext>
+/** Nom d'un fichier de sortie (spec Rendu et export, 5.6) : <slug>[-<usage>][-telephone][-transparent][-<scène> | -de-12,5s-a-18s].<ext>
  *  (le web n'a pas de suffixe d'usage). */
-function nomSortie(slug, { usage = 'web', scene = null, plage = null, cadre = null, extension = 'mp4' } = {}) {
+function nomSortie(slug, { usage = 'web', scene = null, plage = null, cadre = null, transparent = false, extension = 'mp4' } = {}) {
   const parts = [slug];
   if (usage && usage !== 'web') parts.push(usage);
   if (cadre) parts.push(cadre);
+  if (transparent) parts.push('transparent');
   if (scene) parts.push(scene);
   let nom = parts.join('-');
   if (plage) nom += `-de-${virgule(plage.debut)}s-a-${virgule(plage.fin)}s`;

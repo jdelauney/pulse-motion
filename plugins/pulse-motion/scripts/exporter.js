@@ -5,6 +5,7 @@
  *   node scripts/exporter.js <dossier-du-projet> [--pour <usage>] [--taille-max <Mo>] [--qualite 1080p|720p|540p] [--ips 30|60]
  *                            [--rapide] [--avec-provisoire] [--estimer]
  *                            [--scene <id>[,<id>] | --plage <début>-<fin>] [--gif [--largeur 1280]] [--cadre telephone [--cadre-format 16:9|1:1]]
+ *                            [--flou oui|non] [--transparent [mov|webm]]
  *   node scripts/exporter.js <dossier-du-projet> --planche [id1,id2] [--ouvrir]
  *
  * Usages (scripts/usages.json, spec Rendu et export 5.1) : web (défaut, <slug>.mp4), reseaux, presentation, master, courriel
@@ -20,6 +21,8 @@
  * d'une scène (--scene, un fichier par scène) ou passage seul (--plage « 12,5-18 ») ; GIF (--gif, ffmpeg requis, 20 s au plus) ;
  * cadre de téléphone (--cadre telephone, vidéo 9:16). Export « reseaux » d'une vidéo 9:16 sans plateforme : zones de toutes les
  * applications vérifiées (alertes dans « zonesToutes », phrase dans « conseils »).
+ * Rendu avancé (5.8, 5.14) : flou de mouvement par sous-images (master par défaut ; --flou oui|non le force) ; fond transparent
+ * (--transparent : MOV pour le montage, ffmpeg requis ; --transparent webm : pour le web, aussi dans le navigateur s'il sait le faire).
  * Progression sur la sortie d'erreur ; résumé JSON sur la sortie standard ; code 1 en cas d'échec.
  */
 const fs = require('node:fs');
@@ -69,6 +72,8 @@ const PHASES = {
   'seconde-passe': 'Export : version légère, seconde passe…',
   livrables: 'Export : couverture et chapitres…',
   gif: 'Export : GIF, couleurs calculées sur tout le passage…',
+  flou: 'Export : mesure des passages rapides (flou de mouvement)…',
+  transparent: 'Export : vérification des fonds (vidéo à fond transparent)…',
   reprise: 'Export : version légère, un peu plus compressée…',
   verification: 'Export : vérification de la vidéo…',
 };
@@ -125,7 +130,7 @@ function completerResultat(r, { projet, u, nomSlug }) {
 async function exporterVideo({
   dossier, planche = null, ouvrir = false, dossierStyles, navigateur = trouverNavigateur(),
   surProgression = () => {}, delaiMax, delaiDemarrage = DELAI_DEMARRAGE, ouvrirFichier = ouvrirNavigateur, avecProvisoire = false,
-  pour, qualite, ips, tailleMax, scene, plage, cadre, cadreFormat,
+  pour, qualite, ips, tailleMax, scene, plage, cadre, cadreFormat, flou, transparent,
 }) {
   const debut = Date.now();
   const projet = path.resolve(dossier);
@@ -137,7 +142,7 @@ async function exporterVideo({
     ? deroule.scenes.slice(0, 2).map((s) => s.id)
     : planche;
   // Usage résolu ici (refus avant tout navigateur), puis de nouveau par l'aperçu pour la page (même module, mêmes réglages).
-  const u = ids ? null : U.resoudreUsage({ pour, qualite, ips, tailleMax, deroule, duree: dureeVideo(projet, deroule) });
+  const u = ids ? null : U.resoudreUsage({ pour, qualite, ips, tailleMax, flou, deroule, duree: dureeVideo(projet, deroule) });
   if (u && u.erreur) return fin({ ok: false, message: u.erreur, ...(u.propositionMo ? { propositionMo: u.propositionMo } : {}) });
   if (ids) {
     const inconnues = ids.filter((id) => !deroule.scenes.some((s) => s.id === id));
@@ -164,7 +169,7 @@ async function exporterVideo({
 
   const suivi = path.join(projet, 'sortie', 'export.json');
   fs.rmSync(suivi, { force: true });
-  const options = u ? [['pour', pour], ['qualite', qualite], ['ips', ips], ['taille', tailleMax], ['scene', scene], ['plage', plage], ['cadre', cadre], ['cadreFormat', cadreFormat]].filter(([, v]) => v !== undefined && v !== null && v !== '')
+  const options = u ? [['pour', pour], ['qualite', qualite], ['ips', ips], ['taille', tailleMax], ['scene', scene], ['plage', plage], ['cadre', cadre], ['cadreFormat', cadreFormat], ['flou', flou], ['transparent', transparent]].filter(([, v]) => v !== undefined && v !== null && v !== '')
     .map(([k, v]) => `&${k}=${encodeURIComponent(v)}`).join('') : '';
   const adresse = `${url}?${ids ? `planche=${ids.map(encodeURIComponent).join(',')}` : `export=1${avecProvisoire ? '&provisoire=1' : ''}${options}`}`;
   // Délai maximal sur la durée réelle (scènes allongées par leur voix comprises).
@@ -189,9 +194,9 @@ async function exporterVideo({
             definition: e.definition, ips: e.ips, avertissement: e.avertissement, ...(e.couleurs ? { couleurs: e.couleurs } : {}),
             ...(e.verification ? { verification: e.verification } : {}),
             ...(e.fichiers ? { fichiers: { video: e.fichier, ...e.fichiers } } : {}), creditsAPreciser: e.creditsAPreciser || [], ...(e.alertes ? { alertes: e.alertes } : {}),
-            ...(e.extrait ? { extrait: true } : {}) }, { projet, u, nomSlug: e.extrait ? null : require('./assembler.js').slug(deroule.titre) });
+            ...(e.extrait ? { extrait: true } : {}), ...(e.flou ? { flou: e.flou } : {}), ...(e.transparent ? { transparent: true } : {}) }, { projet, u, nomSlug: e.extrait ? null : require('./assembler.js').slug(deroule.titre) });
           // Vitesse de cet ordinateur dans le navigateur (images par seconde de calcul), pour les prochaines estimations.
-          if (e.imagesParSeconde > 0) ME.noterMesure({ voie: 'navigateur', definition: u.definition, ips: u.ips, flou: false, imagesParSeconde: e.imagesParSeconde, finalesParSeconde: e.finalesParSeconde || 0 });
+          if (e.imagesParSeconde > 0) ME.noterMesure({ voie: 'navigateur', definition: u.definition, ips: u.ips, flou: Boolean(e.flou && e.flou.applique), imagesParSeconde: e.imagesParSeconde, finalesParSeconde: e.finalesParSeconde || 0 });
           return fin(r);
         }
         if (ids && e.etat === 'planche') {
@@ -214,19 +219,23 @@ async function exporterVideo({
 
 if (require.main === module) {
   const args = process.argv.slice(2);
-  const OPTIONS_A_VALEUR = ['--planche', '--qualite', '--ips', '--pour', '--taille-max', '--scene', '--plage', '--largeur', '--cadre', '--cadre-format'];
-  const dossier = args.find((a, i) => !a.startsWith('--') && !OPTIONS_A_VALEUR.includes(args[i - 1])) || '.';
+  const OPTIONS_A_VALEUR = ['--planche', '--qualite', '--ips', '--pour', '--taille-max', '--scene', '--plage', '--largeur', '--cadre', '--cadre-format', '--flou'];
+  // --transparent a une valeur facultative (mov, webm).
+  const estValeurTransparent = (i) => args[i - 1] === '--transparent' && /^(mov|webm)$/i.test(args[i]);
+  const dossier = args.find((a, i) => !a.startsWith('--') && !OPTIONS_A_VALEUR.includes(args[i - 1]) && !estValeurTransparent(i)) || '.';
   const valeur = (o) => { const i = args.indexOf(o); return i >= 0 && args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1] : undefined; };
   const i = args.indexOf('--planche');
   const planche = i < 0 ? null : (args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1].split(',').filter(Boolean) : true);
   const rapide = args.includes('--rapide');
   const avecProvisoire = args.includes('--avec-provisoire');
-  const choix = { pour: valeur('--pour'), qualite: valeur('--qualite'), ips: valeur('--ips'), tailleMax: valeur('--taille-max') };
+  const choix = { pour: valeur('--pour'), qualite: valeur('--qualite'), ips: valeur('--ips'), tailleMax: valeur('--taille-max'), flou: valeur('--flou') };
+  const transparent = args.includes('--transparent') ? (valeur('--transparent') || 'mov') : undefined;
   const sorte = { scenes: valeur('--scene') ? valeur('--scene').split(',').filter(Boolean) : null, plage: valeur('--plage'), gif: args.includes('--gif'),
-    largeurGif: valeur('--largeur'), cadre: valeur('--cadre'), cadreFormat: valeur('--cadre-format') };
+    largeurGif: valeur('--largeur'), cadre: valeur('--cadre'), cadreFormat: valeur('--cadre-format'), transparent };
   const outil = trouverFfmpeg();
   // Le GIF ne se fait que par ffmpeg (voie fidèle), même avec --rapide.
-  const voie = sorte.gif && !planche ? choisirVoie({ outil }) : choisirVoie({ planche, rapide, outil });
+  // Le GIF et la vidéo à fond transparent pour le montage ne se font que par ffmpeg (voie fidèle), même avec --rapide.
+  const voie = (sorte.gif || (transparent && transparent !== 'webm')) && !planche ? choisirVoie({ outil }) : choisirVoie({ planche, rapide, outil });
   // Sortie demandée vérifiée avant tout navigateur (scène inconnue, passage illisible, GIF trop long ou sans ffmpeg, cadre).
   const refus = verifierSortie({ dossier, voie, outil, ...choix, ...sorte });
   if (refus) {
@@ -251,13 +260,13 @@ if (require.main === module) {
     const controle = new AbortController();
     for (const s of ['SIGINT', 'SIGTERM']) process.on(s, () => controle.abort());
     const une = (sceneUne) => exporterFidele({ dossier, ...choix, outil, signal: controle.signal, surProgression, surPhase, avecProvisoire,
-      scene: sceneUne, plage: sorte.plage, gif: sorte.gif, largeurGif: sorte.largeurGif, cadre: sorte.cadre, cadreFormat: sorte.cadreFormat });
+      scene: sceneUne, plage: sorte.plage, gif: sorte.gif, largeurGif: sorte.largeurGif, cadre: sorte.cadre, cadreFormat: sorte.cadreFormat, transparent });
     travail = parScene(sorte.scenes, une).then((r) => ({ ...r, mode: 'fidele' }));
   } else {
     // Interruption : fermer le navigateur sans fenêtre et l'aperçu lancé.
     arreterProprementSurSignal();
     const une = (sceneUne) => exporterVideo({ dossier, planche, ouvrir: args.includes('--ouvrir'), surProgression, avecProvisoire, ...choix,
-      scene: sceneUne, plage: sorte.plage, cadre: sorte.cadre, cadreFormat: sorte.cadreFormat });
+      scene: sceneUne, plage: sorte.plage, cadre: sorte.cadre, cadreFormat: sorte.cadreFormat, transparent });
     travail = parScene(planche ? null : sorte.scenes, une)
       .then((r) => ({ ...r, mode: 'navigateur', ...(!rapide && !planche ? { conseilFfmpeg: { message: outil.message, commande: outil.commande } } : {}) }));
   }
@@ -274,17 +283,17 @@ if (require.main === module) {
 }
 
 /** Sortie demandée (extrait, passage, GIF, cadre) vérifiée sans navigateur. -> message de refus, ou null. */
-function verifierSortie({ dossier, voie, outil, pour, qualite, ips, tailleMax, scenes, plage, gif, cadre, cadreFormat }) {
-  if (!scenes && !plage && !gif && !cadre && !cadreFormat) return null;
+function verifierSortie({ dossier, voie, outil, pour, qualite, ips, tailleMax, flou, scenes, plage, gif, cadre, cadreFormat, transparent }) {
+  if (!scenes && !plage && !gif && !cadre && !cadreFormat && !transparent && !flou) return null;
   const projet = path.resolve(dossier);
   const { deroule, erreurs } = lireDeroule(projet);
   if (erreurs.length) return null;
   const minutage = minutageVideo(projet, deroule);
-  const u = U.resoudreUsage({ pour, qualite, ips, tailleMax, deroule, duree: minutage.duree });
-  if (u.erreur) return null;
+  const u = U.resoudreUsage({ pour, qualite, ips, tailleMax, flou, deroule, duree: minutage.duree });
+  if (u.erreur) return u.erreur;
   const avecFfmpeg = Boolean(outil && outil.present && outil.versionOk !== false);
   for (const scene of scenes || [null]) {
-    const d = L.preparerSortie({ deroule, minutage, ips: u.ips, scene, plage, gif, cadre, cadreFormat, avecFfmpeg });
+    const d = L.preparerSortie({ deroule, minutage, ips: u.ips, scene, plage, gif, cadre, cadreFormat, avecFfmpeg, transparent, flou: u.flouForce, usage: u.usage, tailleMax });
     if (d.erreur) return d.erreur;
   }
   return null;
@@ -348,15 +357,15 @@ async function verifierZonesToutes(projet, deroule, controler) {
 }
 
 /** Durée estimée d'un export (--estimer), sans navigateur. -> { ok, secondesEstimees, usage, voie, source } | { ok: false, message } */
-function estimerExport({ dossier, voie = 'fidele', pour, qualite, ips, tailleMax, mesures }) {
+function estimerExport({ dossier, voie = 'fidele', pour, qualite, ips, tailleMax, flou, mesures }) {
   const projet = path.resolve(dossier);
   const { deroule, erreurs } = lireDeroule(projet);
   if (erreurs.length) return { ok: false, message: `Le déroulé contient des erreurs : ${erreurs.join(' ')}` };
   const duree = dureeVideo(projet, deroule);
-  const u = U.resoudreUsage({ pour, qualite, ips, tailleMax, deroule, duree });
+  const u = U.resoudreUsage({ pour, qualite, ips, tailleMax, flou, deroule, duree });
   if (u.erreur) return { ok: false, message: u.erreur };
   const definition = u.tailleMax && voie === 'fidele' ? '1080p' : u.definition;
-  const e = ME.estimerSecondes({ voie, definition, ips: u.ips, duree, usage: U.lireUsages().usages[u.usage], ...(mesures ? { mesures } : {}) });
+  const e = ME.estimerSecondes({ voie, definition, ips: u.ips, duree, usage: U.lireUsages().usages[u.usage], flou: Boolean(u.flou) && u.usage !== 'brouillon', ...(mesures ? { mesures } : {}) });
   return { ok: true, secondesEstimees: e.secondes, usage: u.usage, voie, source: e.source };
 }
 

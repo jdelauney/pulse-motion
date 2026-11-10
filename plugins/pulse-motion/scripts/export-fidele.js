@@ -44,6 +44,8 @@ const { decouperSegments, empreintesPixels, empreinteDerivee, stable } = require
 const V = require('./lib/verification.js');
 const { joindre, analyserSerie } = require('./lib/series.js');
 const SEUILS = require('./seuils.json');
+const FL = require('../moteur/flou.js');
+const PNG = require('./lib/png.js');
 
 const TAILLES = {
   '1080p': { '16:9': [1920, 1080], '9:16': [1080, 1920], '1:1': [1080, 1080], '4:5': [1080, 1350] },
@@ -55,6 +57,10 @@ const INTERMEDIAIRE = { crf: 14, preset: 'medium' };
 /** Usages dont l'intermédiaire est le fichier lui-même : le master (CRF 14 slow), le brouillon (rapide, jamais réutilisé). */
 const INTERMEDIAIRE_PROPRE = new Set(['master', 'brouillon']);
 const ECART_MAX = 0.02;
+/** Règle du flou de mouvement (5.8), dans l'empreinte des pixels : obturateur, seuils de N, version du calcul. */
+const FLOU_REGLE = `s${FL.OBTURATEUR}-n${FL.N_MAX}-v1`;
+/** Images dont le nombre de sous-images est calculé par appel à la page (délai du protocole : 30 s). */
+const FLOU_PAQUET = 300;
 const VERROU_PERIME = 24 * 3600 * 1000;
 /** Message du verrou (spec Rendu et export, 5.23 point 1) : l'heure du premier export, « 14 h 02 ». */
 function messageVerrou(depuis) {
@@ -167,7 +173,8 @@ const navigateurArrete = (e) => /navigateur s'est arrêté/.test(String(e && e.m
 async function exporterFidele({ dossier, pour, qualite, ips, tailleMax, navigateur = trouverNavigateur(), outil = F.trouverFfmpeg(), dossierStyles,
   dossierEffets = path.join(RACINE, 'effets'), surProgression = () => {}, surPhase = () => {}, signal, dureeSegment = 10, arreterApres, paralleles, avecProvisoire = false,
   encodage, parametresPixels = {}, profil = process.env.PM_PROFIL === '1', surOuverture = () => {}, whisper = null, debitCourriel = (v) => v,
-  encodeurMateriel = null, tailleFichier = (f) => fs.statSync(f).size, scene = null, plage = null, gif = false, largeurGif = null, cadre = null, cadreFormat = null } = {}) {
+  encodeurMateriel = null, tailleFichier = (f) => fs.statSync(f).size, scene = null, plage = null, gif = false, largeurGif = null, cadre = null, cadreFormat = null, flou = null,
+  transparent = null } = {}) {
   const debutExport = performance.now();
   const projet = path.resolve(dossier);
   const sortieDir = path.join(projet, 'sortie');
@@ -183,11 +190,16 @@ async function exporterFidele({ dossier, pour, qualite, ips, tailleMax, navigate
   // Usage et réglages effectifs, avant toute capture (une taille visée impossible est refusée ici). Un GIF est capturé comme
   // l'usage web (l'usage courriel ne change que sa largeur).
   const minutageNode = minutageVideo(projet, deroule);
-  let u = U.resoudreUsage({ pour: gif ? 'web' : pour, qualite, ips, tailleMax: gif ? undefined : tailleMax, deroule, duree: minutageNode.duree });
+  let u = U.resoudreUsage({ pour: gif ? 'web' : pour, qualite, ips, tailleMax: gif ? undefined : tailleMax, flou, deroule, duree: minutageNode.duree });
   if (u.erreur) return { ok: false, audio: false, message: u.erreur, ...(u.propositionMo ? { propositionMo: u.propositionMo } : {}) };
   // Extrait d'une scène, passage seul, GIF, cadre de téléphone (spec Rendu et export, 5.12, 5.13, 5.15) : vérifiés ici.
-  const demande = L.preparerSortie({ deroule, minutage: minutageNode, ips: u.ips, scene, plage, gif, cadre, cadreFormat });
+  const demande = L.preparerSortie({ deroule, minutage: minutageNode, ips: u.ips, scene, plage, gif, cadre, cadreFormat, transparent, flou: u.flouForce, usage: u.usage, tailleMax });
   if (demande.erreur) return { ok: false, audio: false, message: demande.erreur };
+  // Fond transparent (5.14) : chemin à part (segments dans le conteneur final, sans intermédiaire H.264).
+  if (demande.transparent) {
+    return require('./lib/export-transparent.js').exporterTransparent({ projet, deroule, u, demande, navigateur, outil, dossierStyles, dossierEffets, surProgression, surPhase, signal,
+      avecProvisoire, paralleles, dureeSegment, surOuverture });
+  }
   if (demande.extrait && u.tailleMax) {
     // Taille visée d'un extrait : calculée sur sa durée.
     u = U.resoudreUsage({ pour, qualite, ips, tailleMax, deroule, duree: demande.duree });
@@ -233,6 +245,8 @@ async function exporterFidele({ dossier, pour, qualite, ips, tailleMax, navigate
   // Une taille visée (deux passes) n'intègre ni vignette ni chapitres : chaque octet compte.
   const avecCouverture = joints.includes('couverture') && !extrait && !demande.cadre && !deuxPasses;
   const chapitres = joints.includes('chapitres') && !extrait && !demande.cadre && !deuxPasses ? L.chapitresDe(deroule, minutageNode) : [];
+  // Flou de mouvement (5.8) : celui de l'usage (le master) ou forcé ; jamais en brouillon, en GIF, ni pour un style qui le refuse.
+  const avecFlou = Boolean(u.flou) && u.usage !== 'brouillon' && !gif && U.flouDuStyle(assemblage.dossierStyle);
   // Plafond du grain : il ne change les pixels que si la page a un grain.
   const grainMax = u.grainMax && U.avecGrain(deroule) ? u.grainMax : null;
 
@@ -290,7 +304,7 @@ async function exporterFidele({ dossier, pour, qualite, ips, tailleMax, navigate
     const version = await premiere.version().catch(() => '');
     const pixels = empreintesPixels(assemblage, {
       moteur: codeCapture(assemblage), options: optionsMinutage(deroule), segments, cadence, largeur: largeurCapture, hauteur: hauteurCapture,
-      extra: { navigateur: version, gpu, pixels: { ...parametresPixels, ...(grainMax ? { grainMax } : {}), ...(demande.cadre ? { cadre: demande.cadre, cadreFormat: demande.cadreFormat } : {}) } },
+      extra: { navigateur: version, gpu, pixels: { ...parametresPixels, ...(grainMax ? { grainMax } : {}), ...(avecFlou ? { flou: FLOU_REGLE } : {}), ...(demande.cadre ? { cadre: demande.cadre, cadreFormat: demande.cadreFormat } : {}) } },
     });
     // Intermédiaire : sous l'empreinte de ses pixels et de ses propres réglages (le commun, ou celui du master) ; fichier dérivé :
     // pixels et réglages de l'usage (rangement de S1-4, inchangé).
@@ -302,7 +316,6 @@ async function exporterFidele({ dossier, pour, qualite, ips, tailleMax, navigate
     if (plageImages.erreur) throw Object.assign(new Error(plageImages.erreur), { sortie: true });
     const utiles = segments.map((g, k) => k).filter((k) => segments[k].fin > plageImages.f0 && segments[k].debut < plageImages.f1);
     const estUtile = new Set(utiles);
-    const aFaire = utiles.reduce((n, k) => n + segments[k].fin - segments[k].debut, 0);
 
     // Seuls les segments du dernier export réussi et ceux de cet export restent sur le disque.
     const dernier = path.join(dossierSegments, 'dernier.json');
@@ -336,12 +349,49 @@ async function exporterFidele({ dossier, pour, qualite, ips, tailleMax, navigate
       return null;
     }), 8));
     const aCapturer = utiles.filter((k) => !surDisque[k]);
+    // Sous-images (5.8) : N de chaque image à capturer, de la première image des segments repris et des témoins, calculés avant les
+    // captures par une page à part (marche en avant ; les pages de capture ne reviennent jamais en arrière), puis fermée.
+    const nDe = new Map();
+    if (avecFlou) {
+      const voulues = new Set();
+      for (const k of utiles) {
+        const g = segments[k];
+        if (surDisque[k]) voulues.add(g.debut); else for (let i = g.debut; i < g.fin; i++) voulues.add(i);
+      }
+      for (const t of [plageImages.f0, Math.floor((plageImages.f0 + plageImages.f1) / 2), plageImages.f1 - 1]) voulues.add(t);
+      const liste = [...voulues].filter((i) => i >= 0 && i < total).sort((a, b) => a - b);
+      if (liste.length) {
+        surPhase('flou');
+        const mesure = await ouvrir();
+        try {
+          for (let i = 0; i < liste.length; i += FLOU_PAQUET) {
+            const paquet = liste.slice(i, i + FLOU_PAQUET);
+            const ns = await P.mesurer('flouMesure', () => mesure.evaluer(`M.flou.nParImage(${JSON.stringify(paquet)}, ${cadence}, 1)`));
+            paquet.forEach((n, j) => nDe.set(n, ns[j] || 1));
+          }
+        } finally { await fermer(mesure); }
+      }
+    }
+    const sousImagesDe = (n) => nDe.get(n) || 1;
     const regle = paralleles ? { nombre: Math.max(1, Math.min(paralleles, aCapturer.length || 1)), regle: 'option' } : navigateursParalleles({ taches: Math.max(1, aCapturer.length), gpu });
     resume.paralleles = regle.nombre;
 
     const { f0, f1 } = plageImages;
     const temoins = new Map([[f0, null], [Math.floor((f0 + f1) / 2), null], [f1 - 1, null]]);
     const noter = (n, png) => { if (temoins.has(n) && !temoins.get(n)) temoins.set(n, png); };
+    // Progression en sous-images (5.8, point 5) : une image floue compte autant que ses captures ; un segment repris, ses images.
+    const poidsSegment = (k) => { const g = segments[k]; if (surDisque[k] || !avecFlou) return g.fin - g.debut; let p = 0; for (let i = g.debut; i < g.fin; i++) p += sousImagesDe(i); return p; };
+    const aFaire = utiles.reduce((n, k) => n + poidsSegment(k), 0);
+    /** Image n telle que la vidéo la montre : une capture, ou la moyenne de ses sous-images. */
+    async function imageA(capture, n) {
+      const N = sousImagesDe(n);
+      if (N === 1) return capture.capturer(n / cadence, P.ajouter);
+      const pngs = [];
+      for (const t of FL.instants(n, cadence, N, { duree: premiere.duree, scenes: premiere.minutage.scenes })) pngs.push(await capture.capturer(t, P.ajouter));
+      return P.mesurer('flouMoyenne', () => PNG.moyenne(pngs));
+    }
+    let imagesFloues = 0;
+    let sousImagesTotal = 0;
     let faites = 0;
     let repris = 0;
     let reencodes = 0;
@@ -352,7 +402,7 @@ async function exporterFidele({ dossier, pour, qualite, ips, tailleMax, navigate
     const avancer = (n, repriseDeSegment = false) => {
       faites += n;
       if (repriseDeSegment) reprises += n;
-      surProgression(faites, aFaire, { reprises });
+      surProgression(Math.min(faites, aFaire), aFaire, { reprises });
       if (faites % 10 === 0 || faites === aFaire) etat({ etat: 'en-cours', images: faites, total: aFaire });
     };
 
@@ -372,7 +422,7 @@ async function exporterFidele({ dossier, pour, qualite, ips, tailleMax, navigate
     /** Images témoins d'un segment repris, capturées en avançant (la page ne revient jamais en arrière). */
     async function temoinsDuSegment(g, capture) {
       for (const n of [...temoins.keys()].sort((a, b) => a - b)) {
-        if (n > g.debut && n < g.fin && !temoins.get(n)) temoins.set(n, await capture.capturer(n / cadence, P.ajouter));
+        if (n > g.debut && n < g.fin && !temoins.get(n)) temoins.set(n, await imageA(capture, n));
       }
     }
 
@@ -381,7 +431,7 @@ async function exporterFidele({ dossier, pour, qualite, ips, tailleMax, navigate
       const g = segments[k];
       const attendu = { largeur: largeurCapture, hauteur: hauteurCapture, images: g.fin - g.debut };
       if (surDisque[k]) {
-        const capturee = await capture.capturer(g.debut / cadence, P.ajouter);
+        const capturee = await imageA(capture, g.debut);
         noter(g.debut, capturee);
         if (surDisque[k] === 'fichier' && await P.mesurer('verifications', () => premiereImageJuste(outil, fichiers[k], capturee))) {
           await temoinsDuSegment(g, capture);
@@ -410,11 +460,14 @@ async function exporterFidele({ dossier, pour, qualite, ips, tailleMax, navigate
       async function* images() {
         for (let n = g.debut; n < g.fin; n++) {
           if (controle.signal.aborted) return;
-          const png = await capture.capturer(n / cadence, P.ajouter);
+          const png = await imageA(capture, n);
           noter(n, png);
           if (n === g.debut) premiereImage = png;
           resume.imagesCapturees++;
-          avancer(1);
+          const N = sousImagesDe(n);
+          sousImagesTotal += N;
+          if (N > 1) imagesFloues++;
+          avancer(N);
           yield png;
         }
         finImages = performance.now();
@@ -504,7 +557,7 @@ async function exporterFidele({ dossier, pour, qualite, ips, tailleMax, navigate
     // Image témoin encore absente (ne devrait pas arriver) : capturée par une page neuve, qui part de zéro.
     if ([...temoins.values()].some((png) => !png)) {
       const c = await ouvrir();
-      for (const n of [...temoins.keys()].sort((a, b) => a - b)) if (!temoins.get(n)) temoins.set(n, await c.capturer(n / cadence, P.ajouter));
+      for (const n of [...temoins.keys()].sort((a, b) => a - b)) if (!temoins.get(n)) temoins.set(n, await imageA(c, n));
     }
     // Couverture (5.10) : l'instant du déroulé, sous-titres masqués, en JPEG de qualité 90, prise par la première page une fois
     // les images faites (une page ne revient en arrière qu'ici, pour cette seule image) ; vignette de 1 280 px et 200 Ko au plus.
@@ -767,7 +820,7 @@ async function exporterFidele({ dossier, pour, qualite, ips, tailleMax, navigate
     const resultat = {
       ok: true, fichier: final, images, duree: n / cadence, largeur: gif ? tailleGif[0] : largeur, hauteur: gif ? tailleGif[1] : hauteur, audio: Boolean(audio),
       usage: u.usage, octets, taille: U.tailleFrancaise(octets), definition: u.definition, ips: gif ? 15 : cadence,
-      flou: { applique: false, sousImages: 1 }, chapitresIntegres: Boolean(chapitres.length && sonde && sonde.chapitres > 0),
+      flou: { applique: avecFlou, sousImages: nDe.size ? Math.max(1, ...nDe.values()) : 1, imagesFloues, sousImagesTotal }, chapitresIntegres: Boolean(chapitres.length && sonde && sonde.chapitres > 0),
       fichiers: { [gif ? 'gif' : 'video']: rel(final), ...(sousTitres.length ? { sousTitres } : {}), ...joint, ...livrables.fichiers },
       ...(demande.extrait ? { extrait: { scene: demande.scene, debut: f0 / cadence, fin: f1 / cadence } } : {}),
       ...(demande.cadre ? { cadre: demande.cadre, cadreFormat: demande.cadreFormat } : {}),
@@ -785,7 +838,7 @@ async function exporterFidele({ dossier, pour, qualite, ips, tailleMax, navigate
     if (avertissementFinal) resultat.avertissement = avertissementFinal;
     // Vitesse de cet ordinateur (temps restant des prochains exports, 5.5) : seulement si des images ont été capturées.
     if (imagesParSeconde && !extrait) {
-      ME.noterMesure({ voie: 'fidele', definition: deuxPasses ? '1080p' : u.definition, ips: cadence, flou: false, imagesParSeconde,
+      ME.noterMesure({ voie: 'fidele', definition: deuxPasses ? '1080p' : u.definition, ips: cadence, flou: avecFlou, imagesParSeconde,
         finalesParSeconde: Math.round(((performance.now() - debutFinales) / 1000 / (total / cadence)) * 1000) / 1000 });
     }
     etat({ etat: 'fini', fichier: rel(final), images, duree: n / cadence, audio: Boolean(audio), usage: u.usage, octets, ...(avertissementFinal ? { avertissement: avertissementFinal } : {}),

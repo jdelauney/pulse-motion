@@ -11,10 +11,12 @@
  * Livrables (spec Rendu et export, 5.10, 5.12, 5.15) : couverture JPEG sans sous-titres et vignette intégrée
  * (setMetadataTags, coverFront), titre en métadonnée ; extrait d'une scène ou passage seul (images f0 à f1, tranche du son
  * avec fondus de 0,1 s) ; cadre de téléphone (scène 9:16 dessinée à l'échelle dans l'écran, moteur/cadres/telephone.js).
+ * Rendu avancé (5.8, 5.14) : flou de mouvement (mêmes N que la voie fidèle, moteur/flou.js ; sous-images accumulées sur 16 bits)
+ * et fond transparent « pour le web » (WebM VP9 à couche alpha, I420A BT.709) si l'encodeur du navigateur sait garder l'alpha.
  */
 import '/_pm/cadres/telephone.js';
 import {
-  Output, Mp4OutputFormat, BufferTarget, VideoSampleSource, VideoSample, AudioBufferSource,
+  Output, Mp4OutputFormat, WebMOutputFormat, BufferTarget, VideoSampleSource, VideoSample, AudioBufferSource,
   Input, BufferSource, ALL_FORMATS, CanvasSink, EncodedPacketSink, Conversion, canEncodeVideo, canEncodeAudio,
 } from '/_pm/vendor/mediabunny.min.mjs';
 
@@ -72,6 +74,18 @@ function preparerScene(largeur, hauteur) {
   };
 }
 
+/** Fond transparent (5.14) : l'encodeur VP9 du navigateur garde-t-il la couche alpha à cette taille ? */
+export async function alphaPossible(largeur, hauteur, debit = 8e6) {
+  if (typeof VideoEncoder === 'undefined' || !VideoEncoder.isConfigSupported) return false;
+  try {
+    const r = await VideoEncoder.isConfigSupported({ codec: 'vp09.00.10.08', width: largeur, height: hauteur, bitrate: debit, alpha: 'keep' });
+    return Boolean(r && r.supported);
+  } catch { return false; }
+}
+
+/** Message d'un fond transparent impossible dans le navigateur (5.14, point 4). */
+export const MESSAGE_ALPHA = 'La vidéo à fond transparent a besoin de ffmpeg sur cet ordinateur.';
+
 /** Espace de couleurs des images confiées à l'encodeur : celui de la voie fidèle. */
 const BT709 = { primaries: 'bt709', transfer: 'bt709', matrix: 'bt709', fullRange: false };
 
@@ -79,7 +93,7 @@ const BT709 = { primaries: 'bt709', transfer: 'bt709', matrix: 'bt709', fullRang
  * Image RVBA (sRGB, alpha ignoré) -> I420 BT.709 plage limitée (Y 16–235, Cb et Cr 16–240 ; chrominance moyennée par
  * blocs de 2 × 2). largeur et hauteur paires. Coefficients de la recommandation UIT-R BT.709 (Kr 0,2126, Kb 0,0722).
  */
-export function versI420(rgba, largeur, hauteur, sortie = new Uint8Array(largeur * hauteur * 1.5)) {
+export function versI420(rgba, largeur, hauteur, sortie = new Uint8Array(largeur * hauteur * 1.5), alpha = false) {
   const Y = sortie;
   const U = largeur * hauteur;
   const V = U + (largeur * hauteur) / 4;
@@ -101,6 +115,8 @@ export function versI420(rgba, largeur, hauteur, sortie = new Uint8Array(largeur
       sortie[V + k] = Math.round(128 + (224 / 255) * (0.5 * r - 0.454153 * v - 0.045847 * b));
     }
   }
+  // I420A (fond transparent, 5.14) : plan alpha en pleine définition après les trois plans.
+  if (alpha) { const A = largeur * hauteur * 1.5; for (let i = 0, j = 3; i < largeur * hauteur; i++, j += 4) sortie[A + i] = rgba[j]; }
   return sortie;
 }
 
@@ -186,6 +202,8 @@ async function preparerCadre(largeur, hauteur) {
 export async function exporter({ surProgression = () => {}, signal, reglages = WEB } = {}) {
   const r = { ...WEB, ...(reglages || {}), navigateur: { ...WEB.navigateur, ...((reglages && reglages.navigateur) || {}) } };
   const sortie = r.sortie || {};
+  const transparent = sortie.transparent === 'webm';
+  if (sortie.transparent && !transparent) throw new Error(MESSAGE_ALPHA);
   const cadre = sortie.cadre === 'telephone' && M.cadreTelephone ? sortie : null;
   // Cadre : la sortie a la taille du cadre ; la scène est capturée en 9:16 à sa propre définition.
   const [largeurScene, hauteurScene] = taille(M.donnees.format.ratio, r.definition);
@@ -198,6 +216,7 @@ export async function exporter({ surProgression = () => {}, signal, reglages = W
     n.acceleration = 'no-preference';
   }
   if (!support.video) throw new Error('Ce navigateur ne sait pas encoder la vidéo (H.264) : ouvrez l\'aperçu dans Chrome ou Edge.');
+  if (transparent && !(await alphaPossible(largeur, hauteur, n.debit * 1000))) throw new Error(MESSAGE_ALPHA);
   if (M.particules) await M.particules.verifierExport();
   // --qualite et --ips priment (résolus par l'aperçu) ; sinon les images par seconde du déroulé.
   const ips = r.ips || M.ips;
@@ -229,11 +248,11 @@ export async function exporter({ surProgression = () => {}, signal, reglages = W
   // Cadre : la scène est capturée dans une toile de travail, puis dessinée à l'échelle sur le cadre.
   const decor = cadre ? await preparerCadre(largeur, hauteur) : null;
   const travail = decor ? new OffscreenCanvas(largeurScene, hauteurScene) : null;
-  const output = new Output({ format: new Mp4OutputFormat({ fastStart: 'in-memory' }), target: new BufferTarget() });
+  const output = new Output({ format: transparent ? new WebMOutputFormat() : new Mp4OutputFormat({ fastStart: 'in-memory' }), target: new BufferTarget() });
   // Couverture et vignette intégrée (5.10) : avant start(), comme l'exige setMetadataTags ; titre de la vidéo en métadonnée.
   let couverture = null;
   const tags = { title: M.donnees.titre || '' };
-  if (r.couverture && !sortie.extrait && !cadre) {
+  if (r.couverture && !sortie.extrait && !cadre && !transparent) {
     const remettreCouv = preparerScene(largeurScene, hauteurScene);
     M.modeCapture(true);
     try {
@@ -246,12 +265,12 @@ export async function exporter({ surProgression = () => {}, signal, reglages = W
     }
   }
   output.setMetadataTags(tags);
-  const video = new VideoSampleSource(configVideo(n, n.debit));
-  const i420 = new Uint8Array(largeur * hauteur * 1.5);
+  const video = new VideoSampleSource(transparent ? { codec: 'vp9', bitrate: Math.max(1, Math.round(n.debit * 1000)), keyFrameInterval: n.gop || 2, alpha: 'keep' } : configVideo(n, n.debit));
+  const i420 = new Uint8Array(largeur * hauteur * (transparent ? 2.5 : 1.5));
   output.addVideoTrack(video, { frameRate: ips });
   let pisteAudio = null;
   if (audio) {
-    pisteAudio = new AudioBufferSource({ codec: 'aac', bitrate: (n.audio || 160) * 1000 });
+    pisteAudio = new AudioBufferSource({ codec: transparent ? 'opus' : 'aac', bitrate: (n.audio || 160) * 1000 });
     output.addAudioTrack(pisteAudio);
   }
 
@@ -262,8 +281,36 @@ export async function exporter({ surProgression = () => {}, signal, reglages = W
   window.addEventListener('error', surErreur);
   window.addEventListener('unhandledrejection', surErreur);
   const remettre = preparerScene(largeurScene, hauteurScene);
+  if (transparent) document.documentElement.classList.add('pm-transparent');
   const stats = creerStats(largeur, hauteur);
   M.modeCapture(true);
+  // Flou de mouvement (5.8) : N de chaque image par la même fonction que la voie fidèle (boîtes en pixels de la sortie).
+  const boite = document.getElementById('pm-scene').getBoundingClientRect();
+  const echelle = boite.width > 0 ? largeurScene / boite.width : 1;
+  const ns = r.flou && !transparent && M.flou ? M.flou.nParImage(Array.from({ length: total }, (_, k) => f0 + k), ips, echelle) : null;
+  const somme = ns && ns.some((x) => x > 1) ? new Uint16Array(largeur * hauteur * 4) : null;
+  let imagesFloues = 0;
+  /** Image de l'instant t dans ctx (cadre compris). */
+  const dessinerA = async (t) => {
+    try {
+      await M.seek(t);
+    } catch (e) {
+      throw erreurDeScript(t);
+    }
+    if (decor) {
+      await M.capturer(travail.getContext('2d'), largeurScene, hauteurScene);
+      const e = decor.g.ecran;
+      ctx.drawImage(decor.image, 0, 0, largeur, hauteur);
+      ctx.save();
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(e.x, e.y, e.largeur, e.hauteur, e.rayon); else ctx.rect(e.x, e.y, e.largeur, e.hauteur);
+      ctx.clip();
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(travail, e.x, e.y, e.largeur, e.hauteur);
+      ctx.restore();
+    } else await M.capturer(ctx, largeur, hauteur);
+    if (erreurScript) throw erreurDeScript(t);
+  };
   const debut = horloge();
   let finImages = debut;
   try {
@@ -271,27 +318,24 @@ export async function exporter({ surProgression = () => {}, signal, reglages = W
     if (pisteAudio) await pisteAudio.add(audio);
     for (let k = 0; k < total; k++) {
       if (signal && signal.aborted) throw new DOMException('Export annulé.', 'AbortError');
-      const t = (f0 + k) / ips;
-      try {
-        await M.seek(t);
-      } catch (e) {
-        throw erreurDeScript(t);
+      const N = ns ? ns[k] : 1;
+      if (N === 1) await dessinerA((f0 + k) / ips);
+      else {
+        // Sous-images accumulées sur 16 bits, moyenne arrondie posée dans la toile encodée.
+        somme.fill(0);
+        for (const tk of M.flou.instants(f0 + k, ips, N, { duree: M.duree, scenes: M.minutage.scenes })) {
+          await dessinerA(tk);
+          const d = ctx.getImageData(0, 0, largeur, hauteur).data;
+          for (let i = 0; i < d.length; i++) somme[i] += d[i];
+        }
+        const moyenne = ctx.createImageData(largeur, hauteur);
+        const demi = N >> 1;
+        for (let i = 0; i < somme.length; i++) moyenne.data[i] = ((somme[i] + demi) / N) | 0;
+        ctx.putImageData(moyenne, 0, 0);
+        imagesFloues++;
       }
-      if (decor) {
-        await M.capturer(travail.getContext('2d'), largeurScene, hauteurScene);
-        const e = decor.g.ecran;
-        ctx.drawImage(decor.image, 0, 0, largeur, hauteur);
-        ctx.save();
-        ctx.beginPath();
-        if (ctx.roundRect) ctx.roundRect(e.x, e.y, e.largeur, e.hauteur, e.rayon); else ctx.rect(e.x, e.y, e.largeur, e.hauteur);
-        ctx.clip();
-        ctx.imageSmoothingQuality = 'high';
-        ctx.drawImage(travail, e.x, e.y, e.largeur, e.hauteur);
-        ctx.restore();
-      } else await M.capturer(ctx, largeur, hauteur);
-      if (erreurScript) throw erreurDeScript(t);
-      versI420(ctx.getImageData(0, 0, largeur, hauteur).data, largeur, hauteur, i420);
-      const image = new VideoSample(i420, { format: 'I420', codedWidth: largeur, codedHeight: hauteur, timestamp: k / ips, duration: 1 / ips, colorSpace: BT709 });
+      versI420(ctx.getImageData(0, 0, largeur, hauteur).data, largeur, hauteur, i420, transparent);
+      const image = new VideoSample(i420, { format: transparent ? 'I420A' : 'I420', codedWidth: largeur, codedHeight: hauteur, timestamp: k / ips, duration: 1 / ips, colorSpace: BT709 });
       try { await video.add(image); } finally { image.close(); }
       stats.ajouter(canvas);
       surProgression(k + 1, total);
@@ -305,6 +349,7 @@ export async function exporter({ surProgression = () => {}, signal, reglages = W
     window.removeEventListener('error', surErreur);
     window.removeEventListener('unhandledrejection', surErreur);
     M.modeCapture(false);
+    document.documentElement.classList.remove('pm-transparent');
     remettre();
     M.rendre(depart);
   }
@@ -323,7 +368,8 @@ export async function exporter({ surProgression = () => {}, signal, reglages = W
   const finales = Math.max(0, (horloge() - finImages) / 1000);
   return {
     buffer, images: total, duree: total / ips, largeur, hauteur, audio: !!audio, avertissement, fondSombre, stats: sortie.extrait ? null : stats.finir(),
-    usage: r.usage, definition: r.definition, ips, reprises, couverture, vignette: Boolean(tags.images), extrait: Boolean(sortie.extrait),
+    usage: r.usage, definition: r.definition, ips, reprises, couverture, vignette: Boolean(tags.images), extrait: Boolean(sortie.extrait), transparent,
+    flou: { applique: Boolean(ns), sousImages: ns ? Math.max(1, ...ns) : 1, imagesFloues },
     imagesParSeconde: Math.round((total / secondes) * 10) / 10, finalesParSeconde: Math.round((finales / (total / ips)) * 1000) / 1000,
   };
 }
@@ -435,7 +481,7 @@ export async function relire(buffer, { images: attendues, ips, fondSombre = fals
 export async function envoyer(buffer, relecture, nom, { extrait = false } = {}) {
   const reponse = await fetch('/_pm/export', {
     method: 'POST',
-    headers: { 'Content-Type': 'video/mp4', 'X-PM-Relecture': encodeURIComponent(JSON.stringify(relecture)), ...(nom ? { 'X-PM-Nom': encodeURIComponent(nom) } : {}),
+    headers: { 'Content-Type': /\.webm$/.test(nom || '') ? 'video/webm' : 'video/mp4', 'X-PM-Relecture': encodeURIComponent(JSON.stringify(relecture)), ...(nom ? { 'X-PM-Nom': encodeURIComponent(nom) } : {}),
       ...(extrait ? { 'X-PM-Extrait': '1' } : {}) },
     body: buffer,
   });

@@ -89,6 +89,12 @@ function lireFlou(v) {
   return 'illisible';
 }
 
+/** Le style accepte-t-il le flou de mouvement (5.8, point 4) ? Un style « en pas » déclare "flou": false dans identite.json. */
+function flouDuStyle(dossierStyle) {
+  if (!dossierStyle) return true;
+  try { return JSON.parse(fs.readFileSync(path.join(dossierStyle, 'identite.json'), 'utf8')).flou !== false; } catch { return true; }
+}
+
 const arrondiKbit = (x) => Math.max(1, Math.round(x));
 
 /**
@@ -212,5 +218,5 @@ function tableauUsages(u = lireUsages()) {
 
 module.exports = {
   lireUsages, nomsUsages, messageUsageInconnu, resoudreUsage, planTaille, nomFichier, tailleFrancaise, dureeFrancaise,
-  nombreFrancais, tableauUsages, lireFlou, poidsEtTemps, dureeMaxPour, avecGrain, MOTS, DEFINITIONS, SEUILS_TAILLE, FACTEUR_DEFINITION, MO,
+  nombreFrancais, tableauUsages, lireFlou, flouDuStyle, poidsEtTemps, dureeMaxPour, avecGrain, MOTS, DEFINITIONS, SEUILS_TAILLE, FACTEUR_DEFINITION, MO,
 };

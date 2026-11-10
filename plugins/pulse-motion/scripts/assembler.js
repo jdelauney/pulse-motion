@@ -470,7 +470,7 @@ M.demarrerParticules();
 </html>
 `;
 
-  const resultat = { ok: true, fichier: null, html: page, erreurs, effets, milieux, shaders, donnees, parScene, cssPage, moteur, groupes, polices, detailPolices,
+  const resultat = { ok: true, fichier: null, html: page, erreurs, effets, milieux, shaders, donnees, parScene, cssPage, moteur, groupes, polices, detailPolices, dossierStyle,
     ressources: [...ressources].map(([fichier, sorte]) => ({ fichier, sorte })), minutage: minutageScenes };
   if (ecrire) resultat.fichier = ecrireSortie(projet, resultat).fichier;
   return resultat;
