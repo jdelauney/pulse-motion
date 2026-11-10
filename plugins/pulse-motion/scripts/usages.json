@@ -38,7 +38,7 @@
     "master": {
       "nom": "Pour archiver ou confier à un monteur",
       "pourQuoi": "la meilleure qualité, à garder ou à retravailler",
-      "image": "la plus fidèle possible, à retravailler sans perte visible",
+      "image": "la plus fidèle possible, à retravailler sans perte visible ; flou de mouvement sur les passages rapides",
       "definition": "1080p", "ipsMax": 60,
       "fidele": { "crf": 14, "preset": "slow", "tune": "auto", "debitMax": null, "tampon": null, "gop": 2, "profil": "high", "audio": 256 },
       "navigateur": { "debit": 20000, "gop": 2, "acceleration": "no-preference" },

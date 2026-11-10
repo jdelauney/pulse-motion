@@ -212,7 +212,7 @@ function tableauUsages(u = lireUsages()) {
   }
   lignes.push('', '## Ce que dit la personne', '', '| Elle dit | Usage |', '|---|---|');
   for (const [mots, usage, complement] of MOTS) lignes.push(`| ${mots} | \`${usage}\`${complement ? `, ${complement}` : ''} |`);
-  lignes.push('', 'Fichiers joints selon l\'usage : couverture (image de la miniature, sans sous-titres), chapitres (s\'ils sont déclarés dans la vidéo), crédits (toujours). « En boucle » et « des chapitres » changent la vidéo : c\'est une retouche (`/pulse-motion:retoucher`). « En GIF », « juste la scène 3 », « de 12 à 18 s », « dans un téléphone », « un PDF des scènes » : voir `pulse-motion reference sorties` ; « fond transparent » : pas encore possible.', '');
+  lignes.push('', 'Fichiers joints selon l\'usage : couverture (image de la miniature, sans sous-titres), chapitres (s\'ils sont déclarés dans la vidéo), crédits (toujours). « En boucle » et « des chapitres » changent la vidéo : c\'est une retouche (`/pulse-motion:retoucher`). « En GIF », « juste la scène 3 », « de 12 à 18 s », « dans un téléphone », « un PDF des scènes », « à incruster dans mon montage » (fond transparent) : voir `pulse-motion reference sorties`. Le master a un flou de mouvement sur les passages rapides (`--flou non` pour l\'enlever).', '');
   return lignes.join('\n');
 }
 

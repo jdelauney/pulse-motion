@@ -203,7 +203,8 @@ async function exporterTransparent({ projet, deroule, u, demande, navigateur, ou
     const message = annule ? 'Export annulé : rien n\'est écrit.'
       : e.sortie || e.script ? e.message : `L'export de la vidéo à fond transparent a échoué (${e.message}) : relancez-le.`;
     etat({ etat: annule ? 'annule' : 'erreur', message });
-    return { ok: false, audio: false, message, usage: u.usage, ...(e.fondOpaque ? { fondOpaque: e.fondOpaque } : {}),
+    return { ok: false, audio: false, message, usage: u.usage,
+      ...(e.fondOpaque ? { fondOpaque: e.fondOpaque, probleme: { regle: 'fond-opaque', gravite: 'erreur', scene: e.fondOpaque[0], message } } : {}),
       ...(e.script ? { erreurScript: { scene: e.scene, instant: e.instant, detail: e.detail } } : {}) };
   } finally {
     if (signal) signal.removeEventListener('abort', surAnnulation);

@@ -184,6 +184,7 @@ Chaque export relit le fichier livré et écrit `sortie/verification.json` : `fa
 | `silence-export` | Un silence du fichier (`silenceNiveau`, `silenceDuree`) absent du mixage de la page | **erreur** | l'export échoue | Relancer l'export |
 | `crete-export` | Crête vraie au-dessus de −1 dBTP (`creteMax`) | alerte | — | Baisser les bruitages forts ou la musique |
 | `voix-inaudible` | Réécoute des scènes signalées par `voix-couverte` : moins de 85 % (`motsConfirmes`) des mots dits reconnus dans le mixage, alors que la prise seule en avait au moins autant | alerte | — | Comme `voix-couverte` |
+| `fond-opaque` | Vidéo à fond transparent seulement (`--transparent`) : une scène dont 90 % des pixels sont opaques à 35, 65 et 95 % de sa partie visible | **erreur** | l'export s'arrête avant toute capture, avec le nom de la scène | Retirer le fond de la scène pour cette version (sélecteur `.pm-transparent` du style, ou décor plein retiré) |
 
 ## Autres règles
 
@@ -191,6 +192,8 @@ Le contrôle signale aussi, avec un message qui dit quoi faire : un texte du dé
 
 | Règle | Ce qui la déclenche | Gravité | Corrigé seul ? | Que faire |
 |---|---|---|---|---|
+| `boucle-mesure` | Vidéo en boucle (`boucle: true`) avec un tempo : la durée ne fait pas un nombre entier de mesures de 4 temps, à une image près | alerte | non | Allonger la dernière scène du temps donné par le message |
+| `boucle-jointure` | Vidéo en boucle : vignettes grises de 192 px des images 0, 1, N − 2 et N − 1, et 24 paires d'images voisines pour la médiane. Saut : l'écart entre la dernière et la première image dépasse 2 fois la médiane (et 0,5 niveau) ; vitesse : le rapport des écarts de fin et de début sort de 0,5 à 2 ; arrêt : la dernière image répète la première (moins de 0,1 niveau) | alerte | non | Finir la dernière scène sur l'image de départ (`pulse-motion reference rythme`) |
 | `deroule-invalide` | Le déroulé est mal formé (champ manquant, valeur hors de la liste) | erreur | non | Corriger le champ nommé par le message |
 | `style-inconnu` | Le style du déroulé n'est ni livré ni personnel | erreur | non | Prendre un style de `pulse-motion styles` |
 | `charte-invalide` | `charte/charte.json` mal formé (couleur, police, logo) | erreur | non | Corriger la valeur nommée |
