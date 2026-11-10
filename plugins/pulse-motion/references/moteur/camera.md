@@ -12,6 +12,7 @@
 - `data-camera` sur un conteneur **dans** la scène (jamais sur la `<section>`), qui couvre l'image ; ce qui est **hors** du conteneur (cartons, titres) reste fixe. Un titre placé après le conteneur prend `position: relative` pour passer devant lui.
 - Clauses `propriété départ→arrivée début+durée [courbe]` (courbe par défaut `sine-inout`) :
   - `zoom` (1 = cadre normal, 2 = gros plan) ;
+  - un grand zoom qui plonge à vitesse régulière : jeton `log` après la plage (`zoom 1→6 0+4 log`, #086), chaque doublement prend le même temps ;
   - `x`, `y` : le point visé, en % de l'image (50 = centre) — pour un travelling, déplacer `x` ; pour un gros plan sur un personnage en (44 %, 70 %), `zoom 1→3` avec `x 50→44; y 50→70` sur la même plage ;
   - `rotation` (deg), `saturation` (1 normal, 0 gris), `flou` (cqh) ;
   - `secousse <amplitude cqh> début+durée` : tremblement amorti (impact).

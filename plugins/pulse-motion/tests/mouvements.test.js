@@ -39,7 +39,7 @@ test('dictionnaire : structure de chaque entrée', () => {
     assert.ok(e.recette.exemple && Array.isArray(e.recette.reglages), qui);
     if (e.motionPrompt) assert.match(e.motionPrompt, /^\d{3}$/, qui);
   }
-  assert.ok(DICO.mouvements.length >= 55 && DICO.mouvements.length <= 80, `${DICO.mouvements.length} entrées`);
+  assert.ok(DICO.mouvements.length >= 55 && DICO.mouvements.length <= 160, `${DICO.mouvements.length} entrées`);
   assert.match(DICO.source, /Motion Prompt/);
 });
 

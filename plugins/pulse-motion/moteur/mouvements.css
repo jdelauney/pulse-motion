@@ -4,7 +4,9 @@
  * chaque classe), --pm-fois (répétitions des mouvements qui se répètent : jamais sans fin, la vidéo finit sur une image stable).
  * Les classes des styles (entre-bas, tombe…) restent valables ; celles-ci sont les mêmes partout et l'emportent sur elles
  * (#pm-scene) : sur un élément d'une scène toute faite, une classe pm-m-* remplace l'entrée du style.
- * Section « Vie » : boucles de vie pm-v-* bornées par le moteur (moteur/horloge.js : fenêtre, phase et cycles). */
+ * Section « Vie » : boucles de vie pm-v-* bornées par le moteur (moteur/horloge.js : fenêtre, phase et cycles).
+ * Section « Motifs » : #081 à #093 (appui, graphique, pulsation, échos, défilement, avant/après, pastille, inondation, roue,
+ * mur, hélice). */
 
 /* ---- Entrées et sortie ---- */
 
@@ -281,3 +283,102 @@
 @keyframes pm-v-petale { from { scale: 0; rotate: 40deg; } to { scale: 1; rotate: 0deg; } }
 #pm-scene .pm-v-petale { --pm-fois: 1; transform-origin: var(--pm-pivot, 50% 100%);
   animation: pm-v-petale var(--pm-dur, 0.5s) cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: calc(var(--i, 0) * var(--pm-decalage, 0.12s)); }
+
+/* ---- Motifs (#081 à #093) : mise en valeur, finition, texte et compositions ----
+   Ponctuels (pm-m-*) sauf la pulsation et le défilement, qui sont des boucles de vie (pm-v-*, bornées par le moteur). Rien
+   d'autre que scale, translate, opacity, clip-path, text-shadow et border-radius animés : la mise en page ne bouge pas. */
+
+/* #081 Appui : le bouton s'enfonce à --pm-ampleur de sa taille (0.97) et revient, en --pm-dur (0.22 s). Sur le bouton, pas sur
+   le dessin à l'intérieur. */
+@keyframes pm-m-appui { 0%, 100% { scale: 1; } 55% { scale: var(--pm-ampleur, 0.97); } }
+#pm-scene .pm-m-appui { animation: pm-m-appui var(--pm-dur, 0.22s) var(--pm-courbe, var(--ease-cubic-out)) both; }
+
+/* #082 Graphique qui se trace : chaque barre grandit depuis sa base en --pm-dur (0.7 s), --i × --pm-decalage (60 ms) après la
+   première. */
+@keyframes pm-m-barre { from { scale: 1 0; } to { scale: 1 1; } }
+#pm-scene .pm-m-barre { transform-origin: 50% 100%;
+  animation: pm-m-barre var(--pm-dur, 0.7s) var(--pm-courbe, var(--ease-quint-out)) both; animation-delay: calc(var(--i, 0) * var(--pm-decalage, 60ms)); }
+#pm-scene svg .pm-m-barre { transform-box: fill-box; }
+
+/* #083 Pulsation sur le temps : grossit de --pm-ampleur (0.012) sur chaque temps de la musique (--pm-temps, 0,5 s sans tempo) et
+   retombe en 0,12 s environ ; à la mesure : --pm-dur: calc(4 * var(--pm-temps)) et --pm-ampleur: 0.03. Sans déphasage : sur le
+   temps ; battement : le saut au début de chaque temps est voulu. Départ sur un temps (data-start="…t"). */
+@keyframes pm-v-cogne {
+  0% { scale: calc(1 + var(--pm-ampleur, 0.012)); }
+  20% { scale: calc(1 + 0.37 * var(--pm-ampleur, 0.012)); }
+  45% { scale: calc(1 + 0.08 * var(--pm-ampleur, 0.012)); }
+  100% { scale: 1; }
+}
+#pm-scene .pm-v-cogne { --pm-boucle: battement; --pm-dur: var(--pm-temps, 0.5s); --pm-phase: 0; transform-origin: 50% 50%;
+  animation: pm-v-cogne var(--pm-dur, 0.5s) cubic-bezier(0.33, 1, 0.68, 1) both;
+  animation-delay: calc(var(--pm-phase, var(--pm-v-phase, 0)) * -1 * var(--pm-dur, 0.5s));
+  animation-iteration-count: var(--pm-fois, var(--pm-v-fois, 1)); }
+
+/* #085 Échos : trois rémanences du texte à la couleur d'accent (20 %, 11 %, 6 %), à 1, 2 et 3 fois --pm-ampleur cqh (1.2) en
+   arrière, qui se replient sur lui en --pm-dur (0.8 s). Avec une entrée (#003) sur le conteneur ; pas sur un texte en dégradé. */
+@keyframes pm-m-echo {
+  from { text-shadow: calc(var(--pm-ampleur, 1.2) * -1cqh) 0 0 color-mix(in srgb, var(--c-accent) 20%, transparent),
+    calc(var(--pm-ampleur, 1.2) * -2cqh) 0 0 color-mix(in srgb, var(--c-accent) 11%, transparent),
+    calc(var(--pm-ampleur, 1.2) * -3cqh) 0 0 color-mix(in srgb, var(--c-accent) 6%, transparent); }
+  to { text-shadow: 0 0 0 transparent, 0 0 0 transparent, 0 0 0 transparent; }
+}
+#pm-scene .pm-m-echo { animation: pm-m-echo var(--pm-dur, 0.8s) var(--pm-courbe, var(--ease-quint-out)) both; }
+
+/* #087 Défilement de logos : la piste (qui contient deux fois la liste) avance d'une liste, à vitesse constante, en --pm-dur
+   (20 s par tour, de 10 à 40) ; chaque logo garde --pm-ecart (4 cqh) après lui, le dernier compris : le raccord tombe pile.
+   Boucle continue : elle défile jusqu'à la fin de sa fenêtre. Dans une fenêtre overflow: hidden. */
+@keyframes pm-v-defile { from { translate: 0 0; } to { translate: -50% 0; } }
+#pm-scene .pm-v-defile { --pm-boucle: continue; --pm-phase: 0; display: flex; align-items: center; width: max-content;
+  animation: pm-v-defile var(--pm-dur, 20s) linear both;
+  animation-delay: calc(var(--pm-phase, var(--pm-v-phase, 0)) * -1 * var(--pm-dur, 20s));
+  animation-iteration-count: var(--pm-fois, var(--pm-v-fois, 1)); }
+#pm-scene .pm-v-defile > * { flex: none; margin: 0 var(--pm-ecart, 4cqh) 0 0; }
+
+/* #088 Avant/après balayé : l'« après » (.pm-apres) se découvre sur l'« avant » (.pm-avant) de gauche à droite, derrière une
+   ligne à la couleur d'accent, au fil de --pm-balai (0 → 100, par data-tween sur le conteneur minuté). */
+#pm-scene .pm-m-avant-apres { position: relative; overflow: hidden; }
+#pm-scene .pm-m-avant-apres > .pm-avant, #pm-scene .pm-m-avant-apres > .pm-apres { position: absolute; inset: 0; }
+#pm-scene .pm-m-avant-apres > .pm-apres { clip-path: inset(0 calc((100 - var(--pm-balai, 0)) * 1%) 0 0); }
+#pm-scene .pm-m-avant-apres::after { content: ""; position: absolute; top: 0; bottom: 0; width: 0.5cqh; translate: -50% 0;
+  left: calc(var(--pm-balai, 0) * 1%); background: var(--c-accent-lisible, var(--c-accent)); }
+
+/* #089 Effondrement en pastille : le bloc se recouvre de son fond (contenu effacé à 30 %), se resserre en pastille (à 55 %),
+   puis disparaît, en --pm-dur (0.7 s). Ensuite le logo en #001, data-start="#bloc:fin-0.1". Le bloc a un fond. */
+@keyframes pm-m-pastille { 0% { scale: 1; } 55% { scale: 0.3 0.5; border-radius: 100cqh; opacity: 1; } 100% { scale: 0; border-radius: 100cqh; opacity: 0; } }
+@keyframes pm-m-pastille-voile { 0% { opacity: 0; } 30%, 100% { opacity: 1; } }
+#pm-scene .pm-m-pastille { position: relative; animation: pm-m-pastille var(--pm-dur, 0.7s) var(--pm-courbe, var(--ease-cubic-inout)) both; }
+#pm-scene .pm-m-pastille::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: inherit;
+  animation: pm-m-pastille-voile var(--pm-dur, 0.7s) linear both; }
+
+/* #090 Cercle d'inondation : un calque de --pm-couleur (l'accent) couvre l'image depuis le point (--pm-x, --pm-y), en % de l'image,
+   jusqu'au coin le plus loin (rayon × 1,05), en --pm-dur (0.32 s). La scène suivante entre en coupe, sur le même fond. */
+@keyframes pm-m-inonde {
+  from { clip-path: circle(0cqh at calc(var(--pm-x, 50) * 1%) calc(var(--pm-y, 50) * 1%)); }
+  to { clip-path: circle(calc(1.05 * hypot(max(var(--pm-x, 50), 100 - var(--pm-x, 50)) * var(--pm-ratio-l, 16) / var(--pm-ratio-h, 9) * 1cqh,
+    max(var(--pm-y, 50), 100 - var(--pm-y, 50)) * 1cqh)) at calc(var(--pm-x, 50) * 1%) calc(var(--pm-y, 50) * 1%)); }
+}
+#pm-scene .pm-m-inonde { position: absolute; inset: 0; background: var(--pm-couleur, var(--c-accent));
+  animation: pm-m-inonde var(--pm-dur, 0.32s) var(--pm-courbe, var(--ease-cubic-out)) both; }
+
+/* #091 Roue de sélection : la liste monte de --pm-choix lignes (5) de --pm-pas (8 cqh) dans sa fenêtre d'une ligne, en --pm-dur
+   (1.4 s), sans dépassement. */
+@keyframes pm-m-roue { from { translate: 0 0; } to { translate: 0 calc(var(--pm-choix, 5) * var(--pm-pas, 8cqh) * -1); } }
+#pm-scene .pm-m-roue { animation: pm-m-roue var(--pm-dur, 1.4s) var(--pm-courbe, var(--ease-quint-out)) both; }
+
+/* #092 Mur de vignettes : grille fixe vue en biais (18° et −6°) ; chaque vignette (--l : rang, --c : colonne) apparaît en
+   --pm-dur (0.5 s), (--l + --c) × 60 ms après la première : une onde depuis le coin. Gros plans par data-camera. */
+#pm-scene .pm-m-mur { display: grid; grid-template-columns: repeat(var(--pm-colonnes, 4), 1fr); gap: 2cqh;
+  transform: perspective(200cqh) rotateX(18deg) rotateZ(-6deg); }
+@keyframes pm-m-mur-vignette { from { scale: 0.92; opacity: 0; } to { scale: 1; opacity: 1; } }
+#pm-scene .pm-m-mur-vignette { animation: pm-m-mur-vignette var(--pm-dur, 0.5s) var(--pm-courbe, var(--ease-quint-out)) both;
+  animation-delay: calc((var(--l, 0) + var(--c, 0)) * var(--pm-decalage, 60ms)); }
+
+/* #093 Hélice : les vignettes (--i : rang) s'enroulent sur un cylindre de --pm-rayon (45 cqh), 30° et --pm-pas (3 cqh) l'une
+   après l'autre, et le cylindre tourne de --pm-tour (120°) en --pm-dur (6 s). Une vignette de dos est cachée (jamais en
+   miroir), par sa face arrière et par son opacité (cos de son angle), que l'export rapide fige aussi. */
+@property --pm-helice { syntax: '<angle>'; inherits: true; initial-value: 0deg; }
+@keyframes pm-m-helice { from { --pm-helice: 0deg; } to { --pm-helice: var(--pm-tour, 120deg); } }
+#pm-scene .pm-m-helice { position: relative; animation: pm-m-helice var(--pm-dur, 6s) var(--pm-courbe, var(--ease-sine-inout)) both; }
+#pm-scene .pm-m-helice-vignette { position: absolute; inset: 0; margin: auto; width: var(--pm-largeur, 22cqh); height: var(--pm-hauteur, 14cqh);
+  backface-visibility: hidden; opacity: clamp(0, calc(cos(var(--i, 0) * 30deg + var(--pm-helice, 0deg)) * 40), 1);
+  transform: perspective(220cqh) translateY(calc(var(--i, 0) * var(--pm-pas, 3cqh))) rotateY(calc(var(--i, 0) * 30deg + var(--pm-helice, 0deg))) translateZ(var(--pm-rayon, 45cqh)); }

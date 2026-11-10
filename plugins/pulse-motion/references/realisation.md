@@ -128,7 +128,7 @@ Ce qu'on voit ou mesure sur l'image. Numéros stables : on en ajoute à la fin, 
 | 12 | Deux éléments se recouvrent | Positions libres | Rangées du style (`.rangee`) | `chevauchement` |
 | 13 | Texte qui touche le bord | Marge oubliée | 4 % (`margeMin`) du petit côté | `marge` |
 | 14 | Texte illisible sur un téléphone | Taille trop basse | 3,5 cqh (`texteMinCqh`) au moins | `texte-petit` |
-| 15 | Mouvement trop rapide à suivre | Long trajet, peu de temps | Plus lent, ou moins ample | `mouvement-rapide` |
+| 15 | Mouvement trop vif à suivre | Long trajet, peu de temps | Plus lent, ou moins ample | `mouvement-rapide` |
 | 16 | Particules sur un texte qu'on lit | Effet `avant` | Calque arrière, ou après la lecture | `effet-sur-texte` |
 | 17 | Logo caché | Élément posé dessus | Le déplacer | `logo-masque` |
 | 18 | L'image bouge encore à la dernière seconde | Décor qui dérive jusqu'au bout | Décor arrêté avant ; 0,5 s (`pauseFinale`) d'image stable | `pause-finale` |
@@ -138,7 +138,7 @@ Ce qu'on voit ou mesure sur l'image. Numéros stables : on en ajoute à la fin, 
 | 22 | Bruitage sur un mot de la voix | Son mal calé | Le décaler entre deux mots | `son-sous-voix` |
 | 23 | Un son sur chaque mouvement | Bruitages partout | 1 à 3 par scène | `trop-de-sons` |
 | 24 | Chiffre affiché absent du déroulé | Nombre inventé | Celui de l'intention ou de `faits` | `chiffre-invente` |
-| 25 | Image presque immobile 2,5 s (`tempsMort`) | Décor trop lent | Plus d'ampleur, une entrée | `image-figee` |
+| 25 | Image presque immobile 2,5 s (`tempsMort`) | Décor figé | Plus d'ampleur, une entrée | `image-figee` |
 | 26 | La musique couvre la voix | Musique forte | La baisser | `voix-couverte` |
 
 ## 12. Regarder avant de montrer

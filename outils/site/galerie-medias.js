@@ -37,6 +37,13 @@ const fichiersStyle = (style) => [`${GALERIE}/styles/${style}.mp4`, ...scenesDuS
 const fichiersEffet = (nom) => [`${GALERIE}/effets/${nom}.mp4`, `${GALERIE}/effets/${nom}.jpg`];
 const fichiersClip = (nom) => [`${GALERIE}/personnages/${nom}.mp4`, `${GALERIE}/personnages/${nom}.jpg`];
 
+/** Personnages livrés (dessins de la bibliothèque) : [{ nom, description, maniere }], dans l'ordre alphabétique. */
+function dessinsLivres() {
+  const r = spawnSync(process.execPath, [path.join(PLUGIN, "scripts", "pm.js"), "personnages", "liste"], { encoding: "utf8" });
+  return JSON.parse(r.stdout).dessins.map((d) => ({ nom: d.nom, description: d.description, maniere: d.maniere || "pieces" }));
+}
+const fichiersDessin = (nom) => [`${GALERIE}/dessins/${nom}.mp4`, `${GALERIE}/dessins/${nom}.jpg`];
+
 // ---------------------------------------------------------------- Fabrication
 
 function outils() {
@@ -162,6 +169,22 @@ function fabriquerPersonnages() {
   });
 }
 
+/** Chaque personnage livré marche, se tourne vers nous, salue puis saute : 5 s, sur un fond clair. */
+function fabriquerDessins() {
+  avecDossier("pm-galerie-dessins-", (dossier) => {
+    const demos = dessinsLivres().map((d) => ({
+      id: d.nom, duree: 5,
+      html: `<div data-personnage="${d.nom}" data-x="25" data-sol="90" data-taille="62"><i id="va" data-action="marcher" data-vers="55" data-start="0.2" data-dur="1.6"></i><i id="tourne" data-action="tourner" data-vue="70" data-start="#va:fin" data-dur="0.4"></i><i id="salut" data-action="jouer" data-clip="coucou" data-start="#tourne:fin"></i><i data-action="expression" data-expression="joie" data-start="#tourne:fin"></i><i data-action="jouer" data-clip="saut" data-start="#salut:fin+0.1"></i></div>`,
+    }));
+    const { plages } = projetDeDemos(dossier, demos, { titre: "Personnages livrés" });
+    const video = exporter(dossier);
+    decouper(video, plages.map((p) => {
+      const [mp4, jpg] = fichiersDessin(p.id);
+      return { debut: p.debut, duree: p.fin - p.debut, sortie: mp4, affiche: jpg, tAffiche: p.debut + 2.6 };
+    }));
+  });
+}
+
 // ---------------------------------------------------------------- Exemples des modèles de vidéo (page Idées)
 
 const modelesVideo = () => require(path.join(PLUGIN, "scripts", "modeles.js")).listerModeles();
@@ -204,9 +227,11 @@ const LOTS = [
     sources: [path.join(PLUGIN, "effets"), path.join(PLUGIN, "moteur"), path.join(PLUGIN, "styles", "tech-sombre"), ...FABRICATION], fabriquer: fabriquerEffets },
   { id: "galerie-personnages", sortie: `${GALERIE}/personnages/coucou.mp4`, sorties: () => clipsPersonnages().flatMap(fichiersClip),
     sources: [path.join(PLUGIN, "personnages"), path.join(PLUGIN, "moteur"), path.join(PLUGIN, "styles", "tech-sombre"), ...FABRICATION], fabriquer: fabriquerPersonnages },
+  { id: "galerie-dessins", sortie: `${GALERIE}/dessins/touffu.mp4`, sorties: () => dessinsLivres().flatMap((d) => fichiersDessin(d.nom)),
+    sources: [path.join(PLUGIN, "personnages"), path.join(PLUGIN, "moteur"), path.join(PLUGIN, "styles", "clair-pedagogique"), ...FABRICATION], fabriquer: fabriquerDessins },
   { id: "exemples", sortie: "medias/exemples/pitch.mp4", sorties: () => exemplesAFabriquer().flatMap(fichiersExemple),
     sources: [path.join(PLUGIN, "exemples"), path.join(PLUGIN, "moteur"), path.join(PLUGIN, "styles"), ...FABRICATION], fabriquer: fabriquerExemples },
 ];
 
-module.exports = { LOTS, GALERIE, dictionnaire, STYLES_LIVRES, scenesDuStyle, effets, clipsPersonnages, demoEffet,
-  fichiersMouvement, fichiersStyle, fichiersEffet, fichiersClip, decouper, modelesVideo, dossierExemple, fichiersExemple, exemplesAFabriquer };
+module.exports = { LOTS, GALERIE, dictionnaire, STYLES_LIVRES, scenesDuStyle, effets, clipsPersonnages, dessinsLivres, demoEffet,
+  fichiersMouvement, fichiersStyle, fichiersEffet, fichiersClip, fichiersDessin, decouper, modelesVideo, dossierExemple, fichiersExemple, exemplesAFabriquer };

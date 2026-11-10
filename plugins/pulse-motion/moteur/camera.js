@@ -4,6 +4,8 @@
  *
  * Chaque clause : propriété, valeur de départ → valeur d'arrivée, plage « début+durée »
  * (secondes de la scène, ou temps musicaux « 2t »), courbe facultative (sine-inout par défaut).
+ * Zoom continu (« zoom 1→6 0+4 log ») : jeton « log » après la plage, avant ou après la courbe ; le zoom avance alors
+ * en échelle logarithmique (chaque doublement prend le même temps). Sans « log », interpolation linéaire.
  * Secousse : « secousse <amplitude en cqh> <début>+<durée> », amortie jusqu'à la fin de sa plage.
  *   zoom : 1 = cadre normal · x, y : point visé, en % de l'image · rotation : degrés
  *   saturation : 1 = normale, 0 = gris · flou : cqh
@@ -63,14 +65,21 @@
       }
       var plage = PLAGE.exec(morceaux[2] || '');
       if (!plage) throw new Error('data-camera : plage « début+durée » manquante dans « ' + clause + ' » (ex. 0+4, 2t+1t).');
-      var nomCourbe = morceaux[3] || 'sine-inout';
-      return {
+      // Après la plage : la courbe et le jeton « log » (zoom seulement), dans n'importe quel ordre.
+      var reste = morceaux.slice(3);
+      var log = reste.indexOf('log') >= 0;
+      if (log && prop !== 'zoom') throw new Error('data-camera : « log » ne vaut que pour le zoom, dans « ' + clause + ' ».');
+      reste = reste.filter(function (m) { return m !== 'log'; });
+      var nomCourbe = reste[0] || 'sine-inout';
+      var c = {
         prop: prop, de: de, a: a,
         debut: lireTemps(plage[1], clause, dureeTemps),
         duree: lireTemps(plage[2], clause, dureeTemps),
         nomCourbe: nomCourbe,
         courbe: C.courbeNommee(nomCourbe),
       };
+      if (log) c.log = true;
+      return c;
     });
   }
 
@@ -81,6 +90,7 @@
     liste.forEach(function (c) { if (c.debut <= tau) courante = c; });
     if (!courante) return liste[0].de;
     var p = courante.duree > 0 ? Math.min(1, (tau - courante.debut) / courante.duree) : 1;
+    if (courante.log) return Math.exp(Math.log(courante.de) + (Math.log(courante.a) - Math.log(courante.de)) * courante.courbe(p));
     return courante.de + (courante.a - courante.de) * courante.courbe(p);
   }
 

@@ -1,0 +1,232 @@
+{
+  "nom": "technicien",
+  "description": "un technicien adulte, carré : gilet haute visibilité orange à bandes, chemise bleue, casque de chantier jaune",
+  "maniere": "pieces",
+  "gabarit": {
+    "cuisse": 66,
+    "tibia": 64,
+    "pied": 17,
+    "colonne": 84,
+    "hauteurEpaules": 74,
+    "baseTete": 86,
+    "bras": 50,
+    "avantBras": 46,
+    "demiBassin": 9,
+    "demiEpaules": 16,
+    "tete": {
+      "rx": 33,
+      "ry": 44
+    }
+  },
+  "couleurs": {
+    "bande": "#E8E8E8",
+    "casque": "#F6C90E",
+    "casque-trait": "#B38F00",
+    "chaussure": "#3B2A20",
+    "cheveux": "#2B2B2B",
+    "cheveux-trait": "#151515",
+    "dos": "#14161C",
+    "gilet": "#F28C28",
+    "gilet-trait": "#B8621A",
+    "manche": "#3D5A80",
+    "oeil": "#FFFFFF",
+    "pantalon": "#2F3640",
+    "peau": "#E0A982",
+    "pupille": "#1B1B1B",
+    "trait": "#1E1B18"
+  },
+  "pieces": {
+    "torse": {
+      "profil": "<rect x='-5' y='-100' width='12' height='22' rx='5' fill='var(--peau)'/><path d='M -14 6 C -18.8 -2 -15 -29 -15 -42 C -15 -55 -15.2 -64.9 -14 -72.2 C -12.8 -79.6 -11.3 -83.9 -8 -86 C -4.7 -88.1 2.3 -87.9 6 -85 C 9.7 -82.1 12.3 -76.7 14 -68.9 C 15.7 -61 16 -50.3 16 -37.8 C 16 -25.3 19 -1.3 14 6 C 9 13.3 -9.2 14 -14 6 Z' fill='var(--gilet)' stroke='var(--gilet-trait)' stroke-width='2' stroke-linejoin='round'/><rect x='-13.5' y='-47' width='28.5' height='5' rx='1' fill='var(--bande)'/><rect x='-13.5' y='-28.6' width='28.5' height='5' rx='1' fill='var(--bande)'/>",
+      "troisQuarts": "<rect x='-6' y='-100' width='13' height='22' rx='5' fill='var(--peau)'/><path d='M -17 6 C -23 -2 -18.8 -29 -19 -42 C -19.2 -55 -19.3 -64.9 -18 -72.2 C -16.7 -79.6 -15.7 -83.7 -11 -86 C -6.3 -88.3 5 -88.3 10 -86 C 15 -83.7 17.3 -80.3 19 -72.2 C 20.7 -64.2 20.3 -50.8 20 -37.8 C 19.7 -24.8 23.2 -1.3 17 6 C 10.8 13.3 -11 14 -17 6 Z' fill='var(--gilet)' stroke='var(--gilet-trait)' stroke-width='2' stroke-linejoin='round'/><rect x='-18' y='-47' width='37.5' height='5' rx='1' fill='var(--bande)'/><rect x='-18' y='-28.6' width='37.5' height='5' rx='1' fill='var(--bande)'/><path d='M -2 -84 L 4 -68 L 9 -84' fill='var(--manche)' stroke='var(--gilet-trait)' stroke-width='2' stroke-linejoin='round'/>",
+      "face": "<rect x='-7' y='-100' width='14' height='22' rx='5' fill='var(--peau)'/><path d='M -19 6 C -25.8 -2 -21.7 -29 -22 -42 C -22.3 -55 -22.3 -64.9 -21 -72.2 C -19.7 -79.6 -19.8 -83.7 -14 -86 C -8.2 -88.3 8.2 -88.3 14 -86 C 19.8 -83.7 19.7 -79.6 21 -72.2 C 22.3 -64.9 22.3 -55 22 -42 C 21.7 -29 25.8 -2 19 6 C 12.2 14 -12.2 14 -19 6 Z' fill='var(--gilet)' stroke='var(--gilet-trait)' stroke-width='2' stroke-linejoin='round'/><rect x='-21.5' y='-47' width='43' height='5' rx='1' fill='var(--bande)'/><rect x='-21.5' y='-28.6' width='43' height='5' rx='1' fill='var(--bande)'/><path d='M -7 -84 L 0 -67 L 7 -84' fill='var(--manche)' stroke='var(--gilet-trait)' stroke-width='2' stroke-linejoin='round'/>",
+      "dos": "<rect x='-7' y='-100' width='14' height='22' rx='5' fill='var(--peau)'/><path d='M -19 6 C -25.8 -2 -21.7 -29 -22 -42 C -22.3 -55 -22.3 -64.9 -21 -72.2 C -19.7 -79.6 -19.8 -83.7 -14 -86 C -8.2 -88.3 8.2 -88.3 14 -86 C 19.8 -83.7 19.7 -79.6 21 -72.2 C 22.3 -64.9 22.3 -55 22 -42 C 21.7 -29 25.8 -2 19 6 C 12.2 14 -12.2 14 -19 6 Z' fill='var(--gilet)' stroke='var(--gilet-trait)' stroke-width='2' stroke-linejoin='round'/><rect x='-21.5' y='-47' width='43' height='5' rx='1' fill='var(--bande)'/><rect x='-21.5' y='-28.6' width='43' height='5' rx='1' fill='var(--bande)'/><path d='M -6 -72.2 L -6 -52.1 M 6 -72.2 L 6 -52.1' fill='none' stroke='var(--bande)' stroke-width='5'/>"
+    },
+    "tete": {
+      "profil": "<ellipse rx='33' ry='44' fill='var(--peau)'/><path d='M -34.3 2.2 C -35.1 -2.4 -36.5 -16.9 -33 -24.2 C -29.5 -31.5 -20.9 -38.9 -13.2 -41.8 C -5.5 -44.7 7.7 -44.2 13.2 -41.8 C 18.7 -39.4 23.1 -29.4 19.8 -27.3 C 16.5 -25.2 0.8 -30.7 -6.6 -29 C -14 -27.4 -20.8 -23 -24.4 -17.6 C -28 -12.2 -26.7 0.2 -28.4 3.5 C -30 6.8 -33.5 6.8 -34.3 2.2 Z' fill='var(--cheveux)' stroke='var(--cheveux-trait)' stroke-width='2' stroke-linejoin='round'/>",
+      "troisQuarts": "<ellipse rx='33' ry='44' fill='var(--peau)'/><path d='M -34.3 0 C -34.9 -4.3 -36.5 -18.4 -33 -25.5 C -29.5 -32.6 -21.5 -40.2 -13.2 -42.7 C -5 -45.2 10.2 -43 16.5 -40.5 C 22.8 -37.9 27.8 -29.2 24.8 -27.3 C 21.7 -25.4 6.4 -30.3 -1.6 -29 C -9.7 -27.8 -19.1 -24.6 -23.8 -19.8 C -28.4 -15 -27.9 -3.3 -29.7 0 C -31.5 3.3 -33.8 4.3 -34.3 0 Z' fill='var(--cheveux)' stroke='var(--cheveux-trait)' stroke-width='2' stroke-linejoin='round'/>",
+      "face": "<ellipse rx='33' ry='44' fill='var(--peau)'/><path d='M -34.3 -11 C -34.8 -12.8 -34.9 -23.2 -31.3 -28.6 C -27.8 -34 -20.6 -40.7 -13.2 -43.1 C -5.8 -45.5 5.8 -45.5 13.2 -43.1 C 20.6 -40.7 27.8 -34 31.4 -28.6 C 34.9 -23.2 34.8 -12.8 34.3 -11 C 33.8 -9.2 31.4 -14.7 28.4 -17.6 C 25.4 -20.5 24 -26.4 16.5 -28.2 C 9 -29.9 -9 -29.9 -16.5 -28.2 C -24 -26.4 -25.4 -20.5 -28.4 -17.6 C -31.3 -14.7 -33.8 -9.2 -34.3 -11 Z' fill='var(--cheveux)' stroke='var(--cheveux-trait)' stroke-width='2' stroke-linejoin='round'/>",
+      "dos": "<ellipse rx='33' ry='44' fill='var(--peau)'/><path d='M -34.3 2.2 C -36.8 -3.9 -34.9 -21 -31.3 -28.6 C -27.8 -36.2 -20.6 -40.7 -13.2 -43.1 C -5.8 -45.5 5.8 -45.5 13.2 -43.1 C 20.6 -40.7 27.8 -36.2 31.4 -28.6 C 34.9 -21 36.8 -3.9 34.3 2.2 C 31.8 8.3 25 7 16.5 7.9 C 8 8.9 -8 8.9 -16.5 7.9 C -25 7 -31.8 8.3 -34.3 2.2 Z' fill='var(--cheveux)' stroke='var(--cheveux-trait)' stroke-width='2' stroke-linejoin='round'/>"
+    },
+    "cuisseAvant": {
+      "profil": "<rect x='-9.5' y='-9.5' width='19' height='85' rx='9.5' fill='color-mix(in srgb, var(--pantalon) 70%, var(--teinte-loin, var(--pantalon)))'/>",
+      "troisQuarts": "<rect x='-9.5' y='-9.5' width='19' height='85' rx='9.5' fill='color-mix(in srgb, var(--pantalon) 70%, var(--teinte-loin, var(--pantalon)))'/>",
+      "face": "<rect x='-9.5' y='-9.5' width='19' height='85' rx='9.5' fill='color-mix(in srgb, var(--pantalon) 70%, var(--teinte-loin, var(--pantalon)))'/>"
+    },
+    "tibiaAvant": {
+      "profil": "<rect x='-8.5' y='-8.5' width='17' height='81' rx='8.5' fill='color-mix(in srgb, var(--pantalon) 70%, var(--teinte-loin, var(--pantalon)))'/>",
+      "troisQuarts": "<rect x='-8.5' y='-8.5' width='17' height='81' rx='8.5' fill='color-mix(in srgb, var(--pantalon) 70%, var(--teinte-loin, var(--pantalon)))'/>",
+      "face": "<rect x='-8.5' y='-8.5' width='17' height='81' rx='8.5' fill='color-mix(in srgb, var(--pantalon) 70%, var(--teinte-loin, var(--pantalon)))'/>"
+    },
+    "piedAvant": {
+      "profil": "<rect x='-9.5' y='-7' width='36' height='14' rx='7' fill='color-mix(in srgb, var(--chaussure) 70%, var(--teinte-loin, var(--chaussure)))'/>",
+      "troisQuarts": "<rect x='-9.5' y='-7' width='30.9' height='14' rx='7' fill='color-mix(in srgb, var(--chaussure) 70%, var(--teinte-loin, var(--chaussure)))'/>",
+      "face": "<rect x='-9.5' y='-7' width='19' height='14' rx='7' fill='color-mix(in srgb, var(--chaussure) 70%, var(--teinte-loin, var(--chaussure)))'/>"
+    },
+    "brasAvant": {
+      "profil": "<rect x='-8' y='-8' width='16' height='66' rx='8' fill='color-mix(in srgb, var(--manche) 70%, var(--teinte-loin, var(--manche)))'/>",
+      "troisQuarts": "<rect x='-8' y='-8' width='16' height='66' rx='8' fill='color-mix(in srgb, var(--manche) 70%, var(--teinte-loin, var(--manche)))'/>",
+      "face": "<rect x='-8' y='-8' width='16' height='66' rx='8' fill='color-mix(in srgb, var(--manche) 70%, var(--teinte-loin, var(--manche)))'/>"
+    },
+    "avantBrasAvant": {
+      "profil": "<rect x='-7.5' y='-7.5' width='15' height='61' rx='7.5' fill='color-mix(in srgb, var(--manche) 70%, var(--teinte-loin, var(--manche)))'/>",
+      "troisQuarts": "<rect x='-7.5' y='-7.5' width='15' height='61' rx='7.5' fill='color-mix(in srgb, var(--manche) 70%, var(--teinte-loin, var(--manche)))'/>",
+      "face": "<rect x='-7.5' y='-7.5' width='15' height='61' rx='7.5' fill='color-mix(in srgb, var(--manche) 70%, var(--teinte-loin, var(--manche)))'/>"
+    },
+    "mainAvant": {
+      "profil": "<rect x='-6.5' y='-5.5' width='13' height='15' rx='6.5' fill='color-mix(in srgb, var(--peau) 70%, var(--teinte-loin, var(--peau)))'/>",
+      "troisQuarts": "<rect x='-6.5' y='-5.5' width='13' height='15' rx='6.5' fill='color-mix(in srgb, var(--peau) 70%, var(--teinte-loin, var(--peau)))'/>",
+      "face": "<rect x='-6.5' y='-5.5' width='13' height='15' rx='6.5' fill='color-mix(in srgb, var(--peau) 70%, var(--teinte-loin, var(--peau)))'/>"
+    }
+  },
+  "accessoires": [
+    {
+      "nom": "casque",
+      "os": "tete",
+      "devant": true,
+      "dessins": {
+        "profil": "<path d='M -35.6 -25.5 C -46.1 -28.5 -34 -40.3 -28 -44.9 C -22.1 -49.4 -9.1 -52.9 0 -52.8 C 9.1 -52.7 20.6 -48.3 26.4 -44 C 32.2 -39.7 45.3 -30.4 35 -27.3 C 24.6 -24.2 -25.1 -22.6 -35.6 -25.5 Z' fill='var(--casque)' stroke='var(--casque-trait)' stroke-width='2.5' stroke-linejoin='round'/><path d='M -37 -31.7 C -23 -32.6 32.9 -32.6 46.9 -31.7 C 60.8 -30.8 60.8 -27.3 46.9 -26.4 C 32.9 -25.5 -23 -25.5 -37 -26.4 C -50.9 -27.3 -50.9 -30.8 -37 -31.7 Z' fill='var(--casque)' stroke='var(--casque-trait)' stroke-width='2.5' stroke-linejoin='round'/>",
+        "troisQuarts": "<path d='M -35.6 -26.4 C -46 -29.6 -32.6 -41.8 -26.4 -46.2 C -20.2 -50.6 -7.4 -53 1.7 -52.8 C 10.7 -52.6 22.4 -49.1 28.1 -44.9 C 33.7 -40.6 46.3 -30.4 35.6 -27.3 C 25 -24.2 -25.3 -23.2 -35.6 -26.4 Z' fill='var(--casque)' stroke='var(--casque-trait)' stroke-width='2.5' stroke-linejoin='round'/><path d='M -37 -31.7 C -23.6 -32.6 29.6 -32.6 42.9 -31.7 C 56.2 -30.8 56.2 -27.3 42.9 -26.4 C 29.6 -25.5 -23.6 -25.5 -37 -26.4 C -50.3 -27.3 -50.3 -30.8 -37 -31.7 Z' fill='var(--casque)' stroke='var(--casque-trait)' stroke-width='2.5' stroke-linejoin='round'/>",
+        "face": "<path d='M -35.6 -26.4 C -46.1 -29.7 -33 -41.8 -27.1 -46.2 C -21.1 -50.6 -9 -52.8 0 -52.8 C 9 -52.8 21.1 -50.6 27.1 -46.2 C 33 -41.8 46.1 -29.7 35.6 -26.4 C 25.2 -23.1 -25.2 -23.1 -35.6 -26.4 Z' fill='var(--casque)' stroke='var(--casque-trait)' stroke-width='2.5' stroke-linejoin='round'/><path d='M -39.6 -31.7 C -26.4 -32.6 26.4 -32.6 39.6 -31.7 C 52.8 -30.8 52.8 -27.3 39.6 -26.4 C 26.4 -25.5 -26.4 -25.5 -39.6 -26.4 C -52.8 -27.3 -52.8 -30.8 -39.6 -31.7 Z' fill='var(--casque)' stroke='var(--casque-trait)' stroke-width='2.5' stroke-linejoin='round'/>",
+        "dos": "<path d='M -35.6 -26.4 C -46.1 -29.7 -33 -41.8 -27.1 -46.2 C -21.1 -50.6 -9 -52.8 0 -52.8 C 9 -52.8 21.1 -50.6 27.1 -46.2 C 33 -41.8 46.1 -29.7 35.6 -26.4 C 25.2 -23.1 -25.2 -23.1 -35.6 -26.4 Z' fill='var(--casque)' stroke='var(--casque-trait)' stroke-width='2.5' stroke-linejoin='round'/><path d='M -39.6 -31.7 C -26.4 -32.6 26.4 -32.6 39.6 -31.7 C 52.8 -30.8 52.8 -27.3 39.6 -26.4 C 26.4 -25.5 -26.4 -25.5 -39.6 -26.4 C -52.8 -27.3 -52.8 -30.8 -39.6 -31.7 Z' fill='var(--casque)' stroke='var(--casque-trait)' stroke-width='2.5' stroke-linejoin='round'/>"
+      }
+    }
+  ],
+  "visage": {
+    "oeil": {
+      "blanc": "<ellipse rx='7.5' ry='9' fill='var(--oeil)' stroke='var(--trait)' stroke-width='2.5'/>",
+      "pupille": "<circle r='3.6' fill='var(--pupille)'/><circle cx='-1.1' cy='-1.4' r='1.1' fill='#FFFFFF'/>",
+      "paupiere": "<rect x='-10.5' y='-12' width='21' height='24' fill='var(--peau)'/>",
+      "course": 2.9,
+      "hauteur": 24
+    },
+    "sourcil": "<path d='M -9 2 Q 0 -3 9 2' fill='none' stroke='var(--trait)' stroke-width='3.5' stroke-linecap='round'/>",
+    "bouches": {
+      "neutre": {
+        "profil": "<path d='M -8 0 L 8 0' stroke='var(--trait)' stroke-width='3' stroke-linecap='round' fill='none'/>"
+      },
+      "sourire": {
+        "profil": "<path d='M -10 -2 Q 0 8 10 -2' stroke='var(--trait)' stroke-width='3' stroke-linecap='round' fill='none'/>"
+      },
+      "rire": {
+        "profil": "<path d='M -11 -3 Q 0 14 11 -3 Z' fill='var(--trait)'/>"
+      },
+      "triste": {
+        "profil": "<path d='M -9 4 Q 0 -4 9 4' stroke='var(--trait)' stroke-width='3' stroke-linecap='round' fill='none'/>"
+      },
+      "surprise": {
+        "profil": "<ellipse rx='6' ry='8' fill='var(--trait)'/>"
+      },
+      "colere": {
+        "profil": "<path d='M -9 2 L 9 -1' stroke='var(--trait)' stroke-width='3' stroke-linecap='round' fill='none'/>"
+      },
+      "repos": {
+        "profil": "<path d='M -7 0 L 7 0' stroke='var(--trait)' stroke-width='3' stroke-linecap='round' fill='none'/>"
+      },
+      "A": {
+        "profil": "<ellipse rx='8' ry='9' fill='var(--trait)'/>"
+      },
+      "E": {
+        "profil": "<ellipse rx='10' ry='4' fill='var(--trait)'/>"
+      },
+      "I": {
+        "profil": "<ellipse rx='9' ry='2.5' fill='var(--trait)'/>"
+      },
+      "O": {
+        "profil": "<ellipse rx='6' ry='7' fill='var(--trait)'/>"
+      },
+      "U": {
+        "profil": "<ellipse rx='4' ry='5' fill='var(--trait)'/>"
+      },
+      "MBP": {
+        "profil": "<path d='M -8 0 L 8 0' stroke='var(--trait)' stroke-width='4.5' stroke-linecap='round'/>"
+      },
+      "FV": {
+        "profil": "<path d='M -8 0 Q 0 3 8 0' stroke='var(--trait)' stroke-width='3' stroke-linecap='round' fill='none'/>"
+      },
+      "L": {
+        "profil": "<ellipse rx='7' ry='6' fill='var(--trait)'/><ellipse cx='0' cy='-2' rx='3' ry='2' fill='#E7A0D5'/>"
+      }
+    },
+    "vues": {
+      "profil": {
+        "yeux": [
+          [
+            -9.7,
+            -5.3
+          ],
+          [
+            17.5,
+            -5.3
+          ]
+        ],
+        "sourcils": [
+          [
+            -9.7,
+            -21.1
+          ],
+          [
+            17.5,
+            -21.1
+          ]
+        ],
+        "bouche": [
+          9.7,
+          19.4
+        ]
+      },
+      "troisQuarts": {
+        "yeux": [
+          [
+            -11.6,
+            -5.3
+          ],
+          [
+            15.5,
+            -5.3
+          ]
+        ],
+        "sourcils": [
+          [
+            -11.6,
+            -21.1
+          ],
+          [
+            15.5,
+            -21.1
+          ]
+        ],
+        "bouche": [
+          3.9,
+          19.4
+        ]
+      },
+      "face": {
+        "yeux": [
+          [
+            -14.6,
+            -5.3
+          ],
+          [
+            14.6,
+            -5.3
+          ]
+        ],
+        "sourcils": [
+          [
+            -14.6,
+            -21.1
+          ],
+          [
+            14.6,
+            -21.1
+          ]
+        ],
+        "bouche": [
+          0,
+          19.4
+        ]
+      }
+    }
+  }
+}

@@ -68,7 +68,7 @@ Nom = `<type>-<mode>` (ex. `cubic-out`, `back-inout`, `bounce-out`, `quad-spike`
 
 ### Mouvements nommés
 
-Le dictionnaire de mouvements (`pulse-motion reference mouvements`, fiche : `pulse-motion mouvements afficher <n° ou nom>`) donne pour chaque nom du métier (pop-in, mask reveal, whip pan…) un numéro stable et la recette exacte. Classes communes à tous les styles, sur un élément minuté : `pm-m-*` (`pm-m-pop`, `pm-m-pulse`…) ; réglages par variables : `--pm-dur`, `--pm-courbe`, `--pm-ampleur`, `--pm-fois` (répétitions, jamais sans fin). Vie du décor `pm-v-*` (plante, flamme…) : sur un élément intérieur, `data-dur="scene"` (`pulse-motion reference mouvement-vivant`). Une scène qui a des `mouvements` dans le déroulé applique leurs recettes telles quelles.
+Le dictionnaire de mouvements (`pulse-motion reference mouvements`, fiche : `pulse-motion mouvements afficher <n° ou nom>`) donne pour chaque nom du métier (pop-in, whip pan, logo marquee, before-after…) un numéro stable et la recette exacte. Classes communes à tous les styles, sur un élément minuté : `pm-m-*` (`pm-m-pop`, `pm-m-pulse`…) ; réglages par variables : `--pm-dur`, `--pm-courbe`, `--pm-ampleur`, `--pm-fois` (répétitions, jamais sans fin). Vie du décor `pm-v-*` (plante, flamme…) : sur un élément intérieur, `data-dur="scene"` (`pulse-motion reference mouvement-vivant`). Une scène qui a des `mouvements` dans le déroulé applique leurs recettes telles quelles.
 
 ### Texte lettre par lettre
 

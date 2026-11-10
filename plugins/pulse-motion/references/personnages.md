@@ -63,7 +63,7 @@ Poses : `debout`, `montrer`, `bras-leves`, `mains-hanches`, `assis`, `penche`. M
 
 Expressions : `neutre`, `joie`, `tristesse`, `peur`, `colere`, `surprise` (`"expression": "joie"` dans une pose ou une clé ; `"bouche": "O"` choisit une bouche). Rythme du clignement d'une expression : `"clignement": { "intervalle": [4, 5.5], "lenteur": 1.4 }` (secondes entre deux clignements, de 1,5 à 8 ; lenteur de 0,7 à 2) ; sans lui, toutes les 3 à 4 s.
 
-Gabarit : `"vie": { "retard": 0.1, "force": 0.45 }` (avant-bras et tête arrivent `retard` s après leur parent, de 0,06 à 0,15 ; `force` de 0,3 à 0,6). Dessins : `touffu`.
+Gabarit : `"vie": { "retard": 0.1, "force": 0.45 }` (avant-bras et tête arrivent `retard` s après leur parent, de 0,06 à 0,15 ; `force` de 0,3 à 0,6). Dessins : `touffu`, `ecoliere`, `soignant`, `grand-mere` (manière « traits »), `technicien`, `cuisiniere` (« pièces pleines »).
 
 ## Retouches en une phrase
 

@@ -30,7 +30,7 @@ tools: Read, Write, Edit, Glob, Grep, Bash
    |---|---|
    | une caméra, un travelling, une scène narrative | `pulse-motion reference moteur/camera` |
    | des entrées calées sur le tempo (unité `t`) | `pulse-motion reference moteur/tempo` |
-   | un personnage, ou un décor à faire vivre (plante, flamme, machine, ciel, eau) | `pulse-motion reference mouvement-vivant` ; personnage : aussi `pulse-motion reference moteur/personnages` |
+   | un personnage, ou un décor à faire vivre (plante, flamme, machine, ciel, eau), ou #081 à #093 | `pulse-motion reference mouvement-vivant` ; personnage : aussi `pulse-motion reference moteur/personnages` |
    | un effet de particules | `pulse-motion reference particules`, puis la partie de sa famille |
    | des ancres sur les mots (scène avec une prise de voix) | `pulse-motion reference audio/ancres` |
    | des bruitages | `pulse-motion reference audio/bruitages` |

@@ -351,7 +351,7 @@ function controlesRapides({ projet, dossierStyles, dossierEffets, assemblage = A
       // Boucles de vie (pm-v-*) : une durée, et jamais sur l'élément qui porte l'entrée.
       if (viesParScene[s.id].length) {
         if (!classesStyle) { try { classesStyle = classesAnimeesDuStyle(fs.readFileSync(path.join(dossierStyle, 'style.css'), 'utf8')); } catch { classesStyle = new Set(); } }
-        controlerVie(viesParScene[s.id], s.id, classesStyle, problemes);
+        controlerVie(viesParScene[s.id], s.id, classesStyle, problemes, { tempo: !!temps });
       }
     }
 

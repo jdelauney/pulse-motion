@@ -787,6 +787,7 @@ a[target="_blank"]::after { content: "\00a0↗"; font-size: 0.85em; }
 .galerie.typographie { max-width: none; }
 .galerie > .entete-page, .galerie > #mode-emploi, .galerie > .galerie-source { max-width: 95ch; }
 .typographie .carte-mouvement-numero { margin: 4px 0 0; font-variant-numeric: tabular-nums; color: var(--texte-secondaire); font-size: var(--texte-sm); }
+.typographie .carte-maniere { font-weight: 400; color: var(--texte-secondaire); font-size: var(--texte-sm); }
 .typographie .carte-mouvement-nom, .typographie .carte-effet h3 { margin: 0; font-size: var(--texte-lg); line-height: 1.25; }
 .carte-mouvement-nom span { display: block; font-size: var(--texte-sm); font-weight: 400; color: var(--texte-secondaire); }
 .typographie .carte-mouvement-sens, .typographie .carte-effet p { margin: 0; color: var(--texte-secondaire); font-size: var(--texte-sm); line-height: 1.5; }

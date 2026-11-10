@@ -91,8 +91,9 @@ function classesAnimeesDuStyle(css) {
   return classes;
 }
 
-/** vie-sans-duree, mouvement-ecrase : vies (lib/extraire.js, viesScene), classesStyle (Set des classes animées du style). */
-function controlerVie(vies, scene, classesStyle, problemes) {
+/** vie-sans-duree, mouvement-ecrase, cogne-sans-tempo : vies (lib/extraire.js, viesScene), classesStyle (Set des classes animées
+ *  du style) ; tempo : la vidéo a un tempo (la pulsation #083 bat sur ses temps). */
+function controlerVie(vies, scene, classesStyle, problemes, { tempo = true } = {}) {
   const connues = lireClassesVie();
   const nomDe = (a) => a.id || String(a.class || '').split(/\s+/).find((c) => c && !c.startsWith('pm-')) || String(a.class || '').split(/\s+/)[0] || 'élément';
   for (const v of vies) {
@@ -109,6 +110,9 @@ function controlerVie(vies, scene, classesStyle, problemes) {
     const entrees = v.classes.filter((c) => c.startsWith('pm-m-') || (classesStyle && classesStyle.has(c)));
     if (entrees.length) {
       problemes.push({ regle: 'mouvement-ecrase', gravite: 'alerte', scene, message: `Scène « ${scene} » : « ${qui} » porte à la fois une vie (${v.vies[0]}) et une entrée (${entrees[0]}) : l'une efface l'autre ; mettre la vie sur un élément intérieur.` });
+    }
+    if (!tempo && v.vies.includes('pm-v-cogne')) {
+      problemes.push({ regle: 'cogne-sans-tempo', gravite: 'alerte', scene, message: `Scène « ${scene} » : « ${qui} » demande un tempo dans le déroulé (musique) ; sans lui, elle bat toutes les 0,5 s.` });
     }
   }
 }
@@ -181,7 +185,7 @@ function controlerScene({ projet, deroule, scene, html }) {
   for (const e of ressourcesDistantes(html, `scène « ${scene.id} »`)) problemes.push({ ...e, scene: scene.id });
   problemes.push(...ancresIntrouvables(html, scene.id, lireAttributs));
   const vies = viesScene(html);
-  if (vies.length) controlerVie(vies, scene.id, classesAnimeesDuStyle(cssDuStyle(deroule.style)), problemes);
+  if (vies.length) controlerVie(vies, scene.id, classesAnimeesDuStyle(cssDuStyle(deroule.style)), problemes, { tempo: !!dureeTemps(deroule) });
   return problemes;
 }
 
