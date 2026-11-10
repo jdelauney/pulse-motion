@@ -28,7 +28,8 @@ const arrondi = (x) => Math.round(x * 1000) / 1000;
 function obtenir(url) {
   return new Promise((resolve, reject) => {
     const t0 = process.hrtime.bigint();
-    http.get(url, (res) => {
+    // Sans connexion gardée : la passe suivante rouvre un aperçu sur le même port.
+    http.get(url, { agent: false }, (res) => {
       let n = 0;
       res.on("data", (m) => { n += m.length; });
       res.on("end", () => resolve({ statut: res.statusCode, octets: n, duree: arrondi(Number(process.hrtime.bigint() - t0) / 1e9) }));
