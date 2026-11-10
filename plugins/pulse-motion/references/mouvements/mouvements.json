@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "source": "Noms, sens et idées de phrases inspirés de Motion Prompt (https://github.com/showheyohtaki/motion-prompt), MIT © 2026 Shohei Ohtaki ; traduits et adaptés au moteur Pulse Motion. Vie du décor (#069 à #080) et motifs #081, #082 : chiffres de rossark-motion-skill, MIT © 2026 rossark0 ; zoom continu, pulsation sur le temps et cercle d'inondation (#083, #086, #090) : take-one, MIT © 2026 Tal Siach ; défilement, échos, roue, avant/après, hélice et suivi retardé (#084, #085, #087, #088, #091, #093) : reanimate, MIT © 2026 Niaz Morshed ; idées et chiffres réécrits. Démonstration de logiciel (#094 à #106) : pointeur, projecteur, anneau, zooms enchaînés et blocs d'argo, MIT © 2026 Shreyas Karnik ; idées et chiffres réécrits. Voir THIRD-PARTY-NOTICES.md.",
+  "source": "Noms, sens et idées de phrases inspirés de Motion Prompt (https://github.com/showheyohtaki/motion-prompt), MIT © 2026 Shohei Ohtaki ; traduits et adaptés au moteur Pulse Motion. Vie du décor (#069 à #080) et motifs #081, #082 : chiffres de rossark-motion-skill, MIT © 2026 rossark0 ; zoom continu, pulsation sur le temps et cercle d'inondation (#083, #086, #090) : take-one, MIT © 2026 Tal Siach ; défilement, échos, roue, avant/après, hélice et suivi retardé (#084, #085, #087, #088, #091, #093) : reanimate, MIT © 2026 Niaz Morshed ; idées et chiffres réécrits. Démonstration de logiciel (#094 à #106) : pointeur, projecteur, anneau, zooms enchaînés et blocs d'argo, MIT © 2026 Shreyas Karnik ; idées et chiffres réécrits. Transitions #107 à #111 : fuite de lumière d'argo (light-leak), MIT © 2026 Shreyas Karnik, traduite ; brûlure, lentille, iris et déformation : idées de HyperFrames (via argo), réécrites sans code repris. Voir THIRD-PARTY-NOTICES.md.",
   "categories": [
     {
       "id": "entrees",
@@ -3985,6 +3985,216 @@
           }
         ],
         "note": "De 35° (perspective de 1 200 px) à plat. Une capture seule : pulse-motion bloc revelation-3d."
+      }
+    },
+    {
+      "no": "107",
+      "slug": "fuite-lumiere",
+      "categorie": "transitions",
+      "nom": {
+        "fr": "Fuite de lumière",
+        "metier": "Light leak"
+      },
+      "sens": "Un éclair de lumière chaude, à la couleur de la marque, passe d'une scène à l'autre",
+      "demande": "Passe à la scène suivante par une fuite de lumière de 1 s.",
+      "quand": "Un ton chaleureux, un souvenir, une ouverture.",
+      "motsCles": [
+        "fuite",
+        "lumiere",
+        "light leak",
+        "eclair",
+        "pellicule",
+        "chaleureux"
+      ],
+      "recette": {
+        "type": "transition",
+        "exemple": "\"transition\": {\"shader\":\"fuite-lumiere\",\"duree\":1}",
+        "reglages": [
+          {
+            "nom": "duree",
+            "defaut": "1",
+            "effet": "durée, de 0,1 à 5 s"
+          },
+          {
+            "nom": "couleur",
+            "defaut": "accent",
+            "effet": "couleur de l'éclair (dans sa version claire)"
+          },
+          {
+            "nom": "douceur",
+            "defaut": "0.2",
+            "effet": "durée du fondu sous l'éclair, de 0,01 à 0,5 (part de la transition, de chaque côté du milieu)"
+          }
+        ],
+        "note": "Transition par shader : WebGPU nécessaire (sinon fondu, et l'export est refusé). Couleur de la marque par défaut (accent de la charte)."
+      }
+    },
+    {
+      "no": "108",
+      "slug": "brulure",
+      "categorie": "transitions",
+      "nom": {
+        "fr": "Brûlure",
+        "metier": "Burn"
+      },
+      "sens": "L'image brûle par plaques : un front incandescent, de la cendre et des étincelles découvrent la scène suivante",
+      "demande": "Brûle la scène vers la suivante en 1,2 s.",
+      "quand": "Une rupture forte : l'ancien disparaît, on tourne la page.",
+      "motsCles": [
+        "brulure",
+        "burn",
+        "feu",
+        "bruler",
+        "etincelles",
+        "rupture"
+      ],
+      "recette": {
+        "type": "transition",
+        "exemple": "\"transition\": {\"shader\":\"brulure\",\"duree\":1.2}",
+        "reglages": [
+          {
+            "nom": "duree",
+            "defaut": "1.2",
+            "effet": "durée, de 0,1 à 5 s"
+          },
+          {
+            "nom": "couleur",
+            "defaut": "accent",
+            "effet": "couleur du front (claire au bord, sombre en cendre)"
+          },
+          {
+            "nom": "etincelles",
+            "defaut": "0.5",
+            "effet": "part d'étincelles, de 0 à 1"
+          }
+        ],
+        "note": "Transition par shader : WebGPU nécessaire (sinon fondu, et l'export est refusé). Couleur de la marque par défaut (accent de la charte)."
+      }
+    },
+    {
+      "no": "109",
+      "slug": "lentille",
+      "categorie": "transitions",
+      "nom": {
+        "fr": "Lentille",
+        "metier": "Gravitational lens"
+      },
+      "sens": "L'image se courbe en anneau autour d'un cœur sombre, puis la suivante se déplie",
+      "demande": "Passe à la scène suivante par une lentille de 1 s.",
+      "quand": "Changer d'échelle, plonger dans un sujet, une idée qui aspire.",
+      "motsCles": [
+        "lentille",
+        "lens",
+        "trou noir",
+        "aspiration",
+        "courbure",
+        "plongee"
+      ],
+      "recette": {
+        "type": "transition",
+        "exemple": "\"transition\": {\"shader\":\"lentille\",\"duree\":1}",
+        "reglages": [
+          {
+            "nom": "duree",
+            "defaut": "1",
+            "effet": "durée, de 0,1 à 5 s"
+          },
+          {
+            "nom": "force",
+            "defaut": "1",
+            "effet": "force de la courbure, de 0 à 3"
+          },
+          {
+            "nom": "rayon",
+            "defaut": "0.4",
+            "effet": "taille de l'anneau, en part de la hauteur (0,05 à 1,5)"
+          }
+        ],
+        "note": "Transition par shader : WebGPU nécessaire (sinon fondu, et l'export est refusé)."
+      }
+    },
+    {
+      "no": "110",
+      "slug": "iris",
+      "categorie": "transitions",
+      "nom": {
+        "fr": "Iris coloré",
+        "metier": "Iris wipe"
+      },
+      "sens": "Une forme s'ouvre depuis le centre (cercle, losange ou étoile), bordée d'un anneau à la couleur de la marque",
+      "demande": "Ouvre la scène suivante par un iris en étoile de 0,9 s.",
+      "quand": "Un focus, une ouverture, un clin d'œil au cinéma ; la transition « cercle » (#045) suffit pour un rond simple sans couleur.",
+      "motsCles": [
+        "iris",
+        "ouverture",
+        "etoile",
+        "losange",
+        "cinema",
+        "anneau"
+      ],
+      "recette": {
+        "type": "transition",
+        "exemple": "\"transition\": {\"shader\":\"iris\",\"duree\":0.9,\"reglages\":{\"forme\":2}}",
+        "reglages": [
+          {
+            "nom": "duree",
+            "defaut": "0.9",
+            "effet": "durée, de 0,1 à 5 s"
+          },
+          {
+            "nom": "forme",
+            "defaut": "0",
+            "effet": "0 cercle, 1 losange, 2 étoile"
+          },
+          {
+            "nom": "couleur",
+            "defaut": "accent",
+            "effet": "couleur de l'anneau"
+          }
+        ],
+        "note": "Transition par shader : WebGPU nécessaire (sinon fondu, et l'export est refusé). Couleur de la marque par défaut (accent de la charte)."
+      }
+    },
+    {
+      "no": "111",
+      "slug": "deformation",
+      "categorie": "transitions",
+      "nom": {
+        "fr": "Déformation liquide",
+        "metier": "Domain warp"
+      },
+      "sens": "L'image se tord comme un liquide aux veines colorées, puis se dénoue sur la scène suivante",
+      "demande": "Passe à la scène suivante par une déformation liquide de 1,2 s.",
+      "quand": "Une transformation, une idée qui se reforme, un monde qui change.",
+      "motsCles": [
+        "deformation",
+        "warp",
+        "liquide",
+        "torsion",
+        "transformation",
+        "fluide"
+      ],
+      "recette": {
+        "type": "transition",
+        "exemple": "\"transition\": {\"shader\":\"deformation\",\"duree\":1.2}",
+        "reglages": [
+          {
+            "nom": "duree",
+            "defaut": "1.2",
+            "effet": "durée, de 0,1 à 5 s"
+          },
+          {
+            "nom": "echelle",
+            "defaut": "30",
+            "effet": "taille des veines, en cqh (5 à 120)"
+          },
+          {
+            "nom": "couleur",
+            "defaut": "accent",
+            "effet": "couleur des veines (de sa version sombre à sa version claire)"
+          }
+        ],
+        "note": "Transition par shader : WebGPU nécessaire (sinon fondu, et l'export est refusé). Couleur de la marque par défaut (accent de la charte)."
       }
     }
   ]
