@@ -1,6 +1,7 @@
 {
   "nom": "touffu",
   "description": "le LemStick en pièces : corps en bâtonnets blancs, grands yeux, touffe verte",
+  "maniere": "traits",
   "gabarit": "standard",
   "couleurs": {
     "corps": "#F5F5F5",
@@ -10,6 +11,18 @@
     "touffe": "#63D13E",
     "touffe-trait": "#2A7A22",
     "trait": "#17151C"
+  },
+  "batonnets": {
+    "couleurs": {
+      "corps": "corps",
+      "dos": "dos",
+      "oeil": "oeil",
+      "oeilTrait": "trait",
+      "pupille": "pupille",
+      "touffe": "touffe",
+      "touffeTrait": "touffe-trait"
+    },
+    "epaisseur": 14
   },
   "pieces": {
     "torse": {

@@ -1,7 +1,7 @@
 'use strict';
 /* Pulse Motion – personnages dans les scènes, côté assemblage.
  *
- *   preparerPersonnages(html, { scene, lu, voix }) -> { html, utilises: { dessins: Set, gabarits: Set }, erreurs, parle }
+ *   preparerPersonnages(html, { scene, lu, voix }) -> { html, utilises: { dessins: Set, gabarits: Set, batonnets: Set }, erreurs, parle }
  *     voix : la scène a un texte dit (sinon « parler » est une erreur)
  *   donneesPersonnages(utilises, lu)         -> M.donnees.personnages (ce que la page doit connaître)
  *
@@ -36,7 +36,7 @@ function preparerPersonnages(html0, { scene, lu, voix = false, dureeTemps = null
   const deplie = deplierGroupes(html0, { scene, dureeTemps });
   const html = deplie.html;
   const erreurs = deplie.erreurs.slice();
-  const utilises = { dessins: new Set(), gabarits: new Set() };
+  const utilises = { dessins: new Set(), gabarits: new Set(), batonnets: new Set() };
   if (!/data-personnage|data-action|data-tenu-par/.test(html)) return { html, utilises, erreurs, parle: false };
   let parle = false;
   const verifierEcrase = (v, qui) => {
@@ -86,7 +86,14 @@ function preparerPersonnages(html0, { scene, lu, voix = false, dureeTemps = null
         else utilises.gabarits.add(g);
       } else if (!Object.hasOwn(lu.dessins, nom)) {
         erreurs.push(erreur(scene, `personnage « ${nom} » introuvable${procheDe(nom, [...Object.keys(lu.dessins), 'batonnets']) || ` (dessins : ${Object.keys(lu.dessins).join(', ') || 'aucun'} ; ou « batonnets »).`}`));
-      } else utilises.dessins.add(nom);
+      } else {
+        utilises.dessins.add(nom);
+        const hab = a['data-habillage'] === undefined ? null : a['data-habillage'].trim();
+        if (hab !== null && !['pieces', 'batonnets'].includes(hab)) erreurs.push(erreur(scene, `personnage « ${nom} » : data-habillage="${hab}" inconnu (batonnets, ou pieces par défaut).`));
+        else if (hab === 'batonnets' && P.apparenceBatonnets(lu.dessins[nom])) utilises.batonnets.add(nom);
+        else if (hab === 'batonnets') erreurs.push(erreur(scene, `personnage « ${nom} » : ce dessin n'a pas de réglage bâtonnets (manière « pièces pleines ») ; retirer data-habillage, ou choisir un dessin de la manière « traits ».`));
+      }
+      if (nom === 'batonnets' && a['data-habillage'] !== undefined) erreurs.push(erreur(scene, 'data-habillage se pose sur un personnage dessiné (data-personnage="<dessin>") : il le dessine en bâtonnets, à ses couleurs.'));
       return tout;
     }
     if (a['data-membre'] !== undefined) erreurs.push(erreur(scene, `data-membre="${a['data-membre']}" hors d'un groupe : il sert dans un conteneur data-groupe.`));
@@ -215,9 +222,12 @@ function preparerPersonnages(html0, { scene, lu, voix = false, dureeTemps = null
 
 function donneesPersonnages(utilises, lu) {
   const dessins = {}, gabaritsDessins = {}, gabarits = {};
+  const apparences = {};
   for (const n of utilises.dessins) { dessins[n] = lu.dessins[n]; gabaritsDessins[n] = P.gabaritDe(lu.dessins[n], lu); }
+  // Réglage bâtonnets des seuls dessins montrés en bâtonnets (data-habillage="batonnets").
+  for (const n of utilises.batonnets || []) apparences[n] = P.apparenceBatonnets(lu.dessins[n]);
   for (const g of utilises.gabarits) gabarits[g] = lu.gabarits[g];
-  return { bib: { poses: lu.poses, clips: lu.clips, expressions: lu.expressions }, dessins, gabaritsDessins, gabarits };
+  return { bib: { poses: lu.poses, clips: lu.clips, expressions: lu.expressions }, dessins, gabaritsDessins, gabarits, ...(Object.keys(apparences).length ? { apparences } : {}) };
 }
 
 module.exports = { preparerPersonnages, donneesPersonnages, ACTIONS };

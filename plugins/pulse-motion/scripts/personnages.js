@@ -90,7 +90,7 @@ async function executer(args, { bibliotheque } = {}) {
       poses: resume(l, 'poses'),
       clips: resume(l, 'clips', (c) => ({ boucle: c.boucle, duree: c.boucle ? c.duree : c.cles[c.cles.length - 1].t })),
       gabarits: resume(l, 'gabarits'),
-      dessins: resume(l, 'dessins'),
+      dessins: resume(l, 'dessins', (d) => (d.maniere ? { maniere: d.maniere, ...(d.batonnets ? { batonnets: true } : {}) } : {})),
       expressions: resume(l, 'expressions'),
       erreurs: l.erreurs.map((e) => e.message),
     }, null, 2), erreur: '' };

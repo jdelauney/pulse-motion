@@ -196,7 +196,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   const chargerShader = chargeurShaders(projet, dossierShaders);
   const sourcesModules = {};
   let luPersonnages = null;
-  const utilisesPersonnages = { dessins: new Set(), gabarits: new Set() };
+  const utilisesPersonnages = { dessins: new Set(), gabarits: new Set(), batonnets: new Set() };
   const scenesQuiParlent = new Set();
   // Voix : une prise par scène (ou la voix provisoire), mots calés ; Opus si encodé, sinon WAV. Lues avant les scènes : la
   // durée d'une scène allongée par sa voix sert aux effets faits de structures sans data-dur (jusqu'à la fin de la scène).
@@ -292,6 +292,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
       if (r.parle) scenesQuiParlent.add(scene.id);
       r.utilises.dessins.forEach((n) => utilisesPersonnages.dessins.add(n));
       r.utilises.gabarits.forEach((n) => utilisesPersonnages.gabarits.add(n));
+      (r.utilises.batonnets || []).forEach((n) => utilisesPersonnages.batonnets.add(n));
       erreurs.push(...r.erreurs);
     }
     // Sons importés (data-son="assets/…") : embarqués en bloc, l'attribut désigne le bloc ; un nom de bruitage reste tel quel.

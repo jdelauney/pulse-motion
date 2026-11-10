@@ -7,7 +7,8 @@
  * M.demarrerPersonnages() (après M.demarrer) : pour chaque conteneur, un <svg> couvrant la scène, l'habillage (pièces
  * pour un dessin, bâtonnets sinon), la partition lue sur ses actions (temps résolus par le minutage) ; puis, à chaque
  * rendu (M.surRendu), la pose à l'instant t (M.partition.etatAuTemps), le squelette et l'habillage. Déterministe.
- * Données : M.donnees.personnages = { bib: { poses, clips, expressions }, dessins, gabarits, gabaritsDessins }.
+ * Données : M.donnees.personnages = { bib: { poses, clips, expressions }, dessins, gabarits, gabaritsDessins, apparences }
+ * (apparences : réglage bâtonnets des dessins « traits », pour data-habillage="batonnets").
  * « parler » : piste de visèmes (M.levres) tirée des mots de la voix de la scène ; sans data-dur, jusqu'à la fin.
  * Vie (spec Mouvement vivant) : data-vie (pleine, sobre, aucune ; data-calme="non" vaut aucune), graine propre à chaque
  * personnage (scène + id, ou rang dans la scène) ; ombre au sol (<ellipse class="pm-perso-ombre">, sauf data-ombre="non")
@@ -164,7 +165,9 @@
       svg.appendChild(gEcrase);
       var g = document.createElementNS(NS, 'g');
       gEcrase.appendChild(g);
-      var habillage = dessin ? M.pieces.creer(g, dessin, gabarit) : M.batonnets.creer(g);
+      // data-habillage="batonnets" sur un dessin « traits » : le même personnage en bâtonnets, à ses couleurs et proportions.
+      var apparence = dessin && (div.getAttribute('data-habillage') || '').trim() === 'batonnets' ? (D.apparences || {})[nom] : null;
+      var habillage = dessin && !apparence ? M.pieces.creer(g, dessin, gabarit) : M.batonnets.creer(g, apparence || undefined);
       var elements = (M.minutage.elements && M.minutage.elements[idScene]) || {};
       var actions = [];
       Array.prototype.forEach.call(div.children, function (el) {
@@ -199,7 +202,7 @@
       if (M.interactions) M.interactions.preparer(actions);
       var vie = (div.getAttribute('data-vie') || 'pleine').trim();
       var ecrase = div.hasAttribute('data-ecrase') ? Math.max(0, Math.min(0.25, nombre(div, 'data-ecrase', 0.12))) : undefined;
-      persos.push({ mesurer: mesurer, sec: sec, miroir: !!dessin,
+      persos.push({ mesurer: mesurer, sec: sec, miroir: !!dessin && !apparence,
         div: div, habillage: habillage, gabarit: gabarit, echelle: echelle, ombre: ombre, gEcrase: gEcrase, hauteur: P.hauteur(gabarit),
         partition: { x0: nombre(div, 'data-x', 50), sol0: sol0, vue0: nombre(div, 'data-vue', 0), calme: div.getAttribute('data-calme') !== 'non',
           vie: vie === 'sobre' || vie === 'aucune' ? vie : 'pleine', sel: V.sel(idScene + '/' + (div.id || rang)), scene: bornesScene(idScene),

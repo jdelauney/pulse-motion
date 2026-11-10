@@ -34,11 +34,16 @@ const ORDRE = {
   clip: ['nom', 'description', 'boucle', 'duree', 'foulee', 'pieds', 'miroir', 'additif', 'lissage', 'contacts', 'cles'],
   gabarit: ['nom', 'description', ...Object.keys(S.GABARIT)],
   expression: ['nom', 'description', 'bouche', 'angles', 'clignement'],
-  dessin: ['nom', 'description', 'gabarit', 'couleurs', 'pieces', 'accessoires', 'visage'],
+  dessin: ['nom', 'description', 'maniere', 'gabarit', 'couleurs', 'batonnets', 'pieces', 'accessoires', 'visage'],
   decoupe: ['nom', 'description', 'source', 'vue', 'gabarit', 'couleurs', 'os', 'visage', 'ignorer'],
 };
 const ORDRE_CLE = ['t', 'pose', 'expression', 'bouche', 'angles', 'courbe'];
 const ORDRE_ACCESSOIRE = ['nom', 'os', 'devant', 'dessins'];
+// Manières de dessin (spec Mouvement vivant, 5.17) : « traits » (bâtonnets et tête en ellipse, comme touffu ; un réglage
+// bâtonnets équivalent) ou « pieces » (tenue et volumes dessinés par pièce).
+const MANIERES = ['traits', 'pieces'];
+const ORDRE_BATONNETS = ['couleurs', 'epaisseur'];
+const COULEURS_BATONNETS = ['corps', 'dos', 'oeil', 'oeilTrait', 'pupille', 'touffe', 'touffeTrait'];
 const ORDRE_VISAGE = ['oeil', 'sourcil', 'bouches', 'vues'];
 const ORDRE_OEIL = ['blanc', 'pupille', 'paupiere', 'course', 'hauteur'];
 const ORDRE_VUE_VISAGE = ['yeux', 'sourcils', 'bouche'];
@@ -178,6 +183,34 @@ function validerDessin(objet, contexte, erreurs) {
     });
   }
   if (objet.visage !== undefined) validerVisage(objet.visage, erreurs);
+  if (objet.maniere !== undefined && !MANIERES.includes(objet.maniere)) erreurs.push(`« maniere » : « ${objet.maniere} » inconnue (traits ou pieces).`);
+  if (objet.batonnets !== undefined) validerBatonnets(objet, erreurs);
+}
+
+/** Réglage bâtonnets équivalent d'un dessin « traits » : chaque couleur des bâtonnets nomme une couleur du dessin. */
+function validerBatonnets(objet, erreurs) {
+  const b = objet.batonnets;
+  if (objet.maniere !== 'traits') erreurs.push('« batonnets » : réglage réservé à la manière « traits » (ajouter "maniere": "traits").');
+  if (!estObjet(b)) { erreurs.push('« batonnets » : objet { couleurs, epaisseur } attendu.'); return; }
+  champsInconnus(b, ORDRE_BATONNETS, erreurs, 'batonnets : ');
+  if (b.couleurs !== undefined) {
+    if (!estObjet(b.couleurs)) erreurs.push('« batonnets.couleurs » : objet { corps: "<couleur du dessin>" } attendu.');
+    else for (const [k, v] of Object.entries(b.couleurs)) {
+      if (!COULEURS_BATONNETS.includes(k)) erreurs.push(`batonnets, couleur « ${k} » inconnue (${COULEURS_BATONNETS.join(', ')}).`);
+      else if (!(estObjet(objet.couleurs) && Object.hasOwn(objet.couleurs, v))) erreurs.push(`batonnets, couleur « ${k} » : « ${v} » n'est pas une couleur du dessin (« couleurs »).`);
+    }
+  }
+  if (b.epaisseur !== undefined && !(estNombre(b.epaisseur) && b.epaisseur >= 4 && b.epaisseur <= 30)) erreurs.push('« batonnets.epaisseur » : de 4 à 30 (ex. 14).');
+}
+
+/** Apparence des bâtonnets d'un dessin « traits » (M.batonnets.creer) : couleurs du dessin, épaisseur ; null sans réglage. */
+function apparenceBatonnets(dessin) {
+  if (!dessin || !estObjet(dessin.batonnets)) return null;
+  const couleurs = {};
+  for (const [k, v] of Object.entries(dessin.batonnets.couleurs || {})) if (dessin.couleurs && dessin.couleurs[v]) couleurs[k] = dessin.couleurs[v];
+  const r = { couleurs };
+  if (dessin.batonnets.epaisseur !== undefined) r.epaisseur = dessin.batonnets.epaisseur;
+  return r;
 }
 
 const SELECTEUR = /^(#[^\s'"<>]+|([A-Za-z][\w-]*?\d+>)*[A-Za-z][\w-]*?\d+)$/;
@@ -467,6 +500,7 @@ function serialiser(type, objet) {
     const ordrePieces = (p) => { const r = {}; for (const k of [...PIECES, ...Object.keys(p).filter((n) => !PIECES.includes(n)).sort()]) if (p[k] !== undefined) r[k] = vues(p[k]); return r; };
     if (estObjet(o.gabarit)) o.gabarit = JSON.parse(serialiser('gabarit', o.gabarit));
     if (estObjet(o.couleurs)) o.couleurs = ordonner(o.couleurs, []);
+    if (estObjet(o.batonnets)) { o.batonnets = ordonner(o.batonnets, ORDRE_BATONNETS); if (estObjet(o.batonnets.couleurs)) o.batonnets.couleurs = ordonner(o.batonnets.couleurs, COULEURS_BATONNETS); }
     if (estObjet(o.pieces)) o.pieces = ordrePieces(o.pieces);
     if (Array.isArray(o.accessoires)) o.accessoires = o.accessoires.map((a) => { const r = ordonner(a, ORDRE_ACCESSOIRE); r.dessins = vues(r.dessins); return r; });
     if (estObjet(o.visage)) {
@@ -497,4 +531,4 @@ function enregistrer({ dossier, type, nom, objet, lu, ecrire }) {
   return { fichier };
 }
 
-module.exports = { BIBLIOTHEQUE, TYPES, VUES, PIECES, BOUCHES, ANGLES_VISAGE, valider, lire, contexteDe, gabaritDe, serialiser, enregistrer, ErreurPersonnage };
+module.exports = { BIBLIOTHEQUE, TYPES, VUES, PIECES, BOUCHES, ANGLES_VISAGE, MANIERES, COULEURS_BATONNETS, valider, lire, contexteDe, gabaritDe, apparenceBatonnets, serialiser, enregistrer, ErreurPersonnage };
