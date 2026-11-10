@@ -70,13 +70,17 @@ function ligne(e) {
   return parts.length ? `${debut} : ${parts.join(', ')}.` : `${debut}…`;
 }
 
-/** Suivi d'un travail par une commande : fichier à chaque appel, ligne sur stderr à chaque palier de 10 % ou nouveau detail. */
+/** Suivi d'un travail par une commande : fichier à chaque appel, ligne sur stderr à chaque palier de 10 % ou nouveau detail.
+ *  projet null (commande lancée hors d'une vidéo) : les lignes seulement, aucun fichier écrit. */
 function suivre(projet, { travail, libelle, ecrire = (l) => process.stderr.write(`${l}\n`), maintenant = () => Date.now() }) {
   let palier = -1;
   let dernierDetail = null;
   const f = (fait, total, detail, restant) => {
     let e;
-    try { e = annoncer(projet, { travail, libelle, detail, fait, total, restant }, { maintenant: maintenant() }); } catch { return; }
+    try {
+      e = projet ? annoncer(projet, { travail, libelle, detail, fait, total, restant }, { maintenant: maintenant() })
+        : { travail, libelle: libelle || travail, detail: detail || '', fait, total, restant: restant === undefined ? null : restant, fini: false, ok: null };
+    } catch { return; }
     const p = total > 0 ? Math.floor((10 * fait) / total) : 0;
     if (p > palier || (detail && detail !== dernierDetail)) {
       palier = Math.max(palier, p);
@@ -85,7 +89,7 @@ function suivre(projet, { travail, libelle, ecrire = (l) => process.stderr.write
     }
   };
   f.terminer = (ok = true, message) => {
-    try { ecrire(ligne(terminer(projet, { ok, message }, { maintenant: maintenant() }))); } catch { /* dossier en lecture seule : rien */ }
+    try { ecrire(ligne(projet ? terminer(projet, { ok, message }, { maintenant: maintenant() }) : { travail, libelle: libelle || travail, detail: '', fait: 0, total: 0, restant: ok ? 0 : null, fini: true, ok: Boolean(ok), ...(message ? { message } : {}) })); } catch { /* dossier en lecture seule : rien */ }
   };
   return f;
 }
