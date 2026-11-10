@@ -225,7 +225,7 @@ async function reencoderSegment({ ffmpeg, entree, sortie, ips, crf, preset, regl
  * réduite à taille si besoin, avec la piste son déjà encodée (copiée). journal : fichier des statistiques de la première
  * passe (sans extension), retiré ensuite. surPasse(1 | 2) : début de chaque passe.
  */
-async function transcoderDeuxPasses({ ffmpeg, entree, sortie, ips, reglages, taille, audio = null, journal, signal, surPasse = () => {} }) {
+async function transcoderDeuxPasses({ ffmpeg, entree, sortie, ips, reglages, taille, audio = null, journal, signal, surPasse = () => {}, titre = null }) {
   const filtre = taille ? ['-vf', reduction(taille)] : [];
   const video = argsVideo(reglages, ips);
   try {
@@ -234,7 +234,7 @@ async function transcoderDeuxPasses({ ffmpeg, entree, sortie, ips, reglages, tai
     if (p1.code !== 0) throw new Error(`ffmpeg n'a pas pu préparer la version légère (${derniereLigne(p1.erreurs) || `code ${p1.code}`})`);
     surPasse(2);
     const son = audio ? ['-i', audio, '-map', '0:v:0', '-map', '1:a:0', '-c:a', 'copy'] : ['-an'];
-    const p2 = await lancer(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-i', entree, ...son, ...filtre, ...video, '-pass', '2', '-passlogfile', journal, '-movflags', '+faststart', '-f', 'mp4', sortie], { signal });
+    const p2 = await lancer(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-i', entree, ...son, ...filtre, ...video, '-pass', '2', '-passlogfile', journal, ...(titre ? ['-metadata', `title=${titre}`] : []), '-movflags', '+faststart', '-f', 'mp4', sortie], { signal });
     if (p2.code !== 0) throw new Error(`ffmpeg n'a pas pu écrire la version légère (${derniereLigne(p2.erreurs) || `code ${p2.code}`})`);
   } finally {
     const dossier = path.dirname(journal);
@@ -337,9 +337,14 @@ async function extraireImage({ ffmpeg, fichier, t, taille }) {
 }
 
 /** Piste son de la vidéo : WAV déjà mixé et normalisé par la page -> AAC (debit kbit/s, 192 par défaut), 48 kHz, stéréo, à
- *  la durée exacte (complétée par du silence ou coupée). */
-async function encoderSon({ ffmpeg, wav, duree, sortie, signal, debit = 192 }) {
-  const r = await lancer(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-i', wav, '-vn', '-af', `apad,atrim=0:${duree}`,
+ *  la durée exacte (complétée par du silence ou coupée). debut : tranche du mixage qui commence là (extrait, spec Rendu et
+ *  export 5.12) ; fondu : fondus d'entrée et de sortie, en secondes. */
+async function encoderSon({ ffmpeg, wav, duree, sortie, signal, debit = 192, debut = 0, fondu = 0 }) {
+  const f = [];
+  if (debut > 0) f.push(`atrim=start=${debut}`, 'asetpts=PTS-STARTPTS');
+  f.push('apad', `atrim=0:${duree}`);
+  if (fondu > 0) f.push(`afade=t=in:st=0:d=${fondu}`, `afade=t=out:st=${Math.max(0, duree - fondu)}:d=${fondu}`);
+  const r = await lancer(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-i', wav, '-vn', '-af', f.join(','),
     '-ar', '48000', '-ac', '2', '-c:a', 'aac', '-b:a', `${debit}k`, '-t', String(duree), '-f', 'mp4', sortie], { signal });
   if (r.code !== 0) throw new Error(`son illisible (${derniereLigne(r.erreurs) || `code ${r.code}`})`);
 }
@@ -401,18 +406,104 @@ async function verifierFichier({ ffmpeg, fichier, audio = true, noir = { duree: 
   };
 }
 
-/** Segments -> un fichier, sans réencodage (démultiplexeur concat), prêt à lire en flux (+faststart). */
-async function assemblerSegments({ ffmpeg, segments, sortie, audio }) {
+/**
+ * Segments -> un fichier, sans réencodage (démultiplexeur concat), prêt à lire en flux (+faststart). Livrables de diffusion
+ * (spec Rendu et export, 5.10 et 5.11) : vignette (JPEG) intégrée en flux attached_pic, meta (fichier ;FFMETADATA1) pour le
+ * titre et les chapitres (-map_chapters), titre en métadonnée. Idées d'argo (src/export.ts : attached_pic sans -shortest ;
+ * src/chapters.ts : ffmetadata ; MIT, © 2026 Shreyas Karnik), réécrites.
+ */
+async function assemblerSegments({ ffmpeg, segments, sortie, audio, vignette = null, meta = null, titre = null }) {
   const liste = `${sortie}.liste.txt`;
   fs.writeFileSync(liste, segments.map((s) => `file '${path.resolve(s).replace(/\\/g, '/').replace(/'/g, "'\\''")}'`).join('\n'), 'utf8');
   try {
     // Piste son (facultative) ajoutée sans réencodage de l'image.
     // Pas de « -shortest » : il couperait les dernières images ; la piste est déjà à la durée exacte.
-    const son = audio ? ['-i', audio, '-map', '0:v:0', '-map', '1:a:0'] : [];
-    const r = await lancer(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', liste, ...son, '-c', 'copy', '-movflags', '+faststart', '-video_track_timescale', '90000', '-f', 'mp4', sortie]);
+    const entrees = [];
+    const cartes = ['-map', '0:v:0'];
+    let n = 1;
+    if (audio) { entrees.push('-i', audio); cartes.push('-map', `${n}:a:0`); n++; }
+    let disposition = [];
+    if (vignette) { entrees.push('-i', vignette); cartes.push('-map', `${n}:v:0`); disposition = ['-disposition:v:1', 'attached_pic']; n++; }
+    const metadonnees = [];
+    if (meta) { entrees.push('-f', 'ffmetadata', '-i', meta); metadonnees.push('-map_metadata', String(n), '-map_chapters', String(n)); n++; }
+    if (titre) metadonnees.push('-metadata', `title=${titre}`);
+    const r = await lancer(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', liste, ...entrees, ...cartes, '-c', 'copy', ...disposition,
+      ...metadonnees, '-movflags', '+faststart', '-video_track_timescale', '90000', '-f', 'mp4', sortie]);
     if (r.code !== 0) throw new Error(`ffmpeg n'a pas pu assembler la vidéo (${derniereLigne(r.erreurs)})`);
   } finally {
     fs.rmSync(liste, { force: true });
+  }
+}
+
+/** Vignette intégrée (5.10, point 3) : couverture JPEG -> JPEG de 1 280 px au plus sur le grand côté et de octetsMax au plus
+ *  (qualité baissée par paliers). taille : [largeur, hauteur] de la couverture. -> octets de la vignette */
+async function reduireVignette({ ffmpeg, entree, sortie, taille, cote = 1280, octetsMax = 200000 }) {
+  const [l, h] = taille;
+  const r = Math.min(1, cote / Math.max(l, h));
+  const pair = (x) => Math.max(2, Math.round(x / 2) * 2);
+  const [L, H] = [pair(l * r), pair(h * r)];
+  for (const q of [3, 5, 8, 12, 18, 25, 31]) {
+    const p = await lancer(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-i', entree, '-vf', `scale=${L}:${H}:flags=lanczos`, '-q:v', String(q), '-frames:v', '1', '-f', 'image2', '-c:v', 'mjpeg', sortie]);
+    if (p.code !== 0) throw new Error(`ffmpeg n'a pas pu préparer la vignette (${derniereLigne(p.erreurs)})`);
+    const octets = fs.statSync(sortie).size;
+    if (octets <= octetsMax) return octets;
+  }
+  throw new Error('la vignette dépasse 200 Ko même très compressée');
+}
+
+/** Filtre d'un passage (spec Rendu et export, 5.12) : images [debut, debut + images) de l'entrée, à l'image près, temps
+ *  repartant de 0 ; taille : réduction lanczos. -> chaîne de filtres, ou null. */
+function filtrePassage({ debut = null, images = null, taille = null }) {
+  const f = [];
+  if (debut !== null && images !== null) f.push(`trim=start_frame=${debut}:end_frame=${debut + images}`, 'setpts=PTS-STARTPTS');
+  if (taille) f.push(reduction(taille));
+  return f.length ? f.join(',') : null;
+}
+
+/**
+ * Extrait d'une scène ou passage seul (5.12) : vidéo source (intermédiaires concaténés) -> fichier aux réglages de l'usage,
+ * coupé à l'image près (trim), réduit si taille, avec la piste son déjà coupée (copiée) ; deux passes si reglages.debit et
+ * journal (taille visée). titre en métadonnée.
+ */
+async function transcoderExtrait({ ffmpeg, entree, sortie, ips, debut, images, reglages, taille = null, audio = null, titre = null, journal = null, signal }) {
+  const vf = filtrePassage({ debut, images, taille });
+  const filtre = vf ? ['-vf', vf] : [];
+  const video = argsVideo(reglages, ips);
+  const son = audio ? ['-i', audio, '-map', '0:v:0', '-map', '1:a:0', '-c:a', 'copy'] : ['-an'];
+  const meta = titre ? ['-metadata', `title=${titre}`] : [];
+  const deux = Boolean(reglages.debit && journal);
+  try {
+    if (deux) {
+      const p1 = await lancer(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-i', entree, '-an', ...filtre, ...video, '-pass', '1', '-passlogfile', journal, '-f', 'null', '-'], { signal });
+      if (p1.code !== 0) throw new Error(`ffmpeg n'a pas pu préparer l'extrait (${derniereLigne(p1.erreurs) || `code ${p1.code}`})`);
+    }
+    const p2 = await lancer(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-i', entree, ...son, ...filtre, ...video, ...(deux ? ['-pass', '2', '-passlogfile', journal] : []),
+      ...meta, '-frames:v', String(images), '-movflags', '+faststart', '-f', 'mp4', sortie], { signal });
+    if (p2.code !== 0) throw new Error(`ffmpeg n'a pas pu écrire l'extrait (${derniereLigne(p2.erreurs) || `code ${p2.code}`})`);
+  } finally {
+    if (journal) {
+      const dossier = path.dirname(journal);
+      const base = path.basename(journal);
+      try { for (const f of fs.readdirSync(dossier)) if (f.startsWith(base)) fs.rmSync(path.join(dossier, f), { force: true }); } catch { /* rien à nettoyer */ }
+    }
+  }
+}
+
+/**
+ * GIF (spec Rendu et export, 5.13) : passage de la vidéo source -> GIF à 15 images par seconde, palette en deux passes
+ * (palettegen stats_mode=diff, paletteuse bayer 5, diff_mode rectangle), boucle infinie. taille : [largeur, hauteur].
+ * Valeurs d'argo (src/export.ts, src/clip.ts ; MIT, © 2026 Shreyas Karnik) et d'explainroo (15 images/s, 960 px ; MIT).
+ */
+async function encoderGif({ ffmpeg, entree, sortie, debut, images, taille, palette, ips = 15, signal }) {
+  const base = [filtrePassage({ debut, images }), `fps=${ips}`, `scale=${taille[0]}:${taille[1]}:flags=lanczos`].filter(Boolean).join(',');
+  try {
+    const p1 = await lancer(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-i', entree, '-an', '-vf', `${base},palettegen=stats_mode=diff`, '-frames:v', '1', '-f', 'image2', palette], { signal });
+    if (p1.code !== 0) throw new Error(`ffmpeg n'a pas pu calculer les couleurs du GIF (${derniereLigne(p1.erreurs) || `code ${p1.code}`})`);
+    const p2 = await lancer(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-i', entree, '-i', palette, '-an',
+      '-lavfi', `[0:v]${base}[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle`, '-loop', '0', '-f', 'gif', sortie], { signal });
+    if (p2.code !== 0) throw new Error(`ffmpeg n'a pas pu écrire le GIF (${derniereLigne(p2.erreurs) || `code ${p2.code}`})`);
+  } finally {
+    fs.rmSync(palette, { force: true });
   }
 }
 
@@ -447,5 +538,5 @@ function ecartImages(a, b) {
 module.exports = {
   lireVersion, commandeSure, commandeInstallation, trouverFfmpeg, MINIMUM, encoderSegment, reencoderSegment, transcoderDeuxPasses, sonder,
   extraireImage, assemblerSegments, ecartImages, encoderSon, mesurerSonie, verifierFichier, encoderOpus, importerAudio, argsVideo,
-  detecterEncodeurs, controlesSortie, lancer, LARGEUR_STATS, ETIQUETTES, VERS_BT709, MATERIEL, ORDRE_MATERIEL,
+  detecterEncodeurs, controlesSortie, lancer, reduireVignette, transcoderExtrait, encoderGif, filtrePassage, LARGEUR_STATS, ETIQUETTES, VERS_BT709, MATERIEL, ORDRE_MATERIEL,
 };

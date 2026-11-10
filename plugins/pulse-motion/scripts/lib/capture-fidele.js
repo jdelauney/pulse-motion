@@ -66,17 +66,45 @@ function erreurDeScript(scene, t, detail) {
     { script: true, scene, instant: t, detail });
 }
 
-/** -> Promise<{ duree, minutage: { duree, scenes: [{ id, debut, fin, entree }] }, capturer(t, profil?), rendreSon(), version(), processus, fermer() }>
+/** Cadre de téléphone (spec Rendu et export, 5.15) : la scène garde sa mise en page de 1080 × 1920 (les unités cqh ne bougent
+ *  pas), réduite par transform: scale(k) dans l'écran ; le cadre est dessiné derrière, sur toute la fenêtre. */
+const CADRER = (g, svg) => `(function () {
+  var style = document.createElement('style');
+  style.id = 'pm-cadre-style';
+  style.textContent = 'html body #pm-scene { width: 1080px !important; height: 1920px !important; left: ${g.ecran.x}px !important; top: ${g.ecran.y}px !important;'
+    + ' transform: scale(${g.echelle}) !important; transform-origin: 0 0 !important; clip-path: inset(0 round ${g.ecran.rayon / g.echelle}px) !important; }'
+    + ' #pm-cadre { position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; pointer-events: none; }'
+    + ' #pm-cadre svg { display: block; width: 100%; height: 100%; }';
+  document.head.appendChild(style);
+  var cadre = document.createElement('div');
+  cadre.id = 'pm-cadre';
+  cadre.innerHTML = ${JSON.stringify(svg)};
+  document.body.insertBefore(cadre, document.body.firstChild);
+  return true;
+})()`;
+
+/** Sous-titres masqués le temps d'une image (couverture, spec Rendu et export 5.10), même incrustés. */
+const SOUS_TITRES = (masquer) => `(function () { var st = document.getElementById('pm-sous-titres'); if (st) st.classList.${masquer ? 'add' : 'remove'}('pm-sans-sous-titres'); return true; })()`;
+
+/** -> Promise<{ duree, minutage: { duree, scenes: [{ id, debut, fin, entree }] }, capturer(t, profil?), capturerJpeg(t, options?),
+ *  rendreSon(), version(), processus, fermer() }>
  *  profil(phase, ms) : temps cumulés de seek, particules, capture, base64. parametres : ajoutés à l'adresse de la page
  *  (grainMax : plafond du grain, spec Rendu et export 5.9). erreurs (export) : une exception de la page après sa préparation
- *  (erreur de script d'une scène) fait échouer la capture suivante, avec la scène et l'instant. */
-async function ouvrirCapture({ fichierHtml, largeur, hauteur, navigateur, gpu = false, delai = 30000, ouvrir = ouvrirPage, parametres = {}, erreurs = false }) {
+ *  (erreur de script d'une scène) fait échouer la capture suivante, avec la scène et l'instant. cadre : 'telephone' (vidéo
+ *  9:16 dans la fenêtre largeur × hauteur, moteur/cadres/telephone.js). */
+async function ouvrirCapture({ fichierHtml, largeur, hauteur, navigateur, gpu = false, delai = 30000, ouvrir = ouvrirPage, parametres = {}, erreurs = false, cadre = null }) {
   const page = await ouvrir({ navigateur, largeur, hauteur, gpu, delai, options: OPTIONS_CAPTURE, ...(erreurs ? { erreurs: true } : {}) });
   try {
     // ?capture=1 : le lecteur ne prépare pas le son d'avance (il n'est rendu que si l'export le demande).
     const extra = Object.entries(parametres).filter(([, v]) => v !== null && v !== undefined).map(([k, v]) => `&${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('');
     await page.aller(`${pathToFileURL(fichierHtml).href}?capture=1${extra}`);
     const info = await page.evaluer(PREPARER);
+    if (cadre === 'telephone') {
+      const T = require('../../moteur/cadres/telephone.js');
+      const g = T.geometrie({ sortie: [largeur, hauteur], scene: [1080, 1920] });
+      const fond = await page.evaluer("getComputedStyle(document.getElementById('pm-scene')).backgroundColor");
+      await page.evaluer(CADRER(g, T.svg(g, { fond })));
+    }
     // Exceptions relevées seulement après la préparation : celles du chargement ne changeaient déjà pas l'export.
     const exceptions = [];
     if (erreurs && page.surEvenement) {
@@ -106,6 +134,17 @@ async function ouvrirCapture({ fichierHtml, largeur, hauteur, navigateur, gpu = 
         const png = await page.capturer({ profil });
         verifier(t);
         return png;
+      },
+      /** Image JPEG de l'instant t (couverture, planches du PDF) : sous-titres masqués par défaut. */
+      async capturerJpeg(t, { qualite = 90, sansSousTitres = true } = {}) {
+        if (sansSousTitres) await page.evaluer(SOUS_TITRES(true));
+        try {
+          await page.evaluer(instant(t));
+          verifier(t);
+          return await page.capturer({ format: 'jpeg', qualite });
+        } finally {
+          if (sansSousTitres) await page.evaluer(SOUS_TITRES(false)).catch(() => {});
+        }
       },
       /** -> { wav: Buffer|null, sonie, avertissements } ; rapatrié par morceaux (messages CDP de taille bornée). */
       async rendreSon({ morceau = 4 * 1024 * 1024, seulement } = {}) {

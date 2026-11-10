@@ -11,6 +11,8 @@
  * credits({ projet, deroule, assemblage, version? }) -> { texte, aPreciser: [fichiers] }
  * lireSources(projet) · noterSource({ projet, fichier, source, licence, auteur? }) -> { ok, message }
  * nomSortie(slug, { usage, scene?, plage?, cadre?, extension? }) · lirePlage(texte) · imagesDeScene · imagesDePlage
+ * preparerSortie({ deroule, minutage, ips, scene?, plage?, gif?, cadre?, cadreFormat?, avecFfmpeg? }) -> plage d'images | { erreur }
+ * tailleGif(l, h, { usage, largeur? }) -> [largeur, hauteur]
  * ecrireLivrables({ projet, deroule, assemblage, usage, extrait? }) -> { fichiers, chapitres, creditsAPreciser, alertes }
  */
 const fs = require('node:fs');
@@ -215,6 +217,54 @@ function imagesDeScene(minutage, i, ips) {
   return { f0, f1 };
 }
 
+/** GIF : 20 s au plus (5.13). */
+const GIF_MAX = 20;
+const FORMATS_CADRE = ['16:9', '1:1'];
+
+/**
+ * Sortie demandée, vérifiée avant toute capture (spec Rendu et export, 5.12, 5.13, 5.15) : extrait d'une scène ou passage
+ * seul, GIF, cadre de téléphone. minutage : celui de la vidéo (voix comprises) ; avecFfmpeg : ffmpeg utilisable.
+ * -> { extrait, f0, f1, scene, plage, duree, gif, cadre, cadreFormat } | { erreur }
+ */
+function preparerSortie({ deroule, minutage, ips, scene = null, plage = null, gif = false, cadre = null, cadreFormat = null, avecFfmpeg = true }) {
+  if (scene && plage) return { erreur: 'Choisir une scène ou un passage, pas les deux.' };
+  if (cadre && cadre !== 'telephone') return { erreur: `Cadre « ${cadre} » inconnu : seul le cadre de téléphone existe.` };
+  if (cadre && deroule.format.ratio !== '9:16') return { erreur: 'Le cadre de téléphone est fait pour une vidéo verticale.' };
+  if (cadreFormat && !FORMATS_CADRE.includes(cadreFormat)) return { erreur: `Format du cadre « ${cadreFormat} » inconnu : 16:9 ou 1:1.` };
+  if (gif && cadre) return { erreur: 'Le GIF ne se fait pas dans un cadre de téléphone : faire le GIF seul, ou la vidéo dans le cadre.' };
+  if (gif && !avecFfmpeg) return { erreur: 'Le GIF a besoin de ffmpeg, qui n\'est pas installé : je peux l\'installer une fois, ou faire un MP4 léger de la scène.' };
+  const total = Math.round(minutage.duree * ips);
+  let r = { f0: 0, f1: total };
+  let lue = null;
+  let id = null;
+  if (scene) {
+    const i = minutage.scenes.findIndex((s) => s.id === scene);
+    if (i < 0) return { erreur: `Scène « ${scene} » inconnue : ${minutage.scenes.map((s) => s.id).join(', ')}.` };
+    r = imagesDeScene(minutage, i, ips);
+    r.f1 = Math.min(r.f1, total);
+    id = scene;
+  } else if (plage) {
+    lue = typeof plage === 'string' ? lirePlage(plage) : plage;
+    if (lue.erreur) return { erreur: lue.erreur };
+    r = imagesDePlage(lue, ips, minutage.duree);
+    if (r.erreur) return { erreur: r.erreur };
+  }
+  const duree = (r.f1 - r.f0) / ips;
+  if (gif && duree > GIF_MAX + 1e-6) {
+    const quoi = scene ? `de la scène « ${scene} » (${virgule(Math.round(duree))} s)` : `de ${virgule(Math.round(duree))} s`;
+    return { erreur: `Un GIF ${quoi} serait très lourd : je vous propose celui d'une scène plus courte (laquelle ?) ou d'un passage de ${GIF_MAX} s au plus.` };
+  }
+  return { extrait: Boolean(scene || plage), f0: r.f0, f1: r.f1, scene: id, plage: lue, duree, gif: Boolean(gif), cadre: cadre || null, cadreFormat: cadre ? cadreFormat || '16:9' : null };
+}
+
+/** Grand côté d'un GIF : 960 px, 640 pour le courriel, 1 280 au plus sur demande. -> [largeur, hauteur] paires */
+function tailleGif(largeurVideo, hauteurVideo, { usage = 'web', largeur = null } = {}) {
+  const cote = Math.min(1280, Math.max(64, Number(largeur) || (usage === 'courriel' ? 640 : 960)));
+  const r = cote / Math.max(largeurVideo, hauteurVideo);
+  const pair = (x) => Math.max(2, Math.round(x / 2) * 2);
+  return [pair(largeurVideo * r), pair(hauteurVideo * r)];
+}
+
 /** Nom d'un fichier de sortie (spec Rendu et export, 5.6) : <slug>[-<usage>][-telephone][-<scène> | -de-12,5s-a-18s].<ext>
  *  (le web n'a pas de suffixe d'usage). */
 function nomSortie(slug, { usage = 'web', scene = null, plage = null, cadre = null, extension = 'mp4' } = {}) {
@@ -231,7 +281,7 @@ function nomSortie(slug, { usage = 'web', scene = null, plage = null, cadre = nu
  * Livrables écrits par Node après un export réussi : crédits (toujours), chapitres en texte et en WebVTT (usage qui les joint,
  * chapitres déclarés, vidéo entière). -> { fichiers: { credits, chapitres? }, chapitres, creditsAPreciser, alertes }
  */
-function ecrireLivrables({ projet, deroule, assemblage, usage, extrait = false }) {
+function ecrireLivrables({ projet, deroule, assemblage, usage, extrait = false, minutage = assemblage && assemblage.minutage }) {
   const { slug } = require('../assembler.js');
   const base = slug(deroule.titre);
   const sortie = path.join(projet, 'sortie');
@@ -241,7 +291,7 @@ function ecrireLivrables({ projet, deroule, assemblage, usage, extrait = false }
   ecrireAtomique(fichierCredits, c.texte);
   const fichiers = { credits: relatif(projet, fichierCredits) };
   const joints = (usage && usage.fichiers) || [];
-  const chapitres = !extrait && joints.includes('chapitres') && assemblage && assemblage.minutage ? chapitresDe(deroule, assemblage.minutage) : [];
+  const chapitres = !extrait && joints.includes('chapitres') && minutage ? chapitresDe(deroule, minutage) : [];
   const alertes = alertesChapitres(chapitres);
   const txt = path.join(sortie, `${base}-chapitres.txt`);
   const vtt = path.join(sortie, `${base}-chapitres.vtt`);
@@ -259,5 +309,5 @@ function ecrireLivrables({ projet, deroule, assemblage, usage, extrait = false }
 
 module.exports = {
   chapitresDe, texteYouTube, vttChapitres, ffmetadata, alertesChapitres, horodatage, credits, lireSources, noterSource,
-  lirePlage, imagesDePlage, imagesDeScene, nomSortie, ecrireLivrables, RAPPEL, A_PRECISER,
+  lirePlage, imagesDePlage, imagesDeScene, nomSortie, ecrireLivrables, preparerSortie, tailleGif, RAPPEL, A_PRECISER, GIF_MAX,
 };
