@@ -51,8 +51,12 @@ function cssCharte(charte, dossierProjet, dossierStyle) {
   const faces = [];
   const polices = [];
   const dejaVues = new Set();
+  // Détail des polices embarquées (crédits, spec Rendu et export 5.20) : famille, rôles, fichiers.
+  const detail = new Map();
   const face = (famille, fichier, graisse, italique = false) => {
     try {
+      if (!detail.has(famille)) detail.set(famille, { famille, roles: [], fichiers: [] });
+      detail.get(famille).fichiers.push(fichier);
       faces.push(`@font-face { font-family: '${famille}'; src: url("${versDataURI(fichier)}"); font-weight: ${graisse || '100 900'};${italique ? ' font-style: italic;' : ''} font-display: block; }`);
       polices.push(fichier);
     } catch (e) {
@@ -80,18 +84,19 @@ function cssCharte(charte, dossierProjet, dossierStyle) {
       }
     }
     lignes.push(`  --f-${role}: '${famille}', system-ui, sans-serif;`);
+    if (detail.has(famille)) detail.get(famille).roles.push(role);
   }
-  return { css: `${faces.join('\n')}\n:root {\n${lignes.join('\n')}\n}\n`, erreurs, polices };
+  return { css: `${faces.join('\n')}\n:root {\n${lignes.join('\n')}\n}\n`, erreurs, polices, detailPolices: [...detail.values()] };
 }
 
 /** Fichier du projet -> URL data:, ou null avec une erreur nommée (introuvable, type, lecture). */
-function embarquerFichier(projet, relatif, quoi, erreurs) {
+function embarquerFichier(projet, relatif, quoi, erreurs, ressources = null, sorte = 'image') {
   const absolu = cheminDansProjet(projet, relatif);
   if (!absolu || !fs.existsSync(absolu)) {
     erreurs.push({ regle: 'fichier-introuvable', gravite: 'erreur', message: `${quoi} introuvable : « ${relatif} ».` });
     return null;
   }
-  try { return versDataURI(absolu); } catch (e) {
+  try { const uri = versDataURI(absolu); if (ressources) ressources.set(absolu, sorte); return uri; } catch (e) {
     erreurs.push({ regle: 'fichier-non-pris-en-charge', gravite: 'erreur', message: `${quoi} « ${relatif} » : ${e.code ? `lecture impossible (${e.code})` : e.message}.` });
     return null;
   }
@@ -130,6 +135,16 @@ function ecrireSousTitres(dossierSortie, titre, cartons) {
   }
 }
 
+/** Zones de la plateforme (spec Rendu et export, 5.19) : variables --pm-zone-* sur #pm-scene, en cqh et cqw ; rien sans
+ *  plateforme (la page ne change pas). */
+function cssZones(plateforme) {
+  const z = plateforme && (require('./seuils.json').zonesPlateformes || {})[plateforme];
+  if (!z) return '';
+  const v = (x) => Math.round(x * 100 * 1000) / 1000;
+  return `#pm-scene { --pm-zone-haut: ${v(z.haut)}cqh; --pm-zone-bas: ${v(z.bas)}cqh; --pm-zone-gauche: ${v(z.gauche)}cqw; --pm-zone-droite: ${v(z.droite)}cqw; }
+`;
+}
+
 function jsonDansHTML(objet) {
   return JSON.stringify(objet).replace(/</g, '\\u003c');
 }
@@ -156,11 +171,13 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   const erreurs = [];
   const charte = charteFinale(deroule, dossierStyle, projet);
   charte.erreurs.forEach((message) => erreurs.push({ regle: 'charte-invalide', gravite: 'erreur', message }));
-  const { css: cssDeCharte, erreurs: erreursPolices, polices } = cssCharte(charte, projet, dossierStyle);
+  const { css: cssDeCharte, erreurs: erreursPolices, polices, detailPolices } = cssCharte(charte, projet, dossierStyle);
   erreurs.push(...erreursPolices);
 
+  // Fichiers du projet réellement embarqués (crédits, spec Rendu et export 5.20) : chemin absolu -> image, son, musique.
+  const ressources = new Map();
   let uriLogo = null;
-  if (charte.logo) uriLogo = embarquerFichier(projet, charte.logo, 'Logo', erreurs);
+  if (charte.logo) uriLogo = embarquerFichier(projet, charte.logo, 'Logo', erreurs, ressources, 'image');
 
   const sections = [];
   const scriptsScenes = [];
@@ -282,7 +299,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
       if (!/[/.]/.test(valeur)) return tout;
       let id = sonsEmbarques.get(valeur);
       if (!id) {
-        const uri = embarquerFichier(projet, valeur, `Son « ${valeur} » (scène « ${scene.id} »)`, erreurs);
+        const uri = embarquerFichier(projet, valeur, `Son « ${valeur} » (scène « ${scene.id} »)`, erreurs, ressources, 'son');
         if (!uri) return tout;
         id = `pm-son-fichier-${fichiersSons++}`;
         sons.push(blocSon(id, uri));
@@ -290,7 +307,8 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
       }
       return `${debut}${guillemet}fichier:${id}${guillemet}`;
     });
-    const { html: embarque, erreurs: erreursRes } = embarquerRessources(S.injecterLogo(avecSons, uriLogo), projet, `scène « ${scene.id} »`);
+    const { html: embarque, erreurs: erreursRes, fichiers: fichiersScene } = embarquerRessources(S.injecterLogo(avecSons, uriLogo), projet, `scène « ${scene.id} »`);
+    for (const f of fichiersScene) if (!ressources.has(f)) ressources.set(f, 'image');
     erreursRes.forEach((e) => erreurs.push({ ...e, scene: scene.id }));
     sections.push(embarque.trim());
     parScene.push({ id: scene.id, section: sections[sections.length - 1], scripts });
@@ -303,7 +321,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
 
   let sourceMusique = null;
   if (deroule.musique && deroule.musique.fichier) {
-    const uri = embarquerFichier(projet, deroule.musique.fichier, 'Musique', erreurs);
+    const uri = embarquerFichier(projet, deroule.musique.fichier, 'Musique', erreurs, ressources, 'musique');
     if (uri) { sourceMusique = 'pm-son-musique'; sons.push(blocSon(sourceMusique, uri)); }
   }
 
@@ -333,7 +351,9 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   const [l, h] = deroule.format.ratio.split(':');
   const donnees = {
     titre: deroule.titre,
-    format: { ratio: deroule.format.ratio, ips: deroule.format.ips || 30 },
+    format: { ratio: deroule.format.ratio, ips: deroule.format.ips || 30, ...(deroule.format.plateforme ? { plateforme: deroule.format.plateforme } : {}) },
+    // Couverture déclarée (spec Rendu et export, 5.10) : la page livrée s'ouvre sur elle (moteur/lecteur.js, M.instantCouverture).
+    ...(deroule.couverture ? { couverture: { scene: deroule.couverture.scene, instant: deroule.couverture.instant } } : {}),
     musique: deroule.musique ? { volume: deroule.musique.volume ?? 1, source: sourceMusique, partition: null } : null,
     voix: Object.keys(voixScenes).length ? { volume: deroule.voix && typeof deroule.voix.volume === 'number' ? deroule.voix.volume : 1 } : null,
     // Tempo du déroulé, sinon celui de la musique générée.
@@ -412,7 +432,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   const moteur = lireMoteur(RACINE, { groupes });
   const temps = dureeTemps(deroule);
   const cssPage = `:root { --pm-ratio-l: ${l}; --pm-ratio-h: ${h};${temps ? ` --pm-temps: ${temps}s; --pm-bpm: ${Math.round(60 / temps * 1000) / 1000};` : ''} }
-${fs.readFileSync(path.join(RACINE, 'moteur', 'base.css'), 'utf8')}
+${cssZones(deroule.format.plateforme)}${fs.readFileSync(path.join(RACINE, 'moteur', 'base.css'), 'utf8')}
 ${fs.readFileSync(path.join(RACINE, 'moteur', 'mouvements.css'), 'utf8')}
 ${variablesCSS()}
 ${cssDeCharte}
@@ -450,7 +470,8 @@ M.demarrerParticules();
 </html>
 `;
 
-  const resultat = { ok: true, fichier: null, html: page, erreurs, effets, milieux, shaders, donnees, parScene, cssPage, moteur, groupes, polices };
+  const resultat = { ok: true, fichier: null, html: page, erreurs, effets, milieux, shaders, donnees, parScene, cssPage, moteur, groupes, polices, detailPolices,
+    ressources: [...ressources].map(([fichier, sorte]) => ({ fichier, sorte })), minutage: minutageScenes };
   if (ecrire) resultat.fichier = ecrireSortie(projet, resultat).fichier;
   return resultat;
 }

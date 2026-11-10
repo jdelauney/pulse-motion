@@ -26,6 +26,13 @@
   "zoneDroite": 0.11,
   "zoneDroiteDebut": 0.4,
   "zoneDroiteFin": 0.85,
+  "zonesPlateformes": {
+    "tiktok": { "haut": 0.125, "droite": 0.2, "bas": 0.34, "gauche": 0.11 },
+    "shorts": { "haut": 0.15, "droite": 0.12, "bas": 0.35, "gauche": 0.06 },
+    "reels": { "haut": 0.14, "droite": 0.11, "bas": 0.35, "gauche": 0.06 },
+    "toutes": { "haut": 0.15, "droite": 0.2, "bas": 0.35, "gauche": 0.11 }
+  },
+  "zonesDate": "2026-11",
   "contrasteGrandTexte": 3,
   "grandTexteCqh": 4.5,
   "margeLisible": 0.5,

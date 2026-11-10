@@ -26,6 +26,7 @@ const HORS_PAGE = {
   'particules/recette.js': 'atelier',
   'personnages/atelier.mjs': 'atelier', 'personnages/decoupe-atelier.mjs': 'atelier', 'personnages/edition.mjs': 'atelier',
   'personnages/decoupe.js': 'découpe (Node et atelier)',
+  'cadres/telephone.js': 'cadre de téléphone à l\'export (Node et aperçu, spec Rendu et export 5.15)',
 };
 
 function fichiersMoteur(dossier = DOSSIER_MOTEUR, prefixe = '') {

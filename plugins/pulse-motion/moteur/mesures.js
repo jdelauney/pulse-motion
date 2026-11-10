@@ -146,6 +146,19 @@
     var S = {};
     Object.keys(DEFAUTS).forEach(function (k) { S[k] = options.seuils && typeof options.seuils[k] === 'number' ? options.seuils[k] : DEFAUTS[k]; });
     var vertical = options.ratio === '9:16';
+    // Zones des plateformes (spec Rendu et export, 5.19) : rectangle de la plateforme déclarée (format.plateforme) ou demandée
+    // (options.plateforme : « toutes » pour un export vers les réseaux), quatre côtés ; sinon les seuils d'avant.
+    var plateforme = options.plateforme || (M.donnees && M.donnees.format && M.donnees.format.plateforme) || null;
+    var zones = vertical && plateforme && options.seuils && options.seuils.zonesPlateformes ? options.seuils.zonesPlateformes[plateforme] || null : null;
+    function zoneDe(r, cadre, W, H) {
+      if (zones) {
+        return r.top < cadre.top + zones.haut * H ? 'haut' : r.bottom > cadre.bottom - zones.bas * H ? 'bas'
+          : r.right > cadre.right - zones.droite * W ? 'droite' : r.left < cadre.left + zones.gauche * W ? 'gauche' : null;
+      }
+      var colonne = r.bottom > cadre.top + S.zoneDroiteDebut * H && r.top < cadre.top + S.zoneDroiteFin * H;
+      return r.top < cadre.top + S.zoneHaut * H ? 'haut' : r.bottom > cadre.bottom - S.zoneBas * H ? 'bas'
+        : colonne && r.right > cadre.right - S.zoneDroite * W ? 'droite' : null;
+    }
     var depart = M.temps();
     var conteneur = document.getElementById('pm-scene');
     var constats = [];
@@ -263,9 +276,7 @@
             if (vertical) {
               // Interfaces des réseaux (TikTok, Reels) : bandeau du haut, légende du bas, colonne de boutons
               // à droite entre 40 % et 85 % de la hauteur.
-              var colonne = r.bottom > cadre.top + S.zoneDroiteDebut * H && r.top < cadre.top + S.zoneDroiteFin * H;
-              var zone = r.top < cadre.top + S.zoneHaut * H ? 'haut' : r.bottom > cadre.bottom - S.zoneBas * H ? 'bas'
-                : colonne && r.right > cadre.right - S.zoneDroite * W ? 'droite' : null;
+              var zone = zoneDe(r, cadre, W, H);
               if (zone) constater('zone-sure', id, nom(el), t, zone);
             }
           }
@@ -384,9 +395,7 @@
         var vuSt = tailleRendue(carton) * lecteur.largeur / W;
         if (sceneSt && vuSt < lecteur.min - 1e-6) constater('texte-petit-lecteur', sceneSt, 'sous-titres', t, { px: Math.round(vuSt * 10) / 10, largeur: lecteur.largeur, min: lecteur.min });
         if (vertical && sceneSt) {
-          var colonneSt = rc.bottom > cadre.top + S.zoneDroiteDebut * H && rc.top < cadre.top + S.zoneDroiteFin * H;
-          var zoneSt = rc.top < cadre.top + S.zoneHaut * H ? 'haut' : rc.bottom > cadre.bottom - S.zoneBas * H ? 'bas'
-            : colonneSt && rc.right > cadre.right - S.zoneDroite * W ? 'droite' : null;
+          var zoneSt = zoneDe(rc, cadre, W, H);
           if (zoneSt) constater('zone-sure', sceneSt, 'sous-titres', t, zoneSt);
         }
       }

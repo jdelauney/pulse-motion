@@ -93,13 +93,18 @@ function lireVoixScene(projet, deroule, scene) {
 
 /** Durée de la vidéo avec les scènes allongées par leur voix (délais maximaux de l'export et du contrôle). -> secondes */
 function dureeVideo(projet, deroule) {
+  return minutageVideo(projet, deroule).duree;
+}
+
+/** Minutage des scènes de la vidéo (débuts, fins, entrées), voix comprises, sans ouvrir la page (extraits, chapitres). */
+function minutageVideo(projet, deroule) {
   const { calculerMinutage } = require('../../moteur/minutage.js');
   const { optionsMinutage } = require('./deroule.js');
   const scenes = deroule.scenes.map((s) => {
     const v = s.voix && s.voix.texte ? lireVoixScene(projet, deroule, s) : null;
     return { ...s, voix: v && !v.erreur ? { debut: s.voix.debut, duree: v.duree } : undefined };
   });
-  return calculerMinutage(scenes, {}, optionsMinutage(deroule)).duree;
+  return calculerMinutage(scenes, {}, optionsMinutage(deroule));
 }
 
 /** Prise brute (WAV) -> prise prête, écrite avec ses mots (et son Opus si ffmpeg est donné). -> { relatif, duree } */
@@ -192,4 +197,4 @@ function messageProvisoire(ids) {
   return `La vidéo contient encore la voix provisoire (scènes : ${ids.join(', ')}) : enregistrez votre voix, ou exportez quand même avec --avec-provisoire.`;
 }
 
-module.exports = { DOSSIER_VOIX, empreinte, priseDeScene, lireVoixScene, dureeVideo, ecrirePrise, transcrirePrise, scenesProvisoires, messageProvisoire };
+module.exports = { minutageVideo, DOSSIER_VOIX, empreinte, priseDeScene, lireVoixScene, dureeVideo, ecrirePrise, transcrirePrise, scenesProvisoires, messageProvisoire };

@@ -84,7 +84,8 @@ test('documentation.test.js › chaque seuil cité égale seuils.json ; DEFAUTS 
 test('documentation.test.js › chaque clé de seuils.json est citée dans controles.md', () => {
   const t = lire('references', 'controles.md');
   const cites = new Set(seuilsCites(t, 'controles.md').map((c) => c.cle));
-  const absentes = Object.keys(SEUILS).filter((k) => !cites.has(k));
+  // Les zones des plateformes (tableau, date) sont vérifiées par zones-sures.test.js.
+  const absentes = Object.keys(SEUILS).filter((k) => typeof SEUILS[k] === 'number' && !cites.has(k));
   assert.deepEqual(absentes, [], `clés non citées au format « valeur unité (\`clé\`) » : ${absentes.join(', ')}`);
 });
 

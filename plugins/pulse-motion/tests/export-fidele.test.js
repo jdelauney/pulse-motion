@@ -276,7 +276,8 @@ test('export-fidele.test.js › statistiques écrites à côté de chaque segmen
   assert.equal(v.version, 1);
   assert.equal(v.fichier, 'sortie/la-chaine-du-froid.mp4');
   // S5 ajoute ses vérifications propres (5.22 point 4) : les couleurs étiquetées.
-  assert.deepEqual(v.faites, ['images', 'noirs', 'couleurs']);
+  // La vignette intégrée (spec Rendu et export, 5.10) est vérifiée sur le fichier de l'usage web.
+  assert.deepEqual(v.faites, ['images', 'noirs', 'couleurs', 'vignette']);
   assert.deepEqual(v.nonFaites, [{ quoi: 'son', pourquoi: 'la vidéo n\'a pas de son' }]);
   // Le style de test n'anime pas les entrées : le titre et le compteur apparaissent d'un coup (saut-image, à juste titre).
   assert.deepEqual(r.verification, { erreurs: 0, alertes: v.problemes.length, fichier: 'sortie/verification.json' });

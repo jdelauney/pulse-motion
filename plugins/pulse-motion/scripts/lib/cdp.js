@@ -162,9 +162,10 @@ function ouvrirPage({ navigateur, largeur, hauteur, gpu = false, delai = 30000, 
           return r.result.value;
         },
         /** Capture PNG de la zone d'affichage (largeur × hauteur de la page). rapide : optimizeForSpeed (PNG toujours sans perte,
-         *  seulement moins compressé) ; echelle : image réduite (clip.scale). profil(phase, ms) : temps de capture et de décodage. */
-        async capturer({ echelle, rapide = true, profil } = {}) {
-          const params = { format: 'png', ...(rapide ? { optimizeForSpeed: true } : {}) };
+         *  seulement moins compressé) ; echelle : image réduite (clip.scale). profil(phase, ms) : temps de capture et de décodage.
+         *  format : 'png' (défaut) ou 'jpeg' (couverture, planches du PDF : spec Rendu et export, 5.10 et 5.16), qualite 0–100. */
+        async capturer({ echelle, rapide = true, profil, format = 'png', qualite = 90 } = {}) {
+          const params = format === 'jpeg' ? { format: 'jpeg', quality: Math.round(qualite) } : { format: 'png', ...(rapide ? { optimizeForSpeed: true } : {}) };
           if (echelle !== undefined && echelle !== 1) params.clip = { x: 0, y: 0, width: largeur, height: hauteur, scale: echelle };
           const t0 = profil ? performance.now() : 0;
           const r = await envoyerBrut('Page.captureScreenshot', params, sessionId);

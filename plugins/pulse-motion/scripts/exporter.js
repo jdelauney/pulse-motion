@@ -4,6 +4,7 @@
  *
  *   node scripts/exporter.js <dossier-du-projet> [--pour <usage>] [--taille-max <Mo>] [--qualite 1080p|720p|540p] [--ips 30|60]
  *                            [--rapide] [--avec-provisoire] [--estimer]
+ *                            [--scene <id>[,<id>] | --plage <début>-<fin>] [--gif [--largeur 1280]] [--cadre telephone [--cadre-format 16:9|1:1]]
  *   node scripts/exporter.js <dossier-du-projet> --planche [id1,id2] [--ouvrir]
  *
  * Usages (scripts/usages.json, spec Rendu et export 5.1) : web (défaut, <slug>.mp4), reseaux, presentation, master, courriel
@@ -15,6 +16,10 @@
  * Export dans le navigateur : utilise l'aperçu en cours (ou en démarre un), l'ouvre dans Chrome ou Edge sans fenêtre
  * en mode export, et suit sortie/export.json jusqu'au MP4 relu (ou aux images de la planche).
  * Les deux voies vérifient la vidéo livrée (spec S2, 5.12) : sortie/verification.json, résumé dans « verification ».
+ * Livrables (spec Rendu et export, 5.10 à 5.20) : couverture, chapitres, crédits joints selon l'usage (« fichiers ») ; extrait
+ * d'une scène (--scene, un fichier par scène) ou passage seul (--plage « 12,5-18 ») ; GIF (--gif, ffmpeg requis, 20 s au plus) ;
+ * cadre de téléphone (--cadre telephone, vidéo 9:16). Export « reseaux » d'une vidéo 9:16 sans plateforme : zones de toutes les
+ * applications vérifiées (alertes dans « zonesToutes », phrase dans « conseils »).
  * Progression sur la sortie d'erreur ; résumé JSON sur la sortie standard ; code 1 en cas d'échec.
  */
 const fs = require('node:fs');
@@ -25,7 +30,8 @@ const { etatProjet } = require('./etat.js');
 const { demarrerApercu, ouvrirNavigateur } = require('./apercu.js');
 const { trouverFfmpeg } = require('./lib/ffmpeg.js');
 const { exporterFidele, avecEffets } = require('./export-fidele.js');
-const { scenesProvisoires, messageProvisoire, dureeVideo } = require('./lib/voix.js');
+const { scenesProvisoires, messageProvisoire, dureeVideo, minutageVideo } = require('./lib/voix.js');
+const L = require('./lib/livrables.js');
 const U = require('./lib/usages.js');
 const ME = require('./lib/mesures-export.js');
 const { creerEstimation, ligneProgression } = require('../moteur/estimation.js');
@@ -61,6 +67,8 @@ const PHASES = {
   son: 'Export : préparation du son…',
   assemblage: 'Export : assemblage de la vidéo…',
   'seconde-passe': 'Export : version légère, seconde passe…',
+  livrables: 'Export : couverture et chapitres…',
+  gif: 'Export : GIF, couleurs calculées sur tout le passage…',
   reprise: 'Export : version légère, un peu plus compressée…',
   verification: 'Export : vérification de la vidéo…',
 };
@@ -117,7 +125,7 @@ function completerResultat(r, { projet, u, nomSlug }) {
 async function exporterVideo({
   dossier, planche = null, ouvrir = false, dossierStyles, navigateur = trouverNavigateur(),
   surProgression = () => {}, delaiMax, delaiDemarrage = DELAI_DEMARRAGE, ouvrirFichier = ouvrirNavigateur, avecProvisoire = false,
-  pour, qualite, ips, tailleMax,
+  pour, qualite, ips, tailleMax, scene, plage, cadre, cadreFormat,
 }) {
   const debut = Date.now();
   const projet = path.resolve(dossier);
@@ -156,7 +164,7 @@ async function exporterVideo({
 
   const suivi = path.join(projet, 'sortie', 'export.json');
   fs.rmSync(suivi, { force: true });
-  const options = u ? [['pour', pour], ['qualite', qualite], ['ips', ips], ['taille', tailleMax]].filter(([, v]) => v !== undefined && v !== null && v !== '')
+  const options = u ? [['pour', pour], ['qualite', qualite], ['ips', ips], ['taille', tailleMax], ['scene', scene], ['plage', plage], ['cadre', cadre], ['cadreFormat', cadreFormat]].filter(([, v]) => v !== undefined && v !== null && v !== '')
     .map(([k, v]) => `&${k}=${encodeURIComponent(v)}`).join('') : '';
   const adresse = `${url}?${ids ? `planche=${ids.map(encodeURIComponent).join(',')}` : `export=1${avecProvisoire ? '&provisoire=1' : ''}${options}`}`;
   // Délai maximal sur la durée réelle (scènes allongées par leur voix comprises).
@@ -179,7 +187,9 @@ async function exporterVideo({
         if (!ids && e.etat === 'fini') {
           const r = completerResultat({ ok: true, fichier: e.fichier, images: e.images, duree: e.duree, audio: e.audio, octets: e.octets, usage: e.usage,
             definition: e.definition, ips: e.ips, avertissement: e.avertissement, ...(e.couleurs ? { couleurs: e.couleurs } : {}),
-            ...(e.verification ? { verification: e.verification } : {}) }, { projet, u, nomSlug: require('./assembler.js').slug(deroule.titre) });
+            ...(e.verification ? { verification: e.verification } : {}),
+            ...(e.fichiers ? { fichiers: { video: e.fichier, ...e.fichiers } } : {}), creditsAPreciser: e.creditsAPreciser || [], ...(e.alertes ? { alertes: e.alertes } : {}),
+            ...(e.extrait ? { extrait: true } : {}) }, { projet, u, nomSlug: e.extrait ? null : require('./assembler.js').slug(deroule.titre) });
           // Vitesse de cet ordinateur dans le navigateur (images par seconde de calcul), pour les prochaines estimations.
           if (e.imagesParSeconde > 0) ME.noterMesure({ voie: 'navigateur', definition: u.definition, ips: u.ips, flou: false, imagesParSeconde: e.imagesParSeconde, finalesParSeconde: e.finalesParSeconde || 0 });
           return fin(r);
@@ -204,7 +214,7 @@ async function exporterVideo({
 
 if (require.main === module) {
   const args = process.argv.slice(2);
-  const OPTIONS_A_VALEUR = ['--planche', '--qualite', '--ips', '--pour', '--taille-max'];
+  const OPTIONS_A_VALEUR = ['--planche', '--qualite', '--ips', '--pour', '--taille-max', '--scene', '--plage', '--largeur', '--cadre', '--cadre-format'];
   const dossier = args.find((a, i) => !a.startsWith('--') && !OPTIONS_A_VALEUR.includes(args[i - 1])) || '.';
   const valeur = (o) => { const i = args.indexOf(o); return i >= 0 && args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1] : undefined; };
   const i = args.indexOf('--planche');
@@ -212,8 +222,17 @@ if (require.main === module) {
   const rapide = args.includes('--rapide');
   const avecProvisoire = args.includes('--avec-provisoire');
   const choix = { pour: valeur('--pour'), qualite: valeur('--qualite'), ips: valeur('--ips'), tailleMax: valeur('--taille-max') };
+  const sorte = { scenes: valeur('--scene') ? valeur('--scene').split(',').filter(Boolean) : null, plage: valeur('--plage'), gif: args.includes('--gif'),
+    largeurGif: valeur('--largeur'), cadre: valeur('--cadre'), cadreFormat: valeur('--cadre-format') };
   const outil = trouverFfmpeg();
-  const voie = choisirVoie({ planche, rapide, outil });
+  // Le GIF ne se fait que par ffmpeg (voie fidèle), même avec --rapide.
+  const voie = sorte.gif && !planche ? choisirVoie({ outil }) : choisirVoie({ planche, rapide, outil });
+  // Sortie demandée vérifiée avant tout navigateur (scène inconnue, passage illisible, GIF trop long ou sans ffmpeg, cadre).
+  const refus = verifierSortie({ dossier, voie, outil, ...choix, ...sorte });
+  if (refus) {
+    console.log(JSON.stringify({ ok: false, message: refus }, null, 2));
+    process.exit(1);
+  }
   if (args.includes('--estimer')) {
     // Durée annoncée avant de lancer (5.5, point 3) : sans navigateur, d'après les mesures de cet ordinateur.
     const r = estimerExport({ dossier, voie, ...choix });
@@ -231,15 +250,18 @@ if (require.main === module) {
     // Interruption (Ctrl+C, arrêt de la commande) : l'export s'annule et range ses fichiers avant de sortir.
     const controle = new AbortController();
     for (const s of ['SIGINT', 'SIGTERM']) process.on(s, () => controle.abort());
-    travail = exporterFidele({ dossier, ...choix, outil, signal: controle.signal, surProgression, surPhase, avecProvisoire })
-      .then((r) => ({ ...r, mode: 'fidele' }));
+    const une = (sceneUne) => exporterFidele({ dossier, ...choix, outil, signal: controle.signal, surProgression, surPhase, avecProvisoire,
+      scene: sceneUne, plage: sorte.plage, gif: sorte.gif, largeurGif: sorte.largeurGif, cadre: sorte.cadre, cadreFormat: sorte.cadreFormat });
+    travail = parScene(sorte.scenes, une).then((r) => ({ ...r, mode: 'fidele' }));
   } else {
     // Interruption : fermer le navigateur sans fenêtre et l'aperçu lancé.
     arreterProprementSurSignal();
-    travail = exporterVideo({ dossier, planche, ouvrir: args.includes('--ouvrir'), surProgression, avecProvisoire, ...choix })
+    const une = (sceneUne) => exporterVideo({ dossier, planche, ouvrir: args.includes('--ouvrir'), surProgression, avecProvisoire, ...choix,
+      scene: sceneUne, plage: sorte.plage, cadre: sorte.cadre, cadreFormat: sorte.cadreFormat });
+    travail = parScene(planche ? null : sorte.scenes, une)
       .then((r) => ({ ...r, mode: 'navigateur', ...(!rapide && !planche ? { conseilFfmpeg: { message: outil.message, commande: outil.commande } } : {}) }));
   }
-  travail.then((r) => {
+  travail.then((r) => (r.ok && !planche ? completerDiffusion(r, { dossier, ...sorte }) : r)).then((r) => {
     // La relecture du critique (spec S2, 5.5) : l'export ne la lance jamais, il dit seulement son verdict et si elle
     // porte sur cette version (null : la vidéo n'a pas été relue).
     if (r.ok && !planche) r.relecture = require('./lib/relecture.js').etatRelecture(path.resolve(dossier));
@@ -249,6 +271,80 @@ if (require.main === module) {
     console.log(JSON.stringify({ ok: false, message: e.message }, null, 2));
     process.exit(1);
   });
+}
+
+/** Sortie demandée (extrait, passage, GIF, cadre) vérifiée sans navigateur. -> message de refus, ou null. */
+function verifierSortie({ dossier, voie, outil, pour, qualite, ips, tailleMax, scenes, plage, gif, cadre, cadreFormat }) {
+  if (!scenes && !plage && !gif && !cadre && !cadreFormat) return null;
+  const projet = path.resolve(dossier);
+  const { deroule, erreurs } = lireDeroule(projet);
+  if (erreurs.length) return null;
+  const minutage = minutageVideo(projet, deroule);
+  const u = U.resoudreUsage({ pour, qualite, ips, tailleMax, deroule, duree: minutage.duree });
+  if (u.erreur) return null;
+  const avecFfmpeg = Boolean(outil && outil.present && outil.versionOk !== false);
+  for (const scene of scenes || [null]) {
+    const d = L.preparerSortie({ deroule, minutage, ips: u.ips, scene, plage, gif, cadre, cadreFormat, avecFfmpeg });
+    if (d.erreur) return d.erreur;
+  }
+  return null;
+}
+
+/** Une scène après l'autre (--scene a,b : un fichier par scène) ; un seul résultat sinon. -> résultat (le dernier, avec
+ *  « extraits » quand il y en a plusieurs) */
+async function parScene(scenes, une) {
+  if (!scenes || scenes.length < 2) return une(scenes ? scenes[0] : null);
+  const resultats = [];
+  for (const id of scenes) {
+    const r = await une(id);
+    resultats.push(r);
+    if (!r.ok) return { ...r, extraits: resultats };
+  }
+  const dernier = resultats[resultats.length - 1];
+  return { ...dernier, extraits: resultats.map((r) => ({ fichier: r.fichiers && (r.fichiers.video || r.fichiers.gif), taille: r.taille, duree: r.duree })) };
+}
+
+/**
+ * Après un export réussi (spec Rendu et export, 5.11, 5.19, 5.20) : conseils à dire en une phrase. Vidéo 9:16 exportée pour
+ * les réseaux sans plateforme dite : zones de toutes les applications vérifiées (alertes) ; web de plus de 2 minutes sans
+ * chapitres : les proposer ; fichiers importés sans source : les demander.
+ */
+async function completerDiffusion(r, { dossier, scenes, plage, gif, cadre, controler = null }) {
+  const projet = path.resolve(dossier);
+  const { deroule } = lireDeroule(projet);
+  if (!deroule) return r;
+  const conseils = [];
+  const extrait = Boolean((scenes && scenes.length) || plage || gif);
+  if (r.usage === 'reseaux' && deroule.format.ratio === '9:16' && !deroule.format.plateforme && !extrait && !cadre) {
+    const zones = await verifierZonesToutes(projet, deroule, controler);
+    if (zones) {
+      r.zonesToutes = zones;
+      conseils.push(zones.length
+        ? `Sans plateforme précisée, j'ai vérifié les zones de toutes les applications : ${zones.length} texte${zones.length > 1 ? 's passent' : ' passe'} sous leurs boutons ; dites-moi la plateforme (TikTok, Shorts, Reels) pour un contrôle exact.`
+        : 'Sans plateforme précisée, j\'ai vérifié les zones de toutes les applications : rien ne passe sous leurs boutons.');
+    }
+  }
+  if (r.usage === 'web' && !extrait && (r.duree || 0) > 120 && !deroule.scenes.some((s) => s.chapitre)) {
+    conseils.push('La vidéo dure plus de 2 minutes : des chapitres aideraient à s\'y retrouver sur YouTube (une retouche).');
+  }
+  const aPreciser = r.creditsAPreciser || [];
+  if (aPreciser.length) conseils.push(`${aPreciser.length} fichier${aPreciser.length > 1 ? 's importés n\'ont' : ' importé n\'a'} pas de source : dites-moi d'où ${aPreciser.length > 1 ? 'ils viennent' : 'il vient'} pour compléter les crédits.`);
+  if (conseils.length) r.conseils = conseils;
+  return r;
+}
+
+/** Zones de toutes les applications (5.19, point 3) : contrôle du rendu limité à la règle zone-sure, en alertes. -> messages, ou
+ *  null si le rendu n'a pas pu être mesuré. */
+async function verifierZonesToutes(projet, deroule, controler) {
+  try {
+    const { assembler } = require('./assembler.js');
+    const a = assembler({ dossier: projet, ecrire: false });
+    if (!a.ok) return null;
+    const mesurer = controler || require('./lib/rendu-controle.js').controlerRendu;
+    const v = await mesurer({ html: a.html, ratio: deroule.format.ratio, duree: a.minutage.duree, genre: deroule.genre, plateforme: 'toutes' });
+    if (!v.renduVerifie) return null;
+    return v.problemes.filter((p) => p.regle === 'zone-sure').map((p) => p.message);
+  } catch { return null; }
 }
 
 /** Durée estimée d'un export (--estimer), sans navigateur. -> { ok, secondesEstimees, usage, voie, source } | { ok: false, message } */
@@ -264,4 +360,5 @@ function estimerExport({ dossier, voie = 'fidele', pour, qualite, ips, tailleMax
   return { ok: true, secondesEstimees: e.secondes, usage: u.usage, voie, source: e.source };
 }
 
-module.exports = { choisirVoie, exporterVideo, avecEffets, nettoyages, nettoyerTout, arreterProprementSurSignal, suiviProgression, completerResultat, estimerExport, PHASES };
+module.exports = { choisirVoie, exporterVideo, avecEffets, nettoyages, nettoyerTout, arreterProprementSurSignal, suiviProgression, completerResultat, estimerExport, PHASES,
+  verifierSortie, completerDiffusion, verifierZonesToutes, parScene };

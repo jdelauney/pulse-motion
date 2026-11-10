@@ -3,10 +3,14 @@
  *
  *   GET  /_pm/capture.js, /_pm/export.mjs, /_pm/export-ui.mjs, /_pm/estimation.js, /_pm/vendor/mediabunny.min.mjs
  *   GET  /_pm/usages.json      usages d'export (scripts/usages.json : noms, réglages)
- *   GET  /_pm/usage?pour=&qualite=&ips=&taille=   réglages effectifs d'un export (lib/usages.js, comme la voie fidèle),
- *                              nom du fichier compris ; { erreur } si l'usage est inconnu ou la taille impossible
- *   POST /_pm/export           (video/mp4, video/webm ou image/gif ; en-têtes X-PM-Relecture et X-PM-Nom) → sortie/<nom>
- *                              (X-PM-Nom vérifié par son motif et le slug du titre ; sans lui, sortie/<titre>.mp4)
+ *   GET  /_pm/usage?pour=&qualite=&ips=&taille=&scene=&plage=&cadre=&cadreFormat=   réglages effectifs d'un export (lib/usages.js,
+ *                              comme la voie fidèle), nom du fichier, images d'un extrait (sortie) et couverture compris ;
+ *                              { erreur } si l'usage, la scène ou le passage sont inconnus ou la taille impossible
+ *   GET  /_pm/cadres/telephone.js   dessin du cadre de téléphone (spec Rendu et export, 5.15)
+ *   POST /_pm/export           (video/mp4, video/webm ou image/gif ; en-têtes X-PM-Relecture, X-PM-Nom, X-PM-Extrait) → sortie/<nom>
+ *                              (X-PM-Nom vérifié par son motif et le slug du titre ; sans lui, sortie/<titre>.mp4) ; livrables
+ *                              écrits par Node (crédits, chapitres : lib/livrables.js) ; un extrait (X-PM-Extrait: 1) ne
+ *                              refait pas la vérification de la vidéo entière
  *   POST /_pm/couverture       (image/jpeg) → sortie/<titre>-couverture.jpg
  *   POST /_pm/export-etat      (JSON) → sortie/export.json (suivi par « pulse-motion exporter »)
  *   POST /_pm/export-stats     (JSON) → sortie/.export/stats-navigateur.json (statistiques image par image, analysées à la
@@ -23,7 +27,8 @@ const { slug } = require('../assembler.js');
 const { ecrireAtomique, ecrireJSON } = require('./fichiers.js');
 const { verifierNavigateur, resume } = require('./verification.js');
 const U = require('./usages.js');
-const { dureeVideo } = require('./voix.js');
+const { minutageVideo } = require('./voix.js');
+const L = require('./livrables.js');
 
 const RACINE = path.resolve(__dirname, '..', '..');
 const STATIQUES = {
@@ -31,6 +36,7 @@ const STATIQUES = {
   '/_pm/export.mjs': path.join(RACINE, 'moteur', 'export.mjs'),
   '/_pm/export-ui.mjs': path.join(RACINE, 'moteur', 'export-ui.mjs'),
   '/_pm/estimation.js': path.join(RACINE, 'moteur', 'estimation.js'),
+  '/_pm/cadres/telephone.js': path.join(RACINE, 'moteur', 'cadres', 'telephone.js'),
   '/_pm/vendor/mediabunny.min.mjs': path.join(RACINE, 'vendor', 'mediabunny', 'mediabunny.min.mjs'),
 };
 const MAX_VIDEO = 4 * 1024 ** 3;
@@ -149,15 +155,26 @@ function creerRoutesExport(projet, { optionsAssemblage = {} } = {}) {
           const final = path.join(sortie, nom);
           fs.renameSync(partiel, final);
           const fichier = path.relative(projet, final).split(path.sep).join('/');
-          // Vérification de la vidéo (spec S2, 5.12) : statistiques envoyées par la page juste avant, analysées ici.
+          // Vérification de la vidéo (spec S2, 5.12) : statistiques envoyées par la page juste avant, analysées ici. Un extrait
+          // ne remplace pas la vérification de la vidéo entière.
+          const extrait = req.headers['x-pm-extrait'] === '1';
           let verification;
-          try {
+          if (!extrait) try {
             let stats = null;
             try { stats = JSON.parse(fs.readFileSync(fichierStats, 'utf8')); } catch { /* pas de statistiques reçues */ }
             fs.rmSync(fichierStats, { force: true });
             verification = resume(verifierNavigateur({ projet, stats, fichier, optionsAssemblage }));
           } catch { verification = undefined; }
           const nombre = (x) => (Number.isFinite(Number(x)) ? Number(x) : undefined);
+          // Livrables (spec Rendu et export, 5.10, 5.11, 5.20) : crédits toujours, chapitres de la vidéo entière, couverture reçue.
+          let livrables = { fichiers: {}, creditsAPreciser: [], alertes: [] };
+          try {
+            const assemblage = require('../assembler.js').assembler({ dossier: projet, ...optionsAssemblage, ecrire: false });
+            const usage = U.lireUsages().usages[relecture.usage] || U.lireUsages().usages.web;
+            livrables = L.ecrireLivrables({ projet, deroule, assemblage: assemblage.ok ? assemblage : null, usage, extrait, minutage: assemblage.ok ? assemblage.minutage : minutageVideo(projet, deroule) });
+          } catch { /* livrables facultatifs : la vidéo est enregistrée */ }
+          const couverture = path.join(sortie, `${slug(deroule && deroule.titre ? deroule.titre : 'video')}-couverture.jpg`);
+          if (relecture.couverture === true && !extrait && fs.existsSync(couverture)) livrables.fichiers.couverture = path.relative(projet, couverture).split(path.sep).join('/');
           ecrireEtatExport({
             etat: 'fini', fichier, octets: taille, duree: relecture.duree, images: relecture.images, audio: !!relecture.audio,
             avertissement: relecture.avertissement ? String(relecture.avertissement) : undefined, verification,
@@ -165,6 +182,8 @@ function creerRoutesExport(projet, { optionsAssemblage = {} } = {}) {
             definition: typeof relecture.definition === 'string' ? relecture.definition : undefined,
             ips: nombre(relecture.ips), imagesParSeconde: nombre(relecture.imagesParSeconde), finalesParSeconde: nombre(relecture.finalesParSeconde),
             couleurs: relecture.couleurs && typeof relecture.couleurs === 'object' ? relecture.couleurs : undefined,
+            fichiers: livrables.fichiers, creditsAPreciser: livrables.creditsAPreciser, alertes: livrables.alertes.length ? livrables.alertes : undefined,
+            chapitresIntegres: false, extrait: extrait || undefined,
           });
           fini = true;
           envoiEnCours = false;
@@ -238,9 +257,22 @@ function creerRoutesExport(projet, { optionsAssemblage = {} } = {}) {
     const { deroule, erreurs } = lireDeroule(projet);
     if (erreurs && erreurs.length) return repondre(res, 400, { erreur: `Le déroulé contient des erreurs : ${erreurs.join(' ')}` });
     const p = (k) => { const v = url.searchParams.get(k); return v === null || v === '' ? undefined : v; };
-    const u = U.resoudreUsage({ pour: p('pour'), qualite: p('qualite'), ips: p('ips'), tailleMax: p('taille'), deroule, duree: dureeVideo(projet, deroule) });
+    const minutage = minutageVideo(projet, deroule);
+    let u = U.resoudreUsage({ pour: p('pour'), qualite: p('qualite'), ips: p('ips'), tailleMax: p('taille'), deroule, duree: minutage.duree });
     if (u.erreur) return repondre(res, 400, { erreur: u.erreur });
-    return repondre(res, 200, { ...u, nomFichier: U.nomFichier(slug(deroule.titre || 'video'), u.usage) });
+    // Extrait, passage seul, cadre de téléphone (spec Rendu et export, 5.12, 5.15) : images et nom du fichier.
+    const sortieDemandee = L.preparerSortie({ deroule, minutage, ips: u.ips, scene: p('scene'), plage: p('plage'), cadre: p('cadre'), cadreFormat: p('cadreFormat') });
+    if (sortieDemandee.erreur) return repondre(res, 400, { erreur: sortieDemandee.erreur });
+    if (sortieDemandee.extrait && u.tailleMax) {
+      u = U.resoudreUsage({ pour: p('pour'), qualite: p('qualite'), ips: p('ips'), tailleMax: p('taille'), deroule, duree: sortieDemandee.duree });
+      if (u.erreur) return repondre(res, 400, { erreur: u.erreur });
+    }
+    const base = slug(deroule.titre || 'video');
+    const special = sortieDemandee.extrait || sortieDemandee.cadre;
+    const nomFichier = special ? L.nomSortie(base, { usage: u.usage, scene: sortieDemandee.scene, plage: sortieDemandee.plage, cadre: sortieDemandee.cadre }) : U.nomFichier(base, u.usage);
+    // Taille visée : ni couverture ni vignette (la reconversion ne la garderait pas), comme dans la voie fidèle.
+    const couverture = !special && !u.tailleMax && (u.fichiers || []).includes('couverture');
+    return repondre(res, 200, { ...u, nomFichier, couverture, titre: deroule.titre, sortie: sortieDemandee });
   }
 
   async function terminerPlanche(req, res) {

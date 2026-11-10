@@ -195,7 +195,7 @@ function tableauUsages(u = lireUsages()) {
   }
   lignes.push('', '## Ce que dit la personne', '', '| Elle dit | Usage |', '|---|---|');
   for (const [mots, usage, complement] of MOTS) lignes.push(`| ${mots} | \`${usage}\`${complement ? `, ${complement}` : ''} |`);
-  lignes.push('', 'Couverture, chapitres et crédits arrivent avec les livrables de diffusion ; aujourd\'hui, seuls les sous-titres sont joints. « En boucle » et « des chapitres » changent la vidéo : c\'est une retouche (`/pulse-motion:retoucher`). « En GIF », « juste la scène 3 », « fond transparent », « dans un téléphone », « un PDF des scènes » : pas encore possible (voir `pulse-motion reference sorties`).', '');
+  lignes.push('', 'Fichiers joints selon l\'usage : couverture (image de la miniature, sans sous-titres), chapitres (s\'ils sont déclarés dans la vidéo), crédits (toujours). « En boucle » et « des chapitres » changent la vidéo : c\'est une retouche (`/pulse-motion:retoucher`). « En GIF », « juste la scène 3 », « de 12 à 18 s », « dans un téléphone », « un PDF des scènes » : voir `pulse-motion reference sorties` ; « fond transparent » : pas encore possible.', '');
   return lignes.join('\n');
 }
 

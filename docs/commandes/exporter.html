@@ -47,17 +47,37 @@
 <table>
 <thead><tr><th>Usage</th><th>Pour quoi faire</th><th>Ce qui change à l'image</th><th>Poids</th><th>Temps d'export</th><th>Fichiers joints</th><th>Exige ffmpeg</th></tr></thead>
 <tbody>
-<tr data-usage="web"><td><strong>Pour le web</strong></td><td>site, YouTube, intranet, plateforme de formation</td><td>la qualité de référence, celle de l'aperçu</td><td>environ 5,1 Mo par minute</td><td>environ 1 min 19 s par minute de vidéo</td><td>sous-titres</td><td>non</td></tr>
-<tr data-usage="reseaux"><td><strong>Pour les réseaux sociaux</strong></td><td>LinkedIn, Instagram, TikTok, YouTube Shorts</td><td>un peu plus nette que pour le web, pour résister à la recompression des plateformes</td><td>environ 7,2 Mo par minute</td><td>environ 1 min 17 s par minute de vidéo</td><td>sous-titres</td><td>non</td></tr>
-<tr data-usage="presentation"><td><strong>Pour la projeter en réunion</strong></td><td>vidéoprojecteur, PowerPoint, Keynote, salon</td><td>très nette, lue par les logiciels de présentation, 30 images par seconde</td><td>environ 7,5 Mo par minute</td><td>environ 1 min 17 s par minute de vidéo</td><td>aucun</td><td>non</td></tr>
-<tr data-usage="master"><td><strong>Pour archiver ou confier à un monteur</strong></td><td>la meilleure qualité, à garder ou à retravailler</td><td>la plus fidèle possible, à retravailler sans perte visible</td><td>environ 6,8 Mo par minute</td><td>environ 1 min 17 s par minute de vidéo</td><td>sous-titres</td><td>non</td></tr>
-<tr data-usage="courriel"><td><strong>Pour l'envoyer par courriel</strong></td><td>pièce jointe, messagerie (WhatsApp, Teams)</td><td>plus petite (720p ou 540p selon la durée), grain renouvelé moins souvent ; tient sous la taille annoncée</td><td>moins de 10 Mo en tout (vidéo de 2 min 52 s au plus)</td><td>environ 1 min 23 s par minute de vidéo</td><td>aucun</td><td>non</td></tr>
-<tr data-usage="brouillon"><td><strong>Version de travail</strong></td><td>vérifier vite une longue vidéo, jamais pour publier</td><td>petite (540p), 30 images par seconde au plus, grain renouvelé moins souvent</td><td>environ 2,5 Mo par minute</td><td>environ 1 min 7 s par minute de vidéo</td><td>aucun</td><td>non</td></tr>
+<tr data-usage="web"><td><strong>Pour le web</strong></td><td>site, YouTube, intranet, plateforme de formation</td><td>la qualité de référence, celle de l'aperçu</td><td>environ 5,1 Mo par minute</td><td>environ 1 min 19 s par minute de vidéo</td><td>couverture, chapitres, crédits, sous-titres</td><td>non</td></tr>
+<tr data-usage="reseaux"><td><strong>Pour les réseaux sociaux</strong></td><td>LinkedIn, Instagram, TikTok, YouTube Shorts</td><td>un peu plus nette que pour le web, pour résister à la recompression des plateformes</td><td>environ 7,2 Mo par minute</td><td>environ 1 min 17 s par minute de vidéo</td><td>couverture, crédits, sous-titres</td><td>non</td></tr>
+<tr data-usage="presentation"><td><strong>Pour la projeter en réunion</strong></td><td>vidéoprojecteur, PowerPoint, Keynote, salon</td><td>très nette, lue par les logiciels de présentation, 30 images par seconde</td><td>environ 7,5 Mo par minute</td><td>environ 1 min 17 s par minute de vidéo</td><td>couverture, crédits</td><td>non</td></tr>
+<tr data-usage="master"><td><strong>Pour archiver ou confier à un monteur</strong></td><td>la meilleure qualité, à garder ou à retravailler</td><td>la plus fidèle possible, à retravailler sans perte visible</td><td>environ 6,8 Mo par minute</td><td>environ 1 min 17 s par minute de vidéo</td><td>couverture, chapitres, crédits, sous-titres</td><td>non</td></tr>
+<tr data-usage="courriel"><td><strong>Pour l'envoyer par courriel</strong></td><td>pièce jointe, messagerie (WhatsApp, Teams)</td><td>plus petite (720p ou 540p selon la durée), grain renouvelé moins souvent ; tient sous la taille annoncée</td><td>moins de 10 Mo en tout (vidéo de 2 min 52 s au plus)</td><td>environ 1 min 23 s par minute de vidéo</td><td>crédits</td><td>non</td></tr>
+<tr data-usage="brouillon"><td><strong>Version de travail</strong></td><td>vérifier vite une longue vidéo, jamais pour publier</td><td>petite (540p), 30 images par seconde au plus, grain renouvelé moins souvent</td><td>environ 2,5 Mo par minute</td><td>environ 1 min 7 s par minute de vidéo</td><td>crédits</td><td>non</td></tr>
 </tbody>
 </table>
 <!-- usages:fin -->
 <p>Après un premier export, un autre usage ne refait aucune image : il repart des images déjà capturées. La version pour le courriel vise moins de 10 Mo (ou la taille que vous dites, « moins de 25 Mo pour Teams ») ; si la vidéo est trop longue pour tenir, Pulse Motion vous le dit avant de commencer, avec la taille qu'il faudrait. La version de travail est faite vite, par la carte graphique quand elle sait le faire : elle sert à vérifier, jamais à publier.</p>
 <p>Dans l'aperçu, le bouton <strong>MP4</strong> de la barre de lecture propose quatre usages : Web, Réseaux, Présentation, Courriel.</p>
+<p>Les <strong>chapitres</strong> ne sont joints que si vous les avez demandés (« ajoute des chapitres », une retouche) ; ils sont alors aussi intégrés au MP4 quand ffmpeg est installé, et YouTube les montre à partir de trois. Les <strong>crédits</strong> accompagnent chaque export : polices, musique, voix, images et sons, avec leur licence. Un fichier que vous avez importé sans dire d'où il vient y est marqué « à préciser » : dites-le simplement (« la musique vient de Pixabay »).</p>
+</section>
+
+<section id="sorties">
+<h2>Les autres sorties</h2>
+<p>En plus de la vidéo, vous pouvez demander :</p>
+<!-- sorties:debut (poids et temps mesurés sur les deux vidéos témoins) -->
+<table>
+<thead><tr><th>Vous dites</th><th>Vous obtenez</th><th>Poids</th><th>Temps</th><th>Exige ffmpeg</th></tr></thead>
+<tbody>
+<tr data-sortie="scene"><td>« juste la scène 3 »</td><td>La scène seule, sans ses transitions, avec son son</td><td>environ 1 Mo pour 10 s</td><td>5 à 8 s après un export (rien n'est refait)</td><td>non</td></tr>
+<tr data-sortie="plage"><td>« de 12 à 18 secondes »</td><td>Ce passage seul, pour revoir vite une retouche</td><td>environ 1 Mo pour 10 s</td><td>5 à 8 s après un export</td><td>non</td></tr>
+<tr data-sortie="gif"><td>« en GIF »</td><td>Un GIF en boucle, sans son, d'une scène ou d'un passage de 20 s au plus</td><td>environ 0,6 Mo pour 6 s</td><td>2 à 3 s après un export</td><td>oui</td></tr>
+<tr data-sortie="cadre"><td>« dans un téléphone »</td><td>Une vidéo verticale montrée dans un téléphone, au fond de votre charte</td><td>environ 3,5 Mo par minute</td><td>environ 1 min 18 s par minute de vidéo</td><td>non</td></tr>
+<tr data-sortie="pdf"><td>« un PDF des scènes pour le client »</td><td>Un PDF A4 paysage, deux scènes par page, trois images et le texte dit</td><td>environ 0,3 Mo par page</td><td>4 à 8 s</td><td>non</td></tr>
+<tr data-sortie="textes"><td>« un texte pour LinkedIn »</td><td>Une publication, un courriel ou une description YouTube, sans chiffre absent de la vidéo ; rien n'est publié</td><td>—</td><td>—</td><td>non</td></tr>
+</tbody>
+</table>
+<!-- sorties:fin -->
+<p>Une scène, un passage ou un GIF repartent des images déjà faites : après un export, ils ne recapturent rien. Ils ne touchent jamais à la vidéo complète. Pour une vidéo verticale faite pour TikTok, les Shorts ou les Reels, dites-le (une retouche) : le contrôle vérifie alors que rien ne passe sous les boutons de l'application, et les sous-titres se placent au-dessus. Dans l'aperçu, la touche <kbd>Z</kbd> montre cette zone.</p>
 </section>
 
 <section id="pourquoi">
@@ -82,7 +102,7 @@
 <li><strong>Quand la vidéo vous plaît</strong> dans l'aperçu, et que votre voix est enregistrée.</li>
 <li><strong>Après chaque série de retouches</strong> : le MP4 ne se met pas à jour tout seul, contrairement à la page animée.</li>
 </ul>
-<aside class="encadre encadre-conseil"><p><strong>Conseil :</strong> vous voulez seulement mettre la vidéo sur votre site ? Inutile d'exporter : la page animée <code>sortie/&lt;titre&gt;.html</code> est déjà prête et s'ouvre sans connexion.</p></aside>
+<aside class="encadre encadre-conseil"><p><strong>Conseil :</strong> vous voulez seulement mettre la vidéo sur votre site ? Inutile d'exporter : la page animée <code>sortie/&lt;titre&gt;.html</code> est déjà prête et s'ouvre sans connexion, sur l'image de couverture avec un bouton ▶.</p></aside>
 </section>
 
 <section id="arguments">
@@ -101,6 +121,8 @@
 <tr><td>« vite fait, juste pour vérifier »</td><td>Une version de travail, petite et rapide, à ne pas publier.</td></tr>
 <tr><td>« plus fluide »</td><td>En 60 images par seconde. L'export prend deux fois plus de temps.</td></tr>
 <tr><td>« une version de travail avec la voix de l'ordinateur »</td><td>Avec la voix provisoire, seulement si vous le demandez.</td></tr>
+<tr><td>« juste la scène 3 », « en GIF », « dans un téléphone », « un PDF des scènes »</td><td>Les autres sorties (voir le tableau plus haut).</td></tr>
+<tr><td>« un texte pour accompagner la vidéo »</td><td>Pulse Motion écrit <code>sortie/&lt;titre&gt;-textes.md</code> ; il vous le propose de lui-même après un export pour les réseaux ou le courriel.</td></tr>
 </tbody>
 </table>
 <p>Avant de lancer, Pulse Motion vous dit combien de temps cela prendra ; pendant l'export, il suit le temps restant.</p>
@@ -115,6 +137,10 @@
 <tr><td><code>sortie/&lt;titre&gt;-&lt;usage&gt;.mp4</code></td><td>Les autres usages, chacun son fichier : <code>-reseaux</code>, <code>-presentation</code>, <code>-master</code>, <code>-courriel</code>, <code>-brouillon</code>.</td></tr>
 <tr><td><code>sortie/&lt;titre&gt;.html</code></td><td>La page animée, déjà là : elle s'ouvre sans connexion, à déposer sur votre site.</td></tr>
 <tr><td><code>sortie/&lt;titre&gt;.srt</code> et <code>.vtt</code></td><td>Avec des sous-titres : à joindre sur YouTube, LinkedIn ou une plateforme de formation.</td></tr>
+<tr><td><code>sortie/&lt;titre&gt;-couverture.jpg</code></td><td>L'image de la miniature, sans sous-titres. Elle est aussi intégrée au MP4 : les lecteurs et les explorateurs de fichiers la montrent.</td></tr>
+<tr><td><code>sortie/&lt;titre&gt;-chapitres.txt</code> et <code>.vtt</code></td><td>Si vous avez des chapitres : le texte à coller dans la description YouTube, et le fichier pour une plateforme de formation.</td></tr>
+<tr><td><code>sortie/&lt;titre&gt;-credits.txt</code></td><td>Les crédits : à relire avant de publier.</td></tr>
+<tr><td><code>sortie/&lt;titre&gt;-&lt;scène&gt;.mp4</code>, <code>.gif</code>, <code>-telephone.mp4</code>, <code>-planches.pdf</code></td><td>Les autres sorties, quand vous les demandez.</td></tr>
 </tbody>
 </table>
 <p>Pulse Motion termine par un résumé : l'usage, la durée, le poids du fichier, le son (ou « muette »), le mode d'export, et chaque fichier avec son rôle.</p>

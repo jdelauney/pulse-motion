@@ -137,3 +137,14 @@ body {
 #pm-scene .pm-st-ligne { display: block; white-space: nowrap; }
 #pm-scene #pm-sous-titres[data-mode="mot"] .pm-st-mot[data-etat="a-venir"] { opacity: 0.55; }
 #pm-scene #pm-sous-titres[data-mode="mot"] .pm-st-mot[data-etat="en-cours"] { color: var(--pm-st-accent, var(--c-accent, #ffd400)); }
+/* Couverture et affiche de la page livrée (spec Rendu et export, 5.10 et 5.17) : sous-titres masqués, même incrustés. */
+#pm-scene #pm-sous-titres.pm-sans-sous-titres { display: none !important; }
+/* Zones des plateformes (5.19) : marges intérieures égales aux zones (variables posées seulement avec format.plateforme). */
+#pm-scene .pm-dans-zone { padding: var(--pm-zone-haut, 0) var(--pm-zone-droite, 0) var(--pm-zone-bas, 0) var(--pm-zone-gauche, 0); }
+/* Touche Z de l'aperçu : zone de la plateforme montrée, jamais dans les images exportées. */
+#pm-scene #pm-zones { position: absolute; z-index: 1002; pointer-events: none; outline: 0.3cqh dashed #ff2d55; background: rgb(255 45 85 / 0.06); }
+.pm-capture #pm-zones, .pm-export #pm-zones { display: none !important; }
+/* Page livrée ouverte hors de l'aperçu : couverture et grand bouton ▶ (moteur/lecteur.js). */
+#pm-affiche { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; border: 0; padding: 0; background: transparent; cursor: pointer; }
+#pm-affiche span { display: grid; place-items: center; width: 96px; height: 96px; border-radius: 50%; background: rgb(0 0 0 / 0.62); color: #fff; font: 40px/1 system-ui, sans-serif; box-shadow: 0 6px 24px rgb(0 0 0 / 0.35); padding-left: 6px; }
+#pm-affiche:hover span, #pm-affiche:focus-visible span { background: rgb(0 0 0 / 0.8); }
