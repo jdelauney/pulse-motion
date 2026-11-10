@@ -49,11 +49,11 @@ Classer la demande, puis :
 |---|---|---|
 | Texte | « change le titre », « corrige la faute » | `scenes[].textes` du déroulé |
 | Rythme, durée | « ralentis la scène 3 » (rythme 0,8), « accélère » (1,25), « laisse plus de temps à la fin » (duree + 1 à 2 s) | `rythme` ou `duree` du déroulé |
-| Visuel d'une scène | « le chiffre doit rebondir », « mets la liste à droite » | le fichier de la scène (agent `animateur` pour une refonte, avec ses `scenes[].mouvements` à garder ; sinon modification directe) |
+| Visuel d'une scène | « le chiffre doit rebondir », « mets la liste à droite », « une icône de camion à côté du titre » | le fichier de la scène (agent `animateur` pour une refonte, avec ses `scenes[].mouvements` à garder ; sinon modification directe) |
 | Mouvement nommé | « un pop-in sur le titre », « un #012 », « un whip pan après la scène 2 », « fais vivre la plante » (#069), « un bandeau de logos clients » (#087), « un avant/après balayé » (#088) | `pulse-motion mouvements afficher <n° ou nom>` (sinon `mouvements chercher <mot>` ; rien d'exact : les deux plus proches avec `AskUserQuestion`) ; une transition : `transition` de la scène qui **entre** ; sinon la recette sur l'élément visé (sans sa classe d'entrée du style), ajoutée à `scenes[].mouvements` (`pulse-motion reference demandes`, « Mouvements nommés ») |
 | Effet de particules | « plus d'étincelles », « en bleu », « enlève les confettis », « ajoute des confettis à la fin » | la balise `data-effet` de la scène : `data-reglages`, `data-graine`, `data-calque`, `data-start`/`data-dur` ; l'ajouter ou la supprimer |
 | Style | « passe en style éditorial », « quelque chose de plus chaleureux » | demande floue : la direction la plus proche (`pulse-motion reference directions`) ; `pulse-motion styles --genre <genre>` (doute : 2 styles par `pulse-motion comparer . <style1>,<style2> --ouvrir`), puis `pulse-motion changer-style . <style>` ; les scènes de `aReecrire` : un agent `animateur` chacune, en parallèle, avec leurs `scenes[].mouvements` |
-| Global | « mets mes couleurs », « baisse la musique », « change la transition » | `charte/charte.json` (couleurs, polices, logo), `musique`, `transition` du déroulé ; « prends les couleurs de mon logo » : `pulse-motion charte depuis-logo charte/logo.<ext> --style <style>` ; « change la police des titres » : `pulse-motion police "<famille>"` ; « passe en sombre » : `"ton": "sombre"` dans `charte` du déroulé |
+| Global | « mets mes couleurs », « change la transition » | `charte/charte.json` (couleurs, polices, logo), `musique`, `transition` du déroulé ; « prends les couleurs de mon logo » : `pulse-motion charte depuis-logo charte/logo.<ext> --style <style>` ; « change la police des titres » : `pulse-motion police "<famille>"` ; « passe en sombre » : `"ton": "sombre"` dans `charte` du déroulé |
 | Voix | « baisse la voix », « je réenregistre la scène 3 », « j'ai un nouvel enregistrement », « change ce que je dis dans l'intro », « ajoute une voix à la vidéo » | `voix.volume` ; ajouter une voix : le `voix.texte` de chaque scène (3,5 mots par seconde au plus), puis `pulse-motion voix provisoire .` ; toute la vidéo ou toute autre demande sur les prises : suivre `/pulse-motion:voix` (`pulse-motion consignes voix`) ; réenregistrer : `pulse-motion voix studio <id> .` en arrière-plan ; texte dit changé : `scenes[].voix.texte`, puis `pulse-motion voix provisoire --scene <id> .` (voix provisoire) ou proposer de réenregistrer ; mots recalés : `pulse-motion voix transcrire .` |
 | Musique | « plus calme », « plus entraînant », « une autre variante », « baisse la musique », « enlève la musique », « coupe la musique pendant la scène 4 », « la musique à fond sur la démo » | ambiance (`musique.generee`) ou `intensite` (plus bas = plus calme) ; humeur d'une scène : `scenes[].musique` (`silence`, `calme`, `normale`, `intense`) ; « une autre variante » : `graine` + 1 ; `musique.volume` ; retirer `musique` ; « fais-moi écouter » : `pulse-motion musique ecouter . --ouvrir` |
 | Bruitages | « enlève les bruitages », « mets un son quand le titre arrive », « moins fort » | retirer les `data-son` des scènes et `bruitages.transitions` ; `data-son` sur l'élément (sons : `pulse-motion reference audio/bruitages`) ; `bruitages.volume` ou `data-son-volume` |
@@ -70,7 +70,7 @@ Classer la demande, puis :
 
 Choisir en regardant (« un truc qui claque pour le titre », « montre-moi les mouvements ») : `pulse-motion reference demandes`, section « Mouvements nommés ».
 
-Avant de toucher au fichier d'une scène : `pulse-motion reference moteur` et la partie utile ; le son : `pulse-motion reference audio` ; un effet : `pulse-motion reference particules` et sa famille.
+Avant de toucher au fichier d'une scène : `pulse-motion reference moteur` et la partie utile ; le son : `pulse-motion reference audio` ; un effet : `pulse-motion reference particules` et sa famille ; une icône : `pulse-motion reference icones`.
 
 Agent `animateur` (refonte, scènes de `aReecrire`, nouvelle scène) : modèle passé à l'appel (paramètre `model`) selon la scène :
 
@@ -82,7 +82,7 @@ Agent `animateur` (refonte, scènes de `aReecrire`, nouvelle scène) : modèle p
 
 Jamais un modèle plus cher que celui de la session : si la session tourne déjà en Sonnet ou en Haiku, aucun paramètre. Jamais `haiku`.
 
-Régler un effet de particules ou un personnage en le regardant (« ouvre l'éditeur », « laisse-moi régler ») : suivre `pulse-motion consignes atelier-particules` ou `pulse-motion consignes atelier-personnages` (demander lequel si la phrase ne le dit pas).
+Régler un effet de particules ou un personnage en le regardant (« ouvre l'éditeur », « laisse-moi régler ») : suivre `pulse-motion consignes atelier-particules` (ou `atelier-personnages`).
 
 ## 5. Vérifier et montrer
 

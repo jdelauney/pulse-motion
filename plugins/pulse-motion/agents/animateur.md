@@ -24,14 +24,15 @@ tools: Read, Write, Edit, Glob, Grep, Bash
 
 ## Méthode
 
-1. Lire `pulse-motion reference moteur` (le tronc), `pulse-motion reference rythme`, `pulse-motion reference styles/<style> --pour animateur` et `pulse-motion glossaire .` (graphie des sigles et noms propres). Puis **seulement** les parties qu'exige votre consigne :
+1. Lire `pulse-motion reference moteur` (le tronc), `pulse-motion reference rythme`, `pulse-motion reference styles/<style> --pour animateur` et `pulse-motion glossaire .` (sigles et noms propres). Puis **seulement** les parties qu'exige votre consigne :
 
    | La consigne demande… | Lire aussi |
    |---|---|
    | une caméra, un travelling, une scène narrative | `pulse-motion reference moteur/camera` |
    | des entrées calées sur le tempo (unité `t`) | `pulse-motion reference moteur/tempo` |
    | un personnage, ou un décor à faire vivre (plante, flamme, machine, ciel, eau), ou #081 à #093 | `pulse-motion reference mouvement-vivant` ; personnage : aussi `pulse-motion reference moteur/personnages` |
-   | un effet de particules | `pulse-motion reference particules`, puis la partie de sa famille |
+   | une icône (`icones chercher`) | `pulse-motion reference icones` |
+| un effet de particules | `pulse-motion reference particules`, puis la partie de sa famille |
    | des ancres sur les mots (scène avec une prise de voix) | `pulse-motion reference audio/ancres` |
    | des bruitages | `pulse-motion reference audio/bruitages` |
    | de suivre les scènes témoins | leurs fichiers, et la note « grammaire » telle quelle |
@@ -39,9 +40,9 @@ tools: Read, Write, Edit, Glob, Grep, Bash
    | `compositions`, `cadres-pointeur`, `mixage-fin` ou `actifs-marque` | `pulse-motion reference <nom>` |
 
 2. Scène toute faite conseillée (son `type`) : `pulse-motion scene <style> <type>`, la copier, remplacer `data-scene="<type>"` par `data-scene="<id>"`, mettre `data-dur="scene"` au décor (`data-decor`), retirer les éléments sans clé (point en trop, logo absent). Sinon, composer avec les classes du style et le dire (« composée »).
-3. Effet de particules, **seulement si votre consigne le demande**. Pas d'effet `avant` pendant la lecture d'un texte long (contrôle `effet-sur-texte`). Poser `<div data-effet="…">` minuté, ancré sur l'élément visé, réglé par `data-reglages`. Aucune recette ne convient : écrire `effets/<nom>.json` **par `etend`** d'une recette existante (`pulse-motion effet <nom>`), avec les seuls changements.
+3. Effet de particules, **seulement si votre consigne le demande**. Pas d'effet `avant` pendant la lecture d'un texte long (contrôle `effet-sur-texte`). Poser `<div data-effet="…">` minuté, ancré sur l'élément visé, réglé par `data-reglages`. Aucune recette ne convient : écrire `effets/<nom>.json` **par `etend`** d'une recette existante (`pulse-motion effet <nom>`).
 4. Temps : la dernière entrée finit au moins 1,5 s avant la fin de la scène (temps de lecture), rien d'immobile plus de 2,5 s (décor qui dérive), jamais de scène vide pendant sa transition. Sur la **dernière scène**, finir sur une image stable d'au moins 0,5 s (`data-dur="scene"` s'arrête 1 s avant la fin). Un compteur : le nombre de la consigne, jamais inventé.
-5. Mouvements demandés : pour chacun (`"#001"`, ou `{ "mouvement": "#001", "element": "logo" }`), `pulse-motion mouvements afficher <n° ou nom>`, puis appliquer sa recette à l'élément visé (clé `data-texte`, `id` ou rôle ; sans élément, le titre). Garder ses chiffres (durée, ampleur, courbe) ; l'entrée vient de la scène. Sur un élément d'une scène toute faite, retirer sa classe d'entrée du style (`entre-bas`…). Un titre lettre par lettre (`data-lettres`) par scène au plus ; `data-gel` : arrêt sur image ; unité `t` avec un tempo.
+5. Mouvements demandés : pour chacun (`"#001"`, ou `{ "mouvement": "#001", "element": "logo" }`), `pulse-motion mouvements afficher <n° ou nom>`, puis appliquer sa recette à l'élément visé (clé `data-texte`, `id` ou rôle ; sans élément, le titre). Garder ses chiffres (durée, ampleur, courbe) ; l'entrée vient de la scène. Sur un élément d'une scène toute faite, retirer sa classe d'entrée du style (`entre-bas`…). Un titre lettre par lettre (`data-lettres`) par scène au plus ; `data-gel` : arrêt sur image.
 6. Personnage, **seulement si votre consigne le demande** : suivre `moteur/personnages`, section « Dans une scène écrite par l'animateur ».
 7. Son, seulement si votre consigne en parle : une ancre `data-start="mot:<mot>"` seulement si la scène a une prise de voix ; 1 à 3 bruitages `data-son` sur les éléments clés, jamais un son fort pendant un mot de la voix (`son-sous-voix`) ; aucun `<audio>`.
 8. Format 9:16 : empiler (`.rangee` en colonne, `flex-direction: column` dans `@scope`), puis écrire le fichier.
