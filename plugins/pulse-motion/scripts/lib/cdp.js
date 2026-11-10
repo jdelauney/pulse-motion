@@ -34,8 +34,9 @@ function creerLecteur(surMessage) {
   };
 }
 
-/** -> Promise<{ aller, evaluer, capturer, version, envoyer, fermer, processus, profil }> */
-function ouvrirPage({ navigateur, largeur, hauteur, gpu = false, delai = 30000, options = [] }) {
+/** -> Promise<{ aller, evaluer, capturer, version, envoyer, surEvenement, fermer, processus, profil }>
+ *  erreurs : Runtime.enable, pour recevoir les exceptions de la page (Runtime.exceptionThrown) par surEvenement. */
+function ouvrirPage({ navigateur, largeur, hauteur, gpu = false, delai = 30000, options = [], erreurs = false }) {
   const profil = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-cdp-'));
   const processus = spawn(navigateur, [...optionsChrome({ gpu }), ...options, `--user-data-dir=${profil}`, '--remote-debugging-pipe', `--window-size=${largeur},${hauteur}`, 'about:blank'],
     { stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe'] });
@@ -122,12 +123,18 @@ function ouvrirPage({ navigateur, largeur, hauteur, gpu = false, delai = 30000, 
       const { targetId } = await envoyerBrut('Target.createTarget', { url: 'about:blank' });
       ({ sessionId } = await envoyerBrut('Target.attachToTarget', { targetId, flatten: true }));
       await envoyerBrut('Page.enable', {}, sessionId);
+      if (erreurs) await envoyerBrut('Runtime.enable', {}, sessionId);
       await envoyerBrut('Emulation.setDeviceMetricsOverride', { width: largeur, height: hauteur, deviceScaleFactor: 1, mobile: false }, sessionId);
       pret = true;
       const page = {
         processus,
         profil,
         envoyer: (method, params) => envoyerBrut(method, params, sessionId),
+        /** Écoute un évènement du protocole (ex. Runtime.exceptionThrown) ; -> fonction qui retire l'écoute. */
+        surEvenement(nom, fn) {
+          ecouteurs.set(nom, [...(ecouteurs.get(nom) || []), fn]);
+          return () => ecouteurs.set(nom, (ecouteurs.get(nom) || []).filter((x) => x !== fn));
+        },
         async aller(url) {
           const charge = attendreEvenement('Page.loadEventFired');
           let r;

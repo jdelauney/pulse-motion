@@ -52,21 +52,58 @@ const SON = (options) => `(async function () {
   return { longueur: window.__pmSon.length, sonie: r.sonie, avertissements: r.avertissements };
 })()`;
 
+/** Scène montrée à l'instant t (celle qui entre pendant une transition). */
+function sceneA(scenes, t) {
+  let id = scenes.length ? scenes[0].id : null;
+  for (const s of scenes) if (s.debut <= t + 1e-9) id = s.id;
+  return id;
+}
+
+/** Erreur de script relevée pendant l'export (spec Rendu et export, 5.23) : la scène et l'instant, en français. */
+function erreurDeScript(scene, t, detail) {
+  const instantFr = String(Math.round(t * 10) / 10).replace('.', ',');
+  return Object.assign(new Error(`La scène « ${scene} » a une erreur de script vers ${instantFr} s : l'export s'arrête, rien n'est écrit.`),
+    { script: true, scene, instant: t, detail });
+}
+
 /** -> Promise<{ duree, minutage: { duree, scenes: [{ id, debut, fin, entree }] }, capturer(t, profil?), rendreSon(), version(), processus, fermer() }>
- *  profil(phase, ms) : temps cumulés de seek, particules, capture, base64. */
-async function ouvrirCapture({ fichierHtml, largeur, hauteur, navigateur, gpu = false, delai = 30000, ouvrir = ouvrirPage }) {
-  const page = await ouvrir({ navigateur, largeur, hauteur, gpu, delai, options: OPTIONS_CAPTURE });
+ *  profil(phase, ms) : temps cumulés de seek, particules, capture, base64. parametres : ajoutés à l'adresse de la page
+ *  (grainMax : plafond du grain, spec Rendu et export 5.9). erreurs (export) : une exception de la page après sa préparation
+ *  (erreur de script d'une scène) fait échouer la capture suivante, avec la scène et l'instant. */
+async function ouvrirCapture({ fichierHtml, largeur, hauteur, navigateur, gpu = false, delai = 30000, ouvrir = ouvrirPage, parametres = {}, erreurs = false }) {
+  const page = await ouvrir({ navigateur, largeur, hauteur, gpu, delai, options: OPTIONS_CAPTURE, ...(erreurs ? { erreurs: true } : {}) });
   try {
     // ?capture=1 : le lecteur ne prépare pas le son d'avance (il n'est rendu que si l'export le demande).
-    await page.aller(`${pathToFileURL(fichierHtml).href}?capture=1`);
+    const extra = Object.entries(parametres).filter(([, v]) => v !== null && v !== undefined).map(([k, v]) => `&${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('');
+    await page.aller(`${pathToFileURL(fichierHtml).href}?capture=1${extra}`);
     const info = await page.evaluer(PREPARER);
+    // Exceptions relevées seulement après la préparation : celles du chargement ne changeaient déjà pas l'export.
+    const exceptions = [];
+    if (erreurs && page.surEvenement) {
+      page.surEvenement('Runtime.exceptionThrown', (p) => {
+        const d = (p && p.exceptionDetails) || {};
+        exceptions.push((d.exception && d.exception.description) || d.text || 'erreur de script');
+      });
+    }
+    const verifier = (t) => { if (exceptions.length) throw erreurDeScript(sceneA(info.scenes, t), t, exceptions[0]); };
     return {
       duree: info.duree,
       minutage: { duree: info.duree, scenes: info.scenes },
       async capturer(t, profil) {
-        const [seek, particules] = await page.evaluer(instant(t));
+        let mesure;
+        try {
+          mesure = await page.evaluer(instant(t));
+        } catch (e) {
+          // Exception levée par le moteur pendant M.seek : la même erreur, avec la scène et l'instant.
+          if (!erreurs || /le navigateur s'est arrêté|délai dépassé/.test(e.message)) throw e;
+          throw erreurDeScript(sceneA(info.scenes, t), t, e.message);
+        }
+        const [seek, particules] = mesure;
         if (profil) { profil('seek', seek); profil('particules', particules); }
-        return page.capturer({ profil });
+        verifier(t);
+        const png = await page.capturer({ profil });
+        verifier(t);
+        return png;
       },
       /** -> { wav: Buffer|null, sonie, avertissements } ; rapatrié par morceaux (messages CDP de taille bornée). */
       async rendreSon({ morceau = 4 * 1024 * 1024, seulement } = {}) {
@@ -88,4 +125,4 @@ async function ouvrirCapture({ fichierHtml, largeur, hauteur, navigateur, gpu = 
   }
 }
 
-module.exports = { ouvrirCapture, OPTIONS_CAPTURE };
+module.exports = { ouvrirCapture, OPTIONS_CAPTURE, sceneA, erreurDeScript };
