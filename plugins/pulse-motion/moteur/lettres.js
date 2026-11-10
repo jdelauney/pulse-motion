@@ -8,14 +8,22 @@
  * --pm-i (rang, espaces non comptés) ; l'élément porte --pm-n (nombre de morceaux) et --pm-pas
  * (écart entre deux morceaux). Les animations pm-l-<effet> sont dans base.css et se calent,
  * comme toute animation, sur l'élément minuté le plus proche.
- * Navigateur seulement ; dépend de minutage (M.lireSecondes).
+ * Saisie (data-lettres="saisie", spec S6 5.9) : chaque lettre porte son délai --pm-d (paquets irréguliers à graine, voir
+ * paquetsSaisie) ; la dernière lettre de chaque paquet porte data-pm-curseur et --pm-dc (le curseur de saisie jusqu'au
+ * paquet suivant), la dernière data-pm-curseur="fin" (curseur qui clignote à 1 Hz) ; CSS dans moteur/ecran.css.
+ * Navigateur seulement ; dépend de minutage (M.lireSecondes). Sous Node : EFFETS et paquetsSaisie.
  */
 (function (racine) {
   'use strict';
   var M = racine.M = racine.M || {};
 
   // Écart par défaut entre deux lettres, en secondes ; entre deux mots : PAS_MOTS.
-  var EFFETS = { monte: 0.05, flou: 0.05, frappe: 0.04, onde: 0.02, chute: 0.05, brouille: 0.04 };
+  var EFFETS = { monte: 0.05, flou: 0.05, frappe: 0.04, onde: 0.02, chute: 0.05, brouille: 0.04, saisie: 0.04 };
+  // Saisie (spec S6, 5.9) : paquets de 1 à 3 lettres (probabilités 0,6, 0,3, 0,1), 45 à 140 ms entre deux paquets, × 2,5
+  // après une espace ou une ponctuation ; graine : le texte et la scène. Valeurs propres à Pulse Motion ; la même suite pilote
+  // les touches du tournage (plan 2 de S6).
+  var SAISIE = { paquets: [0.6, 0.9], ecartMin: 0.045, ecartMax: 0.14, pause: 2.5 };
+  var PAUSE_SAISIE = /[\s.,;:!?…»)\]]/;
   // Texte brouillé : signes tirés au hasard (même tirage pour la même image) avant la vraie lettre.
   var SIGNES = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#%&*+=?';
   var PAS_MOTS = 0.12;
@@ -26,6 +34,38 @@
       return Array.prototype.map.call(Array.from(new Intl.Segmenter('fr', { granularity: 'grapheme' }).segment(mot)), function (s) { return s.segment; });
     }
     return Array.from(mot);
+  }
+
+  function graineSaisie(texte) {
+    var h = 0x811c9dc5;
+    for (var i = 0; i < texte.length; i++) { h ^= texte.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+    return h >>> 0;
+  }
+
+  /** Délais de saisie (s) de chaque caractère de `caracteres` (graphèmes, espaces compris) : un par caractère ; les
+   *  caractères d'un même paquet ont le même délai. -> { delais, fins } (fins[i] : vrai pour le dernier caractère d'un paquet). */
+  function paquetsSaisie(caracteres, graine) {
+    var liste = typeof caracteres === 'string' ? graphemes(caracteres) : caracteres;
+    var a = graineSaisie(String(graine === undefined ? '' : graine) + '|' + liste.join('')) | 0;
+    function hasard() {
+      a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    }
+    var delais = [], fins = [];
+    var t = 0, i = 0;
+    while (i < liste.length) {
+      var r = hasard();
+      var n = r < SAISIE.paquets[0] ? 1 : r < SAISIE.paquets[1] ? 2 : 3;
+      var j = Math.min(liste.length, i + n);
+      for (var k = i; k < j; k++) { delais.push(Math.round(t * 1000) / 1000); fins.push(k === j - 1); }
+      var ecart = SAISIE.ecartMin + (SAISIE.ecartMax - SAISIE.ecartMin) * hasard();
+      if (PAUSE_SAISIE.test(liste[j - 1])) ecart *= SAISIE.pause;
+      t += ecart;
+      i = j;
+    }
+    return { delais: delais, fins: fins, duree: Math.round(t * 1000) / 1000 };
   }
 
   function span(classe, texte) {
@@ -73,10 +113,28 @@
       if (m === null) suite.push(null);
       else suite.push.apply(suite, m.split(/([ \t\n\r]+)/));
     });
+    // Saisie : délais tirés sur la suite des caractères (une espace par blanc ou retour à la ligne). Le curseur suit la
+    // dernière lettre de chaque paquet jusqu'à la lettre suivante, puis clignote après la dernière lettre.
+    var saisie = null, rang = 0;
+    if (effet === 'saisie' && parLettres) {
+      var caracteres = [];
+      suite.forEach(function (morceau) {
+        if (morceau === '') return;
+        if (morceau === null || BLANC.test(morceau)) caracteres.push(' ');
+        else caracteres.push.apply(caracteres, graphemes(morceau));
+      });
+      saisie = paquetsSaisie(caracteres, idScene);
+      saisie.suivante = [];
+      var prochaine;
+      for (var r = caracteres.length - 1; r >= 0; r--) {
+        saisie.suivante[r] = prochaine;
+        if (!/^\s$/.test(caracteres[r])) prochaine = r;
+      }
+    }
     suite.forEach(function (morceau) {
       if (morceau === '') return;
-      if (morceau === null) { fragment.appendChild(document.createElement('br')); return; }
-      if (BLANC.test(morceau)) { fragment.appendChild(document.createTextNode(morceau)); return; }
+      if (morceau === null) { rang++; fragment.appendChild(document.createElement('br')); return; }
+      if (BLANC.test(morceau)) { rang++; fragment.appendChild(document.createTextNode(morceau)); return; }
       var mot = span('pm-mot');
       mot.setAttribute('aria-hidden', 'true');
       if (parLettres) {
@@ -86,9 +144,20 @@
           if (/^\s$/.test(g)) lettre.className = 'pm-lettre pm-blanc';
           else {
             lettre.style.setProperty('--pm-i', String(n++));
+            if (saisie) {
+              var d = saisie.delais[rang];
+              var k = saisie.suivante[rang];
+              lettre.style.setProperty('--pm-d', d + 's');
+              if (k === undefined) lettre.setAttribute('data-pm-curseur', 'fin');
+              else if (saisie.delais[k] !== d) {
+                lettre.setAttribute('data-pm-curseur', '');
+                lettre.style.setProperty('--pm-dc', Math.round((saisie.delais[k] - d) * 1000) / 1000 + 's');
+              }
+            }
             // Seules les lettres et les chiffres se brouillent ; la ponctuation reste en place.
             if (effet === 'brouille' && /[\p{L}\p{N}]/u.test(g)) lettre.setAttribute('data-pm-vraie', g);
           }
+          rang++;
           mot.appendChild(lettre);
         });
       } else {
@@ -146,6 +215,7 @@
     });
   };
   M.EFFETS_LETTRES = EFFETS;
-  // Sous Node (controler.js) : la liste des effets seulement.
-  if (typeof module === 'object' && module.exports) module.exports = { EFFETS: EFFETS };
+  M.paquetsSaisie = paquetsSaisie;
+  // Sous Node (controler.js) : la liste des effets, et les délais de la saisie (tournage, tests).
+  if (typeof module === 'object' && module.exports) module.exports = { EFFETS: EFFETS, paquetsSaisie: paquetsSaisie, SAISIE: SAISIE };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

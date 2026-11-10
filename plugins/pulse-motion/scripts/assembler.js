@@ -33,6 +33,7 @@ const SA = require('../moteur/synthe/ambiances.js');
 const { trouverFichiersPolice } = require('./lib/police.js');
 const GM = require('./lib/groupes-moteur.js');
 const { minifier } = require('./lib/minifier.js');
+const { preparerEcrans, usagesEcran } = require('./lib/ecrans.js');
 
 const RACINE = path.resolve(__dirname, '..');
 // Modules du moteur, groupés (moteur à la carte, spec Rapidité 5.19) : lib/groupes-moteur.js.
@@ -198,6 +199,8 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   let luPersonnages = null;
   const utilisesPersonnages = { dessins: new Set(), gabarits: new Set(), batonnets: new Set() };
   const scenesQuiParlent = new Set();
+  // Écrans des tutoriels (spec S6) : moteur de l'écran et moteur/ecran.css seulement si une scène s'en sert.
+  const usages = { moteur: false, css: false };
   // Voix : une prise par scène (ou la voix provisoire), mots calés ; Opus si encodé, sinon WAV. Lues avant les scènes : la
   // durée d'une scène allongée par sa voix sert aux effets faits de structures sans data-dur (jusqu'à la fin de la scène).
   const voixScenes = {};
@@ -263,6 +266,15 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     let avecIcones = avecTextes;
     if (/data-icone/.test(avecTextes)) {
       const r = require('./lib/icones.js').preparerIcones(avecTextes, { scene: scene.id });
+      avecIcones = r.html;
+      erreurs.push(...r.erreurs);
+    }
+    // Écrans (spec S6, 5.8 à 5.12) : cadre, surface et plan posés, adresse réduite au domaine, marques en décor, bruitage des clics.
+    const usage = usagesEcran(avecIcones);
+    if (usage.moteur) usages.moteur = true;
+    if (usage.css) usages.css = true;
+    if (usage.moteur) {
+      const r = preparerEcrans(avecIcones, { scene: scene.id });
       avecIcones = r.html;
       erreurs.push(...r.erreurs);
     }
@@ -449,7 +461,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   const cssPage = `:root { --pm-ratio-l: ${l}; --pm-ratio-h: ${h};${temps ? ` --pm-temps: ${temps}s; --pm-bpm: ${Math.round(60 / temps * 1000) / 1000};` : ''} }
 ${cssZones(deroule.format.plateforme)}${fs.readFileSync(path.join(RACINE, 'moteur', 'base.css'), 'utf8')}
 ${fs.readFileSync(path.join(RACINE, 'moteur', 'mouvements.css'), 'utf8')}
-${variablesCSS()}
+${usages.css ? `${fs.readFileSync(path.join(RACINE, 'moteur', 'ecran.css'), 'utf8')}\n` : ''}${variablesCSS()}
 ${cssDeCharte}
 ${cssStyle}`;
   const page = `<!doctype html>
@@ -480,7 +492,7 @@ M.demarrerLecteur();
 M.demarrerSousTitres();
 M.demarrerSonReactif();
 M.demarrerParticules();
-</script>
+${usages.moteur && (groupes === 'tous' || groupes.includes('ecran')) ? 'M.demarrerEcrans();\n' : ''}</script>
 </body>
 </html>
 `;
