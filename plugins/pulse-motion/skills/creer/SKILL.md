@@ -77,7 +77,7 @@ La charte (logo, couleurs, polices) vit dans `charte/` du projet ; la musique da
    - Un seul style disponible : pas de comparaison ; le dire et ne demander que l'accord sur le déroulé.
    - **Faites pour moi** : rien à demander ; le dire en une phrase (<n> scènes, <durée>, style en trois mots), noter le style au journal des choix.
 6. Changements : corriger, représenter. Accord : `pulse-motion etat . --accord deroule`. Style choisi : s'il diffère du style recommandé, changer `style` dans `deroule.json` tant qu'aucune scène n'est écrite ; si des scènes existent déjà, lancer `pulse-motion changer-style . <style>` (puis réécrire les scènes de `aReecrire`, étape 3). Enfin `pulse-motion etat . --accord style`.
-7. **Ébauche**, aussitôt (avant la voix) : `pulse-motion ebauche .`, `pulse-motion assembler .`, puis `pulse-motion apercu . --ouvrir` en arrière-plan ; dire « Voici une première ébauche animée ; je la remplace scène par scène. » Chaque scène écrite remplace son ébauche dans l'aperçu.
+7. **Ébauche**, aussitôt (avant la voix) : `pulse-motion ebauche .`, puis `pulse-motion apercu . --ouvrir` en arrière-plan (il assemble la page) ; dire « Voici une première ébauche animée ; je la remplace scène par scène. » Chaque scène écrite remplace son ébauche dans l'aperçu.
 
 ```json
 {

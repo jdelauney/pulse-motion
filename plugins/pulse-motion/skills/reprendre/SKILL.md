@@ -29,7 +29,7 @@ Si ce bloc est vide ou contient une erreur, lancer `pulse-motion lexique`.
 | `questions` | aucune | Aucune vidéo ici : proposer `/pulse-motion:creer` |
 | `deroule-a-corriger` | `deroule` | Corriger le déroulé (erreurs dans `erreurs`), puis le présenter (étape 2) |
 | `deroule-a-valider` | `deroule` | Présenter le déroulé et demander l'accord (étape 2) |
-| `fabrication` | `fabrication` | Aperçu inactif : `pulse-motion ebauche .`, `pulse-motion assembler .`, `pulse-motion apercu . --ouvrir` en arrière-plan ; écrire les scènes de `scenesManquantes` (étape 3) ; puis `apercu,fin` |
+| `fabrication` | `fabrication` | `pulse-motion ebauche .`, puis, aperçu inactif, `pulse-motion apercu . --ouvrir` en arrière-plan ; écrire les scènes de `scenesManquantes` (étape 3) ; puis lire `apercu,fin` |
 | `style-a-valider` | `deroule` | Montrer la comparaison des styles et demander l'accord sur le style (étape 2, points 4 à 6) |
 | `video-a-valider` | `apercu,fin` | Ouvrir l'aperçu (`pulse-motion apercu . --ouvrir` en arrière-plan : il rouvre l'aperçu déjà lancé, ou le démarre) et demander l'accord sur la vidéo (étape 4) |
 | `apercu` | aucune | Ouvrir l'aperçu (`pulse-motion apercu . --ouvrir` en arrière-plan), puis proposer une retouche (`/pulse-motion:retoucher`) |

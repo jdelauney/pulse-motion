@@ -21,7 +21,7 @@ function enTete(texte) {
 }
 
 const SKILLS = fs.readdirSync(path.join(RACINE, 'skills'));
-const COMMANDES = ['etat', 'assembler', 'controler', 'apercu', 'historique', 'reference', 'scene', 'styles', 'consignes', 'exporter', 'planche', 'effet', 'comparer', 'changer-style', 'lexique', 'charte', 'police', 'glossaire', 'style', 'ffmpeg', 'voix', 'whisper', 'musique', 'outils', 'atelier', 'personnages', 'mouvements', 'modeles', 'credits', 'avancement'];
+const COMMANDES = ['etat', 'assembler', 'controler', 'apercu', 'historique', 'reference', 'scene', 'styles', 'consignes', 'exporter', 'planche', 'effet', 'comparer', 'changer-style', 'lexique', 'charte', 'police', 'glossaire', 'style', 'ffmpeg', 'voix', 'whisper', 'musique', 'outils', 'atelier', 'personnages', 'mouvements', 'modeles', 'credits', 'avancement', 'ebauche', 'decisions'];
 const fichiersGuides = () => [
   ...SKILLS.map((s) => path.join('skills', s, 'SKILL.md')),
   ...fs.readdirSync(path.join(RACINE, 'agents')).map((a) => path.join('agents', a)),
@@ -292,7 +292,8 @@ test('revue : consignes du son exactes (pas de voix.fichier, import relancé apr
 
 test('correctifs : guidage du son précisé (sous-titres sans voix, arrêt avant export, retouches, crête, largeur des sous-titres)', () => {
   const creer = lire('skills', 'creer', 'SKILL.md');
-  assert.match(creer, /« Pas de voix »[^\n]*ignor[^\n]*sous-titres/);
+  // R2 (5.4) : voix et sous-titres en une question ; « Pas de voix » ne laisse pas de sous-titres.
+  assert.match(creer, /« Pas de voix » \(donc sans sous-titres, qui reprennent le texte dit\)/);
   const exporter = lire('skills', 'exporter', 'SKILL.md');
   assert.match(exporter, /« Enregistrer ma voix d'abord »[^\n]*s'arrêter/);
   const retoucher = lire('skills', 'retoucher', 'SKILL.md');

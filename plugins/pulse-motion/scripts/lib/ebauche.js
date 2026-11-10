@@ -7,7 +7,7 @@
  * - la <section> porte data-ebauche : l'état reste « fabrication », le contrôle le signale (ebauche-restante), l'export
  *   le refuse, l'aperçu montre une pastille « Ébauche ».
  *
- * estEbauche(html) -> bool ; scenesEbauche(projet, deroule) -> [id] ; nombreDeScene(scene) -> '4' | '0'
+ * estEbauche(html) -> bool ; scenesEbauche(projet, deroule) -> [id] ; nombreDeScene(scene) -> '4' | null ; sansCompteur(html)
  * carteNeutre({ id, duree, textes, derniere }) -> html ; ecrireEbauche({ dossier, dossierStyles?, suivi? })
  *   -> { ok, ecrites: [id], gardees: [id] } | { ok: false, message }
  */
@@ -35,16 +35,34 @@ function scenesEbauche(projet, deroule) {
   return ids;
 }
 
-/** Premier nombre écrit pour la scène (textes, texte dit, intention), au format du compteur (« 1 250 » -> 1250,
- *  « 3,5 » -> 3.5) ; 0 sinon : jamais la valeur d'exemple du style, un chiffre inventé. */
+/** Nombres écrits en lettres que le compteur peut reprendre (« quatre degrés ») ; jamais « un », le plus souvent un article. */
+const EN_LETTRES = { deux: 2, trois: 3, quatre: 4, cinq: 5, six: 6, sept: 7, huit: 8, neuf: 9, dix: 10, onze: 11, douze: 12, treize: 13,
+  quatorze: 14, quinze: 15, seize: 16, vingt: 20, trente: 30, quarante: 40, cinquante: 50, soixante: 60, cent: 100, mille: 1000 };
+const ESPACES = /[ \u00a0\u202f]/g;
+
+/** Premier nombre écrit pour la scène (textes, texte dit, intention ; en chiffres d'abord, puis en lettres), au format du
+ *  compteur (« 1 250 » -> 1250, « 3,5 » -> 3.5) ; null sinon : jamais la valeur d'exemple du style, un chiffre inventé. */
 function nombreDeScene(scene) {
-  const sources = [...Object.values((scene && scene.textes) || {}), scene && scene.voix && scene.voix.texte, scene && scene.intention];
+  const sources = [...Object.values((scene && scene.textes) || {}), scene && scene.voix && scene.voix.texte, scene && scene.intention]
+    .filter((x) => typeof x === 'string');
   for (const t of sources) {
-    if (typeof t !== 'string') continue;
-    const m = /(\d{1,3}(?:[   ]\d{3})+|\d+)(?:[.,](\d+))?/.exec(t);
-    if (m) return `${m[1].replace(/[   ]/g, '')}${m[2] ? `.${m[2]}` : ''}`;
+    const m = /(\d{1,3}(?:[ \u00a0\u202f]\d{3})+|\d+)(?:[.,](\d+))?/.exec(t);
+    if (m) return `${m[1].replace(ESPACES, '')}${m[2] ? `.${m[2]}` : ''}`;
   }
-  return '0';
+  for (const t of sources) {
+    const mot = t.toLowerCase().split(/[^a-zàâçéèêëîïôûùüÿœ-]+/).find((x) => EN_LETTRES[x]);
+    if (mot) return String(EN_LETTRES[mot]);
+  }
+  return null;
+}
+
+/** Compteur sans nombre connu : la clause « nombre » retirée, « … » à la place du chiffre d'exemple. */
+function sansCompteur(html) {
+  return String(html).replace(/(<([a-zA-Z][\w-]*)\b[^>]*?)\sdata-tween=(["'])([^"']*)\3([^>]*>)[^<]*(?=<\/\2>)/g, (tout, avant, balise, q, valeur, apres) => {
+    if (!/(^|;)\s*nombre\s/.test(valeur)) return tout;
+    const reste = valeur.split(';').map((s) => s.trim()).filter((s) => s && !/^nombre\s/.test(s)).join('; ');
+    return `${avant}${reste ? ` data-tween=${q}${reste}${q}` : ''}${apres}…`;
+  });
 }
 
 const echapperAttribut = (t) => String(t).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
@@ -76,8 +94,13 @@ function carteNeutre({ id, duree, textes = {}, derniere = false }) {
   ].join('\n');
 }
 
-/** Ajoute data-ebauche à la <section> d'une scène toute faite adaptée. */
-const marquer = (html) => (estEbauche(html) ? html : String(html).replace(/<section\b/i, '<section data-ebauche'));
+/** Scène toute faite adaptée, marquée data-ebauche ; son commentaire d'en-tête (consignes et valeurs d'exemple du style) est
+ *  remplacé par celui de l'ébauche. */
+function marquer(html, { id, type }) {
+  const sans = String(html).replace(/^\s*<!--[\s\S]*?-->\s*/, '');
+  const marque = estEbauche(sans) ? sans : sans.replace(/<section\b/i, '<section data-ebauche');
+  return `<!-- Ébauche de la scène « ${id} » (pulse-motion ebauche) : scène toute faite « ${type} » du style, remplacée par la scène écrite. -->\n${marque}`;
+}
 
 function ecrireEbauche({ dossier, dossierStyles, suivi = null }) {
   const projet = path.resolve(dossier);
@@ -105,8 +128,9 @@ function ecrireEbauche({ dossier, dossierStyles, suivi = null }) {
       try { modele = fs.readFileSync(path.join(st.dossier, 'scenes', `${s.type}.html`), 'utf8'); } catch {
         return { ok: false, message: `Le style « ${deroule.style} » n'a pas de scène toute faite « ${s.type} ».` };
       }
-      html = marquer(adapterScene(modele, { type: s.type, id: s.id, duree: s.duree, textes: s.textes, derniere, logo,
-        nombre: s.type === 'chiffre' ? nombreDeScene(s) : null }));
+      const nombre = s.type === 'chiffre' ? nombreDeScene(s) : null;
+      html = marquer(adapterScene(modele, { type: s.type, id: s.id, duree: s.duree, textes: s.textes, derniere, logo, nombre }), { id: s.id, type: s.type });
+      if (s.type === 'chiffre' && nombre === null) html = sansCompteur(html);
     } else {
       html = carteNeutre({ id: s.id, duree: s.duree, textes: s.textes, derniere });
     }
@@ -127,4 +151,4 @@ function messageEbauches(ids) {
   return `La vidéo n'est pas encore finie : ${ids.length > 1 ? `les scènes ${liste} ne sont encore que des ébauches` : `la scène ${liste} n'est encore qu'une ébauche`}. Elles s'exportent une fois écrites.`;
 }
 
-module.exports = { estEbauche, scenesEbauche, nombreDeScene, carteNeutre, ecrireEbauche, messageEbauches, SECTION_EBAUCHE };
+module.exports = { estEbauche, scenesEbauche, nombreDeScene, sansCompteur, carteNeutre, ecrireEbauche, messageEbauches, SECTION_EBAUCHE };
