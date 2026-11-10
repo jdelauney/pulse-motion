@@ -1,0 +1,255 @@
+{
+  "nom": "ecoliere",
+  "description": "une écolière d'une dizaine d'années en traits jaunes : grosse tête ronde, queue de cheval brune, cartable rouge",
+  "maniere": "traits",
+  "gabarit": {
+    "cuisse": 44,
+    "tibia": 44,
+    "pied": 12,
+    "colonne": 58,
+    "hauteurEpaules": 50,
+    "baseTete": 60,
+    "bras": 36,
+    "avantBras": 32,
+    "demiBassin": 5,
+    "demiEpaules": 8,
+    "tete": {
+      "rx": 36,
+      "ry": 40
+    }
+  },
+  "couleurs": {
+    "cartable": "#E4572E",
+    "cartable-trait": "#9C3415",
+    "cheveux": "#7A4A2A",
+    "cheveux-trait": "#4A2A18",
+    "corps": "#FFD166",
+    "dos": "#D9A93F",
+    "oeil": "#FFFFFF",
+    "pupille": "#1B1520",
+    "trait": "#1B1520"
+  },
+  "batonnets": {
+    "couleurs": {
+      "corps": "corps",
+      "dos": "dos",
+      "oeil": "oeil",
+      "oeilTrait": "trait",
+      "pupille": "pupille",
+      "touffe": "cheveux",
+      "touffeTrait": "cheveux-trait"
+    },
+    "epaisseur": 12
+  },
+  "pieces": {
+    "torse": {
+      "profil": "<rect x='-6.9' y='-64.9' width='13.8' height='71.8' rx='6.9' fill='var(--corps)'/>",
+      "troisQuarts": "<rect x='-6.9' y='-64.9' width='13.8' height='71.8' rx='6.9' fill='var(--corps)'/>",
+      "face": "<rect x='-6.9' y='-64.9' width='13.8' height='71.8' rx='6.9' fill='var(--corps)'/>",
+      "dos": "<rect x='-6.9' y='-64.9' width='13.8' height='71.8' rx='6.9' fill='var(--corps)'/><rect x='-16' y='-53.4' width='32' height='36' rx='6' fill='var(--cartable)' stroke='var(--cartable-trait)' stroke-width='2'/><rect x='-10' y='-36' width='20' height='11.6' rx='3' fill='none' stroke='var(--cartable-trait)' stroke-width='2'/>"
+    },
+    "tete": {
+      "profil": "<ellipse rx='36' ry='40' fill='var(--corps)'/><path d='M -37.4 4 C -38.9 -0.1 -39.4 -12.9 -36.7 -20 C -34.1 -27.1 -28.3 -34.9 -21.6 -38.8 C -14.9 -42.7 -4.5 -44 3.6 -43.2 C 11.7 -42.4 21.5 -38.2 27 -34 C 32.5 -29.8 36.4 -20 36.7 -18 C 37 -16 32.8 -20.9 28.8 -22 C 24.8 -23.1 18.6 -24.8 12.6 -24.8 C 6.6 -24.8 -1.4 -24.5 -7.2 -22 C -13 -19.5 -18.8 -14.5 -22.3 -10 C -25.8 -5.5 -25.6 2.5 -28.1 4.8 C -30.6 7.1 -36 8.1 -37.4 4 Z' fill='var(--cheveux)' stroke='var(--cheveux-trait)' stroke-width='2.5' stroke-linejoin='round'/>",
+      "troisQuarts": "<ellipse rx='36' ry='40' fill='var(--corps)'/><path d='M -37.8 0 C -38.8 -3.5 -38.3 -16.5 -35.3 -23.2 C -32.3 -29.9 -26 -36.7 -19.8 -40 C -13.6 -43.3 -5.2 -43.7 1.8 -43.2 C 8.8 -42.7 16.7 -40.7 22.3 -36.8 C 27.9 -32.9 34.3 -22.4 35.3 -20 C 36.2 -17.6 31.6 -21.5 28.1 -22.4 C 24.6 -23.3 20 -25.3 14.4 -25.6 C 8.8 -25.9 0.6 -25.6 -5.4 -24 C -11.4 -22.4 -17.6 -19.7 -21.6 -16 C -25.6 -12.3 -26.8 -4.7 -29.5 -2 C -32.2 0.7 -36.8 3.5 -37.8 0 Z' fill='var(--cheveux)' stroke='var(--cheveux-trait)' stroke-width='2.5' stroke-linejoin='round'/>",
+      "face": "<ellipse rx='36' ry='40' fill='var(--corps)'/><path d='M -37.8 -2 C -38.3 -4.1 -37.5 -18.5 -34.2 -24.8 C -30.9 -31.1 -23.7 -36.9 -18 -40 C -12.3 -43.1 -6 -43.2 0 -43.2 C 6 -43.2 12.3 -43.1 18 -40 C 23.7 -36.9 30.9 -31.1 34.2 -24.8 C 37.5 -18.5 38.3 -4.1 37.8 -2 C 37.3 0.1 34 -8.3 31 -12 C 28 -15.7 25 -21.6 19.8 -24 C 14.6 -26.4 6.6 -26.4 0 -26.4 C -6.6 -26.4 -14.6 -26.4 -19.8 -24 C -25 -21.6 -28 -15.7 -31 -12 C -34 -8.3 -37.3 0.1 -37.8 -2 Z' fill='var(--cheveux)' stroke='var(--cheveux-trait)' stroke-width='2.5' stroke-linejoin='round'/>",
+      "dos": "<ellipse rx='36' ry='40' fill='var(--corps)'/><path d='M -37.8 6 C -40.1 -0.3 -38.6 -16.2 -35.3 -24 C -32 -31.8 -23.9 -37.6 -18 -40.8 C -12.1 -44 -6 -43.2 0 -43.2 C 6 -43.2 12.1 -44 18 -40.8 C 23.9 -37.6 32 -31.8 35.3 -24 C 38.6 -16.2 40.1 -0.3 37.8 6 C 35.5 12.3 27.9 12.3 21.6 14 C 15.3 15.7 7.2 16 0 16 C -7.2 16 -15.3 15.7 -21.6 14 C -27.9 12.3 -35.5 12.3 -37.8 6 Z' fill='var(--cheveux)' stroke='var(--cheveux-trait)' stroke-width='2.5' stroke-linejoin='round'/><path d='M -7 -24.8 C -4.3 -30.3 4.3 -30.3 7 -24.8 C 9.7 -19.3 10.2 -1.1 9 8 C 7.8 17.1 3 30 0 30 C -3 30 -7.8 17.1 -9 8 C -10.2 -1.1 -9.7 -19.3 -7 -24.8 Z' fill='var(--cheveux)' stroke='var(--cheveux-trait)' stroke-width='2.5' stroke-linejoin='round'/><circle cx='0' cy='-24.8' r='5' fill='var(--cartable)'/>"
+    },
+    "cuisseAvant": {
+      "profil": "<rect x='-6' y='-6' width='12' height='56' rx='6' fill='var(--teinte-loin, var(--corps))'/>",
+      "troisQuarts": "<rect x='-6' y='-6' width='12' height='56' rx='6' fill='var(--teinte-loin, var(--corps))'/>",
+      "face": "<rect x='-6' y='-6' width='12' height='56' rx='6' fill='var(--teinte-loin, var(--corps))'/>"
+    },
+    "tibiaAvant": {
+      "profil": "<rect x='-6' y='-6' width='12' height='56' rx='6' fill='var(--teinte-loin, var(--corps))'/>",
+      "troisQuarts": "<rect x='-6' y='-6' width='12' height='56' rx='6' fill='var(--teinte-loin, var(--corps))'/>",
+      "face": "<rect x='-6' y='-6' width='12' height='56' rx='6' fill='var(--teinte-loin, var(--corps))'/>"
+    },
+    "piedAvant": {
+      "profil": "<rect x='-6' y='-6' width='24' height='12' rx='6' fill='var(--teinte-loin, var(--corps))'/>",
+      "troisQuarts": "<rect x='-6' y='-6' width='20.4' height='12' rx='6' fill='var(--teinte-loin, var(--corps))'/>",
+      "face": "<rect x='-6' y='-6' width='12' height='12' rx='6' fill='var(--teinte-loin, var(--corps))'/>"
+    },
+    "brasAvant": {
+      "profil": "<rect x='-6' y='-6' width='12' height='48' rx='6' fill='var(--teinte-loin, var(--corps))'/>",
+      "troisQuarts": "<rect x='-6' y='-6' width='12' height='48' rx='6' fill='var(--teinte-loin, var(--corps))'/>",
+      "face": "<rect x='-6' y='-6' width='12' height='48' rx='6' fill='var(--teinte-loin, var(--corps))'/>"
+    },
+    "avantBrasAvant": {
+      "profil": "<rect x='-6' y='-6' width='12' height='44' rx='6' fill='var(--teinte-loin, var(--corps))'/>",
+      "troisQuarts": "<rect x='-6' y='-6' width='12' height='44' rx='6' fill='var(--teinte-loin, var(--corps))'/>",
+      "face": "<rect x='-6' y='-6' width='12' height='44' rx='6' fill='var(--teinte-loin, var(--corps))'/>"
+    }
+  },
+  "accessoires": [
+    {
+      "nom": "queue-de-cheval",
+      "os": "tete",
+      "devant": false,
+      "dessins": {
+        "profil": "<path d='M -27 -34 C -29.7 -35 -44 -31.3 -49 -26 C -54 -20.7 -57.3 -9 -57 -2 C -56.7 5 -49.3 16.3 -47 16 C -44.7 15.7 -45.3 2 -43 -4 C -40.7 -10 -35.7 -15 -33 -20 C -30.3 -25 -24.3 -33 -27 -34 Z' fill='var(--cheveux)' stroke='var(--cheveux-trait)' stroke-width='2.5' stroke-linejoin='round'/><circle cx='-29' cy='-28' r='5' fill='var(--cartable)'/>",
+        "troisQuarts": "<path d='M -19.8 -38.8 C -22.5 -39.8 -36.8 -36.1 -41.8 -30.8 C -46.8 -25.5 -50.1 -13.8 -49.8 -6.8 C -49.5 0.2 -42.1 11.5 -39.8 11.2 C -37.5 10.9 -38.1 -2.8 -35.8 -8.8 C -33.5 -14.8 -28.5 -19.8 -25.8 -24.8 C -23.1 -29.8 -17.1 -37.8 -19.8 -38.8 Z' fill='var(--cheveux)' stroke='var(--cheveux-trait)' stroke-width='2.5' stroke-linejoin='round'/><circle cx='-21.8' cy='-32.8' r='5' fill='var(--cartable)'/>",
+        "face": "<path d='M 28.1 -37.2 C 30.7 -38.2 45.1 -34.5 50.1 -29.2 C 55.1 -23.9 58.4 -12.2 58.1 -5.2 C 57.7 1.8 50.4 13.1 48.1 12.8 C 45.7 12.5 46.4 -1.2 44.1 -7.2 C 41.7 -13.2 36.7 -18.2 34.1 -23.2 C 31.4 -28.2 25.4 -36.2 28.1 -37.2 Z' fill='var(--cheveux)' stroke='var(--cheveux-trait)' stroke-width='2.5' stroke-linejoin='round'/><circle cx='30.1' cy='-31.2' r='5' fill='var(--cartable)'/>",
+        "dos": ""
+      }
+    },
+    {
+      "nom": "cartable",
+      "os": "torse",
+      "devant": false,
+      "dessins": {
+        "profil": "<rect x='-22' y='-53.4' width='18' height='36' rx='5' fill='var(--cartable)' stroke='var(--cartable-trait)' stroke-width='2'/>",
+        "troisQuarts": "<rect x='-20' y='-53.4' width='24' height='36' rx='5' fill='var(--cartable)' stroke='var(--cartable-trait)' stroke-width='2'/>",
+        "face": "<rect x='-16' y='-53.4' width='32' height='36' rx='6' fill='var(--cartable)' stroke='var(--cartable-trait)' stroke-width='2'/>",
+        "dos": ""
+      }
+    },
+    {
+      "nom": "bretelles",
+      "os": "torse",
+      "devant": true,
+      "dessins": {
+        "profil": "<path d='M 1 -49.9 Q 6 -34.8 1 -22' fill='none' stroke='var(--cartable-trait)' stroke-width='3' stroke-linecap='round'/>",
+        "troisQuarts": "<path d='M -3 -49.9 Q 1 -34.8 -2 -22 M 4 -49.9 Q 7 -34.8 5 -22' fill='none' stroke='var(--cartable-trait)' stroke-width='3' stroke-linecap='round'/>",
+        "face": "<path d='M -5 -49.9 L -6 -22 M 5 -49.9 L 6 -22' fill='none' stroke='var(--cartable-trait)' stroke-width='3' stroke-linecap='round'/>",
+        "dos": ""
+      }
+    }
+  ],
+  "visage": {
+    "oeil": {
+      "blanc": "<ellipse rx='10' ry='11.5' fill='var(--oeil)' stroke='var(--trait)' stroke-width='3'/>",
+      "pupille": "<circle r='4.8' fill='var(--pupille)'/><circle cx='-1.5' cy='-1.8' r='1.4' fill='#FFFFFF'/>",
+      "paupiere": "<rect x='-13' y='-14.5' width='26' height='29' fill='var(--corps)'/>",
+      "course": 3.8,
+      "hauteur": 29
+    },
+    "sourcil": "<path d='M -9 2 Q 0 -3 9 2' fill='none' stroke='var(--trait)' stroke-width='3.5' stroke-linecap='round'/>",
+    "bouches": {
+      "neutre": {
+        "profil": "<path d='M -8 0 L 8 0' stroke='var(--trait)' stroke-width='3' stroke-linecap='round' fill='none'/>"
+      },
+      "sourire": {
+        "profil": "<path d='M -10 -2 Q 0 8 10 -2' stroke='var(--trait)' stroke-width='3' stroke-linecap='round' fill='none'/>"
+      },
+      "rire": {
+        "profil": "<path d='M -11 -3 Q 0 14 11 -3 Z' fill='var(--trait)'/>"
+      },
+      "triste": {
+        "profil": "<path d='M -9 4 Q 0 -4 9 4' stroke='var(--trait)' stroke-width='3' stroke-linecap='round' fill='none'/>"
+      },
+      "surprise": {
+        "profil": "<ellipse rx='6' ry='8' fill='var(--trait)'/>"
+      },
+      "colere": {
+        "profil": "<path d='M -9 2 L 9 -1' stroke='var(--trait)' stroke-width='3' stroke-linecap='round' fill='none'/>"
+      },
+      "repos": {
+        "profil": "<path d='M -7 0 L 7 0' stroke='var(--trait)' stroke-width='3' stroke-linecap='round' fill='none'/>"
+      },
+      "A": {
+        "profil": "<ellipse rx='8' ry='9' fill='var(--trait)'/>"
+      },
+      "E": {
+        "profil": "<ellipse rx='10' ry='4' fill='var(--trait)'/>"
+      },
+      "I": {
+        "profil": "<ellipse rx='9' ry='2.5' fill='var(--trait)'/>"
+      },
+      "O": {
+        "profil": "<ellipse rx='6' ry='7' fill='var(--trait)'/>"
+      },
+      "U": {
+        "profil": "<ellipse rx='4' ry='5' fill='var(--trait)'/>"
+      },
+      "MBP": {
+        "profil": "<path d='M -8 0 L 8 0' stroke='var(--trait)' stroke-width='4.5' stroke-linecap='round'/>"
+      },
+      "FV": {
+        "profil": "<path d='M -8 0 Q 0 3 8 0' stroke='var(--trait)' stroke-width='3' stroke-linecap='round' fill='none'/>"
+      },
+      "L": {
+        "profil": "<ellipse rx='7' ry='6' fill='var(--trait)'/><ellipse cx='0' cy='-2' rx='3' ry='2' fill='#E7A0D5'/>"
+      }
+    },
+    "vues": {
+      "profil": {
+        "yeux": [
+          [
+            -9.8,
+            -4.8
+          ],
+          [
+            18.3,
+            -4.8
+          ]
+        ],
+        "sourcils": [
+          [
+            -9.8,
+            -19.2
+          ],
+          [
+            18.3,
+            -19.2
+          ]
+        ],
+        "bouche": [
+          10.6,
+          17.6
+        ]
+      },
+      "troisQuarts": {
+        "yeux": [
+          [
+            -12,
+            -4.8
+          ],
+          [
+            16.2,
+            -4.8
+          ]
+        ],
+        "sourcils": [
+          [
+            -12,
+            -19.2
+          ],
+          [
+            16.2,
+            -19.2
+          ]
+        ],
+        "bouche": [
+          4.2,
+          17.6
+        ]
+      },
+      "face": {
+        "yeux": [
+          [
+            -15.1,
+            -4.8
+          ],
+          [
+            15.1,
+            -4.8
+          ]
+        ],
+        "sourcils": [
+          [
+            -15.1,
+            -19.2
+          ],
+          [
+            15.1,
+            -19.2
+          ]
+        ],
+        "bouche": [
+          0,
+          17.6
+        ]
+      }
+    }
+  }
+}

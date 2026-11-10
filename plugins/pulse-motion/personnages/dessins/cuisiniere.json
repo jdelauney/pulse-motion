@@ -1,0 +1,236 @@
+{
+  "nom": "cuisiniere",
+  "description": "une cuisinière adulte, petite et ronde : veste blanche, tablier bleu, foulard rouge, toque",
+  "maniere": "pieces",
+  "gabarit": {
+    "cuisse": 52,
+    "tibia": 50,
+    "pied": 15,
+    "colonne": 76,
+    "hauteurEpaules": 66,
+    "baseTete": 78,
+    "bras": 44,
+    "avantBras": 40,
+    "demiBassin": 11,
+    "demiEpaules": 18,
+    "tete": {
+      "rx": 34,
+      "ry": 44
+    }
+  },
+  "couleurs": {
+    "bouton": "#8E8B80",
+    "chaussure": "#1F1F22",
+    "cheveux": "#2E1C12",
+    "cheveux-trait": "#170D08",
+    "dos": "#14161C",
+    "foulard": "#D64545",
+    "foulard-trait": "#8E2626",
+    "manche": "#F7F6F0",
+    "oeil": "#FFFFFF",
+    "pantalon": "#3E3E46",
+    "peau": "#B97A57",
+    "pupille": "#1A120D",
+    "tablier": "#2E6F95",
+    "tablier-trait": "#1C4A66",
+    "toque": "#FFFFFF",
+    "toque-trait": "#B9B7AC",
+    "trait": "#1A120D",
+    "veste": "#F7F6F0",
+    "veste-trait": "#B9B7AC"
+  },
+  "pieces": {
+    "torse": {
+      "profil": "<rect x='-5' y='-90' width='12' height='20' rx='5' fill='var(--peau)'/><path d='M -18 8 C -25.2 1 -21.2 -22.1 -21 -34.2 C -20.8 -46.3 -19.2 -57.3 -17 -64.6 C -14.8 -71.9 -11.8 -75.9 -8 -78 C -4.2 -80.1 1.5 -80.9 6 -77 C 10.5 -73.1 15.3 -63 19 -54.7 C 22.7 -46.4 27.5 -37.8 28 -27.4 C 28.5 -16.9 29.7 2.1 22 8 C 14.3 13.9 -10.8 15 -18 8 Z' fill='var(--veste)' stroke='var(--veste-trait)' stroke-width='2' stroke-linejoin='round'/><path d='M 4 -31.9 C 7.3 -40.2 21.8 -35.3 26 -31.9 C 30.2 -28.5 29.3 -19.4 29 -11.4 C 28.7 -3.4 27.8 11.1 24 16 C 20.2 20.9 9.3 26 6 18 C 2.7 10 0.7 -23.6 4 -31.9 Z' fill='var(--tablier)' stroke='var(--tablier-trait)' stroke-width='2' stroke-linejoin='round'/><circle cx='15' cy='-54.7' r='2.2' fill='var(--bouton)'/><circle cx='21' cy='-42.6' r='2.2' fill='var(--bouton)'/><path d='M -1 -77 L 8 -77 L 10 -66 Z' fill='var(--foulard)' stroke='var(--foulard-trait)' stroke-width='1.5' stroke-linejoin='round'/>",
+      "troisQuarts": "<rect x='-6' y='-90' width='13' height='20' rx='5' fill='var(--peau)'/><path d='M -24 8 C -32.7 1 -27.5 -22.1 -27 -34.2 C -26.5 -46.3 -23.7 -57.3 -21 -64.6 C -18.3 -71.9 -16.3 -75.8 -11 -78 C -5.7 -80.2 5.3 -81.1 11 -78 C 16.7 -74.9 19.8 -67.2 23 -59.3 C 26.2 -51.3 29.7 -41.6 30 -30.4 C 30.3 -19.2 34 1.6 25 8 C 16 14.4 -15.3 15 -24 8 Z' fill='var(--veste)' stroke='var(--veste-trait)' stroke-width='2' stroke-linejoin='round'/><path d='M -16 -31.9 C -9.7 -40.1 16.5 -35.3 24 -31.9 C 31.5 -28.5 29 -19.6 29 -11.4 C 29 -3.2 31.2 12.3 24 17 C 16.8 21.7 -7.3 25.2 -14 17 C -20.7 8.8 -22.3 -23.8 -16 -31.9 Z' fill='var(--tablier)' stroke='var(--tablier-trait)' stroke-width='2' stroke-linejoin='round'/><circle cx='6' cy='-54.7' r='2.2' fill='var(--bouton)'/><circle cx='6' cy='-42.6' r='2.2' fill='var(--bouton)'/><circle cx='14' cy='-54.7' r='2.2' fill='var(--bouton)'/><circle cx='14' cy='-42.6' r='2.2' fill='var(--bouton)'/><path d='M -3 -77 L 9 -77 L 5 -64 Z' fill='var(--foulard)' stroke='var(--foulard-trait)' stroke-width='1.5' stroke-linejoin='round'/>",
+      "face": "<rect x='-7' y='-90' width='14' height='20' rx='5' fill='var(--peau)'/><path d='M -26 8 C -35.3 1.3 -30.7 -19.8 -30 -31.9 C -29.3 -44 -24.7 -56.9 -22 -64.6 C -19.3 -72.3 -20 -75.8 -14 -78 C -8 -80.2 8 -80.2 14 -78 C 20 -75.8 19.3 -72.3 22 -64.6 C 24.7 -56.9 29.3 -44 30 -31.9 C 30.7 -19.8 35.3 1.3 26 8 C 16.7 14.7 -16.7 14.7 -26 8 Z' fill='var(--veste)' stroke='var(--veste-trait)' stroke-width='2' stroke-linejoin='round'/><path d='M -20 -31.9 C -12.7 -35.3 12.7 -35.3 20 -31.9 C 27.3 -28.5 24 -19.6 24 -11.4 C 24 -3.2 27.3 12.3 20 17 C 12.7 21.7 -12.7 21.7 -20 17 C -27.3 12.3 -24 -3.2 -24 -11.4 C -24 -19.6 -27.3 -28.5 -20 -31.9 Z' fill='var(--tablier)' stroke='var(--tablier-trait)' stroke-width='2' stroke-linejoin='round'/><circle cx='-6' cy='-54.7' r='2.2' fill='var(--bouton)'/><circle cx='-6' cy='-42.6' r='2.2' fill='var(--bouton)'/><circle cx='6' cy='-54.7' r='2.2' fill='var(--bouton)'/><circle cx='6' cy='-42.6' r='2.2' fill='var(--bouton)'/><path d='M -7 -77 L 7 -77 L 0 -64 Z' fill='var(--foulard)' stroke='var(--foulard-trait)' stroke-width='1.5' stroke-linejoin='round'/>",
+      "dos": "<rect x='-7' y='-90' width='14' height='20' rx='5' fill='var(--peau)'/><path d='M -26 8 C -35.3 1.3 -30.7 -19.8 -30 -31.9 C -29.3 -44 -24.7 -56.9 -22 -64.6 C -19.3 -72.3 -20 -75.8 -14 -78 C -8 -80.2 8 -80.2 14 -78 C 20 -75.8 19.3 -72.3 22 -64.6 C 24.7 -56.9 29.3 -44 30 -31.9 C 30.7 -19.8 35.3 1.3 26 8 C 16.7 14.7 -16.7 14.7 -26 8 Z' fill='var(--veste)' stroke='var(--veste-trait)' stroke-width='2' stroke-linejoin='round'/><path d='M -29 -22.8 L 29 -22.8' fill='none' stroke='var(--tablier)' stroke-width='4' stroke-linecap='round'/><path d='M 0 -22.8 l -8 -6 l 0 12 Z' fill='var(--tablier)' stroke='var(--tablier-trait)' stroke-width='1.5' stroke-linejoin='round'/><path d='M 0 -22.8 l 8 -6 l 0 12 Z' fill='var(--tablier)' stroke='var(--tablier-trait)' stroke-width='1.5' stroke-linejoin='round'/>"
+    },
+    "tete": {
+      "profil": "<ellipse rx='34' ry='44' fill='var(--peau)'/><path d='M -35.7 6.6 C -37.5 1.2 -38.1 -16.1 -34.7 -24.2 C -31.3 -32.3 -23.6 -39.1 -15.3 -41.8 C -7 -44.5 8.5 -43 15.3 -40.5 C 22.1 -37.9 27.5 -28.7 25.5 -26.4 C 23.5 -24.1 10.5 -27.9 3.4 -26.4 C -3.7 -24.9 -12.5 -23.3 -17 -17.6 C -21.5 -11.9 -20.7 3.9 -23.8 7.9 C -26.9 12 -33.9 12 -35.7 6.6 Z' fill='var(--cheveux)' stroke='var(--cheveux-trait)' stroke-width='2' stroke-linejoin='round'/>",
+      "troisQuarts": "<ellipse rx='34' ry='44' fill='var(--peau)'/><path d='M -35.7 2.2 C -36.7 -2.4 -37.4 -18 -34 -25.5 C -30.6 -33 -24.1 -40.3 -15.3 -42.7 C -6.5 -45 11.3 -42.5 18.7 -39.6 C 26.1 -36.7 31.5 -27.6 28.9 -25.5 C 26.4 -23.5 11.6 -28.5 3.4 -27.3 C -4.8 -26.1 -15.2 -23.4 -20.4 -18.5 C -25.6 -13.6 -25.3 -1.2 -27.9 2.2 C -30.4 5.6 -34.7 6.8 -35.7 2.2 Z' fill='var(--cheveux)' stroke='var(--cheveux-trait)' stroke-width='2' stroke-linejoin='round'/>",
+      "face": "<ellipse rx='34' ry='44' fill='var(--peau)'/><path d='M -35.7 -4.4 C -36.2 -6.5 -36 -22.1 -32.3 -28.6 C -28.6 -35.1 -21.2 -40.7 -13.6 -43.1 C -6 -45.5 6 -45.5 13.6 -43.1 C 21.3 -40.7 28.6 -35.1 32.3 -28.6 C 36 -22.1 36.2 -6.5 35.7 -4.4 C 35.2 -2.3 32.6 -12.2 29.2 -15.8 C 25.8 -19.5 22.7 -24.6 15.3 -26.4 C 7.9 -28.2 -7.9 -28.2 -15.3 -26.4 C -22.7 -24.6 -25.8 -19.5 -29.2 -15.8 C -32.6 -12.2 -35.2 -2.3 -35.7 -4.4 Z' fill='var(--cheveux)' stroke='var(--cheveux-trait)' stroke-width='2' stroke-linejoin='round'/>",
+      "dos": "<ellipse rx='34' ry='44' fill='var(--peau)'/><path d='M -35.7 8.8 C -38.2 1.7 -36 -19.9 -32.3 -28.6 C -28.6 -37.3 -21.2 -40.7 -13.6 -43.1 C -6 -45.5 6 -45.5 13.6 -43.1 C 21.3 -40.7 28.6 -37.3 32.3 -28.6 C 36 -19.9 38.3 1.7 35.7 8.8 C 33.2 15.9 25.8 13.2 17 14.1 C 8.2 15 -8.2 15 -17 14.1 C -25.8 13.2 -33.2 15.9 -35.7 8.8 Z' fill='var(--cheveux)' stroke='var(--cheveux-trait)' stroke-width='2' stroke-linejoin='round'/>"
+    },
+    "cuisseAvant": {
+      "profil": "<rect x='-10.5' y='-10.5' width='21' height='73' rx='10.5' fill='color-mix(in srgb, var(--pantalon) 70%, var(--teinte-loin, var(--pantalon)))'/>",
+      "troisQuarts": "<rect x='-10.5' y='-10.5' width='21' height='73' rx='10.5' fill='color-mix(in srgb, var(--pantalon) 70%, var(--teinte-loin, var(--pantalon)))'/>",
+      "face": "<rect x='-10.5' y='-10.5' width='21' height='73' rx='10.5' fill='color-mix(in srgb, var(--pantalon) 70%, var(--teinte-loin, var(--pantalon)))'/>"
+    },
+    "tibiaAvant": {
+      "profil": "<rect x='-9' y='-9' width='18' height='68' rx='9' fill='color-mix(in srgb, var(--pantalon) 70%, var(--teinte-loin, var(--pantalon)))'/>",
+      "troisQuarts": "<rect x='-9' y='-9' width='18' height='68' rx='9' fill='color-mix(in srgb, var(--pantalon) 70%, var(--teinte-loin, var(--pantalon)))'/>",
+      "face": "<rect x='-9' y='-9' width='18' height='68' rx='9' fill='color-mix(in srgb, var(--pantalon) 70%, var(--teinte-loin, var(--pantalon)))'/>"
+    },
+    "piedAvant": {
+      "profil": "<rect x='-10' y='-7' width='35' height='14' rx='7' fill='color-mix(in srgb, var(--chaussure) 70%, var(--teinte-loin, var(--chaussure)))'/>",
+      "troisQuarts": "<rect x='-10' y='-7' width='30.5' height='14' rx='7' fill='color-mix(in srgb, var(--chaussure) 70%, var(--teinte-loin, var(--chaussure)))'/>",
+      "face": "<rect x='-10' y='-7' width='20' height='14' rx='7' fill='color-mix(in srgb, var(--chaussure) 70%, var(--teinte-loin, var(--chaussure)))'/>"
+    },
+    "brasAvant": {
+      "profil": "<rect x='-8.5' y='-8.5' width='17' height='61' rx='8.5' fill='color-mix(in srgb, var(--manche) 70%, var(--teinte-loin, var(--manche)))'/>",
+      "troisQuarts": "<rect x='-8.5' y='-8.5' width='17' height='61' rx='8.5' fill='color-mix(in srgb, var(--manche) 70%, var(--teinte-loin, var(--manche)))'/>",
+      "face": "<rect x='-8.5' y='-8.5' width='17' height='61' rx='8.5' fill='color-mix(in srgb, var(--manche) 70%, var(--teinte-loin, var(--manche)))'/>"
+    },
+    "avantBrasAvant": {
+      "profil": "<rect x='-8' y='-8' width='16' height='56' rx='8' fill='color-mix(in srgb, var(--manche) 70%, var(--teinte-loin, var(--manche)))'/>",
+      "troisQuarts": "<rect x='-8' y='-8' width='16' height='56' rx='8' fill='color-mix(in srgb, var(--manche) 70%, var(--teinte-loin, var(--manche)))'/>",
+      "face": "<rect x='-8' y='-8' width='16' height='56' rx='8' fill='color-mix(in srgb, var(--manche) 70%, var(--teinte-loin, var(--manche)))'/>"
+    },
+    "mainAvant": {
+      "profil": "<rect x='-6.5' y='-5.5' width='13' height='15' rx='6.5' fill='color-mix(in srgb, var(--peau) 70%, var(--teinte-loin, var(--peau)))'/>",
+      "troisQuarts": "<rect x='-6.5' y='-5.5' width='13' height='15' rx='6.5' fill='color-mix(in srgb, var(--peau) 70%, var(--teinte-loin, var(--peau)))'/>",
+      "face": "<rect x='-6.5' y='-5.5' width='13' height='15' rx='6.5' fill='color-mix(in srgb, var(--peau) 70%, var(--teinte-loin, var(--peau)))'/>"
+    }
+  },
+  "accessoires": [
+    {
+      "nom": "toque",
+      "os": "tete",
+      "devant": true,
+      "dessins": {
+        "profil": "<path d='M -32.3 -34.3 C -44 -37.7 -40.8 -47.7 -39.1 -53.7 C -37.4 -59.7 -28 -68.2 -22.1 -70.4 C -16.2 -72.6 -8.8 -65.7 -3.4 -66.9 C 2 -68.1 5.1 -77.2 10.2 -77.4 C 15.3 -77.7 22.6 -72.7 27.2 -68.2 C 31.8 -63.7 37.4 -56.4 38.1 -50.6 C 38.8 -44.8 43 -36.2 31.3 -33.4 C 19.6 -30.7 -20.6 -30.9 -32.3 -34.3 Z' fill='var(--toque)' stroke='var(--toque-trait)' stroke-width='2.5' stroke-linejoin='round'/><path d='M -34 -41.4 C -22.8 -43.9 22.8 -43.9 34 -41.4 C 45.2 -38.9 44.5 -28.9 33.3 -26.4 C 22.1 -23.9 -22.1 -23.9 -33.3 -26.4 C -44.5 -28.9 -45.2 -38.9 -34 -41.4 Z' fill='var(--toque)' stroke='var(--toque-trait)' stroke-width='2.5' stroke-linejoin='round'/>",
+        "troisQuarts": "<path d='M -32.6 -34.3 C -44.8 -37.5 -41.6 -46.6 -40.1 -52.8 C -38.6 -59 -29.6 -68.8 -23.8 -71.3 C -18 -73.8 -10.5 -66.6 -5.1 -67.8 C 0.3 -68.9 3.2 -78 8.5 -78.3 C 13.8 -78.6 21.4 -73.9 26.5 -69.5 C 31.7 -65.1 38.4 -57.9 39.4 -51.9 C 40.5 -46 44.7 -36.8 32.6 -33.9 C 20.6 -30.9 -20.5 -31.2 -32.6 -34.3 Z' fill='var(--toque)' stroke='var(--toque-trait)' stroke-width='2.5' stroke-linejoin='round'/><path d='M -34.3 -41.4 C -23 -43.9 23 -43.9 34.3 -41.4 C 45.7 -38.9 45 -28.9 33.7 -26.4 C 22.3 -23.9 -22.3 -23.9 -33.7 -26.4 C -45 -28.9 -45.7 -38.9 -34.3 -41.4 Z' fill='var(--toque)' stroke='var(--toque-trait)' stroke-width='2.5' stroke-linejoin='round'/>",
+        "face": "<path d='M -33.3 -34.3 C -45.7 -37.4 -42.1 -46.6 -40.8 -52.8 C -39.5 -59 -31.2 -68.7 -25.5 -71.3 C -19.8 -73.8 -12.2 -66.9 -6.8 -68.2 C -1.4 -69.5 1.4 -78.7 6.8 -79.2 C 12.2 -79.7 19.8 -75.7 25.5 -71.3 C 31.2 -66.9 39.5 -59 40.8 -52.8 C 42.1 -46.6 45.7 -37.4 33.3 -34.3 C 21 -31.2 -21 -31.2 -33.3 -34.3 Z' fill='var(--toque)' stroke='var(--toque-trait)' stroke-width='2.5' stroke-linejoin='round'/><path d='M -34.7 -41.4 C -23.2 -43.9 23.2 -43.9 34.7 -41.4 C 46.1 -38.9 45.4 -28.9 34 -26.4 C 22.6 -23.9 -22.6 -23.9 -34 -26.4 C -45.4 -28.9 -46.1 -38.9 -34.7 -41.4 Z' fill='var(--toque)' stroke='var(--toque-trait)' stroke-width='2.5' stroke-linejoin='round'/>",
+        "dos": "<path d='M -33.3 -34.3 C -45.7 -37.4 -42.1 -46.6 -40.8 -52.8 C -39.5 -59 -31.2 -68.7 -25.5 -71.3 C -19.8 -73.8 -12.2 -66.9 -6.8 -68.2 C -1.4 -69.5 1.4 -78.7 6.8 -79.2 C 12.2 -79.7 19.8 -75.7 25.5 -71.3 C 31.2 -66.9 39.5 -59 40.8 -52.8 C 42.1 -46.6 45.7 -37.4 33.3 -34.3 C 21 -31.2 -21 -31.2 -33.3 -34.3 Z' fill='var(--toque)' stroke='var(--toque-trait)' stroke-width='2.5' stroke-linejoin='round'/><path d='M -34.7 -41.4 C -23.2 -43.9 23.2 -43.9 34.7 -41.4 C 46.1 -38.9 45.4 -28.9 34 -26.4 C 22.6 -23.9 -22.6 -23.9 -34 -26.4 C -45.4 -28.9 -46.1 -38.9 -34.7 -41.4 Z' fill='var(--toque)' stroke='var(--toque-trait)' stroke-width='2.5' stroke-linejoin='round'/>"
+      }
+    }
+  ],
+  "visage": {
+    "oeil": {
+      "blanc": "<ellipse rx='8' ry='9.5' fill='var(--oeil)' stroke='var(--trait)' stroke-width='2.5'/>",
+      "pupille": "<circle r='3.8' fill='var(--pupille)'/><circle cx='-1.2' cy='-1.5' r='1.1' fill='#FFFFFF'/>",
+      "paupiere": "<rect x='-11' y='-12.5' width='22' height='25' fill='var(--peau)'/>",
+      "course": 3,
+      "hauteur": 25
+    },
+    "sourcil": "<path d='M -9 2 Q 0 -3 9 2' fill='none' stroke='var(--trait)' stroke-width='3.5' stroke-linecap='round'/>",
+    "bouches": {
+      "neutre": {
+        "profil": "<path d='M -8 0 L 8 0' stroke='var(--trait)' stroke-width='3' stroke-linecap='round' fill='none'/>"
+      },
+      "sourire": {
+        "profil": "<path d='M -10 -2 Q 0 8 10 -2' stroke='var(--trait)' stroke-width='3' stroke-linecap='round' fill='none'/>"
+      },
+      "rire": {
+        "profil": "<path d='M -11 -3 Q 0 14 11 -3 Z' fill='var(--trait)'/>"
+      },
+      "triste": {
+        "profil": "<path d='M -9 4 Q 0 -4 9 4' stroke='var(--trait)' stroke-width='3' stroke-linecap='round' fill='none'/>"
+      },
+      "surprise": {
+        "profil": "<ellipse rx='6' ry='8' fill='var(--trait)'/>"
+      },
+      "colere": {
+        "profil": "<path d='M -9 2 L 9 -1' stroke='var(--trait)' stroke-width='3' stroke-linecap='round' fill='none'/>"
+      },
+      "repos": {
+        "profil": "<path d='M -7 0 L 7 0' stroke='var(--trait)' stroke-width='3' stroke-linecap='round' fill='none'/>"
+      },
+      "A": {
+        "profil": "<ellipse rx='8' ry='9' fill='var(--trait)'/>"
+      },
+      "E": {
+        "profil": "<ellipse rx='10' ry='4' fill='var(--trait)'/>"
+      },
+      "I": {
+        "profil": "<ellipse rx='9' ry='2.5' fill='var(--trait)'/>"
+      },
+      "O": {
+        "profil": "<ellipse rx='6' ry='7' fill='var(--trait)'/>"
+      },
+      "U": {
+        "profil": "<ellipse rx='4' ry='5' fill='var(--trait)'/>"
+      },
+      "MBP": {
+        "profil": "<path d='M -8 0 L 8 0' stroke='var(--trait)' stroke-width='4.5' stroke-linecap='round'/>"
+      },
+      "FV": {
+        "profil": "<path d='M -8 0 Q 0 3 8 0' stroke='var(--trait)' stroke-width='3' stroke-linecap='round' fill='none'/>"
+      },
+      "L": {
+        "profil": "<ellipse rx='7' ry='6' fill='var(--trait)'/><ellipse cx='0' cy='-2' rx='3' ry='2' fill='#E7A0D5'/>"
+      }
+    },
+    "vues": {
+      "profil": {
+        "yeux": [
+          [
+            -10,
+            -5.3
+          ],
+          [
+            18,
+            -5.3
+          ]
+        ],
+        "sourcils": [
+          [
+            -10,
+            -21.1
+          ],
+          [
+            18,
+            -21.1
+          ]
+        ],
+        "bouche": [
+          10,
+          19.4
+        ]
+      },
+      "troisQuarts": {
+        "yeux": [
+          [
+            -12,
+            -5.3
+          ],
+          [
+            16,
+            -5.3
+          ]
+        ],
+        "sourcils": [
+          [
+            -12,
+            -21.1
+          ],
+          [
+            16,
+            -21.1
+          ]
+        ],
+        "bouche": [
+          4,
+          19.4
+        ]
+      },
+      "face": {
+        "yeux": [
+          [
+            -15,
+            -5.3
+          ],
+          [
+            15,
+            -5.3
+          ]
+        ],
+        "sourcils": [
+          [
+            -15,
+            -21.1
+          ],
+          [
+            15,
+            -21.1
+          ]
+        ],
+        "bouche": [
+          0,
+          19.4
+        ]
+      }
+    }
+  }
+}
