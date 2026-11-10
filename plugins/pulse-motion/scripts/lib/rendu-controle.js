@@ -16,7 +16,7 @@ const SEUILS = require('../seuils.json');
 const virgule = (x) => String(Math.round(x * 10) / 10).replace('.', ',');
 /** « 1 image », « 3 images » (au moins une). */
 const images = (n) => { const k = Math.max(1, Math.round(n)); return `${k} image${k > 1 ? 's' : ''}`; };
-const ZONES = { haut: 'en haut', bas: 'en bas', droite: 'à droite' };
+const ZONES = { haut: 'en haut', bas: 'en bas', droite: 'à droite', gauche: 'à gauche' };
 
 const MESSAGES = {
   chevauchement: (c) => { const [a, b] = c.element.split('|'); return `Scène « ${c.scene} » : « ${a} » et « ${b} » se chevauchent (vers ${virgule(c.instant)} s) ; les écarter, ou marquer celui qui passe volontairement par-dessus avec data-superpose. S'il s'agit d'un décor : data-decor (ou alt="" pour une image, aria-hidden="true" pour un SVG).`; },
@@ -88,8 +88,9 @@ const nonVerifie = (regle, message) => ({ renduVerifie: false, problemes: [{ reg
  * du son avance pendant qu'elles tournent) et gardé dans window.__pmEcoute ; attendreEcoute : attendu ici (repli), sinon lu
  * plus tard par le CDP.
  */
-function scriptMesures({ ratio, scenes, plages, plagesFlashs, flashs, genre = null, ecoute = null, attendreEcoute = false }) {
-  const opts = (extra) => JSON.stringify({ ratio, seuils: SEUILS, ...extra });
+function scriptMesures({ ratio, scenes, plages, plagesFlashs, flashs, genre = null, ecoute = null, attendreEcoute = false, plateforme = null }) {
+  // plateforme : zones d'une plateforme imposées (« toutes » pour un export vers les réseaux, spec Rendu et export 5.19).
+  const opts = (extra) => JSON.stringify({ ratio, seuils: SEUILS, ...(plateforme ? { plateforme } : {}), ...extra });
   const choix = scenes ? { scenes } : {};
   return `
     window.__pmEcoute = ${ecoute ? `M.ecouter ? M.ecouter(${JSON.stringify({ seuils: SEUILS, humeurs: ecoute.humeurs || {} })}).catch(function (e) { return { erreur: String((e && e.message) || e) }; }) : null` : 'null'};
@@ -194,7 +195,7 @@ async function flashsParCDP(page, { plagesFlashs, aides = [] } = {}) {
  * les mesures de la page principale. genre : celui du déroulé (accroche et première image des réseaux). ecoute : { humeurs }
  * pour mesurer aussi le son (résultat dans son ; null : non mesuré).
  */
-async function controlerRendu({ html, ratio, duree, navigateur = trouverNavigateur(), scenes = null, plages = null, plagesFlashs = null, ouvrir, genre = null, ecoute = null }) {
+async function controlerRendu({ html, ratio, duree, navigateur = trouverNavigateur(), scenes = null, plages = null, plagesFlashs = null, ouvrir, genre = null, ecoute = null, plateforme = null }) {
   if (!navigateur) return nonVerifie('rendu-non-verifie', 'Chrome ou Edge introuvable : la vidéo rendue (chevauchements, marges, textes qui débordent…) n\'a pas été vérifiée. Installez l\'un des deux, ou indiquez son chemin avec la variable PM_NAVIGATEUR.');
   const delai = (30 + 2 * (duree || 0)) * 1000;
   const introuvable = () => nonVerifie('rendu-impossible', `Navigateur introuvable à « ${navigateur} » : vérifiez la variable PM_NAVIGATEUR (ou retirez-la pour utiliser Chrome ou Edge installés). Seuls les contrôles sans navigateur ont été faits.`);
@@ -215,7 +216,7 @@ async function controlerRendu({ html, ratio, duree, navigateur = trouverNavigate
       const erreurPage = () => page.evaluer('window.__pmErreur === undefined ? null : window.__pmErreur');
       let erreur = await erreurPage();
       if (erreur !== null) return impossible(erreur);
-      const resultat = await page.evaluer(`(async function () {${scriptMesures({ ratio, scenes, plages, flashs: false, genre, ecoute })}\n})()`);
+      const resultat = await page.evaluer(`(async function () {${scriptMesures({ ratio, scenes, plages, flashs: false, genre, ecoute, plateforme })}\n})()`);
       const pagesAide = (await aides).filter(Boolean).map((a) => a.page);
       resultat.constats = resultat.constats.concat(await flashsParCDP(page, { plagesFlashs, aides: pagesAide }));
       // Son : rendu pendant les mesures et les flashs, attendu seulement maintenant.
@@ -230,7 +231,7 @@ async function controlerRendu({ html, ratio, duree, navigateur = trouverNavigate
     }
   }
   // Repli : la page renvoie son résultat par POST, les flashs sont mesurés dans la page (captures foreignObject).
-  const r = await mesurerPage({ html, navigateur, delai, script: scriptMesures({ ratio, scenes, plages, plagesFlashs, flashs: true, genre, ecoute, attendreEcoute: true }) });
+  const r = await mesurerPage({ html, navigateur, delai, script: scriptMesures({ ratio, scenes, plages, plagesFlashs, flashs: true, genre, ecoute, attendreEcoute: true, plateforme }) });
   if (r.code === 'ENOENT') return introuvable();
   if (r.erreur) return impossible(r.erreur);
   return { ...traduireResultat(r.resultat, scenes), voie: 'page' };

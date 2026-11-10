@@ -57,10 +57,21 @@ function pageErreur(erreurs) {
 <p>La page se rechargera seule dès que le problème sera corrigé.</p></body></html>`;
 }
 
+/** Zone sûre montrée par la touche Z (spec Rendu et export, 5.19) : celle de la plateforme déclarée, ou celle de toutes les
+ *  applications pour une vidéo verticale ; null pour un autre format. */
+function zonesApercu(html) {
+  let format = null;
+  try { format = JSON.parse(/"format":(\{[^{}]*\})/.exec(html)[1]); } catch { return null; }
+  if (!format || format.ratio !== '9:16') return null;
+  const plateforme = format.plateforme || 'toutes';
+  const z = (require('./seuils.json').zonesPlateformes || {})[plateforme];
+  return z ? { plateforme, declaree: Boolean(format.plateforme), ...z } : null;
+}
+
 function injecterApercu(html, erreurs) {
   // Plafond du grain par usage (spec Rendu et export, 5.9) : l'aperçu ouvert avec ?pour=courriel montre le grain du courriel.
   const grains = Object.fromEntries(Object.entries(lireUsages().usages).filter(([, u]) => u.grainHz).map(([n, u]) => [n, u.grainHz]));
-  const script = `<script>window.__PM_APERCU__ = true; window.__PM_ERREURS__ = ${JSON.stringify(erreurs).replace(/</g, '\\u003c')}; window.__PM_GRAIN__ = ${JSON.stringify(grains)};</script>` +
+  const script = `<script>window.__PM_APERCU__ = true; window.__PM_ERREURS__ = ${JSON.stringify(erreurs).replace(/</g, '\\u003c')}; window.__PM_GRAIN__ = ${JSON.stringify(grains)}; window.__PM_ZONES__ = ${JSON.stringify(zonesApercu(html))};</script>` +
     '\n<script src="/_pm/capture.js"></script>\n<script type="module" src="/_pm/export-ui.mjs"></script>' +
     '\n<script type="module" src="/_pm/studio.mjs"></script>' +
     '\n<script defer src="/_pm/atelier/expression.js"></script>\n<script defer src="/_pm/atelier/recette.js"></script>' +

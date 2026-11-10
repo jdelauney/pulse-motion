@@ -28,6 +28,13 @@
     var position = st.position || cs.getPropertyValue('--pm-st-position').trim() || 'bas';
     calque.setAttribute('data-position', position === 'haut' ? 'haut' : 'bas');
     var d = DEFAUTS[(M.donnees.format && M.donnees.format.ratio) || '16:9'] || DEFAUTS['16:9'];
+    // Plateforme déclarée (spec Rendu et export, 5.19) : le carton reste entre les zones de gauche et de droite, et sa marge
+    // vaut la zone du bas (ou du haut) + 2 %.
+    if (M.donnees.format && M.donnees.format.plateforme) {
+      d = { taille: d.taille, largeur: '100%', bas: 'calc(var(--pm-zone-bas, 0cqh) + 2cqh)', haut: 'calc(var(--pm-zone-haut, 0cqh) + 2cqh)' };
+      calque.style.left = 'var(--pm-zone-gauche, 0)';
+      calque.style.right = 'var(--pm-zone-droite, 0)';
+    }
     if (!cs.getPropertyValue('--pm-st-taille').trim()) calque.style.setProperty('--pm-st-taille', d.taille);
     if (!cs.getPropertyValue('--pm-st-largeur').trim()) calque.style.setProperty('--pm-st-largeur', d.largeur);
     if (!cs.getPropertyValue('--pm-st-marge').trim()) calque.style.setProperty('--pm-st-marge', position === 'haut' ? d.haut : d.bas);

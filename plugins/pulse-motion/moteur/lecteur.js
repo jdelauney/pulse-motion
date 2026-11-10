@@ -1,7 +1,10 @@
 /* Pulse Motion – lecteur : barre de lecture de la page (aperçu et page livrée).
  *
  * Espace : lecture/pause · ←/→ : une image · Maj+←/→ : scène précédente/suivante
- * B : boucle sur la scène courante · clic sur l'image : lecture/pause.
+ * B : boucle sur la scène courante · clic sur l'image : lecture/pause · Z (aperçu) : zone sûre de la plateforme.
+ * Page livrée ouverte hors de l'aperçu (spec Rendu et export, 5.17) : elle s'affiche sur l'image de couverture (sans
+ * sous-titres) avec un grand bouton ▶ « Lire la vidéo » ; le premier clic, une touche ou le bouton de la barre lancent la
+ * lecture depuis 0. Jamais sous l'aperçu, en capture (?capture=1, M.enCapture), à l'export, ni dans les pages du contrôle.
  * M.enLecture() : vrai pendant la lecture (composition des shaders : cadence des photographies).
  * M.boucler({ debut, fin } | null) : boucle de lecture posée par l'atelier des effets (fenêtre d'un effet).
  * Les champs du panneau de l'atelier (#pm-atelier) et du studio (#pm-studio) gardent le clavier.
@@ -101,6 +104,53 @@
     var pageCapture = /[?&]capture=1(&|$)/.test(location.search);
     setTimeout(function () { if (!(M.enCapture && M.enCapture()) && !M.sansSon && !pageCapture) preparerSon(); }, 1000);
 
+    // Affiche de la page livrée (5.17).
+    var affiche = null;
+    function sansAffiche() {
+      return !!(racine.__PM_APERCU__ || pageCapture || M.sansSon || M.exportEnCours || (M.enCapture && M.enCapture())
+        || /[?&](export|planche)=/.test(location.search) || !M.instantCouverture);
+    }
+    function sousTitresMasques(oui) {
+      var st = document.getElementById('pm-sous-titres');
+      if (st) st.classList.toggle('pm-sans-sous-titres', oui);
+    }
+    function poserAffiche() {
+      if (affiche || lecture || M.temps() > 0 || sansAffiche()) return;
+      sousTitresMasques(true);
+      M.rendre(M.instantCouverture(M.minutage, M.donnees && M.donnees.couverture));
+      affiche = el('button', { id: 'pm-affiche', type: 'button', 'aria-label': 'Lire la vidéo' }, document.body);
+      el('span', { 'aria-hidden': 'true', texte: '▶' }, affiche);
+      affiche.addEventListener('click', function (e) { e.stopPropagation(); jouer(); });
+    }
+    /** Retire l'affiche (premier clic, touche) : la vidéo repart de 0. -> vrai si elle était là */
+    function retirerAffiche() {
+      if (!affiche) return false;
+      affiche.remove();
+      affiche = null;
+      sousTitresMasques(false);
+      M.rendre(0);
+      return true;
+    }
+    M.afficheVisible = function () { return !!affiche; };
+
+    // Touche Z (aperçu) : zone sûre de la plateforme (window.__PM_ZONES__, posé par l'aperçu), jamais dans les images exportées.
+    function basculerZones() {
+      var calque = document.getElementById('pm-zones');
+      if (calque) { calque.remove(); return; }
+      var z = racine.__PM_ZONES__;
+      if (!z) { signaler('Les zones des applications ne concernent que les vidéos verticales (9:16).'); return; }
+      calque = document.createElement('div');
+      calque.id = 'pm-zones';
+      calque.setAttribute('data-decor', '');
+      calque.setAttribute('aria-hidden', 'true');
+      calque.setAttribute('data-plateforme', z.plateforme || '');
+      calque.style.top = (z.haut * 100) + '%';
+      calque.style.bottom = (z.bas * 100) + '%';
+      calque.style.left = (z.gauche * 100) + '%';
+      calque.style.right = (z.droite * 100) + '%';
+      document.getElementById('pm-scene').appendChild(calque);
+    }
+
     function indexScene(t) {
       var i = 0;
       scenes.forEach(function (s, k) { if (t >= s.debut) i = k; });
@@ -137,6 +187,7 @@
     document.addEventListener('keydown', debloquer, true);
 
     function jouer() {
+      retirerAffiche();
       if (M.temps() >= M.duree) M.rendre(0);
       lecture = true;
       bouton.textContent = '⏸';
@@ -179,11 +230,14 @@
 
     bouton.addEventListener('click', basculer);
     document.getElementById('pm-scene').addEventListener('click', basculer);
-    curseur.addEventListener('input', function () { aller(parseFloat(curseur.value)); });
+    curseur.addEventListener('input', function () { retirerAffiche(); aller(parseFloat(curseur.value)); });
     document.addEventListener('keydown', function (e) {
       if (e.target && e.target.tagName === 'INPUT' && e.key !== ' ') return;
       // Studio de voix et atelier des effets : leurs champs gardent le clavier.
       if (e.target && e.target.closest && e.target.closest('#pm-studio, #pm-atelier')) return;
+      // Affiche : la première touche la retire (la vidéo repart de 0).
+      if (affiche && e.key !== ' ') retirerAffiche();
+      if ((e.key === 'z' || e.key === 'Z') && racine.__PM_APERCU__) { basculerZones(); return; }
       var i = indexScene(M.temps());
       if (e.key === ' ') { e.preventDefault(); basculer(); }
       else if (e.key === 'ArrowRight' && e.shiftKey) { e.preventDefault(); aller(scenes[Math.min(i + 1, scenes.length - 1)].debut); }
@@ -198,6 +252,8 @@
     try { sauvee = JSON.parse(sessionStorage.getItem(CLE_POSITION) || 'null'); sessionStorage.removeItem(CLE_POSITION); } catch (e) { /* stockage indisponible */ }
     if (sauvee && typeof sauvee.t === 'number') { M.rendre(sauvee.t); if (sauvee.lecture) jouer(); }
     else afficher(M.temps());
+    // Affiche décidée une fois la page prête : les pages du contrôle (M.sansSon) et de l'export l'ont alors signalé.
+    if (!sauvee && M.pret && M.pret.then) M.pret.then(poserAffiche);
 
     // Rechargement après une retouche, à la même position. Pendant un export (M.exportEnCours) ou une prise du studio,
     // il attend la fin (M.finExport, M.reprendreRechargement) pour ne pas l'interrompre.
