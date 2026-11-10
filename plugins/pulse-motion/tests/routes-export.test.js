@@ -189,7 +189,7 @@ test('routes-export.test.js › nom de l\'usage : écrit sous ce nom ; WebM et G
 
 test('routes-export.test.js › nom hors motif refusé', async () => {
   await avecApercu(47804, async (dir, url) => {
-    for (const n of ['La-Chaine.mp4', 'la-chaine-du-froid.mov', 'autre-video.mp4', 'la-chaine-du-froid courriel.mp4', 'la-chaine-du-froid-de-12s-a.mp4', '']) {
+    for (const n of ['La-Chaine.mp4', 'la-chaine-du-froid.mov', 'autre-video.mp4', 'la-chaine-du-froid courriel.mp4', 'la-chaine-du-froid-de-12,5s.mp4', '']) {
       const r = await requete(url + '_pm/export', { methode: 'POST', type: 'video/mp4', corps: MP4, entetes: { ...relecture(RELU), ...nom(n) } });
       assert.equal(r.statut, 400, n);
       assert.match(r.json.message, /Nom de fichier refusé/, n);

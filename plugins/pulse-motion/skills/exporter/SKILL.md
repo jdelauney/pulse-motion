@@ -30,7 +30,7 @@ Si ce bloc est vide ou contient une erreur, lancer `pulse-motion ffmpeg`.
 
 1. L'état ci-dessus : sans vidéo (`projet` faux), proposer `/pulse-motion:creer` et s'arrêter. « Node.js introuvable » : faire installer Node.js (LTS, https://nodejs.org), relancer Claude Code, et s'arrêter.
 2. `pulse-motion controler . --complet` (toute la vidéo) : s'il reste des **erreurs**, les dire simplement et proposer de les corriger d'abord (`/pulse-motion:retoucher`). Des **alertes** seules n'empêchent pas l'export : les mentionner en une phrase.
-3. Alerte `voix-provisoire` : la vidéo parle encore avec la voix de l'ordinateur, qui sert seulement à caler l'animation. Le dire, et proposer : « Enregistrer ma voix d'abord (Recommandé) » · « Exporter une version de travail avec la voix de l'ordinateur ». Sur « Enregistrer ma voix d'abord » : expliquer comment ouvrir le studio (bouton « Voix » de l'aperçu, ou « j'enregistre la scène 1 »), puis s'arrêter sans exporter. Seulement sur le second choix, ajouter `--avec-provisoire` à l'export.
+3. Alerte `voix-provisoire` : la vidéo parle encore avec la voix de l'ordinateur, qui sert seulement à caler l'animation. Proposer : « Enregistrer ma voix d'abord (Recommandé) » · « Exporter une version de travail avec la voix de l'ordinateur ». Sur « Enregistrer ma voix d'abord » : expliquer comment ouvrir le studio (bouton « Voix » de l'aperçu, ou « j'enregistre la scène 1 »), puis s'arrêter sans exporter. Seulement sur le second choix, ajouter `--avec-provisoire` à l'export.
 
 ## 2. Préparer l'export fidèle
 
@@ -45,8 +45,8 @@ Si ce bloc est vide ou contient une erreur, lancer `pulse-motion ffmpeg`.
 - `--qualite 720p` ou `--ips 60` : seulement sur demande (ils priment sur l'usage).
 - Refus de taille : dire le message et ses deux propositions.
 - Une demande d'usage hors de cette liste (« un GIF », « sur fond transparent ») ou une remarque après l'export (« trop lourd », « c'est flou », « en vertical ») : répondre d'après `pulse-motion reference sorties` : un réglage d'export, une retouche (`/pulse-motion:retoucher`), ou « pas encore possible », dit franchement.
-- Réussite : `fichier`, `taille`, `duree`, `audio`, `mode` (`fidele` ou `navigateur`), `usage`, `fichiers`, `verification`.
-- `verification` : une erreur (noir ou silence absent de la page) : « l'export est abîmé », le relancer une fois ; des alertes : les dire en une phrase, proposer la retouche. `avertissement` (son illisible) : le dire. `conseilFfmpeg` : faite dans le navigateur faute de ffmpeg ; proposer l'installation pour la prochaine fois.
+- Réussite : `fichier`, `taille`, `duree`, `audio`, `mode` (`fidele` ou `navigateur`), `fichiers`, `verification`.
+- `verification` (`sortie/verification.json`) : une erreur (noir ou silence absent de la page) : « l'export est abîmé », le relancer une fois ; des alertes : les dire en une phrase et proposer la retouche. `avertissement` (son illisible) : le dire. `conseilFfmpeg` : faite dans le navigateur faute de ffmpeg ; proposer l'installation pour la prochaine fois.
 - « Chrome ou Edge introuvable » : installer l'un des deux, ou ouvrir l'aperçu (`pulse-motion apercu . --ouvrir` en arrière-plan) et cliquer sur « MP4 ».
 - Autre échec, ou export interrompu : dire le message simplement ; aucun fichier incomplet n'est écrit, les parties faites seront reprises.
 

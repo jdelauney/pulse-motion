@@ -54,6 +54,8 @@ test('les commandes pulse-motion citées existent, avec les références et scè
       if (m[1].includes('<')) continue;
       // Le dictionnaire de mouvements est rendu depuis sa source JSON.
       if (m[1] === 'mouvements') { assert.ok(fs.existsSync(path.join(RACINE, 'references', 'mouvements', 'mouvements.json')), `${f} : dictionnaire absent`); continue; }
+      // Les usages d'export aussi (scripts/usages.json, spec Rendu et export 5.4).
+      if (m[1] === 'usages') { assert.ok(fs.existsSync(path.join(RACINE, 'scripts', 'usages.json')), `${f} : usages.json absent`); continue; }
       assert.ok(fs.existsSync(path.join(RACINE, 'references', `${m[1]}.md`)), `${f} : référence « ${m[1]} » absente`);
     }
     for (const m of texte.matchAll(/pulse-motion consignes ([a-z0-9-]+)/g)) {

@@ -7,7 +7,7 @@
 - Un changement de **format d'image** (vertical, carré) n'est pas un réglage d'export : c'est une retouche, les scènes se recomposent.
 - Une vidéo **légère** se prépare dans l'image : moins de grain, de particules fines et de dégradés qui bougent, car ce sont eux qui alourdissent le fichier.
 - **Première et dernière images** : la première n'est jamais vide ni noire (au moins le fond et le décor de la charte), la dernière est nette et stable, sans fondu au noir sauf demande.
-- Pour un support imprimé ou une relecture, les **planches** (trois images par scène) font foi ; le PDF des planches viendra avec les extraits (spec S5).
+- Pour un support imprimé ou une relecture, les **planches** (trois images par scène) font foi ; le PDF des planches viendra plus tard.
 
 ## La personne dit… on fait…
 

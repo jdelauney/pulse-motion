@@ -76,7 +76,8 @@ test('taille-cible.test.js › calcul avant capture : V = C × 8 × 0,96 / D −
   // chaine-du-froid (62,5 s) en 10 Mo : 1 228,8 − 96 ≈ 1 132 kbit/s, donc 720p.
   assert.deepEqual(U.planTaille({ cible: 10e6, duree: 62.5, audio: 96 }), { definition: '720p', debitVideo: 1132 });
   assert.equal(U.planTaille({ cible: 25e6, duree: 62.5 }).definition, '1080p');
-  assert.equal(U.planTaille({ cible: 10e6, duree: 180 }).definition, '540p');
+  assert.equal(U.planTaille({ cible: 10e6, duree: 120 }).definition, '540p');
+  assert.match(U.planTaille({ cible: 10e6, duree: 180 }).erreur, /^La vidéo dure 3 min : /);
   const c = U.resoudreUsage({ pour: 'courriel', deroule: { format: { ips: 60 } }, duree: 62.5 });
   assert.deepEqual([c.definition, c.ips, c.fidele.passes, c.fidele.debit, c.navigateur.mode, c.tailleMax, c.grainMax], ['720p', 30, 2, 1132, 'constant', 10e6, 12]);
   // --taille-max marche avec tout usage ; le débit reste plafonné par celui de l'usage.
