@@ -5,9 +5,12 @@
  * Export par usage (spec Rendu et export, 5.1, 5.3, 5.7) : réglages résolus par l'aperçu (/_pm/usage, scripts/usages.json),
  * définition, images par seconde, débit, image clé, mode de débit, accélération ; taille visée tenue par une seule
  * reconversion (Conversion) si le fichier dépasse ; erreur de script d'une scène : arrêt avec la scène et l'instant (5.23).
+ * Couleurs (5.2, décision 16, mesurée sur la mire le 2026-11-10) : un canevas confié tel quel à l'encodeur sort étiqueté
+ * sRGB en pleine plage, et Chrome le relit jusqu'à ΔE00 2,6 de la page ; chaque image passe donc par une conversion maison
+ * en I420 BT.709 plage limitée (versI420), étiquetée comme dans la voie fidèle.
  */
 import {
-  Output, Mp4OutputFormat, BufferTarget, CanvasSource, AudioBufferSource,
+  Output, Mp4OutputFormat, BufferTarget, VideoSampleSource, VideoSample, AudioBufferSource,
   Input, BufferSource, ALL_FORMATS, CanvasSink, EncodedPacketSink, Conversion, canEncodeVideo, canEncodeAudio,
 } from '/_pm/vendor/mediabunny.min.mjs';
 
@@ -65,7 +68,39 @@ function preparerScene(largeur, hauteur) {
   };
 }
 
-/** Réglages de l'encodeur vidéo (CanvasSource) d'un usage : débit, image clé, mode de débit, latence, accélération. */
+/** Espace de couleurs des images confiées à l'encodeur : celui de la voie fidèle. */
+const BT709 = { primaries: 'bt709', transfer: 'bt709', matrix: 'bt709', fullRange: false };
+
+/**
+ * Image RVBA (sRGB, alpha ignoré) -> I420 BT.709 plage limitée (Y 16–235, Cb et Cr 16–240 ; chrominance moyennée par
+ * blocs de 2 × 2). largeur et hauteur paires. Coefficients de la recommandation UIT-R BT.709 (Kr 0,2126, Kb 0,0722).
+ */
+export function versI420(rgba, largeur, hauteur, sortie = new Uint8Array(largeur * hauteur * 1.5)) {
+  const Y = sortie;
+  const U = largeur * hauteur;
+  const V = U + (largeur * hauteur) / 4;
+  const l2 = largeur / 2;
+  for (let y = 0; y < hauteur; y += 2) {
+    for (let x = 0; x < largeur; x += 2) {
+      let r = 0; let v = 0; let b = 0;
+      for (let dy = 0; dy < 2; dy++) {
+        for (let dx = 0; dx < 2; dx++) {
+          const i = ((y + dy) * largeur + x + dx) * 4;
+          const R = rgba[i]; const G = rgba[i + 1]; const B = rgba[i + 2];
+          Y[(y + dy) * largeur + x + dx] = Math.round(16 + (219 / 255) * (0.2126 * R + 0.7152 * G + 0.0722 * B));
+          r += R; v += G; b += B;
+        }
+      }
+      r /= 4; v /= 4; b /= 4;
+      const k = (y / 2) * l2 + x / 2;
+      sortie[U + k] = Math.round(128 + (224 / 255) * (-0.114572 * r - 0.385428 * v + 0.5 * b));
+      sortie[V + k] = Math.round(128 + (224 / 255) * (0.5 * r - 0.454153 * v - 0.045847 * b));
+    }
+  }
+  return sortie;
+}
+
+/** Réglages de l'encodeur vidéo (VideoSampleSource) d'un usage : débit, image clé, mode de débit, latence, accélération. */
 function configVideo(n, debit) {
   return {
     codec: 'avc', bitrate: Math.max(1, Math.round(debit * 1000)), keyFrameInterval: n.gop || 2,
@@ -121,9 +156,10 @@ export async function exporter({ surProgression = () => {}, signal, reglages = W
   const fondSombre = luminanceCouleur(getComputedStyle(document.getElementById('pm-scene')).backgroundColor) < 24;
 
   const canvas = new OffscreenCanvas(largeur, hauteur);
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
   const output = new Output({ format: new Mp4OutputFormat({ fastStart: 'in-memory' }), target: new BufferTarget() });
-  const video = new CanvasSource(canvas, configVideo(n, n.debit));
+  const video = new VideoSampleSource(configVideo(n, n.debit));
+  const i420 = new Uint8Array(largeur * hauteur * 1.5);
   output.addVideoTrack(video, { frameRate: ips });
   let pisteAudio = null;
   if (audio) {
@@ -154,7 +190,9 @@ export async function exporter({ surProgression = () => {}, signal, reglages = W
       }
       await M.capturer(ctx, largeur, hauteur);
       if (erreurScript) throw erreurDeScript(k / ips);
-      await video.add(k / ips, 1 / ips);
+      versI420(ctx.getImageData(0, 0, largeur, hauteur).data, largeur, hauteur, i420);
+      const image = new VideoSample(i420, { format: 'I420', codedWidth: largeur, codedHeight: hauteur, timestamp: k / ips, duration: 1 / ips, colorSpace: BT709 });
+      try { await video.add(image); } finally { image.close(); }
       stats.ajouter(canvas);
       surProgression(k + 1, total);
     }

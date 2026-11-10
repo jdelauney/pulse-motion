@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "titre": "Mire des couleurs",
+  "genre": "formation",
+  "parcours": "rapide",
+  "format": {
+    "ratio": "16:9",
+    "ips": 12
+  },
+  "style": "minimal",
+  "scenes": [
+    {
+      "id": "mire",
+      "fichier": "scenes/01-mire.html",
+      "duree": 1,
+      "transition": "coupe",
+      "intention": "aplats de couleur, immobiles",
+      "textes": {}
+    }
+  ]
+}
