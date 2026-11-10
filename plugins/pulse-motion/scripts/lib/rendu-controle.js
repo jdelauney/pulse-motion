@@ -71,6 +71,9 @@ flash: (c) => `Scène « ${c.scene} » : l'image clignote ${virgule(c.valeur)} f
       : `Scène « ${c.scene} » : l'étape ${c.valeur.b} commence trop tôt ; il faut au moins ${virgule(c.valeur.minimum)} s depuis le début de la scène (le temps d'aller cliquer).`)
     : `Scène « ${c.scene} » : les gestes ${c.valeur.a} et ${c.valeur.b} du pointeur sont trop rapprochés (${virgule(c.valeur.ecart)} s) ; il faut au moins ${virgule(c.valeur.minimum)} s entre eux, le temps de voir le clic puis d'aller au suivant.`),
   'pointeur-hors-ecran': (c) => `Scène « ${c.scene} » : le pointeur doit aller sur « ${c.element} », qui est hors de l'image de l'écran.`,
+  // Calque de dessin (spec S7, 5.2 et 5.4).
+  'dessin-erreur': (c) => `Scène « ${c.scene} » : un dessin de la scène ne se fait pas (vers ${virgule(c.instant)} s) : ${c.valeur} ; le reste de la scène s'affiche sans lui.`,
+  'fleche-cible-introuvable': (c) => `Scène « ${c.scene} » : ${c.valeur}.`,
   'silence-imprevu': (c) => `De ${virgule(c.valeur.a)} s à ${virgule(c.valeur.b)} s, on n'entend rien pendant ${virgule(c.valeur.d)} s alors que la musique devrait jouer ; vérifier la musique de la scène « ${c.scene} ».`,
 };
 
@@ -80,7 +83,7 @@ function proposition(c) {
   return ` ; ${phraseProposition(suggererCouleur(c.couleur, c.fond, c.minimum, c.charte || {}))}`;
 }
 
-const GRAVITES = { flash: 'erreur', 'texte-casse': 'erreur', 'erreur-de-scene': 'erreur', 'etapes-trop-rapprochees': 'erreur' };
+const GRAVITES = { flash: 'erreur', 'texte-casse': 'erreur', 'erreur-de-scene': 'erreur', 'etapes-trop-rapprochees': 'erreur', 'dessin-erreur': 'erreur', 'fleche-cible-introuvable': 'erreur' };
 
 /** Constats bruts de M.mesurer -> problèmes (alertes, sauf GRAVITES). Règle inconnue : ignorée. */
 function traduireConstats(constats) {
@@ -110,11 +113,14 @@ function scriptMesures({ ratio, scenes, plages, plagesFlashs, flashs, genre = nu
     try { if (M.mesurerMouvement) constats = constats.concat(M.mesurerMouvement(${opts(choix)})); } catch (e) { console.error('[Pulse Motion] mesure du mouvement : ' + e.message); }
     // Écrans des tutoriels (spec S6) : gestes trop rapprochés, cible hors de l'image.
     try { if (M.mesurerEcrans) constats = constats.concat(M.mesurerEcrans(${JSON.stringify(choix)})); } catch (e) { console.error('[Pulse Motion] mesure des écrans : ' + e.message); }
+    // Calque de dessin (spec S7) : erreurs des dessins, cibles des flèches, relevés des scènes qui dessinent.
+    var dessin = M.mesurerDessin ? M.mesurerDessin(${JSON.stringify(choix)}) : null;
+    if (dessin) constats = constats.concat(dessin.constats);
     var debordements = M.detecterDebordements(${JSON.stringify(choix)});
     var ajustements = M.essayerTailles(${JSON.stringify({ minimumCqh: SEUILS.texteMinCqh, ...choix })});
     var pixels = await M.mesurerPixels(${opts({ ...choix, flashs, ...(flashs && plagesFlashs ? { plagesFlashs } : {}) })});
     return { constats: constats.concat(pixels), debordements: debordements, ajustements: ajustements, formesVides: formesVides, photos: photos,
-      erreursScenes: window.__pmErreursScenes || [], ecoute: ${attendreEcoute ? 'await window.__pmEcoute' : 'null'} };`;
+      erreursScenes: window.__pmErreursScenes || [], releves: dessin ? dessin.releves : null, ecoute: ${attendreEcoute ? 'await window.__pmEcoute' : 'null'} };`;
 }
 
 /** Résultat de l'écoute (M.ecouter) -> problèmes, ou null si le son n'a pas pu être mesuré. */
@@ -123,14 +129,14 @@ function traduireEcoute(e) {
   return traduireConstats(e.constats);
 }
 
-/** Résultat brut de la page -> { renduVerifie, problemes, ajustements, son } (problèmes des seules scènes demandées, s'il y en a ;
- *  son : problèmes du son, de toute la vidéo, ou null). */
+/** Résultat brut de la page -> { renduVerifie, problemes, ajustements, son, releves } (problèmes des seules scènes demandées,
+ *  s'il y en a ; son : problèmes du son, de toute la vidéo, ou null ; releves : relevés des scènes qui dessinent, ou null). */
 function traduireResultat(resultat, scenes) {
   const garder = (p) => !scenes || !p.scene || scenes.includes(p.scene);
   const debordements = (resultat.debordements || []).map((d) => ({ regle: 'debordement', gravite: 'erreur', scene: d.scene, element: d.element, message: d.message }));
   const erreurs = (resultat.erreursScenes || []).map((e) => ({ regle: 'erreur-de-scene', scene: e.scene, element: null, instant: 0, valeur: e.message }));
   return { renduVerifie: true, problemes: [...debordements, ...traduireConstats([...(resultat.constats || []), ...erreurs]), ...traduireFormesVides(resultat.formesVides), ...traduirePhotos(resultat.photos)].filter(garder),
-    ajustements: (resultat.ajustements || []).filter(garder), son: traduireEcoute(resultat.ecoute) };
+    ajustements: (resultat.ajustements || []).filter(garder), son: traduireEcoute(resultat.ecoute), releves: resultat.releves || null };
 }
 
 /** Prépare une page aux flashs (sous-titres masqués, comme dans la page) -> géométrie de la scène et minutage. */

@@ -333,6 +333,10 @@
       }
     });
 
+    // Calque de dessin (spec S7, 5.2 ; moteur/dessin/calque.js) : après les éléments, avant les caméras, au temps vu par
+    // son conteneur.
+    if (M.dessinerScene) M.dessinerScene(info, t, function (el) { return tempsVu(s.chaine(el), t, info); });
+
     // Caméras : cadrage au temps de leurs conteneurs ; --pm-cam-dx/dy pour la parallaxe (data-profondeur).
     s.cameras.forEach(function (c) {
       var st = M.styleCamera(M.etatCamera(c.clauses, (tempsVu(c.chaine, t, info) - info.debut) * info.rythme));

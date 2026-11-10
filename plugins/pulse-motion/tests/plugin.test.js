@@ -451,7 +451,7 @@ test('budget-consignes : les consignes ne regrossissent pas sans qu\'on le voie 
   // ligne, la conduite elle-même vit dans realisation § 13 et revue.md, lus à la demande. critique.md : corps ≤ 3 500 o.
   // 0.40.0 (S4 R1, 5.6) : outils 6 144 → 6 550 o (plan d'installation en un accord, installation de Node.js : deux étapes
   // demandées par la spec, que les autres compétences ne recopient plus ; elles renvoient à outils).
-  // 0.50.0 (S6 plan 2) : filmer, la 13e compétence (7 417 o, plafond 7 800 o) ; creer, retoucher, reprendre et l'animateur
+  // 0.51.0 (S6 plan 2) : filmer, la 13e compétence (7 417 o, plafond 7 800 o) ; creer, retoucher, reprendre et l'animateur
   // n'y renvoient qu'en une ligne (consignes filmer creer, retouches, prises), sans relever leur plafond.
   const PLAFONDS = {
     'skills/animer-personnage/SKILL.md': 5884, 'skills/atelier-particules/SKILL.md': 2272, 'skills/atelier-personnages/SKILL.md': 3529,

@@ -10,7 +10,8 @@
  * Écrit sortie/controle.json : { version: 2, problemes: [{ regle, gravite: "erreur" | "alerte" | "info" (rien à corriger : la personne est prévenue), scene?, element?, message (pour la personne, sans jargon), consigne (pour Claude : la correction technique, lib/messages.js), correction? }],
  *   corrections: [{ regle, scene, element?, avant, apres, message }], renduVerifie, rendu: "complet" | "partiel" | null, scenesMesurees,
  *   empreintes: { moteur, seuils, commun, scenes: { id: empreinte } } | null, rendus: { id: [problèmes du rendu] } | null,
- *   son: { empreinte, problemes } | null } (son mesuré : voix-couverte, silence-imprevu ; repris tant que son empreinte ne change pas).
+ *   son: { empreinte, problemes } | null, releves? } (son mesuré : voix-couverte, silence-imprevu ; repris tant que son empreinte
+ *   ne change pas ; releves : { id: relevé de mise en page } des scènes qui dessinent, spec S7 5.1, boîtes en cqh).
  * Un seul assemblage par contrôle (deux après des corrections du déroulé) ; écrit aussi la page sortie/<titre>.html
  * quand elle a changé (plus besoin d'assembler avant de contrôler).
  * Contrôle du rendu incrémental (spec Rapidité 5.9) : les contrôles rapides se refont en entier ; le rendu ne mesure que
@@ -544,6 +545,7 @@ async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.j
   let empreintes = null;
   let rendus = null;
   let son = null;
+  let releves = null;
   let determinisme = precedent && precedent.determinisme ? precedent.determinisme : null;
   let preuve = null;
   if (rendu && assemblage.ok) {
@@ -586,6 +588,12 @@ async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.j
       v = await mesurer(opt);
     }
     renduVerifie = v.renduVerifie;
+    // Relevés de mise en page des scènes qui dessinent (spec S7, 5.1) : ceux des scènes mesurées, les autres repris.
+    if (renduVerifie && (v.releves || (comparable && precedent.releves))) {
+      const repris = comparable && precedent.releves ? precedent.releves : {};
+      releves = Object.fromEntries(ids.map((id) => [id, (v.releves && v.releves[id]) || (changees.includes(id) ? null : repris[id])]).filter(([, x]) => x));
+      if (!Object.keys(releves).length) releves = null;
+    }
     let duRendu = v.problemes;
     if (renduVerifie && comparable) {
       // Scènes mesurées : leurs nouveaux résultats ; les autres : ceux du contrôle précédent (même empreinte).
@@ -634,6 +642,7 @@ async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.j
     empreintes = precedent.empreintes;
     rendus = precedent.rendus;
     son = precedent.son || null;
+    releves = precedent.releves || null;
   }
   if (gpu && assemblage.ok && aDesShaders(assemblage.donnees)) {
     const g = await compilerShadersGPU({ html: assemblage.html, ...(navigateur !== undefined ? { navigateur } : {}) });
@@ -643,7 +652,7 @@ async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.j
   problemes = avecConsignes(problemes);
   corrections = avecConsignes(corrections);
   if (r.fichier) {
-    ecrireAtomique(r.fichier, JSON.stringify({ version: 2, problemes, corrections, renduVerifie, rendu: modeRendu, scenesMesurees, empreintes, rendus, son, determinisme }, null, 2));
+    ecrireAtomique(r.fichier, JSON.stringify({ version: 2, problemes, corrections, renduVerifie, rendu: modeRendu, scenesMesurees, empreintes, rendus, son, determinisme, ...(releves ? { releves } : {}) }, null, 2));
   }
   if (avancement && avancement.terminer) avancement.terminer(true);
   return { problemes, corrections, renduVerifie, rendu: modeRendu, scenesMesurees, determinisme: preuve, fichier: r.fichier };

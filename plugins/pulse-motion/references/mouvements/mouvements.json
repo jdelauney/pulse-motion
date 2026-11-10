@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "source": "Noms, sens et idées de phrases inspirés de Motion Prompt (https://github.com/showheyohtaki/motion-prompt), MIT © 2026 Shohei Ohtaki ; traduits et adaptés au moteur Pulse Motion. Vie du décor (#069 à #080) et motifs #081, #082 : chiffres de rossark-motion-skill, MIT © 2026 rossark0 ; zoom continu, pulsation sur le temps et cercle d'inondation (#083, #086, #090) : take-one, MIT © 2026 Tal Siach ; défilement, échos, roue, avant/après, hélice et suivi retardé (#084, #085, #087, #088, #091, #093) : reanimate, MIT © 2026 Niaz Morshed ; idées et chiffres réécrits. Démonstration de logiciel (#094 à #106) : pointeur, projecteur, anneau, zooms enchaînés et blocs d'argo, MIT © 2026 Shreyas Karnik ; idées et chiffres réécrits. Transitions #107 à #111 : fuite de lumière d'argo (light-leak), MIT © 2026 Shreyas Karnik, traduite ; brûlure, lentille, iris et déformation : idées de HyperFrames (via argo), réécrites sans code repris. Voir THIRD-PARTY-NOTICES.md.",
+  "source": "Noms, sens et idées de phrases inspirés de Motion Prompt (https://github.com/showheyohtaki/motion-prompt), MIT © 2026 Shohei Ohtaki ; traduits et adaptés au moteur Pulse Motion. Vie du décor (#069 à #080) et motifs #081, #082 : chiffres de rossark-motion-skill, MIT © 2026 rossark0 ; zoom continu, pulsation sur le temps et cercle d'inondation (#083, #086, #090) : take-one, MIT © 2026 Tal Siach ; défilement, échos, roue, avant/après, hélice et suivi retardé (#084, #085, #087, #088, #091, #093) : reanimate, MIT © 2026 Niaz Morshed ; idées et chiffres réécrits. Démonstration de logiciel (#094 à #106) : pointeur, projecteur, anneau, zooms enchaînés et blocs d'argo, MIT © 2026 Shreyas Karnik ; idées et chiffres réécrits. Transitions #107 à #111 : fuite de lumière d'argo (light-leak), MIT © 2026 Shreyas Karnik, traduite ; brûlure, lentille, iris et déformation : idées de HyperFrames (via argo), réécrites sans code repris. Diagrammes #112 à #121 : flèches, annotations et tracé à main levée d'explainroo (engine/stage.js, engine/pen.js), MIT © 2026 Vincent Schmalbach, principes de Rough.js ; idées et chiffres réécrits. Voir THIRD-PARTY-NOTICES.md.",
   "categories": [
     {
       "id": "entrees",
@@ -4195,6 +4195,477 @@
           }
         ],
         "note": "Transition par shader : WebGPU nécessaire (sinon fondu, et l'export est refusé). Couleur de la marque par défaut (accent de la charte)."
+      }
+    },
+    {
+      "no": "112",
+      "slug": "main-levee",
+      "categorie": "entrees",
+      "nom": {
+        "fr": "Tracé à main levée",
+        "metier": "Hand-drawn stroke"
+      },
+      "sens": "Le trait tremble un peu et repasse sur lui-même, comme dessiné au feutre",
+      "demande": "Dessine la flèche du schéma à main levée, en 1 s.",
+      "quand": "Un schéma, une explication au tableau, un ton artisanal ou pédagogique.",
+      "motsCles": [
+        "main levee",
+        "dessine",
+        "feutre",
+        "croquis",
+        "sketch",
+        "hand-drawn",
+        "rough"
+      ],
+      "recette": {
+        "type": "attribut",
+        "exemple": "<svg viewBox=\"0 0 100 20\" style=\"width: 60cqh; margin-top: 40cqh\" aria-hidden=\"true\" data-start=\"0.3\" data-dur=\"1\">\n  <path data-main-levee d=\"M4 10 H 96\" pathLength=\"100\" stroke=\"var(--c-accent)\" stroke-width=\"2\" fill=\"none\" style=\"stroke-dasharray: 100; stroke-dashoffset: calc(100 * (1 - var(--p)))\"/>\n</svg>",
+        "reglages": [
+          {
+            "nom": "data-main-levee",
+            "defaut": "(présent)",
+            "effet": "sur line, polyline, polygon, rect, ellipse, circle ou path : redessiné à main levée"
+          },
+          {
+            "nom": "--pm-trait",
+            "defaut": "net",
+            "effet": "main sur la scène : flèches, annotations et dessins du calque à main levée"
+          },
+          {
+            "nom": "--pm-rugosite",
+            "defaut": "1",
+            "effet": "tremblement du trait (0 à 3)"
+          },
+          {
+            "nom": "--pm-courbure",
+            "defaut": "1",
+            "effet": "courbure des traits droits"
+          }
+        ],
+        "note": "Même graine, même tracé : la scène se redessine toujours pareil. Le minutage se pose sur le <svg>. pulse-motion reference explication."
+      }
+    },
+    {
+      "no": "113",
+      "slug": "ebullition",
+      "categorie": "finition",
+      "nom": {
+        "fr": "Ébullition des traits",
+        "metier": "Line boil"
+      },
+      "sens": "Les traits dessinés à main levée se redessinent quelques fois par seconde : le dessin frémit, vivant",
+      "demande": "Fais frémir les traits du schéma, 8 fois par seconde.",
+      "quand": "Un dessin animé à la main, une scène dessinée qui reste longtemps à l'écran.",
+      "motsCles": [
+        "ebullition",
+        "boil",
+        "fremir",
+        "vivant",
+        "dessin anime",
+        "trait"
+      ],
+      "recette": {
+        "type": "attribut",
+        "exemple": "<style>@scope { :scope { --pm-trait: main; --pm-ebullition: 8; } }</style>\n<p id=\"a\" style=\"position: absolute; left: 30cqh; top: 45cqh; font-size: 5cqh\" data-texte=\"titre\" data-start=\"0.2\"></p>\n<p id=\"b\" style=\"position: absolute; right: 30cqh; top: 45cqh; font-size: 5cqh\" data-texte=\"texte\" data-start=\"0.4\"></p>\n<i data-fleche=\"#a → #b\" data-start=\"0.8\"></i>",
+        "reglages": [
+          {
+            "nom": "--pm-ebullition",
+            "defaut": "0",
+            "effet": "re-tracés par seconde (0 : figé ; 4 à 12)"
+          },
+          {
+            "nom": "--pm-trait",
+            "defaut": "net",
+            "effet": "main : nécessaire, l'ébullition ne touche que les traits à main levée"
+          }
+        ],
+        "note": "Le tracé ne change qu'à chaque pas (1/8 s à 8) et ne fait pas clignoter l'image. Les formes data-main-levee restent figées."
+      }
+    },
+    {
+      "no": "114",
+      "slug": "fleche-relie",
+      "categorie": "compositions",
+      "nom": {
+        "fr": "Flèche qui relie",
+        "metier": "Connector arrow"
+      },
+      "sens": "Une flèche se trace d'un élément à l'autre, s'arrête au bord de chacun, avec son étiquette",
+      "demande": "Trace une flèche de Client à Serveur en 0,7 s quand je dis « serveur ».",
+      "quand": "Un échange, une cause et sa conséquence, un circuit, un schéma qui se construit au fil de la voix.",
+      "motsCles": [
+        "fleche",
+        "relier",
+        "connecteur",
+        "connector",
+        "arrow",
+        "schema",
+        "diagramme"
+      ],
+      "recette": {
+        "type": "attribut",
+        "exemple": "<p id=\"client\" style=\"position: absolute; left: 25cqh; top: 45cqh; font-size: 5cqh\" data-texte=\"titre\" data-start=\"0.2\"></p>\n<p id=\"serveur\" style=\"position: absolute; right: 25cqh; top: 45cqh; font-size: 5cqh\" data-texte=\"texte\" data-start=\"0.6\"></p>\n<i data-fleche=\"#client → #serveur\" data-start=\"1.2\" data-dur=\"0.7\"></i>",
+        "reglages": [
+          {
+            "nom": "data-fleche",
+            "defaut": "#a → #b",
+            "effet": "de l'élément #a à #b (ou un point « x,y » en cqh)"
+          },
+          {
+            "nom": "data-dur",
+            "defaut": "0.7",
+            "effet": "durée du tracé"
+          },
+          {
+            "nom": "data-fleche-courbe",
+            "defaut": "0",
+            "effet": "courbure, de -1 à 1"
+          },
+          {
+            "nom": "data-fleche-tete",
+            "defaut": "fin",
+            "effet": "fin, debut, deux ou aucune"
+          },
+          {
+            "nom": "data-fleche-ecart",
+            "defaut": "1.3",
+            "effet": "distance au bord de chaque élément, en cqh"
+          },
+          {
+            "nom": "data-fleche-pointille",
+            "defaut": "(absent)",
+            "effet": "trait pointillé"
+          },
+          {
+            "nom": "data-fleche-suivre",
+            "defaut": "(absent)",
+            "effet": "suit un élément qui se déplace"
+          }
+        ],
+        "note": "L'étiquette est un <span data-texte=\"cle\"> dans la flèche : un texte du déroulé, placé par le moteur. pulse-motion reference explication."
+      }
+    },
+    {
+      "no": "115",
+      "slug": "souligne",
+      "categorie": "valeur",
+      "nom": {
+        "fr": "Soulignement à la main",
+        "metier": "Hand underline"
+      },
+      "sens": "Un trait légèrement courbe se trace sous l'élément, au mot dit",
+      "demande": "Souligne le titre d'un trait dessiné en 0,6 s.",
+      "quand": "Insister sur un mot, une conclusion, sans le cacher.",
+      "motsCles": [
+        "souligner",
+        "underline",
+        "trait",
+        "insister",
+        "annoter"
+      ],
+      "recette": {
+        "type": "attribut",
+        "exemple": "<p id=\"mot\" style=\"font-size: 6cqh; text-align: center; margin-top: 40cqh\" data-texte=\"titre\" data-start=\"0.2\"></p>\n<i data-annoter=\"souligne\" data-cible=\"#mot\" data-start=\"1\"></i>",
+        "reglages": [
+          {
+            "nom": "data-cible",
+            "defaut": "#mot",
+            "effet": "élément mis en valeur (son id)"
+          },
+          {
+            "nom": "data-start",
+            "defaut": "1",
+            "effet": "instant du tracé (mot:… pour le caler sur le mot dit)"
+          },
+          {
+            "nom": "data-dur",
+            "defaut": "0.6",
+            "effet": "durée du tracé"
+          },
+          {
+            "nom": "data-couleur",
+            "defaut": "accent",
+            "effet": "couleur de la charte (accent, primaire, texte…)"
+          }
+        ],
+        "note": "Variante dessinée de #025 (classe pm-m-souligne), qui vise l'élément par son id."
+      }
+    },
+    {
+      "no": "116",
+      "slug": "entoure",
+      "categorie": "valeur",
+      "nom": {
+        "fr": "Entourer",
+        "metier": "Circle"
+      },
+      "sens": "Une ellipse se trace autour de l'élément, comme au stylo",
+      "demande": "Entoure le prix en 0,8 s quand je dis « cher ».",
+      "quand": "Le chiffre ou le mot qu'il ne faut pas manquer.",
+      "motsCles": [
+        "entourer",
+        "cercle",
+        "circle",
+        "ellipse",
+        "annoter",
+        "stylo"
+      ],
+      "recette": {
+        "type": "attribut",
+        "exemple": "<p id=\"mot\" style=\"font-size: 6cqh; text-align: center; margin-top: 40cqh\" data-texte=\"titre\" data-start=\"0.2\"></p>\n<i data-annoter=\"entoure\" data-cible=\"#mot\" data-start=\"1\"></i>",
+        "reglages": [
+          {
+            "nom": "data-cible",
+            "defaut": "#mot",
+            "effet": "élément mis en valeur (son id)"
+          },
+          {
+            "nom": "data-start",
+            "defaut": "1",
+            "effet": "instant du tracé (mot:… pour le caler sur le mot dit)"
+          },
+          {
+            "nom": "data-dur",
+            "defaut": "0.8",
+            "effet": "durée du tracé"
+          },
+          {
+            "nom": "data-couleur",
+            "defaut": "accent",
+            "effet": "couleur de la charte (accent, primaire, texte…)"
+          }
+        ],
+        "note": "Ellipse de 1,12 fois la largeur et 1,25 fois la hauteur de l'élément, marge de 1,3 cqh comprise."
+      }
+    },
+    {
+      "no": "117",
+      "slug": "encadre",
+      "categorie": "valeur",
+      "nom": {
+        "fr": "Encadrer",
+        "metier": "Box"
+      },
+      "sens": "Un cadre se trace autour de l'élément",
+      "demande": "Encadre la règle à retenir en 0,6 s.",
+      "quand": "Une règle, une définition, ce qu'il faut retenir.",
+      "motsCles": [
+        "encadrer",
+        "cadre",
+        "box",
+        "rectangle",
+        "annoter"
+      ],
+      "recette": {
+        "type": "attribut",
+        "exemple": "<p id=\"mot\" style=\"font-size: 6cqh; text-align: center; margin-top: 40cqh\" data-texte=\"titre\" data-start=\"0.2\"></p>\n<i data-annoter=\"encadre\" data-cible=\"#mot\" data-start=\"1\"></i>",
+        "reglages": [
+          {
+            "nom": "data-cible",
+            "defaut": "#mot",
+            "effet": "élément mis en valeur (son id)"
+          },
+          {
+            "nom": "data-start",
+            "defaut": "1",
+            "effet": "instant du tracé (mot:… pour le caler sur le mot dit)"
+          },
+          {
+            "nom": "data-dur",
+            "defaut": "0.6",
+            "effet": "durée du tracé"
+          },
+          {
+            "nom": "data-couleur",
+            "defaut": "accent",
+            "effet": "couleur de la charte (accent, primaire, texte…)"
+          }
+        ],
+        "note": "Marge de 1,3 cqh autour de l'élément."
+      }
+    },
+    {
+      "no": "118",
+      "slug": "surligne",
+      "categorie": "valeur",
+      "nom": {
+        "fr": "Surligner à la main",
+        "metier": "Highlight sweep"
+      },
+      "sens": "Un aplat translucide s'étend sous le texte de gauche à droite, au mot dit",
+      "demande": "Surligne la phrase clé en 0,6 s.",
+      "quand": "Un mot clé dans une phrase, sur fond clair ou sombre.",
+      "motsCles": [
+        "surligner",
+        "highlight",
+        "marqueur",
+        "fluo",
+        "annoter"
+      ],
+      "recette": {
+        "type": "attribut",
+        "exemple": "<p id=\"mot\" style=\"font-size: 6cqh; text-align: center; margin-top: 40cqh\" data-texte=\"titre\" data-start=\"0.2\"></p>\n<i data-annoter=\"surligne\" data-cible=\"#mot\" data-start=\"1\"></i>",
+        "reglages": [
+          {
+            "nom": "data-cible",
+            "defaut": "#mot",
+            "effet": "élément mis en valeur (son id)"
+          },
+          {
+            "nom": "data-start",
+            "defaut": "1",
+            "effet": "instant du tracé (mot:… pour le caler sur le mot dit)"
+          },
+          {
+            "nom": "data-dur",
+            "defaut": "0.6",
+            "effet": "durée du tracé"
+          },
+          {
+            "nom": "data-couleur",
+            "defaut": "accent",
+            "effet": "couleur de la charte (accent, primaire, texte…)"
+          }
+        ],
+        "note": "Passe sous le texte (calque du dessous), opacité 0,38 sur fond clair et 0,3 sur fond sombre, sans mode de fusion : le texte reste lisible. Variante dessinée de #024."
+      }
+    },
+    {
+      "no": "119",
+      "slug": "barre",
+      "categorie": "valeur",
+      "nom": {
+        "fr": "Barrer",
+        "metier": "Strike"
+      },
+      "sens": "Un trait légèrement penché barre l'élément",
+      "demande": "Barre l'ancien prix en 0,6 s.",
+      "quand": "Une idée reçue, un ancien chiffre, ce qu'on ne fait plus.",
+      "motsCles": [
+        "barrer",
+        "rayer",
+        "strike",
+        "annoter",
+        "faux"
+      ],
+      "recette": {
+        "type": "attribut",
+        "exemple": "<p id=\"mot\" style=\"font-size: 6cqh; text-align: center; margin-top: 40cqh\" data-texte=\"titre\" data-start=\"0.2\"></p>\n<i data-annoter=\"barre\" data-cible=\"#mot\" data-start=\"1\"></i>",
+        "reglages": [
+          {
+            "nom": "data-cible",
+            "defaut": "#mot",
+            "effet": "élément mis en valeur (son id)"
+          },
+          {
+            "nom": "data-start",
+            "defaut": "1",
+            "effet": "instant du tracé (mot:… pour le caler sur le mot dit)"
+          },
+          {
+            "nom": "data-dur",
+            "defaut": "0.6",
+            "effet": "durée du tracé"
+          },
+          {
+            "nom": "data-couleur",
+            "defaut": "accent",
+            "effet": "couleur de la charte (accent, primaire, texte…)"
+          }
+        ],
+        "note": "Pour corriger : barrer l'ancien, puis faire entrer le nouveau."
+      }
+    },
+    {
+      "no": "120",
+      "slug": "croix",
+      "categorie": "valeur",
+      "nom": {
+        "fr": "Croix",
+        "metier": "Cross"
+      },
+      "sens": "Deux traits se tracent l'un après l'autre en croix sur l'élément",
+      "demande": "Fais une croix sur la mauvaise réponse en 0,6 s.",
+      "quand": "Une erreur, une mauvaise pratique, une option écartée.",
+      "motsCles": [
+        "croix",
+        "cross",
+        "erreur",
+        "interdit",
+        "annoter"
+      ],
+      "recette": {
+        "type": "attribut",
+        "exemple": "<p id=\"mot\" style=\"font-size: 6cqh; text-align: center; margin-top: 40cqh\" data-texte=\"titre\" data-start=\"0.2\"></p>\n<i data-annoter=\"croix\" data-cible=\"#mot\" data-start=\"1\"></i>",
+        "reglages": [
+          {
+            "nom": "data-cible",
+            "defaut": "#mot",
+            "effet": "élément mis en valeur (son id)"
+          },
+          {
+            "nom": "data-start",
+            "defaut": "1",
+            "effet": "instant du tracé (mot:… pour le caler sur le mot dit)"
+          },
+          {
+            "nom": "data-dur",
+            "defaut": "0.6",
+            "effet": "durée du tracé"
+          },
+          {
+            "nom": "data-couleur",
+            "defaut": "accent",
+            "effet": "couleur de la charte (accent, primaire, texte…)"
+          }
+        ],
+        "note": "Le second trait commence quand le premier est fini."
+      }
+    },
+    {
+      "no": "121",
+      "slug": "accolade",
+      "categorie": "valeur",
+      "nom": {
+        "fr": "Accolade",
+        "metier": "Bracket"
+      },
+      "sens": "Une accolade se trace à gauche de l'élément",
+      "demande": "Mets une accolade devant la liste en 0,6 s.",
+      "quand": "Regrouper des éléments, montrer qu'ils vont ensemble.",
+      "motsCles": [
+        "accolade",
+        "bracket",
+        "regrouper",
+        "ensemble",
+        "annoter"
+      ],
+      "recette": {
+        "type": "attribut",
+        "exemple": "<p id=\"mot\" style=\"font-size: 6cqh; text-align: center; margin-top: 40cqh\" data-texte=\"titre\" data-start=\"0.2\"></p>\n<i data-annoter=\"accolade\" data-cible=\"#mot\" data-start=\"1\"></i>",
+        "reglages": [
+          {
+            "nom": "data-cible",
+            "defaut": "#mot",
+            "effet": "élément mis en valeur (son id)"
+          },
+          {
+            "nom": "data-start",
+            "defaut": "1",
+            "effet": "instant du tracé (mot:… pour le caler sur le mot dit)"
+          },
+          {
+            "nom": "data-dur",
+            "defaut": "0.6",
+            "effet": "durée du tracé"
+          },
+          {
+            "nom": "data-couleur",
+            "defaut": "accent",
+            "effet": "couleur de la charte (accent, primaire, texte…)"
+          }
+        ],
+        "note": "Viser le conteneur de la liste (son id) pour regrouper ses points."
       }
     }
   ]

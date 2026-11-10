@@ -36,6 +36,7 @@ const { minifier } = require('./lib/minifier.js');
 const { preparerEcrans, usagesEcran } = require('./lib/ecrans.js');
 const { blocFilm } = require('./lib/film.js');
 const crypto = require('node:crypto');
+const { preparerDessin, usagesDessin } = require('./lib/dessin.js');
 
 const RACINE = path.resolve(__dirname, '..');
 // Modules du moteur, groupés (moteur à la carte, spec Rapidité 5.19) : lib/groupes-moteur.js.
@@ -205,6 +206,8 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   const usages = { moteur: false, css: false };
   // Films (plan 2 de S6, 5.8) : nom -> étapes visées par les scènes (seules ces étapes sont embarquées).
   const filmsVises = new Map();
+  // Calque de dessin (spec S7) : groupe « dessin » et moteur/dessin/dessin.css seulement si une scène dessine ; icônes de d.icone.
+  const dessin = { utilise: false, icones: new Set(), scripts: [] };
   // Voix : une prise par scène (ou la voix provisoire), mots calés ; Opus si encodé, sinon WAV. Lues avant les scènes : la
   // durée d'une scène allongée par sa voix sert aux effets faits de structures sans data-dur (jusqu'à la fin de la scène).
   const voixScenes = {};
@@ -263,7 +266,17 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
       erreurs.push(...deplie.erreurs);
     }
     const { html: sansScripts, scripts } = S.extraireScripts(html);
-    const { html: avecTextes, manquants } = S.injecterTextes(sansScripts, scene.textes, scene.ajustements);
+    // Flèches, annotations et dessins libres (spec S7, 5.2 à 5.5) : avant les textes (étiquettes des dessins libres).
+    let aDessiner = sansScripts;
+    if (usagesDessin(sansScripts, scripts)) {
+      const r = preparerDessin(sansScripts, { scene: scene.id, scripts });
+      aDessiner = r.html;
+      erreurs.push(...r.erreurs);
+      dessin.utilise = true;
+      r.icones.forEach((n) => dessin.icones.add(n));
+      dessin.scripts.push(...scripts);
+    }
+    const { html: avecTextes, manquants } = S.injecterTextes(aDessiner, scene.textes, scene.ajustements);
     manquants.forEach((cle) => erreurs.push({ regle: 'texte-manquant', gravite: 'erreur', scene: scene.id, message: `Scène « ${scene.id} » : data-texte="${cle}" n'a pas de texte dans le déroulé.` }));
     // Icônes Lucide (spec S9, 5.3) : <svg data-icone="nom"> devient son SVG en ligne ; la bibliothèque n'est lue qu'à la
     // première icône (une page sans icône n'en porte rien).
@@ -417,6 +430,8 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     shaders,
     modules: sourcesModules,
     ...(luPersonnages ? { personnages: donneesPersonnages(utilisesPersonnages, luPersonnages) } : {}),
+    // Icônes des dessins libres (d.icone) : seulement celles nommées (lib/icones.js, cheminsPour).
+    ...(dessin.icones.size ? { icones: require('./lib/icones.js').cheminsPour([...dessin.icones]) } : {}),
   };
 
   // Son réactif (P7) : pistes lues par les effets, les shaders et le CSS ; analysées une fois dans la page.
@@ -478,13 +493,13 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   }
 
   // Moteur à la carte : seuls les groupes de modules dont la vidéo se sert (groupesImposes : 'tous' pour les tests).
-  const groupes = groupesImposes || GM.groupesDuDeroule(donnees, sections);
+  const groupes = groupesImposes || GM.groupesDuDeroule(donnees, sections, dessin.scripts);
   const moteur = lireMoteur(RACINE, { groupes });
   const temps = dureeTemps(deroule);
   const cssPage = `:root { --pm-ratio-l: ${l}; --pm-ratio-h: ${h};${temps ? ` --pm-temps: ${temps}s; --pm-bpm: ${Math.round(60 / temps * 1000) / 1000};` : ''} }
 ${cssZones(deroule.format.plateforme)}${fs.readFileSync(path.join(RACINE, 'moteur', 'base.css'), 'utf8')}
 ${fs.readFileSync(path.join(RACINE, 'moteur', 'mouvements.css'), 'utf8')}
-${usages.css ? `${fs.readFileSync(path.join(RACINE, 'moteur', 'ecran.css'), 'utf8')}\n` : ''}${variablesCSS()}
+${usages.css ? `${fs.readFileSync(path.join(RACINE, 'moteur', 'ecran.css'), 'utf8')}\n` : ''}${dessin.utilise ? `${fs.readFileSync(path.join(RACINE, 'moteur', 'dessin', 'dessin.css'), 'utf8')}\n` : ''}${variablesCSS()}
 ${cssDeCharte}
 ${cssStyle}`;
   const page = `<!doctype html>
@@ -515,7 +530,7 @@ M.demarrerLecteur();
 M.demarrerSousTitres();
 M.demarrerSonReactif();
 M.demarrerParticules();
-${usages.moteur && (groupes === 'tous' || groupes.includes('ecran')) ? 'M.demarrerEcrans();\n' : ''}</script>
+${usages.moteur && (groupes === 'tous' || groupes.includes('ecran')) ? 'M.demarrerEcrans();\n' : ''}${dessin.utilise && (groupes === 'tous' || groupes.includes('dessin')) ? 'M.demarrerDessin();\n' : ''}</script>
 </body>
 </html>
 `;

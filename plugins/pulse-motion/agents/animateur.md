@@ -8,7 +8,7 @@ tools: Read, Write, Edit, Glob, Grep, Bash
 
 ## Ce que vous recevez
 
-- le dossier du projet ; la scène : `id`, `fichier`, `duree`, `rythme`, `intention`, clés de `textes` (avec leurs valeurs), la scène toute faite conseillée s'il y en a une ;
+- le dossier du projet ; la scène : `id`, `fichier`, `duree`, `rythme`, `intention`, clés de `textes` (et valeurs), la scène toute faite conseillée s'il y en a une ;
 - le style, le format (`16:9`, `9:16`, `1:1`, `4:5`), le tempo de la musique s'il y en a un ;
 - s'il y a lieu : l'effet de particules à poser, le personnage, les mouvements demandés (avec l'élément visé), le texte dit (`voix.texte`) et si la scène a une prise de voix, le nombre de bruitages ;
 - scène composée de la seconde vague : chemins des scènes témoins et note « grammaire ».
@@ -37,7 +37,7 @@ tools: Read, Write, Edit, Glob, Grep, Bash
    | des bruitages | `pulse-motion reference audio/bruitages` |
    | de suivre les scènes témoins | leurs fichiers, et la note « grammaire » telle quelle |
    | une scène témoin (la consigne le dit) | `pulse-motion reference anti-cliches` et `pulse-motion reference pieges` |
-   | `compositions`, `cadres-pointeur`, `ecran`, `mixage-fin` ou `actifs-marque` | `pulse-motion reference <nom>` |
+   | une flèche, une annotation (`explication`), `compositions`, `cadres-pointeur`, `ecran`, `mixage-fin` ou `actifs-marque` | `pulse-motion reference <nom>` |
 
 2. Scène toute faite conseillée (son `type`) : `pulse-motion scene <style> <type>`, la copier, remplacer `data-scene="<type>"` par `data-scene="<id>"`, mettre `data-dur="scene"` au décor (`data-decor`), retirer les éléments sans clé (point en trop, logo absent). Sinon, composer avec les classes du style et le dire (« composée »).
 3. Effet de particules, **seulement si votre consigne le demande**. Pas d'effet `avant` pendant la lecture d'un texte long (contrôle `effet-sur-texte`). Poser `<div data-effet="…">` minuté, ancré sur l'élément visé, réglé par `data-reglages`. Aucune recette ne convient : écrire `effets/<nom>.json` **par `etend`** d'une recette existante (`pulse-motion effet <nom>`).
@@ -49,7 +49,7 @@ tools: Read, Write, Edit, Glob, Grep, Bash
 
 ## Résultat à renvoyer
 
-Une ligne par point : fichier écrit, scène toute faite utilisée (ou « composée »), éléments animés et leur ordre d'entrée, ce qui vit (action principale, boucles) et ce qui reste immobile exprès, mouvements appliqués (numéro, nom, élément), effets posés (nom, ancre, calque), personnages et actions, sons et ancres `mot:`, zone réservée laissée, toute difficulté (texte trop long, clé inutilisable, nombre incertain).
+Une ligne par point : fichier écrit, scène toute faite utilisée (ou « composée »), éléments animés et leur ordre, ce qui vit (action principale, boucles) et ce qui reste immobile exprès, mouvements appliqués (numéro, élément), effets posés (nom, ancre, calque), personnages et actions, sons et ancres `mot:`, zone réservée laissée, toute difficulté (texte trop long, nombre incertain).
 
 ## Mode « style »
 

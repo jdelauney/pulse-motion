@@ -7,7 +7,7 @@
  * sonConnu(nom), problemeSonInconnu(scene, nom) son-inconnu
  * controlerScene({ projet, deroule, scene, html }) -> problemes : toutes les règles d'une scène lisibles sans assembler la
  *   vidéo : section, textes manquants, minutage (data-start, data-dur, ancres), CSS, lettres, sons, ressources sur internet,
- *   ancres des effets, milieux et shaders, icônes. Mêmes règles et mêmes messages que le contrôle.
+ *   ancres des effets, milieux et shaders, icônes, flèches et annotations. Mêmes règles et mêmes messages que le contrôle.
  */
 const fs = require('node:fs');
 const path = require('node:path');
@@ -164,8 +164,16 @@ function controlerScene({ projet, deroule, scene, html }) {
     html = deplie.html;
     problemes.push(...deplie.erreurs);
   }
-  const { html: sansScripts } = S.extraireScripts(html);
-  for (const cle of S.injecterTextes(sansScripts, scene.textes, scene.ajustements).manquants) {
+  const { html: sansScripts, scripts } = S.extraireScripts(html);
+  // Calque de dessin (spec S7) : flèches, annotations, main levée, étiquettes et icônes des dessins libres, comme à l'assemblage.
+  let aDessiner = sansScripts;
+  const D = require('./dessin.js');
+  if (D.usagesDessin(sansScripts, scripts)) {
+    const r = D.preparerDessin(sansScripts, { scene: scene.id, scripts });
+    aDessiner = r.html;
+    problemes.push(...r.erreurs);
+  }
+  for (const cle of S.injecterTextes(aDessiner, scene.textes, scene.ajustements).manquants) {
     problemes.push({ regle: 'texte-manquant', gravite: 'erreur', scene: scene.id, message: `Scène « ${scene.id} » : data-texte="${cle}" n'a pas de texte dans le déroulé.` });
   }
   // Icônes (spec S9, 5.3) : nom inconnu ou data-icone hors d'un <svg>, comme à l'assemblage.
