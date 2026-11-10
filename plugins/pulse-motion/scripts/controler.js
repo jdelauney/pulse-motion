@@ -40,6 +40,7 @@ const { cheminDansProjet } = require('./lib/embarquer.js');
 const W = require('../moteur/wav.js');
 const { corrigerTypographie, corrigerMajuscules, motsDoubles, termesVariables, cleTerme } = require('./lib/typographie.js');
 const { extraireScene, textesEnDur } = require('./lib/extraire.js');
+const { estEbauche } = require('./lib/ebauche.js');
 const { calculerMinutage } = require('../moteur/minutage.js');
 const CATALOGUE = require('../moteur/synthe/catalogue.js');
 const { appliquerCorrections } = require('./lib/corriger.js');
@@ -137,6 +138,12 @@ function controlesRapides({ projet, dossierStyles, dossierEffets, assemblage = A
       if (/data-groupe/.test(html)) html = deplierGroupes(html, { scene: s.id, dureeTemps: dureeTemps(deroule) }).html;
       scenesLues[s.id] = extraireScene(html);
       elementsParScene[s.id] = scenesLues[s.id].elements;
+      // Ébauche restée en place (spec Retouches et ergonomie, 5.3) : point de départ, jamais un résultat ; l'export la refuse.
+      if (estEbauche(scenesHtml[s.id])) {
+        problemes.push({ regle: 'ebauche-restante', gravite: 'erreur', scene: s.id,
+          message: `Scène « ${s.id} » : ce n'est encore que l'ébauche, la scène n'a pas été écrite.`,
+          consigne: `Scène « ${s.id} » : le fichier « ${s.fichier} » porte encore data-ebauche (écrit par pulse-motion ebauche). Le faire réécrire en entier par un agent animateur, sans data-ebauche.` });
+      }
     }
     const temps = dureeTemps(deroule);
     // Scènes de la page (avec leur voix) : durées effectives et ancres « mot: » comme dans le navigateur.

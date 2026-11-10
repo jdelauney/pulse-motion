@@ -157,6 +157,22 @@
       document.getElementById('pm-scene').appendChild(calque);
     }
 
+    // Pastille « Ébauche » (spec Retouches et ergonomie, 5.3), aperçu seulement : la scène affichée n'est encore que son
+    // point de départ (section data-ebauche). Hors de #pm-scene : jamais dans les images ; rien dans une page sans ébauche.
+    var pastille = null;
+    function marquerEbauche(i) {
+      var s = M.donnees && M.donnees.scenes && M.donnees.scenes[i];
+      if (!racine.__PM_APERCU__ || !s || !s.ebauche) { if (pastille) pastille.hidden = true; return; }
+      if (!pastille) {
+        pastille = el('div', { id: 'pm-pastille-ebauche', role: 'status', texte: 'Ébauche',
+          title: 'Scène en préparation : elle est remplacée dès qu’elle est écrite.' }, document.body);
+        pastille.style.cssText = 'position:fixed;left:12px;top:12px;z-index:19;padding:4px 10px;border-radius:999px;'
+          + 'background:#b9770e;color:#fff;font:600 12px/1.4 system-ui,sans-serif;letter-spacing:.04em;pointer-events:none';
+      }
+      pastille.hidden = false;
+    }
+    M.pastilleEbauche = function () { return !!(pastille && !pastille.hidden); };
+
     function indexScene(t) {
       var i = 0;
       scenes.forEach(function (s, k) { if (t >= s.debut) i = k; });
@@ -168,6 +184,7 @@
       var i = indexScene(t);
       etiquette.textContent = 'Scène ' + (i + 1) + '/' + scenes.length + ' · ' + scenes[i].id + (boucle ? ' (boucle)' : '') +
         ' · ' + horodatage(t) + ' / ' + horodatage(M.duree);
+      marquerEbauche(i);
       if (lecture && son.attendu && !son.tampon) etiquette.textContent += ' · son en préparation';
       else if (lecture && sonBloque()) etiquette.textContent += ' · son bloqué par le navigateur : cliquez pour l\'entendre';
       if (lecture && son.source) {

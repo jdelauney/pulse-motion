@@ -194,6 +194,7 @@ Le contrôle signale aussi, avec un message qui dit quoi faire : un texte du dé
 |---|---|---|---|---|
 | `boucle-mesure` | Vidéo en boucle (`boucle: true`) avec un tempo : la durée ne fait pas un nombre entier de mesures de 4 temps, à une image près | alerte | non | Allonger la dernière scène du temps donné par le message |
 | `boucle-jointure` | Vidéo en boucle : vignettes grises de 192 px des images 0, 1, N − 2 et N − 1, et 24 paires d'images voisines pour la médiane. Saut : l'écart entre la dernière et la première image dépasse 2 fois la médiane (et 0,5 niveau) ; vitesse : le rapport des écarts de fin et de début sort de 0,5 à 2 ; arrêt : la dernière image répète la première (moins de 0,1 niveau) | alerte | non | Finir la dernière scène sur l'image de départ (`pulse-motion reference rythme`) |
+| `ebauche-restante` | Une scène est encore l'ébauche écrite dès l'accord sur le déroulé (section `data-ebauche`, `pulse-motion ebauche`) | **erreur** | non ; l'export la refuse | Faire écrire la scène par son animateur, qui retire `data-ebauche` |
 | `deroule-invalide` | Le déroulé est mal formé (champ manquant, valeur hors de la liste) | erreur | non | Corriger le champ nommé par le message |
 | `style-inconnu` | Le style du déroulé n'est ni livré ni personnel | erreur | non | Prendre un style de `pulse-motion styles` |
 | `charte-invalide` | `charte/charte.json` mal formé (couleur, police, logo) | erreur | non | Corriger la valeur nommée |

@@ -261,6 +261,9 @@ function creerRoutesExport(projet, { optionsAssemblage = {} } = {}) {
     const { deroule, erreurs } = lireDeroule(projet);
     if (erreurs && erreurs.length) return repondre(res, 400, { erreur: `Le déroulé contient des erreurs : ${erreurs.join(' ')}` });
     const p = (k) => { const v = url.searchParams.get(k); return v === null || v === '' ? undefined : v; };
+    // Ébauche restante (spec Retouches et ergonomie, 5.3) : le bouton MP4 de l'aperçu la refuse aussi.
+    const ebauches = require('./ebauche.js').scenesEbauche(projet, deroule);
+    if (ebauches.length) return repondre(res, 400, { erreur: require('./ebauche.js').messageEbauches(ebauches) });
     const minutage = minutageVideo(projet, deroule);
     let u = U.resoudreUsage({ pour: p('pour'), qualite: p('qualite'), ips: p('ips'), tailleMax: p('taille'), flou: p('flou'), deroule, duree: minutage.duree });
     if (u.erreur) return repondre(res, 400, { erreur: u.erreur });

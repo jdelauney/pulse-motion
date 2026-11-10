@@ -24,6 +24,7 @@ const { besoinsSon } = require('./lib/son.js');
 const { variablesCSS } = require('../moteur/courbes.js');
 const { trouverStyle, messageStyleInconnu } = require('./styles.js');
 const { charteFinale, chartePour, variablesDerivees } = require('./lib/fusion-charte.js');
+const { estEbauche } = require('./lib/ebauche.js');
 const { lireVoixScene } = require('./lib/voix.js');
 const { DEBUT_VOIX, calculerMinutage, DUREE_TRANSITION_SHADER } = require('../moteur/minutage.js');
 const ST = require('../moteur/sous-titres.js');
@@ -246,6 +247,8 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
       parScene.push({ id: scene.id, section: sections[sections.length - 1], scripts: [] });
       continue;
     }
+    // Ébauche (spec Retouches et ergonomie, 5.3) : la page le sait, pour la pastille « Ébauche » de l'aperçu.
+    if (estEbauche(html)) scenesDonnees[rang].ebauche = true;
     // Groupes de personnages dépliés d'abord : effets, obstacles et personnages voient les membres (#file-2).
     if (/data-groupe/.test(html)) {
       const deplie = deplierGroupes(html, { scene: scene.id, dureeTemps: dureeTemps(deroule) });
