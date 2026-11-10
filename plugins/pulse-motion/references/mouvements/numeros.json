@@ -1,9 +1,11 @@
 {
-  "107": "fuite-lumiere",
-  "108": "brulure",
-  "109": "lentille",
-  "110": "iris",
-  "111": "deformation",
+  "100": "assombrir-autour",
+  "101": "zoom-etape",
+  "102": "zooms-suivent",
+  "103": "notification",
+  "104": "toast",
+  "105": "copier-copie",
+  "106": "revelation-3d",
   "001": "pop-in",
   "002": "fondu-montant",
   "003": "glisse",
@@ -96,5 +98,11 @@
   "090": "inondation",
   "091": "roue",
   "092": "mur",
-  "093": "helice"
+  "093": "helice",
+  "094": "clic-pointeur",
+  "095": "survol",
+  "096": "double-clic",
+  "097": "saisie",
+  "098": "projecteur",
+  "099": "anneau-focus"
 }

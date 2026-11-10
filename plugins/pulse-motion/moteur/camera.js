@@ -124,5 +124,74 @@
     };
   }
 
-  return { analyserCamera: analyserCamera, etatCamera: etatCamera, styleCamera: styleCamera, PROPRIETES_CAMERA: PROPRIETES };
+  // Zooms ciblés et enchaînés (spec S6, 5.11 ; réutilisés par la caméra automatique de S7). Logique d'enchaînement de argo
+  // (src/camera-move.ts : CHAIN_GAP_MS = 1500, CHAIN_PAN_MS = 1000, detectChainedPairs, courbe 1 − (1 − p)³ ; MIT,
+  // Shreyas Karnik), traduite des expressions ffmpeg en clauses de caméra.
+  var ZOOM = { entree: 0.4, ecart: 1.5, panoramique: 1, part: 0.4, min: 1.3, max: 2.5, courbe: 'cubic-out' };
+
+  /** Échelle d'un zoom : la cible occupe 40 % de la largeur (part : largeur de la cible ÷ largeur du cadre), de 1,3 à 2,5. */
+  function echelleZoom(part, echelle) {
+    if (echelle > 0) return echelle;
+    var s = part > 0 ? ZOOM.part / part : ZOOM.max;
+    return arrondi(Math.max(ZOOM.min, Math.min(ZOOM.max, s)));
+  }
+
+  /** Point visé (en %) gardé assez loin des bords pour que l'image zoomée couvre toujours le cadre. */
+  function centreZoom(x, y, s) {
+    var m = s > 1 ? 50 / s : 50;
+    return [arrondi(Math.max(m, Math.min(100 - m, x))), arrondi(Math.max(m, Math.min(100 - m, y)))];
+  }
+
+  function clause(prop, de, a, debut, duree) {
+    return { prop: prop, de: de, a: a, debut: arrondi(debut), duree: arrondi(Math.max(0.01, duree)), nomCourbe: ZOOM.courbe, courbe: C.courbeNommee(ZOOM.courbe) };
+  }
+
+  /** Trois clauses (zoom, x, y) d'un mouvement de A vers B. */
+  function mouvement(a, b, debut, duree) {
+    return [clause('zoom', a.echelle, b.echelle, debut, duree), clause('x', a.x, b.x, debut, duree), clause('y', a.y, b.y, debut, duree)];
+  }
+
+  /**
+   * enchainerZooms([{ debut, fin, echelle, x, y }]) -> clauses de caméra (analyserCamera) : entrée et sortie de 0,4 s en
+   * cubic-out ; deux zooms (d'échelle > 1) dont le second commence au plus 1,5 s après la fin du premier ne repassent pas
+   * par le plan large : un panoramique d'au plus 1 s, échelle comprise, va d'une cible à l'autre et finit avec l'entrée du
+   * second ; au-delà de 1,5 s, retour à 1. x, y : point visé en % du cadre (recentré pour couvrir le cadre).
+   */
+  function enchainerZooms(liste) {
+    var LARGE = { echelle: 1, x: 50, y: 50 };
+    var zooms = (liste || []).filter(function (z) { return z && z.fin > z.debut; }).map(function (z) {
+      var s = Math.max(1, Number(z.echelle) || 1);
+      var c = centreZoom(Number(z.x), Number(z.y), s);
+      return { debut: z.debut, fin: z.fin, echelle: s, x: c[0], y: c[1] };
+    }).sort(function (a, b) { return a.debut - b.debut; });
+    var clauses = [];
+    var courant = null;
+    var libre = -Infinity;
+    zooms.forEach(function (z, i) {
+      var suivant = zooms[i + 1];
+      if (courant) {
+        // Panoramique depuis le zoom précédent, enchaîné : au plus 1 s, fini quand l'entrée du zoom aurait fini.
+        var fin = Math.max(z.debut + ZOOM.entree, libre + 0.2);
+        var debut = Math.max(libre, fin - ZOOM.panoramique, courant.fin - ZOOM.entree);
+        if (debut > fin - 0.2) debut = fin - 0.2;
+        if (debut < libre) debut = libre;
+        clauses.push.apply(clauses, mouvement(courant, z, debut, fin - debut));
+        libre = fin;
+      } else {
+        var depart = Math.max(z.debut, libre);
+        clauses.push.apply(clauses, mouvement(LARGE, z, depart, ZOOM.entree));
+        libre = depart + ZOOM.entree;
+      }
+      var enchaine = suivant && suivant.debut - z.fin <= ZOOM.ecart && z.echelle > 1 && suivant.echelle > 1;
+      if (enchaine) { courant = z; return; }
+      var sortie = Math.max(libre, z.fin - ZOOM.entree);
+      clauses.push.apply(clauses, mouvement(z, LARGE, sortie, ZOOM.entree));
+      libre = sortie + ZOOM.entree;
+      courant = null;
+    });
+    return clauses;
+  }
+
+  return { analyserCamera: analyserCamera, etatCamera: etatCamera, styleCamera: styleCamera, PROPRIETES_CAMERA: PROPRIETES,
+    enchainerZooms: enchainerZooms, echelleZoom: echelleZoom, centreZoom: centreZoom, ZOOM: ZOOM };
 });

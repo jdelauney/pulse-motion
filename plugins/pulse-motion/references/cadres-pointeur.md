@@ -2,6 +2,7 @@
 
 ## L'essentiel
 
+- **Prêt à l'emploi : lire d'abord `pulse-motion reference ecran`.** Une capture ou une maquette de logiciel se pose dans le composant `pm-ecran` : cadres, pointeur à graine, clics, projecteur, zooms et blocs y sont déjà faits par le moteur. Ce qui suit ne sert qu'à une maquette entièrement dessinée à la main.
 - Quatre cadres **génériques, sans marque** : téléphone, tablette, fenêtre d'ordinateur, navigateur. Ils servent à poser une capture ou une démonstration de logiciel de la personne. Jamais de logo, de nom ni de forme qui imite un appareil précis.
 - Les dimensions sont des **proportions** (en % du cadre) : le cadre se règle par sa seule hauteur, en `cqh`.
 - Le cadre est du **décor** (`data-decor`) ; ce qu'il montre (la capture) est du **contenu**, avec un `alt`.
@@ -105,5 +106,4 @@ M.chaqueImage('demo', function (p, t) {
 
 ## À venir
 
-- Classes communes des quatre cadres et pointeur prêt à l'emploi, avec un attribut qui décrit les étapes (« aller sur #bouton, cliquer, taper dans #champ ») et calcule seul arc, durée, tremblement et onde à partir d'une graine ; projecteur et anneau autour d'un élément ; positions des clics reprises d'une application filmée puis figée (spec S6, tutoriels logiciels).
-- Cadre de téléphone autour d'une vidéo 9:16 à l'export (spec S5, sorties nouvelles).
+- Positions des clics reprises d'une application filmée puis figée (spec S6, tutoriels logiciels, plans 2 à 4).

@@ -62,5 +62,6 @@
       + '</svg>';
   }
 
-  return { FORMATS: FORMATS, geometrie: geometrie, svg: svg, PART_ECRAN: PART_ECRAN };
+  // BORD, RAYON, CORPS, PASTILLE : repris par le cadre « telephone » des écrans dans une scène (moteur/ecran.css, spec S6 5.12).
+  return { FORMATS: FORMATS, geometrie: geometrie, svg: svg, PART_ECRAN: PART_ECRAN, BORD: BORD, RAYON: RAYON, CORPS: CORPS, PASTILLE: { rayon: 0.3, couleur: '#2a2a2a' } };
 });

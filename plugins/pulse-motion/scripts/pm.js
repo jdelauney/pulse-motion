@@ -31,6 +31,7 @@
  *   pulse-motion reference styles/<style> --pour animateur   extrait de la fiche de style lu par l'animateur
  *   pulse-motion scene <style> <nom>      affiche une scène toute faite d'un style
  *   pulse-motion effet <nom>              affiche la recette d'un effet de particules de la bibliothèque
+ *   pulse-motion bloc [<nom>]             blocs « interface » d'un écran de tutoriel (notification, toast, commande…) : liste, ou le HTML d'un bloc
  *   pulse-motion icones chercher <mots…> | afficher <nom> | planche <nom1,nom2…> [--ouvrir]   icônes Lucide : chercher en français, SVG, planche PNG
  *   pulse-motion mouvements liste [--categorie <id>] | chercher <mots…> | afficher <n° ou nom> | reference | choisir [--categorie <id>] [--ouvrir]   dictionnaire de mouvements nommés ; choisir en regardant
  *   pulse-motion personnages liste|afficher <nom>|verifier|planche <nom> [--dessin <d>]|planche --dessin <d> --visage|atelier [<nom>] [--dessin <d>] [--decoupe <nom>] [--bibliotheque]|analyser <svg>|decouper <nom>|renommer-couleur <dessin> <ancien> <nouveau> [--dossier <d>]   poses, clips et gabarits des personnages
@@ -169,6 +170,19 @@ function lancer(args) {
     if (!st) { console.error(messageStyleInconnu(style)); return 1; }
     return afficherFichier(path.join(st.dossier, 'scenes', `${nom}.html`), `Scène « ${nom} » du style « ${style} »`);
   }
+  if (commande === 'bloc') {
+    // Blocs « interface » (spec S6, 5.13) : HTML commun à tous les styles, dans moteur/blocs/.
+    const dossier = path.join(RACINE, 'moteur', 'blocs');
+    const nom = reste[0] || '';
+    if (!nom) {
+      const liste = fs.readdirSync(dossier).filter((f) => f.endsWith('.html')).map((f) => f.slice(0, -5)).sort();
+      process.stdout.write(`${JSON.stringify({ blocs: liste }, null, 2)}
+`);
+      return 0;
+    }
+    if (!/^[a-z0-9-]+$/.test(nom)) { console.error('Usage : pulse-motion bloc [<nom>] (ex. notification, toast, commande)'); return 2; }
+    return afficherFichier(path.join(dossier, `${nom}.html`), `Bloc « ${nom} »`);
+  }
   if (commande === 'effet') {
     const nom = reste[0] || '';
     if (!/^[a-z0-9-]+$/.test(nom)) { console.error('Usage : pulse-motion effet <nom> (ex. etincelles, confettis)'); return 2; }
@@ -208,7 +222,7 @@ function lancer(args) {
     '  outils [--plan]          état de l\'ordinateur (ce qui est prêt, ce qui manque) ; --plan : ce qu\'il faudrait installer',
     '  avancement <dossier> [--suivre]   travail long en cours, une ligne (ou une par étape jusqu\'à la fin)',
     '  musique ecouter [dossier]   musique seule dans sortie/musique.wav',
-    '  reference <nom>          scene <style> <nom>      effet <nom>      consignes <skill> [<section>]',
+    '  reference <nom>          scene <style> <nom>      effet <nom>      bloc [<nom>]      consignes <skill> [<section>]',
     '  mouvements liste [--categorie <id>] | chercher <mots…> | afficher <n° ou nom> | reference | choisir [--categorie <id>] [--ouvrir] [--delai <minutes>]   [--json]',
     '  icones chercher <mots…> | afficher <nom> | planche <nom1,nom2…> [--ouvrir]   icônes Lucide, posées par <svg data-icone="nom"> (reference icones)',
     '  personnages liste|afficher <nom>|verifier|planche <nom> [--dessin <d>]|planche --dessin <d> --visage|atelier [<nom>] [--dessin <d>] [--decoupe <nom>] [--bibliotheque]|analyser <svg>|decouper <nom>|renommer-couleur <dessin> <ancien> <nouveau>   poses, clips et gabarits des personnages',

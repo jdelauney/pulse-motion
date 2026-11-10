@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "source": "Noms, sens et idées de phrases inspirés de Motion Prompt (https://github.com/showheyohtaki/motion-prompt), MIT © 2026 Shohei Ohtaki ; traduits et adaptés au moteur Pulse Motion. Vie du décor (#069 à #080) et motifs #081, #082 : chiffres de rossark-motion-skill, MIT © 2026 rossark0 ; zoom continu, pulsation sur le temps et cercle d'inondation (#083, #086, #090) : take-one, MIT © 2026 Tal Siach ; défilement, échos, roue, avant/après, hélice et suivi retardé (#084, #085, #087, #088, #091, #093) : reanimate, MIT © 2026 Niaz Morshed ; idées et chiffres réécrits. Transitions #107 à #111 : fuite de lumière d'argo (light-leak), MIT © 2026 Shreyas Karnik, traduite ; brûlure, lentille, iris et déformation : idées de HyperFrames (via argo), réécrites sans code repris. Voir THIRD-PARTY-NOTICES.md.",
+  "source": "Noms, sens et idées de phrases inspirés de Motion Prompt (https://github.com/showheyohtaki/motion-prompt), MIT © 2026 Shohei Ohtaki ; traduits et adaptés au moteur Pulse Motion. Vie du décor (#069 à #080) et motifs #081, #082 : chiffres de rossark-motion-skill, MIT © 2026 rossark0 ; zoom continu, pulsation sur le temps et cercle d'inondation (#083, #086, #090) : take-one, MIT © 2026 Tal Siach ; défilement, échos, roue, avant/après, hélice et suivi retardé (#084, #085, #087, #088, #091, #093) : reanimate, MIT © 2026 Niaz Morshed ; idées et chiffres réécrits. Démonstration de logiciel (#094 à #106) : pointeur, projecteur, anneau, zooms enchaînés et blocs d'argo, MIT © 2026 Shreyas Karnik ; idées et chiffres réécrits. Voir THIRD-PARTY-NOTICES.md.",
   "categories": [
     {
       "id": "entrees",
@@ -37,6 +37,10 @@
     {
       "id": "compositions",
       "nom": "Compositions"
+    },
+    {
+      "id": "logiciel",
+      "nom": "Démonstration de logiciel"
     }
   ],
   "mouvements": [
@@ -3491,213 +3495,496 @@
       }
     },
     {
-      "no": "107",
-      "slug": "fuite-lumiere",
-      "categorie": "transitions",
+      "no": "094",
+      "slug": "clic-pointeur",
+      "categorie": "logiciel",
       "nom": {
-        "fr": "Fuite de lumière",
-        "metier": "Light leak"
+        "fr": "Clic du pointeur",
+        "metier": "Cursor click"
       },
-      "sens": "Un éclair de lumière chaude, à la couleur de la marque, passe d'une scène à l'autre",
-      "demande": "Passe à la scène suivante par une fuite de lumière de 1 s.",
-      "quand": "Un ton chaleureux, un souvenir, une ouverture.",
+      "sens": "Le pointeur va sur le bouton en arc, marque un temps et clique : le bouton s'enfonce, un cercle se resserre, on entend le clic",
+      "demande": "Fais cliquer le pointeur sur le bouton Envoyer à 1,6 s.",
+      "quand": "Montrer où cliquer dans un logiciel, sur une capture d'écran ou une maquette de l'écran.",
       "motsCles": [
-        "fuite",
-        "lumiere",
-        "light leak",
-        "eclair",
-        "pellicule",
-        "chaleureux"
+        "clic",
+        "cliquer",
+        "pointeur",
+        "souris",
+        "curseur",
+        "cursor",
+        "click",
+        "tutoriel",
+        "logiciel"
       ],
       "recette": {
-        "type": "transition",
-        "exemple": "\"transition\": {\"shader\":\"fuite-lumiere\",\"duree\":1}",
+        "type": "combinaison",
+        "exemple": "<div class=\"pm-ecran\" data-adresse=\"app.exemple.fr\" style=\"--pm-ecran-l: 92cqh\">\n  <div style=\"position: absolute; inset: 0; display: grid; gap: 6%; align-content: start; padding: 6%; background: var(--c-fond)\">\n    <div id=\"liste\" style=\"height: 22cqh; border-radius: 1cqh; background: color-mix(in srgb, var(--c-texte) 10%, transparent)\"></div>\n    <div id=\"envoyer\" style=\"justify-self: end; width: 24cqh; height: 7cqh; border-radius: 1cqh; background: var(--c-primaire)\"></div>\n  </div>\n  <i class=\"pm-clic\" data-cible=\"#envoyer\" data-start=\"1.6\"></i>\n</div>",
         "reglages": [
           {
-            "nom": "duree",
+            "nom": "data-cible",
+            "defaut": "#envoyer",
+            "effet": "élément de l'écran (#id), ou point x%,y% de l'image (une capture)"
+          },
+          {
+            "nom": "data-start",
+            "defaut": "1.6",
+            "effet": "instant du clic (mot:, #id:fin… marchent) ; le pointeur part 0,35 s plus son trajet (0,3 à 1,1 s) avant"
+          },
+          {
+            "nom": "data-son",
+            "defaut": "clic",
+            "effet": "bruitage du clic ; « aucun » : sans son"
+          },
+          {
+            "nom": "data-pointeur",
+            "defaut": "fleche",
+            "effet": "sur l'écran : fleche, main, doigt (téléphone, tablette), aucun"
+          },
+          {
+            "nom": "data-pointeur-vitesse",
             "defaut": "1",
-            "effet": "durée, de 0,1 à 5 s"
-          },
-          {
-            "nom": "couleur",
-            "defaut": "accent",
-            "effet": "couleur de l'éclair (dans sa version claire)"
-          },
-          {
-            "nom": "douceur",
-            "defaut": "0.2",
-            "effet": "durée du fondu sous l'éclair, de 0,01 à 0,5 (part de la transition, de chaque côté du milieu)"
+            "effet": "sur l'écran : facteur de la durée des trajets (1.4 : plus lent)"
           }
         ],
-        "note": "Transition par shader : WebGPU nécessaire (sinon fondu, et l'export est refusé). Couleur de la marque par défaut (accent de la charte)."
+        "note": "Le pointeur est dessiné par le moteur, à graine : même trajet à chaque rendu. Laisser au moins 1,5 s entre deux gestes (contrôle etapes-trop-rapprochees). pulse-motion reference ecran."
       }
     },
     {
-      "no": "108",
-      "slug": "brulure",
-      "categorie": "transitions",
+      "no": "095",
+      "slug": "survol",
+      "categorie": "logiciel",
       "nom": {
-        "fr": "Brûlure",
-        "metier": "Burn"
+        "fr": "Survol",
+        "metier": "Hover"
       },
-      "sens": "L'image brûle par plaques : un front incandescent, de la cendre et des étincelles découvrent la scène suivante",
-      "demande": "Brûle la scène vers la suivante en 1,2 s.",
-      "quand": "Une rupture forte : l'ancien disparaît, on tourne la page.",
+      "sens": "Le pointeur vient se poser sur un élément sans cliquer",
+      "demande": "Fais passer le pointeur sur la liste à 1,2 s.",
+      "quand": "Montrer une aide qui apparaît au survol, ou désigner un endroit de l'écran avant d'en parler.",
       "motsCles": [
-        "brulure",
-        "burn",
-        "feu",
-        "bruler",
-        "etincelles",
-        "rupture"
+        "survol",
+        "survoler",
+        "hover",
+        "pointeur",
+        "souris",
+        "designer",
+        "montrer"
       ],
       "recette": {
-        "type": "transition",
-        "exemple": "\"transition\": {\"shader\":\"brulure\",\"duree\":1.2}",
+        "type": "combinaison",
+        "exemple": "<div class=\"pm-ecran\" data-adresse=\"app.exemple.fr\" style=\"--pm-ecran-l: 92cqh\">\n  <div style=\"position: absolute; inset: 0; display: grid; gap: 6%; align-content: start; padding: 6%; background: var(--c-fond)\">\n    <div id=\"liste\" style=\"height: 22cqh; border-radius: 1cqh; background: color-mix(in srgb, var(--c-texte) 10%, transparent)\"></div>\n    <div id=\"envoyer\" style=\"justify-self: end; width: 24cqh; height: 7cqh; border-radius: 1cqh; background: var(--c-primaire)\"></div>\n  </div>\n  <i class=\"pm-survol\" data-cible=\"#liste\" data-start=\"1.2\"></i>\n</div>",
         "reglages": [
           {
-            "nom": "duree",
+            "nom": "data-cible",
+            "defaut": "#liste",
+            "effet": "élément de l'écran (#id), ou point x%,y% de l'image"
+          },
+          {
+            "nom": "data-start",
             "defaut": "1.2",
-            "effet": "durée, de 0,1 à 5 s"
-          },
-          {
-            "nom": "couleur",
-            "defaut": "accent",
-            "effet": "couleur du front (claire au bord, sombre en cendre)"
-          },
-          {
-            "nom": "etincelles",
-            "defaut": "0.5",
-            "effet": "part d'étincelles, de 0 à 1"
+            "effet": "instant où le pointeur arrive"
           }
-        ],
-        "note": "Transition par shader : WebGPU nécessaire (sinon fondu, et l'export est refusé). Couleur de la marque par défaut (accent de la charte)."
+        ]
       }
     },
     {
-      "no": "109",
-      "slug": "lentille",
-      "categorie": "transitions",
+      "no": "096",
+      "slug": "double-clic",
+      "categorie": "logiciel",
       "nom": {
-        "fr": "Lentille",
-        "metier": "Gravitational lens"
+        "fr": "Double-clic",
+        "metier": "Double click"
       },
-      "sens": "L'image se courbe en anneau autour d'un cœur sombre, puis la suivante se déplie",
-      "demande": "Passe à la scène suivante par une lentille de 1 s.",
-      "quand": "Changer d'échelle, plonger dans un sujet, une idée qui aspire.",
+      "sens": "Deux clics rapprochés, 0,15 s d'écart, chacun avec son enfoncement, son cercle et son son",
+      "demande": "Fais un double-clic sur la liste à 1,6 s.",
+      "quand": "Ouvrir un fichier, entrer dans un dossier, sélectionner un mot dans un logiciel montré.",
       "motsCles": [
-        "lentille",
-        "lens",
-        "trou noir",
-        "aspiration",
-        "courbure",
-        "plongee"
+        "double clic",
+        "double click",
+        "ouvrir",
+        "pointeur",
+        "souris"
       ],
       "recette": {
-        "type": "transition",
-        "exemple": "\"transition\": {\"shader\":\"lentille\",\"duree\":1}",
+        "type": "combinaison",
+        "exemple": "<div class=\"pm-ecran\" data-adresse=\"app.exemple.fr\" style=\"--pm-ecran-l: 92cqh\">\n  <div style=\"position: absolute; inset: 0; display: grid; gap: 6%; align-content: start; padding: 6%; background: var(--c-fond)\">\n    <div id=\"liste\" style=\"height: 22cqh; border-radius: 1cqh; background: color-mix(in srgb, var(--c-texte) 10%, transparent)\"></div>\n    <div id=\"envoyer\" style=\"justify-self: end; width: 24cqh; height: 7cqh; border-radius: 1cqh; background: var(--c-primaire)\"></div>\n  </div>\n  <i class=\"pm-double-clic\" data-cible=\"#liste\" data-start=\"1.6\"></i>\n</div>",
         "reglages": [
           {
-            "nom": "duree",
-            "defaut": "1",
-            "effet": "durée, de 0,1 à 5 s"
+            "nom": "data-cible",
+            "defaut": "#liste",
+            "effet": "élément de l'écran (#id), ou point x%,y% de l'image"
           },
           {
-            "nom": "force",
-            "defaut": "1",
-            "effet": "force de la courbure, de 0 à 3"
-          },
-          {
-            "nom": "rayon",
-            "defaut": "0.4",
-            "effet": "taille de l'anneau, en part de la hauteur (0,05 à 1,5)"
+            "nom": "data-start",
+            "defaut": "1.6",
+            "effet": "instant du premier clic"
           }
-        ],
-        "note": "Transition par shader : WebGPU nécessaire (sinon fondu, et l'export est refusé)."
+        ]
       }
     },
     {
-      "no": "110",
-      "slug": "iris",
-      "categorie": "transitions",
+      "no": "097",
+      "slug": "saisie",
+      "categorie": "logiciel",
       "nom": {
-        "fr": "Iris coloré",
-        "metier": "Iris wipe"
+        "fr": "Saisie au clavier",
+        "metier": "Human typing"
       },
-      "sens": "Une forme s'ouvre depuis le centre (cercle, losange ou étoile), bordée d'un anneau à la couleur de la marque",
-      "demande": "Ouvre la scène suivante par un iris en étoile de 0,9 s.",
-      "quand": "Un focus, une ouverture, un clin d'œil au cinéma ; la transition « cercle » (#045) suffit pour un rond simple sans couleur.",
+      "sens": "Le texte se tape par petits paquets irréguliers, comme une vraie main, avec le curseur de saisie qui clignote",
+      "demande": "Tape le nom du client dans le champ à 0,5 s, comme au clavier.",
+      "quand": "Un champ qu'on remplit dans un logiciel montré, une recherche, une commande tapée.",
       "motsCles": [
-        "iris",
-        "ouverture",
-        "etoile",
-        "losange",
-        "cinema",
-        "anneau"
+        "saisie",
+        "taper",
+        "clavier",
+        "typing",
+        "champ",
+        "curseur",
+        "ecrire"
       ],
       "recette": {
-        "type": "transition",
-        "exemple": "\"transition\": {\"shader\":\"iris\",\"duree\":0.9,\"reglages\":{\"forme\":2}}",
+        "type": "attribut",
+        "exemple": "<h2 data-texte=\"titre\" data-start=\"0.5\" data-lettres=\"saisie\"></h2>",
         "reglages": [
           {
-            "nom": "duree",
-            "defaut": "0.9",
-            "effet": "durée, de 0,1 à 5 s"
-          },
-          {
-            "nom": "forme",
-            "defaut": "0",
-            "effet": "0 cercle, 1 losange, 2 étoile"
-          },
-          {
-            "nom": "couleur",
-            "defaut": "accent",
-            "effet": "couleur de l'anneau"
+            "nom": "data-lettres",
+            "defaut": "saisie",
+            "effet": "paquets de 1 à 3 lettres, 45 à 140 ms entre deux, plus long après une espace ou une ponctuation ; même texte et même scène, même rythme"
           }
         ],
-        "note": "Transition par shader : WebGPU nécessaire (sinon fondu, et l'export est refusé). Couleur de la marque par défaut (accent de la charte)."
+        "note": "Différente de #015 (machine à écrire, régulière). Le curseur reste après la dernière lettre et clignote à 1 Hz."
       }
     },
     {
-      "no": "111",
-      "slug": "deformation",
-      "categorie": "transitions",
+      "no": "098",
+      "slug": "projecteur",
+      "categorie": "logiciel",
       "nom": {
-        "fr": "Déformation liquide",
-        "metier": "Domain warp"
+        "fr": "Projecteur",
+        "metier": "Spotlight"
       },
-      "sens": "L'image se tord comme un liquide aux veines colorées, puis se dénoue sur la scène suivante",
-      "demande": "Passe à la scène suivante par une déformation liquide de 1,2 s.",
-      "quand": "Une transformation, une idée qui se reforme, un monde qui change.",
+      "sens": "Tout l'écran s'assombrit sauf la zone dont on parle",
+      "demande": "Mets un projecteur sur le bouton Envoyer de 1 s à 3 s.",
+      "quand": "Une zone précise d'un écran chargé : un total, un bouton, une colonne.",
       "motsCles": [
-        "deformation",
-        "warp",
-        "liquide",
-        "torsion",
-        "transformation",
-        "fluide"
+        "projecteur",
+        "spotlight",
+        "eclairer",
+        "assombrir",
+        "zone",
+        "mettre en valeur"
       ],
       "recette": {
-        "type": "transition",
-        "exemple": "\"transition\": {\"shader\":\"deformation\",\"duree\":1.2}",
+        "type": "combinaison",
+        "exemple": "<div class=\"pm-ecran\" data-adresse=\"app.exemple.fr\" style=\"--pm-ecran-l: 92cqh\">\n  <div style=\"position: absolute; inset: 0; display: grid; gap: 6%; align-content: start; padding: 6%; background: var(--c-fond)\">\n    <div id=\"liste\" style=\"height: 22cqh; border-radius: 1cqh; background: color-mix(in srgb, var(--c-texte) 10%, transparent)\"></div>\n    <div id=\"envoyer\" style=\"justify-self: end; width: 24cqh; height: 7cqh; border-radius: 1cqh; background: var(--c-primaire)\"></div>\n  </div>\n  <i class=\"pm-projecteur\" data-cible=\"#envoyer\" data-start=\"1\" data-dur=\"2\"></i>\n</div>",
         "reglages": [
           {
-            "nom": "duree",
-            "defaut": "1.2",
-            "effet": "durée, de 0,1 à 5 s"
+            "nom": "data-cible",
+            "defaut": "#envoyer",
+            "effet": "élément de l'écran (#id), ou zone x%,y%,l%,h% de l'image"
           },
           {
-            "nom": "echelle",
-            "defaut": "30",
-            "effet": "taille des veines, en cqh (5 à 120)"
+            "nom": "data-dur",
+            "defaut": "3",
+            "effet": "durée ; entrée et sortie de 0,4 s"
           },
           {
-            "nom": "couleur",
-            "defaut": "accent",
-            "effet": "couleur des veines (de sa version sombre à sa version claire)"
+            "nom": "--pm-projecteur",
+            "defaut": "0.7",
+            "effet": "assombrissement du reste (0 à 1)"
           }
         ],
-        "note": "Transition par shader : WebGPU nécessaire (sinon fondu, et l'export est refusé). Couleur de la marque par défaut (accent de la charte)."
+        "note": "Marge de 12 px, coins de 10 px, bord adouci : aucun filtre, rendu pareil dans les deux voies d'export."
+      }
+    },
+    {
+      "no": "099",
+      "slug": "anneau-focus",
+      "categorie": "logiciel",
+      "nom": {
+        "fr": "Anneau de focus",
+        "metier": "Focus ring"
+      },
+      "sens": "Un anneau à la couleur d'accent entoure l'élément et pulse doucement",
+      "demande": "Entoure le champ d'un anneau qui pulse de 1 s à 3 s.",
+      "quand": "Désigner un champ ou un bouton sans assombrir le reste.",
+      "motsCles": [
+        "anneau",
+        "focus",
+        "entourer",
+        "cadre",
+        "pulse",
+        "ring"
+      ],
+      "recette": {
+        "type": "combinaison",
+        "exemple": "<div class=\"pm-ecran\" data-adresse=\"app.exemple.fr\" style=\"--pm-ecran-l: 92cqh\">\n  <div style=\"position: absolute; inset: 0; display: grid; gap: 6%; align-content: start; padding: 6%; background: var(--c-fond)\">\n    <div id=\"liste\" style=\"height: 22cqh; border-radius: 1cqh; background: color-mix(in srgb, var(--c-texte) 10%, transparent)\"></div>\n    <div id=\"envoyer\" style=\"justify-self: end; width: 24cqh; height: 7cqh; border-radius: 1cqh; background: var(--c-primaire)\"></div>\n  </div>\n  <i class=\"pm-anneau\" data-cible=\"#envoyer\" data-start=\"1\" data-dur=\"2\"></i>\n</div>",
+        "reglages": [
+          {
+            "nom": "data-cible",
+            "defaut": "#envoyer",
+            "effet": "élément de l'écran (#id), ou zone x%,y%,l%,h% de l'image"
+          },
+          {
+            "nom": "data-dur",
+            "defaut": "3",
+            "effet": "durée ; une pulsation toutes les 1,5 s"
+          }
+        ]
+      }
+    },
+    {
+      "no": "100",
+      "slug": "assombrir-autour",
+      "categorie": "logiciel",
+      "nom": {
+        "fr": "Assombrir autour",
+        "metier": "Dim around"
+      },
+      "sens": "Le reste de la scène pâlit pour ne laisser que l'écran",
+      "demande": "Fais pâlir tout autour de l'écran de 1 s à 3 s.",
+      "quand": "Un écran entouré de textes ou de décor, au moment où l'on doit le regarder lui seul.",
+      "motsCles": [
+        "assombrir",
+        "palir",
+        "autour",
+        "dim",
+        "concentrer",
+        "ecran"
+      ],
+      "recette": {
+        "type": "combinaison",
+        "exemple": "<h2 data-texte=\"titre\" data-start=\"0\"></h2>\n<div class=\"pm-ecran\" data-adresse=\"app.exemple.fr\" style=\"--pm-ecran-l: 92cqh\">\n  <div style=\"position: absolute; inset: 0; display: grid; gap: 6%; align-content: start; padding: 6%; background: var(--c-fond)\">\n    <div id=\"liste\" style=\"height: 22cqh; border-radius: 1cqh; background: color-mix(in srgb, var(--c-texte) 10%, transparent)\"></div>\n    <div id=\"envoyer\" style=\"justify-self: end; width: 24cqh; height: 7cqh; border-radius: 1cqh; background: var(--c-primaire)\"></div>\n  </div>\n  <i class=\"pm-assombrir\" data-start=\"1\" data-dur=\"2\"></i>\n</div>",
+        "reglages": [
+          {
+            "nom": "data-dur",
+            "defaut": "3",
+            "effet": "durée ; entrée et sortie de 0,4 s"
+          }
+        ],
+        "note": "Les éléments hors de l'écran passent à 30 % (voile de la couleur du fond)."
+      }
+    },
+    {
+      "no": "101",
+      "slug": "zoom-etape",
+      "categorie": "logiciel",
+      "nom": {
+        "fr": "Zoom sur l'étape",
+        "metier": "Zoom to target"
+      },
+      "sens": "L'écran se rapproche de l'élément dont on parle, puis revient",
+      "demande": "Zoome sur le bouton Envoyer de 1 s à 3,4 s.",
+      "quand": "Un détail trop petit pour être lu sur l'écran entier : un champ, un bouton, un chiffre.",
+      "motsCles": [
+        "zoom",
+        "zoomer",
+        "rapprocher",
+        "detail",
+        "loupe",
+        "etape"
+      ],
+      "recette": {
+        "type": "combinaison",
+        "exemple": "<div class=\"pm-ecran\" data-adresse=\"app.exemple.fr\" style=\"--pm-ecran-l: 92cqh\">\n  <div style=\"position: absolute; inset: 0; display: grid; gap: 6%; align-content: start; padding: 6%; background: var(--c-fond)\">\n    <div id=\"liste\" style=\"height: 22cqh; border-radius: 1cqh; background: color-mix(in srgb, var(--c-texte) 10%, transparent)\"></div>\n    <div id=\"envoyer\" style=\"justify-self: end; width: 24cqh; height: 7cqh; border-radius: 1cqh; background: var(--c-primaire)\"></div>\n  </div>\n  <i class=\"pm-zoom\" data-cible=\"#envoyer\" data-start=\"1\" data-dur=\"2.4\"></i>\n</div>",
+        "reglages": [
+          {
+            "nom": "data-cible",
+            "defaut": "#envoyer",
+            "effet": "élément de l'écran (#id), ou point x%,y% de l'image"
+          },
+          {
+            "nom": "data-dur",
+            "defaut": "2.4",
+            "effet": "durée, entrée et sortie de 0,4 s comprises"
+          },
+          {
+            "nom": "data-echelle",
+            "defaut": "1.3 à 2.5",
+            "effet": "sans elle, la cible occupe 40 % de la largeur"
+          }
+        ],
+        "note": "Deux zooms à moins de 1,5 s s'enchaînent par un panoramique, sans repasser au plan large."
+      }
+    },
+    {
+      "no": "102",
+      "slug": "zooms-suivent",
+      "categorie": "logiciel",
+      "nom": {
+        "fr": "Zooms qui suivent les clics",
+        "metier": "Follow the cursor"
+      },
+      "sens": "À chaque clic, l'écran se rapproche de la cible, glisse vers la suivante, puis recule à la fin",
+      "demande": "Fais suivre les clics par la caméra sur les deux clics à 1,2 s et 2,4 s.",
+      "quand": "Un parcours de plusieurs clics sur un grand écran, pour que chaque geste se lise.",
+      "motsCles": [
+        "suivre",
+        "zooms",
+        "camera",
+        "clics",
+        "follow",
+        "parcours"
+      ],
+      "recette": {
+        "type": "combinaison",
+        "exemple": "<div class=\"pm-ecran\" data-adresse=\"app.exemple.fr\" data-film-camera=\"suivre\" style=\"--pm-ecran-l: 92cqh\">\n  <div style=\"position: absolute; inset: 0; display: grid; gap: 6%; align-content: start; padding: 6%; background: var(--c-fond)\">\n    <div id=\"liste\" style=\"height: 22cqh; border-radius: 1cqh; background: color-mix(in srgb, var(--c-texte) 10%, transparent)\"></div>\n    <div id=\"envoyer\" style=\"justify-self: end; width: 24cqh; height: 7cqh; border-radius: 1cqh; background: var(--c-primaire)\"></div>\n  </div>\n  <i class=\"pm-clic\" data-cible=\"#liste\" data-start=\"1.2\"></i>\n  <i class=\"pm-clic\" data-cible=\"#envoyer\" data-start=\"2.4\"></i>\n</div>",
+        "reglages": [
+          {
+            "nom": "data-film-camera",
+            "defaut": "suivre",
+            "effet": "sur l'écran : un zoom par geste ; les pm-zoom écrits l'emportent ; un data-camera sur l'écran le désactive"
+          }
+        ]
+      }
+    },
+    {
+      "no": "103",
+      "slug": "notification",
+      "categorie": "logiciel",
+      "nom": {
+        "fr": "Notification",
+        "metier": "Notification"
+      },
+      "sens": "Une notification générique glisse du coin de l'image",
+      "demande": "Fais arriver une notification en haut à droite à 1 s.",
+      "quand": "Un message reçu, une alerte d'application, un rappel montré dans un tutoriel.",
+      "motsCles": [
+        "notification",
+        "alerte",
+        "message",
+        "rappel",
+        "push"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<div class=\"pm-bloc pm-bloc-notification pm-m-glisse-droite\" data-start=\"1\" style=\"--pm-ampleur: 14\">\n  <span class=\"pm-bloc-pastille\"><svg class=\"pm-bloc-icone\" data-icone=\"bell\"></svg></span>\n  <div class=\"pm-bloc-corps\"><p class=\"pm-bloc-titre\" data-texte=\"titre\"></p><p class=\"pm-bloc-texte\" data-texte=\"texte\"></p></div>\n</div>",
+        "reglages": [
+          {
+            "nom": "data-icone",
+            "defaut": "bell",
+            "effet": "icône Lucide (pulse-motion icones chercher <mot>)"
+          },
+          {
+            "nom": "--pm-bloc-haut",
+            "defaut": "5cqh",
+            "effet": "distance au haut"
+          },
+          {
+            "nom": "--pm-bloc-droite",
+            "defaut": "5cqh",
+            "effet": "distance à droite"
+          }
+        ],
+        "note": "Bloc complet (appli, « maintenant ») : pulse-motion bloc notification. Aucun aspect de système ni de marque."
+      }
+    },
+    {
+      "no": "104",
+      "slug": "toast",
+      "categorie": "logiciel",
+      "nom": {
+        "fr": "Message bref",
+        "metier": "Toast"
+      },
+      "sens": "Un court message avec une coche monte en bas de l'image",
+      "demande": "Fais monter le message « Facture enregistrée » en bas à 1 s.",
+      "quand": "Confirmer qu'une action a réussi (enregistré, envoyé), ou prévenir d'une erreur.",
+      "motsCles": [
+        "toast",
+        "message",
+        "confirmation",
+        "enregistre",
+        "succes",
+        "coche"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<div class=\"pm-bloc pm-bloc-toast pm-m-monte\" data-start=\"1\" style=\"--pm-ampleur: 3\">\n  <svg class=\"pm-bloc-icone\" data-icone=\"circle-check\"></svg>\n  <p class=\"pm-bloc-texte\" data-texte=\"titre\"></p>\n</div>",
+        "reglages": [
+          {
+            "nom": "data-variante",
+            "defaut": "alerte",
+            "effet": "fond d'accent, avec data-icone=\"triangle-alert\""
+          },
+          {
+            "nom": "--pm-bloc-bas",
+            "defaut": "7cqh",
+            "effet": "distance au bas"
+          }
+        ]
+      }
+    },
+    {
+      "no": "105",
+      "slug": "copier-copie",
+      "categorie": "logiciel",
+      "nom": {
+        "fr": "Copier, puis Copié",
+        "metier": "Copy button"
+      },
+      "sens": "Une commande dans une pastille sombre ; le bouton Copier devient Copié avec une coche",
+      "demande": "Montre la commande et fais passer Copier à Copié à 2 s.",
+      "quand": "Une commande ou un code à recopier ; avec la variante terminal, une suite de commandes tapées et leurs réponses.",
+      "motsCles": [
+        "copier",
+        "copie",
+        "commande",
+        "terminal",
+        "code",
+        "presse papiers"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<div class=\"pm-bloc pm-bloc-commande pm-m-pop\" data-start=\"0.3\">\n  <code class=\"pm-bloc-code\" data-texte=\"texte\"></code>\n  <span class=\"pm-bloc-copier\" data-start=\"2\"><svg class=\"pm-bloc-icone pm-bloc-avant\" data-icone=\"copy\"></svg><svg class=\"pm-bloc-icone pm-bloc-apres\" data-icone=\"check\"></svg></span>\n</div>",
+        "reglages": [
+          {
+            "nom": "data-start",
+            "defaut": "2",
+            "effet": "sur pm-bloc-copier : l'instant où « Copier » devient « Copié »"
+          },
+          {
+            "nom": "data-variante",
+            "defaut": "terminal",
+            "effet": "fenêtre de terminal : pulse-motion bloc commande"
+          }
+        ]
+      }
+    },
+    {
+      "no": "106",
+      "slug": "revelation-3d",
+      "categorie": "logiciel",
+      "nom": {
+        "fr": "Révélation 3D",
+        "metier": "3D reveal"
+      },
+      "sens": "Une capture penchée en arrière se redresse et se pose à plat",
+      "demande": "Fais se redresser la capture de l'écran en 1,2 s à 0,2 s.",
+      "quand": "Présenter un écran ou un produit logiciel au début d'une démonstration.",
+      "motsCles": [
+        "revelation",
+        "3d",
+        "incliner",
+        "redresser",
+        "perspective",
+        "capture"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<div class=\"pm-3d\" data-start=\"0.2\">\n<div class=\"pm-ecran\" data-adresse=\"app.exemple.fr\" style=\"--pm-ecran-l: 92cqh\">\n  <div style=\"position: absolute; inset: 0; display: grid; gap: 6%; align-content: start; padding: 6%; background: var(--c-fond)\">\n    <div id=\"liste\" style=\"height: 22cqh; border-radius: 1cqh; background: color-mix(in srgb, var(--c-texte) 10%, transparent)\"></div>\n    <div id=\"envoyer\" style=\"justify-self: end; width: 24cqh; height: 7cqh; border-radius: 1cqh; background: var(--c-primaire)\"></div>\n  </div>\n</div>\n</div>",
+        "reglages": [
+          {
+            "nom": "--pm-dur",
+            "defaut": "1.2s",
+            "effet": "durée du redressement"
+          },
+          {
+            "nom": "--pm-courbe",
+            "defaut": "var(--ease-cubic-out)",
+            "effet": "courbe"
+          }
+        ],
+        "note": "De 35° (perspective de 1 200 px) à plat. Une capture seule : pulse-motion bloc revelation-3d."
       }
     }
   ]

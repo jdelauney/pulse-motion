@@ -64,6 +64,9 @@ flash: (c) => `Scène « ${c.scene} » : l'image clignote ${virgule(c.valeur)} f
   'a-coup-camera': (c) => (c.valeur && c.valeur.retour
     ? `Scène « ${c.scene} » : la caméra avance puis recule aussitôt vers ${virgule(c.instant)} s (zoom) : laisser au moins ${virgule(SEUILS.zoomRetourMin)} s entre les deux, ou n'en garder qu'un.`
     : `Scène « ${c.scene} » : la caméra part ou s'arrête d'un coup vers ${virgule(c.instant)} s (${c.valeur ? c.valeur.partie : 'cadrage'}) : prendre une courbe douce (sine-inout) ; pour un choc voulu, une secousse.`),
+  // Écrans des tutoriels (spec S6, 5.8 et 5.15).
+  'etapes-trop-rapprochees': (c) => `Scène « ${c.scene} » : les gestes ${c.valeur.a} et ${c.valeur.b} du pointeur sont trop rapprochés (${virgule(c.valeur.ecart)} s) ; il faut au moins ${virgule(c.valeur.minimum)} s entre eux, le temps de voir le clic puis d'aller au suivant.`,
+  'pointeur-hors-ecran': (c) => `Scène « ${c.scene} » : le pointeur doit aller sur « ${c.element} », qui est hors de l'image de l'écran.`,
   'silence-imprevu': (c) => `De ${virgule(c.valeur.a)} s à ${virgule(c.valeur.b)} s, on n'entend rien pendant ${virgule(c.valeur.d)} s alors que la musique devrait jouer ; vérifier la musique de la scène « ${c.scene} ».`,
 };
 
@@ -73,7 +76,7 @@ function proposition(c) {
   return ` ; ${phraseProposition(suggererCouleur(c.couleur, c.fond, c.minimum, c.charte || {}))}`;
 }
 
-const GRAVITES = { flash: 'erreur', 'texte-casse': 'erreur', 'erreur-de-scene': 'erreur' };
+const GRAVITES = { flash: 'erreur', 'texte-casse': 'erreur', 'erreur-de-scene': 'erreur', 'etapes-trop-rapprochees': 'erreur' };
 
 /** Constats bruts de M.mesurer -> problèmes (alertes, sauf GRAVITES). Règle inconnue : ignorée. */
 function traduireConstats(constats) {
@@ -101,6 +104,8 @@ function scriptMesures({ ratio, scenes, plages, plagesFlashs, flashs, genre = nu
     var constats = M.mesurer(${opts({ ...(plages ? { plages } : {}), genre })});
     // Contrôles du mouvement (spec Mouvement vivant, 5.12) : calculs purs, sans mise en page par image.
     try { if (M.mesurerMouvement) constats = constats.concat(M.mesurerMouvement(${opts(choix)})); } catch (e) { console.error('[Pulse Motion] mesure du mouvement : ' + e.message); }
+    // Écrans des tutoriels (spec S6) : gestes trop rapprochés, cible hors de l'image.
+    try { if (M.mesurerEcrans) constats = constats.concat(M.mesurerEcrans(${JSON.stringify(choix)})); } catch (e) { console.error('[Pulse Motion] mesure des écrans : ' + e.message); }
     var debordements = M.detecterDebordements(${JSON.stringify(choix)});
     var ajustements = M.essayerTailles(${JSON.stringify({ minimumCqh: SEUILS.texteMinCqh, ...choix })});
     var pixels = await M.mesurerPixels(${opts({ ...choix, flashs, ...(flashs && plagesFlashs ? { plagesFlashs } : {}) })});
