@@ -79,6 +79,19 @@
       "attendu": "reprendre"
     },
     {
+      "phrase": "Filme comment on crée une facture dans mon application, elle tourne sur localhost",
+      "attendu": "filmer"
+    },
+    {
+      "phrase": "Montre-moi sur l'appli d'essai comment ça filme un logiciel",
+      "attendu": "filmer"
+    },
+    {
+      "phrase": "Refilme l'étape où je clique sur Enregistrer, le bouton n'a pas été trouvé",
+      "attendu": "filmer",
+      "pasAttendu": "retoucher"
+    },
+    {
       "phrase": "Vérifie que mon ordinateur est prêt pour faire des vidéos",
       "attendu": "outils"
     },
