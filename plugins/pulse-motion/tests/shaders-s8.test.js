@@ -66,7 +66,8 @@ test('dictionnaire : 5 numéros nouveaux à la suite, numeros.json ancien inchan
   const empreinte = crypto.createHash('sha256').update(JSON.stringify(anciens.map((k) => [k, numeros[k]]))).digest('hex');
   assert.equal(anciens.length, 106);
   assert.equal(empreinte, 'b61afe4f07a0c381980b63d99cdcdac082faaadb04aec4ae24d0b7d5dd750a15', 'numeros.json : anciens numéros inchangés');
-  const nouveaux = dico.mouvements.filter((e) => Number(e.no) > 106);
+  // Les numéros de S8 J5 seuls : les plans suivants en ajoutent après #111.
+  const nouveaux = dico.mouvements.filter((e) => Number(e.no) > 106 && Number(e.no) <= 111);
   assert.deepEqual(nouveaux.map((e) => [e.no, e.slug, e.categorie]), [
     ['107', 'fuite-lumiere', 'transitions'], ['108', 'brulure', 'transitions'], ['109', 'lentille', 'transitions'], ['110', 'iris', 'transitions'], ['111', 'deformation', 'transitions']]);
   // À la suite : le premier suit le dernier numéro attribué avant lui, sans trou.
@@ -78,7 +79,7 @@ test('dictionnaire : 5 numéros nouveaux à la suite, numeros.json ancien inchan
     assert.equal(JSON.parse(`{${e.recette.exemple}}`).transition.shader, e.slug, `#${e.no} : la recette pose son shader`);
     assert.match(e.recette.note, /WebGPU/, `#${e.no} : WebGPU nécessaire`);
   }
-  assert.equal(dico.mouvements.length, 111);
+  assert.ok(dico.mouvements.length >= 111);
   assert.match(dico.source, /#107 à #111/);
   assert.match(dico.source, /argo/);
   assert.match(dico.source, /HyperFrames/);
