@@ -127,11 +127,17 @@ function licencePolice(famille, fichiers) {
   for (const f of fichiers) {
     let texte;
     try { texte = fs.readFileSync(path.join(path.dirname(f), 'LICENCES.md'), 'utf8'); } catch { continue; }
-    const sections = texte.split(/^## /m).slice(1);
+    // Deux rédactions : lignes « - Source : » et « - Licence : » (polices installées par Pulse Motion), ou texte libre avec
+    // la licence (« licensed under the SIL Open Font License, Version 1.1 ») et la source en tête du fichier.
+    const [preambule, ...sections] = texte.split(/^## /m);
     const s = sections.find((x) => x.split('\n')[0].trim() === famille) || sections.find((x) => x.includes(path.basename(f)));
     if (!s) continue;
     const ligne = (nom) => { const m = new RegExp(`^- ${nom} : (.+)$`, 'm').exec(s); return m ? m[1].trim() : null; };
-    return { source: ligne('Source'), licence: ligne('Licence') };
+    const libre = (t) => { const m = /licensed under the ([^\n]+?)\.?\s*$/m.exec(t || '') || /distribuées sous (SIL Open Font License[^.,\n]*)/.exec(t || ''); return m ? m[1].trim() : null; };
+    const licence = ligne('Licence') || libre(s) || libre(preambule);
+    const parentheses = /\(([^()]*(?:fontsource|bunny|jsdelivr|google)[^()]*)\)/i.exec(preambule);
+    const source = ligne('Source') || (parentheses ? parentheses[1].trim() : null);
+    if (licence) return { source, licence };
   }
   return null;
 }

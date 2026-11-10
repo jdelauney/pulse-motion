@@ -331,7 +331,8 @@ function controlesSortie(sonde, attendu = {}) {
 /** Image de la vidéo à l'instant t, en PNG ; taille : [largeur, hauteur] pour la comparer à une capture d'une autre taille. */
 async function extraireImage({ ffmpeg, fichier, t, taille }) {
   const filtre = taille ? ['-vf', `scale=${taille[0]}:${taille[1]}:flags=bicubic`] : [];
-  const r = await lancer(ffmpeg, ['-hide_banner', '-loglevel', 'error', '-ss', String(t), '-i', fichier, '-frames:v', '1', ...filtre, '-f', 'image2pipe', '-c:v', 'png', '-']);
+  // t null : une image fixe (JPEG), lue sans -ss (qui n'en rendrait aucune).
+  const r = await lancer(ffmpeg, ['-hide_banner', '-loglevel', 'error', ...(t === null || t === undefined ? [] : ['-ss', String(t)]), '-i', fichier, '-frames:v', '1', ...filtre, '-f', 'image2pipe', '-c:v', 'png', '-']);
   if (r.code !== 0 || !r.sortie.length) throw new Error(`ffmpeg n'a pas pu lire une image de la vidéo (${derniereLigne(r.erreurs)})`);
   return r.sortie;
 }
