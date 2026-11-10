@@ -62,6 +62,55 @@ function controlerLettres(decoupes, scene, problemes) {
   }
 }
 
+// Boucles de vie (spec Mouvement vivant, 5.9) : classes pm-v-* lues dans moteur/mouvements.css, une fois. Ponctuelle : la
+// classe écrit son nombre de tours (--pm-fois, la pousse) ; sans images-clés : elle suit --p de l'élément lui-même (la dérive).
+let classesVie = null;
+function lireClassesVie() {
+  if (!classesVie) {
+    const css = fs.readFileSync(path.join(__dirname, '..', '..', 'moteur', 'mouvements.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    classesVie = new Map();
+    for (const m of css.matchAll(/#pm-scene \.(pm-v-[a-z0-9-]+) \{([^}]*)\}/g)) {
+      classesVie.set(m[1], { ponctuelle: /--pm-fois\s*:/.test(m[2]), sansImagesCles: !/\banimation\s*:/.test(m[2]) });
+    }
+  }
+  return classesVie;
+}
+
+/** Classes d'un style qui portent une animation (ses entrées : entre-bas, tombe…), lues dans son style.css. */
+function classesAnimeesDuStyle(css) {
+  const sans = String(css || '').replace(/\/\*[\s\S]*?\*\//g, '');
+  const classes = new Set();
+  for (const m of sans.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    if (!/\banimation(?:-name)?\s*:/.test(m[2]) || /\banimation(?:-name)?\s*:\s*none\b/.test(m[2])) continue;
+    // Seules les classes de l'élément animé (dernier maillon du sélecteur) : « .decor .rond » anime .rond, pas .decor.
+    for (const selecteur of m[1].split(',')) {
+      const dernier = selecteur.trim().split(/[\s>+~]+/).pop() || '';
+      for (const c of dernier.matchAll(/\.([a-zA-Z][\w-]*)/g)) classes.add(c[1]);
+    }
+  }
+  return classes;
+}
+
+/** vie-sans-duree, mouvement-ecrase : vies (lib/extraire.js, viesScene), classesStyle (Set des classes animées du style). */
+function controlerVie(vies, scene, classesStyle, problemes) {
+  const connues = lireClassesVie();
+  const nomDe = (a) => a.id || String(a.class || '').split(/\s+/).find((c) => c && !c.startsWith('pm-')) || String(a.class || '').split(/\s+/)[0] || 'élément';
+  for (const v of vies) {
+    const qui = nomDe(v.attrs);
+    const vivantes = v.vies.filter((c) => !(connues.get(c) || {}).ponctuelle);
+    const derive = vivantes.find((c) => (connues.get(c) || {}).sansImagesCles);
+    const sansDuree = derive ? !('data-dur' in v.attrs) : vivantes.length > 0 && v.porteur && !('data-dur' in v.porteur);
+    if (sansDuree) {
+      const conteneur = !derive && v.porteur !== v.attrs ? ` à son conteneur « ${nomDe(v.porteur)} »` : '';
+      problemes.push({ regle: 'vie-sans-duree', gravite: 'alerte', scene, message: `Scène « ${scene} » : « ${qui} » vit (${derive || vivantes[0]}) sans data-dur : il ne bougera qu'une seconde ; ajouter data-dur="scene"${conteneur}.` });
+    }
+    const entrees = v.classes.filter((c) => c.startsWith('pm-m-') || (classesStyle && classesStyle.has(c)));
+    if (entrees.length) {
+      problemes.push({ regle: 'mouvement-ecrase', gravite: 'alerte', scene, message: `Scène « ${scene} » : « ${qui} » porte à la fois une vie (${v.vies[0]}) et une entrée (${entrees[0]}) : l'une efface l'autre ; mettre la vie sur un élément intérieur.` });
+    }
+  }
+}
+
 /** Un bruitage de la bibliothèque, ou un fichier (chemin). */
 const sonConnu = (nom) => CATALOGUE.BRUITAGES.includes(nom) || /[/.]/.test(nom);
 const problemeSonInconnu = (scene, nom) => ({ regle: 'son-inconnu', gravite: 'erreur', scene, message: `Scène « ${scene} » : le son « ${nom} » n'existe pas (sons : ${CATALOGUE.BRUITAGES.join(', ')} ; ou un fichier assets/…).` });
@@ -84,10 +133,17 @@ function ancresIntrouvables(html, scene, lireAttributs) {
   return problemes;
 }
 
+/** style.css du style nommé (bibliothèque ou styles personnels), ou '' (style inconnu : signalé ailleurs). */
+function cssDuStyle(nom, dossierStyles) {
+  const { trouverStyle } = require('../styles.js');
+  const st = trouverStyle(nom, dossierStyles);
+  try { return st ? fs.readFileSync(path.join(st.dossier, 'style.css'), 'utf8') : ''; } catch { return ''; }
+}
+
 /** Toutes les règles statiques d'une scène (crochet). Chargement paresseux : le crochet doit rester rapide. */
 function controlerScene({ projet, deroule, scene, html }) {
   const S = require('./scenes.js');
-  const { extraireScene, lireAttributs } = require('./extraire.js');
+  const { extraireScene, lireAttributs, viesScene } = require('./extraire.js');
   const { deplierGroupes } = require('./groupes-personnages.js');
   const { dureeTemps, optionsMinutage } = require('./deroule.js');
   const { ressourcesDistantes } = require('./embarquer.js');
@@ -122,6 +178,8 @@ function controlerScene({ projet, deroule, scene, html }) {
   controlerLettres(lue.decoupes, scene.id, problemes);
   for (const e of ressourcesDistantes(html, `scène « ${scene.id} »`)) problemes.push({ ...e, scene: scene.id });
   problemes.push(...ancresIntrouvables(html, scene.id, lireAttributs));
+  const vies = viesScene(html);
+  if (vies.length) controlerVie(vies, scene.id, classesAnimeesDuStyle(cssDuStyle(deroule.style)), problemes);
   return problemes;
 }
 
@@ -142,4 +200,5 @@ function sceneDuFichier(fichier) {
   return scene ? { projet, deroule, scene } : null;
 }
 
-module.exports = { controlerCSS, controlerLettres, sonConnu, problemeSonInconnu, ancresIntrouvables, controlerScene, sceneDuFichier };
+module.exports = { controlerCSS, controlerLettres, sonConnu, problemeSonInconnu, ancresIntrouvables, controlerScene, sceneDuFichier,
+  controlerVie, classesAnimeesDuStyle, cssDuStyle, lireClassesVie };
