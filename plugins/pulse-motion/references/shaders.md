@@ -62,10 +62,16 @@ Le fond est dessiné dans le calque de particules de la scène, avant les partic
 | `pixels` | transition | `taille_max` | Univers numérique, jeu |
 | `glitch` | transition | `force`, `bandes` | Rupture, bug |
 | `balayage-organique` | transition | `angle`, `douceur`, `echelle` | Balayage vivant, encre |
+| `fuite-lumiere` | transition | `couleur`, `douceur` | Chaleur, souvenir, ouverture |
+| `brulure` | transition | `couleur`, `grain`, `etincelles` | Rupture forte, page qui se tourne |
+| `lentille` | transition | `force`, `rayon` | Changement d'échelle, plongée |
+| `iris` | transition | `forme` (0 cercle, 1 losange, 2 étoile), `couleur` | Ouverture, focus, cinéma |
+| `deformation` | transition | `echelle`, `couleur` | Transformation, matière liquide |
 | `grain` | post | `force`, `taille`, `vitesse` | Cinéma, archive |
 | `vignettage` | post | `force`, `rayon`, `douceur`, `couleur` | Focalisation, intimité |
 | `aberration` | post | `ecart` | Tension, image numérique |
 | `chaleur` | post | `force`, `echelle`, `vitesse`, `haut` | Chaleur, désert, mirage |
+| `cathodique` | post | `force`, `lignes`, `grille`, `bavure`, `decalage_rouge`, `coins`, `bruit_bande`, `allumage` | Vieille télé, cassette vidéo, archive des années 80 |
 | `reaction-diffusion` | fond multipasse | `alimentation`, `destruction`, `couleur1`, `couleur2`, `opacite` | Vivant, organique, science |
 | `trainees-lumineuses` | fond multipasse | `nombre`, `vitesse`, `persistance`, `epaisseur`, `couleur1`, `couleur2` | Énergie, technologie, nuit |
 | `peinture` | fond multipasse | `pinceau`, `courant`, `echelle`, `couleur1`, `couleur2`, `couleur3` | Création, art, douceur |
@@ -74,6 +80,10 @@ Le fond est dessiné dans le calque de particules de la scène, avant les partic
 | `spirale` | module de force | `tours`, `attraction` | Tourbillon, aspiration |
 | `couleur-vitesse` | module de couleur | `vitesse_max`, `lent`, `rapide` | Étincelles qui refroidissent |
 | `etoile` | module de forme | `branches`, `creux`, `douceur` | Célébration, magie |
+
+- **Couleur de la marque** : `fuite-lumiere`, `brulure`, `iris` et `deformation` partent de leur seule `couleur` (l'accent de la charte par défaut) et en tirent une version sombre et une claire ; `"reglages": { "couleur": "primaire" }` pour une autre couleur de la charte.
+- `cathodique` : `allumage` (en secondes, 0 = aucun) allume le tube au début de la scène (ou de la vidéo, posé au niveau de la vidéo) ; `bruit_bande` (0 à 1) ajoute la bande de bruit d'une cassette ; `bavure` et `decalage_rouge` sont en pixels de l'image.
+- Un style peut **conseiller** un shader (`shaders.conseilles` de son identité), jamais l'imposer : sans WebGPU, l'export serait refusé.
 
 Régler à l'œil un fond : bouton **Effets** de l'aperçu (les fonds de la scène sont listés avec les effets).
 
@@ -102,7 +112,7 @@ Seulement si aucun shader de la table ne convient, dans le projet : `shaders/<no
 - Son (voir `pulse-motion reference audio/son-reactif`) : `iSon.volume`, `iSon.basses`, `iSon.mediums`, `iSon.aigus`, `iSon.battement`, `iSon.phase`, `iSon.enveloppe`, `iSon.syllabe` (0 à 1, à l'instant de la vidéo) ; `sonSpectre(x)` et `sonOnde(x)` (x de 0 à 1 : des graves aux aigus, ou le long de l'onde) ; `"piste": "voix"` dans le `.json` pour suivre la voix (musique par défaut). `iFrame` (numéro d'image depuis le début du fond) et `iTimeDelta` (durée d'une image). Sans la piste : contrôle `son-sans-piste`.
 - Images : `canal0(uv)` … `canal3(uv)` (uv de 0 à 1, y vers le bas). Transition : `canal0` = scène qui sort, `canal1` = scène qui entre ; post : `canal0` = image de la scène (particules comprises) ; `canal2` = image de `data-image` ou `"image"` ; `canal3` = texture de bruit fixe (répétée).
 - Retour : RVBA **linéaire prémultiplié** (`vec4f(couleur * a, a)`) ; des valeurs au-dessus de 1 brillent si le calque a du halo.
-- Prélude disponible : `bruit(vec3f)` et `fbm(vec3f)` (dans [−1, 1]), `curl(vec2f, f32)`, `alea2(vec2f)`, `pcg(u32)`, `alea(…)`, `palette(t, a, b, c, d)`, `rot2(angle)`, `sdCercle`, `sdBoite`, `sdSegment`, `sdEtoile`.
+- Prélude disponible : `bruit(vec3f)` et `fbm(vec3f)` (dans [−1, 1]), `curl(vec2f, f32)`, `alea2(vec2f)`, `pcg(u32)`, `alea(…)`, `palette(t, a, b, c, d)`, `rot2(angle)`, `sdCercle`, `sdBoite`, `sdSegment`, `sdEtoile`, `teinteSombre(vec3f)` et `teinteClaire(vec3f)` (une couleur linéaire assombrie à 35 %, ou éclaircie vers le blanc à 65 %, en sRGB).
 - Le WGSL réserve des mots courants comme noms de variables (`trait`, `type`, `filter`, `set`, `target`, `module`, `match`…) : en choisir d'autres (`lueur`, `genre`…), sinon `shader-ne-compile-pas`.
 - Interdits : `@group` et `@binding` (réservés au moteur), les noms commençant par `pm`, `iTime`, `iProgres`, `iResolution`, `iChannel0` à `iChannel3`, `iSon`, `iSonTexture`, `iFrame`, `iTimeDelta`, `sonSpectre`, `sonOnde`, `R`, `canal0` à `canal3` ; plus de 64 Ko de code. Rien d'aléatoire hors de ce qui dépend de `iTime` et de `coord` (l'image ne dépend que de t).
 - Un module : la recette qui l'utilise peut exposer un réglage de même nom (ex. `tours`) : sa valeur remplace celle du module. Dans un module, un champ de structure ne porte pas le nom d'une constante ou d'une structure du module.
@@ -190,3 +200,5 @@ Un émetteur avec un module de force est simulé pas à pas (plus coûteux qu'un
 | « une transition plus douce » | `duree` plus longue, `dissolution` ou `balayage-organique` |
 | « moins de grain » | `force` du grain divisée par 2 |
 | « enlève l'effet de chaleur » | retirer l'entrée de `post` |
+| « un look de vieille télé » | `"post": [{ "shader": "cathodique" }]` ; « qui s'allume » : `allumage: 1` ; « cassette abîmée » : `bruit_bande: 0.6` |
+| « une transition aux couleurs de la marque » | `fuite-lumiere`, `brulure`, `iris` ou `deformation` (couleur : `accent` par défaut, ou `primaire`) |
