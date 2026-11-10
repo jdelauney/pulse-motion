@@ -138,7 +138,9 @@ test('mouvements nommés : numéros et noms acceptés', () => {
 test('deroule : mouvement inconnu, ou transition rangée dans les mouvements', () => {
   const d = valide();
   d.scenes[0].mouvements = ['999'];
-  assert.match(validerDeroule(d).join('\n'), /mouvement « 999 » inconnu.*pulse-motion mouvements chercher/);
+  // Sans commande montrée (spec Retouches et ergonomie, 5.16) : les noms proches, ou une phrase.
+  assert.match(validerDeroule(d).join('\n'), /mouvement « 999 » inconnu ; le décrire avec des mots/);
+  assert.doesNotMatch(validerDeroule(d).join('\n'), /pulse-motion/);
   d.scenes[0].mouvements = ['whip-pan'];
   assert.match(validerDeroule(d).join('\n'), /est une transition : l'écrire dans « transition »/);
   d.scenes[0].mouvements = 'pop-in';

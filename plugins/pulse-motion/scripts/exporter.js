@@ -143,7 +143,12 @@ async function exporterVideo({
   if (u && u.erreur) return fin({ ok: false, message: u.erreur, ...(u.propositionMo ? { propositionMo: u.propositionMo } : {}) });
   if (ids) {
     const inconnues = ids.filter((id) => !deroule.scenes.some((s) => s.id === id));
-    if (inconnues.length) return fin({ ok: false, message: `Scène inconnue : ${inconnues.join(', ')}.` });
+    if (inconnues.length) {
+      // Scènes proches (spec Retouches et ergonomie, 5.16).
+      const P = require('../moteur/proches.js');
+      const l = P.proches(inconnues[0], deroule.scenes.map((s) => s.id));
+      return fin({ ok: false, message: `Scène inconnue : ${inconnues.join(', ')}${l.length ? ` ; ${P.phrase(l)}` : '.'}` });
+    }
   } else {
     // La planche n'a pas de son ; une vidéo avec la voix provisoire du système ne sort pas sans accord.
     const provisoires = scenesProvisoires(projet, deroule);

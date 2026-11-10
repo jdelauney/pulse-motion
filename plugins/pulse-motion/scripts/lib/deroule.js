@@ -14,6 +14,9 @@ const PARCOURS = ['rapide', 'accompagne'];
 const RATIOS = ['16:9', '9:16', '1:1', '4:5'];
 // Les transitions viennent du moteur : une seule liste pour le déroulé et la page.
 const { TRANSITIONS } = require('../../moteur/transitions.js');
+// Noms proches d'une saisie (spec Retouches et ergonomie, 5.16) : « vouliez-vous dire … ? » plutôt que toute la liste.
+const P = require('../../moteur/proches.js');
+const suggestion = (saisie, candidats) => { const l = P.proches(saisie, candidats); return l.length ? ` ; ${P.phrase(l)}` : ''; };
 const TONS = ['clair', 'sombre', 'auto'];
 const ID = /^[a-z0-9-]+$/;
 const HEX = /^#[0-9a-fA-F]{6}$/;
@@ -63,7 +66,7 @@ function validerCharte(c, nom = 'charte') {
 function validerShaderDeclare(o, ou, champs) {
   if (!estObjet(o)) return [`${ou} doit être un objet { "shader": "nom", "reglages": { … } }.`];
   const err = [];
-  for (const k of Object.keys(o)) if (!champs.includes(k)) err.push(`${ou} : champ « ${k} » inconnu (champs : ${champs.join(', ')}).`);
+  for (const k of Object.keys(o)) if (!champs.includes(k)) err.push(`${ou} : champ « ${k} » inconnu${suggestion(k, champs) || ` (champs : ${champs.join(', ')}).`}`);
   if (!estTexte(o.shader) || !NOM_SHADER.test(o.shader)) err.push(`${ou} : « shader » doit être le nom d'un shader (minuscules, chiffres, tirets).`);
   const valeurOk = (x) => (typeof x === 'number' && isFinite(x)) || estTexte(x);
   if (o.reglages !== undefined && !(estObjet(o.reglages) && Object.values(o.reglages).every(valeurOk))) {
@@ -201,7 +204,11 @@ function validerDeroule(d) {
         const { trouver } = require('../mouvements.js');
         for (const cle of s.mouvements.map((x) => (estObjet(x) ? x.mouvement : x))) {
           const e = trouver(String(cle));
-          if (!e) err.push(`La ${nom} : mouvement « ${cle} » inconnu. Cherchez-le avec pulse-motion mouvements chercher <mot>.`);
+          if (!e) {
+            // Noms proches parmi les mouvements du dictionnaire (nom français, nom du métier, nom court), sans commande.
+            const noms = require('../mouvements.js').charger().mouvements.flatMap((m) => [m.nom.fr, m.slug]);
+            err.push(`La ${nom} : mouvement « ${cle} » inconnu${suggestion(cle, noms) || ' ; le décrire avec des mots, ou demander les mouvements qui existent.'}`);
+          }
           else if (e.categorie === 'transitions') err.push(`La ${nom} : « ${cle} » (#${e.no} ${e.nom.fr}) est une transition : l'écrire dans « transition » de la scène qui entre, pas dans « mouvements ».`);
         }
       }
@@ -209,7 +216,7 @@ function validerDeroule(d) {
     if (s.transition !== undefined) {
       if (typeof s.transition === 'string' || !estObjet(s.transition)) {
         if (!TRANSITIONS.includes(s.transition)) {
-          err.push(`La ${nom} : « transition » doit être l'une de : ${TRANSITIONS.join(', ')}, ou un shader { "shader": "dissolution", "duree": 0.8 }.`);
+          err.push(`La ${nom} : transition « ${s.transition} » inconnue${suggestion(s.transition, TRANSITIONS) ? `${suggestion(s.transition, TRANSITIONS)} ` : '. '}« transition » doit être l'une de : ${TRANSITIONS.join(', ')}, ou un shader { "shader": "dissolution", "duree": 0.8 }.`);
         }
       } else {
         err.push(...validerShaderDeclare(s.transition, `La ${nom} : « transition »`, ['shader', 'duree', 'reglages', 'image']));

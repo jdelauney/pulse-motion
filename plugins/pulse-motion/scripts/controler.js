@@ -7,7 +7,7 @@
  * --gpu : compile aussi chaque shader et chaque module WGSL dans Chrome sans fenêtre avec WebGPU (shader-ne-compile-pas).
  * Contrôle aussi la vidéo rendue dans Chrome ou Edge sans fenêtre (débordements, chevauchements, cadre, marges,
  * zone des boutons en 9:16, logo, textes fugaces, mouvements rapides) ; sans navigateur : alerte rendu-non-verifie.
- * Écrit sortie/controle.json : { version: 2, problemes: [{ regle, gravite: "erreur" | "alerte" | "info" (rien à corriger : la personne est prévenue), scene?, element?, message, correction? }],
+ * Écrit sortie/controle.json : { version: 2, problemes: [{ regle, gravite: "erreur" | "alerte" | "info" (rien à corriger : la personne est prévenue), scene?, element?, message (pour la personne, sans jargon), consigne (pour Claude : la correction technique, lib/messages.js), correction? }],
  *   corrections: [{ regle, scene, element?, avant, apres, message }], renduVerifie, rendu: "complet" | "partiel" | null, scenesMesurees,
  *   empreintes: { moteur, seuils, commun, scenes: { id: empreinte } } | null, rendus: { id: [problèmes du rendu] } | null,
  *   son: { empreinte, problemes } | null } (son mesuré : voix-couverte, silence-imprevu ; repris tant que son empreinte ne change pas).
@@ -31,6 +31,7 @@ const { charteFinale, RACINE } = Assembleur;
 const { controlerCSS, controlerLettres, sonConnu, problemeSonInconnu } = require('./lib/controle-scene.js');
 const { empreintesControle, plagesScenes, besoinEcoute, empreinteSonore } = require('./lib/empreintes.js');
 const { ecrireAtomique } = require('./lib/fichiers.js');
+const { avecConsignes } = require('./lib/messages.js');
 const { trouverStyle } = require('./styles.js');
 const { lireGlossaire, verifierGlossaire } = require('./vocabulaire.js');
 const { lireDeroule, dureeTemps, grilleFixe, optionsMinutage } = require('./lib/deroule.js');
@@ -611,6 +612,9 @@ async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.j
     const g = await compilerShadersGPU({ html: assemblage.html, ...(navigateur !== undefined ? { navigateur } : {}) });
     problemes = [...problemes, ...g.problemes];
   }
+  // Messages pour la personne sans jargon, consigne technique pour Claude (spec Retouches et ergonomie, 5.15).
+  problemes = avecConsignes(problemes);
+  corrections = avecConsignes(corrections);
   if (r.fichier) {
     ecrireAtomique(r.fichier, JSON.stringify({ version: 2, problemes, corrections, renduVerifie, rendu: modeRendu, scenesMesurees, empreintes, rendus, son, determinisme }, null, 2));
   }

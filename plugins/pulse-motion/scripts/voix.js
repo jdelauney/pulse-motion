@@ -31,7 +31,13 @@ function ecrireDeroule(projet, fn) {
 
 function sceneAvecTexte(deroule, id) {
   const scene = deroule.scenes.find((s) => s.id === id);
-  if (!scene) return { message: `Scène inconnue : « ${id} » (scènes : ${deroule.scenes.map((s) => s.id).join(', ')}).` };
+  if (!scene) {
+    // Scènes proches d'abord (spec Retouches et ergonomie, 5.16) ; la liste entière si aucune ne ressemble.
+    const P = require('../moteur/proches.js');
+    const ids = deroule.scenes.map((s) => s.id);
+    const l = P.proches(id, ids);
+    return { message: `Scène inconnue : « ${id} »${l.length ? ` ; ${P.phrase(l)}` : ` (scènes : ${ids.join(', ')}).`}` };
+  }
   if (!scene.voix || !scene.voix.texte) return { message: `La scène « ${id} » n'a pas de texte de voix : écrire d'abord « voix.texte » dans le déroulé.` };
   return { scene };
 }

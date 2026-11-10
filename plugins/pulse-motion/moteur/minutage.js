@@ -13,11 +13,14 @@
  * Module pur : chargé tel quel dans la page (global M) et par Node (require).
  */
 (function (racine, fabrique) {
-  var Al = typeof require === 'function' && typeof module === 'object' ? require('./aligner.js') : (racine.M && racine.M.aligner);
-  var api = fabrique(Al);
+  var node = typeof require === 'function' && typeof module === 'object';
+  var Al = node ? require('./aligner.js') : (racine.M && racine.M.aligner);
+  // Noms proches (spec Retouches et ergonomie, 5.16) : facultatifs (une page de test sans proches.js n'en propose aucun).
+  var P = node ? require('./proches.js') : (racine.M && racine.M.proches) || null;
+  var api = fabrique(Al, P);
   if (typeof module === 'object' && module.exports) module.exports = api;
   else { racine.M = racine.M || {}; Object.assign(racine.M, api); }
-})(typeof globalThis !== 'undefined' ? globalThis : this, function (Al) {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (Al, P) {
   'use strict';
 
   var CHEVAUCHEMENT = 0.5;
@@ -111,8 +114,15 @@
     var local = {};      // cle -> { debut, fin } en temps de scène
     var enCours = {};
 
-    function erreur(regle, cle, message) {
-      erreurs.push({ regle: regle, scene: idScene, element: cle, message: message });
+    function erreur(regle, cle, message, consigne) {
+      var e = { regle: regle, scene: idScene, element: cle, message: message };
+      if (consigne) e.consigne = consigne;
+      erreurs.push(e);
+    }
+    /** « ; vouliez-vous dire « a » ou « b » ? » (5.16), ou rien. */
+    function suggestion(saisie, candidats) {
+      var liste = P ? P.proches(saisie, candidats) : [];
+      return liste.length ? ' ; ' + P.phrase(liste) : '';
     }
 
     function lireDuree(e) {
@@ -148,7 +158,9 @@
           var w = String(x.w).toLowerCase().replace(/[^\p{L}\p{N}'’-]+/gu, '');
           if (w && dispo.indexOf(w) < 0) dispo.push(w);
         });
-        erreur('ancre-mot-introuvable', cle, 'Scène « ' + idScene + ' », élément « ' + cle + ' » : le mot « ' + a[1] + ' »' + (rang > 1 ? ' (n° ' + rang + ')' : '') + ' n\'est pas dit par la voix (mots : ' + dispo.join(', ') + ').');
+        // Le mot le plus proche dans le message ; la liste complète dans la consigne (spec Retouches et ergonomie, 5.16).
+        erreur('ancre-mot-introuvable', cle, 'Scène « ' + idScene + ' » : le mot « ' + a[1] + ' »' + (rang > 1 ? ' (n° ' + rang + ')' : '') + ' n\'est pas dit par la voix' + (suggestion(a[1], dispo) || '.'),
+          'élément « ' + cle + ' », data-start « ' + texte + ' » ; mots dits dans la scène : ' + dispo.join(', ') + '.');
         return 0;
       }
       var ecart = a[5] ? lireSecondes(a[5], dureeTemps) : { valeur: 0 };
@@ -178,7 +190,8 @@
         if (!m) {
           erreur('start-invalide', cle, 'Scène « ' + idScene + ' », élément « ' + cle + ' » : data-start « ' + s + ' » illisible (exemples : 0.4, #titre+0.3, #titre:fin-0.2).');
         } else if (!parCle[m[1]]) {
-          erreur('reference-inconnue', cle, 'Scène « ' + idScene + ' », élément « ' + cle + ' » : « #' + m[1] + ' » n\'existe pas dans cette scène (ou n\'est pas minuté).');
+          erreur('reference-inconnue', cle, 'Scène « ' + idScene + ' », élément « ' + cle + ' » : « #' + m[1] + ' » n\'existe pas dans cette scène (ou n\'est pas minuté)'
+            + (suggestion(m[1], Object.keys(parCle).filter(function (k) { return k.charAt(0) !== '_'; })) || '.'));
         } else {
           var ref = resoudre(m[1]);
           var ecart = m[4] ? lireSecondes(m[4], dureeTemps) : { valeur: 0 };

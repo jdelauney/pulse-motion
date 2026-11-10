@@ -4,6 +4,7 @@
 
 - `pulse-motion controler <dossier>` fait d'abord les **contrôles rapides** (déroulé, minutage, textes, CSS), puis contrôle la **vidéo rendue** dans Chrome ou Edge sans fenêtre (mise en page, pixels). Il écrit aussi la page `sortie/<titre>.html` : pas besoin d'assembler avant.
 - Après une retouche, seules les scènes qui ont changé sont remesurées (`"rendu": "partiel"`, `scenesMesurees`) ; les autres gardent leurs résultats. `--complet` remesure toute la vidéo : toujours avant l'export.
+- Chaque problème de `sortie/controle.json` a deux textes : `message`, pour la personne (ce qui se voit, où et quand, sans terme technique), à dire tel quel ; `consigne`, pour Claude (la correction : attributs, variables, champs), pour corriger.
 - Les cas sûrs sont **corrigés seuls** dans `deroule.json`, après une copie d'historique ; chaque correction est listée dans `corrections` de `sortie/controle.json` : les dire à la personne en une phrase. « annule » défait toutes les corrections d'un passage.
 - Dans les tableaux ci-dessous, la colonne « Corrigé seul ? » dit ce que le contrôle a corrigé seul, et dans quelle limite.
 - Ce qui reste est dans `problemes` : corriger les erreurs, traiter les alertes (deux tours au plus), dire le reste à la personne.
