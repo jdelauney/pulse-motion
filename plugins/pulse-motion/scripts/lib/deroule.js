@@ -23,6 +23,9 @@ const CLE = /^[a-z0-9-]+$/;
 const POLICE = /^[\p{L}\p{N} _.\/-]+$/u;
 
 const NOM_SHADER = /^[a-z0-9-]+$/;
+/** Plateformes dont les zones sont connues (scripts/seuils.json, zonesPlateformes). */
+const PLATEFORMES = ['tiktok', 'shorts', 'reels', 'toutes'];
+const CHAPITRE_MAX = 60;
 const MAX_POST = 4;
 
 const estObjet = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -92,6 +95,11 @@ function validerDeroule(d) {
   if (d.format && d.format.ips !== undefined && !(Number.isInteger(d.format.ips) && d.format.ips >= 12 && d.format.ips <= 60)) {
     err.push('« format.ips » doit être un entier entre 12 et 60.');
   }
+  // Zones des plateformes (spec Rendu et export, 5.19) : en 9:16 seulement.
+  if (d.format && d.format.plateforme !== undefined) {
+    if (!PLATEFORMES.includes(d.format.plateforme)) err.push(`« format.plateforme » doit être l'une de : ${PLATEFORMES.join(', ')}.`);
+    else if (d.format.ratio !== '9:16') err.push('« format.plateforme » ne sert qu\'à une vidéo verticale (« format.ratio » : « 9:16 ») : le retirer, ou passer la vidéo en 9:16.');
+  }
   if (!estTexte(d.style)) err.push('« style » est obligatoire (nom d\'un style du catalogue).');
 
   if (d.charte !== undefined) err.push(...validerCharte(d.charte));
@@ -148,6 +156,13 @@ function validerDeroule(d) {
     return err;
   }
   const vus = new Set();
+  // Couverture (spec Rendu et export, 5.10) : { scene, instant } en secondes depuis le début de la scène.
+  if (d.couverture !== undefined) {
+    const c = d.couverture;
+    if (!estObjet(c) || !estTexte(c.scene) || !(typeof c.instant === 'number' && isFinite(c.instant) && c.instant >= 0)) {
+      err.push('« couverture » doit être { "scene": "<id>", "instant": 2.4 } (secondes depuis le début de la scène).');
+    } else if (!d.scenes.some((s) => s && s.id === c.scene)) err.push(`« couverture.scene » : la scène « ${c.scene} » n'existe pas.`);
+  }
   d.scenes.forEach((s, i) => {
     const nom = s && estTexte(s.id) ? `scène « ${s.id} »` : `scène n° ${i + 1}`;
     if (!s || typeof s !== 'object') { err.push(`La ${nom} doit être un objet.`); return; }
@@ -214,6 +229,7 @@ function validerDeroule(d) {
         }
       }
     }
+    if (s.chapitre !== undefined && !(estTexte(s.chapitre) && s.chapitre.length <= CHAPITRE_MAX)) err.push(`La ${nom} : « chapitre » doit être un titre de ${CHAPITRE_MAX} caractères au plus.`);
     if (s.musique !== undefined && !HUMEURS.includes(s.musique)) err.push(`La ${nom} : « musique » (humeur de la musique pendant la scène) doit être l'une de : ${HUMEURS.join(', ')}.`);
     if (s.post !== undefined) err.push(...validerPost(s.post, `La ${nom} : « post »`));
     if (s.type !== undefined && !TYPES_SCENE.includes(s.type)) {
@@ -328,4 +344,4 @@ function lireDeroule(dossier) {
   return { deroule: d, erreurs };
 }
 
-module.exports = { validerDeroule, validerCharte, lireDeroule, dureeTemps, tempoMusique, musiqueSuitScenes, grilleFixe, optionsMinutage, GENRES, PARCOURS, RATIOS, TRANSITIONS, TYPES_SCENE, TONS, MAX_POST, CADRANS };
+module.exports = { validerDeroule, validerCharte, lireDeroule, dureeTemps, tempoMusique, musiqueSuitScenes, grilleFixe, optionsMinutage, GENRES, PARCOURS, RATIOS, TRANSITIONS, TYPES_SCENE, TONS, MAX_POST, CADRANS, PLATEFORMES, CHAPITRE_MAX };

@@ -216,7 +216,36 @@
     return visibles.map(function (s) { return s.id; });
   }
 
+  /**
+   * Partie visible de la scène i (spec Rendu et export, 5.10 et 5.12) : de son début + son entrée à sa fin − l'entrée de la
+   * suivante, hors transitions (la règle de la planche). -> { debut, fin } en secondes absolues.
+   */
+  function partieVisible(minutage, i) {
+    var s = minutage.scenes[i];
+    var suivante = minutage.scenes[i + 1];
+    var debut = s.debut + (s.entree || 0);
+    var fin = s.fin - (suivante ? suivante.entree || 0 : 0);
+    return fin > debut ? { debut: debut, fin: fin } : { debut: s.debut, fin: s.fin };
+  }
+
+  /**
+   * Instant de la couverture (spec Rendu et export, 5.10) : couverture { scene, instant } du déroulé (secondes depuis le
+   * début de la scène, borné à la scène), sinon la première scène à 95 % de sa partie visible. -> secondes absolues.
+   */
+  function instantCouverture(minutage, couverture) {
+    if (!minutage || !minutage.scenes || !minutage.scenes.length) return 0;
+    var i = couverture && couverture.scene ? minutage.scenes.findIndex(function (s) { return s.id === couverture.scene; }) : -1;
+    if (i >= 0 && typeof couverture.instant === 'number') {
+      var s = minutage.scenes[i];
+      return Math.min(Math.max(s.debut + couverture.instant, s.debut), Math.max(s.debut, s.fin - 1e-3));
+    }
+    var v = partieVisible(minutage, i >= 0 ? i : 0);
+    return v.debut + (v.fin - v.debut) * 0.95;
+  }
+
   return {
+    partieVisible: partieVisible,
+    instantCouverture: instantCouverture,
     CHEVAUCHEMENT: CHEVAUCHEMENT,
     DUREE_TRANSITION_SHADER: DUREE_TRANSITION_SHADER,
     MARGE_VOIX: MARGE_VOIX,

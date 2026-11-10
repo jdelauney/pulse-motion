@@ -46,11 +46,12 @@ function ressourcesDistantes(html, contexte) {
 
 /**
  * Remplace les chemins de fichiers (src, href, url()) par des URL data:.
- * -> { html, erreurs: [{ regle, gravite, message }] }
+ * -> { html, erreurs: [{ regle, gravite, message }], fichiers: [chemins absolus embarqués] } (crédits, spec Rendu et export 5.20)
  */
 function embarquerRessources(html, dossierProjet, contexte) {
   const erreurs = [];
   const cache = new Map();
+  const fichiers = new Set();
   const ou = contexte ? ` (${contexte})` : '';
 
   function remplacer(chemin) {
@@ -69,7 +70,7 @@ function embarquerRessources(html, dossierProjet, contexte) {
     } else if (!fs.existsSync(absolu)) {
       erreurs.push({ regle: 'fichier-introuvable', gravite: 'erreur', message: `Fichier introuvable : « ${chemin} »${ou}.` });
     } else {
-      try { resultat = versDataURI(absolu); } catch (e) {
+      try { resultat = versDataURI(absolu); fichiers.add(absolu); } catch (e) {
         erreurs.push({ regle: 'fichier-non-pris-en-charge', gravite: 'erreur', message: `« ${chemin} »${ou} : ${e.message}.` });
       }
     }
@@ -85,7 +86,7 @@ function embarquerRessources(html, dossierProjet, contexte) {
     const uri = remplacer(entreGuillemets || nu);
     return uri ? `url("${uri}")` : tout;
   });
-  return { html: sortie, erreurs };
+  return { html: sortie, erreurs, fichiers: [...fichiers] };
 }
 
 module.exports = { TYPES_MIME, cheminDansProjet, versDataURI, embarquerRessources, ressourcesDistantes };

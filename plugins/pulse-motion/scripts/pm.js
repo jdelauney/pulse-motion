@@ -15,6 +15,8 @@
  *   pulse-motion whisper [installer [--modele small]]   transcription des voix (Python, faster-whisper) : état ou installation
  *   pulse-motion outils                  état de l'ordinateur : Node, Chrome ou Edge, ffmpeg, Python, transcription, voix du système
  *   pulse-motion planche <dossier> [id1,id2] [--ouvrir]   images clés PNG dans sortie/planche/
+ *   pulse-motion planche <dossier> [id1,id2] --pdf   PDF des planches (A4 paysage, deux scènes par page) : sortie/<titre>-planches.pdf
+ *   pulse-motion credits <dossier> [noter <fichier> "<source>" "<licence>" ["<auteur>"]]   crédits de la vidéo ; source d'un fichier importé
  *   pulse-motion planche <dossier> --regard [--scenes a,b]   planches de regard dans sortie/regard/ (ouverture, temps forts, téléphone, bandes, fiche)
  *   pulse-motion planche <dossier> <id> --de <s> --duree <s> [--pas <n>]   planche image par image d'une scène (3 s au plus), dans sortie/planche/
  *   pulse-motion reference <nom>          affiche references/<nom>.md (ex. moteur, rythme, styles/clair-pedagogique) ; usages : tableau de scripts/usages.json
@@ -63,6 +65,7 @@ const SCRIPTS = {
   personnages: 'personnages.js',
   mouvements: 'mouvements.js',
   modeles: 'modeles.js',
+  credits: 'credits.js',
 };
 
 function afficherFichier(fichier, quoi) {
@@ -103,6 +106,10 @@ function lancer(args) {
     if (drapeaux.includes('--regard')) {
       const regard = [path.join(RACINE, 'scripts', 'regard.js'), dossier, ...(ids.length ? ['--scenes', ids[0]] : [])];
       return spawnSync(process.execPath, regard, { stdio: 'inherit' }).status ?? 1;
+    }
+    // PDF des planches (spec Rendu et export, 5.16) : captures fidèles, impression du navigateur, jamais ffmpeg.
+    if (drapeaux.includes('--pdf')) {
+      return spawnSync(process.execPath, [path.join(RACINE, 'scripts', 'planche-pdf.js'), dossier, ...ids.slice(0, 1)], { stdio: 'inherit' }).status ?? 1;
     }
     const args = [path.join(RACINE, 'scripts', 'exporter.js'), dossier, '--planche', ...ids.slice(0, 1), ...drapeaux];
     return spawnSync(process.execPath, args, { stdio: 'inherit' }).status ?? 1;
@@ -157,7 +164,8 @@ function lancer(args) {
     '  historique sauvegarder|annuler <dossier>',
     '  atelier [<recette>] [--dossier <dossier>]   atelier des effets de particules : régler à l\'œil, enregistrer dans effets/',
     '  exporter <dossier> [--pour <usage>] [--taille-max <Mo>] [--qualite 1080p|720p|540p] [--ips 30|60] [--rapide] [--avec-provisoire] [--estimer]   usages : reference usages',
-    '  planche <dossier> [id1,id2]       planche <dossier> <id> --de <s> --duree <s> [--pas <n>]',
+    '  planche <dossier> [id1,id2] [--pdf]       planche <dossier> <id> --de <s> --duree <s> [--pas <n>]',
+    '  credits <dossier> [noter <fichier> "<source>" "<licence>" ["<auteur>"]]   crédits de la vidéo, source d\'un fichier importé',
     '  ffmpeg                   ffmpeg présent ? commande pour l\'installer',
     '  voix importer <fichier> [--scene <id>] [dossier] | provisoire [--scene <id>] [dossier] | transcrire [--scene <id>] [dossier] | studio <scène> [dossier]',
     '  whisper [installer [--modele small]]   transcription des voix',
