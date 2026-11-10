@@ -216,16 +216,21 @@ test('cache-scene-autre-encodage-sans-recapture : seul un réglage d\'encodage c
   assert.equal(r2.segmentsReencodes, r2.segments);
   assert.equal(r2.segmentsRepris, 0);
   assert.ok(fs.statSync(r2.fichier).size < taille1, 'CRF 35 : fichier plus léger');
+  const taille2 = fs.statSync(r2.fichier).size;
   const seg = path.join(dir, 'sortie', '.export', 'segments');
   assert.equal(fs.readdirSync(seg).filter((f) => f.endsWith('.mp4')).length, r2.segments, 'fichiers dérivés');
   assert.equal(fs.readdirSync(path.join(seg, 'pixels')).filter((f) => f.endsWith('.mp4')).length, r2.segments, 'intermédiaires gardés');
   const r3 = await exporter(dir, { encodage: { crf: 35 } });
   assert.equal(r3.segmentsRepris, r3.segments);
   assert.equal(r3.segmentsReencodes, 0);
-  // Retour aux réglages par défaut : l'intermédiaire sert tel quel.
+  // Retour à l'usage web (S5 : l'intermédiaire commun est en CRF 14, le web en dérive) : réencodé sans recapture, et les
+  // fichiers dérivés de l'autre réglage sont retirés après succès.
   const r4 = await exporter(dir);
-  assert.equal(r4.segmentsRepris, r4.segments);
-  assert.equal(fs.readdirSync(seg).filter((f) => f.endsWith('.mp4')).length, 0, 'fichiers dérivés de l\'autre usage retirés après succès');
+  assert.equal(r4.segmentsReencodes, r4.segments);
+  assert.deepEqual(r4.scenesRecapturees, []);
+  const derives = fs.readdirSync(seg).filter((f) => f.endsWith('.mp4'));
+  assert.equal(derives.length, r4.segments, 'seuls les fichiers dérivés du web restent');
+  assert.ok(fs.statSync(r4.fichier).size > taille2, 'qualité du web revenue (plus lourd que CRF 35)');
 });
 
 test('cache : seuls les segments du dernier export réussi et de l\'export en cours restent sur le disque', sans, async () => {

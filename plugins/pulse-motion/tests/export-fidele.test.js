@@ -76,13 +76,17 @@ test('revue : segment gardé mais faux (images noires) : détecté à la reprise
   const dir = copierProjet('projet-simple');
   const r1 = await exporter(dir, { arreterApres: 1 });
   assert.equal(r1.ok, false);
-  const [segment] = cache(dir).pixels;
-  const { images } = await F.sonder({ ffprobe: outil.cheminProbe, fichier: segment, compter: 'paquets' });
+  // L'intermédiaire et le fichier dérivé du web (écrits ensemble, S5) : tous deux remplacés par des images noires.
+  const segments = [...cache(dir).pixels, ...cache(dir).derives];
+  assert.equal(segments.length, 2);
+  const { images } = await F.sonder({ ffprobe: outil.cheminProbe, fichier: segments[0], compter: 'paquets' });
   const { pngRGBA } = require('./aide/png.js');
   const noir = pngRGBA(1280, 720, () => [0, 0, 0, 255]);
   async function* noires() { for (let k = 0; k < images; k++) yield noir; }
-  fs.rmSync(segment);
-  await F.encoderSegment({ ffmpeg: outil.chemin, sortie: segment, ips: 10, crf: 21, images: noires() });
+  for (const segment of segments) {
+    fs.rmSync(segment);
+    await F.encoderSegment({ ffmpeg: outil.chemin, sortie: segment, ips: 10, crf: 21, images: noires() });
+  }
   const r2 = await exporter(dir);
   assert.equal(r2.ok, true, r2.message);
   assert.equal(r2.segmentsRepris, 0);
@@ -268,7 +272,8 @@ test('export-fidele.test.js › statistiques écrites à côté de chaque segmen
   const v = JSON.parse(fs.readFileSync(path.join(dir, 'sortie', 'verification.json'), 'utf8'));
   assert.equal(v.version, 1);
   assert.equal(v.fichier, 'sortie/la-chaine-du-froid.mp4');
-  assert.deepEqual(v.faites, ['images', 'noirs']);
+  // S5 ajoute ses vérifications propres (5.22 point 4) : les couleurs étiquetées.
+  assert.deepEqual(v.faites, ['images', 'noirs', 'couleurs']);
   assert.deepEqual(v.nonFaites, [{ quoi: 'son', pourquoi: 'la vidéo n\'a pas de son' }]);
   // Le style de test n'anime pas les entrées : le titre et le compteur apparaissent d'un coup (saut-image, à juste titre).
   assert.deepEqual(r.verification, { erreurs: 0, alertes: v.problemes.length, fichier: 'sortie/verification.json' });
@@ -306,18 +311,23 @@ test('export-fidele.test.js › noir-export : un segment noirci après coup fait
   const dir = copierProjet('projet-simple');
   const r1 = await exporter(dir);
   assert.equal(r1.ok, true, r1.message);
-  // Le deuxième segment garde sa première image (il est repris) mais devient noir ensuite ; ses statistiques disent la page.
-  const segment = cache(dir).pixels.sort().find((f) => /-01\.mp4$/.test(f) && fs.existsSync(`${f}.stats.json`) && JSON.parse(fs.readFileSync(`${f}.stats.json`, 'utf8')).images >= 10);
-  assert.ok(segment, 'un segment d\'au moins une seconde');
-  const { images } = await F.sonder({ ffprobe: outil.cheminProbe, fichier: segment, compter: 'paquets' });
+  // Le deuxième segment du web (fichier dérivé, S5) garde sa première image (il est repris) mais devient noir ensuite ; les
+  // statistiques de son intermédiaire disent la page.
+  const inter = cache(dir).pixels.sort().find((f) => /-01\.mp4$/.test(f) && fs.existsSync(`${f}.stats.json`) && JSON.parse(fs.readFileSync(`${f}.stats.json`, 'utf8')).images >= 10);
+  assert.ok(inter, 'un segment d\'au moins une seconde');
+  let segment = null;
+  let images = 0;
+  for (const f of cache(dir).derives.filter((x) => /-01\.mp4$/.test(x)).sort()) {
+    const n = (await F.sonder({ ffprobe: outil.cheminProbe, fichier: f, compter: 'paquets' })).images;
+    if (n >= 10) { segment = f; images = n; break; }
+  }
+  assert.ok(segment, 'un fichier dérivé d\'au moins une seconde');
   const premiere = await F.extraireImage({ ffmpeg: outil.chemin, fichier: segment, t: 0 });
   const { pngRGBA } = require('./aide/png.js');
   const noir = pngRGBA(1280, 720, () => [0, 0, 0, 255]);
   async function* noircies() { for (let k = 0; k < images; k++) yield k < 2 ? premiere : noir; }
-  const stats = fs.readFileSync(`${segment}.stats.json`);
   fs.rmSync(segment);
   await F.encoderSegment({ ffmpeg: outil.chemin, sortie: segment, ips: 10, crf: 21, images: noircies() });
-  fs.writeFileSync(`${segment}.stats.json`, stats);
   const r2 = await exporter(dir);
   assert.equal(r2.ok, false);
   assert.match(r2.message, /La vidéo exportée a [\d,]+ s d'images noires vers [\d,]+ s qui n'existent pas dans la page ; l'export est abîmé : relancez-le\./);
@@ -328,4 +338,145 @@ test('export-fidele.test.js › noir-export : un segment noirci après coup fait
   // Relancé : refait, et juste.
   const r3 = await exporter(dir);
   assert.equal(r3.ok, true, r3.message);
+});
+
+// --- Spec Rendu et export (S5), jalon 1 ---------------------------------------------------------------------------------
+
+/** Options x264 inscrites par l'encodeur dans le premier segment du fichier (« x264 - core … options: … »). */
+function optionsX264(fichier) {
+  const octets = fs.readFileSync(fichier);
+  const debut = octets.indexOf('x264 - core');
+  assert.ok(debut >= 0, 'en-tête x264 absent');
+  const texte = octets.toString('latin1', debut, Math.min(octets.length, debut + 4000));
+  const options = texte.slice(texte.indexOf('options: ') + 9).split('\0')[0];
+  return Object.fromEntries(options.split(' ').map((o) => o.split('=')));
+}
+
+test('export-fidele.test.js › les options x264 inscrites dans le fichier (crf, aq-mode, tune, keyint) sont celles de l\'usage', sans, async () => {
+  const dir = copierProjet('projet-simple');
+  const web = await exporter(dir);
+  assert.equal(web.ok, true, web.message);
+  const w = optionsX264(web.fichier);
+  // Web : CRF 18, aq-mode 3 à 0,8, tune animation (déblocage 1:1, psy-rd 0,4), image clé toutes les 2 s (10 i/s), 8 Mbit/s au plus (×0,5 en 720p).
+  assert.deepEqual([w.crf, w.aq, w.deblock, w.psy_rd, w.keyint, w.vbv_maxrate, w.vbv_bufsize], ['18.0', '3:0.80', '1:1:1', '0.40:0.00', '20', '4000', '8000']);
+  const reseaux = await exporter(dir, { pour: 'reseaux' });
+  assert.equal(reseaux.ok, true, reseaux.message);
+  const r = optionsX264(reseaux.fichier);
+  assert.deepEqual([r.crf, r.aq, r.keyint, r.vbv_maxrate], ['17.0', '3:0.80', '10', '6000']);
+});
+
+test('export-fidele.test.js › web puis reseaux : le second ne recapture aucune image', sans, async () => {
+  const dir = copierProjet('projet-simple');
+  const web = await exporter(dir);
+  assert.equal(web.ok, true, web.message);
+  let captures = 0;
+  const surOuverture = (c) => { const avant = c.capturer; c.capturer = (...a) => { captures++; return avant(...a); }; };
+  const reseaux = await exporter(dir, { pour: 'reseaux', surOuverture });
+  assert.equal(reseaux.ok, true, reseaux.message);
+  assert.deepEqual(reseaux.scenesRecapturees, []);
+  assert.equal(reseaux.segmentsReencodes, reseaux.segments, 'chaque segment dérivé de l\'intermédiaire commun');
+  // Seules les images témoins et la première de chaque segment sont capturées, pour vérifier : aucune image du film.
+  assert.ok(captures <= reseaux.segments + 3, String(captures));
+  assert.equal(path.basename(reseaux.fichier), 'la-chaine-du-froid-reseaux.mp4');
+  assert.ok(fs.existsSync(web.fichier));
+});
+
+test('export-fidele.test.js › master : son propre intermédiaire, sans transcodage', sans, async () => {
+  const dir = copierProjet('projet-simple');
+  const web = await exporter(dir);
+  assert.equal(web.ok, true, web.message);
+  const communs = cache(dir).pixels.length;
+  const master = await exporter(dir, { pour: 'master' });
+  assert.equal(master.ok, true, master.message);
+  assert.equal(master.segmentsReencodes, 0);
+  assert.deepEqual(master.scenesRecapturees.sort(), ['chiffre', 'intro']);
+  const m = optionsX264(master.fichier);
+  assert.deepEqual([m.crf, m.subme], ['14.0', '8'], 'CRF 14, preset slow');
+  // Deux intermédiaires gardés (le commun et celui du master), aucun fichier dérivé pour le master.
+  assert.equal(cache(dir).pixels.length, communs + master.segments);
+  assert.equal(path.basename(master.fichier), 'la-chaine-du-froid-master.mp4');
+  // Réexport du master : repris tel quel.
+  const encore = await exporter(dir, { pour: 'master' });
+  assert.equal(encore.segmentsRepris, encore.segments);
+});
+
+test('export-fidele.test.js › vignette absente, étiquette de couleur absente ou taille dépassée : échec avec message, aucun fichier final', sans, async () => {
+  const bon = { couleurs: { espace: 'bt709', primaires: 'bt709', transfert: 'bt709', plage: 'tv' }, octets: 9e6, vignette: true, chapitres: 3, alpha: true };
+  assert.deepEqual(F.controlesSortie(bon, { etiquettes: true, octetsMax: 10e6, vignette: true, chapitres: true, alpha: true }), []);
+  assert.match(F.controlesSortie({ ...bon, vignette: false }, { vignette: true })[0], /^La vignette n'a pas pu être intégrée à la vidéo : l'export s'arrête, rien n'est écrit\.$/);
+  assert.match(F.controlesSortie({ ...bon, couleurs: { espace: null } }, { etiquettes: true })[0], /^Les couleurs de la vidéo ne sont pas marquées comme il faut/);
+  assert.equal(F.controlesSortie({ ...bon, octets: 10.6e6 }, { octetsMax: 10e6, nom: 'courriel' })[0], 'La version courriel fait 10,6 Mo, au-dessus des 10 Mo demandés : je peux viser 12 Mo, ou exporter une seule scène.');
+  // Dans l'export : un fichier sans étiquettes de couleur (ffprobe simulé) n'est jamais écrit.
+  const dir = copierProjet('projet-simple');
+  const avant = F.sonder;
+  F.sonder = async (o) => { const s = await avant(o); return /la-chaine-du-froid\.mp4\.part$/.test(o.fichier) ? { ...s, couleurs: { espace: null } } : s; };
+  try {
+    const r = await exporter(dir);
+    assert.equal(r.ok, false);
+    assert.match(r.message, /^Les couleurs de la vidéo ne sont pas marquées comme il faut/);
+  } finally { F.sonder = avant; }
+  assert.equal(fs.existsSync(path.join(dir, 'sortie', 'la-chaine-du-froid.mp4')), false);
+  assert.deepEqual(fs.readdirSync(path.join(dir, 'sortie')).filter((f) => f.endsWith('.part')), []);
+  // Relancé normalement : écrit, avec les couleurs vérifiées.
+  const r2 = await exporter(dir);
+  assert.equal(r2.ok, true, r2.message);
+  assert.ok(JSON.parse(fs.readFileSync(path.join(dir, 'sortie', 'verification.json'), 'utf8')).faites.includes('couleurs'));
+});
+
+test('export-fidele.test.js › le champ verification est présent dans les deux voies', sans, async () => {
+  const { exporterVideo } = require('../scripts/exporter.js');
+  const dir = copierProjet('projet-simple');
+  const f = await exporter(dir);
+  const n = await exporterVideo({ dossier: dir, dossierStyles: STYLES, navigateur });
+  for (const [voie, r] of [['fidele', f], ['navigateur', n]]) {
+    assert.equal(r.ok, true, `${voie} : ${r.message}`);
+    assert.equal(r.verification.fichier, 'sortie/verification.json', voie);
+    assert.ok(Number.isInteger(r.verification.erreurs) && Number.isInteger(r.verification.alertes), voie);
+  }
+});
+
+test('export-fidele.test.js › deux exports simultanés du même projet : le second refusé avec l\'heure du premier', sans, async () => {
+  const dir = copierProjet('projet-simple');
+  const travail = path.join(dir, 'sortie', '.export');
+  fs.mkdirSync(travail, { recursive: true });
+  const date = new Date(2026, 10, 10, 14, 2, 0);
+  fs.writeFileSync(path.join(travail, 'verrou'), JSON.stringify({ pid: process.pid, date: new Date(Date.now() - 60000).toISOString() }));
+  const r = await exporter(dir);
+  assert.equal(r.ok, false);
+  assert.match(r.message, /^Un export de cette vidéo est déjà en cours \(commencé à \d{1,2} h \d{2}\) : attendez sa fin\.$/);
+  // Deux exports lancés ensemble : un seul passe, l'autre dit l'heure du premier.
+  fs.rmSync(path.join(travail, 'verrou'));
+  const [x, y] = await Promise.all([exporter(dir, { ips: 5 }), exporter(dir, { ips: 5 })]);
+  assert.deepEqual([x.ok, y.ok].sort(), [false, true]);
+  assert.match((x.ok ? y : x).message, /^Un export de cette vidéo est déjà en cours \(commencé à \d{1,2} h \d{2}\) : attendez sa fin\.$/);
+  const { messageVerrou } = require('../scripts/export-fidele.js');
+  assert.equal(messageVerrou(date.toISOString()), 'Un export de cette vidéo est déjà en cours (commencé à 14 h 02) : attendez sa fin.');
+});
+
+test('export-fidele.test.js › verrou d\'un processus mort : ignoré', sans, async () => {
+  const { spawnSync } = require('node:child_process');
+  const dir = copierProjet('projet-simple');
+  const travail = path.join(dir, 'sortie', '.export');
+  fs.mkdirSync(travail, { recursive: true });
+  const mort = spawnSync(process.execPath, ['-e', '0']).pid;
+  fs.writeFileSync(path.join(travail, 'verrou'), JSON.stringify({ pid: mort, date: new Date().toISOString() }));
+  const r = await exporter(dir, { ips: 5 });
+  assert.equal(r.ok, true, r.message);
+  assert.equal(fs.existsSync(path.join(travail, 'verrou')), false);
+});
+
+test('export-fidele.test.js › exception dans une scène pendant l\'export : échec avec le nom de la scène et l\'instant', sans, async () => {
+  const dir = copierProjet('projet-simple');
+  // Le script de la page échoue à partir de 5 s (scène « chiffre ») : rejet non traité, vu par Runtime.exceptionThrown.
+  const surOuverture = (c) => c.evaluer(`(function () {
+    var seek = M.seek;
+    M.seek = function (t) { return Promise.resolve(seek.call(M, t)).then(function (r) { if (t >= 5) Promise.reject(new Error('boum')); return r; }); };
+    return true;
+  })()`);
+  const r = await exporter(dir, { surOuverture: (c) => { surOuverture(c); } });
+  assert.equal(r.ok, false);
+  assert.match(r.message, /^La scène « chiffre » a une erreur de script vers 5(,\d)? s : l'export s'arrête, rien n'est écrit\.$/);
+  assert.equal(r.erreurScript.scene, 'chiffre');
+  assert.match(r.erreurScript.detail, /boum/);
+  assert.equal(fs.existsSync(path.join(dir, 'sortie', 'la-chaine-du-froid.mp4')), false);
 });

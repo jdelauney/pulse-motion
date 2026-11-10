@@ -32,3 +32,36 @@ test('export-navigateur.test.js › les mêmes statistiques dans la voie navigat
   assert.match(source, /export const LARGEUR_STATS = 192;/);
   assert.equal(require('../scripts/lib/ffmpeg.js').LARGEUR_STATS, 192);
 });
+
+// --- Spec Rendu et export (S5), 5.1 : usages dans la voie navigateur -----------------------------------------------------
+
+const F = require('../scripts/lib/ffmpeg.js');
+const outil = F.trouverFfmpeg();
+const U = require('../scripts/lib/usages.js');
+
+/** Débit moyen de la piste vidéo, en kbit/s (octets des paquets vidéo, lus par ffprobe). */
+function debitVideo(fichier) {
+  const { spawnSync } = require('node:child_process');
+  const r = spawnSync(outil.cheminProbe, ['-v', 'error', '-select_streams', 'v:0', '-show_entries', 'packet=size', '-of', 'csv=p=0', fichier], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  const octets = r.stdout.split('\n').filter(Boolean).reduce((s, l) => s + Number(l), 0);
+  const duree = Number(spawnSync(outil.cheminProbe, ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', fichier], { encoding: 'utf8' }).stdout);
+  return (octets * 8) / duree / 1000;
+}
+
+test('export-navigateur.test.js › --pour web en voie navigateur : débit moyen à ±25 % de usages.json', { skip: (!navigateur && 'Chrome ou Edge introuvable') || (!outil.present && 'ffmpeg absent') }, async () => {
+  const dir = copierProjet('projet-simple');
+  const r = await exporterVideo({ dossier: dir, dossierStyles: STYLES, pour: 'web' });
+  assert.equal(r.ok, true, r.message);
+  const attendu = U.lireUsages().usages.web.navigateur.debit;
+  const mesure = debitVideo(path.join(dir, r.fichier));
+  assert.ok(Math.abs(mesure - attendu) / attendu <= 0.25, `${Math.round(mesure)} kbit/s mesurés, ${attendu} attendus`);
+});
+
+test('export-navigateur.test.js › --qualite 720p en voie navigateur : 1280×720', { skip: (!navigateur && 'Chrome ou Edge introuvable') || (!outil.present && 'ffmpeg absent') }, async () => {
+  const dir = copierProjet('projet-simple');
+  const r = await exporterVideo({ dossier: dir, dossierStyles: STYLES, qualite: '720p' });
+  assert.equal(r.ok, true, r.message);
+  const s = await F.sonder({ ffprobe: outil.cheminProbe, fichier: path.join(dir, r.fichier), compter: 'aucun' });
+  assert.deepEqual([s.largeur, s.hauteur], [1280, 720]);
+  assert.equal(r.definition, '720p');
+});

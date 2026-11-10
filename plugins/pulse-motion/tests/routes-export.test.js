@@ -164,3 +164,73 @@ test('planche : images PNG nommées sûrement, page de planche avec les seules i
     assert.deepEqual(fs.readdirSync(path.join(dir, 'sortie', 'planche')).sort(), ['intro-1.png', 'planche.html']);
   });
 });
+
+// --- Spec Rendu et export (S5), 5.6 : noms des fichiers envoyés par la page, nouvelles routes --------------------------------
+
+const nom = (n) => ({ 'X-PM-Nom': encodeURIComponent(n) });
+
+test('routes-export.test.js › nom de l\'usage : écrit sous ce nom ; WebM et GIF acceptés à leur extension', async () => {
+  await avecApercu(47803, async (dir, url) => {
+    const r = await requete(url + '_pm/export', { methode: 'POST', type: 'video/mp4', corps: MP4, entetes: { ...relecture({ ...RELU, usage: 'courriel', definition: '720p', ips: 30 }), ...nom('la-chaine-du-froid-courriel.mp4') } });
+    assert.equal(r.statut, 200, r.texte);
+    assert.deepEqual(r.json, { fichier: 'sortie/la-chaine-du-froid-courriel.mp4' });
+    const e = lireEtatExport(dir);
+    assert.deepEqual([e.etat, e.usage, e.definition, e.ips, e.octets], ['fini', 'courriel', '720p', 30, MP4.length]);
+    // Passage seul (motif « -de-12,5s-a-18s ») et GIF : leur type, leur signature.
+    const gif = Buffer.concat([Buffer.from('GIF89a'), Buffer.alloc(32)]);
+    const g = await requete(url + '_pm/export', { methode: 'POST', type: 'image/gif', corps: gif, entetes: { ...relecture(RELU), ...nom('la-chaine-du-froid-de-12,5s-a-18s.gif') } });
+    assert.equal(g.statut, 200, g.texte);
+    assert.ok(fs.existsSync(path.join(dir, 'sortie', 'la-chaine-du-froid-de-12,5s-a-18s.gif')));
+    // Type qui ne suit pas l'extension : refusé.
+    const t = await requete(url + '_pm/export', { methode: 'POST', type: 'video/mp4', corps: MP4, entetes: { ...relecture(RELU), ...nom('la-chaine-du-froid.webm') } });
+    assert.equal(t.statut, 415);
+  });
+});
+
+test('routes-export.test.js › nom hors motif refusé', async () => {
+  await avecApercu(47804, async (dir, url) => {
+    for (const n of ['La-Chaine.mp4', 'la-chaine-du-froid.mov', 'autre-video.mp4', 'la-chaine-du-froid courriel.mp4', 'la-chaine-du-froid-de-12s-a.mp4', '']) {
+      const r = await requete(url + '_pm/export', { methode: 'POST', type: 'video/mp4', corps: MP4, entetes: { ...relecture(RELU), ...nom(n) } });
+      assert.equal(r.statut, 400, n);
+      assert.match(r.json.message, /Nom de fichier refusé/, n);
+    }
+    assert.deepEqual(fs.existsSync(path.join(dir, 'sortie')) ? fs.readdirSync(path.join(dir, 'sortie')).filter((f) => /\.(mp4|mov|webm|gif)$/.test(f)) : [], []);
+  });
+});
+
+test('routes-export.test.js › « ../ » dans le nom refusé', async () => {
+  await avecApercu(47805, async (dir, url) => {
+    for (const n of ['../la-chaine-du-froid.mp4', '..%2Fla-chaine-du-froid.mp4', 'la-chaine-du-froid/../../x.mp4', 'la-chaine-du-froid-..\\x.mp4']) {
+      const r = await requete(url + '_pm/export', { methode: 'POST', type: 'video/mp4', corps: MP4, entetes: { ...relecture(RELU), ...nom(n) } });
+      assert.equal(r.statut, 400, n);
+    }
+    assert.equal(fs.existsSync(path.join(dir, 'la-chaine-du-froid.mp4')), false);
+    assert.equal(fs.existsSync(path.join(path.dirname(dir), 'x.mp4')), false);
+  });
+});
+
+test('routes-export.test.js › autre origine refusée (S4) ; couverture JPEG et réglages d\'un usage', async () => {
+  await avecApercu(47806, async (dir, url) => {
+    const autre = await requete(url + '_pm/export', { methode: 'POST', type: 'video/mp4', corps: MP4, entetes: { ...relecture(RELU), ...nom('la-chaine-du-froid.mp4'), Origin: 'http://evil.example' } });
+    assert.equal(autre.statut, 403);
+    const couv = await requete(url + '_pm/couverture', { methode: 'POST', type: 'image/jpeg', corps: Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(64)]), entetes: { Origin: 'http://evil.example' } });
+    assert.equal(couv.statut, 403);
+    const ok = await requete(url + '_pm/couverture', { methode: 'POST', type: 'image/jpeg', corps: Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(64)]) });
+    assert.equal(ok.statut, 200, ok.texte);
+    assert.deepEqual(ok.json, { fichier: 'sortie/la-chaine-du-froid-couverture.jpg' });
+    const pasJpeg = await requete(url + '_pm/couverture', { methode: 'POST', type: 'image/jpeg', corps: PNG });
+    assert.equal(pasJpeg.statut, 422);
+    // Réglages résolus par l'aperçu comme dans la voie fidèle ; usage inconnu : message français.
+    const u = await requete(url + '_pm/usage?pour=courriel');
+    assert.equal(u.statut, 200);
+    assert.deepEqual([u.json.usage, u.json.nomFichier, u.json.navigateur.mode, u.json.grainMax], ['courriel', 'la-chaine-du-froid-courriel.mp4', 'constant', 12]);
+    const inconnu = await requete(url + '_pm/usage?pour=tele');
+    assert.equal(inconnu.statut, 400);
+    assert.match(inconnu.json.erreur, /Usage « tele » inconnu/);
+    const tous = await requete(url + '_pm/usages.json');
+    assert.deepEqual(Object.keys(tous.json.usages), ['web', 'reseaux', 'presentation', 'master', 'courriel', 'brouillon']);
+    const est = await requete(url + '_pm/estimation.js');
+    assert.equal(est.statut, 200);
+    assert.match(est.type, /^text\/javascript/);
+  });
+});

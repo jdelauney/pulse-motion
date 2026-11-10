@@ -85,7 +85,7 @@ const arrondiKbit = (x) => Math.max(1, Math.round(x));
 
 /**
  * Réglages effectifs d'un export. Erreurs (message français) : usage inconnu, qualité inconnue, images par seconde hors de
- * 12 à 60, taille visée trop petite pour la durée.
+ * 1 à 60, taille visée trop petite pour la durée.
  */
 function resoudreUsage({ pour, qualite, ips, tailleMax, deroule = {}, duree = 0, usages = lireUsages() } = {}) {
   const usage = pour || usages.defaut;
@@ -95,7 +95,7 @@ function resoudreUsage({ pour, qualite, ips, tailleMax, deroule = {}, duree = 0,
   let cadence;
   if (ips !== undefined && ips !== null && ips !== '') {
     cadence = Number(ips);
-    if (!Number.isInteger(cadence) || cadence < 12 || cadence > 60) return { erreur: `Images par seconde « ${ips} » impossibles : de 12 à 60.` };
+    if (!Number.isInteger(cadence) || cadence < 1 || cadence > 60) return { erreur: `Images par seconde « ${ips} » impossibles : de 1 à 60.` };
   } else {
     cadence = Math.min((deroule.format && deroule.format.ips) || 30, u.ipsMax || 60);
   }
@@ -193,5 +193,5 @@ function tableauUsages(u = lireUsages()) {
 
 module.exports = {
   lireUsages, nomsUsages, messageUsageInconnu, resoudreUsage, planTaille, nomFichier, tailleFrancaise, dureeFrancaise,
-  nombreFrancais, tableauUsages, avecGrain, MOTS, DEFINITIONS, SEUILS_TAILLE, FACTEUR_DEFINITION, MO,
+  nombreFrancais, tableauUsages, poidsEtTemps, avecGrain, MOTS, DEFINITIONS, SEUILS_TAILLE, FACTEUR_DEFINITION, MO,
 };

@@ -45,3 +45,19 @@ test('couleurs.test.js › suggererCouleur : couleur de la charte qui passe d\'a
   assert.match(C.phraseProposition(s), /couleur lisible proposée : #9a3412 \(la couleur « profond » de la charte\)/);
   assert.match(C.phraseProposition(t), /la même teinte, plus sombre/);
 });
+
+test('couleurs.test.js › CIEDE2000 : paires de référence de Sharma, Wu et Dalal (2005) ; identiques : 0', () => {
+  // Extraits du jeu de 34 paires publié avec la formule : L, a, b de chaque couleur, écart attendu (4 décimales).
+  const PAIRES = [
+    [[50, 2.6772, -79.7751], [50, 0, -82.7485], 2.0425],
+    [[50, 3.1571, -77.2803], [50, 0, -82.7485], 2.8615],
+    [[50, 0, 0], [50, -1, 2], 2.3669],
+    [[50, 2.49, -0.001], [50, -2.49, 0.0009], 7.1792],
+    [[60.2574, -34.0099, 36.2677], [60.4626, -34.1751, 39.4387], 1.2644],
+    [[90.8027, -2.0831, 1.441], [91.1528, -1.6435, 0.0447], 1.4441],
+    [[2.0776, 0.0795, -1.135], [0.9033, -0.0636, -0.5514], 0.9082],
+  ];
+  for (const [a, b, attendu] of PAIRES) assert.equal(Math.round(C.deltaE00Lab(a, b) * 1e4) / 1e4, attendu, JSON.stringify([a, b]));
+  assert.equal(C.deltaE00([51, 102, 204], [51, 102, 204]), 0);
+  assert.ok(C.deltaE00([255, 255, 255], [0, 0, 0]) > 99);
+});

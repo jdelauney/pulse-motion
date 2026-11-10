@@ -77,3 +77,48 @@ test('revue : capture qui échoue pendant un segment : rejet seulement après l\
   fs.rmSync(sortie, { force: true });
   assert.equal(fs.existsSync(sortie), false);
 });
+
+// --- Spec Rendu et export (S5), 5.2 : couleurs étiquetées, concaténation sans réencodage ---------------------------------
+
+test('ffmpeg-operations.test.js › segment encodé : ffprobe lit color_space, color_primaries et color_transfer bt709, color_range tv', sans, async () => {
+  const dir = dossierTemporaire('pm-ff-');
+  const sortie = path.join(dir, 'a.mp4');
+  const derive = path.join(dir, 'b.mp4');
+  await F.encoderSegment({ ffmpeg: outil.chemin, sortie, ips: 30, reglages: { crf: 14, preset: 'medium', tune: 'animation', gop: 2, profil: 'high' },
+    derive: { sortie: derive, reglages: { crf: 18, preset: 'medium', tune: 'animation', gop: 2, profil: 'high', debitMax: 8000, tampon: 16000 } },
+    images: images(30, (k) => uni(29, 78, 216 - k)) });
+  for (const f of [sortie, derive]) {
+    const s = await F.sonder({ ffprobe: outil.cheminProbe, fichier: f });
+    assert.deepEqual(s.couleurs, { espace: 'bt709', primaires: 'bt709', transfert: 'bt709', plage: 'tv' }, f);
+    assert.equal(s.images, 30);
+  }
+  // Réencodé (dérivé sans recapture), réduit, ou en deux passes : mêmes étiquettes.
+  const reduit = path.join(dir, 'c.mp4');
+  await F.reencoderSegment({ ffmpeg: outil.chemin, entree: sortie, sortie: reduit, ips: 30, reglages: { crf: 20, gop: 2 }, taille: [32, 18] });
+  const leger = path.join(dir, 'd.mp4');
+  await F.transcoderDeuxPasses({ ffmpeg: outil.chemin, entree: sortie, sortie: leger, ips: 30, reglages: { debit: 200, gop: 2 }, journal: path.join(dir, 'passe') });
+  for (const f of [reduit, leger]) assert.deepEqual((await F.sonder({ ffprobe: outil.cheminProbe, fichier: f })).couleurs, { espace: 'bt709', primaires: 'bt709', transfert: 'bt709', plage: 'tv' }, f);
+  assert.deepEqual((await F.sonder({ ffprobe: outil.cheminProbe, fichier: reduit })).largeur, 32);
+  assert.deepEqual(fs.readdirSync(dir).filter((f) => f.startsWith('passe')), [], 'journal des deux passes retiré');
+});
+
+test('ffmpeg-operations.test.js › deux segments concaténés : aucun avertissement de paramètres différents', sans, async () => {
+  const { spawnSync } = require('node:child_process');
+  const dir = dossierTemporaire('pm-ff-');
+  const reglages = { crf: 18, preset: 'medium', tune: 'animation', gop: 1, profil: 'high', debitMax: 12000, tampon: 24000 };
+  const a = path.join(dir, 'a.mp4');
+  const b = path.join(dir, 'b.mp4');
+  await F.encoderSegment({ ffmpeg: outil.chemin, sortie: a, ips: 30, reglages, images: images(30, () => uni(200, 40, 40)) });
+  await F.encoderSegment({ ffmpeg: outil.chemin, sortie: b, ips: 30, reglages, images: images(15, () => uni(40, 200, 40)) });
+  const liste = path.join(dir, 'liste.txt');
+  fs.writeFileSync(liste, [a, b].map((f) => `file '${f.replace(/\\/g, '/')}'`).join('\n'));
+  const r = spawnSync(outil.chemin, ['-y', '-hide_banner', '-loglevel', 'warning', '-f', 'concat', '-safe', '0', '-i', liste, '-c', 'copy', '-movflags', '+faststart', '-video_track_timescale', '90000', path.join(dir, 'tout.mp4')], { encoding: 'utf8' });
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal(r.stderr.trim(), '', 'aucun avertissement');
+  const s = await F.sonder({ ffprobe: outil.cheminProbe, fichier: path.join(dir, 'tout.mp4') });
+  assert.equal(s.images, 45);
+  assert.deepEqual(s.couleurs, { espace: 'bt709', primaires: 'bt709', transfert: 'bt709', plage: 'tv' });
+  // Et par la fonction de l'export (son facultatif, sans réencodage).
+  await F.assemblerSegments({ ffmpeg: outil.chemin, segments: [a, b], sortie: path.join(dir, 'export.mp4') });
+  assert.equal((await F.sonder({ ffprobe: outil.cheminProbe, fichier: path.join(dir, 'export.mp4') })).images, 45);
+});
