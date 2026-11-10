@@ -6,6 +6,7 @@
  *   data-start="#titre:fin-0.2" fin de #titre − 0,2 s
  *   data-start="mot:froid"      quand la voix de la scène dit « froid » (#2 : deuxième fois, :fin : fin du mot, +0.2)
  *   data-dur="1.2"              durée (1 s par défaut)
+ *   data-dur="scene"            jusqu'à la fin de la scène, voix comprise (dernière scène : 1 s avant, image finale stable)
  * Avec un tempo dans le déroulé, toute durée s'écrit aussi en temps musicaux : « 2t », « #titre:fin+1t ».
  * Les temps internes d'une scène sont divisés par son rythme. Une voix (scenes[].voix = { debut, duree, mots }, en
  * secondes réelles) allonge la scène jusqu'à sa fin + 0,4 s (arrondi au temps musical suivant avec un tempo).
@@ -67,6 +68,8 @@
    *   options.dureeTemps : secondes par temps musical (tempo du déroulé), absent sans tempo
    *   options.decalageTemps : instant du premier temps (tempo.decalage), 0 par défaut
    *   options.grilleFixe : la musique ne suit pas les scènes (une scène allongée par la voix finit sur un temps)
+   *   options.derniere : la dernière scène de la liste est-elle la dernière de la vidéo (vrai par défaut ; faux pour le
+   *     minutage d'une scène seule au milieu de la vidéo) : data-dur="scene" s'y arrête 1 s avant la fin
    * -> { duree, scenes: [{ id, debut, fin, rythme, transition, entree, dureeTransition }],
    *      elements: { [idScene]: { [cle]: { debut, fin } } }, erreurs: [{ regle, scene, element, message }] }
    */
@@ -74,6 +77,7 @@
     var dureeTemps = options && options.dureeTemps > 0 ? options.dureeTemps : null;
     var decalageTemps = options && options.decalageTemps > 0 ? options.decalageTemps : 0;
     var grilleFixe = !!(options && options.grilleFixe);
+    var finVideo = !(options && options.derniere === false);
     var erreurs = [];
     var resultat = { duree: 0, scenes: [], elements: {}, erreurs: erreurs };
     var fin = 0;
@@ -101,14 +105,16 @@
       var finScene = debut + reelle;
       resultat.scenes.push({ id: s.id, debut: debut, fin: finScene, rythme: rythme, transition: s.transition || 'aucune', entree: entree, dureeTransition: dureeTransitionDe(s),
         allongee: allongee, dureeEffective: Math.round(reelle * rythme * 1e6) / 1e6 });
-      resultat.elements[s.id] = minuterScene(s.id, debut, rythme, (elementsParScene && elementsParScene[s.id]) || [], erreurs, dureeTemps, s.voix);
+      // data-dur="scene" : jusqu'à la fin de la scène (temps de la scène), 1 s réelle avant sur la dernière.
+      var finLocale = Math.round(reelle * rythme * 1e6) / 1e6 - (finVideo && i === scenes.length - 1 ? rythme : 0);
+      resultat.elements[s.id] = minuterScene(s.id, debut, rythme, (elementsParScene && elementsParScene[s.id]) || [], erreurs, dureeTemps, s.voix, finLocale);
       fin = finScene;
     });
     resultat.duree = fin;
     return resultat;
   }
 
-  function minuterScene(idScene, debutScene, rythme, elements, erreurs, dureeTemps, voix) {
+  function minuterScene(idScene, debutScene, rythme, elements, erreurs, dureeTemps, voix, finLocale) {
     var parCle = {};
     elements.forEach(function (e) { parCle[e.cle] = e; });
     var local = {};      // cle -> { debut, fin } en temps de scène
@@ -125,9 +131,11 @@
       return liste.length ? ' ; ' + P.phrase(liste) : '';
     }
 
-    function lireDuree(e) {
+    /** Durée en temps de scène ; debut : début de l'élément (temps de scène), pour data-dur="scene". */
+    function lireDuree(e, debut) {
       if (e.dur === undefined || e.dur === null || e.dur === '') return DUREE_DEFAUT;
       var d = String(e.dur).trim();
+      if (d === 'scene') return Math.max(0, Math.round((finLocale - debut) * 1e6) / 1e6);
       var lu = lireSecondes(d, dureeTemps);
       if (lu.erreur === 'tempo-absent') {
         erreur('tempo-absent', e.cle, messageTempoAbsent(idScene, e.cle, 'data-dur', d));
@@ -200,7 +208,7 @@
           debut = Math.max(0, (m[2] ? ref.fin : ref.debut) + decalage);
         }
       }
-      var res = { debut: debut, fin: debut + lireDuree(e) };
+      var res = { debut: debut, fin: debut + lireDuree(e, debut) };
       enCours[cle] = false;
       local[cle] = res;
       return res;
@@ -256,7 +264,38 @@
     return v.debut + (v.fin - v.debut) * 0.95;
   }
 
+  // ---- Boucles de vie pm-v-* (spec Mouvement vivant, 5.9) : calculs purs, partagés par l'horloge et les tests.
+
+  /** FNV-1a 32 bits d'un texte -> entier non signé (même calcul que moteur/vivant.js, sel). */
+  function selVie(texte) {
+    var h = 0x811c9dc5, s = String(texte);
+    for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+    return h >>> 0;
+  }
+
+  /** Phase d'une boucle de vie dans [0, 1[ : graine(rang, sel(idScene + '/' + classe)), un tour de mulberry32 (même calcul
+   *  que moteur/vivant.js, graine). rang : rang de l'élément parmi ceux de même classe dans la scène. */
+  function phaseVie(rang, idScene, classe) {
+    var a = ((selVie(idScene + '/' + classe) >>> 0) ^ Math.imul((rang | 0) + 1, 0x9e3779b1)) | 0;
+    a = (a + 0x6D2B79F5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+
+  /** Nombre de cycles d'une boucle de période P dans une fenêtre W (mêmes unités) : une boucle qui oscille fait un nombre
+   *  entier de cycles et finit au repos (une fraction si W < P) ; une boucle continue (défilement, engrenage) remplit W. */
+  function cyclesVie(W, P, continue_) {
+    if (!(W > 0) || !(P > 0)) return 0;
+    var n = W / P;
+    if (!continue_ && n >= 1 - 1e-9) n = Math.floor(n + 1e-9);
+    return Math.round(n * 1e6) / 1e6;
+  }
+
   return {
+    selVie: selVie,
+    phaseVie: phaseVie,
+    cyclesVie: cyclesVie,
     partieVisible: partieVisible,
     instantCouverture: instantCouverture,
     CHEVAUCHEMENT: CHEVAUCHEMENT,

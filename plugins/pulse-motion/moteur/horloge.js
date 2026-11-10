@@ -27,6 +27,11 @@
  *
  * Aléa reproductible et horloge virtuelle : idée et algorithme mulberry32 repris de
  * showtime (skills/showtime/runtime/stage.js), licence MIT.
+ * Boucles de vie (classes pm-v-*, spec Mouvement vivant 5.9) : à M.demarrer, chaque élément qui en porte une reçoit en
+ * ligne sa fenêtre (--pm-fenetre, s de la scène : durée de son porteur minuté, lui-même ou l'ancêtre minuté le plus
+ * proche ; la scène sans porteur), sa phase (--pm-v-phase, graine du rang parmi les éléments de même classe de la scène) et
+ * ses cycles (--pm-v-fois, --pm-v-fois-2 : par animation pm-v-*, M.cyclesVie). Les classes lisent d'abord --pm-phase et
+ * --pm-fois : ce que la scène écrit l'emporte. Calcul fait une fois, sans t : la même image quel que soit l'ordre de rendu.
  * Caméra (data-camera, data-profondeur) et temps figé ou accéléré (data-gel, data-vitesse) : chaque
  * élément voit le temps de ses conteneurs ; une caméra voit celui de ses ancêtres, pas le sien.
  * Navigateur seulement ; dépend de courbes, minutage, transitions, tween, lettres, camera, temps (global M).
@@ -151,6 +156,38 @@
     return liste;
   }
 
+  /** Bornes des boucles de vie d'une scène (voir l'en-tête) : styles lus par getComputedStyle, valables même dans une
+   *  scène masquée. */
+  function bornerVie(s) {
+    if (!s.sec || !M.cyclesVie) return;
+    var liste = s.sec.querySelectorAll('[class*="pm-v-"]');
+    if (!liste.length) return;
+    var info = s.info, rythme = info.rythme || 1;
+    var porteurs = new Map();
+    s.elements.forEach(function (e) { porteurs.set(e.el, e); });
+    var rangs = {};
+    Array.prototype.forEach.call(liste, function (el) {
+      var classe = null;
+      for (var i = 0; i < el.classList.length && !classe; i++) if (el.classList[i].indexOf('pm-v-') === 0) classe = el.classList[i];
+      if (!classe) return;
+      rangs[classe] = rangs[classe] === undefined ? 0 : rangs[classe] + 1;
+      var porteur = null;
+      for (var c = el; c && !porteur; c = c === s.sec ? null : c.parentElement) if (porteurs.has(c)) porteur = porteurs.get(c);
+      var W = porteur ? (porteur.fin - porteur.debut) * rythme : (info.fin - info.debut) * rythme;
+      el.style.setProperty('--pm-fenetre', String(arrondi(W)));
+      el.style.setProperty('--pm-v-phase', String(arrondi(M.phaseVie(rangs[classe], info.id, classe))));
+      var cs = racine.getComputedStyle(el);
+      var noms = String(cs.animationName || '').split(','), durees = String(cs.animationDuration || '').split(',');
+      var continue_ = String(cs.getPropertyValue('--pm-boucle') || '').trim() === 'continue';
+      noms.forEach(function (nom, k) {
+        if (k > 1 || String(nom).trim().indexOf('pm-v-') !== 0) return;
+        var d = String(durees[k % durees.length] || '').trim();
+        var P = /ms$/.test(d) ? parseFloat(d) / 1000 : parseFloat(d);
+        el.style.setProperty(k === 0 ? '--pm-v-fois' : '--pm-v-fois-2', String(M.cyclesVie(W, P, continue_)));
+      });
+    });
+  }
+
   M.demarrer = function () {
     var donnees = JSON.parse(document.getElementById('pm-donnees').textContent);
     M.donnees = donnees;
@@ -206,6 +243,7 @@
         chaines: new Map(),
       };
     });
+    etat.scenes.forEach(bornerVie);
     M.erreurs = min.erreurs.concat(erreurs);
     M.erreurs.forEach(function (e) { console.warn('[Pulse Motion] ' + e.message); });
     M.rendre(0);
