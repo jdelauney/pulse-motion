@@ -473,10 +473,10 @@ async function tourner({ projet, nom, accord = false, navigateur, surEtape = () 
     let nCalmes = 0;
     // Une image identique à une autre (SHA-256 des octets écrits, ou de la capture d'origine) n'est écrite qu'une fois.
     const ecrites = new Map();   // sha des octets écrits -> nom
-    const ecrireImage = (data, nom) => {
-      const h = sha(data);
+    const ecrireImage = (octets, nom) => {
+      const h = sha(octets);
       if (ecrites.has(h)) return { nom: ecrites.get(h), nouveau: false };
-      fs.writeFileSync(path.join(temporaire, 'images', nom()), data);
+      fs.writeFileSync(path.join(temporaire, 'images', nom()), octets);
       ecrites.set(h, nom());
       return { nom: nom(), nouveau: true };
     };
@@ -537,7 +537,7 @@ async function tourner({ projet, nom, accord = false, navigateur, surEtape = () 
       duree: Math.round((Date.now() - debutTournage) / 100) / 10,
     };
     film.poids = F.poidsPrise(temporaire);
-    fs.writeFileSync(path.join(temporaire, 'film.json'), `${JSON.stringify(film, null, 2)}\n`);
+    fs.writeFileSync(path.join(temporaire, 'film.json'), `${JSON.stringify(film, null, 2)}\n`, 'utf8');
     // Planche : l'image avant l'action, la cible et le point visé, le compte des zones floutées.
     const planche = path.join(projet, 'sortie', 'planche-film', `${nom}-${prise}`);
     fs.rmSync(planche, { recursive: true, force: true });
@@ -563,10 +563,10 @@ async function tourner({ projet, nom, accord = false, navigateur, surEtape = () 
       let image = null;
       try {
         if (page) {
-          const im = await page.capturer({ format: 'webp', qualite: 90 });
+          const octets = await page.capturer({ format: 'webp', qualite: 90 });
           fs.mkdirSync(path.join(projet, 'sortie'), { recursive: true });
           image = path.join(projet, 'sortie', 'tournage-echec.webp');
-          fs.writeFileSync(image, im);
+          fs.writeFileSync(image, octets);
         }
       } catch { /* capture impossible : le message suffit */ }
       resultat = { ok: false, erreur: 'etape', etape: e.echec.etape, ...(e.echec.preparation ? { preparation: true } : {}), message: e.message, proches: e.echec.proches,
