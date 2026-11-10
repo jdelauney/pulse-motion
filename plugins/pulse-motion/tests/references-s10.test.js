@@ -3,7 +3,7 @@
  * garde-fous (§ 5.14), les critères de chaque référence (§ 5.1 à 5.12) et leurs branchements (§ 5.13).
  * Les évaluations de comportement (« creer_demande_floue… », « retoucher_note_ma_video… », « creer_produit_nomme… »,
  * « animateur_ne_redessine_pas… ») appartiennent au jeu d'évaluations de S2 (plan S2-8) ; les critères des réglages
- * rapides, au plan R3 de S4. */
+ * rapides, au plan R3 de S4 (tests/reglages-rapides.test.js), qui déplace aussi la douzième référence. */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -15,7 +15,7 @@ const { trouverNavigateur } = require('./aide/navigateur.js');
 const RACINE = path.join(__dirname, '..');
 const lire = (...p) => fs.readFileSync(path.join(RACINE, ...p), 'utf8');
 const S10 = ['directions', 'revue', 'anti-cliches', 'mixage-fin', 'compositions', 'actifs-marque', 'cadres-pointeur', 'sorties',
-  'scenes-temoins', 'recettes-rythme', 'pieges'];
+  'scenes-temoins', 'recettes-rythme', 'pieges', 'reglages-rapides'];
 
 /** Termes interdits de la spec S10 (§ 7, étape 2) : noms de studios, de marques d'appareils, fichiers, couleurs et jargon
  *  de la source. La liste peut grandir, jamais rétrécir. */
@@ -74,8 +74,8 @@ test('references_s10_essentiel_puis_a_venir : titre, « L\'essentiel » en tête
     }
     for (const m of aVenir(t).matchAll(/spec (S\d+)/g)) assert.match(m[1], /^S[1-9]$/, `${nom} : ${m[1]}`);
   }
-  // reglages-rapides reste avec le panneau (plan R3 de S4).
-  assert.equal(fs.existsSync(path.join(RACINE, 'references', 'reglages-rapides.md')), false);
+  // reglages-rapides est déplacé avec le panneau (plan R3 de S4, avec S10-B) : les douze références sont là.
+  assert.equal(S10.length, 12);
 });
 
 test('references_s10_mouvements_classes_sons_existent : numéros, classes pm-m-* et sons cités existent (hors « À venir »)', () => {
