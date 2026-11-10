@@ -79,6 +79,8 @@ Gabarit : `"vie": { "retard": 0.1, "force": 0.45 }` (avant-bras et tête arriven
 | « il saute plus haut » | copie de `saut`, `bassinY` de l'envol plus négatif (ex. -150 → -200) |
 | « montre-moi la course de face et de profil » | `pulse-motion personnages planche course --vues 0,90 --dossier .` puis `Read` |
 | « il est raide », « il fait robot » | copie du mouvement dans la vidéo avec `"lissage": "continu"` |
+| « il lance la balle à son ami » | l'objet tenu en `data-lacher="lance"`, `data-cible="#ami"` (même conteneur) ; l'ami `regarder` la balle |
+| « il flotte » | action `flotter` (`data-hauteur`, `data-dur`) |
 | « il ne bouge pas quand il attend » | `data-vie="pleine"` sur le conteneur (ou retirer `data-vie="sobre"`, `data-calme="non"`) |
 | « il cligne trop » | copie de l'expression dans la vidéo, `clignement.intervalle` plus grand (ex. [5, 7]) |
 | « enlève son ombre » | `data-ombre="non"` sur le conteneur |

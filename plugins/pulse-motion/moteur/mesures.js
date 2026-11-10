@@ -15,6 +15,13 @@
  * plages : [[debut, fin]] ; seuls les relevés qui y tombent sont faits (contrôle partiel : les scènes changées, et un
  * relevé de chaque côté ; les constats des autres scènes sont repris du contrôle précédent).
  * Revient à l'instant de départ. Navigateur seulement ; dépend de horloge (global M).
+ *
+ * M.mesurerMouvement({ seuils, scenes? }) : contrôles du mouvement (spec Mouvement vivant, 5.12), constats bruts aussi.
+ * geste-bref et pose-figee sur les poses relevées des personnages (M.personnages.releve, calcul pur), a-coup-camera sur
+ * les caméras échantillonnées à la cadence de la vidéo (M.etatCamera), raccord-boucle et tout-en-phase sur les animations
+ * CSS répétées (chaque scène rendue une fois, au milieu de sa partie hors transitions). Analyses pures :
+ * M.mesurerMouvement.analyses (testées dans Node). Méthode de rossark-motion-skill (SKILL.md § 1.6, § 1.12, § 5, § 7.10)
+ * et de take-one (motion-kit.md, « no back-to-back in/out »), licences MIT ; idée de lemo (camcheck.mjs) ; code réécrit.
  */
 (function (racine) {
   'use strict';
@@ -23,7 +30,9 @@
   var DEFAUTS = { pasMesure: 0.2, immobile: 0.005, chevauchementMax: 0.1, margeMin: 0.04, logoMasqueMax: 0.2, grandElement: 0.25, vitesseMax: 1, texteFugaceBase: 0.8, texteFugaceParMot: 0.2,
     zoneHaut: 0.07, zoneBas: 0.2, zoneDroite: 0.11, zoneDroiteDebut: 0.4, zoneDroiteFin: 0.85, sousTitreMin: 1.25,
     grandTexteCqh: 4.5, animationLongue: 3, epingleCoin: 0.15, epingleDuree: 6, accrocheMax: 3, accrocheTaille: 0.078, agrandissementMax: 1.12,
-    lecteurLargeur: 854, lecteurTexteMin: 16, telephoneLargeur: 360, telephoneTexteMin: 9, sujetMin: 0.33, regardDecalage: 0.3, transitionOpacite: 0.1 };
+    lecteurLargeur: 854, lecteurTexteMin: 16, telephoneLargeur: 360, telephoneTexteMin: 9, sujetMin: 0.33, regardDecalage: 0.3, transitionOpacite: 0.1,
+    pasPersonnages: 0.0166667, gesteBrefDuree: 0.1, gesteBrefAngle: 20, gesteBrefPaupieres: 0.5, poseFigee: 2, poseFigeeAngle: 0.3,
+    aCoupCamera: 20, aCoupRotation: 15, toutEnPhase: 3, zoomRetourMin: 0.3 };
   // Largeur de l'image exportée en 1080p, par format (scripts/export-fidele.js, TAILLES).
   var LARGEUR_EXPORT = { '16:9': 1920, '9:16': 1080, '1:1': 1080, '4:5': 1080 };
   var CASSE = /\b(NaN|undefined|Infinity|null)\b|\[object Object\]/;
@@ -440,4 +449,245 @@
     M.rendre(depart);
     return constats;
   };
+
+  /* ---------- Mouvement (spec Mouvement vivant, 5.12) ---------- */
+
+  var EPS = 1e-6;
+  var EN_DEPLACEMENT = { marche: true, course: true, bond: true };
+  var PARTIES = { bras: 'bras', avantBras: 'avant-bras', ecartBras: 'bras', torsionBras: 'bras', cuisse: 'cuisse', tibia: 'jambe',
+    pied: 'pied', ecartJambe: 'jambe', torsionJambe: 'jambe', torse: 'buste', torseRot: 'buste', torseIncl: 'buste',
+    bassinRot: 'bassin', tete: 'tête', teteTourne: 'tête', tetePenche: 'tête', touffeRot: 'touffe', paupieres: 'paupières' };
+  function partie(cle) { var g = cle.replace(/(Avant|Arriere)$/, ''); return PARTIES[g] || PARTIES[cle] || cle; }
+
+  /** Variations dans un même sens d'au moins gesteBrefAngle (gesteBrefPaupieres pour les paupières), accomplies en moins
+   *  de gesteBrefDuree, hors marche, course et bond. releve : { t, corps, poses } -> [{ cle, partie, debut, fin, ampleur, duree }]
+   *  triées par début. Une variation s'arrête quand la valeur change de sens ou ne bouge plus. */
+  function gestesBrefs(r, S) {
+    var out = [];
+    if (!r || !r.poses.length) return out;
+    Object.keys(r.poses[0]).forEach(function (k) {
+      var seuil = k === 'paupieres' ? S.gesteBrefPaupieres : S.gesteBrefAngle;
+      var debut = null, sens = 0;
+      function fermer(j) {
+        if (debut === null) return;
+        var ampleur = Math.abs(r.poses[j][k] - r.poses[debut][k]), duree = r.t[j] - r.t[debut];
+        if (ampleur >= seuil - 1e-9 && duree < S.gesteBrefDuree - 1e-9) out.push({ cle: k, partie: partie(k), debut: r.t[debut], fin: r.t[j], ampleur: ampleur, duree: duree });
+        debut = null; sens = 0;
+      }
+      for (var i = 1; i < r.poses.length; i++) {
+        if (EN_DEPLACEMENT[r.corps[i]] || EN_DEPLACEMENT[r.corps[i - 1]]) { fermer(i - 1); continue; }
+        var d = r.poses[i][k] - r.poses[i - 1][k];
+        var s = d > EPS ? 1 : d < -EPS ? -1 : 0;
+        if (s === 0) { fermer(i - 1); continue; }
+        if (s !== sens) { fermer(i - 1); debut = i - 1; sens = s; }
+      }
+      fermer(r.poses.length - 1);
+    });
+    return out.sort(function (a, b) { return a.debut - b.debut; });
+  }
+
+  /** Passages de plus de poseFigee où, respiration et clignements mis à part (releve.fixes), aucun angle ne varie de plus
+   *  de poseFigeeAngle et les paupières ne bougent pas. Un arrêt sur image (temps du personnage qui n'avance pas) coupe le
+   *  passage ; data-vie="aucune" n'est jamais figé (immobile exprès). -> [{ debut, fin, duree }] */
+  function posesFigees(r, S) {
+    var out = [];
+    if (!r || r.vie === 'aucune' || r.fixes.length < 2) return out;
+    var cles = Object.keys(r.fixes[0]);
+    var pas = r.t.length > 1 ? r.t[1] - r.t[0] : 0;
+    var w0 = 0, bas = {}, haut = {};
+    function ouvrir(i) { w0 = i; cles.forEach(function (k) { bas[k] = haut[k] = r.fixes[i][k]; }); }
+    function fermer(j) {
+      var duree = r.t[j] - r.t[w0];
+      if (j > w0 && duree > S.poseFigee + 1e-9) out.push({ debut: r.t[w0], fin: r.t[j], duree: duree });
+    }
+    ouvrir(0);
+    for (var i = 1; i < r.fixes.length; i++) {
+      if (r.tp[i] - r.tp[i - 1] < pas / 2) { fermer(i - 1); ouvrir(i); continue; }
+      var bouge = cles.some(function (k) {
+        var v = r.fixes[i][k];
+        var b = Math.min(bas[k], v), h = Math.max(haut[k], v);
+        return h - b > (k === 'paupieres' ? 1e-3 : S.poseFigeeAngle) + 1e-9;
+      });
+      if (bouge) { fermer(i - 1); ouvrir(i - 1); }
+      cles.forEach(function (k) { var v = r.fixes[i][k]; bas[k] = Math.min(bas[k], v); haut[k] = Math.max(haut[k], v); });
+    }
+    fermer(r.fixes.length - 1);
+    return out;
+  }
+
+  /** Rotation en degrés d'une valeur d'image-clé (rotate ou transform à une seule rotation), ou null. */
+  function rotation(prop, v) {
+    if (v === null || v === undefined) return 0;
+    var s = String(v).trim();
+    if ((prop === 'transform' || prop === 'rotate') && s === 'none') return 0; // valeur sous-jacente d'une image-clé implicite
+    var m = prop === 'rotate' ? /^(?:z\s+|0\s+0\s+1\s+)?(-?\d*\.?\d+)(deg|turn|rad|grad)?$/.exec(s) : prop === 'transform' ? /^rotate[Z]?\((-?\d*\.?\d+)(deg|turn|rad|grad)\)$/.exec(s) : null;
+    if (!m) return null;
+    var n = Number(m[1]), u = m[2] || 'deg';
+    return u === 'turn' ? n * 360 : u === 'rad' ? n * 180 / Math.PI : u === 'grad' ? n * 0.9 : n;
+  }
+  var NON_PROPRIETES = { offset: true, computedOffset: true, easing: true, composite: true };
+  /** Images-clés d'une animation répétée : la première propriété animée dont la valeur de départ diffère de celle
+   *  d'arrivée (propriété présente à un seul bout : comparée à la valeur sous-jacente), ou null. Une rotation d'un nombre
+   *  entier de tours est permise, comme un saut invisible (opacité nulle aux deux bouts). */
+  function raccordBoucle(cles) {
+    if (!cles || !cles.length) return null;
+    var premiere = cles[0], derniere = cles[cles.length - 1];
+    var off = function (c) { return typeof c.computedOffset === 'number' ? c.computedOffset : c.offset; };
+    var a = off(premiere) === 0 ? premiere : {}, b = off(derniere) === 1 ? derniere : {};
+    // Invisible au raccord (opacité nulle aux deux bouts : goutte qui tombe et s'efface) : le saut ne se voit pas.
+    if (Number(a.opacity) === 0 && Number(b.opacity) === 0 && 'opacity' in a && 'opacity' in b) return null;
+    var props = Object.keys(a).concat(Object.keys(b)).filter(function (p, i, l) { return !NON_PROPRIETES[p] && l.indexOf(p) === i; });
+    for (var i = 0; i < props.length; i++) {
+      var p = props[i];
+      var va = p in a ? a[p] : null, vb = p in b ? b[p] : null;
+      if (va !== null && vb !== null && String(va).replace(/\s+/g, ' ').trim() === String(vb).replace(/\s+/g, ' ').trim()) continue;
+      var ra = rotation(p, va), rb = rotation(p, vb);
+      if (ra !== null && rb !== null && (p === 'rotate' || p === 'transform')) {
+        var tours = (rb - ra) / 360;
+        if (Math.abs(tours - Math.round(tours)) < 1e-6) continue;
+      }
+      return p;
+    }
+    return null;
+  }
+
+  /** Animations répétées d'une scène [{ nom, duree, depart, classe, element }] -> groupes d'au moins toutEnPhase éléments
+   *  de même animation, même durée, même départ effectif : [{ element, nombre }]. Boucles de vie pm-v-* exclues (le moteur
+   *  les déphase). */
+  function toutEnPhase(anims, S) {
+    var groupes = {};
+    anims.forEach(function (x) {
+      if (/^pm-v-/.test(x.nom)) return;
+      var cle = x.nom + '|' + Math.round(x.duree * 1000) + '|' + Math.round(x.depart * 1000);
+      (groupes[cle] = groupes[cle] || []).push(x);
+    });
+    var out = [];
+    Object.keys(groupes).forEach(function (cle) {
+      var g = groupes[cle];
+      if (g.length < S.toutEnPhase) return;
+      var classe = g[0].classe;
+      var commune = classe && g.every(function (x) { return x.classe === classe; });
+      out.push({ element: commune ? '.' + classe : g[0].nom, nombre: g.length });
+    });
+    return out;
+  }
+
+  /** Caméra échantillonnée à la cadence de la vidéo (temps de la scène, de 0 à duree) : à-coups de vitesse d'une image
+   *  à l'autre (x, y en %/s, zoom en 100 × ln z par s : aCoupCamera ; rotation en °/s : aCoupRotation), hors des plages de
+   *  secousse ; zoom avant suivi d'un zoom arrière à moins de zoomRetourMin. -> [{ tau, partie, retour? }] triés. */
+  function acoupsCamera(clauses, duree, ips, S) {
+    var out = [];
+    if (!clauses || !clauses.length || !(duree > 0)) return out;
+    var etatCamera = M.etatCamera;
+    var n = Math.ceil(duree * ips - 1e-9);
+    var etats = [];
+    for (var k = 0; k <= n; k++) etats.push(etatCamera(clauses, k / ips));
+    var secousses = clauses.filter(function (c) { return c.prop === 'secousse'; }).map(function (c) { return [c.debut - 1 / ips, c.debut + c.duree + 1 / ips]; });
+    var secoue = function (tau) { return secousses.some(function (p) { return tau >= p[0] && tau <= p[1]; }); };
+    var grandeur = function (p, e) { return p === 'zoom' ? 100 * Math.log(e.zoom) : e[p]; };
+    var vitesses = {};
+    [['x', 'cadrage'], ['y', 'cadrage'], ['zoom', 'zoom'], ['rotation', 'rotation']].forEach(function (q) {
+      var p = q[0], v = [];
+      for (var i = 0; i < n; i++) v.push((grandeur(p, etats[i + 1]) - grandeur(p, etats[i])) * ips);
+      vitesses[p] = v;
+      var seuil = p === 'rotation' ? S.aCoupRotation : S.aCoupCamera;
+      for (var j = 1; j < v.length; j++) {
+        var tau = j / ips;
+        if (Math.abs(v[j] - v[j - 1]) > seuil + 1e-9 && !secoue(tau)) { out.push({ tau: tau, partie: q[1] }); break; }
+      }
+    });
+    // Zoom avant, puis zoom arrière collé : fin du premier mouvement, début du second.
+    var vz = vitesses.zoom, finAvant = null, SEUIL_ZOOM = 0.5;
+    for (var i = 0; i < vz.length; i++) {
+      if (vz[i] > SEUIL_ZOOM) finAvant = (i + 1) / ips;
+      else if (vz[i] < -SEUIL_ZOOM && finAvant !== null) {
+        if (i / ips - finAvant < S.zoomRetourMin - 1e-9) { out.push({ tau: i / ips, partie: 'zoom', retour: true }); break; }
+        finAvant = null;
+      }
+    }
+    return out.sort(function (a, b) { return a.tau - b.tau; });
+  }
+
+  M.mesurerMouvement = function (options) {
+    options = options || {};
+    var S = {};
+    Object.keys(DEFAUTS).forEach(function (k) { S[k] = options.seuils && typeof options.seuils[k] === 'number' ? options.seuils[k] : DEFAUTS[k]; });
+    var A = M.mesurerMouvement.analyses;
+    var garder = function (id) { return !options.scenes || options.scenes.indexOf(id) >= 0; };
+    var constats = [], vus = {};
+    function constater(regle, scene, element, t, valeur) {
+      var cle = regle + '|' + scene + '|' + element;
+      if (vus[cle]) return;
+      vus[cle] = true;
+      constats.push({ regle: regle, scene: scene, element: element, instant: arrondi(t), valeur: valeur === undefined ? null : valeur });
+    }
+    var liste = M.minutage.scenes;
+    /** Partie d'une scène hors transitions (entrée de la scène, entrée de la suivante). */
+    function fenetre(id) {
+      for (var i = 0; i < liste.length; i++) {
+        if (liste[i].id !== id) continue;
+        var s = liste[i], suivante = liste[i + 1];
+        var fin = suivante ? Math.min(s.fin, suivante.debut) : s.fin;
+        return [Math.min(fin, s.debut + (s.entree || 0)), fin];
+      }
+      return null;
+    }
+    var ips = M.ips || 30;
+    // Personnages : relevé pur de la partition (aucune mise en page).
+    if (M.personnages && M.personnages.liste && M.personnages.releve) {
+      M.personnages.liste().forEach(function (q) {
+        if (!garder(q.scene)) return;
+        var f = fenetre(q.scene);
+        if (!f || f[1] - f[0] < S.pasPersonnages) return;
+        var r = M.personnages.releve(q.div, f[0], f[1], S.pasPersonnages);
+        var g = A.gestesBrefs(r, S)[0];
+        if (g) constater('geste-bref', q.scene, q.nom, g.debut, { partie: g.partie, ampleur: Math.round(g.ampleur * 100) / 100, duree: Math.round(g.duree * 1000) / 1000, ips: ips });
+        var p = A.posesFigees(r, S)[0];
+        if (p) constater('pose-figee', q.scene, q.nom, p.debut, { debut: arrondi(p.debut), fin: arrondi(p.fin), duree: arrondi(p.duree) });
+      });
+    }
+    // Caméras : clauses échantillonnées au temps de la scène.
+    if (M.camerasDeScene && M.etatCamera) {
+      liste.forEach(function (s) {
+        if (!garder(s.id)) return;
+        var rythme = s.rythme || 1;
+        M.camerasDeScene(s.id).forEach(function (c) {
+          var a = A.acoupsCamera(c.clauses, (s.fin - s.debut) * rythme, ips, S)[0];
+          if (a) constater('a-coup-camera', s.id, c.el.id || 'camera', s.debut + a.tau / rythme, { partie: a.partie, retour: !!a.retour });
+        });
+      });
+    }
+    // Animations CSS répétées : chaque scène rendue une fois, au milieu de sa partie hors transitions.
+    var depart = M.temps();
+    var conteneur = document.getElementById('pm-scene');
+    liste.forEach(function (s) {
+      if (!garder(s.id)) return;
+      var f = fenetre(s.id);
+      var sec = conteneur && conteneur.querySelector(':scope > section[data-scene="' + s.id + '"]');
+      if (!f || !sec) return;
+      var t = (f[0] + f[1]) / 2;
+      M.rendre(t);
+      var elements = (M.minutage.elements && M.minutage.elements[s.id]) || {};
+      var rythme = s.rythme || 1;
+      var anims = [];
+      sec.getAnimations({ subtree: true }).forEach(function (a) {
+        var el = a.effect && a.effect.target;
+        if (!el || typeof a.animationName !== 'string') return; // animations CSS seulement
+        if (!(a.effect.getComputedTiming().iterations > 1)) return;
+        var base = s.debut;
+        for (var c = el; c && c !== sec; c = c.parentElement) {
+          var cle = c.getAttribute && c.getAttribute('data-pm-cle');
+          if (cle && elements[cle]) { base = elements[cle].debut; break; }
+        }
+        var timing = a.effect.getTiming();
+        anims.push({ nom: a.animationName, duree: Number(timing.duration) / 1000, depart: base + (Number(timing.delay) || 0) / 1000 / rythme, classe: el.classList && el.classList[0] || null });
+        var prop = A.raccordBoucle(a.effect.getKeyframes());
+        if (prop) constater('raccord-boucle', s.id, nom(el), t, { propriete: prop, animation: a.animationName });
+      });
+      A.toutEnPhase(anims, S).forEach(function (g) { constater('tout-en-phase', s.id, g.element, t, g.nombre); });
+    });
+    M.rendre(depart);
+    return constats;
+  };
+  M.mesurerMouvement.analyses = { gestesBrefs: gestesBrefs, posesFigees: posesFigees, raccordBoucle: raccordBoucle, toutEnPhase: toutEnPhase, acoupsCamera: acoupsCamera, partie: partie, DEFAUTS: DEFAUTS };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

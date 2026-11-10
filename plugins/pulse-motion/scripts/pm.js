@@ -16,6 +16,7 @@
  *   pulse-motion outils                  état de l'ordinateur : Node, Chrome ou Edge, ffmpeg, Python, transcription, voix du système
  *   pulse-motion planche <dossier> [id1,id2] [--ouvrir]   images clés PNG dans sortie/planche/
  *   pulse-motion planche <dossier> --regard [--scenes a,b]   planches de regard dans sortie/regard/ (ouverture, temps forts, téléphone, bandes, fiche)
+ *   pulse-motion planche <dossier> <id> --de <s> --duree <s> [--pas <n>]   planche image par image d'une scène (3 s au plus), dans sortie/planche/
  *   pulse-motion reference <nom>          affiche references/<nom>.md (ex. moteur, rythme, styles/clair-pedagogique)
  *   pulse-motion scene <style> <nom>      affiche une scène toute faite d'un style
  *   pulse-motion effet <nom>              affiche la recette d'un effet de particules de la bibliothèque
@@ -86,6 +87,15 @@ function lancer(args) {
     return spawnSync(process.execPath, [path.join(RACINE, 'scripts', 'vocabulaire.js'), 'lexique', ...reste], { stdio: 'inherit' }).status ?? 1;
   }
   if (commande === 'planche') {
+    // Planche image par image (spec Mouvement vivant, 5.14) : planche <dossier> <id> --de <s> --duree <s> [--pas <n>].
+    if (reste.includes('--de') || reste.includes('--duree')) {
+      const AVEC_VALEUR = ['--de', '--duree', '--pas'];
+      const libres = reste.filter((o, k) => !o.startsWith('--') && !AVEC_VALEUR.includes(reste[k - 1]));
+      const [dossier = '.', id = ''] = libres;
+      const val = (o) => { const k = reste.indexOf(o); return k >= 0 && reste[k + 1] !== undefined ? [o, reste[k + 1]] : []; };
+      const cadence = [path.join(RACINE, 'scripts', 'regard.js'), dossier, '--cadence', id, ...val('--de'), ...val('--duree'), ...val('--pas')];
+      return spawnSync(process.execPath, cadence, { stdio: 'inherit' }).status ?? 1;
+    }
     const [dossier = '.', ...options] = reste;
     const ids = options.filter((o) => !o.startsWith('--'));
     const drapeaux = options.filter((o) => o.startsWith('--'));
@@ -144,7 +154,7 @@ function lancer(args) {
     '  assembler <dossier>      controler <dossier> [--sans-correction] [--sans-rendu] [--gpu] [--complet]      apercu <dossier> [--port N] [--ouvrir]',
     '  historique sauvegarder|annuler <dossier>',
     '  atelier [<recette>] [--dossier <dossier>]   atelier des effets de particules : régler à l\'œil, enregistrer dans effets/',
-    '  exporter <dossier> [--qualite 1080p|720p] [--ips 30|60] [--rapide] [--avec-provisoire]       planche <dossier> [id1,id2]',
+    '  exporter <dossier> [--qualite 1080p|720p] [--ips 30|60] [--rapide] [--avec-provisoire]       planche <dossier> [id1,id2]       planche <dossier> <id> --de <s> --duree <s> [--pas <n>]',
     '  ffmpeg                   ffmpeg présent ? commande pour l\'installer',
     '  voix importer <fichier> [--scene <id>] [dossier] | provisoire [--scene <id>] [dossier] | transcrire [--scene <id>] [dossier] | studio <scène> [dossier]',
     '  whisper [installer [--modele small]]   transcription des voix',

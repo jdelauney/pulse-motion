@@ -13,6 +13,7 @@
  * personnage (scène + id, ou rang dans la scène) ; ombre au sol (<ellipse class="pm-perso-ombre">, sauf data-ombre="non")
  * centrée entre les chevilles, sur la ligne du sol, plus petite quand il s'élève ; écrasement à l'atterrissage
  * (data-ecrase, 0 à 0,25) appliqué au groupe du personnage autour du point de contact, volume gardé (sx = 1 / sy^0,6).
+ * « flotter » (data-hauteur, data-dur) : vol pieds pendants, l'ombre reste au sol ; « regarder » : data-attention (0 à 1).
  * Ombre et écrasement : rossark-motion-skill (licence MIT), formules reprises, code réécrit.
  */
 (function (racine) {
@@ -104,6 +105,7 @@
     if (el.hasAttribute('data-ecrase')) a.ecrase = Math.max(0, Math.min(0.25, nombre(el, 'data-ecrase', 0.12)));
     if (el.hasAttribute('data-courbe')) a.courbe = el.getAttribute('data-courbe').trim();
     if (el.hasAttribute('data-vue')) a.vue = nombre(el, 'data-vue', 0);
+    if (el.hasAttribute('data-attention')) a.attention = Math.max(0, Math.min(1, nombre(el, 'data-attention', 1)));
     ['pose', 'clip', 'expression', 'bouche', 'cible', 'point', 'main', 'niveau'].forEach(function (k) { if (el.hasAttribute('data-' + k)) a[k] = el.getAttribute('data-' + k).trim(); });
     if (a.type === 'regarder' && !el.hasAttribute('data-dur')) a.jusquAuSuivant = true;
     return a;
@@ -201,7 +203,7 @@
         div: div, habillage: habillage, gabarit: gabarit, echelle: echelle, ombre: ombre, gEcrase: gEcrase, hauteur: P.hauteur(gabarit),
         partition: { x0: nombre(div, 'data-x', 50), sol0: sol0, vue0: nombre(div, 'data-vue', 0), calme: div.getAttribute('data-calme') !== 'non',
           vie: vie === 'sobre' || vie === 'aucune' ? vie : 'pleine', sel: V.sel(idScene + '/' + (div.id || rang)), scene: bornesScene(idScene),
-          ecrase: ecrase, largeur: W, hauteur: H, echelle: echelle, sols: sols, actions: actions }
+          ecrase: ecrase, largeur: W, hauteur: H, echelle: echelle, taille: nombre(div, 'data-taille', 40), sols: sols, actions: actions }
       });
     });
     if (!persos.length) return;
@@ -240,6 +242,12 @@
       var pose = placerBase(p, t);
       return M.interactions ? M.interactions.appliquer(p, t, pose, ctxInteractions) : pose;
     }
+    // Pose pour les mains (objets tenus) : le regard ne bouge que la tête et les yeux, il est sauté (un porteur qui
+    // regarde l'objet qu'il tient ne se demande pas où est sa propre main).
+    function placerMains(p, t) {
+      var pose = placerBase(p, t);
+      return M.interactions ? M.interactions.appliquer(p, t, pose, ctxInteractions, { sansRegard: true }) : pose;
+    }
     function rendre(t) {
       // Objets tenus d'abord : une cible qui est un objet tenu est lue à sa place de cet instant.
       if (M.rendreObjetsTenus) M.rendreObjetsTenus(t);
@@ -258,7 +266,6 @@
       });
     }
     M.surRendu(rendre);
-    rendre(M.temps ? M.temps() : 0);
     // Mains des personnages (repère de la scène, au temps de chacun) : pour les objets tenus.
     var memoMains = { t: null, par: new Map() };
     M.personnages = {
@@ -266,6 +273,28 @@
       connu: function (div) { return persos.some(function (p) { return p.div === div; }); },
       /** Pose complète de div au temps du personnage t (pour les vérifications). */
       pose: function (div, t) { var p = persos.filter(function (x) { return x.div === div; })[0]; return p ? placer(p, t) : null; },
+      /** Conteneurs des personnages : [{ div, nom, scene }] (contrôle du mouvement). */
+      liste: function () { return persos.map(function (p) { return { div: p.div, nom: p.div.id || p.div.getAttribute('data-personnage'), scene: p.sec.getAttribute('data-scene') }; }); },
+      /** Relevé pur des poses de div de debut à fin (temps global), tous les pas : poses de la partition (sans les
+       *  interactions), réduites aux angles du squelette et aux paupières. -> { t, tp, corps, poses, fixes, vie } ou null.
+       *  fixes : sans la respiration ni les clignements ; tp : temps du personnage (arrêt sur image : il n'avance pas). */
+      releve: function (div, debut, fin, pas) {
+        var p = persos.filter(function (x) { return x.div === div; })[0];
+        if (!p || !(pas > 0)) return null;
+        // Angles (degrés) : os du squelette sauf la hauteur du bassin, et la touffe ; puis les paupières.
+        var cles = S.NOMS.os.filter(function (k) { return k !== 'bassinY'; }).concat(['touffeRot', 'paupieres']);
+        var r = { t: [], tp: [], corps: [], poses: [], fixes: [], vie: null };
+        function reduire(pose) { var o = {}; cles.forEach(function (k) { o[k] = typeof pose[k] === 'number' ? pose[k] : S.REPOS[k]; }); return o; }
+        var n = Math.floor((fin - debut) / pas + 1e-6);
+        for (var i = 0; i <= n; i++) {
+          var t = debut + i * pas;
+          var tp = M.tempsVuPar ? M.tempsVuPar(p.div, t) : t;
+          var e = P.etatAuTemps(p.partition, tp, D.bib, p.gabarit, { releve: true });
+          r.t.push(t); r.tp.push(tp); r.corps.push(e.corps); r.poses.push(reduire(e.pose)); r.fixes.push(reduire(e.fixe));
+          r.vie = e.vie;
+        }
+        return r;
+      },
       /** Mains de div à t (temps global ; tLocal : t est déjà au temps du personnage). Mémorisées pour l'image en cours. */
       mains: function (div, t, tLocal) {
         var cle = t + (tLocal ? 'l' : 'g');
@@ -274,7 +303,7 @@
         var p = persos.filter(function (x) { return x.div === div; })[0];
         if (!p) return null;
         var tp = tLocal || !M.tempsVuPar ? t : M.tempsVuPar(div, t);
-        var pose = placer(p, tp);
+        var pose = placerMains(p, tp);
         var r = S.calculer(pose, p.gabarit), A = r.articulations, e = r.efficace;
         function point(nom) { return [e.x + A[nom][0] * e.echelle, e.y + A[nom][1] * e.echelle]; }
         var out = { sol: pose.y + (S.sol(p.gabarit) + 7) * p.echelle };
@@ -287,6 +316,8 @@
       }
     };
     if (M.demarrerObjetsTenus) M.demarrerObjetsTenus();
+    // Premier rendu une fois les objets tenus connus (un regard sur un objet le suit dès la première image).
+    rendre(M.temps ? M.temps() : 0);
     // La place du décor peut changer avec la taille de l'image : les sols courbes sont remesurés.
     if (typeof window !== 'undefined' && window.addEventListener) {
       window.addEventListener('resize', function () {

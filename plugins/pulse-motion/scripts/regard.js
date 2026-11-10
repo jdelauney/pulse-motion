@@ -5,6 +5,9 @@
  * une page HTML capturée par le même navigateur, et une fiche pour le relecteur.
  *
  *   node scripts/regard.js <dossier-du-projet> [--scenes a,b]      (pulse-motion planche <dossier> --regard [--scenes a,b])
+ *   node scripts/regard.js <dossier> --cadence <id> --de <s> --duree <s> [--pas <n>]
+ *                                                    (pulse-motion planche <dossier> <id> --de <s> --duree <s> [--pas <n>])
+ *     planche image par image d'une scène (spec Mouvement vivant, 5.14) : sortie/planche/cadence-<id>.png (ou -N).
  *
  * Écrit dans sortie/regard/ (vidé d'abord) :
  *   ouverture.png        de 0 à accrocheMax, tous les regardPas (si la première scène est regardée) ;
@@ -151,9 +154,10 @@ const INFOS = `(function () {
   }) };
 })()`;
 
-/** Page qui compose une planche : vignettes (fichiers voisins) et légende « n° · scène · t s » sous chacune. */
-function pageComposition(vignettes, mise) {
-  const figures = vignettes.map((v, i) => `<figure><img src="${v.fichier}" alt=""><figcaption>${i + 1} · ${v.scene} · ${virgule(v.t)} s</figcaption></figure>`).join('\n');
+/** Page qui compose une planche : vignettes (fichiers voisins) et légende « n° · scène · t s » sous chacune (ou celles
+ *  données). */
+function pageComposition(vignettes, mise, legendes = null) {
+  const figures = vignettes.map((v, i) => `<figure><img src="${v.fichier}" alt=""><figcaption>${legendes ? legendes[i] : `${i + 1} · ${v.scene} · ${virgule(v.t)} s`}</figcaption></figure>`).join('\n');
   return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><style>
 html, body { margin: 0; background: #ecebe7; color: #1d1d1b; font: 600 14px/1.2 Arial, Helvetica, sans-serif; }
 .planche { display: grid; grid-template-columns: repeat(${mise.colonnes}, ${mise.largeur}px); gap: ${ECART}px; padding: ${ECART}px; }
@@ -370,8 +374,131 @@ async function planchesRegard({ dossier, scenes = null, dossierStyles, navigateu
   }
 }
 
+/** Planche image par image (spec Mouvement vivant, 5.14) : fenêtre de 3 s au plus, 10 vignettes de 192 px par ligne,
+ *  30 par planche. */
+const CADENCE_MAX = 3;
+const CADENCE_COLONNES = 10;
+const CADENCE_LARGEUR = 192;
+const CADENCE_PAR_PLANCHE = 30;
+
+/** Instants (secondes de la scène) d'une fenêtre image par image : toutes les images de [de, de + duree[, ou une sur pas. */
+function instantsCadence({ de, duree, pas = 1, ips = 30 }) {
+  const r = [];
+  const premiere = Math.ceil(de * ips - 1e-6);
+  for (let k = premiere; k / ips < de + duree - 1e-6; k += pas) r.push(arrondi(k / ips));
+  return r;
+}
+
+/** Légendes « n° · t s » des vignettes de la planche k (0 pour la première) : rang dans la fenêtre, instant en secondes
+ *  de la scène au centième (à l'image près). */
+function legendesCadence(lot, k) {
+  return lot.map((v, i) => `${k * CADENCE_PAR_PLANCHE + i + 1} · ${v.t.toFixed(2).replace('.', ',')} s`);
+}
+
+/** Vérifie la demande d'une planche image par image -> message d'erreur en français, ou null. */
+function verifierCadence({ de, duree, pas }) {
+  if (!Number.isFinite(de) || de < 0) return 'Planche image par image : le début (--de) doit être un nombre de secondes depuis le début de la scène, 0 ou plus (ex. 2).';
+  if (!Number.isFinite(duree) || duree <= 0) return 'Planche image par image : la durée (--duree) doit être un nombre de secondes plus grand que 0 (ex. 1).';
+  if (duree > CADENCE_MAX + 1e-9) return `Planche image par image : une fenêtre de ${virgule(duree)} s est trop longue ; ${CADENCE_MAX} s au plus (sinon les vignettes deviennent illisibles). Demander une fenêtre plus courte.`;
+  if (!Number.isInteger(pas) || pas < 1) return 'Planche image par image : le pas (--pas) doit être un nombre entier d\'images, 1 ou plus (ex. 2 : une image sur deux).';
+  return null;
+}
+
+/**
+ * plancheCadence({ dossier, scene, de, duree, pas?, dossierStyles?, navigateur? }) : toutes les images (ou une sur pas)
+ * de la scène entre de et de + duree (secondes de la scène), capturées comme l'export fidèle, légendées « n° · t s ».
+ * -> Promise<{ ok, planches, vignettes, ips, instants, message? }> ; planches dans sortie/planche/ (cadence-<id>.png, ou -N).
+ */
+async function plancheCadence({ dossier, scene, de, duree, pas = 1, dossierStyles, navigateur = trouverNavigateur() }) {
+  const refus = verifierCadence({ de, duree, pas });
+  if (refus) return { ok: false, message: refus };
+  const projet = path.resolve(dossier);
+  const { deroule, erreurs } = lireDeroule(projet);
+  if (erreurs.length) return { ok: false, message: `Le déroulé contient des erreurs : ${erreurs.join(' ')}` };
+  if (!scene || !deroule.scenes.some((s) => s.id === scene)) return { ok: false, message: `Scène inconnue : ${scene || '(aucune)'} ; donner l'identifiant d'une scène du déroulé.` };
+  const assemblage = assembler({ dossier: projet, dossierStyles, ecrire: false });
+  if (!assemblage.ok) return { ok: false, message: `La page ne s'assemble pas : ${assemblage.erreurs.map((e) => e.message).join(' ')}` };
+  if (!navigateur) return { ok: false, message: 'Chrome ou Edge introuvable : les images de la scène n\'ont pas pu être prises.' };
+  const ratio = deroule.format.ratio;
+  const [a, b] = RATIOS[ratio] || RATIOS['16:9'];
+  const largeur = a >= b ? GRAND_COTE / 2 : Math.round(GRAND_COTE / 2 * a / b);
+  const hauteur = a >= b ? Math.round(GRAND_COTE / 2 * b / a) : GRAND_COTE / 2;
+  const travail = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-cadence-'));
+  const pageVideo = path.join(travail, 'video.html');
+  fs.writeFileSync(pageVideo, assemblage.html, 'utf8');
+  let lisible = null;
+  let capture;
+  try {
+    capture = await ouvrirCapture({ fichierHtml: pageVideo, largeur, hauteur, navigateur, gpu: avecEffets(projet, deroule), delai: 60000,
+      ouvrir: async (o) => { lisible = await ouvrirPage(o); return lisible; } });
+  } catch (e) {
+    fs.rmSync(travail, { recursive: true, force: true });
+    return { ok: false, message: `Les images de la scène n'ont pas pu être prises (${e.message}).` };
+  }
+  try {
+    const infos = await capture.evaluer(INFOS);
+    const ips = infos.ips || 30;
+    const s = infos.scenes.find((x) => x.id === scene);
+    const instants = instantsCadence({ de, duree, pas, ips }).filter((t) => s.debut + t < infos.duree - 1e-6);
+    if (!instants.length) return { ok: false, message: `La scène « ${scene} » dure ${virgule(s.fin - s.debut)} s : la fenêtre demandée commence après sa fin.` };
+    const mise = { colonnes: CADENCE_COLONNES, largeur: CADENCE_LARGEUR, hauteur: Math.round(CADENCE_LARGEUR * b / a) };
+    const vignettes = [];
+    for (const [i, t] of instants.entries()) {
+      const absolu = s.debut + t;
+      // Deux captures du même instant, la seconde gardée (comme les planches de regard).
+      await capture.capturer(absolu);
+      const fichier = `c${String(i + 1).padStart(3, '0')}.png`;
+      fs.writeFileSync(path.join(travail, fichier), reduirePng(await capture.capturer(absolu), mise.largeur, mise.hauteur));
+      vignettes.push({ fichier, scene, t });
+    }
+    const dossierPlanche = path.join(projet, 'sortie', 'planche');
+    fs.mkdirSync(dossierPlanche, { recursive: true });
+    for (const f of fs.readdirSync(dossierPlanche)) if (/^cadence-/.test(f)) fs.rmSync(path.join(dossierPlanche, f), { force: true });
+    const planches = [];
+    const lots = [];
+    for (let i = 0; i < vignettes.length; i += CADENCE_PAR_PLANCHE) lots.push(vignettes.slice(i, i + CADENCE_PAR_PLANCHE));
+    for (const [k, lot] of lots.entries()) {
+      const colonnes = Math.min(mise.colonnes, lot.length);
+      const rangees = Math.ceil(lot.length / mise.colonnes);
+      const L = colonnes * mise.largeur + (colonnes + 1) * ECART;
+      const H = rangees * (mise.hauteur + LEGENDE) + (rangees + 1) * ECART;
+      const html = path.join(travail, `cadence-${k + 1}.html`);
+      // Légende « n° · t s » : rang dans la fenêtre, instant en secondes de la scène, au centième (à l'image près).
+      fs.writeFileSync(html, pageComposition(lot, { ...mise, colonnes }, legendesCadence(lot, k)), 'utf8');
+      await lisible.envoyer('Emulation.setDeviceMetricsOverride', { width: L, height: H, deviceScaleFactor: 1, mobile: false });
+      await lisible.aller(pathToFileURL(html).href);
+      await lisible.evaluer('Promise.all(Array.prototype.map.call(document.images, function (i) { return i.decode().catch(function () {}); })).then(function () { return true; })');
+      const nom = lots.length === 1 ? `cadence-${scene}.png` : `cadence-${scene}-${k + 1}.png`;
+      fs.writeFileSync(path.join(dossierPlanche, nom), await lisible.capturer({ rapide: false }));
+      planches.push(`sortie/planche/${nom}`);
+    }
+    return { ok: true, planches, vignettes: vignettes.length, ips, pas, instants };
+  } finally {
+    await capture.fermer().catch(() => {});
+    fs.rmSync(travail, { recursive: true, force: true });
+  }
+}
+
 if (require.main === module) {
   const args = process.argv.slice(2);
+  if (args.includes('--cadence')) {
+    // Planche image par image : regard.js <dossier> --cadence <scène> --de <s> --duree <s> [--pas <n>].
+    const val = (o) => { const k = args.indexOf(o); return k >= 0 ? args[k + 1] : undefined; };
+    const nombre = (x, defaut) => (x === undefined ? defaut : Number(String(x).replace(',', '.')));
+    const AVEC_VALEUR = ['--cadence', '--de', '--duree', '--pas'];
+    const dossier = args.find((a, k) => !a.startsWith('--') && !AVEC_VALEUR.includes(args[k - 1])) || '.';
+    const travail = plancheCadence({ dossier, scene: val('--cadence'), de: nombre(val('--de'), NaN), duree: nombre(val('--duree'), NaN), pas: nombre(val('--pas'), 1) });
+    travail.then((r) => {
+      console.log(JSON.stringify(r, null, 2));
+      process.exit(r.ok ? 0 : 1);
+    }, (e) => {
+      console.log(JSON.stringify({ ok: false, message: e.message }, null, 2));
+      process.exit(1);
+    });
+  } else lancerRegard(args);
+}
+
+function lancerRegard(args) {
   const i = args.indexOf('--scenes');
   const scenes = i >= 0 && args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1].split(',').filter(Boolean) : null;
   const dossier = args.find((a, k) => !a.startsWith('--') && args[k - 1] !== '--scenes') || '.';
@@ -384,4 +511,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { planchesRegard, instantsTempsForts, momentsBandes, miseEnPage, tailleCapture, sectionsDoctrine, jetonsImage, pageComposition };
+module.exports = { planchesRegard, plancheCadence, instantsCadence, verifierCadence, legendesCadence, CADENCE_MAX, instantsTempsForts, momentsBandes, miseEnPage, tailleCapture, sectionsDoctrine, jetonsImage, pageComposition };

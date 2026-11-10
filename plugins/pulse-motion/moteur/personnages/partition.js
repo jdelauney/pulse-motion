@@ -19,6 +19,10 @@
  *   irréguliers tirés d'une graine propre au personnage (sel), et au début de chaque tournant ; respiration en pose et en
  *   geste ; repos vivant (petits mouvements déphasés) en pose tenue et au repos ; retard des bouts (avant-bras, tête,
  *   touffe) sur leur parent, lus « vie.retard » s plus tôt (gabarit). Poids fondus sur 0,25 s comme le corps.
+ * - Flotter (trajet « flotter », hauteur en % de l'image, 12 par défaut) : il s'élève (quint-out), dérive doucement (±5 % de
+ *   sa taille en 3,2 s), redescend (sine-inout) et touche le sol (écrasement de 6 %) ; il garde sa pose ou son geste, les
+ *   jambes pendantes (pieds pointés vers le bas, genoux qui alternent sur 3 s), pieds remis à plat avant le contact.
+ *   L'ombre reste au sol (solAuTemps ne compte pas l'élévation). Méthode de rossark-motion-skill (MIT), réécrite.
  * - Atterrissage : ecraseY (écrasement vertical, 1 = aucun) autour de la fin d'un « bondir » (étirement juste avant) et
  *   des contacts d'un geste (champ « contacts » du clip) ; ecrase (conteneur ou action) règle l'ampleur.
  * Champs de partition pour la vie : vie, sel (entier), scene { debut, fin }, ecrase. Méthode du mouvement vivant :
@@ -38,7 +42,10 @@
   'use strict';
 
   var FONDU = 0.25;
-  var ALLURES = { marcher: 'marche', courir: 'course', glisser: 'glisse', bondir: 'bond' };
+  var ALLURES = { marcher: 'marche', courir: 'course', glisser: 'glisse', bondir: 'bond', flotter: 'flotte' };
+  // Trajets qui partent du point atteint en l'air quand ils sont coupés, et qui ne changent pas l'état du corps.
+  var EN_L_AIR = { bond: true, flotte: true };
+  var SANS_CORPS = { glisse: true, flotte: true };
   var GESTES = ['pose', 'jouer'];
   var SOL = 90;
 
@@ -53,7 +60,9 @@
     return m;
   }
 
+  function sineInOut(k) { k = Math.max(0, Math.min(1, k)); return (1 - Math.cos(Math.PI * k)) / 2; }
   function lisse(k) { k = Math.max(0, Math.min(1, k)); return k * k * (3 - 2 * k); }
+  function quintOut(k) { k = Math.max(0, Math.min(1, k)); return 1 - Math.pow(1 - k, 5); }
   function triees(actions) { return actions.slice().sort(function (a, b) { return a.debut - b.debut; }); }
 
   /** Hauteur du sol (% de l'image) pour une valeur (nombre, ou « #id » d'un tracé) à la position x. */
@@ -67,7 +76,7 @@
   /** Avancement du trajet à t (0 → 1), selon sa courbe pour un glissement. */
   function avancement(d, t) {
     var u = Math.max(0, Math.min(1, (t - d.debut) / (d.fin - d.debut)));
-    return d.allure === 'glisse' ? d.courbe(u) : u;
+    return d.allure === 'glisse' ? d.courbe(u) : d.allure === 'flotte' ? sineInOut(u) : u;
   }
 
   /** Position { x, sol } dans un trajet, à t (borné à son arrêt) ; sansArc : le sol sans la hauteur du bond. */
@@ -80,7 +89,20 @@
     var s0 = solValeur(part, d.solDe, xs), s1 = solValeur(part, d.solVers, xs);
     var sol = s0 + (s1 - s0) * k;
     if (d.allure === 'bond' && !sansArc) sol -= d.hauteur * 4 * u * (1 - u);
+    if (d.allure === 'flotte' && !sansArc) sol -= elevation(part, d, t);
     return { x: x, sol: sol };
+  }
+
+  /** Élévation d'un « flotter » à t (% de la hauteur de l'image) : montée en quint-out sur min(0,9 s ; 30 %), dérive de
+   *  ±5 % de la taille du personnage en 3,2 s (entrée fondue sur 0,6 s), descente en sine-inout sur min(0,7 s ; 25 %). */
+  function elevation(part, d, t) {
+    var D = d.fin - d.debut, tau = Math.max(0, Math.min(D, t - d.debut));
+    var h = d.hauteur, mont = Math.min(0.9, 0.3 * D), desc = Math.min(0.7, 0.25 * D);
+    var derive = 0.05 * (typeof part.taille === 'number' ? part.taille : 40);
+    function enVol(x) { var u = x - mont; return h + derive * Math.sin(2 * Math.PI * u / 3.2) * lisse(u / 0.6); }
+    if (tau < mont) return h * quintOut(tau / mont);
+    if (tau < D - desc) return enVol(tau);
+    return enVol(D - desc) * (1 - sineInOut((tau - (D - desc)) / desc));
   }
 
   function courbeDe(nom) {
@@ -103,13 +125,13 @@
         // même tracé le garde ; le suivant vise encore le sol d'arrivée du coupé s'il n'en donne pas (il redescend).
         var p = positionTrajet(part, prec, prec.arret);
         x = p.x;
-        sol = prec.solDe === prec.solVers && prec.allure !== 'bond' ? prec.solVers : p.sol;
+        sol = prec.solDe === prec.solVers && !EN_L_AIR[prec.allure] ? prec.solVers : p.sol;
         cible = prec.solVers;
       }
       var fin = Math.max(a.fin, a.debut + 1e-6);
       var d = { debut: a.debut, fin: fin, arret: fin, de: x, vers: typeof a.vers === 'number' ? a.vers : x, solDe: sol,
         solVers: a.sol === undefined || a.sol === null ? cible : a.sol, allure: ALLURES[a.type], vue: a.vue, clip: a.clip,
-        hauteur: typeof a.hauteur === 'number' ? a.hauteur : 15, courbe: a.type === 'glisser' ? courbeDe(a.courbe) : null, a: a };
+        hauteur: a.type === 'flotter' ? Math.max(2, Math.min(40, typeof a.hauteur === 'number' ? a.hauteur : 12)) : (typeof a.hauteur === 'number' ? a.hauteur : 15), courbe: a.type === 'glisser' ? courbeDe(a.courbe) : null, a: a };
       out.push(d);
       x = d.vers; sol = d.solVers; cible = d.solVers;
     });
@@ -126,7 +148,7 @@
       if (t < d.arret) return positionTrajet(part, d, t);
       var p = positionTrajet(part, d, d.arret);
       x = p.x;
-      solV = d.arret < d.fin ? (d.solDe === d.solVers && d.allure !== 'bond' ? d.solVers : p.sol) : d.solVers;
+      solV = d.arret < d.fin ? (d.solDe === d.solVers && !EN_L_AIR[d.allure] ? d.solVers : p.sol) : d.solVers;
     }
     return { x: x, sol: solValeur(part, solV, x) };
   }
@@ -141,7 +163,7 @@
       if (t < d.debut) break;
       if (t < d.arret) return positionTrajet(part, d, t, true, x).sol;
       var p = positionTrajet(part, d, d.arret, true, x);
-      solV = d.arret < d.fin ? (d.solDe === d.solVers && d.allure !== 'bond' ? d.solVers : p.sol) : d.solVers;
+      solV = d.arret < d.fin ? (d.solDe === d.solVers && !EN_L_AIR[d.allure] ? d.solVers : p.sol) : d.solVers;
     }
     return solValeur(part, solV, x);
   }
@@ -315,9 +337,11 @@
     var defaut = typeof part.ecrase === 'number' ? part.ecrase : null;
     var liste = [];
     m.trajets.forEach(function (d) {
-      if (d.allure !== 'bond' || d.arret < d.fin) return;
-      var A = typeof d.a.ecrase === 'number' ? d.a.ecrase : (defaut !== null ? defaut : 0.12);
-      liste.push({ t: d.fin, A: A, etire: true });
+      if (!EN_L_AIR[d.allure] || d.arret < d.fin) return;
+      // Fin d'un bond : 12 %, étirement juste avant ; fin d'un vol (flotter) : 6 %, sans étirement.
+      var bond = d.allure === 'bond';
+      var A = typeof d.a.ecrase === 'number' ? d.a.ecrase : (defaut !== null ? defaut : bond ? 0.12 : 0.06);
+      liste.push({ t: d.fin, A: A, etire: bond });
     });
     part.actions.forEach(function (a) {
       if (a.type !== 'jouer') return;
@@ -333,7 +357,7 @@
   }
 
   function cubicOut(k) { k = Math.max(0, Math.min(1, k)); return 1 - Math.pow(1 - k, 3); }
-  function sineInOut(k) { k = Math.max(0, Math.min(1, k)); return (1 - Math.cos(Math.PI * k)) / 2; }
+
 
   /** Écrasement vertical autour d'un contact (τ = t − contact) ; 1 hors de sa fenêtre. */
   function profilEcrase(c, tau) {
@@ -364,7 +388,7 @@
   function calculerBornes(part, tr) {
     var b = [];
     part.actions.forEach(function (a) { if (GESTES.indexOf(a.type) >= 0) b.push(a.debut, a.fin); });
-    tr.forEach(function (d) { if (d.allure !== 'glisse') b.push(d.debut, d.arret); });
+    tr.forEach(function (d) { if (!SANS_CORPS[d.allure]) b.push(d.debut, d.arret); });
     return b.sort(function (x, y) { return x - y; });
   }
 
@@ -386,13 +410,38 @@
     return { pose: pose, type: cur.type };
   }
 
+  /** En vol (flotter) : jambes pendantes, d'un poids fondu selon l'élévation (plein à mi-hauteur) ; pieds pointés vers le
+   *  bas (70° et 64°), remis à plat dans les 0,15 s avant le contact ; genoux qui alternent lentement (3 s) ; jambes
+   *  serrées, bras un peu écartés. Pose inchangée hors d'un vol. */
+  function jambesPendantes(part, t, pose) {
+    var tr = structure(part).trajets, d = null;
+    for (var i = 0; i < tr.length; i++) if (tr[i].allure === 'flotte' && tr[i].debut <= t && t < tr[i].arret) d = tr[i];
+    if (!d) return pose;
+    var w = lisse(elevation(part, d, t) / (0.5 * d.hauteur));
+    if (!(w > 0)) return pose;
+    var tau = t - d.debut, D = d.fin - d.debut;
+    var wPieds = w * (1 - lisse((tau - (D - 0.15)) / 0.15));
+    var onde = Math.sin(2 * Math.PI * tau / 3);
+    var out = Object.assign({}, pose);
+    var vers = function (k, cible, poids) { var v = valeurDe(pose, k); out[k] = v + (cible - v) * poids; };
+    vers('piedAvant', 70, wPieds);
+    vers('piedArriere', 64, wPieds);
+    vers('tibiaAvant', 18 + 10 * (0.5 + 0.5 * onde), w);
+    vers('tibiaArriere', 12 + 10 * (0.5 - 0.5 * onde), w);
+    vers('ecartJambeAvant', 1, w);
+    vers('ecartJambeArriere', 1, w);
+    out.ecartBrasAvant = valeurDe(pose, 'ecartBrasAvant') + 10 * w;
+    out.ecartBrasArriere = valeurDe(pose, 'ecartBrasArriere') + 10 * w;
+    return out;
+  }
+
   function normaliser(a) { a = ((a + 180) % 360 + 360) % 360 - 180; return a === -180 ? 180 : a; }
   function versAngle(de, a, k) { return de + normaliser(a - de) * k; }
 
   function calculerVues(part, tr) {
     var ev = [];
     tr.forEach(function (d) {
-      if (d.allure === 'glisse' && typeof d.vue !== 'number') return; // un glissement garde la vue
+      if (SANS_CORPS[d.allure] && typeof d.vue !== 'number') return; // un glissement ou un vol garde la vue
       if (typeof d.vue !== 'number' && Math.abs(d.vers - d.de) < 1e-9) return; // sur place : pas de demi-tour
       ev.push({ debut: d.debut, duree: FONDU, vue: typeof d.vue === 'number' ? d.vue : (d.vers >= d.de ? 0 : 180) });
     });
@@ -423,7 +472,8 @@
     return trouve;
   }
 
-  function etatAuTemps(part, t, bib, gabarit) {
+  /** options.releve : rend aussi « fixe », la pose sans respiration ni clignements (contrôle du mouvement), et « vie ». */
+  function etatAuTemps(part, t, bib, gabarit, options) {
     var corps = corpsAuTemps(part, t, bib, gabarit);
     var pose = Object.assign({}, corps.pose);
     var explicites = Object.keys(pose);
@@ -446,6 +496,7 @@
         });
       }
     }
+    pose = jambesPendantes(part, t, pose);
     var ex = dernier(part, 'expression', t), bo = dernier(part, 'bouche', t);
     if (ex && ex.expression) pose.expression = ex.expression;
     if (bo && bo.bouche && bo.bouche !== 'aucune') pose.bouche = bo.bouche;
@@ -457,6 +508,8 @@
       if (v) pose.bouche = v;
     }
     K.appliquerExpression(pose, bib, explicites);
+    // Relevé du contrôle (pose-figee) : la pose sans la respiration ni les clignements, repos vivant compris.
+    var fixe = options && options.releve ? pose : null;
     if (vie !== 'aucune') {
       // Respiration : en pose tenue et en geste (à moitié) ; au repos, c'est le clip « repos » qui respire.
       var resp = bib.clips.respiration;
@@ -467,7 +520,11 @@
       var rv = bib.clips['repos-vivant'];
       if (vie === 'pleine' && rv && rv.additif) {
         var w = poids.vie;
-        if (w > 0) pose = K.ajouter(pose, rv, t + (rv.duree || 9) * V.graine(1, selDe(part)), bib, w);
+        if (w > 0) {
+          var tv = t + (rv.duree || 9) * V.graine(1, selDe(part));
+          pose = K.ajouter(pose, rv, tv, bib, w);
+          if (fixe) fixe = K.ajouter(fixe, rv, tv, bib, w);
+        }
       }
       var cl = bib.clips.clignement;
       if (cl && cl.additif) {
@@ -481,8 +538,10 @@
     }
     var vue = vueAuTemps(part, t);
     var pos = positionAuTemps(part, t);
-    return { pose: Object.assign({}, S.REPOS, pose, { vue: vue }), x: pos.x, sol: pos.sol, vue: vue, corps: corps.type,
+    var etat = { pose: Object.assign({}, S.REPOS, pose, { vue: vue }), x: pos.x, sol: pos.sol, vue: vue, corps: corps.type,
       ecraseY: ecraseAuTemps(part, t, bib) };
+    if (fixe) { etat.fixe = Object.assign({}, S.REPOS, fixe); etat.vie = vie; }
+    return etat;
   }
 
   /** Hauteur du personnage debout (unités du squelette) : des pieds au haut de la tête. */
@@ -492,5 +551,5 @@
   }
 
   return { etatAuTemps: etatAuTemps, xAuTemps: xAuTemps, positionAuTemps: positionAuTemps, solAuTemps: solAuTemps, vueAuTemps: vueAuTemps,
-    trajets: trajets, hauteur: hauteur, clignements: clignements, contacts: contacts, profilEcrase: profilEcrase, FONDU: FONDU };
+    trajets: trajets, hauteur: hauteur, elevation: elevation, clignements: clignements, contacts: contacts, profilEcrase: profilEcrase, FONDU: FONDU };
 });

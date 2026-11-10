@@ -20,7 +20,7 @@ const BALISE = /<!--[\s\S]*?-->|<(\/?)([a-zA-Z][\w-]*)\b((?:[^>"']|"[^"]*"|'[^']
 // Éléments sans fermeture : ils ne changent pas la profondeur.
 const VIDES = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr']);
 const ACTIONS = {
-  marcher: ['vers'], courir: ['vers'], glisser: [], bondir: [], atteindre: ['cible'], regarder: ['cible'], pose: ['pose'], jouer: ['clip'], tourner: ['vue'], expression: ['expression'], bouche: ['bouche'], parler: [],
+  marcher: ['vers'], courir: ['vers'], glisser: [], bondir: [], flotter: [], atteindre: ['cible'], regarder: ['cible'], pose: ['pose'], jouer: ['clip'], tourner: ['vue'], expression: ['expression'], bouche: ['bouche'], parler: [],
 };
 const NOMBRES = ['data-x', 'data-sol', 'data-taille', 'data-vue', 'data-vers', 'data-hauteur'];
 const TRAJETS = ['marcher', 'courir', 'glisser', 'bondir'];
@@ -104,17 +104,24 @@ function preparerPersonnages(html0, { scene, lu, voix = false, dureeTemps = null
         if (parent && parent.id === c.slice(1)) erreurs.push({ ...erreur(scene, `${qui} : la cible « ${c} » est le personnage lui-même.`), gravite: 'alerte' });
       }
       if (type === 'regarder') for (const k of ['data-niveau', 'data-main']) if (a[k] !== undefined) erreurs.push({ ...erreur(scene, `${qui} : ${k} ne sert qu'à « atteindre ».`), gravite: 'alerte' });
+      if (type === 'regarder' && a['data-attention'] !== undefined) {
+        const n = Number(a['data-attention']);
+        if (String(a['data-attention']).trim() === '' || !Number.isFinite(n) || n < 0 || n > 1) erreurs.push(erreur(scene, `${qui} : data-attention="${a['data-attention']}" : de 0 à 1 (1 = il regarde franchement, 0,5 = à moitié ; ex. 0.5).`));
+      }
       if (a['data-point'] !== undefined && !/^\s*-?\d*\.?\d+%\s+-?\d*\.?\d+%\s*$/.test(a['data-point'])) erreurs.push(erreur(scene, `${qui} : data-point="${a['data-point']}" doit être un point en % de l'élément, ex. « 50% 0% ».`));
       if (type === 'atteindre' && a['data-dur'] === undefined) erreurs.push(erreur(scene, `${qui} : data-dur obligatoire (combien de temps la main reste sur la cible).`));
       if (type === 'atteindre' && a['data-main'] !== undefined && !['avant', 'arriere', 'deux'].includes(a['data-main'].trim())) erreurs.push(erreur(scene, `${qui} : data-main="${a['data-main']}" doit être avant, arriere ou deux.`));
       if (a['data-niveau'] !== undefined && !['haut', 'epaule', 'bas'].includes(a['data-niveau'].trim())) erreurs.push(erreur(scene, `${qui} : data-niveau="${a['data-niveau']}" doit être haut, epaule ou bas.`));
     }
+    if (a['data-attention'] !== undefined && type !== 'regarder') erreurs.push(erreur(scene, `${qui} : data-attention ne sert qu'à « regarder ».`));
     if (a['data-sol'] !== undefined && !TRAJETS.includes(type)) erreurs.push(erreur(scene, `${qui} : data-sol ne sert qu'aux déplacements (marcher, courir, glisser, bondir) ou au personnage lui-même.`));
     if (a['data-ecrase'] !== undefined) {
-      if (type !== 'bondir') erreurs.push(erreur(scene, `${qui} : data-ecrase ne sert qu'à « bondir » ou au personnage lui-même (écrasement à l'atterrissage).`));
+      if (type !== 'bondir' && type !== 'flotter') erreurs.push(erreur(scene, `${qui} : data-ecrase ne sert qu'à « bondir », « flotter » ou au personnage lui-même (écrasement à l'atterrissage).`));
       else verifierEcrase(a['data-ecrase'], qui);
     }
-    if (a['data-hauteur'] !== undefined && type !== 'bondir') erreurs.push(erreur(scene, `${qui} : data-hauteur ne sert qu'à « bondir » (hauteur de l'arc).`));
+    if (a['data-hauteur'] !== undefined && type !== 'bondir' && type !== 'flotter') erreurs.push(erreur(scene, `${qui} : data-hauteur ne sert qu'à « bondir » (hauteur de l'arc) et à « flotter » (hauteur du vol).`));
+    if (type === 'flotter' && a['data-hauteur'] !== undefined && Number.isFinite(Number(a['data-hauteur'])) && (Number(a['data-hauteur']) < 2 || Number(a['data-hauteur']) > 40)) erreurs.push(erreur(scene, `${qui} : data-hauteur="${a['data-hauteur']}" : hauteur du vol en % de la hauteur de l'image, de 2 à 40 (ex. 12).`));
+    if (type === 'flotter' && a['data-dur'] === undefined) erreurs.push(erreur(scene, `${qui} : data-dur obligatoire (durée du vol, ex. data-dur="3").`));
     if (a['data-courbe'] !== undefined && type !== 'glisser') erreurs.push(erreur(scene, `${qui} : data-courbe ne sert qu'à « glisser ».`));
     if (a['data-courbe'] !== undefined) { try { C.courbeNommee(a['data-courbe'].trim()); } catch (e) { erreurs.push(erreur(scene, `${qui} : ${e.message}`)); } }
     if (type === 'bondir' && a['data-clip'] !== undefined && !Object.hasOwn(lu.clips, a['data-clip'].trim())) erreurs.push(erreur(scene, `${qui} : mouvement « ${a['data-clip'].trim()} » introuvable pour le bond (par défaut : saut).`));
@@ -158,8 +165,27 @@ function preparerPersonnages(html0, { scene, lu, voix = false, dureeTemps = null
     if (!porteurs.has(id)) erreurs.push(erreur(scene, `${qui} : porteur « #${id} » introuvable (data-tenu-par = l'id d'un conteneur data-personnage de la scène).`));
     else if (porteurs.get(id) !== parent) erreurs.push(erreur(scene, `${qui} : il doit être dans le même conteneur que son porteur « #${id} » (même parent), pour suivre sa main.`));
     if (a['data-devant'] !== undefined && a['data-derriere'] !== undefined) erreurs.push(erreur(scene, `${qui} : data-devant et data-derriere ensemble ; n'en garder qu'un.`));
-    const liste = { 'data-main': ['avant', 'arriere', 'deux'], 'data-orientation': ['droit', 'main'], 'data-lacher': ['reste', 'cache', 'tombe'] };
+    const liste = { 'data-main': ['avant', 'arriere', 'deux'], 'data-orientation': ['droit', 'main'], 'data-lacher': ['reste', 'cache', 'tombe', 'lance'] };
     for (const [k, valeurs] of Object.entries(liste)) if (a[k] !== undefined && !valeurs.includes(a[k].trim())) erreurs.push(erreur(scene, `${qui} : ${k}="${a[k]}" doit être ${valeurs.join(', ')}.`));
+    // Lancer (spec Mouvement vivant 5.8) : une cible obligatoire, dans la scène ; un personnage visé, dans le même conteneur.
+    const lance = (a['data-lacher'] || '').trim() === 'lance';
+    if (lance) {
+      const c = (a['data-cible'] || '').trim();
+      if (!c) erreurs.push(erreur(scene, `l'objet « ${a.id || '?'} » est lancé (data-lacher="lance") sans data-cible : donner l'élément, le personnage ou le point visé (ex. data-cible="#panier").`));
+      else if (/^#[\w-]+$/.test(c)) {
+        const vise = c.slice(1);
+        if (!chemins.has(vise) && !autresIds.has(vise)) erreurs.push(erreur(scene, `${qui} : la cible « ${c} » n'existe pas dans la scène.`));
+        else if (porteurs.has(vise) && porteurs.get(vise) !== parent) erreurs.push(erreur(scene, `${qui} : le personnage visé « ${c} » doit être dans le même conteneur que l'objet (même parent), pour le recevoir dans sa main.`));
+      } else if (!/^-?\d*\.?\d+%\s+-?\d*\.?\d+%$/.test(c)) erreurs.push(erreur(scene, `${qui} : data-cible="${c}" doit être « #id » (un élément ou un personnage de la scène) ou un point « x% y% » de l'image.`));
+      const bornes = { 'data-hauteur': [0, 100, 'sommet du vol en % de la hauteur de l\'image au-dessus du plus haut des deux points, ex. 15'], 'data-tours': [-20, 20, 'tours sur lui-même en vol, ex. 1 ; négatif : dans l\'autre sens'], 'data-roule': [0, 100, '% de la largeur parcourus en roulant à l\'arrivée, ex. 10'] };
+      for (const [k, [min, max, sens]] of Object.entries(bornes)) {
+        if (a[k] === undefined) continue;
+        const n = Number(a[k]);
+        if (String(a[k]).trim() === '' || !Number.isFinite(n) || n < min || n > max) erreurs.push(erreur(scene, `${qui} : ${k}="${a[k]}" : de ${min} à ${max} (${sens}).`));
+      }
+    } else {
+      for (const k of ['data-cible', 'data-tours', 'data-roule']) if (a[k] !== undefined) erreurs.push({ ...erreur(scene, `${qui} : ${k} ne sert qu'à un objet lancé (data-lacher="lance").`), gravite: 'alerte' });
+    }
     if (a['data-prise'] !== undefined && !/^\s*-?\d*\.?\d+%\s+-?\d*\.?\d+%\s*$/.test(a['data-prise'])) erreurs.push(erreur(scene, `${qui} : data-prise="${a['data-prise']}" doit être un point en % de l'objet, ex. « 50% 100% » (milieu du bas).`));
     if (a['data-dur'] === undefined) erreurs.push(erreur(scene, `${qui} : data-dur obligatoire (combien de temps il est tenu).`));
     if (a['data-relais'] !== undefined) {
