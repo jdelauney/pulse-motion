@@ -176,6 +176,18 @@
 }
 #pm-scene .pm-bloc-carte-appli .pm-bloc-pastille .pm-bloc-icone { width: 4.8cqh; height: 4.8cqh; }
 #pm-scene .pm-bloc-carte-appli .pm-bloc-corps { flex: 1; display: grid; gap: 0.6cqh; min-width: 0; }
+/* Cartes « graphique » et « organigramme » (spec S6 5.13, livrées avec S7 J2) : la carte ici, son dessin par le calque. */
+#pm-scene .pm-bloc-carte-graphique, #pm-scene .pm-bloc-carte-organigramme {
+  display: grid; gap: 2.4cqh; width: min(96cqh, 88cqw); padding: 3cqh 3.4cqh; border-radius: 2.6cqh;
+  background: var(--pm-bloc-fond); box-shadow: 0 1cqh 3.6cqh rgb(0 0 0 / 0.16), 0 0 0 0.15cqh var(--pm-bloc-trait);
+}
+#pm-scene .pm-bloc-carte-graphique .pm-bloc-entete { display: flex; gap: 2cqh; align-items: baseline; justify-content: space-between; }
+#pm-scene .pm-bloc-carte-graphique .pm-bloc-chiffre { font: 800 6cqh/1 var(--f-titres, var(--f-texte, system-ui, sans-serif)); color: var(--c-accent-lisible, var(--c-accent, #b45309)); }
+#pm-scene .pm-bloc-carte-graphique .pm-bloc-graphique { width: 100%; height: var(--pm-bloc-hauteur, 40cqh); margin: 0; }
+#pm-scene .pm-bloc-organigramme { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9cqh 3cqh; }
+#pm-scene .pm-bloc-case { margin: 0; padding: 1.8cqh 1.6cqh; border-radius: 1.6cqh; text-align: center; font-weight: 600;
+  background: color-mix(in srgb, var(--c-primaire, #1d4ed8) 10%, var(--pm-bloc-fond)); box-shadow: 0 0 0 0.2cqh color-mix(in srgb, var(--c-primaire, #1d4ed8) 40%, transparent); }
+#pm-scene .pm-bloc-case-chef { grid-column: 1 / -1; justify-self: center; min-width: 40%; background: var(--c-primaire-lisible, var(--c-primaire, #1d4ed8)); color: var(--c-sur-primaire, #fff); }
 #pm-scene .pm-bloc-bandeau-nom {
   position: absolute; left: var(--pm-bloc-gauche, 6cqh); bottom: var(--pm-bloc-bas, 8cqh); z-index: 5; display: grid; gap: 0.6cqh;
   max-width: 80cqw; padding: 1.6cqh 3cqh 1.6cqh 2.6cqh; border-left: 1cqh solid var(--c-accent, #b45309); background: var(--pm-bloc-fond);

@@ -1,0 +1,23 @@
+<!-- Scène toute faite « moyeu » (style minimal) : une idée au centre et 3 à 5 parties reliées par des traits fins. Durée conseillée : 10 s.
+     Textes : titre (≤ 40 car.), centre (≤ 24 car.), partie1 … partie5 (≤ 22 car. chacune ; en 9:16, ≤ 14 car.).
+     Moins de 5 parties : supprimer la partie en trop et sa flèche (la couronne se refait seule). Adapter data-dur du décor à la durée de la scène. -->
+<section data-scene="moyeu">
+  <div class="decor">
+    <span class="repere"></span>
+    <span class="marqueur" data-decor data-start="0" data-dur="10" data-tween="--x 0cqw→60cqw expo-inout"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen revele" data-texte="titre" data-start="0.2" data-dur="0.7"></h2>
+  <div class="moyeu">
+    <div id="centre" class="jalon-moyeu moyeu-centre monte" data-texte="centre" data-start="#titre:fin+0.2" data-dur="0.8"></div>
+    <div id="partie1" class="jalon-moyeu moyeu-partie monte" style="--i: 0" data-texte="partie1" data-start="#centre:fin+0.4" data-dur="0.6"></div>
+    <i data-fleche="#centre → #partie1" data-start="#partie1" data-dur="0.6" data-couleur="texte" data-epaisseur="0.3"></i>
+    <div id="partie2" class="jalon-moyeu moyeu-partie monte" style="--i: 1" data-texte="partie2" data-start="#partie1:fin+0.5" data-dur="0.6"></div>
+    <i data-fleche="#centre → #partie2" data-start="#partie2" data-dur="0.6" data-couleur="texte" data-epaisseur="0.3"></i>
+    <div id="partie3" class="jalon-moyeu moyeu-partie monte" style="--i: 2" data-texte="partie3" data-start="#partie2:fin+0.5" data-dur="0.6"></div>
+    <i data-fleche="#centre → #partie3" data-start="#partie3" data-dur="0.6" data-couleur="texte" data-epaisseur="0.3"></i>
+    <div id="partie4" class="jalon-moyeu moyeu-partie monte" style="--i: 3" data-texte="partie4" data-start="#partie3:fin+0.5" data-dur="0.6"></div>
+    <i data-fleche="#centre → #partie4" data-start="#partie4" data-dur="0.6" data-couleur="texte" data-epaisseur="0.3"></i>
+    <div id="partie5" class="jalon-moyeu moyeu-partie monte" style="--i: 4" data-texte="partie5" data-start="#partie4:fin+0.5" data-dur="0.6"></div>
+    <i data-fleche="#centre → #partie5" data-start="#partie5" data-dur="0.6" data-couleur="texte" data-epaisseur="0.3"></i>
+  </div>
+</section>

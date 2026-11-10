@@ -1,4 +1,4 @@
-<!-- Scène toute faite « schema » (style editorial) : trois temps reliés par des flèches fines. Durée conseillée : 8 s.
+<!-- Scène toute faite « schema » (style editorial) : trois temps reliés par des flèches fines qui visent les boîtes. Durée conseillée : 8 s.
      Textes : titre (≤ 40 car.), a, b, c (≤ 25 car.). -->
 <section data-scene="schema">
   <div class="decor">
@@ -7,13 +7,9 @@
   <h2 id="titre" class="titre-moyen masque" data-texte="titre" data-start="0.2" data-dur="1.1"></h2>
   <div class="chaine">
     <div id="a" class="maillon fondu" data-texte="a" data-start="#titre:fin+0.3" data-dur="0.9"></div>
-    <svg id="lien1" class="lien" viewBox="0 0 60 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" data-start="#a:fin" data-dur="0.8" aria-hidden="true">
-      <path pathLength="100" d="M1 6h56M51 1l6 5-6 5"/>
-    </svg>
+    <span class="lien" aria-hidden="true"><i id="lien1" data-fleche="#a → #b" data-start="#a:fin" data-dur="0.8" data-couleur="accent-lisible" data-epaisseur="0.3"></i></span>
     <div id="b" class="maillon fondu" data-texte="b" data-start="#lien1:fin" data-dur="0.9"></div>
-    <svg id="lien2" class="lien" viewBox="0 0 60 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" data-start="#b:fin" data-dur="0.8" aria-hidden="true">
-      <path pathLength="100" d="M1 6h56M51 1l6 5-6 5"/>
-    </svg>
+    <span class="lien" aria-hidden="true"><i id="lien2" data-fleche="#b → #c" data-start="#b:fin" data-dur="0.8" data-couleur="accent-lisible" data-epaisseur="0.3"></i></span>
     <div id="c" class="maillon fondu" data-texte="c" data-start="#lien2:fin" data-dur="0.9"></div>
   </div>
 </section>

@@ -31,6 +31,10 @@
  *   opacite }] de l'image en cours ; M.dessin.encreStyle(fn(idScene, traces, { L })) : le canevas d'un style s'inscrit ;
  *   data-encre="style" sur la scène : le SVG garde ses nœuds sans peindre l'encre, fn la redessine ; sans fn, encre opaque à
  *   0,94 dans le SVG, sans fusion.
+ * Extensions (moteur/dessin/composants.js, S7 J2) : M.dessin.etendre(fn(d, sc, outils)) ajoute des primitives à d (barres,
+ *   courbe, secteurs) ; M.dessin.composant(selecteur, fabrique(sc, el, outils) -> fn(d)) ajoute un composant déclaratif
+ *   (data-graphique, data-code), dessiné avant les flèches et les annotations. Sans data-fleche-courbe, une flèche prend
+ *   --pm-fleche-courbe de son élément (lu au relevé : un style peut courber ses flèches en portrait).
  * Erreurs : règle dessin-erreur (M.erreurs, « Scène « x », à 2,4 s : … »), la scène continue sans ce dessin ; cible d'une
  *   flèche absente : fleche-cible-introuvable, avec les ids proches. M.mesurerDessin({ scenes? }) -> { constats, releves }.
  * Options at/out, entrées, _life, _seed, rand, noise, wiggle, get de engine/stage.js d'explainroo (MIT, © 2026 Vincent
@@ -44,7 +48,8 @@
   var CACHE_MAX = 4000;
   var SORTIE = 0.3;
   var FORMES = ['line', 'polyline', 'polygon', 'rect', 'ellipse', 'circle', 'path'];
-  var etat = { fns: {}, scenes: {}, pret: false, constats: [], vus: {}, peintre: null, cache: new Map(), courbes: {}, chemins: new Map(), mesureur: null };
+  var etat = { fns: {}, scenes: {}, pret: false, constats: [], vus: {}, peintre: null, cache: new Map(), courbes: {}, chemins: new Map(), mesureur: null,
+    extensions: [], fabriques: [] };
 
   function clamp(x) { return x < 0 ? 0 : x > 1 ? 1 : x; }
   function r2(x) { return Math.round(x * 100) / 100; }
@@ -61,6 +66,10 @@
   M.dessin = dessin;
   dessin.traces = function (id) { var sc = etat.scenes[id]; return sc && sc.traces ? sc.traces.map(copie) : []; };
   dessin.encreStyle = function (fn) { etat.peintre = typeof fn === 'function' ? fn : null; };
+  // Points d'extension (spec S7 J2, moteur/dessin/composants.js) : primitives ajoutées à « d » (fn(d, sc, outils)), et
+  // composants déclaratifs (selecteur, fabrique(sc, el, outils) -> fn(d)), dessinés par le même chemin que les flèches.
+  dessin.etendre = function (fn) { if (typeof fn === 'function') etat.extensions.push(fn); };
+  dessin.composant = function (selecteur, fabrique) { if (selecteur && typeof fabrique === 'function') etat.fabriques.push({ selecteur: selecteur, fabrique: fabrique }); };
   M.mesurerDessin = function (o) {
     var scenes = o && o.scenes;
     var garder = function (id) { return !scenes || scenes.indexOf(id) >= 0; };
@@ -649,6 +658,7 @@
       }
       return cle;
     };
+    etat.extensions.forEach(function (fn) { fn(d, sc, OUTILS); });
     return d;
   }
 
@@ -721,10 +731,14 @@
     var etiquette = el.querySelector('[data-texte]');
     if (etiquette) adopterEtiquette(sc, etiquette);
     var cle = 'fleche:' + (el.id || el.getAttribute('data-pm-cle') || sc.composants.length);
+    var courbeStyle = null;
     return function (d) {
       if (!m) throw new Error('data-fleche « ' + el.getAttribute('data-fleche') + ' » : écrire « #a → #b »');
       var t = tempsElement(sc, el);
-      d.fleche(m[1], m[2], { id: cle, debut: t.debut, duree: t.duree !== null ? t.duree : 0.7, courbe: nombre(el.getAttribute('data-fleche-courbe'), 0),
+      // Sans data-fleche-courbe : la variable --pm-fleche-courbe du style (une scène peut courber ses flèches en portrait),
+      // lue au relevé.
+      if (!el.hasAttribute('data-fleche-courbe') && (courbeStyle === null || sc.cadre.mode === 'releve')) courbeStyle = nombre(getComputedStyle(el).getPropertyValue('--pm-fleche-courbe'), 0);
+      d.fleche(m[1], m[2], { id: cle, debut: t.debut, duree: t.duree !== null ? t.duree : 0.7, courbe: el.hasAttribute('data-fleche-courbe') ? nombre(el.getAttribute('data-fleche-courbe'), 0) : courbeStyle,
         tete: el.getAttribute('data-fleche-tete') || 'fin', ecart: nombre(el.getAttribute('data-fleche-ecart'), undefined),
         pointille: el.hasAttribute('data-fleche-pointille'), suivre: el.hasAttribute('data-fleche-suivre'), etiquette: etiquette || null,
         couleur: el.getAttribute('data-couleur') || undefined, epaisseur: el.hasAttribute('data-epaisseur') ? nombre(el.getAttribute('data-epaisseur'), 0.4) : undefined });
@@ -802,6 +816,11 @@
     });
   }
 
+  // Outils passés aux extensions et aux composants (moteur/dessin/composants.js) : le même chemin de rendu que l'API.
+  var OUTILS = { tracer: tracer, adopterEtiquette: adopterEtiquette, poserEtiquette: poserEtiquette, tempsElement: tempsElement,
+    signaler: signaler, noeud: noeud, calqueDe: calqueDe, attr: attr, styleDe: styleDe, union: union, nombre: nombre,
+    clamp: clamp, douce: douce, arriere: arriere, r2: r2, r3: r3, NS: NS };
+
   // --- Rendu ------------------------------------------------------------------------------------------------------------
 
   function dessiner(sc, ts, mode) {
@@ -854,9 +873,13 @@
       var fns = etat.fns[info.id] || [];
       var comps = sec.querySelectorAll('[data-fleche], [data-annoter]');
       var mains = sec.querySelectorAll('[data-main-levee]');
-      if (!fns.length && !comps.length && !mains.length) return;
+      var autres = [];
+      etat.fabriques.forEach(function (f) { sec.querySelectorAll(f.selecteur).forEach(function (el) { autres.push({ f: f, el: el }); }); });
+      if (!fns.length && !comps.length && !mains.length && !autres.length) return;
       var sc = creerScene(info, sec, fns);
       sec.querySelectorAll('.pm-calque-texte[data-pm-libre][data-texte]').forEach(function (el) { sc.libres[el.getAttribute('data-texte')] = adopterEtiquette(sc, el); });
+      // Graphiques et code d'abord (ils sont dessous) ; flèches et annotations par-dessus.
+      autres.forEach(function (x) { sc.composants.push(x.f.fabrique(sc, x.el, OUTILS)); });
       comps.forEach(function (el) { sc.composants.push(el.hasAttribute('data-fleche') ? composantFleche(sc, el) : composantAnnotation(sc, el)); });
       sc.mains = Array.prototype.slice.call(mains);
       etat.scenes[info.id] = sc;
@@ -867,6 +890,7 @@
       if (!sc) return;
       positionner(sc, cadre);
       mesurerTextes(sc, cadre);
+      sc.cadreReleve = cadre;
       sc.releve = releve;
       sc.temps = {};
       dessiner(sc, Math.max(0, (info.fin - 1e-4 - info.debut) * info.rythme), 'releve').forEach(function (b) { releve.elements.push(b); });

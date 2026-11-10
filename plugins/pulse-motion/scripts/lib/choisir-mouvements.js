@@ -33,7 +33,8 @@ function projetDeDemos(dossier, demos, { style = 'clair-pedagogique', ratio = '1
   const scenes = demos.map((d) => {
     const fichier = `scenes/${d.id}.html`;
     fs.writeFileSync(path.join(dossier, fichier), `<section data-scene="${d.id}"${d.sombre ? ' data-demo-sombre' : ''}>\n${DECOR}\n<div class="pm-demo">\n${d.html}\n</div>\n</section>\n`, 'utf8');
-    return { id: d.id, fichier, duree: d.duree, textes: d.textes || {}, transition: d.transition || 'coupe' };
+    // Données d'un graphique ou d'un code (recette.donnees : scenes[].graphiques, code, formules), comme dans un déroulé.
+    return { id: d.id, fichier, duree: d.duree, textes: d.textes || {}, transition: d.transition || 'coupe', ...(d.donnees || {}) };
   });
   const deroule = { version: 1, titre, genre: 'formation', parcours: 'rapide', format: { ratio, ips: 30 }, style, scenes };
   fs.writeFileSync(path.join(dossier, 'deroule.json'), JSON.stringify(deroule, null, 2), 'utf8');
@@ -51,7 +52,7 @@ function demosDeMouvements(entrees) {
       demos.push({ id: `m${e.no}a`, duree: 1.5, textes: { titre: 'Avant' }, html: '<h2 data-texte="titre" data-start="0"></h2>' });
       demos.push({ id: `m${e.no}`, duree: 1.5, textes, transition, html: '<h2 data-texte="titre" data-start="0"></h2>' });
     } else {
-      demos.push({ id: `m${e.no}`, duree: 3, textes, html: e.recette.exemple, sombre: e.recette.type === 'effet' });
+      demos.push({ id: `m${e.no}`, duree: 3, textes, html: e.recette.exemple, sombre: e.recette.type === 'effet', ...(e.recette.donnees ? { donnees: e.recette.donnees } : {}) });
     }
   }
   return demos;

@@ -52,7 +52,7 @@ function concernees(assemblage) {
     // Écran (spec S6) : pointeur et caméra du plan recalculés à chaque image par moteur/ecran.js.
     if (/\sdata-pm-ecran\s*=/.test(p.section || '')) raisons.push('ecran');
     // Calque de dessin (spec S7) : flèches, annotations, main levée et dessins libres redessinés à chaque image.
-    if (/\sdata-(?:fleche|annoter|main-levee)[\s=>]/.test(p.section || '') || (p.scripts || []).some((c) => /\bM\s*\.\s*dessin\s*\(/.test(c))) raisons.push('dessin');
+    if (/\sdata-(?:fleche|annoter|main-levee|graphique|code)[\s=>]/.test(p.section || '') || (p.scripts || []).some((c) => /\bM\s*\.\s*dessin\s*\(/.test(c))) raisons.push('dessin');
     if (raisons.length) r.push({ id: p.id, raisons, gpu });
   }
   return r;

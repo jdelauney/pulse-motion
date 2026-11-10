@@ -11,7 +11,7 @@
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
-const { TYPES, FAMILLES, NOM_STYLE, CATEGORIES, TYPES_ENTREE } = require('./lib/contrat.js');
+const { TYPES, TYPES_RECENTS, FAMILLES, NOM_STYLE, CATEGORIES, TYPES_ENTREE } = require('./lib/contrat.js');
 const { TRANSITIONS, GENRES } = require('./lib/deroule.js');
 const { extraireScene } = require('./lib/extraire.js');
 const { verifierSection } = require('./lib/scenes.js');
@@ -59,7 +59,7 @@ function verifierStabilite(texte, ou, erreurs, avertissements) {
   if (/(^|[\s;{])transition\s*:/.test(sans)) avertissements.push(`${ou} : transition CSS sans effet (le moteur les neutralise) ; utiliser une animation calée sur data-start.`);
 }
 
-function verifierCatalogue(dossier, nom, catalogue, erreurs, avertissements) {
+function verifierCatalogue(dossier, nom, catalogue, erreurs, avertissements, livre = true) {
   if (catalogue.style !== nom) erreurs.push(`catalogue.json : « style » doit valoir « ${nom} » (nom du dossier).`);
   for (const t of catalogue.transitions || []) {
     if (!TRANSITIONS.includes(t)) erreurs.push(`catalogue.json : transition inconnue du moteur « ${t} ».`);
@@ -72,6 +72,11 @@ function verifierCatalogue(dossier, nom, catalogue, erreurs, avertissements) {
   for (const [type, cles] of Object.entries(TYPES)) {
     const attendues = [...cles].sort().join(', ');
     const s = decrites.get(type);
+    // Type récent (moyeu) absent d'un style personnel écrit avant lui : un avertissement, le style reste utilisable.
+    if (!livre && !s && TYPES_RECENTS.includes(type) && lireTexte(path.join(dossier, 'scenes', `${type}.html`)) === null) {
+      avertissements.push(`Scène toute faite « ${type} » absente (type ajouté après ce style) : une scène de ce type se compose librement.`);
+      continue;
+    }
     if (!s) erreurs.push(`catalogue.json : scène « ${type} » absente.`);
     else {
       const declarees = Object.keys(s.textes || {}).sort().join(', ');
@@ -248,7 +253,7 @@ function verifierContrat(dossier, { livre = estLivre(dossier) } = {}) {
   else { verifierEffets(css, 'style.css', avertissements); verifierStabilite(css, 'style.css', erreurs, avertissements); }
   const catalogue = lireJSON(path.join(dossier, 'catalogue.json'));
   if (!catalogue) erreurs.push('catalogue.json manquant ou illisible.');
-  else verifierCatalogue(dossier, nom, catalogue, erreurs, avertissements);
+  else verifierCatalogue(dossier, nom, catalogue, erreurs, avertissements, livre);
   const identite = lireJSON(path.join(dossier, 'identite.json'));
   if (!identite) erreurs.push('identite.json manquant ou illisible.');
   else verifierIdentite(nom, identite, css || '', erreurs, (lireJSON(path.join(dossier, 'charte.json')) || {}).couleurs || {}, livre);

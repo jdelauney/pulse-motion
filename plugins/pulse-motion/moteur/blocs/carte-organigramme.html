@@ -1,0 +1,13 @@
+<!-- Bloc « carte-organigramme » : carte d'un organigramme (un responsable et trois équipes reliées par des flèches qui se tracent), entrée #001. Textes : titre, chef, equipe1, equipe2, equipe3 ; une équipe en moins : retirer sa case et sa flèche. -->
+<div class="pm-bloc pm-bloc-carte-organigramme pm-m-pop" data-start="0.5">
+  <p class="pm-bloc-titre" data-texte="titre"></p>
+  <div class="pm-bloc-organigramme">
+    <p id="org-chef" class="pm-bloc-case pm-bloc-case-chef" data-texte="chef"></p>
+    <p id="org-equipe1" class="pm-bloc-case" data-texte="equipe1"></p>
+    <p id="org-equipe2" class="pm-bloc-case" data-texte="equipe2"></p>
+    <p id="org-equipe3" class="pm-bloc-case" data-texte="equipe3"></p>
+    <i data-fleche="#org-chef → #org-equipe1" data-start="1.3" data-dur="0.6" data-couleur="accent-lisible"></i>
+    <i data-fleche="#org-chef → #org-equipe2" data-start="1.6" data-dur="0.6" data-couleur="accent-lisible"></i>
+    <i data-fleche="#org-chef → #org-equipe3" data-start="1.9" data-dur="0.6" data-couleur="accent-lisible"></i>
+  </div>
+</div>
