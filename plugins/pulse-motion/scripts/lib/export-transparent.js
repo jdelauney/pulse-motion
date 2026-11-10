@@ -41,7 +41,7 @@ function messageFondOpaque(ids) {
 const retirer = (f) => { try { fs.rmSync(f, { force: true, maxRetries: 5, retryDelay: 200 }); } catch { /* laissé */ } };
 
 async function exporterTransparent({ projet, deroule, u, demande, navigateur, outil, dossierStyles, dossierEffets, surProgression = () => {}, surPhase = () => {}, signal,
-  paralleles, dureeSegment = 10, surOuverture = () => {} }) {
+  paralleles, dureeSegment = 10, surOuverture = () => {}, versionDeTravail = false }) {
   const debutExport = performance.now();
   const { assembler, slug } = require('../assembler.js');
   const { prendreVerrou, messageVerrou, avecEffets, TAILLES } = require('../export-fidele.js');
@@ -60,7 +60,9 @@ async function exporterTransparent({ projet, deroule, u, demande, navigateur, ou
   const verrou = prendreVerrou(travail);
   if (!verrou.ok) return { ok: false, audio: false, message: messageVerrou(verrou.depuis), usage: u.usage };
   const nomSlug = slug(deroule.titre);
-  const final = path.join(sortieDir, L.nomSortie(nomSlug, { usage: u.usage, scene: demande.scene, plage: demande.plage, transparent: true, extension: T.conteneur }));
+  const nom = L.nomSortie(nomSlug, { usage: u.usage, scene: demande.scene, plage: demande.plage, transparent: true, extension: T.conteneur });
+  // Voix provisoire (spec Retouches et ergonomie, 5.17) : une version de travail nommée à part.
+  const final = path.join(sortieDir, versionDeTravail ? require('./voix.js').nomVersionDeTravail(nom) : nom);
   const partiel = `${final}.part`;
   const page = path.join(dossierT, 'page.html');
   const gpu = avecEffets(projet, deroule);
@@ -186,7 +188,7 @@ async function exporterTransparent({ projet, deroule, u, demande, navigateur, ou
     }
     const resultat = {
       ok: true, fichier: final, images: n, duree: n / ips, largeur, hauteur, audio: Boolean(audio), usage: u.usage, octets, taille: U.tailleFrancaise(octets),
-      definition: u.definition, ips, transparent: format, flou: { applique: false, sousImages: 1 }, chapitresIntegres: false,
+      definition: u.definition, ips, transparent: format, ...(versionDeTravail ? { versionDeTravail: true } : {}), flou: { applique: false, sousImages: 1 }, chapitresIntegres: false,
       fichiers: { video: rel(final), ...livrables.fichiers }, creditsAPreciser: livrables.creditsAPreciser,
       ...(demande.extrait ? { extrait: { scene: demande.scene, debut: f0 / ips, fin: f1 / ips } } : {}),
       couleurs: s.couleurs, segments: segments.length, paralleles: regle.nombre, regleParalleles: regle.regle,

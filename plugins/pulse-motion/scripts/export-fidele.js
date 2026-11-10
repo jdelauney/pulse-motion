@@ -198,7 +198,7 @@ async function exporterFidele({ dossier, pour, qualite, ips, tailleMax, navigate
   // Fond transparent (5.14) : chemin à part (segments dans le conteneur final, sans intermédiaire H.264).
   if (demande.transparent) {
     return require('./lib/export-transparent.js').exporterTransparent({ projet, deroule, u, demande, navigateur, outil, dossierStyles, dossierEffets, surProgression, surPhase, signal,
-      avecProvisoire, paralleles, dureeSegment, surOuverture });
+      versionDeTravail: provisoires.length > 0, paralleles, dureeSegment, surOuverture });
   }
   if (demande.extrait && u.tailleMax) {
     // Taille visée d'un extrait : calculée sur sa durée.
