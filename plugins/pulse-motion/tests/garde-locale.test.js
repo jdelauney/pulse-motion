@@ -215,6 +215,7 @@ function cheminExemple(motif) {
   if (typeof motif === 'string') return motif;
   return {
     [String(/^\/_pm\/planche\/[a-z0-9-]+\.png$/)]: '/_pm/planche/intro-1.png',
+    [String(/^\/_pm\/remarques(\/(envoyer|r-\d{4,}))?$/)]: '/_pm/remarques/envoyer',
   }[String(motif)] || String(motif).replace(/^\/\^|\$\/$/g, '').replace(/\\\//g, '/').replace(/\((\w[\w-]*)\|[^)]*\)/, '$1').replace(/\\/g, '');
 }
 

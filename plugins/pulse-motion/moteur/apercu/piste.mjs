@@ -121,7 +121,7 @@ function cadreVignettes() {
   if (cadrePret) return cadrePret;
   const sc = document.getElementById('pm-scene').getBoundingClientRect();
   const hauteur = Math.round(480 * sc.height / sc.width);
-  cadre = el('iframe', { src: '/_pm/version/courante', 'aria-hidden': 'true', tabindex: '-1',
+  cadre = el('iframe', { src: '/_pm/version/courante?capture=1', 'aria-hidden': 'true', tabindex: '-1',
     style: `position:fixed;left:-10000px;top:0;width:480px;height:${hauteur + 48}px;border:0;visibility:hidden` }, document.body);
   cadrePret = new Promise((resolve, reject) => {
     cadre.addEventListener('load', () => {

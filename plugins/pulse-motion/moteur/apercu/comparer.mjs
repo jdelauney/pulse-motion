@@ -90,7 +90,8 @@ position.addEventListener('input', () => aller(parseFloat(position.value)));
 
 async function demarrer() {
   courante.src = '/';
-  avant.src = `/_pm/version/${encodeURIComponent(avec)}`;
+  // ?capture=1 : le lecteur de ce cadre ne prépare pas le son (il vient de la version actuelle seulement).
+  avant.src = `/_pm/version/${encodeURIComponent(avec)}?capture=1`;
   try {
     const versions = (await (await fetch('/_pm/versions')).json()).versions || [];
     const v = versions.find((x) => x.numero === avec || Number(x.numero) === Number(avec)) || null;
