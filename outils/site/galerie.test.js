@@ -77,3 +77,24 @@ test("idées : les sept modèles, chacun avec au moins deux phrases, sa vidéo e
   }
   assert.match(b, /idee-video-verticale/, "les modèles verticaux ont un cadre vertical");
 });
+
+test("galerie : chaque entrée #069 à #080 a son aperçu rendu par sa recette", () => {
+  const { demosDeMouvements } = require("../../plugins/pulse-motion/scripts/lib/choisir-mouvements.js");
+  const vie = G.dictionnaire().mouvements.filter((m) => m.categorie === "vie");
+  assert.deepEqual(vie.map((m) => m.no), ["069", "070", "071", "072", "073", "074", "075", "076", "077", "078", "079", "080"]);
+  const demos = demosDeMouvements(vie);
+  const lot = G.LOTS.find((l) => l.id === "galerie-mouvements");
+  const sorties = lot.sorties();
+  const b = blocs().mouvements;
+  assert.match(b, /<section class="categorie-mouvements" id="categorie-vie" data-categorie="vie">\n<h2>Vie du décor<\/h2>/);
+  for (const m of vie) {
+    // La démo de la galerie est la recette elle-même, dans sa scène de 3 s.
+    const d = demos.find((x) => x.id === `m${m.no}`);
+    assert.equal(d.html, m.recette.exemple, m.no);
+    assert.equal(d.duree, 3, m.no);
+    const [mp4, jpg] = G.fichiersMouvement(m.no);
+    assert.ok(sorties.includes(mp4) && sorties.includes(jpg), m.no);
+    assert.match(b, new RegExp(`id="m${m.no}"[\\s\\S]*?<source src="${mp4}"`), m.no);
+  }
+  assert.ok(lot.sources.some((s) => /references[\\/]mouvements$/.test(s)), "le dictionnaire changé refait les aperçus");
+});

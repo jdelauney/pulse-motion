@@ -160,10 +160,21 @@ function dureeStructures(attributs, effet, dureeScene, dureeTemps = null, debutR
   return reste > 0 ? reste : null;
 }
 
+/** Durée d'un effet en data-dur="scene" : de son début à la fin de la scène (τ de la scène ; dernière scène : 1 s réelle
+ *  avant), comme moteur/minutage.js ; 1 s sans durée de scène connue (atelier), jamais moins de 0,1 s. */
+function dureeJusquaFin(attributs, dureeScene, { dureeTemps = null, debutRelatif = null, derniere = false, rythme = 1 } = {}) {
+  if (!(dureeScene > 0)) return 1;
+  const texte = attributs['data-start'] === undefined ? '' : String(attributs['data-start']).trim();
+  let debut = texte === '' ? { valeur: 0 } : lireSecondes(texte, dureeTemps);
+  if (debut.valeur === undefined && debutRelatif) debut = { valeur: debutRelatif(texte) };
+  const reste = dureeScene - (derniere ? rythme : 0) - (debut.valeur || 0);
+  return Math.max(0.1, Math.round(reste * 1e6) / 1e6);
+}
+
 /** Début relatif d'un effet résolu comme dans la page (moteur/horloge.js : éléments minutés, puis M.calculerMinutage) :
  *  -> debutRelatif(texte) -> s de τ depuis le début de la scène (une référence introuvable, un mot non dit : 0, comme dans
  *  la page, qui le signale). html : la scène ; voix : { debut, duree, mots } ou null ; rythme : rythme de la scène. */
-function minuteurScene(html, { scene, dureeTemps = null, voix = null, rythme = 1 }) {
+function minuteurScene(html, { scene, dureeTemps = null, voix = null, rythme = 1, duree = 1 }) {
   let elements = null;
   return (texte) => {
     if (!elements) {
@@ -175,12 +186,12 @@ function minuteurScene(html, { scene, dureeTemps = null, voix = null, rythme = 1
       }
     }
     const cle = ' effet'; // jamais un id (espace)
-    const min = calculerMinutage([{ id: scene, duree: 1, rythme, ...(voix ? { voix } : {}) }], { [scene]: elements.concat([{ cle, start: texte }]) }, { dureeTemps });
+    const min = calculerMinutage([{ id: scene, duree, rythme, ...(voix ? { voix } : {}) }], { [scene]: elements.concat([{ cle, start: texte }]) }, { dureeTemps, derniere: false });
     return Math.round((min.elements[scene][cle].debut - min.scenes[0].debut) * min.scenes[0].rythme * 1e6) / 1e6;
   };
 }
 
-function preparerEffets(html, { scene, projet, bibliotheque, charte = {}, premierIndex = 0, dureeTemps = null, chargerShader = null, milieu = false, dureeScene = null, voix = null, rythme = 1 }) {
+function preparerEffets(html, { scene, projet, bibliotheque, charte = {}, premierIndex = 0, dureeTemps = null, chargerShader = null, milieu = false, dureeScene = null, voix = null, rythme = 1, derniere = false }) {
   const effets = [];
   const erreurs = [];
   const modules = {};
@@ -191,7 +202,7 @@ function preparerEffets(html, { scene, projet, bibliotheque, charte = {}, premie
     if (a.id) ids.add(a.id);
   }
   const charger = chargeurRecettes(projet, bibliotheque);
-  const debutRelatif = minuteurScene(source, { scene, dureeTemps, voix, rythme });
+  const debutRelatif = minuteurScene(source, { scene, dureeTemps, voix, rythme, duree: dureeScene > 0 ? dureeScene : 1 });
   let ordre = 0;
 
   const sortie = source.replace(BALISE, (tout, balise, texteAttributs) => {
@@ -226,9 +237,11 @@ function preparerEffets(html, { scene, projet, bibliotheque, charte = {}, premie
       if (!/^\d+$/.test(a['data-graine'].trim())) return signaler([{ regle: 'effet-invalide', message: `data-graine « ${a['data-graine']} » : nombre entier attendu.` }]);
       graine = Number(a['data-graine'].trim()) >>> 0;
     }
-    // Durée illisible ou sans tempo : 1 s, comme le minutage (qui signale l'erreur).
+    // Durée illisible ou sans tempo : 1 s, comme le minutage (qui signale l'erreur). « scene » : jusqu'à la fin de la scène
+    // (1 s avant sur la dernière), comme dans la page.
     const lu = lireSecondes(String(a['data-dur'] || ''), dureeTemps);
-    const dur = lu.erreur ? 1 : lu.valeur;
+    let dur = lu.erreur ? 1 : lu.valeur;
+    if (String(a['data-dur'] || '').trim() === 'scene') dur = dureeJusquaFin(a, dureeScene, { dureeTemps, debutRelatif, derniere, rythme });
 
     let compile;
     try {

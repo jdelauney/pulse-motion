@@ -119,6 +119,8 @@ function referenceMarkdown() {
     '- Les réglages se changent seulement si la personne le demande (« plus lent » : `--pm-dur` ; « plus fort » : `--pm-ampleur`).',
     '- Une transition (catégorie « Transitions entre scènes ») se règle dans `deroule.json`, sur la scène qui **entre** (`transition`), jamais dans le HTML.',
     '- Les mouvements qui se répètent (battement, tremblotement, aller-retour) s\'arrêtent toujours (`--pm-fois`) : la vidéo finit sur une image stable.',
+    '- La vie du décor (catégorie « Vie du décor », classes `pm-v-*`) se pose sur un élément intérieur, jamais sur celui qui porte l\'entrée (l\'une effacerait l\'autre), minuté avec `data-dur="scene"` (lui ou son conteneur) : le moteur la répète jusqu\'à la fin de la scène, la finit au repos et donne à chaque élément sa phase (`--pm-phase`) : deux feuilles ne bougent jamais ensemble.',
+    '- Une vie qui se déplace (volutes, flottement, dérive) se pose sur un élément HTML ou sur un `<svg>` entier, pas sur une forme à l\'intérieur d\'un dessin.',
     '', `_${source}_`, '');
   return lignes.join('\n');
 }

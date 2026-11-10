@@ -10,7 +10,8 @@ const BALISE_OU_FIN = /<\/([a-zA-Z][\w-]*)\s*>|<([a-zA-Z][\w-]*)\b((?:[^>"']|"[^
 const VIDES = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr']);
 const estDecor = (attrs) => 'data-decor' in attrs || /(^|\s)decor(\s|$)/.test(attrs.class || '');
 
-/** Parcourt les balises ouvrantes (balise, attributs, decor) en tenant la pile des conteneurs. */
+/** Parcourt les balises ouvrantes (balise, attributs, decor, ancetres) en tenant la pile des conteneurs ; ancetres : les
+ *  conteneurs ouverts, du plus lointain au plus proche ([{ nom, decor, attrs }]). */
 function parcourir(html, surBalise) {
   const pile = [];
   let m;
@@ -25,8 +26,8 @@ function parcourir(html, surBalise) {
     const balise = m[2].toLowerCase();
     const attrs = lireAttributs(m[3]);
     const decor = (pile.length > 0 && pile[pile.length - 1].decor) || estDecor(attrs);
-    surBalise(balise, attrs, decor);
-    if (!VIDES.has(balise) && !/\/\s*$/.test(m[3])) pile.push({ nom: balise, decor });
+    surBalise(balise, attrs, decor, pile);
+    if (!VIDES.has(balise) && !/\/\s*$/.test(m[3])) pile.push({ nom: balise, decor, attrs });
   }
 }
 const ATTRIBUT = /([^\s"'=<>/]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+)))?/g;
@@ -97,6 +98,28 @@ function extraireScene(html) {
   return { elements, textes, decoupes, miseEnScene, css: css.join('\n') };
 }
 
+const MINUTE = ['data-start', 'data-dur', 'data-tween', 'data-effet', 'data-milieu', 'data-son', 'data-shader'];
+const estMinute = (attrs) => MINUTE.some((k) => k in attrs);
+
+/**
+ * Boucles de vie d'une scène (classes pm-v-*, spec Mouvement vivant 5.9), dans l'ordre du document :
+ * [{ balise, attrs, classes, vies: ['pm-v-…'], porteur }] ; porteur : attributs de l'élément minuté qui cale la vie (lui-même
+ * ou l'ancêtre minuté le plus proche, comme moteur/horloge.js), ou null.
+ */
+function viesScene(html) {
+  const sans = String(html).replace(/<!--[\s\S]*?-->/g, '').replace(/<(style|script)\b[\s\S]*?<\/\1>/gi, '');
+  const vies = [];
+  parcourir(sans, (balise, attrs, decor, ancetres) => {
+    const classes = String(attrs.class || '').split(/\s+/).filter(Boolean);
+    const v = classes.filter((c) => c.startsWith('pm-v-'));
+    if (!v.length) return;
+    let porteur = estMinute(attrs) ? attrs : null;
+    for (let i = ancetres.length - 1; i >= 0 && !porteur; i--) if (estMinute(ancetres[i].attrs)) porteur = ancetres[i].attrs;
+    vies.push({ balise, attrs, classes, vies: v, porteur });
+  });
+  return vies;
+}
+
 // Entités nommées courantes en français ; les numériques sont décodées toutes, les inconnues retirées.
 const ENTITES = {
   nbsp: '\u00a0', lt: '<', gt: '>', quot: '"', apos: "'", amp: '&', laquo: '«', raquo: '»', lsquo: '‘', rsquo: '’', ldquo: '“', rdquo: '”',
@@ -145,4 +168,4 @@ function scriptsScene(html) {
   return r;
 }
 
-module.exports = { extraireScene, lireAttributs, textesEnDur, imagesScene, scriptsScene };
+module.exports = { extraireScene, lireAttributs, textesEnDur, imagesScene, scriptsScene, viesScene };
