@@ -4,6 +4,9 @@
  *
  *   node scripts/outils.js   { node, navigateur, carteGraphique, ffmpeg, python, transcription, voixSysteme } ; code 0 même s'il
  *   manque des outils. carteGraphique : sondée seulement si un navigateur est trouvé (null sinon), 20 s au plus.
+ *   node scripts/outils.js --plan   ce qui manque et serait utile, dans l'ordre où l'installer (spec Retouches et ergonomie,
+ *   5.6 point 4) : [{ outil, pourquoi, taille, duree, commande, leger?, texte? }] ; commande : celle que Claude lance après un
+ *   seul accord pour toute la liste (jamais sudo ; null : la personne tape elle-même « texte », ou rien à installer d'ici).
  *
  * Chaque détection est indépendante : une qui échoue (exception) est rendue « ok: false » avec son message.
  */
@@ -97,9 +100,45 @@ function etatOutils(options = {}) {
   };
 }
 
+/**
+ * Plan d'installation (5.6 point 4), d'après l'état des outils : ffmpeg, puis Python (seulement si la transcription manque),
+ * puis la transcription, puis le navigateur (rien à installer d'ici). Commandes sûres seulement : celles du système sans sudo,
+ * et « pulse-motion whisper installer » pour la transcription. -> [{ outil, pourquoi, taille, duree, commande, leger?, texte? }]
+ */
+function planOutils(etat, { plateforme = process.platform, commandeFfmpeg, commandePython } = {}) {
+  const F = require('./lib/ffmpeg.js');
+  const sure = (c) => (c && !/^sudos/.test(c) ? c : null);
+  const plan = [];
+  if (etat.ffmpeg && !etat.ffmpeg.ok) {
+    const c = commandeFfmpeg !== undefined ? commandeFfmpeg : F.commandeSure({ plateforme });
+    plan.push({ outil: 'ffmpeg', pourquoi: 'un MP4 de qualité avec un son propre', taille: '≈ 100 Mo', duree: '1 à 2 min', commande: sure(c),
+      ...(sure(c) ? {} : { texte: F.commandeInstallation({ plateforme }) }) });
+  }
+  const sansTranscription = etat.transcription && !etat.transcription.ok;
+  if (sansTranscription && etat.python && !etat.python.ok) {
+    const systeme = etat.python.commandeSysteme || null;
+    const c = commandePython !== undefined ? commandePython : systeme && systeme.commande;
+    plan.push({ outil: 'python', pourquoi: 'nécessaire à la transcription', taille: '≈ 30 Mo', duree: '1 à 2 min', commande: sure(c),
+      ...(sure(c) ? {} : { texte: (systeme && systeme.message) || 'installer Python 3 avec le gestionnaire de paquets du système' }) });
+  }
+  if (sansTranscription) {
+    plan.push({ outil: 'transcription', pourquoi: 'caler les sous-titres et les animations sur les vrais mots de la voix', taille: '≈ 800 Mo', leger: '≈ 250 Mo',
+      duree: '3 à 6 min', commande: 'pulse-motion whisper installer', commandeLegere: 'pulse-motion whisper installer --modele small' });
+  }
+  if (etat.navigateur && !etat.navigateur.ok) {
+    plan.push({ outil: 'navigateur', pourquoi: 'regarder la vidéo, la contrôler, l'exporter', taille: '≈ 150 Mo', duree: '2 min', commande: null,
+      texte: 'installer Chrome ou Edge depuis leur site' });
+  }
+  return plan;
+}
+
 if (require.main === module) {
+  if (process.argv.includes('--plan')) {
+    console.log(JSON.stringify(planOutils(etatOutils({ sonderCarteGraphique: () => null })), null, 2));
+    process.exit(0);
+  }
   console.log(JSON.stringify(etatOutils(), null, 2));
   process.exit(0);
 }
 
-module.exports = { etatOutils, voixSysteme };
+module.exports = { etatOutils, voixSysteme, planOutils };

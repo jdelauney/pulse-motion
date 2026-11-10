@@ -3,6 +3,7 @@
 /* Pulse Motion – point d'entrée unique des skills (bin/pulse-motion).
  *
  *   pulse-motion etat <dossier> [--accord deroule|style|video] [--parcours rapide|accompagne]
+ *   pulse-motion rappel                 rappel de démarrage (crochet SessionStart, par le relais sh) : entrée JSON du crochet
  *   pulse-motion assembler <dossier>
  *   pulse-motion controler <dossier> [--sans-correction] [--sans-rendu] [--gpu] [--complet]   contrôle ; corrige seul les cas sûrs
  *   pulse-motion apercu <dossier> [--port 4321] [--ouvrir]
@@ -45,6 +46,7 @@ const NOM_SUR = /^[a-z0-9-]+(\/[a-z0-9-]+)?$/;
 
 const SCRIPTS = {
   etat: 'etat.js',
+  rappel: 'rappel.js',
   assembler: 'assembler.js',
   controler: 'controler.js',
   apercu: 'apercu.js',

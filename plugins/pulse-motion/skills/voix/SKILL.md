@@ -17,7 +17,7 @@ Enregistrer la voix scène par scène dans le studio de l'aperçu, importer un e
 
 ## 0. Vérifier la vidéo
 
-`pulse-motion etat .` : `projet` faux (aucune vidéo ici) : proposer `/pulse-motion:creer` et s'arrêter, sans rien modifier. La commande échoue avec « node » introuvable (Node.js n'est pas installé) : expliquer qu'il faut installer Node.js en version LTS depuis https://nodejs.org, puis relancer Claude Code, et s'arrêter.
+`pulse-motion etat .` : `projet` faux (aucune vidéo ici) : proposer `/pulse-motion:creer` et s'arrêter, sans rien modifier. La commande échoue avec « Node.js introuvable » : proposer de l'installer (`/pulse-motion:outils`, étape « Installer Node.js »), et s'arrêter.
 
 Les scènes à dire sont celles qui ont un `voix.texte` dans `deroule.json`. Aucune, sauf pour écouter la musique : proposer d'ajouter une voix avec `/pulse-motion:retoucher` (« ajoute une voix à la vidéo »), qui écrit les textes dits.
 

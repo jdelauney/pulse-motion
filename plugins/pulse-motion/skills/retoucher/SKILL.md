@@ -29,7 +29,7 @@ Si ce bloc est vide ou contient une erreur, lancer `pulse-motion lexique`.
 
 ## 1. Vérifier
 
-L'état ci-dessus : sans vidéo (`projet` faux), proposer `/pulse-motion:creer` et s'arrêter. « Node.js introuvable » : faire installer Node.js (LTS, https://nodejs.org), relancer Claude Code, et s'arrêter.
+L'état ci-dessus : sans vidéo (`projet` faux), proposer `/pulse-motion:creer` et s'arrêter. « Node.js introuvable » : l'installer (`/pulse-motion:outils`), et s'arrêter.
 
 ## 2. « Annule » (ou « reviens en arrière »)
 

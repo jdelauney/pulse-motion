@@ -29,7 +29,7 @@ Si ce bloc est vide ou contient une erreur, lancer `pulse-motion ffmpeg`.
 
 ## 1. Vérifier
 
-1. L'état ci-dessus : sans vidéo (`projet` faux), proposer `/pulse-motion:creer` et s'arrêter. « Node.js introuvable » : faire installer Node.js (LTS, https://nodejs.org) et s'arrêter.
+1. L'état ci-dessus : sans vidéo (`projet` faux), proposer `/pulse-motion:creer` et s'arrêter. « Node.js introuvable » : l'installer (`/pulse-motion:outils`), et s'arrêter.
 2. `pulse-motion controler . --complet` : s'il reste des **erreurs**, les dire simplement et proposer de les corriger d'abord (`/pulse-motion:retoucher`). Des **alertes** seules n'empêchent pas l'export : les mentionner en une phrase.
 3. Alerte `voix-provisoire` : la vidéo parle encore avec la voix de l'ordinateur. Proposer : « Enregistrer ma voix d'abord (Recommandé) » · « Exporter une version de travail avec la voix de l'ordinateur ». Sur « Enregistrer ma voix d'abord » : dire comment ouvrir le studio (bouton « Voix » de l'aperçu, ou « j'enregistre la scène 1 »), puis s'arrêter sans exporter. Second choix seulement : `--avec-provisoire`.
 

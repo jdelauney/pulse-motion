@@ -447,10 +447,12 @@ test('budget-consignes : les consignes ne regrossissent pas sans qu\'on le voie 
   // 0.34.0 (S2-3 et S2-4) : creer +300 o (lire la doctrine, la relecture dès 3 scènes, verdict sur la ligne 🔎),
   // retoucher +200 o (relecture d'une refonte, ligne 🔎), exporter +100 o (verdict de la relecture) : trois renvois d'une
   // ligne, la conduite elle-même vit dans realisation § 13 et revue.md, lus à la demande. critique.md : corps ≤ 3 500 o.
+  // 0.40.0 (S4 R1, 5.6) : outils 6 144 → 6 550 o (plan d'installation en un accord, installation de Node.js : deux étapes
+  // demandées par la spec, que les autres compétences ne recopient plus ; elles renvoient à outils).
   const PLAFONDS = {
     'skills/animer-personnage/SKILL.md': 5884, 'skills/atelier-particules/SKILL.md': 2272, 'skills/atelier-personnages/SKILL.md': 3529,
     'skills/creer/SKILL.md': 23400, 'skills/decouper-personnage/SKILL.md': 4020, 'skills/dessiner-personnage/SKILL.md': 4528,
-    'skills/exporter/SKILL.md': 6600, 'skills/outils/SKILL.md': 6144, 'skills/reprendre/SKILL.md': 2999,
+    'skills/exporter/SKILL.md': 6600, 'skills/outils/SKILL.md': 6550, 'skills/reprendre/SKILL.md': 2999,
     'skills/retoucher/SKILL.md': 13850, 'skills/style/SKILL.md': 6460, 'skills/voix/SKILL.md': 5073,
     'agents/animateur.md': 6000, 'agents/critique.md': 3800,
   };
