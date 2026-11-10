@@ -9,6 +9,9 @@
  *   node scripts/modeles.js afficher <id>              le modèle complet
  *   node scripts/modeles.js trouver "<sujet>"          le modèle qui correspond au sujet, ou null
  *   node scripts/modeles.js exemple <id> <dossier>     copie l'exemple fini du modèle dans un dossier sans vidéo
+ *   node scripts/modeles.js apercu <id>                ouvre l'exemple fini du modèle (page autonome), assemblé dans un dossier
+ *                                                      temporaire : rien n'est écrit dans le dossier courant (spec Retouches et
+ *                                                      ergonomie, 5.3, point 5) ; PM_SANS_OUVRIR=1 : rien n'est ouvert
  *
  * Sortie JSON. Code 1 si le modèle demandé n'existe pas ou si la copie est refusée ; `trouver` rend null (code 0) sans modèle.
  */
@@ -170,6 +173,29 @@ function copierExemple(id, dossier) {
   return { ok: true, dossier: cible, titre };
 }
 
+/** Dossier temporaire fixe d'un exemple (vidé à chaque ouverture : un seul exemplaire par modèle). */
+const dossierApercu = (id) => path.join(require('node:os').tmpdir(), 'pulse-motion', 'exemples', id);
+
+/**
+ * Exemple fini du modèle assemblé dans un dossier temporaire, puis ouvert dans le navigateur.
+ * -> { ok, id, dossier, fichier, titre } | { ok: false, message }
+ */
+function apercuExemple(id, { ouvrir = true, ouvrirFichier = null, dossier = null } = {}) {
+  const m = lireModele(id);
+  if (!m) return { ok: false, message: `Modèle inconnu « ${id || ''} ». Modèles : ${listerModeles().map((x) => x.id).join(', ')}.` };
+  const cible = dossier ? path.resolve(dossier) : dossierApercu(m.id);
+  fs.rmSync(cible, { recursive: true, force: true });
+  const copie = copierExemple(m.id, cible);
+  if (!copie.ok) return copie;
+  const a = require('./assembler.js').assembler({ dossier: cible });
+  if (!a.ok || !a.fichier) return { ok: false, message: `L'exemple du modèle « ${m.nom} » n'a pas pu être assemblé.` };
+  if (ouvrir) {
+    const ouvre = ouvrirFichier || ((f) => require('./apercu.js').ouvrirNavigateur(require('node:url').pathToFileURL(f).href));
+    ouvre(a.fichier);
+  }
+  return { ok: true, id: m.id, nom: m.nom, dossier: cible, fichier: a.fichier, titre: copie.titre };
+}
+
 function principal(args) {
   const [commande, ...reste] = args;
   const ecrire = (x) => console.log(JSON.stringify(x, null, 2));
@@ -193,10 +219,15 @@ function principal(args) {
     ecrire(r);
     return r.ok ? 0 : 1;
   }
-  console.error('Usage : pulse-motion modeles liste | afficher <id> | trouver "<sujet>" | exemple <id> <dossier>');
+  if (commande === 'apercu') {
+    const r = apercuExemple(reste[0]);
+    ecrire(r);
+    return r.ok ? 0 : 1;
+  }
+  console.error('Usage : pulse-motion modeles liste | afficher <id> | trouver "<sujet>" | exemple <id> <dossier> | apercu <id>');
   return 2;
 }
 
 if (require.main === module) process.exitCode = principal(process.argv.slice(2));
 
-module.exports = { listerModeles, lireModele, validerModele, trouverModele, copierExemple, stylesLivres, principal };
+module.exports = { listerModeles, lireModele, validerModele, trouverModele, copierExemple, apercuExemple, dossierApercu, stylesLivres, principal };
