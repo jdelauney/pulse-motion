@@ -21,14 +21,14 @@ function enTete(texte) {
 }
 
 const SKILLS = fs.readdirSync(path.join(RACINE, 'skills'));
-const COMMANDES = ['etat', 'assembler', 'controler', 'apercu', 'historique', 'reference', 'scene', 'styles', 'consignes', 'exporter', 'planche', 'effet', 'comparer', 'changer-style', 'lexique', 'charte', 'police', 'glossaire', 'style', 'ffmpeg', 'voix', 'whisper', 'musique', 'outils', 'atelier', 'personnages', 'mouvements', 'modeles', 'credits', 'avancement', 'ebauche', 'decisions', 'remarques'];
+const COMMANDES = ['etat', 'assembler', 'controler', 'apercu', 'historique', 'reference', 'scene', 'styles', 'consignes', 'exporter', 'planche', 'effet', 'comparer', 'changer-style', 'lexique', 'charte', 'police', 'glossaire', 'style', 'ffmpeg', 'voix', 'whisper', 'musique', 'outils', 'atelier', 'personnages', 'mouvements', 'modeles', 'credits', 'avancement', 'ebauche', 'decisions', 'remarques', 'filmer'];
 const fichiersGuides = () => [
   ...SKILLS.map((s) => path.join('skills', s, 'SKILL.md')),
   ...fs.readdirSync(path.join(RACINE, 'agents')).map((a) => path.join('agents', a)),
 ];
 
 test('skills : creer, exporter, retoucher, reprendre, lancés par la personne, outils limités', () => {
-  assert.deepEqual(SKILLS.sort(), ['animer-personnage', 'atelier-particules', 'atelier-personnages', 'creer', 'decouper-personnage', 'dessiner-personnage', 'exporter', 'outils', 'reprendre', 'retoucher', 'style', 'voix']);
+  assert.deepEqual(SKILLS.sort(), ['animer-personnage', 'atelier-particules', 'atelier-personnages', 'creer', 'decouper-personnage', 'dessiner-personnage', 'exporter', 'filmer', 'outils', 'reprendre', 'retoucher', 'style', 'voix']);
   for (const s of SKILLS) {
     const e = enTete(lire('skills', s, 'SKILL.md'));
     assert.ok(e.description && e.description.length > 20, `${s} : description`);
@@ -451,10 +451,12 @@ test('budget-consignes : les consignes ne regrossissent pas sans qu\'on le voie 
   // ligne, la conduite elle-même vit dans realisation § 13 et revue.md, lus à la demande. critique.md : corps ≤ 3 500 o.
   // 0.40.0 (S4 R1, 5.6) : outils 6 144 → 6 550 o (plan d'installation en un accord, installation de Node.js : deux étapes
   // demandées par la spec, que les autres compétences ne recopient plus ; elles renvoient à outils).
+  // 0.51.0 (S6 plan 2) : filmer, la 13e compétence (7 417 o, plafond 7 800 o) ; creer, retoucher, reprendre et l'animateur
+  // n'y renvoient qu'en une ligne (consignes filmer creer, retouches, prises), sans relever leur plafond.
   const PLAFONDS = {
     'skills/animer-personnage/SKILL.md': 5884, 'skills/atelier-particules/SKILL.md': 2272, 'skills/atelier-personnages/SKILL.md': 3529,
     'skills/creer/SKILL.md': 23400, 'skills/decouper-personnage/SKILL.md': 4020, 'skills/dessiner-personnage/SKILL.md': 4528,
-    'skills/exporter/SKILL.md': 6600, 'skills/outils/SKILL.md': 6550, 'skills/reprendre/SKILL.md': 2999,
+    'skills/exporter/SKILL.md': 6600, 'skills/filmer/SKILL.md': 7800, 'skills/outils/SKILL.md': 6550, 'skills/reprendre/SKILL.md': 2999,
     'skills/retoucher/SKILL.md': 13850, 'skills/style/SKILL.md': 6460, 'skills/voix/SKILL.md': 5073,
     'agents/animateur.md': 6000, 'agents/critique.md': 3800,
   };

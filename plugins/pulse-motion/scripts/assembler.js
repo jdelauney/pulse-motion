@@ -34,6 +34,8 @@ const { trouverFichiersPolice } = require('./lib/police.js');
 const GM = require('./lib/groupes-moteur.js');
 const { minifier } = require('./lib/minifier.js');
 const { preparerEcrans, usagesEcran } = require('./lib/ecrans.js');
+const { blocFilm } = require('./lib/film.js');
+const crypto = require('node:crypto');
 const { preparerDessin, usagesDessin } = require('./lib/dessin.js');
 
 const RACINE = path.resolve(__dirname, '..');
@@ -202,6 +204,8 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   const scenesQuiParlent = new Set();
   // Écrans des tutoriels (spec S6) : moteur de l'écran et moteur/ecran.css seulement si une scène s'en sert.
   const usages = { moteur: false, css: false };
+  // Films (plan 2 de S6, 5.8) : nom -> étapes visées par les scènes (seules ces étapes sont embarquées).
+  const filmsVises = new Map();
   // Calque de dessin (spec S7) : groupe « dessin » et moteur/dessin/dessin.css seulement si une scène dessine ; icônes de d.icone.
   const dessin = { utilise: false, icones: new Set(), scripts: [] };
   // Voix : une prise par scène (ou la voix provisoire), mots calés ; Opus si encodé, sinon WAV. Lues avant les scènes : la
@@ -287,9 +291,13 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     if (usage.moteur) usages.moteur = true;
     if (usage.css) usages.css = true;
     if (usage.moteur) {
-      const r = preparerEcrans(avecIcones, { scene: scene.id });
+      const r = preparerEcrans(avecIcones, { scene: scene.id, projet, film: scene.film || null, duree: scene.duree / (scene.rythme || 1) });
       avecIcones = r.html;
       erreurs.push(...r.erreurs);
+      for (const f of r.films) {
+        if (!filmsVises.has(f.nom)) filmsVises.set(f.nom, new Set());
+        f.etapes.forEach((n) => filmsVises.get(f.nom).add(n));
+      }
     }
     // Milieu fluide (P5c) : un par scène, préparé avant les effets (qui peuvent s'y coupler).
     const { html: avecMilieux, milieux: milieuxScene, erreurs: erreursMilieux } = preparerMilieux(avecIcones, {
@@ -373,6 +381,21 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   if (calageApproche) {
     erreurs.push({ regle: 'calage-approche', gravite: 'info',
       message: 'Les mots de la voix sont calés approximativement (sans transcription) : les ancres « mot: » et les sous-titres peuvent tomber un peu à côté ; « pulse-motion whisper » dit comment installer la transcription.' });
+  }
+  // Films : un bloc JSON par film, ses seules étapes visées, images en data: (cache des URI par chemin, taille et date).
+  const blocsFilms = [];
+  const films = [];
+  let poidsFilms = 0;
+  for (const [nom, numeros] of filmsVises) {
+    const b = blocFilm(projet, nom, [...numeros].sort((a, c) => a - c));
+    if (b.erreur) continue;
+    blocsFilms.push(b.html);
+    poidsFilms += b.poids;
+    films.push({ nom, prise: b.prise, etapes: [...numeros].sort((a, c) => a - c), poids: b.poids, empreinte: crypto.createHash('sha256').update(b.html).digest('hex') });
+  }
+  if (poidsFilms > 25 * 1024 * 1024) {
+    erreurs.push({ regle: 'film-trop-lourd', gravite: 'alerte',
+      message: `Les images filmées embarquées pèsent ${Math.round(poidsFilms / 1024 / 1024)} Mo (au-delà de 25 Mo, la page est lente à ouvrir) : supprimer les étapes inutiles des scènes, raccourcir les réactions (refilmer en attendant moins), ou alléger le film.` });
   }
   const poidsSons = sons.reduce((n, b) => n + b.length, 0);
   if (poidsSons > 20 * 1024 * 1024) {
@@ -495,7 +518,7 @@ ${cssPage}
 ${sections.join('\n')}
 </div>
 ${sons.join('\n')}
-<script type="application/json" id="pm-donnees">${jsonDansHTML(donnees)}</script>
+${blocsFilms.length ? `${blocsFilms.join('\n')}\n` : ''}<script type="application/json" id="pm-donnees">${jsonDansHTML(donnees)}</script>
 <script>
 ${moteur}
 </script>
@@ -512,7 +535,7 @@ ${usages.moteur && (groupes === 'tous' || groupes.includes('ecran')) ? 'M.demarr
 </html>
 `;
 
-  const resultat = { ok: true, fichier: null, html: page, erreurs, effets, milieux, shaders, donnees, parScene, cssPage, moteur, groupes, polices, detailPolices, dossierStyle,
+  const resultat = { ok: true, fichier: null, html: page, erreurs, effets, milieux, shaders, donnees, parScene, cssPage, moteur, groupes, polices, detailPolices, dossierStyle, films,
     ressources: [...ressources].map(([fichier, sorte]) => ({ fichier, sorte })), minutage: minutageScenes };
   if (ecrire) resultat.fichier = ecrireSortie(projet, resultat).fichier;
   return resultat;

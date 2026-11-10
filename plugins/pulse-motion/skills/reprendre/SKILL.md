@@ -26,6 +26,7 @@ Si ce bloc est vide ou contient une erreur, lancer `pulse-motion lexique`.
 
 | Étape | Section | Suite |
 |---|---|---|
+| `tournage` | aucune | Suivre `pulse-motion consignes filmer prises` |
 | `questions` | aucune | Aucune vidéo ici : proposer `/pulse-motion:creer` |
 | `deroule-a-corriger` | `deroule` | Corriger le déroulé (erreurs dans `erreurs`), puis le présenter (étape 2) |
 | `deroule-a-valider` | `deroule` | Présenter le déroulé et demander l'accord (étape 2) |

@@ -35,6 +35,14 @@ function optionsChrome({ gpu = false } = {}) {
   return [...OPTIONS.filter((o) => o !== '--disable-gpu'), ...supplementaires];
 }
 
+/** Options d'un tournage (spec S6, 5.1) : celles de Chrome sans fenêtre, moins --headless=new et --hide-scrollbars avec une
+ *  fenêtre visible, plus trois drapeaux pour qu'une fenêtre cachée ne ralentisse pas la page filmée (idée de reanimate,
+ *  video/scripts/render.ts) et la langue française. L'échelle passe par ouvrirPage (--force-device-scale-factor). */
+function optionsTournage({ fenetre = false, gpu = false } = {}) {
+  const base = optionsChrome({ gpu }).filter((o) => !fenetre || (o !== '--headless=new' && o !== '--hide-scrollbars'));
+  return [...base, '--disable-renderer-backgrounding', '--disable-background-timer-throttling', '--disable-backgrounding-occluded-windows', '--lang=fr-FR'];
+}
+
 /** Charge un fichier HTML ou une URL ; -> Promise du DOM après exécution des scripts. delai : en millisecondes. */
 function rendreDOM(navigateur, cible, { delai = 60000 } = {}) {
   const url = /^https?:/.test(cible) ? cible : pathToFileURL(path.resolve(cible)).href;
@@ -81,4 +89,4 @@ function ouvrirSansFenetre(navigateur, url, { gpu = false } = {}) {
   };
 }
 
-module.exports = { trouverNavigateur, optionsChrome, rendreDOM, ouvrirSansFenetre };
+module.exports = { trouverNavigateur, optionsChrome, optionsTournage, rendreDOM, ouvrirSansFenetre };

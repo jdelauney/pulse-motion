@@ -181,7 +181,7 @@ function controlerScene({ projet, deroule, scene, html }) {
   // Écrans (spec S6) : cadre, pointeur, cibles et marques, comme à l'assemblage.
   if (/pm-/.test(sansScripts)) {
     const E = require('./ecrans.js');
-    if (E.usagesEcran(sansScripts).moteur) problemes.push(...E.preparerEcrans(sansScripts, { scene: scene.id }).erreurs);
+    if (E.usagesEcran(sansScripts).moteur) problemes.push(...E.preparerEcrans(sansScripts, { scene: scene.id, projet, film: scene.film || null, duree: scene.duree / (scene.rythme || 1) }).erreurs);
   }
   const lue = extraireScene(html);
   // Minutage de la scène seule, avec sa voix (ancres « mot: ») comme dans la page.

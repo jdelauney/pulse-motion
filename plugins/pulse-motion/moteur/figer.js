@@ -1,6 +1,7 @@
 /* Pulse Motion – figement d'éléments : copie d'un sous-arbre avec ses styles calculés figés en ligne.
  *
- * M.figer.styleFige(cs) -> texte              propriétés calculées (sans variables, transitions ni animations)
+ * M.figer.styleFige(cs, el?) -> texte         propriétés calculées (sans variables, transitions ni animations) ; avec el,
+ *                                             ses marges automatiques restent « auto » (Chrome en donne parfois « 0px »)
  * M.figer.reglesPolices() -> texte            règles @font-face de la page (polices embarquées), lues une fois
  * M.figer.figerArbre(el) -> copie             styles figés (animations comprises), pseudo-éléments ::before/::after
  *                                             recréés, valeurs SMIL figées, canvas remplacés par leur image
@@ -34,14 +35,33 @@
     return proprietes;
   }
 
-  function styleFige(cs) {
+  // Marges : getComputedStyle en donne la valeur utilisée, en pixels, que Chrome ne recalcule pas toujours pour une marge
+  // automatique (élément centré par margin: auto dans un flex : « 0px » alors qu'il est centré). La copie garde « auto »,
+  // qui se résout comme dans la page (même conteneur, mêmes styles).
+  var MARGES = ['margin-top', 'margin-right', 'margin-bottom', 'margin-left', 'margin-block-start', 'margin-block-end', 'margin-inline-start', 'margin-inline-end'];
+
+  function margesAuto(el) {
+    if (!el || typeof el.computedStyleMap !== 'function') return '';
+    var texte = '';
+    var carte;
+    try { carte = el.computedStyleMap(); } catch (e) { return ''; }
+    for (var i = 0; i < MARGES.length; i++) {
+      var v;
+      try { v = carte.get(MARGES[i]); } catch (e) { v = null; }
+      if (v && String(v) === 'auto') texte += MARGES[i] + ':auto;';
+    }
+    return texte;
+  }
+
+  /** Propriétés calculées figées ; el (facultatif) : l'élément, pour garder ses marges automatiques. */
+  function styleFige(cs, el) {
     var texte = '';
     var liste = listeProprietes();
     for (var i = 0; i < liste.length; i++) {
       var v = cs.getPropertyValue(liste[i]);
       if (v !== '') texte += liste[i] + ':' + v + ';';
     }
-    return texte + 'animation:none;transition:none;';
+    return texte + margesAuto(el) + 'animation:none;transition:none;';
   }
 
   /** Règles @font-face de la page (polices embarquées en data:), lues une fois. */
@@ -118,7 +138,7 @@
         aRetirer.push(c);
         return;
       }
-      c.setAttribute('style', styleFige(getComputedStyle(s)));
+      c.setAttribute('style', styleFige(getComputedStyle(s), s));
       ajouts.push([c, pseudo(s, '::before'), pseudo(s, '::after')]);
     });
     ajouts.forEach(function (a) {

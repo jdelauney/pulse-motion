@@ -31,6 +31,7 @@
  *   pulse-motion reference styles/<style> --pour animateur   extrait de la fiche de style lu par l'animateur
  *   pulse-motion scene <style> <nom>      affiche une scène toute faite d'un style
  *   pulse-motion effet <nom>              affiche la recette d'un effet de particules de la bibliothèque
+ *   pulse-motion filmer verifier|tourner|prises|choisir|supprimer|essai <dossier> <nom> …   filmer une application web locale (tutoriel)
  *   pulse-motion bloc [<nom>]             blocs « interface » d'un écran de tutoriel (notification, toast, commande…) : liste, ou le HTML d'un bloc
  *   pulse-motion icones chercher <mots…> | afficher <nom> | planche <nom1,nom2…> [--ouvrir]   icônes Lucide : chercher en français, SVG, planche PNG
  *   pulse-motion mouvements liste [--categorie <id>] | chercher <mots…> | afficher <n° ou nom> | reference | choisir [--categorie <id>] [--ouvrir]   dictionnaire de mouvements nommés ; choisir en regardant
@@ -86,6 +87,7 @@ const SCRIPTS = {
   icones: 'icones.js',
   modeles: 'modeles.js',
   credits: 'credits.js',
+  filmer: 'filmer.js',
 };
 
 function afficherFichier(fichier, quoi) {
@@ -222,6 +224,7 @@ function lancer(args) {
     '  outils [--plan]          état de l\'ordinateur (ce qui est prêt, ce qui manque) ; --plan : ce qu\'il faudrait installer',
     '  avancement <dossier> [--suivre]   travail long en cours, une ligne (ou une par étape jusqu\'à la fin)',
     '  musique ecouter [dossier]   musique seule dans sortie/musique.wav',
+    '  filmer verifier|tourner [--accord]|prises|choisir|supprimer|essai <dossier> <nom> [<prise>]   filmer une application web (tutoriel)',
     '  reference <nom>          scene <style> <nom>      effet <nom>      bloc [<nom>]      consignes <skill> [<section>]',
     '  mouvements liste [--categorie <id>] | chercher <mots…> | afficher <n° ou nom> | reference | choisir [--categorie <id>] [--ouvrir] [--delai <minutes>]   [--json]',
     '  icones chercher <mots…> | afficher <nom> | planche <nom1,nom2…> [--ouvrir]   icônes Lucide, posées par <svg data-icone="nom"> (reference icones)',
