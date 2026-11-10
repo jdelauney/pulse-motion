@@ -221,17 +221,20 @@ function verifierCharte(dossier, charte, erreurs) {
   }
 }
 
-/** Vérifie qu'un dossier de style respecte le contrat. -> { ok, erreurs, avertissements } (ne lève jamais) */
-function verifierStyle(dossier) {
+/**
+ * Vérifie qu'un dossier de style respecte le contrat. -> { ok, erreurs, avertissements } (ne lève jamais)
+ * options.livre : traiter le style comme livré (par défaut : rangé dans styles/ du plugin).
+ */
+function verifierStyle(dossier, options = {}) {
   try {
-    return verifierContrat(dossier);
+    return verifierContrat(dossier, options);
   } catch (e) {
     // Un fichier de style aux valeurs d'un mauvais type ne doit pas faire tomber la liste des styles.
     return { ok: false, erreurs: [`Style mal formé (${path.basename(dossier)}) : ${e.message}.`], avertissements: [] };
   }
 }
 
-function verifierContrat(dossier) {
+function verifierContrat(dossier, { livre = estLivre(dossier) } = {}) {
   const erreurs = [];
   const avertissements = [];
   const nom = path.basename(dossier);
@@ -244,7 +247,7 @@ function verifierContrat(dossier) {
   else verifierCatalogue(dossier, nom, catalogue, erreurs, avertissements);
   const identite = lireJSON(path.join(dossier, 'identite.json'));
   if (!identite) erreurs.push('identite.json manquant ou illisible.');
-  else verifierIdentite(nom, identite, css || '', erreurs, (lireJSON(path.join(dossier, 'charte.json')) || {}).couleurs || {}, estLivre(dossier));
+  else verifierIdentite(nom, identite, css || '', erreurs, (lireJSON(path.join(dossier, 'charte.json')) || {}).couleurs || {}, livre);
   verifierCharte(dossier, lireJSON(path.join(dossier, 'charte.json')) || {}, erreurs);
   return { ok: erreurs.length === 0, erreurs, avertissements };
 }
@@ -358,11 +361,11 @@ function listerStyles(dossierStyles) {
  * du genre, le style de contraste (ou, à défaut, un style d'une autre famille), les styles « aussi »
  * du tableau, puis le reste. Les styles personnels non vérifiés ne sont pas proposés.
  */
-function recommander(genre, dossierStyles) {
+function recommander(genre, dossierStyles, recommandation = lireJSON(RECOMMANDATION)) {
   if (!GENRES.includes(genre)) throw new Error(`Genre inconnu : « ${genre} ». Genres : ${GENRES.join(', ')}.`);
   const fiches = listerStyles(dossierStyles).filter((f) => f.verifie);
   const parNom = new Map(fiches.map((f) => [f.style, f]));
-  const table = (lireJSON(RECOMMANDATION) || {})[genre] || {};
+  const table = (recommandation || {})[genre] || {};
   const ordre = [];
   const ajouter = (n) => { if (parNom.has(n) && !ordre.includes(n)) ordre.push(n); };
   (table.recommandes || []).forEach(ajouter);
@@ -386,6 +389,14 @@ function ficheCourte(f) {
   return { style: f.style, categorie: f.categorie, personnalite: f.personnalite, usages: f.usages, personnel: f.personnel };
 }
 
+/**
+ * Forme courte en une ligne, pour « styles --genre » au-delà des 3 proposés (6 Ko au plus pour 25 styles) :
+ * « <style> · <catégorie> · <personnalité> · <usages> », suivie de « · personnel » pour un style personnel.
+ */
+function ligneCourte(f) {
+  return [f.style, f.categorie || 'sans catégorie', f.personnalite.join(', '), f.usages.join(' ; ') || 'usages non dits', ...(f.personnel ? ['personnel'] : [])].join(' · ');
+}
+
 /** Fiche complète d'un style proposé, resserrée : chaque scène toute faite en « durée · textes (longueurs maximales) ». */
 function fichePropose(f) {
   const scenes = {};
@@ -395,14 +406,14 @@ function fichePropose(f) {
     scenes[s.nom] = `${String(s.duree).replace('.', ',')} s · ${textes}`;
   }
   return {
-    style: f.style, description: f.description, personnel: f.personnel, famille: f.famille, categorie: f.categorie,
-    personnalite: f.personnalite, usages: f.usages, genres: f.genres, signature: f.signature, transitions: f.transitions, scenes,
+    style: f.style, personnel: f.personnel, famille: f.famille, categorie: f.categorie, personnalite: f.personnalite,
+    usages: f.usages, genres: f.genres, signature: f.signature, transitions: f.transitions, scenes,
   };
 }
 
-/** Liste de « styles --genre » : fiche complète des 3 premiers, forme courte des autres. */
+/** Liste de « styles --genre » : fiche complète des 3 premiers, forme courte (une ligne) des autres. */
 function listePourGenre(fiches) {
-  return fiches.map((f, i) => (i < PROPOSES ? fichePropose(f) : ficheCourte(f)));
+  return fiches.map((f, i) => (i < PROPOSES ? fichePropose(f) : ligneCourte(f)));
 }
 
 // Petits mots ignorés dans une recherche de style (« façon tableau blanc », « quelque chose à la craie »).

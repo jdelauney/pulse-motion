@@ -15,10 +15,10 @@ const LIVRES = ['chaleureux', 'clair-pedagogique', 'editorial', 'energique', 'mi
 const lireJSON = (...p) => JSON.parse(fs.readFileSync(path.join(RACINE, ...p), 'utf8'));
 const navigateur = trouverNavigateur();
 
-test('catalogue livré : exactement les 6 styles, chacun recommandé pour au moins un genre', () => {
+test('catalogue livré : exactement les 6 styles, chacun proposé pour au moins un genre (recommandes, contraste ou aussi)', () => {
   assert.deepEqual(fs.readdirSync(path.join(RACINE, 'styles')).sort(), LIVRES);
   const recommandation = lireJSON('references', 'styles', 'recommandation.json');
-  const cites = new Set(Object.values(recommandation).flatMap((r) => [...r.recommandes, r.contraste]));
+  const cites = new Set(Object.values(recommandation).flatMap((r) => [...r.recommandes, r.contraste, ...(r.aussi || [])]));
   for (const nom of LIVRES) assert.ok(cites.has(nom), `${nom} n'est proposé pour aucun genre`);
   for (const nom of cites) assert.ok(LIVRES.includes(nom), `${nom} recommandé mais absent`);
 });
@@ -29,7 +29,8 @@ for (const style of LIVRES) {
     assert.deepEqual(v.erreurs, [], style);
     assert.deepEqual(v.avertissements, [], style);
     const guide = fs.readFileSync(path.join(RACINE, 'references', 'styles', `${style}.md`), 'utf8');
-    assert.match(guide, /^# .+\n\n## L'essentiel\n/);
+    // Fiche en 11 sections : titre, essence et sources en citation, puis « L'essentiel » (spec Styles et réalisation, 5.1).
+    assert.match(guide, /^# .+\n\n(?:> .+\n)+\n## L'essentiel\n/);
     for (const s of lireJSON('styles', style, 'catalogue.json').scenes) {
       const ligne = new RegExp(`\\| \`${s.nom}\` \\|.*\\| ${String(s.duree).replace('.', ',')} s \\|`);
       assert.doesNotMatch('aucun tableau', ligne, 'expression de contrôle invalide');
