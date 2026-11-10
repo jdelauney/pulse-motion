@@ -227,7 +227,9 @@ if (require.main === module) {
   const i = args.indexOf('--planche');
   const planche = i < 0 ? null : (args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1].split(',').filter(Boolean) : true);
   const rapide = args.includes('--rapide');
-  const avecProvisoire = args.includes('--avec-provisoire');
+  // Voix provisoire (spec Retouches et ergonomie, 5.17) : un accord gardé (etat --accord voix-provisoire) vaut tant que les
+  // prises provisoires n'ont pas changé ; l'export ne redemande pas.
+  const avecProvisoire = args.includes('--avec-provisoire') || (() => { try { return Boolean(etatProjet(path.resolve(dossier)).accords.voixProvisoire); } catch { return false; } })();
   const choix = { pour: valeur('--pour'), qualite: valeur('--qualite'), ips: valeur('--ips'), tailleMax: valeur('--taille-max') };
   const sorte = { scenes: valeur('--scene') ? valeur('--scene').split(',').filter(Boolean) : null, plage: valeur('--plage'), gif: args.includes('--gif'),
     largeurGif: valeur('--largeur'), cadre: valeur('--cadre'), cadreFormat: valeur('--cadre-format') };

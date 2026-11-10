@@ -27,7 +27,7 @@ const { slug } = require('../assembler.js');
 const { ecrireAtomique, ecrireJSON } = require('./fichiers.js');
 const { verifierNavigateur, resume } = require('./verification.js');
 const U = require('./usages.js');
-const { minutageVideo } = require('./voix.js');
+const { minutageVideo, scenesProvisoires, nomVersionDeTravail } = require('./voix.js');
 const L = require('./livrables.js');
 
 const RACINE = path.resolve(__dirname, '..', '..');
@@ -269,10 +269,13 @@ function creerRoutesExport(projet, { optionsAssemblage = {} } = {}) {
     }
     const base = slug(deroule.titre || 'video');
     const special = sortieDemandee.extrait || sortieDemandee.cadre;
-    const nomFichier = special ? L.nomSortie(base, { usage: u.usage, scene: sortieDemandee.scene, plage: sortieDemandee.plage, cadre: sortieDemandee.cadre }) : U.nomFichier(base, u.usage);
+    const nomDefinitif = special ? L.nomSortie(base, { usage: u.usage, scene: sortieDemandee.scene, plage: sortieDemandee.plage, cadre: sortieDemandee.cadre }) : U.nomFichier(base, u.usage);
+    // Voix provisoire (spec Retouches et ergonomie, 5.17) : une version de travail, nommée à part.
+    const versionDeTravail = scenesProvisoires(projet, deroule).length > 0;
+    const nomFichier = versionDeTravail ? nomVersionDeTravail(nomDefinitif) : nomDefinitif;
     // Taille visée : ni couverture ni vignette (la reconversion ne la garderait pas), comme dans la voie fidèle.
     const couverture = !special && !u.tailleMax && (u.fichiers || []).includes('couverture');
-    return repondre(res, 200, { ...u, nomFichier, couverture, titre: deroule.titre, sortie: sortieDemandee });
+    return repondre(res, 200, { ...u, nomFichier, versionDeTravail, couverture: couverture && !versionDeTravail, titre: deroule.titre, sortie: sortieDemandee });
   }
 
   async function terminerPlanche(req, res) {
