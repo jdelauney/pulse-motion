@@ -93,12 +93,19 @@ test('vidéo de 5 minutes : 40 scènes de 30 éléments minutées en moins de 50
     scenes.push({ id: `s${i}`, duree: 7.5, transition: i % 2 ? 'fondu' : 'aucune' });
     elements[`s${i}`] = Array.from({ length: 30 }, (_, k) => ({ cle: `e${k}`, start: k ? `#e${k - 1}+0.1` : '0' }));
   }
-  const debut = process.hrtime.bigint();
-  const m = Mi.calculerMinutage(scenes, elements);
-  const ms = Number(process.hrtime.bigint() - debut) / 1e6;
+  // Médiane de cinq passes : une passe seule mesurait aussi la compilation à la volée et les à-coups de la machine (56,8 ms
+  // une fois sur la CI Windows). Le seuil de 50 ms est gardé, partout.
+  const temps = [];
+  let m = null;
+  for (let passe = 0; passe < 5; passe++) {
+    const debut = process.hrtime.bigint();
+    m = Mi.calculerMinutage(scenes, elements);
+    temps.push(Number(process.hrtime.bigint() - debut) / 1e6);
+  }
+  const ms = [...temps].sort((a, b) => a - b)[2];
   assert.deepEqual(m.erreurs, []);
   assert.ok(Math.abs(m.duree - (300 - 20 * 0.5)) < 1e-9);
-  assert.ok(ms < 50, `${ms} ms`);
+  assert.ok(ms < 50, `médiane ${ms} ms (${temps.map((x) => x.toFixed(1)).join(', ')})`);
 });
 
 test('coupe : aucun chevauchement entre les scènes', () => {
