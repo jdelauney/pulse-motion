@@ -10,6 +10,8 @@
 //   --livrables : livrables de diffusion et formats légers (S5, jalons 2 et 3), sur une même copie : web avec chapitres
 //              déclarés (couverture, vignette, chapitres, crédits), extrait de la deuxième scène, passage de 10 s, GIF de 6 s,
 //              PDF des planches ; puis cadre de téléphone sur une copie passée en 9:16 ;
+//   --rendu-avance : rendu avancé (S5, jalon 4), chacun sur une copie neuve : master avec son flou de mouvement, puis master
+//              --flou non (coût du flou) ; sur le premier témoin seulement, fond transparent MOV puis WebM ;
 //   --mire   : export de la mire des couleurs (tests/fixtures/mire-couleurs du dépôt) dans les deux voies, écart CIEDE2000 lu
 //              par ffmpeg et par Chrome.
 // PM_SANS_OUVRIR=1 et PM_PROFIL=1 passés aux commandes ; dossier personnel temporaire (les mesures de vitesse de cet outil
@@ -155,6 +157,30 @@ async function mesurerLivrables({ plugin, temoin, journal }) {
   return r;
 }
 
+/** Rendu avancé (jalon 4) : coût du flou de mouvement du master (avec et sans), poids et temps du fond transparent. */
+async function mesurerRenduAvance({ plugin, temoin, journal, transparent = true }) {
+  const source = sourceTemoin(temoin, plugin);
+  const r = {};
+  const cas = [["masterFlou", ["--pour", "master"]], ["masterSansFlou", ["--pour", "master", "--flou", "non"]],
+    ...(transparent ? [["transparentMov", ["--transparent"]], ["transparentWebm", ["--transparent", "webm"]]] : [])];
+  for (const [nom, args] of cas) {
+    const copie = copierTemoin(source);
+    const personnel = fs.mkdtempSync(path.join(os.tmpdir(), "pm-mesure-perso-"));
+    try {
+      journal(`${temoin} : ${nom}…`);
+      const x = lancer(plugin, ["exporter", ".", ...args], copie, personnel);
+      const res = x.resultat || {};
+      r[nom] = { ...resumeExport(copie, x, res.duree), ...(res.flou ? { flou: res.flou } : {}), ...(res.fondOpaque ? { fondOpaque: res.fondOpaque } : {}) };
+      journal(`  ${r[nom].ok ? "ok" : "échec"} ${r[nom].duree} s, ${r[nom].octets} o${res.message ? ` (${res.message})` : ""}`);
+    } finally {
+      fs.rmSync(copie, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+      fs.rmSync(personnel, { recursive: true, force: true });
+    }
+  }
+  if (r.masterFlou && r.masterSansFlou && r.masterFlou.ok && r.masterSansFlou.ok) r.coutFlou = arrondi(r.masterFlou.duree / r.masterSansFlou.duree);
+  return r;
+}
+
 /** Mire des couleurs : écart CIEDE2000 de chaque aplat, lu par ffmpeg et par Chrome, dans les deux voies du plugin mesuré. */
 async function mesurerMire({ plugin, journal }) {
   const M = require(path.join(DEPOT, "plugins", "pulse-motion", "tests", "aide", "mire.js"));
@@ -194,6 +220,7 @@ function lireOptions(args) {
     derive: args.includes("--derive"),
     mire: args.includes("--mire"),
     livrables: args.includes("--livrables"),
+    renduAvance: args.includes("--rendu-avance"),
     sortie: args.includes("--sortie") ? path.resolve(valeur("--sortie")) : null,
   };
 }
@@ -209,6 +236,7 @@ async function principal(args) {
     if (o.usages.length) resultat.temoins[t].usages = await mesurerUsages({ plugin: o.plugin, temoin: t, usages: o.usages, journal });
     if (o.derive) resultat.temoins[t].derives = await mesurerDerives({ plugin: o.plugin, temoin: t, journal });
     if (o.livrables) resultat.temoins[t].livrables = await mesurerLivrables({ plugin: o.plugin, temoin: t, journal });
+    if (o.renduAvance) resultat.temoins[t].renduAvance = await mesurerRenduAvance({ plugin: o.plugin, temoin: t, journal, transparent: t === o.temoins[0] });
     ecrire();
   }
   if (o.mire) resultat.mire = await mesurerMire({ plugin: o.plugin, journal });

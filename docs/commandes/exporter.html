@@ -116,12 +116,13 @@
 <tr><td>« pour YouTube », « pour mon site », « pour notre plateforme de formation »</td><td>Pour le web : la qualité de l'aperçu.</td></tr>
 <tr><td>« pour LinkedIn », « pour Instagram »</td><td>Pour les réseaux sociaux : un peu plus nette, pour résister à la recompression des plateformes.</td></tr>
 <tr><td>« pour la projeter », « pour PowerPoint »</td><td>Pour la présentation : très nette, lue par PowerPoint et Keynote.</td></tr>
-<tr><td>« pour mon monteur », « la meilleure qualité »</td><td>Le master : le fichier le plus fidèle, à retravailler.</td></tr>
+<tr><td>« pour mon monteur », « la meilleure qualité »</td><td>Le master : le fichier le plus fidèle, à retravailler, avec un léger flou de mouvement sur les passages rapides (comme une caméra) ; « sans flou » le retire.</td></tr>
+<tr><td>« à incruster dans mon montage », « fond transparent »</td><td>Une vidéo sans fond, pour la poser sur une autre image dans un logiciel de montage (voir le tableau plus haut).</td></tr>
 <tr><td>« par courriel », « moins de 20 Mo »</td><td>Une version légère, qui tient sous la taille dite (10 Mo sans précision).</td></tr>
 <tr><td>« vite fait, juste pour vérifier »</td><td>Une version de travail, petite et rapide, à ne pas publier.</td></tr>
 <tr><td>« plus fluide »</td><td>En 60 images par seconde. L'export prend deux fois plus de temps.</td></tr>
 <tr><td>« une version de travail avec la voix de l'ordinateur »</td><td>Avec la voix provisoire, seulement si vous le demandez.</td></tr>
-<tr><td>« juste la scène 3 », « en GIF », « dans un téléphone », « un PDF des scènes »</td><td>Les autres sorties (voir le tableau plus haut).</td></tr>
+<tr><td>« juste la scène 3 », « en GIF », « dans un téléphone », « un PDF des scènes », « en boucle »</td><td>Les autres sorties (voir le tableau plus haut).</td></tr>
 <tr><td>« un texte pour accompagner la vidéo »</td><td>Pulse Motion écrit <code>sortie/&lt;titre&gt;-textes.md</code> ; il vous le propose de lui-même après un export pour les réseaux ou le courriel.</td></tr>
 </tbody>
 </table>
@@ -140,7 +141,7 @@
 <tr><td><code>sortie/&lt;titre&gt;-couverture.jpg</code></td><td>L'image de la miniature, sans sous-titres. Elle est aussi intégrée au MP4 : les lecteurs et les explorateurs de fichiers la montrent.</td></tr>
 <tr><td><code>sortie/&lt;titre&gt;-chapitres.txt</code> et <code>.vtt</code></td><td>Si vous avez des chapitres : le texte à coller dans la description YouTube, et le fichier pour une plateforme de formation.</td></tr>
 <tr><td><code>sortie/&lt;titre&gt;-credits.txt</code></td><td>Les crédits : à relire avant de publier.</td></tr>
-<tr><td><code>sortie/&lt;titre&gt;-&lt;scène&gt;.mp4</code>, <code>.gif</code>, <code>-telephone.mp4</code>, <code>-planches.pdf</code></td><td>Les autres sorties, quand vous les demandez.</td></tr>
+<tr><td><code>sortie/&lt;titre&gt;-&lt;scène&gt;.mp4</code>, <code>.gif</code>, <code>-telephone.mp4</code>, <code>-transparent.mov</code> ou <code>.webm</code>, <code>-planches.pdf</code></td><td>Les autres sorties, quand vous les demandez.</td></tr>
 </tbody>
 </table>
 <p>Pulse Motion termine par un résumé : l'usage, la durée, le poids du fichier, le son (ou « muette »), le mode d'export, et chaque fichier avec son rôle.</p>
@@ -150,7 +151,7 @@
 <h2>Risques et précautions</h2>
 <ul>
 <li><strong>Les erreurs passent d'abord.</strong> S'il reste des erreurs, Pulse Motion vous les dit simplement et propose de les corriger d'abord avec <a href="retoucher.html"><code>/pulse-motion:retoucher</code></a>. Les simples alertes n'empêchent pas l'export : il vous les mentionne en une phrase.</li>
-<li><strong>La voix provisoire est refusée.</strong> Si une scène parle encore avec la voix de l'ordinateur, Pulse Motion vous propose d'enregistrer d'abord votre voix. Il exporte avec la voix provisoire seulement si vous choisissez « une version de travail ».</li>
+<li><strong>La voix provisoire n'est jamais publiée par erreur.</strong> Si une scène parle encore avec la voix de l'ordinateur, Pulse Motion vous propose d'enregistrer d'abord votre voix. Si vous choisissez « une version de travail », il ne vous le redemande plus tant que cette voix ne change pas, et le fichier s'appelle <code>&lt;titre&gt;-version-de-travail.mp4</code> : la vidéo définitive n'est pas touchée.</li>
 <li><strong>ffmpeg n'est installé qu'avec votre accord</strong>, et seulement avec la commande officielle de votre système (winget sous Windows, Homebrew sous macOS).</li>
 <li><strong>Aucun fichier incomplet.</strong> Si l'export échoue, aucun MP4 à moitié écrit ne reste dans <code>sortie/</code>. Une version pour le courriel qui dépasserait la taille annoncée n'est jamais écrite.</li>
 <li><strong>Une scène en erreur arrête l'export.</strong> Si le script d'une scène échoue pendant l'export, Pulse Motion s'arrête et vous dit laquelle, et vers quel instant.</li>
