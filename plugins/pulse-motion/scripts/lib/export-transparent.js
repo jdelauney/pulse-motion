@@ -92,6 +92,8 @@ async function exporterTransparent({ projet, deroule, u, demande, navigateur, ou
     const parScene = {};
     for (let i = 0; i < minutage.scenes.length; i++) {
       const v = partieVisible(minutage, i);
+      // La première scène entre en fondu depuis le fond (sa transition) : ses images ne comptent qu'après.
+      if (i === 0 && minutage.scenes[0].dureeTransition > 0) v.debut = Math.min(v.fin, Math.max(v.debut, minutage.scenes[0].dureeTransition));
       // Seules les scènes montrées par la vidéo (ou l'extrait) comptent.
       if (v.fin * ips <= f0 || v.debut * ips >= f1) continue;
       parScene[minutage.scenes[i].id] = [];
@@ -164,7 +166,7 @@ async function exporterTransparent({ projet, deroule, u, demande, navigateur, ou
     const s = await F.sonder({ ffprobe: outil.cheminProbe, fichier: partiel, compter: 'paquets' });
     const n = f1 - f0;
     if (s.video !== T.codec || s.largeur !== largeur || s.hauteur !== hauteur) throw new Error('la vidéo à fond transparent n\'a pas la piste ou la taille attendues');
-    const defauts = F.controlesSortie(s, { etiquettes: true, alpha: true });
+    const defauts = F.controlesSortie(s, { etiquettes: format === 'mov' ? 'sans-plage' : true, alpha: true });
     if (defauts.length) throw Object.assign(new Error(defauts[0]), { sortie: true });
     if (s.images !== n) throw new Error(`la vidéo a ${s.images} images au lieu de ${n}`);
     if (audio && !s.audio) throw new Error('la piste son est absente');

@@ -29,7 +29,7 @@ const PREPARER_DE = (transparent) => `(async function () {
   // Horloge réelle gardée pour le profil : en mode capture, performance.now suit le temps de la vidéo.
   window.__pmMaintenant = performance.now.bind(performance);
   M.modeCapture(true);
-  var scenes = ((M.minutage && M.minutage.scenes) || []).map(function (s) { return { id: s.id, debut: s.debut, fin: s.fin, entree: s.entree }; });
+  var scenes = ((M.minutage && M.minutage.scenes) || []).map(function (s) { return { id: s.id, debut: s.debut, fin: s.fin, entree: s.entree, dureeTransition: s.dureeTransition || 0 }; });
   return { duree: M.duree, scenes: scenes };
 })()`;
 const PREPARER = PREPARER_DE(false);

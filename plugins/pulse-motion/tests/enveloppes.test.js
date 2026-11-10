@@ -8,6 +8,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { dossierTemporaire } = require('./aide/temporaire.js');
+const { copierProjet } = require('./aide/projet.js');
+const copierVideo = () => copierProjet('projet-simple');
 
 const BIN = path.join(__dirname, '..', 'bin');
 const MESSAGE = 'Node.js introuvable : « node » n\'est pas installé.';
@@ -105,6 +107,13 @@ test('rappel : Node absent, consigne d\'installation pour Claude', { skip: !trou
   const present = lancer('pulse-motion', ['rappel'], process.env, dossier, JSON.stringify({ cwd: dossier }));
   assert.equal(present.status, 0, present.stderr);
   assert.equal(present.stdout, '');
+  // Second crochet (rappel-node) : la même consigne sans Node ; rien quand Node est là (le premier crochet fait le rappel).
+  const second = lancer('pulse-motion', ['rappel-node'], sansNode(dossier), dossier, '{}');
+  assert.equal(second.status, 0, second.stderr);
+  assert.match(JSON.parse(second.stdout).hookSpecificOutput.additionalContext, /Node\.js manque/);
+  const muet = lancer('pulse-motion', ['rappel-node'], process.env, dossier, JSON.stringify({ cwd: copierVideo() }));
+  assert.equal(muet.status, 0, muet.stderr);
+  assert.equal(muet.stdout, '');
 });
 
 test('wrapper-node-absent-message-francais : le message est celui que les compétences reconnaissent', () => {

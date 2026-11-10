@@ -70,7 +70,8 @@ test('controle : chaque alerte corrigeable porte une consigne', async () => {
   const r = await controlerComplet({ dossier: projetFautif(), dossierStyles: STYLES, ...sansRendu });
   const corrigeables = r.problemes.filter((p) => p.gravite === 'erreur' || p.gravite === 'alerte');
   assert.ok(corrigeables.length >= 3);
-  for (const p of corrigeables) assert.ok(typeof p.consigne === 'string' && p.consigne.length >= p.message.length - 1, `${p.regle} : consigne`);
+  // La consigne est le texte complet de la règle : le message, ou ce qu'il a dû retirer (termes techniques).
+  for (const p of corrigeables) assert.ok(typeof p.consigne === 'string' && p.consigne.length > 0 && (p.consigne === p.message || TECHNIQUE.test(p.consigne)), `${p.regle} : consigne`);
   // La consigne garde la correction technique que le message a retirée.
   const lettres = r.problemes.find((p) => p.regle === 'lettres-invalide');
   assert.match(lettres.consigne, /data-lettres « danse » inconnu/);
@@ -97,7 +98,8 @@ test('proches : sans accents ni casse, les plus proches d\'abord', () => {
   assert.equal(P.distance('fiord', 'froid'), 2);
   assert.equal(P.distance('frodi', 'froid'), 1);
   // Préfixe commun de 4 lettres : proposé même loin en distance.
-  assert.deepEqual(P.proches('recongélation', ['recon', 'recongeler', 'intro']), ['recongeler']);
+  // « recon » partage aussi 5 lettres de préfixe : proposé, après le plus proche.
+  assert.deepEqual(P.proches('recongélation', ['recon', 'recongeler', 'intro']), ['recongeler', 'recon']);
   assert.equal(P.proches('a', ['b', 'c', 'd', 'e'], { max: 3 }).length, 3);
   assert.equal(P.phrase(['froid', 'froids']), 'vouliez-vous dire « froid » ou « froids » ?');
   assert.equal(P.phrase(['a', 'b', 'c']), 'vouliez-vous dire « a », « b » ou « c » ?');

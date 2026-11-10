@@ -315,7 +315,8 @@ function controlesSortie(sonde, attendu = {}) {
   const U = require('./usages.js');
   const defauts = [];
   const c = sonde.couleurs || {};
-  if (attendu.etiquettes && !(c.espace === 'bt709' && c.primaires === 'bt709' && c.transfert === 'bt709' && c.plage === 'tv')) {
+  // etiquettes « sans-plage » : ProRes n'écrit pas la plage (toujours limitée), seulement la matrice, les primaires et le transfert.
+  if (attendu.etiquettes && !(c.espace === 'bt709' && c.primaires === 'bt709' && c.transfert === 'bt709' && (c.plage === 'tv' || attendu.etiquettes === 'sans-plage'))) {
     defauts.push('Les couleurs de la vidéo ne sont pas marquées comme il faut (certains lecteurs les montreraient fausses) : l\'export s\'arrête, rien n\'est écrit.');
   }
   if (attendu.octetsMax && sonde.octets > attendu.octetsMax) {
@@ -373,7 +374,7 @@ const TRANSPARENTS = {
 async function encoderTransparent({ ffmpeg, sortie, ips, format, images, signal }) {
   const t = TRANSPARENTS[format];
   const args = ['-y', '-hide_banner', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(ips), '-c:v', 'png', '-i', '-',
-    '-vf', `scale=out_color_matrix=bt709:out_range=tv,format=${t.pixels}`, ...t.args, '-r', String(ips), ...ETIQUETTES, '-f', t.conteneur, sortie];
+    '-vf', `scale=out_color_matrix=bt709:out_range=tv,format=${t.pixels},setparams=color_primaries=bt709:color_trc=bt709:colorspace=bt709:range=tv`, ...t.args, '-r', String(ips), ...ETIQUETTES, '-f', t.conteneur, sortie];
   const r = await lancer(ffmpeg, args, {
     signal,
     entree: async (stdin) => {

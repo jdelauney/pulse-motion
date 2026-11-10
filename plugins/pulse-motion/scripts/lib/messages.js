@@ -27,6 +27,7 @@ function nettoyer(texte) {
   t = t.replace(/(\d+(?:[.,]\d+)?)\s*cqh²/g, '$1 % de la hauteur de l\'image, au carré')
     .replace(/(\d+(?:[.,]\d+)?)\s*cqh/g, '$1 % de la hauteur de l\'image')
     .replace(/\bcqh\b/g, 'centièmes de la hauteur de l\'image')
+    .replace(/\bdata-texte\s*=\s*"([^"]*)"/g, 'le texte « $1 »')
     .replace(/\bdata-[a-z0-9-]+(?:\s*=\s*("[^"]*"|'[^']*'))?/g, 'un réglage de la scène')
     .replace(/--(?:pm|c)-[a-z0-9-]+/g, 'un réglage du style')
     .replace(/\baria-[a-z-]+(?:\s*=\s*("[^"]*"|'[^']*'))?/g, 'un réglage')
@@ -36,7 +37,7 @@ function nettoyer(texte) {
   return t.replace(/\s{2,}/g, ' ').replace(/\s+([,.;:])/g, '$1').trim();
 }
 
-const finir = (t) => (/[.?!»)]$/.test(t) ? t : `${t}.`);
+const finir = (t) => (/[.?!…]$/.test(t) ? t : `${t}.`);
 
 function separerMessage(texte, { scene = null } = {}) {
   const original = String(texte === undefined || texte === null ? '' : texte);

@@ -57,7 +57,7 @@ function casDe(p, k, { bloquees: bloq = bloquees() } = {}) {
   };
   if (attendu === 'aucune') fichiers['graders/aucune.md'] = correcteur({ input: motif(`(?:${COMPETENCES.join('|')})`), min: 0, max: 0 });
   else fichiers[`graders/${attendu}.md`] = correcteur({ input: motif(attendu), min: 1 });
-  const pas = new Set(p.pasAttendu ? [p.pasAttendu] : []);
+  const pas = new Set(p.pasAttendu && !bloq.includes(p.pasAttendu) ? [p.pasAttendu] : []);
   // Déclenchement erroné de creer ou de style : vérifié sur chaque phrase qui ne les attend pas.
   for (const c of SURVEILLEES) if (c !== p.attendu && COMPETENCES.includes(c) && !bloq.includes(c)) pas.add(c);
   for (const c of pas) fichiers[`graders/pas-${c}.md`] = correcteur({ input: motif(c), min: 0, max: 0 });

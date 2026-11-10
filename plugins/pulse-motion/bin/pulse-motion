@@ -6,7 +6,8 @@
 # et AppData. PM_NODE_EMPLACEMENTS (chemins séparés par « ; » : un chemin Windows contient « : ») remplace la liste des
 # emplacements connus (tests).
 # Node absent : un message en français sur la sortie standard (lu aussi par les blocs injectés au lancement des skills),
-# code 3 ; pour le rappel de démarrage (« pulse-motion rappel »), un contexte pour Claude, code 0.
+# code 3 ; pour le rappel de démarrage (« pulse-motion rappel » ou « rappel-node »), un contexte pour Claude, code 0.
+# « rappel-node » (second crochet SessionStart) ne dit rien quand Node est là : le premier crochet, lancé par node, fait le rappel.
 
 trouver_node() {
   if command -v node >/dev/null 2>&1; then command -v node; return 0; fi
@@ -44,14 +45,18 @@ trouver_node() {
 
 NODE=$(trouver_node)
 if [ -z "$NODE" ]; then
-  if [ "$1" = "rappel" ]; then
+  if [ "$1" = "rappel" ] || [ "$1" = "rappel-node" ]; then
     printf '%s\n' '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"Pulse Motion – Node.js manque sur cet ordinateur : proposer de l'"'"'installer avec l'"'"'accord de la personne (/pulse-motion:outils, étape « Installer Node.js »), avant toute vidéo."}}'
     exit 0
   fi
   echo "Node.js introuvable : « node » n'est pas installé."
   exit 3
 fi
-# Dossier du relais sans dirname (le PATH peut ne contenir aucun outil).
-ICI=${0%/*}
-[ "$ICI" = "$0" ] && ICI=.
+[ "$1" = "rappel-node" ] && exit 0
+# Dossier du relais sans dirname (le PATH peut ne contenir aucun outil) ; sous Windows, $0 peut s'écrire avec des « \ ».
+case "$0" in
+  */*) ICI=${0%/*} ;;
+  *\\*) ICI=${0%\\*} ;;
+  *) ICI=. ;;
+esac
 exec "$NODE" "$ICI/../scripts/pm.js" "$@"
