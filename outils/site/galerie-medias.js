@@ -33,7 +33,10 @@ function clipsPersonnages() {
 }
 
 const fichiersMouvement = (no) => [`${GALERIE}/mouvements/${no}.mp4`, `${GALERIE}/mouvements/${no}.jpg`];
-const fichiersStyle = (style) => [`${GALERIE}/styles/${style}.mp4`, ...scenesDuStyle(style).map((t) => `${GALERIE}/styles/${style}-${t}.jpg`)];
+/** Images témoin A et B d'un style (même contenu pour tous les styles : references/styles/temoin.json). */
+const fichiersTemoin = (style) => [`${GALERIE}/styles/${style}-temoin-a.jpg`, `${GALERIE}/styles/${style}-temoin-b.jpg`];
+/** Boucle du style, une image par scène toute faite, puis les images témoin A et B. */
+const fichiersStyle = (style) => [`${GALERIE}/styles/${style}.mp4`, ...scenesDuStyle(style).map((t) => `${GALERIE}/styles/${style}-${t}.jpg`), ...fichiersTemoin(style)];
 const fichiersEffet = (nom) => [`${GALERIE}/effets/${nom}.mp4`, `${GALERIE}/effets/${nom}.jpg`];
 const fichiersClip = (nom) => [`${GALERIE}/personnages/${nom}.mp4`, `${GALERIE}/personnages/${nom}.jpg`];
 
@@ -85,7 +88,12 @@ function decouper(video, plages) {
 
 function avecDossier(prefixe, fn) {
   const dossier = fs.mkdtempSync(path.join(os.tmpdir(), prefixe));
-  try { return fn(dossier); } finally { fs.rmSync(dossier, { recursive: true, force: true, maxRetries: 3 }); }
+  const nettoyer = () => fs.rmSync(dossier, { recursive: true, force: true, maxRetries: 3 });
+  let r;
+  try { r = fn(dossier); } catch (e) { nettoyer(); throw e; }
+  if (r && typeof r.then === "function") return r.finally(nettoyer);
+  nettoyer();
+  return r;
 }
 
 function fabriquerMouvements() {
@@ -102,21 +110,21 @@ function fabriquerMouvements() {
   });
 }
 
-function fabriquerStyles() {
-  const { projetEssai } = require(path.join(PLUGIN, "scripts", "lib", "projet-essai.js"));
+/** Boucle (les huit scènes du témoin, 2,5 s chacune), une image par scène, et les images témoin A et B, rendues par le
+ * plugin comme « pulse-motion style planche --temoin » (lib/temoin.js), réduites en JPEG de 480 px. */
+async function fabriquerStyles() {
+  const { projetBoucle, imagesTemoin } = require(path.join(PLUGIN, "scripts", "lib", "temoin.js"));
   const ffmpeg = outils();
   for (const style of STYLES_LIVRES()) {
-    const dossier = projetEssai({ dossierStyle: path.join(PLUGIN, "styles", style), textes: "exemple" });
+    const dossierStyle = path.join(PLUGIN, "styles", style);
+    const dossier = projetBoucle({ dossierStyle });
     try {
-      // 2,5 s par scène toute faite : la boucle du style montre ses scènes en une vingtaine de secondes (transitions comprises).
-      const fichier = path.join(dossier, "deroule.json");
-      const d = JSON.parse(fs.readFileSync(fichier, "utf8"));
-      for (const s of d.scenes) s.duree = 2.5;
-      fs.writeFileSync(fichier, JSON.stringify(d, null, 2));
+      const d = JSON.parse(fs.readFileSync(path.join(dossier, "deroule.json"), "utf8"));
       const video = exporter(dossier);
       const { calculerMinutage } = require(path.join(PLUGIN, "moteur", "minutage.js"));
       const min = calculerMinutage(d.scenes, {});
-      const [mp4, ...images] = fichiersStyle(style);
+      const [mp4, ...autres] = fichiersStyle(style);
+      const images = autres.slice(0, d.scenes.length);
       fs.mkdirSync(path.dirname(path.join(DOCS, mp4)), { recursive: true });
       execFileSync(ffmpeg, ["-y", "-loglevel", "error", "-i", video, "-an", "-vf", "scale=480:-2", "-c:v", "libx264", "-preset", "veryfast", "-crf", "28",
         "-pix_fmt", "yuv420p", "-movflags", "+faststart", path.join(DOCS, mp4)]);
@@ -126,6 +134,14 @@ function fabriquerStyles() {
     } finally {
       fs.rmSync(dossier, { recursive: true, force: true, maxRetries: 3 });
     }
+    await avecDossier("pm-galerie-temoin-", async (sortie) => {
+      const r = await imagesTemoin({ dossierStyle, sortie });
+      if (!r.ok) throw new Error(`images témoin de ${style} : ${r.message}`);
+      const [a, b] = fichiersTemoin(style);
+      for (const [png, jpg] of [[r.images.A, a], [r.images.B, b]]) {
+        execFileSync(ffmpeg, ["-y", "-loglevel", "error", "-i", png, "-vf", "scale=480:-2", "-q:v", "4", path.join(DOCS, jpg)]);
+      }
+    });
   }
 }
 
@@ -222,7 +238,7 @@ const LOTS = [
   { id: "galerie-mouvements", sortie: `${GALERIE}/mouvements/001.mp4`, sorties: () => dictionnaire().mouvements.flatMap((e) => fichiersMouvement(e.no)),
     sources: [path.join(PLUGIN, "references", "mouvements"), path.join(PLUGIN, "moteur"), path.join(PLUGIN, "styles", "clair-pedagogique"), ...FABRICATION], fabriquer: fabriquerMouvements },
   { id: "galerie-styles", sortie: `${GALERIE}/styles/clair-pedagogique.mp4`, sorties: () => STYLES_LIVRES().flatMap(fichiersStyle),
-    sources: [path.join(PLUGIN, "styles"), path.join(PLUGIN, "moteur"), ...FABRICATION], fabriquer: fabriquerStyles },
+    sources: [path.join(PLUGIN, "styles"), path.join(PLUGIN, "moteur"), path.join(PLUGIN, "references", "styles", "temoin.json"), path.join(PLUGIN, "scripts", "lib", "temoin.js"), path.join(PLUGIN, "scripts", "lib", "projet-essai.js"), ...FABRICATION], fabriquer: fabriquerStyles },
   { id: "galerie-effets", sortie: `${GALERIE}/effets/confettis.mp4`, sorties: () => effets().flatMap(fichiersEffet),
     sources: [path.join(PLUGIN, "effets"), path.join(PLUGIN, "moteur"), path.join(PLUGIN, "styles", "tech-sombre"), ...FABRICATION], fabriquer: fabriquerEffets },
   { id: "galerie-personnages", sortie: `${GALERIE}/personnages/coucou.mp4`, sorties: () => clipsPersonnages().flatMap(fichiersClip),
@@ -234,4 +250,4 @@ const LOTS = [
 ];
 
 module.exports = { LOTS, GALERIE, dictionnaire, STYLES_LIVRES, scenesDuStyle, effets, clipsPersonnages, dessinsLivres, demoEffet,
-  fichiersMouvement, fichiersStyle, fichiersEffet, fichiersClip, fichiersDessin, decouper, modelesVideo, dossierExemple, fichiersExemple, exemplesAFabriquer };
+  fichiersMouvement, fichiersStyle, fichiersTemoin, fichiersEffet, fichiersClip, fichiersDessin, decouper, modelesVideo, dossierExemple, fichiersExemple, exemplesAFabriquer };
