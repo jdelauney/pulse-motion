@@ -18,7 +18,7 @@ const Pa = require('./parcours.js');
 const { ouvrirPage } = require('./cdp.js');
 
 const OUTIL = `(function () {
-  async function bitmap(b64, mime) { var r = await fetch('data:' + mime + ';base64,' + b64); return createImageBitmap(await r.blob()); }
+  async function bitmap(b64, mime) { var s = atob(b64), o = new Uint8Array(s.length); for (var i = 0; i < s.length; i++) o[i] = s.charCodeAt(i); return createImageBitmap(new Blob([o], { type: mime })); }
   function en64(blob) { return new Promise(function (ok) { var f = new FileReader(); f.onload = function () { ok(String(f.result).split(',')[1]); }; f.readAsDataURL(blob); }); }
   window.__pmFlouter = async function (b64, mime, zone, rayon, qualite) {
     var b = await bitmap(b64, mime);

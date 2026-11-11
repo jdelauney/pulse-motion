@@ -258,7 +258,7 @@ async function decoderFfmpeg(outil, fichier, { de, a, largeur, hauteur, dossier 
 }
 
 const OUTIL_PLANCHE = `(function () {
-  async function bitmap(b64, mime) { var r = await fetch('data:' + mime + ';base64,' + b64); return createImageBitmap(await r.blob()); }
+  async function bitmap(b64, mime) { var s = atob(b64), o = new Uint8Array(s.length); for (var i = 0; i < s.length; i++) o[i] = s.charCodeAt(i); return createImageBitmap(new Blob([o], { type: mime })); }
   function en64(blob) { return new Promise(function (ok) { var f = new FileReader(); f.onload = function () { ok(String(f.result).split(',')[1]); }; f.readAsDataURL(blob); }); }
   window.__pmPlancheImport = async function (vignettes, titre) {
     var L = 1280, col = 4, l = L / col, premiere = await bitmap(vignettes[0].b64, vignettes[0].mime);
