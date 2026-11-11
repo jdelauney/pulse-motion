@@ -17,6 +17,13 @@ test("porte : un chemin de l'ordinateur se reconnaît sous toutes ses écritures
   assert.ok(P.motifChemin("/home/camille").test("/home/camille/pulse"));
 });
 
+test("porte : un chemin Windows se reconnaît aussi sous son écriture Git Bash et WSL", () => {
+  const chemins = P.cheminsLocaux({ racine: process.cwd(), accueil: "D:\\Atelier" });
+  const motifs = chemins.map((c) => c.motif);
+  for (const t of ["D:\\Atelier\\video", "/d/Atelier/video", "Read(//d/Atelier/x)", "/mnt/d/Atelier"]) assert.ok(motifs.some((m) => m.test(t)), t);
+  assert.ok(!motifs.some((m) => m.test("/d/AtelierX")), "un autre dossier qui commence pareil");
+});
+
 test("porte : un chemin trop commun n'est pas un chemin de cet ordinateur", () => {
   for (const c of ["C:\\", "C:\\Users", "/home", "/", "D:\\Program Files"]) assert.equal(P.motifChemin(c), null, c);
 });
@@ -53,10 +60,10 @@ function depotEssai() {
   return racine;
 }
 
-test("porte : fichiers suivis examinés, hors .claude/, binaires et fichiers non suivis", () => {
+test("porte : fichiers suivis examinés, .claude/ compris, hors binaires et fichiers non suivis", () => {
   const racine = depotEssai();
   const problemes = P.verifierDepot(racine, { accueil: "/home/camille" });
-  assert.deepEqual(problemes.map((p) => `${p.fichier}:${p.ligne}:${p.sorte}`).sort(), ["cle.txt:1:secret", "docs/b.md:2:chemin"]);
+  assert.deepEqual(problemes.map((p) => `${p.fichier}:${p.ligne}:${p.sorte}`).sort(), [".claude/settings.json:1:chemin", "cle.txt:1:secret", "docs/b.md:2:chemin"]);
   assert.ok(!P.decrire(problemes.find((p) => p.sorte === "secret")).includes("zzzz"), "le secret n'est pas recopié");
 });
 

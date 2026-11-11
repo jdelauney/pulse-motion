@@ -14,3 +14,7 @@
 
 # État écrit par une commande lancée depuis le dossier du plugin (tests) : jamais versionné.
 /plugins/pulse-motion/.pulse-motion/
+
+# Réglages de Claude Code du mainteneur (chemins de son ordinateur) : jamais publiés.
+/.claude/settings.json
+/.claude/settings.local.json
