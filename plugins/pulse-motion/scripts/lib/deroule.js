@@ -182,6 +182,16 @@ function validerDeroule(d) {
     else for (const [k, v] of Object.entries(s.textes)) {
       if (typeof v !== 'string') err.push(`La ${nom} : « textes.${k} » doit être un texte.`);
     }
+    // Graphiques, code et formules (spec S7, 5.6, 5.9, 5.10) : la forme ici ; le contenu est jugé à l'assemblage, avec les
+    // règles graphique-donnees-invalides, code-invalide et formule-non-prise-en-charge (lib/donnees-scene.js).
+    for (const [champ, exemple, sorte] of [['graphiques', '{ "ventes": { "type": "barres", "valeurs": [{ "etiquette": "2024", "valeur": 19 }] } }', 'objet'],
+      ['code', '{ "formule": { "langage": "tableur", "etapes": [{ "code": "=SOMME(B2:B13)" }] } }', 'objet'], ['formules', '{ "aire": "\\\\pi r^2" }', 'texte']]) {
+      if (s[champ] === undefined) continue;
+      if (!estObjet(s[champ])) { err.push(`La ${nom} : « ${champ} » doit être un objet ${exemple}.`); continue; }
+      for (const [k, v] of Object.entries(s[champ])) {
+        if (sorte === 'objet' ? !estObjet(v) : typeof v !== 'string') err.push(`La ${nom} : « ${champ}.${k} » doit être ${sorte === 'objet' ? 'un objet' : 'un texte TeX'}, ex. ${exemple}.`);
+      }
+    }
     if (s.ajustements !== undefined) {
       if (!estObjet(s.ajustements)) err.push(`La ${nom} : « ajustements » doit être un objet, ex. { "titre": { "taille": 0.9 } }.`);
       else for (const [cle, a] of Object.entries(s.ajustements)) {

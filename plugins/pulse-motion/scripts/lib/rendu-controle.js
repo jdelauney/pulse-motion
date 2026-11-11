@@ -74,6 +74,8 @@ flash: (c) => `Scène « ${c.scene} » : l'image clignote ${virgule(c.valeur)} f
   // Calque de dessin (spec S7, 5.2 et 5.4).
   'dessin-erreur': (c) => `Scène « ${c.scene} » : un dessin de la scène ne se fait pas (vers ${virgule(c.instant)} s) : ${c.valeur} ; le reste de la scène s'affiche sans lui.`,
   'fleche-cible-introuvable': (c) => `Scène « ${c.scene} » : ${c.valeur}.`,
+  // Code animé (spec S7, 5.9).
+  'code-trop-large': (c) => `Scène « ${c.scene} » : ${c.valeur}.`,
   'silence-imprevu': (c) => `De ${virgule(c.valeur.a)} s à ${virgule(c.valeur.b)} s, on n'entend rien pendant ${virgule(c.valeur.d)} s alors que la musique devrait jouer ; vérifier la musique de la scène « ${c.scene} ».`,
 };
 
@@ -83,7 +85,7 @@ function proposition(c) {
   return ` ; ${phraseProposition(suggererCouleur(c.couleur, c.fond, c.minimum, c.charte || {}))}`;
 }
 
-const GRAVITES = { flash: 'erreur', 'texte-casse': 'erreur', 'erreur-de-scene': 'erreur', 'etapes-trop-rapprochees': 'erreur', 'dessin-erreur': 'erreur', 'fleche-cible-introuvable': 'erreur' };
+const GRAVITES = { flash: 'erreur', 'texte-casse': 'erreur', 'erreur-de-scene': 'erreur', 'etapes-trop-rapprochees': 'erreur', 'dessin-erreur': 'erreur', 'fleche-cible-introuvable': 'erreur', 'code-trop-large': 'erreur' };
 
 /** Constats bruts de M.mesurer -> problèmes (alertes, sauf GRAVITES). Règle inconnue : ignorée. */
 function traduireConstats(constats) {

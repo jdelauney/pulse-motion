@@ -10,6 +10,7 @@
     { "nom": "etape", "role": "Une étape numérotée d'une procédure", "duree": 8, "textes": { "numero": 2, "titre": 40, "texte": 80 } },
     { "nom": "alerte", "role": "Un point de vigilance, une erreur à éviter", "duree": 8, "textes": { "titre": 40, "texte": 80 } },
     { "nom": "schema", "role": "Trois étapes reliées par des flèches", "duree": 8, "textes": { "titre": 40, "a": 25, "b": 25, "c": 25 } },
+    { "nom": "moyeu", "role": "Une idée au centre, 3 à 5 parties autour, reliées par des flèches", "duree": 10, "textes": { "titre": 40, "centre": 24, "partie1": 22, "partie2": 22, "partie3": 22, "partie4": 22, "partie5": 22 } },
     { "nom": "conclusion", "role": "Le message à retenir et le logo", "duree": 6, "textes": { "titre": 40, "sous": 50 } }
   ]
 }

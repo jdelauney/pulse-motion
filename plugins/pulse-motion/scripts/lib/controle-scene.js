@@ -173,9 +173,14 @@ function controlerScene({ projet, deroule, scene, html }) {
     aDessiner = r.html;
     problemes.push(...r.erreurs);
   }
-  for (const cle of S.injecterTextes(aDessiner, scene.textes, scene.ajustements).manquants) {
+  const injecte = S.injecterTextes(aDessiner, scene.textes, scene.ajustements);
+  for (const cle of injecte.manquants) {
     problemes.push({ regle: 'texte-manquant', gravite: 'erreur', scene: scene.id, message: `Scène « ${scene.id} » : data-texte="${cle}" n'a pas de texte dans le déroulé.` });
   }
+  // Graphiques, code et formules (spec S7, 5.6, 5.9, 5.10) : données du déroulé, comme à l'assemblage.
+  const DS = require('./donnees-scene.js');
+  const u = DS.usagesDonnees(injecte.html);
+  if (u.graphique || u.code || u.formule) problemes.push(...DS.preparerDonnees(injecte.html, { scene }).erreurs);
   // Icônes (spec S9, 5.3) : nom inconnu ou data-icone hors d'un <svg>, comme à l'assemblage.
   if (/data-icone/.test(sansScripts)) problemes.push(...require('./icones.js').preparerIcones(sansScripts, { scene: scene.id }).erreurs);
   // Écrans (spec S6) : cadre, pointeur, cibles et marques, comme à l'assemblage.

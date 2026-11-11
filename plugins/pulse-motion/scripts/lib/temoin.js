@@ -1,7 +1,7 @@
 'use strict';
 /* Pulse Motion – contenu témoin des styles (spec Styles et réalisation, 5.6) : le même petit film, « la chaîne du froid »
  * (references/styles/temoin.json), montre chaque style, livré ou personnel, par deux images de composition fixe et par la
- * boucle de ses huit scènes toutes faites.
+ * boucle de ses neuf scènes toutes faites.
  *   A : scène « titre » à 80 % de sa durée ; B : scène « chiffre » à 80 %, compteur arrivé à 1 250.
  * Les images sont prises par la capture fidèle du plugin (planche des instants), jamais dessinées à part. Sert à
  * « pulse-motion style planche --temoin | --avec-base », à « pulse-motion styles choisir » et à la galerie du wiki.
@@ -32,7 +32,7 @@ function projetTemoin({ dossierStyle, ratio = '16:9', ton }) {
   return projetEssai({ dossierStyle, ratio, ton, types, textes: 'exemple', valeurChiffre: TEMOIN.images.B.valeur });
 }
 
-/** Projet de la boucle témoin : les huit scènes, 2,5 s chacune, mêmes textes. */
+/** Projet de la boucle témoin : les neuf scènes, 2,5 s chacune, mêmes textes. */
 function projetBoucle({ dossierStyle, ratio = '16:9', ton }) {
   return projetEssai({ dossierStyle, ratio, ton, textes: 'exemple', valeurChiffre: TEMOIN.images.B.valeur, dureeScene: TEMOIN.boucle.dureeScene });
 }

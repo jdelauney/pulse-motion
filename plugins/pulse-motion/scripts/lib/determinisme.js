@@ -54,7 +54,7 @@ function concernees(assemblage) {
     // Film (spec S6, 5.8) : images de la prise figée choisies par l'horloge, décodées avant chaque capture.
     if (/\sdata-film\s*=\s*["']fichier:pm-film-/.test(p.section || '')) raisons.push('film');
     // Calque de dessin (spec S7) : flèches, annotations, main levée et dessins libres redessinés à chaque image.
-    if (/\sdata-(?:fleche|annoter|main-levee)[\s=>]/.test(p.section || '') || (p.scripts || []).some((c) => /\bM\s*\.\s*dessin\s*\(/.test(c))) raisons.push('dessin');
+    if (/\sdata-(?:fleche|annoter|main-levee|graphique|code)[\s=>]/.test(p.section || '') || (p.scripts || []).some((c) => /\bM\s*\.\s*dessin\s*\(/.test(c))) raisons.push('dessin');
     if (raisons.length) r.push({ id: p.id, raisons, gpu });
   }
   return r;

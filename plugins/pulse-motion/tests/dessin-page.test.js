@@ -306,7 +306,8 @@ test('main levée : ébullition à 8 par seconde, le tracé change toutes les 0,
 });
 
 test('main levée : data-main-levee sur la flèche de la scène schema la redessine sans changer sa boîte', { ...SANS, timeout: 120000 }, async () => {
-  const schema = lire('styles', 'clair-pedagogique', 'scenes', 'schema.html').replace(/^<!--[\s\S]*?-->\s*/, '');
+  // La scène schema d'avant S7 J2 (flèches SVG dessinées) ; celle des styles relie désormais ses boîtes par data-fleche.
+  const schema = lire('tests', 'fixtures', 'dessin', 'schema-svg.html').replace(/^<!--[\s\S]*?-->\s*/, '');
   const textes = { titre: 'Le trajet', a: 'Devis', b: 'Facture', c: 'Paiement' };
   const net = page([{ id: 'schema', html: schema, duree: 8, textes }]);
   const main = page([{ id: 'schema', html: schema.replace(/<path pathLength/g, '<path data-main-levee pathLength'), duree: 8, textes }]);

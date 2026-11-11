@@ -37,6 +37,7 @@ const { preparerEcrans, usagesEcran } = require('./lib/ecrans.js');
 const { blocFilm } = require('./lib/film.js');
 const crypto = require('node:crypto');
 const { preparerDessin, usagesDessin } = require('./lib/dessin.js');
+const { preparerDonnees, usagesDonnees, cssDonnees } = require('./lib/donnees-scene.js');
 
 const RACINE = path.resolve(__dirname, '..');
 // Modules du moteur, groupés (moteur à la carte, spec Rapidité 5.19) : lib/groupes-moteur.js.
@@ -208,6 +209,8 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   const filmsVises = new Map();
   // Calque de dessin (spec S7) : groupe « dessin » et moteur/dessin/dessin.css seulement si une scène dessine ; icônes de d.icone.
   const dessin = { utilise: false, icones: new Set(), scripts: [] };
+  // Graphiques, code et formules (spec S7, 5.6, 5.9, 5.10) : polices du code et des formules seulement si une scène en montre.
+  const montre = { code: false, formule: false };
   // Voix : une prise par scène (ou la voix provisoire), mots calés ; Opus si encodé, sinon WAV. Lues avant les scènes : la
   // durée d'une scène allongée par sa voix sert aux effets faits de structures sans data-dur (jusqu'à la fin de la scène).
   const voixScenes = {};
@@ -278,11 +281,22 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     }
     const { html: avecTextes, manquants } = S.injecterTextes(aDessiner, scene.textes, scene.ajustements);
     manquants.forEach((cle) => erreurs.push({ regle: 'texte-manquant', gravite: 'erreur', scene: scene.id, message: `Scène « ${scene.id} » : data-texte="${cle}" n'a pas de texte dans le déroulé.` }));
+    // Graphiques, code et formules (spec S7) : après les textes (leurs textes, tirés de scenes[].graphiques, code, formules,
+    // sont posés déjà remplis).
+    let avecDonnees = avecTextes;
+    const usageDonnees = usagesDonnees(avecTextes);
+    if (usageDonnees.graphique || usageDonnees.code || usageDonnees.formule) {
+      const r = preparerDonnees(avecTextes, { scene });
+      avecDonnees = r.html;
+      erreurs.push(...r.erreurs);
+      if (r.code) montre.code = true;
+      if (r.formule) montre.formule = true;
+    }
     // Icônes Lucide (spec S9, 5.3) : <svg data-icone="nom"> devient son SVG en ligne ; la bibliothèque n'est lue qu'à la
     // première icône (une page sans icône n'en porte rien).
-    let avecIcones = avecTextes;
-    if (/data-icone/.test(avecTextes)) {
-      const r = require('./lib/icones.js').preparerIcones(avecTextes, { scene: scene.id });
+    let avecIcones = avecDonnees;
+    if (/data-icone/.test(avecDonnees)) {
+      const r = require('./lib/icones.js').preparerIcones(avecDonnees, { scene: scene.id });
       avecIcones = r.html;
       erreurs.push(...r.erreurs);
     }
@@ -420,6 +434,8 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     musique: deroule.musique ? { volume: deroule.musique.volume ?? 1, source: sourceMusique, partition: null } : null,
     voix: Object.keys(voixScenes).length ? { volume: deroule.voix && typeof deroule.voix.volume === 'number' ? deroule.voix.volume : 1 } : null,
     // Tempo du déroulé, sinon celui de la musique générée.
+    // Allure globale (spec S7, 5.14, plan J4) : lue par le code et les graphiques du calque (durées divisées par l'allure).
+    ...(typeof deroule.allure === 'number' && deroule.allure >= 0.7 && deroule.allure <= 1.6 && deroule.allure !== 1 ? { allure: deroule.allure } : {}),
     tempo: dureeTemps(deroule) ? { bpm: (deroule.tempo && deroule.tempo.bpm) || tempoMusique(deroule), decalage: (deroule.tempo && deroule.tempo.decalage) || 0, ...(grilleFixe(deroule) ? { grille: true } : {}) } : null,
     bruitages: deroule.bruitages ? { transitions: deroule.bruitages.transitions === true, volume: deroule.bruitages.volume ?? 1 } : null,
     scenes: scenesDonnees,
@@ -495,13 +511,20 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   // Moteur à la carte : seuls les groupes de modules dont la vidéo se sert (groupesImposes : 'tous' pour les tests).
   const groupes = groupesImposes || GM.groupesDuDeroule(donnees, sections, dessin.scripts);
   const moteur = lireMoteur(RACINE, { groupes });
+  // Polices du code et des formules (vendor/polices/, OFL) : seulement si une scène en montre ; dans les crédits.
+  const cssMontre = cssDonnees(montre);
+  polices.push(...cssMontre.polices);
+  for (const p of cssMontre.detail) {
+    const deja = detailPolices.find((x) => x.famille === p.famille);
+    if (deja) { deja.roles.push(...p.roles); deja.fichiers.push(...p.fichiers); } else detailPolices.push(p);
+  }
   const temps = dureeTemps(deroule);
   const cssPage = `:root { --pm-ratio-l: ${l}; --pm-ratio-h: ${h};${temps ? ` --pm-temps: ${temps}s; --pm-bpm: ${Math.round(60 / temps * 1000) / 1000};` : ''} }
 ${cssZones(deroule.format.plateforme)}${fs.readFileSync(path.join(RACINE, 'moteur', 'base.css'), 'utf8')}
 ${fs.readFileSync(path.join(RACINE, 'moteur', 'mouvements.css'), 'utf8')}
 ${usages.css ? `${fs.readFileSync(path.join(RACINE, 'moteur', 'ecran.css'), 'utf8')}\n` : ''}${dessin.utilise ? `${fs.readFileSync(path.join(RACINE, 'moteur', 'dessin', 'dessin.css'), 'utf8')}\n` : ''}${variablesCSS()}
 ${cssDeCharte}
-${cssStyle}`;
+${cssMontre.css}${cssStyle}`;
   const page = `<!doctype html>
 <html lang="fr">
 <head>

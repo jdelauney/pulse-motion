@@ -1,6 +1,7 @@
 'use strict';
-/* Pulse Motion – contrat commun des styles : les 8 types de scène toute faite et leurs clés de texte.
- * Tout style (livré ou personnel) fournit ces 8 scènes avec exactement ces clés. */
+/* Pulse Motion – contrat commun des styles : les 9 types de scène toute faite et leurs clés de texte.
+ * Tout style livré fournit ces 9 scènes avec exactement ces clés ; un style personnel peut ne pas avoir les types récents
+ * (TYPES_RECENTS : moyeu, spec S7 5.7), écrits après lui. */
 
 const TYPES = {
   titre: ['etiquette', 'titre', 'sous'],
@@ -11,10 +12,15 @@ const TYPES = {
   alerte: ['titre', 'texte'],
   schema: ['titre', 'a', 'b', 'c'],
   conclusion: ['titre', 'sous'],
+  // Moyeu et rayons (spec S7, 5.7) : un centre et 3 à 5 parties reliées par des flèches.
+  moyeu: ['titre', 'centre', 'partie1', 'partie2', 'partie3', 'partie4', 'partie5'],
 };
 
+/** Types ajoutés après les premiers styles personnels : facultatifs pour un style personnel (une scène absente : un avertissement). */
+const TYPES_RECENTS = ['moyeu'];
+
 /** Clés qu'on peut laisser sans texte : l'élément qui les porte est alors retiré de la scène. */
-const OPTIONNELLES = { liste: ['point3', 'point4'] };
+const OPTIONNELLES = { liste: ['point3', 'point4'], moyeu: ['partie4', 'partie5'] };
 
 /** Familles de styles, reprises des directions visuelles de pulse-vibe. */
 const FAMILLES = ['editoriale', 'moderne', 'technique', 'affirmee', 'chaleureuse'];
@@ -60,4 +66,4 @@ const SECTIONS_ANIMATEUR = [SECTIONS_FICHE[0], SECTIONS_FICHE[2], SECTIONS_FICHE
  * ses pièges. La fiche entière dépasserait le budget de lecture du critique (15 000 jetons avant d'écrire). */
 const SECTIONS_CRITIQUE = [SECTIONS_FICHE[1], SECTIONS_FICHE[3], SECTIONS_FICHE[9]];
 
-module.exports = { TYPES, OPTIONNELLES, FAMILLES, NOM_STYLE, CATEGORIES, TYPES_ENTREE, SECTIONS_FICHE, SECTIONS_ANIMATEUR, SECTIONS_CRITIQUE };
+module.exports = { TYPES, TYPES_RECENTS, OPTIONNELLES, FAMILLES, NOM_STYLE, CATEGORIES, TYPES_ENTREE, SECTIONS_FICHE, SECTIONS_ANIMATEUR, SECTIONS_CRITIQUE };

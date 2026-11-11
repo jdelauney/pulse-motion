@@ -147,7 +147,7 @@ function versionPlugin() {
   try { return JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', '.claude-plugin', 'plugin.json'), 'utf8')).version; } catch { return ''; }
 }
 
-const ROLES = { titres: 'titres', texte: 'texte' };
+const ROLES = { titres: 'titres', texte: 'texte', code: 'code', formules: 'formules' };
 
 /**
  * Crédits de la vidéo, en français : polices (rôle, licence, source), musique, voix, images et logos, sons importés, version

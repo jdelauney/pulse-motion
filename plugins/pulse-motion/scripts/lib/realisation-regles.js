@@ -176,6 +176,12 @@ function compteurs(elements) {
 function nombresAffiches(scene, html, elements, { avecTextes }) {
   const r = [...compteurs(elements), ...textesEnDur(html).flatMap(nombresEnChiffres)];
   if (avecTextes) for (const [cle, t] of Object.entries(scene.textes || {})) if (cle !== 'numero' && typeof t === 'string') r.push(...nombresEnChiffres(t));
+  // Valeurs d'un graphique sans source (spec S7, 5.6 : vérité des chiffres de S2) : comme les textes de la scène.
+  if (avecTextes && scene.graphiques && typeof scene.graphiques === 'object') {
+    for (const g of Object.values(scene.graphiques)) {
+      if (g && !g.source && Array.isArray(g.valeurs)) for (const v of g.valeurs) if (v && typeof v.valeur === 'number') r.push(v.valeur);
+    }
+  }
   return r.filter((v, i, t) => t.findIndex((x) => memeNombre(x, v)) === i);
 }
 

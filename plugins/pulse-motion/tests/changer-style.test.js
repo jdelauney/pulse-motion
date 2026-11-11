@@ -76,7 +76,7 @@ test('styles livrés : clair-pedagogique puis les cinq autres, scènes recopiée
   for (const style of ['energique', 'minimal', 'tech-sombre', 'chaleureux', 'editorial']) {
     const r = changerStyle({ dossier: dir, style });
     assert.equal(r.ok, true, `${style} : ${r.message}`);
-    assert.equal(r.recopiees.length, 8, style);
+    assert.equal(r.recopiees.length, 9, style); // les neuf scènes toutes faites (moyeu : S7 J2)
     assert.deepEqual(assembler({ dossier: dir, ecrire: false }).erreurs, [], style);
   }
 });

@@ -46,6 +46,7 @@ const { estEbauche } = require('./lib/ebauche.js');
 const { calculerMinutage } = require('../moteur/minutage.js');
 const CATALOGUE = require('../moteur/synthe/catalogue.js');
 const { appliquerCorrections } = require('./lib/corriger.js');
+const { CLE_GENEREE } = require('./lib/donnees-scene.js');
 const { controlerRendu } = require('./lib/rendu-controle.js');
 const { verifierDeterminisme } = require('./lib/determinisme.js');
 const { aDesShaders, compilerShadersGPU } = require('./lib/shaders-gpu.js');
@@ -605,7 +606,9 @@ async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.j
     if (renduVerifie) problemes = problemes.filter((p) => p.regle !== 'debordement');
     if (corriger && renduVerifie) {
       // Seulement les textes dont le débordement est bien signalé par le rendu.
-      const corrigibles = v.ajustements.filter((a) => a.taille && duRendu.some((p) => p.regle === 'debordement' && p.scene === a.scene && p.element === a.element));
+      // Textes d'un graphique, du code ou d'une formule (clés posées par l'assemblage, lib/donnees-scene.js) : pas une clé du
+      // déroulé, aucune taille à y écrire.
+      const corrigibles = v.ajustements.filter((a) => a.taille && !CLE_GENEREE.test(a.cle || '') && duRendu.some((p) => p.regle === 'debordement' && p.scene === a.scene && p.element === a.element));
       if (corrigibles.length) {
         const appli = appliquerCorrections(projet, corrigibles.map((a) => ({ regle: 'debordement', correction: { scene: a.scene, ajustement: { cle: a.cle, taille: a.taille } } })), { copieFaite: r.corrections.length > 0 });
         corrections = [...corrections, ...appli.corrections];
