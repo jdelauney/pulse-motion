@@ -116,7 +116,10 @@ function fabriquerMouvements() {
 async function fabriquerStyles() {
   const { projetBoucle, imagesTemoin } = require(path.join(PLUGIN, "scripts", "lib", "temoin.js"));
   const ffmpeg = outils();
+  // PM_MEDIAS_MANQUANTS=1 : seuls les styles dont un média manque sont fabriqués (les médias publiés restent tels quels).
+  const manquantsSeuls = process.env.PM_MEDIAS_MANQUANTS === "1";
   for (const style of STYLES_LIVRES()) {
+    if (manquantsSeuls && fichiersStyle(style).every((f) => fs.existsSync(path.join(DOCS, f)))) continue;
     const dossierStyle = path.join(PLUGIN, "styles", style);
     const dossier = projetBoucle({ dossierStyle });
     try {
