@@ -83,6 +83,8 @@
 .cadre-alerte { display: flex; flex-direction: column; gap: 2cqh; padding: 4cqh 5cqh; }
 
 /* ---------- Schéma ---------- */
+/* Flèches courtes entre trois idées : un trait presque net, pour qu'elles partent et arrivent au bord des idées. */
+#pm-scene > section[data-scene]:has(.chaine) { --pm-rugosite: 0.3; }
 .chaine { display: flex; align-items: center; gap: 2cqh; }
 .chaine > .idee { flex: 1; text-align: center; padding: 3cqh 1.6cqh; font: 600 4.6cqh/1.2 var(--f-titres); }
 .connecteur { flex: none; width: 9cqh; height: 2cqh; }
@@ -158,7 +160,7 @@
   .moyeu > .moyeu-partie { width: 27cqh; font-size: 3.5cqh; translate: calc(-50% + cos(var(--a)) * 31cqh) calc(-50% + sin(var(--a)) * 26cqh); }
 }
 @container (max-aspect-ratio: 9/10) {
-  .moyeu { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); align-content: center; row-gap: 12cqh; column-gap: 0.8cqh; min-height: 0; }
+  .moyeu { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); align-content: center; align-items: center; row-gap: 12cqh; column-gap: 0.8cqh; min-height: 0; }
   .moyeu > .moyeu-centre, .moyeu > .moyeu-partie { position: relative; left: auto; top: auto; translate: none; width: auto; }
   .moyeu > .moyeu-centre { grid-column: 1 / -1; justify-self: center; width: 85%; }
   .moyeu > .moyeu-partie { grid-row: 2; font-size: calc(3.4cqh - var(--n) * 0.24cqh); padding: 1.4cqh 0.2cqh; overflow-wrap: anywhere; }
