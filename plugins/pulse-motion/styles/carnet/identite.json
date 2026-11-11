@@ -32,9 +32,9 @@
   },
   "typographie": {
     "titres": {
-      "famille": "Fraunces",
-      "categorie": "serif",
-      "graisse": 400
+      "famille": "Caveat",
+      "categorie": "handwriting",
+      "graisse": 700
     },
     "texte": {
       "famille": "Instrument Sans",

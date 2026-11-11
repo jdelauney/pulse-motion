@@ -25,15 +25,15 @@
 }
 
 /* ---------- Typographie : titres à la plume, texte simple ---------- */
-.titre { margin: 0; width: fit-content; max-width: 100%; font: italic 400 10cqh/1.08 var(--f-titres); text-wrap: balance; overflow-wrap: break-word; }
-.titre-moyen { margin: 0; width: fit-content; max-width: 100%; font: italic 400 6.6cqh/1.12 var(--f-titres); text-wrap: balance; overflow-wrap: break-word; }
+.titre { margin: 0; width: fit-content; max-width: 100%; font: 700 10cqh/1.08 var(--f-titres); text-wrap: balance; overflow-wrap: break-word; }
+.titre-moyen { margin: 0; width: fit-content; max-width: 100%; font: 700 6.6cqh/1.12 var(--f-titres); text-wrap: balance; overflow-wrap: break-word; }
 .texte { margin: 0; font: 400 3.9cqh/1.45 var(--f-texte); text-wrap: pretty; }
 .etiquette { margin: 0 0 1.8cqh; align-self: flex-start; color: var(--c-primaire-lisible); font: 600 3.8cqh/1.2 var(--f-texte); letter-spacing: 0.05em; text-transform: uppercase; }
-.nombre { margin: 0; width: fit-content; font: italic 400 22cqh/1 var(--f-titres); font-variant-numeric: tabular-nums lining-nums; }
+.nombre { margin: 0; width: fit-content; font: 700 22cqh/1 var(--f-titres); font-variant-numeric: tabular-nums lining-nums; }
 .unite { font-size: 0.4em; margin-left: 0.15em; }
 .compte { color: var(--c-accent-lisible); }
 /* Note dans la marge : un peu de travers, à la couleur du second feutre. */
-.note { margin: 0; align-self: flex-end; max-width: 60%; rotate: -2.5deg; color: var(--c-primaire-lisible); font: italic 400 4.2cqh/1.3 var(--f-titres); }
+.note { margin: 0; align-self: flex-end; max-width: 60%; rotate: -2.5deg; color: var(--c-primaire-lisible); font: 700 4.2cqh/1.3 var(--f-titres); }
 
 /* ---------- Décor : le grain du papier, une ombre de reliure ---------- */
 .decor { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
@@ -65,11 +65,11 @@
 /* ---------- Comparaison : deux croquis ---------- */
 .croquis { display: grid; grid-template-columns: 1fr 1fr; gap: 8cqh; }
 .vignette { position: relative; display: flex; flex-direction: column; gap: 1.6cqh; padding: 3cqh; min-width: 0; }
-.vignette-titre { margin: 0; width: fit-content; font: italic 400 5.4cqh/1.1 var(--f-titres); }
+.vignette-titre { margin: 0; width: fit-content; font: 700 5.4cqh/1.1 var(--f-titres); }
 
 /* ---------- Étape ---------- */
 .etape { display: grid; grid-template-columns: auto 1fr; gap: 6cqh; align-items: center; }
-.numero { display: block; text-align: center; width: 18cqh; height: 18cqh; line-height: 18cqh; margin: 0; font: italic 400 13cqh/1 var(--f-titres); color: var(--c-accent-lisible); }
+.numero { display: block; text-align: center; width: 18cqh; height: 18cqh; line-height: 18cqh; margin: 0; font: 700 13cqh/1 var(--f-titres); color: var(--c-accent-lisible); }
 .etape-texte { display: flex; flex-direction: column; gap: 2cqh; min-width: 0; }
 
 /* ---------- Alerte ---------- */
@@ -79,7 +79,7 @@
 /* Flèches courtes entre trois idées : un trait moins rugueux, pour qu'elles partent et arrivent au bord des idées. */
 #pm-scene > section[data-scene]:has(> .chaine) { --pm-rugosite: 0.6; }
 .chaine { display: flex; align-items: center; gap: 2cqh; }
-.chaine > .idee { flex: 1; text-align: center; padding: 3cqh 1.6cqh; font: italic 400 4.8cqh/1.2 var(--f-titres); }
+.chaine > .idee { flex: 1; text-align: center; padding: 3cqh 1.6cqh; font: 700 4.8cqh/1.2 var(--f-titres); }
 .connecteur { flex: none; width: 9cqh; height: 2cqh; }
 
 /* ---------- Logo ---------- */
@@ -144,7 +144,7 @@
 .moyeu:has(> .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie) { --n: 4; }
 .moyeu:has(> .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie) { --n: 5; }
 .moyeu > .moyeu-centre, .moyeu > .moyeu-partie { position: absolute; left: 50%; top: 50%; box-sizing: border-box; flex: none; margin: 0; text-align: center; }
-.moyeu > .moyeu-centre { width: 38cqh; padding: 2.4cqh; translate: -50% -50%; font: italic 400 5.4cqh/1.15 var(--f-titres); color: var(--c-accent-lisible); }
+.moyeu > .moyeu-centre { width: 38cqh; padding: 2.4cqh; translate: -50% -50%; font: 700 5.4cqh/1.15 var(--f-titres); color: var(--c-accent-lisible); }
 .moyeu > .moyeu-partie { --a: calc(-90deg + 180deg / var(--n) + var(--i, 0) * 360deg / var(--n)); width: 32cqh; font: 400 3.8cqh/1.25 var(--f-texte); overflow-wrap: anywhere;
   translate: calc(-50% + cos(var(--a)) * 58cqh) calc(-50% + sin(var(--a)) * 27cqh); }
 @container (max-aspect-ratio: 5/4) {

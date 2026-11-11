@@ -28,7 +28,7 @@
 
 ## 4. Typographie et sous-titres
 
-- **Sora** 600 : titres (10,5 cqh, moyen 6,6), chiffres (22 cqh) ; **Nunito Sans** 400 : texte (4 cqh), 700 : étiquettes.
+- **Cabin Sketch** 700 (lettres à la craie) : titres (10,5 cqh, moyen 6,6), chiffres (22 cqh) ; **Nunito Sans** 400 : texte (4 cqh), 700 : étiquettes.
 - Sous-titres sur l'ardoise assombrie (`--pm-st-fond`). Lisibilité : `controles.md`.
 
 ## 5. Qualité du mouvement

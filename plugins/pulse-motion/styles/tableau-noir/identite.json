@@ -31,9 +31,9 @@
   },
   "typographie": {
     "titres": {
-      "famille": "Sora",
-      "categorie": "sans-serif",
-      "graisse": 600
+      "famille": "Cabin Sketch",
+      "categorie": "handwriting",
+      "graisse": 700
     },
     "texte": {
       "famille": "Nunito Sans",

@@ -36,7 +36,7 @@
 /* Note épinglée : écrite à la main, tenue par une épingle, reliée à ce qu'elle commente par un fil. */
 .note {
   position: relative; margin: 0; align-self: flex-start; max-width: 70%; padding-left: 4cqh;
-  color: var(--c-primaire-lisible); font: italic 400 4.4cqh/1.3 var(--f-texte);
+  color: var(--c-primaire-lisible); font: 400 4.6cqh/1.25 var(--f-notes, var(--f-texte));
 }
 .note::before { content: ""; position: absolute; left: 0; top: 0.5em; width: 1.6cqh; height: 1.6cqh; border-radius: 50%; background: var(--c-accent-lisible); box-shadow: 0.3cqh 0.4cqh 0.4cqh rgba(40, 30, 20, 0.25); }
 .note::after { content: ""; position: absolute; left: 1.6cqh; top: calc(0.5em + 0.8cqh); width: 2cqh; height: var(--fin); background: var(--c-primaire-lisible); }

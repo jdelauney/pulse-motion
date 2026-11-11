@@ -32,7 +32,7 @@
 
 ## 4. Typographie et sous-titres
 
-- **Fredoka** 600 : titres (9,6 cqh, moyen 6,4), chiffres (21 cqh), notes ; **Nunito Sans** 400 : texte (3,9 cqh), 700 : étiquettes.
+- **Patrick Hand** 400 (écriture d'album) : titres (9,6 cqh, moyen 6,4), chiffres (21 cqh), notes ; **Nunito Sans** 400 : texte (3,9 cqh), 700 : étiquettes.
 - Sous-titres sur papier éclairci (`--pm-st-fond`). Lisibilité : `controles.md`.
 
 ## 5. Qualité du mouvement

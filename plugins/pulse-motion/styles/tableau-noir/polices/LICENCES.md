@@ -1,12 +1,5 @@
 # Licences des polices
 
-## Sora
-
-- Source : Bunny Fonts (https://fonts.bunny.net), le 2026-11-11
-- Licence : catalogue Google Fonts (SIL Open Font License, Apache 2.0 ou Ubuntu Font Licence), intégration autorisée
-- Sora-600.woff2 : https://fonts.bunny.net/sora/files/sora-latin-600-normal.woff2 (sha256 fa9ab76f30510ad92153c6d6d72d0508884b85e9f0148abdfa963231b2a4845a)
-- Copiée du style « lancement » du plugin le 2026-11-11 (mêmes fichiers, mêmes empreintes) : aucune police téléchargée pour ce style.
-
 ## Nunito Sans
 
 - Source : Bunny Fonts (https://fonts.bunny.net), le 2026-10-12
@@ -15,10 +8,17 @@
 - Nunito Sans-700.woff2 : https://fonts.bunny.net/nunito-sans/files/nunito-sans-latin-700-normal.woff2 (sha256 cb84238e7b852f2d22b91a598289f13b31cbc7a2d618fd2c0628ecb69459fbeb)
 - Copiée du style « chaleureux » du plugin le 2026-11-11 (mêmes fichiers, mêmes empreintes) : aucune police téléchargée pour ce style.
 
+## Cabin Sketch
+
+- Source : Bunny Fonts (https://fonts.bunny.net), le 2026-11-11
+- Licence : catalogue Google Fonts (SIL Open Font License, Apache 2.0 ou Ubuntu Font Licence), intégration autorisée
+- Cabin Sketch-700.woff2 : https://fonts.bunny.net/cabin-sketch/files/cabin-sketch-latin-700-normal.woff2 (sha256 5b1ad02715a39f758061673f2c39631e1d256f6b5d865355fc63a785f40f399a)
+- Téléchargée sur Bunny Fonts (sous-ensemble latin) avec l'accord de l'auteur du plugin, le 2026-11-11 ; licence SIL Open Font License 1.1.
+
 ## Copyright
 
-- Sora : Copyright 2019 The Sora Project Authors (https://github.com/sora-xor/sora-font)
 - Nunito Sans : Copyright 2016 The Nunito Sans Project Authors (https://github.com/Fonthausen/NunitoSans)
+- Cabin Sketch : Copyright 2011 The Cabin Sketch Project Authors (Pablo Impallari)
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 

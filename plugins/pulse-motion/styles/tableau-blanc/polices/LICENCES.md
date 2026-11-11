@@ -1,16 +1,16 @@
 # Licences des polices
 
-## Fredoka
+## Kalam
 
-- Source : Bunny Fonts (https://fonts.bunny.net), le 2026-10-12
+- Source : Bunny Fonts (https://fonts.bunny.net), le 2026-11-11
 - Licence : catalogue Google Fonts (SIL Open Font License, Apache 2.0 ou Ubuntu Font Licence), intégration autorisée
-- Fredoka-500.woff2 : https://fonts.bunny.net/fredoka/files/fredoka-latin-500-normal.woff2 (sha256 7d76e44a94b02894b384fc98c124ccf521d8460bf0e0bbe31c1b6b4be6099620)
-- Fredoka-600.woff2 : https://fonts.bunny.net/fredoka/files/fredoka-latin-600-normal.woff2 (sha256 b62f2898de150f019961f4884a49f83dcd2ce74375be5e0992c594ebb8f30294)
-- Copiée du style « chaleureux » du plugin le 2026-11-11 (mêmes fichiers, mêmes empreintes) : aucune police téléchargée pour ce style.
+- Kalam-400.woff2 : https://fonts.bunny.net/kalam/files/kalam-latin-400-normal.woff2 (sha256 954410601a823f37e219f7930b7446f86afa15621326a7078d56fb9c910135cb)
+- Kalam-700.woff2 : https://fonts.bunny.net/kalam/files/kalam-latin-700-normal.woff2 (sha256 252063af6ade8b9a744cde4ddad0fc21ea53b8ba711eed121a0c2e8610ea9c93)
+- Téléchargée sur Bunny Fonts (sous-ensemble latin) avec l'accord de l'auteur du plugin, le 2026-11-11 ; licence SIL Open Font License 1.1.
 
 ## Copyright
 
-- Fredoka : Copyright 2016 The Fredoka Project Authors (https://github.com/hafontia/Fredoka-One)
+- Kalam : Copyright 2014 Indian Type Foundry
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 
