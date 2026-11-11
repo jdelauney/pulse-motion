@@ -1,0 +1,21 @@
+<!-- Scène toute faite « alerte » (style iso-album) : le danger posé dans le lieu ; la personne s'arrête avant, puis la règle. Durée conseillée : 8 s.
+     Textes : titre (≤ 32 car.), texte (≤ 64 car.). -->
+<section data-scene="alerte">
+  <div class="decor">
+    <span class="nuage" data-decor data-start="0" data-dur="8"></span>
+    <span class="nuage" data-decor data-start="0" data-dur="8"></span>
+  </div>
+  <div class="une inverse">
+    <div class="iso" data-iso>
+      <i data-iso-extruder="0,0 6,0 6,4.4 0,4.4" data-iso-h="0.25" data-couleur="iso2"></i>
+      <i data-iso-boite="0 0 0.25 6 0.3 1.8" data-couleur="iso4"></i>
+      <i data-iso-extruder="1.6,1.2 3.8,1 4.3,2.4 2.4,3" data-iso-z="0.25" data-iso-h="0.03" data-couleur="iso3" class="iso-monte" data-start="0.4" data-dur="0.6"></i>
+      <i data-iso-cylindre="4.4 0.9 0.25 0.25 0.9" data-couleur="accent" class="iso-pose" data-start="1" data-dur="0.6"></i>
+      <i data-iso-personne="4.6 3.4 0.25" data-iso-depuis="5.8 4.2 0.25" data-couleur="primaire" data-start="1.4" data-dur="1.4"></i>
+    </div>
+    <div id="boite" class="signal arrive" data-start="1.6">
+      <h2 id="titre" class="titre-moyen compte arrive" data-texte="titre" data-start="#boite+0.5"></h2>
+      <p id="texte" class="texte arrive" data-texte="texte" data-start="#titre+0.8"></p>
+    </div>
+  </div>
+</section>

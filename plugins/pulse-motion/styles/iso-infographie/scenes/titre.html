@@ -1,0 +1,25 @@
+<!-- Scène toute faite « titre » (style iso-infographie) : le site se construit bloc par bloc, le sujet à l'accent, puis le titre. Durée conseillée : 7 s.
+     Textes : etiquette (≤ 22 car.), titre (≤ 32 car.), sous (≤ 46 car.). Décor : data-dur = durée de la scène. -->
+<section data-scene="titre">
+  <div class="decor">
+    <span class="losange" data-decor data-start="0" data-dur="7"></span>
+    <span class="losange" data-decor data-start="0" data-dur="7"></span>
+  </div>
+  <div class="une">
+    <div class="textes">
+      <p id="etiquette" class="etiquette arrive" data-texte="etiquette" data-start="0.4"></p>
+      <h1 id="titre" class="titre arrive" data-texte="titre" data-start="#etiquette+0.4"></h1>
+      <p id="sous" class="texte arrive" data-texte="sous" data-start="#titre+1.4"></p>
+    </div>
+    <div class="iso" data-iso>
+      <i data-iso-extruder="0,0 8,0 8,6 0,6" data-iso-h="0.3" data-couleur="iso4" class="iso-pose" data-start="0.1" data-dur="0.6"></i>
+      <i id="batiment" data-iso-boite="0.8 0.8 0.3 3.4 2.6 1.8" data-couleur="iso1" class="iso-monte" data-start="0.5" data-dur="0.8"></i>
+      <i data-iso-prisme="0.8 0.8 2.1 3.4 2.6 0.9" data-couleur="iso3" class="iso-pose" data-start="#batiment:fin" data-dur="0.6"></i>
+      <i data-iso-boite="4.2 1.4 1.2 1.2 0.5 0.4" data-couleur="iso6" class="iso-pose" data-start="1.7" data-dur="0.5"></i>
+      <i data-iso-cylindre="6.1 1.7 0.3 0.8 2.2" data-couleur="accent" class="iso-monte sujet" data-start="1.5" data-dur="0.8"></i>
+      <i data-iso-boite="4.4 3.8 0.3 2.2 1.3 1.1" data-iso-depuis="7.4 3.8 0.3" data-couleur="iso2" data-start="2.2" data-dur="1.2"></i>
+      <i data-iso-boite="6.6 3.9 0.3 0.8 1.1 0.9" data-iso-depuis="9.6 3.9 0.3" data-couleur="iso1" data-start="2.2" data-dur="1.2"></i>
+      <i data-iso-personne="1.4 4.8 0.3" data-iso-vers="3.4 4.8 0.3" data-start="2.6" data-dur="2.4"></i>
+    </div>
+  </div>
+</section>

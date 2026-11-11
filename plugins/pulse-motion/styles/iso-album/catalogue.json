@@ -1,0 +1,16 @@
+{
+  "style": "iso-album",
+  "description": "Calme, bienveillant, précis : une règle du quotidien jouée dans l'ordre par de petits personnages, dans un lieu en isométrie, pour les consignes, l'accueil et les procédures.",
+  "transitions": ["fondu", "glissement"],
+  "scenes": [
+    { "nom": "titre", "role": "Le lieu, l'étiquette écrite au sol, les personnes qui entrent", "duree": 7, "textes": { "etiquette": 18, "titre": 32, "sous": 46 } },
+    { "nom": "liste", "role": "La règle dans l'ordre, la file qui se forme", "duree": 12, "textes": { "titre": 32, "point1": 36, "point2": 36, "point3": 36, "point4": 36 } },
+    { "nom": "chiffre", "role": "La valeur se compte, les personnes arrivent", "duree": 7, "textes": { "titre": 32, "unite": 3, "legende": 46 } },
+    { "nom": "comparaison", "role": "Deux façons côte à côte, la bonne plus rapide", "duree": 12, "textes": { "titre": 32, "gauche-titre": 16, "gauche-texte": 48, "droite-titre": 16, "droite-texte": 48 } },
+    { "nom": "etape", "role": "Le numéro au sol, la personne à sa place", "duree": 8, "textes": { "numero": 2, "titre": 32, "texte": 64 } },
+    { "nom": "alerte", "role": "Le danger dans le lieu, la personne s'arrête", "duree": 8, "textes": { "titre": 32, "texte": 64 } },
+    { "nom": "schema", "role": "Trois lieux du parcours reliés", "duree": 8, "textes": { "titre": 32, "a": 14, "b": 14, "c": 14 } },
+    { "nom": "moyeu", "role": "Une idée au centre, 3 à 5 parties autour, reliées par des flèches", "duree": 10, "textes": { "titre": 32, "centre": 18, "partie1": 16, "partie2": 16, "partie3": 16, "partie4": 16, "partie5": 16 } },
+    { "nom": "conclusion", "role": "Le lieu entier, chacun à sa place ; la leçon et le logo", "duree": 6, "textes": { "titre": 32, "sous": 44 } }
+  ]
+}

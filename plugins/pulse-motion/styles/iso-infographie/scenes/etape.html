@@ -1,0 +1,21 @@
+<!-- Scène toute faite « etape » (style iso-infographie) : le numéro, puis la machine s'ouvre et montre son intérieur (la coupe). Durée conseillée : 8 s.
+     Textes : numero (≤ 2 car.), titre (≤ 32 car.), texte (≤ 64 car.). -->
+<section data-scene="etape">
+  <div class="decor">
+    <span class="losange" data-decor data-start="0" data-dur="8"></span>
+    <span class="losange" data-decor data-start="0" data-dur="8"></span>
+  </div>
+  <div class="une">
+    <div class="textes">
+      <p id="numero" class="numero arrive" data-texte="numero" data-start="0.4"></p>
+      <h2 id="titre" class="titre-moyen arrive" data-texte="titre" data-start="#numero+0.5"></h2>
+      <p id="texte" class="texte arrive" data-texte="texte" data-start="#titre+0.8"></p>
+    </div>
+    <div class="iso" data-iso>
+      <i data-iso-extruder="0,0 5.4,0 5.4,4.4 0,4.4" data-iso-h="0.3" data-couleur="iso4"></i>
+      <i id="machine" data-iso-boite="0.6 0.6 0.3 4.2 3.2 2.2" data-couleur="iso1" data-iso-coupe="2.6" data-iso-coupe-dur="0.9" class="iso-monte" data-start="0.5" data-dur="0.8"></i>
+      <i data-iso-cylindre="1.9 1.9 0.3 0.7 1.5" data-couleur="accent" class="iso-monte sujet" data-start="3" data-dur="0.7"></i>
+      <i data-iso-boite="3.1 1.1 0.3 1.2 1.3 0.9" data-couleur="iso3" class="iso-monte" data-start="3.3" data-dur="0.6"></i>
+    </div>
+  </div>
+</section>

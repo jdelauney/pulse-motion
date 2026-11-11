@@ -1,0 +1,26 @@
+<!-- Scène toute faite « conclusion » (style iso-album) : le lieu entier, vu de plus loin, chacun à sa place ; la leçon, puis le logo. Durée conseillée : 6 s.
+     Textes : titre (≤ 32 car.), sous (≤ 44 car.). Logo : celui de la charte (sinon supprimer l'image).
+     Dernière scène de la vidéo : data-dur du décor = durée de la scène − 1 s (image stable d'au moins 0,5 s à la fin). -->
+<section data-scene="conclusion">
+  <div class="decor">
+    <span class="nuage" data-decor data-start="0" data-dur="5"></span>
+    <span class="nuage" data-decor data-start="0" data-dur="5"></span>
+  </div>
+  <div class="une">
+    <div class="textes">
+      <h2 id="titre" class="titre arrive" data-texte="titre" data-start="0.4"></h2>
+      <p id="sous" class="texte arrive" data-texte="sous" data-start="#titre+1"></p>
+      <img id="logo" class="logo" data-logo alt="" data-start="#sous+0.8" data-dur="0.5" data-tween="opacity 0→1">
+    </div>
+    <div class="iso recule" data-iso data-start="0" data-dur="3.5">
+      <i data-iso-extruder="0,0 9,0 9,6 0,6" data-iso-h="0.25" data-couleur="iso2"></i>
+      <i data-iso-boite="0 0 0.25 9 0.3 2.2" data-couleur="iso4"></i>
+      <i data-iso-boite="0 0.3 0.25 0.3 5.7 2.2" data-couleur="iso4"></i>
+      <i data-iso-boite="6 0.3 0.25 1.3 0.1 1.7" data-couleur="iso3"></i>
+      <i data-iso-boite="1.4 1.3 0.25 2.6 1 0.9" data-couleur="iso5"></i>
+      <i data-iso-cylindre="8.2 1.1 0.25 0.35 0.5" data-couleur="iso4"></i>
+      <i data-iso-cylindre="8.2 1.1 0.75 0.55 0.7" data-couleur="iso1"></i>
+      <i data-iso-isotype="2.2 2.9 0.25 4" data-iso-pas="1" data-couleur="primaire" data-start="1" data-dur="1"></i>
+    </div>
+  </div>
+</section>

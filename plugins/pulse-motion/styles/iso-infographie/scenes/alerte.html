@@ -1,0 +1,23 @@
+<!-- Scène toute faite « alerte » (style iso-infographie) : tout le site passe au gris, sauf le point qui compte, à l'accent (focus et contexte). Durée conseillée : 8 s.
+     Textes : titre (≤ 32 car.), texte (≤ 64 car.). -->
+<section data-scene="alerte">
+  <div class="decor">
+    <span class="losange" data-decor data-start="0" data-dur="8"></span>
+    <span class="losange" data-decor data-start="0" data-dur="8"></span>
+  </div>
+  <div class="une inverse">
+    <div class="iso focus" data-iso data-start="1.6" data-dur="0.8">
+      <i data-iso-extruder="0,0 6,0 6,4.4 0,4.4" data-iso-h="0.3" data-couleur="iso4"></i>
+      <i data-iso-boite="0.5 0.5 0.3 1.5 1.5 1.3" data-couleur="iso1"></i>
+      <i data-iso-boite="2.4 0.6 0.3 1.3 1.2 0.8" data-couleur="iso2"></i>
+      <i data-iso-cylindre="4.8 1.2 0.3 0.6 1.8" data-couleur="iso6"></i>
+      <i data-iso-boite="0.6 2.8 0.3 1.2 1.1 0.7" data-couleur="iso3"></i>
+      <i data-iso-boite="2.8 2.6 0.3 1.3 1.2 1" data-couleur="accent" class="iso-pose sujet" data-start="0.4" data-dur="0.6"></i>
+      <i data-iso-personne="4.6 3.4 0.3" data-couleur="primaire"></i>
+    </div>
+    <div id="boite" class="signal arrive" data-start="0.8">
+      <h2 id="titre" class="titre-moyen compte arrive" data-texte="titre" data-start="#boite+0.6"></h2>
+      <p id="texte" class="texte arrive" data-texte="texte" data-start="#titre+0.8"></p>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,163 @@
+/* Pulse Motion – style « iso-album ».
+ *
+ * L'explication calme d'une règle du quotidien, dans un lieu dessiné en vraie isométrie à aplats (module
+ * moteur/medium/iso.js) : de petits personnages sans visage, vus de dos, font la chose dans l'ordre, au pas de 12 images par
+ * seconde ; le texte à empattements se pose au sol, lettre à lettre. Papier crème, nuages lents, couleurs douces ; l'accent
+ * pour le bon geste.
+ * Idées de lemo-opuscar (isometric-picture-book, MIT, © 2026 LemoLab), réécrites en CSS et pour le module isométrique.
+ * Ton clair seulement. Formats 16:9, 1:1, 4:5 et 9:16 par requêtes de conteneur. Effets exclus : filter: url(),
+ * mix-blend-mode, backdrop-filter.
+ */
+
+/* ---------- Mise en page : le papier crème ---------- */
+#pm-scene > section[data-scene] {
+  --iso-1: #a9c79f; --iso-2: #ead8ae; --iso-3: #a2bcd4; --iso-4: #dcb9a4; --iso-5: #c8b6d6; --iso-6: #f1e7d2;
+  --iso-gris: #d6cfc2;
+  display: flex; flex-direction: column; justify-content: center; gap: 3cqh;
+  padding: 9cqh 11cqh 11cqh; overflow: hidden;
+  background:
+    radial-gradient(circle at 18% 12%, color-mix(in srgb, #fffaf0 70%, transparent), transparent 42%),
+    radial-gradient(circle at 85% 90%, color-mix(in srgb, #e9dcc2 55%, transparent), transparent 48%),
+    var(--c-fond);
+  color: var(--c-texte);
+  font: 400 3.9cqh/1.45 var(--f-texte);
+}
+
+/* ---------- Typographie : des titres à empattements, un texte doux ---------- */
+.titre { margin: 0; font: 600 8.6cqh/1.06 var(--f-titres); letter-spacing: -0.01em; text-wrap: balance; overflow-wrap: break-word; }
+.titre-moyen { margin: 0; font: 600 6cqh/1.12 var(--f-titres); text-wrap: balance; overflow-wrap: break-word; }
+.texte { margin: 0; font: 400 3.9cqh/1.45 var(--f-texte); text-wrap: pretty; }
+.nombre { margin: 0; font: 600 19cqh/1 var(--f-titres); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.unite { font-size: 0.36em; margin-left: 0.15em; }
+.compte { color: var(--c-accent-lisible); }
+/* Entrée d'un texte : il se pose doucement. Par transform : la propriété translate reste à la mise en page. */
+.arrive { animation: ia-arrive 0.7s cubic-bezier(0.25, 0.6, 0.3, 1) both; }
+@keyframes ia-arrive { from { opacity: 0; transform: translateY(1.2cqh); } to { opacity: 1; transform: none; } }
+/* Texte posé au sol : couché dans le plan du sol (axe x du dessin), écrit lettre à lettre (data-lettres sur l'élément). */
+.iso > .au-sol { translate: -50% -50%; transform: matrix(0.866, 0.5, -0.866, 0.5, 0, 0); white-space: nowrap;
+  font: 600 4.2cqh/1 var(--f-titres); color: var(--c-texte); }
+.iso > .au-sol.compte { color: var(--c-accent-lisible); }
+.iso > .au-sol.grand { font-size: 11cqh; }
+/* Repère d'un lieu ou d'une étape, à côté du plan. */
+.repere { margin: 0; padding: 0.4cqh 1.4cqh; border-radius: 3cqh; background: color-mix(in srgb, var(--c-fond) 88%, #ffffff); box-shadow: 0 0.3cqh 0 color-mix(in srgb, var(--c-texte) 14%, transparent);
+  font: 700 3.6cqh/1.3 var(--f-texte); white-space: nowrap; }
+.repere.compte { color: var(--c-accent-lisible); }
+
+/* ---------- Décor : deux nuages qui passent lentement (jamais immobile) ---------- */
+.decor { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.decor ~ * { position: relative; z-index: 1; }
+.nuage { position: absolute; left: 60%; top: 4cqh; width: 30cqh; height: 9cqh; border-radius: 9cqh;
+  background: color-mix(in srgb, #ffffff 62%, transparent); box-shadow: 9cqh -3cqh 0 -1cqh color-mix(in srgb, #ffffff 62%, transparent);
+  translate: calc(var(--p, 0) * -12cqh) 0; }
+.nuage + .nuage { left: 8%; top: calc(100% - 12cqh); width: 22cqh; height: 7cqh; translate: calc(var(--p, 0) * 10cqh) 0; }
+
+/* ---------- Deux colonnes : les textes et le lieu ---------- */
+.une { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 6cqh; }
+.une > .textes { display: flex; flex-direction: column; gap: 2.6cqh; min-width: 0; }
+.une > .iso { --iso-unite: 0.74cqh; --iso-largeur: 84cqh; --iso-hauteur: 62cqh; }
+.inverse { grid-template-columns: auto minmax(0, 1fr); }
+
+/* ---------- Liste : chaque règle, et la personne qui prend sa place dans la file ---------- */
+.faits { list-style: none; margin: 0; padding: 0; display: grid; gap: 2.2cqh; }
+.faits li { display: grid; grid-template-columns: 3.4cqh 1fr; gap: 2cqh; align-items: baseline; font: 400 4cqh/1.35 var(--f-texte); }
+.faits li::before { content: "1"; display: block; color: var(--c-accent-lisible); font: 600 4cqh/1 var(--f-titres); }
+.faits li:nth-child(2)::before { content: "2"; }
+.faits li:nth-child(3)::before { content: "3"; }
+.faits li:nth-child(4)::before { content: "4"; }
+
+/* ---------- Chiffre : le temps qui se compte ---------- */
+.mesure { display: flex; flex-direction: column; gap: 1.6cqh; min-width: 0; }
+
+/* ---------- Comparaison : deux façons côte à côte ---------- */
+.duo { display: grid; grid-template-columns: 1fr 1fr; gap: 8cqh; align-items: start; }
+.cote { display: flex; flex-direction: column; gap: 1.6cqh; min-width: 0; }
+.cote > .iso { --iso-unite: 0.5cqh; --iso-largeur: 62cqh; --iso-hauteur: 26cqh; align-self: flex-start; }
+.cote-titre { margin: 0; font: 600 5cqh/1.1 var(--f-titres); }
+.cote.compte { color: var(--c-texte); }
+.cote.compte > .cote-titre { color: var(--c-accent-lisible); }
+
+/* ---------- Étape : le numéro peint au sol ---------- */
+.etape-texte { display: flex; flex-direction: column; gap: 2cqh; min-width: 0; }
+
+/* ---------- Alerte : la règle à ne pas oublier ---------- */
+.signal { display: flex; flex-direction: column; gap: 2cqh; padding: 3cqh 3.6cqh; border-radius: 2cqh; background: color-mix(in srgb, var(--c-fond) 80%, #ffffff);
+  box-shadow: 0 0.5cqh 0 color-mix(in srgb, var(--c-accent-lisible) 45%, transparent); }
+
+/* ---------- Schéma : trois lieux reliés ---------- */
+.chaine { display: flex; align-items: flex-end; justify-content: space-between; gap: 3cqh; }
+.maillon { display: flex; flex-direction: column; align-items: center; gap: 1.6cqh; flex: 1; min-width: 0; }
+.maillon > .iso { --iso-unite: 0.55cqh; --iso-largeur: 36cqh; --iso-hauteur: 30cqh; }
+.connecteur { flex: none; width: 8cqh; height: 2cqh; align-self: flex-end; margin-bottom: 2.4cqh; }
+
+/* ---------- Conclusion : le lieu entier, vu de plus loin ---------- */
+.recule { animation: ia-recule 3.5s cubic-bezier(0.3, 0, 0.2, 1) both; }
+@keyframes ia-recule { from { scale: 1.25; } to { scale: 1; } }
+.logo { height: 10cqh; width: auto; object-fit: contain; align-self: flex-start; }
+
+/* ---------- Format carré ---------- */
+@container (max-aspect-ratio: 5/4) {
+  #pm-scene > section[data-scene] { padding: 9cqh 8cqh 10cqh; gap: 2.4cqh; font-size: 3.6cqh; }
+  .titre { font-size: 6.8cqh; }
+  .titre-moyen { font-size: 5cqh; }
+  .texte { font-size: 3.6cqh; }
+  .repere { font-size: 3.5cqh; }
+  .nombre { font-size: 14cqh; }
+  .faits li { font-size: 3.6cqh; }
+  .une { gap: 4cqh; }
+  .duo { gap: 4cqh; }
+  .cote-titre { font-size: 4.4cqh; }
+  .connecteur { width: 4cqh; }
+}
+
+/* ---------- Format vertical : le lieu sous les textes ---------- */
+@container (orientation: portrait) {
+  #pm-scene > section[data-scene] { padding: 9cqh 7cqh; gap: 2cqh; font-size: 3.5cqh; }
+  .titre { font-size: 5.6cqh; }
+  .titre-moyen { font-size: 4.3cqh; }
+  .texte, .repere { font-size: 3.5cqh; }
+  .iso > .au-sol { font-size: 3.6cqh; }
+  .iso > .au-sol.grand { font-size: 8cqh; }
+  .nombre { font-size: 10.5cqh; }
+  .une, .inverse { grid-template-columns: minmax(0, 1fr); gap: 2.4cqh; }
+  .inverse > .iso { order: 2; }
+  .une > .iso { --iso-largeur: 50cqh; --iso-hauteur: 32cqh; justify-self: center; }
+  .faits { gap: 1.4cqh; }
+  .faits li { grid-template-columns: 2.6cqh 1fr; gap: 1.4cqh; font-size: 3.5cqh; }
+  .faits li::before { font-size: 3.5cqh; }
+  .duo { grid-template-columns: 1fr; gap: 2.4cqh; }
+  .cote > .iso { --iso-largeur: 40cqh; --iso-hauteur: 16cqh; }
+  .cote-titre { font-size: 3.9cqh; }
+  .signal { padding: 2.4cqh 2.6cqh; }
+  .chaine { flex-direction: column; align-items: stretch; gap: 1cqh; }
+  .maillon { flex-direction: row; justify-content: flex-start; gap: 2.4cqh; }
+  .maillon > .iso { --iso-largeur: 18cqh; --iso-hauteur: 12cqh; }
+  .connecteur { align-self: flex-start; width: 2cqh; height: 3cqh; margin: 0 0 0 7cqh; }
+  .logo { height: 8cqh; }
+}
+
+/* ---------- 9:16 : place pour la légende des réseaux sociaux (pas en 4:5) ---------- */
+@container (max-aspect-ratio: 2/3) {
+  #pm-scene > section[data-scene] { padding-bottom: 15cqh; }
+  .une > .iso { --iso-largeur: 44cqh; --iso-hauteur: 26cqh; }
+  .cote > .iso { --iso-hauteur: 13cqh; }
+}
+
+/* ---------- Moyeu et rayons (spec S7, 5.7) : le centre sur son tapis, couronne en paysage, rangée en portrait ---------- */
+.moyeu { --n: 3; position: relative; flex: 1; min-height: 46cqh; }
+.moyeu:has(> .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie) { --n: 4; }
+.moyeu:has(> .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie) { --n: 5; }
+.moyeu > .moyeu-centre, .moyeu > .moyeu-partie { position: absolute; left: 50%; top: 50%; box-sizing: border-box; flex: none; margin: 0; text-align: center; }
+.moyeu > .moyeu-centre { width: 38cqh; padding: 3cqh 2cqh; translate: -50% -50%; font: 600 5cqh/1.15 var(--f-titres); color: var(--c-sur-accent);
+  background: var(--c-accent-lisible); border-radius: 50%; }
+.moyeu > .moyeu-partie { --a: calc(-90deg + 180deg / var(--n) + var(--i, 0) * 360deg / var(--n)); width: 30cqh; font: 700 3.7cqh/1.25 var(--f-texte); overflow-wrap: anywhere;
+  padding: 1cqh 0.6cqh; border-radius: 3cqh; background: color-mix(in srgb, var(--c-fond) 85%, #ffffff); translate: calc(-50% + cos(var(--a)) * 58cqh) calc(-50% + sin(var(--a)) * 27cqh); }
+@container (max-aspect-ratio: 5/4) {
+  .moyeu > .moyeu-centre { width: 26cqh; font-size: 4cqh; }
+  .moyeu > .moyeu-partie { width: 26cqh; font-size: 3.5cqh; translate: calc(-50% + cos(var(--a)) * 31cqh) calc(-50% + sin(var(--a)) * 26cqh); }
+}
+@container (max-aspect-ratio: 9/10) {
+  .moyeu { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); align-content: center; align-items: center; row-gap: 12cqh; column-gap: 0.8cqh; min-height: 0; }
+  .moyeu > .moyeu-centre, .moyeu > .moyeu-partie { position: relative; left: auto; top: auto; translate: none; width: auto; }
+  .moyeu > .moyeu-centre { grid-column: 1 / -1; justify-self: center; width: 85%; border-radius: 4cqh; }
+  .moyeu > .moyeu-partie { grid-row: 2; font-size: calc(3.4cqh - var(--n) * 0.24cqh); padding: 1.4cqh 0.2cqh; overflow-wrap: anywhere; }
+}

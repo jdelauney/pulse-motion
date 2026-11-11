@@ -1,0 +1,118 @@
+{
+  "style": "iso-album",
+  "famille": "chaleureuse",
+  "personnalite": [
+    "calme",
+    "bienveillant",
+    "précis"
+  ],
+  "eviter": [
+    "ton pressé ou alarmiste",
+    "gags et personnages caricaturés"
+  ],
+  "genres": [
+    "formation",
+    "storytelling"
+  ],
+  "couleur": {
+    "strategie": "plusieurs-couleurs",
+    "tons": [
+      "clair"
+    ],
+    "tonDefaut": "clair",
+    "clair": {
+      "fond": "#f6efe2",
+      "texte": "#2b2a33"
+    },
+    "roles": {
+      "primaire": "le lieu, les repères",
+      "accent": "le bon geste, la règle"
+    }
+  },
+  "typographie": {
+    "titres": {
+      "famille": "Fraunces",
+      "categorie": "serif",
+      "graisse": 600
+    },
+    "texte": {
+      "famille": "Nunito Sans",
+      "categorie": "sans-serif",
+      "graisse": 400
+    }
+  },
+  "mouvement": {
+    "caractere": "posé",
+    "courbes": [
+      "sine-inout",
+      "cubic-out"
+    ],
+    "dureeType": 0.9,
+    "transitions": [
+      "fondu",
+      "glissement"
+    ]
+  },
+  "signature": "Un lieu du quotidien en vraie isométrie à aplats, de petits personnages vus de dos qui font la chose dans l'ordre, et la règle écrite au sol, lettre à lettre",
+  "aFaire": [
+    "Jouer la règle dans l'ordre, une étape à la fois",
+    "Poser le texte au sol, près de ce qu'il dit"
+  ],
+  "aEviter": [
+    "Les visages, les expressions, les gags",
+    "Plusieurs règles dans le même lieu"
+  ],
+  "categorie": "schemas-donnees",
+  "nonPas": "Pas un dessin animé à gags : de petits personnages sans visage, vus de dos. Pas iso-infographie : un lieu habité et une règle du quotidien, pas un système à démonter.",
+  "usages": [
+    "Expliquer une consigne de sécurité",
+    "Présenter une procédure d'accueil",
+    "Montrer le bon ordre de passage"
+  ],
+  "motsCles": [
+    "album",
+    "album isométrique",
+    "livre illustré",
+    "petits personnages",
+    "consigne",
+    "règle du quotidien",
+    "file d'attente",
+    "sécurité",
+    "accueil",
+    "bon geste"
+  ],
+  "son": {
+    "ambiances": [
+      "calme",
+      "acoustique"
+    ],
+    "bruitages": {
+      "titre": null,
+      "texte": null,
+      "point": "tic",
+      "chiffre": "tic",
+      "trace": "papier",
+      "forme": "pop",
+      "image": null,
+      "ecriture": "papier",
+      "transition": null
+    },
+    "matiere": "papier",
+    "fort": "carillon"
+  },
+  "shaders": {
+    "conseilles": [
+      "grain"
+    ]
+  },
+  "modules": [
+    "iso"
+  ],
+  "provenance": [
+    {
+      "depot": "lemo-opuscar",
+      "style": "isometric-picture-book",
+      "licence": "MIT"
+    }
+  ]
+}

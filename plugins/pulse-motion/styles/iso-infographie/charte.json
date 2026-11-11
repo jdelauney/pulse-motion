@@ -1,0 +1,12 @@
+{
+  "couleurs": {
+    "primaire": "#2f5d9e",
+    "accent": "#d9472b",
+    "fond": "#f4f1ea",
+    "texte": "#231a2c"
+  },
+  "polices": {
+    "titres": "Archivo",
+    "texte": "Barlow"
+  }
+}
