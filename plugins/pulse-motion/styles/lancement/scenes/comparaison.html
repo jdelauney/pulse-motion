@@ -1,0 +1,22 @@
+<!-- Scène toute faite « comparaison » (style lancement) : deux cartes ; la seconde s'allume à l'accent. Durée conseillée : 12 s.
+     Textes : titre (≤ 36 car.), gauche-titre et droite-titre (≤ 20 car.), gauche-texte et droite-texte (≤ 60 car.). -->
+<section data-scene="comparaison">
+  <div class="decor">
+    <span class="grille" data-decor data-start="0" data-dur="12" data-tween="--y 0cqh→-8cqh linear"></span>
+    <span class="lumiere" data-decor data-start="0" data-dur="12" data-tween="--lx 22%→68% sine-inout"></span>
+    <span class="voile"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen monte" data-texte="titre" data-start="0.3" data-dur="0.5"></h2>
+  <div class="duo">
+    <div id="gauche" class="carte-ui aimante" style="--dx: -6cqh; --dy: 5cqh" data-start="#titre:fin+0.4" data-dur="0.3">
+      <span class="barre-ui"></span>
+      <h3 class="carte-titre" data-texte="gauche-titre"></h3>
+      <p class="texte" data-texte="gauche-texte"></p>
+    </div>
+    <div id="droite" class="carte-ui active aimante" style="--dx: 5cqh; --dy: 6cqh" data-start="#gauche:fin+2.8" data-dur="0.3">
+      <span class="barre-ui"></span>
+      <h3 class="carte-titre" data-texte="droite-titre"></h3>
+      <p class="texte" data-texte="droite-texte"></p>
+    </div>
+  </div>
+</section>

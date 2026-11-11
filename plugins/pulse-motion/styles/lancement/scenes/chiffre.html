@@ -1,0 +1,12 @@
+<!-- Scène toute faite « chiffre » (style lancement) : un nombre géant au trait fin qui monte et se fige dans la lumière. Durée conseillée : 7 s.
+     Textes : titre (≤ 36 car.), unite (≤ 3 car., vide si aucune), legende (≤ 56 car.). Valeur : remplacer 1250 dans « nombre 0→1250 ». -->
+<section data-scene="chiffre">
+  <div class="decor">
+    <span class="grille" data-decor data-start="0" data-dur="7" data-tween="--y 0cqh→-8cqh linear"></span>
+    <span class="lumiere" data-decor data-start="0" data-dur="7" data-tween="--lx 22%→68% sine-inout"></span>
+    <span class="voile"></span>
+  </div>
+  <h2 id="titre" class="surtitre monte" data-texte="titre" data-start="0.3" data-dur="0.5"></h2>
+  <p class="nombre monte" data-start="#titre:fin+0.1" data-dur="0.5"><span id="valeur" data-start="#titre:fin+0.1" data-dur="1.8" data-tween="nombre 0→1250 expo-out">0</span><span class="unite accent" data-texte="unite"></span></p>
+  <p id="legende" class="texte monte" data-texte="legende" data-start="#valeur:fin+0.2" data-dur="0.5"></p>
+</section>

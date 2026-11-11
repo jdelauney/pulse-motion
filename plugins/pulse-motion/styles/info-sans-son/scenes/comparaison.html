@@ -1,0 +1,20 @@
+<!-- Scène toute faite « comparaison » (style info-sans-son) : écran partagé ; le séparateur tombe d'abord, la mauvaise moitié est éteinte. Durée conseillée : 10 s.
+     Textes : titre (≤ 34 car.), gauche-titre et droite-titre (≤ 16 car.), gauche-texte et droite-texte (≤ 50 car.). -->
+<section data-scene="comparaison">
+  <div class="decor">
+    <span class="lignes-compte" data-decor data-start="0" data-dur="10" data-tween="--y 0cqh→-5cqh linear"></span>
+    <span class="marges"></span>
+  </div>
+  <h2 id="titre" class="legende-moyenne" data-texte="titre" data-morceaux="2" data-start="0.2" data-dur="0.4"></h2>
+  <div class="ecran-partage">
+    <div id="gauche" class="moitie terne claque" data-start="#titre:fin+0.9" data-dur="0.2">
+      <h3 class="moitie-titre" data-texte="gauche-titre"></h3>
+      <p class="texte" data-texte="gauche-texte"></p>
+    </div>
+    <span id="separateur" class="separateur" data-start="#titre:fin+0.3" data-dur="0.4"></span>
+    <div id="droite" class="moitie claque" data-start="#gauche:fin+2.4" data-dur="0.2">
+      <h3 class="moitie-titre" data-texte="droite-titre"></h3>
+      <p class="texte" data-texte="droite-texte"></p>
+    </div>
+  </div>
+</section>

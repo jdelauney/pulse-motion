@@ -1,0 +1,177 @@
+/* Pulse Motion – style « lancement ».
+ *
+ * Le film de lancement où l'interface est la vedette : dégradé presque noir, grille au trait fin, lumière douce qui se
+ * déplace, cartes d'interface dessinées en HTML qui s'aimantent à leur place, révélation par la lumière, nombre géant au
+ * trait fin qui se fige. Un seul élément coloré par scène : l'accent ; la lumière prend la couleur primaire.
+ * Idées de lemo-opuscar (dark-keynote, MIT, © 2026 LemoLab) et de take-one (monochrome-launch, dark-premium, MIT),
+ * réécrites. Sans 3D CSS : la profondeur vient de la lumière et des ombres.
+ * Formats 16:9, 1:1, 4:5 et 9:16 par requêtes de conteneur. Effets exclus : filter: url(), mix-blend-mode, backdrop-filter.
+ */
+
+/* ---------- Mise en page ---------- */
+#pm-scene > section[data-scene] {
+  display: flex; flex-direction: column; justify-content: center; gap: 3cqh;
+  padding: 10cqh 13cqh; overflow: hidden;
+  background: radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--c-texte) 6%, var(--c-fond)), var(--c-fond) 70%);
+  color: var(--c-texte);
+  font: 400 3.8cqh/1.45 var(--f-texte);
+}
+
+/* ---------- Typographie ---------- */
+.surtitre {
+  margin: 0; align-self: flex-start; display: inline-flex; align-items: center; gap: 1.4cqh; max-width: 100%; box-sizing: border-box;
+  padding: 1cqh 2.4cqh; border-radius: 10cqh; border: 0.15cqh solid color-mix(in srgb, var(--c-texte) 22%, transparent);
+  font: 600 2.9cqh/1.2 var(--f-texte); letter-spacing: 0.02em;
+}
+.surtitre::before { content: ""; flex: none; width: 1.2cqh; height: 1.2cqh; border-radius: 50%; background: var(--c-accent-lisible); }
+.titre { margin: 0; font: 600 9cqh/1.04 var(--f-titres); letter-spacing: -0.035em; text-wrap: balance; overflow-wrap: break-word; }
+.titre-moyen { margin: 0; font: 600 6cqh/1.08 var(--f-titres); letter-spacing: -0.03em; text-wrap: balance; overflow-wrap: break-word; }
+.texte { margin: 0; font: 400 3.8cqh/1.45 var(--f-texte); color: color-mix(in srgb, var(--c-texte) 82%, var(--c-fond)); text-wrap: pretty; }
+.nombre {
+  margin: 0; font: 300 26cqh/0.95 var(--f-titres); letter-spacing: -0.05em; font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 7cqh color-mix(in srgb, var(--c-primaire) 35%, transparent);
+}
+.unite { font-size: 0.35em; margin-left: 0.15em; letter-spacing: -0.01em; }
+.accent { color: var(--c-accent-lisible); }
+
+/* ---------- Entrées : nettes, puis aimantées ---------- */
+@keyframes la-monte { from { opacity: 0; transform: translateY(3cqh); } to { opacity: 1; transform: none; } }
+@keyframes la-aimante { from { opacity: 0; transform: translate(var(--dx, 0cqh), var(--dy, 4cqh)) scale(0.96); } to { opacity: 1; transform: none; } }
+@keyframes la-reflet { from { background-position: 100% 0; } to { background-position: 0 0; } }
+.monte { animation: la-monte 0.5s var(--ease-expo-out) both; }
+.aimante { animation: la-aimante 0.25s var(--ease-back-out) both; }
+/* Lumière qui balaie le texte une fois arrivé (#035). */
+.reflet { position: relative; }
+.reflet::after {
+  content: ""; position: absolute; inset: -0.1em -0.2em; pointer-events: none;
+  background: linear-gradient(100deg, transparent 42%, color-mix(in srgb, var(--c-primaire) 32%, transparent) 50%, transparent 58%) no-repeat;
+  background-size: 300% 100%; animation: la-reflet 1.2s var(--ease-cubic-inout) both; animation-delay: 0.5s;
+}
+
+/* ---------- Décor : grille fine, lumière, voile ---------- */
+.decor { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.decor ~ * { position: relative; z-index: 1; }
+.grille {
+  position: absolute; inset: -8cqh;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--c-texte) 5%, transparent) 0.12cqh, transparent 0.12cqh),
+    linear-gradient(90deg, color-mix(in srgb, var(--c-texte) 5%, transparent) 0.12cqh, transparent 0.12cqh);
+  background-size: 8cqh 8cqh; translate: 0 var(--y, 0);
+}
+.lumiere {
+  position: absolute; inset: 0;
+  background: radial-gradient(55% 60% at var(--lx, 30%) 15%, color-mix(in srgb, var(--c-primaire) 16%, transparent), transparent 70%);
+}
+.voile { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 45%, transparent 35%, var(--c-fond) 92%); }
+
+/* ---------- Cartes d'interface ---------- */
+.carte-ui {
+  display: flex; flex-direction: column; gap: 1.2cqh; min-width: 0; padding: 3cqh; box-sizing: border-box; border-radius: 1.8cqh;
+  background: color-mix(in srgb, var(--c-texte) 6%, var(--c-fond));
+  border: 0.15cqh solid color-mix(in srgb, var(--c-texte) 15%, transparent);
+  box-shadow: 0 3cqh 8cqh rgb(0 0 0 / 45%);
+  font: 600 4cqh/1.2 var(--f-titres); letter-spacing: -0.02em; overflow-wrap: break-word;
+}
+.carte-ui.active {
+  border-color: var(--c-accent-lisible);
+  box-shadow: 0 3cqh 8cqh rgb(0 0 0 / 45%), 0 0 5cqh color-mix(in srgb, var(--c-accent) 22%, transparent);
+}
+.carte-ui.active > .carte-titre { color: var(--c-accent-lisible); }
+.carte-titre { margin: 0; font: 600 4.4cqh/1.1 var(--f-titres); letter-spacing: -0.02em; }
+/* Barre de fenêtre : trois traits gris, jamais de couleur. */
+.carte-ui > .barre-ui { display: block; height: 1cqh; width: 9cqh; border-radius: 1cqh; background: color-mix(in srgb, var(--c-texte) 18%, transparent); }
+
+/* ---------- Liste : des fenêtres qui se rangent ---------- */
+.pile-ui { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.6cqh; }
+.pile-ui li { flex-direction: row; align-items: center; gap: 2cqh; padding: 2cqh 2.6cqh; font: 400 3.8cqh/1.3 var(--f-texte); letter-spacing: 0; }
+.pile-ui li::before { content: ""; flex: none; width: 1.4cqh; height: 1.4cqh; border-radius: 50%; border: 0.3cqh solid color-mix(in srgb, var(--c-texte) 55%, transparent); }
+.pile-ui li:last-child::before { background: var(--c-accent-lisible); border-color: var(--c-accent-lisible); }
+
+/* ---------- Comparaison ---------- */
+.duo { display: grid; grid-template-columns: 1fr 1fr; gap: 4cqh; }
+
+/* ---------- Étape ---------- */
+.etape { display: grid; grid-template-columns: auto 1fr; gap: 5cqh; align-items: center; }
+.numero-fin { font: 300 20cqh/0.9 var(--f-titres); letter-spacing: -0.06em; color: var(--c-accent-lisible); font-variant-numeric: tabular-nums; }
+.etape-texte { display: flex; flex-direction: column; gap: 2cqh; min-width: 0; }
+
+/* ---------- Alerte : une notification ---------- */
+.notification { display: grid; grid-template-columns: 0.6cqh 1fr; gap: 3cqh; padding: 4cqh 4cqh 4cqh 3cqh; }
+.notification::before { content: ""; border-radius: 1cqh; background: var(--c-accent-lisible); }
+.notification-corps { display: flex; flex-direction: column; gap: 1.6cqh; min-width: 0; }
+
+/* ---------- Schéma : trois cartes reliées ---------- */
+.chaine-ui { display: flex; align-items: center; gap: 2cqh; }
+.chaine-ui > .carte-ui { flex: 1; text-align: center; }
+.connecteur { flex: none; width: 8cqh; height: 2cqh; }
+
+/* ---------- Logo ---------- */
+.logo { height: 11cqh; width: auto; object-fit: contain; align-self: flex-start; }
+
+/* ---------- Ton sombre (le seul) ---------- */
+#pm-scene[data-ton="sombre"] .grille { opacity: 1; }
+
+/* ---------- Format carré ---------- */
+@container (max-aspect-ratio: 5/4) {
+  #pm-scene > section[data-scene] { padding: 9cqh 8cqh; gap: 2.4cqh; font-size: 3.5cqh; }
+  .titre { font-size: 7cqh; }
+  .titre-moyen { font-size: 5cqh; }
+  .texte { font-size: 3.5cqh; }
+  .nombre { font-size: 18cqh; }
+  .carte-ui { padding: 2.4cqh; font-size: 3.5cqh; }
+  .carte-titre { font-size: 3.8cqh; }
+  .pile-ui li { font-size: 3.4cqh; padding: 1.6cqh 2cqh; }
+  .duo { gap: 3cqh; }
+  .numero-fin { font-size: 14cqh; }
+  .etape { gap: 3.6cqh; }
+  .chaine-ui > .carte-ui { padding: 2.2cqh 1.2cqh; }
+  .connecteur { width: 5cqh; }
+}
+
+/* ---------- Format vertical : tout s'empile ---------- */
+@container (orientation: portrait) {
+  #pm-scene > section[data-scene] { padding: 9cqh 6cqh; gap: 2cqh; font-size: 3.3cqh; }
+  .surtitre { font-size: 2.5cqh; padding: 0.8cqh 1.8cqh; }
+  .titre { font-size: 5.4cqh; }
+  .titre-moyen { font-size: 4.2cqh; }
+  .texte { font-size: 3.2cqh; }
+  .nombre { font-size: 12cqh; }
+  .carte-ui { padding: 2cqh; gap: 0.8cqh; font-size: 3.3cqh; border-radius: 1.4cqh; }
+  .carte-titre { font-size: 3.6cqh; }
+  .pile-ui { gap: 1cqh; }
+  .pile-ui li { font-size: 3.2cqh; padding: 1.4cqh 1.8cqh; gap: 1.4cqh; }
+  .duo { grid-template-columns: 1fr; gap: 2cqh; }
+  .etape { grid-template-columns: 1fr; gap: 2cqh; }
+  .numero-fin { font-size: 11cqh; }
+  .notification { gap: 2cqh; padding: 2.6cqh 2.6cqh 2.6cqh 2cqh; }
+  .chaine-ui { flex-direction: column; align-items: stretch; gap: 1cqh; }
+  .chaine-ui > .carte-ui { padding: 1.8cqh; }
+  .connecteur { align-self: center; width: 2cqh; height: 4cqh; }
+  .logo { height: 8cqh; }
+}
+
+/* ---------- 9:16 : place pour la légende des réseaux sociaux (pas en 4:5) ---------- */
+@container (max-aspect-ratio: 2/3) {
+  #pm-scene > section[data-scene] { padding-bottom: 15cqh; }
+}
+
+/* ---------- Moyeu et rayons (spec S7, 5.7) : couronne en paysage, rangée sous le centre en portrait ---------- */
+.moyeu { --n: 3; position: relative; flex: 1; min-height: 46cqh; }
+.moyeu:has(> .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie) { --n: 4; }
+.moyeu:has(> .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie) { --n: 5; }
+.moyeu > .moyeu-centre, .moyeu > .moyeu-partie { position: absolute; left: 50%; top: 50%; box-sizing: border-box; flex: none; margin: 0; text-align: center; }
+.moyeu > .moyeu-centre { width: 38cqh; translate: -50% -50%; }
+.moyeu > .moyeu-partie { --a: calc(-90deg + 180deg / var(--n) + var(--i, 0) * 360deg / var(--n)); width: 32cqh; font-size: 3.6cqh; overflow-wrap: anywhere;
+  translate: calc(-50% + cos(var(--a)) * 58cqh) calc(-50% + sin(var(--a)) * 27cqh); }
+#pm-scene .moyeu > .carte-ui.moyeu-centre { font-size: 4.6cqh; color: var(--c-accent-lisible); }
+@container (max-aspect-ratio: 5/4) {
+  .moyeu > .moyeu-centre { width: 26cqh; }
+  #pm-scene .moyeu > .carte-ui.moyeu-centre { font-size: 3.8cqh; }
+  .moyeu > .moyeu-partie { width: 27cqh; font-size: 3.2cqh; translate: calc(-50% + cos(var(--a)) * 31cqh) calc(-50% + sin(var(--a)) * 26cqh); }
+}
+@container (max-aspect-ratio: 9/10) {
+  .moyeu { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); align-content: center; row-gap: 12cqh; column-gap: 0.8cqh; min-height: 0; }
+  .moyeu > .moyeu-centre, .moyeu > .moyeu-partie { position: relative; left: auto; top: auto; translate: none; width: auto; }
+  .moyeu > .moyeu-centre { grid-column: 1 / -1; justify-self: center; width: 85%; }
+  .moyeu > .moyeu-partie { grid-row: 2; font-size: calc(3.2cqh - var(--n) * 0.24cqh); padding: 1.4cqh 0.2cqh; overflow-wrap: anywhere; }
+}

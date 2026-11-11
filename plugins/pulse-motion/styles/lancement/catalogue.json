@@ -1,0 +1,16 @@
+{
+  "style": "lancement",
+  "description": "Premium, épuré, lumineux : le film de lancement où l'interface est la vedette, pour un produit, un logiciel ou une offre.",
+  "transitions": ["fondu", "zoom", "coupe"],
+  "scenes": [
+    { "nom": "titre", "role": "Ouvrir sur le titre que la lumière balaie", "duree": 7, "textes": { "etiquette": 24, "titre": 36, "sous": 50 } },
+    { "nom": "liste", "role": "2 à 4 fenêtres qui s'aimantent", "duree": 12, "textes": { "titre": 36, "point1": 42, "point2": 42, "point3": 42, "point4": 42 } },
+    { "nom": "chiffre", "role": "Un nombre géant qui se fige", "duree": 7, "textes": { "titre": 36, "unite": 3, "legende": 56 } },
+    { "nom": "comparaison", "role": "Deux cartes, la seconde allumée", "duree": 12, "textes": { "titre": 36, "gauche-titre": 20, "gauche-texte": 60, "droite-titre": 20, "droite-texte": 60 } },
+    { "nom": "etape", "role": "Une étape, numéro au trait fin", "duree": 8, "textes": { "numero": 2, "titre": 36, "texte": 76 } },
+    { "nom": "alerte", "role": "Un point d'attention en notification", "duree": 8, "textes": { "titre": 36, "texte": 76 } },
+    { "nom": "schema", "role": "Trois cartes reliées", "duree": 8, "textes": { "titre": 36, "a": 22, "b": 22, "c": 22 } },
+    { "nom": "moyeu", "role": "Une idée au centre, 3 à 5 parties autour, reliées par des flèches", "duree": 10, "textes": { "titre": 36, "centre": 20, "partie1": 18, "partie2": 18, "partie3": 18, "partie4": 18, "partie5": 18 } },
+    { "nom": "conclusion", "role": "Le message et le logo", "duree": 6, "textes": { "titre": 36, "sous": 50 } }
+  ]
+}

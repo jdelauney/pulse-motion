@@ -1,0 +1,126 @@
+{
+  "style": "plan-technique",
+  "famille": "technique",
+  "personnalite": [
+    "précis",
+    "méthodique",
+    "technique"
+  ],
+  "eviter": [
+    "ton léger ou enfantin",
+    "formes molles ou arrondies"
+  ],
+  "genres": [
+    "formation",
+    "produit"
+  ],
+  "couleur": {
+    "strategie": "sobre-avec-une-touche",
+    "tons": [
+      "sombre",
+      "clair"
+    ],
+    "tonDefaut": "sombre",
+    "sombre": {
+      "fond": "#123c69",
+      "texte": "#eef5fc"
+    },
+    "clair": {
+      "fond": "#f3f6fa",
+      "texte": "#123c69"
+    },
+    "roles": {
+      "primaire": "cartouche, repères",
+      "accent": "la pièce qui compte, nuage de révision"
+    }
+  },
+  "typographie": {
+    "titres": {
+      "famille": "B612",
+      "categorie": "sans-serif",
+      "graisse": 700
+    },
+    "texte": {
+      "famille": "B612 Mono",
+      "categorie": "monospace",
+      "graisse": 400
+    }
+  },
+  "mouvement": {
+    "caractere": "precis",
+    "courbes": [
+      "cubic-inout",
+      "linear"
+    ],
+    "dureeType": 0.9,
+    "transitions": [
+      "balayage",
+      "glissement",
+      "coupe"
+    ]
+  },
+  "signature": "Trait blanc sur bleu de Prusse tracé dans l'ordre du dessinateur, grille fine, cartouche, cotes fléchées, hachures de coupe, une seule pièce à l'accent",
+  "aFaire": [
+    "Tracer dans l'ordre : cadre, contours, détails, cotes",
+    "Une seule pièce à l'accent par scène"
+  ],
+  "aEviter": [
+    "Les rebonds et les entrées vives",
+    "Trop de tracés en même temps"
+  ],
+  "categorie": "schemas-donnees",
+  "nonPas": "Pas tech-sombre : ni interface, ni clavier, ni texte tapé. Pas un tableau blanc : trait à la règle, sans main. Pas une infographie isométrique : des lignes, pas des blocs de couleur.",
+  "usages": [
+    "Expliquer une machine ou une pièce",
+    "Former à la maintenance",
+    "Présenter un procédé industriel"
+  ],
+  "motsCles": [
+    "plan technique",
+    "plan",
+    "dessin technique",
+    "plan d'ingénieur",
+    "ingénieur",
+    "blueprint",
+    "cyanotype",
+    "industrie",
+    "maintenance",
+    "mécanique"
+  ],
+  "son": {
+    "ambiances": [
+      "mecanique",
+      "tech"
+    ],
+    "bruitages": {
+      "titre": null,
+      "texte": null,
+      "point": null,
+      "chiffre": "tic",
+      "trace": "crayon",
+      "forme": "whoosh",
+      "image": null,
+      "ecriture": null,
+      "transition": null
+    },
+    "matiere": "crayon",
+    "fort": "ding"
+  },
+  "shaders": {
+    "conseilles": [
+      "grain"
+    ]
+  },
+  "provenance": [
+    {
+      "depot": "lemo-opuscar",
+      "style": "blueprint",
+      "licence": "MIT"
+    },
+    {
+      "depot": "explainroo",
+      "style": "blueprint",
+      "licence": "MIT"
+    }
+  ]
+}

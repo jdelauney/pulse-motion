@@ -1,0 +1,15 @@
+<!-- Scène toute faite « alerte » (style lancement) : un point d'attention, en notification. Durée conseillée : 8 s.
+     Textes : titre (≤ 36 car.), texte (≤ 76 car.). -->
+<section data-scene="alerte">
+  <div class="decor">
+    <span class="grille" data-decor data-start="0" data-dur="8" data-tween="--y 0cqh→-8cqh linear"></span>
+    <span class="lumiere" data-decor data-start="0" data-dur="8" data-tween="--lx 22%→68% sine-inout"></span>
+    <span class="voile"></span>
+  </div>
+  <div id="boite" class="carte-ui notification aimante" style="--dx: -4cqh; --dy: 7cqh" data-start="0.3" data-dur="0.3">
+    <div class="notification-corps">
+      <h2 id="titre" class="titre-moyen monte" data-texte="titre" data-start="#boite:fin+0.1" data-dur="0.5"></h2>
+      <p id="texte" class="texte monte" data-texte="texte" data-start="#titre:fin+0.3" data-dur="0.5"></p>
+    </div>
+  </div>
+</section>

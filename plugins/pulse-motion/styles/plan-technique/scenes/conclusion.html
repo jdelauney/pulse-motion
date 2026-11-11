@@ -1,0 +1,14 @@
+<!-- Scène toute faite « conclusion » (style plan-technique) : la pièce à retenir, tracée à l'accent, et le logo. Durée conseillée : 6 s.
+     Textes : titre (≤ 36 car.), sous (≤ 48 car.). Logo : celui de la charte (sinon supprimer l'image).
+     Dernière scène de la vidéo : data-dur du décor = durée de la scène − 1 s (image stable d'au moins 0,5 s à la fin). -->
+<section data-scene="conclusion">
+  <div class="decor">
+    <span class="grille" data-decor data-start="0" data-dur="5" data-tween="--x 0cqh→-4cqh linear"></span>
+    <span class="cadre" data-start="0" data-dur="1.2"></span>
+  </div>
+  <div id="boite" class="piece compte" data-start="0.4" data-dur="0.8">
+    <h2 id="titre" class="titre" data-texte="titre"></h2>
+    <p id="sous" class="texte" data-texte="sous"></p>
+  </div>
+  <img id="logo" class="logo" data-logo alt="" data-start="#boite:fin+0.4" data-dur="0.6" data-tween="opacity 0→1">
+</section>

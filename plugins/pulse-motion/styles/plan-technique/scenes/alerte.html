@@ -1,0 +1,12 @@
+<!-- Scène toute faite « alerte » (style plan-technique) : ce qui a changé ou ce qu'il faut surveiller, dans un nuage de révision. Durée conseillée : 8 s.
+     Textes : titre (≤ 36 car.), texte (≤ 72 car.). -->
+<section data-scene="alerte">
+  <div class="decor">
+    <span class="grille" data-decor data-start="0" data-dur="8" data-tween="--x 0cqh→-4cqh linear"></span>
+    <span class="cadre" data-start="0" data-dur="1.2"></span>
+  </div>
+  <div id="boite" class="nuage" data-start="0.6" data-dur="1">
+    <h2 id="titre" class="titre-moyen ecrit" data-texte="titre" data-start="#boite:fin" data-dur="0.9"></h2>
+    <p id="texte" class="texte ecrit" data-texte="texte" data-start="#titre:fin+0.2" data-dur="1.1"></p>
+  </div>
+</section>

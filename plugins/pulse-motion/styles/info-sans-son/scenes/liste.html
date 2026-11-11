@@ -1,0 +1,15 @@
+<!-- Scène toute faite « liste » (style info-sans-son) : 2 à 4 légendes, une par point. Durée conseillée : 10 s.
+     Textes : titre (≤ 34 car.), point1 … point4 (≤ 36 car.). Moins de 4 points : supprimer les points en trop. -->
+<section data-scene="liste">
+  <div class="decor">
+    <span class="lignes-compte" data-decor data-start="0" data-dur="10" data-tween="--y 0cqh→-5cqh linear"></span>
+    <span class="marges"></span>
+  </div>
+  <h2 id="titre" class="legende-moyenne" data-texte="titre" data-morceaux="2" data-start="0.2" data-dur="0.4"></h2>
+  <ul class="points">
+    <li id="point1" data-texte="point1" data-morceaux="2" data-start="#titre:fin+0.5" data-dur="0.4"></li>
+    <li id="point2" data-texte="point2" data-morceaux="2" data-start="#point1:fin+0.9" data-dur="0.4"></li>
+    <li id="point3" data-texte="point3" data-morceaux="2" data-start="#point2:fin+0.9" data-dur="0.4"></li>
+    <li id="point4" data-texte="point4" data-morceaux="2" data-start="#point3:fin+0.9" data-dur="0.4"></li>
+  </ul>
+</section>

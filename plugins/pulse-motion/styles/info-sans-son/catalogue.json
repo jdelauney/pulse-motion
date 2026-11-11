@@ -1,0 +1,16 @@
+{
+  "style": "info-sans-son",
+  "description": "Direct, lisible, factuel : l'info qui se lit son coupé, pour les réseaux, la communication interne et les chiffres.",
+  "transitions": ["coupe", "glissement"],
+  "scenes": [
+    { "nom": "titre", "role": "Ouvrir sur la légende géante", "duree": 6, "textes": { "etiquette": 24, "titre": 34, "sous": 44 } },
+    { "nom": "liste", "role": "2 à 4 légendes, une par point", "duree": 10, "textes": { "titre": 34, "point1": 36, "point2": 36, "point3": 36, "point4": 36 } },
+    { "nom": "chiffre", "role": "Un chiffre qui roule, sa source", "duree": 7, "textes": { "titre": 34, "unite": 3, "legende": 50 } },
+    { "nom": "comparaison", "role": "Écran partagé avant / après", "duree": 10, "textes": { "titre": 34, "gauche-titre": 16, "gauche-texte": 50, "droite-titre": 16, "droite-texte": 50 } },
+    { "nom": "etape", "role": "Une étape, numéro sur l'accent", "duree": 7, "textes": { "numero": 2, "titre": 34, "texte": 70 } },
+    { "nom": "alerte", "role": "Un avertissement entre crochets", "duree": 7, "textes": { "titre": 34, "texte": 70 } },
+    { "nom": "schema", "role": "Trois tuiles reliées", "duree": 8, "textes": { "titre": 34, "a": 20, "b": 20, "c": 20 } },
+    { "nom": "moyeu", "role": "Une idée au centre, 3 à 5 parties autour, reliées par des flèches", "duree": 10, "textes": { "titre": 34, "centre": 20, "partie1": 18, "partie2": 18, "partie3": 18, "partie4": 18, "partie5": 18 } },
+    { "nom": "conclusion", "role": "La légende à retenir et le logo", "duree": 6, "textes": { "titre": 34, "sous": 44 } }
+  ]
+}

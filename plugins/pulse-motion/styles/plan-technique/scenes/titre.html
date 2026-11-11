@@ -1,0 +1,13 @@
+<!-- Scène toute faite « titre » (style plan-technique) : le cadre et l'axe se tracent, puis la désignation, le titre et sa cote. Durée conseillée : 7 s.
+     Textes : etiquette (≤ 24 car., la désignation du cartouche), titre (≤ 36 car.), sous (≤ 48 car.). Décor : data-dur = durée de la scène. -->
+<section data-scene="titre">
+  <div class="decor">
+    <span class="grille" data-decor data-start="0" data-dur="7" data-tween="--x 0cqh→-4cqh linear"></span>
+    <span class="cadre" data-start="0" data-dur="1.2"></span>
+    <span class="axe" data-start="0.6" data-dur="1"></span>
+  </div>
+  <p id="etiquette" class="cartouche ecrit" data-texte="etiquette" data-start="1.1" data-dur="0.6"></p>
+  <h1 id="titre" class="titre ecrit" data-texte="titre" data-start="#etiquette:fin+0.1" data-dur="1"></h1>
+  <span id="cote" class="cote" data-start="#titre:fin" data-dur="0.6"></span>
+  <p id="sous" class="texte ecrit" data-texte="sous" data-start="#cote:fin+0.1" data-dur="0.9"></p>
+</section>

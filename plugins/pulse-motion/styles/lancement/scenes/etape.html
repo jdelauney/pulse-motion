@@ -1,0 +1,16 @@
+<!-- Scène toute faite « etape » (style lancement) : une étape, son numéro au trait fin dans l'accent. Durée conseillée : 8 s.
+     Textes : numero (≤ 2 car.), titre (≤ 36 car.), texte (≤ 76 car.). -->
+<section data-scene="etape">
+  <div class="decor">
+    <span class="grille" data-decor data-start="0" data-dur="8" data-tween="--y 0cqh→-8cqh linear"></span>
+    <span class="lumiere" data-decor data-start="0" data-dur="8" data-tween="--lx 22%→68% sine-inout"></span>
+    <span class="voile"></span>
+  </div>
+  <div class="etape">
+    <span id="numero" class="numero-fin monte" data-texte="numero" data-start="0.3" data-dur="0.5"></span>
+    <div class="etape-texte">
+      <h2 id="titre" class="titre-moyen reflet monte" data-texte="titre" data-start="#numero:fin" data-dur="0.5"></h2>
+      <p id="texte" class="texte monte" data-texte="texte" data-start="#titre:fin+0.4" data-dur="0.5"></p>
+    </div>
+  </div>
+</section>

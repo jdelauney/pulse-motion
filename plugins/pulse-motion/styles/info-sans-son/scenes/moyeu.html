@@ -1,0 +1,23 @@
+<!-- Scène toute faite « moyeu » (style info-sans-son) : une tuile d'accent au centre et 3 à 5 tuiles reliées. Durée conseillée : 10 s.
+     Textes : titre (≤ 34 car.), centre (≤ 20 car.), partie1 … partie5 (≤ 18 car. chacune ; en 9:16, 12 car. avec 3 parties, 6 avec 5).
+     Moins de 5 parties : supprimer la partie en trop et sa flèche (la couronne se refait seule). Adapter data-dur du décor à la durée de la scène. -->
+<section data-scene="moyeu">
+  <div class="decor">
+    <span class="lignes-compte" data-decor data-start="0" data-dur="10" data-tween="--y 0cqh→-5cqh linear"></span>
+    <span class="marges"></span>
+  </div>
+  <h2 id="titre" class="legende-moyenne" data-texte="titre" data-morceaux="2" data-start="0.2" data-dur="0.4"></h2>
+  <div class="moyeu">
+    <div id="centre" class="tuile moyeu-centre claque" data-texte="centre" data-start="#titre:fin+0.4" data-dur="0.2"></div>
+    <div id="partie1" class="tuile moyeu-partie claque" style="--i: 0" data-texte="partie1" data-start="#centre:fin+0.5" data-dur="0.2"></div>
+    <i data-fleche="#centre → #partie1" data-start="#partie1" data-dur="0.4" data-couleur="accent-lisible" data-epaisseur="0.4"></i>
+    <div id="partie2" class="tuile moyeu-partie claque" style="--i: 1" data-texte="partie2" data-start="#partie1:fin+0.6" data-dur="0.2"></div>
+    <i data-fleche="#centre → #partie2" data-start="#partie2" data-dur="0.4" data-couleur="accent-lisible" data-epaisseur="0.4"></i>
+    <div id="partie3" class="tuile moyeu-partie claque" style="--i: 2" data-texte="partie3" data-start="#partie2:fin+0.6" data-dur="0.2"></div>
+    <i data-fleche="#centre → #partie3" data-start="#partie3" data-dur="0.4" data-couleur="accent-lisible" data-epaisseur="0.4"></i>
+    <div id="partie4" class="tuile moyeu-partie claque" style="--i: 3" data-texte="partie4" data-start="#partie3:fin+0.6" data-dur="0.2"></div>
+    <i data-fleche="#centre → #partie4" data-start="#partie4" data-dur="0.4" data-couleur="accent-lisible" data-epaisseur="0.4"></i>
+    <div id="partie5" class="tuile moyeu-partie claque" style="--i: 4" data-texte="partie5" data-start="#partie4:fin+0.6" data-dur="0.2"></div>
+    <i data-fleche="#centre → #partie5" data-start="#partie5" data-dur="0.4" data-couleur="accent-lisible" data-epaisseur="0.4"></i>
+  </div>
+</section>

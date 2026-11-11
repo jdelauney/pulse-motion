@@ -1,0 +1,109 @@
+{
+  "style": "info-sans-son",
+  "famille": "affirmee",
+  "personnalite": [
+    "direct",
+    "lisible",
+    "factuel"
+  ],
+  "eviter": [
+    "longs paragraphes à lire",
+    "effets décoratifs sans information"
+  ],
+  "genres": [
+    "social",
+    "produit",
+    "formation"
+  ],
+  "couleur": {
+    "strategie": "sobre-avec-une-touche",
+    "tons": [
+      "sombre"
+    ],
+    "tonDefaut": "sombre",
+    "sombre": {
+      "fond": "#121418",
+      "texte": "#f5f1e6"
+    },
+    "roles": {
+      "primaire": "filet et étiquette de source",
+      "accent": "bloc du mot-clé, chiffre arrivé, gains"
+    }
+  },
+  "typographie": {
+    "titres": {
+      "famille": "Barlow Condensed",
+      "categorie": "sans-serif",
+      "graisse": 800
+    },
+    "texte": {
+      "famille": "Barlow",
+      "categorie": "sans-serif",
+      "graisse": 500
+    }
+  },
+  "mouvement": {
+    "caractere": "net",
+    "courbes": [
+      "linear",
+      "cubic-out"
+    ],
+    "dureeType": 0.13,
+    "transitions": [
+      "coupe",
+      "glissement"
+    ]
+  },
+  "signature": "Légende géante qui claque en deux ou trois morceaux, un seul mot-clé sur un bloc d'accent, chiffres qui roulent avec leur source, feuille sombre à lignes et double marge rouge",
+  "aFaire": [
+    "Une idée par légende, lisible son coupé",
+    "Une source sous chaque chiffre"
+  ],
+  "aEviter": [
+    "Plus d'un mot-clé par légende",
+    "Une perte montrée par la couleur seule"
+  ],
+  "categorie": "ecrans-annonces",
+  "nonPas": "Pas énergique : les légendes claquent sur place, sans tomber ni rebondir. Pas un journal télévisé : ni bandeau permanent, ni présentateur.",
+  "usages": [
+    "Publier une info sur les réseaux",
+    "Annoncer en interne",
+    "Faire parler un chiffre clé"
+  ],
+  "motsCles": [
+    "son coupé",
+    "sans son",
+    "sous-titres",
+    "légende",
+    "info",
+    "actualité",
+    "réseaux",
+    "mot-clé"
+  ],
+  "son": {
+    "ambiances": [
+      "entrainant",
+      "tech"
+    ],
+    "bruitages": {
+      "titre": null,
+      "texte": "tic",
+      "point": null,
+      "chiffre": "tic",
+      "trace": null,
+      "forme": null,
+      "image": null,
+      "ecriture": null,
+      "transition": "clic"
+    },
+    "matiere": null,
+    "fort": "basse"
+  },
+  "provenance": [
+    {
+      "depot": "lemo-opuscar",
+      "style": "caption-news",
+      "licence": "MIT"
+    }
+  ]
+}

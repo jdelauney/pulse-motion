@@ -1,0 +1,12 @@
+<!-- Scène toute faite « titre » (style info-sans-son) : ouvrir sur la légende géante qui claque en trois morceaux. Durée conseillée : 6 s.
+     Textes : etiquette (≤ 24 car., étiquette de la chaîne ou de la source), titre (≤ 34 car.), sous (≤ 44 car.).
+     Mot-clé du titre : data-mot-cle="auto" (le mot le plus long) ou le mot voulu. Décor : data-dur = durée de la scène. -->
+<section data-scene="titre">
+  <div class="decor">
+    <span class="lignes-compte" data-decor data-start="0" data-dur="6" data-tween="--y 0cqh→-5cqh linear"></span>
+    <span class="marges"></span>
+  </div>
+  <p id="etiquette" class="source balaie" data-texte="etiquette" data-start="0.2" data-dur="0.3"></p>
+  <h1 id="titre" class="legende" data-texte="titre" data-morceaux="3" data-mot-cle="auto" data-start="#etiquette:fin+0.1" data-dur="0.5"></h1>
+  <p id="sous" class="legende-moyenne" data-texte="sous" data-morceaux="2" data-start="#titre:fin+0.6" data-dur="0.4"></p>
+</section>
