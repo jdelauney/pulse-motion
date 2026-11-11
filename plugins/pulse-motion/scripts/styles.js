@@ -7,6 +7,7 @@
  *   node scripts/styles.js chercher <mots…>      styles dont le nom, la catégorie, les mots-clés, les usages ou la
  *                                                personnalité contiennent ces mots (« façon tableau blanc »)
  *   node scripts/styles.js verifier <nom>        vérifie le contrat d'un style
+ *   node scripts/styles.js ambiance <style> [--genre <genre>]   ambiance musicale proposée pour ce style (JSON)
  */
 const crypto = require('node:crypto');
 const fs = require('node:fs');
@@ -99,8 +100,8 @@ function verifierCatalogue(dossier, nom, catalogue, erreurs, avertissements, liv
 // facultatifs pour un style personnel (un style personnel d'avant reste valide), toujours vérifiés quand ils sont là.
 const CHAMPS_LIVRE = ['categorie', 'nonPas', 'usages', 'motsCles', 'son'];
 const USAGE_MAX = 40;
-// Sons tenus (feutre, craie…) : aucun pour l'instant ; la matière d'un style vaut null tant qu'il n'y en a pas.
-const SONS_TENUS = SYNTHE.TENUS || [];
+// Sons tenus du catalogue (crissement, feutre, craie, crayon, papier, chargement) : la matière d'un style en est un, ou null.
+const SONS_TENUS = (SYNTHE.TENUS || []).filter((n) => n !== 'crissement');
 const listeNoms = (v) => (v.length ? v.join(', ') : 'aucun pour l\'instant');
 const chaine = (v) => typeof v === 'string' && v.trim() !== '';
 
@@ -127,6 +128,10 @@ function verifierSon(son, erreurs) {
   }
   if ('matiere' in son && son.matiere !== null && !SONS_TENUS.includes(son.matiere)) {
     erreurs.push(`identite.json : matière « ${son.matiere} » inconnue (son.matiere). Sons tenus : ${listeNoms(SONS_TENUS)} ; ou null.`);
+  }
+  // Une matière déclarée remplace crissement pour le tracé (5.7, point 4) : la table la donne au tracé.
+  if (son.matiere && SONS_TENUS.includes(son.matiere) && son.bruitages && typeof son.bruitages === 'object' && son.bruitages.trace !== son.matiere) {
+    erreurs.push(`identite.json : la matière « ${son.matiere} » doit aussi être le son du tracé (son.bruitages.trace : « ${son.matiere} »).`);
   }
   if ('fort' in son && !SYNTHE.BRUITAGES.includes(son.fort)) erreurs.push(`identite.json : son fort « ${son.fort} » inconnu (son.fort). Bruitages : ${SYNTHE.BRUITAGES.join(', ')}.`);
 }
@@ -528,6 +533,29 @@ function chercherStyles(mots, dossierStyles) {
     .map((r) => ficheCourte(r.f));
 }
 
+/**
+ * Ambiance musicale proposée (spec Styles et réalisation, 5.7) : la première de son.ambiances du style ; le genre départage
+ * seulement si le style en liste plusieurs (la première de ses ambiances qui convient au genre). Un style sans palette
+ * sonore (style personnel d'avant) : l'ambiance du genre, comme avant.
+ */
+const AMBIANCES_GENRE = { formation: ['calme', 'inspirant', 'acoustique'], produit: ['corporate', 'tech', 'mecanique'], storytelling: ['inspirant', 'suspense', 'acoustique'], social: ['entrainant'] };
+function ambianceProposee(son, genre) {
+  const connues = Object.keys(SYNTHE.AMBIANCES);
+  const liste = son && Array.isArray(son.ambiances) ? son.ambiances.filter((a) => connues.includes(a)) : [];
+  const duGenre = AMBIANCES_GENRE[genre] || [];
+  if (!liste.length) return duGenre[0] || 'calme';
+  if (liste.length === 1 || !duGenre.length) return liste[0];
+  return liste.find((a) => duGenre.includes(a)) || liste[0];
+}
+
+/** Ambiance proposée pour un style nommé. -> { style, ambiance, ambiances } ou null (style inconnu). */
+function ambianceDuStyle(nom, genre, dossierStyles) {
+  const st = trouverStyle(nom, dossierStyles);
+  if (!st) return null;
+  const son = (lireJSON(path.join(st.dossier, 'identite.json')) || {}).son || null;
+  return { style: nom, ambiance: ambianceProposee(son, genre), ambiances: son && Array.isArray(son.ambiances) ? son.ambiances : [] };
+}
+
 if (require.main === module) {
   const args = process.argv.slice(2);
   try {
@@ -537,6 +565,13 @@ if (require.main === module) {
       const r = verifierStyle(st.dossier);
       console.log(JSON.stringify(r, null, 2));
       process.exit(r.ok ? 0 : 1);
+    }
+    if (args[0] === 'ambiance') {
+      const k = args.indexOf('--genre');
+      const r = args[1] && !args[1].startsWith('--') ? ambianceDuStyle(args[1], k >= 0 ? args[k + 1] : null) : null;
+      if (!r) { console.error(args[1] && !args[1].startsWith('--') ? messageStyleInconnu(args[1]) : 'Indiquez un style après ambiance (ex. : ambiance clair-pedagogique --genre formation).'); process.exit(1); }
+      console.log(JSON.stringify(r));
+      process.exit(0);
     }
     if (args[0] === 'chercher') {
       if (!args.slice(1).join(' ').trim()) throw new Error('Indiquez des mots après chercher (ex. : chercher tableau blanc).');
@@ -575,7 +610,7 @@ if (require.main === module) {
 
 module.exports = {
   verifierStyle, styleVerifie, marquerVerifie, racinesStyles, trouverStyle, nomsStyles, messageStyleInconnu, ficheStyle, listerStyles, recommander,
-  listePourGenre, ficheCourte, chercherStyles, estLivre, CHAMPS_LIVRE,
+  listePourGenre, ficheCourte, chercherStyles, estLivre, CHAMPS_LIVRE, ambianceProposee, ambianceDuStyle, AMBIANCES_GENRE,
   empreinteStyle, empreinteBase, ficheDuStyle, baseAChanger, signalerBase, MARQUE_BASE, CHANGEMENTS,
   lireJSON, RACINE, LIVRES, dossierPersonnel,
 };

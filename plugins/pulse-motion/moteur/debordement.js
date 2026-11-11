@@ -16,6 +16,8 @@
 
   function virgule(t) { return (Math.round(t * 10) / 10).toString().replace('.', ','); }
 
+  function estCode(el) { return /^code:/.test(el.getAttribute('data-texte') || ''); }
+
   function enMouvement(el) {
     var porteur = el.closest('[data-etat]');
     var etat = porteur && porteur.getAttribute('data-etat');
@@ -52,7 +54,9 @@
           // Tolérance d'un quart de la taille du texte : avec un interligne serré, accents et
           // jambages dépassent de quelques pixels sans que le texte déborde vraiment.
           var marge = Math.max(1, 0.25 * parseFloat(getComputedStyle(el).fontSize));
-          var deborde = el.scrollWidth > el.clientWidth + marge || el.scrollHeight > el.clientHeight + marge;
+          // Corps d'un code (spec S7, 5.9) : la bande d'une ligne surlignée dépasse exprès de ses bords ; sa largeur est mesurée
+          // par le calque (code-trop-large).
+          var deborde = !estCode(el) && (el.scrollWidth > el.clientWidth + marge || el.scrollHeight > el.clientHeight + marge);
           var dehors = !enMouvement(el) && !el.closest('[data-camera]') && r.width > 0 &&
             (r.left < cadre.left - 1 || r.right > cadre.right + 1 || r.top < cadre.top - 1 || r.bottom > cadre.bottom + 1);
           if (deborde || dehors) {

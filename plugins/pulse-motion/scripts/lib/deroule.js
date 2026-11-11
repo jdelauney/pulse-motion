@@ -135,6 +135,9 @@ function validerDeroule(d) {
     if (d.bruitages.volume !== undefined && !(typeof d.bruitages.volume === 'number' && d.bruitages.volume >= 0 && d.bruitages.volume <= 1)) err.push('« bruitages.volume » doit être un nombre entre 0 et 1.');
     // Bruitages automatiques par type d'entrée (spec S7, 5.15).
     if (d.bruitages.auto !== undefined && ![true, false, 'minimal'].includes(d.bruitages.auto)) err.push('« bruitages.auto » doit valoir true (un son doux à chaque entrée), « minimal » (transitions et sons posés à la main seulement) ou false.');
+    // Calage par le pic et mixage par bandes (spec Styles et réalisation, 5.8).
+    if (d.bruitages.calage !== undefined && !['pic', 'debut'].includes(d.bruitages.calage)) err.push('« bruitages.calage » doit valoir « pic » (le pic du son tombe sur l\'élément) ou « debut » (le son part avec l\'élément).');
+    if (d.bruitages.bandes !== undefined && typeof d.bruitages.bandes !== 'boolean') err.push('« bruitages.bandes » doit valoir true (bruitages et musique chacun dans sa bande) ou false.');
   }
 
   if (d.tempo !== undefined && !estObjet(d.tempo)) err.push('« tempo » doit être un objet, ex. { "bpm": 120 }.');

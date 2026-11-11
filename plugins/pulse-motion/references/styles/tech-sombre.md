@@ -53,7 +53,7 @@
 ## 7. Palette sonore
 
 - Ambiance `tech` par défaut, `corporate` en alternative.
-- Bruitages : texte → `clic` ; chiffre → `tic` ; les autres entrées sans son propre ; transition : son de la transition (`glissement` → `whoosh`).
+- Bruitages : texte → `frappe` (touche de clavier) ; chiffre → `tic` ; les autres entrées sans son propre ; transition : son de la transition (`glissement` → `whoosh`).
 - Matière : aucune. Moment fort : `basse`.
 - Sons brefs et réguliers ; pas de son à chaque lettre.
 

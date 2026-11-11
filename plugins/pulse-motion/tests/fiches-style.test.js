@@ -246,11 +246,11 @@ test('styles livrés : chaque fiche au nouveau format et chaque identite complè
     const onze = F.section(fiche(style), SECTIONS_FICHE[11]);
     for (const u of id.usages) assert.ok(onze.toLowerCase().includes(u.toLowerCase()), `${style} : usage « ${u} » absent du § 11`);
   }
-  // Palettes sonores de départ (spec 5.3, point 2) ; tech-sombre : « clic » en attendant le son « frappe » (J4).
+  // Palettes sonores de départ (spec 5.3, point 2) ; tech-sombre : « frappe » pour le texte (J4).
   const sons = Object.fromEntries(LIVRES.map((s) => [s, identite(s).son]));
   assert.deepEqual(sons['clair-pedagogique'].ambiances, ['calme', 'inspirant']);
   assert.deepEqual([sons.energique.bruitages.titre, sons.energique.bruitages.point, sons.energique.fort], ['impact', 'clic', 'impact']);
-  assert.deepEqual([sons['tech-sombre'].bruitages.texte, sons['tech-sombre'].bruitages.chiffre], ['clic', 'tic']);
+  assert.deepEqual([sons['tech-sombre'].bruitages.texte, sons['tech-sombre'].bruitages.chiffre], ['frappe', 'tic']);
   assert.deepEqual(identite('minimal').provenance, [{ depot: 'lemo-opuscar', style: 'swiss-motion', licence: 'MIT' }]);
 });
 

@@ -28,9 +28,51 @@
     }).filter(Boolean);
   }
 
+  function catalogue() { return (M.synthe && M.synthe.catalogue) || { TENUS: [], PICS: {}, FORTS: [] }; }
+
+  /**
+   * Moments forts déclarés (spec Styles et réalisation, 5.8) : [data-moment-fort] minutés, au plus 1 par scène et 3 par
+   * vidéo (les suivants sont ignorés ; contrôle moment-fort-en-trop). -> [{ t, el }] dans l'ordre de la vidéo.
+   */
+  function momentsForts() {
+    var r = [], vues = {};
+    if (!M.minutage) return r;
+    document.querySelectorAll('#pm-scene section[data-scene] [data-moment-fort]').forEach(function (el) {
+      var id = el.closest('section[data-scene]').getAttribute('data-scene');
+      var e = M.minutage.elements[id];
+      var cle = el.getAttribute('data-pm-cle');
+      if (!e || !e[cle] || vues[id] || r.length >= 3) return;
+      vues[id] = true;
+      r.push({ t: e[cle].debut, el: el });
+    });
+    return r.sort(function (a, b) { return a.t - b.t; });
+  }
+  M.momentsForts = function () { return momentsForts().map(function (m) { return { t: m.t, id: m.el.id || null }; }); };
+  // Silence de la musique avant un moment fort (s), fondus de sortie et de retour.
+  var SILENCE_FORT = 0.6, FONDU_FORT = 0.05, RETOUR_FORT = 0.03;
+
+  // Mixage par bandes (5.8 ; idée seulement, citée par la spec ; valeurs à juger à l'oreille) : passe-haut des bruitages,
+  // passe-bas de la musique, largeur de la plage autour du pic, fondus.
+  var BANDES = { bruitages: 800, musique: 4000, plage: 0.3, fondu: 0.05 };
+  function estFort(ev) { return !!ev.fort || catalogue().FORTS.indexOf(ev.nom) >= 0; }
+  /** Plages [{ debut, fin }] où la musique passe au passe-bas : 0,3 s centrées sur le pic de chaque bruitage non fort. */
+  function plagesBandes(sons) {
+    var C = catalogue(), r = [];
+    sons.filter(function (ev) { return !ev.fichier && !estFort(ev); }).map(function (ev) {
+      var c = ev.t + (C.PICS[ev.nom] || 0);
+      return { debut: Math.max(0, c - BANDES.plage / 2), fin: c + BANDES.plage / 2 };
+    }).sort(function (a, b) { return a.debut - b.debut; }).forEach(function (p) {
+      var der = r[r.length - 1];
+      if (der && p.debut <= der.fin + BANDES.fondu) der.fin = Math.max(der.fin, p.fin);
+      else r.push(p);
+    });
+    return r;
+  }
+  M.plagesBandes = function () { return plagesBandes(evenementsSons()); };
+
   /** Sons à jouer : éléments [data-son] (au début résolu de l'élément), transitions. -> [{ t, nom, fichier, volume }] */
   function evenementsSons() {
-    var d = M.donnees || {}, liste = [];
+    var d = M.donnees || {}, liste = [], C = catalogue();
     if (!M.minutage) return liste;
     document.querySelectorAll('#pm-scene section[data-scene] [data-son]').forEach(function (el) {
       var sec = el.closest('section[data-scene]');
@@ -40,7 +82,15 @@
       var v = parseFloat(el.getAttribute('data-son-volume'));
       var nom = el.getAttribute('data-son');
       var fichier = /^fichier:/.test(nom) ? nom.slice(8) : null;
-      liste.push({ t: e[cle].debut, nom: fichier ? null : nom, fichier: fichier, volume: isFinite(v) ? Math.max(0, Math.min(1, v)) : 1 });
+      var ev = { t: e[cle].debut, nom: fichier ? null : nom, fichier: fichier, volume: isFinite(v) ? Math.max(0, Math.min(1, v)) : 1, element: true };
+      // Son tenu (5.8) : il dure l'entrée de l'élément (crissement posé à la main garde sa durée de 0,4 s, comme avant).
+      if (!fichier && nom !== 'crissement' && C.TENUS.indexOf(nom) >= 0) ev.duree = Math.max(0.05, e[cle].fin - e[cle].debut);
+      liste.push(ev);
+    });
+    // Moment fort : le son fort du style tombe sur l'élément (sauf s'il porte déjà son data-son).
+    var fort = (d.momentFort && d.momentFort.son) || null;
+    momentsForts().forEach(function (m) {
+      if (fort && !m.el.hasAttribute('data-son')) liste.push({ t: m.t, nom: fort, fichier: null, volume: 1, element: true, fort: true });
     });
     var auto = d.bruitages ? d.bruitages.auto : false;
     // Bruitages automatiques (spec S7, 5.15) : true ou « minimal » sonnent aussi les transitions, sauf transitions: false.
@@ -51,10 +101,21 @@
         if (son) liste.push({ t: s.debut, nom: son, fichier: null, volume: 1 });
       });
     }
-    if (auto !== true && auto !== 'minimal') return liste;
-    liste.forEach(function (e) { e.explicite = true; });
-    if (auto === true) liste = liste.concat(bruitagesAuto(d));
-    return eclaircir(liste);
+    if (auto === true || auto === 'minimal') {
+      liste.forEach(function (e) { e.explicite = true; });
+      if (auto === true) liste = liste.concat(bruitagesAuto(d));
+      liste = eclaircir(liste);
+    }
+    // Calage par le pic (5.8, bruitages.calage = "pic") : le son d'un élément part plus tôt, son pic tombe sur l'élément.
+    // Les sons des transitions et les fichiers partent toujours à leur instant.
+    if (d.bruitages && d.bruitages.calage === 'pic') {
+      liste.forEach(function (e) {
+        var pic = e.element && e.nom ? C.PICS[e.nom] : 0;
+        if (pic > 0) e.t = Math.max(0, Math.round((e.t - pic) * 1e6) / 1e6);
+      });
+      liste.sort(function (a, b) { return a.t - b.t; });
+    }
+    return liste;
   }
 
   // --- Bruitages automatiques par type d'entrée (spec S7, 5.15) ----------------------------------------------------------
@@ -104,7 +165,8 @@
   }
 
   function bruitagesAuto(d) {
-    var r = [], table = (d.bruitages && d.bruitages.table) || {}, gamme = gammeListes(d);
+    var r = [], table = (d.bruitages && d.bruitages.table) || {}, gamme = gammeListes(d), tenus = catalogue().TENUS;
+    var matiere = d.bruitages && tenus.indexOf(d.bruitages.matiere) >= 0 ? d.bruitages.matiere : null;
     document.querySelectorAll('#pm-scene section[data-scene]').forEach(function (sec) {
       var e = M.minutage.elements[sec.getAttribute('data-scene')];
       if (!e) return;
@@ -117,23 +179,25 @@
         if (!g) return;
         var defaut = DEFAUTS[g.type] || [null, 0];
         var nom = Object.prototype.hasOwnProperty.call(table, g.type) ? table[g.type] : defaut[0];
-        // Tracé à main levée : crissement, son générique du tracé, que la matière d'un style remplace par sa table.
-        if (g.type === 'trace' && g.main && !Object.prototype.hasOwnProperty.call(table, 'trace')) nom = 'crissement';
+        // Tracé à main levée : le son tenu de la matière du style (spec Styles et réalisation, 5.7, point 4), sinon crissement,
+        // son générique du tracé (conflit 14 de la revue).
+        if (g.type === 'trace' && g.main) nom = matiere || 'crissement';
         if (!nom || FORTS.indexOf(nom) >= 0) return;
-        var gain = g.type === 'trace' && nom === 'crissement' ? 0.4 : defaut[1] || 0.4;
+        var tenu = tenus.indexOf(nom) >= 0;
+        var gain = g.type === 'trace' && tenu ? 0.4 : defaut[1] || 0.4;
         var duree = Math.max(0.05, tps.fin - tps.debut);
         if (g.type === 'point') {
           var midi = gamme[rangListe % gamme.length] + 12 * Math.floor(rangListe / gamme.length);
           rangListe++;
-          r.push({ t: tps.debut, nom: nom, fichier: null, volume: gain, hauteur: nom === 'blip' ? frequence(midi) : undefined });
+          r.push({ t: tps.debut, nom: nom, fichier: null, volume: gain, hauteur: nom === 'blip' ? frequence(midi) : undefined, element: true, duree: tenu ? duree : undefined });
         } else if (g.type === 'chiffre' && nom === 'tic') {
           // Compteur : tic × N, N = borne(arrondi(durée × 10), 4, 18), aux instants 1 − ∛(1 − k/N), gain de 0,8 à 0,4.
           var n = Math.max(4, Math.min(18, Math.round(duree * 10)));
           for (var k = 0; k < n; k++) {
             var x = 1 - Math.cbrt(1 - k / n);
-            r.push({ t: tps.debut + duree * x, nom: 'tic', fichier: null, volume: 0.8 - 0.4 * k / Math.max(1, n - 1) });
+            r.push({ t: tps.debut + duree * x, nom: 'tic', fichier: null, volume: 0.8 - 0.4 * k / Math.max(1, n - 1), element: true });
           }
-        } else r.push({ t: tps.debut, nom: nom, fichier: null, volume: gain, duree: nom === 'crissement' ? duree : undefined });
+        } else r.push({ t: tps.debut, nom: nom, fichier: null, volume: gain, duree: tenu ? duree : undefined, element: true });
       });
     });
     return r;
@@ -203,6 +267,10 @@
     var seulement = options && options.seulement;
     var d = M.donnees, duree = M.duree, X = M.mixage, D = X.DUCKING;
     var avertissements = [], bus = [], musiqueIllisible = false, entendues = [];
+    // Sons et moments forts lus d'abord : la musique se tait avant un moment fort et se filtre sous les bruitages (bandes).
+    var sons = seulement ? [] : evenementsSons();
+    var forts = momentsForts();
+    var bandes = !!(d.bruitages && d.bruitages.bandes === true);
 
     var prises = seulement ? [] : prisesVoix();
     if (prises.length) {
@@ -249,7 +317,38 @@
         creux.frequency.value = D.frequence;
         creux.Q.value = D.q;
         automatiser(creux.gain, points.map(function (q) { return { t: q.t, v: q.db * D.creux }; }));
-        entree.connect(fondus).connect(baisse).connect(creux).connect(contexte.destination);
+        var chaine = entree.connect(fondus).connect(baisse).connect(creux);
+        // Moments forts (spec Styles et réalisation, 5.8) : la musique se tait 0,6 s avant l'élément, puis revient avec lui.
+        if (forts.length) {
+          var silence = contexte.createGain();
+          silence.gain.setValueAtTime(1, 0);
+          forts.forEach(function (m) {
+            var debut = Math.max(0, m.t - SILENCE_FORT);
+            silence.gain.setValueAtTime(1, Math.max(0, debut - FONDU_FORT));
+            silence.gain.linearRampToValueAtTime(0, debut);
+            silence.gain.setValueAtTime(0, m.t);
+            silence.gain.linearRampToValueAtTime(1, m.t + RETOUR_FORT);
+          });
+          chaine = chaine.connect(silence);
+        }
+        // Mixage par bandes (5.8, bruitages.bandes) : passe-bas à 4 kHz sur la musique 0,3 s autour du pic de chaque bruitage
+        // non fort, fondus de 50 ms (fondu enchaîné entre la musique telle quelle et la musique filtrée).
+        var plages = bandes ? plagesBandes(sons) : [];
+        if (plages.length) {
+          var directe = contexte.createGain(), filtree = contexte.createGain(), bas = contexte.createBiquadFilter();
+          bas.type = 'lowpass';
+          bas.frequency.value = BANDES.musique;
+          directe.gain.setValueAtTime(1, 0);
+          filtree.gain.setValueAtTime(0, 0);
+          plages.forEach(function (p) {
+            directe.gain.setValueAtTime(1, p.debut); directe.gain.linearRampToValueAtTime(0, p.debut + BANDES.fondu);
+            directe.gain.setValueAtTime(0, p.fin - BANDES.fondu); directe.gain.linearRampToValueAtTime(1, p.fin);
+            filtree.gain.setValueAtTime(0, p.debut); filtree.gain.linearRampToValueAtTime(1, p.debut + BANDES.fondu);
+            filtree.gain.setValueAtTime(1, p.fin - BANDES.fondu); filtree.gain.linearRampToValueAtTime(0, p.fin);
+          });
+          chaine.connect(directe).connect(contexte.destination);
+          chaine.connect(bas).connect(filtree).connect(contexte.destination);
+        } else chaine.connect(contexte.destination);
         var rendue = await contexte.startRendering();
         if (enBoucle) {
           var nb = Math.max(1, Math.ceil(duree * TAUX));
@@ -265,7 +364,6 @@
       }
     }
     // Bruitages : éléments [data-son] et transitions ; non baissés sous la voix.
-    var sons = seulement ? [] : evenementsSons();
     if (sons.length) {
       var contexteSons = nouveauContexte();
       var bruitSons = M.synthe.bruit(contexteSons, 777);
@@ -274,6 +372,14 @@
       sortieSons.gain.setValueAtTime(1, Math.max(0, duree - 0.3));
       sortieSons.gain.linearRampToValueAtTime(0, duree);
       sortieSons.connect(contexteSons.destination);
+      // Bandes (5.8) : les bruitages non forts passent dans un passe-haut à 800 Hz (ils laissent le grave à la musique).
+      var aigus = null;
+      if (bandes) {
+        aigus = contexteSons.createBiquadFilter();
+        aigus.type = 'highpass';
+        aigus.frequency.value = BANDES.bruitages;
+        aigus.connect(sortieSons);
+      }
       for (var s = 0; s < sons.length; s++) {
         var ev = sons[s];
         if (ev.fichier) {
@@ -285,7 +391,7 @@
             src.connect(gf).connect(sortieSons);
             src.start(ev.t);
           } catch (e) { avertissements.push('Un son importé n\'a pas pu être lu.'); }
-        } else M.synthe.bruitages.jouer(contexteSons, sortieSons, ev.nom, ev.t, ev.volume, bruitSons, { hauteur: ev.hauteur, duree: ev.duree });
+        } else M.synthe.bruitages.jouer(contexteSons, aigus && !estFort(ev) ? aigus : sortieSons, ev.nom, ev.t, ev.volume, bruitSons, { hauteur: ev.hauteur, duree: ev.duree });
       }
       bus.push({ tampon: await contexteSons.startRendering(), volume: volumeDe(d.bruitages) });
     }

@@ -47,11 +47,11 @@ La première question rappelle ce qui va se passer : « Nouvelle vidéo sur « <
 Sujet qui nomme une entreprise ou un produit précis : la question 4 devient celle des visuels, une seule fois (`pulse-motion reference actifs-marque` : logo, photos du produit, captures, couleurs et polices) ; ne jamais redessiner le produit, poser une zone réservée s'il manque.
 Tutoriel de logiciel : `pulse-motion consignes filmer creer`.
 
-**Faites pour moi** : aucune autre question (sauf le fichier du logo s'il est demandé) : musique composée selon le genre, ni voix (une voix provisoire bloquerait l'export) ni sous-titres, style recommandé, glossaire noté d'office, aucune installation ; chaque choix se note : `pulse-motion decisions . noter "<sujet>" "<choix>" "<raison>" "<pour changer>"`.
+**Faites pour moi** : aucune autre question (sauf le fichier du logo s'il est demandé) : musique composée selon le style, ni voix (une voix provisoire bloquerait l'export) ni sous-titres, style recommandé, glossaire noté d'office, aucune installation ; chaque choix se note : `pulse-motion decisions . noter "<sujet>" "<choix>" "<raison>" "<pour changer>"`.
 
 Sinon, une deuxième ronde, **Le son** (lire d'abord `pulse-motion reference audio`, et `pulse-motion reference audio/musique` pour décrire les ambiances) :
 
-1. **Musique** : « Une musique composée pour la vidéo (Recommandé) » · « J'ai un fichier » · « Pas de musique ». L'ambiance se choisit selon le genre (formation → `calme` ou `inspirant`, produit → `corporate` ou `tech`, storytelling → `inspirant` ou `suspense`, social → `entrainant`) et se décrit en trois mots, jamais par son nom technique.
+1. **Musique** : « Une musique composée pour la vidéo (Recommandé) » · « J'ai un fichier » · « Pas de musique ». L'ambiance est celle du style (`pulse-motion styles ambiance <style> --genre <genre>`, le style une fois choisi), décrite en trois mots, jamais par son nom technique.
 2. **Voix et sous-titres** : « Ma voix, avec sous-titres (Recommandé) » · « Ma voix, sans sous-titres » · « Voix de synthèse » · « Pas de voix » (donc sans sous-titres, qui reprennent le texte dit) ; un fichier de sa voix se dit en réponse libre. En 9:16, les sous-titres mot par mot (`mode` `mot`).
 3. **L'ordinateur**, seulement si `pulse-motion outils --plan` liste un outil utile (la transcription avec une voix, ou ffmpeg) : « Préparer l'ordinateur pendant que je travaille : <liste> (Recommandé) » · « Plus tard ». Accord : les installations partent en arrière-plan, une à la fois (`pulse-motion consignes outils`, étape « Tout installer »).
 
@@ -63,7 +63,7 @@ La charte (logo, couleurs, polices) vit dans `charte/` du projet ; la musique da
 - Logo : le copier dans `charte/logo.<ext>`, puis `pulse-motion charte depuis-logo charte/logo.<ext> --style <style>` (style recommandé, étape 2) : primaire et accent, déjà lisibles sur le fond du style. Les écrire dans `charte/charte.json` (`{ "couleurs": { "primaire": "…", "accent": "…" }, "logo": "logo.<ext>" }`) et dire les `ajustements` en une phrase. Logo en JPEG ou WebP : demander un PNG ou un SVG. Sans couleur exploitable : celles du style, et le dire.
 - Couleurs en mots (« bleu marine ») : les traduire en `#rrggbb` dans `charte/charte.json` et le dire.
 - Police citée sans fichier (« ma police, c'est Montserrat ») : `pulse-motion police "<famille>"` la récupère depuis Bunny Fonts dans `charte/polices/` ; si elle n'y est pas, garder la plus proche des polices du style (celles de sa fiche ; `clair-pedagogique` : Figtree, Inter) et le dire. Fichier fourni : `pulse-motion reference actifs-marque`, section « Couleurs et polices ».
-- Musique composée : `"musique": { "generee": "<ambiance>", "tempo": 120, "volume": 0.5 }` dans le déroulé (volume 0,5 sous une voix, 0,8 sans voix ; pas de `tempo` en haut du déroulé en plus). Ce tempo devient celui de la vidéo (gestes calés sur les temps : `data-start="2t"`) ; la musique suit les scènes, dont les durées restent libres.
+- Musique composée : `"musique": { "generee": "<ambiance>", "tempo": 120, "volume": 0.5 }` dans le déroulé (volume 0,5 sous une voix, 0,8 sans voix ; pas de `tempo` en haut du déroulé en plus). Ce tempo devient celui de la vidéo (gestes calés sur les temps : `data-start="2t"`) ; la musique suit les scènes, dont les durées restent libres. Toujours `"bruitages": { "calage": "pic" }` (sons calés sur leur pic).
 - Musique en fichier (tempo, contrôle `hors-tempo`) : `pulse-motion reference audio/musique`, section « Musique en fichier ».
 
 ## 2. Déroulé et style

@@ -11,6 +11,7 @@
  * Élément jugé : texte (data-texte), image (sauf alt="" décoratif), logo, SVG de contenu (sans aria-hidden),
  * hors décor (.decor, [data-decor]) et pas imbriqué dans un autre élément jugé. Immobile : même place
  * qu'au relevé précédent, porteur data-etat ni « avant » ni « pendant », lettres arrivées, pas de transition.
+ * Chevauchement : étendue des lettres d'un texte, ou toute sa boîte pour une carte (texte sur un fond ou dans un cadre).
  * [data-superpose] autorise un élément à en recouvrir un autre. Un constat par (règle, scène, élément).
  * plages : [[debut, fin]] ; seuls les relevés qui y tombent sont faits (contrôle partiel : les scènes changées, et un
  * relevé de chaque côté ; les constats des autres scènes sont repris du contrôle précédent).
@@ -102,6 +103,14 @@
     var ia = rang(a.el);
     var ib = rang(b.el);
     return ia >= 0 && (ib < 0 || ia < ib);
+  }
+  /** Boîte d'un texte qui a son propre fond ou son cadre (carte, étiquette), ou null. */
+  function carte(x) {
+    if (!x.el.hasAttribute('data-texte')) return null;
+    var cs = getComputedStyle(x.el);
+    var fond = (cs.backgroundColor && cs.backgroundColor !== 'transparent' && !/rgba\([^)]*,\s*0\)$/.test(cs.backgroundColor)) || (cs.backgroundImage && cs.backgroundImage !== 'none');
+    var cadre = ['Top', 'Right', 'Bottom', 'Left'].some(function (k) { return parseFloat(cs['border' + k + 'Width']) > 0 && cs['border' + k + 'Style'] !== 'none'; });
+    return fond || cadre ? x.el.getBoundingClientRect() : null;
   }
   function aire(r) { return Math.max(0, r.width) * Math.max(0, r.height); }
   function commune(a, b) {
@@ -287,15 +296,18 @@
             var b = immobiles[j];
             if (a.el.contains(b.el) || b.el.contains(a.el)) continue;
             var c = commune(a.r, b.r);
-            if (!c) continue;
+            // Une carte (texte sur un fond ou dans un cadre) couvre toute sa boîte, pas seulement son texte : son cadre posé sur
+            // un titre le recouvre, même si leurs lettres ne se touchent pas.
+            var boiteA = carte(a), boiteB = carte(b);
+            if (!c && !boiteA && !boiteB) continue;
             var superpose = a.el.closest('[data-superpose]') || b.el.closest('[data-superpose]');
             // Logo masqué : seulement par un élément peint au-dessus de lui, et pas autorisé (data-superpose).
             var logo = estLogo(a.el) ? a : estLogo(b.el) ? b : null;
             var autre = logo === a ? b : a;
             if (logo && !superpose && c / aire(logo.r) > S.logoMasqueMax && audessus(autre, logo)) constater('logo-masque', id, nom(logo.el), t, arrondi(c / aire(logo.r)));
             if (superpose) continue;
-            var ra = encre(a);
-            var rb = encre(b);
+            var ra = boiteA || encre(a);
+            var rb = boiteB || encre(b);
             var part = commune(ra, rb) / Math.min(aire(ra), aire(rb));
             if (part > S.chevauchementMax) constater('chevauchement', id, nom(a.el) + '|' + nom(b.el), t, arrondi(part));
           }

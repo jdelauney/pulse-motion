@@ -35,11 +35,20 @@ const PREPARER_DE = (transparent) => `(async function () {
 const PREPARER = PREPARER_DE(false);
 
 // Instant t : temps passés dans M.seek et dans la préparation des particules, mesurés dans la page à l'horloge réelle
-// (profil d'export).
+// (profil d'export). Saut dans le temps sous une caméra (data-camera) : deux images d'attente avant la capture. Sans elles, le
+// navigateur peut encore peindre un texte animé à l'échelle de la caméra de l'image d'avant (trame rééchantillonnée, jusqu'à
+// 5 niveaux d'écart sur quelques pixels) : la même image différait d'un rien selon l'ordre des captures (preuve du
+// déterminisme du témoin explication-facture, scène finale). Les images qui se suivent (export) n'attendent pas.
 const instant = (t) => `(async function () {
   var maintenant = window.__pmMaintenant;
   var a = maintenant();
+  var ips = (M.donnees && M.donnees.format && M.donnees.format.ips) || 30;
+  var saut = window.__pmDernierInstant === undefined || Math.abs(${Number(t)} - window.__pmDernierInstant) > 1.5 / ips;
+  window.__pmDernierInstant = ${Number(t)};
   await M.seek(${Number(t)});
+  if (saut && document.querySelector('#pm-scene [data-camera]')) {
+    await new Promise(function (r) { requestAnimationFrame(function () { requestAnimationFrame(function () { setTimeout(r, 0); }); }); });
+  }
   var b = maintenant();
   if (M.particules && M.particules.preparerCapture) await M.particules.preparerCapture();
   return [b - a, maintenant() - b];

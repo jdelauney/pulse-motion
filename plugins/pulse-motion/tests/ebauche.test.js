@@ -294,7 +294,7 @@ test('plugin : creer en parcours autonome ne pose aucune question après la rond
   assert.match(c, /3\. \*\*Parcours\*\* : Rapide \(Recommandé\)[^\n]*· Faites pour moi – « aucune autre question, je regarde le résultat »/);
   const faites = c.split('\n').find((l) => l.startsWith('**Faites pour moi** : '));
   assert.ok(faites, 'paragraphe « Faites pour moi »');
-  for (const r of [/aucune autre question \(sauf le fichier du logo s'il est demandé\)/, /musique composée selon le genre/, /ni voix \(une voix provisoire bloquerait l'export\) ni sous-titres/,
+  for (const r of [/aucune autre question \(sauf le fichier du logo s'il est demandé\)/, /musique composée selon le style/, /ni voix \(une voix provisoire bloquerait l'export\) ni sous-titres/,
     /style recommandé/, /glossaire noté d'office/, /aucune installation/, /`pulse-motion decisions \. noter "<sujet>" "<choix>" "<raison>" "<pour changer>"`/]) assert.match(faites, r);
   // Il vient avant la ronde du son, qui ne s'ouvre que « sinon ».
   assert.ok(c.indexOf(faites) < c.indexOf('**Le son**'));

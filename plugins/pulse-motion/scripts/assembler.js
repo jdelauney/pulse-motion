@@ -161,17 +161,40 @@ function bruitagesAuto(deroule, dossierStyle) {
   const auto = deroule.bruitages && deroule.bruitages.auto;
   if (auto !== true && auto !== 'minimal') return {};
   const { TYPES_ENTREE } = require('./lib/contrat.js');
-  const { BRUITAGES } = require('../moteur/synthe/catalogue.js');
+  const { BRUITAGES, TENUS } = require('../moteur/synthe/catalogue.js');
   let table = null;
+  const son = sonDuStyle(dossierStyle);
+  const brute = son && son.bruitages;
+  if (brute && typeof brute === 'object') {
+    table = Object.fromEntries(Object.entries(brute).filter(([type, nom]) => TYPES_ENTREE.includes(type) && (nom === null || BRUITAGES.includes(nom))));
+  }
+  // Matière du style (spec Styles et réalisation, 5.7) : son tenu du tracé à main levée, à la place de crissement.
+  const matiere = son && TENUS.includes(son.matiere) && son.matiere !== 'crissement' ? son.matiere : null;
+  // true ou « minimal » sonnent aussi les transitions, sauf « transitions »: false écrit au déroulé.
+  return { auto, transitions: deroule.bruitages.transitions !== false, ...(table && Object.keys(table).length ? { table } : {}), ...(matiere ? { matiere } : {}) };
+}
+
+/** Palette sonore du style (identite.json, son), ou null (style sans identité). */
+function sonDuStyle(dossierStyle) {
   try {
     const id = JSON.parse(fs.readFileSync(path.join(dossierStyle, 'identite.json'), 'utf8').replace(/^﻿/, ''));
-    const brute = id && id.son && id.son.bruitages;
-    if (brute && typeof brute === 'object') {
-      table = Object.fromEntries(Object.entries(brute).filter(([type, nom]) => TYPES_ENTREE.includes(type) && (nom === null || BRUITAGES.includes(nom))));
-    }
-  } catch { /* style sans identité : table par défaut */ }
-  // true ou « minimal » sonnent aussi les transitions, sauf « transitions »: false écrit au déroulé.
-  return { auto, transitions: deroule.bruitages.transitions !== false, ...(table && Object.keys(table).length ? { table } : {}) };
+    return id && id.son && typeof id.son === 'object' ? id.son : null;
+  } catch { return null; }
+}
+
+/**
+ * Moments forts (spec Styles et réalisation, 5.8) : éléments data-moment-fort minutés, au plus 1 par scène et 3 par vidéo (comme
+ * moteur/audio.js), en temps de la vidéo. -> [{ scene, cle, t }]
+ */
+function momentsForts(scenesDonnees, elementsForts, options) {
+  if (!Object.keys(elementsForts).length) return [];
+  const min = calculerMinutage(scenesDonnees, elementsForts, options);
+  const r = [];
+  for (const s of min.scenes) {
+    const e = (elementsForts[s.id] || []).find((x) => x.momentFort && min.elements[s.id][x.cle]);
+    if (e && r.length < 3) r.push({ scene: s.id, cle: e.cle, t: min.elements[s.id][e.cle].debut });
+  }
+  return r;
 }
 
 function jsonDansHTML(objet) {
@@ -266,6 +289,8 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
 
   // Son réactif (P7) : texte de chaque scène, cherché ensuite pour les variables CSS du son.
   const textesScenes = [];
+  // Éléments des scènes qui déclarent un moment fort (spec Styles et réalisation, 5.8), minutés pour couper la musique.
+  const elementsForts = {};
   for (const [rang, scene] of deroule.scenes.entries()) {
     const fichier = cheminDansProjet(projet, scene.fichier);
     let html = null;
@@ -294,6 +319,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
       html = deplie.html;
       erreurs.push(...deplie.erreurs);
     }
+    if (/\sdata-moment-fort[\s=>]/.test(html)) elementsForts[scene.id] = require('./lib/extraire.js').extraireScene(html).elements;
     const { html: sansScripts, scripts } = S.extraireScripts(html);
     // Flèches, annotations et dessins libres (spec S7, 5.2 à 5.5) : avant les textes (étiquettes des dessins libres).
     let aDessiner = sansScripts;
@@ -463,7 +489,11 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     // Allure globale (spec S7, 5.14, plan J4) : lue par le code et les graphiques du calque (durées divisées par l'allure).
     ...(typeof deroule.allure === 'number' && deroule.allure >= 0.7 && deroule.allure <= 1.6 && deroule.allure !== 1 ? { allure: deroule.allure } : {}),
     tempo: dureeTemps(deroule) ? { bpm: (deroule.tempo && deroule.tempo.bpm) || tempoMusique(deroule), decalage: (deroule.tempo && deroule.tempo.decalage) || 0, ...(grilleFixe(deroule) ? { grille: true } : {}) } : null,
-    bruitages: deroule.bruitages ? { transitions: deroule.bruitages.transitions === true, volume: deroule.bruitages.volume ?? 1, ...bruitagesAuto(deroule, dossierStyle) } : null,
+    bruitages: deroule.bruitages ? { transitions: deroule.bruitages.transitions === true, volume: deroule.bruitages.volume ?? 1, ...bruitagesAuto(deroule, dossierStyle),
+      // Calage par le pic et mixage par bandes (spec Styles et réalisation, 5.8) : seulement si le déroulé les déclare.
+      ...(deroule.bruitages.calage === 'pic' ? { calage: 'pic' } : {}), ...(deroule.bruitages.bandes === true ? { bandes: true } : {}) } : null,
+    // Moment fort (5.8) : le son fort du style (identite.json, son.fort), seulement si une scène en déclare un.
+    ...(Object.keys(elementsForts).length ? { momentFort: { son: (sonDuStyle(dossierStyle) || {}).fort || 'impact' } } : {}),
     scenes: scenesDonnees,
     effets: effets.map(({ calque, ancre, cible, effet }) => ({ calque, ancre, cible, effet })),
     milieux: milieux.map(({ calque, ancre, sansDuree, effet }) => ({ calque, ancre, sansDuree, effet })),
@@ -511,10 +541,13 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   // Musique générée (ambiance) ou partition libre : partition validée, jouée par le synthétiseur de la page.
   if (deroule.musique && deroule.musique.generee) {
     const min = calculerMinutage(donnees.scenes, {}, optionsMinutage(deroule));
+    const forts = momentsForts(donnees.scenes, elementsForts, optionsMinutage(deroule));
     // Allure (spec S7, 5.14) : tempo × √allure ; accents (5.15) : une note douce de tonique au début de chaque scène.
     donnees.musique.partition = SA.generer({ ambiance: deroule.musique.generee, tempo: allureDe(deroule) === 1 ? deroule.musique.tempo : tempoMusique(deroule), tonalite: deroule.musique.tonalite,
       ...(deroule.musique.accents === true ? { accents: true } : {}),
       intensite: deroule.musique.intensite, graine: deroule.musique.graine, duree: min.duree,
+      // Moments forts (5.8) : la musique se tait 0,6 s avant chacun (aucune note n'y part).
+      ...(forts.length ? { coupures: forts.map((m) => ({ debut: Math.max(0, m.t - 0.6), fin: m.t })) } : {}),
       scenes: min.scenes.map((s, i) => ({ debut: s.debut, fin: s.fin, humeur: deroule.scenes[i].musique })) });
   } else if (deroule.musique && deroule.musique.partition) {
     const absolu = cheminDansProjet(projet, deroule.musique.partition);
