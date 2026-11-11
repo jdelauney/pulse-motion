@@ -16,7 +16,8 @@
  * (plus de 60 % de l'image), hors calque et composants de dessin (le calque ajoute leurs boîtes). Instant de mesure : la fin
  * de son entrée (l'élément minuté, sinon son ancêtre minuté le plus proche, sinon la dernière fin de la scène), bornée à la
  * fin de la scène. Genres : texte, carte (texte sur un fond ou dans une bordure), image (nu : sans texte), cadrage,
- * graphique, code, formule ; puis fleche, trait, etiquette (calque). Forme ellipse : border-radius d'au moins 50 %, <circle>,
+ * graphique, code, formule ; puis fleche, trait, etiquette (calque). Cadrage (data-cadrer, caméra automatique) : explicite ;
+ * <i data-cadrer="#id"> prend la boîte de sa cible, pendant sa propre plage (debut, fin). Forme ellipse : border-radius d'au moins 50 %, <circle>,
  * <ellipse>. Idée de boundsRecorder et des genres de director.js (BACKDROPS, bare), explainroo (MIT, © 2026 Vincent
  * Schmalbach) ; code neuf. Navigateur seulement ; dépend de horloge, minutage (global M).
  */
@@ -143,7 +144,12 @@
           var cs = getComputedStyle(x.el);
           if (cs.display === 'none') return;
           var genre = genreDe(x.el, cs);
-          var r = rectangle(x.el, genre);
+          // Gros plan demandé (caméra automatique, spec S7 5.8) : <i data-cadrer="#id" data-start data-dur> vise la boîte de
+          // sa cible pendant sa plage, sans rien dessiner ; data-cadrer sans valeur : l'élément lui-même est la zone.
+          var vise = genre === 'cadrage' ? String(x.el.getAttribute('data-cadrer') || '').trim() : '';
+          var cible = /^#[A-Za-z0-9_-]+$/.test(vise) ? sec.querySelector(vise) : null;
+          if (vise && !cible) return;
+          var r = cible ? rectangle(cible, genreDe(cible, getComputedStyle(cible))) : rectangle(x.el, genre);
           if (!(r.width > 0 && r.height > 0)) return;
           var l = r.width * k, h = r.height * k;
           if (l * h > 0.6 * L * 100) return; // fond plein cadre
@@ -151,6 +157,7 @@
             debut: r2((x.debut - info.debut) * info.rythme), fin: r2((x.fin - info.debut) * info.rythme),
             boite: { x: r2((r.left + r.width / 2 - cadre.left) * k), y: r2((r.top + r.height / 2 - cadre.top) * k), l: r2(l), h: r2(h) },
             forme: rond(x.el, cs, r) ? 'ellipse' : 'rect', nu: genre === 'image' && !aTexte(x.el) });
+          if (genre === 'cadrage') elements[elements.length - 1].explicite = true;
         });
       });
     });

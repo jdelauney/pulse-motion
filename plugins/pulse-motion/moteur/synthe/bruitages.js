@@ -1,5 +1,8 @@
-/* Pulse Motion – douze bruitages synthétisés (Web Audio) : whoosh, swoosh-inverse, pop, clic, tic, impact, basse,
- * montee, carillon, ding, blip, souffle. Enveloppes sans clic, bruit à graine (M.synthe.bruit).
+/* Pulse Motion – treize bruitages synthétisés (Web Audio) : whoosh, swoosh-inverse, pop, clic, tic, impact, basse,
+ * montee, carillon, ding, blip, souffle, crissement. Enveloppes sans clic, bruit à graine (M.synthe.bruit).
+ * Options (bruitages automatiques, spec S7 5.15) : hauteur (Hz) du blip (degré de la gamme d'une liste) ; duree (s) du
+ * crissement, son générique du tracé à main levée : bruit filtré en bande, modulé comme une pointe qui frotte, sur la durée
+ * du tracé (0,15 à 3 s).
  * Navigateur seulement (global M.synthe.bruitages, M.synthe.essayerBruitage) ; dépend de synthe/instruments.js.
  */
 (function (racine) {
@@ -54,20 +57,33 @@
       osc(c, 'sine', 1318.51, t, t + 1.3).connect(env(c, t, 0.003, 1.1, 0.35)).connect(s);
       osc(c, 'sine', 1318.51 * 2.76, t, t + 0.5).connect(env(c, t, 0.003, 0.35, 0.08)).connect(s);
     },
-    blip: function (c, s, t) { osc(c, 'square', 880, t, t + 0.1).connect(filtre(c, 'lowpass', 3000, t)).connect(env(c, t, 0.002, 0.06, 0.25)).connect(s); },
+    blip: function (c, s, t, b, o) { osc(c, 'square', o && o.hauteur > 0 ? o.hauteur : 880, t, t + 0.1).connect(filtre(c, 'lowpass', 3000, t)).connect(env(c, t, 0.002, 0.06, 0.25)).connect(s); },
+    crissement: function (c, s, t, b, o) {
+      var d = Math.max(0.15, Math.min(3, o && o.duree > 0 ? o.duree : 0.4));
+      var bande = filtre(c, 'bandpass', 2600, t, 2.2);
+      // La pointe frotte par à-coups (quelques passages par seconde) : fréquence et niveau varient, sans hasard.
+      var pas = 0.11;
+      for (var u = 0; u * pas < d; u++) bande.frequency.setValueAtTime(2200 + 900 * ((u * 7) % 5) / 4, t + u * pas);
+      var g = c.createGain();
+      g.gain.setValueAtTime(PETIT, t);
+      g.gain.exponentialRampToValueAtTime(0.32, t + 0.03);
+      for (var v = 1; v * pas < d - 0.06; v++) g.gain.setTargetAtTime(v % 2 ? 0.18 : 0.3, t + v * pas, 0.03);
+      g.gain.setTargetAtTime(PETIT, t + d - 0.06, 0.03);
+      bruitSource(c, b, t, t + d + 0.2).connect(filtre(c, 'highpass', 900, t)).connect(bande).connect(g).connect(s);
+    },
     souffle: function (c, s, t, b) { bruitSource(c, b, t, t + 0.9).connect(filtre(c, 'lowpass', 900, t)).connect(env(c, t, 0.3, 0.5, 0.3)).connect(s); },
   };
 
   M.synthe.bruitages = {
     noms: Object.keys(SONS),
     /** Joue un bruitage à l'instant t. -> false si le nom est inconnu. */
-    jouer: function (contexte, sortie, nom, t, volume, bruit) {
+    jouer: function (contexte, sortie, nom, t, volume, bruit, options) {
       var faire = SONS[nom];
       if (!faire) return false;
       var g = contexte.createGain();
       g.gain.value = volume === undefined ? 1 : volume;
       g.connect(sortie);
-      faire(contexte, g, t, bruit);
+      faire(contexte, g, t, bruit, options || {});
       return true;
     },
   };

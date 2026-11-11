@@ -11,6 +11,8 @@
  *   saturation : 1 = normale, 0 = gris · flou : cqh
  * Avant la première clause d'une propriété, sa valeur de départ ; après la dernière, sa valeur d'arrivée.
  *
+ *   auto : caméra automatique (moteur/camera-auto.js), ex. « auto; secousse 1 3+0.2 » ; zoom, x et y viennent alors du plan.
+ *
  * Module pur : chargé tel quel dans la page (global M) et par Node (require).
  */
 (function (racine, fabrique) {
@@ -43,9 +45,16 @@
     return lu.valeur;
   }
 
-  /** "zoom 1→1.06 0+4; secousse 1 2+0.2" -> [{ prop, de, a, debut, duree, nomCourbe, courbe }] */
+  /** "zoom 1→1.06 0+4; secousse 1 2+0.2" -> [{ prop, de, a, debut, duree, nomCourbe, courbe }]
+   *  Caméra automatique (spec S7, 5.8 ; moteur/camera-auto.js) : la clause « auto » donne une liste marquée .auto = true ;
+   *  les autres clauses (secousse, saturation, flou, rotation) s'y ajoutent ; zoom, x ou y avec auto : erreur de règle
+   *  camera-auto-melangee (err.regle). */
   function analyserCamera(texte, dureeTemps) {
-    return String(texte).split(';').map(function (s) { return s.trim(); }).filter(Boolean).map(function (clause) {
+    var auto = false;
+    var liste = String(texte).split(';').map(function (s) { return s.trim(); }).filter(function (s) {
+      if (s === 'auto') { auto = true; return false; }
+      return !!s;
+    }).map(function (clause) {
       var morceaux = clause.replace(/->/g, '→').split(/\s+/);
       var prop = morceaux[0];
       if (PROPRIETES.indexOf(prop) < 0) {
@@ -81,6 +90,15 @@
       if (log) c.log = true;
       return c;
     });
+    if (auto) {
+      var cadrees = liste.filter(function (c) { return c.prop === 'zoom' || c.prop === 'x' || c.prop === 'y'; });
+      if (cadrees.length) {
+        var e = new Error('data-camera : « auto » cadre seule ; la clause « ' + cadrees[0].prop + ' » ne peut pas s\'y ajouter (garder « auto » et retirer zoom, x et y, ou écrire toute la caméra à la main sans « auto »).');
+        throw Object.assign(e, { regle: 'camera-auto-melangee' });
+      }
+      liste.auto = true;
+    }
+    return liste;
   }
 
   function valeur(clauses, prop, tau) {

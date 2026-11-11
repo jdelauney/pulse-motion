@@ -6,9 +6,9 @@ const { INSTRUMENTS, BRUITAGES, SONS_TRANSITION, AMBIANCES } = require('../moteu
 
 const proche = (a, b) => Math.abs(a - b) < 0.01;
 
-test('catalogue : instruments, douze bruitages, sons de transition, six ambiances', () => {
+test('catalogue : instruments, treize bruitages (crissement : spec S7, 5.15), sons de transition, six ambiances', () => {
   assert.ok(['pluck', 'pad', 'basse', 'sub', 'kick', 'caisse', 'charleston', 'cloche', 'nappe-bruit', 'riser'].every((n) => INSTRUMENTS.includes(n)));
-  assert.equal(BRUITAGES.length, 12);
+  assert.equal(BRUITAGES.length, 13);
   assert.equal(SONS_TRANSITION.glissement, 'whoosh');
   assert.deepEqual(Object.keys(AMBIANCES).sort(), ['calme', 'corporate', 'entrainant', 'inspirant', 'suspense', 'tech']);
 });

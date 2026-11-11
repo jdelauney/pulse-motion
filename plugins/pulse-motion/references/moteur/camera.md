@@ -19,4 +19,5 @@
 - Hors de toute clause, une propriété garde sa valeur de départ (avant) ou d'arrivée (après).
 - `data-profondeur` sur un enfant de la caméra : 1 suit la caméra (défaut), 0 reste fixe, 0,3 = plan lointain. Utilise la propriété CSS `translate` : ne pas l'animer soi-même sur ces plans (`transform` reste libre).
 - Le décor peut dépasser l'image (`left: 150%`) : la caméra va le chercher.
-
+- Caméra automatique : `data-camera="auto"` (les plans viennent du relevé de la scène ; `zoom`, `x` et `y` ne s'y ajoutent pas) : `pulse-motion reference explication`. Une scène sans `auto` garde sa caméra écrite à la main.
+- `--pm-ampleur-scene` sur la `<section>` multiplie l'amplitude des secousses (et des mouvements `pm-m-*`).

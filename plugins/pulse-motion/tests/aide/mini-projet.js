@@ -5,7 +5,7 @@ const path = require('node:path');
 const { dossierTemporaire } = require('./temporaire.js');
 
 /**
- * miniProjet({ scenes: [{ id, html, duree?, textes?, type?, intention?, voix?, transition?, musique?, graphiques?, code?, formules?, rythme? }], deroule?, glossaire? })
+ * miniProjet({ scenes: [{ id, html, duree?, textes?, type?, intention?, voix?, transition?, musique?, graphiques?, code?, formules?, rythme?, camera? }], deroule?, glossaire? })
  * -> dossier. html : contenu de la <section> (la balise est ajoutée), ou une section complète. Style clair-pedagogique.
  */
 function miniProjet({ scenes, deroule = {}, glossaire = null, style = 'clair-pedagogique', assets = {} }) {
@@ -18,7 +18,7 @@ function miniProjet({ scenes, deroule = {}, glossaire = null, style = 'clair-ped
     const html = /^\s*<section/.test(s.html) ? s.html : `<section data-scene="${s.id}">\n${s.html}\n</section>`;
     fs.writeFileSync(path.join(dir, fichier), html);
     const sc = { id: s.id, fichier, duree: s.duree || 6, textes: s.textes || {}, transition: s.transition || 'fondu' };
-    for (const k of ['type', 'intention', 'voix', 'musique', 'graphiques', 'code', 'formules', 'rythme']) if (s[k] !== undefined) sc[k] = s[k];
+    for (const k of ['type', 'intention', 'voix', 'musique', 'graphiques', 'code', 'formules', 'rythme', 'camera']) if (s[k] !== undefined) sc[k] = s[k];
     return sc;
   });
   fs.writeFileSync(path.join(dir, 'deroule.json'), JSON.stringify({

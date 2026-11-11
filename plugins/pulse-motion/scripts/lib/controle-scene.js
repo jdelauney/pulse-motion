@@ -173,6 +173,8 @@ function controlerScene({ projet, deroule, scene, html }) {
     aDessiner = r.html;
     problemes.push(...r.erreurs);
   }
+  // Caméra automatique (spec S7, 5.8) : demandée par le déroulé, gros plans data-cadrer, comme au contrôle de la vidéo.
+  problemes.push(...require('./camera-auto.js').controlerCameraAuto(sansScripts, { deroule, scene }));
   const injecte = S.injecterTextes(aDessiner, scene.textes, scene.ajustements);
   for (const cle of injecte.manquants) {
     problemes.push({ regle: 'texte-manquant', gravite: 'erreur', scene: scene.id, message: `Scène « ${scene.id} » : data-texte="${cle}" n'a pas de texte dans le déroulé.` });
@@ -193,7 +195,7 @@ function controlerScene({ projet, deroule, scene, html }) {
   let voix = null;
   try {
     const v = lireVoixScene(projet, deroule, scene);
-    if (v && !v.erreur) voix = { debut: scene.voix.debut ?? DEBUT_VOIX, duree: v.duree, mots: v.mots };
+    if (v && !v.erreur) voix = { debut: scene.voix.debut ?? DEBUT_VOIX / require('./deroule.js').allureDe(deroule), duree: v.duree, mots: v.mots, reperes: v.reperes };
   } catch { /* voix illisible : signalée par le contrôle de la vidéo */ }
   const donnee = { id: scene.id, duree: scene.duree, rythme: scene.rythme || 1,
     transition: scene.transition && typeof scene.transition === 'object' ? { shader: scene.transition.shader, duree: scene.transition.duree > 0 ? scene.transition.duree : DUREE_TRANSITION_SHADER } : (scene.transition || 'aucune'),

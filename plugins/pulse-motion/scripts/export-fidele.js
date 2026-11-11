@@ -634,7 +634,7 @@ async function exporterFidele({ dossier, pour, qualite, ips, tailleMax, navigate
               const sc = deroule.scenes.find((x) => x.id === id) || {};
               const ms = min.find((x) => x.id === id) || { debut: 0, fin: 0 };
               const dv = assemblage.donnees.scenes.find((x) => x.id === id);
-              return { id, debut: ms.debut, fin: ms.fin, texte: (sc.voix && sc.voix.texte) || '', mots: (dv && dv.voix && dv.voix.mots) || [] };
+              return { id, debut: ms.debut, fin: ms.fin, texte: sc.voix && sc.voix.texte ? require('../moteur/aligner.js').lireTexteDit(sc.voix.texte).affiche : '', mots: (dv && dv.voix && dv.voix.mots) || [] };
             });
             const r = await V.reecouter({ scenes, wav, transcrire: w.transcrire, dossier: travail, seuil: SEUILS.motsConfirmes });
             if (r.faite) { faites.push('reecoute'); problemes.push(...r.problemes); } else nonFaites.push({ quoi: 'reecoute', pourquoi: r.pourquoi });

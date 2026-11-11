@@ -1,4 +1,4 @@
-# Vidéo explicative : flèches, annotations, graphiques, code et formules
+# Vidéo explicative : flèches, annotations, graphiques, code, formules, caméra automatique et voix d'abord
 
 Lire cette partie pour une scène qui relie des éléments par une flèche, met un mot en valeur au moment où la voix le dit, dessine à main levée, montre un graphique de données, du code ou une formule. La voix pose le rythme : un dessin se trace quand la voix le nomme (`data-start="mot:…"`, voir `pulse-motion reference audio/ancres`). « Ce qui se dit se montre » et « un changement toutes les 2 à 4 s » : `pulse-motion reference realisation`.
 
@@ -139,6 +139,31 @@ Composer l'image finale entière (tout ce qui sera montré, à sa place), puis l
 
 Un style qui peint son encre dans son propre canevas (fusions permises) pose `data-encre="style"` sur la scène et s'inscrit par `M.dessin.encreStyle(fn)` : le calque garde ses nœuds, ses boîtes et ses étiquettes sans peindre l'encre, et `fn(idScene, traces)` reçoit à chaque image les tracés (`M.dessin.traces(idScene)` : chemin à main levée, transformation d'une pointe de flèche, part tracée de 0 à 1, épaisseur, couleur résolue, calque). Sans canevas inscrit, l'encre reste dans le SVG, opaque à 0,94, sans fusion.
 
+## Caméra automatique (#126 à #128)
+
+`<div data-camera="auto">` autour de tout le contenu de la scène (le conteneur remplit la scène : `camera-auto-cadre` sinon) : la caméra trouve seule ses plans dans le relevé, sans réglage. Plan d'ouverture sur l'image, rapprochement d'au moins 1,3 fois quand on a le temps de regarder (tenu au moins 1,5 s, pas plus d'un changement de zoom en 5 s), recul final sur l'image entière, dérive lente de 3,5 %, zoom de 2,2 au plus, jamais un texte, une carte ou une étiquette coupé pendant un plan tenu, hors bande des sous-titres et zones des réseaux. Une scène qui reprend l'image de la précédente (mêmes éléments aux mêmes places, transition autre que `coupe`) part de son dernier plan. Au déroulé : `"camera": "auto"` (toute la vidéo) ou `scenes[].camera` (`auto` | `fixe`) ; une scène demandée en `auto` sans le conteneur : `camera-auto-absente`.
+
+- D'autres clauses s'ajoutent : `data-camera="auto; secousse 1 3+0.2; saturation 1→0.6 0+4"` ; jamais `zoom`, `x` ou `y` avec `auto` (`camera-auto-melangee`). Sans `auto`, la caméra manuelle reste.
+- Gros plan demandé (#127) : `<i data-cadrer="#prix" data-start="mot:cher" data-dur="3"></i>` ; il ne dessine rien. Une ligne de code surlignée est aussi un gros plan possible.
+- Composer pour elle : l'image finale entière, un élément près de celui qu'il suit, une boîte avec son étiquette, une étiquette pour chaque icône à cadrer (une icône seule n'a pas de gros plan), pas de caméra automatique sur une scène où un élément traverse l'image.
+- Le plan de chaque scène est écrit dans `sortie/controle.json` (`cameras` : départ, mouvements).
+
+## Voix d'abord : repères, forme dite, allure
+
+Le texte dit (`voix.texte`) peut porter trois marques, jamais montrées dans les sous-titres :
+
+- `[#serveur]` : repère à l'instant du mot qui suit ; un élément y entre par `data-start="repere:serveur"` (+0.2 permis). Noms uniques ; inconnu : `repere-introuvable`.
+- `{HACCP|hache a cé cé pé}` : affiché HACCP, dit comme écrit à droite ; `mot:HACCP` et `mot:hache` le trouvent tous deux. La prononciation du glossaire s'applique d'elle-même à la voix provisoire.
+- `[pause 0.6]` : silence de la voix de synthèse ; ignoré pour une prise enregistrée.
+
+Les temps des mots d'une scène, en une ligne : `pulse-motion voix mots . --scene <id>`.
+
+`allure` du déroulé (0,7 à 1,6, 1 par défaut) : temps internes des scènes × allure, début et fin de voix et transitions ÷ allure, musique générée à un tempo × √allure ; les ancres `mot:` et `repere:` restent sur la voix, une prise n'est jamais accélérée. Une scène plus calme : `--pm-ampleur-scene: 0.6` sur la `<section>` (ampleur de ses mouvements `pm-m-*` et de ses secousses) et `rythme` 0,85.
+
+## Bruitages automatiques
+
+`"bruitages": { "auto": true }` : un son doux à chaque entrée, selon son genre (carte, image : `pop` ; flèche, trait, annotation : `souffle`, `crissement` à main levée ; point de liste : `blip` qui monte dans la gamme de la musique ; compteur, graphique : `tic` en série), éclaircis (deux mêmes sons à moins de 0,12 s n'en font qu'un, 3 au plus par demi-seconde). Titres et textes : aucun. Un `data-son` posé à la main passe toujours ; `"minimal"` : transitions et sons posés à la main seulement. La table d'un style (`identite.json`, `son.bruitages`) remplace ces sons. `"musique": { …, "accents": true }` : une note douce au début de chaque scène.
+
 ## Ce qui casse
 
 - `Math.random` dans `M.dessin` : il change à chaque image ; prendre `d.hasard(i)`.
@@ -149,7 +174,9 @@ Un style qui peint son encre dans son propre canevas (fusions permises) pose `da
 - Une annotation sur un bloc entier : elle prend toute sa largeur ; viser le `<span>` du mot.
 - Un chiffre, un code ou une formule écrit dans la figure : tout vient du déroulé (`graphiques`, `code`, `formules`) ; une clé absente : `donnees-manquantes`.
 - « 19 % » dans `valeur` : écrire `19` et `"unite": "%"`.
-- L'allure appliquée à la main dans les durées : le moteur divise déjà les durées des graphiques et du code par l'allure.
+- L'allure appliquée à la main dans les durées : le moteur divise déjà toutes les durées par l'allure.
+- Une caméra automatique sur un conteneur qui ne couvre qu'une partie de la scène : `camera-auto-cadre` ; `zoom`, `x` ou `y` avec `auto` : `camera-auto-melangee`.
+- Un repère posé deux fois, ou un crochet non fermé dans le texte dit : erreur du déroulé.
 
 ## Retouches en une phrase
 
@@ -166,3 +193,11 @@ Un style qui peint son encre dans son propre canevas (fusions permises) pose `da
 | « mets 2025 en avant » | `"accent": true` sur sa valeur |
 | « montre la formule, puis passe à la moyenne quand je dis moyenne » | `scenes[].code.<clé>`, une étape par version, `"debut": "mot:moyenne"` |
 | « écris la formule de l'aire du disque » | `scenes[].formules.aire = "\\pi r^2"`, `<span data-formule="aire">` |
+| « laisse la caméra bouger toute seule » | `<div data-camera="auto">` autour du contenu (ou `"camera": "auto"` au déroulé, puis la scène) |
+| « garde la caméra fixe scène 2 » | `scenes[].camera` : `fixe`, retirer `auto` de la scène |
+| « gros plan sur le prix quand je dis cher » | `<i data-cadrer="#prix" data-start="mot:cher" data-dur="3"></i>` |
+| « la flèche quand je dis serveur, même si la phrase change » | `[#serveur]` dans le texte dit, `data-start="repere:serveur"` |
+| « il prononce mal HACCP » | `{HACCP|hache a cé cé pé}` dans le texte dit, ou la prononciation au glossaire (« notée pour vos prochaines vidéos ») |
+| « plus rythmé pour les réseaux », « plus posé » | `allure` 1,2 ou 0,85 (`pulse-motion reference remarques`) |
+| « la scène 3 plus calme » | `--pm-ampleur-scene: 0.6` sur sa section, `rythme` 0,85 |
+| « ajoute des petits sons », « moins de bruitages » | `bruitages.auto` : `true`, ou `"minimal"` |

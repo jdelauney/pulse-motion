@@ -7,6 +7,7 @@
  *   node scripts/voix.js provisoire [--scene <id>] [dossier]           voix du système pour caler avant d'enregistrer
  *   node scripts/voix.js transcrire [--scene <id>] [dossier]           mots calés par la transcription (Whisper installé)
  *   node scripts/voix.js studio <scène> [dossier]                       ouvre le studio de voix de l'aperçu sur la scène
+ *   node scripts/voix.js mots --scene <id> [dossier]                    mots et repères datés de la scène (une ligne courte)
  *
  * Résumé JSON ; code 1 en cas d'échec.
  */
@@ -16,7 +17,7 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { lireDeroule } = require('./lib/deroule.js');
 const F = require('./lib/ffmpeg.js');
-const { ecrirePrise, transcrirePrise, lireVoixScene } = require('./lib/voix.js');
+const { ecrirePrise, transcrirePrise, lireVoixScene, texteDitPour } = require('./lib/voix.js');
 const { whisperParDefaut } = require('./lib/whisper.js');
 const W = require('../moteur/wav.js');
 const A = require('../moteur/aligner.js');
@@ -78,6 +79,8 @@ async function importerUnique({ projet, deroule, fichier, outil, whisper, surSce
   if (!scenes.length) return { ok: false, message: 'Aucune scène n\'a de texte de voix (« voix.texte ») dans le déroulé.' };
   const lu = await lireSon(fichier, outil);
   if (!lu.ok) return lu;
+  // Formes dites des textes (spec S7, 5.11) : ce que la personne a dit, sans balisage.
+  const dits = scenes.map((s) => texteDitPour(projet, s.voix.texte, false).dit);
   const son = W.lire(new Uint8Array(lu.octets));
   const canal = W.mono(son.canaux);
   const duree = canal.length / son.taux;
@@ -86,12 +89,12 @@ async function importerUnique({ projet, deroule, fichier, outil, whisper, surSce
   try {
     const wav = path.join(travail, 'tout.wav');
     fs.writeFileSync(wav, W.ecrire({ taux: son.taux, canaux: [canal] }));
-    t = await whisper.transcrire({ wav, duree, attendu: scenes.map((s) => s.voix.texte).join(' ') });
+    t = await whisper.transcrire({ wav, duree, attendu: dits.join(' ') });
   } finally {
     fs.rmSync(travail, { recursive: true, force: true });
   }
   if (!t.ok) return { ok: false, message: t.message };
-  const decoupe = A.decouperEnScenes(scenes.map((s) => s.voix.texte), t.mots, duree);
+  const decoupe = A.decouperEnScenes(dits, t.mots, duree);
   if (!decoupe) return { ok: false, message: 'La transcription n\'a reconnu aucun mot des textes : vérifier que l\'enregistrement dit bien les textes des scènes, ou importer scène par scène (--scene <id>).' };
   // Presque rien de reconnu : pas un enregistrement de toute la vidéo (oubli de --scene ?) ; rien n'est remplacé.
   const reconnus = decoupe.reduce((n, p) => n + p.reconnus, 0);
@@ -264,7 +267,8 @@ async function voixProvisoire({ dossier, scene: id, synthetiser = synthetiserSys
   try {
     for (const s of scenes) {
       const brut = path.join(travail, `${s.id}.wav`);
-      const r = synthetiser(s.voix.texte, brut);
+      // Forme dite, prononciation du glossaire comprise (spec S7, 5.11) ; les pauses [pause …] ne valent que pour la synthèse.
+      const r = synthetiser(texteDitPour(projet, s.voix.texte, true).dit, brut);
       if (!r.ok) return { ok: false, scenes: faites, message: `Voix provisoire impossible : ${r.message}.` };
       const p = await ecrirePrise({ projet, scene: s.id, octets: new Uint8Array(fs.readFileSync(brut)), texte: s.voix.texte, provisoire: true, outil: outil && outil.present ? outil : null });
       faites.push({ id: s.id, fichier: p.relatif, duree: p.duree });
@@ -274,6 +278,38 @@ async function voixProvisoire({ dossier, scene: id, synthetiser = synthetiserSys
   }
   if (!(deroule.voix && deroule.voix.provisoire)) ecrireDeroule(projet, (d) => { d.voix = { ...(d.voix || {}), provisoire: true }; });
   return { ok: true, scenes: faites };
+}
+
+/**
+ * Mots et repères datés d'une scène (spec S7, 5.11), en secondes depuis le début de la scène (prise courante : la personne,
+ * sinon la voix provisoire), en une ligne courte : « 0,42 chaîne · 0,80 du · 1,10 froid · repère serveur 2,30 ».
+ * -> { ok, scene, ligne, mots: [{ w, t0, t1 }], reperes: { nom: t } } | { ok: false, message }
+ */
+function motsDeScene({ dossier, scene: id }) {
+  const projet = path.resolve(dossier);
+  const { deroule, erreurs } = lireDeroule(projet);
+  if (erreurs.length) return { ok: false, message: `Le déroulé contient des erreurs : ${erreurs.join(' ')}` };
+  if (!id) return { ok: false, message: 'Préciser la scène : --scene <id>.' };
+  const { scene, message } = sceneAvecTexte(deroule, id);
+  if (!scene) return { ok: false, message };
+  const v = lireVoixScene(projet, deroule, scene);
+  if (!v) return { ok: false, message: `La scène « ${id} » n'a pas encore de voix : l'enregistrer, ou poser la voix provisoire.` };
+  if (v.erreur) return { ok: false, message: v.erreur };
+  const { DEBUT_VOIX } = require('../moteur/minutage.js');
+  const { allureDe } = require('./lib/deroule.js');
+  const debut = scene.voix.debut ?? DEBUT_VOIX / allureDe(deroule);
+  const t = (x) => Math.round((debut + x) * 100) / 100;
+  const virgule = (x) => x.toFixed(2).replace('.', ',');
+  const mots = v.mots.map((m) => ({ w: m.w, t0: t(m.t0), t1: t(m.t1) }));
+  const reperes = Object.fromEntries(Object.entries(v.reperes || {}).map(([nom, x]) => [nom, t(x)]));
+  const morceaux = [];
+  const lu = A.lireTexteDit(scene.voix.texte);
+  mots.forEach((m, k) => {
+    for (const r of lu.reperes.filter((x) => x.mot === k)) morceaux.push(`repère ${r.nom} ${virgule(reperes[r.nom])}`);
+    morceaux.push(`${virgule(m.t0)} ${m.w.replace(/[.,;:!?…»«"]+/g, '').trim() || m.w}`);
+  });
+  for (const r of lu.reperes.filter((x) => x.mot >= mots.length)) morceaux.push(`repère ${r.nom} ${virgule(reperes[r.nom])}`);
+  return { ok: true, scene: id, ligne: morceaux.join(' · '), mots, reperes, calage: v.approche };
 }
 
 if (require.main === module) {
@@ -291,12 +327,13 @@ if (require.main === module) {
   else if (action === 'provisoire') travail = voixProvisoire({ dossier: libres[0] || '.', scene: valeur('--scene') });
   else if (action === 'transcrire') travail = transcrireProjet({ dossier: libres[0] || '.', scene: valeur('--scene'), surScene });
   else if (action === 'studio' && libres[0]) travail = Promise.resolve(ouvrirStudio({ dossier: libres[1] || '.', scene: libres[0] }));
+  else if (action === 'mots') travail = Promise.resolve(motsDeScene({ dossier: libres[0] || '.', scene: valeur('--scene') }));
   else {
-    console.error('Usage : pulse-motion voix importer <fichier> [--scene <id>] [dossier] | provisoire [--scene <id>] [dossier] | transcrire [--scene <id>] [dossier] | studio <scène> [dossier]');
+    console.error('Usage : pulse-motion voix importer <fichier> [--scene <id>] [dossier] | provisoire [--scene <id>] [dossier] | transcrire [--scene <id>] [dossier] | studio <scène> [dossier] | mots --scene <id> [dossier]');
     process.exit(2);
   }
   travail.then((r) => { if (avancement) avancement.terminer(r.ok, r.ok ? undefined : r.message); console.log(JSON.stringify(r, null, 2)); process.exit(r.ok ? 0 : 1); },
     (e) => { if (avancement) avancement.terminer(false, e.message); console.log(JSON.stringify({ ok: false, message: e.message }, null, 2)); process.exit(1); });
 }
 
-module.exports = { importerVoix, enregistrerPrise, ecrireDeroule, voixProvisoire, transcrireProjet, ouvrirStudio, synthetiserSysteme };
+module.exports = { motsDeScene, importerVoix, enregistrerPrise, ecrireDeroule, voixProvisoire, transcrireProjet, ouvrirStudio, synthetiserSysteme };

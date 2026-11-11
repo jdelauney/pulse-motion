@@ -74,6 +74,8 @@ flash: (c) => `Scène « ${c.scene} » : l'image clignote ${virgule(c.valeur)} f
   // Calque de dessin (spec S7, 5.2 et 5.4).
   'dessin-erreur': (c) => `Scène « ${c.scene} » : un dessin de la scène ne se fait pas (vers ${virgule(c.instant)} s) : ${c.valeur} ; le reste de la scène s'affiche sans lui.`,
   'fleche-cible-introuvable': (c) => `Scène « ${c.scene} » : ${c.valeur}.`,
+  // Caméra automatique (spec S7, 5.8).
+  'camera-auto-cadre': (c) => `Scène « ${c.scene} » : ${c.valeur}`,
   // Code animé (spec S7, 5.9).
   'code-trop-large': (c) => `Scène « ${c.scene} » : ${c.valeur}.`,
   'silence-imprevu': (c) => `De ${virgule(c.valeur.a)} s à ${virgule(c.valeur.b)} s, on n'entend rien pendant ${virgule(c.valeur.d)} s alors que la musique devrait jouer ; vérifier la musique de la scène « ${c.scene} ».`,
@@ -85,7 +87,7 @@ function proposition(c) {
   return ` ; ${phraseProposition(suggererCouleur(c.couleur, c.fond, c.minimum, c.charte || {}))}`;
 }
 
-const GRAVITES = { flash: 'erreur', 'texte-casse': 'erreur', 'erreur-de-scene': 'erreur', 'etapes-trop-rapprochees': 'erreur', 'dessin-erreur': 'erreur', 'fleche-cible-introuvable': 'erreur', 'code-trop-large': 'erreur' };
+const GRAVITES = { flash: 'erreur', 'texte-casse': 'erreur', 'erreur-de-scene': 'erreur', 'etapes-trop-rapprochees': 'erreur', 'dessin-erreur': 'erreur', 'fleche-cible-introuvable': 'erreur', 'code-trop-large': 'erreur', 'camera-auto-cadre': 'erreur' };
 
 /** Constats bruts de M.mesurer -> problèmes (alertes, sauf GRAVITES). Règle inconnue : ignorée. */
 function traduireConstats(constats) {
@@ -118,11 +120,14 @@ function scriptMesures({ ratio, scenes, plages, plagesFlashs, flashs, genre = nu
     // Calque de dessin (spec S7) : erreurs des dessins, cibles des flèches, relevés des scènes qui dessinent.
     var dessin = M.mesurerDessin ? M.mesurerDessin(${JSON.stringify(choix)}) : null;
     if (dessin) constats = constats.concat(dessin.constats);
+    // Caméra automatique (spec S7, 5.8) : conteneur qui ne remplit pas la scène, plans des scènes filmées.
+    var camera = M.mesurerCameraAuto ? M.mesurerCameraAuto(${JSON.stringify(choix)}) : null;
+    if (camera) constats = constats.concat(camera.constats);
     var debordements = M.detecterDebordements(${JSON.stringify(choix)});
     var ajustements = M.essayerTailles(${JSON.stringify({ minimumCqh: SEUILS.texteMinCqh, ...choix })});
     var pixels = await M.mesurerPixels(${opts({ ...choix, flashs, ...(flashs && plagesFlashs ? { plagesFlashs } : {}) })});
     return { constats: constats.concat(pixels), debordements: debordements, ajustements: ajustements, formesVides: formesVides, photos: photos,
-      erreursScenes: window.__pmErreursScenes || [], releves: dessin ? dessin.releves : null, ecoute: ${attendreEcoute ? 'await window.__pmEcoute' : 'null'} };`;
+      erreursScenes: window.__pmErreursScenes || [], releves: dessin ? dessin.releves : null, cameras: camera ? camera.plans : null, ecoute: ${attendreEcoute ? 'await window.__pmEcoute' : 'null'} };`;
 }
 
 /** Résultat de l'écoute (M.ecouter) -> problèmes, ou null si le son n'a pas pu être mesuré. */
@@ -138,7 +143,8 @@ function traduireResultat(resultat, scenes) {
   const debordements = (resultat.debordements || []).map((d) => ({ regle: 'debordement', gravite: 'erreur', scene: d.scene, element: d.element, message: d.message }));
   const erreurs = (resultat.erreursScenes || []).map((e) => ({ regle: 'erreur-de-scene', scene: e.scene, element: null, instant: 0, valeur: e.message }));
   return { renduVerifie: true, problemes: [...debordements, ...traduireConstats([...(resultat.constats || []), ...erreurs]), ...traduireFormesVides(resultat.formesVides), ...traduirePhotos(resultat.photos)].filter(garder),
-    ajustements: (resultat.ajustements || []).filter(garder), son: traduireEcoute(resultat.ecoute), releves: resultat.releves || null };
+    ajustements: (resultat.ajustements || []).filter(garder), son: traduireEcoute(resultat.ecoute), releves: resultat.releves || null,
+    cameras: resultat.cameras && Object.keys(resultat.cameras).length ? resultat.cameras : null };
 }
 
 /** Prépare une page aux flashs (sous-titres masqués, comme dans la page) -> géométrie de la scène et minutage. */

@@ -10,7 +10,7 @@
  */
 const fs = require('node:fs');
 const path = require('node:path');
-const { lireDeroule, dureeTemps, tempoMusique, grilleFixe, optionsMinutage } = require('./lib/deroule.js');
+const { lireDeroule, dureeTemps, tempoMusique, grilleFixe, optionsMinutage, allureDe } = require('./lib/deroule.js');
 const { embarquerRessources, versDataURI, cheminDansProjet } = require('./lib/embarquer.js');
 const S = require('./lib/scenes.js');
 const { preparerEffets } = require('./lib/effets.js');
@@ -26,6 +26,7 @@ const { trouverStyle, messageStyleInconnu } = require('./styles.js');
 const { charteFinale, chartePour, variablesDerivees } = require('./lib/fusion-charte.js');
 const { estEbauche } = require('./lib/ebauche.js');
 const { lireVoixScene } = require('./lib/voix.js');
+const { lireTexteDit } = require('../moteur/aligner.js');
 const { DEBUT_VOIX, calculerMinutage, DUREE_TRANSITION_SHADER } = require('../moteur/minutage.js');
 const ST = require('../moteur/sous-titres.js');
 const SP = require('../moteur/synthe/partition.js');
@@ -151,6 +152,28 @@ function cssZones(plateforme) {
 `;
 }
 
+/**
+ * Bruitages automatiques (spec S7, 5.15) : { auto, transitions, table? } pour la page. auto : true ou « minimal » (rien sinon : une vidéo
+ * existante garde son mixage) ; table : celle du style (identite.json, son.bruitages), réduite aux types d'entrée connus
+ * (TYPES_ENTREE de lib/contrat.js) et aux bruitages du catalogue (null : aucun son pour ce type).
+ */
+function bruitagesAuto(deroule, dossierStyle) {
+  const auto = deroule.bruitages && deroule.bruitages.auto;
+  if (auto !== true && auto !== 'minimal') return {};
+  const { TYPES_ENTREE } = require('./lib/contrat.js');
+  const { BRUITAGES } = require('../moteur/synthe/catalogue.js');
+  let table = null;
+  try {
+    const id = JSON.parse(fs.readFileSync(path.join(dossierStyle, 'identite.json'), 'utf8').replace(/^﻿/, ''));
+    const brute = id && id.son && id.son.bruitages;
+    if (brute && typeof brute === 'object') {
+      table = Object.fromEntries(Object.entries(brute).filter(([type, nom]) => TYPES_ENTREE.includes(type) && (nom === null || BRUITAGES.includes(nom))));
+    }
+  } catch { /* style sans identité : table par défaut */ }
+  // true ou « minimal » sonnent aussi les transitions, sauf « transitions »: false écrit au déroulé.
+  return { auto, transitions: deroule.bruitages.transitions !== false, ...(table && Object.keys(table).length ? { table } : {}) };
+}
+
 function jsonDansHTML(objet) {
   return JSON.stringify(objet).replace(/</g, '\\u003c');
 }
@@ -226,7 +249,9 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     if (!uri) continue;
     const id = `pm-son-voix-${scene.id}`;
     sonsVoix.push(blocSon(id, uri));
-    voixScenes[scene.id] = { source: id, debut: scene.voix.debut ?? DEBUT_VOIX, duree: v.duree, mots: v.mots, ...(v.prise.provisoire ? { provisoire: true } : {}) };
+    // Début par défaut divisé par l'allure (spec S7, 5.14) ; repères du texte dit (5.11), en secondes de la prise.
+    voixScenes[scene.id] = { source: id, debut: scene.voix.debut ?? DEBUT_VOIX / allureDe(deroule), duree: v.duree, mots: v.mots,
+      ...(v.reperes && Object.keys(v.reperes).length ? { reperes: v.reperes } : {}), ...(v.prise.provisoire ? { provisoire: true } : {}) };
     if (v.approche !== 'whisper') calageApproche = true;
     if (v.prise.provisoire) {
       erreursVoix.push({ regle: 'voix-provisoire', gravite: 'alerte', scene: scene.id,
@@ -437,7 +462,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     // Allure globale (spec S7, 5.14, plan J4) : lue par le code et les graphiques du calque (durées divisées par l'allure).
     ...(typeof deroule.allure === 'number' && deroule.allure >= 0.7 && deroule.allure <= 1.6 && deroule.allure !== 1 ? { allure: deroule.allure } : {}),
     tempo: dureeTemps(deroule) ? { bpm: (deroule.tempo && deroule.tempo.bpm) || tempoMusique(deroule), decalage: (deroule.tempo && deroule.tempo.decalage) || 0, ...(grilleFixe(deroule) ? { grille: true } : {}) } : null,
-    bruitages: deroule.bruitages ? { transitions: deroule.bruitages.transitions === true, volume: deroule.bruitages.volume ?? 1 } : null,
+    bruitages: deroule.bruitages ? { transitions: deroule.bruitages.transitions === true, volume: deroule.bruitages.volume ?? 1, ...bruitagesAuto(deroule, dossierStyle) } : null,
     scenes: scenesDonnees,
     effets: effets.map(({ calque, ancre, cible, effet }) => ({ calque, ancre, cible, effet })),
     milieux: milieux.map(({ calque, ancre, sansDuree, effet }) => ({ calque, ancre, sansDuree, effet })),
@@ -465,7 +490,8 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     const min = calculerMinutage(donnees.scenes, {}, optionsMinutage(deroule));
     const scenesST = deroule.scenes.map((s, i) => {
       const m = min.scenes[i];
-      const mots = s.voix && s.voix.texte ? ST.motsDeScene({ debut: m.debut, fin: m.fin, texte: s.voix.texte, voix: voixScenes[s.id] || null }) : [];
+      // Forme affichée du texte dit (spec S7, 5.11) : jamais de balisage dans les sous-titres.
+      const mots = s.voix && s.voix.texte ? ST.motsDeScene({ debut: m.debut, fin: m.fin, texte: lireTexteDit(s.voix.texte).affiche, voix: voixScenes[s.id] || null }) : [];
       return { id: s.id, debut: m.debut, fin: m.fin, mots };
     }).filter((s) => s.mots.length);
     cartons = ST.cartons(scenesST, { ratio: deroule.format.ratio });
@@ -477,10 +503,16 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     cartons,
   } : null;
 
+  // Allure (spec S7, 5.14) : une musique importée ou une partition garde son tempo ; on le dit.
+  if (allureDe(deroule) !== 1 && deroule.musique && (deroule.musique.fichier || deroule.musique.partition)) {
+    erreurs.push({ regle: 'allure-musique', gravite: 'alerte', message: `L'allure de la vidéo est à ${String(allureDe(deroule)).replace('.', ',')}, mais la musique ${deroule.musique.fichier ? 'importée' : 'de la partition'} garde son tempo : elle ne suit pas l'allure (une musique générée, elle, la suit).` });
+  }
   // Musique générée (ambiance) ou partition libre : partition validée, jouée par le synthétiseur de la page.
   if (deroule.musique && deroule.musique.generee) {
     const min = calculerMinutage(donnees.scenes, {}, optionsMinutage(deroule));
-    donnees.musique.partition = SA.generer({ ambiance: deroule.musique.generee, tempo: deroule.musique.tempo, tonalite: deroule.musique.tonalite,
+    // Allure (spec S7, 5.14) : tempo × √allure ; accents (5.15) : une note douce de tonique au début de chaque scène.
+    donnees.musique.partition = SA.generer({ ambiance: deroule.musique.generee, tempo: allureDe(deroule) === 1 ? deroule.musique.tempo : tempoMusique(deroule), tonalite: deroule.musique.tonalite,
+      ...(deroule.musique.accents === true ? { accents: true } : {}),
       intensite: deroule.musique.intensite, graine: deroule.musique.graine, duree: min.duree,
       scenes: min.scenes.map((s, i) => ({ debut: s.debut, fin: s.fin, humeur: deroule.scenes[i].musique })) });
   } else if (deroule.musique && deroule.musique.partition) {
@@ -553,7 +585,7 @@ M.demarrerLecteur();
 M.demarrerSousTitres();
 M.demarrerSonReactif();
 M.demarrerParticules();
-${usages.moteur && (groupes === 'tous' || groupes.includes('ecran')) ? 'M.demarrerEcrans();\n' : ''}${dessin.utilise && (groupes === 'tous' || groupes.includes('dessin')) ? 'M.demarrerDessin();\n' : ''}</script>
+${usages.moteur && (groupes === 'tous' || groupes.includes('ecran')) ? 'M.demarrerEcrans();\n' : ''}${dessin.utilise && (groupes === 'tous' || groupes.includes('dessin')) ? 'M.demarrerDessin();\n' : ''}${groupes === 'tous' || groupes.includes('camera-auto') ? 'M.demarrerCameraAuto();\n' : ''}</script>
 </body>
 </html>
 `;

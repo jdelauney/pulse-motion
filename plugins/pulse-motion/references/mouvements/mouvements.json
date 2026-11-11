@@ -4947,6 +4947,117 @@
         ],
         "note": "Passage d'une étape à l'autre en 0,8 s ; lignes surlignées par « surligner ». pulse-motion reference explication."
       }
+    },
+    {
+      "no": "126",
+      "slug": "camera-auto",
+      "categorie": "camera",
+      "nom": {
+        "fr": "Caméra automatique",
+        "metier": "Auto-director camera"
+      },
+      "sens": "La caméra trouve seule ses plans : ouverture sur l'image, rapprochement quand on a le temps de regarder, recul final, sans jamais couper un texte",
+      "demande": "Laisse la caméra bouger toute seule dans cette scène de 8 s.",
+      "quand": "Une scène explicative composée en entier (schéma, moyeu, étapes), qui se construit au fil de la voix.",
+      "motsCles": [
+        "caméra automatique",
+        "auto",
+        "réalisateur",
+        "cadrage",
+        "gros plan",
+        "director"
+      ],
+      "recette": {
+        "type": "camera",
+        "exemple": "<div data-camera=\"auto\">\n  <h2 data-texte=\"titre\" data-start=\"0.2\" style=\"position: absolute; left: 14cqh; top: 18cqh; margin: 0\"></h2>\n  <p data-texte=\"texte\" data-start=\"2.6\" style=\"position: absolute; left: 104cqh; top: 70cqh; margin: 0\"></p>\n</div>",
+        "reglages": [
+          {
+            "nom": "data-camera",
+            "defaut": "auto",
+            "effet": "sur un conteneur qui remplit la scène ; secousse, saturation ou flou peuvent s'ajouter, jamais zoom, x ou y"
+          },
+          {
+            "nom": "camera (déroulé)",
+            "defaut": "auto | fixe",
+            "effet": "toute la vidéo (camera) ou une scène (scenes[].camera)"
+          }
+        ],
+        "note": "Zoom de 2,2 au plus, rapprochement tenu au moins 1,5 s, un changement de zoom en 5 s au plus, dérive lente de 3,5 %. pulse-motion reference explication."
+      }
+    },
+    {
+      "no": "127",
+      "slug": "gros-plan",
+      "categorie": "camera",
+      "nom": {
+        "fr": "Gros plan sur un élément",
+        "metier": "Focus close-up"
+      },
+      "sens": "La caméra automatique se rapproche d'un élément choisi pendant quelques secondes, sans couper ses voisins",
+      "demande": "Fais un gros plan de 3 s sur le prix quand je dis « cher ».",
+      "quand": "Insister sur un chiffre, un mot, une ligne de code, au moment où la voix en parle.",
+      "motsCles": [
+        "gros plan",
+        "focus",
+        "zoom sur",
+        "insister",
+        "cadrer",
+        "close-up"
+      ],
+      "recette": {
+        "type": "camera",
+        "exemple": "<div data-camera=\"auto\">\n  <h2 id=\"titre\" data-texte=\"titre\" data-start=\"0.2\" style=\"position: absolute; left: 20cqh; top: 30cqh; margin: 0\"></h2>\n  <p data-texte=\"texte\" data-start=\"0.6\" style=\"position: absolute; left: 20cqh; top: 60cqh; margin: 0\"></p>\n  <i data-cadrer=\"#titre\" data-start=\"1.6\" data-dur=\"3\"></i>\n</div>",
+        "reglages": [
+          {
+            "nom": "data-cadrer",
+            "defaut": "#id",
+            "effet": "élément à cadrer ; sans valeur, l'élément qui le porte"
+          },
+          {
+            "nom": "data-start, data-dur",
+            "defaut": "1.6, 3",
+            "effet": "quand et combien de temps (ex. data-start=\"mot:cher\")"
+          }
+        ],
+        "note": "Ne dessine rien ; une ligne de code surlignée est aussi un gros plan possible. Avec data-camera=\"auto\"."
+      }
+    },
+    {
+      "no": "128",
+      "slug": "recul-final",
+      "categorie": "camera",
+      "nom": {
+        "fr": "Recul final",
+        "metier": "Pull-back reveal"
+      },
+      "sens": "Pour finir, la caméra recule et montre toute l'idée d'un coup",
+      "demande": "Termine la scène par un recul de 1,4 s qui montre tout le schéma.",
+      "quand": "Après un gros plan, pour montrer comment les morceaux tiennent ensemble.",
+      "motsCles": [
+        "recul",
+        "reveal",
+        "dézoom",
+        "vue d'ensemble",
+        "zoom arrière",
+        "tout montrer"
+      ],
+      "recette": {
+        "type": "camera",
+        "exemple": "<div data-camera=\"zoom 1.6→1 3+1.4; x 30→50 3+1.4; y 40→50 3+1.4\">\n  <h2 data-texte=\"titre\" data-start=\"0.2\" style=\"position: absolute; left: 20cqh; top: 30cqh; margin: 0\"></h2>\n  <p data-texte=\"texte\" data-start=\"0.4\" style=\"position: absolute; left: 110cqh; top: 64cqh; margin: 0\"></p>\n</div>",
+        "reglages": [
+          {
+            "nom": "zoom",
+            "defaut": "1.6→1",
+            "effet": "du gros plan à l'image entière"
+          },
+          {
+            "nom": "début+durée",
+            "defaut": "3+1.4",
+            "effet": "vers la fin de la scène"
+          }
+        ],
+        "note": "La caméra automatique le fait d'elle-même, à la fin de la voix (data-camera=\"auto\")."
+      }
     }
   ]
 }

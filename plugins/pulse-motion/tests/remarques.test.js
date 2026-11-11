@@ -289,7 +289,8 @@ test('remarques : chaque champ, valeur, ambiance et style cité existe dans le c
   const shaders = fs.readdirSync(path.join(RACINE, 'shaders')).filter((f) => f.endsWith('.json')).map((f) => f.slice(0, -5));
   const { TONS } = require('../scripts/lib/deroule.js');
   // Champs du déroulé que le tableau cite, vérifiés par le validateur (lib/deroule.js) ; commandes du plugin.
-  const CHAMPS = ['rythme', 'duree', 'ton', 'intensite', 'tempo', 'scenes[].musique', 'data-start', 'mot:'];
+  // allure et --pm-ampleur-scene : spec S7, 5.14 (plan J4).
+  const CHAMPS = ['rythme', 'duree', 'ton', 'intensite', 'tempo', 'scenes[].musique', 'data-start', 'mot:', 'allure', '--pm-ampleur-scene'];
   const COMMANDES = ['comparer', 'charte depuis-logo'];
   const connus = new Set([...CHAMPS, ...COMMANDES, ...Object.keys(AMBIANCES), ...HUMEURS, ...styles, ...shaders, ...TONS, ...TRANSITIONS]);
   const code = lire('scripts', 'lib', 'deroule.js');

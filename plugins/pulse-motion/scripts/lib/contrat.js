@@ -43,6 +43,14 @@ const CATEGORIES = [
  */
 const TYPES_ENTREE = ['titre', 'texte', 'point', 'chiffre', 'trace', 'forme', 'image', 'ecriture', 'transition'];
 
+/**
+ * Genres d'élément des bruitages automatiques (spec S7, 5.15 ; moteur/audio.js) rattachés aux types d'entrée : la table d'un
+ * style (son.bruitages, par type) remplace le son par défaut de chaque genre. Le tracé à main levée garde le type trace :
+ * son son générique est crissement, qu'une matière de style remplace (conflit 14 de la revue).
+ */
+const GENRES_ENTREE = { carte: 'forme', image: 'image', fleche: 'trace', trait: 'trace', annotation: 'trace', axe: 'trace',
+  point: 'point', compteur: 'chiffre', valeur: 'chiffre', code: 'ecriture', titre: 'titre', texte: 'texte' };
+
 /** Titres exacts des sections d'une fiche de style, dans l'ordre (spec Styles et réalisation, 5.1). */
 const SECTIONS_FICHE = [
   "L'essentiel",
@@ -66,4 +74,4 @@ const SECTIONS_ANIMATEUR = [SECTIONS_FICHE[0], SECTIONS_FICHE[2], SECTIONS_FICHE
  * ses pièges. La fiche entière dépasserait le budget de lecture du critique (15 000 jetons avant d'écrire). */
 const SECTIONS_CRITIQUE = [SECTIONS_FICHE[1], SECTIONS_FICHE[3], SECTIONS_FICHE[9]];
 
-module.exports = { TYPES, TYPES_RECENTS, OPTIONNELLES, FAMILLES, NOM_STYLE, CATEGORIES, TYPES_ENTREE, SECTIONS_FICHE, SECTIONS_ANIMATEUR, SECTIONS_CRITIQUE };
+module.exports = { TYPES, TYPES_RECENTS, OPTIONNELLES, FAMILLES, NOM_STYLE, CATEGORIES, TYPES_ENTREE, GENRES_ENTREE, SECTIONS_FICHE, SECTIONS_ANIMATEUR, SECTIONS_CRITIQUE };
