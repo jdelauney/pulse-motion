@@ -341,6 +341,9 @@ async function completerDiffusion(r, { dossier, scenes, plage, gif, cadre, contr
   const { deroule } = lireDeroule(projet);
   if (!deroule) return r;
   const conseils = [];
+  // Voix entendue (spec S7, 5.12) : « synthese » pour la voix de synthèse locale, exportée sans accord spécial.
+  const voix = require('./lib/voix.js').natureVoix(projet, deroule);
+  if (voix) r.voix = voix;
   const extrait = Boolean((scenes && scenes.length) || plage || gif);
   if (r.usage === 'reseaux' && deroule.format.ratio === '9:16' && !deroule.format.plateforme && !extrait && !cadre) {
     const zones = await verifierZonesToutes(projet, deroule, controler);

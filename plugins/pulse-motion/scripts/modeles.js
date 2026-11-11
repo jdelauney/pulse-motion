@@ -77,6 +77,16 @@ function validerModele(m) {
     if (!m.variantes || !/^\/pulse-motion:creer \S/.test(String(m.variantes[v] || ''))) err.push(`« variantes.${v} » doit être une phrase « /pulse-motion:creer … ».`);
   }
   if (m.exemple !== undefined && !/^[a-z0-9-]+$/.test(String(m.exemple))) err.push('« exemple » doit être un nom de dossier d\'exemples/.');
+  // Réglages du déroulé allumés d'office par le modèle (spec S7, décision 7.8) : caméra automatique, bruitages automatiques.
+  if (m.reglages !== undefined) {
+    const r = m.reglages;
+    if (!r || typeof r !== 'object' || Array.isArray(r)) err.push('« reglages » doit être un objet, ex. { "camera": "auto", "bruitages": { "auto": true } }.');
+    else {
+      for (const cle of Object.keys(r)) if (!['camera', 'bruitages'].includes(cle)) err.push(`« reglages.${cle} » inconnu : seuls « camera » et « bruitages » se règlent par un modèle.`);
+      if (r.camera !== undefined && !['auto', 'fixe'].includes(r.camera)) err.push('« reglages.camera » doit valoir « auto » ou « fixe ».');
+      if (r.bruitages !== undefined && !(r.bruitages && typeof r.bruitages === 'object' && [true, false, 'minimal'].includes(r.bruitages.auto))) err.push('« reglages.bruitages » doit être { "auto": true }, { "auto": "minimal" } ou { "auto": false }.');
+    }
+  }
 
   const typesParStyle = Object.fromEntries(styles.filter((s) => livres.includes(s)).map((s) => [s, typesDuStyle(s)]));
   err.push(...validerScenes(m.scenes, m.duree, typesParStyle, ''));
@@ -171,6 +181,9 @@ const MOTS_CLES = [
   ['publication-sociale', ['reseaux sociaux', 'reseau social', 'reseaux', 'instagram', 'tiktok', 'linkedin', 'facebook', 'reels', 'stories'], ['publication', 'post', 'story', 'short']],
   ['presentation-produit', ['produit', 'presentation', 'presenter'], ['application', 'appli', 'logiciel', 'service', 'offre', 'outil', 'fonctionnalite', 'plateforme']],
   ['histoire', ['histoire', 'raconter', 'raconte', 'recit', 'storytelling', 'est ne', 'est nee'], ['parcours', 'aventure', 'origine']],
+  // Vidéo explicative (spec S7, 5.17) : un mécanisme, un trajet, « comment ça marche » ; avant la formation (« expliquer »
+  // seul reste une formation).
+  ['explication', ['video explicative', 'explicative', 'explication', 'explique comment', 'expliquer comment', 'comment fonctionne', 'comment ca marche', 'mecanisme', 'trajet'], ['schema', 'circuit', 'fonctionnement', 'processus', 'cycle']],
   ['formation-courte', ['formation', 'former', 'tutoriel', 'apprendre', 'expliquer', 'consigne', 'procedure', 'regle', 'bonnes pratiques', 'geste', 'sensibilisation', 'rappel'], ['securite', 'hygiene', 'comprendre', 'prevention']],
   // Tutoriel de logiciel (spec S6, 5.16) : une adresse de site, « filme… », un logiciel ; « tutoriel » seul reste une formation
   // courte (égalité : la formation, plus haut), « tutoriel » et un mot de logiciel donnent le tutoriel logiciel.

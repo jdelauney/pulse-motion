@@ -2,7 +2,7 @@
 'use strict';
 /* Pulse Motion – état de l'ordinateur en une commande (skill « outils »).
  *
- *   node scripts/outils.js   { node, navigateur, carteGraphique, ffmpeg, python, transcription, voixSysteme } ; code 0 même s'il
+ *   node scripts/outils.js   { node, navigateur, carteGraphique, ffmpeg, python, transcription, voixSysteme, voixSynthese } ; code 0 même s'il
  *   manque des outils. carteGraphique : sondée seulement si un navigateur est trouvé (null sinon), 20 s au plus.
  *   node scripts/outils.js --plan   ce qui manque et serait utile, dans l'ordre où l'installer (spec Retouches et ergonomie,
  *   5.6 point 4) : [{ outil, pourquoi, taille, duree, commande, leger?, texte? }] ; commande : celle que Claude lance après un
@@ -51,6 +51,7 @@ function etatOutils(options = {}) {
     pythonAncien = () => Wh().pythonAncien(),
     voixSysteme: voix = () => voixSysteme(),
     sonderCarteGraphique = (o) => require('./lib/carte-graphique.js').sonderCarteGraphique(o),
+    etatVoixLocale = () => require('./lib/voix-locale.js').etatVoixLocale(),
   } = options;
   const majeure = Number(process.versions.node.split('.')[0]);
   const echec = (quoi) => (e) => ({ ok: false, message: `${quoi} n'a pas pu être vérifié (${e.message}).` });
@@ -97,6 +98,11 @@ function etatOutils(options = {}) {
     python,
     transcription,
     voixSysteme: essayer(() => voix(), echec('La voix de l\'ordinateur')),
+    // Voix de synthèse locale facultative (spec S7, 5.12) : installée seulement à la demande, avec accord.
+    voixSynthese: essayer(() => {
+      const e = etatVoixLocale();
+      return { ok: Boolean(e.pret), variante: e.variante || null, message: e.message };
+    }, echec('La voix de synthèse')),
   };
 }
 

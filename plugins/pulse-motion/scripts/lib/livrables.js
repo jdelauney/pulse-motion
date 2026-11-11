@@ -181,9 +181,12 @@ function credits({ projet, deroule, assemblage, version = versionPlugin() }) {
   else if (m.fichier) lignes.push(ligneFichier(m.fichier.replace(/\\/g, '/').replace(/^\.\//, '')).replace(/^- /, '- fichier importé '));
   else lignes.push('- composée par Pulse Motion, libre de droits, sans mention obligatoire');
   lignes.push('', 'Voix');
-  const voix = ((assemblage && assemblage.donnees && assemblage.donnees.scenes) || []).filter((s) => s.voix);
-  if (!voix.length) lignes.push('- aucune voix');
-  else if (voix.every((s) => s.voix.provisoire)) lignes.push('- voix de synthèse du système (provisoire)');
+  const parlees = ((assemblage && assemblage.donnees && assemblage.donnees.scenes) || []).filter((s) => s.voix);
+  // Voix de synthèse locale (spec S7, 5.12 ; S5, Q18) : mention de licence du modèle et du corpus de la voix.
+  const synthese = parlees.some((s) => s.voix.synthese);
+  const voix = parlees.filter((s) => !s.voix.synthese);
+  if (synthese) lignes.push(`- ${require('./voix-locale.js').MENTION}`);
+  if (!voix.length) { if (!synthese) lignes.push('- aucune voix'); } else if (voix.every((s) => s.voix.provisoire)) lignes.push('- voix de synthèse du système (provisoire)');
   else lignes.push(`- enregistrée par vous${voix.some((s) => s.voix.provisoire) ? ' (certaines scènes : voix de synthèse du système, provisoire)' : ''}`);
   const ressources = ((assemblage && assemblage.ressources) || []).map((r) => ({ ...r, rel: relatif(projet, r.fichier) })).filter((r) => !r.rel.startsWith('..'));
   const images = ressources.filter((r) => r.sorte === 'image').map((r) => r.rel).sort();

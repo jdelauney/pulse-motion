@@ -276,4 +276,4 @@ function whisperParDefaut() {
   return { pret: etatWhisper({ python: null, ancien: null }).pret, transcrire };
 }
 
-module.exports = { emplacementsPython, candidatsPython, MODELE_DEFAUT, PHRASES_FANTOMES, filtrerTranscription, dossierWhisper, pythonDuVenv, trouverPython, pythonAncien, afficherCommande, commandeSysteme, commandesInstallation, etatWhisper, transcrire, installerWhisper, whisperParDefaut };
+module.exports = { versionsPython, emplacementsPython, candidatsPython, MODELE_DEFAUT, PHRASES_FANTOMES, filtrerTranscription, dossierWhisper, pythonDuVenv, trouverPython, pythonAncien, afficherCommande, commandeSysteme, commandesInstallation, etatWhisper, transcrire, installerWhisper, whisperParDefaut };

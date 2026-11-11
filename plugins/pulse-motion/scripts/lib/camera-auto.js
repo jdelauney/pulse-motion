@@ -29,7 +29,7 @@ function controlerCameraAuto(html, { deroule, scene }) {
   const id = scene && scene.id;
   if (cameraVoulue(deroule, scene) === 'auto' && !aCameraAuto(html)) {
     problemes.push({ regle: 'camera-auto-absente', gravite: 'alerte', scene: id,
-      message: `Scène « ${id} » : le déroulé demande la caméra automatique, mais la scène n'a pas de conteneur data-camera="auto" autour de son contenu ; l'ajouter, ou garder la caméra fixe pour cette scène.` });
+      message: `Scène « ${id} » : le déroulé demande la caméra automatique, mais rien autour de son contenu ne la porte (data-camera="auto" sur un conteneur qui remplit la scène) ; l'ajouter, ou garder la caméra fixe pour cette scène.` });
   }
   const ids = [...masquer(html).matchAll(/\sid\s*=\s*(?:"([^"]*)"|'([^']*)')/g)].map((m) => m[1] ?? m[2]);
   for (const v of valeurs(html, 'data-cadrer')) {

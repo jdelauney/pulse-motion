@@ -8,6 +8,8 @@
  *   node scripts/voix.js transcrire [--scene <id>] [dossier]           mots calés par la transcription (Whisper installé)
  *   node scripts/voix.js studio <scène> [dossier]                       ouvre le studio de voix de l'aperçu sur la scène
  *   node scripts/voix.js mots --scene <id> [dossier]                    mots et repères datés de la scène (une ligne courte)
+ *   node scripts/voix.js synthese [--scene <id>] [dossier]              voix de synthèse locale (spec S7, 5.12), si installée
+ *   node scripts/voix.js synthese installer [--legere|--normale]        l'installe (avec l'accord de la personne)
  *
  * Résumé JSON ; code 1 en cas d'échec.
  */
@@ -17,7 +19,7 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { lireDeroule } = require('./lib/deroule.js');
 const F = require('./lib/ffmpeg.js');
-const { ecrirePrise, transcrirePrise, lireVoixScene, texteDitPour } = require('./lib/voix.js');
+const { ecrirePrise, transcrirePrise, lireVoixScene, texteDitPour, SEUIL_RECONNUS } = require('./lib/voix.js');
 const { whisperParDefaut } = require('./lib/whisper.js');
 const W = require('../moteur/wav.js');
 const A = require('../moteur/aligner.js');
@@ -105,6 +107,7 @@ async function importerUnique({ projet, deroule, fichier, outil, whisper, surSce
   sauvegarder(projet);
   const faites = [];
   const douteuses = [];
+  const ecarts = [];
   const gardees = [];
   for (let k = 0; k < scenes.length; k++) {
     try { surScene(k + 1, scenes.length, scenes[k].id); } catch { /* suivi facultatif */ }
@@ -115,14 +118,18 @@ async function importerUnique({ projet, deroule, fichier, outil, whisper, surSce
     if (douteuse && existante) { gardees.push(scenes[k].id); continue; }
     const morceau = canal.slice(Math.round(p.debut * son.taux), Math.round(p.fin * son.taux));
     const mots = p.mots.map((m) => ({ w: m.w, t0: m.t0 - p.debut, t1: m.t1 - p.debut }));
+    // Sous 85 % de mots reconnus (spec S7, 5.13) : vérification gardée à côté de la prise (alerte voix-ecart-texte au contrôle).
+    const taux = p.total ? Math.round(p.reconnus / p.total * 1000) / 1000 : 1;
     const r = await ecrirePrise({ projet, scene: scenes[k].id, octets: W.ecrire({ taux: son.taux, canaux: [morceau] }), texte: scenes[k].voix.texte,
-      outil: outil && outil.present ? outil : null, mots, approche: 'whisper' });
+      outil: outil && outil.present ? outil : null, mots, approche: 'whisper', extra: taux < SEUIL_RECONNUS ? { verification: { taux, aVerifier: [] } } : {} });
     faites.push({ id: scenes[k].id, fichier: r.relatif, duree: r.duree });
     if (douteuse) douteuses.push(scenes[k].id);
+    else if (taux < SEUIL_RECONNUS) ecarts.push(scenes[k].id);
   }
   ecrireDeroule(projet, (d) => { for (const f of faites) d.scenes.find((s) => s.id === f.id).voix.fichier = f.fichier; });
   const messages = [];
   if (douteuses.length) messages.push(`Découpe à vérifier pour ${douteuses.map((id) => `la scène « ${id} »`).join(', ')} : moins de la moitié de ses mots ont été reconnus ; l'écouter, et la réenregistrer seule si besoin (pulse-motion voix importer <fichier> --scene <id>).`);
+  if (ecarts.length) messages.push(`L'enregistrement ne correspond pas tout à fait au texte de ${ecarts.map((id) => `la scène « ${id} »`).join(', ')} : l'écouter, et la réenregistrer seule si besoin.`);
   if (gardees.length) messages.push(`Prise existante gardée pour ${gardees.map((id) => `la scène « ${id} »`).join(', ')} : elle n'a presque pas été reconnue dans cet enregistrement.`);
   if (messages.length) messages.push('« pulse-motion historique annuler » revient aux prises d\'avant.');
   const avertissement = messages.length ? messages.join(' ') : undefined;
@@ -281,6 +288,80 @@ async function voixProvisoire({ dossier, scene: id, synthetiser = synthetiserSys
 }
 
 /**
+ * Voix de synthèse locale (spec S7, 5.12) pour les scènes qui ont un texte (sans --scene : celles qui n'ont pas de prise de la
+ * personne). Phrases découpées (balisage de 5.11, prononciation du glossaire, 0,25 s entre phrases, [pause …]), prise figée
+ * dans assets/voix/synthese/<scène>.wav avec ses mots ; empreinte de fabrication : seule une scène changée est refaite.
+ * Transcription installée : chaque scène fabriquée est réécoutée (5.13 : aVerifier, taux, alerte voix-mal-lue sous 85 %).
+ * voix : { pret, moteur, modele } (lib/voix-locale.js) ; absente : message en français, installer vrai, rien d'écrit.
+ * -> { ok, scenes, gardees, aVerifier, taux, verification, message?, avertissement? }
+ */
+async function voixSynthese({ dossier, scene: id, voix, whisper = whisperParDefaut(), outil = F.trouverFfmpeg(), surScene = () => {} }) {
+  const VL = require('./lib/voix-locale.js');
+  const projet = path.resolve(dossier);
+  const { deroule, erreurs } = lireDeroule(projet);
+  if (erreurs.length) return { ok: false, scenes: [], message: `Le déroulé contient des erreurs : ${erreurs.join(' ')}` };
+  const v = voix || VL.voixLocaleParDefaut();
+  if (!v || !v.pret || !v.moteur) return { ok: false, scenes: [], installer: true, repli: 'provisoire', message: VL.MESSAGE_ABSENTE };
+  let scenes = deroule.scenes.filter((s) => s.voix && s.voix.texte && !s.voix.fichier);
+  const notes = [];
+  if (id) {
+    const r = sceneAvecTexte(deroule, id);
+    if (!r.scene) return { ok: false, scenes: [], message: r.message };
+    scenes = [r.scene];
+    if (r.scene.voix.fichier) notes.push(`La scène « ${id} » a votre prise : c'est elle qui reste entendue.`);
+  }
+  if (!scenes.length && deroule.scenes.some((s) => s.voix && s.voix.texte)) return { ok: true, scenes: [], gardees: [], message: 'Toutes les scènes qui ont un texte ont déjà leur vraie voix : rien à faire.' };
+  if (!scenes.length) return { ok: false, scenes: [], message: 'Aucune scène n\'a de texte de voix (« voix.texte ») dans le déroulé.' };
+  const reglages = { voix: VL.VOIX_DEFAUT, vitesse: 1, ...((deroule.voix && deroule.voix.synthese) || {}) };
+  const { allureDe } = require('./lib/deroule.js');
+  const vitesse = VL.vitesseEffective(reglages.vitesse, allureDe(deroule));
+  const lireJSON = (f) => { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch { return null; } };
+  const aFaire = scenes.map((s) => {
+    const lu = texteDitPour(projet, s.voix.texte, true);
+    const fabrication = VL.empreinteFabrication({ modele: v.modele, voix: reglages.voix, vitesse, lu });
+    const wav = path.join(projet, 'assets', 'voix', 'synthese', `${s.id}.wav`);
+    const ancien = lireJSON(wav.replace(/\.wav$/, '.mots.json'));
+    return { s, lu, fabrication, gardee: Boolean(ancien && ancien.fabrication === fabrication && fs.existsSync(wav)) };
+  });
+  if (aFaire.some((x) => !x.gardee)) sauvegarder(projet);
+  const faites = [];
+  const gardees = [];
+  for (const [k, x] of aFaire.entries()) {
+    try { surScene(k + 1, aFaire.length, x.s.id); } catch { /* suivi facultatif */ }
+    if (x.gardee) { gardees.push(x.s.id); continue; }
+    const { phrases, debut } = VL.decouperPhrases(x.lu);
+    if (!phrases.length) continue;
+    const r = await v.moteur({ phrases: phrases.map((p) => ({ texte: p.texte })), voix: reglages.voix, vitesse });
+    if (!r.ok) return { ok: false, scenes: faites, gardees, message: `Voix de synthèse impossible pour la scène « ${x.s.id} » : ${r.message.replace(/^La voix de synthèse a /, 'elle a ')}` };
+    const prise = VL.assemblerPhrases(r.sons, phrases.map((p) => p.ecart), { debut });
+    const mots = VL.calerMots(x.lu, phrases, prise);
+    const p = await ecrirePrise({ projet, scene: x.s.id, octets: W.ecrire({ taux: prise.taux, canaux: [prise.canal] }), texte: x.s.voix.texte, synthese: true,
+      outil: outil && outil.present ? outil : null, mots, approche: 'synthese', extra: { fabrication: x.fabrication, reglages: { ...reglages, vitesse } } });
+    faites.push({ id: x.s.id, fichier: p.relatif, duree: p.duree });
+  }
+  if (!(deroule.voix && deroule.voix.synthese)) ecrireDeroule(projet, (d) => { d.voix = { ...(d.voix || {}), synthese: { voix: reglages.voix, vitesse: reglages.vitesse } }; });
+  // Prononciation vérifiée (5.13) : chaque scène fabriquée, réécoutée par la transcription si elle est installée.
+  const aVerifier = [];
+  const taux = {};
+  const verification = Boolean(whisper && whisper.pret);
+  if (verification) {
+    for (const f of faites) {
+      const s = deroule.scenes.find((x) => x.id === f.id);
+      const t = await transcrirePrise({ projet, relatif: f.fichier, texte: s.voix.texte, whisper, synthese: true, verifier: true });
+      if (t.verification) {
+        taux[f.id] = t.verification.taux;
+        for (const m of t.verification.aVerifier) aVerifier.push({ scene: f.id, ...m });
+      }
+    }
+  }
+  const malLues = Object.entries(taux).filter(([, t]) => t < SEUIL_RECONNUS).map(([s]) => s);
+  const messages = [...notes];
+  if (!verification && faites.length) messages.push('Sans la transcription, la voix de synthèse marche, mais sa prononciation n\'est pas vérifiée.');
+  if (malLues.length) messages.push(`La voix lit mal une partie du texte de ${malLues.map((s) => `la scène « ${s} »`).join(', ')} : corriger la prononciation des mots à vérifier.`);
+  return { ok: true, scenes: faites, gardees, aVerifier, taux, verification, ...(messages.length ? { avertissement: messages.join(' ') } : {}) };
+}
+
+/**
  * Mots et repères datés d'une scène (spec S7, 5.11), en secondes depuis le début de la scène (prise courante : la personne,
  * sinon la voix provisoire), en une ligne courte : « 0,42 chaîne · 0,80 du · 1,10 froid · repère serveur 2,30 ».
  * -> { ok, scene, ligne, mots: [{ w, t0, t1 }], reperes: { nom: t } } | { ok: false, message }
@@ -320,20 +401,29 @@ if (require.main === module) {
   // Avancement par scène (spec Retouches et ergonomie, 5.2) : import d'un enregistrement entier, transcription.
   const Av = require('./lib/avancement.js');
   const dossierAvancement = path.resolve((action === 'importer' ? libres[1] : libres[0]) || '.');
-  const avancement = ['importer', 'transcrire'].includes(action)
-    ? Av.suivre(dossierAvancement, action === 'importer' ? { travail: 'voix', libelle: 'Import de la voix' } : { travail: 'transcription', libelle: 'Transcription des voix' }) : null;
+  const installe = action === 'synthese' && libres[0] === 'installer';
+  const LIBELLES = { importer: { travail: 'voix', libelle: 'Import de la voix' }, transcrire: { travail: 'transcription', libelle: 'Transcription des voix' }, synthese: { travail: 'voix', libelle: 'Voix de synthèse' } };
+  // Installation : avancement dans le dossier courant s'il contient une vidéo, sinon les lignes seulement (comme whisper).
+  const avancement = installe
+    ? Av.suivre(fs.existsSync(path.join(process.cwd(), 'deroule.json')) ? process.cwd() : null, { travail: 'installation', libelle: 'Installation de la voix de synthèse' })
+    : LIBELLES[action] ? Av.suivre(dossierAvancement, LIBELLES[action]) : null;
   const surScene = avancement ? (k, n, id) => avancement(k - 1, n, `scène « ${id} » (${k} sur ${n})`) : () => {};
   if (action === 'importer' && libres[0]) travail = importerVoix({ dossier: libres[1] || '.', fichier: libres[0], scene: valeur('--scene'), surScene });
   else if (action === 'provisoire') travail = voixProvisoire({ dossier: libres[0] || '.', scene: valeur('--scene') });
   else if (action === 'transcrire') travail = transcrireProjet({ dossier: libres[0] || '.', scene: valeur('--scene'), surScene });
   else if (action === 'studio' && libres[0]) travail = Promise.resolve(ouvrirStudio({ dossier: libres[1] || '.', scene: libres[0] }));
   else if (action === 'mots') travail = Promise.resolve(motsDeScene({ dossier: libres[0] || '.', scene: valeur('--scene') }));
+  else if (installe) {
+    const surEtape = (k, n, nom) => avancement(k, n, `${nom} (étape ${k + 1} sur ${n})`);
+    travail = require('./lib/voix-locale.js').installerVoixLocale({ variante: args.includes('--normale') ? 'normale' : 'legere', surEtape })
+      .catch((e) => ({ ok: false, message: `L'installation de la voix de synthèse a échoué (${e.message}).` }));
+  } else if (action === 'synthese') travail = voixSynthese({ dossier: libres[0] || '.', scene: valeur('--scene'), surScene });
   else {
-    console.error('Usage : pulse-motion voix importer <fichier> [--scene <id>] [dossier] | provisoire [--scene <id>] [dossier] | transcrire [--scene <id>] [dossier] | studio <scène> [dossier] | mots --scene <id> [dossier]');
+    console.error('Usage : pulse-motion voix importer <fichier> [--scene <id>] [dossier] | provisoire [--scene <id>] [dossier] | transcrire [--scene <id>] [dossier] | studio <scène> [dossier] | mots --scene <id> [dossier] | synthese [--scene <id>] [dossier] | synthese installer [--legere|--normale]');
     process.exit(2);
   }
   travail.then((r) => { if (avancement) avancement.terminer(r.ok, r.ok ? undefined : r.message); console.log(JSON.stringify(r, null, 2)); process.exit(r.ok ? 0 : 1); },
     (e) => { if (avancement) avancement.terminer(false, e.message); console.log(JSON.stringify({ ok: false, message: e.message }, null, 2)); process.exit(1); });
 }
 
-module.exports = { motsDeScene, importerVoix, enregistrerPrise, ecrireDeroule, voixProvisoire, transcrireProjet, ouvrirStudio, synthetiserSysteme };
+module.exports = { voixSynthese, motsDeScene, importerVoix, enregistrerPrise, ecrireDeroule, voixProvisoire, transcrireProjet, ouvrirStudio, synthetiserSysteme };
