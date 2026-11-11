@@ -38,7 +38,7 @@ Une scène qui montre des chiffres (une évolution, une comparaison, des parts),
 
 ## Caméra, allure et petits sons
 
-« Laisse la caméra bouger toute seule », « plus rythmé pour les réseaux », « ajoute des petits sons » : au déroulé, `"camera": "auto"` (puis chaque scène reçoit son conteneur `data-camera="auto"`), `"allure"` de 0,7 à 1,6, `"bruitages": { "auto": true }` ; détail et pièges : `pulse-motion reference explication`. Ces trois réglages restent éteints tant que la personne ne les demande pas. Le texte dit peut porter des repères et une forme dite (`[#serveur]`, `{HACCP|hache a cé cé pé}`) : `pulse-motion reference audio/voix`.
+« Laisse la caméra bouger toute seule », « plus rythmé pour les réseaux », « ajoute des petits sons » : au déroulé, `"camera": "auto"` (puis chaque scène reçoit son conteneur `data-camera="auto"`), `"allure"` de 0,7 à 1,6, `"bruitages": { "auto": true }` ; détail et pièges : `pulse-motion reference explication`. Ces trois réglages restent éteints tant que la personne ne les demande pas. Le texte dit peut porter des repères et une forme dite (`[#serveur]`, `{HACCP|hache a cé cé pé}`) : `pulse-motion reference audio/voix`. « Mets une voix de synthèse », « fais-la parler plus lentement », « il prononce mal HACCP » : `/pulse-motion:voix` (section « Synthèse »).
 
 ## Personnages
 

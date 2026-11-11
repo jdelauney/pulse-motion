@@ -148,6 +148,12 @@ Un style qui peint son encre dans son propre canevas (fusions permises) pose `da
 - Composer pour elle : l'image finale entière, un élément près de celui qu'il suit, une boîte avec son étiquette, une étiquette pour chaque icône à cadrer (une icône seule n'a pas de gros plan), pas de caméra automatique sur une scène où un élément traverse l'image.
 - Le plan de chaque scène est écrit dans `sortie/controle.json` (`cameras` : départ, mouvements).
 
+## Narration
+
+- Une idée par scène ; des phrases de 8 à 18 mots ; environ 2,5 mots par seconde avec la voix de synthèse (3,5 au plus : `pulse-motion reference rythme`) ; chaque phrase déclenche une image (un dessin, une flèche, une barre).
+- Finir par une phrase de synthèse qui reprend l'idée entière ; ni « tout simplement », ni slogan.
+- Structure du modèle de vidéo `explication` : accroche, problème, mécanisme en trois étapes, chiffre, synthèse (`pulse-motion modeles afficher explication`) ; caméra et bruitages automatiques y sont allumés d'office.
+
 ## Voix d'abord : repères, forme dite, allure
 
 Le texte dit (`voix.texte`) peut porter trois marques, jamais montrées dans les sous-titres :
@@ -155,6 +161,8 @@ Le texte dit (`voix.texte`) peut porter trois marques, jamais montrées dans les
 - `[#serveur]` : repère à l'instant du mot qui suit ; un élément y entre par `data-start="repere:serveur"` (+0.2 permis). Noms uniques ; inconnu : `repere-introuvable`.
 - `{HACCP|hache a cé cé pé}` : affiché HACCP, dit comme écrit à droite ; `mot:HACCP` et `mot:hache` le trouvent tous deux. La prononciation du glossaire s'applique d'elle-même à la voix provisoire.
 - `[pause 0.6]` : silence de la voix de synthèse ; ignoré pour une prise enregistrée.
+
+Voix de synthèse locale (facultative, installée avec l'accord de la personne) : `pulse-motion voix synthese .` ; une voix française, féminine, moins naturelle qu'une vraie voix ; elle s'exporte sans accord et se crédite d'office. Détail : `pulse-motion reference audio/voix`.
 
 Les temps des mots d'une scène, en une ligne : `pulse-motion voix mots . --scene <id>`.
 
@@ -197,6 +205,8 @@ Les temps des mots d'une scène, en une ligne : `pulse-motion voix mots . --scen
 | « garde la caméra fixe scène 2 » | `scenes[].camera` : `fixe`, retirer `auto` de la scène |
 | « gros plan sur le prix quand je dis cher » | `<i data-cadrer="#prix" data-start="mot:cher" data-dur="3"></i>` |
 | « la flèche quand je dis serveur, même si la phrase change » | `[#serveur]` dans le texte dit, `data-start="repere:serveur"` |
+| « mets une voix de synthèse », « fais-la parler plus lentement » | `/pulse-motion:voix` (section « Synthèse ») |
+| « plus rythmé pour les réseaux », « plus posé » | `"allure": 1.2`, `"allure": 0.85` au déroulé |
 | « il prononce mal HACCP » | `{HACCP|hache a cé cé pé}` dans le texte dit, ou la prononciation au glossaire (« notée pour vos prochaines vidéos ») |
 | « plus rythmé pour les réseaux », « plus posé » | `allure` 1,2 ou 0,85 (`pulse-motion reference remarques`) |
 | « la scène 3 plus calme » | `--pm-ampleur-scene: 0.6` sur sa section, `rythme` 0,85 |

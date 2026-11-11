@@ -1,5 +1,5 @@
 ---
-description: "Vérifier que l'ordinateur est prêt pour Pulse Motion et installer ce qui manque, avec votre accord (« vérifie mon ordinateur », « installe ffmpeg », « installe la transcription »). Ne crée ni ne modifie aucune vidéo."
+description: "Vérifier que l'ordinateur est prêt pour Pulse Motion et installer ce qui manque, avec votre accord (« vérifie mon ordinateur », « installe ffmpeg », « installe la transcription », « installe la voix de synthèse »). Ne crée ni ne modifie aucune vidéo."
 allowed-tools: Bash(pulse-motion *) Bash(node *) Bash(winget install --id Python.Python.3.12 -e --accept-source-agreements --accept-package-agreements) Bash(brew install python) Bash(winget install --id Gyan.FFmpeg -e --accept-source-agreements --accept-package-agreements) Bash(brew install ffmpeg) Bash(winget install --id OpenJS.NodeJS.LTS -e --accept-source-agreements --accept-package-agreements) Bash(brew install node) Monitor Read AskUserQuestion
 ---
 
@@ -44,16 +44,23 @@ Dire simplement ce qui est prêt, ce qui manque, et l'installer avec l'accord de
 
 1. `pulse-motion whisper` : `pret` vrai → déjà prête, le dire.
 2. Sinon, expliquer en une phrase (« elle cale les sous-titres et les animations sur les vrais mots de votre voix ; environ 800 Mo à télécharger une fois ») et demander l'accord : « Installer (Recommandé) » · « Version légère (250 Mo, un peu moins précise) » · « Pas maintenant ».
-3. Python absent (`commandeSysteme` présent) : installer Python d'abord (étape 5), puis relancer `pulse-motion whisper`. Python toujours introuvable : en dernier recours, relancer Claude Code, puis redemander « installe la transcription » ; s'arrêter.
+3. Python absent (`commandeSysteme` présent) : installer Python d'abord (étape 6), puis relancer `pulse-motion whisper`. Python toujours introuvable : en dernier recours, relancer Claude Code, puis redemander « installe la transcription » ; s'arrêter.
 4. `pulse-motion whisper installer` en arrière-plan (version légère : `pulse-motion whisper installer --modele small`) ; attendre la fin et lire son résultat.
    - `ok` vrai : « La transcription est installée. » Si la vidéo du dossier a déjà des prises de voix, proposer de recaler leurs mots (« recale les mots »).
    - `ok` faux : dire le `message` simplement ; tout le reste fonctionne sans transcription (mots calés au mieux).
 
-## 5. Installer Python (« installe Python », ou étape 4)
+## 5. Installer la voix de synthèse (« installe la voix de synthèse »)
+
+1. `pulse-motion outils` : `voixSynthese.ok` vrai → déjà prête, le dire.
+2. Sinon, expliquer en une phrase : « une voix française fabriquée sur votre ordinateur, sans compte ni réseau ensuite ; une seule voix, féminine, moins naturelle qu'une vraie voix ; environ 300 Mo à télécharger une fois, quelques minutes » ; demander l'accord : « Installer (Recommandé) » · « Version plus fidèle (environ 550 Mo) » · « Pas maintenant ». Rien ne se télécharge sans cet accord.
+3. Python de 3.10 à 3.13 requis : absent ou d'une autre version, l'installer d'abord (étape 6), puis reprendre.
+4. `pulse-motion voix synthese installer` en arrière-plan (version plus fidèle : `--normale`) ; attendre la fin et lire son résultat. `ok` vrai : « La voix de synthèse est installée. » ; si la vidéo du dossier a des textes dits, proposer de la poser (« mets une voix de synthèse », `/pulse-motion:voix`). `ok` faux : dire le `message` ; la voix de l'ordinateur reste disponible en attendant.
+
+## 6. Installer Python (« installe Python », ou étapes 4 et 5)
 
 Si `python.ok` est faux : accord, puis la `commandeSysteme.commande` de `pulse-motion outils` (nulle sous Linux : le texte du `message`, à taper), puis `pulse-motion outils`.
 
-## 6. Installer Node.js (« Node.js introuvable »)
+## 7. Installer Node.js (« Node.js introuvable »)
 
 Proposer « Installer Node.js (Recommandé) » · « Je l'installe moi-même ». Accord :
 - Windows : `winget install --id OpenJS.NodeJS.LTS -e --accept-source-agreements --accept-package-agreements` ;
@@ -62,7 +69,7 @@ Proposer « Installer Node.js (Recommandé) » · « Je l'installe moi-même ».
 
 Puis `pulse-motion etat .`, qui marche sans redémarrage ; toujours introuvable : en dernier recours, relancer Claude Code.
 
-## 7. Fin
+## 8. Fin
 
 ✅ **Fait** : <ce qui est prêt, en une phrase>.
 📄 **Fichiers** : rien dans votre vidéo n'a changé ; les outils sont installés sur l'ordinateur.
