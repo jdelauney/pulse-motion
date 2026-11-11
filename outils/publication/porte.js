@@ -2,7 +2,7 @@
 // Pulse Motion – porte de publication, à passer avant chaque envoi : dans les fichiers suivis par git, aucun chemin de cet
 // ordinateur (le dossier personnel, le dossier qui contient le dépôt) ni secret (clé privée, jeton d'un service). Les chemins
 // d'exemple des pages (« C:\Users\Marie\… ») passent : seuls ceux de l'ordinateur qui lance la porte sont refusés.
-// Le dossier .claude/ (réglages de Claude Code du mainteneur) n'est pas examiné.
+// Tous les fichiers suivis sont examinés ; les réglages de Claude Code du mainteneur (.claude/settings.json) ne sont pas suivis.
 // Idée de Lemo-Opuscar (tools/release.py : LOCAL_PATH, SECRET ; MIT), réécrite.
 // Lancer : node outils/publication/porte.js   (code 1 et la liste des problèmes si un fichier en a)
 "use strict";
@@ -24,8 +24,9 @@ const SECRETS = [
   ["jeton GitLab", /\bglpat-[A-Za-z0-9_-]{20,}\b/],
 ];
 
-/** Dossiers exclus de l'examen (relatifs à la racine, en /). */
-const EXCLUS = [".claude/"];
+/** Dossiers exclus de l'examen (relatifs à la racine, en /). Aucun : les réglages de Claude Code du mainteneur
+ *  (.claude/settings.json) ne sont plus suivis par git, et tout fichier suivi est examiné. */
+const EXCLUS = [];
 const TAILLE_MAX = 2 * 1024 * 1024;
 
 /** Dossiers communs à tous les ordinateurs : seuls, ils ne disent rien de celui-ci. */
@@ -57,10 +58,20 @@ function racinePrincipale(racine) {
   }
 }
 
-/** Chemins propres à cet ordinateur : le dossier personnel et le dossier qui contient le dépôt. -> [{ chemin, motif }] */
+/** « D:\Atelier » s'écrit aussi « /d/Atelier » dans Git Bash et MSYS (et « /mnt/d/Atelier » sous WSL). */
+function formesPosix(chemin) {
+  const m = /^([A-Za-z]):[\\/]+(.*)$/.exec(String(chemin));
+  if (!m) return [];
+  const reste = m[2].replace(/\\/g, "/");
+  return [`/${m[1].toLowerCase()}/${reste}`, `/mnt/${m[1].toLowerCase()}/${reste}`];
+}
+
+/** Chemins propres à cet ordinateur : le dossier personnel et le dossier qui contient le dépôt, sous leurs écritures
+ *  Windows et Git Bash. -> [{ chemin, motif }] */
 function cheminsLocaux({ racine, accueil = os.homedir() }) {
-  const chemins = [accueil, path.dirname(racinePrincipale(racine))];
-  return [...new Set(chemins.filter(Boolean))].map((chemin) => ({ chemin, motif: motifChemin(chemin) })).filter((c) => c.motif);
+  const base = [accueil, path.dirname(racinePrincipale(racine))].filter(Boolean);
+  const chemins = [...base, ...base.flatMap(formesPosix)];
+  return [...new Set(chemins)].map((chemin) => ({ chemin, motif: motifChemin(chemin) })).filter((c) => c.motif);
 }
 
 /** Problèmes d'un texte : [{ ligne, sorte: "chemin" | "secret", nom }]. */
