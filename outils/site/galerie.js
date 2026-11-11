@@ -69,7 +69,7 @@ function grouperParCategorie(styles) {
   return groupes.filter((g) => g.styles.length);
 }
 
-/** Carte d'un style : images témoin A et B, boucle, vignettes des huit scènes, personnalité, usages, « ce qu'il n'est pas »,
+/** Carte d'un style : images témoin A et B, boucle, vignettes des neuf scènes, personnalité, usages, « ce qu'il n'est pas »,
  * signature et provenance (spec Styles et réalisation, 5.6). */
 function carteStyle(style, id) {
   const scenes = JSON.parse(fs.readFileSync(path.join(PLUGIN(RACINE_DEPOT), "styles", style, "catalogue.json"), "utf8")).scenes;
@@ -86,7 +86,7 @@ function carteStyle(style, id) {
 <figure class="vignette"><img src="${a}" alt="Image témoin A (titre) du style ${e(style)}" loading="lazy" width="480" height="270"><figcaption>A · le titre, mêmes textes pour tous les styles</figcaption></figure>
 <figure class="vignette"><img src="${b}" alt="Image témoin B (chiffre clé) du style ${e(style)}" loading="lazy" width="480" height="270"><figcaption>B · le chiffre clé, 1 250 kg</figcaption></figure>
 </div>
-<figure class="capture">${apercu(mp4, images[0], `Les huit scènes du style ${style}`)}<figcaption>Les huit scènes toutes faites du style ${e(style)}, avec le même contenu témoin, « la chaîne du froid ».</figcaption></figure>
+<figure class="capture">${apercu(mp4, images[0], `Les neuf scènes du style ${style}`)}<figcaption>Les neuf scènes toutes faites du style ${e(style)}, avec le même contenu témoin, « la chaîne du froid ».</figcaption></figure>
 <div class="grille-vignettes">
 ${vignettes}
 </div>

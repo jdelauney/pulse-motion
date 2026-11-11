@@ -202,14 +202,16 @@ test('identite : un module ou un shader conseillé inconnu est refusé', () => {
 
 // ---------- 5.3 Migration des 6 styles ----------
 
-// Empreinte des fichiers de chaque style hors identite.json, relevée sur main en 0.44.0 avant la migration.
+// Empreinte des fichiers de chaque style hors identite.json, relevée sur main en 0.44.0 avant la migration, puis en 0.52.0
+// (S7 J2, voulu : scène toute faite « moyeu », « schema » relié par data-fleche, CSS du moyeu ajouté sans toucher aux règles
+// existantes ; les projets gardent leur copie des scènes).
 const EMPREINTES = {
-  'chaleureux': '798beadfe7ad8ad751938b40f4ae781f12bbcdbfc43348d282d2e41222fc6742',
-  'clair-pedagogique': 'dade79aa64a260b5df09699f62b2b485b35c2934ac2cdd9168413e63f8057f2e',
-  'editorial': '9c064ff92e11b8c56ae58e932ad1a6371c57d42d1827d0d0e4a8d6cffef22a00',
-  'energique': 'cd32d01b0841801db12edd438a4e321a31320f9154ac249770498ef024db778e',
-  'minimal': '169faebd8b082aa3bee47dab36336ff8c61fc1bf344836816af151c647ba0017',
-  'tech-sombre': '26228094aeca93c4e308499d181c6ef19f84c22ed137af4d5f7b9f01788a615b',
+  'chaleureux': 'e816b59dda26c971d33e956cb49c326e6e4792d3737e09cc5f4a7b1fe91834d8',
+  'clair-pedagogique': '8d9eb9c9f1f92754f3f3ae47a7b8467c6d2446e5af28a0272f65f2cadf810eea',
+  'editorial': 'c9a800149594df3fca38b419a3aae927eedff1e4602778d5e6b131633ad6193e',
+  'energique': 'f048d60b1ba06c21aa1b792ac0650af2123f11a64c6a04e48d1a755bd2408b30',
+  'minimal': '35a41283154fc1bfe76f72224dc12a8c6d4ff9bb7885e4fe53fb4ca5b135a1e7',
+  'tech-sombre': 'bfa3cb0d8d9f3608189dcbe5d370d98f6594cb64582390dc0f3ff3bc6ea34f83',
 };
 
 function empreinteSansIdentite(dossier) {
@@ -286,7 +288,7 @@ test('styles --genre : fiche complète pour 3 styles, forme courte pour les autr
   assert.ok(octets(sortie) <= 6000, `${octets(sortie)} o`);
   assert.deepEqual(liste.slice(0, 3).map((f) => f.style), ['clair-pedagogique', 'chaleureux', 'perso-1']);
   for (const f of liste.slice(0, 3)) {
-    assert.deepEqual(Object.keys(f.scenes), ['titre', 'liste', 'chiffre', 'comparaison', 'etape', 'alerte', 'schema', 'conclusion']);
+    assert.deepEqual(Object.keys(f.scenes), ['titre', 'liste', 'chiffre', 'comparaison', 'etape', 'alerte', 'schema', 'moyeu', 'conclusion']);
     assert.ok(f.signature && f.personnalite.length === 3 && f.usages.length === 3);
   }
   assert.equal(liste[0].scenes.titre, '7 s · etiquette 25, titre 40, sous 50');

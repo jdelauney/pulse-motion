@@ -29,7 +29,8 @@ const GROUPES = {
   // Écrans des tutoriels (spec S6) : pointeur, clics, projecteur, zooms, lecture des films ; CSS moteur/ecran.css, embarqué avec eux.
   ecran: ['pointeur.js', 'film.js', 'ecran.js'],
   // Calque de dessin (spec S7) : relevé de mise en page, main levée, flèches, annotations ; CSS moteur/dessin/dessin.css.
-  dessin: ['releve.js', 'dessin/main-levee.js', 'dessin/geometrie.js', 'dessin/calque.js'],
+  // Graphiques et code (spec S7 J2) : dessin/graphiques.js et dessin/code.js (purs), dessin/composants.js.
+  dessin: ['releve.js', 'dessin/main-levee.js', 'dessin/geometrie.js', 'dessin/calque.js', 'dessin/graphiques.js', 'dessin/code.js', 'dessin/composants.js'],
 };
 
 // Ordre de chargement : celui de la liste historique (dépendances au chargement), puis absents.js en dernier.
@@ -38,7 +39,7 @@ const MODULES = ['courbes.js', 'aligner.js', 'proches.js', 'sous-titres.js', 'mi
   'personnages/interactions.js', 'personnages/scene.js', 'personnages/objets.js', 'temps.js', 'horloge.js', 'tailles.js', 'wav.js',
   'sonie.js', 'mixage.js', 'synthe/catalogue.js', 'synthe/partition.js', 'synthe/ambiances.js', 'synthe/instruments.js',
   'synthe/bruitages.js', 'analyse-son.js', 'audio.js', 'son-reactif.js', 'lecteur.js', 'sous-titres-rendu.js', 'debordement.js',
-  'mesures.js', 'pixels.js', 'ecoute.js', 'figer.js', 'flou.js', 'pointeur.js', 'film.js', 'ecran.js', 'releve.js', 'dessin/main-levee.js', 'dessin/geometrie.js', 'dessin/calque.js', 'shaders/glsl.js', 'shaders/code.js', 'particules/instantanes.js', 'particules/gpu.js',
+  'mesures.js', 'pixels.js', 'ecoute.js', 'figer.js', 'flou.js', 'pointeur.js', 'film.js', 'ecran.js', 'releve.js', 'dessin/main-levee.js', 'dessin/geometrie.js', 'dessin/calque.js', 'dessin/graphiques.js', 'dessin/code.js', 'dessin/composants.js', 'shaders/glsl.js', 'shaders/code.js', 'particules/instantanes.js', 'particules/gpu.js',
   'particules/obstacles.js', 'particules/fragments.js', 'particules/simulation.js', 'particules/voisinage.js',
   'particules/maillage.js', 'particules/structures.js', 'particules/milieu.js', 'particules/rendu.js', 'particules/glsl.js',
   'particules/shaders.js', 'particules/composition.js', 'particules/formes.js', 'particules/reperes.js', 'particules/calques.js'];
@@ -58,7 +59,8 @@ const nonVide = (x) => (Array.isArray(x) ? x.length > 0 : !!(x && typeof x === '
  * - GPU : effet, milieu, shader (fond, transition, post-traitement), module d'effet, ou obstacle (data-obstacle : le contrôle juge
  *   ses formes exactes par M.particules.formesVides) ;
  * - écran : un écran (pm-ecran) ou une de ses marques (pm-clic, pm-projecteur, pm-zoom…) dans une scène ;
- * - dessin : data-fleche, data-annoter ou data-main-levee dans une scène, ou un script de scène qui appelle M.dessin(.
+ * - dessin : data-fleche, data-annoter, data-main-levee, data-graphique ou data-code dans une scène, ou un script de
+ *   scène qui appelle M.dessin(.
  */
 function groupesDuDeroule(donnees, sections = [], scripts = []) {
   const d = donnees || {};

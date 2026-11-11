@@ -214,7 +214,8 @@ test('dessin : dessin-invalide sur ses cas ; durées par défaut posées ; étiq
 });
 
 test('dessin : moteur à la carte, le groupe « dessin » seulement si une scène dessine ; une page sans dessin n\'en porte rien', () => {
-  assert.deepEqual(GM.GROUPES.dessin, ['releve.js', 'dessin/main-levee.js', 'dessin/geometrie.js', 'dessin/calque.js']);
+  // S7 J2 : graphiques et code s'ajoutent au groupe (dessin/graphiques.js, dessin/code.js, dessin/composants.js).
+  assert.deepEqual(GM.GROUPES.dessin.slice(0, 4), ['releve.js', 'dessin/main-levee.js', 'dessin/geometrie.js', 'dessin/calque.js']);
   for (const m of GM.GROUPES.dessin) assert.ok(GM.MODULES.includes(m) && fs.existsSync(path.join(RACINE, 'moteur', m)), m);
   assert.ok(!GM.groupesDuDeroule({}, ['<section><p data-texte="a"></p></section>']).includes('dessin'));
   assert.ok(GM.groupesDuDeroule({}, ['<section><i data-fleche="#a → #b"></i></section>']).includes('dessin'));
@@ -274,7 +275,8 @@ test('référence : pulse-motion reference explication existe et chaque exemple 
   const r = spawnSync(process.execPath, [PM, 'reference', 'explication'], { encoding: 'utf8' });
   assert.equal(r.status, 0);
   assert.match(r.stdout, /^# Vidéo explicative/);
-  const blocs = [...r.stdout.matchAll(/```html\n([\s\S]*?)```/g)].map((m) => m[1]);
+  // Les exemples de graphique, de code et de formule ont leurs données dans le déroulé : donnees.test.js.
+  const blocs = [...r.stdout.matchAll(/```html\n([\s\S]*?)```/g)].map((m) => m[1]).filter((b) => !/data-(?:graphique|code|formule)=/.test(b));
   assert.ok(blocs.length >= 3, `${blocs.length} exemples`);
   const textes = {};
   for (const b of blocs) for (const m of b.matchAll(/data-texte="([^"]+)"|etiquette\('([^']+)'/g)) textes[m[1] || m[2]] = 'Un texte';
@@ -294,7 +296,7 @@ test('référence : pulse-motion reference explication existe et chaque exemple 
 
 test('référence : chaque attribut et chaque réglage cités existent dans le moteur', () => {
   const t = lire('references', 'explication.md');
-  const code = [lire('moteur', 'dessin', 'calque.js'), lire('moteur', 'releve.js'), lire('scripts', 'lib', 'dessin.js'), lire('moteur', 'minutage.js')].join('\n');
+  const code = [lire('moteur', 'dessin', 'calque.js'), lire('moteur', 'dessin', 'composants.js'), lire('moteur', 'releve.js'), lire('scripts', 'lib', 'dessin.js'), lire('scripts', 'lib', 'donnees-scene.js'), lire('moteur', 'minutage.js')].join('\n');
   const attributs = new Set([...t.matchAll(/\b(data-[a-z-]+)/g)].map((m) => m[1]));
   assert.ok(attributs.size >= 10);
   for (const x of attributs) {
@@ -317,7 +319,7 @@ test('consignes : l\'animateur lit explication pour une flèche ou une annotatio
   assert.ok(ligne && /une flèche/.test(ligne) && /une annotation/.test(ligne) && ligne.includes('`pulse-motion reference <nom>`'));
   const r = lire('skills', 'retoucher', 'SKILL.md');
   assert.ok(Buffer.byteLength(r) <= 13850, `${Buffer.byteLength(r)} o`);
-  assert.match(r, /flèche, annotation : `pulse-motion reference explication`/);
+  assert.match(r, /flèche, annotation, graphique, code, formule : `pulse-motion reference explication`/);
   assert.match(r, /« entoure le prix quand je dis cher »/);
   assert.ok(Buffer.byteLength(lire('skills', 'creer', 'SKILL.md')) <= 23400);
   assert.ok(Buffer.byteLength(lire('references', 'moteur.md')) <= 12000);

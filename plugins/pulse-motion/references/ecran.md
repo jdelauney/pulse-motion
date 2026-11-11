@@ -77,6 +77,8 @@ Deux zooms dont le second commence moins de 1,5 s après la fin du premier ne re
 | `revelation-3d` | Une capture qui se redresse de 35° à plat (classe `pm-3d`) |
 | `liste` | Une liste déroulante ouverte, l'option choisie (`pm-bloc-choisie`) mise en valeur à son instant |
 | `dialogue` | Une boîte de dialogue, le bouton choisi enfoncé à son instant |
+| `carte-graphique` | Une carte de tableau de bord : titre, chiffre clé et graphique qui pousse (`data-graphique`, données dans le déroulé : `pulse-motion reference explication`) |
+| `carte-organigramme` | Une carte d'organigramme : un responsable et trois équipes reliées par des flèches qui se tracent (`data-fleche`) |
 
 ## Un film
 
@@ -106,4 +108,4 @@ Une application filmée par `/pulse-motion:filmer` se montre dans le même écra
 
 ## À venir
 
-Les cartes « graphique » et « organigramme » arrivent avec les graphiques animés (S7).
+Le modèle de vidéo « tutoriel », son exemple et la documentation du wiki (spec S6, plan 5) ; l'allègement des films par différences (plan 6, s'il le faut).

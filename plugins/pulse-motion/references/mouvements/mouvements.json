@@ -4667,6 +4667,286 @@
         ],
         "note": "Viser le conteneur de la liste (son id) pour regrouper ses points."
       }
+    },
+    {
+      "no": "122",
+      "slug": "barres-poussent",
+      "categorie": "compositions",
+      "nom": {
+        "fr": "Barres qui poussent",
+        "metier": "Bar chart grow"
+      },
+      "sens": "Un graphique en barres dont chaque barre pousse depuis zéro, sa valeur comptant avec elle",
+      "demande": "Fais pousser les barres 2023, 2024 et 2025 une par une quand la voix dit chaque année, en 0,9 s chacune.",
+      "quand": "Des quantités à comparer, un avant / après, une progression d'une année sur l'autre.",
+      "motsCles": [
+        "graphique",
+        "barres",
+        "histogramme",
+        "bar chart",
+        "donnees",
+        "chiffres",
+        "comparer"
+      ],
+      "recette": {
+        "type": "attribut",
+        "exemple": "<figure data-graphique=\"ventes\" data-start=\"0.2\" style=\"width: 100cqh; height: 56cqh\"></figure>",
+        "donnees": {
+          "graphiques": {
+            "ventes": {
+              "type": "barres",
+              "valeurs": [
+                {
+                  "etiquette": "2023",
+                  "valeur": 12
+                },
+                {
+                  "etiquette": "2024",
+                  "valeur": 19
+                },
+                {
+                  "etiquette": "2025",
+                  "valeur": 27,
+                  "accent": true
+                }
+              ],
+              "unite": "%"
+            }
+          }
+        },
+        "reglages": [
+          {
+            "nom": "data-graphique",
+            "defaut": "ventes",
+            "effet": "clé des données dans le déroulé (scenes[].graphiques.ventes)"
+          },
+          {
+            "nom": "type",
+            "defaut": "barres",
+            "effet": "barres ou barres-horizontales (libellés longs, classement)"
+          },
+          {
+            "nom": "debut",
+            "defaut": "(décalé de 0,22 s)",
+            "effet": "instant d'une barre, ex. « mot:2024 »"
+          },
+          {
+            "nom": "accent",
+            "defaut": "false",
+            "effet": "la valeur mise en avant, à la couleur d'accent"
+          },
+          {
+            "nom": "unite, source",
+            "defaut": "(aucune)",
+            "effet": "« % », « € » ; source affichée sous le graphique"
+          }
+        ],
+        "note": "Les barres partent toujours de zéro ; nombres à la française (« 1 250,5 »). pulse-motion reference explication."
+      }
+    },
+    {
+      "no": "123",
+      "slug": "courbe-trace",
+      "categorie": "compositions",
+      "nom": {
+        "fr": "Courbe qui se trace",
+        "metier": "Line chart draw"
+      },
+      "sens": "Une courbe se trace point par point, une aire en dégradé apparaît dessous",
+      "demande": "Trace la courbe des ventes de janvier à juin en 1,6 s, en passant par chaque mois quand la voix le dit.",
+      "quand": "Une évolution dans le temps, une tendance, une saison.",
+      "motsCles": [
+        "courbe",
+        "graphique",
+        "evolution",
+        "tendance",
+        "line chart",
+        "donnees"
+      ],
+      "recette": {
+        "type": "attribut",
+        "exemple": "<figure data-graphique=\"mois\" data-start=\"0.2\" style=\"width: 110cqh; height: 56cqh\"></figure>",
+        "donnees": {
+          "graphiques": {
+            "mois": {
+              "type": "courbe",
+              "valeurs": [
+                {
+                  "etiquette": "janv.",
+                  "valeur": 8
+                },
+                {
+                  "etiquette": "févr.",
+                  "valeur": 11
+                },
+                {
+                  "etiquette": "mars",
+                  "valeur": 10
+                },
+                {
+                  "etiquette": "avr.",
+                  "valeur": 15
+                },
+                {
+                  "etiquette": "mai",
+                  "valeur": 19
+                }
+              ]
+            }
+          }
+        },
+        "reglages": [
+          {
+            "nom": "data-graphique",
+            "defaut": "mois",
+            "effet": "clé des données dans le déroulé (scenes[].graphiques.mois)"
+          },
+          {
+            "nom": "type",
+            "defaut": "courbe",
+            "effet": "une valeur par point, de gauche à droite"
+          },
+          {
+            "nom": "debut",
+            "defaut": "(1,6 s en tout)",
+            "effet": "instant où la courbe passe par un point, ex. « mot:mai »"
+          }
+        ],
+        "note": "Valeur inconnue : null (la courbe saute le point). pulse-motion reference explication."
+      }
+    },
+    {
+      "no": "124",
+      "slug": "anneau-remplit",
+      "categorie": "compositions",
+      "nom": {
+        "fr": "Anneau qui se remplit",
+        "metier": "Donut chart fill"
+      },
+      "sens": "Un anneau (ou un disque) se remplit part après part, chaque étiquette arrive avec sa part",
+      "demande": "Remplis l'anneau des trois parts en 1,2 s, avec « Images 55 % » quand sa part est complète.",
+      "quand": "Les parts d'un tout, au plus cinq : budget, répartition, origine.",
+      "motsCles": [
+        "anneau",
+        "camembert",
+        "secteurs",
+        "parts",
+        "donut",
+        "pie chart",
+        "repartition"
+      ],
+      "recette": {
+        "type": "attribut",
+        "exemple": "<figure data-graphique=\"parts\" data-start=\"0.2\" style=\"width: 100cqh; height: 60cqh\"></figure>",
+        "donnees": {
+          "graphiques": {
+            "parts": {
+              "type": "anneau",
+              "valeurs": [
+                {
+                  "etiquette": "Images",
+                  "valeur": 55,
+                  "accent": true
+                },
+                {
+                  "etiquette": "Textes",
+                  "valeur": 30
+                },
+                {
+                  "etiquette": "Sons",
+                  "valeur": 15
+                }
+              ]
+            }
+          }
+        },
+        "reglages": [
+          {
+            "nom": "data-graphique",
+            "defaut": "parts",
+            "effet": "clé des données dans le déroulé (scenes[].graphiques.parts)"
+          },
+          {
+            "nom": "type",
+            "defaut": "anneau",
+            "effet": "anneau (trou de 0,55) ou secteurs (disque plein), 6 parts au plus"
+          },
+          {
+            "nom": "accent",
+            "defaut": "false",
+            "effet": "la part mise en avant, à la couleur d'accent"
+          }
+        ],
+        "note": "Parts en pourcentages arrondis (somme 100). pulse-motion reference explication."
+      }
+    },
+    {
+      "no": "125",
+      "slug": "code-transforme",
+      "categorie": "texte",
+      "nom": {
+        "fr": "Code qui se transforme",
+        "metier": "Code morph"
+      },
+      "sens": "Une formule ou un code se construit étape par étape : les morceaux communs glissent à leur nouvelle place",
+      "demande": "Montre la formule =SOMME(B2:B13), puis transforme-la en =MOYENNE(B2:B13) en 0,8 s quand je dis « moyenne ».",
+      "quand": "Une formule de tableur qui se construit, un code qui évolue, une commande qu'on complète.",
+      "motsCles": [
+        "code",
+        "formule",
+        "tableur",
+        "excel",
+        "morph",
+        "coloration",
+        "programmation"
+      ],
+      "recette": {
+        "type": "attribut",
+        "exemple": "<figure data-code=\"formule\" data-start=\"0.2\"></figure>",
+        "donnees": {
+          "code": {
+            "formule": {
+              "langage": "tableur",
+              "titre": "Ventes.xlsx",
+              "etapes": [
+                {
+                  "code": "=SOMME(B2:B13)"
+                },
+                {
+                  "code": "=MOYENNE(B2:B13)",
+                  "debut": 1.4,
+                  "surligner": [
+                    1
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        "reglages": [
+          {
+            "nom": "data-code",
+            "defaut": "formule",
+            "effet": "clé des données dans le déroulé (scenes[].code.formule)"
+          },
+          {
+            "nom": "langage",
+            "defaut": "tableur",
+            "effet": "tableur, js, python, html, css, sql, json, sh ou texte"
+          },
+          {
+            "nom": "debut",
+            "defaut": "(étape 2 et suivantes)",
+            "effet": "instant du passage à l'étape, ex. « mot:moyenne »"
+          },
+          {
+            "nom": "data-code-entree",
+            "defaut": "lignes",
+            "effet": "première apparition par lignes (0,12 s) ou « frappe »"
+          }
+        ],
+        "note": "Passage d'une étape à l'autre en 0,8 s ; lignes surlignées par « surligner ». pulse-motion reference explication."
+      }
     }
   ]
 }

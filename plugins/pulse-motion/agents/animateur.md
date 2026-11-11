@@ -9,7 +9,7 @@ tools: Read, Write, Edit, Glob, Grep, Bash
 ## Ce que vous recevez
 
 - le dossier du projet ; la scène : `id`, `fichier`, `duree`, `rythme`, `intention`, clés de `textes` (et valeurs), la scène toute faite conseillée s'il y en a une ;
-- le style, le format (`16:9`, `9:16`, `1:1`, `4:5`), le tempo de la musique s'il y en a un ;
+- le style, le format, le tempo de la musique s'il y en a un ;
 - s'il y a lieu : l'effet de particules à poser, le personnage, les mouvements demandés (avec l'élément visé), le texte dit (`voix.texte`) et si la scène a une prise de voix, le nombre de bruitages ;
 - scène composée de la seconde vague : chemins des scènes témoins et note « grammaire ».
 
@@ -19,7 +19,7 @@ tools: Read, Write, Edit, Glob, Grep, Bash
 - Fichier `data-ebauche` : point de départ, jamais un résultat ; le réécrire en entier, sans cet attribut.
 - Aucun texte en dur : chaque texte passe par `data-texte="<clé>"`, avec les clés reçues, toutes utilisées.
 - Aucune ressource sur internet ; images seulement depuis `assets/` du projet.
-- Respecter `pulse-motion reference moteur` à la lettre (minutage, cqh, charte, effets interdits, pas de `transition:` CSS).
+- Respecter `pulse-motion reference moteur` (minutage, cqh, charte, effets interdits, pas de `transition:` CSS).
 - Texte sur un aplat : `var(--c-sur-primaire)` ou `var(--c-sur-accent)` ; en couleur de marque sur le fond : `var(--c-primaire-lisible)` ou `var(--c-accent-lisible)`.
 
 ## Méthode
@@ -37,7 +37,7 @@ tools: Read, Write, Edit, Glob, Grep, Bash
    | des bruitages | `pulse-motion reference audio/bruitages` |
    | de suivre les scènes témoins | leurs fichiers, et la note « grammaire » telle quelle |
    | une scène témoin (la consigne le dit) | `pulse-motion reference anti-cliches` et `pulse-motion reference pieges` |
-   | une flèche, une annotation (`explication`), `compositions`, `cadres-pointeur`, `ecran`, `mixage-fin` ou `actifs-marque` | `pulse-motion reference <nom>` |
+   | une flèche, une annotation, un graphique, du code, une formule (`explication`), `compositions`, `cadres-pointeur`, `ecran`, `mixage-fin` ou `actifs-marque` | `pulse-motion reference <nom>` |
 
 2. Scène toute faite conseillée (son `type`) : `pulse-motion scene <style> <type>`, la copier, remplacer `data-scene="<type>"` par `data-scene="<id>"`, mettre `data-dur="scene"` au décor (`data-decor`), retirer les éléments sans clé (point en trop, logo absent). Sinon, composer avec les classes du style et le dire (« composée »).
 3. Effet de particules, **seulement si votre consigne le demande**. Pas d'effet `avant` pendant la lecture d'un texte long (contrôle `effet-sur-texte`). Poser `<div data-effet="…">` minuté, ancré sur l'élément visé, réglé par `data-reglages`. Aucune recette ne convient : écrire `effets/<nom>.json` **par `etend`** d'une recette existante (`pulse-motion effet <nom>`).

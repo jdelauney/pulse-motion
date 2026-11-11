@@ -19,6 +19,11 @@ function retirerElement(html, attribut) {
     if (id) retires.push({ id: id[1], debut: debut ? debut[1] : '0' });
     return '';
   });
+  // Une flèche qui visait l'élément retiré (data-fleche="#centre → #partie5", scène « moyeu ») part avec lui.
+  for (const { id } of retires) {
+    const fleche = new RegExp(`[ \\t]*<([a-zA-Z][\\w-]*)\\b[^>]*\\sdata-fleche="[^"]*#${echapperRegex(id)}(?![\\w-])[^"]*"[^>]*>(?:[\\s\\S]*?<\\/\\1>)?[ \\t]*(?:\\r?\\n)?`, 'g');
+    h = h.replace(fleche, '');
+  }
   for (const { id, debut } of retires) {
     const reference = new RegExp(`(data-start=")#${echapperRegex(id)}(:fin)?([+-][\\d.]+)?"`, 'g');
     h = h.replace(reference, (tout, avant, fin, decalage = '') => {

@@ -5,3 +5,24 @@
 #pm-scene .pm-calque-texte { position: absolute; left: 0; top: 0; transform: translate(-50%, -50%); white-space: nowrap; opacity: 0;
   font: 500 3.6cqh/1.2 var(--f-texte, inherit); color: var(--c-texte); margin: 0; padding: 0; }
 #pm-scene [data-fleche], #pm-scene [data-annoter] { position: absolute; left: 0; top: 0; width: 0; height: 0; margin: 0; padding: 0; overflow: visible; pointer-events: none; }
+/* Graphiques et code (spec S7, 5.6 et 5.9) : la figure donne la place ; textes du déroulé posés par le calque. */
+#pm-scene figure[data-graphique], #pm-scene figure[data-code] { margin: 0; }
+#pm-scene figure[data-graphique] { position: relative; width: 90cqh; height: 50cqh; }
+#pm-scene .pm-calque-texte.pm-graphique-valeur { font-weight: 700; }
+#pm-scene .pm-calque-texte.pm-graphique-source { font-size: 3.4cqh; font-style: italic; }
+#pm-scene figure[data-code] { --pm-code-fond: color-mix(in srgb, var(--c-fond, #fff) 92%, var(--c-texte, #111)); max-width: 100%; }
+#pm-scene .pm-code-fenetre { width: fit-content; max-width: 100%; overflow: hidden; border-radius: 2cqh; background: var(--pm-code-fond);
+  box-shadow: 0 1cqh 3.6cqh rgb(0 0 0 / 0.16), 0 0 0 0.15cqh color-mix(in srgb, var(--c-texte, #111) 14%, transparent); padding: 0 0 2.2cqh; }
+#pm-scene .pm-code-barre { display: flex; align-items: center; gap: 1cqh; padding: 1.4cqh 2.4cqh; background: color-mix(in srgb, var(--pm-code-fond) 88%, var(--c-texte, #111)); }
+#pm-scene .pm-code-barre i { display: block; width: 1.4cqh; aspect-ratio: 1; border-radius: 50%; background: color-mix(in srgb, var(--c-texte, #111) 28%, transparent); }
+#pm-scene .pm-code-titre { margin-left: 1.2cqh; font: 500 3.4cqh/1.2 'JetBrains Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace; color: var(--c-texte); white-space: nowrap; }
+#pm-scene .pm-code-corps { position: relative; box-sizing: content-box; margin: 2cqh 2.8cqh 0; width: calc(var(--pm-code-colonnes, 20) * 1ch);
+  height: calc(var(--pm-code-lignes, 1) * 1.5em); font: 400 var(--pm-code-taille, 3.6cqh)/1.5 'JetBrains Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace; color: var(--c-texte); }
+#pm-scene .pm-code-jeton { position: absolute; left: calc(var(--col, 0) * 1ch); top: calc(var(--ligne, 0) * 1.5em); white-space: pre; overflow: hidden; max-width: calc(var(--vis, 999) * 1ch); }
+#pm-scene .pm-code-bande { position: absolute; left: -1.4cqh; right: -1.4cqh; top: calc(var(--ligne, 0) * 1.5em); height: 1.5em; border-radius: 0.8cqh; opacity: 0;
+  background: color-mix(in srgb, var(--c-accent, #b45309) 20%, transparent); }
+#pm-scene .pm-code-motcle, #pm-scene .pm-code-fonction, #pm-scene .pm-code-balise, #pm-scene .pm-code-propriete { color: var(--c-primaire-lisible, var(--c-primaire)); }
+#pm-scene .pm-code-reference, #pm-scene .pm-code-nombre, #pm-scene .pm-code-attribut { color: var(--c-accent-lisible, var(--c-accent)); }
+#pm-scene .pm-code-chaine { color: color-mix(in oklab, var(--c-accent-lisible, var(--c-accent)) 60%, var(--c-texte)); }
+#pm-scene .pm-code-commentaire { color: color-mix(in srgb, var(--c-texte) 66%, var(--pm-code-fond)); }
+#pm-scene .pm-code-corps, #pm-scene .pm-code-titre { font-variant-ligatures: none; }

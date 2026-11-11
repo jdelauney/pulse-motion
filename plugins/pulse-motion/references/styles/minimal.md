@@ -5,10 +5,10 @@
 
 ## L'essentiel
 
-- Partir d'une des **8 scènes toutes faites** (`pulse-motion scene minimal <type>`) ; le `type` noté au déroulé permet de changer de style sans réécrire la scène.
+- Partir d'une des **9 scènes toutes faites** (`pulse-motion scene minimal <type>`) ; le `type` noté au déroulé permet de changer de style sans réécrire la scène.
 - Décor (`.marqueur`, `data-decor`) : `data-dur="scene"`. Sur la **dernière scène**, il s'arrête 1 s avant la fin : image stable d'au moins 0,5 s.
-- Formats 16:9, 1:1, 4:5 et 9:16 (en vertical, la ligne du schéma devient verticale). Ton clair par défaut, sombre sur demande.
-- Titres très courts, tout aligné à gauche ; longueurs maximales du § 10.
+- Formats 16:9, 1:1, 4:5 et 9:16 (en vertical, le schéma se redresse). Ton clair par défaut, sombre sur demande.
+- Titres très courts, alignés à gauche ; longueurs du § 10.
 
 ## 1. Essence, et ce qu'il n'est pas
 
@@ -17,7 +17,7 @@
 
 ## 2. Matières et rendu
 
-- HTML et CSS : fond uni, règles de 0,2 à 0,4 cqh, carrés pleins ; ni ombre, ni rayon, ni module. Seul décor : `.repere` et `.marqueur` qui avance (`--x`, en cqw).
+- HTML et CSS : fond uni, règles de 0,2 à 0,4 cqh, carrés pleins ; ni ombre, ni rayon, ni module. Seul décor : `.repere` et `.marqueur` qui avance (`--x`, cqw).
 
 ## 3. Logique de couleur
 
@@ -78,6 +78,7 @@
 | `etape` | Une étape, numéro géant | 8 s | numero 2, titre 40, texte 80 |
 | `alerte` | Vigilance, barre d'accent | 8 s | titre 40, texte 80 |
 | `schema` | Trois temps sur une ligne | 8 s | titre 40, a, b, c 25 |
+| `moyeu` | Centre et parties | 10 s | titre 40, centre 24, parties 22 |
 | `conclusion` | Le message et le logo | 6 s | titre 40, sous 50 |
 
 Point ou logo absent : retirer son élément et sa clé.
@@ -85,7 +86,7 @@ Point ou logo absent : retirer son élément et sa clé.
 - Entrées : `.monte`, `.revele` ; `.regle` se trace. Décor : `.decor` + `.repere`, `.marqueur` (`--x`).
 - Scènes : `.rangs` ; `.colonnes`, `.colonne` (`.accent`), `.colonne-titre` ; `.etape`, `.numero-geant` ; `.vigilance`, `.vigilance-corps` ; `.ligne-temps`, `.temps` ; `.logo`.
 
-Modules du moteur : aucun. Scène composée : ces classes et `<style>@scope { … }</style>`.
+Scène composée : ces classes et `<style>@scope { … }</style>`.
 
 ## 11. Espace de variation
 

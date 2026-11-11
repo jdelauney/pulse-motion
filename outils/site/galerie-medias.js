@@ -110,7 +110,7 @@ function fabriquerMouvements() {
   });
 }
 
-/** Boucle (les huit scènes du témoin, 2,5 s chacune), une image par scène, et les images témoin A et B, rendues par le
+/** Boucle (les neuf scènes du témoin, 2,5 s chacune), une image par scène, et les images témoin A et B, rendues par le
  * plugin comme « pulse-motion style planche --temoin » (lib/temoin.js), réduites en JPEG de 480 px. */
 async function fabriquerStyles() {
   const { projetBoucle, imagesTemoin } = require(path.join(PLUGIN, "scripts", "lib", "temoin.js"));

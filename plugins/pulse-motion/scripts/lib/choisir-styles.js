@@ -1,6 +1,6 @@
 'use strict';
 /* Pulse Motion – choisir un style en le regardant (spec Styles et réalisation, 5.6 point 4) : une page locale où les styles
- * livrés et les styles personnels vérifiés jouent le même contenu témoin (la boucle de leurs huit scènes, « la chaîne du
+ * livrés et les styles personnels vérifiés jouent le même contenu témoin (la boucle de leurs neuf scènes, « la chaîne du
  * froid ») en direct dans le moteur, rangés et filtrés par catégorie. La personne en coche un, ajoute une note, clique sur
  * « Envoyer à Claude » : la commande rend { ok: true, style, note } et s'arrête.
  *

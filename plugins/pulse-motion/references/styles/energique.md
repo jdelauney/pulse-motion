@@ -5,7 +5,7 @@
 
 ## L'essentiel
 
-- Partir d'une des **8 scènes toutes faites** (`pulse-motion scene energique <type>`) ; le `type` noté au déroulé permet de changer de style sans réécrire la scène.
+- Partir d'une des **9 scènes toutes faites** (`pulse-motion scene energique <type>`) ; le `type` noté au déroulé permet de changer de style sans réécrire la scène.
 - Décor (`.bandes`, `data-decor`) : `data-dur="scene"`. Sur la **dernière scène**, il s'arrête 1 s avant la fin : image stable d'au moins 0,5 s.
 - Formats 16:9, 1:1, 4:5 et 9:16 (pensé aussi pour le vertical). Ton clair par défaut (fond jaune), sombre sur demande (fond noir, aplats à l'accent).
 - Textes plus courts qu'ailleurs (titre 28 caractères) : longueurs du § 10 ; une idée par écran.
@@ -80,6 +80,7 @@
 | `etape` | Une étape, pastille | 7 s | numero 2, titre 28, texte 70 |
 | `alerte` | Bande de chantier | 7 s | titre 28, texte 70 |
 | `schema` | Trois blocs enchaînés | 7 s | titre 28, a, b, c 20 |
+| `moyeu` | Centre et parties | 10 s | titre 28, centre 20, parties 16 |
 | `conclusion` | L'appel à l'action et le logo | 5 s | titre 28, sous 40 |
 
 Point ou logo absent : retirer son élément et sa clé.
@@ -87,7 +88,7 @@ Point ou logo absent : retirer son élément et sa clé.
 - Entrées : `.tombe`, `.claque`, `.volet`. Décor : `.decor` + `.bandes` (`--x`).
 - Scènes : `.pile` ; `.face-a-face`, `.carte.creuse`, `.carte.pleine`, `.carte-titre` ; `.etape`, `.pastille` ; `.danger` ; `.enchainement`, `.maillon`, `.chevron` ; `.logo`.
 
-Modules du moteur : aucun. Scène composée : ces classes et `<style>@scope { … }</style>`.
+Scène composée : ces classes et `<style>@scope { … }</style>`.
 
 ## 11. Espace de variation
 

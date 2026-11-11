@@ -19,13 +19,13 @@ const NOUVELLES = new Set(['rien-de-nouveau', 'comparaison-courte', 'camera-repe
 const nouvelles = (problemes) => problemes.filter((p) => NOUVELLES.has(p.regle) || (p.regle === 'marge' && /^Scène « [^»]+ » : « /.test(p.message)));
 const navigateur = trouverNavigateur();
 
-test('controler-calibrage.test.js › aucune des règles de 5.7 à 5.11 ne se déclenche sur chaine-du-froid ni sur les 48 scènes toutes faites remplies de leurs textes d\'exemple', async (t) => {
+test('controler-calibrage.test.js › aucune des règles de 5.7 à 5.11 ne se déclenche sur chaine-du-froid ni sur les 54 scènes toutes faites remplies de leurs textes d\'exemple', async (t) => {
   const froid = dossierTemporaire('pm-calibrage-');
   fs.cpSync(path.join(RACINE, 'exemples', 'chaine-du-froid'), froid, { recursive: true });
   const projets = [froid, ...STYLES.map((s) => projetEssai({ dossierStyle: path.join(RACINE, 'styles', s), textes: 'exemple' }))];
   assert.equal(projets.length - 1, STYLES.length);
   const scenes = projets.slice(1).reduce((n, d) => n + JSON.parse(fs.readFileSync(path.join(d, 'deroule.json'), 'utf8')).scenes.length, 0);
-  assert.equal(scenes, 48);
+  assert.equal(scenes, 54);
   const nom = (dir) => JSON.parse(fs.readFileSync(path.join(dir, 'deroule.json'), 'utf8')).style;
   const vus = projets.flatMap((dir) => nouvelles(controler({ dossier: dir, ecrire: false }).problemes).map((p) => `${nom(dir)} : ${p.message}`));
   assert.deepEqual(vus, []);
