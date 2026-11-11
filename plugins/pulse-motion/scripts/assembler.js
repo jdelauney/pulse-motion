@@ -153,7 +153,7 @@ function cssZones(plateforme) {
 }
 
 /**
- * Bruitages automatiques (spec S7, 5.15) : { auto, table? } pour la page. auto : true ou « minimal » (rien sinon : une vidéo
+ * Bruitages automatiques (spec S7, 5.15) : { auto, transitions, table? } pour la page. auto : true ou « minimal » (rien sinon : une vidéo
  * existante garde son mixage) ; table : celle du style (identite.json, son.bruitages), réduite aux types d'entrée connus
  * (TYPES_ENTREE de lib/contrat.js) et aux bruitages du catalogue (null : aucun son pour ce type).
  */
@@ -170,7 +170,8 @@ function bruitagesAuto(deroule, dossierStyle) {
       table = Object.fromEntries(Object.entries(brute).filter(([type, nom]) => TYPES_ENTREE.includes(type) && (nom === null || BRUITAGES.includes(nom))));
     }
   } catch { /* style sans identité : table par défaut */ }
-  return { auto, ...(table && Object.keys(table).length ? { table } : {}) };
+  // true ou « minimal » sonnent aussi les transitions, sauf « transitions »: false écrit au déroulé.
+  return { auto, transitions: deroule.bruitages.transitions !== false, ...(table && Object.keys(table).length ? { table } : {}) };
 }
 
 function jsonDansHTML(objet) {

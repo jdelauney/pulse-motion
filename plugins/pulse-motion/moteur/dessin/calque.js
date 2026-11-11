@@ -208,7 +208,8 @@
       sc.temps[s] = { erreur: message };
       throw new Error(message);
     }
-    var valeur = (r.elements[info.id].__pm_q.debut - r.scenes[0].debut) * rythme;
+    // Rythme effectif (allure comprise, spec S7 5.14) : le temps de scène du calque.
+    var valeur = (r.elements[info.id].__pm_q.debut - r.scenes[0].debut) * r.scenes[0].rythme;
     sc.temps[s] = { valeur: valeur };
     return valeur;
   }

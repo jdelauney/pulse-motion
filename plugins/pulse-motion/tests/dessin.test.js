@@ -215,7 +215,10 @@ test('dessin : dessin-invalide sur ses cas ; durées par défaut posées ; étiq
 
 test('dessin : moteur à la carte, le groupe « dessin » seulement si une scène dessine ; une page sans dessin n\'en porte rien', () => {
   // S7 J2 : graphiques et code s'ajoutent au groupe (dessin/graphiques.js, dessin/code.js, dessin/composants.js).
-  assert.deepEqual(GM.GROUPES.dessin.slice(0, 4), ['releve.js', 'dessin/main-levee.js', 'dessin/geometrie.js', 'dessin/calque.js']);
+  // S7 J3 : le relevé forme son propre groupe, chargé avec le dessin comme avec la caméra automatique.
+  assert.deepEqual(GM.GROUPES.dessin.slice(0, 3), ['dessin/main-levee.js', 'dessin/geometrie.js', 'dessin/calque.js']);
+  assert.deepEqual(GM.GROUPES.releve, ['releve.js']);
+  assert.ok(GM.groupesDuDeroule({}, ['<section><i data-fleche="#a → #b"></i></section>']).includes('releve'));
   for (const m of GM.GROUPES.dessin) assert.ok(GM.MODULES.includes(m) && fs.existsSync(path.join(RACINE, 'moteur', m)), m);
   assert.ok(!GM.groupesDuDeroule({}, ['<section><p data-texte="a"></p></section>']).includes('dessin'));
   assert.ok(GM.groupesDuDeroule({}, ['<section><i data-fleche="#a → #b"></i></section>']).includes('dessin'));
@@ -296,7 +299,9 @@ test('référence : pulse-motion reference explication existe et chaque exemple 
 
 test('référence : chaque attribut et chaque réglage cités existent dans le moteur', () => {
   const t = lire('references', 'explication.md');
-  const code = [lire('moteur', 'dessin', 'calque.js'), lire('moteur', 'dessin', 'composants.js'), lire('moteur', 'releve.js'), lire('scripts', 'lib', 'dessin.js'), lire('scripts', 'lib', 'donnees-scene.js'), lire('moteur', 'minutage.js')].join('\n');
+  const code = [lire('moteur', 'dessin', 'calque.js'), lire('moteur', 'dessin', 'composants.js'), lire('moteur', 'releve.js'), lire('scripts', 'lib', 'dessin.js'), lire('scripts', 'lib', 'donnees-scene.js'), lire('moteur', 'minutage.js'),
+    // S7 J3 et J4 : caméra automatique (data-camera, data-cadrer) et bruitages (data-son) dans la même référence.
+    lire('moteur', 'camera-auto-page.js'), lire('moteur', 'audio.js')].join('\n');
   const attributs = new Set([...t.matchAll(/\b(data-[a-z-]+)/g)].map((m) => m[1]));
   assert.ok(attributs.size >= 10);
   for (const x of attributs) {

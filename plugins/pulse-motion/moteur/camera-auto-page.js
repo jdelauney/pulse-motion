@@ -100,6 +100,7 @@
         immobile: lie ? Math.min(info.entree, duree * 0.5) : 0, utile: utile });
       if (!plan) { precedent = null; return; }
       plan.continue = lie;
+      plan.utile = utile;
       etat.plans[info.id] = plan;
       precedent = { plan: plan, elements: elements };
     });
@@ -133,7 +134,9 @@
     Object.keys(etat.plans).forEach(function (id) {
       if (scenes && scenes.indexOf(id) < 0) return;
       var p = etat.plans[id], V = M.cameraAuto.versCamera;
+      var u = p.utile;
       r[id] = { duree: r3(p.duree), continue: !!p.continue, depart: V(p.depart, p.cadre),
+        utile: { x0: r3(u.x0), y0: r3(u.y0), x1: r3(u.x1), y1: r3(u.y1) },
         mouvements: p.mouvements.map(function (m) { return { debut: r3(m.debut), duree: r3(m.duree), genre: m.genre, vers: V(m.vers, p.cadre) }; }) };
     });
     return r;

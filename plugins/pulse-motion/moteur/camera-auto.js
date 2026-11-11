@@ -481,10 +481,10 @@
     });
   }
 
-  /** Vue (marges de 7 % du petit côté, comme explainroo) d'un cadre. */
+  /** Vue d'un cadre : 7 % de chaque côté (la vue d'explainroo, 134 et 76 px sur 1920 × 1080). */
   function vueDe(cadre) {
-    var m = Math.min(cadre.L, cadre.H) * 0.07;
-    return { x: m, y: m, l: cadre.L - 2 * m, h: cadre.H - 2 * m };
+    var mx = cadre.L * 0.07, my = cadre.H * 0.07;
+    return { x: mx, y: my, l: cadre.L - 2 * mx, h: cadre.H - 2 * my };
   }
 
   /** Plan { x, y, z } -> réglages de moteur/camera.js : zoom, x et y en % de l'image (point visé au centre). */

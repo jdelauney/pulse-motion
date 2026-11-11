@@ -306,7 +306,7 @@ test('correctifs : guidage du son précisé (sous-titres sans voix, arrêt avant
 });
 
 test('correctifs : sous-commandes du son citées dans les guides : elles existent', () => {
-  const SOUS = { voix: ['importer', 'provisoire', 'transcrire', 'studio'], whisper: ['installer'], musique: ['ecouter'] };
+  const SOUS = { voix: ['importer', 'provisoire', 'transcrire', 'studio', 'mots'], whisper: ['installer'], musique: ['ecouter'] };
   const references = ['audio', 'moteur'].flatMap((n) => [path.join('references', `${n}.md`), ...partiesDe(n).map((p) => path.relative(RACINE, p.fichier))]);
   for (const f of [...fichiersGuides(), ...references]) {
     for (const m of lire(f).matchAll(/pulse-motion (voix|whisper|musique)(?: ([a-z]+))?/g)) {

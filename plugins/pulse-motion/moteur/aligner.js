@@ -195,6 +195,8 @@
   function memeMot(a, b) {
     var x = cleComparee(a), y = cleComparee(b);
     if (x === y) return true;
+    // Un nombre ne ressemble qu'à lui-même : 2025 n'est pas 2026, même écrits en lettres.
+    if (/\d/.test(a + b)) return false;
     if (x.length > 4 && y.length > 4 && distance(x, y) <= 1) return true;
     var long = Math.max(x.length, y.length);
     return long > 3 && !/\d/.test(x + y) && distance(x, y) / long <= 0.34;
@@ -210,7 +212,9 @@
 
   /** Un mot du script (ou une de ses parties : « faut-il » entendu « faut » « -il ») correspond au mot entendu. */
   function correspond(script, entendu) {
-    return script.comp.some(function (c) { return entendu.comp.some(function (h) { return memeMot(c, h); }); });
+    // Mot écrit ou entendu en chiffres : formes égales seulement (nombre, forme dite).
+    var exact = script.cles.concat(entendu.cles).some(function (c) { return /\d/.test(c); });
+    return script.comp.some(function (c) { return entendu.comp.some(function (h) { return exact ? c === h : memeMot(c, h); }); });
   }
 
   var GROUPE_ENTENDU = 6;   // mots entendus pour un mot écrit (« deux mille vingt-six », « s n c f »)

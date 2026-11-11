@@ -87,7 +87,7 @@ function proposition(c) {
   return ` ; ${phraseProposition(suggererCouleur(c.couleur, c.fond, c.minimum, c.charte || {}))}`;
 }
 
-const GRAVITES = { flash: 'erreur', 'texte-casse': 'erreur', 'erreur-de-scene': 'erreur', 'etapes-trop-rapprochees': 'erreur', 'dessin-erreur': 'erreur', 'fleche-cible-introuvable': 'erreur', 'code-trop-large': 'erreur' };
+const GRAVITES = { flash: 'erreur', 'texte-casse': 'erreur', 'erreur-de-scene': 'erreur', 'etapes-trop-rapprochees': 'erreur', 'dessin-erreur': 'erreur', 'fleche-cible-introuvable': 'erreur', 'code-trop-large': 'erreur', 'camera-auto-cadre': 'erreur' };
 
 /** Constats bruts de M.mesurer -> problèmes (alertes, sauf GRAVITES). Règle inconnue : ignorée. */
 function traduireConstats(constats) {
