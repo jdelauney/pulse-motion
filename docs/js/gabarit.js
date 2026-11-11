@@ -194,6 +194,7 @@
       el("a", { href: racine + "quelle-commande.html", texte: "Quelle commande pour… ?" }),
       el("a", { href: racine + "depannage.html", texte: "Je suis bloqué" }),
       el("a", { href: racine + "lexique.html", texte: "Lexique" }),
+      el("a", { href: racine + "contribuer.html", texte: "Contribuer" }),
       el("a", { href: "https://github.com/jdelauney/pulse-motion", texte: "Le dépôt sur GitHub" }),
     ]);
     var texte = el("p", { texte: "Wiki de Pulse Motion, le plugin de motion design pour Claude Code. Les commandes se tapent dans Claude Code, puis on se laisse guider." });

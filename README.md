@@ -15,6 +15,8 @@ Créez, sur votre ordinateur et sans cloud, des vidéos dynamiques en motion des
 
 Le pas à pas : [En 5 minutes](https://jdelauney.github.io/pulse-motion/demarrage-rapide.html), et tout le guide sur le [wiki](https://jdelauney.github.io/pulse-motion/).
 
+D'autres vidéos faites avec Pulse Motion, chacune avec la phrase qui l'a lancée et son déroulé, et deux retouches montrées avant et après : [Exemples](https://jdelauney.github.io/pulse-motion/exemples.html).
+
 Ce dépôt est un catalogue (marketplace) de plugins Claude Code. Il contient le plugin [`pulse-motion`](plugins/pulse-motion/).
 
 ## Installation
@@ -27,6 +29,10 @@ Dans Claude Code :
 ```
 
 Fermez puis relancez Claude Code. Prérequis : Node.js 20 ou plus, et Chrome ou Edge ([installation pas à pas](https://jdelauney.github.io/pulse-motion/prerequis.html)).
+
+## Contribuer
+
+Le guide des contributeurs, [CONTRIBUTING.md](CONTRIBUTING.md) ([in English](CONTRIBUTING.en.md)), dit comment installer le dépôt, lancer les tests et ajouter un style, un effet, un mouvement ou un modèle de vidéo. [ARCHITECTURE.md](ARCHITECTURE.md) explique comment une vidéo est fabriquée.
 
 ## Licence
 
