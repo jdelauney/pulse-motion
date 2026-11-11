@@ -37,7 +37,8 @@ Rappel (détail dans `pulse-motion reference audio`) : un seul mixage dans la pa
 
 | Son | Où le placer par rapport au moment visible | Décalage à 30 images par seconde |
 |---|---|---|
-| `clic`, `tic`, `pop`, `blip`, `ding`, `carillon` | À l'image du contact ou de l'apparition | 0 |
+| `clic`, `tic`, `pop`, `blip`, `ding`, `carillon`, `frappe`, `aimant` | À l'image du contact ou de l'apparition | 0 |
+| `succes`, `erreur`, `notification` | Deux notes : la seconde, plus forte, sur le moment visible | La faire partir 0,1 s avant |
 | `whoosh`, `swoosh-inverse` | Juste avant le passage : on entend venir | 1 à 2 images avant (−0,03 à −0,07 s) |
 | `impact`, `basse` | Juste après le contact : la cause d'abord, le choc ensuite | 1 à 2 images après (+0,03 à +0,07 s) |
 | `montee` | Elle finit sur le moment fort : la commencer avant | Départ 0,8 s avant le moment |
@@ -75,6 +76,5 @@ Les gestes forts se posent sur les temps (`data-start="4t"`).
 
 ## À venir
 
-- Partage des fréquences quand musique et bruitages coexistent : filtre passe-haut vers 800 Hz sur le bus des bruitages, passe-bas vers 4 kHz sur la musique, puis mesure de l'écart de crête (spec S8, son plus fin).
-- Calage automatique d'un bruitage sur le pic de son geste plutôt que sur son début, sans repère vide (spec S8) ; bruitages posés seuls selon le type d'entrée (spec S7).
-- Sons nouveaux, tous synthétisés sur l'ordinateur, rangés par famille (noms à fixer par la spec S8) : clavier (frappe, frappe rapide, effacement, touche Entrée) ; interface (survol, bascule, notification) ; cartes (pose, retournement, pile qui s'effondre) ; retours (succès, erreur, trophée) ; progression (chargement, terminé) ; chocs (tampon, chute sourde) ; magie (étincelle, transformation) ; terminal (commande, réponse).
+- Mesure de l'écart de crête entre bruitages et musique quand le mixage par bandes est demandé (spec S8, son plus fin).
+- Sons nouveaux, tous synthétisés sur l'ordinateur, au-delà de ceux de 0.58.0 : clavier (frappe rapide, effacement, touche Entrée) ; interface (survol, bascule) ; cartes (retournement, pile qui s'effondre) ; retours (trophée) ; progression (terminé) ; chocs (tampon, chute sourde) ; magie (étincelle, transformation) ; terminal (commande, réponse) (spec S8, vagues de styles).

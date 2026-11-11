@@ -6,11 +6,11 @@ const { INSTRUMENTS, BRUITAGES, SONS_TRANSITION, AMBIANCES } = require('../moteu
 
 const proche = (a, b) => Math.abs(a - b) < 0.01;
 
-test('catalogue : instruments, treize bruitages (crissement : spec S7, 5.15), sons de transition, six ambiances', () => {
+test('catalogue : instruments, vingt-trois bruitages (crissement : spec S7, 5.15 ; S8 J4), sons de transition, huit ambiances', () => {
   assert.ok(['pluck', 'pad', 'basse', 'sub', 'kick', 'caisse', 'charleston', 'cloche', 'nappe-bruit', 'riser'].every((n) => INSTRUMENTS.includes(n)));
-  assert.equal(BRUITAGES.length, 13);
+  assert.equal(BRUITAGES.length, 23);
   assert.equal(SONS_TRANSITION.glissement, 'whoosh');
-  assert.deepEqual(Object.keys(AMBIANCES).sort(), ['calme', 'corporate', 'entrainant', 'inspirant', 'suspense', 'tech']);
+  assert.deepEqual(Object.keys(AMBIANCES).sort(), ['acoustique', 'calme', 'corporate', 'entrainant', 'inspirant', 'mecanique', 'suspense', 'tech']);
 });
 
 test("catalogue : son d'une transition, nommée ou par shader (bibliothèque, ou souffle pour un shader du projet)", () => {

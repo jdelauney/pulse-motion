@@ -120,7 +120,7 @@ test('moteur-controle-injecte-par-la-page-de-mesure : mesures et pixels jamais d
 
 test('ateliers-moteur-entier : l\'atelier des effets sert le moteur entier', () => {
   const { corps } = GENERES['/_pm/atelier/moteur.js']();
-  assert.match(corps, /\.groupes = \["tronc","controle","son-reactif","synthe","personnages","gpu","ecran","dessin","releve","camera-auto"]/);
+  assert.match(corps, /\.groupes = \["tronc","controle","son-reactif","synthe","corde","personnages","gpu","ecran","dessin","releve","camera-auto"]/);
   for (const f of ['M.demarrerPersonnages = function', 'M.demarrerParticules = function', 'M.mesurer = function', 'M.demarrerSonReactif = function']) assert.ok(corps.includes(f), f);
 });
 

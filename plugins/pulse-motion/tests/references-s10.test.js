@@ -90,7 +90,7 @@ test('references_s10_mouvements_classes_sons_existent : numéros, classes pm-m-*
     for (const m of sansAVenir(t).matchAll(/data-son="([a-z-]+)"/g)) assert.ok(SONS.has(m[1]), `${nom} : son « ${m[1]} » absent`);
   }
   assert.ok(numeros > 30, 'des numéros sont cités');
-  assert.ok(SONS.size === 13, `${SONS.size} sons (les douze de S10 et crissement, S7 J4)`);
+  assert.ok(SONS.size === 23, `${SONS.size} sons (les douze de S10, crissement de S7 J4 et les dix de S8 J4)`);
 });
 
 test('references_s10_et_realisation_sans_termes_interdits : aucun terme de la source dans les références (et la doctrine de S2)', () => {
