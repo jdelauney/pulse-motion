@@ -1,0 +1,106 @@
+{
+  "version": 1,
+  "titre": "Créer une facture dans Facturo",
+  "genre": "formation",
+  "parcours": "rapide",
+  "format": {
+    "ratio": "16:9",
+    "ips": 30
+  },
+  "style": "clair-pedagogique",
+  "musique": {
+    "generee": "calme",
+    "tempo": 90,
+    "volume": 0.8
+  },
+  "scenes": [
+    {
+      "id": "accroche",
+      "fichier": "scenes/01-accroche.html",
+      "duree": 3,
+      "transition": "fondu",
+      "intention": "écran – montrer le résultat final tout de suite : la facture enregistrée",
+      "film": {
+        "nom": "factures",
+        "etapes": "4"
+      },
+      "textes": {
+        "titre": "Votre facture en 30 secondes"
+      }
+    },
+    {
+      "id": "contexte",
+      "type": "titre",
+      "fichier": "scenes/02-contexte.html",
+      "duree": 5,
+      "transition": "glissement",
+      "intention": "titre – dire pourquoi, en une phrase",
+      "textes": {
+        "etiquette": "Facturo",
+        "titre": "Créer une facture",
+        "sous": "Sans rien oublier"
+      }
+    },
+    {
+      "id": "etapes-1",
+      "fichier": "scenes/03-etapes-1.html",
+      "duree": 8,
+      "transition": "glissement",
+      "intention": "écran – étapes 1 et 2 : ouvrir une nouvelle facture, taper le client ; la caméra suit les clics",
+      "film": {
+        "nom": "factures",
+        "etapes": "1-2"
+      },
+      "textes": {
+        "numero1": "1",
+        "consigne1": "Cliquez sur Nouvelle facture",
+        "numero2": "2",
+        "consigne2": "Tapez le nom du client"
+      }
+    },
+    {
+      "id": "etapes-2",
+      "fichier": "scenes/04-etapes-2.html",
+      "duree": 7,
+      "transition": "glissement",
+      "intention": "écran – étapes 3 et 4 : enregistrer, confirmer ; projecteur sur le bouton Enregistrer, l'étape clé",
+      "film": {
+        "nom": "factures",
+        "etapes": "3-4"
+      },
+      "textes": {
+        "numero3": "3",
+        "consigne3": "Cliquez sur Enregistrer",
+        "numero4": "4",
+        "consigne4": "Confirmez dans la fenêtre"
+      }
+    },
+    {
+      "id": "recapitulatif",
+      "type": "liste",
+      "fichier": "scenes/05-recapitulatif.html",
+      "duree": 5,
+      "transition": "glissement",
+      "intention": "liste – récapituler les étapes, une ligne chacune",
+      "textes": {
+        "titre": "En 4 étapes",
+        "point1": "Nouvelle facture",
+        "point2": "Le nom du client",
+        "point3": "Enregistrer",
+        "point4": "Confirmer"
+      }
+    },
+    {
+      "id": "fin",
+      "type": "conclusion",
+      "fichier": "scenes/06-fin.html",
+      "duree": 4,
+      "transition": "fondu",
+      "intention": "conclusion – ce qu'on sait faire maintenant, et où trouver de l'aide",
+      "textes": {
+        "titre": "Votre facture est prête",
+        "sous": "Besoin d’aide ? Menu Aide"
+      }
+    }
+  ]
+}

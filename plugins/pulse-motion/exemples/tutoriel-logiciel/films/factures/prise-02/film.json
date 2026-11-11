@@ -1,0 +1,309 @@
+{
+  "version": 1,
+  "source": "tournage",
+  "flou": {
+    "auto": true,
+    "mode": "flou"
+  },
+  "date": "2026-11-11T07:55:00.408Z",
+  "navigateur": "Chrome/157.0.8103.39 @9a31f0acec1854d44e49a73fbf8017598151a583",
+  "appareil": "ordinateur",
+  "largeur": 1280,
+  "hauteur": 800,
+  "echelle": 1.5,
+  "cadence": 30,
+  "bords": [
+    "#f3f5f9",
+    "#fcfcfd"
+  ],
+  "etapes": [
+    {
+      "n": 1,
+      "faire": "cliquer",
+      "dit": "Cliquez sur Nouvelle facture.",
+      "url": "appli-essai/nouvelle.html",
+      "cible": {
+        "libelle": "Nouvelle Facture",
+        "boite": [
+          1021.92,
+          87.34,
+          150.08,
+          35
+        ]
+      },
+      "point": [
+        1096.96,
+        104.84
+      ],
+      "avant": "0001.webp",
+      "survol": "0002.webp",
+      "reaction": [
+        [
+          167,
+          "r01-0001.webp"
+        ]
+      ],
+      "coupes": [],
+      "apres": "0003.webp",
+      "flous": {
+        "auto": 1,
+        "cible": 0,
+        "apres": 0
+      },
+      "alertes": []
+    },
+    {
+      "n": 2,
+      "faire": "taper",
+      "dit": "Dans Client, tapez le nom du client.",
+      "url": "appli-essai/nouvelle.html",
+      "cible": {
+        "libelle": "Nom du client",
+        "boite": [
+          132,
+          189.99,
+          497,
+          43.08
+        ]
+      },
+      "point": [
+        380.5,
+        211.53
+      ],
+      "avant": "0003.webp",
+      "survol": "0003.webp",
+      "reaction": [
+        [
+          33,
+          "r02-0001.webp"
+        ],
+        [
+          200,
+          "r02-0002.webp"
+        ],
+        [
+          333,
+          "r02-0003.webp"
+        ],
+        [
+          400,
+          "r02-0004.webp"
+        ],
+        [
+          500,
+          "r02-0005.webp"
+        ],
+        [
+          567,
+          "r02-0006.webp"
+        ],
+        [
+          633,
+          "r02-0007.webp"
+        ],
+        [
+          700,
+          "r02-0008.webp"
+        ],
+        [
+          800,
+          "r02-0009.webp"
+        ]
+      ],
+      "coupes": [],
+      "apres": "0004.webp",
+      "flous": {
+        "auto": 1,
+        "cible": 0,
+        "apres": 0
+      },
+      "alertes": []
+    },
+    {
+      "n": 3,
+      "faire": "cliquer",
+      "dit": "Cliquez sur Enregistrer.",
+      "url": "appli-essai/nouvelle.html",
+      "cible": {
+        "libelle": "Enregistrer",
+        "boite": [
+          1038.3,
+          467.16,
+          109.7,
+          35
+        ]
+      },
+      "point": [
+        1093.15,
+        484.66
+      ],
+      "avant": "0004.webp",
+      "survol": "0005.webp",
+      "reaction": [
+        [
+          67,
+          "r03-0001.webp"
+        ],
+        [
+          100,
+          "r03-0002.webp"
+        ],
+        [
+          133,
+          "r03-0003.webp"
+        ],
+        [
+          167,
+          "r03-0004.webp"
+        ],
+        [
+          200,
+          "r03-0005.webp"
+        ],
+        [
+          233,
+          "r03-0006.webp"
+        ],
+        [
+          267,
+          "r03-0007.webp"
+        ],
+        [
+          300,
+          "r03-0008.webp"
+        ],
+        [
+          333,
+          "r03-0009.webp"
+        ]
+      ],
+      "coupes": [],
+      "apres": "0006.webp",
+      "flous": {
+        "auto": 1,
+        "cible": 0,
+        "apres": 0
+      },
+      "alertes": []
+    },
+    {
+      "n": 4,
+      "faire": "cliquer",
+      "dit": "Confirmez : la facture est enregistrée.",
+      "url": "appli-essai/nouvelle.html",
+      "cible": {
+        "libelle": "Enregistrer",
+        "boite": [
+          766.3,
+          422.88,
+          109.7,
+          35
+        ]
+      },
+      "point": [
+        821.15,
+        440.38
+      ],
+      "avant": "0006.webp",
+      "survol": "0007.webp",
+      "reaction": [
+        [
+          67,
+          "r04-0001.webp"
+        ],
+        [
+          100,
+          "r04-0002.webp"
+        ],
+        [
+          133,
+          "r04-0003.webp"
+        ],
+        [
+          167,
+          "r04-0004.webp"
+        ],
+        [
+          200,
+          "r04-0005.webp"
+        ],
+        [
+          233,
+          "r04-0006.webp"
+        ],
+        [
+          267,
+          "r04-0007.webp"
+        ],
+        [
+          300,
+          "r04-0008.webp"
+        ],
+        [
+          333,
+          "r04-0009.webp"
+        ],
+        [
+          367,
+          "r04-0010.webp"
+        ],
+        [
+          400,
+          "r04-0011.webp"
+        ],
+        [
+          433,
+          "r04-0012.webp"
+        ],
+        [
+          467,
+          "r04-0013.webp"
+        ],
+        [
+          500,
+          "r04-0014.webp"
+        ],
+        [
+          533,
+          "r04-0015.webp"
+        ],
+        [
+          567,
+          "r04-0016.webp"
+        ],
+        [
+          600,
+          "r04-0017.webp"
+        ],
+        [
+          633,
+          "r04-0018.webp"
+        ],
+        [
+          667,
+          "r04-0019.webp"
+        ],
+        [
+          700,
+          "r04-0020.webp"
+        ]
+      ],
+      "coupes": [
+        [
+          703,
+          1658
+        ]
+      ],
+      "apres": "0008.webp",
+      "flous": {
+        "auto": 1,
+        "cible": 0,
+        "apres": 0
+      },
+      "alertes": []
+    }
+  ],
+  "alertes": [],
+  "duree": 12.5,
+  "poids": 1622258
+}
