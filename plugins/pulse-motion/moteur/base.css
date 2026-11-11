@@ -119,7 +119,7 @@ body {
 }
 [data-morceaux] .pm-mot-cle::before {
   content: ""; position: absolute; z-index: -1; inset: -0.02em -0.14em -0.06em;
-  background: var(--pm-bloc, var(--c-accent-lisible, #f2c94c)); transform-origin: left center;
+  background: var(--pm-cle-fond, var(--c-accent-lisible, #f2c94c)); transform-origin: left center;
   animation: pm-l-bloc 0.12s linear both;
   animation-delay: calc(var(--pm-i, 0) * var(--pm-pas, 0.12s) + 0.1s);
 }
@@ -130,7 +130,7 @@ body {
   100% { opacity: 1; transform: none; }
 }
 @keyframes pm-l-bloc { from { transform: scaleX(0); } to { transform: none; } }
-@keyframes pm-l-sur-bloc { from { color: inherit; } to { color: var(--pm-sur-bloc, var(--c-sur-accent, #111)); } }
+@keyframes pm-l-sur-bloc { to { color: var(--pm-cle-texte, var(--c-sur-accent, #111)); } }
 /* Texte rempli d'un dégradé (--pm-degrade) ; avec data-lettres ou data-mots, chaque morceau en porte sa portion. */
 .pm-degrade {
   background-image: var(--pm-degrade, linear-gradient(90deg, var(--c-primaire, #ff6b35), var(--c-accent, #8e44ad)));
