@@ -1,0 +1,122 @@
+{
+  "style": "carnet",
+  "famille": "chaleureuse",
+  "personnalite": [
+    "spontané",
+    "chaleureux",
+    "curieux"
+  ],
+  "eviter": [
+    "lignes droites et formes parfaites",
+    "textes qui tremblent"
+  ],
+  "genres": [
+    "storytelling",
+    "formation",
+    "social"
+  ],
+  "couleur": {
+    "strategie": "sobre-avec-une-touche",
+    "tons": [
+      "clair"
+    ],
+    "tonDefaut": "clair",
+    "clair": {
+      "fond": "#f4ecd8",
+      "texte": "#2b2622"
+    },
+    "roles": {
+      "primaire": "le second feutre : notes, puces",
+      "accent": "ce qui compte : hachures, une seule ligne"
+    }
+  },
+  "typographie": {
+    "titres": {
+      "famille": "Fraunces",
+      "categorie": "serif",
+      "graisse": 400
+    },
+    "texte": {
+      "famille": "Instrument Sans",
+      "categorie": "sans-serif",
+      "graisse": 400
+    }
+  },
+  "mouvement": {
+    "caractere": "doux",
+    "courbes": [
+      "sine-inout",
+      "cubic-out"
+    ],
+    "dureeType": 0.8,
+    "transitions": [
+      "fondu",
+      "balayage"
+    ]
+  },
+  "signature": "Croquis au feutre sur papier crème : traits qui tremblent un peu et ne se ferment pas tout à fait, hachures à la main, une seule ligne qui fait le tour de ce qui compte, notes dans la marge",
+  "aFaire": [
+    "Laisser la vidéo se dessiner, un trait après l'autre",
+    "Une seule ligne pour ce qui compte"
+  ],
+  "aEviter": [
+    "Faire trembler un texte à lire",
+    "Une rugosité qui rend le 9:16 illisible"
+  ],
+  "categorie": "dessine",
+  "nonPas": "Pas un tableau blanc : du papier, pas de feutres flottants. Pas un dessin au crayon gras : de l'encre, sans cire ni lavis. Pas chaleureux : des traits dessinés, pas des cartes arrondies.",
+  "usages": [
+    "Raconter une idée ou une démarche",
+    "Résumer un atelier",
+    "Expliquer avec des croquis"
+  ],
+  "motsCles": [
+    "carnet",
+    "croquis",
+    "carnet de croquis",
+    "dessiné à la main",
+    "sketch",
+    "sketchbook",
+    "griffonné",
+    "une seule ligne",
+    "dessin"
+  ],
+  "son": {
+    "ambiances": [
+      "acoustique"
+    ],
+    "bruitages": {
+      "titre": null,
+      "texte": null,
+      "point": "pop",
+      "chiffre": "tic",
+      "trace": "crayon",
+      "forme": null,
+      "image": null,
+      "ecriture": "crayon",
+      "transition": null
+    },
+    "matiere": "crayon",
+    "fort": "carillon"
+  },
+  "modules": [
+    "une-ligne"
+  ],
+  "provenance": [
+    {
+      "depot": "explainroo",
+      "style": "paper",
+      "licence": "MIT"
+    },
+    {
+      "depot": "take-one",
+      "style": "sketchbook",
+      "licence": "MIT"
+    },
+    {
+      "depot": "lemo-opuscar",
+      "style": "one-line",
+      "licence": "MIT"
+    }
+  ]
+}

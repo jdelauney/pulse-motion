@@ -1,0 +1,18 @@
+<!-- Scène toute faite « etape » (style recit-donnees) : un repère numéroté sur l'axe du temps, puis ce qui s'y passe. Durée conseillée : 8 s.
+     Textes : numero (≤ 2 car.), titre (≤ 32 car.), texte (≤ 64 car.). -->
+<section data-scene="etape">
+  <div class="decor">
+    <span class="ombre-crayon" data-decor data-start="0" data-dur="8"></span>
+    <span class="crayon" data-decor data-start="0" data-dur="8"></span>
+  </div>
+  <div class="repere">
+    <span class="axe-x" data-start="0.2" data-dur="1"></span>
+    <div class="etape">
+      <p id="numero" class="numero arrive" data-texte="numero" data-start="0.8"></p>
+      <div class="etape-texte">
+        <h2 id="titre" class="titre-moyen arrive" data-texte="titre" data-start="#numero+0.6"></h2>
+        <p id="texte" class="texte arrive" data-texte="texte" data-start="#titre+0.8"></p>
+      </div>
+    </div>
+  </div>
+</section>

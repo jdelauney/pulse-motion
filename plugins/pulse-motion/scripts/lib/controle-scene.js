@@ -66,6 +66,8 @@ function controlerLettres(decoupes, scene, problemes) {
       problemes.push({ regle: 'lettres-invalide', gravite: 'erreur', scene, message: `Scène « ${scene} » : ${attribut} « ${effet} » inconnu (effets : ${Object.keys(EFFETS_LETTRES).join(', ')}).` });
     } else if (effet === 'brouille' && attribut === 'data-mots') {
       problemes.push({ regle: 'lettres-invalide', gravite: 'erreur', scene, message: `Scène « ${scene} » : data-mots « brouille » : le texte se brouille lettre par lettre, écrire data-lettres="brouille".` });
+    } else if (effet === 'ecrit' && attribut === 'data-mots') {
+      problemes.push({ regle: 'lettres-invalide', gravite: 'erreur', scene, message: `Scène « ${scene} » : data-mots « ecrit » : le texte s'écrit lettre par lettre, écrire data-lettres="ecrit".` });
     }
   }
 }

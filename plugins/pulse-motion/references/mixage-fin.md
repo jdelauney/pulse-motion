@@ -66,6 +66,10 @@ Pour un élément animé par une entrée qui ralentit (`expo-out`, `back-out`), 
 | `info-sans-son` | `tic`, `clic`, `basse` | `carillon`, sons tenus (la vidéo vit sans le son) |
 | `plan-technique` | `crayon`, `tic`, `ding`, `whoosh` | `impact`, `pop` |
 | `lancement` | `clic`, `souffle`, `frappe`, `basse` | `carillon`, `pop` |
+| `tableau-blanc` | `feutre`, `aimant`, `tic`, `carillon` | `impact`, `whoosh` |
+| `tableau-noir` | `craie`, `tic`, `carillon` | `impact`, `blip` |
+| `carnet` | `crayon`, `pop`, `tic`, `carillon` | `impact`, `basse` |
+| `recit-donnees` | `blip`, `tic`, `crayon`, `ding` | `impact`, `whoosh` |
 
 ## Tempo de la musique selon le caractère
 

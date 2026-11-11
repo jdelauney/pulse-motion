@@ -105,7 +105,7 @@ test('styles choisir : envoi rend { style, note } ; envoi d\'une autre origine r
   const rang = (style) => CATEGORIES.findIndex((c) => c.id === JSON.parse(fs.readFileSync(path.join(LIVRES, style, 'identite.json'), 'utf8')).categorie);
   assert.deepEqual(liste.map((s) => s.style), fs.readdirSync(LIVRES).sort().sort((a, b) => rang(a) - rang(b)));
   assert.ok(liste.every((s) => s.nomCategorie === CATEGORIES.find((c) => c.id === s.categorie).nom && s.usages.length === 3 && s.nonPas));
-  assert.deepEqual([...new Set(liste.map((s) => s.categorie))], ['essentiels', 'schemas-donnees', 'ecrans-annonces']);
+  assert.deepEqual([...new Set(liste.map((s) => s.categorie))], ['essentiels', 'dessine', 'schemas-donnees', 'ecrans-annonces']);
   let url;
   const fin = choisirStyles({ delai: 60000, surPret: (u) => { url = u; } });
   while (!url) await new Promise((r) => setTimeout(r, 20));

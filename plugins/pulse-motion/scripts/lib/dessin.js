@@ -6,7 +6,7 @@
  *   <script>M.dessin('s', function (d) { d.etiquette('legende', { x: 40, y: 20 }); d.icone('truck', { x: 60, y: 50 }); });</script>
  *
  * usagesDessin(html, scripts?) -> bool : la scène a une flèche, une annotation, une forme à main levée, un graphique
- *   (data-graphique), du code (data-code), ou un script qui appelle M.dessin (groupe « dessin » du moteur,
+ *   (data-graphique), du code (data-code), une seule ligne (data-une-ligne), ou un script qui appelle M.dessin (groupe « dessin » du moteur,
  *   moteur/dessin/dessin.css). Graphiques, code et formules : lib/donnees-scene.js.
  * preparerDessin(html, { scene, scripts }) -> { html, erreurs, icones }
  *   Une flèche sans data-dur reçoit 0,7 s, une annotation 0,6 s (0,8 s pour entoure). Les étiquettes d'un dessin libre
@@ -26,8 +26,9 @@ const BALISE = /<([a-zA-Z][\w-]*)\b((?:[^>"']|"[^"]*"|'[^']*')*)>/g;
 const ATTRIBUT = /([^\s"'=<>/]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+)))?/g;
 const EXTREMITE = /^(#[A-Za-z0-9_-]+|-?\d*\.?\d+\s*,\s*-?\d*\.?\d+)$/;
 const APPEL_DESSIN = /\bM\s*\.\s*dessin\s*\(/;
-// Graphiques et code (spec S7 J2) : dessinés par le calque, comme les flèches (moteur/dessin/composants.js).
-const DECLARATIFS = /\sdata-(?:fleche|annoter|main-levee|graphique|code)(?=[\s=>/])/;
+// Graphiques et code (spec S7 J2) : dessinés par le calque, comme les flèches (moteur/dessin/composants.js). « Une seule
+// ligne » (data-une-ligne, spec Styles et réalisation 5.13) : composant du module moteur/medium/une-ligne.js du style carnet.
+const DECLARATIFS = /\sdata-(?:fleche|annoter|main-levee|graphique|code|une-ligne)(?=[\s=>/])/;
 
 const echapper = (v) => String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const masquer = (html) => String(html).replace(/<!--[\s\S]*?-->|<(style|script)\b[\s\S]*?<\/\1\s*>/gi, (t) => ' '.repeat(t.length));

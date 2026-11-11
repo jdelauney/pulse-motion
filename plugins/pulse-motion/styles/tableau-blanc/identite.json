@@ -1,0 +1,113 @@
+{
+  "style": "tableau-blanc",
+  "famille": "moderne",
+  "personnalite": [
+    "clair",
+    "posé",
+    "pédagogique"
+  ],
+  "eviter": [
+    "texte qui apparaît d'un coup",
+    "plus de trois feutres"
+  ],
+  "genres": [
+    "formation",
+    "produit"
+  ],
+  "couleur": {
+    "strategie": "plusieurs-couleurs",
+    "tons": [
+      "clair"
+    ],
+    "tonDefaut": "clair",
+    "clair": {
+      "fond": "#f3f3ef",
+      "texte": "#1f2328"
+    },
+    "roles": {
+      "primaire": "le signal, la mesure, le processus",
+      "accent": "ce qui compte, un par région"
+    }
+  },
+  "typographie": {
+    "titres": {
+      "famille": "Fredoka",
+      "categorie": "sans-serif",
+      "graisse": 600
+    },
+    "texte": {
+      "famille": "Fredoka",
+      "categorie": "sans-serif",
+      "graisse": 500
+    }
+  },
+  "mouvement": {
+    "caractere": "posé",
+    "courbes": [
+      "sine-inout",
+      "linear"
+    ],
+    "dureeType": 0.8,
+    "transitions": [
+      "glissement",
+      "whip"
+    ]
+  },
+  "signature": "Feutre sur tableau blanc brillant : le texte s'écrit dans l'ordre, l'encre fonce où deux traits se croisent, un feutre flotte avec son ombre puis se gare hors champ, des aimants tiennent les points",
+  "aFaire": [
+    "Écrire chaque texte au feutre (data-lettres=\"ecrit\")",
+    "Garder à chaque feutre son sens toute la vidéo"
+  ],
+  "aEviter": [
+    "Une coupe sur le tableau (préférer whip ou glissement)",
+    "Plus de trois feutres, ou l'accent partout"
+  ],
+  "categorie": "dessine",
+  "nonPas": "Pas un plan technique : trait à la main, pas à la règle. Pas un carnet au crayon : feutre sur tableau brillant. Pas de la typographie animée : du vrai feutre, écrit dans l'ordre.",
+  "usages": [
+    "Expliquer une notion pas à pas",
+    "Former en salle ou à distance",
+    "Dessiner un processus au tableau"
+  ],
+  "motsCles": [
+    "tableau blanc",
+    "tableau",
+    "feutre",
+    "marqueur",
+    "whiteboard",
+    "dessiné au tableau",
+    "formation",
+    "atelier",
+    "explication"
+  ],
+  "son": {
+    "ambiances": [
+      "calme",
+      "acoustique",
+      "mecanique"
+    ],
+    "bruitages": {
+      "titre": null,
+      "texte": null,
+      "point": "aimant",
+      "chiffre": "tic",
+      "trace": "feutre",
+      "forme": "aimant",
+      "image": null,
+      "ecriture": "feutre",
+      "transition": null
+    },
+    "matiere": "feutre",
+    "fort": "carillon"
+  },
+  "modules": [
+    "encre"
+  ],
+  "provenance": [
+    {
+      "depot": "lemo-opuscar",
+      "style": "whiteboard",
+      "licence": "MIT"
+    }
+  ]
+}

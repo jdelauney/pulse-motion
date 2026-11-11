@@ -146,7 +146,7 @@
   /** Type d'entrée d'un élément minuté (null : aucun son) ; main : tracé à main levée. */
   function typeEntree(el, sec) {
     if (el.matches('[data-effet],[data-milieu],[data-shader],[data-cadrer],[data-camera],.decor,[data-decor]') || el.closest('.decor,[data-decor]')) return null;
-    if (el.matches('[data-fleche],[data-annoter],[data-main-levee]') || el.closest('svg[data-main-levee]')) {
+    if (el.matches('[data-fleche],[data-annoter],[data-main-levee],[data-une-ligne]') || el.closest('svg[data-main-levee]')) {
       var main = el.hasAttribute('data-main-levee') || String(getComputedStyle(el).getPropertyValue('--pm-trait') || getComputedStyle(sec).getPropertyValue('--pm-trait')).trim() === 'main';
       return { type: 'trace', main: main };
     }
@@ -155,7 +155,8 @@
     var cle = el.getAttribute('data-texte') || '';
     if (el.tagName === 'LI' || /^point\d*$/.test(cle) || el.querySelector('[data-texte^="point"]')) return { type: 'point' };
     if (el.tagName === 'IMG' || el.matches('[data-logo], .logo, svg:not([aria-hidden="true"])')) return { type: 'image' };
-    if (el.hasAttribute('data-code')) return { type: 'ecriture' };
+    // Texte écrit à la main (data-lettres="ecrit", styles dessinés) : le son de l'écriture du style (feutre, craie, crayon).
+    if (el.hasAttribute('data-code') || el.getAttribute('data-lettres') === 'ecrit') return { type: 'ecriture' };
     var texte = el.hasAttribute('data-texte') || /\S/.test(el.textContent || '');
     if (texte) {
       if (aFond(getComputedStyle(el))) return { type: 'forme' };

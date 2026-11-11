@@ -1,0 +1,13 @@
+<!-- Scène toute faite « titre » (style tableau-noir) : l'étiquette, puis le titre s'écrivent à la craie, le titre se souligne. Durée conseillée : 7 s.
+     Textes : etiquette (≤ 22 car.), titre (≤ 30 car.), sous (≤ 46 car.). Décor : data-dur = durée de la scène. -->
+<section data-scene="titre" data-encre="style">
+  <div class="decor">
+    <span class="marbrure" data-decor data-start="0" data-dur="7" data-tween="--x -6cqh→6cqh linear; --y 3cqh→-3cqh linear"></span>
+    <span class="fenetre" data-decor data-start="0" data-dur="7" data-tween="--x -40cqh→40cqh linear"></span>
+    <span class="rebord"></span>
+  </div>
+  <p id="etiquette" class="etiquette" data-texte="etiquette" data-lettres="ecrit" data-start="0.5" data-dur="0.8"></p>
+  <h1 id="titre" class="titre" data-texte="titre" data-lettres="ecrit" data-start="#etiquette:fin+0.1" data-dur="2"></h1>
+  <i data-annoter="souligne" data-cible="#titre" data-start="#titre:fin" data-dur="0.6" data-couleur="texte"></i>
+  <p id="sous" class="texte" data-texte="sous" data-lettres="ecrit" data-start="#titre:fin+0.4" data-dur="1.3"></p>
+</section>

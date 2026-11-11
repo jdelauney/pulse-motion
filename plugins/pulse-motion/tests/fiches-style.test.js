@@ -15,10 +15,11 @@ const { projetCatalogue } = require('./aide/catalogue.js');
 const { CLAIR, modifierJSON, stylesEssai, dossierPersonnelEssai } = require('./aide/styles.js');
 
 const RACINE = path.join(__dirname, '..');
-// Les six styles migrés (J1) ; les styles livrés : les six et la vague A (S8 J6).
+// Les six styles migrés (J1) ; les styles livrés : les six, la vague A (S8 J6) et la vague B (S8 J7).
 const ESSENTIELS = ['chaleureux', 'clair-pedagogique', 'editorial', 'energique', 'minimal', 'tech-sombre'];
-const LIVRES = ['chaleureux', 'clair-pedagogique', 'editorial', 'energique', 'info-sans-son', 'lancement', 'minimal', 'plan-technique', 'tech-sombre'];
-const CATEGORIE = { 'info-sans-son': 'ecrans-annonces', lancement: 'ecrans-annonces', 'plan-technique': 'schemas-donnees' };
+const LIVRES = ['carnet', 'chaleureux', 'clair-pedagogique', 'editorial', 'energique', 'info-sans-son', 'lancement', 'minimal', 'plan-technique', 'recit-donnees', 'tableau-blanc', 'tableau-noir', 'tech-sombre'];
+const CATEGORIE = { 'info-sans-son': 'ecrans-annonces', lancement: 'ecrans-annonces', 'plan-technique': 'schemas-donnees',
+  'tableau-blanc': 'dessine', 'tableau-noir': 'dessine', carnet: 'dessine', 'recit-donnees': 'schemas-donnees' };
 const fiche = (style) => fs.readFileSync(path.join(RACINE, 'references', 'styles', `${style}.md`), 'utf8');
 const identite = (style) => JSON.parse(fs.readFileSync(path.join(RACINE, 'styles', style, 'identite.json'), 'utf8'));
 const octets = (t) => Buffer.byteLength(t, 'utf8');
@@ -305,20 +306,19 @@ test('styles --genre : fiche complète pour 3 styles, forme courte pour les autr
   const cli = JSON.parse(r.stdout);
   assert.equal(cli.length, LIVRES.length);
   assert.ok(cli[0].scenes && typeof cli[3] === 'string');
-  // Les styles de la vague A viennent après le contraste (« aussi »), jamais parmi les recommandés.
+  // Les styles des vagues A et B viennent après le contraste (« aussi »), jamais parmi les recommandés.
   assert.match(cli[3], /^plan-technique · schemas-donnees · /);
   assert.match(cli[4], /^info-sans-son · ecrans-annonces · /);
-  assert.match(cli[5], /^[a-z-]+ · essentiels · /);
+  assert.match(cli[5], /^tableau-blanc · dessine · /);
+  assert.match(cli[6], /^tableau-noir · dessine · /);
+  // Puis le reste, par ordre alphabétique.
+  assert.match(cli[7], /^carnet · dessine · /);
 }));
 
 test('styles chercher : « tableau blanc », « craie », « plan technique », « chiffres » trouvent le bon style', () => {
   const racine = stylesEssai([]);
-  for (const s of [...ESSENTIELS, 'info-sans-son', 'lancement']) copier(racine, s, s);
-  copier(racine, 'clair-pedagogique', 'tableau-blanc', (j) => { j.categorie = 'dessine'; j.motsCles = ['tableau blanc', 'feutre', 'whiteboard']; j.usages = ['Expliquer au tableau', 'Former en salle', 'Dessiner un processus']; });
-  copier(racine, 'clair-pedagogique', 'tableau-noir', (j) => { j.categorie = 'dessine'; j.motsCles = ['craie', 'ardoise', 'école']; j.usages = ['Faire un cours', 'Réviser une notion', 'Raconter une recette']; });
-  // plan-technique : le vrai style, livré en S8 J6.
-  copier(racine, 'plan-technique', 'plan-technique');
-  copier(racine, 'minimal', 'recit-donnees', (j) => { j.categorie = 'schemas-donnees'; j.motsCles = ['chiffres', 'données', 'graphiques']; j.usages = ['Raconter un bilan', 'Comparer des résultats', 'Suivre une évolution']; });
+  // Les vrais styles livrés : tableau-blanc, tableau-noir et recit-donnees depuis S8 J7, plan-technique depuis J6.
+  for (const s of LIVRES) copier(racine, s, s);
   const premier = (q) => (S.chercherStyles(q, racine)[0] || {}).style;
   assert.equal(premier('façon tableau blanc'), 'tableau-blanc');
   assert.equal(premier('quelque chose à la craie'), 'tableau-noir');
@@ -334,6 +334,10 @@ test('styles chercher : « tableau blanc », « craie », « plan technique », 
   assert.equal(premier('lisible son coupé'), 'info-sans-son');
   assert.equal(premier('une keynote de lancement'), 'lancement');
   assert.equal(premier('un blueprint'), 'plan-technique');
+  assert.equal(premier('un carnet de croquis'), 'carnet');
+  assert.equal(premier('une seule ligne'), 'carnet');
+  assert.equal(premier('un tableau noir'), 'tableau-noir');
+  assert.equal(premier('avec des graphiques'), 'recit-donnees');
   assert.equal(premier('pedagogique'), 'clair-pedagogique', 'sans accents');
   assert.deepEqual(S.chercherStyles('aquarelle', racine), []);
   assert.deepEqual(Object.keys(S.chercherStyles('craie', racine)[0]), ['style', 'categorie', 'personnalite', 'usages', 'personnel']);

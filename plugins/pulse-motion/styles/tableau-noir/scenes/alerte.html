@@ -1,0 +1,15 @@
+<!-- Scène toute faite « alerte » (style tableau-noir) : ce qu'il ne faut pas oublier, écrit à la place d'un coup d'éponge (voile), puis encadré à la craie d'accent. Durée conseillée : 8 s.
+     Textes : titre (≤ 30 car.), texte (≤ 64 car.). -->
+<section data-scene="alerte" data-encre="style">
+  <div class="decor">
+    <span class="marbrure" data-decor data-start="0" data-dur="8" data-tween="--x -6cqh→6cqh linear; --y 3cqh→-3cqh linear"></span>
+    <span class="fenetre" data-decor data-start="0" data-dur="8" data-tween="--x -40cqh→40cqh linear"></span>
+    <span class="rebord"></span>
+    <span class="voile" data-start="0.2" data-dur="0.9"></span>
+  </div>
+  <div id="boite" class="cadre-alerte">
+    <h2 id="titre" class="titre-moyen compte" data-texte="titre" data-lettres="ecrit" data-start="1.2" data-dur="1.4"></h2>
+    <p id="texte" class="texte" data-texte="texte" data-lettres="ecrit" data-start="#titre:fin+0.2" data-dur="1.8"></p>
+  </div>
+  <i data-annoter="encadre" data-cible="#boite" data-start="#texte:fin" data-dur="0.7" data-couleur="accent-lisible" data-epaisseur="0.6"></i>
+</section>

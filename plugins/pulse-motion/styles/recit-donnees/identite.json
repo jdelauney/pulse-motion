@@ -1,0 +1,110 @@
+{
+  "style": "recit-donnees",
+  "famille": "editoriale",
+  "personnalite": [
+    "rigoureux",
+    "clair",
+    "narratif"
+  ],
+  "eviter": [
+    "chiffres sans source",
+    "tableau de bord chargé"
+  ],
+  "genres": [
+    "produit",
+    "storytelling",
+    "formation"
+  ],
+  "couleur": {
+    "strategie": "sobre-avec-une-touche",
+    "tons": [
+      "clair"
+    ],
+    "tonDefaut": "clair",
+    "clair": {
+      "fond": "#f6f1e7",
+      "texte": "#2a2723"
+    },
+    "roles": {
+      "primaire": "la série principale",
+      "accent": "la valeur qui compte"
+    }
+  },
+  "typographie": {
+    "titres": {
+      "famille": "Schibsted Grotesk",
+      "categorie": "sans-serif",
+      "graisse": 700
+    },
+    "texte": {
+      "famille": "Fraunces",
+      "categorie": "serif",
+      "graisse": 400
+    }
+  },
+  "mouvement": {
+    "caractere": "precis",
+    "courbes": [
+      "cubic-out",
+      "sine-inout"
+    ],
+    "dureeType": 0.9,
+    "transitions": [
+      "glissement",
+      "fondu"
+    ]
+  },
+  "signature": "Le graphique est le film : papier crème à grille de points, axes qui poussent avec l'histoire, une valeur à l'accent, notes manuscrites épinglées, la pointe d'un crayon rouge et bleu, une case vide en pointillés pour ce qu'on ne sait pas",
+  "aFaire": [
+    "Une idée par graphique, des données réelles avec leur source",
+    "Faire de chaque mouvement une opération du graphique"
+  ],
+  "aEviter": [
+    "Extrapoler ou inventer une valeur",
+    "Un axe qui ne part pas de zéro sans le dire"
+  ],
+  "categorie": "schemas-donnees",
+  "nonPas": "Pas un tableau de bord : une idée à la fois. Pas une présentation avec des graphiques : le graphique est le récit lui-même.",
+  "usages": [
+    "Raconter un bilan chiffré",
+    "Comparer des résultats",
+    "Suivre une évolution"
+  ],
+  "motsCles": [
+    "chiffres",
+    "données",
+    "graphique",
+    "graphiques",
+    "dataviz",
+    "statistiques",
+    "bilan",
+    "récit de données",
+    "courbe"
+  ],
+  "son": {
+    "ambiances": [
+      "inspirant",
+      "calme"
+    ],
+    "bruitages": {
+      "titre": null,
+      "texte": null,
+      "point": "blip",
+      "chiffre": "tic",
+      "trace": "crayon",
+      "forme": null,
+      "image": null,
+      "ecriture": null,
+      "transition": null
+    },
+    "matiere": "crayon",
+    "fort": "ding"
+  },
+  "provenance": [
+    {
+      "depot": "lemo-opuscar",
+      "style": "dataviz",
+      "licence": "MIT"
+    }
+  ]
+}

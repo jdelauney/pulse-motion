@@ -1,0 +1,177 @@
+/* Pulse Motion – style « recit-donnees ».
+ *
+ * Le graphique est le film : des données réelles, fournies par la personne, et chaque mouvement est une opération du
+ * graphique (un point arrive, un axe pousse, l'échelle change, une note s'épingle). Papier crème, grille de points, encre
+ * chaude ; un crayon rouge et bleu dont seule la pointe paraît, en bas à droite, avec une ombre qui s'éloigne quand il se
+ * lève ; notes manuscrites épinglées ; case vide en pointillés pour la valeur inconnue.
+ * Les vrais graphiques viennent du calque de S7 (<figure data-graphique>, données dans le déroulé) ; ces classes les habillent
+ * et donnent aux scènes toutes faites leurs axes, leurs points et leurs notes, sans jamais inventer une valeur.
+ * Idées de lemo-opuscar (dataviz, MIT, © 2026 LemoLab), réécrites en CSS. Ton clair seulement (le papier).
+ * Formats 16:9, 1:1, 4:5 et 9:16 par requêtes de conteneur. Effets exclus : filter: url(), mix-blend-mode, backdrop-filter.
+ */
+
+/* ---------- Mise en page : le papier quadrillé de points ---------- */
+#pm-scene > section[data-scene] {
+  --encre: var(--c-texte); --grille: color-mix(in srgb, #8a7a62 32%, transparent); --fin: 0.22cqh;
+  display: flex; flex-direction: column; justify-content: center; gap: 3cqh;
+  padding: 10cqh 12cqh 12cqh; overflow: hidden;
+  background:
+    radial-gradient(circle, var(--grille) 0 0.26cqh, transparent 0.3cqh) 0 0 / 5cqh 5cqh,
+    linear-gradient(var(--c-fond), color-mix(in srgb, var(--c-fond) 94%, #8a7a62));
+  color: var(--c-texte);
+  font: 400 3.8cqh/1.45 var(--f-texte);
+}
+
+/* ---------- Typographie : titres nets, notes à la main ---------- */
+.titre { margin: 0; font: 700 9cqh/1.05 var(--f-titres); letter-spacing: -0.02em; text-wrap: balance; overflow-wrap: break-word; }
+.titre-moyen { margin: 0; font: 700 6cqh/1.1 var(--f-titres); letter-spacing: -0.01em; text-wrap: balance; overflow-wrap: break-word; }
+.texte { margin: 0; font: 400 4cqh/1.4 var(--f-texte); text-wrap: pretty; }
+.etiquette { margin: 0; align-self: flex-start; color: var(--c-primaire-lisible); font: 700 3.6cqh/1.2 var(--f-titres); letter-spacing: 0.08em; text-transform: uppercase; }
+.nombre { margin: 0; font: 900 22cqh/1 var(--f-titres); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.unite { font-size: 0.38em; margin-left: 0.15em; font-weight: 700; }
+.compte { color: var(--c-accent-lisible); }
+/* Entrée d'un texte : il se pose, sans rebond (cubic-out, 0,5 s) ; par transform, la propriété translate reste à la mise en page. */
+.arrive { animation: rd-arrive 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes rd-arrive { from { opacity: 0; transform: translateY(1.6cqh); } to { opacity: 1; transform: none; } }
+/* Note épinglée : écrite à la main, tenue par une épingle, reliée à ce qu'elle commente par un fil. */
+.note {
+  position: relative; margin: 0; align-self: flex-start; max-width: 70%; padding-left: 4cqh;
+  color: var(--c-primaire-lisible); font: italic 400 4.4cqh/1.3 var(--f-texte);
+}
+.note::before { content: ""; position: absolute; left: 0; top: 0.5em; width: 1.6cqh; height: 1.6cqh; border-radius: 50%; background: var(--c-accent-lisible); box-shadow: 0.3cqh 0.4cqh 0.4cqh rgba(40, 30, 20, 0.25); }
+.note::after { content: ""; position: absolute; left: 1.6cqh; top: calc(0.5em + 0.8cqh); width: 2cqh; height: var(--fin); background: var(--c-primaire-lisible); }
+
+/* ---------- Décor : la pointe du crayon rouge et bleu ---------- */
+.decor { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.decor ~ * { position: relative; z-index: 1; }
+.crayon {
+  position: absolute; left: calc(100% - 22cqh); top: calc(100% - 13cqh); width: 34cqh; height: 4.4cqh; rotate: 34deg; transform-origin: 0 50%;
+  background:
+    linear-gradient(90deg, transparent 0 4.8cqh, #e9d2a7 4.8cqh 8.4cqh, transparent 8.4cqh),
+    linear-gradient(#b7322a 0 50%, #2c5d8a 50% 100%);
+  clip-path: polygon(0 50%, 8.4cqh 0, 100% 0, 100% 100%, 8.4cqh 100%);
+  box-shadow: 0 0 0 transparent;
+  animation: rd-crayon 1s ease-in-out both;
+}
+/* L'ombre part de la pointe, sous le crayon, et s'éloigne quand il se lève. */
+.ombre-crayon { position: absolute; left: calc(100% - 21cqh); top: calc(100% - 9cqh); width: 30cqh; height: 2.2cqh; border-radius: 50%; background: rgba(60, 45, 30, 0.14); rotate: 34deg; transform-origin: 0 50%; animation: rd-ombre 1s ease-in-out both; }
+@keyframes rd-crayon { 0%, 100% { translate: 0 0; } 40% { translate: -1.2cqh -2.4cqh; } 70% { translate: -0.4cqh -0.8cqh; } }
+@keyframes rd-ombre { 0%, 100% { translate: 0 0; opacity: 1; } 40% { translate: 2cqh 2cqh; opacity: 0.45; } }
+
+/* ---------- Axes et points : ce que le graphique fait ---------- */
+.repere { position: relative; display: flex; flex-direction: column; gap: 2cqh; padding: 0 0 3cqh 3cqh; }
+/* Axes tracés par --p : l'axe vertical monte, l'axe horizontal pousse vers la droite. */
+.axe-y { position: absolute; left: 0; bottom: 0; width: var(--fin); height: calc(var(--p, 1) * 100%); background: var(--encre); }
+.axe-x { position: absolute; left: 0; bottom: 0; height: 1.4cqh; width: calc(var(--p, 1) * 100%);
+  background:
+    linear-gradient(var(--encre), var(--encre)) left bottom / 100% var(--fin) no-repeat,
+    repeating-linear-gradient(90deg, var(--encre) 0 var(--fin), transparent var(--fin) 10cqh) left bottom / 100% 1.4cqh no-repeat; }
+/* La barre de la valeur : elle pousse depuis zéro, à la couleur de la série. */
+.barre { display: block; height: 4cqh; width: calc(var(--p, 1) * 100%); background: var(--c-primaire-lisible); border-radius: 0 0.6cqh 0.6cqh 0; }
+.barre.compte { background: var(--c-accent-lisible); }
+
+/* ---------- Liste : un point, un fait ---------- */
+.faits { list-style: none; margin: 0; padding: 0 0 0 1cqh; display: grid; gap: 2.4cqh; position: relative; }
+.faits li { display: grid; grid-template-columns: 3cqh 1fr; gap: 2.4cqh; align-items: center; font: 400 4.1cqh/1.3 var(--f-texte); }
+.faits li::before { content: ""; display: block; width: 2.4cqh; height: 2.4cqh; border-radius: 50%; background: var(--c-primaire-lisible); box-shadow: 0 0 0 0.6cqh color-mix(in srgb, var(--c-primaire-lisible) 18%, transparent);
+  animation: rd-point 0.45s cubic-bezier(0.3, 1.4, 0.5, 1) both; }
+@keyframes rd-point { from { scale: 0; } to { scale: 1; } }
+
+/* ---------- Chiffre ---------- */
+.mesure { display: flex; flex-direction: column; gap: 1.6cqh; align-items: stretch; width: 100%; }
+
+/* ---------- Comparaison : deux séries, chacune sa couleur ---------- */
+.series { display: grid; grid-template-columns: 1fr 1fr; gap: 8cqh; }
+.serie { display: flex; flex-direction: column; gap: 1.6cqh; min-width: 0; padding-top: 2.4cqh; border-top: 0.8cqh solid var(--c-primaire-lisible); }
+.serie.compte { border-top-color: var(--c-accent-lisible); }
+.serie-titre { margin: 0; font: 700 5cqh/1.1 var(--f-titres); }
+
+/* ---------- Étape : un repère sur l'axe ---------- */
+.etape { display: grid; grid-template-columns: auto 1fr; gap: 6cqh; align-items: center; }
+.numero { display: grid; place-items: center; width: 17cqh; height: 17cqh; margin: 0; border-radius: 50%; box-sizing: border-box;
+  border: 0.5cqh solid var(--c-accent-lisible); font: 900 9cqh/1 var(--f-titres); color: var(--c-accent-lisible); font-variant-numeric: tabular-nums; }
+.etape-texte { display: flex; flex-direction: column; gap: 2cqh; min-width: 0; }
+
+/* ---------- Alerte : la case vide, en pointillés ---------- */
+.case-vide { display: flex; flex-direction: column; gap: 2cqh; padding: 4cqh 5cqh; border: 0.4cqh dashed var(--c-accent-lisible); border-radius: 1cqh; }
+
+/* ---------- Schéma ---------- */
+.chaine { display: flex; align-items: center; gap: 2cqh; }
+.chaine > .noeud { flex: 1; text-align: center; padding: 2.6cqh 1.6cqh; font: 700 4.4cqh/1.2 var(--f-titres); border-bottom: 0.5cqh solid var(--c-primaire-lisible); }
+.chaine > .noeud.compte { border-bottom-color: var(--c-accent-lisible); }
+.connecteur { flex: none; width: 9cqh; height: 2cqh; }
+
+/* ---------- Graphiques du calque de S7 : à l'encre du style ---------- */
+#pm-scene figure[data-graphique] { --pm-trait: net; }
+
+/* ---------- Logo ---------- */
+.logo { height: 11cqh; width: auto; object-fit: contain; align-self: flex-start; }
+
+/* ---------- Format carré ---------- */
+@container (max-aspect-ratio: 5/4) {
+  #pm-scene > section[data-scene] { padding: 9cqh 8cqh 10cqh; gap: 2.4cqh; font-size: 3.6cqh; }
+  .titre { font-size: 7cqh; }
+  .titre-moyen { font-size: 5cqh; }
+  .texte { font-size: 3.6cqh; }
+  .etiquette { font-size: 3.5cqh; }
+  .note { font-size: 3.8cqh; max-width: 90%; }
+  .nombre { font-size: 16cqh; }
+  .faits li { font-size: 3.8cqh; }
+  .series { gap: 4cqh; }
+  .serie-titre { font-size: 4.2cqh; }
+  .numero { width: 13cqh; height: 13cqh; font-size: 7cqh; }
+  .etape { gap: 4cqh; }
+  .chaine > .noeud { font-size: 3.7cqh; padding: 2.2cqh 1cqh; }
+  .connecteur { width: 5cqh; }
+}
+
+/* ---------- Format vertical : tout s'empile ---------- */
+@container (orientation: portrait) {
+  #pm-scene > section[data-scene] { padding: 9cqh 7cqh; gap: 2cqh; font-size: 3.5cqh; }
+  .titre { font-size: 5.4cqh; }
+  .titre-moyen { font-size: 4.2cqh; }
+  .texte { font-size: 3.5cqh; }
+  .etiquette { font-size: 3.5cqh; }
+  .note { font-size: 3.5cqh; max-width: 100%; padding-left: 3.2cqh; }
+  .nombre { font-size: 11cqh; }
+  .barre { height: 3cqh; }
+  .faits { gap: 1.4cqh; }
+  .faits li { grid-template-columns: 2.2cqh 1fr; gap: 1.4cqh; font-size: 3.5cqh; }
+  .faits li::before { width: 1.8cqh; height: 1.8cqh; }
+  .series { grid-template-columns: 1fr; gap: 2cqh; }
+  .serie { gap: 1cqh; padding-top: 1.6cqh; }
+  .serie-titre { font-size: 3.8cqh; }
+  .etape { grid-template-columns: 1fr; gap: 2cqh; }
+  .numero { width: 10cqh; height: 10cqh; font-size: 5.4cqh; }
+  .case-vide { padding: 3cqh 3.4cqh; }
+  .chaine { flex-direction: column; align-items: stretch; gap: 1cqh; }
+  .chaine > .noeud { font-size: 3.6cqh; padding: 1.8cqh; }
+  .connecteur { align-self: center; width: 2cqh; height: 4cqh; }
+  .logo { height: 8cqh; }
+  .crayon { left: calc(100% - 15cqh); top: calc(100% - 9cqh); height: 3.2cqh; }
+  .ombre-crayon { left: calc(100% - 14cqh); top: calc(100% - 6cqh); height: 1.6cqh; }
+}
+
+/* ---------- 9:16 : place pour la légende des réseaux sociaux (pas en 4:5) ---------- */
+@container (max-aspect-ratio: 2/3) {
+  #pm-scene > section[data-scene] { padding-bottom: 15cqh; }
+}
+
+/* ---------- Moyeu et rayons (spec S7, 5.7) : couronne en paysage, rangée sous le centre en portrait ---------- */
+.moyeu { --n: 3; position: relative; flex: 1; min-height: 46cqh; }
+.moyeu:has(> .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie) { --n: 4; }
+.moyeu:has(> .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie) { --n: 5; }
+.moyeu > .moyeu-centre, .moyeu > .moyeu-partie { position: absolute; left: 50%; top: 50%; box-sizing: border-box; flex: none; margin: 0; text-align: center; }
+.moyeu > .moyeu-centre { width: 38cqh; padding: 2.4cqh; translate: -50% -50%; font: 700 5cqh/1.15 var(--f-titres); color: var(--c-accent-lisible); border-bottom: 0.5cqh solid var(--c-accent-lisible); }
+.moyeu > .moyeu-partie { --a: calc(-90deg + 180deg / var(--n) + var(--i, 0) * 360deg / var(--n)); width: 32cqh; font: 400 3.8cqh/1.25 var(--f-texte); overflow-wrap: anywhere;
+  translate: calc(-50% + cos(var(--a)) * 58cqh) calc(-50% + sin(var(--a)) * 27cqh); }
+@container (max-aspect-ratio: 5/4) {
+  .moyeu > .moyeu-centre { width: 26cqh; font-size: 4cqh; }
+  .moyeu > .moyeu-partie { width: 27cqh; font-size: 3.5cqh; translate: calc(-50% + cos(var(--a)) * 31cqh) calc(-50% + sin(var(--a)) * 26cqh); }
+}
+@container (max-aspect-ratio: 9/10) {
+  .moyeu { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); align-content: center; align-items: center; row-gap: 12cqh; column-gap: 0.8cqh; min-height: 0; }
+  .moyeu > .moyeu-centre, .moyeu > .moyeu-partie { position: relative; left: auto; top: auto; translate: none; width: auto; }
+  .moyeu > .moyeu-centre { grid-column: 1 / -1; justify-self: center; width: 85%; }
+  .moyeu > .moyeu-partie { grid-row: 2; font-size: calc(3.4cqh - var(--n) * 0.24cqh); padding: 1.4cqh 0.2cqh; overflow-wrap: anywhere; }
+}

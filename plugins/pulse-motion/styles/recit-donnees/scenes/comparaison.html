@@ -1,0 +1,20 @@
+<!-- Scène toute faite « comparaison » (style recit-donnees) : deux séries, chacune sa couleur ; la seconde, celle qui compte, à l'accent. Durée conseillée : 12 s.
+     Textes : titre (≤ 32 car.), gauche-titre et droite-titre (≤ 16 car.), gauche-texte et droite-texte (≤ 48 car.).
+     Pour des valeurs à comparer, un graphique du déroulé (data-graphique, barres), jamais des barres inventées. -->
+<section data-scene="comparaison">
+  <div class="decor">
+    <span class="ombre-crayon" data-decor data-start="0" data-dur="12"></span>
+    <span class="crayon" data-decor data-start="0" data-dur="12"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen arrive" data-texte="titre" data-start="0.4"></h2>
+  <div class="series">
+    <div id="gauche" class="serie arrive" data-start="#titre+1">
+      <h3 class="serie-titre" data-texte="gauche-titre"></h3>
+      <p class="texte" data-texte="gauche-texte"></p>
+    </div>
+    <div id="droite" class="serie compte arrive" data-start="#gauche+3.4">
+      <h3 class="serie-titre compte" data-texte="droite-titre"></h3>
+      <p class="texte" data-texte="droite-texte"></p>
+    </div>
+  </div>
+</section>

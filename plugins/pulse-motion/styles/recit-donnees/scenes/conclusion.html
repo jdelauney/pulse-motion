@@ -1,0 +1,13 @@
+<!-- Scène toute faite « conclusion » (style recit-donnees) : la leçon des chiffres, soulignée à l'accent, puis le logo. Durée conseillée : 6 s.
+     Textes : titre (≤ 32 car.), sous (≤ 44 car.). Logo : celui de la charte (sinon supprimer l'image).
+     Dernière scène de la vidéo : data-dur du décor = durée de la scène − 1 s (image stable d'au moins 0,5 s à la fin). -->
+<section data-scene="conclusion">
+  <div class="decor">
+    <span class="ombre-crayon" data-decor data-start="0" data-dur="5"></span>
+    <span class="crayon" data-decor data-start="0" data-dur="5"></span>
+  </div>
+  <h2 id="titre" class="titre arrive" data-texte="titre" data-start="0.3"></h2>
+  <i data-annoter="souligne" data-cible="#titre" data-start="#titre+0.6" data-dur="0.6" data-couleur="accent-lisible"></i>
+  <p id="sous" class="note arrive" data-texte="sous" data-start="#titre+1.3"></p>
+  <img id="logo" class="logo" data-logo alt="" data-start="#sous+0.8" data-dur="0.5" data-tween="opacity 0→1">
+</section>

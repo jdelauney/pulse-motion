@@ -30,7 +30,8 @@
  * Encre des styles (conflit 9) : M.dessin.traces(idScene) -> [{ cle, genre, d, transform? (pointe), part, epaisseur, couleur, calque, remplissage?,
  *   opacite }] de l'image en cours ; M.dessin.encreStyle(fn(idScene, traces, { L })) : le canevas d'un style s'inscrit ;
  *   data-encre="style" sur la scène : le SVG garde ses nœuds sans peindre l'encre, fn la redessine ; sans fn, encre opaque à
- *   0,94 dans le SVG, sans fusion.
+ *   0,94 dans le SVG, sans fusion. Un peintre qui lève une erreur (dessin-erreur) rend l'encre au SVG pour cette scène, à
+ *   l'image même (repli de 5.13) ; le module du style efface alors son canevas.
  * Extensions (moteur/dessin/composants.js, S7 J2) : M.dessin.etendre(fn(d, sc, outils)) ajoute des primitives à d (barres,
  *   courbe, secteurs) ; M.dessin.composant(selecteur, fabrique(sc, el, outils) -> fn(d)) ajoute un composant déclaratif
  *   (data-graphique, data-code), dessiné avant les flèches et les annotations. Sans data-fleche-courbe, une flèche prend
@@ -346,7 +347,7 @@
     n.__enfants = e.slice(0, depuis);
   }
   function encre(sc, chemin, opacite) {
-    if (sc.encreStyle && etat.peintre) { attr(chemin, 'visibility', 'hidden'); attr(chemin, 'opacity', null); }
+    if (sc.encreStyle && etat.peintre && !sc.peintreEchoue) { attr(chemin, 'visibility', 'hidden'); attr(chemin, 'opacity', null); }
     else { attr(chemin, 'visibility', null); attr(chemin, 'opacity', sc.encreStyle ? r3(0.94 * opacite) : (opacite < 1 ? r3(opacite) : null)); }
   }
   /** Révélation d'un trait de longueur L (pathLength) à la part p ; pointillé : tirets de 3 et 2,4 épaisseurs. */
@@ -842,9 +843,14 @@
     });
     sc.etiquettes.forEach(function (el) { if (!cadre.etiquettesVues.has(el)) styleDe(el, 'opacity', '0'); });
     sc.traces = cadre.traces;
-    if (sc.encreStyle && etat.peintre) {
+    if (sc.encreStyle && etat.peintre && !sc.peintreEchoue) {
       var traces = cadre.traces.map(copie);
-      essayer(sc, ts, function () { etat.peintre(sc.info.id, traces, { L: sc.L, t: ts }); });
+      try { etat.peintre(sc.info.id, traces, { L: sc.L, t: ts }); } catch (e) {
+        // Repli : l'encre revient au SVG (opaque à 0,94, sans fusion), dès cette image.
+        signaler(sc, ts, 'dessin-erreur', 'encre du style : ' + ((e && e.message) || String(e)));
+        sc.peintreEchoue = true;
+        return dessiner(sc, ts, mode);
+      }
     }
     return cadre.boites;
   }

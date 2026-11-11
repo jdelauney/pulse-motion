@@ -1,0 +1,17 @@
+<!-- Scène toute faite « liste » (style tableau-noir) : 2 à 4 points écrits à la craie, un tiret de craie devant chacun. Durée conseillée : 12 s.
+     Textes : titre (≤ 30 car.), point1 … point4 (≤ 36 car.). Moins de 4 points : supprimer les points en trop. -->
+<section data-scene="liste" data-encre="style">
+  <div class="decor">
+    <span class="marbrure" data-decor data-start="0" data-dur="12" data-tween="--x -6cqh→6cqh linear; --y 3cqh→-3cqh linear"></span>
+    <span class="fenetre" data-decor data-start="0" data-dur="12" data-tween="--x -40cqh→40cqh linear"></span>
+    <span class="rebord"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen" data-texte="titre" data-lettres="ecrit" data-start="0.4" data-dur="1.6"></h2>
+  <i data-annoter="souligne" data-cible="#titre" data-start="#titre:fin" data-dur="0.5" data-couleur="primaire-lisible"></i>
+  <ul class="points">
+    <li id="point1" data-texte="point1" data-lettres="ecrit" data-start="#titre:fin+0.6" data-dur="1.4"></li>
+    <li id="point2" data-texte="point2" data-lettres="ecrit" data-start="#point1:fin+0.9" data-dur="1.4"></li>
+    <li id="point3" data-texte="point3" data-lettres="ecrit" data-start="#point2:fin+0.9" data-dur="1.4"></li>
+    <li id="point4" data-texte="point4" data-lettres="ecrit" data-start="#point3:fin+0.9" data-dur="1.4"></li>
+  </ul>
+</section>

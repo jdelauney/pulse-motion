@@ -1,0 +1,21 @@
+<!-- Scène toute faite « comparaison » (style tableau-blanc) : deux régions du tableau ; la seconde, celle qui compte, encadrée à l'accent. Durée conseillée : 12 s.
+     Textes : titre (≤ 30 car.), gauche-titre et droite-titre (≤ 16 car.), gauche-texte et droite-texte (≤ 48 car.). -->
+<section data-scene="comparaison" data-encre="style">
+  <div class="decor">
+    <span class="reflet" data-decor data-start="0" data-dur="12" data-tween="--x -24cqh→24cqh linear"></span>
+    <span class="fantomes"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen" data-texte="titre" data-lettres="ecrit" data-start="0.4" data-dur="1.4"></h2>
+  <div class="regions">
+    <div id="gauche" class="region" data-start="#titre:fin+0.3">
+      <h3 id="gauche-titre" class="region-titre" data-texte="gauche-titre" data-lettres="ecrit" data-start="#titre:fin+0.3" data-dur="0.8"></h3>
+      <p id="gauche-texte" class="texte" data-texte="gauche-texte" data-lettres="ecrit" data-start="#gauche-titre:fin+0.1" data-dur="1.5"></p>
+    </div>
+    <div id="droite" class="region" data-start="#gauche-texte:fin+1.4">
+      <h3 id="droite-titre" class="region-titre compte" data-texte="droite-titre" data-lettres="ecrit" data-start="#gauche-texte:fin+1.4" data-dur="0.8"></h3>
+      <p id="droite-texte" class="texte" data-texte="droite-texte" data-lettres="ecrit" data-start="#droite-titre:fin+0.1" data-dur="1.5"></p>
+    </div>
+  </div>
+  <i data-annoter="encadre" data-cible="#gauche" data-start="#gauche-texte:fin" data-dur="0.6" data-couleur="texte"></i>
+  <i data-annoter="encadre" data-cible="#droite" data-start="#droite-texte:fin" data-dur="0.6" data-couleur="accent-lisible"></i>
+</section>

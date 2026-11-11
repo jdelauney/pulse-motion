@@ -1,0 +1,16 @@
+{
+  "style": "recit-donnees",
+  "description": "Rigoureux, clair, narratif : le graphique est le film, chaque mouvement est une opération sur des données réelles, pour un bilan, un résultat ou une évolution.",
+  "transitions": ["glissement", "fondu"],
+  "scenes": [
+    { "nom": "titre", "role": "Les axes se tracent, le titre arrive, la question s'épingle", "duree": 7, "textes": { "etiquette": 22, "titre": 32, "sous": 46 } },
+    { "nom": "liste", "role": "Un point, un fait : 2 à 4 faits posés sur l'axe", "duree": 12, "textes": { "titre": 32, "point1": 36, "point2": 36, "point3": 36, "point4": 36 } },
+    { "nom": "chiffre", "role": "La valeur qui compte : elle pousse depuis zéro, sa note s'épingle", "duree": 7, "textes": { "titre": 32, "unite": 3, "legende": 46 } },
+    { "nom": "comparaison", "role": "Deux séries, chacune sa couleur ; celle qui compte à l'accent", "duree": 12, "textes": { "titre": 32, "gauche-titre": 16, "gauche-texte": 48, "droite-titre": 16, "droite-texte": 48 } },
+    { "nom": "etape", "role": "Un repère sur l'axe du temps, puis ce qui s'y passe", "duree": 8, "textes": { "numero": 2, "titre": 32, "texte": 64 } },
+    { "nom": "alerte", "role": "La case vide : ce qu'on ne sait pas, en pointillés", "duree": 8, "textes": { "titre": 32, "texte": 64 } },
+    { "nom": "schema", "role": "Trois étapes d'un flux reliées par des flèches", "duree": 8, "textes": { "titre": 32, "a": 16, "b": 16, "c": 16 } },
+    { "nom": "moyeu", "role": "Une idée au centre, 3 à 5 parties autour, reliées par des flèches", "duree": 10, "textes": { "titre": 32, "centre": 18, "partie1": 16, "partie2": 16, "partie3": 16, "partie4": 16, "partie5": 16 } },
+    { "nom": "conclusion", "role": "La leçon des chiffres, soulignée, et le logo", "duree": 6, "textes": { "titre": 32, "sous": 44 } }
+  ]
+}

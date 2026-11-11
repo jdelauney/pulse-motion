@@ -53,7 +53,10 @@ test('moteur-chaque-module-dans-un-seul-groupe : chaque module de page dans un s
   assert.deepEqual(MOTEUR, GM.MODULES, 'la liste du moteur de l\'assemblage est celle des groupes');
   for (const m of GM.MODULES.concat(GM.ABSENTS)) assert.ok(fs.existsSync(path.join(DOSSIER_MOTEUR, m)), `${m} existe`);
   // Tout fichier du moteur est soit dans un groupe, soit déclaré hors page ici.
-  for (const f of fichiersMoteur()) assert.ok(vus.has(f) || HORS_PAGE[f], `${f} : module sans groupe (l'ajouter à un groupe de scripts/lib/groupes-moteur.js, ou ici s'il ne va jamais dans une page)`);
+  // Modules d'un style (moteur/medium/, spec Styles et réalisation 5.10 point 3) : hors des groupes, inclus seulement par le
+  // style qui les déclare (identite.modules).
+  for (const f of fichiersMoteur()) assert.ok(vus.has(f) || HORS_PAGE[f] || f.startsWith('medium/'), `${f} : module sans groupe (l'ajouter à un groupe de scripts/lib/groupes-moteur.js, ou ici s'il ne va jamais dans une page)`);
+  for (const f of fichiersMoteur().filter((x) => x.startsWith('medium/'))) assert.ok(!vus.has(f), `${f} : un module de style n'est dans aucun groupe`);
   // Ordre : tronc d'abord pour ses dépendances (courbes avant minutage, horloge avant tailles), absents.js en dernier.
   const tous = GM.modulesDesGroupes('tous');
   assert.equal(tous[tous.length - 1], 'absents.js');

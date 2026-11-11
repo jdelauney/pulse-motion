@@ -1,0 +1,16 @@
+<!-- Scène toute faite « liste » (style carnet) : 2 à 4 points écrits, une puce dessinée devant chacun. Durée conseillée : 12 s.
+     Textes : titre (≤ 30 car.), point1 … point4 (≤ 36 car.). Moins de 4 points : supprimer les points en trop. -->
+<section data-scene="liste">
+  <div class="decor">
+    <span class="fibres" data-decor data-start="0" data-dur="12" data-tween="--x 0cqh→-3cqh linear"></span>
+    <span class="reliure"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen" data-texte="titre" data-lettres="ecrit" data-start="0.4" data-dur="1.4"></h2>
+  <i data-annoter="souligne" data-cible="#titre" data-start="#titre:fin" data-dur="0.6" data-couleur="primaire-lisible"></i>
+  <ul class="points">
+    <li id="point1" data-texte="point1" data-lettres="ecrit" data-start="#titre:fin+0.6" data-dur="1.3"></li>
+    <li id="point2" data-texte="point2" data-lettres="ecrit" data-start="#point1:fin+1" data-dur="1.3"></li>
+    <li id="point3" data-texte="point3" data-lettres="ecrit" data-start="#point2:fin+1" data-dur="1.3"></li>
+    <li id="point4" data-texte="point4" data-lettres="ecrit" data-start="#point3:fin+1" data-dur="1.3"></li>
+  </ul>
+</section>

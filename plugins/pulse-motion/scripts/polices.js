@@ -6,9 +6,14 @@
  *   node scripts/polices.js <fichier.ttf|otf|woff|woff2> [--famille "<nom>"] [--confirmer] [--dans <dossier>]
  *
  * Par défaut, les fichiers vont dans charte/polices/ du dossier courant. Résumé JSON ; code 1 en cas d'échec.
- * Bunny : l'identifiant doit exister dans le catalogue téléchargé ; une seule URL hors de fonts.bunny.net
- * fait refuser toute la feuille ; on garde le sous-ensemble latin (tout le français) ; écriture en .part
- * puis renommage, rien de partiel. Le réseau ne sert qu'à cette commande.
+ * Bunny : l'identifiant doit exister dans le catalogue téléchargé ; on garde le sous-ensemble latin (tout le français) ;
+ * écriture en .part puis renommage, rien de partiel. Le réseau ne sert qu'à cette commande.
+ * Feuille : Bunny Fonts la fait pointer vers le miroir fontsource de cdn.jsdelivr.net (constaté en novembre 2026) ; une URL de
+ * la forme stricte https://cdn.jsdelivr.net/fontsource/fonts/<id>@<version>/<sous-ensemble>-<graisse>-<normal|italic>.woff2,
+ * dont l'<id> est celui de la famille demandée, est traduite en son adresse directe sur fonts.bunny.net
+ * (<id>/files/<id>-<sous-ensemble>-<graisse>-<style>.woff2), encore servie. Toute autre URL hors de fonts.bunny.net (autre
+ * hôte, autre famille, autre forme, « .. ») fait refuser toute la feuille. Seul le WOFF2 s'installe : les url() en .woff
+ * d'une règle sont ignorées. Aucune redirection suivie ; signature wOF2 et taille maximale vérifiées.
  */
 const crypto = require('node:crypto');
 const fs = require('node:fs');
@@ -19,6 +24,9 @@ const { sauvegarder, defaire } = require('./historique.js');
 
 const HOTE = 'fonts.bunny.net';
 const FAMILLE_ID = /^[a-z0-9-]+$/;
+// Fichier du miroir fontsource, forme stricte : id, version (chiffres et points), sous-ensemble, graisse, style, extension.
+const MIROIR = /^https:\/\/cdn\.jsdelivr\.net\/fontsource\/fonts\/([a-z0-9-]+)@([0-9.]+)\/([a-z0-9-]+)-(\d{3})-(normal|italic)\.(woff2|woff)$/;
+const VERSION = /^\d+(?:\.\d+)*$/;
 const DELAI = 15000;
 const RIEN = ' Rien n\'a été installé.';
 
@@ -54,14 +62,38 @@ function couvreLatin(plage) {
   return [0x61, 0xe9].every((c) => plages.some(([a, b]) => c >= a && c <= b));
 }
 
-/** Règles @font-face de la feuille ; [] si une seule URL sort de fonts.bunny.net (feuille entière refusée). */
-function fichiersDeLaFeuille(css) {
+/**
+ * Adresse sur fonts.bunny.net d'une url() de la feuille : elle-même si elle y est ; pour un fichier du miroir fontsource à la
+ * forme stricte et de la famille `id` (si donnée), son adresse directe ; null sinon (feuille à refuser).
+ */
+function adresseDirecte(url, id) {
+  const u = String(url || '');
+  if (u.startsWith(`https://${HOTE}/`)) return u.includes('..') ? null : u;
+  const m = MIROIR.exec(u);
+  if (!m || !VERSION.test(m[2]) || (id !== undefined && m[1] !== id)) return null;
+  const [, fid, , sous, graisse, style, ext] = m;
+  return `https://${HOTE}/${fid}/files/${fid}-${sous}-${graisse}-${style}.${ext}`;
+}
+
+/**
+ * Lecture de la feuille : -> { fichiers, refus } ; refus : l'url() qui n'est ni sur fonts.bunny.net ni un fichier reconnu
+ * du miroir pour cette famille (toute la feuille est alors refusée). Par règle, la première url() en .woff2 ; une règle sans
+ * WOFF2 est ignorée.
+ */
+function lireFeuille(css, id) {
   const fichiers = [];
   for (const m of String(css).matchAll(/@font-face\s*\{([^}]*)\}/g)) {
     const bloc = m[1];
-    const url = ((/url\(([^)]+)\)/.exec(bloc) || [])[1] || '').replace(/['"]/g, '').trim();
+    const urls = [...bloc.matchAll(/url\(([^)]+)\)/g)].map((x) => x[1].replace(/['"]/g, '').trim()).filter(Boolean);
+    if (!urls.length) continue;
+    const directes = [];
+    for (const brute of urls) {
+      const d = adresseDirecte(brute, id);
+      if (!d) return { fichiers: [], refus: brute };
+      directes.push(d);
+    }
+    const url = directes.find((d) => d.endsWith('.woff2'));
     if (!url) continue;
-    if (!url.startsWith(`https://${HOTE}/`)) return [];
     fichiers.push({
       url,
       graisse: Number((/font-weight:\s*(\d+)/.exec(bloc) || [])[1] || 400),
@@ -71,7 +103,13 @@ function fichiersDeLaFeuille(css) {
       latin: couvreLatin(((/unicode-range:\s*([^;}]+)/i.exec(bloc) || [])[1] || '').trim() || null),
     });
   }
-  return fichiers;
+  return { fichiers, refus: null };
+}
+
+/** Règles @font-face de la feuille, à leur adresse sur fonts.bunny.net ; [] si la feuille est refusée. */
+function fichiersDeLaFeuille(css, id) {
+  const r = lireFeuille(css, id);
+  return r.refus ? [] : r.fichiers;
 }
 
 /** Un fichier par graisse et style : celui du latin ordinaire (sinon le premier rencontré). */
@@ -121,8 +159,13 @@ async function installerBunny({ famille, graisses = [400, 700], italique = false
     if (!fam.nom) throw new Refus(`Le catalogue Bunny Fonts donne un nom de police inutilisable pour « ${id} ».`);
     const feuille = await recuperer(urlFeuille(fam, graisses, italique));
     if (!feuille.ok) throw new Error(`feuille indisponible, ${feuille.status}`);
+    const lue = lireFeuille(await feuille.text(), fam.id);
+    if (lue.refus) {
+      const hote = (/^[a-z]+:\/\/([^/]+)/i.exec(lue.refus) || [])[1] || 'adresse illisible';
+      throw new Refus(`La feuille de Bunny Fonts pour ${fam.nom} n'est pas reconnue (fichier hors de ${HOTE}, sur ${hote}) : elle est refusée par prudence. Fournissez le fichier de la police (TTF, OTF, WOFF ou WOFF2) pour l'installer.`);
+    }
     // Un fichier variable sert pour chaque graisse demandée de sa plage.
-    const fichiers = choisirLatin(fichiersDeLaFeuille(await feuille.text()))
+    const fichiers = choisirLatin(lue.fichiers)
       .flatMap((f) => (f.graisseMax ? graisses.filter((g) => g >= f.graisse && g <= f.graisseMax).map((g) => ({ ...f, graisse: g })) : [f]))
       .filter((f) => graisses.includes(f.graisse) && (f.style === 'normal' || (italique && f.style === 'italic')));
     if (!fichiers.length) throw new Refus(`La feuille de Bunny Fonts pour ${fam.nom} est vide ou pointe hors de ${HOTE}.`);
@@ -226,4 +269,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { lireCatalogueBunny, familleConnue, urlFeuille, fichiersDeLaFeuille, choisirLatin, installerBunny, installerFichier };
+module.exports = { lireCatalogueBunny, familleConnue, urlFeuille, adresseDirecte, lireFeuille, fichiersDeLaFeuille, choisirLatin, installerBunny, installerFichier };
