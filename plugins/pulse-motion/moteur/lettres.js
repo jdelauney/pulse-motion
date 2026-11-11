@@ -16,6 +16,9 @@
  * morceau (les mots d'un morceau arrivent ensemble), l'élément --pm-n et --pm-pas (0,12 s, ou data-pas). data-mot-cle="<mot>"
  * pose un bloc d'accent sur ce mot (première occurrence, sans accents ni casse ; « auto » : le mot le plus long) : un seul
  * mot-clé par légende. Aucune syntaxe dans le texte du déroulé : changer de style reste propre. Animations dans base.css.
+ * Écrit à la main (data-lettres="ecrit", spec Styles et réalisation 5.13, styles dessinés) : chaque lettre s'écrit de gauche à
+ * droite, deux lettres à la fois au plus ; sans data-pas, le pas suit data-dur pour que la dernière lettre finisse à son
+ * échéance (pas = durée / (n + 1), lettre en deux pas, --pm-lettre-dur posé sur l'élément). Animation dans base.css.
  * Navigateur seulement ; dépend de minutage (M.lireSecondes). Sous Node : EFFETS, paquetsSaisie, couperMorceaux, motCleDe.
  */
 (function (racine) {
@@ -23,7 +26,9 @@
   var M = racine.M = racine.M || {};
 
   // Écart par défaut entre deux lettres, en secondes ; entre deux mots : PAS_MOTS.
-  var EFFETS = { monte: 0.05, flou: 0.05, frappe: 0.04, onde: 0.02, chute: 0.05, brouille: 0.04, saisie: 0.04 };
+  var EFFETS = { monte: 0.05, flou: 0.05, frappe: 0.04, onde: 0.02, chute: 0.05, brouille: 0.04, saisie: 0.04, ecrit: 0.06 };
+  // Écrit à la main : une lettre dure LETTRE_ECRIT pas (deux lettres s'écrivent ensemble au plus).
+  var LETTRE_ECRIT = 2;
   // Saisie (spec S6, 5.9) : paquets de 1 à 3 lettres (probabilités 0,6, 0,3, 0,1), 45 à 140 ms entre deux paquets, × 2,5
   // après une espace ou une ponctuation ; graine : le texte et la scène. Valeurs propres à Pulse Motion ; la même suite pilote
   // les touches du tournage (plan 2 de S6).
@@ -188,8 +193,13 @@
     if (effet === 'brouille' && !parLettres) {
       return { regle: 'lettres-invalide', message: debut + 'data-mots « brouille » : le texte se brouille lettre par lettre, écrire data-lettres="brouille".' };
     }
+    if (effet === 'ecrit' && !parLettres) {
+      return { regle: 'lettres-invalide', message: debut + 'data-mots « ecrit » : le texte s'écrit lettre par lettre, écrire data-lettres="ecrit".' };
+    }
     var pas = parLettres ? EFFETS[effet] : PAS_MOTS;
     var brut = el.getAttribute('data-pas');
+    // Écrit à la main sans data-pas : le pas suit data-dur (calculé une fois les lettres comptées).
+    var ajuster = effet === 'ecrit' && brut === null ? M.lireSecondes(el.getAttribute('data-dur') || '', dureeTemps) : null;
     if (brut !== null) {
       var lu = M.lireSecondes(brut, dureeTemps);
       if (lu.erreur === 'tempo-absent') return { regle: 'tempo-absent', message: debut + 'data-pas « ' + brut + ' » est en temps musicaux, mais le déroulé n\'a pas de « tempo ».' };
@@ -269,6 +279,10 @@
     el.setAttribute('aria-label', texte.replace(/\s+/g, ' ').trim());
     el.textContent = '';
     el.appendChild(fragment);
+    if (effet === 'ecrit') {
+      if (ajuster && !ajuster.erreur && ajuster.valeur > 0) pas = Math.round(ajuster.valeur / (n - 1 + LETTRE_ECRIT) * 10000) / 10000;
+      el.style.setProperty('--pm-lettre-dur', Math.round(pas * LETTRE_ECRIT * 10000) / 10000 + 's');
+    }
     el.style.setProperty('--pm-n', String(n));
     el.style.setProperty('--pm-pas', pas + 's');
     return null;
@@ -319,6 +333,6 @@
   M.couperMorceaux = couperMorceaux;
   // Sous Node (controler.js) : la liste des effets, les délais de la saisie (tournage, tests) et la coupe des légendes.
   if (typeof module === 'object' && module.exports) {
-    module.exports = { EFFETS: EFFETS, paquetsSaisie: paquetsSaisie, SAISIE: SAISIE, couperMorceaux: couperMorceaux, motCleDe: motCleDe, MORCEAUX: MORCEAUX, PAS_MORCEAUX: PAS_MORCEAUX };
+    module.exports = { EFFETS: EFFETS, paquetsSaisie: paquetsSaisie, SAISIE: SAISIE, couperMorceaux: couperMorceaux, motCleDe: motCleDe, MORCEAUX: MORCEAUX, PAS_MORCEAUX: PAS_MORCEAUX, LETTRE_ECRIT: LETTRE_ECRIT };
   }
 })(typeof globalThis !== 'undefined' ? globalThis : this);

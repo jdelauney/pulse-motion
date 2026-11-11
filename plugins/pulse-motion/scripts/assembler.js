@@ -174,6 +174,18 @@ function bruitagesAuto(deroule, dossierStyle) {
   return { auto, transitions: deroule.bruitages.transitions !== false, ...(table && Object.keys(table).length ? { table } : {}), ...(matiere ? { matiere } : {}) };
 }
 
+/**
+ * Modules du style (spec Styles et réalisation, 5.10 point 3) : moteur/medium/<nom>.js déclarés par identite.modules, dans
+ * leur ordre ; un nom inconnu est ignoré ici (style verifier le refuse). [] sans déclaration : rien n'est inclus.
+ */
+function modulesDuStyle(dossierStyle) {
+  try {
+    const id = JSON.parse(fs.readFileSync(path.join(dossierStyle, 'identite.json'), 'utf8').replace(/^﻿/, ''));
+    const liste = id && Array.isArray(id.modules) ? id.modules : [];
+    return [...new Set(liste.filter((n) => typeof n === 'string' && /^[a-z0-9-]+$/.test(n) && fs.existsSync(path.join(RACINE, 'moteur', 'medium', `${n}.js`))))];
+  } catch { return []; }
+}
+
 /** Palette sonore du style (identite.json, son), ou null (style sans identité). */
 function sonDuStyle(dossierStyle) {
   try {
@@ -255,6 +267,9 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   const filmsVises = new Map();
   // Calque de dessin (spec S7) : groupe « dessin » et moteur/dessin/dessin.css seulement si une scène dessine ; icônes de d.icone.
   const dessin = { utilise: false, icones: new Set(), scripts: [] };
+  // Modules du style (5.10 point 3) : seulement s'il les déclare ; ils s'appuient sur le calque de dessin.
+  const modulesStyle = modulesDuStyle(dossierStyle);
+  if (modulesStyle.length) dessin.utilise = true;
   // Graphiques, code et formules (spec S7, 5.6, 5.9, 5.10) : polices du code et des formules seulement si une scène en montre.
   const montre = { code: false, formule: false };
   // Voix : une prise par scène (ou la voix provisoire), mots calés ; Opus si encodé, sinon WAV. Lues avant les scènes : la
@@ -576,7 +591,8 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
 
   // Moteur à la carte : seuls les groupes de modules dont la vidéo se sert (groupesImposes : 'tous' pour les tests).
   const groupes = groupesImposes || GM.groupesDuDeroule(donnees, sections, dessin.scripts);
-  const moteur = lireMoteur(RACINE, { groupes });
+  if (modulesStyle.length && Array.isArray(groupes)) for (const g of ['dessin', 'releve']) if (!groupes.includes(g)) groupes.push(g);
+  const moteur = [lireMoteur(RACINE, { groupes })].concat(modulesStyle.map((n) => lireModule(RACINE, `medium/${n}.js`, process.env.PM_MOTEUR_BRUT === '1'))).join('\n;\n');
   // Polices du code et des formules (vendor/polices/, OFL) : seulement si une scène en montre ; dans les crédits.
   const cssMontre = cssDonnees(montre);
   polices.push(...cssMontre.polices);

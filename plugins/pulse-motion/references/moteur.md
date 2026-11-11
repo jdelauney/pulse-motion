@@ -77,11 +77,11 @@ Le dictionnaire de mouvements (`pulse-motion reference mouvements`, fiche : `pul
 <p class="texte" data-texte="detail" data-start="#titre:fin+0.2" data-mots="monte"></p>
 ```
 
-- `data-lettres` (par lettre) ou `data-mots` (par mot) : `monte` (monte de 0,5 em), `flou` (net en 0,5 s), `frappe` (machine à écrire), `onde` (saut puis petit rebond), `chute` (tombe du haut et rebondit) ; par lettre seulement : `brouille` (signes au hasard puis la vraie lettre, `--pm-lettre-dur` 0,3 s).
+- `data-lettres` (par lettre) ou `data-mots` (par mot) : `monte` (monte de 0,5 em), `flou` (net en 0,5 s), `frappe` (machine), `onde` (saut, petit rebond), `chute` (tombe et rebondit) ; par lettre seulement : `brouille` (signes au hasard puis la vraie lettre, `--pm-lettre-dur` 0,3 s).
 - `data-pas` : écart entre deux lettres ou deux mots (par défaut `frappe` 0,04 s, `onde` 0,02 s, autres 0,05 s ; mots 0,12 s). Durée d'une lettre : `--pm-lettre-dur` (ex. `style="--pm-lettre-dur: 0.3s"`).
 - Le départ est le `data-start` de l'élément (ou de son ancêtre minuté). Fin de l'animation ≈ `data-start` + nombre de lettres × pas + durée d'une lettre : en tenir compte pour le temps de lecture.
 - Mots jamais coupés, retours à la ligne gardés ; les lecteurs d'écran lisent tout le texte. Une balise dans le texte (`<em>`) est aplatie.
-- Légende en morceaux et mot-clé : style `info-sans-son`.
+- Légende en morceaux, mot-clé : `info-sans-son`. Écrit à la main jusqu'au `data-dur` : `ecrit`.
 
 ### Dégradé et contour
 
