@@ -55,7 +55,7 @@ test('témoin : contrôle complet de la vidéo rendue, rien à signaler', { ...S
   assert.deepEqual(r.problemes, []);
 });
 
-test('témoin : deux exports donnent les mêmes images (outil de preuve de S2)', { ...SANS, timeout: 300000 }, async () => {
+test('témoin : deux exports donnent les mêmes images, à l'octet près (outil de preuve de S2)', { ...SANS, timeout: 300000 }, async () => {
   const D = require('../scripts/lib/determinisme.js');
   const { ouvrirCapture } = require('../scripts/lib/capture-fidele.js');
   const dir = copie();
@@ -65,9 +65,9 @@ test('témoin : deux exports donnent les mêmes images (outil de preuve de S2)',
   assert.equal(concernees.length, 6, 'chaque scène a un calque ou une caméra automatique');
   assert.ok(concernees.every((c) => c.raisons.includes('camera')), JSON.stringify(concernees));
   const instants = D.instantsPreuve(a.minutage, concernees.map((c) => c.id), { n: 12 });
-  // Seuil de la preuve du contrôle (seuils.json) : une image qui diffère au-dessus de 45 dB de PSNR est un tremblement de la
-  // trame du navigateur, pas un hasard (un écart de ce genre est observé sur la scène finale, sous la caméra automatique).
-  const r = await D.prouver({ fichierHtml: a.fichier, instants, ouvrir: ouvrirCapture, navigateur, psnrMin: require('../scripts/seuils.json').determinismePsnr });
+  // Déterminisme exact (octets identiques, aucun seuil de PSNR) : la capture attend deux images après un saut sous une caméra
+  // (scripts/lib/capture-fidele.js) ; avant 0.58.0, une image de la scène finale différait d'un rien selon l'ordre des captures.
+  const r = await D.prouver({ fichierHtml: a.fichier, instants, ouvrir: ouvrirCapture, navigateur, psnrMin: Infinity });
   assert.deepEqual(r.problemes, []);
   assert.deepEqual([...r.nonFaites], []);
 });
