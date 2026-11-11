@@ -7,6 +7,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync, spawn } = require('node:child_process');
 const { decoderPNG } = require('../logo.js');
+const { verifierPNG } = require('./png.js');
 
 const MINIMUM = { majeure: 4, mineure: 4 };
 const RECENTE = { majeure: 99, mineure: 0 };
@@ -566,8 +567,8 @@ async function encoderGif({ ffmpeg, entree, sortie, debut, images, taille, palet
  *  (un grain de pellicule ou un bruit fin, que l'encodage lisse, ne compte pas ; une image décalée ou noire, si) ; 1 si les
  *  tailles diffèrent. */
 function ecartImages(a, b) {
-  const x = decoderPNG(a);
-  const y = decoderPNG(b);
+  const x = decoderPNG(a, { logo: false });
+  const y = decoderPNG(b, { logo: false });
   if (x.largeur !== y.largeur || x.hauteur !== y.hauteur) return 1;
   let somme = 0;
   let n = 0;
@@ -590,8 +591,49 @@ function ecartImages(a, b) {
   return somme / n / 255;
 }
 
+// Images témoins (vérification de l'export) : lues ou capturées de nouveau, trois fois au plus en tout.
+const LECTURES_MAX = 3;
+
+/** Image PNG utilisable pour une comparaison : complète (structure et sommes de contrôle) et décodable. -> null, ou la raison. */
+function imageIllisible(png) {
+  const defaut = verifierPNG(png);
+  if (defaut) return defaut;
+  try { decoderPNG(png, { logo: false }); return null; } catch (e) { return e.message; }
+}
+
+/**
+ * Écart entre une image de la vidéo et sa capture (ecartImages). L'image lue par ffmpeg qui est illisible (coupée, abîmée,
+ * ou non décodée sur une machine à court de mémoire) est relue, deux fois au plus, avant de conclure : un incident passager
+ * n'arrête plus l'export. lire() -> Promise<PNG> ; deja : une image déjà lue (première lecture).
+ */
+async function ecartTemoin(lire, capturee, deja = null) {
+  let raison = null;
+  for (let essai = 0; essai < LECTURES_MAX; essai++) {
+    const lue = essai === 0 && deja ? deja : await lire();
+    raison = imageIllisible(lue);
+    if (!raison) return ecartImages(lue, capturee);
+  }
+  throw new Error(`une image de la vidéo reste illisible après ${LECTURES_MAX} lectures (${raison})`);
+}
+
+/**
+ * Captures témoins vérifiées avant la comparaison : une capture illisible est refaite par recapturer(n), deux fois au plus.
+ * temoins : Map n -> PNG (les absentes sont ignorées).
+ */
+async function verifierTemoins(temoins, recapturer) {
+  for (const n of [...temoins.keys()].sort((a, b) => a - b)) {
+    if (!temoins.get(n)) continue;
+    let raison = imageIllisible(temoins.get(n));
+    for (let essai = 1; raison && essai < LECTURES_MAX; essai++) {
+      temoins.set(n, await recapturer(n));
+      raison = imageIllisible(temoins.get(n));
+    }
+    if (raison) throw new Error(`la capture de l'image ${n + 1} reste illisible après ${LECTURES_MAX} captures (${raison})`);
+  }
+}
+
 module.exports = {
   lireVersion, commandeSure, commandeInstallation, trouverFfmpeg, MINIMUM, encoderSegment, reencoderSegment, transcoderDeuxPasses, sonder,
-  extraireImage, assemblerSegments, ecartImages, encoderSon, mesurerSonie, verifierFichier, encoderOpus, importerAudio, argsVideo,
+  extraireImage, assemblerSegments, ecartImages, imageIllisible, ecartTemoin, verifierTemoins, LECTURES_MAX, encoderSon, mesurerSonie, verifierFichier, encoderOpus, importerAudio, argsVideo,
   detecterEncodeurs, controlesSortie, lancer, reduireVignette, transcoderExtrait, encoderGif, filtrePassage, encoderTransparent, assemblerTransparent, TRANSPARENTS, SONS, LARGEUR_STATS, ETIQUETTES, VERS_BT709, MATERIEL, ORDRE_MATERIEL,
 };

@@ -1,0 +1,122 @@
+{
+  "style": "lancement",
+  "famille": "moderne",
+  "personnalite": [
+    "premium",
+    "épuré",
+    "lumineux"
+  ],
+  "eviter": [
+    "ton enfantin ou bricolé",
+    "couleurs nombreuses"
+  ],
+  "genres": [
+    "produit",
+    "social",
+    "storytelling"
+  ],
+  "couleur": {
+    "strategie": "sobre-avec-une-touche",
+    "tons": [
+      "sombre"
+    ],
+    "tonDefaut": "sombre",
+    "sombre": {
+      "fond": "#09090b",
+      "texte": "#e4e4e7"
+    },
+    "roles": {
+      "primaire": "la lumière qui se déplace et le reflet",
+      "accent": "le seul élément coloré : carte allumée, numéro, point actif"
+    }
+  },
+  "typographie": {
+    "titres": {
+      "famille": "Sora",
+      "categorie": "sans-serif",
+      "graisse": 600
+    },
+    "texte": {
+      "famille": "Manrope",
+      "categorie": "sans-serif",
+      "graisse": 400
+    }
+  },
+  "mouvement": {
+    "caractere": "doux",
+    "courbes": [
+      "expo-out",
+      "back-out"
+    ],
+    "dureeType": 0.5,
+    "transitions": [
+      "fondu",
+      "zoom",
+      "coupe"
+    ]
+  },
+  "signature": "Fond presque noir à grille fine, lumière douce qui se déplace, cartes d'interface qui s'aimantent à leur place, reflet qui balaie le titre, nombre géant au trait fin, un seul accent",
+  "aFaire": [
+    "Une action par temps, l'interface en vedette",
+    "Un seul élément coloré par scène"
+  ],
+  "aEviter": [
+    "Du gris trop sombre pour être lu",
+    "Trop d'éléments qui bougent à la fois"
+  ],
+  "categorie": "ecrans-annonces",
+  "nonPas": "Pas tech-sombre : ni terminal, ni invite de commande. Pas minimal : sombre, avec de la lumière et de la profondeur.",
+  "usages": [
+    "Lancer un produit ou une offre",
+    "Présenter un logiciel",
+    "Annoncer une nouveauté"
+  ],
+  "motsCles": [
+    "lancement",
+    "keynote",
+    "nouveauté",
+    "logiciel",
+    "application",
+    "interface",
+    "premium",
+    "produit",
+    "SaaS"
+  ],
+  "son": {
+    "ambiances": [
+      "tech",
+      "corporate"
+    ],
+    "bruitages": {
+      "titre": null,
+      "texte": "frappe",
+      "point": null,
+      "chiffre": null,
+      "trace": null,
+      "forme": "clic",
+      "image": null,
+      "ecriture": null,
+      "transition": "souffle"
+    },
+    "matiere": null,
+    "fort": "basse"
+  },
+  "shaders": {
+    "conseilles": [
+      "vignettage",
+      "grain"
+    ]
+  },
+  "provenance": [
+    {
+      "depot": "lemo-opuscar",
+      "style": "dark-keynote",
+      "licence": "MIT"
+    },
+    {
+      "depot": "take-one",
+      "style": "monochrome-launch, dark-premium",
+      "licence": "MIT"
+    }
+  ]
+}

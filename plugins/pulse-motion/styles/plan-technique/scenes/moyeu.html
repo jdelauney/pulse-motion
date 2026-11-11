@@ -1,0 +1,23 @@
+<!-- Scène toute faite « moyeu » (style plan-technique) : la pièce maîtresse à l'accent au centre, 3 à 5 pièces reliées. Durée conseillée : 10 s.
+     Textes : titre (≤ 36 car.), centre (≤ 20 car.), partie1 … partie5 (≤ 18 car. chacune ; en 9:16, 12 car. avec 3 parties, 6 avec 5).
+     Moins de 5 parties : supprimer la partie en trop et sa flèche (la couronne se refait seule). Adapter data-dur du décor à la durée de la scène. -->
+<section data-scene="moyeu">
+  <div class="decor">
+    <span class="grille" data-decor data-start="0" data-dur="10" data-tween="--x 0cqh→-4cqh linear"></span>
+    <span class="cadre" data-start="0" data-dur="1.2"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen ecrit" data-texte="titre" data-start="0.6" data-dur="0.9"></h2>
+  <div class="moyeu">
+    <div id="centre" class="piece compte nue moyeu-centre" data-texte="centre" data-start="#titre:fin+0.2" data-dur="0.8"></div>
+    <div id="partie1" class="piece nue moyeu-partie" style="--i: 0" data-texte="partie1" data-start="#centre:fin+0.3" data-dur="0.8"></div>
+    <i data-fleche="#centre → #partie1" data-start="#partie1" data-dur="0.6" data-couleur="texte" data-epaisseur="0.2"></i>
+    <div id="partie2" class="piece nue moyeu-partie" style="--i: 1" data-texte="partie2" data-start="#partie1:fin+0.3" data-dur="0.8"></div>
+    <i data-fleche="#centre → #partie2" data-start="#partie2" data-dur="0.6" data-couleur="texte" data-epaisseur="0.2"></i>
+    <div id="partie3" class="piece nue moyeu-partie" style="--i: 2" data-texte="partie3" data-start="#partie2:fin+0.3" data-dur="0.8"></div>
+    <i data-fleche="#centre → #partie3" data-start="#partie3" data-dur="0.6" data-couleur="texte" data-epaisseur="0.2"></i>
+    <div id="partie4" class="piece nue moyeu-partie" style="--i: 3" data-texte="partie4" data-start="#partie3:fin+0.3" data-dur="0.8"></div>
+    <i data-fleche="#centre → #partie4" data-start="#partie4" data-dur="0.6" data-couleur="texte" data-epaisseur="0.2"></i>
+    <div id="partie5" class="piece nue moyeu-partie" style="--i: 4" data-texte="partie5" data-start="#partie4:fin+0.3" data-dur="0.8"></div>
+    <i data-fleche="#centre → #partie5" data-start="#partie5" data-dur="0.6" data-couleur="texte" data-epaisseur="0.2"></i>
+  </div>
+</section>

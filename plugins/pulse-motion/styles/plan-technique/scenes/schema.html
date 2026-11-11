@@ -1,0 +1,16 @@
+<!-- Scène toute faite « schema » (style plan-technique) : trois pièces tracées et reliées par des flèches. Durée conseillée : 8 s.
+     Textes : titre (≤ 36 car.), a, b, c (≤ 20 car.). -->
+<section data-scene="schema">
+  <div class="decor">
+    <span class="grille" data-decor data-start="0" data-dur="8" data-tween="--x 0cqh→-4cqh linear"></span>
+    <span class="cadre" data-start="0" data-dur="1.2"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen ecrit" data-texte="titre" data-start="0.6" data-dur="0.9"></h2>
+  <div class="chaine-pieces">
+    <div id="a" class="piece nue" data-texte="a" data-start="#titre:fin+0.2" data-dur="0.8"></div>
+    <span class="connecteur" aria-hidden="true"><i id="lien1" data-fleche="#a → #b" data-start="#a:fin" data-dur="0.6" data-couleur="texte" data-epaisseur="0.2"></i></span>
+    <div id="b" class="piece compte nue" data-texte="b" data-start="#lien1:fin" data-dur="0.8"></div>
+    <span class="connecteur" aria-hidden="true"><i id="lien2" data-fleche="#b → #c" data-start="#b:fin" data-dur="0.6" data-couleur="texte" data-epaisseur="0.2"></i></span>
+    <div id="c" class="piece nue" data-texte="c" data-start="#lien2:fin" data-dur="0.8"></div>
+  </div>
+</section>

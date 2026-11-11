@@ -63,6 +63,9 @@ Pour un élément animé par une entrée qui ralentit (`expo-out`, `back-out`), 
 | `editorial` | `souffle`, `pop` doux, `ding` | `impact`, `basse` |
 | `chaleureux`, `clair-pedagogique` | `pop`, `carillon`, `ding` | `basse`, `impact` |
 | `energique` | `whoosh`, `impact`, `pop`, `basse` | Silence total |
+| `info-sans-son` | `tic`, `clic`, `basse` | `carillon`, sons tenus (la vidéo vit sans le son) |
+| `plan-technique` | `crayon`, `tic`, `ding`, `whoosh` | `impact`, `pop` |
+| `lancement` | `clic`, `souffle`, `frappe`, `basse` | `carillon`, `pop` |
 
 ## Tempo de la musique selon le caractère
 

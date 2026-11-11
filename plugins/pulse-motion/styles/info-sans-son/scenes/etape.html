@@ -1,0 +1,15 @@
+<!-- Scène toute faite « etape » (style info-sans-son) : une étape, son numéro sur un bloc d'accent. Durée conseillée : 7 s.
+     Textes : numero (≤ 2 car.), titre (≤ 34 car.), texte (≤ 70 car.). -->
+<section data-scene="etape">
+  <div class="decor">
+    <span class="lignes-compte" data-decor data-start="0" data-dur="7" data-tween="--y 0cqh→-5cqh linear"></span>
+    <span class="marges"></span>
+  </div>
+  <div class="etape">
+    <span id="numero" class="numero-bloc claque" data-texte="numero" data-start="0.2" data-dur="0.2"></span>
+    <div class="etape-texte">
+      <h2 id="titre" class="legende-moyenne" data-texte="titre" data-morceaux="2" data-start="#numero:fin+0.2" data-dur="0.4"></h2>
+      <p id="texte" class="texte balaie" data-texte="texte" data-start="#titre:fin+0.4" data-dur="0.4"></p>
+    </div>
+  </div>
+</section>

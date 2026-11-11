@@ -7,6 +7,7 @@
  * encoder({ largeur, hauteur, canaux, donnees }, { niveau? }) -> Buffer PNG
  * moyenne([png]) -> Buffer PNG : moyenne des images (mêmes tailles), arrondie ; une seule image : rendue telle quelle.
  * alphaOpaque(png, { seuil? }) -> part des pixels opaques (alpha ≥ seuil, 250 par défaut) ; 1 sans couche alpha.
+ * verifierPNG(png, { sommes? }) -> null si l'image est complète, sinon la raison (structure, sommes de contrôle).
  */
 const zlib = require('node:zlib');
 
@@ -17,6 +18,31 @@ const TABLE = (() => {
   return t;
 })();
 function crc32(buf) { let c = 0xffffffff; for (let i = 0; i < buf.length; i++) c = TABLE[(c ^ buf[i]) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+// Somme de contrôle native quand Node l'a (22.2 et plus) : la vérification d'une image de 1080p prend alors une milliseconde.
+const crc32Rapide = typeof zlib.crc32 === 'function' ? (buf) => zlib.crc32(buf) >>> 0 : crc32;
+
+/**
+ * Image PNG complète ? -> null si oui, sinon la raison en français. Signature, en-tête IHDR d'abord, chaque bloc dans le
+ * fichier, IEND à la fin exacte ; sommes : vérifie aussi la somme de contrôle de chaque bloc (une image coupée, mêlée à une
+ * autre ou abîmée en mémoire est reconnue avant d'être décodée). Sans sommes : seulement la structure, en quelques
+ * microsecondes (chaque image capturée de l'export).
+ */
+function verifierPNG(buf, { sommes = true } = {}) {
+  if (!Buffer.isBuffer(buf) || buf.length < 8 || !buf.subarray(0, 8).equals(SIGNATURE)) return 'ce n\'est pas une image PNG';
+  let pos = 8;
+  let premier = true;
+  while (pos + 12 <= buf.length) {
+    const longueur = buf.readUInt32BE(pos);
+    const type = buf.toString('latin1', pos + 4, pos + 8);
+    if (premier && type !== 'IHDR') return 'en-tête IHDR absent';
+    premier = false;
+    if (pos + 12 + longueur > buf.length) return `bloc ${type} coupé (image incomplète)`;
+    if (sommes && crc32Rapide(buf.subarray(pos + 4, pos + 8 + longueur)) !== buf.readUInt32BE(pos + 8 + longueur)) return `bloc ${type} abîmé (somme de contrôle fausse)`;
+    pos += 12 + longueur;
+    if (type === 'IEND') return pos === buf.length ? null : 'données après la fin de l\'image';
+  }
+  return 'fin de l\'image absente (image incomplète)';
+}
 function bloc(type, donnees) {
   const l = Buffer.alloc(4); l.writeUInt32BE(donnees.length);
   const td = Buffer.concat([Buffer.from(type, 'latin1'), donnees]);
@@ -121,4 +147,4 @@ function alphaOpaque(png, { seuil = 250 } = {}) {
   return opaques / (img.largeur * img.hauteur);
 }
 
-module.exports = { decoder, encoder, moyenne, alphaOpaque };
+module.exports = { decoder, encoder, moyenne, alphaOpaque, verifierPNG };

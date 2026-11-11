@@ -241,8 +241,8 @@ test('formule : la police mathématique n\'est embarquée que si la vidéo a une
 
 // --- 5.7 Moyeu et mises en page --------------------------------------------------------------------------------------------
 
-test('moyeu : présent dans les 6 styles, passe la vérification des styles', () => {
-  assert.equal(STYLES.length, 6);
+test('moyeu : présent dans les styles livrés, passe la vérification des styles', () => {
+  assert.equal(STYLES.length, 9, 'six essentiels et la vague A');
   assert.deepEqual(TYPES.moyeu, ['titre', 'centre', 'partie1', 'partie2', 'partie3', 'partie4', 'partie5']);
   assert.deepEqual(OPTIONNELLES.moyeu, ['partie4', 'partie5']);
   assert.deepEqual(TYPES_RECENTS, ['moyeu']);
@@ -275,7 +275,7 @@ test('moyeu : présent dans les 6 styles, passe la vérification des styles', ()
   assert.equal(A.choisirType({ textes: { titre: 'x', centre: 'c', partie1: '1', partie2: '2', partie3: '3' } }), 'moyeu');
 });
 
-test('schema : les flèches visent les boîtes dans les 6 styles (sans navigateur)', () => {
+test('schema : les flèches visent les boîtes dans les styles livrés (sans navigateur)', () => {
   for (const s of STYLES) {
     const html = lire('styles', s, 'scenes', 'schema.html').replace(/^<!--[\s\S]*?-->\s*/, '');
     assert.doesNotMatch(html, /<svg/, `${s} : plus de flèche dessinée à la place supposée des boîtes`);

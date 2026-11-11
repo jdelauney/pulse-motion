@@ -1,0 +1,12 @@
+<!-- Scène toute faite « chiffre » (style info-sans-son) : un chiffre qui roule et prend l'accent à l'arrivée, sa source dessous. Durée conseillée : 7 s.
+     Textes : titre (≤ 34 car.), unite (≤ 3 car., vide si aucune), legende (≤ 50 car., la source ou ce que le chiffre compte).
+     Valeur : remplacer 1250 dans « nombre 0→1250 ». -->
+<section data-scene="chiffre">
+  <div class="decor">
+    <span class="lignes-compte" data-decor data-start="0" data-dur="7" data-tween="--y 0cqh→-5cqh linear"></span>
+    <span class="marges"></span>
+  </div>
+  <h2 id="titre" class="legende-moyenne" data-texte="titre" data-morceaux="2" data-start="0.2" data-dur="0.4"></h2>
+  <p class="nombre claque" data-start="#titre:fin+0.2" data-dur="0.2"><span id="valeur" class="vire" data-start="#titre:fin+0.2" data-dur="1.6" data-tween="nombre 0→1250 expo-out">0</span><span class="unite" data-texte="unite"></span></p>
+  <p id="legende" class="source balaie" data-texte="legende" data-start="#valeur:fin+0.2" data-dur="0.4"></p>
+</section>

@@ -1,6 +1,6 @@
 {
-  "formation": { "recommandes": ["clair-pedagogique", "chaleureux"], "contraste": "minimal", "aussi": [] },
-  "produit": { "recommandes": ["minimal", "tech-sombre"], "contraste": "energique", "aussi": [] },
-  "storytelling": { "recommandes": ["editorial", "chaleureux"], "contraste": "tech-sombre", "aussi": [] },
-  "social": { "recommandes": ["energique", "minimal"], "contraste": "editorial", "aussi": [] }
+  "formation": { "recommandes": ["clair-pedagogique", "chaleureux"], "contraste": "minimal", "aussi": ["plan-technique", "info-sans-son"] },
+  "produit": { "recommandes": ["minimal", "tech-sombre"], "contraste": "energique", "aussi": ["lancement", "plan-technique"] },
+  "storytelling": { "recommandes": ["editorial", "chaleureux"], "contraste": "tech-sombre", "aussi": ["lancement"] },
+  "social": { "recommandes": ["energique", "minimal"], "contraste": "editorial", "aussi": ["info-sans-son", "lancement"] }
 }

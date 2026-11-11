@@ -13,7 +13,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const SEUILS = require('../seuils.json');
 const CATALOGUE = require('../../moteur/synthe/catalogue.js');
-const { EFFETS: EFFETS_LETTRES } = require('../../moteur/lettres.js');
+const { EFFETS: EFFETS_LETTRES, MORCEAUX } = require('../../moteur/lettres.js');
 
 const virgule = (x) => String(Math.round(x * 10) / 10).replace('.', ',');
 
@@ -53,7 +53,15 @@ function controlerCSS(cssBrut, scene, ou, problemes) {
 }
 
 function controlerLettres(decoupes, scene, problemes) {
-  for (const { attribut, effet } of decoupes) {
+  for (const { attribut, effet, motCle } of decoupes) {
+    // Légende en morceaux (spec Styles et réalisation, 5.12) : 2 ou 3 morceaux, un seul mot-clé, en un mot.
+    if (attribut === 'data-morceaux') {
+      if (!MORCEAUX.includes(effet)) problemes.push({ regle: 'lettres-invalide', gravite: 'erreur', scene, message: `Scène « ${scene} » : data-morceaux « ${effet} » : 2 ou 3 morceaux.` });
+      if (motCle !== undefined && (!motCle.trim() || /\s/.test(motCle.trim()))) {
+        problemes.push({ regle: 'lettres-invalide', gravite: 'erreur', scene, message: `Scène « ${scene} » : data-mot-cle « ${motCle} » : un seul mot-clé par légende, en un mot (ou « auto » : le plus long).` });
+      }
+      continue;
+    }
     if (!Object.hasOwn(EFFETS_LETTRES, effet)) {
       problemes.push({ regle: 'lettres-invalide', gravite: 'erreur', scene, message: `Scène « ${scene} » : ${attribut} « ${effet} » inconnu (effets : ${Object.keys(EFFETS_LETTRES).join(', ')}).` });
     } else if (effet === 'brouille' && attribut === 'data-mots') {

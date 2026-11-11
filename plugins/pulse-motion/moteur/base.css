@@ -103,6 +103,34 @@ body {
 [data-lettres="brouille"] .pm-lettre { position: relative; }
 .pm-lettre[data-pm-brouille] { visibility: hidden; }
 .pm-lettre[data-pm-brouille]::after { content: attr(data-pm-brouille); position: absolute; left: 0; top: 0; visibility: visible; -webkit-text-fill-color: currentColor; }
+/* Légende en morceaux (data-morceaux) : les mots d'un morceau claquent ensemble, de l'échelle 1,3 à 1 en 0,13 s avec un
+   dépassement, opaques en 0,04 s ; le bloc d'accent du mot-clé (data-mot-cle) se balaie de gauche à droite en 0,12 s,
+   puis le mot prend la couleur posée sur l'accent. Chiffres de lemo-opuscar (caption-news § 4, MIT). */
+[data-morceaux] .pm-mot {
+  animation: pm-l-claque var(--pm-lettre-dur, 0.13s) linear both;
+  animation-delay: calc(var(--pm-i, 0) * var(--pm-pas, 0.12s));
+}
+[data-morceaux] .pm-mot-cle {
+  position: relative; isolation: isolate;
+  animation-name: pm-l-claque, pm-l-sur-bloc;
+  animation-duration: var(--pm-lettre-dur, 0.13s), 0.01s;
+  animation-timing-function: linear, step-end;
+  animation-delay: calc(var(--pm-i, 0) * var(--pm-pas, 0.12s)), calc(var(--pm-i, 0) * var(--pm-pas, 0.12s) + 0.16s);
+}
+[data-morceaux] .pm-mot-cle::before {
+  content: ""; position: absolute; z-index: -1; inset: -0.02em -0.14em -0.06em;
+  background: var(--pm-cle-fond, var(--c-accent-lisible, #f2c94c)); transform-origin: left center;
+  animation: pm-l-bloc 0.12s linear both;
+  animation-delay: calc(var(--pm-i, 0) * var(--pm-pas, 0.12s) + 0.1s);
+}
+@keyframes pm-l-claque {
+  0% { opacity: 0; transform: scale(1.3); }
+  30% { opacity: 1; }
+  70% { transform: scale(0.97); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes pm-l-bloc { from { transform: scaleX(0); } to { transform: none; } }
+@keyframes pm-l-sur-bloc { to { color: var(--pm-cle-texte, var(--c-sur-accent, #111)); } }
 /* Texte rempli d'un dégradé (--pm-degrade) ; avec data-lettres ou data-mots, chaque morceau en porte sa portion. */
 .pm-degrade {
   background-image: var(--pm-degrade, linear-gradient(90deg, var(--c-primaire, #ff6b35), var(--c-accent, #8e44ad)));

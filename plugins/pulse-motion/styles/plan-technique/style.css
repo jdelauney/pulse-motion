@@ -1,0 +1,232 @@
+/* Pulse Motion – style « plan-technique ».
+ *
+ * Un dessin technique qui s'anime sur papier cyanotype : trait blanc cassé sur bleu de Prusse, tracé dans l'ordre du
+ * dessinateur (cadre, axes, contours, détails, cotes), à la règle, jamais à main levée. Trois épaisseurs (contour 0,35 cqh,
+ * détail 0,2, cote 0,12) ; grille fine ; cartouche ; cotes fléchées ; hachures de coupe ; nuage de révision festonné.
+ * Tout est tracé par --p (progression de l'élément minuté) : rien n'est dessiné à part, rien ne rebondit.
+ * Idées de lemo-opuscar (blueprint, MIT, © 2026 LemoLab) et d'explainroo (blueprint, MIT), réécrites en CSS.
+ * Accent : une seule pièce, « celle qui compte », et le nuage de révision ; primaire : cartouche et repères.
+ * Ton sombre par défaut (tirage cyanotype) ; ton clair : calque blanc, trait bleu.
+ * Formats 16:9, 1:1, 4:5 et 9:16 par requêtes de conteneur. Effets exclus : filter: url(), mix-blend-mode, backdrop-filter.
+ */
+
+/* ---------- Mise en page ---------- */
+#pm-scene > section[data-scene] {
+  --contour: 0.35cqh; --detail: 0.2cqh; --fin: 0.12cqh; --trait: var(--c-texte);
+  display: flex; flex-direction: column; justify-content: center; gap: 3cqh;
+  padding: 10cqh 12cqh; overflow: hidden;
+  background: radial-gradient(ellipse at 50% 40%, color-mix(in srgb, var(--c-texte) 5%, var(--c-fond)), var(--c-fond) 75%);
+  color: var(--c-texte);
+  font: 400 3.6cqh/1.45 var(--f-texte);
+}
+
+/* ---------- Typographie : lettrage de dessinateur ---------- */
+.titre { margin: 0; font: 700 7.4cqh/1.12 var(--f-titres); letter-spacing: 0.02em; text-transform: uppercase; text-wrap: balance; overflow-wrap: break-word; }
+.titre-moyen { margin: 0; font: 700 5cqh/1.15 var(--f-titres); letter-spacing: 0.02em; text-transform: uppercase; text-wrap: balance; overflow-wrap: break-word; }
+.texte { margin: 0; font: 400 3.6cqh/1.45 var(--f-texte); text-wrap: pretty; }
+.nombre { margin: 0; font: 700 20cqh/1 var(--f-texte); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+.unite { font-size: 0.4em; margin-left: 0.2em; letter-spacing: 0; }
+
+/* ---------- Tracés : révélés par --p, dans l'ordre ---------- */
+@keyframes pt-encre { from { color: transparent; } }
+@keyframes pt-apparait { from { opacity: 0; } to { opacity: 1; } }
+/* Lettrage écrit de gauche à droite. */
+.ecrit { clip-path: inset(-12% calc((1 - var(--p, 1)) * 100%) -12% 0); }
+/* Contour d'une pièce : quatre côtés qui partent des coins ; le texte s'encre à la fin du tracé. */
+.piece {
+  position: relative; display: flex; flex-direction: column; gap: 1.4cqh; min-width: 0; padding: 3cqh; box-sizing: border-box;
+  --q: var(--p, 1);
+  background:
+    linear-gradient(var(--trait), var(--trait)) left top / calc(var(--q) * 100%) var(--contour) no-repeat,
+    linear-gradient(var(--trait), var(--trait)) right top / var(--contour) calc(var(--q) * 100%) no-repeat,
+    linear-gradient(var(--trait), var(--trait)) right bottom / calc(var(--q) * 100%) var(--contour) no-repeat,
+    linear-gradient(var(--trait), var(--trait)) left bottom / var(--contour) calc(var(--q) * 100%) no-repeat;
+  font: 700 4cqh/1.2 var(--f-titres); text-transform: uppercase; overflow-wrap: break-word;
+}
+.piece > * { animation: pt-apparait 0.3s linear both; animation-delay: 0.55s; }
+.piece.compte { --trait: var(--c-accent-lisible); }
+.piece.compte > .piece-titre, .piece.compte.nue { color: var(--c-accent-lisible); }
+/* Pièce sans enfant (son texte seul) : le texte s'encre à la fin du tracé. */
+.piece.nue { animation: pt-encre 0.3s linear both; animation-delay: 0.55s; }
+.piece-titre { margin: 0; font: 700 4.4cqh/1.1 var(--f-titres); text-transform: uppercase; }
+.piece .texte { text-transform: none; font-weight: 400; }
+/* Cote fléchée : un trait fin et deux pointes, étiré depuis le milieu. */
+.cote {
+  position: relative; display: block; height: 2cqh; width: 100%; flex: none;
+  background: linear-gradient(var(--trait), var(--trait)) center / 100% var(--fin) no-repeat;
+  transform: scaleX(var(--p, 1));
+}
+.cote::before, .cote::after { content: ""; position: absolute; top: 50%; width: 0; height: 0; border: 0.8cqh solid transparent; translate: 0 -50%; }
+.cote::before { left: 0; border-left: 1.6cqh solid var(--trait); border-right-width: 0; rotate: 180deg; }
+.cote::after { right: 0; border-left: 1.6cqh solid var(--trait); border-right-width: 0; }
+.cote.accent { --trait: var(--c-accent-lisible); }
+/* Hachures de coupe : à 45°, au trait de détail. */
+.coupe {
+  display: block; height: 5cqh; width: calc(var(--p, 1) * 100%); flex: none; box-sizing: border-box;
+  border: var(--detail) solid var(--trait);
+  background: repeating-linear-gradient(45deg, var(--trait) 0 var(--detail), transparent var(--detail) 1.4cqh);
+  opacity: clamp(0, calc(var(--p, 1) * 20), 1);
+}
+/* Repère (ballon) : un cercle tracé comme au compas, le numéro s'encre ensuite. */
+.ballon {
+  display: grid; place-items: center; width: 20cqh; height: 20cqh; flex: none; border-radius: 50%;
+  background:
+    radial-gradient(closest-side, var(--c-fond) calc(100% - var(--contour)), transparent calc(100% - var(--contour) + 0.1cqh)),
+    conic-gradient(var(--c-primaire-lisible) calc(var(--p, 1) * 1turn), transparent 0);
+  color: var(--c-primaire-lisible); font: 700 9cqh/1 var(--f-titres);
+  animation: pt-encre 0.3s linear both; animation-delay: 0.55s;
+}
+/* Nuage de révision : festons d'accent autour de ce qui a changé, déroulé de gauche à droite. */
+.nuage {
+  --r: 1.6cqh; --e: var(--detail); --t: var(--c-accent-lisible);
+  display: flex; flex-direction: column; gap: 2cqh; padding: 5cqh 5.4cqh;
+  background:
+    radial-gradient(circle at 50% 100%, transparent calc(var(--r) - var(--e)), var(--t) calc(var(--r) - var(--e)), var(--t) var(--r), transparent calc(var(--r) + 0.1cqh)) left top / calc(2 * var(--r)) var(--r) repeat-x,
+    radial-gradient(circle at 50% 0, transparent calc(var(--r) - var(--e)), var(--t) calc(var(--r) - var(--e)), var(--t) var(--r), transparent calc(var(--r) + 0.1cqh)) left bottom / calc(2 * var(--r)) var(--r) repeat-x,
+    radial-gradient(circle at 100% 50%, transparent calc(var(--r) - var(--e)), var(--t) calc(var(--r) - var(--e)), var(--t) var(--r), transparent calc(var(--r) + 0.1cqh)) left top / var(--r) calc(2 * var(--r)) repeat-y,
+    radial-gradient(circle at 0 50%, transparent calc(var(--r) - var(--e)), var(--t) calc(var(--r) - var(--e)), var(--t) var(--r), transparent calc(var(--r) + 0.1cqh)) right top / var(--r) calc(2 * var(--r)) repeat-y;
+  clip-path: inset(-1cqh calc((1 - var(--p, 1)) * 100%) -1cqh -1cqh);
+}
+
+/* ---------- Décor : grille, cadre, axes ---------- */
+.decor { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.decor ~ * { position: relative; z-index: 1; }
+.grille {
+  position: absolute; inset: -8cqh;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--c-texte) 9%, transparent) var(--fin), transparent var(--fin)),
+    linear-gradient(90deg, color-mix(in srgb, var(--c-texte) 9%, transparent) var(--fin), transparent var(--fin)),
+    linear-gradient(color-mix(in srgb, var(--c-texte) 5%, transparent) var(--fin), transparent var(--fin)),
+    linear-gradient(90deg, color-mix(in srgb, var(--c-texte) 5%, transparent) var(--fin), transparent var(--fin));
+  background-size: 20cqh 20cqh, 20cqh 20cqh, 4cqh 4cqh, 4cqh 4cqh;
+  translate: var(--x, 0) 0;
+}
+.cadre {
+  position: absolute; inset: 4cqh; --q: var(--p, 1);
+  background:
+    linear-gradient(var(--trait), var(--trait)) left top / calc(var(--q) * 100%) var(--contour) no-repeat,
+    linear-gradient(var(--trait), var(--trait)) right top / var(--contour) calc(var(--q) * 100%) no-repeat,
+    linear-gradient(var(--trait), var(--trait)) right bottom / calc(var(--q) * 100%) var(--contour) no-repeat,
+    linear-gradient(var(--trait), var(--trait)) left bottom / var(--contour) calc(var(--q) * 100%) no-repeat;
+}
+.axe {
+  position: absolute; left: 4cqh; right: 4cqh; top: 50%; height: var(--fin); opacity: 0.45;
+  background: repeating-linear-gradient(90deg, var(--trait) 0 4cqh, transparent 4cqh 5cqh, var(--trait) 5cqh 5.6cqh, transparent 5.6cqh 6.6cqh);
+  transform: scaleX(var(--p, 1));
+}
+
+/* ---------- Cartouche : la désignation du plan ---------- */
+.cartouche {
+  margin: 0; align-self: flex-start; max-width: 100%; padding: 1.2cqh 2.4cqh; box-sizing: border-box;
+  border: var(--detail) solid var(--c-primaire-lisible); color: var(--c-texte);
+  font: 400 3.5cqh/1.3 var(--f-texte); letter-spacing: 0.12em; text-transform: uppercase;
+}
+
+/* ---------- Liste : nomenclature à repères ---------- */
+.nomenclature { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.6cqh; }
+.nomenclature li {
+  display: grid; grid-template-columns: 6cqh 1fr; gap: 2.4cqh; align-items: center; padding-bottom: 1.2cqh;
+  background: linear-gradient(var(--trait), var(--trait)) left bottom / 100% var(--fin) no-repeat;
+  font: 400 3.8cqh/1.3 var(--f-texte);
+}
+/* Numéros écrits en clair : la capture de l'export ne calcule pas les compteurs CSS. */
+.nomenclature li:nth-child(1)::before { content: "1"; }
+.nomenclature li:nth-child(2)::before { content: "2"; }
+.nomenclature li:nth-child(3)::before { content: "3"; }
+.nomenclature li:nth-child(4)::before { content: "4"; }
+.nomenclature li::before {
+  display: grid; place-items: center; width: 6cqh; height: 6cqh; border-radius: 50%; box-sizing: border-box;
+  border: var(--detail) solid var(--c-primaire-lisible); color: var(--c-primaire-lisible); font: 700 3.5cqh/1 var(--f-titres);
+}
+
+/* ---------- Chiffre : la mesure et sa cote ---------- */
+.mesure { display: flex; flex-direction: column; gap: 1.6cqh; align-items: flex-start; }
+
+/* ---------- Comparaison : deux vues ---------- */
+.vues { display: grid; grid-template-columns: 1fr 1fr; gap: 5cqh; }
+
+/* ---------- Étape ---------- */
+.etape { display: grid; grid-template-columns: auto 1fr; gap: 5cqh; align-items: center; }
+.etape-texte { display: flex; flex-direction: column; gap: 2cqh; min-width: 0; }
+
+/* ---------- Schéma : trois pièces reliées ---------- */
+.chaine-pieces { display: flex; align-items: center; gap: 2cqh; }
+.chaine-pieces > .piece { flex: 1; text-align: center; padding: 3cqh 1.6cqh; }
+.connecteur { flex: none; width: 8cqh; height: 2cqh; }
+
+/* ---------- Logo ---------- */
+.logo { height: 11cqh; width: auto; object-fit: contain; align-self: flex-start; }
+
+/* ---------- Ton sombre (par défaut, cyanotype) et ton clair (calque) ---------- */
+#pm-scene[data-ton="sombre"] .grille { opacity: 1; }
+#pm-scene[data-ton="clair"] .grille { opacity: 0.8; }
+
+/* ---------- Format carré ---------- */
+@container (max-aspect-ratio: 5/4) {
+  #pm-scene > section[data-scene] { padding: 9cqh 8cqh; gap: 2.4cqh; font-size: 3.5cqh; }
+  .cadre { inset: 3cqh; }
+  .axe { left: 3cqh; right: 3cqh; }
+  .titre { font-size: 5.8cqh; }
+  .titre-moyen { font-size: 4.2cqh; }
+  .texte { font-size: 3.5cqh; }
+  .nombre { font-size: 15cqh; }
+  .piece { font-size: 3.5cqh; padding: 2.4cqh; }
+  .piece-titre { font-size: 3.7cqh; }
+  .vues { gap: 3cqh; }
+  .ballon { width: 15cqh; height: 15cqh; font-size: 7cqh; }
+  .etape { gap: 3.6cqh; }
+  .nomenclature li { font-size: 3.5cqh; }
+  .chaine-pieces > .piece { padding: 2.4cqh 1cqh; }
+  .connecteur { width: 5cqh; }
+}
+
+/* ---------- Format vertical : tout s'empile ---------- */
+@container (orientation: portrait) {
+  #pm-scene > section[data-scene] { padding: 9cqh 7cqh; gap: 2cqh; font-size: 3.5cqh; }
+  .cadre { inset: 2.4cqh; }
+  .axe { left: 2.4cqh; right: 2.4cqh; }
+  .titre { font-size: 4.4cqh; }
+  .titre-moyen { font-size: 3.5cqh; }
+  .texte { font-size: 3.5cqh; }
+  .cartouche { font-size: 3.5cqh; padding: 1cqh 1.6cqh; }
+  .nombre { font-size: 11cqh; }
+  .piece { font-size: 3.5cqh; padding: 2cqh; gap: 0.8cqh; }
+  .piece-titre { font-size: 3.5cqh; }
+  .vues { grid-template-columns: 1fr; gap: 2cqh; }
+  .etape { grid-template-columns: 1fr; gap: 2cqh; }
+  .ballon { width: 11cqh; height: 11cqh; font-size: 5.4cqh; }
+  .nomenclature { gap: 0.6cqh; }
+  .nomenclature li { grid-template-columns: 4.4cqh 1fr; gap: 1.2cqh; padding-bottom: 0.6cqh; font: 400 3.5cqh/1.2 var(--f-titres); }
+  .nomenclature li::before { width: 4.4cqh; height: 4.4cqh; font-size: 3.5cqh; }
+  .nuage { padding: 3.6cqh 3.6cqh; --r: 1.2cqh; }
+  .chaine-pieces { flex-direction: column; align-items: stretch; gap: 1cqh; }
+  .chaine-pieces > .piece { padding: 1.8cqh; }
+  .connecteur { align-self: center; width: 2cqh; height: 4cqh; }
+  .logo { height: 8cqh; }
+}
+
+/* ---------- 9:16 : place pour la légende des réseaux sociaux (pas en 4:5) ---------- */
+@container (max-aspect-ratio: 2/3) {
+  #pm-scene > section[data-scene] { padding-bottom: 15cqh; }
+}
+
+/* ---------- Moyeu et rayons (spec S7, 5.7) : couronne en paysage, rangée sous le centre en portrait ---------- */
+.moyeu { --n: 3; position: relative; flex: 1; min-height: 46cqh; }
+.moyeu:has(> .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie) { --n: 4; }
+.moyeu:has(> .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie) { --n: 5; }
+.moyeu > .moyeu-centre, .moyeu > .moyeu-partie { position: absolute; left: 50%; top: 50%; box-sizing: border-box; flex: none; margin: 0; text-align: center; }
+.moyeu > .moyeu-centre { width: 38cqh; translate: -50% -50%; }
+.moyeu > .moyeu-partie { --a: calc(-90deg + 180deg / var(--n) + var(--i, 0) * 360deg / var(--n)); width: 32cqh; font-size: 3.6cqh; overflow-wrap: anywhere;
+  translate: calc(-50% + cos(var(--a)) * 58cqh) calc(-50% + sin(var(--a)) * 27cqh); }
+#pm-scene .moyeu > .piece.moyeu-centre { font-size: 4.6cqh; }
+@container (max-aspect-ratio: 5/4) {
+  .moyeu > .moyeu-centre { width: 26cqh; }
+  #pm-scene .moyeu > .piece.moyeu-centre { font-size: 3.8cqh; }
+  .moyeu > .moyeu-partie { width: 27cqh; font-size: 3.5cqh; translate: calc(-50% + cos(var(--a)) * 31cqh) calc(-50% + sin(var(--a)) * 26cqh); }
+}
+@container (max-aspect-ratio: 9/10) {
+  .moyeu { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); align-content: center; row-gap: 12cqh; column-gap: 0.8cqh; min-height: 0; }
+  .moyeu > .moyeu-centre, .moyeu > .moyeu-partie { position: relative; left: auto; top: auto; translate: none; width: auto; }
+  .moyeu > .moyeu-centre { grid-column: 1 / -1; justify-self: center; width: 85%; }
+  .moyeu > .moyeu-partie { grid-row: 2; font-size: calc(3.4cqh - var(--n) * 0.24cqh); padding: 1.4cqh 0.2cqh; overflow-wrap: anywhere; }
+}

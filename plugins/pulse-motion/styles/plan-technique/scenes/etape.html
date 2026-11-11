@@ -1,0 +1,15 @@
+<!-- Scène toute faite « etape » (style plan-technique) : une étape, son repère tracé au compas. Durée conseillée : 8 s.
+     Textes : numero (≤ 2 car.), titre (≤ 36 car.), texte (≤ 72 car.). -->
+<section data-scene="etape">
+  <div class="decor">
+    <span class="grille" data-decor data-start="0" data-dur="8" data-tween="--x 0cqh→-4cqh linear"></span>
+    <span class="cadre" data-start="0" data-dur="1.2"></span>
+  </div>
+  <div class="etape">
+    <span id="numero" class="ballon" data-texte="numero" data-start="0.6" data-dur="0.8"></span>
+    <div class="etape-texte">
+      <h2 id="titre" class="titre-moyen ecrit" data-texte="titre" data-start="#numero:fin" data-dur="0.9"></h2>
+      <p id="texte" class="texte ecrit" data-texte="texte" data-start="#titre:fin+0.2" data-dur="1.1"></p>
+    </div>
+  </div>
+</section>

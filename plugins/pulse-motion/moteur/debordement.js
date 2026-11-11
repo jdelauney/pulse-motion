@@ -4,7 +4,7 @@
  * data-texte qui débordent de leur cadre ou sortent de l'image, puis revient à
  * l'instant de départ. Un élément encore en train d'entrer (data-etat « avant »
  * ou « pendant ») n'est pas jugé hors de l'image : il peut arriver de l'extérieur.
- * Un texte découpé (data-lettres, data-mots) n'est jugé qu'une fois toutes ses lettres arrivées ;
+ * Un texte découpé (data-lettres, data-mots, data-morceaux) n'est jugé qu'une fois toutes ses lettres arrivées ;
  * un texte dans une caméra (data-camera) n'est pas jugé hors de l'image : le cadrage est voulu.
  * Sous l'aperçu (window.__PM_APERCU__), le rapport est envoyé à /_pm/controle.
  * Navigateur seulement ; dépend de horloge (global M).
@@ -26,7 +26,7 @@
 
   /** Texte découpé dont une lettre ou un mot est encore en train d'entrer. */
   function lettresEnCours(el) {
-    if (!el.hasAttribute('data-lettres') && !el.hasAttribute('data-mots')) return false;
+    if (!el.hasAttribute('data-lettres') && !el.hasAttribute('data-mots') && !el.hasAttribute('data-morceaux')) return false;
     return el.getAnimations({ subtree: true }).some(function (a) {
       var fin = a.effect && a.effect.getComputedTiming().endTime;
       return typeof fin === 'number' && a.currentTime < fin;

@@ -1,0 +1,16 @@
+<!-- Scène toute faite « schema » (style info-sans-son) : trois tuiles reliées par des flèches. Durée conseillée : 8 s.
+     Textes : titre (≤ 34 car.), a, b, c (≤ 20 car.). -->
+<section data-scene="schema">
+  <div class="decor">
+    <span class="lignes-compte" data-decor data-start="0" data-dur="8" data-tween="--y 0cqh→-5cqh linear"></span>
+    <span class="marges"></span>
+  </div>
+  <h2 id="titre" class="legende-moyenne" data-texte="titre" data-morceaux="2" data-start="0.2" data-dur="0.4"></h2>
+  <div class="chaine-tuiles">
+    <div id="a" class="tuile claque" data-texte="a" data-start="#titre:fin+0.4" data-dur="0.2"></div>
+    <span class="connecteur" aria-hidden="true"><i id="lien1" data-fleche="#a → #b" data-start="#a:fin+0.1" data-dur="0.4" data-couleur="accent-lisible" data-epaisseur="0.5"></i></span>
+    <div id="b" class="tuile claque" data-texte="b" data-start="#lien1:fin" data-dur="0.2"></div>
+    <span class="connecteur" aria-hidden="true"><i id="lien2" data-fleche="#b → #c" data-start="#b:fin+0.1" data-dur="0.4" data-couleur="accent-lisible" data-epaisseur="0.5"></i></span>
+    <div id="c" class="tuile claque" data-texte="c" data-start="#lien2:fin" data-dur="0.2"></div>
+  </div>
+</section>

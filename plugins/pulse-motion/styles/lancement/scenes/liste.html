@@ -1,0 +1,16 @@
+<!-- Scène toute faite « liste » (style lancement) : 2 à 4 fenêtres qui viennent s'aimanter à leur place ; la dernière porte l'accent. Durée conseillée : 12 s.
+     Textes : titre (≤ 36 car.), point1 … point4 (≤ 42 car.). Moins de 4 points : supprimer les points en trop. -->
+<section data-scene="liste">
+  <div class="decor">
+    <span class="grille" data-decor data-start="0" data-dur="12" data-tween="--y 0cqh→-8cqh linear"></span>
+    <span class="lumiere" data-decor data-start="0" data-dur="12" data-tween="--lx 22%→68% sine-inout"></span>
+    <span class="voile"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen monte" data-texte="titre" data-start="0.3" data-dur="0.5"></h2>
+  <ul class="pile-ui">
+    <li id="point1" class="carte-ui aimante" style="--dx: -6cqh; --dy: 5cqh" data-texte="point1" data-start="#titre:fin+0.4" data-dur="0.3"></li>
+    <li id="point2" class="carte-ui aimante" style="--dx: 5cqh; --dy: 6cqh" data-texte="point2" data-start="#point1:fin+1" data-dur="0.3"></li>
+    <li id="point3" class="carte-ui aimante" style="--dx: -4cqh; --dy: 7cqh" data-texte="point3" data-start="#point2:fin+1" data-dur="0.3"></li>
+    <li id="point4" class="carte-ui aimante" style="--dx: 6cqh; --dy: 4cqh" data-texte="point4" data-start="#point3:fin+1" data-dur="0.3"></li>
+  </ul>
+</section>

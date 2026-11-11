@@ -102,8 +102,10 @@ test('styles choisir : envoi rend { style, note } ; envoi d\'une autre origine r
   P.nouveauStyle({ nom: 'brouillon', depuis: 'minimal' });
   const liste = stylesAChoisir();
   assert.equal(liste.some((s) => s.style === 'brouillon'), false, 'style personnel non vérifié : pas montré');
-  assert.deepEqual(liste.map((s) => s.style), fs.readdirSync(LIVRES).sort());
-  assert.ok(liste.every((s) => s.categorie === 'essentiels' && s.nomCategorie === CATEGORIES[0].nom && s.usages.length === 3 && s.nonPas));
+  const rang = (style) => CATEGORIES.findIndex((c) => c.id === JSON.parse(fs.readFileSync(path.join(LIVRES, style, 'identite.json'), 'utf8')).categorie);
+  assert.deepEqual(liste.map((s) => s.style), fs.readdirSync(LIVRES).sort().sort((a, b) => rang(a) - rang(b)));
+  assert.ok(liste.every((s) => s.nomCategorie === CATEGORIES.find((c) => c.id === s.categorie).nom && s.usages.length === 3 && s.nonPas));
+  assert.deepEqual([...new Set(liste.map((s) => s.categorie))], ['essentiels', 'schemas-donnees', 'ecrans-annonces']);
   let url;
   const fin = choisirStyles({ delai: 60000, surPret: (u) => { url = u; } });
   while (!url) await new Promise((r) => setTimeout(r, 20));

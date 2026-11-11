@@ -1,0 +1,24 @@
+<!-- Scène toute faite « moyeu » (style lancement) : la carte centrale allumée, 3 à 5 cartes aimantées autour. Durée conseillée : 10 s.
+     Textes : titre (≤ 36 car.), centre (≤ 20 car.), partie1 … partie5 (≤ 18 car. chacune ; en 9:16, 12 car. avec 3 parties, 6 avec 5).
+     Moins de 5 parties : supprimer la partie en trop et sa flèche (la couronne se refait seule). Adapter data-dur du décor à la durée de la scène. -->
+<section data-scene="moyeu">
+  <div class="decor">
+    <span class="grille" data-decor data-start="0" data-dur="10" data-tween="--y 0cqh→-8cqh linear"></span>
+    <span class="lumiere" data-decor data-start="0" data-dur="10" data-tween="--lx 22%→68% sine-inout"></span>
+    <span class="voile"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen monte" data-texte="titre" data-start="0.3" data-dur="0.5"></h2>
+  <div class="moyeu">
+    <div id="centre" class="carte-ui active moyeu-centre monte" data-texte="centre" data-start="#titre:fin+0.3" data-dur="0.5"></div>
+    <div id="partie1" class="carte-ui moyeu-partie aimante" style="--i: 0; --dx: -6cqh; --dy: 5cqh" data-texte="partie1" data-start="#centre:fin+0.4" data-dur="0.3"></div>
+    <i data-fleche="#centre → #partie1" data-start="#partie1" data-dur="0.5" data-couleur="texte" data-epaisseur="0.3"></i>
+    <div id="partie2" class="carte-ui moyeu-partie aimante" style="--i: 1; --dx: 5cqh; --dy: 6cqh" data-texte="partie2" data-start="#partie1:fin+0.5" data-dur="0.3"></div>
+    <i data-fleche="#centre → #partie2" data-start="#partie2" data-dur="0.5" data-couleur="texte" data-epaisseur="0.3"></i>
+    <div id="partie3" class="carte-ui moyeu-partie aimante" style="--i: 2; --dx: -4cqh; --dy: 7cqh" data-texte="partie3" data-start="#partie2:fin+0.5" data-dur="0.3"></div>
+    <i data-fleche="#centre → #partie3" data-start="#partie3" data-dur="0.5" data-couleur="texte" data-epaisseur="0.3"></i>
+    <div id="partie4" class="carte-ui moyeu-partie aimante" style="--i: 3; --dx: 6cqh; --dy: 4cqh" data-texte="partie4" data-start="#partie3:fin+0.5" data-dur="0.3"></div>
+    <i data-fleche="#centre → #partie4" data-start="#partie4" data-dur="0.5" data-couleur="texte" data-epaisseur="0.3"></i>
+    <div id="partie5" class="carte-ui moyeu-partie aimante" style="--i: 4; --dx: -5cqh; --dy: 6cqh" data-texte="partie5" data-start="#partie4:fin+0.5" data-dur="0.3"></div>
+    <i data-fleche="#centre → #partie5" data-start="#partie5" data-dur="0.5" data-couleur="texte" data-epaisseur="0.3"></i>
+  </div>
+</section>

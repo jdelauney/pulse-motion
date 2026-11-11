@@ -1,0 +1,17 @@
+<!-- Scène toute faite « schema » (style lancement) : trois cartes qui s'aimantent, reliées par des flèches. Durée conseillée : 8 s.
+     Textes : titre (≤ 36 car.), a, b, c (≤ 22 car.). -->
+<section data-scene="schema">
+  <div class="decor">
+    <span class="grille" data-decor data-start="0" data-dur="8" data-tween="--y 0cqh→-8cqh linear"></span>
+    <span class="lumiere" data-decor data-start="0" data-dur="8" data-tween="--lx 22%→68% sine-inout"></span>
+    <span class="voile"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen monte" data-texte="titre" data-start="0.3" data-dur="0.5"></h2>
+  <div class="chaine-ui">
+    <div id="a" class="carte-ui aimante" style="--dx: -6cqh; --dy: 5cqh" data-texte="a" data-start="#titre:fin+0.3" data-dur="0.3"></div>
+    <span class="connecteur" aria-hidden="true"><i id="lien1" data-fleche="#a → #b" data-start="#a:fin+0.1" data-dur="0.5" data-couleur="texte" data-epaisseur="0.3"></i></span>
+    <div id="b" class="carte-ui aimante" style="--dx: 5cqh; --dy: 6cqh" data-texte="b" data-start="#lien1:fin" data-dur="0.3"></div>
+    <span class="connecteur" aria-hidden="true"><i id="lien2" data-fleche="#b → #c" data-start="#b:fin+0.1" data-dur="0.5" data-couleur="texte" data-epaisseur="0.3"></i></span>
+    <div id="c" class="carte-ui active aimante" style="--dx: -4cqh; --dy: 7cqh" data-texte="c" data-start="#lien2:fin" data-dur="0.3"></div>
+  </div>
+</section>

@@ -1,0 +1,12 @@
+<!-- Scène toute faite « titre » (style lancement) : l'étiquette, le titre que la lumière balaie, la promesse. Durée conseillée : 7 s.
+     Textes : etiquette (≤ 24 car.), titre (≤ 36 car.), sous (≤ 50 car.). Décor : data-dur = durée de la scène. -->
+<section data-scene="titre">
+  <div class="decor">
+    <span class="grille" data-decor data-start="0" data-dur="7" data-tween="--y 0cqh→-8cqh linear"></span>
+    <span class="lumiere" data-decor data-start="0" data-dur="7" data-tween="--lx 22%→68% sine-inout"></span>
+    <span class="voile"></span>
+  </div>
+  <p id="etiquette" class="surtitre monte" data-texte="etiquette" data-start="0.3" data-dur="0.5"></p>
+  <h1 id="titre" class="titre reflet monte" data-texte="titre" data-start="#etiquette:fin+0.1" data-dur="0.6"></h1>
+  <p id="sous" class="texte monte" data-texte="sous" data-start="#titre:fin+0.5" data-dur="0.5"></p>
+</section>

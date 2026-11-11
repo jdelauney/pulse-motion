@@ -1,0 +1,19 @@
+<!-- Scène toute faite « comparaison » (style plan-technique) : deux vues ; la seconde, celle qui compte, à l'accent. Durée conseillée : 12 s.
+     Textes : titre (≤ 36 car.), gauche-titre et droite-titre (≤ 18 car.), gauche-texte et droite-texte (≤ 56 car.). -->
+<section data-scene="comparaison">
+  <div class="decor">
+    <span class="grille" data-decor data-start="0" data-dur="12" data-tween="--x 0cqh→-4cqh linear"></span>
+    <span class="cadre" data-start="0" data-dur="1.2"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen ecrit" data-texte="titre" data-start="0.6" data-dur="0.9"></h2>
+  <div class="vues">
+    <div id="gauche" class="piece" data-start="#titre:fin+0.3" data-dur="0.8">
+      <h3 class="piece-titre" data-texte="gauche-titre"></h3>
+      <p class="texte" data-texte="gauche-texte"></p>
+    </div>
+    <div id="droite" class="piece compte" data-start="#gauche:fin+2.6" data-dur="0.8">
+      <h3 class="piece-titre" data-texte="droite-titre"></h3>
+      <p class="texte" data-texte="droite-texte"></p>
+    </div>
+  </div>
+</section>

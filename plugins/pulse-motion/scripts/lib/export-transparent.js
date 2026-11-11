@@ -173,8 +173,8 @@ async function exporterTransparent({ projet, deroule, u, demande, navigateur, ou
     for (const [k, capturee] of temoins) {
       if (!capturee) continue;
       // Une demi-image avant l'instant : le WebM range ses temps à la milliseconde (la dernière image peut tomber 2 ms plus tôt).
-      const lue = await F.extraireImage({ ffmpeg: outil.chemin, fichier: partiel, t: Math.max(0, (k - f0 - 0.5) / ips), decodeur: format === 'webm' ? 'libvpx-vp9' : null, pixels: 'rgba' });
-      const ecart = F.ecartImages(lue, capturee);
+      const lire = () => F.extraireImage({ ffmpeg: outil.chemin, fichier: partiel, t: Math.max(0, (k - f0 - 0.5) / ips), decodeur: format === 'webm' ? 'libvpx-vp9' : null, pixels: 'rgba' });
+      const ecart = await F.ecartTemoin(lire, capturee);
       if (ecart > ECART_MAX) throw new Error(`l'image ${k + 1} de la vidéo ne correspond pas à la page (écart de ${Math.round(ecart * 100)} %)`);
     }
     try {
