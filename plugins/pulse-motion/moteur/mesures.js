@@ -59,7 +59,7 @@
   }
   function etat(el) { var p = el.closest('[data-etat]'); return p ? p.getAttribute('data-etat') : null; }
   function lettresEnCours(el) {
-    if (!el.hasAttribute('data-lettres') && !el.hasAttribute('data-mots')) return false;
+    if (!el.hasAttribute('data-lettres') && !el.hasAttribute('data-mots') && !el.hasAttribute('data-morceaux')) return false;
     return el.getAnimations({ subtree: true }).some(function (a) {
       var fin = a.effect && a.effect.getComputedTiming().endTime;
       return typeof fin === 'number' && a.currentTime < fin;

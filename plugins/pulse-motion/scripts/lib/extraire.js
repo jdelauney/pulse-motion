@@ -48,7 +48,7 @@ function lireAttributs(texte) {
  *   elements: [{ cle, balise, start, dur, tween, texte, effet, milieu, calque, shader, son, sonVolume, momentFort?, classe, lettres, decor }],   (éléments minutés,
  *     data-effet et data-milieu compris, ordre du document ; decor : dans un .decor ou un [data-decor], ou décor lui-même)
  *   textes: [clé data-texte],
- *   decoupes: [{ attribut: 'data-lettres' | 'data-mots', effet }],
+ *   decoupes: [{ attribut: 'data-lettres' | 'data-mots' | 'data-morceaux', effet, motCle? }],
  *   miseEnScene: [{ balise, camera, gel, vitesse, profondeur }]   (textes des attributs, undefined si absents)
  *   css: texte des blocs <style>, des attributs style et des attributs filter
  * }
@@ -68,6 +68,8 @@ function extraireScene(html) {
   parcourir(sansBlocs, (balise, attrs, decor) => {
     if ('data-texte' in attrs) textes.push(attrs['data-texte']);
     for (const attribut of ['data-lettres', 'data-mots']) if (attribut in attrs) decoupes.push({ attribut, effet: attrs[attribut] });
+    // Légende en morceaux (spec Styles et réalisation, 5.12) : nombre de morceaux et mot-clé.
+    if ('data-morceaux' in attrs) decoupes.push({ attribut: 'data-morceaux', effet: attrs['data-morceaux'], ...('data-mot-cle' in attrs ? { motCle: attrs['data-mot-cle'] } : {}) });
     if ('data-camera' in attrs || 'data-gel' in attrs || 'data-vitesse' in attrs || 'data-profondeur' in attrs) {
       miseEnScene.push({ balise, camera: attrs['data-camera'], gel: attrs['data-gel'], vitesse: attrs['data-vitesse'], profondeur: attrs['data-profondeur'] });
     }

@@ -11,7 +11,12 @@
  * Saisie (data-lettres="saisie", spec S6 5.9) : chaque lettre porte son délai --pm-d (paquets irréguliers à graine, voir
  * paquetsSaisie) ; la dernière lettre de chaque paquet porte data-pm-curseur et --pm-dc (le curseur de saisie jusqu'au
  * paquet suivant), la dernière data-pm-curseur="fin" (curseur qui clignote à 1 Hz) ; CSS dans moteur/ecran.css.
- * Navigateur seulement ; dépend de minutage (M.lireSecondes). Sous Node : EFFETS et paquetsSaisie.
+ * Légende en morceaux (data-morceaux="2" ou "3", spec Styles et réalisation 5.12, style info-sans-son) : le texte injecté est
+ * coupé aux limites de mots en 2 ou 3 morceaux de longueur proche (couperMorceaux) ; chaque mot porte --pm-i, le rang de son
+ * morceau (les mots d'un morceau arrivent ensemble), l'élément --pm-n et --pm-pas (0,12 s, ou data-pas). data-mot-cle="<mot>"
+ * pose un bloc d'accent sur ce mot (première occurrence, sans accents ni casse ; « auto » : le mot le plus long) : un seul
+ * mot-clé par légende. Aucune syntaxe dans le texte du déroulé : changer de style reste propre. Animations dans base.css.
+ * Navigateur seulement ; dépend de minutage (M.lireSecondes). Sous Node : EFFETS, paquetsSaisie, couperMorceaux, motCleDe.
  */
 (function (racine) {
   'use strict';
@@ -28,6 +33,9 @@
   var SIGNES = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#%&*+=?';
   var PAS_MOTS = 0.12;
   var BLANC = /^[ \t\n\r]+$/;
+  // Légende en morceaux : 2 ou 3 morceaux, 0,12 s entre deux (chiffres de lemo-opuscar, caption-news § 4, MIT).
+  var MORCEAUX = ['2', '3'];
+  var PAS_MORCEAUX = 0.12;
 
   function graphemes(mot) {
     if (racine.Intl && Intl.Segmenter) {
@@ -73,6 +81,98 @@
     s.className = classe;
     if (texte !== undefined) s.textContent = texte;
     return s;
+  }
+
+  /** Longueur d'un mot pour l'équilibre des morceaux : ses caractères (graphèmes). */
+  function longueur(mot) { return graphemes(mot).length; }
+
+  /**
+   * Coupe une suite de mots en n morceaux consécutifs de longueur proche (espaces comprises) : le plus long morceau le plus
+   * court possible, puis l'écart le plus petit, puis la première coupe. -> tailles des morceaux, en mots (un morceau par mot
+   * s'il y a n mots ou moins).
+   */
+  function couperMorceaux(mots, n) {
+    var k = mots.length;
+    if (k <= n) return mots.map(function () { return 1; });
+    var l = mots.map(longueur);
+    var poids = function (a, b) { var t = b - a - 1; for (var i = a; i < b; i++) t += l[i]; return t; };
+    var meilleur = null;
+    var essayer = function (coupes) {
+      var bornes = [0].concat(coupes, [k]);
+      var tailles = [], longs = [];
+      for (var i = 0; i < bornes.length - 1; i++) { tailles.push(bornes[i + 1] - bornes[i]); longs.push(poids(bornes[i], bornes[i + 1])); }
+      var max = Math.max.apply(null, longs);
+      var moy = longs.reduce(function (a, b) { return a + b; }, 0) / longs.length;
+      var ecart = longs.reduce(function (a, b) { return a + (b - moy) * (b - moy); }, 0);
+      if (!meilleur || max < meilleur.max || (max === meilleur.max && ecart < meilleur.ecart - 1e-9)) meilleur = { max: max, ecart: ecart, tailles: tailles };
+    };
+    if (n === 2) for (var a = 1; a < k; a++) essayer([a]);
+    else for (var b = 1; b < k - 1; b++) for (var c = b + 1; c < k; c++) essayer([b, c]);
+    return meilleur.tailles;
+  }
+
+  /** Forme comparable d'un mot : sans accents, sans casse, sans ponctuation autour. */
+  function nu(mot) {
+    return String(mot).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '');
+  }
+
+  /** Rang du mot-clé dans `mots` : première occurrence ; « auto » : le mot le plus long (le premier à égalité). -1 : absent. */
+  function motCleDe(mots, voulu) {
+    var v = String(voulu || '').trim();
+    if (v === 'auto') {
+      var rang = -1, max = 0;
+      mots.forEach(function (m, i) { var n = longueur(nu(m)); if (n > max) { max = n; rang = i; } });
+      return rang;
+    }
+    var cible = nu(v);
+    if (!cible) return -1;
+    for (var i = 0; i < mots.length; i++) if (nu(mots[i]) === cible) return i;
+    return -1;
+  }
+
+  /** Légende en morceaux : découpe un élément [data-morceaux] ; -> erreur ou null. */
+  function decouperMorceaux(el, idScene, dureeTemps) {
+    var cle = el.id || el.getAttribute('data-texte') || el.tagName.toLowerCase();
+    var debut = 'Scène « ' + idScene + ' », élément « ' + cle + ' » : ';
+    var valeur = el.getAttribute('data-morceaux');
+    if (MORCEAUX.indexOf(valeur) < 0) return { regle: 'lettres-invalide', message: debut + 'data-morceaux « ' + valeur + ' » : 2 ou 3 morceaux.' };
+    if (el.hasAttribute('data-lettres') || el.hasAttribute('data-mots')) return { regle: 'lettres-invalide', message: debut + 'data-morceaux ne se combine pas avec data-lettres ni data-mots.' };
+    var pas = PAS_MORCEAUX;
+    var brut = el.getAttribute('data-pas');
+    if (brut !== null) {
+      var lu = M.lireSecondes(brut, dureeTemps);
+      if (lu.erreur === 'tempo-absent') return { regle: 'tempo-absent', message: debut + 'data-pas « ' + brut + ' » est en temps musicaux, mais le déroulé n\'a pas de « tempo ».' };
+      if (lu.erreur) return { regle: 'lettres-invalide', message: debut + 'data-pas « ' + brut + ' » n\'est pas un nombre de secondes (ex. 0.12, ou 0.25t avec un tempo).' };
+      pas = lu.valeur;
+    }
+    var texte = el.textContent;
+    var mots = texte.split(/[ \t\n\r ]+/).filter(Boolean);
+    if (!mots.length) return null;
+    var voulu = el.getAttribute('data-mot-cle');
+    var rangCle = -1;
+    if (voulu !== null) {
+      if (/\s/.test(voulu.trim())) return { regle: 'lettres-invalide', message: debut + 'data-mot-cle « ' + voulu + ' » : un seul mot-clé par légende, en un mot.' };
+      rangCle = motCleDe(mots, voulu);
+      if (rangCle < 0) return { regle: 'lettres-invalide', message: debut + 'data-mot-cle « ' + voulu + ' » absent du texte « ' + texte.trim() + ' ».' };
+    }
+    var tailles = couperMorceaux(mots, Number(valeur));
+    var fragment = document.createDocumentFragment();
+    var i = 0;
+    tailles.forEach(function (taille, morceau) {
+      for (var j = 0; j < taille; j++, i++) {
+        if (i > 0) fragment.appendChild(document.createTextNode(' '));
+        var mot = span(i === rangCle ? 'pm-mot pm-mot-cle' : 'pm-mot', mots[i]);
+        mot.setAttribute('aria-hidden', 'true');
+        mot.style.setProperty('--pm-i', String(morceau));
+        fragment.appendChild(mot);
+      }
+    });
+    el.setAttribute('aria-label', texte.replace(/\s+/g, ' ').trim());
+    el.textContent = '';
+    el.appendChild(fragment);
+    el.style.setProperty('--pm-n', String(tailles.length));
+    el.style.setProperty('--pm-pas', pas + 's');
+    return null;
   }
 
   /** Découpe un élément ; -> message d'erreur ou null. */
@@ -177,8 +277,8 @@
   /** Découpe les éléments [data-lettres] et [data-mots] d'une section ; -> erreurs [{ regle, scene, message }]. */
   M.decouper = function (section, idScene, dureeTemps) {
     var erreurs = [];
-    section.querySelectorAll('[data-lettres],[data-mots]').forEach(function (el) {
-      var e = decouperElement(el, idScene, dureeTemps);
+    section.querySelectorAll('[data-lettres],[data-mots],[data-morceaux]').forEach(function (el) {
+      var e = el.hasAttribute('data-morceaux') ? decouperMorceaux(el, idScene, dureeTemps) : decouperElement(el, idScene, dureeTemps);
       if (e) erreurs.push({ regle: e.regle, scene: idScene, message: e.message });
     });
     return erreurs;
@@ -216,6 +316,9 @@
   };
   M.EFFETS_LETTRES = EFFETS;
   M.paquetsSaisie = paquetsSaisie;
-  // Sous Node (controler.js) : la liste des effets, et les délais de la saisie (tournage, tests).
-  if (typeof module === 'object' && module.exports) module.exports = { EFFETS: EFFETS, paquetsSaisie: paquetsSaisie, SAISIE: SAISIE };
+  M.couperMorceaux = couperMorceaux;
+  // Sous Node (controler.js) : la liste des effets, les délais de la saisie (tournage, tests) et la coupe des légendes.
+  if (typeof module === 'object' && module.exports) {
+    module.exports = { EFFETS: EFFETS, paquetsSaisie: paquetsSaisie, SAISIE: SAISIE, couperMorceaux: couperMorceaux, motCleDe: motCleDe, MORCEAUX: MORCEAUX, PAS_MORCEAUX: PAS_MORCEAUX };
+  }
 })(typeof globalThis !== 'undefined' ? globalThis : this);
