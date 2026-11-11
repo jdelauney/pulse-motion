@@ -31,7 +31,8 @@
         ["Une vidéo à partir d'une idée, vite", "creer"],
         ["Une vidéo aux couleurs de ma marque", "creer-charte"],
         ["Une vidéo avec ma voix et des sous-titres", "creer-voix"],
-        ["Une vidéo verticale pour les réseaux", "creer-social"]
+        ["Une vidéo verticale pour les réseaux", "creer-social"],
+        ["Un tutoriel : montrer comment on fait dans un logiciel", "creer-tutoriel"]
       ]
     },
     "en-cours": {
@@ -42,6 +43,7 @@
         ["Changer le son : musique, voix, bruitages", "retoucher-son"],
         ["Enregistrer ou importer ma voix", "voix"],
         ["Régler un effet de particules à l'œil", "atelier-particules"],
+        ["Ajouter le film d'une application, ou une vidéo de mon écran", "filmer"],
         ["Changer de style", "retoucher-style"],
         ["Revenir en arrière", "retoucher-annuler"]
       ]
@@ -114,6 +116,18 @@
       commande: "creer", arguments: "une astuce de rangement pour Instagram",
       pourquoi: "Un sujet pour les réseaux donne le genre « social » : format vertical 9:16, style énergique proposé en premier, sous-titres mot par mot conseillés.",
       note: "Pour le fil LinkedIn ou Instagram, demandez le format 4:5."
+    },
+    "creer-tutoriel": {
+      commande: "creer", arguments: "un tutoriel : comment créer une facture dans notre logiciel",
+      pourquoi: "Pulse Motion part du modèle « Tutoriel logiciel » et vous demande ce qu'on montre : l'application, une vidéo de votre écran ou des captures. Vous racontez le parcours, il le filme avec vous, puis il écrit la vidéo à partir des étapes filmées.",
+      note: "Les clics sont réels : utilisez un compte de démonstration. Pour essayer sans risque : « montre-moi sur l'appli d'essai ».",
+      autre: { commande: "filmer", arguments: "montre-moi sur l'appli d'essai", pourquoi: "Pour voir le tournage seul, sur Facturo, l'application d'essai livrée avec Pulse Motion." }
+    },
+    "filmer": {
+      commande: "filmer", arguments: "comment on crée une facture sur app.exemple.fr",
+      pourquoi: "Vous racontez le parcours, Pulse Motion le fait dans l'application et le filme, floute ce qui est personnel, puis vous choisissez la prise. Le pointeur, les clics et les zooms se retouchent ensuite sans refilmer.",
+      note: "Un logiciel installé (Excel, logiciel métier) : enregistrez votre écran avec l'outil de votre ordinateur, puis dites « j'ai enregistré mon écran ».",
+      autre: { commande: "retoucher", arguments: "suis les clics", pourquoi: "Une fois le film dans la vidéo, la caméra, le pointeur et le projecteur se règlent en une phrase." }
     },
     "reprendre": {
       commande: "reprendre", arguments: "",

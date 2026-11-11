@@ -218,7 +218,7 @@ function fabriquerExemples() {
   for (const m of exemplesAFabriquer()) {
     avecDossier(`pm-galerie-exemple-`, (dossier) => {
       const source = dossierExemple(m);
-      fs.cpSync(source, dossier, { recursive: true, filter: (f) => !/^(sortie|\.pulse-motion|\.historique|exemple\.json)([\/]|$)/.test(path.relative(source, f)) });
+      fs.cpSync(source, dossier, { recursive: true, filter: (f) => !/^(sortie|\.pulse-motion|\.historique|exemple\.json|appli)([\\/]|$)/.test(path.relative(source, f)) });
       const video = exporter(dossier);
       const [mp4, jpg] = fichiersExemple(m);
       fs.mkdirSync(path.dirname(path.join(DOCS, mp4)), { recursive: true });
