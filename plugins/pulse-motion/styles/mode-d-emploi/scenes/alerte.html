@@ -1,0 +1,12 @@
+<!-- Scène toute faite « alerte » (style mode-d-emploi) : le carton d'avertissement se pose image par image, sur sa couleur chaude. Durée conseillée : 8 s.
+     Textes : titre (≤ 30 car.), texte (≤ 64 car.). -->
+<section data-scene="alerte">
+  <div class="decor">
+    <span class="piece barre" data-aplat data-decor data-start="0" data-dur="8" data-tween="--y 0cqh→2cqh linear"></span>
+    <span class="piece boulon" data-aplat="rond" data-decor data-start="0" data-dur="8" data-tween="--r 0deg→90deg linear"></span>
+  </div>
+  <div id="boite" class="carton chaud cadre-alerte pm-m-saccade" data-aplat data-start="0.3">
+    <h2 id="titre" class="titre-moyen compte pm-m-saccade" data-texte="titre" data-start="0.8" data-dur="0.6"></h2>
+    <p id="texte" class="texte pm-m-saccade" data-texte="texte" data-start="#titre:fin+0.4" data-dur="0.6"></p>
+  </div>
+</section>

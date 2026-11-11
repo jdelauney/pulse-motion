@@ -1,0 +1,15 @@
+<!-- Scène toute faite « conclusion » (style mode-d-emploi) : ce qu'il faut retenir, sur sa carte de fin posée image par image, puis le logo. Durée conseillée : 6 s.
+     Textes : titre (≤ 30 car.), sous (≤ 44 car.). Logo : celui de la charte (sinon supprimer l'image).
+     Dernière scène de la vidéo : data-dur du décor = durée de la scène − 1 s (image stable d'au moins 0,5 s à la fin). -->
+<section data-scene="conclusion">
+  <div class="decor">
+    <span class="piece bloc" data-aplat data-decor data-start="0" data-dur="5" data-tween="--x 0cqh→-2cqh linear"></span>
+    <span class="piece disque" data-aplat="rond" data-decor data-start="0" data-dur="5" data-tween="--r 0deg→30deg linear"></span>
+    <span class="piece barre" data-aplat data-decor data-start="0" data-dur="5" data-tween="--y 0cqh→1.5cqh linear"></span>
+  </div>
+  <div id="carte" class="carton moutarde nommee pm-m-saccade" data-aplat data-start="0.3" data-dur="1.2">
+    <h2 id="titre" class="titre" data-texte="titre"></h2>
+  </div>
+  <p id="sous" class="texte pm-m-saccade" data-texte="sous" data-start="#carte+1" data-dur="0.6"></p>
+  <img id="logo" class="logo" data-logo alt="" data-start="#sous:fin+0.2" data-dur="0.5" data-tween="opacity 0→1">
+</section>

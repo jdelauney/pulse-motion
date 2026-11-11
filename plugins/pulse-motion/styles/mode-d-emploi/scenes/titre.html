@@ -1,0 +1,18 @@
+<!-- Scène toute faite « titre » (style mode-d-emploi) : la carte de titre se pose image par image, le guide la montre de la main. Durée conseillée : 7 s.
+     Textes : etiquette (≤ 22 car.), titre (≤ 30 car.), sous (≤ 46 car.). Décor : data-dur = durée de la scène. Le guide : personnage « guide » du plugin. -->
+<section data-scene="titre">
+  <div class="decor">
+    <span class="piece bloc" data-aplat data-decor data-start="0" data-dur="7" data-tween="--x 0cqh→-3cqh linear"></span>
+    <span class="piece disque" data-aplat="rond" data-decor data-start="0" data-dur="7" data-tween="--r 0deg→45deg linear"></span>
+    <span class="piece barre" data-aplat data-decor data-start="0" data-dur="7" data-tween="--y 0cqh→2cqh linear"></span>
+  </div>
+  <div id="narrateur" class="guide" data-personnage="guide" data-vue="40">
+    <i id="montre" data-action="pose" data-pose="montrer" data-start="#titre" data-dur="5"></i>
+    <i data-action="expression" data-expression="joie" data-start="#sous"></i>
+  </div>
+  <div class="carte-titre">
+    <div id="carton" class="carton moutarde pm-m-saccade" data-aplat data-start="0.4"><p id="etiquette" class="etiquette" data-texte="etiquette"></p></div>
+    <h1 id="titre" class="titre pm-m-saccade" data-texte="titre" data-start="#carton+0.6" data-dur="0.6"></h1>
+    <p id="sous" class="texte pm-m-saccade" data-texte="sous" data-start="#titre:fin+0.6" data-dur="0.6"></p>
+  </div>
+</section>

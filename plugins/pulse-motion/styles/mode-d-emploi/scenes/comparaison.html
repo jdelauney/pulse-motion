@@ -1,0 +1,19 @@
+<!-- Scène toute faite « comparaison » (style mode-d-emploi) : le mauvais geste, marqué d'une croix, puis le bon, marqué d'une coche, qui se colore quand on le nomme. Durée conseillée : 12 s.
+     Textes : titre (≤ 30 car.), gauche-titre et droite-titre (≤ 16 car.), gauche-texte et droite-texte (≤ 48 car.). -->
+<section data-scene="comparaison">
+  <div class="decor">
+    <span class="piece bloc" data-aplat data-decor data-start="0" data-dur="12" data-tween="--x 0cqh→-4cqh linear"></span>
+    <span class="piece disque" data-aplat="rond" data-decor data-start="0" data-dur="12" data-tween="--r 0deg→60deg linear"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen pm-m-saccade" data-texte="titre" data-start="0.4" data-dur="0.6"></h2>
+  <div class="planches">
+    <div id="gauche" class="planche pm-m-saccade" data-aplat data-start="#titre:fin+0.2">
+      <div class="planche-tete"><span class="signe non" data-aplat="rond" aria-hidden="true"></span><h3 id="gauche-titre" class="planche-titre" data-texte="gauche-titre"></h3></div>
+      <p id="gauche-texte" class="texte pm-m-saccade" data-texte="gauche-texte" data-start="#gauche+0.8" data-dur="0.6"></p>
+    </div>
+    <div id="droite" class="planche bonne nommee pm-m-saccade" data-aplat data-start="#gauche-texte:fin+2" data-dur="1.6">
+      <div class="planche-tete"><span class="signe oui" data-aplat="rond" aria-hidden="true"></span><h3 id="droite-titre" class="planche-titre compte" data-texte="droite-titre"></h3></div>
+      <p id="droite-texte" class="texte pm-m-saccade" data-texte="droite-texte" data-start="#droite+1.2" data-dur="0.6"></p>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,15 @@
+<!-- Scène toute faite « liste » (style mode-d-emploi) : 2 à 4 points, chacun sur sa pastille numérotée, qui arrivent image par image. Durée conseillée : 12 s.
+     Textes : titre (≤ 30 car.), point1 … point4 (≤ 36 car.). Moins de 4 points : supprimer les points en trop. -->
+<section data-scene="liste">
+  <div class="decor">
+    <span class="piece bloc" data-aplat data-decor data-start="0" data-dur="12" data-tween="--x 0cqh→-4cqh linear"></span>
+    <span class="piece disque" data-aplat="rond" data-decor data-start="0" data-dur="12" data-tween="--r 0deg→60deg linear"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen pm-m-saccade" data-texte="titre" data-start="0.4" data-dur="0.6"></h2>
+  <ul class="points">
+    <li id="point1" class="pm-m-saccade" data-texte="point1" data-start="#titre:fin+0.4"></li>
+    <li id="point2" class="pm-m-saccade" data-texte="point2" data-start="#point1+1.8"></li>
+    <li id="point3" class="pm-m-saccade" data-texte="point3" data-start="#point2+1.8"></li>
+    <li id="point4" class="pm-m-saccade" data-texte="point4" data-start="#point3+1.8"></li>
+  </ul>
+</section>

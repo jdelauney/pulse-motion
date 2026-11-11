@@ -1,6 +1,6 @@
 {
-  "formation": { "recommandes": ["clair-pedagogique", "chaleureux"], "contraste": "minimal", "aussi": ["plan-technique", "info-sans-son", "tableau-blanc", "tableau-noir", "iso-album", "iso-infographie", "pictogrammes", "crayon"] },
-  "produit": { "recommandes": ["minimal", "tech-sombre"], "contraste": "energique", "aussi": ["lancement", "plan-technique", "recit-donnees", "tableau-blanc", "iso-infographie", "papier-decoupe", "pictogrammes"] },
+  "formation": { "recommandes": ["clair-pedagogique", "chaleureux"], "contraste": "minimal", "aussi": ["plan-technique", "info-sans-son", "tableau-blanc", "tableau-noir", "iso-album", "iso-infographie", "pictogrammes", "crayon", "mode-d-emploi"] },
+  "produit": { "recommandes": ["minimal", "tech-sombre"], "contraste": "energique", "aussi": ["lancement", "plan-technique", "recit-donnees", "tableau-blanc", "iso-infographie", "papier-decoupe", "pictogrammes", "mode-d-emploi"] },
   "storytelling": { "recommandes": ["editorial", "chaleureux"], "contraste": "tech-sombre", "aussi": ["lancement", "carnet", "recit-donnees", "tableau-noir", "iso-album", "crayon", "papier-decoupe"] },
   "social": { "recommandes": ["energique", "minimal"], "contraste": "editorial", "aussi": ["info-sans-son", "lancement", "carnet", "riso", "papier-decoupe"] }
 }
