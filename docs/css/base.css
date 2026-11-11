@@ -827,3 +827,14 @@ a[target="_blank"]::after { content: "\00a0↗"; font-size: 0.85em; }
 .idee-reponses dd { margin: 0; }
 .idee-seance { margin-top: 16px; }
 .idee-seance summary { cursor: pointer; font-weight: 600; }
+
+/* Exemples : la demande, le déroulé validé et la vidéo ; avant / après d'une retouche, côte à côte ; scénarios d'usage. */
+.exemple { margin: 56px 0; padding-top: 8px; border-top: 1px solid var(--lisere); scroll-margin-top: 96px; }
+.retouche { margin: 32px 0; scroll-margin-top: 96px; }
+.avant-apres { display: grid; grid-template-columns: 1fr; gap: 16px; margin: 16px 0; }
+.avant-apres figure { margin: 0; }
+.avant-apres figcaption { margin-top: 6px; font-size: var(--texte-sm); color: var(--texte-secondaire); }
+@media (min-width: 640px) { .avant-apres { grid-template-columns: 1fr 1fr; } }
+/* Pourquoi Pulse Motion (accueil) : trois façons de faire aujourd'hui, et ce qui change. */
+.pourquoi-defaut { color: var(--texte-secondaire); }
+.pourquoi-change { max-width: 896px; margin: 40px auto 0; }

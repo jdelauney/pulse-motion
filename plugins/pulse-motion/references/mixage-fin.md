@@ -42,6 +42,7 @@ Rappel (détail dans `pulse-motion reference audio`) : un seul mixage dans la pa
 | `impact`, `basse` | Juste après le contact : la cause d'abord, le choc ensuite | 1 à 2 images après (+0,03 à +0,07 s) |
 | `montee` | Elle finit sur le moment fort : la commencer avant | Départ 0,8 s avant le moment |
 | `souffle` | Il enveloppe une apparition lente | Départ 0,3 s avant |
+| `crissement` | Il dure tout le tracé à main levée : il part avec le trait | 0 (posé seul par le moteur sur un tracé) |
 
 Pour un élément animé par une entrée qui ralentit (`expo-out`, `back-out`), le moment visible est proche de son début : pas de décalage. Pour une chute (`pm-m-chute`), le contact est au premier rebond, vers 40 % de la durée.
 

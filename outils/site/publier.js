@@ -2,7 +2,8 @@
 // Wiki Pulse Motion – publie le site sur la branche gh-pages : les fichiers de docs/ suivis par git (sans docs/superpowers/), plus les
 // médias fabriqués dans docs/medias/ (ignoré par git, voir outils/site/medias.js). La branche n'a qu'un seul commit, poussé en force :
 // elle ne grossit pas d'une publication à l'autre. Seule gh-pages est poussée, jamais main.
-// Avant de pousser, il refuse de publier depuis une autre branche que main, avec des pages de docs/ modifiées et non validées, ou
+// Avant de pousser, il refuse de publier depuis une autre branche que main, avec des pages de docs/ modifiées et non validées,
+// avec un chemin de cet ordinateur ou un secret dans une page (outils/publication/porte.js), ou
 // avec des liens cassés (outils/site/liens.js).
 // Lancer : node outils/site/publier.js [--sec] [--forcer]
 //   --sec     prépare le site sans rien pousser, et affiche le nombre de fichiers et leur poids
@@ -64,6 +65,11 @@ function refusAvantPublication(racineDepot) {
   if (modifies) refus.push("Des fichiers de docs/ ne sont pas validés :\n  " + modifies.split(/\r?\n/).join("\n  "));
   const { casses } = require("./liens.js").liensDuWiki(racineDepot);
   if (casses.length) refus.push("Liens cassés :\n  " + casses.map((c) => `${c.page} → ${c.cible}`).join("\n  "));
+  // Porte de publication (outils/publication/porte.js) sur les fichiers suivis qui seront publiés.
+  const porte = require("../publication/porte.js");
+  const suivis = fichiersAPublier(racineDepot).filter((f) => !f.startsWith("medias/")).map((f) => `docs/${f}`);
+  const problemes = porte.verifierDepot(racineDepot, { fichiers: suivis });
+  if (problemes.length) refus.push("Chemins de cet ordinateur ou secrets dans les pages :\n  " + problemes.map(porte.decrire).join("\n  "));
   return refus;
 }
 

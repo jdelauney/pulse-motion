@@ -66,7 +66,7 @@ Gardez `whisper` tel quel. Le rétablissement se fait en fin d'essai (partie 13)
 
 ### 0.4 Fichiers à avoir sous la main
 
-- **Logo** : `plugins\pulse-motion\exemples\chaine-du-froid\assets\logo.svg`. Vous pouvez aussi utiliser un vrai logo PNG ou SVG de votre choix.
+- **Logo** : `<dossier du dépôt>\plugins\pulse-motion\exemples\chaine-du-froid\assets\logo.svg`. Vous pouvez aussi utiliser un vrai logo PNG ou SVG de votre choix.
 - **Logo JPEG** (facultatif) : n'importe quelle image `.jpg`, pour tester le refus.
 - Un nom de police à citer : **Montserrat**.
 

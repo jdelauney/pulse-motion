@@ -90,7 +90,7 @@ test('references_s10_mouvements_classes_sons_existent : numéros, classes pm-m-*
     for (const m of sansAVenir(t).matchAll(/data-son="([a-z-]+)"/g)) assert.ok(SONS.has(m[1]), `${nom} : son « ${m[1]} » absent`);
   }
   assert.ok(numeros > 30, 'des numéros sont cités');
-  assert.ok(SONS.size === 12, `${SONS.size} sons`);
+  assert.ok(SONS.size === 13, `${SONS.size} sons (les douze de S10 et crissement, S7 J4)`);
 });
 
 test('references_s10_et_realisation_sans_termes_interdits : aucun terme de la source dans les références (et la doctrine de S2)', () => {
@@ -224,7 +224,7 @@ test('mixage_fin_sons_cites_existent_ou_a_venir : chaque son des tableaux existe
     });
   }
   assert.ok(n >= 20, `${n} sons cités`);
-  // Le décalage par son couvre les douze sons existants.
+  // Le décalage par son couvre tous les sons existants.
   const cale = tableaux(sectionReference('mixage-fin', 'Caler un son sur l\'instant visible'))[0];
   const cites = new Set(cale.lignes.flatMap((l) => [...l[0].matchAll(/`([a-z-]+)`/g)].map((m) => m[1])));
   for (const s of SONS) assert.ok(cites.has(s), `décalage du son « ${s} »`);
