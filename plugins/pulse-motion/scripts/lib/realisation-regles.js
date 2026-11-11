@@ -7,6 +7,8 @@
  * (principe seulement), term_in() et vérité des chiffres de video-director (MIT, © 2026 win4r) ; code écrit à neuf.
  * Module pur (lit seulement les polices, mises en cache).
  */
+// Forme affichée du texte dit (spec S7, 5.11) : sans [#repère], {affiché|dit} ni [pause].
+const affiche = (texte) => require('../../moteur/aligner.js').lireTexteDit(texte).affiche;
 const fs = require('node:fs');
 const { analyserCamera } = require('../../moteur/camera.js');
 const { analyserTween } = require('../../moteur/tween.js');
@@ -54,7 +56,7 @@ function rienDeNouveau({ deroule, min, elements, scenesMinutees, besoinLecture, 
     // Pause finale de la dernière scène exclue : rien de nouveau n'y entre, c'est voulu.
     if (suivante) points.push(fin);
     const prevue = (deroule.scenes.find((x) => x.id === s.id) || {}).voix;
-    const voix = plagesVoix(s, scenesMinutees.find((x) => x.id === s.id), prevue && prevue.texte);
+    const voix = plagesVoix(s, scenesMinutees.find((x) => x.id === s.id), prevue && prevue.texte && affiche(prevue.texte));
     const lecture = (besoinLecture[s.id] && besoinLecture[s.id].besoin) || 0;
     let pire = null;
     for (let k = 1; k < points.length; k++) {
@@ -146,7 +148,7 @@ function termeCle({ deroule, scenesHtml, termes }) {
   const r = [];
   const avecVoix = deroule.scenes.some((s) => s.voix && s.voix.texte);
   for (const t of termes.filter((x) => x.cle)) {
-    const dits = deroule.scenes.filter((s) => s.voix && s.voix.texte && contientTerme(s.voix.texte, t.terme)).map((s) => s.id);
+    const dits = deroule.scenes.filter((s) => s.voix && s.voix.texte && contientTerme(affiche(s.voix.texte), t.terme)).map((s) => s.id);
     const montres = deroule.scenes.filter((s) => textesAffiches(s, scenesHtml[s.id] || '').some((x) => contientTerme(x, t.terme))).map((s) => s.id);
     if (dits.length && !dits.some((id) => montres.includes(id))) {
       r.push({ regle: 'terme-cle', gravite: 'alerte', scene: dits[0], element: t.terme,

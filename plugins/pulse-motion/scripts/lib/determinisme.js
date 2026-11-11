@@ -3,7 +3,7 @@
  * personnage ou un décor vivant (boucles pm-v-*, spec Mouvement vivant 5.9) pourraient ne pas se dessiner deux fois pareil
  * est capturée dans deux pages et dans deux ordres.
  *
- * concernees(assemblage) -> [{ id, raisons: ['code' | 'particules' | 'personnage' | 'vie' | 'ecran' | 'film' | 'dessin'], gpu }]
+ * concernees(assemblage) -> [{ id, raisons: ['code' | 'particules' | 'personnage' | 'vie' | 'ecran' | 'film' | 'dessin' | 'camera'], gpu }]
  * empreinteDeterminisme(assemblage, id) -> sha256 : section et code de la scène, recettes de ses effets et milieux,
  *   personnages de la vidéo (si la scène en a), moteur et code de la preuve.
  * instantsPreuve(minutage, ids, { n, ips }) -> [{ scene, t }] : à 10, 50 et 90 % de la partie de chaque scène hors
@@ -55,6 +55,8 @@ function concernees(assemblage) {
     if (/\sdata-film\s*=\s*["']fichier:pm-film-/.test(p.section || '')) raisons.push('film');
     // Calque de dessin (spec S7) : flèches, annotations, main levée et dessins libres redessinés à chaque image.
     if (/\sdata-(?:fleche|annoter|main-levee|graphique|code)[\s=>]/.test(p.section || '') || (p.scripts || []).some((c) => /\bM\s*\.\s*dessin\s*\(/.test(c))) raisons.push('dessin');
+    // Caméra automatique (spec S7, 5.8) : plan calculé depuis le relevé de la page, cadrage recalculé à chaque image.
+    if (require('./camera-auto.js').aCameraAuto(p.section || '')) raisons.push('camera');
     if (raisons.length) r.push({ id: p.id, raisons, gpu });
   }
   return r;

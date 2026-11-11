@@ -215,7 +215,7 @@ function ecrireFiche({ projet, deroule, infos, ids, index, doctrine, glossaire, 
     if (s.intention) L.push(`- Intention : ${s.intention}`);
     const textes = Object.entries(s.textes || {}).filter(([, v]) => typeof v === 'string' && v.trim());
     if (textes.length) L.push(`- À l'écran : ${textes.map(([k, v]) => `${k} « ${v} »`).join(' ; ')}`);
-    if (s.voix && s.voix.texte) L.push(`- Texte dit : « ${s.voix.texte} »`);
+    if (s.voix && s.voix.texte) L.push(`- Texte dit : « ${require('../moteur/aligner.js').lireTexteDit(s.voix.texte).affiche} »`);
     if ((s.mouvements || []).length) L.push(`- Mouvements nommés : ${s.mouvements.map((x) => nomMouvement(x, dictionnaire)).join(' ; ')}`);
     let html = '';
     try { html = fs.readFileSync(path.join(projet, s.fichier), 'utf8'); } catch { /* scène pas encore écrite */ }

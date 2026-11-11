@@ -13,7 +13,7 @@
  *   barre ; courbe qui se trace en 1,6 s (ou passe par chaque point à son debut), aire en dégradé (0,35 vers 0) après 60 %,
  *   points qui apparaissent avec un léger dépassement ; secteurs balayés en 1,2 s, étiquette « Images 55 % » quand le secteur
  *   est complet ; anneau : trou de 0,55. Hachures à main levée (--pm-trait: main) ; valeur inconnue (null) : contour pointillé.
- *   Durées divisées par l'allure (M.donnees.allure). Le relevé reçoit les boîtes des étiquettes (genre etiquette).
+ *   Durées divisées par l'allure par le rythme effectif de la scène (minutage). Le relevé reçoit les boîtes des étiquettes (genre etiquette).
  * Code : jetons placés par --col et --ligne (grille à chasse fixe) ; d'une étape à l'autre en 0,8 s ÷ allure, les jetons
  *   communs glissent, les retirés s'effacent sur la première moitié, les nouveaux apparaissent sur la seconde ; la hauteur
  *   suit le nombre de lignes ; lignes surlignées (bande d'accent) relevées comme cadrage ; première apparition par lignes
@@ -38,7 +38,9 @@
   function inverseDouce(y) { return Math.acos(Math.max(-1, Math.min(1, 1 - 2 * clamp(y)))) / Math.PI; }
   function r2(x) { return Math.round(x * 100) / 100; }
   function r3(x) { return Math.round(x * 1000) / 1000; }
-  function allure() { var a = M.donnees && Number(M.donnees.allure); return a > 0 ? a : 1; }
+  // Allure globale (spec S7, 5.14, plan J4) : le minutage la porte déjà dans le rythme effectif de la scène (temps de scène
+  // ts = temps réel × rythme × allure) ; les durées du calque, en temps de scène, n'ont plus à être divisées ici.
+  function allure() { return 1; }
   function lireJson(el, nom) { try { return JSON.parse(el.getAttribute(nom) || 'null'); } catch (e) { return null; } }
   function propriete(n, nom, v) {
     var c = n.__pmp || (n.__pmp = {});

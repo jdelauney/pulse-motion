@@ -170,6 +170,8 @@
         }
       }
       if (finales) cadre({ instrument: 'pad', volume: 0.55, motif: [accord(tonique, gamme, 1).map(nom).join('+') + ' ' + finales] }, corps, n);
+      // Accents (spec S7, 5.15 ; o.accents) : une note douce de tonique sur le premier temps de chaque scène.
+      if (o.accents) cadre({ instrument: 'cloche', volume: 0.22, motif: [nom(tonique + 24) + ' 1/4', '- 3/4'] }, 0, 1);
     });
 
     // Montée sur la dernière seconde avant la dernière scène (au seizième de mesure près), sauf si elle est muette.
@@ -182,5 +184,13 @@
     return { tempo: tempo, tonalite: tonalite, mesures: mesures, pistes: pistes };
   }
 
-  return { generer: generer, tonaliteValide: tonaliteValide, HUMEURS: HUMEURS };
+  /** Notes (midi, octave 5) de la gamme d'une tonalité, pour les blips d'une liste (spec S7, 5.15). -> [midi] | null */
+  function notesGamme(tonalite) {
+    var m = TONALITE.exec(String(tonalite || ''));
+    if (!m) return null;
+    var gamme = m[2] === 'm' ? MINEUR : MAJEUR;
+    return gamme.map(function (x) { return 72 + TONIQUES[m[1]] + x; });
+  }
+
+  return { generer: generer, tonaliteValide: tonaliteValide, notesGamme: notesGamme, HUMEURS: HUMEURS };
 });

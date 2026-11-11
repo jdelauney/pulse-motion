@@ -28,9 +28,13 @@ const GROUPES = {
     'particules/composition.js', 'particules/formes.js', 'particules/reperes.js', 'particules/calques.js'],
   // Écrans des tutoriels (spec S6) : pointeur, clics, projecteur, zooms, lecture des films ; CSS moteur/ecran.css, embarqué avec eux.
   ecran: ['pointeur.js', 'film.js', 'ecran.js'],
-  // Calque de dessin (spec S7) : relevé de mise en page, main levée, flèches, annotations ; CSS moteur/dessin/dessin.css.
+  // Calque de dessin (spec S7) : main levée, flèches, annotations ; CSS moteur/dessin/dessin.css. Demande le relevé.
   // Graphiques et code (spec S7 J2) : dessin/graphiques.js et dessin/code.js (purs), dessin/composants.js.
-  dessin: ['releve.js', 'dessin/main-levee.js', 'dessin/geometrie.js', 'dessin/calque.js', 'dessin/graphiques.js', 'dessin/code.js', 'dessin/composants.js'],
+  dessin: ['dessin/main-levee.js', 'dessin/geometrie.js', 'dessin/calque.js', 'dessin/graphiques.js', 'dessin/code.js', 'dessin/composants.js'],
+  // Relevé de mise en page (spec S7, 5.1) : la boîte de chaque élément, pour le calque et pour la caméra automatique.
+  releve: ['releve.js'],
+  // Caméra automatique (spec S7, 5.8) : plan calculé (camera-auto.js, pur) et branché sur la page. Demande le relevé.
+  'camera-auto': ['camera-auto.js', 'camera-auto-page.js'],
 };
 
 // Ordre de chargement : celui de la liste historique (dépendances au chargement), puis absents.js en dernier.
@@ -39,7 +43,7 @@ const MODULES = ['courbes.js', 'aligner.js', 'proches.js', 'sous-titres.js', 'mi
   'personnages/interactions.js', 'personnages/scene.js', 'personnages/objets.js', 'temps.js', 'horloge.js', 'tailles.js', 'wav.js',
   'sonie.js', 'mixage.js', 'synthe/catalogue.js', 'synthe/partition.js', 'synthe/ambiances.js', 'synthe/instruments.js',
   'synthe/bruitages.js', 'analyse-son.js', 'audio.js', 'son-reactif.js', 'lecteur.js', 'sous-titres-rendu.js', 'debordement.js',
-  'mesures.js', 'pixels.js', 'ecoute.js', 'figer.js', 'flou.js', 'pointeur.js', 'film.js', 'ecran.js', 'releve.js', 'dessin/main-levee.js', 'dessin/geometrie.js', 'dessin/calque.js', 'dessin/graphiques.js', 'dessin/code.js', 'dessin/composants.js', 'shaders/glsl.js', 'shaders/code.js', 'particules/instantanes.js', 'particules/gpu.js',
+  'mesures.js', 'pixels.js', 'ecoute.js', 'figer.js', 'flou.js', 'pointeur.js', 'film.js', 'ecran.js', 'releve.js', 'camera-auto.js', 'camera-auto-page.js', 'dessin/main-levee.js', 'dessin/geometrie.js', 'dessin/calque.js', 'dessin/graphiques.js', 'dessin/code.js', 'dessin/composants.js', 'shaders/glsl.js', 'shaders/code.js', 'particules/instantanes.js', 'particules/gpu.js',
   'particules/obstacles.js', 'particules/fragments.js', 'particules/simulation.js', 'particules/voisinage.js',
   'particules/maillage.js', 'particules/structures.js', 'particules/milieu.js', 'particules/rendu.js', 'particules/glsl.js',
   'particules/shaders.js', 'particules/composition.js', 'particules/formes.js', 'particules/reperes.js', 'particules/calques.js'];
@@ -47,6 +51,9 @@ const MODULES = ['courbes.js', 'aligner.js', 'proches.js', 'sous-titres.js', 'mi
 /** Toujours inclus, en dernier : points d'entrée des groupes absents et liste des groupes (M.groupes). */
 const ABSENTS = 'absents.js';
 const NOMS = Object.keys(GROUPES);
+
+// data-camera dont une clause est « auto » (moteur/camera.js).
+const CAMERA_AUTO = /\sdata-camera\s*=\s*(["'])(?:[^"']*;)?\s*auto\s*(?:;[^"']*)?\1/;
 
 const nonVide = (x) => (Array.isArray(x) ? x.length > 0 : !!(x && typeof x === 'object' && Object.keys(x).length > 0));
 
@@ -60,7 +67,9 @@ const nonVide = (x) => (Array.isArray(x) ? x.length > 0 : !!(x && typeof x === '
  *   ses formes exactes par M.particules.formesVides) ;
  * - écran : un écran (pm-ecran) ou une de ses marques (pm-clic, pm-projecteur, pm-zoom…) dans une scène ;
  * - dessin : data-fleche, data-annoter, data-main-levee, data-graphique ou data-code dans une scène, ou un script de
- *   scène qui appelle M.dessin(.
+ *   scène qui appelle M.dessin( ;
+ * - caméra automatique : data-camera="auto…" dans une scène ;
+ * - relevé : avec le dessin ou la caméra automatique.
  */
 function groupesDuDeroule(donnees, sections = [], scripts = []) {
   const d = donnees || {};
@@ -68,12 +77,16 @@ function groupesDuDeroule(donnees, sections = [], scripts = []) {
   if (d.son) groupes.push('son-reactif');
   const textes = sections.join('\n');
   const musique = d.musique && (d.musique.partition || d.musique.generee);
-  if (musique || (d.bruitages && d.bruitages.transitions) || /\sdata-son\s*=/.test(textes)) groupes.push('synthe');
+  // Bruitages automatiques (spec S7, 5.15) : true ou « minimal » sonnent les transitions et les entrées.
+  const bruitages = d.bruitages && (d.bruitages.transitions || d.bruitages.auto === true || d.bruitages.auto === 'minimal');
+  if (musique || bruitages || /\sdata-son\s*=/.test(textes)) groupes.push('synthe');
   if (d.personnages) groupes.push('personnages');
   const obstacles = nonVide(d.obstacles) || nonVide(d.obstaclesVideo);
   if (nonVide(d.effets) || nonVide(d.milieux) || nonVide(d.shaders) || nonVide(d.modules) || obstacles) groupes.push('gpu');
   if (sections.some((s) => usagesEcran(s).moteur)) groupes.push('ecran');
   if (usagesDessin(textes, scripts)) groupes.push('dessin');
+  if (CAMERA_AUTO.test(textes)) groupes.push('camera-auto');
+  if (groupes.includes('dessin') || groupes.includes('camera-auto')) groupes.push('releve');
   return groupes;
 }
 

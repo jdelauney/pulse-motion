@@ -37,7 +37,7 @@ function dureeFrancaise(s) {
 
 /** Texte d'une scène pour le PDF : ce que dit la voix, sinon les textes affichés. */
 function texteScene(scene) {
-  if (scene.voix && scene.voix.texte) return scene.voix.texte;
+  if (scene.voix && scene.voix.texte) return require('../moteur/aligner.js').lireTexteDit(scene.voix.texte).affiche;
   return Object.values(scene.textes || {}).map((t) => String(t).trim()).filter(Boolean).join(' · ');
 }
 

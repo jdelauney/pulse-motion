@@ -6,6 +6,7 @@ const path = require('node:path');
 const { TYPES } = require('./contrat.js');
 const { AMBIANCES } = require('../../moteur/synthe/catalogue.js');
 const { tonaliteValide, HUMEURS } = require('../../moteur/synthe/ambiances.js');
+const { lireTexteDit } = require('../../moteur/aligner.js');
 
 const TYPES_SCENE = Object.keys(TYPES);
 
@@ -30,6 +31,7 @@ const NOM_SHADER = /^[a-z0-9-]+$/;
 /** Plateformes dont les zones sont connues (scripts/seuils.json, zonesPlateformes). */
 const PLATEFORMES = ['tiktok', 'shorts', 'reels', 'toutes'];
 const CHAPITRE_MAX = 60;
+const CAMERAS = ['auto', 'fixe'];
 const MAX_POST = 4;
 
 const estObjet = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -118,6 +120,7 @@ function validerDeroule(d) {
     if (d.musique.tempo !== undefined && !(typeof d.musique.tempo === 'number' && d.musique.tempo >= 60 && d.musique.tempo <= 180)) err.push('« musique.tempo » doit être un nombre de battements par minute, de 60 à 180.');
     if (d.musique.tonalite !== undefined && !tonaliteValide(d.musique.tonalite)) err.push('« musique.tonalite » doit être une tonalité : do, re, mib, fa#… suivie de « m » pour mineur (ex. « lam »).');
     if (d.musique.intensite !== undefined && !(typeof d.musique.intensite === 'number' && d.musique.intensite >= 0 && d.musique.intensite <= 1)) err.push('« musique.intensite » doit être un nombre entre 0 et 1.');
+    if (d.musique.accents !== undefined && typeof d.musique.accents !== 'boolean') err.push('« musique.accents » doit valoir true (une note douce au début de chaque scène) ou false.');
     if (d.musique.graine !== undefined && !(Number.isInteger(d.musique.graine) && d.musique.graine >= 0)) err.push('« musique.graine » doit être un nombre entier positif ou nul.');
     if (d.musique.volume !== undefined && !(typeof d.musique.volume === 'number' && d.musique.volume >= 0 && d.musique.volume <= 1)) {
       err.push('« musique.volume » doit être un nombre entre 0 et 1.');
@@ -130,6 +133,8 @@ function validerDeroule(d) {
   else if (d.bruitages !== undefined) {
     if (d.bruitages.transitions !== undefined && typeof d.bruitages.transitions !== 'boolean') err.push('« bruitages.transitions » doit valoir true ou false.');
     if (d.bruitages.volume !== undefined && !(typeof d.bruitages.volume === 'number' && d.bruitages.volume >= 0 && d.bruitages.volume <= 1)) err.push('« bruitages.volume » doit être un nombre entre 0 et 1.');
+    // Bruitages automatiques par type d'entrée (spec S7, 5.15).
+    if (d.bruitages.auto !== undefined && ![true, false, 'minimal'].includes(d.bruitages.auto)) err.push('« bruitages.auto » doit valoir true (un son doux à chaque entrée), « minimal » (transitions et sons posés à la main seulement) ou false.');
   }
 
   if (d.tempo !== undefined && !estObjet(d.tempo)) err.push('« tempo » doit être un objet, ex. { "bpm": 120 }.');
@@ -154,6 +159,10 @@ function validerDeroule(d) {
   }
 
   if (d.post !== undefined) err.push(...validerPost(d.post, '« post »'));
+  // Allure globale (spec S7, 5.14) : pauses, marges, transitions et animations plus courtes ou plus longues, ancres sur la voix.
+  if (d.allure !== undefined && !(typeof d.allure === 'number' && d.allure >= 0.7 && d.allure <= 1.6)) err.push('« allure » doit être un nombre de 0,7 (plus posé) à 1,6 (plus rythmé) ; 1 par défaut.');
+  // Caméra automatique (spec S7, 5.8) : toute la vidéo, ou scène par scène (scenes[].camera l'emporte).
+  if (d.camera !== undefined && !CAMERAS.includes(d.camera)) err.push(`« camera » doit valoir « auto » (la caméra trouve seule les gros plans) ou « fixe ».`);
   // Boucle parfaite (spec Rendu et export, 5.18) : la vidéo tourne en boucle (lecteur, musique sans fondus, contrôles de jointure).
   if (d.boucle !== undefined && typeof d.boucle !== 'boolean') err.push('« boucle » doit valoir true ou false (true : la vidéo tourne en boucle).');
 
@@ -203,6 +212,8 @@ function validerDeroule(d) {
       if (!estObjet(s.voix)) err.push(`La ${nom} : « voix » doit être un objet, ex. { "texte": "…" }.`);
       else {
         if (!estTexte(s.voix.texte)) err.push(`La ${nom} : « voix.texte » est obligatoire (le texte dit dans la scène).`);
+        // Balisage du texte dit (spec S7, 5.11) : [#repère], {affiché|dit}, [pause 0.6].
+        else for (const e of lireTexteDit(s.voix.texte).erreurs) err.push(`La ${nom} : « voix.texte » : ${e}`);
         if (s.voix.fichier !== undefined && !estTexte(s.voix.fichier)) err.push(`La ${nom} : « voix.fichier » doit être un chemin de fichier dans assets/.`);
         if (s.voix.debut !== undefined && !(typeof s.voix.debut === 'number' && isFinite(s.voix.debut) && s.voix.debut >= 0)) err.push(`La ${nom} : « voix.debut » doit être un nombre de secondes positif ou nul.`);
       }
@@ -249,6 +260,7 @@ function validerDeroule(d) {
         }
       }
     }
+    if (s.camera !== undefined && !CAMERAS.includes(s.camera)) err.push(`La ${nom} : « camera » doit valoir « auto » ou « fixe ».`);
     if (s.chapitre !== undefined && !(estTexte(s.chapitre) && s.chapitre.length <= CHAPITRE_MAX)) err.push(`La ${nom} : « chapitre » doit être un titre de ${CHAPITRE_MAX} caractères au plus.`);
     if (s.musique !== undefined && !HUMEURS.includes(s.musique)) err.push(`La ${nom} : « musique » (humeur de la musique pendant la scène) doit être l'une de : ${HUMEURS.join(', ')}.`);
     if (s.post !== undefined) err.push(...validerPost(s.post, `La ${nom} : « post »`));
@@ -312,7 +324,12 @@ function validerCadrans(c) {
  *  (retenu par lireDeroule), ou null. */
 function tempoMusique(d) {
   if (!d || !d.musique) return null;
-  if (d.musique.generee && Object.hasOwn(AMBIANCES, d.musique.generee)) return d.musique.tempo || AMBIANCES[d.musique.generee].tempo;
+  // Allure globale (spec S7, 5.14) : une musique générée prend un tempo × √allure (arrondi) ; une partition garde le sien.
+  if (d.musique.generee && Object.hasOwn(AMBIANCES, d.musique.generee)) {
+    const base = d.musique.tempo || AMBIANCES[d.musique.generee].tempo;
+    const a = allureDe(d);
+    return a === 1 ? base : Math.round(base * Math.sqrt(a));
+  }
   if (d.musique.partition && typeof d.musique.tempoPartition === 'number') return d.musique.tempoPartition;
   return null;
 }
@@ -331,7 +348,12 @@ function grilleFixe(d) {
 
 /** Options du minutage pour ce déroulé. */
 function optionsMinutage(d) {
-  return { dureeTemps: dureeTemps(d), decalageTemps: (d && d.tempo && d.tempo.decalage) || 0, grilleFixe: grilleFixe(d) };
+  return { dureeTemps: dureeTemps(d), decalageTemps: (d && d.tempo && d.tempo.decalage) || 0, grilleFixe: grilleFixe(d), allure: allureDe(d) };
+}
+
+/** Allure globale (spec S7, 5.14) : de 0,7 à 1,6, 1 sinon. */
+function allureDe(d) {
+  return d && typeof d.allure === 'number' && d.allure >= 0.7 && d.allure <= 1.6 ? d.allure : 1;
 }
 
 /** Durée d'un temps musical en secondes (tempo du déroulé, sinon celui de la musique générée), ou null. */
@@ -396,4 +418,4 @@ function lireDeroule(dossier) {
   return { deroule: d, erreurs };
 }
 
-module.exports = { validerDeroule, validerCharte, lireDeroule, verifierFilms, dureeTemps, tempoMusique, musiqueSuitScenes, grilleFixe, optionsMinutage, GENRES, PARCOURS, RATIOS, TRANSITIONS, TYPES_SCENE, TONS, MAX_POST, CADRANS, PLATEFORMES, CHAPITRE_MAX };
+module.exports = { allureDe, validerDeroule, validerCharte, lireDeroule, verifierFilms, dureeTemps, tempoMusique, musiqueSuitScenes, grilleFixe, optionsMinutage, GENRES, PARCOURS, RATIOS, TRANSITIONS, TYPES_SCENE, TONS, MAX_POST, CADRANS, PLATEFORMES, CHAPITRE_MAX };

@@ -39,6 +39,24 @@
     if (!cs.getPropertyValue('--pm-st-largeur').trim()) calque.style.setProperty('--pm-st-largeur', d.largeur);
     if (!cs.getPropertyValue('--pm-st-marge').trim()) calque.style.setProperty('--pm-st-marge', position === 'haut' ? d.haut : d.bas);
 
+    // Bande des sous-titres (caméra automatique, spec S7 5.8) : carton témoin de deux lignes mesuré puis retiré ; en cqh.
+    M.bandeSousTitres = function () {
+      var temoin = document.createElement('div');
+      temoin.className = 'pm-st-carton';
+      temoin.style.visibility = 'hidden';
+      for (var k = 0; k < 2; k++) { var l = document.createElement('span'); l.className = 'pm-st-ligne'; l.textContent = 'Mg'; temoin.appendChild(l); }
+      // Carton affiché mis de côté le temps de la mesure (le témoin prend sa place), puis remis.
+      var gardes = Array.prototype.slice.call(calque.childNodes);
+      gardes.forEach(function (n) { calque.removeChild(n); });
+      calque.appendChild(temoin);
+      var r = temoin.getBoundingClientRect(), s = scene.getBoundingClientRect();
+      calque.removeChild(temoin);
+      gardes.forEach(function (n) { calque.appendChild(n); });
+      if (!(s.height > 0) || !(r.height > 0)) return null;
+      var k2 = 100 / s.height;
+      return position === 'haut' ? { haut: 0, bas: Math.round((r.bottom - s.top) * k2 * 100) / 100 } : { haut: Math.round((r.top - s.top) * k2 * 100) / 100, bas: 100 };
+    };
+
     var courant = -1, mots = [];
     function afficher(t) {
       var i = -1;

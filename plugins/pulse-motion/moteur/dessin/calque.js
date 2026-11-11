@@ -201,7 +201,7 @@
     var parScene = {};
     parScene[info.id] = liste;
     var rythme = donnee.rythme || 1;
-    var r = M.calculerMinutage([{ id: info.id, duree: donnee.duree || 1, rythme: rythme, transition: 'aucune', voix: donnee.voix }], parScene, { dureeTemps: M.dureeTemps, derniere: false });
+    var r = M.calculerMinutage([{ id: info.id, duree: donnee.duree || 1, rythme: rythme, transition: 'aucune', voix: donnee.voix }], parScene, { dureeTemps: M.dureeTemps, derniere: false, allure: M.donnees && M.donnees.allure });
     var e = r.erreurs.filter(function (x) { return x.element === '__pm_q'; })[0];
     if (e) {
       var message = 'temps « ' + s + ' » illisible : ' + String(e.message).replace(/^Scène « [^»]* », élément « __pm_q » : /, '');

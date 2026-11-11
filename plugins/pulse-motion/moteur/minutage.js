@@ -5,6 +5,7 @@
  *   data-start="#titre+0.3"     début de #titre + 0,3 s
  *   data-start="#titre:fin-0.2" fin de #titre − 0,2 s
  *   data-start="mot:froid"      quand la voix de la scène dit « froid » (#2 : deuxième fois, :fin : fin du mot, +0.2)
+ *   data-start="repere:serveur" au repère [#serveur] du texte dit (voix.reperes : { nom: t }, secondes de la prise ; +0.2)
  *   data-dur="1.2"              durée (1 s par défaut)
  *   data-dur="scene"            jusqu'à la fin de la scène, voix comprise (dernière scène : 1 s avant, image finale stable)
  * Avec un tempo dans le déroulé, toute durée s'écrit aussi en temps musicaux : « 2t », « #titre:fin+1t ».
@@ -29,6 +30,7 @@
   var MARGE_VOIX = 0.4;   // respiration après la voix
   var DEBUT_VOIX = 0.3;   // début de la prise dans la scène, par défaut
   var ANCRE_MOT = /^mot:(.+?)(?:#(\d+))?(:fin)?(?:\s*([+-])\s*(\d*\.?\d+t?))?$/;
+  var ANCRE_REPERE = /^repere:([A-Za-z0-9_-]+)(?:\s*([+-])\s*(\d*\.?\d+t?))?$/;
   var DUREE_DEFAUT = 1;
   var REFERENCE = /^#([A-Za-z0-9_-]+)(:fin)?\s*(?:([+-])\s*(\d*\.?\d+t?))?$/;
   var DUREE = /^(\d*\.?\d+)(t?)$/;
@@ -70,6 +72,9 @@
    *   options.grilleFixe : la musique ne suit pas les scènes (une scène allongée par la voix finit sur un temps)
    *   options.derniere : la dernière scène de la liste est-elle la dernière de la vidéo (vrai par défaut ; faux pour le
    *     minutage d'une scène seule au milieu de la vidéo) : data-dur="scene" s'y arrête 1 s avant la fin
+   *   options.allure : allure globale (spec S7, 5.14 ; 0,7 à 1,6, 1 par défaut) : rythme effectif = rythme × allure ;
+   *     début de la voix par défaut, marge après la voix et chevauchement des transitions divisés par l'allure ; les ancres
+   *     « mot: » et « repere: » restent sur leur instant (la prise n'est pas accélérée)
    * -> { duree, scenes: [{ id, debut, fin, rythme, transition, entree, dureeTransition }],
    *      elements: { [idScene]: { [cle]: { debut, fin } } }, erreurs: [{ regle, scene, element, message }] }
    */
@@ -78,23 +83,25 @@
     var decalageTemps = options && options.decalageTemps > 0 ? options.decalageTemps : 0;
     var grilleFixe = !!(options && options.grilleFixe);
     var finVideo = !(options && options.derniere === false);
+    var allure = options && options.allure >= 0.7 && options.allure <= 1.6 ? options.allure : 1;
     var erreurs = [];
     var resultat = { duree: 0, scenes: [], elements: {}, erreurs: erreurs };
     var fin = 0;
 
     scenes.forEach(function (s, i) {
-      var rythme = s.rythme > 0 ? s.rythme : 1;
-      var entree = chevauchement(s, i);
+      var rythme = (s.rythme > 0 ? s.rythme : 1) * allure;
+      var entree = chevauchement(s, i) / allure;
+      var debutVoix = s.voix && s.voix.debut !== undefined ? s.voix.debut : DEBUT_VOIX / allure;
       var debut = Math.max(0, fin - entree);
       var reelle = s.duree / rythme;
       var allongee = false;
       if (s.voix && s.voix.duree > 0) {
-        var finVoix = (s.voix.debut === undefined ? DEBUT_VOIX : s.voix.debut) + s.voix.duree + MARGE_VOIX;
+        var finVoix = debutVoix + s.voix.duree + MARGE_VOIX / allure;
         if (finVoix > reelle + 1e-9) {
           // Grille fixe (musique qui ne suit pas les scènes) : la scène suivante commence sur un temps (premier temps à
           // decalageTemps, entrée chevauchée comprise). Sinon la scène finit avec la voix : la musique se cale dessus.
           if (dureeTemps && grilleFixe) {
-            var entreeSuivante = i + 1 < scenes.length ? chevauchement(scenes[i + 1], i + 1) : 0;
+            var entreeSuivante = i + 1 < scenes.length ? chevauchement(scenes[i + 1], i + 1) / allure : 0;
             var k = Math.ceil((debut + finVoix - entreeSuivante - decalageTemps) / dureeTemps - 1e-9);
             reelle = k * dureeTemps + decalageTemps + entreeSuivante - debut;
           } else reelle = finVoix;
@@ -103,18 +110,18 @@
       }
       reelle = Math.round(reelle * 1e6) / 1e6;
       var finScene = debut + reelle;
-      resultat.scenes.push({ id: s.id, debut: debut, fin: finScene, rythme: rythme, transition: s.transition || 'aucune', entree: entree, dureeTransition: dureeTransitionDe(s),
+      resultat.scenes.push({ id: s.id, debut: debut, fin: finScene, rythme: rythme, transition: s.transition || 'aucune', entree: entree, dureeTransition: dureeTransitionDe(s) / allure,
         allongee: allongee, dureeEffective: Math.round(reelle * rythme * 1e6) / 1e6 });
       // data-dur="scene" : jusqu'à la fin de la scène (temps de la scène), 1 s réelle avant sur la dernière.
       var finLocale = Math.round(reelle * rythme * 1e6) / 1e6 - (finVideo && i === scenes.length - 1 ? rythme : 0);
-      resultat.elements[s.id] = minuterScene(s.id, debut, rythme, (elementsParScene && elementsParScene[s.id]) || [], erreurs, dureeTemps, s.voix, finLocale);
+      resultat.elements[s.id] = minuterScene(s.id, debut, rythme, (elementsParScene && elementsParScene[s.id]) || [], erreurs, dureeTemps, s.voix, finLocale, debutVoix);
       fin = finScene;
     });
     resultat.duree = fin;
     return resultat;
   }
 
-  function minuterScene(idScene, debutScene, rythme, elements, erreurs, dureeTemps, voix, finLocale) {
+  function minuterScene(idScene, debutScene, rythme, elements, erreurs, dureeTemps, voix, finLocale, debutVoix) {
     var parCle = {};
     elements.forEach(function (e) { parCle[e.cle] = e; });
     var local = {};      // cle -> { debut, fin } en temps de scène
@@ -157,7 +164,8 @@
       }
       var voulu = Al.normaliserMot(a[1]), rang = a[2] ? parseInt(a[2], 10) : 1, vus = 0, trouve = null;
       for (var k = 0; k < mots.length && !trouve; k++) {
-        var cles = Al.decouperMots(mots[k].w).reduce(function (t, x) { return t.concat(x.cles); }, []);
+        // Forme affichée, et forme dite d'un {affiché|dit} (spec S7, 5.11).
+        var cles = Al.decouperMots(mots[k].w + (mots[k].dit ? ' ' + mots[k].dit : '')).reduce(function (t, x) { return t.concat(x.cles); }, []);
         if (cles.indexOf(voulu) >= 0 && ++vus === rang) trouve = mots[k];
       }
       if (!trouve) {
@@ -174,8 +182,23 @@
       var ecart = a[5] ? lireSecondes(a[5], dureeTemps) : { valeur: 0 };
       if (ecart.erreur) erreur('tempo-absent', cle, messageTempoAbsent(idScene, cle, 'data-start', texte));
       var decalage = ecart.erreur ? 0 : ecart.valeur * (a[4] === '-' ? -1 : 1);
-      var reel = (voix.debut === undefined ? DEBUT_VOIX : voix.debut) + (a[3] ? trouve.t1 : trouve.t0);
+      var reel = debutVoix + (a[3] ? trouve.t1 : trouve.t0);
       return reel * rythme + decalage;
+    }
+
+    /** Ancre « repere: » (spec S7, 5.11) -> temps de scène : repère [#nom] du texte dit, à l'instant du mot qui le suit. */
+    function resoudreRepere(cle, texte, a) {
+      var reperes = voix && voix.reperes ? voix.reperes : null;
+      if (!reperes || !Object.prototype.hasOwnProperty.call(reperes, a[1])) {
+        var noms = reperes ? Object.keys(reperes) : [];
+        erreur('repere-introuvable', cle, 'Scène « ' + idScene + ' » : le repère « ' + a[1] + " » n'est pas dans le texte dit" + (noms.length ? (suggestion(a[1], noms) || ' (repères : ' + noms.join(', ') + ').') : (voix ? ' (le poser par [#' + a[1] + '] devant le mot voulu).' : ", et la scène n'a pas de voix.")),
+          'élément « ' + cle + ' », data-start « ' + texte + ' ».');
+        return 0;
+      }
+      var ecart = a[3] ? lireSecondes(a[3], dureeTemps) : { valeur: 0 };
+      if (ecart.erreur) erreur('tempo-absent', cle, messageTempoAbsent(idScene, cle, 'data-start', texte));
+      var decalage = ecart.erreur ? 0 : ecart.valeur * (a[2] === '-' ? -1 : 1);
+      return (debutVoix + reperes[a[1]]) * rythme + decalage;
     }
 
     function resoudre(cle) {
@@ -193,6 +216,8 @@
       else if (direct.erreur === 'tempo-absent') erreur('tempo-absent', cle, messageTempoAbsent(idScene, cle, 'data-start', s));
       else if (ANCRE_MOT.test(s)) {
         debut = Math.max(0, resoudreMot(cle, s, ANCRE_MOT.exec(s)));
+      } else if (ANCRE_REPERE.test(s)) {
+        debut = Math.max(0, resoudreRepere(cle, s, ANCRE_REPERE.exec(s)));
       } else {
         var m = REFERENCE.exec(s);
         if (!m) {

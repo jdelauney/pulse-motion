@@ -16,7 +16,7 @@
   return {
     INSTRUMENTS: ['pluck', 'pad', 'basse', 'sub', 'kick', 'caisse', 'charleston', 'cloche', 'nappe-bruit', 'riser'],
     PERCUSSIONS: ['kick', 'caisse', 'charleston', 'riser', 'nappe-bruit'],
-    BRUITAGES: ['whoosh', 'swoosh-inverse', 'pop', 'clic', 'tic', 'impact', 'basse', 'montee', 'carillon', 'ding', 'blip', 'souffle'],
+    BRUITAGES: ['whoosh', 'swoosh-inverse', 'pop', 'clic', 'tic', 'impact', 'basse', 'montee', 'carillon', 'ding', 'blip', 'souffle', 'crissement'],
     // Sons forts : jamais sous la voix (contrôle son-sous-voix).
     FORTS: ['impact', 'basse', 'montee'],
     SONS_TRANSITION: SONS_TRANSITION,

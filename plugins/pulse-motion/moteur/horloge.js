@@ -132,7 +132,7 @@
     });
     sec.querySelectorAll('[data-camera]').forEach(function (el) {
       var clauses = [];
-      try { clauses = M.analyserCamera(el.getAttribute('data-camera'), M.dureeTemps); } catch (err) { signaler('camera-invalide', err.message); }
+      try { clauses = M.analyserCamera(el.getAttribute('data-camera'), M.dureeTemps); } catch (err) { signaler(err.regle || 'camera-invalide', err.message); }
       cameras.push({ el: el, clauses: clauses, chaine: chaineTemps(el.parentElement, sec, plagesParEl) });
     });
     sec.querySelectorAll('[data-profondeur]').forEach(function (el) {
@@ -188,6 +188,32 @@
     });
   }
 
+  // Ampleur de scène (spec S7, 5.14) : --pm-ampleur-scene sur la <section> (1 par défaut) multiplie --pm-ampleur des classes
+  // pm-m-* (valeur de l'élément, sinon celle de la classe) et les secousses de caméra. Classes d'échelle (f) : seul l'écart
+  // à 1 est multiplié (0,5 réduit de moitié le dépassement d'un pop-in). Écrit en ligne une fois, au démarrage.
+  var AMPLEURS = { 'pm-m-pop': [1.12, 'f'], 'pm-m-zoom-entree': [0.8, 'f'], 'pm-m-pulse': [1.08, 'f'], 'pm-m-appui': [0.97, 'f'],
+    'pm-m-monte': [4], 'pm-m-saccade': [4], 'pm-m-glisse-gauche': [10], 'pm-m-glisse-droite': [10], 'pm-m-net': [1.5], 'pm-m-chute': [20],
+    'pm-m-anticipe': [10], 'pm-m-ecrase': [15], 'pm-m-sortie': [3], 'pm-m-tremblote': [3], 'pm-m-va-vient': [6], 'pm-m-epaule': [0.6],
+    'pm-m-echo': [1.2] };
+  function appliquerAmpleur(s) {
+    s.ampleur = 1;
+    if (!s.sec) return;
+    var k = parseFloat(racine.getComputedStyle(s.sec).getPropertyValue('--pm-ampleur-scene'));
+    if (!(k >= 0) || k === 1) return;
+    s.ampleur = k;
+    // Toutes les valeurs lues avant d'en écrire une (--pm-ampleur s'hérite : un parent déjà écrit fausserait ses enfants).
+    var a_ecrire = [];
+    s.sec.querySelectorAll('[class*="pm-m-"]').forEach(function (el) {
+      var classe = null;
+      for (var i = 0; i < el.classList.length && !classe; i++) if (AMPLEURS[el.classList[i]]) classe = el.classList[i];
+      if (!classe) return;
+      var propre = parseFloat(racine.getComputedStyle(el).getPropertyValue('--pm-ampleur'));
+      var v = isFinite(propre) ? propre : AMPLEURS[classe][0];
+      a_ecrire.push([el, String(arrondi(AMPLEURS[classe][1] === 'f' ? 1 + (v - 1) * k : v * k))]);
+    });
+    a_ecrire.forEach(function (x) { x[0].style.setProperty('--pm-ampleur', x[1]); });
+  }
+
   M.demarrer = function () {
     var donnees = JSON.parse(document.getElementById('pm-donnees').textContent);
     M.donnees = donnees;
@@ -207,7 +233,7 @@
     donnees.scenes.forEach(function (sc) {
       elementsParScene[sc.id] = sections[sc.id] ? lireElements(sections[sc.id]) : [];
     });
-    var min = M.calculerMinutage(donnees.scenes, elementsParScene, { dureeTemps: M.dureeTemps, decalageTemps: (donnees.tempo && donnees.tempo.decalage) || 0, grilleFixe: !!(donnees.tempo && donnees.tempo.grille) });
+    var min = M.calculerMinutage(donnees.scenes, elementsParScene, { dureeTemps: M.dureeTemps, decalageTemps: (donnees.tempo && donnees.tempo.decalage) || 0, grilleFixe: !!(donnees.tempo && donnees.tempo.grille), allure: donnees.allure });
     M.minutage = min;
     M.duree = min.duree;
 
@@ -244,6 +270,7 @@
       };
     });
     etat.scenes.forEach(bornerVie);
+    etat.scenes.forEach(appliquerAmpleur);
     M.erreurs = min.erreurs.concat(erreurs);
     M.erreurs.forEach(function (e) { console.warn('[Pulse Motion] ' + e.message); });
     M.rendre(0);
@@ -337,9 +364,18 @@
     // son conteneur.
     if (M.dessinerScene) M.dessinerScene(info, t, function (el) { return tempsVu(s.chaine(el), t, info); });
 
-    // Caméras : cadrage au temps de leurs conteneurs ; --pm-cam-dx/dy pour la parallaxe (data-profondeur).
+    // Caméras : cadrage au temps de leurs conteneurs ; --pm-cam-dx/dy pour la parallaxe (data-profondeur). Caméra
+    // automatique (spec S7, 5.8 ; moteur/camera-auto-page.js) : zoom, x et y du plan de la scène (neutres avant le relevé),
+    // les autres clauses telles qu'écrites. Ampleur de scène (--pm-ampleur-scene, 5.14) : secousses multipliées.
     s.cameras.forEach(function (c) {
-      var st = M.styleCamera(M.etatCamera(c.clauses, (tempsVu(c.chaine, t, info) - info.debut) * info.rythme));
+      var tau = (tempsVu(c.chaine, t, info) - info.debut) * info.rythme;
+      var ec = M.etatCamera(c.clauses, tau);
+      if (c.clauses.auto && M.cameraAutoA) {
+        var auto = M.cameraAutoA(info.id, tau / info.rythme);
+        if (auto) { ec.zoom = auto.zoom; ec.x = auto.x; ec.y = auto.y; }
+      }
+      if (s.ampleur !== undefined && s.ampleur !== 1) { ec.sx = arrondi(ec.sx * s.ampleur); ec.sy = arrondi(ec.sy * s.ampleur); }
+      var st = M.styleCamera(ec);
       ecrireStyle(c.el, 'transform', st.transform);
       ecrireStyle(c.el, 'filter', st.filter);
       ecrirePropriete(c.el, '--pm-cam-dx', String(st.dx));

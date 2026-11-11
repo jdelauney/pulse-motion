@@ -42,14 +42,121 @@
       var fichier = /^fichier:/.test(nom) ? nom.slice(8) : null;
       liste.push({ t: e[cle].debut, nom: fichier ? null : nom, fichier: fichier, volume: isFinite(v) ? Math.max(0, Math.min(1, v)) : 1 });
     });
-    if (d.bruitages && d.bruitages.transitions) {
+    var auto = d.bruitages ? d.bruitages.auto : false;
+    // Bruitages automatiques (spec S7, 5.15) : true ou « minimal » sonnent aussi les transitions, sauf transitions: false.
+    var transitions = d.bruitages && (d.bruitages.transitions === true || ((auto === true || auto === 'minimal') && d.bruitages.transitions !== false));
+    if (transitions) {
       M.minutage.scenes.forEach(function (s, i) {
         var son = i > 0 && M.synthe.catalogue.sonTransition(s.transition);
         if (son) liste.push({ t: s.debut, nom: son, fichier: null, volume: 1 });
       });
     }
-    return liste;
+    if (auto !== true && auto !== 'minimal') return liste;
+    liste.forEach(function (e) { e.explicite = true; });
+    if (auto === true) liste = liste.concat(bruitagesAuto(d));
+    return eclaircir(liste);
   }
+
+  // --- Bruitages automatiques par type d'entrée (spec S7, 5.15) ----------------------------------------------------------
+  // Genre de l'élément -> type d'entrée (TYPES_ENTREE de scripts/lib/contrat.js, tables des styles : identite.son.bruitages),
+  // son par défaut et gain. Logique de sfxCues (engine/runtime.js d'explainroo, MIT, © 2026 Vincent Schmalbach) : même son
+  // à moins de 0,12 s ignoré (0,045 s pour tic), au plus 3 sons par fenêtre de 0,5 s (tic à part), sons posés à la main et
+  // transitions jamais filtrés. Aucun son fort (impact, basse, montee) : jamais.
+  var DEFAUTS = { image: ['pop', 0.5], forme: ['pop', 0.5], trace: ['souffle', 0.35], point: ['blip', 0.45], chiffre: ['tic', 0.8], titre: [null, 0], texte: [null, 0], ecriture: [null, 0] };
+  var FORTS = ['impact', 'basse', 'montee'];
+  // Gamme pentatonique de do (octave 5), sans musique générée.
+  var PENTATONIQUE = [72, 74, 76, 79, 81];
+
+  function frequence(midi) { return 440 * Math.pow(2, (midi - 69) / 12); }
+
+  function gammeListes(d) {
+    var p = d.musique && d.musique.partition;
+    var notes = p && p.tonalite && M.synthe && M.synthe.ambiances && M.synthe.ambiances.notesGamme ? M.synthe.ambiances.notesGamme(p.tonalite) : null;
+    return notes && notes.length ? notes : PENTATONIQUE;
+  }
+
+  function aFond(cs) {
+    var bg = cs.backgroundColor;
+    var fond = (bg && bg !== 'transparent' && !/rgba\([^)]*,\s*0\)$/.test(bg)) || (cs.backgroundImage && cs.backgroundImage !== 'none');
+    var bordure = ['Top', 'Right', 'Bottom', 'Left'].some(function (c) { return parseFloat(cs['border' + c + 'Width']) > 0 && cs['border' + c + 'Style'] !== 'none'; });
+    return fond || bordure;
+  }
+
+  /** Type d'entrée d'un élément minuté (null : aucun son) ; main : tracé à main levée. */
+  function typeEntree(el, sec) {
+    if (el.matches('[data-effet],[data-milieu],[data-shader],[data-cadrer],[data-camera],.decor,[data-decor]') || el.closest('.decor,[data-decor]')) return null;
+    if (el.matches('[data-fleche],[data-annoter],[data-main-levee]') || el.closest('svg[data-main-levee]')) {
+      var main = el.hasAttribute('data-main-levee') || String(getComputedStyle(el).getPropertyValue('--pm-trait') || getComputedStyle(sec).getPropertyValue('--pm-trait')).trim() === 'main';
+      return { type: 'trace', main: main };
+    }
+    var tween = el.getAttribute('data-tween') || '';
+    if (el.hasAttribute('data-graphique') || /(^|;)\s*nombre\b/.test(tween)) return { type: 'chiffre' };
+    var cle = el.getAttribute('data-texte') || '';
+    if (el.tagName === 'LI' || /^point\d*$/.test(cle) || el.querySelector('[data-texte^="point"]')) return { type: 'point' };
+    if (el.tagName === 'IMG' || el.matches('[data-logo], .logo, svg:not([aria-hidden="true"])')) return { type: 'image' };
+    if (el.hasAttribute('data-code')) return { type: 'ecriture' };
+    var texte = el.hasAttribute('data-texte') || /\S/.test(el.textContent || '');
+    if (texte) {
+      if (aFond(getComputedStyle(el))) return { type: 'forme' };
+      return { type: /^(h1|h2)$/i.test(el.tagName) || /titre/.test(cle) ? 'titre' : 'texte' };
+    }
+    return aFond(getComputedStyle(el)) ? { type: 'forme' } : null;
+  }
+
+  function bruitagesAuto(d) {
+    var r = [], table = (d.bruitages && d.bruitages.table) || {}, gamme = gammeListes(d);
+    document.querySelectorAll('#pm-scene section[data-scene]').forEach(function (sec) {
+      var e = M.minutage.elements[sec.getAttribute('data-scene')];
+      if (!e) return;
+      var rangListe = 0;
+      sec.querySelectorAll('[data-pm-cle]').forEach(function (el) {
+        if (el.hasAttribute('data-son')) return;
+        var tps = e[el.getAttribute('data-pm-cle')];
+        if (!tps) return;
+        var g = typeEntree(el, sec);
+        if (!g) return;
+        var defaut = DEFAUTS[g.type] || [null, 0];
+        var nom = Object.prototype.hasOwnProperty.call(table, g.type) ? table[g.type] : defaut[0];
+        // Tracé à main levée : crissement, son générique du tracé, que la matière d'un style remplace par sa table.
+        if (g.type === 'trace' && g.main && !Object.prototype.hasOwnProperty.call(table, 'trace')) nom = 'crissement';
+        if (!nom || FORTS.indexOf(nom) >= 0) return;
+        var gain = g.type === 'trace' && nom === 'crissement' ? 0.4 : defaut[1] || 0.4;
+        var duree = Math.max(0.05, tps.fin - tps.debut);
+        if (g.type === 'point') {
+          var midi = gamme[rangListe % gamme.length] + 12 * Math.floor(rangListe / gamme.length);
+          rangListe++;
+          r.push({ t: tps.debut, nom: nom, fichier: null, volume: gain, hauteur: nom === 'blip' ? frequence(midi) : undefined });
+        } else if (g.type === 'chiffre' && nom === 'tic') {
+          // Compteur : tic × N, N = borne(arrondi(durée × 10), 4, 18), aux instants 1 − ∛(1 − k/N), gain de 0,8 à 0,4.
+          var n = Math.max(4, Math.min(18, Math.round(duree * 10)));
+          for (var k = 0; k < n; k++) {
+            var x = 1 - Math.cbrt(1 - k / n);
+            r.push({ t: tps.debut + duree * x, nom: 'tic', fichier: null, volume: 0.8 - 0.4 * k / Math.max(1, n - 1) });
+          }
+        } else r.push({ t: tps.debut, nom: nom, fichier: null, volume: gain, duree: nom === 'crissement' ? duree : undefined });
+      });
+    });
+    return r;
+  }
+
+  /** Éclaircit les sons (voir plus haut) ; ordre par instant. */
+  function eclaircir(liste) {
+    liste.sort(function (a, b) { return a.t - b.t; });
+    var sortie = [], dernier = {}, debutFenetre = -Infinity, dansFenetre = 0;
+    liste.forEach(function (c) {
+      var cle = c.nom || c.fichier;
+      var prec = dernier[cle];
+      if (!c.explicite && prec !== undefined && c.t - prec < (c.nom === 'tic' ? 0.045 : 0.12)) return;
+      if (c.t - debutFenetre > 0.5) { debutFenetre = c.t; dansFenetre = 0; }
+      if (!c.explicite && dansFenetre >= 3 && c.nom !== 'tic') return;
+      dansFenetre++;
+      dernier[cle] = c.t;
+      sortie.push(c);
+    });
+    return sortie;
+  }
+  /** Sons à jouer, bruitages automatiques compris (contrôle, tests). */
+  M.evenementsSons = function () { return evenementsSons(); };
 
   M.aSon = function () {
     var d = M.donnees;
@@ -178,7 +285,7 @@
             src.connect(gf).connect(sortieSons);
             src.start(ev.t);
           } catch (e) { avertissements.push('Un son importé n\'a pas pu être lu.'); }
-        } else M.synthe.bruitages.jouer(contexteSons, sortieSons, ev.nom, ev.t, ev.volume, bruitSons);
+        } else M.synthe.bruitages.jouer(contexteSons, sortieSons, ev.nom, ev.t, ev.volume, bruitSons, { hauteur: ev.hauteur, duree: ev.duree });
       }
       bus.push({ tampon: await contexteSons.startRendering(), volume: volumeDe(d.bruitages) });
     }

@@ -142,6 +142,8 @@ function controlesRapides({ projet, dossierStyles, dossierEffets, assemblage = A
       if (/data-groupe/.test(html)) html = deplierGroupes(html, { scene: s.id, dureeTemps: dureeTemps(deroule) }).html;
       scenesLues[s.id] = extraireScene(html);
       elementsParScene[s.id] = scenesLues[s.id].elements;
+      // Caméra automatique (spec S7, 5.8) : demandée par le déroulé, gros plans data-cadrer.
+      problemes.push(...require('./lib/camera-auto.js').controlerCameraAuto(html, { deroule, scene: s }));
       // Ébauche restée en place (spec Retouches et ergonomie, 5.3) : point de départ, jamais un résultat ; l'export la refuse.
       if (estEbauche(scenesHtml[s.id])) {
         problemes.push({ regle: 'ebauche-restante', gravite: 'erreur', scene: s.id,
@@ -343,7 +345,7 @@ function controlesRapides({ projet, dossierStyles, dossierEffets, assemblage = A
       for (const m of scenesLues[s.id].miseEnScene) {
         const signaler = (regle, message) => problemes.push({ regle, gravite: 'erreur', scene: s.id, message: `Scène « ${s.id} » : ${message}` });
         if (m.camera !== undefined && m.balise === 'section') signaler('camera-invalide', 'data-camera se pose sur un conteneur à l\'intérieur de la scène, pas sur la <section> (dont les transitions déplacent déjà l\'image).');
-        else if (m.camera !== undefined) { try { analyserCamera(m.camera, temps); } catch (e) { signaler('camera-invalide', e.message); } }
+        else if (m.camera !== undefined) { try { analyserCamera(m.camera, temps); } catch (e) { signaler(e.regle || 'camera-invalide', e.message); } }
         if (m.gel !== undefined || m.vitesse !== undefined) { try { analyserTemps(m.gel ?? null, m.vitesse ?? null, temps); } catch (e) { signaler('temps-invalide', e.message); } }
         if (m.profondeur !== undefined && !/^\d*\.?\d+$/.test(m.profondeur)) {
           signaler('profondeur-invalide', `data-profondeur « ${m.profondeur} » doit être un nombre (1 : suit la caméra, 0 : plan fixe, 0.3 : plan lointain).`);
@@ -547,6 +549,7 @@ async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.j
   let rendus = null;
   let son = null;
   let releves = null;
+  let cameras = null;
   let determinisme = precedent && precedent.determinisme ? precedent.determinisme : null;
   let preuve = null;
   if (rendu && assemblage.ok) {
@@ -594,6 +597,12 @@ async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.j
       const repris = comparable && precedent.releves ? precedent.releves : {};
       releves = Object.fromEntries(ids.map((id) => [id, (v.releves && v.releves[id]) || (changees.includes(id) ? null : repris[id])]).filter(([, x]) => x));
       if (!Object.keys(releves).length) releves = null;
+    }
+    // Plans de la caméra automatique (spec S7, 5.8) : ceux des scènes mesurées, les autres repris.
+    if (renduVerifie && (v.cameras || (comparable && precedent.cameras))) {
+      const repris = comparable && precedent.cameras ? precedent.cameras : {};
+      cameras = Object.fromEntries(ids.map((id) => [id, (v.cameras && v.cameras[id]) || (changees.includes(id) ? null : repris[id])]).filter(([, x]) => x));
+      if (!Object.keys(cameras).length) cameras = null;
     }
     let duRendu = v.problemes;
     if (renduVerifie && comparable) {
@@ -646,6 +655,7 @@ async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.j
     rendus = precedent.rendus;
     son = precedent.son || null;
     releves = precedent.releves || null;
+    cameras = precedent.cameras || null;
   }
   if (gpu && assemblage.ok && aDesShaders(assemblage.donnees)) {
     const g = await compilerShadersGPU({ html: assemblage.html, ...(navigateur !== undefined ? { navigateur } : {}) });
@@ -655,7 +665,7 @@ async function controlerComplet({ dossier, dossierStyles, dossierEffets = path.j
   problemes = avecConsignes(problemes);
   corrections = avecConsignes(corrections);
   if (r.fichier) {
-    ecrireAtomique(r.fichier, JSON.stringify({ version: 2, problemes, corrections, renduVerifie, rendu: modeRendu, scenesMesurees, empreintes, rendus, son, determinisme, ...(releves ? { releves } : {}) }, null, 2));
+    ecrireAtomique(r.fichier, JSON.stringify({ version: 2, problemes, corrections, renduVerifie, rendu: modeRendu, scenesMesurees, empreintes, rendus, son, determinisme, ...(releves ? { releves } : {}), ...(cameras ? { cameras } : {}) }, null, 2));
   }
   if (avancement && avancement.terminer) avancement.terminer(true);
   return { problemes, corrections, renduVerifie, rendu: modeRendu, scenesMesurees, determinisme: preuve, fichier: r.fichier };
