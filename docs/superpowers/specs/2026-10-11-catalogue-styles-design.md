@@ -1,6 +1,6 @@
 # Spec – Pulse Motion, brique 3 : catalogue de styles et charte
 
-> 2026-10-11 · Statut : à relire · Source : `docs/brief.md`, spec du socle (`2026-10-11-socle-design.md`), références `pulse-vibe` (identité, directions, lexique, glossaire) et `projets\pulse-boilerplate` (import Bunny Fonts)
+> 2026-10-11 · Statut : à relire · Source : `docs/brief.md`, spec du socle (`2026-10-11-socle-design.md`), références `pulse-vibe` (dépôt voisin) (identité, directions, lexique, glossaire) et `pulse-boilerplate` (dépôt voisin) (import Bunny Fonts)
 
 ## 1. Intention
 
