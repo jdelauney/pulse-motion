@@ -66,7 +66,7 @@
 .points li::before { content: ""; display: block; width: 3cqh; height: 0.6cqh; border-radius: 0.3cqh; background: var(--c-primaire-lisible); opacity: 0.9; }
 
 /* ---------- Chiffre ---------- */
-.mesure { display: flex; flex-direction: column; gap: 2cqh; align-items: flex-start; }
+.mesure { display: flex; flex-direction: column; gap: 2cqh; align-items: flex-start; align-self: flex-start; margin: 2.6cqh 0 1cqh; }
 
 /* ---------- Comparaison : deux panneaux ---------- */
 .panneaux { display: grid; grid-template-columns: 1fr 1fr; gap: 8cqh; }

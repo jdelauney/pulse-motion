@@ -16,8 +16,9 @@
   var M = racine.M = racine.M || {};
   if (!M.dessin || !M.dessin.composant) return;
   var TOUR = 1.12;          // tours autour de chaque cible
-  var POINTS_TOUR = 14;     // points par tour
-  var ECART = 2.2;          // cqh entre la cible et la ligne
+  var POINTS_TOUR = 28;     // points par tour
+  var ECART = 2.4;          // cqh entre la cible et la ligne
+  var CARRE = 8;            // exposant du tour (super-ellipse) : il passe au large des coins d'un texte long et bas
 
   function r2(x) { return Math.round(x * 100) / 100; }
 
@@ -26,17 +27,18 @@
     var pts = [];
     var borne = function (p) { return [r2(Math.max(1, Math.min(L - 1, p[0]))), r2(Math.max(1, Math.min(99, p[1])))]; };
     var premiere = boites[0];
-    // Entrée par la gauche, un peu sous la première cible.
-    pts.push(borne([premiere.x - premiere.l / 2 - 9, premiere.y + premiere.h / 2 + 5]));
+    // Entrée par le bas, sous la droite de la première cible : la ligne file vers la gauche et commence son tour.
+    pts.push(borne([premiere.x + premiere.l * 0.3, premiere.y + premiere.h / 2 + ECART + 4]));
     boites.forEach(function (b) {
       var rx = b.l / 2 + ECART, ry = b.h / 2 + ECART;
-      var depart = 0.75 * Math.PI;   // en bas à gauche (y vers le bas)
+      var depart = 0.5 * Math.PI;    // en bas, au milieu (y vers le bas) ; le tour va vers la gauche, puis le haut
       var n = Math.round(POINTS_TOUR * TOUR);
+      var puissance = function (c) { return (c < 0 ? -1 : 1) * Math.pow(Math.abs(c), 2 / CARRE); };
       for (var i = 0; i <= n; i++) {
         var a = depart + (i / POINTS_TOUR) * 2 * Math.PI;
         // Le tour s'élargit un peu : la ligne ne repasse jamais exactement sur elle-même.
         var k = 1 + 0.08 * i / n;
-        pts.push(borne([b.x + Math.cos(a) * rx * k, b.y + Math.sin(a) * ry * k]));
+        pts.push(borne([b.x + puissance(Math.cos(a)) * rx * k, b.y + puissance(Math.sin(a)) * ry * k]));
       }
     });
     // Sortie par la droite avec une petite boucle.

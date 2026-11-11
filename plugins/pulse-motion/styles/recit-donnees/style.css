@@ -45,7 +45,7 @@
 .decor { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
 .decor ~ * { position: relative; z-index: 1; }
 .crayon {
-  position: absolute; right: -4cqh; bottom: -5cqh; width: 26cqh; height: 4.4cqh; rotate: -32deg; transform-origin: 0 50%;
+  position: absolute; left: calc(100% - 22cqh); top: calc(100% - 13cqh); width: 34cqh; height: 4.4cqh; rotate: 34deg; transform-origin: 0 50%;
   background:
     linear-gradient(90deg, transparent 0 4.8cqh, #e9d2a7 4.8cqh 8.4cqh, transparent 8.4cqh),
     linear-gradient(#b7322a 0 50%, #2c5d8a 50% 100%);
@@ -53,7 +53,8 @@
   box-shadow: 0 0 0 transparent;
   animation: rd-crayon 1s ease-in-out both;
 }
-.ombre-crayon { position: absolute; right: 2cqh; bottom: 7cqh; width: 18cqh; height: 2cqh; border-radius: 50%; background: rgba(60, 45, 30, 0.16); rotate: -32deg; animation: rd-ombre 1s ease-in-out both; }
+/* L'ombre part de la pointe, sous le crayon, et s'éloigne quand il se lève. */
+.ombre-crayon { position: absolute; left: calc(100% - 21cqh); top: calc(100% - 9cqh); width: 30cqh; height: 2.2cqh; border-radius: 50%; background: rgba(60, 45, 30, 0.14); rotate: 34deg; transform-origin: 0 50%; animation: rd-ombre 1s ease-in-out both; }
 @keyframes rd-crayon { 0%, 100% { translate: 0 0; } 40% { translate: -1.2cqh -2.4cqh; } 70% { translate: -0.4cqh -0.8cqh; } }
 @keyframes rd-ombre { 0%, 100% { translate: 0 0; opacity: 1; } 40% { translate: 2cqh 2cqh; opacity: 0.45; } }
 
@@ -147,7 +148,8 @@
   .chaine > .noeud { font-size: 3.6cqh; padding: 1.8cqh; }
   .connecteur { align-self: center; width: 2cqh; height: 4cqh; }
   .logo { height: 8cqh; }
-  .crayon { width: 18cqh; height: 3.2cqh; }
+  .crayon { left: calc(100% - 15cqh); top: calc(100% - 9cqh); height: 3.2cqh; }
+  .ombre-crayon { left: calc(100% - 14cqh); top: calc(100% - 6cqh); height: 1.6cqh; }
 }
 
 /* ---------- 9:16 : place pour la légende des réseaux sociaux (pas en 4:5) ---------- */

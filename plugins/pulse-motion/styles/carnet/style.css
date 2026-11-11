@@ -28,7 +28,7 @@
 .titre { margin: 0; width: fit-content; max-width: 100%; font: italic 400 10cqh/1.08 var(--f-titres); text-wrap: balance; overflow-wrap: break-word; }
 .titre-moyen { margin: 0; width: fit-content; max-width: 100%; font: italic 400 6.6cqh/1.12 var(--f-titres); text-wrap: balance; overflow-wrap: break-word; }
 .texte { margin: 0; font: 400 3.9cqh/1.45 var(--f-texte); text-wrap: pretty; }
-.etiquette { margin: 0; align-self: flex-start; color: var(--c-primaire-lisible); font: 600 3.8cqh/1.2 var(--f-texte); letter-spacing: 0.05em; text-transform: uppercase; }
+.etiquette { margin: 0 0 1.8cqh; align-self: flex-start; color: var(--c-primaire-lisible); font: 600 3.8cqh/1.2 var(--f-texte); letter-spacing: 0.05em; text-transform: uppercase; }
 .nombre { margin: 0; width: fit-content; font: italic 400 22cqh/1 var(--f-titres); font-variant-numeric: tabular-nums lining-nums; }
 .unite { font-size: 0.4em; margin-left: 0.15em; }
 .compte { color: var(--c-accent-lisible); }
@@ -59,7 +59,7 @@
 .points li::before { content: ""; display: block; width: 2.2cqh; height: 2.2cqh; border: 0.4cqh solid var(--c-primaire-lisible); border-radius: 52% 44% 56% 48%; box-sizing: border-box; rotate: -12deg; }
 
 /* ---------- Chiffre ---------- */
-.mesure { position: relative; display: flex; flex-direction: column; gap: 2cqh; align-items: flex-start; }
+.mesure { position: relative; display: flex; flex-direction: column; gap: 2cqh; align-items: flex-start; align-self: flex-start; margin: 2.6cqh 0 1cqh; }
 
 /* ---------- Comparaison : deux croquis ---------- */
 .croquis { display: grid; grid-template-columns: 1fr 1fr; gap: 8cqh; }
