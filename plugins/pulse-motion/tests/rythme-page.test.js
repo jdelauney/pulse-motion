@@ -113,12 +113,13 @@ test('bruitages auto : les blips d\'une liste montent dans la gamme de la musiqu
     const m = await json(minimal.c, 'M.seek(0).then(function () { return M.evenementsSons(); })');
     assert.deepEqual(m.map((x) => [x.nom, x.explicite]), [['ding', true], ['souffle', true]]);
   } finally { await auto.c.fermer(); await minimal.c.fermer(); }
-  // La table d'un style livré remplace ces sons (clair-pedagogique : point → pop, trace → whoosh, forme → aucun).
+  // La table d'un style livré remplace ces sons (clair-pedagogique : point → pop, forme → aucun) ; le tracé à main levée garde
+  // crissement, le style n'a pas de matière (spec S8, 5.7 point 4 ; son trace → whoosh vaut pour les flèches nettes).
   const style = await ouvrir(scenes, { bruitages: { auto: true } }, 'clair-pedagogique');
   try {
     const sons = await json(style.c, 'M.seek(0).then(function () { return M.evenementsSons(); })');
     assert.deepEqual(style.a.donnees.bruitages.table.point, 'pop');
-    assert.ok(!sons.some((x) => x.nom === 'blip' || x.nom === 'crissement'), JSON.stringify(sons));
-    assert.ok(sons.some((x) => x.nom === 'whoosh' && Math.abs(x.t - 2.6) < 1e-6) && sons.filter((x) => x.nom === 'pop').length >= 2, JSON.stringify(sons));
+    assert.ok(!sons.some((x) => x.nom === 'blip'), JSON.stringify(sons));
+    assert.ok(sons.some((x) => x.nom === 'crissement' && Math.abs(x.t - 2.6) < 1e-6) && sons.filter((x) => x.nom === 'pop').length >= 2, JSON.stringify(sons));
   } finally { await style.c.fermer(); }
 });
