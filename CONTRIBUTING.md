@@ -99,10 +99,11 @@ Un style est un dossier `plugins/pulse-motion/styles/<id>/` :
 |---|---|
 | `style.css` | L'allure : mise en page, classes d'entrée (`.entre-bas`…), décor ; tailles en `cqh`, couleurs et polices **seulement** par les variables de la charte (`--c-*`, `--f-*`) |
 | `charte.json` | Couleurs et polices par défaut du style |
-| `identite.json` | Catégorie, usages, personnalité, signature, à faire, à éviter, mots-clés, palette sonore, provenance ; `modules` : les modules de `moteur/medium/` dont le style a besoin (encre dans un canevas, une seule ligne, isométrie), inclus dans la page seulement pour ce style, avec leur feuille `moteur/medium/<nom>.css` s'ils en ont une |
+| `identite.json` | Catégorie, usages, personnalité, signature, à faire, à éviter, mots-clés, palette sonore, provenance ; `modules` : les modules de `moteur/medium/` dont le style a besoin (encre dans un canevas, une seule ligne, isométrie, aplats surimprimés du riso), inclus dans la page seulement pour ce style, avec leur feuille `moteur/medium/<nom>.css` s'ils en ont une |
 | `catalogue.json` | Les neuf scènes toutes faites et leurs textes à remplir |
 | `scenes/*.html` | Les neuf scènes toutes faites (`titre`, `chiffre`, `liste`, `etape`, `comparaison`, `schema`, `alerte`, `moyeu`, `conclusion`) |
 | `polices/` | Les polices embarquées et leur `LICENCES.md` |
+| Textures (facultatives) | Tuiles PNG tirées d'une graine par `outils/styles/textures.js` (40 Ko au plus, `--verifier` pour les contrôler), embarquées par `url()` dans `style.css` |
 
 Puis :
 
