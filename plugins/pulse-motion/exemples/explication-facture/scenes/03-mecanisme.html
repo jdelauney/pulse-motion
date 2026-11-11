@@ -1,0 +1,30 @@
+<!-- Scène « mecanisme » : trois étapes reliées par des flèches tracées l'une après l'autre, d'après la scène toute faite « schema ».
+     Caméra automatique : le conteneur data-camera="auto" remplit la scène. Temps en secondes (pas de voix), environ 2 s entre les entrées. -->
+<section data-scene="mecanisme" class="centre">
+  <style>
+    @scope {
+      .plateau {
+        position: absolute; inset: 0; box-sizing: border-box;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8cqh;
+        padding: 9cqh 12cqh;
+      }
+      .plateau > .decor ~ * { position: relative; z-index: 1; }
+      .schema { gap: 9cqh; justify-content: center; }
+      .boite.resultat { background: var(--c-accent); color: var(--c-sur-accent); border-color: var(--c-accent); }
+    }
+  </style>
+  <div class="plateau" data-camera="auto">
+    <div class="decor">
+      <span class="rond accent" data-decor style="width: 62cqh; height: 62cqh; right: -12cqh; top: -18cqh" data-start="0" data-dur="14" data-tween="scale 0.92→1.06 sine-inout; --dx 0cqh→-6cqh sine-inout"></span>
+      <span class="rond" data-decor style="width: 48cqh; height: 48cqh; left: -14cqh; bottom: -16cqh" data-start="0" data-dur="14" data-tween="--dy 0cqh→-7cqh sine-inout"></span>
+    </div>
+    <h2 id="titre" class="titre-moyen entre-bas" data-texte="titre" data-start="0.5" data-dur="0.7"></h2>
+    <div class="schema">
+      <div id="a" class="boite zoom" data-texte="a" data-start="2.5" data-dur="0.8"></div>
+      <span class="fleche" aria-hidden="true"><i id="fleche1" data-fleche="#a → #b" data-start="4.5" data-dur="0.8" data-couleur="primaire-lisible" data-epaisseur="0.6"></i></span>
+      <div id="b" class="boite zoom" data-texte="b" data-start="5.5" data-dur="0.8"></div>
+      <span class="fleche" aria-hidden="true"><i id="fleche2" data-fleche="#b → #c" data-start="7.5" data-dur="0.8" data-couleur="primaire-lisible" data-epaisseur="0.6"></i></span>
+      <div id="c" class="boite zoom resultat" data-texte="c" data-start="8.5" data-dur="0.8"></div>
+    </div>
+  </div>
+</section>

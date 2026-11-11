@@ -1,0 +1,39 @@
+<!-- Scène « detail » : une étape vue de près, la formule du montant TTC qui se construit (composée d'après « etape »).
+     12 s. L'étape (numéro, titre, texte) en haut à gauche ; la fenêtre de code, grande et centrée, est le sujet.
+     Code « ttc » : =B2 à 2 s, ajout de la TVA à 4,5 s (le texte entre avec), arrondi à 8 s (soulignement du titre avec).
+     Caméra automatique : le conteneur data-camera="auto" remplit la scène. -->
+<section data-scene="detail">
+  <style>
+    @scope {
+      .plateau {
+        position: absolute; inset: 0; box-sizing: border-box;
+        display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 8cqh;
+        padding: 9cqh 14cqh;
+      }
+      .plateau > .decor ~ * { position: relative; z-index: 1; }
+      .plateau .etape { gap: 4cqh; align-items: center; }
+      .plateau .numero {
+        width: 15cqh; height: 15cqh; font-size: 8.5cqh;
+        background: var(--c-accent-lisible); color: var(--c-sur-accent);
+      }
+      .plateau .etape-texte { gap: 1.6cqh; }
+      .plateau .trait { width: 22cqh; height: 1cqh; }
+      .code { align-self: center; width: fit-content; --pm-code-taille: 6.6cqh; }
+    }
+  </style>
+  <div class="plateau" data-camera="auto">
+    <div class="decor">
+      <span class="rond accent" data-decor style="width: 52cqh; height: 52cqh; right: -12cqh; top: -18cqh" data-start="0" data-dur="12" data-tween="--dy 0cqh→8cqh sine-inout; scale 0.95→1.04 sine-inout"></span>
+      <span class="rond" data-decor style="width: 56cqh; height: 56cqh; left: -16cqh; bottom: -20cqh" data-start="0" data-dur="12" data-tween="--dx 0cqh→6cqh sine-inout; --dy 0cqh→-6cqh sine-inout"></span>
+    </div>
+    <div class="etape">
+      <span id="numero" class="numero zoom" data-texte="numero" data-start="0.2" data-dur="0.8"></span>
+      <div class="etape-texte">
+        <h2 id="titre" class="titre-moyen entre-droite" data-texte="titre" data-start="#numero:fin" data-dur="0.7"></h2>
+        <span id="trait" class="trait" data-start="8.2" data-dur="0.6"></span>
+        <p id="texte" class="texte entre-droite" data-texte="texte" data-start="4.6" data-dur="0.7"></p>
+      </div>
+    </div>
+    <figure id="formule" class="code" data-code="ttc" data-start="2"></figure>
+  </div>
+</section>

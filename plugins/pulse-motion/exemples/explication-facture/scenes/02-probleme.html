@@ -1,0 +1,37 @@
+<!-- Scène « probleme » : scène toute faite « moyeu » du style clair-pedagogique, dans une caméra automatique.
+     12 s. Titre centré en haut, puis le problème au centre de l'espace restant et quatre causes en couronne, reliées par des flèches ;
+     « Mention manquante » entourée à 7 s. Temps en secondes (pas de voix). -->
+<section data-scene="probleme" class="centre">
+  <style>
+    @scope {
+      .plateau {
+        position: absolute; inset: 0; box-sizing: border-box;
+        display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 4cqh;
+        padding: 9cqh 12cqh; text-align: center;
+      }
+      .plateau > .decor ~ * { position: relative; z-index: 1; }
+      .plateau > .titre-moyen { flex: none; align-self: center; max-width: 140cqh; }
+      .plateau > .moyeu { flex: 1; min-height: 0; }
+      .moyeu > .moyeu-partie { translate: calc(-50% + cos(var(--a)) * 72cqh) calc(-50% + sin(var(--a)) * 29cqh); }
+    }
+  </style>
+  <div class="plateau" data-camera="auto">
+    <div class="decor">
+      <span class="rond" data-decor style="width: 60cqh; height: 60cqh; left: -18cqh; top: -22cqh" data-start="0" data-dur="12" data-tween="--dx 0cqh→8cqh sine-inout; --dy 0cqh→5cqh sine-inout"></span>
+      <span class="rond accent" data-decor style="width: 50cqh; height: 50cqh; right: -15cqh; bottom: -20cqh" data-start="0" data-dur="12" data-tween="--dx 0cqh→-8cqh sine-inout"></span>
+    </div>
+    <h2 id="titre" class="titre-moyen entre-bas" data-texte="titre" data-start="0.2" data-dur="0.7"></h2>
+    <div class="moyeu">
+      <div id="centre" class="boite moyeu-centre zoom" data-texte="centre" data-start="1" data-dur="0.8"></div>
+      <div id="partie1" class="boite moyeu-partie zoom" style="--i: 0" data-texte="partie1" data-start="2.4" data-dur="0.6"></div>
+      <i data-fleche="#centre → #partie1" data-start="#partie1" data-dur="0.6" data-couleur="accent-lisible" data-epaisseur="0.6"></i>
+      <div id="partie2" class="boite moyeu-partie zoom" style="--i: 1" data-texte="partie2" data-start="3.5" data-dur="0.6"></div>
+      <i data-fleche="#centre → #partie2" data-start="#partie2" data-dur="0.6" data-couleur="accent-lisible" data-epaisseur="0.6"></i>
+      <div id="partie3" class="boite moyeu-partie zoom" style="--i: 2" data-texte="partie3" data-start="4.6" data-dur="0.6"></div>
+      <i data-fleche="#centre → #partie3" data-start="#partie3" data-dur="0.6" data-couleur="accent-lisible" data-epaisseur="0.6"></i>
+      <div id="partie4" class="boite moyeu-partie zoom" style="--i: 3" data-texte="partie4" data-start="5.7" data-dur="0.6"></div>
+      <i data-fleche="#centre → #partie4" data-start="#partie4" data-dur="0.6" data-couleur="accent-lisible" data-epaisseur="0.6"></i>
+    </div>
+    <i data-annoter="entoure" data-cible="#partie2" data-start="7" data-dur="0.8"></i>
+  </div>
+</section>
