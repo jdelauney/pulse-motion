@@ -8,10 +8,10 @@ const { listerModeles, lireModele, validerModele, trouverModele, copierExemple, 
 const { dossierTemporaire } = require('./aide/temporaire.js');
 
 const PM = path.join(__dirname, '..', 'scripts', 'pm.js');
-const IDS = ['accueil', 'annonce', 'formation-courte', 'histoire', 'pitch', 'presentation-produit', 'publication-sociale', 'tutoriel-logiciel'];
-const GENRE = { 'formation-courte': 'formation', 'presentation-produit': 'produit', histoire: 'storytelling', 'publication-sociale': 'social', accueil: 'formation', pitch: 'produit', annonce: 'social', 'tutoriel-logiciel': 'formation' };
+const IDS = ['accueil', 'annonce', 'explication', 'formation-courte', 'histoire', 'pitch', 'presentation-produit', 'publication-sociale', 'tutoriel-logiciel'];
+const GENRE = { 'formation-courte': 'formation', 'presentation-produit': 'produit', histoire: 'storytelling', 'publication-sociale': 'social', accueil: 'formation', pitch: 'produit', annonce: 'social', 'tutoriel-logiciel': 'formation', explication: 'formation' };
 
-test('modeles : les huit modèles existent, valides, avec leur genre', () => {
+test('modeles : les neuf modèles existent, valides, avec leur genre', () => {
   assert.deepEqual(listerModeles().map((m) => m.id), IDS);
   for (const id of IDS) {
     const m = lireModele(id);
@@ -144,7 +144,7 @@ test('exemple : modèle inconnu, la liste des modèles est donnée', () => {
 test('pm modeles : liste, afficher, trouver, exemple', () => {
   const liste = spawnSync(process.execPath, [PM, 'modeles', 'liste'], { encoding: 'utf8' });
   assert.equal(liste.status, 0, liste.stderr);
-  assert.equal(JSON.parse(liste.stdout).length, 8);
+  assert.equal(JSON.parse(liste.stdout).length, 9);
   const fiche = spawnSync(process.execPath, [PM, 'modeles', 'afficher', 'pitch'], { encoding: 'utf8' });
   assert.equal(JSON.parse(fiche.stdout).genre, 'produit');
   const rien = spawnSync(process.execPath, [PM, 'modeles', 'trouver', 'anniversaire de ma grand-mère'], { encoding: 'utf8' });

@@ -205,7 +205,7 @@ Les temps des mots d'une scène, en une ligne : `pulse-motion voix mots . --scen
 | « garde la caméra fixe scène 2 » | `scenes[].camera` : `fixe`, retirer `auto` de la scène |
 | « gros plan sur le prix quand je dis cher » | `<i data-cadrer="#prix" data-start="mot:cher" data-dur="3"></i>` |
 | « la flèche quand je dis serveur, même si la phrase change » | `[#serveur]` dans le texte dit, `data-start="repere:serveur"` |
-| « mets une voix de synthèse », « fais-la parler plus lentement » | `/pulse-motion:voix` (section « Synthèse ») |
+| « mets une voix de synthèse », « fais-la parler plus lentement » | `/pulse-motion:voix` (`pulse-motion reference audio/synthese`) |
 | « plus rythmé pour les réseaux », « plus posé » | `"allure": 1.2`, `"allure": 0.85` au déroulé |
 | « il prononce mal HACCP » | `{HACCP|hache a cé cé pé}` dans le texte dit, ou la prononciation au glossaire (« notée pour vos prochaines vidéos ») |
 | « plus rythmé pour les réseaux », « plus posé » | `allure` 1,2 ou 0,85 (`pulse-motion reference remarques`) |

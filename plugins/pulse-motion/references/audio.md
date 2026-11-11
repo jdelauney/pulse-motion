@@ -69,6 +69,7 @@ Lire ce tronc, puis seulement la partie utile : `pulse-motion reference audio/<p
 | Partie | Contenu |
 |---|---|
 | `audio/voix` | écrire le texte dit, prises, voix provisoire, transcription |
+| `audio/synthese` | voix de synthèse locale : la poser, l'installer (avec accord), prononciation vérifiée, vitesse |
 | `audio/ancres` | `data-start="mot:…"` : un élément entre quand la voix dit son mot (scène qui a une prise) |
 | `audio/musique` | musique générée (ambiances, humeur par scène, `intensite`) et partition écrite |
 | `audio/bruitages` | `data-son` sur un élément, liste des sons, sons des transitions |

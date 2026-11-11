@@ -74,6 +74,7 @@ test('plugin : outils propose tout installer en une question', () => {
     assert.ok(t.split('\n---')[0].includes(`Bash(${c})`), `allowed-tools : ${c}`);
   }
   assert.match(t, /## 6\. Installer Node\.js/);
+  assert.match(t, /\| Voix de synthèse \(`voixSynthese`\) \|[^\n]*`pulse-motion reference audio\/synthese`/);
 });
 
 test('plugin : creer propose de préparer l\'ordinateur à la ronde 2 seulement si un outil manque', () => {

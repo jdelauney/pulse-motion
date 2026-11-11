@@ -102,9 +102,9 @@ test('modèle explication : validé, réglages allumés d\'office, retrouvé par
 
 test('compétences : creer dit que les réglages du modèle vont au déroulé ; aucune commande dans les phrases du wiki ajoutées', () => {
   const creer = fs.readFileSync(path.join(__dirname, '..', 'skills', 'creer', 'SKILL.md'), 'utf8');
-  assert.match(creer, /ses `reglages` \(caméra, bruitages\) vont tels quels dans le déroulé/);
+  assert.match(creer, /ses `reglages` vont au déroulé/);
   assert.match(creer, /« Voix de synthèse »/);
-  assert.match(creer, /Voix de synthèse : `pulse-motion consignes voix synthese`/);
+  assert.match(creer, /Voix de synthèse : `pulse-motion reference audio\/synthese`/);
   const concepts = fs.readFileSync(path.join(__dirname, '..', '..', '..', 'docs', 'concepts.html'), 'utf8');
   const section = concepts.slice(concepts.indexOf('<section id="explicative">'), concepts.indexOf('</section>', concepts.indexOf('<section id="explicative">')));
   assert.ok(section.length > 200);
