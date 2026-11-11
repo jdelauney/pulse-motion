@@ -13,7 +13,7 @@
 /* ---------- Mise en page : la page du carnet ---------- */
 #pm-scene > section[data-scene] {
   --pm-trait: main; --pm-rugosite: 1.15; --pm-courbure: 1.2; --pm-ebullition: 10;
-  --hachure: color-mix(in srgb, var(--c-accent-lisible) 55%, transparent);
+  --hachure: color-mix(in srgb, var(--c-accent-lisible) 30%, transparent);
   display: flex; flex-direction: column; justify-content: center; gap: 3.6cqh;
   padding: 10cqh 13cqh 12cqh; overflow: hidden;
   background:
@@ -55,8 +55,9 @@
 
 /* ---------- Liste : des puces dessinées ---------- */
 .points { list-style: none; margin: 0; padding: 0; display: grid; gap: 2.2cqh; }
-.points li { display: grid; grid-template-columns: 3cqh 1fr; gap: 2.2cqh; align-items: center; font: 400 4.1cqh/1.3 var(--f-texte); }
-.points li::before { content: ""; display: block; width: 2.2cqh; height: 2.2cqh; border: 0.4cqh solid var(--c-primaire-lisible); border-radius: 52% 44% 56% 48%; box-sizing: border-box; rotate: -12deg; }
+/* Le texte du point s'écrit lettre après lettre : le point reste un bloc (pas une grille, où chaque mot ferait une case). */
+.points li { position: relative; padding-left: 5.2cqh; font: 400 4.1cqh/1.3 var(--f-texte); }
+.points li::before { content: ""; position: absolute; left: 0; top: calc(0.65em - 1.1cqh); display: block; width: 2.2cqh; height: 2.2cqh; border: 0.4cqh solid var(--c-primaire-lisible); border-radius: 52% 44% 56% 48%; box-sizing: border-box; rotate: -12deg; }
 
 /* ---------- Chiffre ---------- */
 .mesure { position: relative; display: flex; flex-direction: column; gap: 2cqh; align-items: flex-start; align-self: flex-start; margin: 2.6cqh 0 1cqh; }
@@ -68,7 +69,7 @@
 
 /* ---------- Étape ---------- */
 .etape { display: grid; grid-template-columns: auto 1fr; gap: 6cqh; align-items: center; }
-.numero { display: grid; place-items: center; width: 18cqh; height: 18cqh; margin: 0; font: italic 400 13cqh/1 var(--f-titres); color: var(--c-accent-lisible); }
+.numero { display: block; text-align: center; width: 18cqh; height: 18cqh; line-height: 18cqh; margin: 0; font: italic 400 13cqh/1 var(--f-titres); color: var(--c-accent-lisible); }
 .etape-texte { display: flex; flex-direction: column; gap: 2cqh; min-width: 0; }
 
 /* ---------- Alerte ---------- */
@@ -81,6 +82,10 @@
 
 /* ---------- Logo ---------- */
 .logo { height: 11cqh; width: auto; object-fit: contain; align-self: flex-start; }
+
+/* Texte court qui s'écrit d'un trait (parties du moyeu) : il se découvre de gauche à droite (--p), sans couper ses mots en
+   lettres (une colonne étroite peut le passer à la ligne). */
+.ecrit-court { clip-path: inset(-20% calc((1 - var(--p, 1)) * 100%) -20% -5%); }
 
 /* ---------- Format carré ---------- */
 @container (max-aspect-ratio: 5/4) {
@@ -95,7 +100,7 @@
   .croquis { gap: 4cqh; }
   .vignette { padding: 2.4cqh; }
   .vignette-titre { font-size: 4.4cqh; }
-  .numero { width: 14cqh; height: 14cqh; font-size: 10cqh; }
+  .numero { width: 14cqh; height: 14cqh; line-height: 14cqh; font-size: 10cqh; }
   .etape { gap: 4cqh; }
   .chaine > .idee { font-size: 3.9cqh; padding: 2.4cqh 1cqh; }
   .connecteur { width: 5cqh; }
@@ -103,21 +108,21 @@
 
 /* ---------- Format vertical : tout s'empile ---------- */
 @container (orientation: portrait) {
-  #pm-scene > section[data-scene] { padding: 9cqh 7cqh; gap: 2.4cqh; font-size: 3.5cqh; }
+  #pm-scene > section[data-scene] { padding: 8cqh 7cqh; gap: 1.6cqh; font-size: 3.5cqh; }
   .titre { font-size: 5.6cqh; }
-  .titre-moyen { font-size: 4.4cqh; }
+  .titre-moyen { font-size: 4.2cqh; }
   .texte { font-size: 3.5cqh; }
   .etiquette { font-size: 3.5cqh; }
   .note { font-size: 3.5cqh; max-width: 100%; align-self: flex-start; }
   .nombre { font-size: 11cqh; }
-  .points { gap: 1.4cqh; }
-  .points li { grid-template-columns: 2.4cqh 1fr; gap: 1.4cqh; font-size: 3.5cqh; }
-  .points li::before { width: 1.8cqh; height: 1.8cqh; border-width: 0.3cqh; }
+  .points { gap: 0.8cqh; }
+  .points li { padding-left: 3.6cqh; font-size: 3.5cqh; line-height: 1.22; }
+  .points li::before { width: 1.8cqh; height: 1.8cqh; border-width: 0.3cqh; top: calc(0.61em - 0.9cqh); }
   .croquis { grid-template-columns: 1fr; gap: 2cqh; }
   .vignette { padding: 2cqh; gap: 1cqh; }
   .vignette-titre { font-size: 3.9cqh; }
   .etape { grid-template-columns: 1fr; gap: 2cqh; }
-  .numero { width: 10cqh; height: 10cqh; font-size: 7cqh; }
+  .numero { width: 10cqh; height: 10cqh; line-height: 10cqh; font-size: 7cqh; }
   .cadre-alerte { padding: 3cqh 3.4cqh; }
   .chaine { flex-direction: column; align-items: stretch; gap: 1cqh; }
   .chaine > .idee { font-size: 3.7cqh; padding: 1.8cqh; }
@@ -129,6 +134,7 @@
 /* ---------- 9:16 : place pour la légende des réseaux sociaux (pas en 4:5) ---------- */
 @container (max-aspect-ratio: 2/3) {
   #pm-scene > section[data-scene] { padding-bottom: 15cqh; }
+  .moyeu { margin-right: 5cqh; }
 }
 
 /* ---------- Moyeu et rayons (spec S7, 5.7) : couronne en paysage, rangée sous le centre en portrait ---------- */
