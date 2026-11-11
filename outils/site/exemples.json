@@ -1,0 +1,76 @@
+{
+  "commentaire": "Page Exemples du wiki (docs/exemples.html, écrite par outils/site/galerie.js). Les exemples des modèles viennent du plugin (exemples/<id>/deroule.json et exemple.json) ; ici, ce qui n'y est pas : la demande de la chaîne du froid (tutoriel 1), Vibe Connection (tutoriel « Recréer Vibe Connection ») et les deux retouches montrées avant et après, appliquées par outils/site/galerie-medias.js (lot retouches) comme le dit la consigne de /pulse-motion:retoucher.",
+  "chaineDuFroid": {
+    "phrase": "/pulse-motion:creer la chaîne du froid pour mes stagiaires",
+    "note": "Faite pas à pas dans le tutoriel « Première vidéo », avec les réponses conseillées aux questions ; montrée ici sans sa voix.",
+    "tutoriel": "tutoriels/premiere-video.html"
+  },
+  "vibeConnection": {
+    "titre": "Vibe Connection",
+    "phrase": "/pulse-motion:creer le film « Vibe Connection » décrit dans scenario.md (dans ce dossier) : lis-le en entier avant tout. C'est un faux film muet et rétro de 1 min 40 qui fait la promotion de pulse-motion, en 7 scènes composées librement, une par séquence, avec exactement les durées du scénario (20, 6, 17, 8, 23, 10 et 16 secondes) et ces noms de scènes : generique, installation, probleme, tournant, demo, preuve, pancartes. Genre storytelling, format carré 1:1 à 25 images par seconde, style tech-sombre, ton sombre, sans voix ni sous-titres, une musique composée d'ambiance inspirante (nappes et mélodie douces, sans sonorités chiptune) à 120 battements par minute, volume 0,45. Les textes à l'écran sont les cartons du scénario, mot pour mot ; aucun texte plus petit que 38 px. Pour ce premier jet : décors, cartons, caméra et objets de chaque séquence, avec les Tousfous du plugin (le dessin « touffu », hauteur 14 % de l'image en plan large) et seulement les poses et mouvements de la bibliothèque ; les gestes propres au film, les effets de particules et les bruitages viendront ensuite.",
+    "note": "Un film de 1 min 40, fait avec Pulse Motion à partir d'un scénario écrit à l'avance : une première demande pour le premier jet, puis une trentaine de demandes pour refaire chaque séquence, créer les gestes des personnages, ajouter les effets et les bruitages, et l'exporter. Toutes sont dans le tutoriel.",
+    "tutoriel": "tutoriels/vibe-connection.html",
+    "video": "assets/vibe-connection.mp4",
+    "affiche": "assets/captures/vibe-connection-affiche.jpg",
+    "format": "1:1",
+    "scenes": [
+      {
+        "id": "generique",
+        "role": "Générique d'ouverture : le logo tombe, les Tousfous arrivent, le titre se révèle dans la fumée",
+        "duree": 20
+      },
+      {
+        "id": "installation",
+        "role": "L'installation : les Tousfous tombent d'une trappe et marchent droit devant",
+        "duree": 6
+      },
+      {
+        "id": "probleme",
+        "role": "Le problème : le designer dessine un pont à la main au-dessus du précipice, et échoue",
+        "duree": 17
+      },
+      {
+        "id": "tournant",
+        "role": "Le tournant : tout s'arrête au bord du vide, et le terminal apparaît",
+        "duree": 8
+      },
+      {
+        "id": "demo",
+        "role": "La démo : une seule commande, et le pont se construit de lui-même",
+        "duree": 23
+      },
+      {
+        "id": "preuve",
+        "role": "La chute comique : le designer se libère et prend un café pendant que les Tousfous jouent sur le pont",
+        "duree": 10
+      },
+      {
+        "id": "pancartes",
+        "role": "L'appel à l'action, porté par deux Tousfous maladroits et leurs pancartes",
+        "duree": 16
+      }
+    ]
+  },
+  "retouches": [
+    {
+      "id": "titre-percutant",
+      "phrase": "/pulse-motion:retoucher rends le titre plus percutant",
+      "exemple": "chaine-du-froid",
+      "scene": "intro",
+      "mouvement": {
+        "no": "001",
+        "element": "titre",
+        "retirer": [
+          "entre-bas"
+        ]
+      }
+    },
+    {
+      "id": "ralentir",
+      "phrase": "/pulse-motion:retoucher ralentis la scène 3",
+      "exemple": "chaine-du-froid",
+      "scene": "maillons",
+      "rythme": 0.8
+    }
+  ]
+}

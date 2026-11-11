@@ -173,3 +173,82 @@ test("galerie : cartes regroupées par catégorie, dans l'ordre de CATEGORIES", 
   }
   assert.match(b, /id="style-minimal"[\s\S]*?<strong>Provenance :<\/strong> lemo-opuscar, style « swiss-motion » \(MIT\)/);
 });
+
+// ---------------------------------------------------------------- Chantier F « Valorisation » : page Exemples
+
+const PLUGIN_EX = path.join(__dirname, "..", "..", "plugins", "pulse-motion");
+const lireDeroule = (id) => JSON.parse(fs.readFileSync(path.join(PLUGIN_EX, "exemples", id, "deroule.json"), "utf8"));
+const echappe = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+test("exemples : chaque exemple livré montre sa demande d'origine, son déroulé validé et sa vidéo", () => {
+  const b = blocs().exemples;
+  const donnees = G.donneesExemples();
+  for (const m of G.modelesVideo()) {
+    const dossier = G.dossierExemple(m);
+    const id = path.basename(dossier);
+    const d = lireDeroule(id);
+    const recit = fs.existsSync(path.join(dossier, "exemple.json")) ? JSON.parse(fs.readFileSync(path.join(dossier, "exemple.json"), "utf8")) : null;
+    const debut = b.indexOf(`<section class="exemple" id="exemple-${id}">`);
+    assert.ok(debut >= 0, `${id} : section`);
+    const section = b.slice(debut, b.indexOf("</section>", debut));
+    const phrase = recit ? recit.phrase : donnees.chaineDuFroid.phrase;
+    assert.ok(section.includes(`<code>${echappe(phrase)}</code>`), `${id} : demande d'origine`);
+    assert.equal((section.match(/<tr><td>\d+<\/td>/g) || []).length, d.scenes.length, `${id} : une ligne par scène du déroulé`);
+    for (const t of Object.values(d.scenes[0].textes || {})) assert.ok(section.includes(echappe(t)), `${id} : texte « ${t} »`);
+    const [mp4, jpg] = G.fichiersExemple(m);
+    assert.ok(section.includes(`src="${mp4}"`) && section.includes(`poster="${jpg}"`), `${id} : vidéo`);
+  }
+  assert.match(b, /id="exemple-vibe-connection"[\s\S]*src="assets\/vibe-connection\.mp4"/, "Vibe Connection, sa vidéo à sa place");
+  assert.equal((b.match(/id="exemple-vibe-connection"[\s\S]*$/)[0].match(/<tr><td>\d+<\/td>/g) || []).length, 7);
+});
+
+test("exemples : la durée d'une scène est celle du déroulé, rythme compris", () => {
+  const html = blocs().exemples;
+  const section = html.slice(html.indexOf('id="exemple-chaine-du-froid"'));
+  assert.match(section, /<tr><td>3<\/td><td>Liste : les 4 maillons de la chaîne<\/td>[^\n]*<td>13 s<\/td><\/tr>/);
+});
+
+test("retouches : « ralentis la scène 3 » règle le rythme du déroulé, et l'explication dit les deux durées", () => {
+  const r = G.retouches().find((x) => x.id === "ralentir");
+  const dossier = dossierTemporaire("pm-retouche-");
+  G.copierSansVoix(path.join(PLUGIN_EX, "exemples", r.exemple), dossier);
+  const scene = G.appliquerRetouche(dossier, r);
+  assert.equal(scene.rythme, 0.8);
+  const apres = JSON.parse(fs.readFileSync(path.join(dossier, "deroule.json"), "utf8"));
+  assert.ok(apres.scenes.every((s) => !s.voix), "copie sans voix");
+  assert.equal(apres.scenes.filter((s) => s.rythme).length, 1, "une seule scène touchée");
+  const { explicationRetouche } = require("./galerie.js");
+  assert.match(explicationRetouche(r, lireDeroule(r.exemple)), /scène 3 .*de 13 s à 16,25 s/);
+});
+
+test("retouches : « rends le titre plus percutant » pose la recette #001 du dictionnaire sur le titre, sans l'entrée du style", () => {
+  const r = G.retouches().find((x) => x.id === "titre-percutant");
+  const dossier = dossierTemporaire("pm-retouche-");
+  G.copierSansVoix(path.join(PLUGIN_EX, "exemples", r.exemple), dossier);
+  const avant = fs.readFileSync(path.join(dossier, "scenes", "01-intro.html"), "utf8");
+  const scene = G.appliquerRetouche(dossier, r);
+  const html = fs.readFileSync(path.join(dossier, scene.fichier), "utf8");
+  const titre = /<h1 id="titre" class="([^"]+)"/.exec(html)[1].split(" ");
+  const m = G.dictionnaire().mouvements.find((x) => x.no === "001");
+  for (const c of G.classesDeRecette(m)) assert.ok(titre.includes(c), c);
+  assert.ok(!titre.includes("entre-bas"));
+  assert.deepEqual(scene.mouvements, ["#001"]);
+  // Rien d'autre ne change dans la scène.
+  assert.equal(html.replace(/<h1[^>]*>/, ""), avant.replace(/<h1[^>]*>/, ""));
+});
+
+test("retouches : avant et après côte à côte, rendus par le lot « retouches » (aucun média fait à la main)", () => {
+  const b = blocs().retouches;
+  const lot = G.LOTS.find((l) => l.id === "retouches");
+  assert.ok(lot, "lot retouches dans medias.js");
+  for (const r of G.retouches()) {
+    const fichiers = G.fichiersRetouche(r);
+    assert.deepEqual(lot.sorties().filter((f) => fichiers.includes(f)), fichiers, `${r.id} : sorties du lot`);
+    const section = b.slice(b.indexOf(`id="retouche-${r.id}"`));
+    assert.ok(section.includes(`<code>${echappe(r.phrase)}</code>`), `${r.id} : phrase`);
+    assert.match(section, /<div class="avant-apres">[\s\S]*Avant[\s\S]*Après/);
+    for (const f of fichiers) assert.ok(section.includes(f), `${r.id} : ${f}`);
+  }
+  assert.equal(PAGES.exemples, "exemples.html");
+  assert.equal(PAGES.retouches, "exemples.html");
+});

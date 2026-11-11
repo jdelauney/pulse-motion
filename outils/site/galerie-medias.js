@@ -56,9 +56,9 @@ function outils() {
   return f.chemin;
 }
 
-/** Exporte le projet en fidèle (720p) ; -> chemin du MP4. */
-function exporter(dossier) {
-  const r = spawnSync(process.execPath, [path.join(PLUGIN, "scripts", "exporter.js"), dossier, "--qualite", "720p"], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+/** Exporte le projet en fidèle (720p), avec les options en plus (`--scene <id>`) ; -> chemin du MP4. */
+function exporter(dossier, options = []) {
+  const r = spawnSync(process.execPath, [path.join(PLUGIN, "scripts", "exporter.js"), dossier, "--qualite", "720p", ...options], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
   const sortie = (r.stdout || "").trim();
   let resume = null;
   for (let i = sortie.lastIndexOf("{"); i >= 0 && !resume; i = sortie.lastIndexOf("{", i - 1)) {
@@ -70,18 +70,19 @@ function exporter(dossier) {
 }
 
 /**
- * Une boucle MP4 muette (480 px, CRF 28, lecture dès le chargement) et une image JPEG par plage.
- * plages : [{ debut, duree, sortie (relatif à docs/, .mp4), affiche (relatif à docs/, .jpg), tAffiche (s, dans la vidéo) }]
+ * Une boucle MP4 muette (480 px par défaut, CRF 28, lecture dès le chargement) et une image JPEG par plage.
+ * plages : [{ debut, duree, sortie (relatif à docs/, .mp4), affiche (relatif à docs/, .jpg), tAffiche (s, dans la vidéo), largeur? }]
  */
 function decouper(video, plages) {
   const ffmpeg = outils();
   for (const p of plages) {
     const mp4 = path.join(DOCS, p.sortie);
+    const largeur = p.largeur || 480;
     fs.mkdirSync(path.dirname(mp4), { recursive: true });
     execFileSync(ffmpeg, ["-y", "-loglevel", "error", "-ss", String(p.debut), "-t", String(p.duree), "-i", video, "-an",
-      "-vf", "scale=480:-2", "-c:v", "libx264", "-preset", "veryfast", "-crf", "28", "-pix_fmt", "yuv420p", "-movflags", "+faststart", mp4]);
+      "-vf", `scale=${largeur}:-2`, "-c:v", "libx264", "-preset", "veryfast", "-crf", "28", "-pix_fmt", "yuv420p", "-movflags", "+faststart", mp4]);
     if (p.affiche) {
-      execFileSync(ffmpeg, ["-y", "-loglevel", "error", "-ss", String(p.tAffiche), "-i", video, "-frames:v", "1", "-vf", "scale=480:-2", "-q:v", "4", path.join(DOCS, p.affiche)]);
+      execFileSync(ffmpeg, ["-y", "-loglevel", "error", "-ss", String(p.tAffiche), "-i", video, "-frames:v", "1", "-vf", `scale=${largeur}:-2`, "-q:v", "4", path.join(DOCS, p.affiche)]);
     }
   }
 }
@@ -231,6 +232,92 @@ function fabriquerExemples() {
   }
 }
 
+// ---------------------------------------------------------------- Avant / après d'une retouche (page Exemples)
+
+const PAGE_EXEMPLES = path.join(__dirname, "exemples.json");
+/** Données de la page Exemples (outils/site/exemples.json). */
+const donneesExemples = () => JSON.parse(fs.readFileSync(PAGE_EXEMPLES, "utf8"));
+const retouches = () => donneesExemples().retouches;
+const RETOUCHES = "medias/exemples/retouches";
+/** [avant.mp4, avant.jpg, après.mp4, après.jpg] d'une retouche (relatifs à docs/). */
+const fichiersRetouche = (r) => ["avant", "apres"].flatMap((q) => [`${RETOUCHES}/${r.id}-${q}.mp4`, `${RETOUCHES}/${r.id}-${q}.jpg`]);
+
+/** Classes d'une recette de type « classe » du dictionnaire (lues dans son exemple). */
+function classesDeRecette(m) {
+  if (m.recette.type !== "classe") throw new Error(`#${m.no} : seule une recette de type « classe » se pose sur un élément ici.`);
+  const c = /class="([^"]+)"/.exec(m.recette.exemple);
+  if (!c) throw new Error(`#${m.no} : classe introuvable dans l'exemple de la recette.`);
+  return c[1].split(/\s+/).filter(Boolean);
+}
+
+/** Copie de l'exemple dans `dossier`, sans voix, sous-titres ni logo (comme la vidéo publiée de l'exemple). */
+function copierSansVoix(source, dossier) {
+  fs.cpSync(source, dossier, { recursive: true, filter: (f) => !/^(sortie|\.pulse-motion|\.historique|exemple\.json|appli)([\\/]|$)/.test(path.relative(source, f)) });
+  const fichier = path.join(dossier, "deroule.json");
+  const d = JSON.parse(fs.readFileSync(fichier, "utf8"));
+  for (const s of d.scenes) delete s.voix;
+  delete d.sousTitres;
+  if (d.charte) {
+    delete d.charte.logo;
+    if (!Object.keys(d.charte).length) delete d.charte;
+  }
+  fs.writeFileSync(fichier, JSON.stringify(d, null, 2) + "\n");
+}
+
+/**
+ * Applique une retouche à la copie, comme le dit la consigne de /pulse-motion:retoucher (§ 4, « Appliquer ») : « ralentis
+ * la scène 3 » règle `rythme` dans le déroulé ; un mouvement nommé pose la recette du dictionnaire sur l'élément visé, sans
+ * sa classe d'entrée du style, et s'ajoute à `scenes[].mouvements`. -> la scène retouchée du déroulé.
+ */
+function appliquerRetouche(dossier, r) {
+  const fichier = path.join(dossier, "deroule.json");
+  const d = JSON.parse(fs.readFileSync(fichier, "utf8"));
+  const scene = d.scenes.find((s) => s.id === r.scene);
+  if (!scene) throw new Error(`retouche ${r.id} : scène ${r.scene} introuvable.`);
+  if (r.rythme !== undefined) scene.rythme = r.rythme;
+  if (r.mouvement) {
+    const m = dictionnaire().mouvements.find((x) => x.no === r.mouvement.no);
+    if (!m) throw new Error(`retouche ${r.id} : mouvement #${r.mouvement.no} introuvable.`);
+    const html = path.join(dossier, scene.fichier);
+    let trouve = false;
+    const apres = fs.readFileSync(html, "utf8").replace(/<([a-z0-9]+)([^>]*\bid="([^"]+)"[^>]*)>/g, (tout, balise, attributs, id) => {
+      if (id !== r.mouvement.element) return tout;
+      trouve = true;
+      const a = attributs.replace(/\bclass="([^"]*)"/, (x, classes) => {
+        const gardees = classes.split(/\s+/).filter((c) => c && !(r.mouvement.retirer || []).includes(c));
+        return `class="${[...gardees, ...classesDeRecette(m)].join(" ")}"`;
+      });
+      return `<${balise}${a}>`;
+    });
+    if (!trouve) throw new Error(`retouche ${r.id} : élément #${r.mouvement.element} introuvable dans ${scene.fichier}.`);
+    fs.writeFileSync(html, apres);
+    const entree = r.mouvement.element === "titre" ? `#${m.no}` : { mouvement: `#${m.no}`, element: r.mouvement.element };
+    scene.mouvements = [...(scene.mouvements || []), entree];
+  }
+  fs.writeFileSync(fichier, JSON.stringify(d, null, 2) + "\n");
+  return scene;
+}
+
+/** Pour chaque retouche : la scène exportée avant et après (extrait de la scène, fidèle 720p), en boucles de 640 px. */
+function fabriquerRetouches() {
+  const { calculerMinutage } = require(path.join(PLUGIN, "moteur", "minutage.js"));
+  for (const r of retouches()) {
+    const [avantMp4, avantJpg, apresMp4, apresJpg] = fichiersRetouche(r);
+    for (const [quoi, mp4, jpg] of [["avant", avantMp4, avantJpg], ["apres", apresMp4, apresJpg]]) {
+      avecDossier("pm-galerie-retouche-", (dossier) => {
+        copierSansVoix(path.join(PLUGIN, "exemples", r.exemple), dossier);
+        if (quoi === "apres") appliquerRetouche(dossier, r);
+        const d = JSON.parse(fs.readFileSync(path.join(dossier, "deroule.json"), "utf8"));
+        const s = calculerMinutage(d.scenes, {}).scenes.find((x) => x.id === r.scene);
+        const duree = s.fin - s.debut;
+        const video = exporter(dossier, ["--scene", r.scene]);
+        // Image fixe au milieu de la scène, avant comme après : les deux se comparent au même moment de son déroulement.
+        decouper(video, [{ debut: 0, duree: duree + 1, sortie: mp4, affiche: jpg, tAffiche: duree * 0.5, largeur: 640 }]);
+      });
+    }
+  }
+}
+
 /** Lots de la galerie, au format de MEDIAS (outils/site/medias.js). Leurs sources comprennent ce fichier et la chaîne
  * d'export : une démo ou un réglage d'export changé refait les aperçus. */
 const FABRICATION = [__filename, path.join(PLUGIN, "scripts", "assembler.js"), path.join(PLUGIN, "scripts", "exporter.js"), path.join(PLUGIN, "scripts", "lib", "choisir-mouvements.js")];
@@ -247,7 +334,11 @@ const LOTS = [
     sources: [path.join(PLUGIN, "personnages"), path.join(PLUGIN, "moteur"), path.join(PLUGIN, "styles", "clair-pedagogique"), ...FABRICATION], fabriquer: fabriquerDessins },
   { id: "exemples", sortie: "medias/exemples/pitch.mp4", sorties: () => exemplesAFabriquer().flatMap(fichiersExemple),
     sources: [path.join(PLUGIN, "exemples"), path.join(PLUGIN, "moteur"), path.join(PLUGIN, "styles"), ...FABRICATION], fabriquer: fabriquerExemples },
+  { id: "retouches", sortie: `${RETOUCHES}/ralentir-avant.mp4`, sorties: () => retouches().flatMap(fichiersRetouche),
+    sources: [PAGE_EXEMPLES, path.join(PLUGIN, "exemples", "chaine-du-froid"), path.join(PLUGIN, "moteur"), path.join(PLUGIN, "styles", "clair-pedagogique"),
+      path.join(PLUGIN, "references", "mouvements"), ...FABRICATION], fabriquer: fabriquerRetouches },
 ];
 
 module.exports = { LOTS, GALERIE, dictionnaire, STYLES_LIVRES, scenesDuStyle, effets, clipsPersonnages, dessinsLivres, demoEffet,
-  fichiersMouvement, fichiersStyle, fichiersTemoin, fichiersEffet, fichiersClip, fichiersDessin, decouper, modelesVideo, dossierExemple, fichiersExemple, exemplesAFabriquer };
+  fichiersMouvement, fichiersStyle, fichiersTemoin, fichiersEffet, fichiersClip, fichiersDessin, decouper, modelesVideo, dossierExemple, fichiersExemple, exemplesAFabriquer,
+  donneesExemples, retouches, fichiersRetouche, appliquerRetouche, copierSansVoix, classesDeRecette };
