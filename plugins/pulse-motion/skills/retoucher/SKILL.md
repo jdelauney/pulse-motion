@@ -24,7 +24,7 @@ Si ce bloc est vide ou contient une erreur, lancer `pulse-motion lexique`.
 
 - Parler simplement, en français, sans jargon ; ne jamais montrer de commande.
 - Une retouche = le plus petit changement qui répond à la phrase. Ne pas « améliorer » autre chose.
-- Phrase ambiguë (quelle scène ? de combien ?) : une seule question avec `AskUserQuestion`, réponse recommandée en premier.
+- Phrase ambiguë (quelle scène ? de combien ?) : une seule question avec `AskUserQuestion`, la recommandée en premier.
 - Problème du contrôle : dire son `message`, corriger avec sa `consigne`.
 - Travail long (scènes réécrites, contrôle complet) : l'annoncer en une phrase avec sa durée ; en arrière-plan, le suivre par `Monitor` sur `pulse-motion avancement . --suivre`, une phrase par minute au plus.
 - Lexique : un mot de l'outil déjà noté ci-dessus n'est pas réexpliqué en entier ; un mot expliqué pour la première fois se note avec `pulse-motion lexique noter "<terme>" "<phrase>" "<comme…>" "/pulse-motion:retoucher"`.
@@ -71,7 +71,7 @@ Classer la demande, puis :
 
 Choisir en regardant (« un truc qui claque pour le titre », « montre-moi les mouvements ») : `pulse-motion reference demandes`, section « Mouvements nommés ».
 
-Avant de toucher au fichier d'une scène : `pulse-motion reference moteur` et la partie utile ; le son : `pulse-motion reference audio` ; un effet : `pulse-motion reference particules` et sa famille ; une icône : `pulse-motion reference icones` ; flèche, annotation, graphique, code, formule : `pulse-motion reference explication`.
+Avant de toucher au fichier d'une scène : `pulse-motion reference moteur` et la partie utile ; le son : `pulse-motion reference audio` ; un effet : `pulse-motion reference particules` et sa famille ; une icône : `pulse-motion reference icones` ; flèche, annotation, graphique, code, formule : `pulse-motion reference explication` (caméra aussi).
 
 Agent `animateur` (refonte, scènes de `aReecrire`, nouvelle scène) : modèle passé à l'appel (paramètre `model`) selon la scène :
 

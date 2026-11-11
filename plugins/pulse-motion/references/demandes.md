@@ -36,6 +36,10 @@ Quand la personne cite un mouvement ou un numéro du dictionnaire (« avec un po
 
 Une scène qui montre des chiffres (une évolution, une comparaison, des parts), du code, une formule de tableur ou de mathématiques : écrire ses données dans la scène du déroulé, comme ses textes (`graphiques`, `code`, `formules` ; formats et table « donnée → graphique » : `pulse-motion reference explication`), puis donner leur clé à l'animateur (« graphique `ventes` en barres, chaque barre à son année dite »). Les chiffres viennent de la personne ou d'une source citée (`source`), jamais inventés. Une idée au centre et 3 à 5 parties autour : `type` `moyeu`.
 
+## Caméra, allure et petits sons
+
+« Laisse la caméra bouger toute seule », « plus rythmé pour les réseaux », « ajoute des petits sons » : au déroulé, `"camera": "auto"` (puis chaque scène reçoit son conteneur `data-camera="auto"`), `"allure"` de 0,7 à 1,6, `"bruitages": { "auto": true }` ; détail et pièges : `pulse-motion reference explication`. Ces trois réglages restent éteints tant que la personne ne les demande pas. Le texte dit peut porter des repères et une forme dite (`[#serveur]`, `{HACCP|hache a cé cé pé}`) : `pulse-motion reference audio/voix`.
+
 ## Personnages
 
 Une vidéo qui demande un personnage (« un cuisinier qui explique », « une infirmière qui accueille », « un enfant qui découvre ») : proposer d'abord les personnages livrés, en une question, par leur description en mots simples (`pulse-motion personnages liste`, rubrique `dessins` : le Touffu, une écolière, un soignant, une grand-mère, un technicien, une cuisinière), le plus proche de la demande « (Recommandé) », plus « Un nouveau personnage » (`pulse-motion consignes dessiner-personnage`). Le choisi va dans la consigne des animateurs (`data-personnage="<nom>"`).
