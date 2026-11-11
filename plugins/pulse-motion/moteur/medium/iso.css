@@ -10,7 +10,8 @@
   width: min(calc(var(--iso-w, 160) * var(--iso-unite, 0.6cqh)), var(--iso-largeur, 100%), calc(var(--iso-hauteur, 56cqh) * var(--iso-ratio, 1.6)));
 }
 .iso > svg.pm-iso { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; }
-.iso > [data-iso-ancre] { position: absolute; left: var(--iso-ax, 50%); top: var(--iso-ay, 50%); translate: -50% -100%; margin: 0; }
+/* Une étiquette garde sa largeur naturelle : posée près du bord du plan, elle ne se replie pas. */
+.iso > [data-iso-ancre] { position: absolute; left: var(--iso-ax, 50%); top: var(--iso-ay, 50%); width: max-content; translate: -50% -100%; margin: 0; }
 .iso > [data-iso-cote="bas"] { translate: -50% 0; }
 .iso > [data-iso-cote="gauche"] { translate: -100% -50%; }
 .iso > [data-iso-cote="droite"] { translate: 0 -50%; }

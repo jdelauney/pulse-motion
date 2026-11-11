@@ -139,7 +139,9 @@
 @container (max-aspect-ratio: 2/3) {
   #pm-scene > section[data-scene] { padding-bottom: 15cqh; }
   .une > .iso { --iso-largeur: 42cqh; --iso-hauteur: 26cqh; }
-  .cote > .iso { --iso-hauteur: 13cqh; }
+  .cote > .iso { --iso-hauteur: 9cqh; }
+  .duo { gap: 1.6cqh; }
+  .cote { gap: 1cqh; }
 }
 
 /* ---------- Moyeu et rayons (spec S7, 5.7) : le centre sur sa dalle, couronne en paysage, rangée en portrait ---------- */

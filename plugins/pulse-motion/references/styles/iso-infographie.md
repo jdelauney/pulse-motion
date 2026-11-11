@@ -24,7 +24,7 @@
 ## 3. Logique de couleur
 
 - Une couleur par type d'objet, tenue toute la vidéo (bâtiments `iso1`, véhicules `iso2`, toits `iso3`, sol `iso4`) ; `--c-accent` pour le seul sujet de la scène ; `--c-primaire` pour les étiquettes et les silhouettes.
-- Fond pâle sous une trame isométrique à 9 %. Palette d'exemple : encre `#231a2c`, bleu `#2f5d9e`, rouge `#d9472b`.
+- Fond pâle sous une trame isométrique à 9 %. Palette d'exemple : encre `#231a2c`, bleu `#2f5d9e`, rouge `#c03e24`.
 
 ## 4. Typographie et sous-titres
 
@@ -92,4 +92,4 @@ Scène composée : ces classes et `<style>@scope { … }</style>`.
 - Structures : le système se construit → il fonctionne → on ouvre le point clé ; le site avant → après ; le parcours d'un produit, poste par poste.
 - Ouvertures : le site qui se construit ; une seule boîte qui s'ouvre ; un nombre en Isotype.
 - Fins : le recul sur le site fini ; le sujet seul en couleur ; la pile complète.
-- Usages : expliquer un système ou un circuit ; montrer un site ; faire voir l'intérieur d'une machine.
+- Usages : expliquer un système ou un circuit ; montrer un site, un entrepôt, une usine ; faire voir l'intérieur d'une machine.
