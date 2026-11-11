@@ -24,12 +24,12 @@ test("porte : un chemin trop commun n'est pas un chemin de cet ordinateur", () =
 test("porte : secrets reconnus, texte ordinaire accepté", () => {
   const chemins = [];
   const secrets = [
-    "-----BEGIN OPENSSH PRIVATE KEY-----",
+    "-----BEGIN OPENSSH " + "PRIVATE KEY-----",
     "ghp_" + "a".repeat(36),
     "github_pat_" + "b".repeat(50),
     "sk-ant-api03-" + "c".repeat(40),
     "AKIA" + "ABCDEFGHIJKLMNOP",
-    "xoxb-1234567890-abcdef",
+    "xoxb-" + "1234567890-abcdef",
   ];
   for (const s of secrets) assert.equal(P.examinerTexte(`cle = "${s}"`, chemins)[0].sorte, "secret", s);
   assert.deepEqual(P.examinerTexte("La clé du succès : sk-ant n'est pas un jeton. ghp_court.", chemins), []);
