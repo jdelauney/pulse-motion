@@ -1,0 +1,147 @@
+{
+  "version": 1,
+  "titre": "Du devis au paiement : le trajet d'une facture",
+  "genre": "formation",
+  "parcours": "rapide",
+  "format": {
+    "ratio": "16:9",
+    "ips": 30
+  },
+  "style": "clair-pedagogique",
+  "camera": "auto",
+  "bruitages": {
+    "auto": true
+  },
+  "musique": {
+    "generee": "calme",
+    "tempo": 120,
+    "volume": 0.8
+  },
+  "scenes": [
+    {
+      "id": "accroche",
+      "type": "titre",
+      "fichier": "scenes/01-accroche.html",
+      "duree": 8,
+      "transition": "fondu",
+      "intention": "titre – l'accroche : ce qu'on va comprendre, en une question ou un trajet",
+      "textes": {
+        "etiquette": "Comptabilité",
+        "titre": "Du devis au paiement",
+        "sous": "Le trajet d’une facture, en trois étapes"
+      }
+    },
+    {
+      "id": "probleme",
+      "type": "moyeu",
+      "fichier": "scenes/02-probleme.html",
+      "duree": 12,
+      "transition": "glissement",
+      "intention": "moyeu – le problème au centre et ses causes autour ; le mot important entouré",
+      "textes": {
+        "titre": "Pourquoi une facture est payée en retard",
+        "centre": "Paiement en retard",
+        "partie1": "Montant erroné",
+        "partie2": "Mention manquante",
+        "partie3": "Mauvais destinataire",
+        "partie4": "Relance oubliée"
+      }
+    },
+    {
+      "id": "mecanisme",
+      "type": "schema",
+      "fichier": "scenes/03-mecanisme.html",
+      "duree": 14,
+      "transition": "glissement",
+      "intention": "schema – le mécanisme en trois étapes, reliées par des flèches tracées l'une après l'autre",
+      "textes": {
+        "titre": "Le trajet en trois étapes",
+        "a": "Devis signé",
+        "b": "Facture envoyée",
+        "c": "Paiement reçu"
+      }
+    },
+    {
+      "id": "detail",
+      "type": "etape",
+      "fichier": "scenes/04-detail.html",
+      "duree": 12,
+      "transition": "zoom",
+      "intention": "etape – une étape vue de près : une formule de tableur qui se construit",
+      "textes": {
+        "numero": "2",
+        "titre": "Calculer le montant TTC",
+        "texte": "Le montant TTC ajoute la TVA au montant hors taxes"
+      },
+      "code": {
+        "ttc": {
+          "langage": "tableur",
+          "titre": "Facture.xlsx",
+          "etapes": [
+            {
+              "code": "=B2"
+            },
+            {
+              "code": "=B2*(1+C2)",
+              "debut": 4.5,
+              "surligner": [
+                1
+              ]
+            },
+            {
+              "code": "=ARRONDI(B2*(1+C2);2)",
+              "debut": 8
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "chiffre",
+      "type": "chiffre",
+      "fichier": "scenes/05-chiffre.html",
+      "duree": 12,
+      "transition": "glissement",
+      "intention": "chiffre – un chiffre qui donne l'ampleur, en graphique en barres",
+      "textes": {
+        "titre": "Délai moyen de paiement",
+        "unite": "jours",
+        "legende": "Une petite entreprise, de 2023 à 2025"
+      },
+      "graphiques": {
+        "delais": {
+          "type": "barres",
+          "unite": " j",
+          "source": "Exemple fictif",
+          "valeurs": [
+            {
+              "etiquette": "2023",
+              "valeur": 48
+            },
+            {
+              "etiquette": "2024",
+              "valeur": 41
+            },
+            {
+              "etiquette": "2025",
+              "valeur": 32,
+              "accent": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "synthese",
+      "type": "conclusion",
+      "fichier": "scenes/06-synthese.html",
+      "duree": 8,
+      "transition": "fondu",
+      "intention": "conclusion – la synthèse : l'idée entière en une phrase",
+      "textes": {
+        "titre": "Une facture complète est payée à l’heure",
+        "sous": "Vérifiez ses mentions avant chaque envoi"
+      }
+    }
+  ]
+}

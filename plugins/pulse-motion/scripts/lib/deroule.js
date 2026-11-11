@@ -149,6 +149,13 @@ function validerDeroule(d) {
   else if (d.voix !== undefined) {
     if (d.voix.provisoire !== undefined && typeof d.voix.provisoire !== 'boolean') err.push('« voix.provisoire » doit valoir true ou false.');
     if (d.voix.volume !== undefined && !(typeof d.voix.volume === 'number' && d.voix.volume >= 0 && d.voix.volume <= 1)) err.push('« voix.volume » doit être un nombre entre 0 et 1.');
+    // Voix de synthèse locale (spec S7, 5.12) : la seule voix française du modèle, vitesse de 0,7 à 1,3.
+    const sy = d.voix.synthese;
+    if (sy !== undefined && !estObjet(sy)) err.push('« voix.synthese » doit être un objet, ex. { "voix": "ff_siwis", "vitesse": 1 }.');
+    else if (sy !== undefined) {
+      if (sy.voix !== undefined && sy.voix !== 'ff_siwis') err.push('« voix.synthese.voix » doit valoir « ff_siwis » (la seule voix française de la voix de synthèse).');
+      if (sy.vitesse !== undefined && !(typeof sy.vitesse === 'number' && sy.vitesse >= 0.7 && sy.vitesse <= 1.3)) err.push('« voix.synthese.vitesse » doit être un nombre de 0,7 (plus lent) à 1,3 (plus rapide) ; 1 par défaut.');
+    }
   }
 
   if (d.sousTitres !== undefined && !estObjet(d.sousTitres)) err.push('« sousTitres » doit être un objet, ex. { "mode": "ligne" }.');

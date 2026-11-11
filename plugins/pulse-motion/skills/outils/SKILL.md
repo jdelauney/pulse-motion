@@ -13,7 +13,7 @@ Dire simplement ce qui est prêt, ce qui manque, et l'installer avec l'accord de
 - **Rien ne s'installe sans l'accord de la personne**, demandé avec `AskUserQuestion` : un accord pour une liste montrée (outil, à quoi il sert, taille, durée), puis les installations **une à la fois**, en arrière-plan ; annoncer chacune en une phrase et la suivre avec `Monitor` sur `pulse-motion avancement . --suivre` (sans lui : dire que cela prend quelques minutes).
 - Lexique : avant d'expliquer un mot de l'outil (ffmpeg, transcription, export…), lire `pulse-motion lexique` ; un mot expliqué pour la première fois se note avec `pulse-motion lexique noter "<terme>" "<phrase>" "<comme…>" "/pulse-motion:outils"`.
 - La commande échoue avec « Node.js introuvable » : étape « Installer Node.js ».
-- « relancer Claude Code » seulement en dernier recours : quand l'outil reste introuvable juste après son installation (Pulse Motion le cherche aussi à ses emplacements habituels).
+- « relancer Claude Code » seulement en dernier recours : quand l'outil reste introuvable juste après son installation.
 
 ## 1. Vérifier (« vérifie mon ordinateur », « tout est prêt ? »)
 
@@ -27,6 +27,7 @@ Dire simplement ce qui est prêt, ce qui manque, et l'installer avec l'accord de
 | Python (`python`) | ✅ / ❌ | la transcription |
 | Transcription (`transcription`) | ✅ / ❌ | sous-titres et animations calés sur les vrais mots (facultative) |
 | Voix de l'ordinateur (`voixSysteme`) | ✅ / ❌ | la voix provisoire |
+| Voix de synthèse (`voixSynthese`) | ✅ / ❌ | voix livrable, facultative : `pulse-motion reference audio/synthese` |
 
 `python.ancien` : « Python <version> est trop ancien ». Le micro se teste dans le studio de voix (« j'enregistre la scène 1 », une vidéo ouverte). Il manque quelque chose : étape « Tout installer ».
 
@@ -44,7 +45,7 @@ Dire simplement ce qui est prêt, ce qui manque, et l'installer avec l'accord de
 
 1. `pulse-motion whisper` : `pret` vrai → déjà prête, le dire.
 2. Sinon, expliquer en une phrase (« elle cale les sous-titres et les animations sur les vrais mots de votre voix ; environ 800 Mo à télécharger une fois ») et demander l'accord : « Installer (Recommandé) » · « Version légère (250 Mo, un peu moins précise) » · « Pas maintenant ».
-3. Python absent (`commandeSysteme` présent) : installer Python d'abord (étape 5), puis relancer `pulse-motion whisper`. Python toujours introuvable : en dernier recours, relancer Claude Code, puis redemander « installe la transcription » ; s'arrêter.
+3. Python absent (`commandeSysteme` présent) : installer Python d'abord (étape 5), puis relancer `pulse-motion whisper`. Python toujours introuvable : en dernier recours, relancer Claude Code ; s'arrêter.
 4. `pulse-motion whisper installer` en arrière-plan (version légère : `pulse-motion whisper installer --modele small`) ; attendre la fin et lire son résultat.
    - `ok` vrai : « La transcription est installée. » Si la vidéo du dossier a déjà des prises de voix, proposer de recaler leurs mots (« recale les mots »).
    - `ok` faux : dire le `message` simplement ; tout le reste fonctionne sans transcription (mots calés au mieux).

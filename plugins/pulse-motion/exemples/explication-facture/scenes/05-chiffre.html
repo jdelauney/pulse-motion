@@ -1,0 +1,30 @@
+<!-- Scène « chiffre » : le délai moyen de paiement en graphique en barres (2023 → 2025), d'après la scène toute faite « chiffre ».
+     Caméra automatique : le conteneur data-camera="auto" remplit la scène et porte la mise en page.
+     Temps en temps musicaux (tempo 120 : 1t = 0,5 s). Les barres poussent au rythme par défaut du graphique. -->
+<section data-scene="chiffre" class="centre">
+  <style>
+    @scope {
+      .plateau {
+        position: absolute; inset: 0; box-sizing: border-box;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3cqh;
+        padding: 9cqh 12cqh;
+      }
+      .plateau > .decor ~ * { position: relative; z-index: 1; }
+      .bloc-graphique { display: flex; flex-direction: column; align-items: flex-start; gap: 1.2cqh; }
+      .unite-axe { margin: 0 0 0 2cqh; }
+      .graphique { margin: 0; width: 112cqh; height: 48cqh; }
+    }
+  </style>
+  <div class="plateau" data-camera="auto">
+    <div class="decor">
+      <span class="rond accent" data-decor style="width: 62cqh; height: 62cqh; right: -12cqh; top: -18cqh" data-start="0" data-dur="12" data-tween="scale 0.92→1.06 sine-inout; --dx 0cqh→-6cqh sine-inout"></span>
+      <span class="rond" data-decor style="width: 48cqh; height: 48cqh; left: -14cqh; bottom: -16cqh" data-start="0" data-dur="12" data-tween="--dy 0cqh→-7cqh sine-inout"></span>
+    </div>
+    <h2 id="titre" class="titre-moyen entre-bas" data-texte="titre" data-start="1t" data-dur="0.7"></h2>
+    <div class="bloc-graphique">
+      <p id="unite" class="etiquette entre-gauche" data-texte="unite" data-start="8t" data-dur="0.7"></p>
+      <figure id="graphique" class="graphique" data-graphique="delais" data-start="3t"></figure>
+    </div>
+    <p id="legende" class="sous-titre entre-bas" data-texte="legende" data-start="10t" data-dur="0.7"></p>
+  </div>
+</section>

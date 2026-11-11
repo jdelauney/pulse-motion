@@ -35,7 +35,7 @@ function creerRoutesVoix(projet, { whisper, maxOctets = MAX_PRISE, outil } = {})
       const p = priseDeScene(projet, deroule, s);
       const v = p && !p.erreur ? lireVoixScene(projet, deroule, s) : null;
       // Prompteur : la forme dite (spec S7, 5.11), sans balisage.
-      return { id: s.id, texte: require('../../moteur/aligner.js').lireTexteDit(s.voix.texte).dit, etat: !p || p.erreur ? 'aucune' : p.provisoire ? 'provisoire' : 'enregistree', calage: v && !v.erreur ? v.approche : null };
+      return { id: s.id, texte: require('../../moteur/aligner.js').lireTexteDit(s.voix.texte).dit, etat: !p || p.erreur ? 'aucune' : p.provisoire ? 'provisoire' : p.synthese ? 'synthese' : 'enregistree', calage: v && !v.erreur ? v.approche : null };
     });
     return repondre(res, 200, scenes);
   }

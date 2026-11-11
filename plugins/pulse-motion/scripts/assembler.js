@@ -251,8 +251,9 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     sonsVoix.push(blocSon(id, uri));
     // Début par défaut divisé par l'allure (spec S7, 5.14) ; repères du texte dit (5.11), en secondes de la prise.
     voixScenes[scene.id] = { source: id, debut: scene.voix.debut ?? DEBUT_VOIX / allureDe(deroule), duree: v.duree, mots: v.mots,
-      ...(v.reperes && Object.keys(v.reperes).length ? { reperes: v.reperes } : {}), ...(v.prise.provisoire ? { provisoire: true } : {}) };
-    if (v.approche !== 'whisper') calageApproche = true;
+      ...(v.reperes && Object.keys(v.reperes).length ? { reperes: v.reperes } : {}), ...(v.prise.provisoire ? { provisoire: true } : {}), ...(v.prise.synthese ? { synthese: true } : {}) };
+    // Voix de synthèse (spec S7, 5.12) : bornes de phrase exactes, mots au prorata des lettres dans chaque phrase.
+    if (v.approche !== 'whisper' && v.approche !== 'synthese') calageApproche = true;
     if (v.prise.provisoire) {
       erreursVoix.push({ regle: 'voix-provisoire', gravite: 'alerte', scene: scene.id,
         message: `Scène « ${scene.id} » : c'est encore la voix provisoire du système ; enregistrez la vôtre avant d'exporter.` });

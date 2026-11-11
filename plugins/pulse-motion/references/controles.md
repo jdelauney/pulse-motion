@@ -162,6 +162,8 @@ La preuve du déterminisme (contrôle complet) : 12 instants (`determinismeInsta
 | `voix-illisible` | Prise de voix abîmée ou introuvable | erreur | non | Réimporter ou réenregistrer la scène |
 | `voix-provisoire` | La scène joue encore la voix du système | alerte | non | Enregistrer la vraie voix ; l'export la refuse sans `--avec-provisoire` |
 | `mots-perimes` | La prise ou son texte ont changé depuis la transcription | alerte | non | `pulse-motion voix transcrire` |
+| `voix-mal-lue` | La voix de synthèse lit mal la scène : moins de 85 % de ses mots reconnus par la transcription | alerte | non | Prononciation au glossaire, ou `{affiché\|dit}` ; puis `pulse-motion voix synthese` |
+| `voix-ecart-texte` | L'enregistrement découpé d'une scène ne correspond pas à son texte (moins de 85 % de mots reconnus) | alerte | non | L'écouter ; réenregistrer la scène seule si besoin |
 | `calage-approche` | Mots calés sans transcription | info | — | `pulse-motion whisper` : installer la transcription, puis `pulse-motion voix transcrire` |
 | `page-lourde` | Plus de 20 Mo de sons dans la page | alerte | non | Installer ffmpeg (voix en Opus) |
 | `son-inconnu` | `data-son` qui n'est ni un son de la bibliothèque ni un fichier | erreur | non | Prendre un son de la liste du message |

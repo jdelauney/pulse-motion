@@ -1,5 +1,5 @@
 ---
-description: "Enregistrer, importer ou recaler la voix de la vidéo, écouter sa musique (« j'enregistre la scène 2 », « j'ai un fichier de ma voix », « recale les mots »). Volume, texte dit, sous-titres : /pulse-motion:retoucher."
+description: "Enregistrer, importer ou recaler la voix, poser une voix de synthèse, écouter la musique (« j'enregistre la scène 2 », « j'ai un fichier de ma voix », « mets une voix de synthèse »). Volume, texte dit, sous-titres : /pulse-motion:retoucher."
 allowed-tools: Bash(pulse-motion *) Bash(node *) Monitor Read Glob Write AskUserQuestion
 ---
 
@@ -29,10 +29,11 @@ Les scènes à dire sont celles qui ont un `voix.texte` dans `deroule.json`. Auc
 | « j'enregistre la scène 2 », « je veux enregistrer ma voix » | `pulse-motion apercu . --ouvrir` en arrière-plan (il rouvre l'aperçu déjà lancé, ou le démarre ; attendre sa ligne « Aperçu »). Puis `pulse-motion voix studio <id> .` (scène demandée, sinon la première à enregistrer). Dire en deux phrases : « Le texte s'affiche en grand ; cliquez sur Enregistrer, lisez après le compte à rebours, puis Arrêter. Réécoutez, puis Garder ou Refaire. » La première fois, le navigateur demande d'autoriser le micro |
 | « j'ai un fichier de ma voix », « importe mon enregistrement » | Demander le fichier (chemin ou glisser-déposer) ; ne pas le copier : l'import le lit où il est et range la prise dans la vidéo. Demander « pour une scène ou pour toute la vidéo ? » (Recommandé : toute la vidéo si le fichier dure plus d'une minute). Une scène : `pulse-motion voix importer "<chemin>" --scene <id> .` ; toute la vidéo : `pulse-motion voix importer "<chemin>" .` (découpée par scène). Refusé faute de transcription : proposer de l'installer (« installe la transcription », consignes de `pulse-motion consignes outils`), puis relancer le même import ; sinon proposer une prise par scène. Un `avertissement` (scène mal reconnue) se dit en une phrase |
 | « mets une voix provisoire », « je veux entendre le texte » | `pulse-motion voix provisoire .` (une scène : `--scene <id>`) : la voix de l'ordinateur lit les textes, pour caler l'animation ; les vraies prises sont gardées. Elle ne sera jamais livrée : l'export la refuse sans accord |
+| « mets une voix de synthèse », « il prononce mal HACCP » | `pulse-motion reference audio/synthese` |
 | « recale les mots », « la voix est décalée », « les sous-titres sont en avance » | `pulse-motion voix transcrire .` ; transcription absente : proposer de l'installer (consignes de `pulse-motion consignes outils`), puis relancer |
 | « fais-moi écouter la musique » | `pulse-motion musique ecouter . --ouvrir` : la musique seule s'ouvre dans le lecteur de l'ordinateur ; pas de musique : proposer d'en ajouter une avec `/pulse-motion:retoucher` |
 
-Après un enregistrement, un import ou une voix provisoire : `pulse-motion controler .`, et dire en une phrase ce qui reste (scènes encore en voix provisoire, scène allongée par la voix, mots calés au mieux). L'aperçu se recharge seul.
+Après un enregistrement, un import ou une voix provisoire : `pulse-motion controler .`, et dire en une phrase ce qui reste (scènes encore en voix provisoire, scène allongée par la voix, mots calés au mieux).
 
 ## 2. Fin
 

@@ -1,0 +1,19 @@
+{
+  "modele": "explication",
+  "phrase": "/pulse-motion:creer une vidéo explicative : du devis au paiement, le trajet d'une facture",
+  "reponses": {
+    "duree": "1 min",
+    "public": "Professionnels du métier",
+    "parcours": "Rapide",
+    "ajouter": "Rien pour l'instant",
+    "musique": "Une musique composée pour la vidéo",
+    "voix": "Pas de voix",
+    "sousTitres": "Sans voix, pas de sous-titres",
+    "style": "clair-pedagogique"
+  },
+  "retouches": [],
+  "corrections": [
+    "scène « detail » réécrite : la formule débordait de sa fenêtre et rien de nouveau n'arrivait pendant 8 s (une troisième étape de la formule, l'arrondi, ajoutée au déroulé)",
+    "scène « probleme » réécrite : dans le conteneur de la caméra automatique, le titre était recouvert par les parties du moyeu"
+  ]
+}

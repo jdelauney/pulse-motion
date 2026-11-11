@@ -1,0 +1,113 @@
+{
+  "id": "explication",
+  "nom": "Vidéo explicative",
+  "genre": "formation",
+  "description": "Expliquer un mécanisme en une minute : une accroche, le problème et ses causes, le mécanisme en trois étapes reliées par des flèches, un détail montré de près (une formule, un calcul), un chiffre en graphique, puis la synthèse. La caméra trouve seule ses gros plans.",
+  "pourQui": "Formateurs, services administratifs, associations : expliquer comment une chose fonctionne (un circuit, une démarche, un calcul).",
+  "format": "16:9",
+  "duree": 66,
+  "styles": [
+    "clair-pedagogique",
+    "minimal",
+    "editorial"
+  ],
+  "musique": {
+    "ambiance": "calme"
+  },
+  "sousTitres": true,
+  "reglages": {
+    "camera": "auto",
+    "bruitages": {
+      "auto": true
+    }
+  },
+  "exemple": "explication-facture",
+  "phrases": [
+    "/pulse-motion:creer une vidéo explicative : du devis au paiement, le trajet d'une facture",
+    "/pulse-motion:creer une vidéo explicative sur le cycle de l'eau",
+    "/pulse-motion:creer explique comment fonctionne le tri sélectif dans notre commune"
+  ],
+  "variantes": {
+    "grandPublic": "/pulse-motion:creer une vidéo explicative pour le grand public : comment fonctionne une carte bancaire sans contact",
+    "professionnels": "/pulse-motion:creer une vidéo explicative pour des comptables : le trajet d'une note de frais",
+    "eleves": "/pulse-motion:creer une vidéo explicative pour des collégiens : le mécanisme de la photosynthèse"
+  },
+  "scenes": [
+    {
+      "id": "accroche",
+      "type": "titre",
+      "intention": "l'accroche : ce qu'on va comprendre, en une question ou un trajet",
+      "duree": 8,
+      "transition": "fondu",
+      "textes": {
+        "etiquette": "le domaine (« Comptabilité », « Sciences »)",
+        "titre": "le sujet en quelques mots (« Du devis au paiement »)",
+        "sous": "la promesse : ce qu'on saura à la fin"
+      }
+    },
+    {
+      "id": "probleme",
+      "type": "moyeu",
+      "intention": "le problème au centre et ses causes autour ; le mot important entouré",
+      "duree": 12,
+      "transition": "glissement",
+      "textes": {
+        "titre": "le problème, en une phrase courte",
+        "centre": "le problème en deux ou trois mots",
+        "partie1": "première cause",
+        "partie2": "deuxième cause",
+        "partie3": "troisième cause",
+        "partie4": "quatrième cause (facultatif : à retirer s'il n'y en a que trois)",
+        "partie5": "cinquième cause (facultatif : à retirer)"
+      }
+    },
+    {
+      "id": "mecanisme",
+      "type": "schema",
+      "intention": "le mécanisme en trois étapes, reliées par des flèches tracées l'une après l'autre",
+      "duree": 14,
+      "transition": "glissement",
+      "textes": {
+        "titre": "le mécanisme (« Le trajet en trois étapes »)",
+        "a": "première étape, en un ou deux mots",
+        "b": "deuxième étape",
+        "c": "le résultat"
+      }
+    },
+    {
+      "id": "detail",
+      "type": "etape",
+      "intention": "une étape vue de près : une formule de tableur ou un calcul qui se construit",
+      "duree": 12,
+      "transition": "zoom",
+      "textes": {
+        "numero": "le numéro de l'étape détaillée",
+        "titre": "ce que fait cette étape",
+        "texte": "ce qu'il faut retenir du calcul"
+      }
+    },
+    {
+      "id": "chiffre",
+      "type": "chiffre",
+      "intention": "un chiffre qui donne l'ampleur, en graphique en barres (données de la personne ou d'une source citée)",
+      "duree": 12,
+      "transition": "glissement",
+      "textes": {
+        "titre": "ce que montre le graphique",
+        "unite": "l'unité du chiffre (« jours », « % »)",
+        "legende": "la source, ou « exemple » si les chiffres sont fictifs"
+      }
+    },
+    {
+      "id": "synthese",
+      "type": "conclusion",
+      "intention": "la synthèse : l'idée entière en une phrase",
+      "duree": 8,
+      "transition": "fondu",
+      "textes": {
+        "titre": "l'idée à retenir, en une phrase",
+        "sous": "le geste ou la ressource pour aller plus loin"
+      }
+    }
+  ]
+}

@@ -283,7 +283,7 @@ test('plugin : ronde 2 en deux questions, voix et sous-titres ensemble', () => {
   const questions = son.split('\n').filter((l) => /^\d\. \*\*/.test(l)).map((l) => /^\d\. \*\*([^*]+)\*\*/.exec(l)[1]);
   assert.deepEqual(questions, ['Musique', 'Voix et sous-titres', 'L\'ordinateur']);
   assert.match(son, /3\. \*\*L'ordinateur\*\*, seulement si `pulse-motion outils --plan` liste un outil utile/);
-  assert.match(son, /\*\*Voix et sous-titres\*\* : « Ma voix, avec sous-titres \(Recommandé\) » · « Ma voix, sans sous-titres » · « J'ai un fichier de ma voix » · « Pas de voix »/);
+  assert.match(son, /\*\*Voix et sous-titres\*\* : « Ma voix, avec sous-titres \(Recommandé\) » · « Ma voix, sans sous-titres » · « Voix de synthèse » · « Pas de voix »[^\n]*un fichier de sa voix se dit en réponse libre/);
   assert.doesNotMatch(c, /\*\*Sous-titres\*\* :/);
   // Le public n'est pas demandé quand le sujet ou le modèle le donne.
   assert.match(c, /2\. \*\*Public\*\*[^\n]*omis si le sujet ou le modèle le donne/);

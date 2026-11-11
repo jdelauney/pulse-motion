@@ -14,10 +14,10 @@
  *   pulse-motion remarques [liste | attendre | faite <id> "<réponse>" | discuter <id> "<question>"] <dossier>   remarques épinglées dans l'aperçu
  *   pulse-motion exporter <dossier> [--pour web|reseaux|presentation|master|courriel|brouillon] [--taille-max <Mo>] [--qualite 1080p|720p|540p] [--ips 30|60] [--rapide] [--avec-provisoire] [--estimer] [--scene <id>[,<id>] | --plage <début>-<fin>] [--gif [--largeur 1280]] [--cadre telephone [--cadre-format 16:9|1:1]] [--flou oui|non] [--transparent [mov|webm]]   MP4 fidèle (ffmpeg) ou dans le navigateur ; extrait, passage seul, GIF, cadre de téléphone, flou de mouvement, fond transparent
  *   pulse-motion ffmpeg                  ffmpeg présent ? commande pour l'installer
- *   pulse-motion voix importer <fichier> [--scene <id>] [dossier] | provisoire [--scene <id>] [dossier] | transcrire [--scene <id>] [dossier] | studio <scène> [dossier] | mots --scene <id> [dossier]   voix d'une scène, voix provisoire, transcription, studio, mots datés
+ *   pulse-motion voix importer <fichier> [--scene <id>] [dossier] | provisoire [--scene <id>] [dossier] | transcrire [--scene <id>] [dossier] | studio <scène> [dossier] | mots --scene <id> [dossier] | synthese [--scene <id>] [dossier] | synthese installer [--legere|--normale]   voix d'une scène, voix provisoire, transcription, studio, mots datés, voix de synthèse locale
  *   pulse-motion musique ecouter [dossier] [--ouvrir]   musique seule dans sortie/musique.wav (pour l'écouter)
  *   pulse-motion whisper [installer [--modele small]]   transcription des voix (Python, faster-whisper) : état ou installation
- *   pulse-motion outils [--plan]         état de l'ordinateur : Node, Chrome ou Edge, ffmpeg, Python, transcription, voix du système ;
+ *   pulse-motion outils [--plan]         état de l'ordinateur : Node, Chrome ou Edge, ffmpeg, Python, transcription, voix du système, voix de synthèse ;
  *                                        --plan : ce qui manque, dans l'ordre où l'installer (un accord pour la liste)
  *   pulse-motion avancement <dossier> [--suivre]   travail long en cours (contrôle, export, installation…) : une ligne, ou une par étape
  *   pulse-motion planche <dossier> [id1,id2] [--ouvrir]   images clés PNG dans sortie/planche/
@@ -219,7 +219,7 @@ function lancer(args) {
     '  planche <dossier> --instants <t1,t2>      planche <dossier> --avant <numéro|nom|precedente> [id1,id2]   instants précis ; avant / après d\'une retouche',
     '  credits <dossier> [noter <fichier> "<source>" "<licence>" ["<auteur>"]]   crédits de la vidéo, source d\'un fichier importé',
     '  ffmpeg                   ffmpeg présent ? commande pour l\'installer',
-    '  voix importer <fichier> [--scene <id>] [dossier] | provisoire [--scene <id>] [dossier] | transcrire [--scene <id>] [dossier] | studio <scène> [dossier] | mots --scene <id> [dossier]',
+    '  voix importer <fichier> [--scene <id>] [dossier] | provisoire [--scene <id>] [dossier] | transcrire [--scene <id>] [dossier] | studio <scène> [dossier] | mots --scene <id> [dossier] | synthese [--scene <id>] [dossier] | synthese installer [--legere|--normale]',
     '  whisper [installer [--modele small]]   transcription des voix',
     '  outils [--plan]          état de l\'ordinateur (ce qui est prêt, ce qui manque) ; --plan : ce qu\'il faudrait installer',
     '  avancement <dossier> [--suivre]   travail long en cours, une ligne (ou une par étape jusqu\'à la fin)',

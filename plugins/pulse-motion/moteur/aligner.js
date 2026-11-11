@@ -225,7 +225,7 @@
    * Pas : un pour un (égaux, ou substitués), un mot écrit pour plusieurs entendus (nombre, sigle épelé), plusieurs écrits pour
    * un entendu (et l'inverse pour un nombre écrit en morceaux), mot écrit sauté, mot entendu en trop. Les mots appariés
    * prennent les temps entendus ; les autres sont interpolés au prorata des lettres entre leurs voisins.
-   * -> { mots, reconnus } | null si aucun mot n'est égal. Logique d'alignWords et d'expand (src/align.js d'explainroo, MIT,
+   * -> { mots, reconnus, ecarts: [{ rang, mot, entendu }] } | null si aucun mot n'est égal. Logique d'alignWords et d'expand (src/align.js d'explainroo, MIT,
    * © 2026 Vincent Schmalbach), adaptée ; lecture des nombres réécrite pour le français.
    */
   function aligner(texte, entendus, duree) {
@@ -273,12 +273,14 @@
       }
     }
     var mots = script.map(function (s) { return { w: s.w, t0: null, t1: null }; });
-    var utilise = new Array(m), seuls = [], egaux = 0;
+    var utilise = new Array(m), seuls = [], egaux = 0, ecarts = [];
     i = n; j = m;
     while (i > 0 || j > 0) {
       var x = choix[i][j];
       if (!x) break;
       var i0 = i - x.k, j0 = j - x.q;
+      // Mots écrits non reconnus (spec S7, 5.13) : ce qui a été entendu à leur place (rien : mot sauté).
+      if (x.k === 1 && !x.egal) ecarts.push({ rang: i0, mot: script[i0].w, entendu: x.q ? oui[j0].w.trim() : '' });
       if (x.k && x.q) {
         for (var u = j0; u < j; u++) utilise[u] = true;
         if (x.egal) egaux += x.k;
@@ -323,7 +325,7 @@
       }
       k2 = a2 - 1;
     }
-    return { mots: mots, reconnus: egaux };
+    return { mots: mots, reconnus: egaux, ecarts: ecarts.reverse() };
   }
 
   /**
