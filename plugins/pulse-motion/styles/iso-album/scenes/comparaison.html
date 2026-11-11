@@ -1,0 +1,30 @@
+<!-- Scène toute faite « comparaison » (style iso-album) : deux façons côte à côte ; dans la seconde, la bonne, la personne passe plus vite. Durée conseillée : 12 s.
+     Textes : titre (≤ 32 car.), gauche-titre et droite-titre (≤ 16 car.), gauche-texte et droite-texte (≤ 48 car.). -->
+<section data-scene="comparaison">
+  <div class="decor">
+    <span class="nuage" data-decor data-start="0" data-dur="12"></span>
+    <span class="nuage" data-decor data-start="0" data-dur="12"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen arrive" data-texte="titre" data-start="0.4"></h2>
+  <div class="duo">
+    <div id="gauche" class="cote arrive" data-start="#titre+1">
+      <div class="iso" data-iso>
+        <i data-iso-extruder="0,0 6,0 6,2.4 0,2.4" data-iso-h="0.25" data-couleur="iso2"></i>
+        <i data-iso-boite="0.3 0.4 0.25 0.8 1.6 0.9" data-couleur="iso4"></i>
+        <i data-iso-boite="2.2 0.4 0.25 0.5 0.5 1.1" data-couleur="iso3"></i>
+        <i data-iso-personne="1.6 1.6 0.25" data-iso-depuis="5.6 1.6 0.25" data-couleur="primaire" data-start="#gauche+0.4" data-dur="4"></i>
+      </div>
+      <h3 class="cote-titre" data-texte="gauche-titre"></h3>
+      <p class="texte" data-texte="gauche-texte"></p>
+    </div>
+    <div id="droite" class="cote compte arrive" data-start="#gauche+3.4">
+      <div class="iso" data-iso>
+        <i data-iso-extruder="0,0 6,0 6,2.4 0,2.4" data-iso-h="0.25" data-couleur="iso2"></i>
+        <i data-iso-boite="0.3 0.4 0.25 0.8 1.6 0.9" data-couleur="accent"></i>
+        <i data-iso-personne="1.6 1.2 0.25" data-iso-depuis="5.6 1.2 0.25" data-couleur="primaire" data-start="#droite+0.4" data-dur="1.6"></i>
+      </div>
+      <h3 class="cote-titre" data-texte="droite-titre"></h3>
+      <p class="texte" data-texte="droite-texte"></p>
+    </div>
+  </div>
+</section>

@@ -1,7 +1,8 @@
 /* Pulse Motion – capture de l'image courante dans un canvas (export rapide).
  *
  * M.capturer(ctx, largeur, hauteur) dessine #pm-scene, tel qu'il est rendu à l'instant
- * courant, dans le contexte 2D donné. Voie SVG foreignObject : copie des scènes visibles
+ * courant, dans le contexte 2D donné (mis à l'échelle de largeur × hauteur si la page a une autre taille).
+ * Voie SVG foreignObject : copie des scènes visibles
  * figées par M.figer (styles calculés en ligne, animations comprises, pseudo-éléments ::before/::after
  * recréés, valeurs SMIL figées), polices @font-face embarquées dans l'image.
  * Calques de particules : M.particules.preparerCapture() pose l'image de chaque calque sur son canvas, remplacé par un <img>.
@@ -31,11 +32,16 @@
   };
 
   function dessiner(ctx, largeur, hauteur) {
+    var scene = document.getElementById('pm-scene');
+    // Taille de la page : un canevas d'une autre taille reçoit toute l'image, mise à son échelle (sans viewBox, il n'en
+    // recevait que le coin haut gauche). Même taille, au pixel d'arrondi près : rien ne change.
+    var l = scene.offsetWidth || largeur, h = scene.offsetHeight || hauteur;
+    var echelle = Math.abs(l - largeur) > 1 || Math.abs(h - hauteur) > 1 ? ' viewBox="0 0 ' + l + ' ' + h + '" preserveAspectRatio="none"' : '';
     var copie = copierScene();
     copie.setAttribute('xmlns', XHTML);
     var xml = new XMLSerializer().serializeToString(copie);
-    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + largeur + '" height="' + hauteur + '">' +
-      '<foreignObject x="0" y="0" width="' + largeur + '" height="' + hauteur + '">' +
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + largeur + '" height="' + hauteur + '"' + echelle + '>' +
+      '<foreignObject x="0" y="0" width="' + (echelle ? l : largeur) + '" height="' + (echelle ? h : hauteur) + '">' +
       '<style xmlns="' + XHTML + '">' + M.figer.reglesPolices() + '</style>' + xml +
       '</foreignObject></svg>';
     var img = new Image();

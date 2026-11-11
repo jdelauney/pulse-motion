@@ -15,11 +15,11 @@ const { projetCatalogue } = require('./aide/catalogue.js');
 const { CLAIR, modifierJSON, stylesEssai, dossierPersonnelEssai } = require('./aide/styles.js');
 
 const RACINE = path.join(__dirname, '..');
-// Les six styles migrés (J1) ; les styles livrés : les six, la vague A (S8 J6) et la vague B (S8 J7).
+// Les six styles migrés (J1) ; les styles livrés : les six, la vague A (S8 J6), la vague B (S8 J7) et la vague C (S8 J8).
 const ESSENTIELS = ['chaleureux', 'clair-pedagogique', 'editorial', 'energique', 'minimal', 'tech-sombre'];
-const LIVRES = ['carnet', 'chaleureux', 'clair-pedagogique', 'editorial', 'energique', 'info-sans-son', 'lancement', 'minimal', 'plan-technique', 'recit-donnees', 'tableau-blanc', 'tableau-noir', 'tech-sombre'];
+const LIVRES = ['carnet', 'chaleureux', 'clair-pedagogique', 'editorial', 'energique', 'info-sans-son', 'iso-album', 'iso-infographie', 'lancement', 'minimal', 'plan-technique', 'recit-donnees', 'tableau-blanc', 'tableau-noir', 'tech-sombre'];
 const CATEGORIE = { 'info-sans-son': 'ecrans-annonces', lancement: 'ecrans-annonces', 'plan-technique': 'schemas-donnees',
-  'tableau-blanc': 'dessine', 'tableau-noir': 'dessine', carnet: 'dessine', 'recit-donnees': 'schemas-donnees' };
+  'tableau-blanc': 'dessine', 'tableau-noir': 'dessine', carnet: 'dessine', 'recit-donnees': 'schemas-donnees', 'iso-infographie': 'schemas-donnees', 'iso-album': 'schemas-donnees' };
 const fiche = (style) => fs.readFileSync(path.join(RACINE, 'references', 'styles', `${style}.md`), 'utf8');
 const identite = (style) => JSON.parse(fs.readFileSync(path.join(RACINE, 'styles', style, 'identite.json'), 'utf8'));
 const octets = (t) => Buffer.byteLength(t, 'utf8');
@@ -192,9 +192,9 @@ test('identite : un type d\'entrée hors TYPES_ENTREE est refusé', () => {
 test('identite : un module ou un shader conseillé inconnu est refusé', () => {
   const racine = stylesEssai(['modules']);
   const d = path.join(racine, 'modules');
-  modifierJSON(path.join(d, 'identite.json'), (j) => { j.modules = ['iso']; j.shaders = { conseilles: ['grain', 'arc-en-ciel'] }; });
+  modifierJSON(path.join(d, 'identite.json'), (j) => { j.modules = ['aquarelle']; j.shaders = { conseilles: ['grain', 'arc-en-ciel'] }; });
   const e = S.verifierStyle(d).erreurs.join('\n');
-  assert.match(e, /module « iso » inconnu/);
+  assert.match(e, /module « aquarelle » inconnu/);
   assert.match(e, /shader conseillé « arc-en-ciel » inconnu\. Shaders : .*grain/);
   assert.doesNotMatch(e, /« grain » inconnu/);
   modifierJSON(path.join(d, 'identite.json'), (j) => { j.categorie = 'peinture'; j.usages = ['un', 'deux']; j.provenance = [{ depot: 'x' }]; });
@@ -306,13 +306,15 @@ test('styles --genre : fiche complète pour 3 styles, forme courte pour les autr
   const cli = JSON.parse(r.stdout);
   assert.equal(cli.length, LIVRES.length);
   assert.ok(cli[0].scenes && typeof cli[3] === 'string');
-  // Les styles des vagues A et B viennent après le contraste (« aussi »), jamais parmi les recommandés.
+  // Les styles des vagues A, B et C viennent après le contraste (« aussi »), jamais parmi les recommandés.
   assert.match(cli[3], /^plan-technique · schemas-donnees · /);
   assert.match(cli[4], /^info-sans-son · ecrans-annonces · /);
   assert.match(cli[5], /^tableau-blanc · dessine · /);
   assert.match(cli[6], /^tableau-noir · dessine · /);
+  assert.match(cli[7], /^iso-album · schemas-donnees · /);
+  assert.match(cli[8], /^iso-infographie · schemas-donnees · /);
   // Puis le reste, par ordre alphabétique.
-  assert.match(cli[7], /^carnet · dessine · /);
+  assert.match(cli[9], /^carnet · dessine · /);
 }));
 
 test('styles chercher : « tableau blanc », « craie », « plan technique », « chiffres » trouvent le bon style', () => {

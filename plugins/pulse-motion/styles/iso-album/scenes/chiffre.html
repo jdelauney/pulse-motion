@@ -1,0 +1,23 @@
+<!-- Scène toute faite « chiffre » (style iso-album) : la valeur se compte pendant que les personnes arrivent une à une. Durée conseillée : 7 s.
+     Textes : titre (≤ 32 car.), unite (≤ 3 car., vide si aucune), legende (≤ 46 car.). Valeur : remplacer 1250 dans « nombre 0→1250 ».
+     Les personnes ne disent pas une proportion : pour en montrer une, une personne par unité dans une scène composée. -->
+<section data-scene="chiffre">
+  <div class="decor">
+    <span class="nuage" data-decor data-start="0" data-dur="7"></span>
+    <span class="nuage" data-decor data-start="0" data-dur="7"></span>
+  </div>
+  <div class="une">
+    <div class="mesure">
+      <h2 id="titre" class="titre-moyen arrive" data-texte="titre" data-start="0.4"></h2>
+      <p id="nombre" class="nombre compte"><span id="valeur" data-start="#titre+0.8" data-dur="1.6" data-tween="nombre 0→1250 cubic-out">0</span><span class="unite" data-texte="unite"></span></p>
+      <p id="legende" class="texte arrive" data-texte="legende" data-start="#valeur:fin+0.4"></p>
+    </div>
+    <div class="iso" data-iso>
+      <i data-iso-extruder="0,0 6.4,0 6.4,4 0,4" data-iso-h="0.25" data-couleur="iso2"></i>
+      <i data-iso-boite="0 0 0.25 6.4 0.3 1.8" data-couleur="iso4"></i>
+      <i data-iso-boite="4.6 0.3 0.25 1.2 0.1 1.4" data-couleur="iso3"></i>
+      <i data-iso-boite="0.6 0.8 0.25 3.2 0.7 0.5" data-couleur="iso5"></i>
+      <i data-iso-isotype="0.9 2.4 0.25 5" data-iso-pas="1" data-couleur="primaire" data-start="#titre+0.9" data-dur="1.2"></i>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,12 @@
+{
+  "couleurs": {
+    "primaire": "#3a7264",
+    "accent": "#b5481f",
+    "fond": "#f6efe2",
+    "texte": "#2b2a33"
+  },
+  "polices": {
+    "titres": "Fraunces",
+    "texte": "Nunito Sans"
+  }
+}

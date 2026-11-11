@@ -1,0 +1,56 @@
+/* Pulse Motion – feuille du module isométrique (moteur/medium/iso.js), embarquée avec lui, seulement pour les styles qui le
+ * déclarent (identite.modules). Le plan garde le rapport de son dessin (--iso-ratio, posé par le module) : sa largeur est la
+ * plus petite de sa taille naturelle (--iso-w unités SVG × --iso-unite), de --iso-largeur et de --iso-hauteur × le rapport ;
+ * les étiquettes se posent donc en pourcentage du plan, exactement sur leur point. Réglages du style : --iso-unite,
+ * --iso-largeur, --iso-hauteur, --iso-1 … --iso-6 (couleurs par type d'objet), --iso-gris (contexte d'un focus), --iso-fil.
+ * Trois tons par face (spec 5.14) : dessus à 20 % de blanc chaud, côté +x à 22 % d'un sombre froid, côté +y à la base.
+ * Effets exclus (export rapide) : filter: url(), mix-blend-mode, backdrop-filter. */
+.iso {
+  position: relative; flex: none; align-self: center; box-sizing: border-box; aspect-ratio: var(--iso-ratio, 1.6);
+  width: min(calc(var(--iso-w, 160) * var(--iso-unite, 0.6cqh)), var(--iso-largeur, 100%), calc(var(--iso-hauteur, 56cqh) * var(--iso-ratio, 1.6)));
+}
+.iso > svg.pm-iso { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; }
+/* Une étiquette garde sa largeur naturelle : posée près du bord du plan, elle ne se replie pas. */
+.iso > [data-iso-ancre] { position: absolute; left: var(--iso-ax, 50%); top: var(--iso-ay, 50%); width: max-content; translate: -50% -100%; margin: 0; }
+.iso > [data-iso-cote="bas"] { translate: -50% 0; }
+.iso > [data-iso-cote="gauche"] { translate: -100% -50%; }
+.iso > [data-iso-cote="droite"] { translate: 0 -50%; }
+
+/* ---------- Trois tons ; un trait de la couleur de la face cache les joints ---------- */
+.pm-iso path { stroke-width: 0.5; stroke-linejoin: round; }
+.pm-iso .iso-objet { --iso-c: var(--iso-base); }
+.pm-iso .iso-dessus { fill: color-mix(in srgb, var(--iso-c) 80%, #fff8ec); stroke: color-mix(in srgb, var(--iso-c) 80%, #fff8ec); }
+.pm-iso .iso-face { fill: var(--iso-c); stroke: var(--iso-c); }
+.pm-iso .iso-ombre { fill: color-mix(in srgb, var(--iso-c) 78%, #231a2c); stroke: color-mix(in srgb, var(--iso-c) 78%, #231a2c); }
+.pm-iso .iso-dedans { fill: color-mix(in srgb, var(--iso-c) 72%, #231a2c); stroke: color-mix(in srgb, var(--iso-c) 72%, #231a2c); }
+.pm-iso .iso-sol { fill: #231a2c; opacity: 0.14; stroke: none; }
+.pm-iso .iso-tete { fill: color-mix(in srgb, var(--iso-c) 25%, #231a2c); stroke: none; }
+/* Fil d'une étiquette : il se trace en 0,4 s (pathLength 1). */
+.pm-iso .iso-fil { fill: none; stroke: var(--iso-fil, var(--c-texte)); stroke-width: 0.7; stroke-dasharray: 1; stroke-dashoffset: calc(1 - var(--p, 1)); }
+
+/* ---------- Focus et contexte : .iso.focus minuté, tout passe au gris sauf .sujet ---------- */
+.iso.focus { --iso-focus: var(--p, 1); }
+.iso.focus .iso-objet:not(.sujet) { --iso-c: color-mix(in srgb, var(--iso-base) calc(100% - var(--iso-focus, 1) * 100%), var(--iso-gris, #c9c4bb)); }
+
+/* ---------- La coupe : les faces avant s'effacent, l'intérieur paraît ---------- */
+.pm-iso .iso-avant { opacity: calc(1 - 0.9 * var(--p, 0)); }
+
+/* ---------- Entrées et déplacements (durée : data-dur de l'objet, --iso-dur) ---------- */
+.pm-iso .iso-pose { animation: iso-pose var(--iso-dur, 0.8s) cubic-bezier(0.25, 0.9, 0.3, 1) both; }
+@keyframes iso-pose { from { transform: translateY(-30px); opacity: 0; } 40% { opacity: 1; } to { transform: none; opacity: 1; } }
+.pm-iso .iso-monte { animation: iso-monte var(--iso-dur, 0.8s) cubic-bezier(0.3, 1.15, 0.5, 1) both; }
+@keyframes iso-monte { from { scale: 1 0; } to { scale: 1 1; } }
+.pm-iso .iso-depuis { animation: iso-depuis var(--iso-dur, 0.8s) cubic-bezier(0.45, 0, 0.2, 1) both; }
+@keyframes iso-depuis { from { transform: translate(calc(var(--iso-dx, 0) * 1px), calc(var(--iso-dy, 0) * 1px)); } to { transform: none; } }
+.pm-iso .iso-vers { animation: iso-vers var(--iso-dur, 0.8s) cubic-bezier(0.45, 0, 0.2, 1) both; }
+@keyframes iso-vers { from { transform: none; } to { transform: translate(calc(var(--iso-dx, 0) * 1px), calc(var(--iso-dy, 0) * 1px)); } }
+/* Une silhouette marche par à-coups, 12 images par seconde (#013), et le corps monte d'un cran à chaque pas. */
+.pm-iso .iso-marche { animation: iso-vers var(--iso-dur, 1s) steps(var(--iso-images, 12), end) both; }
+.pm-iso .iso-marche.iso-depuis { animation-name: iso-depuis; }
+/* iso-entre : l'objet n'est pas encore là avant son départ (une silhouette qui entre dans le lieu). */
+.pm-iso .iso-entre[data-etat="avant"] { visibility: hidden; }
+.pm-iso .iso-marche .iso-corps { animation: iso-pas 0.3333s step-end var(--iso-fois, 3); }
+@keyframes iso-pas { 0% { transform: none; } 50% { transform: translateY(-1px); } 100% { transform: none; } }
+/* Nombre en Isotype : les silhouettes de la rangée arrivent une à une. */
+.pm-iso .iso-isotype .iso-un { animation: iso-un 0.35s cubic-bezier(0.3, 1.4, 0.5, 1) calc(var(--i, 0) * var(--iso-ecart, 0.12s)) both; }
+@keyframes iso-un { from { scale: 0; opacity: 0; } to { scale: 1; opacity: 1; } }

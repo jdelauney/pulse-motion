@@ -1,0 +1,118 @@
+{
+  "style": "iso-infographie",
+  "famille": "technique",
+  "personnalite": [
+    "clair",
+    "structuré",
+    "ingénieux"
+  ],
+  "eviter": [
+    "effets 3D, reflets et dégradés",
+    "détails si fins qu'ils disparaissent au recul"
+  ],
+  "genres": [
+    "formation",
+    "produit"
+  ],
+  "couleur": {
+    "strategie": "plusieurs-couleurs",
+    "tons": [
+      "clair"
+    ],
+    "tonDefaut": "clair",
+    "clair": {
+      "fond": "#f4f1ea",
+      "texte": "#231a2c"
+    },
+    "roles": {
+      "primaire": "étiquettes et repères",
+      "accent": "le sujet, un par scène"
+    }
+  },
+  "typographie": {
+    "titres": {
+      "famille": "Archivo",
+      "categorie": "sans-serif",
+      "graisse": 800
+    },
+    "texte": {
+      "famille": "Barlow",
+      "categorie": "sans-serif",
+      "graisse": 500
+    }
+  },
+  "mouvement": {
+    "caractere": "precis",
+    "courbes": [
+      "cubic-out",
+      "back-out"
+    ],
+    "dureeType": 0.7,
+    "transitions": [
+      "glissement",
+      "fondu",
+      "zoom"
+    ]
+  },
+  "signature": "Un diorama isométrique de blocs plats à trois tons qui se construit, étiquettes fines au fil, nombres en Isotype ; les choses s'ouvrent pour montrer leur intérieur",
+  "aFaire": [
+    "Une couleur par type d'objet, l'accent pour le seul sujet",
+    "Construire le système bloc par bloc, dans l'ordre où il fonctionne"
+  ],
+  "aEviter": [
+    "Les ombres portées, les reflets, la perspective",
+    "Trop d'objets : au recul, ils deviennent illisibles"
+  ],
+  "categorie": "schemas-donnees",
+  "nonPas": "Pas de la 3D low-poly : des blocs plats à trois tons, sans lumière ni perspective. Pas un schéma plat ni plan-technique : des volumes, pas des traits.",
+  "usages": [
+    "Expliquer un système ou un circuit",
+    "Montrer un site, un entrepôt, une usine",
+    "Faire voir l'intérieur d'une machine"
+  ],
+  "motsCles": [
+    "isométrique",
+    "isométrie",
+    "infographie",
+    "infographie isométrique",
+    "diorama",
+    "isotype",
+    "maquette",
+    "entrepôt",
+    "usine",
+    "logistique",
+    "circuit"
+  ],
+  "son": {
+    "ambiances": [
+      "corporate",
+      "inspirant"
+    ],
+    "bruitages": {
+      "titre": null,
+      "texte": null,
+      "point": "pop",
+      "chiffre": "tic",
+      "trace": "tic",
+      "forme": "pop",
+      "image": null,
+      "ecriture": null,
+      "transition": null
+    },
+    "matiere": null,
+    "fort": "ding"
+  },
+  "shaders": {
+    "conseilles": []
+  },
+  "modules": [
+    "iso"
+  ],
+  "provenance": [
+    {
+      "depot": "lemo-opuscar",
+      "style": "iso-infographic",
+      "licence": "MIT"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "style": "iso-infographie",
+  "description": "Clair, structuré, ingénieux : un système qui s'anime en diorama isométrique de blocs plats, pour expliquer un site, un circuit ou l'intérieur d'une machine.",
+  "transitions": ["glissement", "fondu", "zoom"],
+  "scenes": [
+    { "nom": "titre", "role": "Le site se construit, puis le titre", "duree": 7, "textes": { "etiquette": 22, "titre": 32, "sous": 46 } },
+    { "nom": "liste", "role": "Chaque point pose son bloc sur la pile", "duree": 12, "textes": { "titre": 32, "point1": 36, "point2": 36, "point3": 36, "point4": 36 } },
+    { "nom": "chiffre", "role": "La valeur compte, la pile monte, les silhouettes arrivent", "duree": 7, "textes": { "titre": 32, "unite": 3, "legende": 46 } },
+    { "nom": "comparaison", "role": "Deux maquettes, la première passe au gris", "duree": 12, "textes": { "titre": 32, "gauche-titre": 16, "gauche-texte": 48, "droite-titre": 16, "droite-texte": 48 } },
+    { "nom": "etape", "role": "Le numéro, la machine s'ouvre", "duree": 8, "textes": { "numero": 2, "titre": 32, "texte": 64 } },
+    { "nom": "alerte", "role": "Tout au gris sauf le point qui compte", "duree": 8, "textes": { "titre": 32, "texte": 64 } },
+    { "nom": "schema", "role": "Trois maquettes reliées", "duree": 8, "textes": { "titre": 32, "a": 14, "b": 14, "c": 14 } },
+    { "nom": "moyeu", "role": "Une idée au centre, 3 à 5 parties autour, reliées par des flèches", "duree": 10, "textes": { "titre": 32, "centre": 18, "partie1": 16, "partie2": 16, "partie3": 16, "partie4": 16, "partie5": 16 } },
+    { "nom": "conclusion", "role": "Le recul sur le site fini, la leçon et le logo", "duree": 6, "textes": { "titre": 32, "sous": 44 } }
+  ]
+}

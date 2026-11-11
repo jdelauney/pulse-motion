@@ -1,0 +1,22 @@
+<!-- Scène toute faite « etape » (style iso-album) : le numéro de l'étape s'écrit au sol, une personne vient s'y placer, puis ce qu'elle fait. Durée conseillée : 8 s.
+     Textes : numero (≤ 2 car., écrit au sol), titre (≤ 32 car.), texte (≤ 64 car.). -->
+<section data-scene="etape">
+  <div class="decor">
+    <span class="nuage" data-decor data-start="0" data-dur="8"></span>
+    <span class="nuage" data-decor data-start="0" data-dur="8"></span>
+  </div>
+  <div class="une inverse">
+    <div class="iso" data-iso>
+      <i data-iso-extruder="0,0 6,0 6,4.4 0,4.4" data-iso-h="0.25" data-couleur="iso2"></i>
+      <i data-iso-boite="0 0 0.25 6 0.3 1.8" data-couleur="iso4"></i>
+      <i data-iso-boite="0.6 0.6 0.25 1.8 0.8 0.9" data-couleur="iso5"></i>
+      <i data-iso-cylindre="5.2 0.9 0.25 0.4 0.9" data-couleur="iso1"></i>
+      <i data-iso-personne="2.4 2.2 0.25" data-iso-depuis="5.6 4 0.25" data-couleur="primaire" data-start="1.4" data-dur="2.2"></i>
+      <p id="numero" class="au-sol grand compte" data-texte="numero" data-iso-ancre="3.6 3 0.25" data-lettres="ecrit" data-start="0.4" data-dur="0.6"></p>
+    </div>
+    <div class="etape-texte">
+      <h2 id="titre" class="titre-moyen arrive" data-texte="titre" data-start="1.2"></h2>
+      <p id="texte" class="texte arrive" data-texte="texte" data-start="#titre+0.8"></p>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,24 @@
+<!-- Scène toute faite « liste » (style iso-infographie) : chaque point pose son bloc, de sa couleur, sur la pile. Durée conseillée : 12 s.
+     Textes : titre (≤ 32 car.), point1 … point4 (≤ 36 car.). Moins de 4 points : supprimer les points en trop et leurs blocs (le dernier bloc d'abord). -->
+<section data-scene="liste">
+  <div class="decor">
+    <span class="losange" data-decor data-start="0" data-dur="12"></span>
+    <span class="losange" data-decor data-start="0" data-dur="12"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen arrive" data-texte="titre" data-start="0.4"></h2>
+  <div class="une">
+    <ul class="faits">
+      <li id="point1" class="arrive" data-texte="point1" data-start="1.8"></li>
+      <li id="point2" class="arrive" data-texte="point2" data-start="#point1+2.2"></li>
+      <li id="point3" class="arrive" data-texte="point3" data-start="#point2+2.2"></li>
+      <li id="point4" class="arrive" data-texte="point4" data-start="#point3+2.2"></li>
+    </ul>
+    <div class="iso" data-iso>
+      <i data-iso-extruder="0,0 3.4,0 3.4,3.4 0,3.4" data-iso-h="0.3" data-couleur="iso4" class="iso-pose" data-start="0.8" data-dur="0.6"></i>
+      <i data-iso-boite="0.6 0.6 0.3 2.2 2.2 0.9" data-couleur="iso1" class="iso-pose" data-start="1.8" data-dur="0.6"></i>
+      <i data-iso-boite="0.6 0.6 1.2 2.2 2.2 0.9" data-couleur="iso2" class="iso-pose" data-start="4" data-dur="0.6"></i>
+      <i data-iso-boite="0.6 0.6 2.1 2.2 2.2 0.9" data-couleur="iso3" class="iso-pose" data-start="6.2" data-dur="0.6"></i>
+      <i data-iso-boite="0.6 0.6 3 2.2 2.2 0.9" data-couleur="iso5" class="iso-pose" data-start="8.4" data-dur="0.6"></i>
+    </div>
+  </div>
+</section>

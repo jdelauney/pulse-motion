@@ -186,6 +186,15 @@ function modulesDuStyle(dossierStyle) {
   } catch { return []; }
 }
 
+// Modules d'un style qui s'appuient sur le calque de dessin (ils redessinent ses tracés) : ses groupes viennent avec eux.
+// L'isométrie (iso) n'en a pas besoin : elle produit son propre SVG.
+const MODULES_DESSIN = new Set(['encre', 'une-ligne']);
+
+/** Feuille d'un module (moteur/medium/<nom>.css), embarquée avec lui ; '' s'il n'en a pas. */
+function cssModule(nom) {
+  try { return fs.readFileSync(path.join(RACINE, 'moteur', 'medium', `${nom}.css`), 'utf8'); } catch { return ''; }
+}
+
 /** Palette sonore du style (identite.json, son), ou null (style sans identité). */
 function sonDuStyle(dossierStyle) {
   try {
@@ -269,7 +278,8 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   const dessin = { utilise: false, icones: new Set(), scripts: [] };
   // Modules du style (5.10 point 3) : seulement s'il les déclare ; ils s'appuient sur le calque de dessin.
   const modulesStyle = modulesDuStyle(dossierStyle);
-  if (modulesStyle.length) dessin.utilise = true;
+  const modulesDessin = modulesStyle.some((n) => MODULES_DESSIN.has(n));
+  if (modulesDessin) dessin.utilise = true;
   // Graphiques, code et formules (spec S7, 5.6, 5.9, 5.10) : polices du code et des formules seulement si une scène en montre.
   const montre = { code: false, formule: false };
   // Voix : une prise par scène (ou la voix provisoire), mots calés ; Opus si encodé, sinon WAV. Lues avant les scènes : la
@@ -591,7 +601,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
 
   // Moteur à la carte : seuls les groupes de modules dont la vidéo se sert (groupesImposes : 'tous' pour les tests).
   const groupes = groupesImposes || GM.groupesDuDeroule(donnees, sections, dessin.scripts);
-  if (modulesStyle.length && Array.isArray(groupes)) for (const g of ['dessin', 'releve']) if (!groupes.includes(g)) groupes.push(g);
+  if (modulesDessin && Array.isArray(groupes)) for (const g of ['dessin', 'releve']) if (!groupes.includes(g)) groupes.push(g);
   const moteur = [lireMoteur(RACINE, { groupes })].concat(modulesStyle.map((n) => lireModule(RACINE, `medium/${n}.js`, process.env.PM_MOTEUR_BRUT === '1'))).join('\n;\n');
   // Polices du code et des formules (vendor/polices/, OFL) : seulement si une scène en montre ; dans les crédits.
   const cssMontre = cssDonnees(montre);
@@ -606,7 +616,8 @@ ${cssZones(deroule.format.plateforme)}${fs.readFileSync(path.join(RACINE, 'moteu
 ${fs.readFileSync(path.join(RACINE, 'moteur', 'mouvements.css'), 'utf8')}
 ${usages.css ? `${fs.readFileSync(path.join(RACINE, 'moteur', 'ecran.css'), 'utf8')}\n` : ''}${dessin.utilise ? `${fs.readFileSync(path.join(RACINE, 'moteur', 'dessin', 'dessin.css'), 'utf8')}\n` : ''}${variablesCSS()}
 ${cssDeCharte}
-${cssMontre.css}${cssStyle}`;
+${cssMontre.css}${modulesStyle.map(cssModule).filter(Boolean).map((c) => `${c}
+`).join('')}${cssStyle}`;
   const page = `<!doctype html>
 <html lang="fr">
 <head>

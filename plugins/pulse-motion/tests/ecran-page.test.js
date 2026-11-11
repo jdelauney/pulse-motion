@@ -267,7 +267,7 @@ test('blocs : chaque bloc passe le contrôle (contraste, lecture, débordement) 
   scenes.push(['terminal', `<section data-scene="terminal">${TERMINAL()}</section>`, 7, Object.fromEntries(clesDe(TERMINAL()).map((k) => [k, textes[k]]))]);
   const VUES = ['contraste', 'contraste-reel', 'lecture', 'debordement', 'texte-petit', 'hors-cadre', 'glyphe-absent', 'marge'];
   const styles = fs.readdirSync(path.join(RACINE, 'styles')).filter((s) => fs.existsSync(path.join(RACINE, 'styles', s, 'catalogue.json')));
-  assert.equal(styles.length, 13, 'six essentiels, la vague A et la vague B');
+  assert.equal(styles.length, 15, 'six essentiels et les vagues A, B et C');
   for (const style of styles) {
     const dir = projet(scenes, { style, images: ['capture.png'] });
     const r = await controlerComplet({ dossier: dir, corriger: false, ecrire: false, navigateur });

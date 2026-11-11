@@ -1,0 +1,34 @@
+<!-- Scène toute faite « schema » (style iso-infographie) : trois maquettes reliées par des flèches ; celle du milieu à l'accent. Durée conseillée : 8 s.
+     Textes : titre (≤ 32 car.), a, b, c (≤ 14 car.). -->
+<section data-scene="schema">
+  <div class="decor">
+    <span class="losange" data-decor data-start="0" data-dur="8"></span>
+    <span class="losange" data-decor data-start="0" data-dur="8"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen arrive" data-texte="titre" data-start="0.3"></h2>
+  <div class="chaine">
+    <div class="maillon">
+      <div class="iso" data-iso>
+        <i data-iso-extruder="0,0 3,0 3,3 0,3" data-iso-h="0.25" data-couleur="iso4"></i>
+        <i data-iso-boite="0.5 0.6 0.25 2 1.8 1" data-couleur="iso2" class="iso-monte" data-start="#a" data-dur="0.6"></i>
+      </div>
+      <p id="a" class="fine arrive" data-texte="a" data-start="#titre+0.7" data-dur="0.6"></p>
+    </div>
+    <span class="connecteur" aria-hidden="true"><i id="lien1" data-fleche="#a → #b" data-start="#a:fin" data-dur="0.6" data-couleur="texte"></i></span>
+    <div class="maillon">
+      <div class="iso" data-iso>
+        <i data-iso-extruder="0,0 3,0 3,3 0,3" data-iso-h="0.25" data-couleur="iso4"></i>
+        <i data-iso-boite="0.6 0.6 0.25 1.8 1.8 2" data-couleur="accent" class="iso-monte sujet" data-start="#b" data-dur="0.6"></i>
+      </div>
+      <p id="b" class="fine compte arrive" data-texte="b" data-start="#lien1:fin" data-dur="0.6"></p>
+    </div>
+    <span class="connecteur" aria-hidden="true"><i id="lien2" data-fleche="#b → #c" data-start="#b:fin" data-dur="0.6" data-couleur="texte"></i></span>
+    <div class="maillon">
+      <div class="iso" data-iso>
+        <i data-iso-extruder="0,0 3,0 3,3 0,3" data-iso-h="0.25" data-couleur="iso4"></i>
+        <i data-iso-cylindre="1.5 1.5 0.25 0.8 1.4" data-couleur="iso1" class="iso-monte" data-start="#c" data-dur="0.6"></i>
+      </div>
+      <p id="c" class="fine arrive" data-texte="c" data-start="#lien2:fin" data-dur="0.6"></p>
+    </div>
+  </div>
+</section>
