@@ -28,11 +28,12 @@
 
 <section id="description">
 <h2>Description</h2>
-<p>C'est la commande de la voix de votre vidéo, scène par scène. Elle sait faire quatre choses :</p>
+<p>C'est la commande de la voix de votre vidéo, scène par scène. Elle sait faire cinq choses :</p>
 <ul>
 <li><strong>Enregistrer</strong> votre voix dans le <em>studio</em> de l'aperçu. Le texte de la scène s'affiche en grand ; vous cliquez sur « Enregistrer », vous lisez après le compte à rebours, puis « Arrêter ». Vous réécoutez, puis « Garder » ou « Refaire ».</li>
 <li><strong>Importer</strong> un enregistrement fait ailleurs, pour une scène ou pour toute la vidéo. Un enregistrement de toute la vidéo est découpé par scène.</li>
 <li><strong>Poser une voix provisoire</strong> : la voix de l'ordinateur lit les textes, pour caler l'animation en attendant votre enregistrement.</li>
+<li><strong>Poser une voix de synthèse</strong> : une voix française fabriquée sur votre ordinateur, sans compte ni connexion une fois installée. Elle se livre telle quelle, avec ses crédits.</li>
 <li><strong>Recaler les mots</strong> sur ce que vous avez vraiment dit, grâce à la <a href="../son.html#transcription">transcription</a>.</li>
 </ul>
 <p>Elle sait aussi vous <strong>faire écouter la musique seule</strong>, dans le lecteur de votre ordinateur.</p>
@@ -79,6 +80,9 @@
 <tr><td>« j'enregistre la scène 2 », « je veux enregistrer ma voix »</td><td>L'aperçu s'ouvre sur le studio de la scène demandée (sinon, la première à enregistrer). La première fois, le navigateur vous demande d'autoriser le micro.</td></tr>
 <tr><td>« j'ai un fichier de ma voix », « importe mon enregistrement »</td><td>Pulse Motion vous demande le fichier (son chemin, ou glissez-le dans la conversation), puis : « pour une scène ou pour toute la vidéo ? ». Il conseille toute la vidéo si l'enregistrement dure plus d'une minute.</td></tr>
 <tr><td>« mets une voix provisoire », « je veux entendre le texte »</td><td>La voix de l'ordinateur lit les textes de toute la vidéo, ou d'une seule scène. Les prises déjà enregistrées sont gardées.</td></tr>
+<tr><td>« mets une voix de synthèse »</td><td>Pulse Motion fabrique la voix de chaque scène qui n'a pas votre prise. La première fois, il vous propose de l'installer (environ 300 Mo, quelques minutes, avec votre accord) ; en attendant, la voix de l'ordinateur tient la place. Seules les scènes changées sont refaites ensuite.</td></tr>
+<tr><td>« fais-la parler plus lentement », « un peu plus vite »</td><td>La vitesse de la voix de synthèse change (de 0,7 à 1,3 fois), puis les scènes sont refaites.</td></tr>
+<tr><td>« il prononce mal HACCP »</td><td>Pulse Motion vous propose de noter la bonne prononciation au glossaire, pour vos prochaines vidéos aussi, ou seulement dans cette vidéo. Si la transcription est installée, il réécoute lui-même la voix de synthèse et vous dit les mots mal lus.</td></tr>
 <tr><td>« recale les mots », « la voix est décalée », « les sous-titres sont en avance »</td><td>La transcription recale les mots de vos prises. Si elle n'est pas installée, Pulse Motion vous propose de l'installer d'abord.</td></tr>
 <tr><td>« fais-moi écouter la musique »</td><td>La musique seule s'ouvre dans le lecteur de votre ordinateur. Sans musique, Pulse Motion vous propose d'en ajouter une avec <a href="retoucher.html"><code>/pulse-motion:retoucher</code></a>.</td></tr>
 </tbody>
@@ -100,6 +104,7 @@
 <h2>Risques et précautions</h2>
 <ul>
 <li><strong>La voix fixe la durée des scènes.</strong> Une scène dure au moins le temps de sa prise, plus un court silence. Une prise plus longue que prévu allonge donc la scène : Pulse Motion vous le dit.</li>
+<li><strong>La voix de synthèse est honnête, pas humaine.</strong> Une seule voix française, féminine, correcte mais moins naturelle qu'une vraie voix ; les sigles, les noms propres et les mots anglais se corrigent par le glossaire. Elle n'imite personne. Votre prise passe toujours avant elle.</li>
 <li><strong>La voix provisoire n'est jamais livrée.</strong> Elle sert seulement à caler l'animation. L'export la refuse, sauf si vous demandez vous-même une version de travail.</li>
 <li><strong>Un enregistrement de toute la vidéo demande la transcription.</strong> C'est elle qui le découpe par scène. Elle s'installe une fois, avec votre accord (environ 800 Mo, voir <a href="outils.html"><code>/pulse-motion:outils</code></a>). Sans elle, importez une prise par scène.</li>
 <li><strong>Les sous-titres reprennent le texte écrit</strong>, jamais ce que la transcription a cru entendre. Si vous avez dit autre chose que le texte, changez le texte dit avec <a href="retoucher.html"><code>/pulse-motion:retoucher</code></a>.</li>

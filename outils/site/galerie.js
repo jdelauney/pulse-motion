@@ -188,7 +188,7 @@ const duree = (s) => (s < 60 ? `${s} s` : `${Math.floor(s / 60)} min${s % 60 ? `
 const QUESTIONS = [["montre", "Que montre-t-on ?"], ["duree", "Durée"], ["public", "Public"], ["parcours", "Parcours"], ["ajouter", "À ajouter"], ["musique", "Musique"], ["voix", "Voix"], ["sousTitres", "Sous-titres"], ["style", "Style"]];
 
 // Ordre de la page Idées : du plus courant au plus particulier (un modèle absent de la liste vient à la fin).
-const ORDRE_IDEES = ["formation-courte", "tutoriel-logiciel", "presentation-produit", "histoire", "publication-sociale", "accueil", "pitch", "annonce"];
+const ORDRE_IDEES = ["formation-courte", "tutoriel-logiciel", "explication", "presentation-produit", "histoire", "publication-sociale", "accueil", "pitch", "annonce"];
 const rangIdee = (m) => (ORDRE_IDEES.includes(m.id) ? ORDRE_IDEES.indexOf(m.id) : ORDRE_IDEES.length);
 
 /** Page Idées : un modèle par section, avec la vidéo de son exemple, les phrases à copier, sa structure et la séance d'origine. */
