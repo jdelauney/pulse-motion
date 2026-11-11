@@ -6,8 +6,20 @@
  * - capture WebP q90 de chaque état calme (avant, vue, survol, après) ; le pointeur n'est pas filmé : le moteur le dessine ;
  * - page calme : DOM immobile depuis 500 ms, aucune animation finie en cours, aucune requête en cours depuis 500 ms (hors
  *   WebSocket et EventSource), polices et images chargées ; au plus 10 s, puis une alerte ;
- * - tournage local seulement : file://, localhost, 127.0.0.1 et l'appli d'essai ; toute requête vers un autre hôte est
- *   bloquée (Fetch) et comptée ; un site en ligne n'est pas filmé ici (plan 3 de la spec : accord, connexion, flou) ;
+ * - réseau (plan 3 de la spec, 5.4) : file://, localhost, 127.0.0.1 et l'appli d'essai sans accord ; un site en ligne
+ *   seulement après l'accord de la personne (--accord, écrit dans parcours.accord : les prises suivantes de ce site passent
+ *   sans redemander), un seul site par parcours. Tournage local : toute requête vers un autre hôte est bloquée (Fetch) et
+ *   comptée. Site en ligne : les ressources de la page passent ; une navigation de la page vers un autre site est bloquée ;
+ * - profil du navigateur d'un site en ligne sous ~/.pulse-motion/navigateur/<site>/ (lib/connexions.js : gestionnaire de
+ *   mots de passe et saisie automatique coupés), jamais dans le projet ; local : profil temporaire ;
+ * - connexion (5.5) : fenêtre visible sur la page de départ, { attente: 'connexion' } sur la progression, puis la prise
+ *   reprend dans la même fenêtre et le même processus quand films/<nom>/.continuer apparaît (filmer continuer), 15 min au
+ *   plus ; une page qui redemande l'identifiant (cible de la première étape introuvable, mot de passe visible) rend
+ *   { besoin: 'connexion' } ; rien n'est filmé ni lu pendant que la personne se connecte ;
+ * - flou des données personnelles (5.6) : posé dans la page filmée par le monde isolé (lib/tournage-page.js), donc dans les
+ *   pixels de toutes les images avant leur écriture ; défilement sur le fil principal (--disable-threaded-scrolling), pour
+ *   que les voiles suivent au pixel près ; flou vérifié au lancement (sinon : masque opaque et une alerte) ; zones comptées
+ *   par étape (flous) ; textes reconnus comme personnels masqués dans film.json et la progression ;
  * - liens et formulaires target=_blank, window.open : même onglet ; boîtes de dialogue acceptées, leur texte relevé ;
  * - échec d'une étape : sortie/tournage-echec.webp, textes actionnables proches, prise incomplète supprimée ;
  * - figement : réactions ramenées à la cadence (dernière image peinte avant chaque instant), doublons supprimés (SHA-256),
@@ -26,7 +38,10 @@ const { ouvrirPage } = require('./cdp.js');
 const { optionsTournage } = require('./navigateur.js');
 const Pa = require('./parcours.js');
 const F = require('./film.js');
-const { SCRIPT } = require('./tournage-page.js');
+const { scriptAvec } = require('./tournage-page.js');
+const FL = require('./flou.js');
+const { profilSite } = require('./connexions.js');
+const { decoder: decoderPng } = require('./png.js');
 const { servirAppliEssai } = require('./appli-essai.js');
 const Pt = require('../../moteur/pointeur.js');
 const { paquetsSaisie } = require('../../moteur/lettres.js');
@@ -34,6 +49,8 @@ const { paquetsSaisie } = require('../../moteur/lettres.js');
 const MONDE = 'pulse-motion';
 const CALME = { attente: 500, max: 10000, pas: 100 };
 const COUPE = { apres: 1500, garde: 600 };
+const CONNEXION = 15 * 60 * 1000;
+const masquer = (t) => FL.masquerTexte(t);
 const pause = (ms) => new Promise((r) => setTimeout(r, ms));
 const sha = (b) => crypto.createHash('sha256').update(b).digest('hex');
 const LOCAL = /^(file:|data:|blob:|about:)/;
@@ -47,15 +64,19 @@ function estLocal(url) {
 }
 
 /** Adresse gardée dans film.json : origine et chemin, jamais les paramètres ni le fragment. */
-function adresseGardee(url, { projet, essai }) {
+function adresseGardee(url, { projet, essai, domaine = null }) {
   try {
     const u = new URL(url);
+    if (!/^(https?|file):$/.test(u.protocol)) return '';
+    // Une page hors du site accordé (navigation bloquée) : son adresse n'est pas gardée.
+    const h = u.hostname.toLowerCase();
+    if (domaine && /^https?:$/.test(u.protocol) && !estLocal(url) && h !== domaine && !h.endsWith(`.${domaine}`)) return '';
     if (essai && url.startsWith(essai)) return `${Pa.ESSAI}${u.pathname}`;
     if (u.protocol === 'file:') {
       const rel = path.relative(path.resolve(projet), require('node:url').fileURLToPath(u)).split(path.sep).join('/');
       return rel.startsWith('..') ? 'fichier' : rel;
     }
-    return `${u.origin}${u.pathname}`;
+    return masquer(`${u.origin}${u.pathname}`);
   } catch { return ''; }
 }
 
@@ -64,7 +85,7 @@ const hex = (c) => `#${c.map((x) => Math.max(0, Math.min(255, Math.round(x))).to
 
 // Travail d'images dans Chrome (aucun décodeur JPEG ni WebP dans Node) : réencodage, bords, planche.
 const OUTILS_IMAGES = `(function () {
-  async function bitmap(b64, mime) { var r = await fetch('data:' + mime + ';base64,' + b64); return createImageBitmap(await r.blob()); }
+  async function bitmap(b64, mime) { var s = atob(b64), o = new Uint8Array(s.length); for (var i = 0; i < s.length; i++) o[i] = s.charCodeAt(i); return createImageBitmap(new Blob([o], { type: mime })); }
   function en64(blob) { return new Promise(function (ok) { var f = new FileReader(); f.onload = function () { ok(String(f.result).split(',')[1]); }; f.readAsDataURL(blob); }); }
   window.__pmImages = {
     webp: async function (b64, mime, q) {
@@ -105,22 +126,66 @@ const OUTILS_IMAGES = `(function () {
   return true;
 })()`;
 
-async function tourner({ projet, nom, accord = false, navigateur, surEtape = () => {}, taille = null, calme = {} }) {
+/** Le flou par backdrop-filter est-il dessiné par ce navigateur ? Des rayures nettes sous un voile : leur contraste doit
+ *  tomber. Sinon, les zones sont masquées (pastille opaque) plutôt que laissées lisibles. */
+async function flouDessine(page) {
+  await page.evaluer(`(function () {
+    document.body.style.margin = '0';
+    document.body.innerHTML = '<div style="position:absolute;left:0;top:0;width:240px;height:60px;background:repeating-linear-gradient(90deg,#000 0 3px,#fff 3px 6px)"></div>'
+      + '<div style="position:absolute;left:120px;top:0;width:120px;height:60px;backdrop-filter:blur(10px);background:rgb(128 128 128 / .15)"></div>';
+    return new Promise(function (ok) { requestAnimationFrame(function () { requestAnimationFrame(function () { ok(true); }); }); });
+  })()`);
+  const png = decoderPng(await page.capturer({ format: 'png', zone: { x: 0, y: 10, largeur: 240, hauteur: 40 }, echelle: 1 }));
+  const ecart = (x0, x1) => {
+    const v = [];
+    for (let y = 10; y < png.hauteur - 10; y++) for (let x = x0; x < x1; x++) v.push(png.donnees[(y * png.largeur + x) * png.canaux]);
+    const m = v.reduce((a, b) => a + b, 0) / v.length;
+    return Math.sqrt(v.reduce((a, b) => a + (b - m) * (b - m), 0) / v.length);
+  };
+  const net = ecart(Math.round(png.largeur * 0.08), Math.round(png.largeur * 0.42));
+  const floute = ecart(Math.round(png.largeur * 0.6), Math.round(png.largeur * 0.92));
+  return net > 40 && floute < net * 0.25;
+}
+
+const MIMES = { '.webp': 'image/webp', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png' };
+
+/** Planche d'une prise filmée : sortie/planche-film/<nom>-<prise>/etape-KK.png (1 280 px), l'image d'avant l'action avec
+ *  la boîte de la cible, le point visé et le compte des zones floutées. page : Chrome, OUTILS_IMAGES posés. -> chemin. */
+async function ecrirePlanche(page, { projet, nom, prise, film, dossier, phrases = [] }) {
+  const planche = path.join(projet, 'sortie', 'planche-film', `${nom}-${prise}`);
+  fs.rmSync(planche, { recursive: true, force: true });
+  fs.mkdirSync(planche, { recursive: true });
+  for (const [i, e] of film.etapes.entries()) {
+    const source = e.survol || e.vue || e.avant;
+    const octets = fs.readFileSync(path.join(dossier, 'images', source));
+    const mime = MIMES[path.extname(source)] || 'image/jpeg';
+    const f = e.flous || { auto: 0, cible: 0, apres: 0 };
+    const texte = masquer(`Étape ${e.n} · ${phrases[i] || e.faire} · zones floutées : ${f.auto + f.cible + (f.apres || 0)}`);
+    const png = await page.evaluer(`window.__pmImages.planche(${JSON.stringify(octets.toString('base64'))}, '${mime}', ${JSON.stringify({ largeur: film.largeur, boite: e.cible && e.cible.boite, point: e.point, texte })})`);
+    fs.writeFileSync(path.join(planche, `etape-${String(e.n).padStart(2, '0')}.png`), Buffer.from(png, 'base64'));
+  }
+  return planche;
+}
+
+async function tourner({ projet, nom, accord = false, navigateur, surEtape = () => {}, taille = null, calme = {}, fenetre, delaiConnexion = CONNEXION, personne = null, resolutions = null }) {
   const debutTournage = Date.now();
   projet = path.resolve(projet);
   const lu = Pa.lireParcours(projet, nom);
   if (!lu.parcours || lu.erreurs.length) return { ok: false, erreur: 'parcours-invalide', message: lu.erreurs.join(' '), erreurs: lu.erreurs };
   const p = lu.parcours;
-  // Réseau : jamais un site en ligne dans ce tournage (plan 3 de la spec : accord, connexion, flou).
-  const adresses = [p.depart, ...[...(p.preparation || []), ...p.etapes].filter((e) => e.faire === 'aller').map((e) => e.url)];
-  for (const a of adresses) {
-    const l = Pa.lireAdresse(a, { projet });
-    if (l.sorte !== 'en-ligne') continue;
-    if (!accord && !(p.accord && p.accord.site === l.site)) return { ok: false, besoin: 'accord', site: l.site };
-    return { ok: false, erreur: 'site-en-ligne', site: l.site, message: `Filmer un site en ligne (${l.site}) arrive avec le flou des données personnelles ; pour l'instant, Pulse Motion filme les pages de l'ordinateur (un fichier, localhost) et l'appli d'essai.` };
+  if (p.import !== undefined) return { ok: false, erreur: 'import', message: `Le film « ${nom} » vient d'une vidéo importée : il ne se tourne pas (l'importer de nouveau pour une autre prise).` };
+  // Réseau : un site en ligne seulement après l'accord de la personne, pour ce site (5.4).
+  const site = Pa.sitesEnLigne(p, { projet })[0] || null;
+  const domaine = site ? Pa.domaineDe(site) : null;
+  if (site) {
+    const dejaAccorde = p.accord && Pa.domaineDe(p.accord.site) === domaine;
+    if (!accord && !dejaAccorde) return { ok: false, besoin: 'accord', site };
+    if (!dejaAccorde) F.ecrireParcours(projet, nom, (x) => { x.accord = { site, date: new Date().toISOString().slice(0, 10) }; });
   }
-  if (p.connexion) return { ok: false, erreur: 'connexion', message: 'La connexion à une application arrive avec les sites en ligne ; pour l\'instant, filmer une page qui ne demande pas d\'identifiant.' };
   if (!navigateur) return { ok: false, erreur: 'navigateur', message: 'Chrome ou Edge est introuvable : il en faut un pour filmer.' };
+  const visible = fenetre !== undefined ? !!fenetre : !!p.connexion;
+  const reglageFlou = FL.lireFlou(p.flou);
+  const adresses = [p.depart, ...[...(p.preparation || []), ...p.etapes].filter((e) => e.faire === 'aller').map((e) => e.url)];
 
   const appareil = p.appareil || 'ordinateur';
   const T = { ...Pa.TAILLES[appareil], ...(taille || {}) };
@@ -129,11 +194,14 @@ async function tourner({ projet, nom, accord = false, navigateur, surEtape = () 
   const prise = F.prochainePrise(projet, nom);
   const dossierFilm = F.dossierFilm(projet, nom);
   const temporaire = path.join(dossierFilm, `.${prise}-en-cours`);
+  const signal = path.join(dossierFilm, '.continuer');
+  fs.rmSync(signal, { force: true });
   fs.rmSync(temporaire, { recursive: true, force: true });
   fs.mkdirSync(path.join(temporaire, 'images'), { recursive: true });
 
   let essai = null;
   let page = null;
+  let motDePasseVisible = async () => false;
   const alertes = [];
   const resoudre = (adresse) => {
     const l = Pa.lireAdresse(adresse, { projet });
@@ -143,8 +211,17 @@ async function tourner({ projet, nom, accord = false, navigateur, surEtape = () 
   };
   try {
     if (adresses.some((a) => Pa.lireAdresse(a, { projet }).sorte === 'essai')) essai = await servirAppliEssai();
-    page = await ouvrirPage({ navigateur, largeur: T.largeur, hauteur: T.hauteur, echelle: T.echelle, mobile: T.mobile, base: optionsTournage({}), delai: 30000 });
+    // Défilement sur le fil principal : les voiles du flou sont recalés avant chaque peinture, défilement compris.
+    const options = ['--disable-threaded-scrolling', '--hide-crash-restore-bubble'];
+    if (resolutions) options.push(`--host-resolver-rules=${Object.entries(resolutions).map(([h, ip]) => `MAP ${h} ${ip}`).join(', ')}`);
+    page = await ouvrirPage({ navigateur, largeur: T.largeur, hauteur: T.hauteur, echelle: T.echelle, mobile: T.mobile, base: optionsTournage({ fenetre: visible }),
+      fenetre: visible, profil: site ? profilSite(site) : null, options, delai: 30000 });
     const envoyer = page.envoyer;
+    if (reglageFlou.mode === 'flou' && !(await flouDessine(page))) {
+      reglageFlou.mode = 'masque';
+      alertes.push('Ce navigateur ne dessine pas le flou : les données personnelles sont masquées par une pastille grise.');
+    }
+    const SCRIPT = scriptAvec({ flou: { ...(p.flou || {}), mode: reglageFlou.mode } });
 
     // Monde isolé, posé à chaque document ; son contexte suivi par les évènements du protocole.
     const { frameTree } = await envoyer('Page.getFrameTree');
@@ -165,9 +242,15 @@ async function tourner({ projet, nom, accord = false, navigateur, surEtape = () 
       await envoyer('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: p.apparence === 'sombre' ? 'dark' : 'light' }] });
     }
     // Requêtes en cours (page calme) ; réseau hors de l'ordinateur bloqué.
-    const enCours = new Set();
+    // Requête -> document qui l'a lancée : un document remplacé (redirection dès l'en-tête) ne rend pas toujours ses requêtes
+    // annulées ; elles sont oubliées quand la page change de document.
+    const enCours = new Map();
     let dernierReseau = Date.now();
-    page.sur('Network.requestWillBeSent', (x) => { if (x.type !== 'EventSource' && !/^(data|blob):/.test(x.request.url)) { enCours.add(x.requestId); dernierReseau = Date.now(); } });
+    page.sur('Network.requestWillBeSent', (x) => { if (x.type !== 'EventSource' && !/^(data|blob):/.test(x.request.url)) { enCours.set(x.requestId, x.loaderId); dernierReseau = Date.now(); } });
+    page.sur('Page.frameNavigated', (x) => {
+      if (!x.frame || x.frame.parentId || x.frame.id !== cadre) return;
+      for (const [id, chargeur] of enCours) if (chargeur && chargeur !== x.frame.loaderId) enCours.delete(id);
+    });
     const fini = (x) => { if (enCours.delete(x.requestId)) dernierReseau = Date.now(); };
     page.sur('Network.loadingFinished', fini);
     page.sur('Network.loadingFailed', fini);
@@ -177,8 +260,19 @@ async function tourner({ projet, nom, accord = false, navigateur, surEtape = () 
     page.sur('Page.frameStoppedLoading', (x) => { if (x.frameId === cadre) { chargement = false; dernierReseau = Date.now(); } });
     await envoyer('Network.enable');
     let bloquees = 0;
+    const ailleurs = new Set();
+    let libre = false;   // pendant la connexion : la personne navigue elle-même (authentification sur un autre site comprise)
+    const dansSite = (url) => { try { const h = new URL(url).hostname.toLowerCase(); return h === domaine || h.endsWith(`.${domaine}`); } catch { return false; } };
     page.sur('Fetch.requestPaused', (x) => {
-      if (estLocal(x.request.url)) envoyer('Fetch.continueRequest', { requestId: x.requestId }).catch(() => {});
+      const url = x.request.url;
+      let permis = estLocal(url);
+      if (!permis && domaine) {
+        // Site en ligne accordé : ses ressources passent (comme dans tout navigateur) ; la page ne quitte pas le site.
+        const navigation = x.resourceType === 'Document' && x.frameId === cadre;
+        permis = libre || !navigation || dansSite(url);
+        if (!permis) { try { ailleurs.add(new URL(url).hostname); } catch { /* adresse illisible */ } }
+      }
+      if (permis) envoyer('Fetch.continueRequest', { requestId: x.requestId }).catch(() => {});
       else { bloquees++; envoyer('Fetch.failRequest', { requestId: x.requestId, errorReason: 'BlockedByClient' }).catch(() => {}); }
     });
     await envoyer('Fetch.enable', { patterns: [{ urlPattern: '*' }] });
@@ -226,6 +320,7 @@ async function tourner({ projet, nom, accord = false, navigateur, surEtape = () 
       throw new Error('la page filmée ne répond plus');
     }
     const appel = (fn, ...args) => evaluer(`globalThis.__pm.${fn}(${args.map((a) => JSON.stringify(a)).join(',')})`);
+    motDePasseVisible = async () => { try { return !!(await appel('motDePasseVisible')); } catch { return false; } };
 
     async function attendreCalme(max = C.max) {
       const debut = Date.now();
@@ -266,7 +361,14 @@ async function tourner({ projet, nom, accord = false, navigateur, surEtape = () 
 
     const captures = [];   // { data, sorte: 'calme' | 'reaction', etape }
     const garder = (data, sorte, etape) => { captures.push({ data, sorte, etape }); return captures.length - 1; };
-    const capturerCalme = async (etape) => garder(await page.capturer({ format: 'webp', qualite: 90 }), 'calme', etape);
+    // Zones floutées par étape : le plus grand nombre vu dans ses états calmes (le texte reconnu n'est jamais gardé).
+    const flous = {};
+    const capturerCalme = async (etape) => {
+      let c = null;
+      try { c = await appel('flouPret'); } catch { c = null; }
+      if (c) { const f = flous[etape] || (flous[etape] = { auto: 0, cible: 0 }); f.auto = Math.max(f.auto, c.auto); f.cible = Math.max(f.cible, c.cible); }
+      return garder(await page.capturer({ format: 'webp', qualite: 90 }), 'calme', etape);
+    };
 
     // Souris (ou doigt sur téléphone et tablette) : la vraie souris passe aussi sur la cible (état de survol filmé).
     let souris = [T.largeur * 0.72, T.hauteur * 0.78];
@@ -330,7 +432,7 @@ async function tourner({ projet, nom, accord = false, navigateur, surEtape = () 
       if (r.ok) return r;
       const quoi = Pa.texteCible(cible) || 'la cible';
       if (r.raison === 'ambigu') {
-        throw echec(n, `À l'étape ${n}, plusieurs éléments correspondent à « ${quoi} » : ${r.candidats.map((c) => `« ${c.libelle} » (${c.position})`).join(', ')}. Préciser le rang (« le 2ᵉ ») ou le conteneur (« dans la fenêtre »).`, r.candidats.map((c) => c.libelle));
+        throw Object.assign(echec(n, `À l'étape ${n}, plusieurs éléments correspondent à « ${quoi} » : ${r.candidats.map((c) => `« ${c.libelle} » (${c.position})`).join(', ')}. Préciser le rang (« le 2ᵉ ») ou le conteneur (« dans la fenêtre »).`, r.candidats.map((c) => c.libelle)), { ambigu: true });
       }
       const vus = r.proches && r.proches.length ? ` Je vois : ${r.proches.map((t) => `« ${t} »`).join(', ')}.` : '';
       throw echec(n, `Je ne trouve pas « ${quoi} » à l'étape ${n}.${vus}`, r.proches || []);
@@ -343,7 +445,7 @@ async function tourner({ projet, nom, accord = false, navigateur, surEtape = () 
     const etapes = [];
 
     const jouer = async (e, n, filmee) => {
-      const fiche = { n, faire: e.faire, dit: e.dit || '', url: '', cible: null, point: null, alertes: [], flous: { auto: 0, cible: 0, apres: 0 } };
+      const fiche = { n, faire: e.faire, dit: masquer(e.dit || ''), url: '', cible: null, point: null, alertes: [], flous: { auto: 0, cible: 0, apres: 0 } };
       dialogues = [];
       if (filmee && precedente === null) precedente = await capturerCalme(n);
       if (filmee) fiche.avantI = precedente;
@@ -366,7 +468,7 @@ async function tourner({ projet, nom, accord = false, navigateur, surEtape = () 
         }
       }
       const vise = cible ? (cible.point ? [cible.boite[0] + 2, cible.boite[1] + 2] : Pt.pointVise(cible.boite)) : null;
-      if (filmee && cible) { fiche.cible = { libelle: cible.libelle, boite: cible.boite }; }
+      if (filmee && cible) { fiche.cible = { libelle: masquer(cible.libelle), boite: cible.boite }; }
       // Survol : la vraie souris va au point visé ; l'état de survol est filmé.
       const geste = ['cliquer', 'double-cliquer', 'taper', 'vider', 'choisir', 'cocher', 'decocher'].includes(e.faire);
       if (geste && vise) {
@@ -397,7 +499,7 @@ async function tourner({ projet, nom, accord = false, navigateur, surEtape = () 
         if (cible.natif) {
           const r = await appel('choisir', cible.id, e.option);
           if (!r.ok) throw echec(n, `À l'étape ${n}, la liste « ${Pa.texteCible(e.cible)} » n'a pas d'option « ${e.option} »${r.libelles ? ` (options : ${r.libelles.map((x) => `« ${x} »`).join(', ')})` : ''}.`, r.libelles || []);
-          fiche.options = { libelles: r.libelles, choisie: r.choisie, ...(r.etiquette ? { etiquette: r.etiquette } : {}) };
+          fiche.options = { libelles: r.libelles.map(masquer), choisie: r.choisie, ...(r.etiquette ? { etiquette: masquer(r.etiquette) } : {}) };
         } else {
           await cliquer(vise);
           await attendreCalme(3000);
@@ -429,7 +531,7 @@ async function tourner({ projet, nom, accord = false, navigateur, surEtape = () 
       const ok = await attendreCalme();
       const images = arreter(t0);
       if (!filmee) return null;
-      if (cible && e.faire === 'defiler') fiche.cible = { libelle: cible.libelle, boite: (await appel('boite', cible.id)) || cible.boite };
+      if (cible && e.faire === 'defiler') fiche.cible = { libelle: masquer(cible.libelle), boite: (await appel('boite', cible.id)) || cible.boite };
       if (!ok) { fiche.alertes.push(`la page ne s'est pas calmée à l'étape ${n}`); alertes.push(`La page ne s'est pas calmée à l'étape ${n}.`); }
       const apresI = await capturerCalme(n);
       // Images gardées : aller sans « montrer » n'en garde aucune (fondu) ; une attente de plus de 1,5 s après l'action,
@@ -445,8 +547,9 @@ async function tourner({ projet, nom, accord = false, navigateur, surEtape = () 
       }
       fiche.reactionI = gardees;
       fiche.apresI = apresI;
-      if (dialogues.length) fiche.dialogue = dialogues[0];
-      fiche.url = adresseGardee((await evaluer('location.href')) || '', { projet, essai: essai && essai.url });
+      if (dialogues.length) fiche.dialogue = { type: dialogues[0].type, message: masquer(dialogues[0].message) };
+      if (flous[n]) fiche.flous = { auto: flous[n].auto, cible: flous[n].cible, apres: 0 };
+      fiche.url = adresseGardee((await evaluer('location.href')) || '', { projet, essai: essai && essai.url, domaine });
       precedente = apresI;
       return fiche;
     };
@@ -457,13 +560,28 @@ async function tourner({ projet, nom, accord = false, navigateur, surEtape = () 
         throw err;
       }
     }
+    // Connexion : la personne se connecte elle-même dans la fenêtre ; rien n'est filmé ni lu entre-temps.
+    if (p.connexion) {
+      libre = true;
+      surEtape({ attente: 'connexion', site: site || Pa.lireAdresse(p.depart, { projet }).site });
+      if (personne) await personne({ evaluer: (x) => page.evaluer(x), aller: (u) => page.aller(u) });
+      const debut = Date.now();
+      while (!fs.existsSync(signal)) {
+        if (Date.now() - debut > delaiConnexion) { const e = new Error('connexion'); e.connexion = true; throw e; }
+        await pause(500);
+      }
+      fs.rmSync(signal, { force: true });
+      libre = false;
+      if (!(await attendreCalme())) alertes.push('La page ne s\'est pas calmée après la connexion.');
+    }
     for (const [i, e] of p.etapes.entries()) {
-      surEtape({ etape: i + 1, sur: p.etapes.length, quoi: Pa.phraseEtape(e) });
+      surEtape({ etape: i + 1, sur: p.etapes.length, quoi: masquer(Pa.phraseEtape(e)) });
       etapes.push(await jouer(e, i + 1, true));
     }
     tourne = false;
     await envoyer('Page.stopScreencast').catch(() => {});
-    if (bloquees) alertes.push(`La page a voulu joindre internet : ${bloquees} requête${bloquees > 1 ? 's' : ''} bloquée${bloquees > 1 ? 's' : ''} (le tournage reste sur l'ordinateur).`);
+    if (bloquees && !domaine) alertes.push(`La page a voulu joindre internet : ${bloquees} requête${bloquees > 1 ? 's' : ''} bloquée${bloquees > 1 ? 's' : ''} (le tournage reste sur l'ordinateur).`);
+    if (ailleurs.size) alertes.push(`La page a voulu aller sur un autre site (${[...ailleurs].join(', ')}) : c'est bloqué, le tournage reste sur ${site}.`);
 
     // Figement, dans le même navigateur (page vide) : cadence, doublons, WebP, bords, planche.
     await envoyer('Fetch.disable').catch(() => {});
@@ -532,25 +650,14 @@ async function tourner({ projet, nom, accord = false, navigateur, surEtape = () 
     const premiere = captures[etapes[0].avantI].data;
     const bords = (await page.evaluer(`window.__pmImages.bords(${JSON.stringify(premiere.toString('base64'))}, 'image/webp')`)).map(hex);
     const film = {
-      version: F.VERSION, source: 'tournage', date: new Date().toISOString(), navigateur: await page.version(), appareil,
+      version: F.VERSION, source: 'tournage', ...(site ? { site } : {}), flou: { auto: reglageFlou.auto, mode: reglageFlou.mode }, date: new Date().toISOString(), navigateur: await page.version(), appareil,
       largeur: T.largeur, hauteur: T.hauteur, echelle: T.echelle, cadence, bords, etapes: filmEtapes, alertes,
       duree: Math.round((Date.now() - debutTournage) / 100) / 10,
     };
     film.poids = F.poidsPrise(temporaire);
     fs.writeFileSync(path.join(temporaire, 'film.json'), `${JSON.stringify(film, null, 2)}\n`, 'utf8');
     // Planche : l'image avant l'action, la cible et le point visé, le compte des zones floutées.
-    const planche = path.join(projet, 'sortie', 'planche-film', `${nom}-${prise}`);
-    fs.rmSync(planche, { recursive: true, force: true });
-    fs.mkdirSync(planche, { recursive: true });
-    for (const [i, e] of filmEtapes.entries()) {
-      const source = e.survol || e.vue || e.avant;
-      const data = fs.readFileSync(path.join(temporaire, 'images', source));
-      const mime = source.endsWith('.webp') ? 'image/webp' : 'image/jpeg';
-      const flous = e.flous.auto + e.flous.cible + e.flous.apres;
-      const texte = `Étape ${e.n} · ${Pa.phraseEtape(p.etapes[i])} · zones floutées : ${flous}`;
-      const png = await page.evaluer(`window.__pmImages.planche(${JSON.stringify(data.toString('base64'))}, '${mime}', ${JSON.stringify({ largeur: T.largeur, boite: e.cible && e.cible.boite, point: e.point, texte })})`);
-      fs.writeFileSync(path.join(planche, `etape-${String(e.n).padStart(2, '0')}.png`), Buffer.from(png, 'base64'));
-    }
+    const planche = await ecrirePlanche(page, { projet, nom, prise, film, dossier: temporaire, phrases: p.etapes.map(Pa.phraseEtape) });
     await page.fermer();
     page = null;
     const dossierPrise = path.join(dossierFilm, prise);
@@ -558,7 +665,14 @@ async function tourner({ projet, nom, accord = false, navigateur, surEtape = () 
     return { ok: true, prise, etapes: filmEtapes.length, duree: film.duree, poids: film.poids, alertes, planche: path.relative(projet, planche).split(path.sep).join('/') };
   } catch (e) {
     let resultat;
-    if (e.echec) {
+    // Première étape introuvable et un mot de passe visible : la page redemande l'identifiant.
+    if (e.echec && !e.ambigu && (e.echec.etape === 1 || e.echec.preparation) && page && await motDePasseVisible()) {
+      e.connexion = true;
+    }
+    if (e.connexion) {
+      resultat = { ok: false, besoin: 'connexion', site: site || Pa.lireAdresse(p.depart, { projet }).site,
+        message: p.connexion ? 'La connexion n\'a pas été faite dans les 15 minutes.' : 'La page demande de se connecter.' };
+    } else if (e.echec) {
       // Échec d'une étape : état de la page gardé dans sortie/tournage-echec.webp ; la prise incomplète est supprimée.
       let image = null;
       try {
@@ -569,7 +683,7 @@ async function tourner({ projet, nom, accord = false, navigateur, surEtape = () 
           fs.writeFileSync(image, octets);
         }
       } catch { /* capture impossible : le message suffit */ }
-      resultat = { ok: false, erreur: 'etape', etape: e.echec.etape, ...(e.echec.preparation ? { preparation: true } : {}), message: e.message, proches: e.echec.proches,
+      resultat = { ok: false, erreur: 'etape', etape: e.echec.etape, ...(e.echec.preparation ? { preparation: true } : {}), message: masquer(e.message), proches: (e.echec.proches || []).map(masquer),
         image: image && path.relative(projet, image).split(path.sep).join('/'),
         rappel: 'Les actions déjà faites dans l\'application ne sont pas annulées.' };
     } else resultat = { ok: false, erreur: 'tournage', message: `Le tournage s'est arrêté : ${e.message}` };
@@ -579,7 +693,8 @@ async function tourner({ projet, nom, accord = false, navigateur, surEtape = () 
     if (page) await page.fermer().catch(() => {});
     if (essai) await essai.fermer().catch(() => {});
     fs.rmSync(temporaire, { recursive: true, force: true });
+    fs.rmSync(signal, { force: true });
   }
 }
 
-module.exports = { tourner, estLocal, adresseGardee, CALME, COUPE };
+module.exports = { tourner, estLocal, adresseGardee, flouDessine, ecrirePlanche, OUTILS_IMAGES, CALME, COUPE, CONNEXION };

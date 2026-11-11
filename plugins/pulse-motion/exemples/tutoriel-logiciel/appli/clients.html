@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Facturo – clients</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="barre">
+  <span class="logo">Facturo</span>
+  <nav><ul class="menu">
+    <li><a href="factures.html">Factures</a></li>
+    <li><a href="clients.html" aria-current="page">Clients</a></li>
+    <li><a href="compte.html">Mon compte</a></li>
+  </ul></nav>
+  <span class="compte">Camille Durand</span>
+</header>
+<main>
+  <div class="entete">
+    <h1>Clients</h1>
+    <span class="note">Coordonnées fictives : rien n'est réel.</span>
+  </div>
+  <table id="clients">
+    <thead><tr><th>Client</th><th>Adresse électronique</th><th>Téléphone</th><th>Ville</th></tr></thead>
+    <tbody>
+      <tr><td>Dupont SARL</td><td class="contact">contact@dupont-sarl.fr</td><td class="contact">01 42 68 53 00</td><td>Paris</td></tr>
+      <tr><td>Martin et fils</td><td class="contact">martin.fils@exemple.fr</td><td class="contact">06 12 34 56 78</td><td>Lyon</td></tr>
+      <tr><td>Boulangerie Lefèvre</td><td class="contact">bonjour@lefevre-pain.fr</td><td class="contact">+33 3 20 11 22 33</td><td>Lille</td></tr>
+      <tr><td>Atelier Moreau</td><td class="contact">atelier.moreau@exemple.fr</td><td class="contact">04 91 55 66 77</td><td>Marseille</td></tr>
+      <tr><td>Garage Petit</td><td class="contact">garage.petit@exemple.fr</td><td class="contact">02 40 12 13 14</td><td>Nantes</td></tr>
+      <tr><td>Cabinet Bernard</td><td class="contact">cabinet@bernard-avocats.fr</td><td class="contact">05 56 78 90 12</td><td>Bordeaux</td></tr>
+      <tr><td>Ferme des Tilleuls</td><td class="contact">ferme.tilleuls@exemple.fr</td><td class="contact">03 88 21 43 65</td><td>Strasbourg</td></tr>
+      <tr><td>Librairie Roux</td><td class="contact">librairie.roux@exemple.fr</td><td class="contact">04 67 98 76 54</td><td>Montpellier</td></tr>
+      <tr><td>Studio Fournier</td><td class="contact">studio@fournier-photo.fr</td><td class="contact">02 99 31 41 59</td><td>Rennes</td></tr>
+      <tr><td>Pharmacie Girard</td><td class="contact">pharmacie.girard@exemple.fr</td><td class="contact">05 61 26 53 58</td><td>Toulouse</td></tr>
+      <tr><td>Transports Bonnet</td><td class="contact">transports.bonnet@exemple.fr</td><td class="contact">04 76 97 93 23</td><td>Grenoble</td></tr>
+      <tr><td>Menuiserie Lambert</td><td class="contact">menuiserie.lambert@exemple.fr</td><td class="contact">03 80 84 62 64</td><td>Dijon</td></tr>
+    </tbody>
+  </table>
+  <div class="carte paiement" id="paiement">
+    <h2>Paiement des abonnements</h2>
+    <p>IBAN du compte prélevé : <span class="contact">FR76 3000 6000 0112 3456 7890 189</span></p>
+    <p>Carte enregistrée : <span class="contact">4111 1111 1111 1111</span></p>
+    <p>Référence de mandat : <span class="reference">4970 1012 3456 7890</span></p>
+  </div>
+</main>
+<script src="app.js"></script>
+</body>
+</html>

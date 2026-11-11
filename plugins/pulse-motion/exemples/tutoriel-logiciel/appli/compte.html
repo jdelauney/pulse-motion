@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Facturo – mon compte</title>
+<script>
+  // Page réservée : sans session (servie par Pulse Motion), retour à la connexion. Ouverte en fichier, elle s'affiche.
+  if (/^https?:$/.test(location.protocol) && document.cookie.indexOf('facturo-session=') < 0) location.replace('index.html');
+</script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="barre">
+  <span class="logo">Facturo</span>
+  <nav><ul class="menu">
+    <li><a href="factures.html">Factures</a></li>
+    <li><a href="clients.html">Clients</a></li>
+    <li><a href="compte.html" aria-current="page">Mon compte</a></li>
+  </ul></nav>
+  <span class="compte">Camille Durand</span>
+</header>
+<main>
+  <h1>Compte de Camille Durand</h1>
+  <div class="carte">
+    <p>Adresse électronique : <span class="contact">camille.durand@facturo-demo.fr</span></p>
+    <p>Téléphone : <span class="contact">06 98 76 54 32</span></p>
+    <p><a class="bouton secondaire" href="factures.html">Mes factures</a></p>
+  </div>
+</main>
+<script src="app.js"></script>
+</body>
+</html>

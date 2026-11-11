@@ -90,8 +90,12 @@ test('filmer : sans --accord, un site en ligne est refusé ; file:// et localhos
   const ecrire = (depart) => { fs.mkdirSync(path.join(dir, 'films', 'x'), { recursive: true }); fs.writeFileSync(path.join(dir, 'films', 'x', 'parcours.json'), JSON.stringify({ nom: 'x', depart, etapes: [{ faire: 'attendre', secondes: 1 }] })); };
   ecrire('https://app.exemple.fr/factures');
   assert.deepEqual(await tourner({ projet: dir, nom: 'x', navigateur: null }), { ok: false, besoin: 'accord', site: 'app.exemple.fr' });
-  // Avec l'accord : toujours pas de site en ligne avant le flou des données personnelles (plan 3).
-  assert.equal((await tourner({ projet: dir, nom: 'x', accord: true, navigateur: null })).erreur, 'site-en-ligne');
+  // Avec l'accord (plan 3) : noté dans le parcours ; les prises suivantes de ce site ne le redemandent pas.
+  assert.equal((await tourner({ projet: dir, nom: 'x', accord: true, navigateur: null })).erreur, 'navigateur');
+  const note = JSON.parse(fs.readFileSync(path.join(dir, 'films', 'x', 'parcours.json'), 'utf8')).accord;
+  assert.equal(note.site, 'app.exemple.fr');
+  assert.match(note.date, /^\d{4}-\d{2}-\d{2}$/);
+  assert.equal((await tourner({ projet: dir, nom: 'x', navigateur: null })).erreur, 'navigateur');
   for (const depart of ['http://localhost:5173/', 'http://127.0.0.1:8080/x', 'page.html', 'appli-essai']) {
     ecrire(depart);
     const r = await tourner({ projet: dir, nom: 'x', navigateur: null });

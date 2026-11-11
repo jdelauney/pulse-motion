@@ -21,7 +21,8 @@
 function scriptPage() {
   if (globalThis.__pm) return;
   var derniere = performance.now();
-  var suivi = new MutationObserver(function () { derniere = performance.now(); });
+  var sale = true;
+  var suivi = new MutationObserver(function () { derniere = performance.now(); sale = true; });
   suivi.observe(document, { subtree: true, childList: true, attributes: true, characterData: true });
   // Un défilement (même doux, sans changement du DOM) compte comme un changement : la page n'est pas calme.
   addEventListener('scroll', function () { derniere = performance.now(); }, { capture: true, passive: true });
@@ -177,6 +178,132 @@ function scriptPage() {
     return liste.slice(0, 5).map(function (x) { return x.texte; });
   }
 
+  // --- Flou des données personnelles (spec S6, 5.6), dans la page filmée : Chrome le dessine, il est donc dans les pixels
+  // des images figées. Un hôte à racine fantôme fermée (le site ne voit pas dedans), sans pointeur ; des voiles en
+  // backdrop-filter recalés avant chaque peinture sur les plages et les champs à couvrir.
+  var FL = globalThis.__pmFlou;
+  var reglage = FL ? FL.lireFlou((globalThis.__pmConfig || {}).flou) : null;
+  var hote = null, ombre = null, sentinelle = null, voiles = [], plages = [];
+  var IGNORES = { SCRIPT: 1, STYLE: 1, NOSCRIPT: 1, TEMPLATE: 1, TEXTAREA: 1 };
+
+  function monter() {
+    if (!reglage || !document.documentElement) return false;
+    if (hote && hote.isConnected) return true;
+    if (!hote) {
+      hote = document.createElement('pm-voiles');
+      ['all:initial', 'position:absolute', 'left:0', 'top:0', 'width:0', 'height:0', 'overflow:visible', 'z-index:2147483647', 'pointer-events:none', 'display:block'].forEach(function (d) {
+        var k = d.split(':');
+        hote.style.setProperty(k[0], k[1], 'important');
+      });
+      ombre = hote.attachShadow({ mode: 'closed' });
+      var st = document.createElement('style');
+      st.textContent = '.v{position:absolute;box-sizing:border-box;border-radius:.3em;-webkit-backdrop-filter:blur(max(10px,.6em));backdrop-filter:blur(max(10px,.6em));background:rgb(128 128 128 / .15);pointer-events:none}'
+        + '.v.m{-webkit-backdrop-filter:none;backdrop-filter:none;background:#9aa0a6;border-radius:.4em}'
+        + '.s{position:absolute;left:0;top:0;height:1px;visibility:hidden}';
+      ombre.appendChild(st);
+      sentinelle = document.createElement('div');
+      sentinelle.className = 's';
+      sentinelle.style.width = '1px';
+      ombre.appendChild(sentinelle);
+      // Après les rappels d'animation du site et la mise en page, avant la peinture : le voile suit l'image même.
+      new ResizeObserver(function () { if (sale) relever(); poser(); }).observe(sentinelle);
+    }
+    document.documentElement.appendChild(hote);
+    return true;
+  }
+  function tailleDe(el) { try { return getComputedStyle(el).fontSize; } catch (e) { return '16px'; } }
+  function elementsCible(c) {
+    if (c && c.colonne !== undefined) {
+      var voulu = norme(c.colonne), r = [];
+      document.querySelectorAll('th, [role=columnheader]').forEach(function (th) {
+        if (norme(th.innerText || th.textContent).indexOf(voulu) < 0 || !th.parentElement) return;
+        var k = Array.prototype.indexOf.call(th.parentElement.children, th);
+        var table = th.closest('table, [role=table], [role=grid]');
+        if (!table || k < 0) return;
+        table.querySelectorAll('tr, [role=row]').forEach(function (tr) {
+          if (tr === th.parentElement) return;
+          var cellule = tr.children[k];
+          if (cellule) r.push(cellule);
+        });
+      });
+      return r;
+    }
+    if (c && c.point) { var p = document.elementFromPoint(c.point[0] / 100 * innerWidth, c.point[1] / 100 * innerHeight); return p ? [p] : []; }
+    if (c && c.selecteur) { try { return Array.prototype.filter.call(document.querySelectorAll(c.selecteur), visible); } catch (e) { return []; } }
+    var texte = typeof c === 'string' ? c : c && c.texte;
+    var liste = texte ? candidats(norme(texte), c && c.dans) : [];
+    if (c && c.rang) {
+      liste = liste.slice().sort(function (a, b) { return a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1; });
+      return liste[c.rang - 1] ? [liste[c.rang - 1].el] : [];
+    }
+    return liste.map(function (x) { return x.el; });
+  }
+  /** Plages et champs à couvrir, relevés de nouveau après un changement du DOM. */
+  function relever() {
+    sale = false;
+    plages = [];
+    if (!reglage || !document.body) return;
+    var a = reglage.actives;
+    var marcheur = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    var n;
+    while ((n = marcheur.nextNode())) {
+      var parent = n.parentElement;
+      if (!parent || IGNORES[parent.tagName]) continue;
+      FL.trouverTextes(n.nodeValue, a).forEach(function (p) {
+        var r = document.createRange();
+        r.setStart(n, p.debut);
+        r.setEnd(n, p.fin);
+        plages.push({ range: r, el: parent, origine: 'auto', taille: tailleDe(parent) });
+      });
+    }
+    document.querySelectorAll('input, textarea').forEach(function (el) {
+      if (el.type === 'hidden') return;
+      var cat = FL.categorieChamp({ type: el.type, autocomplete: el.getAttribute('autocomplete') });
+      var par = cat ? a[cat] : FL.trouverTextes(el.value, a).length > 0;
+      if (par) plages.push({ el: el, origine: 'auto', taille: tailleDe(el) });
+    });
+    reglage.cibles.forEach(function (c) {
+      elementsCible(c).forEach(function (el) { plages.push({ el: el, origine: 'cible', taille: tailleDe(el) }); });
+    });
+  }
+  function rectsDe(p) {
+    if (!p.el.isConnected) return [];
+    if (p.el.checkVisibility && !p.el.checkVisibility({ visibilityProperty: true })) return [];
+    var liste = p.range ? Array.prototype.slice.call(p.range.getClientRects()) : [p.el.getBoundingClientRect()];
+    return liste.filter(function (r) { return r.width > 0 && r.height > 0 && r.bottom > -40 && r.right > -40 && r.top < innerHeight + 40 && r.left < innerWidth + 40; });
+  }
+  /** Voiles posés sur les plages visibles ; -> { auto, cible } (plages et champs couverts). */
+  function poser() {
+    if (!monter()) return { auto: 0, cible: 0 };
+    var base = hote.getBoundingClientRect();
+    var k = 0, compte = { auto: 0, cible: 0 };
+    plages.forEach(function (p) {
+      var rs = rectsDe(p);
+      if (rs.length) compte[p.origine]++;
+      rs.forEach(function (r) {
+        var v = voiles[k];
+        if (!v) { v = document.createElement('div'); ombre.appendChild(v); voiles.push(v); }
+        v.className = reglage.mode === 'masque' ? 'v m' : 'v';
+        v.style.display = 'block';
+        v.style.fontSize = p.taille;
+        v.style.left = (r.left - base.left - 3) + 'px';
+        v.style.top = (r.top - base.top - 2) + 'px';
+        v.style.width = (r.width + 6) + 'px';
+        v.style.height = (r.height + 4) + 'px';
+        k++;
+      });
+    });
+    for (var i = k; i < voiles.length; i++) voiles[i].style.display = 'none';
+    return compte;
+  }
+  if (reglage) {
+    (function image() {
+      requestAnimationFrame(image);
+      if (!monter()) return;
+      sentinelle.style.width = sentinelle.style.width === '1px' ? '2px' : '1px';
+    })();
+  }
+
   globalThis.__pm = {
     etat: function () {
       var anim = 0;
@@ -265,9 +392,33 @@ function scriptPage() {
       return false;
     },
     pointA: function (x, y) { var el = document.elementFromPoint(x, y); return el ? idDe(el) : null; },
+    // Flou : voiles à jour et peints (deux images) avant une capture ; -> { auto, cible } (zones couvertes).
+    flouPret: function () {
+      if (!monter()) return { auto: 0, cible: 0 };
+      relever();
+      poser();
+      return new Promise(function (ok) { requestAnimationFrame(function () { requestAnimationFrame(function () { ok(poser()); }); }); });
+    },
+    // Voiles posés, en px CSS de la vue (tests) : [{ boite, origine }].
+    zonesFlou: function () {
+      var r = [];
+      plages.forEach(function (p) { rectsDe(p).forEach(function (b) { r.push({ boite: [b.left, b.top, b.width, b.height], origine: p.origine }); }); });
+      return r;
+    },
+    motDePasseVisible: function () {
+      return Array.prototype.some.call(document.querySelectorAll('input[type=password], input[autocomplete~=current-password]'), visible);
+    },
   };
 }
 
-const SCRIPT = `(${scriptPage.toString()})();`;
+// Motifs des données personnelles (lib/flou.js), posés tels quels avant le script : la page et film.json reconnaissent les
+// mêmes choses.
+const SOURCE_FLOU = require('node:fs').readFileSync(require('node:path').join(__dirname, 'flou.js'), 'utf8');
+const SCRIPT = `(function () {\n${SOURCE_FLOU}\n})();\n(${scriptPage.toString()})();`;
 
-module.exports = { SCRIPT, scriptPage };
+/** Script du monde isolé avec son réglage (flou du parcours : { auto, mode, cibles, categories }). */
+function scriptAvec({ flou } = {}) {
+  return `globalThis.__pmConfig = ${JSON.stringify({ flou: flou || {} }).replace(/</g, '\\u003c')};\n${SCRIPT}`;
+}
+
+module.exports = { SCRIPT, scriptPage, scriptAvec };

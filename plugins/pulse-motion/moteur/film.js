@@ -7,7 +7,9 @@
  * parts égales entre les états calmes.
  *
  * gesteDe(etape) -> 'clic' | 'double-clic' | 'survol' | null
- * dureeReaction(etape, cadence) -> s (aller sans images de chargement : fondu de 0,25 s)
+ * dureeReaction(etape, cadence) -> s (aller sans images de chargement : fondu de 0,25 s ; « lire » d'une vidéo importée :
+ *   sa durée)
+ * reperesDe(film) -> repères d'une prise importée ([{ instant, point, boite? }]) : etape:N y désigne le repère N.
  * planifierFilm(film, marques, { etapes, duree, depart, diagonale, vitesse }) -> { etapes: [plan], ecarts, minimum, court }
  *   marques : { n: instant de l'action } ; etapes : numéros montrés (défaut : toutes) ; duree : durée de la scène (vue par
  *   l'écran) ; depart : point de départ du pointeur (px CSS de la page) ; vitesse : facteur de la durée des trajets.
@@ -46,6 +48,8 @@
 
   function dureeReaction(e, cadence) {
     var r = finImages(e.reaction, cadence);
+    // Vidéo importée (étape « lire ») : sa durée, la dernière image comprise (une animation garde la durée de chacune).
+    if (e.faire === 'lire' && e.duree > 0) return Math.max(r - 1 / (cadence > 0 ? cadence : 30), e.duree / 1000);
     if (!r && e.faire === 'aller') return FONDU;
     // Un clic s'enfonce 0,09 s, un double-clic 0,24 s : la réaction ne finit jamais avant.
     var g = gesteDe(e);
@@ -140,6 +144,11 @@
     return { etapes: plans, ecarts: ecarts, minimum: arrondi(minimum), court: court, cadence: cadence };
   }
 
+  function reperesDe(film) {
+    var e = film && film.etapes && film.etapes[0];
+    return film && film.etapes && film.etapes.length === 1 && e.faire === 'lire' && Array.isArray(e.reperes) ? e.reperes : null;
+  }
+
   function ecartMinimal(a, b) { return arrondi(a.reaction + MARGE + b.avantAction); }
 
   function derniereAuPlus(liste, ms) {
@@ -190,6 +199,6 @@
     return Object.keys(noms);
   }
 
-  return { MARGE: MARGE, FONDU: FONDU, GESTES: GESTES, gesteDe: gesteDe, dureeReaction: dureeReaction, planifierFilm: planifierFilm,
+  return { MARGE: MARGE, FONDU: FONDU, GESTES: GESTES, gesteDe: gesteDe, dureeReaction: dureeReaction, reperesDe: reperesDe, planifierFilm: planifierFilm,
     ecartMinimal: ecartMinimal, etatFilm: etatFilm, imageA: imageA, gestesDuPlan: gestesDuPlan, imagesEntre: imagesEntre };
 });
