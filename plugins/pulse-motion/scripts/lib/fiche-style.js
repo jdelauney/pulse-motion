@@ -87,7 +87,9 @@ function nomsConnus() {
     transitions: TRANSITIONS.filter((t) => t !== 'aucune'),
     shaders: liste('shaders', '.json'),
     modules: liste(path.join('moteur', 'medium'), '.js'),
-    classesMoteur: new Set([...classesCSS(fs.readFileSync(path.join(RACINE, 'moteur', 'mouvements.css'), 'utf8')), ...classesCSS(fs.readFileSync(path.join(RACINE, 'moteur', 'base.css'), 'utf8'))]),
+    // Classes du moteur : base.css, mouvements.css et les feuilles des modules d'un style (moteur/medium/<nom>.css).
+    classesMoteur: new Set([...classesCSS(fs.readFileSync(path.join(RACINE, 'moteur', 'mouvements.css'), 'utf8')), ...classesCSS(fs.readFileSync(path.join(RACINE, 'moteur', 'base.css'), 'utf8')),
+      ...liste(path.join('moteur', 'medium'), '.css').flatMap((n) => [...classesCSS(fs.readFileSync(path.join(RACINE, 'moteur', 'medium', `${n}.css`), 'utf8'))])]),
   };
 }
 
