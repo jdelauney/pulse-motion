@@ -78,8 +78,8 @@ test("idées : les huit modèles, chacun avec au moins deux phrases, sa vidéo e
   assert.match(b, /idee-video-verticale/, "les modèles verticaux ont un cadre vertical");
   // Tutoriel logiciel (spec S6, 5.17) : sa variante verticale, la question « Que montre-t-on ? » et les étapes filmées.
   const tuto = b.slice(b.indexOf('id="modele-tutoriel-logiciel"'), b.indexOf("</section>", b.indexOf('id="modele-tutoriel-logiciel"')));
-  assert.match(tuto, /Variante :</strong> « Astuce en 30 s », vertical (9:16)/);
-  assert.match(tuto, /<dt>Que montre-t-on ?</dt>/);
+  assert.ok(tuto.includes("Variante :</strong> « Astuce en 30 s », vertical (9:16)"));
+  assert.ok(tuto.includes("<dt>Que montre-t-on ?</dt>"));
   assert.match(tuto, /Les étapes filmées, sur l'appli d'essai/);
 });
 
