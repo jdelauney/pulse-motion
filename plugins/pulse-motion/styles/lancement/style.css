@@ -21,7 +21,7 @@
 .surtitre {
   margin: 0; align-self: flex-start; display: inline-flex; align-items: center; gap: 1.4cqh; max-width: 100%; box-sizing: border-box;
   padding: 1cqh 2.4cqh; border-radius: 10cqh; border: 0.15cqh solid color-mix(in srgb, var(--c-texte) 22%, transparent);
-  font: 600 2.9cqh/1.2 var(--f-texte); letter-spacing: 0.02em;
+  font: 600 3.5cqh/1.2 var(--f-texte); letter-spacing: 0.02em;
 }
 .surtitre::before { content: ""; flex: none; width: 1.2cqh; height: 1.2cqh; border-radius: 50%; background: var(--c-accent-lisible); }
 .titre { margin: 0; font: 600 9cqh/1.04 var(--f-titres); letter-spacing: -0.035em; text-wrap: balance; overflow-wrap: break-word; }
@@ -120,7 +120,7 @@
   .nombre { font-size: 18cqh; }
   .carte-ui { padding: 2.4cqh; font-size: 3.5cqh; }
   .carte-titre { font-size: 3.8cqh; }
-  .pile-ui li { font-size: 3.4cqh; padding: 1.6cqh 2cqh; }
+  .pile-ui li { font-size: 3.5cqh; padding: 1.6cqh 2cqh; }
   .duo { gap: 3cqh; }
   .numero-fin { font-size: 14cqh; }
   .etape { gap: 3.6cqh; }
@@ -130,16 +130,16 @@
 
 /* ---------- Format vertical : tout s'empile ---------- */
 @container (orientation: portrait) {
-  #pm-scene > section[data-scene] { padding: 9cqh 6cqh; gap: 2cqh; font-size: 3.3cqh; }
-  .surtitre { font-size: 2.5cqh; padding: 0.8cqh 1.8cqh; }
+  #pm-scene > section[data-scene] { padding: 9cqh 7cqh; gap: 2cqh; font-size: 3.5cqh; }
+  .surtitre { font-size: 3.5cqh; padding: 0.8cqh 1.8cqh; }
   .titre { font-size: 5.4cqh; }
   .titre-moyen { font-size: 4.2cqh; }
-  .texte { font-size: 3.2cqh; }
+  .texte { font-size: 3.5cqh; }
   .nombre { font-size: 12cqh; }
-  .carte-ui { padding: 2cqh; gap: 0.8cqh; font-size: 3.3cqh; border-radius: 1.4cqh; }
+  .carte-ui { padding: 2cqh; gap: 0.8cqh; font-size: 3.5cqh; border-radius: 1.4cqh; }
   .carte-titre { font-size: 3.6cqh; }
   .pile-ui { gap: 1cqh; }
-  .pile-ui li { font-size: 3.2cqh; padding: 1.4cqh 1.8cqh; gap: 1.4cqh; }
+  .pile-ui li { font-size: 3.5cqh; padding: 1.4cqh 1.8cqh; gap: 1.4cqh; }
   .duo { grid-template-columns: 1fr; gap: 2cqh; }
   .etape { grid-template-columns: 1fr; gap: 2cqh; }
   .numero-fin { font-size: 11cqh; }
@@ -167,11 +167,11 @@
 @container (max-aspect-ratio: 5/4) {
   .moyeu > .moyeu-centre { width: 26cqh; }
   #pm-scene .moyeu > .carte-ui.moyeu-centre { font-size: 3.8cqh; }
-  .moyeu > .moyeu-partie { width: 27cqh; font-size: 3.2cqh; translate: calc(-50% + cos(var(--a)) * 31cqh) calc(-50% + sin(var(--a)) * 26cqh); }
+  .moyeu > .moyeu-partie { width: 27cqh; font-size: 3.5cqh; translate: calc(-50% + cos(var(--a)) * 31cqh) calc(-50% + sin(var(--a)) * 26cqh); }
 }
 @container (max-aspect-ratio: 9/10) {
   .moyeu { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); align-content: center; row-gap: 12cqh; column-gap: 0.8cqh; min-height: 0; }
   .moyeu > .moyeu-centre, .moyeu > .moyeu-partie { position: relative; left: auto; top: auto; translate: none; width: auto; }
   .moyeu > .moyeu-centre { grid-column: 1 / -1; justify-self: center; width: 85%; }
-  .moyeu > .moyeu-partie { grid-row: 2; font-size: calc(3.2cqh - var(--n) * 0.24cqh); padding: 1.4cqh 0.2cqh; overflow-wrap: anywhere; }
+  .moyeu > .moyeu-partie { grid-row: 2; font-size: calc(3.4cqh - var(--n) * 0.24cqh); padding: 1.4cqh 0.2cqh; overflow-wrap: anywhere; }
 }

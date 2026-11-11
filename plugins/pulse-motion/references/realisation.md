@@ -33,7 +33,7 @@ Quatre choix facultatifs du déroulé : `"cadrans": { "horloge": "voix", "contin
 
 Couplages : `sans-texte` exige l'horloge `voix` ; `coupes` va avec `musique` et `energique` ; `voyage` demande une caméra (`pulse-motion reference moteur/camera`).
 
-Par défaut : formation → `voix` (sinon `lecture`), `chapitres`, `legendes` ; produit → `voix` ou `musique`, `voyage`, `grand-titre` ; storytelling → `voix`, `metamorphose`, `legendes` ; social → `musique`, `coupes`, `grand-titre`. Registre : `editorial` pour `clair-pedagogique` et `editorial`, `fait-main` pour `chaleureux`, `energique`, `net` pour `minimal` et `tech-sombre`.
+Par défaut : formation → `voix` (sinon `lecture`), `chapitres`, `legendes` ; produit → `voix` ou `musique`, `voyage`, `grand-titre` ; storytelling → `voix`, `metamorphose`, `legendes` ; social → `musique`, `coupes`, `grand-titre`. Registre : `editorial` pour `clair-pedagogique` et `editorial`, `fait-main` pour `chaleureux`, `energique`, `net` pour les autres styles.
 
 ## 3. Avant d'écrire le déroulé
 

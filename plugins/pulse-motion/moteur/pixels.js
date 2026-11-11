@@ -7,7 +7,8 @@
  *   puis transparentes, aplats gardés). Les pixels où noir et blanc diffèrent sont ceux des lettres, quelle que
  *   soit leur couleur ; le fond se lit là sur la capture sans lettres (10e et 90e centiles). Couleur du texte
  *   mélangée au fond selon sa transparence ; une ombre ou un contour compte s'il détache mieux le texte. Fond
- *   uni de la charte sous une couleur de la charte : laissé au contrôle de la charte (pas d'alerte doublée).
+ *   uni de la charte sous une couleur de la charte : laissé au contrôle de la charte (pas d'alerte doublée). Mot-clé d'une
+ *   légende en morceaux (.pm-mot-cle, moteur/lettres.js) : jugé à part, dans sa couleur, sur son bloc d'accent.
  * - flash (WCAG 2.3.1) : passe rapide à intervalles irréguliers (pas d'effet de stroboscope), puis image par
  *   image (cadence de la vidéo) autour des passages où la lumière change ; plus de flashMax flashs dans une
  *   seconde sur au moins flashAire de l'image.
@@ -229,7 +230,18 @@
           var plage = document.createRange();
           plage.selectNodeContents(el);
           var cs = getComputedStyle(el);
-          return { el: el, r: plage.getBoundingClientRect(), couleur: couleur(cs.color), ornement: ornement(cs), taille: parseFloat(cs.fontSize) };
+          // Mot-clé d'une légende en morceaux (data-mot-cle) : sa couleur est celle posée sur son bloc d'accent ; il est jugé à part,
+          // et ses lettres ne comptent pas pour le reste de la légende.
+          var cles = Array.prototype.slice.call(el.querySelectorAll('.pm-mot-cle'));
+          return { el: el, r: plage.getBoundingClientRect(), couleur: couleur(cs.color), ornement: ornement(cs), taille: parseFloat(cs.fontSize),
+            cles: cles, exclus: cles.map(function (c) { return c.getBoundingClientRect(); }) };
+        });
+        textes.slice().forEach(function (x) {
+          x.cles.forEach(function (c) {
+            var cc = getComputedStyle(c);
+            textes.push({ el: c, r: c.getBoundingClientRect(), couleur: couleur(cc.color), ornement: ornement(cc), taille: parseFloat(cc.fontSize), exclus: [],
+              nom: (x.el.id || x.el.getAttribute('data-texte') || '') + ' (mot-clé)' });
+          });
         });
         if (!textes.length) return null;
         var images = {};
@@ -251,8 +263,12 @@
             var y1 = Math.min(H, Math.ceil((x.r.bottom - cadre.top) * echelle));
             var lums = [];
             var somme = { r: 0, g: 0, b: 0 };
+            var hors = (x.exclus || []).map(function (e) {
+              return { x0: (e.left - cadre.left) * echelle, x1: (e.right - cadre.left) * echelle, y0: (e.top - cadre.top) * echelle, y1: (e.bottom - cadre.top) * echelle };
+            });
             for (var y = y0; y < y1; y++) {
               for (var xx = x0; xx < x1; xx++) {
+                if (hors.length && hors.some(function (e) { return xx >= e.x0 && xx < e.x1 && y >= e.y0 && y < e.y1; })) continue;
                 var k = (y * L + xx) * 4;
                 var ecart = Math.abs(noir[k] - blanc[k]) + Math.abs(noir[k + 1] - blanc[k + 1]) + Math.abs(noir[k + 2] - blanc[k + 2]);
                 if (ecart <= S.ecartLettre) continue;
@@ -278,7 +294,7 @@
             }
             var grand = x.taille >= S.grandTexteCqh * cadre.height / 100;
             var minimum = grand ? S.contrasteGrandTexte : S.contrasteTexte;
-            var nomTexte = x.el.id || x.el.getAttribute('data-texte') || (x.el.hasAttribute('data-pm-st') ? 'sous-titres' : '');
+            var nomTexte = x.nom || x.el.id || x.el.getAttribute('data-texte') || (x.el.hasAttribute('data-pm-st') ? 'sous-titres' : '');
             // Fond moyen sous les lettres et couleur du texte : le contrôle en déduit une couleur lisible (jamais appliquée).
             if (c < minimum) constats.push({ regle: 'contraste-reel', scene: s.id, element: nomTexte, instant: Math.round(t * 100) / 100, valeur: arrondi(c),
               fond: hex(moyen), couleur: hex(x.couleur), minimum: minimum, charte: charteNommee });

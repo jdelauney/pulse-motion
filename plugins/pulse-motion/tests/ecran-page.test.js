@@ -1,6 +1,6 @@
 'use strict';
 /* Spec S6, plan 1 : critères rendus dans Chrome ou Edge sans fenêtre (pointeur, cercle, projecteur, anneau, zooms,
- * cadres et blocs dans les deux voies d'export, contrôle des blocs dans les six styles, déterminisme). */
+ * cadres et blocs dans les deux voies d'export, contrôle des blocs dans les styles livrés, déterminisme). */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -248,7 +248,7 @@ test('blocs : liste met en valeur l\'option choisie à son instant (options rele
   } finally { await c.fermer(); }
 });
 
-test('blocs : chaque bloc passe le contrôle (contraste, lecture, débordement) dans les 6 styles', { ...SANS, timeout: 900000 }, async () => {
+test('blocs : chaque bloc passe le contrôle (contraste, lecture, débordement) dans les styles livrés', { ...SANS, timeout: 900000 }, async () => {
   const { controlerComplet } = require('../scripts/controler.js');
   const blocs = fs.readdirSync(path.join(RACINE, 'moteur', 'blocs')).filter((f) => f.endsWith('.html')).map((f) => f.slice(0, -5)).sort();
   const textes = {

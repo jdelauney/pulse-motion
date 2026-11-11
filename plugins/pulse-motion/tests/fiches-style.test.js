@@ -15,7 +15,10 @@ const { projetCatalogue } = require('./aide/catalogue.js');
 const { CLAIR, modifierJSON, stylesEssai, dossierPersonnelEssai } = require('./aide/styles.js');
 
 const RACINE = path.join(__dirname, '..');
-const LIVRES = ['chaleureux', 'clair-pedagogique', 'editorial', 'energique', 'minimal', 'tech-sombre'];
+// Les six styles migrés (J1) ; les styles livrés : les six et la vague A (S8 J6).
+const ESSENTIELS = ['chaleureux', 'clair-pedagogique', 'editorial', 'energique', 'minimal', 'tech-sombre'];
+const LIVRES = ['chaleureux', 'clair-pedagogique', 'editorial', 'energique', 'info-sans-son', 'lancement', 'minimal', 'plan-technique', 'tech-sombre'];
+const CATEGORIE = { 'info-sans-son': 'ecrans-annonces', lancement: 'ecrans-annonces', 'plan-technique': 'schemas-donnees' };
 const fiche = (style) => fs.readFileSync(path.join(RACINE, 'references', 'styles', `${style}.md`), 'utf8');
 const identite = (style) => JSON.parse(fs.readFileSync(path.join(RACINE, 'styles', style, 'identite.json'), 'utf8'));
 const octets = (t) => Buffer.byteLength(t, 'utf8');
@@ -228,7 +231,7 @@ function empreinteSansIdentite(dossier) {
 }
 
 test('migration : style.css et scènes des 6 styles inchangés (empreinte avant et après)', () => {
-  for (const style of LIVRES) assert.equal(empreinteSansIdentite(path.join(RACINE, 'styles', style)), EMPREINTES[style], `${style} : style.css, scènes, catalogue, charte ou polices modifiés`);
+  for (const style of ESSENTIELS) assert.equal(empreinteSansIdentite(path.join(RACINE, 'styles', style)), EMPREINTES[style], `${style} : style.css, scènes, catalogue, charte ou polices modifiés`);
 });
 
 test('styles livrés : chaque fiche au nouveau format et chaque identite complète', () => {
@@ -236,7 +239,7 @@ test('styles livrés : chaque fiche au nouveau format et chaque identite complè
   for (const style of LIVRES) {
     assert.deepEqual(titres(fiche(style)), SECTIONS_FICHE, style);
     const id = identite(style);
-    assert.equal(id.categorie, 'essentiels', style);
+    assert.equal(id.categorie, CATEGORIE[style] || 'essentiels', style);
     for (const champ of S.CHAMPS_LIVRE) assert.ok(id[champ] !== undefined, `${style} : ${champ}`);
     assert.equal(id.usages.length, 3, style);
     assert.ok(id.motsCles.length >= 3, style);
@@ -277,10 +280,10 @@ test('styles livrés : tests existants (contrat, guide, contrôles, quatre forma
 test('styles --genre : fiche complète pour 3 styles, forme courte pour les autres, au plus 6 Ko', () => avecPersonnel((perso) => {
   // 20 styles livrés (les 6, et 14 copies) et 5 styles personnels vérifiés.
   const racine = stylesEssai([]);
-  for (const s of LIVRES) copier(racine, s, s);
-  for (let i = 0; i < 14; i++) copier(racine, LIVRES[i % 6], `copie-${String(i + 1).padStart(2, '0')}`);
+  for (const s of ESSENTIELS) copier(racine, s, s);
+  for (let i = 0; i < 14; i++) copier(racine, ESSENTIELS[i % 6], `copie-${String(i + 1).padStart(2, '0')}`);
   const persos = path.join(perso, 'styles');
-  for (let i = 0; i < 5; i++) S.marquerVerifie(copier(persos, LIVRES[i], `perso-${i + 1}`, (j) => { j.genres = ['formation']; }));
+  for (let i = 0; i < 5; i++) S.marquerVerifie(copier(persos, ESSENTIELS[i], `perso-${i + 1}`, (j) => { j.genres = ['formation']; }));
   const fiches = S.recommander('formation', [racine, persos]);
   assert.equal(fiches.length, 25);
   const liste = S.listePourGenre(fiches);
@@ -300,17 +303,21 @@ test('styles --genre : fiche complète pour 3 styles, forme courte pour les autr
   const r = pm(['styles', '--genre', 'formation'], { PULSE_MOTION_DOSSIER: dossierPersonnelEssai() });
   assert.equal(r.status, 0, r.stderr);
   const cli = JSON.parse(r.stdout);
-  assert.equal(cli.length, 6);
+  assert.equal(cli.length, LIVRES.length);
   assert.ok(cli[0].scenes && typeof cli[3] === 'string');
+  // Les styles de la vague A viennent après le contraste (« aussi »), jamais parmi les recommandés.
+  assert.match(cli[3], /^plan-technique · schemas-donnees · /);
+  assert.match(cli[4], /^info-sans-son · ecrans-annonces · /);
   assert.match(cli[5], /^[a-z-]+ · essentiels · /);
 }));
 
 test('styles chercher : « tableau blanc », « craie », « plan technique », « chiffres » trouvent le bon style', () => {
   const racine = stylesEssai([]);
-  for (const s of LIVRES) copier(racine, s, s);
+  for (const s of [...ESSENTIELS, 'info-sans-son', 'lancement']) copier(racine, s, s);
   copier(racine, 'clair-pedagogique', 'tableau-blanc', (j) => { j.categorie = 'dessine'; j.motsCles = ['tableau blanc', 'feutre', 'whiteboard']; j.usages = ['Expliquer au tableau', 'Former en salle', 'Dessiner un processus']; });
   copier(racine, 'clair-pedagogique', 'tableau-noir', (j) => { j.categorie = 'dessine'; j.motsCles = ['craie', 'ardoise', 'école']; j.usages = ['Faire un cours', 'Réviser une notion', 'Raconter une recette']; });
-  copier(racine, 'tech-sombre', 'plan-technique', (j) => { j.categorie = 'schemas-donnees'; j.motsCles = ['plan', 'ingénieur', 'blueprint', 'cotes']; j.usages = ['Montrer une machine', 'Décrire une installation', 'Expliquer un montage']; });
+  // plan-technique : le vrai style, livré en S8 J6.
+  copier(racine, 'plan-technique', 'plan-technique');
   copier(racine, 'minimal', 'recit-donnees', (j) => { j.categorie = 'schemas-donnees'; j.motsCles = ['chiffres', 'données', 'graphiques']; j.usages = ['Raconter un bilan', 'Comparer des résultats', 'Suivre une évolution']; });
   const premier = (q) => (S.chercherStyles(q, racine)[0] || {}).style;
   assert.equal(premier('façon tableau blanc'), 'tableau-blanc');
@@ -324,6 +331,9 @@ test('styles chercher : « tableau blanc », « craie », « plan technique », 
   assert.equal(premier('grille suisse'), 'minimal');
   assert.equal(premier('un terminal'), 'tech-sombre');
   assert.equal(premier('pour les réseaux sociaux'), 'energique');
+  assert.equal(premier('lisible son coupé'), 'info-sans-son');
+  assert.equal(premier('une keynote de lancement'), 'lancement');
+  assert.equal(premier('un blueprint'), 'plan-technique');
   assert.equal(premier('pedagogique'), 'clair-pedagogique', 'sans accents');
   assert.deepEqual(S.chercherStyles('aquarelle', racine), []);
   assert.deepEqual(Object.keys(S.chercherStyles('craie', racine)[0]), ['style', 'categorie', 'personnalite', 'usages', 'personnel']);
@@ -356,7 +366,7 @@ test('recommandation : chaque style livré cité pour au moins un genre (recomma
 
 test('recommander : ordre recommandés, personnels du genre, contraste, aussi, reste', () => avecPersonnel((perso) => {
   const racine = stylesEssai([]);
-  for (const s of LIVRES) copier(racine, s, s);
+  for (const s of ESSENTIELS) copier(racine, s, s);
   for (const n of ['craie', 'riso']) copier(racine, 'clair-pedagogique', n);
   const persos = path.join(perso, 'styles');
   S.marquerVerifie(copier(persos, 'chaleureux', 'maison', (j) => { j.genres = ['formation']; }));

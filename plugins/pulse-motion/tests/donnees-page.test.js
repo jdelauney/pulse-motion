@@ -1,6 +1,6 @@
 'use strict';
 /* Spec « Explication narrée » (S7), plan J2 « Données, code, formules » : critères rendus dans Chrome ou Edge sans fenêtre.
- * Graphiques (5.6), moyeu et schéma dans les six styles (5.7), code (5.9), formules (5.10), deux voies d'export, contrôle de la
+ * Graphiques (5.6), moyeu et schéma dans les styles livrés (5.7), code (5.9), formules (5.10), deux voies d'export, contrôle de la
  * vidéo rendue, preuve du déterminisme, coût par image et poids de la page (D8). */
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -206,12 +206,12 @@ test('formule : \\pi r^2 s\'affiche avec la police mathématique embarquée ; vo
   } finally { await c.fermer(); }
 });
 
-// --- 5.7 Moyeu et schéma dans les six styles ---------------------------------------------------------------------------------
+// --- 5.7 Moyeu et schéma dans les styles livrés ---------------------------------------------------------------------------------
 
 const TEXTES_MOYEU = { titre: 'Le trajet d\'une facture', centre: 'Facture', partie1: 'Devis', partie2: 'Envoi', partie3: 'Relance', partie4: 'Paiement', partie5: 'Archive' };
 const dedans = (b, Lg) => b.x - b.l / 2 >= -0.01 && b.x + b.l / 2 <= Lg + 0.01 && b.y - b.h / 2 >= -0.01 && b.y + b.h / 2 <= 100.01;
 
-test('moyeu : en 9:16, les parties sont sous le centre et aucune ne sort de l\'image ; en 16:9, en couronne ; dans les 6 styles', { ...SANS, timeout: 600000 }, async () => {
+test('moyeu : en 9:16, les parties sont sous le centre et aucune ne sort de l\'image ; en 16:9, en couronne ; dans les styles livrés', { ...SANS, timeout: 600000 }, async () => {
   for (const style of STYLES) {
     const html = lire('styles', style, 'scenes', 'moyeu.html').replace(/^<!--[\s\S]*?-->\s*/, '').replace('data-scene="moyeu"', 'data-scene="s"');
     for (const [ratio, l, h] of [['9:16', 360, 640], ['16:9', L, H]]) {
@@ -246,7 +246,7 @@ test('moyeu : en 9:16, les parties sont sous le centre et aucune ne sort de l\'i
   }
 });
 
-test('schema : les flèches visent les boîtes dans les 6 styles', { ...SANS, timeout: 600000 }, async () => {
+test('schema : les flèches visent les boîtes dans les styles livrés', { ...SANS, timeout: 600000 }, async () => {
   for (const style of STYLES) {
     const html = lire('styles', style, 'scenes', 'schema.html').replace(/^<!--[\s\S]*?-->\s*/, '').replace('data-scene="schema"', 'data-scene="s"');
     const p = page([{ id: 's', html, duree: 8, textes: { titre: 'Le trajet', a: 'Devis', b: 'Facture', c: 'Paiement' } }], { style });

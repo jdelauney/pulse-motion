@@ -1,7 +1,7 @@
 # Style « lancement »
 
-> Le film de lancement où l'interface est la vedette : fond presque noir à grille fine, lumière douce qui se déplace, cartes d'interface qui s'aimantent à leur place, reflet qui balaie le titre, nombre géant au trait fin, un seul accent.
-> Sources : lemo-opuscar, style `dark-keynote` (MIT, © 2026 LemoLab) ; take-one, fiches `monochrome-launch` et `dark-premium` (MIT) ; traduits et adaptés.
+> Le film de lancement où l'interface est la vedette : presque noir, lumière douce, cartes qui s'aimantent, reflet sur le titre, nombre géant, un seul accent.
+> Sources : lemo-opuscar, `dark-keynote` (MIT, © 2026 LemoLab) ; take-one, `monochrome-launch`, `dark-premium` (MIT) ; adaptés.
 
 ## L'essentiel
 
@@ -17,8 +17,8 @@
 
 ## 2. Matières et rendu
 
-- HTML et CSS : `radial-gradient` pour la lumière (`.lumiere`, qui se déplace sur `--lx`) et le `.voile` qui assombrit les bords ; `.grille` à 5 % qui monte doucement.
-- Cartes d'interface (`.carte-ui`) dessinées en HTML : fond à peine plus clair, bord fin, ombre portée, `.barre-ui` grise. Si un bloc « interface » du moteur sert mieux, le poser tel quel : le style l'habille.
+- HTML et CSS : `radial-gradient` pour la lumière (`.lumiere`, sur `--lx`) et le `.voile` des bords ; `.grille` à 5 % qui monte.
+- `.carte-ui` en HTML : fond à peine plus clair, bord fin, ombre, `.barre-ui` grise. Un bloc « interface » du moteur se pose tel quel.
 
 ## 3. Logique de couleur
 
@@ -28,13 +28,13 @@
 
 ## 4. Typographie et sous-titres
 
-- Polices fournies : **Sora** 600, titres (9 cqh, moyen 6) ; Sora 300, nombre géant (26 cqh, `tabular-nums`) et numéros ; **Manrope** 400 et 600, texte (3,8 cqh) et étiquettes.
-- Sous-titres : habillage du moteur ; lisibilité : `controles.md`.
+- **Sora** 600 : titres (9 cqh, moyen 6) ; Sora 300 : nombre géant (26 cqh, `tabular-nums`), numéros ; **Manrope** 400 et 600 : texte (3,8 cqh), étiquettes.
+- Sous-titres du moteur ; lisibilité : `controles.md`.
 
 ## 5. Qualité du mouvement
 
-- `.monte` : `expo-out`, 0,5 s ; `.aimante` : `back-out`, 0,25 s depuis une place fixe (`--dx`, `--dy`) ; le reflet passe 0,5 s après l'arrivée, en 1,2 s.
-- Une action par temps, 0,3 à 1 s entre deux ; rien ne clignote.
+- `.monte` : `expo-out`, 0,5 s ; `.aimante` : `back-out`, 0,25 s depuis une place fixe (`--dx`, `--dy`) ; reflet 0,5 s après l'arrivée, en 1,2 s.
+- Une action par temps, 0,3 à 1 s entre deux.
 - Conseillés : #035, #021, #020. Déconseillés : #036, #028, #049.
 
 ## 6. Grammaire de caméra et transitions
@@ -59,24 +59,22 @@
 
 ## 8. Gestes natifs
 
-- **Cent fenêtres qui se rangent.** *Recette :* `.carte-ui.aimante` en série, chacune avec ses `--dx`, `--dy` fixes. *Convient à :* les fonctions d'un logiciel ; une gamme d'offres ; des avis de clients.
+- **Cent fenêtres qui se rangent.** *Recette :* `.carte-ui.aimante` en série, `--dx`, `--dy` fixes. *Convient à :* des fonctions ; une gamme ; des avis.
 - **La lumière révèle.** *Recette :* `.reflet` sur un titre (#035), `.lumiere` qui glisse. *Convient à :* le nom du produit ; la promesse ; le prix.
-- **Le nombre se fige.** *Recette :* `.nombre` et `nombre 0→…` en `expo-out` (#021), `data-moment-fort`. *Convient à :* un nombre d'utilisateurs ; un gain de temps ; une date de sortie.
+- **Le nombre se fige.** *Recette :* `.nombre`, `nombre 0→…` (#021), `data-moment-fort`. *Convient à :* des utilisateurs ; un gain de temps ; une date.
 - **La carte qui s'allume.** *Recette :* `.carte-ui.active`. *Convient à :* la bonne offre ; la nouveauté ; la fonction phare.
 
 ## 9. Pièges
 
-- Gris sur noir sous le seuil de contraste : garder `.texte` tel quel, ne pas l'assombrir.
-- Trop d'éléments en mouvement : une action par temps.
-- Accent sur deux éléments : il n'en désigne plus aucun.
-- Bandes dans la lumière : garder la lumière douce et large, jamais un disque net.
-- Export : ni `backdrop-filter`, ni `mix-blend-mode` ; l'ombre et la lumière sont des dégradés.
+- Gris sur noir : ne pas assombrir `.texte`. Trop de mouvements : une action par temps. Deux accents : aucun ne compte.
+- Lumière en disque net : des bandes apparaissent ; la garder douce et large.
+- Export : ni `backdrop-filter`, ni `mix-blend-mode`.
 
 ## 10. Scènes toutes faites et classes
 
 | Scène | Rôle | Durée | Textes (longueur maximale) |
 |---|---|---|---|
-| `titre` | Ouvrir sur le titre que la lumière balaie | 7 s | etiquette 24, titre 36, sous 50 |
+| `titre` | Titre que la lumière balaie | 7 s | etiquette 24, titre 36, sous 50 |
 | `liste` | 2 à 4 fenêtres qui s'aimantent | 12 s | titre 36, point1 … point4 42 |
 | `chiffre` | Un nombre géant qui se fige | 7 s | titre 36, unite 3, legende 56 ; `nombre 0→…` |
 | `comparaison` | Deux cartes, la seconde allumée | 12 s | titre 36, gauche-titre et droite-titre 20, gauche-texte et droite-texte 60 |
@@ -89,7 +87,7 @@
 Point ou logo absent : retirer son élément et sa clé.
 - Texte : `.surtitre`, `.titre`, `.titre-moyen`, `.texte`, `.nombre`, `.unite`, `.accent`.
 - Entrées : `.monte`, `.aimante` (`--dx`, `--dy`), `.reflet`. Décor : `.decor` + `.grille`, `.lumiere`, `.voile`.
-- Scènes : `.carte-ui` (`.active`), `.carte-titre`, `.barre-ui` ; `.pile-ui` ; `.duo` ; `.etape`, `.numero-fin` ; `.notification`, `.notification-corps` ; `.chaine-ui`, `.connecteur` ; `.logo`.
+- Scènes : `.carte-ui` (`.active`), `.carte-titre`, `.barre-ui`, `.pile-ui`, `.duo`, `.numero-fin`, `.notification`, `.chaine-ui`.
 
 Scène composée : ces classes et `<style>@scope { … }</style>`.
 

@@ -25,7 +25,7 @@
 .source {
   margin: 0; align-self: flex-start; max-width: 100%; padding: 0.4cqh 0 0.4cqh 1.6cqh;
   border-left: 0.6cqh solid var(--c-primaire-lisible);
-  font: 700 3cqh/1.25 var(--f-texte); letter-spacing: 0.08em; text-transform: uppercase; color: var(--c-primaire-lisible);
+  font: 700 3.5cqh/1.25 var(--f-texte); letter-spacing: 0.08em; text-transform: uppercase; color: var(--c-primaire-lisible);
 }
 .nombre { margin: 0; font: 800 26cqh/0.9 var(--f-titres); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 .unite { font-size: 0.4em; margin-left: 0.12em; }
@@ -143,12 +143,12 @@
 
 /* ---------- Format vertical : une autre mise en page ---------- */
 @container (orientation: portrait) {
-  #pm-scene > section[data-scene] { padding: 9cqh 6cqh 8cqh 9cqh; gap: 2cqh; font-size: 3.5cqh; justify-content: flex-end; }
+  #pm-scene > section[data-scene] { padding: 9cqh 7cqh 8cqh 9cqh; gap: 2cqh; font-size: 3.5cqh; }
   .marges { left: 3.6cqh; width: 0.9cqh; }
   .legende { font-size: 6.4cqh; line-height: 1.06; }
   .legende-moyenne { font-size: 4.8cqh; }
-  .texte { font-size: 3.4cqh; }
-  .source { font-size: 2.6cqh; }
+  .texte { font-size: 3.5cqh; }
+  .source { font-size: 3.5cqh; }
   .points { gap: 1.2cqh; }
   .points li { padding-left: 3cqh; font-size: 3.6cqh; }
   .nombre { font-size: 13cqh; }
@@ -182,7 +182,7 @@
 @container (max-aspect-ratio: 5/4) {
   .moyeu > .moyeu-centre { width: 26cqh; }
   #pm-scene .moyeu > .tuile.moyeu-centre { font-size: 4cqh; }
-  .moyeu > .moyeu-partie { width: 27cqh; font-size: 3.4cqh; translate: calc(-50% + cos(var(--a)) * 31cqh) calc(-50% + sin(var(--a)) * 26cqh); }
+  .moyeu > .moyeu-partie { width: 27cqh; font-size: 3.5cqh; translate: calc(-50% + cos(var(--a)) * 31cqh) calc(-50% + sin(var(--a)) * 26cqh); }
 }
 @container (max-aspect-ratio: 9/10) {
   .moyeu { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); align-content: center; row-gap: 12cqh; column-gap: 0.8cqh; min-height: 0; }

@@ -118,8 +118,8 @@
 /* ---------- Cartouche : la désignation du plan ---------- */
 .cartouche {
   margin: 0; align-self: flex-start; max-width: 100%; padding: 1.2cqh 2.4cqh; box-sizing: border-box;
-  border: var(--detail) solid var(--c-primaire-lisible); color: var(--c-primaire-lisible);
-  font: 400 2.8cqh/1.3 var(--f-texte); letter-spacing: 0.12em; text-transform: uppercase;
+  border: var(--detail) solid var(--c-primaire-lisible); color: var(--c-texte);
+  font: 400 3.5cqh/1.3 var(--f-texte); letter-spacing: 0.12em; text-transform: uppercase;
 }
 
 /* ---------- Liste : nomenclature à repères ---------- */
@@ -136,7 +136,7 @@
 .nomenclature li:nth-child(4)::before { content: "4"; }
 .nomenclature li::before {
   display: grid; place-items: center; width: 6cqh; height: 6cqh; border-radius: 50%; box-sizing: border-box;
-  border: var(--detail) solid var(--c-primaire-lisible); color: var(--c-primaire-lisible); font: 700 3.2cqh/1 var(--f-titres);
+  border: var(--detail) solid var(--c-primaire-lisible); color: var(--c-primaire-lisible); font: 700 3.5cqh/1 var(--f-titres);
 }
 
 /* ---------- Chiffre : la mesure et sa cote ---------- */
@@ -163,41 +163,41 @@
 
 /* ---------- Format carré ---------- */
 @container (max-aspect-ratio: 5/4) {
-  #pm-scene > section[data-scene] { padding: 9cqh 8cqh; gap: 2.4cqh; font-size: 3.4cqh; }
+  #pm-scene > section[data-scene] { padding: 9cqh 8cqh; gap: 2.4cqh; font-size: 3.5cqh; }
   .cadre { inset: 3cqh; }
   .axe { left: 3cqh; right: 3cqh; }
   .titre { font-size: 5.8cqh; }
   .titre-moyen { font-size: 4.2cqh; }
-  .texte { font-size: 3.3cqh; }
+  .texte { font-size: 3.5cqh; }
   .nombre { font-size: 15cqh; }
-  .piece { font-size: 3.4cqh; padding: 2.4cqh; }
+  .piece { font-size: 3.5cqh; padding: 2.4cqh; }
   .piece-titre { font-size: 3.7cqh; }
   .vues { gap: 3cqh; }
   .ballon { width: 15cqh; height: 15cqh; font-size: 7cqh; }
   .etape { gap: 3.6cqh; }
-  .nomenclature li { font-size: 3.4cqh; }
+  .nomenclature li { font-size: 3.5cqh; }
   .chaine-pieces > .piece { padding: 2.4cqh 1cqh; }
   .connecteur { width: 5cqh; }
 }
 
 /* ---------- Format vertical : tout s'empile ---------- */
 @container (orientation: portrait) {
-  #pm-scene > section[data-scene] { padding: 9cqh 6cqh; gap: 2cqh; font-size: 3.2cqh; }
+  #pm-scene > section[data-scene] { padding: 9cqh 7cqh; gap: 2cqh; font-size: 3.5cqh; }
   .cadre { inset: 2.4cqh; }
   .axe { left: 2.4cqh; right: 2.4cqh; }
   .titre { font-size: 4.4cqh; }
   .titre-moyen { font-size: 3.5cqh; }
-  .texte { font-size: 3.1cqh; }
-  .cartouche { font-size: 2.4cqh; padding: 1cqh 1.6cqh; }
+  .texte { font-size: 3.5cqh; }
+  .cartouche { font-size: 3.5cqh; padding: 1cqh 1.6cqh; }
   .nombre { font-size: 11cqh; }
-  .piece { font-size: 3.2cqh; padding: 2cqh; gap: 0.8cqh; }
-  .piece-titre { font-size: 3.4cqh; }
+  .piece { font-size: 3.5cqh; padding: 2cqh; gap: 0.8cqh; }
+  .piece-titre { font-size: 3.5cqh; }
   .vues { grid-template-columns: 1fr; gap: 2cqh; }
   .etape { grid-template-columns: 1fr; gap: 2cqh; }
   .ballon { width: 11cqh; height: 11cqh; font-size: 5.4cqh; }
-  .nomenclature { gap: 1cqh; }
-  .nomenclature li { grid-template-columns: 4.4cqh 1fr; gap: 1.4cqh; padding-bottom: 0.8cqh; font-size: 3.2cqh; }
-  .nomenclature li::before { width: 4.4cqh; height: 4.4cqh; font-size: 2.4cqh; }
+  .nomenclature { gap: 0.6cqh; }
+  .nomenclature li { grid-template-columns: 4.4cqh 1fr; gap: 1.2cqh; padding-bottom: 0.6cqh; font: 400 3.5cqh/1.2 var(--f-titres); }
+  .nomenclature li::before { width: 4.4cqh; height: 4.4cqh; font-size: 3.5cqh; }
   .nuage { padding: 3.6cqh 3.6cqh; --r: 1.2cqh; }
   .chaine-pieces { flex-direction: column; align-items: stretch; gap: 1cqh; }
   .chaine-pieces > .piece { padding: 1.8cqh; }
@@ -222,11 +222,11 @@
 @container (max-aspect-ratio: 5/4) {
   .moyeu > .moyeu-centre { width: 26cqh; }
   #pm-scene .moyeu > .piece.moyeu-centre { font-size: 3.8cqh; }
-  .moyeu > .moyeu-partie { width: 27cqh; font-size: 3.2cqh; translate: calc(-50% + cos(var(--a)) * 31cqh) calc(-50% + sin(var(--a)) * 26cqh); }
+  .moyeu > .moyeu-partie { width: 27cqh; font-size: 3.5cqh; translate: calc(-50% + cos(var(--a)) * 31cqh) calc(-50% + sin(var(--a)) * 26cqh); }
 }
 @container (max-aspect-ratio: 9/10) {
   .moyeu { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); align-content: center; row-gap: 12cqh; column-gap: 0.8cqh; min-height: 0; }
   .moyeu > .moyeu-centre, .moyeu > .moyeu-partie { position: relative; left: auto; top: auto; translate: none; width: auto; }
   .moyeu > .moyeu-centre { grid-column: 1 / -1; justify-self: center; width: 85%; }
-  .moyeu > .moyeu-partie { grid-row: 2; font-size: calc(3.2cqh - var(--n) * 0.24cqh); padding: 1.4cqh 0.2cqh; overflow-wrap: anywhere; }
+  .moyeu > .moyeu-partie { grid-row: 2; font-size: calc(3.4cqh - var(--n) * 0.24cqh); padding: 1.4cqh 0.2cqh; overflow-wrap: anywhere; }
 }
