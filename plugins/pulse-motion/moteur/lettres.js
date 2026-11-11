@@ -194,7 +194,7 @@
       return { regle: 'lettres-invalide', message: debut + 'data-mots « brouille » : le texte se brouille lettre par lettre, écrire data-lettres="brouille".' };
     }
     if (effet === 'ecrit' && !parLettres) {
-      return { regle: 'lettres-invalide', message: debut + 'data-mots « ecrit » : le texte s'écrit lettre par lettre, écrire data-lettres="ecrit".' };
+      return { regle: 'lettres-invalide', message: debut + 'data-mots « ecrit » : le texte s\'écrit lettre par lettre, écrire data-lettres="ecrit".' };
     }
     var pas = parLettres ? EFFETS[effet] : PAS_MOTS;
     var brut = el.getAttribute('data-pas');
