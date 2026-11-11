@@ -91,7 +91,7 @@ const EXEMPLES = path.join(__dirname, '..', 'exemples');
 const exemplesDeModeles = () => listerModeles().map((m) => m.exemple || m.id).filter((x) => x !== 'chaine-du-froid');
 
 test('exemples des modèles : un par modèle, avec le récit de sa séance', () => {
-  assert.equal(exemplesDeModeles().length, 6);
+  assert.equal(exemplesDeModeles().length, 7);
   for (const id of exemplesDeModeles()) {
     const recit = JSON.parse(fs.readFileSync(path.join(EXEMPLES, id, 'exemple.json'), 'utf8'));
     const m = lireModele(recit.modele);
@@ -105,7 +105,9 @@ test('exemples des modèles : un par modèle, avec le récit de sa séance', () 
     assert.equal(d.style, m.styles[0], id);
     assert.equal(d.sousTitres, undefined, `${id} : pas de sous-titres`);
     assert.ok(d.scenes.every((s) => s.voix === undefined), `${id} : pas de voix`);
-    assert.deepEqual(d.scenes.map((s) => s.type), m.scenes.map((s) => s.type), `${id} : structure du modèle`);
+    // Une scène d'écran du modèle (tutoriel logiciel) tient la place des scènes filmées qui se suivent (une par 1 à 3 étapes).
+    const genres = d.scenes.map((s) => s.type || (s.film ? 'ecran' : undefined)).filter((g, i, l) => g !== 'ecran' || l[i - 1] !== 'ecran');
+    assert.deepEqual(genres, m.scenes.map((s) => s.type || (s.ecran ? 'ecran' : undefined)), `${id} : structure du modèle`);
   }
 });
 

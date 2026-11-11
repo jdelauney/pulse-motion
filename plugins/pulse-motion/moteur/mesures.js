@@ -439,7 +439,8 @@
       M.rendre(t);
       var cadre = conteneur.getBoundingClientRect();
       var u = null;
-      Array.prototype.forEach.call(sec.querySelectorAll(JUGES + ', [data-personnage], [data-tween*="nombre"]'), function (el) {
+      // Un écran (pm-ecran, spec S6) est du contenu : ses images de film n'ont pas de texte alternatif, mais c'est le sujet.
+      Array.prototype.forEach.call(sec.querySelectorAll(JUGES + ', [data-personnage], [data-tween*="nombre"], .pm-ecran'), function (el) {
         if (el.closest('.decor, [data-decor]') || (el.tagName === 'IMG' && el.getAttribute('alt') === '' && !estLogo(el))) return;
         if (opacite(el) <= 0.5) return;
         var r = rectangle(el);

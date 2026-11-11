@@ -42,6 +42,21 @@ test('avancement : écrit de façon atomique et relu', () => {
   assert.deepEqual(A.TRAVAUX, ['fabrication', 'ebauche', 'assemblage', 'controle', 'comparaison', 'export', 'installation', 'transcription', 'voix']);
 });
 
+test('avancement : aucun fichier dans un dossier sans deroule.json, même quand la commande échoue', () => {
+  const dir = dossierTemporaire('pm-avancement-hors-video-');
+  const lignes = [];
+  const s = A.suivre(dir, { travail: 'controle', libelle: 'Contrôle de la vidéo', ecrire: (l) => lignes.push(l) });
+  s(1, 2, 'scène 1 sur 2');
+  s.terminer(false, 'Le déroulé contient des erreurs : Fichier introuvable');
+  assert.equal(fs.existsSync(path.join(dir, '.pulse-motion')), false, 'aucun dossier .pulse-motion hors d\'une vidéo');
+  assert.match(lignes.at(-1), /échec \(Le déroulé contient des erreurs/);
+  // Dans une vidéo, le fichier est écrit.
+  fs.writeFileSync(path.join(dir, 'deroule.json'), '{}\n', 'utf8');
+  const s2 = A.suivre(dir, { travail: 'controle', libelle: 'Contrôle de la vidéo', ecrire: () => {} });
+  s2(1, 2);
+  assert.equal(A.lire(dir).travail, 'controle');
+});
+
 test('avancement : restant absent avant 10 % puis calculé', () => {
   const dir = dossierTemporaire('pm-avancement-');
   const t0 = Date.parse('2026-11-10T10:00:00Z');

@@ -61,10 +61,10 @@ test("chaque page qui montre des aperçus charge js/galerie.js (sinon ses vidéo
   for (const p of avecApercus) assert.match(fs.readFileSync(path.join(DOCS, p), "utf8"), /<script src="js\/galerie\.js" defer><\/script>/, p);
 });
 
-test("idées : les sept modèles, chacun avec au moins deux phrases, sa vidéo et sa séance", () => {
+test("idées : les huit modèles, chacun avec au moins deux phrases, sa vidéo et sa séance", () => {
   const b = blocs().idees;
   const modeles = G.modelesVideo();
-  assert.equal(modeles.length, 7);
+  assert.equal(modeles.length, 8);
   for (const m of modeles) {
     const debut = b.indexOf(`<section class="idee-modele" id="modele-${m.id}">`);
     assert.ok(debut >= 0, m.id);
@@ -76,6 +76,11 @@ test("idées : les sept modèles, chacun avec au moins deux phrases, sa vidéo e
     assert.match(section, /Comment cette vidéo a été faite/, m.id);
   }
   assert.match(b, /idee-video-verticale/, "les modèles verticaux ont un cadre vertical");
+  // Tutoriel logiciel (spec S6, 5.17) : sa variante verticale, la question « Que montre-t-on ? » et les étapes filmées.
+  const tuto = b.slice(b.indexOf('id="modele-tutoriel-logiciel"'), b.indexOf("</section>", b.indexOf('id="modele-tutoriel-logiciel"')));
+  assert.ok(tuto.includes("Variante :</strong> « Astuce en 30 s », vertical (9:16)"));
+  assert.ok(tuto.includes("<dt>Que montre-t-on ?</dt>"));
+  assert.match(tuto, /Les étapes filmées, sur l'appli d'essai/);
 });
 
 test("galerie : chaque entrée #069 à #080 a son aperçu rendu par sa recette", () => {

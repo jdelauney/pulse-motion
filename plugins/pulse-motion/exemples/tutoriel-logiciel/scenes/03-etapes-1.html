@@ -1,0 +1,49 @@
+<section data-scene="etapes-1">
+  <style>
+    @scope {
+      /* Grammaire des scènes « écran » : la consigne dans une colonne à gauche (44 cqh), l'écran à droite (110 cqh),
+         l'ensemble centré, 5 cqh entre les deux. Les cibles de l'action restent toujours dégagées. */
+      :scope > .plan {
+        position: absolute; inset: 0; z-index: 1;
+        display: grid; grid-template-columns: 44cqh auto; column-gap: 5cqh;
+        justify-content: center; align-items: center;
+      }
+      .consignes { display: grid; align-items: center; }
+      .consignes > * { grid-area: 1 / 1; }
+      :scope #consigne1.pm-bloc-consigne, :scope #consigne2.pm-bloc-consigne {
+        flex-direction: column; align-items: flex-start; gap: 2.6cqh; max-width: 44cqh;
+      }
+      :scope .consignes .pm-bloc-numero { width: 9.5cqh; height: 9.5cqh; font-size: 5.2cqh; }
+      :scope .consignes .pm-bloc-texte { font-size: 4.8cqh; line-height: 1.22; text-wrap: balance; }
+      /* La consigne 1 laisse la place : elle monte et s'efface, plus vite qu'elle n'est entrée. */
+      @keyframes sort-haut { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-4cqh); } }
+      .sortie { animation: sort-haut 0.35s var(--ease-cubic-in) both; }
+    }
+  </style>
+
+  <div class="decor">
+    <span class="rond accent" data-decor style="width: 58cqh; height: 58cqh; left: -18cqh; bottom: -24cqh" data-start="0" data-dur="scene" data-tween="--dy 0cqh→-6cqh sine-inout"></span>
+    <span class="rond" data-decor style="width: 40cqh; height: 40cqh; right: -12cqh; top: -14cqh" data-start="0" data-dur="scene" data-tween="--dx 0cqh→-5cqh sine-inout"></span>
+  </div>
+
+  <div class="plan">
+    <div class="consignes">
+      <div id="sortie1" class="sortie" data-start="3.5" data-dur="0.35">
+        <div id="consigne1" class="pm-bloc pm-bloc-consigne pm-m-glisse-gauche" data-start="0.1" data-dur="0.6">
+          <span class="pm-bloc-numero" data-texte="numero1"></span>
+          <p class="pm-bloc-texte" data-texte="consigne1"></p>
+        </div>
+      </div>
+      <div id="consigne2" class="pm-bloc pm-bloc-consigne pm-m-glisse-gauche" data-start="#sortie1+0.15" data-dur="0.6">
+        <span class="pm-bloc-numero" data-texte="numero2"></span>
+        <p class="pm-bloc-texte" data-texte="consigne2"></p>
+      </div>
+    </div>
+
+    <div class="pm-ecran" data-cadre="navigateur" data-film="factures" data-etapes="1-2" data-film-camera="suivre" data-start="0" style="--pm-ecran-l: 110cqh">
+      <i class="pm-etape" data-etape="1" data-start="2.2"></i>
+      <i class="pm-zoom" data-cible="etape:1" data-start="1.9" data-dur="1.5" data-echelle="1.6"></i>
+      <i class="pm-etape" data-etape="2" data-start="4.9"></i>
+    </div>
+  </div>
+</section>
