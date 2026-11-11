@@ -1,0 +1,16 @@
+<!-- Scène toute faite « schema » (style recit-donnees) : trois étapes d'un flux, reliées par des flèches ; celle du milieu à l'accent. Durée conseillée : 8 s.
+     Textes : titre (≤ 32 car.), a, b, c (≤ 16 car.). -->
+<section data-scene="schema">
+  <div class="decor">
+    <span class="ombre-crayon" data-decor data-start="0" data-dur="8"></span>
+    <span class="crayon" data-decor data-start="0" data-dur="8"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen arrive" data-texte="titre" data-start="0.3"></h2>
+  <div class="chaine">
+    <div id="a" class="noeud arrive" data-texte="a" data-start="#titre+0.7" data-dur="0.6"></div>
+    <span class="connecteur" aria-hidden="true"><i id="lien1" data-fleche="#a → #b" data-start="#a:fin" data-dur="0.6" data-couleur="texte"></i></span>
+    <div id="b" class="noeud compte arrive" data-texte="b" data-start="#lien1:fin" data-dur="0.6"></div>
+    <span class="connecteur" aria-hidden="true"><i id="lien2" data-fleche="#b → #c" data-start="#b:fin" data-dur="0.6" data-couleur="texte"></i></span>
+    <div id="c" class="noeud arrive" data-texte="c" data-start="#lien2:fin" data-dur="0.6"></div>
+  </div>
+</section>

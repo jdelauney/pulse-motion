@@ -1,0 +1,17 @@
+<!-- Scène toute faite « schema » (style carnet) : trois idées écrites et reliées par des flèches tremblées ; celle du milieu à l'accent. Durée conseillée : 8 s.
+     Textes : titre (≤ 30 car.), a, b, c (≤ 16 car.). -->
+<section data-scene="schema">
+  <div class="decor">
+    <span class="fibres" data-decor data-start="0" data-dur="8" data-tween="--x 0cqh→-3cqh linear"></span>
+    <span class="reliure"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen" data-texte="titre" data-lettres="ecrit" data-start="0.3" data-dur="1.2"></h2>
+  <div class="chaine">
+    <div id="a" class="idee" data-texte="a" data-lettres="ecrit" data-start="#titre:fin+0.2" data-dur="0.8"></div>
+    <span class="connecteur" aria-hidden="true"><i id="lien1" data-fleche="#a → #b" data-start="#a:fin" data-dur="0.6" data-couleur="texte"></i></span>
+    <div id="b" class="idee compte" data-texte="b" data-lettres="ecrit" data-start="#lien1:fin" data-dur="0.8"></div>
+    <span class="connecteur" aria-hidden="true"><i id="lien2" data-fleche="#b → #c" data-start="#b:fin" data-dur="0.6" data-couleur="texte"></i></span>
+    <div id="c" class="idee" data-texte="c" data-lettres="ecrit" data-start="#lien2:fin" data-dur="0.8"></div>
+  </div>
+  <i data-annoter="entoure" data-cible="#b" data-start="#c:fin+0.3" data-dur="0.8" data-couleur="accent-lisible"></i>
+</section>

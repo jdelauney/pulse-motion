@@ -1,0 +1,14 @@
+<!-- Scène toute faite « conclusion » (style tableau-blanc) : ce qu'il faut retenir, écrit et souligné, le feutre se gare, puis le logo. Durée conseillée : 6 s.
+     Textes : titre (≤ 30 car.), sous (≤ 44 car.). Logo : celui de la charte (sinon supprimer l'image).
+     Dernière scène de la vidéo : data-dur du décor = durée de la scène − 1 s (image stable d'au moins 0,5 s à la fin). -->
+<section data-scene="conclusion" data-encre="style">
+  <div class="decor">
+    <span class="reflet" data-decor data-start="0" data-dur="5" data-tween="--x -24cqh→24cqh linear"></span>
+    <span class="fantomes"></span>
+    <span class="feutre" data-start="0.1" data-dur="3.4"></span>
+  </div>
+  <h2 id="titre" class="titre" data-texte="titre" data-lettres="ecrit" data-start="0.3" data-dur="1.6"></h2>
+  <i data-annoter="souligne" data-cible="#titre" data-start="#titre:fin" data-dur="0.6" data-couleur="accent-lisible"></i>
+  <p id="sous" class="texte" data-texte="sous" data-lettres="ecrit" data-start="#titre:fin+0.3" data-dur="1.1"></p>
+  <img id="logo" class="logo" data-logo alt="" data-start="#sous:fin+0.2" data-dur="0.5" data-tween="opacity 0→1">
+</section>

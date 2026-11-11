@@ -1,0 +1,117 @@
+{
+  "style": "tableau-noir",
+  "famille": "chaleureuse",
+  "personnalite": [
+    "calme",
+    "scolaire",
+    "attentif"
+  ],
+  "eviter": [
+    "beaucoup de texte à la fois",
+    "couleurs vives partout"
+  ],
+  "genres": [
+    "formation",
+    "storytelling"
+  ],
+  "couleur": {
+    "strategie": "sobre-avec-une-touche",
+    "tons": [
+      "sombre"
+    ],
+    "tonDefaut": "sombre",
+    "sombre": {
+      "fond": "#233a30",
+      "texte": "#f1efe6"
+    },
+    "roles": {
+      "primaire": "craie pâle, la seconde main",
+      "accent": "craie d'accent, ce que la leçon suit"
+    }
+  },
+  "typographie": {
+    "titres": {
+      "famille": "Sora",
+      "categorie": "sans-serif",
+      "graisse": 600
+    },
+    "texte": {
+      "famille": "Nunito Sans",
+      "categorie": "sans-serif",
+      "graisse": 400
+    }
+  },
+  "mouvement": {
+    "caractere": "posé",
+    "courbes": [
+      "sine-inout",
+      "linear"
+    ],
+    "dureeType": 0.9,
+    "transitions": [
+      "glissement",
+      "fondu"
+    ]
+  },
+  "signature": "Craie sur ardoise verte mate : le texte s'écrit avec pression, le grain du tableau mord la craie, un peu de poussière au lever du trait, une lumière de fenêtre qui glisse",
+  "aFaire": [
+    "Peu de mots, grandes lettres, écrits à la craie",
+    "Garder le tableau vivant (marbrure, lumière de fenêtre)"
+  ],
+  "aEviter": [
+    "La craie d'accent partout",
+    "Plus d'un effacement par vidéo"
+  ],
+  "categorie": "dessine",
+  "nonPas": "Pas un tableau blanc : ni brillant, ni feutres, ni aimants, ni marques fantômes. La caméra reste de face, devant le tableau.",
+  "usages": [
+    "Faire un cours",
+    "Réviser une notion",
+    "Raconter une méthode pas à pas"
+  ],
+  "motsCles": [
+    "tableau noir",
+    "craie",
+    "ardoise",
+    "école",
+    "cours",
+    "leçon",
+    "chalkboard",
+    "à la craie",
+    "professeur"
+  ],
+  "son": {
+    "ambiances": [
+      "calme",
+      "acoustique"
+    ],
+    "bruitages": {
+      "titre": null,
+      "texte": null,
+      "point": null,
+      "chiffre": "tic",
+      "trace": "craie",
+      "forme": null,
+      "image": null,
+      "ecriture": "craie",
+      "transition": null
+    },
+    "matiere": "craie",
+    "fort": "carillon"
+  },
+  "modules": [
+    "encre"
+  ],
+  "provenance": [
+    {
+      "depot": "lemo-opuscar",
+      "style": "chalkboard",
+      "licence": "MIT"
+    },
+    {
+      "depot": "explainroo",
+      "style": "chalk",
+      "licence": "MIT"
+    }
+  ]
+}

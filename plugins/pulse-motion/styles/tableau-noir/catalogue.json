@@ -1,0 +1,16 @@
+{
+  "style": "tableau-noir",
+  "description": "Calme, scolaire, attentif : une leçon écrite à la craie sur un tableau vert, pour les cours, les révisions et les notions à poser.",
+  "transitions": ["glissement", "fondu"],
+  "scenes": [
+    { "nom": "titre", "role": "Le titre s'écrit à la craie et se souligne", "duree": 7, "textes": { "etiquette": 22, "titre": 30, "sous": 46 } },
+    { "nom": "liste", "role": "2 à 4 points, un tiret de craie devant chacun", "duree": 12, "textes": { "titre": 30, "point1": 36, "point2": 36, "point3": 36, "point4": 36 } },
+    { "nom": "chiffre", "role": "Un chiffre écrit et entouré", "duree": 7, "textes": { "titre": 30, "unite": 3, "legende": 46 } },
+    { "nom": "comparaison", "role": "Deux panneaux, celui qui compte encadré à la craie d'accent", "duree": 12, "textes": { "titre": 30, "gauche-titre": 16, "gauche-texte": 48, "droite-titre": 16, "droite-texte": 48 } },
+    { "nom": "etape", "role": "Une étape : son numéro entouré, puis ce qu'il faut faire", "duree": 8, "textes": { "numero": 2, "titre": 30, "texte": 64 } },
+    { "nom": "alerte", "role": "Ce qu'il ne faut pas oublier, écrit après un coup d'éponge", "duree": 8, "textes": { "titre": 30, "texte": 64 } },
+    { "nom": "schema", "role": "Trois idées reliées à la craie, de face", "duree": 8, "textes": { "titre": 30, "a": 16, "b": 16, "c": 16 } },
+    { "nom": "moyeu", "role": "Une idée au centre, 3 à 5 parties autour, reliées par des flèches", "duree": 10, "textes": { "titre": 30, "centre": 18, "partie1": 16, "partie2": 16, "partie3": 16, "partie4": 16, "partie5": 16 } },
+    { "nom": "conclusion", "role": "Ce qu'il faut retenir, souligné, et le logo", "duree": 6, "textes": { "titre": 30, "sous": 44 } }
+  ]
+}

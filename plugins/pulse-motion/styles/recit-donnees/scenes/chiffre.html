@@ -1,0 +1,15 @@
+<!-- Scène toute faite « chiffre » (style recit-donnees) : la valeur pousse depuis zéro avec sa barre, à l'accent ; sa note s'épingle. Durée conseillée : 7 s.
+     Textes : titre (≤ 32 car.), unite (≤ 3 car., vide si aucune), legende (≤ 46 car.). Valeur : remplacer 1250 dans « nombre 0→1250 ».
+     La barre dit « la valeur arrive », pas une proportion : pour comparer des valeurs, un graphique du déroulé (data-graphique). -->
+<section data-scene="chiffre">
+  <div class="decor">
+    <span class="ombre-crayon" data-decor data-start="0" data-dur="7"></span>
+    <span class="crayon" data-decor data-start="0" data-dur="7"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen arrive" data-texte="titre" data-start="0.4"></h2>
+  <div class="mesure">
+    <p id="nombre" class="nombre compte"><span id="valeur" data-start="#titre+0.8" data-dur="1.6" data-tween="nombre 0→1250 cubic-out">0</span><span class="unite" data-texte="unite"></span></p>
+    <span id="barre" class="barre compte" data-start="#titre+0.8" data-dur="1.6"></span>
+  </div>
+  <p id="legende" class="note arrive" data-texte="legende" data-start="#valeur:fin+0.4"></p>
+</section>

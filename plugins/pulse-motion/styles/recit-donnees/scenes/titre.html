@@ -1,0 +1,15 @@
+<!-- Scène toute faite « titre » (style recit-donnees) : les axes se tracent, l'étiquette et le titre arrivent, la question s'épingle. Durée conseillée : 7 s.
+     Textes : etiquette (≤ 22 car.), titre (≤ 32 car.), sous (≤ 46 car.). Décor : data-dur = durée de la scène. -->
+<section data-scene="titre">
+  <div class="decor">
+    <span class="ombre-crayon" data-decor data-start="0" data-dur="7"></span>
+    <span class="crayon" data-decor data-start="0" data-dur="7"></span>
+  </div>
+  <div class="repere">
+    <span class="axe-y" data-start="0.2" data-dur="0.8"></span>
+    <span class="axe-x" data-start="0.6" data-dur="1"></span>
+    <p id="etiquette" class="etiquette arrive" data-texte="etiquette" data-start="0.9"></p>
+    <h1 id="titre" class="titre arrive" data-texte="titre" data-start="#etiquette+0.4"></h1>
+    <p id="sous" class="note arrive" data-texte="sous" data-start="#titre+1.4"></p>
+  </div>
+</section>

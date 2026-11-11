@@ -1,0 +1,12 @@
+<!-- Scène toute faite « alerte » (style recit-donnees) : la case vide, en pointillés : ce qu'on ne sait pas, ou ce qu'il ne faut pas conclure. Durée conseillée : 8 s.
+     Textes : titre (≤ 32 car.), texte (≤ 64 car.). -->
+<section data-scene="alerte">
+  <div class="decor">
+    <span class="ombre-crayon" data-decor data-start="0" data-dur="8"></span>
+    <span class="crayon" data-decor data-start="0" data-dur="8"></span>
+  </div>
+  <div id="boite" class="case-vide arrive" data-start="0.4">
+    <h2 id="titre" class="titre-moyen compte arrive" data-texte="titre" data-start="#boite+0.5"></h2>
+    <p id="texte" class="texte arrive" data-texte="texte" data-start="#titre+0.8"></p>
+  </div>
+</section>

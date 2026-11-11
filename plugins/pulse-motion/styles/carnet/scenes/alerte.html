@@ -1,0 +1,13 @@
+<!-- Scène toute faite « alerte » (style carnet) : ce qu'il ne faut pas oublier, encadré à la main ; la phrase tient comme une note dans la marge. Durée conseillée : 8 s.
+     Textes : titre (≤ 30 car.), texte (≤ 64 car.). -->
+<section data-scene="alerte">
+  <div class="decor">
+    <span class="fibres" data-decor data-start="0" data-dur="8" data-tween="--x 0cqh→-3cqh linear"></span>
+    <span class="reliure"></span>
+  </div>
+  <div id="boite" class="cadre-alerte">
+    <h2 id="titre" class="titre-moyen compte" data-texte="titre" data-lettres="ecrit" data-start="0.4" data-dur="1.4"></h2>
+    <p id="texte" class="note" data-texte="texte" data-lettres="ecrit" data-start="#titre:fin+0.3" data-dur="1.8"></p>
+  </div>
+  <i data-annoter="encadre" data-cible="#boite" data-start="#texte:fin" data-dur="0.8" data-couleur="accent-lisible"></i>
+</section>

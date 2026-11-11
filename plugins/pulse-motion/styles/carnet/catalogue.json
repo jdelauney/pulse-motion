@@ -1,0 +1,16 @@
+{
+  "style": "carnet",
+  "description": "Spontané, chaleureux, curieux : un carnet de croquis au feutre qui se dessine sous nos yeux, pour raconter une idée, une démarche ou un atelier.",
+  "transitions": ["fondu", "balayage"],
+  "scenes": [
+    { "nom": "titre", "role": "Le titre s'écrit, une seule ligne en fait le tour", "duree": 7, "textes": { "etiquette": 22, "titre": 30, "sous": 46 } },
+    { "nom": "liste", "role": "2 à 4 points, une puce dessinée devant chacun", "duree": 12, "textes": { "titre": 30, "point1": 36, "point2": 36, "point3": 36, "point4": 36 } },
+    { "nom": "chiffre", "role": "Un chiffre écrit, entouré et hachuré", "duree": 7, "textes": { "titre": 30, "unite": 3, "legende": 46 } },
+    { "nom": "comparaison", "role": "Deux croquis, celui qui compte hachuré", "duree": 12, "textes": { "titre": 30, "gauche-titre": 16, "gauche-texte": 48, "droite-titre": 16, "droite-texte": 48 } },
+    { "nom": "etape", "role": "Une étape : son numéro entouré, puis ce qu'il faut faire", "duree": 8, "textes": { "numero": 2, "titre": 30, "texte": 64 } },
+    { "nom": "alerte", "role": "Une note dans la marge, encadrée à la main", "duree": 8, "textes": { "titre": 30, "texte": 64 } },
+    { "nom": "schema", "role": "Trois idées reliées par des flèches tremblées", "duree": 8, "textes": { "titre": 30, "a": 16, "b": 16, "c": 16 } },
+    { "nom": "moyeu", "role": "Une idée au centre, 3 à 5 parties autour, reliées par des flèches", "duree": 10, "textes": { "titre": 30, "centre": 18, "partie1": 16, "partie2": 16, "partie3": 16, "partie4": 16, "partie5": 16 } },
+    { "nom": "conclusion", "role": "Ce qu'il faut retenir, d'une seule ligne, et le logo", "duree": 6, "textes": { "titre": 30, "sous": 44 } }
+  ]
+}

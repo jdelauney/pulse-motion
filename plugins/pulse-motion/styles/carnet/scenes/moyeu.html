@@ -1,0 +1,24 @@
+<!-- Scène toute faite « moyeu » (style carnet) : l'idée au centre, entourée à l'accent, 3 à 5 parties autour, reliées par des flèches tremblées. Durée conseillée : 10 s.
+     Textes : titre (≤ 30 car.), centre (≤ 18 car.), partie1 … partie5 (≤ 16 car. chacune ; en 9:16, 12 car. avec 3 parties, 6 avec 5).
+     Moins de 5 parties : supprimer la partie en trop et sa flèche (la couronne se refait seule). Adapter data-dur du décor à la durée de la scène. -->
+<section data-scene="moyeu">
+  <div class="decor">
+    <span class="fibres" data-decor data-start="0" data-dur="10" data-tween="--x 0cqh→-3cqh linear"></span>
+    <span class="reliure"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen" data-texte="titre" data-lettres="ecrit" data-start="0.4" data-dur="1.2"></h2>
+  <div class="moyeu">
+    <div id="centre" class="moyeu-centre" data-texte="centre" data-lettres="ecrit" data-start="#titre:fin+0.2" data-dur="0.8"></div>
+    <i data-annoter="entoure" data-cible="#centre" data-start="#centre:fin" data-dur="0.6" data-couleur="accent-lisible"></i>
+    <div id="partie1" class="moyeu-partie" style="--i: 0" data-texte="partie1" data-lettres="ecrit" data-start="#centre:fin+0.6" data-dur="0.7"></div>
+    <i data-fleche="#centre → #partie1" data-start="#partie1" data-dur="0.6" data-couleur="texte"></i>
+    <div id="partie2" class="moyeu-partie" style="--i: 1" data-texte="partie2" data-lettres="ecrit" data-start="#partie1:fin+0.3" data-dur="0.7"></div>
+    <i data-fleche="#centre → #partie2" data-start="#partie2" data-dur="0.6" data-couleur="texte"></i>
+    <div id="partie3" class="moyeu-partie" style="--i: 2" data-texte="partie3" data-lettres="ecrit" data-start="#partie2:fin+0.3" data-dur="0.7"></div>
+    <i data-fleche="#centre → #partie3" data-start="#partie3" data-dur="0.6" data-couleur="texte"></i>
+    <div id="partie4" class="moyeu-partie" style="--i: 3" data-texte="partie4" data-lettres="ecrit" data-start="#partie3:fin+0.3" data-dur="0.7"></div>
+    <i data-fleche="#centre → #partie4" data-start="#partie4" data-dur="0.6" data-couleur="texte"></i>
+    <div id="partie5" class="moyeu-partie" style="--i: 4" data-texte="partie5" data-lettres="ecrit" data-start="#partie4:fin+0.3" data-dur="0.7"></div>
+    <i data-fleche="#centre → #partie5" data-start="#partie5" data-dur="0.6" data-couleur="texte"></i>
+  </div>
+</section>

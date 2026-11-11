@@ -1,0 +1,22 @@
+<!-- Scène toute faite « comparaison » (style tableau-noir) : deux panneaux ; le second, celui qui compte, encadré à la craie d'accent. Durée conseillée : 12 s.
+     Textes : titre (≤ 30 car.), gauche-titre et droite-titre (≤ 16 car.), gauche-texte et droite-texte (≤ 48 car.). -->
+<section data-scene="comparaison" data-encre="style">
+  <div class="decor">
+    <span class="marbrure" data-decor data-start="0" data-dur="12" data-tween="--x -6cqh→6cqh linear; --y 3cqh→-3cqh linear"></span>
+    <span class="fenetre" data-decor data-start="0" data-dur="12" data-tween="--x -40cqh→40cqh linear"></span>
+    <span class="rebord"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen" data-texte="titre" data-lettres="ecrit" data-start="0.4" data-dur="1.4"></h2>
+  <div class="panneaux">
+    <div id="gauche" class="panneau" data-start="#titre:fin+0.3">
+      <h3 id="gauche-titre" class="panneau-titre" data-texte="gauche-titre" data-lettres="ecrit" data-start="#titre:fin+0.3" data-dur="0.8"></h3>
+      <p id="gauche-texte" class="texte" data-texte="gauche-texte" data-lettres="ecrit" data-start="#gauche-titre:fin+0.1" data-dur="1.5"></p>
+    </div>
+    <div id="droite" class="panneau" data-start="#gauche-texte:fin+1.4">
+      <h3 id="droite-titre" class="panneau-titre compte" data-texte="droite-titre" data-lettres="ecrit" data-start="#gauche-texte:fin+1.4" data-dur="0.8"></h3>
+      <p id="droite-texte" class="texte" data-texte="droite-texte" data-lettres="ecrit" data-start="#droite-titre:fin+0.1" data-dur="1.5"></p>
+    </div>
+  </div>
+  <i data-annoter="encadre" data-cible="#gauche" data-start="#gauche-texte:fin" data-dur="0.6" data-couleur="texte"></i>
+  <i data-annoter="encadre" data-cible="#droite" data-start="#droite-texte:fin" data-dur="0.6" data-couleur="accent-lisible"></i>
+</section>

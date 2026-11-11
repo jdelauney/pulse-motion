@@ -1,0 +1,15 @@
+<!-- Scène toute faite « chiffre » (style tableau-noir) : le chiffre compte, puis il est entouré à l'accent ; la légende s'écrit. Durée conseillée : 7 s.
+     Textes : titre (≤ 30 car.), unite (≤ 3 car., vide si aucune), legende (≤ 46 car.). Valeur : remplacer 1250 dans « nombre 0→1250 ». -->
+<section data-scene="chiffre" data-encre="style">
+  <div class="decor">
+    <span class="marbrure" data-decor data-start="0" data-dur="7" data-tween="--x -6cqh→6cqh linear; --y 3cqh→-3cqh linear"></span>
+    <span class="fenetre" data-decor data-start="0" data-dur="7" data-tween="--x -40cqh→40cqh linear"></span>
+    <span class="rebord"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen" data-texte="titre" data-lettres="ecrit" data-start="0.4" data-dur="1.4"></h2>
+  <div class="mesure">
+    <p id="nombre" class="nombre"><span id="valeur" data-start="#titre:fin+0.2" data-dur="1.4" data-tween="nombre 0→1250 cubic-out">0</span><span class="unite" data-texte="unite"></span></p>
+    <i data-annoter="entoure" data-cible="#nombre" data-start="#valeur:fin" data-dur="0.8" data-couleur="accent-lisible"></i>
+  </div>
+  <p id="legende" class="texte" data-texte="legende" data-lettres="ecrit" data-start="#valeur:fin+0.6" data-dur="1.3"></p>
+</section>
