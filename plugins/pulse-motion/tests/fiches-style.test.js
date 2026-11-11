@@ -192,9 +192,9 @@ test('identite : un type d\'entrée hors TYPES_ENTREE est refusé', () => {
 test('identite : un module ou un shader conseillé inconnu est refusé', () => {
   const racine = stylesEssai(['modules']);
   const d = path.join(racine, 'modules');
-  modifierJSON(path.join(d, 'identite.json'), (j) => { j.modules = ['iso']; j.shaders = { conseilles: ['grain', 'arc-en-ciel'] }; });
+  modifierJSON(path.join(d, 'identite.json'), (j) => { j.modules = ['aquarelle']; j.shaders = { conseilles: ['grain', 'arc-en-ciel'] }; });
   const e = S.verifierStyle(d).erreurs.join('\n');
-  assert.match(e, /module « iso » inconnu/);
+  assert.match(e, /module « aquarelle » inconnu/);
   assert.match(e, /shader conseillé « arc-en-ciel » inconnu\. Shaders : .*grain/);
   assert.doesNotMatch(e, /« grain » inconnu/);
   modifierJSON(path.join(d, 'identite.json'), (j) => { j.categorie = 'peinture'; j.usages = ['un', 'deux']; j.provenance = [{ depot: 'x' }]; });
