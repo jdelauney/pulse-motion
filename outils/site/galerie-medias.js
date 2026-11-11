@@ -191,8 +191,12 @@ function fabriquerPersonnages() {
 
 /** Chaque personnage livré marche, se tourne vers nous, salue puis saute : 5 s, sur un fond clair. */
 function fabriquerDessins() {
+  // PM_MEDIAS_MANQUANTS=1 : seuls les dessins dont un média manque sont fabriqués (les médias publiés restent tels quels).
+  const manquantsSeuls = process.env.PM_MEDIAS_MANQUANTS === "1";
+  const aFaire = dessinsLivres().filter((d) => !manquantsSeuls || !fichiersDessin(d.nom).every((x) => fs.existsSync(path.join(DOCS, x))));
+  if (!aFaire.length) return;
   avecDossier("pm-galerie-dessins-", (dossier) => {
-    const demos = dessinsLivres().map((d) => ({
+    const demos = aFaire.map((d) => ({
       id: d.nom, duree: 5,
       html: `<div data-personnage="${d.nom}" data-x="25" data-sol="90" data-taille="62"><i id="va" data-action="marcher" data-vers="55" data-start="0.2" data-dur="1.6"></i><i id="tourne" data-action="tourner" data-vue="70" data-start="#va:fin" data-dur="0.4"></i><i id="salut" data-action="jouer" data-clip="coucou" data-start="#tourne:fin"></i><i data-action="expression" data-expression="joie" data-start="#tourne:fin"></i><i data-action="jouer" data-clip="saut" data-start="#salut:fin+0.1"></i></div>`,
     }));

@@ -99,7 +99,7 @@ A style is a folder `plugins/pulse-motion/styles/<id>/`:
 |---|---|
 | `style.css` | The look: layout, entrance classes (`.entre-bas`…), decoration; sizes in `cqh`, colours and fonts **only** through the brand variables (`--c-*`, `--f-*`) |
 | `charte.json` | Default colours and fonts of the style |
-| `identite.json` | Category, uses, personality, signature, do's and don'ts, keywords, sound palette, provenance; `modules`: the `moteur/medium/` modules the style needs (ink in a canvas, single line, isometry, overprinted riso flats), included in the page only for that style, with their stylesheet `moteur/medium/<name>.css` if they have one |
+| `identite.json` | Category, uses, personality, signature, do's and don'ts, keywords, sound palette, provenance; `modules`: the `moteur/medium/` modules the style needs (ink in a canvas, single line, isometry, overprinted riso flats, flats offset from their broken line), included in the page only for that style, with their stylesheet `moteur/medium/<name>.css` if they have one |
 | `catalogue.json` | The nine ready-made scenes and the texts they expect |
 | `scenes/*.html` | The nine ready-made scenes (`titre`, `chiffre`, `liste`, `etape`, `comparaison`, `schema`, `alerte`, `moyeu`, `conclusion`) |
 | `polices/` | Embedded fonts and their `LICENCES.md` |
