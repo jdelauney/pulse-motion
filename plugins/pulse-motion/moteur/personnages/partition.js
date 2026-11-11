@@ -15,7 +15,9 @@
  * - Vue : vue0 ; une marche se tourne dans le sens du trajet (sauf « vue » donnée) ; « tourner » interpole.
  * - Visage : dernière expression et dernière bouche commencées ; « parler » (piste de visèmes, M.levres) l'emporte sur une
  *   bouche commencée avant lui, pendant les paroles.
- * - Vie (vie : « pleine » par défaut, « sobre », « aucune » ; calme === false vaut « aucune ») : clignements à des instants
+ * - Vie (vie : « pleine » par défaut, « sobre », « mains », « aucune » ; calme === false vaut « aucune ») ; « mains »
+ *   (animation limitée) : ni respiration, ni retard, repos tenu sur sa première image, repos vivant des seuls bras (ampleur
+ *   doublée), clignements gardés. Pour « pleine » et « sobre » : clignements à des instants
  *   irréguliers tirés d'une graine propre au personnage (sel), et au début de chaque tournant ; respiration en pose et en
  *   geste ; repos vivant (petits mouvements déphasés) en pose tenue et au repos ; retard des bouts (avant-bras, tête,
  *   touffe) sur leur parent, lus « vie.retard » s plus tôt (gabarit). Poids fondus sur 0,25 s comme le corps.
@@ -235,7 +237,9 @@
       return K.echantillonner(clip, tc, bib, gabarit, sansSol);
     }
     var repos = bib.clips.repos;
-    // Le repos respire : chaque personnage à sa phase (deux voisins ne respirent pas ensemble).
+    // Le repos respire : chaque personnage à sa phase (deux voisins ne respirent pas ensemble). Vie « mains » : le corps
+    // tient la première image du repos (animation limitée), seules les mains bougeront.
+    if (repos && vieDe(part) === 'mains') return K.echantillonner(repos, 0, bib, gabarit, sansSol);
     return repos ? K.echantillonner(repos, t + phaseRespiration(part, repos), bib, gabarit, sansSol) : {};
   }
 
@@ -245,7 +249,23 @@
 
   function vieDe(part) {
     if (part.calme === false || part.vie === 'aucune') return 'aucune';
-    return part.vie === 'sobre' ? 'sobre' : 'pleine';
+    return part.vie === 'sobre' || part.vie === 'mains' ? part.vie : 'pleine';
+  }
+
+  // Vie « mains » (animation limitée, style mode-d-emploi) : le repos vivant réduit aux bras et aux avant-bras, ampleur
+  // doublée (les mains travaillent), le reste du corps immobile. Clip dérivé une fois par clip source.
+  var MAINS = { brasAvant: true, brasArriere: true, avantBrasAvant: true, avantBrasArriere: true };
+  var memoMains = typeof WeakMap === 'function' ? new WeakMap() : null;
+  function reposMains(rv) {
+    var m = memoMains && memoMains.get(rv);
+    if (m) return m;
+    m = Object.assign({}, rv, { cles: rv.cles.map(function (c) {
+      var angles = {};
+      Object.keys(c.angles || {}).forEach(function (k) { if (MAINS[k]) angles[k] = 2 * c.angles[k]; });
+      return Object.assign({}, c, { angles: angles });
+    }).filter(function (c) { return Object.keys(c.angles).length; }) });
+    if (memoMains) memoMains.set(rv, m);
+    return m;
   }
   function selDe(part) { return typeof part.sel === 'number' ? part.sel >>> 0 : V.sel(part.sel || ''); }
   function phaseRespiration(part, clip) { return (clip.duree || 2.86) * V.graine(2, selDe(part)); }
@@ -512,13 +532,14 @@
     var fixe = options && options.releve ? pose : null;
     if (vie !== 'aucune') {
       // Respiration : en pose tenue et en geste (à moitié) ; au repos, c'est le clip « repos » qui respire.
-      var resp = bib.clips.respiration;
+      var resp = vie === 'mains' ? null : bib.clips.respiration;
       if (resp && resp.additif) {
         var wResp = poids.respiration;
         if (wResp > 0) pose = K.ajouter(pose, resp, t + phaseRespiration(part, resp), bib, wResp);
       }
       var rv = bib.clips['repos-vivant'];
-      if (vie === 'pleine' && rv && rv.additif) {
+      if (vie === 'mains' && rv && rv.additif && rv.cles) rv = reposMains(rv);
+      if ((vie === 'pleine' || vie === 'mains') && rv && rv.additif) {
         var w = poids.vie;
         if (w > 0) {
           var tv = t + (rv.duree || 9) * V.graine(1, selDe(part));

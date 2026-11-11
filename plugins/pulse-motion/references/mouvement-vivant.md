@@ -64,7 +64,7 @@ Ce que le moteur fait seul, pour tout personnage :
 - **atterrissage** : à la fin d'un `bondir`, il s'étire de 6 % juste avant le contact, s'écrase de 12 % (8 % au contact déclaré d'un saut joué), puis revient en un seul dépassement, en gardant son volume (6 % à la fin d'un `flotter`).
 
 Réglages :
-- `data-vie` sur le conteneur : `pleine` (par défaut), `sobre` (clignement et respiration seulement), `aucune` (immobile exprès ; `data-calme="non"` vaut `aucune`) ;
+- `data-vie` sur le conteneur : `pleine` (par défaut), `sobre` (clignement et respiration seulement), `mains` (animation limitée : corps immobile, seuls les bras bougent, clignement gardé ; posé par le style `mode-d-emploi`), `aucune` (immobile exprès ; `data-calme="non"` vaut `aucune`) ;
 - `data-ombre="non"` : sans ombre ;
 - `data-ecrase` (de 0 à 0,25 ; 0 = sans) sur le conteneur, un `bondir` ou un `flotter` ;
 - `data-attention` sur `regarder` (de 0 à 1) : 0,5, il regarde à moitié ;

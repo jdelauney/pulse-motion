@@ -10,7 +10,10 @@
  * Données : M.donnees.personnages = { bib: { poses, clips, expressions }, dessins, gabarits, gabaritsDessins, apparences }
  * (apparences : réglage bâtonnets des dessins « traits », pour data-habillage="batonnets").
  * « parler » : piste de visèmes (M.levres) tirée des mots de la voix de la scène ; sans data-dur, jusqu'à la fin.
- * Vie (spec Mouvement vivant) : data-vie (pleine, sobre, aucune ; data-calme="non" vaut aucune), graine propre à chaque
+ * Réglages de la feuille du style (variables CSS du conteneur, quand l'attribut manque) : --pm-perso-x, --pm-perso-sol,
+ * --pm-perso-taille (place selon le format), --pm-perso-vie, --pm-perso-cadence (images par seconde : rendu image par image,
+ * #013 ; le relevé du contrôle reste continu).
+ * Vie (spec Mouvement vivant) : data-vie (pleine, sobre, mains, aucune ; data-calme="non" vaut aucune), graine propre à chaque
  * personnage (scène + id, ou rang dans la scène) ; ombre au sol (<ellipse class="pm-perso-ombre">, sauf data-ombre="non")
  * centrée entre les chevilles, sur la ligne du sol, plus petite quand il s'élève ; écrasement à l'atterrissage
  * (data-ecrase, 0 à 0,25) appliqué au groupe du personnage autour du point de contact, volume gardé (sx = 1 / sy^0,6).
@@ -175,8 +178,27 @@
         var temps = elements[el.getAttribute('data-pm-cle')];
         if (temps) actions.push(lireAction(el, temps, idScene));
       });
-      var echelle = nombre(div, 'data-taille', 40) / 100 * H / P.hauteur(gabarit);
-      var sol0 = div.hasAttribute('data-sol') ? valeurSol(div.getAttribute('data-sol')) : 90;
+      // Réglages posés par la feuille du style (variables CSS du conteneur) quand l'attribut manque : place selon le format
+      // (--pm-perso-x, --pm-perso-sol, --pm-perso-taille), vie (--pm-perso-vie), cadence image par image (--pm-perso-cadence).
+      // Lues scène affichée (les requêtes de conteneur du format ne s'appliquent qu'à un élément rendu).
+      var lues = {};
+      if (racine.getComputedStyle) {
+        var affichee = sec.style.display;
+        sec.style.display = '';
+        var cs = racine.getComputedStyle(div);
+        ['--pm-perso-x', '--pm-perso-sol', '--pm-perso-taille', '--pm-perso-vie', '--pm-perso-cadence'].forEach(function (n) { lues[n] = String(cs.getPropertyValue(n) || '').trim(); });
+        sec.style.display = affichee;
+      }
+      var feuille = function (nom) { return lues[nom] || ''; };
+      var feuilleNombre = function (attr, nom, defaut) {
+        if (div.hasAttribute(attr)) return nombre(div, attr, defaut);
+        var n = feuille(nom) === '' ? NaN : Number(feuille(nom));
+        return isFinite(n) ? n : defaut;
+      };
+      var taille = feuilleNombre('data-taille', '--pm-perso-taille', 40);
+      var echelle = taille / 100 * H / P.hauteur(gabarit);
+      var sol0 = div.hasAttribute('data-sol') ? valeurSol(div.getAttribute('data-sol')) : feuilleNombre('data-sol', '--pm-perso-sol', 90);
+      var cadence = Math.max(0, Math.min(60, Number(feuille('--pm-perso-cadence')) || 0));
       // Sols courbes : chaque tracé cité (conteneur ou actions), mesuré au démarrage et à chaque changement de taille.
       var sols = {}, traces = [];
       [sol0].concat(actions.map(function (a) { return a.sol; })).forEach(function (v) {
@@ -200,13 +222,13 @@
         }
       });
       if (M.interactions) M.interactions.preparer(actions);
-      var vie = (div.getAttribute('data-vie') || 'pleine').trim();
+      var vie = (div.getAttribute('data-vie') || feuille('--pm-perso-vie') || 'pleine').trim();
       var ecrase = div.hasAttribute('data-ecrase') ? Math.max(0, Math.min(0.25, nombre(div, 'data-ecrase', 0.12))) : undefined;
-      persos.push({ mesurer: mesurer, sec: sec, miroir: !!dessin && !apparence,
+      persos.push({ mesurer: mesurer, sec: sec, miroir: !!dessin && !apparence, cadence: cadence,
         div: div, habillage: habillage, gabarit: gabarit, echelle: echelle, ombre: ombre, gEcrase: gEcrase, hauteur: P.hauteur(gabarit),
-        partition: { x0: nombre(div, 'data-x', 50), sol0: sol0, vue0: nombre(div, 'data-vue', 0), calme: div.getAttribute('data-calme') !== 'non',
-          vie: vie === 'sobre' || vie === 'aucune' ? vie : 'pleine', sel: V.sel(idScene + '/' + (div.id || rang)), scene: bornesScene(idScene),
-          ecrase: ecrase, largeur: W, hauteur: H, echelle: echelle, taille: nombre(div, 'data-taille', 40), sols: sols, actions: actions }
+        partition: { x0: feuilleNombre('data-x', '--pm-perso-x', 50), sol0: sol0, vue0: nombre(div, 'data-vue', 0), calme: div.getAttribute('data-calme') !== 'non',
+          vie: vie === 'sobre' || vie === 'aucune' || vie === 'mains' ? vie : 'pleine', sel: V.sel(idScene + '/' + (div.id || rang)), scene: bornesScene(idScene),
+          ecrase: ecrase, largeur: W, hauteur: H, echelle: echelle, taille: taille, sols: sols, actions: actions }
       });
     });
     if (!persos.length) return;
@@ -251,13 +273,16 @@
       var pose = placerBase(p, t);
       return M.interactions ? M.interactions.appliquer(p, t, pose, ctxInteractions, { sansRegard: true }) : pose;
     }
+    /** Temps du personnage arrondi à sa cadence (images par seconde, 0 : continu). */
+    function image(p, t) { return p.cadence > 0 ? Math.floor(t * p.cadence + 1e-6) / p.cadence : t; }
     function rendre(t) {
       // Objets tenus d'abord : une cible qui est un objet tenu est lue à sa place de cet instant.
       if (M.rendreObjetsTenus) M.rendreObjetsTenus(t);
       // Poses de tous les personnages avant toute écriture dans la page (les cibles sont mesurées sans relayout).
       var poses = persos.map(function (p) {
         // Le personnage vit au temps de ses conteneurs (arrêt sur image, accéléré).
-        var tp = M.tempsVuPar ? M.tempsVuPar(p.div, t) : t;
+        // Image par image (--pm-perso-cadence) : le temps arrondi à la cadence du style.
+        var tp = image(p, M.tempsVuPar ? M.tempsVuPar(p.div, t) : t);
         return { p: p, tp: tp, pose: placer(p, tp) };
       });
       poses.forEach(function (x) {
@@ -305,7 +330,7 @@
         if (memoMains.par.has(div)) return memoMains.par.get(div);
         var p = persos.filter(function (x) { return x.div === div; })[0];
         if (!p) return null;
-        var tp = tLocal || !M.tempsVuPar ? t : M.tempsVuPar(div, t);
+        var tp = image(p, tLocal || !M.tempsVuPar ? t : M.tempsVuPar(div, t));
         var pose = placerMains(p, tp);
         var r = S.calculer(pose, p.gabarit), A = r.articulations, e = r.efficace;
         function point(nom) { return [e.x + A[nom][0] * e.echelle, e.y + A[nom][1] * e.echelle]; }
