@@ -1,0 +1,16 @@
+<!-- Scène toute faite « etape » (style crayon) : le numéro s'écrit et s'entoure au crayon d'accent, puis ce qu'il faut faire. Durée conseillée : 8 s.
+     Textes : numero (≤ 2 car.), titre (≤ 30 car.), texte (≤ 64 car.). -->
+<section data-scene="etape" data-encre="style">
+  <div class="decor">
+    <span class="page"></span>
+    <span class="crayons" data-decor data-start="0" data-dur="8" data-tween="--x 0cqh→-2cqh linear"><span class="marqueur"></span><span class="marqueur"></span><span class="marqueur"></span></span>
+  </div>
+  <div class="etape">
+    <p id="numero" class="numero" data-texte="numero" data-lettres="ecrit" data-start="0.4" data-dur="0.5"></p>
+    <div class="etape-texte">
+      <h2 id="titre" class="titre-moyen" data-texte="titre" data-lettres="ecrit" data-start="#numero:fin+0.6" data-dur="1.4"></h2>
+      <p id="texte" class="texte" data-texte="texte" data-mots="monte" data-start="#titre:fin+0.2" data-dur="1"></p>
+    </div>
+  </div>
+  <i data-annoter="entoure" data-cible="#numero" data-start="#numero:fin" data-dur="0.7" data-couleur="accent-lisible" data-epaisseur="0.7"></i>
+</section>

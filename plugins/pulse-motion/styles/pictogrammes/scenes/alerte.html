@@ -1,0 +1,13 @@
+<!-- Scène toute faite « alerte » (style pictogrammes) : le panneau « attention » se pose sur un temps, puis ce qu'il ne faut pas oublier, dans un cadre d'accent. Durée conseillée : 8 s.
+     Textes : titre (≤ 30 car.), texte (≤ 64 car.). -->
+<section data-scene="alerte">
+  <div class="decor">
+    <span class="filet"></span>
+    <div class="motif" data-decor data-start="0" data-dur="8" data-tween="--d 0→16 linear"><span class="rangee"></span><span class="rangee"></span><span class="rangee"></span></div>
+  </div>
+  <div id="boite" class="cadre-alerte pm-m-pop" data-start="0.5">
+    <span class="panneau alerte-panneau pm-m-pop" data-start="1"><i class="picto picto-attention"></i></span>
+    <h2 id="titre" class="titre-moyen compte pm-m-masque" data-texte="titre" data-start="1.5"></h2>
+    <p id="texte" class="texte pm-m-monte" data-texte="texte" data-start="2.5"></p>
+  </div>
+</section>

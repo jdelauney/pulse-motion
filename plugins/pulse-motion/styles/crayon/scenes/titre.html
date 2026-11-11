@@ -1,0 +1,15 @@
+<!-- Scène toute faite « titre » (style crayon) : l'étiquette et le titre s'écrivent, un lavis passe sous le titre, puis le crayon le souligne ; le sous-titre arrive. Durée conseillée : 7 s.
+     Textes : etiquette (≤ 22 car.), titre (≤ 30 car.), sous (≤ 46 car.). Décor : data-dur = durée de la scène. -->
+<section data-scene="titre" data-encre="style">
+  <div class="decor">
+    <span class="page"></span>
+    <span class="crayons" data-decor data-start="0" data-dur="7" data-tween="--x 0cqh→-2cqh linear"><span class="marqueur"></span><span class="marqueur"></span><span class="marqueur"></span></span>
+  </div>
+  <p id="etiquette" class="etiquette" data-texte="etiquette" data-lettres="ecrit" data-start="0.4" data-dur="0.8"></p>
+  <div class="bloc-titre">
+    <span class="lavis" data-start="#titre:fin" data-dur="1"></span>
+    <h1 id="titre" class="titre" data-texte="titre" data-lettres="ecrit" data-start="#etiquette:fin+0.1" data-dur="1.8"></h1>
+  </div>
+  <i data-annoter="souligne" data-cible="#titre" data-start="#titre:fin+0.6" data-dur="0.7" data-couleur="accent-lisible" data-epaisseur="0.7"></i>
+  <p id="sous" class="texte" data-texte="sous" data-mots="monte" data-start="#titre:fin+1" data-dur="0.9"></p>
+</section>

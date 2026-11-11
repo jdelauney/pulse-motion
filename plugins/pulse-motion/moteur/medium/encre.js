@@ -1,14 +1,18 @@
 /* Pulse Motion – encre d'un style dessiné (spec Styles et réalisation, 5.13 : contrat d'encre avec le calque de S7).
  *
  * Module d'un style (5.10 point 3) : inclus par l'assemblage seulement si identite.modules du style contient « encre »
- * (tableau-blanc, tableau-noir). Le calque SVG de S7 garde ses nœuds, ses boîtes et ses étiquettes HTML ; ce module
+ * (tableau-blanc, tableau-noir, crayon, riso). Le calque SVG de S7 garde ses nœuds, ses boîtes et ses étiquettes HTML ; ce module
  * redessine l'encre des traits, à chaque image, à partir de M.dessin.traces (reçues par M.dessin.encreStyle), dans un canevas
  * posé juste après chaque calque (même conteneur, même place, il suit la caméra), où les fusions sont permises :
  *   - feutre (--pm-encre: feutre, par défaut) : encre à 0,94 en multiply (deux traits qui se croisent foncent), cœur du
  *     trait un peu plus clair (destination-out), comme un vrai feutre ;
  *   - craie (--pm-encre: craie) : le trait est peint dans une couche, puis le grain du tableau décide quels grains prennent
  *     la craie (destination-in avec un grain tiré de la graine de la scène, fixe sur le tableau) ; 2 à 5 grains de poussière
- *     au lever du trait.
+ *     au lever du trait ;
+ *   - cire (--pm-encre: cire, crayon gras, spec 5.15) : comme la craie, avec le grain du papier (plus de creux sans cire),
+ *     un trait plus large, posé en multiply (deux crayons qui se croisent se mêlent) ;
+ *   - riso (--pm-encre: riso, spec 5.15) : une couche par encre (une couleur), grain d'encre léger ; chaque couche est surimprimée en multiply, décalée de son calage (M.encre.decalage : 0,2 à 0,5 cqh tiré de la
+ *     scène et de l'encre, constant dans le plan, rattrapé par l'élément [data-riso-calage] de la scène).
  * Les sections sans data-encre reçoivent data-encre="style" (l'encre du style vaut pour toute la vidéo) ; data-encre="svg"
  * la refuse. Repli : si le canevas manque (navigateur sans canevas) ou si le dessin échoue, le canevas est effacé et
  * l'erreur remonte au calque, qui rend l'encre au SVG (opaque à 0,94, sans fusion) pour cette scène.
@@ -83,7 +87,7 @@
     document.querySelectorAll('#pm-scene > section[data-scene]').forEach(function (s) { if (s.getAttribute('data-scene') === id) sec = s; });
     if (!sec) throw new Error('section introuvable');
     var mode = getComputedStyle(sec).getPropertyValue('--pm-encre').trim();
-    sc = etat.scenes[id] = { id: id, sec: sec, mode: mode === 'craie' ? 'craie' : 'feutre', canevas: {}, grain: null, couche: null };
+    sc = etat.scenes[id] = { id: id, sec: sec, mode: GRAINS[mode] ? mode : 'feutre', canevas: {}, grain: null, couche: null };
     return sc;
   }
 
@@ -127,22 +131,26 @@
     c.ctx.clearRect(0, 0, c.el.width, c.el.height);
   }
 
-  // --- Grain du tableau (craie) -----------------------------------------------------------------------------------------
+  // --- Grain du tableau (craie), du papier (cire), de l'encre (riso) ----------------------------------------------------
 
-  /** Grain fixe du tableau, tiré de la graine de la scène : cellules de 2 px, 18 % sans craie, les autres de 0,45 à 1. */
+  // Par mode : part des cellules sans matière, opacité la plus faible des autres (de min à 1). Feutre : aucun grain.
+  var GRAINS = { feutre: null, craie: { vide: 0.18, min: 0.45 }, cire: { vide: 0.3, min: 0.5 }, riso: { vide: 0.05, min: 0.7 } };
+
+  /** Grain fixe de la surface, tiré de la graine de la scène : cellules de 2 px, une part sans matière, les autres de min à 1. */
   function grainDe(sc, w, h) {
     if (sc.grain && sc.grain.width === w && sc.grain.height === h) return sc.grain;
     var g = document.createElement('canvas');
     g.width = w; g.height = h;
     var ctx = g.getContext('2d');
     var img = ctx.createImageData(w, h);
-    var hasard = alea(hacher('craie|' + sc.id));
+    var p = GRAINS[sc.mode];
+    var hasard = alea(hacher(sc.mode + '|' + sc.id));
     var cellule = 2;
     var lignes = Math.ceil(h / cellule), colonnes = Math.ceil(w / cellule);
     for (var j = 0; j < lignes; j++) {
       for (var i = 0; i < colonnes; i++) {
         var r = hasard();
-        var a = r < 0.18 ? 0 : Math.round(255 * (0.45 + 0.55 * hasard()));
+        var a = r < p.vide ? 0 : Math.round(255 * (p.min + (1 - p.min) * hasard()));
         for (var y = j * cellule; y < Math.min(h, (j + 1) * cellule); y++) {
           for (var x = i * cellule; x < Math.min(w, (i + 1) * cellule); x++) {
             var o = (y * w + x) * 4;
@@ -230,31 +238,93 @@
     ctx.restore();
   }
 
+  // --- Riso : encres, calage --------------------------------------------------------------------------------------------
+
+  var normaliseur = null;
+  /** Couleur sous une forme unique (#rrggbb, ou rgba(…)), pour reconnaître une même encre d'un tracé à l'autre. */
+  function normaliser(couleur) {
+    if (!normaliseur) normaliseur = document.createElement('canvas').getContext('2d');
+    normaliseur.fillStyle = '#000';
+    normaliseur.fillStyle = String(couleur || '#000');
+    return normaliseur.fillStyle;
+  }
+  /** Rattrapage du calage (0 à 1) : la part écoulée (--p) du premier élément [data-riso-calage] de la scène, 0 sinon. */
+  function calage(sec) {
+    var el = sec && sec.querySelector('[data-riso-calage]');
+    var p = el ? parseFloat(el.style.getPropertyValue('--p')) : 0;
+    return isFinite(p) ? Math.max(0, Math.min(1, p)) : 0;
+  }
+  /** Décalage de calage d'une encre dans une scène, en cqh : 0,2 à 0,5 cqh dans une direction tirée de la scène et de
+   *  l'encre, le même à chaque image du plan ; réduit d'autant que le calage est rattrapé. -> [dx, dy] */
+  function decalage(sec, idScene, couleur) {
+    var hasard = alea(hacher('calage|' + idScene + '|' + normaliser(couleur)));
+    var a = hasard() * Math.PI * 2, r = (0.2 + 0.3 * hasard()) * (1 - calage(sec));
+    return [Math.round(Math.cos(a) * r * 1000) / 1000, Math.round(Math.sin(a) * r * 1000) / 1000];
+  }
+
   // --- Peintre ----------------------------------------------------------------------------------------------------------
+
+  /** Couche de travail vidée, à la taille du canevas, mise à l'échelle k. */
+  function coucheVide(sc, c, k) {
+    var couche = coucheDe(sc, c.el.width, c.el.height);
+    var cc = couche.getContext('2d');
+    cc.setTransform(1, 0, 0, 1, 0, 0);
+    cc.globalCompositeOperation = 'source-over';
+    cc.globalAlpha = 1;
+    cc.clearRect(0, 0, couche.width, couche.height);
+    cc.setTransform(k, 0, 0, k, 0, 0);
+    return cc;
+  }
+  /** Le grain de la surface décide quels grains de la couche prennent la matière. */
+  function grainer(sc, cc) {
+    cc.setTransform(1, 0, 0, 1, 0, 0);
+    cc.globalAlpha = 1;
+    cc.globalCompositeOperation = 'destination-in';
+    cc.drawImage(grainDe(sc, cc.canvas.width, cc.canvas.height), 0, 0);
+    cc.globalCompositeOperation = 'source-over';
+  }
 
   function peindreCalque(sc, c, traces, L) {
     dimensionner(sc, c, L);
     effacer(c);
     if (!traces.length) return;
     var k = c.echelle;
+    var cc;
     if (sc.mode === 'craie') {
-      var couche = coucheDe(sc, c.el.width, c.el.height);
-      var cc = couche.getContext('2d');
-      cc.setTransform(1, 0, 0, 1, 0, 0);
-      cc.globalCompositeOperation = 'source-over';
-      cc.globalAlpha = 1;
-      cc.clearRect(0, 0, couche.width, couche.height);
-      cc.setTransform(k, 0, 0, k, 0, 0);
+      cc = coucheVide(sc, c, k);
       traces.forEach(function (t) { tracer(cc, t, { opacite: 0.92, largeur: 1.05 }); });
-      // Le grain du tableau décide quels grains prennent la craie.
-      cc.setTransform(1, 0, 0, 1, 0, 0);
-      cc.globalAlpha = 1;
-      cc.globalCompositeOperation = 'destination-in';
-      cc.drawImage(grainDe(sc, couche.width, couche.height), 0, 0);
-      cc.globalCompositeOperation = 'source-over';
-      c.ctx.drawImage(couche, 0, 0);
+      grainer(sc, cc);
+      c.ctx.drawImage(cc.canvas, 0, 0);
       c.ctx.setTransform(k, 0, 0, k, 0, 0);
       traces.forEach(function (t) { if (!t.remplissage && t.part >= 0.999 && !t.transform && !t.origine) { var m = mesure(t.d); if (m.fin) poussiere(c.ctx, t, m.fin); } });
+      return;
+    }
+    if (sc.mode === 'cire') {
+      // Crayon gras : la cire ne prend que sur les bosses du papier ; deux crayons qui se croisent se mêlent.
+      cc = coucheVide(sc, c, k);
+      traces.forEach(function (t) { tracer(cc, t, { opacite: 0.95, largeur: 1.2 }); });
+      grainer(sc, cc);
+      c.ctx.globalCompositeOperation = 'multiply';
+      c.ctx.drawImage(cc.canvas, 0, 0);
+      c.ctx.globalCompositeOperation = 'source-over';
+      return;
+    }
+    if (sc.mode === 'riso') {
+      // Une couche par encre, dans l'ordre d'apparition des encres ; chacune surimprimée à son calage.
+      var encres = [], groupes = {};
+      traces.forEach(function (t) { var e = normaliser(t.couleur); if (!groupes[e]) { groupes[e] = []; encres.push(e); } groupes[e].push(t); });
+      encres.forEach(function (e) {
+        cc = coucheVide(sc, c, k);
+        groupes[e].forEach(function (t) { tracer(cc, t, { opacite: 1, largeur: 1 }); });
+        grainer(sc, cc);
+        var d = decalage(sc.sec, sc.id, e);
+        c.ctx.setTransform(1, 0, 0, 1, 0, 0);
+        c.ctx.globalAlpha = 0.9;
+        c.ctx.globalCompositeOperation = 'multiply';
+        c.ctx.drawImage(cc.canvas, d[0] * k, d[1] * k);
+      });
+      c.ctx.globalAlpha = 1;
+      c.ctx.globalCompositeOperation = 'source-over';
       return;
     }
     c.ctx.setTransform(k, 0, 0, k, 0, 0);
@@ -281,6 +351,6 @@
     }
   }
 
-  M.encre = { peindre: peindre, OPACITE: OPACITE };
+  M.encre = { peindre: peindre, OPACITE: OPACITE, decalage: decalage, normaliser: normaliser };
   M.dessin.encreStyle(peindre);
 })(typeof globalThis !== 'undefined' ? globalThis : this);

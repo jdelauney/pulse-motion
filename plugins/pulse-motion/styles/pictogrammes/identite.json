@@ -1,0 +1,110 @@
+{
+  "style": "pictogrammes",
+  "famille": "moderne",
+  "personnalite": [
+    "clair",
+    "rythmé",
+    "universel"
+  ],
+  "eviter": [
+    "dessins détaillés ou réalistes",
+    "mouvements hors des temps"
+  ],
+  "genres": [
+    "formation",
+    "produit",
+    "social"
+  ],
+  "couleur": {
+    "strategie": "sobre-avec-une-touche",
+    "tons": [
+      "clair"
+    ],
+    "tonDefaut": "clair",
+    "clair": {
+      "fond": "#f3f1ea",
+      "texte": "#1b1d21"
+    },
+    "roles": {
+      "primaire": "les panneaux et la première rangée de la grille",
+      "accent": "le panneau qui alerte ou qui compte, la deuxième rangée"
+    }
+  },
+  "typographie": {
+    "titres": {
+      "famille": "Barlow Condensed",
+      "categorie": "sans-serif",
+      "graisse": 800
+    },
+    "texte": {
+      "famille": "Barlow",
+      "categorie": "sans-serif",
+      "graisse": 500
+    }
+  },
+  "mouvement": {
+    "caractere": "net",
+    "courbes": [
+      "cubic-out",
+      "back-out"
+    ],
+    "dureeType": 0.25,
+    "transitions": [
+      "coupe",
+      "volets"
+    ]
+  },
+  "signature": "Une signalétique qui s'anime sur les temps : des pictogrammes géométriques posés un par temps, une grille-motif de ronds, de demi-disques et de cellules dont les rangées glissent d'une cellule par temps, une typographie de panneau",
+  "aFaire": [
+    "Poser chaque chose sur un temps",
+    "Un pictogramme par idée, jamais une illustration"
+  ],
+  "aEviter": [
+    "Des pictogrammes détaillés ou en couleurs multiples",
+    "Un mouvement qui tombe entre deux temps"
+  ],
+  "categorie": "schemas-donnees",
+  "nonPas": "Pas une infographie isométrique : tout est plat, de face. Pas des icônes d'interface : des panneaux, une grille et des temps.",
+  "usages": [
+    "Donner une consigne ou un mode d'emploi",
+    "Présenter un service public ou interne",
+    "Montrer une quantité en silhouettes"
+  ],
+  "motsCles": [
+    "pictogrammes",
+    "pictogramme",
+    "picto",
+    "signalétique",
+    "panneau",
+    "isotype",
+    "icônes",
+    "consigne",
+    "sur les temps"
+  ],
+  "son": {
+    "ambiances": [
+      "entrainant",
+      "corporate"
+    ],
+    "bruitages": {
+      "titre": "clic",
+      "texte": null,
+      "point": "tic",
+      "chiffre": "tic",
+      "trace": null,
+      "forme": "pop",
+      "image": null,
+      "ecriture": null,
+      "transition": null
+    },
+    "matiere": null,
+    "fort": "ding"
+  },
+  "provenance": [
+    {
+      "depot": "lemo-opuscar",
+      "style": "pictogram-motion",
+      "licence": "MIT"
+    }
+  ]
+}

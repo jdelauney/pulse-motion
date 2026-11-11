@@ -1,0 +1,187 @@
+/* Pulse Motion – style « papier-decoupe ».
+ *
+ * Des couches de papier découpé, aux bords un peu irréguliers (coins inégaux, découpe légèrement de travers), séparées par de
+ * vraies ombres portées : la profondeur vient des ombres (box-shadow à deux étages, jamais de filtre). Les textes sont posés
+ * sur des feuilles blanches (.feuille) ; les papiers de couleur font le décor (.colline, .rond) et se décalent à des vitesses
+ * différentes (strates). Gestes : la feuille qui se soulève (son ombre s'allonge, --p), le volet qui se lève et révèle la
+ * couche du dessous, le décor en strates, le pli. Grain du papier : tuile fibres.png (outils/styles/textures.js, graine fixe).
+ * Idées de take-one (paper-cutout, MIT) et de lemo-opuscar (papercut-red, MIT, © 2026 LemoLab : couches, ombres entre
+ * couches, découpe), réécrites en CSS. Ton clair seulement. Formats 16:9, 1:1, 4:5 et 9:16 par requêtes de conteneur.
+ * Effets exclus : filter: url(), mix-blend-mode, backdrop-filter.
+ */
+
+/* ---------- Mise en page : le plan de travail ---------- */
+#pm-scene > section[data-scene] {
+  --papier: color-mix(in srgb, var(--c-fond) 18%, #fffdf8);
+  --ombre-pres: 52, 36, 20;
+  --ombre: 0 0.25cqh 0.35cqh rgba(var(--ombre-pres), 0.24), 0 0.9cqh 1.8cqh rgba(var(--ombre-pres), 0.16);
+  --pm-trait: net; --pm-st-police: var(--f-texte); --pm-st-fond: var(--papier); --pm-st-texte: var(--c-texte);
+  display: flex; flex-direction: column; justify-content: center; gap: 3.4cqh;
+  padding: 10cqh 13cqh 13cqh; overflow: hidden;
+  background:
+    url("fibres.png") 0 0 / 12cqh 12cqh repeat,
+    linear-gradient(170deg, color-mix(in srgb, var(--c-fond) 92%, #fff) 0%, var(--c-fond) 60%, color-mix(in srgb, var(--c-fond) 90%, #7a5a36) 100%);
+  color: var(--c-texte);
+  font: 400 3.8cqh/1.45 var(--f-texte);
+}
+
+/* ---------- Typographie : des lettres franches, découpées ---------- */
+.titre { margin: 0; font: 800 9.4cqh/1.06 var(--f-titres); letter-spacing: -0.01em; text-wrap: balance; overflow-wrap: break-word; }
+.titre-moyen { margin: 0; font: 800 6.2cqh/1.1 var(--f-titres); text-wrap: balance; overflow-wrap: break-word; }
+.texte { margin: 0; font: 400 3.9cqh/1.45 var(--f-texte); text-wrap: pretty; }
+.etiquette { margin: 0; align-self: flex-start; color: var(--c-primaire-lisible); font: 700 3.6cqh/1.2 var(--f-texte); letter-spacing: 0.06em; text-transform: uppercase; }
+.nombre { margin: 0; font: 800 20cqh/1 var(--f-titres); font-variant-numeric: tabular-nums lining-nums; }
+.unite { font-size: 0.4em; margin-left: 0.15em; }
+.compte { color: var(--c-accent-lisible); }
+
+/* ---------- La feuille : un papier blanc découpé, posé, avec son ombre ---------- */
+.feuille {
+  position: relative; box-sizing: border-box; background: var(--papier); box-shadow: var(--ombre), var(--dessous, 0 0 #0000);
+  border-radius: 0.6cqh 1.2cqh 0.5cqh 1cqh / 1cqh 0.5cqh 1.1cqh 0.6cqh; rotate: -0.6deg;
+}
+.feuille:nth-of-type(even) { rotate: 0.5deg; }
+/* Une feuille de couleur glissée dessous, décalée, avec sa propre ombre (la bande du titre, le chiffre). */
+.bandeau, .mesure { --dessous: 1.3cqh 1.3cqh 0 0 color-mix(in srgb, var(--c-accent) 55%, var(--c-fond)), 1.3cqh 1.9cqh 1.4cqh 0 rgba(52, 36, 20, 0.2); }
+/* Elle se soulève (--p de 0 à 1) : elle monte un peu, son ombre s'allonge et s'adoucit. */
+.souleve {
+  translate: 0 calc(var(--p, 0) * -0.8cqh);
+  box-shadow: 0 calc(0.25cqh + var(--p, 0) * 0.7cqh) calc(0.35cqh + var(--p, 0) * 0.9cqh) rgba(var(--ombre-pres), 0.24),
+    0 calc(0.9cqh + var(--p, 0) * 2.2cqh) calc(1.8cqh + var(--p, 0) * 2.8cqh) rgba(var(--ombre-pres), calc(0.16 - var(--p, 0) * 0.04)),
+    var(--dessous, 0 0 #0000);
+}
+/* Le pli : un coin rabattu, sa face claire et son ombre. */
+.pli::after {
+  content: ""; position: absolute; right: 0; top: 0; width: 5cqh; height: 5cqh; border-radius: 0 1.2cqh 0 0;
+  background: linear-gradient(225deg, var(--c-fond) 0 50%, color-mix(in srgb, var(--papier) 80%, #b9a27f) 50% 62%, var(--papier) 100%);
+  box-shadow: -0.3cqh 0.3cqh 0.5cqh rgba(var(--ombre-pres), 0.2);
+}
+/* Le volet : un papier de couleur posé sur la couche du dessous, qui se lève et s'en va (--p) pour la révéler. */
+.volet {
+  position: absolute; inset: -0.6cqh; z-index: 2; border-radius: inherit;
+  background: color-mix(in srgb, var(--c-primaire) 78%, var(--papier)); box-shadow: var(--ombre);
+  translate: 0 calc(var(--p, 0) * -120%); rotate: calc(var(--p, 0) * -6deg); opacity: calc(1.6 - var(--p, 0) * 1.6);
+}
+
+/* ---------- Décor : papiers de couleur en strates, un rond ---------- */
+.decor { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.decor ~ * { position: relative; z-index: 1; }
+.colline {
+  position: absolute; left: -20%; width: 140%; height: 30cqh; bottom: -22cqh;
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0; box-shadow: 0 -0.5cqh 1.2cqh rgba(52, 36, 20, 0.18);
+  background: color-mix(in srgb, var(--c-primaire) 55%, var(--c-fond)); translate: var(--x, 0px) 0;
+}
+.colline.loin { bottom: -18cqh; left: -40%; background: color-mix(in srgb, var(--c-primaire) 30%, var(--c-fond)); }
+.colline.pres { bottom: -25cqh; left: -10%; width: 120%; background: color-mix(in srgb, var(--c-accent) 50%, var(--c-fond)); }
+.rond { position: absolute; right: 9cqh; top: 7cqh; width: 15cqh; height: 15cqh; border-radius: 50% 48% 52% 49%; box-shadow: 0 0.4cqh 0.8cqh rgba(52, 36, 20, 0.2);
+  background: color-mix(in srgb, var(--c-accent) 72%, var(--c-fond)); translate: 0 var(--y, 0px); }
+
+/* ---------- Titre : sur sa bande de papier ---------- */
+.bandeau { display: flex; flex-direction: column; gap: 1.6cqh; padding: 4cqh 5cqh; align-self: flex-start; max-width: 100%; }
+
+/* ---------- Liste : une pastille de papier devant chaque point ---------- */
+.points { list-style: none; margin: 0; padding: 0; display: grid; gap: 2.2cqh; }
+.points.feuille { padding: 3.4cqh 4.4cqh; align-self: flex-start; max-width: 100%; }
+.points li { position: relative; padding-left: 5.4cqh; font: 400 4.1cqh/1.3 var(--f-texte); }
+.points li::before { content: ""; position: absolute; left: 0; top: calc(0.65em - 1.1cqh); width: 2.2cqh; height: 2.2cqh; border-radius: 50% 46% 52% 48%;
+  background: color-mix(in srgb, var(--c-accent-lisible) 88%, #fff); box-shadow: 0 0.25cqh 0.4cqh rgba(52, 36, 20, 0.28); }
+
+/* ---------- Chiffre : sur un rond de papier ---------- */
+.mesure { display: flex; flex-direction: column; gap: 1.2cqh; align-items: flex-start; align-self: flex-start; padding: 3cqh 5cqh; }
+
+/* ---------- Comparaison : deux feuilles ---------- */
+.feuilles { display: grid; grid-template-columns: 1fr 1fr; gap: 7cqh; }
+.vignette { display: flex; flex-direction: column; gap: 1.6cqh; padding: 3.4cqh; min-width: 0; }
+.vignette-titre { margin: 0; font: 800 5cqh/1.1 var(--f-titres); }
+
+/* ---------- Étape ---------- */
+.etape { display: grid; grid-template-columns: auto 1fr; gap: 6cqh; align-items: center; }
+.numero { display: block; text-align: center; width: 18cqh; height: 18cqh; line-height: 18cqh; margin: 0; border-radius: 50% 48% 51% 49%; font: 800 11cqh/18cqh var(--f-titres); color: var(--c-accent-lisible); }
+.etape-texte { display: flex; flex-direction: column; gap: 2cqh; min-width: 0; padding: 3cqh 4cqh; }
+
+/* ---------- Alerte ---------- */
+.cadre-alerte { display: flex; flex-direction: column; gap: 2cqh; padding: 4.4cqh 6cqh 4.4cqh 5cqh; }
+.cadre-alerte::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 1.6cqh; border-radius: 0.6cqh 0 0 1cqh; background: color-mix(in srgb, var(--c-accent) 80%, var(--papier)); }
+
+/* ---------- Schéma : trois feuilles reliées ---------- */
+.chaine { display: flex; align-items: center; gap: 2cqh; }
+.chaine > .idee { flex: 1; text-align: center; padding: 3cqh 1.6cqh; font: 800 4.4cqh/1.2 var(--f-titres); }
+.connecteur { flex: none; width: 9cqh; height: 2cqh; }
+
+/* ---------- Logo ---------- */
+.logo { height: 11cqh; width: auto; object-fit: contain; align-self: flex-start; }
+
+/* ---------- Format carré ---------- */
+@container (max-aspect-ratio: 5/4) {
+  #pm-scene > section[data-scene] { padding: 9cqh 8cqh 11cqh; gap: 2.8cqh; font-size: 3.6cqh; }
+  .titre { font-size: 7cqh; }
+  .titre-moyen { font-size: 5cqh; }
+  .texte { font-size: 3.6cqh; }
+  .etiquette { font-size: 3.5cqh; }
+  .nombre { font-size: 15cqh; }
+  .points li { font-size: 3.8cqh; }
+  .bandeau { padding: 3.4cqh 4cqh; }
+  .feuilles { gap: 3.4cqh; }
+  .vignette { padding: 2.6cqh; }
+  .vignette-titre { font-size: 4.2cqh; }
+  .numero { width: 14cqh; height: 14cqh; line-height: 14cqh; font-size: 8.6cqh; }
+  .etape { gap: 3.4cqh; }
+  .chaine > .idee { font-size: 3.6cqh; padding: 2.4cqh 1cqh; }
+  .connecteur { width: 4cqh; }
+  .rond { width: 11cqh; height: 11cqh; right: 5cqh; top: 4cqh; }
+}
+
+/* ---------- Format vertical : tout s'empile ---------- */
+@container (orientation: portrait) {
+  #pm-scene > section[data-scene] { padding: 8cqh 7cqh 10cqh; gap: 1.6cqh; font-size: 3.5cqh; }
+  .titre { font-size: 5.2cqh; }
+  .titre-moyen { font-size: 4cqh; }
+  .texte { font-size: 3.5cqh; }
+  .etiquette { font-size: 3.5cqh; }
+  .nombre { font-size: 10.5cqh; }
+  .points { gap: 0.8cqh; }
+  .points li { padding-left: 3.6cqh; font-size: 3.5cqh; line-height: 1.22; }
+  .points li::before { width: 1.8cqh; height: 1.8cqh; top: calc(0.61em - 0.9cqh); }
+  .bandeau { padding: 2.6cqh 3cqh; gap: 1cqh; }
+  .mesure { padding: 2cqh 3cqh; }
+  .feuilles { grid-template-columns: 1fr; gap: 2cqh; }
+  .vignette { padding: 2cqh 2.4cqh; gap: 1cqh; }
+  .vignette-titre { font-size: 3.8cqh; }
+  .etape { grid-template-columns: 1fr; gap: 2cqh; }
+  .numero { width: 10cqh; height: 10cqh; line-height: 10cqh; font-size: 6.4cqh; }
+  .etape-texte { padding: 2cqh 2.4cqh; }
+  .cadre-alerte { padding: 3cqh 4cqh 3cqh 3.6cqh; }
+  .chaine { flex-direction: column; align-items: stretch; gap: 1cqh; }
+  .chaine > .idee { font-size: 3.5cqh; padding: 1.8cqh; }
+  .connecteur { align-self: center; width: 2cqh; height: 4cqh; }
+  .logo { height: 8cqh; }
+  .colline { height: 20cqh; bottom: -15cqh; }
+  .colline.loin { bottom: -12cqh; }
+  .colline.pres { bottom: -17cqh; }
+  .rond { width: 8cqh; height: 8cqh; right: 4cqh; top: 3cqh; }
+  .pli::after { width: 3.6cqh; height: 3.6cqh; }
+}
+
+/* ---------- 9:16 : place pour la légende des réseaux sociaux (pas en 4:5) ---------- */
+@container (max-aspect-ratio: 2/3) {
+  #pm-scene > section[data-scene] { padding-bottom: 15cqh; }
+  .moyeu { margin-right: 5cqh; }
+}
+
+/* ---------- Moyeu et rayons (spec S7, 5.7) : couronne en paysage, rangée sous le centre en portrait ---------- */
+.moyeu { --n: 3; position: relative; flex: 1; min-height: 46cqh; }
+.moyeu:has(> .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie) { --n: 4; }
+.moyeu:has(> .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie) { --n: 5; }
+.moyeu > .moyeu-centre, .moyeu > .moyeu-partie { position: absolute; left: 50%; top: 50%; box-sizing: border-box; flex: none; margin: 0; text-align: center; }
+.moyeu > .moyeu-centre { width: 38cqh; padding: 2.6cqh; translate: -50% -50%; font: 800 5cqh/1.15 var(--f-titres); color: var(--c-accent-lisible); }
+.moyeu > .moyeu-partie { --a: calc(-90deg + 180deg / var(--n) + var(--i, 0) * 360deg / var(--n)); width: 32cqh; font: 400 3.8cqh/1.25 var(--f-texte); overflow-wrap: anywhere;
+  translate: calc(-50% + cos(var(--a)) * 58cqh) calc(-50% + sin(var(--a)) * 27cqh); }
+@container (max-aspect-ratio: 5/4) {
+  .moyeu > .moyeu-centre { width: 26cqh; font-size: 4cqh; }
+  .moyeu > .moyeu-partie { width: 27cqh; font-size: 3.5cqh; translate: calc(-50% + cos(var(--a)) * 31cqh) calc(-50% + sin(var(--a)) * 26cqh); }
+}
+@container (max-aspect-ratio: 9/10) {
+  .moyeu { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); align-content: center; align-items: center; row-gap: 12cqh; column-gap: 0.8cqh; min-height: 0; }
+  .moyeu > .moyeu-centre, .moyeu > .moyeu-partie { position: relative; left: auto; top: auto; translate: none; width: auto; }
+  .moyeu > .moyeu-centre { grid-column: 1 / -1; justify-self: center; width: 85%; }
+  .moyeu > .moyeu-partie { grid-row: 2; font-size: calc(3.4cqh - var(--n) * 0.24cqh); padding: 1.4cqh 0.2cqh; overflow-wrap: anywhere; }
+}

@@ -1,0 +1,5 @@
+/* Pulse Motion – feuille du module riso (moteur/medium/riso.js), embarquée avec lui seulement.
+ * Le canevas des aplats couvre le décor ; une fois peints, les éléments [data-riso] ne servent plus que de géométrie.
+ * Repli (canevas absent ou en échec) : section sans data-riso-peint, les aplats HTML restent visibles. */
+canvas.pm-riso { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
+section[data-riso-peint] [data-riso] { visibility: hidden; }

@@ -1,0 +1,210 @@
+/* Pulse Motion – style « pictogrammes ».
+ *
+ * Un film calé sur les temps, fait de trois choses seulement : une grille-motif de ronds, de demi-disques et de petites cellules
+ * dont les rangées glissent d'une cellule par temps (.motif, .rangee) ; des pictogrammes géométriques dessinés pour Pulse
+ * Motion (pictos/*.svg : objets, véhicules, météo, panneaux, posés par .picto et .picto-<nom>, à la couleur du texte) ; une
+ * typographie de signalétique (Barlow). Temps : 0,5 s (120 battements par minute) dans les scènes toutes faites ; une vidéo
+ * calée sur sa musique écrit ses débuts en temps (« 2t »).
+ * Pictogrammes et motif : masques SVG embarqués (mask), colorés par la charte ; aucune icône tierce.
+ * Idées de lemo-opuscar (pictogram-motion, MIT, © 2026 LemoLab : grille-motif, rangées qui glissent, film catalogue,
+ * pictogrammes calés sur le temps), réécrites en CSS. Ton clair seulement. Formats 16:9, 1:1, 4:5 et 9:16 par requêtes de
+ * conteneur. Effets exclus : filter: url(), mix-blend-mode, backdrop-filter.
+ */
+
+/* ---------- Mise en page : le panneau ---------- */
+#pm-scene > section[data-scene] {
+  --cellule: 4cqh; --temps: 0.5s;
+  --pm-trait: net; --pm-st-police: var(--f-texte); --pm-st-fond: var(--c-texte); --pm-st-texte: var(--c-fond);
+  display: flex; flex-direction: column; justify-content: center; gap: 3cqh;
+  padding: 10cqh 13cqh 16cqh; overflow: hidden;
+  background: var(--c-fond);
+  color: var(--c-texte);
+  font: 500 3.9cqh/1.35 var(--f-texte);
+}
+
+/* ---------- Typographie de signalétique ---------- */
+.titre { margin: 0; font: 800 10cqh/1 var(--f-titres); text-transform: uppercase; letter-spacing: 0.005em; text-wrap: balance; overflow-wrap: break-word; }
+.titre-moyen { margin: 0; font: 800 6.6cqh/1.02 var(--f-titres); text-transform: uppercase; text-wrap: balance; overflow-wrap: break-word; }
+.texte { margin: 0; font: 500 3.9cqh/1.35 var(--f-texte); text-wrap: pretty; }
+.etiquette { margin: 0; align-self: flex-start; padding: 0.6cqh 1.6cqh; background: var(--c-texte); color: var(--c-fond); font: 700 3.5cqh/1.2 var(--f-texte); letter-spacing: 0.1em; text-transform: uppercase; }
+.nombre { margin: 0; font: 800 22cqh/0.9 var(--f-titres); font-variant-numeric: tabular-nums lining-nums; }
+.unite { font-size: 0.4em; margin-left: 0.12em; }
+.compte { color: var(--c-accent-lisible); }
+
+/* ---------- Pictogrammes : un masque à la couleur du texte ---------- */
+.picto { display: inline-block; flex: none; width: 1em; height: 1em; background: currentColor; mask: var(--picto) center / contain no-repeat; vertical-align: -0.15em; }
+.picto-personne { --picto: url("pictos/personne.svg"); }
+.picto-camion { --picto: url("pictos/camion.svg"); }
+.picto-maison { --picto: url("pictos/maison.svg"); }
+.picto-horloge { --picto: url("pictos/horloge.svg"); }
+.picto-soleil { --picto: url("pictos/soleil.svg"); }
+.picto-nuage { --picto: url("pictos/nuage.svg"); }
+.picto-goutte { --picto: url("pictos/goutte.svg"); }
+.picto-flocon { --picto: url("pictos/flocon.svg"); }
+.picto-attention { --picto: url("pictos/attention.svg"); }
+.picto-interdit { --picto: url("pictos/interdit.svg"); }
+.picto-info { --picto: url("pictos/info.svg"); }
+.picto-fleche { --picto: url("pictos/fleche.svg"); }
+.picto-coche { --picto: url("pictos/coche.svg"); }
+.picto-croix { --picto: url("pictos/croix.svg"); }
+.picto-thermometre { --picto: url("pictos/thermometre.svg"); }
+.picto-colis { --picto: url("pictos/colis.svg"); }
+/* Panneau : le pictogramme clair sur un carré arrondi de la couleur primaire (ou d'accent). */
+.panneau { display: grid; place-items: center; flex: none; width: 14cqh; height: 14cqh; border-radius: 2.2cqh; background: var(--c-primaire-lisible); color: var(--c-sur-primaire); font-size: 10cqh; }
+.panneau.alerte-panneau { background: var(--c-accent-lisible); color: var(--c-sur-accent); }
+/* Le film catalogue : une rangée de panneaux, un par temps. */
+.catalogue { display: flex; gap: 2cqh; }
+.catalogue > .panneau { width: 11cqh; height: 11cqh; font-size: 7.6cqh; animation: pg-pose 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; animation-delay: calc(var(--i, 0) * var(--temps)); }
+@keyframes pg-pose { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: none; } }
+/* Le compte en pictogrammes : une silhouette par temps court. */
+.compte-pictos { display: flex; flex-wrap: wrap; gap: 0.6cqh; font-size: 6cqh; color: var(--c-primaire-lisible); }
+.compte-pictos > .picto { animation: pg-pose 0.2s ease-out both; animation-delay: calc(var(--i, 0) * 0.12s); }
+.compte-pictos > .picto:nth-child(n + 8) { color: var(--c-accent-lisible); }
+/* Un pictogramme qui devient un autre (#031) : le premier se replie, le second se déplie sur le temps suivant. */
+.devient { position: relative; display: grid; }
+.devient > * { grid-area: 1 / 1; }
+.devient > :first-child { animation: pg-replie 0.25s ease-in both; animation-delay: var(--temps); }
+.devient > :last-child { animation: pg-pose 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; animation-delay: calc(var(--temps) + 0.25s); }
+@keyframes pg-replie { from { opacity: 1; transform: none; } to { opacity: 0; transform: scale(0.3) rotate(-30deg); } }
+
+/* ---------- La grille-motif : trois rangées qui glissent d'une cellule par temps ---------- */
+.decor { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.decor ~ * { position: relative; z-index: 1; }
+/* --d : temps écoulés (data-tween="--d 0→<deux fois la durée du décor> linear" sur .motif). Dans chaque temps, la rangée glisse
+   d'une cellule pendant les 40 premiers % (--g), puis tient ; le motif se répète toutes les quatre cellules (--k), et la rangée
+   s'arrête avec le décor (image stable de la dernière scène). */
+.motif { --d: 0; position: absolute; left: 0; right: 0; bottom: 0; height: calc(3 * var(--cellule)); overflow: hidden; }
+.rangee { --k: mod(round(down, var(--d), 1), 4); --g: min(1, mod(var(--d), 1) / 0.4);
+  position: absolute; left: calc(-4 * var(--cellule)); right: calc(-4 * var(--cellule)); height: var(--cellule);
+  background: var(--c-primaire-lisible); mask: url("pictos/motif.svg") 0 0 / calc(4 * var(--cellule)) var(--cellule) repeat-x;
+  translate: calc(-1 * (var(--k) + var(--g)) * var(--cellule)) 0; }
+.rangee:nth-child(1) { top: 0; }
+.rangee:nth-child(2) { top: var(--cellule); background: var(--c-accent-lisible); mask-position: calc(2 * var(--cellule)) 0;
+  translate: calc((var(--k) + var(--g) - 4) * var(--cellule)) 0; }
+.rangee:nth-child(3) { top: calc(2 * var(--cellule)); background: var(--c-texte); mask-position: var(--cellule) 0; }
+/* Bande verticale du panneau, à gauche. */
+.filet { position: absolute; left: 0; top: 0; bottom: calc(3 * var(--cellule)); width: 2cqh; background: var(--c-texte); }
+
+/* ---------- Titre ---------- */
+.entete { display: flex; flex-direction: column; gap: 2.4cqh; }
+
+/* ---------- Liste : des puces de la grille ---------- */
+.points { list-style: none; margin: 0; padding: 0; display: grid; gap: 2cqh; }
+.points li { position: relative; padding-left: 5.4cqh; font: 500 4.1cqh/1.25 var(--f-texte); }
+.points li::before { content: ""; position: absolute; left: 0; top: calc(0.62em - 1.1cqh); width: 2.6cqh; height: 2.2cqh; background: var(--c-primaire-lisible); border-radius: 50%; }
+.points li:nth-child(2)::before { border-radius: 1.3cqh 1.3cqh 0 0 / 2.2cqh 2.2cqh 0 0; background: var(--c-accent-lisible); }
+.points li:nth-child(3)::before { width: 1.6cqh; height: 1.6cqh; margin: 0.3cqh 0.5cqh; border-radius: 0; background: var(--c-texte); }
+.points li:nth-child(4)::before { background: var(--c-primaire-lisible); }
+
+/* ---------- Chiffre ---------- */
+.mesure { display: flex; flex-direction: column; gap: 2cqh; align-items: flex-start; align-self: flex-start; }
+
+/* ---------- Comparaison : deux panneaux de signalisation ---------- */
+.signaux { display: grid; grid-template-columns: 1fr 1fr; gap: 7cqh; }
+.signal { display: grid; grid-template-columns: auto 1fr; column-gap: 3cqh; row-gap: 1.2cqh; align-items: start; min-width: 0; }
+.signal > .panneau { grid-row: span 2; width: 11cqh; height: 11cqh; font-size: 7.6cqh; }
+.signal-titre { margin: 0; font: 800 5cqh/1 var(--f-titres); text-transform: uppercase; }
+.panneau.neutre { background: var(--c-texte); color: var(--c-fond); }
+
+/* ---------- Étape : le numéro sur un disque, une flèche ---------- */
+.etape { display: grid; grid-template-columns: auto 1fr; gap: 6cqh; align-items: center; }
+.numero { display: block; text-align: center; width: 18cqh; height: 18cqh; margin: 0; border-radius: 50%; background: var(--c-primaire-lisible); color: var(--c-sur-primaire); font: 800 11cqh/18cqh var(--f-titres); }
+.etape-texte { display: flex; flex-direction: column; gap: 2cqh; min-width: 0; }
+
+/* ---------- Alerte ---------- */
+.cadre-alerte { display: grid; grid-template-columns: auto 1fr; column-gap: 4cqh; row-gap: 1.6cqh; align-items: start; padding: 4cqh 5cqh; border: 0.8cqh solid var(--c-accent-lisible); border-radius: 2.2cqh; }
+.cadre-alerte > .panneau { grid-row: span 2; }
+
+/* ---------- Schéma ---------- */
+.chaine { display: flex; align-items: center; gap: 2cqh; }
+.chaine > .idee { flex: 1; text-align: center; padding: 3cqh 1.6cqh; border: 0.5cqh solid var(--c-texte); border-radius: 1.6cqh; font: 800 4.2cqh/1.1 var(--f-titres); text-transform: uppercase; }
+.chaine > .idee.compte { border-color: var(--c-accent-lisible); }
+.connecteur { flex: none; width: 9cqh; height: 2cqh; }
+
+/* ---------- Conclusion ---------- */
+.final { display: flex; align-items: center; gap: 4cqh; }
+.final > .devient > .panneau { width: 12cqh; height: 12cqh; font-size: 8.4cqh; }
+
+/* ---------- Logo ---------- */
+.logo { height: 11cqh; width: auto; object-fit: contain; align-self: flex-start; }
+
+/* ---------- Format carré ---------- */
+@container (max-aspect-ratio: 5/4) {
+  #pm-scene > section[data-scene] { --cellule: 3.6cqh; padding: 9cqh 8cqh 14cqh; gap: 2.6cqh; font-size: 3.6cqh; }
+  .titre { font-size: 7.4cqh; }
+  .titre-moyen { font-size: 5.2cqh; }
+  .texte { font-size: 3.6cqh; }
+  .etiquette { font-size: 3.5cqh; }
+  .nombre { font-size: 16cqh; }
+  .points li { font-size: 3.8cqh; }
+  .catalogue > .panneau { width: 9cqh; height: 9cqh; font-size: 6.2cqh; }
+  .compte-pictos { font-size: 5cqh; }
+  .signaux { gap: 3.4cqh; }
+  .signal { grid-template-columns: 1fr; }
+  .signal > .panneau { grid-row: auto; width: 9cqh; height: 9cqh; font-size: 6.2cqh; }
+  .signal-titre { font-size: 4.2cqh; }
+  .numero { width: 14cqh; height: 14cqh; line-height: 14cqh; font-size: 8.6cqh; }
+  .etape { gap: 4cqh; }
+  .panneau { width: 11cqh; height: 11cqh; font-size: 7.6cqh; }
+  .chaine > .idee { font-size: 3.5cqh; padding: 2.4cqh 1cqh; }
+  .connecteur { width: 4cqh; }
+}
+
+/* ---------- Format vertical : tout s'empile ---------- */
+@container (orientation: portrait) {
+  #pm-scene > section[data-scene] { --cellule: 2.6cqh; padding: 8cqh 7cqh 11cqh; gap: 1.6cqh; font-size: 3.5cqh; }
+  .titre { font-size: 5.4cqh; }
+  .titre-moyen { font-size: 4.1cqh; }
+  .texte { font-size: 3.5cqh; }
+  .etiquette { font-size: 3.5cqh; }
+  .nombre { font-size: 11cqh; }
+  .points { gap: 0.8cqh; }
+  .points li { padding-left: 3.6cqh; font-size: 3.5cqh; line-height: 1.2; }
+  .points li::before { width: 1.9cqh; height: 1.6cqh; top: calc(0.6em - 0.8cqh); }
+  .points li:nth-child(2)::before { border-radius: 1cqh 1cqh 0 0 / 1.6cqh 1.6cqh 0 0; }
+  .points li:nth-child(3)::before { width: 1.2cqh; height: 1.2cqh; margin: 0.2cqh 0.35cqh; }
+  .catalogue { gap: 1.2cqh; }
+  .catalogue > .panneau { width: 7cqh; height: 7cqh; font-size: 4.8cqh; border-radius: 1.4cqh; }
+  .compte-pictos { font-size: 3.8cqh; gap: 0.4cqh; }
+  .signaux { grid-template-columns: 1fr; gap: 2cqh; }
+  .signal { grid-template-columns: auto 1fr; column-gap: 2cqh; }
+  .signal > .panneau { grid-row: span 2; width: 7cqh; height: 7cqh; font-size: 4.8cqh; border-radius: 1.4cqh; }
+  .signal-titre { font-size: 3.7cqh; }
+  .etape { grid-template-columns: 1fr; gap: 2cqh; }
+  .numero { width: 10cqh; height: 10cqh; line-height: 10cqh; font-size: 6.4cqh; }
+  .panneau { width: 8cqh; height: 8cqh; font-size: 5.6cqh; border-radius: 1.4cqh; }
+  .cadre-alerte { grid-template-columns: 1fr; padding: 3cqh 3.4cqh; border-width: 0.5cqh; }
+  .cadre-alerte > .panneau { grid-row: auto; }
+  .chaine { flex-direction: column; align-items: stretch; gap: 1cqh; }
+  .chaine > .idee { font-size: 3.5cqh; padding: 1.8cqh; }
+  .connecteur { align-self: center; width: 2cqh; height: 4cqh; }
+  .final { gap: 2.4cqh; }
+  .final > .devient > .panneau { width: 8cqh; height: 8cqh; font-size: 5.6cqh; }
+  .logo { height: 8cqh; }
+  .filet { width: 1.2cqh; }
+}
+
+/* ---------- 9:16 : place pour la légende des réseaux sociaux (pas en 4:5) ---------- */
+@container (max-aspect-ratio: 2/3) {
+  #pm-scene > section[data-scene] { padding-bottom: 15cqh; }
+  .moyeu { margin-right: 5cqh; }
+}
+
+/* ---------- Moyeu et rayons (spec S7, 5.7) : couronne en paysage, rangée sous le centre en portrait ---------- */
+.moyeu { --n: 3; position: relative; flex: 1; min-height: 46cqh; }
+.moyeu:has(> .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie) { --n: 4; }
+.moyeu:has(> .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie) { --n: 5; }
+.moyeu > .moyeu-centre, .moyeu > .moyeu-partie { position: absolute; left: 50%; top: 50%; box-sizing: border-box; flex: none; margin: 0; text-align: center; }
+.moyeu > .moyeu-centre { width: 38cqh; padding: 2.4cqh; translate: -50% -50%; border-radius: 2.2cqh; background: var(--c-primaire-lisible); color: var(--c-sur-primaire); font: 800 4.8cqh/1.05 var(--f-titres); text-transform: uppercase; }
+.moyeu > .moyeu-partie { --a: calc(-90deg + 180deg / var(--n) + var(--i, 0) * 360deg / var(--n)); width: 32cqh; font: 500 3.8cqh/1.2 var(--f-texte); overflow-wrap: anywhere;
+  translate: calc(-50% + cos(var(--a)) * 58cqh) calc(-50% + sin(var(--a)) * 27cqh); }
+@container (max-aspect-ratio: 5/4) {
+  .moyeu > .moyeu-centre { width: 26cqh; font-size: 3.8cqh; }
+  .moyeu > .moyeu-partie { width: 27cqh; font-size: 3.5cqh; translate: calc(-50% + cos(var(--a)) * 31cqh) calc(-50% + sin(var(--a)) * 26cqh); }
+}
+@container (max-aspect-ratio: 9/10) {
+  .moyeu { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); align-content: center; align-items: center; row-gap: 12cqh; column-gap: 0.8cqh; min-height: 0; }
+  .moyeu > .moyeu-centre, .moyeu > .moyeu-partie { position: relative; left: auto; top: auto; translate: none; width: auto; }
+  .moyeu > .moyeu-centre { grid-column: 1 / -1; justify-self: center; width: 85%; }
+  .moyeu > .moyeu-partie { grid-row: 2; font-size: calc(3.4cqh - var(--n) * 0.24cqh); padding: 1.4cqh 0.2cqh; overflow-wrap: anywhere; }
+}

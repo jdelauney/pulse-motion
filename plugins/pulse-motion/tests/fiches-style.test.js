@@ -15,11 +15,12 @@ const { projetCatalogue } = require('./aide/catalogue.js');
 const { CLAIR, modifierJSON, stylesEssai, dossierPersonnelEssai } = require('./aide/styles.js');
 
 const RACINE = path.join(__dirname, '..');
-// Les six styles migrés (J1) ; les styles livrés : les six, la vague A (S8 J6), la vague B (S8 J7) et la vague C (S8 J8).
+// Les six styles migrés (J1) ; les styles livrés : les six, la vague A (S8 J6), la vague B (S8 J7), la vague C (S8 J8) et la vague D (S8 J9).
 const ESSENTIELS = ['chaleureux', 'clair-pedagogique', 'editorial', 'energique', 'minimal', 'tech-sombre'];
-const LIVRES = ['carnet', 'chaleureux', 'clair-pedagogique', 'editorial', 'energique', 'info-sans-son', 'iso-album', 'iso-infographie', 'lancement', 'minimal', 'plan-technique', 'recit-donnees', 'tableau-blanc', 'tableau-noir', 'tech-sombre'];
+const LIVRES = ['carnet', 'chaleureux', 'clair-pedagogique', 'crayon', 'editorial', 'energique', 'info-sans-son', 'iso-album', 'iso-infographie', 'lancement', 'minimal', 'papier-decoupe', 'pictogrammes', 'plan-technique', 'recit-donnees', 'riso', 'tableau-blanc', 'tableau-noir', 'tech-sombre'];
 const CATEGORIE = { 'info-sans-son': 'ecrans-annonces', lancement: 'ecrans-annonces', 'plan-technique': 'schemas-donnees',
-  'tableau-blanc': 'dessine', 'tableau-noir': 'dessine', carnet: 'dessine', 'recit-donnees': 'schemas-donnees', 'iso-infographie': 'schemas-donnees', 'iso-album': 'schemas-donnees' };
+  'tableau-blanc': 'dessine', 'tableau-noir': 'dessine', carnet: 'dessine', 'recit-donnees': 'schemas-donnees', 'iso-infographie': 'schemas-donnees', 'iso-album': 'schemas-donnees',
+  crayon: 'dessine', 'papier-decoupe': 'papier-imprime', riso: 'papier-imprime', pictogrammes: 'schemas-donnees' };
 const fiche = (style) => fs.readFileSync(path.join(RACINE, 'references', 'styles', `${style}.md`), 'utf8');
 const identite = (style) => JSON.parse(fs.readFileSync(path.join(RACINE, 'styles', style, 'identite.json'), 'utf8'));
 const octets = (t) => Buffer.byteLength(t, 'utf8');
@@ -306,15 +307,17 @@ test('styles --genre : fiche complète pour 3 styles, forme courte pour les autr
   const cli = JSON.parse(r.stdout);
   assert.equal(cli.length, LIVRES.length);
   assert.ok(cli[0].scenes && typeof cli[3] === 'string');
-  // Les styles des vagues A, B et C viennent après le contraste (« aussi »), jamais parmi les recommandés.
+  // Les styles des vagues A, B, C et D viennent après le contraste (« aussi »), jamais parmi les recommandés.
   assert.match(cli[3], /^plan-technique · schemas-donnees · /);
   assert.match(cli[4], /^info-sans-son · ecrans-annonces · /);
   assert.match(cli[5], /^tableau-blanc · dessine · /);
   assert.match(cli[6], /^tableau-noir · dessine · /);
   assert.match(cli[7], /^iso-album · schemas-donnees · /);
   assert.match(cli[8], /^iso-infographie · schemas-donnees · /);
+  assert.match(cli[9], /^pictogrammes · schemas-donnees · /);
+  assert.match(cli[10], /^crayon · dessine · /);
   // Puis le reste, par ordre alphabétique.
-  assert.match(cli[9], /^carnet · dessine · /);
+  assert.match(cli[11], /^carnet · dessine · /);
 }));
 
 test('styles chercher : « tableau blanc », « craie », « plan technique », « chiffres » trouvent le bon style', () => {

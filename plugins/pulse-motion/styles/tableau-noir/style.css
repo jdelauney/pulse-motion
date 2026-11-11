@@ -37,20 +37,22 @@
 /* ---------- Décor vivant : marbrure, lumière de fenêtre, rebord ---------- */
 .decor { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
 .decor ~ * { position: relative; z-index: 1; }
-/* Marbrure du tableau : deux nuées très douces qui dérivent sur toute la scène. */
+/* Marbrure du tableau : deux nuées très douces qui dérivent sur toute la scène. Chaque nuée est posée à sa place exacte, à la
+   taille de sa tache seulement (au-delà de 70 % de son rayon, elle est transparente), et dérive par background-position : la
+   même image qu'une couche de 140 % × 140 % déplacée par transform, pour une capture bien plus rapide (rastérisation de
+   l'export rapide et des mesures par pixels). Repères : couche de 140 cqw × 140 cqh posée à (−20 cqw, −20 cqh). */
 .marbrure {
-  position: absolute; inset: -20%;
+  position: absolute; inset: 0;
   background:
-    radial-gradient(ellipse 38% 30% at 28% 34%, color-mix(in srgb, var(--c-texte) 7%, transparent), transparent 70%),
-    radial-gradient(ellipse 34% 40% at 74% 66%, color-mix(in srgb, #000 14%, transparent), transparent 70%),
-    radial-gradient(ellipse 22% 18% at 58% 22%, color-mix(in srgb, var(--c-texte) 5%, transparent), transparent 70%);
-  transform: translate(var(--x, 0), var(--y, 0));
+    radial-gradient(ellipse 53.2cqw 42cqh at 50% 50%, color-mix(in srgb, var(--c-texte) 7%, transparent), transparent 70%) calc(var(--x, 0px) - 18.04cqw) calc(var(--y, 0px) - 1.8cqh) / 74.48cqw 58.8cqh no-repeat,
+    radial-gradient(ellipse 47.6cqw 56cqh at 50% 50%, color-mix(in srgb, #000 14%, transparent), transparent 70%) calc(var(--x, 0px) + 50.28cqw) calc(var(--y, 0px) + 33.2cqh) / 66.64cqw 78.4cqh no-repeat,
+    radial-gradient(ellipse 30.8cqw 25.2cqh at 50% 50%, color-mix(in srgb, var(--c-texte) 5%, transparent), transparent 70%) calc(var(--x, 0px) + 39.64cqw) calc(var(--y, 0px) - 6.84cqh) / 43.12cqw 35.28cqh no-repeat;
 }
-/* Lumière de fenêtre : une bande oblique, chaude et douce, qui traverse lentement le tableau. */
+/* Lumière de fenêtre : une bande oblique, chaude et douce, qui traverse lentement le tableau (dégradé de 220 cqw × 180 cqh posé
+   à (−60 cqw, −40 cqh), déplacé par background-position, sans couche transformée). */
 .fenetre {
-  position: absolute; inset: -40% -60%;
-  background: linear-gradient(105deg, transparent 36%, rgba(255, 246, 214, 0.12) 44%, rgba(255, 246, 214, 0.16) 48%, rgba(255, 246, 214, 0.05) 54%, transparent 60%);
-  transform: translateX(var(--x, 0));
+  position: absolute; inset: 0;
+  background: linear-gradient(105deg, transparent 36%, rgba(255, 246, 214, 0.12) 44%, rgba(255, 246, 214, 0.16) 48%, rgba(255, 246, 214, 0.05) 54%, transparent 60%) calc(var(--x, 0px) - 60cqw) -40cqh / 220cqw 180cqh no-repeat;
 }
 /* Voile d'un effacement : la bande floue de l'éponge, qui passe puis laisse un voile pâle (tracée par --p). */
 .voile {

@@ -1,0 +1,16 @@
+<!-- Scène toute faite « schema » (style pictogrammes) : trois cases de signalétique, une par temps, reliées par des flèches nettes ; celle du milieu à l'accent. Durée conseillée : 8 s.
+     Textes : titre (≤ 30 car.), a, b, c (≤ 16 car.). -->
+<section data-scene="schema">
+  <div class="decor">
+    <span class="filet"></span>
+    <div class="motif" data-decor data-start="0" data-dur="8" data-tween="--d 0→16 linear"><span class="rangee"></span><span class="rangee"></span><span class="rangee"></span></div>
+  </div>
+  <h2 id="titre" class="titre-moyen pm-m-masque" data-texte="titre" data-start="0.5"></h2>
+  <div class="chaine">
+    <div id="a" class="idee pm-m-pop" data-texte="a" data-start="1.5"></div>
+    <span class="connecteur" aria-hidden="true"><i id="lien1" data-fleche="#a → #b" data-start="2" data-dur="0.5" data-couleur="texte"></i></span>
+    <div id="b" class="idee compte pm-m-pop" data-texte="b" data-start="2.5"></div>
+    <span class="connecteur" aria-hidden="true"><i id="lien2" data-fleche="#b → #c" data-start="3" data-dur="0.5" data-couleur="texte"></i></span>
+    <div id="c" class="idee pm-m-pop" data-texte="c" data-start="3.5"></div>
+  </div>
+</section>

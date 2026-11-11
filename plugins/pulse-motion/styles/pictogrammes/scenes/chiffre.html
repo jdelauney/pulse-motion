@@ -1,0 +1,16 @@
+<!-- Scène toute faite « chiffre » (style pictogrammes) : le chiffre compte, et le compte en pictogrammes se pose, une silhouette après l'autre. Durée conseillée : 7 s.
+     Textes : titre (≤ 30 car.), unite (≤ 3 car., vide si aucune), legende (≤ 46 car.). Valeur : remplacer 1250 dans « nombre 0→1250 ». -->
+<section data-scene="chiffre">
+  <div class="decor">
+    <span class="filet"></span>
+    <div class="motif" data-decor data-start="0" data-dur="7" data-tween="--d 0→14 linear"><span class="rangee"></span><span class="rangee"></span><span class="rangee"></span></div>
+  </div>
+  <h2 id="titre" class="titre-moyen pm-m-masque" data-texte="titre" data-start="0.5"></h2>
+  <div class="mesure">
+    <p id="nombre" class="nombre"><span id="valeur" data-start="1" data-dur="1.5" data-tween="nombre 0→1250 cubic-out">0</span><span class="unite" data-texte="unite"></span></p>
+    <div class="compte-pictos" data-start="1" data-dur="1.2" aria-hidden="true">
+      <i class="picto picto-personne" style="--i: 0"></i><i class="picto picto-personne" style="--i: 1"></i><i class="picto picto-personne" style="--i: 2"></i><i class="picto picto-personne" style="--i: 3"></i><i class="picto picto-personne" style="--i: 4"></i><i class="picto picto-personne" style="--i: 5"></i><i class="picto picto-personne" style="--i: 6"></i><i class="picto picto-personne" style="--i: 7"></i><i class="picto picto-personne" style="--i: 8"></i><i class="picto picto-personne" style="--i: 9"></i>
+    </div>
+  </div>
+  <p id="legende" class="texte pm-m-monte" data-texte="legende" data-start="3"></p>
+</section>

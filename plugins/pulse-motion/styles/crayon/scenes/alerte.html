@@ -1,0 +1,14 @@
+<!-- Scène toute faite « alerte » (style crayon) : ce qu'il ne faut pas oublier, écrit sur un lavis chaud, puis encadré au crayon d'accent ; la phrase tient comme une note. Durée conseillée : 8 s.
+     Textes : titre (≤ 30 car.), texte (≤ 64 car.). -->
+<section data-scene="alerte" data-encre="style">
+  <div class="decor">
+    <span class="page"></span>
+    <span class="crayons" data-decor data-start="0" data-dur="8" data-tween="--x 0cqh→-2cqh linear"><span class="marqueur"></span><span class="marqueur"></span><span class="marqueur"></span></span>
+  </div>
+  <div id="boite" class="cadre-alerte">
+    <span class="lavis chaud" data-start="0.2" data-dur="1"></span>
+    <h2 id="titre" class="titre-moyen" data-texte="titre" data-lettres="ecrit" data-start="1" data-dur="1.4"></h2>
+    <p id="texte" class="note" data-texte="texte" data-lettres="ecrit" data-start="#titre:fin+0.3" data-dur="1.8"></p>
+  </div>
+  <i data-annoter="encadre" data-cible="#boite" data-start="#texte:fin" data-dur="0.8" data-couleur="accent-lisible" data-epaisseur="0.7"></i>
+</section>

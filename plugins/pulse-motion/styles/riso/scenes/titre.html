@@ -1,0 +1,14 @@
+<!-- Scène toute faite « titre » (style riso) : les encres arrivent l'une après l'autre (le rond rose, la colline bleue), puis le titre dans l'encre la plus sombre, surligné à l'encre claire. Durée conseillée : 7 s.
+     Textes : etiquette (≤ 22 car.), titre (≤ 30 car.), sous (≤ 46 car.). Décor : data-dur = durée de la scène. -->
+<section data-scene="titre" data-encre="style">
+  <div class="decor">
+    <span class="aplat soleil pm-m-pop" data-riso="rond accent" data-decor data-start="0.2" data-dur="7" data-tween="--y 0cqh→2cqh sine-inout"></span>
+    <span class="aplat colline pm-m-monte" data-riso="demi primaire" data-decor data-start="0.6" data-dur="6.4" data-tween="--x 0cqh→3cqh sine-inout"></span>
+    <span class="aplat pastille pm-m-pop" data-riso="rond neutre trame" data-start="1"></span>
+    <span class="grain"></span>
+  </div>
+  <p id="etiquette" class="etiquette pm-m-monte" data-texte="etiquette" data-start="0.9"></p>
+  <h1 id="titre" class="titre" data-texte="titre" data-mots="monte" data-start="#etiquette+0.3" data-dur="0.9"></h1>
+  <i data-annoter="surligne" data-cible="#titre" data-start="#titre:fin" data-dur="0.6" data-couleur="encre-neutre"></i>
+  <p id="sous" class="texte" data-texte="sous" data-mots="monte" data-start="#titre:fin+0.5" data-dur="0.9"></p>
+</section>

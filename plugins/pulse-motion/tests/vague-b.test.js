@@ -158,7 +158,7 @@ test('assembler : module d\'un style inclus seulement si le style le déclare', 
   fs.cpSync(path.join(RACINE, 'styles', 'tableau-blanc'), copie, { recursive: true });
   fs.writeFileSync(path.join(copie, 'identite.json'), JSON.stringify({ ...identite('tableau-blanc'), modules: ['encre', 'inconnu'] }), 'utf8');
   const v = S.verifierStyle(copie, { livre: true });
-  assert.ok(v.erreurs.some((e) => /module « inconnu » inconnu\. Modules : encre, iso, une-ligne\./.test(e)), v.erreurs.join('\n'));
+  assert.ok(v.erreurs.some((e) => /module « inconnu » inconnu\. Modules : encre, iso, riso, une-ligne\./.test(e)), v.erreurs.join('\n'));
   // Chaque module : 20 Ko au plus, sans Math.random.
   for (const f of fs.readdirSync(path.join(RACINE, 'moteur', 'medium'))) {
     const code = lire('moteur', 'medium', f);
