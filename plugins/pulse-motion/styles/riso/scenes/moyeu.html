@@ -1,0 +1,24 @@
+<!-- Scène toute faite « moyeu » (style riso) : l'idée au centre, entourée à l'encre d'accent, 3 à 5 parties autour, reliées par des flèches à l'encre primaire. Durée conseillée : 10 s.
+     Textes : titre (≤ 30 car.), centre (≤ 18 car.), partie1 … partie5 (≤ 16 car. chacune ; en 9:16, 12 car. avec 3 parties, 6 avec 5).
+     Moins de 5 parties : supprimer la partie en trop et sa flèche (la couronne se refait seule). Adapter data-dur du décor à la durée de la scène. -->
+<section data-scene="moyeu" data-encre="style">
+  <div class="decor">
+    <span class="aplat soleil pm-m-pop" data-riso="rond neutre trame" data-decor data-start="0.2" data-dur="10" data-tween="--y 0cqh→2cqh sine-inout"></span>
+    <span class="grain"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen" data-texte="titre" data-mots="monte" data-start="0.4" data-dur="0.9"></h2>
+  <div class="moyeu">
+    <div id="centre" class="moyeu-centre pm-m-pop" data-texte="centre" data-start="#titre:fin+0.2"></div>
+    <i data-annoter="entoure" data-cible="#centre" data-start="#centre+0.5" data-dur="0.6" data-couleur="accent"></i>
+    <div id="partie1" class="moyeu-partie pm-m-monte" style="--i: 0" data-texte="partie1" data-start="#centre+1"></div>
+    <i data-fleche="#centre → #partie1" data-start="#partie1" data-dur="0.6" data-couleur="primaire"></i>
+    <div id="partie2" class="moyeu-partie pm-m-monte" style="--i: 1" data-texte="partie2" data-start="#partie1+0.9"></div>
+    <i data-fleche="#centre → #partie2" data-start="#partie2" data-dur="0.6" data-couleur="primaire"></i>
+    <div id="partie3" class="moyeu-partie pm-m-monte" style="--i: 2" data-texte="partie3" data-start="#partie2+0.9"></div>
+    <i data-fleche="#centre → #partie3" data-start="#partie3" data-dur="0.6" data-couleur="primaire"></i>
+    <div id="partie4" class="moyeu-partie pm-m-monte" style="--i: 3" data-texte="partie4" data-start="#partie3+0.9"></div>
+    <i data-fleche="#centre → #partie4" data-start="#partie4" data-dur="0.6" data-couleur="primaire"></i>
+    <div id="partie5" class="moyeu-partie pm-m-monte" style="--i: 4" data-texte="partie5" data-start="#partie4+0.9"></div>
+    <i data-fleche="#centre → #partie5" data-start="#partie5" data-dur="0.6" data-couleur="primaire"></i>
+  </div>
+</section>

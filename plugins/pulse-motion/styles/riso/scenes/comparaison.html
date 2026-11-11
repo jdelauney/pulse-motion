@@ -1,0 +1,22 @@
+<!-- Scène toute faite « comparaison » (style riso) : deux colonnes, chacune marquée de son encre ; celle qui compte est surlignée à l'encre claire. Durée conseillée : 12 s.
+     Textes : titre (≤ 30 car.), gauche-titre et droite-titre (≤ 16 car.), gauche-texte et droite-texte (≤ 48 car.). -->
+<section data-scene="comparaison" data-encre="style">
+  <div class="decor">
+    <span class="aplat soleil pm-m-pop" data-riso="rond accent trame" data-decor data-start="0.2" data-dur="12" data-tween="--y 0cqh→2cqh sine-inout"></span>
+    <span class="grain"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen" data-texte="titre" data-mots="monte" data-start="0.4" data-dur="0.9"></h2>
+  <div class="colonnes">
+    <div id="gauche" class="colonne">
+      <span class="aplat pm-m-glisse-gauche" data-riso="rect primaire" data-start="#titre:fin+0.2"></span>
+      <h3 id="gauche-titre" class="colonne-titre pm-m-monte" data-texte="gauche-titre" data-start="#titre:fin+0.4"></h3>
+      <p id="gauche-texte" class="texte" data-texte="gauche-texte" data-mots="monte" data-start="#gauche-titre+0.5" data-dur="0.9"></p>
+    </div>
+    <div id="droite" class="colonne">
+      <span class="aplat pm-m-glisse-gauche" data-riso="rect accent" data-start="#gauche-texte:fin+1.4"></span>
+      <h3 id="droite-titre" class="colonne-titre pm-m-monte" data-texte="droite-titre" data-start="#gauche-texte:fin+1.6"></h3>
+      <p id="droite-texte" class="texte" data-texte="droite-texte" data-mots="monte" data-start="#droite-titre+0.5" data-dur="0.9"></p>
+    </div>
+  </div>
+  <i data-annoter="surligne" data-cible="#droite-titre" data-start="#droite-texte:fin+0.2" data-dur="0.6" data-couleur="encre-neutre"></i>
+</section>

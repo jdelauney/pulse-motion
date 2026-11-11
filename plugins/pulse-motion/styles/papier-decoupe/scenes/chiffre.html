@@ -1,0 +1,15 @@
+<!-- Scène toute faite « chiffre » (style papier-decoupe) : un volet de papier se lève et révèle la feuille du chiffre, qui compte ; la légende arrive. Durée conseillée : 7 s.
+     Textes : titre (≤ 30 car.), unite (≤ 3 car., vide si aucune), legende (≤ 46 car.). Valeur : remplacer 1250 dans « nombre 0→1250 ». -->
+<section data-scene="chiffre">
+  <div class="decor">
+    <span class="rond" data-decor data-start="0" data-dur="7" data-tween="--y 0cqh→1.4cqh sine-inout"></span>
+    <span class="colline loin" data-decor data-start="0" data-dur="7" data-tween="--x 0cqh→-1.5cqh linear"></span>
+    <span class="colline pres" data-decor data-start="0" data-dur="7" data-tween="--x 0cqh→-4cqh linear"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen" data-texte="titre" data-mots="monte" data-start="0.4" data-dur="0.9"></h2>
+  <div id="mesure" class="feuille mesure pm-m-monte" data-start="#titre:fin+0.1">
+    <span class="volet" data-start="#titre:fin+0.5" data-dur="0.7"></span>
+    <p id="nombre" class="nombre"><span id="valeur" data-start="#titre:fin+1" data-dur="1.4" data-tween="nombre 0→1250 cubic-out">0</span><span class="unite" data-texte="unite"></span></p>
+  </div>
+  <p id="legende" class="texte" data-texte="legende" data-mots="monte" data-start="#valeur:fin+0.3" data-dur="0.9"></p>
+</section>

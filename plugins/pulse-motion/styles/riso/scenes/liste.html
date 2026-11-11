@@ -1,0 +1,17 @@
+<!-- Scène toute faite « liste » (style riso) : 2 à 4 points ; chaque point ajoute une encre au décor (le ruban, le rond, la colline). Durée conseillée : 12 s.
+     Textes : titre (≤ 30 car.), point1 … point4 (≤ 36 car.). Moins de 4 points : supprimer les points en trop (et l'aplat qui l'accompagne). -->
+<section data-scene="liste" data-encre="style">
+  <div class="decor">
+    <span class="aplat ruban pm-m-glisse-gauche" data-riso="bande neutre" data-decor data-start="0.2" data-dur="12" data-tween="--x 0cqh→3cqh linear"></span>
+    <span class="aplat soleil pm-m-pop" data-riso="rond accent trame" data-start="#point2"></span>
+    <span class="aplat colline pm-m-monte" data-riso="demi primaire" data-start="#point3"></span>
+    <span class="grain"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen" data-texte="titre" data-mots="monte" data-start="0.4" data-dur="0.9"></h2>
+  <ul class="points">
+    <li id="point1" class="pm-m-glisse-gauche" data-texte="point1" data-start="#titre:fin+0.5"></li>
+    <li id="point2" class="pm-m-glisse-gauche" data-texte="point2" data-start="#point1+1.8"></li>
+    <li id="point3" class="pm-m-glisse-gauche" data-texte="point3" data-start="#point2+1.8"></li>
+    <li id="point4" class="pm-m-glisse-gauche" data-texte="point4" data-start="#point3+1.8"></li>
+  </ul>
+</section>

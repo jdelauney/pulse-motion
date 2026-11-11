@@ -1,0 +1,15 @@
+<!-- Scène toute faite « etape » (style papier-decoupe) : le rond du numéro se pose, puis la feuille de ce qu'il faut faire se soulève. Durée conseillée : 8 s.
+     Textes : numero (≤ 2 car.), titre (≤ 30 car.), texte (≤ 64 car.). -->
+<section data-scene="etape">
+  <div class="decor">
+    <span class="colline loin" data-decor data-start="0" data-dur="8" data-tween="--x 0cqh→-1.5cqh linear"></span>
+    <span class="colline pres" data-decor data-start="0" data-dur="8" data-tween="--x 0cqh→-4cqh linear"></span>
+  </div>
+  <div class="etape">
+    <p id="numero" class="numero feuille pm-m-pop" data-texte="numero" data-start="0.4"></p>
+    <div class="etape-texte feuille souleve pm-m-monte" data-start="#numero+0.5" data-dur="2.6">
+      <h2 id="titre" class="titre-moyen" data-texte="titre" data-mots="monte" data-start="#numero+0.8" data-dur="0.9"></h2>
+      <p id="texte" class="texte" data-texte="texte" data-mots="monte" data-start="#titre:fin+0.2" data-dur="1"></p>
+    </div>
+  </div>
+</section>

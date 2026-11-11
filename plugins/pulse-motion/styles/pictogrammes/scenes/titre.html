@@ -1,0 +1,20 @@
+<!-- Scène toute faite « titre » (style pictogrammes) : le film catalogue (un panneau par temps), puis l'étiquette et le titre ; les rangées de la grille glissent d'une cellule par temps. Durée conseillée : 7 s.
+     Textes : etiquette (≤ 22 car.), titre (≤ 30 car.), sous (≤ 46 car.). Décor : data-dur = durée de la scène.
+     Pictogrammes : changer les classes picto-<nom> (personne, camion, maison, horloge, soleil, nuage, goutte, flocon, attention, interdit, info, fleche, coche, croix, thermometre, colis). -->
+<section data-scene="titre">
+  <div class="decor">
+    <span class="filet"></span>
+    <div class="motif" data-decor data-start="0" data-dur="7" data-tween="--d 0→14 linear"><span class="rangee"></span><span class="rangee"></span><span class="rangee"></span></div>
+  </div>
+  <div class="catalogue" data-start="0.5" data-dur="2">
+    <span class="panneau" style="--i: 0"><i class="picto picto-personne"></i></span>
+    <span class="panneau" style="--i: 1"><i class="picto picto-camion"></i></span>
+    <span class="panneau" style="--i: 2"><i class="picto picto-maison"></i></span>
+    <span class="panneau alerte-panneau" style="--i: 3"><i class="picto picto-horloge"></i></span>
+  </div>
+  <div class="entete">
+    <p id="etiquette" class="etiquette pm-m-glisse-gauche" data-texte="etiquette" data-start="2.5"></p>
+    <h1 id="titre" class="titre pm-m-masque" data-texte="titre" data-start="3"></h1>
+  </div>
+  <p id="sous" class="texte pm-m-monte" data-texte="sous" data-start="4"></p>
+</section>

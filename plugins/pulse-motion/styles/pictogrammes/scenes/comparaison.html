@@ -1,0 +1,21 @@
+<!-- Scène toute faite « comparaison » (style pictogrammes) : deux panneaux de signalisation, la croix puis la coche ; celui qui compte à l'accent. Durée conseillée : 12 s.
+     Textes : titre (≤ 30 car.), gauche-titre et droite-titre (≤ 16 car.), gauche-texte et droite-texte (≤ 48 car.). -->
+<section data-scene="comparaison">
+  <div class="decor">
+    <span class="filet"></span>
+    <div class="motif" data-decor data-start="0" data-dur="12" data-tween="--d 0→24 linear"><span class="rangee"></span><span class="rangee"></span><span class="rangee"></span></div>
+  </div>
+  <h2 id="titre" class="titre-moyen pm-m-masque" data-texte="titre" data-start="0.5"></h2>
+  <div class="signaux">
+    <div id="gauche" class="signal">
+      <span class="panneau neutre pm-m-pop" data-start="1.5"><i class="picto picto-croix"></i></span>
+      <h3 id="gauche-titre" class="signal-titre pm-m-glisse-gauche" data-texte="gauche-titre" data-start="2"></h3>
+      <p id="gauche-texte" class="texte pm-m-monte" data-texte="gauche-texte" data-start="2.5"></p>
+    </div>
+    <div id="droite" class="signal">
+      <span class="panneau alerte-panneau pm-m-pop" data-start="5"><i class="picto picto-coche"></i></span>
+      <h3 id="droite-titre" class="signal-titre compte pm-m-glisse-gauche" data-texte="droite-titre" data-start="5.5"></h3>
+      <p id="droite-texte" class="texte pm-m-monte" data-texte="droite-texte" data-start="6"></p>
+    </div>
+  </div>
+</section>

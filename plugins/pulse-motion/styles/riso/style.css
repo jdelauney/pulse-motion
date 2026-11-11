@@ -1,0 +1,161 @@
+/* Pulse Motion – style « riso ».
+ *
+ * L'impression risographique : deux ou trois encres translucides surimprimées sur un papier chaud, une trame de points, un
+ * grain d'encre, des plaques jamais tout à fait calées. Les aplats du décor ([data-riso], module moteur/medium/riso.js) et les
+ * tracés du calque de S7 (moteur/medium/encre.js, --pm-encre: riso) sont peints dans un canevas, une couche par encre,
+ * surimprimés en multiply et décalés de leur calage (0,2 à 0,5 cqh tiré par plan, constant dans le plan, rattrapé par
+ * [data-riso-calage]). Les textes restent du HTML, dans une seule encre opaque : la plus sombre (--c-texte). Encres : primaire,
+ * accent et une troisième, claire (--c-encre-neutre, jaune par défaut), pour les fonds et les surlignages.
+ * Repli (sans canevas) : les aplats HTML restent visibles, translucides, sans surimpression.
+ * Grain : tuile grain.png (outils/styles/textures.js, graine fixe), jamais renouvelée à chaque image.
+ * Idées de lemo-opuscar (risograph, MIT, © 2026 LemoLab) et de take-one (riso-pop, MIT : encres d'exemple), réécrites en CSS.
+ * Ton clair seulement (le papier). Formats 16:9, 1:1, 4:5 et 9:16 par requêtes de conteneur.
+ * Effets exclus : filter: url(), mix-blend-mode, backdrop-filter.
+ */
+
+/* ---------- Mise en page : la feuille imprimée ---------- */
+#pm-scene > section[data-scene] {
+  --c-encre-neutre: #f4c51a;
+  --pm-trait: main; --pm-rugosite: 0.4; --pm-courbure: 0.6; --pm-ebullition: 0; --pm-encre: riso;
+  --pm-st-police: var(--f-texte); --pm-st-fond: color-mix(in srgb, var(--c-fond) 90%, #fff); --pm-st-texte: var(--c-texte);
+  display: flex; flex-direction: column; justify-content: center; gap: 3cqh;
+  padding: 10cqh 13cqh 12cqh; overflow: hidden;
+  background: var(--c-fond);
+  color: var(--c-texte);
+  font: 400 3.9cqh/1.4 var(--f-texte);
+}
+
+/* ---------- Typographie : grotesque grasse, une seule encre ---------- */
+.titre { margin: 0; font: 900 10cqh/1.02 var(--f-titres); letter-spacing: -0.02em; text-wrap: balance; overflow-wrap: break-word; }
+.titre-moyen { margin: 0; font: 900 6.4cqh/1.06 var(--f-titres); letter-spacing: -0.01em; text-wrap: balance; overflow-wrap: break-word; }
+.texte { margin: 0; font: 400 3.9cqh/1.4 var(--f-texte); text-wrap: pretty; }
+.etiquette { margin: 0; align-self: flex-start; font: 700 3.6cqh/1.2 var(--f-texte); letter-spacing: 0.08em; text-transform: uppercase; }
+.nombre { margin: 0; font: 900 22cqh/0.95 var(--f-titres); letter-spacing: -0.03em; font-variant-numeric: tabular-nums lining-nums; }
+.unite { font-size: 0.4em; margin-left: 0.12em; }
+/* Ce qui compte n'a pas d'autre couleur : il est surligné à l'encre claire (data-annoter="surligne", data-couleur="encre-neutre"),
+   le texte reste dans l'encre la plus sombre. */
+
+/* ---------- Décor : aplats d'encre (peints dans le canevas du module riso), grain ---------- */
+.decor { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.decor ~ * { position: relative; z-index: 1; }
+.aplat { position: absolute; display: block; }
+.aplat.rond { border-radius: 50%; }
+/* Repli sans canevas : des aplats translucides, sans surimpression. */
+.aplat[data-riso~="primaire"] { background: color-mix(in srgb, var(--c-primaire) 80%, transparent); }
+.aplat[data-riso~="accent"] { background: color-mix(in srgb, var(--c-accent) 80%, transparent); }
+.aplat[data-riso~="neutre"] { background: color-mix(in srgb, var(--c-encre-neutre) 85%, transparent); }
+.aplat[data-riso~="demi"] { border-radius: 50% 50% 0 0 / 100% 100% 0 0; }
+.aplat[data-riso~="bande"] { border-radius: 99cqh; }
+.soleil { right: -7cqh; top: -9cqh; width: 36cqh; height: 36cqh; translate: 0 var(--y, 0px); }
+.colline { left: 4cqh; bottom: -1cqh; width: 40cqh; height: 20cqh; translate: var(--x, 0px) 0; }
+.pastille { left: 32cqh; bottom: 7cqh; width: 16cqh; height: 16cqh; }
+.ruban { left: -4cqh; top: 5cqh; width: 46cqh; height: 6cqh; rotate: 0deg; translate: var(--x, 0px) 0; }
+/* Le grain d'encre, sur les aplats (au-dessus du canevas du décor). */
+.grain { position: absolute; inset: 0; background: url("grain.png") 0 0 / 10cqh 10cqh repeat; opacity: 0.45; }
+/* Le calage : un élément qui ne se voit pas, dont la part écoulée (--p) rattrape le décalage des plaques. */
+.calage { position: absolute; width: 0; height: 0; }
+
+/* ---------- Liste : des points pleins, dans l'encre du texte ---------- */
+.points { list-style: none; margin: 0; padding: 0; display: grid; gap: 2.2cqh; }
+.points li { position: relative; padding-left: 5cqh; font: 400 4.1cqh/1.3 var(--f-texte); }
+.points li::before { content: ""; position: absolute; left: 0; top: calc(0.65em - 1cqh); width: 2cqh; height: 2cqh; border-radius: 50%; background: var(--c-texte); }
+
+/* ---------- Chiffre ---------- */
+.mesure { position: relative; display: flex; flex-direction: column; gap: 1.6cqh; align-items: flex-start; align-self: flex-start; margin: 1.6cqh 0 0.6cqh; }
+
+/* ---------- Comparaison : deux colonnes, chacune son encre ---------- */
+.colonnes { display: grid; grid-template-columns: 1fr 1fr; gap: 8cqh; }
+.colonne { position: relative; display: flex; flex-direction: column; gap: 1.6cqh; padding: 3cqh 0 0; min-width: 0; }
+.colonne-titre { margin: 0; font: 900 5.2cqh/1.05 var(--f-titres); }
+.colonne > .aplat { left: 0; top: 0; width: 12cqh; height: 1.4cqh; }
+
+/* ---------- Étape ---------- */
+.etape { display: grid; grid-template-columns: auto 1fr; gap: 6cqh; align-items: center; }
+.bloc-numero { position: relative; }
+.bloc-numero > .aplat { inset: 0; }
+.numero { position: relative; display: block; text-align: center; width: 18cqh; height: 18cqh; line-height: 18cqh; margin: 0; font: 900 12cqh/18cqh var(--f-titres); }
+.etape-texte { display: flex; flex-direction: column; gap: 2cqh; min-width: 0; }
+
+/* ---------- Alerte ---------- */
+.cadre-alerte { position: relative; display: flex; flex-direction: column; gap: 2cqh; padding: 4cqh 5cqh; }
+.cadre-alerte > .aplat { inset: 0; }
+.cadre-alerte > :not(.aplat) { position: relative; }
+
+/* ---------- Schéma ---------- */
+.chaine { display: flex; align-items: center; gap: 2cqh; }
+.chaine > .idee { position: relative; flex: 1; text-align: center; padding: 3cqh 1.6cqh; font: 900 4.4cqh/1.15 var(--f-titres); }
+.connecteur { flex: none; width: 9cqh; height: 2cqh; }
+
+/* ---------- Logo ---------- */
+.logo { height: 11cqh; width: auto; object-fit: contain; align-self: flex-start; }
+
+/* ---------- Format carré ---------- */
+@container (max-aspect-ratio: 5/4) {
+  #pm-scene > section[data-scene] { padding: 9cqh 8cqh 10cqh; gap: 2.6cqh; font-size: 3.6cqh; }
+  .titre { font-size: 7.4cqh; }
+  .titre-moyen { font-size: 5.2cqh; }
+  .texte { font-size: 3.6cqh; }
+  .etiquette { font-size: 3.5cqh; }
+  .nombre { font-size: 16cqh; }
+  .points li { font-size: 3.8cqh; }
+  .colonnes { gap: 4cqh; }
+  .colonne-titre { font-size: 4.3cqh; }
+  .numero { width: 14cqh; height: 14cqh; line-height: 14cqh; font-size: 9cqh; }
+  .etape { gap: 4cqh; }
+  .chaine > .idee { font-size: 3.6cqh; padding: 2.4cqh 1cqh; }
+  .connecteur { width: 5cqh; }
+  .soleil { width: 26cqh; height: 26cqh; right: -6cqh; top: -8cqh; }
+  .pastille { left: 28cqh; bottom: 6cqh; width: 12cqh; height: 12cqh; }
+}
+
+/* ---------- Format vertical : tout s'empile ---------- */
+@container (orientation: portrait) {
+  #pm-scene > section[data-scene] { padding: 9cqh 7cqh 8cqh; gap: 1.6cqh; font-size: 3.5cqh; }
+  .titre { font-size: 5.4cqh; }
+  .titre-moyen { font-size: 4.1cqh; }
+  .texte { font-size: 3.5cqh; }
+  .etiquette { font-size: 3.5cqh; }
+  .nombre { font-size: 11cqh; }
+  .points { gap: 0.8cqh; }
+  .points li { padding-left: 3.4cqh; font-size: 3.5cqh; line-height: 1.22; }
+  .points li::before { width: 1.6cqh; height: 1.6cqh; top: calc(0.61em - 0.8cqh); }
+  .colonnes { grid-template-columns: 1fr; gap: 2cqh; }
+  .colonne { padding-top: 2cqh; gap: 1cqh; }
+  .colonne-titre { font-size: 3.9cqh; }
+  .etape { grid-template-columns: 1fr; gap: 2cqh; }
+  .numero { width: 10cqh; height: 10cqh; line-height: 10cqh; font-size: 6.6cqh; }
+  .cadre-alerte { padding: 3cqh 3.4cqh; }
+  .chaine { flex-direction: column; align-items: stretch; gap: 1cqh; }
+  .chaine > .idee { font-size: 3.5cqh; padding: 1.8cqh; }
+  .connecteur { align-self: center; width: 2cqh; height: 4cqh; }
+  .logo { height: 8cqh; }
+  .soleil { width: 14cqh; height: 14cqh; right: -3cqh; top: -4cqh; }
+  .colline { width: 26cqh; height: 12cqh; left: 2cqh; }
+  .pastille { left: 20cqh; bottom: 6cqh; width: 9cqh; height: 9cqh; }
+  .ruban { width: 30cqh; height: 3.4cqh; top: 3cqh; }
+}
+
+/* ---------- 9:16 : place pour la légende des réseaux sociaux (pas en 4:5) ---------- */
+@container (max-aspect-ratio: 2/3) {
+  #pm-scene > section[data-scene] { padding-bottom: 15cqh; }
+  .moyeu { margin-right: 5cqh; }
+}
+
+/* ---------- Moyeu et rayons (spec S7, 5.7) : couronne en paysage, rangée sous le centre en portrait ---------- */
+.moyeu { --n: 3; position: relative; flex: 1; min-height: 46cqh; }
+.moyeu:has(> .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie) { --n: 4; }
+.moyeu:has(> .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie) { --n: 5; }
+.moyeu > .moyeu-centre, .moyeu > .moyeu-partie { position: absolute; left: 50%; top: 50%; box-sizing: border-box; flex: none; margin: 0; text-align: center; }
+.moyeu > .moyeu-centre { width: 38cqh; padding: 2.6cqh; translate: -50% -50%; font: 900 5cqh/1.1 var(--f-titres); }
+.moyeu > .moyeu-partie { --a: calc(-90deg + 180deg / var(--n) + var(--i, 0) * 360deg / var(--n)); width: 32cqh; font: 400 3.8cqh/1.25 var(--f-texte); overflow-wrap: anywhere;
+  translate: calc(-50% + cos(var(--a)) * 58cqh) calc(-50% + sin(var(--a)) * 27cqh); }
+@container (max-aspect-ratio: 5/4) {
+  .moyeu > .moyeu-centre { width: 26cqh; font-size: 4cqh; }
+  .moyeu > .moyeu-partie { width: 27cqh; font-size: 3.5cqh; translate: calc(-50% + cos(var(--a)) * 31cqh) calc(-50% + sin(var(--a)) * 26cqh); }
+}
+@container (max-aspect-ratio: 9/10) {
+  .moyeu { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); align-content: center; align-items: center; row-gap: 12cqh; column-gap: 0.8cqh; min-height: 0; }
+  .moyeu > .moyeu-centre, .moyeu > .moyeu-partie { position: relative; left: auto; top: auto; translate: none; width: auto; }
+  .moyeu > .moyeu-centre { grid-column: 1 / -1; justify-self: center; width: 85%; }
+  .moyeu > .moyeu-partie { grid-row: 2; font-size: calc(3.4cqh - var(--n) * 0.24cqh); padding: 1.4cqh 0.2cqh; overflow-wrap: anywhere; }
+}

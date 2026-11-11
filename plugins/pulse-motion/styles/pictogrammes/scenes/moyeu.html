@@ -1,0 +1,23 @@
+<!-- Scène toute faite « moyeu » (style pictogrammes) : l'idée au centre sur son panneau, 3 à 5 parties autour, une par temps, reliées par des flèches nettes. Durée conseillée : 10 s.
+     Textes : titre (≤ 30 car.), centre (≤ 18 car.), partie1 … partie5 (≤ 16 car. chacune ; en 9:16, 12 car. avec 3 parties, 6 avec 5).
+     Moins de 5 parties : supprimer la partie en trop et sa flèche (la couronne se refait seule). Adapter data-dur du décor à la durée de la scène. -->
+<section data-scene="moyeu">
+  <div class="decor">
+    <span class="filet"></span>
+    <div class="motif" data-decor data-start="0" data-dur="10" data-tween="--d 0→20 linear"><span class="rangee"></span><span class="rangee"></span><span class="rangee"></span></div>
+  </div>
+  <h2 id="titre" class="titre-moyen pm-m-masque" data-texte="titre" data-start="0.5"></h2>
+  <div class="moyeu">
+    <div id="centre" class="moyeu-centre pm-m-pop" data-texte="centre" data-start="1.5"></div>
+    <div id="partie1" class="moyeu-partie pm-m-pop" style="--i: 0" data-texte="partie1" data-start="2.5"></div>
+    <i data-fleche="#centre → #partie1" data-start="2.5" data-dur="0.5" data-couleur="texte"></i>
+    <div id="partie2" class="moyeu-partie pm-m-pop" style="--i: 1" data-texte="partie2" data-start="3.5"></div>
+    <i data-fleche="#centre → #partie2" data-start="3.5" data-dur="0.5" data-couleur="texte"></i>
+    <div id="partie3" class="moyeu-partie pm-m-pop" style="--i: 2" data-texte="partie3" data-start="4.5"></div>
+    <i data-fleche="#centre → #partie3" data-start="4.5" data-dur="0.5" data-couleur="texte"></i>
+    <div id="partie4" class="moyeu-partie pm-m-pop" style="--i: 3" data-texte="partie4" data-start="5.5"></div>
+    <i data-fleche="#centre → #partie4" data-start="5.5" data-dur="0.5" data-couleur="texte"></i>
+    <div id="partie5" class="moyeu-partie pm-m-pop" style="--i: 4" data-texte="partie5" data-start="6.5"></div>
+    <i data-fleche="#centre → #partie5" data-start="6.5" data-dur="0.5" data-couleur="texte"></i>
+  </div>
+</section>

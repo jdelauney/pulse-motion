@@ -1,0 +1,15 @@
+<!-- Scène toute faite « liste » (style pictogrammes) : 2 à 4 points, chacun sur un temps, une puce de la grille devant chacun (rond, demi-disque, cellule). Durée conseillée : 12 s.
+     Textes : titre (≤ 30 car.), point1 … point4 (≤ 36 car.). Moins de 4 points : supprimer les points en trop. -->
+<section data-scene="liste">
+  <div class="decor">
+    <span class="filet"></span>
+    <div class="motif" data-decor data-start="0" data-dur="12" data-tween="--d 0→24 linear"><span class="rangee"></span><span class="rangee"></span><span class="rangee"></span></div>
+  </div>
+  <h2 id="titre" class="titre-moyen pm-m-masque" data-texte="titre" data-start="0.5"></h2>
+  <ul class="points">
+    <li id="point1" class="pm-m-glisse-gauche" data-texte="point1" data-start="1.5"></li>
+    <li id="point2" class="pm-m-glisse-gauche" data-texte="point2" data-start="3.5"></li>
+    <li id="point3" class="pm-m-glisse-gauche" data-texte="point3" data-start="5.5"></li>
+    <li id="point4" class="pm-m-glisse-gauche" data-texte="point4" data-start="7.5"></li>
+  </ul>
+</section>

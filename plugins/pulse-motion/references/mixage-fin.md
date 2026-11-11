@@ -72,6 +72,10 @@ Pour un élément animé par une entrée qui ralentit (`expo-out`, `back-out`), 
 | `recit-donnees` | `blip`, `tic`, `crayon`, `ding` | `impact`, `whoosh` |
 | `iso-infographie` | `pop`, `tic`, `ding`, `souffle` | `crissement`, sons tenus |
 | `iso-album` | `papier`, `pop`, `tic`, `carillon` | `impact`, `basse` |
+| `crayon` | `crayon`, `pop`, `tic`, `carillon` | `impact`, `whoosh` |
+| `papier-decoupe` | `papier`, `pop`, `tic`, `carillon` | `impact`, `basse` |
+| `riso` | `clic`, `pop`, `papier`, `impact` | sons tenus longs, `carillon` |
+| `pictogrammes` | `tic`, `clic`, `pop`, `ding` | sons tenus, `souffle` |
 
 ## Tempo de la musique selon le caractère
 

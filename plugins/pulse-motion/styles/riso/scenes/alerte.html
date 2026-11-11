@@ -1,0 +1,14 @@
+<!-- Scène toute faite « alerte » (style riso) : ce qu'il ne faut pas oublier, sur un aplat d'encre claire, encadré à l'encre d'accent. Durée conseillée : 8 s.
+     Textes : titre (≤ 30 car.), texte (≤ 64 car.). -->
+<section data-scene="alerte" data-encre="style">
+  <div class="decor">
+    <span class="aplat soleil pm-m-pop" data-riso="rond accent trame" data-decor data-start="0.2" data-dur="8" data-tween="--y 0cqh→2cqh sine-inout"></span>
+    <span class="grain"></span>
+  </div>
+  <div id="boite" class="cadre-alerte">
+    <span class="aplat pm-m-glisse-gauche" data-riso="rect neutre" data-start="0.3"></span>
+    <h2 id="titre" class="titre-moyen" data-texte="titre" data-mots="monte" data-start="0.9" data-dur="0.9"></h2>
+    <p id="texte" class="texte" data-texte="texte" data-mots="monte" data-start="#titre:fin+0.3" data-dur="1.2"></p>
+  </div>
+  <i data-annoter="encadre" data-cible="#boite" data-start="#texte:fin" data-dur="0.7" data-couleur="accent"></i>
+</section>

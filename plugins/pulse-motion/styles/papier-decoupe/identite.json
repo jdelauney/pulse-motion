@@ -1,0 +1,115 @@
+{
+  "style": "papier-decoupe",
+  "famille": "chaleureuse",
+  "personnalite": [
+    "artisanal",
+    "joyeux",
+    "en relief"
+  ],
+  "eviter": [
+    "ombres dures ou trop noires",
+    "tout à plat, sans couches"
+  ],
+  "genres": [
+    "storytelling",
+    "produit",
+    "social"
+  ],
+  "couleur": {
+    "strategie": "sobre-avec-une-touche",
+    "tons": [
+      "clair"
+    ],
+    "tonDefaut": "clair",
+    "clair": {
+      "fond": "#ece2d0",
+      "texte": "#2b2420"
+    },
+    "roles": {
+      "primaire": "le papier des strates et des volets",
+      "accent": "le papier de ce qui compte : le rond, les pastilles, la bande d'alerte"
+    }
+  },
+  "typographie": {
+    "titres": {
+      "famille": "Archivo",
+      "categorie": "sans-serif",
+      "graisse": 800
+    },
+    "texte": {
+      "famille": "Nunito Sans",
+      "categorie": "sans-serif",
+      "graisse": 400
+    }
+  },
+  "mouvement": {
+    "caractere": "posé",
+    "courbes": [
+      "quart-out",
+      "cubic-out"
+    ],
+    "dureeType": 0.6,
+    "transitions": [
+      "glissement",
+      "fondu"
+    ]
+  },
+  "signature": "Papiers découpés posés en couches, aux bords un peu irréguliers : de vraies ombres portées entre les couches, une feuille qui se soulève, un volet qui se lève pour révéler la couche du dessous",
+  "aFaire": [
+    "Poser chaque texte sur une feuille, et laisser l'ombre dire la profondeur",
+    "Une seule feuille soulevée à la fois : celle qui compte"
+  ],
+  "aEviter": [
+    "Des ombres noires et dures",
+    "Empiler plus de quatre couches"
+  ],
+  "categorie": "papier-imprime",
+  "nonPas": "Pas un style plat : la profondeur vient des ombres entre les couches. Pas un papier découpé traditionnel rouge et or : des papiers de la charte, posés comme une maquette.",
+  "usages": [
+    "Présenter une offre ou un service",
+    "Accueillir et présenter une équipe",
+    "Raconter un projet en étapes"
+  ],
+  "motsCles": [
+    "papier découpé",
+    "papier",
+    "découpage",
+    "paper cut",
+    "papercut",
+    "collage",
+    "couches de papier",
+    "maquette en papier",
+    "ombres portées"
+  ],
+  "son": {
+    "ambiances": [
+      "acoustique",
+      "inspirant"
+    ],
+    "bruitages": {
+      "titre": null,
+      "texte": null,
+      "point": "pop",
+      "chiffre": "tic",
+      "trace": "papier",
+      "forme": "papier",
+      "image": null,
+      "ecriture": "papier",
+      "transition": null
+    },
+    "matiere": "papier",
+    "fort": "carillon"
+  },
+  "provenance": [
+    {
+      "depot": "take-one",
+      "style": "paper-cutout",
+      "licence": "MIT"
+    },
+    {
+      "depot": "lemo-opuscar",
+      "style": "papercut-red",
+      "licence": "MIT"
+    }
+  ]
+}

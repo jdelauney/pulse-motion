@@ -1,0 +1,15 @@
+<!-- Scène toute faite « chiffre » (style riso) : le chiffre compte dans l'encre la plus sombre, sur un rond de trame ; il est souligné à l'encre d'accent. Durée conseillée : 7 s.
+     Textes : titre (≤ 30 car.), unite (≤ 3 car., vide si aucune), legende (≤ 46 car.). Valeur : remplacer 1250 dans « nombre 0→1250 ». -->
+<section data-scene="chiffre" data-encre="style">
+  <div class="decor">
+    <span class="aplat soleil pm-m-pop" data-riso="rond accent" data-decor data-start="0.2" data-dur="7" data-tween="--y 0cqh→2cqh sine-inout"></span>
+    <span class="aplat colline pm-m-monte" data-riso="demi primaire trame" data-start="0.5"></span>
+    <span class="grain"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen" data-texte="titre" data-mots="monte" data-start="0.4" data-dur="0.9"></h2>
+  <div class="mesure">
+    <p id="nombre" class="nombre"><span id="valeur" data-start="#titre:fin+0.2" data-dur="1.4" data-tween="nombre 0→1250 cubic-out">0</span><span class="unite" data-texte="unite"></span></p>
+    <i data-annoter="souligne" data-cible="#nombre" data-start="#valeur:fin" data-dur="0.6" data-couleur="accent" data-epaisseur="1.2"></i>
+  </div>
+  <p id="legende" class="texte" data-texte="legende" data-mots="monte" data-start="#valeur:fin+0.6" data-dur="0.9"></p>
+</section>

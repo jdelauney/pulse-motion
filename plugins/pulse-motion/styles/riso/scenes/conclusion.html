@@ -1,0 +1,15 @@
+<!-- Scène toute faite « conclusion » (style riso) : ce qu'il faut retenir, surligné ; sur un temps fort, les plaques se calent (data-riso-calage), puis le logo. Durée conseillée : 6 s.
+     Textes : titre (≤ 30 car.), sous (≤ 44 car.). Logo : celui de la charte (sinon supprimer l'image).
+     Dernière scène de la vidéo : data-dur du décor = durée de la scène − 1 s (image stable d'au moins 0,5 s à la fin). -->
+<section data-scene="conclusion" data-encre="style">
+  <div class="decor">
+    <span class="aplat soleil pm-m-pop" data-riso="rond accent" data-decor data-start="0.2" data-dur="5" data-tween="--y 0cqh→1.5cqh sine-inout"></span>
+    <span class="aplat colline pm-m-monte" data-riso="demi primaire" data-start="0.4"></span>
+    <span class="grain"></span>
+    <span class="calage" data-riso-calage data-start="#titre:fin+0.8" data-dur="0.4"></span>
+  </div>
+  <h2 id="titre" class="titre" data-texte="titre" data-mots="monte" data-start="0.3" data-dur="0.9"></h2>
+  <i data-annoter="surligne" data-cible="#titre" data-start="#titre:fin" data-dur="0.6" data-couleur="encre-neutre"></i>
+  <p id="sous" class="texte" data-texte="sous" data-mots="monte" data-start="#titre:fin+0.4" data-dur="0.8"></p>
+  <img id="logo" class="logo" data-logo alt="" data-start="#sous:fin+0.2" data-dur="0.5" data-tween="opacity 0→1">
+</section>

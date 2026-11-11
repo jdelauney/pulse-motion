@@ -1,0 +1,16 @@
+<!-- Scène toute faite « conclusion » (style crayon) : ce qu'il faut retenir s'écrit, le lavis passe dessous, le crayon le souligne, puis le logo. Durée conseillée : 6 s.
+     Textes : titre (≤ 30 car.), sous (≤ 44 car.). Logo : celui de la charte (sinon supprimer l'image).
+     Dernière scène de la vidéo : data-dur du décor = durée de la scène − 1 s (image stable d'au moins 0,5 s à la fin). -->
+<section data-scene="conclusion" data-encre="style">
+  <div class="decor">
+    <span class="page"></span>
+    <span class="crayons" data-decor data-start="0" data-dur="5" data-tween="--x 0cqh→-2cqh linear"><span class="marqueur"></span><span class="marqueur"></span><span class="marqueur"></span></span>
+  </div>
+  <div class="bloc-titre">
+    <span class="lavis chaud" data-start="#titre:fin" data-dur="0.9"></span>
+    <h2 id="titre" class="titre" data-texte="titre" data-lettres="ecrit" data-start="0.3" data-dur="1.4"></h2>
+  </div>
+  <i data-annoter="souligne" data-cible="#titre" data-start="#titre:fin+0.5" data-dur="0.6" data-couleur="accent-lisible" data-epaisseur="0.7"></i>
+  <p id="sous" class="texte" data-texte="sous" data-mots="monte" data-start="#titre:fin+0.8" data-dur="0.8"></p>
+  <img id="logo" class="logo" data-logo alt="" data-start="#sous:fin+0.2" data-dur="0.5" data-tween="opacity 0→1">
+</section>

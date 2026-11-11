@@ -1,0 +1,20 @@
+<!-- Scène toute faite « comparaison » (style papier-decoupe) : deux feuilles ; la seconde, celle qui compte, est révélée par son volet, puis se soulève. Durée conseillée : 12 s.
+     Textes : titre (≤ 30 car.), gauche-titre et droite-titre (≤ 16 car.), gauche-texte et droite-texte (≤ 48 car.). -->
+<section data-scene="comparaison">
+  <div class="decor">
+    <span class="colline loin" data-decor data-start="0" data-dur="12" data-tween="--x 0cqh→-2cqh linear"></span>
+    <span class="colline pres" data-decor data-start="0" data-dur="12" data-tween="--x 0cqh→-6cqh linear"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen" data-texte="titre" data-mots="monte" data-start="0.4" data-dur="0.9"></h2>
+  <div class="feuilles">
+    <div id="gauche" class="feuille vignette pm-m-monte" data-start="#titre:fin+0.2">
+      <h3 id="gauche-titre" class="vignette-titre" data-texte="gauche-titre" data-mots="monte" data-start="#titre:fin+0.5" data-dur="0.6"></h3>
+      <p id="gauche-texte" class="texte" data-texte="gauche-texte" data-mots="monte" data-start="#gauche-titre:fin+0.1" data-dur="0.9"></p>
+    </div>
+    <div id="droite" class="feuille vignette souleve pm-m-monte" data-start="#gauche-texte:fin+0.8" data-dur="3">
+      <span class="volet" data-start="#gauche-texte:fin+1.4" data-dur="0.8"></span>
+      <h3 id="droite-titre" class="vignette-titre compte" data-texte="droite-titre" data-mots="monte" data-start="#gauche-texte:fin+2" data-dur="0.6"></h3>
+      <p id="droite-texte" class="texte" data-texte="droite-texte" data-mots="monte" data-start="#droite-titre:fin+0.1" data-dur="0.9"></p>
+    </div>
+  </div>
+</section>

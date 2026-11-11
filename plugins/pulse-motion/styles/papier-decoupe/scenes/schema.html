@@ -1,0 +1,16 @@
+<!-- Scène toute faite « schema » (style papier-decoupe) : trois feuilles posées l'une après l'autre, reliées par des flèches ; celle du milieu se soulève. Durée conseillée : 8 s.
+     Textes : titre (≤ 30 car.), a, b, c (≤ 16 car.). -->
+<section data-scene="schema">
+  <div class="decor">
+    <span class="colline loin" data-decor data-start="0" data-dur="8" data-tween="--x 0cqh→-1.5cqh linear"></span>
+    <span class="colline pres" data-decor data-start="0" data-dur="8" data-tween="--x 0cqh→-4cqh linear"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen" data-texte="titre" data-mots="monte" data-start="0.3" data-dur="0.9"></h2>
+  <div class="chaine">
+    <div id="a" class="idee feuille pm-m-monte" data-texte="a" data-start="#titre:fin+0.2"></div>
+    <span class="connecteur" aria-hidden="true"><i id="lien1" data-fleche="#a → #b" data-start="#a+0.6" data-dur="0.6" data-couleur="texte"></i></span>
+    <div id="b" class="idee feuille compte souleve pm-m-monte" data-texte="b" data-start="#lien1:fin" data-dur="1.6"></div>
+    <span class="connecteur" aria-hidden="true"><i id="lien2" data-fleche="#b → #c" data-start="#b+0.6" data-dur="0.6" data-couleur="texte"></i></span>
+    <div id="c" class="idee feuille pm-m-monte" data-texte="c" data-start="#lien2:fin"></div>
+  </div>
+</section>

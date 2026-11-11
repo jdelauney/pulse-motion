@@ -1,0 +1,15 @@
+<!-- Scène toute faite « etape » (style pictogrammes) : le numéro sur son disque, sur un temps, puis ce qu'il faut faire, un temps après l'autre. Durée conseillée : 8 s.
+     Textes : numero (≤ 2 car.), titre (≤ 30 car.), texte (≤ 64 car.). -->
+<section data-scene="etape">
+  <div class="decor">
+    <span class="filet"></span>
+    <div class="motif" data-decor data-start="0" data-dur="8" data-tween="--d 0→16 linear"><span class="rangee"></span><span class="rangee"></span><span class="rangee"></span></div>
+  </div>
+  <div class="etape">
+    <p id="numero" class="numero pm-m-pop" data-texte="numero" data-start="0.5"></p>
+    <div class="etape-texte">
+      <h2 id="titre" class="titre-moyen pm-m-masque" data-texte="titre" data-start="1.5"></h2>
+      <p id="texte" class="texte pm-m-monte" data-texte="texte" data-start="2.5"></p>
+    </div>
+  </div>
+</section>

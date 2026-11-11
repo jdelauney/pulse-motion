@@ -1,0 +1,15 @@
+<!-- Scène toute faite « conclusion » (style pictogrammes) : la flèche devient une coche (#031) sur un temps, puis ce qu'il faut retenir et le logo. Durée conseillée : 6 s.
+     Textes : titre (≤ 30 car.), sous (≤ 44 car.). Logo : celui de la charte (sinon supprimer l'image).
+     Dernière scène de la vidéo : data-dur du décor = durée de la scène − 1 s (image stable d'au moins 0,5 s à la fin). -->
+<section data-scene="conclusion">
+  <div class="decor">
+    <span class="filet"></span>
+    <div class="motif" data-decor data-start="0" data-dur="5" data-tween="--d 0→10 linear"><span class="rangee"></span><span class="rangee"></span><span class="rangee"></span></div>
+  </div>
+  <div class="final">
+    <span class="devient" data-start="0.5" data-dur="1"><span class="panneau"><i class="picto picto-fleche"></i></span><span class="panneau alerte-panneau"><i class="picto picto-coche"></i></span></span>
+    <h2 id="titre" class="titre pm-m-masque" data-texte="titre" data-start="1.5"></h2>
+  </div>
+  <p id="sous" class="texte pm-m-monte" data-texte="sous" data-start="2.5"></p>
+  <img id="logo" class="logo" data-logo alt="" data-start="3" data-dur="0.5" data-tween="opacity 0→1">
+</section>

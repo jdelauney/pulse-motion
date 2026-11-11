@@ -1,0 +1,16 @@
+<!-- Scène toute faite « conclusion » (style papier-decoupe) : ce qu'il faut retenir, sur sa bande de papier qui se soulève, puis le logo. Durée conseillée : 6 s.
+     Textes : titre (≤ 30 car.), sous (≤ 44 car.). Logo : celui de la charte (sinon supprimer l'image).
+     Dernière scène de la vidéo : data-dur du décor = durée de la scène − 1 s (image stable d'au moins 0,5 s à la fin). -->
+<section data-scene="conclusion">
+  <div class="decor">
+    <span class="rond" data-decor data-start="0" data-dur="5" data-tween="--y 0cqh→1.2cqh sine-inout"></span>
+    <span class="colline loin" data-decor data-start="0" data-dur="5" data-tween="--x 0cqh→-1.5cqh linear"></span>
+    <span class="colline" data-decor data-start="0" data-dur="5" data-tween="--x 0cqh→-3cqh linear"></span>
+    <span class="colline pres" data-decor data-start="0" data-dur="5" data-tween="--x 0cqh→-4cqh linear"></span>
+  </div>
+  <div id="bandeau" class="feuille bandeau souleve pm-m-monte" data-start="0.3" data-dur="2">
+    <h2 id="titre" class="titre" data-texte="titre" data-mots="monte" data-start="0.6" data-dur="0.9"></h2>
+  </div>
+  <p id="sous" class="texte" data-texte="sous" data-mots="monte" data-start="#titre:fin+0.3" data-dur="0.8"></p>
+  <img id="logo" class="logo" data-logo alt="" data-start="#sous:fin+0.2" data-dur="0.5" data-tween="opacity 0→1">
+</section>

@@ -1,0 +1,15 @@
+<!-- Scène toute faite « titre » (style papier-decoupe) : les strates de papier se posent, puis la bande du titre ; elle se soulève, son ombre s'allonge. Durée conseillée : 7 s.
+     Textes : etiquette (≤ 22 car.), titre (≤ 30 car.), sous (≤ 46 car.). Décor : data-dur = durée de la scène. -->
+<section data-scene="titre">
+  <div class="decor">
+    <span class="rond pm-m-pop" data-decor data-start="0.2" data-dur="7" data-tween="--y 0cqh→1.4cqh sine-inout"></span>
+    <span class="colline loin" data-decor data-start="0" data-dur="7" data-tween="--x 0cqh→-1.5cqh linear"></span>
+    <span class="colline" data-decor data-start="0" data-dur="7" data-tween="--x 0cqh→-3cqh linear"></span>
+    <span class="colline pres" data-decor data-start="0" data-dur="7" data-tween="--x 0cqh→-5cqh linear"></span>
+  </div>
+  <div id="bandeau" class="feuille bandeau souleve pm-m-monte" data-start="0.5" data-dur="2.4">
+    <p id="etiquette" class="etiquette" data-texte="etiquette" data-mots="monte" data-start="0.8" data-dur="0.6"></p>
+    <h1 id="titre" class="titre" data-texte="titre" data-mots="monte" data-start="#etiquette:fin" data-dur="0.9"></h1>
+  </div>
+  <p id="sous" class="texte" data-texte="sous" data-mots="monte" data-start="#titre:fin+0.6" data-dur="0.9"></p>
+</section>

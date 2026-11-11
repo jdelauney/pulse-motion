@@ -1,0 +1,119 @@
+{
+  "style": "crayon",
+  "famille": "chaleureuse",
+  "personnalite": [
+    "tendre",
+    "artisanal",
+    "patient"
+  ],
+  "eviter": [
+    "traits nets et formes parfaites",
+    "textes qui tremblent"
+  ],
+  "genres": [
+    "storytelling",
+    "formation",
+    "social"
+  ],
+  "couleur": {
+    "strategie": "sobre-avec-une-touche",
+    "tons": [
+      "clair"
+    ],
+    "tonDefaut": "clair",
+    "clair": {
+      "fond": "#f5eedf",
+      "texte": "#2f2a26"
+    },
+    "roles": {
+      "primaire": "le crayon bleu et le lavis froid",
+      "accent": "le crayon rouge : ce qui compte, le lavis chaud"
+    }
+  },
+  "typographie": {
+    "titres": {
+      "famille": "Fredoka",
+      "categorie": "sans-serif",
+      "graisse": 600
+    },
+    "texte": {
+      "famille": "Nunito Sans",
+      "categorie": "sans-serif",
+      "graisse": 400
+    }
+  },
+  "mouvement": {
+    "caractere": "doux",
+    "courbes": [
+      "sine-inout",
+      "cubic-out"
+    ],
+    "dureeType": 0.9,
+    "transitions": [
+      "fondu",
+      "retournement"
+    ]
+  },
+  "signature": "Page d'album au crayon gras sur papier à grain : la cire ne prend que sur les bosses du papier, un lavis translucide passe dessous et révèle, les traits frémissent doucement",
+  "aFaire": [
+    "Laisser la page se dessiner, un trait de cire après l'autre",
+    "Un lavis pour révéler ce qui compte, pas partout"
+  ],
+  "aEviter": [
+    "Faire trembler un texte à lire",
+    "Plus de trois crayons dans une même scène"
+  ],
+  "categorie": "dessine",
+  "nonPas": "Pas un carnet de croquis : de la cire et du lavis, pas de l'encre ni des hachures. Pas un tableau : une page d'album, du papier à grain.",
+  "usages": [
+    "Sensibiliser le grand public",
+    "Raconter une histoire simple",
+    "Expliquer à des enfants ou des familles"
+  ],
+  "motsCles": [
+    "crayon",
+    "crayon gras",
+    "crayon de couleur",
+    "cire",
+    "pastel",
+    "album",
+    "livre d'enfant",
+    "album jeunesse",
+    "lavis",
+    "dessin d'enfant"
+  ],
+  "son": {
+    "ambiances": [
+      "acoustique",
+      "calme"
+    ],
+    "bruitages": {
+      "titre": null,
+      "texte": null,
+      "point": "pop",
+      "chiffre": "tic",
+      "trace": "crayon",
+      "forme": null,
+      "image": null,
+      "ecriture": "crayon",
+      "transition": null
+    },
+    "matiere": "crayon",
+    "fort": "carillon"
+  },
+  "modules": [
+    "encre"
+  ],
+  "provenance": [
+    {
+      "depot": "lemo-opuscar",
+      "style": "crayon-book",
+      "licence": "MIT"
+    },
+    {
+      "depot": "take-one",
+      "style": "crayon-storybook",
+      "licence": "MIT"
+    }
+  ]
+}

@@ -1,0 +1,119 @@
+{
+  "style": "riso",
+  "famille": "affirmee",
+  "personnalite": [
+    "vif",
+    "indépendant",
+    "graphique"
+  ],
+  "eviter": [
+    "plus de trois encres",
+    "texte en couleur claire"
+  ],
+  "genres": [
+    "social",
+    "produit",
+    "storytelling"
+  ],
+  "couleur": {
+    "strategie": "plusieurs-couleurs",
+    "tons": [
+      "clair"
+    ],
+    "tonDefaut": "clair",
+    "clair": {
+      "fond": "#ebe3cf",
+      "texte": "#1d3a6e"
+    },
+    "roles": {
+      "primaire": "la première encre : collines, flèches, colonnes",
+      "accent": "la seconde encre : le rond, les soulignés, les cadres"
+    }
+  },
+  "typographie": {
+    "titres": {
+      "famille": "Schibsted Grotesk",
+      "categorie": "sans-serif",
+      "graisse": 900
+    },
+    "texte": {
+      "famille": "Schibsted Grotesk",
+      "categorie": "sans-serif",
+      "graisse": 400
+    }
+  },
+  "mouvement": {
+    "caractere": "vif",
+    "courbes": [
+      "quart-out",
+      "back-out"
+    ],
+    "dureeType": 0.5,
+    "transitions": [
+      "coupe",
+      "glissement"
+    ]
+  },
+  "signature": "Deux ou trois encres translucides surimprimées sur un papier chaud : une trame de points, un grain d'encre, des plaques jamais tout à fait calées ; le texte dans l'encre la plus sombre",
+  "aFaire": [
+    "Ajouter une encre à chaque étape, jamais plus de trois",
+    "Garder le texte dans l'encre la plus sombre"
+  ],
+  "aEviter": [
+    "Un texte sur l'encre d'accent pleine",
+    "Un décalage des plaques qui change à chaque image"
+  ],
+  "categorie": "papier-imprime",
+  "nonPas": "Pas un style plat : les encres se superposent et se mêlent. Pas une affiche énergique : peu de mouvement, des encres qui se posent, pas de titres qui tombent.",
+  "usages": [
+    "Annoncer un événement",
+    "Publier sur les réseaux",
+    "Donner du caractère à une marque"
+  ],
+  "motsCles": [
+    "riso",
+    "risographie",
+    "risograph",
+    "sérigraphie",
+    "imprimé",
+    "affiche imprimée",
+    "fanzine",
+    "trame",
+    "surimpression"
+  ],
+  "son": {
+    "ambiances": [
+      "entrainant",
+      "inspirant"
+    ],
+    "bruitages": {
+      "titre": "clic",
+      "texte": null,
+      "point": "pop",
+      "chiffre": "tic",
+      "trace": "papier",
+      "forme": "pop",
+      "image": null,
+      "ecriture": "papier",
+      "transition": null
+    },
+    "matiere": "papier",
+    "fort": "impact"
+  },
+  "modules": [
+    "encre",
+    "riso"
+  ],
+  "provenance": [
+    {
+      "depot": "lemo-opuscar",
+      "style": "risograph",
+      "licence": "MIT"
+    },
+    {
+      "depot": "take-one",
+      "style": "riso-pop",
+      "licence": "MIT"
+    }
+  ]
+}
