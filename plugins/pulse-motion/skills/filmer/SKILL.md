@@ -75,7 +75,7 @@ Une capture d'écran fixe ne s'importe pas : la copier dans `assets/`, montrée 
 
 ## Creer
 
-Lu par `/pulse-motion:creer` pour un tutoriel de logiciel (une adresse, « comment faire … dans … », « tutoriel ») : la question 2 de la première ronde devient **Que montre-t-on ?** : « L'application : je donne son adresse et les étapes (Recommandé) » · « Une vidéo de mon écran » · « Des captures d'écran » · « Un logiciel installé ». L'application : sections 1 à 4 de ces consignes (tournage, choix de la prise, confidentialité) **avant** d'écrire le déroulé. Une vidéo de l'écran ou un logiciel installé : section 5. Des captures : les copier dans `assets/`, montrées dans un écran (`pulse-motion reference ecran`).
+Lu par `/pulse-motion:creer` pour un tutoriel de logiciel (une adresse, « comment faire … dans … », « tutoriel ») : la question 2 de la première ronde devient **Que montre-t-on ?** : « L'application : je donne son adresse et les étapes (Recommandé) » · « Une vidéo de mon écran » · « Des captures d'écran » · « Un logiciel installé ». L'application : sections 1 à 4 **avant** d'écrire le déroulé. Une vidéo de l'écran ou un logiciel installé : section 5 ; des captures : sa fin. Modèle `tutoriel-logiciel` : sa scène `ecran` devient une scène par 1 à 3 étapes ; « astuce », 9:16 : sa `declinaison`, filmée en `telephone`.
 
 ## Retouches
 
