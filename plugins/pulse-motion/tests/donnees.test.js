@@ -242,7 +242,7 @@ test('formule : la police mathématique n\'est embarquée que si la vidéo a une
 // --- 5.7 Moyeu et mises en page --------------------------------------------------------------------------------------------
 
 test('moyeu : présent dans les styles livrés, passe la vérification des styles', () => {
-  assert.equal(STYLES.length, 9, 'six essentiels et la vague A');
+  assert.equal(STYLES.length, 13, 'six essentiels, la vague A et la vague B');
   assert.deepEqual(TYPES.moyeu, ['titre', 'centre', 'partie1', 'partie2', 'partie3', 'partie4', 'partie5']);
   assert.deepEqual(OPTIONNELLES.moyeu, ['partie4', 'partie5']);
   assert.deepEqual(TYPES_RECENTS, ['moyeu']);
