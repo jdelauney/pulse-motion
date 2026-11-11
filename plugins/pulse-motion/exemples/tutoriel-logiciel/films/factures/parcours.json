@@ -1,0 +1,33 @@
+{
+  "nom": "factures",
+  "depart": "appli-essai/factures.html",
+  "appareil": "ordinateur",
+  "apparence": "claire",
+  "etapes": [
+    {
+      "faire": "cliquer",
+      "cible": "Nouvelle facture",
+      "dit": "Cliquez sur Nouvelle facture."
+    },
+    {
+      "faire": "taper",
+      "cible": "Client",
+      "texte": "Dupont SARL",
+      "dit": "Dans Client, tapez le nom du client."
+    },
+    {
+      "faire": "cliquer",
+      "cible": "Enregistrer",
+      "dit": "Cliquez sur Enregistrer."
+    },
+    {
+      "faire": "cliquer",
+      "cible": {
+        "texte": "Enregistrer",
+        "dans": "fenêtre"
+      },
+      "dit": "Confirmez : la facture est enregistrée."
+    }
+  ],
+  "prise": "prise-02"
+}

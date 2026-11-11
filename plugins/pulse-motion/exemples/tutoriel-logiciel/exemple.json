@@ -1,0 +1,27 @@
+{
+  "modele": "tutoriel-logiciel",
+  "phrase": "/pulse-motion:creer un tutoriel : comment créer une facture dans Facturo, l'appli d'essai",
+  "reponses": {
+    "montre": "L'application : je donne son adresse et les étapes",
+    "duree": "30 s",
+    "public": "Professionnels du métier",
+    "parcours": "Rapide",
+    "ajouter": "Rien pour l'instant",
+    "musique": "Une musique composée pour la vidéo",
+    "voix": "Pas de voix",
+    "sousTitres": "Sans voix, pas de sous-titres",
+    "style": "clair-pedagogique"
+  },
+  "parcours": [
+    "Cliquer sur « Nouvelle facture »",
+    "Dans « Client », taper « Dupont SARL »",
+    "Cliquer sur « Enregistrer »",
+    "Confirmer dans la fenêtre"
+  ],
+  "tournage": [
+    "Première prise refaite : l'appli d'essai suivait le mode sombre de l'ordinateur et le nom tapé se lisait mal. Deuxième prise en apparence claire, gardée ; la première a été supprimée.",
+    "Confidentialité : l'adresse électronique du client est floutée d'office ; le nom du compte (Camille Durand) est fictif, laissé tel quel."
+  ],
+  "retouches": [],
+  "corrections": []
+}

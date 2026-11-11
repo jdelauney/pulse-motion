@@ -8,10 +8,10 @@ const { listerModeles, lireModele, validerModele, trouverModele, copierExemple, 
 const { dossierTemporaire } = require('./aide/temporaire.js');
 
 const PM = path.join(__dirname, '..', 'scripts', 'pm.js');
-const IDS = ['accueil', 'annonce', 'formation-courte', 'histoire', 'pitch', 'presentation-produit', 'publication-sociale'];
-const GENRE = { 'formation-courte': 'formation', 'presentation-produit': 'produit', histoire: 'storytelling', 'publication-sociale': 'social', accueil: 'formation', pitch: 'produit', annonce: 'social' };
+const IDS = ['accueil', 'annonce', 'formation-courte', 'histoire', 'pitch', 'presentation-produit', 'publication-sociale', 'tutoriel-logiciel'];
+const GENRE = { 'formation-courte': 'formation', 'presentation-produit': 'produit', histoire: 'storytelling', 'publication-sociale': 'social', accueil: 'formation', pitch: 'produit', annonce: 'social', 'tutoriel-logiciel': 'formation' };
 
-test('modeles : les sept modèles existent, valides, avec leur genre', () => {
+test('modeles : les huit modèles existent, valides, avec leur genre', () => {
   assert.deepEqual(listerModeles().map((m) => m.id), IDS);
   for (const id of IDS) {
     const m = lireModele(id);
@@ -71,7 +71,9 @@ test('modeles : trouver le modèle d\'après le sujet', () => {
   // Le genre dit par un mot fort l'emporte sur un mot qui ne fait que le suggérer.
   const cas = {
     'une formation sur notre nouvel outil': 'formation-courte',
-    'un tutoriel pour utiliser notre application': 'formation-courte',
+    // Un tutoriel et un mot de logiciel : le tutoriel logiciel (spec S6, 5.16) ; « tutoriel » seul reste une formation.
+    'un tutoriel pour utiliser notre application': 'tutoriel-logiciel',
+    'un tutoriel sur le tri des déchets': 'formation-courte',
     "une vidéo de bienvenue pour les nouveaux adhérents : horaires d'ouverture et règles du club": 'accueil',
     "une vidéo d'accueil pour expliquer l'inscription à la médiathèque": 'accueil',
     "une vidéo de prise en main : comment lancer l'application": 'accueil',
@@ -142,7 +144,7 @@ test('exemple : modèle inconnu, la liste des modèles est donnée', () => {
 test('pm modeles : liste, afficher, trouver, exemple', () => {
   const liste = spawnSync(process.execPath, [PM, 'modeles', 'liste'], { encoding: 'utf8' });
   assert.equal(liste.status, 0, liste.stderr);
-  assert.equal(JSON.parse(liste.stdout).length, 7);
+  assert.equal(JSON.parse(liste.stdout).length, 8);
   const fiche = spawnSync(process.execPath, [PM, 'modeles', 'afficher', 'pitch'], { encoding: 'utf8' });
   assert.equal(JSON.parse(fiche.stdout).genre, 'produit');
   const rien = spawnSync(process.execPath, [PM, 'modeles', 'trouver', 'anniversaire de ma grand-mère'], { encoding: 'utf8' });

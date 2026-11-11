@@ -10,6 +10,7 @@ window.PULSE_WIKI = {
       "couleur": 1,
       "commandes": [
         "creer",
+        "filmer",
         "reprendre",
         "outils"
       ]
@@ -105,6 +106,13 @@ window.PULSE_WIKI = {
       "description": "Créer une nouvelle vidéo, seulement quand vous le demandez (« fais-moi une vidéo sur… », ou la commande) : quelques questions, le déroulé validé, puis la vidéo dans le navigateur",
       "forme": "[le sujet de la vidéo en une phrase]",
       "note": "facultatif : sans sujet, Pulse Motion vous le demande"
+    },
+    {
+      "nom": "filmer",
+      "etape": "creer",
+      "description": "Filmer une application web ou un site pour un tutoriel, ou partir d'une vidéo ou de captures de votre écran (« filme comment on crée une facture sur app.exemple.fr », « j'ai enregistré mon écran », « floute les noms des clients »)",
+      "forme": "[ce qu'il faut filmer, ou la vidéo de votre écran]",
+      "note": "facultatif : sans précision, Pulse Motion vous demande ce qu'on montre"
     },
     {
       "nom": "reprendre",

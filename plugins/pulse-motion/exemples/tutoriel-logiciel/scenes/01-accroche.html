@@ -1,0 +1,20 @@
+<!-- Accroche (composée) : le résultat final tout de suite. Le titre au-dessus, l'écran filmé de Facturo en grand :
+     le clic de confirmation dans « Enregistrer la facture ? », puis le message « Facture enregistrée ». 3 s. -->
+<section data-scene="accroche" class="centre">
+  <style>
+    @scope {
+      :scope { padding: 4.5cqh 8cqh; gap: 3cqh; justify-content: center; }
+      .titre { font-size: 7.4cqh; white-space: nowrap; }
+      .pm-ecran { --pm-ecran-l: 116cqh; }
+    }
+  </style>
+  <div class="decor">
+    <span class="rond" data-decor style="width: 64cqh; height: 64cqh; left: -24cqh; top: -20cqh" data-start="0" data-dur="scene" data-tween="--dx 0cqh→6cqh sine-inout; --dy 0cqh→4cqh sine-inout"></span>
+    <span class="rond accent" data-decor style="width: 46cqh; height: 46cqh; right: -14cqh; bottom: -16cqh" data-start="0" data-dur="scene" data-tween="--dx 0cqh→-5cqh sine-inout; --dy 0cqh→-3cqh sine-inout"></span>
+  </div>
+  <h1 id="titre" class="titre entre-bas" data-texte="titre" data-start="0.1" data-dur="0.7"></h1>
+  <div id="ecran" class="pm-ecran pm-m-monte" data-cadre="navigateur" data-film="factures" data-etapes="4"
+       data-pointeur-depart="80%,82%" data-start="#titre+0.15" data-dur="0.6">
+    <i class="pm-etape" data-etape="4" data-start="1"></i>
+  </div>
+</section>

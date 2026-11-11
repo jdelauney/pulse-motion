@@ -1,0 +1,136 @@
+{
+  "id": "tutoriel-logiciel",
+  "nom": "Tutoriel logiciel",
+  "genre": "formation",
+  "description": "Deux minutes pour montrer comment on fait dans une application : le résultat d'abord, puis chaque étape filmée à l'écran, avec le pointeur, les clics et un projecteur sur l'essentiel.",
+  "pourQui": "Formateurs, équipes support, responsables d'un outil interne : une démarche à montrer dans un logiciel, pas à pas.",
+  "format": "16:9",
+  "duree": 120,
+  "styles": [
+    "clair-pedagogique",
+    "minimal",
+    "tech-sombre"
+  ],
+  "musique": {
+    "ambiance": "calme"
+  },
+  "sousTitres": true,
+  "phrases": [
+    "/pulse-motion:creer un tutoriel : comment créer une facture dans Facturo, l'appli d'essai",
+    "/pulse-motion:creer un tutoriel pour montrer comment réserver une salle sur notre site intranet",
+    "/pulse-motion:creer filme comment on ajoute un client dans notre logiciel de facturation"
+  ],
+  "variantes": {
+    "grandPublic": "/pulse-motion:creer un tutoriel pour prendre rendez-vous sur le site de la mairie, pour le grand public",
+    "professionnels": "/pulse-motion:creer un tutoriel pour saisir une note de frais dans notre logiciel, pour les commerciaux",
+    "eleves": "/pulse-motion:creer un tutoriel pour rendre un devoir sur l'espace numérique de travail, pour des élèves de quatrième"
+  },
+  "scenes": [
+    {
+      "id": "accroche",
+      "ecran": true,
+      "etapes": "la dernière étape du parcours : le résultat obtenu",
+      "intention": "montrer le résultat final tout de suite",
+      "duree": 3,
+      "transition": "fondu",
+      "textes": {
+        "titre": "la promesse (« Voici votre facture, prête en 1 minute »)"
+      }
+    },
+    {
+      "id": "contexte",
+      "type": "titre",
+      "intention": "dire pourquoi, en une phrase",
+      "duree": 8,
+      "transition": "glissement",
+      "textes": {
+        "etiquette": "le logiciel (« Facturo »)",
+        "titre": "ce qu'on va savoir faire (« Créer une facture »)",
+        "sous": "pourquoi c'est utile, en une phrase"
+      }
+    },
+    {
+      "id": "etapes",
+      "ecran": true,
+      "etapes": "toutes les étapes du parcours, dans l'ordre : une scène pour 1 à 3 étapes, cette durée partagée entre elles",
+      "intention": "faire chaque étape à l'écran : le pointeur, les clics, la saisie",
+      "duree": 88,
+      "transition": "glissement",
+      "suivre": true,
+      "projecteur": "l'étape clé de chaque scène (le bouton qui enregistre, le total)",
+      "textes": {
+        "consigne": "la phrase de l'étape, numérotée (« 2. Cliquez sur Nouvelle facture »), tirée de ce que dit la personne"
+      }
+    },
+    {
+      "id": "recapitulatif",
+      "type": "liste",
+      "intention": "récapituler les étapes, une ligne chacune",
+      "duree": 13,
+      "transition": "glissement",
+      "textes": {
+        "titre": "le nombre d'étapes (« En 4 étapes »)",
+        "point1": "première étape, quelques mots",
+        "point2": "deuxième étape",
+        "point3": "troisième étape",
+        "point4": "quatrième étape (à retirer s'il n'y en a que 3)"
+      }
+    },
+    {
+      "id": "fin",
+      "type": "conclusion",
+      "intention": "ce qu'on sait faire maintenant, et où trouver de l'aide",
+      "duree": 8,
+      "transition": "fondu",
+      "textes": {
+        "titre": "ce qu'on sait faire maintenant",
+        "sous": "où trouver de l'aide, ou la prochaine étape"
+      }
+    }
+  ],
+  "declinaison": {
+    "id": "astuce",
+    "nom": "Astuce en 30 s",
+    "format": "9:16",
+    "duree": 30,
+    "appareil": "telephone",
+    "etapes": 3,
+    "scenes": [
+      {
+        "id": "accroche",
+        "ecran": true,
+        "etapes": "la dernière étape : le résultat obtenu",
+        "intention": "montrer le résultat tout de suite",
+        "duree": 3,
+        "transition": "fondu",
+        "textes": {
+          "titre": "l'astuce en quelques mots (« Une facture en 3 gestes »)"
+        }
+      },
+      {
+        "id": "etapes",
+        "ecran": true,
+        "etapes": "les 3 étapes, filmées sur téléphone, dans une seule scène",
+        "intention": "faire les 3 gestes à l'écran",
+        "duree": 22,
+        "transition": "glissement",
+        "suivre": true,
+        "projecteur": "le geste qui donne le résultat",
+        "textes": {
+          "consigne": "la phrase de chaque étape, numérotée"
+        }
+      },
+      {
+        "id": "fin",
+        "type": "conclusion",
+        "intention": "l'astuce à retenir",
+        "duree": 5,
+        "transition": "fondu",
+        "textes": {
+          "titre": "l'astuce à retenir",
+          "sous": "où la retrouver"
+        }
+      }
+    ]
+  }
+}
