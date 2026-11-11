@@ -35,6 +35,8 @@
   };
 
   function deborde(el) {
+    // Corps d'un code : sa bande surlignée dépasse exprès ; sa largeur se juge par code-trop-large (calque de dessin).
+    if (/^code:/.test(el.getAttribute('data-texte') || '')) return false;
     var marge = Math.max(1, 0.25 * parseFloat(getComputedStyle(el).fontSize));
     return el.scrollWidth > el.clientWidth + marge || el.scrollHeight > el.clientHeight + marge;
   }

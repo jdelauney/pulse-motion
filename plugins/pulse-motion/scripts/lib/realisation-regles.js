@@ -45,13 +45,37 @@ function plagesVoix(minutee, sceneMinutee, texteDit) {
   return v.duree > 0 ? [[d, d + v.duree]] : [];
 }
 
-function rienDeNouveau({ deroule, min, elements, scenesMinutees, besoinLecture, social, S }) {
+/**
+ * Instants (s, temps de la vidéo) des étapes d'un code de la scène (spec S7, 5.9) : passer à l'étape suivante fait apparaître
+ * du nouveau. Les instants des étapes se lisent comme le calque de dessin (moteur/dessin/calque.js) : un nombre en temps de la
+ * scène, ou une ancre (mot:, repere:, #élément) résolue par le minutage de la scène seule.
+ */
+function instantsEtapesCode({ deroule, s, elements, scenesMinutees, html }) {
+  const sc = (deroule.scenes || []).find((x) => x.id === s.id);
+  if (!sc || !sc.code || typeof sc.code !== 'object') return [];
+  const pseudo = [];
+  for (const [cle, c] of Object.entries(sc.code)) {
+    if (!c || !Array.isArray(c.etapes) || (html && !new RegExp(`\\sdata-code\\s*=\\s*["']${echapper(cle)}["']`).test(html))) continue;
+    c.etapes.forEach((e, k) => { if (k > 0 && e && e.debut !== undefined) pseudo.push({ cle: `__pm_etape_${pseudo.length}`, start: String(e.debut) }); });
+  }
+  if (!pseudo.length) return [];
+  const { calculerMinutage } = require('../../moteur/minutage.js');
+  const { optionsMinutage } = require('./deroule.js');
+  const sm = (scenesMinutees || []).find((x) => x.id === s.id) || sc;
+  const liste = (elements || []).map((e) => ({ cle: e.cle, start: e.start, dur: e.dur })).concat(pseudo);
+  const m = calculerMinutage([{ id: s.id, duree: sm.duree, rythme: sm.rythme || 1, transition: 'aucune', voix: sm.voix }], { [s.id]: liste }, { ...optionsMinutage(deroule), derniere: false });
+  return pseudo.map((p) => m.elements[s.id][p.cle]).filter(Boolean).map((x) => s.debut + x.debut);
+}
+
+function rienDeNouveau({ deroule, min, elements, scenesMinutees, besoinLecture, social, S, scenesHtml = {} }) {
   const r = [];
   min.scenes.forEach((s, i) => {
     const contenu = (elements[s.id] || []).filter((e) => !e.decor && min.elements[s.id][e.cle]);
     const suivante = min.scenes[i + 1];
     const fin = suivante ? Math.min(s.fin, suivante.debut) : s.fin;
-    const entrees = contenu.map((e) => min.elements[s.id][e.cle].debut).filter((t) => t > s.debut + EPS && t < fin - EPS).sort((a, b) => a - b);
+    // Les étapes d'un code comptent comme du nouveau (le code change sous les yeux).
+    const etapes = instantsEtapesCode({ deroule, s, elements: elements[s.id], scenesMinutees, html: scenesHtml[s.id] });
+    const entrees = contenu.map((e) => min.elements[s.id][e.cle].debut).concat(etapes).filter((t) => t > s.debut + EPS && t < fin - EPS).sort((a, b) => a - b);
     const points = [s.debut, ...entrees];
     // Pause finale de la dernière scène exclue : rien de nouveau n'y entre, c'est voulu.
     if (suivante) points.push(fin);
@@ -389,7 +413,7 @@ function reglesRealisation(o) {
   const elements = Object.fromEntries(Object.entries(o.scenesLues).map(([id, l]) => [id, l.elements]));
   const social = o.deroule.genre === 'social';
   return [
-    ...rienDeNouveau({ deroule: o.deroule, min: o.min, elements, scenesMinutees: o.scenesMinutees, besoinLecture: o.besoinLecture, social, S }),
+    ...rienDeNouveau({ deroule: o.deroule, min: o.min, elements, scenesMinutees: o.scenesMinutees, besoinLecture: o.besoinLecture, social, S, scenesHtml: o.scenesHtml || {} }),
     ...comparaisonCourte({ deroule: o.deroule, min: o.min, elements, avecVoix: o.avecVoix, corrigeable: o.corrigeable, S }),
     ...cameraRepetee({ deroule: o.deroule, scenesLues: o.scenesLues, temps: o.temps, S }),
     ...termeCle({ deroule: o.deroule, scenesHtml: o.scenesHtml, termes: o.termes || [] }),
@@ -400,4 +424,5 @@ function reglesRealisation(o) {
   ];
 }
 
-module.exports = { reglesRealisation, contientTerme, analyserScript, mouvementsCamera, EMOJI };
+module.exports = {
+  instantsEtapesCode, reglesRealisation, contientTerme, analyserScript, mouvementsCamera, EMOJI };

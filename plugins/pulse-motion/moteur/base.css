@@ -124,6 +124,13 @@ body {
 /* Caméra : le conteneur couvre l'image ; le moteur pose transform, filter et --pm-cam-dx/dy.
    Parallaxe : un plan [data-profondeur] suit le cadrage à --pm-profondeur (1 : comme la caméra, 0 : fixe). */
 #pm-scene [data-camera] { position: absolute; inset: 0; transform-origin: 0 0; }
+/* Caméra automatique (spec S7, 5.8) : le conteneur remplit la scène et en reprend la mise en page (colonne, marges,
+   alignements, écarts), pour qu'une scène toute faite posée dedans (moyeu, liste…) garde la sienne. Spécificité nulle : une
+   mise en page écrite par la scène l'emporte. */
+:where(#pm-scene > section[data-scene] > [data-camera*="auto"]) {
+  display: inherit; flex-direction: inherit; flex-wrap: inherit; justify-content: inherit; align-items: inherit; align-content: inherit;
+  gap: inherit; padding: inherit; box-sizing: border-box; text-align: inherit;
+}
 #pm-scene [data-profondeur] {
   translate: calc(var(--pm-cam-dx, 0) * (1 - var(--pm-profondeur, 1)) * 1cqw) calc(var(--pm-cam-dy, 0) * (1 - var(--pm-profondeur, 1)) * 1cqh);
 }

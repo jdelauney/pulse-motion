@@ -109,6 +109,15 @@
     var h = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
     return w > 0 && h > 0 ? w * h : 0;
   }
+  /** Rectangle dans le repère de la caméra qui porte l'élément (zoom et déplacement retirés), ou null hors caméra. */
+  function repereCamera(el, r) {
+    var cam = el.closest('[data-camera]');
+    if (!cam || !(cam.offsetWidth > 0)) return null;
+    var c = cam.getBoundingClientRect();
+    var s = c.width / cam.offsetWidth;
+    if (!(s > 0)) return null;
+    return { left: (r.left - c.left) / s, top: (r.top - c.top) / s, width: r.width / s, height: r.height / s };
+  }
   function mots(t) { return (String(t).match(/[\p{L}\p{N}]+(?:['’-][\p{L}\p{N}]+)*/gu) || []).length; }
   function arrondi(x) { return Math.round(x * 100) / 100; }
   /** Taille rendue d'un texte (px) : taille de police × échelle réelle (largeur rendue / largeur de mise en page). */
@@ -213,7 +222,11 @@
       visibles.forEach(function (id) {
         var sec = conteneur.querySelector(':scope > section[data-scene="' + id + '"]');
         if (!sec) return;
-        var immobiles = [];
+        var immobiles = [], portes = [];
+        var deplace = function (r, a) {
+          return Math.abs(r.left - a.left) > S.immobile * W || Math.abs(r.top - a.top) > S.immobile * H ||
+            Math.abs(r.width - a.width) > S.immobile * W || Math.abs(r.height - a.height) > S.immobile * H;
+        };
         // Mouvement rapide : grands éléments animés ou jugés, hors transition.
         sec.querySelectorAll('[data-start], ' + JUGES).forEach(function (el) {
           var r = el.getBoundingClientRect();
@@ -244,13 +257,18 @@
           var e = etat(el);
           var stable = !transition && e !== 'avant' && e !== 'pendant' && !lettresEnCours(el);
           var avant = releves.get(el);
-          releves.set(el, { r: r, k: k });
+          var rl = repereCamera(el, r);
+          releves.set(el, { r: r, rl: rl, k: k });
           if (!stable || !avant || avant.k !== k - 1) return;
-          avant = avant.r;
-          if (Math.abs(r.left - avant.left) > S.immobile * W || Math.abs(r.top - avant.top) > S.immobile * H ||
-              Math.abs(r.width - avant.width) > S.immobile * W || Math.abs(r.height - avant.height) > S.immobile * H) return;
+          if (deplace(r, avant.r)) {
+            // Posé dans une caméra qui bouge (dérive de la caméra automatique, zoom lent) : immobile dans le repère de la caméra,
+            // il est jugé pour les chevauchements (la caméra déplace pareil les deux éléments).
+            if (rl && avant.rl && !deplace(rl, avant.rl)) portes.push({ el: el, r: r });
+            return;
+          }
           immobiles.push({ el: el, r: r });
         });
+        var poses = immobiles.concat(portes);
         immobiles.forEach(function (x) {
           var el = x.el;
           var r = x.r;
@@ -281,10 +299,10 @@
             }
           }
         });
-        for (var i = 0; i < immobiles.length; i++) {
-          for (var j = i + 1; j < immobiles.length; j++) {
-            var a = immobiles[i];
-            var b = immobiles[j];
+        for (var i = 0; i < poses.length; i++) {
+          for (var j = i + 1; j < poses.length; j++) {
+            var a = poses[i];
+            var b = poses[j];
             if (a.el.contains(b.el) || b.el.contains(a.el)) continue;
             var c = commune(a.r, b.r);
             if (!c) continue;
