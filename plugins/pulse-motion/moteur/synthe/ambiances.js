@@ -1,4 +1,4 @@
-/* Pulse Motion – ambiances : six recettes qui écrivent une partition (le même chemin qu'une partition libre).
+/* Pulse Motion – ambiances : huit recettes qui écrivent une partition (le même chemin qu'une partition libre).
  * Structure calée sur les scènes : introduction sans percussion, corps, montée (riser) sur la dernière seconde de
  * l'avant-dernière scène, accord de tonique final. Variations tous les 8 temps tirées de la graine (déterministe).
  *
@@ -26,6 +26,11 @@
     corporate: { progressions: [[1, 6, 4, 5], [1, 4, 5, 4]], nappe: 'pad', rythmeBasse: ['1/4'], rythmePluck: ['1/8'], percussions: true },
     suspense: { progressions: [[1, 6, 3, 7], [1, 7, 6, 7]], nappe: 'nappe-bruit', rythmeBasse: ['1'], rythmePluck: ['1/4', '- 1/4', '1/2'], percussions: true, cloche: true },
     tech: { progressions: [[1, 7, 6, 7], [1, 6, 7, 1]], nappe: 'pad', rythmeBasse: ['1/8'], rythmePluck: ['1/16'], percussions: true },
+    // Styles dessinés et techniques (spec Styles et réalisation, 5.8), ajoutées à la fin : les graines des six premières ne
+    // changent pas. acoustique : arpèges de guitare et nappe, basse pincée, sans batterie ; mecanique : horlogerie, ostinato
+    // en pizzicato, tics et une cloche toutes les deux mesures.
+    acoustique: { progressions: [[1, 5, 6, 4], [1, 4, 6, 5]], nappe: 'pad', rythmeBasse: ['1/2'], rythmePluck: ['1/8'], percussions: false, corde: 'guitare' },
+    mecanique: { progressions: [[1, 6, 4, 5], [1, 7, 6, 5]], nappe: 'pad', rythmeBasse: ['1/4'], rythmePluck: ['1/8'], percussions: false, horloge: true, corde: 'pizzicato' },
   };
 
   function mulberry32(a) {
@@ -122,7 +127,9 @@
       if (corps > 0) {
         var ac = accordsSuivants(corps), accords = ac.accords, racines = ac.racines;
         // Nappe (ou arpèges en tech).
-        if (o.ambiance === 'tech' && h !== 'calme') {
+        if (recette.corde) {
+          cordes(cadre, recette, accords, racines, h, pleine, normale, intensite, corps);
+        } else if (o.ambiance === 'tech' && h !== 'calme') {
           cadre({ instrument: 'pluck', volume: 0.5, motif: [].concat.apply([], accords.map(function (a) {
             var seq = [a[0] + 12, a[1] + 12, a[2] + 12, a[1] + 12];
             return [].concat(seq, seq, seq, seq).map(function (x) { return nom(x) + ' 1/16'; });
@@ -135,7 +142,7 @@
           cadre({ instrument: 'pad', volume: 0.55, motif: accords.map(function (a) { return a.map(nom).join('+') + ' 1'; }) }, 0, corps);
         }
         // Basse : fondamentale une octave plus bas, au rythme de l'ambiance.
-        if (pleine || (normale && intensite >= 0.25)) {
+        if (!recette.corde && (pleine || (normale && intensite >= 0.25))) {
           cadre({ instrument: 'basse', volume: 0.6, motif: [].concat.apply([], racines.map(function (x) {
             var pas = [], temps = 0, j = 0;
             while (temps < 1 - 1e-9) { var r = recette.rythmeBasse[j++ % recette.rythmeBasse.length]; pas.push(nom(x - 12) + ' ' + r); temps += fraction(r); }
@@ -143,7 +150,7 @@
           })) }, 0, corps);
         }
         // Pluck (cloche en suspense) : notes de l'accord, variées par la graine.
-        if ((pleine || (normale && intensite >= 0.45)) && o.ambiance !== 'tech') {
+        if ((pleine || (normale && intensite >= 0.45)) && o.ambiance !== 'tech' && !recette.corde) {
           var motif = [];
           accords.forEach(function (a) {
             var temps = 0, j = 0;
@@ -181,7 +188,35 @@
       var departMontee = frontiere - seiziemes / 16 * mesure;
       if (departMontee >= 0) pistes.push({ instrument: 'riser', volume: 0.5, motif: ['x ' + seiziemes + '/16'], de: 0, a: 1, origine: arrondi(departMontee), jusqua: arrondi(frontiere) });
     }
-    return { tempo: tempo, tonalite: tonalite, mesures: mesures, pistes: pistes };
+    var r = { tempo: tempo, tonalite: tonalite, mesures: mesures, pistes: pistes };
+    // Moments forts (spec Styles et réalisation, 5.8) : la musique se tait sur chaque coupure [{ debut, fin }] (aucune note n'y
+    // part, M.synthe.partition.evenements ; la page y baisse aussi la musique). Absent sans coupure : partition inchangée.
+    if (Array.isArray(o.coupures) && o.coupures.length) r.coupures = o.coupures.map(function (c) { return { debut: arrondi(c.debut), fin: arrondi(c.fin) }; });
+    return r;
+
+    /** Couches des recettes à cordes : nappe douce, arpèges (guitare) ou ostinato (pizzicato), basse pincée, horlogerie. */
+    function cordes(cadre, recette, accords, racines, h, pleine, normale, intensite, corps) {
+      var nom = P.nomDeMidi;
+      cadre({ instrument: 'pad', volume: recette.horloge ? 0.28 : 0.4, motif: accords.map(function (a) { return a.map(nom).join('+') + ' 1'; }) }, 0, corps);
+      if (h === 'calme') return;
+      var motif = [];
+      accords.forEach(function (a) {
+        var seq = recette.horloge ? [a[0] + 12, a[2] + 12, a[1] + 12, a[2] + 12] : [a[0], a[1] + 12, a[2] + 12, a[1] + 12, a[0] + 12, a[2] + 12, a[1] + 12, a[2]];
+        for (var k = 0; k < 8; k++) motif.push(nom(seq[k % seq.length]) + ' 1/8 ' + (k % 4 === 0 ? 1 : 0.62 + 0.3 * hasard()).toFixed(2));
+      });
+      cadre({ instrument: 'corde', prereglage: recette.corde, volume: recette.horloge ? 0.5 : 0.6, motif: motif }, 0, corps);
+      if (pleine || (normale && intensite >= 0.25)) {
+        cadre({ instrument: 'corde', prereglage: recette.horloge ? 'pizzicato' : 'guitare', volume: 0.55, motif: [].concat.apply([], racines.map(function (x) {
+          var pas = [], temps = 0, j = 0;
+          while (temps < 1 - 1e-9) { var r = recette.rythmeBasse[j++ % recette.rythmeBasse.length]; pas.push(nom(x - 12) + ' ' + r); temps += fraction(r); }
+          return pas;
+        })) }, 0, corps);
+      }
+      if (recette.horloge && (pleine || (h === 'normale' && intensite >= 0.45))) {
+        cadre({ instrument: 'tic', volume: 0.35, motif: ['x 1/8', 'x 1/8 0.6'] }, 0, corps);
+        cadre({ instrument: 'cloche', volume: 0.18, motif: [nom(tonique + 24) + ' 1/4', '- 7/4'] }, 0, corps);
+      }
+    }
   }
 
   /** Notes (midi, octave 5) de la gamme d'une tonalité, pour les blips d'une liste (spec S7, 5.15). -> [midi] | null */

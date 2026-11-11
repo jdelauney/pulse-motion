@@ -212,7 +212,7 @@ function besoinEcoute(assemblage) {
   const d = assemblage.donnees || {};
   const voix = (d.scenes || []).some((s) => s.voix && s.voix.source);
   const musique = !!(d.musique && (d.musique.source || d.musique.partition) && d.musique.volume !== 0);
-  const bruitages = !!(d.bruitages && d.bruitages.transitions) || (assemblage.parScene || []).some((p) => /\sdata-son\s*=/.test(p.section || ''));
+  const bruitages = !!(d.bruitages && d.bruitages.transitions) || (assemblage.parScene || []).some((p) => /\sdata-(?:son\s*=|moment-fort[\s=>])/.test(p.section || ''));
   return musique || (voix && bruitages);
 }
 
@@ -224,8 +224,10 @@ function empreinteSonore(assemblage, { seuils, code = '', humeurs = {} } = {}) {
     blocs: blocs.map(sha),
     musique: d.musique || null, voix: d.voix || null, bruitages: d.bruitages || null, tempo: d.tempo || null,
     scenes: (d.scenes || []).map((s) => ({ id: s.id, duree: s.duree, rythme: s.rythme, transition: s.transition, voix: s.voix || null })),
-    sections: (assemblage.parScene || []).filter((p) => /\sdata-son\s*=/.test(p.section || '')).map((p) => ({ id: p.id, section: sha(p.section) })),
+    sections: (assemblage.parScene || []).filter((p) => /\sdata-(?:son\s*=|moment-fort[\s=>])/.test(p.section || '')).map((p) => ({ id: p.id, section: sha(p.section) })),
     humeurs, seuils: S, code: sha(String(code)),
+    // Moment fort (spec Styles et réalisation, 5.8) : son fort du style, seulement s'il y en a un.
+    ...(d.momentFort ? { momentFort: d.momentFort } : {}),
   }));
 }
 

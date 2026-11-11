@@ -6,14 +6,16 @@
  *
  * Sauvegarde dans l'historique (« annule » revient au style d'avant), recopie les scènes toutes
  * faites du nouveau style (scènes qui ont un « type »), liste les scènes composées librement.
- * Affiche { ok, style, recopiees, aReecrire } (aReecrire : scènes composées, ou recopiées mais qui avaient des mouvements nommés) ; code 1 avec { ok: false, message } en cas d'échec.
+ * Affiche { ok, style, recopiees, aReecrire, ambiance? } (aReecrire : scènes composées, ou recopiées mais qui avaient des mouvements nommés ;
+ * ambiance : { actuelle, proposee }, l'ambiance du nouveau style à proposer à la personne quand la musique composée avait
+ * l'ambiance par défaut de l'ancien style : elle n'est jamais changée ici) ; code 1 avec { ok: false, message } en cas d'échec.
  */
 const fs = require('node:fs');
 const path = require('node:path');
 const { lireDeroule } = require('./lib/deroule.js');
 const { cheminDansProjet } = require('./lib/embarquer.js');
 const { adapterScene, lireNombre } = require('./lib/adapter.js');
-const { trouverStyle, messageStyleInconnu, styleVerifie } = require('./styles.js');
+const { trouverStyle, messageStyleInconnu, styleVerifie, ambianceDuStyle } = require('./styles.js');
 const { sauvegarder } = require('./historique.js');
 
 function changerStyle({ dossier, style, dossierStyles }) {
@@ -72,7 +74,21 @@ function changerStyle({ dossier, style, dossierStyles }) {
     recopiees: plan.map((p) => p.s.id),
     // Scènes composées, et scènes recopiées qui portaient des mouvements nommés : la copie neuve les a perdus.
     aReecrire: deroule.scenes.filter((s) => !s.type || (Array.isArray(s.mouvements) && s.mouvements.length)).map((s) => s.id),
+    ...ambianceAProposer(deroule, style, dossierStyles),
   };
+}
+
+/**
+ * Ambiance du nouveau style à proposer (spec Styles et réalisation, 5.7, point 3) : seulement si la musique composée avait
+ * l'ambiance par défaut de l'ancien style et que celle du nouveau est différente. -> { ambiance: { actuelle, proposee } } ou {}
+ */
+function ambianceAProposer(deroule, style, dossierStyles) {
+  const actuelle = deroule.musique && deroule.musique.generee;
+  if (!actuelle) return {};
+  const ancien = ambianceDuStyle(deroule.style, deroule.genre, dossierStyles);
+  const nouveau = ambianceDuStyle(style, deroule.genre, dossierStyles);
+  if (!ancien || !nouveau || ancien.ambiance !== actuelle || nouveau.ambiance === actuelle) return {};
+  return { ambiance: { actuelle, proposee: nouveau.ambiance } };
 }
 
 if (require.main === module) {

@@ -45,7 +45,7 @@ function lireAttributs(texte) {
 
 /**
  * extraireScene(html) -> {
- *   elements: [{ cle, balise, start, dur, tween, texte, effet, milieu, calque, shader, son, sonVolume, classe, lettres, decor }],   (éléments minutés,
+ *   elements: [{ cle, balise, start, dur, tween, texte, effet, milieu, calque, shader, son, sonVolume, momentFort?, classe, lettres, decor }],   (éléments minutés,
  *     data-effet et data-milieu compris, ordre du document ; decor : dans un .decor ou un [data-decor], ou décor lui-même)
  *   textes: [clé data-texte],
  *   decoupes: [{ attribut: 'data-lettres' | 'data-mots', effet }],
@@ -89,6 +89,8 @@ function extraireScene(html) {
         shader: attrs['data-shader'],
         son: attrs['data-son'],
         sonVolume: attrs['data-son-volume'],
+        // Moment fort déclaré (spec Styles et réalisation, 5.8).
+        ...('data-moment-fort' in attrs ? { momentFort: true } : {}),
         classe: attrs.class,
         lettres: attrs['data-lettres'] ?? attrs['data-mots'],
         decor,

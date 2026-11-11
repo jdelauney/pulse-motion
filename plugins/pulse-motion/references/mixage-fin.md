@@ -28,7 +28,7 @@ Rappel (détail dans `pulse-motion reference audio`) : un seul mixage dans la pa
 
 ## Caler un son sur l'instant visible
 
-`data-son` part au début de l'élément qui le porte. Pour décaler, porter le son par un repère vide minuté, placé avant ou après l'élément :
+`data-son` part au début de l'élément qui le porte ; avec `"bruitages": { "calage": "pic" }` (vidéos créées depuis 0.58.0), il part assez tôt pour que son pic tombe sur l'élément : les décalages ci-dessous sont alors déjà faits pour `whoosh`, `swoosh-inverse`, `souffle` et `montee`. Pour décaler encore, porter le son par un repère vide minuté, placé avant ou après l'élément :
 
 ```html
 <div id="carte" class="pm-m-glisse-gauche" data-start="1.2" data-dur="0.5"></div>
@@ -43,6 +43,7 @@ Rappel (détail dans `pulse-motion reference audio`) : un seul mixage dans la pa
 | `montee` | Elle finit sur le moment fort : la commencer avant | Départ 0,8 s avant le moment |
 | `souffle` | Il enveloppe une apparition lente | Départ 0,3 s avant |
 | `crissement` | Il dure tout le tracé à main levée : il part avec le trait | 0 (posé seul par le moteur sur un tracé) |
+| `feutre`, `craie`, `crayon`, `papier`, `chargement` | Sons tenus : ils durent l'entrée de l'élément | 0 |
 
 Pour un élément animé par une entrée qui ralentit (`expo-out`, `back-out`), le moment visible est proche de son début : pas de décalage. Pour une chute (`pm-m-chute`), le contact est au premier rebond, vers 40 % de la durée.
 
@@ -50,7 +51,7 @@ Pour un élément animé par une entrée qui ralentit (`expo-out`, `back-out`), 
 
 - La musique tient le fond ; les bruitages ponctuent. Sous une voix, musique à 0,4 ou 0,5 ; sans voix, 0,7 à 0,8.
 - Les bruitages doivent dépasser la musique de 6 à 8 dB à leur crête : s'ils se perdent, baisser la musique plutôt que de monter les bruitages (le mélange est ramené à −16 LUFS, monter un son baisse les autres).
-- Le moment fort : retirer la musique une demi-seconde avant (`scenes[].musique` à `silence` sur une scène courte, ou une partition avec un temps vide), puis le son le plus fort de la vidéo dessus.
+- Le moment fort : `data-moment-fort` sur son élément ; la musique se tait 0,6 s avant, puis le son fort du style tombe dessus (un par scène, trois par vidéo au plus).
 - Fin : la musique finit avec la dernière image stable ; pas de son qui démarre dans la dernière seconde.
 
 ## Timbre et style

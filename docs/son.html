@@ -62,7 +62,7 @@
 <li><strong>votre fichier</strong> : une musique que vous avez le droit d'utiliser, copiée dans <code>assets/</code> ;</li>
 <li><strong>pas de musique.</strong></li>
 </ul>
-<h3>Les six ambiances</h3>
+<h3>Les huit ambiances</h3>
 <table>
 <thead><tr><th>Ambiance</th><th>Caractère</th><th>Tempo</th><th>Pour</th></tr></thead>
 <tbody>
@@ -72,9 +72,11 @@
 <tr><td><code>corporate</code></td><td>Net, rassurant</td><td>108</td><td>Produit, entreprise</td></tr>
 <tr><td><code>suspense</code></td><td>Sombre, tendu (cloche, souffle)</td><td>84</td><td>Storytelling, alerte</td></tr>
 <tr><td><code>tech</code></td><td>Arpèges rapides</td><td>124</td><td>Produit, numérique</td></tr>
+<tr><td><code>acoustique</code></td><td>Guitare pincée, chaleureux</td><td>92</td><td>Formation, styles dessinés</td></tr>
+<tr><td><code>mecanique</code></td><td>Horlogerie, précis</td><td>108</td><td>Procédure, styles techniques</td></tr>
 </tbody>
 </table>
-<p class="legende">Tempo en battements par minute. Pulse Motion vous décrit l'ambiance en trois mots, jamais par son nom technique.</p>
+<p class="legende">Tempo en battements par minute. Pulse Motion vous décrit l'ambiance en trois mots, jamais par son nom technique. Chaque style a la sienne : c'est elle qu'on vous propose d'abord, et si vous changez de style, on vous propose la sienne (sans la changer d'office). Les deux dernières jouent des cordes pincées calculées sur l'ordinateur, chaque note un peu différente de la précédente.</p>
 <p>La musique composée suit la vidéo : une <strong>introduction sans percussion</strong> pendant la première scène, une <strong>montée</strong> juste avant la dernière, un <strong>accord final</strong> jusqu'à la fin. Son tempo devient celui de la vidéo : les animations peuvent partir sur les temps (voir <a href="concepts.html#tempo">le tempo</a>).</p>
 <h3>Régler la musique d'une phrase</h3>
 <table>
@@ -183,11 +185,23 @@
 <tr><td><code>ding</code></td><td>Un chiffre, une bonne réponse</td></tr>
 <tr><td><code>blip</code></td><td>Une alerte, une notification</td></tr>
 <tr><td><code>souffle</code></td><td>Un fondu, une respiration</td></tr>
+<tr><td><code>frappe</code></td><td>Une touche de clavier, un texte tapé</td></tr>
+<tr><td><code>succes</code></td><td>Une réussite (deux notes qui montent)</td></tr>
+<tr><td><code>erreur</code></td><td>Une erreur (deux notes graves qui descendent)</td></tr>
+<tr><td><code>notification</code></td><td>Un message qui arrive</td></tr>
+<tr><td><code>aimant</code></td><td>Une pièce qui se pose</td></tr>
+<tr><td><code>crissement</code></td><td>Un tracé à main levée (tenu)</td></tr>
+<tr><td><code>feutre</code>, <code>craie</code>, <code>crayon</code></td><td>Un trait sur un tableau blanc, à la craie, au crayon (tenus)</td></tr>
+<tr><td><code>papier</code></td><td>Un papier qui glisse ou se froisse (tenu)</td></tr>
+<tr><td><code>chargement</code></td><td>Une barre qui se remplit (tenu)</td></tr>
 </tbody>
 </table>
 <ul>
 <li><strong>Jamais un son fort pendant que vous parlez :</strong> il est placé dans une pause.</li>
-<li><strong>Au plus trois sons dans la même seconde.</strong></li>
+<li><strong>Au plus trois sons dans la même seconde.</strong> Un son tenu dure toute l'entrée de son élément et compte pour un.</li>
+<li><strong>Calé sur son pic :</strong> dans une vidéo créée depuis la version 0.58, le son part un rien avant l'élément pour que son moment le plus fort tombe pile dessus.</li>
+<li><strong>Un moment fort</strong> (« marque le moment fort sur le chiffre ») : la musique se tait une demi-seconde avant, puis le son fort du style tombe sur l'élément. Un par scène, trois par vidéo au plus.</li>
+<li><strong>Chacun sa place</strong> (« sépare mieux la musique et les sons »), si vous le demandez : les bruitages doux passent dans l'aigu, la musique s'adoucit un instant autour d'eux.</li>
 <li><strong>Un son à chaque transition</strong>, si vous le demandez : un souffle pour un fondu, un whoosh pour un glissement…</li>
 <li><strong>Vos propres sons</strong> sont possibles : donnez le fichier, il est copié dans le dossier de la vidéo.</li>
 </ul>

@@ -92,7 +92,7 @@
     ],
     "bruitages": {
       "titre": null,
-      "texte": "clic",
+      "texte": "frappe",
       "point": null,
       "chiffre": "tic",
       "trace": null,

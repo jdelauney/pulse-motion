@@ -1,5 +1,7 @@
 /* Pulse Motion – instruments du synthétiseur (Web Audio) : pluck, pad, basse, sub, kick, caisse, charleston, cloche,
- * nappe-bruit, riser. Un évènement { t, frequences, duree, velocite, volume } crée ses nœuds dans le contexte.
+ * nappe-bruit, riser, corde (cordes pincées calculées par synthe/corde.js dans un AudioBuffer, préréglage de l'évènement,
+ * quatre variantes par note jouées tour à tour, gardées par contexte), tic (battement d'horlogerie).
+ * Un évènement { t, frequences, duree, velocite, volume, prereglage? } crée ses nœuds dans le contexte.
  * Enveloppes qui partent de 0,0001 (rampes exponentielles) : aucun clic. Bruit tiré d'un générateur à graine.
  * Navigateur seulement (global M.synthe.instruments, M.synthe.bruit, M.synthe.essayerInstrument).
  */
@@ -120,6 +122,33 @@
       sourceBruit(c, bruit, e.t, e.t + e.duree + 1).connect(filtre(c, 'lowpass', 500, e.t))
         .connect(enveloppe(c, e.t, Math.min(0.8, e.duree / 2), e.duree / 2, 0.8, 0.08 * e.velocite)).connect(sortie);
     },
+    corde: function (c, sortie, e) {
+      var C = M.synthe.corde;
+      if (!C) return;
+      e.frequences.forEach(function (f) {
+        var v = C.variante(e.t, f);
+        var cle = e.prereglage + '|' + Math.round(f * 100) + '|' + Math.round(e.duree * 1000) + '|' + v;
+        var cache = c.__pmCordes || (c.__pmCordes = {});
+        var tampon = cache[cle];
+        if (!tampon) {
+          var x = C.calculer({ frequence: f, duree: e.duree, prereglage: e.prereglage, graine: v + 1, taux: c.sampleRate });
+          tampon = c.createBuffer(1, x.length, c.sampleRate);
+          tampon.copyToChannel(x, 0);
+          cache[cle] = tampon;
+        }
+        var s = c.createBufferSource();
+        s.buffer = tampon;
+        var g = c.createGain();
+        g.gain.value = e.velocite;
+        s.connect(g).connect(sortie);
+        s.start(e.t);
+        if (sourcesEnCours) sourcesEnCours.push(s);
+      });
+    },
+    tic: function (c, sortie, e) {
+      oscillateur(c, 'sine', 2000, e.t, e.t + 0.06).connect(enveloppe(c, e.t, 0.001, 0, 0.03, 0.4 * e.velocite)).connect(sortie);
+      oscillateur(c, 'sine', 3400, e.t, e.t + 0.03).connect(enveloppe(c, e.t, 0.001, 0, 0.012, 0.12 * e.velocite)).connect(sortie);
+    },
     riser: function (c, sortie, e, bruit) {
       var b = filtre(c, 'bandpass', 300, e.t, 2);
       b.frequency.exponentialRampToValueAtTime(6000, e.t + e.duree);
@@ -137,7 +166,7 @@
       piste.gain.value = e.volume === undefined ? 1 : e.volume;
       piste.connect(sortie);
       sourcesEnCours = [];
-      faire(contexte, piste, { t: e.t, frequences: e.frequences && e.frequences.length ? e.frequences : [220], duree: Math.max(0.05, e.duree), velocite: e.velocite === undefined ? 1 : e.velocite }, bruit);
+      faire(contexte, piste, { t: e.t, frequences: e.frequences && e.frequences.length ? e.frequences : [220], duree: Math.max(0.05, e.duree), velocite: e.velocite === undefined ? 1 : e.velocite, prereglage: e.prereglage || 'guitare' }, bruit);
       // Note finie : sa chaîne est débranchée, le rendu ne la calcule plus (sinon il ralentit avec la durée).
       var sources = sourcesEnCours, restantes = sources.length;
       sourcesEnCours = null;
@@ -148,9 +177,9 @@
   };
 
   /** Rend un instrument seul (2 s) : sert aux tests. -> Promise<{ rms, crete, fini }> */
-  M.synthe.essayerInstrument = function (nom) {
+  M.synthe.essayerInstrument = function (nom, prereglage) {
     var c = new OfflineAudioContext(1, 2 * 48000, 48000);
-    M.synthe.instruments.jouer(c, c.destination, { t: 0.1, instrument: nom, frequences: [220, 277.18, 329.63], duree: 1, velocite: 1, volume: 1 }, M.synthe.bruit(c, 1));
+    M.synthe.instruments.jouer(c, c.destination, { t: 0.1, instrument: nom, frequences: [220, 277.18, 329.63], duree: 1, velocite: 1, volume: 1, prereglage: prereglage }, M.synthe.bruit(c, 1));
     return c.startRendering().then(function (b) {
       var x = b.getChannelData(0), s = 0, m = 0, fini = true;
       for (var i = 0; i < x.length; i++) { if (!isFinite(x[i])) fini = false; s += x[i] * x[i]; m = Math.max(m, Math.abs(x[i])); }

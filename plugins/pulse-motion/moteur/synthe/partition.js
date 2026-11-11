@@ -64,6 +64,10 @@
       if (!piste || typeof piste !== 'object') { err.push(nom + ' : un objet { instrument, motif } est attendu.'); return; }
       if (C.INSTRUMENTS.indexOf(piste.instrument) < 0) err.push(nom + ' : instrument « ' + piste.instrument + ' » inconnu (' + C.INSTRUMENTS.join(', ') + ').');
       if (piste.volume !== undefined && !(typeof piste.volume === 'number' && piste.volume >= 0 && piste.volume <= 1)) err.push(nom + ' : « volume » de 0 à 1.');
+      // Cordes pincées (spec Styles et réalisation, 5.8) : préréglage de la piste.
+      if (piste.prereglage !== undefined && (piste.instrument !== 'corde' || C.PREREGLAGES_CORDE.indexOf(piste.prereglage) < 0)) {
+        err.push(nom + ' : « prereglage » vaut pour l’instrument corde : ' + C.PREREGLAGES_CORDE.join(', ') + '.');
+      }
       ['de', 'a'].forEach(function (k) { if (piste[k] !== undefined && !(Number.isInteger(piste[k]) && piste[k] >= 0)) err.push(nom + ' : « ' + k + ' » doit être un numéro de mesure (entier, à partir de 0).'); });
       // Piste calée sur une scène : « scene » (écrit par la personne) ou « origine » / « jusqua » (secondes, posés à l'assemblage).
       if (piste.scene !== undefined && !(typeof piste.scene === 'string' && /^[a-z0-9-]+$/.test(piste.scene))) err.push(nom + ' : « scene » doit être l\'identifiant d\'une scène du déroulé.');
@@ -88,10 +92,16 @@
     return err;
   }
 
-  /** Partition valide -> évènements [{ t, instrument, frequences, duree, velocite, volume }], triés, coupés à duree. */
+  /**
+   * Partition valide -> évènements [{ t, instrument, frequences, duree, velocite, volume, prereglage? }], triés, coupés à duree.
+   * Coupures (moments forts, spec Styles et réalisation 5.8) : p.coupures ou options.coupures, [{ debut, fin }] ; aucune note
+   * ne part dans une coupure.
+   */
   function evenements(p, options) {
     var mesure = dureeMesure(p.tempo), fin = p.mesures * mesure;
     var limite = options && options.duree !== undefined ? options.duree : Infinity;
+    var coupures = (options && options.coupures) || p.coupures || [];
+    function coupee(t) { return coupures.some(function (c) { return t >= c.debut - 1e-6 && t < c.fin - 1e-6; }); }
     fin = Math.min(fin, limite);
     var liste = [];
     p.pistes.forEach(function (piste) {
@@ -108,12 +118,14 @@
       while (t < arret - 1e-6 && garde++ < 100000) {
         var s = pas[k % pas.length];
         var duree = s.fraction * mesure;
-        if (s.notes && Math.min(duree, arret - t) > 1e-4) {
-          liste.push({
+        if (s.notes && Math.min(duree, arret - t) > 1e-4 && !(coupures.length && coupee(t))) {
+          var ev = {
             t: Math.round(t * 1e6) / 1e6, instrument: piste.instrument,
             frequences: s.notes === 'x' ? [] : s.notes.map(frequence),
             duree: Math.round(Math.min(duree, arret - t) * 1e6) / 1e6, velocite: s.velocite, volume: piste.volume === undefined ? 1 : piste.volume,
-          });
+          };
+          if (piste.instrument === 'corde') ev.prereglage = piste.prereglage || 'guitare';
+          liste.push(ev);
         }
         t += duree;
         k++;

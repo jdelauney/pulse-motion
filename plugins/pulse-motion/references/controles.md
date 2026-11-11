@@ -169,6 +169,7 @@ La preuve du déterminisme (contrôle complet) : 12 instants (`determinismeInsta
 | `son-inconnu` | `data-son` qui n'est ni un son de la bibliothèque ni un fichier | erreur | non | Prendre un son de la liste du message |
 | `son-sous-voix` | Son fort (`impact`, `basse`, `montee`) pendant un mot de la voix | alerte | non | Le placer dans une pause |
 | `trop-de-sons` | Plus de 3 sons dans la même seconde | alerte | non | En retirer ou les espacer |
+| `moment-fort-en-trop` | Plus d'un moment fort dans une scène, ou plus de trois dans la vidéo (les suivants ne sonnent pas) | alerte | non | Garder le temps fort de chaque scène, trois au plus |
 | `partition-invalide` | Partition mal formée (la piste et la note fautives sont nommées) | erreur | non | Corriger la partition |
 | `voix-couverte` | Par scène avec voix : parmi les fenêtres de 100 ms où la voix parle (au-dessus de −45 dBFS (`voixActive`)), moins de 80 % (`voixPart`) où elle dépasse de 3 dB (`voixEmergence`) la musique et les bruitages, entre 500 Hz (`voixBasse`) et 4 000 Hz (`voixHaute`) | alerte | non | `musique.volume`, `scenes[].musique: "calme"`, `data-son-volume` |
 | `silence-imprevu` | Le mixage reste sous −50 dBFS (`silenceNiveau`) pendant 2,5 s (`silenceDuree`) au moins là où la musique doit jouer (humeur autre que `silence`) ; dernière demi-seconde exclue | alerte | non | Fichier de musique, partition, humeur de la scène |

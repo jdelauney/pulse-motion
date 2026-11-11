@@ -177,6 +177,29 @@ function controlesRapides({ projet, dossierStyles, dossierEffets, assemblage = A
         if (el) sonsJoues.push({ t: el.debut, nom: e.son, scene: s.id, volume, fichier: /[/.]/.test(e.son) });
       }
     }
+    // Moments forts (spec Styles et réalisation, 5.8) : au plus 1 par scène et 3 par vidéo ; le son fort du style tombe
+    // dessus (compté parmi les sons, et fort pour son-sous-voix).
+    const momentsForts = [];
+    for (const s of min.scenes) {
+      const f = elementsParScene[s.id].filter((e) => e.momentFort && min.elements[s.id][e.cle]);
+      if (f.length > 1) {
+        problemes.push({ regle: 'moment-fort-en-trop', gravite: 'alerte', scene: s.id,
+          message: `Scène « ${s.id} » : ${f.length} moments forts ; un seul par scène, les suivants ne sonnent pas ; garder data-moment-fort sur un seul élément.` });
+      }
+      if (f.length) momentsForts.push({ scene: s.id, e: f[0], t: min.elements[s.id][f[0].cle].debut });
+    }
+    if (momentsForts.length > 3) {
+      problemes.push({ regle: 'moment-fort-en-trop', gravite: 'alerte', scene: momentsForts[3].scene,
+        message: `La vidéo a ${momentsForts.length} moments forts ; trois au plus, le quatrième et les suivants ne sonnent pas (scène « ${momentsForts[3].scene} ») ; retirer data-moment-fort des scènes en trop.` });
+    }
+    const sonFort = assemblage.donnees && assemblage.donnees.momentFort && assemblage.donnees.momentFort.son;
+    for (const m of momentsForts.slice(0, 3)) {
+      if (sonFort && m.e.son === undefined) sonsJoues.push({ t: m.t, nom: sonFort, scene: m.scene, volume: 1, fichier: false, momentFort: true });
+    }
+    // Calage par le pic (5.8) : le son d'un élément part plus tôt, de l'instant de son pic.
+    if (deroule.bruitages && deroule.bruitages.calage === 'pic') {
+      for (const x of sonsJoues) if (!x.fichier && CATALOGUE.PICS[x.nom] > 0) x.t = Math.max(0, x.t - CATALOGUE.PICS[x.nom]);
+    }
     if (deroule.bruitages && deroule.bruitages.transitions) {
       min.scenes.forEach((s, i) => { const nom = i > 0 && CATALOGUE.sonTransition(s.transition); if (nom) sonsJoues.push({ t: s.debut, nom, scene: s.id }); });
     }
@@ -198,6 +221,7 @@ function controlesRapides({ projet, dossierStyles, dossierEffets, assemblage = A
     const crete = new Map();
     const fort = (x) => {
       if (x.volume <= 0) return false;
+      if (x.momentFort) return true;
       if (!x.fichier) return CATALOGUE.FORTS.includes(x.nom);
       if (!crete.has(x.nom)) {
         let c = 1;

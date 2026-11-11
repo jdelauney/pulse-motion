@@ -16,6 +16,10 @@ Humeur de la musique pendant une scène : `scenes[].musique` = `"silence"` (rien
 | `corporate` | net, rassurant | 108 bpm, do | produit, entreprise |
 | `suspense` | sombre, tendu (cloche, souffle) | 84 bpm, la mineur | storytelling, alerte |
 | `tech` | arpèges rapides | 124 bpm, mi mineur | produit, numérique |
+| `acoustique` | guitare pincée, chaleureux | 92 bpm, sol | formation, styles dessinés |
+| `mecanique` | horlogerie, précis (pizzicato, tics, cloche) | 108 bpm, la mineur | procédure, styles techniques |
+
+L'ambiance proposée est la première de la palette sonore du style (`pulse-motion styles ambiance <style> --genre <genre>`) ; le genre départage les ambiances d'un style qui en liste plusieurs.
 
 `intensite` (scènes `normale`) : en dessous de 0,25, nappe seule ; puis basse (0,25), mélodie (0,45), percussions (0,65). Sous une voix, `volume` 0,4 à 0,6. `pulse-motion musique ecouter .` rend la musique seule dans `sortie/musique.wav`, pour la faire écouter.
 
@@ -41,6 +45,6 @@ Copier le fichier dans `assets/`. Si la personne connaît son tempo (ou le titre
 - **Piste calée sur une scène** : `"scene": "demo"`. Elle commence au vrai début de la scène (transitions comprises) et s'arrête au début de la suivante ; `de` et `a` comptent alors les mesures depuis ce début. Écrire la partition **après** les scènes, une ou plusieurs pistes par scène : elle suit l'image même si une durée ou une transition change. Une scène sans piste est muette. Les pistes sans `scene` suivent une grille continue depuis 0.
 - Le `tempo` de la partition devient celui de la vidéo (unité `t` des animations) : ne pas écrire de `tempo` dans le déroulé en plus (s'il diffère, c'est une erreur).
 - Une partition dont une piste n'a pas de `scene` garde une grille continue : les scènes doivent alors commencer sur un temps (contrôle `hors-tempo`). Toutes les pistes calées sur une scène : durées libres.
-- Instruments : `pluck` (corde pincée), `pad` (nappe), `basse`, `sub` (basse profonde), `kick` (grosse caisse), `caisse` (caisse claire), `charleston`, `cloche`, `nappe-bruit` (souffle filtré), `riser` (montée).
+- Instruments : `pluck` (corde pincée simple), `corde` (corde pincée par modèle physique ; `"prereglage"` de la piste : `guitare`, `harpe`, `kalimba`, `pizzicato` ; chaque note varie un peu), `tic` (battement d'horloge), `pad` (nappe), `basse`, `sub` (basse profonde), `kick` (grosse caisse), `caisse` (caisse claire), `charleston`, `cloche`, `nappe-bruit` (souffle filtré), `riser` (montée).
 - Une partition mal formée est une erreur (`partition-invalide`) qui nomme la piste et la note fautives.
 

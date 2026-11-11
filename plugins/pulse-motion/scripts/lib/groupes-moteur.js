@@ -20,6 +20,8 @@ const GROUPES = {
   controle: ['mesures.js', 'pixels.js', 'ecoute.js'],
   'son-reactif': ['analyse-son.js', 'son-reactif.js'],
   synthe: ['synthe/catalogue.js', 'synthe/partition.js', 'synthe/ambiances.js', 'synthe/instruments.js', 'synthe/bruitages.js'],
+  // Cordes pincées (spec Styles et réalisation, 5.8) : seulement si la musique a une piste « corde ».
+  corde: ['synthe/corde.js'],
   personnages: ['squelette.js', 'vivant.js', 'clips.js', 'habillage-batonnets.js', 'habillage-pieces.js', 'personnages/levres.js',
     'personnages/partition.js', 'personnages/interactions.js', 'personnages/scene.js', 'personnages/objets.js'],
   gpu: ['shaders/glsl.js', 'shaders/code.js', 'particules/instantanes.js', 'particules/gpu.js', 'particules/obstacles.js',
@@ -41,7 +43,7 @@ const GROUPES = {
 const MODULES = ['courbes.js', 'aligner.js', 'proches.js', 'sous-titres.js', 'minutage.js', 'transitions.js', 'tween.js', 'lettres.js', 'camera.js',
   'squelette.js', 'vivant.js', 'clips.js', 'habillage-batonnets.js', 'habillage-pieces.js', 'personnages/levres.js', 'personnages/partition.js',
   'personnages/interactions.js', 'personnages/scene.js', 'personnages/objets.js', 'temps.js', 'horloge.js', 'tailles.js', 'wav.js',
-  'sonie.js', 'mixage.js', 'synthe/catalogue.js', 'synthe/partition.js', 'synthe/ambiances.js', 'synthe/instruments.js',
+  'sonie.js', 'mixage.js', 'synthe/catalogue.js', 'synthe/partition.js', 'synthe/ambiances.js', 'synthe/corde.js', 'synthe/instruments.js',
   'synthe/bruitages.js', 'analyse-son.js', 'audio.js', 'son-reactif.js', 'lecteur.js', 'sous-titres-rendu.js', 'debordement.js',
   'mesures.js', 'pixels.js', 'ecoute.js', 'figer.js', 'flou.js', 'pointeur.js', 'film.js', 'ecran.js', 'releve.js', 'camera-auto.js', 'camera-auto-page.js', 'dessin/main-levee.js', 'dessin/geometrie.js', 'dessin/calque.js', 'dessin/graphiques.js', 'dessin/code.js', 'dessin/composants.js', 'shaders/glsl.js', 'shaders/code.js', 'particules/instantanes.js', 'particules/gpu.js',
   'particules/obstacles.js', 'particules/fragments.js', 'particules/simulation.js', 'particules/voisinage.js',
@@ -62,6 +64,7 @@ const nonVide = (x) => (Array.isArray(x) ? x.length > 0 : !!(x && typeof x === '
  * - son réactif : des pistes du son sont lues (donnees.son) ;
  * - synthé : musique générée ou partition, bruitages des transitions, ou un data-son dans une scène (même un son importé :
  *   moteur/audio.js prépare le bruit du synthétiseur dès qu'il y a un son à jouer) ;
+ * - corde : une piste « corde » dans la partition de la musique (ambiances acoustique et mecanique, ou partition libre) ;
  * - personnages : donnees.personnages (une scène a data-personnage ou data-action) ;
  * - GPU : effet, milieu, shader (fond, transition, post-traitement), module d'effet, ou obstacle (data-obstacle : le contrôle juge
  *   ses formes exactes par M.particules.formesVides) ;
@@ -79,7 +82,10 @@ function groupesDuDeroule(donnees, sections = [], scripts = []) {
   const musique = d.musique && (d.musique.partition || d.musique.generee);
   // Bruitages automatiques (spec S7, 5.15) : true ou « minimal » sonnent les transitions et les entrées.
   const bruitages = d.bruitages && (d.bruitages.transitions || d.bruitages.auto === true || d.bruitages.auto === 'minimal');
-  if (musique || bruitages || /\sdata-son\s*=/.test(textes)) groupes.push('synthe');
+  // Moment fort déclaré (spec Styles et réalisation, 5.8) : le son fort du style.
+  if (musique || bruitages || d.momentFort || /\sdata-son\s*=/.test(textes)) groupes.push('synthe');
+  const partition = d.musique && d.musique.partition;
+  if (partition && Array.isArray(partition.pistes) && partition.pistes.some((p) => p && p.instrument === 'corde')) groupes.push('corde');
   if (d.personnages) groupes.push('personnages');
   const obstacles = nonVide(d.obstacles) || nonVide(d.obstaclesVideo);
   if (nonVide(d.effets) || nonVide(d.milieux) || nonVide(d.shaders) || nonVide(d.modules) || obstacles) groupes.push('gpu');
