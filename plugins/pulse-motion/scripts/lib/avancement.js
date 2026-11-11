@@ -71,8 +71,11 @@ function ligne(e) {
 }
 
 /** Suivi d'un travail par une commande : fichier à chaque appel, ligne sur stderr à chaque palier de 10 % ou nouveau detail.
- *  projet null (commande lancée hors d'une vidéo) : les lignes seulement, aucun fichier écrit. */
-function suivre(projet, { travail, libelle, ecrire = (l) => process.stderr.write(`${l}\n`), maintenant = () => Date.now() }) {
+ *  projet null, ou dossier sans deroule.json (commande lancée hors d'une vidéo) : les lignes seulement, aucun fichier écrit. */
+function suivre(dossier, { travail, libelle, ecrire = (l) => process.stderr.write(`${l}\n`), maintenant = () => Date.now() }) {
+  // Un dossier sans deroule.json n'est pas une vidéo : aucun fichier d'avancement n'y est écrit (commande lancée au
+  // mauvais endroit, ou qui échoue faute de déroulé), seulement les lignes.
+  const projet = dossier && fs.existsSync(path.join(path.resolve(dossier), 'deroule.json')) ? dossier : null;
   let palier = -1;
   let dernierDetail = null;
   const f = (fait, total, detail, restant) => {
