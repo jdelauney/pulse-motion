@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-// Wiki Pulse Motion – écrit dans les pages les cartes de la galerie, du catalogue, du lexique et des idées, à partir des sources
-// du plugin (dictionnaire de mouvements, styles, recettes d'effets, mouvements de personnages, modèles de vidéo et leurs exemples). Chaque bloc va entre
+// Wiki Pulse Motion – écrit dans les pages les cartes de la galerie, du catalogue, du lexique, des idées et des exemples, à partir
+// des sources du plugin (dictionnaire de mouvements, styles, recettes d'effets, mouvements de personnages, modèles de vidéo et leurs
+// exemples) et de outils/site/exemples.json (demandes hors exemple.json, Vibe Connection, retouches avant / après). Chaque bloc va entre
 // <!-- galerie:<nom> --> et <!-- /galerie:<nom> -->. Le contenu est dans le HTML : les pages se lisent sans JavaScript ; les
 // aperçus (docs/medias/galerie/, outils/site/medias.js) s'y ajoutent quand ils existent.
 // Lancer : node outils/site/galerie.js [--verifier]
@@ -15,7 +16,7 @@ const RACINE_DEPOT = path.join(__dirname, "..", "..");
 const PLUGIN = (racine) => path.join(racine, "plugins", "pulse-motion");
 const { normaliser } = require(path.join(PLUGIN(RACINE_DEPOT), "scripts", "mouvements.js"));
 
-const PAGES = { mouvements: "mouvements.html", styles: "catalogue.html", effets: "catalogue.html", personnages: "catalogue.html", dessins: "personnages.html", "mots-du-mouvement": "lexique.html", idees: "idees.html" };
+const PAGES = { mouvements: "mouvements.html", styles: "catalogue.html", effets: "catalogue.html", personnages: "catalogue.html", dessins: "personnages.html", "mots-du-mouvement": "lexique.html", idees: "idees.html", exemples: "exemples.html", retouches: "exemples.html" };
 
 const e = (t) => String(t ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
@@ -254,6 +255,124 @@ ${seance}
   return `${sommaire}\n${sections}`;
 }
 
+// ---------------------------------------------------------------- Page Exemples (chantier F, Valorisation)
+
+const { calculerMinutage } = require(path.join(PLUGIN(RACINE_DEPOT), "moteur", "minutage.js"));
+const secondes = (x) => `${String(Math.round(x * 100) / 100).replace(".", ",")} s`;
+const majuscule = (t) => String(t).charAt(0).toUpperCase() + String(t).slice(1);
+
+/** Lignes du déroulé validé : n°, ce que fait la scène, ses textes à l'écran, sa durée réelle (rythme compris, sans voix). */
+function lignesDeroule(deroule) {
+  const min = calculerMinutage(deroule.scenes, {}).scenes;
+  return deroule.scenes.map((sc, i) => {
+    const intention = sc.intention ? majuscule(sc.intention.replace(/\s+–\s+/, " : ")) : "";
+    const textes = Object.values(sc.textes || {}).filter((t) => typeof t === "string" && t.trim()).map((t) => `« ${e(t)} »`).join(" · ");
+    return `<tr><td>${i + 1}</td><td>${e(intention)}</td><td>${textes || "—"}</td><td>${secondes(min[i].fin - min[i].debut)}</td></tr>`;
+  }).join("\n");
+}
+
+/**
+ * Page Exemples : pour chaque exemple livré, l'avant et l'après du processus (la demande d'origine, le déroulé validé, la
+ * vidéo), dans l'ordre de la page Idées ; puis Vibe Connection. Les demandes viennent de exemple.json (séance d'origine)
+ * ou de outils/site/exemples.json (chaîne du froid, Vibe Connection).
+ */
+function blocExemples() {
+  const donnees = G.donneesExemples();
+  const modeles = G.modelesVideo().sort((a, b) => rangIdee(a) - rangIdee(b));
+  const fiches = modeles.map((m) => {
+    const dossier = G.dossierExemple(m);
+    const deroule = JSON.parse(fs.readFileSync(path.join(dossier, "deroule.json"), "utf8"));
+    const fichierRecit = path.join(dossier, "exemple.json");
+    const recit = fs.existsSync(fichierRecit) ? JSON.parse(fs.readFileSync(fichierRecit, "utf8")) : null;
+    const id = path.basename(dossier);
+    const hors = id === "chaine-du-froid" ? donnees.chaineDuFroid : null;
+    if (!recit && !hors) throw new Error(`exemples/${id} : ni exemple.json ni demande dans outils/site/exemples.json.`);
+    return { m, id, deroule, recit, hors };
+  });
+  const sommaire = `<nav class="idees-sommaire" aria-label="Les exemples"><ul>
+${fiches.map((f) => `<li><a href="#exemple-${f.id}">${e(f.deroule.titre)}</a></li>`).join("\n")}
+<li><a href="#exemple-vibe-connection">${e(donnees.vibeConnection.titre)}</a></li>
+</ul></nav>`;
+  const sections = fiches.map(({ m, id, deroule, recit, hors }) => {
+    const [mp4, jpg] = G.fichiersExemple(m);
+    const vertical = deroule.format && (deroule.format.ratio === "9:16" || deroule.format.ratio === "4:5");
+    const total = calculerMinutage(deroule.scenes, {}).duree;
+    const note = recit
+      ? `<p>Puis les réponses conseillées aux questions de Pulse Motion${recit.retouches.length ? ` et ${recit.retouches.length === 1 ? "une retouche" : `${recit.retouches.length} retouches`}` : ", sans retouche"} : le détail est dans <a href="idees.html#modele-${m.id}">la page Idées</a>.</p>`
+      : `<p>${e(hors.note)} <a href="${hors.tutoriel}">Le tutoriel pas à pas</a>.</p>`;
+    return `<section class="exemple" id="exemple-${id}">
+<h2>${e(deroule.titre)}</h2>
+<p class="idee-pour">Modèle <a href="idees.html#modele-${m.id}">${e(m.nom)}</a> · ${secondes(total).replace(" s", "")} secondes, ${FORMATS[(deroule.format && deroule.format.ratio) || "16:9"]}.</p>
+<h3>1. La demande</h3>
+<pre class="commande"><code>${e(recit ? recit.phrase : hors.phrase)}</code></pre>
+${note}
+<h3>2. Le déroulé validé</h3>
+<p>Avant d'animer quoi que ce soit, Pulse Motion propose ce déroulé et attend votre accord.</p>
+<table>
+<thead><tr><th>Scène</th><th>Ce qu'elle fait</th><th>À l'écran</th><th>Durée</th></tr></thead>
+<tbody>
+${lignesDeroule(deroule)}
+</tbody>
+</table>
+<h3>3. La vidéo</h3>
+<figure class="capture idee-video${vertical ? " idee-video-verticale" : ""}"><video controls preload="none" playsinline poster="${jpg}" aria-label="La vidéo : ${e(deroule.titre)}"><source src="${mp4}" type="video/mp4"></video><figcaption>« ${e(deroule.titre)} », telle que Pulse Motion l'a fabriquée, sans voix. <a href="${mp4}" download>Télécharger la vidéo (MP4)</a></figcaption></figure>
+</section>`;
+  }).join("\n");
+  const v = donnees.vibeConnection;
+  const totalVibe = v.scenes.reduce((t, sc) => t + sc.duree, 0);
+  const vibe = `<section class="exemple" id="exemple-vibe-connection">
+<h2>${e(v.titre)}</h2>
+<p class="idee-pour">Une histoire, un faux film muet et rétro · ${Math.floor(totalVibe / 60)} min ${totalVibe % 60} s, ${FORMATS[v.format]}.</p>
+<h3>1. Les demandes</h3>
+<p>${e(v.note)}</p>
+<details><summary>La première demande, en entier</summary>
+<pre class="commande"><code>${e(v.phrase)}</code></pre>
+</details>
+<h3>2. Le déroulé</h3>
+<table>
+<thead><tr><th>Scène</th><th>Ce qu'elle fait</th><th>Durée</th></tr></thead>
+<tbody>
+${v.scenes.map((sc, i) => `<tr><td>${i + 1}</td><td>${e(sc.role)}</td><td>${secondes(sc.duree)}</td></tr>`).join("\n")}
+</tbody>
+</table>
+<h3>3. La vidéo</h3>
+<figure class="capture capture-carree"><video controls preload="none" playsinline poster="${v.affiche}" width="1080" height="1080" aria-label="La vidéo : ${e(v.titre)}"><source src="${v.video}" type="video/mp4"></video><figcaption>Le film fini, avec sa musique et ses bruitages. <a href="${v.tutoriel}">Le refaire pas à pas</a>.</figcaption></figure>
+</section>`;
+  return `${sommaire}\n${sections}\n${vibe}`;
+}
+
+/** Ce que change une retouche, dit en mots simples et calculé depuis sa définition (rythme du déroulé, fiche du dictionnaire). */
+function explicationRetouche(r, deroule) {
+  const i = deroule.scenes.findIndex((sc) => sc.id === r.scene);
+  const sc = deroule.scenes[i];
+  if (i < 0) throw new Error(`retouche ${r.id} : scène ${r.scene} introuvable dans exemples/${r.exemple}.`);
+  if (r.rythme !== undefined) {
+    return `Pulse Motion règle le rythme de la scène ${i + 1} dans le déroulé (${String(r.rythme).replace(".", ",")}) : tous ses temps s'étirent, et elle passe de ${secondes(sc.duree)} à ${secondes(sc.duree / r.rythme)}. Les textes et le dessin ne changent pas.`;
+  }
+  const m = G.dictionnaire().mouvements.find((x) => x.no === r.mouvement.no);
+  if (!m) throw new Error(`retouche ${r.id} : mouvement #${r.mouvement.no} introuvable.`);
+  return `Le ${r.mouvement.element === "titre" ? "titre" : `bloc « ${e(r.mouvement.element)} »`} de la scène ${i + 1} entre désormais en ${e(m.nom.fr.toLowerCase())} (<span lang="en">${e(m.nom.metier)}</span>, <a href="mouvements.html#m${m.no}">#${m.no}</a> du dictionnaire) : il ${e(m.sens.charAt(0).toLowerCase() + m.sens.slice(1))}, ${(r.mouvement.retirer || []).includes("entre-bas") ? "au lieu de monter doucement comme le veut le style" : "au lieu de son entrée habituelle"}. Rien d'autre ne change.`;
+}
+
+/** Page Exemples : deux retouches, la scène avant et après, côte à côte (aperçus du lot « retouches » de outils/site/medias.js). */
+function blocRetouches() {
+  return G.retouches().map((r) => {
+    const deroule = JSON.parse(fs.readFileSync(path.join(PLUGIN(RACINE_DEPOT), "exemples", r.exemple, "deroule.json"), "utf8"));
+    const [avMp4, avJpg, apMp4, apJpg] = G.fichiersRetouche(r);
+    const n = deroule.scenes.findIndex((sc) => sc.id === r.scene) + 1;
+    const demande = r.phrase.replace(/^\/pulse-motion:retoucher\s+/, "");
+    return `<section class="retouche" id="retouche-${r.id}">
+<h3>« ${e(majuscule(demande))} »</h3>
+<pre class="commande"><code>${e(r.phrase)}</code></pre>
+<p>${explicationRetouche(r, deroule)}</p>
+<div class="avant-apres">
+<figure>${apercu(avMp4, avJpg, `Avant : la scène ${n} de « ${deroule.titre} »`)}<figcaption><strong>Avant</strong> · la scène ${n} de « ${e(deroule.titre)} »</figcaption></figure>
+<figure>${apercu(apMp4, apJpg, `Après « ${demande} » : la même scène`)}<figcaption><strong>Après</strong> · la même scène, retouchée</figcaption></figure>
+</div>
+</section>`;
+  }).join("\n");
+}
+
 /** HTML de chaque bloc (toujours depuis le plugin de ce dépôt). */
 function blocs() {
   return {
@@ -264,6 +383,8 @@ function blocs() {
     dessins: blocDessins(),
     "mots-du-mouvement": blocMotsDuMouvement(),
     idees: blocIdees(),
+    exemples: blocExemples(),
+    retouches: blocRetouches(),
   };
 }
 
@@ -314,4 +435,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { blocs, appliquer, PAGES, manquesStyles, stylesParCategorie, grouperParCategorie };
+module.exports = { blocs, appliquer, PAGES, manquesStyles, stylesParCategorie, grouperParCategorie, explicationRetouche };

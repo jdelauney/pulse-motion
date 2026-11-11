@@ -64,6 +64,8 @@ npm test
 
 La non-régression visuelle du moteur compare deux vidéos étalons (`tests/fixtures/etalon/`) à leurs images de référence, enregistrées par système ; quand un changement de rendu est voulu, `node scripts/lancer-tests.js --etalon` les réenregistre (à dire dans le message de commit). Les tests unitaires tournent aussi sur Windows, macOS et Linux à chaque envoi (`.github/workflows/tests.yml`) ; la phase navigateur se lance sur le poste de développement. Les évaluations de déclenchement des compétences (`tests/evaluations/`) se lancent à part, avec `claude plugin eval` (mode d'emploi en tête de `tests/evaluations/evaluer.js`), et un test copie le plugin hors du dépôt pour fabriquer et exporter l'exemple comme une fois installé.
 
+Pour contribuer (installer le dépôt, règles, ajouter un style, un effet, un mouvement ou un modèle) : `CONTRIBUTING.md` et `ARCHITECTURE.md`, à la racine du dépôt.
+
 ## Licence
 
 MIT. Le code ou les tracés repris citent leur origine en tête de fichier ; licences des polices : `styles/clair-pedagogique/polices/LICENCES.md`.
