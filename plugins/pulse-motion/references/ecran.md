@@ -101,7 +101,9 @@ Une application filmée par `/pulse-motion:filmer` se montre dans le même écra
 - Sans marque, une étape se place après la précédente et le temps libre de la scène se partage entre les états calmes. Deux actions sont séparées d'au moins la réaction de la première, 0,35 s, le trajet du pointeur et 0,2 s (`etapes-trop-rapprochees`) ; le déroulé vérifie que la scène dure assez.
 - Le pointeur va seul vers chaque cible ; chaque étape de clic reçoit le bruitage `clic` (`data-son="aucun"` sur sa marque : sans).
 - `data-vitesse` sur l'écran accélère la réaction (« accélère la saisie » : `data-vitesse="3.1+2 x2"`) ; `data-gel` la fige.
+- Les données personnelles sont déjà floutées dans les images de la prise : rien à poser par-dessus.
+- **Vidéo importée** (une vidéo de l'écran, un GIF) : une seule étape, la lecture (`data-etapes="1"`, `<i class="pm-etape" data-etape="1" data-start="…">` : l'instant où elle démarre) ; `data-cible="etape:N"` y vise le **repère** N (posé d'après la planche). Le pointeur n'y va que par une marque : `<i class="pm-clic" data-cible="etape:2" data-start="…">`.
 
 ## À venir
 
-Les sites en ligne, la connexion à un compte et le flou des données personnelles (spec S6, plan 3), l'import d'une vidéo de l'écran (plan 4). Les cartes « graphique » et « organigramme » arrivent avec les graphiques animés (S7).
+Les cartes « graphique » et « organigramme » arrivent avec les graphiques animés (S7).

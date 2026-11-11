@@ -21,6 +21,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const P = require('../../moteur/proches.js');
 const { cheminDansProjet } = require('./embarquer.js');
+const FL = require('./flou.js');
 
 const NOM = /^[a-z0-9-]+$/;
 const APPAREILS = ['ordinateur', 'tablette', 'telephone'];
@@ -238,6 +239,15 @@ function validerEtape(e, ou, { projet, erreurs }) {
 function validerParcours(p, { projet } = {}) {
   const erreurs = [];
   if (!estObjet(p)) return { ok: false, erreurs: ['Le parcours doit être un objet JSON.'], etapes: [] };
+  // Vidéo importée (5.14) : pas de parcours à filmer, seulement le fichier d'origine et la prise choisie.
+  if (p.import !== undefined) {
+    const inconnus = Object.keys(p).filter((k) => !['nom', 'import', 'prise'].includes(k));
+    if (inconnus.length) erreurs.push(`Vidéo importée : champ${inconnus.length > 1 ? 's' : ''} ${inconnus.map((k) => `« ${k} »`).join(', ')} inconnu${inconnus.length > 1 ? 's' : ''} (nom, import, prise).`);
+    if (!estTexte(p.nom) || !NOM.test(p.nom)) erreurs.push('« nom » : a-z, 0-9 et des tirets (le nom du dossier films/<nom>).');
+    if (!estTexte(p.import)) erreurs.push('« import » : le nom du fichier importé.');
+    if (p.prise !== undefined && !(typeof p.prise === 'string' && /^prise-\d{2,}$/.test(p.prise))) erreurs.push('« prise » : la prise choisie, « prise-01 »…');
+    return { ok: erreurs.length === 0, erreurs, etapes: [{ n: 1, faire: 'lire', phrase: `Lire la vidéo « ${p.import} »` }], importe: true };
+  }
   const CHAMPS = ['nom', 'depart', 'appareil', 'apparence', 'connexion', 'preparation', 'etapes', 'flou', 'prise', 'graine', 'accord'];
   const inconnus = Object.keys(p).filter((k) => !CHAMPS.includes(k));
   if (inconnus.length) erreurs.push(`Champ${inconnus.length > 1 ? 's' : ''} ${inconnus.map((k) => `« ${k} »`).join(', ')} inconnu${inconnus.length > 1 ? 's' : ''} (${CHAMPS.join(', ')}).`);
@@ -247,7 +257,7 @@ function validerParcours(p, { projet } = {}) {
   if (p.appareil !== undefined && !APPAREILS.includes(p.appareil)) erreurs.push(`« appareil » : ${APPAREILS.join(', ')}.`);
   if (p.apparence !== undefined && !APPARENCES.includes(p.apparence)) erreurs.push(`« apparence » : ${APPARENCES.join(', ')}.`);
   if (p.connexion !== undefined && typeof p.connexion !== 'boolean') erreurs.push('« connexion » : true si la personne se connecte d\'abord.');
-  if (p.flou !== undefined && !estObjet(p.flou)) erreurs.push('« flou » : un objet { "auto", "cibles", "categories" }.');
+  for (const m of FL.erreursFlou(p.flou, erreurCible)) erreurs.push(m);
   if (p.prise !== undefined && !(typeof p.prise === 'string' && /^prise-\d{2,}$/.test(p.prise))) erreurs.push('« prise » : la prise choisie, « prise-01 »…');
   if (p.graine !== undefined && !estTexte(p.graine)) erreurs.push('« graine » : un texte.');
   if (p.accord !== undefined && !(estObjet(p.accord) && estTexte(p.accord.site) && estTexte(p.accord.date))) erreurs.push('« accord » : { "site", "date" }, écrit quand la personne a dit oui.');
@@ -257,8 +267,41 @@ function validerParcours(p, { projet } = {}) {
   }
   if (!Array.isArray(p.etapes) || !p.etapes.length) erreurs.push('« etapes » : au moins une étape filmée.');
   else p.etapes.forEach((e, i) => validerEtape(e, `Étape ${i + 1}`, { projet, erreurs }));
+  // Un seul site en ligne par parcours : l'accord de la personne vaut pour ce site (spec 5.4).
+  const sites = [...new Set(sitesEnLigne(p, { projet }).map(domaineDe))];
+  if (sites.length > 1) erreurs.push(`Un parcours filme un seul site en ligne (ici : ${sites.join(', ')}) : faire un parcours par site.`);
   const etapes = Array.isArray(p.etapes) ? p.etapes.map((e, i) => ({ n: i + 1, faire: e && e.faire, phrase: estObjet(e) && VERBES[e.faire] ? phraseEtape(e) : '' })) : [];
   return { ok: erreurs.length === 0, erreurs, etapes };
+}
+
+/** Noms d'hôte des adresses en ligne du parcours (départ et étapes « aller »), dans l'ordre. */
+function sitesEnLigne(p, { projet } = {}) {
+  if (!estObjet(p)) return [];
+  const liste = [p.depart, ...[...(Array.isArray(p.preparation) ? p.preparation : []), ...(Array.isArray(p.etapes) ? p.etapes : [])]
+    .filter((e) => estObjet(e) && e.faire === 'aller').map((e) => e.url)];
+  const r = [];
+  for (const a of liste) {
+    if (!estTexte(a)) continue;
+    const l = lireAdresse(a, { projet });
+    if (l.sorte === 'en-ligne' && !r.includes(l.site)) r.push(l.site);
+  }
+  return r;
+}
+
+/** Domaine d'un nom d'hôte (« app.exemple.fr » -> « exemple.fr » ; « a.b.co.uk » -> « b.co.uk ») : le site, sous-domaines
+ *  compris. Sans liste des suffixes publics : deux derniers libellés, trois si l'avant-dernier est court (co.uk, com.au). */
+function domaineDe(hote) {
+  const h = String(hote || '').toLowerCase().replace(/\.$/, '');
+  if (/^\[|^\d+\.\d+\.\d+\.\d+$/.test(h)) return h;
+  const l = h.split('.');
+  if (l.length <= 2) return h;
+  const n = l[l.length - 2].length <= 3 && l[l.length - 1].length === 2 && l.length >= 3 && ['co', 'com', 'net', 'org', 'gov', 'ac', 'edu', 'gouv'].includes(l[l.length - 2]) ? 3 : 2;
+  return l.slice(-n).join('.');
+}
+
+/** Nom d'hôte réduit à a-z, 0-9 et tirets (dossier du profil d'un site). */
+function siteReduit(hote) {
+  return String(hote || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80) || 'site';
 }
 
 function lireParcours(projet, nom) {
@@ -272,4 +315,4 @@ function lireParcours(projet, nom) {
   return { parcours: p, erreurs: v.erreurs, fichier, etapes: v.etapes };
 }
 
-module.exports = { validerParcours, lireParcours, lireAdresse, lireTouches, phraseEtape, texteCible, VERBES, APPAREILS, APPARENCES, TAILLES, ESSAI, MOT_DE_PASSE, MESSAGE_MOT_DE_PASSE, NOM };
+module.exports = { validerParcours, lireParcours, lireAdresse, sitesEnLigne, domaineDe, siteReduit, erreurCible, lireTouches, phraseEtape, texteCible, VERBES, APPAREILS, APPARENCES, TAILLES, ESSAI, MOT_DE_PASSE, MESSAGE_MOT_DE_PASSE, NOM };

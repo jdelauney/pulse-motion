@@ -17,11 +17,12 @@
     document.body.appendChild(t);
   }
 
-  // Connexion factice : aucun contrôle, rien n'est gardé.
+  // Connexion factice : aucun contrôle ; un cookie de session (effacé à la fermeture du navigateur) ouvre « Mon compte ».
   var connexion = document.getElementById('connexion');
   if (connexion) {
     connexion.addEventListener('submit', function (e) {
       e.preventDefault();
+      document.cookie = 'facturo-session=1; path=/; SameSite=Lax';
       location.href = 'factures.html';
     });
   }

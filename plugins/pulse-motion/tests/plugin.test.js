@@ -453,10 +453,12 @@ test('budget-consignes : les consignes ne regrossissent pas sans qu\'on le voie 
   // demandées par la spec, que les autres compétences ne recopient plus ; elles renvoient à outils).
   // 0.51.0 (S6 plan 2) : filmer, la 13e compétence (7 417 o, plafond 7 800 o) ; creer, retoucher, reprendre et l'animateur
   // n'y renvoient qu'en une ligne (consignes filmer creer, retouches, prises), sans relever leur plafond.
+  // 0.52.0 (S6 plans 3 et 4) : filmer 7 800 → 11 500 o : accord réseau, connexion, confidentialité et import (spec S6
+  // 5.16), trois flux propres à cette compétence que creer, retoucher et outils (pleins) ne recopient pas.
   const PLAFONDS = {
     'skills/animer-personnage/SKILL.md': 5884, 'skills/atelier-particules/SKILL.md': 2272, 'skills/atelier-personnages/SKILL.md': 3529,
     'skills/creer/SKILL.md': 23400, 'skills/decouper-personnage/SKILL.md': 4020, 'skills/dessiner-personnage/SKILL.md': 4528,
-    'skills/exporter/SKILL.md': 6600, 'skills/filmer/SKILL.md': 7800, 'skills/outils/SKILL.md': 6550, 'skills/reprendre/SKILL.md': 2999,
+    'skills/exporter/SKILL.md': 6600, 'skills/filmer/SKILL.md': 11500, 'skills/outils/SKILL.md': 6550, 'skills/reprendre/SKILL.md': 2999,
     'skills/retoucher/SKILL.md': 13850, 'skills/style/SKILL.md': 6460, 'skills/voix/SKILL.md': 5073,
     'agents/animateur.md': 6000, 'agents/critique.md': 3800,
   };
