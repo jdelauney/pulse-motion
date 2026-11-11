@@ -583,7 +583,6 @@ async function tourner({ projet, nom, accord = false, navigateur, surEtape = () 
     if (bloquees && !domaine) alertes.push(`La page a voulu joindre internet : ${bloquees} requête${bloquees > 1 ? 's' : ''} bloquée${bloquees > 1 ? 's' : ''} (le tournage reste sur l'ordinateur).`);
     if (ailleurs.size) alertes.push(`La page a voulu aller sur un autre site (${[...ailleurs].join(', ')}) : c'est bloqué, le tournage reste sur ${site}.`);
 
-    const T0dbg = Date.now(); console.error("dbg debut figement", etapes.map((f) => (f.reactionI || []).length + (f.approcheI || []).length).join(","));
     // Figement, dans le même navigateur (page vide) : cadence, doublons, WebP, bords, planche.
     await envoyer('Fetch.disable').catch(() => {});
     await page.aller('about:blank');
@@ -648,7 +647,6 @@ async function tourner({ projet, nom, accord = false, navigateur, surEtape = () 
       e.alertes = f.alertes;
       filmEtapes.push(e);
     }
-    console.error("dbg cadence", Date.now() - T0dbg);
     const premiere = captures[etapes[0].avantI].data;
     const bords = (await page.evaluer(`window.__pmImages.bords(${JSON.stringify(premiere.toString('base64'))}, 'image/webp')`)).map(hex);
     const film = {
@@ -663,7 +661,6 @@ async function tourner({ projet, nom, accord = false, navigateur, surEtape = () 
     await page.fermer();
     page = null;
     const dossierPrise = path.join(dossierFilm, prise);
-    console.error("dbg fin", Date.now() - T0dbg);
     fs.renameSync(temporaire, dossierPrise);
     return { ok: true, prise, etapes: filmEtapes.length, duree: film.duree, poids: film.poids, alertes, planche: path.relative(projet, planche).split(path.sep).join('/') };
   } catch (e) {
