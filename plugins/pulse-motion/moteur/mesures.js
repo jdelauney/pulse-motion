@@ -11,6 +11,7 @@
  * Élément jugé : texte (data-texte), image (sauf alt="" décoratif), logo, SVG de contenu (sans aria-hidden),
  * hors décor (.decor, [data-decor]) et pas imbriqué dans un autre élément jugé. Immobile : même place
  * qu'au relevé précédent, porteur data-etat ni « avant » ni « pendant », lettres arrivées, pas de transition.
+ * Chevauchement : étendue des lettres d'un texte, ou toute sa boîte pour une carte (texte sur un fond ou dans un cadre).
  * [data-superpose] autorise un élément à en recouvrir un autre. Un constat par (règle, scène, élément).
  * plages : [[debut, fin]] ; seuls les relevés qui y tombent sont faits (contrôle partiel : les scènes changées, et un
  * relevé de chaque côté ; les constats des autres scènes sont repris du contrôle précédent).
@@ -103,20 +104,19 @@
     var ib = rang(b.el);
     return ia >= 0 && (ib < 0 || ia < ib);
   }
+  /** Boîte d'un texte qui a son propre fond ou son cadre (carte, étiquette), ou null. */
+  function carte(x) {
+    if (!x.el.hasAttribute('data-texte')) return null;
+    var cs = getComputedStyle(x.el);
+    var fond = (cs.backgroundColor && cs.backgroundColor !== 'transparent' && !/rgba\([^)]*,\s*0\)$/.test(cs.backgroundColor)) || (cs.backgroundImage && cs.backgroundImage !== 'none');
+    var cadre = ['Top', 'Right', 'Bottom', 'Left'].some(function (k) { return parseFloat(cs['border' + k + 'Width']) > 0 && cs['border' + k + 'Style'] !== 'none'; });
+    return fond || cadre ? x.el.getBoundingClientRect() : null;
+  }
   function aire(r) { return Math.max(0, r.width) * Math.max(0, r.height); }
   function commune(a, b) {
     var w = Math.min(a.right, b.right) - Math.max(a.left, b.left);
     var h = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
     return w > 0 && h > 0 ? w * h : 0;
-  }
-  /** Rectangle dans le repère de la caméra qui porte l'élément (zoom et déplacement retirés), ou null hors caméra. */
-  function repereCamera(el, r) {
-    var cam = el.closest('[data-camera]');
-    if (!cam || !(cam.offsetWidth > 0)) return null;
-    var c = cam.getBoundingClientRect();
-    var s = c.width / cam.offsetWidth;
-    if (!(s > 0)) return null;
-    return { left: (r.left - c.left) / s, top: (r.top - c.top) / s, width: r.width / s, height: r.height / s };
   }
   function mots(t) { return (String(t).match(/[\p{L}\p{N}]+(?:['’-][\p{L}\p{N}]+)*/gu) || []).length; }
   function arrondi(x) { return Math.round(x * 100) / 100; }
@@ -222,11 +222,7 @@
       visibles.forEach(function (id) {
         var sec = conteneur.querySelector(':scope > section[data-scene="' + id + '"]');
         if (!sec) return;
-        var immobiles = [], portes = [];
-        var deplace = function (r, a) {
-          return Math.abs(r.left - a.left) > S.immobile * W || Math.abs(r.top - a.top) > S.immobile * H ||
-            Math.abs(r.width - a.width) > S.immobile * W || Math.abs(r.height - a.height) > S.immobile * H;
-        };
+        var immobiles = [];
         // Mouvement rapide : grands éléments animés ou jugés, hors transition.
         sec.querySelectorAll('[data-start], ' + JUGES).forEach(function (el) {
           var r = el.getBoundingClientRect();
@@ -257,18 +253,13 @@
           var e = etat(el);
           var stable = !transition && e !== 'avant' && e !== 'pendant' && !lettresEnCours(el);
           var avant = releves.get(el);
-          var rl = repereCamera(el, r);
-          releves.set(el, { r: r, rl: rl, k: k });
+          releves.set(el, { r: r, k: k });
           if (!stable || !avant || avant.k !== k - 1) return;
-          if (deplace(r, avant.r)) {
-            // Posé dans une caméra qui bouge (dérive de la caméra automatique, zoom lent) : immobile dans le repère de la caméra,
-            // il est jugé pour les chevauchements (la caméra déplace pareil les deux éléments).
-            if (rl && avant.rl && !deplace(rl, avant.rl)) portes.push({ el: el, r: r });
-            return;
-          }
+          avant = avant.r;
+          if (Math.abs(r.left - avant.left) > S.immobile * W || Math.abs(r.top - avant.top) > S.immobile * H ||
+              Math.abs(r.width - avant.width) > S.immobile * W || Math.abs(r.height - avant.height) > S.immobile * H) return;
           immobiles.push({ el: el, r: r });
         });
-        var poses = immobiles.concat(portes);
         immobiles.forEach(function (x) {
           var el = x.el;
           var r = x.r;
@@ -299,21 +290,24 @@
             }
           }
         });
-        for (var i = 0; i < poses.length; i++) {
-          for (var j = i + 1; j < poses.length; j++) {
-            var a = poses[i];
-            var b = poses[j];
+        for (var i = 0; i < immobiles.length; i++) {
+          for (var j = i + 1; j < immobiles.length; j++) {
+            var a = immobiles[i];
+            var b = immobiles[j];
             if (a.el.contains(b.el) || b.el.contains(a.el)) continue;
             var c = commune(a.r, b.r);
-            if (!c) continue;
+            // Une carte (texte sur un fond ou dans un cadre) couvre toute sa boîte, pas seulement son texte : son cadre posé sur
+            // un titre le recouvre, même si leurs lettres ne se touchent pas.
+            var boiteA = carte(a), boiteB = carte(b);
+            if (!c && !boiteA && !boiteB) continue;
             var superpose = a.el.closest('[data-superpose]') || b.el.closest('[data-superpose]');
             // Logo masqué : seulement par un élément peint au-dessus de lui, et pas autorisé (data-superpose).
             var logo = estLogo(a.el) ? a : estLogo(b.el) ? b : null;
             var autre = logo === a ? b : a;
             if (logo && !superpose && c / aire(logo.r) > S.logoMasqueMax && audessus(autre, logo)) constater('logo-masque', id, nom(logo.el), t, arrondi(c / aire(logo.r)));
             if (superpose) continue;
-            var ra = encre(a);
-            var rb = encre(b);
+            var ra = boiteA || encre(a);
+            var rb = boiteB || encre(b);
             var part = commune(ra, rb) / Math.min(aire(ra), aire(rb));
             if (part > S.chevauchementMax) constater('chevauchement', id, nom(a.el) + '|' + nom(b.el), t, arrondi(part));
           }

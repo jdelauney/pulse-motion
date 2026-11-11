@@ -55,7 +55,7 @@ test('témoin : contrôle complet de la vidéo rendue, rien à signaler', { ...S
   assert.deepEqual(r.problemes, []);
 });
 
-test('témoin : deux exports donnent les mêmes images, à l'octet près (outil de preuve de S2)', { ...SANS, timeout: 300000 }, async () => {
+test('témoin : deux exports donnent les mêmes images, à l’octet près (outil de preuve de S2)', { ...SANS, timeout: 300000 }, async () => {
   const D = require('../scripts/lib/determinisme.js');
   const { ouvrirCapture } = require('../scripts/lib/capture-fidele.js');
   const dir = copie();
