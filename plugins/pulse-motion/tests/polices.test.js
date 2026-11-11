@@ -157,6 +157,67 @@ test('Bunny : police variable (font-weight en plage), chaque graisse demandée i
   assert.deepEqual(r.fichiers, ['Playfair Display-400.woff2', 'Playfair Display-700.woff2']);
 });
 
+// Bunny Fonts fait désormais pointer sa feuille vers le miroir fontsource de cdn.jsdelivr.net (constaté en novembre 2026 :
+// la liste et la feuille répondent sans redirection, les url() visent jsdelivr, l'adresse directe sur fonts.bunny.net sert
+// toujours le fichier). Hors réseau : la feuille réelle de Kalam, et des feuilles piégées.
+const KALAM = { kalam: { familyName: 'Kalam', weights: [300, 400, 700], styles: ['normal'], category: 'handwriting' } };
+const URL_KALAM = 'https://fonts.bunny.net/css?family=kalam:400';
+const jsdelivr = (sous, id = 'kalam', ext = 'woff2', version = '5.3.0') => `https://cdn.jsdelivr.net/fontsource/fonts/${id}@${version}/${sous}-400-normal.${ext}`;
+const regle = (sous, plage, a = jsdelivr(sous), b = jsdelivr(sous, 'kalam', 'woff')) => `/* ${sous} */
+@font-face { font-family: 'Kalam'; font-style: normal; font-weight: 400; font-display: swap; src: url(${a}) format('woff2'), url(${b}) format('woff'); unicode-range: ${plage}; }`;
+const FEUILLE_KALAM = [regle('devanagari', 'U+0900-097F'), regle('latin-ext', 'U+0100-02AF'), regle('latin', 'U+0000-00FF, U+0131, U+0152-0153')].join('\n');
+const directe = (sous) => `https://fonts.bunny.net/kalam/files/kalam-${sous}-400-normal.woff2`;
+
+test('Bunny : feuille vers jsdelivr traduite en adresses directes de fonts.bunny.net, seul le WOFF2 installé (hors réseau)', async () => {
+  // Forme stricte traduite ; tout le reste refusé (autre famille, autre hôte, http, « .. », version non numérique, police variable).
+  assert.equal(P.adresseDirecte(jsdelivr('latin'), 'kalam'), directe('latin'));
+  assert.equal(P.adresseDirecte(jsdelivr('latin-ext'), 'kalam'), directe('latin-ext'));
+  for (const u of [jsdelivr('latin', 'caveat'), 'https://evil.example/fontsource/fonts/kalam@5.3.0/latin-400-normal.woff2',
+    'http://cdn.jsdelivr.net/fontsource/fonts/kalam@5.3.0/latin-400-normal.woff2', jsdelivr('latin', 'kalam', 'woff2', '..'),
+    'https://cdn.jsdelivr.net/fontsource/fonts/kalam@5.3.0/../latin-400-normal.woff2', jsdelivr('latin', 'kalam', 'woff2', 'latest'),
+    'https://cdn.jsdelivr.net/fontsource/fonts/kalam:vf@latest/latin-wght-normal.woff2', `${jsdelivr('latin')}?v=1`, 'https://fonts.bunny.net/../evil.woff2']) {
+    assert.equal(P.adresseDirecte(u, 'kalam'), null, u);
+  }
+  // Seule la première url() en .woff2 de chaque règle ; le latin retenu.
+  const lus = P.lireFeuille(FEUILLE_KALAM, 'kalam');
+  assert.equal(lus.refus, null);
+  assert.deepEqual(lus.fichiers.map((f) => f.url), [directe('devanagari'), directe('latin-ext'), directe('latin')]);
+  assert.deepEqual(P.choisirLatin(lus.fichiers).map((f) => f.url), [directe('latin')]);
+  // Installation : rien n'est demandé à jsdelivr, le fichier vient de son adresse directe.
+  const demandes = [];
+  const r = await P.installerBunny({ famille: 'Kalam', graisses: [400], dans: dossier(), recuperer: async (url) => { demandes.push(url); return faux({ 'https://fonts.bunny.net/list': KALAM, [URL_KALAM]: FEUILLE_KALAM, [directe('latin')]: 'wOF2KALAM' })(url); } });
+  assert.equal(r.ok, true, r.message);
+  assert.deepEqual(r.fichiers, ['Kalam-400.woff2']);
+  assert.deepEqual(demandes, ['https://fonts.bunny.net/list', URL_KALAM, directe('latin')]);
+  assert.ok(!demandes.some((u) => /jsdelivr/.test(u)));
+});
+
+test('Bunny : feuille piégée (autre famille, autre hôte, « .. » dans le chemin) refusée en entier, rien d\'installé', async () => {
+  const pieges = [
+    ['autre famille', regle('latin', 'U+0000-00FF', jsdelivr('latin', 'caveat'))],
+    ['autre hôte', regle('latin', 'U+0000-00FF', 'https://evil.example/fontsource/fonts/kalam@5.3.0/latin-400-normal.woff2')],
+    ['« .. » dans le chemin', regle('latin', 'U+0000-00FF', 'https://cdn.jsdelivr.net/fontsource/fonts/kalam@5.3.0/../../evil/latin-400-normal.woff2')],
+    ['woff piégé après le woff2', regle('latin', 'U+0000-00FF', jsdelivr('latin'), 'https://evil.example/x.woff')],
+  ];
+  for (const [nom, piege] of pieges) {
+    const feuille = `${FEUILLE_KALAM}\n${piege}`;
+    assert.deepEqual(P.fichiersDeLaFeuille(feuille, 'kalam'), [], nom);
+    const d = dossier();
+    const demandes = [];
+    const r = await P.installerBunny({ famille: 'Kalam', graisses: [400], dans: d, recuperer: async (url) => { demandes.push(url); return faux({ 'https://fonts.bunny.net/list': KALAM, [URL_KALAM]: feuille, [directe('latin')]: 'wOF2KALAM' })(url); } });
+    assert.equal(r.ok, false, nom);
+    assert.match(r.message, /n'est pas reconnue/, nom);
+    assert.match(r.message, /Fournissez le fichier de la police/, nom);
+    assert.match(r.message, /Rien n'a été installé/, nom);
+    assert.deepEqual(fs.readdirSync(d), [], nom);
+    assert.equal(demandes.length, 2, `${nom} : aucun fichier demandé`);
+  }
+  // Une règle sans WOFF2 (seulement .woff) est ignorée : la feuille n'apporte rien à installer.
+  const sansWoff2 = regle('latin', 'U+0000-00FF', jsdelivr('latin', 'kalam', 'woff'), jsdelivr('latin', 'kalam', 'woff'));
+  assert.deepEqual(P.fichiersDeLaFeuille(sansWoff2, 'kalam'), []);
+  assert.equal(P.lireFeuille(sansWoff2, 'kalam').refus, null);
+});
+
 test('glossaire : écriture impossible, aucune copie d\'historique laissée', () => {
   const { noterGlossaire } = require('../scripts/vocabulaire.js');
   const { copierProjet } = require('./aide/projet.js');
