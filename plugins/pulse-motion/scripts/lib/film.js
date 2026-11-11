@@ -65,6 +65,15 @@ function validerFilm(f, { dossier } = {}) {
       let avant = -1;
       e[k].forEach((r) => { image(r[1], `${ou}, ${k}`); if (r[0] < avant) err.push(`${ou} : « ${k} » dans l'ordre des instants.`); avant = r[0]; });
     }
+    if (e.duree !== undefined && !(estNombre(e.duree) && e.duree >= 0)) err.push(`${ou} : « duree » en ms.`);
+    if (e.reperes !== undefined) {
+      if (!Array.isArray(e.reperes)) err.push(`${ou} : « reperes » une liste [{ instant, point, boite? }].`);
+      else e.reperes.forEach((r, k) => {
+        const bon = estObjet(r) && estNombre(r.instant) && r.instant >= 0 && Array.isArray(r.point) && r.point.length === 2 && r.point.every(estNombre)
+          && (r.boite === undefined || (Array.isArray(r.boite) && r.boite.length === 4 && r.boite.every(estNombre)));
+        if (!bon) err.push(`${ou}, repère ${k + 1} : { instant (s), point [x, y] px, boite? [x, y, l, h] px }.`);
+      });
+    }
     if (e.coupes !== undefined && !(Array.isArray(e.coupes) && e.coupes.every((c) => Array.isArray(c) && c.length === 2 && estNombre(c[0]) && estNombre(c[1])))) err.push(`${ou} : « coupes » [[de, a], …] en ms.`);
     if (e.alertes !== undefined && !Array.isArray(e.alertes)) err.push(`${ou} : « alertes » une liste.`);
   });
@@ -215,4 +224,4 @@ function blocFilm(projet, nom, numeros) {
   return { id, html: `<script type="application/json" id="${id}">${json}</script>`, poids, images: noms.size, film: r.film, prise: r.prise };
 }
 
-module.exports = { VERSION, PRISE, validerFilm, lireFilm, prises, prochainePrise, choisirPrise, supprimerPrise, filmChoisi, lireEtapes, blocFilm, poidsPrise, dossierFilm, lireParcoursBrut };
+module.exports = { VERSION, PRISE, ecrireParcours, validerFilm, lireFilm, prises, prochainePrise, choisirPrise, supprimerPrise, filmChoisi, lireEtapes, blocFilm, poidsPrise, dossierFilm, lireParcoursBrut };

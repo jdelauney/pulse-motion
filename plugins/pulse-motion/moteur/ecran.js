@@ -24,7 +24,7 @@
  * de l'étape N (sinon, M.film.planifierFilm la place). L'image est choisie par M.film.etatFilm, du temps vu par l'écran, et
  * posée dans deux <img> (l'une s'affiche une fois l'autre décodée ; M.seek attend ce décodage) ; les images des 2 s
  * suivantes sont préchargées pendant la lecture. Le pointeur suit les gestes des étapes ; « etape:N » vise la cible relevée
- * au tournage.
+ * au tournage (vidéo importée : le repère N).
  * Valeurs de argo (src/camera.ts : spotlight, focusRing, dimAround ; src/cursor.ts ; MIT, Shreyas Karnik), rendu réécrit
  * sans filtre SVG ni backdrop-filter. Navigateur seulement ; dépend de pointeur, camera, courbes, horloge (global M).
  */
@@ -190,6 +190,13 @@
         return b ? { boite: [b[0] * kx, b[1] * ky, b[2] * kx, b[3] * ky], el: cible } : null;
       }
       if (c.etape) {
+        // Vidéo importée : etape:N vise le repère N, ajouté en regardant la planche de la vidéo.
+        var reperes = e.film && M.film && M.film.reperesDe ? M.film.reperesDe(e.film) : null;
+        if (reperes) {
+          var rp = reperes[c.etape - 1];
+          if (!rp) return null;
+          return rp.boite ? { boite: rp.boite.slice(), point: rp.point ? rp.point.slice() : null } : { point: rp.point.slice() };
+        }
         var et = e.film && e.film.etapes.filter(function (x) { return x.n === c.etape; })[0];
         if (!et) return null;
         if (et.cible && et.cible.boite) return { boite: et.cible.boite.slice() };
