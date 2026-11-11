@@ -4,6 +4,23 @@
  * modes de fusion, filtres, emoji, particules). PNG sans perte, compressé au plus vite (optimizeForSpeed). */
 const { pathToFileURL } = require('node:url');
 const { ouvrirPage } = require('./cdp.js');
+const { verifierPNG } = require('./png.js');
+
+// Une capture dont la structure est incomplète (coupée, sans fin) est refaite au même instant, deux fois au plus : le
+// navigateur, sous charge, peut rendre une image abîmée qu'une seconde capture rend entière.
+const CAPTURES_MAX = 3;
+
+/** Capture complète : prendre() -> Promise<PNG>, refaite tant que sa structure est incomplète (CAPTURES_MAX fois en tout). */
+async function captureEntiere(prendre, t) {
+  let png = await prendre();
+  let defaut = verifierPNG(png, { sommes: false });
+  for (let essai = 1; defaut && essai < CAPTURES_MAX; essai++) {
+    png = await prendre();
+    defaut = verifierPNG(png, { sommes: false });
+  }
+  if (defaut) throw new Error(`la capture de l'instant ${Math.round(t * 1000) / 1000} s est abîmée (${defaut}), même refaite ${CAPTURES_MAX - 1} fois`);
+  return png;
+}
 
 /** Drapeaux ajoutés aux pages de capture : aucun (mesures de S1-4 sur le témoin de 3 min).
  *  - --disable-frame-rate-limit (utilisé par la page de contrôle) : une capture peut précéder la présentation de l'image
@@ -145,7 +162,7 @@ async function ouvrirCapture({ fichierHtml, largeur, hauteur, navigateur, gpu = 
         const [seek, particules] = mesure;
         if (profil) { profil('seek', seek); profil('particules', particules); }
         verifier(t);
-        const png = await page.capturer({ profil });
+        const png = await captureEntiere(() => page.capturer({ profil }), t);
         verifier(t);
         return png;
       },
@@ -180,4 +197,4 @@ async function ouvrirCapture({ fichierHtml, largeur, hauteur, navigateur, gpu = 
   }
 }
 
-module.exports = { ouvrirCapture, OPTIONS_CAPTURE, sceneA, erreurDeScript };
+module.exports = { ouvrirCapture, OPTIONS_CAPTURE, sceneA, erreurDeScript, captureEntiere, CAPTURES_MAX };

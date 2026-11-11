@@ -565,6 +565,8 @@ async function exporterFidele({ dossier, pour, qualite, ips, tailleMax, navigate
       const c = await ouvrir();
       for (const n of [...temoins.keys()].sort((a, b) => a - b)) if (!temoins.get(n)) temoins.set(n, await imageA(c, n));
     }
+    // Captures témoins complètes et décodables avant de servir de référence ; une capture abîmée est refaite par la première page.
+    await P.mesurer('verifications', () => F.verifierTemoins(temoins, (n) => imageA(pages[0], n)));
     // Couverture (5.10) : l'instant du déroulé, sous-titres masqués, en JPEG de qualité 90, prise par la première page une fois
     // les images faites (une page ne revient en arrière qu'ici, pour cette seule image) ; vignette de 1 280 px et 200 Ko au plus.
     let couverture = null;
@@ -743,8 +745,8 @@ async function exporterFidele({ dossier, pour, qualite, ips, tailleMax, navigate
         if (s.images !== n) throw new Error(`l'extrait a ${s.images} images au lieu de ${n}`);
         if (audio && (s.audio !== 'aac' || Math.abs(s.dureeAudio - n / cadence) > 0.1)) throw new Error('la piste son de l\'extrait est absente ou n\'a pas la durée de l\'image');
         for (const [k, capturee] of temoins) {
-          const lue = await F.extraireImage({ ffmpeg: outil.chemin, fichier: partiel, t: Math.max(0, (k - f0) / cadence - 0.001), taille: reduite ? [largeurCapture, hauteurCapture] : undefined });
-          const ecart = F.ecartImages(lue, capturee);
+          const lire = () => F.extraireImage({ ffmpeg: outil.chemin, fichier: partiel, t: Math.max(0, (k - f0) / cadence - 0.001), taille: reduite ? [largeurCapture, hauteurCapture] : undefined });
+          const ecart = await F.ecartTemoin(lire, capturee);
           if (ecart > ECART_MAX) throw new Error(`l'image ${k + 1} de l'extrait ne correspond pas à la page (écart de ${Math.round(ecart * 100)} %)`);
         }
       });
@@ -777,7 +779,9 @@ async function exporterFidele({ dossier, pour, qualite, ips, tailleMax, navigate
         verification = await P.mesurer('verificationContenu', () => verifierContenu({ m, sonie, propres: ['couleurs', ...(u.tailleMax ? ['taille'] : []), ...(vignette ? ['vignette'] : []), ...(chapitres.length ? ['chapitres'] : [])] }));
         // Trois images de la vidéo comparées aux captures (segment décalé, image noire).
         for (const [i, [k, capturee]] of [...temoins].entries()) {
-          const ecart = F.ecartImages(lues[i], capturee);
+          // Une image lue illisible est relue (F.ecartTemoin) : un incident passager n'arrête pas l'export.
+          const lire = () => F.extraireImage({ ffmpeg: outil.chemin, fichier: partiel, t: Math.max(0, k / cadence - 0.001), taille: reduite ? [largeurCapture, hauteurCapture] : undefined });
+          const ecart = await F.ecartTemoin(lire, capturee, lues[i]);
           if (ecart > ECART_MAX) {
             // Le segment fautif est retiré : il ne sera pas repris au prochain export.
             const j = segments.findIndex((g) => k >= g.debut && k < g.fin);

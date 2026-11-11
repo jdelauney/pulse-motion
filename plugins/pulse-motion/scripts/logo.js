@@ -50,11 +50,14 @@ class ErreurImage extends Error {}
  * PNG non entrelacé, 8 bits par couleur (1, 2 ou 4 bits aussi pour la palette et les gris)
  * -> { largeur, hauteur, pixel(x, y) -> [r, g, b, a] }.
  */
-function decoderPNG(buf) {
+function decoderPNG(buf, { logo = true } = {}) {
   try {
     return decoder(buf);
   } catch (e) {
     if (e instanceof ErreurImage) throw new Error(e.message);
+    // Une autre erreur (mémoire, tampon) : hors du logo (images de l'export comparées), sa cause est gardée, et le conseil
+    // « réenregistrez le logo » n'aurait pas de sens.
+    if (!logo) throw new Error(`image PNG illisible (${e.message})`);
     throw new Error('image PNG abîmée : réenregistrez le logo, ou donnez-le en SVG');
   }
 }
