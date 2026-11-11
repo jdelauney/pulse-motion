@@ -83,6 +83,15 @@ function trous(debut, fin, intervalles) {
 
 const liste = (corrections) => corrections.join(', ');
 
+// Propriétés qui colorent un texte (lettres, sous-titres) : l'accent « encre seulement » ne doit jamais y figurer.
+const COULEUR_TEXTE = /(?:^|[\s;{"'])(color|-webkit-text-fill-color|-webkit-text-stroke-color|--pm-st-texte|--pm-st-accent|--pm-cle-texte)\s*:\s*([^;}"']*--c-accent-encre[^;}"']*)/g;
+/** Règle accent-encre-texte : -> [problèmes] (erreur), un par déclaration fautive (CSS ou attribut style d'une scène). */
+function accentEncreSurTexte(texte, ou, scene) {
+  const sans = String(texte).replace(/\/\*[\s\S]*?\*\/|<!--[\s\S]*?-->/g, '');
+  return [...sans.matchAll(COULEUR_TEXTE)].map((m) => ({ regle: 'accent-encre-texte', gravite: 'erreur', ...(scene ? { scene } : {}),
+    message: `${ou} : l'accent « encre seulement » (--c-accent-encre) colore un texte (${m[1]}: ${m[2].trim()}) ; il ne sert qu'aux encres, aplats et tracés : prendre --c-texte ou --c-accent-lisible.` }));
+}
+
 /** Typographie, majuscules accentuées, mots doublés, termes variables (textes du déroulé et des scènes). */
 function controlerTextes(deroule, scenesHtml, termesGlossaire, problemes) {
   const entrees = [];
@@ -460,7 +469,11 @@ function controlesRapides({ projet, dossierStyles, dossierEffets, assemblage = A
       temps, termes: termesGlossaire, fichiersPolices: assemblage.polices, seuils: SEUILS }));
 
     // Style : tailles de texte et effets.
-    try { controlerCSS(fs.readFileSync(path.join(dossierStyle, 'style.css'), 'utf8'), undefined, `Style « ${deroule.style} »`, problemes); } catch { /* style vérifié par l'assemblage */ }
+    let cssStyle = '';
+    try { cssStyle = fs.readFileSync(path.join(dossierStyle, 'style.css'), 'utf8'); controlerCSS(cssStyle, undefined, `Style « ${deroule.style} »`, problemes); } catch { /* style vérifié par l'assemblage */ }
+    // Accent « encre seulement » (accent-encre) : jamais la couleur d'un texte, dans le style ni dans une scène.
+    problemes.push(...accentEncreSurTexte(cssStyle, `Style « ${deroule.style} »`));
+    for (const s of deroule.scenes) problemes.push(...accentEncreSurTexte(scenesHtml[s.id] || '', `Scène « ${s.id} »`, s.id));
 
     // Contraste de la charte.
     const { couleurs, ton, tonIndisponible } = charteFinale(deroule, dossierStyle, projet);
@@ -712,4 +725,4 @@ if (require.main === module) {
   }, (e) => { avancement.terminer(false, e.message); console.error(e.message); process.exit(1); });
 }
 
-module.exports = { controler, controlerComplet, controlesRapides, contraste, compterMots, trous, SEUILS };
+module.exports = { controler, controlerComplet, controlesRapides, contraste, compterMots, trous, accentEncreSurTexte, SEUILS };

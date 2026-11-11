@@ -25,7 +25,7 @@
 
 ## 3. Logique de couleur
 
-- Trois encres au plus : `--c-primaire`, `--c-accent` et une encre claire, `--c-encre-neutre` (jaune) pour les fonds et les surlignages.
+- Trois encres au plus : `--c-primaire`, l'accent « encre seulement » `--c-accent-encre` (couleur `accent-encre` de la charte, rose vif ; jamais un texte, règle `accent-encre-texte` ; sans elle, l'accent de la personne) et une encre claire, `--c-encre-neutre` (jaune), pour les fonds et les surlignages. Tracés d'accent : `data-couleur="accent-encre"`.
 - Le texte n'a qu'une couleur : `--c-texte`, la plus sombre. Jamais de texte sur l'encre d'accent pleine.
 - Palette d'exemple (encres de take-one) : jaune `#F4C51A`, rose `#F0508C`, bleu `#2160A8`, papier `#E6DECB`.
 

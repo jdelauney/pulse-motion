@@ -21,7 +21,8 @@
   var M = racine.M = racine.M || {};
   if (typeof document === 'undefined' || !M.surRendu) return;
   var FORMES = ['rond', 'rect', 'demi', 'bande'];
-  var ENCRES = { primaire: '--c-primaire', accent: '--c-accent', neutre: '--c-encre-neutre', texte: '--c-texte' };
+  // L'accent d'une encre est l'accent « encre seulement » de la charte (--c-accent-encre, jamais un texte), sinon l'accent.
+  var ENCRES = { primaire: '--c-primaire', accent: '--c-accent-encre', neutre: '--c-encre-neutre', texte: '--c-texte' };
   var OPACITE = 0.9;
   var etat = { scenes: null };
 
@@ -117,7 +118,7 @@
       parEncre[a.encre].push({ a: a, op: op, x: (r.left - rs.left) / ech * dpr, y: (r.top - rs.top) / ech * dpr, l: r.width / ech * dpr, h: r.height / ech * dpr });
     });
     ordre.forEach(function (encre) {
-      var couleur = cs.getPropertyValue(ENCRES[encre]).trim() || '#000';
+      var couleur = cs.getPropertyValue(ENCRES[encre]).trim() || (encre === 'accent' ? cs.getPropertyValue('--c-accent').trim() : '') || '#000';
       cc.setTransform(1, 0, 0, 1, 0, 0);
       cc.globalCompositeOperation = 'source-over';
       cc.globalAlpha = 1;

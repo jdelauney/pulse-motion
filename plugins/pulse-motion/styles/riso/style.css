@@ -42,7 +42,7 @@
 .aplat.rond { border-radius: 50%; }
 /* Repli sans canevas : des aplats translucides, sans surimpression. */
 .aplat[data-riso~="primaire"] { background: color-mix(in srgb, var(--c-primaire) 80%, transparent); }
-.aplat[data-riso~="accent"] { background: color-mix(in srgb, var(--c-accent) 80%, transparent); }
+.aplat[data-riso~="accent"] { background: color-mix(in srgb, var(--c-accent-encre, var(--c-accent)) 80%, transparent); }
 .aplat[data-riso~="neutre"] { background: color-mix(in srgb, var(--c-encre-neutre) 85%, transparent); }
 .aplat[data-riso~="demi"] { border-radius: 50% 50% 0 0 / 100% 100% 0 0; }
 .aplat[data-riso~="bande"] { border-radius: 99cqh; }

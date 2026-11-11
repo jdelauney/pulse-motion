@@ -1,4 +1,4 @@
 {
-  "couleurs": { "primaire": "#2160a8", "accent": "#b52d68", "fond": "#ebe3cf", "texte": "#1d3a6e" },
+  "couleurs": { "primaire": "#2160a8", "accent": "#b52d68", "accent-encre": "#f0508c", "fond": "#ebe3cf", "texte": "#1d3a6e" },
   "polices": { "titres": "Schibsted Grotesk", "texte": "Schibsted Grotesk" }
 }
