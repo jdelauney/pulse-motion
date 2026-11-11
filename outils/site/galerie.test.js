@@ -61,10 +61,10 @@ test("chaque page qui montre des aperçus charge js/galerie.js (sinon ses vidéo
   for (const p of avecApercus) assert.match(fs.readFileSync(path.join(DOCS, p), "utf8"), /<script src="js\/galerie\.js" defer><\/script>/, p);
 });
 
-test("idées : les huit modèles, chacun avec au moins deux phrases, sa vidéo et sa séance", () => {
+test("idées : les neuf modèles, chacun avec au moins deux phrases, sa vidéo et sa séance", () => {
   const b = blocs().idees;
   const modeles = G.modelesVideo();
-  assert.equal(modeles.length, 8);
+  assert.equal(modeles.length, 9);
   for (const m of modeles) {
     const debut = b.indexOf(`<section class="idee-modele" id="modele-${m.id}">`);
     assert.ok(debut >= 0, m.id);
@@ -162,7 +162,7 @@ test("galerie : cartes regroupées par catégorie, dans l'ordre de CATEGORIES", 
   // Le bloc du catalogue : une section par catégorie, chaque carte avec A, B, la boucle et ses champs.
   const b = blocs().styles;
   const sections = [...b.matchAll(/<section class="categorie-styles" id="styles-([a-z-]+)" data-categorie="\1">\n<h4>([^<]+)<\/h4>/g)];
-  assert.deepEqual(sections.map((m) => m[1]), ["essentiels"]);
+  assert.deepEqual(sections.map((m) => m[1]), ["essentiels", "schemas-donnees", "ecrans-annonces"]);
   assert.equal(sections[0][2], "Les essentiels");
   for (const style of G.STYLES_LIVRES()) {
     const carte = new RegExp(`<details class="style-en-mouvement" id="style-${style}"[\\s\\S]*?</details>`).exec(b)[0];

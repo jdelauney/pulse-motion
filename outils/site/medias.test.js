@@ -63,7 +63,7 @@ test("exemples : une vidéo et une affiche par modèle (la chaîne du froid réu
   assert.ok(lot, "lot exemples");
   const sorties = sortiesDe(lot);
   assert.equal(sorties.length, G.exemplesAFabriquer().length * 2);
-  assert.equal(G.exemplesAFabriquer().length, 7);
+  assert.equal(G.exemplesAFabriquer().length, 8);
   for (const m of G.modelesVideo()) {
     const [mp4, jpg] = G.fichiersExemple(m);
     assert.match(mp4, /\.mp4$/);
