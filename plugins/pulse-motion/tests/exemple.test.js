@@ -91,7 +91,7 @@ const EXEMPLES = path.join(__dirname, '..', 'exemples');
 const exemplesDeModeles = () => listerModeles().map((m) => m.exemple || m.id).filter((x) => x !== 'chaine-du-froid');
 
 test('exemples des modèles : un par modèle, avec le récit de sa séance', () => {
-  assert.equal(exemplesDeModeles().length, 7);
+  assert.equal(exemplesDeModeles().length, 8);
   for (const id of exemplesDeModeles()) {
     const recit = JSON.parse(fs.readFileSync(path.join(EXEMPLES, id, 'exemple.json'), 'utf8'));
     const m = lireModele(recit.modele);
