@@ -7,6 +7,8 @@ test('svg-sur : formes simples acceptées', () => {
   assert.deepEqual(verifierSVG(`<g transform='translate(0 -44)'><path d="M -8 6 C -7 -8 2 -36 8 6 Z" fill='var(--touffe)' stroke-width='2.5'/><ellipse rx='21' ry='9'/></g>`), []);
   assert.deepEqual(verifierSVG('<rect x="-7" y="-7" width="14" height="82" rx="7" fill="var(--teinte-loin, var(--corps))"/>'), []);
   assert.deepEqual(verifierSVG('  <circle r="6"></circle>\n'), []);
+  // Trait cassé (dessin guide, style mode-d-emploi) : tirets irréguliers.
+  assert.deepEqual(verifierSVG("<path d='M 0 0 L 0 60' fill='none' stroke='var(--trait)' stroke-dasharray='14.2 2.1 22 3' stroke-dashoffset='4'/>"), []);
 });
 
 test('svg-sur : refus', () => {

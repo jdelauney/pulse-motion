@@ -77,11 +77,13 @@ test('vague D : crayon, papier-decoupe, riso, pictogrammes passent contrat, quat
     assert.equal(id.categorie, categorie, style);
     assert.ok(id.provenance.length >= 1 && id.provenance.every((p) => p.licence === 'MIT'), style);
     assert.deepEqual(F.verifierFiche(lire('references', 'styles', `${style}.md`), { dossierStyle: dossier, identite: id }), [], style);
-    // Polices : uniquement des polices OFL déjà livrées dans le dépôt, copiées à l'identique (aucun téléchargement).
+    // Polices : des polices OFL déjà livrées dans le dépôt, copiées à l'identique ; seule exception, la police manuscrite de
+    // crayon (Patrick Hand, S8 J10), téléchargée avec l'accord de l'auteur (vérifiée par mode-d-emploi.test.js).
     const licences = lire('styles', style, 'polices', 'LICENCES.md');
     assert.match(licences, /SIL OPEN FONT LICENSE Version 1\.1/, style);
     assert.match(licences, /aucune police téléchargée pour ce style/, style);
     for (const f of fs.readdirSync(path.join(dossier, 'polices')).filter((x) => x.endsWith('.woff2'))) {
+      if (style === 'crayon' && f === 'Patrick Hand-400.woff2') continue;
       const octets = fs.readFileSync(path.join(dossier, 'polices', f));
       const sources = Object.keys(identiteDesAnciens()).filter((s) => fs.existsSync(path.join(RACINE, 'styles', s, 'polices', f)) && fs.readFileSync(path.join(RACINE, 'styles', s, 'polices', f)).equals(octets));
       assert.ok(sources.length >= 1, `${style} : ${f} n'est la copie d'aucune police déjà livrée`);

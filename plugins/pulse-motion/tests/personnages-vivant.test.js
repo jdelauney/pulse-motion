@@ -329,7 +329,7 @@ test('data-vie sobre : ni repos vivant ni retard ; aucune : rien', () => {
   // Validation du conteneur.
   const r = preparerPersonnages('<section><div data-personnage="touffu" data-vie="vivante" data-ombre="peut-etre" data-ecrase="0.5"><i data-action="pose" data-pose="montrer" data-start="0" data-dur="1" data-ecrase="0.1"></i></div></section>', { scene: 's', lu });
   const m = r.erreurs.map((e) => e.message);
-  assert.ok(m.includes('Scène « s » : data-vie="vivante" : valeur inconnue (pleine, sobre ou aucune).'), m.join(' | '));
+  assert.ok(m.includes('Scène « s » : data-vie="vivante" : valeur inconnue (pleine, sobre, mains ou aucune).'), m.join(' | '));
   assert.ok(m.includes('Scène « s » : data-ombre="peut-etre" : oui ou non.'));
   assert.ok(m.some((x) => /data-ecrase="0\.5" : écrasement à l'atterrissage, de 0 \(aucun\) à 0,25/.test(x)));
   assert.ok(m.some((x) => /data-ecrase ne sert qu'à « bondir »/.test(x)));
