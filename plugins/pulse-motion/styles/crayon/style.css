@@ -60,12 +60,12 @@
 .lavis {
   position: absolute; inset: -2cqh -3.6cqh; z-index: -1; rotate: -1.2deg;
   border-radius: 46% 54% 42% 58% / 58% 44% 56% 42%;
-  background: radial-gradient(farthest-side at 48% 50%, color-mix(in srgb, var(--c-primaire) 13%, transparent) 55%, color-mix(in srgb, var(--c-primaire) 22%, transparent) 92%, color-mix(in srgb, var(--c-primaire) 30%, transparent) 100%);
+  background: radial-gradient(farthest-side at 48% 50%, color-mix(in srgb, var(--c-primaire) 9%, transparent) 55%, color-mix(in srgb, var(--c-primaire) 15%, transparent) 92%, color-mix(in srgb, var(--c-primaire) 21%, transparent) 100%);
   clip-path: inset(-1cqh calc((1 - var(--p, 1)) * 100%) -1cqh -1cqh);
 }
 .lavis.chaud {
   rotate: 1deg; border-radius: 54% 44% 58% 42% / 44% 58% 42% 56%;
-  background: radial-gradient(farthest-side at 52% 50%, color-mix(in srgb, var(--c-accent) 10%, transparent) 55%, color-mix(in srgb, var(--c-accent) 18%, transparent) 92%, color-mix(in srgb, var(--c-accent) 26%, transparent) 100%);
+  background: radial-gradient(farthest-side at 52% 50%, color-mix(in srgb, var(--c-accent) 7%, transparent) 55%, color-mix(in srgb, var(--c-accent) 12%, transparent) 92%, color-mix(in srgb, var(--c-accent) 18%, transparent) 100%);
 }
 
 /* ---------- Liste : une tache de cire devant chaque point ---------- */
@@ -90,6 +90,8 @@
 
 /* ---------- Alerte ---------- */
 .cadre-alerte { position: relative; display: flex; flex-direction: column; gap: 2cqh; padding: 4cqh 5cqh; }
+/* Sur le lavis chaud, la note garde l'encre du texte (contraste). */
+.cadre-alerte > .note { color: var(--c-texte); }
 
 /* ---------- Schéma ---------- */
 /* Flèches courtes entre trois idées : un trait moins rugueux, pour qu'elles partent et arrivent au bord des idées. */
