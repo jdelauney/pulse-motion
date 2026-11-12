@@ -177,10 +177,13 @@ window.__pmImport = {
 window.__pmImportPret = true;
 </script>`;
 
-/** Serveur de la page d'aide, sur 127.0.0.1, lecture seule (garde commune : aucune écriture admise). */
-function servirAide(fichier, type) {
+/** Serveur de la page d'aide, sur 127.0.0.1, lecture seule (garde commune : aucune écriture admise). page et routes : ceux
+ *  d'une autre page d'aide (imitation, spec S9 5.15) ; routes : { chemin: [() => Buffer, type] }, ou une fonction
+ *  (chemin) -> [() => Buffer, type] | null pour les chemins variables. */
+function servirAide(fichier, type, { page = PAGE, routes = {}, routeVariable = null } = {}) {
   const ROUTES = {
-    '/': [() => Buffer.from(PAGE, 'utf8'), 'text/html; charset=utf-8'],
+    ...routes,
+    '/': [() => Buffer.from(page, 'utf8'), 'text/html; charset=utf-8'],
     '/_pm/vendor/mediabunny.min.mjs': [() => fs.readFileSync(path.join(RACINE, 'vendor', 'mediabunny', 'mediabunny.min.mjs')), 'text/javascript; charset=utf-8'],
     '/_pm/wav.js': [() => fs.readFileSync(path.join(RACINE, 'moteur', 'wav.js')), 'text/javascript; charset=utf-8'],
   };
@@ -193,7 +196,7 @@ function servirAide(fichier, type) {
       fs.createReadStream(fichier).pipe(res);
       return;
     }
-    const r = ROUTES[chemin];
+    const r = ROUTES[chemin] || (routeVariable ? routeVariable(chemin) : null);
     if (!r) { res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }); res.end('Introuvable.'); return; }
     res.writeHead(200, { 'Content-Type': r[1] });
     res.end(r[0]());

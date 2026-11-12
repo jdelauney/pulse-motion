@@ -34,6 +34,8 @@
  *   pulse-motion effet liste [--dossier <d>] | enregistrer <nom> [<dossier>] [--sous <autre>] [--remplacer] | utiliser <nom> [<dossier>] [--remplacer]
  *                                        effets avec leur provenance ; garder un effet de la vidéo ; le copier dans une vidéo
  *   pulse-motion filmer verifier|tourner|continuer|prises|choisir|supprimer|essai|connexions|flouter|importer|repere <dossier> <nom> …   filmer une application web ou importer une vidéo de l'écran (tutoriel)
+ *   pulse-motion imiter niveau "<phrase>" | analyser <fichier | films/<nom>> [--de s --a s] [--zone x,y,l,h] [--couleurs #hex,…] [--niveau esprit|mouvement] [<dossier>]
+ *                       | comparer <nom> --scene <id> [<dossier>] | fiche <nom> [<dossier>]   imiter la manière d'une animation fournie (jamais l'œuvre)
  *   pulse-motion bloc [<nom>]             blocs « interface » d'un écran de tutoriel (notification, toast, commande…) : liste, ou le HTML d'un bloc
  *   pulse-motion icones chercher <mots…> | afficher <nom> | planche <nom1,nom2…> [--ouvrir]   icônes Lucide : chercher en français, SVG, planche PNG
  *   pulse-motion mouvements liste [--categorie <id>] | chercher <mots…> | afficher <n° ou nom> | reference | choisir [--categorie <id>] [--ouvrir]   dictionnaire de mouvements nommés ; choisir en regardant
@@ -101,6 +103,7 @@ const SCRIPTS = {
   modeles: 'modeles.js',
   credits: 'credits.js',
   filmer: 'filmer.js',
+  imiter: 'imiter.js',
   rapport: 'rapport.js',
   preferences: 'preferences.js',
   videos: 'videos.js',
@@ -270,6 +273,7 @@ function lancer(args) {
     '  avancement <dossier> [--suivre]   travail long en cours, une ligne (ou une par étape jusqu\'à la fin)',
     '  musique ecouter [dossier]   musique seule dans sortie/musique.wav',
     '  filmer verifier|tourner [--accord]|continuer|prises|choisir|supprimer|essai|connexions|flouter|importer|repere <dossier> <nom> …   filmer une application web, importer une vidéo de son écran (tutoriel)',
+    '  imiter niveau "<phrase>" | analyser <fichier | films/<nom>> [--de s --a s] [--zone x,y,l,h] [--couleurs #hex,…] [--niveau esprit|mouvement] [<dossier>] | comparer <nom> --scene <id> [<dossier>] | fiche <nom>   imiter une animation (reference imiter)',
     '  reference <nom>          scene <style> <nom>      effet <nom>      bloc [<nom>]      consignes <skill> [<section>]',
     '  effet liste [--dossier <d>] | enregistrer <nom> [<dossier>] [--sous <autre>] [--remplacer] | utiliser <nom> [<dossier>] [--remplacer]   effets gardés pour toutes les vidéos',
     '  mouvements liste [--categorie <id>] | chercher <mots…> | afficher <n° ou nom> | reference | choisir [--categorie <id>] [--ouvrir] [--delai <minutes>]   [--json]',
