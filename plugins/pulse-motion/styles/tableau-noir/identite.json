@@ -31,9 +31,9 @@
   },
   "typographie": {
     "titres": {
-      "famille": "Cabin Sketch",
+      "famille": "Kalam",
       "categorie": "handwriting",
-      "graisse": 700
+      "graisse": 400
     },
     "texte": {
       "famille": "Nunito Sans",

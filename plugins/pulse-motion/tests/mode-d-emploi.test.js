@@ -268,13 +268,15 @@ test('mode-d-emploi : le guide vit à 12 i/s, placé par la feuille, et les apla
 
 // ---------- Polices manuscrites (accord de l'auteur, 2026-11-11) ----------
 
-test('polices manuscrites : Patrick Hand, Kalam, Caveat et Cabin Sketch, OFL, sources et empreintes, notices', () => {
+test('polices manuscrites : Patrick Hand, Kalam et Caveat, OFL, sources et empreintes, notices', () => {
   const ATTENDU = {
     crayon: { roles: { titres: 'Patrick Hand' }, fichiers: ['Patrick Hand-400.woff2'], retirees: ['Fredoka-500.woff2', 'Fredoka-600.woff2'] },
-    'tableau-blanc': { roles: { titres: 'Kalam', texte: 'Kalam' }, fichiers: ['Kalam-400.woff2', 'Kalam-700.woff2'], retirees: ['Fredoka-500.woff2', 'Fredoka-600.woff2'] },
+    'tableau-blanc': { roles: { titres: 'Kalam', texte: 'Kalam' }, fichiers: ['Kalam-400.woff2'], retirees: ['Fredoka-500.woff2', 'Fredoka-600.woff2'] },
     'recit-donnees': { roles: { notes: 'Kalam' }, fichiers: ['Kalam-400.woff2'], retirees: [] },
-    carnet: { roles: { titres: 'Caveat' }, fichiers: ['Caveat-500.woff2', 'Caveat-700.woff2'], retirees: ['Fraunces-400-italic.woff2'] },
-    'tableau-noir': { roles: { titres: 'Cabin Sketch' }, fichiers: ['Cabin Sketch-700.woff2'], retirees: ['Sora-600.woff2'] },
+    carnet: { roles: { titres: 'Caveat' }, fichiers: ['Caveat-700.woff2'], retirees: ['Fraunces-400-italic.woff2'] },
+    // Cabin Sketch, d'abord retenue, faisait échouer la capture (polices embarquées dans chaque image) ; Caveat, penchée, demande
+    // un découpage de l'écriture plus large qui ralentit trop la capture des titres écrits lettre à lettre : Kalam, droite.
+    'tableau-noir': { roles: { titres: 'Kalam' }, fichiers: ['Kalam-400.woff2'], retirees: ['Sora-600.woff2', 'Cabin Sketch-700.woff2', 'Caveat-700.woff2'] },
   };
   const notices = fs.readFileSync(path.join(DEPOT, 'THIRD-PARTY-NOTICES.md'), 'utf8');
   assert.equal(notices, lire('THIRD-PARTY-NOTICES.md'));
@@ -295,10 +297,13 @@ test('polices manuscrites : Patrick Hand, Kalam, Caveat et Cabin Sketch, OFL, so
     for (const f of a.retirees) assert.ok(!fs.existsSync(path.join(RACINE, 'styles', style, 'polices', f)), `${style} : ${f} encore là`);
     assert.deepEqual(S.verifierStyle(path.join(RACINE, 'styles', style)).erreurs, [], style);
   }
-  for (const famille of ['Patrick Hand', 'Kalam', 'Caveat', 'Cabin Sketch']) assert.match(notices, new RegExp(`${famille} \\d{3}`), famille);
+  for (const famille of ['Patrick Hand', 'Kalam', 'Caveat']) assert.match(notices, new RegExp(`${famille} \\d{3}`), famille);
+  assert.doesNotMatch(notices, /Cabin Sketch/);
   // Les notes de recit-donnees passent par le rôle « notes » ; l'écriture lettre à lettre laisse dépasser les écritures penchées.
   assert.match(lire('styles', 'recit-donnees', 'style.css'), /\.note \{[^}]*var\(--f-notes, var\(--f-texte\)\)/);
-  assert.match(lire('moteur', 'base.css'), /@keyframes pm-l-ecrit \{ from \{ clip-path: inset\(-100% 200% -100% -100%\); \} to \{ clip-path: inset\(-100%\); \} \}/);
+  // Marges par défaut inchangées (25 % et 8 % : même image, même vitesse de capture) ; carnet (Caveat, penchée) les élargit.
+  assert.match(lire('moteur', 'base.css'), /var\(--pm-ecrit-marge-v, 25%\)[^}]*var\(--pm-ecrit-marge-h, 8%\)/);
+  assert.match(lire('styles', 'carnet', 'style.css'), /--pm-ecrit-marge-v: 100%; --pm-ecrit-marge-h: 100%;/);
   // Les styles copiés plus tard ne prennent plus Fredoka ni Sora par erreur.
   assert.doesNotMatch(lire('styles', 'crayon', 'style.css'), /font: 600 [^;]*var\(--f-titres\)/);
 });

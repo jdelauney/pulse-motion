@@ -8,17 +8,17 @@
 - Nunito Sans-700.woff2 : https://fonts.bunny.net/nunito-sans/files/nunito-sans-latin-700-normal.woff2 (sha256 cb84238e7b852f2d22b91a598289f13b31cbc7a2d618fd2c0628ecb69459fbeb)
 - Copiée du style « chaleureux » du plugin le 2026-11-11 (mêmes fichiers, mêmes empreintes) : aucune police téléchargée pour ce style.
 
-## Cabin Sketch
+## Kalam
 
 - Source : Bunny Fonts (https://fonts.bunny.net), le 2026-11-11
 - Licence : catalogue Google Fonts (SIL Open Font License, Apache 2.0 ou Ubuntu Font Licence), intégration autorisée
-- Cabin Sketch-700.woff2 : https://fonts.bunny.net/cabin-sketch/files/cabin-sketch-latin-700-normal.woff2 (sha256 5b1ad02715a39f758061673f2c39631e1d256f6b5d865355fc63a785f40f399a)
+- Kalam-400.woff2 : https://fonts.bunny.net/kalam/files/kalam-latin-400-normal.woff2 (sha256 954410601a823f37e219f7930b7446f86afa15621326a7078d56fb9c910135cb)
 - Téléchargée sur Bunny Fonts (sous-ensemble latin) avec l'accord de l'auteur du plugin, le 2026-11-11 ; licence SIL Open Font License 1.1.
 
 ## Copyright
 
 - Nunito Sans : Copyright 2016 The Nunito Sans Project Authors (https://github.com/Fonthausen/NunitoSans)
-- Cabin Sketch : Copyright 2011 The Cabin Sketch Project Authors (Pablo Impallari)
+- Kalam : Copyright 2014 Indian Type Foundry
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 

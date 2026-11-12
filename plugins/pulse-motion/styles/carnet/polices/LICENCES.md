@@ -12,7 +12,6 @@
 
 - Source : Bunny Fonts (https://fonts.bunny.net), le 2026-11-11
 - Licence : catalogue Google Fonts (SIL Open Font License, Apache 2.0 ou Ubuntu Font Licence), intégration autorisée
-- Caveat-500.woff2 : https://fonts.bunny.net/caveat/files/caveat-latin-500-normal.woff2 (sha256 edbfb1a768829d4e85127cd327e59faaec9701cb043e96430938f1f66acf009f)
 - Caveat-700.woff2 : https://fonts.bunny.net/caveat/files/caveat-latin-700-normal.woff2 (sha256 15f9638095ad5ec9816f93d66805ca1a87e71dc5a76b596bfce1c78d4704c405)
 - Téléchargée sur Bunny Fonts (sous-ensemble latin) avec l'accord de l'auteur du plugin, le 2026-11-11 ; licence SIL Open Font License 1.1.
 

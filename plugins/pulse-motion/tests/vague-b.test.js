@@ -70,8 +70,8 @@ test('vague B : tableau-blanc, tableau-noir, carnet, recit-donnees passent contr
     assert.equal(id.categorie, categorie, style);
     assert.ok(id.provenance.length >= 1 && id.provenance.every((p) => p.licence === 'MIT'), style);
     assert.deepEqual(F.verifierFiche(lire('references', 'styles', `${style}.md`), { dossierStyle: dossier, identite: id }), [], style);
-    // Polices OFL : copiées d'un style déjà livré, ou manuscrites téléchargées avec l'accord de l'auteur (S8 J10 : Kalam, Caveat,
-    // Cabin Sketch ; vérifiées par mode-d-emploi.test.js).
+    // Polices OFL : copiées d'un style déjà livré, ou manuscrites téléchargées avec l'accord de l'auteur (S8 J10 : Kalam, Caveat ;
+    // vérifiées par mode-d-emploi.test.js).
     const licences = lire('styles', style, 'polices', 'LICENCES.md');
     assert.match(licences, /SIL OPEN FONT LICENSE Version 1\.1/, style);
     assert.match(licences, /aucune police téléchargée pour ce style|avec l'accord de l'auteur du plugin/, style);

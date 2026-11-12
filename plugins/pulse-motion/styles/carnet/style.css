@@ -12,6 +12,8 @@
 
 /* ---------- Mise en page : la page du carnet ---------- */
 #pm-scene > section[data-scene] {
+  /* Caveat penche et dépasse de sa chasse : l'écriture lettre à lettre découpe plus large (moteur/base.css). */
+  --pm-ecrit-marge-v: 100%; --pm-ecrit-marge-h: 100%;
   --pm-trait: main; --pm-rugosite: 1.15; --pm-courbure: 1.2; --pm-ebullition: 10;
   --hachure: color-mix(in srgb, var(--c-accent-lisible) 30%, transparent);
   display: flex; flex-direction: column; justify-content: center; gap: 3.6cqh;

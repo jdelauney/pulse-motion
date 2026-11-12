@@ -5,7 +5,6 @@
 - Source : Bunny Fonts (https://fonts.bunny.net), le 2026-11-11
 - Licence : catalogue Google Fonts (SIL Open Font License, Apache 2.0 ou Ubuntu Font Licence), intégration autorisée
 - Kalam-400.woff2 : https://fonts.bunny.net/kalam/files/kalam-latin-400-normal.woff2 (sha256 954410601a823f37e219f7930b7446f86afa15621326a7078d56fb9c910135cb)
-- Kalam-700.woff2 : https://fonts.bunny.net/kalam/files/kalam-latin-700-normal.woff2 (sha256 252063af6ade8b9a744cde4ddad0fc21ea53b8ba711eed121a0c2e8610ea9c93)
 - Téléchargée sur Bunny Fonts (sous-ensemble latin) avec l'accord de l'auteur du plugin, le 2026-11-11 ; licence SIL Open Font License 1.1.
 
 ## Copyright

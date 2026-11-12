@@ -181,7 +181,7 @@ Polices embarquées dans la page d'une vidéo seulement quand elle montre du cod
 
 ## Polices manuscrites des styles
 
-Polices embarquées dans la page d'une vidéo seulement quand son style les emploie, téléchargées sur Bunny Fonts (sous-ensemble latin) avec l'accord de l'auteur du plugin le 2026-11-11, sous SIL Open Font License 1.1, fichiers non modifiés ; texte complet de la licence, adresses et empreintes sha256 dans le `polices/LICENCES.md` de chaque style : Patrick Hand 400 (© 2010-2012 Patrick Wagesreiter ; `styles/crayon/`), Kalam 400 et 700 (© 2014 Indian Type Foundry ; `styles/tableau-blanc/`, `styles/recit-donnees/` pour les notes), Caveat 500 et 700 (© 2014 The Caveat Project Authors ; `styles/carnet/`), Cabin Sketch 700 (© 2011 The Cabin Sketch Project Authors ; `styles/tableau-noir/`).
+Polices embarquées dans la page d'une vidéo seulement quand son style les emploie, téléchargées sur Bunny Fonts (sous-ensemble latin) avec l'accord de l'auteur du plugin le 2026-11-11, sous SIL Open Font License 1.1, fichiers non modifiés ; texte complet de la licence, adresses et empreintes sha256 dans le `polices/LICENCES.md` de chaque style : Patrick Hand 400 (© 2010-2012 Patrick Wagesreiter ; `styles/crayon/`), Kalam 400 (© 2014 Indian Type Foundry ; `styles/tableau-blanc/`, `styles/tableau-noir/` pour les titres, `styles/recit-donnees/` pour les notes), Caveat 700 (© 2014 The Caveat Project Authors ; `styles/carnet/`).
 
 ## rossark-motion-skill
 
