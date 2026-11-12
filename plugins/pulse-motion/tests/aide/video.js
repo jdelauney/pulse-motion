@@ -1,14 +1,15 @@
 'use strict';
 /* Vidéos de test fabriquées dans Chrome avec Mediabunny (déjà embarqué) : aucune dépendance, aucun fichier binaire livré.
  * fabriquerVideo({ navigateur, duree, ips, largeur, hauteur, immobile, son }) -> { octets, ext } (MP4 H.264, sinon WebM VP9).
- * Chaque image est différente (une barre qui avance et un damier qui change) sauf si immobile. */
+ * Chaque image est différente (une barre qui avance et un damier qui change) sauf si immobile. dessin : corps d'une fonction
+ * (x, k, t, L, H) qui dessine l'image k (instant t) dans le contexte x, à la place de la barre (imitation, spec S9 5.15). */
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { ouvrirPage } = require('../../scripts/lib/cdp.js');
 const { servirAide } = require('../../scripts/lib/import.js');
 
-async function fabriquerVideo({ navigateur, duree = 5, ips = 30, largeur = 320, hauteur = 180, immobile = false, son = false }) {
+async function fabriquerVideo({ navigateur, duree = 5, ips = 30, largeur = 320, hauteur = 180, immobile = false, son = false, dessin = null }) {
   const vide = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'pm-video-')), 'vide.bin');
   fs.writeFileSync(vide, Buffer.alloc(1));
   const aide = await servirAide(vide, 'application/octet-stream');
@@ -30,11 +31,15 @@ async function fabriquerVideo({ navigateur, duree = 5, ips = 30, largeur = 320, 
         if (await MB.canEncodeAudio(codec)) { audio = new MB.AudioBufferSource({ codec, bitrate: 96000 }); output.addAudioTrack(audio); }
       }
       await output.start();
+      const dessiner = ${dessin ? `(x, k, t, L, H) => { ${dessin} }` : 'null'};
       for (let k = 0; k < n; k++) {
-        x.fillStyle = '#f0f0f0'; x.fillRect(0, 0, L, H);
-        const p = ${immobile ? '0' : 'k'};
-        x.fillStyle = '#1d4ed8'; x.fillRect((p * 7) % L, 0, 24, H);
-        for (let i = 0; i < 8; i++) { x.fillStyle = ((p >> i) & 1) ? '#111' : '#eee'; x.fillRect(i * (L / 8), H - 30, L / 8, 30); }
+        if (dessiner) dessiner(x, k, k / ${ips}, L, H);
+        else {
+          x.fillStyle = '#f0f0f0'; x.fillRect(0, 0, L, H);
+          const p = ${immobile ? '0' : 'k'};
+          x.fillStyle = '#1d4ed8'; x.fillRect((p * 7) % L, 0, 24, H);
+          for (let i = 0; i < 8; i++) { x.fillStyle = ((p >> i) & 1) ? '#111' : '#eee'; x.fillRect(i * (L / 8), H - 30, L / 8, 30); }
+        }
         await source.add(k / ${ips}, 1 / ${ips});
       }
       if (audio) {

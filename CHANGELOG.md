@@ -2,6 +2,20 @@
 
 Produit par `outils/nouveautes.js` depuis l'historique du dépôt : ne pas le modifier à la main. Les nouveautés racontées simplement sont sur la page « Nouveautés » du wiki.
 
+## 0.69.0 – 2026-11-13
+
+Montrez une animation que vous aimez : Pulse Motion en mesure le rythme et les mouvements, et votre scène bouge de la même façon.
+
+### Nouveautés
+
+- Mesurer une animation fournie (S9 5.15) : référence copiée dans assets/references, décodée dans Chrome sans ffmpeg (GIF, vidéo, prise de filmer), planches de 24 images, activité, fenêtres, coupes, tenues, suivi des bords, courbe ajustée et dépassement, règle du tiers, vie, palette OKLab, main, styles proches, fiche ; comparer la scène à la référence ; niveau de fidélité et refus (au pixel, personnage, logo, musique, adresse)
+- Règle reference-embarquee : la vidéo de référence d'une imitation n'entre jamais dans la vidéo (scène, logo, musique, son)
+- PM_MEDIAS_MANQUANTS=1 pour le lot galerie-mouvements : seuls les aperçus de mouvements absents sont fabriqués, les médias publiés restent tels quels
+
+### Corrections
+
+- Règle du tiers symétrique avant le tiers (inout), trame de points cherchée en lignes et en colonnes avec un creux à la demi-période, trait épais au-delà de 1 % de la hauteur, instants de la fiche et des planches à deux décimales ; deux phrases d'évaluation de déclenchement (imiter)
+
 ## 0.68.0 – 2026-11-12
 
 De nouvelles façons de faire bouger vos textes et vos photos, des sous-titres façon karaoké, et des QR codes vers vos liens.

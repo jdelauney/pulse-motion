@@ -276,6 +276,7 @@ Le contrôle signale aussi, avec un message qui dit quoi faire : un texte du dé
 | `charte-invalide` | `charte/charte.json` mal formé (couleur, police, logo) | erreur | non | Corriger la valeur nommée |
 | `assemblage-impossible` | L'aperçu n'a pas pu réassembler la page (fichier verrouillé, erreur imprévue) | erreur | non | Lire la cause ; l'aperçu garde la dernière page juste et réessaie au prochain changement |
 | `chemin-hors-projet` | Un fichier cité sort du dossier du projet | erreur | non | Copier le fichier dans le projet (`assets/`, `charte/`) |
+| `reference-embarquee` | Une scène, le logo, la musique ou un son cite un fichier de `assets/references/` : la vidéo ou l'animation de référence d'une imitation, qui sert seulement à mesurer | erreur | non | Retirer le fichier de la scène ; reprendre le mouvement mesuré, avec les images de la personne (`pulse-motion reference imiter`) |
 | `fichier-non-pris-en-charge` | Fichier illisible ou d'un type que la page ne sait pas embarquer | erreur | non | Le remplacer par un format courant (image PNG, JPEG, WebP, AVIF ou SVG ; son WAV, MP3, M4A ou Opus) |
 | `glossaire` | Un texte emploie une forme que le glossaire dit d'éviter | alerte | non | Écrire le terme comme le glossaire |
 | `transcription-echouee` | La transcription d'une prise a échoué : ses mots sont calés au mieux | alerte | non | `pulse-motion voix transcrire` après avoir vérifié la prise |

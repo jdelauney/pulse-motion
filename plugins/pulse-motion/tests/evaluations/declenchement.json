@@ -330,6 +330,15 @@
     {
       "phrase": "Importe ma bibliothèque Pulse Motion depuis ce fichier zip",
       "attendu": "outils"
+    },
+    {
+      "phrase": "Fais pareil que cette vidéo pour la scène 2, je l'ai mise dans le dossier",
+      "attendu": "retoucher",
+      "pasAttendu": "filmer"
+    },
+    {
+      "phrase": "Le titre doit bouger comme dans ce GIF que j'ai déposé",
+      "attendu": "retoucher"
     }
   ]
 }

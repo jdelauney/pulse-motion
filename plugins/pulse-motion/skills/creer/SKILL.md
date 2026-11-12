@@ -46,6 +46,7 @@ La première question rappelle ce qui va se passer : « Nouvelle vidéo sur « <
 
 Sujet qui nomme une entreprise ou un produit précis : la question 4 devient celle des visuels, une seule fois (`pulse-motion reference actifs-marque` : logo, photos du produit, captures, couleurs et polices) ; ne jamais redessiner le produit, poser une zone réservée s'il manque.
 Tutoriel de logiciel : `pulse-motion consignes filmer creer`.
+Une vidéo ou un GIF à imiter (« qui bouge comme cette pub ») : `pulse-motion reference imiter`.
 
 **Faites pour moi** : aucune autre question (sauf le fichier du logo s'il est demandé) : musique composée selon le style, ni voix (une voix provisoire bloquerait l'export) ni sous-titres, style recommandé, glossaire noté d'office, aucune installation ; chaque choix se note : `pulse-motion decisions . noter "<sujet>" "<choix>" "<raison>" "<pour changer>"`.
 

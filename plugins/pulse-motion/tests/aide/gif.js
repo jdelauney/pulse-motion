@@ -27,7 +27,8 @@ function lzw(indices, min = 2) {
   return [min, ...blocs, 0];
 }
 
-/** -> Buffer d'un GIF de largeur × hauteur ; images : [{ couleur: 0..3, centiemes }] ; palette : 4 couleurs [r, v, b]. */
+/** -> Buffer d'un GIF de largeur × hauteur ; images : [{ couleur: 0..3, centiemes }] ou [{ indices: [0..3 par point], centiemes }]
+ *  (une image dessinée : imitation, spec S9 5.15) ; palette : 4 couleurs [r, v, b]. */
 function gifAnime({ largeur = 64, hauteur = 36, images, palette = [[220, 30, 30], [30, 180, 60], [30, 60, 220], [240, 240, 240]] }) {
   const o = [];
   const mot = (n) => o.push(n & 0xff, (n >> 8) & 0xff);
@@ -40,7 +41,7 @@ function gifAnime({ largeur = 64, hauteur = 36, images, palette = [[220, 30, 30]
   for (const im of images) {
     o.push(0x21, 0xf9, 0x04, 0x04); mot(im.centiemes); o.push(0, 0);
     o.push(0x2c); mot(0); mot(0); mot(largeur); mot(hauteur); o.push(0);
-    o.push(...lzw(new Array(largeur * hauteur).fill(im.couleur)));
+    for (const b of lzw(im.indices || new Array(largeur * hauteur).fill(im.couleur))) o.push(b);
   }
   o.push(0x3b);
   return Buffer.from(o);
