@@ -233,7 +233,8 @@ async function depuisSite({ adresse, style, dossier = '.', dossierStyles, analys
   let logo = null;
   if (site.logo) {
     logo = `logo.${site.logo.extension}`;
-    fs.writeFileSync(path.join(dossierProposition, logo), site.logo.donnees);
+    const { donnees } = site.logo;
+    fs.writeFileSync(path.join(dossierProposition, logo), donnees);
   }
   const polices = Object.fromEntries(Object.entries(m.polices || {}).filter(([, f]) => f && !/^(system-ui|sans-serif|serif|monospace|-apple-system|Arial|Helvetica|Times New Roman)$/i.test(f)));
   const proposition = { adresse: site.adresse, date: new Date().toISOString().slice(0, 10), style: r.style, ton: r.ton, fond: r.fond, couleurs: r.couleurs,
