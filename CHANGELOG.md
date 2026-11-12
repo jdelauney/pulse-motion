@@ -2,6 +2,14 @@
 
 Produit par `outils/nouveautes.js` depuis l'historique du dépôt : ne pas le modifier à la main. Les nouveautés racontées simplement sont sur la page « Nouveautés » du wiki.
 
+## 0.65.0 – 2026-11-12
+
+Votre bibliothèque : gardez vos effets et vos personnages pour toutes vos vidéos, et emportez tout sur un autre ordinateur.
+
+### Nouveautés
+
+- Effets et personnages gardés pour toutes les vidéos et copiés dans la vidéo qui s'en sert (effet liste|enregistrer|utiliser, personnages enregistrer|utiliser, provenance video, personnel, plugin), bibliothèque emportée dans une archive ZIP écrite et lue sans dépendance (bibliotheque liste|exporter|importer, rien de déjà là remplacé sans accord, archive vérifiée avant toute écriture) ; l'assemblage ne lit jamais la bibliothèque, le contrôle dit de copier
+
 ## 0.64.0 – 2026-11-12
 
 Pulse Motion retient vos goûts, prend les couleurs de votre site, retrouve vos vidéos et peut livrer une page qui fait son MP4 toute seule.
