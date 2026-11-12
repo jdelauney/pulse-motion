@@ -5,7 +5,8 @@
  * chevauchement, hors-cadre, marge (textes, images, logos, SVG), zone-sure (9:16), logo-masque, texte-fugace, mouvement-rapide,
  * sous-titre-cache-texte ; réalisation (spec S2, 5.8) : texte-casse, texte-epingle ([data-repere] exclu), accroche et
  * image-zero (options.genre « social »), image-agrandie (rapportée à l'export en 1080p), texte-petit-lecteur, sujet-petit
- * (un rendu par scène, à l'instant stable), transition-vide, sous-titre-cache-sujet. Idées de take-one (text-audit.mjs,
+ * (un rendu par scène, à l'instant stable), transition-vide, sous-titre-cache-sujet ; QR codes (spec S9, 5.4) : qr-trop-petit (plus
+ * grand module vu, en 1080p), qr-hors-zone (9:16) ; Ken Burns (5.9) : image-agrandie au zoom final. Idées de take-one (text-audit.mjs,
  * plate-audit.mjs : BROKEN, PINNED, SMALL, UPSCALE ; MIT, © 2026 Tal Siach) et d'explainroo (readability.js : 854 px,
  * 16 px ; MIT, © 2026 Vincent Schmalbach), adaptées au DOM.
  * Élément jugé : texte (data-texte), image (sauf alt="" décoratif), logo, SVG de contenu (sans aria-hidden),
@@ -33,7 +34,7 @@
     grandTexteCqh: 4.5, animationLongue: 3, epingleCoin: 0.15, epingleDuree: 6, accrocheMax: 3, accrocheTaille: 0.078, agrandissementMax: 1.12,
     lecteurLargeur: 854, lecteurTexteMin: 16, telephoneLargeur: 360, telephoneTexteMin: 9, sujetMin: 0.33, regardDecalage: 0.3, transitionOpacite: 0.1,
     pasPersonnages: 0.0166667, gesteBrefDuree: 0.1, gesteBrefAngle: 20, gesteBrefPaupieres: 0.5, poseFigee: 2, poseFigeeAngle: 0.3,
-    aCoupCamera: 20, aCoupRotation: 15, toutEnPhase: 3, zoomRetourMin: 0.3 };
+    aCoupCamera: 20, aCoupRotation: 15, toutEnPhase: 3, zoomRetourMin: 0.3, qrModulePx: 6 };
   // Largeur de l'image exportée en 1080p, par format (scripts/export-fidele.js, TAILLES).
   var LARGEUR_EXPORT = { '16:9': 1920, '9:16': 1080, '1:1': 1080, '4:5': 1080 };
   var CASSE = /\b(NaN|undefined|Infinity|null)\b|\[object Object\]/;
@@ -190,6 +191,7 @@
     var lecteur = options.ratio === '16:9' || !options.ratio ? { largeur: S.lecteurLargeur, min: S.lecteurTexteMin } : { largeur: S.telephoneLargeur, min: S.telephoneTexteMin };
     var epingles = new Map();     // contenu d'un petit texte en coin -> { scene, debut, duree }
     var agrandies = new Map();    // scène|image -> { scene, element, f, px, t }
+    var qrs = new Map();          // scène|QR code -> { scene, element, px, t } (plus grand module vu)
     var accroche = { mesuree: false, lisible: null, petit: null, premier: null };
     var premiereScene = M.minutage.scenes.length ? M.minutage.scenes[0].id : null;
 
@@ -346,9 +348,26 @@
           var fx = r.width * k2 / img.naturalWidth;
           var fy = r.height * k2 / img.naturalHeight;
           var f = getComputedStyle(img).objectFit === 'contain' ? Math.min(fx, fy) : Math.max(fx, fy);
+          // Ken Burns (spec S9, 5.9) : le zoom final compte, même si aucun relevé ne tombe à la fin du mouvement.
+          var kb = img.__pmKenBurns;
+          if (kb && kb.zoom > 0 && kb.zoomMax > kb.zoom) f = f * kb.zoomMax / kb.zoom;
           var cle = id + '|' + nom(img);
           var avant = agrandies.get(cle);
-          if (!avant || f > avant.f) agrandies.set(cle, { scene: id, element: nom(img), f: f, px: Math.ceil(img.naturalWidth * f), t: t });
+          if (!avant || f > avant.f) agrandies.set(cle, { scene: id, element: nom(img), f: f, px: Math.ceil(img.naturalWidth * f), t: t, kenBurns: !!kb });
+        });
+        // QR codes (spec S9, 5.4) : plus grand côté d'un module vu dans la scène, rapporté à l'export en 1080p ; zones des réseaux.
+        sec.querySelectorAll('svg[data-pm-qr-modules]').forEach(function (svg) {
+          if (opacite(svg) <= 0.5) return;
+          var r = svg.getBoundingClientRect();
+          if (!aire(r)) return;
+          var px = Math.min(r.width, r.height) * (largeurExport / W) / Number(svg.getAttribute('data-pm-qr-modules'));
+          var cle = id + '|' + nom(svg);
+          var avant = qrs.get(cle);
+          if (!avant || px > avant.px) qrs.set(cle, { scene: id, element: nom(svg), px: px, t: t });
+          if (vertical) {
+            var zoneQr = zoneDe(r, cadre, W, H);
+            if (zoneQr) constater('qr-hors-zone', id, nom(svg), t, zoneQr);
+          }
         });
         // Réseaux : la première image (vignette) montre déjà du contenu.
         if (social && k === 0 && id === premiereScene) {
@@ -426,7 +445,10 @@
       if (e.duree > S.epingleDuree + 1e-6) constater('texte-epingle', e.scene, contenu, e.debut, arrondi(e.duree));
     });
     agrandies.forEach(function (a) {
-      if (a.f > S.agrandissementMax + 1e-6) constater('image-agrandie', a.scene, a.element, a.t, { f: Math.round(a.f * 100) / 100, px: a.px });
+      if (a.f > S.agrandissementMax + 1e-6) constater('image-agrandie', a.scene, a.element, a.t, a.kenBurns ? { f: Math.round(a.f * 100) / 100, px: a.px, kenBurns: true } : { f: Math.round(a.f * 100) / 100, px: a.px });
+    });
+    qrs.forEach(function (q) {
+      if (q.px < S.qrModulePx - 1e-6) constater('qr-trop-petit', q.scene, q.element, q.t, { px: Math.round(q.px * 10) / 10, min: S.qrModulePx });
     });
     // Accroche des réseaux : un texte grand et complet avant accrocheMax (mesurée seulement si l'ouverture l'a été).
     if (social && accroche.mesuree && !accroche.lisible && premiereScene) {

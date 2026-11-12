@@ -1,5 +1,16 @@
 [
   {
+    "version": "0.68.0",
+    "date": "2026-11-12",
+    "resume": "De nouvelles façons de faire bouger vos textes et vos photos, des sous-titres façon karaoké, et des QR codes vers vos liens.",
+    "points": [
+      "« Ajoute un QR code vers notre site à la fin » : le code est fabriqué sur votre ordinateur, sans aucun service en ligne, et Pulse Motion vérifie qu'il sera assez grand, assez contrasté et assez longtemps à l'écran pour être scanné.",
+      "« Sous-titres façon karaoké » : chaque mot se colore pendant qu'il est dit, au rythme de votre voix enregistrée.",
+      "« Fais défiler mes photos doucement » : chaque photo glisse ou se rapproche lentement dans son cadre, jamais deux fois de suite dans le même sens.",
+      "Le texte peut suivre une courbe, s'épaissir lettre après lettre, se remplir d'une photo ou apparaître derrière un bord flou ; une carte peut se retourner, un cube tourner, une capture se poser inclinée, un titre prendre du relief. Douze nouveaux mouvements au dictionnaire."
+    ]
+  },
+  {
     "version": "0.67.0",
     "date": "2026-11-12",
     "resume": "Vos vidéos parlent anglais, espagnol, allemand, italien, portugais ou néerlandais, et une vidéo réussie se décline en vertical ou dans une autre langue sans la refaire.",

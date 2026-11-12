@@ -33,7 +33,8 @@
  * ses cycles (--pm-v-fois, --pm-v-fois-2 : par animation pm-v-*, M.cyclesVie). Les classes lisent d'abord --pm-phase et
  * --pm-fois : ce que la scène écrit l'emporte. Calcul fait une fois, sans t : la même image quel que soit l'ordre de rendu.
  * Caméra (data-camera, data-profondeur) et temps figé ou accéléré (data-gel, data-vitesse) : chaque
- * élément voit le temps de ses conteneurs ; une caméra voit celui de ses ancêtres, pas le sien.
+ * élément voit le temps de ses conteneurs ; une caméra voit celui de ses ancêtres, pas le sien. Ken Burns (data-ken-burns, spec
+ * S9 5.9) : caméras de moteur/ken-burns.js, posées sur les images, si le groupe ken-burns est dans la page.
  * Navigateur seulement ; dépend de courbes, minutage, transitions, tween, lettres, camera, temps (global M).
  */
 (function (racine) {
@@ -237,9 +238,17 @@
     M.minutage = min;
     M.duree = min.duree;
 
+    var suiviKenBurns = { precedent: null };
     etat.scenes = min.scenes.map(function (info, index) {
       var sec = sections[info.id];
       var scene = lireMiseEnScene(sec, info.id, erreurs);
+      // Ken Burns (spec S9, 5.9 ; moteur/ken-burns.js, groupe ken-burns) : caméras posées sur les images, de leur apparition à
+      // la fin de la scène ; le sens « auto » ne répète jamais celui de l'image précédente.
+      if (M.camerasKenBurns && sec) {
+        var kb = M.camerasKenBurns(sec, info, min.elements[info.id], suiviKenBurns);
+        erreurs.push.apply(erreurs, kb.erreurs);
+        kb.cameras.forEach(function (c) { scene.cameras.push({ el: c.el, clauses: c.clauses, kenBurns: c.kenBurns, chaine: chaineTemps(c.el.parentElement, sec, scene.plagesParEl) }); });
+      }
       var elements = elementsParScene[info.id].map(function (e) {
         var tweens = [];
         var attr = e.el.getAttribute('data-tween');
@@ -376,6 +385,7 @@
       }
       if (s.ampleur !== undefined && s.ampleur !== 1) { ec.sx = arrondi(ec.sx * s.ampleur); ec.sy = arrondi(ec.sy * s.ampleur); }
       var st = M.styleCamera(ec);
+      if (c.kenBurns) c.el.__pmKenBurns = { zoom: ec.zoom, zoomMax: c.kenBurns };
       ecrireStyle(c.el, 'transform', st.transform);
       ecrireStyle(c.el, 'filter', st.filter);
       ecrirePropriete(c.el, '--pm-cam-dx', String(st.dx));

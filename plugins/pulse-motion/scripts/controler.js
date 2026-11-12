@@ -55,6 +55,7 @@ const { LIMITES_INTERACTIONS, PLEINE_VOISINAGE, STRUCTURES_SCENE_MAX, SOMMETS_TI
 const { analyserCamera } = require('../moteur/camera.js');
 const { analyserTemps } = require('../moteur/temps.js');
 const { reglesRealisation } = require('./lib/realisation-regles.js');
+const { controlerBriques, TROIS_D } = require('./lib/briques.js');
 
 const SEUILS = JSON.parse(fs.readFileSync(path.join(__dirname, 'seuils.json'), 'utf8'));
 
@@ -373,6 +374,7 @@ function controlesRapides({ projet, dossierStyles, dossierEffets, assemblage = A
 
     // Temps de lecture et CSS des scènes.
     let classesStyle = null;
+    let couleursCharte = null;
     for (const s of deroule.scenes) {
       const { mots, besoin } = besoinLecture[s.id];
       const minutee = min.scenes.find((x) => x.id === s.id);
@@ -394,6 +396,12 @@ function controlesRapides({ projet, dossierStyles, dossierEffets, assemblage = A
         }
       }
       controlerLettres(scenesLues[s.id].decoupes, s.id, problemes);
+      // Briques de la spec S9 (QR codes, texte sur un tracé, Ken Burns, police variable) : règles sans navigateur.
+      if (/\sdata-(?:qr|sur-trace|ken-burns|lettres|mots|tween)\s*=/.test(scenesHtml[s.id]) || TROIS_D.test(scenesHtml[s.id])) {
+        if (!couleursCharte) couleursCharte = charteFinale(deroule, dossierStyle, projet).couleurs || {};
+        problemes.push(...controlerBriques({ deroule, scene: s, html: scenesHtml[s.id], min, seuils: SEUILS, couleurs: couleursCharte,
+          detailPolices: assemblage.detailPolices, css: assemblage.cssPage, dureeTemps: temps }));
+      }
       // Boucles de vie (pm-v-*) : une durée, et jamais sur l'élément qui porte l'entrée.
       if (viesParScene[s.id].length) {
         if (!classesStyle) { try { classesStyle = classesAnimeesDuStyle(fs.readFileSync(path.join(dossierStyle, 'style.css'), 'utf8')); } catch { classesStyle = new Set(); } }

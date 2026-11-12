@@ -47,7 +47,8 @@ test('embarquerRessources : data:, distantes, hors projet, introuvables', () => 
     dir, 'scène « t »',
   );
   const uri = 'data:image/svg+xml;base64,' + Buffer.from('<svg/>').toString('base64');
-  assert.ok(html.startsWith(`<img src="${uri}"><div style="background:url("${uri}")">`));
+  // Dans un attribut style="…", l'URL prend des guillemets simples : des doubles refermaient l'attribut (spec S9, 5.7).
+  assert.ok(html.startsWith(`<img src="${uri}"><div style="background:url('${uri}')">`), html.slice(0, 200));
   assert.ok(html.includes('href="#ancre"'));
   assert.deepEqual(erreurs.map((e) => e.regle), ['ressource-distante', 'chemin-hors-projet', 'fichier-introuvable']);
   assert.match(erreurs[0].message, /hors ligne/);

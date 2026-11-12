@@ -46,7 +46,10 @@ flash: (c) => `Scène « ${c.scene} » : l'image clignote ${virgule(c.valeur)} f
     ? `le texte « ${c.element} » est lisible à ${virgule(c.instant)} s mais petit (${virgule(c.valeur.p)} % du petit côté ; il faut ${virgule(c.valeur.min)} %)`
     : `aucun texte assez grand n'est lisible avant ${virgule(SEUILS.accrocheMax)} s (${c.valeur && c.valeur.t !== null ? `le premier l'est à ${virgule(c.valeur.t)} s` : 'aucun ne l\'est'})`} ; on décide en ${virgule(SEUILS.accrocheMax)} secondes, souvent sans le son : afficher la promesse dès le début, en grand.`,
   'image-zero': (c) => `Vidéo pour les réseaux : la première image (scène « ${c.scene} ») est vide, et c'est elle qui sert de vignette ; faire apparaître le titre dès la première image.`,
-  'image-agrandie': (c) => `Scène « ${c.scene} » : l'image « ${c.element} » est affichée ${virgule(c.valeur.f)} fois plus grande que sa taille réelle vers ${virgule(c.instant)} s (zoom compris) ; elle sera floue. Fournir une image d'au moins ${c.valeur.px} pixels de large, ou l'afficher plus petite.`,
+  'image-agrandie': (c) => `Scène « ${c.scene} » : l'image « ${c.element} » est affichée ${virgule(c.valeur.f)} fois plus grande que sa taille réelle vers ${virgule(c.instant)} s (zoom compris${c.valeur.kenBurns ? ', jusqu\'au zoom final du Ken Burns' : ''}) ; elle sera floue. Fournir une image d'au moins ${c.valeur.px} pixels de large, ou l'afficher plus petite.`,
+  // QR codes (spec S9, 5.4) : taille d'un module à l'export en 1080p, zones des réseaux.
+  'qr-trop-petit': (c) => `Scène « ${c.scene} » : les carrés du QR code « ${c.element} » ne font que ${virgule(c.valeur.px)} pixels dans la vidéo exportée ; en dessous de ${c.valeur.min} pixels, un téléphone a du mal à le lire. Agrandir le QR code, ou raccourcir le lien (moins de carrés).`,
+  'qr-hors-zone': (c) => `Scène « ${c.scene} » : le QR code « ${c.element} » passe sous l'interface des réseaux (${ZONES[c.valeur] || c.valeur}) vers ${virgule(c.instant)} s ; le placer au centre de l'image.`,
   'texte-petit-lecteur': (c) => `Scène « ${c.scene} » : ${c.element === 'sous-titres' ? 'les sous-titres ne font' : `le texte « ${c.element} » ne fait`} que ${virgule(c.valeur.px)} pixels quand la vidéo est vue en petit (${c.valeur.largeur} pixels de large, comme dans un fil ou sur un téléphone) ; il faut au moins ${c.valeur.min} pixels : l'agrandir ou le raccourcir.`,
   'sujet-petit': (c) => `Scène « ${c.scene} » : à ${virgule(c.instant)} s, le contenu n'occupe que ${c.valeur} % de l'image ; au moment clé, il doit en occuper au moins un tiers : l'agrandir ou rapprocher la caméra.`,
   'transition-vide': (c) => { const [a, b] = String(c.element).split('|'); return `Entre les scènes « ${a} » et « ${b} » (vers ${virgule(c.instant)} s), l'image est vide pendant la transition ; faire entrer un élément de « ${b} » dès son début, ou choisir la coupe.`; },
@@ -87,7 +90,7 @@ function proposition(c) {
   return ` ; ${phraseProposition(suggererCouleur(c.couleur, c.fond, c.minimum, c.charte || {}))}`;
 }
 
-const GRAVITES = { flash: 'erreur', 'texte-casse': 'erreur', 'erreur-de-scene': 'erreur', 'etapes-trop-rapprochees': 'erreur', 'dessin-erreur': 'erreur', 'fleche-cible-introuvable': 'erreur', 'code-trop-large': 'erreur', 'camera-auto-cadre': 'erreur' };
+const GRAVITES = { flash: 'erreur', 'texte-casse': 'erreur', 'erreur-de-scene': 'erreur', 'etapes-trop-rapprochees': 'erreur', 'dessin-erreur': 'erreur', 'fleche-cible-introuvable': 'erreur', 'code-trop-large': 'erreur', 'camera-auto-cadre': 'erreur', 'qr-trop-petit': 'erreur' };
 
 /** Constats bruts de M.mesurer -> problèmes (alertes, sauf GRAVITES). Règle inconnue : ignorée. */
 function traduireConstats(constats) {

@@ -39,10 +39,14 @@ const GROUPES = {
   releve: ['releve.js'],
   // Caméra automatique (spec S7, 5.8) : plan calculé (camera-auto.js, pur) et branché sur la page. Demande le relevé.
   'camera-auto': ['camera-auto.js', 'camera-auto-page.js'],
+  // Texte sur un tracé (spec S9, 5.5) : data-sur-trace dans une scène ; CSS moteur/briques.css.
+  trace: ['trace-texte.js'],
+  // Ken Burns (spec S9, 5.9) : data-ken-burns dans une scène ; caméras ajoutées par l'horloge.
+  'ken-burns': ['ken-burns.js'],
 };
 
 // Ordre de chargement : celui de la liste historique (dépendances au chargement), puis absents.js en dernier.
-const MODULES = ['courbes.js', 'langues.js', 'aligner.js', 'proches.js', 'sous-titres.js', 'minutage.js', 'transitions.js', 'tween.js', 'lettres.js', 'camera.js',
+const MODULES = ['courbes.js', 'langues.js', 'aligner.js', 'proches.js', 'sous-titres.js', 'minutage.js', 'transitions.js', 'tween.js', 'lettres.js', 'camera.js', 'ken-burns.js', 'trace-texte.js',
   'squelette.js', 'vivant.js', 'clips.js', 'habillage-batonnets.js', 'habillage-pieces.js', 'personnages/levres.js', 'personnages/partition.js',
   'personnages/interactions.js', 'personnages/scene.js', 'personnages/objets.js', 'temps.js', 'horloge.js', 'tailles.js', 'wav.js',
   'sonie.js', 'mixage.js', 'synthe/catalogue.js', 'synthe/partition.js', 'synthe/ambiances.js', 'synthe/corde.js', 'synthe/instruments.js',
@@ -75,7 +79,9 @@ const nonVide = (x) => (Array.isArray(x) ? x.length > 0 : !!(x && typeof x === '
  *   scène qui appelle M.dessin( ;
  * - caméra automatique : data-camera="auto…" dans une scène ;
  * - relevé : avec le dessin ou la caméra automatique ;
- * - langues : la vidéo déclare sa langue (donnees.langue, spec S9 5.1).
+ * - langues : la vidéo déclare sa langue (donnees.langue, spec S9 5.1) ;
+ * - trace : data-sur-trace dans une scène (texte sur un tracé, spec S9 5.5) ;
+ * - ken-burns : data-ken-burns dans une scène (spec S9 5.9).
  */
 function groupesDuDeroule(donnees, sections = [], scripts = []) {
   const d = donnees || {};
@@ -96,6 +102,8 @@ function groupesDuDeroule(donnees, sections = [], scripts = []) {
   if (sections.some((s) => usagesEcran(s).moteur)) groupes.push('ecran');
   if (usagesDessin(textes, scripts)) groupes.push('dessin');
   if (CAMERA_AUTO.test(textes)) groupes.push('camera-auto');
+  if (/\sdata-sur-trace\s*=/.test(textes)) groupes.push('trace');
+  if (/\sdata-ken-burns\s*=/.test(textes)) groupes.push('ken-burns');
   if (groupes.includes('dessin') || groupes.includes('camera-auto')) groupes.push('releve');
   return groupes;
 }

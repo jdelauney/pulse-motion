@@ -13,7 +13,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const SEUILS = require('../seuils.json');
 const CATALOGUE = require('../../moteur/synthe/catalogue.js');
-const { EFFETS: EFFETS_LETTRES, MORCEAUX } = require('../../moteur/lettres.js');
+const { EFFETS: EFFETS_LETTRES, EFFETS_TRACE, MORCEAUX } = require('../../moteur/lettres.js');
 
 const virgule = (x) => String(Math.round(x * 10) / 10).replace('.', ',');
 
@@ -53,7 +53,7 @@ function controlerCSS(cssBrut, scene, ou, problemes) {
 }
 
 function controlerLettres(decoupes, scene, problemes) {
-  for (const { attribut, effet, motCle } of decoupes) {
+  for (const { attribut, effet, motCle, balise } of decoupes) {
     // Légende en morceaux (spec Styles et réalisation, 5.12) : 2 ou 3 morceaux, un seul mot-clé, en un mot.
     if (attribut === 'data-morceaux') {
       if (!MORCEAUX.includes(effet)) problemes.push({ regle: 'lettres-invalide', gravite: 'erreur', scene, message: `Scène « ${scene} » : data-morceaux « ${effet} » : 2 ou 3 morceaux.` });
@@ -68,6 +68,9 @@ function controlerLettres(decoupes, scene, problemes) {
       problemes.push({ regle: 'lettres-invalide', gravite: 'erreur', scene, message: `Scène « ${scene} » : data-mots « brouille » : le texte se brouille lettre par lettre, écrire data-lettres="brouille".` });
     } else if (effet === 'ecrit' && attribut === 'data-mots') {
       problemes.push({ regle: 'lettres-invalide', gravite: 'erreur', scene, message: `Scène « ${scene} » : data-mots « ecrit » : le texte s'écrit lettre par lettre, écrire data-lettres="ecrit".` });
+    } else if (balise === 'textpath' && !EFFETS_TRACE.includes(effet)) {
+      // Texte sur un tracé (spec S9, 5.5) : un <tspan> ne prend pas de transform dans Chrome.
+      problemes.push({ regle: 'lettres-invalide', gravite: 'erreur', scene, message: `Scène « ${scene} » : ${attribut} « ${effet} » : sur un tracé : frappe ou fondu seulement.` });
     }
   }
 }
@@ -195,6 +198,13 @@ function controlerScene({ projet, deroule, scene, html }) {
   if (u.graphique || u.code || u.formule) problemes.push(...DS.preparerDonnees(injecte.html, { scene }).erreurs);
   // Icônes (spec S9, 5.3) : nom inconnu ou data-icone hors d'un <svg>, comme à l'assemblage.
   if (/data-icone/.test(sansScripts)) problemes.push(...require('./icones.js').preparerIcones(sansScripts, { scene: scene.id }).erreurs);
+  // Briques de la spec S9 : QR code (texte du déroulé, correction), tracé et Ken Burns illisibles, lien trop long ; les règles
+  // qui demandent le minutage de la vidéo ou la charte (qr-trop-court, qr-contraste nommé, police-non-variable) restent au contrôle.
+  const Br = require('./briques.js');
+  if (/\sdata-(?:qr|sur-trace|ken-burns)\s*=/.test(sansScripts) || Br.TROIS_D.test(sansScripts)) {
+    if (/\sdata-qr\s*=/.test(sansScripts)) problemes.push(...Br.preparerQR(sansScripts, { scene: scene.id, textes: scene.textes }).erreurs.filter((e) => e.regle !== 'qr-invalide' || !/couleur/.test(e.message)));
+    problemes.push(...Br.controlerBriques({ deroule, scene, html: sansScripts, min: null, seuils: SEUILS, dureeTemps: dureeTemps(deroule) }));
+  }
   // Écrans (spec S6) : cadre, pointeur, cibles et marques, comme à l'assemblage.
   if (/pm-/.test(sansScripts)) {
     const E = require('./ecrans.js');

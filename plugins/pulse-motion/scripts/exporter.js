@@ -162,6 +162,10 @@ async function exporterVideo({
     if (ebauches.length) return fin({ ok: false, message: messageEbauches(ebauches), ebauches });
     const provisoires = scenesProvisoires(projet, deroule);
     if (provisoires.length && !avecProvisoire) return fin({ ok: false, message: messageProvisoire(provisoires) });
+    // 2,5D en perspective (spec S9, 5.12, règle trois-d-export-rapide) : l'export rapide l'aplatirait ; l'export fidèle la rend.
+    const Br = require('./lib/briques.js');
+    const troisD = Br.scenesTroisD(projet, deroule).filter((id) => !scene || id === scene);
+    if (troisD.length) return fin({ ok: false, message: Br.messageTroisD(troisD), troisD });
   }
 
   const etat = etatProjet(projet);

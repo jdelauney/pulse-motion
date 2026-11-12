@@ -59,9 +59,9 @@ test('sans champ sousTitres, ou sans texte dit : rien', () => {
 
 test('validation de sousTitres', () => {
   const d = { version: 1, titre: 'T', genre: 'formation', parcours: 'rapide', format: { ratio: '16:9' }, style: 's', scenes: [{ id: 'a', fichier: 'a.html', duree: 1, textes: {} }],
-    sousTitres: { mode: 'karaoke', incrustes: 'oui', position: 'milieu' } };
+    sousTitres: { mode: 'syllabes', incrustes: 'oui', position: 'milieu' } };
   const e = validerDeroule(d).join(' ');
-  assert.match(e, /« sousTitres\.mode » doit être « ligne » ou « mot »/);
+  assert.match(e, /« sousTitres\.mode » doit être « ligne », « mot » ou « karaoke »/);
   assert.match(e, /« sousTitres\.incrustes » doit valoir true ou false/);
   assert.match(e, /« sousTitres\.position » doit être « bas » ou « haut »/);
 });

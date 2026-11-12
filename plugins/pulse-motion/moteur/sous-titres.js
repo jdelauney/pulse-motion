@@ -179,5 +179,11 @@
     return 'WEBVTT\n' + (langue ? 'Language: ' + langue + '\n' : '') + '\n' + liste.map(function (c) { return horodatage(c.debut, '.') + ' --> ' + horodatage(c.fin, '.') + '\n' + echapper(texteCarton(c)) + '\n'; }).join('\n');
   }
 
-  return { LARGEUR: LARGEUR, motsDeScene: motsDeScene, cartons: cartons, versSRT: versSRT, versVTT: versVTT };
+  /** Karaoké (spec S9, 5.8) : part dite du mot à l'instant t, (t − t0) / (t1 − t0) bornée à [0, 1], arrondie à 0,001. */
+  function avanceKaraoke(t, t0, t1) {
+    if (!(t1 > t0)) return t >= t0 ? 1 : 0;
+    return Math.round(Math.max(0, Math.min(1, (t - t0) / (t1 - t0))) * 1000) / 1000;
+  }
+
+  return { LARGEUR: LARGEUR, motsDeScene: motsDeScene, cartons: cartons, versSRT: versSRT, versVTT: versVTT, avanceKaraoke: avanceKaraoke };
 });

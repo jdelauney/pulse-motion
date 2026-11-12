@@ -2,6 +2,14 @@
 
 Produit par `outils/nouveautes.js` depuis l'historique du dépôt : ne pas le modifier à la main. Les nouveautés racontées simplement sont sur la page « Nouveautés » du wiki.
 
+## 0.68.0 – 2026-11-12
+
+De nouvelles façons de faire bouger vos textes et vos photos, des sous-titres façon karaoké, et des QR codes vers vos liens.
+
+### Nouveautés
+
+- Typographie, karaoké, QR codes, Ken Burns et 2,5D (S9-3 et S9-4)
+
 ## 0.67.0 – 2026-11-12
 
 Vos vidéos parlent anglais, espagnol, allemand, italien, portugais ou néerlandais, et une vidéo réussie se décline en vertical ou dans une autre langue sans la refaire.

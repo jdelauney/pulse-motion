@@ -18,7 +18,7 @@
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
-const { analyserPolice, EXTENSIONS_POLICE } = require('./lib/police.js');
+const { analyserPolice, annonceAxes, EXTENSIONS_POLICE } = require('./lib/police.js');
 const { trouverStyle, lireJSON } = require('./styles.js');
 const { sauvegarder, defaire } = require('./historique.js');
 
@@ -255,7 +255,9 @@ function installerFichier({ fichier, famille, confirmer = false, dans, style, ro
   const avertissements = analyse.manquants.length
     ? [`Caractères absents de cette police : ${analyse.manquants.join(' ')}. Ils s'afficheraient dans une autre police : ${conseil}`]
     : [];
-  return { ok: true, famille: nomFamille, fichier: nom, dans, avertissements };
+  // Police variable (spec S9, 5.6) : ses axes sont annoncés (« police variable : graisse de 100 à 900 »).
+  const variable = annonceAxes(analyse.axes);
+  return { ok: true, famille: nomFamille, fichier: nom, dans, avertissements, ...(variable ? { variable, axes: analyse.axes } : {}) };
 }
 
 if (require.main === module) {
