@@ -10,6 +10,10 @@ Votre bibliothèque : gardez vos effets et vos personnages pour toutes vos vidé
 
 - Effets et personnages gardés pour toutes les vidéos et copiés dans la vidéo qui s'en sert (effet liste|enregistrer|utiliser, personnages enregistrer|utiliser, provenance video, personnel, plugin), bibliothèque emportée dans une archive ZIP écrite et lue sans dépendance (bibliotheque liste|exporter|importer, rien de déjà là remplacé sans accord, archive vérifiée avant toute écriture) ; l'assemblage ne lit jamais la bibliothèque, le contrôle dit de copier
 
+### Corrections
+
+- Écritures binaires de l'import depuis une variable « donnees », recette lue dans « octets » (règle des écritures) ; dessiner-personnage propose d'abord les personnages livrés, puis ceux de la bibliothèque
+
 ## 0.64.0 – 2026-11-12
 
 Pulse Motion retient vos goûts, prend les couleurs de votre site, retrouve vos vidéos et peut livrer une page qui fait son MP4 toute seule.
