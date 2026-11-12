@@ -194,6 +194,7 @@
       el("a", { href: racine + "quelle-commande.html", texte: "Quelle commande pour… ?" }),
       el("a", { href: racine + "depannage.html", texte: "Je suis bloqué" }),
       el("a", { href: racine + "lexique.html", texte: "Lexique" }),
+      el("a", { href: racine + "nouveautes.html", texte: "Nouveautés" }),
       el("a", { href: racine + "contribuer.html", texte: "Contribuer" }),
       el("a", { href: "https://github.com/jdelauney/pulse-motion", texte: "Le dépôt sur GitHub" }),
     ]);

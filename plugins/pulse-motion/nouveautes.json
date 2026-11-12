@@ -1,0 +1,127 @@
+[
+  {
+    "version": "0.64.0",
+    "date": "2026-11-12",
+    "resume": "Pulse Motion retient vos goûts, prend les couleurs de votre site, retrouve vos vidéos et peut livrer une page qui fait son MP4 toute seule.",
+    "points": [
+      "Dites « jamais de rebond » ou « toujours mon logo à la fin » : Pulse Motion vous propose de le retenir pour vos prochaines vidéos.",
+      "« Prends les couleurs de notre site » : couleurs, logo et polices proposés depuis le site de votre entreprise, avec votre accord, et rien n'est changé avant votre réponse.",
+      "« Quelles sont mes vidéos ? » : la liste de vos vidéos, où qu'elles soient sur l'ordinateur, avec leur MP4.",
+      "Sur demande, une page qui sait faire son MP4 sans Claude : ouvrez-la dans Chrome ou Edge et cliquez sur « MP4 ».",
+      "« Signale un problème » : un résumé sans rien de votre vidéo, que vous relisez et envoyez vous-même ; et Claude vous dit en une phrase ce qui est nouveau après une mise à jour."
+    ]
+  },
+  {
+    "version": "0.63.1",
+    "date": "2026-11-12",
+    "resume": "Correction d'un test de la page de choix des styles ; rien ne change pour vous.",
+    "points": []
+  },
+  {
+    "version": "0.63.0",
+    "date": "2026-11-12",
+    "resume": "Vingt styles : le film pédagogique des années 50 arrive, avec son guide qui montre le geste.",
+    "points": [
+      "Style « mode d'emploi » : des aplats de couleur décalés de leur trait, comme dans les films éducatifs d'autrefois.",
+      "Un nouveau personnage, le guide, dessiné dans ce style : son corps reste immobile, ses mains travaillent.",
+      "Écritures manuscrites plus naturelles dans les styles crayon, tableau blanc, tableau noir et carnet.",
+      "Style riso : le rose vif réservé aux encres, pour que les textes restent lisibles."
+    ]
+  },
+  {
+    "version": "0.62.0",
+    "date": "2026-11-11",
+    "resume": "Quatre styles de plus : crayon, papier découpé, risographie et pictogrammes.",
+    "points": [
+      "Crayon : la page d'album au crayon gras et au lavis.",
+      "Papier découpé : des couches de papier séparées par de vraies ombres.",
+      "Risographie : des encres qui se superposent, comme une impression artisanale.",
+      "Pictogrammes : la signalétique qui bat au rythme de la musique."
+    ]
+  },
+  {
+    "version": "0.61.1",
+    "date": "2026-11-11",
+    "resume": "Correction interne de la vérification automatique ; rien ne change pour vous.",
+    "points": []
+  },
+  {
+    "version": "0.61.0",
+    "date": "2026-11-11",
+    "resume": "Deux styles en perspective : l'infographie en petits blocs et l'album de petits personnages.",
+    "points": [
+      "Infographie isométrique : un système expliqué comme une maquette vue de biais.",
+      "Album isométrique : une règle du quotidien jouée par de petits personnages.",
+      "Capture plus sûre des vidéos aux petites dimensions."
+    ]
+  },
+  {
+    "version": "0.60.0",
+    "date": "2026-11-11",
+    "resume": "Quatre styles dessinés en direct : tableau blanc, tableau noir, carnet de croquis et graphique qui raconte.",
+    "points": [
+      "Tableau blanc et tableau noir : le feutre et la craie se dessinent pendant que vous parlez.",
+      "Carnet : le croquis qui se trace d'une seule ligne.",
+      "Graphique qui raconte : des chiffres mis en scène comme une histoire.",
+      "Les polices de votre charte se récupèrent de nouveau sans erreur."
+    ]
+  },
+  {
+    "version": "0.59.0",
+    "date": "2026-11-11",
+    "resume": "Trois styles de plus : l'info qui se lit son coupé, le dessin technique et le film de lancement.",
+    "points": [
+      "Info sans son : des légendes en morceaux, lisibles sans le son.",
+      "Plan technique : un dessin qui se trace sur fond bleu.",
+      "Lancement : le film qui présente un produit.",
+      "Les images de l'export sont vérifiées une à une, et refaites si l'une est incomplète."
+    ]
+  },
+  {
+    "version": "0.58.1",
+    "date": "2026-11-11",
+    "resume": "Correction interne du numéro de version ; rien ne change pour vous.",
+    "points": []
+  },
+  {
+    "version": "0.58.0",
+    "date": "2026-11-11",
+    "resume": "Chaque style a maintenant son propre son, et le son est plus fin.",
+    "points": [
+      "Vingt-trois bruitages, dont le feutre, la craie, le crayon et le papier.",
+      "Un moment fort qui fait taire la musique juste avant.",
+      "Des cordes pincées et deux nouvelles ambiances musicales."
+    ]
+  },
+  {
+    "version": "0.57.1",
+    "date": "2026-11-11",
+    "resume": "Nettoyage de l'historique du projet ; rien ne change pour vous.",
+    "points": []
+  },
+  {
+    "version": "0.57.0",
+    "date": "2026-11-11",
+    "resume": "Une voix de synthèse française, fabriquée sur votre ordinateur, et un modèle de vidéo explicative.",
+    "points": [
+      "Voix de synthèse facultative, installée avec votre accord, utilisable dans la vidéo finale.",
+      "Modèle « Vidéo explicative », avec la caméra et les petits sons qui se règlent seuls."
+    ]
+  },
+  {
+    "version": "0.56.1",
+    "date": "2026-11-11",
+    "resume": "Correction interne des fichiers publiés ; rien ne change pour vous.",
+    "points": []
+  },
+  {
+    "version": "0.56.0",
+    "date": "2026-11-11",
+    "resume": "Le wiki montre de vrais exemples, de la demande à la vidéo.",
+    "points": [
+      "Page Exemples : la demande, le déroulé validé et la vidéo de chaque exemple.",
+      "Deux retouches montrées avant et après.",
+      "Une page pour celles et ceux qui veulent contribuer."
+    ]
+  }
+]
