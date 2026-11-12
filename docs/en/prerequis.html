@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en" data-racine="../">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Requirements – Pulse Motion Wiki</title>
+<meta name="description" content="Everything to install before your first video with Pulse Motion: VS Code, Node.js, Claude Code, Chrome or Edge, the plugin, then, if you wish, ffmpeg and transcription.">
+<!-- langues -->
+<link rel="alternate" hreflang="fr" href="https://jdelauney.github.io/pulse-motion/prerequis.html">
+<link rel="alternate" hreflang="en" href="https://jdelauney.github.io/pulse-motion/en/prerequis.html">
+<link rel="alternate" hreflang="x-default" href="https://jdelauney.github.io/pulse-motion/prerequis.html">
+<!-- /langues -->
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/animations.css">
+<script src="../js/donnees.js" defer></script>
+<script src="../js/gabarit.js" defer></script>
+<script src="../js/animations.js" defer></script>
+<script src="../js/console.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<div class="mise-en-page">
+<nav class="laterale" aria-label="On this page" data-laterale="sommaire"></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille">Before you start</p>
+<h1>Requirements</h1>
+<p class="chapo">Everything to install before your first video with Pulse Motion. Never installed developer software before? This page is made for you: every step is explained click by click and ends with a simple check.</p>
+</header>
+
+<!-- ===================================================================================================== -->
+<section id="introduction" class="etape-tuto">
+<h2><span class="etape-numero">1</span> What you’ll need</h2>
+<p>Pulse Motion works inside <strong>Claude Code</strong>, Anthropic’s assistant. It makes your videos <strong>on your computer</strong>: no online service, no extra account, no video sent anywhere. You won’t have to write any code: you’ll download, click “Next”, and copy a few commands that this page gives you.</p>
+<table>
+<thead><tr><th>Tool</th><th>What it’s for</th><th>Required?</th></tr></thead>
+<tbody>
+<tr><td><strong>VS Code</strong> and the Claude Code extension</td><td>Where you chat with Claude, next to your video’s files.</td><td>Recommended (the terminal or Claude Desktop work too)</td></tr>
+<tr><td><strong>A Claude subscription</strong></td><td>Claude Code needs a Pro, Max, Team or Enterprise plan, or a Console account.</td><td>Yes</td></tr>
+<tr><td><strong>Node.js</strong> 20 or later</td><td>Runs Pulse Motion: assembly, checks, preview, export. Nothing else to install alongside it.</td><td>Yes</td></tr>
+<tr><td><strong>Chrome</strong> or <strong>Edge</strong></td><td>Shows the video preview, checks the rendered video and makes the MP4.</td><td>Yes</td></tr>
+<tr><td><strong>ffmpeg</strong></td><td>Makes the MP4 as a <a href="concepts.html#export">high-fidelity export</a>, with clean sound, and imports voice recordings in any format.</td><td>Optional: Pulse Motion offers it at your first export</td></tr>
+<tr><td><strong>Python</strong> and transcription</td><td>Times the subtitles and animations to the actual words of your voice, and splits a recording of the whole video.</td><td>Optional: Pulse Motion offers it when you add a voice</td></tr>
+</tbody>
+</table>
+<aside class="encadre encadre-conseil"><p><strong>Tip:</strong> already have Claude Code and Node.js for another plugin, Pulse for example? Go straight to the <a href="#navigateur">Chrome or Edge</a> step, then to <a href="#plugin">installing the plugin</a>.</p></aside>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="vscode" class="etape-tuto">
+<h2><span class="etape-numero">2</span> Install VS Code <span class="duree">10 min</span></h2>
+<p><dfn>VS Code</dfn> (Visual Studio Code) is a free editor from Microsoft: it shows your video’s files (the timeline, the scenes), and it’s where you’ll chat with Claude.</p>
+<div class="onglets">
+<section data-onglet="Windows">
+<h3 class="onglet-titre">Windows</h3>
+<ol>
+<li>Open <a href="https://code.visualstudio.com/download" target="_blank" rel="noopener noreferrer">code.visualstudio.com/download</a> and click the big <strong>Windows</strong> button (Windows 10 or 11).</li>
+<li>Open the downloaded file (<code>VSCodeUserSetup-x64-….exe</code>, in your <strong>Downloads</strong> folder). Then, in the installer:
+<ul>
+<li>licence: tick <strong>I accept the agreement</strong>, then <strong>Next</strong>;</li>
+<li>install folder and Start menu folder: keep everything, <strong>Next</strong>;</li>
+<li><strong>Additional Tasks</strong>: keep <strong>Add to PATH</strong> ticked. You can also tick the two “Add ‘Open with Code’ action” boxes: right-clicking a folder will then open it in VS Code;</li>
+<li><strong>Install</strong>, then <strong>Finish</strong>.</li>
+</ul></li>
+</ol>
+<p><strong>Where to find it afterwards:</strong> Start menu, “Visual Studio Code”.</p>
+</section>
+<section data-onglet="macOS">
+<h3 class="onglet-titre">macOS</h3>
+<ol>
+<li>Open <a href="https://code.visualstudio.com/download" target="_blank" rel="noopener noreferrer">code.visualstudio.com/download</a> and click the big <strong>Mac</strong> button (the “Universal” version, for every Mac).</li>
+<li>Open the downloaded file, then drag <strong>Visual Studio Code</strong> into the <strong>Applications</strong> folder.</li>
+<li>Open it from Applications. The first time, macOS asks you to confirm: click <strong>Open</strong>.</li>
+</ol>
+<p><strong>Where to find it afterwards:</strong> Applications folder, “Visual Studio Code”.</p>
+</section>
+</div>
+<figure class="capture"><img src="../assets/captures/prerequis-vscode-telechargement.png" alt="the code.visualstudio.com/download page, with the Windows and Mac buttons." loading="lazy" width="1440" height="900"><figcaption>The button to click for your computer.</figcaption></figure>
+<p>VS Code’s menus are in English by default, and this page gives the English name of every menu.</p>
+<aside class="encadre encadre-attendu"><p><strong>What you should see:</strong> VS Code opens on a welcome page (“Welcome”).</p></aside>
+<details class="probleme"><summary>On Windows, a blue “Windows protected your PC” window appears</summary><p>Check that the file really comes from code.visualstudio.com, then click <strong>More info</strong> and <strong>Run anyway</strong>.</p></details>
+<details class="probleme"><summary>I’d rather have VS Code in French</summary><p>Open the list of extensions (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>X</kbd>, or <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>X</kbd> on a Mac), search for “French Language Pack” published by Microsoft, install it, then restart VS Code.</p></details>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="node" class="etape-tuto">
+<h2><span class="etape-numero">3</span> Install Node.js <span class="duree">10 min</span></h2>
+<p><dfn>Node.js</dfn> runs Pulse Motion: it assembles the video, checks it, serves the preview and makes the export. Pulse Motion needs no other component: nothing else to download.</p>
+<p>Pulse Motion needs <strong>Node.js 20 or later</strong>. Take the version marked <strong>LTS</strong> (“long-term support”, the most stable).</p>
+<p>If Claude Code and the plugin are already there but Node.js isn’t, Pulse Motion offers to install it for you, with your approval (on Windows, and on macOS with Homebrew); it then finds it without a restart.</p>
+<div class="onglets">
+<section data-onglet="Windows">
+<h3 class="onglet-titre">Windows</h3>
+<ol>
+<li>Open <a href="https://nodejs.org/fr/download" target="_blank" rel="noopener noreferrer">nodejs.org/fr/download</a>.</li>
+<li>At the top, check that the selected version is marked <strong>LTS</strong>.</li>
+<li>Further down, click the <strong>Windows Installer (.msi)</strong> button.</li>
+<li>Open the downloaded file. Then, in the installer:
+<ul>
+<li>first screen: <strong>Next</strong>;</li>
+<li>licence: tick the acceptance box, then <strong>Next</strong>;</li>
+<li>install folder and list of features: keep everything, <strong>Next</strong>;</li>
+<li>“Tools for Native Modules” screen: <strong>leave the box unticked</strong>, then <strong>Next</strong>. Pulse Motion doesn’t use these tools;</li>
+<li><strong>Install</strong>, then <strong>Yes</strong> when Windows asks for permission, and finally <strong>Finish</strong>.</li>
+</ul></li>
+</ol>
+</section>
+<section data-onglet="macOS">
+<h3 class="onglet-titre">macOS</h3>
+<ol>
+<li>Open <a href="https://nodejs.org/fr/download" target="_blank" rel="noopener noreferrer">nodejs.org/fr/download</a>.</li>
+<li>At the top, check that the selected version is marked <strong>LTS</strong>.</li>
+<li>Further down, click the <strong>macOS Installer (.pkg)</strong> button.</li>
+<li>Open the downloaded file, then click <strong>Continue</strong> on each screen, <strong>Agree</strong> to the licence, and <strong>Install</strong>. Your Mac asks for your login password: type it in. Finish with <strong>Close</strong>.</li>
+</ol>
+</section>
+</div>
+<figure class="capture"><img src="../assets/captures/prerequis-node-telechargement.png" alt="the nodejs.org download page, with the LTS label and the installer button highlighted." loading="lazy" width="1440" height="900"><figcaption>Choose the LTS version and the installer for your system.</figcaption></figure>
+<p>Node.js has no window: it works behind the scenes. Close VS Code completely, reopen it, open the terminal (menu <strong>Terminal</strong> → <strong>New Terminal</strong>), then check:</p>
+<pre class="commande"><code>node --version</code></pre>
+<aside class="encadre encadre-attendu"><p><strong>What you should see:</strong> a number starting with <code>v20</code> or higher, for example <code>v24.21.0</code>.</p></aside>
+<details class="probleme"><summary>The version shown is older than 20</summary><p>An older version of Node.js is already installed. Install the LTS version over it from nodejs.org, then close and reopen VS Code. Pulse Motion also reminds you at the start of every session for as long as the version is too old.</p></details>
+<details class="probleme"><summary>Later on, Pulse Motion says « <span lang="fr">node introuvable</span> » (“node not found”) even though it’s installed</summary><p>Claude Code reads the list of installed software when it starts. <strong>Close VS Code completely and reopen it</strong> (or Claude Desktop, or the terminal, depending on how you work).</p></details>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="claude" class="etape-tuto">
+<h2><span class="etape-numero">4</span> The Claude subscription and the Claude Code extension <span class="duree">15 min</span></h2>
+<p><strong>Claude Code</strong> is Anthropic’s assistant that works with you on the files in a folder. The extension adds it to VS Code, in a chat panel.</p>
+
+<h3>Take out a subscription</h3>
+<p>Claude Code needs a Claude <strong>Pro, Max, Team or Enterprise</strong> account, or a <strong>Console</strong> account (pay as you go). The free plan isn’t enough. If you’re starting out on your own, the Pro plan is the simplest.</p>
+<ol>
+<li>Open <a href="https://claude.com/pricing" target="_blank" rel="noopener noreferrer">claude.com/pricing</a>.</li>
+<li>Choose a plan and click its button. Create your account (or sign in), then pay for the subscription.</li>
+<li>Make a note of the email address you used: it’s the one you’ll sign in with in VS Code.</li>
+</ol>
+<figure class="capture"><img src="../assets/captures/prerequis-claude-abonnement.png" alt="the Claude plans page, showing the plans that include Claude Code." loading="lazy" width="1440" height="900"><figcaption>The paid plans include Claude Code.</figcaption></figure>
+
+<h3>Install the extension</h3>
+<ol>
+<li>In VS Code, press <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>X</kbd> (Windows) or <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>X</kbd> (macOS): the list of extensions opens on the left.</li>
+<li>In the search box, type <strong>Claude Code</strong>.</li>
+<li>Choose the one published by <strong>Anthropic</strong>, then click <strong>Install</strong>.</li>
+</ol>
+
+<h3>Open the panel and sign in</h3>
+<ol>
+<li>Click the spark-shaped icon in the vertical bar on the left, or <strong>✻ Claude Code</strong> at the bottom right of the window.</li>
+<li>The first time, a sign-in screen appears: click <strong>Sign in</strong>, sign in in your browser with your subscription account, and accept.</li>
+<li>Go back to VS Code: the Claude panel shows a text box.</li>
+</ol>
+<p>In the text box, type <code>/</code>: the list of available commands opens. This is how you’ll run Pulse Motion’s commands, such as <code>/pulse-motion:creer</code>.</p>
+<aside class="encadre encadre-attendu"><p><strong>What you should see:</strong> when you type <code>/</code>, a list of commands appears above the text box.</p></aside>
+<p>Source: <a href="https://code.claude.com/docs/fr/vs-code" target="_blank" rel="noopener noreferrer">using Claude Code in VS Code</a>.</p>
+<details class="probleme"><summary>The spark-shaped icon doesn’t appear</summary><p>Restart VS Code. Or open the command palette (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>, or <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd> on a Mac), type <code>Developer: Reload Window</code> and confirm.</p></details>
+<details class="probleme"><summary>The panel suggests upgrading to a paid plan</summary><p>The account you used doesn’t have a compatible subscription. Check the email address you signed in with.</p></details>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="terminal" class="etape-tuto">
+<h2><span class="etape-numero">5</span> Install Claude Code for the terminal <span class="duree">10 min</span></h2>
+<p>The copy of Claude Code that comes with the extension only serves its panel. The <strong>plugin update</strong> commands, on the other hand, are typed in the terminal. So install Claude Code for the terminal too: just once, and then it keeps itself up to date.</p>
+<p>In the VS Code terminal (menu <strong>Terminal</strong> → <strong>New Terminal</strong>):</p>
+<div class="onglets">
+<section data-onglet="Windows">
+<h3 class="onglet-titre">Windows</h3>
+<p>The line must start with <code>PS</code> (PowerShell). Paste this command, then press <kbd>Enter</kbd>:</p>
+<pre class="commande"><code>irm https://claude.ai/install.ps1 | iex</code></pre>
+</section>
+<section data-onglet="macOS">
+<h3 class="onglet-titre">macOS</h3>
+<p>Paste this command, then press <kbd>Enter</kbd>:</p>
+<pre class="commande"><code>curl -fsSL https://claude.ai/install.sh | bash</code></pre>
+</section>
+</div>
+<p>Close VS Code completely, reopen it, open the terminal, then check:</p>
+<pre class="commande"><code>claude --version</code></pre>
+<aside class="encadre encadre-attendu"><p><strong>What you should see:</strong> a version number followed by <code>(Claude Code)</code>.</p></aside>
+<p>Source: <a href="https://code.claude.com/docs/fr/setup" target="_blank" rel="noopener noreferrer">the official Claude Code documentation</a>.</p>
+<details class="probleme"><summary>“claude is not recognized” or “command not found: claude”</summary><p>Close VS Code completely and reopen it. If the message is still there, follow the “Troubleshooting” part of the <a href="https://code.claude.com/docs/fr/terminal-guide" target="_blank" rel="noopener noreferrer">terminal guide</a>.</p></details>
+<details class="probleme"><summary>On Windows: “irm is not recognized”</summary><p>The terminal is the Command Prompt (CMD), not PowerShell. In the VS Code terminal, open the small arrow next to the <strong>+</strong> and choose <strong>PowerShell</strong>, then run the command again.</p></details>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="navigateur" class="etape-tuto">
+<h2><span class="etape-numero">6</span> Chrome or Edge <span class="duree">5 min</span></h2>
+<p>Pulse Motion uses a browser from the Chrome family for three things: <strong>showing the preview</strong> of the video, <strong>checking the rendered video</strong> (overflowing text, contrast, flashes) and <strong>making the MP4</strong>. It runs them without a window, behind the scenes.</p>
+<ul>
+<li><strong>Windows:</strong> Microsoft Edge is already installed. Nothing to do.</li>
+<li><strong>macOS:</strong> install Google Chrome from <a href="https://www.google.com/chrome/" target="_blank" rel="noopener noreferrer">google.com/chrome</a>, or Microsoft Edge from <a href="https://www.microsoft.com/edge" target="_blank" rel="noopener noreferrer">microsoft.com/edge</a>. Safari and Firefox aren’t enough.</li>
+</ul>
+<aside class="encadre encadre-attendu"><p><strong>What you should see:</strong> Chrome or Edge opens on your computer.</p></aside>
+<details class="probleme"><summary>Pulse Motion says « <span lang="fr">Chrome ou Edge introuvable</span> » (“Chrome or Edge not found”) even though one of them is installed</summary><p>The browser is installed in an unusual place. Put its path in the <code>PM_NAVIGATEUR</code> environment variable, then restart VS Code. You can ask Claude to guide you: « <span lang="fr">aide-moi à régler PM_NAVIGATEUR</span> » (“help me set PM_NAVIGATEUR”).</p></details>
+<details class="probleme"><summary>I open the preview in Firefox or Safari</summary><p>The video plays, but voice recording and the MP4 button need Chrome or Edge. Copy the preview address (it starts with <code>http://localhost:</code>) into Chrome or Edge.</p></details>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="plugin" class="etape-tuto">
+<h2><span class="etape-numero">7</span> Install Pulse Motion and keep it up to date <span class="duree">5 min</span></h2>
+<p>Pulse Motion is a <dfn>plugin</dfn> (an add-on for Claude Code), stored in a catalogue called <code>pulse-motion</code>. First you add the catalogue, then the plugin.</p>
+
+<h3>Install, in VS Code</h3>
+<ol>
+<li>In the Claude Code panel, type <code>/plugins</code>, then press <kbd>Enter</kbd>: the <strong>Manage plugins</strong> window opens.</li>
+<li>Click the <strong>Marketplaces</strong> tab. In the box for adding a catalogue, type <code>jdelauney/pulse-motion</code> and confirm.</li>
+<li>Go back to the <strong>Plugins</strong> tab. Search for <code>pulse-motion</code>, then click <strong>Install</strong>. Choose <strong>Install for you</strong>: Pulse Motion will be available in all your folders.</li>
+<li>Close VS Code completely and reopen it.</li>
+</ol>
+
+<h3>Or: install in Claude Code</h3>
+<p>In the Claude Code panel, or in Claude Code started from a terminal (the <code>claude</code> command), type one line at a time:</p>
+<pre class="commande"><code>/plugin marketplace add jdelauney/pulse-motion</code></pre>
+<pre class="commande"><code>/plugin install pulse-motion@pulse-motion</code></pre>
+<p>Choose <strong>Install for you (user scope)</strong> if asked, then restart Claude Code.</p>
+
+<h3>Check</h3>
+<p>In the Claude Code panel, type <code>/pulse-motion:</code> (without pressing <kbd>Enter</kbd>).</p>
+<aside class="encadre encadre-attendu"><p><strong>What you should see:</strong> the list of Pulse Motion commands appears, from <code>/pulse-motion:creer</code> to <code>/pulse-motion:voix</code> (twelve in all, <a href="commandes/index.html">all described here</a>).</p></aside>
+
+<h3>Update</h3>
+<p>Pulse Motion’s fixes only reach you after an update. In the VS Code terminal:</p>
+<pre class="commande"><code>claude plugin marketplace update pulse-motion
+claude plugin update pulse-motion@pulse-motion</code></pre>
+<p>Then close VS Code completely and reopen it: the new version loads at startup.</p>
+
+<h3>Stop thinking about it: automatic updates</h3>
+<ol>
+<li>In the VS Code terminal, type <code>claude</code>, then press <kbd>Enter</kbd>.</li>
+<li>Type <code>/plugin</code>, then press <kbd>Enter</kbd>.</li>
+<li>Open the <strong>Marketplaces</strong> tab (the <kbd>Tab</kbd> key moves from one tab to the next).</li>
+<li>Choose <code>pulse-motion</code>, then <strong>Enable auto-update</strong>.</li>
+<li>Quit with <code>exit</code>.</li>
+</ol>
+<p>Sources: <a href="https://github.com/jdelauney/pulse-motion" target="_blank" rel="noopener noreferrer">the Pulse Motion repository</a> and <a href="https://code.claude.com/docs/fr/discover-plugins" target="_blank" rel="noopener noreferrer">installing and managing plugins</a>.</p>
+<details class="probleme"><summary>The <code>/pulse-motion:</code> commands don’t appear</summary><p>Close VS Code completely and reopen it. If they’re still missing, type <code>/plugins</code>: <code>pulse-motion</code> must be listed in the <strong>Plugins</strong> tab, with its switch turned on. A plugin that couldn’t load shows the reason on its line.</p></details>
+<details class="probleme"><summary>Adding the catalogue fails</summary><p>Check your internet connection and the exact spelling: <code>jdelauney/pulse-motion</code>. Then try again.</p></details>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="ffmpeg" class="etape-tuto">
+<h2><span class="etape-numero">8</span> Optional: ffmpeg, for the high-fidelity export <span class="duree">5 min</span></h2>
+<p><dfn>ffmpeg</dfn> is a small piece of free software that makes the video in high quality, with clean sound. Without it, Pulse Motion still exports, directly in the browser. With it, the export is <strong>high-fidelity</strong>: the browser’s real frames, and sound measured at the right level.</p>
+<p><strong>The simplest way:</strong> do nothing for now. At your first <a href="commandes/exporter.html"><code>/pulse-motion:exporter</code></a>, Pulse Motion checks whether ffmpeg is there and offers to install it, with your approval. If you’d rather install it yourself:</p>
+<div class="onglets">
+<section data-onglet="Windows">
+<h3 class="onglet-titre">Windows</h3>
+<p>In the VS Code terminal:</p>
+<pre class="commande"><code>winget install --id Gyan.FFmpeg -e --accept-source-agreements --accept-package-agreements</code></pre>
+</section>
+<section data-onglet="macOS">
+<h3 class="onglet-titre">macOS</h3>
+<p>With <a href="https://brew.sh/fr/" target="_blank" rel="noopener noreferrer">Homebrew</a> installed, in the terminal:</p>
+<pre class="commande"><code>brew install ffmpeg</code></pre>
+</section>
+</div>
+<p>Close VS Code completely and reopen it, then check:</p>
+<pre class="commande"><code>ffmpeg -version</code></pre>
+<aside class="encadre encadre-attendu"><p><strong>What you should see:</strong> a line starting with <code>ffmpeg version</code>.</p></aside>
+<details class="probleme"><summary>On Linux, Pulse Motion gives me a command to type</summary><p>The installation needs your password: Pulse Motion can’t run it for you. Type the command it gives you in a terminal, then tell it you’re done.</p></details>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="transcription" class="etape-tuto">
+<h2><span class="etape-numero">9</span> Optional: voice transcription <span class="duree">10 min</span></h2>
+<p>When you add your voice, <dfn>transcription</dfn> finds the exact moment of each word. The subtitles and animations are then timed to your actual words. It’s essential for splitting a recording of the whole video into scenes. Without it, everything still works: the words are timed as well as possible.</p>
+<p>It runs on your computer, with <strong>Python</strong> and a speech recognition model (about 800 MB, or 250 MB for the lighter version). <strong>The simplest way, once again:</strong> wait for Pulse Motion to offer it during <a href="commandes/creer.html"><code>/pulse-motion:creer</code></a>. With your approval, it installs Python if needed, then transcription, in a few minutes.</p>
+<aside class="encadre encadre-conseil"><p><strong>One sentence, one approval, no restart:</strong> ask « <span lang="fr">installe ce qui manque</span> » (“install whatever is missing”), or accept « Préparer l’ordinateur pendant que je travaille » (Prepare the computer while I work) during <a href="commandes/creer.html"><code>/pulse-motion:creer</code></a>. Pulse Motion shows you the list (what each tool is for, its size, how long it takes), you answer « Tout installer » (Install everything), and it installs one tool after another, in the background. A freshly installed Python or Node.js is found in its usual place, without restarting Claude Code; it only asks you to restart as a last resort, if a tool still can’t be found.</p></aside>
+<details class="probleme"><summary>Installing transcription failed</summary><p>Pulse Motion tells you in one sentence and carries on without it: the video is made, and the words are timed as well as possible. You can try again later by asking « <span lang="fr">installe la transcription</span> » (“install the transcription”).</p></details>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="verification" class="etape-tuto">
+<h2><span class="etape-numero">10</span> Final check <span class="duree">5 min</span></h2>
+<ol>
+<li>Create an empty folder, for example <code>chaine-du-froid</code>, wherever you keep your documents. <strong>One video = one folder.</strong></li>
+<li>In VS Code, menu <strong>File</strong> → <strong>Open Folder…</strong>, choose that folder. If VS Code asks, trust its authors: it’s your folder.</li>
+<li>Open the Claude Code panel and type <code>/pulse-motion:</code>.</li>
+</ol>
+<aside class="encadre encadre-attendu"><p><strong>What you should see:</strong> Pulse Motion’s commands appear. You’re ready for the <a href="tutoriels/premiere-video.html">First video</a> tutorial.</p></aside>
+</section>
+
+</article>
+</div>
+</main>
+</body>
+</html>

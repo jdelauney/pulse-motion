@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en" data-racine="../../" data-commande="atelier-particules">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>/pulse-motion:atelier-particules – Pulse Motion Wiki</title>
+<meta name="description" content="Open the particle effects workshop to adjust an effect while watching it (“let me adjust the sparks”, “I want to see what the snow looks like”).">
+<!-- langues -->
+<link rel="alternate" hreflang="fr" href="https://jdelauney.github.io/pulse-motion/commandes/atelier-particules.html">
+<link rel="alternate" hreflang="en" href="https://jdelauney.github.io/pulse-motion/en/commandes/atelier-particules.html">
+<link rel="alternate" hreflang="x-default" href="https://jdelauney.github.io/pulse-motion/commandes/atelier-particules.html">
+<!-- /langues -->
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/animations.css">
+<script src="../../js/donnees.js" defer></script>
+<script src="../../js/gabarit.js" defer></script>
+<script src="../../js/animations.js" defer></script>
+<script src="../../js/console.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<div class="mise-en-page">
+<nav class="laterale" aria-label="The commands" data-laterale></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille pastille-etape" data-couleur="0">Step 4 · Customise</p>
+<h1><code>/pulse-motion:atelier-particules</code></h1>
+<p class="chapo">Open the particle effects workshop to adjust an effect while watching it (« <span lang="fr">laisse-moi régler les étincelles</span> » (“let me adjust the sparks”), « <span lang="fr">je veux voir ce que donne la neige</span> » (“I want to see what the snow looks like”)).</p>
+</header>
+
+<ul class="sommaire" aria-label="On this page" data-sommaire></ul>
+
+<section id="description">
+<h2>Description</h2>
+<p><a href="../catalogue.html#effets">Particle effects</a> (sparks, confetti, snow, smoke…) are usually edited in one sentence: « <span lang="fr">plus d'étincelles</span> » (“more sparks”), « <span lang="fr">en bleu</span> » (“in blue”). This command lets you adjust them <strong>by eye</strong>, with sliders, while watching the result. Depending on your request, Pulse Motion opens one of these two places:</p>
+<ul>
+<li><strong>The preview’s « Effets » (Effects) button</strong>, for an effect already placed in a scene. You choose the effect from the list, or click on it in the picture; the sliders change the picture straight away, and playback loops on the effect. « Enregistrer » (Save) stores your settings in the scene. « Recette complète » (Full recipe) shows all the effect’s settings, and « Enregistrer comme nouvel effet » (Save as new effect) turns it into an effect of your own, which the scene uses at once.</li>
+<li><strong>The workshop page</strong>, to work on an effect on its own (« <span lang="fr">laisse-moi régler les étincelles</span> » (“let me adjust the sparks”)). The effect loops, on a light background (your brand kit’s) or a dark one; you move and resize with the mouse the area where the particles appear. « Enregistrer » stores the effect with your video: your settings become its starting settings.</li>
+</ul>
+<p>When you say you have finished, Pulse Motion reads the chosen setting and describes it to you in one sentence.</p>
+</section>
+
+<section id="pourquoi">
+<h2>Why use it</h2>
+<ul>
+<li><strong>An effect is judged by eye.</strong> The right amount of snow or the right speed for a burst is found faster by watching it.</li>
+<li><strong>The result is immediate</strong>, without reloading the page.</li>
+<li><strong>You can create your own effect</strong> from a built-in one, and reuse it in the video.</li>
+<li><strong>Nothing is lost.</strong> Every save goes through the <a href="../concepts.html#historique">history</a>: « <span lang="fr">annule</span> » (“undo”) reverses it.</li>
+</ul>
+</section>
+
+<section id="quand">
+<h2>When to use it</h2>
+<ol class="parcours" aria-label="The Pulse Motion path, with this command’s step highlighted">
+  <li data-couleur="1"><span class="parcours-numero">1</span> Create</li>
+  <li data-couleur="3"><span class="parcours-numero">2</span> Edit</li>
+  <li data-couleur="4"><span class="parcours-numero">3</span> Export</li>
+  <li data-couleur="0" aria-current="step"><span class="parcours-numero">4</span> Customise</li>
+</ol>
+<ul>
+<li><strong>After <a href="creer.html"><code>/pulse-motion:creer</code></a></strong>, when a scene has an effect you want to fine-tune.</li>
+<li><strong>To try out an effect</strong> before putting it in a scene: « <span lang="fr">je veux voir ce que donne la neige</span> » (“I want to see what the snow looks like”).</li>
+<li><strong>Instead of <a href="retoucher.html"><code>/pulse-motion:retoucher</code></a></strong> when a sentence is no longer enough. For a simple change (« <span lang="fr">plus d'étincelles</span> » (“more sparks”), « <span lang="fr">enlève les confettis</span> » (“remove the confetti”)), an edit is quicker.</li>
+</ul>
+</section>
+
+<section id="arguments">
+<h2>How to run it</h2>
+<pre class="commande" lang="fr"><code>/pulse-motion:atelier-particules [l'effet à régler]</code></pre>
+<p class="traduction">“[the effect to adjust]”</p>
+<p class="legende">In square brackets <code>[ ]</code>: optional. You can also run the command on its own and then say which effect to adjust.</p>
+<pre class="commande" lang="fr"><code>/pulse-motion:atelier-particules laisse-moi régler les étincelles</code></pre>
+<p class="traduction">“let me adjust the sparks”</p>
+<pre class="commande" lang="fr"><code>/pulse-motion:atelier-particules je veux voir ce que donne la neige</code></pre>
+<p class="traduction">“I want to see what the snow looks like”</p>
+<p>The built-in effects: étincelles (sparks), braises (embers), confettis (confetti), feu d’artifice (fireworks), fumée (smoke), feu (fire), poussière (dust), neige (snow), pluie (rain), paillettes (glitter), énergie (energy), explosion (explosion). They are described in the <a href="../catalogue.html#effets">catalogue</a>.</p>
+<p>You only say « <span lang="fr">ouvre l'éditeur</span> » (“open the editor”), and your video also has characters? Pulse Motion asks you which: « Les effets de particules » (The particle effects) or « Les personnages » (The characters). For characters, use <a href="atelier-personnages.html"><code>/pulse-motion:atelier-personnages</code></a>.</p>
+</section>
+
+<section id="produit">
+<h2>What it produces</h2>
+<ul>
+<li><strong>The effect’s settings, stored in the scene</strong>, when you save from the preview’s « Effets » button.</li>
+<li><strong>An effect of your own</strong>, stored with the video in <code>effets/&lt;nom&gt;.json</code>, when you save a new effect or an effect adjusted on the workshop page.</li>
+<li><strong>A sentence</strong> summing up the chosen setting, once you have finished.</li>
+</ul>
+</section>
+
+<section id="risques">
+<h2>Risks and precautions</h2>
+<ul>
+<li><strong>Outside a video’s folder, the workshop does not save.</strong> It opens anyway so you can try things out; Pulse Motion warns you.</li>
+<li><strong>A scene changed in the meantime is not overwritten.</strong> If the scene changed while you were adjusting (an edit, for example), the workshop refuses to save and offers to reload the page.</li>
+<li><strong>The name of a new effect</strong> is written in lower case, with numbers and hyphens, and must differ from those of the built-in effects.</li>
+</ul>
+<aside class="encadre encadre-conseil"><p><strong>Tip:</strong> an effect serves a purpose: highlighting a figure, celebrating a conclusion, setting a mood. One well-placed subtle effect is worth more than three spectacular ones.</p></aside>
+</section>
+
+<section id="problemes">
+<h2>Problems and solutions</h2>
+<details class="probleme"><summary>I saved, but nothing changed in my video</summary><p>The open folder probably has no video in it: the workshop adjusts, but does not save. Open your video’s folder in VS Code and run the command again.</p></details>
+<details class="probleme"><summary>The workshop refuses to save and offers to reload the page</summary><p>The scene was changed while you were adjusting the effect. Reload the page, redo your adjustment, then save: nothing from the edit has been overwritten.</p></details>
+<details class="probleme"><summary>The snow can’t be seen on a light background</summary><p>Snow and dust are white to start with. On a light background, choose your brand kit’s primary colour, or a blue-grey.</p></details>
+<details class="probleme"><summary>Pulse Motion asks me which editor to open</summary><p>Your video has effects and characters, and “the editor” could mean either. Choose « Les effets de particules » (The particle effects); for characters, use <a href="atelier-personnages.html"><code>/pulse-motion:atelier-personnages</code></a>.</p></details>
+<details class="probleme"><summary>“node” not found</summary><p>Node.js is not installed. Install the LTS version from <a href="https://nodejs.org/fr/download" target="_blank" rel="noopener noreferrer">nodejs.org</a>, then restart Claude Code. See the <a href="../prerequis.html#node">requirements</a>.</p></details>
+</section>
+
+<section id="exemples">
+<h2>Examples</h2>
+<div class="conversation" lang="fr" data-titre="Example: adjusting an effect already in place">
+<p data-role="vous">/pulse-motion:atelier-particules laisse-moi régler les étincelles de la scène 3</p>
+<p data-role="outil">pulse-motion apercu . --ouvrir</p>
+<p data-role="claude">L'aperçu est ouvert. Cliquez sur « Effets », puis choisissez les étincelles : les curseurs changent l'image tout de suite, et la lecture boucle sur l'effet. Cliquez sur « Enregistrer » quand elles vous plaisent.</p>
+<p data-role="vous">C'est fait.</p>
+<p data-role="claude">Les étincelles de la scène 3 sont enregistrées : plus nombreuses et un peu plus lentes, dans la couleur d'accent de votre charte.</p>
+</div>
+<details class="traduction"><summary>In English</summary><p><strong>You:</strong> /pulse-motion:atelier-particules let me adjust the sparks in scene 3</p><p><strong>Claude:</strong> The preview is open. Click “Effets” (Effects), then choose the sparks: the sliders change the picture straight away, and playback loops on the effect. Click “Enregistrer” (Save) when you like them.</p><p><strong>You:</strong> Done.</p><p><strong>Claude:</strong> The sparks in scene 3 are saved: more of them and a little slower, in your brand kit’s accent colour.</p></details>
+<div class="conversation" lang="fr" data-titre="Example: trying out an effect on its own">
+<p data-role="vous">/pulse-motion:atelier-particules je veux voir ce que donne la neige</p>
+<p data-role="outil">pulse-motion atelier neige</p>
+<p data-role="claude">L'atelier est ouvert sur la neige, qui tombe en boucle. Passez du fond clair au fond sombre, déplacez à la souris la zone d'où tombent les flocons, réglez les curseurs. « Enregistrer » range l'effet avec votre vidéo.</p>
+</div>
+<details class="traduction"><summary>In English</summary><p><strong>You:</strong> /pulse-motion:atelier-particules I want to see what the snow looks like</p><p><strong>Claude:</strong> The workshop is open on the snow, which falls in a loop. Switch between the light and dark backgrounds, move the area the flakes fall from with the mouse, adjust the sliders. “Enregistrer” (Save) stores the effect with your video.</p></details>
+</section>
+
+<section id="liees">
+<h2>Related commands</h2>
+<ul>
+<li><a href="retoucher.html"><code>/pulse-motion:retoucher</code></a>: edit an effect in one sentence, add it or remove it.</li>
+<li><a href="atelier-personnages.html"><code>/pulse-motion:atelier-personnages</code></a>: the character editor.</li>
+</ul>
+</section>
+
+<nav class="suite" aria-label="Previous and next command" data-suite></nav>
+</article>
+</div>
+</main>
+</body>
+</html>

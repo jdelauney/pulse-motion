@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en" data-racine="../../" data-commande="animer-personnage">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>/pulse-motion:animer-personnage – Pulse Motion Wiki</title>
+<meta name="description" content="Create or change a character’s pose or move, and see it from several angles (“make a pose where he scratches his head”, “he walks too fast”).">
+<!-- langues -->
+<link rel="alternate" hreflang="fr" href="https://jdelauney.github.io/pulse-motion/commandes/animer-personnage.html">
+<link rel="alternate" hreflang="en" href="https://jdelauney.github.io/pulse-motion/en/commandes/animer-personnage.html">
+<link rel="alternate" hreflang="x-default" href="https://jdelauney.github.io/pulse-motion/commandes/animer-personnage.html">
+<!-- /langues -->
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/animations.css">
+<script src="../../js/donnees.js" defer></script>
+<script src="../../js/gabarit.js" defer></script>
+<script src="../../js/animations.js" defer></script>
+<script src="../../js/console.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<div class="mise-en-page">
+<nav class="laterale" aria-label="The commands" data-laterale></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille pastille-etape" data-couleur="0">Step 4 · Customise</p>
+<h1><code>/pulse-motion:animer-personnage</code></h1>
+<p class="chapo">Create or change a character’s pose or move, and see it from several angles (« <span lang="fr">fais une pose où il se gratte la tête</span> » (“make a pose where he scratches his head”), « <span lang="fr">il marche trop vite</span> » (“he walks too fast”)).</p>
+</header>
+
+<ul class="sommaire" aria-label="On this page" data-sommaire></ul>
+
+<section id="description">
+<h2>Description</h2>
+<p>A Pulse Motion character moves with <strong>poses</strong> (a held attitude: pointing, hands on hips, sitting) and <strong>moves</strong> (walking, running, a jump, a gesture). It also changes <strong>expression</strong>: joy, sadness, fear, anger, surprise. This command creates new ones or changes existing ones, for a drawn character as well as for the stick figure.</p>
+<p>After each change, Pulse Motion checks the result and looks at it on a <em>sheet</em>, an image made of thumbnails that shows the move from several angles: limbs must not bend the wrong way, feet must stay on the ground, the gesture must look like what you asked for. It fixes things, in three rounds at most, then shows you the sheet.</p>
+<p>It is also used to <strong>put a character in a scene</strong> and have it act there: walk in, point at a figure, wave, leave, or talk over the scene’s voice.</p>
+</section>
+
+<section id="pourquoi">
+<h2>Why use it</h2>
+<ul>
+<li><strong>A new gesture in one sentence.</strong> « <span lang="fr">Fais une pose où il se gratte la tête</span> » (“Make a pose where he scratches his head”), « <span lang="fr">fais-le sauter plus haut</span> » (“make him jump higher”).</li>
+<li><strong>You see it from every angle</strong>: in profile, three-quarter, from the front.</li>
+<li><strong>The built-in moves stay intact.</strong> To change the walk, Pulse Motion makes a copy stored with your video, which replaces the walk for that video only.</li>
+<li><strong>The character acts with the scene.</strong> Its actions are timed to the other elements or to a word in the voice; between two actions it breathes, and every change happens smoothly.</li>
+</ul>
+</section>
+
+<section id="quand">
+<h2>When to use it</h2>
+<ol class="parcours" aria-label="The Pulse Motion path, with this command’s step highlighted">
+  <li data-couleur="1"><span class="parcours-numero">1</span> Create</li>
+  <li data-couleur="3"><span class="parcours-numero">2</span> Edit</li>
+  <li data-couleur="4"><span class="parcours-numero">3</span> Export</li>
+  <li data-couleur="0" aria-current="step"><span class="parcours-numero">4</span> Customise</li>
+</ol>
+<ul>
+<li><strong>After <a href="dessiner-personnage.html"><code>/pulse-motion:dessiner-personnage</code></a></strong> or <a href="decouper-personnage.html"><code>/pulse-motion:decouper-personnage</code></a>, to make your character move. The stick figure is always there anyway.</li>
+<li><strong>To find out what already exists</strong>: « <span lang="fr">quels mouvements existent ?</span> » (“what moves are there?”). This works even without a video in the folder.</li>
+<li><strong>Before <a href="atelier-personnages.html"><code>/pulse-motion:atelier-personnages</code></a></strong>, if you then want to fine-tune the gesture with the mouse.</li>
+</ul>
+<p>Everything characters can do is gathered on the <a href="../../personnages.html" hreflang="fr">Personnages</a> (in French) page.</p>
+</section>
+
+<section id="arguments">
+<h2>How to run it</h2>
+<pre class="commande" lang="fr"><code>/pulse-motion:animer-personnage [la pose ou le mouvement voulu]</code></pre>
+<p class="traduction">“[the pose or move you want]”</p>
+<p class="legende">In square brackets <code>[ ]</code>: optional. You can also run the command on its own and describe the gesture afterwards, in your own words.</p>
+<pre class="commande" lang="fr"><code>/pulse-motion:animer-personnage fais une pose où il se gratte la tête</code></pre>
+<p class="traduction">“make a pose where he scratches his head”</p>
+<pre class="commande" lang="fr"><code>/pulse-motion:animer-personnage montre-moi la course de face et de profil</code></pre>
+<p class="traduction">“show me the run from the front and in profile”</p>
+<pre class="commande" lang="fr"><code>/pulse-motion:animer-personnage mets le cuisinier dans la scène 3, qu'il montre le chiffre</code></pre>
+<p class="traduction">“put the chef in scene 3, pointing at the figure”</p>
+
+<h3>What you can ask for</h3>
+<table>
+<thead><tr><th>What you want</th><th>Example sentences</th></tr></thead>
+<tbody>
+<tr><td><strong>Find out what exists</strong></td><td>« <span lang="fr">quels mouvements existent ?</span> » (“what moves are there?”)</td></tr>
+<tr><td><strong>See a move</strong></td><td>« <span lang="fr">montre-moi la course de face et de profil</span> » (“show me the run from the front and in profile”)</td></tr>
+<tr><td><strong>A new pose</strong></td><td>« <span lang="fr">fais une pose où il se gratte la tête</span> » (“make a pose where he scratches his head”)</td></tr>
+<tr><td><strong>A changed move</strong></td><td>« <span lang="fr">il marche trop vite</span> », « <span lang="fr">fais-le sauter plus haut</span> » (“he walks too fast”, “make him jump higher”)</td></tr>
+<tr><td><strong>An expression at a given moment</strong></td><td>« <span lang="fr">fais-lui une tête surprise quand il salue</span> » (“give him a surprised face when he waves”)</td></tr>
+<tr><td><strong>A new gesture</strong></td><td>« <span lang="fr">un geste où il applaudit</span> » (“a gesture where he claps”)</td></tr>
+<tr><td><strong>The character in a scene</strong></td><td>« <span lang="fr">mets le cuisinier dans la scène 3, qu'il montre le chiffre</span> », « <span lang="fr">fais-le entrer puis repartir</span> » (“put the chef in scene 3, pointing at the figure”, “have him come in and then leave”)</td></tr>
+<tr><td><strong>Make it talk</strong></td><td>« <span lang="fr">fais-le parler</span> », « <span lang="fr">qu'il dise le texte de la scène</span> » (“make him talk”, “have him say the scene’s text”)</td></tr>
+</tbody>
+</table>
+
+<h3>What already exists</h3>
+<table>
+<thead><tr><th>Family</th><th>Built into Pulse Motion</th></tr></thead>
+<tbody>
+<tr><td><strong>Poses</strong></td><td>standing, pointing, arms raised, hands on hips, sitting, leaning</td></tr>
+<tr><td><strong>Moves</strong></td><td>idle, walk, run, jump, crouch, stand up, wave, fright</td></tr>
+<tr><td><strong>Expressions</strong></td><td>neutral, joy, sadness, fear, anger, surprise</td></tr>
+<tr><td><strong>Drawn character</strong></td><td>touffu</td></tr>
+</tbody>
+</table>
+
+<h3>What a character does in a scene</h3>
+<table>
+<thead><tr><th>Action</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td><strong>Walk, run</strong></td><td>Go from one point to another, without sliding, turning to face the direction of travel.</td></tr>
+<tr><td><strong>Strike a pose</strong></td><td>Hold an attitude for a while.</td></tr>
+<tr><td><strong>Play a move</strong></td><td>A jump, a wave…</td></tr>
+<tr><td><strong>Turn</strong></td><td>In profile, from the front, three-quarter.</td></tr>
+<tr><td><strong>Change expression</strong></td><td>Joy, fear… until the next expression.</td></tr>
+<tr><td><strong>Change mouth</strong></td><td>A specific mouth, for as long as needed.</td></tr>
+<tr><td><strong>Talk</strong></td><td>The mouth follows the words of the scene’s voice.</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="produit">
+<h2>What it produces</h2>
+<ul>
+<li><strong>The new or changed poses and moves</strong>, stored with the video: <code>personnages/poses/&lt;nom&gt;.json</code> and <code>personnages/clips/&lt;nom&gt;.json</code>.</li>
+<li><strong>A sheet</strong> showing the move from several angles, with a sentence about what has changed.</li>
+<li><strong>For a new pose or move</strong>, a question: « Je le garde pour vos prochaines vidéos ? » (Shall I keep it for your next videos?). Once kept, it joins your <a href="../concepts.html#bibliotheque">personal library</a>.</li>
+<li><strong>For a character in a scene</strong>: the updated scene, the video checked, and a sheet of the scene to check its position.</li>
+</ul>
+</section>
+
+<section id="risques">
+<h2>Risks and precautions</h2>
+<ul>
+<li><strong>Creating needs a video in the folder.</strong> Without one, Pulse Motion can only show you the moves; it offers to create a video with <a href="creer.html"><code>/pulse-motion:creer</code></a>.</li>
+<li><strong>A change only applies to this video.</strong> The built-in moves are never changed: your slower walk stays specific to the video in the folder.</li>
+<li><strong>To talk, the scene must have a voice.</strong> If two characters share the voice, each one talks during its part, which starts on a word.</li>
+<li><strong>A gesture during a walk would make the character slide.</strong> Pulse Motion places poses and gestures after the end of the journey.</li>
+<li><strong>Text stays readable.</strong> Pulse Motion places it out of the character’s path, or has the character cross the scene before the text arrives.</li>
+</ul>
+</section>
+
+<section id="problemes">
+<h2>Problems and solutions</h2>
+<details class="probleme"><summary>Pulse Motion says it needs a video’s folder</summary><p>You can look at the moves anywhere, but a new pose or move is stored with a video. Open your video’s folder, or create one with <a href="creer.html"><code>/pulse-motion:creer</code></a>.</p></details>
+<details class="probleme"><summary>The move doesn’t look like what I wanted</summary><p>Say what is wrong, in one sentence: « <span lang="fr">il lève le bras trop haut</span> », « <span lang="fr">plus lentement</span> » (“he raises his arm too high”, “more slowly”). To set the position of the arms and legs yourself, open <a href="atelier-personnages.html"><code>/pulse-motion:atelier-personnages</code></a>.</p></details>
+<details class="probleme"><summary>The character doesn’t talk</summary><p>The scene has no voice. Add one with <a href="retoucher.html"><code>/pulse-motion:retoucher</code></a> (« <span lang="fr">ajoute une voix à la vidéo</span> » (“add a voice to the video”)), or record it with <a href="voix.html"><code>/pulse-motion:voix</code></a>.</p></details>
+<details class="probleme"><summary>Its mouth moves badly when it talks</summary><p>A drawn character needs speaking mouths. Ask for them with <a href="dessiner-personnage.html"><code>/pulse-motion:dessiner-personnage</code></a> (« <span lang="fr">dessine-lui les bouches pour parler</span> » (“draw him the mouths for talking”)).</p></details>
+<details class="probleme"><summary>My changed walk doesn’t appear in another video</summary><p>That is intended: a change is stored with the video where you made it. Make the request again in the other video.</p></details>
+<details class="probleme"><summary>“node” not found</summary><p>Node.js is not installed. Install the LTS version from <a href="https://nodejs.org/fr/download" target="_blank" rel="noopener noreferrer">nodejs.org</a>, then restart Claude Code. See the <a href="../prerequis.html#node">requirements</a>.</p></details>
+</section>
+
+<section id="exemples">
+<h2>Examples</h2>
+<div class="conversation" lang="fr" data-titre="Example: a slower walk">
+<p data-role="vous">/pulse-motion:animer-personnage il marche trop vite</p>
+<p data-role="outil">pulse-motion personnages afficher marche</p>
+<p data-role="outil">pulse-motion personnages verifier --dossier .</p>
+<p data-role="outil">pulse-motion personnages planche marche --vues 0,45,90 --dessin cuisinier --dossier .</p>
+<p data-role="claude">Le cuisinier marche plus posément : chaque pas dure un peu plus longtemps. Ce changement vaut pour cette vidéo seulement.
+Pour régler la marche vous-même, à la souris : /pulse-motion:atelier-personnages.</p>
+</div>
+<details class="traduction"><summary>In English</summary><p><strong>You:</strong> /pulse-motion:animer-personnage he walks too fast</p><p><strong>Claude:</strong> The chef now walks more calmly: each step lasts a little longer. This change applies to this video only. To adjust the walk yourself, with the mouse: /pulse-motion:atelier-personnages.</p></details>
+<div class="conversation" lang="fr" data-titre="Example: a character in a scene">
+<p data-role="vous">/pulse-motion:animer-personnage mets le cuisinier dans la scène 3, qu'il entre et montre le chiffre</p>
+<p data-role="outil">pulse-motion assembler .</p>
+<p data-role="outil">pulse-motion controler .</p>
+<p data-role="outil">pulse-motion planche . chiffre</p>
+<p data-role="claude">Dans la scène 3, le cuisinier entre en marchant par la gauche, s'arrête, puis montre le chiffre quand il apparaît. Le texte reste dégagé. L'aperçu s'est rechargé.</p>
+</div>
+<details class="traduction"><summary>In English</summary><p><strong>You:</strong> /pulse-motion:animer-personnage put the chef in scene 3, have him come in and point at the figure</p><p><strong>Claude:</strong> In scene 3, the chef walks in from the left, stops, then points at the figure when it appears. The text stays clear. The preview has reloaded.</p></details>
+<div class="conversation" lang="fr" data-titre="Example: making him talk">
+<p data-role="vous">/pulse-motion:animer-personnage fais-le parler dans l'intro</p>
+<p data-role="outil">pulse-motion assembler .</p>
+<p data-role="outil">pulse-motion planche . intro</p>
+<p data-role="claude">Dans l'intro, la bouche du cuisinier suit maintenant les mots de la voix, jusqu'à la fin de la scène.</p>
+</div>
+<details class="traduction"><summary>In English</summary><p><strong>You:</strong> /pulse-motion:animer-personnage make him talk in the intro</p><p><strong>Claude:</strong> In the intro, the chef’s mouth now follows the words of the voice, until the end of the scene.</p></details>
+</section>
+
+<section id="liees">
+<h2>Related commands</h2>
+<ul>
+<li><a href="dessiner-personnage.html"><code>/pulse-motion:dessiner-personnage</code></a>: draw the character, or edit its drawing.</li>
+<li><a href="atelier-personnages.html"><code>/pulse-motion:atelier-personnages</code></a>: adjust a pose or a move with the mouse.</li>
+<li><a href="voix.html"><code>/pulse-motion:voix</code></a>: record the voice it talks over.</li>
+</ul>
+</section>
+
+<nav class="suite" aria-label="Previous and next command" data-suite></nav>
+</article>
+</div>
+</main>
+</body>
+</html>

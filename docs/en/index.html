@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en" data-racine="../">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pulse Motion Wiki – motion design videos with Claude Code, no editing software</title>
+<meta name="description" content="The Pulse Motion guide: describe your video in plain words, approve the timeline, watch it in your browser, edit it with one sentence and export it as an MP4. Everything is made on your own computer.">
+<!-- langues -->
+<link rel="alternate" hreflang="fr" href="https://jdelauney.github.io/pulse-motion/index.html">
+<link rel="alternate" hreflang="en" href="https://jdelauney.github.io/pulse-motion/en/index.html">
+<link rel="alternate" hreflang="x-default" href="https://jdelauney.github.io/pulse-motion/index.html">
+<!-- /langues -->
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/animations.css">
+<script src="../js/donnees.js" defer></script>
+<script src="../js/gabarit.js" defer></script>
+<script src="../js/animations.js" defer></script>
+</head>
+<body>
+<main id="contenu">
+
+<section class="section section-premiere conteneur heros">
+<div class="heros-texte">
+<p class="pastille">The motion design plugin for Claude Code</p>
+<h1 class="titre-heros">Your idea as an animated video, in minutes.</h1>
+<p class="chapo">You describe the video in your own words. Pulse Motion writes the timeline, asks you to approve it, animates each scene, checks readability on its own, then opens the video in your browser. An edit takes one sentence. Everything is made on your computer, with no cloud and no editing software.</p>
+<p class="avis-langue">Pulse Motion is made for French speakers: the plugin’s questions, messages and reports are in French, and Claude answers in French while it uses the plugin. This English guide helps you discover it; the requests shown as examples stay in French, with their translation alongside.</p>
+<div class="heros-actions">
+<a class="cta cta-grand" data-onde href="demarrage-rapide.html">Start in 5 minutes</a>
+<a class="bouton bouton-grand" href="tutoriels/premiere-video.html">Make my first video</a>
+<a class="bouton bouton-grand" href="prerequis.html">What to install</a>
+</div>
+</div>
+
+<div class="heros-visuel">
+<svg class="visage" viewBox="0 0 400 400" aria-hidden="true" focusable="false">
+<defs>
+<linearGradient id="degrade-trainee" x1="20" y1="0" x2="380" y2="0" gradientUnits="userSpaceOnUse">
+<stop offset="0" stop-color="#FF6B35"/><stop offset=".25" stop-color="#FF8C42"/><stop offset=".55" stop-color="#C56CF0"/><stop offset=".8" stop-color="#9B59B6"/><stop offset="1" stop-color="#8E44AD"/>
+</linearGradient>
+<radialGradient id="halo-chaud" cx="0.5" cy="0.5" r="0.5">
+<stop offset="0" stop-color="#FF6B35" stop-opacity=".22"/><stop offset=".6" stop-color="#C56CF0" stop-opacity=".08"/><stop offset="1" stop-color="#8E44AD" stop-opacity="0"/>
+</radialGradient>
+</defs>
+<circle class="halo" cx="200" cy="215" r="180"/>
+<!-- L'écran : le cadre de la vidéo se trace -->
+<path class="contour" pathLength="1" d="M62 96 H338 Q356 96 356 114 V262 Q356 280 338 280 H62 Q44 280 44 262 V114 Q44 96 62 96 Z"/>
+<!-- Le titre et le sous-titre de la scène -->
+<path class="detail" pathLength="1" d="M84 146 H262"/>
+<path class="detail" pathLength="1" d="M84 172 H210"/>
+<path class="detail" pathLength="1" d="M300 132 A22 22 0 1 1 299.9 132"/>
+<!-- La ligne de temps : trois pistes et leurs images clés -->
+<path class="piste" style="--i:0" pathLength="1" d="M52 318 H348"/>
+<path class="piste" style="--i:1" pathLength="1" d="M52 342 H300"/>
+<path class="piste" style="--i:2" pathLength="1" d="M52 366 H250"/>
+<path class="piste" style="--i:3" pathLength="1" d="M200 300 V378"/>
+<circle class="noeud" style="--i:0" cx="96" cy="318" r="4.5"/>
+<circle class="noeud" style="--i:1" cx="150" cy="318" r="4.5"/>
+<circle class="noeud" style="--i:2" cx="262" cy="318" r="4.5"/>
+<circle class="noeud" style="--i:3" cx="122" cy="342" r="4.5"/>
+<circle class="noeud" style="--i:4" cx="244" cy="342" r="4.5"/>
+<circle class="noeud" style="--i:5" cx="84" cy="366" r="4.5"/>
+<circle class="noeud" style="--i:6" cx="176" cy="366" r="4.5"/>
+<circle class="noeud-chaud" style="--i:7" cx="200" cy="300" r="6"/>
+<!-- Le pouls qui traverse l'image : la vidéo prend vie -->
+<path class="pouls" pathLength="1" d="M20 230 H130 L144 230 L157 200 L171 258 L185 186 L199 244 L211 230 H380"/>
+</svg>
+<p class="visuellement-cache">Illustration: the frame of a video screen draws itself, with a title and a circle inside. Below it, a three-track timeline lights up, its keyframes appear and the playhead settles in place. Then a pulse wave sweeps across the screen: the video comes to life.</p>
+</div>
+</section>
+
+<svg class="vague" viewBox="0 0 1200 64" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+<defs><linearGradient id="degrade-vague" x1="0" x2="1"><stop offset="0" stop-color="#FF6B35"/><stop offset=".25" stop-color="#FF8C42"/><stop offset=".5" stop-color="#C56CF0"/><stop offset=".75" stop-color="#9B59B6"/><stop offset="1" stop-color="#8E44AD"/></linearGradient></defs>
+<path pathLength="1" stroke="url(#degrade-vague)" d="M0 32 C150 4 300 60 450 32 S750 4 900 32 S1100 58 1200 28"/>
+</svg>
+
+<section class="section conteneur" id="trois-etapes">
+<header class="entete-section revele">
+<p class="pastille">The result</p>
+<h2>Create, watch, export</h2>
+<p class="sous-titre">One sentence is enough to get started. Here is a video made with Pulse Motion on the topic « <span lang="fr">la chaîne du froid pour mes stagiaires</span> » (“the cold chain, for my trainees”), the one from the first tutorial.</p>
+</header>
+<div class="resultat">
+<figure class="capture"><video aria-describedby="resultat-legende" controls preload="none" playsinline poster="../assets/captures/chaine-du-froid-affiche.jpg" width="1280" height="720"><source src="../medias/chaine-du-froid.mp4" type="video/mp4">Your browser can’t play this video: <a href="../medias/chaine-du-froid.mp4">download it</a>.</video><figcaption id="resultat-legende">Six scenes, music composed for the video, no voice: about one minute. <a href="../medias/chaine-du-froid.mp4">Download the video (MP4, 2.4 MB)</a>.</figcaption></figure>
+<ol class="etapes-resultat">
+<li class="carte revele"><span class="pastille pastille-etape" data-couleur="1">1. Create</span><span class="carte-titre carte-titre-espace">One sentence and a few questions</span><span class="carte-texte"><code>/pulse-motion:creer</code> followed by your idea. You approve the timeline and the style.</span></li>
+<li class="carte revele"><span class="pastille pastille-etape" data-couleur="3">2. Watch</span><span class="carte-titre carte-titre-espace">The video in your browser</span><span class="carte-texte">The preview opens on its own. An edit takes one sentence.</span></li>
+<li class="carte revele"><span class="pastille pastille-etape" data-couleur="4">3. Export</span><span class="carte-titre carte-titre-espace">An MP4 ready to publish</span><span class="carte-texte"><code>/pulse-motion:exporter</code> makes the file on your computer.</span></li>
+</ol>
+</div>
+<p class="centre"><a class="cta" href="demarrage-rapide.html">Start in 5 minutes</a></p>
+</section>
+
+<section class="section conteneur" id="pourquoi">
+<header class="entete-section revele">
+<p class="pastille">Why Pulse Motion</p>
+<h2>Publish more often, with videos that feel like you</h2>
+<p class="sous-titre">An animated video holds attention far better than text. Yet few people publish them, nobody edits them on their own, and a consistent series of videos seems out of reach. Today there are three ways to go about it, and each one gets stuck somewhere.</p>
+</header>
+<ul class="grille-cartes">
+<li><div class="carte revele"><span class="carte-titre">An online template tool</span><span class="carte-texte">Fast. <span class="pourquoi-defaut">But the videos all look alike, and you can’t control the pace.</span></span></div></li>
+<li><div class="carte revele"><span class="carte-titre">A freelance video editor</span><span class="carte-texte">Real expertise. <span class="pourquoi-defaut">But it’s expensive, it takes time, and every edit costs a round trip.</span></span></div></li>
+<li><div class="carte revele"><span class="carte-titre">Professional animation software</span><span class="carte-texte">Anything is possible. <span class="pourquoi-defaut">But it takes months to learn, and most people give up after a few evenings of tutorials.</span></span></div></li>
+</ul>
+<div class="typographie pourquoi-change">
+<h3>What Pulse Motion changes</h3>
+<ul>
+<li><strong>Your words are enough.</strong> You describe the video as you would to a colleague; Pulse Motion writes the timeline, you approve it, and it animates.</li>
+<li><strong>It knows the craft.</strong> Reading pace, typography, contrast, sound at the right level: checked every time, and fixed on its own when it’s safe.</li>
+<li><strong>A video that feels like you.</strong> A wide range of styles, your logo, your colours and fonts, your voice: no two videos look the same.</li>
+<li><strong>The edits are yours.</strong> « <span lang="fr">Ralentis la scène 3</span> » (“Slow down scene 3”): you see the result straight away, whether it’s the night before your session or five minutes before you publish.</li>
+<li><strong>Everything is made at home.</strong> On your computer, with no cloud and no editing software; the video belongs to you.</li>
+</ul>
+<p>See for yourself: <a href="exemples.html">videos made with Pulse Motion</a>, each with the sentence that started it, two edits shown before and after, and three ways to use them.</p>
+</div>
+</section>
+
+<section class="section conteneur" id="parcours">
+<header class="entete-section revele">
+<p class="pastille">The path</p>
+<h2>Six steps, from idea to MP4 file</h2>
+<p class="sous-titre">You type a command, then answer questions in your own words. Pulse Motion asks for only one approval: the timeline. On the guided path, it also asks for your approval of the style and of the final video.</p>
+</header>
+
+<figure class="anim anim-vive" data-etapes="8" data-duree="650">
+<svg viewBox="0 0 960 250" role="img" aria-labelledby="parcours-titre">
+<title id="parcours-titre">The Pulse Motion path in six steps</title>
+<g class="schema-etape e1" data-etape="1" data-couleur="1">
+<rect class="actif-halo schema-halo" x="6" y="36" width="134" height="92" rx="20"/>
+<rect class="schema-boite schema-boite-etape" x="12" y="42" width="122" height="80" rx="16"/>
+<text class="schema-numero" x="28" y="70">1</text>
+<text class="schema-texte" x="28" y="94">Describe</text>
+<text class="schema-texte-secondaire" x="28" y="112">creer · questions</text>
+</g>
+<path class="schema-fleche trace e2" pathLength="1" d="M136 82 H150"/>
+<g class="schema-etape e2" data-etape="2" data-couleur="1">
+<rect class="actif-halo schema-halo" x="146" y="36" width="134" height="92" rx="20"/>
+<rect class="schema-boite schema-boite-etape" x="152" y="42" width="122" height="80" rx="16"/>
+<text class="schema-numero" x="168" y="70">2</text>
+<text class="schema-texte" x="168" y="94">Approve</text>
+<text class="schema-texte-secondaire" x="168" y="112">timeline · style</text>
+</g>
+<path class="schema-fleche trace e3" pathLength="1" d="M276 82 H290"/>
+<g class="schema-etape e3" data-etape="3" data-couleur="2">
+<rect class="actif-halo schema-halo" x="286" y="36" width="134" height="92" rx="20"/>
+<rect class="schema-boite schema-boite-etape" x="292" y="42" width="122" height="80" rx="16"/>
+<text class="schema-numero" x="308" y="70">3</text>
+<text class="schema-texte" x="308" y="94">Build</text>
+<text class="schema-texte-secondaire" x="308" y="112">scenes · sound</text>
+</g>
+<g class="e4" data-etape="4">
+<path class="schema-accompagne trace e4" pathLength="1" d="M322 124 C322 196 384 196 384 124" marker-end="url(#pointe-mauve)"/>
+<text class="schema-texte-secondaire" x="353" y="206" text-anchor="middle">automatic checks:</text>
+<text class="schema-texte-secondaire" x="353" y="224" text-anchor="middle">reading time, overflow, contrast</text>
+</g>
+<path class="schema-fleche trace e5" pathLength="1" d="M416 82 H430"/>
+<g class="schema-etape e5" data-etape="5" data-couleur="3">
+<rect class="actif-halo schema-halo" x="426" y="36" width="134" height="92" rx="20"/>
+<rect class="schema-boite schema-boite-etape" x="432" y="42" width="122" height="80" rx="16"/>
+<text class="schema-numero" x="448" y="70">4</text>
+<text class="schema-texte" x="448" y="94">Watch</text>
+<text class="schema-texte-secondaire" x="448" y="112">preview · voice</text>
+</g>
+<path class="schema-fleche trace e6" pathLength="1" d="M556 82 H570"/>
+<g class="schema-etape e6" data-etape="6" data-couleur="3">
+<rect class="actif-halo schema-halo" x="566" y="36" width="134" height="92" rx="20"/>
+<rect class="schema-boite schema-boite-etape" x="572" y="42" width="122" height="80" rx="16"/>
+<text class="schema-numero" x="588" y="70">5</text>
+<text class="schema-texte" x="588" y="94">Edit</text>
+<text class="schema-texte-secondaire" x="588" y="112">one sentence</text>
+</g>
+<path class="schema-fleche trace e7" pathLength="1" d="M696 82 H710"/>
+<g class="schema-etape e7" data-etape="7" data-couleur="4">
+<rect class="actif-halo schema-halo" x="706" y="36" width="134" height="92" rx="20"/>
+<rect class="schema-boite schema-boite-etape" x="712" y="42" width="122" height="80" rx="16"/>
+<text class="schema-numero" x="728" y="70">6</text>
+<text class="schema-texte" x="728" y="94">Export</text>
+<text class="schema-texte-secondaire" x="728" y="112">MP4 · page</text>
+</g>
+<g class="e8" data-etape="8">
+<path class="schema-pouls trace e8" pathLength="1" d="M836 82 H862 L870 62 L880 104 L890 70 L898 82 H950"/>
+<text class="schema-texte" x="893" y="140" text-anchor="middle">Published</text>
+</g>
+<g class="schema-etape e1" data-couleur="0">
+<rect class="schema-boite schema-boite-toujours" x="472" y="168" width="440" height="48" rx="14"/>
+<text class="schema-numero" x="488" y="198">+</text>
+<text class="schema-texte" x="508" y="198">At any time: pick up again · personal style</text>
+</g>
+<defs><marker id="pointe-mauve" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="schema-pointe"/></marker></defs>
+</svg>
+<figcaption>The path: 1. Describe the video (<code>/pulse-motion:creer</code> and its round of questions), 2. Approve the timeline and choose the style, 3. Build the scenes and the sound, with automatic checks that fix the safe cases on their own, 4. Watch the video in the browser and, if you like, record your voice, 5. Edit with one sentence, 6. Export as an MP4. At any time: pick up a video in progress, or create your own style.</figcaption>
+</figure>
+
+<p class="centre"><a class="bouton bouton-grand" href="commandes/index.html">See all the commands</a></p>
+</section>
+
+<section class="section conteneur">
+<header class="entete-section revele">
+<p class="pastille">Where to start</p>
+<h2>Four ways in</h2>
+<p class="sous-titre">Install the tools first, then pick your pace: a first video in half an hour, a complete video in your colours and with your voice, or a ready-made idea to adapt.</p>
+</header>
+<ul class="grille-cartes grille-quatre">
+<li><a class="carte revele" href="prerequis.html"><span class="pastille">1. Install</span><span class="carte-titre carte-titre-espace">Requirements</span><span class="carte-texte">Claude Code, Node.js, Chrome or Edge, then Pulse Motion itself. Every step can be checked.</span></a></li>
+<li><a class="carte revele" href="tutoriels/premiere-video.html"><span class="pastille pastille-etape" data-couleur="1">2. Try</span><span class="carte-titre carte-titre-espace">First video</span><span class="carte-texte">A one-minute training video on the cold chain, in about 30 minutes, with <code>/pulse-motion:creer</code>.</span></a></li>
+<li><a class="carte revele" href="../tutoriels/complet.html" hreflang="fr"><span class="pastille pastille-etape" data-couleur="4">3. Master</span><span class="carte-titre carte-titre-espace">Complete video</span><span class="carte-texte">Your logo and colours, your voice, subtitles, edits, then the high-fidelity MP4 export. (in French)</span></a></li>
+<li><a class="carte revele" href="idees.html"><span class="pastille pastille-etape" data-couleur="3">Or else</span><span class="carte-titre carte-titre-espace">Start from an idea</span><span class="carte-texte">Pitch, announcement, welcome, tutorial… Eight finished video examples, each with the sentence to copy to make your own.</span></a></li>
+</ul>
+</section>
+
+<section class="section conteneur">
+<header class="entete-section revele">
+<p class="pastille">What it can do</p>
+<h2>A polished video, with nothing to learn</h2>
+<p class="sous-titre">Pulse Motion takes care of the craft: reading pace, French typography, contrast, sound at the right level. You stay in charge of what matters: the message.</p>
+</header>
+<ul class="grille-cartes">
+<li><a class="carte revele" href="catalogue.html#styles"><span class="carte-titre">Twenty styles, your colours</span><span class="carte-texte">Clear and educational, warm, editorial, energetic, minimal, dark tech, silent info, technical blueprint, launch, whiteboard, blackboard, notebook, data story, isometric infographic, isometric album, bold crayon, paper cut-out, riso, pictograms, 1950s instruction manual. Your logo, colours and fonts apply to all of them.</span></a></li>
+<li><a class="carte revele" href="../son.html" hreflang="fr"><span class="carte-titre">Sound included</span><span class="carte-texte">Music composed on your computer, your voice recorded in the preview, sound effects and subtitles timed to the words. (in French)</span></a></li>
+<li><a class="carte revele" href="concepts.html#controles"><span class="carte-titre">Checks that fix things</span><span class="carte-texte">Text that overflows, a scene too short to read, dead time, typography: the safe cases are fixed on their own, and Pulse Motion tells you so.</span></a></li>
+<li><a class="carte revele" href="commandes/retoucher.html"><span class="carte-titre">One edit, one sentence</span><span class="carte-texte">« <span lang="fr">Ralentis la scène 3</span> » (“slow down scene 3”), « <span lang="fr">mets mes couleurs</span> » (“use my colours”), « <span lang="fr">annule</span> » (“undo”): the preview reloads straight away, at the same point.</span></a></li>
+<li><a class="carte revele" href="mouvements.html"><span class="carte-titre">The name of every move</span><span class="carte-texte">Pop-in, mask reveal, whip pan, zoom-through… 128 moves from the trade, each one shown in motion, with the sentence to ask for it.</span></a></li>
+<li><a class="carte revele" href="catalogue.html#effets"><span class="carte-titre">Particle effects</span><span class="carte-texte">Sparks on a key figure, confetti for the conclusion, snow or smoke for atmosphere: thirty-four effects, used with restraint, to watch in motion.</span></a></li>
+<li><a class="carte revele" href="../personnages.html" hreflang="fr"><span class="carte-titre">Animated characters</span><span class="carte-texte">A character drawn on request, or your own mascot: it walks in, points to a figure, smiles, waves, and speaks with your voice. (in French)</span></a></li>
+<li><a class="carte revele" href="commandes/exporter.html"><span class="carte-titre">Two deliverables</span><span class="carte-texte">An MP4 file to publish, and an animated page that opens offline, ready to put on your website.</span></a></li>
+</ul>
+</section>
+
+<section class="section conteneur-lecture" id="installer">
+<header class="entete-section revele">
+<p class="pastille">Install and update</p>
+<h2>Pulse Motion in two commands</h2>
+<p class="sous-titre">Once Claude Code and Node.js are installed (see the <a href="prerequis.html">requirements</a>), type these commands in Claude Code, one at a time.</p>
+</header>
+<div class="typographie">
+<h3>Install</h3>
+<pre class="commande"><code>/plugin marketplace add jdelauney/pulse-motion</code></pre>
+<pre class="commande"><code>/plugin install pulse-motion@pulse-motion</code></pre>
+<p>Close and restart Claude Code: the <code>/pulse-motion:…</code> commands appear.</p>
+<h3>Update</h3>
+<p>From time to time, in a terminal:</p>
+<pre class="commande"><code>claude plugin marketplace update pulse-motion
+claude plugin update pulse-motion@pulse-motion</code></pre>
+<p>Close and restart Claude Code: the new version loads at startup.</p>
+<aside class="encadre encadre-conseil"><p><strong>Tip:</strong> to stop thinking about it, type <code>/plugin</code> in Claude Code, open <strong>Marketplaces</strong>, choose <code>pulse-motion</code>, then <strong>Enable auto-update</strong>. The details are in the <a href="prerequis.html#plugin">requirements</a>.</p></aside>
+</div>
+</section>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,1819 @@
+<!doctype html>
+<html lang="en" data-racine="../">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Moves – Pulse Motion Wiki</title>
+<meta name="description" content="The Pulse Motion move gallery: 93 motion design trade names (pop-in, mask reveal, whip pan, zoom-through…), each one shown in motion, with the sentence to ask Claude for it.">
+<!-- langues -->
+<link rel="alternate" hreflang="fr" href="https://jdelauney.github.io/pulse-motion/mouvements.html">
+<link rel="alternate" hreflang="en" href="https://jdelauney.github.io/pulse-motion/en/mouvements.html">
+<link rel="alternate" hreflang="x-default" href="https://jdelauney.github.io/pulse-motion/mouvements.html">
+<!-- /langues -->
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/animations.css">
+<script src="../js/donnees.js" defer></script>
+<script src="../js/gabarit.js" defer></script>
+<script src="../js/galerie.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<article class="typographie galerie">
+
+<header class="entete-page">
+<p class="pastille">The move dictionary</p>
+<h1>Moves</h1>
+<p class="chapo">The name of each move, so you can ask Claude for it: « <span lang="fr">un pop-in sur le titre</span> » (“a pop-in on the title”), « <span lang="fr">un whip pan entre la scène 2 et la 3</span> » (“a whip pan between scenes 2 and 3”), or simply its number: « #001 ». Every preview is rendered by Pulse Motion itself.</p>
+</header>
+
+<section id="mode-emploi">
+<h2>How to use it</h2>
+<ol>
+<li><strong>Watch</strong>: the previews play when they are on screen.</li>
+<li><strong>Open a move’s card</strong> and copy the sentence to ask for it.</li>
+<li><strong>Give it</strong> to <a href="commandes/retoucher.html"><code>/pulse-motion:retoucher</code></a> on a video in progress, or slip it into your request to <a href="commandes/creer.html"><code>/pulse-motion:creer</code></a>.</li>
+</ol>
+<p>On your computer, you can also choose by watching: say « <span lang="fr">montre-moi les mouvements</span> » (“show me the moves”), tick the ones you like in the page that opens, then click « Envoyer à Claude » (Send to Claude).</p>
+</section>
+
+<div class="galerie-outils" data-galerie-outils hidden>
+<label class="galerie-recherche">Search <input type="search" data-galerie-recherche placeholder="pop-in, mask, #042…" autocomplete="off"></label>
+<div class="galerie-filtres" role="group" aria-label="Categories" data-galerie-filtres></div>
+<button class="bouton" type="button" data-galerie-pause>Pause all</button>
+<p class="galerie-compte" aria-live="polite" data-galerie-compte></p>
+</div>
+
+<!-- galerie:mouvements -->
+<section class="categorie-mouvements" id="categorie-entrees" data-categorie="entrees">
+<h2>Entrances and exits</h2>
+<div class="grille-mouvements">
+<article class="carte-mouvement" id="m001" data-categorie="entrees" data-mots="001 #001 apparition rebondie pop in pop in pop apparition rebond icone badge surgir grows from nothing, overshoots its size slightly, then settles">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/001.jpg" aria-label="Preview: Pop-in"><source src="../medias/galerie/mouvements/001.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#001</p>
+<h3 class="carte-mouvement-nom">Pop-in <span lang="fr">Apparition rebondie</span></h3>
+<p class="carte-mouvement-sens">Grows from nothing, overshoots its size slightly, then settles</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais entrer le logo en pop-in, en 0,45 s, avec un léger rebond.</code></pre>
+<p class="traduction">“Bring the logo in with a pop-in, in 0.45 s, with a slight bounce.”</p>
+<p><strong>When:</strong> An icon, a badge, a number that should catch the eye without being abrupt.</p>
+<p><strong>Recipe:</strong> <code>&lt;h2 data-texte=&quot;titre&quot; class=&quot;pm-m-pop&quot; data-start=&quot;0.3&quot;&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 001 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m002" data-categorie="entrees" data-mots="002 #002 fondu montant fade up fondu montant fondu monte fade apparition texte sobre rises a few line heights as it appears">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/002.jpg" aria-label="Preview: Fade up"><source src="../medias/galerie/mouvements/002.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#002</p>
+<h3 class="carte-mouvement-nom">Fade up <span lang="fr">Fondu montant</span></h3>
+<p class="carte-mouvement-sens">Rises a few line heights as it appears</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais monter le sous-titre en fondu, sur 0,6 s, depuis 4 % de la hauteur.</code></pre>
+<p class="traduction">“Bring the subtitle in with a fade up, over 0.6 s, from 4% of the height.”</p>
+<p><strong>When:</strong> The most neutral entrance, for almost any text.</p>
+<p><strong>Recipe:</strong> <code>&lt;h2 data-texte=&quot;titre&quot; class=&quot;pm-m-monte&quot; data-start=&quot;0.3&quot;&gt;&lt;/h2&gt;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m003" data-categorie="entrees" data-mots="003 #003 glisse lateral slide in glisse glisse slide gauche droite lateral entree arrives from the side as it appears">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/003.jpg" aria-label="Preview: Slide in"><source src="../medias/galerie/mouvements/003.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#003</p>
+<h3 class="carte-mouvement-nom">Slide in <span lang="fr">Glissé latéral</span></h3>
+<p class="carte-mouvement-sens">Arrives from the side as it appears</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais glisser l'image depuis la gauche, en 0,6 s, sur 10 % de la hauteur.</code></pre>
+<p class="traduction">“Make the image slide in from the left, in 0.6 s, over 10% of the height.”</p>
+<p><strong>When:</strong> An image or a block that adds to what is already there.</p>
+<p><strong>Recipe:</strong> <code>&lt;h2 data-texte=&quot;titre&quot; class=&quot;pm-m-glisse-gauche&quot; data-start=&quot;0.3&quot;&gt;&lt;/h2&gt;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m004" data-categorie="entrees" data-mots="004 #004 zoom d entree scale in zoom entree zoom scale agrandir apparition carte starts slightly smaller and grows to its full size as it appears">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/004.jpg" aria-label="Preview: Scale in"><source src="../medias/galerie/mouvements/004.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#004</p>
+<h3 class="carte-mouvement-nom">Scale in <span lang="fr">Zoom d'entrée</span></h3>
+<p class="carte-mouvement-sens">Starts slightly smaller and grows to its full size as it appears</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais apparaître la carte en zoom, en 0,6 s, depuis 80 % de sa taille.</code></pre>
+<p class="traduction">“Make the card appear with a scale in, in 0.6 s, from 80% of its size.”</p>
+<p><strong>When:</strong> A card, a photo, a box.</p>
+<p><strong>Recipe:</strong> <code>&lt;h2 data-texte=&quot;titre&quot; class=&quot;pm-m-zoom-entree&quot; data-start=&quot;0.3&quot;&gt;&lt;/h2&gt;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m005" data-categorie="entrees" data-mots="005 #005 de flou a net blur in flou net flou net blur focus doux reveal appears blurred, then comes into focus">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/005.jpg" aria-label="Preview: Blur in"><source src="../medias/galerie/mouvements/005.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#005</p>
+<h3 class="carte-mouvement-nom">Blur in <span lang="fr">De flou à net</span></h3>
+<p class="carte-mouvement-sens">Appears blurred, then comes into focus</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais apparaître le titre de flou à net, en 0,6 s.</code></pre>
+<p class="traduction">“Make the title appear with a blur in, from blurred to sharp, in 0.6 s.”</p>
+<p><strong>When:</strong> A soft mood, a memory, a calm reveal.</p>
+<p><strong>Recipe:</strong> <code>&lt;h2 data-texte=&quot;titre&quot; class=&quot;pm-m-net&quot; data-start=&quot;0.3&quot;&gt;&lt;/h2&gt;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m006" data-categorie="entrees" data-mots="006 #006 revele par masque mask reveal masque masque mask reveal devoiler editorial ligne the text rises from behind an invisible edge that stays still">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/006.jpg" aria-label="Preview: Mask reveal"><source src="../medias/galerie/mouvements/006.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#006</p>
+<h3 class="carte-mouvement-nom">Mask reveal <span lang="fr">Révélé par masque</span></h3>
+<p class="carte-mouvement-sens">The text rises from behind an invisible edge that stays still</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Révèle le titre par masque, en 0,7 s, ligne par ligne.</code></pre>
+<p class="traduction">“Bring the title in with a mask reveal, in 0.7 s, line by line.”</p>
+<p><strong>When:</strong> An elegant, editorial title that “comes out” of the page.</p>
+<p><strong>Recipe:</strong> <code>&lt;h2 data-texte=&quot;titre&quot; class=&quot;pm-m-masque&quot; data-start=&quot;0.3&quot;&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 005 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m007" data-categorie="entrees" data-mots="007 #007 chute avec rebond drop in chute chute tomber rebond bounce drop ludique falls from above and bounces when it hits the ground">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/007.jpg" aria-label="Preview: Drop in"><source src="../medias/galerie/mouvements/007.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#007</p>
+<h3 class="carte-mouvement-nom">Drop in <span lang="fr">Chute avec rebond</span></h3>
+<p class="carte-mouvement-sens">Falls from above and bounces when it hits the ground</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais tomber le chiffre d'en haut, en 0,9 s, avec des rebonds.</code></pre>
+<p class="traduction">“Make the number drop in from above, in 0.9 s, with bounces.”</p>
+<p><strong>When:</strong> A number, a strong word, a playful tone.</p>
+<p><strong>Recipe:</strong> <code>&lt;h2 data-texte=&quot;titre&quot; class=&quot;pm-m-chute&quot; data-start=&quot;0.3&quot;&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 123 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m008" data-categorie="entrees" data-mots="008 #008 anticipation anticipation anticipation anticipation elan recul cartoon dessin anime pulls back a little before heading to its place">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/008.jpg" aria-label="Preview: Anticipation"><source src="../medias/galerie/mouvements/008.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#008</p>
+<h3 class="carte-mouvement-nom">Anticipation <span lang="fr">Anticipation</span></h3>
+<p class="carte-mouvement-sens">Pulls back a little before heading to its place</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais entrer la flèche avec une anticipation : elle recule d'un tiers puis part, en 0,8 s.</code></pre>
+<p class="traduction">“Bring the arrow in with anticipation: it pulls back by a third, then sets off, in 0.8 s.”</p>
+<p><strong>When:</strong> Give an entrance momentum, cartoon-style.</p>
+<p><strong>Recipe:</strong> <code>&lt;h2 data-texte=&quot;titre&quot; class=&quot;pm-m-anticipe&quot; data-start=&quot;0.3&quot;&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 121 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m009" data-categorie="entrees" data-mots="009 #009 ecrasement etirement squash stretch ecrasement ecrasement etirement squash stretch elastique balle squashes when it hits the ground, then regains its shape, like a ball">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/009.jpg" aria-label="Preview: Squash &amp; stretch"><source src="../medias/galerie/mouvements/009.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#009</p>
+<h3 class="carte-mouvement-nom">Squash &amp; stretch <span lang="fr">Écrasement-étirement</span></h3>
+<p class="carte-mouvement-sens">Squashes when it hits the ground, then regains its shape, like a ball</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais tomber le bouton avec un écrasement à l'arrivée, en 0,7 s.</code></pre>
+<p class="traduction">“Drop the button in with a squash &amp; stretch on landing, in 0.7 s.”</p>
+<p><strong>When:</strong> An object that should look supple, lively, elastic.</p>
+<p><strong>Recipe:</strong> <code>&lt;h2 data-texte=&quot;titre&quot; class=&quot;pm-m-ecrase&quot; data-start=&quot;0.3&quot;&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 011 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m010" data-categorie="entrees" data-mots="010 #010 entree en cascade stagger cascade cascade stagger decalage liste suite un par un the elements come in one after another, with a small offset">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/010.jpg" aria-label="Preview: Stagger"><source src="../medias/galerie/mouvements/010.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#010</p>
+<h3 class="carte-mouvement-nom">Stagger <span lang="fr">Entrée en cascade</span></h3>
+<p class="carte-mouvement-sens">The elements come in one after another, with a small offset</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais entrer les trois points de la liste en cascade, à 0,2 s d'écart.</code></pre>
+<p class="traduction">“Bring the three bullet points in with a stagger, 0.2 s apart.”</p>
+<p><strong>When:</strong> A list, a grid of icons, several cards.</p>
+<p><strong>Recipe:</strong> <code>&lt;h2 id=&quot;c1&quot; class=&quot;pm-m-monte&quot; data-texte=&quot;titre&quot; data-start=&quot;0.2&quot;&gt;&lt;/h2&gt; &lt;p id=&quot;c2&quot; class=&quot;pm-m-monte&quot; data-texte=&quot;texte&quot; data-start=&quot;#c1+0.2&quot;&gt;&lt;/p&gt;</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 002 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m011" data-categorie="entrees" data-mots="011 #011 trace de ligne line draw trace trace ligne dessin stroke fleche schema a line draws itself, as if traced in pencil">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/011.jpg" aria-label="Preview: Line draw"><source src="../medias/galerie/mouvements/011.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#011</p>
+<h3 class="carte-mouvement-nom">Line draw <span lang="fr">Tracé de ligne</span></h3>
+<p class="carte-mouvement-sens">A line draws itself, as if traced in pencil</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Trace la flèche du schéma en 1 s, de gauche à droite.</code></pre>
+<p class="traduction">“Draw the diagram's arrow with a line draw in 1 s, from left to right.”</p>
+<p><strong>When:</strong> A diagram, an arrow, a drawn underline, a signature.</p>
+<p><strong>Recipe:</strong> <code>&lt;svg viewBox=&quot;0 0 100 20&quot; style=&quot;width: 60cqh&quot; aria-hidden=&quot;true&quot; data-start=&quot;0.3&quot; data-dur=&quot;1&quot;&gt;&lt;path d=&quot;M2 10 H 98&quot; pathLength=&quot;100&quot; stroke=&quot;var(--c-accent)&quot; s…</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 004 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m012" data-categorie="entrees" data-mots="012 #012 sortie en fondu fade out sortie sortie disparition fade out effacer partir moves down slightly as it fades away">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/012.jpg" aria-label="Preview: Fade out"><source src="../medias/galerie/mouvements/012.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#012</p>
+<h3 class="carte-mouvement-nom">Fade out <span lang="fr">Sortie en fondu</span></h3>
+<p class="carte-mouvement-sens">Moves down slightly as it fades away</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais sortir le premier titre en fondu à 2 s, en 0,5 s, avant que le second arrive.</code></pre>
+<p class="traduction">“Fade out the first title at 2 s, over 0.5 s, before the second one arrives.”</p>
+<p><strong>When:</strong> Make room for the next element in the same scene.</p>
+<p><strong>Recipe:</strong> <code>&lt;div class=&quot;pm-m-monte&quot; data-start=&quot;0.2&quot;&gt;&lt;h2 class=&quot;pm-m-sortie&quot; data-texte=&quot;titre&quot; data-start=&quot;2&quot;&gt;&lt;/h2&gt;&lt;/div&gt;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m013" data-categorie="entrees" data-mots="013 #013 image par image stop motion style saccade saccade stop motion image par image a coups artisanal moves in jerks, like frame by frame animation">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/013.jpg" aria-label="Preview: Stop-motion style"><source src="../medias/galerie/mouvements/013.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#013</p>
+<h3 class="carte-mouvement-nom">Stop-motion style <span lang="fr">Image par image</span></h3>
+<p class="carte-mouvement-sens">Moves in jerks, like frame-by-frame animation</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais monter le titre par à-coups, en 6 images sur 0,6 s.</code></pre>
+<p class="traduction">“Make the title rise in a stop-motion style, in 6 frames over 0.6 s.”</p>
+<p><strong>When:</strong> A handcrafted, cut-paper, home-made tone.</p>
+<p><strong>Recipe:</strong> <code>&lt;h2 data-texte=&quot;titre&quot; class=&quot;pm-m-saccade&quot; data-start=&quot;0.3&quot;&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 128 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m014" data-categorie="entrees" data-mots="014 #014 eclat burst eclat eclat burst etincelles jaillir explosion legere sparks burst out when something appears">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/014.jpg" aria-label="Preview: Burst"><source src="../medias/galerie/mouvements/014.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#014</p>
+<h3 class="carte-mouvement-nom">Burst <span lang="fr">Éclat</span></h3>
+<p class="carte-mouvement-sens">Sparks burst out when something appears</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais jaillir des étincelles autour du chiffre quand il apparaît, pendant 1 s.</code></pre>
+<p class="traduction">“Make a burst of sparks shoot out around the number when it appears, for 1 s.”</p>
+<p><strong>When:</strong> Highlight the arrival of a key figure or a result.</p>
+<p><strong>Recipe:</strong> <code>&lt;h2 id=&quot;chiffre&quot; class=&quot;pm-m-pop&quot; data-texte=&quot;titre&quot; data-start=&quot;0.5&quot;&gt;&lt;/h2&gt; &lt;div data-effet=&quot;etincelles&quot; data-ancre=&quot;#chiffre&quot; data-start=&quot;#chiffre&quot; data-dur=&quot;1…</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 003 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m112" data-categorie="entrees" data-mots="112 #112 trace a main levee hand drawn stroke main levee main levee dessine feutre croquis sketch hand drawn rough the stroke wobbles slightly and goes back over itself, as if drawn in felt tip pen">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/112.jpg" aria-label="Preview: Hand-drawn stroke"><source src="../medias/galerie/mouvements/112.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#112</p>
+<h3 class="carte-mouvement-nom">Hand-drawn stroke <span lang="fr">Tracé à main levée</span></h3>
+<p class="carte-mouvement-sens">The stroke wobbles slightly and goes back over itself, as if drawn in felt-tip pen</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Dessine la flèche du schéma à main levée, en 1 s.</code></pre>
+<p class="traduction">“Draw the diagram's arrow freehand with a hand-drawn stroke, in 1 s.”</p>
+<p><strong>When:</strong> A diagram, a whiteboard explanation, a handcrafted or teaching tone.</p>
+<p><strong>Recipe:</strong> <code>&lt;svg viewBox=&quot;0 0 100 20&quot; style=&quot;width: 60cqh; margin-top: 40cqh&quot; aria-hidden=&quot;true&quot; data-start=&quot;0.3&quot; data-dur=&quot;1&quot;&gt; &lt;path data-main-levee d=&quot;M4 10 H 96&quot; pathLen…</code></p>
+</details>
+</article>
+</div>
+</section>
+<section class="categorie-mouvements" id="categorie-texte" data-categorie="texte">
+<h2>Text</h2>
+<div class="grille-mouvements">
+<article class="carte-mouvement" id="m015" data-categorie="texte" data-mots="015 #015 machine a ecrire typewriter machine a ecrire machine a ecrire typewriter ecrire frappe clavier lettre the text writes itself letter by letter">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/015.jpg" aria-label="Preview: Typewriter"><source src="../medias/galerie/mouvements/015.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#015</p>
+<h3 class="carte-mouvement-nom">Typewriter <span lang="fr">Machine à écrire</span></h3>
+<p class="carte-mouvement-sens">The text writes itself letter by letter</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Écris la phrase en machine à écrire, une lettre toutes les 0,04 s.</code></pre>
+<p class="traduction">“Write the sentence with a typewriter effect, one letter every 0.04 s.”</p>
+<p><strong>When:</strong> Code, a quotation, a technical or retro mood.</p>
+<p><strong>Recipe:</strong> <code>&lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.3&quot; data-lettres=&quot;frappe&quot;&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 006 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m016" data-categorie="texte" data-mots="016 #016 vague de lettres wave text vague vague wave onde lettres saut joyeux the letters jump one after another, like a wave">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/016.jpg" aria-label="Preview: Wave text"><source src="../medias/galerie/mouvements/016.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#016</p>
+<h3 class="carte-mouvement-nom">Wave text <span lang="fr">Vague de lettres</span></h3>
+<p class="carte-mouvement-sens">The letters jump one after another, like a wave</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais onduler les lettres du titre en vague, à 0,02 s d'écart.</code></pre>
+<p class="traduction">“Make the title's letters ripple with a wave text effect, 0.02 s apart.”</p>
+<p><strong>When:</strong> A cheerful title, an announcement, a word to bring to life.</p>
+<p><strong>Recipe:</strong> <code>&lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.3&quot; data-lettres=&quot;onde&quot;&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 130 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m017" data-categorie="texte" data-mots="017 #017 mots qui montent word by word mots montants mots mot par mot word monte phrase the words rise one after another">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/017.jpg" aria-label="Preview: Word by word"><source src="../medias/galerie/mouvements/017.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#017</p>
+<h3 class="carte-mouvement-nom">Word by word <span lang="fr">Mots qui montent</span></h3>
+<p class="carte-mouvement-sens">The words rise one after another</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais monter la phrase mot par mot, à 0,12 s d'écart.</code></pre>
+<p class="traduction">“Bring the sentence up word by word, 0.12 s apart.”</p>
+<p><strong>When:</strong> A sentence to read at the pace of the voice.</p>
+<p><strong>Recipe:</strong> <code>&lt;p data-texte=&quot;texte&quot; data-start=&quot;0.3&quot; data-mots=&quot;monte&quot;&gt;&lt;/p&gt;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m018" data-categorie="texte" data-mots="018 #018 lettres de flou a net blur letters lettres floues flou lettres blur net doux each letter appears blurred, then comes into focus">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/018.jpg" aria-label="Preview: Blur letters"><source src="../medias/galerie/mouvements/018.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#018</p>
+<h3 class="carte-mouvement-nom">Blur letters <span lang="fr">Lettres de flou à net</span></h3>
+<p class="carte-mouvement-sens">Each letter appears blurred, then comes into focus</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais apparaître le titre lettre par lettre, de flou à net, à 0,05 s d'écart.</code></pre>
+<p class="traduction">“Make the title appear letter by letter with blur letters, from blurred to sharp, 0.05 s apart.”</p>
+<p><strong>When:</strong> A soft, elegant title.</p>
+<p><strong>Recipe:</strong> <code>&lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.3&quot; data-lettres=&quot;flou&quot;&gt;&lt;/h2&gt;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m019" data-categorie="texte" data-mots="019 #019 lettres qui tombent falling letters lettres tombantes tomber lettres chute rebond ludique each letter falls from above and bounces">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/019.jpg" aria-label="Preview: Falling letters"><source src="../medias/galerie/mouvements/019.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#019</p>
+<h3 class="carte-mouvement-nom">Falling letters <span lang="fr">Lettres qui tombent</span></h3>
+<p class="carte-mouvement-sens">Each letter falls from above and bounces</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais tomber les lettres du titre une à une, à 0,05 s d'écart.</code></pre>
+<p class="traduction">“Make the title's letters fall one by one as falling letters, 0.05 s apart.”</p>
+<p><strong>When:</strong> An energetic, playful title.</p>
+<p><strong>Recipe:</strong> <code>&lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.3&quot; data-lettres=&quot;chute&quot;&gt;&lt;/h2&gt;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m020" data-categorie="texte" data-mots="020 #020 texte brouille text scramble brouillage brouille scramble hasard decoder numerique hacker the letters scroll at random, then settle on the right text">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/020.jpg" aria-label="Preview: Text scramble"><source src="../medias/galerie/mouvements/020.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#020</p>
+<h3 class="carte-mouvement-nom">Text scramble <span lang="fr">Texte brouillé</span></h3>
+<p class="carte-mouvement-sens">The letters scroll at random, then settle on the right text</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais apparaître le mot en texte brouillé, une lettre fixée toutes les 0,04 s.</code></pre>
+<p class="traduction">“Make the word appear as a text scramble, one letter locked in every 0.04 s.”</p>
+<p><strong>When:</strong> Code, a password, a digital mood.</p>
+<p><strong>Recipe:</strong> <code>&lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.3&quot; data-lettres=&quot;brouille&quot;&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 129 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m021" data-categorie="texte" data-mots="021 #021 compteur count up compteur compteur count up nombre chiffre statistique defiler a number rolls quickly up to its value">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/021.jpg" aria-label="Preview: Count-up"><source src="../medias/galerie/mouvements/021.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#021</p>
+<h3 class="carte-mouvement-nom">Count-up <span lang="fr">Compteur</span></h3>
+<p class="carte-mouvement-sens">A number rolls quickly up to its value</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais compter le chiffre de 0 à 1 250 en 1,5 s.</code></pre>
+<p class="traduction">“Make the number count up from 0 to 1,250 in 1.5 s.”</p>
+<p><strong>When:</strong> A key figure, a statistic, a result.</p>
+<p><strong>Recipe:</strong> <code>&lt;p class=&quot;titre&quot; data-start=&quot;0.3&quot; data-dur=&quot;1.5&quot; data-tween=&quot;nombre 0→1250 cubic-out&quot; aria-label=&quot;1 250&quot;&gt;&lt;/p&gt;</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 007 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m022" data-categorie="texte" data-mots="022 #022 typographie cinetique kinetic typography typo cinetique typographie cinetique kinetic mots rythme accroche the words drop in rhythm while the frame tightens">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/022.jpg" aria-label="Preview: Kinetic typography"><source src="../medias/galerie/mouvements/022.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#022</p>
+<h3 class="carte-mouvement-nom">Kinetic typography <span lang="fr">Typographie cinétique</span></h3>
+<p class="carte-mouvement-sens">The words drop in rhythm while the frame tightens</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais tomber les mots du titre un par un, toutes les 0,25 s, avec un zoom lent de 15 %.</code></pre>
+<p class="traduction">“Make the title's words drop one by one in kinetic typography, every 0.25 s, with a slow 15% zoom.”</p>
+<p><strong>When:</strong> A punchy sentence, a hook for social media.</p>
+<p><strong>Recipe:</strong> <code>&lt;div data-camera=&quot;zoom 1→1.15 0+3&quot; style=&quot;display: grid; place-items: center&quot;&gt;&lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.2&quot; data-mots=&quot;chute&quot; data-pas=&quot;0.25&quot;&gt;&lt;/h2&gt;&lt;/d…</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 008 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m023" data-categorie="texte" data-mots="023 #023 texte en degrade gradient text degrade degrade gradient couleur titre marque the text is filled with a gradient of the brand kit colours">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/023.jpg" aria-label="Preview: Gradient text"><source src="../medias/galerie/mouvements/023.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#023</p>
+<h3 class="carte-mouvement-nom">Gradient text <span lang="fr">Texte en dégradé</span></h3>
+<p class="carte-mouvement-sens">The text is filled with a gradient of the brand kit colours</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Mets le titre en dégradé à 90 degrés, de la couleur principale à la couleur d'accent.</code></pre>
+<p class="traduction">“Give the title a gradient text at 90 degrees, from the main colour to the accent colour.”</p>
+<p><strong>When:</strong> A brand title, a hook.</p>
+<p><strong>Recipe:</strong> <code>&lt;h2 data-texte=&quot;titre&quot; class=&quot;pm-degrade pm-m-monte&quot; data-start=&quot;0.3&quot;&gt;&lt;/h2&gt;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m024" data-categorie="texte" data-mots="024 #024 surlignage highlight surlignage surligner highlight mot cle marqueur insister a flat block of colour settles behind a word, like a highlighter pen">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/024.jpg" aria-label="Preview: Highlight"><source src="../medias/galerie/mouvements/024.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#024</p>
+<h3 class="carte-mouvement-nom">Highlight <span lang="fr">Surlignage</span></h3>
+<p class="carte-mouvement-sens">A flat block of colour settles behind a word, like a highlighter pen</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Surligne le mot-clé à 1 s, en 0,6 s.</code></pre>
+<p class="traduction">“Highlight the keyword at 1 s, over 0.6 s.”</p>
+<p><strong>When:</strong> Make one word stand out in a sentence.</p>
+<p><strong>Recipe:</strong> <code>&lt;p&gt;&lt;span class=&quot;pm-m-surligne&quot; data-texte=&quot;texte&quot; data-start=&quot;1&quot;&gt;&lt;/span&gt;&lt;/p&gt;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m025" data-categorie="texte" data-mots="025 #025 soulignement trace underline draw soulignement souligner underline trait tracer insister a line draws itself under the text">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/025.jpg" aria-label="Preview: Underline draw"><source src="../medias/galerie/mouvements/025.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#025</p>
+<h3 class="carte-mouvement-nom">Underline draw <span lang="fr">Soulignement tracé</span></h3>
+<p class="carte-mouvement-sens">A line draws itself under the text</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Souligne le titre d'un trait qui se trace en 0,6 s.</code></pre>
+<p class="traduction">“Underline the title with an underline draw that traces in 0.6 s.”</p>
+<p><strong>When:</strong> A section title, a conclusion.</p>
+<p><strong>Recipe:</strong> <code>&lt;h2&gt;&lt;span class=&quot;pm-m-souligne&quot; data-texte=&quot;titre&quot; data-start=&quot;0.5&quot;&gt;&lt;/span&gt;&lt;/h2&gt;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m085" data-categorie="texte" data-mots="085 #085 echos echo trail echo echos echo trail remanence onion trainee three pale afterimages follow the incoming text, then fold back into it">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/085.jpg" aria-label="Preview: Echo trail"><source src="../medias/galerie/mouvements/085.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#085</p>
+<h3 class="carte-mouvement-nom">Echo trail <span lang="fr">Échos</span></h3>
+<p class="carte-mouvement-sens">Three pale afterimages follow the incoming text, then fold back into it</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais glisser le titre avec des échos derrière lui, repliés en 0,8 s.</code></pre>
+<p class="traduction">“Slide the title in with an echo trail behind it, folding back in 0.8 s.”</p>
+<p><strong>When:</strong> A title that comes in fast, a word that should leave a trace: the eye follows the path travelled.</p>
+<p><strong>Recipe:</strong> <code>&lt;div class=&quot;pm-m-glisse-gauche&quot; data-start=&quot;0.3&quot;&gt; &lt;h2 class=&quot;pm-m-echo&quot; data-texte=&quot;titre&quot; data-start=&quot;0.3&quot;&gt;&lt;/h2&gt; &lt;/div&gt;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m125" data-categorie="texte" data-mots="125 #125 code qui se transforme code morph code transforme code formule tableur excel morph coloration programmation a formula or code builds up step by step: the shared pieces slide to their new place">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/125.jpg" aria-label="Preview: Code morph"><source src="../medias/galerie/mouvements/125.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#125</p>
+<h3 class="carte-mouvement-nom">Code morph <span lang="fr">Code qui se transforme</span></h3>
+<p class="carte-mouvement-sens">A formula or code builds up step by step: the shared pieces slide to their new place</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Montre la formule =SOMME(B2:B13), puis transforme-la en =MOYENNE(B2:B13) en 0,8 s quand je dis « moyenne ».</code></pre>
+<p class="traduction">“Show the formula =SUM(B2:B13), then turn it into =AVERAGE(B2:B13) with a code morph in 0.8 s when I say “average”.”</p>
+<p><strong>When:</strong> A spreadsheet formula being built, code that evolves, a command being completed.</p>
+<p><strong>Recipe:</strong> <code>&lt;figure data-code=&quot;formule&quot; data-start=&quot;0.2&quot;&gt;&lt;/figure&gt;</code></p>
+</details>
+</article>
+</div>
+</section>
+<section class="categorie-mouvements" id="categorie-finition" data-categorie="finition">
+<h2>Motion polish</h2>
+<div class="grille-mouvements">
+<article class="carte-mouvement" id="m026" data-categorie="finition" data-mots="026 #026 acceleration douce easing courbe douce easing courbe douceur ralentir accelerer the motion speeds up then slows down, instead of moving at a constant speed">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/026.jpg" aria-label="Preview: Easing"><source src="../medias/galerie/mouvements/026.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#026</p>
+<h3 class="carte-mouvement-nom">Easing <span lang="fr">Accélération douce</span></h3>
+<p class="carte-mouvement-sens">The motion speeds up then slows down, instead of moving at a constant speed</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais glisser la carte avec une courbe douce (sine-inout), en 0,8 s.</code></pre>
+<p class="traduction">“Slide the card with gentle easing (sine-inout), in 0.8 s.”</p>
+<p><strong>When:</strong> Any motion: a constant speed looks mechanical.</p>
+<p><strong>Recipe:</strong> <code>&lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.3&quot; data-dur=&quot;0.8&quot; data-tween=&quot;--x -20cqh→0cqh sine-inout&quot; style=&quot;transform: translateX(var(--x))&quot;&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 009 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m027" data-categorie="finition" data-mots="027 #027 depassement overshoot depassement depassement overshoot back revenir dynamique goes slightly past its place, then comes back">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/027.jpg" aria-label="Preview: Overshoot"><source src="../medias/galerie/mouvements/027.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#027</p>
+<h3 class="carte-mouvement-nom">Overshoot <span lang="fr">Dépassement</span></h3>
+<p class="carte-mouvement-sens">Goes slightly past its place, then comes back</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais arriver le bouton avec un léger dépassement (back-out), en 0,6 s.</code></pre>
+<p class="traduction">“Bring the button in with a slight overshoot (back-out), in 0.6 s.”</p>
+<p><strong>When:</strong> An interface element, a dynamic tone.</p>
+<p><strong>Recipe:</strong> <code>&lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.3&quot; data-dur=&quot;0.6&quot; data-tween=&quot;--x -20cqh→0cqh back-out&quot; style=&quot;transform: translateX(var(--x))&quot;&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 010 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m028" data-categorie="finition" data-mots="028 #028 rebond bounce rebond rebond bounce rebondir ludique balle arrives and bounces several times before stopping">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/028.jpg" aria-label="Preview: Bounce"><source src="../medias/galerie/mouvements/028.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#028</p>
+<h3 class="carte-mouvement-nom">Bounce <span lang="fr">Rebond</span></h3>
+<p class="carte-mouvement-sens">Arrives and bounces several times before stopping</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais arriver l'icône avec des rebonds (bounce-out), en 0,9 s.</code></pre>
+<p class="traduction">“Bring the icon in with a bounce (bounce-out), in 0.9 s.”</p>
+<p><strong>When:</strong> A playful tone, a falling object.</p>
+<p><strong>Recipe:</strong> <code>&lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.3&quot; data-dur=&quot;0.9&quot; data-tween=&quot;--y -20cqh→0cqh bounce-out&quot; style=&quot;transform: translateY(var(--y))&quot;&gt;&lt;/h2&gt;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m029" data-categorie="finition" data-mots="029 #029 elastique elastic elastique elastique ressort osciller elastic follow through oscillates around its place before settling, like a spring">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/029.jpg" aria-label="Preview: Elastic"><source src="../medias/galerie/mouvements/029.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#029</p>
+<h3 class="carte-mouvement-nom">Elastic <span lang="fr">Élastique</span></h3>
+<p class="carte-mouvement-sens">Oscillates around its place before settling, like a spring</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais arriver la pastille avec un effet élastique (elastic-out), en 1 s.</code></pre>
+<p class="traduction">“Bring the badge in with an elastic effect (elastic-out), in 1 s.”</p>
+<p><strong>When:</strong> After a sudden stop, parts that keep moving.</p>
+<p><strong>Recipe:</strong> <code>&lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.3&quot; data-dur=&quot;1&quot; data-tween=&quot;--s 0→1 elastic-out&quot; style=&quot;transform: scale(var(--s))&quot;&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 122 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m030" data-categorie="finition" data-mots="030 #030 trajectoire courbe motion path trajectoire trajectoire motion path arc courbe voler lancer moves in an arc instead of a straight line">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/030.jpg" aria-label="Preview: Motion path"><source src="../medias/galerie/mouvements/030.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#030</p>
+<h3 class="carte-mouvement-nom">Motion path <span lang="fr">Trajectoire courbe</span></h3>
+<p class="carte-mouvement-sens">Moves in an arc instead of a straight line</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais voler l'avion en arc vers la droite, sur 60 % de la hauteur, en 2 s.</code></pre>
+<p class="traduction">“Fly the plane in an arc to the right along a motion path, over 60% of the height, in 2 s.”</p>
+<p><strong>When:</strong> An object that flies, jumps or is thrown.</p>
+<p><strong>Recipe:</strong> <code>&lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.3&quot; data-dur=&quot;2&quot; data-tween=&quot;--x 0cqh→60cqh sine-inout; --y 0cqh→-20cqh sine-arch&quot; style=&quot;transform: translate(var(--x), var…</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 126 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m031" data-categorie="finition" data-mots="031 #031 forme qui se transforme shape morph morphing morphing morph forme transformer icone a shape smoothly turns into another">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/031.jpg" aria-label="Preview: Shape morph"><source src="../medias/galerie/mouvements/031.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#031</p>
+<h3 class="carte-mouvement-nom">Shape morph <span lang="fr">Forme qui se transforme</span></h3>
+<p class="carte-mouvement-sens">A shape smoothly turns into another</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Transforme l'octogone en étoile à 4 branches en 0,8 s.</code></pre>
+<p class="traduction">“Turn the octagon into a 4-pointed star with a shape morph in 0.8 s.”</p>
+<p><strong>When:</strong> Move from one idea to another, an icon that changes state.</p>
+<p><strong>Recipe:</strong> <code>&lt;style&gt;@scope { @keyframes morphe { from { d: path('M50 10 L78 22 L90 50 L78 78 L50 90 L22 78 L10 50 L22 22 Z'); } to { d: path('M50 5 L60 40 L95 50 L60 60 L50 …</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 012 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m084" data-categorie="finition" data-mots="084 #084 suivi retarde follow through suivi retarde suivi follow through retard suiveur souple traine a second element repeats the first one s motion, slightly later and slightly weaker">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/084.jpg" aria-label="Preview: Follow-through"><source src="../medias/galerie/mouvements/084.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#084</p>
+<h3 class="carte-mouvement-nom">Follow-through <span lang="fr">Suivi retardé</span></h3>
+<p class="carte-mouvement-sens">A second element repeats the first one's motion, slightly later and slightly weaker</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais suivre le sous-titre derrière le titre, 0,09 s après lui et moitié moins loin.</code></pre>
+<p class="traduction">“Make the subtitle follow behind the title with follow-through, 0.09 s after it and half as far.”</p>
+<p><strong>When:</strong> A title and its subtitle, a card and its shadow, an object and what it drags along: the whole thing feels supple.</p>
+<p><strong>Recipe:</strong> <code>&lt;h2 id=&quot;meneur&quot; class=&quot;pm-m-glisse-gauche&quot; data-texte=&quot;titre&quot; data-start=&quot;0.3&quot;&gt;&lt;/h2&gt; &lt;p class=&quot;pm-m-glisse-gauche&quot; data-texte=&quot;texte&quot; data-start=&quot;#meneur+0.09&quot; …</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m113" data-categorie="finition" data-mots="113 #113 ebullition des traits line boil ebullition ebullition boil fremir vivant dessin anime trait hand drawn lines redraw themselves a few times per second: the drawing quivers, alive">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/113.jpg" aria-label="Preview: Line boil"><source src="../medias/galerie/mouvements/113.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#113</p>
+<h3 class="carte-mouvement-nom">Line boil <span lang="fr">Ébullition des traits</span></h3>
+<p class="carte-mouvement-sens">Hand-drawn lines redraw themselves a few times per second: the drawing quivers, alive</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais frémir les traits du schéma, 8 fois par seconde.</code></pre>
+<p class="traduction">“Make the diagram's lines quiver with line boil, 8 times per second.”</p>
+<p><strong>When:</strong> A hand-drawn cartoon, a drawn scene that stays on screen for a long time.</p>
+<p><strong>Recipe:</strong> <code>&lt;style&gt;@scope { :scope { --pm-trait: main; --pm-ebullition: 8; } }&lt;/style&gt; &lt;p id=&quot;a&quot; style=&quot;position: absolute; left: 30cqh; top: 45cqh; font-size: 5cqh&quot; data-t…</code></p>
+</details>
+</article>
+</div>
+</section>
+<section class="categorie-mouvements" id="categorie-valeur" data-categorie="valeur">
+<h2>Emphasis</h2>
+<div class="grille-mouvements">
+<article class="carte-mouvement" id="m032" data-categorie="valeur" data-mots="032 #032 battement pulse battement battement pulse coeur attirer bouton appel grows and shrinks back, like a beating heart">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/032.jpg" aria-label="Preview: Pulse"><source src="../medias/galerie/mouvements/032.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#032</p>
+<h3 class="carte-mouvement-nom">Pulse <span lang="fr">Battement</span></h3>
+<p class="carte-mouvement-sens">Grows and shrinks back, like a beating heart</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais battre le bouton 3 fois, de 8 %, toutes les 0,8 s.</code></pre>
+<p class="traduction">“Make the button pulse 3 times, by 8%, every 0.8 s.”</p>
+<p><strong>When:</strong> Draw the eye to a call to action.</p>
+<p><strong>Recipe:</strong> <code>&lt;h2 data-texte=&quot;titre&quot; class=&quot;pm-m-pulse&quot; data-start=&quot;0.5&quot;&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 125 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m033" data-categorie="valeur" data-mots="033 #033 tremblotement wiggle tremblement trembler wiggle secouer alerte notification small quick jolts, like an object fidgeting">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/033.jpg" aria-label="Preview: Wiggle"><source src="../medias/galerie/mouvements/033.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#033</p>
+<h3 class="carte-mouvement-nom">Wiggle <span lang="fr">Tremblotement</span></h3>
+<p class="carte-mouvement-sens">Small quick jolts, like an object fidgeting</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais trembloter la cloche 3 fois, de 3 degrés.</code></pre>
+<p class="traduction">“Make the bell wiggle 3 times, by 3 degrees.”</p>
+<p><strong>When:</strong> An alert, a notification, an error.</p>
+<p><strong>Recipe:</strong> <code>&lt;h2 data-texte=&quot;titre&quot; class=&quot;pm-m-tremblote&quot; data-start=&quot;0.5&quot;&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 124 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m034" data-categorie="valeur" data-mots="034 #034 aller retour ping pong loop va et vient aller retour ping pong balancer boucle fleche slides to one side then comes back, several times">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/034.jpg" aria-label="Preview: Ping-pong loop"><source src="../medias/galerie/mouvements/034.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#034</p>
+<h3 class="carte-mouvement-nom">Ping-pong loop <span lang="fr">Aller-retour</span></h3>
+<p class="carte-mouvement-sens">Slides to one side then comes back, several times</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais faire 2 allers-retours à la flèche, de 6 %, en 1,2 s chacun.</code></pre>
+<p class="traduction">“Make the arrow do 2 back-and-forth ping-pong loops, by 6%, in 1.2 s each.”</p>
+<p><strong>When:</strong> Show a direction, invite people to swipe or scroll.</p>
+<p><strong>Recipe:</strong> <code>&lt;h2 data-texte=&quot;titre&quot; class=&quot;pm-m-va-vient&quot; data-start=&quot;0.5&quot;&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 127 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m035" data-categorie="valeur" data-mots="035 #035 reflet lumineux light sweep reflet reflet brillance light sweep lumiere premium shine a band of light crosses the element">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/035.jpg" aria-label="Preview: Light sweep"><source src="../medias/galerie/mouvements/035.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#035</p>
+<h3 class="carte-mouvement-nom">Light sweep <span lang="fr">Reflet lumineux</span></h3>
+<p class="carte-mouvement-sens">A band of light crosses the element</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais passer un reflet sur le titre à 1 s, en 0,9 s.</code></pre>
+<p class="traduction">“Run a light sweep across the title at 1 s, over 0.9 s.”</p>
+<p><strong>When:</strong> A logo, a product, a premium button.</p>
+<p><strong>Recipe:</strong> <code>&lt;h2&gt;&lt;span class=&quot;pm-m-reflet&quot; data-texte=&quot;titre&quot; data-start=&quot;1&quot;&gt;&lt;/span&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 022 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m036" data-categorie="valeur" data-mots="036 #036 secousse d impact impact shake secousse impact secousse shake impact trembler choc camera the whole frame shakes when something lands">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/036.jpg" aria-label="Preview: Impact shake"><source src="../medias/galerie/mouvements/036.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#036</p>
+<h3 class="carte-mouvement-nom">Impact shake <span lang="fr">Secousse d'impact</span></h3>
+<p class="carte-mouvement-sens">The whole frame shakes when something lands</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais trembler l'image quand le titre touche le sol, à 0,63 s, pendant 0,3 s.</code></pre>
+<p class="traduction">“Shake the picture with an impact shake when the title hits the ground, at 0.63 s, for 0.3 s.”</p>
+<p><strong>When:</strong> An impact, a number dropping, a strong reveal.</p>
+<p><strong>Recipe:</strong> <code>&lt;div data-camera=&quot;secousse 1.2 0.63+0.3&quot; style=&quot;display: grid; place-items: center&quot;&gt;&lt;div class=&quot;decor&quot; data-decor&gt;&lt;/div&gt;&lt;h2 class=&quot;pm-m-chute&quot; data-texte=&quot;titre…</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 024 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m037" data-categorie="valeur" data-mots="037 #037 zoom sur un detail punch in zoom sur zoom punch in gros plan detail insister the frame quickly tightens on a precise point">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/037.jpg" aria-label="Preview: Punch in"><source src="../medias/galerie/mouvements/037.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#037</p>
+<h3 class="carte-mouvement-nom">Punch in <span lang="fr">Zoom sur un détail</span></h3>
+<p class="carte-mouvement-sens">The frame quickly tightens on a precise point</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Zoome vite sur le chiffre à 2 s : 1,4 fois, en 0,3 s, centré sur 40 % de la largeur.</code></pre>
+<p class="traduction">“Punch in quickly on the number at 2 s: 1.4 times, in 0.3 s, centred at 40% of the width.”</p>
+<p><strong>When:</strong> Emphasise a detail, a reaction, a number.</p>
+<p><strong>Recipe:</strong> <code>&lt;div data-camera=&quot;zoom 1→1.4 2+0.3 back-out; x 50→40 2+0.3 back-out&quot; style=&quot;display: grid; place-items: center&quot;&gt;&lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.3&quot;&gt;&lt;/h2&gt;&lt;/d…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m038" data-categorie="valeur" data-mots="038 #038 pluie de confettis particles confettis confettis particules fete celebration reussite a cloud of small pieces flies up and falls back down">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/038.jpg" aria-label="Preview: Particles"><source src="../medias/galerie/mouvements/038.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#038</p>
+<h3 class="carte-mouvement-nom">Particles <span lang="fr">Pluie de confettis</span></h3>
+<p class="carte-mouvement-sens">A cloud of small pieces flies up and falls back down</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais tomber des confettis sur la conclusion pendant 3 s.</code></pre>
+<p class="traduction">“Make confetti particles fall on the conclusion for 3 s.”</p>
+<p><strong>When:</strong> A success, a celebration, a conclusion.</p>
+<p><strong>Recipe:</strong> <code>&lt;h2 class=&quot;pm-m-pop&quot; data-texte=&quot;titre&quot; data-start=&quot;0.3&quot;&gt;&lt;/h2&gt; &lt;div data-effet=&quot;confettis&quot; data-start=&quot;0.5&quot; data-dur=&quot;3&quot;&gt;&lt;/div&gt;</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 015 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m081" data-categorie="valeur" data-mots="081 #081 appui press appui appui press clic bouton touche enfoncer the button sinks in ever so slightly under the finger, then comes back">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/081.jpg" aria-label="Preview: Press"><source src="../medias/galerie/mouvements/081.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#081</p>
+<h3 class="carte-mouvement-nom">Press <span lang="fr">Appui</span></h3>
+<p class="carte-mouvement-sens">The button sinks in ever so slightly under the finger, then comes back</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais un appui sur le bouton à 1 s, en 0,2 s.</code></pre>
+<p class="traduction">“Add a press on the button at 1 s, over 0.2 s.”</p>
+<p><strong>When:</strong> A clicked button, a pressed key, a card chosen in an interface shown on screen.</p>
+<p><strong>Recipe:</strong> <code>&lt;div class=&quot;pm-m-appui&quot; data-start=&quot;1&quot; style=&quot;padding: 2.5cqh 6cqh; border-radius: 2cqh; background: var(--c-primaire); color: var(--c-fond)&quot;&gt;&lt;p data-texte=&quot;tex…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m082" data-categorie="valeur" data-mots="082 #082 graphique qui se trace chart draw on trace graphique graphique chart barres histogramme donnees evolution courbe a chart s bars rise one after another from their base, and the number counts along with them">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/082.jpg" aria-label="Preview: Chart draw-on"><source src="../medias/galerie/mouvements/082.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#082</p>
+<h3 class="carte-mouvement-nom">Chart draw-on <span lang="fr">Graphique qui se trace</span></h3>
+<p class="carte-mouvement-sens">A chart's bars rise one after another from their base, and the number counts along with them</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais monter les 4 barres du graphique l'une après l'autre, 60 ms d'écart, puis compte jusqu'à 90.</code></pre>
+<p class="traduction">“Make the chart's 4 bars rise one after another with a chart draw-on, 60 ms apart, then count up to 90.”</p>
+<p><strong>When:</strong> A chart, a histogram, a change in figures: the final frame shows the data.</p>
+<p><strong>Recipe:</strong> <code>&lt;div data-start=&quot;0.3&quot; data-dur=&quot;1.5&quot; style=&quot;display: flex; align-items: flex-end; gap: 3cqh; height: 36cqh; border-bottom: 0.5cqh solid var(--c-texte)&quot;&gt; &lt;div cl…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m083" data-categorie="valeur" data-mots="083 #083 pulsation sur le temps beat punch cogne pulsation beat punch temps musique rythme battre the element beats on every beat of the music: a small hit that drops back straight away">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/083.jpg" aria-label="Preview: Beat punch"><source src="../medias/galerie/mouvements/083.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#083</p>
+<h3 class="carte-mouvement-nom">Beat punch <span lang="fr">Pulsation sur le temps</span></h3>
+<p class="carte-mouvement-sens">The element beats on every beat of the music: a small hit that drops back straight away</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais battre le logo sur les temps de la musique, de 1,2 % ; plus fort sur chaque mesure.</code></pre>
+<p class="traduction">“Make the logo beat punch on the music's beats, by 1.2%; harder on each bar.”</p>
+<p><strong>When:</strong> A logo, a title or a key word that lives with the music, in a rhythmic video.</p>
+<p><strong>Recipe:</strong> <code>&lt;div data-start=&quot;0&quot; data-dur=&quot;scene&quot;&gt; &lt;h2 class=&quot;pm-v-cogne&quot; data-texte=&quot;titre&quot;&gt;&lt;/h2&gt; &lt;p class=&quot;pm-v-cogne&quot; data-texte=&quot;texte&quot; style=&quot;--pm-dur: calc(4 * var(--p…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m115" data-categorie="valeur" data-mots="115 #115 soulignement a la main hand underline souligne souligner underline trait insister annoter a slightly curved line draws itself under the element, on the spoken word">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/115.jpg" aria-label="Preview: Hand underline"><source src="../medias/galerie/mouvements/115.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#115</p>
+<h3 class="carte-mouvement-nom">Hand underline <span lang="fr">Soulignement à la main</span></h3>
+<p class="carte-mouvement-sens">A slightly curved line draws itself under the element, on the spoken word</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Souligne le titre d'un trait dessiné en 0,6 s.</code></pre>
+<p class="traduction">“Underline the title with a hand underline drawn in 0.6 s.”</p>
+<p><strong>When:</strong> Emphasise a word, a conclusion, without hiding it.</p>
+<p><strong>Recipe:</strong> <code>&lt;p id=&quot;mot&quot; style=&quot;font-size: 6cqh; text-align: center; margin-top: 40cqh&quot; data-texte=&quot;titre&quot; data-start=&quot;0.2&quot;&gt;&lt;/p&gt; &lt;i data-annoter=&quot;souligne&quot; data-cible=&quot;#mot&quot;…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m116" data-categorie="valeur" data-mots="116 #116 entourer circle entoure entourer cercle circle ellipse annoter stylo an ellipse draws itself around the element, as if with a pen">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/116.jpg" aria-label="Preview: Circle"><source src="../medias/galerie/mouvements/116.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#116</p>
+<h3 class="carte-mouvement-nom">Circle <span lang="fr">Entourer</span></h3>
+<p class="carte-mouvement-sens">An ellipse draws itself around the element, as if with a pen</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Entoure le prix en 0,8 s quand je dis « cher ».</code></pre>
+<p class="traduction">“Circle the price in 0.8 s when I say “expensive”.”</p>
+<p><strong>When:</strong> The number or word that must not be missed.</p>
+<p><strong>Recipe:</strong> <code>&lt;p id=&quot;mot&quot; style=&quot;font-size: 6cqh; text-align: center; margin-top: 40cqh&quot; data-texte=&quot;titre&quot; data-start=&quot;0.2&quot;&gt;&lt;/p&gt; &lt;i data-annoter=&quot;entoure&quot; data-cible=&quot;#mot&quot; …</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m117" data-categorie="valeur" data-mots="117 #117 encadrer box encadre encadrer cadre box rectangle annoter a frame draws itself around the element">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/117.jpg" aria-label="Preview: Box"><source src="../medias/galerie/mouvements/117.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#117</p>
+<h3 class="carte-mouvement-nom">Box <span lang="fr">Encadrer</span></h3>
+<p class="carte-mouvement-sens">A frame draws itself around the element</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Encadre la règle à retenir en 0,6 s.</code></pre>
+<p class="traduction">“Box the rule to remember in 0.6 s.”</p>
+<p><strong>When:</strong> A rule, a definition, what needs to be remembered.</p>
+<p><strong>Recipe:</strong> <code>&lt;p id=&quot;mot&quot; style=&quot;font-size: 6cqh; text-align: center; margin-top: 40cqh&quot; data-texte=&quot;titre&quot; data-start=&quot;0.2&quot;&gt;&lt;/p&gt; &lt;i data-annoter=&quot;encadre&quot; data-cible=&quot;#mot&quot; …</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m118" data-categorie="valeur" data-mots="118 #118 surligner a la main highlight sweep surligne surligner highlight marqueur fluo annoter a translucent flat colour spreads under the text from left to right, on the spoken word">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/118.jpg" aria-label="Preview: Highlight sweep"><source src="../medias/galerie/mouvements/118.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#118</p>
+<h3 class="carte-mouvement-nom">Highlight sweep <span lang="fr">Surligner à la main</span></h3>
+<p class="carte-mouvement-sens">A translucent flat colour spreads under the text from left to right, on the spoken word</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Surligne la phrase clé en 0,6 s.</code></pre>
+<p class="traduction">“Highlight the key sentence with a highlight sweep in 0.6 s.”</p>
+<p><strong>When:</strong> A key word in a sentence, on a light or dark background.</p>
+<p><strong>Recipe:</strong> <code>&lt;p id=&quot;mot&quot; style=&quot;font-size: 6cqh; text-align: center; margin-top: 40cqh&quot; data-texte=&quot;titre&quot; data-start=&quot;0.2&quot;&gt;&lt;/p&gt; &lt;i data-annoter=&quot;surligne&quot; data-cible=&quot;#mot&quot;…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m119" data-categorie="valeur" data-mots="119 #119 barrer strike barre barrer rayer strike annoter faux a slightly slanted line strikes through the element">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/119.jpg" aria-label="Preview: Strike"><source src="../medias/galerie/mouvements/119.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#119</p>
+<h3 class="carte-mouvement-nom">Strike <span lang="fr">Barrer</span></h3>
+<p class="carte-mouvement-sens">A slightly slanted line strikes through the element</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Barre l'ancien prix en 0,6 s.</code></pre>
+<p class="traduction">“Strike through the old price in 0.6 s.”</p>
+<p><strong>When:</strong> A misconception, an old figure, what we no longer do.</p>
+<p><strong>Recipe:</strong> <code>&lt;p id=&quot;mot&quot; style=&quot;font-size: 6cqh; text-align: center; margin-top: 40cqh&quot; data-texte=&quot;titre&quot; data-start=&quot;0.2&quot;&gt;&lt;/p&gt; &lt;i data-annoter=&quot;barre&quot; data-cible=&quot;#mot&quot; da…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m120" data-categorie="valeur" data-mots="120 #120 croix cross croix croix cross erreur interdit annoter two lines draw themselves one after the other in a cross over the element">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/120.jpg" aria-label="Preview: Cross"><source src="../medias/galerie/mouvements/120.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#120</p>
+<h3 class="carte-mouvement-nom">Cross <span lang="fr">Croix</span></h3>
+<p class="carte-mouvement-sens">Two lines draw themselves one after the other in a cross over the element</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais une croix sur la mauvaise réponse en 0,6 s.</code></pre>
+<p class="traduction">“Put a cross over the wrong answer in 0.6 s.”</p>
+<p><strong>When:</strong> A mistake, a bad practice, a rejected option.</p>
+<p><strong>Recipe:</strong> <code>&lt;p id=&quot;mot&quot; style=&quot;font-size: 6cqh; text-align: center; margin-top: 40cqh&quot; data-texte=&quot;titre&quot; data-start=&quot;0.2&quot;&gt;&lt;/p&gt; &lt;i data-annoter=&quot;croix&quot; data-cible=&quot;#mot&quot; da…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m121" data-categorie="valeur" data-mots="121 #121 accolade bracket accolade accolade bracket regrouper ensemble annoter a curly bracket draws itself to the left of the element">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/121.jpg" aria-label="Preview: Bracket"><source src="../medias/galerie/mouvements/121.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#121</p>
+<h3 class="carte-mouvement-nom">Bracket <span lang="fr">Accolade</span></h3>
+<p class="carte-mouvement-sens">A curly bracket draws itself to the left of the element</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Mets une accolade devant la liste en 0,6 s.</code></pre>
+<p class="traduction">“Put a bracket in front of the list in 0.6 s.”</p>
+<p><strong>When:</strong> Group elements, show that they belong together.</p>
+<p><strong>Recipe:</strong> <code>&lt;p id=&quot;mot&quot; style=&quot;font-size: 6cqh; text-align: center; margin-top: 40cqh&quot; data-texte=&quot;titre&quot; data-start=&quot;0.2&quot;&gt;&lt;/p&gt; &lt;i data-annoter=&quot;accolade&quot; data-cible=&quot;#mot&quot;…</code></p>
+</details>
+</article>
+</div>
+</section>
+<section class="categorie-mouvements" id="categorie-transitions" data-categorie="transitions">
+<h2>Scene transitions</h2>
+<div class="grille-mouvements">
+<article class="carte-mouvement" id="m039" data-categorie="transitions" data-mots="039 #039 fondu enchaine cross dissolve fondu enchaine fondu enchaine dissolve cross doux the next scene fades in on top">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/039.jpg" aria-label="Preview: Cross dissolve"><source src="../medias/galerie/mouvements/039.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#039</p>
+<h3 class="carte-mouvement-nom">Cross dissolve <span lang="fr">Fondu enchaîné</span></h3>
+<p class="carte-mouvement-sens">The next scene fades in on top</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Passe à la scène 3 en fondu enchaîné.</code></pre>
+<p class="traduction">“Move to scene 3 with a cross dissolve.”</p>
+<p><strong>When:</strong> The default, discreet transition.</p>
+<p><strong>Recipe:</strong> <code>&quot;transition&quot;: &quot;fondu&quot;</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 044 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m040" data-categorie="transitions" data-mots="040 #040 glissement slide transition glissement glissement slide suivant etape the next scene slides in from the right">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/040.jpg" aria-label="Preview: Slide transition"><source src="../medias/galerie/mouvements/040.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#040</p>
+<h3 class="carte-mouvement-nom">Slide transition <span lang="fr">Glissement</span></h3>
+<p class="carte-mouvement-sens">The next scene slides in from the right</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Passe de l'étape 1 à l'étape 2 en glissement.</code></pre>
+<p class="traduction">“Go from step 1 to step 2 with a slide transition.”</p>
+<p><strong>When:</strong> Move forward through a sequence (steps).</p>
+<p><strong>Recipe:</strong> <code>&quot;transition&quot;: &quot;glissement&quot;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m041" data-categorie="transitions" data-mots="041 #041 poussee push transition poussee poussee push pousser diaporama the next scene pushes the previous one out of the frame">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/041.jpg" aria-label="Preview: Push transition"><source src="../medias/galerie/mouvements/041.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#041</p>
+<h3 class="carte-mouvement-nom">Push transition <span lang="fr">Poussée</span></h3>
+<p class="carte-mouvement-sens">The next scene pushes the previous one out of the frame</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais pousser la scène 2 par la scène 3.</code></pre>
+<p class="traduction">“Make scene 3 push scene 2 out with a push transition.”</p>
+<p><strong>When:</strong> A logical sequence, a slideshow.</p>
+<p><strong>Recipe:</strong> <code>&quot;transition&quot;: &quot;poussee&quot;</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 137 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m042" data-categorie="transitions" data-mots="042 #042 panoramique file whip pan whip pan whip pan file rapide flou energique a very fast, blurred movement carries you to the next scene">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/042.jpg" aria-label="Preview: Whip pan"><source src="../medias/galerie/mouvements/042.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#042</p>
+<h3 class="carte-mouvement-nom">Whip pan <span lang="fr">Panoramique filé</span></h3>
+<p class="carte-mouvement-sens">A very fast, blurred movement carries you to the next scene</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais un whip pan entre la scène 2 et la 3.</code></pre>
+<p class="traduction">“Do a whip pan between scene 2 and scene 3.”</p>
+<p><strong>When:</strong> An energetic change, a fast pace.</p>
+<p><strong>Recipe:</strong> <code>&quot;transition&quot;: &quot;whip&quot;</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 043 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m043" data-categorie="transitions" data-mots="043 #043 balayage wipe balayage balayage wipe volet partie a moving edge uncovers the next scene">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/043.jpg" aria-label="Preview: Wipe"><source src="../medias/galerie/mouvements/043.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#043</p>
+<h3 class="carte-mouvement-nom">Wipe <span lang="fr">Balayage</span></h3>
+<p class="carte-mouvement-sens">A moving edge uncovers the next scene</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Change de partie à la scène 4 avec un balayage.</code></pre>
+<p class="traduction">“Switch section at scene 4 with a wipe.”</p>
+<p><strong>When:</strong> Change section.</p>
+<p><strong>Recipe:</strong> <code>&quot;transition&quot;: &quot;balayage&quot;</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 045 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m044" data-categorie="transitions" data-mots="044 #044 rideau barn door rideau rideau ouverture centre barn door the next scene opens from the centre">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/044.jpg" aria-label="Preview: Barn door"><source src="../medias/galerie/mouvements/044.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#044</p>
+<h3 class="carte-mouvement-nom">Barn door <span lang="fr">Rideau</span></h3>
+<p class="carte-mouvement-sens">The next scene opens from the centre</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Ouvre la scène 6, la conclusion, en rideau.</code></pre>
+<p class="traduction">“Open scene 6, the conclusion, with a barn door.”</p>
+<p><strong>When:</strong> An opening, an elegant reveal.</p>
+<p><strong>Recipe:</strong> <code>&quot;transition&quot;: &quot;rideau&quot;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m045" data-categorie="transitions" data-mots="045 #045 ouverture en cercle iris mask transition cercle cercle iris masque rond retro the next scene appears inside a growing circle">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/045.jpg" aria-label="Preview: Iris / mask transition"><source src="../medias/galerie/mouvements/045.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#045</p>
+<h3 class="carte-mouvement-nom">Iris / mask transition <span lang="fr">Ouverture en cercle</span></h3>
+<p class="carte-mouvement-sens">The next scene appears inside a growing circle</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Ouvre la scène 2 dans un cercle qui grandit.</code></pre>
+<p class="traduction">“Open scene 2 inside a growing circle with an iris / mask transition.”</p>
+<p><strong>When:</strong> A playful, retro tone, a focus.</p>
+<p><strong>Recipe:</strong> <code>&quot;transition&quot;: &quot;cercle&quot;</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 017 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m046" data-categorie="transitions" data-mots="046 #046 volets blinds transition volets volets blinds bandes stores the next scene appears in widening strips">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/046.jpg" aria-label="Preview: Blinds transition"><source src="../medias/galerie/mouvements/046.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#046</p>
+<h3 class="carte-mouvement-nom">Blinds transition <span lang="fr">Volets</span></h3>
+<p class="carte-mouvement-sens">The next scene appears in widening strips</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Passe à la scène 4 avec des volets.</code></pre>
+<p class="traduction">“Move to scene 4 with a blinds transition.”</p>
+<p><strong>When:</strong> A graphic tone, a presentation.</p>
+<p><strong>Recipe:</strong> <code>&quot;transition&quot;: &quot;volets&quot;</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 138 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m047" data-categorie="transitions" data-mots="047 #047 zoom zoom transition zoom zoom approcher agrandir the next scene comes closer as it grows">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/047.jpg" aria-label="Preview: Zoom transition"><source src="../medias/galerie/mouvements/047.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#047</p>
+<h3 class="carte-mouvement-nom">Zoom transition <span lang="fr">Zoom</span></h3>
+<p class="carte-mouvement-sens">The next scene comes closer as it grows</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais approcher la scène 5 en zoom.</code></pre>
+<p class="traduction">“Bring scene 5 closer with a zoom transition.”</p>
+<p><strong>When:</strong> Go into a detail.</p>
+<p><strong>Recipe:</strong> <code>&quot;transition&quot;: &quot;zoom&quot;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m048" data-categorie="transitions" data-mots="048 #048 zoom traversant zoom through traversee traverser zoom through plonger entrer we travel through the growing scene to arrive in the next one">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/048.jpg" aria-label="Preview: Zoom through"><source src="../medias/galerie/mouvements/048.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#048</p>
+<h3 class="carte-mouvement-nom">Zoom through <span lang="fr">Zoom traversant</span></h3>
+<p class="carte-mouvement-sens">We travel through the growing scene to arrive in the next one</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Traverse la scène 1 en zoom pour arriver dans la 2.</code></pre>
+<p class="traduction">“Zoom through scene 1 to arrive in scene 2.”</p>
+<p><strong>When:</strong> Dive into the subject, change scale.</p>
+<p><strong>Recipe:</strong> <code>&quot;transition&quot;: &quot;traversee&quot;</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 020 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m049" data-categorie="transitions" data-mots="049 #049 retournement flip retournement retourner flip carte pivoter reponse the next scene turns over like a card being flipped">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/049.jpg" aria-label="Preview: Flip"><source src="../medias/galerie/mouvements/049.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#049</p>
+<h3 class="carte-mouvement-nom">Flip <span lang="fr">Retournement</span></h3>
+<p class="carte-mouvement-sens">The next scene turns over like a card being flipped</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Retourne la scène 3 comme une carte pour montrer la réponse.</code></pre>
+<p class="traduction">“Flip scene 3 like a card to show the answer.”</p>
+<p><strong>When:</strong> A question then its answer, a before/after.</p>
+<p><strong>Recipe:</strong> <code>&quot;transition&quot;: &quot;retournement&quot;</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 021 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m050" data-categorie="transitions" data-mots="050 #050 coupe franche jump cut coupe coupe cut sec net jump cut smash cut a hard switch from one scene to the next, with no effect">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/050.jpg" aria-label="Preview: Jump cut"><source src="../medias/galerie/mouvements/050.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#050</p>
+<h3 class="carte-mouvement-nom">Jump cut <span lang="fr">Coupe franche</span></h3>
+<p class="carte-mouvement-sens">A hard switch from one scene to the next, with no effect</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Coupe net entre la scène 2 et la 3.</code></pre>
+<p class="traduction">“Do a clean jump cut between scene 2 and scene 3.”</p>
+<p><strong>When:</strong> A fast pace, a strong contrast.</p>
+<p><strong>Recipe:</strong> <code>&quot;transition&quot;: &quot;coupe&quot;</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 041 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m051" data-categorie="transitions" data-mots="051 #051 dissolution organique organic dissolve dissolution dissolution grain organique doux the scene dissolves into grains, with a coloured edge">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/051.jpg" aria-label="Preview: Organic dissolve"><source src="../medias/galerie/mouvements/051.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#051</p>
+<h3 class="carte-mouvement-nom">Organic dissolve <span lang="fr">Dissolution organique</span></h3>
+<p class="carte-mouvement-sens">The scene dissolves into grains, with a coloured edge</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais une dissolution organique de 0,8 s vers la scène suivante.</code></pre>
+<p class="traduction">“Do a 0.8 s organic dissolve into the next scene.”</p>
+<p><strong>When:</strong> A soft, lively transition.</p>
+<p><strong>Recipe:</strong> <code>&quot;transition&quot;: {&quot;shader&quot;:&quot;dissolution&quot;,&quot;duree&quot;:0.8}</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m052" data-categorie="transitions" data-mots="052 #052 ondulation ripple ondulation ondulation ripple eau reve souvenir the picture ripples like water during the transition">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/052.jpg" aria-label="Preview: Ripple"><source src="../medias/galerie/mouvements/052.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#052</p>
+<h3 class="carte-mouvement-nom">Ripple <span lang="fr">Ondulation</span></h3>
+<p class="carte-mouvement-sens">The picture ripples like water during the transition</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Passe au souvenir avec une ondulation de 1 s.</code></pre>
+<p class="traduction">“Move to the memory with a 1 s ripple.”</p>
+<p><strong>When:</strong> A memory, a dream, a change of era.</p>
+<p><strong>Recipe:</strong> <code>&quot;transition&quot;: {&quot;shader&quot;:&quot;ondulation&quot;,&quot;duree&quot;:1}</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m053" data-categorie="transitions" data-mots="053 #053 pixellisation pixelate pixels pixels pixelate carres jeu numerique the picture breaks into large squares, then changes">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/053.jpg" aria-label="Preview: Pixelate"><source src="../medias/galerie/mouvements/053.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#053</p>
+<h3 class="carte-mouvement-nom">Pixelate <span lang="fr">Pixellisation</span></h3>
+<p class="carte-mouvement-sens">The picture breaks into large squares, then changes</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Passe à la scène suivante en pixellisant, en 0,8 s.</code></pre>
+<p class="traduction">“Move to the next scene with a pixelate, in 0.8 s.”</p>
+<p><strong>When:</strong> Digital world, video games.</p>
+<p><strong>Recipe:</strong> <code>&quot;transition&quot;: {&quot;shader&quot;:&quot;pixels&quot;,&quot;duree&quot;:0.8}</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 141 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m054" data-categorie="transitions" data-mots="054 #054 glitch glitch glitch glitch bug panne brouille tech the picture scrambles like a broken screen">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/054.jpg" aria-label="Preview: Glitch"><source src="../medias/galerie/mouvements/054.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#054</p>
+<h3 class="carte-mouvement-nom">Glitch <span lang="fr">Glitch</span></h3>
+<p class="carte-mouvement-sens">The picture scrambles like a broken screen</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais un glitch de 0,5 s entre les deux scènes.</code></pre>
+<p class="traduction">“Do a 0.5 s glitch between the two scenes.”</p>
+<p><strong>When:</strong> A break, a bug, a tech mood.</p>
+<p><strong>Recipe:</strong> <code>&quot;transition&quot;: {&quot;shader&quot;:&quot;glitch&quot;,&quot;duree&quot;:0.5}</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 023 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m055" data-categorie="transitions" data-mots="055 #055 balayage a l encre ink wipe balayage organique encre ink liquide organique balayage a living edge, like ink, covers the picture">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/055.jpg" aria-label="Preview: Ink wipe"><source src="../medias/galerie/mouvements/055.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#055</p>
+<h3 class="carte-mouvement-nom">Ink wipe <span lang="fr">Balayage à l'encre</span></h3>
+<p class="carte-mouvement-sens">A living edge, like ink, covers the picture</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Passe à la scène suivante avec un balayage à l'encre de 1 s.</code></pre>
+<p class="traduction">“Move to the next scene with a 1 s ink wipe.”</p>
+<p><strong>When:</strong> An artistic, fluid tone.</p>
+<p><strong>Recipe:</strong> <code>&quot;transition&quot;: {&quot;shader&quot;:&quot;balayage-organique&quot;,&quot;duree&quot;:1}</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 019 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m107" data-categorie="transitions" data-mots="107 #107 fuite de lumiere light leak fuite lumiere fuite lumiere light leak eclair pellicule chaleureux a flash of warm light, in the brand colour, carries one scene into the next">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/107.jpg" aria-label="Preview: Light leak"><source src="../medias/galerie/mouvements/107.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#107</p>
+<h3 class="carte-mouvement-nom">Light leak <span lang="fr">Fuite de lumière</span></h3>
+<p class="carte-mouvement-sens">A flash of warm light, in the brand colour, carries one scene into the next</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Passe à la scène suivante par une fuite de lumière de 1 s.</code></pre>
+<p class="traduction">“Move to the next scene with a 1 s light leak.”</p>
+<p><strong>When:</strong> A warm tone, a memory, an opening.</p>
+<p><strong>Recipe:</strong> <code>&quot;transition&quot;: {&quot;shader&quot;:&quot;fuite-lumiere&quot;,&quot;duree&quot;:1}</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m108" data-categorie="transitions" data-mots="108 #108 brulure burn brulure brulure burn feu bruler etincelles rupture the picture burns away in patches: a glowing front, ash and sparks uncover the next scene">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/108.jpg" aria-label="Preview: Burn"><source src="../medias/galerie/mouvements/108.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#108</p>
+<h3 class="carte-mouvement-nom">Burn <span lang="fr">Brûlure</span></h3>
+<p class="carte-mouvement-sens">The picture burns away in patches: a glowing front, ash and sparks uncover the next scene</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Brûle la scène vers la suivante en 1,2 s.</code></pre>
+<p class="traduction">“Burn the scene into the next one in 1.2 s.”</p>
+<p><strong>When:</strong> A strong break: the old disappears, we turn the page.</p>
+<p><strong>Recipe:</strong> <code>&quot;transition&quot;: {&quot;shader&quot;:&quot;brulure&quot;,&quot;duree&quot;:1.2}</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m109" data-categorie="transitions" data-mots="109 #109 lentille gravitational lens lentille lentille lens trou noir aspiration courbure plongee the picture bends into a ring around a dark core, then the next one unfolds">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/109.jpg" aria-label="Preview: Gravitational lens"><source src="../medias/galerie/mouvements/109.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#109</p>
+<h3 class="carte-mouvement-nom">Gravitational lens <span lang="fr">Lentille</span></h3>
+<p class="carte-mouvement-sens">The picture bends into a ring around a dark core, then the next one unfolds</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Passe à la scène suivante par une lentille de 1 s.</code></pre>
+<p class="traduction">“Move to the next scene with a 1 s gravitational lens.”</p>
+<p><strong>When:</strong> Change scale, dive into a subject, an idea that pulls you in.</p>
+<p><strong>Recipe:</strong> <code>&quot;transition&quot;: {&quot;shader&quot;:&quot;lentille&quot;,&quot;duree&quot;:1}</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m110" data-categorie="transitions" data-mots="110 #110 iris colore iris wipe iris iris ouverture etoile losange cinema anneau a shape opens from the centre (circle, diamond or star), edged with a ring in the brand colour">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/110.jpg" aria-label="Preview: Iris wipe"><source src="../medias/galerie/mouvements/110.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#110</p>
+<h3 class="carte-mouvement-nom">Iris wipe <span lang="fr">Iris coloré</span></h3>
+<p class="carte-mouvement-sens">A shape opens from the centre (circle, diamond or star), edged with a ring in the brand colour</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Ouvre la scène suivante par un iris en étoile de 0,9 s.</code></pre>
+<p class="traduction">“Open the next scene with a 0.9 s star-shaped iris wipe.”</p>
+<p><strong>When:</strong> A focus, an opening, a nod to cinema; the “circle” transition (#045) is enough for a simple round shape with no colour.</p>
+<p><strong>Recipe:</strong> <code>&quot;transition&quot;: {&quot;shader&quot;:&quot;iris&quot;,&quot;duree&quot;:0.9,&quot;reglages&quot;:{&quot;forme&quot;:2}}</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m111" data-categorie="transitions" data-mots="111 #111 deformation liquide domain warp deformation deformation warp liquide torsion transformation fluide the picture twists like a liquid with coloured veins, then untwists onto the next scene">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/111.jpg" aria-label="Preview: Domain warp"><source src="../medias/galerie/mouvements/111.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#111</p>
+<h3 class="carte-mouvement-nom">Domain warp <span lang="fr">Déformation liquide</span></h3>
+<p class="carte-mouvement-sens">The picture twists like a liquid with coloured veins, then untwists onto the next scene</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Passe à la scène suivante par une déformation liquide de 1,2 s.</code></pre>
+<p class="traduction">“Move to the next scene with a 1.2 s liquid domain warp.”</p>
+<p><strong>When:</strong> A transformation, an idea taking new shape, a changing world.</p>
+<p><strong>Recipe:</strong> <code>&quot;transition&quot;: {&quot;shader&quot;:&quot;deformation&quot;,&quot;duree&quot;:1.2}</code></p>
+</details>
+</article>
+</div>
+</section>
+<section class="categorie-mouvements" id="categorie-camera" data-categorie="camera">
+<h2>Camera</h2>
+<div class="grille-mouvements">
+<article class="carte-mouvement" id="m056" data-categorie="camera" data-mots="056 #056 zoom avant lent dolly in zoom avant zoom avant dolly approcher lent tension the camera slowly moves closer to the subject">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/056.jpg" aria-label="Preview: Dolly in"><source src="../medias/galerie/mouvements/056.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#056</p>
+<h3 class="carte-mouvement-nom">Dolly in <span lang="fr">Zoom avant lent</span></h3>
+<p class="carte-mouvement-sens">The camera slowly moves closer to the subject</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais un zoom avant lent de 10 % pendant toute la scène.</code></pre>
+<p class="traduction">“Do a slow 10% dolly in throughout the scene.”</p>
+<p><strong>When:</strong> Build tension, keep a picture alive.</p>
+<p><strong>Recipe:</strong> <code>&lt;div data-camera=&quot;zoom 1→1.1 0+4&quot;&gt;&lt;div class=&quot;decor&quot; data-decor&gt;&lt;/div&gt;&lt;/div&gt; &lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.3&quot; style=&quot;position: relative&quot;&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 027 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m057" data-categorie="camera" data-mots="057 #057 panoramique pan panoramique panoramique pan gauche droite decor the camera turns from left to right to follow the scene">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/057.jpg" aria-label="Preview: Pan"><source src="../medias/galerie/mouvements/057.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#057</p>
+<h3 class="carte-mouvement-nom">Pan <span lang="fr">Panoramique</span></h3>
+<p class="carte-mouvement-sens">The camera turns from left to right to follow the scene</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais un panoramique de gauche à droite sur 4 s.</code></pre>
+<p class="traduction">“Do a pan from left to right over 4 s.”</p>
+<p><strong>When:</strong> Reveal a setting wider than the frame.</p>
+<p><strong>Recipe:</strong> <code>&lt;div data-camera=&quot;zoom 1.3→1.3 0+4; x 35→65 0+4&quot;&gt;&lt;div class=&quot;decor&quot; data-decor&gt;&lt;/div&gt;&lt;/div&gt; &lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.3&quot; style=&quot;position: relative&quot;&gt;&lt;…</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 025 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m058" data-categorie="camera" data-mots="058 #058 bascule verticale tilt bascule tilt bascule haut bas vertical the camera tilts from top to bottom">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/058.jpg" aria-label="Preview: Tilt"><source src="../medias/galerie/mouvements/058.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#058</p>
+<h3 class="carte-mouvement-nom">Tilt <span lang="fr">Bascule verticale</span></h3>
+<p class="carte-mouvement-sens">The camera tilts from top to bottom</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Descends la caméra du ciel vers le sol, en 3 s.</code></pre>
+<p class="traduction">“Tilt the camera down from the sky to the ground, in 3 s.”</p>
+<p><strong>When:</strong> Reveal something at the top or the bottom.</p>
+<p><strong>Recipe:</strong> <code>&lt;div data-camera=&quot;zoom 1.3→1.3 0+3; y 35→65 0+3&quot;&gt;&lt;div class=&quot;decor&quot; data-decor&gt;&lt;/div&gt;&lt;/div&gt; &lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.3&quot; style=&quot;position: relative&quot;&gt;&lt;…</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 026 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m059" data-categorie="camera" data-mots="059 #059 montee en grue crane up grue grue crane monter elever ensemble the camera rises as it pulls back to reveal the whole picture">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/059.jpg" aria-label="Preview: Crane up"><source src="../medias/galerie/mouvements/059.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#059</p>
+<h3 class="carte-mouvement-nom">Crane up <span lang="fr">Montée en grue</span></h3>
+<p class="carte-mouvement-sens">The camera rises as it pulls back to reveal the whole picture</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais monter la caméra en reculant sur 4 s.</code></pre>
+<p class="traduction">“Do a crane up, pulling back over 4 s.”</p>
+<p><strong>When:</strong> An opening, a conclusion that rises above it all.</p>
+<p><strong>Recipe:</strong> <code>&lt;div data-camera=&quot;zoom 1.4→1 0+4; y 70→50 0+4&quot;&gt;&lt;div class=&quot;decor&quot; data-decor&gt;&lt;/div&gt;&lt;/div&gt; &lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.3&quot; style=&quot;position: relative&quot;&gt;&lt;/h…</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 031 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m060" data-categorie="camera" data-mots="060 #060 plan incline dutch angle plan incline incline dutch pencher diagonale tension the frame tilts diagonally">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/060.jpg" aria-label="Preview: Dutch angle"><source src="../medias/galerie/mouvements/060.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#060</p>
+<h3 class="carte-mouvement-nom">Dutch angle <span lang="fr">Plan incliné</span></h3>
+<p class="carte-mouvement-sens">The frame tilts diagonally</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Penche le cadre de 6 degrés pendant la scène d'alerte.</code></pre>
+<p class="traduction">“Give the frame a 6-degree Dutch angle during the alert scene.”</p>
+<p><strong>When:</strong> Unease, tension, an offbeat tone.</p>
+<p><strong>Recipe:</strong> <code>&lt;div data-camera=&quot;rotation 0→6 0+1&quot;&gt;&lt;div class=&quot;decor&quot; data-decor&gt;&lt;/div&gt;&lt;/div&gt; &lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.3&quot; style=&quot;position: relative&quot;&gt;&lt;/h2&gt;</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 036 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m061" data-categorie="camera" data-mots="061 #061 bascule de mise au point rack focus mise au point mise au point rack focus flou net premier plan focus shifts from the foreground to the background">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/061.jpg" aria-label="Preview: Rack focus"><source src="../medias/galerie/mouvements/061.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#061</p>
+<h3 class="carte-mouvement-nom">Rack focus <span lang="fr">Bascule de mise au point</span></h3>
+<p class="carte-mouvement-sens">Focus shifts from the foreground to the background</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Passe la netteté du premier plan au fond à 2 s, en 0,6 s.</code></pre>
+<p class="traduction">“Rack focus from the foreground to the background at 2 s, over 0.6 s.”</p>
+<p><strong>When:</strong> Guide the eye from one element to another.</p>
+<p><strong>Recipe:</strong> <code>&lt;div class=&quot;decor&quot; data-decor data-start=&quot;2&quot; data-dur=&quot;0.6&quot; data-tween=&quot;--flou 1cqh→0cqh&quot; style=&quot;filter: blur(var(--flou))&quot;&gt;&lt;/div&gt; &lt;h2 data-texte=&quot;titre&quot; data-s…</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 033 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m062" data-categorie="camera" data-mots="062 #062 camera a l epaule handheld epaule epaule handheld main documentaire flottement a slight float, like a handheld camera">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/062.jpg" aria-label="Preview: Handheld"><source src="../medias/galerie/mouvements/062.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#062</p>
+<h3 class="carte-mouvement-nom">Handheld <span lang="fr">Caméra à l'épaule</span></h3>
+<p class="carte-mouvement-sens">A slight float, like a handheld camera</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Ajoute un léger effet caméra à l'épaule pendant 6 s.</code></pre>
+<p class="traduction">“Add a slight handheld camera effect for 6 s.”</p>
+<p><strong>When:</strong> A documentary, lively, intimate tone.</p>
+<p><strong>Recipe:</strong> <code>&lt;div data-camera=&quot;zoom 1.05→1.05 0+6&quot;&gt;&lt;div class=&quot;pm-m-epaule&quot; data-start=&quot;0&quot; data-dur=&quot;6&quot; style=&quot;display: grid; place-items: center&quot;&gt;&lt;div class=&quot;decor&quot; data-de…</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 034 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m063" data-categorie="camera" data-mots="063 #063 parallaxe parallax parallaxe parallaxe parallax profondeur plans travelling near layers move faster than distant ones">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/063.jpg" aria-label="Preview: Parallax"><source src="../medias/galerie/mouvements/063.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#063</p>
+<h3 class="carte-mouvement-nom">Parallax <span lang="fr">Parallaxe</span></h3>
+<p class="carte-mouvement-sens">Near layers move faster than distant ones</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais un travelling avec parallaxe : fond à 20 %, collines à 60 %.</code></pre>
+<p class="traduction">“Do a tracking shot with parallax: background at 20%, hills at 60%.”</p>
+<p><strong>When:</strong> Give a setting depth.</p>
+<p><strong>Recipe:</strong> <code>&lt;div data-camera=&quot;zoom 1.2→1.2 0+4; x 40→60 0+4&quot;&gt;&lt;div class=&quot;decor&quot; data-decor data-profondeur=&quot;0.2&quot;&gt;&lt;/div&gt;&lt;div class=&quot;decor&quot; data-decor data-profondeur=&quot;0.6&quot;&gt;&lt;…</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 016 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m064" data-categorie="camera" data-mots="064 #064 effet vertigo dolly zoom vertigo vertigo dolly zoom choc fond vertige the subject keeps its size while the background distorts">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/064.jpg" aria-label="Preview: Dolly zoom"><source src="../medias/galerie/mouvements/064.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#064</p>
+<h3 class="carte-mouvement-nom">Dolly zoom <span lang="fr">Effet vertigo</span></h3>
+<p class="carte-mouvement-sens">The subject keeps its size while the background distorts</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais un effet vertigo : le fond grossit de 40 % en 2 s, le titre ne bouge pas.</code></pre>
+<p class="traduction">“Do a dolly zoom (vertigo effect): the background grows by 40% in 2 s, the title stays still.”</p>
+<p><strong>When:</strong> A shock, a moment of realisation.</p>
+<p><strong>Recipe:</strong> <code>&lt;div data-camera=&quot;zoom 1→1.4 0.5+2 sine-inout&quot;&gt;&lt;div class=&quot;decor&quot; data-decor&gt;&lt;/div&gt;&lt;/div&gt; &lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.3&quot; style=&quot;position: relative&quot;&gt;&lt;/h…</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 032 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m086" data-categorie="camera" data-mots="086 #086 zoom continu log zoom zoom log zoom log continu plongee regulier detail the camera dives into the picture at a steady pace: each doubling of the zoom takes the same time">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/086.jpg" aria-label="Preview: Log zoom"><source src="../medias/galerie/mouvements/086.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#086</p>
+<h3 class="carte-mouvement-nom">Log zoom <span lang="fr">Zoom continu</span></h3>
+<p class="carte-mouvement-sens">The camera dives into the picture at a steady pace: each doubling of the zoom takes the same time</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais un zoom continu de 1 à 6 en 4 s, qui plonge régulièrement.</code></pre>
+<p class="traduction">“Do a continuous log zoom from 1 to 6 in 4 s, diving in steadily.”</p>
+<p><strong>When:</strong> A big zoom (a map, a detail of a picture, a dive into a diagram): an ordinary zoom looks slow, then rushes.</p>
+<p><strong>Recipe:</strong> <code>&lt;div data-camera=&quot;zoom 1→6 0+4 log&quot;&gt;&lt;div class=&quot;decor&quot; data-decor&gt;&lt;/div&gt;&lt;/div&gt; &lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.3&quot; style=&quot;position: relative&quot;&gt;&lt;/h2&gt;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m126" data-categorie="camera" data-mots="126 #126 camera automatique auto director camera camera auto camera automatique auto realisateur cadrage gros plan director the camera finds its own shots: opening on the picture, moving in when there is time to look, a final pull back, never cutting off any text">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/126.jpg" aria-label="Preview: Auto-director camera"><source src="../medias/galerie/mouvements/126.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#126</p>
+<h3 class="carte-mouvement-nom">Auto-director camera <span lang="fr">Caméra automatique</span></h3>
+<p class="carte-mouvement-sens">The camera finds its own shots: opening on the picture, moving in when there is time to look, a final pull-back, never cutting off any text</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Laisse la caméra bouger toute seule dans cette scène de 8 s.</code></pre>
+<p class="traduction">“Let the auto-director camera move on its own in this 8 s scene.”</p>
+<p><strong>When:</strong> A fully composed explanatory scene (diagram, hub, steps) that builds up along with the voice.</p>
+<p><strong>Recipe:</strong> <code>&lt;div data-camera=&quot;auto&quot;&gt; &lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.2&quot; style=&quot;position: absolute; left: 14cqh; top: 18cqh; margin: 0&quot;&gt;&lt;/h2&gt; &lt;p data-texte=&quot;texte&quot; data…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m127" data-categorie="camera" data-mots="127 #127 gros plan sur un element focus close up gros plan gros plan focus zoom sur insister cadrer close up the automatic camera moves in on a chosen element for a few seconds, without cutting off its neighbours">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/127.jpg" aria-label="Preview: Focus close-up"><source src="../medias/galerie/mouvements/127.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#127</p>
+<h3 class="carte-mouvement-nom">Focus close-up <span lang="fr">Gros plan sur un élément</span></h3>
+<p class="carte-mouvement-sens">The automatic camera moves in on a chosen element for a few seconds, without cutting off its neighbours</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais un gros plan de 3 s sur le prix quand je dis « cher ».</code></pre>
+<p class="traduction">“Do a 3 s focus close-up on the price when I say “expensive”.”</p>
+<p><strong>When:</strong> Emphasise a number, a word, a line of code, just as the voice mentions it.</p>
+<p><strong>Recipe:</strong> <code>&lt;div data-camera=&quot;auto&quot;&gt; &lt;h2 id=&quot;titre&quot; data-texte=&quot;titre&quot; data-start=&quot;0.2&quot; style=&quot;position: absolute; left: 20cqh; top: 30cqh; margin: 0&quot;&gt;&lt;/h2&gt; &lt;p data-texte=&quot;…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m128" data-categorie="camera" data-mots="128 #128 recul final pull back reveal recul final recul reveal dezoom vue d ensemble zoom arriere tout montrer to finish, the camera pulls back and shows the whole idea at once">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/128.jpg" aria-label="Preview: Pull-back reveal"><source src="../medias/galerie/mouvements/128.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#128</p>
+<h3 class="carte-mouvement-nom">Pull-back reveal <span lang="fr">Recul final</span></h3>
+<p class="carte-mouvement-sens">To finish, the camera pulls back and shows the whole idea at once</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Termine la scène par un recul de 1,4 s qui montre tout le schéma.</code></pre>
+<p class="traduction">“End the scene with a 1.4 s pull-back reveal that shows the whole diagram.”</p>
+<p><strong>When:</strong> After a close-up, to show how the pieces fit together.</p>
+<p><strong>Recipe:</strong> <code>&lt;div data-camera=&quot;zoom 1.6→1 3+1.4; x 30→50 3+1.4; y 40→50 3+1.4&quot;&gt; &lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.2&quot; style=&quot;position: absolute; left: 20cqh; top: 30cqh; m…</code></p>
+</details>
+</article>
+</div>
+</section>
+<section class="categorie-mouvements" id="categorie-temps" data-categorie="temps">
+<h2>Time</h2>
+<div class="grille-mouvements">
+<article class="carte-mouvement" id="m065" data-categorie="temps" data-mots="065 #065 ralenti slow motion ralenti ralenti slow motion lent savourer the action plays out more slowly">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/065.jpg" aria-label="Preview: Slow motion"><source src="../medias/galerie/mouvements/065.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#065</p>
+<h3 class="carte-mouvement-nom">Slow motion <span lang="fr">Ralenti</span></h3>
+<p class="carte-mouvement-sens">The action plays out more slowly</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Passe la chute au ralenti, de 1 s à 3 s, à moitié de la vitesse.</code></pre>
+<p class="traduction">“Put the fall in slow motion, from 1 s to 3 s, at half speed.”</p>
+<p><strong>When:</strong> Savour a gesture, an impact.</p>
+<p><strong>Recipe:</strong> <code>&lt;div data-vitesse=&quot;1+2 x0.5&quot;&gt;&lt;h2 class=&quot;pm-m-chute&quot; data-texte=&quot;titre&quot; data-start=&quot;0.8&quot;&gt;&lt;/h2&gt;&lt;/div&gt;</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 037 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m066" data-categorie="temps" data-mots="066 #066 variation de vitesse speed ramp rampe speed ramp vitesse accelerer ralentir dynamique the action speeds up then slows down within the same shot">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/066.jpg" aria-label="Preview: Speed ramp"><source src="../medias/galerie/mouvements/066.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#066</p>
+<h3 class="carte-mouvement-nom">Speed ramp <span lang="fr">Variation de vitesse</span></h3>
+<p class="carte-mouvement-sens">The action speeds up then slows down within the same shot</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Accélère l'entrée ×2 pendant 1 s, puis ralentis à moitié pendant 1 s.</code></pre>
+<p class="traduction">“Speed ramp the entrance: ×2 for 1 s, then slow down to half speed for 1 s.”</p>
+<p><strong>When:</strong> A dynamic pace, an emphasis.</p>
+<p><strong>Recipe:</strong> <code>&lt;div data-vitesse=&quot;0.5+1 x2; 1.5+1 x0.5&quot;&gt;&lt;h2 class=&quot;pm-m-glisse-gauche&quot; data-texte=&quot;titre&quot; data-start=&quot;0.5&quot; style=&quot;--pm-dur: 2s&quot;&gt;&lt;/h2&gt;&lt;/div&gt;</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 038 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m067" data-categorie="temps" data-mots="067 #067 arret sur image freeze frame arret sur image arret sur image freeze figer pause moment cle the action stops for a moment, then resumes">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/067.jpg" aria-label="Preview: Freeze frame"><source src="../medias/galerie/mouvements/067.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#067</p>
+<h3 class="carte-mouvement-nom">Freeze frame <span lang="fr">Arrêt sur image</span></h3>
+<p class="carte-mouvement-sens">The action stops for a moment, then resumes</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fige l'image à 1,2 s pendant 1,5 s, en la passant en gris.</code></pre>
+<p class="traduction">“Freeze frame at 1.2 s for 1.5 s, turning the picture grey.”</p>
+<p><strong>When:</strong> A key moment, a “this is where…”.</p>
+<p><strong>Recipe:</strong> <code>&lt;div data-gel=&quot;1.2+1.5&quot; data-camera=&quot;saturation 1→0.4 1.2+0.3; saturation 0.4→1 2.7+0.3&quot; style=&quot;display: grid; place-items: center&quot;&gt;&lt;h2 class=&quot;pm-m-glisse-gauch…</code></p>
+<p class="carte-mouvement-source">Inspired by card no. 040 of <a href="https://showheyohtaki.github.io/motion-prompt/" rel="noopener">Motion Prompt</a></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m068" data-categorie="temps" data-mots="068 #068 accelere fast forward accelere accelere fast forward rapide resumer time lapse the action plays much faster">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/068.jpg" aria-label="Preview: Fast forward"><source src="../medias/galerie/mouvements/068.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#068</p>
+<h3 class="carte-mouvement-nom">Fast forward <span lang="fr">Accéléré</span></h3>
+<p class="carte-mouvement-sens">The action plays much faster</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Passe la préparation en accéléré ×4 pendant 2 s.</code></pre>
+<p class="traduction">“Fast forward the preparation ×4 for 2 s.”</p>
+<p><strong>When:</strong> Summarise a long step.</p>
+<p><strong>Recipe:</strong> <code>&lt;div data-vitesse=&quot;0.5+2 x4&quot;&gt;&lt;h2 class=&quot;pm-m-va-vient&quot; data-texte=&quot;titre&quot; data-start=&quot;0.5&quot; style=&quot;--pm-fois: 6&quot;&gt;&lt;/h2&gt;&lt;/div&gt;</code></p>
+</details>
+</article>
+</div>
+</section>
+<section class="categorie-mouvements" id="categorie-vie" data-categorie="vie">
+<h2>Living scenery</h2>
+<div class="grille-mouvements">
+<article class="carte-mouvement" id="m069" data-categorie="vie" data-mots="069 #069 balancement sway balance balancement sway plante vent feuille osciller sways gently around its base, like a plant in a breath of air">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/069.jpg" aria-label="Preview: Sway"><source src="../medias/galerie/mouvements/069.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#069</p>
+<h3 class="carte-mouvement-nom">Sway <span lang="fr">Balancement</span></h3>
+<p class="carte-mouvement-sens">Sways gently around its base, like a plant in a breath of air</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais balancer la plante de 2 degrés, lentement, en 4 secondes.</code></pre>
+<p class="traduction">“Make the plant sway by 2 degrees, slowly, over 4 seconds.”</p>
+<p><strong>When:</strong> A plant, grass, a hanging sign, a lantern: scenery that lives without drawing the eye.</p>
+<p><strong>Recipe:</strong> <code>&lt;svg viewBox=&quot;0 0 60 100&quot; style=&quot;height: 50cqh&quot; aria-hidden=&quot;true&quot;&gt; &lt;g class=&quot;pm-v-balance&quot; data-start=&quot;0&quot; data-dur=&quot;scene&quot;&gt; &lt;path d=&quot;M30 100 Q28 62 31 22&quot; stro…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m070" data-categorie="vie" data-mots="070 #070 flamme flicker flamme flamme flicker bougie feu danser torche a flame dancing in two waves: it leans and stretches from its base">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/070.jpg" aria-label="Preview: Flicker"><source src="../medias/galerie/mouvements/070.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#070</p>
+<h3 class="carte-mouvement-nom">Flicker <span lang="fr">Flamme</span></h3>
+<p class="carte-mouvement-sens">A flame dancing in two waves: it leans and stretches from its base</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Une flamme qui danse sur la bougie, deux vagues, de 3 degrés.</code></pre>
+<p class="traduction">“A flame flickering on the candle, two waves, by 3 degrees.”</p>
+<p><strong>When:</strong> A candle, a torch, a drawn campfire; for a fire with volume, the particle effects.</p>
+<p><strong>Recipe:</strong> <code>&lt;svg viewBox=&quot;0 0 40 90&quot; style=&quot;height: 45cqh&quot; aria-hidden=&quot;true&quot;&gt; &lt;rect x=&quot;14&quot; y=&quot;54&quot; width=&quot;12&quot; height=&quot;36&quot; rx=&quot;2&quot; fill=&quot;var(--c-primaire)&quot;/&gt; &lt;g class=&quot;pm-v-f…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m071" data-categorie="vie" data-mots="071 #071 volutes steam vapeur vapeur steam volute fumee chaud tasse wisps rise in swirls, grow and fade away">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/071.jpg" aria-label="Preview: Steam"><source src="../medias/galerie/mouvements/071.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#071</p>
+<h3 class="carte-mouvement-nom">Steam <span lang="fr">Volutes</span></h3>
+<p class="carte-mouvement-sens">Wisps rise in swirls, grow and fade away</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais monter trois volutes de vapeur au-dessus de la tasse, toutes les 2,4 s.</code></pre>
+<p class="traduction">“Make three wisps of steam rise above the cup, every 2.4 s.”</p>
+<p><strong>When:</strong> A coffee, a soup, a machine heating up.</p>
+<p><strong>Recipe:</strong> <code>&lt;div data-decor data-start=&quot;0&quot; data-dur=&quot;scene&quot; style=&quot;position: relative; width: 26cqh; height: 36cqh&quot;&gt; &lt;svg class=&quot;pm-v-vapeur&quot; viewBox=&quot;0 0 10 30&quot; style=&quot;pos…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m072" data-categorie="vie" data-mots="072 #072 flottement bob flotte flottement bob flotter eau apesanteur bouee bobs gently up and down, tilting slightly, as if resting on water">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/072.jpg" aria-label="Preview: Bob"><source src="../medias/galerie/mouvements/072.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#072</p>
+<h3 class="carte-mouvement-nom">Bob <span lang="fr">Flottement</span></h3>
+<p class="carte-mouvement-sens">Bobs gently up and down, tilting slightly, as if resting on water</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais flotter la bouée de 0,8 % de la hauteur, en 3,4 s.</code></pre>
+<p class="traduction">“Make the buoy bob by 0.8% of the height, over 3.4 s.”</p>
+<p><strong>When:</strong> An object on water, a balloon, a bubble, a weightless icon.</p>
+<p><strong>Recipe:</strong> <code>&lt;div class=&quot;pm-v-flotte&quot; data-decor data-start=&quot;0&quot; data-dur=&quot;scene&quot; style=&quot;width: 24cqh; height: 24cqh; border-radius: 50%; border: 4cqh solid var(--c-accent); …</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m073" data-categorie="vie" data-mots="073 #073 lueur glow lueur lueur glow halo lumiere respirer lampe a halo grows and shrinks back very gently, like a breathing light">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/073.jpg" aria-label="Preview: Glow"><source src="../medias/galerie/mouvements/073.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#073</p>
+<h3 class="carte-mouvement-nom">Glow <span lang="fr">Lueur</span></h3>
+<p class="carte-mouvement-sens">A halo grows and shrinks back very gently, like a breathing light</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais respirer le halo de la lampe de 4 %, en 3 s.</code></pre>
+<p class="traduction">“Make the lamp's halo glow and breathe by 4%, over 3 s.”</p>
+<p><strong>When:</strong> A lamp, a light bulb, a button to highlight without making it pulse.</p>
+<p><strong>Recipe:</strong> <code>&lt;div data-decor data-start=&quot;0&quot; data-dur=&quot;scene&quot; style=&quot;position: relative; display: grid; place-items: center&quot;&gt; &lt;div class=&quot;pm-v-lueur&quot; style=&quot;width: 40cqh; hei…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m074" data-categorie="vie" data-mots="074 #074 scintillement twinkle scintille scintillement twinkle etoile briller etincelle ciel a star stays still, then tightens and shines for a moment">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/074.jpg" aria-label="Preview: Twinkle"><source src="../medias/galerie/mouvements/074.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#074</p>
+<h3 class="carte-mouvement-nom">Twinkle <span lang="fr">Scintillement</span></h3>
+<p class="carte-mouvement-sens">A star stays still, then tightens and shines for a moment</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais scintiller les cinq étoiles, chacune à son moment, toutes les 2,8 s.</code></pre>
+<p class="traduction">“Make the five stars twinkle, each at its own moment, every 2.8 s.”</p>
+<p><strong>When:</strong> A night sky, a bright idea, small scattered sparkles.</p>
+<p><strong>Recipe:</strong> <code>&lt;svg viewBox=&quot;0 0 120 60&quot; style=&quot;height: 40cqh&quot; aria-hidden=&quot;true&quot;&gt; &lt;g data-start=&quot;0&quot; data-dur=&quot;scene&quot; fill=&quot;var(--c-accent)&quot;&gt; &lt;path class=&quot;pm-v-scintille&quot; d=&quot;M…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m075" data-categorie="vie" data-mots="075 #075 engrenage gear train engrenage engrenage gear roue machine mecanisme tourner gears turn together, at a constant speed, in opposite directions">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/075.jpg" aria-label="Preview: Gear train"><source src="../medias/galerie/mouvements/075.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#075</p>
+<h3 class="carte-mouvement-nom">Gear train <span lang="fr">Engrenage</span></h3>
+<p class="carte-mouvement-sens">Gears turn together, at a constant speed, in opposite directions</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais tourner les deux engrenages : un tour en 6 s pour la grande roue de 16 dents.</code></pre>
+<p class="traduction">“Turn the two gears in a gear train: one turn in 6 s for the large 16-tooth wheel.”</p>
+<p><strong>When:</strong> A machine, a process, a method that “turns”.</p>
+<p><strong>Recipe:</strong> <code>&lt;svg viewBox=&quot;0 0 100 60&quot; style=&quot;height: 40cqh&quot; aria-hidden=&quot;true&quot;&gt; &lt;g data-start=&quot;0&quot; data-dur=&quot;scene&quot; fill=&quot;var(--c-primaire)&quot; stroke=&quot;var(--c-primaire)&quot;&gt; &lt;g c…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m076" data-categorie="vie" data-mots="076 #076 vibreur buzz vibre vibreur buzz vibrer telephone notification sonner a short burst of jolts, then calm: a vibrating phone">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/076.jpg" aria-label="Preview: Buzz"><source src="../medias/galerie/mouvements/076.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#076</p>
+<h3 class="carte-mouvement-nom">Buzz <span lang="fr">Vibreur</span></h3>
+<p class="carte-mouvement-sens">A short burst of jolts, then calm: a vibrating phone</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais vibrer le téléphone : 4 secousses de 3 degrés en 0,45 s, toutes les 1,6 s.</code></pre>
+<p class="traduction">“Make the phone buzz: 4 jolts of 3 degrees in 0.45 s, every 1.6 s.”</p>
+<p><strong>When:</strong> A notification, a call, an alarm clock.</p>
+<p><strong>Recipe:</strong> <code>&lt;div class=&quot;pm-v-vibre&quot; data-decor data-start=&quot;0&quot; data-dur=&quot;scene&quot; style=&quot;width: 16cqh; height: 28cqh; border-radius: 2.5cqh; border: 1.2cqh solid var(--c-prima…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m077" data-categorie="vie" data-mots="077 #077 attente idle jiggle attend attente idle dandiner patienter attendre jiggle a waiting object jiggles: it flattens on one side, then the other">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/077.jpg" aria-label="Preview: Idle jiggle"><source src="../medias/galerie/mouvements/077.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#077</p>
+<h3 class="carte-mouvement-nom">Idle jiggle <span lang="fr">Attente</span></h3>
+<p class="carte-mouvement-sens">A waiting object jiggles: it flattens on one side, then the other</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais attendre le colis en se dandinant de 2 %, en deux temps de 270 ms.</code></pre>
+<p class="traduction">“Make the parcel wait with an idle jiggle of 2%, in two 270 ms beats.”</p>
+<p><strong>When:</strong> A simple object or mascot waiting its turn, an icon biding its time.</p>
+<p><strong>Recipe:</strong> <code>&lt;div class=&quot;pm-v-attend&quot; data-decor data-start=&quot;0&quot; data-dur=&quot;scene&quot; style=&quot;width: 26cqh; height: 20cqh; border-radius: 3cqh; background: var(--c-accent)&quot;&gt;&lt;/div&gt;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m078" data-categorie="vie" data-mots="078 #078 derive cloud drift nuage nuage derive drift ciel parallaxe avancer a cloud moves slowly, at a constant speed, throughout the scene">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/078.jpg" aria-label="Preview: Cloud drift"><source src="../medias/galerie/mouvements/078.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#078</p>
+<h3 class="carte-mouvement-nom">Cloud drift <span lang="fr">Dérive</span></h3>
+<p class="carte-mouvement-sens">A cloud moves slowly, at a constant speed, throughout the scene</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais dériver les nuages vers la droite, à 4 % de la hauteur par seconde, le plus lointain à 2.</code></pre>
+<p class="traduction">“Make the clouds drift to the right, at 4% of the height per second, the farthest at 2.”</p>
+<p><strong>When:</strong> A sky, a landscape, a background that should live without any sudden movement.</p>
+<p><strong>Recipe:</strong> <code>&lt;div data-decor style=&quot;display: grid; gap: 6cqh; justify-items: start; width: 70cqh&quot;&gt; &lt;div class=&quot;pm-v-nuage&quot; data-start=&quot;0&quot; data-dur=&quot;scene&quot; style=&quot;--pm-vitess…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m079" data-categorie="vie" data-mots="079 #079 ondes ripples ondes ondes ripple anneau signal goutte radar rings appear at the centre, widen and fade, one after another">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/079.jpg" aria-label="Preview: Ripples"><source src="../medias/galerie/mouvements/079.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#079</p>
+<h3 class="carte-mouvement-nom">Ripples <span lang="fr">Ondes</span></h3>
+<p class="carte-mouvement-sens">Rings appear at the centre, widen and fade, one after another</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais partir trois ondes depuis le point, toutes les 2,6 s.</code></pre>
+<p class="traduction">“Send three ripples out from the dot, every 2.6 s.”</p>
+<p><strong>When:</strong> A signal, a drop in water, a point to draw attention to.</p>
+<p><strong>Recipe:</strong> <code>&lt;svg viewBox=&quot;0 0 100 100&quot; style=&quot;height: 50cqh&quot; aria-hidden=&quot;true&quot;&gt; &lt;g data-start=&quot;0&quot; data-dur=&quot;scene&quot; fill=&quot;none&quot; stroke=&quot;var(--c-accent)&quot; stroke-width=&quot;2&quot;&gt; &lt;…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m080" data-categorie="vie" data-mots="080 #080 pousse grow croissance pousse grow croissance fleur plante eclore a plant grows: the stem draws itself in two spurts, then the leaves and petals open">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/080.jpg" aria-label="Preview: Grow"><source src="../medias/galerie/mouvements/080.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#080</p>
+<h3 class="carte-mouvement-nom">Grow <span lang="fr">Pousse</span></h3>
+<p class="carte-mouvement-sens">A plant grows: the stem draws itself in two spurts, then the leaves and petals open</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais pousser la fleur en 1,6 s, puis balancer de 2 degrés.</code></pre>
+<p class="traduction">“Make the flower grow in 1.6 s, then sway by 2 degrees.”</p>
+<p><strong>When:</strong> Growth, a project that grows, an idea blossoming.</p>
+<p><strong>Recipe:</strong> <code>&lt;svg viewBox=&quot;0 0 60 100&quot; style=&quot;height: 50cqh&quot; aria-hidden=&quot;true&quot;&gt; &lt;g class=&quot;pm-v-balance&quot; data-start=&quot;1.6&quot; data-dur=&quot;scene&quot; style=&quot;--pm-ampleur: 2&quot;&gt; &lt;g data-s…</code></p>
+</details>
+</article>
+</div>
+</section>
+<section class="categorie-mouvements" id="categorie-compositions" data-categorie="compositions">
+<h2>Compositions</h2>
+<div class="grille-mouvements">
+<article class="carte-mouvement" id="m087" data-categorie="compositions" data-mots="087 #087 defilement de logos logo marquee defile logos defilement marquee logos bandeau clients partenaires carrousel a row of logos scrolls with no apparent end, at a constant speed, with no visible seam">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/087.jpg" aria-label="Preview: Logo marquee"><source src="../medias/galerie/mouvements/087.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#087</p>
+<h3 class="carte-mouvement-nom">Logo marquee <span lang="fr">Défilement de logos</span></h3>
+<p class="carte-mouvement-sens">A row of logos scrolls with no apparent end, at a constant speed, with no visible seam</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais défiler les logos de nos clients en bandeau, un tour en 20 s.</code></pre>
+<p class="traduction">“Scroll our clients' logos in a logo marquee, one loop in 20 s.”</p>
+<p><strong>When:</strong> A project's clients, partners or funders, in a strip under a title.</p>
+<p><strong>Recipe:</strong> <code>&lt;div data-start=&quot;0&quot; data-dur=&quot;scene&quot; style=&quot;width: 100%; overflow: hidden&quot;&gt; &lt;div class=&quot;pm-v-defile&quot;&gt; &lt;span style=&quot;display: block; width: 14cqh; height: 8cqh; b…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m088" data-categorie="compositions" data-mots="088 #088 avant apres balaye before after wipe avant apres avant apres before after wipe comparaison balayage a line sweeps across the picture from left to right and reveals the “after” over the “before”">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/088.jpg" aria-label="Preview: Before-after wipe"><source src="../medias/galerie/mouvements/088.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#088</p>
+<h3 class="carte-mouvement-nom">Before-after wipe <span lang="fr">Avant/après balayé</span></h3>
+<p class="carte-mouvement-sens">A line sweeps across the picture from left to right and reveals the “after” over the “before”</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Montre l'avant/après : la ligne balaie l'image en 1,2 s.</code></pre>
+<p class="traduction">“Show the before/after with a before-after wipe: the line sweeps across the picture in 1.2 s.”</p>
+<p><strong>When:</strong> A transformation: a renovated room, a corrected document, a spreadsheet before and after the training.</p>
+<p><strong>Recipe:</strong> <code>&lt;div class=&quot;pm-m-avant-apres&quot; data-start=&quot;0.5&quot; data-dur=&quot;1.2&quot; data-tween=&quot;--pm-balai 0→100 cubic-inout&quot; style=&quot;width: 80cqh; height: 44cqh; border-radius: 2cqh&quot;…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m089" data-categorie="compositions" data-mots="089 #089 effondrement en pastille collapse to pill pastille pastille pill collapse effondrement fin logo resserrer the block clears its content, shrinks into a pill and disappears, and the logo pops up in its place">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/089.jpg" aria-label="Preview: Collapse to pill"><source src="../medias/galerie/mouvements/089.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#089</p>
+<h3 class="carte-mouvement-nom">Collapse to pill <span lang="fr">Effondrement en pastille</span></h3>
+<p class="carte-mouvement-sens">The block clears its content, shrinks into a pill and disappears, and the logo pops up in its place</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais s'effondrer la carte en pastille en 0,7 s, puis fais surgir le logo.</code></pre>
+<p class="traduction">“Collapse the card to a pill in 0.7 s, then make the logo pop up.”</p>
+<p><strong>When:</strong> A video ending: the last message shrinks and makes way for the logo.</p>
+<p><strong>Recipe:</strong> <code>&lt;div style=&quot;display: grid; place-items: center&quot;&gt; &lt;div id=&quot;bloc&quot; class=&quot;pm-m-pastille&quot; data-start=&quot;1.2&quot; data-dur=&quot;0.7&quot; style=&quot;grid-area: 1 / 1; padding: 4cqh 8cq…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m090" data-categorie="compositions" data-mots="090 #090 cercle d inondation flood circle inondation inondation flood cercle remplir couvrir passage a circle of colour starts from a point and covers the whole picture in a flash">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/090.jpg" aria-label="Preview: Flood circle"><source src="../medias/galerie/mouvements/090.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#090</p>
+<h3 class="carte-mouvement-nom">Flood circle <span lang="fr">Cercle d'inondation</span></h3>
+<p class="carte-mouvement-sens">A circle of colour starts from a point and covers the whole picture in a flash</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais partir un cercle d'inondation depuis le bouton, à 80 % et 70 % de l'image, en 0,32 s.</code></pre>
+<p class="traduction">“Send a flood circle out from the button, at 80% and 70% of the picture, in 0.32 s.”</p>
+<p><strong>When:</strong> A brisk move to the next scene, from where you have just clicked or looked.</p>
+<p><strong>Recipe:</strong> <code>&lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.2&quot;&gt;&lt;/h2&gt; &lt;div class=&quot;pm-m-inonde&quot; data-decor data-start=&quot;1.5&quot; data-dur=&quot;0.32&quot; style=&quot;--pm-x: 80; --pm-y: 70&quot;&gt;&lt;/div&gt;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m091" data-categorie="compositions" data-mots="091 #091 roue de selection selection wheel roue roue wheel selection choix liste tambour machine a sous a list scrolls in a one line window and stops dead on the choice">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/091.jpg" aria-label="Preview: Selection wheel"><source src="../medias/galerie/mouvements/091.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#091</p>
+<h3 class="carte-mouvement-nom">Selection wheel <span lang="fr">Roue de sélection</span></h3>
+<p class="carte-mouvement-sens">A list scrolls in a one-line window and stops dead on the choice</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais tourner la roue jusqu'au 5e choix en 1,4 s, sans rebond.</code></pre>
+<p class="traduction">“Spin the selection wheel to the 5th choice in 1.4 s, with no bounce.”</p>
+<p><strong>When:</strong> A choice among several (a day, an offer, a job), an answer that lands.</p>
+<p><strong>Recipe:</strong> <code>&lt;div data-start=&quot;0.4&quot; data-dur=&quot;1.4&quot; style=&quot;height: 8cqh; overflow: hidden; border-block: 0.4cqh solid var(--c-accent)&quot;&gt; &lt;div class=&quot;pm-m-roue&quot;&gt; &lt;div style=&quot;hei…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m092" data-categorie="compositions" data-mots="092 #092 mur de vignettes tile wall mur mur wall vignettes tile grille galerie onde a wall of thumbnails seen at an angle appears in a wave from one corner, then the camera moves from one to the next">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/092.jpg" aria-label="Preview: Tile wall"><source src="../medias/galerie/mouvements/092.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#092</p>
+<h3 class="carte-mouvement-nom">Tile wall <span lang="fr">Mur de vignettes</span></h3>
+<p class="carte-mouvement-sens">A wall of thumbnails seen at an angle appears in a wave from one corner, then the camera moves from one to the next</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais apparaître le mur de 12 vignettes en onde, 60 ms entre deux, puis un gros plan sur l'une.</code></pre>
+<p class="traduction">“Make the tile wall of 12 thumbnails appear in a wave, 60 ms apart, then do a close-up on one of them.”</p>
+<p><strong>When:</strong> Past work, products, team photos: lots of pictures at once, then one in detail.</p>
+<p><strong>Recipe:</strong> <code>&lt;div data-camera=&quot;zoom 1→1.6 1.6+1.2 quart-inout; x 50→62 1.6+1.2 quart-inout; y 50→42 1.6+1.2 quart-inout&quot; style=&quot;display: grid; place-items: center; position:…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m093" data-categorie="compositions" data-mots="093 #093 helice helix wall helice helice helix spirale vignettes relief tourner carrousel thumbnails wrapped in a helix turn around a vertical axis; those facing away are hidden">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/093.jpg" aria-label="Preview: Helix wall"><source src="../medias/galerie/mouvements/093.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#093</p>
+<h3 class="carte-mouvement-nom">Helix wall <span lang="fr">Hélice</span></h3>
+<p class="carte-mouvement-sens">Thumbnails wrapped in a helix turn around a vertical axis; those facing away are hidden</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais tourner l'hélice de 12 vignettes d'un tiers de tour en 6 s.</code></pre>
+<p class="traduction">“Turn the helix wall of 12 thumbnails by a third of a turn in 6 s.”</p>
+<p><strong>When:</strong> A collection (products, faces, past work) to show with depth, as an opening or a closing.</p>
+<p><strong>Recipe:</strong> <code>&lt;div class=&quot;pm-m-helice&quot; data-start=&quot;0&quot; data-dur=&quot;6&quot; style=&quot;width: 100%; height: 60cqh&quot;&gt; &lt;div class=&quot;pm-m-helice-vignette&quot; style=&quot;--i: -5; border-radius: 2cqh; …</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m114" data-categorie="compositions" data-mots="114 #114 fleche qui relie connector arrow fleche relie fleche relier connecteur connector arrow schema diagramme an arrow draws itself from one element to another, stopping at the edge of each, with its label">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/114.jpg" aria-label="Preview: Connector arrow"><source src="../medias/galerie/mouvements/114.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#114</p>
+<h3 class="carte-mouvement-nom">Connector arrow <span lang="fr">Flèche qui relie</span></h3>
+<p class="carte-mouvement-sens">An arrow draws itself from one element to another, stopping at the edge of each, with its label</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Trace une flèche de Client à Serveur en 0,7 s quand je dis « serveur ».</code></pre>
+<p class="traduction">“Draw a connector arrow from Client to Server in 0.7 s when I say “server”.”</p>
+<p><strong>When:</strong> An exchange, a cause and its effect, a circuit, a diagram that builds up along with the voice.</p>
+<p><strong>Recipe:</strong> <code>&lt;p id=&quot;client&quot; style=&quot;position: absolute; left: 25cqh; top: 45cqh; font-size: 5cqh&quot; data-texte=&quot;titre&quot; data-start=&quot;0.2&quot;&gt;&lt;/p&gt; &lt;p id=&quot;serveur&quot; style=&quot;position: ab…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m122" data-categorie="compositions" data-mots="122 #122 barres qui poussent bar chart grow barres poussent graphique barres histogramme bar chart donnees chiffres comparer a bar chart where each bar grows from zero, its value counting along with it">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/122.jpg" aria-label="Preview: Bar chart grow"><source src="../medias/galerie/mouvements/122.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#122</p>
+<h3 class="carte-mouvement-nom">Bar chart grow <span lang="fr">Barres qui poussent</span></h3>
+<p class="carte-mouvement-sens">A bar chart where each bar grows from zero, its value counting along with it</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais pousser les barres 2023, 2024 et 2025 une par une quand la voix dit chaque année, en 0,9 s chacune.</code></pre>
+<p class="traduction">“Make the 2023, 2024 and 2025 bars grow one by one as the voice says each year, in 0.9 s each.”</p>
+<p><strong>When:</strong> Quantities to compare, a before/after, a year-on-year progression.</p>
+<p><strong>Recipe:</strong> <code>&lt;figure data-graphique=&quot;ventes&quot; data-start=&quot;0.2&quot; style=&quot;width: 100cqh; height: 56cqh&quot;&gt;&lt;/figure&gt;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m123" data-categorie="compositions" data-mots="123 #123 courbe qui se trace line chart draw courbe trace courbe graphique evolution tendance line chart donnees a curve draws itself point by point, and a gradient area appears beneath it">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/123.jpg" aria-label="Preview: Line chart draw"><source src="../medias/galerie/mouvements/123.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#123</p>
+<h3 class="carte-mouvement-nom">Line chart draw <span lang="fr">Courbe qui se trace</span></h3>
+<p class="carte-mouvement-sens">A curve draws itself point by point, and a gradient area appears beneath it</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Trace la courbe des ventes de janvier à juin en 1,6 s, en passant par chaque mois quand la voix le dit.</code></pre>
+<p class="traduction">“Draw the sales curve from January to June in 1.6 s, passing through each month as the voice says it.”</p>
+<p><strong>When:</strong> A change over time, a trend, a season.</p>
+<p><strong>Recipe:</strong> <code>&lt;figure data-graphique=&quot;mois&quot; data-start=&quot;0.2&quot; style=&quot;width: 110cqh; height: 56cqh&quot;&gt;&lt;/figure&gt;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m124" data-categorie="compositions" data-mots="124 #124 anneau qui se remplit donut chart fill anneau remplit anneau camembert secteurs parts donut pie chart repartition a ring (or a disc) fills up slice by slice, each label arriving with its slice">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/124.jpg" aria-label="Preview: Donut chart fill"><source src="../medias/galerie/mouvements/124.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#124</p>
+<h3 class="carte-mouvement-nom">Donut chart fill <span lang="fr">Anneau qui se remplit</span></h3>
+<p class="carte-mouvement-sens">A ring (or a disc) fills up slice by slice, each label arriving with its slice</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Remplis l'anneau des trois parts en 1,2 s, avec « Images 55 % » quand sa part est complète.</code></pre>
+<p class="traduction">“Fill the donut chart's three slices in 1.2 s, with “Images 55%” once its slice is complete.”</p>
+<p><strong>When:</strong> The parts of a whole, five at most: budget, breakdown, origin.</p>
+<p><strong>Recipe:</strong> <code>&lt;figure data-graphique=&quot;parts&quot; data-start=&quot;0.2&quot; style=&quot;width: 100cqh; height: 60cqh&quot;&gt;&lt;/figure&gt;</code></p>
+</details>
+</article>
+</div>
+</section>
+<section class="categorie-mouvements" id="categorie-logiciel" data-categorie="logiciel">
+<h2>Software demos</h2>
+<div class="grille-mouvements">
+<article class="carte-mouvement" id="m094" data-categorie="logiciel" data-mots="094 #094 clic du pointeur cursor click clic pointeur clic cliquer pointeur souris curseur cursor click tutoriel logiciel the pointer moves to the button in an arc, pauses and clicks: the button sinks in, a circle tightens, you hear the click">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/094.jpg" aria-label="Preview: Cursor click"><source src="../medias/galerie/mouvements/094.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#094</p>
+<h3 class="carte-mouvement-nom">Cursor click <span lang="fr">Clic du pointeur</span></h3>
+<p class="carte-mouvement-sens">The pointer moves to the button in an arc, pauses and clicks: the button sinks in, a circle tightens, you hear the click</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais cliquer le pointeur sur le bouton Envoyer à 1,6 s.</code></pre>
+<p class="traduction">“Make the pointer click the Send button at 1.6 s.”</p>
+<p><strong>When:</strong> Show where to click in a piece of software, on a screenshot or a mock-up of the screen.</p>
+<p><strong>Recipe:</strong> <code>&lt;div class=&quot;pm-ecran&quot; data-adresse=&quot;app.exemple.fr&quot; style=&quot;--pm-ecran-l: 92cqh&quot;&gt; &lt;div style=&quot;position: absolute; inset: 0; display: grid; gap: 6%; align-content…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m095" data-categorie="logiciel" data-mots="095 #095 survol hover survol survol survoler hover pointeur souris designer montrer the pointer comes to rest on an element without clicking">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/095.jpg" aria-label="Preview: Hover"><source src="../medias/galerie/mouvements/095.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#095</p>
+<h3 class="carte-mouvement-nom">Hover <span lang="fr">Survol</span></h3>
+<p class="carte-mouvement-sens">The pointer comes to rest on an element without clicking</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais passer le pointeur sur la liste à 1,2 s.</code></pre>
+<p class="traduction">“Make the pointer hover over the list at 1.2 s.”</p>
+<p><strong>When:</strong> Show a tooltip that appears on hover, or point to a spot on the screen before talking about it.</p>
+<p><strong>Recipe:</strong> <code>&lt;div class=&quot;pm-ecran&quot; data-adresse=&quot;app.exemple.fr&quot; style=&quot;--pm-ecran-l: 92cqh&quot;&gt; &lt;div style=&quot;position: absolute; inset: 0; display: grid; gap: 6%; align-content…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m096" data-categorie="logiciel" data-mots="096 #096 double clic double click double clic double clic double click ouvrir pointeur souris two clicks close together, 0.15 s apart, each with its press, its circle and its sound">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/096.jpg" aria-label="Preview: Double click"><source src="../medias/galerie/mouvements/096.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#096</p>
+<h3 class="carte-mouvement-nom">Double click <span lang="fr">Double-clic</span></h3>
+<p class="carte-mouvement-sens">Two clicks close together, 0.15 s apart, each with its press, its circle and its sound</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais un double-clic sur la liste à 1,6 s.</code></pre>
+<p class="traduction">“Double-click on the list at 1.6 s.”</p>
+<p><strong>When:</strong> Open a file, enter a folder, select a word in the software being shown.</p>
+<p><strong>Recipe:</strong> <code>&lt;div class=&quot;pm-ecran&quot; data-adresse=&quot;app.exemple.fr&quot; style=&quot;--pm-ecran-l: 92cqh&quot;&gt; &lt;div style=&quot;position: absolute; inset: 0; display: grid; gap: 6%; align-content…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m097" data-categorie="logiciel" data-mots="097 #097 saisie au clavier human typing saisie saisie taper clavier typing champ curseur ecrire the text is typed in small irregular bursts, like a real hand, with the text cursor blinking">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/097.jpg" aria-label="Preview: Human typing"><source src="../medias/galerie/mouvements/097.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#097</p>
+<h3 class="carte-mouvement-nom">Human typing <span lang="fr">Saisie au clavier</span></h3>
+<p class="carte-mouvement-sens">The text is typed in small irregular bursts, like a real hand, with the text cursor blinking</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Tape le nom du client dans le champ à 0,5 s, comme au clavier.</code></pre>
+<p class="traduction">“Type the client's name into the field at 0.5 s, as if on a keyboard.”</p>
+<p><strong>When:</strong> A field being filled in in the software being shown, a search, a typed command.</p>
+<p><strong>Recipe:</strong> <code>&lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0.5&quot; data-lettres=&quot;saisie&quot;&gt;&lt;/h2&gt;</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m098" data-categorie="logiciel" data-mots="098 #098 projecteur spotlight projecteur projecteur spotlight eclairer assombrir zone mettre en valeur the whole screen darkens except the area being talked about">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/098.jpg" aria-label="Preview: Spotlight"><source src="../medias/galerie/mouvements/098.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#098</p>
+<h3 class="carte-mouvement-nom">Spotlight <span lang="fr">Projecteur</span></h3>
+<p class="carte-mouvement-sens">The whole screen darkens except the area being talked about</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Mets un projecteur sur le bouton Envoyer de 1 s à 3 s.</code></pre>
+<p class="traduction">“Put a spotlight on the Send button from 1 s to 3 s.”</p>
+<p><strong>When:</strong> A precise area of a busy screen: a total, a button, a column.</p>
+<p><strong>Recipe:</strong> <code>&lt;div class=&quot;pm-ecran&quot; data-adresse=&quot;app.exemple.fr&quot; style=&quot;--pm-ecran-l: 92cqh&quot;&gt; &lt;div style=&quot;position: absolute; inset: 0; display: grid; gap: 6%; align-content…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m099" data-categorie="logiciel" data-mots="099 #099 anneau de focus focus ring anneau focus anneau focus entourer cadre pulse ring a ring in the accent colour surrounds the element and pulses gently">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/099.jpg" aria-label="Preview: Focus ring"><source src="../medias/galerie/mouvements/099.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#099</p>
+<h3 class="carte-mouvement-nom">Focus ring <span lang="fr">Anneau de focus</span></h3>
+<p class="carte-mouvement-sens">A ring in the accent colour surrounds the element and pulses gently</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Entoure le champ d'un anneau qui pulse de 1 s à 3 s.</code></pre>
+<p class="traduction">“Surround the field with a pulsing focus ring from 1 s to 3 s.”</p>
+<p><strong>When:</strong> Point out a field or a button without darkening the rest.</p>
+<p><strong>Recipe:</strong> <code>&lt;div class=&quot;pm-ecran&quot; data-adresse=&quot;app.exemple.fr&quot; style=&quot;--pm-ecran-l: 92cqh&quot;&gt; &lt;div style=&quot;position: absolute; inset: 0; display: grid; gap: 6%; align-content…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m100" data-categorie="logiciel" data-mots="100 #100 assombrir autour dim around assombrir autour assombrir palir autour dim concentrer ecran the rest of the scene fades to leave only the screen">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/100.jpg" aria-label="Preview: Dim around"><source src="../medias/galerie/mouvements/100.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#100</p>
+<h3 class="carte-mouvement-nom">Dim around <span lang="fr">Assombrir autour</span></h3>
+<p class="carte-mouvement-sens">The rest of the scene fades to leave only the screen</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais pâlir tout autour de l'écran de 1 s à 3 s.</code></pre>
+<p class="traduction">“Dim everything around the screen from 1 s to 3 s.”</p>
+<p><strong>When:</strong> A screen surrounded by text or scenery, at the moment it needs to be looked at on its own.</p>
+<p><strong>Recipe:</strong> <code>&lt;h2 data-texte=&quot;titre&quot; data-start=&quot;0&quot;&gt;&lt;/h2&gt; &lt;div class=&quot;pm-ecran&quot; data-adresse=&quot;app.exemple.fr&quot; style=&quot;--pm-ecran-l: 92cqh&quot;&gt; &lt;div style=&quot;position: absolute; ins…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m101" data-categorie="logiciel" data-mots="101 #101 zoom sur l etape zoom to target zoom etape zoom zoomer rapprocher detail loupe etape the screen moves closer to the element being talked about, then comes back">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/101.jpg" aria-label="Preview: Zoom to target"><source src="../medias/galerie/mouvements/101.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#101</p>
+<h3 class="carte-mouvement-nom">Zoom to target <span lang="fr">Zoom sur l'étape</span></h3>
+<p class="carte-mouvement-sens">The screen moves closer to the element being talked about, then comes back</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Zoome sur le bouton Envoyer de 1 s à 3,4 s.</code></pre>
+<p class="traduction">“Zoom to the Send button from 1 s to 3.4 s.”</p>
+<p><strong>When:</strong> A detail too small to read on the full screen: a field, a button, a number.</p>
+<p><strong>Recipe:</strong> <code>&lt;div class=&quot;pm-ecran&quot; data-adresse=&quot;app.exemple.fr&quot; style=&quot;--pm-ecran-l: 92cqh&quot;&gt; &lt;div style=&quot;position: absolute; inset: 0; display: grid; gap: 6%; align-content…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m102" data-categorie="logiciel" data-mots="102 #102 zooms qui suivent les clics follow the cursor zooms suivent suivre zooms camera clics follow parcours on each click, the screen moves closer to the target, slides to the next one, then pulls back at the end">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/102.jpg" aria-label="Preview: Follow the cursor"><source src="../medias/galerie/mouvements/102.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#102</p>
+<h3 class="carte-mouvement-nom">Follow the cursor <span lang="fr">Zooms qui suivent les clics</span></h3>
+<p class="carte-mouvement-sens">On each click, the screen moves closer to the target, slides to the next one, then pulls back at the end</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais suivre les clics par la caméra sur les deux clics à 1,2 s et 2,4 s.</code></pre>
+<p class="traduction">“Make the camera follow the cursor on the two clicks at 1.2 s and 2.4 s.”</p>
+<p><strong>When:</strong> A path of several clicks on a large screen, so that every gesture can be read.</p>
+<p><strong>Recipe:</strong> <code>&lt;div class=&quot;pm-ecran&quot; data-adresse=&quot;app.exemple.fr&quot; data-film-camera=&quot;suivre&quot; style=&quot;--pm-ecran-l: 92cqh&quot;&gt; &lt;div style=&quot;position: absolute; inset: 0; display: gr…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m103" data-categorie="logiciel" data-mots="103 #103 notification notification notification notification alerte message rappel push a generic notification slides in from the corner of the picture">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/103.jpg" aria-label="Preview: Notification"><source src="../medias/galerie/mouvements/103.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#103</p>
+<h3 class="carte-mouvement-nom">Notification <span lang="fr">Notification</span></h3>
+<p class="carte-mouvement-sens">A generic notification slides in from the corner of the picture</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais arriver une notification en haut à droite à 1 s.</code></pre>
+<p class="traduction">“Bring in a notification at the top right at 1 s.”</p>
+<p><strong>When:</strong> A message received, an app alert, a reminder shown in a tutorial.</p>
+<p><strong>Recipe:</strong> <code>&lt;div class=&quot;pm-bloc pm-bloc-notification pm-m-glisse-droite&quot; data-start=&quot;1&quot; style=&quot;--pm-ampleur: 14&quot;&gt; &lt;span class=&quot;pm-bloc-pastille&quot;&gt;&lt;svg class=&quot;pm-bloc-icone&quot; …</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m104" data-categorie="logiciel" data-mots="104 #104 message bref toast toast toast message confirmation enregistre succes coche a short message with a tick rises at the bottom of the picture">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/104.jpg" aria-label="Preview: Toast"><source src="../medias/galerie/mouvements/104.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#104</p>
+<h3 class="carte-mouvement-nom">Toast <span lang="fr">Message bref</span></h3>
+<p class="carte-mouvement-sens">A short message with a tick rises at the bottom of the picture</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais monter le message « Facture enregistrée » en bas à 1 s.</code></pre>
+<p class="traduction">“Bring up the “Invoice saved” toast at the bottom at 1 s.”</p>
+<p><strong>When:</strong> Confirm that an action has succeeded (saved, sent), or warn of an error.</p>
+<p><strong>Recipe:</strong> <code>&lt;div class=&quot;pm-bloc pm-bloc-toast pm-m-monte&quot; data-start=&quot;1&quot; style=&quot;--pm-ampleur: 3&quot;&gt; &lt;svg class=&quot;pm-bloc-icone&quot; data-icone=&quot;circle-check&quot;&gt;&lt;/svg&gt; &lt;p class=&quot;pm-b…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m105" data-categorie="logiciel" data-mots="105 #105 copier, puis copie copy button copier copie copier copie commande terminal code presse papiers a command in a dark pill; the copy button turns into copied with a tick">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/105.jpg" aria-label="Preview: Copy button"><source src="../medias/galerie/mouvements/105.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#105</p>
+<h3 class="carte-mouvement-nom">Copy button <span lang="fr">Copier, puis Copié</span></h3>
+<p class="carte-mouvement-sens">A command in a dark pill; the Copy button turns into Copied with a tick</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Montre la commande et fais passer Copier à Copié à 2 s.</code></pre>
+<p class="traduction">“Show the command and switch the copy button from Copy to Copied at 2 s.”</p>
+<p><strong>When:</strong> A command or code to copy; with the terminal variant, a series of typed commands and their responses.</p>
+<p><strong>Recipe:</strong> <code>&lt;div class=&quot;pm-bloc pm-bloc-commande pm-m-pop&quot; data-start=&quot;0.3&quot;&gt; &lt;code class=&quot;pm-bloc-code&quot; data-texte=&quot;texte&quot;&gt;&lt;/code&gt; &lt;span class=&quot;pm-bloc-copier&quot; data-start=&quot;…</code></p>
+</details>
+</article>
+<article class="carte-mouvement" id="m106" data-categorie="logiciel" data-mots="106 #106 revelation 3d 3d reveal revelation 3d revelation 3d incliner redresser perspective capture a screenshot tilted backwards straightens up and lies flat">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/mouvements/106.jpg" aria-label="Preview: 3D reveal"><source src="../medias/galerie/mouvements/106.mp4" type="video/mp4"></video></figure>
+<p class="carte-mouvement-numero">#106</p>
+<h3 class="carte-mouvement-nom">3D reveal <span lang="fr">Révélation 3D</span></h3>
+<p class="carte-mouvement-sens">A screenshot tilted backwards straightens up and lies flat</p>
+<details><summary>Details</summary>
+<p><strong>To ask for it:</strong></p>
+<pre class="commande" lang="fr"><code>Fais se redresser la capture de l'écran en 1,2 s à 0,2 s.</code></pre>
+<p class="traduction">“Make the screenshot straighten up with a 3D reveal, in 1.2 s, at 0.2 s.”</p>
+<p><strong>When:</strong> Present a screen or a software product at the start of a demo.</p>
+<p><strong>Recipe:</strong> <code>&lt;div class=&quot;pm-3d&quot; data-start=&quot;0.2&quot;&gt; &lt;div class=&quot;pm-ecran&quot; data-adresse=&quot;app.exemple.fr&quot; style=&quot;--pm-ecran-l: 92cqh&quot;&gt; &lt;div style=&quot;position: absolute; inset: 0; …</code></p>
+</details>
+</article>
+</div>
+</section>
+<!-- /galerie:mouvements -->
+
+<footer class="galerie-source">
+<p>Names, meanings and sentence ideas inspired by <a href="https://github.com/showheyohtaki/motion-prompt" rel="noopener">Motion Prompt</a> by Shohei Ohtaki (MIT licence), translated and adapted to the Pulse Motion engine. Every move is produced by the Pulse Motion engine.</p>
+</footer>
+
+</article>
+</main>
+</body>
+</html>

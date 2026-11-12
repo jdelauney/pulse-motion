@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en" data-racine="../../" data-commande="creer">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>/pulse-motion:creer – Pulse Motion Wiki</title>
+<meta name="description" content="Create a motion design video in a few questions, approve its timeline, then watch it in your browser.">
+<!-- langues -->
+<link rel="alternate" hreflang="fr" href="https://jdelauney.github.io/pulse-motion/commandes/creer.html">
+<link rel="alternate" hreflang="en" href="https://jdelauney.github.io/pulse-motion/en/commandes/creer.html">
+<link rel="alternate" hreflang="x-default" href="https://jdelauney.github.io/pulse-motion/commandes/creer.html">
+<!-- /langues -->
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/animations.css">
+<script src="../../js/donnees.js" defer></script>
+<script src="../../js/gabarit.js" defer></script>
+<script src="../../js/animations.js" defer></script>
+<script src="../../js/console.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<div class="mise-en-page">
+<nav class="laterale" aria-label="The commands" data-laterale></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille pastille-etape" data-couleur="1">Step 1 · Create</p>
+<h1><code>/pulse-motion:creer</code></h1>
+<p class="chapo">Create a motion design video in a few questions, approve its timeline, then watch it in your browser.</p>
+</header>
+
+<ul class="sommaire" aria-label="On this page" data-sommaire></ul>
+
+<section id="description">
+<h2>Description</h2>
+<p>This is the command you start with. You give the subject in one sentence; Pulse Motion asks you two short rounds of questions, writes the <a href="../concepts.html#deroule">timeline</a> (the list of scenes, their text, their length) and shows it to you as a table. Nothing is animated until you approve it; as soon as you do, a <strong>first animated draft</strong> opens in your browser, in under a minute.</p>
+<p>Once the timeline is approved, Pulse Motion makes the video: a specialist assistant, the <em>animator</em>, writes each scene, all at the same time. Each finished scene replaces its draft in the preview, right before your eyes. <a href="../concepts.html#controles">Automatic checks</a> then test readability and fix the safe cases on their own: a video that still contains a draft cannot be exported.</p>
+<p><strong>One video = one folder.</strong> Run the command in an empty folder, open in VS Code. If the folder already holds a video, Pulse Motion offers to <a href="reprendre.html">pick it up</a>, or to create the new one somewhere else.</p>
+
+<figure class="anim" data-etapes="5" data-duree="1400">
+<svg viewBox="0 0 900 220" role="img" aria-labelledby="creer-flux-titre">
+<title id="creer-flux-titre">The five stages of /pulse-motion:creer</title>
+<g class="e1" data-etape="1"><rect class="actif-halo schema-halo-primaire" x="4" y="44" width="164" height="100" rx="20"/><rect class="schema-boite" x="10" y="50" width="152" height="88" rx="16"/><text class="schema-texte" x="86" y="88" text-anchor="middle">Questions</text><text class="schema-texte-secondaire" x="86" y="110" text-anchor="middle">length · audience · sound</text></g>
+<path class="schema-fleche trace e2" pathLength="1" d="M162 94 H186" marker-end="url(#creer-pointe)"/>
+<g class="e2" data-etape="2"><rect class="actif-halo schema-halo-primaire" x="186" y="44" width="164" height="100" rx="20"/><rect class="schema-boite-active" x="192" y="50" width="152" height="88" rx="16"/><text class="schema-texte" x="268" y="88" text-anchor="middle">Timeline</text><text class="schema-texte-secondaire" x="268" y="110" text-anchor="middle">your approval</text></g>
+<path class="schema-fleche trace e3" pathLength="1" d="M344 94 H368" marker-end="url(#creer-pointe)"/>
+<g class="e3" data-etape="3"><rect class="actif-halo schema-halo-primaire" x="368" y="44" width="164" height="100" rx="20"/><rect class="schema-boite" x="374" y="50" width="152" height="88" rx="16"/><text class="schema-texte" x="450" y="88" text-anchor="middle">Animators</text><text class="schema-texte-secondaire" x="450" y="110" text-anchor="middle">one scene each</text></g>
+<path class="schema-fleche trace e4" pathLength="1" d="M526 94 H550" marker-end="url(#creer-pointe)"/>
+<g class="e4" data-etape="4"><rect class="actif-halo schema-halo-primaire" x="550" y="44" width="164" height="100" rx="20"/><rect class="schema-boite" x="556" y="50" width="152" height="88" rx="16"/><text class="schema-texte" x="632" y="88" text-anchor="middle">Checks</text><text class="schema-texte-secondaire" x="632" y="110" text-anchor="middle">fixed on their own</text></g>
+<path class="schema-accompagne trace e4" pathLength="1" d="M600 140 C600 200 664 200 664 140" marker-end="url(#creer-pointe-mauve)"/>
+<path class="schema-fleche trace e5" pathLength="1" d="M708 94 H732" marker-end="url(#creer-pointe)"/>
+<g class="e5" data-etape="5"><rect class="actif-halo schema-halo-primaire" x="732" y="44" width="164" height="100" rx="20"/><rect class="schema-boite-active" x="738" y="50" width="152" height="88" rx="16"/><text class="schema-texte" x="814" y="88" text-anchor="middle">Preview</text><text class="schema-texte-secondaire" x="814" y="110" text-anchor="middle">in the browser</text></g>
+<defs>
+<marker id="creer-pointe" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" class="schema-pointe-grise"/></marker>
+<marker id="creer-pointe-mauve" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" class="schema-pointe"/></marker>
+</defs>
+</svg>
+<figcaption>The questions lead to the timeline, which you approve. The animators then write all the scenes at the same time. The checks test the video and fix the safe cases on their own, in two rounds at most. As soon as you approve, an animated draft opens in your browser; each finished scene replaces it.</figcaption>
+</figure>
+</section>
+
+<section id="pourquoi">
+<h2>Why use it</h2>
+<ul>
+<li><strong>You talk about your subject, not about technique.</strong> Pulse Motion works out the genre (training, product, storytelling, social media) and the format, then picks the structure that works for that genre.</li>
+<li><strong>One approval is enough.</strong> On the quick path, you only approve the timeline, along with the style. Everything else is done for you.</li>
+<li><strong>The pace is right from the start.</strong> Each scene lasts long enough to be read (1.5 s + 0.3 s per word), nothing stays still for more than 2.5 s, and the video ends on a steady frame.</li>
+<li><strong>You see the video move straight away.</strong> An animated draft opens as soon as you approve the timeline, with the music; it is replaced scene by scene.</li>
+<li><strong>You compare before you choose.</strong> Three styles appear side by side, on your first two scenes, in your browser.</li>
+</ul>
+</section>
+
+<section id="quand">
+<h2>When to use it</h2>
+<ol class="parcours" aria-label="The Pulse Motion journey, with this command’s step highlighted">
+  <li data-couleur="1" aria-current="step"><span class="parcours-numero">1</span> Create</li>
+  <li data-couleur="3"><span class="parcours-numero">2</span> Edit</li>
+  <li data-couleur="4"><span class="parcours-numero">3</span> Export</li>
+  <li data-couleur="0"><span class="parcours-numero">4</span> Customise</li>
+</ol>
+<ul>
+<li><strong>For every new video</strong>, in an empty folder.</li>
+<li><strong>After <a href="style.html"><code>/pulse-motion:style</code></a></strong>, if you have created your own style: it will be offered alongside the built-in styles.</li>
+<li><strong>Before <a href="retoucher.html"><code>/pulse-motion:retoucher</code></a></strong> and <a href="exporter.html"><code>/pulse-motion:exporter</code></a>, which work on the video created here.</li>
+</ul>
+</section>
+
+<section id="arguments">
+<h2>How to run it</h2>
+<pre class="commande" lang="fr"><code>/pulse-motion:creer [le sujet de la vidéo en une phrase]</code></pre>
+<p class="traduction">“[the subject of the video in one sentence]”</p>
+<p class="legende">In square brackets <code>[ ]</code>: optional. With no subject, there is a single question: « <span lang="fr">Que voulez-vous faire ?</span> » (“What would you like to do?”): a video from your idea (recommended), start from a video template, see an example first, or a video in one of your styles (« <span lang="fr">Créer mon propre style</span> » (“Create my own style”) if you don’t have one yet).</p>
+<pre class="commande" lang="fr"><code>/pulse-motion:creer la chaîne du froid en une minute pour mes stagiaires</code></pre>
+<p class="traduction">“the cold chain in one minute, for my trainees”</p>
+<pre class="commande" lang="fr"><code>/pulse-motion:creer présenter notre application de réservation en 30 secondes</code></pre>
+<p class="traduction">“present our booking app in 30 seconds”</p>
+<p>A plain sentence works too: « <span lang="fr">fais-moi une vidéo d'une minute sur la chaîne du froid</span> » (“make me a one-minute video about the cold chain”), « <span lang="fr">que sait faire Pulse Motion ?</span> » (“what can Pulse Motion do?”). Pulse Motion only creates a video if you ask for one, first reminds you that this is a new video in this folder, and writes nothing before your first answer; in a folder that already has a video, it offers to pick it up.</p>
+
+<h3>The questions asked</h3>
+<p>A first round, four questions at most:</p>
+<table>
+<thead><tr><th>Question</th><th>Suggested answers</th></tr></thead>
+<tbody>
+<tr><td>Length</td><td>30 s · 1 min (recommended for a short training video) · 3 min · 5 min</td></tr>
+<tr><td>Audience</td><td>General public · professionals in the field · pupils or trainees (adapted to your subject). Not asked if your subject already says so (« <span lang="fr">pour mes stagiaires</span> » (“for my trainees”)).</td></tr>
+<tr><td>Path</td><td><strong>Quick</strong> (recommended): you only approve the timeline · <strong>Guided</strong>: you also approve the style and the final video · <strong>Do it for me</strong>: no more questions, you just watch the result</td></tr>
+<tr><td>To add</td><td>My logo and my colours · my company’s website (colours, logo and fonts suggested, after your consent) · « <span lang="fr">Ma charte…</span> » (“My brand kit…”) if you have saved one · nothing for now</td></tr>
+</tbody>
+</table>
+<p>Then a round on <a href="../../son.html" hreflang="fr">sound</a> (in French):</p>
+<table>
+<thead><tr><th>Question</th><th>Suggested answers</th></tr></thead>
+<tbody>
+<tr><td>Music</td><td>Music composed for the video (recommended) · I have a file · No music</td></tr>
+<tr><td>Voice and subtitles</td><td>My voice, with subtitles (recommended) · My voice, without subtitles · Synthetic voice · No voice (so no subtitles: they repeat the spoken text). A file of your voice: just say so.</td></tr>
+<tr><td>The computer</td><td>Only if a useful tool is missing (voice transcription, ffmpeg): Get the computer ready while I work (recommended) · Later</td></tr>
+</tbody>
+</table>
+<p>In total, without a brand kit: <strong>7 answers at most</strong> on the quick path, 9 on the guided path.</p>
+<h3>The “Do it for me” path</h3>
+<p>You answer the first round, and that’s it: <strong>4 answers</strong>. Pulse Motion chooses the rest for you: music composed to suit the genre, no voice and no subtitles (you can add them later), the recommended style, the words of your trade noted in the glossary, nothing installed. Only exception: it asks you for your logo file if you chose “My logo and my colours”. At the end, the summary lists <strong>« <span lang="fr">Mes choix</span> » (“My choices”)</strong>: each one can be changed in one sentence with <a href="retoucher.html"><code>/pulse-motion:retoucher</code></a> (« <span lang="fr">passe en style éditorial</span> » (“switch to the editorial style”)).</p>
+<p>The format follows from the genre: <strong>16:9</strong> (landscape) in general, <strong>9:16</strong> (vertical) for social media, <strong>4:5</strong> if you are aiming at the LinkedIn or Instagram feed.</p>
+</section>
+
+<section id="modeles">
+<h2>Starting from a template</h2>
+<p>Pulse Motion recognises nine kinds of video from your subject. When it recognises one, it starts from its template: a proven scene structure, a length, a format, a musical mood and three styles that suit it. It tells you so in one sentence (« <span lang="fr">Je pars du modèle « Pitch » : 6 scènes, environ 1 min.</span> » (“I’m starting from the ‘Pitch’ template: 6 scenes, about 1 min.”)) and opens the finished example of that template while you answer the questions, without writing anything in your folder; you can change everything afterwards. For a subject that matches no template, it carries on as usual.</p>
+<table>
+<thead><tr><th>Template</th><th>For</th><th>Length, format</th></tr></thead>
+<tbody>
+<tr><td><strong>Short training video</strong></td><td>getting a rule or a gesture across</td><td>1 min, landscape</td></tr>
+<tr><td><strong>Software tutorial</strong></td><td>showing how to do something in an app, step by step, filmed on screen (see <a href="filmer.html"><code>/pulse-motion:filmer</code></a>)</td><td>2 min, landscape; or “30-second tip”, vertical</td></tr>
+<tr><td><strong>Explainer video</strong></td><td>making a mechanism, a circuit or a calculation clear: arrows, chart, formula, a camera that finds its own close-ups (see <a href="../concepts.html#explicative">The explainer video</a>)</td><td>1 min, landscape</td></tr>
+<tr><td><strong>Product presentation</strong></td><td>introducing an offer</td><td>45 s, landscape</td></tr>
+<tr><td><strong>Story</strong></td><td>telling a journey, an origin</td><td>1 min, landscape</td></tr>
+<tr><td><strong>Social media post</strong></td><td>hooking people in 2 seconds</td><td>30 s, vertical</td></tr>
+<tr><td><strong>Welcoming a newcomer</strong></td><td>saying welcome, guiding the first steps</td><td>1 min, landscape</td></tr>
+<tr><td><strong>Pitch</strong></td><td>convincing a jury or investors</td><td>1 min, landscape</td></tr>
+<tr><td><strong>Announcement</strong></td><td>a launch, an opening, an event</td><td>30 s, vertical</td></tr>
+</tbody>
+</table>
+<pre class="commande" lang="fr"><code>/pulse-motion:creer le pitch de notre projet de recyclerie, à partir du modèle pitch</code></pre>
+<p class="traduction">“the pitch for our reuse-centre project, from the pitch template”</p>
+<p>To see the result before you start, run the command below in an empty folder: the template’s finished example is copied there and opens in the preview.</p>
+<pre class="commande" lang="fr"><code>/pulse-motion:creer montre-moi un exemple de pitch</code></pre>
+<p class="traduction">“show me an example of a pitch”</p>
+<p> All the ideas, with their video examples and sentences to copy, are on the <a href="../idees.html">Video ideas</a> page.</p>
+</section>
+
+<section id="produit">
+<h2>What it produces</h2>
+<p>Everything is stored in the video’s folder. You never have to open these files, but you can read them.</p>
+<table>
+<thead><tr><th>File</th><th>What it is for</th></tr></thead>
+<tbody>
+<tr><td><code>deroule.json</code></td><td>The timeline: the title, the genre, the format, the style, the music, and for each scene its text, its spoken text, its length and its transition.</td></tr>
+<tr><td><code>scenes/01-intro.html</code>…</td><td>One scene per file, numbered in order. The text isn’t written in them: it comes from the timeline.</td></tr>
+<tr><td><code>charte/</code></td><td>Your logo, your colours (<code>charte.json</code>), your fonts and the glossary of your trade.</td></tr>
+<tr><td><code>assets/</code></td><td>Your files: music, images, voice takes (<code>assets/voix/</code>).</td></tr>
+<tr><td><code>sortie/&lt;titre&gt;.html</code></td><td><strong>The animated video</strong>, as a single page that opens with no internet connection.</td></tr>
+<tr><td><code>sortie/&lt;titre&gt;.srt</code> and <code>.vtt</code></td><td>The subtitles, if you asked for them, for platforms that show them separately.</td></tr>
+<tr><td><code>sortie/controle.json</code></td><td>The report of the last check: what was fixed automatically, what remains.</td></tr>
+<tr><td><code>sortie/comparaison/</code></td><td>The images from the style comparison.</td></tr>
+</tbody>
+</table>
+<p>At the end, if you added your logo and your colours, Pulse Motion offers to <strong>save them as a brand kit</strong> (“client-dupont”, for example): it will be offered for your next videos.</p>
+</section>
+
+<section id="risques">
+<h2>Risks and precautions</h2>
+<ul>
+<li><strong>Nothing is animated before you approve.</strong> If the timeline doesn’t suit you, say what needs changing: Pulse Motion corrects it and shows it to you again.</li>
+<li><strong>Your files are copied, never moved.</strong> The logo, music or voice you provide is copied into the video’s folder; the original stays where it was.</li>
+<li><strong>Installations need your consent.</strong> Transcription (Python, about 800 MB) is only installed if you accept. Everything works without it.</li>
+<li><strong>The placeholder voice isn’t yours.</strong> If you record yourself, the computer’s voice first reads the text to time the animation. It is never delivered: export refuses it until you have recorded.</li>
+</ul>
+<aside class="encadre encadre-attention"><p><strong>Warning:</strong> a JPEG or WebP logo isn’t enough to pick out your colours cleanly. Provide a PNG or an SVG.</p></aside>
+</section>
+
+<section id="problemes">
+<h2>Problems and solutions</h2>
+<details class="probleme"><summary>“node” not found, or Node.js too old</summary><p>Install the LTS version of Node.js from <a href="https://nodejs.org/fr/download" target="_blank" rel="noopener noreferrer">nodejs.org</a>, then close VS Code completely and reopen it. See the <a href="../prerequis.html#node">requirements</a>.</p></details>
+<details class="probleme"><summary>Pulse Motion says a video already exists here</summary><p>The folder already holds a timeline. To carry on with that video: <a href="reprendre.html"><code>/pulse-motion:reprendre</code></a>. To make a new one: create another empty folder, open it, and run the command again.</p></details>
+<details class="probleme"><summary>The style comparison doesn’t open</summary><p>It opens in Chrome or Edge. Without them, Pulse Motion describes each style by its personality, in three words: choose on that basis. See <a href="../prerequis.html#navigateur">Chrome or Edge</a>.</p></details>
+<details class="probleme"><summary>Pulse Motion tells me it made a scene longer</summary><p>That’s the reading check: the scene was too short to read its text. Pulse Motion lengthened it (by 50% at most) and tells you in one sentence. If you prefer a precise length, ask for it with <a href="retoucher.html"><code>/pulse-motion:retoucher</code></a>.</p></details>
+<details class="probleme"><summary>« <span lang="fr">Le rendu n'a pas pu être vérifié</span> » (“The render could not be checked”)</summary><p>Neither Chrome nor Edge was found, or the page ran into an error. The video is made, but overflow and contrast haven’t been checked on screen. Install one of the two browsers, then ask for an edit, even a tiny one: the full check runs again.</p></details>
+<details class="probleme"><summary>My font wasn’t found</summary><p>Pulse Motion fetches free fonts from Bunny Fonts. If yours isn’t there, it keeps the closest of the style’s fonts and tells you. You can give it the font file (<code>.ttf</code>, <code>.otf</code>, <code>.woff</code> or <code>.woff2</code>).</p></details>
+</section>
+
+<section id="exemples">
+<h2>Examples</h2>
+<div class="conversation" lang="fr" data-titre="Example: a one-minute training video">
+<p data-role="vous">/pulse-motion:creer la chaîne du froid pour mes stagiaires</p>
+<p data-role="claude">Durée ? → 1 min (Recommandé pour une formation courte)
+Public ? → Élèves ou stagiaires
+Parcours ? → Rapide (Recommandé) : je valide seulement le déroulé
+À ajouter ? → Rien pour l'instant</p>
+<p data-role="claude">Musique ? → Une musique composée pour la vidéo (Recommandé), lumineuse, posée, qui avance
+Voix et sous-titres ? → Ma voix, avec sous-titres (Recommandé)</p>
+<p data-role="outil">pulse-motion comparer . clair-pedagogique,chaleureux,minimal --ouvrir</p>
+<p data-role="claude">Voici le déroulé : 6 scènes, 1 min 03. La comparaison des styles s'est ouverte dans votre navigateur.
+→ Je valide, avec le style posé, lisible, rassurant (Recommandé) / … accueillant, doux, humain / … net, sûr, essentiel / Je veux changer quelque chose</p>
+<p data-role="vous">Je valide, avec le style posé, lisible, rassurant</p>
+<p data-role="claude">Voici une première ébauche animée ; je la remplace scène par scène.</p>
+<p data-role="claude">J'ai allongé la scène 3 d'une seconde pour laisser le temps de lire.
+✅ Fait : la vidéo « La chaîne du froid » (6 scènes, 1 min 04) est prête et s'affiche dans votre navigateur.
+Pour enregistrer votre voix, cliquez sur « Voix » dans la barre de l'aperçu.</p>
+</div>
+<details class="traduction"><summary>In English</summary><p><strong>You:</strong> /pulse-motion:creer the cold chain, for my trainees</p><p><strong>Claude:</strong> Length? → 1 min (Recommended for a short training video). Audience? → Pupils or trainees. Path? → Quick (Recommended): I only approve the timeline. To add? → Nothing for now</p><p><strong>Claude:</strong> Music? → Music composed for the video (Recommended), bright, calm, moving forward. Voice and subtitles? → My voice, with subtitles (Recommended)</p><p><strong>Claude:</strong> Here is the timeline: 6 scenes, 1 min 03 s. The style comparison has opened in your browser. → I approve, with the calm, readable, reassuring style (Recommended) / … welcoming, gentle, human / … crisp, confident, essential / I want to change something</p><p><strong>You:</strong> I approve, with the calm, readable, reassuring style</p><p><strong>Claude:</strong> Here is a first animated draft; I’m replacing it scene by scene.</p><p><strong>Claude:</strong> I made scene 3 one second longer to leave time to read. ✅ Done: the video “La chaîne du froid” (6 scenes, 1 min 04 s) is ready and showing in your browser. To record your voice, click “Voix” (Voice) in the preview bar.</p></details>
+<div class="conversation" lang="fr" data-titre="Example: a folder that already holds a video">
+<p data-role="vous">/pulse-motion:creer une vidéo sur le lavage des mains</p>
+<p data-role="claude">Ce dossier contient déjà la vidéo « La chaîne du froid ». Je vous propose de la reprendre avec /pulse-motion:reprendre, ou de créer la nouvelle vidéo dans un autre dossier.</p>
+</div>
+<details class="traduction"><summary>In English</summary><p><strong>You:</strong> /pulse-motion:creer a video about handwashing</p><p><strong>Claude:</strong> This folder already holds the video “La chaîne du froid”. I suggest picking it up with /pulse-motion:reprendre, or creating the new video in another folder.</p></details>
+<div class="conversation" lang="fr" data-titre="Example: asking for a move by name">
+<p data-role="vous">/pulse-motion:creer le lancement de notre application, avec un pop-in sur chaque titre et un whip pan entre les scènes</p>
+<p data-role="claude">C'est noté : les titres entreront en pop-in (mouvement n° 001), et les scènes s'enchaîneront en panoramique filé (n° 042). Voici le déroulé…</p>
+</div>
+<details class="traduction"><summary>In English</summary><p><strong>You:</strong> /pulse-motion:creer the launch of our app, with a pop-in on every title and a whip pan between scenes</p><p><strong>Claude:</strong> Noted: the titles will come in with a pop-in (move no. 001), and the scenes will flow into each other with a whip pan (no. 042). Here is the timeline…</p></details>
+<div class="conversation" lang="fr" data-titre="Example: choosing a move by watching it">
+<p data-role="vous">/pulse-motion:creer une vidéo de bienvenue, avec un truc qui claque pour le titre</p>
+<p data-role="claude">Une page s'ouvre : cochez les mouvements qui vous plaisent, puis cliquez sur « Envoyer à Claude ».</p>
+</div>
+<details class="traduction"><summary>In English</summary><p><strong>You:</strong> /pulse-motion:creer a welcome video, with something punchy for the title</p><p><strong>Claude:</strong> A page opens: tick the moves you like, then click “Envoyer à Claude” (Send to Claude).</p></details>
+<aside class="encadre encadre-conseil"><p><strong>Tip:</strong> don’t know the name of a move? Ask « <span lang="fr">quels mouvements existent ?</span> » (“which moves are there?”), say « <span lang="fr">montre-moi les mouvements</span> » (“show me the moves”) to choose them by watching, or browse the <a href="../mouvements.html">move gallery</a>: each one has a name and a number.</p></aside>
+</section>
+
+<section id="liees">
+<h2>Related commands</h2>
+<ul>
+<li><a href="reprendre.html"><code>/pulse-motion:reprendre</code></a>: carry on with a video you have started.</li>
+<li><a href="retoucher.html"><code>/pulse-motion:retoucher</code></a>: change the video in one sentence.</li>
+<li><a href="exporter.html"><code>/pulse-motion:exporter</code></a>: make the MP4.</li>
+<li><a href="style.html"><code>/pulse-motion:style</code></a>: create your own style before creating the video.</li>
+</ul>
+</section>
+
+<nav class="suite" aria-label="Previous and next command" data-suite></nav>
+</article>
+</div>
+</main>
+</body>
+</html>
