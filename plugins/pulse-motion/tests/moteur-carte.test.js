@@ -125,7 +125,9 @@ test('moteur-controle-injecte-par-la-page-de-mesure : mesures et pixels jamais d
 
 test('ateliers-moteur-entier : l\'atelier des effets sert le moteur entier', () => {
   const { corps } = GENERES['/_pm/atelier/moteur.js']();
-  assert.match(corps, /\.groupes = \["tronc","controle","son-reactif","synthe","corde","personnages","gpu","ecran","dessin","releve","camera-auto"]/);
+  // Tous les groupes du moteur, dans l'ordre de groupes-moteur.js (la liste n'est pas recopiée ici).
+  assert.ok(corps.includes(`.groupes = ${JSON.stringify(GM.NOMS)};`), 'le moteur entier, tous groupes compris');
+  assert.ok(GM.NOMS.includes('controle') && GM.NOMS.includes('tronc'));
   for (const f of ['M.demarrerPersonnages = function', 'M.demarrerParticules = function', 'M.mesurer = function', 'M.demarrerSonReactif = function']) assert.ok(corps.includes(f), f);
 });
 

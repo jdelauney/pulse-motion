@@ -1,14 +1,18 @@
 /* Pulse Motion – mots d'une voix : découpage du texte dit, formes normalisées (ancres « mot: »),
  * calage approché des mots sur une prise (énergie de la parole, prorata des lettres).
  * L'alignement sur une transcription (Whisper) s'ajoute au plan 3.
+ * Langue de la vidéo (spec S9, 5.1) : normaliserMot ramène ß, ø, ł, đ, þ, æ, œ aux lettres latines simples ; aligner et
+ * decouperEnScenes prennent la langue en dernier argument : nombres en lettres de moteur/langues.js (0 à 100), comparaison sur
+ * les chiffres seuls au-delà ; le français (par défaut) garde ses nombres jusqu'au milliard, décimales, % et €.
  *
  * Module pur : chargé tel quel dans la page (global M.aligner) et par Node (require).
  */
 (function (racine, fabrique) {
-  var api = fabrique();
-  if (typeof module === 'object' && module.exports) module.exports = api;
+  var node = typeof module === 'object' && module.exports;
+  var api = fabrique(function () { return node ? require('./langues.js') : (racine.M && racine.M.langues) || null; });
+  if (node) module.exports = api;
   else { racine.M = racine.M || {}; racine.M.aligner = api; }
-})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (langues) {
   'use strict';
 
   var FENETRE = 0.02;      // 20 ms
@@ -16,7 +20,8 @@
   var PAUSE = 0.25;        // un silence plus long sépare deux groupes de parole
 
   function normaliserMot(texte) {
-    return String(texte).toLowerCase().replace(/œ/g, 'oe').replace(/æ/g, 'ae')
+    return String(texte).toLowerCase().replace(/œ/g, 'oe').replace(/æ/g, 'ae').replace(/ß/g, 'ss').replace(/ø/g, 'o').replace(/ł/g, 'l')
+      .replace(/đ/g, 'd').replace(/þ/g, 'th')
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
   }
 
@@ -173,9 +178,29 @@
     return [texte];
   }
 
-  /** Clé de comparaison : un nombre écrit en chiffres (jusqu'au milliard) devient sa forme en lettres. */
-  function cleComparee(cle) {
-    return /^\d{1,12}$/.test(cle) ? nombreEnLettres(Number(cle)) : cle;
+  /** Lecture des nombres d'une langue : { lettres(n) -> forme ou null, dites(brut) -> [formes] }. Français par défaut. */
+  var FRANCAIS = { lettres: nombreEnLettres, dites: formesDites };
+  function lecture(langue) {
+    var L = langue && langues();
+    if (!L || L.estFrancais(langue)) return FRANCAIS;
+    var nb = L.de(langue).nombres;
+    if (!nb) return { lettres: function () { return null; }, dites: function () { return []; } };
+    return {
+      lettres: nb,
+      // Un entier écrit en chiffres (« 21 », « 21 % ») : sa forme en lettres, jusqu'à 100.
+      dites: function (brut) {
+        var w = String(brut).trim().replace(/^[«“‘„("'[]+/, '').replace(/[»”’)"'\].,;:!?…%€]+$/, '').trim();
+        var f = /^\d{1,3}$/.test(w) ? nb(Number(w)) : null;
+        return f ? [f] : [];
+      },
+    };
+  }
+
+  /** Clé de comparaison : un nombre écrit en chiffres devient sa forme en lettres (français : jusqu'au milliard). */
+  function cleComparee(cle, F) {
+    if (!/^\d{1,12}$/.test(cle)) return cle;
+    var l = (F || FRANCAIS).lettres(Number(cle));
+    return l === null || l === undefined ? cle : l;
   }
 
   function distance(a, b) {
@@ -192,8 +217,9 @@
    * Même mot : clés égales (nombres compris), une lettre d'écart pour des mots de plus de 4 lettres, ou une distance
    * d'édition relative d'au plus 0,34 pour des mots de plus de 3 lettres sans chiffre (similar d'explainroo).
    */
-  function memeMot(a, b) {
-    var x = cleComparee(a), y = cleComparee(b);
+  function memeMot(a, b, langue) {
+    var F = typeof langue === 'object' && langue ? langue : lecture(langue);
+    var x = cleComparee(a, F), y = cleComparee(b, F);
     if (x === y) return true;
     // Un nombre ne ressemble qu'à lui-même : 2025 n'est pas 2026, même écrits en lettres.
     if (/\d/.test(a + b)) return false;
@@ -203,18 +229,18 @@
   }
 
   /** Clés comparables d'un mot (clés normalisées, nombres en lettres, formes dites). */
-  function comparables(mot) {
+  function comparables(mot, F) {
     var r = [];
-    mot.cles.forEach(function (c) { var x = cleComparee(c); if (r.indexOf(x) < 0) r.push(x); });
-    formesDites(mot.w).forEach(function (x) { if (r.indexOf(x) < 0) r.push(x); });
+    mot.cles.forEach(function (c) { var x = cleComparee(c, F); if (r.indexOf(x) < 0) r.push(x); });
+    (F || FRANCAIS).dites(mot.w).forEach(function (x) { if (r.indexOf(x) < 0) r.push(x); });
     return r;
   }
 
   /** Un mot du script (ou une de ses parties : « faut-il » entendu « faut » « -il ») correspond au mot entendu. */
-  function correspond(script, entendu) {
+  function correspond(script, entendu, F) {
     // Mot écrit ou entendu en chiffres : formes égales seulement (nombre, forme dite).
     var exact = script.cles.concat(entendu.cles).some(function (c) { return /\d/.test(c); });
-    return script.comp.some(function (c) { return entendu.comp.some(function (h) { return exact ? c === h : memeMot(c, h); }); });
+    return script.comp.some(function (c) { return entendu.comp.some(function (h) { return exact ? c === h : memeMot(c, h, F || FRANCAIS); }); });
   }
 
   var GROUPE_ENTENDU = 6;   // mots entendus pour un mot écrit (« deux mille vingt-six », « s n c f »)
@@ -228,14 +254,15 @@
    * -> { mots, reconnus, ecarts: [{ rang, mot, entendu }] } | null si aucun mot n'est égal. Logique d'alignWords et d'expand (src/align.js d'explainroo, MIT,
    * © 2026 Vincent Schmalbach), adaptée ; lecture des nombres réécrite pour le français.
    */
-  function aligner(texte, entendus, duree) {
-    var script = decouperMots(texte).map(function (s) { return { w: s.w, cles: s.cles, comp: comparables(s) }; });
+  function aligner(texte, entendus, duree, langue) {
+    var F = lecture(langue);
+    var script = decouperMots(texte).map(function (s) { return { w: s.w, cles: s.cles, comp: comparables(s, F) }; });
     var oui = [];
     (entendus || []).forEach(function (h) {
       var dec = decouperMots(h.w);
       if (!dec.length) return;
       var mot = { w: dec.map(function (d) { return d.w; }).join(' '), cles: [dec[0].cles[0]], t0: h.t0, t1: h.t1 };
-      mot.comp = comparables(mot);
+      mot.comp = comparables(mot, F);
       oui.push(mot);
     });
     var n = script.length, m = oui.length, i, j;
@@ -243,8 +270,8 @@
     // Formes jointes d'une suite de mots écrits : clés collées, et formes dites de la suite (nombre écrit en morceaux).
     var joint = function (a, k) {
       var mots = script.slice(a, a + k);
-      var r = [mots.map(function (s) { return cleComparee(s.cles[0]); }).join(''), mots.map(function (s) { return s.cles[0]; }).join('')];
-      formesDites(mots.map(function (s) { return s.w; }).join(' ')).forEach(function (f) { r.push(f); });
+      var r = [mots.map(function (s) { return cleComparee(s.cles[0], F); }).join(''), mots.map(function (s) { return s.cles[0]; }).join('')];
+      F.dites(mots.map(function (s) { return s.w; }).join(' ')).forEach(function (f) { r.push(f); });
       return r;
     };
     var entendu = function (b, q) { return oui.slice(b, b + q).map(function (h) { return h.comp[0]; }).join(''); };
@@ -258,7 +285,7 @@
         if (c >= INF) continue;
         var poser = function (a, b, v, quoi) { if (v < D[a][b]) { D[a][b] = v; choix[a][b] = quoi; } };
         // Un pour un d'abord (à égalité, il l'emporte), puis les groupes, puis les mots sautés.
-        if (i < n && j < m) { var ok = correspond(script[i], oui[j]); poser(i + 1, j + 1, c + (ok ? 0 : 1), { k: 1, q: 1, egal: ok }); }
+        if (i < n && j < m) { var ok = correspond(script[i], oui[j], F); poser(i + 1, j + 1, c + (ok ? 0 : 1), { k: 1, q: 1, egal: ok }); }
         for (var k = 1; k <= GROUPE_ECRIT && i + k <= n; k++) {
           var formes = k === 1 ? script[i].comp : joint(i, k);
           for (var q = 1; q <= GROUPE_ENTENDU && j + q <= m; q++) {
@@ -300,8 +327,8 @@
     // Morceaux voisins entendus du même mot (« faut » « -il ») : du début du premier à la fin du dernier.
     seuls.forEach(function (p) {
       var s = script[p[0]], premier = p[1], dernier = p[1];
-      while (premier > 0 && !utilise[premier - 1] && correspond(s, oui[premier - 1])) premier--;
-      while (dernier < m - 1 && !utilise[dernier + 1] && correspond(s, oui[dernier + 1])) dernier++;
+      while (premier > 0 && !utilise[premier - 1] && correspond(s, oui[premier - 1], F)) premier--;
+      while (dernier < m - 1 && !utilise[dernier + 1] && correspond(s, oui[dernier + 1], F)) dernier++;
       mots[p[0]].t0 = oui[premier].t0;
       mots[p[0]].t1 = oui[dernier].t1;
     });
@@ -332,8 +359,8 @@
    * Enregistrement unique -> une plage par texte de scène, coupée au milieu du silence entre le dernier mot d'une
    * scène et le premier de la suivante. -> [{ debut, fin, mots (temps de l'enregistrement), reconnus, total }] | null
    */
-  function decouperEnScenes(textes, entendus, duree) {
-    var r = aligner(textes.join(' '), entendus, duree);
+  function decouperEnScenes(textes, entendus, duree, langue) {
+    var r = aligner(textes.join(' '), entendus, duree, langue);
     if (!r) return null;
     var scenes = [], k = 0;
     textes.forEach(function (t) {
@@ -354,7 +381,7 @@
       var debut = coupes[i], fin = coupes[i + 1];
       // Mots reconnus de la scène : son texte réaligné sur les mots entendus de sa plage seulement.
       var dedans = entendus.filter(function (h) { return h.t0 >= debut - 1e-9 && h.t1 <= fin + 1e-9; });
-      var seule = aligner(textes[i], dedans);
+      var seule = aligner(textes[i], dedans, undefined, langue);
       return { debut: debut, fin: fin, mots: s.mots, reconnus: seule ? seule.reconnus : 0, total: s.total };
     });
   }

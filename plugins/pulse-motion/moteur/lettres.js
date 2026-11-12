@@ -44,7 +44,9 @@
 
   function graphemes(mot) {
     if (racine.Intl && Intl.Segmenter) {
-      return Array.prototype.map.call(Array.from(new Intl.Segmenter('fr', { granularity: 'grapheme' }).segment(mot)), function (s) { return s.segment; });
+      // Langue de la vidéo (spec S9, 5.1), français par défaut.
+      var langue = (M.donnees && M.donnees.langue) || 'fr';
+      return Array.prototype.map.call(Array.from(new Intl.Segmenter(langue, { granularity: 'grapheme' }).segment(mot)), function (s) { return s.segment; });
     }
     return Array.from(mot);
   }

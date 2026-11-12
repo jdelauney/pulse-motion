@@ -14,6 +14,7 @@ Enregistrer la voix scène par scène dans le studio de l'aperçu, importer un e
 - Lexique : avant d'expliquer un mot de l'outil (studio, voix provisoire, transcription…), lire `pulse-motion lexique` ; un mot expliqué pour la première fois se note avec `pulse-motion lexique noter "<terme>" "<phrase>" "<comme…>" "/pulse-motion:voix"`.
 - Import ou transcription de plusieurs scènes : l'annoncer en une phrase (« je découpe et je cale les mots, comptez environ une minute ») ; en arrière-plan, le suivre par `Monitor` sur `pulse-motion avancement . --suivre`, une phrase par minute au plus (sans lui : « l'avancement s'affiche dans l'aperçu »).
 - Détail : `pulse-motion reference audio/voix` (voix), `pulse-motion reference audio/ancres` (ancres), `pulse-motion reference audio` (sous-titres).
+- Vidéo dans une autre langue (`langue` du déroulé) : dire dans quelle langue parler ; `pulse-motion reference langues` § 3.
 - Ce skill ne change ni les volumes, ni le texte dit, ni les sous-titres, ni l'ambiance : renvoyer à `/pulse-motion:retoucher` (« baisse la voix », « change ce que je dis dans l'intro »…).
 
 ## 0. Vérifier la vidéo

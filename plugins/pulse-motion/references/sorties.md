@@ -41,8 +41,8 @@ L'usage s'applique aux extraits (`--pour courriel --scene 3` : la scène sous 10
 | « Trop lourd », « je ne peux pas l'envoyer par courriel » | Usage `courriel` (`--pour courriel`, 10 Mo ; « moins de 25 Mo » : `--taille-max 25`), en 720p ou 540p selon la durée ; trop long : une seule scène (`--scene`), ou retirer le grain et les particules fines, raccourcir | — |
 | « C'est flou », « pixelisé » | Export fidèle (avec ffmpeg) plutôt que dans le navigateur, usage `master` ; vérifier que les images de `assets/` sont assez grandes | — |
 | « Ça saccade » | Chercher d'abord un mouvement trop rapide (contrôle `mouvement-rapide`) ; sinon export à 60 images par seconde | — |
-| « En vertical », « pour les stories » | Retouche : format 9:16 dans le déroulé, scènes recomposées (empilées) | Déclinaison automatique : décision de la spec S9 |
-| « En carré », « pour le fil LinkedIn » | Retouche : format 1:1 ou 4:5 | Idem |
+| « En vertical », « pour les stories » | Retouche : format 9:16 dans le déroulé, scènes recomposées (empilées) ; en gardant l'original (« fais-en une version verticale ») : une déclinaison, `pulse-motion reference langues` | — |
+| « En carré », « pour le fil LinkedIn » | Retouche : format 1:1 ou 4:5 ; ou une déclinaison, comme ci-dessus | — |
 | « Fond transparent », « pour l'incruster dans mon montage » | `--transparent` (ou `--transparent webm` pour le web) ; ffmpeg requis pour le montage | — |
 | « Pour mon monteur », « sans perte » | Usage `master` (`--pour master`) : la meilleure qualité | — |
 | « Un GIF » | `--gif` avec une scène ou un passage de 20 s au plus (ffmpeg requis) ; sans ffmpeg : proposer de l'installer, ou un MP4 court et muet que la plupart des messageries lisent en boucle | GIF sans ffmpeg (spec S5) |

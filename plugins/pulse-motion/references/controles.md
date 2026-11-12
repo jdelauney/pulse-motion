@@ -62,7 +62,8 @@ Un chiffre donné avec sa source va dans `faits` du déroulé (`pulse-motion ref
 
 | Règle | Ce qui la déclenche | Gravité | Corrigé seul ? | Que faire |
 |---|---|---|---|---|
-| `typographie` | Espace fine avant ; ! ?, insécable avant : et dans « », guillemets « », apostrophe ’, points de suspension …, espace entre un nombre et son unité | alerte | oui (textes du déroulé) | Texte écrit dans une scène : le corriger dans le fichier |
+| `typographie` | Espace fine avant ; ! ?, insécable avant : et dans « », guillemets « », apostrophe ’, points de suspension …, espace entre un nombre et son unité ; vidéo dans une autre langue (`langue`) : la typographie de cette langue (guillemets “ ” ou „ “, pas d'espace avant ? ! : ;, `pulse-motion reference langues`) | alerte | oui (textes du déroulé) | Texte écrit dans une scène : le corriger dans le fichier |
+| `ponctuation-ouvrante` | Vidéo en espagnol : une question ou une exclamation sans « ¿ » ou « ¡ » ouvrant | alerte | non | Ajouter le signe ouvrant au début de la phrase |
 | `majuscule-accentuee` | « Etape », « Equipe », « Ecole »… en début de phrase | alerte | oui | — |
 | `mot-double` | Le même mot deux fois de suite (« le le ») | alerte | non | Appliquer la proposition du message |
 | `terme-variable` | Un mot écrit de deux façons (« e-mail » / « email ») | alerte | non | Choisir une graphie ; la noter au glossaire si c'est un mot du métier |
@@ -70,7 +71,7 @@ Un chiffre donné avec sa source va dans `faits` du déroulé (`pulse-motion ref
 | `contraste` | Couleur de la charte sur le fond de la charte : moins de 4,5:1 (`contrasteTexte`), titres moins de 3:1 (`contrasteTitres`) | alerte | non : une couleur lisible est proposée (`correction`, jamais appliquée seule : la charte est celle de la personne) | Changer la couleur de la charte. Les couleurs lisibles (`--c-primaire-lisible`, `--c-accent-lisible`) sont ajustées avec une marge de 0,5 (`margeLisible`) au-dessus du seuil |
 | `accent-encre-texte` | L'accent « encre seulement » de la charte (`accent-encre`, `--c-accent-encre` : encres, aplats et tracés ; jamais lu, donc hors du contrôle `contraste`) colore un texte (`color`, `-webkit-text-fill-color`, sous-titres) dans la feuille du style ou dans une scène | **erreur** | non | `--c-texte` ou `--c-accent-lisible` pour le texte ; l'accent encre pour les aplats seulement |
 | `texte-casse` | Un texte ou un compteur affiche « NaN », « undefined », « Infinity », « null » ou « [object Object] » | **erreur** | non | Corriger le `data-tween` ou le code de la scène |
-| `glyphe-absent` | Un caractère d'un texte n'existe dans aucune police embarquée de la vidéo | alerte | non | Remplacer le caractère, ou choisir une police qui l'a |
+| `glyphe-absent` | Un caractère d'un texte n'existe pas dans la police embarquée de son rôle (titres, texte… : la classe de son élément), qui est nommée avec les caractères absents ; rôle inconnu : dans aucune police embarquée de la vidéo | alerte | non | Remplacer le caractère, ou choisir une police de charte qui l'a |
 | `emoji` | Un texte contient un emoji | alerte | non | Le retirer, ou une icône SVG dans la scène |
 
 ## Mise en page rendue

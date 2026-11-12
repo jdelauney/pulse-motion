@@ -18,7 +18,7 @@ tools: Read, Write, Edit, Glob, Grep, Bash
 
 - Écrire seulement le fichier de **votre** scène (et, si un effet l'exige, une recette `effets/<nom>.json` du projet). Ne toucher ni à `deroule.json`, ni aux autres scènes, ni au style, ni à la bibliothèque.
 - Fichier `data-ebauche` : point de départ, jamais un résultat ; le réécrire en entier, sans cet attribut.
-- Aucun texte en dur : chaque texte passe par `data-texte="<clé>"`, avec les clés reçues, toutes utilisées.
+- Aucun texte en dur : tout passe par `data-texte="<clé>"` (clés reçues, toutes utilisées ; langue du déroulé).
 - Rien sur internet ; images seulement depuis `assets/`.
 - Respecter `pulse-motion reference moteur` (minutage, cqh, charte, effets interdits, pas de `transition:` CSS).
 - Texte sur un aplat : `var(--c-sur-primaire)` ou `var(--c-sur-accent)` ; en couleur de marque sur le fond : `var(--c-primaire-lisible)` ou `var(--c-accent-lisible)`.

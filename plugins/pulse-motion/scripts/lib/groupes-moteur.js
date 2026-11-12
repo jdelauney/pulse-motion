@@ -18,6 +18,8 @@ const GROUPES = {
     'temps.js', 'horloge.js', 'tailles.js', 'wav.js', 'sonie.js', 'mixage.js', 'audio.js', 'lecteur.js', 'sous-titres-rendu.js',
     'debordement.js', 'figer.js', 'flou.js'],
   controle: ['mesures.js', 'pixels.js', 'ecoute.js'],
+  // Langue de la vidéo (spec S9, 5.1) : seulement si le déroulé la déclare ; sans elle, les modules parlent français.
+  langues: ['langues.js'],
   'son-reactif': ['analyse-son.js', 'son-reactif.js'],
   synthe: ['synthe/catalogue.js', 'synthe/partition.js', 'synthe/ambiances.js', 'synthe/instruments.js', 'synthe/bruitages.js'],
   // Cordes pincées (spec Styles et réalisation, 5.8) : seulement si la musique a une piste « corde ».
@@ -40,7 +42,7 @@ const GROUPES = {
 };
 
 // Ordre de chargement : celui de la liste historique (dépendances au chargement), puis absents.js en dernier.
-const MODULES = ['courbes.js', 'aligner.js', 'proches.js', 'sous-titres.js', 'minutage.js', 'transitions.js', 'tween.js', 'lettres.js', 'camera.js',
+const MODULES = ['courbes.js', 'langues.js', 'aligner.js', 'proches.js', 'sous-titres.js', 'minutage.js', 'transitions.js', 'tween.js', 'lettres.js', 'camera.js',
   'squelette.js', 'vivant.js', 'clips.js', 'habillage-batonnets.js', 'habillage-pieces.js', 'personnages/levres.js', 'personnages/partition.js',
   'personnages/interactions.js', 'personnages/scene.js', 'personnages/objets.js', 'temps.js', 'horloge.js', 'tailles.js', 'wav.js',
   'sonie.js', 'mixage.js', 'synthe/catalogue.js', 'synthe/partition.js', 'synthe/ambiances.js', 'synthe/corde.js', 'synthe/instruments.js',
@@ -72,11 +74,13 @@ const nonVide = (x) => (Array.isArray(x) ? x.length > 0 : !!(x && typeof x === '
  * - dessin : data-fleche, data-annoter, data-main-levee, data-graphique ou data-code dans une scène, ou un script de
  *   scène qui appelle M.dessin( ;
  * - caméra automatique : data-camera="auto…" dans une scène ;
- * - relevé : avec le dessin ou la caméra automatique.
+ * - relevé : avec le dessin ou la caméra automatique ;
+ * - langues : la vidéo déclare sa langue (donnees.langue, spec S9 5.1).
  */
 function groupesDuDeroule(donnees, sections = [], scripts = []) {
   const d = donnees || {};
   const groupes = ['tronc'];
+  if (d.langue) groupes.push('langues');
   if (d.son) groupes.push('son-reactif');
   const textes = sections.join('\n');
   const musique = d.musique && (d.musique.partition || d.musique.generee);

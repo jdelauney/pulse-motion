@@ -160,7 +160,8 @@ async function exporterTransparent({ projet, deroule, u, demande, navigateur, ou
     if (echec) throw echec.reason;
     if (controle.signal.aborted) throw new Error('export annulé');
     surPhase('assemblage');
-    await F.assemblerTransparent({ ffmpeg: outil.chemin, segments: fichiers, sortie: partiel, audio, format, titre: deroule.titre });
+    await F.assemblerTransparent({ ffmpeg: outil.chemin, segments: fichiers, sortie: partiel, audio, format, titre: deroule.titre,
+      langueSon: deroule.langue !== undefined ? require('../../moteur/langues.js').de(deroule.langue).iso6392 : null });
     // Vérification (5.22, point 4) : piste, taille, nombre d'images, couleurs étiquetées, couche alpha ; trois images comparées.
     surPhase('verification');
     const s = await F.sonder({ ffprobe: outil.cheminProbe, fichier: partiel, compter: 'paquets' });

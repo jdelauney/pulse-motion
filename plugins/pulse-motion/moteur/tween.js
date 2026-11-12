@@ -5,16 +5,16 @@
  * Chaque clause : propriété, valeur de départ → valeur d'arrivée (même unité),
  * courbe facultative (cubic-out par défaut). « -> » est accepté pour « → ».
  * La propriété spéciale « nombre » remplace le texte de l'élément par la valeur
- * formatée en français (1 250).
+ * formatée dans la langue de la vidéo (M.donnees.langue, spec S9 5.1), en français par défaut (1 250).
  *
  * Module pur : chargé tel quel dans la page (global M) et par Node (require).
  */
 (function (racine, fabrique) {
   var C = typeof require === 'function' && typeof module === 'object' ? require('./courbes.js') : racine.M;
-  var api = fabrique(C);
+  var api = fabrique(C, function () { return racine.M && racine.M.donnees && racine.M.donnees.langue; });
   if (typeof module === 'object' && module.exports) module.exports = api;
   else { racine.M = racine.M || {}; Object.assign(racine.M, api); }
-})(typeof globalThis !== 'undefined' ? globalThis : this, function (C) {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (C, langueDeLaPage) {
   'use strict';
 
   var VALEUR = /^(-?\d*\.?\d+)([a-z%]*)$/i;
@@ -60,9 +60,11 @@
     return clause.de + (clause.a - clause.de) * clause.courbe(p);
   }
 
-  /** Formate un nombre en français : séparateur de milliers, virgule décimale. */
-  function nombre(v, decimales) {
+  /** Formate un nombre dans la langue (étiquette ; celle de la page, sinon le français) : séparateur de milliers, décimales. */
+  function nombre(v, decimales, langue) {
     var d = decimales || 0;
+    var l = langue || langueDeLaPage();
+    if (l && !/^fr(-|$)/i.test(l)) return new Intl.NumberFormat(l, { minimumFractionDigits: d, maximumFractionDigits: d }).format(v).replace(/\u202f/g, '\u00a0');
     // Espace insécable ordinaire plutôt que l'espace fine (U+202F) d'Intl : absente de plusieurs polices, elle s'afficherait collée.
     return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d }).format(v).replace(/\u202f/g, '\u00a0');
   }

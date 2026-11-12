@@ -29,6 +29,7 @@ const G = require('../../moteur/dessin/graphiques.js');
 const C = require('../../moteur/dessin/code.js');
 const F = require('./formules.js');
 const { corrigerTypographie } = require('./typographie.js');
+const Langues = require('../../moteur/langues.js');
 const { versDataURI } = require('./embarquer.js');
 
 const VENDOR = path.join(__dirname, '..', '..', 'vendor', 'polices');
@@ -42,7 +43,8 @@ const ATTR = (nom) => new RegExp(`\\s${nom}\\s*=\\s*(?:"([^"]*)"|'([^']*)')`);
 
 const echapper = (v) => String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const masquer = (html) => String(html).replace(/<!--[\s\S]*?-->|<(style|script)\b[\s\S]*?<\/\1\s*>/gi, (t) => ' '.repeat(t.length));
-const typo = (t) => corrigerTypographie(String(t)).texte;
+// Typographie et nombres dans la langue de la vidéo (spec S9, 5.1), passée par preparerDonnees (français par défaut).
+const typo = (t, langue) => corrigerTypographie(String(t), langue).texte;
 
 function usagesDonnees(html) {
   const vu = masquer(html || '');
@@ -63,13 +65,13 @@ function completerBalise(ouvrante, { classe = null, style = null, attributs = ''
   return `${t}${attributs}>`;
 }
 
-function htmlGraphique(cle, g) {
-  const tx = G.textes(g);
+function htmlGraphique(cle, g, langue) {
+  const tx = G.textes(g, langue);
   const spans = [];
   const span = (role, rang, texte, classe) => spans.push(`<span class="pm-calque-texte ${classe}" data-texte="graphique:${echapper(cle)}:${role}${rang === null ? '' : `:${rang}`}" data-pm-role="${role}"${rang === null ? '' : ` data-pm-rang="${rang}"`}>${echapper(texte)}</span>`);
-  tx.etiquettes.forEach((t, i) => { if (t && t.trim()) span('etiquette', i, typo(t.trim()), 'pm-graphique-etiquette'); });
+  tx.etiquettes.forEach((t, i) => { if (t && t.trim()) span('etiquette', i, typo(t.trim(), langue), 'pm-graphique-etiquette'); });
   tx.valeurs.forEach((t, i) => { if (t) span('valeur', i, t, 'pm-graphique-valeur'); });
-  if (tx.source) span('source', null, `Source : ${typo(tx.source)}`, 'pm-graphique-source');
+  if (tx.source) span('source', null, `${Langues.de(langue || 'fr').source}${typo(tx.source, langue)}`, 'pm-graphique-source');
   const donnees = { type: g.type, valeurs: g.valeurs.map((x) => ({ valeur: x.valeur, ...(x.debut !== undefined ? { debut: x.debut } : {}), ...(x.accent ? { accent: true } : {}) })),
     ...(g.unite ? { unite: g.unite } : {}), ...(g.prefixe ? { prefixe: g.prefixe } : {}), ...(g.max !== undefined ? { max: g.max } : {}),
     ...(g.decimales !== undefined ? { decimales: g.decimales } : {}) };
@@ -96,7 +98,7 @@ function htmlCode(cle, c) {
   };
 }
 
-function preparerDonnees(html, { scene } = {}) {
+function preparerDonnees(html, { scene, langue } = {}) {
   const sc = scene || {};
   const id = sc.id;
   const erreurs = [];
@@ -128,7 +130,7 @@ function preparerDonnees(html, { scene } = {}) {
     if (sorte === 'graphique') {
       const fautes = G.valider(donnee);
       if (fautes.length) { erreur('graphique-donnees-invalides', `${ou}, graphique « ${cle} » : ${fautes.slice(0, 3).join(' ')}`); continue; }
-      r = htmlGraphique(cle, donnee);
+      r = htmlGraphique(cle, donnee, langue);
     } else if (sorte === 'code') {
       const fautes = C.valider(donnee);
       if (fautes.length) { erreur('code-invalide', `${ou}, code « ${cle} » : ${fautes.slice(0, 3).join(' ')}`); continue; }

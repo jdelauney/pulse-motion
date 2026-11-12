@@ -225,7 +225,14 @@ function installerFichier({ fichier, famille, confirmer = false, dans, style, ro
   let octets;
   try { octets = fs.readFileSync(fichier); } catch { return { ok: false, message: `Fichier introuvable : « ${fichier} ».` }; }
   let analyse;
-  try { analyse = analyserPolice(octets); } catch (e) { return { ok: false, message: `« ${path.basename(fichier)} » : ${e.message}.` }; }
+  // Caractères de la langue de la vidéo (spec S9, 5.1 point 10) : le déroulé du projet, deux dossiers au-dessus de charte/polices.
+  let caracteres;
+  try {
+    const d = JSON.parse(fs.readFileSync(path.join(dans, '..', '..', 'deroule.json'), 'utf8').replace(/^\uFEFF/, ''));
+    const Langues = require('../moteur/langues.js');
+    caracteres = Langues.de(Langues.etiquetteDe(d)).caracteres;
+  } catch { caracteres = undefined; }
+  try { analyse = analyserPolice(octets, caracteres); } catch (e) { return { ok: false, message: `« ${path.basename(fichier)} » : ${e.message}.` }; }
   if (analyse.interdite) return { ok: false, message: `La police « ${path.basename(fichier)} » interdit son intégration dans un document (licence inscrite dans le fichier) : elle ne peut pas servir dans la vidéo. Choisissez une autre police, ou demandez une licence d'intégration à son éditeur.` };
   if (analyse.apercuSeulement && !confirmer) return { ok: false, aConfirmer: true, message: `La licence inscrite dans « ${path.basename(fichier)} » limite son intégration à l'affichage et à l'impression. Confirmez que vous avez le droit de l'utiliser dans une vidéo (ce contrôle ne remplace pas la lecture de la licence).` };
   const nomFamille = String(famille || path.basename(fichier, path.extname(fichier))).replace(/[^\p{L}\p{N} _-]/gu, '').trim();

@@ -22,7 +22,7 @@ Si ce bloc est vide ou contient une erreur, lancer `pulse-motion lexique`.
 0. « Quelles sont mes vidéos ? », « retrouve ma vidéo sur… » : `pulse-motion reference chez-soi`, section « Mes vidéos ».
 1. Lire dans l'état ci-dessus `etape`, `prochaine`, `titre`, `parcours`. `projet` faux (aucune vidéo ici) : proposer `/pulse-motion:creer` et s'arrêter, sans rien modifier ; la personne veut voir un exemple (« montre-moi un exemple de pitch ») : c'est `/pulse-motion:creer` qui le copie (`pulse-motion modeles exemple`), le lui proposer. L'état dit « Node.js introuvable » : proposer de l'installer (`/pulse-motion:outils`, étape « Installer Node.js »), et s'arrêter.
 2. Lexique ci-dessus : ne pas réexpliquer les mots déjà vus par la personne. `charte.aJour` faux : dire que la charte enregistrée « <modele> » a changé (ou n'existe plus, `charte.existe` faux) et proposer de la réappliquer (`pulse-motion charte appliquer <modele> .`) ; ne rien changer sans accord.
-3. Dire à la personne, en une phrase simple, où en est la vidéo « <titre> ».
+3. Dire à la personne, en une phrase simple, où en est la vidéo « <titre> » ; citer ses `declinaisons` (format, langue), ou son `origine`.
 4. Continuer selon l'étape : lire seulement la section utile des consignes de création (`pulse-motion consignes creer <section>` : leurs règles et cette section), puis la suivre ; une étape qui mène à la suivante : lire la section suivante de la même façon.
 
 | Étape | Section | Suite |

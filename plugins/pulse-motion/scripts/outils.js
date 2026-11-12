@@ -7,14 +7,30 @@
  *   node scripts/outils.js --plan   ce qui manque et serait utile, dans l'ordre où l'installer (spec Retouches et ergonomie,
  *   5.6 point 4) : [{ outil, pourquoi, taille, duree, commande, leger?, texte? }] ; commande : celle que Claude lance après un
  *   seul accord pour toute la liste (jamais sudo ; null : la personne tape elle-même « texte », ou rien à installer d'ici).
+ *   node scripts/outils.js --langue en   voixSysteme dit si une voix de cette langue existe (vidéo dans une autre langue, spec S9 5.1).
  *
  * Chaque détection est indépendante : une qui échoue (exception) est rendue « ok: false » avec son message.
  */
 const { spawnSync } = require('node:child_process');
 
-/** Voix du système, pour la voix provisoire. -> { ok, message } */
-function voixSysteme({ plateforme = process.platform, lancer = spawnSync } = {}) {
+/** Voix du système, pour la voix provisoire. langue (étiquette, facultative, spec S9 5.1) : dit si une voix de cette langue
+ *  existe (Windows : culture de la voix ; macOS : voix de say -v ?). -> { ok, message } */
+function voixSysteme({ plateforme = process.platform, lancer = spawnSync, langue = null } = {}) {
   const options = { encoding: 'utf8', windowsHide: true, timeout: 20000 };
+  if (langue && plateforme !== 'linux') {
+    const L = require('../moteur/langues.js').de(langue);
+    const r = plateforme === 'win32'
+      ? lancer('powershell', ['-NoProfile', '-NonInteractive', '-Command',
+        `Add-Type -AssemblyName System.Speech; @((New-Object System.Speech.Synthesis.SpeechSynthesizer).GetInstalledVoices() | Where-Object { $_.VoiceInfo.Culture.Name -like "${L.code}*" }).Count`], options)
+      : lancer('say', ['-v', '?'], options);
+    const sortie = String(r.stdout || '');
+    const trouvee = !r.error && r.status === 0 && (plateforme === 'win32' ? parseInt(sortie.trim(), 10) > 0 : new RegExp(`\\s${L.code}[_-]`, 'i').test(sortie));
+    return trouvee
+      ? { ok: true, message: `Une voix ${L.adjectif} de l'ordinateur est disponible pour la voix provisoire.` }
+      : { ok: false, message: plateforme === 'win32'
+        ? `Aucune voix ${L.adjectif} sur l'ordinateur : en ajouter une dans Paramètres → Heure et langue → Voix → Ajouter des voix, ou enregistrer la voix.`
+        : `Aucune voix ${L.adjectif} sur l'ordinateur : en ajouter une dans Réglages Système → Accessibilité → Contenu énoncé → Voix du système, ou enregistrer la voix.` };
+  }
   if (plateforme === 'win32') {
     const r = lancer('powershell', ['-NoProfile', '-NonInteractive', '-Command',
       'Add-Type -AssemblyName System.Speech; (New-Object System.Speech.Synthesis.SpeechSynthesizer).GetInstalledVoices().Count'], options);
@@ -49,7 +65,7 @@ function etatOutils(options = {}) {
     trouverFfmpeg = () => F().trouverFfmpeg(),
     etatWhisper = () => Wh().etatWhisper(),
     pythonAncien = () => Wh().pythonAncien(),
-    voixSysteme: voix = () => voixSysteme(),
+    voixSysteme: voix = () => voixSysteme(options.langue ? { langue: options.langue } : {}),
     sonderCarteGraphique = (o) => require('./lib/carte-graphique.js').sonderCarteGraphique(o),
     etatVoixLocale = () => require('./lib/voix-locale.js').etatVoixLocale(),
   } = options;
@@ -143,7 +159,8 @@ if (require.main === module) {
     console.log(JSON.stringify(planOutils(etatOutils({ sonderCarteGraphique: () => null })), null, 2));
     process.exit(0);
   }
-  console.log(JSON.stringify(etatOutils(), null, 2));
+  const i = process.argv.indexOf('--langue');
+  console.log(JSON.stringify(etatOutils(i > 0 && process.argv[i + 1] ? { langue: process.argv[i + 1] } : {}), null, 2));
   process.exit(0);
 }
 

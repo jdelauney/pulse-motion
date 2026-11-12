@@ -102,7 +102,8 @@ const arrondiKbit = (x) => Math.max(1, Math.round(x));
  * 1 à 60, taille visée trop petite pour la durée.
  */
 function resoudreUsage({ pour, qualite, ips, tailleMax, flou, deroule = {}, duree = 0, usages = lireUsages() } = {}) {
-  const usage = pour || usages.defaut;
+  // Déclinaison (spec S9, 5.2) : sans --pour, l'usage noté par « decliner » (une version verticale part vers les réseaux).
+  const usage = pour || (deroule && deroule.declinaison && deroule.declinaison.usage) || usages.defaut;
   const u = usages.usages[usage];
   if (!u) return { erreur: messageUsageInconnu(usage, usages) };
   // Flou de mouvement (5.8) : celui de l'usage (le master), forcé par --flou oui|non.

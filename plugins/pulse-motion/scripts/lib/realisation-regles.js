@@ -276,9 +276,46 @@ const textesScene = (s, html) => [...Object.entries(s.textes || {}).filter(([, t
   ...textesEnDur(html).map((texte) => ({ cle: '', texte }))];
 const nomTexte = (s, cle) => (cle ? `Scène « ${s.id} », texte « ${cle} »` : `Scène « ${s.id} », texte écrit dans la scène`);
 
-function glyphesEtEmoji({ deroule, scenesHtml, fichiersPolices }) {
+/** Rôles de police posés par le CSS de la page (spec S9, 5.1 point 10) : classe -> rôle, d'après les règles qui écrivent
+ *  var(--f-<rôle>) ; la dernière règle l'emporte, comme dans la cascade (même spécificité). */
+function rolesDesClasses(css) {
+  const roles = new Map();
+  const sans = String(css || '').replace(/\/\*[\s\S]*?\*\//g, '');
+  for (const m of sans.matchAll(/([^{}@;]+)\{([^{}]*)\}/g)) {
+    const role = /var\(\s*--f-([a-z0-9-]+)\s*\)/.exec(m[2]);
+    if (!role) continue;
+    for (const selecteur of m[1].split(',')) {
+      const dernier = selecteur.trim().split(/[\s>+~]+/).pop() || '';
+      for (const c of dernier.matchAll(/\.([\w-]+)/g)) roles.set(c[1], role[1]);
+    }
+  }
+  return roles;
+}
+
+/** Rôle de police du texte « cle » d'une scène : celui d'une classe de son élément, ou null (rien ne le dit). */
+function roleDuTexte(html, cle, roles) {
+  if (!cle) return null;
+  const echappe = cle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const balise = new RegExp(`<[a-zA-Z][\\w-]*\\b[^>]*\\sdata-texte\\s*=\\s*["']${echappe}["'][^>]*>`).exec(html || '');
+  const classes = balise && /\sclass\s*=\s*["']([^"']*)["']/.exec(balise[0]);
+  if (!classes) return null;
+  let role = null;
+  for (const c of classes[1].split(/\s+/)) if (roles.has(c)) role = roles.get(c);
+  return role;
+}
+
+const entreGuillemets = (cars) => `« ${cars.join(' ')} »`;
+
+/**
+ * glyphe-absent (spec S2, 5.7, étendue par S9, 5.1 point 10) : un texte dont le rôle de police est connu (classe de son élément,
+ * detailPolices et CSS de l'assemblage) est cherché dans la police embarquée de ce rôle : les caractères absents sont nommés,
+ * avec la police ; sinon (texte écrit dans la scène, rôle inconnu, police du système), dans toutes les polices de la vidéo.
+ */
+function glyphesEtEmoji({ deroule, scenesHtml, fichiersPolices, detailPolices, css }) {
   const r = [];
   const lecteurs = (fichiersPolices || []).map(lecteurPolice).filter(Boolean);
+  const roles = detailPolices && css ? rolesDesClasses(css) : new Map();
+  const policeDuRole = (role) => (detailPolices || []).find((p) => p.roles.includes(role) && p.fichiers.length);
   for (const s of deroule.scenes) {
     const vus = new Set();
     for (const { cle, texte } of textesScene(s, scenesHtml[s.id] || '')) {
@@ -287,6 +324,18 @@ function glyphesEtEmoji({ deroule, scenesHtml, fichiersPolices }) {
           message: `${nomTexte(s, cle)} : l'emoji « ${e} » change d'allure selon l'ordinateur et donne un air « fait par une IA » ; le retirer ou le remplacer par une icône dessinée.` });
       }
       if (!lecteurs.length) continue;
+      const role = roleDuTexte(scenesHtml[s.id] || '', cle, roles);
+      const police = role && policeDuRole(role);
+      const siens = police && police.fichiers.map(lecteurPolice).filter(Boolean);
+      if (siens && siens.length) {
+        const absents = [...new Set([...texte])].filter((c) => !HORS_POLICE.test(c) && !siens.some((l) => l(c.codePointAt(0))));
+        if (absents.length) {
+          const un = absents.length === 1;
+          r.push({ regle: 'glyphe-absent', gravite: 'alerte', scene: s.id, element: cle, role, police: police.famille, caracteres: absents,
+            message: `${nomTexte(s, cle)} : ${un ? 'le caractère' : 'les caractères'} ${entreGuillemets(absents)} ${un ? 'n\'existe' : 'n\'existent'} pas dans la police « ${police.famille} » ; ${un ? 'il s\'afficherait' : 'ils s\'afficheraient'} dans une autre police. Choisir une police de charte qui ${un ? 'le' : 'les'} contient.` });
+        }
+        continue;
+      }
       for (const c of new Set([...texte])) {
         if (HORS_POLICE.test(c) || vus.has(c)) continue;
         if (lecteurs.some((l) => l(c.codePointAt(0)))) continue;
@@ -406,7 +455,7 @@ function scriptInterdit({ deroule, scenesHtml }) {
 
 /**
  * reglesRealisation({ deroule, min, scenesMinutees, scenesHtml, scenesLues, besoinLecture, avecVoix, corrigeable, temps,
- *   termes, fichiersPolices, seuils }) -> [problèmes]
+ *   termes, fichiersPolices, detailPolices?, css?, seuils }) -> [problèmes]
  */
 function reglesRealisation(o) {
   const S = o.seuils;
@@ -418,7 +467,7 @@ function reglesRealisation(o) {
     ...cameraRepetee({ deroule: o.deroule, scenesLues: o.scenesLues, temps: o.temps, S }),
     ...termeCle({ deroule: o.deroule, scenesHtml: o.scenesHtml, termes: o.termes || [] }),
     ...chiffres({ deroule: o.deroule, scenesHtml: o.scenesHtml, elements }),
-    ...glyphesEtEmoji({ deroule: o.deroule, scenesHtml: o.scenesHtml, fichiersPolices: o.fichiersPolices }),
+    ...glyphesEtEmoji({ deroule: o.deroule, scenesHtml: o.scenesHtml, fichiersPolices: o.fichiersPolices, detailPolices: o.detailPolices, css: o.css }),
     ...imageRepetee({ deroule: o.deroule, scenesHtml: o.scenesHtml, S }),
     ...scriptInterdit({ deroule: o.deroule, scenesHtml: o.scenesHtml }),
   ];

@@ -23,6 +23,7 @@ const { ecrirePrise, transcrirePrise, lireVoixScene, texteDitPour, SEUIL_RECONNU
 const { whisperParDefaut } = require('./lib/whisper.js');
 const W = require('../moteur/wav.js');
 const A = require('../moteur/aligner.js');
+const Langues = require('../moteur/langues.js');
 const { sauvegarder } = require('./historique.js');
 
 function ecrireDeroule(projet, fn) {
@@ -91,12 +92,12 @@ async function importerUnique({ projet, deroule, fichier, outil, whisper, surSce
   try {
     const wav = path.join(travail, 'tout.wav');
     fs.writeFileSync(wav, W.ecrire({ taux: son.taux, canaux: [canal] }));
-    t = await whisper.transcrire({ wav, duree, attendu: dits.join(' ') });
+    t = await whisper.transcrire({ wav, duree, attendu: dits.join(' '), langue: Langues.principale(Langues.etiquetteDe(deroule)) });
   } finally {
     fs.rmSync(travail, { recursive: true, force: true });
   }
   if (!t.ok) return { ok: false, message: t.message };
-  const decoupe = A.decouperEnScenes(dits, t.mots, duree);
+  const decoupe = A.decouperEnScenes(dits, t.mots, duree, Langues.etiquetteDe(deroule));
   if (!decoupe) return { ok: false, message: 'La transcription n\'a reconnu aucun mot des textes : vérifier que l\'enregistrement dit bien les textes des scènes, ou importer scène par scène (--scene <id>).' };
   // Presque rien de reconnu : pas un enregistrement de toute la vidéo (oubli de --scene ?) ; rien n'est remplacé.
   const reconnus = decoupe.reduce((n, p) => n + p.reconnus, 0);
@@ -225,27 +226,37 @@ async function transcrireProjet({ dossier, scene: id, whisper = whisperParDefaut
   return { ok: true, scenes: faites, ...(avertissements.length ? { avertissement: avertissements.join(' ') } : {}) };
 }
 
-/** Voix du système -> WAV. -> { ok, message? } */
-function synthetiserSysteme(texte, sortie, { plateforme = process.platform, lancer = spawnSync } = {}) {
+/** Voix du système -> WAV, dans la langue de la vidéo (étiquette, français par défaut ; spec S9, 5.1 point 5) : jamais de
+ *  repli silencieux sur une voix française pour une autre langue. -> { ok, message?, sansVoixDeLaLangue? } */
+function synthetiserSysteme(texte, sortie, { plateforme = process.platform, lancer = spawnSync, langue = 'fr' } = {}) {
   let r;
+  const L = Langues.de(langue);
+  const autre = L.code !== 'fr';
+  const sansVoix = () => ({ ok: false, sansVoixDeLaLangue: true, message: plateforme === 'darwin'
+    ? `Aucune voix ${L.adjectif} sur l'ordinateur : en ajouter une dans Réglages Système → Accessibilité → Contenu énoncé → Voix du système, ou enregistrer la voix.`
+    : `Aucune voix ${L.adjectif} sur l'ordinateur : en ajouter une dans Paramètres → Heure et langue → Voix → Ajouter des voix, ou enregistrer la voix.` });
   // Texte passé par un fichier : jamais pris pour une option (« -v… ») ni coupé par les guillemets.
   const fichierTexte = `${sortie}.txt`;
   if (plateforme !== 'win32') fs.writeFileSync(fichierTexte, texte, 'utf8');
   if (plateforme === 'win32') {
     const script = 'Add-Type -AssemblyName System.Speech; $s = New-Object System.Speech.Synthesis.SpeechSynthesizer; '
-      + '$v = $s.GetInstalledVoices() | Where-Object { $_.VoiceInfo.Culture.Name -like "fr*" } | Select-Object -First 1; '
+      + `$v = $s.GetInstalledVoices() | Where-Object { $_.VoiceInfo.Culture.Name -like "${L.code}*" } | Select-Object -First 1; `
+      // Une autre langue que le français : sans voix de cette langue, rien n'est lu (code 3), jamais la voix par défaut.
+      + (autre ? 'if (-not $v) { exit 3 }; ' : '')
       + 'if ($v) { $s.SelectVoice($v.VoiceInfo.Name) }; $s.SetOutputToWaveFile($env:PM_SORTIE); $s.Speak($env:PM_TEXTE); $s.Dispose()';
     r = lancer('powershell', ['-NoProfile', '-NonInteractive', '-Command', script], { env: { ...process.env, PM_TEXTE: texte, PM_SORTIE: sortie }, encoding: 'utf8', windowsHide: true, timeout: 60000 });
+    if (autre && r && !r.error && r.status === 3) return sansVoix();
   } else if (plateforme === 'darwin') {
-    // Voix françaises de macOS, puis la voix par défaut.
-    for (const voix of ['Thomas', 'Amélie', null]) {
+    // Voix de la langue (moteur/langues.js, voixMac), puis, en français seulement, la voix par défaut.
+    for (const voix of [...L.voixMac, ...(autre ? [] : [null])]) {
       r = lancer('say', [...(voix ? ['-v', voix] : []), '-o', sortie, '--data-format=LEI16@48000', '-f', fichierTexte], { encoding: 'utf8', timeout: 60000 });
       if (!r.error && r.status === 0 && fs.existsSync(sortie)) break;
     }
   } else {
-    r = lancer('espeak-ng', ['-v', 'fr', '-w', sortie, '-f', fichierTexte], { encoding: 'utf8', timeout: 60000 });
+    r = lancer('espeak-ng', ['-v', L.espeak, '-w', sortie, '-f', fichierTexte], { encoding: 'utf8', timeout: 60000 });
   }
   fs.rmSync(fichierTexte, { force: true });
+  if (autre && plateforme === 'darwin' && (r.error || r.status !== 0 || !fs.existsSync(sortie))) return sansVoix();
   if (r.error || r.status !== 0 || !fs.existsSync(sortie)) {
     return { ok: false, message: plateforme === 'linux'
       ? 'aucune voix du système : installez espeak-ng (ex. « sudo apt install espeak-ng »)'
@@ -275,8 +286,8 @@ async function voixProvisoire({ dossier, scene: id, synthetiser = synthetiserSys
     for (const s of scenes) {
       const brut = path.join(travail, `${s.id}.wav`);
       // Forme dite, prononciation du glossaire comprise (spec S7, 5.11) ; les pauses [pause …] ne valent que pour la synthèse.
-      const r = synthetiser(texteDitPour(projet, s.voix.texte, true).dit, brut);
-      if (!r.ok) return { ok: false, scenes: faites, message: `Voix provisoire impossible : ${r.message}.` };
+      const r = synthetiser(texteDitPour(projet, s.voix.texte, true).dit, brut, { langue: Langues.etiquetteDe(deroule) });
+      if (!r.ok) return { ok: false, scenes: faites, message: r.sansVoixDeLaLangue ? r.message : `Voix provisoire impossible : ${r.message}.` };
       const p = await ecrirePrise({ projet, scene: s.id, octets: new Uint8Array(fs.readFileSync(brut)), texte: s.voix.texte, provisoire: true, outil: outil && outil.present ? outil : null });
       faites.push({ id: s.id, fichier: p.relatif, duree: p.duree });
     }
@@ -300,6 +311,11 @@ async function voixSynthese({ dossier, scene: id, voix, whisper = whisperParDefa
   const projet = path.resolve(dossier);
   const { deroule, erreurs } = lireDeroule(projet);
   if (erreurs.length) return { ok: false, scenes: [], message: `Le déroulé contient des erreurs : ${erreurs.join(' ')}` };
+  // Langue de la vidéo (spec S9, 5.1) : la voix de synthèse n'a qu'une voix, française ; aucune autre n'est téléchargée.
+  const langue = Langues.etiquetteDe(deroule);
+  if (!Langues.de(langue).kokoro.length) {
+    return { ok: false, scenes: [], repli: 'provisoire', message: `La voix de synthèse ne parle que français : pour cette vidéo en ${Langues.nom(langue)}, enregistrer la voix, ou prendre une voix provisoire ${Langues.adjectif(langue)} de l'ordinateur.` };
+  }
   const v = voix || VL.voixLocaleParDefaut();
   if (!v || !v.pret || !v.moteur) return { ok: false, scenes: [], installer: true, repli: 'provisoire', message: VL.MESSAGE_ABSENTE };
   let scenes = deroule.scenes.filter((s) => s.voix && s.voix.texte && !s.voix.fichier);

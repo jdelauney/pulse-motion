@@ -99,4 +99,4 @@ function listerVideos({ personnel = dossierPersonnel() } = {}) {
   return { ok: true, videos };
 }
 
-module.exports = { noterVideo, listerVideos, lireRegistre };
+module.exports = { noterVideo, listerVideos, lireRegistre, dernierMp4 };

@@ -101,7 +101,7 @@
     if (a.type === 'parler') {
       if (!el.hasAttribute('data-dur')) a.fin = Infinity;
       var v = voixDe(idScene);
-      a.piste = v ? M.levres.piste(v.mots, v.origine, a.debut, a.fin) : [];
+      a.piste = v ? M.levres.piste(v.mots, v.origine, a.debut, a.fin, M.donnees && M.donnees.langue) : [];
     }
     if (el.hasAttribute('data-vers')) a.vers = nombre(el, 'data-vers', 50);
     if (el.hasAttribute('data-sol')) a.sol = valeurSol(el.getAttribute('data-sol'));

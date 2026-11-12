@@ -7,6 +7,7 @@ const { TYPES } = require('./contrat.js');
 const { AMBIANCES } = require('../../moteur/synthe/catalogue.js');
 const { tonaliteValide, HUMEURS } = require('../../moteur/synthe/ambiances.js');
 const { lireTexteDit } = require('../../moteur/aligner.js');
+const Langues = require('../../moteur/langues.js');
 
 const TYPES_SCENE = Object.keys(TYPES);
 
@@ -107,6 +108,9 @@ function validerDeroule(d) {
     else if (d.format.ratio !== '9:16') err.push('« format.plateforme » ne sert qu\'à une vidéo verticale (« format.ratio » : « 9:16 ») : le retirer, ou passer la vidéo en 9:16.');
   }
   if (!estTexte(d.style)) err.push('« style » est obligatoire (nom d\'un style du catalogue).');
+  // Langue de la vidéo (spec S9, 5.1) : absente = français ; l'interface reste en français.
+  if (d.langue !== undefined) { const l = Langues.lire(d.langue); if (!l.ok) err.push(l.message); }
+  if (d.declinaison !== undefined) err.push(...validerDeclinaison(d.declinaison));
 
   if (d.charte !== undefined) err.push(...validerCharte(d.charte));
 
@@ -158,6 +162,9 @@ function validerDeroule(d) {
     else if (sy !== undefined) {
       if (sy.voix !== undefined && sy.voix !== 'ff_siwis') err.push('« voix.synthese.voix » doit valoir « ff_siwis » (la seule voix française de la voix de synthèse).');
       if (sy.vitesse !== undefined && !(typeof sy.vitesse === 'number' && sy.vitesse >= 0.7 && sy.vitesse <= 1.3)) err.push('« voix.synthese.vitesse » doit être un nombre de 0,7 (plus lent) à 1,3 (plus rapide) ; 1 par défaut.');
+      // Langue de la vidéo (spec S9, 5.1) : la voix de synthèse ne parle que français ; jamais une voix française en silence.
+      const lv = d.langue !== undefined && Langues.lire(d.langue);
+      if (lv && lv.ok && !Langues.de(lv.etiquette).kokoro.length) err.push(`« voix.synthese » : la voix de synthèse ne parle que français ; pour une vidéo en ${Langues.nom(lv.etiquette)}, retirer « voix.synthese » (enregistrer la voix, ou prendre une voix provisoire ${Langues.adjectif(lv.etiquette)} de l'ordinateur).`);
     }
   }
 
@@ -292,6 +299,31 @@ function validerDeroule(d) {
     }
   });
   err.push(...validerFaits(d.faits, vus), ...validerCadrans(d.cadrans));
+  return err;
+}
+
+const DATE_JOUR = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
+const CHAMPS_DECLINAISON = ['origine', 'format', 'langue', 'le', 'usage'];
+
+/** « declinaison » (spec S9, 5.2) : d'où vient la vidéo déclinée, et ce qui a changé (format et langue d'origine). */
+function validerDeclinaison(x) {
+  const ex = '{ "origine": "../..", "format": "16:9", "langue": "fr", "le": "2026-11-08" }';
+  if (!estObjet(x)) return [`« declinaison » doit être un objet, ex. ${ex}.`];
+  const err = [];
+  for (const k of Object.keys(x)) if (!CHAMPS_DECLINAISON.includes(k)) err.push(`« declinaison » : champ « ${k} » inconnu (champs : ${CHAMPS_DECLINAISON.join(', ')}).`);
+  // Origine relative au dossier de la déclinaison, sans lettre de lecteur ni chemin absolu.
+  if (!(estTexte(x.origine) && !path.isAbsolute(x.origine) && !/^[a-zA-Z]:/.test(x.origine) && !x.origine.includes('\\'))) {
+    err.push('« declinaison.origine » doit être le chemin relatif de la vidéo d\'origine, ex. « ../.. ».');
+  }
+  if (x.format !== undefined && !RATIOS.includes(x.format)) err.push(`« declinaison.format » (format d'origine) doit être l'un de : ${RATIOS.join(', ')}.`);
+  if (x.langue !== undefined && !Langues.lire(x.langue).ok) err.push(`« declinaison.langue » (langue d'origine) : ${Langues.MESSAGE.replace(/^« langue » doit/, 'doit')}`);
+  if (x.format === undefined && x.langue === undefined) err.push('« declinaison » doit dire ce qui a changé : « format » ou « langue » d\'origine (ou les deux).');
+  if (!(typeof x.le === 'string' && DATE_JOUR.test(x.le))) err.push('« declinaison.le » doit être la date de la déclinaison, AAAA-MM-JJ.');
+  if (x.usage !== undefined) {
+    const { lireUsages } = require('./usages.js');
+    const noms = Object.keys(lireUsages().usages);
+    if (!noms.includes(x.usage)) err.push(`« declinaison.usage » doit être l'un de : ${noms.join(', ')}.`);
+  }
   return err;
 }
 
@@ -434,4 +466,4 @@ function lireDeroule(dossier) {
   return { deroule: d, erreurs };
 }
 
-module.exports = { allureDe, validerDeroule, validerCharte, lireDeroule, verifierFilms, dureeTemps, tempoMusique, musiqueSuitScenes, grilleFixe, optionsMinutage, GENRES, PARCOURS, RATIOS, TRANSITIONS, TYPES_SCENE, TONS, MAX_POST, CADRANS, PLATEFORMES, CHAPITRE_MAX };
+module.exports = { validerDeclinaison, allureDe, validerDeroule, validerCharte, lireDeroule, verifierFilms, dureeTemps, tempoMusique, musiqueSuitScenes, grilleFixe, optionsMinutage, GENRES, PARCOURS, RATIOS, TRANSITIONS, TYPES_SCENE, TONS, MAX_POST, CADRANS, PLATEFORMES, CHAPITRE_MAX };
