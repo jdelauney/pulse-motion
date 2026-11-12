@@ -40,3 +40,4 @@ Créer ou modifier une pose ou un mouvement (marche, course, saut, geste, expres
 1. `pulse-motion personnages verifier --dossier .` : corriger chaque erreur.
 2. `pulse-motion personnages planche <nom> --vues 0,45,90 --dossier .` (avec `--dessin <nom>` si la vidéo a un personnage dessiné), regarder avec `Read` : membres qui ne plient pas à l'envers, pieds sur la ligne, mouvement lisible, ressemblant à la demande. Corriger (trois tours au plus).
 3. Montrer la planche, une phrase sur ce qui a changé, et proposer de régler soi-même avec `/pulse-motion:atelier-personnages`.
+4. Pose ou mouvement nouveau : « Je le garde pour vos prochaines vidéos ? » (« Le garder (Recommandé) » · « Seulement cette vidéo ») ; oui : `pulse-motion reference chez-soi`, « Bibliothèque personnelle ».

@@ -19,7 +19,7 @@ Dessiner (ou retoucher) un personnage en pièces SVG qui s'anime avec les poses 
 ## 1. Préparer
 
 1. Lire `pulse-motion reference dessin-personnages` (repère « os debout », longueurs, visage, style) en entier.
-2. `pulse-motion personnages liste --dossier .` : un dessin du même nom existe déjà ? Retouche : partir de `pulse-motion personnages afficher <nom> --type dessin --dossier .`. Nouveau : d'abord proposer les personnages livrés (`dessins`), en une question par leur description, le plus proche « (Recommandé) », plus « Un nouveau personnage » ; sinon partir du livré le plus proche (`pulse-motion personnages afficher <nom> --type dessin`).
+2. `pulse-motion personnages liste --dossier .` : un dessin du même nom existe déjà ? Retouche : partir de `pulse-motion personnages afficher <nom> --type dessin --dossier .`. Nouveau : d'abord proposer ceux de sa bibliothèque (`source` `personnel`, copiés par `pulse-motion personnages utiliser <nom> --dossier .`) et les livrés (`dessins`), en une question par leur description, le plus proche « (Recommandé) », plus « Un nouveau personnage » ; sinon partir du livré le plus proche (`pulse-motion personnages afficher <nom> --type dessin`).
 3. Si la demande est floue sur un point qui change tout le dessin (humain ou animal, silhouette), une seule question avec `AskUserQuestion`, choix proposés et une option « (Recommandé) ». Sinon, décider.
 
 ## 2. Dessiner
@@ -43,3 +43,5 @@ Dessiner (ou retoucher) un personnage en pièces SVG qui s'anime avec les poses 
 ## 4. Montrer
 
 Une phrase sur le personnage, puis la planche de la marche (ouverte avec `--ouvrir` si la personne veut la voir), et ce qu'on peut faire ensuite : le faire bouger (`/pulse-motion:animer-personnage`), le régler soi-même (`/pulse-motion:atelier-personnages`), changer une couleur.
+
+Nouveau personnage : une seule question, « Je le garde pour vos prochaines vidéos ? » : « Le garder (Recommandé) » · « Seulement cette vidéo » ; oui : `pulse-motion reference chez-soi`, section « Bibliothèque personnelle ».

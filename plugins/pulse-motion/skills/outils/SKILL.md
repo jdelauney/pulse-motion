@@ -1,5 +1,5 @@
 ---
-description: "Vérifier que l'ordinateur est prêt pour Pulse Motion et installer ce qui manque, avec votre accord (« vérifie mon ordinateur », « installe ffmpeg »), ou signaler un problème à l'auteur (« signale un problème »). Ne modifie aucune vidéo."
+description: "Vérifier l'ordinateur et installer ce qui manque, avec votre accord (« vérifie mon ordinateur », « installe ffmpeg »), signaler un problème (« signale un problème »), emporter sa bibliothèque (« emporte mes chartes »). Ne modifie aucune vidéo."
 allowed-tools: Bash(pulse-motion *) Bash(node *) Bash(winget install --id Python.Python.3.12 -e --accept-source-agreements --accept-package-agreements) Bash(brew install python) Bash(winget install --id Gyan.FFmpeg -e --accept-source-agreements --accept-package-agreements) Bash(brew install ffmpeg) Bash(winget install --id OpenJS.NodeJS.LTS -e --accept-source-agreements --accept-package-agreements) Bash(brew install node) Monitor Read AskUserQuestion
 ---
 
@@ -67,7 +67,11 @@ Puis `pulse-motion etat .`, qui marche sans redémarrage ; toujours introuvable 
 
 Suivre `pulse-motion reference chez-soi`, section « Signaler un problème » : le résumé montré, puis l'accord avant d'ouvrir la page ; rien n'est envoyé par Pulse Motion.
 
-## 8. Fin
+## 8. Emporter sa bibliothèque (« emporte mes chartes sur mon autre ordinateur », « importe ma bibliothèque »)
+
+Suivre `pulse-motion reference chez-soi`, section « Bibliothèque personnelle » : la liste montrée, puis un fichier ZIP que la personne copie elle-même ; à l'import, rien de ce qui est déjà là n'est remplacé sans son accord.
+
+## 9. Fin
 
 ✅ **Fait** : <ce qui est prêt, en une phrase>.
 📄 **Fichiers** : rien dans votre vidéo n'a changé ; les outils sont installés sur l'ordinateur.

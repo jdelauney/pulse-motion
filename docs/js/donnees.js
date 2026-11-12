@@ -121,14 +121,14 @@ window.PULSE_WIKI = {
     {
       "nom": "reprendre",
       "etape": "creer",
-      "description": "Reprendre la vidéo en cours là où elle s'était arrêtée",
+      "description": "Reprendre la vidéo en cours là où elle s'était arrêtée, ou retrouver vos vidéos",
       "forme": "",
       "note": ""
     },
     {
       "nom": "outils",
       "etape": "creer",
-      "description": "Vérifier que l'ordinateur est prêt pour les vidéos et installer ce qui manque (ffmpeg, la transcription, Python), avec votre accord. Ne crée ni ne modifie aucune vidéo",
+      "description": "Vérifier que l'ordinateur est prêt pour les vidéos et installer ce qui manque (ffmpeg, la transcription, Python), avec votre accord ; signaler un problème ; emporter votre bibliothèque sur un autre ordinateur. Ne crée ni ne modifie aucune vidéo",
       "forme": "",
       "note": ""
     },

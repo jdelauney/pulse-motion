@@ -26,7 +26,7 @@ Si ce bloc est vide ou contient une erreur, lancer `pulse-motion lexique`.
 - Une retouche = le plus petit changement qui répond à la phrase. Ne pas « améliorer » autre chose.
 - Phrase ambiguë (quelle scène ? de combien ?) : une seule question avec `AskUserQuestion`, la recommandée en premier.
 - Problème du contrôle : dire son `message`, corriger avec sa `consigne`.
-- Goûts (`pulse-motion preferences liste`) : après la demande du moment, avant le style ; « jamais… », « les couleurs de notre site », « une page qui sait faire son MP4 » : `pulse-motion reference chez-soi`.
+- Goûts (`pulse-motion preferences liste`) : après la demande du moment, avant le style ; « jamais… », « les couleurs de notre site », « une page qui sait faire son MP4 », « garde cet effet (ce personnage) pour mes prochaines vidéos » : `pulse-motion reference chez-soi`.
 - Travail long (scènes réécrites, contrôle complet) : l'annoncer en une phrase avec sa durée ; en arrière-plan, le suivre par `Monitor` sur `pulse-motion avancement . --suivre`, une phrase par minute au plus.
 - Lexique : un mot de l'outil déjà noté ci-dessus n'est pas réexpliqué en entier ; un mot expliqué pour la première fois se note avec `pulse-motion lexique noter "<terme>" "<phrase>" "<comme…>" "/pulse-motion:retoucher"`.
 

@@ -23,4 +23,4 @@ Ouvrir l'atelier des effets de particules sur l'effet demandé, puis relire le r
 
 ## 2. Après
 
-Quand la personne dit avoir fini : lire la scène ou `effets/<nom>.json` pour connaître le réglage retenu, et le dire en une phrase.
+Quand la personne dit avoir fini : lire la scène ou `effets/<nom>.json` pour connaître le réglage retenu, et le dire en une phrase. « Garde-le pour mes prochaines vidéos » : `pulse-motion reference chez-soi`, « Bibliothèque personnelle ».
