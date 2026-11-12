@@ -19,6 +19,7 @@ const { ouvrirCapture } = require('../scripts/lib/capture-fidele.js');
 const { trouverNavigateur } = require('./aide/navigateur.js');
 const { miniProjet } = require('./aide/mini-projet.js');
 const { dossierTemporaire } = require('./aide/temporaire.js');
+const { plafond } = require('./aide/plafonds.js');
 
 const RACINE = path.join(__dirname, '..');
 const lire = (...p) => fs.readFileSync(path.join(RACINE, ...p), 'utf8');
@@ -112,7 +113,7 @@ test('creer : ambiance proposée = première ambiance du style', () => {
   assert.equal(ambianceProposee({ ambiances: ['calme', 'inspirant'] }, 'formation'), 'calme');
   assert.equal(ambianceProposee(null, 'produit'), 'corporate', 'style personnel sans palette sonore : ambiance du genre');
   const creer = lire('skills', 'creer', 'SKILL.md');
-  assert.ok(Buffer.byteLength(creer) <= 23400);
+  assert.ok(Buffer.byteLength(creer) <= plafond('creer'));
   assert.match(creer, /L'ambiance est celle du style \(`pulse-motion styles ambiance <style> --genre <genre>`/);
   assert.match(creer, /Toujours `"bruitages": \{ "calage": "pic" \}`/);
 });

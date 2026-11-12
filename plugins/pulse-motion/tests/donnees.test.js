@@ -21,6 +21,7 @@ const { controlerScene } = require('../scripts/lib/controle-scene.js');
 const { lireDeroule, validerDeroule } = require('../scripts/lib/deroule.js');
 const { miniProjet } = require('./aide/mini-projet.js');
 const { dossierTemporaire } = require('./aide/temporaire.js');
+const { plafond } = require('./aide/plafonds.js');
 
 const RACINE = path.join(__dirname, '..');
 const DEPOT = path.join(RACINE, '..', '..');
@@ -382,10 +383,10 @@ test('consignes : animateur, creer et retoucher renvoient à explication pour un
   assert.ok(Buffer.byteLength(a) <= 6000, `${Buffer.byteLength(a)} o`);
   assert.ok(a.split('\n').some((l) => /un graphique, du code, une formule \(`explication`\)/.test(l)));
   const r = lire('skills', 'retoucher', 'SKILL.md');
-  assert.ok(Buffer.byteLength(r) <= 13850, `${Buffer.byteLength(r)} o`);
+  assert.ok(Buffer.byteLength(r) <= plafond('retoucher'), `${Buffer.byteLength(r)} o`);
   assert.match(r, /flèche, annotation, graphique, code, formule : `pulse-motion reference explication`/);
   const c = lire('skills', 'creer', 'SKILL.md');
-  assert.ok(Buffer.byteLength(c) <= 23400, `${Buffer.byteLength(c)} o`);
+  assert.ok(Buffer.byteLength(c) <= plafond('creer'), `${Buffer.byteLength(c)} o`);
   assert.match(c, /`schema`, `moyeu` ou `conclusion`/);
   assert.match(c, /`pulse-motion reference demandes` \(graphique, code, formule aussi\)/);
   assert.ok(Buffer.byteLength(lire('references', 'moteur.md')) <= 12000);

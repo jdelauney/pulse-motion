@@ -16,6 +16,7 @@ const { assembler } = require('../scripts/assembler.js');
 const { controlerScene } = require('../scripts/lib/controle-scene.js');
 const { lireDeroule } = require('../scripts/lib/deroule.js');
 const { miniProjet } = require('./aide/mini-projet.js');
+const { plafond } = require('./aide/plafonds.js');
 
 const RACINE = path.join(__dirname, '..');
 const DEPOT = path.join(RACINE, '..', '..');
@@ -323,10 +324,10 @@ test('consignes : l\'animateur lit explication pour une flèche ou une annotatio
   const ligne = table.split('\n').find((l) => l.includes('`explication`'));
   assert.ok(ligne && /une flèche/.test(ligne) && /une annotation/.test(ligne) && ligne.includes('`pulse-motion reference <nom>`'));
   const r = lire('skills', 'retoucher', 'SKILL.md');
-  assert.ok(Buffer.byteLength(r) <= 13850, `${Buffer.byteLength(r)} o`);
+  assert.ok(Buffer.byteLength(r) <= plafond('retoucher'), `${Buffer.byteLength(r)} o`);
   assert.match(r, /flèche, annotation, graphique, code, formule : `pulse-motion reference explication`/);
   assert.match(r, /« entoure le prix quand je dis cher »/);
-  assert.ok(Buffer.byteLength(lire('skills', 'creer', 'SKILL.md')) <= 23400);
+  assert.ok(Buffer.byteLength(lire('skills', 'creer', 'SKILL.md')) <= plafond('creer'));
   assert.ok(Buffer.byteLength(lire('references', 'moteur.md')) <= 12000);
   const ref = lire('references', 'explication.md');
   assert.match(ref, /« ajoute une flèche de Client à Serveur quand je dis envoie »/);

@@ -15,6 +15,7 @@ const { decoder } = require('../scripts/lib/png.js');
 const { trouverNavigateur } = require('./aide/navigateur.js');
 const { STYLES, copierProjet, modifierDeroule } = require('./aide/projet.js');
 const { dossierTemporaire } = require('./aide/temporaire.js');
+const { plafond } = require('./aide/plafonds.js');
 
 const RACINE = path.join(__dirname, '..');
 const DEPOT = path.join(RACINE, '..', '..');
@@ -279,7 +280,7 @@ test('consignes : icônes guidées dans l\'animateur et retoucher, sans dépasse
   const table = a.slice(a.indexOf('| La consigne demande… | Lire aussi |'), a.indexOf('\n2. '));
   assert.ok(table.split('\n').some((l) => /une icône/.test(l) && l.includes('`pulse-motion reference icones`')));
   const t = lire('skills', 'retoucher', 'SKILL.md');
-  assert.ok(Buffer.byteLength(t) <= 13850, `${Buffer.byteLength(t)} o`);
+  assert.ok(Buffer.byteLength(t) <= plafond('retoucher'), `${Buffer.byteLength(t)} o`);
   assert.match(t, /« une icône de camion à côté du titre »/);
   assert.match(t, /une icône : `pulse-motion reference icones`/);
   const ref = lire('references', 'icones.md');
