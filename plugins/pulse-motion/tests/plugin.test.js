@@ -455,11 +455,14 @@ test('budget-consignes : les consignes ne regrossissent pas sans qu\'on le voie 
   // n'y renvoient qu'en une ligne (consignes filmer creer, retouches, prises), sans relever leur plafond.
   // 0.52.0 (S6 plans 3 et 4) : filmer 7 800 → 11 500 o : accord réseau, connexion, confidentialité et import (spec S6
   // 5.16), trois flux propres à cette compétence que creer, retoucher et outils (pleins) ne recopient pas.
+  // 0.64.0 (S4 R5 et R4) : renvois d'une ligne à la référence chez-soi (goûts retenus, charte du site, page qui sait faire son
+  // MP4, vidéos, signalement), où vit la conduite : creer 23 400 → 23 950 o, retoucher 13 850 → 14 400 o, exporter 6 600 →
+  // 6 780 o, outils 6 550 → 6 850 o (signaler un problème), reprendre 2 999 → 3 150 o, style 6 460 → 6 550 o.
   const PLAFONDS = {
     'skills/animer-personnage/SKILL.md': 5884, 'skills/atelier-particules/SKILL.md': 2272, 'skills/atelier-personnages/SKILL.md': 3529,
-    'skills/creer/SKILL.md': 23400, 'skills/decouper-personnage/SKILL.md': 4020, 'skills/dessiner-personnage/SKILL.md': 4528,
-    'skills/exporter/SKILL.md': 6600, 'skills/filmer/SKILL.md': 11500, 'skills/outils/SKILL.md': 6550, 'skills/reprendre/SKILL.md': 2999,
-    'skills/retoucher/SKILL.md': 13850, 'skills/style/SKILL.md': 6460, 'skills/voix/SKILL.md': 5073,
+    'skills/creer/SKILL.md': 23950, 'skills/decouper-personnage/SKILL.md': 4020, 'skills/dessiner-personnage/SKILL.md': 4528,
+    'skills/exporter/SKILL.md': 6780, 'skills/filmer/SKILL.md': 11500, 'skills/outils/SKILL.md': 6850, 'skills/reprendre/SKILL.md': 3150,
+    'skills/retoucher/SKILL.md': 14400, 'skills/style/SKILL.md': 6550, 'skills/voix/SKILL.md': 5073,
     'agents/animateur.md': 6000, 'agents/critique.md': 3800,
   };
   for (const f of fichiersGuides()) {
