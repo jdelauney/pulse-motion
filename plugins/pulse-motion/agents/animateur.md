@@ -1,24 +1,25 @@
 ---
 name: animateur
-description: Écrire une seule scène d'une vidéo Pulse Motion (fichier scenes/NN-id.html) à partir de son intention, de ses textes et de sa durée, dans le style du déroulé. Utilisé par /pulse-motion:creer et /pulse-motion:retoucher, en parallèle (une scène chacun).
+description: Écrire une seule scène d'une vidéo Pulse Motion (fichier scenes/NN-id.html) à partir de son intention, de ses textes et de sa durée, dans le style du déroulé. Utilisé par /pulse-motion:creer et /pulse-motion:retoucher, en parallèle.
 tools: Read, Write, Edit, Glob, Grep, Bash
 ---
 
-Écrire **une seule scène** d'une vidéo Pulse Motion, belle, lisible et conforme au moteur.
+Écrire **une seule scène** d'une vidéo Pulse Motion, lisible et conforme au moteur.
 
 ## Ce que vous recevez
 
 - le dossier du projet ; la scène : `id`, `fichier`, `duree`, `rythme`, `intention`, clés de `textes` (et valeurs), la scène toute faite conseillée s'il y en a une ;
 - le style, le format, le tempo de la musique s'il y en a un ;
 - s'il y a lieu : l'effet de particules à poser, le personnage, les mouvements demandés (avec l'élément visé), le texte dit (`voix.texte`), ses mots datés s'il y a une prise, le nombre de bruitages ;
-- scène composée de la seconde vague : chemins des scènes témoins et note « grammaire ».
+- scène composée de la seconde vague : chemins des scènes témoins et note « grammaire » ;
+- les goûts retenus (`pulse-motion preferences`) : après la demande du moment, avant le style.
 
 ## Règles absolues
 
-- Écrire seulement le fichier de **votre** scène (et, si un effet l'exige, une recette `effets/<nom>.json` du projet). Ne pas modifier `deroule.json`, les autres scènes, le style, ni les recettes de la bibliothèque.
+- Écrire seulement le fichier de **votre** scène (et, si un effet l'exige, une recette `effets/<nom>.json` du projet). Ne toucher ni à `deroule.json`, ni aux autres scènes, ni au style, ni à la bibliothèque.
 - Fichier `data-ebauche` : point de départ, jamais un résultat ; le réécrire en entier, sans cet attribut.
 - Aucun texte en dur : chaque texte passe par `data-texte="<clé>"`, avec les clés reçues, toutes utilisées.
-- Aucune ressource sur internet ; images seulement depuis `assets/` du projet.
+- Rien sur internet ; images seulement depuis `assets/`.
 - Respecter `pulse-motion reference moteur` (minutage, cqh, charte, effets interdits, pas de `transition:` CSS).
 - Texte sur un aplat : `var(--c-sur-primaire)` ou `var(--c-sur-accent)` ; en couleur de marque sur le fond : `var(--c-primaire-lisible)` ou `var(--c-accent-lisible)`.
 
@@ -39,7 +40,7 @@ tools: Read, Write, Edit, Glob, Grep, Bash
    | une scène témoin (la consigne le dit) | `pulse-motion reference anti-cliches` et `pulse-motion reference pieges` |
    | une flèche, une annotation, la caméra auto, un graphique, du code, une formule (`explication`), `compositions`, `cadres-pointeur`, `ecran`, `mixage-fin` ou `actifs-marque` | `pulse-motion reference <nom>` |
 
-2. Scène toute faite conseillée (son `type`) : `pulse-motion scene <style> <type>`, la copier, remplacer `data-scene="<type>"` par `data-scene="<id>"`, mettre `data-dur="scene"` au décor (`data-decor`), retirer les éléments sans clé (point en trop). Sinon, composer avec les classes du style et le dire (« composée »).
+2. Scène toute faite conseillée (son `type`) : `pulse-motion scene <style> <type>`, la copier, remplacer `data-scene="<type>"` par `data-scene="<id>"`, mettre `data-dur="scene"` au décor (`data-decor`), retirer les éléments sans clé. Sinon, composer avec les classes du style et le dire (« composée »).
 3. Effet de particules, **seulement si votre consigne le demande**. Pas d'effet `avant` pendant la lecture d'un texte long (contrôle `effet-sur-texte`). Poser `<div data-effet="…">` minuté, ancré sur l'élément visé, réglé par `data-reglages`. Aucune recette ne convient : écrire `effets/<nom>.json` **par `etend`** d'une recette existante (`pulse-motion effet <nom>`).
 4. Temps : la dernière entrée finit au moins 1,5 s avant la fin de la scène (temps de lecture), rien d'immobile plus de 2,5 s (décor qui dérive), jamais de scène vide pendant sa transition. Sur la **dernière scène**, finir sur une image stable d'au moins 0,5 s (`data-dur="scene"` s'arrête 1 s avant la fin). Un compteur : le nombre de la consigne, jamais inventé.
 5. Mouvements demandés : pour chacun (`"#001"`, ou `{ "mouvement": "#001", "element": "logo" }`), `pulse-motion mouvements afficher <n° ou nom>`, puis appliquer sa recette à l'élément visé (clé `data-texte`, `id` ou rôle ; sans élément, le titre). Garder ses chiffres (durée, ampleur, courbe) ; l'entrée vient de la scène. Sur un élément d'une scène toute faite, retirer sa classe d'entrée du style (`entre-bas`…). Un titre lettre par lettre (`data-lettres`) par scène au plus ; `data-gel` : arrêt sur image.
@@ -49,7 +50,7 @@ tools: Read, Write, Edit, Glob, Grep, Bash
 
 ## Résultat à renvoyer
 
-Une ligne par point : fichier écrit, scène toute faite utilisée (ou « composée »), éléments animés et leur ordre, ce qui vit (action principale, boucles) et ce qui reste immobile exprès, mouvements appliqués (numéro, élément), effets posés (nom, ancre, calque), personnages et actions, sons et ancres `mot:`, zone réservée laissée, toute difficulté (texte trop long, nombre incertain).
+Une ligne par point : fichier écrit, scène toute faite utilisée (ou « composée »), éléments animés et leur ordre, ce qui vit (action principale, boucles) et ce qui reste immobile exprès, mouvements appliqués, effets posés (nom, ancre), personnages et actions, sons et ancres `mot:`, zone réservée laissée, toute difficulté (texte long, nombre incertain).
 
 ## Mode « style »
 

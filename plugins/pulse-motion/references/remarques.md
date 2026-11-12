@@ -23,7 +23,7 @@ Les options d'une ligne sont séparées par « <br> » ; chacune donne les régl
 | « plus vivant », « plus dynamique », « plus jeune » | Entrées sages, transitions lentes, musique en retrait | 1. entrées #001 ou #016 → les textes arrivent avec du ressort<br>2. transitions `poussee` ou `whip` (#041, #042) calées sur les temps → les scènes s'enchaînent avec élan<br>3. musique `entrainant`, `tempo` 120 à 128, 1 à 3 bruitages par scène → une énergie plus nette<br>4. style `energique` → une autre allure, plus vive | Mouvement plus vif et bruitages plus denses vont ensemble |
 | « ça fait diaporama », « PowerPoint » | Tout entre d'un coup, puis rien ne bouge | 1. entrées échelonnées sur la voix (`mot:`) → chaque élément arrive quand on en parle<br>2. un mouvement de caméra lent #056 ou #063 → l'image vit pendant qu'on lit<br>3. transitions variées → chaque passage a son caractère | Rien d'immobile plus de 2,5 s |
 | « trop chargé », « on ne sait pas où regarder » | Trop d'éléments au même instant | 1. un élément de moins par scène → l'essentiel ressort<br>2. départs décalés (`data-start`) → les éléments arrivent l'un après l'autre<br>3. retirer un effet de particules → l'image se dégage | Un seul accent par scène |
-| « comme notre marque » | Couleurs, police ou logo absents | 1. couleur de la marque en accent, pas en fond → la marque se reconnaît sans écraser le texte<br>2. police de la marque pour les titres, logo à l'ouverture et à la fin → la vidéo signe comme la marque<br>3. charte depuis le logo (`charte depuis-logo`) → les couleurs viennent du logo | Vérifier le contraste de l'accent sur le fond |
+| « comme notre marque » | Couleurs, police ou logo absents | 1. couleur de la marque en accent, pas en fond → la marque se reconnaît sans écraser le texte<br>2. police de la marque pour les titres, logo à l'ouverture et à la fin → la vidéo signe comme la marque<br>3. charte depuis le logo (`charte depuis-logo`) → les couleurs viennent du logo<br>4. charte depuis le site de l'entreprise (`charte depuis-site`), après son accord → les couleurs et le logo viennent du site | Vérifier le contraste de l'accent sur le fond |
 | « ça manque de punch », « pas d'impact » | Le moment fort n'est pas préparé | 1. `scenes[].musique` `silence` juste avant, puis entrée #014 sur le chiffre clé → un court silence, puis le chiffre éclate<br>2. secousse #036 et bruitage d'impact → le chiffre frappe<br>3. zoom sur un détail #037 → l'œil va droit à l'essentiel | Un seul moment fort par vidéo |
 | « trop enfantin » | Rebonds, couleurs vives, bruitages partout | 1. sans rebond ni élastique (#028, #029) → des mouvements plus adultes<br>2. couleurs moins saturées, bruitages réduits → une image plus posée<br>3. style `editorial` → une allure plus sérieuse | Courbes douces |
 | « trop froid », « pas chaleureux » | Style ou palette distants | 1. style `chaleureux` → des couleurs et des formes plus douces<br>2. `ton` `clair`, musique `inspirant` → plus de lumière, une musique qui porte<br>3. courbes douces #026 → des mouvements plus ronds | Une voix plus proche, si la vidéo en a une |
@@ -37,6 +37,7 @@ Les options d'une ligne sont séparées par « <br> » ; chacune donne les régl
 3. Appliquer l'option choisie comme une retouche ordinaire (sauvegarde, puis les lignes de `/pulse-motion:retoucher`), 5 changements au plus par tour ; s'il en faut plus, le dire et proposer un second tour.
 4. La phrase ne dit pas la scène : la demander (« toute la vidéo » en premier si l'impression est générale).
 5. Regarder le résultat (planches de regard, avant / après) avant de le montrer.
+6. La remarque vaut pour toutes les vidéos (« jamais », « toujours », « à chaque fois », ou la même impression deux fois) : après l'avoir appliquée, proposer de la retenir (`pulse-motion reference chez-soi`, section « Mémoire des goûts »).
 
 ## Remarques épinglées
 
@@ -51,6 +52,3 @@ La personne laisse ses remarques dans l'aperçu (bouton « Remarque » ou touche
 
 Une remarque « scène retirée » (la scène a été supprimée) se discute : la recopier, demander où elle s'applique maintenant.
 
-## À venir
-
-- Retenir une remarque pour toutes les vidéos (mémoire des goûts : spec S4, R4).
