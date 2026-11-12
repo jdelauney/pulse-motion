@@ -1,15 +1,22 @@
 // Wiki Pulse Motion – gabarit commun : en-tête, navigation latérale des commandes, sommaire, boutons Copier, pied de page.
 // La page indique sa racine relative dans <html data-racine="../"> et, pour une commande, data-commande="creer".
+// Une page anglaise (docs/en/, <html lang="en">) garde sa racine vers docs/ : le gabarit y parle anglais, et le sélecteur de
+// langue de l'en-tête mène à l'autre version de la page (ses <link rel="alternate" hreflang>, écrits par outils/site/langues.js).
 // Le contenu reste lisible sans JavaScript : seuls la navigation et les boutons manquent alors.
 (function () {
   "use strict";
 
   var donnees = window.PULSE_WIKI || { etapes: [], navigation: [], commandes: [] };
+  var anglais = donnees.anglais || { etapes: {}, navigation: donnees.navigation };
   var html = document.documentElement;
   var racine = html.getAttribute("data-racine") || "";
   var commande = html.getAttribute("data-commande");
-  var ici = location.pathname.replace(/\\/g, "/");
+  var en = /^en\b/i.test(html.getAttribute("lang") || "");
+  var T = function (fr, anglaisTexte) { return en ? anglaisTexte : fr; };
+  // Le chemin de la page ; une adresse de dossier (« …/pulse-motion/ », « …/en/ ») est sa page index.html.
+  var ici = location.pathname.replace(/\\/g, "/").replace(/\/$/, "/index.html");
   var prefixe = donnees.prefixe || "/pulse-motion:";
+  var SITE = donnees.site || "https://jdelauney.github.io/pulse-motion/";
 
   function el(balise, attributs, enfants) {
     var n = document.createElement(balise);
@@ -27,7 +34,7 @@
     // Le chemin (vu depuis la racine du wiki) se termine par la cible, à une frontière de dossier :
     // l'accueil (index.html) n'est pas marqué sur commandes/index.html.
     var depuisRacine = ici.split("/").slice(-(racine.split("../").length)).join("/");
-    return depuisRacine === cible || (cible === "index.html" && racine === "" && /\/$/.test(ici));
+    return depuisRacine === cible;
   }
 
   // Logo : une onde de pouls qui sort d'un triangle de lecture, aux couleurs de la traînée.
@@ -42,27 +49,62 @@
     return s.firstChild;
   }
 
+  // Une page restée en français, depuis une page anglaise : marquée « FR ».
+  function marqueFr() {
+    return el("span", { class: "marque-langue" }, [el("span", { "aria-hidden": "true", texte: "FR" }), el("span", { class: "visuellement-cache", texte: " (in French)" })]);
+  }
+
+  // Sélecteur de langue : l'autre version de cette page (son lien alternatif), sinon l'accueil de l'autre langue.
+  function selecteurLangue() {
+    var autre = document.querySelector('link[rel="alternate"][hreflang="' + (en ? "fr" : "en") + '"]');
+    var cible = autre && autre.getAttribute("href").indexOf(SITE) === 0 ? racine + autre.getAttribute("href").slice(SITE.length) : null;
+    var a = el("a", {
+      class: "bouton-langue",
+      href: cible || racine + (en ? "index.html" : "en/index.html"),
+      hreflang: en ? "fr" : "en",
+      lang: en ? "fr" : "en",
+      // Court (« FR », « EN ») pour que la navigation tienne sur une ligne ; le nom entier est lu et montré au survol.
+      texte: en ? "FR" : "EN",
+    });
+    a.setAttribute("aria-label", en
+      ? (cible ? "Français : lire cette page en français" : "Français : le wiki en français")
+      : (cible ? "English: read this page in English" : "English: the English documentation (this page is in French only)"));
+    a.title = a.getAttribute("aria-label");
+    return a;
+  }
+
   function entete() {
     var liste = el("ul", { id: "menu-principal" });
-    donnees.navigation.forEach(function (p) {
+    (en ? anglais.navigation : donnees.navigation).forEach(function (p) {
       var a = el("a", { href: racine + p.href, texte: p.titre });
-      // Une rubrique (commandes/, tutoriels/) reste active sur toutes ses pages.
-      var rubrique = /\/index\.html$/.test(p.href) && ici.indexOf("/" + p.href.split("/")[0] + "/") >= 0;
+      if (p.fr) { a.setAttribute("hreflang", "fr"); a.appendChild(marqueFr()); }
+      // Une rubrique (commandes/, tutoriels/, en/commandes/…) reste active sur toutes ses pages.
+      var dossier = p.href.replace(/[^/]*$/, "");
+      // L'accueil anglais (en/index.html) n'est pas une rubrique.
+      var rubrique = /\/index\.html$/.test(p.href) && dossier !== "en/" && ici.indexOf("/" + dossier) >= 0;
       if (estIci(p.href) || rubrique) a.setAttribute("aria-current", "page");
       liste.appendChild(el("li", {}, [a]));
     });
-    var nav = el("nav", { class: "navigation", "aria-label": "Navigation principale" }, [liste]);
+    var nav = el("nav", { class: "navigation", "aria-label": T("Navigation principale", "Main navigation") }, [liste]);
     var bouton = el("button", { class: "bouton bouton-fantome bouton-menu", type: "button", "aria-expanded": "false", "aria-controls": "menu-principal", texte: "Menu" });
     bouton.addEventListener("click", function () {
       var ouvert = nav.classList.toggle("ouverte");
       bouton.setAttribute("aria-expanded", ouvert ? "true" : "false");
     });
-    var marque = el("a", { class: "marque", href: racine + "index.html" }, [logo(), el("span", { texte: "Pulse Motion" }), el("span", { class: "visuellement-cache", texte: " – accueil du wiki" })]);
-    var barre = el("div", { class: "barre" }, [marque, bouton, nav]);
+    var marque = el("a", { class: "marque", href: racine + T("index.html", "en/index.html") }, [logo(), el("span", { texte: "Pulse Motion" }), el("span", { class: "visuellement-cache", texte: T(" – accueil du wiki", " – wiki home") })]);
+    var barre = el("div", { class: "barre" }, [marque, selecteurLangue(), bouton, nav]);
     var header = el("header", { class: "entete-site" }, [barre]);
-    var evitement = el("a", { class: "lien-evitement", href: "#contenu", texte: "Aller au contenu" });
+    var evitement = el("a", { class: "lien-evitement", href: "#contenu", texte: T("Aller au contenu", "Skip to content") });
     document.body.insertBefore(header, document.body.firstChild);
     document.body.insertBefore(evitement, header);
+  }
+
+  // Page anglaise : Pulse Motion parle français, dit sous le chapeau (sauf si la page le dit déjà).
+  function avisLangue() {
+    if (!en || document.querySelector(".avis-langue")) return;
+    var cible = document.querySelector("main .entete-page, main .entete-section, main .heros-texte");
+    if (!cible) return;
+    cible.appendChild(el("p", { class: "avis-langue", texte: "Pulse Motion is made for French speakers: the plugin’s questions, messages and reports are in French, and Claude answers in French while it uses the plugin. The requests shown as examples stay in French, with their translation alongside." }));
   }
 
   // Navigation latérale des pages de commandes : les commandes groupées par étape.
@@ -70,10 +112,10 @@
     var cible = document.querySelector("[data-laterale=\"\"]");
     if (!cible) return;
     donnees.etapes.forEach(function (etape) {
-      cible.appendChild(el("h2", { texte: etape.numero + ". " + etape.nom }));
+      cible.appendChild(el("h2", { texte: etape.numero + ". " + (en ? anglais.etapes[etape.id] || etape.nom : etape.nom) }));
       var ul = el("ul");
       etape.commandes.forEach(function (nom) {
-        var a = el("a", { href: racine + "commandes/" + nom + ".html", texte: prefixe + nom });
+        var a = el("a", { href: racine + T("", "en/") + "commandes/" + nom + ".html", texte: prefixe + nom });
         if (nom === commande) a.setAttribute("aria-current", "page");
         ul.appendChild(el("li", {}, [a]));
       });
@@ -85,7 +127,7 @@
   function lateraleSommaire() {
     var cible = document.querySelector('[data-laterale="sommaire"]');
     if (!cible) return;
-    cible.appendChild(el("h2", { texte: "Sur cette page" }));
+    cible.appendChild(el("h2", { texte: T("Sur cette page", "On this page") }));
     var ul = el("ul");
     document.querySelectorAll(".typographie h2").forEach(function (h) {
       var section = h.closest("section[id]");
@@ -163,11 +205,11 @@
     document.querySelectorAll("pre.commande").forEach(function (pre) {
       var code = pre.querySelector("code");
       if (!code || !navigator.clipboard) return;
-      var b = el("button", { class: "bouton bouton-copier", type: "button", texte: "Copier" });
+      var b = el("button", { class: "bouton bouton-copier", type: "button", lang: en ? "en" : "fr", texte: T("Copier", "Copy") });
       b.addEventListener("click", function () {
         navigator.clipboard.writeText(code.textContent.trim()).then(function () {
-          b.textContent = "Copié";
-          setTimeout(function () { b.textContent = "Copier"; }, 1600);
+          b.textContent = T("Copié", "Copied");
+          setTimeout(function () { b.textContent = T("Copier", "Copy"); }, 1600);
         });
       });
       pre.appendChild(b);
@@ -189,20 +231,32 @@
   }
 
   function pied() {
-    var liens = el("p", { class: "pied-liens" }, [
-      el("a", { href: racine + "commandes/index.html", texte: "Toutes les commandes" }),
-      el("a", { href: racine + "quelle-commande.html", texte: "Quelle commande pour… ?" }),
-      el("a", { href: racine + "depannage.html", texte: "Je suis bloqué" }),
-      el("a", { href: racine + "lexique.html", texte: "Lexique" }),
-      el("a", { href: racine + "nouveautes.html", texte: "Nouveautés" }),
-      el("a", { href: racine + "contribuer.html", texte: "Contribuer" }),
-      el("a", { href: "https://github.com/jdelauney/pulse-motion", texte: "Le dépôt sur GitHub" }),
-    ]);
-    var texte = el("p", { texte: "Wiki de Pulse Motion, le plugin de motion design pour Claude Code. Les commandes se tapent dans Claude Code, puis on se laisse guider." });
+    var liens = en
+      ? el("p", { class: "pied-liens" }, [
+        el("a", { href: racine + "en/commandes/index.html", texte: "All commands" }),
+        el("a", { href: racine + "quelle-commande.html", hreflang: "fr", texte: "Which command for…?" }, [marqueFr()]),
+        el("a", { href: racine + "depannage.html", hreflang: "fr", texte: "I'm stuck" }, [marqueFr()]),
+        el("a", { href: racine + "lexique.html", hreflang: "fr", texte: "Glossary" }, [marqueFr()]),
+        el("a", { href: racine + "nouveautes.html", hreflang: "fr", texte: "What's new" }, [marqueFr()]),
+        el("a", { href: "https://github.com/jdelauney/pulse-motion/blob/main/CONTRIBUTING.en.md", texte: "Contributing" }),
+        el("a", { href: "https://github.com/jdelauney/pulse-motion", texte: "The repository on GitHub" }),
+      ])
+      : el("p", { class: "pied-liens" }, [
+        el("a", { href: racine + "commandes/index.html", texte: "Toutes les commandes" }),
+        el("a", { href: racine + "quelle-commande.html", texte: "Quelle commande pour… ?" }),
+        el("a", { href: racine + "depannage.html", texte: "Je suis bloqué" }),
+        el("a", { href: racine + "lexique.html", texte: "Lexique" }),
+        el("a", { href: racine + "nouveautes.html", texte: "Nouveautés" }),
+        el("a", { href: racine + "contribuer.html", texte: "Contribuer" }),
+        el("a", { href: "https://github.com/jdelauney/pulse-motion", texte: "Le dépôt sur GitHub" }),
+      ]);
+    var texte = el("p", { texte: T("Wiki de Pulse Motion, le plugin de motion design pour Claude Code. Les commandes se tapent dans Claude Code, puis on se laisse guider.",
+      "The Pulse Motion wiki, the motion design plugin for Claude Code. You type a command in Claude Code, then let it guide you, in French.") });
     document.body.appendChild(el("footer", { class: "pied-site" }, [el("div", { class: "conteneur" }, [texte, liens])]));
   }
 
   entete();
+  avisLangue();
   laterale();
   lateraleSommaire();
   onglets();

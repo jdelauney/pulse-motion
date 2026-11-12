@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en" data-racine="../">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Concepts – Pulse Motion Wiki</title>
+<meta name="description" content="The ideas behind Pulse Motion explained simply: genre and style, brand kit, timeline, scenes, characters, path, preview, automatic checks, export, privacy of screen recordings, and where your files are kept.">
+<!-- langues -->
+<link rel="alternate" hreflang="fr" href="https://jdelauney.github.io/pulse-motion/concepts.html">
+<link rel="alternate" hreflang="en" href="https://jdelauney.github.io/pulse-motion/en/concepts.html">
+<link rel="alternate" hreflang="x-default" href="https://jdelauney.github.io/pulse-motion/concepts.html">
+<!-- /langues -->
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/animations.css">
+<script src="../js/donnees.js" defer></script>
+<script src="../js/gabarit.js" defer></script>
+<script src="../js/animations.js" defer></script>
+<script src="../js/console.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<div class="mise-en-page">
+<nav class="laterale" aria-label="On this page" data-laterale="sommaire"></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille">Understanding</p>
+<h1>Concepts</h1>
+<p class="chapo">The ideas Pulse Motion is built on, explained in plain words. You don’t need to know them to make a video: they help you understand what Pulse Motion suggests, and why.</p>
+</header>
+
+<!-- ===================================================================================================== -->
+<section id="chaine">
+<h2>From idea to video file</h2>
+<p>A Pulse Motion video isn’t edited the way it would be in editing software. It is <strong>described</strong>, then <strong>drawn by the browser</strong>, frame by frame, like a web page that moves. That’s what makes it editable with one sentence: changing a word in the timeline is enough to change the video.</p>
+<figure class="anim" data-etapes="6" data-duree="1300">
+<svg viewBox="0 0 900 230" role="img" aria-labelledby="concepts-chaine-titre">
+<title id="concepts-chaine-titre">From idea to video file, in six links</title>
+<g class="e1" data-etape="1"><rect class="actif-halo schema-halo-primaire" x="4" y="24" width="132" height="84" rx="18"/><rect class="schema-boite" x="10" y="30" width="120" height="72" rx="14"/><text class="schema-texte" x="70" y="62" text-anchor="middle">Your idea</text><text class="schema-texte-secondaire" x="70" y="82" text-anchor="middle">in one sentence</text></g>
+<path class="schema-fleche trace e2" pathLength="1" d="M130 66 H156" marker-end="url(#concepts-pointe)"/>
+<g class="e2" data-etape="2"><rect class="actif-halo schema-halo-primaire" x="154" y="24" width="132" height="84" rx="18"/><rect class="schema-boite-active" x="160" y="30" width="120" height="72" rx="14"/><text class="schema-texte" x="220" y="62" text-anchor="middle">Timeline</text><text class="schema-texte-secondaire" x="220" y="82" text-anchor="middle">scenes · text</text></g>
+<path class="schema-fleche trace e3" pathLength="1" d="M280 66 H306" marker-end="url(#concepts-pointe)"/>
+<g class="e3" data-etape="3"><rect class="actif-halo schema-halo-primaire" x="304" y="24" width="132" height="84" rx="18"/><rect class="schema-boite" x="310" y="30" width="120" height="72" rx="14"/><text class="schema-texte" x="370" y="62" text-anchor="middle">Scenes</text><text class="schema-texte-secondaire" x="370" y="82" text-anchor="middle">one per file</text></g>
+<path class="schema-fleche trace e4" pathLength="1" d="M430 66 H456" marker-end="url(#concepts-pointe)"/>
+<g class="e4" data-etape="4"><rect class="actif-halo schema-halo-primaire" x="454" y="24" width="132" height="84" rx="18"/><rect class="schema-boite" x="460" y="30" width="120" height="72" rx="14"/><text class="schema-texte" x="520" y="62" text-anchor="middle">Assembly</text><text class="schema-texte-secondaire" x="520" y="82" text-anchor="middle">style · brand · sound</text></g>
+<path class="schema-fleche trace e5" pathLength="1" d="M580 66 H606" marker-end="url(#concepts-pointe)"/>
+<g class="e5" data-etape="5"><rect class="actif-halo schema-halo-primaire" x="604" y="24" width="132" height="84" rx="18"/><rect class="schema-boite-active" x="610" y="30" width="120" height="72" rx="14"/><text class="schema-texte" x="670" y="62" text-anchor="middle">Animated page</text><text class="schema-texte-secondaire" x="670" y="82" text-anchor="middle">preview · website</text></g>
+<path class="schema-fleche trace e6" pathLength="1" d="M730 66 H756" marker-end="url(#concepts-pointe)"/>
+<g class="e6" data-etape="6"><rect class="actif-halo schema-halo-primaire" x="754" y="24" width="142" height="84" rx="18"/><rect class="schema-boite-active" x="760" y="30" width="130" height="72" rx="14"/><text class="schema-texte" x="825" y="62" text-anchor="middle">MP4</text><text class="schema-texte-secondaire" x="825" y="82" text-anchor="middle">to publish</text></g>
+<g class="e4" data-etape="4"><path class="schema-accompagne trace e4" pathLength="1" d="M520 104 V150 H370 V108" marker-end="url(#concepts-pointe-mauve)"/><text class="schema-texte-secondaire" x="445" y="172" text-anchor="middle">checks: fixed automatically, or to be fixed</text></g>
+<g class="e6"><path class="schema-accompagne trace e6" pathLength="1" d="M670 104 V200 H220 V108" marker-end="url(#concepts-pointe-mauve)"/><text class="schema-texte-secondaire" x="445" y="222" text-anchor="middle">an edit changes the timeline or a scene, and everything is rebuilt</text></g>
+<defs>
+<marker id="concepts-pointe" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" class="schema-pointe-grise"/></marker>
+<marker id="concepts-pointe-mauve" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" class="schema-pointe"/></marker>
+</defs>
+</svg>
+<figcaption>Your idea becomes a timeline (the list of scenes and their text). Each scene is written in its own file. Assembly brings together the scenes, the style, your brand kit and the sound in a single animated page, checked along the way. This page serves as the preview and can go on a website; the export turns it into the MP4 file. An edit changes the timeline or a scene, then everything is rebuilt.</figcaption>
+</figure>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="genre">
+<h2>Genre and style: two separate choices</h2>
+<p>Pulse Motion separates two things that often get mixed up:</p>
+<ul>
+<li>the <dfn>genre</dfn> is <strong>what the video does</strong>: train, present a product, tell a story, post on social media;</li>
+<li>the <dfn>style</dfn> is <strong>what it looks like</strong>: its shapes, its fonts, the way it moves, like a presentation theme.</li>
+</ul>
+<p>Any genre can be combined with any style. The genre is worked out from your topic; it decides the <strong>structure</strong> of the video and the format, and ranks the styles from most to least suitable.</p>
+<table>
+<thead><tr><th>Genre</th><th>Suggested structure</th><th>Format</th><th>Styles suggested first</th></tr></thead>
+<tbody>
+<tr><td><strong>Training</strong></td><td>Title → why (a figure or a warning) → steps or list → do’s and don’ts → conclusion</td><td>16:9</td><td>clair-pedagogique, chaleureux</td></tr>
+<tr><td><strong>Product presentation</strong></td><td>Problem → product → 3 benefits → key figure → call to action</td><td>16:9</td><td>minimal, tech-sombre</td></tr>
+<tr><td><strong>Storytelling</strong></td><td>Situation → difficulty → turning point → resolution → moral</td><td>16:9</td><td>editorial, chaleureux</td></tr>
+<tr><td><strong>Social media post</strong></td><td>Hook in 2 s → 2 or 3 short scenes → conclusion</td><td>9:16 (4:5 for the feed)</td><td>energique, minimal</td></tr>
+</tbody>
+</table>
+<p>The third suggested style is deliberately <strong>contrasting</strong>: it shows you another possible direction. All twenty styles are presented in the <a href="catalogue.html#styles">catalogue</a>.</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="charte">
+<h2>The brand kit and the brand vocabulary</h2>
+<p>The <dfn>brand kit</dfn> is your brand’s colours, fonts and logo. It applies <strong>on top of the style</strong>: the style gives the look, the brand kit gives your identity. That’s what avoids the “all videos look the same” effect.</p>
+<ul>
+<li><strong>Two colours:</strong> the primary (titles, main elements) and the accent (highlights). Pulse Motion takes them from your logo, or from your words: « <span lang="fr">bleu marine</span> » (“navy blue”).</li>
+<li><strong>Colours that are always readable:</strong> for each colour, Pulse Motion works out a version just dark or light enough to read against the background, and whether white or black should sit on a solid block of that colour.</li>
+<li><strong>Two fonts:</strong> one for titles, one for body text, embedded in the video.</li>
+<li><strong>A tone:</strong> light or dark, when the style offers both.</li>
+</ul>
+<p>A brand kit is created during a video, then <strong>saved</strong> under a name (“atelier-nord”) so it can be offered for your next videos. If you change it later, <a href="commandes/reprendre.html"><code>/pulse-motion:reprendre</code></a> tells you when a video uses an older version, and offers to update it.</p>
+<p>The <dfn>brand vocabulary</dfn> goes with the brand kit: these are the words of <em>your trade</em> (acronyms, product names), with their exact spelling and the forms to avoid. The check flags any mistake in these words. Not to be confused with the <a href="#lexique">personal glossary</a>, which keeps track of the <em>tool’s</em> words that have already been explained to you.</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="deroule">
+<h2>The timeline</h2>
+<p>The <dfn>timeline</dfn> is the list of scenes in order, like a running order for a TV show. It’s the heart of the video: a single file, <code>deroule.json</code>, holding everything that one sentence can change.</p>
+<table>
+<thead><tr><th>For the whole video</th><th>For each scene</th></tr></thead>
+<tbody>
+<tr><td>The title, the genre, the path</td><td>The text shown on screen</td></tr>
+<tr><td>The format (16:9, 9:16, 1:1, 4:5) and the frames per second</td><td>The spoken text, if the video has a voice</td></tr>
+<tr><td>The style and the brand kit settings specific to this video</td><td>The length, and the pace (slower, livelier)</td></tr>
+<tr><td>The music, the voice, the subtitles, the sound effects</td><td>The transition to the next scene</td></tr>
+</tbody>
+</table>
+<p><strong>Why it matters:</strong> the text is never written in the scenes, only in the timeline. So « <span lang="fr">Change le titre</span> » (“Change the title”) changes a single line, with no risk of breaking the animation.</p>
+<h3>The pacing rules</h3>
+<ul>
+<li><strong>One idea per scene.</strong> If the text holds two ideas, that’s two scenes.</li>
+<li><strong>Time to read:</strong> a scene lasts at least 1.5 s + 0.3 s per word shown.</li>
+<li><strong>Nothing still for more than 2.5 s</strong>: a drifting background or a staggered entrance is enough.</li>
+<li><strong>End on a still frame</strong> lasting at least half a second.</li>
+<li><strong>Short text:</strong> a title of 40 characters at most, scene text of 80 at most, numbers written as figures.</li>
+</ul>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="scenes">
+<h2>Ready-made scenes and composed scenes</h2>
+<p>A <dfn>scene</dfn> is one animated screen of the video, like a slide that moves. Each style offers <strong>nine ready-made scenes</strong>, one per role:</p>
+<table>
+<thead><tr><th>Scene</th><th>Role</th><th>Suggested length</th></tr></thead>
+<tbody>
+<tr><td><code>titre</code></td><td>Open the video or a chapter</td><td>7 s</td></tr>
+<tr><td><code>liste</code></td><td>2 to 4 points revealed one by one</td><td>12 s</td></tr>
+<tr><td><code>chiffre</code></td><td>A key figure that counts up to its value</td><td>7 s</td></tr>
+<tr><td><code>comparaison</code></td><td>Two columns: before / after, do / don’t</td><td>12 s</td></tr>
+<tr><td><code>etape</code></td><td>A numbered step in a procedure</td><td>8 s</td></tr>
+<tr><td><code>alerte</code></td><td>A point to watch out for, a mistake to avoid</td><td>8 s</td></tr>
+<tr><td><code>schema</code></td><td>Three steps linked by arrows</td><td>8 s</td></tr>
+<tr><td><code>moyeu</code></td><td>One idea in the centre, 3 to 5 parts around it, linked by arrows</td><td>10 s</td></tr>
+<tr><td><code>conclusion</code></td><td>The key message and the logo</td><td>6 s</td></tr>
+</tbody>
+</table>
+<p>Lengths vary a little from one style to another (the energetic style is shorter). When none of them fits, the animator <strong>composes</strong> the scene freely: a <a href="../personnages.html" hreflang="fr">character</a> (in French), a background, a moving camera.</p>
+<p><strong>The difference matters when you change style:</strong> a ready-made scene is carried over as it is into the new style; a composed scene has to be rewritten.</p>
+<h3>The animators</h3>
+<p>An <dfn>animator</dfn> is a specialised Pulse Motion assistant that writes <strong>one</strong> scene. During the build there is one per scene, and they all work at the same time: a 10-scene video doesn’t take ten times longer than a one-scene video. Pulse Motion itself decides on particle effects and hands them to the animators concerned, to keep the video understated.</p>
+<h3>The characters</h3>
+<p>A <dfn>character</dfn> is an animated actor in the scene: it walks in, points to a figure, waves, changes expression, and can even speak the scene’s text with your voice. They all share the same skeleton, dressed as a stick figure, as a drawing made on request or as your own illustration; so they all strike the same poses and make the same moves. Everything is explained on the <a href="../personnages.html" hreflang="fr">characters</a> page (in French).</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="parcours">
+<h2>The path: quick or guided</h2>
+<p>At the start, you choose your <dfn>path</dfn>, that is, how many times Pulse Motion stops to ask for your approval.</p>
+<table>
+<thead><tr><th>Path</th><th>Your approvals</th><th>Who it’s for</th></tr></thead>
+<tbody>
+<tr><td><strong>Quick</strong> (default)</td><td>Just one: the timeline, with the choice of style in the same question</td><td>You want to see the video fast, and edit it afterwards.</td></tr>
+<tr><td><strong>Guided</strong></td><td>Three: the timeline, then the style, then the final video</td><td>You want to approve each step, or the video is important.</td></tr>
+</tbody>
+</table>
+<p>Either way, <strong>nothing is animated before you approve the timeline</strong>, and everything can still be edited afterwards.</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="apercu">
+<h2>The preview</h2>
+<p>The <dfn>preview</dfn> is the video itself, open in your browser, with a playback bar. It’s served by a small server on your computer (an address starting with <code>http://localhost:…</code>): nothing goes out to the internet.</p>
+<ul>
+<li><strong>It reloads on its own</strong> after every edit, at the same point.</li>
+<li><strong>You can drive it from the keyboard:</strong> <kbd>Space</kbd> play/pause, <kbd>←</kbd> <kbd>→</kbd> frame by frame, <kbd>Shift</kbd> + arrow to change scene, <kbd>B</kbd> to loop a scene.</li>
+<li><strong>It hosts the voice studio</strong> (the <strong>Voix</strong> (Voice) button) and an <strong>MP4</strong> button that exports directly in the browser.</li>
+</ul>
+<p>The video is <strong>deterministic</strong>: a given moment always shows exactly the same frame. That’s what makes it possible to check it frame by frame, and to export it without stutter, however powerful the computer is.</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="controles">
+<h2>The automatic checks</h2>
+<p>After every build and every edit, Pulse Motion <strong>checks</strong> the video in two stages: first the timeline and the text, then the rendered video, in Chrome or Edge without a window, frame by frame.</p>
+<p>The safe cases are <strong>fixed on their own</strong>, and Pulse Motion tells you in one sentence what it did. The rest is fixed by Pulse Motion itself, in two rounds at most; whatever resists is reported to you.</p>
+<table>
+<thead><tr><th>What is checked</th><th>Fixed on its own?</th></tr></thead>
+<tbody>
+<tr><td>A scene too short to read its text</td><td>Yes: lengthened, by 50% at most</td></tr>
+<tr><td>Dead time at the end of a scene (nothing moves for more than 2.5 s)</td><td>Yes: scene shortened, without going below the reading time</td></tr>
+<tr><td>A video ending without a still frame</td><td>Yes: last scene lengthened by one second at most</td></tr>
+<tr><td>French typography (spaces before ; : ! ?, « » quotation marks, ’ apostrophe, ellipses)</td><td>Yes, in the timeline text</td></tr>
+<tr><td>A capital letter missing its accent (« Etape » → « Étape »)</td><td>Yes</td></tr>
+<tr><td>Text spilling out of its box or off the frame</td><td>Yes: size reduced down to 80%, never below readable</td></tr>
+<tr><td>Two overlapping elements, a hidden logo, text too close to the edge</td><td>No: reported and fixed in the scene</td></tr>
+<tr><td>In vertical format: text under the social media buttons</td><td>No: reported</td></tr>
+<tr><td>The real contrast of a text against what lies behind its letters</td><td>No: reported</td></tr>
+<tr><td>More than 3 flashes per second over a quarter of the frame</td><td>No: <strong>error</strong>, risk of an epileptic seizure</td></tr>
+<tr><td>A word from the brand vocabulary misspelt, a word written twice in a row</td><td>No: reported</td></tr>
+</tbody>
+</table>
+<p>Each automatic fix is backed up first: « <span lang="fr">annule</span> » (“undo”) reverses it. If you asked for a specific length or spelling, Pulse Motion checks without fixing, to respect your request.</p>
+<aside class="encadre encadre-conseil"><p><strong>Tip:</strong> the frame check needs Chrome or Edge. Without them, Pulse Motion tells you the render hasn’t been checked: the video is made, but overflows haven’t been measured.</p></aside>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="tempo">
+<h2>Tempo: timing the picture to the music</h2>
+<p>With composed music, a score, or a file whose tempo you know, the video takes on the music’s <dfn>tempo</dfn>, in beats per minute. At 120 beats per minute, there’s a beat every half-second. Animations can then start <strong>on the beat</strong>.</p>
+<p>It’s the music that fits the picture, not the other way round: composed music (or a score timed to the scenes) starts again at the beginning of each scene. Scene lengths stay free, and the check can fix a length on its own without putting the music out of step.</p>
+<p>Music from a file, on the other hand, doesn’t move: if you give its tempo, each scene must start on a beat (at 120 beats per minute, every half-second), and the check no longer fixes a length on its own, so as not to put the picture out of step with the music.</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="transitions">
+<h2>Transitions</h2>
+<p>The <dfn>transition</dfn> is the passage from one scene to the next. It lasts half a second.</p>
+<table>
+<thead><tr><th>Transition</th><th>For</th></tr></thead>
+<tbody>
+<tr><td><code>fondu</code></td><td>The default choice, everywhere.</td></tr>
+<tr><td><code>glissement</code></td><td>Moving forward through a sequence (steps).</td></tr>
+<tr><td><code>balayage</code></td><td>Changing section.</td></tr>
+<tr><td><code>rideau</code></td><td>An opening from the centre (editorial style).</td></tr>
+<tr><td><code>zoom</code></td><td>The scene comes closer (energetic style).</td></tr>
+<tr><td><code>coupe</code></td><td>A hard cut, with no overlap (energetic and minimal styles).</td></tr>
+<tr><td><code>whip</code></td><td>A fast, blurred whip pan: an energetic change.</td></tr>
+<tr><td><code>poussee</code></td><td>The new scene pushes the old one out of frame: a logical sequence, a slideshow.</td></tr>
+<tr><td><code>traversee</code></td><td>You go through the scene into the next one: diving into the subject.</td></tr>
+<tr><td><code>cercle</code></td><td>The scene opens in a growing circle: a playful or retro tone.</td></tr>
+<tr><td><code>volets</code></td><td>The scene appears in strips: a graphic tone.</td></tr>
+<tr><td><code>retournement</code></td><td>The scene flips like a card: a question, then its answer.</td></tr>
+<tr><td><code>aucune</code></td><td>Linking two scenes that answer each other (before / after).</td></tr>
+</tbody>
+</table>
+<p>Two or three families at most in one video, and the same one for scenes of the same kind.</p>
+<p>Transitions, like text entrances and camera moves, also have a <strong>trade name</strong> and a <strong>number</strong> in the move dictionary: « <span lang="fr">un whip pan entre la scène 2 et la 3</span> » (“a whip pan between scenes 2 and 3”) or « #042 » are understood. For the list: « <span lang="fr">quels mouvements existent ?</span> » (“which moves are there?”).</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="explicative">
+<h2>The explainer video</h2>
+<p>An <dfn>explainer video</dfn> helps people understand a mechanism: a circuit, a process, a calculation. The « Vidéo explicative » (Explainer video) template builds it in six parts: a hook, the problem and its causes, the mechanism in three steps, a close-up on one detail, a figure, the summary. Example: « <span lang="fr">Du devis au paiement : le trajet d’une facture</span> » (“From quote to payment: the journey of an invoice”), on the <a href="idees.html#modele-explication">Video ideas</a> page.</p>
+<ul>
+<li><strong>What is said is shown</strong>: an arrow draws itself from “Client” to “Server” when the voice says “sends”, a word is circled by hand as it’s spoken, a chart grows bar by bar over the years mentioned, a spreadsheet formula builds up step by step.</li>
+<li><strong>The camera finds its own shots</strong>: an opening shot, a move in when there’s time to look, a final pull-back over the whole idea, never cutting off any text. « <span lang="fr">Laisse la caméra bouger toute seule</span> » (“Let the camera move on its own”), or « <span lang="fr">garde la caméra fixe scène 2</span> » (“keep the camera still in scene 2”).</li>
+<li><strong>Small, soft sounds</strong> go with each entrance (a card, an arrow, a list point, a bar counting up): « <span lang="fr">ajoute des petits sons</span> » (“add little sounds”).</li>
+<li><strong>The overall pace</strong> is set with one sentence: « <span lang="fr">plus rythmé pour les réseaux</span> » (“punchier for social media”), « <span lang="fr">plus posé</span> » (“calmer”).</li>
+</ul>
+<p>In an explainer video, the automatic camera and the small sounds are on by default; elsewhere, they stay off until you ask for them.</p>
+<p>The voice can be yours, or a <strong>synthetic voice</strong> made on your computer, with no account or connection once installed (about 300 MB, with your approval). It’s a single French female voice, decent but less natural than a real voice. Unlike the computer’s own voice, it can be delivered as it is, and its credits are added automatically. See <a href="commandes/voix.html"><code>/pulse-motion:voix</code></a>.</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="export">
+<h2>The two exports</h2>
+<p>The same video gives you <strong>two deliverables</strong>:</p>
+<ul>
+<li>the <strong>animated page</strong> (<code>sortie/&lt;titre&gt;.html</code>), always up to date: a single file that contains everything (images, fonts, sound) and opens offline, ready to put on a website;</li>
+<li>the <strong>MP4 file</strong>, made on request by <a href="commandes/exporter.html"><code>/pulse-motion:exporter</code></a>, ready to publish or send.</li>
+</ul>
+<p>The MP4 can be made in two ways:</p>
+<table>
+<thead><tr><th></th><th>High-fidelity export</th><th>Export in the browser</th></tr></thead>
+<tbody>
+<tr><td>What you need</td><td>ffmpeg, installed once</td><td>Nothing beyond Chrome or Edge</td></tr>
+<tr><td>The frames</td><td>The browser’s real frames, one by one</td><td>Drawn in the browser; a few advanced effects come out less well</td></tr>
+<tr><td>The sound</td><td>The page’s mix, level checked</td><td>The same mix</td></tr>
+<tr><td>The time it takes</td><td>About 2 s of processing per second of video in 1080p</td><td>Depends on the computer</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="historique">
+<h2>The edit history</h2>
+<p>Before every edit, Pulse Motion copies the state of the video (timeline, scenes, files, brand kit) into a hidden folder, <code>.historique/</code>. The <strong>last 20</strong> copies are kept. « <span lang="fr">annule</span> » (“undo”) restores the most recent one; said again, it goes back in time, copy after copy.</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="confidentialite">
+<h2>Privacy</h2>
+<p>When you record an app with <a href="commandes/filmer.html"><code>/pulse-motion:filmer</code></a>, what appears on screen may be personal: addresses, customer names, an IBAN. Pulse Motion follows four rules.</p>
+<ul>
+<li><strong>The blur is in the frames themselves.</strong> It’s applied during recording, before the frame is written to disk: no sharp frame is kept, and nobody can “remove” the blur from the delivered page. Passwords, email addresses, phone numbers, IBANs, card and national insurance numbers, and address and date-of-birth fields are blurred automatically. Anything else (a name, a face, an amount), Pulse Motion points out to you when it looks at the contact sheet, and you decide.</li>
+<li><strong>Your password never goes through Pulse Motion.</strong> You sign in yourself, in a visible window; Pulse Motion doesn’t see what you type, never types a password, and its browser’s password manager is turned off.</li>
+<li><strong>The internet is only used for recording</strong>, and only after you’ve approved that site, one per recording. If the page tries to take you elsewhere, navigation is blocked. After that, the video never needs it again: the preview and the export read the recording kept in the folder.</li>
+<li><strong>The clicks are real.</strong> Pulse Motion warns you before the first recording: an action taken in the app (save, send) isn’t undone afterwards. A demo account is the safest option.</li>
+</ul>
+<table>
+<thead><tr><th>What is kept</th><th>Where</th></tr></thead>
+<tbody>
+<tr><td>The recording (frames already blurred, click positions) and your approval for the site</td><td>The video’s folder, under <code>films/</code>. A take doesn’t go into the edit history: its blur is permanent.</td></tr>
+<tr><td>Your login to a site (its cookies, as in any browser)</td><td>Your personal Pulse Motion folder, separately for each site, never in the video’s folder or in an exported library. « <span lang="fr">Oublie ma connexion à …</span> » (“Forget my login to …”) deletes it.</td></tr>
+<tr><td>Your password</td><td>Nowhere.</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="lexique">
+<h2>The personal glossary</h2>
+<p>Pulse Motion talks to you without jargon. When it needs to explain one of the tool’s words (timeline, scene, brand kit, export…), it does so <strong>once</strong>, with an everyday image, and notes it in your <dfn>personal glossary</dfn>. Next time, it doesn’t explain it all over again. You can read and correct this glossary: it’s a text file, <code>lexique.md</code>, in your personal Pulse Motion folder. The <a href="../lexique.html" hreflang="fr">glossary of this wiki</a> (in French) lists these words.</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="bibliotheque">
+<h2>Your library</h2>
+<p>What you keep for all your videos makes up your <dfn>personal library</dfn>: your saved brand kits, your personal styles, the effects and characters you’ve kept, and the preferences it remembers: « <span lang="fr">jamais de rebond</span> » (“never any bounce”).</p>
+<ul>
+<li><strong>Keep.</strong> « <span lang="fr">Garde cet effet de neige pour mes prochaines vidéos</span> » (“Keep this snow effect for my next videos”), « <span lang="fr">garde ce personnage</span> » (“keep this character”): it joins your library, along with what it needs (a character’s poses and moves, an effect’s image). When you’ve just drawn a character or invented a move, Pulse Motion offers to keep it. A name already used by something that comes with Pulse Motion can’t be used: it suggests another one.</li>
+<li><strong>Find again.</strong> When Pulse Motion suggests an effect or a character, the ones in your library are in the list, alongside the ones that come with it.</li>
+<li><strong>By copy.</strong> An item from your library is <em>copied</em> into the video that uses it. The video stays complete: you can copy it or send it on its own. And changing your library never changes a video that’s already made.</li>
+<li><strong>Take it to another computer.</strong> « <span lang="fr">Emporte mes chartes sur mon autre ordinateur</span> » (“Take my brand kits to my other computer”): your whole library, or whatever you choose, goes into a single ZIP file that your file explorer can open. You copy it yourself (USB stick, email); nothing goes over the internet. On the other computer: « <span lang="fr">importe ma bibliothèque</span> » (“import my library”). Whatever is already there is never replaced without your approval.</li>
+</ul>
+<aside class="encadre encadre-conseil"><p><strong>What doesn’t go with it:</strong> your logins to the sites you’ve recorded, the list of your videos and the error log stay on the computer where they were made.</p></aside>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="donnees">
+<h2>Where your files are</h2>
+<p>Pulse Motion works <strong>without the cloud</strong>: nothing is sent to a video service. Everything is on your computer, in two places.</p>
+<table>
+<thead><tr><th>Where</th><th>What you’ll find there</th></tr></thead>
+<tbody>
+<tr><td><strong>The video’s folder</strong></td><td>The timeline, the scenes, the video’s brand kit, your files (<code>assets/</code>), app recordings (<code>films/</code>), the outputs (<code>sortie/</code>), the history. Copy this folder to back up or hand over the video.</td></tr>
+<tr><td><strong>Your personal Pulse Motion folder</strong><br><code>.pulse-motion</code>, in your user folder</td><td>Your <a href="#bibliotheque">library</a>: saved brand kits (<code>chartes/</code>), personal styles (<code>styles/</code>), kept effects (<code>effets/</code>) and characters (<code>personnages/</code>), remembered preferences (<code>preferences.json</code>). Also your glossary (<code>lexique.md</code>), the list of your videos, and your logins to the sites you’ve recorded (see <a href="#confidentialite">Privacy</a>).</td></tr>
+</tbody>
+</table>
+<p>Claude, for its part, reads the files in the folder to work with you, as it does for any project in Claude Code.</p>
+</section>
+
+</article>
+</div>
+</main>
+</body>
+</html>

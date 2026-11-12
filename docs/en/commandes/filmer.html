@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en" data-racine="../../" data-commande="filmer">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>/pulse-motion:filmer – Pulse Motion Wiki</title>
+<meta name="description" content="Film a web app or a website for a tutorial, or start from a video or screenshots of your screen (“film how to create an invoice on app.exemple.fr”, “I’ve recorded my screen”, “blur the customers’ names”).">
+<!-- langues -->
+<link rel="alternate" hreflang="fr" href="https://jdelauney.github.io/pulse-motion/commandes/filmer.html">
+<link rel="alternate" hreflang="en" href="https://jdelauney.github.io/pulse-motion/en/commandes/filmer.html">
+<link rel="alternate" hreflang="x-default" href="https://jdelauney.github.io/pulse-motion/commandes/filmer.html">
+<!-- /langues -->
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/animations.css">
+<script src="../../js/donnees.js" defer></script>
+<script src="../../js/gabarit.js" defer></script>
+<script src="../../js/animations.js" defer></script>
+<script src="../../js/console.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<div class="mise-en-page">
+<nav class="laterale" aria-label="The commands" data-laterale></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille pastille-etape" data-couleur="1">Step 1 · Create</p>
+<h1><code>/pulse-motion:filmer</code></h1>
+<p class="chapo">Film a web app or a website for a tutorial, or start from a video or screenshots of your screen (« <span lang="fr">filme comment on crée une facture sur app.exemple.fr</span> » (“film how to create an invoice on app.exemple.fr”), « <span lang="fr">j'ai enregistré mon écran</span> » (“I’ve recorded my screen”), « <span lang="fr">floute les noms des clients</span> » (“blur the customers’ names”)).</p>
+</header>
+
+<ul class="sommaire" aria-label="On this page" data-sommaire></ul>
+
+<section id="description">
+<h2>Description</h2>
+<p>This is the command for <strong>software tutorials</strong>: showing how to do something in an app (“we go to Invoices, click New invoice, type the customer, save”). You describe the journey in your own words; Pulse Motion does it itself in the app, step by step, and films it.</p>
+<ol>
+<li><strong>You describe the journey</strong>, as you would to a colleague, and give the starting address. Pulse Motion reads it back to you as numbered sentences: you approve or correct it.</li>
+<li><strong>For a live website, it asks for your consent</strong>, naming the site. If the app asks for a login, <strong>you sign in yourself</strong>, in a window that opens on your screen.</li>
+<li><strong>It films</strong>: an image of each state of the app, the short reactions after each click, and the position of each click. A few seconds per step.</li>
+<li><strong>It looks at the result with you</strong>: a contact sheet, one image per step. It points out anything that looks personal and offers to blur it.</li>
+<li><strong>You choose the take</strong> you keep, or you film again.</li>
+<li><strong>The footage goes into the video</strong>: one scene for one to three steps. The pointer, clicks, zooms and spotlight are added by Pulse Motion, after filming.</li>
+</ol>
+<p>It can also start from a <strong>video of your screen</strong> (an installed program, filmed with your computer’s own tool), an <strong>animation</strong> (a GIF) or <strong>screenshots</strong>: the same pointer, zooms and spotlight go on top.</p>
+<p>You can run it on its own, to add footage to a video that already exists. <a href="creer.html"><code>/pulse-motion:creer</code></a> also calls it by itself for a tutorial subject.</p>
+</section>
+
+<section id="pourquoi">
+<h2>Why use it</h2>
+<ul>
+<li><strong>Everything can be edited without filming again.</strong> The pointer, zooms, spotlight and the time between two clicks are added afterwards: « <span lang="fr">le pointeur va trop vite</span> » (“the pointer is going too fast”), « <span lang="fr">zoome sur le bouton</span> » (“zoom in on the button”) take one sentence.</li>
+<li><strong>The footage is kept with the video.</strong> Once filmed, the app is never visited again: neither the preview nor the export needs the internet, and two exports give exactly the same images.</li>
+<li><strong>Personal data is blurred in the images themselves</strong>, at filming time: email addresses, phone numbers, IBANs, card numbers. No sharp image is kept.</li>
+<li><strong>Your password stays yours.</strong> Pulse Motion never types it, never sees it and never writes it anywhere, even if you give it in the conversation.</li>
+<li><strong>A failed take can be redone.</strong> Each filming is a new take; you choose the one that goes into the video.</li>
+</ul>
+</section>
+
+<section id="quand">
+<h2>When to use it</h2>
+<ol class="parcours" aria-label="The Pulse Motion journey, with this command’s step highlighted">
+  <li data-couleur="1" aria-current="step"><span class="parcours-numero">1</span> Create</li>
+  <li data-couleur="3"><span class="parcours-numero">2</span> Edit</li>
+  <li data-couleur="4"><span class="parcours-numero">3</span> Export</li>
+  <li data-couleur="0"><span class="parcours-numero">4</span> Customise</li>
+</ol>
+<ul>
+<li><strong>For a new tutorial video</strong>: run <a href="creer.html"><code>/pulse-motion:creer</code></a> instead, with your subject (« <span lang="fr">un tutoriel : comment créer une facture dans notre logiciel</span> » (“a tutorial: how to create an invoice in our software”)). It starts from the “Software tutorial” template, asks you what to show, then films with you <strong>before</strong> writing the timeline.</li>
+<li><strong>To add footage to an existing video</strong>: run <code>/pulse-motion:filmer</code> in the video’s folder, then <a href="retoucher.html"><code>/pulse-motion:retoucher</code></a> places the scene.</li>
+<li><strong>To try it out safely</strong>: « <span lang="fr">montre-moi sur l'appli d'essai</span> » (“show me on the test app”). Facturo, a small invoicing app that comes with Pulse Motion, runs on your computer; everything in it is fake.</li>
+</ul>
+</section>
+
+<section id="arguments">
+<h2>How to run it</h2>
+<pre class="commande"><code>/pulse-motion:filmer</code></pre>
+<p class="legende">Say what you want to film right after the name, or in the conversation.</p>
+<pre class="commande" lang="fr"><code>/pulse-motion:filmer comment on crée une facture sur app.exemple.fr</code></pre>
+<p class="traduction">“how to create an invoice on app.exemple.fr”</p>
+<pre class="commande" lang="fr"><code>/pulse-motion:filmer montre-moi sur l'appli d'essai</code></pre>
+<p class="traduction">“show me on the test app”</p>
+<pre class="commande" lang="fr"><code>/pulse-motion:filmer j'ai enregistré mon écran</code></pre>
+<p class="traduction">“I’ve recorded my screen”</p>
+
+<h3>What you can ask</h3>
+<table>
+<thead><tr><th>You say</th><th>What happens</th></tr></thead>
+<tbody>
+<tr><td>« <span lang="fr">filme comment on crée une facture sur app.exemple.fr</span> » (“film how to create an invoice on app.exemple.fr”)</td><td>Pulse Motion has you describe the journey, reads it back as numbered sentences, then asks for your consent for this site before filming.</td></tr>
+<tr><td>« <span lang="fr">montre-moi sur l'appli d'essai</span> » (“show me on the test app”)</td><td>A sample journey on Facturo (creating an invoice), to review, then to film. No consent asked: nothing leaves your computer.</td></tr>
+<tr><td>« <span lang="fr">je dois d'abord me connecter</span> » (“I need to sign in first”)</td><td>A window opens on the site. You sign in as usual, go to the starting page, then say « <span lang="fr">c'est fait</span> » (“done”): filming carries on in the same window.</td></tr>
+<tr><td>« <span lang="fr">floute les noms des clients</span> » (“blur the customers’ names”), « <span lang="fr">floute la colonne Client</span> » (“blur the Customer column”)</td><td>Pulse Motion advises filming again with this blur, applied from the start of filming. It can also blur an area of the take already made, permanently.</td></tr>
+<tr><td>« <span lang="fr">ne floute pas les adresses, elles sont fausses</span> » (“don’t blur the addresses, they’re fake”)</td><td>Addresses are no longer blurred automatically in the next take. Passwords always stay blurred.</td></tr>
+<tr><td>« <span lang="fr">refilme</span> » (“film it again”), « <span lang="fr">reprends la première prise</span> » (“go back to the first take”)</td><td>A new take, or the previous take put back into the video.</td></tr>
+<tr><td>« <span lang="fr">j'ai enregistré mon écran</span> » (“I’ve recorded my screen”), « <span lang="fr">voici un GIF de la manipulation</span> » (“here’s a GIF of the steps”)</td><td>Pulse Motion turns the video or animation into footage, with no internet, and shows you one image per second so you can place the clicks and zooms.</td></tr>
+<tr><td>« <span lang="fr">je veux montrer Excel</span> » (“I want to show Excel”), « <span lang="fr">c'est un logiciel installé</span> » (“it’s an installed program”)</td><td>It explains how to record your screen with your computer’s own tool, then imports the video.</td></tr>
+<tr><td>« <span lang="fr">oublie ma connexion à app.exemple.fr</span> » (“forget my sign-in to app.exemple.fr”)</td><td>What the Pulse Motion browser was keeping for this site (its sign-in) is erased from your computer.</td></tr>
+</tbody>
+</table>
+<p>Once the footage is in the video, edits go through <a href="retoucher.html"><code>/pulse-motion:retoucher</code></a>: « <span lang="fr">le pointeur va trop vite</span> » (“the pointer is going too fast”), « <span lang="fr">clique quand je dis enregistrez</span> » (“click when I say save”), « <span lang="fr">suis les clics</span> » (“follow the clicks”), « <span lang="fr">mets un projecteur sur le total</span> » (“put a spotlight on the total”), « <span lang="fr">mets-le dans un téléphone</span> » (“put it in a phone”), « <span lang="fr">accélère la saisie</span> » (“speed up the typing”).</p>
+</section>
+
+<section id="produit">
+<h2>What it produces</h2>
+<ul>
+<li><strong>The footage</strong>, stored in the video’s folder, under <code>films/</code>: the images of each step, already blurred, and the position of each click. Each filming adds a take there.</li>
+<li><strong>A contact sheet per take</strong>: one image per step, with the click target and the number of blurred areas. Pulse Motion looks at it with you.</li>
+<li><strong>Filmed scenes</strong> in the video, one for one to three steps, shown in a browser frame (or a phone, tablet or window frame).</li>
+</ul>
+<p>What is kept on your computer, and what isn’t, is explained in the <a href="../concepts.html#confidentialite">Privacy</a> section of the concepts.</p>
+</section>
+
+<section id="risques">
+<h2>Risks and precautions</h2>
+<ul>
+<li><strong>The clicks are real.</strong> Pulse Motion really carries out the actions in the app: a saved invoice is saved, a sent message is sent, and nothing is undone afterwards. Use a <strong>demo account</strong> if you have one.</li>
+<li><strong>The automatic blur doesn’t recognise everything.</strong> It spots email addresses, phone numbers, IBANs, card and social security numbers, address and date-of-birth fields. Names, faces or amounts are pointed out by Pulse Motion when it looks at the contact sheet, and you decide.</li>
+<li><strong>A blur added afterwards is permanent</strong> in that take: to remove it, you have to film again. A video already exported before that blur keeps the sharp image: export it again.</li>
+<li><strong>One site per filming.</strong> Your consent applies to that site; if the page tries to go elsewhere, navigation is blocked and Pulse Motion tells you.</li>
+<li><strong>Don’t touch the window while filming</strong>, when it is visible (after signing in): a few seconds per step.</li>
+</ul>
+<aside class="encadre encadre-conseil"><p><strong>Tip:</strong> start with the test app (« <span lang="fr">montre-moi sur l'appli d'essai</span> » (“show me on the test app”)): you see the whole journey, signing in and blurring included, without touching a real app.</p></aside>
+</section>
+
+<section id="problemes">
+<h2>Problems and solutions</h2>
+<details class="probleme"><summary>Pulse Motion can’t find the button or the field</summary><p>The take stops at that step. Pulse Motion tells you what it sees instead, and shows you the image. Describe the target differently, using the text actually displayed (« <span lang="fr">le bouton Créer</span> » (“the Create button”)), its position (« <span lang="fr">le deuxième Modifier</span> » (“the second Edit”)) or where it is (« <span lang="fr">dans la fenêtre</span> » (“in the window”)), then film again. Actions already carried out are not undone.</p></details>
+<details class="probleme"><summary>The page asks me to sign in again</summary><p>The sign-in has expired, or the site asks for a login that Pulse Motion doesn’t have. Reply « <span lang="fr">je dois d'abord me connecter</span> » (“I need to sign in first”): the window opens, you sign in, then you say « <span lang="fr">c'est fait</span> » (“done”).</p></details>
+<details class="probleme"><summary>You can’t see the page loading</summary><p>By default, Pulse Motion moves from one page to the next with a fade. Say « <span lang="fr">on ne voit pas le chargement</span> » (“you can’t see it loading”): the next take keeps the loading images.</p></details>
+<details class="probleme"><summary>My screen recording is refused</summary><p>Its format can’t be read by your computer’s browser. Install ffmpeg with <a href="outils.html"><code>/pulse-motion:outils</code></a>, then give the file again.</p></details>
+<details class="probleme"><summary>My screen recording is longer than 3 minutes</summary><p>Pulse Motion asks you which part to keep: the start and end, in minutes and seconds (« <span lang="fr">de 0:12 à 1:05</span> » (“from 0:12 to 1:05”)).</p></details>
+<details class="probleme"><summary>Pulse Motion warns about a heavy video</summary><p>Above 25 MB of images in the page, it tells you before the export. Delete the takes you don’t need, shorten the reactions, or show fewer steps per scene.</p></details>
+<details class="probleme"><summary>« <span lang="fr">Chrome ou Edge est introuvable</span> » (“Chrome or Edge can’t be found”)</summary><p>Filming goes through Chrome or Edge. Install one of the two, then check with <a href="outils.html"><code>/pulse-motion:outils</code></a>. See the <a href="../prerequis.html">requirements</a>.</p></details>
+</section>
+
+<section id="exemples">
+<h2>Examples</h2>
+<div class="conversation" lang="fr" data-titre="Example: trying it on the test app">
+<p data-role="vous">/pulse-motion:filmer montre-moi sur l'appli d'essai</p>
+<p data-role="claude">Voici le parcours, sur Facturo, l'application d'essai :
+1. Cliquer sur « Nouvelle facture »
+2. Dans « Client », taper « Dupont SARL »
+3. Choisir « Virement » dans « Mode de paiement »
+4. Cliquer sur « Enregistrer »
+5. Confirmer dans la fenêtre
+6. Attendre que « Facture enregistrée » s'affiche
+→ C'est bien ça (Recommandé) / Je corrige</p>
+<p data-role="vous">C'est bien ça</p>
+<p data-role="claude">Je filme. Ne touchez à rien, c'est l'affaire de quelques secondes par étape… Voici la planche : une image par étape. L'adresse électronique du client est floutée.
+→ Je garde cette prise (Recommandé) / Je refilme</p>
+<p data-role="vous">Je garde cette prise</p>
+<p data-role="claude">✅ Fait : la prise est gardée, 6 étapes, 14 secondes de film.
+➡️ Ensuite : je l'ajoute à la vidéo avec /pulse-motion:retoucher, ou nous créons un tutoriel avec /pulse-motion:creer.</p>
+</div>
+<details class="traduction"><summary>In English</summary><p><strong>You:</strong> /pulse-motion:filmer show me on the test app</p><p><strong>Claude:</strong> Here is the journey, on Facturo, the test app: 1. Click “Nouvelle facture” (New invoice). 2. In “Client” (Customer), type “Dupont SARL”. 3. Choose “Virement” (Bank transfer) in “Mode de paiement” (Payment method). 4. Click “Enregistrer” (Save). 5. Confirm in the window. 6. Wait for “Facture enregistrée” (Invoice saved) to appear. → That’s right (Recommended) / I’ll correct it</p><p><strong>You:</strong> That’s right</p><p><strong>Claude:</strong> I’m filming. Don’t touch anything, it only takes a few seconds per step… Here is the contact sheet: one image per step. The customer’s email address is blurred. → I’ll keep this take (Recommended) / I’ll film again</p><p><strong>You:</strong> I’ll keep this take</p><p><strong>Claude:</strong> ✅ Done: the take is kept, 6 steps, 14 seconds of footage. ➡️ Next: I add it to the video with /pulse-motion:retoucher, or we create a tutorial with /pulse-motion:creer.</p></details>
+<div class="conversation" lang="fr" data-titre="Example: a site where you have to sign in">
+<p data-role="vous">/pulse-motion:filmer comment on ajoute un client sur app.exemple.fr</p>
+<p data-role="claude">Pour filmer, Pulse Motion va ouvrir app.exemple.fr sur cet ordinateur et y faire les clics pour de vrai. Utilisez un compte de démonstration si vous en avez un. Si vous vous connectez, ce navigateur garde la connexion du site sur cet ordinateur, jamais votre mot de passe.
+→ Oui, filmer (Recommandé) / Je dois d'abord me connecter / Non</p>
+<p data-role="vous">Je dois d'abord me connecter</p>
+<p data-role="claude">Une fenêtre s'est ouverte sur app.exemple.fr. Connectez-vous comme d'habitude, allez sur la page de départ, puis dites-moi « c'est fait ». Je ne vois pas ce que vous tapez.</p>
+<p data-role="vous">C'est fait</p>
+<p data-role="claude">Ne touchez pas à la fenêtre pendant le tournage, environ 40 secondes… À l'étape 4, je vois des noms de clients dans le tableau. Je les floute ?
+→ Flouter et refilmer (Recommandé) / Flouter cette prise / C'est bon</p>
+</div>
+<details class="traduction"><summary>In English</summary><p><strong>You:</strong> /pulse-motion:filmer how to add a customer on app.exemple.fr</p><p><strong>Claude:</strong> To film, Pulse Motion will open app.exemple.fr on this computer and really click through it. Use a demo account if you have one. If you sign in, this browser keeps the site’s sign-in on this computer, never your password. → Yes, film (Recommended) / I need to sign in first / No</p><p><strong>You:</strong> I need to sign in first</p><p><strong>Claude:</strong> A window has opened on app.exemple.fr. Sign in as usual, go to the starting page, then tell me “done”. I can’t see what you type.</p><p><strong>You:</strong> Done</p><p><strong>Claude:</strong> Don’t touch the window while filming, about 40 seconds… At step 4, I can see customer names in the table. Shall I blur them? → Blur and film again (Recommended) / Blur this take / It’s fine</p></details>
+<div class="conversation" lang="fr" data-titre="Example: a screen recording">
+<p data-role="vous">/pulse-motion:filmer j'ai enregistré mon écran pour montrer un tableau Excel</p>
+<p data-role="claude">Où est votre fichier ? Donnez son chemin, ou glissez-le ici.</p>
+<p data-role="vous">C:\Users\Marie\Videos\tableau-ventes.mp4</p>
+<p data-role="claude">C'est fait : 48 secondes, une image par seconde sur la planche. Votre voix est dans la vidéo.
+→ Garder votre voix de la vidéo (Recommandé) / Couper le son
+Où voulez-vous un clic, un zoom ou le projecteur ? Dites-le avec la seconde (« à 12 s, zoome sur le total »).</p>
+</div>
+<details class="traduction"><summary>In English</summary><p><strong>You:</strong> /pulse-motion:filmer I’ve recorded my screen to show an Excel spreadsheet</p><p><strong>Claude:</strong> Where is your file? Give its path, or drag it here.</p><p><strong>You:</strong> C:\Users\Marie\Videos\tableau-ventes.mp4</p><p><strong>Claude:</strong> Done: 48 seconds, one image per second on the contact sheet. Your voice is in the video. → Keep your voice from the video (Recommended) / Mute the sound. Where would you like a click, a zoom or the spotlight? Give the second (“at 12 s, zoom in on the total”).</p></details>
+</section>
+
+<section id="liees">
+<h2>Related commands</h2>
+<ul>
+<li><a href="creer.html"><code>/pulse-motion:creer</code></a>: a complete tutorial, from the “Software tutorial” template.</li>
+<li><a href="retoucher.html"><code>/pulse-motion:retoucher</code></a>: place the footage in the video, adjust the pointer, zooms, spotlight and frame.</li>
+<li><a href="voix.html"><code>/pulse-motion:voix</code></a>: record your voice, or keep the one from your screen recording.</li>
+<li><a href="outils.html"><code>/pulse-motion:outils</code></a>: install ffmpeg to import every video format.</li>
+<li><a href="exporter.html"><code>/pulse-motion:exporter</code></a>: a filmed video exports like any other.</li>
+</ul>
+<p>Step by step, with the test app: the <a href="../../tutoriels/filmer-un-logiciel.html" hreflang="fr">Filmer un logiciel</a> tutorial (in French).</p>
+</section>
+
+<nav class="suite" aria-label="Previous and next command" data-suite></nav>
+</article>
+</div>
+</main>
+</body>
+</html>

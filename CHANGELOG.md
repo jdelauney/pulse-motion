@@ -2,6 +2,14 @@
 
 Produit par `outils/nouveautes.js` depuis l'historique du dépôt : ne pas le modifier à la main. Les nouveautés racontées simplement sont sur la page « Nouveautés » du wiki.
 
+## 0.66.0 – 2026-11-12
+
+Le guide de Pulse Motion existe aussi en anglais, pour le faire découvrir à ceux qui ne lisent pas le français.
+
+### Nouveautés
+
+- Pages anglaises outillées (chantier I) : blocs de la galerie, du catalogue, des idées et des exemples écrits aussi en anglais par galerie.js depuis le recueil outils/site/anglais.json (texte source exact → traduction, --anglais liste les manques), liens hreflang des pages en deux langues (outils/site/langues.js) vérifiés par liens.js, un index de recherche par langue ; gabarit : sélecteur de langue, navigation et pied anglais, pages restées en français marquées, avis « Pulse Motion parle français » ; scripts des pages en anglais sur une page anglaise
+
 ## 0.65.0 – 2026-11-12
 
 Votre bibliothèque : gardez vos effets et vos personnages pour toutes vos vidéos, et emportez tout sur un autre ordinateur.

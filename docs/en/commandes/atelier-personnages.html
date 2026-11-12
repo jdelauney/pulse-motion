@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en" data-racine="../../" data-commande="atelier-personnages">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>/pulse-motion:atelier-personnages – Pulse Motion Wiki</title>
+<meta name="description" content="Open the character workshop to pose and animate a character with the mouse (“I want to adjust his wave myself”, “let me place his arms”).">
+<!-- langues -->
+<link rel="alternate" hreflang="fr" href="https://jdelauney.github.io/pulse-motion/commandes/atelier-personnages.html">
+<link rel="alternate" hreflang="en" href="https://jdelauney.github.io/pulse-motion/en/commandes/atelier-personnages.html">
+<link rel="alternate" hreflang="x-default" href="https://jdelauney.github.io/pulse-motion/commandes/atelier-personnages.html">
+<!-- /langues -->
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/animations.css">
+<script src="../../js/donnees.js" defer></script>
+<script src="../../js/gabarit.js" defer></script>
+<script src="../../js/animations.js" defer></script>
+<script src="../../js/console.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<div class="mise-en-page">
+<nav class="laterale" aria-label="The commands" data-laterale></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille pastille-etape" data-couleur="0">Step 4 · Customise</p>
+<h1><code>/pulse-motion:atelier-personnages</code></h1>
+<p class="chapo">Open the character workshop to pose and animate a character with the mouse (« <span lang="fr">je veux régler son salut moi-même</span> » (“I want to adjust his wave myself”), « <span lang="fr">laisse-moi placer ses bras</span> » (“let me place his arms”)).</p>
+</header>
+
+<ul class="sommaire" aria-label="On this page" data-sommaire></ul>
+
+<section id="description">
+<h2>Description</h2>
+<p>The <em>character workshop</em> is an editor that opens in your browser. Pulse Motion opens it on the pose or move you ask for (“his wave” is the <code>coucou</code> move), with your character: the video’s character if there is only one, otherwise it asks you which. Without a drawn character, it is the stick figure.</p>
+<p>In the workshop:</p>
+<ul>
+<li><strong>Dragging a joint</strong> rotates the limb.</li>
+<li><strong><kbd>Shift</kbd> + dragging a hand or a foot</strong> brings it under the mouse: the arm or leg follows.</li>
+<li><strong>The strip at the bottom</strong> holds the moments of the move: you adjust the character at each moment.</li>
+<li><strong>« Enregistrer » (Save)</strong> stores the result with your video; « <span lang="fr">annule</span> » (“undo”) reverses it.</li>
+</ul>
+<p>The workshop is also used to <strong>fix a cut-out</strong>, for a character taken from your illustration with <a href="decouper-personnage.html"><code>/pulse-motion:decouper-personnage</code></a>: click a shape then a bone of the skeleton to assign it, drag the dots to move the joints, « Découper » (Cut out) to see the walking result, and « Enregistrer ».</p>
+<p>When you say you have finished, Pulse Motion reads what you saved, looks at the move’s sheet and describes it to you in one sentence.</p>
+</section>
+
+<section id="pourquoi">
+<h2>Why use it</h2>
+<ul>
+<li><strong>Some gestures are easier to show than to describe.</strong> Placing a hand in an exact spot, setting the angle of an elbow: it is simpler with the mouse.</li>
+<li><strong>You see the result as you work</strong>, from every angle.</li>
+<li><strong>You risk nothing.</strong> Until you have saved, nothing changes; afterwards, « <span lang="fr">annule</span> » (“undo”) goes back.</li>
+<li><strong>A cut-out can be fixed without starting over.</strong> A misplaced elbow moves with one gesture.</li>
+</ul>
+</section>
+
+<section id="quand">
+<h2>When to use it</h2>
+<ol class="parcours" aria-label="The Pulse Motion path, with this command’s step highlighted">
+  <li data-couleur="1"><span class="parcours-numero">1</span> Create</li>
+  <li data-couleur="3"><span class="parcours-numero">2</span> Edit</li>
+  <li data-couleur="4"><span class="parcours-numero">3</span> Export</li>
+  <li data-couleur="0" aria-current="step"><span class="parcours-numero">4</span> Customise</li>
+</ol>
+<ul>
+<li><strong>After <a href="animer-personnage.html"><code>/pulse-motion:animer-personnage</code></a></strong>, when a sentence is no longer enough to get the exact gesture.</li>
+<li><strong>After <a href="dessiner-personnage.html"><code>/pulse-motion:dessiner-personnage</code></a></strong>, to see your character from every angle.</li>
+<li><strong>After <a href="decouper-personnage.html"><code>/pulse-motion:decouper-personnage</code></a></strong>, if a limb turns around the wrong point or a shape is in the wrong limb.</li>
+</ul>
+<p>Everything characters can do is gathered on the <a href="../../personnages.html" hreflang="fr">Personnages</a> (in French) page.</p>
+</section>
+
+<section id="arguments">
+<h2>How to run it</h2>
+<pre class="commande" lang="fr"><code>/pulse-motion:atelier-personnages [le mouvement ou la pose à ouvrir, et le personnage]</code></pre>
+<p class="traduction">“[the move or pose to open, and the character]”</p>
+<p class="legende">In square brackets <code>[ ]</code>: optional. You can also run the command on its own and then say what you want to adjust.</p>
+<pre class="commande" lang="fr"><code>/pulse-motion:atelier-personnages je veux régler son salut moi-même</code></pre>
+<p class="traduction">“I want to adjust his wave myself”</p>
+<pre class="commande" lang="fr"><code>/pulse-motion:atelier-personnages je veux voir le cuisinier sous tous les angles</code></pre>
+<p class="traduction">“I want to see the chef from every angle”</p>
+<pre class="commande" lang="fr"><code>/pulse-motion:atelier-personnages laisse-moi corriger la découpe</code></pre>
+<p class="traduction">“let me fix the cut-out”</p>
+<p>You only say « <span lang="fr">ouvre l'éditeur</span> » (“open the editor”), and your video also has particle effects? Pulse Motion asks you which: « Les personnages (Recommandé) » (The characters, Recommended) or « Les effets de particules » (The particle effects). For effects, use <a href="atelier-particules.html"><code>/pulse-motion:atelier-particules</code></a>.</p>
+</section>
+
+<section id="produit">
+<h2>What it produces</h2>
+<ul>
+<li><strong>The workshop open in your browser</strong>, on the requested move or pose.</li>
+<li><strong>What you save</strong>, stored with the video: the adjusted pose or move, or the fixed cut-out. If you saved it under a new name, Pulse Motion tells you.</li>
+<li><strong>A sheet</strong> of the result, once you have finished, to see it in motion again.</li>
+</ul>
+</section>
+
+<section id="risques">
+<h2>Risks and precautions</h2>
+<ul>
+<li><strong>Without a video in the folder, nothing is saved.</strong> The workshop opens anyway, to look and try things out; Pulse Motion warns you.</li>
+<li><strong>Tell Claude when you have finished.</strong> That is when Pulse Motion reads what you saved and shows you the result.</li>
+<li><strong>A save can be undone.</strong> « <span lang="fr">annule</span> » (“undo”) goes back to the previous state, as for any edit.</li>
+</ul>
+<aside class="encadre encadre-conseil"><p><strong>Tip:</strong> start with the most telling moment of the gesture (the arm at the very top of a wave), save, look, then refine the other moments on the strip.</p></aside>
+</section>
+
+<section id="problemes">
+<h2>Problems and solutions</h2>
+<details class="probleme"><summary>I clicked “Enregistrer” (Save) and nothing changed in my video</summary><p>The open folder probably has no video in it: the workshop adjusts, but does not save. Open your video’s folder in VS Code and run the command again.</p></details>
+<details class="probleme"><summary>Pulse Motion asks me which editor to open</summary><p>Your video has characters and particle effects, and “the editor” could mean either. Choose « Les personnages » (The characters); for effects, use <a href="atelier-particules.html"><code>/pulse-motion:atelier-particules</code></a>.</p></details>
+<details class="probleme"><summary>A limb turns around the wrong point</summary><p>The joint is in the wrong place in the cut-out. Ask « <span lang="fr">laisse-moi corriger la découpe</span> » (“let me fix the cut-out”), then drag the joint’s dot (the elbow, the knee) to its centre, and « Enregistrer ».</p></details>
+<details class="probleme"><summary>I want to go back to the previous version</summary><p>Say « <span lang="fr">annule</span> » (“undo”), for example with <a href="retoucher.html"><code>/pulse-motion:retoucher annule</code></a>: your save is undone.</p></details>
+<details class="probleme"><summary>“node” not found</summary><p>Node.js is not installed. Install the LTS version from <a href="https://nodejs.org/fr/download" target="_blank" rel="noopener noreferrer">nodejs.org</a>, then restart Claude Code. See the <a href="../prerequis.html#node">requirements</a>.</p></details>
+</section>
+
+<section id="exemples">
+<h2>Examples</h2>
+<div class="conversation" lang="fr" data-titre="Example: adjusting a wave">
+<p data-role="vous">/pulse-motion:atelier-personnages je veux régler son salut moi-même</p>
+<p data-role="outil">pulse-motion personnages liste --dossier .</p>
+<p data-role="outil">pulse-motion personnages atelier coucou --dessin cuisinier --dossier .</p>
+<p data-role="claude">L'atelier des personnages est ouvert sur le salut du cuisinier. Glissez une articulation pour tourner le membre ; Maj + glisser une main ou un pied l'amène sous la souris. La frise du bas porte les moments du salut : « Enregistrer » range le résultat avec la vidéo, et « annule » le défait.</p>
+<p data-role="vous">J'ai fini.</p>
+<p data-role="outil">pulse-motion personnages planche coucou --dessin cuisinier --dossier .</p>
+<p data-role="claude">Votre salut est enregistré : le bras monte plus haut et la main reste ouverte. Voici la planche.</p>
+</div>
+<details class="traduction"><summary>In English</summary><p><strong>You:</strong> /pulse-motion:atelier-personnages I want to adjust his wave myself</p><p><strong>Claude:</strong> The character workshop is open on the chef’s wave. Drag a joint to rotate the limb; Shift + drag a hand or a foot brings it under the mouse. The strip at the bottom holds the moments of the wave: “Enregistrer” (Save) stores the result with the video, and “annule” (undo) reverses it.</p><p><strong>You:</strong> I’ve finished.</p><p><strong>Claude:</strong> Your wave is saved: the arm goes up higher and the hand stays open. Here is the sheet.</p></details>
+<div class="conversation" lang="fr" data-titre="Example: fixing a cut-out">
+<p data-role="vous">/pulse-motion:atelier-personnages le coude de la mascotte est mal placé</p>
+<p data-role="outil">pulse-motion personnages atelier --decoupe mascotte --dossier .</p>
+<p data-role="claude">L'atelier montre votre illustration découpée. Cliquez une forme puis un os pour l'y ranger, glissez les ronds pour déplacer les articulations. « Découper » montre le résultat qui marche ; « Enregistrer » le range.</p>
+<p data-role="vous">C'est bon.</p>
+<p data-role="outil">pulse-motion personnages planche marche --dessin mascotte --dossier .</p>
+<p data-role="claude">Le bras de la mascotte plie maintenant au bon endroit. Voici sa marche.</p>
+</div>
+<details class="traduction"><summary>In English</summary><p><strong>You:</strong> /pulse-motion:atelier-personnages the mascot’s elbow is in the wrong place</p><p><strong>Claude:</strong> The workshop shows your cut-out illustration. Click a shape then a bone to assign it, drag the dots to move the joints. “Découper” (Cut out) shows the walking result; “Enregistrer” (Save) stores it.</p><p><strong>You:</strong> That’s fine.</p><p><strong>Claude:</strong> The mascot’s arm now bends in the right place. Here is its walk.</p></details>
+</section>
+
+<section id="liees">
+<h2>Related commands</h2>
+<ul>
+<li><a href="animer-personnage.html"><code>/pulse-motion:animer-personnage</code></a>: create a pose or a move in one sentence.</li>
+<li><a href="decouper-personnage.html"><code>/pulse-motion:decouper-personnage</code></a>: cut out your illustration before fixing it here.</li>
+<li><a href="atelier-particules.html"><code>/pulse-motion:atelier-particules</code></a>: the particle effects editor.</li>
+</ul>
+</section>
+
+<nav class="suite" aria-label="Previous and next command" data-suite></nav>
+</article>
+</div>
+</main>
+</body>
+</html>

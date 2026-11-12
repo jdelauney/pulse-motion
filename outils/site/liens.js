@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 // Wiki Pulse Motion – vérifie que chaque lien, image et vidéo relatifs des pages de docs/ pointe vers un fichier existant, et chaque
 // ancre « page.html#id » vers un id de la page. Un média encore à fabriquer (sortie déclarée dans outils/site/medias.js) n'est pas
-// compté comme cassé : il est absent en local tant qu'on ne l'a pas fabriqué.
+// compté comme cassé : il est absent en local tant qu'on ne l'a pas fabriqué. Les liens entre langues (hreflang), adresses complètes
+// du site, sont vérifiés aussi.
 // Lancer : node outils/site/liens.js   (code 1 s'il y a des liens cassés)
 "use strict";
 
 const fs = require("fs");
 const path = require("path");
+const { SITE } = require("./langues.js");
 
 function pages(dossier, prefixe = "") {
   return fs.readdirSync(dossier, { withFileTypes: true }).flatMap((e) => {
@@ -45,6 +47,14 @@ function liensDuWiki(racineDepot, declares = sortiesDeclarees()) {
         continue;
       }
       if (ancre && cible.endsWith(".html") && !idsDe(cible).has(ancre)) casses.push({ page, cible: lien });
+    }
+    // Les liens entre langues (<link rel="alternate" hreflang>, outils/site/langues.js) sont des adresses complètes du site :
+    // chacune doit mener à une page du wiki.
+    for (const m of html.matchAll(/<link\b[^>]*\brel="alternate"[^>]*>/g)) {
+      const href = (/\bhref="([^"]*)"/.exec(m[0]) || [])[1] || "";
+      if (!href.startsWith(SITE)) continue;
+      const cible = href.slice(SITE.length).split("#")[0] || "index.html";
+      if (!fs.existsSync(path.join(docs, cible))) casses.push({ page, cible: href });
     }
   }
   return { casses };

@@ -143,6 +143,7 @@ The dictionary, `plugins/pulse-motion/references/mouvements/mouvements.json`, gi
 - Command descriptions in `docs/js/donnees.js` follow those of the `SKILL.md` files: change them together.
 - Blocks between `<!-- galerie:<name> -->` and `<!-- /galerie:<name> -->` are written by `node outils/site/galerie.js`: do not edit them by hand.
 - After changing a page: `node outils/wiki/indexer.js` (search index) and `node outils/site/liens.js` (links).
+- **English pages** (`docs/en/`, same path as the French page): only the documentation is translated, the plugin stays in French. A French page that has an English version is changed together with it (same outline: headings, blocks, links, `id`s, checked by `tests/documentation.test.js`). Gallery blocks are written in English too: a new or changed source text is translated in `outils/site/anglais.json` (`node outils/site/galerie.js --anglais` lists the missing ones). A new English page: `node outils/site/langues.js` (`hreflang` links of both pages).
 - Publishing, by the maintainer, from `main`: `node outils/site/medias.js` (affected batches), `node outils/site/galerie.js --verifier`, then `node outils/site/publier.js`, which builds the `gh-pages` branch. Details: `outils/site/README.md`.
 - The user-facing wiki only shows Claude Code `/pulse-motion:…` commands, never a terminal command.
 

@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en" data-racine="../">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quick start – Pulse Motion Wiki</title>
+<meta name="description" content="Get started with Pulse Motion in 5 minutes: one sentence to create the video, the preview that opens in your browser, then the MP4 export.">
+<!-- langues -->
+<link rel="alternate" hreflang="fr" href="https://jdelauney.github.io/pulse-motion/demarrage-rapide.html">
+<link rel="alternate" hreflang="en" href="https://jdelauney.github.io/pulse-motion/en/demarrage-rapide.html">
+<link rel="alternate" hreflang="x-default" href="https://jdelauney.github.io/pulse-motion/demarrage-rapide.html">
+<!-- /langues -->
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/animations.css">
+<script src="../js/donnees.js" defer></script>
+<script src="../js/gabarit.js" defer></script>
+<script src="../js/animations.js" defer></script>
+<script src="../js/console.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<div class="mise-en-page">
+<nav class="laterale" aria-label="On this page" data-laterale="sommaire"></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille pastille-etape" data-couleur="1">Quick start · 5 minutes</p>
+<h1>Quick start</h1>
+<p class="chapo">One sentence, a few answers, and you’re watching an animated video of about one minute in your browser, ready to export as an MP4. Five minutes of your time, plus a few minutes of building during which you have nothing to do.</p>
+<p class="avis-langue">Pulse Motion is made for French speakers: the plugin’s questions, messages and reports are in French, and Claude answers in French while it uses the plugin. This English guide helps you discover it; the requests shown as examples stay in French, with their translation alongside.</p>
+</header>
+
+<figure class="capture"><video aria-describedby="video-legende" controls preload="none" playsinline poster="../assets/captures/chaine-du-froid-affiche.jpg" width="1280" height="720"><source src="../medias/chaine-du-froid.mp4" type="video/mp4">Your browser can’t play this video: <a href="../medias/chaine-du-froid.mp4">download it</a>.</video><figcaption id="video-legende">A video made with Pulse Motion on the topic « <span lang="fr">la chaîne du froid pour mes stagiaires</span> » (“the cold chain, for my trainees”): six scenes, music composed for the video, no voice. Yours will be different: Pulse Motion writes the timeline for your topic. <a href="../medias/chaine-du-froid.mp4">Download the video (MP4, 2.4 MB)</a>.</figcaption></figure>
+
+<!-- ===================================================================================================== -->
+<section id="pret" class="etape-tuto">
+<h2><span class="etape-numero">0</span> Before you start <span class="duree">1 minute</span></h2>
+<p>You need Claude Code, Node.js, Chrome or Edge, and the Pulse Motion plugin. If any of the four is missing, the <a href="prerequis.html">requirements</a> page installs them step by step; then come back here.</p>
+<p>Open an <strong>empty folder</strong> in VS Code (the video will be stored there), then ask Claude to check your computer:</p>
+<pre class="commande"><code>/pulse-motion:outils</code></pre>
+<aside class="encadre encadre-attendu"><p><strong>What you should see:</strong> Pulse Motion shows a table of what’s ready. Node.js and the browser must be ticked; ❌ lines for ffmpeg, Python or transcription don’t stop you from starting. If anything is missing, it offers to install everything in a single question: « Tout installer (Recommandé) » (Install everything (Recommended)). One approval, and no need to restart Claude Code.</p></aside>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="creer" class="etape-tuto">
+<h2><span class="etape-numero">1</span> Create <span class="duree">2 minutes</span></h2>
+<p>Describe your video in one sentence, after the command:</p>
+<pre class="commande" lang="fr"><code>/pulse-motion:creer la chaîne du froid pour mes stagiaires</code></pre>
+<p class="traduction">“the cold chain, for my trainees”</p>
+<p>Pulse Motion asks two short rounds of questions (length, audience, music, voice and subtitles). To go fast, each time keep the answer marked <strong>(Recommandé)</strong> (Recommended); for the audience, choose the one your video is for; at « À ajouter » (To add), answer « Rien pour l’instant » (Nothing for now); for the voice, « Pas de voix » (No voice). Even quicker: when asked about the path, choose <strong>« Faites pour moi »</strong> (Do it for me), and Pulse Motion won’t ask you any more questions. It then shows you the <a href="concepts.html#deroule">timeline</a>, the list of scenes with their text, and three possible styles.</p>
+<div class="conversation" lang="fr" data-titre="Approve">
+<p data-role="claude">Voici le déroulé : 6 scènes, environ 1 minute.
+→ Je valide, avec le style posé, lisible et rassurant (Recommandé) / … / Je veux changer quelque chose</p>
+<p data-role="vous">Je valide, avec le style posé, lisible et rassurant</p>
+</div>
+<details class="traduction"><summary>In English</summary><p><strong>Claude:</strong> Here is the timeline: 6 scenes, about 1 minute. → I approve, with the calm, clear and reassuring style (Recommended) / … / I want to change something</p><p><strong>You:</strong> I approve, with the calm, clear and reassuring style</p></details>
+<aside class="encadre encadre-attendu"><p><strong>What you should see:</strong> a first animated draft opens in your browser in under a minute. Pulse Motion then animates the scenes, which replace the draft one by one, and checks readability on its own: allow a few minutes, there’s nothing for you to do.</p></aside>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="regarder" class="etape-tuto">
+<h2><span class="etape-numero">2</span> Watch <span class="duree">1 minute</span></h2>
+<p>The <a href="concepts.html#apercu">preview</a> has been open in your browser since the draft: it’s the video, with a playback bar at the bottom. Click <strong>▶</strong> or press the <kbd>Space</kbd> bar.</p>
+<p>Something you don’t like? Say it in one sentence, and the preview reloads straight away:</p>
+<pre class="commande" lang="fr"><code>/pulse-motion:retoucher ralentis la scène 3</code></pre>
+<p class="traduction">“slow down scene 3”</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="exporter" class="etape-tuto">
+<h2><span class="etape-numero">3</span> Export <span class="duree">1 minute</span></h2>
+<pre class="commande"><code>/pulse-motion:exporter</code></pre>
+<p>Pulse Motion makes the MP4 file on your computer, in a few minutes for a one-minute video.</p>
+<aside class="encadre encadre-attendu"><p><strong>What you should see:</strong> the <code>sortie/</code> folder contains the MP4, ready to publish or send, and the animated page, which opens offline.</p></aside>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="ensuite" class="etape-tuto">
+<h2><span class="etape-numero">✓</span> What next?</h2>
+<ul>
+<li>The same path, explained step by step: <a href="tutoriels/premiere-video.html">tutorial 1, First video</a>.</li>
+<li>Your logo, your colours and your voice: <a href="../tutoriels/complet.html" hreflang="fr">tutorial 2, Complete video</a> (in French).</li>
+<li>Everything one sentence can change: <a href="commandes/retoucher.html"><code>/pulse-motion:retoucher</code></a>.</li>
+<li>Not sure which command to use? <a href="../quelle-commande.html" hreflang="fr">Which command?</a> (in French)</li>
+</ul>
+</section>
+
+</article>
+</div>
+</main>
+</body>
+</html>

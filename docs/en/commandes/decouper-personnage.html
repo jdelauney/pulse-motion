@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en" data-racine="../../" data-commande="decouper-personnage">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>/pulse-motion:decouper-personnage – Pulse Motion Wiki</title>
+<meta name="description" content="Animate an illustration of a character you provide (Illustrator, Inkscape, Figma…) by cutting it out onto the Pulse Motion skeleton (“here is our mascot, make it walk”).">
+<!-- langues -->
+<link rel="alternate" hreflang="fr" href="https://jdelauney.github.io/pulse-motion/commandes/decouper-personnage.html">
+<link rel="alternate" hreflang="en" href="https://jdelauney.github.io/pulse-motion/en/commandes/decouper-personnage.html">
+<link rel="alternate" hreflang="x-default" href="https://jdelauney.github.io/pulse-motion/commandes/decouper-personnage.html">
+<!-- /langues -->
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/animations.css">
+<script src="../../js/donnees.js" defer></script>
+<script src="../../js/gabarit.js" defer></script>
+<script src="../../js/animations.js" defer></script>
+<script src="../../js/console.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<div class="mise-en-page">
+<nav class="laterale" aria-label="The commands" data-laterale></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille pastille-etape" data-couleur="0">Step 4 · Customise</p>
+<h1><code>/pulse-motion:decouper-personnage</code></h1>
+<p class="chapo">Animate an illustration of a character you provide (Illustrator, Inkscape, Figma…) by cutting it out onto the Pulse Motion skeleton (« <span lang="fr">voici notre mascotte, fais-la marcher</span> » (“here is our mascot, make it walk”)).</p>
+</header>
+
+<ul class="sommaire" aria-label="On this page" data-sommaire></ul>
+
+<section id="description">
+<h2>Description</h2>
+<p>You already have a drawing of your character, a mascot for example, exported from your drawing software as a <code>.svg</code> vector file. Pulse Motion cuts it out so it can be animated:</p>
+<ol>
+<li><strong>It looks at the illustration.</strong> It copies it into your video, then makes an annotated image of it: each shape numbered, on a grid.</li>
+<li><strong>It assigns each shape to a limb</strong> of the skeleton (the head, the torso, each arm, each leg…) and places the joints at the centre of the drawing’s own: hip, knee, ankle; shoulder, elbow, wrist; the pelvis and the neck; the centre of the head. The background and the shadow on the ground are set aside.</li>
+<li><strong>It names the main colours</strong> (the skin, the outfit…), so that « <span lang="fr">change sa tenue en rouge</span> » (“make its outfit red”) works afterwards.</li>
+<li><strong>It makes it walk</strong> on a sheet, from several angles, and fixes what is wrong, in three rounds at most.</li>
+</ol>
+<p>Your illustration becomes a drawn character, which can be animated with all of Pulse Motion’s poses and moves. If the eyes and the mouth are separate shapes in your drawing, the face comes alive: the eyes look around and blink.</p>
+</section>
+
+<section id="pourquoi">
+<h2>Why use it</h2>
+<ul>
+<li><strong>Your character, just as you drew it.</strong> It keeps its look and its proportions.</li>
+<li><strong>It moves straight away</strong>: walking, running, jumping, waving, and all the poses.</li>
+<li><strong>Its colours can be edited in one sentence</strong>, once they have names.</li>
+<li><strong>The cut-out can be fixed with the mouse</strong>, in the character workshop, if a joint is in the wrong place.</li>
+</ul>
+</section>
+
+<section id="quand">
+<h2>When to use it</h2>
+<ol class="parcours" aria-label="The Pulse Motion path, with this command’s step highlighted">
+  <li data-couleur="1"><span class="parcours-numero">1</span> Create</li>
+  <li data-couleur="3"><span class="parcours-numero">2</span> Edit</li>
+  <li data-couleur="4"><span class="parcours-numero">3</span> Export</li>
+  <li data-couleur="0" aria-current="step"><span class="parcours-numero">4</span> Customise</li>
+</ol>
+<ul>
+<li><strong>After <a href="creer.html"><code>/pulse-motion:creer</code></a></strong>: the cut-out is stored in a video’s folder.</li>
+<li><strong>When you already have an illustration.</strong> For a character to invent, use <a href="dessiner-personnage.html"><code>/pulse-motion:dessiner-personnage</code></a>.</li>
+<li><strong>Before <a href="animer-personnage.html"><code>/pulse-motion:animer-personnage</code></a></strong>, to give it gestures or have it act in a scene.</li>
+</ul>
+<p>Everything characters can do is gathered on the <a href="../../personnages.html" hreflang="fr">Personnages</a> (in French) page.</p>
+</section>
+
+<section id="arguments">
+<h2>How to run it</h2>
+<pre class="commande" lang="fr"><code>/pulse-motion:decouper-personnage [le fichier SVG du personnage]</code></pre>
+<p class="traduction">“[the character’s SVG file]”</p>
+<p class="legende">In square brackets <code>[ ]</code>: optional. You can also run the command on its own and give the file afterwards: its path, or its name if it is already in the video’s <code>assets/</code> folder.</p>
+<pre class="commande"><code>/pulse-motion:decouper-personnage assets/mascotte.svg</code></pre>
+<pre class="commande" lang="fr"><code>/pulse-motion:decouper-personnage j'ai un personnage dans assets, anime-le</code></pre>
+<p class="traduction">“I have a character in assets, animate it”</p>
+
+<h3>Preparing the illustration</h3>
+<p>One character per file, preferably in profile (facing right), otherwise from the front. Some elements prevent the cut-out: Pulse Motion tells you which, and what to change in your drawing software.</p>
+<table>
+<thead><tr><th>Your illustration contains</th><th>In the drawing software</th></tr></thead>
+<tbody>
+<tr><td>Text</td><td>Convert the text to shapes (“Create Outlines”, “Object to Path”).</td></tr>
+<tr><td>An image (a photo, a texture)</td><td>Redraw it as shapes, or leave it out.</td></tr>
+<tr><td>A linked copy (a clone)</td><td>Unlink the clone (“Object &gt; Expand”).</td></tr>
+<tr><td>A filter, a mask</td><td>Remove them, or apply them.</td></tr>
+<tr><td>“Entity” styles (Illustrator)</td><td>Export again with “CSS Properties: Style Elements”.</td></tr>
+</tbody>
+</table>
+<p>A clipping mask, on the other hand, does not get in the way: the shape is drawn whole, and Pulse Motion lets you know.</p>
+</section>
+
+<section id="produit">
+<h2>What it produces</h2>
+<table>
+<thead><tr><th>File</th><th>What it is for</th></tr></thead>
+<tbody>
+<tr><td><code>assets/&lt;nom&gt;.svg</code></td><td>The copy of your illustration, stored with the video. The original stays where it was.</td></tr>
+<tr><td><code>personnages/decoupes/&lt;nom&gt;.json</code></td><td>The cut-out: each shape assigned to a limb, and the position of the joints.</td></tr>
+<tr><td><code>personnages/dessins/&lt;nom&gt;.json</code></td><td>The resulting drawn character, ready to move.</td></tr>
+</tbody>
+</table>
+<p>Pulse Motion finishes with the walk sheet and what you can do next: fix the cut-out with the mouse, make the character move, draw its front if the illustration is only in profile.</p>
+</section>
+
+<section id="risques">
+<h2>Risks and precautions</h2>
+<ul>
+<li><strong>There must be a video in the folder.</strong> Without one, Pulse Motion tells you and offers to create one with <a href="creer.html"><code>/pulse-motion:creer</code></a>.</li>
+<li><strong>A rejected element stops the cut-out</strong> until it is fixed in your software. If it is only decorative, Pulse Motion may offer to leave it out.</li>
+<li><strong>A front-view illustration also serves as the profile</strong>, until something better comes along. For a real profile, or a missing front, ask <a href="dessiner-personnage.html"><code>/pulse-motion:dessiner-personnage</code></a>.</li>
+<li><strong>The face stays frozen</strong> if the eyes and the mouth are not separate shapes. With a living face, the other mouths (smile, surprise…) are drawn afterwards with <a href="dessiner-personnage.html"><code>/pulse-motion:dessiner-personnage</code></a>.</li>
+<li><strong>Redoing the cut-out does not undo the rest.</strong> The other drawn views and the added mouths are kept; the colours keep their names.</li>
+</ul>
+<aside class="encadre encadre-conseil"><p><strong>Tip:</strong> before exporting your illustration, keep the eyes and the mouth as separate shapes: your character will have a living face that looks around and blinks.</p></aside>
+</section>
+
+<section id="problemes">
+<h2>Problems and solutions</h2>
+<details class="probleme"><summary>Pulse Motion rejects my illustration</summary><p>It contains text, an image, a clone, a filter or a mask. Pulse Motion tells you which: fix it in your drawing software (see the <a href="#arguments">Preparing the illustration</a> table), export again, then give it the file again.</p></details>
+<details class="probleme"><summary>A limb comes loose or turns around the wrong point</summary><p>A joint is in the wrong place. Pulse Motion sees it on the sheet and fixes it; if the problem remains, fix it yourself with the mouse using <a href="atelier-personnages.html"><code>/pulse-motion:atelier-personnages</code></a> (« <span lang="fr">laisse-moi corriger la découpe</span> » (“let me fix the cut-out”)).</p></details>
+<details class="probleme"><summary>Pulse Motion reports shapes that were left out</summary><p>These shapes were not assigned to any limb. Pulse Motion assigns them, or sets them aside if they are not part of the character (a shadow, a background).</p></details>
+<details class="probleme"><summary>My character’s eyes don’t move</summary><p>In your drawing, the eyes are part of the same shape as the head. Separate them in your drawing software (the white of the eye and the pupil), export again, and run the cut-out again.</p></details>
+<details class="probleme"><summary>“node” not found</summary><p>Node.js is not installed. Install the LTS version from <a href="https://nodejs.org/fr/download" target="_blank" rel="noopener noreferrer">nodejs.org</a>, then restart Claude Code. See the <a href="../prerequis.html#node">requirements</a>.</p></details>
+</section>
+
+<section id="exemples">
+<h2>Examples</h2>
+<div class="conversation" lang="fr" data-titre="Example: making a mascot walk">
+<p data-role="vous">/pulse-motion:decouper-personnage voici notre mascotte, fais-la marcher : C:\Users\Marie\Bureau\mascotte.svg</p>
+<p data-role="outil">pulse-motion personnages analyser assets/mascotte.svg --dossier .</p>
+<p data-role="outil">pulse-motion personnages decouper mascotte --dossier .</p>
+<p data-role="outil">pulse-motion personnages renommer-couleur mascotte c1 tenue --dossier .</p>
+<p data-role="outil">pulse-motion personnages planche marche --dessin mascotte --vues 0,45,180 --dossier .</p>
+<p data-role="claude">Votre mascotte marche ! Voici la planche, sous trois angles.
+Ensuite, vous pouvez corriger la découpe à la souris (/pulse-motion:atelier-personnages), la faire bouger (/pulse-motion:animer-personnage), ou dessiner sa face (/pulse-motion:dessiner-personnage) : votre illustration n'est que de profil.</p>
+</div>
+<details class="traduction"><summary>In English</summary><p><strong>You:</strong> /pulse-motion:decouper-personnage here is our mascot, make it walk: C:\Users\Marie\Bureau\mascotte.svg</p><p><strong>Claude:</strong> Your mascot is walking! Here is the sheet, from three angles. Next, you can fix the cut-out with the mouse (/pulse-motion:atelier-personnages), make it move (/pulse-motion:animer-personnage), or draw its front (/pulse-motion:dessiner-personnage): your illustration is only in profile.</p></details>
+<div class="conversation" lang="fr" data-titre="Example: an illustration to fix first">
+<p data-role="vous">/pulse-motion:decouper-personnage assets/chef.svg</p>
+<p data-role="outil">pulse-motion personnages analyser assets/chef.svg --dossier .</p>
+<p data-role="claude">Votre illustration contient du texte : le nom brodé sur le tablier. Dans votre logiciel de dessin, convertissez-le en formes (« Vectoriser » ou « Objet en chemin »), réexportez le fichier, puis redonnez-le-moi.</p>
+</div>
+<details class="traduction"><summary>In English</summary><p><strong>You:</strong> /pulse-motion:decouper-personnage assets/chef.svg</p><p><strong>Claude:</strong> Your illustration contains text: the name embroidered on the apron. In your drawing software, convert it to shapes (“Create Outlines” or “Object to Path”), export the file again, then give it back to me.</p></details>
+</section>
+
+<section id="liees">
+<h2>Related commands</h2>
+<ul>
+<li><a href="atelier-personnages.html"><code>/pulse-motion:atelier-personnages</code></a>: fix the cut-out with the mouse.</li>
+<li><a href="animer-personnage.html"><code>/pulse-motion:animer-personnage</code></a>: its poses, its moves, its place in a scene.</li>
+<li><a href="dessiner-personnage.html"><code>/pulse-motion:dessiner-personnage</code></a>: draw a missing view, or the mouths for its face.</li>
+</ul>
+</section>
+
+<nav class="suite" aria-label="Previous and next command" data-suite></nav>
+</article>
+</div>
+</main>
+</body>
+</html>

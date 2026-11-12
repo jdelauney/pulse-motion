@@ -1,10 +1,14 @@
 // Wiki Pulse Motion – recherche sur tout le site. Le bouton « Rechercher » de l'en-tête (ou la touche / ou Ctrl+K) ouvre une
 // fenêtre ; l'index (js/index-recherche.js) se charge au premier usage. La recherche ne tient compte ni des accents ni des
-// majuscules ; chaque mot tapé doit se trouver dans le résultat.
+// majuscules ; chaque mot tapé doit se trouver dans le résultat. Une page anglaise (<html lang="en">) cherche dans les pages
+// anglaises (js/index-recherche-en.js), une page française dans les françaises.
 (function () {
   "use strict";
 
   var racine = document.documentElement.getAttribute("data-racine") || "";
+  var en = /^en\b/i.test(document.documentElement.getAttribute("lang") || "");
+  var T = function (fr, anglais) { return en ? anglais : fr; };
+  var INDEX = en ? "PULSE_RECHERCHE_EN" : "PULSE_RECHERCHE";
   var entrees = null;
   var dialogue, champ, liste, etat, dernierFocus;
 
@@ -13,17 +17,17 @@
 
   function charger(suite) {
     if (entrees) return suite();
-    if (window.PULSE_RECHERCHE) { preparer(); return suite(); }
-    etat.textContent = "Chargement de l'index…";
+    if (window[INDEX]) { preparer(); return suite(); }
+    etat.textContent = T("Chargement de l'index…", "Loading the index…");
     var s = document.createElement("script");
-    s.src = racine + "js/index-recherche.js";
+    s.src = racine + T("js/index-recherche.js", "js/index-recherche-en.js");
     s.onload = function () { preparer(); suite(); };
-    s.onerror = function () { etat.textContent = "L'index de recherche n'a pas pu être chargé."; };
+    s.onerror = function () { etat.textContent = T("L'index de recherche n'a pas pu être chargé.", "The search index could not be loaded."); };
     document.head.appendChild(s);
   }
 
   function preparer() {
-    entrees = (window.PULSE_RECHERCHE || []).map(function (e) {
+    entrees = (window[INDEX] || []).map(function (e) {
       return { e: e, t: simplifier(e.t), s: simplifier(e.s), x: simplifier(e.x) };
     });
   }
@@ -51,7 +55,7 @@
   function chercher() {
     var mots = simplifier(champ.value).split(/\s+/).filter(Boolean);
     liste.textContent = "";
-    if (!mots.length) { etat.textContent = "Tapez un ou plusieurs mots : voix, MP4, sous-titres, style…"; return; }
+    if (!mots.length) { etat.textContent = T("Tapez un ou plusieurs mots : voix, MP4, sous-titres, style…", "Type one or more words: voice, MP4, subtitles, style…"); return; }
     var resultats = [];
     entrees.forEach(function (e) {
       var score = 0;
@@ -77,8 +81,8 @@
       liste.appendChild(li);
     });
     etat.textContent = resultats.length
-      ? resultats.length + (resultats.length > 1 ? " résultats" : " résultat") + (resultats.length > 20 ? ", les 20 plus proches affichés" : "")
-      : "Aucun résultat. Essayez un autre mot, ou la page « Je suis bloqué ».";
+      ? resultats.length + T(resultats.length > 1 ? " résultats" : " résultat", resultats.length > 1 ? " results" : " result") + (resultats.length > 20 ? T(", les 20 plus proches affichés", ", the 20 closest shown") : "")
+      : T("Aucun résultat. Essayez un autre mot, ou la page « Je suis bloqué ».", "No results. Try another word, or the “I'm stuck” page (in French).");
   }
 
   function ouvrir() {
@@ -101,12 +105,12 @@
     dialogue.hidden = true;
     dialogue.setAttribute("role", "dialog");
     dialogue.setAttribute("aria-modal", "true");
-    dialogue.setAttribute("aria-label", "Rechercher dans le wiki");
+    dialogue.setAttribute("aria-label", T("Rechercher dans le wiki", "Search the wiki"));
     dialogue.innerHTML = '<div class="recherche-fond" data-fermer></div>'
       + '<div class="recherche-boite">'
-      + '<div class="recherche-entete"><label class="visuellement-cache" for="recherche-champ">Rechercher dans le wiki</label>'
-      + '<input class="champ recherche-champ" id="recherche-champ" type="search" autocomplete="off" placeholder="Rechercher : voix, MP4, sous-titres, style…">'
-      + '<button class="bouton" type="button" data-fermer>Fermer</button></div>'
+      + '<div class="recherche-entete"><label class="visuellement-cache" for="recherche-champ">' + T("Rechercher dans le wiki", "Search the wiki") + '</label>'
+      + '<input class="champ recherche-champ" id="recherche-champ" type="search" autocomplete="off" placeholder="' + T("Rechercher : voix, MP4, sous-titres, style…", "Search: voice, MP4, subtitles, style…") + '">'
+      + '<button class="bouton" type="button" data-fermer>' + T("Fermer", "Close") + '</button></div>'
       + '<p class="recherche-etat" aria-live="polite"></p>'
       + '<ul class="recherche-resultats"></ul></div>';
     document.body.appendChild(dialogue);
@@ -132,10 +136,11 @@
       var bouton = document.createElement("button");
       bouton.type = "button";
       bouton.className = "bouton-recherche";
-      bouton.innerHTML = '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="9" cy="9" r="6"/><path d="M14 14l4 4"/></svg><span>Rechercher</span><kbd>/</kbd>';
-      bouton.setAttribute("aria-label", "Rechercher dans le wiki (touche /)");
+      bouton.innerHTML = '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="9" cy="9" r="6"/><path d="M14 14l4 4"/></svg><span>' + T("Rechercher", "Search") + '</span><kbd>/</kbd>';
+      bouton.setAttribute("aria-label", T("Rechercher dans le wiki (touche /)", "Search the wiki (/ key)"));
       bouton.addEventListener("click", ouvrir);
-      barre.insertBefore(bouton, barre.querySelector(".bouton-menu"));
+      // Avant le sélecteur de langue (gabarit.js), sinon avant le bouton Menu.
+      barre.insertBefore(bouton, barre.querySelector(".bouton-langue") || barre.querySelector(".bouton-menu"));
     }
 
     document.addEventListener("keydown", function (e) {

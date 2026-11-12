@@ -150,7 +150,12 @@ test('documentation.test.js › les pages anglaises suivent le plan des françai
     blocs: (t.match(/<pre\b/g) || []).length,
     liens: [...t.matchAll(/href="([^"#]+)/g)].map((m) => m[1]).filter((h) => !/^https?:/.test(h)).length,
   });
-  for (const f of fs.readdirSync(en).filter((x) => x.endsWith('.html'))) {
+  // Sous-dossiers compris (en/commandes/, en/tutoriels/) : chaque page anglaise a le chemin de sa page française.
+  const lister = (dossier, prefixe = '') => fs.readdirSync(dossier, { withFileTypes: true }).flatMap((e) => (e.isDirectory()
+    ? lister(path.join(dossier, e.name), `${prefixe}${e.name}/`) : e.name.endsWith('.html') ? [`${prefixe}${e.name}`] : []));
+  const pages = lister(en);
+  assert.ok(pages.some((f) => f.includes('/')), 'pages anglaises des sous-dossiers vérifiées');
+  for (const f of pages) {
     const source = path.join(fr, f);
     assert.ok(fs.existsSync(source), `${f} : page française absente`);
     assert.deepEqual(plan(fs.readFileSync(path.join(en, f), 'utf8')), plan(fs.readFileSync(source, 'utf8')), f);

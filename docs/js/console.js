@@ -8,6 +8,8 @@
   "use strict";
 
   var reduit = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // Page anglaise (docs/en/) : la conversation reste en français (lang="fr" sur le bloc), sa barre parle anglais.
+  var en = /^en/i.test(document.documentElement.getAttribute("lang") || "");
 
   function preparer(bloc) {
     var messages = Array.prototype.slice.call(bloc.querySelectorAll("p[data-role]"));
@@ -18,7 +20,8 @@
     var barre = document.createElement("div");
     barre.className = "conversation-barre";
     var titre = document.createElement("span");
-    titre.textContent = bloc.getAttribute("data-titre") || "Exemple de conversation dans Claude Code";
+    titre.textContent = bloc.getAttribute("data-titre") || (en ? "Example of a conversation in Claude Code" : "Exemple de conversation dans Claude Code");
+    if (en) { titre.lang = "en"; }
     barre.appendChild(titre);
     bloc.textContent = "";
     bloc.appendChild(barre);
@@ -30,7 +33,8 @@
     var rejouer = document.createElement("button");
     rejouer.type = "button";
     rejouer.className = "bouton";
-    rejouer.textContent = "Rejouer";
+    rejouer.textContent = en ? "Replay" : "Rejouer";
+    if (en) rejouer.lang = "en";
     barre.appendChild(rejouer);
     bloc.classList.add("conversation-prete");
 

@@ -7,6 +7,8 @@
   "use strict";
 
   var reduit = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var en = /^en/i.test(document.documentElement.getAttribute("lang") || "");
+  var T = function (fr, anglais) { return en ? anglais : fr; };
 
   function bouton(texte, etiquette) {
     var b = document.createElement("button");
@@ -30,20 +32,20 @@
       figure.querySelectorAll("[data-etape]").forEach(function (e) {
         e.classList.toggle("en-cours", parseInt(e.getAttribute("data-etape"), 10) === etape);
       });
-      if (etat) etat.textContent = "Étape " + etape + " sur " + total;
+      if (etat) etat.textContent = T("Étape " + etape + " sur " + total, "Step " + etape + " of " + total);
       if (etape >= total) arreter();
     }
 
     function arreter() {
       clearInterval(minuterie);
       minuterie = null;
-      if (pause) pause.textContent = etape >= total ? "Rejouer" : "Lecture";
+      if (pause) pause.textContent = etape >= total ? T("Rejouer", "Replay") : T("Lecture", "Play");
     }
 
     function lire() {
       if (etape >= total) montrer(0);
       enPause = false;
-      if (pause) pause.textContent = "Pause";
+      if (pause) pause.textContent = T("Pause", "Pause");
       clearInterval(minuterie);
       montrer(etape + 1);
       minuterie = setInterval(function () { montrer(etape + 1); }, duree);
@@ -58,8 +60,8 @@
 
     var barre = document.createElement("div");
     barre.className = "anim-commandes";
-    var pause = bouton("Lecture");
-    var suivante = bouton("Étape suivante");
+    var pause = bouton(T("Lecture", "Play"));
+    var suivante = bouton(T("Étape suivante", "Next step"));
     var etat = document.createElement("span");
     etat.className = "anim-etat";
     etat.setAttribute("aria-live", "polite");
@@ -69,14 +71,14 @@
     figure.appendChild(barre);
 
     pause.addEventListener("click", function () {
-      if (minuterie) { enPause = true; arreter(); pause.textContent = "Lecture"; }
+      if (minuterie) { enPause = true; arreter(); pause.textContent = T("Lecture", "Play"); }
       else lire();
     });
     suivante.addEventListener("click", function () {
       enPause = true;
       arreter();
       montrer(etape >= total ? 1 : etape + 1);
-      pause.textContent = etape >= total ? "Rejouer" : "Lecture";
+      pause.textContent = etape >= total ? T("Rejouer", "Replay") : T("Lecture", "Play");
     });
 
     montrer(0);

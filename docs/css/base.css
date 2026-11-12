@@ -838,3 +838,36 @@ a[target="_blank"]::after { content: "\00a0↗"; font-size: 0.85em; }
 /* Pourquoi Pulse Motion (accueil) : trois façons de faire aujourd'hui, et ce qui change. */
 .pourquoi-defaut { color: var(--texte-secondaire); }
 .pourquoi-change { max-width: 896px; margin: 40px auto 0; }
+
+/* --- Langues (chantier I) : sélecteur de l'en-tête, pages restées en français, avis et traductions des pages anglaises ---- */
+
+.bouton-langue {
+  display: inline-flex;
+  align-items: center;
+  height: 2rem;
+  padding: 0 12px;
+  border-radius: var(--rayon-pilule);
+  border: 1px solid var(--lisere);
+  color: var(--texte-secondaire);
+  font: 500 var(--texte-sm) / 1 var(--police);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.bouton-langue:hover { color: var(--texte); background: var(--surface-attenuee); }
+.bouton-langue:focus-visible { outline: none; border-color: var(--primaire); box-shadow: 0 0 0 3px var(--anneau); }
+.entete-site .marque + .bouton-langue { margin-left: auto; }
+.entete-site .bouton-recherche + .bouton-langue { margin-left: 0; }
+/* Navigation entière sur une ligne (1320 px et plus) : la recherche n'y garde que sa loupe jusqu'à 1600 px, pour laisser la place
+   au sélecteur de langue et aux libellés anglais. */
+@media (min-width: 1320px) and (max-width: 1599px) {
+  .bouton-recherche span, .bouton-recherche kbd { display: none; }
+  .bouton-recherche { padding: 0 10px; }
+  .entete-site .barre { gap: 8px; }
+  .navigation a { padding: 6px 6px; }
+}
+.marque-langue { margin-left: 4px; font-size: var(--texte-xs); color: var(--texte-secondaire); }
+.avis-langue { margin: 16px 0 0; max-width: 70ch; padding: 10px 14px; border-left: 3px solid var(--accompagne); background: var(--surface-attenuee); border-radius: var(--rayon-md); font-size: var(--texte-sm); color: var(--texte-secondaire); }
+.traduction { color: var(--texte-secondaire); font-style: italic; }
+p.traduction { margin-top: -4px; }
+details.traduction { margin: 8px 0 24px; font-style: normal; font-size: var(--texte-sm); }
+details.traduction summary { cursor: pointer; }

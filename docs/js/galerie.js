@@ -6,6 +6,8 @@
   "use strict";
 
   var reduit = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var en = /^en/i.test(document.documentElement.getAttribute("lang") || "");
+  var T = function (fr, anglais) { return en ? anglais : fr; };
   var enPause = reduit;
   var videos = Array.prototype.slice.call(document.querySelectorAll("video.apercu"));
   var visibles = new Set();
@@ -33,7 +35,7 @@
   videos.forEach(function (v) {
     v.tabIndex = 0;
     v.setAttribute("role", "button");
-    v.setAttribute("aria-label", (v.getAttribute("aria-label") || "Aperçu") + " (lire ou arrêter)");
+    v.setAttribute("aria-label", (v.getAttribute("aria-label") || T("Aperçu", "Preview")) + T(" (lire ou arrêter)", " (play or stop)"));
     v.addEventListener("click", function () { basculer(v); });
     v.addEventListener("keydown", function (e) {
       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); basculer(v); }
@@ -66,7 +68,7 @@
       if (ok) n++;
     });
     sections.forEach(function (s) { s.hidden = !s.querySelector(".carte-mouvement:not([hidden])"); });
-    compte.textContent = n + (n > 1 ? " mouvements affichés" : " mouvement affiché");
+    compte.textContent = n + T(n > 1 ? " mouvements affichés" : " mouvement affiché", n > 1 ? " moves shown" : " move shown");
   }
 
   function boutonFiltre(id, nom) {
@@ -83,11 +85,11 @@
     filtres.appendChild(b);
   }
 
-  boutonFiltre("", "Toutes");
+  boutonFiltre("", T("Toutes", "All"));
   sections.forEach(function (s) { boutonFiltre(s.getAttribute("data-categorie"), s.querySelector("h2").textContent); });
   recherche.addEventListener("input", filtrer);
 
-  function majBouton() { bouton.textContent = enPause ? "Lire les aperçus" : "Tout mettre en pause"; }
+  function majBouton() { bouton.textContent = enPause ? T("Lire les aperçus", "Play the previews") : T("Tout mettre en pause", "Pause everything"); }
   bouton.addEventListener("click", function () {
     enPause = !enPause;
     if (enPause) videos.forEach(function (v) { v.pause(); });

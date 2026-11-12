@@ -1,5 +1,7 @@
 # Pulse Motion
 
+*English version: [README.en.md](README.en.md) (the plugin itself speaks French).*
+
 Créez, sur votre ordinateur et sans cloud, des vidéos dynamiques en motion design : décrivez votre idée en mots simples, validez le déroulé, regardez la vidéo dans votre navigateur.
 
 [![Une vidéo faite avec Pulse Motion : la chaîne du froid, en une minute](docs/assets/captures/chaine-du-froid-affiche.jpg)](https://jdelauney.github.io/pulse-motion/medias/chaine-du-froid.mp4)

@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en" data-racine="../../" data-commande="outils">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>/pulse-motion:outils – Pulse Motion Wiki</title>
+<meta name="description" content="Check that the computer is ready for videos and install what is missing (ffmpeg, transcription, Python), with your consent. Never creates or changes a video.">
+<!-- langues -->
+<link rel="alternate" hreflang="fr" href="https://jdelauney.github.io/pulse-motion/commandes/outils.html">
+<link rel="alternate" hreflang="en" href="https://jdelauney.github.io/pulse-motion/en/commandes/outils.html">
+<link rel="alternate" hreflang="x-default" href="https://jdelauney.github.io/pulse-motion/commandes/outils.html">
+<!-- /langues -->
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/animations.css">
+<script src="../../js/donnees.js" defer></script>
+<script src="../../js/gabarit.js" defer></script>
+<script src="../../js/animations.js" defer></script>
+<script src="../../js/console.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<div class="mise-en-page">
+<nav class="laterale" aria-label="The commands" data-laterale></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille pastille-etape" data-couleur="1">Step 1 · Create</p>
+<h1><code>/pulse-motion:outils</code></h1>
+<p class="chapo">Check that the computer is ready for videos and install what is missing (ffmpeg, transcription, Python), with your consent. Never creates or changes a video.</p>
+</header>
+
+<ul class="sommaire" aria-label="On this page" data-sommaire></ul>
+
+<section id="description">
+<h2>Description</h2>
+<p>Pulse Motion relies on a few programs on your computer. This command simply tells you what is ready and what is missing, then installs what is missing, <strong>with your consent</strong>. It works in any folder, with or without a video.</p>
+<p>It starts with the installed version of Pulse Motion (« <span lang="fr">Pulse Motion 0.16.0 est installé</span> » (“Pulse Motion 0.16.0 is installed”)), then shows a table:</p>
+<table>
+<thead><tr><th>Tool</th><th>What it is for</th></tr></thead>
+<tbody>
+<tr><td><strong>Chrome or Edge</strong></td><td>Watching the video, checking it, exporting it.</td></tr>
+<tr><td><strong>ffmpeg</strong></td><td>A high-quality MP4 with clean sound. Without it, the export is done in the browser.</td></tr>
+<tr><td><strong>Python</strong></td><td>Needed for transcription.</td></tr>
+<tr><td><strong>Transcription</strong></td><td>Aligning the subtitles and animations with the actual words of your voice. Optional.</td></tr>
+<tr><td><strong>The computer’s voice</strong></td><td>The placeholder voice, before you record your own.</td></tr>
+<tr><td><strong>The synthetic voice</strong></td><td>A French voice generated on the computer, which can be delivered as it is. Optional, installed only if you ask for it.</td></tr>
+</tbody>
+</table>
+<p>Each missing tool is followed by what you can do, for example: say « <span lang="fr">installe ffmpeg</span> » (“install ffmpeg”).</p>
+</section>
+
+<section id="pourquoi">
+<h2>Why use it</h2>
+<ul>
+<li><strong>You can see at a glance whether everything is ready</strong>, before a first export or a first recording.</li>
+<li><strong>Nothing is installed without your consent.</strong> Pulse Motion asks you « <span lang="fr">Installer (Recommandé)</span> » (Install (Recommended)) or « <span lang="fr">Pas maintenant</span> » (Not now), one installation at a time.</li>
+<li><strong>You have nothing to type</strong> on Windows and Mac: Pulse Motion runs the installation itself. On Linux, it gives you the line to type.</li>
+<li><strong>Your videos aren’t touched.</strong> The tools are installed on the computer; no video is created or changed.</li>
+</ul>
+</section>
+
+<section id="quand">
+<h2>When to use it</h2>
+<ol class="parcours" aria-label="The Pulse Motion journey, with this command’s step highlighted">
+  <li data-couleur="1" aria-current="step"><span class="parcours-numero">1</span> Create</li>
+  <li data-couleur="3"><span class="parcours-numero">2</span> Edit</li>
+  <li data-couleur="4"><span class="parcours-numero">3</span> Export</li>
+  <li data-couleur="0"><span class="parcours-numero">4</span> Customise</li>
+</ol>
+<ul>
+<li><strong>Before your first video</strong>, once the plugin is installed (see the <a href="../prerequis.html">requirements</a>).</li>
+<li><strong>Before <a href="exporter.html"><code>/pulse-motion:exporter</code></a></strong>, to install ffmpeg and get a high-fidelity export.</li>
+<li><strong>Before <a href="voix.html"><code>/pulse-motion:voix</code></a></strong>, to install transcription if you want to import a recording of the whole video or realign the words.</li>
+<li><strong>When a message mentions a missing tool.</strong></li>
+<li><strong>When something isn’t working</strong>: « <span lang="fr">signale un problème</span> » (“report a problem”). Claude prepares a summary (version, system, tools, latest errors), with nothing from your video, and saves it in a file. With your consent, it opens the reporting page, already filled in: you read it over and send it yourself (a GitHub account is needed; otherwise, send the file by email). Nothing is ever sent on your behalf.</li>
+<li><strong>When you change computer</strong>: « <span lang="fr">emporte mes chartes sur mon autre ordinateur</span> » (“take my brand kits to my other computer”). Your <a href="../concepts.html#bibliotheque">personal library</a> (brand kits, styles, effects, characters, preferences) goes into a single file, which you copy yourself.</li>
+</ul>
+</section>
+
+<section id="arguments">
+<h2>How to run it</h2>
+<pre class="commande"><code>/pulse-motion:outils</code></pre>
+<p class="legende">On its own, it checks the computer. To install a tool, say so right after the name or in the conversation.</p>
+<pre class="commande" lang="fr"><code>/pulse-motion:outils installe ffmpeg</code></pre>
+<p class="traduction">“install ffmpeg”</p>
+<pre class="commande" lang="fr"><code>/pulse-motion:outils installe la transcription</code></pre>
+<p class="traduction">“install transcription”</p>
+
+<h3>What you can ask</h3>
+<table>
+<thead><tr><th>You say</th><th>What happens</th></tr></thead>
+<tbody>
+<tr><td>« <span lang="fr">vérifie mon ordinateur</span> » (“check my computer”), « <span lang="fr">est-ce que tout est prêt pour l'export ?</span> » (“is everything ready for export?”)</td><td>The Pulse Motion version and the table of tools, ready or missing.</td></tr>
+<tr><td>« <span lang="fr">installe ffmpeg</span> » (“install ffmpeg”)</td><td>Pulse Motion explains in one sentence what it is for, asks for your consent, installs it, then checks that it is really there.</td></tr>
+<tr><td>« <span lang="fr">installe la transcription</span> » (“install transcription”)</td><td>Three choices: « <span lang="fr">Installer (Recommandé)</span> » (Install (Recommended)), about 800 MB to download once; « <span lang="fr">Version légère</span> » (Light version), 250 MB, slightly less accurate; « <span lang="fr">Pas maintenant</span> » (Not now). If Python is missing, it is installed first, with your consent.</td></tr>
+<tr><td>« <span lang="fr">installe la voix de synthèse</span> » (“install the synthetic voice”)</td><td>Pulse Motion says in one sentence what it is (a single French voice, female, less natural than a real voice) and its size (about 300 MB, or 550 MB for the more faithful version), then asks for your consent. Nothing is downloaded without it. It needs Python, version 3.10 to 3.13.</td></tr>
+<tr><td>« <span lang="fr">emporte mes chartes sur mon autre ordinateur</span> » (“take my brand kits to my other computer”), « <span lang="fr">emporte ma bibliothèque</span> » (“take my library with me”)</td><td>Pulse Motion tells you what your library contains, then offers « <span lang="fr">Tout emporter (Recommandé)</span> » (Take everything (Recommended)) or « <span lang="fr">Choisir</span> » (Choose). It turns it into a ZIP file, saved in your Documents, which you copy like any other (USB stick, email). Sign-ins to the sites you have filmed never leave.</td></tr>
+<tr><td>« <span lang="fr">importe ma bibliothèque</span> » (“import my library”) (with the ZIP file)</td><td>Pulse Motion first tells you what is new, what you already have, and what has a name that is already taken. Nothing already on the computer is replaced without your consent: for each taken name, « <span lang="fr">Garder le mien (Recommandé)</span> » (Keep mine (Recommended)) or « <span lang="fr">Prendre celui de l'archive</span> » (Take the one from the archive). The preferences it remembered for you are added to yours.</td></tr>
+<tr><td>« <span lang="fr">installe Python</span> » (“install Python”)</td><td>Only if it is missing or too old: Pulse Motion asks for your consent, installs it, then checks.</td></tr>
+</tbody>
+</table>
+<p>The same tools, installed by hand, are described in the <a href="../prerequis.html#ffmpeg">requirements</a>.</p>
+</section>
+
+<section id="produit">
+<h2>What it produces</h2>
+<ul>
+<li><strong>An overview</strong> in plain words: what is ready, what is missing, and how to get it.</li>
+<li><strong>The tools installed on the computer</strong>, if you accept: ffmpeg, Python, transcription. Nothing in your video changes.</li>
+<li><strong>What to do next</strong>: the action that was waiting for the tool (the export, recording a voice), otherwise creating a video with <a href="creer.html"><code>/pulse-motion:creer</code></a>.</li>
+</ul>
+</section>
+
+<section id="risques">
+<h2>Risks and precautions</h2>
+<ul>
+<li><strong>Transcription is a big download.</strong> About 800 MB (250 MB for the light version), just once. Installation takes a few minutes: Pulse Motion warns you and waits until it is finished.</li>
+<li><strong>A tool you have just installed may stay invisible.</strong> The computer only sees a new program when Claude Code restarts. Restart it, then ask « <span lang="fr">vérifie mon ordinateur</span> » (“check my computer”) again.</li>
+<li><strong>On Linux, you type the installation line yourself</strong>, in a terminal, because it asks for your password. Pulse Motion waits for you to tell it you’re done, then checks.</li>
+<li><strong>The browser and the microphone can’t be installed from here.</strong> Chrome or Edge are installed from their website. The microphone is tested in the voice studio: ask « <span lang="fr">j'enregistre la scène 1</span> » (“I’m recording scene 1”) when a video is open.</li>
+</ul>
+<aside class="encadre encadre-conseil"><p><strong>Tip:</strong> ffmpeg and transcription are optional. Without ffmpeg, the export is done in the browser; without transcription, the words of the voice are aligned as well as possible. Everything else works.</p></aside>
+</section>
+
+<section id="problemes">
+<h2>Problems and solutions</h2>
+<details class="probleme"><summary>ffmpeg is still missing after installation</summary><p>The computer only sees it when Claude Code restarts. Close Claude Code, start it again, then ask « <span lang="fr">vérifie mon ordinateur</span> » (“check my computer”) again.</p></details>
+<details class="probleme"><summary>Python still can’t be found</summary><p>Same cause: restart Claude Code to finish the installation, then ask « <span lang="fr">installe la transcription</span> » (“install transcription”) again.</p></details>
+<details class="probleme"><summary>« <span lang="fr">Python est trop ancien</span> » (“Python is too old”)</summary><p>Transcription needs a more recent version. Ask « <span lang="fr">installe Python</span> » (“install Python”): Pulse Motion installs the version required, with your consent.</p></details>
+<details class="probleme"><summary>Installing transcription failed</summary><p>Pulse Motion tells you why, in plain words. Everything works without it: the words of the voice are aligned as well as possible. You can try again later.</p></details>
+<details class="probleme"><summary>Chrome or Edge are reported missing</summary><p>Install one of the two from its website, then ask « <span lang="fr">vérifie mon ordinateur</span> » (“check my computer”) again. See <a href="../prerequis.html#navigateur">Chrome or Edge</a>.</p></details>
+<details class="probleme"><summary>« <span lang="fr">Ce nom est déjà pris</span> » (“This name is already taken”) when importing the library</summary><p>On this computer, you already have a brand kit, a style, an effect or a character with the same name, but different. Nothing has been replaced: choose whether to keep yours or take the one from the archive. The rest of the library is imported.</p></details>
+<details class="probleme"><summary>“node” not found</summary><p>Node.js isn’t installed: Pulse Motion can’t check anything without it. Install the LTS version from <a href="https://nodejs.org/fr/download" target="_blank" rel="noopener noreferrer">nodejs.org</a> (installer), then restart Claude Code. See the <a href="../prerequis.html#node">requirements</a>.</p></details>
+</section>
+
+<section id="exemples">
+<h2>Examples</h2>
+<div class="conversation" lang="fr" data-titre="Example: checking the computer">
+<p data-role="vous">/pulse-motion:outils</p>
+<p data-role="outil">pulse-motion outils</p>
+<p data-role="claude">Pulse Motion 0.16.0 est installé.
+✅ Chrome ou Edge : regarder la vidéo, la contrôler, l'exporter
+❌ ffmpeg : un MP4 de qualité avec un son propre (sans lui, l'export se fait dans le navigateur). Dites « installe ffmpeg ».
+✅ Python : nécessaire à la transcription
+❌ Transcription : caler les sous-titres et les animations sur les vrais mots de la voix (facultative). Dites « installe la transcription ».
+✅ Voix de l'ordinateur : la voix provisoire, avant d'enregistrer la vôtre</p>
+</div>
+<details class="traduction"><summary>In English</summary><p><strong>You:</strong> /pulse-motion:outils</p><p><strong>Claude:</strong> Pulse Motion 0.16.0 is installed. ✅ Chrome or Edge: watching the video, checking it, exporting it. ❌ ffmpeg: a high-quality MP4 with clean sound (without it, the export is done in the browser). Say “install ffmpeg”. ✅ Python: needed for transcription. ❌ Transcription: aligning the subtitles and animations with the actual words of the voice (optional). Say “install transcription”. ✅ Computer’s voice: the placeholder voice, before you record your own</p></details>
+<div class="conversation" lang="fr" data-titre="Example: installing transcription">
+<p data-role="vous">/pulse-motion:outils installe la transcription</p>
+<p data-role="outil">pulse-motion whisper</p>
+<p data-role="claude">La transcription cale les sous-titres et les animations sur les vrais mots de votre voix ; environ 800 Mo à télécharger une fois.
+→ Installer (Recommandé) / Version légère (250 Mo, un peu moins précise) / Pas maintenant</p>
+<p data-role="vous">Installer</p>
+<p data-role="outil">pulse-motion whisper installer</p>
+<p data-role="claude">L'installation prend quelques minutes, je vous préviens dès qu'elle est finie.</p>
+<p data-role="claude">✅ Fait : la transcription est installée. Votre vidéo a déjà des prises de voix : voulez-vous que je recale leurs mots ?
+📄 Fichiers : rien dans votre vidéo n'a changé ; les outils sont installés sur l'ordinateur.</p>
+</div>
+<details class="traduction"><summary>In English</summary><p><strong>You:</strong> /pulse-motion:outils install transcription</p><p><strong>Claude:</strong> Transcription aligns the subtitles and animations with the actual words of your voice; about 800 MB to download once. → Install (Recommended) / Light version (250 MB, slightly less accurate) / Not now</p><p><strong>You:</strong> Install</p><p><strong>Claude:</strong> Installation takes a few minutes, I’ll let you know as soon as it’s finished.</p><p><strong>Claude:</strong> ✅ Done: transcription is installed. Your video already has voice takes: would you like me to realign their words? 📄 Files: nothing in your video has changed; the tools are installed on the computer.</p></details>
+</section>
+
+<section id="liees">
+<h2>Related commands</h2>
+<ul>
+<li><a href="exporter.html"><code>/pulse-motion:exporter</code></a>: the high-fidelity export, with ffmpeg.</li>
+<li><a href="voix.html"><code>/pulse-motion:voix</code></a>: import a recording of the whole video, realign the words.</li>
+<li><a href="creer.html"><code>/pulse-motion:creer</code></a>: create a video once the computer is ready.</li>
+</ul>
+</section>
+
+<nav class="suite" aria-label="Previous and next command" data-suite></nav>
+</article>
+</div>
+</main>
+</body>
+</html>

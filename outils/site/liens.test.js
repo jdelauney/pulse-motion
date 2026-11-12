@@ -40,3 +40,22 @@ test("liensDuWiki : un aperçu déclaré par un lot de la galerie est accepté",
   fs.writeFileSync(path.join(racine, "docs", "a.html"), '<video src="medias/galerie/mouvements/001.mp4" poster="medias/galerie/mouvements/001.jpg"></video>');
   assert.deepEqual(liensDuWiki(racine, declares).casses, []);
 });
+
+test("liensDuWiki : un lien hreflang (adresse complète du site) vers une page absente est cassé", () => {
+  const { SITE } = require("./langues.js");
+  const racine = dossierTemporaire("pm-liens-");
+  fs.mkdirSync(path.join(racine, "docs", "en"), { recursive: true });
+  fs.writeFileSync(path.join(racine, "docs", "a.html"), [
+    `<link rel="alternate" hreflang="fr" href="${SITE}a.html">`,
+    `<link rel="alternate" hreflang="en" href="${SITE}en/a.html">`,
+    `<link rel="alternate" hreflang="en" href="${SITE}en/absente.html">`,
+    '<link rel="alternate" hreflang="de" href="https://exemple.fr/a.html">',
+  ].join("\n"), "utf8");
+  fs.writeFileSync(path.join(racine, "docs", "en", "a.html"), '<a href="../a.html" hreflang="fr">fr</a>', "utf8");
+  assert.deepEqual(liensDuWiki(racine, new Set()).casses.map((c) => c.cible), [`${SITE}en/absente.html`]);
+});
+
+test("liensDuWiki : les pages anglaises du dépôt n'ont aucun lien cassé", () => {
+  const { casses } = liensDuWiki(path.join(__dirname, "..", ".."));
+  assert.deepEqual(casses.filter((c) => c.page.startsWith("en/")), []);
+});
