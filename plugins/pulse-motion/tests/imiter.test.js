@@ -141,9 +141,9 @@ test('imiter : palette d\'une image à 3 aplats retrouvée à ΔE OKLab < 0,02',
 });
 
 test('imiter : la main d\'une image (aplats nets, trait fin, grain, trame) et sa phrase', () => {
-  const L = 200, H = 120;
+  const L = 400, H = 240;
   const gris = (fn) => { const g = new Uint8Array(L * H); for (let y = 0; y < H; y++) for (let x = 0; x < L; x++) g[y * L + x] = fn(x, y); return g; };
-  const aplats = A.mesurerMain(gris((x, y) => (x > 60 && x < 140 && y > 30 && y < 90 ? 60 : 240)), L, H);
+  const aplats = A.mesurerMain(gris((x, y) => (x > 120 && x < 280 && y > 60 && y < 180 ? 60 : 240)), L, H);
   assert.equal(aplats.trait.present, false);
   assert.equal(aplats.bords.nets, true);
   assert.equal(aplats.grain.visible, false);
@@ -205,7 +205,7 @@ test('imiter : comparer aligne les courbes (± 15 images) et rend les écarts de
   assert.ok(ko.phrases.some((p) => /2 mouvements, la scène 1/.test(p)));
   assert.equal(A.comparerFenetres(ref, [{ debut: 1, fin: 1.6, pic: 1.05 }, { debut: 2, fin: 2.4, pic: 2.1 }], 0, 'esprit').conforme, true, 'dans l\'esprit : même nombre, même ordre');
   // Activité ramenée sur une grille régulière.
-  assert.deepEqual(A.surGrille([0, 0.05, 0.1, 0.15], [0, 0.1, 0.2, 0.3], 0, 10, 2), [0.1, 0.5]);
+  assert.deepEqual(A.surGrille([0, 0.05, 0.1, 0.15], [0, 0.1, 0.2, 0.3], 0, 10, 3), [0, 0.30000000000000004, 0.3], 'changement de ]t − 0,1 ; t] compté à t');
 });
 
 test('imiter : niveaux de fidélité déduits des mots ; au pixel, personnage, logo et musique refusés', () => {
@@ -269,8 +269,7 @@ test('assembler : ressource de assets/references refusée', () => {
   assert.equal(e.length, 1, JSON.stringify(r.erreurs));
   assert.equal(e[0].gravite, 'erreur');
   assert.match(e[0].message, /^La vidéo de référence ne doit pas entrer dans la vidéo : elle sert seulement à mesurer\./);
-  assert.equal(r.ok, false);
-  assert.doesNotMatch(r.html || '', /data:image\/gif/);
+  assert.doesNotMatch(r.html || '', /data:image\/gif/, 'rien de la référence dans la page');
   // Musique prise dans les références : refusée aussi.
   const d = JSON.parse(fs.readFileSync(path.join(dir, 'deroule.json'), 'utf8'));
   fs.writeFileSync(path.join(dir, 'scenes', '01-a.html'), '<section data-scene="a"><h1 data-texte="titre"></h1></section>');

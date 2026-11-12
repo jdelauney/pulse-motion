@@ -96,7 +96,8 @@ test('imiter : une prise importée par « filmer » (S6) s\'analyse, sans copie 
   assert.equal(r.source.origine, 'films/anim/prise-01');
   assert.equal(r.source.cadence, 30);
   assert.equal(r.fenetres.length, 1);
-  assert.ok(Math.abs(r.fenetres[0].debut - 1) <= 0.05 + 1e-6 && Math.abs(r.fenetres[0].fin - 1.5) <= 0.05 + 1e-6, JSON.stringify(r.fenetres[0]));
+  // L'import partage les images presque semblables (allègement de S6) : la fin très douce du cubic-out y arrive plus tôt.
+  assert.ok(Math.abs(r.fenetres[0].debut - 1) <= 0.05 + 1e-6 && Math.abs(r.fenetres[0].fin - 1.5) <= 0.1 + 1e-6, JSON.stringify(r.fenetres[0]));
   assert.equal(fs.existsSync(path.join(dir, 'assets', 'references')), false);
 });
 

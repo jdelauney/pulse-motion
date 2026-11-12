@@ -50,6 +50,8 @@
 
   var arrondi = function (x, n) { var f = Math.pow(10, n === undefined ? 3 : n); return Math.round(x * f) / f; };
   var virgule = function (x, n) { return String(arrondi(x, n === undefined ? 2 : n)).replace('.', ','); };
+  /** Nombre à 2 décimales fixes, virgule française (« 1,00 ») : colonnes de la fiche, étiquettes des planches. */
+  var fixe = function (x) { return Number(x).toFixed(2).replace('.', ','); };
   function mediane(liste) {
     if (!liste.length) return 0;
     var s = liste.slice().sort(function (a, b) { return a - b; });
@@ -569,21 +571,23 @@
       if (G[y2 * L + x2] < 0.05) { s2 += r * r; na++; }
     }
     var grain = na ? Math.sqrt(s2 / na) : 0;
-    // Trame régulière : pic de l'autocorrélation du reste (pas de 3 à 16 points, sur les lignes).
+    // Trame régulière : pic de l'autocorrélation du reste (pas de 3 à 15 points), le long des lignes et des colonnes, avec un
+    // creux à la demi-période (une trame de points alterne ; un aplat uni ou un filet, non).
     var energie = 0;
     for (var e = 0; e < N; e++) energie += reste[e] * reste[e];
     var trame = { presente: false, periode: null, force: 0 };
     if (energie > N * 1) {
-      var corr = [];
-      for (var k = 1; k <= 16; k++) {
+      var correlation = function (dx, dy) {
         var s = 0;
-        for (var y3 = 0; y3 < H; y3++) for (var x3 = 0; x3 + k < L; x3++) s += reste[y3 * L + x3] * reste[y3 * L + x3 + k];
-        corr[k] = s / energie;
-      }
+        for (var y3 = 0; y3 + dy < H; y3++) for (var x3 = 0; x3 + dx < L; x3++) s += reste[y3 * L + x3] * reste[(y3 + dy) * L + x3 + dx];
+        return s / energie;
+      };
+      var cx = [], cy = [];
+      for (var k = 1; k <= 16; k++) { cx[k] = correlation(k, 0); cy[k] = correlation(0, k); }
+      var pic = function (c, k) { return c[k] > c[k - 1] && c[k] >= c[k + 1] && c[k] > 0.25 && c[k] - c[Math.max(1, Math.round(k / 2))] > 0.4; };
       for (var k2 = 3; k2 <= 15; k2++) {
-        if (corr[k2] > corr[k2 - 1] && corr[k2] >= corr[k2 + 1] && corr[k2] > trame.force) trame = { presente: corr[k2] > 0.25, periode: k2, force: arrondi(corr[k2], 3) };
+        if (pic(cx, k2) && pic(cy, k2) && cx[k2] > trame.force) trame = { presente: true, periode: k2, force: arrondi(Math.min(cx[k2], cy[k2]), 3) };
       }
-      if (!trame.presente) trame = { presente: false, periode: null, force: trame.force };
     }
     // Trait : points d'encre (plus sombres que le fond de 40, ou plus clairs sur un fond sombre), épaisseur = plus courte des
     // deux suites (ligne, colonne) ; trait fin si elle ne dépasse pas 2 % du petit côté.
@@ -649,7 +653,7 @@
 
   function phraseMain(m) {
     var morceaux = [];
-    if (m.trait.present) morceaux.push('trait ' + (m.trait.largeurPourcent !== null && m.trait.largeurPourcent > 0.8 ? 'épais' : 'fin') + ' et ' + (m.trait.regulier ? 'régulier' : 'irrégulier') + (m.trait.clairSurSombre ? ', clair sur fond sombre' : ''));
+    if (m.trait.present) morceaux.push('trait ' + (m.trait.largeurPourcent !== null && m.trait.largeurPourcent > 1 ? 'épais' : 'fin') + ' et ' + (m.trait.regulier ? 'régulier' : 'irrégulier') + (m.trait.clairSurSombre ? ', clair sur fond sombre' : ''));
     else morceaux.push('sans trait (formes en aplats)');
     morceaux.push(m.bords.nets ? 'bords nets' : m.bords.doux ? 'bords doux' : 'bords assez nets');
     morceaux.push(m.grain.marque ? 'grain marqué' : m.grain.visible ? 'grain léger' : 'aplats sans grain');
@@ -712,7 +716,7 @@
     return { colonnes: col, rangees: rang, largeur: 40, hauteur: Math.max(1, Math.round(40 * H / L)), ecart: ecart, legende: legende, titre: titre, parPlanche: col * rang };
   }
 
-  function etiquette(i, t) { return '#' + (i + 1) + '  ' + virgule(t, 2) + ' s'; }
+  function etiquette(i, t) { return '#' + (i + 1) + '  ' + fixe(t) + ' s'; }
 
   /** Ramène une activité (instants quelconques) sur une grille régulière k / cadence (somme des changements de chaque pas). */
   function surGrille(temps, act, depart, cadence, n) {
@@ -814,7 +818,7 @@
       var a = (o.parActivite || {})[f.n];
       var courbe = s ? s.courbe + (s.css ? ' (' + s.css + ')' : '') : a ? a.courbe + ' (' + a.mode + ')' : '?';
       var source = 'fenêtre ' + f.n + (s ? ', suivi' : a ? ', règle du tiers' : '') + ', planche ' + (Math.floor(f.images[0] / 24) + 1);
-      lignes.push('| ? | ' + (s ? s.propriete : '?') + ' | ? | ' + virgule(f.debut, 2) + ' s | ' + virgule(f.duree, 2) + ' s | ? | ' + (s ? virgule(s.de, 1) + ' → ' + virgule(s.a, 1) : '?') + ' | ' + courbe + ' | ' + source + ' |');
+      lignes.push('| ? | ' + (s ? s.propriete : '?') + ' | ? | ' + fixe(f.debut) + ' s | ' + fixe(f.duree) + ' s | ? | ' + (s ? virgule(s.de, 1) + ' → ' + virgule(s.a, 1) : '?') + ' | ' + courbe + ' | ' + source + ' |');
     });
     lignes.push('');
     return lignes.join('\n');
@@ -844,6 +848,6 @@
     oklab: oklab, versHex: versHex, contrasteHex: contrasteHex, palette: palette,
     mesurerMain: mesurerMain, resumerMain: resumerMain, phraseMain: phraseMain, profilStyle: profilStyle, stylesProches: stylesProches,
     misePlanche: misePlanche, etiquette: etiquette, surGrille: surGrille, aligner: aligner, comparerFenetres: comparerFenetres,
-    niveauFidelite: niveauFidelite, estAdresse: estAdresse, ficheSquelette: ficheSquelette, verifierFiche: verifierFiche, mediane: mediane, virgule: virgule,
+    niveauFidelite: niveauFidelite, estAdresse: estAdresse, ficheSquelette: ficheSquelette, verifierFiche: verifierFiche, mediane: mediane, virgule: virgule, fixe: fixe,
   };
 });

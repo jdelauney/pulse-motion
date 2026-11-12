@@ -46,6 +46,8 @@ Refus, dits tels quels (`refus` de la commande) :
 | `main.json` | le trait (présence, épaisseur, régularité), les bords (nets, doux), le grain, la trame ; une phrase (« trait fin et régulier, bords nets, aplats sans grain ») ; `styles` : les trois styles du catalogue les plus proches, avec leurs raisons |
 | `fiche.md` | le squelette de la fiche (§ 4), à compléter |
 
+Une prise importée partage les images presque semblables : la fin d'un mouvement très doux y arrive une ou deux images trop tôt. Pour mesurer finement, analyser le fichier d'origine plutôt que sa prise.
+
 `alertes` : rien ne bouge, sujet non suivi, passage tronqué. Le sujet se repère sur une planche : sa zone (en %) et ses deux ou trois couleurs, puis on relance avec `--zone` et `--couleurs`.
 
 ## 3. Courbes

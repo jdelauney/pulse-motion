@@ -551,7 +551,7 @@ async function comparer({ projet, nom, scene, niveau, navigateur, dossierStyles 
           const tNotre = Math.min(capture.duree - 1e-3, sc.debut + e.scene[cle] + decalage);
           const png = await capture.capturer(tNotre);
           rangees.push({ ref: refImage(tRef + analyse.source.de), notre: png.toString('base64'), texte: `n° ${e.n} · ${quoi}`,
-            detail: `${A.virgule(tRef, 2)} s · écart ${e[cle] >= 0 ? '+' : '−'}${A.virgule(Math.abs(e[cle]), 2)} s` });
+            detail: `${A.fixe(tRef)} s · écart ${e[cle] >= 0 ? '+' : '−'}${A.fixe(Math.abs(e[cle]))} s` });
         }
       }
       const b64 = await capture.evaluer(`window.__pmComparaison(${JSON.stringify(rangees)}, ${JSON.stringify(`« ${nom} » et la scène « ${scene} »${lots.length > 1 ? ` (${k + 1}/${lots.length})` : ''}`)})`);
