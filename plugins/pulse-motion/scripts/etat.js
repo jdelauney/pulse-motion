@@ -108,6 +108,20 @@ function etatProjet(dossier) {
   };
 
   if (resultat.projet) {
+    // Déclinaisons (spec S9, 5.2) : celles du projet (format, langue, dernier export) ; dans une déclinaison, son origine.
+    const D = require('./decliner.js');
+    const declinaisons = D.listerDeclinaisons(projet);
+    if (declinaisons.length) resultat.declinaisons = declinaisons;
+    try {
+      const brut = JSON.parse(fs.readFileSync(path.join(projet, 'deroule.json'), 'utf8').replace(/^\uFEFF/, ''));
+      if (brut.declinaison && typeof brut.declinaison.origine === 'string') {
+        const dOrigine = path.resolve(projet, brut.declinaison.origine);
+        let titre = null;
+        try { titre = JSON.parse(fs.readFileSync(path.join(dOrigine, 'deroule.json'), 'utf8').replace(/^\uFEFF/, '')).titre || null; } catch { /* origine déplacée */ }
+        resultat.origine = { dossier: brut.declinaison.origine, titre, ...(brut.declinaison.format ? { format: brut.declinaison.format } : {}),
+          ...(brut.declinaison.langue ? { langue: require('../moteur/langues.js').nom(brut.declinaison.langue) } : {}) };
+      }
+    } catch { /* déroulé illisible : signalé plus bas */ }
     resultat.remarques = Remarques.compte(projet);
     const reglages = Reglages.resumeNonControles(projet);
     resultat.reglagesNonControles = reglages.nonControles;

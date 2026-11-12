@@ -43,6 +43,7 @@
  *   pulse-motion styles verifier <nom>    vérifie le contrat d'un style
  *   pulse-motion styles choisir [--categorie <id>] [--ouvrir] [--delai <minutes>]   page locale : choisir un style en le regardant
  *   pulse-motion changer-style <dossier> <style>   recopie les scènes toutes faites du nouveau style
+ *   pulse-motion decliner <dossier> [--format 9:16|1:1|4:5|16:9] [--langue <étiquette>] [--plateforme tiktok|shorts|reels|toutes] [--pour <usage>]   version verticale, carrée ou dans une autre langue, dans declinaisons/<nom>/ (l'original ne change pas)
  *   pulse-motion comparer <dossier> <s1,s2,s3> [--scenes a,b] [--ouvrir]   comparaison des styles sur le déroulé
  *   pulse-motion charte enregistrer <nom> <dossier> | liste | appliquer <nom> <dossier> | depuis-logo <fichier> [--style s] [--ton clair|sombre]
  *   pulse-motion police "<famille>" [--graisses 400,700] [--italique] | <fichier> [--famille "<nom>"] [--confirmer] [--style <style> --role titres|texte]   police de la charte (Bunny Fonts ou fichier)
@@ -84,6 +85,7 @@ const SCRIPTS = {
   exporter: 'exporter.js',
   styles: 'styles.js',
   'changer-style': 'changer-style.js',
+  decliner: 'decliner.js',
   comparer: 'comparer.js',
   charte: 'charte.js',
   police: 'polices.js',
