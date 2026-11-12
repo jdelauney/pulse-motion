@@ -1,5 +1,15 @@
 [
   {
+    "version": "0.67.0",
+    "date": "2026-11-12",
+    "resume": "Vos vidéos parlent anglais, espagnol, allemand, italien, portugais ou néerlandais, et une vidéo réussie se décline en vertical ou dans une autre langue sans la refaire.",
+    "points": [
+      "« Une vidéo en anglais pour nos clients » : les textes, les nombres, les sous-titres, la typographie et la barre de lecture suivent la langue de la vidéo. Pulse Motion, lui, continue de vous parler en français.",
+      "La voix provisoire prend une voix de l'ordinateur dans la langue de la vidéo, jamais une voix française à sa place ; la transcription écoute dans cette langue.",
+      "« Fais-en une version verticale pour TikTok », « la même en anglais » : une seconde vidéo est créée à côté, dans le dossier de la première, qui ne change pas ; Pulse Motion recompose les scènes qui en ont besoin et traduit les textes."
+    ]
+  },
+  {
     "version": "0.66.0",
     "date": "2026-11-12",
     "resume": "Le guide de Pulse Motion existe aussi en anglais, pour le faire découvrir à ceux qui ne lisent pas le français.",
