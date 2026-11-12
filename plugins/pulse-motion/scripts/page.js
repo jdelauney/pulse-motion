@@ -13,7 +13,7 @@ const path = require('node:path');
 const { lireDeroule } = require('./lib/deroule.js');
 const { ecrireAtomique } = require('./lib/fichiers.js');
 
-function reglerPage({ dossier = '.', boutonMp4 }) {
+function reglerPage({ dossier = '.', boutonMp4, dossierStyles }) {
   if (typeof boutonMp4 !== 'boolean') return { ok: false, message: 'Dire « oui » (la page sait faire son MP4) ou « non » (page plus légère).' };
   const projet = path.resolve(dossier);
   const { erreurs } = lireDeroule(projet);
@@ -26,7 +26,7 @@ function reglerPage({ dossier = '.', boutonMp4 }) {
     brut.page = { ...(brut.page || {}), boutonMp4 };
     ecrireAtomique(fichier, `${JSON.stringify(brut, null, 2)}\n`);
   }
-  const a = require('./assembler.js').assembler({ dossier: projet });
+  const a = require('./assembler.js').assembler({ dossier: projet, dossierStyles });
   if (!a.ok) return { ok: false, message: `La page n'a pas pu être réassemblée : ${a.erreurs.map((e) => e.message).join(' ')}` };
   return { ok: true, boutonMp4, fichier: path.relative(projet, a.fichier).split(path.sep).join('/'), poids: Buffer.byteLength(a.html, 'utf8') };
 }

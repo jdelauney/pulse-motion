@@ -106,7 +106,7 @@ test('plugin : exporter propose la page qui sait faire son MP4 en fin d\'export,
   assert.match(section, /environ 250 Ko de plus/);
   assert.match(section, /`pulse-motion page \. --bouton-mp4 oui`/);
   assert.match(section, /ouvrez la page dans Chrome ou Edge et cliquez sur « MP4 »/);
-  assert.match(lire('skills', 'creer', 'SKILL.md'), /proposer la page qui sait faire son MP4/);
+  assert.match(lire('skills', 'creer', 'SKILL.md'), /Proposer la page qui sait faire son MP4 \(`chez-soi`\), sauf Faites pour moi/);
   assert.match(lire('vendor', 'mediabunny', 'PROVENANCE.md'), /sauf dans la page facultative qui sait faire son MP4, demandée par la personne, qui porte l'avis MPL-2\.0/);
   for (const f of [path.join(DEPOT, 'THIRD-PARTY-NOTICES.md'), path.join(RACINE, 'THIRD-PARTY-NOTICES.md')]) assert.match(fs.readFileSync(f, 'utf8'), /page facultative « qui sait faire son MP4 »/);
 });
