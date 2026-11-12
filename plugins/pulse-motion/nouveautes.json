@@ -1,5 +1,15 @@
 [
   {
+    "version": "0.66.0",
+    "date": "2026-11-12",
+    "resume": "Le guide de Pulse Motion existe aussi en anglais, pour le faire découvrir à ceux qui ne lisent pas le français.",
+    "points": [
+      "Les pages essentielles du guide en ligne ont leur version anglaise : l'accueil, « En 5 minutes », les prérequis, la première vidéo, les commandes, les concepts, le catalogue, les mouvements, les idées et les exemples. Un bouton en haut de chaque page passe d'une langue à l'autre.",
+      "Pulse Motion, lui, reste en français : ses questions, ses messages et ses réponses ne changent pas, et les pages anglaises le disent clairement.",
+      "Les phrases à copier restent en français, avec leur traduction à côté : on tape la même chose, quelle que soit la langue du guide."
+    ]
+  },
+  {
     "version": "0.65.0",
     "date": "2026-11-12",
     "resume": "Votre bibliothèque : gardez vos effets et vos personnages pour toutes vos vidéos, et emportez tout sur un autre ordinateur.",
