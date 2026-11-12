@@ -98,7 +98,10 @@ function avecDossier(prefixe, fn) {
 }
 
 function fabriquerMouvements() {
-  const { mouvements } = dictionnaire();
+  // PM_MEDIAS_MANQUANTS=1 : seuls les mouvements dont un aperçu manque sont fabriqués (les médias publiés restent tels quels).
+  const manquantsSeuls = process.env.PM_MEDIAS_MANQUANTS === "1";
+  const mouvements = dictionnaire().mouvements.filter((e) => !manquantsSeuls || !fichiersMouvement(e.no).every((f) => fs.existsSync(path.join(DOCS, f))));
+  if (!mouvements.length) return;
   avecDossier("pm-galerie-mouvements-", (dossier) => {
     const { plages } = projetDeMouvements(dossier, mouvements);
     const video = exporter(dossier);
