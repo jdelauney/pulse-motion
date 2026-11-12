@@ -31,6 +31,16 @@ const RESSOURCE_CSS = /url\(\s*(?:(["'])((?:(?!\1).)+)\1|([^)"'\s]+))\s*\)/g;
 const IGNOREES = /^(data:|#|about:|javascript:)/i;
 const DISTANTES = /^(https?:)?\/\//i;
 
+// Vidéo ou animation de référence d'une imitation (spec S9, 5.15) : elle sert seulement à mesurer, jamais dans la page.
+const MESSAGE_REFERENCE = 'La vidéo de référence ne doit pas entrer dans la vidéo : elle sert seulement à mesurer.';
+/** Un fichier de assets/references/ du projet (référence d'une imitation). */
+function estReferenceImitation(dossierProjet, absolu) {
+  const r = path.join(path.resolve(dossierProjet), 'assets', 'references');
+  const a = path.resolve(absolu);
+  return a === r || a.startsWith(r + path.sep);
+}
+const problemeReference = (chemin, ou) => ({ regle: 'reference-embarquee', gravite: 'erreur', message: `${MESSAGE_REFERENCE} (« ${chemin} »${ou})` });
+
 const problemeDistant = (chemin, ou) => ({ regle: 'ressource-distante', gravite: 'erreur', message: `« ${chemin} » est sur internet${ou} : copiez le fichier dans assets/ pour que la vidéo fonctionne hors ligne.` });
 
 /** Ressources sur internet (src, href, url()) d'un HTML, sans rien lire sur le disque (contrôle d'une scène). -> erreurs */
@@ -67,6 +77,8 @@ function embarquerRessources(html, dossierProjet, contexte) {
     let resultat = null;
     if (!absolu) {
       erreurs.push({ regle: 'chemin-hors-projet', gravite: 'erreur', message: `« ${chemin} » sort du dossier du projet${ou}.` });
+    } else if (estReferenceImitation(dossierProjet, absolu)) {
+      erreurs.push(problemeReference(chemin, ou));
     } else if (!fs.existsSync(absolu)) {
       erreurs.push({ regle: 'fichier-introuvable', gravite: 'erreur', message: `Fichier introuvable : « ${chemin} »${ou}.` });
     } else {
@@ -98,4 +110,4 @@ function embarquerRessources(html, dossierProjet, contexte) {
   return { html: sortie, erreurs, fichiers: [...fichiers] };
 }
 
-module.exports = { TYPES_MIME, cheminDansProjet, versDataURI, embarquerRessources, ressourcesDistantes };
+module.exports = { TYPES_MIME, cheminDansProjet, versDataURI, embarquerRessources, ressourcesDistantes, estReferenceImitation, problemeReference, MESSAGE_REFERENCE };

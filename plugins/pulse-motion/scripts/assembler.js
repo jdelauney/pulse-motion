@@ -11,7 +11,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { lireDeroule, dureeTemps, tempoMusique, grilleFixe, optionsMinutage, allureDe } = require('./lib/deroule.js');
-const { embarquerRessources, versDataURI, cheminDansProjet } = require('./lib/embarquer.js');
+const { embarquerRessources, versDataURI, cheminDansProjet, estReferenceImitation, problemeReference } = require('./lib/embarquer.js');
 const S = require('./lib/scenes.js');
 const { preparerEffets } = require('./lib/effets.js');
 const { preparerPersonnages, donneesPersonnages } = require('./lib/personnages-scene.js');
@@ -113,6 +113,11 @@ function cssCharte(charte, dossierProjet, dossierStyle) {
 /** Fichier du projet -> URL data:, ou null avec une erreur nommée (introuvable, type, lecture). */
 function embarquerFichier(projet, relatif, quoi, erreurs, ressources = null, sorte = 'image') {
   const absolu = cheminDansProjet(projet, relatif);
+  // Référence d'une imitation (spec S9, 5.15) : jamais embarquée, même comme logo, musique ou son.
+  if (absolu && estReferenceImitation(projet, absolu)) {
+    erreurs.push(problemeReference(relatif, ` : ${quoi.charAt(0).toLowerCase()}${quoi.slice(1)}`));
+    return null;
+  }
   if (!absolu || !fs.existsSync(absolu)) {
     erreurs.push({ regle: 'fichier-introuvable', gravite: 'erreur', message: `${quoi} introuvable : « ${relatif} ».` });
     return null;
