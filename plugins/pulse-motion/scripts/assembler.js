@@ -39,6 +39,7 @@ const { blocFilm } = require('./lib/film.js');
 const crypto = require('node:crypto');
 const { preparerDessin, usagesDessin } = require('./lib/dessin.js');
 const { preparerDonnees, usagesDonnees, cssDonnees } = require('./lib/donnees-scene.js');
+const PageMp4 = require('./lib/page-mp4.js');
 
 const RACINE = path.resolve(__dirname, '..');
 // Modules du moteur, groupés (moteur à la carte, spec Rapidité 5.19) : lib/groupes-moteur.js.
@@ -618,6 +619,9 @@ ${usages.css ? `${fs.readFileSync(path.join(RACINE, 'moteur', 'ecran.css'), 'utf
 ${cssDeCharte}
 ${cssMontre.css}${modulesStyle.map(cssModule).filter(Boolean).map((c) => `${c}
 `).join('')}${cssStyle}`;
+  // Page qui sait faire son MP4 (spec Retouches et ergonomie, 5.18) : seulement sur demande (page.boutonMp4: true).
+  const blocMp4 = PageMp4.avecBoutonMp4(deroule)
+    ? PageMp4.blocExport({ deroule, dossierStyle, duree: minutageScenes.duree, titre: deroule.titre, base: slug(deroule.titre) }) : '';
   const page = `<!doctype html>
 <html lang="fr">
 <head>
@@ -647,7 +651,7 @@ M.demarrerSousTitres();
 M.demarrerSonReactif();
 M.demarrerParticules();
 ${usages.moteur && (groupes === 'tous' || groupes.includes('ecran')) ? 'M.demarrerEcrans();\n' : ''}${dessin.utilise && (groupes === 'tous' || groupes.includes('dessin')) ? 'M.demarrerDessin();\n' : ''}${groupes === 'tous' || groupes.includes('camera-auto') ? 'M.demarrerCameraAuto();\n' : ''}</script>
-</body>
+${blocMp4 ? `${blocMp4}\n` : ''}</body>
 </html>
 `;
 
@@ -678,6 +682,8 @@ function ecrireSortie(projet, assemblage, { siChangee = false } = {}) {
   ecrireSousTitres(dossierSortie, titre, assemblage.donnees.sousTitres ? assemblage.donnees.sousTitres.cartons : []);
   // Le rapport de débordement portait sur l'ancienne page : l'aperçu en renverra un pour la nouvelle.
   fs.rmSync(path.join(dossierSortie, 'controle-page.json'), { force: true });
+  // Registre des vidéos de la personne (spec Retouches et ergonomie, 5.21) : titre et date, à chaque assemblage.
+  require('./lib/videos.js').noterVideo({ dossier: projet, titre });
   return { fichier: sortie, ecrite: true };
 }
 

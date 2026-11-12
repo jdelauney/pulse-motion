@@ -183,6 +183,8 @@ function choisirParcours(dossier, parcours) {
   const memo = lireEtat(projet);
   memo.parcours = parcours;
   ecrireEtat(projet, memo);
+  // Début d'une création : la vidéo entre au registre de la personne (spec Retouches et ergonomie, 5.21).
+  require('./lib/videos.js').noterVideo({ dossier: projet });
   return etatProjet(projet);
 }
 

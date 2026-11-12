@@ -1,5 +1,5 @@
 ---
-description: "Vérifier que l'ordinateur est prêt pour Pulse Motion et installer ce qui manque, avec votre accord (« vérifie mon ordinateur », « installe ffmpeg », « installe la transcription »). Ne crée ni ne modifie aucune vidéo."
+description: "Vérifier que l'ordinateur est prêt pour Pulse Motion et installer ce qui manque, avec votre accord (« vérifie mon ordinateur », « installe ffmpeg »), ou signaler un problème à l'auteur (« signale un problème »). Ne modifie aucune vidéo."
 allowed-tools: Bash(pulse-motion *) Bash(node *) Bash(winget install --id Python.Python.3.12 -e --accept-source-agreements --accept-package-agreements) Bash(brew install python) Bash(winget install --id Gyan.FFmpeg -e --accept-source-agreements --accept-package-agreements) Bash(brew install ffmpeg) Bash(winget install --id OpenJS.NodeJS.LTS -e --accept-source-agreements --accept-package-agreements) Bash(brew install node) Monitor Read AskUserQuestion
 ---
 
@@ -63,7 +63,11 @@ Proposer « Installer Node.js (Recommandé) » · « Je l'installe moi-même ».
 
 Puis `pulse-motion etat .`, qui marche sans redémarrage ; toujours introuvable : en dernier recours, relancer Claude Code.
 
-## 7. Fin
+## 7. Signaler un problème (« signale un problème », « préviens l'auteur »)
+
+Suivre `pulse-motion reference chez-soi`, section « Signaler un problème » : le résumé montré, puis l'accord avant d'ouvrir la page ; rien n'est envoyé par Pulse Motion.
+
+## 8. Fin
 
 ✅ **Fait** : <ce qui est prêt, en une phrase>.
 📄 **Fichiers** : rien dans votre vidéo n'a changé ; les outils sont installés sur l'ordinateur.

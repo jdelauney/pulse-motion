@@ -291,7 +291,7 @@ test('remarques : chaque champ, valeur, ambiance et style cité existe dans le c
   // Champs du déroulé que le tableau cite, vérifiés par le validateur (lib/deroule.js) ; commandes du plugin.
   // allure et --pm-ampleur-scene : spec S7, 5.14 (plan J4).
   const CHAMPS = ['rythme', 'duree', 'ton', 'intensite', 'tempo', 'scenes[].musique', 'data-start', 'mot:', 'allure', '--pm-ampleur-scene'];
-  const COMMANDES = ['comparer', 'charte depuis-logo'];
+  const COMMANDES = ['comparer', 'charte depuis-logo', 'charte depuis-site'];
   const connus = new Set([...CHAMPS, ...COMMANDES, ...Object.keys(AMBIANCES), ...HUMEURS, ...styles, ...shaders, ...TONS, ...TRANSITIONS]);
   const code = lire('scripts', 'lib', 'deroule.js');
   for (const champ of ['rythme', 'duree', 'intensite', 'tempo', '"ton"|\\.ton\\b|TONS']) assert.match(code, new RegExp(champ), champ);

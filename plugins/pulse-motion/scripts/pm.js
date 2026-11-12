@@ -49,10 +49,17 @@
  *   pulse-motion glossaire <dossier> | glossaire noter <dossier> "<terme>" "<sens>" ["<à éviter>"] [--cle]   mots du métier (charte/glossaire.md)
  *   pulse-motion lexique [noter "<terme>" "<phrase>" "<comme…>" "<commande>"]   mots de l'outil expliqués à la personne
  *   pulse-motion consignes <skill> [<section>[,<section>]]   consignes d'un skill, ou ses règles et une section (ex. creer fabrication)
+ *   pulse-motion rapport [<dossier>]       rapport de problème : sortie/rapport-probleme.md et adresse de signalement préremplie (rien n'est envoyé)
+ *   pulse-motion preferences [liste [--genre g] [--style s] | noter "<citation>" "<règle>" [--domaine d] [--genre g] [--style s] | retirer <id>]   goûts retenus
+ *   pulse-motion page <dossier> --bouton-mp4 oui|non   page livrée qui sait faire son MP4 (environ 250 Ko de plus), ou plus légère
+ *   pulse-motion videos                   les vidéos de la personne (registre ~/.pulse-motion/videos.json) : étape, durée, format, style, MP4
+ *
+ * Chaque sortie en erreur d'une commande s'ajoute au journal ~/.pulse-motion/erreurs.jsonl (nom de la commande, sans ses
+ * arguments : lib/erreurs.js), lu par « rapport ». Les sorties des scripts sont relayées au fil de l'eau.
  */
 const fs = require('node:fs');
 const path = require('node:path');
-const { spawnSync } = require('node:child_process');
+const { spawn } = require('node:child_process');
 const { trouverStyle, messageStyleInconnu } = require('./styles.js');
 
 const RACINE = path.resolve(__dirname, '..');
@@ -88,7 +95,30 @@ const SCRIPTS = {
   modeles: 'modeles.js',
   credits: 'credits.js',
   filmer: 'filmer.js',
+  rapport: 'rapport.js',
+  preferences: 'preferences.js',
+  videos: 'videos.js',
+  page: 'page.js',
 };
+
+// Dernières sorties de la commande lancée, pour le journal des erreurs (lib/erreurs.js, messageDe).
+const derniere = { sortie: '', erreur: '' };
+
+/** Lance un script avec le Node courant ; sorties relayées au fil de l'eau et gardées (8 000 derniers caractères). -> Promise(code) */
+function executer(args) {
+  return new Promise((resoudre) => {
+    const enfant = spawn(process.execPath, args, { stdio: ['inherit', 'pipe', 'pipe'] });
+    enfant.stdout.on('data', (d) => { process.stdout.write(d); derniere.sortie = (derniere.sortie + d).slice(-8000); });
+    enfant.stderr.on('data', (d) => { process.stderr.write(d); derniere.erreur = (derniere.erreur + d).slice(-8000); });
+    const arrets = ['SIGINT', 'SIGTERM'].map((s) => [s, () => { try { enfant.kill(s); } catch { /* déjà arrêté */ } }]);
+    for (const [s, fn] of arrets) process.on(s, fn);
+    enfant.on('error', (e) => { derniere.erreur += `${e.message}\n`; });
+    enfant.on('close', (code, signal) => {
+      for (const [s, fn] of arrets) process.removeListener(s, fn);
+      resoudre(code ?? (signal ? 1 : 0));
+    });
+  });
+}
 
 function afficherFichier(fichier, quoi) {
   if (!fs.existsSync(fichier)) {
@@ -102,14 +132,13 @@ function afficherFichier(fichier, quoi) {
 function lancer(args) {
   const [commande, ...reste] = args;
   if (SCRIPTS[commande]) {
-    const r = spawnSync(process.execPath, [path.join(RACINE, 'scripts', SCRIPTS[commande]), ...reste], { stdio: 'inherit' });
-    return r.status ?? 1;
+    return executer([path.join(RACINE, 'scripts', SCRIPTS[commande]), ...reste]);
   }
   if (commande === 'glossaire') {
-    return spawnSync(process.execPath, [path.join(RACINE, 'scripts', 'vocabulaire.js'), 'glossaire', ...reste], { stdio: 'inherit' }).status ?? 1;
+    return executer([path.join(RACINE, 'scripts', 'vocabulaire.js'), 'glossaire', ...reste]);
   }
   if (commande === 'lexique') {
-    return spawnSync(process.execPath, [path.join(RACINE, 'scripts', 'vocabulaire.js'), 'lexique', ...reste], { stdio: 'inherit' }).status ?? 1;
+    return executer([path.join(RACINE, 'scripts', 'vocabulaire.js'), 'lexique', ...reste]);
   }
   if (commande === 'planche') {
     // Planche image par image (spec Mouvement vivant, 5.14) : planche <dossier> <id> --de <s> --duree <s> [--pas <n>].
@@ -119,11 +148,11 @@ function lancer(args) {
       const [dossier = '.', id = ''] = libres;
       const val = (o) => { const k = reste.indexOf(o); return k >= 0 && reste[k + 1] !== undefined ? [o, reste[k + 1]] : []; };
       const cadence = [path.join(RACINE, 'scripts', 'regard.js'), dossier, '--cadence', id, ...val('--de'), ...val('--duree'), ...val('--pas')];
-      return spawnSync(process.execPath, cadence, { stdio: 'inherit' }).status ?? 1;
+      return executer(cadence);
     }
     // Instants précis (remarques de l'aperçu) et avant / après (spec Retouches et ergonomie, 5.8 et 5.10).
     if (reste.includes('--instants') || reste.includes('--avant')) {
-      return spawnSync(process.execPath, [path.join(RACINE, 'scripts', 'planche-retouche.js'), ...reste], { stdio: 'inherit' }).status ?? 1;
+      return executer([path.join(RACINE, 'scripts', 'planche-retouche.js'), ...reste]);
     }
     const [dossier = '.', ...options] = reste;
     const ids = options.filter((o) => !o.startsWith('--'));
@@ -131,19 +160,19 @@ function lancer(args) {
     // Planches de regard (images que Claude regarde avant de montrer) : scènes en position ou après --scenes.
     if (drapeaux.includes('--regard')) {
       const regard = [path.join(RACINE, 'scripts', 'regard.js'), dossier, ...(ids.length ? ['--scenes', ids[0]] : [])];
-      return spawnSync(process.execPath, regard, { stdio: 'inherit' }).status ?? 1;
+      return executer(regard);
     }
     // PDF des planches (spec Rendu et export, 5.16) : captures fidèles, impression du navigateur, jamais ffmpeg.
     if (drapeaux.includes('--pdf')) {
-      return spawnSync(process.execPath, [path.join(RACINE, 'scripts', 'planche-pdf.js'), dossier, ...ids.slice(0, 1)], { stdio: 'inherit' }).status ?? 1;
+      return executer([path.join(RACINE, 'scripts', 'planche-pdf.js'), dossier, ...ids.slice(0, 1)]);
     }
     const args = [path.join(RACINE, 'scripts', 'exporter.js'), dossier, '--planche', ...ids.slice(0, 1), ...drapeaux];
-    return spawnSync(process.execPath, args, { stdio: 'inherit' }).status ?? 1;
+    return executer(args);
   }
   if (commande === 'reference') {
     const nom = reste[0] || '';
     // Le dictionnaire de mouvements est rendu depuis sa source JSON (references/mouvements/mouvements.json).
-    if (nom === 'mouvements') return spawnSync(process.execPath, [path.join(RACINE, 'scripts', 'mouvements.js'), 'reference'], { stdio: 'inherit' }).status ?? 1;
+    if (nom === 'mouvements') return executer([path.join(RACINE, 'scripts', 'mouvements.js'), 'reference']);
     // Les usages d'export sont rendus depuis leur source (scripts/usages.json, mesures comprises).
     if (nom === 'usages') { process.stdout.write(require('./lib/usages.js').tableauUsages()); return 0; }
     if (!NOM_SUR.test(nom)) { console.error('Usage : pulse-motion reference <nom> (ex. moteur, rythme, styles/clair-pedagogique)'); return 2; }
@@ -238,10 +267,26 @@ function lancer(args) {
     '  style noter <nom> <section> "<avant>" "<après>" "<pourquoi>" [--nouveau-tour] [--charte] | base <nom> [--a-jour]   journal des changements, base du style',
     '  glossaire <dossier> | glossaire noter <dossier> "<terme>" "<sens>" ["<à éviter>"] ["<prononciation>"] [--cle]',
     '  lexique [noter "<terme>" "<phrase>" "<comme…>" "<commande>"]',
+    '  rapport [<dossier>]      rapport de problème (fichier local et adresse préremplie, rien n\'est envoyé)      videos      les vidéos de la personne',
+    '  page <dossier> --bouton-mp4 oui|non   page livrée qui sait faire son MP4, ou plus légère',
+    '  preferences [liste [--genre g] [--style s] | noter "<citation>" "<règle>" [--domaine d] [--genre g] [--style s] | retirer <id>]   goûts retenus',
   ].join('\n'));
   return 2;
 }
 
-if (require.main === module) process.exit(lancer(process.argv.slice(2)));
+if (require.main === module) {
+  const args = process.argv.slice(2);
+  // Messages écrits ici même (usage, fichier introuvable) : gardés pour le journal, comme ceux des scripts.
+  const ecrireErreur = console.error;
+  console.error = (...x) => { derniere.erreur += `${x.join(' ')}\n`; ecrireErreur(...x); };
+  Promise.resolve(lancer(args)).then((code) => {
+    // Journal des erreurs (spec Retouches et ergonomie, 5.20) : le nom de la commande seul, jamais ses arguments.
+    if (code) {
+      const E = require('./lib/erreurs.js');
+      E.noterErreur({ commande: /^[a-z][a-z0-9-]*$/.test(args[0] || '') ? args[0] : 'inconnue', code, message: E.messageDe(derniere), masquer: args.slice(1) });
+    }
+    process.exitCode = code;
+  });
+}
 
 module.exports = { lancer };

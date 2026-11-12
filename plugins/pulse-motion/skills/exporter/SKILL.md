@@ -49,6 +49,7 @@ Si ce bloc est vide ou contient une erreur, lancer `pulse-motion ffmpeg`.
 - Réussite : `fichier`, `taille`, `duree`, `audio`, `mode` (`fidele` ou `navigateur`), `fichiers`, `verification` ; `conseils` et `alertes` : une phrase chacun.
 - `verification` (`sortie/verification.json`) : une erreur (noir ou silence absent de la page) : « l'export est abîmé », le relancer une fois ; des alertes : les dire en une phrase et proposer la retouche. `avertissement` (son illisible) : le dire. `conseilFfmpeg` : proposer ffmpeg pour la prochaine fois.
 - « Chrome ou Edge introuvable » : en installer un, ou ouvrir l'aperçu (`pulse-motion apercu . --ouvrir` en arrière-plan), bouton « MP4 ». Autre échec : dire le message ; rien d'incomplet n'est écrit.
+- Puis la page qui sait faire son MP4 : `pulse-motion reference chez-soi`, section « Page qui sait faire son MP4 » (« Non merci » recommandé ; déjà là : le dire).
 - `reseaux` ou `courriel` : proposer « Voulez-vous un texte pour accompagner la vidéo ? » ; oui : suivre `pulse-motion reference accompagnement`.
 
 ## 4. Fin

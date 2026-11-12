@@ -26,6 +26,7 @@ Si ce bloc est vide ou contient une erreur, lancer `pulse-motion lexique`.
 - Une retouche = le plus petit changement qui répond à la phrase. Ne pas « améliorer » autre chose.
 - Phrase ambiguë (quelle scène ? de combien ?) : une seule question avec `AskUserQuestion`, la recommandée en premier.
 - Problème du contrôle : dire son `message`, corriger avec sa `consigne`.
+- Goûts (`pulse-motion preferences liste`) : après la demande du moment, avant le style ; « jamais… », « les couleurs de notre site », « une page qui sait faire son MP4 » : `pulse-motion reference chez-soi`.
 - Travail long (scènes réécrites, contrôle complet) : l'annoncer en une phrase avec sa durée ; en arrière-plan, le suivre par `Monitor` sur `pulse-motion avancement . --suivre`, une phrase par minute au plus.
 - Lexique : un mot de l'outil déjà noté ci-dessus n'est pas réexpliqué en entier ; un mot expliqué pour la première fois se note avec `pulse-motion lexique noter "<terme>" "<phrase>" "<comme…>" "/pulse-motion:retoucher"`.
 
@@ -39,7 +40,7 @@ L'état ci-dessus : sans vidéo (`projet` faux), proposer `/pulse-motion:creer` 
 
 ## 3. Sauvegarder
 
-`pulse-motion historique sauvegarder . --phrase "<la demande>"` **avant** tout changement. (Un changement de style se sauvegarde lui-même.) Une demande qui ne modifie pas la vidéo (aperçu, planche, comparaison, charte enregistrée, glossaire) : ni copie ni contrôle, l'étape 4 puis la fin.
+`pulse-motion historique sauvegarder . --phrase "<la demande>"` **avant** tout changement. (Un changement de style se sauvegarde lui-même.) Une demande qui ne modifie pas la vidéo (aperçu, planche, comparaison, glossaire) : ni copie ni contrôle, l'étape 4 puis la fin.
 
 ## 4. Appliquer
 
@@ -69,7 +70,7 @@ Classer la demande, puis :
 | Écran filmé | « le pointeur va trop vite », « refilme » | `pulse-motion consignes filmer retouches` |
 | Personnages | « dessine-moi un cuisinier », « il marche trop vite », « fais-lui une tête surprise », « ouvre l'éditeur de personnage » | suivre (`pulse-motion consignes <skill>`) : dessin → `dessiner-personnage` ; illustration fournie (SVG) → `decouper-personnage` ; pose, mouvement, expression → `animer-personnage` ; à la souris → `atelier-personnages` |
 
-Choisir en regardant (« un truc qui claque pour le titre », « montre-moi les mouvements ») : `pulse-motion reference demandes`, section « Mouvements nommés ».
+Choisir en regardant (« montre-moi les mouvements ») : `pulse-motion reference demandes`, section « Mouvements nommés ».
 
 Avant de toucher au fichier d'une scène : `pulse-motion reference moteur` et la partie utile ; le son : `pulse-motion reference audio` ; un effet : `pulse-motion reference particules` et sa famille ; une icône : `pulse-motion reference icones` ; flèche, annotation, graphique, code, formule : `pulse-motion reference explication` (caméra aussi).
 
@@ -83,14 +84,14 @@ Agent `animateur` (refonte, scènes de `aReecrire`, nouvelle scène) : modèle p
 
 Jamais un modèle plus cher que celui de la session : si la session tourne déjà en Sonnet ou en Haiku, aucun paramètre. Jamais `haiku`.
 
-Régler un effet de particules ou un personnage en le regardant (« ouvre l'éditeur », « laisse-moi régler ») : suivre `pulse-motion consignes atelier-particules` (ou `atelier-personnages`).
+Régler un effet ou un personnage en le regardant (« ouvre l'éditeur ») : suivre `pulse-motion consignes atelier-particules` (ou `atelier-personnages`).
 
 ## 5. Vérifier et montrer
 
 1. `pulse-motion controler .` (il assemble aussi la page) ; `reglagesNonControles` dans l'état : dire en une phrase ce que la personne a changé, `reglagesChanges` ; corriger ce que la retouche a cassé (deux tours au plus). Les `corrections` de `sortie/controle.json` (faites seules : `pulse-motion reference controles`) sont dites à la personne ; `pulse-motion controler . --sans-correction` si elle a demandé une durée ou une graphie précise.
 2. Regarder : `pulse-motion planche . --regard --scenes <scènes touchées>`, puis regarder avec `Read` ses planches `temps-forts-*.png` et `telephone-*.png` (deux au plus) ; corriger ce qui se voit (un tour au plus). Une retouche qui ne touche que le son, la charte ou le glossaire n'en fait pas. Retouche visuelle : `pulse-motion planche . --avant precedente`, la regarder, la proposer. Refonte (style changé, 3 scènes réécrites ou plus, scène ajoutée ou retirée) : puis la relecture, agent `critique`, `model` passé à l'appel, selon `realisation` § 13.
-3. Aperçu : il se recharge seul s'il est ouvert ; s'il a été fermé (`apercu.actif` faux dans `pulse-motion etat .`), `pulse-motion apercu . --ouvrir` en arrière-plan.
-4. Le contrôle de l'étape 1 a vérifié la vidéo rendue (débordements, chevauchements, marges…) ; `renduVerifie: false` se dit à la personne.
+3. Aperçu fermé (`apercu.actif` faux dans `pulse-motion etat .`) : `pulse-motion apercu . --ouvrir` en arrière-plan.
+4. `renduVerifie: false` (vidéo rendue non vérifiée) se dit à la personne.
 
 ## 6. Fin
 

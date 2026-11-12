@@ -15,7 +15,7 @@ Créer avec la personne un style à elle, rangé sur son ordinateur et proposé 
 - Lexique : avant d'expliquer un mot de l'outil, lire `pulse-motion lexique` ; un mot expliqué pour la première fois se note avec `pulse-motion lexique noter "<terme>" "<phrase>" "<comme…>" "/pulse-motion:style"`.
 - La commande échoue avec « Node.js introuvable » : proposer « Installer Node.js (Recommandé) » · « Je l'installe moi-même » (accord : `/pulse-motion:outils`, étape « Installer Node.js »), puis reprendre ; s'arrêter sinon.
 - Seulement pour un style à soi (changer de style : `/pulse-motion:retoucher`). Rien n'est écrit avant la première réponse.
-- Lire `pulse-motion reference style-personnel` avant la première question.
+- Lire `pulse-motion reference style-personnel` avant la première question, et les goûts retenus (`pulse-motion preferences liste`) : la demande du moment, puis les préférences, puis le style de départ (`pulse-motion reference chez-soi`, section « Mémoire des goûts »).
 
 ## 1. Départ et entretien
 

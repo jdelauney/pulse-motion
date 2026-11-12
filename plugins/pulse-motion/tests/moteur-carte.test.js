@@ -21,6 +21,8 @@ const HORS_PAGE = {
   'capture.js': 'injecté par la page de mesure, l\'aperçu et l\'export',
   'export.mjs': 'export navigateur de l\'aperçu', 'export-ui.mjs': 'export navigateur de l\'aperçu', 'studio.mjs': 'studio de la voix',
   'estimation.js': 'temps restant de l\'export (aperçu et Node)',
+  // Page qui sait faire son MP4 (spec Retouches et ergonomie, 5.18) : module facultatif, compressé dans le bloc d'export.
+  'export-page.mjs': 'page qui sait faire son MP4 (bloc compressé)', 'export-page-chargeur.js': 'page qui sait faire son MP4 (chargeur)',
   'atelier/editeur.mjs': 'atelier', 'atelier/page.mjs': 'atelier', 'atelier/panneau.mjs': 'atelier',
   'particules/expression.js': 'Node et atelier', 'particules/forme-close.js': 'Node', 'particules/naissances.js': 'Node',
   'particules/recette.js': 'atelier',
