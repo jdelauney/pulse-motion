@@ -1,8 +1,10 @@
 #!/usr/bin/env node
-// Wiki Pulse Motion – construit l'index de recherche du wiki : le texte de chaque section (<section id="…"> et son titre h2) de chaque page de
-// docs/, écrit dans docs/js/index-recherche.js. Chargé à la demande par docs/js/recherche.js (sans fetch : fonctionne en file://).
+// Wiki Pulse Motion – construit les index de recherche du wiki : le texte de chaque section (<section id="…"> et son titre h2) de
+// chaque page de docs/, écrit dans docs/js/index-recherche.js pour les pages françaises et dans docs/js/index-recherche-en.js pour
+// les pages anglaises (docs/en/). Chargés à la demande par docs/js/recherche.js, selon la langue de la page (sans fetch : fonctionne
+// en file://).
 // Lancer : node outils/wiki/indexer.js [--verifier]
-//   --verifier  n'écrit rien ; code de sortie 1 si l'index ne suit plus les pages
+//   --verifier  n'écrit rien ; code de sortie 1 si un index ne suit plus les pages
 "use strict";
 
 const fs = require("fs");
@@ -10,6 +12,11 @@ const path = require("path");
 
 const WIKI = path.join(__dirname, "..", "..", "docs");
 const SORTIE = path.join(WIKI, "js", "index-recherche.js");
+/** Les deux index : langue, fichier, variable globale lue par recherche.js, pages couvertes (chemin relatif à docs/, en /). */
+const INDEX = [
+  { langue: "fr", sortie: SORTIE, variable: "PULSE_RECHERCHE", couvre: (url) => !url.startsWith("en/") },
+  { langue: "en", sortie: path.join(WIKI, "js", "index-recherche-en.js"), variable: "PULSE_RECHERCHE_EN", couvre: (url) => url.startsWith("en/") },
+];
 
 const ENTITES = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", rarr: "→", larr: "←", hellip: "…" };
 
@@ -35,7 +42,7 @@ function texte(html) {
 function indexerPage(fichier) {
   const html = fs.readFileSync(fichier, "utf8");
   const url = path.relative(WIKI, fichier).split(path.sep).join("/");
-  const titre = texte((html.match(/<title>([\s\S]*?)<\/title>/) || [, url])[1]).replace(/ – Wiki Pulse Motion$/, "");
+  const titre = texte((html.match(/<title>([\s\S]*?)<\/title>/) || [, url])[1]).replace(/ – (?:Wiki Pulse Motion|Pulse Motion Wiki)$/, "");
   const main = (html.match(/<main\b[\s\S]*?<\/main>/) || [html])[0];
   const entrees = [];
   // L'en-tête de la page (avant la première section) : son titre et son chapeau.
@@ -53,25 +60,30 @@ function indexerPage(fichier) {
   return entrees;
 }
 
-function produire() {
-  const entrees = pages(WIKI).flatMap(indexerPage);
+/** Contenu d'un index : « fr », les pages françaises ; « en », les pages anglaises (docs/en/). */
+function produire(langue = "fr") {
+  const index = INDEX.find((x) => x.langue === langue);
+  const entrees = pages(WIKI).flatMap(indexerPage).filter((x) => index.couvre(x.u));
   return "// Produit par outils/wiki/indexer.js depuis les pages de docs/ : relancer l'outil après avoir modifié une page.\n"
-    + "window.PULSE_RECHERCHE = " + JSON.stringify(entrees) + ";\n";
+    + `window.${index.variable} = ` + JSON.stringify(entrees) + ";\n";
 }
 
 if (require.main === module) {
-  const contenu = produire();
-  const actuel = fs.existsSync(SORTIE) ? fs.readFileSync(SORTIE, "utf8") : null;
-  if (process.argv.includes("--verifier")) {
-    if (actuel !== contenu) {
-      console.error("Index de recherche à mettre à jour. Relancez : node outils/wiki/indexer.js");
-      process.exit(1);
+  let enRetard = false;
+  for (const index of INDEX) {
+    const contenu = produire(index.langue);
+    const actuel = fs.existsSync(index.sortie) ? fs.readFileSync(index.sortie, "utf8") : null;
+    const nom = path.basename(index.sortie);
+    if (actuel === contenu) console.log(`Index de recherche à jour (${nom}).`);
+    else if (process.argv.includes("--verifier")) {
+      console.error(`Index de recherche à mettre à jour (${nom}). Relancez : node outils/wiki/indexer.js`);
+      enRetard = true;
+    } else {
+      fs.writeFileSync(index.sortie, contenu, "utf8");
+      console.log(`Index de recherche écrit (${nom}, ${Math.round(contenu.length / 1024)} Ko).`);
     }
-    console.log("Index de recherche à jour.");
-  } else if (actuel !== contenu) {
-    fs.writeFileSync(SORTIE, contenu);
-    console.log(`Index de recherche écrit (${Math.round(contenu.length / 1024)} Ko).`);
-  } else console.log("Index de recherche à jour.");
+  }
+  if (enRetard) process.exit(1);
 }
 
-module.exports = { produire, indexerPage, texte, pages };
+module.exports = { produire, indexerPage, texte, pages, INDEX };

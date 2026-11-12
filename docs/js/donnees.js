@@ -1,7 +1,9 @@
 // Wiki Pulse Motion – données communes : les étapes du parcours, la navigation et les commandes.
 // Les descriptions reprennent celles des SKILL.md du plugin (plugins/pulse-motion/skills/) : les modifier ensemble.
+// « anglais » : noms des étapes et navigation des pages anglaises (docs/en/) ; « fr » marque une page restée en français.
 window.PULSE_WIKI = {
   "prefixe": "/pulse-motion:",
+  "site": "https://jdelauney.github.io/pulse-motion/",
   "etapes": [
     {
       "id": "creer",
@@ -103,6 +105,29 @@ window.PULSE_WIKI = {
       "href": "depannage.html"
     }
   ],
+  "anglais": {
+    "etapes": {
+      "creer": "Create",
+      "retoucher": "Edit",
+      "exporter": "Export",
+      "personnaliser": "Customise"
+    },
+    "navigation": [
+      { "titre": "Home", "href": "en/index.html" },
+      { "titre": "Quick start", "href": "en/demarrage-rapide.html" },
+      { "titre": "Ideas", "href": "en/idees.html" },
+      { "titre": "Examples", "href": "en/exemples.html" },
+      { "titre": "Requirements", "href": "en/prerequis.html" },
+      { "titre": "Tutorials", "href": "en/tutoriels/index.html" },
+      { "titre": "Commands", "href": "en/commandes/index.html" },
+      { "titre": "Concepts", "href": "en/concepts.html" },
+      { "titre": "Sound", "href": "son.html", "fr": true },
+      { "titre": "Characters", "href": "personnages.html", "fr": true },
+      { "titre": "Catalogue", "href": "en/catalogue.html" },
+      { "titre": "Moves", "href": "en/mouvements.html" },
+      { "titre": "I'm stuck", "href": "depannage.html", "fr": true }
+    ]
+  },
   "commandes": [
     {
       "nom": "creer",

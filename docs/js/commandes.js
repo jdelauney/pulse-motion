@@ -9,6 +9,9 @@
   var aucun = document.querySelector("[data-aucun]");
   var etapes = (window.PULSE_WIKI && window.PULSE_WIKI.etapes) || [];
   var choisie = null;
+  // Page anglaise (docs/en/commandes/) : noms anglais des étapes (donnees.js, « anglais »).
+  var en = /^en/i.test(document.documentElement.getAttribute("lang") || "");
+  var nomsEn = (window.PULSE_WIKI && window.PULSE_WIKI.anglais && window.PULSE_WIKI.anglais.etapes) || {};
 
   var simplifier = function (t) { return t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(); };
 
@@ -44,8 +47,8 @@
     });
     boutons.appendChild(b);
   }
-  bouton("Toutes", null);
-  etapes.forEach(function (e) { bouton(e.numero + ". " + e.nom, e.id); });
+  bouton(en ? "All" : "Toutes", null);
+  etapes.forEach(function (e) { bouton(e.numero + ". " + (en ? nomsEn[e.id] || e.nom : e.nom), e.id); });
 
   champ.addEventListener("input", filtrer);
   zone.hidden = false;
