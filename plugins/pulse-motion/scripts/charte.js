@@ -6,6 +6,9 @@
  *   node scripts/charte.js liste
  *   node scripts/charte.js appliquer <nom> <dossier-du-projet>
  *   node scripts/charte.js depuis-logo <fichier> [--style <nom>] [--ton clair|sombre]
+ *   node scripts/charte.js depuis-site <adresse> [--style <nom>] <dossier>   après l'accord de la personne : couleurs, ton, polices et
+ *                                    logo proposés depuis le site (spec Retouches et ergonomie, 5.14), rangés dans .pulse-motion/charte-site/
+ *   node scripts/charte.js depuis-site --appliquer <dossier>   après son accord sur la proposition : logo, couleurs et source dans charte/
  *
  * Une charte enregistrée vit dans ~/.pulse-motion/chartes/<nom>/ (charte.json, logo, polices/, glossaire.md).
  * Appliquer la recopie dans charte/ du projet (qui reste autonome) et note son nom et son empreinte :
@@ -174,6 +177,11 @@ function depuisLogo({ fichier, style = 'clair-pedagogique', ton = null, dossierS
     return { ok: false, message: `Logo « ${path.basename(fichier)} » : ${e.code === 'ENOENT' ? 'fichier introuvable' : e.message}.` };
   }
   if (!dominantes) return { ok: false, message: 'Le logo n\'a pas de couleur exploitable (noir, blanc ou transparent) : la charte du style est gardée.' };
+  return { ...couleursLisibles(st, dominantes, ton, 'du logo'), logo: dominantes };
+}
+
+/** Couleurs primaire et accent rendues lisibles sur le fond du style (et du ton retenu). -> { ok, style, ton, fond, couleurs, ajustements } */
+function couleursLisibles(st, dominantes, ton, origine) {
   const couleur = (lireJSON(path.join(st.dossier, 'identite.json')) || {}).couleur || {};
   const charteStyle = (lireJSON(path.join(st.dossier, 'charte.json')) || {}).couleurs || {};
   const tons = Array.isArray(couleur.tons) && couleur.tons.length ? couleur.tons : ['clair'];
@@ -183,16 +191,84 @@ function depuisLogo({ fichier, style = 'clair-pedagogique', ton = null, dossierS
   const couleurs = {};
   const ajustements = [];
   for (const [nom, minimum, quoi] of [['primaire', SEUILS.contrasteTitres, 'couleur primaire'], ['accent', SEUILS.contrasteTexte, 'couleur d\'accent']]) {
+    if (!dominantes[nom]) { couleurs[nom] = charteStyle[nom]; continue; }
     const r = ajusterContraste(dominantes[nom], fond, minimum);
     if (!r.ok) {
       couleurs[nom] = charteStyle[nom] || dominantes[nom];
-      ajustements.push(`${quoi} du logo (${dominantes[nom]}) illisible sur le fond : couleur du style gardée (${couleurs[nom]}).`);
+      ajustements.push(`${quoi} ${origine} (${dominantes[nom]}) illisible sur le fond : couleur du style gardée (${couleurs[nom]}).`);
     } else {
       couleurs[nom] = r.hex;
       if (r.ecart) ajustements.push(`${quoi} ${r.ecart < 0 ? 'foncée' : 'éclaircie'} de ${Math.round(Math.abs(r.ecart) * 100)} % pour rester lisible (${dominantes[nom]} → ${r.hex}).`);
     }
   }
-  return { ok: true, style: st.nom, ton: tonRetenu, fond, logo: dominantes, couleurs, ajustements };
+  return { ok: true, style: st.nom, ton: tonRetenu, fond, couleurs, ajustements };
+}
+
+const PROPOSITION = path.join('.pulse-motion', 'charte-site');
+const luminanceHex = (h) => { const n = parseInt(String(h).slice(1), 16); return ((n >> 16) * 0.2126 + ((n >> 8) & 255) * 0.7152 + (n & 255) * 0.0722) / 255; };
+
+/**
+ * Charte proposée depuis le site (spec Retouches et ergonomie, 5.14), après l'accord de la personne : une **proposition**,
+ * rangée dans .pulse-motion/charte-site/ (proposition.json, logo) ; charte/ et charte.json ne changent pas.
+ * -> { ok, adresse, style, ton, fond, couleurs, ajustements, polices, logo, messages, proposition } | { ok: false, message }
+ */
+async function depuisSite({ adresse, style, dossier = '.', dossierStyles, analyser = require('./lib/charte-site.js').analyserSite }) {
+  const projet = path.resolve(dossier);
+  const { deroule } = lireDeroule(projet);
+  const nomStyle = style || (deroule && deroule.style) || 'clair-pedagogique';
+  const st = trouverStyle(nomStyle, dossierStyles);
+  if (!st) return { ok: false, message: messageStyleInconnu(nomStyle, dossierStyles) };
+  const site = await analyser({ adresse });
+  if (!site.ok) return site;
+  const m = site.mesures;
+  const ton = m.fond ? (luminanceHex(m.fond) < 0.5 ? 'sombre' : 'clair') : null;
+  // Primaire : la couleur des titres du site ; accent : celle de ses boutons et de ses liens.
+  const r = couleursLisibles(st, { primaire: m.titre || m.texte, accent: m.accent }, ton, 'du site');
+  const messages = [];
+  if (!m.accent) messages.push('Aucune couleur vive trouvée sur les boutons et les liens du site : l\'accent du style est gardé.');
+  if (site.messageLogo) messages.push(site.messageLogo);
+  const dossierProposition = path.join(projet, PROPOSITION);
+  fs.rmSync(dossierProposition, { recursive: true, force: true });
+  fs.mkdirSync(dossierProposition, { recursive: true });
+  let logo = null;
+  if (site.logo) {
+    logo = `logo.${site.logo.extension}`;
+    fs.writeFileSync(path.join(dossierProposition, logo), site.logo.donnees);
+  }
+  const polices = Object.fromEntries(Object.entries(m.polices || {}).filter(([, f]) => f && !/^(system-ui|sans-serif|serif|monospace|-apple-system|Arial|Helvetica|Times New Roman)$/i.test(f)));
+  const proposition = { adresse: site.adresse, date: new Date().toISOString().slice(0, 10), style: r.style, ton: r.ton, fond: r.fond, couleurs: r.couleurs,
+    site: { fond: m.fond, titres: m.titre, texte: m.texte, accent: m.accent }, polices, logo };
+  fs.writeFileSync(path.join(dossierProposition, 'proposition.json'), JSON.stringify(proposition, null, 2), 'utf8');
+  return { ok: true, ...proposition, ajustements: r.ajustements, messages, logo: logo ? `${PROPOSITION.split(path.sep).join('/')}/${logo}` : null, proposition: `${PROPOSITION.split(path.sep).join('/')}/proposition.json` };
+}
+
+/** Après l'accord : la proposition entre dans charte/ (logo, couleurs, ton, source). Les polices se proposent à part. */
+function appliquerSite({ dossier = '.' }) {
+  const projet = path.resolve(dossier);
+  const p = lireJSON(path.join(projet, PROPOSITION, 'proposition.json'));
+  if (!p) return { ok: false, message: 'Aucune charte proposée depuis un site pour cette vidéo : lire le site d\'abord.' };
+  const { erreurs } = lireDeroule(projet);
+  if (erreurs.length) return { ok: false, message: `Le déroulé contient des erreurs : ${erreurs.join(' ')}` };
+  sauvegarder(projet, { phrase: `charte tirée du site ${p.adresse}` });
+  const dossierCharte = path.join(projet, 'charte');
+  fs.mkdirSync(dossierCharte, { recursive: true });
+  const charte = lireJSON(path.join(dossierCharte, 'charte.json')) || {};
+  charte.couleurs = { ...(charte.couleurs || {}), ...Object.fromEntries(Object.entries(p.couleurs || {}).filter(([, v]) => v)) };
+  if (p.logo) {
+    fs.copyFileSync(path.join(projet, PROPOSITION, p.logo), path.join(dossierCharte, p.logo));
+    charte.logo = p.logo;
+  }
+  if (p.ton && !charte.ton) charte.ton = p.ton;
+  charte.source = { adresse: p.adresse, date: p.date };
+  fs.writeFileSync(path.join(dossierCharte, 'charte.json'), JSON.stringify(charte, null, 2), 'utf8');
+  // Couleurs et logo du déroulé : ils primeraient sur la charte ; retirés, et dits.
+  const brut = JSON.parse(fs.readFileSync(path.join(projet, 'deroule.json'), 'utf8').replace(/^﻿/, ''));
+  const retires = [];
+  if (brut.charte && brut.charte.couleurs) for (const k of ['primaire', 'accent']) if (k in brut.charte.couleurs) { delete brut.charte.couleurs[k]; retires.push(`couleurs.${k}`); }
+  if (brut.charte && brut.charte.logo && p.logo) { delete brut.charte.logo; retires.push('logo'); }
+  if (retires.length) fs.writeFileSync(path.join(projet, 'deroule.json'), JSON.stringify(brut, null, 2), 'utf8');
+  fs.rmSync(path.join(projet, PROPOSITION), { recursive: true, force: true });
+  return { ok: true, couleurs: charte.couleurs, logo: charte.logo || null, source: charte.source, retires, polices: p.polices || {} };
 }
 
 if (require.main === module) {
@@ -200,16 +276,23 @@ if (require.main === module) {
   const valeur = (option) => { const i = args.indexOf(option); return i >= 0 ? args[i + 1] : undefined; };
   const [action, a, b] = args.filter((x, i) => !x.startsWith('--') && !['--style', '--ton'].includes(args[i - 1]));
   let r;
+  if (action === 'depuis-site') {
+    // Asynchrone (navigateur) : « --appliquer » après l'accord de la personne, sinon la lecture du site.
+    const fin = (x) => { console.log(JSON.stringify(x, null, 2)); process.exit(x.ok ? 0 : 1); };
+    if (args.includes('--appliquer')) fin(appliquerSite({ dossier: a || '.' }));
+    else depuisSite({ adresse: a, style: valeur('--style'), dossier: b || '.' }).then(fin, (e) => fin({ ok: false, message: String((e && e.message) || e) }));
+    return;
+  }
   if (action === 'enregistrer') r = enregistrerCharte({ nom: a, dossier: b || '.' });
   else if (action === 'appliquer') r = appliquerCharte({ nom: a, dossier: b || '.' });
   else if (action === 'liste') r = listerChartes();
   else if (action === 'depuis-logo') r = depuisLogo({ fichier: a || '', style: valeur('--style'), ton: valeur('--ton') });
   else {
-    console.error('Usage : pulse-motion charte enregistrer <nom> <dossier> | liste | appliquer <nom> <dossier> | depuis-logo <fichier> [--style <nom>] [--ton clair|sombre]');
+    console.error('Usage : pulse-motion charte enregistrer <nom> <dossier> | liste | appliquer <nom> <dossier> | depuis-logo <fichier> [--style <nom>] [--ton clair|sombre] | depuis-site <adresse> [--style <nom>] <dossier> | depuis-site --appliquer <dossier>');
     process.exit(2);
   }
   console.log(JSON.stringify(r, null, 2));
   process.exit(Array.isArray(r) || r.ok ? 0 : 1);
 }
 
-module.exports = { enregistrerCharte, listerChartes, appliquerCharte, etatCharte, depuisLogo, empreinte };
+module.exports = { enregistrerCharte, listerChartes, appliquerCharte, etatCharte, depuisLogo, depuisSite, appliquerSite, empreinte };
