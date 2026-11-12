@@ -1,5 +1,16 @@
 [
   {
+    "version": "0.65.0",
+    "date": "2026-11-12",
+    "resume": "Votre bibliothèque : gardez vos effets et vos personnages pour toutes vos vidéos, et emportez tout sur un autre ordinateur.",
+    "points": [
+      "« Garde cet effet de neige pour mes prochaines vidéos », « garde ce personnage » : ils rejoignent votre bibliothèque, et Pulse Motion vous les propose dans vos autres vidéos.",
+      "Un nouveau personnage dessiné, une pose ou un mouvement inventé : Pulse Motion vous propose de le garder.",
+      "Un élément de la bibliothèque se copie dans la vidéo qui s'en sert : changer la bibliothèque ne change jamais une vidéo déjà faite.",
+      "« Emporte mes chartes sur mon autre ordinateur » : chartes, styles, effets, personnages et goûts dans un seul fichier ZIP, que vous copiez vous-même ; à l'import, rien de ce qui est déjà là n'est remplacé sans votre accord."
+    ]
+  },
+  {
     "version": "0.64.0",
     "date": "2026-11-12",
     "resume": "Pulse Motion retient vos goûts, prend les couleurs de votre site, retrouve vos vidéos et peut livrer une page qui fait son MP4 toute seule.",

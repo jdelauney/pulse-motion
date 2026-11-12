@@ -14,12 +14,18 @@
  *   node scripts/personnages.js analyser <fichier.svg> [--dossier <d>] [--sortie <fichier.png>]   formes d'une illustration, PNG annoté
  *   node scripts/personnages.js decouper <nom> [--dossier <d>]                         découpe (personnages/decoupes/<nom>.json) -> dessin
  *   node scripts/personnages.js renommer-couleur <dessin> <ancien> <nouveau> [--dossier <d>]   nom d'une couleur d'un dessin
- * --dossier : dossier de la vidéo (par défaut le dossier courant) ; ses fichiers personnages/ l'emportent sur la bibliothèque.
+ *   node scripts/personnages.js enregistrer <nom> [--type t] [--sous <autre>] [--remplacer] [--dossier <d>]   garde dans la
+ *        bibliothèque personnelle (~/.pulse-motion/personnages/) un dessin, une pose, un mouvement, une expression ou un gabarit
+ *        de la vidéo, avec ce dont il dépend dans la vidéo ; un nom pris n'est jamais écrasé sans --remplacer
+ *   node scripts/personnages.js utiliser <nom> [--type t] [--remplacer] [--dossier <d>]   le copie dans personnages/ de la vidéo
+ * --dossier : dossier de la vidéo (par défaut le dossier courant) ; ses fichiers personnages/ l'emportent sur la bibliothèque
+ * personnelle, qui l'emporte sur celle du plugin (liste, afficher, planche, verifier : source video, personnel, plugin).
  */
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const P = require('./lib/personnages.js');
+const { dossierPersonnelEcrivable } = require('./lib/personnel.js');
 
 const USAGE_PLANCHE = 'Usage : pulse-motion personnages planche <nom> [--type pose|clip] [--dessin <dessin>] [--vues 0,45,90] [--images 1 à 16] [--gabarit standard] [--dossier <d>] [--sortie <fichier.png>] [--ouvrir]\n        pulse-motion personnages planche --dessin <dessin> --visage [--vues 0,90] [--dossier <d>] [--sortie <fichier.png>] [--ouvrir]';
 const USAGE_DECOUPE = [
@@ -34,12 +40,15 @@ const USAGE = [
   `        ${USAGE_PLANCHE.slice('Usage : '.length)}`,
   `        ${USAGE_DECOUPE.slice('Usage : '.length)}`,
   '        pulse-motion personnages atelier [<nom>] [--dessin <d>] [--decoupe <nom>] [--bibliotheque] [--dossier <d>] [--port 4321]',
+  '        pulse-motion personnages enregistrer <nom> [--type t] [--sous <autre>] [--remplacer] [--dossier <d>]',
+  '        pulse-motion personnages utiliser <nom> [--type t] [--remplacer] [--dossier <d>]',
 ].join('\n');
+const USAGE_BIBLIOTHEQUE = 'Usage : pulse-motion personnages enregistrer <nom> [--type dessin|pose|clip|expression|gabarit] [--sous <autre nom>] [--remplacer] [--dossier <d>]\n        pulse-motion personnages utiliser <nom> [--type …] [--remplacer] [--dossier <d>]';
 const USAGE_ATELIER = 'Usage : pulse-motion personnages atelier [<nom>] [--dessin <d>] [--decoupe <nom>] [--bibliotheque] [--dossier <d>] [--port 4321]';
 
 
 // Options suivies d'une valeur (les autres, comme --ouvrir ou --bibliotheque, sont de simples drapeaux).
-const AVEC_VALEUR = ['--decoupe', '--dessin', '--dossier', '--type', '--vues', '--images', '--gabarit', '--sortie', '--port'];
+const AVEC_VALEUR = ['--sous', '--decoupe', '--dessin', '--dossier', '--type', '--vues', '--images', '--gabarit', '--sortie', '--port'];
 
 function options(args) {
   const valeur = (nom) => { const i = args.indexOf(nom); return i >= 0 ? args[i + 1] : undefined; };
@@ -83,7 +92,10 @@ async function lancerAtelierPersonnages({ dossier = '.', nom = null, dessin = nu
 async function executer(args, { bibliotheque } = {}) {
   const [sous, ...reste] = args;
   const o = options(reste);
-  const lu = () => P.lire(o.valeur('--dossier') || '.', bibliotheque ? { bibliotheque } : {});
+  // La bibliothèque personnelle se voit pour proposer et montrer (source « personnel »), jamais pendant les tests sans
+  // PULSE_MOTION_DOSSIER ; l'assemblage, lui, ne la lit jamais (chantier H, par copie).
+  const perso = dossierPersonnelEcrivable();
+  const lu = () => P.lire(o.valeur('--dossier') || '.', Object.assign(bibliotheque ? { bibliotheque } : {}, perso ? { personnel: path.join(perso, 'personnages') } : {}));
   if (sous === 'liste') {
     const l = lu();
     return { code: 0, sortie: JSON.stringify({
@@ -113,7 +125,15 @@ async function executer(args, { bibliotheque } = {}) {
     if (!l.erreurs.length) return { code: 0, sortie: `Personnages : ${bilan}, aucune erreur.`, erreur: '' };
     return { code: 1, sortie: `Personnages : ${bilan}.`, erreur: l.erreurs.map((e) => e.message).join('\n') };
   }
-  if (o.incomplete) return { code: 2, sortie: '', erreur: sous === 'planche' ? USAGE_PLANCHE : sous === 'atelier' ? USAGE_ATELIER : USAGE };
+  if (o.incomplete) return { code: 2, sortie: '', erreur: sous === 'planche' ? USAGE_PLANCHE : sous === 'atelier' ? USAGE_ATELIER : sous === 'enregistrer' || sous === 'utiliser' ? USAGE_BIBLIOTHEQUE : USAGE };
+  if (sous === 'enregistrer' || sous === 'utiliser') {
+    // Bibliothèque personnelle (chantier H) : garder un personnage de la vidéo, ou copier dans la vidéo un personnage gardé.
+    if (o.libres.length !== 1) return { code: 2, sortie: '', erreur: USAGE_BIBLIOTHEQUE };
+    const B = require('./lib/bibliotheque.js');
+    const commun = { nom: o.libres[0], type: o.valeur('--type') || null, projet: o.valeur('--dossier') || '.', remplacer: o.drapeau('--remplacer') };
+    const r = sous === 'enregistrer' ? B.enregistrerPersonnage(Object.assign(commun, { sous: o.valeur('--sous') || null })) : B.utiliserPersonnage(commun);
+    return { code: r.ok ? 0 : 1, sortie: JSON.stringify(r, null, 2), erreur: '' };
+  }
   if (sous === 'planche') {
     const vues = String(o.valeur('--vues') || '0,45,90').split(',').map((v) => (/^-?\d+(\.\d+)?$/.test(v.trim()) ? Number(v) : NaN));
     const images = o.valeur('--images') === undefined ? 8 : Number(o.valeur('--images'));

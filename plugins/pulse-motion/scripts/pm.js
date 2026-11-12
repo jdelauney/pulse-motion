@@ -30,12 +30,14 @@
  *   pulse-motion reference <nom>          affiche references/<nom>.md (ex. moteur, rythme, styles/clair-pedagogique) ; usages : tableau de scripts/usages.json
  *   pulse-motion reference styles/<style> --pour animateur   extrait de la fiche de style lu par l'animateur
  *   pulse-motion scene <style> <nom>      affiche une scène toute faite d'un style
- *   pulse-motion effet <nom>              affiche la recette d'un effet de particules de la bibliothèque
+ *   pulse-motion effet <nom>              affiche la recette d'un effet de particules (vidéo du dossier, bibliothèque personnelle, plugin)
+ *   pulse-motion effet liste [--dossier <d>] | enregistrer <nom> [<dossier>] [--sous <autre>] [--remplacer] | utiliser <nom> [<dossier>] [--remplacer]
+ *                                        effets avec leur provenance ; garder un effet de la vidéo ; le copier dans une vidéo
  *   pulse-motion filmer verifier|tourner|continuer|prises|choisir|supprimer|essai|connexions|flouter|importer|repere <dossier> <nom> …   filmer une application web ou importer une vidéo de l'écran (tutoriel)
  *   pulse-motion bloc [<nom>]             blocs « interface » d'un écran de tutoriel (notification, toast, commande…) : liste, ou le HTML d'un bloc
  *   pulse-motion icones chercher <mots…> | afficher <nom> | planche <nom1,nom2…> [--ouvrir]   icônes Lucide : chercher en français, SVG, planche PNG
  *   pulse-motion mouvements liste [--categorie <id>] | chercher <mots…> | afficher <n° ou nom> | reference | choisir [--categorie <id>] [--ouvrir]   dictionnaire de mouvements nommés ; choisir en regardant
- *   pulse-motion personnages liste|afficher <nom>|verifier|planche <nom> [--dessin <d>]|planche --dessin <d> --visage|atelier [<nom>] [--dessin <d>] [--decoupe <nom>] [--bibliotheque]|analyser <svg>|decouper <nom>|renommer-couleur <dessin> <ancien> <nouveau> [--dossier <d>]   poses, clips et gabarits des personnages
+ *   pulse-motion personnages liste|afficher <nom>|verifier|planche <nom> [--dessin <d>]|planche --dessin <d> --visage|atelier [<nom>] [--dessin <d>] [--decoupe <nom>] [--bibliotheque]|analyser <svg>|decouper <nom>|renommer-couleur <dessin> <ancien> <nouveau> [--dossier <d>]|enregistrer <nom> [--type t] [--sous <autre>] [--remplacer]|utiliser <nom> [--type t] [--remplacer]   poses, clips et gabarits des personnages ; bibliothèque personnelle
  *   pulse-motion styles [--genre <genre>] liste les styles (JSON), classée pour le genre
  *   pulse-motion styles chercher <mots…>  styles trouvés par leur nom de médium (« façon tableau blanc »)
  *   pulse-motion styles verifier <nom>    vérifie le contrat d'un style
@@ -53,6 +55,8 @@
  *   pulse-motion preferences [liste [--genre g] [--style s] | noter "<citation>" "<règle>" [--domaine d] [--genre g] [--style s] | retirer <id>]   goûts retenus
  *   pulse-motion page <dossier> --bouton-mp4 oui|non   page livrée qui sait faire son MP4 (environ 250 Ko de plus), ou plus légère
  *   pulse-motion videos                   les vidéos de la personne (registre ~/.pulse-motion/videos.json) : étape, durée, format, style, MP4
+ *   pulse-motion bibliotheque liste | exporter [<fichier.zip>] [--chartes a,b|tout] [--styles …] [--effets …] [--personnages …] [--gouts] [--remplacer]
+ *                       | importer <fichier.zip> [--voir] [--remplacer tout|<sorte>:<nom>,…]   bibliothèque personnelle emportée sur un autre ordinateur
  *
  * Chaque sortie en erreur d'une commande s'ajoute au journal ~/.pulse-motion/erreurs.jsonl (nom de la commande, sans ses
  * arguments : lib/erreurs.js), lu par « rapport ». Les sorties des scripts sont relayées au fil de l'eau.
@@ -99,7 +103,13 @@ const SCRIPTS = {
   preferences: 'preferences.js',
   videos: 'videos.js',
   page: 'page.js',
+  bibliotheque: 'bibliotheque.js',
 };
+
+/** Commandes traitées ici même, sans script à elles. */
+const INTERNES = ['glossaire', 'lexique', 'planche', 'reference', 'scene', 'bloc', 'effet', 'consignes'];
+/** Toutes les commandes de « pulse-motion » (les tests vérifient que les consignes n'en citent pas d'autres). */
+const COMMANDES = [...Object.keys(SCRIPTS), ...INTERNES];
 
 // Dernières sorties de la commande lancée, pour le journal des erreurs (lib/erreurs.js, messageDe).
 const derniere = { sortie: '', erreur: '' };
@@ -216,8 +226,12 @@ function lancer(args) {
   }
   if (commande === 'effet') {
     const nom = reste[0] || '';
-    if (!/^[a-z0-9-]+$/.test(nom)) { console.error('Usage : pulse-motion effet <nom> (ex. etincelles, confettis)'); return 2; }
-    return afficherFichier(path.join(RACINE, 'effets', `${nom}.json`), `Effet « ${nom} »`);
+    const B = require('./lib/bibliotheque.js');
+    // Bibliothèque personnelle (chantier H) : liste avec provenance, garder un effet de la vidéo, le copier dans une vidéo.
+    if (B.RESERVES.includes(nom)) return executer([path.join(RACINE, 'scripts', 'bibliotheque.js'), 'effet', ...reste]);
+    if (!/^[a-z0-9-]+$/.test(nom)) { console.error('Usage : pulse-motion effet <nom> (ex. etincelles, confettis) | effet liste | effet enregistrer <nom> . | effet utiliser <nom> .'); return 2; }
+    // La recette telle que la vidéo du dossier la voit, sinon celle de la bibliothèque personnelle, sinon celle du plugin.
+    return afficherFichier(B.fichierEffet(nom, { projet: process.cwd() }) || path.join(RACINE, 'effets', `${nom}.json`), `Effet « ${nom} »`);
   }
   if (commande === 'consignes') {
     const nom = reste[0] || '';
@@ -255,9 +269,10 @@ function lancer(args) {
     '  musique ecouter [dossier]   musique seule dans sortie/musique.wav',
     '  filmer verifier|tourner [--accord]|continuer|prises|choisir|supprimer|essai|connexions|flouter|importer|repere <dossier> <nom> …   filmer une application web, importer une vidéo de son écran (tutoriel)',
     '  reference <nom>          scene <style> <nom>      effet <nom>      bloc [<nom>]      consignes <skill> [<section>]',
+    '  effet liste [--dossier <d>] | enregistrer <nom> [<dossier>] [--sous <autre>] [--remplacer] | utiliser <nom> [<dossier>] [--remplacer]   effets gardés pour toutes les vidéos',
     '  mouvements liste [--categorie <id>] | chercher <mots…> | afficher <n° ou nom> | reference | choisir [--categorie <id>] [--ouvrir] [--delai <minutes>]   [--json]',
     '  icones chercher <mots…> | afficher <nom> | planche <nom1,nom2…> [--ouvrir]   icônes Lucide, posées par <svg data-icone="nom"> (reference icones)',
-    '  personnages liste|afficher <nom>|verifier|planche <nom> [--dessin <d>]|planche --dessin <d> --visage|atelier [<nom>] [--dessin <d>] [--decoupe <nom>] [--bibliotheque]|analyser <svg>|decouper <nom>|renommer-couleur <dessin> <ancien> <nouveau>   poses, clips et gabarits des personnages',
+    '  personnages liste|afficher <nom>|verifier|planche <nom> [--dessin <d>]|planche --dessin <d> --visage|atelier [<nom>] [--dessin <d>] [--decoupe <nom>] [--bibliotheque]|analyser <svg>|decouper <nom>|renommer-couleur <dessin> <ancien> <nouveau>|enregistrer <nom>|utiliser <nom> [--remplacer]   poses, clips et gabarits ; bibliothèque personnelle',
     '  modeles liste | afficher <id> | trouver "<sujet>" | exemple <id> <dossier> | apercu <id>   modèles de vidéo et leurs exemples finis',
     '  styles [--genre <genre>]      styles chercher <mots…>      styles verifier <nom>      styles choisir [--categorie <id>] [--ouvrir] [--delai <minutes>]',
     '  changer-style <dossier> <style>                  comparer <dossier> <s1,s2,s3> [--scenes a,b] [--ouvrir]',
@@ -270,6 +285,7 @@ function lancer(args) {
     '  rapport [<dossier>]      rapport de problème (fichier local et adresse préremplie, rien n\'est envoyé)      videos      les vidéos de la personne',
     '  page <dossier> --bouton-mp4 oui|non   page livrée qui sait faire son MP4, ou plus légère',
     '  preferences [liste [--genre g] [--style s] | noter "<citation>" "<règle>" [--domaine d] [--genre g] [--style s] | retirer <id>]   goûts retenus',
+    '  bibliotheque liste | exporter [<fichier.zip>] [--chartes a,b|tout] [--styles …] [--effets …] [--personnages …] [--gouts] [--remplacer] | importer <fichier.zip> [--voir] [--remplacer tout|<sorte>:<nom>,…]',
   ].join('\n'));
   return 2;
 }
@@ -289,4 +305,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { lancer };
+module.exports = { lancer, COMMANDES };

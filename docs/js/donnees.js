@@ -121,21 +121,21 @@ window.PULSE_WIKI = {
     {
       "nom": "reprendre",
       "etape": "creer",
-      "description": "Reprendre la vidéo en cours là où elle s'était arrêtée",
+      "description": "Reprendre la vidéo en cours là où elle s'était arrêtée, ou retrouver vos vidéos",
       "forme": "",
       "note": ""
     },
     {
       "nom": "outils",
       "etape": "creer",
-      "description": "Vérifier que l'ordinateur est prêt pour les vidéos et installer ce qui manque (ffmpeg, la transcription, Python), avec votre accord. Ne crée ni ne modifie aucune vidéo",
+      "description": "Vérifier que l'ordinateur est prêt pour les vidéos et installer ce qui manque (ffmpeg, la transcription, Python), avec votre accord ; signaler un problème ; emporter votre bibliothèque sur un autre ordinateur. Ne crée ni ne modifie aucune vidéo",
       "forme": "",
       "note": ""
     },
     {
       "nom": "retoucher",
       "etape": "retoucher",
-      "description": "Retoucher la vidéo en une phrase (« ralentis la scène 3 », « change le titre », « annule ») et la voir aussitôt",
+      "description": "Retoucher la vidéo en une phrase (« ralentis la scène 3 », « change le titre », « garde cet effet », « annule ») et la voir aussitôt",
       "forme": "[la retouche en une phrase]",
       "note": "facultatif : sans phrase, Pulse Motion vous demande ce qu'il faut changer"
     },

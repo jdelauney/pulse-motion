@@ -21,7 +21,8 @@ function enTete(texte) {
 }
 
 const SKILLS = fs.readdirSync(path.join(RACINE, 'skills'));
-const COMMANDES = ['etat', 'assembler', 'controler', 'apercu', 'historique', 'reference', 'scene', 'styles', 'consignes', 'exporter', 'planche', 'effet', 'comparer', 'changer-style', 'lexique', 'charte', 'police', 'glossaire', 'style', 'ffmpeg', 'voix', 'whisper', 'musique', 'outils', 'atelier', 'personnages', 'mouvements', 'modeles', 'credits', 'avancement', 'ebauche', 'decisions', 'remarques', 'filmer', 'preferences', 'rapport', 'videos', 'page'];
+// Commandes connues de pulse-motion, lues dans pm.js (aucune liste figée ici).
+const { COMMANDES } = require('../scripts/pm.js');
 const fichiersGuides = () => [
   ...SKILLS.map((s) => path.join('skills', s, 'SKILL.md')),
   ...fs.readdirSync(path.join(RACINE, 'agents')).map((a) => path.join('agents', a)),
@@ -442,29 +443,8 @@ test('descriptions-renvois-presents : chaque renvoi vers une autre compétence s
 });
 
 test('budget-consignes : les consignes ne regrossissent pas sans qu\'on le voie (octets, état 0.28.0 + 10 % ; animateur 6 000 o)', () => {
-  // animateur.md ramené à 6 000 o par les références à la carte (spec S1 § 5.4, plan S1-2, 0.29.0).
-  // 0.33.0 (S10-A et S2-2) : creer +1 700 o (visuels d'un produit, directions, recettes de rythme, regarder avant de
-  // montrer, ligne 🔎), retoucher +1 300 o (lignes Revue et Format, regarder, ligne 🔎), exporter +700 o (sorties, ligne 🔎) ;
-  // la section « fabrication » de creer reste sous 7 000 o (consignes-a-la-carte.test.js).
-  // 0.34.0 (S2-3 et S2-4) : creer +300 o (lire la doctrine, la relecture dès 3 scènes, verdict sur la ligne 🔎),
-  // retoucher +200 o (relecture d'une refonte, ligne 🔎), exporter +100 o (verdict de la relecture) : trois renvois d'une
-  // ligne, la conduite elle-même vit dans realisation § 13 et revue.md, lus à la demande. critique.md : corps ≤ 3 500 o.
-  // 0.40.0 (S4 R1, 5.6) : outils 6 144 → 6 550 o (plan d'installation en un accord, installation de Node.js : deux étapes
-  // demandées par la spec, que les autres compétences ne recopient plus ; elles renvoient à outils).
-  // 0.51.0 (S6 plan 2) : filmer, la 13e compétence (7 417 o, plafond 7 800 o) ; creer, retoucher, reprendre et l'animateur
-  // n'y renvoient qu'en une ligne (consignes filmer creer, retouches, prises), sans relever leur plafond.
-  // 0.52.0 (S6 plans 3 et 4) : filmer 7 800 → 11 500 o : accord réseau, connexion, confidentialité et import (spec S6
-  // 5.16), trois flux propres à cette compétence que creer, retoucher et outils (pleins) ne recopient pas.
-  // 0.64.0 (S4 R5 et R4) : renvois d'une ligne à la référence chez-soi (goûts retenus, charte du site, page qui sait faire son
-  // MP4, vidéos, signalement), où vit la conduite : creer et retoucher tenus sous leurs plafonds (textes resserrés), exporter 6 600 →
-  // 6 780 o, outils 6 550 → 6 850 o (signaler un problème), reprendre 2 999 → 3 150 o, style 6 460 → 6 550 o.
-  const PLAFONDS = {
-    'skills/animer-personnage/SKILL.md': 5884, 'skills/atelier-particules/SKILL.md': 2272, 'skills/atelier-personnages/SKILL.md': 3529,
-    'skills/creer/SKILL.md': 23400, 'skills/decouper-personnage/SKILL.md': 4020, 'skills/dessiner-personnage/SKILL.md': 4528,
-    'skills/exporter/SKILL.md': 6780, 'skills/filmer/SKILL.md': 11500, 'skills/outils/SKILL.md': 6850, 'skills/reprendre/SKILL.md': 3150,
-    'skills/retoucher/SKILL.md': 13850, 'skills/style/SKILL.md': 6550, 'skills/voix/SKILL.md': 5073,
-    'agents/animateur.md': 6000, 'agents/critique.md': 3800,
-  };
+  // Plafonds et leur histoire : tests/aide/plafonds.js, seule source (lue aussi par les tests qui recopiaient creer et retoucher).
+  const { PLAFONDS } = require('./aide/plafonds.js');
   for (const f of fichiersGuides()) {
     const cle = f.split(path.sep).join('/');
     assert.ok(PLAFONDS[cle], `${cle} : plafond à fixer dans ce test`);

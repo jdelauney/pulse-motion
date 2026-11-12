@@ -1,4 +1,4 @@
-# Chez soi : goûts, charte du site, vidéos, signalement, page qui fait son MP4
+# Chez soi : goûts, charte du site, vidéos, bibliothèque, signalement, page qui fait son MP4
 
 Ce que Pulse Motion garde pour la personne d'une vidéo à l'autre, et ce qu'elle peut faire sans Claude. Tout reste sur l'ordinateur ; rien ne part sur internet sans son accord.
 
@@ -23,6 +23,16 @@ Ce que Pulse Motion garde pour la personne d'une vidéo à l'autre, et ce qu'ell
 ## Mes vidéos
 
 « Quelles sont mes vidéos ? », « retrouve ma vidéo sur la chaîne du froid » : `pulse-motion videos`. Un tableau en mots simples : titre, où en est la vidéo (`etape`), durée, format, style, MP4 (`mp4` : poids et date, ou « pas encore »), dernière modification. `introuvable` : « ce dossier a été déplacé ou supprimé » ; l'entrée reste (jamais retirée sans accord). « Ouvre-la » : ouvrir sa page `page` dans le navigateur. Pour la retoucher, il faut ouvrir Claude Code dans son dossier : le dire.
+
+## Bibliothèque personnelle
+
+Ce que la personne garde pour toutes ses vidéos : chartes (`charte enregistrer`), styles personnels, effets, personnages, goûts. **Par copie** : un élément gardé se copie dans la vidéo qui s'en sert ; la vidéo reste complète, et changer la bibliothèque ne change aucune vidéo déjà faite.
+
+- **Garder** (« garde cet effet pour mes prochaines vidéos », « garde ce personnage ») : `pulse-motion effet enregistrer <nom> .` ; `pulse-motion personnages enregistrer <nom> --dossier .` (ses poses, mouvements et expressions de la vidéo suivent). Nom d'un élément livré (`nom-livre`) : proposer un autre nom, puis `--sous <nom>`. Déjà gardé, autrement (`pris`) : « Le garder sous un autre nom (Recommandé) » · « Remplacer celui de votre bibliothèque » (`--sous` ou `--remplacer`).
+- **Proposer** : `pulse-motion effet liste --dossier .` et `pulse-motion personnages liste --dossier .` disent la provenance (`source` : `video`, `personnel`, `plugin`) ; `personnel` : « de votre bibliothèque ».
+- **Utiliser** : avant de le poser dans une scène, `pulse-motion effet utiliser <nom> .` ou `pulse-motion personnages utiliser <nom> --dossier .` (sauvegarde d'historique comprise). La vidéo en a déjà un autre de ce nom (`conflits`) : demander avant `--remplacer`. Le contrôle dit « dans la bibliothèque personnelle » : le copier ainsi, puis contrôler à nouveau.
+- **Emporter sur un autre ordinateur** (« emporte mes chartes sur mon autre ordinateur ») : `pulse-motion bibliotheque liste`, dite en mots simples, puis « Tout emporter (Recommandé) » · « Choisir ». `pulse-motion bibliotheque exporter [--chartes a,b] [--styles …] [--effets …] [--personnages …] [--gouts]` (sans choix : tout) : un fichier ZIP dans ses Documents (`fichier`) ; dire où il est, et qu'il se copie comme un autre fichier (clé USB, courriel). Les connexions aux sites filmés ne partent jamais.
+- **Reprendre** (« importe ma bibliothèque », un fichier `.zip`) : `pulse-motion bibliotheque importer <fichier> --voir`, le bilan dit simplement (`importes`, `identiques`, `pris`, `refuses` et leur `raison`), puis `pulse-motion bibliotheque importer <fichier>` : rien de ce qui est déjà là n'est remplacé. Chaque `pris` : « Garder le mien (Recommandé) » · « Prendre celui de l'archive », puis `--remplacer <sorte>:<nom>,…`. Les goûts s'ajoutent aux siens (30 au plus).
 
 ## Signaler un problème
 

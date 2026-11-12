@@ -13,6 +13,7 @@ const { controlesRapides } = require('../scripts/controler.js');
 const { controlerVie } = require('../scripts/lib/controle-scene.js');
 const { viesScene } = require('../scripts/lib/extraire.js');
 const { STYLES, copierProjet, modifierDeroule } = require('./aide/projet.js');
+const { plafond } = require('./aide/plafonds.js');
 
 const RACINE = path.join(__dirname, '..');
 const lire = (...p) => fs.readFileSync(path.join(RACINE, ...p), 'utf8');
@@ -185,10 +186,10 @@ test('reference mouvement-vivant, moteur et consignes : motifs #081 à #093', ()
   assert.match(demandes, /« un bandeau de logos clients »[^\n]*catégorie `compositions` \(#087 à #093\)/);
   assert.match(demandes, /`camera`, `vie`, `compositions`…/);
   const retoucher = lire('skills', 'retoucher', 'SKILL.md');
-  assert.ok(Buffer.byteLength(retoucher) <= 13850);
+  assert.ok(Buffer.byteLength(retoucher) <= plafond('retoucher'));
   assert.match(retoucher, /« un bandeau de logos clients » \(#087\), « un avant\/après balayé » \(#088\)/);
   const creer = lire('skills', 'creer', 'SKILL.md');
-  assert.ok(Buffer.byteLength(creer) <= 23400);
+  assert.ok(Buffer.byteLength(creer) <= plafond('creer'));
   assert.match(creer, /« un bandeau de logos »/);
   const md = referenceMarkdown();
   assert.match(md, /## Compositions/);

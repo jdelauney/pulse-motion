@@ -15,6 +15,7 @@ const { viesScene } = require('../scripts/lib/extraire.js');
 const { preparerEffets } = require('../scripts/lib/effets.js');
 const D = require('../scripts/lib/determinisme.js');
 const { STYLES, copierProjet, modifierDeroule } = require('./aide/projet.js');
+const { plafond } = require('./aide/plafonds.js');
 
 const RACINE = path.join(__dirname, '..');
 const lire = (...p) => fs.readFileSync(path.join(RACINE, ...p), 'utf8');
@@ -359,10 +360,10 @@ test('moteur.md : data-dur scene et classes pm-v documentés ; dictionnaire et c
   assert.match(lire('references', 'demandes.md'), /« fais vivre la plante »[^\n]*catégorie `vie` \(#069 à #080\)/);
   assert.match(lire('references', 'demandes.md'), /`camera`, `vie`, `compositions`…/);
   const retoucher = lire('skills', 'retoucher', 'SKILL.md');
-  assert.ok(Buffer.byteLength(retoucher) <= 13850);
+  assert.ok(Buffer.byteLength(retoucher) <= plafond('retoucher'));
   assert.match(retoucher, /« fais vivre la plante » \(#069\)/);
   const creer = lire('skills', 'creer', 'SKILL.md');
-  assert.ok(Buffer.byteLength(creer) <= 23400);
+  assert.ok(Buffer.byteLength(creer) <= plafond('creer'));
   assert.match(creer, /« une plante qui vit »/);
   const controles = lire('references', 'controles.md');
   for (const r of ['vie-sans-duree', 'mouvement-ecrase']) assert.match(controles, new RegExp('^\\| `' + r + '` \\|', 'm'), r);

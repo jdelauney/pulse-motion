@@ -296,6 +296,40 @@
       "phrase": "C'est quoi la différence entre un style et une charte ?",
       "attendu": "aucune",
       "pasAttendu": "style"
+    },
+    {
+      "phrase": "Signale un problème à l'auteur, l'export plante à chaque fois",
+      "attendu": "outils",
+      "pasAttendu": "exporter"
+    },
+    {
+      "phrase": "Quelles sont mes vidéos ?",
+      "attendu": "reprendre",
+      "pasAttendu": "creer"
+    },
+    {
+      "phrase": "Retrouve ma vidéo sur le lavage des mains",
+      "attendu": "reprendre",
+      "pasAttendu": "creer"
+    },
+    {
+      "phrase": "Garde cet effet de neige pour mes prochaines vidéos",
+      "attendu": "retoucher",
+      "pasAttendu": "atelier-particules"
+    },
+    {
+      "phrase": "Garde ce personnage pour mes prochaines vidéos",
+      "attendu": "retoucher",
+      "pasAttendu": "dessiner-personnage"
+    },
+    {
+      "phrase": "Emporte mes chartes et mes styles sur mon autre ordinateur",
+      "attendu": "outils",
+      "pasAttendu": "style"
+    },
+    {
+      "phrase": "Importe ma bibliothèque Pulse Motion depuis ce fichier zip",
+      "attendu": "outils"
     }
   ]
 }
