@@ -279,7 +279,13 @@ function bibliothequeComplete() {
   const perso = personnelNeuf();
   ecrire(perso, 'chartes/dupont/charte.json', { couleurs: { primaire: '#1d4ed8' }, ton: 'clair' });
   ecrire(perso, 'chartes/dupont/glossaire.md', '# Glossaire\n\n- HACCP\n');
-  fs.cpSync(path.join(RACINE, 'styles', 'clair-pedagogique'), path.join(perso, 'styles', 'mon-style'), { recursive: true });
+  // Style personnel repris d'un style livré, comme le fait « pulse-motion style nouveau » : son nom dans ses fiches.
+  const style = path.join(perso, 'styles', 'mon-style');
+  fs.cpSync(path.join(RACINE, 'styles', 'clair-pedagogique'), style, { recursive: true });
+  for (const f of ['catalogue.json', 'identite.json']) {
+    const j = JSON.parse(fs.readFileSync(path.join(style, f), 'utf8'));
+    fs.writeFileSync(path.join(style, f), JSON.stringify(Object.assign(j, { style: 'mon-style' }), null, 2), 'utf8');
+  }
   assert.equal(B.enregistrerEffet({ nom: 'ma-neige', projet: videoAvecEffet() }).ok, true);
   assert.equal(B.enregistrerPersonnage({ nom: 'mon-perso', projet: videoAvecPersonnages() }).ok, true);
   const Pref = require('../scripts/preferences.js');
