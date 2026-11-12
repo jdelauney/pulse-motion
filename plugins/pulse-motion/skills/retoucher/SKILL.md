@@ -1,5 +1,5 @@
 ---
-description: "Retoucher la vidéo Pulse Motion du dossier en une phrase et la revoir (« ralentis la scène 3 », « change le titre », « baisse la musique », « garde cet effet », « annule »). Voix : /pulse-motion:voix ; nouvelle vidéo : /pulse-motion:creer."
+description: "Retoucher la vidéo Pulse Motion en une phrase (« ralentis la scène 3 », « change le titre », « baisse la musique », « garde cet effet », « fais pareil que cette vidéo », « annule »). Voix : /pulse-motion:voix ; nouvelle vidéo : /pulse-motion:creer."
 argument-hint: "[la retouche en une phrase]"
 allowed-tools: Bash(pulse-motion *) Bash(node *) Monitor Read Glob Grep Write Edit Agent AskUserQuestion
 ---
@@ -62,6 +62,7 @@ Classer la demande, puis :
 | Aperçu et images | « ouvre l'aperçu », « fais une planche des scènes 2 et 3 », « compare avec un autre style » | `pulse-motion apercu . --ouvrir` en arrière-plan ; `pulse-motion planche . <ids> --ouvrir` (regardée avec `Read`) ; `pulse-motion comparer . <s1>,<s2> --ouvrir` en arrière-plan |
 | Charte et glossaire | « enregistre ma charte sous le nom dupont », « applique la charte dupont », « note HACCP au glossaire » | `pulse-motion charte enregistrer <nom> .` (minuscules et tirets) ; `pulse-motion charte appliquer <nom> .` (les réglages remplacés se disent) ; `pulse-motion glossaire noter . "<terme>" "<sens>" "<formes à éviter>"` |
 | Format | « en vertical », « en carré pour LinkedIn », « pour TikTok », « sans le son », « ajoute des chapitres », « la miniature », « en boucle », « la musique vient de Pixabay » | `pulse-motion reference sorties` : `format.ratio` et scènes recomposées (agent `animateur`) ; plateforme, chapitres, couverture, boucle, crédits : leur ligne ; « sans le son » : retirer musique et bruitages |
+| Imiter | « fais pareil que ce GIF », « même rythme que cette pub », « comme dans cette vidéo » | `pulse-motion reference imiter` : le fichier déposé dans le dossier (jamais une adresse), le niveau dit, toutes les planches lues, la fiche, puis `imiter comparer` ; jamais le personnage, le logo, la musique ni les textes de la référence |
 | Langue, déclinaison | « passe la vidéo en anglais », « fais-en une version verticale », « la même en anglais en gardant l'originale » | `pulse-motion reference langues` ; des `declinaisons` dans l'état : à la fin, demander s'il faut les mettre à jour |
 | Revue | « note ma vidéo », « qu'en penses-tu ? » | suivre `pulse-motion reference revue` : cinq axes notés, trois retouches rapides proposées, seules celles cochées appliquées ; un seul tour |
 | Remarque floue | « ça fait cheap », « plus premium », « ça fait diaporama » | `pulse-motion reference remarques` : ses options par `AskUserQuestion`, la première « (Recommandé) » ; jamais appliquée en silence ; 5 changements au plus par tour ; la scène demandée si la phrase ne la dit pas |

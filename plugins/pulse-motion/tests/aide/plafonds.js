@@ -21,12 +21,14 @@
  * l'enregistrement), reprendre 3 150 → 3 180 o (déclinaisons et origine) ; animateur tenu sous 6 000 o (langue des textes dans la règle « aucun texte en dur »).
  * 0.68.0 (S9-3 et S9-4, typographie, karaoké, QR, Ken Burns, 2,5D) : retoucher 14 210 → 14 430 o (karaoké, QR code et photos
  * dans les exemples, renvoi d'une ligne à la référence briques) ; animateur tenu (le dictionnaire porte les recettes).
+ * 0.69.0 (S9-5, imiter une animation) : retoucher 14 430 → 14 800 o (ligne « Imiter » : fichier déposé, niveau, planches, fiche,
+ * comparaison, interdits de copie ; la méthode vit dans la référence imiter), creer 23 520 → 23 620 o (renvoi d'une ligne).
  */
 const PLAFONDS = {
   'skills/animer-personnage/SKILL.md': 6050, 'skills/atelier-particules/SKILL.md': 2272, 'skills/atelier-personnages/SKILL.md': 3529,
-  'skills/creer/SKILL.md': 23520, 'skills/decouper-personnage/SKILL.md': 4020, 'skills/dessiner-personnage/SKILL.md': 4650,
+  'skills/creer/SKILL.md': 23620, 'skills/decouper-personnage/SKILL.md': 4020, 'skills/dessiner-personnage/SKILL.md': 4650,
   'skills/exporter/SKILL.md': 6780, 'skills/filmer/SKILL.md': 11500, 'skills/outils/SKILL.md': 7200, 'skills/reprendre/SKILL.md': 3180,
-  'skills/retoucher/SKILL.md': 14430, 'skills/style/SKILL.md': 6550, 'skills/voix/SKILL.md': 5200,
+  'skills/retoucher/SKILL.md': 14800, 'skills/style/SKILL.md': 6550, 'skills/voix/SKILL.md': 5200,
   'agents/animateur.md': 6000, 'agents/critique.md': 3800,
 };
 
