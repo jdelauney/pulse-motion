@@ -175,6 +175,12 @@ function validerDeroule(d) {
   if (d.camera !== undefined && !CAMERAS.includes(d.camera)) err.push(`« camera » doit valoir « auto » (la caméra trouve seule les gros plans) ou « fixe ».`);
   // Boucle parfaite (spec Rendu et export, 5.18) : la vidéo tourne en boucle (lecteur, musique sans fondus, contrôles de jointure).
   if (d.boucle !== undefined && typeof d.boucle !== 'boolean') err.push('« boucle » doit valoir true ou false (true : la vidéo tourne en boucle).');
+  // Page qui sait faire son MP4 (spec Retouches et ergonomie, 5.18) : facultative, absente ou false par défaut.
+  if (d.page !== undefined && !estObjet(d.page)) err.push('« page » doit être un objet, ex. { "boutonMp4": true }.');
+  else if (d.page !== undefined) {
+    for (const k of Object.keys(d.page)) if (k !== 'boutonMp4') err.push(`« page » : champ « ${k} » inconnu ; seul « boutonMp4 » existe.`);
+    if (d.page.boutonMp4 !== undefined && typeof d.page.boutonMp4 !== 'boolean') err.push('« page.boutonMp4 » doit valoir true ou false (true : la page sait faire son MP4).');
+  }
 
   if (!Array.isArray(d.scenes) || d.scenes.length === 0) {
     err.push('« scenes » doit contenir au moins une scène.');
