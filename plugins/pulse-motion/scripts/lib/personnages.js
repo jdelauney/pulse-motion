@@ -411,10 +411,14 @@ function nomsJSON(dossier) {
   try { return fs.readdirSync(dossier).filter((f) => /^[a-z0-9-]+\.json$/.test(f)).map((f) => f.slice(0, -5)).sort(); } catch { return []; }
 }
 
-function lire(dossierVideo, { bibliotheque = BIBLIOTHEQUE } = {}) {
+/** personnel : dossier des personnages de la bibliothèque personnelle (~/.pulse-motion/personnages), lu entre le plugin et la
+ *  vidéo (source « personnel »), seulement pour proposer, montrer et copier (liste, afficher, planche, verifier) : jamais
+ *  par l'assemblage, la vidéo reste autonome (chantier H, décision « par copie »). */
+function lire(dossierVideo, { bibliotheque = BIBLIOTHEQUE, personnel = null } = {}) {
   const vide = () => ({ poses: {}, clips: {}, gabarits: {}, expressions: {}, dessins: {}, decoupes: {} });
   const lu = Object.assign(vide(), { sources: vide(), fichiers: vide(), erreurs: [] });
   const racines = [[bibliotheque, 'plugin', 'bibliothèque']];
+  if (personnel) racines.push([personnel, 'personnel', 'bibliothèque personnelle']);
   if (dossierVideo) racines.push([path.join(dossierVideo, 'personnages'), 'video', 'vidéo']);
   for (const type of ['gabarit', 'expression', 'pose', 'clip', 'dessin', 'decoupe']) {
     const pluriel = TYPES[type];

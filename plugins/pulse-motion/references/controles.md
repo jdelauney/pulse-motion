@@ -269,11 +269,11 @@ Le contrôle signale aussi, avec un message qui dit quoi faire : un texte du dé
 | `effet-export` | Un effet CSS (`filter: url()`, `mix-blend-mode`, `backdrop-filter`) que l'export dans le navigateur ne rend pas | alerte | non | L'export fidèle le rend ; sinon prendre la solution du message |
 | `ancre-introuvable`, `cible-introuvable` | `data-ancre` ou `data-cible` d'un effet ne désigne aucun élément de la scène | erreur | non | `#id` d'un élément de la même scène |
 | `ancre-vide`, `metamorphose-sans-cible` | Un effet qui photographie son ancre sans `data-ancre`, ou qui la transforme sans `data-cible` | erreur | non | Ajouter l'attribut manquant |
-| `effet-inconnu` | Un `data-effet` (ou un `etend`) nomme un effet ni dans `effets/` du projet, ni dans la bibliothèque | erreur | non | Prendre un effet de la bibliothèque (`pulse-motion effet <nom>`) |
+| `effet-inconnu` | Un `data-effet` (ou un `etend`) nomme un effet ni dans `effets/` du projet, ni dans la bibliothèque | erreur | non | Prendre un effet de la bibliothèque (`pulse-motion effet <nom>`) ; gardé dans la bibliothèque personnelle (le message le dit) : le copier d'abord (`pulse-motion effet utiliser <nom> .`) |
 | `collisions-invalides` | Les collisions d'une recette d'effet sont mal écrites | erreur | non | `pulse-motion reference particules/collisions` |
 | `reglage-invalide` | Un réglage d'effet ou de shader hors de sa plage | erreur | non | Prendre une valeur de la plage du message |
 | `obstacle-introuvable`, `obstacles-video`, `trop-d-obstacles` | Obstacle de particules mal désigné, obstacles de vidéo mal écrits, ou trop d'obstacles (les premiers sont gardés) | erreur ; alerte pour le nombre | non | `pulse-motion reference particules/collisions` |
-| `personnage-invalide` | Personnage, groupe ou action mal écrits, ou bouche sans voix | erreur ou alerte | non | `pulse-motion reference moteur/personnages` |
+| `personnage-invalide` | Personnage, groupe ou action mal écrits, ou bouche sans voix | erreur ou alerte | non | `pulse-motion reference moteur/personnages` ; gardé dans la bibliothèque personnelle (le message le dit) : le copier d'abord (`pulse-motion personnages utiliser <nom> --dossier .`) |
 
 ## Dire ce qui est voulu
 

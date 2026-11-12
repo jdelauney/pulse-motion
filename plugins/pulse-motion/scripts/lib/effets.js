@@ -259,6 +259,9 @@ function preparerEffets(html, { scene, projet, bibliotheque, charte = {}, premie
         const noms = [path.join(projet, 'effets'), bibliotheque].flatMap((d) => { try { return fs.readdirSync(d).filter((x) => x.endsWith('.json')).map((x) => x.slice(0, -5)); } catch { return []; } });
         const liste = P.proches(nom, noms);
         if (liste.length) message = `${message.replace(/\.$/, '')} ; ${P.phrase(liste)}`;
+        // Gardé dans la bibliothèque personnelle : la vidéo ne le lit pas là (par copie, chantier H) ; il faut le copier.
+        const perso = require('./bibliotheque.js').suggestionBibliotheque('effet', nom);
+        if (perso) message = `${message.replace(/\.$/, '')}${perso}.`;
       }
       compile = { ok: false, erreurs: [{ regle: e.regle, message }] };
     }

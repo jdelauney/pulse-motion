@@ -17,6 +17,11 @@ const { deplierGroupes } = require('./groupes-personnages.js');
 // Noms proches d'une saisie (spec Retouches et ergonomie, 5.16).
 const PR = require('../../moteur/proches.js');
 const procheDe = (saisie, candidats) => { const l = PR.proches(saisie, candidats); return l.length ? ' ; ' + PR.phrase(l) : ''; };
+// Gardé dans la bibliothèque personnelle, que l'assemblage ne lit pas (par copie, chantier H) : le dire, pour le copier.
+const avecBibliotheque = (message, sorte, nom) => {
+  const s = require('./bibliotheque.js').suggestionBibliotheque(sorte, nom);
+  return s ? `${message.replace(/.$/, '')}${s}.` : message;
+};
 
 // Les commentaires HTML sont reconnus d'abord, et laissés tels quels (une balise commentée ne compte pas).
 const BALISE = /<!--[\s\S]*?-->|<(\/?)([a-zA-Z][\w-]*)\b((?:[^>"']|"[^"]*"|'[^']*')*)>/g;
@@ -85,7 +90,7 @@ function preparerPersonnages(html0, { scene, lu, voix = false, dureeTemps = null
         if (!Object.hasOwn(lu.gabarits, g)) erreurs.push(erreur(scene, `personnage en bâtonnets : gabarit « ${g} » introuvable (gabarits : ${Object.keys(lu.gabarits).join(', ')}).`));
         else utilises.gabarits.add(g);
       } else if (!Object.hasOwn(lu.dessins, nom)) {
-        erreurs.push(erreur(scene, `personnage « ${nom} » introuvable${procheDe(nom, [...Object.keys(lu.dessins), 'batonnets']) || ` (dessins : ${Object.keys(lu.dessins).join(', ') || 'aucun'} ; ou « batonnets »).`}`));
+        erreurs.push(erreur(scene, avecBibliotheque(`personnage « ${nom} » introuvable${procheDe(nom, [...Object.keys(lu.dessins), 'batonnets']) || ` (dessins : ${Object.keys(lu.dessins).join(', ') || 'aucun'} ; ou « batonnets »).`}`, 'dessin', nom)));
       } else {
         utilises.dessins.add(nom);
         const hab = a['data-habillage'] === undefined ? null : a['data-habillage'].trim();
@@ -148,14 +153,14 @@ function preparerPersonnages(html0, { scene, lu, voix = false, dureeTemps = null
       const nomClip = a['data-clip'].trim();
       const c = Object.hasOwn(lu.clips, nomClip) ? lu.clips[nomClip] : null;
       const modele = type === 'courir' ? 'course' : 'marche';
-      if (!c) erreurs.push(erreur(scene, `${qui} : démarche « ${nomClip} » introuvable ; la créer d'abord dans personnages/clips/ de la vidéo (un mouvement en boucle, copié de « ${modele} » : pulse-motion personnages afficher ${modele}).`));
+      if (!c) erreurs.push(erreur(scene, avecBibliotheque(`${qui} : démarche « ${nomClip} » introuvable ; la créer d'abord dans personnages/clips/ de la vidéo (un mouvement en boucle, copié de « ${modele} » : pulse-motion personnages afficher ${modele}).`, 'clip', nomClip)));
       else if (!c.boucle || c.additif) erreurs.push(erreur(scene, `${qui} : « ${nomClip} » ne peut pas servir de démarche : il faut un mouvement en boucle, comme « ${modele} ».`));
     }
-    if (type === 'pose' && a['data-pose'] !== undefined && !Object.hasOwn(lu.poses, a['data-pose'])) erreurs.push(erreur(scene, `${qui} : pose « ${a['data-pose']} » introuvable${procheDe(a['data-pose'], Object.keys(lu.poses)) || ` (poses : ${Object.keys(lu.poses).join(', ')}).`}`));
-    if (type === 'expression' && a['data-expression'] !== undefined && !Object.hasOwn(lu.expressions, a['data-expression'])) erreurs.push(erreur(scene, `${qui} : expression « ${a['data-expression']} » introuvable${procheDe(a['data-expression'], Object.keys(lu.expressions)) || ` (expressions : ${Object.keys(lu.expressions).join(', ')}).`}`));
+    if (type === 'pose' && a['data-pose'] !== undefined && !Object.hasOwn(lu.poses, a['data-pose'])) erreurs.push(erreur(scene, avecBibliotheque(`${qui} : pose « ${a['data-pose']} » introuvable${procheDe(a['data-pose'], Object.keys(lu.poses)) || ` (poses : ${Object.keys(lu.poses).join(', ')}).`}`, 'pose', a['data-pose'])));
+    if (type === 'expression' && a['data-expression'] !== undefined && !Object.hasOwn(lu.expressions, a['data-expression'])) erreurs.push(erreur(scene, avecBibliotheque(`${qui} : expression « ${a['data-expression']} » introuvable${procheDe(a['data-expression'], Object.keys(lu.expressions)) || ` (expressions : ${Object.keys(lu.expressions).join(', ')}).`}`, 'expression', a['data-expression'])));
     if (type === 'jouer' && a['data-clip'] !== undefined) {
       const clip = Object.hasOwn(lu.clips, a['data-clip']) ? lu.clips[a['data-clip']] : null;
-      if (!clip) erreurs.push(erreur(scene, `${qui} : mouvement « ${a['data-clip']} » introuvable${procheDe(a['data-clip'], Object.keys(lu.clips).filter((n) => !lu.clips[n].additif)) || ` (mouvements : ${Object.keys(lu.clips).filter((n) => !lu.clips[n].additif).join(', ')}).`}`));
+      if (!clip) erreurs.push(erreur(scene, avecBibliotheque(`${qui} : mouvement « ${a['data-clip']} » introuvable${procheDe(a['data-clip'], Object.keys(lu.clips).filter((n) => !lu.clips[n].additif)) || ` (mouvements : ${Object.keys(lu.clips).filter((n) => !lu.clips[n].additif).join(', ')}).`}`, 'clip', a['data-clip'])));
       else if (clip.additif) erreurs.push(erreur(scene, `${qui} : « ${a['data-clip']} » est un calque (respiration, clignement, repos vivant), il s'ajoute tout seul.`));
       else if (a['data-dur'] === undefined) {
         // Durée propre du geste (un cycle : 1 tour), écrite pour que les éléments calés sur sa fin tombent juste.
