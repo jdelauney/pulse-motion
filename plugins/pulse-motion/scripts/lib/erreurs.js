@@ -3,7 +3,8 @@
  *
  * ~/.pulse-motion/erreurs.jsonl : une ligne JSON par sortie en erreur d'une commande, les 20 dernières seulement :
  *   { date, commande, code, message, empreinte }
- *   - commande : le nom de la sous-commande seul, jamais ses arguments (ni dossier, ni texte, ni fichier) ;
+ *   - commande : le nom de la sous-commande seul, jamais ses arguments (ni dossier, ni texte, ni fichier) ; un argument que le
+ *     message répète y est remplacé par « … » (masquer) ;
  *   - message : la fin de ce que la commande a dit, chemins anonymisés, 400 caractères au plus ;
  *   - empreinte : 8 caractères, tirés du message sans chiffres ni chemins (deux erreurs pareilles ont la même).
  * Rien n'est écrit pendant les tests sans PULSE_MOTION_DOSSIER (lib/personnel.js), ni si le dossier est impossible à écrire.
@@ -61,11 +62,14 @@ function messageDe({ sortie = '', erreur = '' } = {}) {
 function fichierJournal(dossier) { return dossier ? path.join(dossier, 'erreurs.jsonl') : null; }
 
 /** Ajoute une erreur au journal (les 20 dernières gardées). -> l'entrée, ou null si rien n'a été écrit. */
-function noterErreur({ commande, code, message, projet = process.cwd(), dossier = dossierPersonnelEcrivable(), date = new Date() }) {
+function noterErreur({ commande, code, message, masquer = [], projet = process.cwd(), dossier = dossierPersonnelEcrivable(), date = new Date() }) {
   const fichier = fichierJournal(dossier);
   if (!fichier || !/^[a-z][a-z0-9-]*$/.test(String(commande || ''))) return null;
-  const texte = anonymiser(message, { projet }).replace(/\s+/g, ' ').trim().slice(0, MAX_MESSAGE);
-  const entree = { date: date.toISOString(), commande, code, message: texte, empreinte: empreinteMessage(message) };
+  // Les arguments de la commande (textes, noms, dossiers) ne restent pas dans le message : remplacés par « … ».
+  let brut = String(message == null ? '' : message);
+  for (const a of masquer.map(String).filter((x) => x.length >= 3 && !x.startsWith('--')).sort((x, y) => y.length - x.length)) brut = brut.split(a).join('…');
+  const texte = anonymiser(brut, { projet }).replace(/\s+/g, ' ').trim().slice(0, MAX_MESSAGE);
+  const entree = { date: date.toISOString(), commande, code, message: texte, empreinte: empreinteMessage(brut) };
   try {
     const avant = lireErreurs({ dossier });
     const lignes = avant.concat(entree).slice(-MAX_LIGNES).map((e) => JSON.stringify(e));

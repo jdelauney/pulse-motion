@@ -283,7 +283,7 @@ if (require.main === module) {
     // Journal des erreurs (spec Retouches et ergonomie, 5.20) : le nom de la commande seul, jamais ses arguments.
     if (code) {
       const E = require('./lib/erreurs.js');
-      E.noterErreur({ commande: /^[a-z][a-z0-9-]*$/.test(args[0] || '') ? args[0] : 'inconnue', code, message: E.messageDe(derniere) });
+      E.noterErreur({ commande: /^[a-z][a-z0-9-]*$/.test(args[0] || '') ? args[0] : 'inconnue', code, message: E.messageDe(derniere), masquer: args.slice(1) });
     }
     process.exitCode = code;
   });
