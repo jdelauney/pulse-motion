@@ -130,7 +130,8 @@ async function analyserSite({ adresse, navigateur = null, delai = 30000, attente
   const limite = (promesse) => Promise.race([promesse, new Promise((_, rejeter) => setTimeout(() => rejeter(Object.assign(new Error('délai'), { delai: true })), reste()).unref())]);
   let page = null;
   try {
-    page = await ouvrirPage({ navigateur: chemin, largeur: LARGEUR, hauteur: HAUTEUR, delai });
+    // Délai des commandes du navigateur à part (démarrage lent sous charge) : le délai du site est tenu par limite().
+    page = await ouvrirPage({ navigateur: chemin, largeur: LARGEUR, hauteur: HAUTEUR, delai: Math.max(delai, 30000) });
     // Aucun fichier de police n'est téléchargé : la famille se lit dans la feuille de style (police proposée ensuite par
     // Bunny Fonts, licence vérifiée), jamais dans les fichiers du site.
     await page.envoyer('Network.enable', {});
