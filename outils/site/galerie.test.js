@@ -4,15 +4,15 @@ const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
 const { dossierTemporaire } = require("../../plugins/pulse-motion/tests/aide/temporaire.js");
-const { blocs, appliquer, PAGES } = require("./galerie.js");
+const { blocs, appliquer, PAGES, PAGES_EN, langue, textesSansTraduction } = require("./galerie.js");
 const G = require("./galerie-medias.js");
 
 const DOCS = path.join(__dirname, "..", "..", "docs");
 
-function copieDuWiki() {
+function copieDuWiki({ anglais = true } = {}) {
   const racine = dossierTemporaire("pm-galerie-");
-  fs.mkdirSync(path.join(racine, "docs"));
-  for (const page of new Set(Object.values(PAGES))) fs.copyFileSync(path.join(DOCS, page), path.join(racine, "docs", page));
+  fs.mkdirSync(path.join(racine, "docs", "en"), { recursive: true });
+  for (const page of new Set([...Object.values(PAGES), ...(anglais ? Object.values(PAGES_EN) : [])])) fs.copyFileSync(path.join(DOCS, page), path.join(racine, "docs", page));
   return racine;
 }
 
@@ -251,4 +251,67 @@ test("retouches : avant et après côte à côte, rendus par le lot « retouches
   }
   assert.equal(PAGES.exemples, "exemples.html");
   assert.equal(PAGES.retouches, "exemples.html");
+});
+
+// ---------------------------------------------------------------- Pages anglaises (chantier I)
+
+test("anglais : chaque texte des sources montré sur les pages anglaises a sa traduction dans anglais.json", () => {
+  const manques = textesSansTraduction();
+  assert.deepEqual(manques, [], `à traduire (node outils/site/galerie.js --anglais) : ${manques.slice(0, 5).join(" | ")}`);
+});
+
+test("anglais : les blocs anglais ont les mêmes cartes et sections que les français, médias publiés en ../", () => {
+  const fr = blocs();
+  const en = blocs("en");
+  assert.deepEqual(Object.keys(en).sort(), Object.keys(PAGES_EN).sort());
+  const plan = (h) => ({
+    ids: [...h.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]),
+    titres: [...h.matchAll(/<h([1-6])\b/g)].map((m) => m[1]).join(""),
+    blocs: (h.match(/<pre\b/g) || []).length,
+  });
+  for (const nom of Object.keys(en)) {
+    assert.deepEqual(plan(en[nom]), plan(fr[nom]), nom);
+    // Mêmes médias que la page française (aucun média nouveau), vus depuis docs/en/.
+    const medias = (h, prefixe) => [...h.matchAll(/\b(?:src|poster)="([^"]+)"/g)].map((m) => m[1]).map((s) => (prefixe ? s.replace(/^\.\.\//, "") : s));
+    assert.deepEqual(medias(en[nom], true), medias(fr[nom], false), `${nom} : médias`);
+    for (const s of [...en[nom].matchAll(/\b(?:src|poster)="([^"]+)"/g)].map((m) => m[1])) assert.match(s, /^\.\.\/(?:medias|assets)\//, `${nom} : ${s}`);
+    assert.doesNotMatch(en[nom], /<span lang="fr">[^<]*<\/span><\/h2>/, `${nom} : titre non traduit`);
+  }
+});
+
+test("anglais : une demande reste en français (lang=\"fr\"), suivie de sa traduction", () => {
+  const b = blocs("en").mouvements;
+  const m = G.dictionnaire().mouvements[0];
+  const debut = b.indexOf(`<article class="carte-mouvement" id="m${m.no}"`);
+  const carte = b.slice(debut, b.indexOf("</article>", debut));
+  assert.match(carte, /<pre class="commande" lang="fr"><code>/);
+  assert.ok(carte.includes(m.demande.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/'/g, "'")), "demande en français");
+  assert.match(carte, /<\/pre>\n<p class="traduction">“[^”]+”<\/p>/);
+  assert.ok(carte.includes(`<h3 class="carte-mouvement-nom">${m.nom.metier} <span lang="fr">`), "nom du métier d'abord, nom français ensuite");
+  const idees = blocs("en").idees;
+  for (const modele of G.modelesVideo()) {
+    for (const ph of modele.phrases) assert.ok(idees.includes(`<pre class="commande" lang="fr"><code>${ph.replace(/&/g, "&amp;").replace(/"/g, "&quot;")}</code></pre>\n<p class="traduction">`), `${modele.id} : ${ph}`);
+  }
+});
+
+test("anglais : un texte sans traduction reparaît en français, marqué, et compte comme manquant", () => {
+  const c = langue("en", { "Bonjour": "Hello" });
+  assert.equal(c.te("Bonjour"), "Hello");
+  assert.equal(c.te("Inconnu & co"), '<span lang="fr">Inconnu &amp; co</span>');
+  assert.equal(c.tr("Inconnu & co"), "Inconnu & co");
+  assert.deepEqual([...c.manques], ["Inconnu & co"]);
+  assert.equal(c.traduction("/pulse-motion:creer Bonjour"), '\n<p class="traduction">“Hello”</p>');
+  assert.equal(c.m("medias/x.mp4"), "../medias/x.mp4");
+  const fr = langue("fr");
+  assert.equal(fr.te("Inconnu & co"), "Inconnu &amp; co");
+  assert.equal(fr.traduction("Bonjour"), "");
+  assert.equal(fr.m("medias/x.mp4"), "medias/x.mp4");
+});
+
+test("anglais : --verifier voit une page anglaise en retard ; une copie sans pages anglaises les ignore", () => {
+  const racine = copieDuWiki();
+  const fichier = path.join(racine, "docs", "en", "idees.html");
+  fs.writeFileSync(fichier, fs.readFileSync(fichier, "utf8").replace(/(<!-- galerie:idees -->)[\s\S]*?(<!-- \/galerie:idees -->)/, "$1\nancien\n$2"), "utf8");
+  assert.deepEqual(appliquer(racine, { verifier: true }).enRetard, ["en/idees.html"]);
+  assert.deepEqual(appliquer(copieDuWiki({ anglais: false }), { verifier: true }).enRetard, []);
 });
