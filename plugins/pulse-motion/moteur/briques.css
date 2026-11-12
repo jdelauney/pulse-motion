@@ -1,0 +1,107 @@
+/* Pulse Motion – briques de la spec S9 (typographie cinétique, karaoké, QR codes, Ken Burns, 2,5D). Feuille embarquée seulement
+   si une scène s'en sert (scripts/lib/briques.js, besoinsBriques) : une vidéo qui n'en utilise aucune garde sa page. */
+
+/* Texte sur un tracé (5.5) : la couleur suit color, pour que la mesure du contraste (qui force color) le voie. */
+#pm-scene .pm-sur-trace text { fill: currentColor; }
+/* Lettres ou mots en <tspan> sur un tracé (moteur/lettres.js) : frappe ou fondu par fill-opacity (un tspan n'a ni opacity
+   ni transform dans Chrome). */
+#pm-scene [data-lettres] tspan.pm-lettre, #pm-scene [data-mots] tspan.pm-mot { display: inline; animation-name: pm-l-trace; }
+#pm-scene [data-lettres="fondu"] tspan.pm-lettre, #pm-scene [data-mots="fondu"] tspan.pm-mot { animation-duration: var(--pm-lettre-dur, 0.3s); }
+@keyframes pm-l-trace { from { fill-opacity: 0; stroke-opacity: 0; } to { fill-opacity: 1; stroke-opacity: 1; } }
+
+/* Lettres en fondu (5.5) et lettres qui s'épaississent (5.6, #131). */
+[data-lettres="fondu"] .pm-lettre, [data-mots="fondu"] .pm-mot { animation-name: pm-l-frappe; animation-duration: var(--pm-lettre-dur, 0.3s); }
+[data-lettres="graisse"] .pm-lettre, [data-mots="graisse"] .pm-mot { animation-name: pm-l-graisse; animation-duration: var(--pm-lettre-dur, 0.5s); }
+@keyframes pm-l-graisse { from { font-variation-settings: "wght" var(--pm-graisse-min, 100); } to { font-variation-settings: "wght" var(--pm-graisse, 400); } }
+
+/* Police variable (5.6, #130) : axes animés par data-tween="--pm-wght 300→800" (graisse, largeur, inclinaison). */
+.pm-variable { font-variation-settings: "wght" var(--pm-wght, 400), "wdth" var(--pm-wdth, 100), "slnt" var(--pm-slnt, 0); }
+
+/* Texte rempli d'une image (5.7, #132), lettre par lettre compris, sur le modèle de pm-degrade. */
+.pm-texte-image {
+  background-image: var(--pm-texte-image, none); background-size: cover;
+  background-position: var(--pm-texte-image-x, 50%) var(--pm-texte-image-y, 50%);
+  -webkit-background-clip: text; background-clip: text;
+  color: transparent; -webkit-text-fill-color: transparent;
+}
+.pm-texte-image[data-lettres], .pm-texte-image[data-mots] { background-image: none; }
+.pm-texte-image[data-lettres] .pm-lettre, .pm-texte-image[data-mots] .pm-mot {
+  background-image: var(--pm-texte-image, none);
+  background-size: calc(var(--pm-n, 1) * 100%) auto;
+  background-position: calc(var(--pm-i, 0) / max(var(--pm-n, 1) - 1, 1) * 100%) var(--pm-texte-image-y, 50%);
+  -webkit-background-clip: text; background-clip: text;
+}
+
+/* Révélé en fondu balayé (5.7, #133) : masque dégradé qui avance avec --p ; --pm-sens règle la direction (90deg : vers la
+   droite). Formes : pm-m-masque-doux-radial (du centre), pm-m-masque-doux-vertical (de haut en bas). */
+.pm-m-masque-doux {
+  -webkit-mask-image: linear-gradient(var(--pm-sens, 90deg), #000 calc(var(--p, 0) * 120% - 20%), transparent calc(var(--p, 0) * 120%));
+  mask-image: linear-gradient(var(--pm-sens, 90deg), #000 calc(var(--p, 0) * 120% - 20%), transparent calc(var(--p, 0) * 120%));
+}
+.pm-m-masque-doux-vertical { --pm-sens: 180deg; }
+.pm-m-masque-doux-radial {
+  -webkit-mask-image: radial-gradient(circle closest-corner, #000 calc(var(--p, 0) * 150% - 20%), transparent calc(var(--p, 0) * 150%));
+  mask-image: radial-gradient(circle closest-corner, #000 calc(var(--p, 0) * 150% - 20%), transparent calc(var(--p, 0) * 150%));
+}
+/* Image dans une forme (5.7, #134) : --pm-forme = url(assets/forme.svg), embarquée ; --pm-forme-taille animable. */
+.pm-masque-forme {
+  -webkit-mask-image: var(--pm-forme, none); mask-image: var(--pm-forme, none);
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-position: center; mask-position: center;
+  -webkit-mask-size: var(--pm-forme-taille, contain); mask-size: var(--pm-forme-taille, contain);
+}
+
+/* Karaoké (5.8) : chaque mot se remplit de l'accent de gauche à droite pendant qu'il est dit (--pm-st-avance) ; les mots à
+   venir restent à pleine opacité, dans la couleur des sous-titres. */
+#pm-scene #pm-sous-titres[data-mode="karaoke"] .pm-st-mot {
+  background-image: linear-gradient(90deg, var(--pm-st-accent, var(--c-accent-lisible, #ffd400)) calc(var(--pm-st-avance, 0) * 100%), var(--pm-st-texte, #fff) 0);
+  -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent;
+}
+
+/* QR codes (5.4, #135) : bords nets ; « qui se compose » : les rangées de modules arrivent l'une après l'autre. */
+#pm-scene svg[data-pm-qr-modules] { shape-rendering: crispEdges; }
+#pm-scene .pm-qr-compose path[style*="--pm-i"] {
+  animation: pm-qr-rangee var(--pm-lettre-dur, 0.2s) linear both; animation-delay: calc(var(--pm-i, 0) * var(--pm-pas, 0.03s));
+}
+@keyframes pm-qr-rangee { from { fill-opacity: 0; } to { fill-opacity: 1; } }
+
+/* Ken Burns (5.9, #136) : l'image couvre son cadre ; le moteur pose la caméra (transform) sur elle. */
+#pm-scene [data-ken-burns] { overflow: hidden; }
+:where(#pm-scene [data-ken-burns]) { position: relative; }
+#pm-scene [data-pm-kb] { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform-origin: 0 0; max-width: none; }
+
+/* 2,5D (5.12) : espace en perspective, faces cachées de dos. La classe pm-3d (moteur/ecran.css, #106) reste la capture qui se
+   redresse ; avec --pm-3d-pose, elle s'arrête inclinée (écran incliné, #139). */
+#pm-scene .pm-espace-3d { perspective: var(--pm-perspective, 150cqh); }
+#pm-scene .pm-espace-3d > * { transform-style: preserve-3d; }
+#pm-scene .pm-3d-face { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+/* Carte qui se retourne (#137) : recto et verso (pm-3d-face, le verso porte pm-3d-verso), demi-tour en 0,8 s. */
+#pm-scene .pm-m-retourne { position: relative; transform-style: preserve-3d; animation: pm-retourne var(--pm-dur, 0.8s) var(--pm-courbe, var(--ease-cubic-inout, ease-in-out)) both; }
+#pm-scene .pm-m-retourne > .pm-3d-face { position: absolute; inset: 0; }
+#pm-scene .pm-m-retourne > .pm-3d-verso { transform: rotateY(180deg); }
+@keyframes pm-retourne { from { transform: rotateY(0deg); } to { transform: rotateY(var(--pm-angle, 180deg)); } }
+/* Cube qui tourne (#138) : quatre faces, un quart de tour par pas (un temps de la musique avec un tempo, sinon 1 s). */
+#pm-scene .pm-m-cube { position: relative; transform-style: preserve-3d; --pm-cube-cote: 30cqh; width: var(--pm-cube-cote); height: var(--pm-cube-cote);
+  animation: pm-cube calc(var(--pm-cube-pas, var(--pm-temps, 1s)) * 4) linear both; animation-iteration-count: var(--pm-cube-tours, 1); }
+#pm-scene .pm-m-cube > * { position: absolute; inset: 0; backface-visibility: hidden; }
+#pm-scene .pm-m-cube > :nth-child(1) { transform: rotateY(0deg) translateZ(calc(var(--pm-cube-cote) / 2)); }
+#pm-scene .pm-m-cube > :nth-child(2) { transform: rotateY(90deg) translateZ(calc(var(--pm-cube-cote) / 2)); }
+#pm-scene .pm-m-cube > :nth-child(3) { transform: rotateY(180deg) translateZ(calc(var(--pm-cube-cote) / 2)); }
+#pm-scene .pm-m-cube > :nth-child(4) { transform: rotateY(270deg) translateZ(calc(var(--pm-cube-cote) / 2)); }
+/* Chaque quart de tour se fait en douceur dans son pas (sine-inout par quart). */
+@keyframes pm-cube {
+  0% { transform: translateZ(calc(var(--pm-cube-cote) / -2)) rotateY(0deg); animation-timing-function: cubic-bezier(0.37, 0, 0.63, 1); }
+  25% { transform: translateZ(calc(var(--pm-cube-cote) / -2)) rotateY(-90deg); animation-timing-function: cubic-bezier(0.37, 0, 0.63, 1); }
+  50% { transform: translateZ(calc(var(--pm-cube-cote) / -2)) rotateY(-180deg); animation-timing-function: cubic-bezier(0.37, 0, 0.63, 1); }
+  75% { transform: translateZ(calc(var(--pm-cube-cote) / -2)) rotateY(-270deg); animation-timing-function: cubic-bezier(0.37, 0, 0.63, 1); }
+  100% { transform: translateZ(calc(var(--pm-cube-cote) / -2)) rotateY(-360deg); }
+}
+/* Texte en relief (#140) : six ombres décalées vers une couleur sombre de la charte ; pas de vraie 3D. */
+.pm-relief {
+  --pm-relief-c: var(--pm-relief-couleur, color-mix(in srgb, var(--c-texte, #111) 70%, #000));
+  text-shadow: calc(var(--pm-relief, 0.08em) / 6) calc(var(--pm-relief, 0.08em) / 6) 0 var(--pm-relief-c),
+    calc(var(--pm-relief, 0.08em) / 3) calc(var(--pm-relief, 0.08em) / 3) 0 var(--pm-relief-c),
+    calc(var(--pm-relief, 0.08em) / 2) calc(var(--pm-relief, 0.08em) / 2) 0 var(--pm-relief-c),
+    calc(var(--pm-relief, 0.08em) * 2 / 3) calc(var(--pm-relief, 0.08em) * 2 / 3) 0 var(--pm-relief-c),
+    calc(var(--pm-relief, 0.08em) * 5 / 6) calc(var(--pm-relief, 0.08em) * 5 / 6) 0 var(--pm-relief-c),
+    var(--pm-relief, 0.08em) var(--pm-relief, 0.08em) 0 var(--pm-relief-c);
+}

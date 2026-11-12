@@ -123,8 +123,9 @@
 @keyframes pm-l-curseur { from { opacity: 1; } to { opacity: 1; } }
 @keyframes pm-l-clignote { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 0; } }
 
-/* ---- Révélation 3D : de 35° (perspective de 1 200 px) à plat, en --pm-dur (1,2 s) ---- */
-@keyframes pm-3d-revele { from { transform: perspective(111cqh) rotateX(35deg); } to { transform: perspective(111cqh) rotateX(0deg); } }
+/* ---- Révélation 3D : de 35° (perspective de 1 200 px) à plat, en --pm-dur (1,2 s) ; écran incliné (spec S9, 5.12, #139) :
+   --pm-3d-pose: rotateX(22deg) rotateZ(-8deg) arrête la capture inclinée, sans seconde recette ---- */
+@keyframes pm-3d-revele { from { transform: perspective(111cqh) rotateX(35deg); } to { transform: perspective(111cqh) var(--pm-3d-pose, rotateX(0deg)); } }
 #pm-scene .pm-3d { transform-origin: 50% 100%; animation: pm-3d-revele var(--pm-dur, 1.2s) var(--pm-courbe, var(--ease-cubic-out)) both; }
 
 /* ---- Blocs « interface » : génériques, aux couleurs de la charte (moteur/blocs/, pulse-motion bloc <nom>) ---- */

@@ -8,7 +8,9 @@
  *   soit leur couleur ; le fond se lit là sur la capture sans lettres (10e et 90e centiles). Couleur du texte
  *   mélangée au fond selon sa transparence ; une ombre ou un contour compte s'il détache mieux le texte. Fond
  *   uni de la charte sous une couleur de la charte : laissé au contrôle de la charte (pas d'alerte doublée). Mot-clé d'une
- *   légende en morceaux (.pm-mot-cle, moteur/lettres.js) : jugé à part, dans sa couleur, sur son bloc d'accent.
+ *   légende en morceaux (.pm-mot-cle, moteur/lettres.js) : jugé à part, dans sa couleur, sur son bloc d'accent. Texte rempli
+ *   (background-clip: text : dégradé, image, karaoké ; spec S9 5.7) : quatrième capture sans forçage, couleur lue sur ses
+ *   lettres (10e centile de luminance d'un texte clair, 90e d'un texte foncé).
  * - flash (WCAG 2.3.1) : passe rapide à intervalles irréguliers (pas d'effet de stroboscope), puis image par
  *   image (cadence de la vidéo) autour des passages où la lumière change ; plus de flashMax flashs dans une
  *   seconde sur au moins flashAire de l'image.
@@ -44,6 +46,14 @@
     var suivante = M.minutage.scenes[i + 1];
     var fin = suivante && suivante.debut < s.fin ? suivante.debut : s.fin;
     return Math.max(s.debut, fin - 0.1);
+  }
+
+  /** Texte rempli par son fond (background-clip: text : pm-degrade, pm-texte-image, karaoké), lui ou ses lettres et mots. */
+  function rempli(el) {
+    var clip = function (n) { var cs = getComputedStyle(n); return /text/.test(cs.webkitBackgroundClip || '') || /text/.test(cs.backgroundClip || ''); };
+    if (clip(el)) return true;
+    var morceau = el.querySelector('.pm-lettre, .pm-mot, .pm-st-mot');
+    return !!(morceau && clip(morceau));
   }
 
   /** Couleur d'un ornement qui détache le texte (contour, ombre), ou null. */
@@ -202,7 +212,9 @@
       var valeur = p.split(':')[1];
       return '[data-pm-lettres="' + nom + '"], [data-pm-lettres="' + nom + '"] * { color: ' + valeur + ' !important; -webkit-text-fill-color: ' + valeur +
         ' !important; text-shadow: none !important; -webkit-text-stroke: 0 !important; text-decoration-color: transparent !important; }';
-    }).join('\n');
+    }).join('\n') +
+      // Texte rempli (background-clip: text) : sans ses lettres, son image ou son dégradé disparaît aussi.
+      '\n[data-pm-lettres="sans"][data-pm-rempli], [data-pm-lettres="sans"][data-pm-rempli] * { background-image: none !important; }';
     document.head.appendChild(regles);
     // Particules : pas de WebGPU sans fenêtre ; leurs calques ne sont pas dessinés pendant la mesure.
     var preparer = M.particules && M.particules.preparerCapture;
@@ -223,7 +235,9 @@
         var textes = candidats.filter(function (el) {
           if (el.closest('.decor, [data-decor]')) return false;
           var cs = getComputedStyle(el);
-          if (cs.webkitTextFillColor && /rgba\([^)]*,\s*0\)/.test(cs.webkitTextFillColor)) return false;
+          // Texte rempli (dégradé, image, karaoké : background-clip: text, spec S9 5.7) : jugé sur ses pixels réels ; un autre
+          // texte transparent n'est pas lu.
+          if (cs.webkitTextFillColor && /rgba\([^)]*,\s*0\)/.test(cs.webkitTextFillColor) && !rempli(el)) return false;
           var r = el.getBoundingClientRect();
           return r.width > 0 && r.height > 0 && parseFloat(cs.opacity) > 0.5 && cs.visibility !== 'hidden';
         }).map(function (el) {
@@ -234,7 +248,7 @@
           // et ses lettres ne comptent pas pour le reste de la légende.
           var cles = Array.prototype.slice.call(el.querySelectorAll('.pm-mot-cle'));
           return { el: el, r: plage.getBoundingClientRect(), couleur: couleur(cs.color), ornement: ornement(cs), taille: parseFloat(cs.fontSize),
-            cles: cles, exclus: cles.map(function (c) { return c.getBoundingClientRect(); }) };
+            cles: cles, exclus: cles.map(function (c) { return c.getBoundingClientRect(); }), rempli: rempli(el) };
         });
         textes.slice().forEach(function (x) {
           x.cles.forEach(function (c) {
@@ -249,12 +263,19 @@
           textes.forEach(function (x) { x.el.setAttribute('data-pm-lettres', nom); });
           return M.capturer(ctx, L, H).then(function () { images[nom] = ctx.getImageData(0, 0, L, H).data; });
         }
-        function remettre() { textes.forEach(function (x) { x.el.removeAttribute('data-pm-lettres'); }); }
+        function remettre() { textes.forEach(function (x) { x.el.removeAttribute('data-pm-lettres'); x.el.removeAttribute('data-pm-rempli'); }); }
+        textes.forEach(function (x) { if (x.rempli) x.el.setAttribute('data-pm-rempli', ''); });
+        // Textes remplis : quatrième capture, sans forçage, pour lire la couleur réelle de leurs lettres.
+        var remplis = textes.some(function (x) { return x.rempli; });
         return capturer('noir').then(function () { return capturer('blanc'); }).then(function () { return capturer('sans'); }).then(function () {
           remettre();
+          if (!remplis) return null;
+          return M.capturer(ctx, L, H).then(function () { images.reel = ctx.getImageData(0, 0, L, H).data; });
+        }).then(function () {
           var noir = images.noir;
           var blanc = images.blanc;
           var image = images.sans;
+          var reel = images.reel || null;
           textes.forEach(function (x) {
             if (!x.couleur) return;
             var x0 = Math.max(0, Math.floor((x.r.left - cadre.left) * echelle));
@@ -263,6 +284,8 @@
             var y1 = Math.min(H, Math.ceil((x.r.bottom - cadre.top) * echelle));
             var lums = [];
             var somme = { r: 0, g: 0, b: 0 };
+            var lettres = [];
+            var sommeLettres = { r: 0, g: 0, b: 0 };
             var hors = (x.exclus || []).map(function (e) {
               return { x0: (e.left - cadre.left) * echelle, x1: (e.right - cadre.left) * echelle, y0: (e.top - cadre.top) * echelle, y1: (e.bottom - cadre.top) * echelle };
             });
@@ -274,6 +297,9 @@
                 if (ecart <= S.ecartLettre) continue;
                 lums.push(luminance(image[k], image[k + 1], image[k + 2]));
                 somme.r += image[k]; somme.g += image[k + 1]; somme.b += image[k + 2];
+                // Texte rempli : couleur lue au cœur des lettres seulement (noir et blanc forcés presque opposés : écart de 690
+                // sur 765), pas sur leurs bords lissés, mêlés au fond.
+                if (x.rempli && reel && ecart >= 690) { lettres.push(luminance(reel[k], reel[k + 1], reel[k + 2])); sommeLettres.r += reel[k]; sommeLettres.g += reel[k + 1]; sommeLettres.b += reel[k + 2]; }
               }
             }
             if (!lums.length) return;
@@ -281,13 +307,26 @@
             var bas = centile(lums, 0.1);
             var haut = centile(lums, 0.9);
             var moyen = { r: somme.r / lums.length, g: somme.g / lums.length, b: somme.b / lums.length };
-            // Fond uni de la charte sous une couleur de la charte : jugé par le contrôle de la charte.
-            var uni = haut - bas < S.fondUniEcart;
-            if (uni && fond && meme(moyen, fond) && charte.some(function (c) { return meme(c, x.couleur); })) return;
-            // Couleur transparente : mélangée au fond.
-            var a = x.couleur.a;
-            var lt = luminance(a * x.couleur.r + (1 - a) * moyen.r, a * x.couleur.g + (1 - a) * moyen.g, a * x.couleur.b + (1 - a) * moyen.b);
-            var c = Math.min(contraste(lt, bas), contraste(lt, haut));
+            var c, lt;
+            // Texte rempli sans cœur de lettre lisible (trait très fin) : pas de mesure plutôt qu'une fausse alerte.
+            if (x.rempli && !lettres.length) return;
+            if (x.rempli) {
+              // Texte rempli (spec S9, 5.7 point 4) : couleur des lettres lue sur la capture sans forçage ; texte plus clair que son
+              // fond : son 10e centile de luminance (ses parties les plus sombres), plus foncé : son 90e.
+              lettres.sort(function (a, b) { return a - b; });
+              var clair = centile(lettres, 0.5) > centile(lums, 0.5);
+              lt = centile(lettres, clair ? 0.1 : 0.9);
+              c = Math.min(contraste(lt, bas), contraste(lt, haut));
+              x.couleur = { r: sommeLettres.r / lettres.length, g: sommeLettres.g / lettres.length, b: sommeLettres.b / lettres.length, a: 1 };
+            } else {
+              // Fond uni de la charte sous une couleur de la charte : jugé par le contrôle de la charte.
+              var uni = haut - bas < S.fondUniEcart;
+              if (uni && fond && meme(moyen, fond) && charte.some(function (cc) { return meme(cc, x.couleur); })) return;
+              // Couleur transparente : mélangée au fond.
+              var a = x.couleur.a;
+              lt = luminance(a * x.couleur.r + (1 - a) * moyen.r, a * x.couleur.g + (1 - a) * moyen.g, a * x.couleur.b + (1 - a) * moyen.b);
+              c = Math.min(contraste(lt, bas), contraste(lt, haut));
+            }
             if (x.ornement) {
               var lo = luminance(x.ornement.r, x.ornement.g, x.ornement.b);
               c = Math.max(c, Math.min(contraste(lo, bas), contraste(lo, haut)));

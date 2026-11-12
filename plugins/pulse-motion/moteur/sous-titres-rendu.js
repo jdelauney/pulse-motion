@@ -1,5 +1,6 @@
 /* Pulse Motion – sous-titres dessinés dans la vidéo : calque #pm-sous-titres au-dessus des scènes, carton actif à
- * chaque rendu ; mode « mot » : mot en cours mis en valeur (data-etat dit / en-cours / a-venir).
+ * chaque rendu ; mode « mot » : mot en cours mis en valeur (data-etat dit / en-cours / a-venir) ; mode « karaoke » (spec S9,
+ * 5.8) : chaque mot porte aussi --pm-st-avance (part dite, de 0 à 1), le remplissage est dans moteur/briques.css.
  * Taille, largeur, marge et position par défaut selon le format ; un style les change par --pm-st-taille, --pm-st-largeur, --pm-st-marge,
  * --pm-st-position (et --pm-st-police, --pm-st-texte, --pm-st-fond, --pm-st-accent pour l'habillage).
  * Navigateur seulement ; dépend de horloge (M.donnees, M.surRendu).
@@ -58,6 +59,7 @@
     };
 
     var courant = -1, mots = [];
+    var karaoke = st.mode === 'karaoke' && M.sousTitres && typeof M.sousTitres.avanceKaraoke === 'function';
     function afficher(t) {
       var i = -1;
       for (var k = 0; k < st.cartons.length; k++) { if (t >= st.cartons[k].debut && t < st.cartons[k].fin) { i = k; break; } }
@@ -86,6 +88,8 @@
         }
       }
       mots.forEach(function (m) { m.el.setAttribute('data-etat', t >= m.t1 ? 'dit' : t >= m.t0 ? 'en-cours' : 'a-venir'); });
+      // Karaoké (spec S9, 5.8) : part dite de chaque mot, remplie de gauche à droite par moteur/briques.css.
+      if (karaoke) mots.forEach(function (m) { m.el.style.setProperty('--pm-st-avance', String(M.sousTitres.avanceKaraoke(t, m.t0, m.t1))); });
     }
     M.surRendu(afficher);
     afficher(M.temps());

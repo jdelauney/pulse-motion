@@ -82,6 +82,15 @@ function embarquerRessources(html, dossierProjet, contexte) {
     const uri = remplacer(chemin);
     return uri ? `${debut}${guillemet}${uri}${guillemet}` : tout;
   });
+  // Dans un attribut style="…" (spec S9, 5.7 : --pm-texte-image: url(assets/photo.jpg)), l'URL data: prend des guillemets
+  // simples : des guillemets doubles auraient refermé l'attribut. Ailleurs, rien ne change.
+  sortie = sortie.replace(/(\sstyle\s*=\s*")([^"]*)"/gi, (tout, debut, valeur) => {
+    if (!/url\(/i.test(valeur)) return tout;
+    return `${debut}${valeur.replace(RESSOURCE_CSS, (u, guillemet, entreGuillemets, nu) => {
+      const uri = remplacer(entreGuillemets || nu);
+      return uri ? `url('${uri}')` : u;
+    })}"`;
+  });
   sortie = sortie.replace(RESSOURCE_CSS, (tout, guillemet, entreGuillemets, nu) => {
     const uri = remplacer(entreGuillemets || nu);
     return uri ? `url("${uri}")` : tout;

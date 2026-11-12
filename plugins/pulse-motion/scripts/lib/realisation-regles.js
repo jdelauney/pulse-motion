@@ -474,4 +474,4 @@ function reglesRealisation(o) {
 }
 
 module.exports = {
-  instantsEtapesCode, reglesRealisation, contientTerme, analyserScript, mouvementsCamera, EMOJI };
+  instantsEtapesCode, reglesRealisation, contientTerme, analyserScript, mouvementsCamera, rolesDesClasses, EMOJI };

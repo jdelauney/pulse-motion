@@ -101,5 +101,9 @@
   "aCoupCamera": 20,
   "aCoupRotation": 15,
   "toutEnPhase": 3,
-  "zoomRetourMin": 0.3
+  "zoomRetourMin": 0.3,
+  "qrModulePx": 6,
+  "qrDuree": 4,
+  "qrLongueur": 120,
+  "qrContraste": 7
 }

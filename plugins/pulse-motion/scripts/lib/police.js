@@ -1,6 +1,7 @@
 'use strict';
 /* Pulse Motion – lecture des polices (TTF, OTF, WOFF, WOFF2) sans dépendance :
- * licence d'intégration (OS/2.fsType) et caractères couverts (cmap) ; fichiers d'une famille dans un dossier. */
+ * licence d'intégration (OS/2.fsType) et caractères couverts (cmap) ; fichiers d'une famille dans un dossier ; axes d'une
+ * police variable (fvar) et graisse d'un fichier statique (OS/2.usWeightClass), spec S9 5.6. */
 const fs = require('node:fs');
 const path = require('node:path');
 const zlib = require('node:zlib');
@@ -151,7 +152,55 @@ function analyserPolice(buf, caracteres = FRANCAIS) {
     interdite: (fsType & 0x000f) === 0x0002,
     apercuSeulement: (fsType & 0x0004) !== 0 && (fsType & 0x0008) === 0,
     manquants,
+    // Police variable (spec S9, 5.6) : axes de la table fvar ; graisse d'un fichier statique (OS/2.usWeightClass).
+    axes: axesDe(tables.get('fvar')),
+    graisse: os2 && os2.length >= 6 ? os2.readUInt16BE(4) : null,
   };
+}
+
+/** Axes d'une police variable (table fvar) : [{ tag, min, max, defaut }] ; [] pour un fichier statique. */
+function axesDe(fvar) {
+  if (!fvar || fvar.length < 16) return [];
+  try {
+    const debut = fvar.readUInt16BE(4);
+    const n = fvar.readUInt16BE(8);
+    const taille = fvar.readUInt16BE(10);
+    const fixe = (o) => Math.round(fvar.readInt32BE(o) / 65536 * 1000) / 1000;
+    const axes = [];
+    for (let i = 0; i < n; i++) {
+      const o = debut + i * taille;
+      if (o + 20 > fvar.length) break;
+      axes.push({ tag: fvar.toString('latin1', o, o + 4), min: fixe(o + 4), defaut: fixe(o + 8), max: fixe(o + 12) });
+    }
+    return axes;
+  } catch { return []; }
+}
+
+// Axes et graisse par fichier, gardés tant que le fichier ne change pas (l'assemblage les lit à chaque fois).
+const caracteristiques = new Map();
+/** Axes et graisse d'un fichier de police : { axes, graisse } ; null s'il est illisible. */
+function caracteristiquesPolice(fichier) {
+  let stat;
+  try { stat = fs.statSync(fichier); } catch { return null; }
+  const cle = `${fichier}|${stat.size}|${stat.mtimeMs}`;
+  if (!caracteristiques.has(cle)) {
+    let r = null;
+    try {
+      const tables = lireTables(fs.readFileSync(fichier));
+      const os2 = tables.get('OS/2');
+      r = { axes: axesDe(tables.get('fvar')), graisse: os2 && os2.length >= 6 ? os2.readUInt16BE(4) : null };
+    } catch { r = null; }
+    caracteristiques.set(cle, r);
+  }
+  return caracteristiques.get(cle);
+}
+
+const NOMS_AXES = { wght: 'graisse', wdth: 'largeur', slnt: 'inclinaison', ital: 'italique', opsz: 'taille optique' };
+/** Annonce des axes : « police variable : graisse de 100 à 900 » ; null pour un fichier statique. */
+function annonceAxes(axes) {
+  if (!axes || !axes.length) return null;
+  const nombre = (x) => String(x).replace('.', ',');
+  return `police variable : ${axes.map((a) => `${NOMS_AXES[a.tag] || `axe « ${a.tag} »`} de ${nombre(a.min)} à ${nombre(a.max)}`).join(', ')}`;
 }
 
 /** Fichiers « <famille>.<ext> » ou « <famille>-<graisse>.<ext> » du premier dossier qui en contient. */
@@ -173,4 +222,4 @@ function trouverFichiersPolice(famille, dossiers) {
   return [];
 }
 
-module.exports = { lireTables, lecteurCmap, analyserPolice, trouverFichiersPolice, FRANCAIS, EXTENSIONS_POLICE };
+module.exports = { lireTables, lecteurCmap, analyserPolice, trouverFichiersPolice, axesDe, caracteristiquesPolice, annonceAxes, FRANCAIS, EXTENSIONS_POLICE };

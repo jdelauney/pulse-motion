@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "source": "Noms, sens et idées de phrases inspirés de Motion Prompt (https://github.com/showheyohtaki/motion-prompt), MIT © 2026 Shohei Ohtaki ; traduits et adaptés au moteur Pulse Motion. Vie du décor (#069 à #080) et motifs #081, #082 : chiffres de rossark-motion-skill, MIT © 2026 rossark0 ; zoom continu, pulsation sur le temps et cercle d'inondation (#083, #086, #090) : take-one, MIT © 2026 Tal Siach ; défilement, échos, roue, avant/après, hélice et suivi retardé (#084, #085, #087, #088, #091, #093) : reanimate, MIT © 2026 Niaz Morshed ; idées et chiffres réécrits. Démonstration de logiciel (#094 à #106) : pointeur, projecteur, anneau, zooms enchaînés et blocs d'argo, MIT © 2026 Shreyas Karnik ; idées et chiffres réécrits. Transitions #107 à #111 : fuite de lumière d'argo (light-leak), MIT © 2026 Shreyas Karnik, traduite ; brûlure, lentille, iris et déformation : idées de HyperFrames (via argo), réécrites sans code repris. Diagrammes #112 à #121 : flèches, annotations et tracé à main levée d'explainroo (engine/stage.js, engine/pen.js), MIT © 2026 Vincent Schmalbach, principes de Rough.js ; idées et chiffres réécrits. Voir THIRD-PARTY-NOTICES.md.",
+  "source": "Noms, sens et idées de phrases inspirés de Motion Prompt (https://github.com/showheyohtaki/motion-prompt), MIT © 2026 Shohei Ohtaki ; traduits et adaptés au moteur Pulse Motion. Vie du décor (#069 à #080) et motifs #081, #082 : chiffres de rossark-motion-skill, MIT © 2026 rossark0 ; zoom continu, pulsation sur le temps et cercle d'inondation (#083, #086, #090) : take-one, MIT © 2026 Tal Siach ; défilement, échos, roue, avant/après, hélice et suivi retardé (#084, #085, #087, #088, #091, #093) : reanimate, MIT © 2026 Niaz Morshed ; idées et chiffres réécrits. Démonstration de logiciel (#094 à #106) : pointeur, projecteur, anneau, zooms enchaînés et blocs d'argo, MIT © 2026 Shreyas Karnik ; idées et chiffres réécrits. Transitions #107 à #111 : fuite de lumière d'argo (light-leak), MIT © 2026 Shreyas Karnik, traduite ; brûlure, lentille, iris et déformation : idées de HyperFrames (via argo), réécrites sans code repris. Diagrammes #112 à #121 : flèches, annotations et tracé à main levée d'explainroo (engine/stage.js, engine/pen.js), MIT © 2026 Vincent Schmalbach, principes de Rough.js ; idées et chiffres réécrits. Voir THIRD-PARTY-NOTICES.md. Typographie cinétique, karaoké, QR codes, Ken Burns et 2,5D (#129 à #140) : spec « Lacunes créatives » de Pulse Motion, écrites à neuf.",
   "categories": [
     {
       "id": "entrees",
@@ -5057,6 +5057,462 @@
           }
         ],
         "note": "La caméra automatique le fait d'elle-même, à la fin de la voix (data-camera=\"auto\")."
+      }
+    },
+    {
+      "no": "129",
+      "slug": "texte-sur-trace",
+      "categorie": "texte",
+      "nom": {
+        "fr": "Texte sur un tracé",
+        "metier": "Text on path"
+      },
+      "sens": "Le texte suit une courbe et glisse le long de son chemin",
+      "demande": "Fais glisser le slogan le long d'un arc en 3 s.",
+      "quand": "Un slogan, un trajet, une route : le texte épouse la forme qu'il raconte.",
+      "motsCles": [
+        "tracé",
+        "courbe",
+        "text on path",
+        "arc",
+        "chemin",
+        "texte courbé"
+      ],
+      "recette": {
+        "type": "attribut",
+        "exemple": "<svg class=\"pm-sur-trace\" viewBox=\"0 0 1000 400\" style=\"position: absolute; left: 10%; top: 18%; width: 80%\">\n  <path id=\"arc-1\" d=\"M50 350 Q500 0 950 350\" fill=\"none\"/>\n  <text font-size=\"72\" style=\"font-family: var(--f-titres); font-weight: 700\"><textPath href=\"#arc-1\" data-texte=\"titre\" data-start=\"0.2\" data-sur-trace=\"defile 100→0 0+3 sine-inout\"></textPath></text>\n</svg>",
+        "reglages": [
+          {
+            "nom": "data-sur-trace",
+            "defaut": "defile 100→0 0+3 sine-inout",
+            "effet": "position de départ et d'arrivée sur le tracé (en %), début+durée, courbe ; « ecrit 0+2 » l'écrit lettre après lettre"
+          },
+          {
+            "nom": "d",
+            "defaut": "M50 350 Q500 0 950 350",
+            "effet": "la forme du tracé : arc, vague, cercle"
+          }
+        ],
+        "note": "La couleur suit color (classe pm-sur-trace). Sur un tracé, data-lettres n'accepte que frappe et fondu."
+      }
+    },
+    {
+      "no": "130",
+      "slug": "graisse-respire",
+      "categorie": "texte",
+      "nom": {
+        "fr": "Graisse qui respire",
+        "metier": "Variable font weight animation"
+      },
+      "sens": "Le mot s'épaissit doucement, comme s'il prenait de l'assurance",
+      "demande": "Fais passer le titre de maigre à gras en 1,6 s.",
+      "quand": "Insister sur un mot sans le déplacer ni changer sa couleur.",
+      "motsCles": [
+        "graisse",
+        "police variable",
+        "variable font",
+        "épaissir",
+        "gras",
+        "respire"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<h1 class=\"pm-variable\" data-texte=\"titre\" data-start=\"0.2\" data-dur=\"1.6\" data-tween=\"--pm-wght 300→800 sine-inout\" style=\"margin: 0; font-family: var(--f-titres)\"></h1>",
+        "reglages": [
+          {
+            "nom": "--pm-wght",
+            "defaut": "300→800",
+            "effet": "graisse de départ et d'arrivée (dans la plage de la police)"
+          },
+          {
+            "nom": "--pm-wdth, --pm-slnt",
+            "defaut": "100, 0",
+            "effet": "largeur et inclinaison, si la police a ces axes"
+          }
+        ],
+        "note": "Il faut une police variable (Inter ou Figtree du style clair-pedagogique, ou une police fournie) ; sinon la règle police-non-variable le signale."
+      }
+    },
+    {
+      "no": "131",
+      "slug": "lettres-epaississent",
+      "categorie": "texte",
+      "nom": {
+        "fr": "Lettres qui s'épaississent",
+        "metier": "Staggered weight reveal"
+      },
+      "sens": "Les lettres passent l'une après l'autre du trait fin au trait plein",
+      "demande": "Fais s'épaissir les lettres du titre une à une, 0,04 s entre deux.",
+      "quand": "Un titre qui s'affirme lettre par lettre, plus calme qu'un rebond.",
+      "motsCles": [
+        "graisse",
+        "lettres",
+        "épaissir",
+        "cascade",
+        "police variable",
+        "weight"
+      ],
+      "recette": {
+        "type": "attribut",
+        "exemple": "<h1 data-texte=\"titre\" data-start=\"0.2\" data-lettres=\"graisse\" style=\"margin: 0; font-family: var(--f-titres); font-weight: 800\"></h1>",
+        "reglages": [
+          {
+            "nom": "data-pas",
+            "defaut": "0.04",
+            "effet": "écart entre deux lettres (s)"
+          },
+          {
+            "nom": "font-weight",
+            "defaut": "800",
+            "effet": "graisse d'arrivée ; le départ est la graisse la plus fine de la police"
+          }
+        ],
+        "note": "Il faut une police variable ; sinon la règle police-non-variable le signale."
+      }
+    },
+    {
+      "no": "132",
+      "slug": "texte-fenetre",
+      "categorie": "texte",
+      "nom": {
+        "fr": "Texte fenêtre",
+        "metier": "Image-filled text"
+      },
+      "sens": "Les lettres sont des fenêtres sur une image qui glisse derrière elles",
+      "demande": "Remplis le titre de la photo de la cuisine, qui glisse en 3 s.",
+      "quand": "Un grand mot-titre qui porte déjà le décor du sujet.",
+      "motsCles": [
+        "texte image",
+        "remplissage",
+        "image dans le texte",
+        "knockout",
+        "fenêtre",
+        "photo"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<h1 class=\"pm-texte-image\" data-texte=\"titre\" data-start=\"0.2\" data-dur=\"3\" data-tween=\"--pm-texte-image-x 0%→100% sine-inout\" style=\"margin: 0; font: 900 18cqh/1 var(--f-titres); --pm-texte-image: repeating-linear-gradient(120deg, var(--c-primaire) 0 4cqh, var(--c-accent) 4cqh 8cqh)\"></h1>",
+        "reglages": [
+          {
+            "nom": "--pm-texte-image",
+            "defaut": "url(assets/photo.jpg)",
+            "effet": "l'image (embarquée dans la page) ou un dégradé"
+          },
+          {
+            "nom": "--pm-texte-image-x",
+            "defaut": "0%→100%",
+            "effet": "glissement de l'image derrière les lettres"
+          }
+        ],
+        "note": "Lettre par lettre aussi (data-lettres) : chaque lettre porte sa portion de l'image. Le contraste se mesure sur les lettres réelles."
+      }
+    },
+    {
+      "no": "133",
+      "slug": "fondu-balaye",
+      "categorie": "entrees",
+      "nom": {
+        "fr": "Révélé en fondu balayé",
+        "metier": "Soft wipe"
+      },
+      "sens": "L'élément apparaît derrière un bord flou qui le balaie",
+      "demande": "Révèle le texte de gauche à droite en 1,2 s, bord doux.",
+      "quand": "Une apparition plus douce qu'un volet net, pour une phrase ou une image.",
+      "motsCles": [
+        "masque",
+        "balayage",
+        "soft wipe",
+        "révéler",
+        "dégradé",
+        "volet doux"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<p class=\"pm-m-masque-doux\" data-texte=\"texte\" data-start=\"0.2\" data-dur=\"1.2\" style=\"margin: 0; font: 600 5cqh/1.3 var(--f-texte)\"></p>",
+        "reglages": [
+          {
+            "nom": "--pm-sens",
+            "defaut": "90deg",
+            "effet": "direction du balayage (180deg : de haut en bas)"
+          },
+          {
+            "nom": "data-dur",
+            "defaut": "1.2",
+            "effet": "durée du balayage (s)"
+          }
+        ],
+        "note": "Formes : pm-m-masque-doux-vertical (de haut en bas), pm-m-masque-doux-radial (du centre vers les bords)."
+      }
+    },
+    {
+      "no": "134",
+      "slug": "image-forme",
+      "categorie": "valeur",
+      "nom": {
+        "fr": "Image dans une forme",
+        "metier": "Shape mask reveal"
+      },
+      "sens": "Une image se dévoile à travers une forme qui grandit",
+      "demande": "Fais apparaître la photo dans un cercle qui grandit en 1 s.",
+      "quand": "Un portrait, un produit, un lieu : l'image entre par une forme de la charte.",
+      "motsCles": [
+        "masque",
+        "forme",
+        "cercle",
+        "shape mask",
+        "découpe",
+        "image"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<div class=\"pm-masque-forme\" data-start=\"0.2\" data-dur=\"1\" data-tween=\"--pm-forme-taille 0%→100% back-out\" style=\"width: 40cqh; height: 40cqh; background: linear-gradient(135deg, var(--c-primaire), var(--c-accent)); --pm-forme: radial-gradient(circle, #000 69%, transparent 70%)\"></div>",
+        "reglages": [
+          {
+            "nom": "--pm-forme",
+            "defaut": "url(assets/forme.svg)",
+            "effet": "la forme (un SVG embarqué) ou un dégradé"
+          },
+          {
+            "nom": "--pm-forme-taille",
+            "defaut": "0%→100%",
+            "effet": "taille de la forme, animée"
+          }
+        ],
+        "note": "Sur une photo : <img class=\"pm-masque-forme\" src=\"assets/photo.jpg\" alt=\"…\">."
+      }
+    },
+    {
+      "no": "135",
+      "slug": "qr-compose",
+      "categorie": "entrees",
+      "nom": {
+        "fr": "QR qui se compose",
+        "metier": "QR code build-up"
+      },
+      "sens": "Le QR code se construit rangée par rangée, puis reste immobile",
+      "demande": "Ajoute un QR code vers notre site, qui se compose en 1 s, et laisse-le 5 s.",
+      "quand": "En fin de vidéo, pour un lien d'inscription ou une ressource à télécharger.",
+      "motsCles": [
+        "qr",
+        "qr code",
+        "lien",
+        "scanner",
+        "code",
+        "adresse"
+      ],
+      "recette": {
+        "type": "attribut",
+        "exemple": "<svg class=\"pm-qr-compose\" data-qr=\"lien\" data-start=\"0.3\" style=\"width: 40cqh; height: 40cqh\"></svg>",
+        "donnees": {
+          "textes": {
+            "titre": "Un titre",
+            "texte": "Un texte",
+            "lien": "https://exemple.fr"
+          }
+        },
+        "reglages": [
+          {
+            "nom": "data-qr",
+            "defaut": "lien",
+            "effet": "clé du texte du déroulé qui donne l'adresse"
+          },
+          {
+            "nom": "data-qr-correction",
+            "defaut": "M",
+            "effet": "L, M, Q ou H : plus haut, plus robuste et plus dense"
+          },
+          {
+            "nom": "data-qr-encre, data-qr-fond",
+            "defaut": "#000, #fff",
+            "effet": "couleurs (de la charte, foncé sur clair, contraste de 7:1 au moins)"
+          }
+        ],
+        "note": "Sans pm-qr-compose, le code entre comme tout élément (fondu, pop-in). Il faut au moins 4 s immobile et des carrés de 6 px à l'export."
+      }
+    },
+    {
+      "no": "136",
+      "slug": "ken-burns",
+      "categorie": "camera",
+      "nom": {
+        "fr": "Ken Burns",
+        "metier": "Ken Burns effect"
+      },
+      "sens": "La photo glisse ou se rapproche lentement dans son cadre",
+      "demande": "Fais défiler mes photos doucement, un zoom de 1,12 par photo.",
+      "quand": "Des photos fixes (lieux, personnes, archives) qui doivent vivre sans distraire.",
+      "motsCles": [
+        "ken burns",
+        "photo",
+        "diaporama",
+        "zoom lent",
+        "défilement",
+        "image"
+      ],
+      "recette": {
+        "type": "attribut",
+        "exemple": "<div data-ken-burns=\"auto\" data-start=\"0\" style=\"position: absolute; inset: 8cqh 20cqh; border-radius: 2cqh\">\n  <svg viewBox=\"0 0 160 90\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\"><rect width=\"160\" height=\"90\" style=\"fill: var(--c-primaire)\"/><circle cx=\"110\" cy=\"35\" r=\"18\" style=\"fill: var(--c-accent)\"/><path d=\"M0 90 L50 45 L90 70 L130 40 L160 60 V90 Z\" style=\"fill: var(--c-texte)\"/></svg>\n</div>",
+        "reglages": [
+          {
+            "nom": "sens",
+            "defaut": "auto",
+            "effet": "avant, arriere, gauche, droite, haut ou bas ; auto : tiré, jamais deux fois de suite le même"
+          },
+          {
+            "nom": "ampleur",
+            "defaut": "1.12",
+            "effet": "zoom final, de 1,03 à 1,3"
+          }
+        ],
+        "note": "Une photo : <img src=\"assets/photo.jpg\" alt=\"…\"> dans le conteneur. Le zoom final compte pour la résolution de l'image. Toute la scène : #056."
+      }
+    },
+    {
+      "no": "137",
+      "slug": "carte-retourne",
+      "categorie": "valeur",
+      "nom": {
+        "fr": "Carte qui se retourne",
+        "metier": "Card flip"
+      },
+      "sens": "Une carte pivote et montre son verso : la question, puis la réponse",
+      "demande": "Retourne la carte à 1 s, en 0,8 s, pour montrer la réponse.",
+      "quand": "Question et réponse, avant et après, mot et définition.",
+      "motsCles": [
+        "carte",
+        "retourner",
+        "flip",
+        "recto verso",
+        "3d",
+        "pivoter"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<div class=\"pm-espace-3d\" style=\"width: 50cqh; height: 32cqh\">\n  <div class=\"pm-m-retourne\" data-start=\"1\" style=\"width: 100%; height: 100%\">\n    <div class=\"pm-3d-face\" style=\"display: grid; place-items: center; border-radius: 2cqh; background: var(--c-primaire); color: var(--c-sur-primaire)\"><h2 data-texte=\"titre\" style=\"margin: 0\"></h2></div>\n    <div class=\"pm-3d-face pm-3d-verso\" style=\"display: grid; place-items: center; border-radius: 2cqh; background: var(--c-fond); color: var(--c-texte)\"><p data-texte=\"texte\" style=\"margin: 0\"></p></div>\n  </div>\n</div>",
+        "reglages": [
+          {
+            "nom": "--pm-dur",
+            "defaut": "0.8s",
+            "effet": "durée du demi-tour"
+          },
+          {
+            "nom": "--pm-perspective",
+            "defaut": "150cqh",
+            "effet": "profondeur (plus petit : plus spectaculaire)"
+          }
+        ],
+        "note": "Recto et verso portent pm-3d-face ; le verso aussi pm-3d-verso. Export avec ffmpeg seulement : l'export rapide aplatit la 3D (règle trois-d-export-rapide)."
+      }
+    },
+    {
+      "no": "138",
+      "slug": "cube-tourne",
+      "categorie": "valeur",
+      "nom": {
+        "fr": "Cube qui tourne",
+        "metier": "Rotating cube"
+      },
+      "sens": "Un cube tourne d'un quart de tour à chaque temps et montre une face après l'autre",
+      "demande": "Fais tourner un cube de 4 faces, un quart de tour par seconde.",
+      "quand": "Quatre idées, quatre étapes ou quatre mots qui se succèdent au même endroit.",
+      "motsCles": [
+        "cube",
+        "rotation",
+        "faces",
+        "3d",
+        "quart de tour",
+        "tourner"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<div class=\"pm-espace-3d\" style=\"width: 30cqh; height: 30cqh\">\n  <div class=\"pm-m-cube\" data-start=\"0.5\">\n    <div style=\"display: grid; place-items: center; background: var(--c-primaire); color: var(--c-sur-primaire)\"><b data-texte=\"titre\"></b></div>\n    <div style=\"background: var(--c-accent)\"></div>\n    <div style=\"display: grid; place-items: center; background: var(--c-fond); color: var(--c-texte)\"><b data-texte=\"texte\"></b></div>\n    <div style=\"background: var(--c-texte)\"></div>\n  </div>\n</div>",
+        "reglages": [
+          {
+            "nom": "--pm-cube-pas",
+            "defaut": "var(--pm-temps, 1s)",
+            "effet": "durée d'un quart de tour : un temps de la musique avec un tempo"
+          },
+          {
+            "nom": "--pm-cube-cote",
+            "defaut": "30cqh",
+            "effet": "taille du cube"
+          }
+        ],
+        "note": "Quatre faces, dans l'ordre de la rotation ; --pm-cube-tours : nombre de tours. Export avec ffmpeg seulement : l'export rapide aplatit la 3D (règle trois-d-export-rapide)."
+      }
+    },
+    {
+      "no": "139",
+      "slug": "ecran-incline",
+      "categorie": "valeur",
+      "nom": {
+        "fr": "Écran incliné",
+        "metier": "Tilted screen mockup"
+      },
+      "sens": "Une capture se pose de biais, comme un écran sur un bureau",
+      "demande": "Pose la capture inclinée de 22° en 1,2 s.",
+      "quand": "Présenter un document ou une interface avec du relief, sans vraie 3D.",
+      "motsCles": [
+        "incliné",
+        "perspective",
+        "écran",
+        "mockup",
+        "capture",
+        "biais"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<div class=\"pm-3d\" data-start=\"0.2\" style=\"--pm-3d-pose: rotateX(22deg) rotateZ(-8deg); width: 90cqh; height: 52cqh; border-radius: 1.5cqh; background: var(--c-fond); box-shadow: 0 3cqh 6cqh rgb(0 0 0 / 0.25); display: grid; place-items: center\"><h2 data-texte=\"titre\" style=\"margin: 0\"></h2></div>",
+        "reglages": [
+          {
+            "nom": "--pm-3d-pose",
+            "defaut": "rotateX(22deg) rotateZ(-8deg)",
+            "effet": "pose d'arrivée"
+          },
+          {
+            "nom": "--pm-dur",
+            "defaut": "1.2s",
+            "effet": "durée de la pose"
+          }
+        ],
+        "note": "Même classe que #106 (la capture qui se redresse) : sans --pm-3d-pose, elle finit à plat. Avec un cadre d'écran : pulse-motion bloc revelation-3d."
+      }
+    },
+    {
+      "no": "140",
+      "slug": "texte-relief",
+      "categorie": "texte",
+      "nom": {
+        "fr": "Texte en relief",
+        "metier": "Extruded text"
+      },
+      "sens": "Les lettres prennent de l'épaisseur, comme découpées dans un bloc",
+      "demande": "Donne du relief au titre, une épaisseur de 0,08 em.",
+      "quand": "Un titre d'affiche, un chiffre clé, une ambiance jeu ou rétro.",
+      "motsCles": [
+        "relief",
+        "extrusion",
+        "3d",
+        "épaisseur",
+        "ombre",
+        "volume"
+      ],
+      "recette": {
+        "type": "classe",
+        "exemple": "<h1 class=\"pm-relief\" data-texte=\"titre\" data-start=\"0.2\" style=\"margin: 0; font: 900 14cqh/1 var(--f-titres); --pm-relief: 0.08em\"></h1>",
+        "reglages": [
+          {
+            "nom": "--pm-relief",
+            "defaut": "0.08em",
+            "effet": "épaisseur du relief"
+          },
+          {
+            "nom": "--pm-relief-couleur",
+            "defaut": "texte assombri",
+            "effet": "couleur du flanc"
+          }
+        ],
+        "note": "Six ombres décalées : aucune vraie 3D, rendu identique à l'export rapide."
       }
     }
   ]

@@ -19,14 +19,21 @@
  * Écrit à la main (data-lettres="ecrit", spec Styles et réalisation 5.13, styles dessinés) : chaque lettre s'écrit de gauche à
  * droite, deux lettres à la fois au plus ; sans data-pas, le pas suit data-dur pour que la dernière lettre finisse à son
  * échéance (pas = durée / (n + 1), lettre en deux pas, --pm-lettre-dur posé sur l'élément). Animation dans base.css.
- * Navigateur seulement ; dépend de minutage (M.lireSecondes). Sous Node : EFFETS, paquetsSaisie, couperMorceaux, motCleDe.
+ * Fondu (lettre par lettre en fondu) et graisse (chaque lettre s'épaissit de la graisse minimale de sa police à celle du texte,
+ * --pm-graisse-min et --pm-graisse posés sur l'élément), spec S9 5.5 et 5.6 ; sur un <textPath>, lettres ou mots en <tspan>,
+ * frappe et fondu seulement (EFFETS_TRACE). CSS de ces trois cas dans moteur/briques.css.
+ * Navigateur seulement ; dépend de minutage (M.lireSecondes). Sous Node : EFFETS, EFFETS_TRACE, paquetsSaisie, couperMorceaux, motCleDe.
  */
 (function (racine) {
   'use strict';
   var M = racine.M = racine.M || {};
 
   // Écart par défaut entre deux lettres, en secondes ; entre deux mots : PAS_MOTS.
-  var EFFETS = { monte: 0.05, flou: 0.05, frappe: 0.04, onde: 0.02, chute: 0.05, brouille: 0.04, saisie: 0.04, ecrit: 0.06 };
+  // fondu et graisse (spec S9, 5.5 et 5.6) : CSS dans moteur/briques.css, embarquée quand une scène s'en sert.
+  var EFFETS = { monte: 0.05, flou: 0.05, frappe: 0.04, onde: 0.02, chute: 0.05, brouille: 0.04, saisie: 0.04, ecrit: 0.06, fondu: 0.04, graisse: 0.04 };
+  // Sur un tracé (<textPath>, spec S9 5.5) : un <tspan> ne prend pas de transform dans Chrome.
+  var EFFETS_TRACE = ['frappe', 'fondu'];
+  var SVG = 'http://www.w3.org/2000/svg';
   // Écrit à la main : une lettre dure LETTRE_ECRIT pas (deux lettres s'écrivent ensemble au plus).
   var LETTRE_ECRIT = 2;
   // Saisie (spec S6, 5.9) : paquets de 1 à 3 lettres (probabilités 0,6, 0,3, 0,1), 45 à 140 ms entre deux paquets, × 2,5
@@ -182,6 +189,31 @@
     return null;
   }
 
+  /** Texte sur un tracé (<textPath>) : lettres ou mots en <tspan> (frappe ou fondu par fill-opacity, moteur/briques.css). */
+  function decouperTrace(el, parLettres, pas) {
+    var texte = el.textContent;
+    if (texte.trim() === '') return null;
+    var n = 0;
+    var tspan = function (classe, contenu) {
+      var t = document.createElementNS(SVG, 'tspan');
+      t.setAttribute('class', classe);
+      t.textContent = contenu;
+      t.style.setProperty('--pm-i', String(n++));
+      return t;
+    };
+    el.setAttribute('aria-label', texte.replace(/\s+/g, ' ').trim());
+    el.textContent = '';
+    texte.split(/([ \t\n\r]+)/).forEach(function (morceau) {
+      if (morceau === '') return;
+      if (BLANC.test(morceau)) { el.appendChild(document.createTextNode(morceau)); return; }
+      if (parLettres) graphemes(morceau).forEach(function (g) { el.appendChild(tspan('pm-lettre', g)); });
+      else el.appendChild(tspan('pm-mot', morceau));
+    });
+    el.style.setProperty('--pm-n', String(n));
+    el.style.setProperty('--pm-pas', pas + 's');
+    return null;
+  }
+
   /** Découpe un élément ; -> message d'erreur ou null. */
   function decouperElement(el, idScene, dureeTemps) {
     var parLettres = el.hasAttribute('data-lettres');
@@ -198,6 +230,10 @@
     if (effet === 'ecrit' && !parLettres) {
       return { regle: 'lettres-invalide', message: debut + 'data-mots « ecrit » : le texte s\'écrit lettre par lettre, écrire data-lettres="ecrit".' };
     }
+    var dansSvg = el.namespaceURI === SVG;
+    if (dansSvg && EFFETS_TRACE.indexOf(effet) < 0) {
+      return { regle: 'lettres-invalide', message: debut + attribut + ' « ' + effet + ' » : sur un tracé : frappe ou fondu seulement.' };
+    }
     var pas = parLettres ? EFFETS[effet] : PAS_MOTS;
     var brut = el.getAttribute('data-pas');
     // Écrit à la main sans data-pas : le pas suit data-dur (calculé une fois les lettres comptées).
@@ -207,6 +243,16 @@
       if (lu.erreur === 'tempo-absent') return { regle: 'tempo-absent', message: debut + 'data-pas « ' + brut + ' » est en temps musicaux, mais le déroulé n\'a pas de « tempo ».' };
       if (lu.erreur) return { regle: 'lettres-invalide', message: debut + 'data-pas « ' + brut + ' » n\'est pas un nombre de secondes (ex. 0.04, ou 0.25t avec un tempo).' };
       pas = lu.valeur;
+    }
+    if (dansSvg) return decouperTrace(el, parLettres, pas);
+    // Graisse (spec S9, 5.6) : de la graisse minimale de la police (axes de M.donnees.polices) à celle du texte.
+    if (effet === 'graisse') {
+      var cs = racine.getComputedStyle(el);
+      var famille = String(cs.fontFamily || '').split(',')[0].trim().replace(/^["']|["']$/g, '');
+      var polices = (M.donnees && M.donnees.polices) || {};
+      var axe = polices[famille] && (polices[famille].axes || []).filter(function (a) { return a.tag === 'wght'; })[0];
+      el.style.setProperty('--pm-graisse-min', String(axe ? axe.min : 100));
+      el.style.setProperty('--pm-graisse', String(parseFloat(cs.fontWeight) || 400));
     }
     // Morceaux de texte et retours à la ligne (<br>, posés par l'assemblage pour « \n ») ;
     // une autre balise dans le texte est aplatie en son texte.
@@ -335,6 +381,6 @@
   M.couperMorceaux = couperMorceaux;
   // Sous Node (controler.js) : la liste des effets, les délais de la saisie (tournage, tests) et la coupe des légendes.
   if (typeof module === 'object' && module.exports) {
-    module.exports = { EFFETS: EFFETS, paquetsSaisie: paquetsSaisie, SAISIE: SAISIE, couperMorceaux: couperMorceaux, motCleDe: motCleDe, MORCEAUX: MORCEAUX, PAS_MORCEAUX: PAS_MORCEAUX, LETTRE_ECRIT: LETTRE_ECRIT };
+    module.exports = { EFFETS: EFFETS, EFFETS_TRACE: EFFETS_TRACE, paquetsSaisie: paquetsSaisie, SAISIE: SAISIE, couperMorceaux: couperMorceaux, motCleDe: motCleDe, MORCEAUX: MORCEAUX, PAS_MORCEAUX: PAS_MORCEAUX, LETTRE_ECRIT: LETTRE_ECRIT };
   }
 })(typeof globalThis !== 'undefined' ? globalThis : this);

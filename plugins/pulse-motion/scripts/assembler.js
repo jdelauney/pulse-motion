@@ -32,7 +32,8 @@ const ST = require('../moteur/sous-titres.js');
 const Langues = require('../moteur/langues.js');
 const SP = require('../moteur/synthe/partition.js');
 const SA = require('../moteur/synthe/ambiances.js');
-const { trouverFichiersPolice } = require('./lib/police.js');
+const { trouverFichiersPolice, caracteristiquesPolice } = require('./lib/police.js');
+const Briques = require('./lib/briques.js');
 const GM = require('./lib/groupes-moteur.js');
 const { minifier } = require('./lib/minifier.js');
 const { preparerEcrans, usagesEcran } = require('./lib/ecrans.js');
@@ -66,7 +67,18 @@ function cssCharte(charte, dossierProjet, dossierStyle) {
     try {
       if (!detail.has(famille)) detail.set(famille, { famille, roles: [], fichiers: [] });
       detail.get(famille).fichiers.push(fichier);
-      faces.push(`@font-face { font-family: '${famille}'; src: url("${versDataURI(fichier)}"); font-weight: ${graisse || '100 900'};${italique ? ' font-style: italic;' : ''} font-display: block; }`);
+      // Graisse déclarée (spec S9, 5.6) : celle du nom du fichier ; sinon la plage réelle d'une police variable (et sa largeur),
+      // ou la graisse inscrite dans un fichier statique (OS/2.usWeightClass) ; 100 900 si le fichier ne la dit pas.
+      let poids = graisse;
+      let largeur = '';
+      if (!poids) {
+        const c = caracteristiquesPolice(fichier);
+        const wght = c && c.axes.find((a) => a.tag === 'wght');
+        const wdth = c && c.axes.find((a) => a.tag === 'wdth');
+        poids = wght ? `${wght.min} ${wght.max}` : (c && c.graisse) || '100 900';
+        if (wdth) largeur = ` font-stretch: ${wdth.min}% ${wdth.max}%;`;
+      }
+      faces.push(`@font-face { font-family: '${famille}'; src: url("${versDataURI(fichier)}"); font-weight: ${poids};${largeur}${italique ? ' font-style: italic;' : ''} font-display: block; }`);
       polices.push(fichier);
     } catch (e) {
       erreurs.push({ regle: 'police-non-embarquee', gravite: 'erreur', message: `Police « ${famille} » : fichier « ${path.basename(fichier)} » illisible (${e.code || e.message}).` });
@@ -291,6 +303,8 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   const sonsVoix = [];
   const erreursVoix = [];
   let calageApproche = false;
+  // Scènes dont les mots sont calés sur la voix (transcription ou voix de synthèse) : le karaoké les suit (spec S9, 5.8).
+  const voixCalees = new Set();
   for (const scene of deroule.scenes) {
     const v = lireVoixScene(projet, deroule, scene);
     if (!v) continue;
@@ -305,6 +319,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
       ...(v.reperes && Object.keys(v.reperes).length ? { reperes: v.reperes } : {}), ...(v.prise.provisoire ? { provisoire: true } : {}), ...(v.prise.synthese ? { synthese: true } : {}) };
     // Voix de synthèse (spec S7, 5.12) : bornes de phrase exactes, mots au prorata des lettres dans chaque phrase.
     if (v.approche !== 'whisper' && v.approche !== 'synthese') calageApproche = true;
+    else voixCalees.add(scene.id);
     if (v.prise.provisoire) {
       erreursVoix.push({ regle: 'voix-provisoire', gravite: 'alerte', scene: scene.id,
         message: `Scène « ${scene.id} » : c'est encore la voix provisoire du système ; enregistrez la vôtre avant d'exporter.` });
@@ -377,6 +392,12 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     let avecIcones = avecDonnees;
     if (/data-icone/.test(avecDonnees)) {
       const r = require('./lib/icones.js').preparerIcones(avecDonnees, { scene: scene.id });
+      avecIcones = r.html;
+      erreurs.push(...r.erreurs);
+    }
+    // QR codes (spec S9, 5.4) : <svg data-qr="clé"> reçoit le tracé du texte « clé » du déroulé, fabriqué ici (lib/qr.js).
+    if (/\sdata-qr\s*=/.test(avecIcones)) {
+      const r = Briques.preparerQR(avecIcones, { scene: scene.id, textes: scene.textes, couleurs: charte.couleurs });
       avecIcones = r.html;
       erreurs.push(...r.erreurs);
     }
@@ -504,6 +525,8 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   shaders.push(...duDeroule.shaders);
   erreurs.push(...duDeroule.erreurs);
   const [l, h] = deroule.format.ratio.split(':');
+  // Briques de la spec S9 (typographie, QR, Ken Burns, 2,5D) : axes des polices variables seulement si une scène en anime un.
+  const policesVariables = Briques.besoinsBriques(sections).variable ? Briques.donneesPolices(detailPolices) : {};
   const donnees = {
     titre: deroule.titre,
     // Langue de la vidéo (spec S9, 5.1) : seulement si le déroulé la déclare (sans elle, la page est celle d'avant).
@@ -534,6 +557,8 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     ...(luPersonnages ? { personnages: donneesPersonnages(utilisesPersonnages, luPersonnages) } : {}),
     // Icônes des dessins libres (d.icone) : seulement celles nommées (lib/icones.js, cheminsPour).
     ...(dessin.icones.size ? { icones: require('./lib/icones.js').cheminsPour([...dessin.icones]) } : {}),
+    // Polices variables (spec S9, 5.6) : axes par famille, lus par l'effet de lettres graisse.
+    ...(Object.keys(policesVariables).length ? { polices: policesVariables } : {}),
   };
 
   // Son réactif (P7) : pistes lues par les effets, les shaders et le CSS ; analysées une fois dans la page.
@@ -563,6 +588,14 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     position: deroule.sousTitres.position || null,
     cartons,
   } : null;
+  // Karaoké (spec S9, 5.8) : sans voix enregistrée et calée, les mots sont répartis au prorata des lettres.
+  if (donnees.sousTitres && donnees.sousTitres.mode === 'karaoke') {
+    const sansVoix = deroule.scenes.filter((s) => s.voix && s.voix.texte && !voixCalees.has(s.id)).map((s) => s.id);
+    if (sansVoix.length) {
+      erreurs.push({ regle: 'karaoke-sans-voix', gravite: 'alerte', scene: sansVoix[0],
+        message: `Le karaoké suit les mots de la voix : sans voix enregistrée et calée, le remplissage ne suivra pas la parole (scène${sansVoix.length > 1 ? 's' : ''} ${sansVoix.map((x) => `« ${x} »`).join(', ')}).` });
+    }
+  }
 
   // Allure (spec S7, 5.14) : une musique importée ou une partition garde son tempo ; on le dit.
   if (allureDe(deroule) !== 1 && deroule.musique && (deroule.musique.fichier || deroule.musique.partition)) {
@@ -616,10 +649,12 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     if (deja) { deja.roles.push(...p.roles); deja.fichiers.push(...p.fichiers); } else detailPolices.push(p);
   }
   const temps = dureeTemps(deroule);
+  // Feuille des briques de la spec S9 (moteur/briques.css) : seulement si une scène s'en sert, ou en karaoké.
+  const cssBriques = Briques.besoinsBriques(sections, donnees).css ? `${fs.readFileSync(path.join(RACINE, 'moteur', 'briques.css'), 'utf8')}\n` : '';
   const cssPage = `:root { --pm-ratio-l: ${l}; --pm-ratio-h: ${h};${temps ? ` --pm-temps: ${temps}s; --pm-bpm: ${Math.round(60 / temps * 1000) / 1000};` : ''} }
 ${cssZones(deroule.format.plateforme)}${fs.readFileSync(path.join(RACINE, 'moteur', 'base.css'), 'utf8')}
 ${fs.readFileSync(path.join(RACINE, 'moteur', 'mouvements.css'), 'utf8')}
-${usages.css ? `${fs.readFileSync(path.join(RACINE, 'moteur', 'ecran.css'), 'utf8')}\n` : ''}${dessin.utilise ? `${fs.readFileSync(path.join(RACINE, 'moteur', 'dessin', 'dessin.css'), 'utf8')}\n` : ''}${variablesCSS()}
+${usages.css ? `${fs.readFileSync(path.join(RACINE, 'moteur', 'ecran.css'), 'utf8')}\n` : ''}${cssBriques}${dessin.utilise ? `${fs.readFileSync(path.join(RACINE, 'moteur', 'dessin', 'dessin.css'), 'utf8')}\n` : ''}${variablesCSS()}
 ${cssDeCharte}
 ${cssMontre.css}${modulesStyle.map(cssModule).filter(Boolean).map((c) => `${c}
 `).join('')}${cssStyle}`;
@@ -654,7 +689,7 @@ M.demarrerLecteur();
 M.demarrerSousTitres();
 M.demarrerSonReactif();
 M.demarrerParticules();
-${usages.moteur && (groupes === 'tous' || groupes.includes('ecran')) ? 'M.demarrerEcrans();\n' : ''}${dessin.utilise && (groupes === 'tous' || groupes.includes('dessin')) ? 'M.demarrerDessin();\n' : ''}${groupes === 'tous' || groupes.includes('camera-auto') ? 'M.demarrerCameraAuto();\n' : ''}</script>
+${usages.moteur && (groupes === 'tous' || groupes.includes('ecran')) ? 'M.demarrerEcrans();\n' : ''}${dessin.utilise && (groupes === 'tous' || groupes.includes('dessin')) ? 'M.demarrerDessin();\n' : ''}${groupes === 'tous' || groupes.includes('camera-auto') ? 'M.demarrerCameraAuto();\n' : ''}${groupes === 'tous' || groupes.includes('trace') ? 'M.demarrerTraces();\n' : ''}</script>
 ${blocMp4 ? `${blocMp4}\n` : ''}</body>
 </html>
 `;
