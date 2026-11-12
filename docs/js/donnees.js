@@ -135,7 +135,7 @@ window.PULSE_WIKI = {
     {
       "nom": "retoucher",
       "etape": "retoucher",
-      "description": "Retoucher la vidéo en une phrase (« ralentis la scène 3 », « change le titre », « annule ») et la voir aussitôt",
+      "description": "Retoucher la vidéo en une phrase (« ralentis la scène 3 », « change le titre », « garde cet effet », « annule ») et la voir aussitôt",
       "forme": "[la retouche en une phrase]",
       "note": "facultatif : sans phrase, Pulse Motion vous demande ce qu'il faut changer"
     },

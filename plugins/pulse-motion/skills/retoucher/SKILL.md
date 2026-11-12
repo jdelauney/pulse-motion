@@ -1,5 +1,5 @@
 ---
-description: "Retoucher la vidéo Pulse Motion du dossier en une phrase et la revoir (« ralentis la scène 3 », « change le titre », « baisse la musique », « annule »). Voix : /pulse-motion:voix ; nouvelle vidéo : /pulse-motion:creer."
+description: "Retoucher la vidéo Pulse Motion du dossier en une phrase et la revoir (« ralentis la scène 3 », « change le titre », « baisse la musique », « garde cet effet », « annule »). Voix : /pulse-motion:voix ; nouvelle vidéo : /pulse-motion:creer."
 argument-hint: "[la retouche en une phrase]"
 allowed-tools: Bash(pulse-motion *) Bash(node *) Monitor Read Glob Grep Write Edit Agent AskUserQuestion
 ---
