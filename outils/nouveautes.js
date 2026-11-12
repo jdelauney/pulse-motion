@@ -89,7 +89,8 @@ function versionsDuJournal() {
       pile.push(...tous.get(x).parents);
     }
     vus.add(h);
-    courant.push(...branche.map((x) => tous.get(x)), c);
+    // Branche dans l'ordre où ses commits ont été faits (la pile la parcourt du plus récent au plus ancien).
+    courant.push(...branche.reverse().map((x) => tous.get(x)), c);
     if (changements.has(h)) {
       groupes.push({ version: changements.get(h), date: c.date, commits: courant });
       courant = [];
@@ -99,6 +100,9 @@ function versionsDuJournal() {
   const disque = JSON.parse(fs.readFileSync(path.join(DEPOT, FICHIER_PLUGIN), "utf8")).version;
   const dernier = groupes.length ? groupes[groupes.length - 1].version : null;
   if (disque && disque !== dernier) groupes.push({ version: disque, date: new Date().toISOString().slice(0, 10), commits: courant });
+  // Même version : les commits faits après le commit de version (sur sa branche) lui reviennent, comme une fois la branche
+  // fusionnée (la fusion est alors le commit qui change la version) : le journal est le même avant et après la fusion.
+  else if (groupes.length) groupes[groupes.length - 1].commits.push(...courant);
   // Une même version prise deux fois sur la lignée : réunie, la date de la seconde.
   const parVersion = new Map();
   for (const g of groupes) {
