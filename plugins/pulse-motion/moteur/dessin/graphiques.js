@@ -5,8 +5,10 @@
  *     max: 40, decimales: 1 }
  *
  * TYPES ; MAX_BARRES (12) ; MAX_SECTEURS (6) ; TROU (0,55 : anneau).
- * nombreFr(v, decimales) -> « 1 250,5 » : espace fine insécable des milliers, virgule décimale, signe « − ».
- * texteValeur(v, g, decimales?) -> préfixe + nombre + espace insécable + unité (« 12 % », « 1 250 € »).
+ * nombreFr(v, decimales, langue?) -> « 1 250,5 » : espace fine insécable des milliers, virgule décimale, signe « − » ; dans une
+ *   autre langue (étiquette, sinon celle de la page, M.donnees.langue, spec S9 5.1) : ses séparateurs (Intl), « 1,250.5 » en anglais.
+ * texteValeur(v, g, decimales?, langue?) -> préfixe + nombre + espace insécable + unité (« 12 % », « 1 250 € ») ; « 12% » collé
+ *   dans les langues qui ne séparent pas le pourcentage (règle unite-insecable-sauf-pourcent de moteur/langues.js).
  * decimalesDe(g, i?) -> décimales affichées : g.decimales, sinon celles de la valeur i (ou le plus grand nombre de décimales
  *   des valeurs), 3 au plus ; une valeur qui compte garde ses décimales.
  * pourcentages(g) -> [entiers] des parts d'un secteur (somme 100, plus forts restes).
@@ -28,10 +30,12 @@
  * table et arrivée des axes au mot : styles/dataviz/STYLE.md de lemo (MIT), idées. Module pur : page (M.graphiques) et Node.
  */
 (function (racine, fabrique) {
-  var api = fabrique();
+  var node = typeof module === 'object' && module.exports;
+  var api = fabrique(function () { return racine.M && racine.M.donnees && racine.M.donnees.langue; },
+    function () { return node ? require('../langues.js') : (racine.M && racine.M.langues) || null; });
   if (typeof module === 'object' && module.exports) module.exports = api;
   else { racine.M = racine.M || {}; racine.M.graphiques = api; }
-})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (langueDeLaPage, langues) {
   'use strict';
   var TYPES = ['barres', 'barres-horizontales', 'courbe', 'secteurs', 'anneau'];
   var MAX_BARRES = 12, MAX_SECTEURS = 6, TROU = 0.55;
@@ -42,10 +46,17 @@
   function r2(x) { return Math.round(x * 100) / 100; }
   function estSecteurs(type) { return type === 'secteurs' || type === 'anneau'; }
 
-  function nombreFr(v, decimales) {
+  function francais(l) { return !l || /^fr(-|$)/i.test(String(l)); }
+
+  function nombreFr(v, decimales, langue) {
     var d = Math.max(0, Math.min(3, decimales | 0));
     var n = Number(v);
     if (!isFinite(n)) return '';
+    var l = langue || langueDeLaPage();
+    if (!francais(l)) {
+      var t = new Intl.NumberFormat(l, { minimumFractionDigits: d, maximumFractionDigits: d }).format(Math.abs(n)).replace(/\u202f/g, INSECABLE);
+      return (n < 0 && Number(Math.abs(n).toFixed(d)) !== 0 ? '−' : '') + t;
+    }
     var s = Math.abs(n).toFixed(d);
     var parties = s.split('.');
     var entier = parties[0].replace(/\B(?=(\d{3})+(?!\d))/g, FINE);
@@ -66,11 +77,13 @@
     return d;
   }
 
-  function texteValeur(v, g, decimales) {
+  function texteValeur(v, g, decimales, langue) {
     g = g || {};
     var dec = decimales === undefined ? decimalesDe(g) : decimales;
     var unite = typeof g.unite === 'string' ? g.unite.trim() : '';
-    return (typeof g.prefixe === 'string' ? g.prefixe : '') + nombreFr(v, dec) + (unite ? INSECABLE + unite : '');
+    var l = langue || langueDeLaPage(), L = !francais(l) && langues();
+    var colle = unite === '%' && L && L.de(l).typographie.indexOf('unite-insecable-sauf-pourcent') >= 0;
+    return (typeof g.prefixe === 'string' ? g.prefixe : '') + nombreFr(v, dec, l) + (unite ? (colle ? '' : INSECABLE) + unite : '');
   }
 
   function pourcentages(g) {
@@ -84,18 +97,18 @@
     return entiers;
   }
 
-  function texteSecteur(g, i) {
+  function texteSecteur(g, i, langue) {
     var x = g.valeurs[i] || {};
-    var part = pourcentages(g)[i] + INSECABLE + '%';
+    var part = texteValeur(pourcentages(g)[i], { unite: '%' }, 0, langue);
     return typeof x.etiquette === 'string' && x.etiquette.trim() ? x.etiquette.trim() + ' ' + part : part;
   }
 
-  /** Textes finaux d'un graphique : étiquettes (secteurs : avec leur part), valeurs, source. */
-  function textes(g) {
+  /** Textes finaux d'un graphique : étiquettes (secteurs : avec leur part), valeurs, source (langue : étiquette facultative). */
+  function textes(g, langue) {
     var sect = estSecteurs(g.type);
     return {
-      etiquettes: g.valeurs.map(function (x, i) { return sect ? texteSecteur(g, i) : (typeof x.etiquette === 'string' ? x.etiquette : ''); }),
-      valeurs: sect ? [] : g.valeurs.map(function (x, i) { return x.valeur === null ? '' : texteValeur(x.valeur, g, decimalesDe(g, i)); }),
+      etiquettes: g.valeurs.map(function (x, i) { return sect ? texteSecteur(g, i, langue) : (typeof x.etiquette === 'string' ? x.etiquette : ''); }),
+      valeurs: sect ? [] : g.valeurs.map(function (x, i) { return x.valeur === null ? '' : texteValeur(x.valeur, g, decimalesDe(g, i), langue); }),
       source: typeof g.source === 'string' && g.source.trim() ? g.source.trim() : null,
     };
   }

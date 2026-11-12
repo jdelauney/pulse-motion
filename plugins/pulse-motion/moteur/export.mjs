@@ -271,7 +271,9 @@ export async function exporter({ surProgression = () => {}, signal, reglages = W
   let pisteAudio = null;
   if (audio) {
     pisteAudio = new AudioBufferSource({ codec: transparent ? 'opus' : 'aac', bitrate: (n.audio || 160) * 1000 });
-    output.addAudioTrack(pisteAudio);
+    // Langue de la vidéo (spec S9, 5.1) : piste son étiquetée (ISO 639-2/T) quand le déroulé la déclare.
+    const langue = M.donnees.langue && M.langues ? M.langues.de(M.donnees.langue).iso6392 : null;
+    output.addAudioTrack(pisteAudio, langue ? { languageCode: langue } : undefined);
   }
 
   // Erreur de script d'une scène pendant l'export (5.23, point 2) : relevée, puis l'export s'arrête à l'image suivante.

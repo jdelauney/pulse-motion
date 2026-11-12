@@ -193,6 +193,8 @@ async function exporterFidele({ dossier, pour, qualite, ips, tailleMax, navigate
   // Usage et réglages effectifs, avant toute capture (une taille visée impossible est refusée ici). Un GIF est capturé comme
   // l'usage web (l'usage courriel ne change que sa largeur).
   const minutageNode = minutageVideo(projet, deroule);
+  // Langue de la vidéo (spec S9, 5.1) : piste son étiquetée, seulement si le déroulé la déclare.
+  const langueSon = deroule.langue !== undefined ? require('../moteur/langues.js').de(deroule.langue).iso6392 : null;
   let u = U.resoudreUsage({ pour: gif ? 'web' : pour, qualite, ips, tailleMax: gif ? undefined : tailleMax, flou, deroule, duree: minutageNode.duree });
   if (u.erreur) return { ok: false, audio: false, message: u.erreur, ...(u.propositionMo ? { propositionMo: u.propositionMo } : {}) };
   // Extrait d'une scène, passage seul, GIF, cadre de téléphone (spec Rendu et export, 5.12, 5.13, 5.15) : vérifiés ici.
@@ -213,7 +215,7 @@ async function exporterFidele({ dossier, pour, qualite, ips, tailleMax, navigate
   const assemblage = await P.mesurer('assemblagePage', () => assembler({ dossier: projet, dossierStyles, dossierEffets, ecrire: false }));
   if (!assemblage.ok) return { ok: false, audio: false, message: `La page ne s'assemble pas : ${assemblage.erreurs.map((e) => e.message).join(' ')}` };
   // Les fichiers de sous-titres suivent le texte exporté, même sans aperçu ouvert.
-  ecrireSousTitres(sortieDir, deroule.titre, assemblage.donnees.sousTitres && assemblage.donnees.sousTitres.cartons);
+  ecrireSousTitres(sortieDir, deroule.titre, assemblage.donnees.sousTitres && assemblage.donnees.sousTitres.cartons, assemblage.donnees.langue || null);
   // Cadre de téléphone : la sortie est celle du cadre (1920 × 1080 ou 1080 × 1080 en 1080p), réduite comme les autres définitions.
   const tailleCadre = (definition) => {
     const [l, h] = CADRE.FORMATS[demande.cadreFormat];
@@ -638,7 +640,9 @@ async function exporterFidele({ dossier, pour, qualite, ips, tailleMax, navigate
               const dv = assemblage.donnees.scenes.find((x) => x.id === id);
               return { id, debut: ms.debut, fin: ms.fin, texte: sc.voix && sc.voix.texte ? require('../moteur/aligner.js').lireTexteDit(sc.voix.texte).affiche : '', mots: (dv && dv.voix && dv.voix.mots) || [] };
             });
-            const r = await V.reecouter({ scenes, wav, transcrire: w.transcrire, dossier: travail, seuil: SEUILS.motsConfirmes });
+            // Transcription dans la langue de la vidéo (spec S9, 5.1).
+            const langueW = require('../moteur/langues.js').principale(require('../moteur/langues.js').etiquetteDe(deroule));
+            const r = await V.reecouter({ scenes, wav, transcrire: (o) => w.transcrire({ ...o, langue: langueW }), dossier: travail, seuil: SEUILS.motsConfirmes });
             if (r.faite) { faites.push('reecoute'); problemes.push(...r.problemes); } else nonFaites.push({ quoi: 'reecoute', pourquoi: r.pourquoi });
           }
         }
@@ -690,7 +694,7 @@ async function exporterFidele({ dossier, pour, qualite, ips, tailleMax, navigate
           const reglages = deuxPasses ? { ...derive, crf: undefined, debit: Math.max(1, Math.round(debitCourriel(debit, essais))) } : derive;
           if (deuxPasses) surPhase(essais ? 'reprise' : 'seconde-passe');
           await P.mesurer('extrait', () => F.transcoderExtrait({ ffmpeg: outil.chemin, entree: source, sortie: partiel, ips: cadence, debut, images: n, reglages,
-            taille: reduite ? [largeur, hauteur] : null, audio, titre, journal: deuxPasses ? path.join(travail, 'passe') : null, signal: controle.signal }));
+            taille: reduite ? [largeur, hauteur] : null, audio, titre, journal: deuxPasses ? path.join(travail, 'passe') : null, signal: controle.signal, langueSon }));
           if (!u.tailleMax) break;
           const octets = tailleFichier(partiel, essais);
           if (octets <= u.tailleMax) break;
@@ -711,7 +715,7 @@ async function exporterFidele({ dossier, pour, qualite, ips, tailleMax, navigate
         const v = Math.max(1, Math.round(debitCourriel(debit, essais)));
         surPhase(essais ? 'reprise' : 'seconde-passe');
         await P.mesurer('deuxPasses', () => F.transcoderDeuxPasses({ ffmpeg: outil.chemin, entree: source, sortie: partiel, ips: cadence, reglages: { ...derive, crf: undefined, debit: v },
-          taille: reduite ? [largeur, hauteur] : null, audio, journal: path.join(travail, 'passe'), signal: controle.signal, titre }));
+          taille: reduite ? [largeur, hauteur] : null, audio, journal: path.join(travail, 'passe'), signal: controle.signal, titre, langueSon }));
         const octets = tailleFichier(partiel, essais);
         if (octets <= u.tailleMax) break;
         // Encore au-dessus après la reprise : échec, sans fichier (5.3, point 5).
@@ -723,7 +727,7 @@ async function exporterFidele({ dossier, pour, qualite, ips, tailleMax, navigate
       partiels.delete(source);
     } else {
       // Vignette et chapitres intégrés à l'assemblage, sans réencodage (5.10, 5.11).
-      await P.mesurer('assemblage', () => F.assemblerSegments({ ffmpeg: outil.chemin, segments: fichiers, sortie: partiel, audio, vignette, meta, titre }));
+      await P.mesurer('assemblage', () => F.assemblerSegments({ ffmpeg: outil.chemin, segments: fichiers, sortie: partiel, audio, vignette, meta, titre, langueSon }));
     }
     let verification = null;
     let sonde = null;

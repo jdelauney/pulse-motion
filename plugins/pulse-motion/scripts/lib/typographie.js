@@ -1,12 +1,18 @@
 'use strict';
-/* Pulse Motion – typographie française d'un texte : corrections sûres (espaces insécables, guillemets,
+/* Pulse Motion – typographie d'un texte : corrections sûres (espaces insécables, guillemets,
  * apostrophe, points de suspension, unités, majuscules accentuées) et constats (mots doublés, termes
- * écrits de deux façons). Fonctions pures. */
+ * écrits de deux façons, ponctuation ouvrante de l'espagnol). Fonctions pures.
+ * Langue de la vidéo (spec S9, 5.1 point 6) : les règles sont nommées (REGLES) ; chaque langue de moteur/langues.js dit
+ * lesquelles s'appliquent, dans l'ordre (« typographie ») ; le français garde ses règles et leur ordre. Communes : points de
+ * suspension, apostrophe. Majuscules accentuées : français seulement ; mots doublés : répétitions correctes de la langue. */
+const Langues = require('../../moteur/langues.js');
 
 const FINE = '\u202f';
 const INSECABLE = '\u00a0';
 // « L » seul est trop souvent une initiale (« Tome 3 L », « 2 L’eau ») : seul « mL » est reconnu.
 const UNITES = '%|°C|°F|€|\\$|kg|km|cm|mm|ml|mL|min|h|Mo|Go|Ko';
+const UNITES_SANS_POURCENT = UNITES.replace('%|', '');
+const ESPACES = '[ \\u00a0\\u202f]';
 
 function appliquer(texte, regles) {
   const corrections = [];
@@ -19,25 +25,58 @@ function appliquer(texte, regles) {
   return { texte: t, corrections };
 }
 
-const REGLES = [
-  ['points de suspension « … »', (t) => t.replace(/\.{3}/g, '…')],
-  ['apostrophe « ’ »', (t) => t.replace(/(\p{L})'(?=\p{L})/gu, '$1’')],
+// Guillemets droits "…" (jamais après un chiffre : pouces, 27") et guillemets français « … » d'un texte -> ouvrant et fermant.
+const remplacerGuillemets = (t, ouvre, ferme) => (/[«»]/.test(t)
+  ? t.replace(new RegExp(`«${ESPACES}*`, 'g'), ouvre).replace(new RegExp(`${ESPACES}*»`, 'g'), ferme)
+  : t.replace(/(?<!\d)"([^"]+)"/g, (m, dedans) => `${ouvre}${dedans.trim()}${ferme}`));
+const uniteInsecable = (unites) => (t) => t.replace(new RegExp(`(\\d) ?(${unites})(?![\\p{L}\\p{N}])`, 'gu'), `$1${INSECABLE}$2`);
+
+/** Règles nommées : [description, correction]. */
+const REGLES = {
+  suspension: ['points de suspension « … »', (t) => t.replace(/\.{3}/g, '…')],
+  apostrophe: ['apostrophe « ’ »', (t) => t.replace(/(\p{L})'(?=\p{L})/gu, '$1’')],
   // Pas de conversion si le texte a déjà des « » (guillemets imbriqués) ni après un chiffre (pouces : 27").
-  ['guillemets « »', (t) => (/[«»]/.test(t) ? t : t.replace(/(?<!\d)"([^"]+)"/g, (m, dedans) => `«${INSECABLE}${dedans.trim()}${INSECABLE}»`))],
-  ['espace insécable dans les guillemets', (t) => t
+  'guillemets-francais': ['guillemets « »', (t) => (/[«»]/.test(t) ? t : t.replace(/(?<!\d)"([^"]+)"/g, (m, dedans) => `«${INSECABLE}${dedans.trim()}${INSECABLE}»`))],
+  'espace-guillemets': ['espace insécable dans les guillemets', (t) => t
     .replace(/«(?![\u00a0\u202f]) ?/g, `«${INSECABLE}`)
     .replace(/(?<![\u00a0\u202f]) ?»/g, `${INSECABLE}»`)],
   // Une espace (ordinaire ou absente) avant ; ! ? devient fine ; une insécable déjà posée est gardée.
-  ['espace fine avant « ? », « ! », « ; »', (t) => t.replace(/([^\s\u00a0\u202f;!?]) ?([;!?]+)(?=\s|$|[»"')\]…])/g, `$1${FINE}$2`)],
+  'espace-fine': ['espace fine avant « ? », « ! », « ; »', (t) => t.replace(/([^\s\u00a0\u202f;!?]) ?([;!?]+)(?=\s|$|[»"')\]…])/g, `$1${FINE}$2`)],
   // Deux-points suivis d'une espace ou en fin de texte : jamais « 12:30 », « 16:9 », « https: ».
-  ['espace insécable avant « : »', (t) => t.replace(/([^\s\u00a0\u202f]) ?:(?=\s|$)/g, `$1${INSECABLE}:`)],
-  ['espace fine entre un nombre et son unité', (t) => t.replace(new RegExp(`(\\d) ?(${UNITES})(?![\\p{L}\\p{N}])`, 'gu'), `$1${FINE}$2`)],
-];
+  'espace-deux-points': ['espace insécable avant « : »', (t) => t.replace(/([^\s\u00a0\u202f]) ?:(?=\s|$)/g, `$1${INSECABLE}:`)],
+  'unite-fine': ['espace fine entre un nombre et son unité', (t) => t.replace(new RegExp(`(\\d) ?(${UNITES})(?![\\p{L}\\p{N}])`, 'gu'), `$1${FINE}$2`)],
+  // Anglais, néerlandais, portugais du Brésil : “ ” ; une paire d'apostrophes droites autour d'un mot : ‘ ’.
+  'guillemets-anglais': ['guillemets “ ”', (t) => remplacerGuillemets(t, '“', '”').replace(/(?<![\p{L}\p{N}])'([^'\n]+)'(?![\p{L}\p{N}])/gu, '‘$1’')],
+  'guillemets-allemands': ['guillemets „ “', (t) => remplacerGuillemets(t, '„', '“')],
+  // Espagnol, italien, portugais : « » sans espace intérieure.
+  'guillemets-chevrons': ['guillemets « » sans espace', (t) => remplacerGuillemets(t, '«', '»')],
+  // Habitude française dans un texte d'une autre langue : l'espace avant ? ! : ; est retirée (jamais dans « 12:30 »).
+  'sans-espace-ponctuation': ['pas d\'espace avant « ? », « ! », « : », « ; »', (t) => t.replace(new RegExp(`(\\S)${ESPACES}+([?!:;]+)(?=\\s|$|[»”“"')\\]…])`, 'g'), '$1$2')],
+  'unite-insecable': ['espace insécable entre un nombre et son unité', uniteInsecable(UNITES)],
+  'unite-insecable-sauf-pourcent': ['espace insécable entre un nombre et son unité', uniteInsecable(UNITES_SANS_POURCENT)],
+};
 
-/** -> { texte, corrections: [description] } */
-function corrigerTypographie(texte) {
+/** Règles d'une langue (étiquette), dans leur ordre. */
+const reglesDe = (langue) => Langues.de(langue).typographie.map((id) => REGLES[id]);
+
+/** -> { texte, corrections: [description] } ; langue : étiquette de la vidéo (français par défaut). */
+function corrigerTypographie(texte, langue = 'fr') {
   // Ordre d'affichage des descriptions : celui des règles, filtrées sur celles qui ont servi.
-  return appliquer(texte, REGLES);
+  return appliquer(texte, reglesDe(langue));
+}
+
+/** Espagnol (spec S9, 5.1 point 6) : phrases qui finissent par « ? » ou « ! » sans « ¿ » ou « ¡ » ouvrant ; constat seulement.
+ *  -> [{ signe, ouvrant, phrase }] */
+function ponctuationOuvrante(texte, langue = 'fr') {
+  if (Langues.principale(langue) !== 'es') return [];
+  const r = [];
+  for (const phrase of String(texte).split(/(?<=[.!?…])\s+/)) {
+    const m = /([?!])["»”’)]*$/.exec(phrase.trim());
+    if (!m) continue;
+    const ouvrant = m[1] === '?' ? '¿' : '¡';
+    if (!phrase.includes(ouvrant)) r.push({ signe: m[1], ouvrant, phrase: phrase.trim() });
+  }
+  return r;
 }
 
 // Mots courants qui prennent un accent sur leur majuscule initiale (clé : sans accent, en minuscules).
@@ -49,9 +88,10 @@ const ACCENTUES = {
 };
 const sansAccent = (m) => m.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
-/** Premier mot d'un texte ou d'une phrase, sans accent, de la liste ACCENTUES. -> { texte, corrections } */
-function corrigerMajuscules(texte) {
+/** Premier mot d'un texte ou d'une phrase, sans accent, de la liste ACCENTUES (français seulement). -> { texte, corrections } */
+function corrigerMajuscules(texte, langue = 'fr') {
   const corrections = [];
+  if (!Langues.estFrancais(langue)) return { texte: String(texte), corrections };
   const t = String(texte).replace(/(^|[.!?…][\s\u00a0\u202f]+)(E\p{Ll}+)/gu, (tout, avant, mot) => {
     const juste = ACCENTUES[sansAccent(mot)];
     if (!juste) return tout;
@@ -61,11 +101,12 @@ function corrigerMajuscules(texte) {
   return { texte: t, corrections };
 }
 
-// Répétitions correctes ou volontaires (oral) : « nous nous lavons », « très très bien », « si si ».
-const REPETITIONS = ['nous', 'vous', 'très', 'si', 'bla', 'non', 'oui'];
+// Répétitions correctes ou volontaires (oral) : « nous nous lavons », « très très bien », « si si » ; celles de chaque langue
+// sont dans moteur/langues.js (« repetitions » : « that that », « had had » en anglais, « die die » en allemand).
 
-/** Mots répétés (« le le »), hors REPETITIONS. */
-function motsDoubles(texte) {
+/** Mots répétés (« le le »), hors répétitions correctes de la langue. */
+function motsDoubles(texte, langue = 'fr') {
+  const REPETITIONS = Langues.de(langue).repetitions;
   const t = String(texte);
   const resultats = [];
   const re = /(?<![\p{L}\p{N}])(\p{L}+)[ \u00a0\u202f]+\1(?![\p{L}\p{N}])/giu;
@@ -101,4 +142,4 @@ function termesVariables(entrees, exclus = new Set()) {
   return [...groupes.values()].filter((f) => f.size > 1).map((f) => ({ formes: [...f.values()] }));
 }
 
-module.exports = { corrigerTypographie, corrigerMajuscules, motsDoubles, termesVariables, cleTerme };
+module.exports = { REGLES, corrigerTypographie, ponctuationOuvrante, corrigerMajuscules, motsDoubles, termesVariables, cleTerme };

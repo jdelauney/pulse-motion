@@ -7,7 +7,8 @@ const zlib = require('node:zlib');
 
 // Ordre des tables connues du format WOFF2 (index 0 à 62 des drapeaux du répertoire).
 const TAGS_WOFF2 = ['cmap', 'head', 'hhea', 'hmtx', 'maxp', 'name', 'OS/2', 'post', 'cvt ', 'fpgm', 'glyf', 'loca', 'prep', 'CFF ', 'VORG', 'EBDT', 'EBLC', 'gasp', 'hdmx', 'kern', 'LTSH', 'PCLT', 'VDMX', 'vhea', 'vmtx', 'BASE', 'GDEF', 'GPOS', 'GSUB', 'EBSC', 'JSTF', 'MATH', 'CBDT', 'CBLC', 'COLR', 'CPAL', 'SVG ', 'sbix', 'acnt', 'avar', 'bdat', 'bloc', 'bsln', 'cvar', 'fdsc', 'feat', 'fmtx', 'fvar', 'gvar', 'hsty', 'just', 'lcar', 'mort', 'morx', 'opbd', 'prop', 'trak', 'Zapf', 'Silf', 'Glat', 'Gloc', 'Feat', 'Sill'];
-const FRANCAIS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789éèêëàâäîïôöùûüÿçœæÉÈÊÀÇŒ«»’€%°…';
+// Caractères attendus d'une police : ceux de la langue de la vidéo (moteur/langues.js, spec S9 5.1 point 10) ; le français par défaut.
+const FRANCAIS = require('../../moteur/langues.js').LANGUES.fr.caracteres;
 const EXTENSIONS_POLICE = ['.woff2', '.woff', '.ttf', '.otf'];
 
 function tablesSfnt(buf) {
@@ -130,8 +131,8 @@ function lecteurCmap(cmap) {
   };
 }
 
-/** -> { fsType, interdite, apercuSeulement, manquants } */
-function analyserPolice(buf) {
+/** -> { fsType, interdite, apercuSeulement, manquants } ; caracteres : ceux de la langue de la vidéo (français par défaut). */
+function analyserPolice(buf, caracteres = FRANCAIS) {
   const tables = lireTables(buf);
   const os2 = tables.get('OS/2');
   const fsType = os2 && os2.length >= 10 ? os2.readUInt16BE(8) : 0;
@@ -140,7 +141,7 @@ function analyserPolice(buf) {
   let manquants;
   try {
     const contient = lecteurCmap(cmap);
-    manquants = [...new Set(FRANCAIS)].filter((c) => !contient(c.codePointAt(0)));
+    manquants = [...new Set(caracteres)].filter((c) => !contient(c.codePointAt(0)));
   } catch {
     // Table des caractères qui pointe hors du fichier : lecture impossible.
     throw new Error('police abîmée ou illisible');

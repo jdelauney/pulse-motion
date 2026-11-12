@@ -57,11 +57,18 @@ function memeTexte(a, b) {
   return cles(a) === cles(b);
 }
 
-/** Prononciations du glossaire du projet (charte/glossaire.md, colonne Prononciation) : { terme: prononciation }. */
+/** Langue de la vidéo du projet (spec S9, 5.1) : étiquette de « langue » dans deroule.json, 'fr' sans elle. */
+function langueDuProjet(projet) {
+  const d = lireJSON(path.join(projet, 'deroule.json'));
+  return require('../../moteur/langues.js').etiquetteDe(d);
+}
+
+/** Prononciations du glossaire du projet (charte/glossaire.md, colonne Prononciation) : { terme: prononciation } ; un glossaire
+ *  d'une autre langue que la vidéo ne s'applique pas (spec S9, 5.1 point 11). */
 function prononciationsDuProjet(projet) {
   try {
-    const { lireGlossaire } = require('../vocabulaire.js');
-    return Object.fromEntries(lireGlossaire(projet).termes.filter((t) => t.prononciation).map((t) => [t.terme, t.prononciation]));
+    const { termesPourLaVideo } = require('../vocabulaire.js');
+    return Object.fromEntries(termesPourLaVideo(projet, langueDuProjet(projet)).filter((t) => t.prononciation).map((t) => [t.terme, t.prononciation]));
   } catch { return {}; }
 }
 
@@ -218,7 +225,10 @@ async function transcrirePrise({ projet, relatif, texte, whisper, surProgression
     fs.writeFileSync(wav, W.ecrire(son));
   }
   let r;
-  try { r = await whisper.transcrire({ wav, duree, surProgression, attendu: lu.dit }); } finally { if (copie) fs.rmSync(copie, { recursive: true, force: true }); }
+  // Transcription et alignement dans la langue de la vidéo (spec S9, 5.1).
+  const langue = langueDuProjet(projet);
+  const Lg = require('../../moteur/langues.js');
+  try { r = await whisper.transcrire({ wav, duree, surProgression, attendu: lu.dit, langue: Lg.principale(langue) }); } finally { if (copie) fs.rmSync(copie, { recursive: true, force: true }); }
   // Prise remplacée pendant la transcription (nouvelle prise du studio) : rien n'est écrit pour l'ancienne.
   const sceau = empreinte(octets);
   const remplacee = () => { try { return empreinte(fs.readFileSync(absolu)) !== sceau; } catch { return true; } };
@@ -237,7 +247,7 @@ async function transcrirePrise({ projet, relatif, texte, whisper, surProgression
     return { ok: false, message, ...(verification ? { verification } : {}) };
   };
   if (!r.ok) return echouer(r.message);
-  const a = A.aligner(lu.dit, r.mots, duree);
+  const a = A.aligner(lu.dit, r.mots, duree, langue);
   const total = A.decouperMots(lu.dit).length;
   if (verifier) {
     verification = { taux: total && a ? Math.round(a.reconnus / total * 1000) / 1000 : 0,
@@ -298,5 +308,5 @@ function messageProvisoire(ids) {
   return `La vidéo contient encore la voix provisoire (scènes : ${ids.join(', ')}) : enregistrez votre voix d'abord, ou exportez une version de travail (un fichier à part, le MP4 définitif n'est pas touché).`;
 }
 
-module.exports = { SEUIL_RECONNUS, alerteVerification, natureVoix, prononciationsDuProjet, texteDitPour, minutageVideo, DOSSIER_VOIX, empreinte, priseDeScene, lireVoixScene, dureeVideo, ecrirePrise, transcrirePrise, scenesProvisoires, messageProvisoire,
+module.exports = { langueDuProjet, SEUIL_RECONNUS, alerteVerification, natureVoix, prononciationsDuProjet, texteDitPour, minutageVideo, DOSSIER_VOIX, empreinte, priseDeScene, lireVoixScene, dureeVideo, ecrirePrise, transcrirePrise, scenesProvisoires, messageProvisoire,
   empreinteProvisoire, nomVersionDeTravail };

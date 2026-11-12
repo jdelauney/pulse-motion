@@ -7,6 +7,9 @@
  * Les visèmes viennent des lettres du mot (règles du français, approximatives), les instants des mots de la voix
  * ({ w, t0, t1 } relatifs au début de la prise ; origine = instant absolu de ce début). Visèmes : A E I O U MBP FV L,
  * « repos » entre deux mots proches.
+ * Langue de la vidéo (spec S9, 5.1 point 9) : les groupes de lettres et les finales muettes sont français seulement ; une autre
+ * langue (langue : étiquette, dernier argument de visemesDuMot et de piste) suit une règle générique : une voyelle écrite donne
+ * son visème, m b p -> MBP, f v -> FV, l n t d -> L ; l'anglais y ajoute ee -> I, oo -> U, th -> L, w -> U.
  */
 (function (racine, fabrique) {
   var api = fabrique();
@@ -27,6 +30,40 @@
   ];
   var NASALES = { a: 'A', e: 'A', o: 'O', i: 'E', u: 'E', y: 'E' };
 
+  // Règle générique (langues autres que le français) : voyelles accentuées des langues latines comprises.
+  var VOYELLES_GEN = { a: 'A', 'à': 'A', 'á': 'A', 'â': 'A', 'ã': 'A', 'ä': 'E', 'å': 'O', e: 'E', 'é': 'E', 'è': 'E', 'ê': 'E', 'ë': 'E',
+    i: 'I', 'í': 'I', 'ì': 'I', 'î': 'I', 'ï': 'I', y: 'I', o: 'O', 'ó': 'O', 'ò': 'O', 'ô': 'O', 'õ': 'O', 'ö': 'E', u: 'U', 'ú': 'U',
+    'ù': 'U', 'û': 'U', 'ü': 'I' };
+  var GROUPES_ANGLAIS = [['ee', ['I']], ['oo', ['U']], ['th', ['L']], ['w', ['U']]];
+  function francais(langue) { return !langue || /^fr(-|$)/i.test(String(langue)); }
+
+  /** Visèmes d'un mot hors du français (règle générique, anglais en plus). */
+  function visemesGeneriques(w, anglais) {
+    var s = String(w || '').toLowerCase().replace(/[^a-zàáâãäåèéêëìíîïòóôõöùúûüýÿçñœæß]/g, ''), out = [];
+    function ajouter(v, poids) {
+      var der = out[out.length - 1];
+      if (der && der.v === v) der.poids = Math.max(der.poids, poids);
+      else out.push({ v: v, poids: poids });
+    }
+    var i = 0;
+    while (i < s.length) {
+      var lu = false;
+      for (var g = 0; anglais && g < GROUPES_ANGLAIS.length && !lu; g++) {
+        var gr = GROUPES_ANGLAIS[g][0];
+        if (s.substr(i, gr.length) === gr) {
+          GROUPES_ANGLAIS[g][1].forEach(function (v) { ajouter(v, v === 'L' ? 1 : 2); });
+          i += gr.length; lu = true;
+        }
+      }
+      if (lu) continue;
+      var c = s[i];
+      if (Object.prototype.hasOwnProperty.call(VOYELLES_GEN, c)) ajouter(VOYELLES_GEN[c], 2);
+      else if (CONSONNES[c]) ajouter(CONSONNES[c], 1);
+      i++;
+    }
+    return out.length ? out : [{ v: 'E', poids: 2 }];
+  }
+
   function estVoyelle(c) { return c !== undefined && Object.prototype.hasOwnProperty.call(VOYELLES, c); }
 
   var VOYELLE = /[aàâäeéèêëiîïoôöuùûüyœæ]/;
@@ -43,7 +80,8 @@
   }
 
   /** Mot -> [{ v, poids }] (voyelle 2, consonne 1), visèmes égaux de suite fusionnés ; un mot sans visème dit E. */
-  function visemesDuMot(w) {
+  function visemesDuMot(w, langue) {
+    if (!francais(langue)) return visemesGeneriques(w, /^en(-|$)/i.test(String(langue)));
     var s = lettres(w), out = [];
     function ajouter(v, poids) {
       var der = out[out.length - 1];
@@ -76,8 +114,8 @@
   }
 
   /** Segments d'un mot dans [t0, t1] au prorata des poids ; trop courts retirés (consonne d'abord). */
-  function segmentsDuMot(w, t0, t1) {
-    var vs = visemesDuMot(w);
+  function segmentsDuMot(w, t0, t1, langue) {
+    var vs = visemesDuMot(w, langue);
     function total() { return vs.reduce(function (s, x) { return s + x.poids; }, 0); }
     while (vs.length > 1 && (t1 - t0) * Math.min.apply(null, vs.map(function (x) { return x.poids; })) / total() < MIN) {
       var k = -1;
@@ -96,7 +134,7 @@
   }
 
   /** Mots de la voix -> piste de visèmes (temps absolus) ; seuls les mots qui commencent dans [debut, fin[. */
-  function piste(mots, origine, debut, fin) {
+  function piste(mots, origine, debut, fin, langue) {
     var retenus = [];
     (mots || []).forEach(function (m) {
       if (!m || typeof m.t0 !== 'number' || typeof m.t1 !== 'number' || !(m.t1 > m.t0)) return;
@@ -109,7 +147,7 @@
     retenus.sort(function (a, b) { return a.t0 - b.t0; });
     var out = [];
     retenus.forEach(function (m, k) {
-      var segs = segmentsDuMot(m.w, m.t0, m.t1);
+      var segs = segmentsDuMot(m.w, m.t0, m.t1, langue);
       var suivant = retenus[k + 1];
       if (suivant) {
         var trou = suivant.t0 - m.t1;

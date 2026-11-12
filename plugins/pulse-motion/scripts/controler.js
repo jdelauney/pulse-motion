@@ -35,12 +35,13 @@ const { marquerControle } = require('./lib/reglages-rapides.js');
 const { ecrireAtomique } = require('./lib/fichiers.js');
 const { avecConsignes } = require('./lib/messages.js');
 const { trouverStyle } = require('./styles.js');
-const { lireGlossaire, verifierGlossaire } = require('./vocabulaire.js');
+const { termesPourLaVideo, verifierGlossaire } = require('./vocabulaire.js');
 const { lireDeroule, dureeTemps, grilleFixe, optionsMinutage } = require('./lib/deroule.js');
 const { deplierGroupes } = require('./lib/groupes-personnages.js');
 const { cheminDansProjet } = require('./lib/embarquer.js');
 const W = require('../moteur/wav.js');
-const { corrigerTypographie, corrigerMajuscules, motsDoubles, termesVariables, cleTerme } = require('./lib/typographie.js');
+const { corrigerTypographie, ponctuationOuvrante, corrigerMajuscules, motsDoubles, termesVariables, cleTerme } = require('./lib/typographie.js');
+const Langues = require('../moteur/langues.js');
 const { extraireScene, textesEnDur, viesScene } = require('./lib/extraire.js');
 const { estEbauche } = require('./lib/ebauche.js');
 const { calculerMinutage } = require('../moteur/minutage.js');
@@ -92,35 +93,43 @@ function accentEncreSurTexte(texte, ou, scene) {
     message: `${ou} : l'accent « encre seulement » (--c-accent-encre) colore un texte (${m[1]}: ${m[2].trim()}) ; il ne sert qu'aux encres, aplats et tracés : prendre --c-texte ou --c-accent-lisible.` }));
 }
 
-/** Typographie, majuscules accentuées, mots doublés, termes variables (textes du déroulé et des scènes). */
+/** Typographie, majuscules accentuées, mots doublés, termes variables (textes du déroulé et des scènes), dans la langue de
+ *  la vidéo (spec S9, 5.1 point 6) ; ponctuation ouvrante de l'espagnol (constat). */
 function controlerTextes(deroule, scenesHtml, termesGlossaire, problemes) {
   const entrees = [];
+  const langue = Langues.etiquetteDe(deroule);
+  const nomTypo = `typographie ${Langues.adjectif(langue)}`;
   for (const s of deroule.scenes) {
     for (const [cle, texte] of Object.entries(s.textes || {})) {
       if (typeof texte !== 'string') continue;
       entrees.push({ scene: s.id, cle, texte });
-      const typo = corrigerTypographie(texte);
+      const typo = corrigerTypographie(texte, langue);
       if (typo.corrections.length) {
         problemes.push({ regle: 'typographie', gravite: 'alerte', scene: s.id, element: cle, details: liste(typo.corrections), correction: { scene: s.id, texte: cle, valeur: typo.texte },
-          message: `Scène « ${s.id} », texte « ${cle} » : typographie française (${liste(typo.corrections)}) : « ${typo.texte} ».` });
+          ...(Langues.estFrancais(langue) ? {} : { typographie: nomTypo }),
+          message: `Scène « ${s.id} », texte « ${cle} » : ${nomTypo} (${liste(typo.corrections)}) : « ${typo.texte} ».` });
+      }
+      for (const o of ponctuationOuvrante(texte, langue)) {
+        problemes.push({ regle: 'ponctuation-ouvrante', gravite: 'alerte', scene: s.id, element: cle,
+          message: `Scène « ${s.id} », texte « ${cle} » : « ${o.phrase} » n'a pas de « ${o.ouvrant} » ouvrant ; en espagnol, ${o.signe === '?' ? 'une question s\'ouvre par « ¿ »' : 'une exclamation s\'ouvre par « ¡ »'}.` });
       }
       // Calculée sur le texte déjà corrigé : appliquée après la typographie, sa valeur contient les deux.
-      const maj = corrigerMajuscules(typo.texte);
+      const maj = corrigerMajuscules(typo.texte, langue);
       if (maj.corrections.length) {
         problemes.push({ regle: 'majuscule-accentuee', gravite: 'alerte', scene: s.id, element: cle, details: liste(maj.corrections), correction: { scene: s.id, texte: cle, valeur: maj.texte },
           message: `Scène « ${s.id} », texte « ${cle} » : ${liste(maj.corrections)} : « ${maj.texte} ».` });
       }
-      for (const d of motsDoubles(texte)) {
+      for (const d of motsDoubles(texte, langue)) {
         problemes.push({ regle: 'mot-double', gravite: 'alerte', scene: s.id, element: cle,
           message: `Scène « ${s.id} », texte « ${cle} » : « ${d.mot} » écrit deux fois de suite ; proposition : « ${d.propose} ».` });
       }
     }
     for (const texte of textesEnDur(scenesHtml[s.id] || '')) {
-      const juste = corrigerMajuscules(corrigerTypographie(texte).texte);
-      const corrections = [...corrigerTypographie(texte).corrections, ...juste.corrections];
+      const juste = corrigerMajuscules(corrigerTypographie(texte, langue).texte, langue);
+      const corrections = [...corrigerTypographie(texte, langue).corrections, ...juste.corrections];
       if (corrections.length) {
         problemes.push({ regle: 'typographie', gravite: 'alerte', scene: s.id,
-          message: `Scène « ${s.id} » : texte écrit dans la scène, typographie française (${liste(corrections)}) : « ${juste.texte} » (à corriger dans le fichier de la scène).` });
+          message: `Scène « ${s.id} » : texte écrit dans la scène, ${nomTypo} (${liste(corrections)}) : « ${juste.texte} » (à corriger dans le fichier de la scène).` });
       }
     }
   }
@@ -459,14 +468,15 @@ function controlesRapides({ projet, dossierStyles, dossierEffets, assemblage = A
       if (res <= RESOLUTION_MILIEU_ALERTE) continue;
       problemes.push({ regle: 'budget-milieu', gravite: 'alerte', scene: mi.scene, message: `Scène « ${mi.scene} » : le milieu « ${mi.effet.nom} » a ${res} cellules sur le grand côté ; au-delà de ${RESOLUTION_MILIEU_ALERTE}, sa simulation dépasse son temps (aperçu saccadé). Baisser « resolution » (192 suffit à une fumée nette : la grille est échantillonnée en bicubique ; l'export reste exact).` });
     }
-    // Glossaire de la charte : formes à éviter, sigles mal écrits ; typographie et graphie des textes.
-    const termesGlossaire = lireGlossaire(projet).termes;
+    // Glossaire de la charte : formes à éviter, sigles mal écrits ; typographie et graphie des textes. Un glossaire d'une autre
+    // langue que la vidéo ne s'applique pas (spec S9, 5.1 point 11).
+    const termesGlossaire = termesPourLaVideo(projet, Langues.etiquetteDe(deroule));
     problemes.push(...verifierGlossaire(deroule.scenes, termesGlossaire));
     controlerTextes(deroule, scenesHtml, termesGlossaire, problemes);
     // Réalisation et vérité (spec S2, 5.7) : nouveauté, comparaison, caméra, termes clés, chiffres, glyphes, emoji, images
     // répétées, code des scènes.
     problemes.push(...reglesRealisation({ deroule, min, scenesMinutees, scenesHtml, scenesLues, besoinLecture, avecVoix, corrigeable,
-      temps, termes: termesGlossaire, fichiersPolices: assemblage.polices, seuils: SEUILS }));
+      temps, termes: termesGlossaire, fichiersPolices: assemblage.polices, detailPolices: assemblage.detailPolices, css: assemblage.cssPage, seuils: SEUILS }));
 
     // Style : tailles de texte et effets.
     let cssStyle = '';

@@ -29,6 +29,7 @@ const { lireVoixScene } = require('./lib/voix.js');
 const { lireTexteDit } = require('../moteur/aligner.js');
 const { DEBUT_VOIX, calculerMinutage, DUREE_TRANSITION_SHADER } = require('../moteur/minutage.js');
 const ST = require('../moteur/sous-titres.js');
+const Langues = require('../moteur/langues.js');
 const SP = require('../moteur/synthe/partition.js');
 const SA = require('../moteur/synthe/ambiances.js');
 const { trouverFichiersPolice } = require('./lib/police.js');
@@ -130,13 +131,14 @@ function lireMoteur(racine, { groupes = 'tous', brut = process.env.PM_MOTEUR_BRU
   return [entete].concat(GM.modulesDesGroupes(groupes).map((f) => lireModule(racine, f, brut))).join('\n;\n');
 }
 
-/** Sous-titres pour les plateformes (sous-titres activables) : sortie/<titre>.srt et .vtt ; retirés quand il n'y en a plus. */
-function ecrireSousTitres(dossierSortie, titre, cartons) {
+/** Sous-titres pour les plateformes (sous-titres activables) : sortie/<titre>.srt et .vtt ; retirés quand il n'y en a plus.
+ *  langue : étiquette de la vidéo, quand le déroulé la déclare (ligne « Language: » du VTT, spec S9 5.1). */
+function ecrireSousTitres(dossierSortie, titre, cartons, langue = null) {
   const base = path.join(dossierSortie, slug(titre));
   if (cartons && cartons.length) {
     fs.mkdirSync(dossierSortie, { recursive: true });
     fs.writeFileSync(`${base}.srt`, ST.versSRT(cartons), 'utf8');
-    fs.writeFileSync(`${base}.vtt`, ST.versVTT(cartons), 'utf8');
+    fs.writeFileSync(`${base}.vtt`, ST.versVTT(cartons, langue ? { langue } : undefined), 'utf8');
   } else {
     fs.rmSync(`${base}.srt`, { force: true });
     fs.rmSync(`${base}.vtt`, { force: true });
@@ -364,7 +366,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     let avecDonnees = avecTextes;
     const usageDonnees = usagesDonnees(avecTextes);
     if (usageDonnees.graphique || usageDonnees.code || usageDonnees.formule) {
-      const r = preparerDonnees(avecTextes, { scene });
+      const r = preparerDonnees(avecTextes, { scene, ...(deroule.langue !== undefined ? { langue: Langues.etiquetteDe(deroule) } : {}) });
       avecDonnees = r.html;
       erreurs.push(...r.erreurs);
       if (r.code) montre.code = true;
@@ -504,6 +506,8 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   const [l, h] = deroule.format.ratio.split(':');
   const donnees = {
     titre: deroule.titre,
+    // Langue de la vidéo (spec S9, 5.1) : seulement si le déroulé la déclare (sans elle, la page est celle d'avant).
+    ...(deroule.langue !== undefined ? { langue: Langues.etiquetteDe(deroule) } : {}),
     format: { ratio: deroule.format.ratio, ips: deroule.format.ips || 30, ...(deroule.format.plateforme ? { plateforme: deroule.format.plateforme } : {}) },
     // Couverture déclarée (spec Rendu et export, 5.10) : la page livrée s'ouvre sur elle (moteur/lecteur.js, M.instantCouverture).
     ...(deroule.couverture ? { couverture: { scene: deroule.couverture.scene, instant: deroule.couverture.instant } } : {}),
@@ -551,7 +555,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
       const mots = s.voix && s.voix.texte ? ST.motsDeScene({ debut: m.debut, fin: m.fin, texte: lireTexteDit(s.voix.texte).affiche, voix: voixScenes[s.id] || null }) : [];
       return { id: s.id, debut: m.debut, fin: m.fin, mots };
     }).filter((s) => s.mots.length);
-    cartons = ST.cartons(scenesST, { ratio: deroule.format.ratio });
+    cartons = ST.cartons(scenesST, { ratio: deroule.format.ratio, langue: Langues.etiquetteDe(deroule) });
   }
   donnees.sousTitres = cartons.length ? {
     mode: deroule.sousTitres.mode || 'ligne',
@@ -623,7 +627,7 @@ ${cssMontre.css}${modulesStyle.map(cssModule).filter(Boolean).map((c) => `${c}
   const blocMp4 = PageMp4.avecBoutonMp4(deroule)
     ? PageMp4.blocExport({ deroule, dossierStyle, duree: minutageScenes.duree, titre: deroule.titre, base: slug(deroule.titre) }) : '';
   const page = `<!doctype html>
-<html lang="fr">
+<html lang="${Langues.etiquetteDe(deroule)}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -679,7 +683,7 @@ function ecrireSortie(projet, assemblage, { siChangee = false } = {}) {
   const temporaire = `${sortie}.${process.pid}.tmp`;
   fs.writeFileSync(temporaire, assemblage.html, 'utf8');
   fs.renameSync(temporaire, sortie);
-  ecrireSousTitres(dossierSortie, titre, assemblage.donnees.sousTitres ? assemblage.donnees.sousTitres.cartons : []);
+  ecrireSousTitres(dossierSortie, titre, assemblage.donnees.sousTitres ? assemblage.donnees.sousTitres.cartons : [], assemblage.donnees.langue || null);
   // Le rapport de débordement portait sur l'ancienne page : l'aperçu en renverra un pour la nouvelle.
   fs.rmSync(path.join(dossierSortie, 'controle-page.json'), { force: true });
   // Registre des vidéos de la personne (spec Retouches et ergonomie, 5.21) : titre et date, à chaque assemblage.

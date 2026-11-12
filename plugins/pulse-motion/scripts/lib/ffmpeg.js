@@ -226,7 +226,13 @@ async function reencoderSegment({ ffmpeg, entree, sortie, ips, crf, preset, regl
  * réduite à taille si besoin, avec la piste son déjà encodée (copiée). journal : fichier des statistiques de la première
  * passe (sans extension), retiré ensuite. surPasse(1 | 2) : début de chaque passe.
  */
-async function transcoderDeuxPasses({ ffmpeg, entree, sortie, ips, reglages, taille, audio = null, journal, signal, surPasse = () => {}, titre = null }) {
+/** Langue de la piste son (spec S9, 5.1) : ISO 639-2/T (« eng »), seulement quand il y a un son et que la vidéo déclare sa
+ *  langue. -> arguments de ffmpeg */
+function etiquetteSon(audio, langueSon) {
+  return audio && langueSon ? ['-metadata:s:a:0', `language=${langueSon}`] : [];
+}
+
+async function transcoderDeuxPasses({ ffmpeg, entree, sortie, ips, reglages, taille, audio = null, journal, signal, surPasse = () => {}, titre = null, langueSon = null }) {
   const filtre = taille ? ['-vf', reduction(taille)] : [];
   const video = argsVideo(reglages, ips);
   try {
@@ -235,7 +241,7 @@ async function transcoderDeuxPasses({ ffmpeg, entree, sortie, ips, reglages, tai
     if (p1.code !== 0) throw new Error(`ffmpeg n'a pas pu préparer la version légère (${derniereLigne(p1.erreurs) || `code ${p1.code}`})`);
     surPasse(2);
     const son = audio ? ['-i', audio, '-map', '0:v:0', '-map', '1:a:0', '-c:a', 'copy'] : ['-an'];
-    const p2 = await lancer(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-i', entree, ...son, ...filtre, ...video, '-pass', '2', '-passlogfile', journal, ...(titre ? ['-metadata', `title=${titre}`] : []), '-movflags', '+faststart', '-f', 'mp4', sortie], { signal });
+    const p2 = await lancer(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-i', entree, ...son, ...filtre, ...video, '-pass', '2', '-passlogfile', journal, ...(titre ? ['-metadata', `title=${titre}`] : []), ...etiquetteSon(audio, langueSon), '-movflags', '+faststart', '-f', 'mp4', sortie], { signal });
     if (p2.code !== 0) throw new Error(`ffmpeg n'a pas pu écrire la version légère (${derniereLigne(p2.erreurs) || `code ${p2.code}`})`);
   } finally {
     const dossier = path.dirname(journal);
@@ -391,14 +397,14 @@ async function encoderTransparent({ ffmpeg, sortie, ips, format, images, signal 
 }
 
 /** Segments d'une vidéo à fond transparent -> un fichier, sans réencodage, avec la piste son (PCM ou Opus) et le titre. */
-async function assemblerTransparent({ ffmpeg, segments, sortie, audio = null, format, titre = null }) {
+async function assemblerTransparent({ ffmpeg, segments, sortie, audio = null, format, titre = null, langueSon = null }) {
   const t = TRANSPARENTS[format];
   const liste = `${sortie}.liste.txt`;
   fs.writeFileSync(liste, segments.map((x) => `file '${path.resolve(x).replace(/\\/g, '/').replace(/'/g, "'\\''")}'`).join('\n'), 'utf8');
   try {
     const son = audio ? ['-i', audio, '-map', '0:v:0', '-map', '1:a:0'] : ['-map', '0:v:0'];
     const r = await lancer(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', liste, ...son, '-c', 'copy',
-      ...(titre ? ['-metadata', `title=${titre}`] : []), ...(t.conteneur === 'mov' ? ['-movflags', '+faststart'] : []), '-f', t.conteneur, sortie]);
+      ...(titre ? ['-metadata', `title=${titre}`] : []), ...etiquetteSon(audio, langueSon), ...(t.conteneur === 'mov' ? ['-movflags', '+faststart'] : []), '-f', t.conteneur, sortie]);
     if (r.code !== 0) throw new Error(`ffmpeg n'a pas pu assembler la vidéo à fond transparent (${derniereLigne(r.erreurs)})`);
   } finally {
     fs.rmSync(liste, { force: true });
@@ -468,7 +474,7 @@ async function verifierFichier({ ffmpeg, fichier, audio = true, noir = { duree: 
  * titre et les chapitres (-map_chapters), titre en métadonnée. Idées d'argo (src/export.ts : attached_pic sans -shortest ;
  * src/chapters.ts : ffmetadata ; MIT, © 2026 Shreyas Karnik), réécrites.
  */
-async function assemblerSegments({ ffmpeg, segments, sortie, audio, vignette = null, meta = null, titre = null }) {
+async function assemblerSegments({ ffmpeg, segments, sortie, audio, vignette = null, meta = null, titre = null, langueSon = null }) {
   const liste = `${sortie}.liste.txt`;
   fs.writeFileSync(liste, segments.map((s) => `file '${path.resolve(s).replace(/\\/g, '/').replace(/'/g, "'\\''")}'`).join('\n'), 'utf8');
   try {
@@ -483,6 +489,7 @@ async function assemblerSegments({ ffmpeg, segments, sortie, audio, vignette = n
     const metadonnees = [];
     if (meta) { entrees.push('-f', 'ffmetadata', '-i', meta); metadonnees.push('-map_metadata', String(n), '-map_chapters', String(n)); n++; }
     if (titre) metadonnees.push('-metadata', `title=${titre}`);
+    metadonnees.push(...etiquetteSon(audio, langueSon));
     const r = await lancer(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', liste, ...entrees, ...cartes, '-c', 'copy', ...disposition,
       ...metadonnees, '-movflags', '+faststart', '-video_track_timescale', '90000', '-f', 'mp4', sortie]);
     if (r.code !== 0) throw new Error(`ffmpeg n'a pas pu assembler la vidéo (${derniereLigne(r.erreurs)})`);
@@ -521,12 +528,12 @@ function filtrePassage({ debut = null, images = null, taille = null }) {
  * coupé à l'image près (trim), réduit si taille, avec la piste son déjà coupée (copiée) ; deux passes si reglages.debit et
  * journal (taille visée). titre en métadonnée.
  */
-async function transcoderExtrait({ ffmpeg, entree, sortie, ips, debut, images, reglages, taille = null, audio = null, titre = null, journal = null, signal }) {
+async function transcoderExtrait({ ffmpeg, entree, sortie, ips, debut, images, reglages, taille = null, audio = null, titre = null, journal = null, signal, langueSon = null }) {
   const vf = filtrePassage({ debut, images, taille });
   const filtre = vf ? ['-vf', vf] : [];
   const video = argsVideo(reglages, ips);
   const son = audio ? ['-i', audio, '-map', '0:v:0', '-map', '1:a:0', '-c:a', 'copy'] : ['-an'];
-  const meta = titre ? ['-metadata', `title=${titre}`] : [];
+  const meta = [...(titre ? ['-metadata', `title=${titre}`] : []), ...etiquetteSon(audio, langueSon)];
   const deux = Boolean(reglages.debit && journal);
   try {
     if (deux) {
@@ -632,7 +639,7 @@ async function verifierTemoins(temoins, recapturer) {
   }
 }
 
-module.exports = {
+module.exports = { etiquetteSon,
   lireVersion, commandeSure, commandeInstallation, trouverFfmpeg, MINIMUM, encoderSegment, reencoderSegment, transcoderDeuxPasses, sonder,
   extraireImage, assemblerSegments, ecartImages, imageIllisible, ecartTemoin, verifierTemoins, LECTURES_MAX, encoderSon, mesurerSonie, verifierFichier, encoderOpus, importerAudio, argsVideo,
   detecterEncodeurs, controlesSortie, lancer, reduireVignette, transcoderExtrait, encoderGif, filtrePassage, encoderTransparent, assemblerTransparent, TRANSPARENTS, SONS, LARGEUR_STATS, ETIQUETTES, VERS_BT709, MATERIEL, ORDRE_MATERIEL,

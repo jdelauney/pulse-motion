@@ -15,6 +15,8 @@
  * même position après une retouche, bandeau en cas d'erreur d'assemblage.
  * Son : mixage du moteur (M.rendreSon), préparé 1 s après le chargement (sauf en capture) ou au premier ▶,
  * joué par un AudioContext calé sur t.
+ * Textes de la barre (page livrée) : dans la langue de la vidéo (M.langues, spec S9 5.1), en français sans elle ; le bandeau
+ * d'erreur d'assemblage et tout ce qui ne sert que sous l'aperçu restent en français.
  * Navigateur seulement ; dépend de horloge et audio (global M).
  */
 (function (racine) {
@@ -29,6 +31,14 @@
     return e;
   }
 
+  // Textes de la barre en français : ceux de moteur/langues.js (fr.lecteur), repris ici pour une page sans langue déclarée.
+  var FRANCAIS = { lecture: 'Lecture', pause: 'Pause', position: 'Position', lire: 'Lire la vidéo', scene: 'Scène', boucle: 'boucle',
+    preparation: 'son en préparation', bloque: 'son bloqué par le navigateur : cliquez pour l\'entendre', echec: 'Le son n\'a pas pu être préparé.' };
+  function textesLecteur() {
+    var langue = M.donnees && M.donnees.langue;
+    return langue && M.langues ? M.langues.lecteur(langue) : FRANCAIS;
+  }
+
   function horodatage(t) {
     var s = Math.floor(t);
     return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
@@ -37,6 +47,7 @@
   M.demarrerLecteur = function () {
     var ips = M.ips;
     var scenes = M.minutage.scenes;
+    var T = textesLecteur();
     // Son : tampon mixé par M.rendreSon, joué par un AudioContext créé au premier ▶ (geste de la personne).
     var son = { attendu: !!(M.aSon && M.aSon()), tampon: null, contexte: null, source: null, debutContexte: 0, debutT: 0, prepare: false, coupe: false };
     var lecture = false, dernier = 0, boucle = null;
@@ -44,9 +55,9 @@
     M.enLecture = function () { return lecture; };
 
     var barre = el('div', { id: 'pm-lecteur' }, document.body);
-    var bouton = el('button', { type: 'button', 'aria-label': 'Lecture', texte: '▶' }, barre);
+    var bouton = el('button', { type: 'button', 'aria-label': T.lecture, texte: '▶' }, barre);
     var piste = el('div', { class: 'pm-piste' }, barre);
-    var curseur = el('input', { type: 'range', min: '0', max: String(M.duree), step: String(1 / ips), value: '0', 'aria-label': 'Position' }, piste);
+    var curseur = el('input', { type: 'range', min: '0', max: String(M.duree), step: String(1 / ips), value: '0', 'aria-label': T.position }, piste);
     var reperes = el('div', { class: 'pm-reperes' }, piste);
     scenes.forEach(function (s) {
       var r = el('span', { title: s.id }, reperes);
@@ -91,7 +102,7 @@
         afficher(M.temps());
       }, function () {
         son.attendu = false;
-        signaler('Le son n\'a pas pu être préparé.');
+        signaler(T.echec);
       });
     }
     // Son coupé (studio : enregistrement au micro) : la lecture continue, sans son.
@@ -126,7 +137,7 @@
       if (affiche || lecture || M.temps() > 0 || sansAffiche()) return;
       sousTitresMasques(true);
       M.rendre(M.instantCouverture(M.minutage, M.donnees && M.donnees.couverture));
-      affiche = el('button', { id: 'pm-affiche', type: 'button', 'aria-label': 'Lire la vidéo' }, document.body);
+      affiche = el('button', { id: 'pm-affiche', type: 'button', 'aria-label': T.lire }, document.body);
       el('span', { 'aria-hidden': 'true', texte: '▶' }, affiche);
       affiche.addEventListener('click', function (e) { e.stopPropagation(); jouer(); });
     }
@@ -184,11 +195,11 @@
     function afficher(t) {
       curseur.value = String(t);
       var i = indexScene(t);
-      etiquette.textContent = 'Scène ' + (i + 1) + '/' + scenes.length + ' · ' + scenes[i].id + (boucle ? ' (boucle)' : '') +
+      etiquette.textContent = T.scene + ' ' + (i + 1) + '/' + scenes.length + ' · ' + scenes[i].id + (boucle ? ' (' + T.boucle + ')' : '') +
         ' · ' + horodatage(t) + ' / ' + horodatage(M.duree);
       marquerEbauche(i);
-      if (lecture && son.attendu && !son.tampon) etiquette.textContent += ' · son en préparation';
-      else if (lecture && sonBloque()) etiquette.textContent += ' · son bloqué par le navigateur : cliquez pour l\'entendre';
+      if (lecture && son.attendu && !son.tampon) etiquette.textContent += ' · ' + T.preparation;
+      else if (lecture && sonBloque()) etiquette.textContent += ' · ' + T.bloque;
       if (lecture && son.source) {
         var position = son.debutT + son.contexte.currentTime - son.debutContexte;
         if (Math.abs(position - t) > 0.05) lancerSon(t);
@@ -216,7 +227,7 @@
       if (M.temps() >= M.duree) M.rendre(0);
       lecture = true;
       bouton.textContent = '⏸';
-      bouton.setAttribute('aria-label', 'Pause');
+      bouton.setAttribute('aria-label', T.pause);
       if (son.attendu && !son.contexte && racine.AudioContext) son.contexte = new racine.AudioContext();
       preparerSon();
       lancerSon(M.temps());
@@ -226,7 +237,7 @@
     function pause() {
       lecture = false;
       bouton.textContent = '▶';
-      bouton.setAttribute('aria-label', 'Lecture');
+      bouton.setAttribute('aria-label', T.lecture);
       arreterSon();
     }
     function basculer() {

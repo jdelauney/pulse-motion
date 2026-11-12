@@ -107,6 +107,27 @@ function noterLexique({ terme, phrase, comme = '', commande = '', date = new Dat
   return ajouterRangee(cheminLexique(), LEXIQUE, [terme, phrase, comme, commande ? `${date} · ${commande}` : date, 'vu']);
 }
 
+/** Ligne d'en-tête facultative « Langue : anglais » (ou « Langue : en ») d'un glossaire (spec S9, 5.1 point 11) : étiquette de
+ *  la langue des termes, 'fr' sans elle. */
+function langueDuGlossaire(texte) {
+  const Langues = require('../moteur/langues.js');
+  const m = /^\s*Langue\s*:\s*([^\r\n|]+?)\s*$/im.exec(String(texte || ''));
+  if (!m) return 'fr';
+  const mot = m[1].normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const code = Langues.CODES.find((c) => Langues.LANGUES[c].nom.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() === mot);
+  if (code) return Langues.lire(code).etiquette;
+  const l = Langues.lire(m[1]);
+  return l.ok ? l.etiquette : 'fr';
+}
+
+/** Termes du glossaire qui s'appliquent à une vidéo de cette langue (étiquette) : tous si le glossaire est de la même langue
+ *  principale, aucun sinon. */
+function termesPourLaVideo(dossier, langue = 'fr') {
+  const g = lireGlossaire(dossier);
+  const Langues = require('../moteur/langues.js');
+  return Langues.principale(g.langue) === Langues.principale(langue) ? g.termes : [];
+}
+
 function lireGlossaire(dossier) {
   const fichier = cheminGlossaire(dossier);
   const texte = lireFichier(fichier, GLOSSAIRE);
@@ -114,7 +135,7 @@ function lireGlossaire(dossier) {
   const termes = lireTableau(texte.split(/\r?\n/), 5).rangees.filter((r) => r[0]).map(([terme, sens, eviter, prononciation, cle]) => ({
     terme, sens, eviter: eviter.split(',').map((f) => f.trim()).filter(Boolean), prononciation, cle: /^oui$/i.test(String(cle || '').trim()),
   }));
-  return { fichier, texte, termes };
+  return { fichier, texte, termes, langue: langueDuGlossaire(texte) };
 }
 
 /** Terme déjà noté -> terme clé (5e cellule « oui »), écriture atomique. */
@@ -210,4 +231,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { cheminLexique, lireLexique, noterLexique, lireGlossaire, noterGlossaire, verifierGlossaire };
+module.exports = { cheminLexique, lireLexique, noterLexique, lireGlossaire, langueDuGlossaire, termesPourLaVideo, noterGlossaire, verifierGlossaire };

@@ -1,15 +1,20 @@
 /* Pulse Motion – sous-titres : mots d'une scène, découpage en cartons lisibles (2 lignes au plus, coupes aux
  * ponctuations, jamais après un article, 3,5 mots/s au plus, 1,25 s au moins), fichiers SRT et VTT.
  * Le texte affiché est celui du script ; les temps viennent de la voix (ou de la durée de la scène).
+ * Langue de la vidéo (spec S9, 5.1) : articles et liaisons viennent de moteur/langues.js (options.langue de cartons, français
+ * par défaut) ; largeur et débit ne changent pas (même alphabet). versVTT(liste, { langue }) écrit « Language: » sous WEBVTT.
  *
  * Module pur : chargé tel quel dans la page (global M.sousTitres) et par Node (require).
  */
 (function (racine, fabrique) {
-  var Al = typeof require === 'function' && typeof module === 'object' ? require('./aligner.js') : (racine.M && racine.M.aligner);
-  var api = fabrique(Al);
+  var node = typeof require === 'function' && typeof module === 'object';
+  var Al = node ? require('./aligner.js') : (racine.M && racine.M.aligner);
+  // Langues : en Node toujours ; dans la page, seulement si la vidéo déclare sa langue (les cartons y sont déjà calculés).
+  var Lg = node ? require('./langues.js') : null;
+  var api = fabrique(Al, function () { return Lg || (racine.M && racine.M.langues) || null; });
   if (typeof module === 'object' && module.exports) module.exports = api;
   else { racine.M = racine.M || {}; racine.M.sousTitres = api; }
-})(typeof globalThis !== 'undefined' ? globalThis : this, function (Al) {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (Al, langues) {
   'use strict';
 
   // Caractères par ligne : 42 en paysage et au carré, 32 en 4:5, 28 en 9:16 (le carton s'y écarte des boutons à droite).
@@ -17,9 +22,13 @@
   var DUREE_MIN = 1.25, DEBIT_MAX = 3.5, ECART = 0.1, MARGE_SANS_VOIX = 0.3;
   var FORTE = /[.!?…]["»”’)]*$/;
   var FAIBLE = /[,;:]["»”’)]*$/;
-  var ARTICLES = ['le', 'la', 'les', 'l', 'un', 'une', 'des', 'du', 'de', 'd', 'au', 'aux', 'ce', 'cet', 'cette', 'ces',
-    'mon', 'ma', 'mes', 'ton', 'ta', 'tes', 'son', 'sa', 'ses', 'notre', 'nos', 'votre', 'vos', 'leur', 'leurs', 'a', 'en'];
-  var LIAISONS = ['et', 'ou', 'mais', 'donc', 'car', 'ni', 'qui', 'que', 'quand', 'pour', 'avec', 'sans', 'parce', 'puis', 'comme', 'si', 'dont'];
+  var SANS_LISTES = { articles: [], liaisons: [] };
+
+  /** Articles et liaisons de la langue (étiquette), français par défaut. */
+  function listes(langue) {
+    var L = langues();
+    return L ? L.de(langue || 'fr') : SANS_LISTES;
+  }
 
   function arrondi(x) { return Math.round(x * 1000) / 1000; }
   function longueur(ms) { return ms.map(function (m) { return m.w; }).join(' ').length; }
@@ -52,31 +61,31 @@
   }
 
   /** Note d'une coupe juste avant le mot i (0 : interdite : après un article, ou avant une ponctuation isolée). */
-  function note(ms, i) {
+  function note(ms, i, L) {
     if (i <= 0 || i >= ms.length) return 0;
     if (!cle(ms[i]) || ms[i - 1].insecable) return 0;
-    if (ARTICLES.indexOf(cle(ms[i - 1])) >= 0) return 0;
+    if (L.articles.indexOf(cle(ms[i - 1])) >= 0) return 0;
     if (FORTE.test(ms[i - 1].w)) return 4;
     if (FAIBLE.test(ms[i - 1].w)) return 3;
-    if (LIAISONS.indexOf(cle(ms[i])) >= 0) return 2;
+    if (L.liaisons.indexOf(cle(ms[i])) >= 0) return 2;
     return 1;
   }
 
   /** Coupe ms en morceaux d'au plus max caractères (le plus long possible, à la meilleure coupe). */
-  function couper(ms, max) {
+  function couper(ms, max, L) {
     var morceaux = [];
     while (ms.length) {
       if (longueur(ms) <= max) { morceaux.push(ms); break; }
       // Meilleure coupe : ponctuation d'abord, mais une ligne bien remplie l'emporte sur une ligne orpheline.
       var meilleure = -1, meilleureNote = -1, i;
       for (i = 1; i < ms.length && longueur(ms.slice(0, i)) <= max; i++) {
-        var n = note(ms, i);
+        var n = note(ms, i, L);
         var valeur = n + 2.5 * longueur(ms.slice(0, i)) / max;
         if (n > 0 && valeur >= meilleureNote) { meilleure = i; meilleureNote = valeur; }
       }
       // Aucune coupe permise dans la largeur (mot trop long, articles) : la première coupe permise, sinon après le premier mot.
       if (meilleure < 0) {
-        for (i = 1; i < ms.length && note(ms, i) === 0; i++) { /* première coupe permise */ }
+        for (i = 1; i < ms.length && note(ms, i, L) === 0; i++) { /* première coupe permise */ }
         meilleure = Math.max(1, Math.min(i, ms.length));
       }
       morceaux.push(ms.slice(0, meilleure));
@@ -86,12 +95,12 @@
   }
 
   /** Carton (mots) -> une ou deux lignes, coupe équilibrée et permise. */
-  function lignes(ms, max) {
+  function lignes(ms, max, L) {
     if (longueur(ms) <= max || ms.length < 2) return [ms];
     var meilleure = 1, score = -Infinity;
     for (var i = 1; i < ms.length; i++) {
       var a = longueur(ms.slice(0, i)), b = longueur(ms.slice(i));
-      var n = note(ms, i);
+      var n = note(ms, i, L);
       var s = (n ? n : -10) - Math.abs(a - b) / max * 4 - (a > max || b > max ? 20 : 0);
       if (s > score) { score = s; meilleure = i; }
     }
@@ -101,6 +110,7 @@
   /** Phrases (coupées après une ponctuation forte) -> cartons d'au plus deux lignes. */
   function cartons(scenes, options) {
     var ratio = options && options.ratio;
+    var L = listes(options && options.langue);
     var max = ratio === '9:16' ? LARGEUR.vertical : ratio === '4:5' ? LARGEUR.etroit : LARGEUR.large;
     var resultat = [];
     scenes.forEach(function (sc) {
@@ -110,8 +120,8 @@
       var siens = [];
       // Une phrase -> lignes valides (largeur, coupes permises) -> cartons de deux lignes ; une phrase courte tient sur une ligne.
       phrases.forEach(function (p) {
-        var ls = longueur(p) <= 2 * max ? lignes(p, max) : null;
-        if (!ls || ls.some(function (l) { return longueur(l) > max && l.length > 1; }) || (ls.length === 2 && note(p, ls[0].length) === 0)) ls = couper(p, max);
+        var ls = longueur(p) <= 2 * max ? lignes(p, max, L) : null;
+        if (!ls || ls.some(function (l) { return longueur(l) > max && l.length > 1; }) || (ls.length === 2 && note(p, ls[0].length, L) === 0)) ls = couper(p, max, L);
         for (var k = 0; k < ls.length; k += 2) {
           var bloc = ls.slice(k, k + 2);
           var premier = bloc[0][0], dernier = bloc[bloc.length - 1][bloc[bloc.length - 1].length - 1];
@@ -164,8 +174,9 @@
   function versSRT(liste) {
     return liste.map(function (c, i) { return (i + 1) + '\n' + horodatage(c.debut, ',') + ' --> ' + horodatage(c.fin, ',') + '\n' + texteCarton(c) + '\n'; }).join('\n');
   }
-  function versVTT(liste) {
-    return 'WEBVTT\n\n' + liste.map(function (c) { return horodatage(c.debut, '.') + ' --> ' + horodatage(c.fin, '.') + '\n' + echapper(texteCarton(c)) + '\n'; }).join('\n');
+  function versVTT(liste, options) {
+    var langue = options && options.langue;
+    return 'WEBVTT\n' + (langue ? 'Language: ' + langue + '\n' : '') + '\n' + liste.map(function (c) { return horodatage(c.debut, '.') + ' --> ' + horodatage(c.fin, '.') + '\n' + echapper(texteCarton(c)) + '\n'; }).join('\n');
   }
 
   return { LARGEUR: LARGEUR, motsDeScene: motsDeScene, cartons: cartons, versSRT: versSRT, versVTT: versVTT };
