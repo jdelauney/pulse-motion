@@ -2,6 +2,15 @@
 
 Produit par `outils/nouveautes.js` depuis l'historique du dépôt : ne pas le modifier à la main. Les nouveautés racontées simplement sont sur la page « Nouveautés » du wiki.
 
+## 0.67.0 – 2026-11-12
+
+Vos vidéos parlent anglais, espagnol, allemand, italien, portugais ou néerlandais, et une vidéo réussie se décline en vertical ou dans une autre langue sans la refaire.
+
+### Nouveautés
+
+- Langue de la vidéo (S9-1) : champ « langue » du déroulé (fr, en, es, de, it, pt, nl, avec une région), module unique moteur/langues.js chargé seulement quand la vidéo la déclare ; page (lang), nombres, lettres, lecteur de la page livrée, graphiques, lèvres et sous-titres dans la langue ; typographie par langue et ponctuation ouvrante de l'espagnol ; glossaire de même langue ; glyphe-absent par rôle de police ; voix provisoire et transcription dans la langue, jamais une voix française à sa place ; voix de synthèse française seulement ; piste son étiquetée
+- Déclinaisons (S9-2) : pulse-motion decliner crée declinaisons/<nom>/ (autre format, autre langue, ou les deux) sans toucher l'original ; scènes toutes faites recopiées depuis le style, scènes à réécrire avec leur motif, textes à traduire et voix retirées listés ; champ « declinaison » validé ; l'état liste les déclinaisons et donne l'origine ; l'usage d'export de la déclinaison est pris par défaut
+
 ## 0.66.0 – 2026-11-12
 
 Le guide de Pulse Motion existe aussi en anglais, pour le faire découvrir à ceux qui ne lisent pas le français.
