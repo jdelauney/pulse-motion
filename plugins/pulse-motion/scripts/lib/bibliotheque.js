@@ -161,12 +161,12 @@ function enregistrerEffet({ nom, projet = '.', sous = null, remplacer = false, p
     const dansVideo = path.join(projet, 'effets', `${n}.json`);
     const dansPerso = racinePerso(personnel, 'effets', n);
     let origine;
-    let texte;
+    let octets;
     if (fs.existsSync(dansVideo)) {
-      texte = fs.readFileSync(dansVideo);
+      octets = fs.readFileSync(dansVideo);
       origine = projet;
       if (n !== nom && effetDuPlugin(n)) {
-        if (texte.equals(fs.readFileSync(path.join(EFFETS_PLUGIN, `${n}.json`)))) break; // copie telle quelle de l'effet livré
+        if (octets.equals(fs.readFileSync(path.join(EFFETS_PLUGIN, `${n}.json`)))) break; // copie telle quelle de l'effet livré
         return echec(`L'effet « ${nom} » s'appuie sur votre version de « ${n} », qui porte le nom d'un effet livré : enregistrez d'abord cette version sous un autre nom, et faites-y renvoyer « ${nom} ».`, { raison: 'base-livree' });
       }
     } else if (fs.existsSync(path.join(dansPerso, 'effets', `${n}.json`))) {
@@ -179,11 +179,11 @@ function enregistrerEffet({ nom, projet = '.', sous = null, remplacer = false, p
       return echec(`L'effet « ${nom} » s'appuie sur « ${n} », introuvable (ni dans la vidéo, ni dans la bibliothèque, ni livré).`);
     }
     let recette;
-    try { recette = JSON.parse(texte.toString('utf8').replace(/^﻿/, '')); } catch (e) { return echec(`effets/${n}.json n'est pas lisible (${e.message}).`); }
+    try { recette = JSON.parse(octets.toString('utf8').replace(/^﻿/, '')); } catch (e) { return echec(`effets/${n}.json n'est pas lisible (${e.message}).`); }
     if (n === nom && cible !== nom && estObjet(recette)) {
       recette.nom = cible;
       fichiers.set(`effets/${cible}.json`, Buffer.from(`${JSON.stringify(recette, null, 2)}\n`, 'utf8'));
-    } else fichiers.set(`effets/${n}.json`, texte);
+    } else fichiers.set(`effets/${n}.json`, octets);
     const { images, modules } = citesParRecette(recette);
     for (const img of images) {
       const f = path.join(origine, ...img.split('/'));
@@ -486,10 +486,10 @@ function lireArchive(fichier) {
 /** Vérifie un élément de l'archive, rangé dans <tmp>. -> raison du refus | null */
 function verifierElement(el, tmp, personnel) {
   const ecrire = (dossier) => {
-    for (const [r, d] of el.fichiers) {
+    for (const [r, donnees] of el.fichiers) {
       const f = path.join(dossier, ...r.split('/'));
       fs.mkdirSync(path.dirname(f), { recursive: true });
-      fs.writeFileSync(f, d);
+      fs.writeFileSync(f, donnees);
     }
     return dossier;
   };
@@ -564,7 +564,8 @@ function importerBibliotheque({ fichier, voir = false, remplacer = [], personnel
     for (const el of personnages) {
       const f = path.join(videoTmp, 'personnages', P.TYPES[el.sorte], `${el.nom}.json`);
       fs.mkdirSync(path.dirname(f), { recursive: true });
-      fs.writeFileSync(f, el.fichiers.get(`${el.nom}.json`));
+      const donnees = el.fichiers.get(`${el.nom}.json`);
+      fs.writeFileSync(f, donnees);
     }
     const lu = personnages.length ? P.lire(videoTmp, { personnel: racinePerso(personnel, 'personnages') }) : null;
     for (const el of [...archive.elements.values()].sort((a, b) => SORTES.indexOf(a.sorte) - SORTES.indexOf(b.sorte) || (a.nom < b.nom ? -1 : 1))) {
