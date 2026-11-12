@@ -3,7 +3,7 @@
 ## L'essentiel
 
 - Une scène = un fichier `scenes/NN-nom.html` qui contient **une seule** `<section data-scene="<id>">`, avec l'`id` de la scène dans `deroule.json`.
-- Les textes ne s'écrivent **jamais** dans le HTML : `<h1 data-texte="titre"></h1>` est rempli avec `scenes[].textes.titre` du déroulé. Chaque clé `data-texte` doit exister dans le déroulé. Ils sont dans la langue de la vidéo (`langue` du déroulé : `pulse-motion reference langues`) ; nombres animés et lettres la suivent seuls.
+- Les textes ne s'écrivent **jamais** dans le HTML : `<h1 data-texte="titre"></h1>` est rempli avec `scenes[].textes.titre` du déroulé. Chaque clé `data-texte` doit exister dans le déroulé.
 - Les temps sont **relatifs au début de la scène**, en secondes : `data-start="0.4"`, `data-start="#titre+0.3"` (début de `#titre` + 0,3 s), `data-start="#titre:fin+0.2"` (fin de `#titre` + 0,2 s). `data-dur` vaut 1 s par défaut.
 - Tout ce qui bouge est **calé sur le temps** : animations CSS (`@keyframes`), `--p` (progression 0→1 de l'élément), `data-tween`. Jamais de `transition:` CSS (neutralisée), jamais de `setTimeout`.
 - Tailles en `cqh` (1 cqh = 1 % de la hauteur de l'image), couleurs et polices **uniquement** par les variables de la charte : `--c-primaire`, `--c-accent`, `--c-fond`, `--c-texte`, `--f-titres`, `--f-texte`.

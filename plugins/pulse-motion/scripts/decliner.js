@@ -38,7 +38,8 @@ const VOIX = path.join('assets', 'voix');
 const aujourdhui = () => new Date().toISOString().slice(0, 10);
 const nomDuFormat = (r) => r.replace(':', 'x');
 const virgules = (l) => (l.length < 2 ? l.join('') : `${l.slice(0, -1).join(', ')} et ${l[l.length - 1]}`);
-const sansBlancs = (h) => String(h).replace(/\s+/g, ' ').trim();
+// Comparaison d'une scène toute faite avec sa copie neuve : commentaires et blancs ignorés.
+const sansBlancs = (h) => String(h).replace(/<!--[\s\S]*?-->/g, '').replace(/\s+/g, ' ').trim();
 
 /** Étiquette telle que la personne l'a donnée, à la casse BCP 47 (« en », « en-US »). */
 function etiquetteDemandee(langue) {
