@@ -1,0 +1,14 @@
+<!-- Scène toute faite « chiffre » (style mode-d-emploi) : le bloc du chiffre est d'abord tracé, puis se colore quand le chiffre arrive ; la légende suit. Durée conseillée : 7 s.
+     Textes : titre (≤ 30 car.), unite (≤ 3 car., vide si aucune), legende (≤ 46 car.). Valeur : remplacer 1250 dans « nombre 0→1250 ». -->
+<section data-scene="chiffre">
+  <div class="decor">
+    <span class="piece bloc" data-aplat data-decor data-start="0" data-dur="7" data-tween="--x 0cqh→-3cqh linear"></span>
+    <span class="piece barre" data-aplat data-decor data-start="0" data-dur="7" data-tween="--y 0cqh→2cqh linear"></span>
+    <span class="piece boulon" data-aplat="rond" data-decor data-start="0" data-dur="7" data-tween="--r 0deg→90deg linear"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen pm-m-saccade" data-texte="titre" data-start="0.4" data-dur="0.6"></h2>
+  <div id="mesure" class="carton mesure nommee pm-m-saccade" data-aplat data-start="#titre:fin+0.2" data-dur="1.6">
+    <p id="nombre" class="nombre"><span id="valeur" data-start="#titre:fin+0.8" data-dur="1.4" data-tween="nombre 0→1250 cubic-out">0</span><span class="unite" data-texte="unite"></span></p>
+  </div>
+  <p id="legende" class="texte pm-m-saccade" data-texte="legende" data-start="#valeur:fin+0.3" data-dur="0.6"></p>
+</section>

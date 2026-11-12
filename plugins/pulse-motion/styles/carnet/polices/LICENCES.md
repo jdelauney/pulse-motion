@@ -1,12 +1,5 @@
 # Licences des polices
 
-## Fraunces
-
-- Source : Bunny Fonts (https://fonts.bunny.net), le 2026-10-11
-- Licence : catalogue Google Fonts (SIL Open Font License, Apache 2.0 ou Ubuntu Font Licence), intégration autorisée
-- Fraunces-400-italic.woff2 : https://fonts.bunny.net/fraunces/files/fraunces-latin-400-italic.woff2 (sha256 475b154af19c6b4ef371db22078b5044a078ce2467e11ef22a7b87f77837caf3), ajouté le 2026-10-12
-- Copiée du style « editorial » du plugin le 2026-11-11 (mêmes fichiers, mêmes empreintes) : aucune police téléchargée pour ce style.
-
 ## Instrument Sans
 
 - Source : Bunny Fonts (https://fonts.bunny.net), le 2026-10-11
@@ -15,10 +8,17 @@
 - Instrument Sans-600.woff2 : https://fonts.bunny.net/instrument-sans/files/instrument-sans-latin-600-normal.woff2 (sha256 efb770916eda95a0e31d80cccde9651d4e8617010b21220e9f227c4820d675da)
 - Copiée du style « editorial » du plugin le 2026-11-11 (mêmes fichiers, mêmes empreintes) : aucune police téléchargée pour ce style.
 
+## Caveat
+
+- Source : Bunny Fonts (https://fonts.bunny.net), le 2026-11-11
+- Licence : catalogue Google Fonts (SIL Open Font License, Apache 2.0 ou Ubuntu Font Licence), intégration autorisée
+- Caveat-700.woff2 : https://fonts.bunny.net/caveat/files/caveat-latin-700-normal.woff2 (sha256 15f9638095ad5ec9816f93d66805ca1a87e71dc5a76b596bfce1c78d4704c405)
+- Téléchargée sur Bunny Fonts (sous-ensemble latin) avec l'accord de l'auteur du plugin, le 2026-11-11 ; licence SIL Open Font License 1.1.
+
 ## Copyright
 
-- Fraunces : Copyright 2018 The Fraunces Project Authors (https://github.com/undercasetype/Fraunces)
 - Instrument Sans : Copyright 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
+- Caveat : Copyright 2014 The Caveat Project Authors (https://github.com/googlefonts/caveat)
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 

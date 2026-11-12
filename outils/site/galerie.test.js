@@ -162,7 +162,7 @@ test("galerie : cartes regroupées par catégorie, dans l'ordre de CATEGORIES", 
   // Le bloc du catalogue : une section par catégorie, chaque carte avec A, B, la boucle et ses champs.
   const b = blocs().styles;
   const sections = [...b.matchAll(/<section class="categorie-styles" id="styles-([a-z-]+)" data-categorie="\1">\n<h4>([^<]+)<\/h4>/g)];
-  assert.deepEqual(sections.map((m) => m[1]), ["essentiels", "dessine", "schemas-donnees", "papier-imprime", "ecrans-annonces"]);
+  assert.deepEqual(sections.map((m) => m[1]), ["essentiels", "dessine", "schemas-donnees", "papier-imprime", "ecrans-annonces", "anime"]);
   assert.equal(sections[0][2], "Les essentiels");
   for (const style of G.STYLES_LIVRES()) {
     const carte = new RegExp(`<details class="style-en-mouvement" id="style-${style}"[\\s\\S]*?</details>`).exec(b)[0];

@@ -10,7 +10,7 @@
 const ELEMENTS = new Set(['g', 'path', 'circle', 'ellipse', 'rect', 'polygon', 'polyline', 'line']);
 const ATTRIBUTS = new Set(['d', 'cx', 'cy', 'r', 'rx', 'ry', 'x', 'y', 'width', 'height', 'points', 'x1', 'y1', 'x2', 'y2',
   'fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'opacity', 'fill-opacity', 'stroke-opacity',
-  'transform', 'fill-rule']);
+  'transform', 'fill-rule', 'stroke-dasharray', 'stroke-dashoffset']);
 const BALISE = /<(\/?)([A-Za-z][\w:-]*)((?:\s+[^\s=>/]+\s*=\s*(?:"[^"]*"|'[^']*'))*)\s*(\/?)>/y;
 const ATTRIBUT = /([^\s=]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
 

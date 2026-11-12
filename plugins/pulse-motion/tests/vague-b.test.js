@@ -70,10 +70,11 @@ test('vague B : tableau-blanc, tableau-noir, carnet, recit-donnees passent contr
     assert.equal(id.categorie, categorie, style);
     assert.ok(id.provenance.length >= 1 && id.provenance.every((p) => p.licence === 'MIT'), style);
     assert.deepEqual(F.verifierFiche(lire('references', 'styles', `${style}.md`), { dossierStyle: dossier, identite: id }), [], style);
-    // Polices : uniquement des polices OFL déjà livrées dans le dépôt, copiées à l'identique (aucun téléchargement).
+    // Polices OFL : copiées d'un style déjà livré, ou manuscrites téléchargées avec l'accord de l'auteur (S8 J10 : Kalam, Caveat ;
+    // vérifiées par mode-d-emploi.test.js).
     const licences = lire('styles', style, 'polices', 'LICENCES.md');
     assert.match(licences, /SIL OPEN FONT LICENSE Version 1\.1/, style);
-    assert.match(licences, /aucune police téléchargée pour ce style/, style);
+    assert.match(licences, /aucune police téléchargée pour ce style|avec l'accord de l'auteur du plugin/, style);
     // Quatre formats : les requêtes de conteneur du carré, du vertical et de la marge des réseaux en 9:16.
     const css = lire('styles', style, 'style.css');
     for (const q of ['@container (max-aspect-ratio: 5/4)', '@container (orientation: portrait)', '@container (max-aspect-ratio: 2/3)', '@container (max-aspect-ratio: 9/10)']) assert.ok(css.includes(q), `${style} : ${q}`);
@@ -158,7 +159,7 @@ test('assembler : module d\'un style inclus seulement si le style le déclare', 
   fs.cpSync(path.join(RACINE, 'styles', 'tableau-blanc'), copie, { recursive: true });
   fs.writeFileSync(path.join(copie, 'identite.json'), JSON.stringify({ ...identite('tableau-blanc'), modules: ['encre', 'inconnu'] }), 'utf8');
   const v = S.verifierStyle(copie, { livre: true });
-  assert.ok(v.erreurs.some((e) => /module « inconnu » inconnu\. Modules : encre, iso, riso, une-ligne\./.test(e)), v.erreurs.join('\n'));
+  assert.ok(v.erreurs.some((e) => /module « inconnu » inconnu\. Modules : aplats, encre, iso, riso, une-ligne\./.test(e)), v.erreurs.join('\n'));
   // Chaque module : 20 Ko au plus, sans Math.random.
   for (const f of fs.readdirSync(path.join(RACINE, 'moteur', 'medium'))) {
     const code = lire('moteur', 'medium', f);

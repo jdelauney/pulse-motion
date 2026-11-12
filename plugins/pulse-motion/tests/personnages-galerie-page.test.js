@@ -18,7 +18,7 @@ const { STYLES, copierProjet } = require('./aide/projet.js');
 const navigateur = trouverNavigateur();
 const SANS = { skip: !navigateur && 'Chrome ou Edge introuvable' };
 const lu = P.lire(null);
-const LIVRES = ['ecoliere', 'soignant', 'grand-mere', 'technicien', 'cuisiniere'];
+const LIVRES = ['ecoliere', 'soignant', 'grand-mere', 'technicien', 'cuisiniere', 'guide'];
 const VUES = [0, 45, 90, -90, 180];
 
 // Paires de pièces qui se touchent : une pièce détachée n'en touche plus aucune.

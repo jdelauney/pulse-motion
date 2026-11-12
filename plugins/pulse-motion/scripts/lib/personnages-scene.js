@@ -77,7 +77,7 @@ function preparerPersonnages(html0, { scene, lu, voix = false, dureeTemps = null
     if (a['data-personnage'] !== undefined) {
       const nom = a['data-personnage'].trim();
       courant = nom;
-      if (a['data-vie'] !== undefined && !['pleine', 'sobre', 'aucune'].includes(a['data-vie'].trim())) erreurs.push(erreur(scene, `data-vie="${a['data-vie']}" : valeur inconnue (pleine, sobre ou aucune).`));
+      if (a['data-vie'] !== undefined && !['pleine', 'sobre', 'mains', 'aucune'].includes(a['data-vie'].trim())) erreurs.push(erreur(scene, `data-vie="${a['data-vie']}" : valeur inconnue (pleine, sobre, mains ou aucune).`));
       if (a['data-ombre'] !== undefined && !['oui', 'non'].includes(a['data-ombre'].trim())) erreurs.push(erreur(scene, `data-ombre="${a['data-ombre']}" : oui ou non.`));
       if (a['data-ecrase'] !== undefined) verifierEcrase(a['data-ecrase'], `personnage « ${nom} »`);
       if (nom === 'batonnets') {

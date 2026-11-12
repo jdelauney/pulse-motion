@@ -16,7 +16,7 @@ const { STYLES, copierProjet, modifierDeroule } = require('./aide/projet.js');
 const RACINE = path.join(__dirname, '..');
 const lire = (...p) => fs.readFileSync(path.join(RACINE, ...p), 'utf8');
 const lu = P.lire(null);
-const LIVRES = ['ecoliere', 'soignant', 'grand-mere', 'technicien', 'cuisiniere'];
+const LIVRES = ['ecoliere', 'soignant', 'grand-mere', 'technicien', 'cuisiniere', 'guide'];
 const VUES = ['profil', 'troisQuarts', 'face'];
 const MEMBRES = ['cuisseAvant', 'tibiaAvant', 'piedAvant', 'brasAvant', 'avantBrasAvant'];
 
@@ -67,7 +67,7 @@ test('personnages : chaque dessin livré se valide contre son gabarit (personnag
   }
   const r = spawnSync(process.execPath, [path.join(RACINE, 'scripts', 'pm.js'), 'personnages', 'verifier'], { encoding: 'utf8' });
   assert.equal(r.status, 0, r.stderr);
-  assert.match(r.stdout, /6 dessins, aucune erreur/);
+  assert.match(r.stdout, /7 dessins, aucune erreur/);
   // Le format refuse une manière inconnue et un réglage bâtonnets sur des pièces pleines, ou qui nomme une couleur absente.
   const e = (d) => P.valider('dessin', d, Object.assign({ nom: d.nom }, P.contexteDe(lu)));
   assert.match(e({ ...lu.dessins.technicien, maniere: 'aquarelle' }).join('\n'), /« maniere » : « aquarelle » inconnue/);
@@ -172,7 +172,7 @@ test('personnages : la manière « traits » a son réglage batonnets équivalen
 });
 
 test('personnages : noms français, aucun nom de marque, description présente', () => {
-  const FRANCAIS = { ecoliere: 'écolière', soignant: 'soignant', 'grand-mere': 'grand-mère', technicien: 'technicien', cuisiniere: 'cuisinière' };
+  const FRANCAIS = { ecoliere: 'écolière', soignant: 'soignant', 'grand-mere': 'grand-mère', technicien: 'technicien', cuisiniere: 'cuisinière', guide: 'guide' };
   for (const n of LIVRES) {
     const d = lu.dessins[n];
     assert.equal(d.nom, n);

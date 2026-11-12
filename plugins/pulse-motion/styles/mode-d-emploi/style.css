@@ -1,0 +1,198 @@
+/* Pulse Motion – style « mode-d-emploi ».
+ *
+ * Le film pédagogique des années 50, « suivez le guide » : des aplats de couleur imprimés à quelques pixels de leur trait
+ * cassé, une animation limitée (le corps tient, les mains travaillent, tout bouge image par image, à 12 i/s), des étapes
+ * numérotées, des pièces abstraites en blocs de couleur qui se colorent quand on les nomme, un guide qui montre. Les aplats
+ * sont des éléments [data-aplat] : couleur (--pm-aplat) décalée du repérage de la scène, trait cassé à graine (module aplats,
+ * moteur/medium/aplats.js). Le guide est le personnage « guide » du plugin, dessiné dans ce style ; la feuille le place selon le
+ * format (--pm-perso-x, --pm-perso-sol, --pm-perso-taille) et règle sa vie (--pm-perso-vie: mains, --pm-perso-cadence: 12).
+ * Idées de lemo-opuscar (midcentury-toon, MIT, © 2026 LemoLab), réécrites en CSS. Ton clair seulement. Formats 16:9, 1:1, 4:5
+ * et 9:16 par requêtes de conteneur. Effets exclus : filter, mix-blend-mode, backdrop-filter.
+ */
+
+/* ---------- Mise en page : la carte de titre d'un film d'atelier ---------- */
+#pm-scene > section[data-scene] {
+  --encre: var(--c-texte);
+  --moutarde: #e2ad45;
+  --papier-clair: color-mix(in srgb, var(--c-fond) 55%, #fffaf0);
+  --pm-aplat-trait: var(--encre); --pm-aplat-epaisseur: 0.42cqh;
+  --pm-images: 7;
+  --pm-trait: net; --pm-st-police: var(--f-texte); --pm-st-fond: var(--papier-clair); --pm-st-texte: var(--c-texte);
+  display: flex; flex-direction: column; justify-content: center; gap: 3.2cqh;
+  padding: 10cqh 13cqh 12cqh; overflow: hidden;
+  background:
+    radial-gradient(ellipse 75% 70% at 50% 46%, transparent 62%, color-mix(in srgb, var(--c-texte) 11%, transparent) 100%),
+    linear-gradient(180deg, color-mix(in srgb, var(--c-fond) 88%, #fff) 0%, var(--c-fond) 70%);
+  color: var(--c-texte);
+  font: 500 3.9cqh/1.4 var(--f-texte);
+}
+/* Le guide : profil de trois quarts, vers les textes ; corps immobile, mains qui travaillent, image par image. */
+.guide { --pm-perso-x: 15; --pm-perso-sol: 86; --pm-perso-taille: 62; --pm-perso-vie: mains; --pm-perso-cadence: 12; --pm-ombre: var(--c-texte); }
+#pm-scene > section[data-scene]:has(> .guide) { padding-left: 60cqh; }
+
+/* ---------- Typographie : la carte de titre et le commentaire ---------- */
+.titre { margin: 0; font: 600 9cqh/1.08 var(--f-titres); letter-spacing: -0.01em; text-wrap: balance; overflow-wrap: break-word; }
+.titre-moyen { margin: 0; font: 600 6.2cqh/1.12 var(--f-titres); text-wrap: balance; overflow-wrap: break-word; }
+.texte { margin: 0; font: 500 3.9cqh/1.42 var(--f-texte); text-wrap: pretty; }
+.etiquette { margin: 0; font: 700 3.5cqh/1.2 var(--f-texte); letter-spacing: 0.12em; text-transform: uppercase; }
+.nombre { margin: 0; font: 600 19cqh/1 var(--f-titres); font-variant-numeric: tabular-nums lining-nums; }
+.unite { font-size: 0.4em; margin-left: 0.15em; }
+.compte { color: var(--c-accent-lisible); }
+
+/* ---------- Les aplats : couleur imprimée à côté de son trait cassé ---------- */
+.carton { --pm-aplat: var(--papier-clair); --pm-aplat-rayon: 1.2cqh; padding: 1.6cqh 3cqh; align-self: flex-start; max-width: 100%; box-sizing: border-box; }
+.carton.moutarde { --pm-aplat: color-mix(in srgb, var(--moutarde) 62%, var(--papier-clair)); }
+.carton.froid { --pm-aplat: color-mix(in srgb, var(--c-primaire) 22%, var(--papier-clair)); }
+.carton.chaud { --pm-aplat: color-mix(in srgb, var(--c-accent) 20%, var(--papier-clair)); }
+/* La pièce qui se colore quand on la nomme (--p de 0 à 1 sur son data-dur) : d'abord le trait seul, puis la couleur. */
+.nommee.froide { --teinte: color-mix(in srgb, var(--c-primaire) 40%, var(--papier-clair)); }
+.nommee { --pm-aplat: color-mix(in srgb, var(--teinte, var(--moutarde)) calc(var(--p, 1) * 62%), var(--papier-clair)); }
+
+/* ---------- Décor : pièces abstraites en blocs de couleur, qui avancent par images ---------- */
+.decor { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.decor ~ * { position: relative; z-index: 1; }
+.piece { position: absolute; width: 16cqh; height: 16cqh; --pm-aplat-epaisseur: 0.36cqh;
+  translate: round(down, var(--x, 0px), 0.6cqh) round(down, var(--y, 0px), 0.6cqh); rotate: round(down, var(--r, 0deg), 3deg); }
+.piece.bloc { --pm-aplat: color-mix(in srgb, var(--c-primaire) 58%, var(--c-fond)); --pm-aplat-rayon: 1cqh; right: 8cqh; top: 8cqh; width: 14cqh; height: 10cqh; }
+.piece.disque { --pm-aplat: color-mix(in srgb, var(--moutarde) 80%, var(--c-fond)); right: 24cqh; bottom: 7cqh; width: 12cqh; height: 12cqh; }
+.piece.barre { --pm-aplat: color-mix(in srgb, var(--c-accent) 55%, var(--c-fond)); --pm-aplat-rayon: 2cqh; right: 5cqh; bottom: 22cqh; width: 5cqh; height: 20cqh; }
+.piece.boulon { --pm-aplat: color-mix(in srgb, var(--c-primaire) 35%, var(--c-fond)); left: 6cqh; bottom: 8cqh; width: 7cqh; height: 7cqh; }
+
+/* ---------- Titre ---------- */
+.carte-titre { display: flex; flex-direction: column; gap: 2cqh; align-items: flex-start; }
+
+/* ---------- Liste : des numéros sur des pastilles ---------- */
+.points { list-style: none; margin: 0; padding: 0; display: grid; gap: 2.2cqh; }
+.points li { position: relative; padding-left: 8.4cqh; min-height: 6cqh; display: flex; align-items: center; font: 500 4.1cqh/1.3 var(--f-texte); }
+/* La pastille numérotée : sa couleur imprimée à côté de son trait cassé (un cercle en tirets, posé dessus). */
+.points li::before, .points li::after { position: absolute; left: 0; top: 50%; width: 6cqh; height: 6cqh; margin-top: -3cqh; border-radius: 50%; box-sizing: border-box; }
+.points li::before { content: ""; background: color-mix(in srgb, var(--moutarde) 75%, var(--papier-clair)); translate: var(--pm-repere-x, 0.35cqh) var(--pm-repere-y, 0.3cqh); }
+.points li::after { display: grid; place-items: center; border: var(--pm-aplat-epaisseur) dashed var(--encre); font: 600 3.6cqh/1 var(--f-titres); }
+.points li:nth-child(1)::after { content: "1"; }
+.points li:nth-child(2)::after { content: "2"; }
+.points li:nth-child(3)::after { content: "3"; }
+.points li:nth-child(4)::after { content: "4"; }
+
+/* ---------- Chiffre : un bloc qui se colore ---------- */
+.mesure { display: flex; flex-direction: column; gap: 1.2cqh; align-items: flex-start; align-self: flex-start; padding: 3cqh 5cqh; --pm-aplat-rayon: 2cqh; }
+
+/* ---------- Comparaison : le mauvais geste, le bon geste ---------- */
+.planches { display: grid; grid-template-columns: 1fr 1fr; gap: 6cqh; }
+.planche { display: flex; flex-direction: column; gap: 1.6cqh; padding: 3.4cqh; min-width: 0; --pm-aplat: var(--papier-clair); --pm-aplat-rayon: 1.4cqh; }
+.planche.bonne { --teinte: color-mix(in srgb, var(--c-primaire) 45%, var(--papier-clair)); }
+.planche.nommee { --pm-aplat: color-mix(in srgb, var(--teinte) calc(var(--p, 1) * 62%), var(--papier-clair)); }
+.planche-tete { display: flex; align-items: center; gap: 2cqh; }
+.signe { flex: none; width: 6cqh; height: 6cqh; }
+/* La croix et la coche, dessinées (aucun glyphe) : deux barres croisées, un angle tourné. */
+.signe::after { content: ""; position: absolute; z-index: 1; }
+.signe.non::after { inset: 22%; background: linear-gradient(45deg, transparent 43%, var(--encre) 43% 57%, transparent 57%), linear-gradient(-45deg, transparent 43%, var(--encre) 43% 57%, transparent 57%); }
+.signe.oui::after { left: 36%; top: 18%; width: 24%; height: 46%; border: solid var(--encre); border-width: 0 0.6cqh 0.6cqh 0; rotate: 45deg; }
+.signe.non { --pm-aplat: color-mix(in srgb, var(--c-accent) 30%, var(--papier-clair)); }
+.signe.oui { --pm-aplat: color-mix(in srgb, var(--c-primaire) 30%, var(--papier-clair)); }
+.planche-titre { margin: 0; font: 600 5cqh/1.1 var(--f-titres); }
+
+/* ---------- Étape : le numéro sur son disque, puis ce que la main fait ---------- */
+.etape { display: grid; grid-template-columns: auto 1fr; gap: 5cqh; align-items: center; }
+.disque-numero { --pm-aplat: color-mix(in srgb, var(--moutarde) 80%, var(--papier-clair)); width: 18cqh; height: 18cqh; display: grid; place-items: center; }
+.numero { margin: 0; font: 600 11cqh/1 var(--f-titres); }
+.etape-texte { display: flex; flex-direction: column; gap: 2cqh; min-width: 0; padding: 3cqh 3.6cqh; }
+
+/* ---------- Alerte : le carton d'avertissement ---------- */
+.cadre-alerte { display: flex; flex-direction: column; gap: 2cqh; padding: 4cqh 5.4cqh; --pm-aplat-rayon: 1.6cqh; }
+
+/* ---------- Schéma : trois pièces reliées ---------- */
+.chaine { display: flex; align-items: center; gap: 2cqh; }
+.chaine > .idee { flex: 1; text-align: center; padding: 3cqh 1.6cqh; font: 600 4.4cqh/1.2 var(--f-titres); --pm-aplat-rayon: 1.2cqh; }
+.connecteur { flex: none; width: 9cqh; height: 2cqh; }
+
+/* ---------- Logo ---------- */
+.logo { height: 11cqh; width: auto; object-fit: contain; align-self: flex-start; }
+
+/* ---------- Format carré ---------- */
+@container (max-aspect-ratio: 5/4) {
+  #pm-scene > section[data-scene] { padding: 9cqh 8cqh 10cqh; gap: 2.6cqh; font-size: 3.6cqh; }
+  .guide { --pm-perso-x: 15; --pm-perso-sol: 88; --pm-perso-taille: 46; }
+  #pm-scene > section[data-scene]:has(> .guide) { padding-left: 34cqh; }
+  .titre { font-size: 6.6cqh; }
+  .titre-moyen { font-size: 4.8cqh; }
+  .texte { font-size: 3.5cqh; }
+  .etiquette { font-size: 3.5cqh; }
+  .nombre { font-size: 15cqh; }
+  .points li { font-size: 3.7cqh; padding-left: 7cqh; min-height: 5cqh; }
+  .points li::before, .points li::after { width: 5cqh; height: 5cqh; margin-top: -2.5cqh; }
+  .points li::after { font-size: 3.5cqh; }
+  .planches { gap: 3cqh; }
+  .planche { padding: 2.6cqh; }
+  .planche-titre { font-size: 4cqh; }
+  .signe { width: 5cqh; height: 5cqh; }
+  .disque-numero { width: 13cqh; height: 13cqh; }
+  .numero { font-size: 8cqh; }
+  .etape { gap: 3cqh; }
+  .chaine > .idee { font-size: 3.5cqh; padding: 2.4cqh 1cqh; }
+  .connecteur { width: 4cqh; }
+  .piece.bloc { right: 4cqh; top: 4cqh; width: 10cqh; height: 7cqh; }
+  .piece.disque { right: 12cqh; bottom: 4cqh; width: 8cqh; height: 8cqh; }
+  .piece.barre { right: 3cqh; bottom: 14cqh; width: 3.6cqh; height: 13cqh; }
+}
+
+/* ---------- Format vertical : tout s'empile, le guide en bas ---------- */
+@container (orientation: portrait) {
+  #pm-scene > section[data-scene] { padding: 8cqh 7cqh 10cqh; gap: 1.6cqh; font-size: 3.5cqh; }
+  .guide { --pm-perso-x: 28; --pm-perso-sol: 92; --pm-perso-taille: 34; }
+  #pm-scene > section[data-scene]:has(> .guide) { justify-content: flex-start; padding: 12cqh 7cqh 40cqh; }
+  .titre { font-size: 5.2cqh; }
+  .titre-moyen { font-size: 4cqh; }
+  .texte { font-size: 3.5cqh; }
+  .etiquette { font-size: 3.5cqh; }
+  .nombre { font-size: 10.5cqh; }
+  .points { gap: 1cqh; }
+  .points li { font-size: 3.5cqh; line-height: 1.22; padding-left: 6.6cqh; min-height: 5cqh; }
+  .points li::before, .points li::after { width: 5cqh; height: 5cqh; margin-top: -2.5cqh; }
+  .points li::after { font-size: 3.5cqh; }
+  .carton { padding: 1.2cqh 2.2cqh; }
+  .mesure { padding: 2cqh 3cqh; }
+  .planches { grid-template-columns: 1fr; gap: 1.8cqh; }
+  .planche { padding: 2cqh 2.4cqh; gap: 1cqh; }
+  .planche-titre { font-size: 3.6cqh; }
+  .signe { width: 4.2cqh; height: 4.2cqh; }
+  .etape { grid-template-columns: 1fr; gap: 1.6cqh; }
+  .disque-numero { width: 10cqh; height: 10cqh; }
+  .numero { font-size: 6.4cqh; }
+  .etape-texte { padding: 1.6cqh 2.2cqh; }
+  .cadre-alerte { padding: 3cqh 3.6cqh; }
+  .chaine { flex-direction: column; align-items: stretch; gap: 1cqh; }
+  .chaine > .idee { font-size: 3.5cqh; padding: 1.8cqh; }
+  .connecteur { align-self: center; width: 2cqh; height: 4cqh; }
+  .logo { height: 8cqh; }
+  .piece.bloc { right: 4cqh; top: 3cqh; width: 8cqh; height: 5.4cqh; }
+  .piece.disque { right: 6cqh; bottom: 5cqh; width: 6cqh; height: 6cqh; }
+  .piece.barre { display: none; }
+  .piece.boulon { left: 3cqh; bottom: 3cqh; width: 4cqh; height: 4cqh; }
+}
+
+/* ---------- 9:16 : place pour la légende des réseaux sociaux (pas en 4:5) ---------- */
+@container (max-aspect-ratio: 2/3) {
+  #pm-scene > section[data-scene] { padding-bottom: 15cqh; }
+  .guide { --pm-perso-x: 30; --pm-perso-sol: 84; --pm-perso-taille: 28; }
+  #pm-scene > section[data-scene]:has(> .guide) { padding-bottom: 46cqh; }
+  .moyeu { margin-right: 5cqh; }
+}
+
+/* ---------- Moyeu et rayons (spec S7, 5.7) : couronne en paysage, rangée sous le centre en portrait ---------- */
+.moyeu { --n: 3; position: relative; flex: 1; min-height: 46cqh; }
+.moyeu:has(> .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie) { --n: 4; }
+.moyeu:has(> .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie ~ .moyeu-partie) { --n: 5; }
+.moyeu > .moyeu-centre, .moyeu > .moyeu-partie { position: absolute; left: 50%; top: 50%; box-sizing: border-box; flex: none; margin: 0; text-align: center; }
+.moyeu > .moyeu-centre { width: 38cqh; padding: 2.6cqh; translate: -50% -50%; --pm-aplat: color-mix(in srgb, var(--moutarde) 62%, var(--papier-clair)); --pm-aplat-rayon: 1.4cqh; font: 600 5cqh/1.15 var(--f-titres); }
+.moyeu > .moyeu-partie { --a: calc(-90deg + 180deg / var(--n) + var(--i, 0) * 360deg / var(--n)); width: 32cqh; font: 500 3.8cqh/1.25 var(--f-texte); overflow-wrap: anywhere;
+  translate: calc(-50% + cos(var(--a)) * 58cqh) calc(-50% + sin(var(--a)) * 27cqh); }
+@container (max-aspect-ratio: 5/4) {
+  .moyeu > .moyeu-centre { width: 26cqh; font-size: 4cqh; }
+  .moyeu > .moyeu-partie { width: 27cqh; font-size: 3.5cqh; translate: calc(-50% + cos(var(--a)) * 31cqh) calc(-50% + sin(var(--a)) * 26cqh); }
+}
+@container (max-aspect-ratio: 9/10) {
+  .moyeu { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); align-content: center; align-items: center; row-gap: 12cqh; column-gap: 0.8cqh; min-height: 0; }
+  .moyeu > .moyeu-centre, .moyeu > .moyeu-partie { position: relative; left: auto; top: auto; translate: none; width: auto; }
+  .moyeu > .moyeu-centre { grid-column: 1 / -1; justify-self: center; width: 85%; }
+  .moyeu > .moyeu-partie { grid-row: 2; font-size: calc(3.4cqh - var(--n) * 0.24cqh); padding: 1.4cqh 0.2cqh; overflow-wrap: anywhere; }
+}

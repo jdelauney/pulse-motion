@@ -1,13 +1,5 @@
 # Licences des polices
 
-## Fredoka
-
-- Source : Bunny Fonts (https://fonts.bunny.net), le 2026-10-12
-- Licence : catalogue Google Fonts (SIL Open Font License, Apache 2.0 ou Ubuntu Font Licence), intégration autorisée
-- Fredoka-500.woff2 : https://fonts.bunny.net/fredoka/files/fredoka-latin-500-normal.woff2 (sha256 7d76e44a94b02894b384fc98c124ccf521d8460bf0e0bbe31c1b6b4be6099620)
-- Fredoka-600.woff2 : https://fonts.bunny.net/fredoka/files/fredoka-latin-600-normal.woff2 (sha256 b62f2898de150f019961f4884a49f83dcd2ce74375be5e0992c594ebb8f30294)
-- Copiée du style « chaleureux » du plugin le 2026-11-11 (mêmes fichiers, mêmes empreintes) : aucune police téléchargée pour ce style.
-
 ## Nunito Sans
 
 - Source : Bunny Fonts (https://fonts.bunny.net), le 2026-10-12
@@ -16,10 +8,17 @@
 - Nunito Sans-700.woff2 : https://fonts.bunny.net/nunito-sans/files/nunito-sans-latin-700-normal.woff2 (sha256 cb84238e7b852f2d22b91a598289f13b31cbc7a2d618fd2c0628ecb69459fbeb)
 - Copiée du style « chaleureux » du plugin le 2026-11-11 (mêmes fichiers, mêmes empreintes) : aucune police téléchargée pour ce style.
 
+## Patrick Hand
+
+- Source : Bunny Fonts (https://fonts.bunny.net), le 2026-11-11
+- Licence : catalogue Google Fonts (SIL Open Font License, Apache 2.0 ou Ubuntu Font Licence), intégration autorisée
+- Patrick Hand-400.woff2 : https://fonts.bunny.net/patrick-hand/files/patrick-hand-latin-400-normal.woff2 (sha256 ac5bc9033b2572bf84d39f7150c1634e37ed16e8dbee632d6d0bceac0bbf0199)
+- Téléchargée sur Bunny Fonts (sous-ensemble latin) avec l'accord de l'auteur du plugin, le 2026-11-11 ; licence SIL Open Font License 1.1.
+
 ## Copyright
 
-- Fredoka : Copyright 2016 The Fredoka Project Authors (https://github.com/hafontia/Fredoka-One)
 - Nunito Sans : Copyright 2016 The Nunito Sans Project Authors (https://github.com/Fonthausen/NunitoSans)
+- Patrick Hand : Copyright 2010-2012 Patrick Wagesreiter
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 

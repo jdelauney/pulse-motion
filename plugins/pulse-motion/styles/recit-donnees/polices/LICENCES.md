@@ -13,13 +13,20 @@
 - Source : Bunny Fonts (https://fonts.bunny.net), le 2026-10-11
 - Licence : catalogue Google Fonts (SIL Open Font License, Apache 2.0 ou Ubuntu Font Licence), intégration autorisée
 - Fraunces-400.woff2 : https://fonts.bunny.net/fraunces/files/fraunces-latin-400-normal.woff2 (sha256 e558f39453a9c611908be04294b50dea5f21ae6c49b41c6e47f4115e91f90209)
-- Fraunces-400-italic.woff2 : https://fonts.bunny.net/fraunces/files/fraunces-latin-400-italic.woff2 (sha256 475b154af19c6b4ef371db22078b5044a078ce2467e11ef22a7b87f77837caf3), ajouté le 2026-10-12
 - Copiée du style « editorial » du plugin le 2026-11-11 (mêmes fichiers, mêmes empreintes) : aucune police téléchargée pour ce style.
+
+## Kalam
+
+- Source : Bunny Fonts (https://fonts.bunny.net), le 2026-11-11
+- Licence : catalogue Google Fonts (SIL Open Font License, Apache 2.0 ou Ubuntu Font Licence), intégration autorisée
+- Kalam-400.woff2 : https://fonts.bunny.net/kalam/files/kalam-latin-400-normal.woff2 (sha256 954410601a823f37e219f7930b7446f86afa15621326a7078d56fb9c910135cb)
+- Téléchargée sur Bunny Fonts (sous-ensemble latin) avec l'accord de l'auteur du plugin, le 2026-11-11 ; licence SIL Open Font License 1.1.
 
 ## Copyright
 
 - Schibsted Grotesk : Copyright 2022 The Schibsted Grotesk Project Authors (https://github.com/schibsted/schibsted-grotesk)
 - Fraunces : Copyright 2018 The Fraunces Project Authors (https://github.com/undercasetype/Fraunces)
+- Kalam : Copyright 2014 Indian Type Foundry
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 

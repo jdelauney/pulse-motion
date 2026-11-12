@@ -1,0 +1,17 @@
+/* Pulse Motion – feuille du module aplats (moteur/medium/aplats.js), embarquée avec lui seulement.
+ * [data-aplat] : sa couleur (--pm-aplat) est imprimée par ::before, décalée du repérage de la scène ; son trait cassé est le
+ * <svg class="pm-aplat-trait"> posé par le module (tirets tirés d'une graine). Repli (module absent) : la couleur reste, sans
+ * trait. Réglages : --pm-aplat (couleur), --pm-aplat-trait (couleur du trait), --pm-aplat-epaisseur, --pm-aplat-rayon. */
+:where([data-aplat]) { position: relative; border-radius: var(--pm-aplat-rayon, 0); }
+[data-aplat] { isolation: isolate; }
+[data-aplat]::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
+  background: var(--pm-aplat, transparent); translate: var(--pm-repere-x, 0px) var(--pm-repere-y, 0px);
+}
+:where([data-aplat="rond"]), [data-aplat="rond"]::before { border-radius: 50%; }
+svg.pm-aplat-trait { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 1; }
+svg.pm-aplat-trait > rect, svg.pm-aplat-trait > ellipse {
+  fill: none; stroke: var(--pm-aplat-trait, currentColor); stroke-width: var(--pm-aplat-epaisseur, 0.4cqh);
+  stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: var(--pm-tirets, none); stroke-dashoffset: var(--pm-tirets-depart, 0);
+}
+svg.pm-aplat-trait > rect { rx: var(--pm-aplat-rayon, 0); }

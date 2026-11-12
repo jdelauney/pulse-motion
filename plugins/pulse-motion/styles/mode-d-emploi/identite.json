@@ -1,0 +1,113 @@
+{
+  "style": "mode-d-emploi",
+  "famille": "chaleureuse",
+  "personnalite": [
+    "calme",
+    "précis",
+    "d'époque"
+  ],
+  "eviter": [
+    "gags et rebonds de dessin animé",
+    "corps qui gigotent sans raison"
+  ],
+  "genres": [
+    "formation",
+    "produit"
+  ],
+  "couleur": {
+    "strategie": "sobre-avec-une-touche",
+    "tons": [
+      "clair"
+    ],
+    "tonDefaut": "clair",
+    "clair": {
+      "fond": "#f1e6cf",
+      "texte": "#26201c"
+    },
+    "roles": {
+      "primaire": "les blocs froids du décor et le bon geste",
+      "accent": "le mauvais geste, l'avertissement, ce qui compte"
+    }
+  },
+  "typographie": {
+    "titres": {
+      "famille": "Fraunces",
+      "categorie": "serif",
+      "graisse": 600
+    },
+    "texte": {
+      "famille": "Barlow",
+      "categorie": "sans-serif",
+      "graisse": 500
+    }
+  },
+  "mouvement": {
+    "caractere": "limité",
+    "courbes": [
+      "cubic-out",
+      "linear"
+    ],
+    "dureeType": 0.6,
+    "transitions": [
+      "coupe",
+      "fondu"
+    ]
+  },
+  "signature": "Film pédagogique des années 50 : aplats imprimés à quelques pixels de leur trait cassé, animation limitée image par image, un guide au corps tranquille dont seules les mains travaillent, des étapes numérotées",
+  "aFaire": [
+    "Une étape par scène, son numéro d'abord, puis ce que la main fait",
+    "Colorer une pièce au moment où on la nomme"
+  ],
+  "aEviter": [
+    "Faire bouger tout le corps du guide quand il explique",
+    "Des mouvements fluides et rebondis : tout avance par images"
+  ],
+  "categorie": "anime",
+  "nonPas": "Pas un style chaleureux aux formes qui respirent : des aplats d'époque, une animation limitée. Pas un dessin animé à gags : un narrateur calme qui montre le geste.",
+  "usages": [
+    "Guide de mise en route d'un produit",
+    "Procédure pas à pas d'un poste",
+    "Aide en ligne et tutoriel d'usage"
+  ],
+  "motsCles": [
+    "mode d'emploi",
+    "années 50",
+    "années cinquante",
+    "rétro",
+    "vintage",
+    "film pédagogique",
+    "suivez le guide",
+    "dessin animé d'époque",
+    "animation limitée",
+    "notice"
+  ],
+  "son": {
+    "ambiances": [
+      "acoustique",
+      "mecanique"
+    ],
+    "bruitages": {
+      "titre": null,
+      "texte": null,
+      "point": "ding",
+      "chiffre": "tic",
+      "trace": null,
+      "forme": "pop",
+      "image": null,
+      "ecriture": null,
+      "transition": null
+    },
+    "matiere": null,
+    "fort": "succes"
+  },
+  "modules": [
+    "aplats"
+  ],
+  "provenance": [
+    {
+      "depot": "lemo-opuscar",
+      "style": "midcentury-toon",
+      "licence": "MIT"
+    }
+  ]
+}

@@ -28,7 +28,7 @@
 
 ## 4. Typographie et sous-titres
 
-- **Fraunces** 400 italique : titres (10 cqh, moyen 6,6), chiffres, notes ; **Instrument Sans** 400 : texte (3,9 cqh), 600 : étiquettes.
+- **Caveat** 700 (écriture au feutre) : titres (10 cqh, moyen 6,6), chiffres, notes ; **Instrument Sans** 400 : texte (3,9 cqh), 600 : étiquettes.
 - Sous-titres du moteur. Lisibilité : `controles.md`.
 
 ## 5. Qualité du mouvement

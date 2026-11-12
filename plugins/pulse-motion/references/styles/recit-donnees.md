@@ -27,7 +27,7 @@
 
 ## 4. Typographie et sous-titres
 
-- **Schibsted Grotesk** 700 : titres (9 cqh, moyen 6), étiquettes ; 900 : chiffres (22 cqh, `tabular-nums`) ; **Fraunces** 400 : texte (4 cqh), italique : notes.
+- **Schibsted Grotesk** 700 : titres (9 cqh, moyen 6), étiquettes ; 900 : chiffres (22 cqh, `tabular-nums`) ; **Fraunces** 400 : texte (4 cqh) ; **Kalam** 400 : notes (rôle `notes`).
 - Sous-titres du moteur. Lisibilité : `controles.md`.
 
 ## 5. Qualité du mouvement

@@ -13,12 +13,12 @@ const { verifierRendu } = require('../scripts/lib/rendu-style.js');
 const RACINE = path.join(__dirname, '..');
 // Liste figée des styles livrés : les six essentiels (J1), la vague A de S8 J6 (info-sans-son, lancement, plan-technique), puis la
 // vague B de S8 J7 (carnet, recit-donnees, tableau-blanc, tableau-noir), la vague C de S8 J8 (iso-album, iso-infographie), puis la
-// vague D de S8 J9 (crayon, papier-decoupe, pictogrammes, riso).
-const LIVRES = ['carnet', 'chaleureux', 'clair-pedagogique', 'crayon', 'editorial', 'energique', 'info-sans-son', 'iso-album', 'iso-infographie', 'lancement', 'minimal', 'papier-decoupe', 'pictogrammes', 'plan-technique', 'recit-donnees', 'riso', 'tableau-blanc', 'tableau-noir', 'tech-sombre'];
+// vague D de S8 J9 (crayon, papier-decoupe, pictogrammes, riso), puis mode-d-emploi (S8 J10).
+const LIVRES = ['carnet', 'chaleureux', 'clair-pedagogique', 'crayon', 'editorial', 'energique', 'info-sans-son', 'iso-album', 'iso-infographie', 'lancement', 'minimal', 'mode-d-emploi', 'papier-decoupe', 'pictogrammes', 'plan-technique', 'recit-donnees', 'riso', 'tableau-blanc', 'tableau-noir', 'tech-sombre'];
 const lireJSON = (...p) => JSON.parse(fs.readFileSync(path.join(RACINE, ...p), 'utf8'));
 const navigateur = trouverNavigateur();
 
-test('catalogue livré : exactement les 19 styles, chacun proposé pour au moins un genre (recommandes, contraste ou aussi)', () => {
+test('catalogue livré : exactement les 20 styles, chacun proposé pour au moins un genre (recommandes, contraste ou aussi)', () => {
   assert.deepEqual(fs.readdirSync(path.join(RACINE, 'styles')).sort(), LIVRES);
   const recommandation = lireJSON('references', 'styles', 'recommandation.json');
   const cites = new Set(Object.values(recommandation).flatMap((r) => [...r.recommandes, r.contraste, ...(r.aussi || [])]));

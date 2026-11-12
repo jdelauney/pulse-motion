@@ -35,8 +35,13 @@ function chartePour(deroule, dossierStyle, projet) {
   const duStyle = lireJSON(path.join(dossierStyle, 'charte.json'), {});
   const { charte: duProjet, erreurs } = projet ? charteDuProjet(projet) : { charte: {}, erreurs: [] };
   const ponctuel = deroule.charte || {};
+  const couleurs = { ...CHARTE_DEFAUT.couleurs, ...duStyle.couleurs, ...duProjet.couleurs, ...ponctuel.couleurs };
+  // Accent « encre seulement » (accent-encre, jamais pour un texte, hors du contrôle de contraste) : celui du style tant que la
+  // personne ne donne pas son accent ; son accent le remplace, sauf si elle donne aussi son accent-encre.
+  const donne = (cle) => [duProjet.couleurs, ponctuel.couleurs].some((c) => c && c[cle] !== undefined);
+  if (couleurs['accent-encre'] && donne('accent') && !donne('accent-encre')) couleurs['accent-encre'] = couleurs.accent;
   return {
-    couleurs: { ...CHARTE_DEFAUT.couleurs, ...duStyle.couleurs, ...duProjet.couleurs, ...ponctuel.couleurs },
+    couleurs,
     polices: { ...CHARTE_DEFAUT.polices, ...duStyle.polices, ...versProjet(duProjet.polices), ...ponctuel.polices },
     logo: ponctuel.logo || (duProjet.logo ? `charte/${duProjet.logo}` : null),
     ton: ponctuel.ton || duProjet.ton || 'auto',

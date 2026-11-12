@@ -1,0 +1,16 @@
+<!-- Scène toute faite « schema » (style mode-d-emploi) : trois pièces tracées, reliées par des flèches, qui se colorent une à une quand on les nomme. Durée conseillée : 8 s.
+     Textes : titre (≤ 30 car.), a, b, c (≤ 16 car.). -->
+<section data-scene="schema">
+  <div class="decor">
+    <span class="piece bloc" data-aplat data-decor data-start="0" data-dur="8" data-tween="--x 0cqh→-3cqh linear"></span>
+    <span class="piece disque" data-aplat="rond" data-decor data-start="0" data-dur="8" data-tween="--r 0deg→45deg linear"></span>
+  </div>
+  <h2 id="titre" class="titre-moyen pm-m-saccade" data-texte="titre" data-start="0.3" data-dur="0.6"></h2>
+  <div class="chaine">
+    <div id="a" class="idee carton nommee pm-m-saccade" data-aplat data-texte="a" data-start="#titre:fin+0.2" data-dur="0.8"></div>
+    <span class="connecteur" aria-hidden="true"><i id="lien1" data-fleche="#a → #b" data-start="#a+0.8" data-dur="0.6" data-couleur="texte"></i></span>
+    <div id="b" class="idee carton nommee froide pm-m-saccade" data-aplat data-texte="b" data-start="#lien1:fin" data-dur="0.8"></div>
+    <span class="connecteur" aria-hidden="true"><i id="lien2" data-fleche="#b → #c" data-start="#b+0.8" data-dur="0.6" data-couleur="texte"></i></span>
+    <div id="c" class="idee carton nommee pm-m-saccade" data-aplat data-texte="c" data-start="#lien2:fin" data-dur="0.8"></div>
+  </div>
+</section>

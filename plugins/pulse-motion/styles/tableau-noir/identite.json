@@ -31,9 +31,9 @@
   },
   "typographie": {
     "titres": {
-      "famille": "Sora",
-      "categorie": "sans-serif",
-      "graisse": 600
+      "famille": "Kalam",
+      "categorie": "handwriting",
+      "graisse": 400
     },
     "texte": {
       "famille": "Nunito Sans",
