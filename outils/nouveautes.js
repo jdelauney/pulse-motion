@@ -43,7 +43,7 @@ function comparerVersions(a, b) {
   return 0;
 }
 
-/** Retire tout ce qui ressemble à un chemin de l'ordinateur (lecteur Windows, /e/tmp, dossier personnel). */
+/** Retire tout ce qui ressemble à un chemin de l'ordinateur (lecteur Windows, lecteur vu par Git sous Windows, dossier personnel). */
 function sansChemin(texte) {
   return String(texte)
     .replace(/\b[A-Za-z]:[\\/][^\s,;)»"']*/g, "…")
