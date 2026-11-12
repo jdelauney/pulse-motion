@@ -9,7 +9,8 @@ const { police } = require('./aide/polices.js');
 
 test('TTF, WOFF et WOFF2 : licence et caractères lus de la même façon', () => {
   for (const format of ['ttf', 'woff', 'woff2']) {
-    assert.deepEqual(P.analyserPolice(police({ format })), { fsType: 0, interdite: false, apercuSeulement: false, manquants: [] }, format);
+    // axes (fvar) et graisse (OS/2.usWeightClass), spec S9 5.6 : la police de test est statique, sans graisse inscrite.
+    assert.deepEqual(P.analyserPolice(police({ format })), { fsType: 0, interdite: false, apercuSeulement: false, manquants: [], axes: [], graisse: 0 }, format);
     assert.equal(P.analyserPolice(police({ format, fsType: 2 })).interdite, true, format);
     assert.equal(P.analyserPolice(police({ format, fsType: 4 })).apercuSeulement, true, format);
     assert.deepEqual(P.analyserPolice(police({ format, texte: P.FRANCAIS.replace('œ', '').replace('€', '') })).manquants, ['œ', '€'], format);

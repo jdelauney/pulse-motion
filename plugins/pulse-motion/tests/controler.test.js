@@ -213,7 +213,10 @@ test('texte lettre par lettre : effet inconnu signalé sans navigateur', () => {
   ecrireScene(dir, '02-chiffre.html', '<section data-scene="chiffre"><p data-texte="legende" data-start="0" data-dur="2" data-lettres="danse"></p><p data-mots="monte" data-start="1"></p></section>');
   const p = controler({ dossier: dir, dossierStyles: STYLES }).problemes.filter((x) => x.regle === 'lettres-invalide');
   assert.equal(p.length, 1);
-  assert.match(p[0].message, /Scène « chiffre » : data-lettres « danse » inconnu \(effets : monte, flou, frappe, onde, chute, brouille, saisie, ecrit\)/);
+  // La liste des effets vient du moteur (aucun test ne la fige).
+  const effets = Object.keys(require('../moteur/lettres.js').EFFETS).join(', ');
+  assert.ok(p[0].message.startsWith(`Scène « chiffre » : data-lettres « danse » inconnu (effets : ${effets})`), p[0].message);
+  assert.match(effets, /^monte, flou, frappe, onde, chute, brouille, saisie, ecrit/);
 });
 
 test('caméra et temps : syntaxe fautive signalée sans navigateur', () => {

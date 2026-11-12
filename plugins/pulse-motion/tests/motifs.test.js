@@ -17,8 +17,10 @@ const { plafond } = require('./aide/plafonds.js');
 
 const RACINE = path.join(__dirname, '..');
 const lire = (...p) => fs.readFileSync(path.join(RACINE, ...p), 'utf8');
-const CSS = lire('moteur', 'mouvements.css');
-const SANS_COMMENTAIRES = CSS.replace(/\/\*[\s\S]*?\*\//g, '');
+// Classes des recettes : mouvements.css, et la feuille des briques de la spec S9 (moteur/briques.css).
+const CSS = `${lire('moteur', 'mouvements.css')}\n${lire('moteur', 'briques.css')}`;
+// Règles des motifs (hélice sans preserve-3d…) : mouvements.css seul ; la 2,5D de briques.css en a besoin, elle.
+const SANS_COMMENTAIRES = lire('moteur', 'mouvements.css').replace(/\/\*[\s\S]*?\*\//g, '');
 const DICO = charger();
 const NUMEROS = JSON.parse(lire('references', 'mouvements', 'numeros.json'));
 const MOTIFS = DICO.mouvements.filter((e) => Number(e.no) >= 81 && Number(e.no) <= 93);

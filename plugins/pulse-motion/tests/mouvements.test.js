@@ -14,7 +14,8 @@ const { dossierTemporaire } = require('./aide/temporaire.js');
 const RACINE = path.join(__dirname, '..');
 const DICO = charger();
 const NUMEROS = JSON.parse(fs.readFileSync(path.join(RACINE, 'references', 'mouvements', 'numeros.json'), 'utf8'));
-const CSS = fs.readFileSync(path.join(RACINE, 'moteur', 'mouvements.css'), 'utf8');
+// Classes pm-m-* : mouvements.css, et la feuille des briques de la spec S9 (moteur/briques.css, embarquée quand une scène s'en sert).
+const CSS = ['mouvements.css', 'briques.css'].map((f) => fs.readFileSync(path.join(RACINE, 'moteur', f), 'utf8')).join('\n');
 const VARIABLES_COURBES = variablesCSS();
 const estHTML = (e) => e.recette.type !== 'transition';
 
