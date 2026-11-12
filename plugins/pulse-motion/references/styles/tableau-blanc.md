@@ -27,7 +27,7 @@
 
 ## 4. Typographie et sous-titres
 
-- **Kalam** 700 (écriture au feutre) : titres (11 cqh, moyen 7), chiffres (22 cqh) ; 400 : texte (4 cqh).
+- **Kalam** 700 (écriture au feutre) : titres (10 cqh, moyen 6,4, interligne 1,28), chiffres (22 cqh) ; 400 : texte (4 cqh).
 - Sous-titres sur étiquette blanc cassé (`--pm-st-fond`), 44 caractères par ligne. Lisibilité : `controles.md`.
 
 ## 5. Qualité du mouvement
