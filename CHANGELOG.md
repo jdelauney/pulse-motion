@@ -2,6 +2,25 @@
 
 Produit par `outils/nouveautes.js` depuis l'historique du dépôt : ne pas le modifier à la main. Les nouveautés racontées simplement sont sur la page « Nouveautés » du wiki.
 
+## 0.64.0 – 2026-11-12
+
+Pulse Motion retient vos goûts, prend les couleurs de votre site, retrouve vos vidéos et peut livrer une page qui fait son MP4 toute seule.
+
+### Nouveautés
+
+- Page qui sait faire son MP4, facultative (page.boutonMp4 : bloc d'export compressé de 260 Ko au plus, avis MPL-2.0, bouton seulement si le navigateur encode le H.264, sinon un conseil ; pulse-motion page --bouton-mp4)
+- Journal des erreurs sans arguments et rapport de problème local (chemins anonymisés, rien de la vidéo, adresse de signalement préremplie de 7 000 caractères au plus, ouverte seulement après accord)
+- Mémoire des goûts (preferences noter, liste par portée, retirer ; 30 au plus) et registre des vidéos (alimenté au début d'une création et à chaque assemblage, dossier disparu gardé)
+- Charte proposée depuis le site de l'entreprise après accord (couleurs lisibles sur le fond du style, ton, polices proposées sans aucun fichier téléchargé, logo filtré), appliquée seulement après l'accord sur la proposition
+- Outil des nouveautés (CHANGELOG par version depuis la première lignée de main, page Nouveautés du wiki depuis nouveautes.json) et mise à jour annoncée une seule fois au démarrage, jamais à la première installation
+
+### Corrections
+
+- Logo du site écrit depuis une variable « donnees » (règle des écritures binaires)
+- Creer et retoucher ramenés sous leurs plafonds (23 400 et 13 850 o) : renvois d'une ligne à chez-soi, phrases resserrées
+- Un argument de la commande répété dans le message d'erreur est masqué au journal
+- Délai du site tenu à part de celui des commandes du navigateur (démarrage lent sous charge)
+
 ## 0.63.1 – 2026-11-12
 
 Correction d'un test de la page de choix des styles ; rien ne change pour vous.
