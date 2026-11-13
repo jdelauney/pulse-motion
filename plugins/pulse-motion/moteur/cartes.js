@@ -12,6 +12,13 @@
  * CADRES : boîtes nommées des cadres de continent (lon, lat), pour data-carte-cadre (europe, afrique, ameriques, asie, oceanie).
  * elargir(boite, part = 0.1) ; unir(boites) ; seCroisent(a, b) ; versCamera(boite, viewBox, ratio) -> { x, y, zoom } (centre en %
  *   de l'image et zoom conseillé, pour une carte qui couvre toute l'image).
+ * contenu(carte) -> boîte de tout ce que la carte dessine (pays, territoires, cadres des encarts).
+ * estVertical(ratio) : image plus haute que large (« 9:16 », « 4:5 »).
+ * ajusterAuFormat(boite, ratio, limites) -> boîte étendue aux proportions de l'image (la carte remplit l'écran), gardée dans
+ *   les limites de la carte quand elle y tient, sinon centrée sur elles.
+ * decalagesVerticaux(carte) -> { code: [dx, dy] } : en vertical, les encarts d'outre-mer passent sous la métropole, en deux
+ *   rangées centrées (au lieu d'une colonne à gauche) ; null sans encart.
+ * deplacerChemin(d, dx, dy) : chemin de l'outil (M absolus, l relatifs) translaté.
  *
  * Module pur : chargé par Node (require) et dans la page (global M.cartes, groupe « cartes » du moteur à la carte), pour les
  * scripts de scène qui posent un point à des coordonnées.
@@ -150,5 +157,90 @@
     return { x: dixieme(cx / L * 100), y: dixieme(cy / H * 100), zoom: dixieme(zoom) };
   }
 
-  return { projeter: projeter, brut: brut, arc: arc, boiteLonLat: boiteLonLat, CADRES: CADRES, elargir: elargir, unir: unir, seCroisent: seCroisent, versCamera: versCamera };
+  function boiteDeChemin(d) {
+    var b = [Infinity, Infinity, -Infinity, -Infinity], x = 0, y = 0, re = /([MlLmz])([^MlLmz]*)/g, m;
+    while ((m = re.exec(d))) {
+      if (m[1] === 'z') continue;
+      var n = (m[2].match(/-?(?:\d+\.?\d*|\.\d+)/g) || []).map(Number);
+      for (var i = 0; i + 1 < n.length; i += 2) {
+        if (m[1] === 'M' || m[1] === 'L') { x = n[i]; y = n[i + 1]; } else { x += n[i]; y += n[i + 1]; }
+        b[0] = Math.min(b[0], x); b[1] = Math.min(b[1], y); b[2] = Math.max(b[2], x); b[3] = Math.max(b[3], y);
+      }
+    }
+    return b;
+  }
+
+  function contenu(carte) {
+    var boites = [];
+    (carte.pays || []).concat(carte.autres || []).forEach(function (p) { boites.push(p.tout || boiteDeChemin(p.d)); });
+    (carte.encarts || []).forEach(function (e) { boites.push(e.cadre); });
+    var b = unir(boites) || [0, 0, carte.largeur, carte.hauteur];
+    return b.map(dixieme);
+  }
+
+  function proportions(ratio) {
+    var r = String(ratio || '16:9').split(':');
+    var L = Number(r[0]), H = Number(r[1]);
+    return L > 0 && H > 0 ? L / H : 16 / 9;
+  }
+
+  function estVertical(ratio) { return proportions(ratio) < 1; }
+
+  /**
+   * Intervalle [a, b] porté à la longueur n, centré sur lui, puis gardé dans [la, lb] s'il y tient (sinon centré dessus) ; le
+   * milieu de [a, b] reste entre 30 % et 60 % du résultat (en vertical, le sujet reste hors des boutons des réseaux).
+   */
+  function etendre(a, b, n, la, lb) {
+    if (n <= b - a) return [a, b];
+    var c = (a + b) / 2, d = c - n / 2;
+    if (n >= lb - la) d = (la + lb) / 2 - n / 2;
+    else d = Math.min(Math.max(d, la), lb - n);
+    d = Math.min(Math.max(d, c - 0.6 * n), c - 0.3 * n);
+    return [d, d + n];
+  }
+
+  function ajusterAuFormat(boite, ratio, limites) {
+    var a = proportions(ratio), l = boite[2] - boite[0], h = boite[3] - boite[1];
+    var lim = limites || boite;
+    var x = [boite[0], boite[2]], y = [boite[1], boite[3]];
+    if (l / h > a) y = etendre(boite[1], boite[3], l / a, lim[1], lim[3]);
+    else x = etendre(boite[0], boite[2], h * a, lim[0], lim[2]);
+    return [x[0], y[0], x[1], y[1]].map(dixieme);
+  }
+
+  function decalagesVerticaux(carte) {
+    var encarts = carte.encarts || [];
+    if (!encarts.length) return null;
+    var codes = {};
+    encarts.forEach(function (e) { codes[e.code] = true; });
+    var metro = unir((carte.pays || []).filter(function (p) { return !codes[p.code]; }).map(function (p) { return p.tout || boiteDeChemin(p.d); }));
+    if (!metro) return null;
+    // Espace entre deux encarts : celui de la colonne livrée (10 unités).
+    var ecart = encarts.length > 1 ? Math.max(0, encarts[1].cadre[1] - encarts[0].cadre[3]) : 10;
+    var parRangee = encarts.length <= 3 ? encarts.length : Math.ceil(encarts.length / 2);
+    var cx = (metro[0] + metro[2]) / 2;
+    var haut = metro[3] + 2 * ecart;
+    var r = {};
+    for (var debut = 0, rangee = 0; debut < encarts.length; debut += parRangee, rangee++) {
+      var ligne = encarts.slice(debut, debut + parRangee);
+      var largeur = ligne.reduce(function (t, e) { return t + e.cadre[2] - e.cadre[0]; }, 0) + ecart * (ligne.length - 1);
+      var hauteur = Math.max.apply(null, ligne.map(function (e) { return e.cadre[3] - e.cadre[1]; }));
+      var x = cx - largeur / 2;
+      ligne.forEach(function (e) {
+        r[e.code] = [dixieme(x - e.cadre[0]), dixieme(haut - e.cadre[1])];
+        x += e.cadre[2] - e.cadre[0] + ecart;
+      });
+      haut += hauteur + ecart;
+    }
+    return r;
+  }
+
+  function deplacerChemin(d, dx, dy) {
+    return String(d).replace(/([ML])\s*(-?(?:\d+\.?\d*|\.\d+))[\s,]*(-?(?:\d+\.?\d*|\.\d+))/g, function (t, c, x, y) {
+      return c + dixieme(Number(x) + dx) + ' ' + dixieme(Number(y) + dy);
+    });
+  }
+
+  return { projeter: projeter, brut: brut, arc: arc, boiteLonLat: boiteLonLat, CADRES: CADRES, elargir: elargir, unir: unir, seCroisent: seCroisent, versCamera: versCamera,
+    contenu: contenu, estVertical: estVertical, ajusterAuFormat: ajusterAuFormat, decalagesVerticaux: decalagesVerticaux, deplacerChemin: deplacerChemin, boiteDeChemin: boiteDeChemin };
 });

@@ -8,4 +8,10 @@
 #pm-scene .pm-carte .pm-encart { fill: none; stroke: color-mix(in srgb, var(--c-texte) 35%, transparent); stroke-width: calc(var(--pm-u) * 0.12); }
 #pm-scene .pm-carte .pm-liaison { fill: none; stroke: var(--c-accent-lisible); stroke-width: calc(var(--pm-u) * 0.5); stroke-linecap: round; }
 #pm-scene .pm-carte .pm-repere-point { fill: var(--c-accent-lisible); stroke: var(--c-fond); stroke-width: calc(var(--pm-u) * 0.25); }
-#pm-scene .pm-carte text { font-size: calc(var(--pm-u) * 3.5); fill: currentColor; font-family: var(--f-texte); text-anchor: middle; }
+/* Textes de la carte : un halo de la couleur du fond les détache des liaisons, des côtes et des pays colorés. Les repères sont
+   posés après les liaisons (au-dessus) ; le nom d'un repère est placé par l'assemblage (pm-nom-debut : à droite du point,
+   pm-nom-fin : à gauche). */
+#pm-scene .pm-carte text { font-size: calc(var(--pm-u) * 3.5); fill: currentColor; font-family: var(--f-texte); text-anchor: middle;
+  paint-order: stroke fill; stroke: var(--c-fond); stroke-width: calc(var(--pm-u) * 0.7); stroke-linejoin: round; }
+#pm-scene .pm-carte text.pm-nom-debut { text-anchor: start; }
+#pm-scene .pm-carte text.pm-nom-fin { text-anchor: end; }

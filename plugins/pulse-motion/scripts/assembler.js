@@ -412,7 +412,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     // Cartes (spec S9, 5.10) : <svg data-carte> reçoit ses pays, son cadre, ses repères et ses liaisons (fonds de cartes/) ;
     // les fonds ne sont lus qu'à la première carte.
     if (/\sdata-carte\s*=/.test(avecIcones)) {
-      const r = require('./lib/cartes.js').preparerCartes(avecIcones, { scene: scene.id });
+      const r = require('./lib/cartes.js').preparerCartes(avecIcones, { scene: scene.id, ratio: deroule.format.ratio });
       avecIcones = r.html;
       erreurs.push(...r.erreurs);
       r.cartes.forEach((n) => cartesUtilisees.add(n));
