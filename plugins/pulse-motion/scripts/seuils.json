@@ -105,5 +105,8 @@
   "qrModulePx": 6,
   "qrDuree": 4,
   "qrLongueur": 120,
-  "qrContraste": 7
+  "qrContraste": 7,
+  "lottieLourdAlerteKo": 500,
+  "lottieLourdErreurMo": 2,
+  "lottieFinAvant": 2
 }

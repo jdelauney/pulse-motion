@@ -198,6 +198,9 @@ function controlerScene({ projet, deroule, scene, html }) {
   if (u.graphique || u.code || u.formule) problemes.push(...DS.preparerDonnees(injecte.html, { scene }).erreurs);
   // Icônes (spec S9, 5.3) : nom inconnu ou data-icone hors d'un <svg>, comme à l'assemblage.
   if (/data-icone/.test(sansScripts)) problemes.push(...require('./icones.js').preparerIcones(sansScripts, { scene: scene.id }).erreurs);
+  // Cartes et animations Lottie (spec S9, 5.10 et 5.11) : carte, pays, ville ou fichier inconnus, comme à l'assemblage.
+  if (/\sdata-carte\s*=/.test(sansScripts)) problemes.push(...require('./cartes.js').preparerCartes(sansScripts, { scene: scene.id }).erreurs);
+  if (/\sdata-lottie\s*=/.test(sansScripts)) problemes.push(...require('./lottie.js').preparerLotties(sansScripts, { scene: scene.id, projet, couleurs: null }).erreurs.filter((e) => e.gravite === 'erreur'));
   // Briques de la spec S9 : QR code (texte du déroulé, correction), tracé et Ken Burns illisibles, lien trop long ; les règles
   // qui demandent le minutage de la vidéo ou la charte (qr-trop-court, qr-contraste nommé, police-non-variable) restent au contrôle.
   const Br = require('./briques.js');

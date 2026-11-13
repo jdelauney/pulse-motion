@@ -38,6 +38,8 @@
  *                       | comparer <nom> --scene <id> [<dossier>] | fiche <nom> [<dossier>]   imiter la manière d'une animation fournie (jamais l'œuvre)
  *   pulse-motion bloc [<nom>]             blocs « interface » d'un écran de tutoriel (notification, toast, commande…) : liste, ou le HTML d'un bloc
  *   pulse-motion icones chercher <mots…> | afficher <nom> | planche <nom1,nom2…> [--ouvrir]   icônes Lucide : chercher en français, SVG, planche PNG
+ *   pulse-motion cartes chercher <mots…> | afficher <carte> <lieu> [--cadre c] [--pays FR,DE] [--ratio r] | planche <carte> [--pays FR,DE] [--cadre c] [--ouvrir]   cartes de pays et de régions (Natural Earth)
+ *   pulse-motion lottie importer <fichier.json|.lottie> [--nom n] [--source "…"] [--licence "…"] [--auteur "…"] [<dossier>] | analyser <fichier> [<dossier>]   animation Lottie fournie par la personne
  *   pulse-motion mouvements liste [--categorie <id>] | chercher <mots…> | afficher <n° ou nom> | reference | choisir [--categorie <id>] [--ouvrir]   dictionnaire de mouvements nommés ; choisir en regardant
  *   pulse-motion personnages liste|afficher <nom>|verifier|planche <nom> [--dessin <d>]|planche --dessin <d> --visage|atelier [<nom>] [--dessin <d>] [--decoupe <nom>] [--bibliotheque]|analyser <svg>|decouper <nom>|renommer-couleur <dessin> <ancien> <nouveau> [--dossier <d>]|enregistrer <nom> [--type t] [--sous <autre>] [--remplacer]|utiliser <nom> [--type t] [--remplacer]   poses, clips et gabarits des personnages ; bibliothèque personnelle
  *   pulse-motion styles [--genre <genre>] liste les styles (JSON), classée pour le genre
@@ -100,6 +102,8 @@ const SCRIPTS = {
   personnages: 'personnages.js',
   mouvements: 'mouvements.js',
   icones: 'icones.js',
+  cartes: 'cartes.js',
+  lottie: 'lottie.js',
   modeles: 'modeles.js',
   credits: 'credits.js',
   filmer: 'filmer.js',
@@ -278,6 +282,8 @@ function lancer(args) {
     '  effet liste [--dossier <d>] | enregistrer <nom> [<dossier>] [--sous <autre>] [--remplacer] | utiliser <nom> [<dossier>] [--remplacer]   effets gardés pour toutes les vidéos',
     '  mouvements liste [--categorie <id>] | chercher <mots…> | afficher <n° ou nom> | reference | choisir [--categorie <id>] [--ouvrir] [--delai <minutes>]   [--json]',
     '  icones chercher <mots…> | afficher <nom> | planche <nom1,nom2…> [--ouvrir]   icônes Lucide, posées par <svg data-icone="nom"> (reference icones)',
+    '  cartes chercher <mots…> | afficher <carte> <lieu> [--cadre c] [--pays FR,DE] [--ratio r] | planche <carte> [--pays FR,DE] [--cadre c] [--ouvrir]   cartes, posées par <svg data-carte="monde"> (reference cartes)',
+    '  lottie importer <fichier.json|.lottie> [--nom n] [--source "…"] [--licence "…"] [--auteur "…"] [<dossier>] | analyser <fichier>   animation Lottie, posée par <div data-lottie="…"> (reference lottie)',
     '  personnages liste|afficher <nom>|verifier|planche <nom> [--dessin <d>]|planche --dessin <d> --visage|atelier [<nom>] [--dessin <d>] [--decoupe <nom>] [--bibliotheque]|analyser <svg>|decouper <nom>|renommer-couleur <dessin> <ancien> <nouveau>|enregistrer <nom>|utiliser <nom> [--remplacer]   poses, clips et gabarits ; bibliothèque personnelle',
     '  modeles liste | afficher <id> | trouver "<sujet>" | exemple <id> <dossier> | apercu <id>   modèles de vidéo et leurs exemples finis',
     '  styles [--genre <genre>]      styles chercher <mots…>      styles verifier <nom>      styles choisir [--categorie <id>] [--ouvrir] [--delai <minutes>]',

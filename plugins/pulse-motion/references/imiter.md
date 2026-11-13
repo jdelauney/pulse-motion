@@ -14,7 +14,7 @@ La personne montre une animation qu'elle aime (« fais pareil que ce GIF », « 
 
 Dans la première réponse, une seule fois :
 
-- **Le fichier** : GIF, WebP ou PNG animés, MP4, WebM, MOV ; ou une prise filmée (`films/<nom>`). La personne le dépose dans le dossier de la vidéo ; on ne le cherche jamais en ligne. Un fichier Lottie ne se lit pas encore : demander un GIF ou un MP4.
+- **Le fichier** : GIF, WebP ou PNG animés, MP4, WebM, MOV ; ou une prise filmée (`films/<nom>`). La personne le dépose dans le dossier de la vidéo ; on ne le cherche jamais en ligne. Un fichier Lottie ne s'imite pas : il se pose tel quel dans la scène (`pulse-motion reference lottie`) ; pour n'en reprendre que le mouvement avec d'autres images, demander un GIF ou un MP4.
 - **Le passage** : début et fin dans la référence ; 10 s au plus (au-delà, demander le passage).
 - **La cible** : quelle scène, quel élément.
 - **Le niveau de fidélité**, déduit des mots par `pulse-motion imiter niveau "<la phrase de la personne>"`, et annoncé avec la phrase qu'il rend (`annonce`) :
