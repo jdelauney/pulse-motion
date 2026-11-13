@@ -98,8 +98,8 @@ A style is a folder `plugins/pulse-motion/styles/<id>/`:
 | File | Role |
 |---|---|
 | `style.css` | The look: layout, entrance classes (`.entre-bas`…), decoration; sizes in `cqh`, colours and fonts **only** through the brand variables (`--c-*`, `--f-*`) |
-| `charte.json` | Default colours and fonts of the style |
-| `identite.json` | Category, uses, personality, signature, do's and don'ts, keywords, sound palette, provenance; `modules`: the `moteur/medium/` modules the style needs (ink in a canvas, single line, isometry, overprinted riso flats, flats offset from their broken line), included in the page only for that style, with their stylesheet `moteur/medium/<name>.css` if they have one |
+| `charte.json` | Default colours and fonts of the style; two alternatives per style and the overused fonts in `references/styles/polices.json` (`pulse-motion styles polices <style>`) |
+| `identite.json` | Category, uses, personality, signature, do's and don'ts, keywords, sound palette, provenance; `couleur.mesure` (`teintesMax`, `chaleur`, `saturee`: what the render measurement expects, set from the witness video); `modules`: the `moteur/medium/` modules the style needs (ink in a canvas, single line, isometry, overprinted riso flats, flats offset from their broken line), included in the page only for that style, with their stylesheet `moteur/medium/<name>.css` if they have one |
 | `catalogue.json` | The nine ready-made scenes and the texts they expect |
 | `scenes/*.html` | The nine ready-made scenes (`titre`, `chiffre`, `liste`, `etape`, `comparaison`, `schema`, `alerte`, `moyeu`, `conclusion`) |
 | `polices/` | Embedded fonts and their `LICENCES.md`; a family already shipped by another style comes from the plugin's shared fonts (`plugins/pulse-motion/polices/<Famille>/`, with its licence): `polices/partagees.json` lists which of its files the style embeds (`{ "Fraunces": ["Fraunces-600.woff2"] }`), with no copy |
@@ -109,6 +109,8 @@ Then:
 
 1. its 11-section style sheet, `references/styles/<id>.md` (template and validation: `scripts/lib/fiche-style.js`);
 2. its place in `references/styles/recommandation.json` (recommended styles per genre), and the well-known references that lead to it in `references/styles/alias.json` ("like …": we borrow the medium, never the work; these names never go in the style sheet or the scenes);
+   - its fonts and two alternatives (OFL licence, French covered, checked against the Google Fonts metadata and the Bunny Fonts catalogue) in `references/styles/polices.json`; no font from `trop-vues`, and at least one font used by at most 2 other shipped styles;
+   - `identite.couleur.mesure` (`teintesMax`, `chaleur`, `saturee`), set from the measurement of its witness loop in the 4 formats and its tones, with a margin: its witness video must get no `style-*` notice;
 3. `npm test`: `styles-livres`, `fiches-style`, `styles`, `contrat` and `temoin` check the files, the style sheet, the ready-made scenes filled with their sample texts, and the reference content;
 4. the wiki: `node outils/site/medias.js galerie-styles`, then `node outils/site/galerie.js`.
 

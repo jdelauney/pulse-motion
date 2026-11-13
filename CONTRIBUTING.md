@@ -98,8 +98,8 @@ Un style est un dossier `plugins/pulse-motion/styles/<id>/` :
 | Fichier | Rôle |
 |---|---|
 | `style.css` | L'allure : mise en page, classes d'entrée (`.entre-bas`…), décor ; tailles en `cqh`, couleurs et polices **seulement** par les variables de la charte (`--c-*`, `--f-*`) |
-| `charte.json` | Couleurs et polices par défaut du style |
-| `identite.json` | Catégorie, usages, personnalité, signature, à faire, à éviter, mots-clés, palette sonore, provenance ; `modules` : les modules de `moteur/medium/` dont le style a besoin (encre dans un canevas, une seule ligne, isométrie, aplats surimprimés du riso, aplats décalés de leur trait cassé), inclus dans la page seulement pour ce style, avec leur feuille `moteur/medium/<nom>.css` s'ils en ont une |
+| `charte.json` | Couleurs et polices par défaut du style ; deux alternatives par style et les polices trop vues dans `references/styles/polices.json` (`pulse-motion styles polices <style>`) |
+| `identite.json` | Catégorie, usages, personnalité, signature, à faire, à éviter, mots-clés, palette sonore, provenance ; `couleur.mesure` (`teintesMax`, `chaleur`, `saturee` : ce que la mesure du rendu attend, fixé d'après la vidéo témoin) ; `modules` : les modules de `moteur/medium/` dont le style a besoin (encre dans un canevas, une seule ligne, isométrie, aplats surimprimés du riso, aplats décalés de leur trait cassé), inclus dans la page seulement pour ce style, avec leur feuille `moteur/medium/<nom>.css` s'ils en ont une |
 | `catalogue.json` | Les neuf scènes toutes faites et leurs textes à remplir |
 | `scenes/*.html` | Les neuf scènes toutes faites (`titre`, `chiffre`, `liste`, `etape`, `comparaison`, `schema`, `alerte`, `moyeu`, `conclusion`) |
 | `polices/` | Les polices embarquées et leur `LICENCES.md` ; une famille déjà livrée par un autre style se prend dans les polices partagées du plugin (`plugins/pulse-motion/polices/<Famille>/`, avec sa licence) : `polices/partagees.json` dit lesquels de ses fichiers le style embarque (`{ "Fraunces": ["Fraunces-600.woff2"] }`), sans copie |
@@ -109,6 +109,8 @@ Puis :
 
 1. sa fiche en 11 sections, `references/styles/<id>.md` (gabarit et validation : `scripts/lib/fiche-style.js`) ;
 2. sa place dans `references/styles/recommandation.json` (styles conseillés par genre), et les références connues qui y mènent dans `references/styles/alias.json` (« façon … » : on reprend le médium, jamais l'œuvre ; ces noms ne vont ni dans la fiche, ni dans les scènes) ;
+   - ses polices et deux alternatives (licence OFL, français couvert, vérifiés sur les métadonnées de Google Fonts et le catalogue de Bunny Fonts) dans `references/styles/polices.json` ; aucune police de `trop-vues`, et au moins une police que 2 autres styles livrés au plus utilisent ;
+   - `identite.couleur.mesure` (`teintesMax`, `chaleur`, `saturee`), fixé d'après la mesure de sa boucle témoin dans les 4 formats et ses tons, avec une marge : sa vidéo témoin ne doit recevoir aucun avis `style-*` ;
 3. `npm test` : `styles-livres`, `fiches-style`, `styles`, `contrat` et `temoin` vérifient les fichiers, la fiche, les scènes remplies de leurs textes d'exemple et le contenu témoin ;
 4. le wiki : `node outils/site/medias.js galerie-styles`, puis `node outils/site/galerie.js` (le catalogue montre la boucle, les images témoin et les neuf scènes du style).
 

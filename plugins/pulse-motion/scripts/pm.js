@@ -50,6 +50,7 @@
  *   pulse-motion styles chercher <mots…>  styles trouvés par leur nom de médium (« façon tableau blanc ») ou par une
  *                                         référence connue (« façon Kurzgesagt »)
  *   pulse-motion styles verifier <nom>    vérifie le contrat d'un style
+ *   pulse-motion styles polices <style>   polices du style, deux alternatives sous licence OFL et polices trop vues
  *   pulse-motion styles choisir [--categorie <id>] [--ouvrir] [--delai <minutes>]   page locale : choisir un style en le regardant
  *   pulse-motion changer-style <dossier> <style>   recopie les scènes toutes faites du nouveau style
  *   pulse-motion decliner <dossier> [--format 9:16|1:1|4:5|16:9] [--langue <étiquette>] [--plateforme tiktok|shorts|reels|toutes] [--pour <usage>]   version verticale, carrée ou dans une autre langue, dans declinaisons/<nom>/ (l'original ne change pas)
@@ -293,7 +294,7 @@ function lancer(args) {
     '  lottie importer <fichier.json|.lottie> [--nom n] [--source "…"] [--licence "…"] [--auteur "…"] [<dossier>] | analyser <fichier>   animation Lottie, posée par <div data-lottie="…"> (reference lottie)',
     '  personnages liste|afficher <nom>|verifier|planche <nom> [--dessin <d>]|planche --dessin <d> --visage|atelier [<nom>] [--dessin <d>] [--decoupe <nom>] [--bibliotheque]|analyser <svg>|decouper <nom>|renommer-couleur <dessin> <ancien> <nouveau>|enregistrer <nom>|utiliser <nom> [--remplacer]   poses, clips et gabarits ; bibliothèque personnelle',
     '  modeles liste | afficher <id> | trouver "<sujet>" | exemple <id> <dossier> | apercu <id>   modèles de vidéo et leurs exemples finis',
-    '  styles [--genre <genre> [--noter <dossier>]]      styles chercher <mots…>      styles verifier <nom>      styles choisir [--categorie <id>] [--ouvrir] [--delai <minutes>]',
+    '  styles [--genre <genre> [--noter <dossier>]]      styles chercher <mots…>      styles verifier <nom>      styles polices <style>      styles choisir [--categorie <id>] [--ouvrir] [--delai <minutes>]',
     '  changer-style <dossier> <style>                  comparer <dossier> <s1,s2,s3> [--scenes a,b] [--ouvrir]',
     '  charte enregistrer <nom> <dossier> | liste | appliquer <nom> <dossier> | depuis-logo <fichier> [--style s] [--ton clair|sombre]',
     '  police "<famille>" [--graisses 400,700] [--italique] | <fichier> [--famille "<nom>"] [--confirmer] [--style <style> --role titres|texte] [--dans <dossier>]',
