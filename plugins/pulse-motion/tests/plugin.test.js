@@ -622,7 +622,7 @@ test('plugin.test.js › creer et retoucher passent le modèle du critique à l\
   for (const s of ['creer', 'retoucher']) assert.ok(lire('skills', s, 'SKILL.md').includes(regle), s);
 });
 
-test('plugin.test.js › revue.md donne la correspondance des 5 axes vers les 8 axes de critique.json, et chaque axe du critique y figure une fois', () => {
+test('plugin.test.js › revue.md donne la correspondance des 5 axes vers les 9 axes de critique.json, et chaque axe du critique y figure une fois', () => {
   const { AXES } = require('../scripts/lib/relecture.js');
   const r = lire('references', 'revue.md');
   const s = r.slice(r.indexOf('## Depuis la relecture du critique'), r.indexOf('## Rendre la revue'));
@@ -633,7 +633,7 @@ test('plugin.test.js › revue.md donne la correspondance des 5 axes vers les 8 
   const cites = lignes.flatMap((l) => axesDe(l[2]));
   assert.deepEqual([...cites].sort(), [...AXES].sort(), 'chaque axe du critique une fois');
   assert.deepEqual(Object.fromEntries(lignes.map((l) => [l[1], axesDe(l[2])])),
-    { Message: ['message', 'verite'], Lisibilité: ['lisibilite', 'composition'], Rythme: ['ouverture', 'rythme'], Cohérence: ['continuite', 'mouvement'], Singularité: [] });
+    { Message: ['message', 'verite'], Lisibilité: ['lisibilite', 'composition'], Rythme: ['ouverture', 'rythme'], Cohérence: ['continuite', 'mouvement', 'style'], Singularité: [] });
   assert.match(lignes[4][2], /^aucun : Claude la note lui-même/);
   assert.match(s, /Cette table fait foi/);
   assert.match(s, /moyenne des axes du critique notés/);
@@ -642,7 +642,7 @@ test('plugin.test.js › revue.md donne la correspondance des 5 axes vers les 8 
   assert.match(r, /si elle n'est pas à jour \(`aJour` faux ou `null`\), lancer l'agent `critique`/);
 });
 
-test('plugin.test.js › critique : 8 axes, barre de 8, un seul tour, pas de son, verrouillé, invérifiable', () => {
+test('plugin.test.js › critique : 9 axes, barre de 8, un seul tour, pas de son, verrouillé, invérifiable', () => {
   const { AXES } = require('../scripts/lib/relecture.js');
   const t = lire('agents', 'critique.md');
   const grille = t.slice(t.indexOf('| Axe |')).split('\n').filter((l) => /^\| `/.test(l)).map((l) => /`([a-z]+)`/.exec(l)[1]);

@@ -194,7 +194,7 @@ test('planche-regard.test.js › la relecture du critique est gardée, et dite �
   assert.match(fs.readFileSync(path.join(dir, r.fiche), 'utf8'), new RegExp(`- Empreinte de la page : ${r.empreinte} \\(à recopier dans critique\\.json\\)\\.`));
   const critique = {
     version: 1, empreinte: r.empreinte, message: 'm', messagePrevu: 'm', ecart: '',
-    axes: Object.fromEntries(AXES.map((a) => [a, { note: 8, preuve: 'scène intro, 1 s : …' }])),
+    axes: Object.fromEntries(AXES.map((a) => [a, { note: 8, preuve: a === 'style' ? 'scène intro, 1 s : clé claire' : 'scène intro, 1 s : …' }])),
     scenes: [{ id: 'seuil', note: 7, raison: 'r' }], defauts: [], verdict: 'prete', plusFaible: 'seuil', inverifiable: [],
   };
   fs.writeFileSync(path.join(dir, 'sortie', 'regard', 'critique.json'), JSON.stringify(critique));

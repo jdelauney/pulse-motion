@@ -84,9 +84,9 @@ test('realisation.test.js › les règles citées dans les §§ 9 et 11 existent
   assert.ok(citees >= 15, `${citees} règles citées`);
 });
 
-test('realisation.test.js › les 8 axes du § 13 sont ceux de agents/critique.md', () => {
-  const ligne = section(13).split('\n').find((l) => l.startsWith('- **Huit axes**'));
-  assert.ok(ligne, 'ligne des huit axes');
+test('realisation.test.js › les 9 axes du § 13 sont ceux de agents/critique.md', () => {
+  const ligne = section(13).split('\n').find((l) => l.startsWith('- **Neuf axes**'));
+  assert.ok(ligne, 'ligne des neuf axes');
   const axes = [...ligne.slice(0, ligne.indexOf('(')).matchAll(/`([a-z]+)`/g)].map((m) => m[1]);
   assert.deepEqual(axes, AXES);
   const critique = lire('agents', 'critique.md');

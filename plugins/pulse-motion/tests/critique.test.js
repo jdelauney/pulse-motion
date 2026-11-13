@@ -15,7 +15,7 @@ const SEUILS = JSON.parse(fs.readFileSync(path.join(RACINE, 'scripts', 'seuils.j
 function critique(n = 8, defauts = []) {
   return {
     version: 1, empreinte: 'abcdef0123456789', message: 'Le froid se garde de bout en bout.', messagePrevu: 'Garder la chaîne du froid.', ecart: '',
-    axes: Object.fromEntries(AXES.map((a) => [a, { note: n, preuve: `scène intro, 1,2 s : ${a}` }])),
+    axes: Object.fromEntries(AXES.map((a) => [a, { note: n, preuve: `scène intro, 1,2 s : ${a}${a === 'style' ? ', clé claire comme le ton' : ''}` }])),
     scenes: [{ id: 'intro', note: n, raison: 'le titre porte le propos' }, { id: 'seuil', note: n, raison: 'le chiffre arrive tard' }],
     defauts, verdict: n >= 8 && !defauts.some((d) => d.gravite === 'a-corriger') ? 'prete' : 'encore-un-tour', plusFaible: 'seuil', inverifiable: [],
   };
@@ -26,7 +26,7 @@ test('critique.test.js › le schéma de critique.json est validé (axes connus,
   assert.equal(SEUILS.critiqueBarre, 8);
   assert.equal(SEUILS.critiqueScenesMax, 3);   // décision 8 de l'auteur : le tour de corrections porte sur 3 scènes au plus
   assert.equal(SEUILS.critiqueIntouche, 9);
-  assert.deepEqual(AXES, ['message', 'ouverture', 'lisibilite', 'composition', 'mouvement', 'rythme', 'continuite', 'verite']);
+  assert.deepEqual(AXES, ['message', 'ouverture', 'lisibilite', 'composition', 'mouvement', 'rythme', 'continuite', 'verite', 'style']);
   const scenes = ['intro', 'seuil'];
   assert.deepEqual(validerCritique(critique(8), { scenes }), []);
   assert.deepEqual(validerCritique(critique(6, [defaut('souhaitable')]), { scenes }), []);
