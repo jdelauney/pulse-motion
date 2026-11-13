@@ -26,15 +26,26 @@ function decouper(texte) {
 }
 
 /**
- * Extrait lu par l'animateur : en-tête, L'essentiel, § 2, § 4, § 5, § 8, § 9, § 10.
+ * Geste du § 8 réduit pour l'animateur (spec S11, 5.1 point 3) : « - **Nom.** *Recette :* … », sans la description ni
+ * « Convient à », que le critique et creer lisent dans la fiche entière. Une ligne sans recette reste entière.
+ */
+function gesteReduit(ligne) {
+  const nom = /^- \*\*[^*]+\*\*/.exec(ligne);
+  const recette = /\*Recette :\*\s*(.+?)\s*(?:\*Convient à :\*.*)?$/.exec(ligne);
+  return nom && recette ? `${nom[0]} *Recette :* ${recette[1]}` : ligne;
+}
+
+/**
+ * Extrait lu par l'animateur : en-tête, L'essentiel, § 2, § 4, § 5, § 8 (noms et recettes des gestes), § 9, § 10.
  * Une fiche à l'ancien format (une de ces sections manque) est rendue entière : rien n'est perdu.
  */
 function extraitAnimateur(texte) {
   const { entete, sections } = decouper(texte);
   const choisies = SECTIONS_ANIMATEUR.map((t) => sections.find((s) => s.titre === t));
   if (choisies.some((s) => !s)) return String(texte || '');
+  const reduite = (s) => (s.titre === SECTIONS_FICHE[8] ? s.texte.split('\n').map((l) => (/^- \*\*/.test(l) ? gesteReduit(l) : l)).join('\n') : s.texte);
   // La ligne « Adapté du style « <base> » » d'un style personnel ne sert pas à écrire une scène.
-  return entete.replace(/^Adapté du style « [^»]* »\.?\n\n?/m, '') + choisies.map((s) => s.texte.replace(/\n*$/, '\n')).join('\n');
+  return entete.replace(/^Adapté du style « [^»]* »\.?\n\n?/m, '') + choisies.map((s) => reduite(s).replace(/\n*$/, '\n')).join('\n');
 }
 
 /**

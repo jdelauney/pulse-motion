@@ -32,7 +32,7 @@ const ST = require('../moteur/sous-titres.js');
 const Langues = require('../moteur/langues.js');
 const SP = require('../moteur/synthe/partition.js');
 const SA = require('../moteur/synthe/ambiances.js');
-const { trouverFichiersPolice, caracteristiquesPolice } = require('./lib/police.js');
+const { trouverFichiersPolice, fichiersPoliceStyle, caracteristiquesPolice } = require('./lib/police.js');
 const Briques = require('./lib/briques.js');
 const GM = require('./lib/groupes-moteur.js');
 const { minifier } = require('./lib/minifier.js');
@@ -99,7 +99,9 @@ function cssCharte(charte, dossierProjet, dossierStyle) {
     } else {
       famille = valeur;
       if (!POLICES_SYSTEME.has(famille) && !dejaVues.has(famille)) {
-        const fichiers = trouverFichiersPolice(famille, [path.join(dossierProjet, 'charte', 'polices'), path.join(dossierStyle, 'polices')]);
+        // Charte du projet d'abord, puis le style : son dossier polices/, sinon les polices partagées du plugin (spec S11, 5.1).
+        const duProjet = trouverFichiersPolice(famille, [path.join(dossierProjet, 'charte', 'polices')]);
+        const fichiers = duProjet.length ? duProjet : fichiersPoliceStyle(famille, dossierStyle);
         if (fichiers.length) { fichiers.forEach((f) => face(famille, f.fichier, f.graisse, f.italique)); dejaVues.add(famille); }
         else erreurs.push({ regle: 'police-non-embarquee', gravite: 'erreur', message: `Police « ${famille} » non fournie : récupérez-la avec « pulse-motion police "${famille}" », ou ajoutez son fichier dans charte/polices/ (charte.polices.${role}).` });
       }
@@ -288,7 +290,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   const chargerShader = chargeurShaders(projet, dossierShaders);
   const sourcesModules = {};
   let luPersonnages = null;
-  const utilisesPersonnages = { dessins: new Set(), gabarits: new Set(), batonnets: new Set() };
+  const utilisesPersonnages = { dessins: new Set(), gabarits: new Set(), batonnets: new Set(), habillages: new Set() };
   const scenesQuiParlent = new Set();
   // Écrans des tutoriels (spec S6) : moteur de l'écran et moteur/ecran.css seulement si une scène s'en sert.
   const usages = { moteur: false, css: false };
@@ -472,6 +474,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
       r.utilises.dessins.forEach((n) => utilisesPersonnages.dessins.add(n));
       r.utilises.gabarits.forEach((n) => utilisesPersonnages.gabarits.add(n));
       (r.utilises.batonnets || []).forEach((n) => utilisesPersonnages.batonnets.add(n));
+      (r.utilises.habillages || []).forEach((n) => utilisesPersonnages.habillages.add(n));
       erreurs.push(...r.erreurs);
     }
     // Sons importés (data-son="assets/…") : embarqués en bloc, l'attribut désigne le bloc ; un nom de bruitage reste tel quel.
@@ -660,8 +663,9 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     }
   }
 
-  // Moteur à la carte : seuls les groupes de modules dont la vidéo se sert (groupesImposes : 'tous' pour les tests).
-  const groupes = groupesImposes || GM.groupesDuDeroule(donnees, sections, dessin.scripts);
+  // Moteur à la carte : seuls les groupes de modules dont la vidéo se sert (groupesImposes : 'tous' pour les tests) ; des
+  // habillages des personnages, seulement ceux d'une scène (spec S11, 5.1 point 4).
+  const groupes = groupesImposes || GM.groupesDuDeroule(donnees, sections, dessin.scripts, { habillages: [...utilisesPersonnages.habillages] });
   if (modulesDessin && Array.isArray(groupes)) for (const g of ['dessin', 'releve']) if (!groupes.includes(g)) groupes.push(g);
   const moteur = [lireMoteur(RACINE, { groupes })].concat(modulesStyle.map((n) => lireModule(RACINE, `medium/${n}.js`, process.env.PM_MOTEUR_BRUT === '1'))).join('\n;\n');
   // Polices du code et des formules (vendor/polices/, OFL) : seulement si une scène en montre ; dans les crédits.

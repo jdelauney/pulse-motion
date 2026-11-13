@@ -222,4 +222,51 @@ function trouverFichiersPolice(famille, dossiers) {
   return [];
 }
 
-module.exports = { lireTables, lecteurCmap, analyserPolice, trouverFichiersPolice, axesDe, caracteristiquesPolice, annonceAxes, FRANCAIS, EXTENSIONS_POLICE };
+// Polices partagées des styles livrés (spec S11, 5.1 point 1) : polices/<famille>/ à la racine du plugin, un seul exemplaire
+// de chaque fichier ; styles/<style>/polices/partagees.json dit lesquels un style embarque ({ "<famille>": ["<fichier>"] }).
+const POLICES_PARTAGEES = path.join(__dirname, '..', '..', 'polices');
+const PARTAGEES = 'partagees.json';
+const familleSure = (famille) => typeof famille === 'string' && famille.trim() !== '' && !/[\\/]/.test(famille) && !/^\.+$/.test(famille);
+
+/** Déclaration polices/partagees.json d'un style : { famille: [fichiers] } ; null sans fichier ; { erreur } s'il est illisible. */
+function declarationPartagees(dossierStyle) {
+  let texte;
+  try { texte = fs.readFileSync(path.join(dossierStyle, 'polices', PARTAGEES), 'utf8'); } catch { return null; }
+  try {
+    const j = JSON.parse(texte.replace(/^\uFEFF/, ''));
+    return j && typeof j === 'object' && !Array.isArray(j) ? j : { erreur: 'un objet { "<famille>": ["<fichier>"] } est attendu' };
+  } catch { return { erreur: 'JSON illisible' }; }
+}
+
+/** Fichiers d'une famille dans les polices partagées du plugin : ceux que le style déclare, sinon toutes ses graisses. */
+function policesPartagees(famille, dossierStyle) {
+  if (!familleSure(famille)) return [];
+  const tous = trouverFichiersPolice(famille, [path.join(POLICES_PARTAGEES, famille)]);
+  const d = dossierStyle ? declarationPartagees(dossierStyle) : null;
+  const declares = d && !d.erreur ? d[famille] : undefined;
+  return Array.isArray(declares) ? tous.filter((f) => declares.includes(path.basename(f.fichier))) : tous;
+}
+
+/** Fichiers d'une famille pour un style : ceux de son dossier polices/ d'abord, sinon les polices partagées du plugin. */
+function fichiersPoliceStyle(famille, dossierStyle) {
+  const propres = trouverFichiersPolice(famille, [path.join(dossierStyle, 'polices')]);
+  return propres.length ? propres : policesPartagees(famille, dossierStyle);
+}
+
+/** Erreurs de polices/partagees.json (familles et fichiers absents des polices partagées) ; [] sans fichier. */
+function verifierPartagees(dossierStyle) {
+  const d = declarationPartagees(dossierStyle);
+  if (!d) return [];
+  if (d.erreur) return [`polices/${PARTAGEES} : ${d.erreur}.`];
+  const erreurs = [];
+  for (const [famille, fichiers] of Object.entries(d)) {
+    const connus = familleSure(famille) ? trouverFichiersPolice(famille, [path.join(POLICES_PARTAGEES, famille)]).map((f) => path.basename(f.fichier)) : [];
+    if (!connus.length) { erreurs.push(`polices/${PARTAGEES} : famille « ${famille} » absente des polices partagées du plugin.`); continue; }
+    if (!Array.isArray(fichiers) || !fichiers.length) { erreurs.push(`polices/${PARTAGEES} : « ${famille} » : une liste de fichiers parmi ${connus.join(', ')}.`); continue; }
+    for (const f of fichiers) if (!connus.includes(f)) erreurs.push(`polices/${PARTAGEES} : « ${famille} » : fichier « ${f} » absent (fichiers : ${connus.join(', ')}).`);
+  }
+  return erreurs;
+}
+
+module.exports = { lireTables, lecteurCmap, analyserPolice, trouverFichiersPolice, axesDe, caracteristiquesPolice, annonceAxes, FRANCAIS, EXTENSIONS_POLICE,
+  POLICES_PARTAGEES, PARTAGEES, declarationPartagees, policesPartagees, fichiersPoliceStyle, verifierPartagees };
