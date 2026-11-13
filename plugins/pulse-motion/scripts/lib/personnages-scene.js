@@ -92,7 +92,8 @@ function preparerPersonnages(html0, { scene, lu, voix = false, dureeTemps = null
       if (seuls.includes(nom)) {
         const g = (a['data-gabarit'] || 'standard').trim();
         if (!Object.hasOwn(lu.gabarits, g)) erreurs.push(erreur(scene, `personnage en ${HAB.habillages[nom].libelle} : gabarit « ${g} » introuvable (gabarits : ${Object.keys(lu.gabarits).join(', ')}).`));
-        else { utilises.gabarits.add(g); utilises.habillages.add(nom); }
+        else utilises.gabarits.add(g);
+        utilises.habillages.add(nom);
       } else if (!Object.hasOwn(lu.dessins, nom)) {
         erreurs.push(erreur(scene, avecBibliotheque(`personnage « ${nom} » introuvable${procheDe(nom, [...Object.keys(lu.dessins), ...seuls]) || ` (dessins : ${Object.keys(lu.dessins).join(', ') || 'aucun'} ; ou ${seuls.map((n) => `« ${n} »`).join(', ')}).`}`, 'dessin', nom)));
       } else {
@@ -100,9 +101,13 @@ function preparerPersonnages(html0, { scene, lu, voix = false, dureeTemps = null
         const hab = a['data-habillage'] === undefined ? null : a['data-habillage'].trim();
         const h = HAB.connu(hab === null ? HAB.DEFAUT : hab) ? HAB.habillages[hab === null ? HAB.DEFAUT : hab] : null;
         const reglage = h && h.reglage ? lu.dessins[nom][h.reglage] : null;
-        if (!h) erreurs.push(erreur(scene, `personnage « ${nom} » : data-habillage="${hab}" inconnu (habillages : ${HAB.NOMS.join(', ')} ; ${HAB.DEFAUT} par défaut).`));
-        else if (h.reglage && !(reglage && typeof reglage === 'object' && !Array.isArray(reglage))) {
+        // Habillage refusé : la page assemblée malgré l'erreur dessine le personnage dans l'habillage par défaut (scene.js).
+        if (!h) {
+          erreurs.push(erreur(scene, `personnage « ${nom} » : data-habillage="${hab}" inconnu (habillages : ${HAB.NOMS.join(', ')} ; ${HAB.DEFAUT} par défaut).`));
+          utilises.habillages.add(HAB.DEFAUT);
+        } else if (h.reglage && !(reglage && typeof reglage === 'object' && !Array.isArray(reglage))) {
           erreurs.push(erreur(scene, `personnage « ${nom} » : ce dessin n'a pas de réglage ${h.libelle} (« ${h.reglage} » du dessin) ; retirer data-habillage, ou choisir un dessin qui l'a.`));
+          utilises.habillages.add(HAB.DEFAUT);
         } else {
           utilises.habillages.add(hab === null ? HAB.DEFAUT : hab);
           // Dessins dont l'habillage demande un réglage : leur apparence va dans les données de la page.

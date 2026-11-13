@@ -243,7 +243,8 @@ test('habillages : un habillage inconnu est refusé avec la liste du registre', 
   for (const inconnu of ['plume', 'constructor', '']) {
     const r = essai(`<div data-personnage="touffu" data-habillage="${inconnu}"></div>`);
     assert.deepEqual(r.erreurs.map((e) => e.message), [`Scène « s » : personnage « touffu » : data-habillage="${inconnu}" inconnu (${liste}).`], inconnu);
-    assert.deepEqual([...r.utilises.habillages], []);
+    // La page assemblée malgré l'erreur le dessine dans l'habillage par défaut : celui-ci est embarqué.
+    assert.deepEqual([...r.utilises.habillages], [HAB.DEFAUT]);
   }
   // Les habillages connus passent ; chacun est noté pour l'assemblage (seulement ceux d'une scène).
   assert.deepEqual([...essai('<div data-personnage="touffu"></div>').utilises.habillages], ['pieces']);
