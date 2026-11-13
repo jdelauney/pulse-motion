@@ -439,27 +439,44 @@ function preparerFrance(features, { tolerance = 0.5, aireMin = 1, champ = 'iso_3
     licence: 'domaine public (Natural Earth)', largeur: LARGEUR, hauteur, projection: proj, encarts, pays }, avertissements };
 }
 
-/** villes.json : lieux peuplés au 1:110 M (nom français, latitude, longitude, pays, population), plus les chefs-lieux de région. */
-function preparerVilles(features, detail = [], { versionNE = null } = {}) {
+// Chefs-lieux absents de Natural Earth 5.1.2, même au 1:10 m : coordonnées publiques arrondies au centième (le point est un
+// repère de carte, pas une adresse) et population municipale. Ajoutés seulement s'ils manquent, et signalés dans le bilan.
+const COMPLEMENTS = { Mamoudzou: { lat: -12.78, lon: 45.23, population: 71437 } };
+// Codes ISO des régions d'outre-mer, que Natural Earth donne aux lieux peuplés (ISO_A2 « GP », « RE »…) : c'est la France.
+const CODES_OUTRE_MER = new Set(Object.keys(ALIAS_OUTRE_MER));
+
+/**
+ * villes.json : lieux peuplés au 1:110 M (nom français, latitude, longitude, pays, population), plus les chefs-lieux de région.
+ * codesA3 : { ADM0_A3 -> code ISO alpha-2 } des pays (monde.json), pour un lieu sans ISO_A2 (Pristina : « -99 », Kosovo XK).
+ */
+function preparerVilles(features, detail = [], { versionNE = null, codesA3 = {} } = {}) {
   const avertissements = [];
   const lire = (f) => {
     const g = f.geometry && f.geometry.type === 'Point' ? f.geometry.coordinates : null;
     const lat = Number(prop(f, 'LATITUDE') ?? (g && g[1]));
     const lon = Number(prop(f, 'LONGITUDE') ?? (g && g[0]));
-    return { nom: String(prop(f, 'NAME_FR') || prop(f, 'NAME') || ''), pays: String(prop(f, 'ISO_A2', 'SOV_A2') || '').toUpperCase(),
+    const a3 = String(prop(f, 'ADM0_A3') || '').toUpperCase();
+    const pays = String(prop(f, 'ISO_A2', 'SOV_A2') || codesA3[a3] || '').toUpperCase();
+    const v = { nom: String(prop(f, 'NAME_FR') || prop(f, 'NAME') || ''), pays,
       lat: Math.round(lat * 10000) / 10000, lon: Math.round(lon * 10000) / 10000, population: Number(prop(f, 'POP_MAX') || 0) };
+    Object.defineProperty(v, 'francaise', { value: pays === 'FR' || a3 === 'FRA' || CODES_OUTRE_MER.has(pays), enumerable: false });
+    return v;
   };
   const villes = features.map(lire).filter((v) => v.nom && Number.isFinite(v.lat) && Number.isFinite(v.lon));
   const parNom = (v) => `${normaliser(v.nom)}|${v.pays}`;
   const vues = new Set(villes.map(parNom));
   const detaillees = detail.map(lire);
   for (const r of REGIONS) {
-    const trouvee = villes.find((v) => v.nom === r.chefLieu && v.pays === 'FR');
-    if (trouvee) { trouvee.chefLieu = r.code; continue; }
-    const d = detaillees.filter((v) => v.nom === r.chefLieu && (v.pays === 'FR' || v.pays === '')).sort((a, b) => b.population - a.population)[0];
+    const trouvee = villes.find((v) => v.nom === r.chefLieu && v.francaise);
+    if (trouvee) { trouvee.pays = 'FR'; trouvee.chefLieu = r.code; continue; }
+    let d = detaillees.filter((v) => v.nom === r.chefLieu && (v.francaise || v.pays === '')).sort((a, b) => b.population - a.population)[0];
+    if (!d && COMPLEMENTS[r.chefLieu] && detail.length) {
+      d = { nom: r.chefLieu, pays: 'FR', ...COMPLEMENTS[r.chefLieu] };
+      avertissements.push(`Chef-lieu « ${r.chefLieu} » (${r.code}) absent de Natural Earth : ajouté par l'outil (${String(d.lat).replace('.', ',')}, ${String(d.lon).replace('.', ',')}).`);
+    }
     if (!d) { avertissements.push(`Chef-lieu « ${r.chefLieu} » (${r.code}) introuvable : ajouter --villes-detail.`); continue; }
     if (vues.has(parNom({ ...d, pays: 'FR' }))) continue;
-    villes.push({ ...d, pays: 'FR', chefLieu: r.code });
+    villes.push({ nom: d.nom, pays: 'FR', lat: d.lat, lon: d.lon, population: d.population, chefLieu: r.code });
   }
   villes.sort((a, b) => b.population - a.population || a.nom.localeCompare(b.nom));
   return { villes: { nom: 'villes', source: `Natural Earth 1:110 m, Populated Places${detail.length ? ' (chefs-lieux : 1:10 m)' : ''}${versionNE ? ` ${versionNE}` : ''}`, licence: 'domaine public (Natural Earth)', villes }, avertissements };
@@ -490,14 +507,20 @@ function principal(args) {
     fs.writeFileSync(path.join(sortie, nom), texte, 'utf8');
     bilan[nom] = { octets: Buffer.byteLength(texte, 'utf8'), avertissements };
   };
-  const m = preparerMonde(lireGeoJSON(valeur('--pays')), options);
+  const lesPays = lireGeoJSON(valeur('--pays'));
+  const m = preparerMonde(lesPays, options);
   ecrire('monde.json', m.carte, m.avertissements);
+  const codesA3 = {};
+  for (const f of lesPays) {
+    const a3 = prop(f, 'ADM0_A3'), code = prop(f, 'ISO_A2_EH', 'ISO_A2');
+    if (a3 && code && /^[A-Z]{2}$/i.test(String(code))) codesA3[String(a3).toUpperCase()] = String(code).toUpperCase();
+  }
   if (valeur('--departements')) {
     const f = preparerFrance(lireGeoJSON(valeur('--departements')), { ...options, champ: valeur('--champ-departement') || 'iso_3166_2' });
     ecrire('france.json', f.carte, f.avertissements);
   }
   if (valeur('--villes')) {
-    const v = preparerVilles(lireGeoJSON(valeur('--villes')), valeur('--villes-detail') ? lireGeoJSON(valeur('--villes-detail')) : [], options);
+    const v = preparerVilles(lireGeoJSON(valeur('--villes')), valeur('--villes-detail') ? lireGeoJSON(valeur('--villes-detail')) : [], { ...options, codesA3 });
     ecrire('villes.json', v.villes, v.avertissements);
   }
   console.log(JSON.stringify(bilan, null, 2));

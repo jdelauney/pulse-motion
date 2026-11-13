@@ -5,7 +5,7 @@
  *   <svg data-carte="monde" data-carte-pays="FR,DE,ES" data-carte-cadre="auto">
  *     <path data-pays="FR" data-start="0.4"></path>          (facultatif : un pays listé qu'on anime ; son tracé est posé ici)
  *     <g data-repere="Lyon"></g>  <g data-repere="45.76,4.84"><text data-texte="ville" y="-2"></text></g>
- *     <path data-liaison="Paris→Montréal" data-start="1" class="pm-m-trace"></path>
+ *     <path data-liaison="Paris→New York" data-start="1" class="pm-m-trace"></path>
  *   </svg>
  *
  * cartesConnues() -> ['monde', 'france'] ; chargerCarte(nom) -> carte | null (fichier absent) ; chargerVilles() -> villes | null.
@@ -28,7 +28,8 @@ const K = require('../../moteur/cartes.js');
 const P = require('../../moteur/proches.js');
 
 const CARTES = ['monde', 'france'];
-const SANS_DONNEES = 'les fonds de carte ne sont pas encore livrés avec Pulse Motion (données Natural Earth à préparer par le mainteneur, voir cartes/PROVENANCE.md du plugin)';
+// Les fonds sont livrés avec le plugin (cartes/PROVENANCE.md) : s'il en manque un, l'installation est abîmée.
+const SANS_DONNEES = 'le fond de carte manque dans Pulse Motion (dossier cartes/ du plugin incomplet) : mettre à jour ou réinstaller Pulse Motion';
 const dossierCartes = () => process.env.PM_CARTES_DOSSIER || path.join(__dirname, '..', '..', 'cartes');
 const cache = new Map();
 
@@ -101,7 +102,7 @@ function resoudreLieu(carte, valeur, villes) {
   }
   const z = zoneDe(carte, v);
   if (z) return { ok: true, x: z.centre[0], y: z.centre[1], boite: z.boite, nom: z.nom };
-  if (!villes) return { ok: false, regle: 'ville-inconnue', message: `lieu « ${v} » inconnu, et les villes ne sont pas encore livrées : donner ses coordonnées (latitude,longitude), ou le code d'un pays.` };
+  if (!villes) return { ok: false, regle: 'ville-inconnue', message: `lieu « ${v} » inconnu, et la liste des villes manque dans Pulse Motion (cartes/villes.json) : donner ses coordonnées (latitude,longitude), ou le code d'un pays.` };
   const n = plat(v);
   const trouvees = villes.villes.filter((x) => plat(x.nom) === n);
   // Même nom dans plusieurs pays : la ville de la carte (France pour la carte de France), puis la plus peuplée.
@@ -200,7 +201,7 @@ function preparerCartes(html, { scene } = {}) {
     const liaisons = [...corps.matchAll(/<path\b(?:[^>"']|"[^"]*"|'[^']*')*?\sdata-liaison\s*=\s*(["'])([^"']*)\1/gi)].map((m) => m[2]);
     for (const v of liaisons) {
       const bouts = v.split(/\s*(?:→|->)\s*/);
-      if (bouts.length !== 2 || !bouts[0] || !bouts[1]) { fautes++; signaler('carte-invalide', `liaison « ${v} » illisible : « départ→arrivée » (ex. Paris→Montréal).`); continue; }
+      if (bouts.length !== 2 || !bouts[0] || !bouts[1]) { fautes++; signaler('carte-invalide', `liaison « ${v} » illisible : « départ→arrivée » (ex. Paris→New York).`); continue; }
       bouts.forEach((b) => { const r = lieu(b); if (r) points.push(r); });
     }
     const cadre = cadreDe({ carte, cadre: lire(attributs, 'data-carte-cadre') || 'auto', zones, points });

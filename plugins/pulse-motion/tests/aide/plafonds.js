@@ -25,12 +25,15 @@
  * comparaison, interdits de copie ; la méthode vit dans la référence imiter), creer 23 520 → 23 620 o (renvoi d'une ligne).
  * 0.70.0 (S9-6 et S9-7, cartes et Lottie) : retoucher 14 800 → 15 000 o (deux phrases d'exemple dans « Visuel d'une scène » et
  * deux renvois aux références cartes et lottie ; description inchangée).
+ * 0.71.0 (S9-8, musiques et images) : creer 23 620 → 23 780 o (« Votre musique » proposée d'abord, depuis la bibliothèque),
+ * voix 5 200 → 5 350 o (ligne « garde cette musique »), exporter 6 780 → 6 810 o (« les images une par une pour mon monteur » ;
+ * la conduite vit dans la référence sorties) ; retoucher tenu ; descriptions inchangées.
  */
 const PLAFONDS = {
   'skills/animer-personnage/SKILL.md': 6050, 'skills/atelier-particules/SKILL.md': 2272, 'skills/atelier-personnages/SKILL.md': 3529,
-  'skills/creer/SKILL.md': 23620, 'skills/decouper-personnage/SKILL.md': 4020, 'skills/dessiner-personnage/SKILL.md': 4650,
-  'skills/exporter/SKILL.md': 6780, 'skills/filmer/SKILL.md': 11500, 'skills/outils/SKILL.md': 7200, 'skills/reprendre/SKILL.md': 3180,
-  'skills/retoucher/SKILL.md': 15000, 'skills/style/SKILL.md': 6550, 'skills/voix/SKILL.md': 5200,
+  'skills/creer/SKILL.md': 23780, 'skills/decouper-personnage/SKILL.md': 4020, 'skills/dessiner-personnage/SKILL.md': 4650,
+  'skills/exporter/SKILL.md': 6810, 'skills/filmer/SKILL.md': 11500, 'skills/outils/SKILL.md': 7200, 'skills/reprendre/SKILL.md': 3180,
+  'skills/retoucher/SKILL.md': 15000, 'skills/style/SKILL.md': 6550, 'skills/voix/SKILL.md': 5350,
   'agents/animateur.md': 6000, 'agents/critique.md': 3800,
 };
 

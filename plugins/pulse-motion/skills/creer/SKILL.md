@@ -52,7 +52,7 @@ Une vidéo ou un GIF à imiter (« qui bouge comme cette pub ») : `pulse-motion
 
 Sinon, une deuxième ronde, **Le son** (lire d'abord `pulse-motion reference audio`, et `pulse-motion reference audio/musique` pour décrire les ambiances) :
 
-1. **Musique** : « Une musique composée pour la vidéo (Recommandé) » · « J'ai un fichier » · « Pas de musique ». L'ambiance est celle du style (`pulse-motion styles ambiance <style> --genre <genre>`, le style une fois choisi), décrite en trois mots, jamais par son nom technique.
+1. **Musique** : « Une musique composée pour la vidéo (Recommandé) » · « J'ai un fichier » · « Pas de musique ». L'ambiance est celle du style (`pulse-motion styles ambiance <style> --genre <genre>`, le style une fois choisi), décrite en trois mots, jamais par son nom technique. `pulse-motion musique liste --ambiance <ambiance>` : un titre gardé, « Votre musique « <titre> » » vient en premier (`pulse-motion musique utiliser <id> .`).
 2. **Voix et sous-titres** : « Ma voix, avec sous-titres (Recommandé) » · « Ma voix, sans sous-titres » · « Voix de synthèse » · « Pas de voix » (donc sans sous-titres, qui reprennent le texte dit) ; un fichier de sa voix se dit en réponse libre. En 9:16, les sous-titres mot par mot (`mode` `mot`).
 3. **L'ordinateur**, seulement si `pulse-motion outils --plan` liste un outil utile (la transcription avec une voix, ou ffmpeg) : « Préparer l'ordinateur pendant que je travaille : <liste> (Recommandé) » · « Plus tard ». Accord : les installations partent en arrière-plan, une à la fois (`pulse-motion consignes outils`, étape « Tout installer »).
 

@@ -6,7 +6,7 @@
 - Deux cartes : `monde` (pays, codes ISO à deux lettres : `FR`, `DE`, `CA`…) et `france` (13 régions et 5 d'outre-mer en encarts : `ARA`, `BFC`, `BRE`, `CVL`, `COR`, `GES`, `HDF`, `IDF`, `NOR`, `NAQ`, `OCC`, `PDL`, `PAC`, `GUA`, `MTQ`, `GUF`, `REU`, `MYT`).
 - **Trouver** un pays, une région ou une ville : `pulse-motion cartes chercher <nom>` (en français, sans souci d'accents). Un lieu absent se donne par ses coordonnées, « latitude,longitude ».
 - **Montrer avant d'écrire** : `pulse-motion cartes planche monde --pays FR,DE,ES --ouvrir`, regarder l'image (`Read`), puis la décrire à la personne en mots.
-- Si `pulse-motion cartes` répond que les fonds ne sont pas encore livrés, le dire à la personne et proposer une autre mise en forme (liste, icônes) : jamais de carte dessinée à la main.
+- Si `pulse-motion cartes` répond qu'un fond manque (installation abîmée), le dire à la personne, proposer de mettre à jour Pulse Motion, ou une autre mise en forme (liste, icônes) : jamais de carte dessinée à la main.
 
 ## Poser une carte
 
@@ -30,7 +30,7 @@
 - `data-carte-cadre` : `auto` (défaut : pays listés, repères et liaisons, plus 10 %), `monde`, un code (`FR`), ou un continent de la carte du monde (`europe`, `afrique`, `ameriques`, `asie`, `oceanie`). **Préférer une vue régionale** à une carte du monde.
 - `<path data-pays="ES">` vide : le pays est posé à cette place, avec son tracé, pour l'animer (entrée, `data-tween`). Son `id` est `pays-ES` (`data-start="#pays-ES:fin+0.2"`).
 - `<g data-repere="…">` : par nom de ville, code de pays (son centre) ou « latitude,longitude » ; un repère vide reçoit un point (`pm-repere-point`). Ce qu'il contient se place autour du point (`dy="-0.8em"` : au-dessus).
-- `<path data-liaison="Paris→Montréal">` : arc calculé, bombé vers le haut (`data-liaison-courbure`, 0.25 par défaut) ; `pathLength="100"` posé pour le tracé (#011).
+- `<path data-liaison="Paris→New York">` : arc calculé, bombé vers le haut (`data-liaison-courbure`, 0.25 par défaut) ; `pathLength="100"` posé pour le tracé (#011).
 - Tailles en unités de carte : `--pm-u` vaut 1 % de la largeur du cadre ; un texte de carte mesure `calc(var(--pm-u) * 3.5)` par défaut, un point 0,9 `--pm-u`.
 
 ## Animer
@@ -48,7 +48,7 @@
 
 ## Ce que le contrôle signale
 
-- `carte-inconnue` : carte autre que `monde` ou `france`, ou fonds pas encore livrés.
+- `carte-inconnue` : carte autre que `monde` ou `france`, ou fond absent du plugin (installation abîmée).
 - `pays-inconnu` : code ou nom absent de la carte ; le message donne les noms proches.
 - `ville-inconnue` : ville absente ; noms proches, ou donner ses coordonnées.
 - `carte-invalide` : cadre inconnu, continent sur la carte de France, liaison illisible, coordonnées hors de la Terre.

@@ -33,6 +33,7 @@ Les scènes à dire sont celles qui ont un `voix.texte` dans `deroule.json`. Auc
 | « mets une voix de synthèse », « il prononce mal HACCP » | `pulse-motion reference audio/synthese` |
 | « recale les mots », « la voix est décalée », « les sous-titres sont en avance » | `pulse-motion voix transcrire .` ; transcription absente : proposer de l'installer (consignes de `pulse-motion consignes outils`), puis relancer |
 | « fais-moi écouter la musique » | `pulse-motion musique ecouter . --ouvrir` : la musique seule s'ouvre dans le lecteur de l'ordinateur ; pas de musique : proposer d'en ajouter une avec `/pulse-motion:retoucher` |
+| « garde cette musique pour mes prochaines vidéos » | `pulse-motion reference audio/musique`, « Vos musiques » (licence demandée si elle manque) |
 
 Après un enregistrement, un import ou une voix provisoire : `pulse-motion controler .`, et dire en une phrase ce qui reste (scènes encore en voix provisoire, scène allongée par la voix, mots calés au mieux).
 

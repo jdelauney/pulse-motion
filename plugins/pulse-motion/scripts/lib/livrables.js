@@ -8,8 +8,8 @@
  *
  * chapitresDe(deroule, minutage) -> [{ debut, fin, titre, scene }] ([] sans chapitre déclaré)
  * texteYouTube(chapitres) · vttChapitres(chapitres) · ffmetadata(chapitres, titre) · alertesChapitres(chapitres)
- * credits({ projet, deroule, assemblage, version? }) -> { texte, aPreciser: [fichiers] }
- * lireSources(projet) · noterSource({ projet, fichier, source, licence, auteur? }) -> { ok, message }
+ * credits({ projet, deroule, assemblage, version? }) -> { texte, aPreciser: [fichiers], alertes: [phrases] }
+ * lireSources(projet) · noterSource({ projet, fichier, source, licence, auteur?, attribution?, licenceCode? }) -> { ok, message }
  * nomSortie(slug, { usage, scene?, plage?, cadre?, transparent?, extension? }) · lirePlage(texte) · imagesDeScene · imagesDePlage
  * preparerSortie({ deroule, minutage, ips, scene?, plage?, gif?, cadre?, cadreFormat?, avecFfmpeg?, transparent?, flou?, usage?, tailleMax? })
  *   -> plage d'images | { erreur } ; combinaisonRefusee(options) -> message | null (fond transparent, flou forcé : 5.8, 5.14)
@@ -93,7 +93,8 @@ function alertesChapitres(chapitres) {
   return a;
 }
 
-/** assets/sources.json -> { "assets/x": { source, licence, auteur? } } ({} s'il manque ou s'il est illisible). */
+/** assets/sources.json -> { "assets/x": { source, licence, auteur?, attribution?, licenceCode? } } ({} s'il manque ou s'il est illisible).
+ *  attribution : texte à citer (licence CC BY) ; licenceCode : code de la bibliothèque de musiques (spec S9, 5.13). */
 function lireSources(projet) {
   try {
     const j = JSON.parse(fs.readFileSync(path.join(projet, SOURCES), 'utf8').replace(/^﻿/, ''));
@@ -109,15 +110,17 @@ function cheminAsset(projet, fichier) {
   return relatif(projet, absolu);
 }
 
-/** Note d'où vient un fichier importé (pulse-motion credits <dossier> noter …). Seulement un fichier de assets/. */
-function noterSource({ projet, fichier, source, licence, auteur }) {
+/** Note d'où vient un fichier importé (pulse-motion credits <dossier> noter …, ou une musique de la bibliothèque). Seulement un
+ *  fichier de assets/. */
+function noterSource({ projet, fichier, source, licence, auteur, attribution, licenceCode }) {
   const rel = cheminAsset(projet, fichier);
   if (!rel) return { ok: false, message: `« ${fichier} » n'est pas dans le dossier assets/ de la vidéo : seuls les fichiers importés dans assets/ ont une source à noter.` };
   if (rel === 'assets/sources.json') return { ok: false, message: 'Ce fichier est la liste des sources elle-même.' };
   if (!fs.existsSync(path.join(projet, rel))) return { ok: false, message: `Fichier introuvable : « ${rel} ».` };
   if (!String(source || '').trim() || !String(licence || '').trim()) return { ok: false, message: 'Il faut la source (d\'où vient le fichier) et la licence (ce qu\'on a le droit d\'en faire).' };
   const sources = lireSources(projet);
-  sources[rel] = { source: String(source).trim(), licence: String(licence).trim(), ...(String(auteur || '').trim() ? { auteur: String(auteur).trim() } : {}) };
+  sources[rel] = { source: String(source).trim(), licence: String(licence).trim(), ...(String(auteur || '').trim() ? { auteur: String(auteur).trim() } : {}),
+    ...(String(attribution || '').trim() ? { attribution: String(attribution).trim() } : {}), ...(String(licenceCode || '').trim() ? { licenceCode: String(licenceCode).trim() } : {}) };
   const tri = Object.fromEntries(Object.keys(sources).sort().map((k) => [k, sources[k]]));
   ecrireAtomique(path.join(projet, SOURCES), `${JSON.stringify(tri, null, 2)}\n`);
   return { ok: true, fichier: rel, message: `Source notée pour « ${rel} ».` };
@@ -151,15 +154,18 @@ const ROLES = { titres: 'titres', texte: 'texte', code: 'code', formules: 'formu
 
 /**
  * Crédits de la vidéo, en français : polices (rôle, licence, source), musique, voix, images et logos, sons importés, version
- * de Pulse Motion, rappel de responsabilité. aPreciser : fichiers importés sans source ni licence.
+ * de Pulse Motion, rappel de responsabilité. aPreciser : fichiers importés sans source ni licence. alertes : musique de la
+ * bibliothèque sous une licence « autre » (spec S9, 5.13 : droits à vérifier avant de publier).
  */
 function credits({ projet, deroule, assemblage, version = versionPlugin() }) {
   const sources = lireSources(projet);
   const aPreciser = [];
+  const alertes = [];
   const ligneFichier = (rel) => {
     const s = sources[rel];
     if (!s) { aPreciser.push(rel); return `- ${rel} : ${A_PRECISER}`; }
-    return `- ${rel} : ${s.source}, ${s.licence}${s.auteur ? `, ${s.auteur}` : ''}`;
+    // Attribution d'une licence CC BY : le texte à citer, tel quel, sur sa propre ligne.
+    return `- ${rel} : ${s.source}, ${s.licence}${s.auteur ? `, ${s.auteur}` : ''}${s.attribution ? `\n  attribution : ${s.attribution}` : ''}`;
   };
   const lignes = [`Crédits de la vidéo « ${deroule.titre} »`, ''];
   lignes.push('Polices');
@@ -178,7 +184,11 @@ function credits({ projet, deroule, assemblage, version = versionPlugin() }) {
   lignes.push('', 'Musique');
   const m = deroule.musique;
   if (!m) lignes.push('- aucune musique');
-  else if (m.fichier) lignes.push(ligneFichier(m.fichier.replace(/\\/g, '/').replace(/^\.\//, '')).replace(/^- /, '- fichier importé '));
+  else if (m.fichier) {
+    const rel = m.fichier.replace(/\\/g, '/').replace(/^\.\//, '');
+    lignes.push(ligneFichier(rel).replace(/^- /, '- fichier importé '));
+    if (sources[rel] && sources[rel].licenceCode === 'autre') alertes.push(`La musique « ${rel} » est sous une licence particulière (${sources[rel].licence}) : vérifiez que vous avez le droit de la publier avec cette vidéo.`);
+  }
   else lignes.push('- composée par Pulse Motion, libre de droits, sans mention obligatoire');
   lignes.push('', 'Voix');
   const parlees = ((assemblage && assemblage.donnees && assemblage.donnees.scenes) || []).filter((s) => s.voix);
@@ -213,7 +223,7 @@ function credits({ projet, deroule, assemblage, version = versionPlugin() }) {
     lignes.push('', 'Cartes', '- fonds de carte : Natural Earth (naturalearthdata.com), domaine public ; frontières de fait');
   }
   lignes.push('', `Fabriqué avec Pulse Motion ${version} (licence MIT).`, '', RAPPEL, '');
-  return { texte: lignes.join('\n'), aPreciser: [...new Set(aPreciser)] };
+  return { texte: lignes.join('\n'), aPreciser: [...new Set(aPreciser)], alertes };
 }
 
 /** « 12,5-18 » ou « 12.5-18 » (secondes) -> { debut, fin } | { erreur } */
@@ -349,7 +359,7 @@ function ecrireLivrables({ projet, deroule, assemblage, usage, extrait = false, 
   const fichiers = { credits: relatif(projet, fichierCredits) };
   const joints = (usage && usage.fichiers) || [];
   const chapitres = !extrait && joints.includes('chapitres') && minutage ? chapitresDe(deroule, minutage) : [];
-  const alertes = alertesChapitres(chapitres);
+  const alertes = alertesChapitres(chapitres).concat(c.alertes);
   const txt = path.join(sortie, `${base}-chapitres.txt`);
   const vtt = path.join(sortie, `${base}-chapitres.vtt`);
   if (chapitres.length) {

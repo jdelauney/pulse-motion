@@ -5,6 +5,7 @@
  *   ~/.pulse-motion/effets/<nom>/          un effet, rangé comme dans une vidéo : effets/<nom>.json, ses bases « etend »
  *                                          (effets/<base>.json), ses images (assets/…) et ses shaders (shaders/…)
  *   ~/.pulse-motion/personnages/<type>/<nom>.json   dessins, poses, mouvements (clips), expressions, gabarits
+ *   ~/.pulse-motion/musiques/<id>/          une musique et sa fiche (licence) : scripts/lib/musiques.js (spec S9, 5.13)
  *
  * Par copie (spec 2026-10-23, § 6 bis) : utiliser un élément de la bibliothèque le copie dans la vidéo, qui reste autonome ;
  * l'assemblage ne lit jamais la bibliothèque, et la modifier ne change aucune vidéo existante. Un nom pris par le plugin est
@@ -13,7 +14,7 @@
  * Ordre de recherche pour proposer : la vidéo, puis la bibliothèque, puis le plugin.
  *
  * Archive : bibliotheque.json (manifeste), LISEZ-MOI.txt, puis les dossiers tels qu'ils sont dans ~/.pulse-motion (chartes/,
- * styles/, effets/, personnages/, preferences.json). Jamais : connexions aux sites, registre des vidéos, journal des
+ * styles/, effets/, personnages/, musiques/, preferences.json). Jamais : connexions aux sites, registre des vidéos, journal des
  * erreurs, mesures, essais. À l'import, tout est vérifié dans un dossier temporaire avant la moindre écriture.
  */
 const fs = require('node:fs');
@@ -35,7 +36,9 @@ const RESERVES = ['liste', 'enregistrer', 'utiliser'];
 const TYPES_PERSONNAGES = ['gabarit', 'expression', 'pose', 'clip', 'dessin'];
 const FORMAT = 'pulse-motion-bibliotheque';
 const IMAGE = /^assets\/.+\.(png|webp|jpe?g|svg)$/i;
-const SORTES = ['charte', 'style', 'effet', ...TYPES_PERSONNAGES];
+const SORTES = ['charte', 'style', 'effet', 'musique', ...TYPES_PERSONNAGES];
+/** Sortes rangées en dossier (<sorte>s/<nom>/…), comparées et écrites d'un bloc. */
+const EN_DOSSIER = ['charte', 'style', 'effet', 'musique'];
 
 const racinePerso = (personnel, ...p) => path.join(personnel || dossierPersonnel(), ...p);
 const versionPlugin = () => { try { return JSON.parse(fs.readFileSync(path.join(RACINE, '.claude-plugin', 'plugin.json'), 'utf8')).version; } catch { return 'inconnue'; } };
@@ -370,6 +373,7 @@ function contenuBibliotheque({ personnel } = {}) {
     styles: nomsDossiers(racinePerso(personnel, 'styles'), () => ['style.css']),
     effets: effetsPerso(personnel),
     personnages,
+    musiques: require('./musiques.js').listerMusiques({ personnel }).musiques.map((m) => m.id),
     gouts,
     ...(lu.erreurs.some((e) => e.source === 'personnel') ? { erreurs: lu.erreurs.filter((e) => e.source === 'personnel').map((e) => e.message) } : {}),
   };
@@ -392,7 +396,7 @@ function choix(valeur, disponibles, quoi) {
 const LISEZ_MOI = [
   'Bibliothèque Pulse Motion',
   '',
-  'Cette archive contient votre bibliothèque personnelle de Pulse Motion : chartes, styles, effets, personnages et goûts retenus.',
+  'Cette archive contient votre bibliothèque personnelle de Pulse Motion : chartes, styles, effets, personnages, musiques et goûts retenus.',
   'Pour la reprendre sur un autre ordinateur : copiez ce fichier sur cet ordinateur, ouvrez Claude Code, et dites',
   '« importe ma bibliothèque » en donnant ce fichier. Rien de ce qui est déjà là n\'est remplacé sans votre accord.',
   '',
@@ -406,20 +410,21 @@ function fichierParDefaut(date) {
 }
 
 /**
- * Archive ZIP de la bibliothèque. selection : { chartes, styles, effets, personnages, gouts } (« tout », liste « a,b », ou
+ * Archive ZIP de la bibliothèque. selection : { chartes, styles, effets, personnages, musiques, gouts } (« tout », liste « a,b », ou
  * rien) ; aucune sélection : tout. -> { ok, fichier, contenu, octets }
  */
 function exporterBibliotheque({ fichier = null, selection = {}, remplacer = false, personnel, date = new Date() } = {}) {
   const dispo = contenuBibliotheque({ personnel });
   const tousPersonnages = [...new Set(Object.values(dispo.personnages).flat())].sort();
-  const rien = ['chartes', 'styles', 'effets', 'personnages', 'gouts'].every((k) => selection[k] === undefined || selection[k] === null || selection[k] === false);
-  const s = rien ? { chartes: 'tout', styles: 'tout', effets: 'tout', personnages: 'tout', gouts: true } : selection;
-  let chartes; let styles; let effets; let noms;
+  const rien = ['chartes', 'styles', 'effets', 'personnages', 'musiques', 'gouts'].every((k) => selection[k] === undefined || selection[k] === null || selection[k] === false);
+  const s = rien ? { chartes: 'tout', styles: 'tout', effets: 'tout', personnages: 'tout', musiques: 'tout', gouts: true } : selection;
+  let chartes; let styles; let effets; let noms; let musiques;
   try {
     chartes = choix(s.chartes, dispo.chartes, 'Charte');
     styles = choix(s.styles, dispo.styles, 'Style');
     effets = choix(s.effets, dispo.effets, 'Effet');
     noms = choix(s.personnages, tousPersonnages, 'Personnage');
+    musiques = choix(s.musiques, dispo.musiques, 'Musique');
   } catch (e) { return echec(e.message); }
   const gouts = Boolean(s.gouts) && dispo.gouts > 0;
   const entrees = [];
@@ -429,6 +434,7 @@ function exporterBibliotheque({ fichier = null, selection = {}, remplacer = fals
   chartes.forEach((n) => ajouterDossier('chartes', n));
   styles.forEach((n) => ajouterDossier('styles', n));
   effets.forEach((n) => ajouterDossier('effets', n));
+  musiques.forEach((n) => ajouterDossier('musiques', n));
   const lu = P.lire(null, { personnel: racinePerso(personnel, 'personnages') });
   const elements = avecDependances(lu, noms.flatMap((n) => TYPES_PERSONNAGES.filter((t) => lu.sources[P.TYPES[t]][n] === 'personnel').map((t) => ({ type: t, nom: n }))), 'personnel');
   for (const e of elements) entrees.push({ nom: `personnages/${P.TYPES[e.type]}/${e.nom}.json`, donnees: fs.readFileSync(lu.fichiers[P.TYPES[e.type]][e.nom]), date });
@@ -436,7 +442,7 @@ function exporterBibliotheque({ fichier = null, selection = {}, remplacer = fals
   if (!entrees.length) return echec('Rien à emporter : votre bibliothèque est vide (ou rien n\'a été choisi).');
   const personnages = {};
   for (const e of elements) (personnages[P.TYPES[e.type]] = personnages[P.TYPES[e.type]] || []).push(e.nom);
-  const contenu = { chartes, styles, effets, personnages, gouts: gouts ? dispo.gouts : 0 };
+  const contenu = { chartes, styles, effets, personnages, musiques, gouts: gouts ? dispo.gouts : 0 };
   const manifeste = { format: FORMAT, version: 1, plugin: versionPlugin(), date: date.toISOString().slice(0, 10), contenu };
   entrees.unshift({ nom: 'LISEZ-MOI.txt', donnees: LISEZ_MOI, date }, { nom: 'bibliotheque.json', donnees: `${JSON.stringify(manifeste, null, 2)}\n`, date });
   const cible = path.resolve(fichier || fichierParDefaut(date));
@@ -473,7 +479,7 @@ function lireArchive(fichier) {
     if (e.nom === 'bibliotheque.json' || e.nom === 'LISEZ-MOI.txt') continue;
     if (!cheminSur(e.nom)) { ignores.push(e.nom); continue; }
     let m;
-    if ((m = /^(chartes|styles|effets)\/([a-z0-9-]+)\/(.+)$/.exec(e.nom))) element({ chartes: 'charte', styles: 'style', effets: 'effet' }[m[1]], m[2]).fichiers.set(m[3], e.donnees);
+    if ((m = /^(chartes|styles|effets|musiques)\/([a-z0-9-]+)\/(.+)$/.exec(e.nom))) element({ chartes: 'charte', styles: 'style', effets: 'effet', musiques: 'musique' }[m[1]], m[2]).fichiers.set(m[3], e.donnees);
     else if ((m = /^personnages\/([a-z]+)\/([a-z0-9-]+)\.json$/.exec(e.nom)) && pluriels[m[1]]) element(pluriels[m[1]], m[2]).fichiers.set(`${m[2]}.json`, e.donnees);
     else if (e.nom === 'preferences.json') {
       try { const j = JSON.parse(e.donnees.toString('utf8')); gouts = Array.isArray(j.preferences) ? j.preferences : null; } catch { gouts = null; }
@@ -523,6 +529,17 @@ function verifierElement(el, tmp, personnel) {
     try { R.resoudre(el.nom, charger); } catch (e) { return e.message; }
     return null;
   }
+  if (el.sorte === 'musique') {
+    // Une fiche valide (licence comprise) et son fichier, rien d'autre.
+    const M = require('./musiques.js');
+    let fiche = null;
+    try { fiche = JSON.parse(el.fichiers.get('fiche.json').toString('utf8')); } catch { return 'fiche.json absent ou illisible'; }
+    const fautes = M.validerFiche(fiche);
+    if (fautes.length) return fautes.join(' ');
+    if (!el.fichiers.has(fiche.fichier)) return `${fiche.fichier} absent`;
+    for (const r of el.fichiers.keys()) if (r !== 'fiche.json' && r !== fiche.fichier) return `fichier inattendu « ${r} »`;
+    return null;
+  }
   // Personnage : vérifié comme dans une vidéo, avec la bibliothèque de la personne et celle du plugin pour contexte.
   if (duPlugin(el.sorte, el.nom)) return 'nom d\'un élément livré avec Pulse Motion';
   return null;
@@ -530,7 +547,7 @@ function verifierElement(el, tmp, personnel) {
 
 /** Comparaison avec la bibliothèque. -> 'nouveau' | 'identique' | 'pris' */
 function etatElement(el, personnel) {
-  if (['charte', 'style', 'effet'].includes(el.sorte)) {
+  if (EN_DOSSIER.includes(el.sorte)) {
     const avant = fichiersDossier(racinePerso(personnel, `${el.sorte}s`, el.nom));
     if (!avant.size) return 'nouveau';
     return memesFichiers(avant, el.fichiers) ? 'identique' : 'pris';
@@ -595,7 +612,7 @@ function importerBibliotheque({ fichier, voir = false, remplacer = [], personnel
   if (voir) return resultat;
   try {
     for (const el of aEcrire) {
-      if (['charte', 'style', 'effet'].includes(el.sorte)) ecrireDossier(racinePerso(personnel, `${el.sorte}s`, el.nom), el.fichiers);
+      if (EN_DOSSIER.includes(el.sorte)) ecrireDossier(racinePerso(personnel, `${el.sorte}s`, el.nom), el.fichiers);
       else ecrireAtomique(racinePerso(personnel, 'personnages', P.TYPES[el.sorte], `${el.nom}.json`), el.fichiers.get(`${el.nom}.json`));
     }
     if (gouts.ajoutes) {
