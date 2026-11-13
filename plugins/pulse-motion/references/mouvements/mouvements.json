@@ -5388,7 +5388,7 @@
       ],
       "recette": {
         "type": "classe",
-        "exemple": "<div class=\"pm-espace-3d\" style=\"width: 50cqh; height: 32cqh\">\n  <div class=\"pm-m-retourne\" data-start=\"1\" style=\"width: 100%; height: 100%\">\n    <div class=\"pm-3d-face\" style=\"display: grid; place-items: center; border-radius: 2cqh; background: var(--c-primaire); color: var(--c-sur-primaire)\"><h2 data-texte=\"titre\" style=\"margin: 0\"></h2></div>\n    <div class=\"pm-3d-face pm-3d-verso\" style=\"display: grid; place-items: center; border-radius: 2cqh; background: var(--c-fond); color: var(--c-texte)\"><p data-texte=\"texte\" style=\"margin: 0\"></p></div>\n  </div>\n</div>",
+        "exemple": "<div class=\"pm-espace-3d\" style=\"width: 50cqh; height: 32cqh\">\n  <div class=\"pm-m-retourne\" data-start=\"1\" style=\"width: 100%; height: 100%\">\n    <div class=\"pm-3d-face\" style=\"display: grid; place-items: center; border-radius: 2cqh; background: var(--c-primaire); color: var(--c-sur-primaire)\"><h2 data-texte=\"titre\" style=\"margin: 0\"></h2></div>\n    <div class=\"pm-3d-face pm-3d-verso\" style=\"display: grid; place-items: center; box-sizing: border-box; border-radius: 2cqh; border: 0.6cqh solid var(--c-primaire-lisible); background: color-mix(in srgb, var(--c-primaire) 14%, var(--c-fond)); color: var(--c-texte)\"><p data-texte=\"texte\" style=\"margin: 0\"></p></div>\n  </div>\n</div>",
         "reglages": [
           {
             "nom": "--pm-dur",
@@ -5401,7 +5401,7 @@
             "effet": "profondeur (plus petit : plus spectaculaire)"
           }
         ],
-        "note": "Recto et verso portent pm-3d-face ; le verso aussi pm-3d-verso. Export avec ffmpeg seulement : l'export rapide aplatit la 3D (règle trois-d-export-rapide)."
+        "note": "Recto et verso portent pm-3d-face ; le verso aussi pm-3d-verso. Le verso a sa propre surface (teinte et bord) : sur le fond de la page, il disparaîtrait. Export avec ffmpeg seulement : l'export rapide aplatit la 3D (règle trois-d-export-rapide)."
       }
     },
     {
