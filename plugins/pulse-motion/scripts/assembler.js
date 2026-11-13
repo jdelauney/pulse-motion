@@ -36,6 +36,7 @@ const { trouverFichiersPolice, fichiersPoliceStyle, caracteristiquesPolice } = r
 const Briques = require('./lib/briques.js');
 const GM = require('./lib/groupes-moteur.js');
 const { verifierPhysique } = require('./lib/physique-scene.js');
+const { verifierJournee } = require('./lib/journee-scene.js');
 const { minifier } = require('./lib/minifier.js');
 const { preparerEcrans, usagesEcran } = require('./lib/ecrans.js');
 const { blocFilm } = require('./lib/film.js');
@@ -481,6 +482,8 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     }
     // Vent et pendules (spec S11, 5.8) : data-vent sur la scène, data-pendule sur un groupe SVG.
     erreurs.push(...verifierPhysique(avecPersonnages, { scene: scene.id }).erreurs);
+    // La journée qui passe (spec S11, 5.9) : data-journee sur la section de la scène, data-lampe dans une scène à journée.
+    erreurs.push(...verifierJournee(avecPersonnages, { scene: scene.id }).erreurs);
     // Sons importés (data-son="assets/…") : embarqués en bloc, l'attribut désigne le bloc ; un nom de bruitage reste tel quel.
     // Valeur entre guillemets doubles ou simples (une apostrophe dans un chemin entre guillemets doubles reste au chemin) ;
     // un même fichier n'est embarqué qu'une fois.
@@ -724,7 +727,7 @@ M.demarrerLecteur();
 M.demarrerSousTitres();
 M.demarrerSonReactif();
 M.demarrerParticules();
-${usages.moteur && (groupes === 'tous' || groupes.includes('ecran')) ? 'M.demarrerEcrans();\n' : ''}${dessin.utilise && (groupes === 'tous' || groupes.includes('dessin')) ? 'M.demarrerDessin();\n' : ''}${groupes === 'tous' || groupes.includes('camera-auto') ? 'M.demarrerCameraAuto();\n' : ''}${groupes === 'tous' || groupes.includes('trace') ? 'M.demarrerTraces();\n' : ''}${groupes === 'tous' || groupes.includes('lottie') ? 'M.demarrerLotties();\n' : ''}${groupes === 'tous' || groupes.includes('physique') ? 'M.demarrerPhysique();\n' : ''}</script>
+${usages.moteur && (groupes === 'tous' || groupes.includes('ecran')) ? 'M.demarrerEcrans();\n' : ''}${dessin.utilise && (groupes === 'tous' || groupes.includes('dessin')) ? 'M.demarrerDessin();\n' : ''}${groupes === 'tous' || groupes.includes('camera-auto') ? 'M.demarrerCameraAuto();\n' : ''}${groupes === 'tous' || groupes.includes('trace') ? 'M.demarrerTraces();\n' : ''}${groupes === 'tous' || groupes.includes('lottie') ? 'M.demarrerLotties();\n' : ''}${groupes === 'tous' || groupes.includes('physique') ? 'M.demarrerPhysique();\n' : ''}${groupes === 'tous' || groupes.includes('journee') ? 'M.demarrerJournee();\n' : ''}</script>
 ${blocMp4 ? `${blocMp4}\n` : ''}</body>
 </html>
 `;
