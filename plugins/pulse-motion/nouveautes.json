@@ -1,5 +1,17 @@
 [
   {
+    "version": "0.75.0",
+    "date": "2026-11-13",
+    "resume": "Pulse Motion vérifie maintenant que votre vidéo ressemble à son style : couleurs, clarté et matière sont mesurées, et le relecteur le note. Chaque style propose aussi deux autres polices libres.",
+    "points": [
+      "Avant de vous montrer la vidéo, Pulse Motion mesure ses images contre leur style : une couleur qui n'appartient ni au style ni à votre charte, une vidéo claire devenue sombre, trop de teintes, des couleurs plus ternes que d'habitude. Ce sont des remarques, jamais des blocages : votre charte peut s'écarter du style. Vos photos, vos écrans et vos cartes ne comptent pas.",
+      "Un effet emprunté à un autre style (particules, glitch, néon, lueurs ou rebonds partout) est signalé ; si c'est un choix, Claude le note et le garde dans toute la vidéo.",
+      "Le relecteur regarde une neuvième chose : la vidéo est-elle fidèle à son style, ou pourrait-elle venir de n'importe où ?",
+      "« Une autre police pour les titres » : chaque style propose deux polices libres qui lui vont, récupérées seulement si vous en choisissez une.",
+      "Dans vos styles personnels, une police vue partout (Montserrat, Poppins…) est signalée, sauf si votre charte l'impose."
+    ]
+  },
+  {
     "version": "0.74.0",
     "date": "2026-11-13",
     "resume": "Choisir un style devient plus simple : nommez une référence connue (« façon Kurzgesagt », « comme une notice IKEA ») et Claude prend le style le plus proche ; votre style habituel revient en premier, et les styles proposés varient.",
