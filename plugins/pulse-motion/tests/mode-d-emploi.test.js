@@ -286,7 +286,11 @@ test('polices manuscrites : Patrick Hand, Kalam et Caveat, OFL, sources et empre
     const licences = lire('styles', style, 'polices', 'LICENCES.md');
     assert.match(licences, /SIL OPEN FONT LICENSE Version 1\.1/, style);
     for (const f of a.fichiers) {
-      const octets = fs.readFileSync(path.join(RACINE, 'styles', style, 'polices', f));
+      // Fichier du style, ou des polices partagées du plugin (spec S11, 5.1 : Kalam est partagée).
+      const famille = f.replace(/-\d{3}\.woff2$/, '');
+      const fichier = require('../scripts/lib/police.js').fichiersPoliceStyle(famille, path.join(RACINE, 'styles', style)).find((x) => path.basename(x.fichier) === f);
+      assert.ok(fichier, `${style} : ${f} introuvable`);
+      const octets = fs.readFileSync(fichier.fichier);
       assert.equal(octets.toString('latin1', 0, 4), 'wOF2', f);
       const sha = crypto.createHash('sha256').update(octets).digest('hex');
       const ligne = licences.split('\n').find((l) => l.startsWith(`- ${f} : `));
@@ -350,7 +354,7 @@ test('S8 : vingt styles livrés, six catégories, liste par genre dans son budge
   assert.equal(styles.length, 20);
   assert.deepEqual([...new Set(styles.map((s) => identite(s).categorie))].sort(), CATEGORIES.map((c) => c.id).sort());
   for (const genre of ['formation', 'produit', 'storytelling', 'social']) {
-    const liste = S.listePourGenre(S.recommander(genre, [path.join(RACINE, 'styles')]));
+    const liste = S.listePourGenre(S.classerPourGenre(genre, [path.join(RACINE, 'styles')]));
     assert.ok(Buffer.byteLength(JSON.stringify(liste)) <= 6000, `${genre} : ${Buffer.byteLength(JSON.stringify(liste))} o`);
   }
 });

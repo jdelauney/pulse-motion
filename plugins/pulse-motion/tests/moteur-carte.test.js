@@ -76,7 +76,8 @@ test('moteur-groupes-selon-le-deroule : chaque groupe selon les données et les 
   assert.deepEqual(g({ bruitages: { transitions: false } }), ['tronc']);
   assert.deepEqual(g({}, ['<p data-son="pop">']), ['tronc', 'synthe'], 'bruitage nommé');
   assert.deepEqual(g({}, ['<p data-son="fichier:pm-son-fichier-0">']), ['tronc', 'synthe'], 'son importé : le synthé prépare son bruit');
-  assert.deepEqual(g({ personnages: { dessins: {} } }), ['tronc', 'personnages']);
+  // Personnages : avec eux, les habillages (registre, spec S11 5.1) ; tous sans la liste de ceux d'une scène.
+  assert.deepEqual(g({ personnages: { dessins: {} } }), ['tronc', 'personnages', 'habillage-pieces', 'habillage-batonnets']);
   for (const cle of ['effets', 'milieux', 'shaders']) assert.deepEqual(g({ [cle]: [{}] }), ['tronc', 'gpu'], cle);
   assert.deepEqual(g({ modules: { 'x.js': '…' } }), ['tronc', 'gpu']);
   assert.deepEqual(g({ obstacles: [{ scene: 's' }] }), ['tronc', 'gpu'], 'obstacle : formes exactes jugées par les particules');
@@ -92,7 +93,7 @@ test('moteur-groupes-selon-le-deroule : chaque groupe selon les données et les 
   const perso = copierProjet('projet-simple');
   fs.writeFileSync(path.join(perso, 'scenes', '02-chiffre.html'), '<section data-scene="chiffre"><div data-personnage="touffu" data-x="40"><i data-action="pose" data-pose="montrer" data-start="0"></i></div><p data-texte="legende" data-son="pop"></p></section>');
   const rp = assembler({ dossier: perso, dossierStyles: STYLES, ecrire: false });
-  assert.deepEqual(rp.groupes, ['tronc', 'synthe', 'personnages']);
+  assert.deepEqual(rp.groupes, ['tronc', 'synthe', 'personnages', 'habillage-pieces']);
   assert.match(rp.html, /M\.demarrerPersonnages = function/);
 
   const transition = copierProjet('projet-simple');

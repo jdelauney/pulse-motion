@@ -14,8 +14,8 @@ const pm = (...args) => spawnSync(process.execPath, [PM, ...args], { encoding: '
 
 test('styles --genre classe les styles ; styles verifier contrôle le contrat', () => {
   const liste = JSON.parse(pm('styles', '--genre', 'formation').stdout);
-  assert.equal(liste[0].style, 'clair-pedagogique');
-  assert.equal(liste[0].famille, 'moderne');
+  // Une ligne par style mis en avant (spec S11, 5.1 point 2), le recommandé d'abord.
+  assert.match(liste[0], /^clair-pedagogique · essentiels · /);
   const v = pm('styles', 'verifier', 'clair-pedagogique');
   assert.equal(v.status, 0, v.stderr);
   assert.equal(JSON.parse(v.stdout).ok, true);
