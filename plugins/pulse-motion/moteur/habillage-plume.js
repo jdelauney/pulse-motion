@@ -1,9 +1,9 @@
 /* Pulse Motion – habillage « plume » (spec S11, 5.6) : un trait d'encre fin sur papier, figures ouvertes sans visage.
  *   var perso = M.plume.creer(g, dessin, gabarit, { graine, traits, ebullition });
  *   perso.rendre(M.squelette.calculer(pose, gabarit), { temps, ebullition, angles }); perso.main('Avant'); perso.accroches()
- *   M.plume.dessiner(r, dessin, gabarit, { graine, traits, pas, angles }) -> { traces, accroches, ourlet }   (pur)
+ *   M.plume.dessiner(r, dessin, gabarit, { graine, traits, pas, angles }) -> { traces, accroches, ourlet } (pur)
  * Trait : 1,4 % de la hauteur, encre var(--pm-encre), papier var(--pm-papier). Tremblé tiré par main-levee.js (graine par
- * personnage et par membre), aucun filtre. Écharpe et objets : pivot et angle (0 : ils pendent droit ; pendules en 5.8).
+ * personnage et par membre), aucun filtre. Écharpe et objets : pivot et angle (0 : droit ; pendules en 5.8).
  * D'après line-art-animation (MIT, © 2026 JDhruv14 : lib/ink.ts limb, shape, blot, paint ; examples/walker), réécrit.
  */
 (function (racine, fabrique) {
@@ -19,13 +19,13 @@
     vetements: ['manteau', 'robe', 'jupe', 'echarpe'], objets: ['sac', 'mallette'], mains: ['Avant', 'Arriere']
   });
   // Ourlet : fraction de la jambe (hanche → cheville) où il tombe.
-  var OURLET = { manteau: 0.55, robe: 0.8, jupe: 0.42 };
+  var OURLET = { manteau: 0.55, robe: 0.7, jupe: 0.42 };
   var PARTIES = ['jambeArriere', 'jambeAvant', 'brasArriere', 'colonne', 'tete', 'brasAvant'];
-  var CSS = '.pm-plume{color:var(--pm-encre,#1c1c1c)}\n.pm-plume path{stroke-linecap:round;stroke-linejoin:round}\n' +
-    '.pm-plume .pm-plume-t{stroke:currentColor}\n.pm-plume [data-r="aucun"]{fill:none}\n' +
-    '.pm-plume [data-r="papier"]{fill:var(--pm-papier,#fdfcf8)}\n.pm-plume [data-r="encre"]{fill:currentColor}';
+  var CSS = '.pm-plume{color:var(--pm-encre,#1c1c1c)}.pm-plume path{stroke-linecap:round;stroke-linejoin:round}' +
+    '.pm-plume .pm-plume-t{stroke:currentColor}.pm-plume [data-r="aucun"]{fill:none}' +
+    '.pm-plume [data-r="papier"]{fill:var(--pm-papier,#fdfcf8)}.pm-plume [data-r="encre"]{fill:currentColor}';
 
-  // Modules lus à l'usage : M.mainLevee et M.squelette dans la page, require dans Node.
+  // M.mainLevee et M.squelette dans la page, require dans Node.
   function mod(nom, f) { return (racine.M && racine.M[nom]) || require(f); }
   function ml() { return mod('mainLevee', './dessin/main-levee.js'); }
   function sq() { return mod('squelette', './squelette.js'); }
@@ -62,7 +62,7 @@
       return [p[0] - q[1] * o, p[1] + q[0] * o];
     });
   }
-  /** Retire la longueur l au bout d'une ligne. */
+  /** Retire la longueur l au bout. */
   function couper(P, l) {
     var Q = P.slice();
     while (Q.length > 2 && l > 0) {
@@ -88,14 +88,15 @@
     ajouter(c, partie, nom + '/a', 'trait', ouvert(couper(L, 0.4 * largeur)), 'aucun', c.ep, nom);
     ajouter(c, partie, nom + '/b', 'trait', ouvert(couper(R, 0.9 * largeur)), 'aucun', c.ep, nom);
   }
-  /** Chaussure : coin d'encre de la cheville vers l'orteil ; de face ou de dos, une semelle vue de bout. */
+  /** Chaussure : coin d'encre vers l'orteil (de face, vue de bout). */
   function chaussure(c, s, A, w, sens) {
     var o = A['cheville' + s], d = sub(A['orteil' + s], o), l = Math.hypot(d[0], d[1]), cote = l > 0.35 * c.pied;
     var u = cote ? unit(d) : [sens >= 0 ? 1 : -1, 0], n = [-u[1], u[0]];
     if (n[1] < 0 || (n[1] === 0 && u[0] < 0)) n = mul(n, -1);
     var L = Math.max(l, 0.6 * c.pied) * 1.05, Q = function (x, y) { return add(o, add(mul(u, x * w), mul(n, y * w))); };
-    var P = cote ? [Q(-0.45, -0.2), Q(L / w * 0.55, -0.25), Q(L / w + 0.2, 0.05), Q(L / w + 0.1, 0.4), Q(L / w + 0.1, 0.4), Q(-0.45, 0.42), Q(-0.45, 0.42)]
-      : [Q(-0.6, 0), Q(0, -0.2), Q(0.6, 0), Q(0.6, 0.42), Q(-0.6, 0.42)];
+    // Semelle 7 sous la cheville : le sol de la scène.
+    var y = 7 / w, P = cote ? [Q(-0.45, -0.2), Q(L / w * 0.55, -0.25), Q(L / w + 0.2, 0.05), Q(L / w + 0.1, y), Q(L / w + 0.1, y), Q(-0.45, y), Q(-0.45, y)]
+      : [Q(-0.6, 0), Q(0, -0.2), Q(0.6, 0), Q(0.6, y), Q(-0.6, y)];
     ajouter(c, 'jambe' + s, 'pied' + s, 'tache', close(P), 'encre', 0);
   }
 
@@ -108,7 +109,7 @@
     var loc = function (p) { var d = sub(p, T.centre); return [d[0] * cs + d[1] * sn, d[1] * cs - d[0] * sn]; };
     if (ch && ch.forme === 'chignon') ajouter(c, 'tete', 'chignon', 'forme', close(ov(-0.62 * fx * rx, -0.82 * ry, 0.42 * rx, 0.4 * rx, 10)), ch.remplissage, c.ep);
     if (ch && ch.forme === 'couettes') [1, -1].forEach(function (s) {
-      var q = loc(T.vers([-0.35 * rx, 0.15 * ry, s * 1.05 * rx]));
+      var q = loc(T.vers([-1.0 * rx, 0.15 * ry, s * 1.05 * rx]));
       ajouter(c, 'tete', 'couette' + (s > 0 ? 'Avant' : 'Arriere'), 'forme', close(ov(q[0], q[1], 0.3 * rx, 0.5 * ry, 8)), ch.remplissage, c.ep);
     });
     ajouter(c, 'tete', 'tete', 'forme', close(ov(0, 0, rx, ry, 20, function () { return 1 + 0.02 * (al() * 2 - 1); })), 'papier', c.ep);
@@ -142,7 +143,7 @@
     membre(c, 'colonne', 'cou', [C, lerp(C, A.centreTete, 0.8)], c.lc, R.remplissages.torse);
     if (!lg && c.traits === 1) ajouter(c, 'colonne', 'torse', 'trait', ouvert(courbe([B, C])), 'aucun', c.ep, 'torse');
     else if (!lg) ajouter(c, 'colonne', 'torse', 'forme', close([Q(C, -wN), Q(C, wN), Q(Sh, wS), Q(B, wW), Q(B, wW), haut(B, -0.03), Q(B, -wW), Q(B, -wW), Q(Sh, -wS)]), R.remplissages.torse, c.ep);
-    // Vêtement : haut avant, taille, ourlet autour des jambes à sa hauteur (et des genoux au-dessus), haut arrière.
+    // Vêtement : haut avant, taille, ourlet autour des jambes (et des genoux au-dessus), haut arrière.
     function ourlet(v, avant, arriere, hl) {
       var k = OURLET[v.forme], av = -Infinity, ar = Infinity, hh = 0;
       ['Avant', 'Arriere'].forEach(function (s) {
@@ -169,7 +170,7 @@
     return { accroches: acc, ourlet: mesure };
   }
 
-  /** Objet porté (sac, mallette) : il pend du poignet selon son angle (0 : droit) ; dans la partie de son bras. */
+  /** Objet porté (sac, mallette) : il pend du poignet selon son angle (0 : droit). */
   function objet(c, o, A, vue, angles) {
     var piv = A['main' + o.main], a = angles['objet' + o.main] || 0, H = c.H, mal = o.forme === 'mallette', cle = 'objet' + o.main;
     var w = (mal ? 0.065 : 0.045) * H * Math.max(0.25, Math.abs(Math.cos(vue * DEG))), h = (mal ? 0.085 : 0.1) * H, y = 0.03 * H;
@@ -182,7 +183,7 @@
     return [f(piv[0]), f(piv[1])];
   }
 
-  /** Réglage plume du dessin (dessin.plume, dessin.vetements), complété. */
+  /** Réglage plume du dessin, complété. */
   function reglage(dessin, options) {
     var P = (dessin && dessin.plume) || {}, m = P.remplissages || {};
     var x = function (v, d) { return v ? { forme: v.forme, main: v.main || 'Avant', remplissage: v.remplissage || d } : null; };
@@ -195,7 +196,7 @@
     };
   }
 
-  /** Hauteur de la figure, comme partition.hauteur. */
+  /** Hauteur de la figure (partition.hauteur). */
   function hauteur(g) { return g.cuisse + g.tibia + g.baseTete + 2 * g.tete.ry - 2; }
 
   /** Tracés d'une pose ; angles : { echarpe, objetAvant, objetArriere } en degrés. traces : [{ partie, cle, role, d, r, couleur,
@@ -206,7 +207,7 @@
     var c = { traces: [], traits: R.traits, H: H, ep: 0.014 * H, lj: 0.044 * H, lb: 0.038 * H, lc: 0.03 * H, pied: g.pied,
       alea: function (cle) { return L.alea(L.graine(graine, cle, pas)); } };
     var A = r.articulations, p = r.efficace, angles = o.angles || {};
-    // De face et de dos, les jambes sont droites.
+    // De face et de dos : jambes droites.
     var droit = Math.abs(Math.sin(p.vue * DEG)) > Math.sin(67.5 * DEG);
     ['Arriere', 'Avant'].forEach(function (s) {
       membre(c, 'jambe' + s, 'jambe' + s, droit ? [A['hanche' + s], A['cheville' + s]] : [A['hanche' + s], A['genou' + s], A['cheville' + s]], c.lj, R.remplissages.jambes);
@@ -219,10 +220,11 @@
     return { traces: c.traces, accroches: k.accroches, ourlet: k.ourlet };
   }
 
-  /** Ordre des parties : les jambes sous le corps (un manteau les couvre), puis le reste dans l'ordre de profondeur. */
+  /** Ordre des parties (profondeur) : bras derrière le corps, jambes (sous un manteau), corps, puis le reste. */
   function ordre(r) {
-    var o = (r.ordre || []).filter(function (n) { return PARTIES.indexOf(n) >= 0; }), j = function (n) { return /^jambe/.test(n); };
-    return o.filter(j).concat(o.filter(function (n) { return !j(n); }));
+    var o = (r.ordre || []).filter(function (n) { return PARTIES.indexOf(n) >= 0; }), i = o.indexOf('colonne');
+    var loin = o.filter(function (n, k) { return k < i && /^bras/.test(n); }), j = o.filter(function (n) { return /^jambe/.test(n); });
+    return loin.concat(j, o.filter(function (n) { return loin.indexOf(n) < 0 && j.indexOf(n) < 0; }));
   }
 
   function creer(groupe, dessin, gabarit, options) {
@@ -233,7 +235,7 @@
       return parent ? parent.appendChild(e) : e;
     };
     if (!svg.querySelector('style[data-pm-plume]')) svg.insertBefore(el('style', { 'data-pm-plume': '' }), svg.firstChild).textContent = CSS;
-    // Groupe réutilisé par l'atelier : on repart de zéro.
+    // Groupe réutilisé (atelier) : on repart de zéro.
     while (groupe.firstChild) groupe.removeChild(groupe.firstChild);
     (groupe.__pmVariables || []).forEach(function (k) { groupe.style.removeProperty(k); });
     var couleurs = (dessin && dessin.couleurs) || {};
