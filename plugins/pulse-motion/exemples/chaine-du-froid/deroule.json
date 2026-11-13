@@ -5,6 +5,7 @@
   "parcours": "rapide",
   "format": { "ratio": "16:9", "ips": 30 },
   "style": "clair-pedagogique",
+  "entorses": [{ "quoi": "particules", "pourquoi": "des étincelles autour du seuil de température, le seul chiffre à retenir" }],
   "charte": { "logo": "assets/logo.svg" },
   "musique": { "generee": "inspirant", "tempo": 120, "intensite": 0.4, "volume": 0.5 },
   "sousTitres": {},
