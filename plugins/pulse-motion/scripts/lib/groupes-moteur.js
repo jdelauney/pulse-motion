@@ -32,6 +32,11 @@ const GROUPES = {
   personnages: ['squelette.js', 'vivant.js', 'clips.js', 'personnages/habillages.js', 'personnages/levres.js',
     'personnages/partition.js', 'personnages/interactions.js', 'personnages/scene.js', 'personnages/objets.js'],
   ...GROUPES_HABILLAGES,
+  // Marche calculée (spec S11, 5.7) : data-demarche sur un personnage.
+  demarche: ['demarche.js'],
+  // Ressorts, pendules et vent (spec S11, 5.8) : data-vent, data-pendule, « vent » du déroulé, ou une marche calculée
+  // (pendants de la plume).
+  physique: ['physique.js'],
   gpu: ['shaders/glsl.js', 'shaders/code.js', 'particules/instantanes.js', 'particules/gpu.js', 'particules/obstacles.js',
     'particules/fragments.js', 'particules/simulation.js', 'particules/voisinage.js', 'particules/maillage.js',
     'particules/structures.js', 'particules/milieu.js', 'particules/rendu.js', 'particules/glsl.js', 'particules/shaders.js',
@@ -60,7 +65,7 @@ const GROUPES = {
 
 // Ordre de chargement : celui de la liste historique (dépendances au chargement), puis absents.js en dernier.
 const MODULES = ['courbes.js', 'langues.js', 'aligner.js', 'proches.js', 'sous-titres.js', 'minutage.js', 'transitions.js', 'tween.js', 'lettres.js', 'camera.js', 'ken-burns.js', 'trace-texte.js', 'cartes.js', 'lottie.js',
-  'squelette.js', 'vivant.js', 'clips.js', ...HAB.fichiers(), 'personnages/habillages.js', 'personnages/levres.js', 'personnages/partition.js',
+  'squelette.js', 'vivant.js', 'clips.js', 'demarche.js', 'physique.js', ...HAB.fichiers(), 'personnages/habillages.js', 'personnages/levres.js', 'personnages/partition.js',
   'personnages/interactions.js', 'personnages/scene.js', 'personnages/objets.js', 'temps.js', 'horloge.js', 'tailles.js', 'wav.js',
   'sonie.js', 'mixage.js', 'synthe/catalogue.js', 'synthe/partition.js', 'synthe/ambiances.js', 'synthe/corde.js', 'synthe/instruments.js',
   'synthe/bruitages.js', 'analyse-son.js', 'audio.js', 'son-reactif.js', 'lecteur.js', 'sous-titres-rendu.js', 'debordement.js',
@@ -98,7 +103,9 @@ const nonVide = (x) => (Array.isArray(x) ? x.length > 0 : !!(x && typeof x === '
  * - trace : data-sur-trace dans une scène (texte sur un tracé, spec S9 5.5) ;
  * - ken-burns : data-ken-burns dans une scène (spec S9 5.9) ;
  * - cartes : data-carte dans une scène (spec S9 5.10) ;
- * - lottie : data-lottie dans une scène (spec S9 5.11).
+ * - lottie : data-lottie dans une scène (spec S9 5.11) ;
+ * - demarche : data-demarche sur un personnage (spec S11 5.7) ; physique : data-vent ou data-pendule dans une scène, « vent » du
+ *   déroulé (donnees.vent), ou data-demarche (spec S11 5.8).
  */
 function groupesDuDeroule(donnees, sections = [], scripts = [], options = {}) {
   const d = donnees || {};
@@ -128,6 +135,9 @@ function groupesDuDeroule(donnees, sections = [], scripts = [], options = {}) {
   if (/\sdata-ken-burns\s*=/.test(textes)) groupes.push('ken-burns');
   if (/\sdata-carte\s*=/.test(textes)) groupes.push('cartes');
   if (/\sdata-lottie\s*=/.test(textes)) groupes.push('lottie');
+  const demarche = /\sdata-demarche\s*=/.test(textes);
+  if (demarche) groupes.push('demarche');
+  if (demarche || d.vent || /\sdata-(?:vent|pendule)\s*=/.test(textes)) groupes.push('physique');
   if (groupes.includes('dessin') || groupes.includes('camera-auto')) groupes.push('releve');
   return groupes;
 }

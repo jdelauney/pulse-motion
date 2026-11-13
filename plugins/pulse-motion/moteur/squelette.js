@@ -18,7 +18,8 @@
  * Contraintes : chaque angle est borné (LIMITES, surchargées par gabarit.contraintes ; « cuisse » vaut pour
  * les deux côtés, « cuisseAvant » pour un seul) ; `efficace` rend la pose réellement appliquée.
  * Os en plus (gabarit.osEnPlus) : balancement recalculé à chaque appel à partir de contexte.poseA(t) sur les
- * FENETRE_OS secondes précédentes (grille absolue de PAS_OS) ; sans contexte, l'os reste à son angle de repos.
+ * FENETRE_OS secondes précédentes (grille absolue de PAS_OS) ; sans contexte, l'os reste à son angle de repos. contexte.vent(u)
+ * -> [ax, ay] (spec S11, 5.8) : le vent pousse leur bout, départ à l'équilibre du vent du début de la fenêtre.
  * Module pur : chargé tel quel dans la page (M.squelette) et par Node (require).
  */
 (function (racine, fabrique) {
@@ -210,7 +211,7 @@
   /** Balancement (degrés) d'un os à l'instant t : ressort amorti intégré sur la fenêtre passée, depuis le repos,
    *  piloté par l'accélération du point d'attache projetée sur la tangente du balancement (pendule).
    *  Grille absolue (multiples de PAS_OS) : même t ⇒ même résultat, quel que soit l'ordre des appels. */
-  function balancement(os, g, t, poseA, contraintes) {
+  function balancement(os, g, t, poseA, contraintes, vent) {
     var n = Math.round(FENETRE_OS / PAS_OS);
     var k0 = Math.floor(t / PAS_OS + 1e-9);
     var pts = [];
@@ -219,12 +220,14 @@
     var raid = Math.pow(2 * Math.PI * f, 2);
     var amort = 2 * Math.max(0, Math.min(1, os.amorti === undefined ? 0.4 : os.amorti)) * Math.sqrt(raid);
     var theta = 0, omega = 0, h = PAS_OS;
+    var souffle = function (j) { var w = vent((k0 + j - n - 1) * PAS_OS), q = pts[j]; return (w[0] * q.T[0] + w[1] * q.T[1]) / (q.L * q.L) / DEG; };
+    if (vent) theta = souffle(1) / raid;
     for (var j = 1; j < pts.length - 1; j++) {
       var q = pts[j];
       var ax = (pts[j + 1].x - 2 * q.x + pts[j - 1].x) / (h * h);
       var ay = (pts[j + 1].y - 2 * q.y + pts[j - 1].y) / (h * h);
       var age = t - (k0 + j - n - 1) * PAS_OS;
-      var pousse = -(ax * q.T[0] + ay * q.T[1]) / (q.L * q.L) / DEG * poids(age);
+      var pousse = -(ax * q.T[0] + ay * q.T[1]) / (q.L * q.L) / DEG * poids(age) + (vent ? souffle(j) : 0);
       omega += h * (pousse - raid * theta - amort * omega);
       theta += h * omega;
     }
@@ -236,7 +239,7 @@
   function calculerOsEnPlus(p, g, geo, ctx) {
     var bal = {};
     var anime = typeof ctx.poseA === 'function' && typeof ctx.temps === 'number';
-    g.osEnPlus.forEach(function (os) { bal[os.nom] = anime ? balancement(os, g, ctx.temps, ctx.poseA, ctx.contraintes) : 0; });
+    g.osEnPlus.forEach(function (os) { bal[os.nom] = anime ? balancement(os, g, ctx.temps, ctx.poseA, ctx.contraintes, typeof ctx.vent === 'function' ? ctx.vent : null) : 0; });
     var out = placerOs(p, g, geo, bal);
     Object.keys(out).forEach(function (nom) { out[nom].balancement = bal[nom]; });
     return out;

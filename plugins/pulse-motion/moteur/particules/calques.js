@@ -739,6 +739,8 @@
     const mm = mondeMilieu(mx);
     const zone = grille(mx, 0, mesures);
     const milieu = new P.Milieu(device, mx.effet, zone, mm.actif ? mm : null, (mx.fin - mx.debut) * rythme);
+    // Vent de la vidéo (spec S11, 5.8) : le milieu le suit s'il y a une piste (τ du milieu -> temps de la vidéo).
+    if (M.vent && M.vent.defini) milieu.ventDe = (tau) => M.vent(mx.debut + tau / rythme);
     const membres = sc.effets.filter((fx) => {
       if (!couple(fx) || fx.desactive) return false;
       if (avecStructures(fx) && elementsAttaches(fx).some((el) => !el)) {

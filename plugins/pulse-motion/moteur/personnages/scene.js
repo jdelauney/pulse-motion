@@ -21,6 +21,10 @@
  * (data-ecrase, 0 à 0,25) appliqué au groupe du personnage autour du point de contact, volume gardé (sx = 1 / sy^0,6).
  * « flotter » (data-hauteur, data-dur) : vol pieds pendants, l'ombre reste au sol ; « regarder » : data-attention (0 à 1).
  * Ombre et écrasement : rossark-motion-skill (licence MIT), formules reprises, code réécrit.
+ * Mouvement physique (spec S11, 5.7 et 5.8, M.physique et M.demarche présents) : data-demarche="calculee" (marche calculée de
+ * profil, partition.js) ; avec une piste de vent (M.vent.defini), le vent pousse le bout des os en plus ; avec une piste de
+ * vent ou une marche calculée, l'écharpe et les objets portés d'un habillage qui a des accroches (plume) sont des pendules
+ * (angles passés au rendu). Sans eux, rien ne change.
  */
 (function (racine) {
   'use strict';
@@ -244,11 +248,14 @@
       var ecrase = div.hasAttribute('data-ecrase') ? Math.max(0, Math.min(0.25, nombre(div, 'data-ecrase', 0.12))) : undefined;
       // Frémissement du trait (plume) : --pm-ebullition du style (re-tracés par seconde, 0 : figé).
       var ebullition = Math.max(0, Number(feuille('--pm-ebullition')) || 0);
-      persos.push({ mesurer: mesurer, sec: sec, miroir: !!entree.miroir, cadence: cadence, ebullition: ebullition,
+      var calculee = (div.getAttribute('data-demarche') || '').trim() === 'calculee';
+      // Pendants (écharpe, objets portés) : pendules avec une piste de vent ou une marche calculée (M.physique).
+      var Ph = M.physique, pendants = Ph && typeof habillage.accroches === 'function' && ((M.vent && M.vent.defini) || calculee) ? Ph.pendantsDe(dessin) : [];
+      persos.push({ mesurer: mesurer, sec: sec, miroir: !!entree.miroir, cadence: cadence, ebullition: ebullition, pendants: pendants.length ? pendants : null,
         div: div, habillage: habillage, gabarit: gabarit, echelle: echelle, ombre: ombre, gEcrase: gEcrase, hauteur: P.hauteur(gabarit),
         partition: { x0: feuilleNombre('data-x', '--pm-perso-x', 50), sol0: sol0, vue0: nombre(div, 'data-vue', 0), calme: div.getAttribute('data-calme') !== 'non',
           vie: vie === 'sobre' || vie === 'aucune' || vie === 'mains' ? vie : 'pleine', sel: V.sel(idScene + '/' + (div.id || rang)), scene: bornesScene(idScene),
-          ecrase: ecrase, largeur: W, hauteur: H, echelle: echelle, taille: taille, sols: sols, actions: actions }
+          ecrase: ecrase, largeur: W, hauteur: H, echelle: echelle, taille: taille, sols: sols, actions: actions, demarche: calculee ? 'calculee' : undefined }
       });
     });
     if (!persos.length) return;
@@ -295,6 +302,12 @@
     }
     /** Temps du personnage arrondi à sa cadence (images par seconde, 0 : continu). */
     function image(p, t) { return p.cadence > 0 ? Math.floor(t * p.cadence + 1e-6) / p.cadence : t; }
+    /** Pivots des pendants au temps u (repère de la scène) : cou (écharpe) et mains (objets). */
+    function pivots(p, u) {
+      var r = S.calculer(placerBase(p, u), p.gabarit), e = r.efficace, A = r.articulations;
+      var en = function (n) { return [e.x + A[n][0] * e.echelle, e.y + A[n][1] * e.echelle]; };
+      return { echarpe: en('cou'), objetAvant: en('mainAvant'), objetArriere: en('mainArriere') };
+    }
     function rendre(t) {
       // Objets tenus d'abord : une cible qui est un objet tenu est lue à sa place de cet instant.
       if (M.rendreObjetsTenus) M.rendreObjetsTenus(t);
@@ -308,8 +321,15 @@
       poses.forEach(function (x) {
         // Os en plus : balancement calculé sur la pose de base (sans interactions : 60 poses par os et par image).
         var contexte = x.p.gabarit.osEnPlus.length ? { temps: x.tp, poseA: function (u) { return placerBase(x.p, u); } } : undefined;
+        var haut = x.p.hauteur * x.p.echelle;
+        // Vent (spec S11, 5.8) : poussée sur le bout des os en plus, seulement avec une piste de vent.
+        if (contexte && M.physique && M.vent && M.vent.defini) {
+          contexte.vent = function (u) { return M.physique.accelerationVent(M.vent(u), M.physique.G * haut / M.physique.HAUTEUR_FIGURE); };
+        }
         var r = S.calculer(x.pose, x.p.gabarit, contexte);
-        x.p.habillage.rendre(r, { temps: x.tp, ebullition: x.p.ebullition });
+        var rendu = { temps: x.tp, ebullition: x.p.ebullition };
+        if (x.p.pendants) rendu.angles = M.physique.anglesPendants(x.p.pendants, x.tp, function (u) { return pivots(x.p, u); }, haut, M.vent);
+        x.p.habillage.rendre(r, rendu);
         rendreSol(x.p, r, x.tp, x.pose.pmEcrase);
       });
     }

@@ -35,6 +35,7 @@ const SA = require('../moteur/synthe/ambiances.js');
 const { trouverFichiersPolice, fichiersPoliceStyle, caracteristiquesPolice } = require('./lib/police.js');
 const Briques = require('./lib/briques.js');
 const GM = require('./lib/groupes-moteur.js');
+const { verifierPhysique } = require('./lib/physique-scene.js');
 const { minifier } = require('./lib/minifier.js');
 const { preparerEcrans, usagesEcran } = require('./lib/ecrans.js');
 const { blocFilm } = require('./lib/film.js');
@@ -475,8 +476,11 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
       r.utilises.gabarits.forEach((n) => utilisesPersonnages.gabarits.add(n));
       (r.utilises.batonnets || []).forEach((n) => utilisesPersonnages.batonnets.add(n));
       (r.utilises.habillages || []).forEach((n) => utilisesPersonnages.habillages.add(n));
+      if (r.utilises.demarche) utilisesPersonnages.demarche = true;
       erreurs.push(...r.erreurs);
     }
+    // Vent et pendules (spec S11, 5.8) : data-vent sur la scène, data-pendule sur un groupe SVG.
+    erreurs.push(...verifierPhysique(avecPersonnages, { scene: scene.id }).erreurs);
     // Sons importés (data-son="assets/…") : embarqués en bloc, l'attribut désigne le bloc ; un nom de bruitage reste tel quel.
     // Valeur entre guillemets doubles ou simples (une apostrophe dans un chemin entre guillemets doubles reste au chemin) ;
     // un même fichier n'est embarqué qu'une fois.
@@ -585,6 +589,8 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
     ...(dessin.icones.size ? { icones: require('./lib/icones.js').cheminsPour([...dessin.icones]) } : {}),
     // Polices variables (spec S9, 5.6) : axes par famille, lus par l'effet de lettres graisse.
     ...(Object.keys(policesVariables).length ? { polices: policesVariables } : {}),
+    // Piste de vent du déroulé (spec S11, 5.8) : seulement si elle est déclarée.
+    ...(Array.isArray(deroule.vent) && deroule.vent.length ? { vent: deroule.vent } : {}),
   };
 
   // Son réactif (P7) : pistes lues par les effets, les shaders et le CSS ; analysées une fois dans la page.
@@ -718,7 +724,7 @@ M.demarrerLecteur();
 M.demarrerSousTitres();
 M.demarrerSonReactif();
 M.demarrerParticules();
-${usages.moteur && (groupes === 'tous' || groupes.includes('ecran')) ? 'M.demarrerEcrans();\n' : ''}${dessin.utilise && (groupes === 'tous' || groupes.includes('dessin')) ? 'M.demarrerDessin();\n' : ''}${groupes === 'tous' || groupes.includes('camera-auto') ? 'M.demarrerCameraAuto();\n' : ''}${groupes === 'tous' || groupes.includes('trace') ? 'M.demarrerTraces();\n' : ''}${groupes === 'tous' || groupes.includes('lottie') ? 'M.demarrerLotties();\n' : ''}</script>
+${usages.moteur && (groupes === 'tous' || groupes.includes('ecran')) ? 'M.demarrerEcrans();\n' : ''}${dessin.utilise && (groupes === 'tous' || groupes.includes('dessin')) ? 'M.demarrerDessin();\n' : ''}${groupes === 'tous' || groupes.includes('camera-auto') ? 'M.demarrerCameraAuto();\n' : ''}${groupes === 'tous' || groupes.includes('trace') ? 'M.demarrerTraces();\n' : ''}${groupes === 'tous' || groupes.includes('lottie') ? 'M.demarrerLotties();\n' : ''}${groupes === 'tous' || groupes.includes('physique') ? 'M.demarrerPhysique();\n' : ''}</script>
 ${blocMp4 ? `${blocMp4}\n` : ''}</body>
 </html>
 `;

@@ -30,6 +30,9 @@
  *   dépôts des émetteurs à « injecte » de sim dans la grille (un dispatch par émetteur, à la fin du pas de sim : particule
  *   vivante, cellule qui la contient, quantité × dt en entiers de 1/65536 ; encre fixe ou −ln de la couleur de la particule)
  *
+ * Vent de la vidéo (spec S11, 5.8) : milieu.ventDe(tau) -> { x, y, force } (M.vent, posé par calques.js s'il y a une piste) ;
+ * la vitesse des faces est entraînée vers lui (VENT cqh/s par unité de force, ENTRAINEMENT par seconde), seulement dans l'axe
+ * du vent (la fumée continue de monter) ; données du pas (zoneA, inutilisée ailleurs par le milieu). Sans piste : inchangé.
  * Pas de la grille (1/120 s de τ, un dispatch par phase) : obstacles de P3 rastérisés à τ1 (vitesse du point matériel) ;
  * injection (sources ; dépôts des effets en entiers de 1/65536, remis à zéro) ; advection MacCormack des scalaires (fumée,
  * température, encre ; départ RK2 ; bornée ; dissipation, refroidissement) ; tourbillon ; forces (flottaison, confinement
@@ -63,6 +66,8 @@
     PAROI: 60,               // frottement des parois (par seconde)
     MASQUE: 4 | 8,           // obstacles contournés : éléments et formes déclarés (catégories de P3)
     ENCRE: 1,                // encre déposée par seconde et par particule (« injecte »)
+    VENT: 30,                // vitesse (cqh/s) d'un vent de force 1 de la piste (M.vent)
+    ENTRAINEMENT: 3,         // la vitesse des faces rejoint le vent de la piste (par seconde)
   };
   P.MILIEU = C;
   P.NOYAUX_MILIEU = ['gObstacles', 'gInjecter', 'gAdvecterS', 'gCorrigerS', 'gRecopierS', 'gTourbillon', 'gForcer', 'gAdvecterV',
@@ -151,6 +156,7 @@ struct Iteration { src: u32, dst: u32, r0: u32, r1: u32 };
 const G_FIXE = 65536.0;
 const G_PAS_LUMIERE = 16u;
 const G_PAROI = ${C.PAROI}.0;
+const G_ENTRAINEMENT = ${C.ENTRAINEMENT}.0;
 
 fn dansG(i: i32, j: i32) -> bool { return i >= 0 && j >= 0 && i < i32(GR.nx) && j < i32(GR.ny); }
 fn celluleG(i: i32, j: i32) -> u32 { return u32(j) * GR.nx + u32(i); }
@@ -452,6 +458,13 @@ fn gForcer(@builtin(global_invocation_id) gid: vec3u) {
   let lap = faceG(base, largeur, hauteur, F.i + 1, F.j) + faceG(base, largeur, hauteur, F.i - 1, F.j)
     + faceG(base, largeur, hauteur, F.i, F.j + 1) + faceG(base, largeur, hauteur, F.i, F.j - 1) - 4.0 * u;
   var r = u + GR.dt * (force + GR.viscosite * lap / (GR.cote * GR.cote));
+  // Vent de la piste (P.zoneA : vitesse, poids) : la composante dans l'axe du vent le rejoint.
+  let vent = P.zoneA.xy;
+  let nv = length(vent);
+  if (P.zoneA.z > 0.0 && nv > 1e-6) {
+    let axe = select(abs(vent.y), abs(vent.x), F.estU) / nv;
+    r = mix(r, select(vent.y, vent.x, F.estU), P.zoneA.z * axe * (1.0 - exp(-G_ENTRAINEMENT * GR.dt)));
+  }
   let w = paroiG(F);
   if (w.x > 0.0) { r = mix(r, w.y / w.x, 1.0 - exp(-G_PAROI * GR.dt)); }
   champ[GR.vB + f] = r;
@@ -757,6 +770,13 @@ fn gEteindreVent(@builtin(global_invocation_id) gid: vec3u) {
       f[o + 1] = tau0;
       f[o + 2] = tau1;
       f[o + 3] = tau1 - tau0;
+      // Vent de la piste au milieu du pas (cqh/s) ; poids 0 sans piste ou par calme.
+      const v = this.ventDe ? this.ventDe(0.5 * (tau0 + tau1)) : null;
+      const poidsVent = v ? Math.min(1, Math.max(0, v.force / 0.1)) : 0;
+      f[o + 4] = v ? v.x * C.VENT : 0;
+      f[o + 5] = v ? v.y * C.VENT : 0;
+      f[o + 6] = poidsVent * poidsVent * (3 - 2 * poidsVent);
+      f[o + 7] = 0;
     }
 
     envoyerPas(n) {
