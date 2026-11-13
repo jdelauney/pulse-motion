@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Catalogue – Wiki Pulse Motion</title>
-<meta name="description" content="Ce que Pulse Motion livre : vingt styles avec leurs polices et leur signature, neuf scènes toutes faites par style, trente-quatre effets de particules, des personnages animés et leurs mouvements, quatre formats d'image.">
+<meta name="description" content="Ce que Pulse Motion livre : vingt styles avec leurs polices et leur signature, neuf scènes toutes faites par style, trente-quatre effets de particules, des personnages animés et leurs mouvements, des cartes de pays et de régions, quatre formats d'image.">
 <!-- langues -->
 <link rel="alternate" hreflang="fr" href="https://jdelauney.github.io/pulse-motion/catalogue.html">
 <link rel="alternate" hreflang="en" href="https://jdelauney.github.io/pulse-motion/en/catalogue.html">
@@ -26,7 +26,7 @@
 <header class="entete-page">
 <p class="pastille">Ce qui est livré</p>
 <h1>Catalogue</h1>
-<p class="chapo">Les styles, les scènes, les effets, les personnages et les formats livrés avec Pulse Motion. Vous n'avez pas à les connaître par cœur : Pulse Motion vous propose ceux qui conviennent à votre vidéo. Cette page vous aide à savoir quoi demander. Les entrées, les transitions et les mouvements de caméra ont leur propre galerie : <a href="mouvements.html">les mouvements</a>.</p>
+<p class="chapo">Les styles, les scènes, les effets, les personnages, les cartes et les formats livrés avec Pulse Motion. Vous n'avez pas à les connaître par cœur : Pulse Motion vous propose ceux qui conviennent à votre vidéo. Cette page vous aide à savoir quoi demander. Les entrées, les transitions et les mouvements de caméra ont leur propre galerie : <a href="mouvements.html">les mouvements</a>.</p>
 </header>
 
 <!-- ===================================================================================================== -->
@@ -869,6 +869,49 @@
 </tbody>
 </table>
 <p>Chaque action se cale sur un autre élément de la scène, sur un mot de la voix ou sur un temps de la musique. Pour créer une pose ou un mouvement : <a href="commandes/animer-personnage.html"><code>/pulse-motion:animer-personnage</code></a> ; pour les régler à la souris : <a href="commandes/atelier-personnages.html"><code>/pulse-motion:atelier-personnages</code></a>.</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="cartes">
+<h2>Les cartes</h2>
+<p>Pulse Motion dessine des cartes de <strong>pays</strong> et de <strong>régions françaises</strong>, outre-mer compris : vos pays d'export, vos agences, un trajet. Les pays se colorent ou s'allument, les villes se marquent d'un point avec leur nom, une ligne relie deux villes. Les noms se placent tout seuls, sans se gêner ni croiser les lignes ; en vertical, la carte remplit l'écran et l'outre-mer passe sous la France. Pour en demander une : « une carte de nos pays d'export », « nos agences en France sur la carte » (<a href="commandes/retoucher.html"><code>/pulse-motion:retoucher</code></a>).</p>
+<!-- galerie:cartes -->
+<p>6 démos, chacune fabriquée par Pulse Motion à partir de la demande écrite dessous.</p>
+<div class="grille-mouvements">
+<article class="carte-effet" id="carte-monde">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/cartes/monde.jpg" aria-label="Démo : Le monde, pays par pays"><source src="medias/galerie/cartes/monde.mp4" type="video/mp4"></video></figure>
+<h3>Le monde, pays par pays</h3>
+<pre class="commande"><code>Une carte du monde où nos pays d'export apparaissent un par un : France, Brésil, Canada, Japon, Australie.</code></pre>
+</article>
+<article class="carte-effet" id="carte-europe">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/cartes/europe.jpg" aria-label="Démo : L'Europe"><source src="medias/galerie/cartes/europe.mp4" type="video/mp4"></video></figure>
+<h3>L'Europe</h3>
+<pre class="commande"><code>Une carte de l'Europe avec nos quatre filiales en couleur, puis la Pologne et Varsovie : c'est la prochaine.</code></pre>
+</article>
+<article class="carte-effet" id="carte-france">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/cartes/france.jpg" aria-label="Démo : La France, ses régions et l'outre-mer"><source src="medias/galerie/cartes/france.mp4" type="video/mp4"></video></figure>
+<h3>La France, ses régions et l'outre-mer</h3>
+<pre class="commande"><code>La carte de France avec ses régions ; l'outre-mer, dans ses encarts, s'allume.</code></pre>
+</article>
+<article class="carte-effet" id="carte-mamoudzou">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/cartes/mamoudzou.jpg" aria-label="Démo : Mamoudzou, à Mayotte"><source src="medias/galerie/cartes/mamoudzou.mp4" type="video/mp4"></video></figure>
+<h3>Mamoudzou, à Mayotte</h3>
+<pre class="commande"><code>Sur la carte de France, marque Mamoudzou, à Mayotte.</code></pre>
+</article>
+<article class="carte-effet" id="carte-liaison">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/cartes/liaison.jpg" aria-label="Démo : De Paris à New York"><source src="medias/galerie/cartes/liaison.mp4" type="video/mp4"></video></figure>
+<h3>De Paris à New York</h3>
+<pre class="commande"><code>Une ligne qui relie Paris à New York, comme un vol.</code></pre>
+</article>
+<article class="carte-effet carte-verticale" id="carte-vertical">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/cartes/vertical.jpg" aria-label="Démo : Nos agences en France"><source src="medias/galerie/cartes/vertical.mp4" type="video/mp4"></video></figure>
+<h3>Nos agences en France <span class="carte-maniere">vertical (9:16)</span></h3>
+<pre class="commande"><code>En vertical, pour les réseaux : nos agences en France, de Rennes à La Réunion.</code></pre>
+</article>
+</div>
+<p class="legende">Fonds de carte : <a href="https://www.naturalearthdata.com/" rel="noopener">Natural Earth</a>, domaine public. Ils sont livrés avec Pulse Motion : aucune carte n'est chargée en ligne, et le crédit s'ajoute tout seul aux crédits de votre vidéo.</p>
+<!-- /galerie:cartes -->
+<p>Jamais de plan de ville ni de carte en ligne. Les frontières sont celles de Natural Earth, telles qu'elles sont sur le terrain, sans prendre parti.</p>
 </section>
 
 <!-- ===================================================================================================== -->

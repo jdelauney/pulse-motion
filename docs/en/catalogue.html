@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Catalogue – Pulse Motion Wiki</title>
-<meta name="description" content="What Pulse Motion ships with: twenty styles with their fonts and their signature, nine ready-made scenes per style, thirty-four particle effects, animated characters and their moves, four picture formats.">
+<meta name="description" content="What Pulse Motion ships with: twenty styles with their fonts and their signature, nine ready-made scenes per style, thirty-four particle effects, animated characters and their moves, maps of countries and regions, four picture formats.">
 <!-- langues -->
 <link rel="alternate" hreflang="fr" href="https://jdelauney.github.io/pulse-motion/catalogue.html">
 <link rel="alternate" hreflang="en" href="https://jdelauney.github.io/pulse-motion/en/catalogue.html">
@@ -26,7 +26,7 @@
 <header class="entete-page">
 <p class="pastille">What ships with it</p>
 <h1>Catalogue</h1>
-<p class="chapo">The styles, scenes, effects, characters and formats that come with Pulse Motion. You don’t need to know them by heart: Pulse Motion suggests the ones that suit your video. This page helps you know what to ask for. Entrances, transitions and camera moves have their own gallery: <a href="mouvements.html">the moves</a>.</p>
+<p class="chapo">The styles, scenes, effects, characters, maps and formats that come with Pulse Motion. You don’t need to know them by heart: Pulse Motion suggests the ones that suit your video. This page helps you know what to ask for. Entrances, transitions and camera moves have their own gallery: <a href="mouvements.html">the moves</a>.</p>
 </header>
 
 <!-- ===================================================================================================== -->
@@ -869,6 +869,55 @@
 </tbody>
 </table>
 <p>Each action is timed to another element of the scene, to a word of the voice or to a beat of the music. To create a pose or a move: <a href="commandes/animer-personnage.html"><code>/pulse-motion:animer-personnage</code></a>; to adjust them with the mouse: <a href="commandes/atelier-personnages.html"><code>/pulse-motion:atelier-personnages</code></a>.</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="cartes">
+<h2>Maps</h2>
+<p>Pulse Motion draws maps of <strong>countries</strong> and <strong>French regions</strong>, overseas regions included: your export countries, your branches, a route. Countries fill with colour or light up, cities get a dot with their name, a line links two cities. Names place themselves, without getting in each other’s way or crossing the lines; in vertical, the map fills the screen and the overseas regions move below France. To ask for one: « <span lang="fr">une carte de nos pays d'export</span> » (“a map of our export countries”), « <span lang="fr">nos agences en France sur la carte</span> » (“our branches in France on the map”) (<a href="commandes/retoucher.html"><code>/pulse-motion:retoucher</code></a>).</p>
+<!-- galerie:cartes -->
+<p>6 demos, each made by Pulse Motion from the request written below it.</p>
+<div class="grille-mouvements">
+<article class="carte-effet" id="carte-monde">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/cartes/monde.jpg" aria-label="Demo: The world, country by country"><source src="../medias/galerie/cartes/monde.mp4" type="video/mp4"></video></figure>
+<h3>The world, country by country</h3>
+<pre class="commande" lang="fr"><code>Une carte du monde où nos pays d'export apparaissent un par un : France, Brésil, Canada, Japon, Australie.</code></pre>
+<p class="traduction">“A world map where our export countries appear one by one: France, Brazil, Canada, Japan, Australia.”</p>
+</article>
+<article class="carte-effet" id="carte-europe">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/cartes/europe.jpg" aria-label="Demo: Europe"><source src="../medias/galerie/cartes/europe.mp4" type="video/mp4"></video></figure>
+<h3>Europe</h3>
+<pre class="commande" lang="fr"><code>Une carte de l'Europe avec nos quatre filiales en couleur, puis la Pologne et Varsovie : c'est la prochaine.</code></pre>
+<p class="traduction">“A map of Europe with our four subsidiaries in colour, then Poland and Warsaw: that's the next one.”</p>
+</article>
+<article class="carte-effet" id="carte-france">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/cartes/france.jpg" aria-label="Demo: France, its regions and overseas"><source src="../medias/galerie/cartes/france.mp4" type="video/mp4"></video></figure>
+<h3>France, its regions and overseas</h3>
+<pre class="commande" lang="fr"><code>La carte de France avec ses régions ; l'outre-mer, dans ses encarts, s'allume.</code></pre>
+<p class="traduction">“The map of France with its regions; the overseas regions, in their insets, light up.”</p>
+</article>
+<article class="carte-effet" id="carte-mamoudzou">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/cartes/mamoudzou.jpg" aria-label="Demo: Mamoudzou, in Mayotte"><source src="../medias/galerie/cartes/mamoudzou.mp4" type="video/mp4"></video></figure>
+<h3>Mamoudzou, in Mayotte</h3>
+<pre class="commande" lang="fr"><code>Sur la carte de France, marque Mamoudzou, à Mayotte.</code></pre>
+<p class="traduction">“On the map of France, mark Mamoudzou, in Mayotte.”</p>
+</article>
+<article class="carte-effet" id="carte-liaison">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/cartes/liaison.jpg" aria-label="Demo: From Paris to New York"><source src="../medias/galerie/cartes/liaison.mp4" type="video/mp4"></video></figure>
+<h3>From Paris to New York</h3>
+<pre class="commande" lang="fr"><code>Une ligne qui relie Paris à New York, comme un vol.</code></pre>
+<p class="traduction">“A line linking Paris to New York, like a flight.”</p>
+</article>
+<article class="carte-effet carte-verticale" id="carte-vertical">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="../medias/galerie/cartes/vertical.jpg" aria-label="Demo: Our branches in France"><source src="../medias/galerie/cartes/vertical.mp4" type="video/mp4"></video></figure>
+<h3>Our branches in France <span class="carte-maniere">vertical (9:16)</span></h3>
+<pre class="commande" lang="fr"><code>En vertical, pour les réseaux : nos agences en France, de Rennes à La Réunion.</code></pre>
+<p class="traduction">“In vertical, for social media: our branches in France, from Rennes to Réunion.”</p>
+</article>
+</div>
+<p class="legende">Base maps: <a href="https://www.naturalearthdata.com/" rel="noopener">Natural Earth</a>, public domain. They ship with Pulse Motion: no map is loaded online, and the credit is added to your video’s credits automatically.</p>
+<!-- /galerie:cartes -->
+<p>Never a street map, never an online map. Borders are those of Natural Earth, as they stand on the ground, without taking sides.</p>
 </section>
 
 <!-- ===================================================================================================== -->

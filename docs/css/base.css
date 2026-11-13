@@ -784,6 +784,9 @@ a[target="_blank"]::after { content: "\00a0↗"; font-size: 0.85em; }
 .carte-mouvement .apercu, .carte-effet .apercu, .style-en-mouvement .apercu { position: relative; background: transparent; }
 .carte-mouvement figure, .carte-effet figure { border-radius: var(--rayon-lg); background: oklch(0.22 0.02 290); }
 .apercu:focus-visible { outline: 2px solid var(--primaire); outline-offset: 2px; }
+/* Démo verticale (9:16) dans une grille de démos 16:9 (catalogue, cartes). */
+.carte-verticale .apercu, .carte-verticale figure::before { aspect-ratio: 9 / 16; }
+.carte-verticale figure { max-width: 240px; margin-inline: auto; }
 .galerie.typographie { max-width: none; }
 .galerie > .entete-page, .galerie > #mode-emploi, .galerie > .galerie-source { max-width: 95ch; }
 .typographie .carte-mouvement-numero { margin: 4px 0 0; font-variant-numeric: tabular-nums; color: var(--texte-secondaire); font-size: var(--texte-sm); }
