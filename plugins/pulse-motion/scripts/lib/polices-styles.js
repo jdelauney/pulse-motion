@@ -19,7 +19,7 @@ const RACINE = path.resolve(__dirname, '..', '..');
 const FICHIER = path.join(RACINE, 'references', 'styles', 'polices.json');
 const SYSTEME = new Set(['system-ui', 'sans-serif', 'serif', 'monospace']);
 
-const lireJSON = (f) => { try { return JSON.parse(fs.readFileSync(f, 'utf8').replace(/^﻿/, '')); } catch { return null; } };
+const lireJSON = (f) => { try { return JSON.parse(fs.readFileSync(f, 'utf8').replace(/^\uFEFF/, '')); } catch { return null; } };
 const cle = (f) => String(f || '').trim().toLowerCase();
 
 function lirePolices() {

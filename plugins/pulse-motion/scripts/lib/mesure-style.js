@@ -254,7 +254,7 @@ function hexDuTexte(texte) {
   return r;
 }
 
-const lireJSON = (f) => { try { return JSON.parse(fs.readFileSync(f, 'utf8').replace(/^﻿/, '')); } catch { return null; } };
+const lireJSON = (f) => { try { return JSON.parse(fs.readFileSync(f, 'utf8').replace(/^\uFEFF/, '')); } catch { return null; } };
 const lireTexte = (f) => { try { return fs.readFileSync(f, 'utf8'); } catch { return ''; } };
 
 /**
