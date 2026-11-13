@@ -1,6 +1,6 @@
 'use strict';
 /* Revue de la branche « demandes » : aperçu rouvert sans second serveur, voix de l'ordinateur détectée,
- * consignes des skills cohérentes, en-têtes YAML sûrs, smoke tests sans attente fausse. */
+ * consignes des skills cohérentes, en-têtes YAML sûrs. (Les protocoles d'essai à la main ont quitté le dépôt en 0.72.0, avec leurs vérifications.) */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -8,7 +8,6 @@ const path = require('node:path');
 
 const RACINE = path.join(__dirname, '..');
 const lire = (...p) => fs.readFileSync(path.join(RACINE, ...p), 'utf8');
-const ESSAIS = path.join(RACINE, '..', '..', 'docs', 'essais');
 
 test('aperçu déjà actif : « --ouvrir » rouvre son adresse, sans second serveur', async () => {
   const { lancerApercu } = require('../scripts/apercu.js');
@@ -79,13 +78,4 @@ test('en-têtes des skills : chaque valeur contenant « : » est entre guillemet
       if (/: /.test(valeur)) assert.match(valeur, /^".*"$/, `${s} : ${ligne.slice(0, 40)}…`);
     }
   }
-});
-
-test('smoke tests : pas d\'attente invérifiable ni de skill inadapté', () => {
-  const complet = fs.readFileSync(path.join(ESSAIS, 'smoke-test-complet.md'), 'utf8');
-  const son = fs.readFileSync(path.join(ESSAIS, 'smoke-test-son.md'), 'utf8');
-  assert.doesNotMatch(son, /quelle est la sonie du MP4/);
-  assert.doesNotMatch(complet, /\/pulse-motion:retoucher J'ai un enregistrement de toute ma voix/);
-  assert.doesNotMatch(complet, /Il propose de recaler les mots des prises existantes/);
-  for (const t of [complet, son]) assert.doesNotMatch(t, /(^|\s)pulse-motion (voix|apercu|exporter|whisper|musique|assembler|controler|ffmpeg|outils) /m);
 });

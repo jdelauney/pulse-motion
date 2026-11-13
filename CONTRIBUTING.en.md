@@ -55,7 +55,7 @@ To try your copy in Claude Code, add the local repository as a marketplace, then
 /plugin install pulse-motion@pulse-motion
 ```
 
-Restart Claude Code after each change to the plugin. Manual test protocols are in `docs/essais/` (in French).
+Restart Claude Code after each change to the plugin.
 
 ## Running the tests
 
