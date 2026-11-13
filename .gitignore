@@ -19,3 +19,4 @@
 /.claude/settings.json
 /.claude/settings.local.json
 /.claude/*.json
+/.vscode/*
