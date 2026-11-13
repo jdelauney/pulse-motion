@@ -10,8 +10,8 @@
  *
  * τ = 0 à minuit, 0,25 à l'aube, 0,5 à midi, 0,75 au crépuscule. Le jour, encre sombre sur papier chaud ; la nuit, encre pâle
  * sur papier indigo : l'encre bascule selon la luminance du papier, entre 0,56 et 0,36, pendant que le papier est à mi-sombre
- * (le passage peu lisible est bref). Signaux : lampe (0 grand jour … 1 nuit noire ; chaque lampe a son seuil), nuit (étoiles,
- * lune), couchant (lumière chaude de l'horizon à l'aube et au crépuscule).
+ * (le passage peu lisible est bref). Signaux : lampe (0 grand jour … 1 nuit noire, d'après le bas du ciel ; chaque lampe a son
+ * seuil), nuit (étoiles, lune), couchant (lumière chaude de l'horizon à l'aube et au crépuscule).
  * data-journee sur la section d'une scène : « a-b », τ va de a à b pendant la scène, en cubic-inout ; « a » le fixe. La section
  * reçoit les six variables à chaque image ; les couleurs --c-* de la charte ne changent jamais. [data-lampe] de la scène :
  * seuil tiré de la graine « scène|id » (sinon « scène|rang »), --pm-allume (0 à 1) et --pm-fenetre (le papier mêlé d'une
@@ -73,7 +73,9 @@
     var L = luminance(papier), encreT = lisse(BASCULE[0], BASCULE[1], L);
     return {
       haut: haut, bas: bas, papier: papier, encre: mele(C_JOUR, C_NUIT, encreT), encreT: encreT,
-      lampe: lisse(0.78, 0.4, L),
+      // Le bas du ciel (l'horizon) s'assombrit plus lentement que le papier : les lampes s'allument une à une même dans une
+      // scène de quelques secondes (tiré du papier, comme la source, elles s'allumaient toutes sur la même image).
+      lampe: lisse(0.75, 0.3, luminance(bas)),
       nuit: lisse(0.42, 0.1, luminance(haut)),
       couchant: Math.max(lisse(0.67, 0.735, t) * lisse(0.79, 0.745, t), lisse(0.215, 0.245, t) * lisse(0.3, 0.26, t))
     };
@@ -124,11 +126,12 @@
     return out;
   }
 
-  /** Graine 0..1 d'un texte (FNV-1a). */
+  /** Graine 0..1 d'un texte (FNV-1a, puis brassage final de murmur3 : « f1 » et « f2 » tombent loin l'un de l'autre). */
   function graine(s) {
     var h = 2166136261;
     s = String(s);
     for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+    h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b); h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35); h ^= h >>> 16;
     return (h >>> 0) / 4294967296;
   }
   function seuilLampe(g) { return SEUIL_LAMPE[0] + (SEUIL_LAMPE[1] - SEUIL_LAMPE[0]) * graine(g); }
@@ -189,7 +192,9 @@
       var e = document.createElementNS(NS, 'ellipse'), marge = 0.25 * (bb.width + bb.height);
       e.setAttribute('cx', bb.x + bb.width / 2); e.setAttribute('cy', bb.y + bb.height / 2);
       e.setAttribute('rx', 0.9 * bb.width + marge); e.setAttribute('ry', 0.9 * bb.height + marge);
-      e.setAttribute('fill', 'url(#' + id + ')'); e.setAttribute('opacity', '0'); e.setAttribute('aria-hidden', 'true');
+      // En style propre : ni le trait ni le remplissage d'un groupe parent (façade à l'encre) ne passent à la lueur.
+      e.style.fill = 'url(#' + id + ')'; e.style.stroke = 'none';
+      e.setAttribute('opacity', '0'); e.setAttribute('aria-hidden', 'true');
       e.setAttribute('class', 'pm-lueur');
       if (el.getAttribute('transform')) e.setAttribute('transform', el.getAttribute('transform'));
       el.parentNode.insertBefore(e, el);

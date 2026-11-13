@@ -79,11 +79,13 @@ test('journee : les lampes s\'allument dans l\'ordre de leur seuil', () => {
   assert.deepEqual(graines.map((g) => J.seuilLampe(g)), seuils, 'seuil tiré de la graine, toujours le même');
   for (const s of seuils) assert.ok(s >= J.SEUIL_LAMPE[0] && s <= J.SEUIL_LAMPE[1]);
   assert.ok(new Set(seuils).size === seuils.length, 'des seuils différents');
+  // Des graines voisines (« f1 », « f2 ») donnent des seuils éloignés : étalés sur au moins la moitié de la plage.
+  assert.ok(Math.max(...seuils) - Math.min(...seuils) > (J.SEUIL_LAMPE[1] - J.SEUIL_LAMPE[0]) / 2, seuils.join(' '));
   // Le soir tombe : la première image où chaque lampe dépasse la moitié de son éclat suit l'ordre des seuils.
   const allumee = seuils.map(() => null);
   let precedent = -1;
   for (let i = 0; i <= 4000; i++) {
-    const tau = 0.72 + 0.06 * i / 4000, P = J.palette(tau);
+    const tau = 0.72 + 0.1 * i / 4000, P = J.palette(tau);
     assert.ok(P.lampe >= precedent - 1e-12, 'le signal lampe monte avec le soir');
     precedent = P.lampe;
     seuils.forEach((s, k) => { if (allumee[k] === null && J.allumage(s, P.lampe) > 0.5) allumee[k] = i; });
