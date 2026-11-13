@@ -485,6 +485,15 @@ function controlesRapides({ projet, dossierStyles, dossierEffets, assemblage = A
     // répétées, code des scènes.
     problemes.push(...reglesRealisation({ deroule, min, scenesMinutees, scenesHtml, scenesLues, besoinLecture, avecVoix, corrigeable,
       temps, termes: termesGlossaire, fichiersPolices: assemblage.polices, detailPolices: assemblage.detailPolices, css: assemblage.cssPage, seuils: SEUILS }));
+    // Fidèle au style (spec S11, 5.4) : effets hors du style (sans navigateur, levés par une entorse nommée) ; avis de la mesure
+    // du rendu (sortie/regard/style.json, s'il porte l'empreinte de cette page). Des avis, jamais bloquants.
+    {
+      const MS = require('./lib/mesure-style.js');
+      let fiche = '';
+      try { fiche = fs.readFileSync(require('./styles.js').ficheDuStyle(trouverStyle(deroule.style, dossierStyles)), 'utf8'); } catch { /* style sans fiche */ }
+      problemes.push(...MS.effetHorsStyle({ deroule, scenesHtml, dossierStyle, fiche, effets: assemblage.effets || [] }));
+      problemes.push(...MS.avisDuRegard(projet, assemblage.html));
+    }
 
     // Style : tailles de texte et effets.
     let cssStyle = '';

@@ -11,7 +11,7 @@
 - `--sans-correction` : signaler seulement (les problèmes de texte et de durée portent leur `correction` proposée ; un débordement reste une erreur). `--sans-rendu` : contrôles rapides seulement.
 - `renduVerifie: false` avec `rendu-non-verifie` ou `rendu-impossible` : la vidéo rendue n'a pas été contrôlée ; le dire à la personne.
 - Avant de montrer la vidéo, Claude en regarde les planches (`pulse-motion planche . --regard`, dans `sortie/regard/`) : l'ouverture de 0 à 3 s (`accrocheMax`), une image toutes les 0,5 s (`regardPas`) ; une image 0,3 s (`regardDecalage`) après la fin des entrées importantes de chaque scène, 24 images (`regardVignettesMax`) au plus ; chaque scène vue sur un téléphone, à 360 px (`telephoneLargeur`) de large ; des bandes autour des transitions, pour le relecteur. Ce sont des réglages du regard, pas des règles.
-- Le relecteur (agent `critique`, `pulse-motion reference realisation`, section « 13. La relecture indépendante ») note la vidéo sur huit axes et écrit `sortie/regard/critique.json` : prête si chaque axe noté vaut 8 (`critiqueBarre`) ou plus ; on ne corrige que ses défauts « à corriger », sur 3 scènes (`critiqueScenesMax`) au plus, sur place si possible, jamais une scène notée 9 (`critiqueIntouche`) ou plus. Ce n'est pas une règle du contrôle.
+- Le relecteur (agent `critique`, `pulse-motion reference realisation`, section « 13. La relecture indépendante ») note la vidéo sur neuf axes et écrit `sortie/regard/critique.json` : prête si chaque axe noté vaut 8 (`critiqueBarre`) ou plus ; on ne corrige que ses défauts « à corriger », sur 3 scènes (`critiqueScenesMax`) au plus, sur place si possible, jamais une scène notée 9 (`critiqueIntouche`) ou plus. Ce n'est pas une règle du contrôle.
 - Chaque seuil est écrit « valeur unité (`clé`) » : la clé est celle de `scripts/seuils.json`, où vit le nombre (une vérification automatique garde les deux égaux).
 - `sortie/verification.json` : la vérification de l'export (section « Vérification de l'export »), à dire après chaque export.
 - Le son est mesuré (`son` de `controle.json`), jamais écouté ; il n'est rendu de nouveau que si la musique, les voix, les bruitages ou leurs réglages ont changé.
@@ -280,6 +280,20 @@ Les cartes de `pulse-motion reference cartes` et les animations de `pulse-motion
 | `lottie-texte` | L'animation contient des calques de texte, qui ne s'affichent pas | alerte | non | Écrire ces textes dans la scène (`data-texte`) |
 | `lottie-non-pris` | Des parties que le lecteur ne dessine pas (répéteur, coins arrondis, fusion de tracés, effets, modes de fusion, calques 3D…) | alerte | non | Regarder les planches ; le dire à la personne |
 | `lottie-trop-court` | L'animation, sans boucle, finit plus de 2 s (`lottieFinAvant`) avant la fin de la scène et reste figée | alerte | non | `data-lottie-boucle="oui"`, la ralentir, ou raccourcir la scène |
+
+## Style
+
+Le rendu mesuré contre son style : `pulse-motion planche . --regard` écrit `sortie/regard/style.json` (couleurs et leur part, clé, contraste, chaleur, part saturée, teintes, main), sur les images des instants stables, les médias de la personne (images, écrans, cartes, Lottie, films) masqués. Le contrôle en reprend les avis tant que la page n'a pas changé. Tous sont des avis, jamais bloquants : une charte peut s'écarter du style. Attendu : les couleurs de la charte pour le ton de la vidéo, les couleurs fixes du style, et `identite.couleur.mesure` (`teintesMax`, `chaleur`, `saturee`) ; la main, d'après la signature et les modules du style. Un écart voulu se nomme dans le déroulé : `"entorses": [{ "quoi": "glitch", "pourquoi": "la vidéo parle d'une panne" }]`, appliqué dans toute la vidéo (le relecteur le vérifie).
+
+| Règle | Ce qui la déclenche | Gravité | Corrigé seul ? | Que faire |
+|---|---|---|---|---|
+| `style-couleur-etrangere` | Une couleur couvre au moins 4 % (`styleEtrangerePart`) d'une image et ses points sont à plus de 0,1 ΔE OKLab (`styleEtrangereEcart`) de toute couleur attendue et de leurs mélanges | info | non | Reprendre les couleurs de la charte (`--c-primaire`, `--c-accent`, `--c-texte`, `--c-fond`), ou nommer l'entorse |
+| `style-teintes` | Plus de teintes distinctes (couleurs non neutres d'au moins 2 % de surface, à 30° d'écart) que `teintesMax` | info | non | Retirer une couleur hors charte |
+| `style-cle` | Clé mesurée contraire au ton : images sombres pour un ton clair, claires pour un ton sombre | info | non | Un fond ou un calque plein contredit le ton : reprendre `--c-fond` |
+| `style-main` | Au moins 2 traits de la main contredisent le style : du grain, une trame ou des bords doux qu'il n'a pas, ou aucun trait dans un style dessiné au trait (un texte fin se mesure comme un trait : un trait dans un style sans trait ne compte pas) | info | non | Les classes et les modules du style (fiche § 2) |
+| `style-terne` | Part saturée (chroma OKLab de plus de 0,08 (`styleSaturee`)) sous le minimum de `saturee` | info | non | Rendre leur place aux aplats de `--c-primaire` et `--c-accent` |
+| `effet-hors-style` | Particules, shader `glitch`, `aberration` ou `grille-neon`, lueur (`pm-v-lueur`, shader `halo`) ou rebond (courbe `bounce` ou `elastic`, classe commune `pm-m-chute` ; les classes du style lui-même sont le style) sur plus d'un élément d'une scène, que le style ne cite ni dans ses gestes (fiche § 8) ni dans `shaders.conseilles` | info | non | Le retirer, ou le nommer dans `entorses` et l'appliquer partout |
+| `police-trop-vue` | `pulse-motion style verifier` : un style personnel prend une police de la liste `trop-vues` de `references/styles/polices.json` (Inter, Roboto, Montserrat…) | info | non | Une alternative de `pulse-motion styles polices <style>` ; rien si la charte l'impose (changement noté avec `--charte`) |
 
 ## Autres règles
 
