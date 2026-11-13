@@ -4,9 +4,10 @@
  *     <i data-action="marcher" data-vers="40" data-start="0.3" data-dur="2"></i> …
  *   </div>
  *
- * M.demarrerPersonnages() (après M.demarrer) : pour chaque conteneur, un <svg> couvrant la scène, l'habillage (pièces
- * pour un dessin, bâtonnets sinon), la partition lue sur ses actions (temps résolus par le minutage) ; puis, à chaque
- * rendu (M.surRendu), la pose à l'instant t (M.partition.etatAuTemps), le squelette et l'habillage. Déterministe.
+ * M.demarrerPersonnages() (après M.demarrer) : pour chaque conteneur, un <svg> couvrant la scène, l'habillage (registre
+ * M.habillages, moteur/personnages/habillages.js : pièces pour un dessin, ou celui de data-habillage ; bâtonnets sans
+ * dessin), la partition lue sur ses actions (temps résolus par le minutage) ; puis, à chaque rendu (M.surRendu), la pose
+ * à l'instant t (M.partition.etatAuTemps), le squelette et l'habillage. Déterministe.
  * Données : M.donnees.personnages = { bib: { poses, clips, expressions }, dessins, gabarits, gabaritsDessins, apparences }
  * (apparences : réglage bâtonnets des dessins « traits », pour data-habillage="batonnets").
  * « parler » : piste de visèmes (M.levres) tirée des mots de la voix de la scène ; sans data-dur, jusqu'à la fin.
@@ -133,6 +134,11 @@
     var D = M.donnees && M.donnees.personnages;
     if (!D || !M.minutage) return;
     var S = M.squelette, P = M.partition, V = M.vivant;
+    // Registre des habillages (moteur/personnages/habillages.js) : habillage par défaut d'un dessin, personnages sans dessin.
+    var HAB = M.habillages || {};
+    var nomsHab = Object.keys(HAB);
+    var defaut = nomsHab.filter(function (n) { return HAB[n].parDefaut; })[0];
+    var sansDessin = nomsHab.filter(function (n) { return HAB[n].sansDessin; });
     var ratio = String((M.donnees.format && M.donnees.format.ratio) || '16:9').split(':').map(Number);
     var W = 100 * ratio[0], H = 100 * ratio[1];
     var persos = [];
@@ -144,8 +150,10 @@
       rangs[idScene] = (rangs[idScene] || 0) + 1;
       var rang = rangs[idScene];
       var nom = div.getAttribute('data-personnage');
-      var dessin = nom === 'batonnets' ? null : D.dessins[nom];
-      if (nom !== 'batonnets' && !dessin) return; // signalé à l'assemblage
+      // Un personnage nommé comme un habillage « sans dessin » (batonnets) se dessine sur un gabarit.
+      var seul = sansDessin.indexOf(nom) >= 0;
+      var dessin = seul ? null : D.dessins[nom];
+      if (!seul && !dessin) return; // signalé à l'assemblage
       var gabarit = S.completerGabarit(dessin ? D.gabaritsDessins[nom] : D.gabarits[div.getAttribute('data-gabarit') || 'standard']);
       div.setAttribute('data-decor', '');
       div.style.position = 'absolute';
@@ -168,9 +176,15 @@
       svg.appendChild(gEcrase);
       var g = document.createElementNS(NS, 'g');
       gEcrase.appendChild(g);
-      // data-habillage="batonnets" sur un dessin « traits » : le même personnage en bâtonnets, à ses couleurs et proportions.
-      var apparence = dessin && (div.getAttribute('data-habillage') || '').trim() === 'batonnets' ? (D.apparences || {})[nom] : null;
-      var habillage = dessin && !apparence ? M.pieces.creer(g, dessin, gabarit) : M.batonnets.creer(g, apparence || undefined);
+      // Habillage (registre M.habillages) : celui du nom pour un personnage sans dessin ; pour un dessin, data-habillage
+      // (« batonnets » sur un dessin « traits » : le même personnage en bâtonnets, à ses couleurs et proportions), sinon
+      // l'habillage par défaut. Un habillage inconnu, ou sans le réglage du dessin qu'il demande (refusés à l'assemblage) :
+      // l'habillage par défaut.
+      var voulu = seul ? nom : (div.getAttribute('data-habillage') || '').trim();
+      var entree = Object.prototype.hasOwnProperty.call(HAB, voulu) ? HAB[voulu] : null;
+      var apparence = dessin && entree && entree.reglage ? (D.apparences || {})[nom] : null;
+      if (dessin && (!entree || (entree.reglage && !apparence))) { entree = HAB[defaut]; apparence = null; }
+      var habillage = entree.creer(g, dessin, gabarit, { apparence: apparence || undefined });
       var elements = (M.minutage.elements && M.minutage.elements[idScene]) || {};
       var actions = [];
       Array.prototype.forEach.call(div.children, function (el) {
@@ -224,7 +238,7 @@
       if (M.interactions) M.interactions.preparer(actions);
       var vie = (div.getAttribute('data-vie') || feuille('--pm-perso-vie') || 'pleine').trim();
       var ecrase = div.hasAttribute('data-ecrase') ? Math.max(0, Math.min(0.25, nombre(div, 'data-ecrase', 0.12))) : undefined;
-      persos.push({ mesurer: mesurer, sec: sec, miroir: !!dessin && !apparence, cadence: cadence,
+      persos.push({ mesurer: mesurer, sec: sec, miroir: !!entree.miroir, cadence: cadence,
         div: div, habillage: habillage, gabarit: gabarit, echelle: echelle, ombre: ombre, gEcrase: gEcrase, hauteur: P.hauteur(gabarit),
         partition: { x0: feuilleNombre('data-x', '--pm-perso-x', 50), sol0: sol0, vue0: nombre(div, 'data-vue', 0), calme: div.getAttribute('data-calme') !== 'non',
           vie: vie === 'sobre' || vie === 'aucune' || vie === 'mains' ? vie : 'pleine', sel: V.sel(idScene + '/' + (div.id || rang)), scene: bornesScene(idScene),
