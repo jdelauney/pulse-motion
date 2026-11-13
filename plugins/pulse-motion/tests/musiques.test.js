@@ -78,7 +78,9 @@ test('musique : tempo et durée estimés à l\'ajout', { ...SANS, timeout: 12000
   const flux = (periode) => Array.from({ length: 60 * 12 }, (_, i) => (i % periode === 0 ? 10 : 0.1 * ((i * 7919) % 13) / 13));
   assert.equal(M.tempoDuFlux(flux(36), 60), 100);
   assert.equal(M.tempoDuFlux(flux(50), 60), 72);
-  assert.equal(M.tempoDuFlux(Array.from({ length: 60 * 12 }, (_, i) => ((i * 7919) % 101) / 101), 60), null);
+  let graine = 7;
+  const bruit = () => { graine = (graine * 1103515245 + 12345) % 2147483648; return graine / 2147483648; };
+  assert.equal(M.tempoDuFlux(Array.from({ length: 60 * 30 }, bruit), 60), null, 'bruit sans pulsation');
 });
 
 test('musique : utiliser copie le fichier dans assets et note l\'origine ; modifier la bibliothèque ne change pas la vidéo', async () => {
