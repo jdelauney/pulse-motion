@@ -315,3 +315,26 @@ test("anglais : --verifier voit une page anglaise en retard ; une copie sans pag
   assert.deepEqual(appliquer(racine, { verifier: true }).enRetard, ["en/idees.html"]);
   assert.deepEqual(appliquer(copieDuWiki({ anglais: false }), { verifier: true }).enRetard, []);
 });
+
+test("cartes : section du catalogue (français et anglais), une démo par usage demandé, sa demande et le crédit Natural Earth", () => {
+  const demos = G.demosCartes();
+  assert.deepEqual(demos.map((d) => d.id), ["monde", "europe", "france", "mamoudzou", "liaison", "vertical"]);
+  assert.ok(demos.some((d) => d.ratio === "9:16"), "au moins une démo verticale");
+  assert.match(demos.find((d) => d.id === "mamoudzou").html, /data-repere="Mamoudzou"/);
+  assert.match(demos.find((d) => d.id === "liaison").html, /data-liaison="Paris→New York"/);
+  assert.match(demos.find((d) => d.id === "europe").html, /data-carte-cadre="europe"/);
+  for (const [page, code] of [["catalogue.html", "fr"], ["en/catalogue.html", "en"]]) {
+    const html = fs.readFileSync(path.join(DOCS, page), "utf8");
+    const section = /<section id="cartes">[\s\S]*?<\/section>/.exec(html)[0];
+    for (const d of demos) {
+      const carte = new RegExp(`<article class="carte-effet[^"]*" id="carte-${d.id}">[\s\S]*?</article>`).exec(section);
+      assert.ok(carte, `${page} : ${d.id}`);
+      assert.ok(carte[0].includes(`<code>${d.demande.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</code>`), `${page} : demande de ${d.id}`);
+      assert.ok(carte[0].includes(G.fichiersCarte(d.id)[0]), `${page} : média de ${d.id}`);
+      if (d.ratio === "9:16") assert.match(carte[0], /carte-verticale/);
+    }
+    assert.match(section, /Natural Earth/, `${page} : crédit`);
+    assert.doesNotMatch(section, /lang="fr">[^<]*<\/span><\/h3>/, `${page} : titre non traduit`);
+    assert.equal(code === "en", /class="traduction"/.test(section));
+  }
+});
