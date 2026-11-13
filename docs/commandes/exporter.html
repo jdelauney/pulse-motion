@@ -78,6 +78,7 @@
 <tr data-sortie="gif"><td>« en GIF »</td><td>Un GIF en boucle, sans son, d'une scène ou d'un passage de 20 s au plus</td><td>environ 0,6 Mo pour 6 s</td><td>2 à 3 s après un export</td><td>oui</td></tr>
 <tr data-sortie="cadre"><td>« dans un téléphone »</td><td>Une vidéo verticale montrée dans un téléphone, au fond de votre charte</td><td>environ 3,5 Mo par minute</td><td>environ 1 min 18 s par minute de vidéo</td><td>non</td></tr>
 <tr data-sortie="transparent"><td>« à incruster dans mon montage »</td><td>Une vidéo sans fond, à poser sur une autre image : pour un logiciel de montage (Premiere, DaVinci Resolve, Final Cut), ou « pour le web »</td><td>environ 850 Mo par minute pour le montage ; 6 Mo par minute pour le web</td><td>environ 1 min 25 s par minute de vidéo</td><td>oui</td></tr>
+<tr data-sortie="images"><td>« les images une par une pour mon monteur »</td><td>Chaque image de la vidéo (ou d'un passage) dans son propre fichier, PNG ou JPEG, et le son à part : Premiere, DaVinci Resolve ou After Effects les importent en séquence. Interrompue, la séquence reprend où elle s'était arrêtée</td><td>environ 2 Mo par image en PNG (3,6 Go par minute à 30 images par seconde), 0,4 Mo en JPEG ; au-delà de 2 Go, Pulse Motion vous demande d'abord</td><td>environ celui d'un export fidèle</td><td>non</td></tr>
 <tr data-sortie="pdf"><td>« un PDF des scènes pour le client »</td><td>Un PDF A4 paysage, deux scènes par page, trois images et le texte dit</td><td>environ 0,3 Mo par page</td><td>4 à 8 s</td><td>non</td></tr>
 <tr data-sortie="textes"><td>« un texte pour LinkedIn »</td><td>Une publication, un courriel ou une description YouTube, sans chiffre absent de la vidéo ; rien n'est publié</td><td>—</td><td>—</td><td>non</td></tr>
 </tbody>
@@ -149,7 +150,7 @@
 <tr><td><code>sortie/&lt;titre&gt;-couverture.jpg</code></td><td>L'image de la miniature, sans sous-titres. Elle est aussi intégrée au MP4 : les lecteurs et les explorateurs de fichiers la montrent.</td></tr>
 <tr><td><code>sortie/&lt;titre&gt;-chapitres.txt</code> et <code>.vtt</code></td><td>Si vous avez des chapitres : le texte à coller dans la description YouTube, et le fichier pour une plateforme de formation.</td></tr>
 <tr><td><code>sortie/&lt;titre&gt;-credits.txt</code></td><td>Les crédits : à relire avant de publier.</td></tr>
-<tr><td><code>sortie/&lt;titre&gt;-&lt;scène&gt;.mp4</code>, <code>.gif</code>, <code>-telephone.mp4</code>, <code>-transparent.mov</code> ou <code>.webm</code>, <code>-planches.pdf</code></td><td>Les autres sorties, quand vous les demandez.</td></tr>
+<tr><td><code>sortie/&lt;titre&gt;-&lt;scène&gt;.mp4</code>, <code>.gif</code>, <code>-telephone.mp4</code>, <code>-transparent.mov</code> ou <code>.webm</code>, <code>-planches.pdf</code>, <code>sortie/images/&lt;titre&gt;/</code></td><td>Les autres sorties, quand vous les demandez.</td></tr>
 </tbody>
 </table>
 <p>Pulse Motion termine par un résumé : l'usage, la durée, le poids du fichier, le son (ou « muette »), le mode d'export, et chaque fichier avec son rôle.</p>

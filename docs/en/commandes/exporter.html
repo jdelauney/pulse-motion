@@ -78,6 +78,7 @@
 <tr data-sortie="gif"><td>« <span lang="fr">en GIF</span> » (“as a GIF”)</td><td>A looping GIF, without sound, of a scene or a passage of 20 s at most</td><td>about 0,6 Mo for 6 s</td><td>2 to 3 s after an export</td><td>yes</td></tr>
 <tr data-sortie="cadre"><td>« <span lang="fr">dans un téléphone</span> » (“in a phone”)</td><td>A vertical video shown inside a phone, on your brand kit’s background</td><td>about 3,5 Mo per minute</td><td>about 1 min 18 s per minute of video</td><td>no</td></tr>
 <tr data-sortie="transparent"><td>« <span lang="fr">à incruster dans mon montage</span> » (“to overlay in my edit”)</td><td>A video with no background, to place over another picture: for editing software (Premiere, DaVinci Resolve, Final Cut), or « <span lang="fr">pour le web</span> » (“for the web”)</td><td>about 850 Mo per minute for editing; 6 Mo per minute for the web</td><td>about 1 min 25 s per minute of video</td><td>yes</td></tr>
+<tr data-sortie="images"><td>« <span lang="fr">les images une par une pour mon monteur</span> » (“the frames one by one for my editor”)</td><td>Every frame of the video (or of a passage) in its own file, PNG or JPEG, with the sound apart: Premiere, DaVinci Resolve or After Effects import them as a sequence. If interrupted, the sequence picks up where it stopped</td><td>about 2 Mo per frame as PNG (3,6 Go per minute at 30 frames per second), 0,4 Mo as JPEG; above 2 Go, Pulse Motion asks you first</td><td>about that of a faithful export</td><td>no</td></tr>
 <tr data-sortie="pdf"><td>« <span lang="fr">un PDF des scènes pour le client</span> » (“a PDF of the scenes for the client”)</td><td>An A4 landscape PDF, two scenes per page, three frames and the spoken text</td><td>about 0,3 Mo per page</td><td>4 to 8 s</td><td>no</td></tr>
 <tr data-sortie="textes"><td>« <span lang="fr">un texte pour LinkedIn</span> » (“a text for LinkedIn”)</td><td>A post, an email or a YouTube description, with no figure that is not in the video; nothing is published</td><td>—</td><td>—</td><td>no</td></tr>
 </tbody>
@@ -149,7 +150,7 @@
 <tr><td><code>sortie/&lt;titre&gt;-couverture.jpg</code></td><td>The thumbnail image, without subtitles. It is also built into the MP4: players and file explorers show it.</td></tr>
 <tr><td><code>sortie/&lt;titre&gt;-chapitres.txt</code> and <code>.vtt</code></td><td>If you have chapters: the text to paste into the YouTube description, and the file for a training platform.</td></tr>
 <tr><td><code>sortie/&lt;titre&gt;-credits.txt</code></td><td>The credits: to read through before publishing.</td></tr>
-<tr><td><code>sortie/&lt;titre&gt;-&lt;scène&gt;.mp4</code>, <code>.gif</code>, <code>-telephone.mp4</code>, <code>-transparent.mov</code> or <code>.webm</code>, <code>-planches.pdf</code></td><td>The other outputs, when you ask for them.</td></tr>
+<tr><td><code>sortie/&lt;titre&gt;-&lt;scène&gt;.mp4</code>, <code>.gif</code>, <code>-telephone.mp4</code>, <code>-transparent.mov</code> or <code>.webm</code>, <code>-planches.pdf</code>, <code>sortie/images/&lt;titre&gt;/</code></td><td>The other outputs, when you ask for them.</td></tr>
 </tbody>
 </table>
 <p>Pulse Motion finishes with a summary: the use, the length, the file size, the sound (or « muette », silent), the export mode, and each file with its role.</p>

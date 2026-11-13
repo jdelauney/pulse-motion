@@ -3,9 +3,9 @@
 /* Pulse Motion – bibliothèque personnelle (chantier H) : effets gardés, et toute la bibliothèque emportée sur un autre
  * ordinateur.
  *
- *   node scripts/bibliotheque.js liste                       chartes, styles, effets, personnages et goûts gardés
+ *   node scripts/bibliotheque.js liste                       chartes, styles, effets, personnages, musiques et goûts gardés
  *   node scripts/bibliotheque.js exporter [<fichier.zip>] [--chartes a,b|tout] [--styles …] [--effets …] [--personnages …]
- *                                [--gouts] [--remplacer]     archive ZIP (sans choix : tout ; par défaut dans Documents)
+ *                                [--musiques …] [--gouts] [--remplacer]     archive ZIP (sans choix : tout ; par défaut dans Documents)
  *   node scripts/bibliotheque.js importer <fichier.zip> [--voir] [--remplacer tout|<sorte>:<nom>,…]
  *                                                            un nom déjà pris n'est jamais écrasé sans --remplacer
  *   node scripts/bibliotheque.js effet liste [--dossier <d>]                       effets : vidéo, bibliothèque, plugin
@@ -19,12 +19,12 @@ const B = require('./lib/bibliotheque.js');
 
 const USAGE = [
   'Usage : pulse-motion bibliotheque liste',
-  '        pulse-motion bibliotheque exporter [<fichier.zip>] [--chartes a,b|tout] [--styles …] [--effets …] [--personnages …] [--gouts] [--remplacer]',
+  '        pulse-motion bibliotheque exporter [<fichier.zip>] [--chartes a,b|tout] [--styles …] [--effets …] [--personnages …] [--musiques …] [--gouts] [--remplacer]',
   '        pulse-motion bibliotheque importer <fichier.zip> [--voir] [--remplacer tout|<sorte>:<nom>,…]',
   '        pulse-motion effet liste [--dossier <d>] | enregistrer <nom> [<dossier>] [--sous <autre>] [--remplacer] | utiliser <nom> [<dossier>] [--remplacer]',
 ].join('\n');
 
-const AVEC_VALEUR = ['--chartes', '--styles', '--effets', '--personnages', '--sous', '--dossier'];
+const AVEC_VALEUR = ['--chartes', '--styles', '--effets', '--personnages', '--musiques', '--sous', '--dossier'];
 
 function lireOptions(args) {
   const valeur = (o) => { const i = args.indexOf(o); return i >= 0 && args[i + 1] !== undefined && !args[i + 1].startsWith('--') ? args[i + 1] : undefined; };
@@ -38,7 +38,7 @@ function executer(args) {
   if (commande === 'liste') return B.listerBibliotheque();
   if (commande === 'exporter') {
     const selection = {};
-    for (const k of ['chartes', 'styles', 'effets', 'personnages']) if (o.drapeau(`--${k}`)) selection[k] = o.valeur(`--${k}`) || 'tout';
+    for (const k of ['chartes', 'styles', 'effets', 'personnages', 'musiques']) if (o.drapeau(`--${k}`)) selection[k] = o.valeur(`--${k}`) || 'tout';
     if (o.drapeau('--gouts')) selection.gouts = true;
     return B.exporterBibliotheque({ fichier: o.libres[0] || null, selection, remplacer: o.drapeau('--remplacer') });
   }

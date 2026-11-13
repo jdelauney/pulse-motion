@@ -126,6 +126,10 @@ function validerDeroule(d) {
     if (d.musique.intensite !== undefined && !(typeof d.musique.intensite === 'number' && d.musique.intensite >= 0 && d.musique.intensite <= 1)) err.push('« musique.intensite » doit être un nombre entre 0 et 1.');
     if (d.musique.accents !== undefined && typeof d.musique.accents !== 'boolean') err.push('« musique.accents » doit valoir true (une note douce au début de chaque scène) ou false.');
     if (d.musique.graine !== undefined && !(Number.isInteger(d.musique.graine) && d.musique.graine >= 0)) err.push('« musique.graine » doit être un nombre entier positif ou nul.');
+    // Origine d'une musique copiée de la bibliothèque personnelle (spec S9, 5.13) : seulement avec un fichier.
+    if (d.musique.origine !== undefined && !(typeof d.musique.origine === 'string' && /^bibliotheque:[a-z0-9-]+$/.test(d.musique.origine) && d.musique.fichier !== undefined)) {
+      err.push('« musique.origine » vaut « bibliotheque:<id> », avec « musique.fichier » (musique copiée de la bibliothèque personnelle).');
+    }
     if (d.musique.volume !== undefined && !(typeof d.musique.volume === 'number' && d.musique.volume >= 0 && d.musique.volume <= 1)) {
       err.push('« musique.volume » doit être un nombre entre 0 et 1.');
     }

@@ -27,6 +27,16 @@ L'ambiance proposée est la première de la palette sonore du style (`pulse-moti
 
 Copier le fichier dans `assets/`. Si la personne connaît son tempo (ou le titre l'indique : « 120 bpm »), l'écrire dans le déroulé (`"tempo": { "bpm": 120 }`) : les animateurs caleront les entrées sur les temps. Un fichier ne se recale pas sur les scènes : chaque scène doit alors commencer sur un temps (contrôle `hors-tempo`) ; à 120 bpm, des durées en demi-secondes.
 
+## Vos musiques (bibliothèque personnelle)
+
+Pulse Motion ne livre aucune musique enregistrée ; la personne peut garder les siennes (achetées, libres, ou dont elle a les droits) pour toutes ses vidéos, dans `~/.pulse-motion/musiques/`.
+
+- **Garder** (« garde cette musique pour mes prochaines vidéos », un fichier donné) : la licence est obligatoire ; la demander si elle manque : « J'en ai les droits » (`personnelle`) · « Libre, sans mention (CC0) » (`cc0`) · « Libre, avec mention (CC BY) » (`cc-by` : demander aussi le texte à citer, `--attribution`) · « Achetée sur une banque de musique » (`achetee`) · « Autre » (`autre:<ce que la licence permet>`). Puis `pulse-motion musique ajouter <fichier> --ambiance <a>[,<b>] --licence <l> [--titre "…"] [--auteur "…"] [--source "…"] [--attribution "…"]` ; ambiances : celles du tableau plus haut. Durée, tempo et volume sont mesurés dans le navigateur (`tempo` : `null` si la pulsation n'est pas nette). Refus `licence` ou `attribution` : poser la question, puis relancer.
+- **Proposer** : `pulse-motion musique liste --ambiance <ambiance>` ; des titres trouvés : « Votre musique « <titre> » » vient avant « Une musique composée pour la vidéo ».
+- **Utiliser** : `pulse-motion musique utiliser <id> .` **copie** le fichier dans `assets/musique/`, écrit `musique.fichier` et `musique.origine` (volume gardé) et note sa licence pour les crédits (`assets/sources.json`, attribution CC BY comprise). Changer ou retirer la musique de la bibliothèque ne change pas la vidéo. `pris` : la vidéo a déjà un fichier de ce nom, différent ; demander avant `--remplacer`. Le résultat donne le `tempo` estimé : si les gestes de la vidéo étaient calés sur les temps de la musique composée (`data-start="2t"`), proposer de l'écrire dans `"tempo": { "bpm": … }`, puis contrôler (`hors-tempo`).
+- Licence `autre` : l'export rappelle de vérifier les droits avant de publier (`alertes` du résultat) ; le dire.
+- `pulse-motion musique retirer <id>` : la retire de la bibliothèque, jamais des vidéos. Elle part avec la bibliothèque sur un autre ordinateur (`pulse-motion reference chez-soi`).
+
 ## Partition
 
 `"musique": { "partition": "assets/partition.json", "volume": 0.5 }` :

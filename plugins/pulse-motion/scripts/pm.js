@@ -15,7 +15,10 @@
  *   pulse-motion exporter <dossier> [--pour web|reseaux|presentation|master|courriel|brouillon] [--taille-max <Mo>] [--qualite 1080p|720p|540p] [--ips 30|60] [--rapide] [--avec-provisoire] [--estimer] [--scene <id>[,<id>] | --plage <début>-<fin>] [--gif [--largeur 1280]] [--cadre telephone [--cadre-format 16:9|1:1]] [--flou oui|non] [--transparent [mov|webm]]   MP4 fidèle (ffmpeg) ou dans le navigateur ; extrait, passage seul, GIF, cadre de téléphone, flou de mouvement, fond transparent
  *   pulse-motion ffmpeg                  ffmpeg présent ? commande pour l'installer
  *   pulse-motion voix importer <fichier> [--scene <id>] [dossier] | provisoire [--scene <id>] [dossier] | transcrire [--scene <id>] [dossier] | studio <scène> [dossier] | mots --scene <id> [dossier] | synthese [--scene <id>] [dossier] | synthese installer [--legere|--normale]   voix d'une scène, voix provisoire, transcription, studio, mots datés, voix de synthèse locale
+ *   pulse-motion exporter <dossier> --images [png|jpeg] [--de <s> --a <s>] [--ips n] [--estimer] [--accord]   séquence d'images pour un monteur (sans ffmpeg)
  *   pulse-motion musique ecouter [dossier] [--ouvrir]   musique seule dans sortie/musique.wav (pour l'écouter)
+ *   pulse-motion musique ajouter <fichier> --ambiance a[,b] --licence <l> [--titre --auteur --source --attribution] | liste [--ambiance a] | utiliser <id> [dossier] [--remplacer] | retirer <id>
+ *                                                       bibliothèque personnelle de musiques (avec leur licence)
  *   pulse-motion whisper [installer [--modele small]]   transcription des voix (Python, faster-whisper) : état ou installation
  *   pulse-motion outils [--plan]         état de l'ordinateur : Node, Chrome ou Edge, ffmpeg, Python, transcription, voix du système, voix de synthèse ;
  *                                        --plan : ce qui manque, dans l'ordre où l'installer (un accord pour la liste)
@@ -60,7 +63,7 @@
  *   pulse-motion preferences [liste [--genre g] [--style s] | noter "<citation>" "<règle>" [--domaine d] [--genre g] [--style s] | retirer <id>]   goûts retenus
  *   pulse-motion page <dossier> --bouton-mp4 oui|non   page livrée qui sait faire son MP4 (environ 250 Ko de plus), ou plus légère
  *   pulse-motion videos                   les vidéos de la personne (registre ~/.pulse-motion/videos.json) : étape, durée, format, style, MP4
- *   pulse-motion bibliotheque liste | exporter [<fichier.zip>] [--chartes a,b|tout] [--styles …] [--effets …] [--personnages …] [--gouts] [--remplacer]
+ *   pulse-motion bibliotheque liste | exporter [<fichier.zip>] [--chartes a,b|tout] [--styles …] [--effets …] [--personnages …] [--musiques …] [--gouts] [--remplacer]
  *                       | importer <fichier.zip> [--voir] [--remplacer tout|<sorte>:<nom>,…]   bibliothèque personnelle emportée sur un autre ordinateur
  *
  * Chaque sortie en erreur d'une commande s'ajoute au journal ~/.pulse-motion/erreurs.jsonl (nom de la commande, sans ses
@@ -275,7 +278,9 @@ function lancer(args) {
     '  whisper [installer [--modele small]]   transcription des voix',
     '  outils [--plan]          état de l\'ordinateur (ce qui est prêt, ce qui manque) ; --plan : ce qu\'il faudrait installer',
     '  avancement <dossier> [--suivre]   travail long en cours, une ligne (ou une par étape jusqu\'à la fin)',
+    '  exporter <dossier> --images [png|jpeg] [--de <s> --a <s>] [--estimer] [--accord]   une image par fichier, pour un monteur',
     '  musique ecouter [dossier]   musique seule dans sortie/musique.wav',
+    '  musique ajouter <fichier> --ambiance a --licence l | liste [--ambiance a] | utiliser <id> [dossier] | retirer <id>   vos musiques gardées, avec leur licence',
     '  filmer verifier|tourner [--accord]|continuer|prises|choisir|supprimer|essai|connexions|flouter|importer|repere <dossier> <nom> …   filmer une application web, importer une vidéo de son écran (tutoriel)',
     '  imiter niveau "<phrase>" | analyser <fichier | films/<nom>> [--de s --a s] [--zone x,y,l,h] [--couleurs #hex,…] [--niveau esprit|mouvement] [<dossier>] | comparer <nom> --scene <id> [<dossier>] | fiche <nom>   imiter une animation (reference imiter)',
     '  reference <nom>          scene <style> <nom>      effet <nom>      bloc [<nom>]      consignes <skill> [<section>]',
@@ -297,7 +302,7 @@ function lancer(args) {
     '  rapport [<dossier>]      rapport de problème (fichier local et adresse préremplie, rien n\'est envoyé)      videos      les vidéos de la personne',
     '  page <dossier> --bouton-mp4 oui|non   page livrée qui sait faire son MP4, ou plus légère',
     '  preferences [liste [--genre g] [--style s] | noter "<citation>" "<règle>" [--domaine d] [--genre g] [--style s] | retirer <id>]   goûts retenus',
-    '  bibliotheque liste | exporter [<fichier.zip>] [--chartes a,b|tout] [--styles …] [--effets …] [--personnages …] [--gouts] [--remplacer] | importer <fichier.zip> [--voir] [--remplacer tout|<sorte>:<nom>,…]',
+    '  bibliotheque liste | exporter [<fichier.zip>] [--chartes a,b|tout] [--styles …] [--effets …] [--personnages …] [--musiques …] [--gouts] [--remplacer] | importer <fichier.zip> [--voir] [--remplacer tout|<sorte>:<nom>,…]',
   ].join('\n'));
   return 2;
 }

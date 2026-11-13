@@ -26,6 +26,7 @@ Tous facultatifs : un déroulé sans son reste valide.
 |---|---|
 | `musique` | exactement un de `fichier`, `generee`, `partition` ; `volume` 0–1 (défaut 1) |
 | `musique.generee` | ambiance (liste plus bas) ; avec `tonalite` (`do`, `do#`, `re`, `mib`, `mi`, `fa`, `fa#`, `sol`, `lab`, `la`, `sib`, `si`, suivi de `m` pour le mineur), `intensite` 0–1 (défaut 0,5), `graine` entier ≥ 0 (défaut 1) |
+| `musique.origine` | `"bibliotheque:<id>"` : musique copiée de la bibliothèque personnelle (écrit par `pulse-motion musique utiliser`), avec `fichier` |
 | `musique.tempo` | 60–180 bpm, avec `generee` : `"musique": { "generee": "inspirant", "tempo": 120 }` (défaut : celui de l'ambiance) ; il devient le tempo de la vidéo, pas de `tempo` en haut du déroulé en plus |
 | `voix.provisoire` | `true` : voix du système pour les scènes qui ont un texte sans prise ; dans la langue de la vidéo, jamais une voix française à sa place (`pulse-motion reference langues`) |
 | `voix.volume` | 0–1 (défaut 1) |
@@ -55,6 +56,7 @@ Tous facultatifs : un déroulé sans son reste valide.
 | `pulse-motion whisper` | état de la transcription (`pret`, `commandeSysteme` si Python manque) |
 | `pulse-motion whisper installer` | installe la transcription (avec l'accord de la personne) |
 | `pulse-motion musique ecouter .` | la musique seule dans `sortie/musique.wav` |
+| `pulse-motion musique liste [--ambiance <a>]` · `ajouter` · `utiliser <id> .` · `retirer <id>` | les musiques de la personne, gardées avec leur licence (`audio/musique`, « Vos musiques ») |
 
 ## Exports
 
@@ -71,7 +73,7 @@ Lire ce tronc, puis seulement la partie utile : `pulse-motion reference audio/<p
 | `audio/voix` | écrire le texte dit, prises, voix provisoire, transcription |
 | `audio/synthese` | voix de synthèse locale : la poser, l'installer (avec accord), prononciation vérifiée, vitesse |
 | `audio/ancres` | `data-start="mot:…"` : un élément entre quand la voix dit son mot (scène qui a une prise) |
-| `audio/musique` | musique générée (ambiances, humeur par scène, `intensite`) et partition écrite |
+| `audio/musique` | musique générée (ambiances, humeur par scène, `intensite`), partition écrite, musique en fichier et musiques de la personne (bibliothèque) |
 | `audio/bruitages` | `data-son` sur un élément, liste des sons, sons des transitions |
 | `audio/son-reactif` | variables `--son-…` et `--voix-enveloppe`, effets et shaders qui suivent le son |
 | `audio/mixage` | fondus, baisse sous la voix, sonie |

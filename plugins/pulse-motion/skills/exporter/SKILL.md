@@ -45,7 +45,7 @@ Si ce bloc est vide ou contient une erreur, lancer `pulse-motion ffmpeg`.
 
 - `--qualite 720p`, `--ips 60` : sur demande seulement.
 - Refus de taille : dire le message et ses deux propositions.
-- Une demande d'usage hors de cette liste (« en GIF », « juste la scène 3 », « un PDF des scènes », « dans un téléphone », « à incruster dans mon montage », « en boucle ») ou une remarque après l'export (« trop lourd », « en vertical ») : suivre `pulse-motion reference sorties` : une option, une retouche (`/pulse-motion:retoucher`), ou « pas encore possible », dit franchement.
+- Une demande d'usage hors de cette liste (« en GIF », « juste la scène 3 », « un PDF des scènes », « dans un téléphone », « à incruster dans mon montage », « les images une par une pour mon monteur », « en boucle ») ou une remarque après l'export (« trop lourd », « en vertical ») : suivre `pulse-motion reference sorties` : une option, une retouche (`/pulse-motion:retoucher`), ou « pas encore possible », dit franchement.
 - Réussite : `fichier`, `taille`, `duree`, `audio`, `mode` (`fidele` ou `navigateur`), `fichiers`, `verification` ; `conseils` et `alertes` : une phrase chacun.
 - `verification` (`sortie/verification.json`) : une erreur (noir ou silence absent de la page) : « l'export est abîmé », le relancer une fois ; des alertes : les dire en une phrase et proposer la retouche. `avertissement` (son illisible) : le dire. `conseilFfmpeg` : proposer ffmpeg pour la prochaine fois.
 - « Chrome ou Edge introuvable » : en installer un, ou ouvrir l'aperçu (`pulse-motion apercu . --ouvrir` en arrière-plan), bouton « MP4 ». Autre échec : dire le message ; rien d'incomplet n'est écrit.

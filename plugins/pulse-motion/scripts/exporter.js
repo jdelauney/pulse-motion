@@ -7,6 +7,9 @@
  *                            [--scene <id>[,<id>] | --plage <début>-<fin>] [--gif [--largeur 1280]] [--cadre telephone [--cadre-format 16:9|1:1]]
  *                            [--flou oui|non] [--transparent [mov|webm]]
  *   node scripts/exporter.js <dossier-du-projet> --planche [id1,id2] [--ouvrir]
+ *   node scripts/exporter.js <dossier-du-projet> --images [png|jpeg] [--de <s> --a <s>] [--ips n] [--estimer] [--accord] [--avec-provisoire]
+ *        séquence d'images pour un monteur (spec S9, 5.14), sans ffmpeg : sortie/images/<titre>/ (lib/export-images.js) ;
+ *        --estimer : la taille annoncée ; au-delà de 2 Go, --accord après celui de la personne
  *
  * Usages (scripts/usages.json, spec Rendu et export 5.1) : web (défaut, <slug>.mp4), reseaux, presentation, master, courriel
  * (taille visée, 10 Mo par défaut), brouillon ; --qualite et --ips priment, dans les deux voies. --estimer : durée annoncée
@@ -234,11 +237,23 @@ async function exporterVideo({
 
 if (require.main === module) {
   const args = process.argv.slice(2);
-  const OPTIONS_A_VALEUR = ['--planche', '--qualite', '--ips', '--pour', '--taille-max', '--scene', '--plage', '--largeur', '--cadre', '--cadre-format', '--flou'];
-  // --transparent a une valeur facultative (mov, webm).
-  const estValeurTransparent = (i) => args[i - 1] === '--transparent' && /^(mov|webm)$/i.test(args[i]);
+  const OPTIONS_A_VALEUR = ['--planche', '--qualite', '--ips', '--pour', '--taille-max', '--scene', '--plage', '--largeur', '--cadre', '--cadre-format', '--flou', '--de', '--a'];
+  // --transparent a une valeur facultative (mov, webm) ; --images aussi (png, jpeg).
+  const estValeurTransparent = (i) => (args[i - 1] === '--transparent' && /^(mov|webm)$/i.test(args[i])) || (args[i - 1] === '--images' && /^(png|jpe?g)$/i.test(args[i]));
   const dossier = args.find((a, i) => !a.startsWith('--') && !OPTIONS_A_VALEUR.includes(args[i - 1]) && !estValeurTransparent(i)) || '.';
   const valeur = (o) => { const i = args.indexOf(o); return i >= 0 && args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1] : undefined; };
+  if (args.includes('--images')) {
+    // Séquence d'images pour un monteur (spec S9, 5.14) : capture fidèle seule, jamais ffmpeg ; --estimer : la taille annoncée.
+    const ecrireImages = (ligne) => process.stderr.write(`${ligne}\n`);
+    let palier = -1;
+    const surProgression = (faites, total) => { const p = Math.floor((10 * faites) / total); if (p !== palier) { palier = p; ecrireImages(`Images : ${faites} sur ${total}`); } };
+    const avecProvisoireImages = args.includes('--avec-provisoire') || (() => { try { return Boolean(etatProjet(path.resolve(dossier)).accords.voixProvisoire); } catch { return false; } })();
+    require('./lib/export-images.js').exporterImages({ dossier, format: valeur('--images'), de: valeur('--de'), a: valeur('--a'), ips: valeur('--ips'),
+      estimer: args.includes('--estimer'), accord: args.includes('--accord'), avecProvisoire: avecProvisoireImages, surProgression })
+      .then((r) => { console.log(JSON.stringify(r, null, 2)); process.exit(r.ok ? 0 : 1); },
+        (e) => { console.log(JSON.stringify({ ok: false, message: e.message }, null, 2)); process.exit(1); });
+    return;
+  }
   const i = args.indexOf('--planche');
   const planche = i < 0 ? null : (args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1].split(',').filter(Boolean) : true);
   const rapide = args.includes('--rapide');
