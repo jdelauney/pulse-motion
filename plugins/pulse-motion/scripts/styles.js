@@ -2,10 +2,12 @@
 'use strict';
 /* Pulse Motion – catalogue des styles : styles livrés et personnels, recommandation, contrat.
  *
- *   node scripts/styles.js [--genre <genre>]     liste des styles (JSON) ; avec un genre : une ligne par style mis en avant
- *                                                (les 3 premiers sont à proposer), une ligne par catégorie pour le reste
+ *   node scripts/styles.js [--genre <genre> [--noter <dossier>]]   liste des styles (JSON) ; avec un genre : une ligne par
+ *                                                style mis en avant (les 3 premiers sont à proposer), une ligne par catégorie
+ *                                                pour le reste ; --noter : les 3 proposés, notés dans l'état du projet
  *   node scripts/styles.js chercher <mots…>      styles dont le nom, la catégorie, les mots-clés, les usages ou la
- *                                                personnalité contiennent ces mots (« façon tableau blanc »)
+ *                                                personnalité contiennent ces mots (« façon tableau blanc »), ou qu'une
+ *                                                référence connue désigne (« façon Kurzgesagt », references/styles/alias.json)
  *   node scripts/styles.js verifier <nom>        vérifie le contrat d'un style
  *   node scripts/styles.js ambiance <style> [--genre <genre>]   ambiance musicale proposée pour ce style (JSON)
  */
@@ -18,6 +20,7 @@ const { extraireScene } = require('./lib/extraire.js');
 const { verifierSection } = require('./lib/scenes.js');
 const { contraste, luminance } = require('./lib/couleurs.js');
 const { dossierPersonnel } = require('./lib/personnel.js');
+const { termesRecherche, trouverAlias, racineMot } = require('./lib/alias.js');
 const { trouverFichiersPolice, policesPartagees, declarationPartagees, verifierPartagees, POLICES_PARTAGEES, PARTAGEES } = require('./lib/police.js');
 const SEUILS = require('./seuils.json');
 const SYNTHE = require('../moteur/synthe/catalogue.js');
@@ -449,18 +452,44 @@ function listerStyles(dossierStyles) {
   return nomsStyles(dossierStyles).map((n) => ficheStyle(trouverStyle(n, dossierStyles)));
 }
 
+/** Nombre de styles proposés à la personne : les 3 premiers de « styles --genre ». */
+const PROPOSES = 3;
+
+/** Au plus 2 styles d'une même famille parmi les 3 premiers (spec S11, 5.3 point 3) : sinon, le premier style suivant d'une
+ *  autre famille (mis en avant, puis le reste) prend la 3ᵉ place. ordre : noms, modifié sur place. */
+function varierFamilles(ordre, parNom, fiches) {
+  if (ordre.length < PROPOSES) return;
+  const famille = (n) => parNom.get(n).famille;
+  const trois = ordre.slice(0, PROPOSES).map(famille);
+  if (!trois[0] || !trois.every((f) => f === trois[0])) return;
+  const suivants = [...ordre.slice(PROPOSES), ...fiches.map((f) => f.style).filter((n) => !ordre.includes(n))];
+  const autre = suivants.find((n) => famille(n) && famille(n) !== trois[0]);
+  if (!autre) return;
+  if (ordre.includes(autre)) ordre.splice(ordre.indexOf(autre), 1);
+  ordre.splice(PROPOSES - 1, 0, autre);
+}
+
 /**
- * Styles classés pour un genre, en deux parts. enAvant : les 2 recommandés du tableau, les styles personnels vérifiés du
- * genre, le style de contraste (ou, à défaut, un style d'une autre famille), les styles « aussi » du tableau ; reste : les
- * autres. Les styles personnels non vérifiés ne sont pas proposés. -> { enAvant: [fiches], reste: [fiches] }
+ * Styles classés pour un genre, en deux parts (spec S11, 5.3). enAvant : la préférence de portée style de la personne, le
+ * style qu'elle a choisi la dernière fois pour ce genre (habitude), les 2 recommandés du tableau, les styles personnels
+ * vérifiés du genre, le style de contraste (ou, à défaut, un style d'une autre famille), les styles « aussi » du tableau en
+ * rotation (lib/styles-proposes.js, ordonnerAussi) ; au plus 2 styles d'une même famille parmi les 3 premiers ; reste : les
+ * autres. Les styles personnels non vérifiés ne sont pas proposés. Le style de la préférence et celui de l'habitude portent
+ * leur marque (« préférence », « habitude »).
+ * contexte : { preference, habitude, propositions, projet } (contexteGenre) ; vide : l'ordre du tableau seul.
+ * -> { enAvant: [fiches], reste: [fiches] }
  */
-function classerPourGenre(genre, dossierStyles, recommandation = lireJSON(RECOMMANDATION)) {
+function classerPourGenre(genre, dossierStyles, recommandation = lireJSON(RECOMMANDATION), contexte = {}) {
   if (!GENRES.includes(genre)) throw new Error(`Genre inconnu : « ${genre} ». Genres : ${GENRES.join(', ')}.`);
   const fiches = listerStyles(dossierStyles).filter((f) => f.verifie);
   const parNom = new Map(fiches.map((f) => [f.style, f]));
   const table = (recommandation || {})[genre] || {};
   const ordre = [];
+  const marques = new Map();
   const ajouter = (n) => { if (parNom.has(n) && !ordre.includes(n)) ordre.push(n); };
+  for (const [n, marque] of [[contexte.preference, 'préférence'], [contexte.habitude, 'habitude']]) {
+    if (parNom.has(n) && !ordre.includes(n)) { ajouter(n); marques.set(n, marque); }
+  }
   (table.recommandes || []).forEach(ajouter);
   fiches.filter((f) => f.personnel && f.genres.includes(genre)).forEach((f) => ajouter(f.style));
   if (parNom.has(table.contraste)) ajouter(table.contraste);
@@ -469,19 +498,18 @@ function classerPourGenre(genre, dossierStyles, recommandation = lireJSON(RECOMM
     const autre = fiches.find((f) => !ordre.includes(f.style) && !familles.has(f.famille));
     if (autre) ajouter(autre.style);
   }
-  (table.aussi || []).forEach(ajouter);
-  const enAvant = ordre.map((n) => parNom.get(n));
+  const aussi = (table.aussi || []).filter((n) => parNom.has(n) && !ordre.includes(n));
+  require('./lib/styles-proposes.js').ordonnerAussi(aussi, contexte).forEach(ajouter);
+  varierFamilles(ordre, parNom, fiches);
+  const enAvant = ordre.map((n) => (marques.has(n) ? { ...parNom.get(n), marque: marques.get(n) } : parNom.get(n)));
   return { enAvant, reste: fiches.filter((f) => !ordre.includes(f.style)) };
 }
 
 /** Styles classés pour un genre, en une liste : ceux mis en avant (classerPourGenre), puis le reste. */
-function recommander(genre, dossierStyles, recommandation) {
-  const { enAvant, reste } = classerPourGenre(genre, dossierStyles, recommandation);
+function recommander(genre, dossierStyles, recommandation, contexte) {
+  const { enAvant, reste } = classerPourGenre(genre, dossierStyles, recommandation, contexte);
   return [...enAvant, ...reste];
 }
-
-/** Nombre de styles proposés à la personne : les 3 premiers de « styles --genre ». */
-const PROPOSES = 3;
 
 /** Forme courte d'un style : de quoi le reconnaître et le nommer. */
 function ficheCourte(f) {
@@ -490,11 +518,12 @@ function ficheCourte(f) {
 
 /**
  * Forme courte en une ligne, pour « styles --genre » : « <style> · <catégorie> · <personnalité> · <usages> », suivie de
- * « · personnel » pour un style personnel et de « · base « <base> » modifiée » quand sa base a changé.
+ * « · personnel » pour un style personnel, de « · base « <base> » modifiée » quand sa base a changé, et de sa marque
+ * (« · préférence », « · habitude » : classerPourGenre).
  */
 function ligneCourte(f) {
   return [f.style, f.categorie || 'sans catégorie', f.personnalite.join(', '), f.usages.join(' ; ') || 'usages non dits', ...(f.personnel ? ['personnel'] : []),
-    ...(f.baseModifiee ? [`base « ${f.base} » modifiée`] : [])].join(' · ');
+    ...(f.baseModifiee ? [`base « ${f.base} » modifiée`] : []), ...(f.marque ? [f.marque] : [])].join(' · ');
 }
 
 /** Ligne d'une catégorie du reste : « 4 autres styles dessine : styles chercher <mots> ou styles choisir --categorie dessine ». */
@@ -527,25 +556,13 @@ function listePourGenre(classement) {
   return [...nommes.map(ligneCourte), ...categories.map((c) => ligneCategorie(c, compte.get(c)))];
 }
 
-// Petits mots ignorés dans une recherche de style (« façon tableau blanc », « quelque chose à la craie »).
-const MOTS_VIDES = new Set(['a', 'au', 'aux', 'avec', 'de', 'des', 'du', 'en', 'et', 'la', 'le', 'les', 'l', 'd', 'un', 'une', 'sur', 'pour', 'par',
-  'facon', 'style', 'comme', 'genre', 'maniere', 'mode', 'look', 'esprit', 'type', 'quelque', 'chose', 'video', 'fais', 'fait', 'moi', 'je', 'veux',
-  'plutot', 'plus', 'tres']);
-const racineMot = (mot) => (mot.length > 3 && /[sx]$/.test(mot) ? mot.slice(0, -1) : mot);
-
-/**
- * Styles vérifiés dont le nom, la catégorie, les mots-clés, les usages ou la personnalité contiennent les mots
- * cherchés, sans accents ni casse : ceux qui les contiennent tous, puis, s'il n'y en a aucun, ceux qui en
- * contiennent le plus. -> formes courtes, la plus proche d'abord.
- */
-function chercherStyles(mots, dossierStyles) {
+/** Styles vérifiés dont les champs contiennent les mots cherchés (termes) : ceux qui les contiennent tous, puis, s'il n'y en a
+ *  aucun, ceux qui en contiennent le plus. -> fiches, la plus proche d'abord. */
+function chercherParMots(termes, normal, fiches, dossierStyles) {
   const { normaliser } = require('./mouvements.js');
-  const normal = normaliser(Array.isArray(mots) ? mots.join(' ') : mots);
-  const termes = normal.split(' ').filter((t) => t && !MOTS_VIDES.has(t)).map(racineMot);
-  if (!termes.length) return [];
   const requete = termes.join(' ');
   const resultats = [];
-  listerStyles(dossierStyles).filter((f) => f.verifie).forEach((f, ordre) => {
+  fiches.forEach((f, ordre) => {
     const identite = lireJSON(path.join(trouverStyle(f.style, dossierStyles).dossier, 'identite.json')) || {};
     const nom = normaliser(f.style);
     const categorie = CATEGORIES.find((c) => c.id === f.categorie);
@@ -564,7 +581,33 @@ function chercherStyles(mots, dossierStyles) {
   const complets = resultats.filter((r) => r.complet);
   return (complets.length ? complets : resultats)
     .sort((a, b) => b.trouves - a.trouves || b.score - a.score || a.ordre - b.ordre)
-    .map((r) => ficheCourte(r.f));
+    .map((r) => r.f);
+}
+
+/**
+ * Styles cherchés par leur médium ou par une référence connue (spec S11, 5.2), sans accents ni casse.
+ * - Une référence de references/styles/alias.json dont tous les mots sont dans la demande (la plus longue) vaut le nom exact :
+ *   ses styles viennent en premier, avec alias: { reference, reprend } ; les autres mots passent ensuite par la recherche
+ *   habituelle (nom, catégorie, mots-clés, usages, personnalité).
+ * - Une référence sans recette : { styles: [], alias: { reference, sansRecette }, proche: [formes courtes] }.
+ * -> formes courtes, la plus proche d'abord.
+ */
+function chercherStyles(mots, dossierStyles) {
+  const { normaliser } = require('./mouvements.js');
+  const brut = Array.isArray(mots) ? mots.join(' ') : mots;
+  let termes = termesRecherche(brut);
+  if (!termes.length) return [];
+  const fiches = listerStyles(dossierStyles).filter((f) => f.verifie);
+  const parNom = new Map(fiches.map((f) => [f.style, f]));
+  const alias = trouverAlias(termes);
+  if (alias && !alias.styles.length) {
+    return { styles: [], alias: { reference: alias.reference, sansRecette: alias.sansRecette || '' },
+      proche: (alias.proche || []).filter((n) => parNom.has(n)).map((n) => ficheCourte(parNom.get(n))) };
+  }
+  const enTete = alias ? alias.styles.filter((n) => parNom.has(n)).map((n) => ({ ...ficheCourte(parNom.get(n)), alias: { reference: alias.reference, reprend: alias.reprend || '' } })) : [];
+  if (alias) termes = termes.filter((t) => !alias.termes.includes(t));
+  const autres = termes.length ? chercherParMots(termes, normaliser(brut), fiches.filter((f) => !enTete.some((e) => e.style === f.style)), dossierStyles) : [];
+  return [...enTete, ...autres.map(ficheCourte)];
 }
 
 /**
@@ -631,10 +674,18 @@ if (require.main === module) {
     }
     const i = args.indexOf('--genre');
     if (i >= 0 && (!args[i + 1] || args[i + 1].startsWith('--'))) throw new Error(`Indiquez un genre après --genre : ${GENRES.join(', ')}.`);
-    // Avec un genre : JSON compact (une ligne par style mis en avant, une par catégorie pour le reste), lu à chaque création.
-    const classement = i >= 0 ? classerPourGenre(args[i + 1]) : null;
+    const k = args.indexOf('--noter');
+    const projet = k >= 0 ? args[k + 1] : null;
+    if (k >= 0 && (i < 0 || !projet || projet.startsWith('--'))) throw new Error('Indiquez un genre et le dossier du projet : --genre <genre> --noter <dossier>.');
+    // Avec un genre : JSON compact (une ligne par style mis en avant, une par catégorie pour le reste), lu à chaque création ;
+    // l'ordre tient compte de la préférence, de l'habitude et des propositions passées de la personne (spec S11, 5.3).
+    const SP = require('./lib/styles-proposes.js');
+    const classement = i >= 0 ? classerPourGenre(args[i + 1], undefined, undefined, SP.contexteGenre(args[i + 1], { projet })) : null;
     const fiches = classement ? nommesPourGenre(classement) : listerStyles();
     console.log(classement ? JSON.stringify(listePourGenre(classement)) : JSON.stringify(fiches, null, 2));
+    // --noter : les 3 styles proposés, dans l'état du projet ; ils n'entrent dans la mémoire de la personne qu'à l'accord sur
+    // le style (etat --accord style).
+    if (projet) SP.noterDansProjet(projet, { genre: args[i + 1], proposes: fiches.slice(0, PROPOSES).map((f) => f.style) });
     // Une base modifiée n'est dite qu'une fois (creer, style) : la marque est posée une fois la liste rendue, pour les styles
     // qu'elle nomme.
     for (const f of fiches.filter((x) => x.baseModifiee)) signalerBase(trouverStyle(f.style));
@@ -646,7 +697,7 @@ if (require.main === module) {
 
 module.exports = {
   verifierStyle, styleVerifie, marquerVerifie, racinesStyles, trouverStyle, nomsStyles, messageStyleInconnu, ficheStyle, listerStyles, recommander,
-  classerPourGenre, nommesPourGenre, listePourGenre, ligneCourte, ficheCourte, chercherStyles, estLivre, CHAMPS_LIVRE, ambianceProposee, ambianceDuStyle, AMBIANCES_GENRE,
+  classerPourGenre, varierFamilles, PROPOSES, nommesPourGenre, listePourGenre, ligneCourte, ficheCourte, chercherStyles, estLivre, CHAMPS_LIVRE, ambianceProposee, ambianceDuStyle, AMBIANCES_GENRE,
   empreinteStyle, empreinteBase, fichiersStyle, ficheDuStyle, baseAChanger, signalerBase, MARQUE_BASE, CHANGEMENTS,
   lireJSON, RACINE, LIVRES, dossierPersonnel,
 };

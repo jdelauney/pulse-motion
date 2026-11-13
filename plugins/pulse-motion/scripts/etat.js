@@ -7,6 +7,8 @@
  *     autonome : « Faites pour moi » (spec Retouches et ergonomie, 5.4) : aucune question après la première ronde, donc aucun
  *     accord demandé ; un déroulé valide mène droit à la fabrication.
  *   node scripts/etat.js <dossier-du-projet> --accord deroule|style|video|voix-provisoire
+ *     style : les 3 styles proposés (styles --genre <genre> --noter <dossier>) et le style choisi s'ajoutent à la mémoire de la
+ *     personne, ~/.pulse-motion/styles-proposes.json (spec S11, 5.3).
  *     voix-provisoire : accord pour exporter une version de travail avec la voix de l'ordinateur (spec Retouches et ergonomie,
  *     5.17), gardé avec l'empreinte des prises provisoires : il tombe dès que l'une d'elles change (accords.voixProvisoire).
  *
@@ -185,6 +187,9 @@ function donnerAccord(dossier, accord) {
     valeur = deroule ? empreinteProvisoire(projet, deroule) : null;
     if (!valeur) throw new Error('La vidéo n\'a pas de voix provisoire : rien à accorder.');
   }
+  // Accord sur le style (spec S11, 5.3) : les styles proposés, notés par « styles --genre --noter », entrent dans la mémoire
+  // de la personne avec le style choisi, une seule fois.
+  if (accord === 'style') require('./lib/styles-proposes.js').retenirAccord(projet, memo);
   memo.accords = { ...(memo.accords || {}), [accord]: valeur };
   ecrireEtat(projet, memo);
   return etatProjet(projet);
