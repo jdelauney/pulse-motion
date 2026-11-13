@@ -191,7 +191,8 @@ test('recommander : un style d\'« aussi » proposé 2 fois sur 5 sans être cho
   assert.deepEqual(noms(S.classerPourGenre('formation', LIVRES_DIR, RECO, { propositions: choisi }).enAvant).slice(3), aussi);
   const anciennes = [entree(['tableau-noir', 'a', 'b']), entree(['tableau-noir', 'a', 'b']), entree(base), entree(base), entree(base), entree(base), entree(base)];
   assert.deepEqual(noms(S.classerPourGenre('formation', LIVRES_DIR, RECO, { propositions: anciennes }).enAvant).slice(3), aussi);
-  assert.deepEqual([...SP.stylesRecules(propositions)], ['tableau-noir']);
+  // Les recommandés proposés à chaque fois sans être choisis reculent aussi, mais la rotation ne touche que « aussi ».
+  assert.deepEqual([...SP.stylesRecules(propositions)].sort(), ['chaleureux', 'minimal', 'tableau-noir']);
 });
 
 test('recommander : même projet, même ordre ; projets différents, « aussi » dans un autre ordre', () => {
