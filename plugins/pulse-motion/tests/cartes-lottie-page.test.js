@@ -102,10 +102,13 @@ test('carte : pays, repère et liaison posés ; la liaison se trace avec t', { .
   })()`);
   const debut = await etat(d + 0.5), milieu = await etat(d + 1.6), fin = await etat(d + 3.5), retour = await etat(d + 1.6);
   assert.equal(debut.pays, 3);
-  assert.ok(debut.fond >= 1);
+  assert.equal(debut.fond, 0, 'les autres pays d\'essai (Brésil, Canada) sont hors du cadre de l\'Europe');
   assert.equal(debut.texte, 'Berlin');
   assert.deepEqual([debut.erreurs], [0]);
-  assert.ok(parseFloat(debut.offset) > parseFloat(milieu.offset) && parseFloat(milieu.offset) > parseFloat(fin.offset), JSON.stringify([debut, milieu, fin]));
+  // Valeur calculée lue par Chrome : « calc(100px) », « calc(50px) », puis « 0% ».
+  const n = (v) => Number((/-?\d*\.?\d+/.exec(v) || [NaN])[0]);
+  assert.ok(n(debut.offset) > n(milieu.offset) && n(milieu.offset) > n(fin.offset), JSON.stringify([debut, milieu, fin]));
+  assert.equal(n(fin.offset), 0);
   assert.deepEqual(retour, milieu, 'aller et retour');
 });
 

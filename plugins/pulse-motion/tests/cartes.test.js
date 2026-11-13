@@ -206,7 +206,7 @@ test('assembler : une page sans carte n\'embarque rien de cartes/', () => {
   const sans = assembler(projet('<h2 data-texte="ville"></h2>'));
   assert.equal(sans.ok, true);
   assert.ok(!sans.groupes.includes('cartes'));
-  assert.doesNotMatch(sans.html, /pm-pays|pm-repere|boiteLonLat|Natural Earth/);
+  assert.doesNotMatch(sans.html, /pm-pays|pm-repere-point|pm-liaison|boiteLonLat|Natural Earth/);
   assert.equal(sans.cartes, undefined);
   // Crédits : Natural Earth seulement avec une carte.
   const L = require('../scripts/lib/livrables.js');
