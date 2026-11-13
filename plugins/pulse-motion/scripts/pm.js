@@ -28,6 +28,8 @@
  *   pulse-motion credits <dossier> [noter <fichier> "<source>" "<licence>" ["<auteur>"]]   crédits de la vidéo ; source d'un fichier importé
  *   pulse-motion planche <dossier> --regard [--scenes a,b]   planches de regard dans sortie/regard/ (ouverture, temps forts, téléphone, bandes, fiche)
  *   pulse-motion planche <dossier> <id> --de <s> --duree <s> [--pas <n>]   planche image par image d'une scène (3 s au plus), dans sortie/planche/
+ *   pulse-motion planche <dossier> --suivre <personnage|sélecteur> [--scene <id>] [--de <s>] [--duree <s>] [--pas <n>]   bandes recadrées
+ *                                        autour de l'élément qui bouge, agrandies 4 fois sans lissage : sortie/planche/suivre-<cible>.png
  *   pulse-motion planche <dossier> --instants <t1,t2>   image de chaque instant (secondes de la vidéo), dans sortie/planche/instant-<ms>.png
  *   pulse-motion planche <dossier> --avant <numéro|nom|precedente> [id1,id2]   avant / après / différences des scènes modifiées : sortie/planche/avant-apres-<id>.png
  *   pulse-motion reference <nom>          affiche references/<nom>.md (ex. moteur, rythme, styles/clair-pedagogique) ; usages : tableau de scripts/usages.json
@@ -166,6 +168,8 @@ function lancer(args) {
     return executer([path.join(RACINE, 'scripts', 'vocabulaire.js'), 'lexique', ...reste]);
   }
   if (commande === 'planche') {
+    // Planche qui suit un élément (spec S11, 5.11 point 1) : avant la planche image par image, qui partage --de et --duree.
+    if (reste.includes('--suivre')) return executer([path.join(RACINE, 'scripts', 'planche-suivre.js'), ...reste]);
     // Planche image par image (spec Mouvement vivant, 5.14) : planche <dossier> <id> --de <s> --duree <s> [--pas <n>].
     if (reste.includes('--de') || reste.includes('--duree')) {
       const AVEC_VALEUR = ['--de', '--duree', '--pas'];
@@ -275,6 +279,7 @@ function lancer(args) {
     '           [--scene <id>[,<id>] | --plage <début>-<fin>] [--gif [--largeur 1280]] [--cadre telephone [--cadre-format 16:9|1:1]]   extrait, passage seul, GIF, cadre de téléphone : reference sorties',
     '  planche <dossier> [id1,id2] [--pdf]       planche <dossier> <id> --de <s> --duree <s> [--pas <n>]',
     '  planche <dossier> --instants <t1,t2>      planche <dossier> --avant <numéro|nom|precedente> [id1,id2]   instants précis ; avant / après d\'une retouche',
+    '  planche <dossier> --suivre <personnage|sélecteur> [--scene <id>] [--de <s>] [--duree <s>] [--pas <n>]   un élément suivi de près, agrandi 4 fois',
     '  credits <dossier> [noter <fichier> "<source>" "<licence>" ["<auteur>"]]   crédits de la vidéo, source d\'un fichier importé',
     '  ffmpeg                   ffmpeg présent ? commande pour l\'installer',
     '  voix importer <fichier> [--scene <id>] [dossier] | provisoire [--scene <id>] [dossier] | transcrire [--scene <id>] [dossier] | studio <scène> [dossier] | mots --scene <id> [dossier] | synthese [--scene <id>] [dossier] | synthese installer [--legere|--normale]',
