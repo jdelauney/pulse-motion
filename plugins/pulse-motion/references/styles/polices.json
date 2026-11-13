@@ -1,0 +1,668 @@
+{
+  "description": "Polices des styles livrés (spec S11, 5.5) : celles du style et deux alternatives, proposées quand la charte n'impose rien et que la personne veut une autre police, ou pour un style personnel. Les alternatives ne sont pas embarquées : la commande police les récupère chez Bunny Fonts au besoin. trop-vues : polices écartées des styles personnels (avis police-trop-vue, sauf si la charte les impose) et des styles nouveaux.",
+  "verification": {
+    "date": "2026-11-13",
+    "licence": "champ license du fichier METADATA.pb de chaque famille, dans le dossier ofl/ du dépôt google/fonts (SIL Open Font License 1.1)",
+    "catalogue": "famille présente dans le catalogue de Bunny Fonts (fonts.bunny.net/list)",
+    "francais": "table des caractères (cmap) des fichiers latin et latin-ext de Bunny Fonts, graisse 400 (ou la seule disponible), contre les caractères du français de moteur/langues.js ; fichiers lus hors du plugin, jamais embarqués"
+  },
+  "trop-vues": [
+    "Inter",
+    "Roboto",
+    "Montserrat",
+    "Poppins",
+    "Open Sans",
+    "Lato",
+    "Arial",
+    "Helvetica"
+  ],
+  "styles": {
+    "carnet": {
+      "titres": "Caveat",
+      "texte": "Instrument Sans",
+      "alternatives": [
+        {
+          "titres": "Shantell Sans",
+          "texte": "Atkinson Hyperlegible",
+          "pourquoi": "Une écriture de marqueur plus ronde, et un texte pensé pour se lire aux petites tailles."
+        },
+        {
+          "titres": "Playpen Sans",
+          "texte": "Source Sans 3",
+          "pourquoi": "Une main plus appliquée, presque scolaire, sur un texte neutre."
+        }
+      ]
+    },
+    "chaleureux": {
+      "titres": "Fredoka",
+      "texte": "Nunito Sans",
+      "alternatives": [
+        {
+          "titres": "Baloo 2",
+          "texte": "Mulish",
+          "pourquoi": "Des titres ronds et pleins, un texte doux et ouvert."
+        },
+        {
+          "titres": "Quicksand",
+          "texte": "Karla",
+          "pourquoi": "Des titres plus légers et arrondis, un texte un peu plus vivant."
+        }
+      ]
+    },
+    "clair-pedagogique": {
+      "titres": "Figtree",
+      "texte": "Inter",
+      "alternatives": [
+        {
+          "titres": "Plus Jakarta Sans",
+          "texte": "Source Sans 3",
+          "pourquoi": "Une géométrique plus ouverte, et un texte de manuel très éprouvé."
+        },
+        {
+          "titres": "Lexend",
+          "texte": "Atkinson Hyperlegible",
+          "pourquoi": "Des lettres larges et un texte dessiné pour les lecteurs en difficulté."
+        }
+      ]
+    },
+    "crayon": {
+      "titres": "Patrick Hand",
+      "texte": "Nunito Sans",
+      "alternatives": [
+        {
+          "titres": "Delius",
+          "texte": "Mulish",
+          "pourquoi": "Une écriture d'enfant plus sage, sur un texte rond."
+        },
+        {
+          "titres": "Shantell Sans",
+          "texte": "Andika",
+          "pourquoi": "Une main plus libre, et un texte conçu pour l'apprentissage de la lecture."
+        }
+      ]
+    },
+    "editorial": {
+      "titres": "Fraunces",
+      "texte": "Instrument Sans",
+      "alternatives": [
+        {
+          "titres": "Newsreader",
+          "texte": "Hanken Grotesk",
+          "pourquoi": "Une serif de journal plus sobre, avec une grotesque fine."
+        },
+        {
+          "titres": "DM Serif Display",
+          "texte": "Source Serif 4",
+          "pourquoi": "Des titres plus contrastés, et un texte tout en serif, plus littéraire."
+        }
+      ]
+    },
+    "energique": {
+      "titres": "Anton",
+      "texte": "Archivo",
+      "alternatives": [
+        {
+          "titres": "Bebas Neue",
+          "texte": "Work Sans",
+          "pourquoi": "Des capitales serrées plus nettes, un texte large et franc."
+        },
+        {
+          "titres": "Big Shoulders Display",
+          "texte": "Chivo",
+          "pourquoi": "Des titres hauts et industriels, un texte solide."
+        }
+      ]
+    },
+    "info-sans-son": {
+      "titres": "Barlow Condensed",
+      "texte": "Barlow",
+      "alternatives": [
+        {
+          "titres": "Oswald",
+          "texte": "Source Sans 3",
+          "pourquoi": "Des titres serrés plus fins, un texte très lisible sur téléphone."
+        },
+        {
+          "titres": "IBM Plex Sans Condensed",
+          "texte": "IBM Plex Sans",
+          "pourquoi": "Une famille entière, plus technique et plus froide."
+        }
+      ]
+    },
+    "iso-album": {
+      "titres": "Fraunces",
+      "texte": "Nunito Sans",
+      "alternatives": [
+        {
+          "titres": "Young Serif",
+          "texte": "Mulish",
+          "pourquoi": "Une serif plus ronde et plus ancienne, un texte doux."
+        },
+        {
+          "titres": "Bitter",
+          "texte": "Lexend",
+          "pourquoi": "Une serif à empattements carrés, solide, et un texte aux lettres larges."
+        }
+      ]
+    },
+    "iso-infographie": {
+      "titres": "Archivo",
+      "texte": "Barlow",
+      "alternatives": [
+        {
+          "titres": "Space Grotesk",
+          "texte": "IBM Plex Sans",
+          "pourquoi": "Des titres plus géométriques, un texte de notice technique."
+        },
+        {
+          "titres": "Chivo",
+          "texte": "Public Sans",
+          "pourquoi": "Des titres plus massifs, un texte neutre d'administration."
+        }
+      ]
+    },
+    "lancement": {
+      "titres": "Sora",
+      "texte": "Manrope",
+      "alternatives": [
+        {
+          "titres": "Outfit",
+          "texte": "Plus Jakarta Sans",
+          "pourquoi": "Des titres géométriques plus doux, un texte moderne et aéré."
+        },
+        {
+          "titres": "Urbanist",
+          "texte": "Hanken Grotesk",
+          "pourquoi": "Des titres plus fins et plus froids, un texte discret."
+        }
+      ]
+    },
+    "minimal": {
+      "titres": "Schibsted Grotesk",
+      "texte": "Schibsted Grotesk",
+      "alternatives": [
+        {
+          "titres": "Hanken Grotesk",
+          "texte": "Hanken Grotesk",
+          "pourquoi": "Une seule grotesque, plus douce, pour tout."
+        },
+        {
+          "titres": "Onest",
+          "texte": "Onest",
+          "pourquoi": "Une seule grotesque, plus ronde et plus actuelle."
+        }
+      ]
+    },
+    "mode-d-emploi": {
+      "titres": "Fraunces",
+      "texte": "Barlow",
+      "alternatives": [
+        {
+          "titres": "Bitter",
+          "texte": "Work Sans",
+          "pourquoi": "Une serif à empattements carrés de livret technique, et un texte franc."
+        },
+        {
+          "titres": "Libre Baskerville",
+          "texte": "Source Sans 3",
+          "pourquoi": "Une serif plus classique, d'imprimé ancien, et un texte neutre."
+        }
+      ]
+    },
+    "papier-decoupe": {
+      "titres": "Archivo",
+      "texte": "Nunito Sans",
+      "alternatives": [
+        {
+          "titres": "Bricolage Grotesque",
+          "texte": "Mulish",
+          "pourquoi": "Des titres plus fantaisistes, comme découpés à la main, et un texte rond."
+        },
+        {
+          "titres": "Rubik",
+          "texte": "Karla",
+          "pourquoi": "Des titres aux angles arrondis, un texte simple."
+        }
+      ]
+    },
+    "pictogrammes": {
+      "titres": "Barlow Condensed",
+      "texte": "Barlow",
+      "alternatives": [
+        {
+          "titres": "Fira Sans Condensed",
+          "texte": "Fira Sans",
+          "pourquoi": "Une famille de signalétique, plus humaniste."
+        },
+        {
+          "titres": "Asap Condensed",
+          "texte": "Asap",
+          "pourquoi": "Une famille aux courbes plus douces, toujours lisible de loin."
+        }
+      ]
+    },
+    "plan-technique": {
+      "titres": "B612",
+      "texte": "B612 Mono",
+      "alternatives": [
+        {
+          "titres": "Red Hat Display",
+          "texte": "Red Hat Mono",
+          "pourquoi": "Des titres plus ronds, et une chasse fixe plus légère pour les cotes."
+        },
+        {
+          "titres": "Chivo",
+          "texte": "Chivo Mono",
+          "pourquoi": "Des titres plus massifs, et une chasse fixe de la même famille."
+        }
+      ]
+    },
+    "recit-donnees": {
+      "titres": "Schibsted Grotesk",
+      "texte": "Fraunces",
+      "alternatives": [
+        {
+          "titres": "Public Sans",
+          "texte": "Source Serif 4",
+          "pourquoi": "Des titres plus neutres, un texte en serif plus posé."
+        },
+        {
+          "titres": "Libre Franklin",
+          "texte": "Newsreader",
+          "pourquoi": "Des titres de grande presse, un texte de journal."
+        }
+      ]
+    },
+    "riso": {
+      "titres": "Schibsted Grotesk",
+      "texte": "Schibsted Grotesk",
+      "alternatives": [
+        {
+          "titres": "Bricolage Grotesque",
+          "texte": "Bricolage Grotesque",
+          "pourquoi": "Une seule grotesque, plus irrégulière, comme une affiche de fanzine."
+        },
+        {
+          "titres": "Archivo Black",
+          "texte": "Archivo",
+          "pourquoi": "Des titres très noirs, un texte de la même famille."
+        }
+      ]
+    },
+    "tableau-blanc": {
+      "titres": "Kalam",
+      "texte": "Kalam",
+      "alternatives": [
+        {
+          "titres": "Shantell Sans",
+          "texte": "Shantell Sans",
+          "pourquoi": "Une écriture de marqueur plus ronde, pour tout."
+        },
+        {
+          "titres": "Playpen Sans",
+          "texte": "Playpen Sans",
+          "pourquoi": "Une écriture plus appliquée, pour tout."
+        }
+      ]
+    },
+    "tableau-noir": {
+      "titres": "Kalam",
+      "texte": "Nunito Sans",
+      "alternatives": [
+        {
+          "titres": "Delius",
+          "texte": "Andika",
+          "pourquoi": "Une écriture d'écolier plus sage, et un texte conçu pour apprendre à lire."
+        },
+        {
+          "titres": "Gochi Hand",
+          "texte": "Mulish",
+          "pourquoi": "Une craie plus vive et penchée, sur un texte rond."
+        }
+      ]
+    },
+    "tech-sombre": {
+      "titres": "Space Grotesk",
+      "texte": "JetBrains Mono",
+      "alternatives": [
+        {
+          "titres": "IBM Plex Sans",
+          "texte": "IBM Plex Mono",
+          "pourquoi": "Une famille de terminal plus sobre, chasse fixe comprise."
+        },
+        {
+          "titres": "Chakra Petch",
+          "texte": "Fira Code",
+          "pourquoi": "Des titres anguleux d'écran, et une chasse fixe de code."
+        }
+      ]
+    }
+  },
+  "familles": {
+    "Andika": {
+      "licence": "OFL-1.1",
+      "bunny": "andika",
+      "francais": true
+    },
+    "Anton": {
+      "licence": "OFL-1.1",
+      "bunny": "anton",
+      "francais": true
+    },
+    "Archivo": {
+      "licence": "OFL-1.1",
+      "bunny": "archivo",
+      "francais": true
+    },
+    "Archivo Black": {
+      "licence": "OFL-1.1",
+      "bunny": "archivo-black",
+      "francais": true
+    },
+    "Asap": {
+      "licence": "OFL-1.1",
+      "bunny": "asap",
+      "francais": true
+    },
+    "Asap Condensed": {
+      "licence": "OFL-1.1",
+      "bunny": "asap-condensed",
+      "francais": true
+    },
+    "Atkinson Hyperlegible": {
+      "licence": "OFL-1.1",
+      "bunny": "atkinson-hyperlegible",
+      "francais": true
+    },
+    "B612": {
+      "licence": "OFL-1.1",
+      "bunny": "b612",
+      "francais": true
+    },
+    "B612 Mono": {
+      "licence": "OFL-1.1",
+      "bunny": "b612-mono",
+      "francais": true
+    },
+    "Baloo 2": {
+      "licence": "OFL-1.1",
+      "bunny": "baloo-2",
+      "francais": true
+    },
+    "Barlow": {
+      "licence": "OFL-1.1",
+      "bunny": "barlow",
+      "francais": true
+    },
+    "Barlow Condensed": {
+      "licence": "OFL-1.1",
+      "bunny": "barlow-condensed",
+      "francais": true
+    },
+    "Bebas Neue": {
+      "licence": "OFL-1.1",
+      "bunny": "bebas-neue",
+      "francais": true
+    },
+    "Big Shoulders Display": {
+      "licence": "OFL-1.1",
+      "bunny": "big-shoulders-display",
+      "francais": true
+    },
+    "Bitter": {
+      "licence": "OFL-1.1",
+      "bunny": "bitter",
+      "francais": true
+    },
+    "Bricolage Grotesque": {
+      "licence": "OFL-1.1",
+      "bunny": "bricolage-grotesque",
+      "francais": true
+    },
+    "Caveat": {
+      "licence": "OFL-1.1",
+      "bunny": "caveat",
+      "francais": true
+    },
+    "Chakra Petch": {
+      "licence": "OFL-1.1",
+      "bunny": "chakra-petch",
+      "francais": true
+    },
+    "Chivo": {
+      "licence": "OFL-1.1",
+      "bunny": "chivo",
+      "francais": true
+    },
+    "Chivo Mono": {
+      "licence": "OFL-1.1",
+      "bunny": "chivo-mono",
+      "francais": true
+    },
+    "DM Serif Display": {
+      "licence": "OFL-1.1",
+      "bunny": "dm-serif-display",
+      "francais": true
+    },
+    "Delius": {
+      "licence": "OFL-1.1",
+      "bunny": "delius",
+      "francais": true
+    },
+    "Figtree": {
+      "licence": "OFL-1.1",
+      "bunny": "figtree",
+      "francais": true
+    },
+    "Fira Code": {
+      "licence": "OFL-1.1",
+      "bunny": "fira-code",
+      "francais": true
+    },
+    "Fira Sans": {
+      "licence": "OFL-1.1",
+      "bunny": "fira-sans",
+      "francais": true
+    },
+    "Fira Sans Condensed": {
+      "licence": "OFL-1.1",
+      "bunny": "fira-sans-condensed",
+      "francais": true
+    },
+    "Fraunces": {
+      "licence": "OFL-1.1",
+      "bunny": "fraunces",
+      "francais": true
+    },
+    "Fredoka": {
+      "licence": "OFL-1.1",
+      "bunny": "fredoka",
+      "francais": true
+    },
+    "Gochi Hand": {
+      "licence": "OFL-1.1",
+      "bunny": "gochi-hand",
+      "francais": true
+    },
+    "Hanken Grotesk": {
+      "licence": "OFL-1.1",
+      "bunny": "hanken-grotesk",
+      "francais": true
+    },
+    "IBM Plex Mono": {
+      "licence": "OFL-1.1",
+      "bunny": "ibm-plex-mono",
+      "francais": true
+    },
+    "IBM Plex Sans": {
+      "licence": "OFL-1.1",
+      "bunny": "ibm-plex-sans",
+      "francais": true
+    },
+    "IBM Plex Sans Condensed": {
+      "licence": "OFL-1.1",
+      "bunny": "ibm-plex-sans-condensed",
+      "francais": true
+    },
+    "Instrument Sans": {
+      "licence": "OFL-1.1",
+      "bunny": "instrument-sans",
+      "francais": true
+    },
+    "Inter": {
+      "licence": "OFL-1.1",
+      "bunny": "inter",
+      "francais": true
+    },
+    "JetBrains Mono": {
+      "licence": "OFL-1.1",
+      "bunny": "jetbrains-mono",
+      "francais": true
+    },
+    "Kalam": {
+      "licence": "OFL-1.1",
+      "bunny": "kalam",
+      "francais": true
+    },
+    "Karla": {
+      "licence": "OFL-1.1",
+      "bunny": "karla",
+      "francais": true
+    },
+    "Lexend": {
+      "licence": "OFL-1.1",
+      "bunny": "lexend",
+      "francais": true
+    },
+    "Libre Baskerville": {
+      "licence": "OFL-1.1",
+      "bunny": "libre-baskerville",
+      "francais": true
+    },
+    "Libre Franklin": {
+      "licence": "OFL-1.1",
+      "bunny": "libre-franklin",
+      "francais": true
+    },
+    "Manrope": {
+      "licence": "OFL-1.1",
+      "bunny": "manrope",
+      "francais": true
+    },
+    "Mulish": {
+      "licence": "OFL-1.1",
+      "bunny": "mulish",
+      "francais": true
+    },
+    "Newsreader": {
+      "licence": "OFL-1.1",
+      "bunny": "newsreader",
+      "francais": true
+    },
+    "Nunito Sans": {
+      "licence": "OFL-1.1",
+      "bunny": "nunito-sans",
+      "francais": true
+    },
+    "Onest": {
+      "licence": "OFL-1.1",
+      "bunny": "onest",
+      "francais": true
+    },
+    "Oswald": {
+      "licence": "OFL-1.1",
+      "bunny": "oswald",
+      "francais": true
+    },
+    "Outfit": {
+      "licence": "OFL-1.1",
+      "bunny": "outfit",
+      "francais": true
+    },
+    "Patrick Hand": {
+      "licence": "OFL-1.1",
+      "bunny": "patrick-hand",
+      "francais": true
+    },
+    "Playpen Sans": {
+      "licence": "OFL-1.1",
+      "bunny": "playpen-sans",
+      "francais": true
+    },
+    "Plus Jakarta Sans": {
+      "licence": "OFL-1.1",
+      "bunny": "plus-jakarta-sans",
+      "francais": true
+    },
+    "Public Sans": {
+      "licence": "OFL-1.1",
+      "bunny": "public-sans",
+      "francais": true
+    },
+    "Quicksand": {
+      "licence": "OFL-1.1",
+      "bunny": "quicksand",
+      "francais": true
+    },
+    "Red Hat Display": {
+      "licence": "OFL-1.1",
+      "bunny": "red-hat-display",
+      "francais": true
+    },
+    "Red Hat Mono": {
+      "licence": "OFL-1.1",
+      "bunny": "red-hat-mono",
+      "francais": true
+    },
+    "Rubik": {
+      "licence": "OFL-1.1",
+      "bunny": "rubik",
+      "francais": true
+    },
+    "Schibsted Grotesk": {
+      "licence": "OFL-1.1",
+      "bunny": "schibsted-grotesk",
+      "francais": true
+    },
+    "Shantell Sans": {
+      "licence": "OFL-1.1",
+      "bunny": "shantell-sans",
+      "francais": true
+    },
+    "Sora": {
+      "licence": "OFL-1.1",
+      "bunny": "sora",
+      "francais": true
+    },
+    "Source Sans 3": {
+      "licence": "OFL-1.1",
+      "bunny": "source-sans-3",
+      "francais": true
+    },
+    "Source Serif 4": {
+      "licence": "OFL-1.1",
+      "bunny": "source-serif-4",
+      "francais": true
+    },
+    "Space Grotesk": {
+      "licence": "OFL-1.1",
+      "bunny": "space-grotesk",
+      "francais": true
+    },
+    "Urbanist": {
+      "licence": "OFL-1.1",
+      "bunny": "urbanist",
+      "francais": true
+    },
+    "Work Sans": {
+      "licence": "OFL-1.1",
+      "bunny": "work-sans",
+      "francais": true
+    },
+    "Young Serif": {
+      "licence": "OFL-1.1",
+      "bunny": "young-serif",
+      "francais": true
+    }
+  }
+}

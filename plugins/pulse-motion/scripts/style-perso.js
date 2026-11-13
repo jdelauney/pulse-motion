@@ -5,7 +5,8 @@
  *   node scripts/style-perso.js nouveau <nom> [--depuis <style>] [--emprunts <style>,<style>]   squelette repris d'un style
  *                                                    (sa base notée dans identite.json, sa fiche copiée dans guide.md)
  *   node scripts/style-perso.js verifier <nom>       contrat, contrôles et rendu (16:9, 1:1, 4:5, 9:16, tons) ;
- *                                                    avertit pour un guide hors format et au-delà de 5 changements par tour
+ *                                                    avertit pour un guide hors format et au-delà de 5 changements par tour ;
+ *                                                    avis police-trop-vue (spec S11, 5.5), levé par un changement noté --charte
  *   node scripts/style-perso.js planche <nom> [--scenes titre,liste] [--ratio 16:9] [--ton clair|sombre] [--textes exemple|maximum]
  *                                             [--temoin | --avec-base] [--ouvrir]
  *   node scripts/style-perso.js noter <nom> <section> "<avant>" "<après>" "<pourquoi>" [--nouveau-tour] [--charte]
@@ -108,7 +109,9 @@ async function verifierStylePerso({ nom, navigateur }) {
   const contrat = verifierStyle(st.dossier);
   // Guide et journal : des avertissements, jamais des erreurs (un style personnel d'avant reste valide).
   const avertissements = [...contrat.avertissements, ...(st.personnel ? [...verifierGuide(st.dossier), ...verifierChangements(st.dossier)] : [])];
-  if (!contrat.ok) return { ok: false, erreurs: contrat.erreurs, avertissements, controle: [], rendu: [], renduVerifie: false, message: 'Contrat non respecté : corriger d\'abord les erreurs (le rendu sera vérifié ensuite).' };
+  // Avis (spec S11, 5.5) : une police trop vue dans un style personnel, sauf si la charte de la personne l'impose ; jamais bloquant.
+  const avis = st.personnel ? require('./lib/polices-styles.js').policeTropVue(st.dossier) : [];
+  if (!contrat.ok) return { ok: false, erreurs: contrat.erreurs, avertissements, avis, controle: [], rendu: [], renduVerifie: false, message: 'Contrat non respecté : corriger d\'abord les erreurs (le rendu sera vérifié ensuite).' };
   const projet = projetEssai({ dossierStyle: st.dossier });
   let controle;
   try { controle = controler({ dossier: projet, ecrire: false }).problemes.map((p) => p.message); } finally { fs.rmSync(projet, { recursive: true, force: true }); }
@@ -117,7 +120,7 @@ async function verifierStylePerso({ nom, navigateur }) {
   if (ok && st.personnel) marquerVerifie(st.dossier);
   return {
     ok,
-    erreurs: [], avertissements, controle, rendu: rendu.problemes, renduVerifie: rendu.ok !== null,
+    erreurs: [], avertissements, avis, controle, rendu: rendu.problemes, renduVerifie: rendu.ok !== null,
     ...(rendu.message ? { message: rendu.message } : {}),
   };
 }

@@ -30,12 +30,15 @@
  * la conduite vit dans la référence sorties) ; retoucher tenu ; descriptions inchangées.
  * 0.74.0 (S11 J2, choisir le style) : creer 23 780 → 24 150 o (--noter, habitude dite, référence connue et sa phrase,
  * « Autre chose que ces styles ») ; description inchangée.
+ * 0.75.0 (S11 J3, fidèle au style) : style 6 550 → 6 620 o (polices de la base ou ses alternatives, jamais une police trop vue
+ * sauf charte), retoucher 15 000 → 15 050 o (« une autre police » sans précision : les alternatives du style) ; critique tenu
+ * (9ᵉ axe style, corps ≤ 3 500 o).
  */
 const PLAFONDS = {
   'skills/animer-personnage/SKILL.md': 6050, 'skills/atelier-particules/SKILL.md': 2272, 'skills/atelier-personnages/SKILL.md': 3529,
   'skills/creer/SKILL.md': 24150, 'skills/decouper-personnage/SKILL.md': 4020, 'skills/dessiner-personnage/SKILL.md': 4650,
   'skills/exporter/SKILL.md': 6810, 'skills/filmer/SKILL.md': 11500, 'skills/outils/SKILL.md': 7200, 'skills/reprendre/SKILL.md': 3180,
-  'skills/retoucher/SKILL.md': 15000, 'skills/style/SKILL.md': 6550, 'skills/voix/SKILL.md': 5350,
+  'skills/retoucher/SKILL.md': 15050, 'skills/style/SKILL.md': 6620, 'skills/voix/SKILL.md': 5350,
   'agents/animateur.md': 6000, 'agents/critique.md': 3800,
 };
 

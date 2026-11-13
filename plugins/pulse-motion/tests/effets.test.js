@@ -122,7 +122,10 @@ test('projet sans effet : liste vide dans la page', () => {
 
 test('contrôles : projet avec effets sans problème', () => {
   const dir = copierProjet('projet-effets');
-  assert.deepEqual(controler2(dir).problemes, []);
+  // Le style d'essai ne cite pas les particules dans ses gestes : seul l'avis effet-hors-style (spec S11, 5.4), jamais bloquant.
+  const p = controler2(dir).problemes;
+  assert.deepEqual(p.filter((x) => x.regle !== 'effet-hors-style'), []);
+  assert.deepEqual(p.map((x) => [x.regle, x.gravite]), [['effet-hors-style', 'info']]);
 });
 
 test('contrôles : erreurs d\'effets reprises de l\'assemblage', () => {

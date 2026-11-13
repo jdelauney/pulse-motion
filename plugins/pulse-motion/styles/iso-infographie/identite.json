@@ -27,6 +27,17 @@
     "roles": {
       "primaire": "étiquettes et repères",
       "accent": "le sujet, un par scène"
+    },
+    "mesure": {
+      "teintesMax": 2,
+      "chaleur": [
+        -0.019,
+        0.053
+      ],
+      "saturee": [
+        0.005,
+        0.04
+      ]
     }
   },
   "typographie": {

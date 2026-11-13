@@ -5,6 +5,7 @@
 - **Deux départs**, dits en une question : adapter un style (une base, celle dont le § 1 de la fiche est le plus proche de la description ; un second style peut prêter des gestes, `--emprunts`) ou partir d'une page blanche (Claude choisit la base technique la plus proche et le dit en une ligne). Dans les deux cas, `style nouveau --depuis <base>`.
 - **Trois groupes de réglages**, montrés avec les exemples de la fiche de la base (`pulse-motion reference styles/<base>`, lue entière), en mots simples.
 - **5 changements au plus par tour.** Un changement imposé par la charte (une police de marque) ne compte pas. Avant d'écrire : un résumé avant / après / ce que ça coûte, puis l'accord.
+- **Polices** : celles de la base, ou l'une de ses deux alternatives (`pulse-motion styles polices <base>`, polices libres, récupérées par `pulse-motion police`). Une police de `tropVues` (Inter, Roboto, Montserrat…) vaut l'avis `police-trop-vue` à `style verifier`, sauf si la charte de la personne l'impose : noter ce changement avec `--charte` en nommant la police.
 - Chaque changement accepté se note (`pulse-motion style noter`) et s'écrit dans sa section de `guide.md`. `style verifier` avertit au-delà de 5 changements dans un tour.
 - À chaque tour, la planche avec la base : `pulse-motion style planche <nom> --avec-base --ouvrir`, la base à gauche, le style à droite, mêmes textes (« la chaîne du froid »).
 - `guide.md` est la fiche de la base, entière, avec la ligne « Adapté du style « <base> » » sous le titre ; il garde les 11 sections de la fiche.

@@ -31,7 +31,7 @@ sortie/<titre>.html  ── page autonome, lisible sans connexion
 
 La compétence `creer` (`skills/creer/SKILL.md`) pose une petite ronde de questions (durée, format, public, parcours, musique, voix), cherche le modèle de vidéo qui correspond au sujet (`scripts/modeles.js`, `modeles/videos/*.json`) et propose des styles (`references/styles/recommandation.json` ; les références connues comme « façon … » dans `references/styles/alias.json` ; la préférence, l'habitude et les propositions passées de la personne dans `~/.pulse-motion/styles-proposes.json`). Elle écrit le **déroulé**, `deroule.json`, contrat central du projet, validé par `scripts/lib/deroule.js` :
 
-- `titre`, `genre`, `parcours`, `format` (`ratio` 16:9, 9:16, 1:1 ou 4:5 ; `ips`), `style`, `charte` (réglages ponctuels), `musique`, `sousTitres`, `bruitages` ;
+- `titre`, `genre`, `parcours`, `format` (`ratio` 16:9, 9:16, 1:1 ou 4:5 ; `ips`), `style`, `charte` (réglages ponctuels), `musique`, `sousTitres`, `bruitages`, `entorses` (écarts au style nommés et voulus, `{ quoi, pourquoi }`) ;
 - `scenes[]` : `id`, `fichier`, `duree`, `transition` (celle de la scène qui **entre**), `rythme` (étire tous les temps de la scène), `intention`, `textes` (clé → texte à l'écran), `voix`, `mouvements` (numéros du dictionnaire), `type` (nom de la scène toute faite du style dont elle vient).
 
 Les textes ne s'écrivent jamais dans le HTML d'une scène : « change le titre » ne touche que le déroulé.
@@ -89,7 +89,7 @@ Les réglages par usage (web, réseaux, présentation, master, courriel, brouill
 
 - **Aperçu** (`scripts/apercu.js`) : serveur local sur 127.0.0.1 seulement, derrière une garde commune (`scripts/lib/garde-locale.js`) ; il surveille le projet et recharge la page à la même position.
 - **Historique** (`scripts/historique.js`) : une copie avant chaque retouche, annuler, rétablir, versions nommées, avant / après (`scripts/planche-retouche.js`).
-- **Planches** : images de la vidéo que Claude regarde pour juger son travail (`scripts/regard.js`), et l'agent `critique` qui relit la vidéo comme un spectateur.
+- **Planches** : images de la vidéo que Claude regarde pour juger son travail (`scripts/regard.js`), et l'agent `critique` qui relit la vidéo comme un spectateur. Le rendu y est aussi mesuré contre son style (`scripts/lib/mesure-style.js` : couleurs, clé, chaleur, part saturée, teintes, main, médias de la personne masqués ; attendu tiré de la charte, du style et de `identite.couleur.mesure`) dans `sortie/regard/style.json`, dont le contrôle reprend les avis et que le critique note sur son 9ᵉ axe, `style`.
 - **État** (`.pulse-motion/etat.json` dans le projet) : l'étape de la vidéo, pour `/pulse-motion:reprendre`.
 
 ## 2. La charte et ses variables

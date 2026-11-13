@@ -23,6 +23,17 @@
     "roles": {
       "primaire": "titres, galets",
       "accent": "pastilles, puces, flèches"
+    },
+    "mesure": {
+      "teintesMax": 2,
+      "chaleur": [
+        0.055,
+        0.121
+      ],
+      "saturee": [
+        0.01,
+        0.065
+      ]
     }
   },
   "typographie": {

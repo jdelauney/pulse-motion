@@ -28,6 +28,17 @@
     "roles": {
       "primaire": "les panneaux et la première rangée de la grille",
       "accent": "le panneau qui alerte ou qui compte, la deuxième rangée"
+    },
+    "mesure": {
+      "teintesMax": 2,
+      "chaleur": [
+        -0.054,
+        0.028
+      ],
+      "saturee": [
+        0.009,
+        0.05
+      ]
     }
   },
   "typographie": {

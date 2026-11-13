@@ -15,9 +15,11 @@
  *                        chaque scène, bornée à sa fin stable ; regardVignettesMax en tout, une par scène au moins ;
  *   telephone-N.png      chaque scène à son instant stable, à telephoneLargeur de large (taille réelle) ;
  *   bandes.png           3 moments au plus (transitions, instants où le plus d'éléments bougent), de −0,2 à +0,3 s ;
- *   fiche.md             ce que la vidéo veut dire et l'index des vignettes, sans code ni contrôle.
+ *   fiche.md             ce que la vidéo veut dire et l'index des vignettes, sans code ni contrôle ;
+ *   style.json           le rendu mesuré contre son style (spec S11, 5.4 : couleurs, clé, chaleur, part saturée, teintes,
+ *                        main ; médias de la personne masqués) et ses avis, sur les images des instants stables.
  * critique.json (relecture de l'agent critique, spec 5.5) est gardé : il porte l'empreinte de la page qu'il a relue.
- * Résumé JSON : { ok, planches, fiche, vignettes, jetonsEstimes, capture: "fidele" | "navigateur", empreinte, relecture }
+ * Résumé JSON : { ok, planches, fiche, vignettes, jetonsEstimes, capture: "fidele" | "navigateur", empreinte, relecture, style }
  * (relecture : null, ou { verdict, plusFaible, aJour, … } ; aJour : la relecture porte sur cette page, ne pas la relancer).
  * Sans capture fidèle possible : repli sur la planche du navigateur (trois images par scène), capture "navigateur".
  */
@@ -34,6 +36,7 @@ const { avecEffets } = require('./export-fidele.js');
 const { trouverStyle } = require('./styles.js');
 const { empreintePage, etatRelecture } = require('./lib/relecture.js');
 const { reduirePng } = require('./lib/vignette.js');
+const MS = require('./lib/mesure-style.js');
 
 const SEUILS = JSON.parse(fs.readFileSync(path.join(__dirname, 'seuils.json'), 'utf8'));
 const RACINE = path.resolve(__dirname, '..');
@@ -235,6 +238,8 @@ function ecrireFiche({ projet, deroule, infos, ids, index, doctrine, glossaire, 
   let ficheStyle = '';
   try { ficheStyle = require('./lib/fiche-style.js').extraitCritique(fs.readFileSync(require('./styles.js').ficheDuStyle(style), 'utf8')); } catch { /* style sans fiche */ }
   if (ficheStyle) L.push(`## Le style « ${deroule.style} »`, '', ficheStyle.trim(), '');
+  // Entorses nommées (spec S11, 5.4 point 4) : voulues, à appliquer dans toute la vidéo ; le relecteur le vérifie.
+  if (Array.isArray(deroule.entorses) && deroule.entorses.length) L.push('## Entorses au style (voulues, appliquées partout ?)', '', ...deroule.entorses.map((e) => `- ${e.quoi} : ${e.pourquoi}`), '');
   L.push('## Ce qui est verrouillé', '', verrous.length ? verrous.map((v) => `- ${v}`).join('\n') : '- rien', '');
   L.push('## Index des vignettes', '', '| Planche | Position | Scène | Instant |', '|---|---|---|---|');
   for (const v of index) L.push(`| ${v.planche} | ${v.position} | ${v.scene} | ${virgule(v.t)} s |`);
@@ -305,6 +310,8 @@ async function planchesRegard({ dossier, scenes = null, dossierStyles, navigateu
     const t = (x) => aLImage(x, ips, infos.duree);
     // Images de la vidéo, une capture par instant (un instant partagé par deux planches n'est pris qu'une fois).
     const prises = new Map();
+    // Boîtes des médias de la personne à chaque instant capturé : masquées dans la mesure du style (spec S11, 5.4).
+    const medias = new Map();
     const prendre = async (instant) => {
       if (!prises.has(instant)) {
         const fichier = `v${String(prises.size + 1).padStart(3, '0')}.png`;
@@ -312,6 +319,7 @@ async function planchesRegard({ dossier, scenes = null, dossierStyles, navigateu
         // le saut (une animation CSS presque à zéro, à 1,4 s de chaine-du-froid, diffère une fois sur quatre).
         await capture.capturer(instant);
         fs.writeFileSync(path.join(travail, fichier), await capture.capturer(instant));
+        medias.set(instant, await capture.evaluer(MS.BOITES_MEDIAS));
         prises.set(instant, fichier);
       }
       return prises.get(instant);
@@ -368,6 +376,17 @@ async function planchesRegard({ dossier, scenes = null, dossierStyles, navigateu
         lot.forEach((v, i) => index.push({ planche: nom, position: i + 1, scene: v.scene, t: v.t }));
       }
     }
+    // Le rendu mesuré contre son style (spec S11, 5.4) : les images des instants stables (planche « téléphone »), médias de
+    // la personne masqués ; sortie/regard/style.json, lu par le critique (axe style) et par le contrôle (avis).
+    let style;
+    try {
+      const images = groupes.find((g) => g.nom === 'telephone').vignettes.map((v) => ({ png: fs.readFileSync(path.join(travail, v.fichier)), masques: medias.get(v.t) || null, scene: v.scene, t: v.t }));
+      const attendu = MS.attenduDuStyle({ projet, deroule, dossierStyle: trouverStyle(deroule.style, dossierStyles).dossier });
+      const mesure = MS.mesurerImages(images, attendu);
+      const avis = MS.avisStyle(mesure, attendu);
+      fs.writeFileSync(path.join(sortie, 'style.json'), `${JSON.stringify(MS.resumeStyle({ mesure, attendu, avis, empreinte }), null, 1)}\n`, 'utf8');
+      style = { fichier: 'sortie/regard/style.json', avis: avis.map((a) => a.regle) };
+    } catch (e) { style = { fichier: null, message: `Le rendu n'a pas pu être mesuré contre son style (${e.message}).` }; }
     let glossaire = [];
     try { glossaire = require('./vocabulaire.js').lireGlossaire(projet).termes; } catch { /* pas de glossaire */ }
     const fiche = ecrireFiche({ projet, deroule, infos, ids, index, doctrine: sectionsDoctrine(doctrine), glossaire, empreinte });
@@ -376,7 +395,7 @@ async function planchesRegard({ dossier, scenes = null, dossierStyles, navigateu
       for (const f of prises.values()) fs.copyFileSync(path.join(travail, f), path.join(garder, f));
       fs.writeFileSync(path.join(garder, 'index.json'), JSON.stringify(groupes.map((g) => ({ nom: g.nom, vignettes: g.vignettes })), null, 2), 'utf8');
     }
-    return { ok: true, planches, fiche: relatif(fiche), vignettes: index.length, jetonsEstimes: jetons, capture: 'fidele', particules, empreinte, relecture };
+    return { ok: true, planches, fiche: relatif(fiche), vignettes: index.length, jetonsEstimes: jetons, capture: 'fidele', particules, empreinte, relecture, style };
   } finally {
     await capture.fermer().catch(() => {});
     fs.rmSync(travail, { recursive: true, force: true });

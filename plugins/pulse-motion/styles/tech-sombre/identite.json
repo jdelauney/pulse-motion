@@ -33,6 +33,17 @@
     "roles": {
       "primaire": "titres en couleur, liens",
       "accent": "invites, curseur, jauges, panneau actif"
+    },
+    "mesure": {
+      "teintesMax": 1,
+      "chaleur": [
+        -0.082,
+        -0.011
+      ],
+      "saturee": [
+        0.001,
+        0.032
+      ]
     }
   },
   "typographie": {

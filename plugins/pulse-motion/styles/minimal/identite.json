@@ -28,6 +28,17 @@
     "roles": {
       "primaire": "règles et repères",
       "accent": "un seul détail par scène : numéros, marqueur, barre"
+    },
+    "mesure": {
+      "teintesMax": 1,
+      "chaleur": [
+        0.035,
+        0.11
+      ],
+      "saturee": [
+        0.001,
+        0.027
+      ]
     }
   },
   "typographie": {

@@ -28,6 +28,17 @@
     "roles": {
       "primaire": "le second feutre : notes, puces",
       "accent": "ce qui compte : hachures, une seule ligne"
+    },
+    "mesure": {
+      "teintesMax": 2,
+      "chaleur": [
+        0.019,
+        0.083
+      ],
+      "saturee": [
+        0.001,
+        0.024
+      ]
     }
   },
   "typographie": {

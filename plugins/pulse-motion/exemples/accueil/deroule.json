@@ -8,6 +8,9 @@
     "ips": 30
   },
   "style": "chaleureux",
+  "entorses": [
+    { "quoi": "particules", "pourquoi": "des confettis pour fêter l'arrivée, à la dernière scène seulement" }
+  ],
   "musique": {
     "generee": "calme",
     "tempo": 120,

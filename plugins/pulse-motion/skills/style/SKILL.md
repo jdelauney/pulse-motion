@@ -36,7 +36,7 @@ Pour proposer des réponses, partir de `pulse-motion reference directions` : les
 ## 2. Squelette
 
 1. Nom en minuscules et tirets (ex. `papercraft`), pas celui d'un style livré : `pulse-motion style nouveau <nom> --depuis <style>` (`--emprunts <style>` : qui prête des gestes). Dans `dossier`, `guide.md` est la fiche de la base.
-2. Polices : `pulse-motion police "<famille>" --dans <dossier>/polices` pour chacune (`--italique` si le style l'emploie ; licence notée dans `polices/LICENCES.md`).
+2. Polices : celles de la base ou ses alternatives (`pulse-motion styles polices <base>`), jamais une `tropVues` sauf charte ; `pulse-motion police "<famille>" --dans <dossier>/polices` (`--italique` au besoin ; licence dans `polices/LICENCES.md`).
 3. Écrire `identite.json` (personnalité, à éviter, genres, couleur et tons, typographie, mouvement, signature, à faire, à éviter), `charte.json` (couleurs, polices) et `style.css` (comme les styles livrés : variables de la charte, `cqh`, `--c-primaire-lisible`, `--c-accent-lisible`, `--c-sur-primaire`, `--c-sur-accent` hors décor, carré et vertical par `@container`, ton sombre par `#pm-scene[data-ton="sombre"]`). Interdits (`pulse-motion reference moteur`) : `infinite`, `counter()`, `transition:` CSS.
 4. Mal rendus par l'export rapide : filtres SVG (`feTurbulence`), `mix-blend-mode`, `backdrop-filter`. Texture de papier : image embarquée (`url("texture.png")` dans `style.css`) ; ombre de découpe : `box-shadow: 1cqh 1cqh 0 …`.
 5. Chaque changement accepté : `pulse-motion style noter <nom> <section> "<avant>" "<après>" "<pourquoi>"` (`--nouveau-tour` au premier d'un tour, `--charte`), puis écrit dans sa section de `guide.md`.

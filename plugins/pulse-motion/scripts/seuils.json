@@ -108,5 +108,8 @@
   "qrContraste": 7,
   "lottieLourdAlerteKo": 500,
   "lottieLourdErreurMo": 2,
-  "lottieFinAvant": 2
+  "lottieFinAvant": 2,
+  "styleEtrangerePart": 0.04,
+  "styleEtrangereEcart": 0.1,
+  "styleSaturee": 0.08
 }

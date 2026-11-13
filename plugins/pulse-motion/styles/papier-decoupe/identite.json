@@ -28,6 +28,17 @@
     "roles": {
       "primaire": "le papier des strates et des volets",
       "accent": "le papier de ce qui compte : le rond, les pastilles, la bande d'alerte"
+    },
+    "mesure": {
+      "teintesMax": 2,
+      "chaleur": [
+        0.02,
+        0.082
+      ],
+      "saturee": [
+        0.007,
+        0.053
+      ]
     }
   },
   "typographie": {

@@ -53,14 +53,14 @@ Ils aident à justifier une note ; ce ne sont pas des règles absolues.
 
 ## Depuis la relecture du critique
 
-`critique.json` note huit axes ; la personne en reçoit cinq. La note d'un axe de la revue est la moyenne des axes du critique notés (un axe `null` ne compte pas), et ses preuves sont celles du critique. Cette table fait foi :
+`critique.json` note neuf axes ; la personne en reçoit cinq. La note d'un axe de la revue est la moyenne des axes du critique notés (un axe `null` ne compte pas), et ses preuves sont celles du critique. Cette table fait foi :
 
 | Axe de la revue | Axes de `critique.json` |
 |---|---|
 | Message | `message`, `verite` |
 | Lisibilité | `lisibilite`, `composition` |
 | Rythme | `ouverture`, `rythme` |
-| Cohérence | `continuite`, `mouvement` |
+| Cohérence | `continuite`, `mouvement`, `style` |
 | Singularité | aucun : Claude la note lui-même d'après les planches et les clichés de `realisation` § 10, avec une preuve située |
 
 Les défauts `a-corriger` deviennent « à corriger » (« Gênant »), `souhaitable` « À améliorer », `detail` « Détail » ; les trois retouches rapides viennent des défauts les plus graves, une scène ou un réglage chacune. La pondération par genre reste celle du tableau ci-dessus. Le critique n'entend pas la vidéo : le son se juge d'après le contrôle, qui le mesure.

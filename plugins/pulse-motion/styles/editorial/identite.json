@@ -28,6 +28,17 @@
     "roles": {
       "primaire": "chapeaux, chiffres, numéros",
       "accent": "surtitres, filets courts, flèches"
+    },
+    "mesure": {
+      "teintesMax": 1,
+      "chaleur": [
+        0.001,
+        0.073
+      ],
+      "saturee": [
+        0.001,
+        0.027
+      ]
     }
   },
   "typographie": {

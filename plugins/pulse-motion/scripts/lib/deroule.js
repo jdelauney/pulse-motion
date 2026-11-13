@@ -302,7 +302,21 @@ function validerDeroule(d) {
       err.push(`La ${nom} : « type » doit être l'un de : ${TYPES_SCENE.join(', ')} (ou absent pour une scène composée librement).`);
     }
   });
-  err.push(...validerFaits(d.faits, vus), ...validerCadrans(d.cadrans));
+  err.push(...validerFaits(d.faits, vus), ...validerCadrans(d.cadrans), ...validerEntorses(d.entorses));
+  return err;
+}
+
+/** « entorses » (spec S11, 5.4 point 4) : écarts au style nommés et voulus, appliqués dans toute la vidéo ; une entorse qui
+ *  nomme un effet lève l'avis effet-hors-style (sans effet sur le moteur). */
+function validerEntorses(entorses) {
+  if (entorses === undefined) return [];
+  const exemple = 'ex. [{ "quoi": "glitch", "pourquoi": "la vidéo parle d\'une panne informatique" }]';
+  if (!Array.isArray(entorses)) return [`« entorses » doit être une liste, ${exemple}.`];
+  const err = [];
+  entorses.forEach((e, i) => {
+    if (!estObjet(e) || !estTexte(e.quoi) || !estTexte(e.pourquoi)) err.push(`« entorses[${i}] » : { "quoi", "pourquoi" }, deux textes, ${exemple}.`);
+    else if (Object.keys(e).some((k) => !['quoi', 'pourquoi'].includes(k))) err.push(`« entorses[${i}] » n'a que « quoi » et « pourquoi ».`);
+  });
   return err;
 }
 
