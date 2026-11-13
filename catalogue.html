@@ -1,0 +1,942 @@
+<!doctype html>
+<html lang="fr" data-racine="">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Catalogue – Wiki Pulse Motion</title>
+<meta name="description" content="Ce que Pulse Motion livre : vingt styles avec leurs polices et leur signature, neuf scènes toutes faites par style, trente-quatre effets de particules, des personnages animés et leurs mouvements, des cartes de pays et de régions, quatre formats d'image.">
+<!-- langues -->
+<link rel="alternate" hreflang="fr" href="https://jdelauney.github.io/pulse-motion/catalogue.html">
+<link rel="alternate" hreflang="en" href="https://jdelauney.github.io/pulse-motion/en/catalogue.html">
+<link rel="alternate" hreflang="x-default" href="https://jdelauney.github.io/pulse-motion/catalogue.html">
+<!-- /langues -->
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/animations.css">
+<script src="js/donnees.js" defer></script>
+<script src="js/gabarit.js" defer></script>
+<script src="js/animations.js" defer></script>
+<script src="js/galerie.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<div class="mise-en-page">
+<nav class="laterale" aria-label="Sur cette page" data-laterale="sommaire"></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille">Ce qui est livré</p>
+<h1>Catalogue</h1>
+<p class="chapo">Les styles, les scènes, les effets, les personnages, les cartes et les formats livrés avec Pulse Motion. Vous n'avez pas à les connaître par cœur : Pulse Motion vous propose ceux qui conviennent à votre vidéo. Cette page vous aide à savoir quoi demander. Les entrées, les transitions et les mouvements de caméra ont leur propre galerie : <a href="mouvements.html">les mouvements</a>.</p>
+</header>
+
+<!-- ===================================================================================================== -->
+<section id="styles">
+<h2>Les vingt styles</h2>
+<p>Un style, c'est l'allure de la vidéo : ses formes, ses polices, sa façon de bouger. Votre <a href="concepts.html#charte">charte</a> (logo, couleurs, polices) s'applique par-dessus. Pour changer de style en cours de route : « passe en style éditorial ». Pour créer le vôtre : <a href="commandes/style.html"><code>/pulse-motion:style</code></a>.</p>
+<ul class="grille-cartes">
+<li><div class="carte"><span class="pastille">posé · lisible · rassurant</span><span class="carte-titre carte-titre-espace">clair-pedagogique</span><span class="carte-texte">Fond clair, titres à la couleur primaire, accents à la couleur d'accent. Pour expliquer : formation, présentation. Polices Figtree et Inter. Ton clair ou sombre.</span></div></li>
+<li><div class="carte"><span class="pastille">accueillant · doux · humain</span><span class="carte-titre carte-titre-espace">chaleureux</span><span class="carte-texte">Tons chauds (terre cuite, sauge, pêche), formes rondes, galets qui respirent. Pour un service grand public, une association, la santé. Polices Fredoka et Nunito Sans. Ton clair.</span></div></li>
+<li><div class="carte"><span class="pastille">élégant · exigeant · calme</span><span class="carte-titre carte-titre-espace">editorial</span><span class="carte-texte">La typographie porte la vidéo, comme un magazine : filets fins qui se tracent, titres très grands, mouvements lents. Pour raconter. Polices Fraunces et Instrument Sans. Ton clair (crème) ou sombre.</span></div></li>
+<li><div class="carte"><span class="pastille">audacieux · rapide · percutant</span><span class="carte-titre carte-titre-espace">energique</span><span class="carte-texte">La couleur partout, des aplats, des titres géants en capitales qui tombent et rebondissent. Pour les réseaux, un lancement. Polices Anton et Archivo. Ton clair (jaune) ou sombre.</span></div></li>
+<li><div class="carte"><span class="pastille">net · sûr · essentiel</span><span class="carte-titre carte-titre-espace">minimal</span><span class="carte-texte">Grille suisse, beaucoup d'espace, typographie démesurée, un seul détail d'accent par scène. Pour un produit, des résultats, une décision. Police Schibsted Grotesk. Ton clair ou sombre.</span></div></li>
+<li><div class="carte"><span class="pastille">précis · moderne · technique</span><span class="carte-titre carte-titre-espace">tech-sombre</span><span class="carte-texte">Fond sombre, grille qui glisse, texte qui s'écrit au clavier avec son curseur. Pour une démo de logiciel, des données, un tutoriel technique. Polices Space Grotesk et JetBrains Mono. Ton sombre ou clair.</span></div></li>
+<li><div class="carte"><span class="pastille">direct · lisible · factuel</span><span class="carte-titre carte-titre-espace">info-sans-son</span><span class="carte-texte">L'info qui se lit son coupé : une légende géante qui claque en deux ou trois morceaux, un seul mot-clé sur un bloc d'accent, des chiffres qui roulent avec leur source. Pour les réseaux, la communication interne, un chiffre clé. Polices Barlow Condensed et Barlow. Ton sombre.</span></div></li>
+<li><div class="carte"><span class="pastille">précis · méthodique · technique</span><span class="carte-titre carte-titre-espace">plan-technique</span><span class="carte-texte">Un dessin technique qui se trace sur papier cyanotype : trait blanc sur bleu, cartouche, cotes, hachures, nuage de révision, une seule pièce à l'accent. Pour l'industrie, la maintenance, une formation technique. Polices B612 et B612 Mono. Ton sombre ou clair.</span></div></li>
+<li><div class="carte"><span class="pastille">premium · épuré · lumineux</span><span class="carte-titre carte-titre-espace">lancement</span><span class="carte-texte">Le film de lancement où l'interface est la vedette : fond presque noir, lumière douce, cartes qui s'aimantent, nombre géant qui se fige. Pour lancer un produit, présenter un logiciel. Polices Sora et Manrope. Ton sombre.</span></div></li>
+</ul>
+<h3>Les styles en mouvement</h3>
+<p>Chaque style joue la même petite histoire, « la chaîne du froid » : deux images fixes (A, le titre ; B, le chiffre clé), puis ses neuf scènes toutes faites en mouvement. Les styles sont rangés par famille ; ouvrez-en un pour le voir bouger, avec sa personnalité, ses usages, ce qu'il n'est pas et sa provenance. Sur votre ordinateur, « montre-moi les autres styles » ouvre la même histoire, jouée en direct, pour choisir en regardant.</p>
+<!-- galerie:styles -->
+<section class="categorie-styles" id="styles-essentiels" data-categorie="essentiels">
+<h4>Les essentiels</h4>
+<details class="style-en-mouvement" id="style-chaleureux" data-categorie="essentiels">
+<summary>Le style <strong>chaleureux</strong> · accueillant, doux, humain</summary>
+<div class="grille-vignettes temoin">
+<figure class="vignette"><img src="medias/galerie/styles/chaleureux-temoin-a.jpg" alt="Image témoin A (titre) du style chaleureux" loading="lazy" width="480" height="270"><figcaption>A · le titre, mêmes textes pour tous les styles</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/chaleureux-temoin-b.jpg" alt="Image témoin B (chiffre clé) du style chaleureux" loading="lazy" width="480" height="270"><figcaption>B · le chiffre clé, 1 250 kg</figcaption></figure>
+</div>
+<figure class="capture"><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/styles/chaleureux-titre.jpg" aria-label="Les neuf scènes du style chaleureux"><source src="medias/galerie/styles/chaleureux.mp4" type="video/mp4"></video><figcaption>Les neuf scènes toutes faites du style chaleureux, avec le même contenu témoin, « la chaîne du froid ».</figcaption></figure>
+<div class="grille-vignettes">
+<figure class="vignette"><img src="medias/galerie/styles/chaleureux-titre.jpg" alt="Scène titre du style chaleureux" loading="lazy" width="480" height="270"><figcaption><code>titre</code> · Accueillir et ouvrir la vidéo</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/chaleureux-liste.jpg" alt="Scène liste du style chaleureux" loading="lazy" width="480" height="270"><figcaption><code>liste</code> · 2 à 4 points sur des cartes douces</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/chaleureux-chiffre.jpg" alt="Scène chiffre du style chaleureux" loading="lazy" width="480" height="270"><figcaption><code>chiffre</code> · Un chiffre dans un galet</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/chaleureux-comparaison.jpg" alt="Scène comparaison du style chaleureux" loading="lazy" width="480" height="270"><figcaption><code>comparaison</code> · Deux cartes arrondies</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/chaleureux-etape.jpg" alt="Scène etape du style chaleureux" loading="lazy" width="480" height="270"><figcaption><code>etape</code> · Une étape, numéro dans une forme ronde</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/chaleureux-alerte.jpg" alt="Scène alerte du style chaleureux" loading="lazy" width="480" height="270"><figcaption><code>alerte</code> · Un conseil important, sur une carte</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/chaleureux-schema.jpg" alt="Scène schema du style chaleureux" loading="lazy" width="480" height="270"><figcaption><code>schema</code> · Trois étapes reliées par des flèches courbes</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/chaleureux-moyeu.jpg" alt="Scène moyeu du style chaleureux" loading="lazy" width="480" height="270"><figcaption><code>moyeu</code> · Une idée au centre, 3 à 5 parties autour, reliées par des flèches</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/chaleureux-conclusion.jpg" alt="Scène conclusion du style chaleureux" loading="lazy" width="480" height="270"><figcaption><code>conclusion</code> · Le message à retenir et le logo</figcaption></figure>
+</div>
+<p><strong>Pour :</strong> Accueillir de nouveaux arrivants · Parler santé ou prévention · Présenter une association</p>
+<p><strong>Ce qu'il n'est pas :</strong> Pas un style enfantin ni de dessin animé : des formes douces, sans personnage en vedette. Ni angles vifs ni couleurs criardes.</p>
+<p><strong>Signature :</strong> Formes organiques qui respirent, cartes aux rayons généreux, mouvements doux qui s'arrêtent net</p>
+<p><strong>À faire :</strong> Un ton direct et bienveillant · Des cartes aérées</p>
+<p><strong>À éviter :</strong> Les angles vifs · Les couleurs criardes</p>
+<p><strong>Provenance :</strong> style d'origine Pulse Motion</p>
+</details>
+<details class="style-en-mouvement" id="style-clair-pedagogique" data-categorie="essentiels">
+<summary>Le style <strong>clair-pedagogique</strong> · posé, lisible, rassurant</summary>
+<div class="grille-vignettes temoin">
+<figure class="vignette"><img src="medias/galerie/styles/clair-pedagogique-temoin-a.jpg" alt="Image témoin A (titre) du style clair-pedagogique" loading="lazy" width="480" height="270"><figcaption>A · le titre, mêmes textes pour tous les styles</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/clair-pedagogique-temoin-b.jpg" alt="Image témoin B (chiffre clé) du style clair-pedagogique" loading="lazy" width="480" height="270"><figcaption>B · le chiffre clé, 1 250 kg</figcaption></figure>
+</div>
+<figure class="capture"><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/styles/clair-pedagogique-titre.jpg" aria-label="Les neuf scènes du style clair-pedagogique"><source src="medias/galerie/styles/clair-pedagogique.mp4" type="video/mp4"></video><figcaption>Les neuf scènes toutes faites du style clair-pedagogique, avec le même contenu témoin, « la chaîne du froid ».</figcaption></figure>
+<div class="grille-vignettes">
+<figure class="vignette"><img src="medias/galerie/styles/clair-pedagogique-titre.jpg" alt="Scène titre du style clair-pedagogique" loading="lazy" width="480" height="270"><figcaption><code>titre</code> · Ouvrir la vidéo ou un chapitre</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/clair-pedagogique-liste.jpg" alt="Scène liste du style clair-pedagogique" loading="lazy" width="480" height="270"><figcaption><code>liste</code> · 2 à 4 points révélés un par un</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/clair-pedagogique-chiffre.jpg" alt="Scène chiffre du style clair-pedagogique" loading="lazy" width="480" height="270"><figcaption><code>chiffre</code> · Un chiffre clé qui compte jusqu'à sa valeur</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/clair-pedagogique-comparaison.jpg" alt="Scène comparaison du style clair-pedagogique" loading="lazy" width="480" height="270"><figcaption><code>comparaison</code> · Deux colonnes : avant/après, à faire/à éviter</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/clair-pedagogique-etape.jpg" alt="Scène etape du style clair-pedagogique" loading="lazy" width="480" height="270"><figcaption><code>etape</code> · Une étape numérotée d'une procédure</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/clair-pedagogique-alerte.jpg" alt="Scène alerte du style clair-pedagogique" loading="lazy" width="480" height="270"><figcaption><code>alerte</code> · Un point de vigilance, une erreur à éviter</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/clair-pedagogique-schema.jpg" alt="Scène schema du style clair-pedagogique" loading="lazy" width="480" height="270"><figcaption><code>schema</code> · Trois étapes reliées par des flèches</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/clair-pedagogique-moyeu.jpg" alt="Scène moyeu du style clair-pedagogique" loading="lazy" width="480" height="270"><figcaption><code>moyeu</code> · Une idée au centre, 3 à 5 parties autour, reliées par des flèches</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/clair-pedagogique-conclusion.jpg" alt="Scène conclusion du style clair-pedagogique" loading="lazy" width="480" height="270"><figcaption><code>conclusion</code> · Le message à retenir et le logo</figcaption></figure>
+</div>
+<p><strong>Pour :</strong> Former une équipe · Expliquer une procédure · Présenter un produit</p>
+<p><strong>Ce qu'il n'est pas :</strong> Pas un style de terminal ni de magazine : ni grille, ni chasse fixe, ni empattements. Pas de galets ni de cartes molles comme chaleureux.</p>
+<p><strong>Signature :</strong> Grands ronds de couleur qui dérivent en fond, textes qui entrent en glissant</p>
+<p><strong>À faire :</strong> Un seul message par scène · Laisser au moins 1,5 s de lecture après la dernière entrée</p>
+<p><strong>À éviter :</strong> Plus de 4 points dans une liste · Des textes au-delà des longueurs maximales</p>
+<p><strong>Provenance :</strong> style d'origine Pulse Motion</p>
+</details>
+<details class="style-en-mouvement" id="style-editorial" data-categorie="essentiels">
+<summary>Le style <strong>editorial</strong> · élégant, exigeant, calme</summary>
+<div class="grille-vignettes temoin">
+<figure class="vignette"><img src="medias/galerie/styles/editorial-temoin-a.jpg" alt="Image témoin A (titre) du style editorial" loading="lazy" width="480" height="270"><figcaption>A · le titre, mêmes textes pour tous les styles</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/editorial-temoin-b.jpg" alt="Image témoin B (chiffre clé) du style editorial" loading="lazy" width="480" height="270"><figcaption>B · le chiffre clé, 1 250 kg</figcaption></figure>
+</div>
+<figure class="capture"><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/styles/editorial-titre.jpg" aria-label="Les neuf scènes du style editorial"><source src="medias/galerie/styles/editorial.mp4" type="video/mp4"></video><figcaption>Les neuf scènes toutes faites du style editorial, avec le même contenu témoin, « la chaîne du froid ».</figcaption></figure>
+<div class="grille-vignettes">
+<figure class="vignette"><img src="medias/galerie/styles/editorial-titre.jpg" alt="Scène titre du style editorial" loading="lazy" width="480" height="270"><figcaption><code>titre</code> · Ouvrir la vidéo ou un chapitre</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/editorial-liste.jpg" alt="Scène liste du style editorial" loading="lazy" width="480" height="270"><figcaption><code>liste</code> · 2 à 4 points, comme un sommaire</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/editorial-chiffre.jpg" alt="Scène chiffre du style editorial" loading="lazy" width="480" height="270"><figcaption><code>chiffre</code> · Un chiffre clé en très grand</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/editorial-comparaison.jpg" alt="Scène comparaison du style editorial" loading="lazy" width="480" height="270"><figcaption><code>comparaison</code> · Deux volets séparés par un filet</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/editorial-etape.jpg" alt="Scène etape du style editorial" loading="lazy" width="480" height="270"><figcaption><code>etape</code> · Une étape, numéro à empattements</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/editorial-alerte.jpg" alt="Scène alerte du style editorial" loading="lazy" width="480" height="270"><figcaption><code>alerte</code> · Un point de vigilance entre deux filets</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/editorial-schema.jpg" alt="Scène schema du style editorial" loading="lazy" width="480" height="270"><figcaption><code>schema</code> · Trois temps reliés par des flèches fines</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/editorial-moyeu.jpg" alt="Scène moyeu du style editorial" loading="lazy" width="480" height="270"><figcaption><code>moyeu</code> · Une idée au centre, 3 à 5 parties autour, reliées par des flèches</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/editorial-conclusion.jpg" alt="Scène conclusion du style editorial" loading="lazy" width="480" height="270"><figcaption><code>conclusion</code> · Le message à retenir et le logo</figcaption></figure>
+</div>
+<p><strong>Pour :</strong> Raconter un récit, un témoignage · Porter un message institutionnel · Former en prenant son temps</p>
+<p><strong>Ce qu'il n'est pas :</strong> Pas un diaporama sobre : la typographie mène, en très grand. Ni couleur en aplat, ni rebond, rien de pressé.</p>
+<p><strong>Signature :</strong> Filets fins qui se tracent, titres à empattements très grands, textes qui montent derrière un masque</p>
+<p><strong>À faire :</strong> Laisser respirer : grandes marges, peu d'éléments · Une seule couleur vive par scène</p>
+<p><strong>À éviter :</strong> Rebonds et mouvements rapides · Aplats de couleur pleins</p>
+<p><strong>Provenance :</strong> style d'origine Pulse Motion</p>
+</details>
+<details class="style-en-mouvement" id="style-energique" data-categorie="essentiels">
+<summary>Le style <strong>energique</strong> · audacieux, rapide, percutant</summary>
+<div class="grille-vignettes temoin">
+<figure class="vignette"><img src="medias/galerie/styles/energique-temoin-a.jpg" alt="Image témoin A (titre) du style energique" loading="lazy" width="480" height="270"><figcaption>A · le titre, mêmes textes pour tous les styles</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/energique-temoin-b.jpg" alt="Image témoin B (chiffre clé) du style energique" loading="lazy" width="480" height="270"><figcaption>B · le chiffre clé, 1 250 kg</figcaption></figure>
+</div>
+<figure class="capture"><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/styles/energique-titre.jpg" aria-label="Les neuf scènes du style energique"><source src="medias/galerie/styles/energique.mp4" type="video/mp4"></video><figcaption>Les neuf scènes toutes faites du style energique, avec le même contenu témoin, « la chaîne du froid ».</figcaption></figure>
+<div class="grille-vignettes">
+<figure class="vignette"><img src="medias/galerie/styles/energique-titre.jpg" alt="Scène titre du style energique" loading="lazy" width="480" height="270"><figcaption><code>titre</code> · Ouvrir fort</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/energique-liste.jpg" alt="Scène liste du style energique" loading="lazy" width="480" height="270"><figcaption><code>liste</code> · 2 à 4 points qui tombent un par un</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/energique-chiffre.jpg" alt="Scène chiffre du style energique" loading="lazy" width="480" height="270"><figcaption><code>chiffre</code> · Un chiffre choc</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/energique-comparaison.jpg" alt="Scène comparaison du style energique" loading="lazy" width="480" height="270"><figcaption><code>comparaison</code> · Avant / après en face à face</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/energique-etape.jpg" alt="Scène etape du style energique" loading="lazy" width="480" height="270"><figcaption><code>etape</code> · Une étape, numéro en pastille</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/energique-alerte.jpg" alt="Scène alerte du style energique" loading="lazy" width="480" height="270"><figcaption><code>alerte</code> · Un point d'attention, bande de chantier</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/energique-schema.jpg" alt="Scène schema du style energique" loading="lazy" width="480" height="270"><figcaption><code>schema</code> · Trois blocs enchaînés</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/energique-moyeu.jpg" alt="Scène moyeu du style energique" loading="lazy" width="480" height="270"><figcaption><code>moyeu</code> · Une idée au centre, 3 à 5 parties autour, reliées par des flèches</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/energique-conclusion.jpg" alt="Scène conclusion du style energique" loading="lazy" width="480" height="270"><figcaption><code>conclusion</code> · L'appel à l'action et le logo</figcaption></figure>
+</div>
+<p><strong>Pour :</strong> Annoncer un lancement · Publier sur les réseaux · Lancer une promotion</p>
+<p><strong>Ce qu'il n'est pas :</strong> Pas un style posé : il crie. Pas de longs textes, ni dégradés subtils, ni lenteur.</p>
+<p><strong>Signature :</strong> Aplats pleins, titres géants en capitales qui tombent et rebondissent, bandes en mouvement</p>
+<p><strong>À faire :</strong> Des titres très courts · Une idée par écran</p>
+<p><strong>À éviter :</strong> Les longs paragraphes · Plus de trois couleurs</p>
+<p><strong>Provenance :</strong> style d'origine Pulse Motion</p>
+</details>
+<details class="style-en-mouvement" id="style-minimal" data-categorie="essentiels">
+<summary>Le style <strong>minimal</strong> · net, sûr, essentiel</summary>
+<div class="grille-vignettes temoin">
+<figure class="vignette"><img src="medias/galerie/styles/minimal-temoin-a.jpg" alt="Image témoin A (titre) du style minimal" loading="lazy" width="480" height="270"><figcaption>A · le titre, mêmes textes pour tous les styles</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/minimal-temoin-b.jpg" alt="Image témoin B (chiffre clé) du style minimal" loading="lazy" width="480" height="270"><figcaption>B · le chiffre clé, 1 250 kg</figcaption></figure>
+</div>
+<figure class="capture"><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/styles/minimal-titre.jpg" aria-label="Les neuf scènes du style minimal"><source src="medias/galerie/styles/minimal.mp4" type="video/mp4"></video><figcaption>Les neuf scènes toutes faites du style minimal, avec le même contenu témoin, « la chaîne du froid ».</figcaption></figure>
+<div class="grille-vignettes">
+<figure class="vignette"><img src="medias/galerie/styles/minimal-titre.jpg" alt="Scène titre du style minimal" loading="lazy" width="480" height="270"><figcaption><code>titre</code> · Ouvrir la vidéo, titre démesuré</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/minimal-liste.jpg" alt="Scène liste du style minimal" loading="lazy" width="480" height="270"><figcaption><code>liste</code> · 2 à 4 points numérotés, alignés</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/minimal-chiffre.jpg" alt="Scène chiffre du style minimal" loading="lazy" width="480" height="270"><figcaption><code>chiffre</code> · Un chiffre clé démesuré</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/minimal-comparaison.jpg" alt="Scène comparaison du style minimal" loading="lazy" width="480" height="270"><figcaption><code>comparaison</code> · Deux colonnes sur une grille</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/minimal-etape.jpg" alt="Scène etape du style minimal" loading="lazy" width="480" height="270"><figcaption><code>etape</code> · Une étape, numéro géant</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/minimal-alerte.jpg" alt="Scène alerte du style minimal" loading="lazy" width="480" height="270"><figcaption><code>alerte</code> · Un point de vigilance, barre d'accent</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/minimal-schema.jpg" alt="Scène schema du style minimal" loading="lazy" width="480" height="270"><figcaption><code>schema</code> · Trois temps sur une ligne</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/minimal-moyeu.jpg" alt="Scène moyeu du style minimal" loading="lazy" width="480" height="270"><figcaption><code>moyeu</code> · Une idée au centre, 3 à 5 parties autour, reliées par des flèches</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/minimal-conclusion.jpg" alt="Scène conclusion du style minimal" loading="lazy" width="480" height="270"><figcaption><code>conclusion</code> · Le message à retenir et le logo</figcaption></figure>
+</div>
+<p><strong>Pour :</strong> Présenter un produit · Montrer des résultats · Annoncer une décision</p>
+<p><strong>Ce qu'il n'est pas :</strong> Pas un style vide ou froid : la grille et la typographie démesurée portent tout. Ni décor chargé, ni dégradé, ni plus d'un accent.</p>
+<p><strong>Signature :</strong> Grille suisse, beaucoup d'espace, typographie démesurée, un seul accent, mouvements courts et nets</p>
+<p><strong>À faire :</strong> Des titres très courts · Un seul accent de couleur par scène</p>
+<p><strong>À éviter :</strong> Le décor · Plusieurs couleurs</p>
+<p><strong>Provenance :</strong> lemo-opuscar, style « swiss-motion » (MIT)</p>
+</details>
+<details class="style-en-mouvement" id="style-tech-sombre" data-categorie="essentiels">
+<summary>Le style <strong>tech-sombre</strong> · précis, moderne, technique</summary>
+<div class="grille-vignettes temoin">
+<figure class="vignette"><img src="medias/galerie/styles/tech-sombre-temoin-a.jpg" alt="Image témoin A (titre) du style tech-sombre" loading="lazy" width="480" height="270"><figcaption>A · le titre, mêmes textes pour tous les styles</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/tech-sombre-temoin-b.jpg" alt="Image témoin B (chiffre clé) du style tech-sombre" loading="lazy" width="480" height="270"><figcaption>B · le chiffre clé, 1 250 kg</figcaption></figure>
+</div>
+<figure class="capture"><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/styles/tech-sombre-titre.jpg" aria-label="Les neuf scènes du style tech-sombre"><source src="medias/galerie/styles/tech-sombre.mp4" type="video/mp4"></video><figcaption>Les neuf scènes toutes faites du style tech-sombre, avec le même contenu témoin, « la chaîne du froid ».</figcaption></figure>
+<div class="grille-vignettes">
+<figure class="vignette"><img src="medias/galerie/styles/tech-sombre-titre.jpg" alt="Scène titre du style tech-sombre" loading="lazy" width="480" height="270"><figcaption><code>titre</code> · Ouvrir la vidéo, invite de commande</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/tech-sombre-liste.jpg" alt="Scène liste du style tech-sombre" loading="lazy" width="480" height="270"><figcaption><code>liste</code> · 2 à 4 lignes de journal</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/tech-sombre-chiffre.jpg" alt="Scène chiffre du style tech-sombre" loading="lazy" width="480" height="270"><figcaption><code>chiffre</code> · Une mesure qui monte, jauge</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/tech-sombre-comparaison.jpg" alt="Scène comparaison du style tech-sombre" loading="lazy" width="480" height="270"><figcaption><code>comparaison</code> · Deux panneaux, l'un actif</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/tech-sombre-etape.jpg" alt="Scène etape du style tech-sombre" loading="lazy" width="480" height="270"><figcaption><code>etape</code> · Une étape numérotée</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/tech-sombre-alerte.jpg" alt="Scène alerte du style tech-sombre" loading="lazy" width="480" height="270"><figcaption><code>alerte</code> · Un avertissement dans une console</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/tech-sombre-schema.jpg" alt="Scène schema du style tech-sombre" loading="lazy" width="480" height="270"><figcaption><code>schema</code> · Trois nœuds reliés</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/tech-sombre-moyeu.jpg" alt="Scène moyeu du style tech-sombre" loading="lazy" width="480" height="270"><figcaption><code>moyeu</code> · Une idée au centre, 3 à 5 parties autour, reliées par des flèches</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/tech-sombre-conclusion.jpg" alt="Scène conclusion du style tech-sombre" loading="lazy" width="480" height="270"><figcaption><code>conclusion</code> · Le message à retenir et le logo</figcaption></figure>
+</div>
+<p><strong>Pour :</strong> Démontrer un logiciel · Présenter des données · Faire un tutoriel technique</p>
+<p><strong>Ce qu'il n'est pas :</strong> Pas un écran de science-fiction : ni néon criard ni lueurs partout. Pas un style chaleureux : chasse fixe, angles nets, un seul accent.</p>
+<p><strong>Signature :</strong> Grille de fond qui glisse, texte qui s'écrit comme au clavier avec un curseur, chiffres à chasse fixe, accent lumineux</p>
+<p><strong>À faire :</strong> Des phrases courtes et factuelles · Un seul accent lumineux par scène</p>
+<p><strong>À éviter :</strong> Les rebonds · Les couleurs chaudes vives</p>
+<p><strong>Provenance :</strong> style d'origine Pulse Motion</p>
+</details>
+</section>
+<section class="categorie-styles" id="styles-dessine" data-categorie="dessine">
+<h4>Dessiné à la main</h4>
+<details class="style-en-mouvement" id="style-carnet" data-categorie="dessine">
+<summary>Le style <strong>carnet</strong> · spontané, chaleureux, curieux</summary>
+<div class="grille-vignettes temoin">
+<figure class="vignette"><img src="medias/galerie/styles/carnet-temoin-a.jpg" alt="Image témoin A (titre) du style carnet" loading="lazy" width="480" height="270"><figcaption>A · le titre, mêmes textes pour tous les styles</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/carnet-temoin-b.jpg" alt="Image témoin B (chiffre clé) du style carnet" loading="lazy" width="480" height="270"><figcaption>B · le chiffre clé, 1 250 kg</figcaption></figure>
+</div>
+<figure class="capture"><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/styles/carnet-titre.jpg" aria-label="Les neuf scènes du style carnet"><source src="medias/galerie/styles/carnet.mp4" type="video/mp4"></video><figcaption>Les neuf scènes toutes faites du style carnet, avec le même contenu témoin, « la chaîne du froid ».</figcaption></figure>
+<div class="grille-vignettes">
+<figure class="vignette"><img src="medias/galerie/styles/carnet-titre.jpg" alt="Scène titre du style carnet" loading="lazy" width="480" height="270"><figcaption><code>titre</code> · Le titre s'écrit, une seule ligne en fait le tour</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/carnet-liste.jpg" alt="Scène liste du style carnet" loading="lazy" width="480" height="270"><figcaption><code>liste</code> · 2 à 4 points, une puce dessinée devant chacun</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/carnet-chiffre.jpg" alt="Scène chiffre du style carnet" loading="lazy" width="480" height="270"><figcaption><code>chiffre</code> · Un chiffre écrit, entouré et hachuré</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/carnet-comparaison.jpg" alt="Scène comparaison du style carnet" loading="lazy" width="480" height="270"><figcaption><code>comparaison</code> · Deux croquis, celui qui compte hachuré</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/carnet-etape.jpg" alt="Scène etape du style carnet" loading="lazy" width="480" height="270"><figcaption><code>etape</code> · Une étape : son numéro entouré, puis ce qu'il faut faire</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/carnet-alerte.jpg" alt="Scène alerte du style carnet" loading="lazy" width="480" height="270"><figcaption><code>alerte</code> · Une note dans la marge, encadrée à la main</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/carnet-schema.jpg" alt="Scène schema du style carnet" loading="lazy" width="480" height="270"><figcaption><code>schema</code> · Trois idées reliées par des flèches tremblées</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/carnet-moyeu.jpg" alt="Scène moyeu du style carnet" loading="lazy" width="480" height="270"><figcaption><code>moyeu</code> · Une idée au centre, 3 à 5 parties autour, reliées par des flèches</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/carnet-conclusion.jpg" alt="Scène conclusion du style carnet" loading="lazy" width="480" height="270"><figcaption><code>conclusion</code> · Ce qu'il faut retenir, d'une seule ligne, et le logo</figcaption></figure>
+</div>
+<p><strong>Pour :</strong> Raconter une idée ou une démarche · Résumer un atelier · Expliquer avec des croquis</p>
+<p><strong>Ce qu'il n'est pas :</strong> Pas un tableau blanc : du papier, pas de feutres flottants. Pas un dessin au crayon gras : de l'encre, sans cire ni lavis. Pas chaleureux : des traits dessinés, pas des cartes arrondies.</p>
+<p><strong>Signature :</strong> Croquis au feutre sur papier crème : traits qui tremblent un peu et ne se ferment pas tout à fait, hachures à la main, une seule ligne qui fait le tour de ce qui compte, notes dans la marge</p>
+<p><strong>À faire :</strong> Laisser la vidéo se dessiner, un trait après l'autre · Une seule ligne pour ce qui compte</p>
+<p><strong>À éviter :</strong> Faire trembler un texte à lire · Une rugosité qui rend le 9:16 illisible</p>
+<p><strong>Provenance :</strong> explainroo, style « paper » (MIT) · take-one, style « sketchbook » (MIT) · lemo-opuscar, style « one-line » (MIT)</p>
+</details>
+<details class="style-en-mouvement" id="style-crayon" data-categorie="dessine">
+<summary>Le style <strong>crayon</strong> · tendre, artisanal, patient</summary>
+<div class="grille-vignettes temoin">
+<figure class="vignette"><img src="medias/galerie/styles/crayon-temoin-a.jpg" alt="Image témoin A (titre) du style crayon" loading="lazy" width="480" height="270"><figcaption>A · le titre, mêmes textes pour tous les styles</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/crayon-temoin-b.jpg" alt="Image témoin B (chiffre clé) du style crayon" loading="lazy" width="480" height="270"><figcaption>B · le chiffre clé, 1 250 kg</figcaption></figure>
+</div>
+<figure class="capture"><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/styles/crayon-titre.jpg" aria-label="Les neuf scènes du style crayon"><source src="medias/galerie/styles/crayon.mp4" type="video/mp4"></video><figcaption>Les neuf scènes toutes faites du style crayon, avec le même contenu témoin, « la chaîne du froid ».</figcaption></figure>
+<div class="grille-vignettes">
+<figure class="vignette"><img src="medias/galerie/styles/crayon-titre.jpg" alt="Scène titre du style crayon" loading="lazy" width="480" height="270"><figcaption><code>titre</code> · Le titre s'écrit, un lavis passe dessous, le crayon le souligne</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/crayon-liste.jpg" alt="Scène liste du style crayon" loading="lazy" width="480" height="270"><figcaption><code>liste</code> · 2 à 4 points, une tache de cire devant chacun</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/crayon-chiffre.jpg" alt="Scène chiffre du style crayon" loading="lazy" width="480" height="270"><figcaption><code>chiffre</code> · Un chiffre écrit, entouré au crayon, révélé par le lavis</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/crayon-comparaison.jpg" alt="Scène comparaison du style crayon" loading="lazy" width="480" height="270"><figcaption><code>comparaison</code> · Deux pages, celle qui compte lavée et encadrée à l'accent</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/crayon-etape.jpg" alt="Scène etape du style crayon" loading="lazy" width="480" height="270"><figcaption><code>etape</code> · Une étape : son numéro entouré, puis ce qu'il faut faire</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/crayon-alerte.jpg" alt="Scène alerte du style crayon" loading="lazy" width="480" height="270"><figcaption><code>alerte</code> · Une note sur un lavis chaud, encadrée au crayon</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/crayon-schema.jpg" alt="Scène schema du style crayon" loading="lazy" width="480" height="270"><figcaption><code>schema</code> · Trois idées reliées par des flèches au crayon</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/crayon-moyeu.jpg" alt="Scène moyeu du style crayon" loading="lazy" width="480" height="270"><figcaption><code>moyeu</code> · Une idée au centre, 3 à 5 parties autour, reliées par des flèches</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/crayon-conclusion.jpg" alt="Scène conclusion du style crayon" loading="lazy" width="480" height="270"><figcaption><code>conclusion</code> · Ce qu'il faut retenir, lavé et souligné, et le logo</figcaption></figure>
+</div>
+<p><strong>Pour :</strong> Sensibiliser le grand public · Raconter une histoire simple · Expliquer à des enfants ou des familles</p>
+<p><strong>Ce qu'il n'est pas :</strong> Pas un carnet de croquis : de la cire et du lavis, pas de l'encre ni des hachures. Pas un tableau : une page d'album, du papier à grain.</p>
+<p><strong>Signature :</strong> Page d'album au crayon gras sur papier à grain : la cire ne prend que sur les bosses du papier, un lavis translucide passe dessous et révèle, les traits frémissent doucement</p>
+<p><strong>À faire :</strong> Laisser la page se dessiner, un trait de cire après l'autre · Un lavis pour révéler ce qui compte, pas partout</p>
+<p><strong>À éviter :</strong> Faire trembler un texte à lire · Plus de trois crayons dans une même scène</p>
+<p><strong>Provenance :</strong> lemo-opuscar, style « crayon-book » (MIT) · take-one, style « crayon-storybook » (MIT)</p>
+</details>
+<details class="style-en-mouvement" id="style-tableau-blanc" data-categorie="dessine">
+<summary>Le style <strong>tableau-blanc</strong> · clair, posé, pédagogique</summary>
+<div class="grille-vignettes temoin">
+<figure class="vignette"><img src="medias/galerie/styles/tableau-blanc-temoin-a.jpg" alt="Image témoin A (titre) du style tableau-blanc" loading="lazy" width="480" height="270"><figcaption>A · le titre, mêmes textes pour tous les styles</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/tableau-blanc-temoin-b.jpg" alt="Image témoin B (chiffre clé) du style tableau-blanc" loading="lazy" width="480" height="270"><figcaption>B · le chiffre clé, 1 250 kg</figcaption></figure>
+</div>
+<figure class="capture"><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/styles/tableau-blanc-titre.jpg" aria-label="Les neuf scènes du style tableau-blanc"><source src="medias/galerie/styles/tableau-blanc.mp4" type="video/mp4"></video><figcaption>Les neuf scènes toutes faites du style tableau-blanc, avec le même contenu témoin, « la chaîne du froid ».</figcaption></figure>
+<div class="grille-vignettes">
+<figure class="vignette"><img src="medias/galerie/styles/tableau-blanc-titre.jpg" alt="Scène titre du style tableau-blanc" loading="lazy" width="480" height="270"><figcaption><code>titre</code> · Le titre s'écrit au feutre et se souligne</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/tableau-blanc-liste.jpg" alt="Scène liste du style tableau-blanc" loading="lazy" width="480" height="270"><figcaption><code>liste</code> · 2 à 4 points, chacun tenu par un aimant</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/tableau-blanc-chiffre.jpg" alt="Scène chiffre du style tableau-blanc" loading="lazy" width="480" height="270"><figcaption><code>chiffre</code> · Un chiffre écrit et entouré</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/tableau-blanc-comparaison.jpg" alt="Scène comparaison du style tableau-blanc" loading="lazy" width="480" height="270"><figcaption><code>comparaison</code> · Deux régions du tableau, celle qui compte encadrée à l'accent</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/tableau-blanc-etape.jpg" alt="Scène etape du style tableau-blanc" loading="lazy" width="480" height="270"><figcaption><code>etape</code> · Une étape : son numéro entouré, puis ce qu'il faut faire</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/tableau-blanc-alerte.jpg" alt="Scène alerte du style tableau-blanc" loading="lazy" width="480" height="270"><figcaption><code>alerte</code> · Ce qu'il ne faut pas oublier, encadré à l'accent</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/tableau-blanc-schema.jpg" alt="Scène schema du style tableau-blanc" loading="lazy" width="480" height="270"><figcaption><code>schema</code> · Trois idées reliées par des flèches, la caméra recule pour tout voir</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/tableau-blanc-moyeu.jpg" alt="Scène moyeu du style tableau-blanc" loading="lazy" width="480" height="270"><figcaption><code>moyeu</code> · Une idée au centre, 3 à 5 parties autour, reliées par des flèches</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/tableau-blanc-conclusion.jpg" alt="Scène conclusion du style tableau-blanc" loading="lazy" width="480" height="270"><figcaption><code>conclusion</code> · Ce qu'il faut retenir, souligné, et le logo</figcaption></figure>
+</div>
+<p><strong>Pour :</strong> Expliquer une notion pas à pas · Former en salle ou à distance · Dessiner un processus au tableau</p>
+<p><strong>Ce qu'il n'est pas :</strong> Pas un plan technique : trait à la main, pas à la règle. Pas un carnet au crayon : feutre sur tableau brillant. Pas de la typographie animée : du vrai feutre, écrit dans l'ordre.</p>
+<p><strong>Signature :</strong> Feutre sur tableau blanc brillant : le texte s'écrit dans l'ordre, l'encre fonce où deux traits se croisent, un feutre flotte avec son ombre puis se gare hors champ, des aimants tiennent les points</p>
+<p><strong>À faire :</strong> Écrire chaque texte au feutre (data-lettres=&quot;ecrit&quot;) · Garder à chaque feutre son sens toute la vidéo</p>
+<p><strong>À éviter :</strong> Une coupe sur le tableau (préférer whip ou glissement) · Plus de trois feutres, ou l'accent partout</p>
+<p><strong>Provenance :</strong> lemo-opuscar, style « whiteboard » (MIT)</p>
+</details>
+<details class="style-en-mouvement" id="style-tableau-noir" data-categorie="dessine">
+<summary>Le style <strong>tableau-noir</strong> · calme, scolaire, attentif</summary>
+<div class="grille-vignettes temoin">
+<figure class="vignette"><img src="medias/galerie/styles/tableau-noir-temoin-a.jpg" alt="Image témoin A (titre) du style tableau-noir" loading="lazy" width="480" height="270"><figcaption>A · le titre, mêmes textes pour tous les styles</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/tableau-noir-temoin-b.jpg" alt="Image témoin B (chiffre clé) du style tableau-noir" loading="lazy" width="480" height="270"><figcaption>B · le chiffre clé, 1 250 kg</figcaption></figure>
+</div>
+<figure class="capture"><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/styles/tableau-noir-titre.jpg" aria-label="Les neuf scènes du style tableau-noir"><source src="medias/galerie/styles/tableau-noir.mp4" type="video/mp4"></video><figcaption>Les neuf scènes toutes faites du style tableau-noir, avec le même contenu témoin, « la chaîne du froid ».</figcaption></figure>
+<div class="grille-vignettes">
+<figure class="vignette"><img src="medias/galerie/styles/tableau-noir-titre.jpg" alt="Scène titre du style tableau-noir" loading="lazy" width="480" height="270"><figcaption><code>titre</code> · Le titre s'écrit à la craie et se souligne</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/tableau-noir-liste.jpg" alt="Scène liste du style tableau-noir" loading="lazy" width="480" height="270"><figcaption><code>liste</code> · 2 à 4 points, un tiret de craie devant chacun</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/tableau-noir-chiffre.jpg" alt="Scène chiffre du style tableau-noir" loading="lazy" width="480" height="270"><figcaption><code>chiffre</code> · Un chiffre écrit et entouré</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/tableau-noir-comparaison.jpg" alt="Scène comparaison du style tableau-noir" loading="lazy" width="480" height="270"><figcaption><code>comparaison</code> · Deux panneaux, celui qui compte encadré à la craie d'accent</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/tableau-noir-etape.jpg" alt="Scène etape du style tableau-noir" loading="lazy" width="480" height="270"><figcaption><code>etape</code> · Une étape : son numéro entouré, puis ce qu'il faut faire</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/tableau-noir-alerte.jpg" alt="Scène alerte du style tableau-noir" loading="lazy" width="480" height="270"><figcaption><code>alerte</code> · Ce qu'il ne faut pas oublier, écrit après un coup d'éponge</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/tableau-noir-schema.jpg" alt="Scène schema du style tableau-noir" loading="lazy" width="480" height="270"><figcaption><code>schema</code> · Trois idées reliées à la craie, de face</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/tableau-noir-moyeu.jpg" alt="Scène moyeu du style tableau-noir" loading="lazy" width="480" height="270"><figcaption><code>moyeu</code> · Une idée au centre, 3 à 5 parties autour, reliées par des flèches</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/tableau-noir-conclusion.jpg" alt="Scène conclusion du style tableau-noir" loading="lazy" width="480" height="270"><figcaption><code>conclusion</code> · Ce qu'il faut retenir, souligné, et le logo</figcaption></figure>
+</div>
+<p><strong>Pour :</strong> Faire un cours · Réviser une notion · Raconter une méthode pas à pas</p>
+<p><strong>Ce qu'il n'est pas :</strong> Pas un tableau blanc : ni brillant, ni feutres, ni aimants, ni marques fantômes. La caméra reste de face, devant le tableau.</p>
+<p><strong>Signature :</strong> Craie sur ardoise verte mate : le texte s'écrit avec pression, le grain du tableau mord la craie, un peu de poussière au lever du trait, une lumière de fenêtre qui glisse</p>
+<p><strong>À faire :</strong> Peu de mots, grandes lettres, écrits à la craie · Garder le tableau vivant (marbrure, lumière de fenêtre)</p>
+<p><strong>À éviter :</strong> La craie d'accent partout · Plus d'un effacement par vidéo</p>
+<p><strong>Provenance :</strong> lemo-opuscar, style « chalkboard » (MIT) · explainroo, style « chalk » (MIT)</p>
+</details>
+</section>
+<section class="categorie-styles" id="styles-schemas-donnees" data-categorie="schemas-donnees">
+<h4>Schémas et données</h4>
+<details class="style-en-mouvement" id="style-iso-album" data-categorie="schemas-donnees">
+<summary>Le style <strong>iso-album</strong> · calme, bienveillant, précis</summary>
+<div class="grille-vignettes temoin">
+<figure class="vignette"><img src="medias/galerie/styles/iso-album-temoin-a.jpg" alt="Image témoin A (titre) du style iso-album" loading="lazy" width="480" height="270"><figcaption>A · le titre, mêmes textes pour tous les styles</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/iso-album-temoin-b.jpg" alt="Image témoin B (chiffre clé) du style iso-album" loading="lazy" width="480" height="270"><figcaption>B · le chiffre clé, 1 250 kg</figcaption></figure>
+</div>
+<figure class="capture"><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/styles/iso-album-titre.jpg" aria-label="Les neuf scènes du style iso-album"><source src="medias/galerie/styles/iso-album.mp4" type="video/mp4"></video><figcaption>Les neuf scènes toutes faites du style iso-album, avec le même contenu témoin, « la chaîne du froid ».</figcaption></figure>
+<div class="grille-vignettes">
+<figure class="vignette"><img src="medias/galerie/styles/iso-album-titre.jpg" alt="Scène titre du style iso-album" loading="lazy" width="480" height="270"><figcaption><code>titre</code> · Le lieu, l'étiquette écrite au sol, les personnes qui entrent</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/iso-album-liste.jpg" alt="Scène liste du style iso-album" loading="lazy" width="480" height="270"><figcaption><code>liste</code> · La règle dans l'ordre, la file qui se forme</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/iso-album-chiffre.jpg" alt="Scène chiffre du style iso-album" loading="lazy" width="480" height="270"><figcaption><code>chiffre</code> · La valeur se compte, les personnes arrivent</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/iso-album-comparaison.jpg" alt="Scène comparaison du style iso-album" loading="lazy" width="480" height="270"><figcaption><code>comparaison</code> · Deux façons côte à côte, la bonne plus rapide</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/iso-album-etape.jpg" alt="Scène etape du style iso-album" loading="lazy" width="480" height="270"><figcaption><code>etape</code> · Le numéro au sol, la personne à sa place</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/iso-album-alerte.jpg" alt="Scène alerte du style iso-album" loading="lazy" width="480" height="270"><figcaption><code>alerte</code> · Le danger dans le lieu, la personne s'arrête</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/iso-album-schema.jpg" alt="Scène schema du style iso-album" loading="lazy" width="480" height="270"><figcaption><code>schema</code> · Trois lieux du parcours reliés</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/iso-album-moyeu.jpg" alt="Scène moyeu du style iso-album" loading="lazy" width="480" height="270"><figcaption><code>moyeu</code> · Une idée au centre, 3 à 5 parties autour, reliées par des flèches</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/iso-album-conclusion.jpg" alt="Scène conclusion du style iso-album" loading="lazy" width="480" height="270"><figcaption><code>conclusion</code> · Le lieu entier, chacun à sa place ; la leçon et le logo</figcaption></figure>
+</div>
+<p><strong>Pour :</strong> Expliquer une consigne de sécurité · Présenter une procédure d'accueil · Montrer le bon ordre de passage</p>
+<p><strong>Ce qu'il n'est pas :</strong> Pas un dessin animé à gags : de petits personnages sans visage, vus de dos. Pas iso-infographie : un lieu habité et une règle du quotidien, pas un système à démonter.</p>
+<p><strong>Signature :</strong> Un lieu du quotidien en vraie isométrie à aplats, de petits personnages vus de dos qui font la chose dans l'ordre, et la règle écrite au sol, lettre à lettre</p>
+<p><strong>À faire :</strong> Jouer la règle dans l'ordre, une étape à la fois · Poser le texte au sol, près de ce qu'il dit</p>
+<p><strong>À éviter :</strong> Les visages, les expressions, les gags · Plusieurs règles dans le même lieu</p>
+<p><strong>Provenance :</strong> lemo-opuscar, style « isometric-picture-book » (MIT)</p>
+</details>
+<details class="style-en-mouvement" id="style-iso-infographie" data-categorie="schemas-donnees">
+<summary>Le style <strong>iso-infographie</strong> · clair, structuré, ingénieux</summary>
+<div class="grille-vignettes temoin">
+<figure class="vignette"><img src="medias/galerie/styles/iso-infographie-temoin-a.jpg" alt="Image témoin A (titre) du style iso-infographie" loading="lazy" width="480" height="270"><figcaption>A · le titre, mêmes textes pour tous les styles</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/iso-infographie-temoin-b.jpg" alt="Image témoin B (chiffre clé) du style iso-infographie" loading="lazy" width="480" height="270"><figcaption>B · le chiffre clé, 1 250 kg</figcaption></figure>
+</div>
+<figure class="capture"><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/styles/iso-infographie-titre.jpg" aria-label="Les neuf scènes du style iso-infographie"><source src="medias/galerie/styles/iso-infographie.mp4" type="video/mp4"></video><figcaption>Les neuf scènes toutes faites du style iso-infographie, avec le même contenu témoin, « la chaîne du froid ».</figcaption></figure>
+<div class="grille-vignettes">
+<figure class="vignette"><img src="medias/galerie/styles/iso-infographie-titre.jpg" alt="Scène titre du style iso-infographie" loading="lazy" width="480" height="270"><figcaption><code>titre</code> · Le site se construit, puis le titre</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/iso-infographie-liste.jpg" alt="Scène liste du style iso-infographie" loading="lazy" width="480" height="270"><figcaption><code>liste</code> · Chaque point pose son bloc sur la pile</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/iso-infographie-chiffre.jpg" alt="Scène chiffre du style iso-infographie" loading="lazy" width="480" height="270"><figcaption><code>chiffre</code> · La valeur compte, la pile monte, les silhouettes arrivent</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/iso-infographie-comparaison.jpg" alt="Scène comparaison du style iso-infographie" loading="lazy" width="480" height="270"><figcaption><code>comparaison</code> · Deux maquettes, la première passe au gris</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/iso-infographie-etape.jpg" alt="Scène etape du style iso-infographie" loading="lazy" width="480" height="270"><figcaption><code>etape</code> · Le numéro, la machine s'ouvre</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/iso-infographie-alerte.jpg" alt="Scène alerte du style iso-infographie" loading="lazy" width="480" height="270"><figcaption><code>alerte</code> · Tout au gris sauf le point qui compte</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/iso-infographie-schema.jpg" alt="Scène schema du style iso-infographie" loading="lazy" width="480" height="270"><figcaption><code>schema</code> · Trois maquettes reliées</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/iso-infographie-moyeu.jpg" alt="Scène moyeu du style iso-infographie" loading="lazy" width="480" height="270"><figcaption><code>moyeu</code> · Une idée au centre, 3 à 5 parties autour, reliées par des flèches</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/iso-infographie-conclusion.jpg" alt="Scène conclusion du style iso-infographie" loading="lazy" width="480" height="270"><figcaption><code>conclusion</code> · Le recul sur le site fini, la leçon et le logo</figcaption></figure>
+</div>
+<p><strong>Pour :</strong> Expliquer un système ou un circuit · Montrer un site, un entrepôt, une usine · Faire voir l'intérieur d'une machine</p>
+<p><strong>Ce qu'il n'est pas :</strong> Pas de la 3D low-poly : des blocs plats à trois tons, sans lumière ni perspective. Pas un schéma plat ni plan-technique : des volumes, pas des traits.</p>
+<p><strong>Signature :</strong> Un diorama isométrique de blocs plats à trois tons qui se construit, étiquettes fines au fil, nombres en Isotype ; les choses s'ouvrent pour montrer leur intérieur</p>
+<p><strong>À faire :</strong> Une couleur par type d'objet, l'accent pour le seul sujet · Construire le système bloc par bloc, dans l'ordre où il fonctionne</p>
+<p><strong>À éviter :</strong> Les ombres portées, les reflets, la perspective · Trop d'objets : au recul, ils deviennent illisibles</p>
+<p><strong>Provenance :</strong> lemo-opuscar, style « iso-infographic » (MIT)</p>
+</details>
+<details class="style-en-mouvement" id="style-pictogrammes" data-categorie="schemas-donnees">
+<summary>Le style <strong>pictogrammes</strong> · clair, rythmé, universel</summary>
+<div class="grille-vignettes temoin">
+<figure class="vignette"><img src="medias/galerie/styles/pictogrammes-temoin-a.jpg" alt="Image témoin A (titre) du style pictogrammes" loading="lazy" width="480" height="270"><figcaption>A · le titre, mêmes textes pour tous les styles</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/pictogrammes-temoin-b.jpg" alt="Image témoin B (chiffre clé) du style pictogrammes" loading="lazy" width="480" height="270"><figcaption>B · le chiffre clé, 1 250 kg</figcaption></figure>
+</div>
+<figure class="capture"><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/styles/pictogrammes-titre.jpg" aria-label="Les neuf scènes du style pictogrammes"><source src="medias/galerie/styles/pictogrammes.mp4" type="video/mp4"></video><figcaption>Les neuf scènes toutes faites du style pictogrammes, avec le même contenu témoin, « la chaîne du froid ».</figcaption></figure>
+<div class="grille-vignettes">
+<figure class="vignette"><img src="medias/galerie/styles/pictogrammes-titre.jpg" alt="Scène titre du style pictogrammes" loading="lazy" width="480" height="270"><figcaption><code>titre</code> · Le film catalogue, un panneau par temps, puis le titre</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/pictogrammes-liste.jpg" alt="Scène liste du style pictogrammes" loading="lazy" width="480" height="270"><figcaption><code>liste</code> · 2 à 4 points, un par temps, une puce de la grille devant chacun</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/pictogrammes-chiffre.jpg" alt="Scène chiffre du style pictogrammes" loading="lazy" width="480" height="270"><figcaption><code>chiffre</code> · Un chiffre qui compte et le compte en pictogrammes</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/pictogrammes-comparaison.jpg" alt="Scène comparaison du style pictogrammes" loading="lazy" width="480" height="270"><figcaption><code>comparaison</code> · Deux panneaux, la croix puis la coche</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/pictogrammes-etape.jpg" alt="Scène etape du style pictogrammes" loading="lazy" width="480" height="270"><figcaption><code>etape</code> · Le numéro sur son disque, puis l'action</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/pictogrammes-alerte.jpg" alt="Scène alerte du style pictogrammes" loading="lazy" width="480" height="270"><figcaption><code>alerte</code> · Le panneau « attention », dans un cadre d'accent</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/pictogrammes-schema.jpg" alt="Scène schema du style pictogrammes" loading="lazy" width="480" height="270"><figcaption><code>schema</code> · Trois cases reliées, une par temps</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/pictogrammes-moyeu.jpg" alt="Scène moyeu du style pictogrammes" loading="lazy" width="480" height="270"><figcaption><code>moyeu</code> · Une idée au centre, 3 à 5 parties autour, reliées par des flèches</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/pictogrammes-conclusion.jpg" alt="Scène conclusion du style pictogrammes" loading="lazy" width="480" height="270"><figcaption><code>conclusion</code> · La flèche devient une coche, puis ce qu'il faut retenir et le logo</figcaption></figure>
+</div>
+<p><strong>Pour :</strong> Donner une consigne ou un mode d'emploi · Présenter un service public ou interne · Montrer une quantité en silhouettes</p>
+<p><strong>Ce qu'il n'est pas :</strong> Pas une infographie isométrique : tout est plat, de face. Pas des icônes d'interface : des panneaux, une grille et des temps.</p>
+<p><strong>Signature :</strong> Une signalétique qui s'anime sur les temps : des pictogrammes géométriques posés un par temps, une grille-motif de ronds, de demi-disques et de cellules dont les rangées glissent d'une cellule par temps, une typographie de panneau</p>
+<p><strong>À faire :</strong> Poser chaque chose sur un temps · Un pictogramme par idée, jamais une illustration</p>
+<p><strong>À éviter :</strong> Des pictogrammes détaillés ou en couleurs multiples · Un mouvement qui tombe entre deux temps</p>
+<p><strong>Provenance :</strong> lemo-opuscar, style « pictogram-motion » (MIT)</p>
+</details>
+<details class="style-en-mouvement" id="style-plan-technique" data-categorie="schemas-donnees">
+<summary>Le style <strong>plan-technique</strong> · précis, méthodique, technique</summary>
+<div class="grille-vignettes temoin">
+<figure class="vignette"><img src="medias/galerie/styles/plan-technique-temoin-a.jpg" alt="Image témoin A (titre) du style plan-technique" loading="lazy" width="480" height="270"><figcaption>A · le titre, mêmes textes pour tous les styles</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/plan-technique-temoin-b.jpg" alt="Image témoin B (chiffre clé) du style plan-technique" loading="lazy" width="480" height="270"><figcaption>B · le chiffre clé, 1 250 kg</figcaption></figure>
+</div>
+<figure class="capture"><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/styles/plan-technique-titre.jpg" aria-label="Les neuf scènes du style plan-technique"><source src="medias/galerie/styles/plan-technique.mp4" type="video/mp4"></video><figcaption>Les neuf scènes toutes faites du style plan-technique, avec le même contenu témoin, « la chaîne du froid ».</figcaption></figure>
+<div class="grille-vignettes">
+<figure class="vignette"><img src="medias/galerie/styles/plan-technique-titre.jpg" alt="Scène titre du style plan-technique" loading="lazy" width="480" height="270"><figcaption><code>titre</code> · Ouvrir sur le cadre, le cartouche et le titre</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/plan-technique-liste.jpg" alt="Scène liste du style plan-technique" loading="lazy" width="480" height="270"><figcaption><code>liste</code> · Une nomenclature de 2 à 4 repères</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/plan-technique-chiffre.jpg" alt="Scène chiffre du style plan-technique" loading="lazy" width="480" height="270"><figcaption><code>chiffre</code> · Une mesure, sa cote et sa coupe</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/plan-technique-comparaison.jpg" alt="Scène comparaison du style plan-technique" loading="lazy" width="480" height="270"><figcaption><code>comparaison</code> · Deux vues, celle qui compte à l'accent</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/plan-technique-etape.jpg" alt="Scène etape du style plan-technique" loading="lazy" width="480" height="270"><figcaption><code>etape</code> · Une étape, son repère au compas</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/plan-technique-alerte.jpg" alt="Scène alerte du style plan-technique" loading="lazy" width="480" height="270"><figcaption><code>alerte</code> · Un nuage de révision</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/plan-technique-schema.jpg" alt="Scène schema du style plan-technique" loading="lazy" width="480" height="270"><figcaption><code>schema</code> · Trois pièces reliées</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/plan-technique-moyeu.jpg" alt="Scène moyeu du style plan-technique" loading="lazy" width="480" height="270"><figcaption><code>moyeu</code> · Une idée au centre, 3 à 5 parties autour, reliées par des flèches</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/plan-technique-conclusion.jpg" alt="Scène conclusion du style plan-technique" loading="lazy" width="480" height="270"><figcaption><code>conclusion</code> · La pièce à retenir et le logo</figcaption></figure>
+</div>
+<p><strong>Pour :</strong> Expliquer une machine ou une pièce · Former à la maintenance · Présenter un procédé industriel</p>
+<p><strong>Ce qu'il n'est pas :</strong> Pas tech-sombre : ni interface, ni clavier, ni texte tapé. Pas un tableau blanc : trait à la règle, sans main. Pas une infographie isométrique : des lignes, pas des blocs de couleur.</p>
+<p><strong>Signature :</strong> Trait blanc sur bleu de Prusse tracé dans l'ordre du dessinateur, grille fine, cartouche, cotes fléchées, hachures de coupe, une seule pièce à l'accent</p>
+<p><strong>À faire :</strong> Tracer dans l'ordre : cadre, contours, détails, cotes · Une seule pièce à l'accent par scène</p>
+<p><strong>À éviter :</strong> Les rebonds et les entrées vives · Trop de tracés en même temps</p>
+<p><strong>Provenance :</strong> lemo-opuscar, style « blueprint » (MIT) · explainroo, style « blueprint » (MIT)</p>
+</details>
+<details class="style-en-mouvement" id="style-recit-donnees" data-categorie="schemas-donnees">
+<summary>Le style <strong>recit-donnees</strong> · rigoureux, clair, narratif</summary>
+<div class="grille-vignettes temoin">
+<figure class="vignette"><img src="medias/galerie/styles/recit-donnees-temoin-a.jpg" alt="Image témoin A (titre) du style recit-donnees" loading="lazy" width="480" height="270"><figcaption>A · le titre, mêmes textes pour tous les styles</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/recit-donnees-temoin-b.jpg" alt="Image témoin B (chiffre clé) du style recit-donnees" loading="lazy" width="480" height="270"><figcaption>B · le chiffre clé, 1 250 kg</figcaption></figure>
+</div>
+<figure class="capture"><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/styles/recit-donnees-titre.jpg" aria-label="Les neuf scènes du style recit-donnees"><source src="medias/galerie/styles/recit-donnees.mp4" type="video/mp4"></video><figcaption>Les neuf scènes toutes faites du style recit-donnees, avec le même contenu témoin, « la chaîne du froid ».</figcaption></figure>
+<div class="grille-vignettes">
+<figure class="vignette"><img src="medias/galerie/styles/recit-donnees-titre.jpg" alt="Scène titre du style recit-donnees" loading="lazy" width="480" height="270"><figcaption><code>titre</code> · Les axes se tracent, le titre arrive, la question s'épingle</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/recit-donnees-liste.jpg" alt="Scène liste du style recit-donnees" loading="lazy" width="480" height="270"><figcaption><code>liste</code> · Un point, un fait : 2 à 4 faits posés sur l'axe</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/recit-donnees-chiffre.jpg" alt="Scène chiffre du style recit-donnees" loading="lazy" width="480" height="270"><figcaption><code>chiffre</code> · La valeur qui compte : elle pousse depuis zéro, sa note s'épingle</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/recit-donnees-comparaison.jpg" alt="Scène comparaison du style recit-donnees" loading="lazy" width="480" height="270"><figcaption><code>comparaison</code> · Deux séries, chacune sa couleur ; celle qui compte à l'accent</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/recit-donnees-etape.jpg" alt="Scène etape du style recit-donnees" loading="lazy" width="480" height="270"><figcaption><code>etape</code> · Un repère sur l'axe du temps, puis ce qui s'y passe</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/recit-donnees-alerte.jpg" alt="Scène alerte du style recit-donnees" loading="lazy" width="480" height="270"><figcaption><code>alerte</code> · La case vide : ce qu'on ne sait pas, en pointillés</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/recit-donnees-schema.jpg" alt="Scène schema du style recit-donnees" loading="lazy" width="480" height="270"><figcaption><code>schema</code> · Trois étapes d'un flux reliées par des flèches</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/recit-donnees-moyeu.jpg" alt="Scène moyeu du style recit-donnees" loading="lazy" width="480" height="270"><figcaption><code>moyeu</code> · Une idée au centre, 3 à 5 parties autour, reliées par des flèches</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/recit-donnees-conclusion.jpg" alt="Scène conclusion du style recit-donnees" loading="lazy" width="480" height="270"><figcaption><code>conclusion</code> · La leçon des chiffres, soulignée, et le logo</figcaption></figure>
+</div>
+<p><strong>Pour :</strong> Raconter un bilan chiffré · Comparer des résultats · Suivre une évolution</p>
+<p><strong>Ce qu'il n'est pas :</strong> Pas un tableau de bord : une idée à la fois. Pas une présentation avec des graphiques : le graphique est le récit lui-même.</p>
+<p><strong>Signature :</strong> Le graphique est le film : papier crème à grille de points, axes qui poussent avec l'histoire, une valeur à l'accent, notes manuscrites épinglées, la pointe d'un crayon rouge et bleu, une case vide en pointillés pour ce qu'on ne sait pas</p>
+<p><strong>À faire :</strong> Une idée par graphique, des données réelles avec leur source · Faire de chaque mouvement une opération du graphique</p>
+<p><strong>À éviter :</strong> Extrapoler ou inventer une valeur · Un axe qui ne part pas de zéro sans le dire</p>
+<p><strong>Provenance :</strong> lemo-opuscar, style « dataviz » (MIT)</p>
+</details>
+</section>
+<section class="categorie-styles" id="styles-papier-imprime" data-categorie="papier-imprime">
+<h4>Papier et imprimé</h4>
+<details class="style-en-mouvement" id="style-papier-decoupe" data-categorie="papier-imprime">
+<summary>Le style <strong>papier-decoupe</strong> · artisanal, joyeux, en relief</summary>
+<div class="grille-vignettes temoin">
+<figure class="vignette"><img src="medias/galerie/styles/papier-decoupe-temoin-a.jpg" alt="Image témoin A (titre) du style papier-decoupe" loading="lazy" width="480" height="270"><figcaption>A · le titre, mêmes textes pour tous les styles</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/papier-decoupe-temoin-b.jpg" alt="Image témoin B (chiffre clé) du style papier-decoupe" loading="lazy" width="480" height="270"><figcaption>B · le chiffre clé, 1 250 kg</figcaption></figure>
+</div>
+<figure class="capture"><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/styles/papier-decoupe-titre.jpg" aria-label="Les neuf scènes du style papier-decoupe"><source src="medias/galerie/styles/papier-decoupe.mp4" type="video/mp4"></video><figcaption>Les neuf scènes toutes faites du style papier-decoupe, avec le même contenu témoin, « la chaîne du froid ».</figcaption></figure>
+<div class="grille-vignettes">
+<figure class="vignette"><img src="medias/galerie/styles/papier-decoupe-titre.jpg" alt="Scène titre du style papier-decoupe" loading="lazy" width="480" height="270"><figcaption><code>titre</code> · Les strates se posent, la bande du titre se soulève</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/papier-decoupe-liste.jpg" alt="Scène liste du style papier-decoupe" loading="lazy" width="480" height="270"><figcaption><code>liste</code> · 2 à 4 points sur une feuille, une pastille devant chacun</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/papier-decoupe-chiffre.jpg" alt="Scène chiffre du style papier-decoupe" loading="lazy" width="480" height="270"><figcaption><code>chiffre</code> · Un volet se lève et révèle le chiffre</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/papier-decoupe-comparaison.jpg" alt="Scène comparaison du style papier-decoupe" loading="lazy" width="480" height="270"><figcaption><code>comparaison</code> · Deux feuilles, celle qui compte révélée puis soulevée</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/papier-decoupe-etape.jpg" alt="Scène etape du style papier-decoupe" loading="lazy" width="480" height="270"><figcaption><code>etape</code> · Le rond du numéro, puis la feuille de l'action</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/papier-decoupe-alerte.jpg" alt="Scène alerte du style papier-decoupe" loading="lazy" width="480" height="270"><figcaption><code>alerte</code> · Une feuille pliée au coin, bordée d'accent</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/papier-decoupe-schema.jpg" alt="Scène schema du style papier-decoupe" loading="lazy" width="480" height="270"><figcaption><code>schema</code> · Trois feuilles reliées, celle du milieu soulevée</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/papier-decoupe-moyeu.jpg" alt="Scène moyeu du style papier-decoupe" loading="lazy" width="480" height="270"><figcaption><code>moyeu</code> · Une idée au centre, 3 à 5 parties autour, reliées par des flèches</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/papier-decoupe-conclusion.jpg" alt="Scène conclusion du style papier-decoupe" loading="lazy" width="480" height="270"><figcaption><code>conclusion</code> · Ce qu'il faut retenir sur sa bande soulevée, et le logo</figcaption></figure>
+</div>
+<p><strong>Pour :</strong> Présenter une offre ou un service · Accueillir et présenter une équipe · Raconter un projet en étapes</p>
+<p><strong>Ce qu'il n'est pas :</strong> Pas un style plat : la profondeur vient des ombres entre les couches. Pas un papier découpé traditionnel rouge et or : des papiers de la charte, posés comme une maquette.</p>
+<p><strong>Signature :</strong> Papiers découpés posés en couches, aux bords un peu irréguliers : de vraies ombres portées entre les couches, une feuille qui se soulève, un volet qui se lève pour révéler la couche du dessous</p>
+<p><strong>À faire :</strong> Poser chaque texte sur une feuille, et laisser l'ombre dire la profondeur · Une seule feuille soulevée à la fois : celle qui compte</p>
+<p><strong>À éviter :</strong> Des ombres noires et dures · Empiler plus de quatre couches</p>
+<p><strong>Provenance :</strong> take-one, style « paper-cutout » (MIT) · lemo-opuscar, style « papercut-red » (MIT)</p>
+</details>
+<details class="style-en-mouvement" id="style-riso" data-categorie="papier-imprime">
+<summary>Le style <strong>riso</strong> · vif, indépendant, graphique</summary>
+<div class="grille-vignettes temoin">
+<figure class="vignette"><img src="medias/galerie/styles/riso-temoin-a.jpg" alt="Image témoin A (titre) du style riso" loading="lazy" width="480" height="270"><figcaption>A · le titre, mêmes textes pour tous les styles</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/riso-temoin-b.jpg" alt="Image témoin B (chiffre clé) du style riso" loading="lazy" width="480" height="270"><figcaption>B · le chiffre clé, 1 250 kg</figcaption></figure>
+</div>
+<figure class="capture"><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/styles/riso-titre.jpg" aria-label="Les neuf scènes du style riso"><source src="medias/galerie/styles/riso.mp4" type="video/mp4"></video><figcaption>Les neuf scènes toutes faites du style riso, avec le même contenu témoin, « la chaîne du froid ».</figcaption></figure>
+<div class="grille-vignettes">
+<figure class="vignette"><img src="medias/galerie/styles/riso-titre.jpg" alt="Scène titre du style riso" loading="lazy" width="480" height="270"><figcaption><code>titre</code> · Les encres arrivent l'une après l'autre, puis le titre surligné</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/riso-liste.jpg" alt="Scène liste du style riso" loading="lazy" width="480" height="270"><figcaption><code>liste</code> · 2 à 4 points, chacun ajoute une encre au décor</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/riso-chiffre.jpg" alt="Scène chiffre du style riso" loading="lazy" width="480" height="270"><figcaption><code>chiffre</code> · Un chiffre géant, souligné à l'encre d'accent</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/riso-comparaison.jpg" alt="Scène comparaison du style riso" loading="lazy" width="480" height="270"><figcaption><code>comparaison</code> · Deux colonnes, chacune son encre, celle qui compte surlignée</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/riso-etape.jpg" alt="Scène etape du style riso" loading="lazy" width="480" height="270"><figcaption><code>etape</code> · Le numéro sur un rond d'encre claire, puis l'action</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/riso-alerte.jpg" alt="Scène alerte du style riso" loading="lazy" width="480" height="270"><figcaption><code>alerte</code> · Un aplat d'encre claire encadré à l'accent</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/riso-schema.jpg" alt="Scène schema du style riso" loading="lazy" width="480" height="270"><figcaption><code>schema</code> · Trois idées reliées, celle du milieu surlignée</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/riso-moyeu.jpg" alt="Scène moyeu du style riso" loading="lazy" width="480" height="270"><figcaption><code>moyeu</code> · Une idée au centre, 3 à 5 parties autour, reliées par des flèches</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/riso-conclusion.jpg" alt="Scène conclusion du style riso" loading="lazy" width="480" height="270"><figcaption><code>conclusion</code> · Ce qu'il faut retenir, les plaques se calent, et le logo</figcaption></figure>
+</div>
+<p><strong>Pour :</strong> Annoncer un événement · Publier sur les réseaux · Donner du caractère à une marque</p>
+<p><strong>Ce qu'il n'est pas :</strong> Pas un style plat : les encres se superposent et se mêlent. Pas une affiche énergique : peu de mouvement, des encres qui se posent, pas de titres qui tombent.</p>
+<p><strong>Signature :</strong> Deux ou trois encres translucides surimprimées sur un papier chaud : une trame de points, un grain d'encre, des plaques jamais tout à fait calées ; le texte dans l'encre la plus sombre</p>
+<p><strong>À faire :</strong> Ajouter une encre à chaque étape, jamais plus de trois · Garder le texte dans l'encre la plus sombre</p>
+<p><strong>À éviter :</strong> Un texte sur l'encre d'accent pleine · Un décalage des plaques qui change à chaque image</p>
+<p><strong>Provenance :</strong> lemo-opuscar, style « risograph » (MIT) · take-one, style « riso-pop » (MIT)</p>
+</details>
+</section>
+<section class="categorie-styles" id="styles-ecrans-annonces" data-categorie="ecrans-annonces">
+<h4>Écrans et annonces</h4>
+<details class="style-en-mouvement" id="style-info-sans-son" data-categorie="ecrans-annonces">
+<summary>Le style <strong>info-sans-son</strong> · direct, lisible, factuel</summary>
+<div class="grille-vignettes temoin">
+<figure class="vignette"><img src="medias/galerie/styles/info-sans-son-temoin-a.jpg" alt="Image témoin A (titre) du style info-sans-son" loading="lazy" width="480" height="270"><figcaption>A · le titre, mêmes textes pour tous les styles</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/info-sans-son-temoin-b.jpg" alt="Image témoin B (chiffre clé) du style info-sans-son" loading="lazy" width="480" height="270"><figcaption>B · le chiffre clé, 1 250 kg</figcaption></figure>
+</div>
+<figure class="capture"><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/styles/info-sans-son-titre.jpg" aria-label="Les neuf scènes du style info-sans-son"><source src="medias/galerie/styles/info-sans-son.mp4" type="video/mp4"></video><figcaption>Les neuf scènes toutes faites du style info-sans-son, avec le même contenu témoin, « la chaîne du froid ».</figcaption></figure>
+<div class="grille-vignettes">
+<figure class="vignette"><img src="medias/galerie/styles/info-sans-son-titre.jpg" alt="Scène titre du style info-sans-son" loading="lazy" width="480" height="270"><figcaption><code>titre</code> · Ouvrir sur la légende géante</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/info-sans-son-liste.jpg" alt="Scène liste du style info-sans-son" loading="lazy" width="480" height="270"><figcaption><code>liste</code> · 2 à 4 légendes, une par point</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/info-sans-son-chiffre.jpg" alt="Scène chiffre du style info-sans-son" loading="lazy" width="480" height="270"><figcaption><code>chiffre</code> · Un chiffre qui roule, sa source</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/info-sans-son-comparaison.jpg" alt="Scène comparaison du style info-sans-son" loading="lazy" width="480" height="270"><figcaption><code>comparaison</code> · Écran partagé avant / après</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/info-sans-son-etape.jpg" alt="Scène etape du style info-sans-son" loading="lazy" width="480" height="270"><figcaption><code>etape</code> · Une étape, numéro sur l'accent</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/info-sans-son-alerte.jpg" alt="Scène alerte du style info-sans-son" loading="lazy" width="480" height="270"><figcaption><code>alerte</code> · Un avertissement entre crochets</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/info-sans-son-schema.jpg" alt="Scène schema du style info-sans-son" loading="lazy" width="480" height="270"><figcaption><code>schema</code> · Trois tuiles reliées</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/info-sans-son-moyeu.jpg" alt="Scène moyeu du style info-sans-son" loading="lazy" width="480" height="270"><figcaption><code>moyeu</code> · Une idée au centre, 3 à 5 parties autour, reliées par des flèches</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/info-sans-son-conclusion.jpg" alt="Scène conclusion du style info-sans-son" loading="lazy" width="480" height="270"><figcaption><code>conclusion</code> · La légende à retenir et le logo</figcaption></figure>
+</div>
+<p><strong>Pour :</strong> Publier une info sur les réseaux · Annoncer en interne · Faire parler un chiffre clé</p>
+<p><strong>Ce qu'il n'est pas :</strong> Pas énergique : les légendes claquent sur place, sans tomber ni rebondir. Pas un journal télévisé : ni bandeau permanent, ni présentateur.</p>
+<p><strong>Signature :</strong> Légende géante qui claque en deux ou trois morceaux, un seul mot-clé sur un bloc d'accent, chiffres qui roulent avec leur source, feuille sombre à lignes et double marge rouge</p>
+<p><strong>À faire :</strong> Une idée par légende, lisible son coupé · Une source sous chaque chiffre</p>
+<p><strong>À éviter :</strong> Plus d'un mot-clé par légende · Une perte montrée par la couleur seule</p>
+<p><strong>Provenance :</strong> lemo-opuscar, style « caption-news » (MIT)</p>
+</details>
+<details class="style-en-mouvement" id="style-lancement" data-categorie="ecrans-annonces">
+<summary>Le style <strong>lancement</strong> · premium, épuré, lumineux</summary>
+<div class="grille-vignettes temoin">
+<figure class="vignette"><img src="medias/galerie/styles/lancement-temoin-a.jpg" alt="Image témoin A (titre) du style lancement" loading="lazy" width="480" height="270"><figcaption>A · le titre, mêmes textes pour tous les styles</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/lancement-temoin-b.jpg" alt="Image témoin B (chiffre clé) du style lancement" loading="lazy" width="480" height="270"><figcaption>B · le chiffre clé, 1 250 kg</figcaption></figure>
+</div>
+<figure class="capture"><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/styles/lancement-titre.jpg" aria-label="Les neuf scènes du style lancement"><source src="medias/galerie/styles/lancement.mp4" type="video/mp4"></video><figcaption>Les neuf scènes toutes faites du style lancement, avec le même contenu témoin, « la chaîne du froid ».</figcaption></figure>
+<div class="grille-vignettes">
+<figure class="vignette"><img src="medias/galerie/styles/lancement-titre.jpg" alt="Scène titre du style lancement" loading="lazy" width="480" height="270"><figcaption><code>titre</code> · Ouvrir sur le titre que la lumière balaie</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/lancement-liste.jpg" alt="Scène liste du style lancement" loading="lazy" width="480" height="270"><figcaption><code>liste</code> · 2 à 4 fenêtres qui s'aimantent</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/lancement-chiffre.jpg" alt="Scène chiffre du style lancement" loading="lazy" width="480" height="270"><figcaption><code>chiffre</code> · Un nombre géant qui se fige</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/lancement-comparaison.jpg" alt="Scène comparaison du style lancement" loading="lazy" width="480" height="270"><figcaption><code>comparaison</code> · Deux cartes, la seconde allumée</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/lancement-etape.jpg" alt="Scène etape du style lancement" loading="lazy" width="480" height="270"><figcaption><code>etape</code> · Une étape, numéro au trait fin</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/lancement-alerte.jpg" alt="Scène alerte du style lancement" loading="lazy" width="480" height="270"><figcaption><code>alerte</code> · Un point d'attention en notification</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/lancement-schema.jpg" alt="Scène schema du style lancement" loading="lazy" width="480" height="270"><figcaption><code>schema</code> · Trois cartes reliées</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/lancement-moyeu.jpg" alt="Scène moyeu du style lancement" loading="lazy" width="480" height="270"><figcaption><code>moyeu</code> · Une idée au centre, 3 à 5 parties autour, reliées par des flèches</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/lancement-conclusion.jpg" alt="Scène conclusion du style lancement" loading="lazy" width="480" height="270"><figcaption><code>conclusion</code> · Le message et le logo</figcaption></figure>
+</div>
+<p><strong>Pour :</strong> Lancer un produit ou une offre · Présenter un logiciel · Annoncer une nouveauté</p>
+<p><strong>Ce qu'il n'est pas :</strong> Pas tech-sombre : ni terminal, ni invite de commande. Pas minimal : sombre, avec de la lumière et de la profondeur.</p>
+<p><strong>Signature :</strong> Fond presque noir à grille fine, lumière douce qui se déplace, cartes d'interface qui s'aimantent à leur place, reflet qui balaie le titre, nombre géant au trait fin, un seul accent</p>
+<p><strong>À faire :</strong> Une action par temps, l'interface en vedette · Un seul élément coloré par scène</p>
+<p><strong>À éviter :</strong> Du gris trop sombre pour être lu · Trop d'éléments qui bougent à la fois</p>
+<p><strong>Provenance :</strong> lemo-opuscar, style « dark-keynote » (MIT) · take-one, style « monochrome-launch, dark-premium » (MIT)</p>
+</details>
+</section>
+<section class="categorie-styles" id="styles-anime" data-categorie="anime">
+<h4>Animé</h4>
+<details class="style-en-mouvement" id="style-mode-d-emploi" data-categorie="anime">
+<summary>Le style <strong>mode-d-emploi</strong> · calme, précis, d'époque</summary>
+<div class="grille-vignettes temoin">
+<figure class="vignette"><img src="medias/galerie/styles/mode-d-emploi-temoin-a.jpg" alt="Image témoin A (titre) du style mode-d-emploi" loading="lazy" width="480" height="270"><figcaption>A · le titre, mêmes textes pour tous les styles</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/mode-d-emploi-temoin-b.jpg" alt="Image témoin B (chiffre clé) du style mode-d-emploi" loading="lazy" width="480" height="270"><figcaption>B · le chiffre clé, 1 250 kg</figcaption></figure>
+</div>
+<figure class="capture"><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/styles/mode-d-emploi-titre.jpg" aria-label="Les neuf scènes du style mode-d-emploi"><source src="medias/galerie/styles/mode-d-emploi.mp4" type="video/mp4"></video><figcaption>Les neuf scènes toutes faites du style mode-d-emploi, avec le même contenu témoin, « la chaîne du froid ».</figcaption></figure>
+<div class="grille-vignettes">
+<figure class="vignette"><img src="medias/galerie/styles/mode-d-emploi-titre.jpg" alt="Scène titre du style mode-d-emploi" loading="lazy" width="480" height="270"><figcaption><code>titre</code> · La carte de titre se pose image par image, le guide la montre</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/mode-d-emploi-liste.jpg" alt="Scène liste du style mode-d-emploi" loading="lazy" width="480" height="270"><figcaption><code>liste</code> · 2 à 4 points, chacun sur sa pastille numérotée</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/mode-d-emploi-chiffre.jpg" alt="Scène chiffre du style mode-d-emploi" loading="lazy" width="480" height="270"><figcaption><code>chiffre</code> · Un bloc tracé qui se colore quand le chiffre arrive</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/mode-d-emploi-comparaison.jpg" alt="Scène comparaison du style mode-d-emploi" loading="lazy" width="480" height="270"><figcaption><code>comparaison</code> · Le mauvais geste, puis le bon, qui se colore</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/mode-d-emploi-etape.jpg" alt="Scène etape du style mode-d-emploi" loading="lazy" width="480" height="270"><figcaption><code>etape</code> · Le numéro sur son disque, le guide montre ce que la main fait</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/mode-d-emploi-alerte.jpg" alt="Scène alerte du style mode-d-emploi" loading="lazy" width="480" height="270"><figcaption><code>alerte</code> · Le carton d'avertissement, bordé d'accent</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/mode-d-emploi-schema.jpg" alt="Scène schema du style mode-d-emploi" loading="lazy" width="480" height="270"><figcaption><code>schema</code> · Trois pièces tracées, reliées, qui se colorent une à une</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/mode-d-emploi-moyeu.jpg" alt="Scène moyeu du style mode-d-emploi" loading="lazy" width="480" height="270"><figcaption><code>moyeu</code> · Une idée au centre, 3 à 5 parties autour, reliées par des flèches</figcaption></figure>
+<figure class="vignette"><img src="medias/galerie/styles/mode-d-emploi-conclusion.jpg" alt="Scène conclusion du style mode-d-emploi" loading="lazy" width="480" height="270"><figcaption><code>conclusion</code> · Ce qu'il faut retenir sur sa carte de fin, et le logo</figcaption></figure>
+</div>
+<p><strong>Pour :</strong> Guide de mise en route d'un produit · Procédure pas à pas d'un poste · Aide en ligne et tutoriel d'usage</p>
+<p><strong>Ce qu'il n'est pas :</strong> Pas un style chaleureux aux formes qui respirent : des aplats d'époque, une animation limitée. Pas un dessin animé à gags : un narrateur calme qui montre le geste.</p>
+<p><strong>Signature :</strong> Film pédagogique des années 50 : aplats imprimés à quelques pixels de leur trait cassé, animation limitée image par image, un guide au corps tranquille dont seules les mains travaillent, des étapes numérotées</p>
+<p><strong>À faire :</strong> Une étape par scène, son numéro d'abord, puis ce que la main fait · Colorer une pièce au moment où on la nomme</p>
+<p><strong>À éviter :</strong> Faire bouger tout le corps du guide quand il explique · Des mouvements fluides et rebondis : tout avance par images</p>
+<p><strong>Provenance :</strong> lemo-opuscar, style « midcentury-toon » (MIT)</p>
+</details>
+</section>
+<!-- /galerie:styles -->
+<h3>Quel style pour quel genre ?</h3>
+<table>
+<thead><tr><th>Genre</th><th>Proposés en premier</th><th>Le contraste proposé en troisième</th></tr></thead>
+<tbody>
+<tr><td>Formation</td><td>clair-pedagogique, chaleureux</td><td>minimal</td></tr>
+<tr><td>Présentation de produit</td><td>minimal, tech-sombre</td><td>energique</td></tr>
+<tr><td>Storytelling</td><td>editorial, chaleureux</td><td>tech-sombre</td></tr>
+<tr><td>Publication sociale</td><td>energique, minimal</td><td>editorial</td></tr>
+</tbody>
+</table>
+<p>Vos styles personnels s'ajoutent à cette liste : un style personnel fait pour ce genre est proposé juste après les deux premiers, à la place du style contrasté. Seuls les styles vérifiés depuis leur dernière modification sont proposés.</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="scenes">
+<h2>Les scènes toutes faites</h2>
+<p>Chaque style livre les mêmes neuf scènes, chacune dessinée à sa façon. Chacune a des textes à remplir, avec une <strong>longueur maximale</strong> : au-delà, le texte déborde ou la scène devient trop courte pour être lue.</p>
+<table>
+<thead><tr><th>Scène</th><th>Rôle</th><th>Textes (longueur maximale, en caractères)</th></tr></thead>
+<tbody>
+<tr><td><code>titre</code></td><td>Ouvrir la vidéo ou un chapitre</td><td>étiquette (25), titre (40), sous-titre (50)</td></tr>
+<tr><td><code>liste</code></td><td>2 à 4 points révélés un par un</td><td>titre (40), 2 à 4 points (45 chacun)</td></tr>
+<tr><td><code>chiffre</code></td><td>Un chiffre clé qui compte jusqu'à sa valeur</td><td>titre (40), unité (3), légende (60)</td></tr>
+<tr><td><code>comparaison</code></td><td>Deux colonnes : avant / après, à faire / à éviter</td><td>titre (40), deux titres de colonne (20), deux textes (60)</td></tr>
+<tr><td><code>etape</code></td><td>Une étape numérotée d'une procédure</td><td>numéro (2), titre (40), texte (80)</td></tr>
+<tr><td><code>alerte</code></td><td>Un point de vigilance, une erreur à éviter</td><td>titre (40), texte (80)</td></tr>
+<tr><td><code>schema</code></td><td>Trois étapes reliées par des flèches</td><td>titre (40), trois étiquettes (25)</td></tr>
+<tr><td><code>moyeu</code></td><td>Une idée au centre, 3 à 5 parties autour, reliées par des flèches</td><td>titre (40), centre (24), 3 à 5 parties (22 chacune)</td></tr>
+<tr><td><code>conclusion</code></td><td>Le message à retenir et le logo</td><td>titre (40), sous-titre (50)</td></tr>
+</tbody>
+</table>
+<p class="legende">Le style <code>energique</code> demande des textes plus courts : un titre de 28 caractères, des points de 32. En vertical, les colonnes, les étapes et les schémas s'empilent ; les parties du moyeu passent en rangée sous le centre.</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="effets">
+<h2>Les effets de particules</h2>
+<p>Un effet <strong>sert un propos</strong> : mettre en valeur un chiffre, célébrer une conclusion, poser une ambiance. Jamais pour décorer. Pulse Motion décide lui-même des scènes qui en reçoivent : au plus deux effets en même temps à l'écran, et un ou deux dans toute une formation courte.</p>
+<!-- galerie:effets -->
+<p>34 effets livrés, chacun montré tel que le moteur le dessine.</p>
+<div class="grille-mouvements">
+<article class="carte-effet" id="effet-air">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/effets/air.jpg" aria-label="Aperçu de l'effet air"><source src="medias/galerie/effets/air.mp4" type="video/mp4"></video></figure>
+<h3><code>air</code></h3>
+<p>Air de la scène : fumée volumineuse qui monte du bas, s'enroule et contourne les obstacles déclarés ; sert de vent aux effets couplés (data-milieu).</p>
+</article>
+<article class="carte-effet" id="effet-assembler">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/effets/assembler.jpg" aria-label="Aperçu de l'effet assembler"><source src="medias/galerie/effets/assembler.mp4" type="video/mp4"></video></figure>
+<h3><code>assembler</code></h3>
+<p>Des particules venues de tout l'écran s'assemblent en l'élément visé (data-ancre), de gauche à droite ; il apparaît à leur arrivée (fin de data-dur, ou plus tôt avec « arrivee »).</p>
+</article>
+<article class="carte-effet" id="effet-banc">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/effets/banc.jpg" aria-label="Aperçu de l'effet banc"><source src="medias/galerie/effets/banc.mp4" type="video/mp4"></video></figure>
+<h3><code>banc</code></h3>
+<p>Banc de poissons de deux teintes qui nagent ensemble autour de l'ancre (essaims liés) ; calque arrière, pour la mer, l'équipe, le collectif.</p>
+</article>
+<article class="carte-effet" id="effet-banniere">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/effets/banniere.jpg" aria-label="Aperçu de l'effet banniere"><source src="medias/galerie/effets/banniere.mp4" type="video/mp4"></video></figure>
+<h3><code>banniere</code></h3>
+<p>Bannière faite de l'ancre (titre, logo, image) : l'élément devient un tissu tenu par son bord haut, qui flotte au vent, puis se détache et tombe sur les obstacles déclarés (data-obstacle) ; l'élément réel est caché pendant ce temps.</p>
+</article>
+<article class="carte-effet" id="effet-braises">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/effets/braises.jpg" aria-label="Aperçu de l'effet braises"><source src="medias/galerie/effets/braises.mp4" type="video/mp4"></video></figure>
+<h3><code>braises</code></h3>
+<p>Braises incandescentes qui montent lentement en tournoyant ; dérivée des étincelles (même réglages).</p>
+</article>
+<article class="carte-effet" id="effet-braises-portees">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/effets/braises-portees.jpg" aria-label="Aperçu de l'effet braises-portees"><source src="medias/galerie/effets/braises-portees.mp4" type="video/mp4"></video></figure>
+<h3><code>braises-portees</code></h3>
+<p>Braises emportées par le milieu de la scène (data-milieu) : elles suivent le panache et tourbillonnent autour des obstacles ; dérivées des braises.</p>
+</article>
+<article class="carte-effet" id="effet-brasier">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/effets/brasier.jpg" aria-label="Aperçu de l'effet brasier"><source src="medias/galerie/effets/brasier.mp4" type="video/mp4"></video></figure>
+<h3><code>brasier</code></h3>
+<p>Brasier : feu coloré par sa température (du rouge sombre au blanc, corps noir), qui lèche les obstacles et brille (halo), surmonté de fumée.</p>
+</article>
+<article class="carte-effet" id="effet-briser">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/effets/briser.jpg" aria-label="Aperçu de l'effet briser"><source src="medias/galerie/effets/briser.mp4" type="video/mp4"></video></figure>
+<h3><code>briser</code></h3>
+<p>L'élément visé (data-ancre) se brise en éclats qui partent du point d'impact, tournent et retombent ; ils rebondissent sur les obstacles déclarés de la scène.</p>
+</article>
+<article class="carte-effet" id="effet-confettis">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/effets/confettis.jpg" aria-label="Aperçu de l'effet confettis"><source src="medias/galerie/effets/confettis.mp4" type="video/mp4"></video></figure>
+<h3><code>confettis</code></h3>
+<p>Explosion de confettis aux couleurs de la charte qui retombent en voletant ; idéal pour une conclusion.</p>
+</article>
+<article class="carte-effet" id="effet-corde">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/effets/corde.jpg" aria-label="Aperçu de l'effet corde"><source src="medias/galerie/effets/corde.mp4" type="video/mp4"></video></figure>
+<h3><code>corde</code></h3>
+<p>Corde suspendue au milieu du bord haut de la zone (l'ancre, ou la balise), qui pend et se balance ; sa longueur est la largeur de la zone.</p>
+</article>
+<article class="carte-effet" id="effet-desintegrer">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/effets/desintegrer.jpg" aria-label="Aperçu de l'effet desintegrer"><source src="medias/galerie/effets/desintegrer.mp4" type="video/mp4"></video></figure>
+<h3><code>desintegrer</code></h3>
+<p>L'élément visé (data-ancre) se désagrège en poussière de ses propres couleurs, de gauche à droite pendant data-dur, emportée par le vent avec une lueur avant de s'éteindre.</p>
+</article>
+<article class="carte-effet" id="effet-drapeau">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/effets/drapeau.jpg" aria-label="Aperçu de l'effet drapeau"><source src="medias/galerie/effets/drapeau.mp4" type="video/mp4"></video></figure>
+<h3><code>drapeau</code></h3>
+<p>Drapeau aux couleurs de la charte (trois bandes verticales) qui flotte au vent, tenu par son bord gauche au bord gauche de l'ancre (le mât) ; l'ancre est la place du drapeau au repos ; plis éclairés.</p>
+</article>
+<article class="carte-effet" id="effet-eau">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/effets/eau.jpg" aria-label="Aperçu de l'effet eau"><source src="medias/galerie/effets/eau.mp4" type="video/mp4"></video></figure>
+<h3><code>eau</code></h3>
+<p>Eau qui se déverse depuis l'ancre, coule sur les obstacles déclarés et forme une nappe lisse avec reflets (fluide) ; déclarer un sol ou une cuve (data-obstacle).</p>
+</article>
+<article class="carte-effet" id="effet-eau-encre">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/effets/eau-encre.jpg" aria-label="Aperçu de l'effet eau-encre"><source src="medias/galerie/effets/eau-encre.mp4" type="video/mp4"></video></figure>
+<h3><code>eau-encre</code></h3>
+<p>Encre dans l'eau : deux encres versées en haut de la zone, l'une un peu plus bas que l'autre, qui coulent en volutes, se rencontrent et se mêlent par absorption ; sur fond clair.</p>
+</article>
+<article class="carte-effet" id="effet-energie">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/effets/energie.jpg" aria-label="Aperçu de l'effet energie"><source src="medias/galerie/effets/energie.mp4" type="video/mp4"></video></figure>
+<h3><code>energie</code></h3>
+<p>Flux d'énergie qui tourbillonne autour de la zone comme un plasma, en traînées lumineuses.</p>
+</article>
+<article class="carte-effet" id="effet-etincelles">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/effets/etincelles.jpg" aria-label="Aperçu de l'effet etincelles"><source src="medias/galerie/effets/etincelles.mp4" type="video/mp4"></video></figure>
+<h3><code>etincelles</code></h3>
+<p>Gerbe d'étincelles chaudes qui jaillissent de la zone puis retombent, avec de petites braises à leur mort.</p>
+</article>
+<article class="carte-effet" id="effet-explosion">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/effets/explosion.jpg" aria-label="Aperçu de l'effet explosion"><source src="medias/galerie/effets/explosion.mp4" type="video/mp4"></video></figure>
+<h3><code>explosion</code></h3>
+<p>Explosion : éclair aveuglant, gerbe de débris incandescents et nuage de fumée qui se dissipe.</p>
+</article>
+<article class="carte-effet" id="effet-feu">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/effets/feu.jpg" aria-label="Aperçu de l'effet feu"><source src="medias/galerie/effets/feu.mp4" type="video/mp4"></video></figure>
+<h3><code>feu</code></h3>
+<p>Flammes vives qui lèchent la zone en ondulant, avec quelques étincelles qui s'échappent.</p>
+</article>
+<article class="carte-effet" id="effet-feu-artifice">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/effets/feu-artifice.jpg" aria-label="Aperçu de l'effet feu-artifice"><source src="medias/galerie/effets/feu-artifice.mp4" type="video/mp4"></video></figure>
+<h3><code>feu-artifice</code></h3>
+<p>Fusées qui montent en laissant une traînée, puis éclatent en gerbes colorées qui scintillent en retombant.</p>
+</article>
+<article class="carte-effet" id="effet-filet">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/effets/filet.jpg" aria-label="Aperçu de l'effet filet"><source src="medias/galerie/effets/filet.mp4" type="video/mp4"></video></figure>
+<h3><code>filet</code></h3>
+<p>Filet tendu entre les bords gauche et droit de l'ancre, qui retient ce qui tombe dedans (élément animé déclaré data-obstacle, particules liées par « avec ») et cède au-delà de sa résistance ; mailles seules dessinées.</p>
+</article>
+<article class="carte-effet" id="effet-fumee">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/effets/fumee.jpg" aria-label="Aperçu de l'effet fumee"><source src="medias/galerie/effets/fumee.mp4" type="video/mp4"></video></figure>
+<h3><code>fumee</code></h3>
+<p>Volutes de fumée douce qui montent, s'élargissent et se dissipent ; à poser en calque arrière.</p>
+</article>
+<article class="carte-effet" id="effet-fusee-panache">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/effets/fusee-panache.jpg" aria-label="Aperçu de l'effet fusee-panache"><source src="medias/galerie/effets/fusee-panache.mp4" type="video/mp4"></video></figure>
+<h3><code>fusee-panache</code></h3>
+<p>Fusées qui montent en laissant un panache de fumée chaude dans le milieu de la scène (data-milieu) : il s'élargit, s'enroule et monte.</p>
+</article>
+<article class="carte-effet" id="effet-guirlande">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/effets/guirlande.jpg" aria-label="Aperçu de l'effet guirlande"><source src="medias/galerie/effets/guirlande.mp4" type="video/mp4"></video></figure>
+<h3><code>guirlande</code></h3>
+<p>Guirlande d'ampoules sur un fil qui pend d'un bord à l'autre de la zone (l'ancre, ou la balise placée d'un élément à l'autre), balancée par un souffle ; halo des ampoules.</p>
+</article>
+<article class="carte-effet" id="effet-lucioles">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/effets/lucioles.jpg" aria-label="Aperçu de l'effet lucioles"><source src="medias/galerie/effets/lucioles.mp4" type="video/mp4"></video></figure>
+<h3><code>lucioles</code></h3>
+<p>Lucioles qui flottent en petits groupes lâches autour de l'ancre et s'allument puis s'éteignent (essaim lent, halo) ; calque arrière, nuit ou magie.</p>
+</article>
+<article class="carte-effet" id="effet-metamorphose">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/effets/metamorphose.jpg" aria-label="Aperçu de l'effet metamorphose"><source src="medias/galerie/effets/metamorphose.mp4" type="video/mp4"></video></figure>
+<h3><code>metamorphose</code></h3>
+<p>L'élément visé (data-ancre) se défait en particules qui se recomposent en un autre élément (data-cible), du centre vers les bords ; les couleurs passent de l'un à l'autre en chemin.</p>
+</article>
+<article class="carte-effet" id="effet-miel">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/effets/miel.jpg" aria-label="Aperçu de l'effet miel"><source src="medias/galerie/effets/miel.mp4" type="video/mp4"></video></figure>
+<h3><code>miel</code></h3>
+<p>Liquide épais et lent (miel, sirop, lave) qui coule depuis l'ancre et s'étale sur les obstacles déclarés ; dérivé de l'eau, plus visqueux et plus dense à l'œil.</p>
+</article>
+<article class="carte-effet" id="effet-neige">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/effets/neige.jpg" aria-label="Aperçu de l'effet neige"><source src="medias/galerie/effets/neige.mp4" type="video/mp4"></video></figure>
+<h3><code>neige</code></h3>
+<p>Flocons qui tombent doucement en se balançant depuis le haut de l'image (zone plein cadre) ; se posent et s'accumulent sur les obstacles de la scène.</p>
+</article>
+<article class="carte-effet" id="effet-neige-lourde">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/effets/neige-lourde.jpg" aria-label="Aperçu de l'effet neige-lourde"><source src="medias/galerie/effets/neige-lourde.mp4" type="video/mp4"></video></figure>
+<h3><code>neige-lourde</code></h3>
+<p>Neige lourde et collante qui tombe depuis le haut de l'image et forme de vrais tas sur les obstacles (grains cohésifs) ; calque arrière, plus coûteuse que la neige.</p>
+</article>
+<article class="carte-effet" id="effet-nuee">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/effets/nuee.jpg" aria-label="Aperçu de l'effet nuee"><source src="medias/galerie/effets/nuee.mp4" type="video/mp4"></video></figure>
+<h3><code>nuee</code></h3>
+<p>Nuée d'oiseaux qui tournoie autour de l'ancre en gardant ses distances (essaim) ; calque arrière, sur une zone dégagée de la scène.</p>
+</article>
+<article class="carte-effet" id="effet-paillettes">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/effets/paillettes.jpg" aria-label="Aperçu de l'effet paillettes"><source src="medias/galerie/effets/paillettes.mp4" type="video/mp4"></video></figure>
+<h3><code>paillettes</code></h3>
+<p>Paillettes magiques qui scintillent et montent doucement autour de la zone (mise en valeur, révélation).</p>
+</article>
+<article class="carte-effet" id="effet-pluie">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/effets/pluie.jpg" aria-label="Aperçu de l'effet pluie"><source src="medias/galerie/effets/pluie.mp4" type="video/mp4"></video></figure>
+<h3><code>pluie</code></h3>
+<p>Pluie fine et rapide, légèrement oblique selon le vent, depuis le haut de l'image (zone plein cadre) ; éclabousse au contact des obstacles de la scène.</p>
+</article>
+<article class="carte-effet" id="effet-poussiere">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/effets/poussiere.jpg" aria-label="Aperçu de l'effet poussiere"><source src="medias/galerie/effets/poussiere.mp4" type="video/mp4"></video></figure>
+<h3><code>poussiere</code></h3>
+<p>Fines poussières en suspension qui flottent lentement dans la lumière ; ambiance de fond, en calque arrière.</p>
+</article>
+<article class="carte-effet" id="effet-rideau">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/effets/rideau.jpg" aria-label="Aperçu de l'effet rideau"><source src="medias/galerie/effets/rideau.mp4" type="video/mp4"></video></figure>
+<h3><code>rideau</code></h3>
+<p>Rideau qui couvre l'ancre, fendu en son milieu et tenu par son bord haut en deux moitiés qui s'écartent : il s'ouvre jusqu'en bas, ses pans pendent (ou se déchirent et leurs morceaux tombent) ; poser l'ancre sur ce qu'il cache, data-start au moment du dévoilement.</p>
+</article>
+<article class="carte-effet" id="effet-sable">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/effets/sable.jpg" aria-label="Aperçu de l'effet sable"><source src="medias/galerie/effets/sable.mp4" type="video/mp4"></video></figure>
+<h3><code>sable</code></h3>
+<p>Sable qui s'écoule depuis l'ancre et forme un vrai tas, qui s'écroule si son support bouge (grains) ; déclarer un sol ou un obstacle dessous (data-obstacle).</p>
+</article>
+</div>
+<!-- /galerie:effets -->
+<h3>Régler un effet d'une phrase</h3>
+<table>
+<thead><tr><th>Vous dites</th><th>Ce qui change</th></tr></thead>
+<tbody>
+<tr><td>« plus d'étincelles », « moins de confettis »</td><td>Le nombre de particules, doublé ou divisé par deux.</td></tr>
+<tr><td>« plus lent », « plus vif »</td><td>La vitesse.</td></tr>
+<tr><td>« en bleu », « aux couleurs de la marque »</td><td>La couleur : une teinte précise, ou celles de votre charte.</td></tr>
+<tr><td>« fais-les partir autrement »</td><td>Un autre tirage du hasard, même effet.</td></tr>
+<tr><td>« derrière le texte »</td><td>L'effet passe derrière le contenu.</td></tr>
+<tr><td>« plus tard », « plus longtemps »</td><td>Le moment et la durée de l'effet.</td></tr>
+<tr><td>« enlève les confettis », « ajoute de la neige sur l'intro »</td><td>L'effet est retiré ou ajouté.</td></tr>
+</tbody>
+</table>
+<aside class="encadre encadre-conseil"><p><strong>Conseil :</strong> sur un fond clair, la neige et la poussière, blanches par défaut, deviennent invisibles. Pulse Motion les passe à la couleur de votre charte ou à un gris-bleu ; si vous ne les voyez pas, demandez « neige plus visible ».</p></aside>
+<p>Aucun effet ne convient ? Pulse Motion peut en créer un pour votre vidéo, de préférence en partant d'un effet existant (« des étincelles bleues et plus lentes, pour un sujet sur le froid »).</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="personnages">
+<h2>Les personnages</h2>
+<p>Un personnage s'anime sur un squelette commun : les bâtonnets, un dessin fait sur demande (<a href="commandes/dessiner-personnage.html"><code>/pulse-motion:dessiner-personnage</code></a>) ou votre illustration découpée (<a href="commandes/decouper-personnage.html"><code>/pulse-motion:decouper-personnage</code></a>) prennent tous les mêmes poses et font les mêmes mouvements. Le détail est sur la page <a href="personnages.html">les personnages</a>.</p>
+<table>
+<thead><tr><th>Ce qui est livré</th><th>Le détail</th></tr></thead>
+<tbody>
+<tr><td><strong>Un dessin</strong></td><td><code>touffu</code> : le bonhomme aux bâtonnets blancs, aux grands yeux et à la touffe verte, qui sert de modèle aux nouveaux dessins.</td></tr>
+<tr><td><strong>Six poses</strong></td><td>debout, montrer, bras levés, mains sur les hanches, assis, penché.</td></tr>
+<tr><td><strong>Huit mouvements</strong></td><td>marche, course, saut, s'accroupir, se relever, coucou (un salut de la main), peur, repos. La respiration et le clignement des yeux s'y ajoutent tout seuls.</td></tr>
+<tr><td><strong>Six expressions</strong></td><td>neutre, joie, tristesse, peur, colère, surprise.</td></tr>
+<tr><td><strong>Des bouches</strong></td><td>Celles des expressions (sourire, rire, triste, surprise, colère) et celles de la parole, pour suivre les mots de la voix.</td></tr>
+<tr><td><strong>Deux gabarits</strong></td><td>Les proportions standard, et les mêmes avec une queue qui balance, pour un animal.</td></tr>
+</tbody>
+</table>
+<!-- galerie:personnages -->
+<h3>Les mouvements, joués par le Touffu</h3>
+<div class="grille-mouvements">
+<article class="carte-effet" id="clip-accroupi">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/personnages/accroupi.jpg" aria-label="Le mouvement accroupi, joué par le Touffu"><source src="medias/galerie/personnages/accroupi.mp4" type="video/mp4"></video></figure>
+<h3><code>accroupi</code></h3>
+<p>s'accroupit, bras devant pour l'équilibre</p>
+</article>
+<article class="carte-effet" id="clip-coucou">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/personnages/coucou.jpg" aria-label="Le mouvement coucou, joué par le Touffu"><source src="medias/galerie/personnages/coucou.mp4" type="video/mp4"></video></figure>
+<h3><code>coucou</code></h3>
+<p>coucou de la main, bras levé sur le côté</p>
+</article>
+<article class="carte-effet" id="clip-course">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/personnages/course.jpg" aria-label="Le mouvement course, joué par le Touffu"><source src="medias/galerie/personnages/course.mp4" type="video/mp4"></video></figure>
+<h3><code>course</code></h3>
+<p>course, bras pliés, petit rebond</p>
+</article>
+<article class="carte-effet" id="clip-marche">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/personnages/marche.jpg" aria-label="Le mouvement marche, joué par le Touffu"><source src="medias/galerie/personnages/marche.mp4" type="video/mp4"></video></figure>
+<h3><code>marche</code></h3>
+<p>marche tranquille, bras en balancier</p>
+</article>
+<article class="carte-effet" id="clip-peur">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/personnages/peur.jpg" aria-label="Le mouvement peur, joué par le Touffu"><source src="medias/galerie/personnages/peur.mp4" type="video/mp4"></video></figure>
+<h3><code>peur</code></h3>
+<p>tremble de peur, yeux ronds, touffe hérissée</p>
+</article>
+<article class="carte-effet" id="clip-repos">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/personnages/repos.jpg" aria-label="Le mouvement repos, joué par le Touffu"><source src="medias/galerie/personnages/repos.mp4" type="video/mp4"></video></figure>
+<h3><code>repos</code></h3>
+<p>debout, respire doucement</p>
+</article>
+<article class="carte-effet" id="clip-saut">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/personnages/saut.jpg" aria-label="Le mouvement saut, joué par le Touffu"><source src="medias/galerie/personnages/saut.mp4" type="video/mp4"></video></figure>
+<h3><code>saut</code></h3>
+<p>saut sur place : élan, envol, réception amortie</p>
+</article>
+<article class="carte-effet" id="clip-se-relever">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/personnages/se-relever.jpg" aria-label="Le mouvement se-relever, joué par le Touffu"><source src="medias/galerie/personnages/se-relever.mp4" type="video/mp4"></video></figure>
+<h3><code>se-relever</code></h3>
+<p>se relève depuis la position accroupie</p>
+</article>
+</div>
+<!-- /galerie:personnages -->
+<h3>Ce qu'il fait dans une scène</h3>
+<table>
+<thead><tr><th>Action</th><th>Vous dites</th></tr></thead>
+<tbody>
+<tr><td>Marcher ou courir jusqu'à un point, sans glisser</td><td>« qu'il entre en marchant », « qu'il reparte en courant »</td></tr>
+<tr><td>Prendre une pose et la tenir</td><td>« qu'il montre le chiffre »</td></tr>
+<tr><td>Faire un geste</td><td>« qu'il salue », « qu'il saute de joie »</td></tr>
+<tr><td>Se tourner</td><td>« qu'il se tourne vers nous »</td></tr>
+<tr><td>Changer d'expression, ouvrir la bouche</td><td>« qu'il sourie », « qu'il ait l'air surpris »</td></tr>
+<tr><td>Parler avec la voix de la scène</td><td>« fais-le parler pendant la voix de la scène 2 »</td></tr>
+</tbody>
+</table>
+<p>Chaque action se cale sur un autre élément de la scène, sur un mot de la voix ou sur un temps de la musique. Pour créer une pose ou un mouvement : <a href="commandes/animer-personnage.html"><code>/pulse-motion:animer-personnage</code></a> ; pour les régler à la souris : <a href="commandes/atelier-personnages.html"><code>/pulse-motion:atelier-personnages</code></a>.</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="cartes">
+<h2>Les cartes</h2>
+<p>Pulse Motion dessine des cartes de <strong>pays</strong> et de <strong>régions françaises</strong>, outre-mer compris : vos pays d'export, vos agences, un trajet. Les pays se colorent ou s'allument, les villes se marquent d'un point avec leur nom, une ligne relie deux villes. Les noms se placent tout seuls, sans se gêner ni croiser les lignes ; en vertical, la carte remplit l'écran et l'outre-mer passe sous la France. Pour en demander une : « une carte de nos pays d'export », « nos agences en France sur la carte » (<a href="commandes/retoucher.html"><code>/pulse-motion:retoucher</code></a>).</p>
+<!-- galerie:cartes -->
+<p>6 démos, chacune fabriquée par Pulse Motion à partir de la demande écrite dessous.</p>
+<div class="grille-mouvements">
+<article class="carte-effet" id="carte-monde">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/cartes/monde.jpg" aria-label="Démo : Le monde, pays par pays"><source src="medias/galerie/cartes/monde.mp4" type="video/mp4"></video></figure>
+<h3>Le monde, pays par pays</h3>
+<pre class="commande"><code>Une carte du monde où nos pays d'export apparaissent un par un : France, Brésil, Canada, Japon, Australie.</code></pre>
+</article>
+<article class="carte-effet" id="carte-europe">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/cartes/europe.jpg" aria-label="Démo : L'Europe"><source src="medias/galerie/cartes/europe.mp4" type="video/mp4"></video></figure>
+<h3>L'Europe</h3>
+<pre class="commande"><code>Une carte de l'Europe avec nos quatre filiales en couleur, puis la Pologne et Varsovie : c'est la prochaine.</code></pre>
+</article>
+<article class="carte-effet" id="carte-france">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/cartes/france.jpg" aria-label="Démo : La France, ses régions et l'outre-mer"><source src="medias/galerie/cartes/france.mp4" type="video/mp4"></video></figure>
+<h3>La France, ses régions et l'outre-mer</h3>
+<pre class="commande"><code>La carte de France avec ses régions ; l'outre-mer, dans ses encarts, s'allume.</code></pre>
+</article>
+<article class="carte-effet" id="carte-mamoudzou">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/cartes/mamoudzou.jpg" aria-label="Démo : Mamoudzou, à Mayotte"><source src="medias/galerie/cartes/mamoudzou.mp4" type="video/mp4"></video></figure>
+<h3>Mamoudzou, à Mayotte</h3>
+<pre class="commande"><code>Sur la carte de France, marque Mamoudzou, à Mayotte.</code></pre>
+</article>
+<article class="carte-effet" id="carte-liaison">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/cartes/liaison.jpg" aria-label="Démo : De Paris à New York"><source src="medias/galerie/cartes/liaison.mp4" type="video/mp4"></video></figure>
+<h3>De Paris à New York</h3>
+<pre class="commande"><code>Une ligne qui relie Paris à New York, comme un vol.</code></pre>
+</article>
+<article class="carte-effet carte-verticale" id="carte-vertical">
+<figure><video class="apercu" muted loop playsinline preload="none" poster="medias/galerie/cartes/vertical.jpg" aria-label="Démo : Nos agences en France"><source src="medias/galerie/cartes/vertical.mp4" type="video/mp4"></video></figure>
+<h3>Nos agences en France <span class="carte-maniere">vertical (9:16)</span></h3>
+<pre class="commande"><code>En vertical, pour les réseaux : nos agences en France, de Rennes à La Réunion.</code></pre>
+</article>
+</div>
+<p class="legende">Fonds de carte : <a href="https://www.naturalearthdata.com/" rel="noopener">Natural Earth</a>, domaine public. Ils sont livrés avec Pulse Motion : aucune carte n'est chargée en ligne, et le crédit s'ajoute tout seul aux crédits de votre vidéo.</p>
+<!-- /galerie:cartes -->
+<p>Jamais de plan de ville ni de carte en ligne. Les frontières sont celles de Natural Earth, telles qu'elles sont sur le terrain, sans prendre parti.</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="formats">
+<h2>Les formats d'image</h2>
+<table>
+<thead><tr><th>Format</th><th>Forme</th><th>Pour</th></tr></thead>
+<tbody>
+<tr><td><strong>16:9</strong></td><td>Paysage</td><td>Formation, présentation, YouTube, plateforme de formation. Le format par défaut.</td></tr>
+<tr><td><strong>9:16</strong></td><td>Vertical</td><td>Stories, Reels, TikTok, Shorts. Choisi pour le genre « social ».</td></tr>
+<tr><td><strong>4:5</strong></td><td>Presque carré, vertical</td><td>Le fil LinkedIn ou Instagram.</td></tr>
+<tr><td><strong>1:1</strong></td><td>Carré</td><td>Le fil des réseaux, quand on veut la même vidéo partout.</td></tr>
+</tbody>
+</table>
+<p>Tous les styles livrés fonctionnent dans les quatre formats : les tailles s'adaptent à la hauteur de l'image. En <strong>9:16</strong>, le contrôle vérifie en plus qu'aucun texte ne passe sous les boutons des réseaux (en haut, en bas, et sur le côté droit).</p>
+</section>
+
+<!-- ===================================================================================================== -->
+<section id="exemple">
+<h2>L'exemple livré</h2>
+<p>Le plugin contient une vidéo d'exemple, <strong>« La chaîne du froid »</strong> : une formation d'une minute, en six scènes, dans le style <code>clair-pedagogique</code>, avec une musique composée, une voix, des sous-titres et des bruitages sur les transitions. C'est elle que suit le <a href="tutoriels/premiere-video.html">tutoriel 1</a>.</p>
+</section>
+
+</article>
+</div>
+</main>
+</body>
+</html>

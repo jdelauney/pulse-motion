@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="fr" data-racine="../" data-commande="filmer">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>/pulse-motion:filmer – Wiki Pulse Motion</title>
+<meta name="description" content="Filmer une application web ou un site pour un tutoriel, ou partir d'une vidéo ou de captures de votre écran (« filme comment on crée une facture sur app.exemple.fr », « j'ai enregistré mon écran », « floute les noms des clients »).">
+<!-- langues -->
+<link rel="alternate" hreflang="fr" href="https://jdelauney.github.io/pulse-motion/commandes/filmer.html">
+<link rel="alternate" hreflang="en" href="https://jdelauney.github.io/pulse-motion/en/commandes/filmer.html">
+<link rel="alternate" hreflang="x-default" href="https://jdelauney.github.io/pulse-motion/commandes/filmer.html">
+<!-- /langues -->
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/animations.css">
+<script src="../js/donnees.js" defer></script>
+<script src="../js/gabarit.js" defer></script>
+<script src="../js/animations.js" defer></script>
+<script src="../js/console.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<div class="mise-en-page">
+<nav class="laterale" aria-label="Les commandes" data-laterale></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille pastille-etape" data-couleur="1">Étape 1 · Créer</p>
+<h1><code>/pulse-motion:filmer</code></h1>
+<p class="chapo">Filmer une application web ou un site pour un tutoriel, ou partir d'une vidéo ou de captures de votre écran (« filme comment on crée une facture sur app.exemple.fr », « j'ai enregistré mon écran », « floute les noms des clients »).</p>
+</header>
+
+<ul class="sommaire" aria-label="Sur cette page" data-sommaire></ul>
+
+<section id="description">
+<h2>Description</h2>
+<p>C'est la commande des <strong>tutoriels de logiciel</strong> : montrer comment on fait dans une application (« on va dans Factures, on clique sur Nouvelle facture, on tape le client, on enregistre »). Vous racontez le parcours avec vos mots ; Pulse Motion le fait lui-même dans l'application, étape par étape, et la filme.</p>
+<ol>
+<li><strong>Vous décrivez le parcours</strong>, comme à un collègue, et vous donnez l'adresse de départ. Pulse Motion vous le relit en phrases numérotées : vous validez ou vous corrigez.</li>
+<li><strong>Pour un site en ligne, il vous demande votre accord</strong>, avec le nom du site. Si l'application demande un identifiant, <strong>vous vous connectez vous-même</strong>, dans une fenêtre qui s'ouvre sur votre écran.</li>
+<li><strong>Il filme</strong> : une image de chaque état de l'application, les courtes réactions après chaque clic, et la position de chaque clic. Quelques secondes par étape.</li>
+<li><strong>Il regarde le résultat avec vous</strong> : une planche, une image par étape. Il vous signale ce qui semble personnel et propose de le flouter.</li>
+<li><strong>Vous choisissez la prise</strong> que vous gardez, ou vous refilmez.</li>
+<li><strong>Le film entre dans la vidéo</strong> : une scène pour une à trois étapes. Le pointeur, les clics, les zooms et le projecteur sont ajoutés par Pulse Motion, après le tournage.</li>
+</ol>
+<p>Elle sait aussi partir d'une <strong>vidéo de votre écran</strong> (un logiciel installé, filmé avec l'outil de votre ordinateur), d'une <strong>animation</strong> (un GIF) ou de <strong>captures d'écran</strong> : le même pointeur, les mêmes zooms et le même projecteur s'y posent.</p>
+<p>Vous pouvez la lancer seule, pour ajouter un film à une vidéo qui existe déjà. <a href="creer.html"><code>/pulse-motion:creer</code></a> l'appelle aussi de lui-même pour un sujet de tutoriel.</p>
+</section>
+
+<section id="pourquoi">
+<h2>Pourquoi l'utiliser</h2>
+<ul>
+<li><strong>Tout se retouche sans refilmer.</strong> Le pointeur, les zooms, le projecteur et le temps entre deux clics sont posés après coup : « le pointeur va trop vite », « zoome sur le bouton » se demandent en une phrase.</li>
+<li><strong>Le film est gardé avec la vidéo.</strong> Une fois filmée, l'application n'est plus jamais consultée : ni l'aperçu, ni l'export n'ont besoin d'internet, et deux exports donnent exactement les mêmes images.</li>
+<li><strong>Les données personnelles sont floutées dans les images mêmes</strong>, au moment du tournage : adresses électroniques, téléphones, IBAN, numéros de carte. Aucune image nette n'est gardée.</li>
+<li><strong>Votre mot de passe reste à vous.</strong> Pulse Motion ne le tape jamais, ne le voit pas et ne l'écrit nulle part, même si vous le donnez dans la conversation.</li>
+<li><strong>Une prise ratée se refait.</strong> Chaque tournage est une nouvelle prise ; c'est vous qui choisissez celle qui va dans la vidéo.</li>
+</ul>
+</section>
+
+<section id="quand">
+<h2>Quand l'utiliser</h2>
+<ol class="parcours" aria-label="Le parcours Pulse Motion, cette commande à l'étape mise en avant">
+  <li data-couleur="1" aria-current="step"><span class="parcours-numero">1</span> Créer</li>
+  <li data-couleur="3"><span class="parcours-numero">2</span> Retoucher</li>
+  <li data-couleur="4"><span class="parcours-numero">3</span> Exporter</li>
+  <li data-couleur="0"><span class="parcours-numero">4</span> Personnaliser</li>
+</ol>
+<ul>
+<li><strong>Pour une nouvelle vidéo de tutoriel</strong> : lancez plutôt <a href="creer.html"><code>/pulse-motion:creer</code></a> avec votre sujet (« un tutoriel : comment créer une facture dans notre logiciel »). Il part du modèle « Tutoriel logiciel », vous demande ce qu'on montre, puis filme avec vous <strong>avant</strong> d'écrire le déroulé.</li>
+<li><strong>Pour ajouter un film à une vidéo existante</strong> : lancez <code>/pulse-motion:filmer</code> dans le dossier de la vidéo, puis <a href="retoucher.html"><code>/pulse-motion:retoucher</code></a> place la scène.</li>
+<li><strong>Pour essayer sans risque</strong> : « montre-moi sur l'appli d'essai ». Facturo, une petite application de facturation livrée avec Pulse Motion, tourne sur votre ordinateur ; tout y est faux.</li>
+</ul>
+</section>
+
+<section id="arguments">
+<h2>Comment la lancer</h2>
+<pre class="commande"><code>/pulse-motion:filmer</code></pre>
+<p class="legende">Dites ce que vous voulez filmer juste après le nom, ou dans la conversation.</p>
+<pre class="commande"><code>/pulse-motion:filmer comment on crée une facture sur app.exemple.fr</code></pre>
+<pre class="commande"><code>/pulse-motion:filmer montre-moi sur l'appli d'essai</code></pre>
+<pre class="commande"><code>/pulse-motion:filmer j'ai enregistré mon écran</code></pre>
+
+<h3>Ce que vous pouvez demander</h3>
+<table>
+<thead><tr><th>Vous dites</th><th>Ce qui se passe</th></tr></thead>
+<tbody>
+<tr><td>« filme comment on crée une facture sur app.exemple.fr »</td><td>Pulse Motion vous fait raconter le parcours, vous le relit en phrases numérotées, puis vous demande l'accord pour ce site avant de filmer.</td></tr>
+<tr><td>« montre-moi sur l'appli d'essai »</td><td>Un parcours d'exemple sur Facturo (créer une facture), à relire, puis à filmer. Aucun accord demandé : rien ne sort de votre ordinateur.</td></tr>
+<tr><td>« je dois d'abord me connecter »</td><td>Une fenêtre s'ouvre sur le site. Vous vous connectez comme d'habitude, vous allez sur la page de départ, puis vous dites « c'est fait » : le tournage continue dans la même fenêtre.</td></tr>
+<tr><td>« floute les noms des clients », « floute la colonne Client »</td><td>Pulse Motion conseille de refilmer avec ce flou, posé dès le tournage. Il peut aussi flouter une zone de la prise déjà faite, définitivement.</td></tr>
+<tr><td>« ne floute pas les adresses, elles sont fausses »</td><td>Les adresses ne sont plus floutées d'office à la prochaine prise. Les mots de passe le restent toujours.</td></tr>
+<tr><td>« refilme », « reprends la première prise »</td><td>Une nouvelle prise, ou la prise précédente remise dans la vidéo.</td></tr>
+<tr><td>« j'ai enregistré mon écran », « voici un GIF de la manipulation »</td><td>Pulse Motion transforme la vidéo ou l'animation en film, sans internet, et vous montre une image par seconde pour placer les clics et les zooms.</td></tr>
+<tr><td>« je veux montrer Excel », « c'est un logiciel installé »</td><td>Il vous explique comment enregistrer votre écran avec l'outil de votre ordinateur, puis importe la vidéo.</td></tr>
+<tr><td>« oublie ma connexion à app.exemple.fr »</td><td>Ce que le navigateur de Pulse Motion gardait pour ce site (sa connexion) est effacé de votre ordinateur.</td></tr>
+</tbody>
+</table>
+<p>Une fois le film dans la vidéo, les retouches passent par <a href="retoucher.html"><code>/pulse-motion:retoucher</code></a> : « le pointeur va trop vite », « clique quand je dis enregistrez », « suis les clics », « mets un projecteur sur le total », « mets-le dans un téléphone », « accélère la saisie ».</p>
+</section>
+
+<section id="produit">
+<h2>Ce qu'elle produit</h2>
+<ul>
+<li><strong>Le film</strong>, rangé dans le dossier de la vidéo, sous <code>films/</code> : les images de chaque étape, déjà floutées, et la position de chaque clic. Chaque tournage y ajoute une prise.</li>
+<li><strong>Une planche par prise</strong> : une image par étape, avec la cible du clic et le nombre de zones floutées. Pulse Motion la regarde avec vous.</li>
+<li><strong>Des scènes filmées</strong> dans la vidéo, une pour une à trois étapes, montrées dans un cadre de navigateur (ou de téléphone, de tablette, de fenêtre).</li>
+</ul>
+<p>Ce qui est gardé sur votre ordinateur, et ce qui ne l'est pas, est détaillé dans la section <a href="../concepts.html#confidentialite">Confidentialité</a> des concepts.</p>
+</section>
+
+<section id="risques">
+<h2>Risques et précautions</h2>
+<ul>
+<li><strong>Les clics sont réels.</strong> Pulse Motion fait vraiment les actions dans l'application : une facture enregistrée est enregistrée, un message envoyé est envoyé, et rien n'est annulé ensuite. Utilisez un <strong>compte de démonstration</strong> si vous en avez un.</li>
+<li><strong>Le flou automatique ne reconnaît pas tout.</strong> Il voit les adresses électroniques, les téléphones, les IBAN, les numéros de carte et de sécurité sociale, les champs d'adresse et de date de naissance. Les noms, les visages ou les montants, c'est Pulse Motion qui vous les signale en regardant la planche, et vous qui décidez.</li>
+<li><strong>Un flou ajouté après coup est définitif</strong> dans cette prise : pour l'enlever, il faut refilmer. Une vidéo déjà exportée avant ce flou garde l'image nette : refaites l'export.</li>
+<li><strong>Un seul site par tournage.</strong> L'accord vaut pour ce site ; si la page veut emmener ailleurs, la navigation est bloquée et Pulse Motion vous le dit.</li>
+<li><strong>Ne touchez pas à la fenêtre pendant le tournage</strong>, quand elle est visible (après une connexion) : quelques secondes par étape.</li>
+</ul>
+<aside class="encadre encadre-conseil"><p><strong>Conseil :</strong> commencez par l'appli d'essai (« montre-moi sur l'appli d'essai ») : vous voyez tout le parcours, connexion et flou compris, sans toucher à une vraie application.</p></aside>
+</section>
+
+<section id="problemes">
+<h2>Problèmes et solutions</h2>
+<details class="probleme"><summary>Pulse Motion ne trouve pas le bouton ou le champ</summary><p>La prise s'arrête à cette étape. Pulse Motion vous dit ce qu'il voit à la place, et vous montre l'image. Décrivez la cible autrement, avec le texte qui s'affiche vraiment (« le bouton Créer »), sa position (« le deuxième Modifier ») ou l'endroit (« dans la fenêtre »), puis refilmez. Les actions déjà faites ne sont pas annulées.</p></details>
+<details class="probleme"><summary>La page me redemande de me connecter</summary><p>La connexion a expiré, ou le site demande un identifiant que Pulse Motion n'a pas. Répondez « je dois d'abord me connecter » : la fenêtre s'ouvre, vous vous connectez, puis vous dites « c'est fait ».</p></details>
+<details class="probleme"><summary>On ne voit pas le chargement de la page</summary><p>Par défaut, Pulse Motion passe d'une page à l'autre par un fondu. Dites « on ne voit pas le chargement » : la prochaine prise garde les images du chargement.</p></details>
+<details class="probleme"><summary>Ma vidéo de l'écran est refusée</summary><p>Son format n'est pas lisible par le navigateur de votre ordinateur. Installez ffmpeg avec <a href="outils.html"><code>/pulse-motion:outils</code></a>, puis redonnez le fichier.</p></details>
+<details class="probleme"><summary>Ma vidéo de l'écran dure plus de 3 minutes</summary><p>Pulse Motion vous demande le passage à garder : le début et la fin, en minutes et secondes (« de 0:12 à 1:05 »).</p></details>
+<details class="probleme"><summary>Pulse Motion signale une vidéo lourde</summary><p>Au-delà de 25 Mo d'images dans la page, il vous le dit avant l'export. Supprimez les prises inutiles, raccourcissez les réactions, ou montrez moins d'étapes par scène.</p></details>
+<details class="probleme"><summary>« Chrome ou Edge est introuvable »</summary><p>Le tournage passe par Chrome ou Edge. Installez l'un des deux, puis vérifiez avec <a href="outils.html"><code>/pulse-motion:outils</code></a>. Voir les <a href="../prerequis.html">prérequis</a>.</p></details>
+</section>
+
+<section id="exemples">
+<h2>Exemples</h2>
+<div class="conversation" data-titre="Exemple : essayer sur l'appli d'essai">
+<p data-role="vous">/pulse-motion:filmer montre-moi sur l'appli d'essai</p>
+<p data-role="claude">Voici le parcours, sur Facturo, l'application d'essai :
+1. Cliquer sur « Nouvelle facture »
+2. Dans « Client », taper « Dupont SARL »
+3. Choisir « Virement » dans « Mode de paiement »
+4. Cliquer sur « Enregistrer »
+5. Confirmer dans la fenêtre
+6. Attendre que « Facture enregistrée » s'affiche
+→ C'est bien ça (Recommandé) / Je corrige</p>
+<p data-role="vous">C'est bien ça</p>
+<p data-role="claude">Je filme. Ne touchez à rien, c'est l'affaire de quelques secondes par étape… Voici la planche : une image par étape. L'adresse électronique du client est floutée.
+→ Je garde cette prise (Recommandé) / Je refilme</p>
+<p data-role="vous">Je garde cette prise</p>
+<p data-role="claude">✅ Fait : la prise est gardée, 6 étapes, 14 secondes de film.
+➡️ Ensuite : je l'ajoute à la vidéo avec /pulse-motion:retoucher, ou nous créons un tutoriel avec /pulse-motion:creer.</p>
+</div>
+<div class="conversation" data-titre="Exemple : un site où il faut se connecter">
+<p data-role="vous">/pulse-motion:filmer comment on ajoute un client sur app.exemple.fr</p>
+<p data-role="claude">Pour filmer, Pulse Motion va ouvrir app.exemple.fr sur cet ordinateur et y faire les clics pour de vrai. Utilisez un compte de démonstration si vous en avez un. Si vous vous connectez, ce navigateur garde la connexion du site sur cet ordinateur, jamais votre mot de passe.
+→ Oui, filmer (Recommandé) / Je dois d'abord me connecter / Non</p>
+<p data-role="vous">Je dois d'abord me connecter</p>
+<p data-role="claude">Une fenêtre s'est ouverte sur app.exemple.fr. Connectez-vous comme d'habitude, allez sur la page de départ, puis dites-moi « c'est fait ». Je ne vois pas ce que vous tapez.</p>
+<p data-role="vous">C'est fait</p>
+<p data-role="claude">Ne touchez pas à la fenêtre pendant le tournage, environ 40 secondes… À l'étape 4, je vois des noms de clients dans le tableau. Je les floute ?
+→ Flouter et refilmer (Recommandé) / Flouter cette prise / C'est bon</p>
+</div>
+<div class="conversation" data-titre="Exemple : une vidéo de l'écran">
+<p data-role="vous">/pulse-motion:filmer j'ai enregistré mon écran pour montrer un tableau Excel</p>
+<p data-role="claude">Où est votre fichier ? Donnez son chemin, ou glissez-le ici.</p>
+<p data-role="vous">C:\Users\Marie\Videos\tableau-ventes.mp4</p>
+<p data-role="claude">C'est fait : 48 secondes, une image par seconde sur la planche. Votre voix est dans la vidéo.
+→ Garder votre voix de la vidéo (Recommandé) / Couper le son
+Où voulez-vous un clic, un zoom ou le projecteur ? Dites-le avec la seconde (« à 12 s, zoome sur le total »).</p>
+</div>
+</section>
+
+<section id="liees">
+<h2>Commandes liées</h2>
+<ul>
+<li><a href="creer.html"><code>/pulse-motion:creer</code></a> : un tutoriel complet, à partir du modèle « Tutoriel logiciel ».</li>
+<li><a href="retoucher.html"><code>/pulse-motion:retoucher</code></a> : placer le film dans la vidéo, régler le pointeur, les zooms, le projecteur, le cadre.</li>
+<li><a href="voix.html"><code>/pulse-motion:voix</code></a> : enregistrer votre voix, ou garder celle de votre vidéo de l'écran.</li>
+<li><a href="outils.html"><code>/pulse-motion:outils</code></a> : installer ffmpeg pour importer tous les formats de vidéo.</li>
+<li><a href="exporter.html"><code>/pulse-motion:exporter</code></a> : une vidéo filmée s'exporte comme les autres.</li>
+</ul>
+<p>Pas à pas, avec l'appli d'essai : le tutoriel <a href="../tutoriels/filmer-un-logiciel.html">Filmer un logiciel</a>.</p>
+</section>
+
+<nav class="suite" aria-label="Commande précédente et suivante" data-suite></nav>
+</article>
+</div>
+</main>
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en" data-racine="../../" data-commande="dessiner-personnage">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>/pulse-motion:dessiner-personnage – Pulse Motion Wiki</title>
+<meta name="description" content="Draw a character for the video, or edit its drawing, and see it move (“draw me a chubby chef with a chef’s hat”, “make his outfit red”).">
+<!-- langues -->
+<link rel="alternate" hreflang="fr" href="https://jdelauney.github.io/pulse-motion/commandes/dessiner-personnage.html">
+<link rel="alternate" hreflang="en" href="https://jdelauney.github.io/pulse-motion/en/commandes/dessiner-personnage.html">
+<link rel="alternate" hreflang="x-default" href="https://jdelauney.github.io/pulse-motion/commandes/dessiner-personnage.html">
+<!-- /langues -->
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/animations.css">
+<script src="../../js/donnees.js" defer></script>
+<script src="../../js/gabarit.js" defer></script>
+<script src="../../js/animations.js" defer></script>
+<script src="../../js/console.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<div class="mise-en-page">
+<nav class="laterale" aria-label="The commands" data-laterale></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille pastille-etape" data-couleur="0">Step 4 · Customise</p>
+<h1><code>/pulse-motion:dessiner-personnage</code></h1>
+<p class="chapo">Draw a character for the video, or edit its drawing, and see it move (« <span lang="fr">dessine-moi un cuisinier rondouillard avec une toque</span> » (“draw me a chubby chef with a chef’s hat”), « <span lang="fr">change sa tenue en rouge</span> » (“make his outfit red”)).</p>
+</header>
+
+<ul class="sommaire" aria-label="On this page" data-sommaire></ul>
+
+<section id="description">
+<h2>Description</h2>
+<p>Describe your character in one sentence: Pulse Motion draws it piece by piece (the head, the torso, the arms, the legs, the hands, the feet), placed on the same skeleton as every Pulse Motion character. The result: it can be animated straight away with all the poses and moves already available, from walking to waving. Pulse Motion starts from the character that comes with the plugin, “touffu”, and transforms it.</p>
+<p>The drawing is done in this order:</p>
+<ul>
+<li><strong>The profile first</strong>, always: the character facing right (facing left is the same drawing, mirrored).</li>
+<li><strong>Then the front</strong>, and if needed the back and the three-quarter view, if the character has to turn towards you.</li>
+<li><strong>The face</strong>: the eyes, the eyebrows and the mouths for each expression (neutral, smile, laughter, sad, surprise, anger).</li>
+<li><strong>The accessories</strong>: a chef’s hat, glasses, a cape, a backpack, placed in front of or behind the piece that carries them.</li>
+</ul>
+<p>Before showing it to you, Pulse Motion checks the drawing and looks at it on two <em>sheets</em>, images made of thumbnails: its walk from several angles, then its expressions and its mouths. It compares the views with each other and fixes what is wrong, in three rounds at most.</p>
+<p>The drawing is stored with your video, so you need to run the command in a video’s folder.</p>
+</section>
+
+<section id="pourquoi">
+<h2>Why use it</h2>
+<ul>
+<li><strong>A character of your own, in one sentence.</strong> A job, a figure, an outfit: you describe, Pulse Motion draws.</li>
+<li><strong>It moves straight away.</strong> Walking, running, jumping, waving, fright: Pulse Motion’s moves fit it without redoing anything.</li>
+<li><strong>Edits are simple.</strong> The colours have names (the skin, the outfit…): « <span lang="fr">change sa tenue en rouge</span> » (“make his outfit red”) changes one colour, without redrawing.</li>
+<li><strong>It is checked before it reaches you.</strong> Pulse Motion looks for a head detached from the body, a gap at a joint, a floating accessory, an element present in one view and missing from another.</li>
+</ul>
+</section>
+
+<section id="quand">
+<h2>When to use it</h2>
+<ol class="parcours" aria-label="The Pulse Motion path, with this command’s step highlighted">
+  <li data-couleur="1"><span class="parcours-numero">1</span> Create</li>
+  <li data-couleur="3"><span class="parcours-numero">2</span> Edit</li>
+  <li data-couleur="4"><span class="parcours-numero">3</span> Export</li>
+  <li data-couleur="0" aria-current="step"><span class="parcours-numero">4</span> Customise</li>
+</ol>
+<ul>
+<li><strong>After <a href="creer.html"><code>/pulse-motion:creer</code></a></strong>: the character is stored in a video’s folder.</li>
+<li><strong>Before <a href="animer-personnage.html"><code>/pulse-motion:animer-personnage</code></a></strong>, to give it new gestures or have it act in a scene.</li>
+<li><strong>Instead of <a href="decouper-personnage.html"><code>/pulse-motion:decouper-personnage</code></a></strong> if you don’t have an illustration yet. If you do, that is what you should cut out.</li>
+</ul>
+<p>Everything characters can do is gathered on the <a href="../../personnages.html" hreflang="fr">Personnages</a> (in French) page.</p>
+</section>
+
+<section id="arguments">
+<h2>How to run it</h2>
+<pre class="commande" lang="fr"><code>/pulse-motion:dessiner-personnage [le personnage à dessiner, ou la retouche de son dessin]</code></pre>
+<p class="traduction">“[the character to draw, or the edit to its drawing]”</p>
+<p class="legende">In square brackets <code>[ ]</code>: optional. You can also run the command on its own and describe the character afterwards, in your own words.</p>
+<pre class="commande" lang="fr"><code>/pulse-motion:dessiner-personnage dessine-moi un cuisinier rondouillard avec une toque</code></pre>
+<p class="traduction">“draw me a chubby chef with a chef’s hat”</p>
+<pre class="commande" lang="fr"><code>/pulse-motion:dessiner-personnage change sa tenue en rouge</code></pre>
+<p class="traduction">“make his outfit red”</p>
+<pre class="commande" lang="fr"><code>/pulse-motion:dessiner-personnage ajoute-lui des lunettes</code></pre>
+<p class="traduction">“give him glasses”</p>
+<p>If your description leaves open a point that changes the whole drawing (a human or an animal, the figure), Pulse Motion asks you a single question, with the recommended answer first. Otherwise, it decides.</p>
+
+<h3>What you can ask for</h3>
+<table>
+<thead><tr><th>What you want</th><th>Example sentences</th></tr></thead>
+<tbody>
+<tr><td><strong>A new character</strong></td><td>« <span lang="fr">dessine-moi un cuisinier rondouillard avec une toque</span> », « <span lang="fr">une docteure avec des lunettes</span> » (“draw me a chubby chef with a chef’s hat”, “a woman doctor with glasses”)</td></tr>
+<tr><td><strong>A colour</strong></td><td>« <span lang="fr">change sa tenue en rouge</span> », « <span lang="fr">des cheveux plus foncés</span> » (“make his outfit red”, “darker hair”)</td></tr>
+<tr><td><strong>Part of the drawing</strong></td><td>« <span lang="fr">refais-lui la tête</span> » (“redo his head”)</td></tr>
+<tr><td><strong>An accessory</strong></td><td>« <span lang="fr">ajoute-lui des lunettes</span> », « <span lang="fr">donne-lui un sac à dos</span> » (“give him glasses”, “give him a backpack”)</td></tr>
+<tr><td><strong>One more view</strong></td><td>« <span lang="fr">il doit pouvoir se tourner vers nous</span> » (“he needs to be able to turn towards us”): Pulse Motion draws his front</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="produit">
+<h2>What it produces</h2>
+<ul>
+<li><strong>The character’s drawing</strong>, stored with the video: <code>personnages/dessins/&lt;nom&gt;.json</code>. The name comes from your request, in lower case with hyphens: <code>cuisinier</code>, <code>docteur-lunettes</code>.</li>
+<li><strong>Two sheets</strong>: the walk from several angles, and the expressions with the mouths. Pulse Motion shows you the walk sheet, and opens it if you want to see it.</li>
+<li><strong>What you can do next</strong>: make it move, adjust it yourself with the mouse, or change a colour.</li>
+<li><strong>For a new character</strong>, a question: « Je le garde pour vos prochaines vidéos ? » (Shall I keep it for your next videos?). Once kept, it joins your <a href="../concepts.html#bibliotheque">personal library</a>, and Pulse Motion offers it to you when you ask for a character in another video.</li>
+</ul>
+</section>
+
+<section id="risques">
+<h2>Risks and precautions</h2>
+<ul>
+<li><strong>There must be a video in the folder.</strong> Without one, Pulse Motion tells you and offers to create one with <a href="creer.html"><code>/pulse-motion:creer</code></a>.</li>
+<li><strong>A character that turns needs more drawing.</strong> The profile is enough as long as it stays side-on. If it has to face you, say so: its front is drawn, with the same elements in the same proportions.</li>
+<li><strong>A character that talks needs speaking mouths.</strong> If you plan to make it talk over the scene’s voice, say so: Pulse Motion draws at least the open mouth, the rounded mouth and the closed lips; the others are worked out from them.</li>
+<li><strong>The style stays simple.</strong> Clean shapes, few details, an even line, and your brand kit’s colours when possible: the character has to read well in motion, in a video.</li>
+</ul>
+<aside class="encadre encadre-conseil"><p><strong>Tip:</strong> to change the colour of an outfit, ask with those very words (« <span lang="fr">change sa tenue en rouge</span> » (“make his outfit red”)): only the colour changes, the drawing stays the same.</p></aside>
+</section>
+
+<section id="problemes">
+<h2>Problems and solutions</h2>
+<details class="probleme"><summary>Pulse Motion says there is no video in this folder</summary><p>The drawing is stored with a video. Open your video’s folder in VS Code, or create one with <a href="creer.html"><code>/pulse-motion:creer</code></a>, then run the command again.</p></details>
+<details class="probleme"><summary>Something looks wrong on the sheet</summary><p>The head seems detached, an accessory is floating, a hand is in the wrong place? Say it in one sentence (« <span lang="fr">de face, la tête flotte au-dessus du cou</span> » (“from the front, the head floats above the neck”)): Pulse Motion fixes the drawing and shows you the sheet again.</p></details>
+<details class="probleme"><summary>I want it to make a different gesture</summary><p>Poses and moves are not drawn: they are created with <a href="animer-personnage.html"><code>/pulse-motion:animer-personnage</code></a> (« <span lang="fr">fais une pose où il se gratte la tête</span> » (“make a pose where he scratches his head”)).</p></details>
+<details class="probleme"><summary>I want to place its arms myself</summary><p>Open the character workshop with <a href="atelier-personnages.html"><code>/pulse-motion:atelier-personnages</code></a>: you pose it with the mouse.</p></details>
+<details class="probleme"><summary>I already have a drawing of my character</summary><p>No need to have it redrawn: <a href="decouper-personnage.html"><code>/pulse-motion:decouper-personnage</code></a> cuts out your illustration so it can be animated.</p></details>
+<details class="probleme"><summary>“node” not found</summary><p>Node.js is not installed. Install the LTS version from <a href="https://nodejs.org/fr/download" target="_blank" rel="noopener noreferrer">nodejs.org</a>, then restart Claude Code. See the <a href="../prerequis.html#node">requirements</a>.</p></details>
+</section>
+
+<section id="exemples">
+<h2>Examples</h2>
+<div class="conversation" lang="fr" data-titre="Example: a new character">
+<p data-role="vous">/pulse-motion:dessiner-personnage dessine-moi un cuisinier rondouillard avec une toque</p>
+<p data-role="outil">pulse-motion personnages afficher touffu --type dessin</p>
+<p data-role="outil">pulse-motion personnages verifier --dossier .</p>
+<p data-role="outil">pulse-motion personnages planche marche --dessin cuisinier --vues 0,45,90,-90 --dossier .</p>
+<p data-role="outil">pulse-motion personnages planche --dessin cuisinier --visage --dossier .</p>
+<p data-role="claude">Voici votre cuisinier : tout rond, en tablier blanc, avec une grande toque, dessiné de profil et de face. La planche le montre en train de marcher, sous quatre angles.
+Ensuite, vous pouvez le faire bouger (/pulse-motion:animer-personnage), le régler vous-même (/pulse-motion:atelier-personnages) ou changer une couleur.</p>
+</div>
+<details class="traduction"><summary>In English</summary><p><strong>You:</strong> /pulse-motion:dessiner-personnage draw me a chubby chef with a chef’s hat</p><p><strong>Claude:</strong> Here is your chef: nice and round, in a white apron, with a tall chef’s hat, drawn in profile and from the front. The sheet shows him walking, from four angles. Next, you can make him move (/pulse-motion:animer-personnage), adjust him yourself (/pulse-motion:atelier-personnages) or change a colour.</p></details>
+<div class="conversation" lang="fr" data-titre="Example: changing a colour">
+<p data-role="vous">/pulse-motion:dessiner-personnage change sa tenue en rouge</p>
+<p data-role="outil">pulse-motion personnages afficher cuisinier --type dessin --dossier .</p>
+<p data-role="outil">pulse-motion personnages verifier --dossier .</p>
+<p data-role="claude">Le cuisinier porte maintenant une tenue rouge. Seule la couleur a changé : le dessin et ses mouvements restent les mêmes.</p>
+</div>
+<details class="traduction"><summary>In English</summary><p><strong>You:</strong> /pulse-motion:dessiner-personnage make his outfit red</p><p><strong>Claude:</strong> The chef now wears a red outfit. Only the colour has changed: the drawing and its moves stay the same.</p></details>
+</section>
+
+<section id="liees">
+<h2>Related commands</h2>
+<ul>
+<li><a href="animer-personnage.html"><code>/pulse-motion:animer-personnage</code></a>: its poses, its moves, its expressions, its place in a scene.</li>
+<li><a href="atelier-personnages.html"><code>/pulse-motion:atelier-personnages</code></a>: pose it and animate it with the mouse.</li>
+<li><a href="decouper-personnage.html"><code>/pulse-motion:decouper-personnage</code></a>: animate an illustration you already have.</li>
+</ul>
+</section>
+
+<nav class="suite" aria-label="Previous and next command" data-suite></nav>
+</article>
+</div>
+</main>
+</body>
+</html>

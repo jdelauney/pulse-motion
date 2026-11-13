@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en" data-racine="../../" data-commande="voix">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>/pulse-motion:voix – Pulse Motion Wiki</title>
+<meta name="description" content="Record, import and align the video’s voice, or play its music (“I’m recording scene 2”, “I have a file of my voice”, “realign the words”).">
+<!-- langues -->
+<link rel="alternate" hreflang="fr" href="https://jdelauney.github.io/pulse-motion/commandes/voix.html">
+<link rel="alternate" hreflang="en" href="https://jdelauney.github.io/pulse-motion/en/commandes/voix.html">
+<link rel="alternate" hreflang="x-default" href="https://jdelauney.github.io/pulse-motion/commandes/voix.html">
+<!-- /langues -->
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/animations.css">
+<script src="../../js/donnees.js" defer></script>
+<script src="../../js/gabarit.js" defer></script>
+<script src="../../js/animations.js" defer></script>
+<script src="../../js/console.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<div class="mise-en-page">
+<nav class="laterale" aria-label="The commands" data-laterale></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille pastille-etape" data-couleur="3">Step 2 · Edit</p>
+<h1><code>/pulse-motion:voix</code></h1>
+<p class="chapo">Record, import and align the video’s voice, or play its music (« <span lang="fr">j'enregistre la scène 2</span> » (“I’m recording scene 2”), « <span lang="fr">j'ai un fichier de ma voix</span> » (“I have a file of my voice”), « <span lang="fr">recale les mots</span> » (“realign the words”)).</p>
+</header>
+
+<ul class="sommaire" aria-label="On this page" data-sommaire></ul>
+
+<section id="description">
+<h2>Description</h2>
+<p>This is the command for your video’s voice, scene by scene. It can do five things:</p>
+<ul>
+<li><strong>Record</strong> your voice in the preview’s <em>studio</em>. The scene’s text is shown in large type; you click « <span lang="fr">Enregistrer</span> » (Record), read after the countdown, then « <span lang="fr">Arrêter</span> » (Stop). You listen back, then « <span lang="fr">Garder</span> » (Keep) or « <span lang="fr">Refaire</span> » (Redo).</li>
+<li><strong>Import</strong> a recording made elsewhere, for one scene or for the whole video. A recording of the whole video is split up by scene.</li>
+<li><strong>Add a placeholder voice</strong>: the computer’s voice reads the text, to time the animation while you wait to record.</li>
+<li><strong>Add a synthetic voice</strong>: a French voice generated on your computer, with no account and no connection once installed. It can be delivered as it is, with its credits.</li>
+<li><strong>Realign the words</strong> with what you actually said, thanks to <a href="../../son.html#transcription" hreflang="fr">transcription</a> (in French).</li>
+</ul>
+<p>It can also <strong>play the music on its own</strong>, in your computer’s media player.</p>
+<p>The scenes to be spoken are the ones with spoken text in the <a href="../concepts.html#deroule">timeline</a>. A video with no spoken text at all has nothing to record: Pulse Motion then offers to add some with <a href="retoucher.html"><code>/pulse-motion:retoucher</code></a> (« <span lang="fr">ajoute une voix à la vidéo</span> » (“add a voice to the video”)).</p>
+<p>This command doesn’t change the volumes, the spoken text, the subtitles or the mood of the music: for that, use <a href="retoucher.html"><code>/pulse-motion:retoucher</code></a> (« <span lang="fr">baisse la voix</span> » (“turn the voice down”), « <span lang="fr">change ce que je dis dans l'intro</span> » (“change what I say in the intro”)).</p>
+</section>
+
+<section id="pourquoi">
+<h2>Why use it</h2>
+<ul>
+<li><strong>No recording software to learn.</strong> The studio is in the preview: the text to read is right in front of you.</li>
+<li><strong>A recording made elsewhere works too.</strong> Pulse Motion reads it where it is and stores the take with the video: the original doesn’t move.</li>
+<li><strong>The video fits itself to your voice.</strong> A scene lasts at least as long as its take, and an animation that starts on a word of the voice follows that word. Re-recording a scene realigns it automatically.</li>
+<li><strong>You can move forward before recording.</strong> The placeholder voice holds the place; your real takes are always kept.</li>
+</ul>
+</section>
+
+<section id="quand">
+<h2>When to use it</h2>
+<ol class="parcours" aria-label="The Pulse Motion journey, with this command’s step highlighted">
+  <li data-couleur="1"><span class="parcours-numero">1</span> Create</li>
+  <li data-couleur="3" aria-current="step"><span class="parcours-numero">2</span> Edit</li>
+  <li data-couleur="4"><span class="parcours-numero">3</span> Export</li>
+  <li data-couleur="0"><span class="parcours-numero">4</span> Customise</li>
+</ol>
+<ul>
+<li><strong>After <a href="creer.html"><code>/pulse-motion:creer</code></a></strong>, if you answered « <span lang="fr">Je l'enregistre</span> » (I’ll record it) or « <span lang="fr">J'ai un fichier</span> » (I have a file) to the voice question.</li>
+<li><strong>While editing</strong>, to redo a take or realign the subtitles.</li>
+<li><strong>Before <a href="exporter.html"><code>/pulse-motion:exporter</code></a></strong>: the export refuses the placeholder voice, unless you ask for a working version.</li>
+</ul>
+</section>
+
+<section id="arguments">
+<h2>How to run it</h2>
+<pre class="commande"><code>/pulse-motion:voix</code></pre>
+<p class="legende">It needs nothing after the name: say what you want in your own words, right after the name or in the conversation.</p>
+<pre class="commande" lang="fr"><code>/pulse-motion:voix j'enregistre la scène 2</code></pre>
+<p class="traduction">“I’m recording scene 2”</p>
+<pre class="commande" lang="fr"><code>/pulse-motion:voix j'ai un fichier de ma voix</code></pre>
+<p class="traduction">“I have a file of my voice”</p>
+
+<h3>What you can ask</h3>
+<table>
+<thead><tr><th>You say</th><th>What happens</th></tr></thead>
+<tbody>
+<tr><td>« <span lang="fr">j'enregistre la scène 2</span> » (“I’m recording scene 2”), « <span lang="fr">je veux enregistrer ma voix</span> » (“I want to record my voice”)</td><td>The preview opens on the studio for the scene you asked for (otherwise, the first one to record). The first time, the browser asks you to allow the microphone.</td></tr>
+<tr><td>« <span lang="fr">j'ai un fichier de ma voix</span> » (“I have a file of my voice”), « <span lang="fr">importe mon enregistrement</span> » (“import my recording”)</td><td>Pulse Motion asks you for the file (its path, or drag it into the conversation), then: “for one scene or for the whole video?”. It recommends the whole video if the recording is longer than a minute.</td></tr>
+<tr><td>« <span lang="fr">mets une voix provisoire</span> » (“add a placeholder voice”), « <span lang="fr">je veux entendre le texte</span> » (“I want to hear the text”)</td><td>The computer’s voice reads the text of the whole video, or of a single scene. Takes already recorded are kept.</td></tr>
+<tr><td>« <span lang="fr">mets une voix de synthèse</span> » (“add a synthetic voice”)</td><td>Pulse Motion generates the voice for each scene that doesn’t have your take. The first time, it offers to install it (about 300 MB, a few minutes, with your consent); meanwhile, the computer’s voice holds the place. After that, only the scenes that changed are remade.</td></tr>
+<tr><td>« <span lang="fr">fais-la parler plus lentement</span> » (“make it speak more slowly”), « <span lang="fr">un peu plus vite</span> » (“a bit faster”)</td><td>The speed of the synthetic voice changes (from 0.7 to 1.3 times), then the scenes are remade.</td></tr>
+<tr><td>« <span lang="fr">il prononce mal HACCP</span> » (“it mispronounces HACCP”)</td><td>Pulse Motion offers to note the correct pronunciation in the glossary, for your next videos too, or only in this video. If transcription is installed, it listens back to the synthetic voice itself and tells you which words were misread.</td></tr>
+<tr><td>« <span lang="fr">recale les mots</span> » (“realign the words”), « <span lang="fr">la voix est décalée</span> » (“the voice is out of sync”), « <span lang="fr">les sous-titres sont en avance</span> » (“the subtitles are early”)</td><td>Transcription realigns the words of your takes. If it isn’t installed, Pulse Motion offers to install it first.</td></tr>
+<tr><td>« <span lang="fr">fais-moi écouter la musique</span> » (“let me hear the music”)</td><td>The music on its own opens in your computer’s media player. With no music, Pulse Motion offers to add some with <a href="retoucher.html"><code>/pulse-motion:retoucher</code></a>.</td></tr>
+</tbody>
+</table>
+<p>The voice, subtitles and music are covered in detail on the <a href="../../son.html" hreflang="fr">Le son</a> page (in French).</p>
+</section>
+
+<section id="produit">
+<h2>What it produces</h2>
+<ul>
+<li><strong>Your voice takes</strong>, one per scene, stored with the video in <code>assets/voix/</code>. Alongside each take, Pulse Motion keeps the moment each word is said.</li>
+<li><strong>The updated video</strong>: <code>sortie/&lt;titre&gt;.html</code>, and the preview, which reloads by itself.</li>
+<li><strong>A check</strong> after each recording, import or placeholder voice. Pulse Motion tells you in one sentence what remains: scenes still using the placeholder voice, a scene made longer by the voice, words aligned as well as possible.</li>
+<li><strong>The music on its own</strong>, when you ask to hear it: <code>sortie/musique.wav</code>.</li>
+</ul>
+</section>
+
+<section id="risques">
+<h2>Risks and precautions</h2>
+<ul>
+<li><strong>The voice sets the length of the scenes.</strong> A scene lasts at least as long as its take, plus a short silence. A take longer than planned therefore makes the scene longer: Pulse Motion tells you.</li>
+<li><strong>The synthetic voice is honest, not human.</strong> A single French voice, female, decent but less natural than a real voice; acronyms, proper names and English words are corrected through the glossary. It doesn’t imitate anyone. Your take always comes before it.</li>
+<li><strong>The placeholder voice is never delivered.</strong> It is only used to time the animation. The export refuses it, unless you ask for a working version yourself.</li>
+<li><strong>A recording of the whole video needs transcription.</strong> That is what splits it up by scene. It is installed once, with your consent (about 800 MB, see <a href="outils.html"><code>/pulse-motion:outils</code></a>). Without it, import one take per scene.</li>
+<li><strong>The subtitles use the written text</strong>, never what transcription thought it heard. If you said something other than the text, change the spoken text with <a href="retoucher.html"><code>/pulse-motion:retoucher</code></a>.</li>
+</ul>
+<aside class="encadre encadre-conseil"><p><strong>Tip:</strong> to redo a single scene, give its number (« <span lang="fr">j'enregistre la scène 3</span> » (“I’m recording scene 3”)): only its take is replaced.</p></aside>
+</section>
+
+<section id="problemes">
+<h2>Problems and solutions</h2>
+<details class="probleme"><summary>Pulse Motion says there is no video here</summary><p>The folder you opened doesn’t contain a video. Open your video’s folder in VS Code, or create one with <a href="creer.html"><code>/pulse-motion:creer</code></a>.</p></details>
+<details class="probleme"><summary>No scene has any text to speak</summary><p>The video was created without a voice. Ask « <span lang="fr">ajoute une voix à la vidéo</span> » (“add a voice to the video”) with <a href="retoucher.html"><code>/pulse-motion:retoucher</code></a>: Pulse Motion writes the spoken text for each scene. You can then record it.</p></details>
+<details class="probleme"><summary>Importing the whole video is refused</summary><p>Transcription isn’t installed, and it is what splits the recording up by scene. Pulse Motion offers to install it, then runs the same import again. If you’d rather not install it, import or record one take per scene.</p></details>
+<details class="probleme"><summary>Pulse Motion reports a poorly recognised scene</summary><p>After importing the whole video, fewer than half the words in this scene were recognised: its take may have been split badly. Re-record this scene in the studio (« <span lang="fr">j'enregistre la scène 4</span> » (“I’m recording scene 4”)), or import a take just for it.</p></details>
+<details class="probleme"><summary>The studio doesn’t record my voice</summary><p>The browser asks for permission to use the microphone the first time. If you refused, allow the microphone for the preview page in the browser’s settings, then ask « <span lang="fr">j'enregistre la scène 1</span> » (“I’m recording scene 1”) again.</p></details>
+<details class="probleme"><summary>The subtitles are ahead of or behind the voice</summary><p>The words were aligned as well as possible, without transcription. Ask « <span lang="fr">recale les mots</span> » (“realign the words”): Pulse Motion realigns them with your voice, after installing transcription if needed.</p></details>
+<details class="probleme"><summary>“node” not found</summary><p>Node.js isn’t installed. Install the LTS version from <a href="https://nodejs.org/fr/download" target="_blank" rel="noopener noreferrer">nodejs.org</a>, then restart Claude Code. See the <a href="../prerequis.html#node">requirements</a>.</p></details>
+</section>
+
+<section id="exemples">
+<h2>Examples</h2>
+<div class="conversation" lang="fr" data-titre="Example: recording a scene">
+<p data-role="vous">/pulse-motion:voix j'enregistre la scène 2</p>
+<p data-role="outil">pulse-motion apercu . --ouvrir</p>
+<p data-role="outil">pulse-motion voix studio maillons .</p>
+<p data-role="claude">Le texte s'affiche en grand ; cliquez sur Enregistrer, lisez après le compte à rebours, puis Arrêter. Réécoutez, puis Garder ou Refaire.</p>
+<p data-role="vous">C'est gardé.</p>
+<p data-role="outil">pulse-motion controler .</p>
+<p data-role="claude">✅ Fait : la scène 2 parle maintenant avec votre voix. Les scènes 3 à 6 sont encore en voix provisoire.
+📄 Fichiers : la voix est rangée avec la vidéo ; sortie/la-chaine-du-froid.html est à jour.
+➡️ Ensuite : enregistrer une autre scène (« j'enregistre la scène 3 »), retoucher avec /pulse-motion:retoucher, ou exporter en MP4 avec /pulse-motion:exporter.</p>
+</div>
+<details class="traduction"><summary>In English</summary><p><strong>You:</strong> /pulse-motion:voix I’m recording scene 2</p><p><strong>Claude:</strong> The text is shown in large type; click Enregistrer (Record), read after the countdown, then Arrêter (Stop). Listen back, then Garder (Keep) or Refaire (Redo).</p><p><strong>You:</strong> It’s kept.</p><p><strong>Claude:</strong> ✅ Done: scene 2 now speaks with your voice. Scenes 3 to 6 still use the placeholder voice. 📄 Files: the voice is stored with the video; sortie/la-chaine-du-froid.html is up to date. ➡️ Next: record another scene (“I’m recording scene 3”), edit with /pulse-motion:retoucher, or export as an MP4 with /pulse-motion:exporter.</p></details>
+<div class="conversation" lang="fr" data-titre="Example: importing a recording of the whole video">
+<p data-role="vous">/pulse-motion:voix j'ai un fichier de ma voix</p>
+<p data-role="claude">Où est votre fichier ? Donnez son chemin, ou glissez-le ici.</p>
+<p data-role="vous">C:\Users\Marie\Documents\voix-chaine-du-froid.wav</p>
+<p data-role="claude">Pour une scène ou pour toute la vidéo ?
+→ Toute la vidéo (Recommandé) / Une scène</p>
+<p data-role="vous">Toute la vidéo</p>
+<p data-role="outil">pulse-motion voix importer "C:\Users\Marie\Documents\voix-chaine-du-froid.wav" .</p>
+<p data-role="outil">pulse-motion controler .</p>
+<p data-role="claude">✅ Fait : votre enregistrement est découpé en 6 prises, une par scène. La scène 5 a été allongée d'une seconde pour laisser finir la voix.</p>
+</div>
+<details class="traduction"><summary>In English</summary><p><strong>You:</strong> /pulse-motion:voix I have a file of my voice</p><p><strong>Claude:</strong> Where is your file? Give its path, or drag it here.</p><p><strong>You:</strong> C:\Users\Marie\Documents\voix-chaine-du-froid.wav</p><p><strong>Claude:</strong> For one scene or for the whole video? → The whole video (Recommended) / One scene</p><p><strong>You:</strong> The whole video</p><p><strong>Claude:</strong> ✅ Done: your recording has been split into 6 takes, one per scene. Scene 5 was made one second longer to let the voice finish.</p></details>
+<div class="conversation" lang="fr" data-titre="Example: listening to the music">
+<p data-role="vous">/pulse-motion:voix fais-moi écouter la musique</p>
+<p data-role="outil">pulse-motion musique ecouter . --ouvrir</p>
+<p data-role="claude">✅ Fait : la musique seule s'est ouverte dans le lecteur de votre ordinateur. Pour la changer (« plus calme », « une autre variante »), c'est /pulse-motion:retoucher.</p>
+</div>
+<details class="traduction"><summary>In English</summary><p><strong>You:</strong> /pulse-motion:voix let me hear the music</p><p><strong>Claude:</strong> ✅ Done: the music on its own has opened in your computer’s media player. To change it (“calmer”, “another variation”), use /pulse-motion:retoucher.</p></details>
+</section>
+
+<section id="liees">
+<h2>Related commands</h2>
+<ul>
+<li><a href="retoucher.html"><code>/pulse-motion:retoucher</code></a>: the voice volume, the spoken text, the subtitles, the mood of the music.</li>
+<li><a href="outils.html"><code>/pulse-motion:outils</code></a>: install transcription.</li>
+<li><a href="exporter.html"><code>/pulse-motion:exporter</code></a>: make the MP4 once the voice is recorded.</li>
+<li><a href="animer-personnage.html"><code>/pulse-motion:animer-personnage</code></a>: make a character talk along with your voice.</li>
+</ul>
+</section>
+
+<nav class="suite" aria-label="Previous and next command" data-suite></nav>
+</article>
+</div>
+</main>
+</body>
+</html>

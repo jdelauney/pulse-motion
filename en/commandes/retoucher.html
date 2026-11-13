@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en" data-racine="../../" data-commande="retoucher">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>/pulse-motion:retoucher – Pulse Motion Wiki</title>
+<meta name="description" content="Edit the video in one sentence (“slow down scene 3”, “change the title”, “undo”) and see the result straight away.">
+<!-- langues -->
+<link rel="alternate" hreflang="fr" href="https://jdelauney.github.io/pulse-motion/commandes/retoucher.html">
+<link rel="alternate" hreflang="en" href="https://jdelauney.github.io/pulse-motion/en/commandes/retoucher.html">
+<link rel="alternate" hreflang="x-default" href="https://jdelauney.github.io/pulse-motion/commandes/retoucher.html">
+<!-- /langues -->
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/animations.css">
+<script src="../../js/donnees.js" defer></script>
+<script src="../../js/gabarit.js" defer></script>
+<script src="../../js/animations.js" defer></script>
+<script src="../../js/console.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<div class="mise-en-page">
+<nav class="laterale" aria-label="The commands" data-laterale></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille pastille-etape" data-couleur="3">Step 2 · Edit</p>
+<h1><code>/pulse-motion:retoucher</code></h1>
+<p class="chapo">Edit the video in one sentence (« <span lang="fr">ralentis la scène 3</span> » (“slow down scene 3”), « <span lang="fr">change le titre</span> » (“change the title”), « <span lang="fr">annule</span> » (“undo”)) and see the result straight away.</p>
+</header>
+
+<ul class="sommaire" aria-label="On this page" data-sommaire></ul>
+
+<section id="description">
+<h2>Description</h2>
+<p>You’re watching the video in the preview and something isn’t right: say so in one sentence. Pulse Motion makes <strong>the smallest change</strong> that answers your sentence, without “improving” anything else along the way. It checks the video, then the preview reloads by itself, at the same position.</p>
+<p>Every edit is <strong>saved before it is made</strong>. If you don’t like the result, « <span lang="fr">annule</span> » (“undo”) goes back to the previous state.</p>
+
+<figure class="anim" data-etapes="4" data-duree="1300">
+<svg viewBox="0 0 760 200" role="img" aria-labelledby="retoucher-flux-titre">
+<title id="retoucher-flux-titre">An edit: save, change, check, see</title>
+<g class="e1" data-etape="1"><rect class="actif-halo schema-halo-primaire" x="4" y="44" width="164" height="100" rx="20"/><rect class="schema-boite" x="10" y="50" width="152" height="88" rx="16"/><text class="schema-texte" x="86" y="88" text-anchor="middle">Save</text><text class="schema-texte-secondaire" x="86" y="110" text-anchor="middle">so you can undo</text></g>
+<path class="schema-fleche trace e2" pathLength="1" d="M162 94 H196" marker-end="url(#retoucher-pointe)"/>
+<g class="e2" data-etape="2"><rect class="actif-halo schema-halo-primaire" x="196" y="44" width="164" height="100" rx="20"/><rect class="schema-boite-active" x="202" y="50" width="152" height="88" rx="16"/><text class="schema-texte" x="278" y="88" text-anchor="middle">Change</text><text class="schema-texte-secondaire" x="278" y="110" text-anchor="middle">only what’s needed</text></g>
+<path class="schema-fleche trace e3" pathLength="1" d="M354 94 H388" marker-end="url(#retoucher-pointe)"/>
+<g class="e3" data-etape="3"><rect class="actif-halo schema-halo-primaire" x="388" y="44" width="164" height="100" rx="20"/><rect class="schema-boite" x="394" y="50" width="152" height="88" rx="16"/><text class="schema-texte" x="470" y="88" text-anchor="middle">Check</text><text class="schema-texte-secondaire" x="470" y="110" text-anchor="middle">nothing broken</text></g>
+<path class="schema-fleche trace e4" pathLength="1" d="M546 94 H580" marker-end="url(#retoucher-pointe)"/>
+<g class="e4" data-etape="4"><rect class="actif-halo schema-halo-primaire" x="580" y="44" width="164" height="100" rx="20"/><rect class="schema-boite-active" x="586" y="50" width="152" height="88" rx="16"/><text class="schema-texte" x="662" y="88" text-anchor="middle">See</text><text class="schema-texte-secondaire" x="662" y="110" text-anchor="middle">the preview reloads</text></g>
+<path class="schema-accompagne trace e4" pathLength="1" d="M662 144 C662 196 86 196 86 148" marker-end="url(#retoucher-pointe-mauve)"/>
+<defs>
+<marker id="retoucher-pointe" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" class="schema-pointe-grise"/></marker>
+<marker id="retoucher-pointe-mauve" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" class="schema-pointe"/></marker>
+</defs>
+</svg>
+<figcaption>An edit: Pulse Motion saves the video, makes the change you asked for and nothing else, checks that nothing is broken, then the preview reloads. The next edit starts the loop again from the beginning.</figcaption>
+</figure>
+</section>
+
+<section id="pourquoi">
+<h2>Why use it</h2>
+<ul>
+<li><strong>You talk as you would to a video editor.</strong> No software to learn: « <span lang="fr">le chiffre doit rebondir</span> » (“the number should bounce”), « <span lang="fr">mets la liste à droite</span> » (“put the list on the right”).</li>
+<li><strong>You see the result within a second.</strong> The preview stays open and reloads at the same position.</li>
+<li><strong>You can try anything.</strong> « <span lang="fr">annule</span> » (“undo”) goes back, « <span lang="fr">rétablis</span> » (“redo”) reverses the undo; the last 20 edits are kept, and a version can be saved under a name (« <span lang="fr">envoyée au client</span> » (“sent to the client”)) so you can get it back whenever you like.</li>
+<li><strong>You show instead of describing.</strong> In the preview, click « <span lang="fr">Remarque</span> » (Note), then on the image where you want: the note is kept with the exact moment. Claude deals with them one by one and only marks a note as done after looking at the new image.</li>
+<li><strong>Your impressions become choices.</strong> « <span lang="fr">ça fait cheap</span> » (“it looks cheap”), « <span lang="fr">plus premium</span> » (“more premium”): Pulse Motion suggests two to four options, in plain words, and applies nothing without your answer.</li>
+<li><strong>An ambiguous sentence leads to a question, not a mistake.</strong> « <span lang="fr">Ralentis</span> » (“Slow down”)? Pulse Motion asks you which scene, with the most likely answer first.</li>
+</ul>
+</section>
+
+<section id="quand">
+<h2>When to use it</h2>
+<ol class="parcours" aria-label="The Pulse Motion journey, with this command’s step highlighted">
+  <li data-couleur="1"><span class="parcours-numero">1</span> Create</li>
+  <li data-couleur="3" aria-current="step"><span class="parcours-numero">2</span> Edit</li>
+  <li data-couleur="4"><span class="parcours-numero">3</span> Export</li>
+  <li data-couleur="0"><span class="parcours-numero">4</span> Customise</li>
+</ol>
+<ul>
+<li><strong>After <a href="creer.html"><code>/pulse-motion:creer</code></a></strong>, while watching the video in the preview.</li>
+<li><strong>Before <a href="exporter.html"><code>/pulse-motion:exporter</code></a></strong>, to fix an error reported by the check.</li>
+<li><strong>After an export</strong>, for a new version: edit, then export again.</li>
+<li><strong>For your lasting preferences</strong>: « <span lang="fr">jamais de rebond</span> » (“never any bounce”), « <span lang="fr">toujours mon logo à la fin</span> » (“always my logo at the end”). Pulse Motion asks whether it should remember this for your next videos; « <span lang="fr">quelles sont mes préférences ?</span> » (“what are my preferences?”) shows them, « <span lang="fr">oublie ma préférence sur les rebonds</span> » (“forget my preference about bounces”) removes one. What you ask for right now always comes first.</li>
+<li><strong>To keep an effect or a character</strong>: « <span lang="fr">garde cet effet de neige pour mes prochaines vidéos</span> » (“keep this snow effect for my next videos”), « <span lang="fr">garde ce personnage</span> » (“keep this character”). It joins your <a href="../concepts.html#bibliotheque">personal library</a>; another video uses it by copying it, without ever changing this one.</li>
+<li><strong>To use your website’s colours</strong>: « <span lang="fr">prends les couleurs de notre site</span> » (“use our website’s colours”). With your consent, Claude reads the home page and suggests two readable colours, the logo and the site’s fonts; nothing is changed before you answer, and no font file from the site is copied.</li>
+<li><strong>To imitate an animation you like</strong>: « <span lang="fr">fais la scène 2 comme ce GIF</span> » (“make scene 2 like this GIF”), « <span lang="fr">même rythme que cette pub</span> » (“same pace as this ad”). Put the GIF or the video in your video’s folder. Pulse Motion looks at it frame by frame and measures each movement (when it starts, how long it lasts, how it slows down), then writes your scene with those figures and shows you both side by side. « <span lang="fr">Dans l’esprit de</span> » (“in the spirit of”) keeps the overall pace; « <span lang="fr">fais pareil</span> » (“do the same”) matches each movement to within a tenth of a second.</li>
+<li><strong>For a map</strong>: « <span lang="fr">une carte de nos pays d’export</span> » (“a map of our export countries”), « <span lang="fr">nos agences en France sur la carte</span> » (“our branches in France on the map”). The countries of the world and the French regions (overseas ones included, as insets) come with Pulse Motion: nothing is loaded online. Countries take a colour, cities get a dot, and a line can link two cities. The borders are Natural Earth’s, as they are on the ground, without taking sides.</li>
+<li><strong>To keep a piece of music</strong>: « <span lang="fr">garde cette musique pour mes prochaines vidéos</span> » (“keep this music for my next videos”). Hand over the file (bought or free) and say its licence: Pulse Motion stores it in your <a href="../concepts.html#bibliotheque">personal library</a>, measures its length and tempo, then offers it first when a video has the same mood. It never ships or downloads any music; the credit line to quote (CC BY licence) goes into the credits.</li>
+<li><strong>To add a Lottie animation</strong>: « <span lang="fr">mets mon animation Lottie de fusée dans la scène 2</span> » (“put my Lottie rocket animation in scene 2”), « <span lang="fr">donne-lui nos couleurs</span> » (“give it our colours”). Hand over the file (from LottieFiles or your designer): Pulse Motion copies it into your video’s folder, asks where it comes from and its licence for the credits, then starts it at the right moment. It never downloads an animation. If a part cannot be drawn (a text, a special effect), it tells you.</li>
+</ul>
+</section>
+
+<section id="arguments">
+<h2>How to run it</h2>
+<pre class="commande" lang="fr"><code>/pulse-motion:retoucher [la retouche en une phrase]</code></pre>
+<p class="traduction">“[the edit in one sentence]”</p>
+<p class="legende">In square brackets <code>[ ]</code>: optional. With no sentence, Pulse Motion asks you what to change.</p>
+<pre class="commande" lang="fr"><code>/pulse-motion:retoucher ralentis la scène 3</code></pre>
+<p class="traduction">“slow down scene 3”</p>
+<pre class="commande" lang="fr"><code>/pulse-motion:retoucher annule</code></pre>
+<p class="traduction">“undo”</p>
+
+<h3>What you can ask</h3>
+<table>
+<thead><tr><th>What you want to change</th><th>Example sentences</th></tr></thead>
+<tbody>
+<tr><td><strong>A piece of text</strong></td><td>« <span lang="fr">change le titre</span> » (“change the title”), « <span lang="fr">corrige la faute dans la scène 2</span> » (“fix the typo in scene 2”)</td></tr>
+<tr><td><strong>The pace, a length</strong></td><td>« <span lang="fr">ralentis la scène 3</span> » (“slow down scene 3”), « <span lang="fr">accélère</span> » (“speed up”), « <span lang="fr">laisse plus de temps à la fin</span> » (“leave more time at the end”)</td></tr>
+<tr><td><strong>The look of a scene</strong></td><td>« <span lang="fr">le chiffre doit rebondir</span> » (“the number should bounce”), « <span lang="fr">mets la liste à droite</span> » (“put the list on the right”)</td></tr>
+<tr><td><strong>A particle effect</strong></td><td>« <span lang="fr">plus d'étincelles</span> » (“more sparks”), « <span lang="fr">en bleu</span> » (“in blue”), « <span lang="fr">fais-les partir autrement</span> » (“make them start differently”), « <span lang="fr">ajoute des confettis à la fin</span> » (“add confetti at the end”), « <span lang="fr">enlève les confettis</span> » (“remove the confetti”)</td></tr>
+<tr><td><strong>The style</strong></td><td>« <span lang="fr">passe en style éditorial</span> » (“switch to the editorial style”), « <span lang="fr">quelque chose de plus chaleureux</span> » (“something warmer”), « <span lang="fr">montre-moi les autres styles</span> » (“show me the other styles”) (a page opens: each style plays the same little story, and you tick the one you like)</td></tr>
+<tr><td><strong>The brand kit</strong></td><td>« <span lang="fr">mets mes couleurs</span> » (“use my colours”), « <span lang="fr">prends les couleurs de mon logo</span> » (“take the colours from my logo”), « <span lang="fr">applique la charte Dupont</span> » (“apply the Dupont brand kit”), « <span lang="fr">change la police des titres</span> » (“change the title font”), « <span lang="fr">passe en sombre</span> » (“switch to dark”)</td></tr>
+<tr><td><strong>The transition</strong></td><td>« <span lang="fr">change la transition</span> » (“change the transition”), « <span lang="fr">coupe sèche entre les scènes 4 et 5</span> » (“hard cut between scenes 4 and 5”), « <span lang="fr">un whip pan entre la scène 2 et la 3</span> » (“a whip pan between scene 2 and scene 3”)</td></tr>
+<tr><td><strong>A move by its name</strong></td><td>« <span lang="fr">un pop-in sur le titre</span> » (“a pop-in on the title”), « <span lang="fr">le titre en machine à écrire</span> » (“the title as a typewriter”), « <span lang="fr">mets un #001 sur le logo</span> » (“put a #001 on the logo”), « <span lang="fr">quels mouvements existent ?</span> » (“which moves are there?”); they are all in the <a href="../mouvements.html">move gallery</a></td></tr>
+<tr><td><strong>A move chosen by watching it</strong></td><td>« <span lang="fr">montre-moi les mouvements</span> » (“show me the moves”), « <span lang="fr">je veux un truc qui claque pour le titre</span> » (“I want something punchy for the title”): a page opens, you tick, then « <span lang="fr">Envoyer à Claude</span> » (Send to Claude)</td></tr>
+<tr><td><strong>The voice</strong></td><td>« <span lang="fr">baisse la voix</span> » (“turn the voice down”), « <span lang="fr">je réenregistre la scène 3</span> » (“I’m re-recording scene 3”), « <span lang="fr">j'ai un nouvel enregistrement</span> » (“I have a new recording”), « <span lang="fr">change ce que je dis dans l'intro</span> » (“change what I say in the intro”)</td></tr>
+<tr><td><strong>The music</strong></td><td>« <span lang="fr">plus calme</span> » (“calmer”), « <span lang="fr">plus entraînant</span> » (“more upbeat”), « <span lang="fr">une autre variante</span> » (“another variation”), « <span lang="fr">baisse la musique</span> » (“turn the music down”), « <span lang="fr">enlève la musique</span> » (“remove the music”), « <span lang="fr">coupe la musique pendant la scène 4</span> » (“cut the music during scene 4”), « <span lang="fr">la musique à fond sur la démo</span> » (“music full blast on the demo”), « <span lang="fr">fais-moi écouter</span> » (“let me hear it”)</td></tr>
+<tr><td><strong>Sound effects</strong></td><td>« <span lang="fr">mets un son quand le titre arrive</span> » (“add a sound when the title comes in”), « <span lang="fr">moins fort</span> » (“quieter”), « <span lang="fr">enlève les bruitages</span> » (“remove the sound effects”)</td></tr>
+<tr><td><strong>The language, another version</strong></td><td>« <span lang="fr">passe la vidéo en anglais</span> » (“switch the video to English”), « <span lang="fr">fais-en une version verticale pour TikTok</span> » (“make a vertical version for TikTok”), « <span lang="fr">la même en anglais en gardant l'originale</span> » (“the same one in English, keeping the original”): the second video is stored in the first one’s folder, which does not change; Pulse Motion keeps talking to you in French</td></tr>
+<tr><td><strong>Subtitles</strong></td><td>« <span lang="fr">sous-titres en haut</span> » (“subtitles at the top”), « <span lang="fr">mot par mot</span> » (“word by word”), « <span lang="fr">enlève-les de l'image</span> » (“take them off the picture”), « <span lang="fr">enlève les sous-titres</span> » (“remove the subtitles”)</td></tr>
+<tr><td><strong>The structure</strong></td><td>« <span lang="fr">ajoute une scène sur le lavage des mains</span> » (“add a scene about handwashing”), « <span lang="fr">supprime la scène 4</span> » (“delete scene 4”)</td></tr>
+<tr><td><strong>A character</strong></td><td>« <span lang="fr">dessine-moi un cuisinier</span> » (“draw me a chef”), « <span lang="fr">il marche trop vite</span> » (“he walks too fast”), « <span lang="fr">fais-lui une tête surprise</span> » (“give him a surprised face”), « <span lang="fr">ouvre l'éditeur de personnage</span> » (“open the character editor”): Pulse Motion follows the dedicated command, <a href="dessiner-personnage.html"><code>/pulse-motion:dessiner-personnage</code></a>, <a href="decouper-personnage.html"><code>/pulse-motion:decouper-personnage</code></a>, <a href="animer-personnage.html"><code>/pulse-motion:animer-personnage</code></a> or <a href="atelier-personnages.html"><code>/pulse-motion:atelier-personnages</code></a></td></tr>
+<tr><td><strong>An impression</strong></td><td>« <span lang="fr">ça fait cheap</span> » (“it looks cheap”), « <span lang="fr">plus premium</span> » (“more premium”), « <span lang="fr">ça fait diaporama</span> » (“it looks like a slideshow”), « <span lang="fr">trop chargé</span> » (“too busy”), « <span lang="fr">ça manque de punch</span> » (“it lacks punch”): you are offered options, the recommended one first</td></tr>
+<tr><td><strong>Your notes on the image</strong></td><td>« <span lang="fr">j'ai laissé des remarques</span> » (“I’ve left some notes”) (or the preview’s « <span lang="fr">Envoyer à Claude</span> » (Send to Claude) button)</td></tr>
+<tr><td><strong>A quick setting</strong></td><td>« <span lang="fr">un peu plus vif partout</span> » (“a bit livelier throughout”), « <span lang="fr">accent en bleu</span> » (“blue accent”), « <span lang="fr">passe en sombre</span> » (“switch to dark”), « <span lang="fr">baisse la musique</span> » (“turn the music down”), « <span lang="fr">sous-titres mot par mot</span> » (“word-by-word subtitles”), or the preview’s « <span lang="fr">Réglages</span> » (Settings) button</td></tr>
+<tr><td><strong>Going back</strong></td><td>« <span lang="fr">annule</span> » (“undo”), « <span lang="fr">reviens en arrière</span> » (“go back”), « <span lang="fr">rétablis</span> » (“redo”), « <span lang="fr">finalement remets-le</span> » (“actually, put it back”)</td></tr>
+<tr><td><strong>Versions</strong></td><td>« <span lang="fr">garde cette version sous le nom envoyée au client</span> » (“keep this version under the name sent to the client”), « <span lang="fr">reviens à la version envoyée au client</span> » (“go back to the version sent to the client”), « <span lang="fr">quelles versions ai-je ?</span> » (“which versions do I have?”), or the preview’s « <span lang="fr">Comparer</span> » (Compare) button</td></tr>
+</tbody>
+</table>
+<p>The sound settings are detailed on the <a href="../../son.html" hreflang="fr">Le son</a> page (in French); styles and effects are in the <a href="../catalogue.html">catalogue</a>.</p>
+
+<h3>In the preview</h3>
+<ul>
+<li><strong>« <span lang="fr">Remarque</span> » (Note)</strong> (or the N key): a click on the image pauses it and drops a pin; write your note, then « <span lang="fr">Garder la remarque</span> » (Keep the note), « <span lang="fr">Sur cette image, sans épingle</span> » (On this image, without a pin) or « <span lang="fr">Sur toute la vidéo</span> » (On the whole video). Notes appear in colour on the playback bar (orange: to do, green: done). When you have finished: « <span lang="fr">Envoyer à Claude</span> » (Send to Claude). A note that has been dealt with shows the before and after images side by side.</li>
+<li><strong>« <span lang="fr">Réglages</span> » (Settings)</strong>: accent colour, pace (calmer, normal, livelier), tone (light, dark, automatic), music (quieter, normal, louder, none) and subtitles (yes, no, word by word). The highlighted value is the video’s; a click writes it straight away, and « <span lang="fr">annule</span> » (“undo”) reverses it.</li>
+<li><strong>« <span lang="fr">Comparer</span> » (Compare)</strong>: choose a saved version; both are shown side by side, driven by a single playback bar.</li>
+<li><strong>The playback bar</strong> shows the shape of the voice (hover over it to see the words, click to jump there) and, when you hover over the start of a scene, a small image of the scene with its name.</li>
+</ul>
+<p>None of this appears in the delivered video or in the MP4.</p>
+</section>
+
+<section id="produit">
+<h2>What it produces</h2>
+<ul>
+<li><strong>The updated video</strong>: <code>sortie/&lt;titre&gt;.html</code>, and the preview reloaded.</li>
+<li><strong>A copy of the previous state</strong>, in the video’s hidden <code>.historique/</code> folder (the last 20, plus your named versions, 20 at most), with the sentence for each edit.</li>
+<li><strong>After a visual edit</strong>, a before / after sheet (<code>sortie/planche/avant-apres-&lt;scène&gt;.png</code>): the before image, the after image, and the differences in red.</li>
+<li><strong>Your notes</strong> and their images, in <code>sortie/remarques/</code>: « <span lang="fr">annule</span> » (“undo”) doesn’t erase them.</li>
+<li><strong>An updated check report</strong> (<code>sortie/controle.json</code>). Whatever the check fixed on its own is told to you in one sentence.</li>
+</ul>
+</section>
+
+<section id="risques">
+<h2>Risks and precautions</h2>
+<ul>
+<li><strong>A precise length or spelling is respected.</strong> If you ask for « <span lang="fr">la scène 3 dure 4 secondes</span> » (“scene 3 lasts 4 seconds”) or a particular spelling, Pulse Motion checks without fixing anything on its own, so as not to undo what you asked for. It only points out what causes a problem.</li>
+<li><strong>Changing the style rewrites some scenes.</strong> Ready-made scenes are copied over into the new style; freely composed scenes are rewritten by an animator. « <span lang="fr">annule</span> » (“undo”) brings back the old style.</li>
+<li><strong>The music follows the picture.</strong> A changed length or transition doesn’t throw the composed music out of step: it is remade to the new timing, each scene with its own section. Music from a file, on the other hand, doesn’t move: with its tempo, each scene has to start on a beat, and Pulse Motion adjusts the lengths itself.</li>
+<li><strong>It imitates a style, never a work.</strong> The drawings, characters, logo, texts and music of a video you show are never taken, and the video itself never goes into yours: it is only used for measuring. Pulse Motion downloads nothing; for a website’s animation, it films the site first, with your consent. An “identical” copy is refused.</li>
+</ul>
+<aside class="encadre encadre-conseil"><p><strong>Tip:</strong> one edit at a time. If you string three together in one sentence, « <span lang="fr">annule</span> » (“undo”) will reverse all three at once.</p></aside>
+</section>
+
+<section id="problemes">
+<h2>Problems and solutions</h2>
+<details class="probleme"><summary>« <span lang="fr">Rien à rétablir</span> » (“Nothing to redo”)</summary><p>« <span lang="fr">rétablis</span> » (“redo”) reverses the last undo. A new edit made since then erases what could have been redone: to get back to a precise state, save it under a name before trying something else.</p></details>
+<details class="probleme"><summary>« <span lang="fr">Vous gardez déjà 20 versions nommées</span> » (“You’re already keeping 20 named versions”)</summary><p>Say which one to forget (« <span lang="fr">oublie la version brouillon</span> » (“forget the draft version”)), then save the new one.</p></details>
+<details class="probleme"><summary>« <span lang="fr">Aucune retouche à annuler</span> » (“No edit to undo”)</summary><p>You have gone back to the very first saved state, or the video has never been edited. There is nothing older to restore.</p></details>
+<details class="probleme"><summary>The preview didn’t reload</summary><p>It may have been closed. Pulse Motion reopens it if it is no longer active; otherwise, reload the browser page (<kbd>F5</kbd>, or <kbd>Cmd</kbd> + <kbd>R</kbd> on Mac).</p></details>
+<details class="probleme"><summary>The text is too long and still overflows</summary><p>The check shrinks overflowing text down to 80% of its size, never below what stays readable. Beyond that, it has to be shortened: « <span lang="fr">raccourcis le titre de la scène 2</span> » (“shorten the title of scene 2”). The maximum lengths for each style are in the <a href="../catalogue.html#styles">catalogue</a>.</p></details>
+<details class="probleme"><summary>Pulse Motion tells me a word in the voice can’t be found</summary><p>An animation starts on a word of your voice, but that word is no longer said (you changed the text or re-recorded). Pulse Motion suggests another word in the scene as the starting point.</p></details>
+</section>
+
+<section id="exemples">
+<h2>Examples</h2>
+<div class="conversation" lang="fr" data-titre="Example: slowing down a scene">
+<p data-role="vous">/pulse-motion:retoucher ralentis la scène 3</p>
+<p data-role="outil">pulse-motion historique sauvegarder .</p>
+<p data-role="claude">✅ Fait : la scène 3, « Les 4 maillons de la chaîne », se déroule plus lentement.
+L'aperçu s'est rechargé.</p>
+</div>
+<details class="traduction"><summary>In English</summary><p><strong>You:</strong> /pulse-motion:retoucher slow down scene 3</p><p><strong>Claude:</strong> ✅ Done: scene 3, “Les 4 maillons de la chaîne” (The 4 links in the chain), now plays more slowly. The preview has reloaded.</p></details>
+<div class="conversation" lang="fr" data-titre="Example: an ambiguous sentence">
+<p data-role="vous">/pulse-motion:retoucher le titre est trop petit</p>
+<p data-role="claude">Quel titre ?
+→ Celui de la scène 1, « La chaîne du froid » (Recommandé) / Tous les titres / Un autre</p>
+<p data-role="vous">Celui de la scène 1</p>
+<p data-role="claude">✅ Fait : le titre de l'intro est plus grand. L'aperçu s'est rechargé.</p>
+</div>
+<details class="traduction"><summary>In English</summary><p><strong>You:</strong> /pulse-motion:retoucher the title is too small</p><p><strong>Claude:</strong> Which title? → The one in scene 1, “La chaîne du froid” (Recommended) / All the titles / Another one</p><p><strong>You:</strong> The one in scene 1</p><p><strong>Claude:</strong> ✅ Done: the intro title is bigger. The preview has reloaded.</p></details>
+<div class="conversation" lang="fr" data-titre="Example: going back">
+<p data-role="vous">/pulse-motion:retoucher annule</p>
+<p data-role="outil">pulse-motion historique annuler .</p>
+<p data-role="claude">✅ Fait : la vidéo est revenue à l'état d'avant la dernière retouche.</p>
+</div>
+<details class="traduction"><summary>In English</summary><p><strong>You:</strong> /pulse-motion:retoucher undo</p><p><strong>Claude:</strong> ✅ Done: the video is back to how it was before the last edit.</p></details>
+</section>
+
+<section id="liees">
+<h2>Related commands</h2>
+<ul>
+<li><a href="creer.html"><code>/pulse-motion:creer</code></a>: create the video to edit.</li>
+<li><a href="exporter.html"><code>/pulse-motion:exporter</code></a>: make the MP4 once the video is just how you want it.</li>
+<li><a href="style.html"><code>/pulse-motion:style</code></a>: create a style of your own, then « <span lang="fr">passe en style…</span> » (“switch to the … style”).</li>
+</ul>
+</section>
+
+<nav class="suite" aria-label="Previous and next command" data-suite></nav>
+</article>
+</div>
+</main>
+</body>
+</html>

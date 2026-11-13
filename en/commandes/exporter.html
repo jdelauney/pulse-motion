@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en" data-racine="../../" data-commande="exporter">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>/pulse-motion:exporter – Pulse Motion Wiki</title>
+<meta name="description" content="Export the video as an MP4 set up for its use (web, social media, presentation, master, email, draft), made on your computer, ready to publish or send.">
+<!-- langues -->
+<link rel="alternate" hreflang="fr" href="https://jdelauney.github.io/pulse-motion/commandes/exporter.html">
+<link rel="alternate" hreflang="en" href="https://jdelauney.github.io/pulse-motion/en/commandes/exporter.html">
+<link rel="alternate" hreflang="x-default" href="https://jdelauney.github.io/pulse-motion/commandes/exporter.html">
+<!-- /langues -->
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/animations.css">
+<script src="../../js/donnees.js" defer></script>
+<script src="../../js/gabarit.js" defer></script>
+<script src="../../js/animations.js" defer></script>
+<script src="../../js/console.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<div class="mise-en-page">
+<nav class="laterale" aria-label="The commands" data-laterale></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille pastille-etape" data-couleur="4">Step 3 · Export</p>
+<h1><code>/pulse-motion:exporter</code></h1>
+<p class="chapo">Export the video as an MP4 set up for its use (the web, social media, a meeting, a video editor, an email), made on your computer, ready to publish or send.</p>
+</header>
+
+<ul class="sommaire" aria-label="On this page" data-sommaire></ul>
+
+<section id="description">
+<h2>Description</h2>
+<p>The animated page is watched in a browser; the <strong>MP4</strong> file can be published anywhere: social media, a training platform, email, YouTube. This command makes it on your computer, without sending anything online.</p>
+<p>It takes the video <strong>as it is</strong>: it changes nothing. You say what the video is for (“for LinkedIn”, “to send by email”) and Pulse Motion picks the settings: the picture size, its sharpness, the file size. It checks the video first, then chooses the best way to export:</p>
+<table>
+<thead><tr><th>Mode</th><th>When</th><th>What you get</th></tr></thead>
+<tbody>
+<tr><td><strong>High-fidelity export</strong></td><td>ffmpeg is installed (Pulse Motion offers it to you once)</td><td>The browser’s real frames, one by one, and the sound at the right level, checked. The time depends on the use (see the table below).</td></tr>
+<tr><td><strong>In-browser export</strong></td><td>Without ffmpeg, or if you decline to install it</td><td>An MP4 made directly in Chrome or Edge, with nothing to install. A few advanced effects are rendered less well.</td></tr>
+</tbody>
+</table>
+<p>Both exports have <strong>exactly the same sound</strong> as the preview: the music, the voice and the sound effects are mixed only once, in the page, and brought to the level the streaming platforms expect. The video’s <strong>colours</strong> are the page’s, in common players (Chrome, Safari, VLC, PowerPoint).</p>
+</section>
+
+<section id="usages">
+<h2>Uses</h2>
+<p>Each use gives its own file: exporting for email does not overwrite the web version. Sizes and times measured on the two reference videos (one minute and three minutes) with a recent desktop computer; allow more on a laptop.</p>
+<!-- usages:debut (écrit depuis plugins/pulse-motion/scripts/usages.json, mesures comprises) -->
+<table>
+<thead><tr><th>Use</th><th>What for</th><th>What changes in the picture</th><th>Size</th><th>Export time</th><th>Files included</th><th>Needs ffmpeg</th></tr></thead>
+<tbody>
+<tr data-usage="web"><td><strong lang="fr">Pour le web</strong> (For the web)</td><td>website, YouTube, intranet, training platform</td><td>the reference quality, the same as the preview</td><td>about 5,1 Mo per minute</td><td>about 1 min 19 s per minute of video</td><td>cover, chapters, credits, subtitles</td><td>no</td></tr>
+<tr data-usage="reseaux"><td><strong lang="fr">Pour les réseaux sociaux</strong> (For social media)</td><td>LinkedIn, Instagram, TikTok, YouTube Shorts</td><td>a little sharper than for the web, to stand up to the platforms’ recompression</td><td>about 7,2 Mo per minute</td><td>about 1 min 17 s per minute of video</td><td>cover, credits, subtitles</td><td>no</td></tr>
+<tr data-usage="presentation"><td><strong lang="fr">Pour la projeter en réunion</strong> (To project in a meeting)</td><td>projector, PowerPoint, Keynote, trade show</td><td>very sharp, plays in presentation software, 30 frames per second</td><td>about 7,5 Mo per minute</td><td>about 1 min 17 s per minute of video</td><td>cover, credits</td><td>no</td></tr>
+<tr data-usage="master"><td><strong lang="fr">Pour archiver ou confier à un monteur</strong> (To archive or hand to a video editor)</td><td>the best quality, to keep or rework</td><td>as faithful as possible, to rework with no visible loss; motion blur on fast passages</td><td>about 6,8 Mo per minute</td><td>about 2 min 31 s per minute of video</td><td>cover, chapters, credits, subtitles</td><td>no</td></tr>
+<tr data-usage="courriel"><td><strong lang="fr">Pour l'envoyer par courriel</strong> (To send by email)</td><td>attachment, messaging (WhatsApp, Teams)</td><td>smaller (720p or 540p depending on length), grain refreshed less often; stays under the stated size</td><td>under 10 Mo in total (video of 2 min 52 s at most)</td><td>about 1 min 23 s per minute of video</td><td>credits</td><td>no</td></tr>
+<tr data-usage="brouillon"><td><strong lang="fr">Version de travail</strong> (Working version)</td><td>quickly check a long video, never for publishing</td><td>small (540p), 30 frames per second at most, grain refreshed less often</td><td>about 2,5 Mo per minute</td><td>about 1 min 7 s per minute of video</td><td>credits</td><td>no</td></tr>
+</tbody>
+</table>
+<!-- usages:fin -->
+<p>After a first export, another use redoes no frames: it starts again from the frames already captured. The email version aims for under 10 MB (or the size you say: « <span lang="fr">moins de 25 Mo pour Teams</span> » (“under 25 MB for Teams”)); if the video is too long to fit, Pulse Motion tells you before starting, with the size it would need. The working version is made quickly, by the graphics card when it can: it is for checking, never for publishing.</p>
+<p>In the preview, the <strong>MP4</strong> button in the playback bar offers four uses: Web, Réseaux (Social media), Présentation (Presentation), Courriel (Email).</p>
+<p><strong>Chapters</strong> are only included if you asked for them (« <span lang="fr">ajoute des chapitres</span> » (“add chapters”), an edit); they are then also built into the MP4 when ffmpeg is installed, and YouTube shows them from three upwards. <strong>Credits</strong> come with every export: fonts, music, voice, images and sounds, with their licence. A file you imported without saying where it came from is marked « à préciser » (to be specified): just say it (« <span lang="fr">la musique vient de Pixabay</span> » (“the music comes from Pixabay”)).</p>
+</section>
+
+<section id="sorties">
+<h2>Other outputs</h2>
+<p>As well as the video, you can ask for:</p>
+<!-- sorties:debut (poids et temps mesurés sur les deux vidéos témoins) -->
+<table>
+<thead><tr><th>You say</th><th>You get</th><th>Size</th><th>Time</th><th>Needs ffmpeg</th></tr></thead>
+<tbody>
+<tr data-sortie="scene"><td>« <span lang="fr">juste la scène 3</span> » (“just scene 3”)</td><td>The scene on its own, without its transitions, with its sound</td><td>about 1 Mo for 10 s</td><td>5 to 8 s after an export (nothing is redone)</td><td>no</td></tr>
+<tr data-sortie="plage"><td>« <span lang="fr">de 12 à 18 secondes</span> » (“from 12 to 18 seconds”)</td><td>That passage on its own, to quickly review an edit</td><td>about 1 Mo for 10 s</td><td>5 to 8 s after an export</td><td>no</td></tr>
+<tr data-sortie="gif"><td>« <span lang="fr">en GIF</span> » (“as a GIF”)</td><td>A looping GIF, without sound, of a scene or a passage of 20 s at most</td><td>about 0,6 Mo for 6 s</td><td>2 to 3 s after an export</td><td>yes</td></tr>
+<tr data-sortie="cadre"><td>« <span lang="fr">dans un téléphone</span> » (“in a phone”)</td><td>A vertical video shown inside a phone, on your brand kit’s background</td><td>about 3,5 Mo per minute</td><td>about 1 min 18 s per minute of video</td><td>no</td></tr>
+<tr data-sortie="transparent"><td>« <span lang="fr">à incruster dans mon montage</span> » (“to overlay in my edit”)</td><td>A video with no background, to place over another picture: for editing software (Premiere, DaVinci Resolve, Final Cut), or « <span lang="fr">pour le web</span> » (“for the web”)</td><td>about 850 Mo per minute for editing; 6 Mo per minute for the web</td><td>about 1 min 25 s per minute of video</td><td>yes</td></tr>
+<tr data-sortie="images"><td>« <span lang="fr">les images une par une pour mon monteur</span> » (“the frames one by one for my editor”)</td><td>Every frame of the video (or of a passage) in its own file, PNG or JPEG, with the sound apart: Premiere, DaVinci Resolve or After Effects import them as a sequence. If interrupted, the sequence picks up where it stopped</td><td>about 2 Mo per frame as PNG (3,6 Go per minute at 30 frames per second), 0,4 Mo as JPEG; above 2 Go, Pulse Motion asks you first</td><td>about that of a faithful export</td><td>no</td></tr>
+<tr data-sortie="pdf"><td>« <span lang="fr">un PDF des scènes pour le client</span> » (“a PDF of the scenes for the client”)</td><td>An A4 landscape PDF, two scenes per page, three frames and the spoken text</td><td>about 0,3 Mo per page</td><td>4 to 8 s</td><td>no</td></tr>
+<tr data-sortie="textes"><td>« <span lang="fr">un texte pour LinkedIn</span> » (“a text for LinkedIn”)</td><td>A post, an email or a YouTube description, with no figure that is not in the video; nothing is published</td><td>—</td><td>—</td><td>no</td></tr>
+</tbody>
+</table>
+<!-- sorties:fin -->
+<p>The <strong>master</strong> adds a light motion blur to fast passages, like a camera (never on text to be read): the export takes longer where things move fast (30% longer for the one-minute video, more than twice as long for the very lively three-minute one). The <strong>no-background</strong> video refuses a scene with a solid background, and names it: Pulse Motion offers to remove that background for this version. For a video that <strong>loops</strong> (« <span lang="fr">fais-la tourner en boucle</span> » (“make it loop”), an edit), the music no longer fades in or out, and the check makes sure the end joins the beginning without a jolt.</p>
+<p>A scene, a passage or a GIF start from the frames already made: after an export, they capture nothing again. They never touch the full video. For a vertical video made for TikTok, Shorts or Reels, say so (an edit): the check then makes sure nothing sits under the app’s buttons, and the subtitles move above them. In the preview, the <kbd>Z</kbd> key shows this area.</p>
+<p id="page-mp4"><strong>A page that can make its own MP4.</strong> At the end of the export, Claude also offers you a page that makes its MP4 by itself, even without Claude (about 250 KB more); the recommended answer is « Non merci » (No thanks). With this page, open it later in Chrome or Edge and click <strong>MP4</strong> in the playback bar: the video is made in the browser, then you choose where to save it. In another browser, the page tells you to open it in Chrome or Edge. For the best quality, exporting through Claude is still recommended. « <span lang="fr">Une page plus légère, sans le bouton MP4</span> » (“A lighter page, without the MP4 button”) puts it back as before.</p>
+</section>
+
+<section id="pourquoi">
+<h2>Why use it</h2>
+<ul>
+<li><strong>Everything stays with you.</strong> No online service, no queue, no watermark.</li>
+<li><strong>What you see is what you get.</strong> The high-fidelity export films the browser frame by frame: no stutter, even on a modest computer.</li>
+<li><strong>Clean sound.</strong> The sound level is checked at export; the music lowers itself under the voice.</li>
+<li><strong>An interrupted export is not lost.</strong> The parts already done are picked up at the next export.</li>
+</ul>
+</section>
+
+<section id="quand">
+<h2>When to use it</h2>
+<ol class="parcours" aria-label="The Pulse Motion path, with this command’s step highlighted">
+  <li data-couleur="1"><span class="parcours-numero">1</span> Create</li>
+  <li data-couleur="3"><span class="parcours-numero">2</span> Edit</li>
+  <li data-couleur="4" aria-current="step"><span class="parcours-numero">3</span> Export</li>
+  <li data-couleur="0"><span class="parcours-numero">4</span> Customise</li>
+</ol>
+<ul>
+<li><strong>When you like the video</strong> in the preview, and your voice is recorded.</li>
+<li><strong>After each round of edits</strong>: the MP4 does not update by itself, unlike the animated page.</li>
+</ul>
+<aside class="encadre encadre-conseil"><p><strong>Tip:</strong> you only want to put the video on your website? No need to export: the animated page <code>sortie/&lt;titre&gt;.html</code> is already ready and opens offline, on the cover image with a ▶ button.</p></aside>
+</section>
+
+<section id="arguments">
+<h2>How to run it</h2>
+<pre class="commande"><code>/pulse-motion:exporter</code></pre>
+<p>It takes nothing after the name, but you can say what you want:</p>
+<table>
+<thead><tr><th>You say</th><th>Pulse Motion exports</th></tr></thead>
+<tbody>
+<tr><td>(nothing)</td><td>It asks you what the video is for: the web (recommended), social media, an email or a meeting. A vertical video, or one made for social media, suggests social media first.</td></tr>
+<tr><td lang="fr">« pour YouTube », « pour mon site », « pour notre plateforme de formation »</td><td>(“for YouTube”, “for my website”, “for our training platform”) For the web: the preview’s quality.</td></tr>
+<tr><td lang="fr">« pour LinkedIn », « pour Instagram »</td><td>(“for LinkedIn”, “for Instagram”) For social media: a little sharper, to stand up to the platforms’ recompression.</td></tr>
+<tr><td lang="fr">« pour la projeter », « pour PowerPoint »</td><td>(“to project it”, “for PowerPoint”) For presentation: very sharp, plays in PowerPoint and Keynote.</td></tr>
+<tr><td lang="fr">« pour mon monteur », « la meilleure qualité »</td><td>(“for my video editor”, “the best quality”) The master: the most faithful file, to rework, with a light motion blur on fast passages (like a camera); « <span lang="fr">sans flou</span> » (“no blur”) removes it.</td></tr>
+<tr><td lang="fr">« à incruster dans mon montage », « fond transparent »</td><td>(“to overlay in my edit”, “transparent background”) A video with no background, to place over another picture in editing software (see the table above).</td></tr>
+<tr><td lang="fr">« par courriel », « moins de 20 Mo »</td><td>(“by email”, “under 20 MB”) A light version that stays under the stated size (10 MB if you don’t say).</td></tr>
+<tr><td lang="fr">« vite fait, juste pour vérifier »</td><td>(“quickly, just to check”) A working version, small and fast, not for publishing.</td></tr>
+<tr><td lang="fr">« plus fluide »</td><td>(“smoother”) At 60 frames per second. The export takes twice as long.</td></tr>
+<tr><td lang="fr">« une version de travail avec la voix de l'ordinateur »</td><td>(“a working version with the computer’s voice”) With the placeholder voice, only if you ask for it.</td></tr>
+<tr><td lang="fr">« juste la scène 3 », « en GIF », « dans un téléphone », « un PDF des scènes », « en boucle »</td><td>(“just scene 3”, “as a GIF”, “in a phone”, “a PDF of the scenes”, “looping”) The other outputs (see the table above).</td></tr>
+<tr><td lang="fr">« un texte pour accompagner la vidéo »</td><td>(“a text to go with the video”) Pulse Motion writes <code>sortie/&lt;titre&gt;-textes.md</code>; it offers it to you by itself after an export for social media or email.</td></tr>
+</tbody>
+</table>
+<p>Before starting, Pulse Motion tells you how long it will take; during the export, it tracks the time remaining.</p>
+</section>
+
+<section id="produit">
+<h2>What it produces</h2>
+<table>
+<thead><tr><th>File</th><th>What it is for</th></tr></thead>
+<tbody>
+<tr><td><code>sortie/&lt;titre&gt;.mp4</code></td><td>The video for the web, to publish or send. The title is written in lower case, without accents or spaces: “La chaîne du froid” gives <code>la-chaine-du-froid.mp4</code>.</td></tr>
+<tr><td><code>sortie/&lt;titre&gt;-&lt;usage&gt;.mp4</code></td><td>The other uses, each with its own file: <code>-reseaux</code>, <code>-presentation</code>, <code>-master</code>, <code>-courriel</code>, <code>-brouillon</code>.</td></tr>
+<tr><td><code>sortie/&lt;titre&gt;.html</code></td><td>The animated page, already there: it opens offline, ready to put on your website.</td></tr>
+<tr><td><code>sortie/&lt;titre&gt;.srt</code> and <code>.vtt</code></td><td>With subtitles: to upload to YouTube, LinkedIn or a training platform.</td></tr>
+<tr><td><code>sortie/&lt;titre&gt;-couverture.jpg</code></td><td>The thumbnail image, without subtitles. It is also built into the MP4: players and file explorers show it.</td></tr>
+<tr><td><code>sortie/&lt;titre&gt;-chapitres.txt</code> and <code>.vtt</code></td><td>If you have chapters: the text to paste into the YouTube description, and the file for a training platform.</td></tr>
+<tr><td><code>sortie/&lt;titre&gt;-credits.txt</code></td><td>The credits: to read through before publishing.</td></tr>
+<tr><td><code>sortie/&lt;titre&gt;-&lt;scène&gt;.mp4</code>, <code>.gif</code>, <code>-telephone.mp4</code>, <code>-transparent.mov</code> or <code>.webm</code>, <code>-planches.pdf</code>, <code>sortie/images/&lt;titre&gt;/</code></td><td>The other outputs, when you ask for them.</td></tr>
+</tbody>
+</table>
+<p>Pulse Motion finishes with a summary: the use, the length, the file size, the sound (or « muette », silent), the export mode, and each file with its role.</p>
+</section>
+
+<section id="risques">
+<h2>Risks and precautions</h2>
+<ul>
+<li><strong>Errors come first.</strong> If errors remain, Pulse Motion tells you plainly and offers to fix them first with <a href="retoucher.html"><code>/pulse-motion:retoucher</code></a>. Simple warnings do not block the export: it mentions them in one sentence.</li>
+<li><strong>The placeholder voice is never published by mistake.</strong> If a scene still speaks with the computer’s voice, Pulse Motion offers to record your voice first. If you choose « une version de travail » (a working version), it does not ask again as long as that voice doesn’t change, and the file is called <code>&lt;titre&gt;-version-de-travail.mp4</code>: the final video is not touched.</li>
+<li><strong>ffmpeg is only installed with your agreement</strong>, and only with your system’s official command (winget on Windows, Homebrew on macOS).</li>
+<li><strong>No incomplete files.</strong> If the export fails, no half-written MP4 is left in <code>sortie/</code>. An email version that would exceed the stated size is never written.</li>
+<li><strong>A scene with an error stops the export.</strong> If a scene’s script fails during the export, Pulse Motion stops and tells you which one, and at roughly what moment.</li>
+</ul>
+<aside class="encadre encadre-attention"><p><strong>Warning:</strong> a flash more than three times per second over a large part of the picture is an <strong>error</strong>, not a warning: it can trigger an epileptic seizure. Pulse Motion offers to soften it before exporting.</p></aside>
+</section>
+
+<section id="problemes">
+<h2>Problems and solutions</h2>
+<details class="probleme"><summary>“Chrome ou Edge introuvable” (Chrome or Edge not found)</summary><p>The export needs one of the two. Install Chrome or Edge (see the <a href="../prerequis.html#navigateur">requirements</a>). Another option: open the preview in one of them and click the <strong>MP4</strong> button in the playback bar.</p></details>
+<details class="probleme"><summary>The video is exported silent, or without the music</summary><p>A sound file could not be read. Pulse Motion tells you in a warning: the video is exported without the damaged source. Give the file again (music or voice), then run the export again.</p></details>
+<details class="probleme"><summary>The export was done “in the browser” when I wanted the high-fidelity export</summary><p>ffmpeg was not installed, or its version is too old. Pulse Motion offers to install it for next time. See <a href="../prerequis.html#ffmpeg">ffmpeg</a>.</p></details>
+<details class="probleme"><summary>The export stopped halfway</summary><p>Just run <code>/pulse-motion:exporter</code> again: the parts already done are picked up.</p></details>
+<details class="probleme"><summary>The file is too big for an email</summary><p>Ask for « <span lang="fr">une version pour l'envoyer par courriel</span> » (“a version to send by email”): it stays under 10 MB, or under the size you say. If the video is too long, Pulse Motion suggests a larger size or a single scene.</p></details>
+<details class="probleme"><summary>“Un export de cette vidéo est déjà en cours” (An export of this video is already running)</summary><p>Another export of the same video is still running (the message says since what time): wait for it to finish, then run it again.</p></details>
+</section>
+
+<section id="exemples">
+<h2>Examples</h2>
+<div class="conversation" lang="fr" data-titre="Example: first export, ffmpeg missing">
+<p data-role="vous">/pulse-motion:exporter</p>
+<p data-role="outil">pulse-motion controler .</p>
+<p data-role="claude">La vidéo est prête à exporter. Une alerte : un texte de la scène 4 est un peu près du bord, sans gravité.
+ffmpeg est un petit logiciel libre qui fabrique la vidéo en haute qualité, avec un son propre ; il s'installe une fois.
+→ Installer ffmpeg (Recommandé) / Exporter sans, dans le navigateur</p>
+<p data-role="vous">Installer ffmpeg</p>
+<p data-role="outil">winget install --id Gyan.FFmpeg -e --accept-source-agreements --accept-package-agreements</p>
+<p data-role="claude">À quoi va servir la vidéo ?
+→ Pour le web (Recommandé) / Pour les réseaux sociaux / Pour l'envoyer par courriel / Pour la projeter en réunion</p>
+<p data-role="vous">Pour le web</p>
+<p data-role="outil">pulse-motion exporter . --pour web</p>
+<p data-role="claude">✅ Fait : la vidéo « La chaîne du froid » est exportée en MP4 pour le web (1 min 04, avec le son, export fidèle).
+📄 Fichiers : sortie/la-chaine-du-froid.mp4 (à publier), la page animée et les sous-titres .srt et .vtt.</p>
+</div>
+<details class="traduction"><summary>In English</summary><p><strong>You:</strong> /pulse-motion:exporter</p><p><strong>Claude:</strong> The video is ready to export. One warning: a text in scene 4 is a little close to the edge, nothing serious. ffmpeg is a small free program that makes the video in high quality, with clean sound; it is installed once. → Install ffmpeg (Recommended) / Export without it, in the browser</p><p><strong>You:</strong> Install ffmpeg</p><p><strong>Claude:</strong> What will the video be used for? → For the web (Recommended) / For social media / To send by email / To project in a meeting</p><p><strong>You:</strong> For the web</p><p><strong>Claude:</strong> ✅ Done: the video “La chaîne du froid” is exported as an MP4 for the web (1 min 04 s, with sound, high-fidelity export). 📄 Files: sortie/la-chaine-du-froid.mp4 (to publish), the animated page and the .srt and .vtt subtitles.</p></details>
+<div class="conversation" lang="fr" data-titre="Example: the voice is not recorded yet">
+<p data-role="vous">/pulse-motion:exporter</p>
+<p data-role="claude">La vidéo parle encore avec la voix de l'ordinateur, qui sert seulement à caler l'animation.
+→ Enregistrer ma voix d'abord (Recommandé) / Exporter une version de travail avec la voix de l'ordinateur</p>
+<p data-role="vous">Enregistrer ma voix d'abord</p>
+<p data-role="claude">Dans l'aperçu, cliquez sur « Voix » : le texte défile, vous parlez, vous réécoutez, vous gardez ou refaites. Relancez ensuite /pulse-motion:exporter.</p>
+</div>
+<details class="traduction"><summary>In English</summary><p><strong>You:</strong> /pulse-motion:exporter</p><p><strong>Claude:</strong> The video still speaks with the computer’s voice, which is only there to time the animation. → Record my voice first (Recommended) / Export a working version with the computer’s voice</p><p><strong>You:</strong> Record my voice first</p><p><strong>Claude:</strong> In the preview, click “Voix” (Voice): the text scrolls, you speak, you listen back, you keep it or do it again. Then run /pulse-motion:exporter again.</p></details>
+</section>
+
+<section id="liees">
+<h2>Related commands</h2>
+<ul>
+<li><a href="retoucher.html"><code>/pulse-motion:retoucher</code></a>: fix things before exporting, then export again.</li>
+<li><a href="creer.html"><code>/pulse-motion:creer</code></a>: the next video.</li>
+</ul>
+</section>
+
+<nav class="suite" aria-label="Previous and next command" data-suite></nav>
+</article>
+</div>
+</main>
+</body>
+</html>

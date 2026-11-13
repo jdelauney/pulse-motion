@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en" data-racine="../../" data-commande="reprendre">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>/pulse-motion:reprendre – Pulse Motion Wiki</title>
+<meta name="description" content="Pick up the current video where it stopped.">
+<!-- langues -->
+<link rel="alternate" hreflang="fr" href="https://jdelauney.github.io/pulse-motion/commandes/reprendre.html">
+<link rel="alternate" hreflang="en" href="https://jdelauney.github.io/pulse-motion/en/commandes/reprendre.html">
+<link rel="alternate" hreflang="x-default" href="https://jdelauney.github.io/pulse-motion/commandes/reprendre.html">
+<!-- /langues -->
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/animations.css">
+<script src="../../js/donnees.js" defer></script>
+<script src="../../js/gabarit.js" defer></script>
+<script src="../../js/animations.js" defer></script>
+<script src="../../js/console.js" defer></script>
+</head>
+<body>
+<main id="contenu" class="conteneur-large">
+<div class="mise-en-page">
+<nav class="laterale" aria-label="The commands" data-laterale></nav>
+<article class="typographie">
+
+<header class="entete-page">
+<p class="pastille pastille-etape" data-couleur="1">Step 1 · Create</p>
+<h1><code>/pulse-motion:reprendre</code></h1>
+<p class="chapo">Pick up the current video where it stopped.</p>
+</header>
+
+<ul class="sommaire" aria-label="On this page" data-sommaire></ul>
+
+<section id="description">
+<h2>Description</h2>
+<p>Closed VS Code halfway through a video? A conversation got interrupted? This command reads the state of the video in the folder again, tells you in one sentence where it stands, then carries on at exactly the right step.</p>
+<p>It also reads your <a href="../../lexique.html#lexique-personnel" hreflang="fr">personal glossary</a> (in French): tool words that have already been explained to you aren’t explained again.</p>
+<table>
+<thead><tr><th>Where the video was</th><th>What Pulse Motion does</th></tr></thead>
+<tbody>
+<tr><td>No video in the folder</td><td>Suggests <a href="creer.html"><code>/pulse-motion:creer</code></a>.</td></tr>
+<tr><td>The timeline has errors</td><td>Fixes them, then shows you the timeline.</td></tr>
+<tr><td>The timeline is waiting for your approval</td><td>Shows it to you and asks for your approval.</td></tr>
+<tr><td>Scenes are missing, or are still only drafts</td><td>Opens the preview on the animated draft if it is closed, has the animators write the scenes, then checks the video.</td></tr>
+<tr><td>The style is waiting for your approval (guided path)</td><td>Shows you the style comparison again.</td></tr>
+<tr><td>The final video is waiting for your approval (guided path)</td><td>Opens the preview and asks for your approval.</td></tr>
+<tr><td>The video is ready</td><td>Reopens the preview if it is closed, then suggests an edit.</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="pourquoi">
+<h2>Why use it</h2>
+<ul>
+<li><strong>Nothing is lost.</strong> The whole state of the video is in its folder: you can shut the computer down at any step.</li>
+<li><strong>You don’t have to remember.</strong> Pulse Motion knows which step comes next and offers it to you.</li>
+<li><strong>Your brand kit stays up to date.</strong> If the saved brand kit used by this video has changed since (another colour, a new logo), Pulse Motion points it out and offers to apply it again. Nothing changes without your approval.</li>
+</ul>
+</section>
+
+<section id="quand">
+<h2>When to use it</h2>
+<ol class="parcours" aria-label="The Pulse Motion journey, with this command’s step highlighted">
+  <li data-couleur="1" aria-current="step"><span class="parcours-numero">1</span> Create</li>
+  <li data-couleur="3"><span class="parcours-numero">2</span> Edit</li>
+  <li data-couleur="4"><span class="parcours-numero">3</span> Export</li>
+  <li data-couleur="0"><span class="parcours-numero">4</span> Customise</li>
+</ol>
+<ul>
+<li><strong>After a break</strong>, when you reopen a video’s folder.</li>
+<li><strong>When Pulse Motion reminds you.</strong> At the start of each session, it checks whether the folder holds a video in progress and offers to pick it up.</li>
+<li><strong>After restarting Claude Code</strong>, for example to finish installing transcription.</li>
+<li><strong>To find your videos</strong>: « <span lang="fr">quelles sont mes vidéos ?</span> » (“what are my videos?”), « <span lang="fr">retrouve ma vidéo sur la chaîne du froid</span> » (“find my video about the cold chain”). Claude shows you the list of your videos, wherever they are on the computer: where each one stands, its length, its style and its MP4. To edit one, open Claude Code in its folder.</li>
+</ul>
+</section>
+
+<section id="arguments">
+<h2>How to run it</h2>
+<pre class="commande"><code>/pulse-motion:reprendre</code></pre>
+<p>It takes nothing after the name. Run it in the video’s folder: in VS Code, <strong>File</strong> menu → <strong>Open Folder…</strong>, then open the Claude Code panel.</p>
+</section>
+
+<section id="produit">
+<h2>What it produces</h2>
+<p>Nothing new on its own: it picks up the work of <a href="creer.html"><code>/pulse-motion:creer</code></a> where it stopped, and so produces the same files (timeline, scenes, animated page in <code>sortie/</code>).</p>
+</section>
+
+<section id="risques">
+<h2>Risks and precautions</h2>
+<ul>
+<li><strong>It changes nothing before talking to you.</strong> It first tells you where the video stands.</li>
+<li><strong>One folder, one video.</strong> Make sure you open the video’s folder, not the folder that contains it: otherwise Pulse Motion finds no video.</li>
+</ul>
+</section>
+
+<section id="problemes">
+<h2>Problems and solutions</h2>
+<details class="probleme"><summary>Pulse Motion says there is no video here</summary><p>The folder you opened isn’t the video’s folder. It must contain a <code>deroule.json</code> file. Open the right folder with <strong>File</strong> → <strong>Open Folder…</strong>, then run the command again.</p></details>
+<details class="probleme"><summary>My saved brand kit no longer exists</summary><p>It has been deleted from your computer. The video keeps its own copy of the brand kit, in its <code>charte/</code> folder: nothing is broken. Pulse Motion simply lets you know.</p></details>
+</section>
+
+<section id="exemples">
+<h2>Examples</h2>
+<div class="conversation" lang="fr" data-titre="Example: picking up after a break">
+<p data-role="vous">/pulse-motion:reprendre</p>
+<p data-role="outil">pulse-motion etat .</p>
+<p data-role="claude">La vidéo « La chaîne du froid » attend encore votre accord sur son déroulé. Le voici : 6 scènes, 1 min 03.
+→ Je valide, avec le style posé, lisible, rassurant (Recommandé) / Je veux changer quelque chose</p>
+</div>
+<details class="traduction"><summary>In English</summary><p><strong>You:</strong> /pulse-motion:reprendre</p><p><strong>Claude:</strong> The video “La chaîne du froid” is still waiting for your approval of its timeline. Here it is: 6 scenes, 1 min 03 s. → I approve, with the calm, readable, reassuring style (Recommended) / I want to change something</p></details>
+<div class="conversation" lang="fr" data-titre="Example: a finished video">
+<p data-role="vous">/pulse-motion:reprendre</p>
+<p data-role="claude">La vidéo « La chaîne du froid » est prête. J'ai rouvert l'aperçu dans votre navigateur.
+Une retouche ? Décrivez-la en une phrase, par exemple « ralentis la scène 3 ».</p>
+</div>
+<details class="traduction"><summary>In English</summary><p><strong>You:</strong> /pulse-motion:reprendre</p><p><strong>Claude:</strong> The video “La chaîne du froid” is ready. I’ve reopened the preview in your browser. An edit? Describe it in one sentence, for example “slow down scene 3”.</p></details>
+</section>
+
+<section id="liees">
+<h2>Related commands</h2>
+<ul>
+<li><a href="creer.html"><code>/pulse-motion:creer</code></a>: the steps that <code>reprendre</code> carries on.</li>
+<li><a href="retoucher.html"><code>/pulse-motion:retoucher</code></a>: change a finished video.</li>
+</ul>
+</section>
+
+<nav class="suite" aria-label="Previous and next command" data-suite></nav>
+</article>
+</div>
+</main>
+</body>
+</html>
