@@ -2,6 +2,20 @@
 
 Produit par `outils/nouveautes.js` depuis l'historique du dépôt : ne pas le modifier à la main. Les nouveautés racontées simplement sont sur la page « Nouveautés » du wiki.
 
+## 0.76.0 – 2026-11-13
+
+Vos personnages peuvent maintenant être dessinés d'un trait d'encre fin, sans visage, comme dans un carnet d'illustrateur : une personne en manteau, un enfant et une personne au travail rejoignent la galerie.
+
+### Nouveautés
+
+- Habillage plume (S11 J4, 5.6)
+- Trois dessins au trait de plume, sans visage (passant, enfant, ouvrier)
+- Planche --suivre, un élément recadré à chaque image et agrandi quatre fois (S11 J4, 5.11 point 1)
+
+### Corrections
+
+- Plume regardée sur planche : bras éloigné derrière les jambes, semelle sur le sol de la scène, robe sous le genou, couettes visibles de profil
+
 ## 0.75.0 – 2026-11-13
 
 Pulse Motion vérifie maintenant que votre vidéo ressemble à son style : couleurs, clarté et matière sont mesurées, et le relecteur le note. Chaque style propose aussi deux autres polices libres.
