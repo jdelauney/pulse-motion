@@ -666,7 +666,7 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   // Moteur à la carte : seuls les groupes de modules dont la vidéo se sert (groupesImposes : 'tous' pour les tests) ; des
   // habillages des personnages, seulement ceux d'une scène (spec S11, 5.1 point 4).
   const groupes = groupesImposes || GM.groupesDuDeroule(donnees, sections, dessin.scripts, { habillages: [...utilisesPersonnages.habillages] });
-  if (modulesDessin && Array.isArray(groupes)) for (const g of ['dessin', 'releve']) if (!groupes.includes(g)) groupes.push(g);
+  if (modulesDessin && Array.isArray(groupes)) for (const g of ['dessin', 'main-levee', 'releve']) if (!groupes.includes(g)) groupes.push(g);
   const moteur = [lireMoteur(RACINE, { groupes })].concat(modulesStyle.map((n) => lireModule(RACINE, `medium/${n}.js`, process.env.PM_MOTEUR_BRUT === '1'))).join('\n;\n');
   // Polices du code et des formules (vendor/polices/, OFL) : seulement si une scène en montre ; dans les crédits.
   const cssMontre = cssDonnees(montre);

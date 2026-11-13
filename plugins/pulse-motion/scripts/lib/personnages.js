@@ -13,6 +13,7 @@ const path = require('node:path');
 const S = require('../../moteur/squelette.js');
 const C = require('../../moteur/courbes.js');
 const { verifierSVG } = require('./svg-sur.js');
+const { FORMES: FORMES_PLUME } = require('../../moteur/habillage-plume.js');
 
 const RACINE = path.resolve(__dirname, '..', '..');
 const BIBLIOTHEQUE = path.join(RACINE, 'personnages');
@@ -34,14 +35,17 @@ const ORDRE = {
   clip: ['nom', 'description', 'boucle', 'duree', 'foulee', 'pieds', 'miroir', 'additif', 'lissage', 'contacts', 'cles'],
   gabarit: ['nom', 'description', ...Object.keys(S.GABARIT)],
   expression: ['nom', 'description', 'bouche', 'angles', 'clignement'],
-  dessin: ['nom', 'description', 'maniere', 'gabarit', 'couleurs', 'batonnets', 'pieces', 'accessoires', 'visage'],
+  dessin: ['nom', 'description', 'maniere', 'gabarit', 'couleurs', 'batonnets', 'plume', 'vetements', 'pieces', 'accessoires', 'visage'],
   decoupe: ['nom', 'description', 'source', 'vue', 'gabarit', 'couleurs', 'os', 'visage', 'ignorer'],
 };
 const ORDRE_CLE = ['t', 'pose', 'expression', 'bouche', 'angles', 'courbe'];
 const ORDRE_ACCESSOIRE = ['nom', 'os', 'devant', 'dessins'];
 // Manières de dessin (spec Mouvement vivant, 5.17) : « traits » (bâtonnets et tête en ellipse, comme touffu ; un réglage
-// bâtonnets équivalent) ou « pieces » (tenue et volumes dessinés par pièce).
-const MANIERES = ['traits', 'pieces'];
+// bâtonnets équivalent) ou « pieces » (tenue et volumes dessinés par pièce) ; « plume » (spec S11, 5.6) : trait d'encre tracé
+// par l'habillage plume, sans pièces ni visage (réglage plume, vêtements).
+const MANIERES = ['traits', 'pieces', 'plume'];
+const ORDRE_PLUME = ['traits', 'remplissages', 'cheveux', 'chapeau', 'objets'];
+const PARTIES_PLUME = ['torse', 'bras', 'jambes'];
 const ORDRE_BATONNETS = ['couleurs', 'epaisseur'];
 const COULEURS_BATONNETS = ['corps', 'dos', 'oeil', 'oeilTrait', 'pupille', 'touffe', 'touffeTrait'];
 const ORDRE_VISAGE = ['oeil', 'sourcil', 'bouches', 'vues'];
@@ -165,12 +169,20 @@ function validerDessin(objet, contexte, erreurs) {
     }
   }
   const connus = [...PIECES, ...os];
-  if (!estObjet(objet.pieces) || !Object.keys(objet.pieces).length) erreurs.push('« pieces » : il faut au moins une pièce (ex. { "tete": { "profil": "<ellipse …/>" } }).');
+  const plume = objet.maniere === 'plume';
+  if (plume) {
+    // Manière plume : l'habillage trace membres, corps et tête ; aucune pièce dessinée, aucun visage.
+    for (const k of ['pieces', 'accessoires', 'visage']) {
+      if (objet[k] !== undefined) erreurs.push(`« ${k} » : un dessin de la manière « plume » n'en a pas (${k === 'visage' ? 'figures sans visage : le caractère vient des cheveux, du chapeau et de la silhouette' : 'le corps est tracé par l\'habillage plume ; vêtements dans « vetements », objets dans « plume.objets »'}).`);
+    }
+    validerPlume(objet, erreurs);
+  } else if (objet.plume !== undefined || objet.vetements !== undefined) erreurs.push('« plume » et « vetements » : réservés à la manière « plume » (ajouter "maniere": "plume").');
+  if (plume) { /* pièces, accessoires et visage refusés plus haut */ } else if (!estObjet(objet.pieces) || !Object.keys(objet.pieces).length) erreurs.push('« pieces » : il faut au moins une pièce (ex. { "tete": { "profil": "<ellipse …/>" } }).');
   else for (const [n, vues] of Object.entries(objet.pieces)) {
     if (!connus.includes(n)) erreurs.push(`pièce « ${n} » : os inconnu${suggestion(n, connus)}`);
     else verifierVues(vues, `pièce « ${n} » `, erreurs);
   }
-  if (objet.accessoires !== undefined) {
+  if (objet.accessoires !== undefined && !plume) {
     if (!Array.isArray(objet.accessoires)) erreurs.push('« accessoires » : liste attendue.');
     else objet.accessoires.forEach((a, i) => {
       const ou = `accessoire ${i + 1} « ${a && a.nom} » `;
@@ -182,9 +194,62 @@ function validerDessin(objet, contexte, erreurs) {
       verifierVues(a.dessins, ou, erreurs);
     });
   }
-  if (objet.visage !== undefined) validerVisage(objet.visage, erreurs);
-  if (objet.maniere !== undefined && !MANIERES.includes(objet.maniere)) erreurs.push(`« maniere » : « ${objet.maniere} » inconnue (traits ou pieces).`);
+  if (objet.visage !== undefined && !plume) validerVisage(objet.visage, erreurs);
+  if (objet.maniere !== undefined && !MANIERES.includes(objet.maniere)) erreurs.push(`« maniere » : « ${objet.maniere} » inconnue (traits, pieces ou plume).`);
   if (objet.batonnets !== undefined) validerBatonnets(objet, erreurs);
+}
+
+/** Réglage plume (traits, remplissages, cheveux, chapeau, objets) et vêtements d'un dessin de la manière « plume ». Formes :
+ *  celles de l'habillage (moteur/habillage-plume.js, FORMES). Remplissage : papier, encre ou une couleur du dessin. */
+function validerPlume(objet, erreurs) {
+  const couleurs = estObjet(objet.couleurs) ? objet.couleurs : {};
+  const remplissage = (v, ou) => {
+    if (v !== undefined && v !== 'papier' && v !== 'encre' && !(typeof v === 'string' && Object.hasOwn(couleurs, v))) erreurs.push(`${ou} : remplissage « ${v} » : papier, encre ou une couleur du dessin (« couleurs »).`);
+  };
+  const forme = (x, liste, ou, champs) => {
+    if (!estObjet(x)) { erreurs.push(`${ou} : objet { ${champs.join(', ')} } attendu.`); return false; }
+    champsInconnus(x, champs, erreurs, `${ou} : `);
+    if (!liste.includes(x.forme)) erreurs.push(`${ou} : forme « ${x.forme} » inconnue (${liste.join(', ')}).`);
+    remplissage(x.remplissage, ou);
+    return true;
+  };
+  const p = objet.plume;
+  if (p !== undefined && !estObjet(p)) erreurs.push(`« plume » : objet { ${ORDRE_PLUME.join(', ')} } attendu.`);
+  else if (p !== undefined) {
+    champsInconnus(p, ORDRE_PLUME, erreurs, 'plume : ');
+    if (p.traits !== undefined && p.traits !== 1 && p.traits !== 2) erreurs.push('plume : « traits » vaut 1 (un trait par membre) ou 2 (deux traits, du papier entre eux).');
+    if (p.remplissages !== undefined) {
+      if (!estObjet(p.remplissages)) erreurs.push(`plume : « remplissages » : objet { ${PARTIES_PLUME.join(', ')} } attendu.`);
+      else {
+        champsInconnus(p.remplissages, PARTIES_PLUME, erreurs, 'plume, remplissages : ');
+        for (const [k, v] of Object.entries(p.remplissages)) remplissage(v, `plume, remplissage « ${k} »`);
+      }
+    }
+    if (p.cheveux !== undefined) forme(p.cheveux, FORMES_PLUME.cheveux, 'plume, cheveux', ['forme', 'remplissage']);
+    if (p.chapeau !== undefined) forme(p.chapeau, FORMES_PLUME.chapeau, 'plume, chapeau', ['forme', 'remplissage']);
+    if (p.objets !== undefined && !Array.isArray(p.objets)) erreurs.push('plume : « objets » : liste attendue (ex. [{ "forme": "mallette", "main": "Avant" }]).');
+    else if (p.objets !== undefined) {
+      const mains = [];
+      p.objets.forEach((o, i) => {
+        if (!forme(o, FORMES_PLUME.objets, `plume, objet ${i + 1}`, ['forme', 'main', 'remplissage'])) return;
+        const main = o.main === undefined ? 'Avant' : o.main;
+        if (!FORMES_PLUME.mains.includes(main)) erreurs.push(`plume, objet ${i + 1} : « main » : ${FORMES_PLUME.mains.join(' ou ')}.`);
+        else if (mains.includes(main)) erreurs.push(`plume, objet ${i + 1} : la main ${main} porte déjà un objet.`);
+        else mains.push(main);
+      });
+    }
+  }
+  const v = objet.vetements;
+  if (v !== undefined && !Array.isArray(v)) erreurs.push('« vetements » : liste attendue (ex. [{ "forme": "manteau" }]).');
+  else if (v !== undefined) {
+    const vus = [];
+    v.forEach((x, i) => {
+      if (!forme(x, FORMES_PLUME.vetements, `vêtement ${i + 1}`, ['forme', 'remplissage'])) return;
+      if (vus.includes(x.forme)) erreurs.push(`vêtement ${i + 1} : « ${x.forme} » est déjà porté.`);
+      vus.push(x.forme);
+    });
+    if (vus.includes('manteau') && vus.includes('robe')) erreurs.push('« vetements » : un seul vêtement long (manteau ou robe).');
+  }
 }
 
 /** Réglage bâtonnets équivalent d'un dessin « traits » : chaque couleur des bâtonnets nomme une couleur du dessin. */
@@ -505,6 +570,14 @@ function serialiser(type, objet) {
     if (estObjet(o.gabarit)) o.gabarit = JSON.parse(serialiser('gabarit', o.gabarit));
     if (estObjet(o.couleurs)) o.couleurs = ordonner(o.couleurs, []);
     if (estObjet(o.batonnets)) { o.batonnets = ordonner(o.batonnets, ORDRE_BATONNETS); if (estObjet(o.batonnets.couleurs)) o.batonnets.couleurs = ordonner(o.batonnets.couleurs, COULEURS_BATONNETS); }
+    if (estObjet(o.plume)) {
+      const pl = ordonner(o.plume, ORDRE_PLUME);
+      if (estObjet(pl.remplissages)) pl.remplissages = ordonner(pl.remplissages, PARTIES_PLUME);
+      for (const k of ['cheveux', 'chapeau']) if (estObjet(pl[k])) pl[k] = ordonner(pl[k], ['forme', 'remplissage']);
+      if (Array.isArray(pl.objets)) pl.objets = pl.objets.map((x) => (estObjet(x) ? ordonner(x, ['forme', 'main', 'remplissage']) : x));
+      o.plume = pl;
+    }
+    if (Array.isArray(o.vetements)) o.vetements = o.vetements.map((x) => (estObjet(x) ? ordonner(x, ['forme', 'remplissage']) : x));
     if (estObjet(o.pieces)) o.pieces = ordrePieces(o.pieces);
     if (Array.isArray(o.accessoires)) o.accessoires = o.accessoires.map((a) => { const r = ordonner(a, ORDRE_ACCESSOIRE); r.dessins = vues(r.dessins); return r; });
     if (estObjet(o.visage)) {
@@ -535,4 +608,4 @@ function enregistrer({ dossier, type, nom, objet, lu, ecrire }) {
   return { fichier };
 }
 
-module.exports = { BIBLIOTHEQUE, TYPES, VUES, PIECES, BOUCHES, ANGLES_VISAGE, MANIERES, COULEURS_BATONNETS, valider, lire, contexteDe, gabaritDe, apparenceBatonnets, serialiser, enregistrer, ErreurPersonnage };
+module.exports = { BIBLIOTHEQUE, TYPES, VUES, PIECES, BOUCHES, ANGLES_VISAGE, MANIERES, COULEURS_BATONNETS, ORDRE_PLUME, valider, lire, contexteDe, gabaritDe, apparenceBatonnets, serialiser, enregistrer, ErreurPersonnage };

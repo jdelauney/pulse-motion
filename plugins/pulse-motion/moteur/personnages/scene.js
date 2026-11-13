@@ -5,9 +5,10 @@
  *   </div>
  *
  * M.demarrerPersonnages() (après M.demarrer) : pour chaque conteneur, un <svg> couvrant la scène, l'habillage (registre
- * M.habillages, moteur/personnages/habillages.js : pièces pour un dessin, ou celui de data-habillage ; bâtonnets sans
- * dessin), la partition lue sur ses actions (temps résolus par le minutage) ; puis, à chaque rendu (M.surRendu), la pose
- * à l'instant t (M.partition.etatAuTemps), le squelette et l'habillage. Déterministe.
+ * M.habillages, moteur/personnages/habillages.js : celui de la manière du dessin (plume), sinon pièces, ou celui de
+ * data-habillage ; bâtonnets sans dessin), la partition lue sur ses actions (temps résolus par le minutage) ; puis, à chaque
+ * rendu (M.surRendu), la pose à l'instant t (M.partition.etatAuTemps), le squelette et l'habillage (avec { temps, ebullition } :
+ * frémissement de la plume, --pm-ebullition du style). Déterministe.
  * Données : M.donnees.personnages = { bib: { poses, clips, expressions }, dessins, gabarits, gabaritsDessins, apparences }
  * (apparences : réglage bâtonnets des dessins « traits », pour data-habillage="batonnets").
  * « parler » : piste de visèmes (M.levres) tirée des mots de la voix de la scène ; sans data-dur, jusqu'à la fin.
@@ -178,13 +179,16 @@
       gEcrase.appendChild(g);
       // Habillage (registre M.habillages) : celui du nom pour un personnage sans dessin ; pour un dessin, data-habillage
       // (« batonnets » sur un dessin « traits » : le même personnage en bâtonnets, à ses couleurs et proportions), sinon
-      // l'habillage par défaut. Un habillage inconnu, ou sans le réglage du dessin qu'il demande (refusés à l'assemblage) :
-      // l'habillage par défaut.
-      var voulu = seul ? nom : (div.getAttribute('data-habillage') || '').trim();
+      // celui de sa manière (plume), sinon l'habillage par défaut. Un habillage inconnu, sans le réglage du dessin qu'il demande,
+      // réservé à une autre manière, ou sur un dessin dont la manière a son habillage (refusés à l'assemblage) : le sien.
+      var propre = dessin ? nomsHab.filter(function (n) { return HAB[n].maniere && HAB[n].maniere === dessin.maniere; })[0] || defaut : null;
+      var voulu = seul ? nom : (div.getAttribute('data-habillage') || '').trim() || propre;
       var entree = Object.prototype.hasOwnProperty.call(HAB, voulu) ? HAB[voulu] : null;
       var apparence = dessin && entree && entree.reglage ? (D.apparences || {})[nom] : null;
-      if (dessin && (!entree || (entree.reglage && !apparence))) { entree = HAB[defaut]; apparence = null; }
-      var habillage = entree.creer(g, dessin, gabarit, { apparence: apparence || undefined });
+      if (dessin && (!entree || (entree.reglage && !apparence) || (entree.maniere && entree.maniere !== dessin.maniere) || (HAB[propre].maniere && entree !== HAB[propre]))) {
+        entree = HAB[propre]; apparence = null;
+      }
+      var habillage = entree.creer(g, dessin, gabarit, { apparence: apparence || undefined, graine: idScene + '/' + (div.id || rang) });
       var elements = (M.minutage.elements && M.minutage.elements[idScene]) || {};
       var actions = [];
       Array.prototype.forEach.call(div.children, function (el) {
@@ -200,7 +204,7 @@
         var affichee = sec.style.display;
         sec.style.display = '';
         var cs = racine.getComputedStyle(div);
-        ['--pm-perso-x', '--pm-perso-sol', '--pm-perso-taille', '--pm-perso-vie', '--pm-perso-cadence'].forEach(function (n) { lues[n] = String(cs.getPropertyValue(n) || '').trim(); });
+        ['--pm-perso-x', '--pm-perso-sol', '--pm-perso-taille', '--pm-perso-vie', '--pm-perso-cadence', '--pm-ebullition'].forEach(function (n) { lues[n] = String(cs.getPropertyValue(n) || '').trim(); });
         sec.style.display = affichee;
       }
       var feuille = function (nom) { return lues[nom] || ''; };
@@ -238,7 +242,9 @@
       if (M.interactions) M.interactions.preparer(actions);
       var vie = (div.getAttribute('data-vie') || feuille('--pm-perso-vie') || 'pleine').trim();
       var ecrase = div.hasAttribute('data-ecrase') ? Math.max(0, Math.min(0.25, nombre(div, 'data-ecrase', 0.12))) : undefined;
-      persos.push({ mesurer: mesurer, sec: sec, miroir: !!entree.miroir, cadence: cadence,
+      // Frémissement du trait (plume) : --pm-ebullition du style (re-tracés par seconde, 0 : figé).
+      var ebullition = Math.max(0, Number(feuille('--pm-ebullition')) || 0);
+      persos.push({ mesurer: mesurer, sec: sec, miroir: !!entree.miroir, cadence: cadence, ebullition: ebullition,
         div: div, habillage: habillage, gabarit: gabarit, echelle: echelle, ombre: ombre, gEcrase: gEcrase, hauteur: P.hauteur(gabarit),
         partition: { x0: feuilleNombre('data-x', '--pm-perso-x', 50), sol0: sol0, vue0: nombre(div, 'data-vue', 0), calme: div.getAttribute('data-calme') !== 'non',
           vie: vie === 'sobre' || vie === 'aucune' || vie === 'mains' ? vie : 'pleine', sel: V.sel(idScene + '/' + (div.id || rang)), scene: bornesScene(idScene),
@@ -303,7 +309,7 @@
         // Os en plus : balancement calculé sur la pose de base (sans interactions : 60 poses par os et par image).
         var contexte = x.p.gabarit.osEnPlus.length ? { temps: x.tp, poseA: function (u) { return placerBase(x.p, u); } } : undefined;
         var r = S.calculer(x.pose, x.p.gabarit, contexte);
-        x.p.habillage.rendre(r);
+        x.p.habillage.rendre(r, { temps: x.tp, ebullition: x.p.ebullition });
         rendreSol(x.p, r, x.tp, x.pose.pmEcrase);
       });
     }

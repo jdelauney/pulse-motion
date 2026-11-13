@@ -160,6 +160,7 @@ async function executer(args, { bibliotheque } = {}) {
       }
     };
     if (visage) {
+      if (dessin.maniere === 'plume') return { code: 1, sortie: '', erreur: `Personnage : le dessin « ${nomDessin} » est de la manière « plume », sans visage : regarder sa planche de marche.` };
       return produire({ nom: nomDessin, visage: true, dessin, lu: l, gabarit: P.gabaritDe(dessin, l), vues: o.valeur('--vues') ? vues : [0, 90] }, `${nomDessin}-visage.png`);
     }
     const nom = o.libres[0];
