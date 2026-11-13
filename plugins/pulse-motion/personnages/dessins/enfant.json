@@ -1,0 +1,43 @@
+{
+  "nom": "enfant",
+  "description": "un enfant d'une dizaine d'années, couettes et robe, un petit sac bleu à la main, au trait de plume, sans visage",
+  "maniere": "plume",
+  "gabarit": {
+    "cuisse": 46,
+    "tibia": 44,
+    "pied": 11,
+    "colonne": 50,
+    "hauteurEpaules": 45,
+    "baseTete": 57,
+    "bras": 36,
+    "avantBras": 32,
+    "demiBassin": 5,
+    "demiEpaules": 7,
+    "tete": {
+      "rx": 13,
+      "ry": 15
+    }
+  },
+  "couleurs": {
+    "sac": "#3E6E8E"
+  },
+  "plume": {
+    "cheveux": {
+      "forme": "couettes",
+      "remplissage": "encre"
+    },
+    "objets": [
+      {
+        "forme": "sac",
+        "main": "Avant",
+        "remplissage": "sac"
+      }
+    ]
+  },
+  "vetements": [
+    {
+      "forme": "robe",
+      "remplissage": "papier"
+    }
+  ]
+}

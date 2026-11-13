@@ -1,0 +1,45 @@
+{
+  "nom": "ouvrier",
+  "description": "une personne au travail en casquette bleue, pantalon sombre et sac de toile à la main, au trait de plume, sans visage",
+  "maniere": "plume",
+  "gabarit": {
+    "cuisse": 68,
+    "tibia": 68,
+    "pied": 16,
+    "colonne": 72,
+    "hauteurEpaules": 65,
+    "baseTete": 81,
+    "bras": 55,
+    "avantBras": 50,
+    "demiBassin": 7,
+    "demiEpaules": 12,
+    "tete": {
+      "rx": 10.5,
+      "ry": 12.5
+    }
+  },
+  "couleurs": {
+    "casquette": "#2F5D8A",
+    "sac": "#B08A5A"
+  },
+  "plume": {
+    "remplissages": {
+      "jambes": "encre"
+    },
+    "cheveux": {
+      "forme": "courts",
+      "remplissage": "encre"
+    },
+    "chapeau": {
+      "forme": "casquette",
+      "remplissage": "casquette"
+    },
+    "objets": [
+      {
+        "forme": "sac",
+        "main": "Arriere",
+        "remplissage": "sac"
+      }
+    ]
+  }
+}
