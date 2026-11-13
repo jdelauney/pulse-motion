@@ -2,6 +2,15 @@
 
 Produit par `outils/nouveautes.js` depuis l'historique du dépôt : ne pas le modifier à la main. Les nouveautés racontées simplement sont sur la page « Nouveautés » du wiki.
 
+## 0.74.0 – 2026-11-13
+
+Choisir un style devient plus simple : nommez une référence connue (« façon Kurzgesagt », « comme une notice IKEA ») et Claude prend le style le plus proche ; votre style habituel revient en premier, et les styles proposés varient.
+
+### Nouveautés
+
+- Références connues vers les styles (alias.json, une vingtaine de références vers les 20 styles, repli sans recette avec styles proches) et règle alias-a-l-ecran (avis)
+- Styles chercher lit les références connues ; propositions variées et habitudes retrouvées (préférence de portée style, habitude, « aussi » en rotation, au plus 2 styles d'une famille parmi les 3 premiers, mémoire des propositions écrite à l'accord du style)
+
 ## 0.73.0 – 2026-11-13
 
 Pulse Motion se prépare à accueillir près de cinquante styles : les polices communes ne sont plus livrées en double (le plugin passe de 15,5 à 15,0 Mo) et la liste des styles proposés reste courte. Vos vidéos ne changent pas.
