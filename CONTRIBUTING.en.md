@@ -108,7 +108,7 @@ A style is a folder `plugins/pulse-motion/styles/<id>/`:
 Then:
 
 1. its 11-section style sheet, `references/styles/<id>.md` (template and validation: `scripts/lib/fiche-style.js`);
-2. its place in `references/styles/recommandation.json` (recommended styles per genre);
+2. its place in `references/styles/recommandation.json` (recommended styles per genre), and the well-known references that lead to it in `references/styles/alias.json` ("like …": we borrow the medium, never the work; these names never go in the style sheet or the scenes);
 3. `npm test`: `styles-livres`, `fiches-style`, `styles`, `contrat` and `temoin` check the files, the style sheet, the ready-made scenes filled with their sample texts, and the reference content;
 4. the wiki: `node outils/site/medias.js galerie-styles`, then `node outils/site/galerie.js`.
 

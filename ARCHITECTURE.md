@@ -29,7 +29,7 @@ sortie/<titre>.html  ── page autonome, lisible sans connexion
 
 ### 1.1 L'idée et le déroulé
 
-La compétence `creer` (`skills/creer/SKILL.md`) pose une petite ronde de questions (durée, format, public, parcours, musique, voix), cherche le modèle de vidéo qui correspond au sujet (`scripts/modeles.js`, `modeles/videos/*.json`) et propose des styles (`references/styles/recommandation.json`). Elle écrit le **déroulé**, `deroule.json`, contrat central du projet, validé par `scripts/lib/deroule.js` :
+La compétence `creer` (`skills/creer/SKILL.md`) pose une petite ronde de questions (durée, format, public, parcours, musique, voix), cherche le modèle de vidéo qui correspond au sujet (`scripts/modeles.js`, `modeles/videos/*.json`) et propose des styles (`references/styles/recommandation.json` ; les références connues comme « façon … » dans `references/styles/alias.json` ; la préférence, l'habitude et les propositions passées de la personne dans `~/.pulse-motion/styles-proposes.json`). Elle écrit le **déroulé**, `deroule.json`, contrat central du projet, validé par `scripts/lib/deroule.js` :
 
 - `titre`, `genre`, `parcours`, `format` (`ratio` 16:9, 9:16, 1:1 ou 4:5 ; `ips`), `style`, `charte` (réglages ponctuels), `musique`, `sousTitres`, `bruitages` ;
 - `scenes[]` : `id`, `fichier`, `duree`, `transition` (celle de la scène qui **entre**), `rythme` (étire tous les temps de la scène), `intention`, `textes` (clé → texte à l'écran), `voix`, `mouvements` (numéros du dictionnaire), `type` (nom de la scène toute faite du style dont elle vient).
