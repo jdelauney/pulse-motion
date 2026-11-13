@@ -43,10 +43,14 @@ const GROUPES = {
   trace: ['trace-texte.js'],
   // Ken Burns (spec S9, 5.9) : data-ken-burns dans une scène ; caméras ajoutées par l'horloge.
   'ken-burns': ['ken-burns.js'],
+  // Cartes (spec S9, 5.10) : data-carte dans une scène ; M.cartes (projeter, arc) pour les scripts de scène ; CSS moteur/cartes.css.
+  cartes: ['cartes.js'],
+  // Lecteur Lottie (spec S9, 5.11) : data-lottie dans une scène ; l'animation suit l'horloge image par image.
+  lottie: ['lottie.js'],
 };
 
 // Ordre de chargement : celui de la liste historique (dépendances au chargement), puis absents.js en dernier.
-const MODULES = ['courbes.js', 'langues.js', 'aligner.js', 'proches.js', 'sous-titres.js', 'minutage.js', 'transitions.js', 'tween.js', 'lettres.js', 'camera.js', 'ken-burns.js', 'trace-texte.js',
+const MODULES = ['courbes.js', 'langues.js', 'aligner.js', 'proches.js', 'sous-titres.js', 'minutage.js', 'transitions.js', 'tween.js', 'lettres.js', 'camera.js', 'ken-burns.js', 'trace-texte.js', 'cartes.js', 'lottie.js',
   'squelette.js', 'vivant.js', 'clips.js', 'habillage-batonnets.js', 'habillage-pieces.js', 'personnages/levres.js', 'personnages/partition.js',
   'personnages/interactions.js', 'personnages/scene.js', 'personnages/objets.js', 'temps.js', 'horloge.js', 'tailles.js', 'wav.js',
   'sonie.js', 'mixage.js', 'synthe/catalogue.js', 'synthe/partition.js', 'synthe/ambiances.js', 'synthe/corde.js', 'synthe/instruments.js',
@@ -81,7 +85,9 @@ const nonVide = (x) => (Array.isArray(x) ? x.length > 0 : !!(x && typeof x === '
  * - relevé : avec le dessin ou la caméra automatique ;
  * - langues : la vidéo déclare sa langue (donnees.langue, spec S9 5.1) ;
  * - trace : data-sur-trace dans une scène (texte sur un tracé, spec S9 5.5) ;
- * - ken-burns : data-ken-burns dans une scène (spec S9 5.9).
+ * - ken-burns : data-ken-burns dans une scène (spec S9 5.9) ;
+ * - cartes : data-carte dans une scène (spec S9 5.10) ;
+ * - lottie : data-lottie dans une scène (spec S9 5.11).
  */
 function groupesDuDeroule(donnees, sections = [], scripts = []) {
   const d = donnees || {};
@@ -104,6 +110,8 @@ function groupesDuDeroule(donnees, sections = [], scripts = []) {
   if (CAMERA_AUTO.test(textes)) groupes.push('camera-auto');
   if (/\sdata-sur-trace\s*=/.test(textes)) groupes.push('trace');
   if (/\sdata-ken-burns\s*=/.test(textes)) groupes.push('ken-burns');
+  if (/\sdata-carte\s*=/.test(textes)) groupes.push('cartes');
+  if (/\sdata-lottie\s*=/.test(textes)) groupes.push('lottie');
   if (groupes.includes('dessin') || groupes.includes('camera-auto')) groupes.push('releve');
   return groupes;
 }

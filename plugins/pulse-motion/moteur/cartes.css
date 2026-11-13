@@ -1,0 +1,11 @@
+/* Pulse Motion – cartes géographiques (spec S9, 5.10), embarqué seulement si une scène pose une carte (<svg data-carte>).
+   --pm-u vaut 1 % de la largeur du cadre de la carte, en unités de la carte : traits et textes gardent leur taille quel que soit
+   le cadre. Les pays listés (pm-pays) prennent la couleur de la marque lisible sur le fond ; le reste du monde est un aplat discret. */
+#pm-scene svg.pm-carte { display: block; overflow: visible; }
+#pm-scene .pm-carte .pm-pays-fond { fill: color-mix(in srgb, var(--c-texte) 10%, var(--c-fond)); stroke: var(--c-fond); stroke-width: calc(var(--pm-u) * 0.12); stroke-linejoin: round; fill-rule: evenodd; }
+/* Surlignage (« FR s'allume ») : data-tween="--pm-surligne 0→1" passe de la couleur de la marque à l'accent. */
+#pm-scene .pm-carte .pm-pays { fill: color-mix(in srgb, var(--c-accent-lisible) calc(var(--pm-surligne, 0) * 100%), var(--c-primaire-lisible)); stroke: var(--c-fond); stroke-width: calc(var(--pm-u) * 0.15); stroke-linejoin: round; fill-rule: evenodd; }
+#pm-scene .pm-carte .pm-encart { fill: none; stroke: color-mix(in srgb, var(--c-texte) 35%, transparent); stroke-width: calc(var(--pm-u) * 0.12); }
+#pm-scene .pm-carte .pm-liaison { fill: none; stroke: var(--c-accent-lisible); stroke-width: calc(var(--pm-u) * 0.5); stroke-linecap: round; }
+#pm-scene .pm-carte .pm-repere-point { fill: var(--c-accent-lisible); stroke: var(--c-fond); stroke-width: calc(var(--pm-u) * 0.25); }
+#pm-scene .pm-carte text { font-size: calc(var(--pm-u) * 3.5); fill: currentColor; font-family: var(--f-texte); text-anchor: middle; }

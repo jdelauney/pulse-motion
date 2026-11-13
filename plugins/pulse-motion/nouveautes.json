@@ -1,5 +1,16 @@
 [
   {
+    "version": "0.70.0",
+    "date": "2026-11-13",
+    "resume": "Vos animations Lottie entrent dans vos vidéos, aux couleurs de votre marque, et les cartes de pays et de régions se préparent.",
+    "points": [
+      "« Mets mon animation Lottie de fusée dans la scène 2 » : donnez le fichier de LottieFiles ou de votre graphiste, Pulse Motion le pose dans la scène, le fait partir au bon moment et peut lui donner vos couleurs. Rien n'est téléchargé, et sa licence rejoint les crédits de la vidéo.",
+      "L'animation est calculée image par image : l'aperçu et le fichier MP4 montrent exactement la même chose. Si une partie ne peut pas être dessinée (un texte, un effet particulier), Pulse Motion vous le dit avant l'export.",
+      "Les cartes de vos pays d'export ou de vos agences en France sont prêtes à arriver : il ne manque plus que leurs fonds, qui seront livrés avec une prochaine version, sans aucune carte en ligne.",
+      "La carte qui se retourne montre maintenant un verso bien visible, même sur un fond clair."
+    ]
+  },
+  {
     "version": "0.69.0",
     "date": "2026-11-13",
     "resume": "Montrez une animation que vous aimez : Pulse Motion en mesure le rythme et les mouvements, et votre scène bouge de la même façon.",

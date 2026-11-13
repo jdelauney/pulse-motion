@@ -33,7 +33,10 @@ const COTE_DECODAGE = 960;
 const COTE_SUIVI = 640;
 const VIGNETTE = 256;
 const COMPARAISON_LARGEUR = 320;
-const MESSAGE_LOTTIE = 'Un fichier Lottie ne se lit pas encore ici : exportez l\'animation en GIF ou en MP4 (votre logiciel d\'animation sait le faire), puis déposez ce fichier dans le dossier de la vidéo.';
+// Lottie (spec S9, 5.11) : l'animation se pose telle quelle dans une scène (pulse-motion lottie importer), avec sa licence ;
+// l'imiter ne servirait qu'à refaire son mouvement avec d'autres images : on l'exporte alors en GIF ou en MP4.
+const MESSAGE_LOTTIE = 'Une animation Lottie n\'a pas besoin d\'être imitée : je peux la poser telle quelle dans une scène, avec sa licence. Pour reprendre seulement son mouvement avec vos propres images, exportez-la en GIF ou en MP4 (votre logiciel d\'animation sait le faire), puis déposez ce fichier dans le dossier de la vidéo.';
+const CONSEIL_LOTTIE = 'Pour la poser dans une scène : pulse-motion lottie importer <fichier> (pulse-motion reference lottie).';
 const CONSEIL_SITE = 'Pour imiter l\'animation d\'un site, je peux d\'abord la filmer, avec votre accord (/pulse-motion:filmer), puis imiter la prise.';
 const MESSAGE_FORMAT = 'Chrome ne sait pas lire ce fichier : exportez-le en MP4 ou en GIF, puis redéposez-le.';
 
@@ -87,7 +90,7 @@ function resoudreSource({ projet, source, nom, etape }) {
   if (morceaux[0] === 'films' && morceaux.length >= 2 && fs.existsSync(absolu) && fs.statSync(absolu).isDirectory()) return resoudrePrise(projet, morceaux, { etape, nom });
   if (!source || !fs.existsSync(absolu) || !fs.statSync(absolu).isFile()) return { ok: false, erreur: 'fichier', message: `Fichier « ${source} » introuvable : le déposer dans le dossier de la vidéo.` };
   const ext = path.extname(absolu).toLowerCase();
-  if (LOTTIE.includes(ext)) return { ok: false, erreur: 'lottie', message: MESSAGE_LOTTIE };
+  if (LOTTIE.includes(ext)) return { ok: false, erreur: 'lottie', message: MESSAGE_LOTTIE, conseil: CONSEIL_LOTTIE };
   const sorte = I.VIDEOS.includes(ext) ? 'video' : I.ANIMATIONS[ext] ? 'animation' : null;
   if (!sorte) return { ok: false, erreur: 'format', message: `« ${path.basename(absolu)} » : une vidéo (${I.VIDEOS.join(', ')}) ou une animation (.gif, WebP ou PNG animés).` };
   let n = nom || Pa.siteReduit(path.basename(absolu, ext));

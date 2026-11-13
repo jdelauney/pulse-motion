@@ -197,6 +197,21 @@ function credits({ projet, deroule, assemblage, version = versionPlugin() }) {
   lignes.push('', 'Sons importés');
   if (!sons.length) lignes.push('- aucun son importé (bruitages composés par Pulse Motion)');
   for (const rel of sons) lignes.push(ligneFichier(rel));
+  // Animations Lottie (spec S9, 5.11) : source et licence notées à l'import (assets/sources.json, ou la fiche <nom>.licence.json).
+  const lotties = ressources.filter((r) => r.sorte === 'lottie').map((r) => r.rel).sort();
+  if (lotties.length) {
+    lignes.push('', 'Animations Lottie');
+    for (const rel of lotties) {
+      let fiche = null;
+      try { fiche = JSON.parse(fs.readFileSync(path.join(projet, rel.replace(/\.json$/, '.licence.json')), 'utf8')); } catch { /* pas de fiche */ }
+      const connue = fiche && fiche.source && fiche.licence && fiche.source !== 'à préciser' && fiche.licence !== 'à préciser';
+      lignes.push(!sources[rel] && connue ? `- ${rel} : ${fiche.source}, ${fiche.licence}${fiche.auteur ? `, ${fiche.auteur}` : ''}` : ligneFichier(rel));
+    }
+  }
+  // Cartes (spec S9, 5.10) : fonds de Natural Earth, dans le domaine public ; le crédit est fait quand même.
+  if (assemblage && Array.isArray(assemblage.cartes) && assemblage.cartes.length) {
+    lignes.push('', 'Cartes', '- fonds de carte : Natural Earth (naturalearthdata.com), domaine public ; frontières de fait');
+  }
   lignes.push('', `Fabriqué avec Pulse Motion ${version} (licence MIT).`, '', RAPPEL, '');
   return { texte: lignes.join('\n'), aPreciser: [...new Set(aPreciser)] };
 }

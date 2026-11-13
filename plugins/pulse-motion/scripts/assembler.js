@@ -296,6 +296,9 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   const filmsVises = new Map();
   // Calque de dessin (spec S7) : groupe « dessin » et moteur/dessin/dessin.css seulement si une scène dessine ; icônes de d.icone.
   const dessin = { utilise: false, icones: new Set(), scripts: [] };
+  // Cartes (spec S9, 5.10) : noms des fonds posés (crédits, feuille moteur/cartes.css). Lottie (5.11) : un bloc JSON par fichier.
+  const cartesUtilisees = new Set();
+  const blocsLottie = new Map();
   // Modules du style (5.10 point 3) : seulement s'il les déclare ; ils s'appuient sur le calque de dessin.
   const modulesStyle = modulesDuStyle(dossierStyle);
   const modulesDessin = modulesStyle.some((n) => MODULES_DESSIN.has(n));
@@ -405,6 +408,21 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
       const r = Briques.preparerQR(avecIcones, { scene: scene.id, textes: scene.textes, couleurs: charte.couleurs });
       avecIcones = r.html;
       erreurs.push(...r.erreurs);
+    }
+    // Cartes (spec S9, 5.10) : <svg data-carte> reçoit ses pays, son cadre, ses repères et ses liaisons (fonds de cartes/) ;
+    // les fonds ne sont lus qu'à la première carte.
+    if (/\sdata-carte\s*=/.test(avecIcones)) {
+      const r = require('./lib/cartes.js').preparerCartes(avecIcones, { scene: scene.id });
+      avecIcones = r.html;
+      erreurs.push(...r.erreurs);
+      r.cartes.forEach((n) => cartesUtilisees.add(n));
+    }
+    // Animations Lottie (spec S9, 5.11) : le fichier de assets/lottie/, recoloré à la charte, devient un bloc JSON de la page.
+    if (/\sdata-lottie\s*=/.test(avecIcones)) {
+      const r = require('./lib/lottie.js').preparerLotties(avecIcones, { scene: scene.id, projet, couleurs: charte.couleurs, blocs: blocsLottie, dureeScene: minutageScenes.scenes[rang].dureeEffective });
+      avecIcones = r.html;
+      erreurs.push(...r.erreurs);
+      r.fichiers.forEach((f) => { if (!ressources.has(f)) ressources.set(f, 'lottie'); });
     }
     // Écrans (spec S6, 5.8 à 5.12) : cadre, surface et plan posés, adresse réduite au domaine, marques en décor, bruitage des clics.
     const usage = usagesEcran(avecIcones);
@@ -656,10 +674,12 @@ function assembler({ dossier, dossierStyles, dossierEffets = path.join(RACINE, '
   const temps = dureeTemps(deroule);
   // Feuille des briques de la spec S9 (moteur/briques.css) : seulement si une scène s'en sert, ou en karaoké.
   const cssBriques = Briques.besoinsBriques(sections, donnees).css ? `${fs.readFileSync(path.join(RACINE, 'moteur', 'briques.css'), 'utf8')}\n` : '';
+  // Cartes (spec S9, 5.10) : moteur/cartes.css seulement si une scène pose une carte.
+  const cssCartes = cartesUtilisees.size ? `${fs.readFileSync(path.join(RACINE, 'moteur', 'cartes.css'), 'utf8')}\n` : '';
   const cssPage = `:root { --pm-ratio-l: ${l}; --pm-ratio-h: ${h};${temps ? ` --pm-temps: ${temps}s; --pm-bpm: ${Math.round(60 / temps * 1000) / 1000};` : ''} }
 ${cssZones(deroule.format.plateforme)}${fs.readFileSync(path.join(RACINE, 'moteur', 'base.css'), 'utf8')}
 ${fs.readFileSync(path.join(RACINE, 'moteur', 'mouvements.css'), 'utf8')}
-${usages.css ? `${fs.readFileSync(path.join(RACINE, 'moteur', 'ecran.css'), 'utf8')}\n` : ''}${cssBriques}${dessin.utilise ? `${fs.readFileSync(path.join(RACINE, 'moteur', 'dessin', 'dessin.css'), 'utf8')}\n` : ''}${variablesCSS()}
+${usages.css ? `${fs.readFileSync(path.join(RACINE, 'moteur', 'ecran.css'), 'utf8')}\n` : ''}${cssBriques}${cssCartes}${dessin.utilise ? `${fs.readFileSync(path.join(RACINE, 'moteur', 'dessin', 'dessin.css'), 'utf8')}\n` : ''}${variablesCSS()}
 ${cssDeCharte}
 ${cssMontre.css}${modulesStyle.map(cssModule).filter(Boolean).map((c) => `${c}
 `).join('')}${cssStyle}`;
@@ -682,7 +702,7 @@ ${cssPage}
 ${sections.join('\n')}
 </div>
 ${sons.join('\n')}
-${blocsFilms.length ? `${blocsFilms.join('\n')}\n` : ''}<script type="application/json" id="pm-donnees">${jsonDansHTML(donnees)}</script>
+${blocsFilms.length ? `${blocsFilms.join('\n')}\n` : ''}${[...blocsLottie.values()].map((b) => `${b.html}\n`).join('')}<script type="application/json" id="pm-donnees">${jsonDansHTML(donnees)}</script>
 <script>
 ${moteur}
 </script>
@@ -694,13 +714,14 @@ M.demarrerLecteur();
 M.demarrerSousTitres();
 M.demarrerSonReactif();
 M.demarrerParticules();
-${usages.moteur && (groupes === 'tous' || groupes.includes('ecran')) ? 'M.demarrerEcrans();\n' : ''}${dessin.utilise && (groupes === 'tous' || groupes.includes('dessin')) ? 'M.demarrerDessin();\n' : ''}${groupes === 'tous' || groupes.includes('camera-auto') ? 'M.demarrerCameraAuto();\n' : ''}${groupes === 'tous' || groupes.includes('trace') ? 'M.demarrerTraces();\n' : ''}</script>
+${usages.moteur && (groupes === 'tous' || groupes.includes('ecran')) ? 'M.demarrerEcrans();\n' : ''}${dessin.utilise && (groupes === 'tous' || groupes.includes('dessin')) ? 'M.demarrerDessin();\n' : ''}${groupes === 'tous' || groupes.includes('camera-auto') ? 'M.demarrerCameraAuto();\n' : ''}${groupes === 'tous' || groupes.includes('trace') ? 'M.demarrerTraces();\n' : ''}${groupes === 'tous' || groupes.includes('lottie') ? 'M.demarrerLotties();\n' : ''}</script>
 ${blocMp4 ? `${blocMp4}\n` : ''}</body>
 </html>
 `;
 
   const resultat = { ok: true, fichier: null, html: page, erreurs, effets, milieux, shaders, donnees, parScene, cssPage, moteur, groupes, polices, detailPolices, dossierStyle, films,
-    ressources: [...ressources].map(([fichier, sorte]) => ({ fichier, sorte })), minutage: minutageScenes };
+    ressources: [...ressources].map(([fichier, sorte]) => ({ fichier, sorte })), minutage: minutageScenes,
+    ...(cartesUtilisees.size ? { cartes: [...cartesUtilisees] } : {}) };
   if (ecrire) resultat.fichier = ecrireSortie(projet, resultat).fichier;
   return resultat;
 }
