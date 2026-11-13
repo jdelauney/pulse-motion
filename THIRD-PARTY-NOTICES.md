@@ -355,3 +355,35 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## cinecode
+
+Idées reprises, sans code ni texte copié (spec S11) : la table des références connues qui mènent au style le plus proche, avec le repli quand aucun style ne convient et la note « un nom ne veut jamais dire copier » (`styles/aliases.json`), écrite en français dans `plugins/pulse-motion/references/styles/alias.json` et lue par `plugins/pulse-motion/scripts/lib/alias.js` ; les propositions variées de `scripts/styles.py suggest` (au plus deux styles d'une même famille, départage par une empreinte, recul des styles déjà montrés) et la sortie « aucun de ceux-là » de `references/quick-mode.md` § 1, réécrites dans `plugins/pulse-motion/scripts/lib/styles-proposes.js`, `scripts/styles.js` et `skills/creer/SKILL.md`.
+
+- Projet : cinecode
+- Auteur : Sarp Yıldız (@sarpstar)
+- Licence : MIT
+
+```
+MIT License
+
+Copyright (c) 2026 Sarp Yıldız (@sarpstar)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```

@@ -1,5 +1,17 @@
 [
   {
+    "version": "0.74.0",
+    "date": "2026-11-13",
+    "resume": "Choisir un style devient plus simple : nommez une référence connue (« façon Kurzgesagt », « comme une notice IKEA ») et Claude prend le style le plus proche ; votre style habituel revient en premier, et les styles proposés varient.",
+    "points": [
+      "Dites « façon Kurzgesagt », « vidéo scribing » ou « keynote Apple » : Claude prend le style le plus proche et vous dit ce qu'il en reprend (le dessin, les couleurs, le rythme), jamais l'univers de l'œuvre. Pour une référence impossible, comme la 3D, il le dit et propose deux styles proches.",
+      "Le style que vous avez choisi la dernière fois pour ce genre de vidéo est proposé en premier, et Claude le dit (« comme pour votre dernière formation »). Si vous avez dit « toujours le tableau blanc pour mes formations », ce style passe avant tout.",
+      "Les trois styles proposés ne sont jamais trois styles de la même famille, et les autres suggestions changent d'une vidéo à l'autre.",
+      "« Je veux changer quelque chose » offre maintenant « Autre chose que ces styles » : trois directions contrastées.",
+      "Le contrôle vous prévient si le nom d'une œuvre ou d'un studio s'écrit à l'écran."
+    ]
+  },
+  {
     "version": "0.73.0",
     "date": "2026-11-13",
     "resume": "Pulse Motion se prépare à accueillir près de cinquante styles : les polices communes ne sont plus livrées en double (le plugin passe de 15,5 à 15,0 Mo) et la liste des styles proposés reste courte. Vos vidéos ne changent pas.",

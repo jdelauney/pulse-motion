@@ -73,6 +73,7 @@ Un chiffre donné avec sa source va dans `faits` du déroulé (`pulse-motion ref
 | `texte-casse` | Un texte ou un compteur affiche « NaN », « undefined », « Infinity », « null » ou « [object Object] » | **erreur** | non | Corriger le `data-tween` ou le code de la scène |
 | `glyphe-absent` | Un caractère d'un texte n'existe pas dans la police embarquée de son rôle (titres, texte… : la classe de son élément), qui est nommée avec les caractères absents ; rôle inconnu : dans aucune police embarquée de la vidéo | alerte | non | Remplacer le caractère, ou choisir une police de charte qui l'a |
 | `emoji` | Un texte contient un emoji | alerte | non | Le retirer, ou une icône SVG dans la scène |
+| `alias-a-l-ecran` | Un texte du déroulé ou écrit dans la scène contient une référence connue de `references/styles/alias.json` (« façon Vox ») | info | non | Décrire le médium (« papier sur bureau, preuves surlignées »), pas l'œuvre ; rien si c'est une source citée ou un nom de client |
 
 ## Mise en page rendue
 

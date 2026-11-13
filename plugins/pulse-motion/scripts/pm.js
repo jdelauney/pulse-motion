@@ -45,8 +45,10 @@
  *   pulse-motion lottie importer <fichier.json|.lottie> [--nom n] [--source "…"] [--licence "…"] [--auteur "…"] [<dossier>] | analyser <fichier> [<dossier>]   animation Lottie fournie par la personne
  *   pulse-motion mouvements liste [--categorie <id>] | chercher <mots…> | afficher <n° ou nom> | reference | choisir [--categorie <id>] [--ouvrir]   dictionnaire de mouvements nommés ; choisir en regardant
  *   pulse-motion personnages liste|afficher <nom>|verifier|planche <nom> [--dessin <d>]|planche --dessin <d> --visage|atelier [<nom>] [--dessin <d>] [--decoupe <nom>] [--bibliotheque]|analyser <svg>|decouper <nom>|renommer-couleur <dessin> <ancien> <nouveau> [--dossier <d>]|enregistrer <nom> [--type t] [--sous <autre>] [--remplacer]|utiliser <nom> [--type t] [--remplacer]   poses, clips et gabarits des personnages ; bibliothèque personnelle
- *   pulse-motion styles [--genre <genre>] liste les styles (JSON), classée pour le genre
- *   pulse-motion styles chercher <mots…>  styles trouvés par leur nom de médium (« façon tableau blanc »)
+ *   pulse-motion styles [--genre <genre> [--noter <dossier>]]   liste les styles (JSON), classée pour le genre ; --noter :
+ *                                         les 3 proposés, gardés dans la mémoire de la personne à l'accord sur le style
+ *   pulse-motion styles chercher <mots…>  styles trouvés par leur nom de médium (« façon tableau blanc ») ou par une
+ *                                         référence connue (« façon Kurzgesagt »)
  *   pulse-motion styles verifier <nom>    vérifie le contrat d'un style
  *   pulse-motion styles choisir [--categorie <id>] [--ouvrir] [--delai <minutes>]   page locale : choisir un style en le regardant
  *   pulse-motion changer-style <dossier> <style>   recopie les scènes toutes faites du nouveau style
@@ -291,7 +293,7 @@ function lancer(args) {
     '  lottie importer <fichier.json|.lottie> [--nom n] [--source "…"] [--licence "…"] [--auteur "…"] [<dossier>] | analyser <fichier>   animation Lottie, posée par <div data-lottie="…"> (reference lottie)',
     '  personnages liste|afficher <nom>|verifier|planche <nom> [--dessin <d>]|planche --dessin <d> --visage|atelier [<nom>] [--dessin <d>] [--decoupe <nom>] [--bibliotheque]|analyser <svg>|decouper <nom>|renommer-couleur <dessin> <ancien> <nouveau>|enregistrer <nom>|utiliser <nom> [--remplacer]   poses, clips et gabarits ; bibliothèque personnelle',
     '  modeles liste | afficher <id> | trouver "<sujet>" | exemple <id> <dossier> | apercu <id>   modèles de vidéo et leurs exemples finis',
-    '  styles [--genre <genre>]      styles chercher <mots…>      styles verifier <nom>      styles choisir [--categorie <id>] [--ouvrir] [--delai <minutes>]',
+    '  styles [--genre <genre> [--noter <dossier>]]      styles chercher <mots…>      styles verifier <nom>      styles choisir [--categorie <id>] [--ouvrir] [--delai <minutes>]',
     '  changer-style <dossier> <style>                  comparer <dossier> <s1,s2,s3> [--scenes a,b] [--ouvrir]',
     '  charte enregistrer <nom> <dossier> | liste | appliquer <nom> <dossier> | depuis-logo <fichier> [--style s] [--ton clair|sombre]',
     '  police "<famille>" [--graisses 400,700] [--italique] | <fichier> [--famille "<nom>"] [--confirmer] [--style <style> --role titres|texte] [--dans <dossier>]',

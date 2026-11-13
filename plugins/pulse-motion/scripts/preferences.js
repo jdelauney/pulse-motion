@@ -10,7 +10,9 @@
  * date, video }] }. La citation est gardée telle quelle et datée ; 30 préférences au plus. liste : celles qui valent pour ce
  * genre et ce style (portée vide : toutes les vidéos). Ordre de priorité, appliqué par les compétences : la demande du
  * moment, puis les préférences, puis le style, puis les valeurs par défaut. Les règles de mouvement propres à la personne
- * (spec S3) s'écrivent ici, domaine « mouvement ». Le chantier H (bibliothèque) emporte ce fichier.
+ * (spec S3) s'écrivent ici, domaine « mouvement ». Préférence de portée style (spec S11, 5.3) : domaine « style », portée qui
+ * nomme le style voulu (« toujours le tableau blanc pour mes formations ») : ce style est proposé en premier, avant tout le
+ * reste (styles --genre). Le chantier H (bibliothèque) emporte ce fichier.
  * Résumé JSON ; code 1 avec { ok: false, message } en cas de refus.
  */
 const fs = require('node:fs');
@@ -18,7 +20,7 @@ const path = require('node:path');
 const { dossierPersonnel } = require('./lib/personnel.js');
 const { ecrireAtomique } = require('./lib/fichiers.js');
 
-const DOMAINES = ['mouvement', 'texte', 'couleur', 'son', 'rythme', 'structure', 'autre'];
+const DOMAINES = ['mouvement', 'texte', 'couleur', 'son', 'rythme', 'structure', 'style', 'autre'];
 const MAX = 30;
 const MAX_TEXTE = 300;
 const SLUG = /^[a-z0-9-]+$/;

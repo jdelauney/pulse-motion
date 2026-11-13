@@ -108,7 +108,7 @@ Un style est un dossier `plugins/pulse-motion/styles/<id>/` :
 Puis :
 
 1. sa fiche en 11 sections, `references/styles/<id>.md` (gabarit et validation : `scripts/lib/fiche-style.js`) ;
-2. sa place dans `references/styles/recommandation.json` (styles conseillés par genre) ;
+2. sa place dans `references/styles/recommandation.json` (styles conseillés par genre), et les références connues qui y mènent dans `references/styles/alias.json` (« façon … » : on reprend le médium, jamais l'œuvre ; ces noms ne vont ni dans la fiche, ni dans les scènes) ;
 3. `npm test` : `styles-livres`, `fiches-style`, `styles`, `contrat` et `temoin` vérifient les fichiers, la fiche, les scènes remplies de leurs textes d'exemple et le contenu témoin ;
 4. le wiki : `node outils/site/medias.js galerie-styles`, puis `node outils/site/galerie.js` (le catalogue montre la boucle, les images témoin et les neuf scènes du style).
 

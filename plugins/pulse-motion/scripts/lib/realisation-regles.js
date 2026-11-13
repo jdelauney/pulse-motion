@@ -2,7 +2,7 @@
 /* Pulse Motion – règles de réalisation et de vérité sans navigateur (spec S2, 5.7), appelées par controlesRapides :
  * rien-de-nouveau, comparaison-courte, camera-repetee (réalisation) ; terme-cle, chiffre-invente, chiffre-sans-source,
  * exemple-non-signale, cause-affirmee (vérité) ; glyphe-absent, emoji, image-repetee (textes et images) ; script-interdit
- * (contrat du code des scènes). Chaque problème porte sa scène (contrôle par scène), sauf un terme absent de toute la vidéo.
+ * (contrat du code des scènes) ; alias-a-l-ecran (spec S11, 5.2). Chaque problème porte sa scène (contrôle par scène), sauf un terme absent de toute la vidéo.
  * Idées : LONG, PINNED, glyphes absents de take-one (text-audit.mjs, MIT, © 2026 Tal Siach), contrat statique de take-one
  * (principe seulement), term_in() et vérité des chiffres de video-director (MIT, © 2026 win4r) ; code écrit à neuf.
  * Module pur (lit seulement les polices, mises en cache).
@@ -452,6 +452,23 @@ function scriptInterdit({ deroule, scenesHtml }) {
   }
   return r;
 }
+/**
+ * alias-a-l-ecran (spec S11, 5.2 point 4 ; avis, gravité info) : un texte du déroulé ou écrit dans la scène contient une
+ * référence de references/styles/alias.json (« façon Vox ») : on reprend le médium, jamais le nom d'une œuvre ou d'un studio.
+ */
+function aliasALEcran({ deroule, scenesHtml }) {
+  const { referencesDansTexte } = require('./alias.js');
+  const r = [];
+  for (const s of deroule.scenes) {
+    for (const { cle, texte } of textesScene(s, (scenesHtml || {})[s.id] || '')) {
+      for (const reference of referencesDansTexte(texte)) {
+        r.push({ regle: 'alias-a-l-ecran', gravite: 'info', scene: s.id, element: cle || undefined,
+          message: `${nomTexte(s, cle)} : « ${reference} » est le nom d'une référence de style ; à l'écran, il laisse croire à une imitation. Rien à faire si c'est voulu (une source citée, un nom de client).` });
+      }
+    }
+  }
+  return r;
+}
 
 /**
  * reglesRealisation({ deroule, min, scenesMinutees, scenesHtml, scenesLues, besoinLecture, avecVoix, corrigeable, temps,
@@ -470,6 +487,7 @@ function reglesRealisation(o) {
     ...glyphesEtEmoji({ deroule: o.deroule, scenesHtml: o.scenesHtml, fichiersPolices: o.fichiersPolices, detailPolices: o.detailPolices, css: o.css }),
     ...imageRepetee({ deroule: o.deroule, scenesHtml: o.scenesHtml, S }),
     ...scriptInterdit({ deroule: o.deroule, scenesHtml: o.scenesHtml }),
+    ...aliasALEcran({ deroule: o.deroule, scenesHtml: o.scenesHtml }),
   ];
 }
 
