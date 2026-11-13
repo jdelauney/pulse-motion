@@ -1,0 +1,8 @@
+{
+  "nom": "pas-traines",
+  "description": "pas traînés calculés : petits pas, pieds presque au ras du sol (fatigue, jupe étroite, sabots)",
+  "genre": "pas-traines",
+  "foulee": 0.5,
+  "periode": 0.9,
+  "appui": 0.64
+}

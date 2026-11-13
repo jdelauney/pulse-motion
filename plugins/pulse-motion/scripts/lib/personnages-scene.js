@@ -43,7 +43,7 @@ function preparerPersonnages(html0, { scene, lu, voix = false, dureeTemps = null
   const deplie = deplierGroupes(html0, { scene, dureeTemps });
   const html = deplie.html;
   const erreurs = deplie.erreurs.slice();
-  const utilises = { dessins: new Set(), gabarits: new Set(), batonnets: new Set(), habillages: new Set() };
+  const utilises = { dessins: new Set(), gabarits: new Set(), batonnets: new Set(), habillages: new Set(), demarche: false };
   if (!/data-personnage|data-action|data-tenu-par/.test(html)) return { html, utilises, erreurs, parle: false };
   let parle = false;
   const verifierEcrase = (v, qui) => {
@@ -70,7 +70,8 @@ function preparerPersonnages(html0, { scene, lu, voix = false, dureeTemps = null
     const a = lireAttributs(texte);
     if (a['data-personnage'] !== undefined && a.id) porteurs.set(a.id.trim(), parent || null);
     if (a['data-tenu-par'] !== undefined) objetsTenus.push({ a, parent: parent || null });
-    if (!autoFermee) pile.push({ tag: nomTag, personnage: a['data-personnage'] !== undefined ? a['data-personnage'].trim() : null, id: a.id ? a.id.trim() : null });
+    if (!autoFermee) pile.push({ tag: nomTag, personnage: a['data-personnage'] !== undefined ? a['data-personnage'].trim() : null, id: a.id ? a.id.trim() : null,
+      calculee: a['data-demarche'] !== undefined && a['data-demarche'].trim() === 'calculee' });
     if (a.id) {
       const id = a.id.trim();
       if (chemins.has(id) || autresIds.has(id)) idsDoubles.add(id);
@@ -87,6 +88,11 @@ function preparerPersonnages(html0, { scene, lu, voix = false, dureeTemps = null
       if (a['data-vie'] !== undefined && !['pleine', 'sobre', 'mains', 'aucune'].includes(a['data-vie'].trim())) erreurs.push(erreur(scene, `data-vie="${a['data-vie']}" : valeur inconnue (pleine, sobre, mains ou aucune).`));
       if (a['data-ombre'] !== undefined && !['oui', 'non'].includes(a['data-ombre'].trim())) erreurs.push(erreur(scene, `data-ombre="${a['data-ombre']}" : oui ou non.`));
       if (a['data-ecrase'] !== undefined) verifierEcrase(a['data-ecrase'], `personnage « ${nom} »`);
+      // Marche calculée (spec S11, 5.7) : vue de profil ; ailleurs, le mouvement marche ou course.
+      if (a['data-demarche'] !== undefined) {
+        if (a['data-demarche'].trim() !== 'calculee') erreurs.push(erreur(scene, `personnage « ${nom} » : data-demarche="${a['data-demarche']}" : seule valeur, « calculee » (marche calculée de profil).`));
+        else utilises.demarche = true;
+      }
       // Habillages : registre unique (moteur/personnages/habillages.js, spec S11 5.1 point 4).
       const seuls = HAB.sansDessin();
       if (seuls.includes(nom)) {
@@ -125,6 +131,7 @@ function preparerPersonnages(html0, { scene, lu, voix = false, dureeTemps = null
       return tout;
     }
     if (a['data-membre'] !== undefined) erreurs.push(erreur(scene, `data-membre="${a['data-membre']}" hors d'un groupe : il sert dans un conteneur data-groupe.`));
+    if (a['data-demarche'] !== undefined) erreurs.push(erreur(scene, `data-demarche se pose sur le personnage (l'élément data-personnage), pas sur ${a['data-action'] !== undefined ? 'une action' : 'un autre élément'}.`));
     if (a['data-action'] === undefined) return tout;
     const type = a['data-action'].trim();
     const dans = parent && parent.personnage !== null ? parent.personnage : null;
@@ -176,7 +183,10 @@ function preparerPersonnages(html0, { scene, lu, voix = false, dureeTemps = null
       const nomClip = a['data-clip'].trim();
       const c = Object.hasOwn(lu.clips, nomClip) ? lu.clips[nomClip] : null;
       const modele = type === 'courir' ? 'course' : 'marche';
-      if (!c) erreurs.push(erreur(scene, avecBibliotheque(`${qui} : démarche « ${nomClip} » introuvable ; la créer d'abord dans personnages/clips/ de la vidéo (un mouvement en boucle, copié de « ${modele} » : pulse-motion personnages afficher ${modele}).`, 'clip', nomClip)));
+      // Démarche calculée (réglages de personnages/clips/demarches/) : seulement pour un personnage en data-demarche="calculee".
+      const reglee = !c && Object.hasOwn(lu.demarches || {}, nomClip);
+      if (reglee && !(parent && parent.calculee)) erreurs.push(erreur(scene, `${qui} : « ${nomClip} » est une démarche calculée : poser data-demarche="calculee" sur le personnage.`));
+      else if (reglee) { /* réglages lus par partition.js */ } else if (!c) erreurs.push(erreur(scene, avecBibliotheque(`${qui} : démarche « ${nomClip} » introuvable ; la créer d'abord dans personnages/clips/ de la vidéo (un mouvement en boucle, copié de « ${modele} » : pulse-motion personnages afficher ${modele}).`, 'clip', nomClip)));
       else if (!c.boucle || c.additif) erreurs.push(erreur(scene, `${qui} : « ${nomClip} » ne peut pas servir de démarche : il faut un mouvement en boucle, comme « ${modele} ».`));
     }
     if (type === 'pose' && a['data-pose'] !== undefined && !Object.hasOwn(lu.poses, a['data-pose'])) erreurs.push(erreur(scene, avecBibliotheque(`${qui} : pose « ${a['data-pose']} » introuvable${procheDe(a['data-pose'], Object.keys(lu.poses)) || ` (poses : ${Object.keys(lu.poses).join(', ')}).`}`, 'pose', a['data-pose'])));
@@ -255,7 +265,9 @@ function donneesPersonnages(utilises, lu) {
   // Réglage bâtonnets des seuls dessins montrés en bâtonnets (data-habillage="batonnets").
   for (const n of utilises.batonnets || []) apparences[n] = P.apparenceBatonnets(lu.dessins[n]);
   for (const g of utilises.gabarits) gabarits[g] = lu.gabarits[g];
-  return { bib: { poses: lu.poses, clips: lu.clips, expressions: lu.expressions }, dessins, gabaritsDessins, gabarits, ...(Object.keys(apparences).length ? { apparences } : {}) };
+  // Réglages des démarches calculées : seulement si un personnage marche en data-demarche="calculee" (spec S11, 5.7).
+  const bib = { poses: lu.poses, clips: lu.clips, expressions: lu.expressions, ...(utilises.demarche ? { demarches: lu.demarches || {} } : {}) };
+  return { bib, dessins, gabaritsDessins, gabarits, ...(Object.keys(apparences).length ? { apparences } : {}) };
 }
 
 module.exports = { preparerPersonnages, donneesPersonnages, ACTIONS };

@@ -1,0 +1,8 @@
+{
+  "nom": "course",
+  "description": "course calculée : appui court qui comprime la jambe, phase de vol, talon lancé (vue de profil)",
+  "genre": "course",
+  "foulee": 0.62,
+  "periode": 0.5,
+  "appui": 0.36
+}
