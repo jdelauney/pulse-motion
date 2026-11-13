@@ -28,6 +28,17 @@
     "roles": {
       "primaire": "la première encre : collines, flèches, colonnes",
       "accent": "la seconde encre : le rond, les soulignés, les cadres"
+    },
+    "mesure": {
+      "teintesMax": 3,
+      "chaleur": [
+        0.005,
+        0.088
+      ],
+      "saturee": [
+        0.02,
+        0.103
+      ]
     }
   },
   "typographie": {

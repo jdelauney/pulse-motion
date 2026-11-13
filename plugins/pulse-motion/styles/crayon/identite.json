@@ -28,6 +28,17 @@
     "roles": {
       "primaire": "le crayon bleu et le lavis froid",
       "accent": "le crayon rouge : ce qui compte, le lavis chaud"
+    },
+    "mesure": {
+      "teintesMax": 2,
+      "chaleur": [
+        0,
+        0.075
+      ],
+      "saturee": [
+        0,
+        0.028
+      ]
     }
   },
   "typographie": {

@@ -28,6 +28,17 @@
     "roles": {
       "primaire": "aplats et bandeaux",
       "accent": "chiffres, pastilles, flèches"
+    },
+    "mesure": {
+      "teintesMax": 3,
+      "chaleur": [
+        -0.012,
+        0.198
+      ],
+      "saturee": [
+        0.019,
+        1
+      ]
     }
   },
   "typographie": {

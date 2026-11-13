@@ -10,6 +10,8 @@
  *                                                référence connue désigne (« façon Kurzgesagt », references/styles/alias.json)
  *   node scripts/styles.js verifier <nom>        vérifie le contrat d'un style
  *   node scripts/styles.js ambiance <style> [--genre <genre>]   ambiance musicale proposée pour ce style (JSON)
+ *   node scripts/styles.js polices <style>       polices du style et deux alternatives sous licence OFL, polices trop vues
+ *                                                (references/styles/polices.json ; un style personnel : celles de sa base)
  */
 const crypto = require('node:crypto');
 const fs = require('node:fs');
@@ -139,6 +141,22 @@ function verifierSon(son, erreurs) {
   if ('fort' in son && !SYNTHE.BRUITAGES.includes(son.fort)) erreurs.push(`identite.json : son fort « ${son.fort} » inconnu (son.fort). Bruitages : ${SYNTHE.BRUITAGES.join(', ')}.`);
 }
 
+/** identite.couleur.mesure (spec S11, 5.4) : ce que la mesure du rendu attend du style ; obligatoire pour un style livré,
+ *  facultatif pour un style personnel. { teintesMax: entier ≥ 1, chaleur: [min, max] (b moyen en OKLab), saturee: [min, max]
+ *  (part de 0 à 1) }. */
+function verifierMesure(m, livre, erreurs) {
+  if (m === undefined) {
+    if (livre) erreurs.push('identite.json : « couleur.mesure » est obligatoire pour un style livré : { "teintesMax", "chaleur": [min, max], "saturee": [min, max] }, d\'après la mesure de sa vidéo témoin.');
+    return;
+  }
+  const plage = (x, a, b) => Array.isArray(x) && x.length === 2 && x.every((v) => typeof v === 'number' && Number.isFinite(v) && v >= a && v <= b) && x[0] <= x[1];
+  if (!m || typeof m !== 'object' || Array.isArray(m)) { erreurs.push('identite.json : « couleur.mesure » : { "teintesMax", "chaleur": [min, max], "saturee": [min, max] }.'); return; }
+  for (const k of Object.keys(m)) if (!['teintesMax', 'chaleur', 'saturee'].includes(k)) erreurs.push(`identite.json : « couleur.mesure.${k} » inconnu (teintesMax, chaleur, saturee).`);
+  if (!(Number.isInteger(m.teintesMax) && m.teintesMax >= 1 && m.teintesMax <= 6)) erreurs.push('identite.json : « couleur.mesure.teintesMax » : un entier de 1 à 6 (teintes distinctes au plus dans une vidéo).');
+  if (!plage(m.chaleur, -0.5, 0.5)) erreurs.push('identite.json : « couleur.mesure.chaleur » : [min, max], de −0,5 (froid) à 0,5 (chaud), min ≤ max.');
+  if (!plage(m.saturee, 0, 1)) erreurs.push('identite.json : « couleur.mesure.saturee » : [min, max], parts de 0 à 1 de l\'image en couleurs vives, min ≤ max.');
+}
+
 function verifierFicheIdentite(identite, livre, erreurs) {
   if (livre) for (const champ of CHAMPS_LIVRE) if (identite[champ] === undefined) erreurs.push(`identite.json : « ${champ} » est obligatoire pour un style livré.`);
   if (identite.categorie !== undefined && !CATEGORIES.some((c) => c.id === identite.categorie)) {
@@ -155,6 +173,7 @@ function verifierFicheIdentite(identite, livre, erreurs) {
     erreurs.push('identite.json : « motsCles » : 3 mots ou plus (pour trouver le style quand la personne le nomme avec ses mots).');
   }
   if (identite.son !== undefined) verifierSon(identite.son, erreurs);
+  verifierMesure(identite.couleur && identite.couleur.mesure, livre, erreurs);
   if (identite.shaders !== undefined) {
     const connus = nomsFichiers(path.join(RACINE, 'shaders'), '.json');
     const c = identite.shaders && identite.shaders.conseilles;
@@ -379,8 +398,19 @@ function empreinteBase(st) {
   const h = crypto.createHash('sha256');
   const fiche = ficheDuStyle(st);
   h.update('fiche\0').update(sansCR(fs.existsSync(fiche) ? fs.readFileSync(fiche) : Buffer.alloc(0), 'fiche.md')).update('\0');
-  for (const { r, chemin } of fichiersStyle(st.dossier)) h.update(r).update('\0').update(sansCR(fs.readFileSync(chemin), r)).update('\0');
+  for (const { r, chemin } of fichiersStyle(st.dossier)) h.update(r).update('\0').update(sansMesure(sansCR(fs.readFileSync(chemin), r), r)).update('\0');
   return h.digest('hex');
+}
+
+/** identite.json sans couleur.mesure (spec S11, 5.4) : ce que la mesure du rendu attend ne change pas le rendu ; la base
+ *  d'un style personnel n'est pas « modifiée » quand ce champ arrive ou change. Sans ce champ : les octets tels quels. */
+function sansMesure(b, r) {
+  if (r !== 'identite.json') return b;
+  let j;
+  try { j = JSON.parse(b.toString('utf8')); } catch { return b; }
+  if (!j || !j.couleur || j.couleur.mesure === undefined) return b;
+  delete j.couleur.mesure;
+  return Buffer.from(`${JSON.stringify(j, null, 2)}${b.toString('utf8').endsWith('\n') ? '\n' : ''}`, 'utf8');
 }
 
 /**
@@ -647,6 +677,13 @@ if (require.main === module) {
       const k = args.indexOf('--genre');
       const r = args[1] && !args[1].startsWith('--') ? ambianceDuStyle(args[1], k >= 0 ? args[k + 1] : null) : null;
       if (!r) { console.error(args[1] && !args[1].startsWith('--') ? messageStyleInconnu(args[1]) : 'Indiquez un style après ambiance (ex. : ambiance clair-pedagogique --genre formation).'); process.exit(1); }
+      console.log(JSON.stringify(r));
+      process.exit(0);
+    }
+    if (args[0] === 'polices') {
+      // Polices du style et ses deux alternatives (spec S11, 5.5) ; un style personnel reçoit celles de sa base.
+      const r = args[1] && !args[1].startsWith('--') ? require('./lib/polices-styles.js').alternativesPolices(args[1]) : null;
+      if (!r) { console.error(args[1] && !args[1].startsWith('--') ? messageStyleInconnu(args[1]) : 'Indiquez un style après polices (ex. : polices riso).'); process.exit(1); }
       console.log(JSON.stringify(r));
       process.exit(0);
     }

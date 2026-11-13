@@ -32,6 +32,17 @@
     "roles": {
       "primaire": "cartouche, repères",
       "accent": "la pièce qui compte, nuage de révision"
+    },
+    "mesure": {
+      "teintesMax": 2,
+      "chaleur": [
+        -0.114,
+        0.005
+      ],
+      "saturee": [
+        0,
+        1
+      ]
     }
   },
   "typographie": {

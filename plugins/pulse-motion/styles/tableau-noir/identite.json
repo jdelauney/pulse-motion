@@ -27,6 +27,17 @@
     "roles": {
       "primaire": "craie pâle, la seconde main",
       "accent": "craie d'accent, ce que la leçon suit"
+    },
+    "mesure": {
+      "teintesMax": 1,
+      "chaleur": [
+        0.016,
+        0.078
+      ],
+      "saturee": [
+        0,
+        0.022
+      ]
     }
   },
   "typographie": {

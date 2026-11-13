@@ -28,6 +28,17 @@
     "roles": {
       "primaire": "la série principale",
       "accent": "la valeur qui compte"
+    },
+    "mesure": {
+      "teintesMax": 2,
+      "chaleur": [
+        0.005,
+        0.079
+      ],
+      "saturee": [
+        0.003,
+        0.035
+      ]
     }
   },
   "typographie": {

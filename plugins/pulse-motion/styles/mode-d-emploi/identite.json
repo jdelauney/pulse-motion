@@ -27,6 +27,17 @@
     "roles": {
       "primaire": "les blocs froids du décor et le bon geste",
       "accent": "le mauvais geste, l'avertissement, ce qui compte"
+    },
+    "mesure": {
+      "teintesMax": 2,
+      "chaleur": [
+        0.031,
+        0.094
+      ],
+      "saturee": [
+        0.006,
+        0.054
+      ]
     }
   },
   "typographie": {

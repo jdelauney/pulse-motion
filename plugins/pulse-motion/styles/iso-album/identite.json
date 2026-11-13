@@ -27,6 +27,17 @@
     "roles": {
       "primaire": "le lieu, les repères",
       "accent": "le bon geste, la règle"
+    },
+    "mesure": {
+      "teintesMax": 2,
+      "chaleur": [
+        0.016,
+        0.082
+      ],
+      "saturee": [
+        0.002,
+        0.033
+      ]
     }
   },
   "typographie": {

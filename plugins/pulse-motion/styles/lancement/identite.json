@@ -28,6 +28,17 @@
     "roles": {
       "primaire": "la lumière qui se déplace et le reflet",
       "accent": "le seul élément coloré : carte allumée, numéro, point actif"
+    },
+    "mesure": {
+      "teintesMax": 2,
+      "chaleur": [
+        -0.123,
+        -0.053
+      ],
+      "saturee": [
+        0,
+        0.023
+      ]
     }
   },
   "typographie": {

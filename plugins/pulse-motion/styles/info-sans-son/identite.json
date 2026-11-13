@@ -28,6 +28,17 @@
     "roles": {
       "primaire": "filet et étiquette de source",
       "accent": "bloc du mot-clé, chiffre arrivé, gains"
+    },
+    "mesure": {
+      "teintesMax": 2,
+      "chaleur": [
+        0.039,
+        0.147
+      ],
+      "saturee": [
+        0.004,
+        0.04
+      ]
     }
   },
   "typographie": {
