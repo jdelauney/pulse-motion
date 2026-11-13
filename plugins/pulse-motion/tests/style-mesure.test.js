@@ -288,18 +288,20 @@ test('style verifier : police-trop-vue pour un style personnel en Montserrat ; l
 test('styles nouveaux : aucune police trop vue ; au moins une police utilisée par 2 autres styles au plus', () => {
   // Les styles livrés après S8 (vagues E à K) respectent les deux règles.
   for (const s of LIVRES.filter((x) => !STYLES_S8.includes(x))) assert.deepEqual(PS.reglesStyleNouveau(s), [], s);
-  // Les règles elles-mêmes, sur un catalogue d'essai : un style nouveau en Inter et en Barlow, déjà pris par 3 autres styles.
+  // Les règles elles-mêmes, sur un catalogue d'essai.
   const dir = dossierTemporaire('pm-polices-');
   const style = (nom, titres, texte) => {
     fs.mkdirSync(path.join(dir, nom));
     fs.writeFileSync(path.join(dir, nom, 'identite.json'), JSON.stringify({ style: nom, typographie: { titres: { famille: titres }, texte: { famille: texte } } }));
   };
   style('a', 'Barlow', 'Barlow'); style('b', 'Barlow', 'Fraunces'); style('c', 'Fraunces', 'Barlow'); style('d', 'Fraunces', 'Kalam');
-  style('nouveau', 'Inter', 'Barlow');
-  const r = PS.reglesStyleNouveau('nouveau', dir);
-  assert.equal(r.length, 2, r.join('\n'));
-  assert.match(r[0], /« Inter » est dans la liste trop-vues/);
-  assert.match(r[1], /plus de 2 autres styles/);
+  // Barlow et Fraunces sont déjà pris par 3 autres styles : aucune police rare.
+  style('commun', 'Barlow', 'Fraunces');
+  const r = PS.reglesStyleNouveau('commun', dir);
+  assert.equal(r.length, 1, r.join('\n'));
+  assert.match(r[0], /plus de 2 autres styles/);
+  // Inter : trop vue (rare, elle suffit à la diversité, mais reste refusée).
+  assert.deepEqual(PS.reglesStyleNouveau('vu', (style('vu', 'Inter', 'Barlow'), dir)).map((m) => /« Inter » est dans la liste trop-vues/.test(m)), [true]);
   style('rare', 'Barlow', 'Shantell Sans');
   assert.deepEqual(PS.reglesStyleNouveau('rare', dir), []);
 });
