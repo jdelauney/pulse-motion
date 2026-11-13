@@ -55,7 +55,7 @@ Pour essayer votre copie dans Claude Code, ajoutez le dépôt local comme catalo
 /plugin install pulse-motion@pulse-motion
 ```
 
-Fermez puis relancez Claude Code après chaque changement du plugin. Les protocoles d'essai à la main sont dans `docs/essais/`.
+Fermez puis relancez Claude Code après chaque changement du plugin.
 
 ## Lancer les tests
 

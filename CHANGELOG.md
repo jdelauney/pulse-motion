@@ -2,6 +2,14 @@
 
 Produit par `outils/nouveautes.js` depuis l'historique du dépôt : ne pas le modifier à la main. Les nouveautés racontées simplement sont sur la page « Nouveautés » du wiki.
 
+## 0.72.0 – 2026-11-13
+
+Les cartes se lisent mieux : les noms des villes trouvent leur place, la France entière tient dans l'image, et en vertical la carte remplit l'écran. Le catalogue du wiki les montre en démo.
+
+### Corrections
+
+- Noms placés autour du point sans toucher noms, liaisons ni bords d'encart, repères au-dessus des liaisons avec un halo ; carte entière avec une marge (Corse) ; en vertical, cadre au format de l'image et encarts d'outre-mer sous la métropole
+
 ## 0.71.0 – 2026-11-13
 
 Les cartes de pays et de régions sont là, vos musiques vous suivent d'une vidéo à l'autre, et votre monteur reçoit les images une par une.

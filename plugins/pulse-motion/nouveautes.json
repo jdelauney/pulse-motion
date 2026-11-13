@@ -1,5 +1,16 @@
 [
   {
+    "version": "0.72.0",
+    "date": "2026-11-13",
+    "resume": "Les cartes se lisent mieux : les noms des villes trouvent leur place, la France entière tient dans l'image, et en vertical la carte remplit l'écran. Le catalogue du wiki les montre en démo.",
+    "points": [
+      "Sur une carte, le nom de chaque ville se place tout seul à côté de son point : les noms ne se chevauchent plus, ne sont plus barrés par la ligne qui relie deux villes, et restent lisibles sur un pays en couleur.",
+      "La carte de France entière tient dans l'image avec une marge, Corse comprise ; la carte du monde entière aussi.",
+      "En vertical, pour les réseaux, la carte remplit l'écran : l'outre-mer passe sous la France, et ce que montre la carte reste vers le milieu, loin des boutons des réseaux.",
+      "Le catalogue du wiki a une section « Cartes » : six démos, en français et en anglais, chacune avec la phrase qui la produit."
+    ]
+  },
+  {
     "version": "0.71.0",
     "date": "2026-11-13",
     "resume": "Les cartes de pays et de régions sont là, vos musiques vous suivent d'une vidéo à l'autre, et votre monteur reçoit les images une par une.",

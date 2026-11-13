@@ -390,15 +390,9 @@ test('demandes : les compétences en langage courant, avec garde « pas de vidé
 });
 
 
-test('demandes : README et smoke tests sans terminal', () => {
+test('demandes : README sans terminal', () => {
   const readme = lire('README.md');
   for (const s of SKILLS) assert.match(readme, new RegExp(`/pulse-motion:${s}`), s);
-  const essais = path.join(RACINE, '..', '..', 'docs', 'essais');
-  for (const f of ['smoke-test-son.md', 'smoke-test-complet.md']) {
-    const t = fs.readFileSync(path.join(essais, f), 'utf8');
-    assert.doesNotMatch(t, /```powershell|```bash|PowerShell/, f);
-    assert.doesNotMatch(t, /(^|\s)pm (voix|apercu|exporter|whisper|musique|assembler|controler|ffmpeg|outils)/m, f);
-  }
 });
 
 test('consignes : l\'atelier des effets est guidé', () => {

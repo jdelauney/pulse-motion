@@ -35,21 +35,23 @@ function carteOuErreur(nom) {
   return { carte };
 }
 
-/** Cadre de la scène, comme l'assemblage le calcule : zones listées et lieux ajoutés. */
-function cadreScene(carte, { cadre, pays, lieux = [] }) {
+/** Cadre de la scène, comme l'assemblage le calcule : zones listées et lieux ajoutés, au format de l'image. */
+function cadreScene(carte, { cadre, pays, lieux = [], ratio }) {
   const zones = String(pays || '').split(',').map((s) => s.trim()).filter(Boolean).map((v) => {
     const z = C.resoudreLieu(carte, v, null);
     return z.ok && z.boite ? { boite: z.boite } : null;
   }).filter(Boolean);
-  return C.cadreDe({ carte, cadre: cadre || 'auto', zones, points: lieux });
+  return C.cadreDe({ carte, cadre: cadre || 'auto', zones, points: lieux, ratio });
 }
 
 function afficher(nom, lieu, { cadre, pays, ratio = '16:9' }) {
-  const { carte, erreur } = carteOuErreur(nom);
-  if (erreur) return { ok: false, message: erreur };
+  const lue = carteOuErreur(nom);
+  if (lue.erreur) return { ok: false, message: lue.erreur };
+  // Même disposition que l'assemblage pour ce format (en vertical, encarts d'outre-mer sous la métropole).
+  const carte = C.disposer(lue.carte, ratio);
   const r = C.resoudreLieu(carte, lieu, C.chargerVilles());
   if (!r.ok) return { ok: false, message: `Carte « ${nom} » : ${r.message}` };
-  const c = cadreScene(carte, { cadre, pays, lieux: [r] });
+  const c = cadreScene(carte, { cadre, pays, lieux: [r], ratio });
   if (c.erreur) return { ok: false, message: c.erreur };
   const vb = C.viewBoxDe(c.boite);
   const autour = carte.largeur * 0.02;

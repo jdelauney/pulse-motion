@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Wiki Pulse Motion – écrit dans les pages les cartes de la galerie, du catalogue, du lexique, des idées et des exemples, à partir
-// des sources du plugin (dictionnaire de mouvements, styles, recettes d'effets, mouvements de personnages, modèles de vidéo et leurs
-// exemples) et de outils/site/exemples.json (demandes hors exemple.json, Vibe Connection, retouches avant / après). Chaque bloc va entre
+// des sources du plugin (dictionnaire de mouvements, styles, recettes d'effets, mouvements de personnages, démos des cartes, modèles
+// de vidéo et leurs exemples) et de outils/site/exemples.json (demandes hors exemple.json, Vibe Connection, retouches avant / après). Chaque bloc va entre
 // <!-- galerie:<nom> --> et <!-- /galerie:<nom> -->. Le contenu est dans le HTML : les pages se lisent sans JavaScript ; les
 // aperçus (docs/medias/galerie/, outils/site/medias.js) s'y ajoutent quand ils existent.
 // Les pages anglaises (docs/en/, chantier I) reçoivent les mêmes blocs en anglais : libellés écrits ici dans les deux langues, textes
@@ -20,9 +20,9 @@ const RACINE_DEPOT = path.join(__dirname, "..", "..");
 const PLUGIN = (racine) => path.join(racine, "plugins", "pulse-motion");
 const { normaliser } = require(path.join(PLUGIN(RACINE_DEPOT), "scripts", "mouvements.js"));
 
-const PAGES = { mouvements: "mouvements.html", styles: "catalogue.html", effets: "catalogue.html", personnages: "catalogue.html", dessins: "personnages.html", "mots-du-mouvement": "lexique.html", idees: "idees.html", exemples: "exemples.html", retouches: "exemples.html" };
+const PAGES = { mouvements: "mouvements.html", styles: "catalogue.html", effets: "catalogue.html", personnages: "catalogue.html", cartes: "catalogue.html", dessins: "personnages.html", "mots-du-mouvement": "lexique.html", idees: "idees.html", exemples: "exemples.html", retouches: "exemples.html" };
 /** Blocs des pages anglaises (docs/en/) ; la page des personnages et le lexique restent en français (spec I). */
-const PAGES_EN = { mouvements: "en/mouvements.html", styles: "en/catalogue.html", effets: "en/catalogue.html", personnages: "en/catalogue.html", idees: "en/idees.html", exemples: "en/exemples.html", retouches: "en/exemples.html" };
+const PAGES_EN = { mouvements: "en/mouvements.html", styles: "en/catalogue.html", effets: "en/catalogue.html", personnages: "en/catalogue.html", cartes: "en/catalogue.html", idees: "en/idees.html", exemples: "en/exemples.html", retouches: "en/exemples.html" };
 
 const e = (t) => String(t ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
@@ -204,6 +204,26 @@ function blocPersonnages(c = FR()) {
 <div class="grille-mouvements">
 ${cartes}
 </div>`;
+}
+
+/** Catalogue : les démos des cartes (lot galerie-cartes de galerie-medias.js), chacune avec la demande qui la produit, et le
+ * crédit des fonds de Natural Earth. */
+function blocCartes(c = FR()) {
+  const demos = G.demosCartes();
+  const cartes = demos.map((d) => {
+    const [mp4, jpg] = G.fichiersCarte(d.id);
+    const vertical = d.ratio === "9:16";
+    return `<article class="carte-effet${vertical ? " carte-verticale" : ""}" id="carte-${d.id}">
+<figure>${apercu(mp4, jpg, c.l(`Démo : ${d.titre}`, `Demo: ${c.tr(d.titre)}`), prefixeMedias(c))}</figure>
+<h3>${c.te(d.titre)}${vertical ? ` <span class="carte-maniere">${c.l("vertical (9:16)", "vertical (9:16)")}</span>` : ""}</h3>
+${c.pre}<code>${e(d.demande)}</code></pre>${c.traduction(d.demande)}
+</article>`;
+  }).join("\n");
+  return `<p>${c.l(`${demos.length} démos, chacune fabriquée par Pulse Motion à partir de la demande écrite dessous.`, `${demos.length} demos, each made by Pulse Motion from the request written below it.`)}</p>
+<div class="grille-mouvements">
+${cartes}
+</div>
+<p class="legende">${c.l(`Fonds de carte : <a href="https://www.naturalearthdata.com/" rel="noopener">Natural Earth</a>, domaine public. Ils sont livrés avec Pulse Motion : aucune carte n'est chargée en ligne, et le crédit s'ajoute tout seul aux crédits de votre vidéo.`, `Base maps: <a href="https://www.naturalearthdata.com/" rel="noopener">Natural Earth</a>, public domain. They ship with Pulse Motion: no map is loaded online, and the credit is added to your video’s credits automatically.`)}</p>`;
 }
 
 /** Page Personnages : une carte par personnage livré, son aperçu animé (il marche, se tourne, salue et saute). */
@@ -460,6 +480,7 @@ function blocs(code = "fr", c = langue(code)) {
       styles: blocStyles(c),
       effets: blocEffets(c),
       personnages: blocPersonnages(c),
+      cartes: blocCartes(c),
       idees: blocIdees(c),
       exemples: blocExemples(c),
       retouches: blocRetouches(c),
@@ -470,6 +491,7 @@ function blocs(code = "fr", c = langue(code)) {
     styles: blocStyles(),
     effets: blocEffets(),
     personnages: blocPersonnages(),
+    cartes: blocCartes(),
     dessins: blocDessins(),
     "mots-du-mouvement": blocMotsDuMouvement(),
     idees: blocIdees(),

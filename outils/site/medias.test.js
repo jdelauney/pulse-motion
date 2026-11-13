@@ -72,3 +72,27 @@ test("exemples : une vidéo et une affiche par modèle (la chaîne du froid réu
   }
   assert.deepEqual(G.fichiersExemple(G.modelesVideo().find((m) => m.id === "formation-courte")), ["medias/chaine-du-froid.mp4", "assets/captures/chaine-du-froid-affiche.jpg"]);
 });
+
+test("cartes : un lot propre aux démos des cartes, qui s'assemblent sans erreur et ne refait que les médias manquants", () => {
+  const G = require("./galerie-medias.js");
+  const lot = MEDIAS.find((m) => m.id === "galerie-cartes");
+  assert.ok(lot, "lot galerie-cartes");
+  assert.deepEqual(sortiesDe(lot), G.demosCartes().flatMap((d) => G.fichiersCarte(d.id)));
+  for (const f of sortiesDe(lot)) assert.match(f, /^medias\/galerie\/cartes\/[a-z-]+\.(mp4|jpg)$/);
+  // PM_MEDIAS_MANQUANTS=1 : la fabrication saute une démo dont les deux fichiers existent.
+  const source = fs.readFileSync(path.join(__dirname, "galerie-medias.js"), "utf8");
+  const fabriquer = /function fabriquerCartes\(\) \{[\s\S]*?\n\}/.exec(source)[0];
+  assert.match(fabriquer, /PM_MEDIAS_MANQUANTS === "1"/);
+  assert.match(fabriquer, /!manquantsSeuls \|\| !fichiersCarte\(d\.id\)\.every/);
+  // Chaque démo s'assemble, sans erreur ni alerte de carte, dans son format ; aucune ressource en ligne.
+  const { projetDeDemos } = require("../../plugins/pulse-motion/scripts/lib/choisir-mouvements.js");
+  const { assembler } = require("../../plugins/pulse-motion/scripts/assembler.js");
+  for (const ratio of ["16:9", "9:16"]) {
+    const d = dossierTemporaire("pm-galerie-cartes-");
+    projetDeDemos(d, G.demosCartes().filter((x) => x.ratio === ratio).map((x) => ({ id: x.id, duree: 5, textes: x.textes || {}, html: x.html })), { ratio });
+    const r = assembler({ dossier: d });
+    assert.deepEqual(r.erreurs.filter((e) => e.gravite === "erreur"), [], ratio);
+    assert.ok(r.groupes.includes("cartes"));
+    assert.doesNotMatch(r.html, /https?:\/\/[^"'\s]*(tile|naturalearth)/i);
+  }
+});

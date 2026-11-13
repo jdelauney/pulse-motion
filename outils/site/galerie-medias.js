@@ -1,4 +1,4 @@
-// Wiki Pulse Motion – aperçus de la galerie (mouvements, styles, effets, personnages), rendus par le plugin : un projet de
+// Wiki Pulse Motion – aperçus de la galerie (mouvements, styles, effets, personnages, cartes), rendus par le plugin : un projet de
 // démonstration par lot, exporté en fidèle (720p), puis découpé par ffmpeg en courtes boucles muettes de 480 px et en images
 // fixes. Les listes viennent des sources du plugin : les pages (outils/site/galerie.js) et les aperçus restent d'accord.
 "use strict";
@@ -212,6 +212,60 @@ function fabriquerDessins() {
   });
 }
 
+// ---------------------------------------------------------------- Cartes (catalogue)
+
+// Une démo par usage des cartes (spec S9, 5.10) : la demande en français, et la scène que Pulse Motion en tire. Fonds de
+// Natural Earth livrés avec le plugin : aucune ressource en ligne dans la vidéo.
+const STYLE_CARTE = "<style>@scope { .carte { position: absolute; inset: 0; width: 100%; height: 100%; } .pm-liaison { stroke-dasharray: 100; stroke-dashoffset: calc(100 * (1 - var(--p))); } }</style>";
+const apparait = (debut, duree = 0.5) => `data-start="${debut}" data-dur="${duree}" data-tween="opacity 0→1"`;
+const DEMOS_CARTES = [
+  { id: "monde", ratio: "16:9", titre: "Le monde, pays par pays",
+    demande: "Une carte du monde où nos pays d'export apparaissent un par un : France, Brésil, Canada, Japon, Australie.",
+    html: `<svg class="carte" data-carte="monde" data-carte-cadre="monde">${["FR", "BR", "CA", "JP", "AU"].map((c, i) => `<path data-pays="${c}" ${apparait(Math.round((0.3 + 0.45 * i) * 100) / 100)}></path>`).join("")}</svg>` },
+  { id: "europe", ratio: "16:9", titre: "L'Europe",
+    demande: "Une carte de l'Europe avec nos quatre filiales en couleur, puis la Pologne et Varsovie : c'est la prochaine.",
+    textes: { varsovie: "Varsovie" },
+    html: `<svg class="carte" data-carte="monde" data-carte-pays="FR,DE,ES,IT" data-carte-cadre="europe"><path data-pays="PL" ${apparait(1.2, 0.8)}></path><g data-repere="Varsovie" ${apparait(2)}><text data-texte="varsovie"></text></g></svg>` },
+  { id: "france", ratio: "16:9", titre: "La France, ses régions et l'outre-mer",
+    demande: "La carte de France avec ses régions ; l'outre-mer, dans ses encarts, s'allume.",
+    html: `<svg class="carte" data-carte="france" data-carte-cadre="monde">${["GUA", "MTQ", "GUF", "REU", "MYT"].map((c, i) => `<path data-pays="${c}" data-start="${Math.round((0.5 + 0.4 * i) * 10) / 10}" data-dur="0.8" data-tween="--pm-surligne 0→1"></path>`).join("")}</svg>` },
+  { id: "mamoudzou", ratio: "16:9", titre: "Mamoudzou, à Mayotte",
+    demande: "Sur la carte de France, marque Mamoudzou, à Mayotte.",
+    textes: { mamoudzou: "Mamoudzou" },
+    html: `<svg class="carte" data-carte="france" data-carte-regions="MYT" data-carte-cadre="monde"><g data-repere="Mamoudzou" ${apparait(0.8)}><text data-texte="mamoudzou"></text></g></svg>` },
+  { id: "liaison", ratio: "16:9", titre: "De Paris à New York",
+    demande: "Une ligne qui relie Paris à New York, comme un vol.",
+    textes: { paris: "Paris", newyork: "New York" },
+    html: `<svg class="carte" data-carte="monde" data-carte-pays="FR,US"><path data-liaison="Paris→New York" data-start="0.9" data-dur="1.8"></path><g data-repere="Paris" ${apparait(0.3)}><text data-texte="paris"></text></g><g data-repere="New York" ${apparait(2.5)}><text data-texte="newyork"></text></g></svg>` },
+  { id: "vertical", ratio: "9:16", titre: "Nos agences en France",
+    demande: "En vertical, pour les réseaux : nos agences en France, de Rennes à La Réunion.",
+    textes: { rennes: "Rennes", lyon: "Lyon", toulouse: "Toulouse", reunion: "Saint-Denis" },
+    html: `<svg class="carte" data-carte="france" data-carte-regions="BRE,ARA,OCC,REU" data-carte-cadre="monde"><path data-liaison="Lyon→Rennes" data-start="1" data-dur="1.2"></path><path data-liaison="Lyon→Toulouse" data-start="1.4" data-dur="1.2"></path><g data-repere="Lyon" ${apparait(0.3)}><text data-texte="lyon"></text></g><g data-repere="Rennes" ${apparait(2)}><text data-texte="rennes"></text></g><g data-repere="Toulouse" ${apparait(2.4)}><text data-texte="toulouse"></text></g><g data-repere="Saint-Denis" ${apparait(2.8)}><text data-texte="reunion"></text></g></svg>` },
+];
+const DUREE_CARTE = 5;
+const demosCartes = () => DEMOS_CARTES;
+const fichiersCarte = (id) => [`${GALERIE}/cartes/${id}.mp4`, `${GALERIE}/cartes/${id}.jpg`];
+
+/** Démos des cartes : un projet par format (16:9, puis 9:16), exporté en fidèle, découpé en boucles (480 px de large en 16:9,
+ * 360 en 9:16) et en images fixes vers la fin de chaque démo. */
+function fabriquerCartes() {
+  // PM_MEDIAS_MANQUANTS=1 : seules les démos dont un média manque sont fabriquées (les médias publiés restent tels quels).
+  const manquantsSeuls = process.env.PM_MEDIAS_MANQUANTS === "1";
+  for (const ratio of ["16:9", "9:16"]) {
+    const aFaire = DEMOS_CARTES.filter((d) => d.ratio === ratio && (!manquantsSeuls || !fichiersCarte(d.id).every((f) => fs.existsSync(path.join(DOCS, f)))));
+    if (!aFaire.length) continue;
+    avecDossier("pm-galerie-cartes-", (dossier) => {
+      const demos = aFaire.map((d) => ({ id: d.id, duree: DUREE_CARTE, textes: d.textes || {}, html: `${STYLE_CARTE}\n${d.html}` }));
+      const { plages } = projetDeDemos(dossier, demos, { titre: "Cartes", ratio });
+      const video = exporter(dossier);
+      decouper(video, plages.map((p) => {
+        const [mp4, jpg] = fichiersCarte(p.id);
+        return { debut: p.debut, duree: p.fin - p.debut, sortie: mp4, affiche: jpg, tAffiche: p.debut + (p.fin - p.debut) * 0.9, largeur: ratio === "9:16" ? 360 : 480 };
+      }));
+    });
+  }
+}
+
 // ---------------------------------------------------------------- Exemples des modèles de vidéo (page Idées)
 
 const modelesVideo = () => require(path.join(PLUGIN, "scripts", "modeles.js")).listerModeles();
@@ -344,6 +398,8 @@ const LOTS = [
     sources: [path.join(PLUGIN, "personnages"), path.join(PLUGIN, "moteur"), path.join(PLUGIN, "styles", "clair-pedagogique"), ...FABRICATION], fabriquer: fabriquerDessins },
   { id: "exemples", sortie: "medias/exemples/pitch.mp4", sorties: () => exemplesAFabriquer().flatMap(fichiersExemple),
     sources: [path.join(PLUGIN, "exemples"), path.join(PLUGIN, "moteur"), path.join(PLUGIN, "styles"), ...FABRICATION], fabriquer: fabriquerExemples },
+  { id: "galerie-cartes", sortie: `${GALERIE}/cartes/monde.mp4`, sorties: () => DEMOS_CARTES.flatMap((d) => fichiersCarte(d.id)),
+    sources: [path.join(PLUGIN, "cartes"), path.join(PLUGIN, "moteur"), path.join(PLUGIN, "scripts", "lib", "cartes.js"), path.join(PLUGIN, "styles", "clair-pedagogique"), ...FABRICATION], fabriquer: fabriquerCartes },
   { id: "retouches", sortie: `${RETOUCHES}/ralentir-avant.mp4`, sorties: () => retouches().flatMap(fichiersRetouche),
     sources: [PAGE_EXEMPLES, path.join(PLUGIN, "exemples", "chaine-du-froid"), path.join(PLUGIN, "moteur"), path.join(PLUGIN, "styles", "clair-pedagogique"),
       path.join(PLUGIN, "references", "mouvements"), ...FABRICATION], fabriquer: fabriquerRetouches },
@@ -351,4 +407,4 @@ const LOTS = [
 
 module.exports = { LOTS, GALERIE, dictionnaire, STYLES_LIVRES, scenesDuStyle, effets, clipsPersonnages, dessinsLivres, demoEffet,
   fichiersMouvement, fichiersStyle, fichiersTemoin, fichiersEffet, fichiersClip, fichiersDessin, decouper, modelesVideo, dossierExemple, fichiersExemple, exemplesAFabriquer,
-  donneesExemples, retouches, fichiersRetouche, appliquerRetouche, copierSansVoix, classesDeRecette };
+  donneesExemples, retouches, fichiersRetouche, appliquerRetouche, copierSansVoix, classesDeRecette, demosCartes, fichiersCarte };
