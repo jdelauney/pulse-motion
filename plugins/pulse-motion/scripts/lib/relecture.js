@@ -12,8 +12,10 @@ const crypto = require('node:crypto');
 
 const SEUILS = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'seuils.json'), 'utf8'));
 
-/** Les huit axes de la grille du critique (agents/critique.md, realisation.md § 13), dans l'ordre. */
-const AXES = ['message', 'ouverture', 'lisibilite', 'composition', 'mouvement', 'rythme', 'continuite', 'verite'];
+/** Les neuf axes de la grille du critique (agents/critique.md, realisation.md § 13), dans l'ordre ; style : spec S11, 5.4. */
+const AXES = ['message', 'ouverture', 'lisibilite', 'composition', 'mouvement', 'rythme', 'continuite', 'verite', 'style'];
+/** Mesures de sortie/regard/style.json : la preuve de l'axe style en cite au moins une (spec S11, 5.4 point 5). */
+const MESURES_STYLE = /(?:^|[^\p{L}])(?:clé|cle|couleurs?|saturée|teintes?|main|chaleur|contraste|avis)(?![\p{L}])|style\.json/iu;
 const GRAVITES = ['a-corriger', 'souhaitable', 'detail'];
 const VERDICTS = ['prete', 'encore-un-tour'];
 
@@ -47,6 +49,7 @@ function validerCritique(c, { scenes = null } = {}) {
       if (!estObjet(a)) { err.push(`L'axe « ${k} » manque.`); continue; }
       if (a.note !== null && !estNote(a.note)) err.push(`« axes.${k}.note » doit être un entier de 1 à 10, ou null (invérifiable).`);
       if (!estTexte(a.preuve)) err.push(`« axes.${k}.preuve » est obligatoire (scène, instant, ce qu'on voit ; ou « invérifiable »).`);
+      else if (k === 'style' && a.note !== null && !MESURES_STYLE.test(a.preuve)) err.push('« axes.style.preuve » cite au moins une mesure de style.json (clé, couleurs, part saturée, teintes, main, chaleur, contraste ou avis).');
     }
   }
   if (!Array.isArray(c.scenes)) err.push('« scenes » doit être une liste { id, note, raison }.');
@@ -109,4 +112,4 @@ function etatRelecture(projet, { html } = {}) {
   };
 }
 
-module.exports = { AXES, GRAVITES, VERDICTS, empreintePage, validerCritique, etatRelecture, fichierCritique };
+module.exports = { AXES, MESURES_STYLE, GRAVITES, VERDICTS, empreintePage, validerCritique, etatRelecture, fichierCritique };
