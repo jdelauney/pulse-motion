@@ -2,6 +2,19 @@
 
 Produit par `outils/nouveautes.js` depuis l'historique du dépôt : ne pas le modifier à la main. Les nouveautés racontées simplement sont sur la page « Nouveautés » du wiki.
 
+## 0.71.0 – 2026-11-13
+
+Les cartes de pays et de régions sont là, vos musiques vous suivent d'une vidéo à l'autre, et votre monteur reçoit les images une par une.
+
+### Nouveautés
+
+- Fonds Natural Earth 5.1.2 livrés (monde, France, villes) ; chefs-lieux d'outre-mer trouvés, Mamoudzou ajouté, message de fond manquant
+- Bibliothèque personnelle de musiques avec leur licence (ajouter, liste, utiliser, retirer ; durée, tempo et sonie mesurés dans le navigateur ; attribution dans les crédits, alerte pour une licence autre ; archive de la bibliothèque) et séquence d'images pour un monteur sans ffmpeg (--images, son à part, estimation, accord au-delà de 2 Go, reprise)
+
+### Corrections
+
+- Villes au 1:110 m et chefs-lieux seulement, comme la spec ; exemple de liaison sur une ville livrée (Paris→New York)
+
 ## 0.70.0 – 2026-11-13
 
 Vos animations Lottie entrent dans vos vidéos, aux couleurs de votre marque, et les cartes de pays et de régions se préparent.
