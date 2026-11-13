@@ -5,6 +5,7 @@
 - Tout est calculé depuis le temps de la vidéo, sans mémoire d'une image à l'autre : l'aperçu, l'export rapide et l'export fidèle montrent la même chose au même instant, dans n'importe quel ordre.
 - Rien n'est imposé : sans `data-demarche`, sans vent et sans `data-pendule`, une vidéo reste exactement la même.
 - Un style s'en sert par ses gestes (fiche § 8) : marche calculée, vent qui traverse la scène, enseigne ou lampe qui se balance.
+- Le jour qui passe à la nuit (ciel, papier, encre, fenêtres qui s'allument) : `pulse-motion reference journee`.
 
 ## Marche calculée
 
