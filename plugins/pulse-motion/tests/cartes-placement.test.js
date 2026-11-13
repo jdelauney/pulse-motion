@@ -140,11 +140,11 @@ test('cartes : la France entière tient dans le cadre avec une marge, Corse comp
   const cor = carte.pays.find((p) => p.code === 'COR').boite;
   for (const ratio of ['16:9', '9:16']) {
     const vb = viewBox(preparer('<svg data-carte="france" data-carte-cadre="monde"></svg>', ratio));
-    const marge = 0.03 * vb[2];
-    assert.ok(cor[2] <= vb[0] + vb[2] - marge && cor[3] <= vb[1] + vb[3] - marge, `${ratio} : Corse à moins de 3 % du bord (${vb.join(' ')})`);
+    const marge = 0.03 * vb[2], margeH = 0.03 * vb[3];
+    assert.ok(cor[2] <= vb[0] + vb[2] - marge && cor[3] <= vb[1] + vb[3] - margeH, `${ratio} : Corse à moins de 3 % du bord (${vb.join(' ')})`);
     for (const p of C.disposer(carte, ratio).pays) {
       const b = p.boite;
-      assert.ok(b[0] >= vb[0] + marge && b[1] >= vb[1] && b[2] <= vb[0] + vb[2] - marge && b[3] <= vb[1] + vb[3], `${ratio} : ${p.code} hors du cadre`);
+      assert.ok(b[0] >= vb[0] + marge && b[1] >= vb[1] + margeH && b[2] <= vb[0] + vb[2] - marge && b[3] <= vb[1] + vb[3] - margeH, `${ratio} : ${p.code} hors du cadre`);
     }
   }
   // Carte du monde entière : rien ne touche plus le bord.

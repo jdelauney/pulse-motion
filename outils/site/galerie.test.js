@@ -327,7 +327,7 @@ test("cartes : section du catalogue (français et anglais), une démo par usage 
     const html = fs.readFileSync(path.join(DOCS, page), "utf8");
     const section = /<section id="cartes">[\s\S]*?<\/section>/.exec(html)[0];
     for (const d of demos) {
-      const carte = new RegExp(`<article class="carte-effet[^"]*" id="carte-${d.id}">[\s\S]*?</article>`).exec(section);
+      const carte = new RegExp(`<article class="carte-effet[^"]*" id="carte-${d.id}">[\\s\\S]*?</article>`).exec(section);
       assert.ok(carte, `${page} : ${d.id}`);
       assert.ok(carte[0].includes(`<code>${d.demande.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</code>`), `${page} : demande de ${d.id}`);
       assert.ok(carte[0].includes(G.fichiersCarte(d.id)[0]), `${page} : média de ${d.id}`);
