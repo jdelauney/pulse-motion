@@ -1,0 +1,8 @@
+{
+  "nom": "marche",
+  "description": "marche calculée : pas posés, talon qui décolle, hanche plus basse en double appui (vue de profil)",
+  "genre": "marche",
+  "foulee": 0.7,
+  "periode": 1,
+  "appui": 0.62
+}

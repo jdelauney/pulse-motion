@@ -56,6 +56,7 @@ Une pose ne donne que ce qui change ; le reste est la pose de repos. Pas de `x`,
 - `lissage: "continu"` : les poses s'enchaînent sans que le mouvement s'arrête à chaque clé (défaut `"par-cle"` : il ralentit et repart à chaque clé). Une clé qui porte une `courbe` garde la sienne (accent voulu, `back-out`). Pour « il est raide », « il fait robot ».
 - `contacts: [0.936]` (gestes) : instants où les pieds retouchent le sol ; le personnage s'y écrase un peu (8 %) en gardant son volume.
 - `foulee` : distance parcourue par cycle (marche 248, course 330), pour la marche sans glissement des scènes.
+- Marche calculée (`data-demarche="calculee"`) : **de profil seulement** (vues 0 et 180), des réglages sans images-clés (`personnages/clips/demarches/` : `marche`, `pas-traines`, `course`) ; dans les autres vues, le clip `marche` ou `course` s'applique (`pulse-motion reference physique`).
 
 ## Bibliothèque
 

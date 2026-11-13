@@ -7,6 +7,8 @@
  * lire(dossierVideo | null) -> { poses, clips, gabarits, sources, fichiers, erreurs } : un fichier invalide est écarté
  * (la version de la bibliothèque reste, s'il y en a une) et signalé dans erreurs.
  * serialiser(type, objet) : ordre des clés fixe, angles dans l'ordre de REPOS, nombres au millième, indentation 2.
+ * Démarches calculées (spec S11, 5.7) : réglages sans images-clés dans <…>/personnages/clips/demarches/<nom>.json
+ * ({ nom, description, genre, foulee, periode, appui }), lus à part dans lu.demarches (ni mouvements, ni atelier).
  */
 const fs = require('node:fs');
 const path = require('node:path');
@@ -14,6 +16,7 @@ const S = require('../../moteur/squelette.js');
 const C = require('../../moteur/courbes.js');
 const { verifierSVG } = require('./svg-sur.js');
 const { FORMES: FORMES_PLUME } = require('../../moteur/habillage-plume.js');
+const D = require('../../moteur/demarche.js');
 
 const RACINE = path.resolve(__dirname, '..', '..');
 const BIBLIOTHEQUE = path.join(RACINE, 'personnages');
@@ -507,7 +510,31 @@ function lire(dossierVideo, { bibliotheque = BIBLIOTHEQUE, personnel = null } = 
       }
     }
   }
+  lu.demarches = lireDemarches(racines, lu.erreurs);
   return lu;
+}
+
+/** Réglages des démarches calculées (personnages/clips/demarches/), à nom égal la vidéo l'emporte. */
+function lireDemarches(racines, erreurs) {
+  const out = {};
+  for (const [racine, source, libelle] of racines) {
+    const dossier = path.join(racine, 'clips', 'demarches');
+    for (const nom of nomsJSON(dossier)) {
+      const fichier = path.join(dossier, `${nom}.json`);
+      const ou = `personnages/clips/demarches/${nom}.json (${libelle}) : `;
+      let objet;
+      try { objet = JSON.parse(fs.readFileSync(fichier, 'utf8')); } catch (e) { erreurs.push({ type: 'demarche', nom, source, fichier, message: `${ou}JSON invalide (${e.message}).` }); continue; }
+      const fautes = [];
+      if (estObjet(objet)) {
+        champsInconnus(objet, ['nom', 'description', 'genre', 'foulee', 'periode', 'appui'], fautes);
+        verifierNom(objet, { nom }, fautes);
+      }
+      fautes.push(...D.valider(objet));
+      if (fautes.length) { for (const m of fautes) erreurs.push({ type: 'demarche', nom, source, fichier, message: ou + m }); continue; }
+      out[nom] = Object.assign({}, objet, { nom });
+    }
+  }
+  return out;
 }
 
 /* ---------- écriture stable ---------- */

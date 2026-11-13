@@ -29,6 +29,10 @@
  *   des contacts d'un geste (champ « contacts » du clip) ; ecrase (conteneur ou action) règle l'ampleur.
  * Champs de partition pour la vie : vie, sel (entier), scene { debut, fin }, ecrase. Méthode du mouvement vivant :
  * rossark-motion-skill et take-one (licences MIT), chiffres repris, code réécrit.
+ * Marche calculée (spec S11, 5.7 ; part.demarche === 'calculee', data-demarche) : une marche ou une course de profil (vues 0
+ *   et 180) prend la pose de M.demarche, réglages bib.demarches[data-clip du trajet], sinon bib.demarches.marche ou .course, phase
+ *   tirée de la distance parcourue (le pied posé ne glisse pas) ; ailleurs le clip (marche, course ou data-clip à images-clés),
+ *   fondu selon la vue entre 20° et 2,5° du profil.
  * Aucune mémoire d'un appel à l'autre : même t, même pose.
  */
 (function (racine, fabrique) {
@@ -37,10 +41,12 @@
   var K = nodeJS ? require('../clips.js') : racine.M.clips;
   var L = nodeJS ? require('./levres.js') : racine.M.levres;
   var V = nodeJS ? require('../vivant.js') : racine.M.vivant;
-  var api = fabrique(S, K, L, V);
+  // Marche calculée : lue à l'appel (groupe « demarche » du moteur, absent des pages qui ne s'en servent pas).
+  var D = function () { return nodeJS ? require('../demarche.js') : racine.M.demarche; };
+  var api = fabrique(S, K, L, V, D);
   if (typeof module === 'object' && module.exports) module.exports = api;
   else { racine.M = racine.M || {}; racine.M.partition = api; }
-})(typeof globalThis !== 'undefined' ? globalThis : this, function (S, K, L, V) {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (S, K, L, V, D) {
   'use strict';
 
   var FONDU = 0.25;
@@ -231,16 +237,35 @@
       var propre = e.trajet && e.trajet.clip ? bib.clips[e.trajet.clip] : null;
       var defaut = bib.clips[e.type];
       var clip = propre && propre.boucle && !propre.additif ? propre : defaut;
-      if (!clip) return {};
+      var calc = part.demarche === 'calculee' ? poseCalculee(part, e, t, bib, gabarit) : null;
+      if (calc && calc.poids >= 1) return calc.pose;
+      if (!clip) return calc ? calc.pose : {};
       var foulee = (clip.foulee || (defaut && defaut.foulee) || 248) * part.echelle;
       var tc = distanceDansTrajet(part, e.trajet, t) / foulee * clip.duree;
-      return K.echantillonner(clip, tc, bib, gabarit, sansSol);
+      var duClip = K.echantillonner(clip, tc, bib, gabarit, sansSol);
+      return calc ? S.melanger(Object.assign({}, S.REPOS, duClip), Object.assign({}, S.REPOS, calc.pose), calc.poids) : duClip;
     }
     var repos = bib.clips.repos;
     // Le repos respire : chaque personnage à sa phase (deux voisins ne respirent pas ensemble). Vie « mains » : le corps
     // tient la première image du repos (animation limitée), seules les mains bougeront.
     if (repos && vieDe(part) === 'mains') return K.echantillonner(repos, 0, bib, gabarit, sansSol);
     return repos ? K.echantillonner(repos, t + phaseRespiration(part, repos), bib, gabarit, sansSol) : {};
+  }
+
+  /** Poids de la marche calculée selon la vue : 1 de profil (à 2,5° près), 0 à 20° et au-delà (3/4, face, dos). */
+  function poidsProfil(vue) {
+    var c = Math.abs(Math.cos(vue * Math.PI / 180)), a = Math.cos(20 * Math.PI / 180), b = Math.cos(2.5 * Math.PI / 180);
+    return lisse((c - a) / (b - a));
+  }
+  /** Marche calculée d'un trajet à t : { pose, poids } ou null (hors du profil, ou module absent). */
+  function poseCalculee(part, e, t, bib, gabarit) {
+    var w = poidsProfil(vueAuTemps(part, t)), Dm = D();
+    if (!(w > 0) || !Dm) return null;
+    var reg = bib.demarches || {};
+    var r = (e.trajet.clip && reg[e.trajet.clip]) || reg[e.type] || { genre: e.type };
+    var d = Dm.demarche(r, gabarit);
+    var phase = distanceDansTrajet(part, e.trajet, t) / (part.echelle * d.cycle);
+    return { pose: d.pose(phase, 1).angles, poids: w };
   }
 
   /* ---------- vie ---------- */

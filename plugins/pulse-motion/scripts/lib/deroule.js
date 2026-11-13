@@ -186,6 +186,8 @@ function validerDeroule(d) {
   if (d.camera !== undefined && !CAMERAS.includes(d.camera)) err.push(`« camera » doit valoir « auto » (la caméra trouve seule les gros plans) ou « fixe ».`);
   // Boucle parfaite (spec Rendu et export, 5.18) : la vidéo tourne en boucle (lecteur, musique sans fondus, contrôles de jointure).
   if (d.boucle !== undefined && typeof d.boucle !== 'boolean') err.push('« boucle » doit valoir true ou false (true : la vidéo tourne en boucle).');
+  // Piste de vent (spec S11, 5.8) : clés minutées, lues par les pendules, les os en plus, la plume et le milieu des particules.
+  err.push(...require('./physique-scene.js').validerVentDeroule(d.vent));
   // Page qui sait faire son MP4 (spec Retouches et ergonomie, 5.18) : facultative, absente ou false par défaut.
   if (d.page !== undefined && !estObjet(d.page)) err.push('« page » doit être un objet, ex. { "boutonMp4": true }.');
   else if (d.page !== undefined) {

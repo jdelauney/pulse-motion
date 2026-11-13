@@ -18,6 +18,8 @@ Un **milieu** est un fluide simulé sur une grille dans la scène : fumée volum
 
 Balise : `data-milieu="nom"` ; `data-ancre="#id"` (zone du milieu : l'élément au début du milieu ; sans : la scène entière) ; `data-calque` (`arriere` par défaut, ou `avant`) ; `data-reglages` ; `data-start` ; `data-dur` (sans : jusqu'à la fin de la scène ; avec : le milieu s'arrête net à la fin de `data-dur`, et les effets couplés qui durent plus longtemps ne reçoivent plus de vent).
 
+Vent de la vidéo (`data-vent` sur la scène, ou `"vent"` du déroulé : `pulse-motion reference physique`) : le milieu le suit, sa fumée part dans le sens du vent (la composante dans l'axe du vent rejoint 30 cqh/s par unité de force en un tiers de seconde ; elle continue de monter). Sans piste de vent, rien ne change.
+
 ## Réglages d'une recette de milieu (`milieu`, à la racine, sans `emetteurs`)
 
 ```json
