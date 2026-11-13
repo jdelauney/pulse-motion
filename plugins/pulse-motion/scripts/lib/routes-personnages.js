@@ -3,7 +3,7 @@
  *
  *   GET  /_pm/personnages                        page de l'atelier (moteur/personnages/atelier.html)
  *   GET  /_pm/personnages/atelier.mjs, edition.mjs, atelier.css
- *   GET  /_pm/personnages/modules/<module>       modules du moteur (courbes, squelette, clips, habillage-batonnets)
+ *   GET  /_pm/personnages/modules/<module>       modules du moteur (courbes, squelette, clips, habillages et leur registre)
  *   GET  /_pm/personnages/contexte               { cible: 'video' | 'bibliotheque' | null, message, lu: { poses, clips, gabarits, expressions, dessins, sources }, erreurs }
  *   GET  /_pm/personnages/decoupe?nom=…        page de découpe (formes de l'illustration, pivots, aperçu)
  *   GET  /_pm/personnages/decoupe/donnees?nom=  { cible, decoupe, source (préparée), gabarit, dessin, lu }
@@ -26,8 +26,16 @@ const RACINE = path.resolve(__dirname, '..', '..');
 const PAGE = path.join(RACINE, 'moteur', 'personnages');
 const MOTEUR = path.join(RACINE, 'moteur');
 const JS = 'text/javascript; charset=utf-8';
+const HAB = require('../../moteur/personnages/habillages.js');
+const MARQUE_HABILLAGES = '<!-- habillages -->';
+/** Page de l'atelier : la marque <!-- habillages --> remplacée par les modules des habillages du registre, puis le registre. */
+function avecHabillages(contenu) {
+  const scripts = [...HAB.fichiers(), 'personnages/habillages.js'].map((m) => `<script src="/_pm/personnages/modules/${m}"></script>`).join('\n');
+  return Buffer.from(contenu.toString('utf8').replace(MARQUE_HABILLAGES, scripts), 'utf8');
+}
 const STATIQUES = {
-  '/_pm/personnages': { fichier: path.join(PAGE, 'atelier.html'), type: 'text/html; charset=utf-8' },
+  // Page de l'atelier : les modules des habillages y sont écrits d'après leur registre (spec S11, 5.1 point 4).
+  '/_pm/personnages': { fichier: path.join(PAGE, 'atelier.html'), type: 'text/html; charset=utf-8', transformer: avecHabillages },
   '/_pm/personnages/atelier.mjs': { fichier: path.join(PAGE, 'atelier.mjs'), type: JS },
   '/_pm/personnages/edition.mjs': { fichier: path.join(PAGE, 'edition.mjs'), type: JS },
   '/_pm/personnages/atelier.css': { fichier: path.join(PAGE, 'atelier.css'), type: 'text/css; charset=utf-8' },
@@ -132,6 +140,7 @@ function creerRoutesPersonnages(projet, { bibliotheque = P.BIBLIOTHEQUE, ecrireB
     if (req.method === 'GET' && statique) {
       let contenu;
       try { contenu = fs.readFileSync(statique.fichier); } catch { repondre(res, 404, { message: 'Introuvable.' }); return true; }
+      if (statique.transformer) contenu = statique.transformer(contenu);
       res.writeHead(200, { 'Content-Type': statique.type, 'Cache-Control': 'no-store' });
       res.end(contenu);
       return true;

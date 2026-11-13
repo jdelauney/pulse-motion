@@ -220,16 +220,10 @@ const EMPREINTES = {
   'tech-sombre': 'bfa3cb0d8d9f3608189dcbe5d370d98f6594cb64582390dc0f3ff3bc6ea34f83',
 };
 
+/** Fichiers du style hors identite.json ; les polices partagées (spec S11, 5.1) comptent à leur ancienne place, polices/<fichier>. */
 function empreinteSansIdentite(dossier) {
   const h = crypto.createHash('sha256');
-  const parcourir = (relatif) => {
-    for (const e of fs.readdirSync(path.join(dossier, relatif), { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1))) {
-      const r = relatif ? `${relatif}/${e.name}` : e.name;
-      if (e.isDirectory()) parcourir(r);
-      else if (r !== 'identite.json') h.update(r).update('\0').update(fs.readFileSync(path.join(dossier, r))).update('\0');
-    }
-  };
-  parcourir('');
+  for (const { r, chemin } of S.fichiersStyle(dossier)) if (r !== 'identite.json') h.update(r).update('\0').update(fs.readFileSync(chemin)).update('\0');
   return h.digest('hex');
 }
 
@@ -280,34 +274,32 @@ test('styles livrés : tests existants (contrat, guide, contrôles, quatre forma
 
 // ---------- 5.4 Trouver et proposer parmi 20 styles ----------
 
-test('styles --genre : fiche complète pour 3 styles, forme courte pour les autres, au plus 6 Ko', () => avecPersonnel((perso) => {
-  // 20 styles livrés (les 6, et 14 copies) et 5 styles personnels vérifiés.
+test('styles --genre : forme courte des styles mis en avant, une ligne par catégorie pour le reste, au plus 6 Ko', () => avecPersonnel((perso) => {
+  // 20 styles livrés (les 6, et 14 copies) et 5 styles personnels vérifiés. Spec S11, 5.1 point 2 : plus de fiche complète,
+  // une ligne par style mis en avant (recommandés, personnels du genre, contraste, aussi), une par catégorie pour le reste.
   const racine = stylesEssai([]);
   for (const s of ESSENTIELS) copier(racine, s, s);
   for (let i = 0; i < 14; i++) copier(racine, ESSENTIELS[i % 6], `copie-${String(i + 1).padStart(2, '0')}`);
   const persos = path.join(perso, 'styles');
   for (let i = 0; i < 5; i++) S.marquerVerifie(copier(persos, ESSENTIELS[i], `perso-${i + 1}`, (j) => { j.genres = ['formation']; }));
-  const fiches = S.recommander('formation', [racine, persos]);
-  assert.equal(fiches.length, 25);
-  const liste = S.listePourGenre(fiches);
+  assert.equal(S.recommander('formation', [racine, persos]).length, 25);
+  const classement = S.classerPourGenre('formation', [racine, persos]);
+  assert.equal(classement.enAvant.length, 8);
+  const liste = S.listePourGenre(classement);
   const sortie = JSON.stringify(liste);
   assert.ok(octets(sortie) <= 6000, `${octets(sortie)} o`);
-  assert.deepEqual(liste.slice(0, 3).map((f) => f.style), ['clair-pedagogique', 'chaleureux', 'perso-1']);
-  for (const f of liste.slice(0, 3)) {
-    assert.deepEqual(Object.keys(f.scenes), ['titre', 'liste', 'chiffre', 'comparaison', 'etape', 'alerte', 'schema', 'moyeu', 'conclusion']);
-    assert.ok(f.signature && f.personnalite.length === 3 && f.usages.length === 3);
-  }
-  assert.equal(liste[0].scenes.titre, '7 s · etiquette 25, titre 40, sous 50');
+  assert.deepEqual(liste.slice(0, 3).map((f) => f.split(' · ')[0]), ['clair-pedagogique', 'chaleureux', 'perso-1']);
   // Forme courte : style, catégorie, personnalité, usages, et « personnel » pour un style personnel, en une ligne.
-  for (const f of liste.slice(3)) assert.match(f, /^[a-z0-9-]+ · [a-z-]+ · [^·]+, [^·]+, [^·]+ · [^·]+ ; [^·]+ ; [^·]+( · personnel)?$/, f);
-  assert.equal(liste.filter((f) => typeof f === 'string' && f.endsWith(' · personnel')).length, 4);
+  for (const f of liste.slice(0, 8)) assert.match(f, /^[a-z0-9-]+ · [a-z-]+ · [^·]+, [^·]+, [^·]+ · [^·]+ ; [^·]+ ; [^·]+( · personnel)?$/, f);
+  assert.equal(liste.filter((f) => f.endsWith(' · personnel')).length, 5);
   assert.equal(liste[3], 'perso-2 · essentiels · accueillant, doux, humain · Former une équipe ; Expliquer une procédure ; Présenter un produit · personnel'.replace('accueillant, doux, humain', identite('clair-pedagogique').personnalite.join(', ')));
+  assert.deepEqual(liste.slice(8), ['17 autres styles essentiels : styles chercher <mots> ou styles choisir --categorie essentiels']);
   // Ligne de commande : même forme, en JSON compact.
   const r = pm(['styles', '--genre', 'formation'], { PULSE_MOTION_DOSSIER: dossierPersonnelEssai() });
   assert.equal(r.status, 0, r.stderr);
   const cli = JSON.parse(r.stdout);
-  assert.equal(cli.length, LIVRES.length);
-  assert.ok(cli[0].scenes && typeof cli[3] === 'string');
+  assert.ok(cli.every((l) => typeof l === 'string'));
+  assert.match(cli[0], /^clair-pedagogique · essentiels · /);
   // Les styles des vagues A, B, C et D et mode-d-emploi viennent après le contraste (« aussi »), jamais parmi les recommandés.
   assert.match(cli[3], /^plan-technique · schemas-donnees · /);
   assert.match(cli[4], /^info-sans-son · ecrans-annonces · /);
@@ -318,8 +310,9 @@ test('styles --genre : fiche complète pour 3 styles, forme courte pour les autr
   assert.match(cli[9], /^pictogrammes · schemas-donnees · /);
   assert.match(cli[10], /^crayon · dessine · /);
   assert.match(cli[11], /^mode-d-emploi · anime · /);
-  // Puis le reste, par ordre alphabétique.
-  assert.match(cli[12], /^carnet · dessine · /);
+  // Puis le reste, une ligne par catégorie, dans l'ordre des catégories.
+  assert.deepEqual(cli.slice(12).map((l) => l.split(' : ')[0]), ['3 autres styles essentiels', '1 autre style dessine', '1 autre style schemas-donnees', '2 autres styles papier-imprime', '1 autre style ecrans-annonces']);
+  assert.equal(cli.length, 17);
 }));
 
 test('styles chercher : « tableau blanc », « craie », « plan technique », « chiffres » trouvent le bon style', () => {

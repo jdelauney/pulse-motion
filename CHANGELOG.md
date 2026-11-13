@@ -2,6 +2,19 @@
 
 Produit par `outils/nouveautes.js` depuis l'historique du dépôt : ne pas le modifier à la main. Les nouveautés racontées simplement sont sur la page « Nouveautés » du wiki.
 
+## 0.73.0 – 2026-11-13
+
+Pulse Motion se prépare à accueillir près de cinquante styles : les polices communes ne sont plus livrées en double (le plugin passe de 15,5 à 15,0 Mo) et la liste des styles proposés reste courte. Vos vidéos ne changent pas.
+
+### Nouveautés
+
+- Polices partagées à la racine du plugin (8 familles en double, un seul exemplaire, partagees.json par style, pages témoins identiques ; plugin 15,5 Mo -> 15,0 Mo), styles --genre en lignes courtes et une ligne par catégorie (6 Ko pour 47 styles), extrait animateur réduit aux noms et recettes des gestes
+- Registre des habillages (moteur/personnages/habillages.js) lu par la scène, la validation, l'assemblage et l'atelier ; seuls les habillages d'une scène sont embarqués ; rendu des personnages inchangé
+
+### Corrections
+
+- Habillage refusé à l'assemblage, la page dessine le personnage dans l'habillage par défaut, qui est donc embarqué (bâtonnets aussi pour un gabarit inconnu)
+
 ## 0.72.0 – 2026-11-13
 
 Les cartes se lisent mieux : les noms des villes trouvent leur place, la France entière tient dans l'image, et en vertical la carte remplit l'écran. Le catalogue du wiki les montre en démo.

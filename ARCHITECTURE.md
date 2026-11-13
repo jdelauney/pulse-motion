@@ -65,7 +65,7 @@ L'agent `animateur` (`agents/animateur.md`) écrit une scène à la fois : un fi
 | `audio.js`, `mixage.js`, `synthe/`, `sonie.js` | Un seul mixage hors temps réel (voix, musique composée, bruitages), baisse de la musique sous la voix, sonie |
 | `sous-titres.js`, `sous-titres-rendu.js` | Cartons de sous-titres calés sur les mots |
 | `particules/` | Effets de particules simulés à graine (recettes de `effets/`) |
-| `personnages/`, `squelette.js`, `clips.js`, `vivant.js`, `habillage-*.js` | Personnages : squelette 2.5D, poses, mouvements, expressions, habillages |
+| `personnages/`, `squelette.js`, `clips.js`, `vivant.js`, `habillage-*.js` | Personnages : squelette 2.5D, poses, mouvements, expressions, habillages (registre unique `personnages/habillages.js` : la scène, la validation, l'assemblage et l'atelier y lisent leur liste) |
 | `ecran.js`, `pointeur.js`, `film.js`, `blocs/`, `cadres/` | Écrans des tutoriels de logiciel : application filmée lue image par image, pointeur, clics, projecteur |
 | `dessin/` | Calque de dessin des vidéos explicatives : flèches, annotations, tracé à main levée, graphiques, code |
 | `mouvements.css`, `base.css`, `ecran.css` | Classes communes à tous les styles (`pm-m-*` du dictionnaire), mise en page de base |
@@ -128,7 +128,7 @@ Les pièges courants et leur symptôme : `references/pieges.md`.
 |---|---|---|
 | Images, captures, logos | `assets/` du projet | Copiés, puis embarqués dans la page (`scripts/lib/embarquer.js`, `scripts/lib/images.js`) |
 | Logo et couleurs de la marque | `charte/` du projet | `pulse-motion logo`, `charte depuis-logo` ; `<img data-logo>` dans une scène |
-| Polices | `charte/` ou `styles/<style>/polices/` | `scripts/polices.js` et `scripts/lib/police.js` les trouvent et les embarquent |
+| Polices | `charte/`, `styles/<style>/polices/` ou les polices partagées des styles livrés (`plugins/pulse-motion/polices/<Famille>/`) | `scripts/polices.js` et `scripts/lib/police.js` les trouvent et les embarquent |
 | Voix | `voix/<scène>.wav` | Enregistrée dans le studio de l'aperçu ou importée (`scripts/voix.js`), transcrite sur l'ordinateur (whisper), mots alignés pour les ancres `mot:` et les sous-titres |
 | Musique | composée par le moteur (`moteur/synthe/`) ou importée | Mixée hors temps réel avec la voix et les bruitages |
 | Application filmée, vidéo de l'écran | `films/` du projet | Figée en images avec ses métadonnées (`scripts/filmer.js`), lue image par image par `moteur/film.js` |

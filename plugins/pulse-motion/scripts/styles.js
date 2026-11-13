@@ -2,8 +2,8 @@
 'use strict';
 /* Pulse Motion – catalogue des styles : styles livrés et personnels, recommandation, contrat.
  *
- *   node scripts/styles.js [--genre <genre>]     liste des styles (JSON), classée pour le genre : fiche complète des
- *                                                3 premiers, forme courte des autres
+ *   node scripts/styles.js [--genre <genre>]     liste des styles (JSON) ; avec un genre : une ligne par style mis en avant
+ *                                                (les 3 premiers sont à proposer), une ligne par catégorie pour le reste
  *   node scripts/styles.js chercher <mots…>      styles dont le nom, la catégorie, les mots-clés, les usages ou la
  *                                                personnalité contiennent ces mots (« façon tableau blanc »)
  *   node scripts/styles.js verifier <nom>        vérifie le contrat d'un style
@@ -18,7 +18,7 @@ const { extraireScene } = require('./lib/extraire.js');
 const { verifierSection } = require('./lib/scenes.js');
 const { contraste, luminance } = require('./lib/couleurs.js');
 const { dossierPersonnel } = require('./lib/personnel.js');
-const { trouverFichiersPolice } = require('./lib/police.js');
+const { trouverFichiersPolice, policesPartagees, declarationPartagees, verifierPartagees, POLICES_PARTAGEES, PARTAGEES } = require('./lib/police.js');
 const SEUILS = require('./seuils.json');
 const SYNTHE = require('../moteur/synthe/catalogue.js');
 
@@ -212,12 +212,18 @@ function verifierIdentite(nom, identite, css, erreurs, charteCouleurs = {}, livr
   verifierFicheIdentite(identite, livre, erreurs);
 }
 
+/** Polices de la charte : dans polices/ du style (licence dans son LICENCES.md), sinon dans les polices partagées du plugin
+ *  (polices/<famille>/, licence dans leur LICENCES.md ; spec S11, 5.1 point 1). */
 function verifierCharte(dossier, charte, erreurs) {
   const licences = lireTexte(path.join(dossier, 'polices', 'LICENCES.md')) || '';
+  erreurs.push(...verifierPartagees(dossier));
   for (const [role, famille] of Object.entries(charte.polices || {})) {
     if (POLICES_SYSTEME.has(famille)) continue;
-    if (!trouverFichiersPolice(famille, [path.join(dossier, 'polices')]).length) erreurs.push(`Police « ${famille} » (charte.polices.${role}) : aucun fichier ${famille}.woff2 ou ${famille}-<graisse>.woff2 dans polices/.`);
-    else if (!licences.includes(famille)) erreurs.push(`Police « ${famille} » : licence absente de polices/LICENCES.md.`);
+    if (trouverFichiersPolice(famille, [path.join(dossier, 'polices')]).length) {
+      if (!licences.includes(famille)) erreurs.push(`Police « ${famille} » : licence absente de polices/LICENCES.md.`);
+    } else if (policesPartagees(famille, dossier).length) {
+      if (!(lireTexte(path.join(POLICES_PARTAGEES, famille, 'LICENCES.md')) || '').includes(famille)) erreurs.push(`Police « ${famille} » : licence absente de polices/${famille}/LICENCES.md (polices partagées du plugin).`);
+    } else erreurs.push(`Police « ${famille} » (charte.polices.${role}) : aucun fichier ${famille}.woff2 ou ${famille}-<graisse>.woff2 dans polices/, ni dans les polices partagées du plugin.`);
   }
   const couleurs = charte.couleurs || {};
   if (couleurs.fond) {
@@ -321,14 +327,26 @@ const CHANGEMENTS = 'changements.json';
 // Fichiers d'un style qui ne changent pas son rendu : guide, journal des changements et marques écrites par le plugin.
 const HORS_EMPREINTE = new Set([MARQUE_VERIFIE, MARQUE_BASE, CHANGEMENTS, 'guide.md']);
 
-/** Fichiers d'un style, chemins relatifs dans un ordre stable (hors guide, journal et marques). */
+/**
+ * Fichiers d'un style, dans un ordre stable (hors guide, journal et marques) : [{ r, chemin }], r relatif au style. Les polices
+ * partagées qu'il déclare (polices/partagees.json) comptent à leur ancienne place, polices/<fichier>, au lieu de la
+ * déclaration : la migration des polices (spec S11, 5.1) ne change l'empreinte d'aucun style.
+ */
 function fichiersStyle(dossier) {
   const liste = [];
   const parcourir = (relatif) => {
-    for (const e of fs.readdirSync(path.join(dossier, relatif), { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1))) {
-      const r = relatif ? `${relatif}/${e.name}` : e.name;
-      if (e.isDirectory()) parcourir(r);
-      else if (!HORS_EMPREINTE.has(r)) liste.push(r);
+    const entrees = fs.readdirSync(path.join(dossier, relatif), { withFileTypes: true })
+      .map((e) => ({ nom: e.name, estDossier: e.isDirectory(), chemin: path.join(dossier, relatif, e.name) }));
+    const k = relatif === 'polices' ? entrees.findIndex((e) => e.nom === PARTAGEES && !e.estDossier) : -1;
+    const d = k >= 0 ? declarationPartagees(dossier) : null;
+    if (d && !d.erreur) {
+      entrees.splice(k, 1);
+      for (const famille of Object.keys(d)) for (const f of policesPartagees(famille, dossier)) entrees.push({ nom: path.basename(f.fichier), estDossier: false, chemin: f.fichier });
+    }
+    for (const e of entrees.sort((a, b) => (a.nom < b.nom ? -1 : 1))) {
+      const r = relatif ? `${relatif}/${e.nom}` : e.nom;
+      if (e.estDossier) parcourir(r);
+      else if (!HORS_EMPREINTE.has(r)) liste.push({ r, chemin: e.chemin });
     }
   };
   parcourir('');
@@ -338,7 +356,7 @@ function fichiersStyle(dossier) {
 /** Empreinte des fichiers d'un style (hors guide, journal et marques) : change dès qu'on modifie le style. */
 function empreinteStyle(dossier) {
   const h = crypto.createHash('sha256');
-  for (const r of fichiersStyle(dossier)) h.update(r).update('\0').update(fs.readFileSync(path.join(dossier, r))).update('\0');
+  for (const { r, chemin } of fichiersStyle(dossier)) h.update(r).update('\0').update(fs.readFileSync(chemin)).update('\0');
   return h.digest('hex');
 }
 
@@ -358,7 +376,7 @@ function empreinteBase(st) {
   const h = crypto.createHash('sha256');
   const fiche = ficheDuStyle(st);
   h.update('fiche\0').update(sansCR(fs.existsSync(fiche) ? fs.readFileSync(fiche) : Buffer.alloc(0), 'fiche.md')).update('\0');
-  for (const r of fichiersStyle(st.dossier)) h.update(r).update('\0').update(sansCR(fs.readFileSync(path.join(st.dossier, r)), r)).update('\0');
+  for (const { r, chemin } of fichiersStyle(st.dossier)) h.update(r).update('\0').update(sansCR(fs.readFileSync(chemin), r)).update('\0');
   return h.digest('hex');
 }
 
@@ -432,11 +450,11 @@ function listerStyles(dossierStyles) {
 }
 
 /**
- * Styles classés pour un genre : les 2 recommandés du tableau, les styles personnels vérifiés
- * du genre, le style de contraste (ou, à défaut, un style d'une autre famille), les styles « aussi »
- * du tableau, puis le reste. Les styles personnels non vérifiés ne sont pas proposés.
+ * Styles classés pour un genre, en deux parts. enAvant : les 2 recommandés du tableau, les styles personnels vérifiés du
+ * genre, le style de contraste (ou, à défaut, un style d'une autre famille), les styles « aussi » du tableau ; reste : les
+ * autres. Les styles personnels non vérifiés ne sont pas proposés. -> { enAvant: [fiches], reste: [fiches] }
  */
-function recommander(genre, dossierStyles, recommandation = lireJSON(RECOMMANDATION)) {
+function classerPourGenre(genre, dossierStyles, recommandation = lireJSON(RECOMMANDATION)) {
   if (!GENRES.includes(genre)) throw new Error(`Genre inconnu : « ${genre} ». Genres : ${GENRES.join(', ')}.`);
   const fiches = listerStyles(dossierStyles).filter((f) => f.verifie);
   const parNom = new Map(fiches.map((f) => [f.style, f]));
@@ -452,45 +470,61 @@ function recommander(genre, dossierStyles, recommandation = lireJSON(RECOMMANDAT
     if (autre) ajouter(autre.style);
   }
   (table.aussi || []).forEach(ajouter);
-  fiches.forEach((f) => ajouter(f.style));
-  return ordre.map((n) => parNom.get(n));
+  const enAvant = ordre.map((n) => parNom.get(n));
+  return { enAvant, reste: fiches.filter((f) => !ordre.includes(f.style)) };
 }
 
-/** Nombre de styles rendus en fiche complète par « styles --genre » ; les autres ont une forme courte. */
+/** Styles classés pour un genre, en une liste : ceux mis en avant (classerPourGenre), puis le reste. */
+function recommander(genre, dossierStyles, recommandation) {
+  const { enAvant, reste } = classerPourGenre(genre, dossierStyles, recommandation);
+  return [...enAvant, ...reste];
+}
+
+/** Nombre de styles proposés à la personne : les 3 premiers de « styles --genre ». */
 const PROPOSES = 3;
 
-/** Forme courte d'un style (au-delà des 3 proposés) : de quoi le reconnaître et le nommer. */
+/** Forme courte d'un style : de quoi le reconnaître et le nommer. */
 function ficheCourte(f) {
   return { style: f.style, categorie: f.categorie, personnalite: f.personnalite, usages: f.usages, personnel: f.personnel, ...(f.baseModifiee ? { baseModifiee: true } : {}) };
 }
 
 /**
- * Forme courte en une ligne, pour « styles --genre » au-delà des 3 proposés (6 Ko au plus pour 25 styles) :
- * « <style> · <catégorie> · <personnalité> · <usages> », suivie de « · personnel » pour un style personnel.
+ * Forme courte en une ligne, pour « styles --genre » : « <style> · <catégorie> · <personnalité> · <usages> », suivie de
+ * « · personnel » pour un style personnel et de « · base « <base> » modifiée » quand sa base a changé.
  */
 function ligneCourte(f) {
   return [f.style, f.categorie || 'sans catégorie', f.personnalite.join(', '), f.usages.join(' ; ') || 'usages non dits', ...(f.personnel ? ['personnel'] : []),
     ...(f.baseModifiee ? [`base « ${f.base} » modifiée`] : [])].join(' · ');
 }
 
-/** Fiche complète d'un style proposé, resserrée : chaque scène toute faite en « durée · textes (longueurs maximales) ». */
-function fichePropose(f) {
-  const scenes = {};
-  for (const s of f.scenes) {
-    if (!s || typeof s.nom !== 'string') continue;
-    const textes = Object.entries(s.textes || {}).map(([k, n]) => `${k} ${n}`).join(', ');
-    scenes[s.nom] = `${String(s.duree).replace('.', ',')} s · ${textes}`;
-  }
-  return {
-    style: f.style, personnel: f.personnel, famille: f.famille, categorie: f.categorie, personnalite: f.personnalite,
-    usages: f.usages, genres: f.genres, signature: f.signature, transitions: f.transitions, scenes,
-    ...(f.baseModifiee ? { baseModifiee: true, base: f.base } : {}),
-  };
+/** Ligne d'une catégorie du reste : « 4 autres styles dessine : styles chercher <mots> ou styles choisir --categorie dessine ». */
+function ligneCategorie(categorie, n) {
+  const pluriel = n > 1 ? 's' : '';
+  return categorie
+    ? `${n} autre${pluriel} style${pluriel} ${categorie} : styles chercher <mots> ou styles choisir --categorie ${categorie}`
+    : `${n} autre${pluriel} style${pluriel} sans catégorie : styles chercher <mots> ou styles choisir`;
 }
 
-/** Liste de « styles --genre » : fiche complète des 3 premiers, forme courte (une ligne) des autres. */
-function listePourGenre(fiches) {
-  return fiches.map((f, i) => (i < PROPOSES ? fichePropose(f) : ligneCourte(f)));
+/** Styles nommés par « styles --genre » : ceux mis en avant ; s'il y en a moins de 3, les premiers du reste les complètent. */
+function nommesPourGenre({ enAvant, reste }) {
+  return [...enAvant, ...reste.slice(0, Math.max(0, PROPOSES - enAvant.length))];
+}
+
+/**
+ * Liste de « styles --genre » (spec S11, 5.1 point 2 ; 6 Ko au plus pour 47 styles et 5 styles personnels) : la forme
+ * courte en une ligne des styles nommés (les 3 premiers sont à proposer), puis une ligne par catégorie pour le reste, dans
+ * l'ordre des catégories. classement : { enAvant, reste } (classerPourGenre).
+ */
+function listePourGenre(classement) {
+  const nommes = nommesPourGenre(classement);
+  const compte = new Map();
+  for (const f of classement.reste.filter((x) => !nommes.includes(x))) {
+    const c = CATEGORIES.some((x) => x.id === f.categorie) ? f.categorie : null;
+    compte.set(c, (compte.get(c) || 0) + 1);
+  }
+  const rang = (c) => { const i = CATEGORIES.findIndex((x) => x.id === c); return i < 0 ? CATEGORIES.length : i; };
+  const categories = [...compte.keys()].sort((a, b) => rang(a) - rang(b));
+  return [...nommes.map(ligneCourte), ...categories.map((c) => ligneCategorie(c, compte.get(c)))];
 }
 
 // Petits mots ignorés dans une recherche de style (« façon tableau blanc », « quelque chose à la craie »).
@@ -597,10 +631,12 @@ if (require.main === module) {
     }
     const i = args.indexOf('--genre');
     if (i >= 0 && (!args[i + 1] || args[i + 1].startsWith('--'))) throw new Error(`Indiquez un genre après --genre : ${GENRES.join(', ')}.`);
-    // Avec un genre : JSON compact (fiche complète des 3 premiers, forme courte des autres), lu à chaque création.
-    const fiches = i >= 0 ? recommander(args[i + 1]) : listerStyles();
-    console.log(i >= 0 ? JSON.stringify(listePourGenre(fiches)) : JSON.stringify(fiches, null, 2));
-    // Une base modifiée n'est dite qu'une fois (creer, style) : la marque est posée une fois la liste rendue.
+    // Avec un genre : JSON compact (une ligne par style mis en avant, une par catégorie pour le reste), lu à chaque création.
+    const classement = i >= 0 ? classerPourGenre(args[i + 1]) : null;
+    const fiches = classement ? nommesPourGenre(classement) : listerStyles();
+    console.log(classement ? JSON.stringify(listePourGenre(classement)) : JSON.stringify(fiches, null, 2));
+    // Une base modifiée n'est dite qu'une fois (creer, style) : la marque est posée une fois la liste rendue, pour les styles
+    // qu'elle nomme.
     for (const f of fiches.filter((x) => x.baseModifiee)) signalerBase(trouverStyle(f.style));
   } catch (e) {
     console.error(e.message);
@@ -610,7 +646,7 @@ if (require.main === module) {
 
 module.exports = {
   verifierStyle, styleVerifie, marquerVerifie, racinesStyles, trouverStyle, nomsStyles, messageStyleInconnu, ficheStyle, listerStyles, recommander,
-  listePourGenre, ficheCourte, chercherStyles, estLivre, CHAMPS_LIVRE, ambianceProposee, ambianceDuStyle, AMBIANCES_GENRE,
-  empreinteStyle, empreinteBase, ficheDuStyle, baseAChanger, signalerBase, MARQUE_BASE, CHANGEMENTS,
+  classerPourGenre, nommesPourGenre, listePourGenre, ligneCourte, ficheCourte, chercherStyles, estLivre, CHAMPS_LIVRE, ambianceProposee, ambianceDuStyle, AMBIANCES_GENRE,
+  empreinteStyle, empreinteBase, fichiersStyle, ficheDuStyle, baseAChanger, signalerBase, MARQUE_BASE, CHANGEMENTS,
   lireJSON, RACINE, LIVRES, dossierPersonnel,
 };

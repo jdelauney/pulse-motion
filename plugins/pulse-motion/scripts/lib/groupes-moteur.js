@@ -4,13 +4,18 @@
  *
  * MODULES : tous les modules, dans l'ordre de chargement (l'ordre relatif est gardé quand on filtre).
  * GROUPES : { nom: [modules] } ; un module ajouté sans groupe fait échouer le test moteur-chaque-module-dans-un-seul-groupe.
- * groupesDuDeroule(donnees, sections, scripts?) -> [noms] : les groupes dont la page a besoin (tronc toujours, contrôle jamais :
+ * groupesDuDeroule(donnees, sections, scripts?, { habillages? }) -> [noms] : les groupes dont la page a besoin (tronc toujours, contrôle jamais :
  *   mesures.js, pixels.js et ecoute.js sont injectés par la page de mesure, lib/page-mesures.js).
  * modulesDesGroupes(groupes | 'tous') -> [modules] dans l'ordre de MODULES, absents.js en dernier.
  */
 
 const { usagesEcran } = require('./ecrans.js');
 const { usagesDessin } = require('./dessin.js');
+const HAB = require('../../moteur/personnages/habillages.js');
+
+// Habillages des personnages (spec S11, 5.1 point 4) : un groupe « habillage-<nom> » par entrée du registre, inclus seulement
+// si une scène s'en sert ; le registre lui-même va avec les personnages.
+const GROUPES_HABILLAGES = Object.fromEntries(HAB.NOMS.map((n) => [`habillage-${n}`, [HAB.habillages[n].fichier]]));
 
 const GROUPES = {
   // tailles.js reste au tronc : la page livrée applique les tailles ajustées (M.appliquerTailles), pas seulement le contrôle.
@@ -24,8 +29,9 @@ const GROUPES = {
   synthe: ['synthe/catalogue.js', 'synthe/partition.js', 'synthe/ambiances.js', 'synthe/instruments.js', 'synthe/bruitages.js'],
   // Cordes pincées (spec Styles et réalisation, 5.8) : seulement si la musique a une piste « corde ».
   corde: ['synthe/corde.js'],
-  personnages: ['squelette.js', 'vivant.js', 'clips.js', 'habillage-batonnets.js', 'habillage-pieces.js', 'personnages/levres.js',
+  personnages: ['squelette.js', 'vivant.js', 'clips.js', 'personnages/habillages.js', 'personnages/levres.js',
     'personnages/partition.js', 'personnages/interactions.js', 'personnages/scene.js', 'personnages/objets.js'],
+  ...GROUPES_HABILLAGES,
   gpu: ['shaders/glsl.js', 'shaders/code.js', 'particules/instantanes.js', 'particules/gpu.js', 'particules/obstacles.js',
     'particules/fragments.js', 'particules/simulation.js', 'particules/voisinage.js', 'particules/maillage.js',
     'particules/structures.js', 'particules/milieu.js', 'particules/rendu.js', 'particules/glsl.js', 'particules/shaders.js',
@@ -51,7 +57,7 @@ const GROUPES = {
 
 // Ordre de chargement : celui de la liste historique (dépendances au chargement), puis absents.js en dernier.
 const MODULES = ['courbes.js', 'langues.js', 'aligner.js', 'proches.js', 'sous-titres.js', 'minutage.js', 'transitions.js', 'tween.js', 'lettres.js', 'camera.js', 'ken-burns.js', 'trace-texte.js', 'cartes.js', 'lottie.js',
-  'squelette.js', 'vivant.js', 'clips.js', 'habillage-batonnets.js', 'habillage-pieces.js', 'personnages/levres.js', 'personnages/partition.js',
+  'squelette.js', 'vivant.js', 'clips.js', ...HAB.fichiers(), 'personnages/habillages.js', 'personnages/levres.js', 'personnages/partition.js',
   'personnages/interactions.js', 'personnages/scene.js', 'personnages/objets.js', 'temps.js', 'horloge.js', 'tailles.js', 'wav.js',
   'sonie.js', 'mixage.js', 'synthe/catalogue.js', 'synthe/partition.js', 'synthe/ambiances.js', 'synthe/corde.js', 'synthe/instruments.js',
   'synthe/bruitages.js', 'analyse-son.js', 'audio.js', 'son-reactif.js', 'lecteur.js', 'sous-titres-rendu.js', 'debordement.js',
@@ -75,7 +81,8 @@ const nonVide = (x) => (Array.isArray(x) ? x.length > 0 : !!(x && typeof x === '
  * - synthé : musique générée ou partition, bruitages des transitions, ou un data-son dans une scène (même un son importé :
  *   moteur/audio.js prépare le bruit du synthétiseur dès qu'il y a un son à jouer) ;
  * - corde : une piste « corde » dans la partition de la musique (ambiances acoustique et mecanique, ou partition libre) ;
- * - personnages : donnees.personnages (une scène a data-personnage ou data-action) ;
+ * - personnages : donnees.personnages (une scène a data-personnage ou data-action) ; avec eux, le groupe de chaque habillage
+ *   dont une scène se sert (options.habillages : noms du registre ; sans cette liste, tous les habillages) ;
  * - GPU : effet, milieu, shader (fond, transition, post-traitement), module d'effet, ou obstacle (data-obstacle : le contrôle juge
  *   ses formes exactes par M.particules.formesVides) ;
  * - écran : un écran (pm-ecran) ou une de ses marques (pm-clic, pm-projecteur, pm-zoom…) dans une scène ;
@@ -89,7 +96,7 @@ const nonVide = (x) => (Array.isArray(x) ? x.length > 0 : !!(x && typeof x === '
  * - cartes : data-carte dans une scène (spec S9 5.10) ;
  * - lottie : data-lottie dans une scène (spec S9 5.11).
  */
-function groupesDuDeroule(donnees, sections = [], scripts = []) {
+function groupesDuDeroule(donnees, sections = [], scripts = [], options = {}) {
   const d = donnees || {};
   const groupes = ['tronc'];
   if (d.langue) groupes.push('langues');
@@ -102,7 +109,11 @@ function groupesDuDeroule(donnees, sections = [], scripts = []) {
   if (musique || bruitages || d.momentFort || /\sdata-son\s*=/.test(textes)) groupes.push('synthe');
   const partition = d.musique && d.musique.partition;
   if (partition && Array.isArray(partition.pistes) && partition.pistes.some((p) => p && p.instrument === 'corde')) groupes.push('corde');
-  if (d.personnages) groupes.push('personnages');
+  if (d.personnages) {
+    groupes.push('personnages');
+    const voulus = Array.isArray(options.habillages) ? options.habillages : HAB.NOMS;
+    for (const n of HAB.NOMS) if (voulus.includes(n)) groupes.push(`habillage-${n}`);
+  }
   const obstacles = nonVide(d.obstacles) || nonVide(d.obstaclesVideo);
   if (nonVide(d.effets) || nonVide(d.milieux) || nonVide(d.shaders) || nonVide(d.modules) || obstacles) groupes.push('gpu');
   if (sections.some((s) => usagesEcran(s).moteur)) groupes.push('ecran');

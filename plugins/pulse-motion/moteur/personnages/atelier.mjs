@@ -1,12 +1,17 @@
 /* Pulse Motion – page de l'atelier des personnages (servie par l'aperçu sur /_pm/personnages[?nom=…]).
  *
  * Affichage et gestes seulement : toutes les règles d'édition sont dans edition.mjs. Les modules du moteur
- * (M.squelette, M.clips, M.batonnets) sont chargés avant ce module par atelier.html.
+ * (M.squelette, M.clips, les habillages et leur registre M.habillages) sont chargés avant ce module par atelier.html.
+ * Habillages proposés : ceux du registre qui se dessinent sans dessin (bâtonnets), puis chaque dessin, dans l'habillage
+ * par défaut du registre (pièces).
  * Crochets de test : window.__atelier (ed, rendre, enregistrer, poignee, pret) ; window.__atelierConfirmer remplace confirm().
  */
 import { creerEdition, nouvelObjet, PAS_IMAGE } from './edition.mjs';
 
-const { squelette: S, clips: K, batonnets: B, pieces: PI } = window.M;
+const { squelette: S, clips: K, habillages: HAB } = window.M;
+// Registre des habillages (moteur/personnages/habillages.js) : ceux qui se dessinent sans dessin, et celui d'un dessin.
+const SEULS = Object.keys(HAB).filter((n) => HAB[n].sansDessin);
+const DEFAUT = Object.keys(HAB).find((n) => HAB[n].parDefaut);
 const NS = 'http://www.w3.org/2000/svg';
 const DEG = Math.PI / 180;
 const X = 450, SOL = 500, ECHELLE = 1.1;
@@ -60,15 +65,17 @@ let vue = 0;
 let tourne = false;
 let lecture = false;
 let dernier = null;
-let habillage = 'batonnets';
+let habillage = SEULS[0];
 let sale = true;
 
+/** L'habillage courant se dessine sans dessin (bâtonnets) ; sinon, c'est le nom d'un dessin. */
+const sansDessin = () => SEULS.includes(habillage);
 function gabaritDessin(d) {
   if (d && d.gabarit && typeof d.gabarit === 'object') return d.gabarit;
   return lu.gabarits[(d && d.gabarit) || 'standard'] || lu.gabarits.standard || null;
 }
 function gabaritCourant() {
-  if (habillage !== 'batonnets') return gabaritDessin(lu.dessins[habillage]);
+  if (!sansDessin()) return gabaritDessin(lu.dessins[habillage]);
   return lu.gabarits[$('#gabarit').value] || lu.gabarits.standard || null;
 }
 function placement() { return { x: X, y: SOL - (S.sol(ed.gabarit) + 7) * ECHELLE, echelle: ECHELLE, vue }; }
@@ -99,7 +106,9 @@ function borner(n, v) {
 const svg = $('#scene');
 let perso;
 let fantomes;
-function creerUn(g) { return habillage === 'batonnets' ? B.creer(g) : PI.creer(g, lu.dessins[habillage], gabaritDessin(lu.dessins[habillage])); }
+function creerUn(g) {
+  return sansDessin() ? HAB[habillage].creer(g, null, null, {}) : HAB[DEFAUT].creer(g, lu.dessins[habillage], gabaritDessin(lu.dessins[habillage]), {});
+}
 function creerPersos() {
   $('#perso').replaceChildren();
   $('#fantomes').replaceChildren();
@@ -386,7 +395,7 @@ $('#retablir').addEventListener('click', () => { if (ed.retablir()) rendre(); })
 /* ---------- visage et habillage ---------- */
 /** Bouches proposées : les noms standard, puis celles propres au dessin choisi. */
 function listeBouches() {
-  const dessin = habillage !== 'batonnets' && lu.dessins[habillage];
+  const dessin = !sansDessin() && lu.dessins[habillage];
   const propres = Object.keys((dessin && dessin.visage && dessin.visage.bouches) || {}).filter((b) => !BOUCHES.includes(b)).sort();
   $('#bouche').innerHTML = ['<option value="">aucune (selon l\'expression)</option>', ...[...BOUCHES, ...propres].map((b) => `<option value="${b}">${b}</option>`)].join('');
 }
@@ -410,9 +419,9 @@ for (const champ of ['expression', 'bouche']) {
 }
 
 function choisirHabillage(nom) {
-  habillage = nom === 'batonnets' || lu.dessins[nom] ? nom : 'batonnets';
+  habillage = SEULS.includes(nom) || lu.dessins[nom] ? nom : SEULS[0];
   $('#habillage').value = habillage;
-  $('#gabarit').disabled = habillage !== 'batonnets';
+  $('#gabarit').disabled = !sansDessin();
   ed.changerGabarit(gabaritCourant());
   listeBouches();
   creerPersos();
@@ -481,13 +490,13 @@ function boucle(maintenant) {
   if (contexte.erreurs.length) message(`Fichiers ignorés :\n${contexte.erreurs.join('\n')}`, 'erreur');
   const gabarits = Object.keys(lu.gabarits).sort();
   $('#gabarit').innerHTML = gabarits.map((g) => `<option value="${g}"${g === 'standard' ? ' selected' : ''}>${g}</option>`).join('');
-  $('#habillage').innerHTML = ['<option value="batonnets">bâtonnets</option>', ...Object.keys(lu.dessins).sort().map((d) => `<option value="${d}">${d}</option>`)].join('');
+  $('#habillage').innerHTML = [...SEULS.map((n) => `<option value="${n}">${HAB[n].libelle}</option>`), ...Object.keys(lu.dessins).sort().map((d) => `<option value="${d}">${d}</option>`)].join('');
   $('#expression').innerHTML = ['<option value="">aucune</option>', ...Object.keys(lu.expressions).map((e) => `<option value="${e}">${e}</option>`)].join('');
   const voulu = new URLSearchParams(location.search).get('dessin');
   if (voulu && lu.dessins[voulu]) habillage = voulu;
   $('#habillage').value = habillage;
   listeBouches();
-  $('#gabarit').disabled = habillage !== 'batonnets';
+  $('#gabarit').disabled = !sansDessin();
   creerPersos();
   construireBibliotheque();
   const nom = new URLSearchParams(location.search).get('nom');

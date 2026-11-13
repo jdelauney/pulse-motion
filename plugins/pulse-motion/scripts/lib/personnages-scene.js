@@ -1,7 +1,8 @@
 'use strict';
 /* Pulse Motion – personnages dans les scènes, côté assemblage.
  *
- *   preparerPersonnages(html, { scene, lu, voix }) -> { html, utilises: { dessins: Set, gabarits: Set, batonnets: Set }, erreurs, parle }
+ *   preparerPersonnages(html, { scene, lu, voix }) -> { html, utilises: { dessins: Set, gabarits: Set, batonnets: Set, habillages: Set },
+ *     erreurs, parle }   batonnets : dessins habillés avec leur réglage ; habillages : ceux dont la scène se sert (registre)
  *     voix : la scène a un texte dit (sinon « parler » est une erreur)
  *   donneesPersonnages(utilises, lu)         -> M.donnees.personnages (ce que la page doit connaître)
  *
@@ -14,6 +15,7 @@ const P = require('./personnages.js');
 const K = require('../../moteur/clips.js');
 const C = require('../../moteur/courbes.js');
 const { deplierGroupes } = require('./groupes-personnages.js');
+const HAB = require('../../moteur/personnages/habillages.js');
 // Noms proches d'une saisie (spec Retouches et ergonomie, 5.16).
 const PR = require('../../moteur/proches.js');
 const procheDe = (saisie, candidats) => { const l = PR.proches(saisie, candidats); return l.length ? ' ; ' + PR.phrase(l) : ''; };
@@ -41,7 +43,7 @@ function preparerPersonnages(html0, { scene, lu, voix = false, dureeTemps = null
   const deplie = deplierGroupes(html0, { scene, dureeTemps });
   const html = deplie.html;
   const erreurs = deplie.erreurs.slice();
-  const utilises = { dessins: new Set(), gabarits: new Set(), batonnets: new Set() };
+  const utilises = { dessins: new Set(), gabarits: new Set(), batonnets: new Set(), habillages: new Set() };
   if (!/data-personnage|data-action|data-tenu-par/.test(html)) return { html, utilises, erreurs, parle: false };
   let parle = false;
   const verifierEcrase = (v, qui) => {
@@ -85,20 +87,34 @@ function preparerPersonnages(html0, { scene, lu, voix = false, dureeTemps = null
       if (a['data-vie'] !== undefined && !['pleine', 'sobre', 'mains', 'aucune'].includes(a['data-vie'].trim())) erreurs.push(erreur(scene, `data-vie="${a['data-vie']}" : valeur inconnue (pleine, sobre, mains ou aucune).`));
       if (a['data-ombre'] !== undefined && !['oui', 'non'].includes(a['data-ombre'].trim())) erreurs.push(erreur(scene, `data-ombre="${a['data-ombre']}" : oui ou non.`));
       if (a['data-ecrase'] !== undefined) verifierEcrase(a['data-ecrase'], `personnage « ${nom} »`);
-      if (nom === 'batonnets') {
+      // Habillages : registre unique (moteur/personnages/habillages.js, spec S11 5.1 point 4).
+      const seuls = HAB.sansDessin();
+      if (seuls.includes(nom)) {
         const g = (a['data-gabarit'] || 'standard').trim();
-        if (!Object.hasOwn(lu.gabarits, g)) erreurs.push(erreur(scene, `personnage en bâtonnets : gabarit « ${g} » introuvable (gabarits : ${Object.keys(lu.gabarits).join(', ')}).`));
+        if (!Object.hasOwn(lu.gabarits, g)) erreurs.push(erreur(scene, `personnage en ${HAB.habillages[nom].libelle} : gabarit « ${g} » introuvable (gabarits : ${Object.keys(lu.gabarits).join(', ')}).`));
         else utilises.gabarits.add(g);
+        utilises.habillages.add(nom);
       } else if (!Object.hasOwn(lu.dessins, nom)) {
-        erreurs.push(erreur(scene, avecBibliotheque(`personnage « ${nom} » introuvable${procheDe(nom, [...Object.keys(lu.dessins), 'batonnets']) || ` (dessins : ${Object.keys(lu.dessins).join(', ') || 'aucun'} ; ou « batonnets »).`}`, 'dessin', nom)));
+        erreurs.push(erreur(scene, avecBibliotheque(`personnage « ${nom} » introuvable${procheDe(nom, [...Object.keys(lu.dessins), ...seuls]) || ` (dessins : ${Object.keys(lu.dessins).join(', ') || 'aucun'} ; ou ${seuls.map((n) => `« ${n} »`).join(', ')}).`}`, 'dessin', nom)));
       } else {
         utilises.dessins.add(nom);
         const hab = a['data-habillage'] === undefined ? null : a['data-habillage'].trim();
-        if (hab !== null && !['pieces', 'batonnets'].includes(hab)) erreurs.push(erreur(scene, `personnage « ${nom} » : data-habillage="${hab}" inconnu (batonnets, ou pieces par défaut).`));
-        else if (hab === 'batonnets' && P.apparenceBatonnets(lu.dessins[nom])) utilises.batonnets.add(nom);
-        else if (hab === 'batonnets') erreurs.push(erreur(scene, `personnage « ${nom} » : ce dessin n'a pas de réglage bâtonnets (manière « pièces pleines ») ; retirer data-habillage, ou choisir un dessin de la manière « traits ».`));
+        const h = HAB.connu(hab === null ? HAB.DEFAUT : hab) ? HAB.habillages[hab === null ? HAB.DEFAUT : hab] : null;
+        const reglage = h && h.reglage ? lu.dessins[nom][h.reglage] : null;
+        // Habillage refusé : la page assemblée malgré l'erreur dessine le personnage dans l'habillage par défaut (scene.js).
+        if (!h) {
+          erreurs.push(erreur(scene, `personnage « ${nom} » : data-habillage="${hab}" inconnu (habillages : ${HAB.NOMS.join(', ')} ; ${HAB.DEFAUT} par défaut).`));
+          utilises.habillages.add(HAB.DEFAUT);
+        } else if (h.reglage && !(reglage && typeof reglage === 'object' && !Array.isArray(reglage))) {
+          erreurs.push(erreur(scene, `personnage « ${nom} » : ce dessin n'a pas de réglage ${h.libelle} (« ${h.reglage} » du dessin) ; retirer data-habillage, ou choisir un dessin qui l'a.`));
+          utilises.habillages.add(HAB.DEFAUT);
+        } else {
+          utilises.habillages.add(hab === null ? HAB.DEFAUT : hab);
+          // Dessins dont l'habillage demande un réglage : leur apparence va dans les données de la page.
+          if (h.reglage) utilises.batonnets.add(nom);
+        }
       }
-      if (nom === 'batonnets' && a['data-habillage'] !== undefined) erreurs.push(erreur(scene, 'data-habillage se pose sur un personnage dessiné (data-personnage="<dessin>") : il le dessine en bâtonnets, à ses couleurs.'));
+      if (seuls.includes(nom) && a['data-habillage'] !== undefined) erreurs.push(erreur(scene, 'data-habillage se pose sur un personnage dessiné (data-personnage="<dessin>") : il le dessine en bâtonnets, à ses couleurs.'));
       return tout;
     }
     if (a['data-membre'] !== undefined) erreurs.push(erreur(scene, `data-membre="${a['data-membre']}" hors d'un groupe : il sert dans un conteneur data-groupe.`));

@@ -11,7 +11,9 @@ const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 
 const MOTEUR = path.resolve(__dirname, '..', '..', 'moteur');
-const MODULES = ['courbes.js', 'squelette.js', 'vivant.js', 'clips.js', 'habillage-batonnets.js', 'habillage-pieces.js'];
+// Modules du moteur des planches et de l'atelier : les habillages et leur registre (moteur/personnages/habillages.js).
+const HAB = require('../../moteur/personnages/habillages.js');
+const MODULES = ['courbes.js', 'squelette.js', 'vivant.js', 'clips.js', ...HAB.fichiers(), 'personnages/habillages.js'];
 const CELLULE = 200, MARGE = 110, ENTETE = 40, ECHELLE = 0.42;
 const SANS_NAVIGATEUR = 'Chrome ou Edge introuvable : la planche se dessine dans un navigateur. Lancez « pulse-motion outils » pour voir quoi installer.';
 
