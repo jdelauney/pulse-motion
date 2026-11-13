@@ -8,6 +8,9 @@
     "ips": 30
   },
   "style": "tech-sombre",
+  "entorses": [
+    { "quoi": "particules", "pourquoi": "des étincelles sur le marché, le chiffre qui décide" }
+  ],
   "musique": {
     "generee": "tech",
     "tempo": 120,

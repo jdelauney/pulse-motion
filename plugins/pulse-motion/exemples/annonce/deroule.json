@@ -8,6 +8,9 @@
     "ips": 30
   },
   "style": "energique",
+  "entorses": [
+    { "quoi": "particules", "pourquoi": "des confettis sur l'invitation, la seule fête de la vidéo" }
+  ],
   "musique": {
     "generee": "entrainant",
     "tempo": 120,
