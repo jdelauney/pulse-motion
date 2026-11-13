@@ -28,10 +28,12 @@
  * 0.71.0 (S9-8, musiques et images) : creer 23 620 → 23 780 o (« Votre musique » proposée d'abord, depuis la bibliothèque),
  * voix 5 200 → 5 350 o (ligne « garde cette musique »), exporter 6 780 → 6 810 o (« les images une par une pour mon monteur » ;
  * la conduite vit dans la référence sorties) ; retoucher tenu ; descriptions inchangées.
+ * 0.74.0 (S11 J2, choisir le style) : creer 23 780 → 24 150 o (--noter, habitude dite, référence connue et sa phrase,
+ * « Autre chose que ces styles ») ; description inchangée.
  */
 const PLAFONDS = {
   'skills/animer-personnage/SKILL.md': 6050, 'skills/atelier-particules/SKILL.md': 2272, 'skills/atelier-personnages/SKILL.md': 3529,
-  'skills/creer/SKILL.md': 23780, 'skills/decouper-personnage/SKILL.md': 4020, 'skills/dessiner-personnage/SKILL.md': 4650,
+  'skills/creer/SKILL.md': 24150, 'skills/decouper-personnage/SKILL.md': 4020, 'skills/dessiner-personnage/SKILL.md': 4650,
   'skills/exporter/SKILL.md': 6810, 'skills/filmer/SKILL.md': 11500, 'skills/outils/SKILL.md': 7200, 'skills/reprendre/SKILL.md': 3180,
   'skills/retoucher/SKILL.md': 15000, 'skills/style/SKILL.md': 6550, 'skills/voix/SKILL.md': 5350,
   'agents/animateur.md': 6000, 'agents/critique.md': 3800,
