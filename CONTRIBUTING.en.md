@@ -102,7 +102,7 @@ A style is a folder `plugins/pulse-motion/styles/<id>/`:
 | `identite.json` | Category, uses, personality, signature, do's and don'ts, keywords, sound palette, provenance; `modules`: the `moteur/medium/` modules the style needs (ink in a canvas, single line, isometry, overprinted riso flats, flats offset from their broken line), included in the page only for that style, with their stylesheet `moteur/medium/<name>.css` if they have one |
 | `catalogue.json` | The nine ready-made scenes and the texts they expect |
 | `scenes/*.html` | The nine ready-made scenes (`titre`, `chiffre`, `liste`, `etape`, `comparaison`, `schema`, `alerte`, `moyeu`, `conclusion`) |
-| `polices/` | Embedded fonts and their `LICENCES.md` |
+| `polices/` | Embedded fonts and their `LICENCES.md`; a family already shipped by another style comes from the plugin's shared fonts (`plugins/pulse-motion/polices/<Famille>/`, with its licence): `polices/partagees.json` lists which of its files the style embeds (`{ "Fraunces": ["Fraunces-600.woff2"] }`), with no copy |
 | Textures (optional) | PNG tiles drawn from a seed by `outils/styles/textures.js` (40 KB at most, `--verifier` to check them), embedded through `url()` in `style.css` |
 
 Then:

@@ -28,7 +28,7 @@
 
 ## Base modifiée
 
-Après une mise à jour de Pulse Motion, la base d'un style personnel peut avoir changé (fiche, CSS, scènes). `pulse-motion styles` (et `--genre`) rend alors `baseModifiee: true` et `base` pour ce style, **une seule fois** : la marque `.base-signalee.json` est posée aussitôt.
+Après une mise à jour de Pulse Motion, la base d'un style personnel peut avoir changé (fiche, CSS, scènes). `pulse-motion styles` rend alors `baseModifiee: true` et `base` pour ce style (`--genre` : sa ligne finit par « base « <base> » modifiée »), **une seule fois** : la marque `.base-signalee.json` est posée aussitôt.
 
 - `creer` : le dire en une phrase (« Le style « <base> », dont votre style « <nom> » est parti, a été amélioré. ») et proposer d'en reprendre les corrections plus tard, avec `/pulse-motion:style`. Rien ne change sans accord.
 - `style` : proposer « Voir ce qui a changé (Recommandé) » (planche avec la base) · « Reprendre ses corrections » · « Garder mon style tel quel ». Pour reprendre : comparer la fiche de la base et `guide.md`, proposer les corrections (5 au plus par tour, accord), puis `pulse-motion style base <nom> --a-jour` (la nouvelle version de la base est notée) et `pulse-motion style verifier <nom>`.
