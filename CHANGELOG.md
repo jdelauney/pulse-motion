@@ -2,6 +2,21 @@
 
 Produit par `outils/nouveautes.js` depuis l'historique du dépôt : ne pas le modifier à la main. Les nouveautés racontées simplement sont sur la page « Nouveautés » du wiki.
 
+## 0.70.0 – 2026-11-13
+
+Vos animations Lottie entrent dans vos vidéos, aux couleurs de votre marque, et les cartes de pays et de régions se préparent.
+
+### Nouveautés
+
+- Cartes de pays et de régions françaises (S9-6) : outil de préparation des fonds Natural Earth (Equal Earth, Lambert, encarts, Visvalingam sur frontières partagées), moteur projeter et arc, assemblage de data-carte (cadre, pays, repères, liaisons), commande cartes, référence ; fonds pas encore livrés
+- Lecteur Lottie écrit dans le plugin (S9-7), image calculée de t, import .json et .lottie sans dépendance, recoloration à l'assemblage, règles lottie-*
+- Cartes et Lottie branchées (groupes cartes et lottie du moteur à la carte, crédits, contrôle d'une scène, controles.md, seuils, imiter renvoie à l'import Lottie)
+
+### Corrections
+
+- #137 carte qui se retourne, verso teinté et bordé (il disparaissait sur le fond de la page)
+- Vérification d'un style 3 à 4 fois plus rapide : flashs mesurés une fois par ton (16:9) par les captures réduites du contrôle, deux navigateurs à la fois au plus ; styles-livres ne dépasse plus son délai
+
 ## 0.69.0 – 2026-11-13
 
 Montrez une animation que vous aimez : Pulse Motion en mesure le rythme et les mouvements, et votre scène bouge de la même façon.
