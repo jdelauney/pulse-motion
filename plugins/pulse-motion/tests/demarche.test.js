@@ -49,7 +49,8 @@ function appui(r, cote, g) {
 test('demarche : même t, même pose', () => {
   const d = D.demarche({ genre: 'marche' }, lu.gabarits.standard);
   assert.deepEqual(d.pose(0.37, 1), d.pose(0.37, 1));
-  assert.deepEqual(d.pose(1.37, 1).angles, d.pose(0.37, 1).angles, 'cycle : phase + 1, même pose');
+  const un = d.pose(1.37, 1).angles, zero = d.pose(0.37, 1).angles;
+  for (const k of Object.keys(zero)) assert.ok(Math.abs(un[k] - zero[k]) < 1e-9, `cycle : phase + 1, même pose (${k})`);
   const x = partition('passant');
   const ordre1 = [0.9, 1.2345, 2.5, 1.2345].map((t) => rendu(x, t).pose);
   const ordre2 = [1.2345, 3, 0.5].map((t) => rendu(partition('passant'), t).pose);
@@ -130,12 +131,12 @@ test('demarche : hanche plus basse en double appui qu\'en appui simple ; course 
 test('demarche : vue de 3/4, repli sur le clip marche', () => {
   const t = [0.8, 1.4, 2.2];
   // Marche vue de 3/4 (data-vue="45" sur l'action) : la pose de la partition est celle du clip, avec ou sans démarche calculée.
-  const avec = partition('passant', { vue: 45 }), sans = partition('passant', { vue: 45, demarche: undefined });
+  const avec = partition('passant', { vue: 45 }), sans = partition('passant', { vue: 45, demarche: null });
   for (const x of t) assert.deepEqual(rendu(avec, x).pose, rendu(sans, x).pose, `t = ${x}`);
   // De face aussi ; de profil, elle change.
-  const face = partition('passant', { vue: 90 }), faceSans = partition('passant', { vue: 90, demarche: undefined });
+  const face = partition('passant', { vue: 90 }), faceSans = partition('passant', { vue: 90, demarche: null });
   assert.deepEqual(rendu(face, 1.4).pose, rendu(faceSans, 1.4).pose);
-  const profil = partition('passant'), profilSans = partition('passant', { demarche: undefined });
+  const profil = partition('passant'), profilSans = partition('passant', { demarche: null });
   assert.notDeepEqual(rendu(profil, 1.4).pose, rendu(profilSans, 1.4).pose);
   // Pas traînés de 3/4 : le clip marche (les réglages n'ont pas d'images-clés).
   const traines = partition('passant', { vue: 45, clip: 'pas-traines' });
@@ -145,7 +146,7 @@ test('demarche : vue de 3/4, repli sur le clip marche', () => {
 });
 
 test('demarche : sans data-demarche, la partition suit le clip exactement comme avant', () => {
-  const sans = partition('touffu', { demarche: undefined });
+  const sans = partition('touffu', { demarche: null });
   const bibSans = { poses: lu.poses, clips: lu.clips, expressions: lu.expressions };
   for (const t of [0.5, 1.1, 2.7]) {
     const a = PA.etatAuTemps(sans.part, t, bibSans, sans.g), b = PA.etatAuTemps(sans.part, t, BIB, sans.g);

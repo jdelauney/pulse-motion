@@ -12,7 +12,9 @@
  * à ces forces pèsent entier sur la moitié récente de la fenêtre, puis s'effacent en douceur (aucun saut quand ils en sortent).
  * Pendule : angle depuis la verticale, positif quand le bout part vers +x ; longueur et gravite dans les mêmes unités (mètres
  * et 9,81 par défaut) ; pivot : point fixe ou fonction u -> [x, y] (son accélération le balance, sa vitesse fait le vent
- * relatif) ; amorti : part de l'amortissement critique (0 à 1) ; prise : prise au vent (accélération en g par unité de force).
+ * relatif) ; amorti : part de l'amortissement critique (0 à 1) ; prise : prise au vent (accélération en g par unité de force) ;
+ * porteurMax : accélération du pivot gardée au plus (en g ; sans limite par défaut) ; lissage : le pivot est moyenné sur ce
+ * nombre d'images de la grille (1 par défaut : sans lissage).
  * forces : vent (u -> { x, y } ou [x, y], force par axe, 1 = vent fort), poussee (u -> [ax, ay], accélération du bout),
  * impulsions ([impulsion(instant, force)] : vitesse donnée d'un coup, rad/s ou unités/s).
  * Vent : clés { de, force, dir, rafales } (scènes : data-vent au début de la scène ; déroulé : "vent") ; chaque clé se rejoint
@@ -36,7 +38,10 @@
     calme: Object.freeze({ force: 0, rafales: 0 }), brise: Object.freeze({ force: 0.3, rafales: 0.1 }),
     rafales: Object.freeze({ force: 0.35, rafales: 0.5 }), tempete: Object.freeze({ force: 0.8, rafales: 0.25 })
   });
-  // Pendants de l'habillage plume (fractions de la hauteur de la figure, qui vaut 1,75 m).
+  // Pendants de l'habillage plume (fractions de la hauteur de la figure, qui vaut 1,75 m) ; le poignet d'un coureur secoue
+  // fort et la hanche de la marche calculée change de sens d'un coup à chaque pas : le pivot est moyenné sur LISSAGE_PORTEUR
+  // images, son accélération gardée sous PORTEUR_MAX g, et l'angle rendu reste sous LIMITE_PENDANT degrés (en douceur).
+  var PORTEUR_MAX = 1.5, LIMITE_PENDANT = 80, LISSAGE_PORTEUR = 9;
   var PENDANTS = Object.freeze({
     echarpe: Object.freeze({ longueur: 0.12, amorti: 0.3, prise: 2.2 }),
     mallette: Object.freeze({ longueur: 0.075, amorti: 0.12, prise: 0.15 }),
@@ -80,16 +85,23 @@
   function pendule(reglage, t, forces) {
     var r = reglage || {}, f = forces || {}, gr = grille(t), h = PAS;
     var g = num(r.gravite, G), L = Math.max(1e-6, num(r.longueur, 1)), prise = num(r.prise, PRISE);
-    var c = 2 * borne(num(r.amorti, 0.15), 0, 1) * Math.sqrt(g / L), vref = VITESSE_VENT * g / G;
-    var piv = [];
-    for (var i = 0; i <= gr.n + 1; i++) piv.push(r.pivot ? vec(r.pivot, gr.tau(i)) : [0, 0]);
+    var c = 2 * borne(num(r.amorti, 0.15), 0, 1) * Math.sqrt(g / L), vref = VITESSE_VENT * g / G, amax = num(r.porteurMax, Infinity) * g;
+    // Pivot, moyenné sur les m dernières images de la grille (lissage) : un pas qui heurte le sol ne secoue pas d'un coup.
+    var m = Math.max(1, Math.round(num(r.lissage, 1))), brut = [], piv = [];
+    for (var i = 1 - m; i <= gr.n + 1; i++) brut.push(r.pivot ? vec(r.pivot, gr.tau(i)) : [0, 0]);
+    for (var q = 0; q <= gr.n + 1; q++) {
+      var sx = 0, sy = 0;
+      for (var w = 0; w < m; w++) { sx += brut[q + w][0]; sy += brut[q + w][1]; }
+      piv.push([sx / m, sy / m]);
+    }
     /** Accélération extérieure du bout dans le repère du pivot, à τ_i (vent relatif, porteur, poussée). */
     function acc(i) {
       var u = gr.tau(i), a = [0, 0];
       var vx = (piv[i + 1][0] - piv[i - 1][0]) / (2 * h), vy = (piv[i + 1][1] - piv[i - 1][1]) / (2 * h);
       if (f.vent) { var v = vec(f.vent, u); a[0] += prise * g * (v[0] - vx / vref); a[1] += prise * g * (v[1] - vy / vref); }
-      a[0] -= (piv[i + 1][0] - 2 * piv[i][0] + piv[i - 1][0]) / (h * h);
-      a[1] -= (piv[i + 1][1] - 2 * piv[i][1] + piv[i - 1][1]) / (h * h);
+      var px = (piv[i + 1][0] - 2 * piv[i][0] + piv[i - 1][0]) / (h * h), py = (piv[i + 1][1] - 2 * piv[i][1] + piv[i - 1][1]) / (h * h);
+      var n = Math.hypot(px, py), k = n > amax ? amax / n : 1;
+      a[0] -= px * k; a[1] -= py * k;
       if (f.poussee) { var p = vec(f.poussee, u); a[0] += p[0]; a[1] += p[1]; }
       return a;
     }
@@ -201,8 +213,9 @@
     var memo = {}, g = G * hauteur / HAUTEUR_FIGURE, out = {};
     function en(u) { var k = Math.round(u / PAS); return memo[k] || (memo[k] = pivots(k * PAS) || {}); }
     pendants.forEach(function (p) {
-      var a = pendule({ longueur: p.longueur * hauteur, amorti: p.amorti, prise: p.prise, gravite: g, pivot: function (u) { return en(u)[p.cle] || [0, 0]; } }, t, { vent: vent });
-      out[p.cle] = zero(-a / DEG);
+      var a = pendule({ longueur: p.longueur * hauteur, amorti: p.amorti, prise: p.prise, gravite: g, porteurMax: PORTEUR_MAX, lissage: LISSAGE_PORTEUR,
+        pivot: function (u) { return en(u)[p.cle] || [0, 0]; } }, t, { vent: vent });
+      out[p.cle] = zero(-LIMITE_PENDANT * Math.tanh(a / DEG / LIMITE_PENDANT));
     });
     return out;
   }
