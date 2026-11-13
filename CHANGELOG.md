@@ -2,6 +2,19 @@
 
 Produit par `outils/nouveautes.js` depuis l'historique du dépôt : ne pas le modifier à la main. Les nouveautés racontées simplement sont sur la page « Nouveautés » du wiki.
 
+## 0.77.0 – 2026-11-14
+
+Vos personnages marchent maintenant pas à pas, sans glisser, et le vent peut traverser vos scènes : une écharpe qui flotte, une mallette qui se balance, une enseigne qui penche au bout de sa chaîne.
+
+### Nouveautés
+
+- Marche calculée de profil, data-demarche, démarches marche, pas-traines et course en réglages (S11 J5, 5.7)
+- Ressorts, pendules et vent sans état, piste de vent M.vent, data-pendule, pendants de la plume, os en plus et milieu des particules au vent (S11 J5, 5.8)
+
+### Corrections
+
+- Pendants de la plume regardés sur planche : pivot moyenné sur 9 images, poignet gardé sous 1,5 g, angle sous 80° (la hanche de la marche calculée change de sens d'un coup à chaque pas ; le sac d'une enfant qui court passait au-dessus de sa main)
+
 ## 0.76.0 – 2026-11-13
 
 Vos personnages peuvent maintenant être dessinés d'un trait d'encre fin, sans visage, comme dans un carnet d'illustrateur : une personne en manteau, un enfant et une personne au travail rejoignent la galerie.
