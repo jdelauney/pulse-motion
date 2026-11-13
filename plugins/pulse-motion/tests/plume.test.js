@@ -42,13 +42,18 @@ test('plume : chaque membre fait de chemins ouverts, sans fermeture (Z), et sans
       assert.ok(papier && a && b, `${n}, ${m}`);
       assert.equal(papier.contour, 0);
       assert.ok(a.contour > 0 && b.contour > 0);
-      const points = (d) => d.slice(1).split('L').length;
-      assert.ok(points(b.d) < points(a.d) || points(a.d) < 17, `${n}, ${m} : traits arrêtés avant le bout`);
+      // Chaque trait s'arrête avant le bout, à 0,4 et 0,9 fois la largeur du membre (le papier va jusqu'au bout).
+      const pts = (d) => d.slice(1).split('L').map((q) => q.split(' ').map(Number));
+      const long = (P) => P.slice(1).reduce((x, q, i) => x + Math.hypot(q[0] - P[i][0], q[1] - P[i][1]), 0);
+      const P = pts(papier.d), H = PL.hauteur(gab(n)), largeur = (/^jambe/.test(m) ? 0.044 : /^bras/.test(m) ? 0.038 : 0.03) * H;
+      assert.ok(Math.abs(long(P.slice(0, 17)) - long(pts(a.d)) - 0.4 * largeur) < 0.1, `${n}, ${m} : premier trait arrêté à 0,4 fois la largeur`);
+      assert.ok(Math.abs(long(P.slice(17).reverse()) - long(pts(b.d)) - 0.9 * largeur) < 0.1, `${n}, ${m} : second trait arrêté à 0,9 fois la largeur`);
     }
   }
   // Aucun filtre : ni dans le module, ni dans ses tracés (le tremblé est tiré au tracé par main-levee.js).
   const code = lire('moteur', 'habillage-plume.js').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
-  assert.doesNotMatch(code, /filter|feTurbulence|feDisplacement|mix-blend|backdrop/i);
+  // (Array.prototype.filter n'est pas un filtre : seuls comptent l'attribut, la propriété CSS et les primitives SVG.)
+  assert.doesNotMatch(code, /fe[A-Z][a-zA-Z]+|['"]filter['"]|filter\s*:|url\(#|mix-blend|backdrop/);
   assert.match(code, /\.graine\(/);
   assert.match(code, /\.alea\(/);
   assert.match(code, /pasEbullition/);

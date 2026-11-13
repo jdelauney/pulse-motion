@@ -241,7 +241,8 @@ test('habillages : un habillage inconnu est refusé avec la liste du registre', 
   const liste = `habillages : ${HAB.NOMS.join(', ')} ; ${HAB.DEFAUT} par défaut`;
   // 0.76.0 (S11 J4) : l'habillage plume rejoint le registre.
   assert.equal(liste, 'habillages : pieces, batonnets, plume ; pieces par défaut');
-  for (const inconnu of ['plume', 'constructor', '']) {
+  // 0.76.0 : « plume » est maintenant connu (refusé sur un dessin d'une autre manière : plume.test.js) ; « pixel » ne l'est pas.
+  for (const inconnu of ['pixel', 'constructor', '']) {
     const r = essai(`<div data-personnage="touffu" data-habillage="${inconnu}"></div>`);
     assert.deepEqual(r.erreurs.map((e) => e.message), [`Scène « s » : personnage « touffu » : data-habillage="${inconnu}" inconnu (${liste}).`], inconnu);
     // La page assemblée malgré l'erreur le dessine dans l'habillage par défaut : celui-ci est embarqué.
