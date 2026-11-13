@@ -13,7 +13,7 @@
  *        sortie/cartes/planche.png
  *
  * Dans une scène : <svg data-carte="monde" data-carte-pays="FR,DE" data-carte-cadre="auto"> (references/cartes.md).
- * Code 1 si rien n'est trouvé ou si les fonds ne sont pas livrés.
+ * Code 1 si rien n'est trouvé ou si un fond manque (installation incomplète).
  */
 const fs = require('node:fs');
 const os = require('node:os');
@@ -26,7 +26,7 @@ const USAGE = 'Usage : pulse-motion cartes chercher <mots…> | afficher <carte>
 const SANS_NAVIGATEUR = 'Chrome ou Edge introuvable : la planche se dessine dans un navigateur. Lancez « pulse-motion outils » pour voir quoi installer.';
 const LARGEUR = 1280;
 
-const pasDeDonnees = () => `Les cartes ne sont pas encore utilisables : ${C.SANS_DONNEES}.`;
+const pasDeDonnees = () => `Les cartes ne sont pas utilisables : ${C.SANS_DONNEES}.`;
 
 function carteOuErreur(nom) {
   if (!C.cartesConnues().includes(nom)) return { erreur: `Carte « ${nom} » inconnue : ${C.cartesConnues().join(' ou ')}.` };

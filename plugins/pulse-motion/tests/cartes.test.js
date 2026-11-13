@@ -1,7 +1,8 @@
 'use strict';
 /* Spec « Lacunes créatives » (S9), 5.10 : cartes de pays et de régions. Outil du mainteneur (projection, topologie, fusion des
  * départements, encarts), moteur (projeter, arc), assemblage (cadre, pays, repères, liaisons), contrôles, crédits, commande.
- * Fonds d'essai inventés (tests/aide/fonds-essai.js) : les fonds de Natural Earth ne sont pas encore livrés. */
+ * Fonds d'essai inventés (tests/aide/fonds-essai.js), aux formes simples : les fonds livrés de Natural Earth sont vérifiés à part
+ * (tests/cartes-livrees.test.js). */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -218,13 +219,13 @@ test('assembler : une page sans carte n\'embarque rien de cartes/', () => {
   assert.doesNotMatch(L.credits({ projet: dir2, deroule: lireDeroule(dir2).deroule, assemblage: assembler(dir2) }).texte, /Natural Earth/);
 });
 
-test('cartes : sans fonds livrés, carte-inconnue le dit ; commande chercher et afficher', async () => {
+test('cartes : fond absent du plugin, carte-inconnue le dit ; commande chercher et afficher', async () => {
   const vide = dossierTemporaire('pm-cartes-vides-');
   process.env.PM_CARTES_DOSSIER = vide;
   try {
     const r = assembler(projet('<svg data-carte="monde"></svg>'));
     const e = r.erreurs.find((x) => x.regle === 'carte-inconnue');
-    assert.ok(e && /pas encore livrés/.test(e.message), JSON.stringify(r.erreurs));
+    assert.ok(e && /manque dans Pulse Motion/.test(e.message) && /réinstaller/.test(e.message), JSON.stringify(r.erreurs));
     assert.equal(C.donneesPresentes(), false);
   } finally {
     process.env.PM_CARTES_DOSSIER = fonds.dossier;

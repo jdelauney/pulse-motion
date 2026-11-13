@@ -6,7 +6,8 @@
 - Deux cartes : `monde` (pays, codes ISO à deux lettres : `FR`, `DE`, `CA`…) et `france` (13 régions et 5 d'outre-mer en encarts : `ARA`, `BFC`, `BRE`, `CVL`, `COR`, `GES`, `HDF`, `IDF`, `NOR`, `NAQ`, `OCC`, `PDL`, `PAC`, `GUA`, `MTQ`, `GUF`, `REU`, `MYT`).
 - **Trouver** un pays, une région ou une ville : `pulse-motion cartes chercher <nom>` (en français, sans souci d'accents). Un lieu absent se donne par ses coordonnées, « latitude,longitude ».
 - **Montrer avant d'écrire** : `pulse-motion cartes planche monde --pays FR,DE,ES --ouvrir`, regarder l'image (`Read`), puis la décrire à la personne en mots.
-- Si `pulse-motion cartes` répond que les fonds ne sont pas encore livrés, le dire à la personne et proposer une autre mise en forme (liste, icônes) : jamais de carte dessinée à la main.
+- Si `pulse-motion cartes` répond qu'un fond manque (installation abîmée), le dire à la personne, proposer de mettre à jour Pulse Motion, ou une autre mise en forme (liste, icônes) : jamais de carte dessinée à la main.
+- **Format vertical** : le cadre `auto` suit la boîte des lieux, souvent plus large que haute ; en 9:16, la carte n'occupe alors qu'une bande au milieu. Resserrer le cadre (moins de pays, un pays, la carte de France) ou poser la carte dans la moitié haute, et regarder l'image.
 
 ## Poser une carte
 
@@ -48,7 +49,7 @@
 
 ## Ce que le contrôle signale
 
-- `carte-inconnue` : carte autre que `monde` ou `france`, ou fonds pas encore livrés.
+- `carte-inconnue` : carte autre que `monde` ou `france`, ou fond absent du plugin (installation abîmée).
 - `pays-inconnu` : code ou nom absent de la carte ; le message donne les noms proches.
 - `ville-inconnue` : ville absente ; noms proches, ou donner ses coordonnées.
 - `carte-invalide` : cadre inconnu, continent sur la carte de France, liaison illisible, coordonnées hors de la Terre.

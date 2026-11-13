@@ -268,7 +268,7 @@ Les cartes de `pulse-motion reference cartes` et les animations de `pulse-motion
 
 | Règle | Ce qui la déclenche | Gravité | Corrigé seul ? | Que faire |
 |---|---|---|---|---|
-| `carte-inconnue` | `data-carte` autre que `monde` ou `france`, ou fonds de carte pas encore livrés avec le plugin | **erreur** | non | `monde` ou `france` ; sans fonds, une autre mise en forme (liste, icônes) |
+| `carte-inconnue` | `data-carte` autre que `monde` ou `france`, ou fond de carte absent du plugin (installation abîmée) | **erreur** | non | `monde` ou `france` ; fond absent : mettre à jour Pulse Motion, ou une autre mise en forme (liste, icônes) |
 | `pays-inconnu` | Un code ou un nom de `data-carte-pays` ou de `<path data-pays>` absent de la carte (le message donne les noms proches) | **erreur** | non | `pulse-motion cartes chercher <nom>` |
 | `ville-inconnue` | Un repère ou un bout de liaison qui n'est ni une ville connue, ni un pays, ni des coordonnées | **erreur** | non | Un nom proche, ou « latitude,longitude » |
 | `carte-invalide` | Cadre inconnu, continent sur la carte de France, liaison illisible (« départ→arrivée »), coordonnées hors de la Terre | **erreur** | non | Corriger l'attribut nommé |

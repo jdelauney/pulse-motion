@@ -28,7 +28,8 @@ const K = require('../../moteur/cartes.js');
 const P = require('../../moteur/proches.js');
 
 const CARTES = ['monde', 'france'];
-const SANS_DONNEES = 'les fonds de carte ne sont pas encore livrés avec Pulse Motion (données Natural Earth à préparer par le mainteneur, voir cartes/PROVENANCE.md du plugin)';
+// Les fonds sont livrés avec le plugin (cartes/PROVENANCE.md) : s'il en manque un, l'installation est abîmée.
+const SANS_DONNEES = 'le fond de carte manque dans Pulse Motion (dossier cartes/ du plugin incomplet) : mettre à jour ou réinstaller Pulse Motion';
 const dossierCartes = () => process.env.PM_CARTES_DOSSIER || path.join(__dirname, '..', '..', 'cartes');
 const cache = new Map();
 
@@ -101,7 +102,7 @@ function resoudreLieu(carte, valeur, villes) {
   }
   const z = zoneDe(carte, v);
   if (z) return { ok: true, x: z.centre[0], y: z.centre[1], boite: z.boite, nom: z.nom };
-  if (!villes) return { ok: false, regle: 'ville-inconnue', message: `lieu « ${v} » inconnu, et les villes ne sont pas encore livrées : donner ses coordonnées (latitude,longitude), ou le code d'un pays.` };
+  if (!villes) return { ok: false, regle: 'ville-inconnue', message: `lieu « ${v} » inconnu, et la liste des villes manque dans Pulse Motion (cartes/villes.json) : donner ses coordonnées (latitude,longitude), ou le code d'un pays.` };
   const n = plat(v);
   const trouvees = villes.villes.filter((x) => plat(x.nom) === n);
   // Même nom dans plusieurs pays : la ville de la carte (France pour la carte de France), puis la plus peuplée.
