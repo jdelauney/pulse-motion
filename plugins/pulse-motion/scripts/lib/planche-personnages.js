@@ -13,7 +13,13 @@ const { pathToFileURL } = require('node:url');
 const MOTEUR = path.resolve(__dirname, '..', '..', 'moteur');
 // Modules du moteur des planches et de l'atelier : les habillages et leur registre (moteur/personnages/habillages.js).
 const HAB = require('../../moteur/personnages/habillages.js');
-const MODULES = ['courbes.js', 'squelette.js', 'vivant.js', 'clips.js', ...HAB.fichiers(), 'personnages/habillages.js'];
+// Avec les modules dont les habillages ont besoin (main-levee.js pour la plume).
+const MODULES = ['courbes.js', 'squelette.js', 'vivant.js', 'clips.js', ...HAB.besoins('modules'), ...HAB.fichiers(), 'personnages/habillages.js'];
+// Habillage d'une planche : celui de la manière du dessin (pièces par défaut), bâtonnets sans dessin ; fond de papier pour un
+// habillage à l'encre (plume).
+const habillageDe = (dessin) => (dessin ? HAB.habillageDe(dessin) : HAB.sansDessin()[0]);
+const FONDS = { sombre: { fond: '#1C1923', texte: '#A19BAF', sol: '#5B3862' }, clair: { fond: '#FDFCF8', texte: '#55524A', sol: '#C9C2B4' } };
+const fondDe = (nom) => FONDS[HAB.habillages[nom].fondClair ? 'clair' : 'sombre'];
 const CELLULE = 200, MARGE = 110, ENTETE = 40, ECHELLE = 0.42;
 const SANS_NAVIGATEUR = 'Chrome ou Edge introuvable : la planche se dessine dans un navigateur. Lancez « pulse-motion outils » pour voir quoi installer.';
 
@@ -33,12 +39,13 @@ function pagePlanche({ nom, type, objet, lu, gabarit, vues, images, dessin = nul
   const temps = instants(type, objet, images);
   const largeur = MARGE + temps.length * CELLULE;
   const hauteur = ENTETE + vues.length * CELLULE;
-  const donnees = { nom, type, objet, dessin, bib: { poses: lu.poses, clips: lu.clips, gabarits: lu.gabarits, expressions: lu.expressions }, gabarit, vues, temps, boucle: !!objet.boucle,
+  const habillage = habillageDe(dessin), fond = fondDe(habillage);
+  const donnees = { nom, type, objet, dessin, habillage, sol: fond.sol, bib: { poses: lu.poses, clips: lu.clips, gabarits: lu.gabarits, expressions: lu.expressions }, gabarit, vues, temps, boucle: !!objet.boucle,
     CELLULE, MARGE, ENTETE, ECHELLE };
   const modules = MODULES.map((m) => `<script>\n${enLigne(fs.readFileSync(path.join(MOTEUR, m), 'utf8'))}\n</script>`).join('\n');
   const html = `<!doctype html>
 <html lang="fr"><head><meta charset="utf-8"><title>Planche : ${nom}</title>
-<style>html,body{margin:0;background:#1C1923}svg{display:block}text{font:500 15px system-ui,sans-serif;fill:#A19BAF}</style></head>
+<style>html,body{margin:0;background:${fond.fond}}svg{display:block}text{font:500 15px system-ui,sans-serif;fill:${fond.texte}}</style></head>
 <body><svg id="planche" xmlns="http://www.w3.org/2000/svg" width="${largeur}" height="${hauteur}" viewBox="0 0 ${largeur} ${hauteur}"></svg>
 <script type="application/json" id="pm-planche-donnees">${JSON.stringify(donnees).replace(/</g, '\\u003c')}</script>
 ${modules}
@@ -60,7 +67,7 @@ ${modules}
     texte(12, sol - D.CELLULE / 2 + 20, 'vue ' + vue + '°', 'start');
     var ligne = document.createElementNS(NS, 'rect');
     ligne.setAttribute('x', D.MARGE); ligne.setAttribute('y', sol); ligne.setAttribute('width', D.temps.length * D.CELLULE); ligne.setAttribute('height', 3);
-    ligne.setAttribute('fill', '#5B3862'); svg.appendChild(ligne);
+    ligne.setAttribute('fill', D.sol); svg.appendChild(ligne);
     D.temps.forEach(function (t, j) {
       var pose;
       if (D.type === 'pose') pose = K.resoudrePose(D.objet, D.bib);
@@ -68,7 +75,7 @@ ${modules}
       else pose = K.echantillonner(D.objet, t, D.bib, D.gabarit);
       var g = document.createElementNS(NS, 'g');
       svg.appendChild(g);
-      var perso = D.dessin ? M.pieces.creer(g, D.dessin, D.gabarit) : M.batonnets.creer(g);
+      var perso = M.habillages[D.habillage].creer(g, D.dessin, D.gabarit, { graine: (D.dessin ? D.dessin.nom : 'planche') + '/' + i + '/' + j });
       Object.assign(pose, { x: D.MARGE + j * D.CELLULE + D.CELLULE / 2, y: sol - (S.sol(D.gabarit) + 7) * D.ECHELLE, echelle: D.ECHELLE, vue: vue });
       perso.rendre(S.calculer(pose, D.gabarit));
       compte++;
@@ -125,7 +132,7 @@ ${modules}
       el('text', { x: x0 + D.CELLULE / 2, y: y0 + D.ENTETE - 12, 'text-anchor': 'middle' }, svg).textContent = col.etiquette;
       var cellule = el('svg', { x: x0, y: y0 + D.ENTETE, width: D.CELLULE, height: D.CELLULE }, svg);
       var g = el('g', {}, cellule);
-      var perso = M.pieces.creer(g, D.dessin, D.gabarit);
+      var perso = M.habillages.pieces.creer(g, D.dessin, D.gabarit);
       var pose = Object.assign(K.resoudrePose(col.objet, D.bib), { x: 0, y: 0, echelle: 1.2, vue: ligne.vue });
       var res = S.calculer(pose, D.gabarit);
       perso.rendre(res);
@@ -165,4 +172,4 @@ async function rendrePlanche(options) {
   }
 }
 
-module.exports = { MODULES, pageVisage, colonnesVisage, CELLULE, MARGE, ENTETE, instants, pagePlanche, rendrePlanche, SANS_NAVIGATEUR };
+module.exports = { MODULES, habillageDe, pageVisage, colonnesVisage, CELLULE, MARGE, ENTETE, instants, pagePlanche, rendrePlanche, SANS_NAVIGATEUR };

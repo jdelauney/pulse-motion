@@ -3,7 +3,7 @@
  * Affichage et gestes seulement : toutes les règles d'édition sont dans edition.mjs. Les modules du moteur
  * (M.squelette, M.clips, les habillages et leur registre M.habillages) sont chargés avant ce module par atelier.html.
  * Habillages proposés : ceux du registre qui se dessinent sans dessin (bâtonnets), puis chaque dessin, dans l'habillage
- * par défaut du registre (pièces).
+ * de sa manière (plume), sinon l'habillage par défaut du registre (pièces) ; fond de papier pour un habillage à l'encre.
  * Crochets de test : window.__atelier (ed, rendre, enregistrer, poignee, pret) ; window.__atelierConfirmer remplace confirm().
  */
 import { creerEdition, nouvelObjet, PAS_IMAGE } from './edition.mjs';
@@ -12,6 +12,8 @@ const { squelette: S, clips: K, habillages: HAB } = window.M;
 // Registre des habillages (moteur/personnages/habillages.js) : ceux qui se dessinent sans dessin, et celui d'un dessin.
 const SEULS = Object.keys(HAB).filter((n) => HAB[n].sansDessin);
 const DEFAUT = Object.keys(HAB).find((n) => HAB[n].parDefaut);
+/** Habillage d'un dessin : celui de sa manière, sinon l'habillage par défaut. */
+const habillageDe = (d) => Object.keys(HAB).find((n) => HAB[n].maniere && d && HAB[n].maniere === d.maniere) || DEFAUT;
 const NS = 'http://www.w3.org/2000/svg';
 const DEG = Math.PI / 180;
 const X = 450, SOL = 500, ECHELLE = 1.1;
@@ -107,9 +109,10 @@ const svg = $('#scene');
 let perso;
 let fantomes;
 function creerUn(g) {
-  return sansDessin() ? HAB[habillage].creer(g, null, null, {}) : HAB[DEFAUT].creer(g, lu.dessins[habillage], gabaritDessin(lu.dessins[habillage]), {});
+  return sansDessin() ? HAB[habillage].creer(g, null, null, {}) : HAB[habillageDe(lu.dessins[habillage])].creer(g, lu.dessins[habillage], gabaritDessin(lu.dessins[habillage]), {});
 }
 function creerPersos() {
+  svg.style.background = HAB[sansDessin() ? habillage : habillageDe(lu.dessins[habillage])].fondClair ? '#fdfcf8' : '';
   $('#perso').replaceChildren();
   $('#fantomes').replaceChildren();
   perso = creerUn($('#perso'));

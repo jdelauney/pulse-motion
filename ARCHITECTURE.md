@@ -65,7 +65,7 @@ L'agent `animateur` (`agents/animateur.md`) écrit une scène à la fois : un fi
 | `audio.js`, `mixage.js`, `synthe/`, `sonie.js` | Un seul mixage hors temps réel (voix, musique composée, bruitages), baisse de la musique sous la voix, sonie |
 | `sous-titres.js`, `sous-titres-rendu.js` | Cartons de sous-titres calés sur les mots |
 | `particules/` | Effets de particules simulés à graine (recettes de `effets/`) |
-| `personnages/`, `squelette.js`, `clips.js`, `vivant.js`, `habillage-*.js` | Personnages : squelette 2.5D, poses, mouvements, expressions, habillages (registre unique `personnages/habillages.js` : la scène, la validation, l'assemblage et l'atelier y lisent leur liste) |
+| `personnages/`, `squelette.js`, `clips.js`, `vivant.js`, `habillage-*.js` | Personnages : squelette 2.5D, poses, mouvements, expressions, habillages (registre unique `personnages/habillages.js` : la scène, la validation, l'assemblage et l'atelier y lisent leur liste ; `habillage-plume.js` : trait d'encre des dessins de la manière « plume », tremblé tiré par `dessin/main-levee.js`, groupe `main-levee` du moteur à la carte) |
 | `ecran.js`, `pointeur.js`, `film.js`, `blocs/`, `cadres/` | Écrans des tutoriels de logiciel : application filmée lue image par image, pointeur, clics, projecteur |
 | `dessin/` | Calque de dessin des vidéos explicatives : flèches, annotations, tracé à main levée, graphiques, code |
 | `mouvements.css`, `base.css`, `ecran.css` | Classes communes à tous les styles (`pm-m-*` du dictionnaire), mise en page de base |
@@ -89,7 +89,7 @@ Les réglages par usage (web, réseaux, présentation, master, courriel, brouill
 
 - **Aperçu** (`scripts/apercu.js`) : serveur local sur 127.0.0.1 seulement, derrière une garde commune (`scripts/lib/garde-locale.js`) ; il surveille le projet et recharge la page à la même position.
 - **Historique** (`scripts/historique.js`) : une copie avant chaque retouche, annuler, rétablir, versions nommées, avant / après (`scripts/planche-retouche.js`).
-- **Planches** : images de la vidéo que Claude regarde pour juger son travail (`scripts/regard.js`), et l'agent `critique` qui relit la vidéo comme un spectateur. Le rendu y est aussi mesuré contre son style (`scripts/lib/mesure-style.js` : couleurs, clé, chaleur, part saturée, teintes, main, médias de la personne masqués ; attendu tiré de la charte, du style et de `identite.couleur.mesure`) dans `sortie/regard/style.json`, dont le contrôle reprend les avis et que le critique note sur son 9ᵉ axe, `style`.
+- **Planches** : images de la vidéo que Claude regarde pour juger son travail (`scripts/regard.js`), et l'agent `critique` qui relit la vidéo comme un spectateur. Le rendu y est aussi mesuré contre son style (`scripts/lib/mesure-style.js` : couleurs, clé, chaleur, part saturée, teintes, main, médias de la personne masqués ; attendu tiré de la charte, du style et de `identite.couleur.mesure`) dans `sortie/regard/style.json`, dont le contrôle reprend les avis et que le critique note sur son 9ᵉ axe, `style`. Pour regarder de près une marche ou une interaction, la planche qui suit un élément (`scripts/planche-suivre.js`, `planche --suivre`) le recadre à chaque image et l'agrandit quatre fois sans lissage.
 - **État** (`.pulse-motion/etat.json` dans le projet) : l'étape de la vidéo, pour `/pulse-motion:reprendre`.
 
 ## 2. La charte et ses variables

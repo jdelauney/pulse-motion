@@ -29,7 +29,8 @@ function svgs(d) {
 }
 
 test('personnages : 4 à 6 dessins livrés en plus de touffu, en au moins deux manières', () => {
-  const autres = Object.keys(lu.dessins).filter((n) => n !== 'touffu').sort();
+  // Galerie V6 (traits et pièces pleines) ; la galerie plume (spec S11, 5.6) a ses tests dans plume.test.js.
+  const autres = Object.keys(lu.dessins).filter((n) => n !== 'touffu' && lu.dessins[n].maniere !== 'plume').sort();
   assert.deepEqual(autres, [...LIVRES].sort());
   assert.ok(autres.length >= 4 && autres.length <= 6);
   const manieres = new Set(autres.map((n) => lu.dessins[n].maniere));
@@ -67,7 +68,7 @@ test('personnages : chaque dessin livré se valide contre son gabarit (personnag
   }
   const r = spawnSync(process.execPath, [path.join(RACINE, 'scripts', 'pm.js'), 'personnages', 'verifier'], { encoding: 'utf8' });
   assert.equal(r.status, 0, r.stderr);
-  assert.match(r.stdout, /7 dessins, aucune erreur/);
+  assert.match(r.stdout, /10 dessins, aucune erreur/);
   // Le format refuse une manière inconnue et un réglage bâtonnets sur des pièces pleines, ou qui nomme une couleur absente.
   const e = (d) => P.valider('dessin', d, Object.assign({ nom: d.nom }, P.contexteDe(lu)));
   assert.match(e({ ...lu.dessins.technicien, maniere: 'aquarelle' }).join('\n'), /« maniere » : « aquarelle » inconnue/);

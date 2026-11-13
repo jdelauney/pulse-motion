@@ -77,7 +77,8 @@ test('moteur-groupes-selon-le-deroule : chaque groupe selon les données et les 
   assert.deepEqual(g({}, ['<p data-son="pop">']), ['tronc', 'synthe'], 'bruitage nommé');
   assert.deepEqual(g({}, ['<p data-son="fichier:pm-son-fichier-0">']), ['tronc', 'synthe'], 'son importé : le synthé prépare son bruit');
   // Personnages : avec eux, les habillages (registre, spec S11 5.1) ; tous sans la liste de ceux d'une scène.
-  assert.deepEqual(g({ personnages: { dessins: {} } }), ['tronc', 'personnages', 'habillage-pieces', 'habillage-batonnets']);
+  // L'habillage plume (spec S11, 5.6) amène le tracé à main levée, sans le calque de dessin.
+  assert.deepEqual(g({ personnages: { dessins: {} } }), ['tronc', 'personnages', 'habillage-pieces', 'habillage-batonnets', 'habillage-plume', 'main-levee']);
   for (const cle of ['effets', 'milieux', 'shaders']) assert.deepEqual(g({ [cle]: [{}] }), ['tronc', 'gpu'], cle);
   assert.deepEqual(g({ modules: { 'x.js': '…' } }), ['tronc', 'gpu']);
   assert.deepEqual(g({ obstacles: [{ scene: 's' }] }), ['tronc', 'gpu'], 'obstacle : formes exactes jugées par les particules');

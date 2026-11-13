@@ -43,6 +43,8 @@ Pour proposer des réponses, partir de `pulse-motion reference directions` : les
 
 ## 3. Scènes témoins
 
+Base `plume` : un coin de décor d'abord (la scène `titre` seule), regardé et accepté avant toute autre scène.
+
 1. Réécrire les scènes `titre` et `liste` du style (agent `animateur`, mode « style », une scène par agent, en parallèle).
 2. `pulse-motion style planche <nom> --scenes titre,liste --ouvrir`, et à chaque tour `pulse-motion style planche <nom> --avec-base --ouvrir` (base à gauche, style à droite) ; regarder soi-même les images (`Read`).
 3. Accord : « C'est ce que je veux (Recommandé) » · « Je veux changer quelque chose » (nouveau tour), jusqu'à l'accord.

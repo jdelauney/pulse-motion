@@ -28,9 +28,10 @@ const MOTEUR = path.join(RACINE, 'moteur');
 const JS = 'text/javascript; charset=utf-8';
 const HAB = require('../../moteur/personnages/habillages.js');
 const MARQUE_HABILLAGES = '<!-- habillages -->';
-/** Page de l'atelier : la marque <!-- habillages --> remplacée par les modules des habillages du registre, puis le registre. */
+/** Page de l'atelier : la marque <!-- habillages --> remplacée par les modules dont les habillages ont besoin (main-levee.js
+ *  pour la plume), ceux des habillages du registre, puis le registre. */
 function avecHabillages(contenu) {
-  const scripts = [...HAB.fichiers(), 'personnages/habillages.js'].map((m) => `<script src="/_pm/personnages/modules/${m}"></script>`).join('\n');
+  const scripts = [...HAB.besoins('modules'), ...HAB.fichiers(), 'personnages/habillages.js'].map((m) => `<script src="/_pm/personnages/modules/${m}"></script>`).join('\n');
   return Buffer.from(contenu.toString('utf8').replace(MARQUE_HABILLAGES, scripts), 'utf8');
 }
 const STATIQUES = {

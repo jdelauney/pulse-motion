@@ -99,17 +99,24 @@ function preparerPersonnages(html0, { scene, lu, voix = false, dureeTemps = null
       } else {
         utilises.dessins.add(nom);
         const hab = a['data-habillage'] === undefined ? null : a['data-habillage'].trim();
-        const h = HAB.connu(hab === null ? HAB.DEFAUT : hab) ? HAB.habillages[hab === null ? HAB.DEFAUT : hab] : null;
+        // Sans data-habillage : celui de la manière du dessin (plume), sinon l'habillage par défaut (registre).
+        const propre = HAB.habillageDe(lu.dessins[nom]);
+        const choisi = hab === null ? propre : hab;
+        const h = HAB.connu(choisi) ? HAB.habillages[choisi] : null;
+        const refus = h ? HAB.refus(choisi, lu.dessins[nom]) : null;
         const reglage = h && h.reglage ? lu.dessins[nom][h.reglage] : null;
-        // Habillage refusé : la page assemblée malgré l'erreur dessine le personnage dans l'habillage par défaut (scene.js).
+        // Habillage refusé : la page assemblée malgré l'erreur dessine le personnage dans son habillage propre (scene.js).
         if (!h) {
-          erreurs.push(erreur(scene, `personnage « ${nom} » : data-habillage="${hab}" inconnu (habillages : ${HAB.NOMS.join(', ')} ; ${HAB.DEFAUT} par défaut).`));
-          utilises.habillages.add(HAB.DEFAUT);
+          erreurs.push(erreur(scene, `personnage « ${nom} » : data-habillage="${hab}" inconnu (habillages : ${HAB.NOMS.join(', ')} ; ${propre} par défaut).`));
+          utilises.habillages.add(propre);
+        } else if (refus) {
+          erreurs.push(erreur(scene, `personnage « ${nom} » : data-habillage="${hab}" refusé : ${refus} ; retirer data-habillage.`));
+          utilises.habillages.add(propre);
         } else if (h.reglage && !(reglage && typeof reglage === 'object' && !Array.isArray(reglage))) {
           erreurs.push(erreur(scene, `personnage « ${nom} » : ce dessin n'a pas de réglage ${h.libelle} (« ${h.reglage} » du dessin) ; retirer data-habillage, ou choisir un dessin qui l'a.`));
-          utilises.habillages.add(HAB.DEFAUT);
+          utilises.habillages.add(propre);
         } else {
-          utilises.habillages.add(hab === null ? HAB.DEFAUT : hab);
+          utilises.habillages.add(choisi);
           // Dessins dont l'habillage demande un réglage : leur apparence va dans les données de la page.
           if (h.reglage) utilises.batonnets.add(nom);
         }

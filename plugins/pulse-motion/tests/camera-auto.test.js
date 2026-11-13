@@ -369,7 +369,7 @@ test('caméra auto : groupes du moteur (relevé à part, caméra automatique seu
   assert.deepEqual(g('<div data-camera="auto"></div>'), ['tronc', 'camera-auto', 'releve']);
   assert.deepEqual(g('<div data-camera="auto; secousse 1 2+0.2"></div>'), ['tronc', 'camera-auto', 'releve']);
   assert.deepEqual(g('<div data-camera="zoom 1→1.1 0+4"></div>'), ['tronc']);
-  assert.deepEqual(g('<i data-fleche="#a → #b"></i>'), ['tronc', 'dessin', 'releve']);
+  assert.deepEqual(g('<i data-fleche="#a → #b"></i>'), ['tronc', 'dessin', 'main-levee', 'releve']);
   // Le relevé est chargé avant le calque et la caméra automatique.
   const ordre = GM.modulesDesGroupes(['tronc', 'releve', 'dessin', 'camera-auto']);
   assert.ok(ordre.indexOf('releve.js') < ordre.indexOf('dessin/calque.js') && ordre.indexOf('releve.js') < ordre.indexOf('camera-auto-page.js'));

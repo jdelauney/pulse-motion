@@ -40,7 +40,10 @@ const GROUPES = {
   ecran: ['pointeur.js', 'film.js', 'ecran.js'],
   // Calque de dessin (spec S7) : main levée, flèches, annotations ; CSS moteur/dessin/dessin.css. Demande le relevé.
   // Graphiques et code (spec S7 J2) : dessin/graphiques.js et dessin/code.js (purs), dessin/composants.js.
-  dessin: ['dessin/main-levee.js', 'dessin/geometrie.js', 'dessin/calque.js', 'dessin/graphiques.js', 'dessin/code.js', 'dessin/composants.js'],
+  dessin: ['dessin/geometrie.js', 'dessin/calque.js', 'dessin/graphiques.js', 'dessin/code.js', 'dessin/composants.js'],
+  // Tracé à main levée à graine (spec S7, 5.3) : avec le calque de dessin, et pour le tremblé de l'habillage plume (spec S11,
+  // 5.6), qui n'a pas besoin du calque.
+  'main-levee': ['dessin/main-levee.js'],
   // Relevé de mise en page (spec S7, 5.1) : la boîte de chaque élément, pour le calque et pour la caméra automatique.
   releve: ['releve.js'],
   // Caméra automatique (spec S7, 5.8) : plan calculé (camera-auto.js, pur) et branché sur la page. Demande le relevé.
@@ -82,12 +85,13 @@ const nonVide = (x) => (Array.isArray(x) ? x.length > 0 : !!(x && typeof x === '
  *   moteur/audio.js prépare le bruit du synthétiseur dès qu'il y a un son à jouer) ;
  * - corde : une piste « corde » dans la partition de la musique (ambiances acoustique et mecanique, ou partition libre) ;
  * - personnages : donnees.personnages (une scène a data-personnage ou data-action) ; avec eux, le groupe de chaque habillage
- *   dont une scène se sert (options.habillages : noms du registre ; sans cette liste, tous les habillages) ;
+ *   dont une scène se sert (options.habillages : noms du registre ; sans cette liste, tous les habillages), et les groupes
+ *   dont ces habillages ont besoin (registre, groupes : main-levee pour la plume) ;
  * - GPU : effet, milieu, shader (fond, transition, post-traitement), module d'effet, ou obstacle (data-obstacle : le contrôle juge
  *   ses formes exactes par M.particules.formesVides) ;
  * - écran : un écran (pm-ecran) ou une de ses marques (pm-clic, pm-projecteur, pm-zoom…) dans une scène ;
  * - dessin : data-fleche, data-annoter, data-main-levee, data-graphique ou data-code dans une scène, ou un script de
- *   scène qui appelle M.dessin( ;
+ *   scène qui appelle M.dessin( ; avec lui, main-levee ;
  * - caméra automatique : data-camera="auto…" dans une scène ;
  * - relevé : avec le dessin ou la caméra automatique ;
  * - langues : la vidéo déclare sa langue (donnees.langue, spec S9 5.1) ;
@@ -113,11 +117,12 @@ function groupesDuDeroule(donnees, sections = [], scripts = [], options = {}) {
     groupes.push('personnages');
     const voulus = Array.isArray(options.habillages) ? options.habillages : HAB.NOMS;
     for (const n of HAB.NOMS) if (voulus.includes(n)) groupes.push(`habillage-${n}`);
+    for (const g of HAB.besoins('groupes', voulus)) if (!groupes.includes(g)) groupes.push(g);
   }
   const obstacles = nonVide(d.obstacles) || nonVide(d.obstaclesVideo);
   if (nonVide(d.effets) || nonVide(d.milieux) || nonVide(d.shaders) || nonVide(d.modules) || obstacles) groupes.push('gpu');
   if (sections.some((s) => usagesEcran(s).moteur)) groupes.push('ecran');
-  if (usagesDessin(textes, scripts)) groupes.push('dessin');
+  if (usagesDessin(textes, scripts)) { groupes.push('dessin'); if (!groupes.includes('main-levee')) groupes.push('main-levee'); }
   if (CAMERA_AUTO.test(textes)) groupes.push('camera-auto');
   if (/\sdata-sur-trace\s*=/.test(textes)) groupes.push('trace');
   if (/\sdata-ken-burns\s*=/.test(textes)) groupes.push('ken-burns');

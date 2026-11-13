@@ -1,0 +1,52 @@
+{
+  "nom": "passant",
+  "description": "une personne en manteau long et chapeau melon, écharpe rouge et mallette brune, au trait de plume, sans visage",
+  "maniere": "plume",
+  "gabarit": {
+    "cuisse": 68,
+    "tibia": 68,
+    "pied": 15,
+    "colonne": 70,
+    "hauteurEpaules": 64,
+    "baseTete": 79,
+    "bras": 54,
+    "avantBras": 50,
+    "demiBassin": 6,
+    "demiEpaules": 10,
+    "tete": {
+      "rx": 9.8,
+      "ry": 12.5
+    }
+  },
+  "couleurs": {
+    "echarpe": "#B3412D",
+    "mallette": "#6B4A32"
+  },
+  "plume": {
+    "cheveux": {
+      "forme": "courts",
+      "remplissage": "encre"
+    },
+    "chapeau": {
+      "forme": "melon",
+      "remplissage": "encre"
+    },
+    "objets": [
+      {
+        "forme": "mallette",
+        "main": "Avant",
+        "remplissage": "mallette"
+      }
+    ]
+  },
+  "vetements": [
+    {
+      "forme": "manteau",
+      "remplissage": "papier"
+    },
+    {
+      "forme": "echarpe",
+      "remplissage": "echarpe"
+    }
+  ]
+}

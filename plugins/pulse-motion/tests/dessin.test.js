@@ -217,7 +217,11 @@ test('dessin : dessin-invalide sur ses cas ; durées par défaut posées ; étiq
 test('dessin : moteur à la carte, le groupe « dessin » seulement si une scène dessine ; une page sans dessin n\'en porte rien', () => {
   // S7 J2 : graphiques et code s'ajoutent au groupe (dessin/graphiques.js, dessin/code.js, dessin/composants.js).
   // S7 J3 : le relevé forme son propre groupe, chargé avec le dessin comme avec la caméra automatique.
-  assert.deepEqual(GM.GROUPES.dessin.slice(0, 3), ['dessin/main-levee.js', 'dessin/geometrie.js', 'dessin/calque.js']);
+  // Main levée dans son groupe (spec S11, 5.6 : le tremblé de la plume s'en sert sans le calque), toujours avec le dessin.
+  assert.deepEqual(GM.GROUPES['main-levee'], ['dessin/main-levee.js']);
+  assert.deepEqual(GM.GROUPES.dessin.slice(0, 2), ['dessin/geometrie.js', 'dessin/calque.js']);
+  assert.ok(GM.groupesDuDeroule({}, ['<section><i data-fleche="#a → #b"></i></section>']).includes('main-levee'));
+  assert.ok(GM.modulesDesGroupes(['tronc', 'dessin', 'main-levee']).indexOf('dessin/main-levee.js') < GM.modulesDesGroupes(['tronc', 'dessin', 'main-levee']).indexOf('dessin/calque.js'));
   assert.deepEqual(GM.GROUPES.releve, ['releve.js']);
   assert.ok(GM.groupesDuDeroule({}, ['<section><i data-fleche="#a → #b"></i></section>']).includes('releve'));
   for (const m of GM.GROUPES.dessin) assert.ok(GM.MODULES.includes(m) && fs.existsSync(path.join(RACINE, 'moteur', m)), m);

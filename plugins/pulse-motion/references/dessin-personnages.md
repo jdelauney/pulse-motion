@@ -3,10 +3,11 @@
 ## L'essentiel
 
 - Un personnage dessiné est un fichier `personnages/dessins/<nom>.json` dans le dossier de la vidéo : un SVG par os (« pièce »), et par vue. Il s'anime avec les mêmes poses et mouvements que les bâtonnets.
-- Partir d'un exemple : `pulse-motion personnages afficher <nom> --type dessin`. Garder sa structure, changer les formes et les couleurs. Deux manières (`"maniere"`) :
+- Partir d'un exemple : `pulse-motion personnages afficher <nom> --type dessin`. Garder sa structure, changer les formes et les couleurs. Trois manières (`"maniere"`) :
   - **« traits »** : membres en bâtonnets arrondis d'épaisseur constante, tête en ellipse, une couleur de corps (`touffu`, `ecoliere`, `soignant`, `grand-mere`) ; son réglage `batonnets` (`{ "couleurs": { "corps": "corps", "touffe": "cheveux" }, "epaisseur": 12 }`, chaque couleur nomme une couleur du dessin) donne le même personnage en bâtonnets (`data-habillage="batonnets"` dans la scène) ;
   - **« pièces pleines »** : tenue et volumes dessinés par pièce, peau, mains (`technicien`, `cuisiniere`, `guide`) ; membres éloignés assombris : `fill='color-mix(in srgb, var(--tenue) 70%, var(--teinte-loin, var(--tenue)))'` avec une couleur `dos` sombre.
-- Personnages livrés, à proposer avant d'en dessiner un : `touffu`, `ecoliere` (enfant), `soignant` (grand et mince), `grand-mere` (personne âgée), `technicien` (carré), `cuisiniere` (petite et ronde), `guide` (années 50, aplats décalés de leur trait cassé, fait pour le style `mode-d-emploi`).
+  - **« plume »** : un trait d'encre fin et un peu tremblé sur papier, membres ouverts, **sans visage** (`passant`, `enfant`, `ouvrier`) ; ni pièces ni visage à dessiner : un réglage (section « Manière plume »).
+- Personnages livrés, à proposer avant d'en dessiner un : `touffu`, `ecoliere` (enfant), `soignant` (grand et mince), `grand-mere` (personne âgée), `technicien` (carré), `cuisiniere` (petite et ronde), `guide` (années 50, aplats décalés de leur trait cassé, fait pour le style `mode-d-emploi`) ; au trait de plume : `passant` (manteau, chapeau melon, écharpe, mallette), `enfant` (robe, couettes, sac), `ouvrier` (casquette, pantalon sombre, sac de toile).
 - Chaque pièce se dessine **« os debout »** : le pivot (l'articulation de départ) est en (0, 0), l'os descend vers +y sur sa longueur. Le moteur le tourne et l'allonge lui-même.
 - Le **profil** (personnage tourné vers la droite) est obligatoire ; ajouter `face` (et `troisQuarts`, `dos`) seulement si le personnage doit se tourner vers la caméra. La vue de gauche est le miroir de celle de droite.
 - Formes permises : `g`, `path`, `circle`, `ellipse`, `rect`, `polygon`, `polyline`, `line`, avec des attributs de dessin. Pas de texte, d'image, de style, de script, de `url(`.
@@ -62,3 +63,23 @@ Même repère que l'os (tête : centre de la tête). `devant: false` (par défau
 - Formes simples, peu de points ; un trait d'épaisseur constante (`var(--trait)`, 3 à 4).
 - D'abord le profil complet, puis la face, puis le 3/4 si le personnage tourne souvent.
 - Garder le style de la vidéo (couleurs de la charte quand c'est possible). Un style d'aplats décalés (`mode-d-emploi`) : chaque pièce a sa couleur dans un `<g transform='translate(2.6 2)'>` et son trait par-dessus, en tirets irréguliers (`stroke-dasharray`), comme `guide`.
+
+## Manière plume
+
+Le dessin ne porte que des réglages ; l'habillage plume trace tout, à 1,4 % de la hauteur de la figure :
+
+```json
+{ "maniere": "plume", "gabarit": { "cuisse": 68, "tibia": 68, "colonne": 70, "baseTete": 79, "bras": 54, "avantBras": 50, "tete": { "rx": 9.8, "ry": 12.5 } },
+  "couleurs": { "echarpe": "#B3412D" },
+  "plume": { "traits": 2, "remplissages": { "jambes": "encre" }, "cheveux": { "forme": "courts" }, "chapeau": { "forme": "melon" },
+             "objets": [{ "forme": "mallette", "main": "Avant", "remplissage": "papier" }] },
+  "vetements": [{ "forme": "manteau" }, { "forme": "echarpe", "remplissage": "echarpe" }] }
+```
+
+- Remplissages : `papier` (la forme cache ce qui est derrière), `encre` (petites parties sombres, pantalon), ou une couleur de `couleurs` (un aplat, sur une petite surface). Peu de couleur : une ou deux, pas plus.
+- `cheveux` : `courts`, `chignon`, `couettes` ; `chapeau` : `melon`, `casquette` ; `vetements` : `manteau` ou `robe` (un seul), `jupe`, `echarpe` ; `objets` : `sac`, `mallette`, un par main. Le caractère vient des cheveux, du chapeau et de la silhouette, jamais d'un visage.
+- Proportions : tête d'environ 1/9,5 de la hauteur pour un adulte (1/6 pour un enfant), bras d'environ 0,44 fois la hauteur (la main tombe sur la cuisse), jambes du gabarit standard (68 et 68) pour que la marche pose les pieds juste.
+- `traits: 1` : un seul trait par membre et une tête en disque (bonshommes au trait).
+- Les vêtements suivent les hanches, les genoux et les chevilles : l'ourlet s'ouvre avec le pas. L'écharpe et les objets pendent droit.
+- **Une figure d'abord** : en manière plume, dessiner **une seule** figure, la montrer sur sa planche (`pulse-motion personnages planche marche --dessin <nom> --vues 0,45,90,-90,180 --dossier .`), et attendre l'accord de la personne avant d'en dessiner d'autres. Un ensemble fait d'un coup revient banal ; une figure réussie fixe le niveau.
+- Pas de planche du visage (il n'y en a pas). De près : `pulse-motion planche . --suivre <nom>` dans une scène où il marche.
