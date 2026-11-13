@@ -33,12 +33,15 @@
  * 0.75.0 (S11 J3, fidèle au style) : style 6 550 → 6 620 o (polices de la base ou ses alternatives, jamais une police trop vue
  * sauf charte), retoucher 15 000 → 15 050 o (« une autre police » sans précision : les alternatives du style) ; critique tenu
  * (9ᵉ axe style, corps ≤ 3 500 o).
+ * 0.76.0 (S11 J4, plume) : « une figure d'abord » (spec S11, 5.6 point 7) : dessiner-personnage 4 650 → 5 000 o (manière plume :
+ * une seule figure, sa planche, l'accord avant les autres ; le format vit dans la référence dessin-personnages), style
+ * 6 620 → 6 750 o (base plume : un coin de décor d'abord) ; animateur et critique tenus.
  */
 const PLAFONDS = {
   'skills/animer-personnage/SKILL.md': 6050, 'skills/atelier-particules/SKILL.md': 2272, 'skills/atelier-personnages/SKILL.md': 3529,
-  'skills/creer/SKILL.md': 24150, 'skills/decouper-personnage/SKILL.md': 4020, 'skills/dessiner-personnage/SKILL.md': 4650,
+  'skills/creer/SKILL.md': 24150, 'skills/decouper-personnage/SKILL.md': 4020, 'skills/dessiner-personnage/SKILL.md': 5000,
   'skills/exporter/SKILL.md': 6810, 'skills/filmer/SKILL.md': 11500, 'skills/outils/SKILL.md': 7200, 'skills/reprendre/SKILL.md': 3180,
-  'skills/retoucher/SKILL.md': 15050, 'skills/style/SKILL.md': 6620, 'skills/voix/SKILL.md': 5350,
+  'skills/retoucher/SKILL.md': 15050, 'skills/style/SKILL.md': 6750, 'skills/voix/SKILL.md': 5350,
   'agents/animateur.md': 6000, 'agents/critique.md': 3800,
 };
 

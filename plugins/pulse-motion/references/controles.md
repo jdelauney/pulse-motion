@@ -129,7 +129,7 @@ Jamais corrigé seul : la méthode et les chiffres sont dans `pulse-motion refer
 
 `vie-sans-duree`, `mouvement-ecrase` et `cogne-sans-tempo` se lisent dans le HTML des scènes (contrôles rapides, et dès qu'une scène est écrite). Comment les autres se mesurent : les poses des personnages (sans `regarder` ni `atteindre`) sont calculées toutes les 0,0166667 s (`pasPersonnages`), soit 60 fois par seconde, hors transitions ; la caméra, à la cadence de la vidéo ; les animations, une fois par scène. Aucun calcul de mise en page par image. Ce sont des poses et des courbes qu'on juge : une image qui ne change pas se voit aux pixels (`image-figee`).
 
-Pour regarder un geste image par image : `pulse-motion planche . <scène> --de <s> --duree <s> [--pas <n>]` (3 s au plus, 10 vignettes de 192 px par ligne, dans `sortie/planche/`).
+Pour regarder un geste image par image : `pulse-motion planche . <scène> --de <s> --duree <s> [--pas <n>]` (3 s au plus, 10 vignettes de 192 px par ligne, dans `sortie/planche/`). Pour suivre de près un élément qui bouge (marche, interaction) : `pulse-motion planche . --suivre <personnage|sélecteur> [--scene <id>] [--de <s>] [--duree <s>] [--pas <n>]` (cadre centré sur l'élément à chaque image, agrandi 4 fois sans lissage, images exactes de l'horloge ; `sortie/planche/suivre-<cible>.png`).
 
 ## Pixels
 

@@ -24,7 +24,9 @@ Dessiner (ou retoucher) un personnage en pièces SVG qui s'anime avec les poses 
 
 ## 2. Dessiner
 
-Écrire `personnages/dessins/<nom>.json` :
+**Manière « plume »** (trait d'encre sans visage, comme `passant`) : seulement des réglages (`dessin-personnages`, section « Manière plume »). **Une figure d'abord** : en dessiner une seule, la montrer sur sa planche (étape 3, `--vues 0,45,90,-90,180`, sans planche du visage) et attendre l'accord de la personne avant d'en dessiner d'autres.
+
+Sinon, écrire `personnages/dessins/<nom>.json` :
 
 - profil complet d'abord (obligatoire), puis `face` (et `dos`, `troisQuarts` si le personnage se tourne) ;
 - couleurs en variables (`couleurs`), réutilisées par toutes les pièces (« change sa tenue en rouge » = changer une couleur, sans redessiner) ;
