@@ -327,6 +327,7 @@ Le contrôle signale aussi, avec un message qui dit quoi faire : un texte du dé
 | `reglage-invalide` | Un réglage d'effet ou de shader hors de sa plage | erreur | non | Prendre une valeur de la plage du message |
 | `obstacle-introuvable`, `obstacles-video`, `trop-d-obstacles` | Obstacle de particules mal désigné, obstacles de vidéo mal écrits, ou trop d'obstacles (les premiers sont gardés) | erreur ; alerte pour le nombre | non | `pulse-motion reference particules/collisions` |
 | `personnage-invalide` | Personnage, groupe ou action mal écrits, ou bouche sans voix | erreur ou alerte | non | `pulse-motion reference moteur/personnages` ; gardé dans la bibliothèque personnelle (le message le dit) : le copier d'abord (`pulse-motion personnages utiliser <nom> --dossier .`) |
+| `physique-invalide` | `data-vent` (calme, brise, rafales, tempete), `data-vent-dir` (degrés) ou `data-pendule` (« longueur amorti ») mal écrits ; vent posé ailleurs que sur la section de la scène, pendule ailleurs que sur un groupe SVG ; direction sans force (alerte) | erreur ou alerte | non | `pulse-motion reference physique` |
 
 ## Dire ce qui est voulu
 
