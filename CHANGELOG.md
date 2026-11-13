@@ -2,6 +2,22 @@
 
 Produit par `outils/nouveautes.js` depuis l'historique du dépôt : ne pas le modifier à la main. Les nouveautés racontées simplement sont sur la page « Nouveautés » du wiki.
 
+## 0.75.0 – 2026-11-13
+
+Pulse Motion vérifie maintenant que votre vidéo ressemble à son style : couleurs, clarté et matière sont mesurées, et le relecteur le note. Chaque style propose aussi deux autres polices libres.
+
+### Nouveautés
+
+- Le rendu mesuré contre son style (S11 J3, 5.4)
+- Couleur.mesure des 20 styles, d'après leurs vidéos témoins
+- 9e axe style, preuve citant une mesure de style.json
+- Typographie des styles (S11 J3, 5.5)
+
+### Corrections
+
+- Les particules de l'accueil et de la chaîne du froid nommées comme entorses au style
+- Les particules de l'annonce et du pitch nommées comme entorses au style
+
 ## 0.74.0 – 2026-11-13
 
 Choisir un style devient plus simple : nommez une référence connue (« façon Kurzgesagt », « comme une notice IKEA ») et Claude prend le style le plus proche ; votre style habituel revient en premier, et les styles proposés varient.
