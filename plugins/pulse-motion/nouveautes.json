@@ -1,5 +1,16 @@
 [
   {
+    "version": "0.73.0",
+    "date": "2026-11-13",
+    "resume": "Pulse Motion se prépare à accueillir près de cinquante styles : les polices communes ne sont plus livrées en double (le plugin passe de 15,5 à 15,0 Mo) et la liste des styles proposés reste courte. Vos vidéos ne changent pas.",
+    "points": [
+      "Une police utilisée par plusieurs styles n'est plus copiée dans chacun : Pulse Motion la garde en un seul exemplaire, avec sa licence. Vos vidéos gardent exactement les mêmes polices, et vos styles personnels restent valides.",
+      "Quand Claude choisit un style pour votre vidéo, il voit les styles conseillés pour votre sujet et les vôtres, puis les autres résumés par famille : la liste reste courte quand la bibliothèque grandit.",
+      "Les personnages sont prêts à recevoir de nouveaux habillages ; une vidéo n'embarque que ceux qu'elle montre.",
+      "Pour écrire chaque scène, Claude lit une version plus courte de la fiche du style : le nom et la recette de chaque geste."
+    ]
+  },
+  {
     "version": "0.72.0",
     "date": "2026-11-13",
     "resume": "Les cartes se lisent mieux : les noms des villes trouvent leur place, la France entière tient dans l'image, et en vertical la carte remplit l'écran. Le catalogue du wiki les montre en démo.",
