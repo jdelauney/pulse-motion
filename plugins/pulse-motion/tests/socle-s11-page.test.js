@@ -40,7 +40,8 @@ function projet(scene) {
 
 test('habillages : liste unique ; pieces et batonnets rendus à l\'identique (empreinte avant et après)', { timeout: 120000 }, async (t) => {
   // Liste unique : le registre ; la scène, la validation, l'atelier, l'assemblage et la planche la lisent, sans liste à eux.
-  assert.deepEqual(HAB.NOMS, ['pieces', 'batonnets']);
+  // 0.76.0 (S11 J4) : l'habillage plume rejoint le registre ; pieces et batonnets gardent leur empreinte.
+  assert.deepEqual(HAB.NOMS, ['pieces', 'batonnets', 'plume']);
   assert.equal(HAB.DEFAUT, 'pieces');
   assert.deepEqual(HAB.sansDessin(), ['batonnets']);
   for (const n of HAB.NOMS) {
@@ -77,7 +78,7 @@ test('habillages : liste unique ; pieces et batonnets rendus à l\'identique (em
   assert.deepEqual(seuls.groupes.filter((g) => /habillage/.test(g)), ['habillage-batonnets']);
   assert.ok(seuls.moteur.includes('pm-perso-touffe-trait') && !seuls.moteur.includes('data-piece'), 'module des pièces absent');
   assert.deepEqual(GM.groupesDuDeroule({ personnages: {} }, [], [], { habillages: ['batonnets'] }), ['tronc', 'personnages', 'habillage-batonnets']);
-  assert.deepEqual(GM.groupesDuDeroule({ personnages: {} }), ['tronc', 'personnages', 'habillage-pieces', 'habillage-batonnets']);
+  assert.deepEqual(GM.groupesDuDeroule({ personnages: {} }), ['tronc', 'personnages', 'habillage-pieces', 'habillage-batonnets', 'habillage-plume', 'main-levee']);
 
   // Rendu identique : les trois personnages, à cinq instants, dans la page.
   if (!navigateur) { t.skip('Chrome ou Edge introuvable : rendu des personnages non vérifié'); return; }
