@@ -5,7 +5,7 @@
  *   <svg data-carte="monde" data-carte-pays="FR,DE,ES" data-carte-cadre="auto">
  *     <path data-pays="FR" data-start="0.4"></path>          (facultatif : un pays listé qu'on anime ; son tracé est posé ici)
  *     <g data-repere="Lyon"></g>  <g data-repere="45.76,4.84"><text data-texte="ville" y="-2"></text></g>
- *     <path data-liaison="Paris→Montréal" data-start="1" class="pm-m-trace"></path>
+ *     <path data-liaison="Paris→New York" data-start="1" class="pm-m-trace"></path>
  *   </svg>
  *
  * cartesConnues() -> ['monde', 'france'] ; chargerCarte(nom) -> carte | null (fichier absent) ; chargerVilles() -> villes | null.
@@ -201,7 +201,7 @@ function preparerCartes(html, { scene } = {}) {
     const liaisons = [...corps.matchAll(/<path\b(?:[^>"']|"[^"]*"|'[^']*')*?\sdata-liaison\s*=\s*(["'])([^"']*)\1/gi)].map((m) => m[2]);
     for (const v of liaisons) {
       const bouts = v.split(/\s*(?:→|->)\s*/);
-      if (bouts.length !== 2 || !bouts[0] || !bouts[1]) { fautes++; signaler('carte-invalide', `liaison « ${v} » illisible : « départ→arrivée » (ex. Paris→Montréal).`); continue; }
+      if (bouts.length !== 2 || !bouts[0] || !bouts[1]) { fautes++; signaler('carte-invalide', `liaison « ${v} » illisible : « départ→arrivée » (ex. Paris→New York).`); continue; }
       bouts.forEach((b) => { const r = lieu(b); if (r) points.push(r); });
     }
     const cadre = cadreDe({ carte, cadre: lire(attributs, 'data-carte-cadre') || 'auto', zones, points });

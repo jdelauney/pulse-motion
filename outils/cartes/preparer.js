@@ -7,11 +7,11 @@
  *   node outils/cartes/preparer.js --pays <ne_110m_admin_0_countries.geojson>
  *        [--departements <ne_10m_admin_1_states_provinces.geojson>] [--champ-departement iso_3166_2]
  *        [--villes <ne_110m_populated_places.geojson>] [--villes-detail <ne_10m_populated_places.geojson>]
- *        [--sortie <dossier>] [--tolerance 0.5] [--aire-min 1] [--rang-villes 2|aucun] [--version-ne 5.1.1]
+ *        [--sortie <dossier>] [--tolerance 0.5] [--aire-min 1] [--version-ne 5.1.1]
  *
  * Écrit monde.json (pays, Equal Earth, boîte de 1 000 unités de large), france.json (13 régions métropolitaines en conique
  * conforme de Lambert, parallèles 44° et 49° N comme Lambert-93, et 5 régions d'outre-mer en encarts) et villes.json (lieux
- * peuplés au 1:110 M, grandes villes du 1:10 M de rang SCALERANK ≤ --rang-villes, et chefs-lieux de région français). Chaque fichier porte ses paramètres de projection : le moteur
+ * peuplés au 1:110 M et chefs-lieux de région français). Chaque fichier porte ses paramètres de projection : le moteur
  * (plugins/pulse-motion/moteur/cartes.js, dont l'outil reprend les formules) projette les repères de la même façon.
  *
  * Simplification de Visvalingam (aire effective sous la tolérance, en unités² de la carte), faite sur les arcs partagés :
@@ -448,9 +448,8 @@ const CODES_OUTRE_MER = new Set(Object.keys(ALIAS_OUTRE_MER));
 /**
  * villes.json : lieux peuplés au 1:110 M (nom français, latitude, longitude, pays, population), plus les chefs-lieux de région.
  * codesA3 : { ADM0_A3 -> code ISO alpha-2 } des pays (monde.json), pour un lieu sans ISO_A2 (Pristina : « -99 », Kosovo XK).
- * rangDetail : les lieux du fichier détaillé de rang SCALERANK au plus rangDetail s'ajoutent (null : aucun).
  */
-function preparerVilles(features, detail = [], { versionNE = null, codesA3 = {}, rangDetail = null } = {}) {
+function preparerVilles(features, detail = [], { versionNE = null, codesA3 = {} } = {}) {
   const avertissements = [];
   const lire = (f) => {
     const g = f.geometry && f.geometry.type === 'Point' ? f.geometry.coordinates : null;
@@ -467,16 +466,6 @@ function preparerVilles(features, detail = [], { versionNE = null, codesA3 = {},
   const parNom = (v) => `${normaliser(v.nom)}|${v.pays}`;
   const vues = new Set(villes.map(parNom));
   const detaillees = detail.map(lire);
-  // Grandes villes absentes du 1:110 m (Montréal, Barcelone, Milan, Munich…) : celles du 1:10 m de rang SCALERANK ≤ rangDetail.
-  if (rangDetail !== null && rangDetail !== undefined) {
-    detail.forEach((f, i) => {
-      const rang = Number(prop(f, 'SCALERANK'));
-      const v = detaillees[i];
-      if (!Number.isFinite(rang) || rang > rangDetail || !v.nom || !Number.isFinite(v.lat) || !Number.isFinite(v.lon) || vues.has(parNom(v))) return;
-      vues.add(parNom(v));
-      villes.push(v);
-    });
-  }
   for (const r of REGIONS) {
     const trouvee = villes.find((v) => v.nom === r.chefLieu && v.francaise);
     if (trouvee) { trouvee.pays = 'FR'; trouvee.chefLieu = r.code; continue; }
@@ -490,7 +479,7 @@ function preparerVilles(features, detail = [], { versionNE = null, codesA3 = {},
     villes.push({ nom: d.nom, pays: 'FR', lat: d.lat, lon: d.lon, population: d.population, chefLieu: r.code });
   }
   villes.sort((a, b) => b.population - a.population || a.nom.localeCompare(b.nom));
-  return { villes: { nom: 'villes', source: `Natural Earth 1:110 m, Populated Places${detail.length ? ` (chefs-lieux${rangDetail !== null && rangDetail !== undefined ? ` et rang ≤ ${rangDetail}` : ''} : 1:10 m)` : ''}${versionNE ? ` ${versionNE}` : ''}`, licence: 'domaine public (Natural Earth)', villes }, avertissements };
+  return { villes: { nom: 'villes', source: `Natural Earth 1:110 m, Populated Places${detail.length ? ' (chefs-lieux : 1:10 m)' : ''}${versionNE ? ` ${versionNE}` : ''}`, licence: 'domaine public (Natural Earth)', villes }, avertissements };
 }
 
 /** JSON compact, une entrée par ligne pour les listes (relecture et différences lisibles). */
@@ -506,10 +495,9 @@ function ecrireCompact(objet) {
 function principal(args) {
   const valeur = (o) => { const k = args.indexOf(o); return k >= 0 ? args[k + 1] : undefined; };
   const sortie = path.resolve(valeur('--sortie') || path.join(__dirname, '..', '..', 'plugins', 'pulse-motion', 'cartes'));
-  const options = { tolerance: Number(valeur('--tolerance') || 0.5), aireMin: Number(valeur('--aire-min') || 1), versionNE: valeur('--version-ne') || null,
-    rangDetail: valeur('--rang-villes') === 'aucun' ? null : Number(valeur('--rang-villes') || 2) };
+  const options = { tolerance: Number(valeur('--tolerance') || 0.5), aireMin: Number(valeur('--aire-min') || 1), versionNE: valeur('--version-ne') || null };
   if (!valeur('--pays')) {
-    console.error('Usage : node outils/cartes/preparer.js --pays <ne_110m_admin_0_countries.geojson> [--departements <ne_10m_admin_1_states_provinces.geojson>] [--villes <ne_110m_populated_places.geojson>] [--villes-detail <ne_10m_populated_places.geojson>] [--sortie <dossier>] [--tolerance 0.5] [--aire-min 1] [--rang-villes 2|aucun] [--version-ne 5.1.1]');
+    console.error('Usage : node outils/cartes/preparer.js --pays <ne_110m_admin_0_countries.geojson> [--departements <ne_10m_admin_1_states_provinces.geojson>] [--villes <ne_110m_populated_places.geojson>] [--villes-detail <ne_10m_populated_places.geojson>] [--sortie <dossier>] [--tolerance 0.5] [--aire-min 1] [--version-ne 5.1.1]');
     return 2;
   }
   fs.mkdirSync(sortie, { recursive: true });

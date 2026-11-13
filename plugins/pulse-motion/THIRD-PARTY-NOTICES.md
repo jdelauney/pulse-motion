@@ -174,7 +174,7 @@ La voix de synthèse facultative (`plugins/pulse-motion/scripts/lib/voix-locale.
 
 ## Natural Earth
 
-Fonds de carte des scènes (`<svg data-carte>`, `plugins/pulse-motion/cartes/`) : données vectorielles de Natural Earth 5.1.2 au 1:110 000 000 (pays, lieux peuplés) et au 1:10 000 000 (départements français fusionnés en régions, grandes villes, chefs-lieux), projetées, simplifiées et arrondies par `outils/cartes/preparer.js` (`monde.json`, `france.json`, `villes.json`). Adresses, version et empreintes sha256 des fichiers d'origine : `plugins/pulse-motion/cartes/PROVENANCE.md`. Seul ajout étranger à Natural Earth : le chef-lieu de Mayotte, Mamoudzou, absent de ses lieux peuplés. Chaque vidéo qui pose une carte crédite Natural Earth dans ses crédits (section « Cartes »).
+Fonds de carte des scènes (`<svg data-carte>`, `plugins/pulse-motion/cartes/`) : données vectorielles de Natural Earth 5.1.2 au 1:110 000 000 (pays, lieux peuplés) et au 1:10 000 000 (départements français fusionnés en régions, chefs-lieux), projetées, simplifiées et arrondies par `outils/cartes/preparer.js` (`monde.json`, `france.json`, `villes.json`). Adresses, version et empreintes sha256 des fichiers d'origine : `plugins/pulse-motion/cartes/PROVENANCE.md`. Seul ajout étranger à Natural Earth : le chef-lieu de Mayotte, Mamoudzou, absent de ses lieux peuplés. Chaque vidéo qui pose une carte crédite Natural Earth dans ses crédits (section « Cartes »).
 
 - Projet : https://www.naturalearthdata.com (données : https://github.com/nvkelso/natural-earth-vector)
 - Licence : domaine public (« All versions of Natural Earth raster + vector map data found on this website are in the public domain »). Aucune mention n'est obligatoire.

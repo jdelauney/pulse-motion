@@ -7,7 +7,6 @@
 - **Trouver** un pays, une région ou une ville : `pulse-motion cartes chercher <nom>` (en français, sans souci d'accents). Un lieu absent se donne par ses coordonnées, « latitude,longitude ».
 - **Montrer avant d'écrire** : `pulse-motion cartes planche monde --pays FR,DE,ES --ouvrir`, regarder l'image (`Read`), puis la décrire à la personne en mots.
 - Si `pulse-motion cartes` répond qu'un fond manque (installation abîmée), le dire à la personne, proposer de mettre à jour Pulse Motion, ou une autre mise en forme (liste, icônes) : jamais de carte dessinée à la main.
-- **Format vertical** : le cadre `auto` suit la boîte des lieux, souvent plus large que haute ; en 9:16, la carte n'occupe alors qu'une bande au milieu. Resserrer le cadre (moins de pays, un pays, la carte de France) ou poser la carte dans la moitié haute, et regarder l'image.
 
 ## Poser une carte
 
@@ -31,7 +30,7 @@
 - `data-carte-cadre` : `auto` (défaut : pays listés, repères et liaisons, plus 10 %), `monde`, un code (`FR`), ou un continent de la carte du monde (`europe`, `afrique`, `ameriques`, `asie`, `oceanie`). **Préférer une vue régionale** à une carte du monde.
 - `<path data-pays="ES">` vide : le pays est posé à cette place, avec son tracé, pour l'animer (entrée, `data-tween`). Son `id` est `pays-ES` (`data-start="#pays-ES:fin+0.2"`).
 - `<g data-repere="…">` : par nom de ville, code de pays (son centre) ou « latitude,longitude » ; un repère vide reçoit un point (`pm-repere-point`). Ce qu'il contient se place autour du point (`dy="-0.8em"` : au-dessus).
-- `<path data-liaison="Paris→Montréal">` : arc calculé, bombé vers le haut (`data-liaison-courbure`, 0.25 par défaut) ; `pathLength="100"` posé pour le tracé (#011).
+- `<path data-liaison="Paris→New York">` : arc calculé, bombé vers le haut (`data-liaison-courbure`, 0.25 par défaut) ; `pathLength="100"` posé pour le tracé (#011).
 - Tailles en unités de carte : `--pm-u` vaut 1 % de la largeur du cadre ; un texte de carte mesure `calc(var(--pm-u) * 3.5)` par défaut, un point 0,9 `--pm-u`.
 
 ## Animer
