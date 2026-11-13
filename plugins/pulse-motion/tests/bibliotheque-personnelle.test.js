@@ -415,7 +415,7 @@ test('bibliotheque : conduite dans chez-soi, renvois d\'une ligne des compétenc
   const ref = lire('references', 'chez-soi.md');
   const section = ref.split('## Bibliothèque personnelle')[1].split('\n## ')[0];
   for (const m of ['effet enregistrer', 'personnages enregistrer', 'effet utiliser', 'personnages utiliser', 'bibliotheque exporter', 'bibliotheque importer', '--voir', '--remplacer', 'Par copie']) assert.ok(section.includes(m), m);
-  assert.match(lire('skills', 'retoucher', 'SKILL.md'), /« garde cet effet \(ce personnage\) pour mes prochaines vidéos » : `pulse-motion reference chez-soi`/);
+  assert.match(lire('skills', 'retoucher', 'SKILL.md'), /« garde cet effet \(ce personnage, cette musique\) pour mes prochaines vidéos » : `pulse-motion reference chez-soi`/);
   assert.match(lire('skills', 'outils', 'SKILL.md'), /## 8\. Emporter sa bibliothèque[\s\S]*section « Bibliothèque personnelle »/);
   assert.match(lire('skills', 'outils', 'SKILL.md'), /^description: ".*« emporte mes chartes ».*"$/m);
   for (const s of ['dessiner-personnage', 'animer-personnage']) assert.match(lire('skills', s, 'SKILL.md'), /« Je le garde pour vos prochaines vidéos \? »[^\n]*« Le garder \(Recommandé\) » · « Seulement cette vidéo »[^\n]*chez-soi/, s);

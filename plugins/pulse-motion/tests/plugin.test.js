@@ -307,7 +307,9 @@ test('correctifs : guidage du son précisé (sous-titres sans voix, arrêt avant
 });
 
 test('correctifs : sous-commandes du son citées dans les guides : elles existent', () => {
-  const SOUS = { voix: ['importer', 'provisoire', 'transcrire', 'studio', 'mots', 'synthese'], whisper: ['installer'], musique: ['ecouter'] };
+  // Sous-commandes de « musique » : celles que son usage annonce (écouter, et la bibliothèque de musiques de S9, 5.13).
+  const musique = [...require('../scripts/musique.js').USAGE.matchAll(/pulse-motion musique ([a-z]+)|\| ([a-z]+) /g)].map((m) => m[1] || m[2]);
+  const SOUS = { voix: ['importer', 'provisoire', 'transcrire', 'studio', 'mots', 'synthese'], whisper: ['installer'], musique };
   const references = ['audio', 'moteur'].flatMap((n) => [path.join('references', `${n}.md`), ...partiesDe(n).map((p) => path.relative(RACINE, p.fichier))]);
   for (const f of [...fichiersGuides(), ...references]) {
     for (const m of lire(f).matchAll(/pulse-motion (voix|whisper|musique)(?: ([a-z]+))?/g)) {
