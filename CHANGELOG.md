@@ -2,6 +2,20 @@
 
 Produit par `outils/nouveautes.js` depuis l'historique du dépôt : ne pas le modifier à la main. Les nouveautés racontées simplement sont sur la page « Nouveautés » du wiki.
 
+## 0.78.0 – 2026-11-14
+
+Une scène peut maintenant passer du jour à la nuit : le ciel change, le papier devient bleu nuit, l'encre pâlit et les fenêtres s'allument une à une.
+
+### Nouveautés
+
+- La journée qui passe (journee.js : palette(τ) du ciel et du papier, encre qui bascule selon la luminance du papier, signaux lampe, nuit et couchant ; data-journee sur une scène en cubic-inout, six variables --pm-* ; fenêtres data-lampe à seuil tiré d'une graine, lueur en dégradé radial ; règles journee-texte et journee-invalide ; l'encre des styles dessinés lit son mode sans la couleur de l'heure) (S11 J6, 5.9)
+- Planche --journee, une scène à data-journee aux 7 heures du balayage, au même instant (S11 J6, 5.11 point 2)
+
+### Corrections
+
+- Fenêtres de la journée regardées sur planche et au test : signal lampe tiré du bas du ciel (tiré du papier, toutes les lampes d'une scène de 8 s s'allumaient sur la même image), graines brassées (des lampes voisines avaient presque le même seuil), lueur sans le trait de la façade
+- Nouveautés de la 0.77.0 en 5 points (le test en demande 5 au plus ; le vent et la fumée réunis)
+
 ## 0.77.0 – 2026-11-14
 
 Vos personnages marchent maintenant pas à pas, sans glisser, et le vent peut traverser vos scènes : une écharpe qui flotte, une mallette qui se balance, une enseigne qui penche au bout de sa chaîne.
