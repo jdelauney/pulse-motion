@@ -86,7 +86,12 @@
     var sec = null;
     document.querySelectorAll('#pm-scene > section[data-scene]').forEach(function (s) { if (s.getAttribute('data-scene') === id) sec = s; });
     if (!sec) throw new Error('section introuvable');
+    // La journée qui passe (moteur/journee.js, spec S11 5.9) écrit la couleur de l'encre dans --pm-encre, sur la section : le
+    // mode du style se lit sans elle.
+    var journee = sec.style.getPropertyValue('--pm-encre');
+    if (journee) sec.style.removeProperty('--pm-encre');
     var mode = getComputedStyle(sec).getPropertyValue('--pm-encre').trim();
+    if (journee) sec.style.setProperty('--pm-encre', journee);
     sc = etat.scenes[id] = { id: id, sec: sec, mode: GRAINS[mode] ? mode : 'feutre', canevas: {}, grain: null, couche: null };
     return sc;
   }

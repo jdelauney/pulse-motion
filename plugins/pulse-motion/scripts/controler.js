@@ -44,6 +44,7 @@ const { corrigerTypographie, ponctuationOuvrante, corrigerMajuscules, motsDouble
 const Langues = require('../moteur/langues.js');
 const { extraireScene, textesEnDur, viesScene } = require('./lib/extraire.js');
 const { estEbauche } = require('./lib/ebauche.js');
+const { texteJournee } = require('./lib/journee-scene.js');
 const { calculerMinutage } = require('../moteur/minutage.js');
 const CATALOGUE = require('../moteur/synthe/catalogue.js');
 const { appliquerCorrections } = require('./lib/corriger.js');
@@ -150,6 +151,7 @@ function controlesRapides({ projet, dossierStyles, dossierEffets, assemblage = A
     const dossierStyle = trouverStyle(deroule.style, dossierStyles).dossier;
     const scenesLues = {};
     const scenesHtml = {};
+    const scenesDepliees = {};
     const elementsParScene = {};
     const viesParScene = {};
     for (const s of deroule.scenes) {
@@ -159,6 +161,7 @@ function controlesRapides({ projet, dossierStyles, dossierEffets, assemblage = A
       scenesHtml[s.id] = html;
       // Groupes de personnages dépliés comme à l'assemblage : mêmes éléments minutés que dans la page.
       if (/data-groupe/.test(html)) html = deplierGroupes(html, { scene: s.id, dureeTemps: dureeTemps(deroule) }).html;
+      scenesDepliees[s.id] = html;
       scenesLues[s.id] = extraireScene(html);
       elementsParScene[s.id] = scenesLues[s.id].elements;
       // Caméra automatique (spec S7, 5.8) : demandée par le déroulé, gros plans data-cadrer.
@@ -176,6 +179,8 @@ function controlesRapides({ projet, dossierStyles, dossierEffets, assemblage = A
     const scenesMinutees = (assemblage.donnees && assemblage.donnees.scenes) || deroule.scenes;
     const min = calculerMinutage(scenesMinutees, elementsParScene, optionsMinutage(deroule));
     for (const e of min.erreurs) problemes.push({ ...e, gravite: 'erreur' });
+    // La journée qui passe (spec S11, 5.9) : aucun texte visible quand l'encre se lit mal sur le papier (d'après palette(τ)).
+    for (const s of min.scenes) problemes.push(...texteJournee(scenesDepliees[s.id] || '', { scene: s.id, debut: s.debut, fin: s.fin, elements: min.elements[s.id] }));
     for (const s of min.scenes.filter((x) => x.allongee)) {
       problemes.push({ regle: 'voix-allonge', gravite: 'info', scene: s.id,
         message: `Scène « ${s.id} » : allongée à ${virgule(s.dureeEffective)} s pour laisser finir la voix (écrire "duree": ${Math.ceil(s.dureeEffective * 10) / 10} dans le déroulé pour la figer).` });

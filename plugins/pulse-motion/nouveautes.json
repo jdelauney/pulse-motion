@@ -1,14 +1,25 @@
 [
   {
+    "version": "0.78.0",
+    "date": "2026-11-14",
+    "resume": "Une scène peut maintenant passer du jour à la nuit : le ciel change, le papier devient bleu nuit, l'encre pâlit et les fenêtres s'allument une à une.",
+    "points": [
+      "L'heure d'une scène se règle d'un mot dans la scène : fixe, ou qui passe pendant la scène, de l'aube à la nuit noire.",
+      "Le ciel, le papier et l'encre suivent l'heure ; les couleurs de votre charte ne changent jamais.",
+      "Les personnages au trait de plume passent d'eux-mêmes à l'encre pâle la nuit.",
+      "Fenêtres, lanternes et réverbères s'allument une à une à la tombée de la nuit, avec une lueur douce, et s'éteignent au matin.",
+      "Aucun texte n'est laissé à l'écran au court moment où l'encre se lit mal ; une planche montre la scène à sept heures du jour et de la nuit pour tout vérifier d'un coup d'œil."
+    ]
+  },
+  {
     "version": "0.77.0",
     "date": "2026-11-14",
     "resume": "Vos personnages marchent maintenant pas à pas, sans glisser, et le vent peut traverser vos scènes : une écharpe qui flotte, une mallette qui se balance, une enseigne qui penche au bout de sa chaîne.",
     "points": [
       "Marche calculée : de profil, chaque pied reste posé au sol pendant que le corps avance, le talon se lève avant le pas et la hanche descend quand les deux pieds touchent le sol. La course a un vrai moment en l'air.",
       "Trois façons d'avancer : marcher, courir, ou traîner les pieds à petits pas.",
-      "Le vent se règle scène par scène, du calme à la tempête, ou pour toute la vidéo ; il change en douceur d'une scène à l'autre, avec des rafales.",
+      "Le vent se règle scène par scène, du calme à la tempête, ou pour toute la vidéo ; il change en douceur d'une scène à l'autre, avec des rafales, et la fumée des effets de particules part dans son sens.",
       "Au vent ou en marchant, l'écharpe et les objets portés des personnages au trait de plume se balancent ; une enseigne, une lampe ou une étiquette suspendue aussi, dans tous les styles.",
-      "La fumée des effets de particules part dans le sens du vent.",
       "Tout est recalculé à chaque image : l'aperçu et la vidéo exportée montrent toujours le même mouvement."
     ]
   },
